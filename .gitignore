@@ -1,0 +1,28 @@
+# 대용량 원본 GIS 데이터 (SHP 세트) - 절대 커밋 금지, GitHub 100MB 제한 초과
+data/raw/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# uv
+.python-version
+
+# 환경변수 / 키
+.env
+*.key
+
+# 에디터
+.vscode/
+!.devcontainer/devcontainer.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 모델 학습 산출물 (용량 큼, 필요시 별도 저장소/Drive)
+runs/
+*.pt
