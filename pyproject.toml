@@ -1,31 +1,52 @@
 [project]
 name = "fire-lane"
 version = "0.1.0"
-description = "소방차 진입로 판정 및 우회경로 탐색 서비스 (인공지능사관학교 7기 3반 AI보안반 파이널 프로젝트)"
+description = "소방차 진입곤란 구간 자동 판정 및 우회 경로 탐색 (인공지능사관학교 7기 파이널)"
 requires-python = ">=3.11"
+
+# 전체 프로젝트 의존성. 팀원은 이 파일 하나만 보면 된다.
+# 스택이 바뀌면 여기만 고치고 devcontainer를 리빌드하면 전원에게 전파된다.
 dependencies = [
-    "fastapi>=0.110.0",
-    "uvicorn[standard]>=0.28.0",
-    "opencv-python>=4.9.0.80",
-    "numpy>=1.26.0",
+    # ── GIS / ETL (현재 파이프라인이 실제로 쓰는 것) ──
+    "geopandas>=1.1,<2",
+    "shapely>=2.1,<3",
+    "pyproj>=3.7,<4",
+    "pyogrio>=0.13",          # geopandas의 SHP 리더. bbox 필터가 이걸로 동작
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "networkx>=3.3",
+    "PyYAML>=6.0",
+
+    # ── 서빙 ──
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
     "python-multipart>=0.0.9",
-    "ultralytics>=8.3.0",
-    "geopandas>=0.14.0",
-    "shapely>=2.0.0",
-    "pyproj>=3.6.0",
-    "networkx>=3.2.0",
-    "sqlalchemy>=2.0.0",
-    "psycopg2-binary>=2.9.0",
-    "geoalchemy2>=0.14.0",
-    "requests>=2.31.0",
-    "pyshp>=2.3.0",
-    "scipy>=1.13.0",
-    "rasterio>=1.4.0",
+
+    # ── DB ──
+    "SQLAlchemy>=2.0",
+    "psycopg2-binary>=2.9",
+    "GeoAlchemy2>=0.15",
+
+    # ── 비전 ──
+    "opencv-python>=4.10",
+    "ultralytics>=8.3",
+
+    "requests>=2.32",
 ]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
-    "ruff>=0.9.0",
-    "pre-commit>=3.6.0",
-    "pytest>=8.0.0",
+    "ruff>=0.6",
+    "pytest>=8.3",
+    "pre-commit>=3.8",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

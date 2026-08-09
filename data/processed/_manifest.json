@@ -1,0 +1,370 @@
+{
+  "generated_at": "2026-08-09T11:41:23.925285+00:00",
+  "bbox_4326": [
+    126.907,
+    35.14,
+    126.94,
+    35.162
+  ],
+  "standard_crs": {
+    "metric": "EPSG:5186",
+    "display": "EPSG:4326"
+  },
+  "datasets": [
+    {
+      "key": "road_link",
+      "source_file": "juso/juso_road_geom_jngj_20260701.zip",
+      "source_sha256": "a4075456def0260583d858fc1418cfcb066c8933aaabd938d0d7187b87f6fe1c",
+      "source_crs": "EPSG:5179",
+      "license": "도로명주소법 시행령 제46조 심사 승인",
+      "url": "https://business.juso.go.kr/addrlink/elctrnMapProvd/geoDBDwldList.do",
+      "status": "OK",
+      "features": 1812,
+      "geom": [
+        "LineString"
+      ],
+      "columns": [
+        "ALWNC_DE",
+        "ALWNC_RESN",
+        "BSI_INT",
+        "ENG_RN",
+        "MVMN_DE",
+        "MVMN_RESN",
+        "MVM_RES_CD",
+        "NTFC_DE",
+        "OPERT_DE",
+        "RBP_CN",
+        "RDS_DPN_SE",
+        "RDS_MAN_NO",
+        "REP_CN",
+        "RN",
+        "RN_CD",
+        "ROAD_BT",
+        "ROAD_LT",
+        "ROA_CLS_SE",
+        "SIG_CD",
+        "WDR_RD_CD"
+      ],
+      "outputs": [
+        "road_link.geojson",
+        "road_link_5186.gpkg"
+      ]
+    },
+    {
+      "key": "road_rw",
+      "source_file": "juso/juso_road_geom_jngj_20260701.zip",
+      "source_sha256": "a4075456def0260583d858fc1418cfcb066c8933aaabd938d0d7187b87f6fe1c",
+      "source_crs": "EPSG:5179",
+      "license": "",
+      "url": "",
+      "status": "OK",
+      "features": 2371,
+      "geom": [
+        "MultiPolygon",
+        "Polygon"
+      ],
+      "columns": [
+        "OPERT_DE",
+        "RW_SN",
+        "SIG_CD"
+      ],
+      "outputs": [
+        "road_rw.geojson",
+        "road_rw_5186.gpkg"
+      ]
+    },
+    {
+      "key": "ngii_road",
+      "source_file": "ngii/ngii_basemap_gj*.zip",
+      "source_sha256": "c8f8622216cdad56,8e16f9c7d049df55,86053a35948c9825,e1ec794c09eeeda4",
+      "source_crs": "EPSG:5179",
+      "license": "국토지리정보원",
+      "url": "https://map.ngii.go.kr",
+      "status": "OK",
+      "features": 3740,
+      "geom": [
+        "MultiPolygon",
+        "Polygon"
+      ],
+      "columns": [
+        "area",
+        "dvyn",
+        "edpt",
+        "fclt",
+        "hjcd",
+        "mmsl",
+        "name",
+        "onsd",
+        "pvqt",
+        "rbid",
+        "rddv",
+        "rdln",
+        "rdnm",
+        "rdnu",
+        "rest",
+        "rvwd",
+        "stpt",
+        "tpsl",
+        "uops",
+        "objectid",
+        "shape_area",
+        "shape_leng"
+      ],
+      "outputs": [
+        "ngii_road.geojson",
+        "ngii_road_5186.gpkg"
+      ]
+    },
+    {
+      "key": "node_link",
+      "source_file": "its/its_nodelink_gwangju_20260716.zip",
+      "source_sha256": "65d9d8412d536d8a50c6481412daa2f825537b6c15029b5947ced38f6e909823",
+      "source_crs": "EPSG:5186",
+      "license": "공공누리 제1유형",
+      "url": "https://www.its.go.kr/nodelink/nodelinkRef",
+      "status": "OK",
+      "features": 1366,
+      "geom": [
+        "LineString"
+      ],
+      "columns": [
+        "LINK_ID",
+        "F_NODE",
+        "T_NODE",
+        "LANES",
+        "ROAD_RANK",
+        "ROAD_TYPE",
+        "ROAD_NO",
+        "ROAD_NAME",
+        "ROAD_USE",
+        "MULTI_LINK",
+        "CONNECT",
+        "MAX_SPD",
+        "REST_VEH",
+        "REST_W",
+        "REST_H",
+        "C-ITS",
+        "LENGTH",
+        "UPDATEDATE",
+        "REMARK",
+        "HIST_TYPE",
+        "HISTREMARK"
+      ],
+      "outputs": [
+        "node_link.geojson",
+        "node_link_5186.gpkg"
+      ]
+    },
+    {
+      "key": "node_point",
+      "source_file": "its/its_nodelink_gwangju_20260716.zip",
+      "source_sha256": "65d9d8412d536d8a50c6481412daa2f825537b6c15029b5947ced38f6e909823",
+      "source_crs": "EPSG:5186",
+      "license": "",
+      "url": "",
+      "status": "OK",
+      "features": 968,
+      "geom": [
+        "Point"
+      ],
+      "columns": [
+        "NODE_ID",
+        "NODE_TYPE",
+        "NODE_NAME",
+        "TURN_P",
+        "UPDATEDATE",
+        "REMARK",
+        "HIST_TYPE",
+        "HISTREMARK"
+      ],
+      "outputs": [
+        "node_point.geojson",
+        "node_point_5186.gpkg"
+      ]
+    },
+    {
+      "key": "turn_restriction",
+      "source_file": "its/its_nodelink_gwangju_20260716.zip",
+      "source_sha256": "65d9d8412d536d8a50c6481412daa2f825537b6c15029b5947ced38f6e909823",
+      "source_crs": "none",
+      "license": "",
+      "url": "",
+      "status": "OK",
+      "features": 87,
+      "geom": [],
+      "columns": [
+        "NODE_ID",
+        "TURN_ID",
+        "ST_LINK",
+        "ED_LINK",
+        "TURN_TYPE",
+        "TURN_OPER",
+        "REMARK"
+      ],
+      "outputs": [
+        "turn_restriction.csv"
+      ]
+    },
+    {
+      "key": "cctv",
+      "source_file": "safety/safety_cctv_jngj_20260630.csv",
+      "source_sha256": "0f1f20d8bbf5180a26cb8288a37d468e04c98a8fea625b9f6ed87e250e43772a",
+      "source_crs": "EPSG:4326",
+      "license": "공공누리 제1유형",
+      "url": "https://www.data.go.kr/data/15084631/fileData.do",
+      "status": "OK",
+      "features": 678,
+      "geom": [
+        "Point"
+      ],
+      "columns": [
+        "관리기관명",
+        "소재지지번주소",
+        "소재지도로명주소",
+        "카메라대수",
+        "카메라화소",
+        "촬영방면",
+        "보관일수",
+        "설치연도",
+        "위도",
+        "경도",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "cctv.geojson",
+        "cctv_5186.gpkg"
+      ]
+    },
+    {
+      "key": "fire_station",
+      "source_file": "safety/safety_firestation_kr_20240901.csv",
+      "source_sha256": "9f0df7bcf84960e41f8e0dcea0cc68fcb0466b7006b784f0c41c96ebed624ebe",
+      "source_crs": "EPSG:4326",
+      "license": "",
+      "url": "https://www.data.go.kr/data/15138232/fileData.do",
+      "status": "OK",
+      "features": 3,
+      "geom": [
+        "Point"
+      ],
+      "columns": [
+        "번호",
+        "소방서 및 안전센터명",
+        "주소",
+        "상위 본부명",
+        "전화번호",
+        "X좌표",
+        "Y좌표",
+        "유형",
+        "등록일"
+      ],
+      "outputs": [
+        "fire_station.geojson",
+        "fire_station_5186.gpkg"
+      ]
+    },
+    {
+      "key": "poi_store",
+      "source_file": "sbiz/sbiz_store_gwangju_20260630.zip",
+      "source_sha256": "7f120320a5121cc15548ed995948988d1d5488367af91195fb6a8e8b09448fdd",
+      "source_crs": "EPSG:4326",
+      "license": "공공누리 제1유형",
+      "url": "https://www.data.go.kr/data/15083033/fileData.do",
+      "status": "OK",
+      "features": 8599,
+      "geom": [
+        "Point"
+      ],
+      "columns": [
+        "상가업소번호",
+        "상호명",
+        "지점명",
+        "상권업종대분류코드",
+        "상권업종대분류명",
+        "상권업종중분류코드",
+        "상권업종중분류명",
+        "상권업종소분류코드",
+        "상권업종소분류명",
+        "표준산업분류코드",
+        "표준산업분류명",
+        "시도코드",
+        "시도명",
+        "시군구코드",
+        "시군구명",
+        "행정동코드",
+        "행정동명",
+        "법정동코드",
+        "법정동명",
+        "지번코드",
+        "대지구분코드",
+        "대지구분명",
+        "지번본번지",
+        "지번부번지",
+        "지번주소",
+        "도로명코드",
+        "도로명",
+        "건물본번지",
+        "건물부번지",
+        "건물관리번호",
+        "건물명",
+        "도로명주소",
+        "구우편번호",
+        "신우편번호",
+        "동정보",
+        "층정보",
+        "호정보",
+        "경도",
+        "위도"
+      ],
+      "outputs": [
+        "poi_store.geojson",
+        "poi_store_5186.gpkg"
+      ]
+    },
+    {
+      "key": "enforcement",
+      "source_file": "safety/safety_parking_enforce_dongu_20240108.csv",
+      "source_sha256": "8ffb3b6c418aa0689d6ac6f99e3852670f16e21a4add8a7aaf7e579477f3377f",
+      "source_crs": "none",
+      "license": "",
+      "url": "",
+      "status": "OK",
+      "features": 85380,
+      "geom": [],
+      "columns": [
+        "위반일자",
+        "위반시간",
+        "위반장소명",
+        "과태료",
+        "비고",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "enforcement.csv"
+      ]
+    },
+    {
+      "key": "hydrant_summary",
+      "source_file": "safety/safety_hydrant_summary_jngj_20251231.csv",
+      "source_sha256": "425857a04f1bba5e6ea5df7832234c7351eac57204788f2d706cf4b9c651ed6d",
+      "source_crs": "none",
+      "license": "",
+      "url": "",
+      "status": "OK",
+      "features": 5,
+      "geom": [],
+      "columns": [
+        "연번",
+        "구분",
+        "지상식소화전",
+        "일반지하식소화전",
+        "저수조",
+        "급수탑",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "hydrant_summary.csv"
+      ]
+    }
+  ]
+}

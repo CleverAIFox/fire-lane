@@ -1,100 +1,159 @@
 # Fire-Lane
 
-소방차 출동 시 불법 주정차로 인한 통행 불가 골목을 자동 판정하고 우회 경로를 탐색하는 서비스.
-인공지능사관학교 7기 3반 AI보안반 파이널 프로젝트 (2026.08.03 ~ 2026.12.11)
+> 소방차 출동 경로 상에서 **불법 주정차로 통과 불가능해진 구간을 자동 판정**하고,
+> 그 판정을 반영한 **우회 경로를 산출**하는 119상황실용 웹 대시보드.
 
-## 프로젝트 전체 문서
+인공지능사관학교 7기 3반 AI 보안반 · 파이널 프로젝트 (2026-05 ~ 12)
+지역 스코프: 전남광주통합특별시 동구 동명동
 
-**`docs/PROJECT.md`가 이 프로젝트의 단일 소스오브트루스임.** 결정사항, 폐기된 접근, 할 일 목록 전부 여기 있음.
-새 팀원은 코드 보기 전에 이 문서부터 읽을 것.
-
-## 개발 환경 세팅
-
-```bash
-# 1. Docker Desktop + WSL2가 이미 설치되어 있어야 함
-# 2. VS Code에서 이 폴더 열고, 우측 하단 팝업에서 "Reopen in Container" 클릭
-#    (또는 Ctrl+Shift+P -> "Dev Containers: Reopen in Container")
-# 3. 컨테이너 빌드 완료되면 자동으로 의존성 설치됨 (uv sync)
+```
+상용 내비(TMAP/카카오)는 "교통량"(얼마나 느린가)을 모델링한다.
+우리는 "통과 가능성"(지나갈 수 있는가)을 모델링한다.
 ```
 
-컨테이너 없이 로컬에서 직접 돌리려면:
-```bash
-uv sync
-uv run python src/etl/preprocess.py            # GIS 전처리 파이프라인 (동명동 클리핑, 3단 필터링)
-docker compose up -d                            # PostGIS
-uv run python src/etl/load_to_postgis.py        # DB 적재
-uv run uvicorn src.api.main:app --reload        # API 서버
+승용차는 물리적으로 못 지나가는 골목이 거의 없다. **폭 2.5m 차량에만 존재하는 문제다.**
+
+## 파이프라인
+
+```
+[프레임 획득]   mock CCTV 서버 (실배포 시 실제 CCTV API로 교체)
+      ↓
+[호모그래피]    픽셀 → 실제 미터
+      ↓
+[YOLO11-seg]   차량 탐지·세그멘테이션
+      ↓
+[유효 통행폭]   변환 좌표계 위에서 직접 측정
+      ↓
+[등급 판정]     6색 체계 (BLUE/GREEN/YELLOW/ORANGE/RED/GRAY)
+      ↓
+[경로탐색]      networkx 다익스트라 / A*
 ```
 
-## 데이터
+## 문서
 
-- `data/raw/` : 원본 GIS 데이터 (SHP/CSV). **git에 커밋되지 않음** (`.gitignore` 처리, 100MB 제한 초과). 각자 로컬에만 보관.
-- `data/processed/` : 동명동으로 클리핑·정제된 결과물 (GeoJSON, 용량 작음). git에 포함됨.
+| 문서 | 내용 |
+|---|---|
+| **[docs/PROJECT.md](docs/PROJECT.md)** | ★ 마스터 문서. 모든 결정의 단일 참조점 |
+| [docs/DATA_INVENTORY.md](docs/DATA_INVENTORY.md) | 데이터 확보 현황 + 검증 로그 |
+| [sources.yaml](sources.yaml) | 데이터 대장 (기계가 읽는 정본) |
+| [src/etl/README.md](src/etl/README.md) | 새 데이터 추가 방법 |
 
-| 파일 | 원본 출처 | 상태 |
+**처음 보는 사람은 `docs/PROJECT.md` §0-3부터 읽어라.** 이전 문서를 왜 폐기했는지가 이 프로젝트의 작업 규칙을 설명한다.
+
+---
+
+# GIS 데이터 파이프라인
+
+## 구조
+
+```
+fire-lane/
+├── sources.yaml            ★ 데이터 대장. 여기 없으면 파이프라인에 못 들어온다
+├── pyproject.toml          전체 스택 의존성
+├── requirements-etl.txt    ETL 최소 의존성 (버전 고정)
+├── data/
+│   ├── raw/                원본 실물 포함 (327MB). 출처별 하위폴더. git 제외
+│   └── processed/          동명동 표준 산출물 + _manifest.json
+├── scripts/
+│   └── normalize_ortho.py  정사영상 파일명 정규화
+├── docs/
+│   ├── PROJECT.md          ★ 마스터 문서
+│   └── DATA_INVENTORY.md   확보 현황 + 검증 로그
+└── src/etl/
+    ├── README.md           ★ 새 데이터 추가 방법
+    ├── ingest.py           raw → processed 전체 파이프라인
+    ├── probe.py            좌표계 / 그래프 위상 진단기
+    └── krgis/crs.py        한국 좌표계 판별·안전 변환
+```
+
+## 시작
+
+```bash
+pip install -r requirements-etl.txt
+python src/etl/ingest.py
+```
+
+11개 레이어가 `data/processed/`에 재생성되면 정상이다.
+`data/raw/`는 git 제외라 별도로 받아야 한다 — `data/raw/README.md` 참조.
+항공정사영상만 용량 때문에 빠져 있다(Phase 3-A까지 불필요).
+넣을 때는 `python scripts/normalize_ortho.py <원본폴더> --apply` — `data/raw/README.md` 참조.
+
+## 의존성
+
+| 파일 | 범위 |
+|---|---|
+| `requirements-etl.txt` | **GIS 파이프라인만.** 버전 고정. 데이터 담당자는 이것만 |
+| `pyproject.toml` | 전체 스택 (FastAPI, PostGIS, YOLO 포함) |
+
+```bash
+pip install -r requirements-etl.txt      # ETL만
+pip install -e ".[dev]"                  # 전체 + ruff/pytest
+```
+
+스택이 바뀌면 `pyproject.toml` 한 곳만 고친다. devcontainer 리빌드로 전원에게 전파된다.
+
+## 실행
+
+```bash
+python src/etl/ingest.py                  # 전체
+python src/etl/ingest.py --only ngii_road # 개별
+python src/etl/ingest.py --check          # 원본 존재·체크섬만
+
+python src/etl/probe.py crs  data/raw/xxx.shp        # 실제 좌표계 역추정
+python src/etl/probe.py topo data/processed/road_link.geojson  # 위상 검사
+```
+
+## 산출물 규칙
+
+| 파일 | 좌표계 | 용도 |
 |---|---|---|
-| `dongmyeong_boundary.geojson` | 국토교통부 법정동(읍면동단위) 경계도면 | ✅ 완료 |
-| `road_link_raw.geojson` / `road_node_raw.geojson` | ITS 국가교통정보센터 표준노드링크 | ✅ 완료 (그래프 뼈대용, 폭 정보 없음) |
-| `cctv_points.geojson` | 공공데이터포털 전국CCTV표준데이터 | ✅ 완료 (동명동 53건) |
-| `fire_hydrants.geojson` | 공공데이터포털 전국소방용수시설표준데이터 | ✅ 완료 (동명동 1건, `road_segment` 스키마 반영은 백로그) |
-| **`road_segment_master.geojson`** | juso.go.kr 도로구간(`TL_SPRD_MANAGE`, ✅ 승인·다운로드·전처리 완료) + CCTV 매칭 | ✅ **완료 — GIS 마스터 데이터 MVP** |
+| `*_5186.gpkg` | EPSG:5186 | **거리·면적·버퍼 계산은 무조건 이쪽** |
+| `*.geojson` | EPSG:4326 | 웹 표출 전용 |
 
-### `road_segment_master.geojson` — 프로젝트 핵심 산출물
+4326에서 `buffer(3)` 하면 단위가 '도'라 반경 330km 원이 나온다.
 
-동명동 222개 도로구간에 대해 3단 필터링 + CCTV 커버리지 + 최종 상태(6색 체계)까지 계산 완료:
+## 좌표계 지문 (동명동 126.9245E / 35.1490N)
 
-| tier | current_status | 개수 | 의미 |
-|---|---|---|---|
-| FIXED_PASS (≥12m) | 🔵 BLUE | 9 | 주 도로, 계산 자체 불필요 |
-| CANDIDATE, COVERED | 🟡 YELLOW | 136 | 실시간 판정 대상(CCTV 있음, YOLO 미연동 상태라 잠정값) |
-| CANDIDATE, BLIND | ⚪ GRAY | 57 | 사각지대 — CCTV 없어서 자동판정 불가 |
-| FIXED_BLOCK (<2m) | 🔴 RED | 20 | 절대 진입불가 |
+미상 데이터의 좌표 한 점만 보면 어느 좌표계인지 바로 나온다.
 
-(GREEN·ORANGE는 YOLO 실시간 판정 연동 후 CANDIDATE 193개가 세분화되며 등장 예정)
+| 좌표계 | X | Y | 쓰는 곳 |
+|---|---:|---:|---|
+| EPSG:4326 | 126.9 | 35.1 | GPS, GeoJSON |
+| EPSG:5179 | 947,580 | 1,683,903 | 도로명주소, 수치지도 |
+| **EPSG:5186** | 193,120 | 283,628 | **프로젝트 표준**, 노드링크, 정사영상 |
+| EPSG:5187 | 10,861 | 285,598 | 동부원점(강원·경북·경남·부산) |
+| EPSG:5181 | 193,120 | 183,628 | 카카오 |
+| EPSG:5174 | 193,047 | 183,321 | 구 지적 |
 
-⚠ BLUE 임계값(12m)은 공식 규정이 아니라 **팀 자체 추정**(차로폭 3~3.5m × 왕복 4차선). "비용 최소화보다 안전 우선"이라는 원칙으로 보수적으로 설정 — 222개 중 9개만 BLUE라는 건 동명동 대부분이 잠재적 위험구간이라는 뜻.
-⚠ 경계 클리핑은 순수 절단이 아니라 10m 버퍼 후 trim 방식(도로 중간 끊김 방지, 4장 참고).
+**판별**: 3자리(126/35)→4326 · 7자리+7자리→5179 · Y 60만대→5186/5187 ·
+Y 50만대→5181/5174 · X 8자리→3857
 
-## DB & API 서버 (PostGIS 실연동)
+## 어긋남 사고의 크기
 
-```bash
-docker compose up -d                          # PostGIS 컨테이너 기동
-uv run python src/etl/load_to_postgis.py       # 마스터 데이터 DB 적재
-uv run uvicorn src.api.main:app --reload       # API 서버 (실제 DB 쿼리)
+| 사고 | 오차 |
+|---|---|
+| 5186 → 5187로 정의 | 184 km |
+| 5186 → 5181로 정의 | 100 km |
+| **5174 → 5181로 정의** | **316 m** ★ 위험 |
+| **5174를 proj4 문자열로 직접 정의 (towgs84 누락)** | **390 m** ★ 최다 원인 |
+
+축척을 줄이면 맞아 보인다. **Bessel 계열(5174~5178)은 proj4 문자열을 손으로 쓰지 말고
+반드시 EPSG 코드로 정의할 것.**
+
+## define vs transform
+
+```python
+gdf.set_crs("EPSG:5179", allow_override=True)  # 정의: "이 숫자는 5179다". 좌표값 안 바뀜
+gdf.to_crs("EPSG:5186")                        # 변환: 좌표값을 실제로 계산
 ```
 
-```
-http://localhost:8000/segments          # 전체 도로 세그먼트 (PostGIS 쿼리)
-http://localhost:8000/segments/RED      # 상태별 필터링 (DB WHERE절 활용 예시)
-http://localhost:8000/cctv              # CCTV 위치
-http://localhost:8000/boundary          # 동명동 경계
-http://localhost:8000/docs              # Swagger UI (FastAPI 자동생성)
-```
+`.prj`가 없는데 `to_crs()`부터 부르면 다 틀어진다. `ingest.py`가 이 순서를 강제한다.
 
-⚠ 개발 샌드박스에 Docker가 없어 이 DB 연동은 로컬 환경에서 직접 테스트 필요. 문법 검증만 완료된 상태.
+## 다음 순서
 
-`outputs/dongmyeong_map.html` — Mapbox GL JS 버전 (3D 건물 포함, 토큰 직접 입력 필요)
-`outputs/dongmyeong_map_naver.html` — Naver Maps 버전 (Client ID 직접 입력 필요)
-⚠ 지도 엔진 최종 선택 미확정(팀 논의 예정) — 둘 다 동일 데이터로 구현되어 비교 가능
+1. juso.go.kr 전자지도 승인 (행정구역경계 + 건물) — **대기 중**
+2. 정식 경계로 재클립
+3. 노딩 → 세그먼트 수 확정 → 전 문서의 "222" 교체
+4. 폭 산출 (수치지도 주 / 실폭도로 폴백 / 교차로 5m 제외)
 
-## 원본 데이터 로컬 세팅 (각자 1회)
-
-`data/raw/`가 git에 없으므로, 아래 원본 파일들을 각자 다운받아 정해진 이름으로 넣어야 함:
-
-```
-data/raw/lsmd_admin_boundary_umd.{shp,dbf,shx,prj,cst,fix}   <- 법정동 경계
-data/raw/its_road_link.{shp,dbf,shx,prj,cpg}                  <- 표준노드링크 LINK
-data/raw/its_road_node.{shp,dbf,shx,prj,cpg}                  <- 표준노드링크 NODE
-data/raw/juso_road_section.{shp,dbf,shx}                      <- juso.go.kr 도로구간(ROAD_BT, ✅ 승인완료), .prj 없음(EPSG:5179로 처리)
-data/raw/cctv_locations.csv                                   <- CCTV 좌표
-data/raw/fire_hydrants.json                                   <- 소화전 좌표 (전국소방용수시설표준데이터)
-```
-
-## 기술 스택
-
-- GIS 전처리: geopandas, shapely, pyproj
-- 경로탐색: networkx
-- 백엔드: FastAPI
-- DB: PostgreSQL + PostGIS
-- CV: OpenCV, Ultralytics YOLO11-seg
-- 프론트: React(Vite) + 지도 엔진(Mapbox GL JS ↔ Naver Maps, ⏳ 팀 결정 대기 — `outputs/` 안 두 버전 다 확인 가능)
+**1번 없이 3~4번을 시작하지 말 것.** bbox 기준 숫자를 문서에 박으면 승인 후 전부 다시 고친다.

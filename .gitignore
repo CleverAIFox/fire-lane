@@ -1,15 +1,17 @@
-# 원본 대용량 데이터 — git 에 절대 올리지 말 것
-data/raw/
-*.merged.tif
-data/processed/*.tif
+# 원본 데이터 (2.5GB급, S3/드라이브 백업)
+data/raw/*
+!data/raw/README.md
 
-# 환경
-.venv/
+# 파이프라인 임시 작업
+.work/
+
+# 산출물
+# .geojson / .csv 는 커밋한다 (팀 공유·리뷰 대상, 텍스트라 diff 가능)
+# .gpkg 는 제외 — 바이너리라 diff 불가하고, ingest.py로 30초면 재생성된다
+data/processed/*.gpkg
+
+# Python
 __pycache__/
 *.pyc
-.env
-
-# OS
-.DS_Store
-desktop.ini
-keys.local.js
+.venv/
+*.egg-info/
