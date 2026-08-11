@@ -9,7 +9,7 @@
 <style>
 :root{
   --void:#0a0d13; --panel:#141922; --line:#232b38; --dim:#7c8798; --text:#e6ebf2;
-  --blocked:#ff4d3d; --needs:#ffab2e; --likely:#5fd39a; --clear:#3d8dff; --unknown:#5a6272;
+  --blocked:#ff4d3d; --needs:#ffab2e; --clear:#4ad18f; --unknown:#5a6272;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -154,12 +154,14 @@ const USE_VWORLD = false;
 const vw = t => `https://api.vworld.kr/req/wmts/1.0.0/${VW_KEY}/${t}/{z}/{y}/{x}.${t==="Satellite"?"jpeg":"png"}?domain=${encodeURIComponent(VW_DOMAIN)}`;
 const CARTO = ["a","b","c","d"].map(s=>`https://${s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png`);
 
+/* 판정 4종. 런타임에 호모그래피를 돌릴지가 유일한 분기라
+   '통과 확실'과 '통과 유력'을 나눌 실익이 없어 하나로 합쳤다.
+   세부 구분이 필요하면 툴팁의 width_min_m 을 보면 된다. */
 const VERDICT = {
-  blocked      : {c:[255, 77, 61], nm:"진입 불가",       d:"담~담 < 3.0m. 차량이 없어도 통과 못 함"},
-  needs_cv     : {c:[255,171, 46], nm:"영상판정 필요",   d:"도면만으로 결론 안 남. 호모그래피 대상"},
-  likely_clear : {c:[ 95,211,154], nm:"통과 유력",       d:"한쪽 주차까지는 여유"},
-  clear        : {c:[ 61,141,255], nm:"통과 확실",       d:"양쪽 주차해도 통과"},
-  unknown      : {c:[ 90, 98,114], nm:"산출 불가",       d:"실폭도로·건물 폴리곤 부재"},
+  blocked  : {c:[255, 77, 61], nm:"진입 불가",     d:"담~담 < 3.0m. 차량이 없어도 통과 못 함"},
+  needs_cv : {c:[255,171, 46], nm:"영상판정 필요", d:"도면만으로 결론 안 남. 호모그래피 대상"},
+  clear    : {c:[ 74,209,143], nm:"통과 가능",     d:"주차가 있어도 통과. 영상판정 불필요"},
+  unknown  : {c:[ 90, 98,114], nm:"산출 불가",     d:"실폭도로·건물 폴리곤 부재"},
 };
 const off = new Set();
 

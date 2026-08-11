@@ -161,11 +161,21 @@ def main():
         return (round(min(A), 2) if A else None, round(min(B), 2) if B else None, fb)
 
     def verdict(wmin, wmax):
-        # 노면폭만으로 결론 나면 담~담은 불필요 (대로는 건물이 멀어 wmax가 null)
-        if wmin is not None and wmin >= TRUCK + 2*PARK: return "clear"
-        if wmax is not None and wmax < TRUCK:           return "blocked"
-        if wmin is None or wmax is None:                return "unknown"
-        if wmin >= TRUCK + PARK:                        return "likely_clear"
+        """판정 4종.
+
+        런타임에 호모그래피를 돌릴지 말지가 유일한 분기다. 그래서
+        '한쪽 주차까지 여유(>=5m)'와 '양쪽 주차해도 통과(>=7m)'를 나눌 실익이 없다.
+        둘 다 영상판정이 필요 없으므로 clear 하나로 합친다.
+        구분이 필요하면 width_min_m 을 직접 보면 된다.
+
+            clear     wmin >= 5.0   주차가 있어도 통과. CV 불필요
+            blocked   wmax <  3.0   차가 없어도 통과 불가. 그래프에서 제외
+            unknown   폭 산출 불가
+            needs_cv  나머지        도면으로 결론 안 남. 호모그래피 대상
+        """
+        if wmin is not None and wmin >= TRUCK + PARK: return "clear"
+        if wmax is not None and wmax < TRUCK:         return "blocked"
+        if wmin is None or wmax is None:              return "unknown"
         return "needs_cv"
 
     rec = {}
@@ -211,7 +221,7 @@ def main():
             "seg_id": "str, 불변 키",
             "width_min_m": "float|null 노면폭(하한). road_rw 트랜섹트",
             "width_max_m": "float|null 담~담(상한). building 트랜섹트. 대로는 null(건물이 40m 밖)",
-            "verdict": "clear|likely_clear|needs_cv|blocked|unknown",
+            "verdict": "clear|needs_cv|blocked|unknown",
             "width_verified": "bool",
             "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
             "inherited": "bool 3m 미만 파편 → 인접 세그먼트 최솟값 상속",
@@ -220,9 +230,10 @@ def main():
         "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK,
                    "intersection_exclusion_m": XSEC_EXCL, "wmax_cap_m": WMAX_CAP,
                    "min_seg_len_m": MIN_SEG_LEN, "snap_tol_m": SNAP_TOL},
-        "verdict_rule": ["wmin >= 7.0 -> clear (담~담 불요)", "wmax < 3.0 -> blocked",
-                         "wmin or wmax null -> unknown", "wmin >= 5.0 -> likely_clear",
-                         "else -> needs_cv"],
+        "verdict_rule": ["wmin >= 5.0 -> clear (주차가 있어도 통과. CV 불필요)",
+                         "wmax <  3.0 -> blocked (차가 없어도 불가)",
+                         "wmin or wmax null -> unknown",
+                         "else -> needs_cv (호모그래피 대상)"],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(g.verdict.value_counts().to_string())
     print(f"\n→ segments {len(g)} · 경로사용 {(g.route_usage>0).sum()} · sha {h[:16]}")

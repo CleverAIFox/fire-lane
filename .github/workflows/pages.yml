@@ -1,0 +1,44 @@
+# 지도를 GitHub Pages 로 배포한다.
+#
+# 왜 필요한가
+#   지혜님도, 심사위원도, 소방서 담당자도 clone·서버실행 없이 URL 하나로 본다.
+#   file:// 로 열어 빈 화면을 보는 사고도 원천 차단된다.
+#
+# 배포되는 것
+#   web/ 폴더 전체. index.html + data/*.geojson (약 1.2MB)
+#   data/raw 는 .gitignore 로 저장소에 없으므로 애초에 올라가지 않는다.
+#
+# 켜는 법 (1회)
+#   Settings > Pages > Source 를 "GitHub Actions" 로 변경
+#   그러면 gis 브랜치에 푸시할 때마다 자동 갱신된다.
+name: 지도 배포
+
+on:
+  push:
+    branches: [gis]
+    paths: ['web/**']          # 지도가 바뀔 때만 배포
+  workflow_dispatch:            # 수동 실행 버튼
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true      # 연달아 푸시하면 마지막 것만 배포
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4

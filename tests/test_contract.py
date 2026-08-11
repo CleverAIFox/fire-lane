@@ -14,7 +14,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web" / "data"
 
-VERDICTS = {"clear", "likely_clear", "needs_cv", "blocked", "unknown"}
+VERDICTS = {"clear", "needs_cv", "blocked", "unknown"}
 REQUIRED = {
     "seg_id": str,
     "width_min_m": (float, int, type(None)),
@@ -56,7 +56,7 @@ def test_fields_present_and_typed(seg):
 
 
 def test_verdict_vocabulary(seg):
-    """판정 문자열은 이 5개뿐이다. 늘리면 UI 색 매핑에 구멍이 난다."""
+    """판정 문자열은 이 4개뿐이다. 늘리면 UI 색 매핑에 구멍이 난다."""
     got = {f["properties"]["verdict"] for f in seg["features"]}
     assert got <= VERDICTS, f"미정의 verdict: {got - VERDICTS}"
 

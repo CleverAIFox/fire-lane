@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "60d6d95a5f85b9d25c5d1b65a284b29f25f1a2ba837937efc4299ef38a72f70d",
+  "sha256": "96f8c824bd8008ef495c4f747ccee4d61cde1d645ebd02a09ec9332156a22454",
   "count": 641,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
@@ -8,7 +8,7 @@
     "seg_id": "str, 불변 키",
     "width_min_m": "float|null 노면폭(하한). road_rw 트랜섹트",
     "width_max_m": "float|null 담~담(상한). building 트랜섹트. 대로는 null(건물이 40m 밖)",
-    "verdict": "clear|likely_clear|needs_cv|blocked|unknown",
+    "verdict": "clear|needs_cv|blocked|unknown",
     "width_verified": "bool",
     "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
     "inherited": "bool 3m 미만 파편 → 인접 세그먼트 최솟값 상속",
@@ -24,10 +24,9 @@
     "snap_tol_m": 0.5
   },
   "verdict_rule": [
-    "wmin >= 7.0 -> clear (담~담 불요)",
-    "wmax < 3.0 -> blocked",
+    "wmin >= 5.0 -> clear (주차가 있어도 통과. CV 불필요)",
+    "wmax <  3.0 -> blocked (차가 없어도 불가)",
     "wmin or wmax null -> unknown",
-    "wmin >= 5.0 -> likely_clear",
-    "else -> needs_cv"
+    "else -> needs_cv (호모그래피 대상)"
   ]
 }
