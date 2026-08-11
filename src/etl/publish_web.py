@@ -7,17 +7,21 @@ web/data 는 생성물이다. 직접 수정하지 말 것.
 import json
 from pathlib import Path
 import geopandas as gpd
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 P, W = ROOT/"data"/"processed", ROOT/"web"/"data"
 EMD_CD = "12210108"
+CCTV_RADIUS    = 30    # CCTV 유효 커버리지 반경(m). 보수적 추정
+STATION_RADIUS = 300   # 안전센터 주변 반경(m). 출발점 일대 도로 맥락 확보
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
 
 def main():
     W.mkdir(parents=True, exist_ok=True)
     gpd.read_file(P/"segments.geojson")[
         ["seg_id","width_min_m","width_max_m","verdict","width_verified",
-         "midpoint_fallback","inherited","route_usage","length_m","geometry"]
+         "midpoint_fallback","inherited","route_usage","length_m",
+         "run_length_m","nfa_designated","geometry"]
     ].to_file(W/"segments.geojson", **PREC)
 
     emd = gpd.read_file(P/"boundary_emd.geojson")
@@ -35,7 +39,15 @@ def main():
     if cp.exists():
         corr = gpd.read_file(cp).to_crs(5186).union_all().buffer(70)
 
-    scope = poly.buffer(60) if corr is None else poly.buffer(60).union(corr)
+    # 안전센터 주변도 스코프에 넣는다. 회랑만으로는 리본이 너무 얇아
+    # 출발점 일대의 도로 맥락이 안 보인다.
+    sta_src = gpd.read_file(P/"fire_station.geojson").to_crs(5186)
+    sta_buf = sta_src.geometry.union_all().buffer(STATION_RADIUS)
+
+    scope = poly.buffer(60)
+    if corr is not None:
+        scope = scope.union(corr)
+    scope = scope.union(sta_buf)
     gpd.GeoDataFrame(geometry=[scope], crs=5186).to_crs(4326).to_file(W/"scope.geojson", **PREC)
 
     # 3단 마스크
@@ -61,14 +73,67 @@ def main():
                       [round(emd.to_crs(4326).total_bounds[2], 4), round(emd.to_crs(4326).total_bounds[3], 4)]],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    # 건물은 스코프 전체를 덮는다. 동명동만 자르면 안전센터 주변이
+    # 길만 남아 3D 가 안 선다. (2,518동 → 5,713동)
     b = gpd.read_file(P/"building_5186.gpkg")
-    b = b[b.intersects(poly.buffer(30))].copy()
+    b = b[b.intersects(scope)].copy()
     b["flo"] = b.GRO_FLO_CO.fillna(1).astype(float).clip(lower=1)   # 0층 291동 → 1층
     b["h"] = (b.flo*3.3).round(1)
     b[["BUL_MAN_NO","BULD_NM","flo","h","geometry"]].to_crs(4326).to_file(W/"buildings.geojson", **PREC)
 
-    for k, out in [("hydrant_point","hydrants"), ("fire_station","stations")]:
-        gpd.read_file(P/f"{k}.geojson").to_file(W/f"{out}.geojson", **PREC)
+    # ── 마커 3종 ────────────────────────────────────────────────
+    # 전부 스코프로 자른다. 자르지 않으면 마스크가 덮은 어두운 영역 위에
+    # 점이 떠서 "저게 뭐냐"는 오해를 부른다. (소화전 18개 중 스코프 밖이 7개였다)
+
+    # 소화전. 관할 588개 중 공개 31개(5%), 그중 동명동 1개.
+    # 이 희소성 자체가 발표 논거다.
+    hyd = gpd.read_file(P/"hydrant_point.geojson")
+    hyd = hyd[hyd.within(scope4)][["시설번호", "소재지도로명주소", "상세위치",
+                                   "설치연도", "보호틀유무", "관할기관명", "geometry"]]
+    hyd.to_file(W/"hydrants.geojson", **PREC)
+
+    # 소방서 / 119안전센터.
+    # 출동은 안전센터에서 나간다. 동부소방서는 대인안전센터와 주소가 같아(제봉로 210)
+    # 좌표가 겹치므로 유형을 나눠 따로 그린다.
+    sta = gpd.read_file(P/"fire_station.geojson")
+    sta = sta[sta.within(scope4)].copy()
+    sta["kind"] = sta["유형"].astype(str).map(
+        lambda v: "center" if "안전센터" in v else "station")
+    sta[["소방서 및 안전센터명", "주소", "전화번호", "kind", "geometry"]].to_file(
+        W/"stations.geojson", **PREC)
+
+    # CCTV. 촬영방면·카메라대수·설치연도 보유.
+    # 야간 답사 대체 근거이자 D-21 시간대 분석의 유일한 출구다.
+    cctv = gpd.read_file(P/"cctv.geojson")
+    cctv = cctv[cctv.within(scope4)].copy()
+    for c, d in (("카메라대수", 1), ("설치연도", 0)):
+        cctv[c] = pd.to_numeric(cctv[c], errors="coerce").fillna(d).astype(int)
+
+    # 원본은 설치연도별로 행이 쪼개져 있다. 같은 지점이 여러 줄로 나온다.
+    # (동명동 53행 → 고유 좌표 29지점, 카메라 90대)
+    # 좌표로 묶어 지점 단위로 만든다. 대수는 합산, 연도는 최초/최신을 둘 다 남긴다.
+    cctv["_k"] = list(zip(cctv.geometry.x.round(6), cctv.geometry.y.round(6)))
+    agg = cctv.groupby("_k").agg(
+        관리기관명=("관리기관명", "first"),
+        소재지도로명주소=("소재지도로명주소", "first"),
+        카메라대수=("카메라대수", "sum"),
+        카메라화소=("카메라화소", "first"),
+        촬영방면=("촬영방면", "first"),
+        최초설치=("설치연도", "min"),
+        최근설치=("설치연도", "max"),
+        설치회차=("설치연도", "size"),
+        geometry=("geometry", "first"),
+    ).reset_index(drop=True)
+    cg = gpd.GeoDataFrame(agg, crs=4326)
+    cg.to_file(W/"cctv.geojson", **PREC)
+
+    # CCTV 커버리지. 촬영방면이 전부 360도라 방향 콘이 아니라 원이다.
+    # 반경은 200만화소 기준 유효 식별거리의 보수적 추정치.
+    # 커버리지가 닿지 않는 골목을 보이게 하는 것이 목적이다.
+    # 가로등·보안등 공개 데이터가 없어 야간 시인성 논거를 이걸로 대체한다.
+    cov = cg.to_crs(5186)
+    cov["geometry"] = cov.geometry.buffer(CCTV_RADIUS)
+    cov[["카메라대수", "geometry"]].to_crs(4326).to_file(W/"cctv_coverage.geojson", **PREC)
 
     import shutil; shutil.copy(P/"segments.schema.json", W/"segments.schema.json")
     for f in sorted(W.iterdir()):

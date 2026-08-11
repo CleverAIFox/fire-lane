@@ -40,7 +40,14 @@ SNAP_TOL      = 0.5          # 끝점 투영 반경. T자 접합 해소
 XSEC_EXCL     = 5.0          # 교차로 노드 제외 반경. blob 폭 폭발 방지
 WMAX_CAP      = 40.0         # 담~담 상한. 15m로 잡으면 대로가 전멸한다
 MIN_SEG_LEN   = 3.0          # 이하는 교차로 파편. 폭 미산출 후 인접 상속
-TRUCK, PARK   = 3.0, 2.0     # 소방펌프차 전폭(사이드미러 포함) / 주차 1대 노면점유
+# 소방청 「2025 화재현장 골든타임 확보 종합대책」 기준
+#   진입불가  폭 2m 이하, 또는 이동불가 장애물로 진입 불가한 구간이 100m 이상
+#   진입곤란  폭 3m 이상 도로 중 장애물·상습주차로 상시 장애, 구간 100m 이상
+#   기준 차량 중형펌프차량 폭 2.5m
+# 임의 임계값이 아니라 국가 기준이다. 바꾸지 말 것.
+TRUCK      = 2.5     # 중형펌프차량 전폭
+PARK       = 2.0     # 주차 1대 노면점유
+NFA_RUN_M  = 100.0   # 소방청 지정 최소 연속 구간장
 STATIONS = {                 # 출동은 소방서가 아니라 119안전센터에서 나간다
     "대인119안전센터": (126.914765, 35.154579),
     "지산119안전센터": (126.938531, 35.149963),
@@ -161,20 +168,15 @@ def main():
         return (round(min(A), 2) if A else None, round(min(B), 2) if B else None, fb)
 
     def verdict(wmin, wmax):
-        """판정 4종.
+        """소방청 기준 판정 4종.
 
-        런타임에 호모그래피를 돌릴지 말지가 유일한 분기다. 그래서
-        '한쪽 주차까지 여유(>=5m)'와 '양쪽 주차해도 통과(>=7m)'를 나눌 실익이 없다.
-        둘 다 영상판정이 필요 없으므로 clear 하나로 합친다.
-        구분이 필요하면 width_min_m 을 직접 보면 된다.
-
-            clear     wmin >= 5.0   주차가 있어도 통과. CV 불필요
-            blocked   wmax <  3.0   차가 없어도 통과 불가. 그래프에서 제외
+            blocked   wmax <  2.5   중형펌프차 폭 미달. 장애물이 없어도 못 지나간다
+            clear     wmin >= 4.5   주차 1대가 있어도 통과. 영상판정 불필요
             unknown   폭 산출 불가
-            needs_cv  나머지        도면으로 결론 안 남. 호모그래피 대상
+            needs_cv  나머지        상습주차 여부로 갈린다. 영상판정 대상
         """
-        if wmin is not None and wmin >= TRUCK + PARK: return "clear"
         if wmax is not None and wmax < TRUCK:         return "blocked"
+        if wmin is not None and wmin >= TRUCK + PARK: return "clear"
         if wmin is None or wmax is None:              return "unknown"
         return "needs_cv"
 
@@ -207,7 +209,23 @@ def main():
             r["width_max_m"] = round(min(mx), 2) if mx else None
             r["verdict"] = verdict(r["width_min_m"], r["width_max_m"])
             r["inherited"] = True
+    # 소방청 지정 기준의 "구간 100m 이상"은 세그먼트 단위가 아니라 연속 구간 단위다.
+    # 같은 판정을 가진 인접 세그먼트를 이어붙여 연속 길이를 잰다.
+    import networkx as _nx
+    for target in ("blocked", "needs_cv"):
+        sub = _nx.Graph()
+        for sid, r in rec.items():
+            if r["verdict"] == target:
+                sub.add_edge(*r["_n"], sid=sid, length=r["length_m"])
+        for comp in _nx.connected_components(sub):
+            g2 = sub.subgraph(comp)
+            run = sum(d["length"] for _, _, d in g2.edges(data=True))
+            for _, _, d in g2.edges(data=True):
+                rec[d["sid"]]["run_length_m"] = round(run, 1)
+                rec[d["sid"]]["nfa_designated"] = bool(run >= NFA_RUN_M)
     for r in rec.values():
+        r.setdefault("run_length_m", None)
+        r.setdefault("nfa_designated", False)
         r.pop("_n")
 
     g = gpd.GeoDataFrame(list(rec.values()), crs=CRS_M)
@@ -226,14 +244,17 @@ def main():
             "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
             "inherited": "bool 3m 미만 파편 → 인접 세그먼트 최솟값 상속",
             "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
-            "length_m": "float"},
-        "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK,
+            "length_m": "float 이 구간의 길이(m)",
+            "run_length_m": "float|null 같은 판정이 이어지는 연속 구간장(m)",
+            "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족"},
+        "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (중형펌프차 2.5m, 구간 100m)",
+        "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK, "nfa_run_m": NFA_RUN_M,
                    "intersection_exclusion_m": XSEC_EXCL, "wmax_cap_m": WMAX_CAP,
                    "min_seg_len_m": MIN_SEG_LEN, "snap_tol_m": SNAP_TOL},
-        "verdict_rule": ["wmin >= 5.0 -> clear (주차가 있어도 통과. CV 불필요)",
-                         "wmax <  3.0 -> blocked (차가 없어도 불가)",
+        "verdict_rule": ["wmax <  2.5 -> blocked (중형펌프차 폭 미달)",
+                         "wmin >= 4.5 -> clear (주차 1대가 있어도 통과)",
                          "wmin or wmax null -> unknown",
-                         "else -> needs_cv (호모그래피 대상)"],
+                         "else -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)"],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(g.verdict.value_counts().to_string())
     print(f"\n→ segments {len(g)} · 경로사용 {(g.route_usage>0).sum()} · sha {h[:16]}")

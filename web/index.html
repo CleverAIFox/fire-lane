@@ -25,7 +25,18 @@ html,body{height:100%;background:var(--void);color:var(--text);
 h1{font-size:15px;font-weight:700;letter-spacing:-.01em}
 .sub{font-size:11px;color:var(--dim);margin-top:3px;font-family:var(--mono)}
 
-.warn{margin:14px 0 0;padding:9px 11px;border-radius:5px;font-size:11px;line-height:1.5;
+.phase{margin:14px 0 0;display:flex;flex-direction:column;gap:1px}
+.p{display:flex;align-items:center;gap:8px;padding:6px 9px;font-size:11px;
+  border-left:2px solid var(--line);background:rgba(255,255,255,.02)}
+.p b{font-weight:600;flex:1}
+.p span{font-family:var(--mono);font-size:10px;color:var(--dim)}
+.p.done{border-left-color:var(--clear)} .p.done span{color:var(--clear)}
+.p.todo{opacity:.55}
+#tip .nfa{margin-top:6px;padding:4px 7px;border-radius:4px;font-size:10px;
+  background:rgba(255,77,61,.14);border:1px solid rgba(255,77,61,.3);color:#ff8b7d}
+#tip .hint{margin-top:6px;padding-top:5px;border-top:1px solid var(--line);
+  font-size:10px;color:var(--dim);line-height:1.5}
+.warn{margin:10px 0 0;padding:9px 11px;border-radius:5px;font-size:11px;line-height:1.5;
   background:rgba(255,171,46,.11);border:1px solid rgba(255,171,46,.32);color:#ffc86b}
 
 h2{font-size:10px;font-weight:600;letter-spacing:.09em;color:var(--dim);
@@ -55,6 +66,20 @@ h2{font-size:10px;font-weight:600;letter-spacing:.09em;color:var(--dim);
   font-family:var(--mono);color:var(--dim)}
 .stat b{color:var(--text);font-weight:500}
 
+.crit{margin:10px 7px 0;padding:9px 10px;background:rgba(255,255,255,.035);
+  border-radius:5px;font-size:10.5px;line-height:1.55;color:var(--dim)}
+.crit b{color:var(--text)}
+.crit table{width:100%;margin:7px 0;border-collapse:collapse;font-family:var(--mono);font-size:10px}
+.crit td{padding:2px 0} .crit td:last-child{text-align:right;color:var(--text)}
+.crit p{margin-top:7px}
+.mk{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:4px 7px}
+.mk i{width:10px;height:10px;border-radius:50%;flex:none}
+.mk span{font-size:10px;color:var(--dim);margin-left:auto;font-family:var(--mono)}
+.maplibregl-popup-content{background:#141922!important;border:1px solid #232b38;
+  border-radius:6px;padding:10px 12px;color:#e6ebf2;font-size:11.5px;line-height:1.6;
+  box-shadow:0 8px 28px rgba(0,0,0,.6)}
+.maplibregl-popup-tip{border-top-color:#141922!important;border-bottom-color:#141922!important}
+.pop b{font-size:12.5px} .pop .a{color:#7c8798;font-size:10.5px}
 .note{font-size:10.5px;color:var(--dim);line-height:1.6;padding:0 7px;margin-top:8px}
 kbd{font-family:var(--mono);font-size:10px;background:#202834;border:1px solid var(--line);
   border-radius:3px;padding:1px 4px}
@@ -97,28 +122,59 @@ kbd{font-family:var(--mono);font-size:10px;background:#202834;border:1px solid v
   <h1>Fire-Lane</h1>
   <div class="sub">전남광주통합특별시 동구 동명동</div>
 
-  <div class="warn" id="warn">폭 값 미검증 · <span class="mono">width_verified: false</span><br>
-    D-25 레이저 실측 전까지 판정은 잠정입니다.</div>
+  <div class="phase">
+    <div class="p done"><b>1단계 · 도면 프루닝</b><span>완료</span></div>
+    <div class="p todo"><b>2단계 · 영상판정</b><span>미착수</span></div>
+    <div class="p todo"><b>3단계 · 현장 실측</b><span>D-25</span></div>
+  </div>
+  <div class="warn">현재 색상은 <b>도면 기반 1차 분류</b>입니다. 최종 판정이 아닙니다.<br>
+    주황(판정 보류)이 영상판정을 거쳐 초록·빨강으로 갈립니다.<br>
+    폭 값은 미검증(<span style="font-family:var(--mono)">width_verified: false</span>)입니다.</div>
 
   <h2>진입 판정</h2>
   <div id="legend"></div>
+  <div class="crit">
+    소방펌프차 전폭 <b>3.0m</b>(사이드미러 포함) · 주차 1대 점유 <b>2.0m</b> 기준
+    <table>
+      <tr><td>통과 가능</td><td>차도폭 ≥ 5.0m</td></tr>
+      <tr><td>영상판정</td><td>차도폭 &lt; 5.0m 이고 담~담 ≥ 3.0m</td></tr>
+      <tr><td>진입 불가</td><td>담~담 &lt; 3.0m</td></tr>
+    </table>
+    <p><b>차도폭</b>은 실폭도로, <b>담~담</b>은 건물 사이 거리입니다.
+    주황 구간은 담~담 기준으로는 넓어 보이지만(중앙 5.44m) 실제 차도는
+    좁아서(중앙 2.20m) 도면만으로 판정할 수 없는 곳입니다.
+    그 2.52m 차이를 메우는 것이 영상판정의 역할입니다.</p>
+  </div>
 
   <h2>레이어</h2>
   <div class="row" data-t="buildings"><span>건물 3D</span><i class="tg on"></i></div>
-  <div class="row" data-t="usage"><span>선 굵기 = 출동 통행량</span><i class="tg on"></i></div>
-  <div class="row" data-t="hydrants"><span>소화전 · 안전센터</span><i class="tg on"></i></div>
-  <div class="row" data-t="sat"><span>위성영상 배경</span><i class="tg"></i></div>
+  <div class="row" data-t="usage"><span>선 굵기 = 경로 빈도</span><i class="tg on"></i></div>
+  <div class="row" data-t="m-sta"><span>119안전센터</span><i class="tg on"></i></div>
+  <div class="row" data-t="m-fs"><span>소방서</span><i class="tg on"></i></div>
+  <div class="row" data-t="m-hyd"><span>소화전</span><i class="tg on"></i></div>
+  <div class="row" data-t="m-cctv"><span>CCTV</span><i class="tg on"></i></div>
+  <div class="row" data-t="cctv-cov"><span>CCTV 커버리지</span><i class="tg on"></i></div>
   <div class="row" data-t="mask"><span>스코프 밖 가리기</span><i class="tg on"></i></div>
-  <div class="row" data-t="fit"><span>동명동만 크게 보기</span><i class="tg"></i></div>
+
+  <h2>시설</h2>
+  <div class="mk"><i style="background:#ff4d3d"></i>119안전센터 <span>기둥 52m</span></div>
+  <div class="mk"><i style="background:#ffb020"></i>소방서 <span>34m</span></div>
+  <div class="mk"><i style="background:#4fc3f7"></i>소화전 <span>14m</span></div>
+  <div class="mk"><i style="background:#b98cff"></i>CCTV <span>높이 = 대수</span></div>
 
   <h2>산출</h2>
   <div class="stat"><span>세그먼트</span><b id="s-seg">–</b></div>
-  <div class="stat"><span>경로 사용</span><b id="s-use">–</b></div>
+  <div class="stat"><span>경로에 쓰임</span><b id="s-use">–</b></div>
   <div class="stat"><span>건물</span><b id="s-bld">–</b></div>
-  <div class="stat"><span>소화전(공개)</span><b id="s-hyd">–</b></div>
+  <div class="stat"><span>소화전(동명동/전체)</span><b id="s-hyd">–</b></div>
+  <div class="stat"><span>CCTV 지점/카메라</span><b id="s-cctv">–</b></div>
   <div class="note">
-    출발점은 소방서가 아니라 <b>119안전센터</b>(대인·지산)입니다.
-    선 굵기는 두 센터에서 건물출입구까지 최단경로가 그 구간을 지난 횟수입니다.
+    <b>경로 빈도</b>는 실제 출동 기록이 아닙니다. 119안전센터 2곳에서 동명동
+    건물출입구 358곳까지 도로망 최단경로를 계산했을 때, 그 구간을 지나는 경로가
+    몇 개인지 센 <b>계산값</b>입니다. 소방관이 실제로 지나간 횟수가 아닙니다.
+    출동 이력 데이터는 공개되지 않습니다.
+    <br><br>소화전은 <b>동명동 안 / 스코프 전체</b> 순입니다. 관할 588개 중
+    공개된 것이 31개(5%)뿐이고, 그중 동명동은 1개입니다.
     <br><br>지도 범위는 <b>동명동 + 접근 회랑 약 2.4×1.3km</b>로 고정돼 있습니다.
     안전센터가 동 밖(대인 서 1.0km · 지산 동 1.2km)에 있어 출동 경로까지 담았습니다.
     이 밖으로는 이동·축소가 되지 않습니다.
@@ -157,11 +213,14 @@ const CARTO = ["a","b","c","d"].map(s=>`https://${s}.basemaps.cartocdn.com/dark_
 /* 판정 4종. 런타임에 호모그래피를 돌릴지가 유일한 분기라
    '통과 확실'과 '통과 유력'을 나눌 실익이 없어 하나로 합쳤다.
    세부 구분이 필요하면 툴팁의 width_min_m 을 보면 된다. */
+/* 현재는 1단계(도면 프루닝) 결과다. 최종 판정이 아니다.
+   라벨에 "도면상"을 붙여 확정처럼 읽히지 않게 한다.
+   2단계(영상판정)가 붙으면 needs_cv 268개가 갈리고 라벨에서 "도면상"이 빠진다. */
 const VERDICT = {
-  blocked  : {c:[255, 77, 61], nm:"진입 불가",     d:"담~담 < 3.0m. 차량이 없어도 통과 못 함"},
-  needs_cv : {c:[255,171, 46], nm:"영상판정 필요", d:"도면만으로 결론 안 남. 호모그래피 대상"},
-  clear    : {c:[ 74,209,143], nm:"통과 가능",     d:"주차가 있어도 통과. 영상판정 불필요"},
-  unknown  : {c:[ 90, 98,114], nm:"산출 불가",     d:"실폭도로·건물 폴리곤 부재"},
+  blocked  : {c:[255, 77, 61], nm:"도면상 불가",   d:"담~담 3.0m 미만. 주차 차량이 없어도 소방차가 못 지나간다"},
+  needs_cv : {c:[255,171, 46], nm:"판정 보류",     d:"도면만으로 결론이 안 난다. 영상판정(호모그래피) 대상"},
+  clear    : {c:[ 74,209,143], nm:"도면상 통과",   d:"노면폭 5m 이상. 양쪽에 주차가 있어도 통과. 영상판정 불필요"},
+  unknown  : {c:[ 90, 98,114], nm:"산출 불가",     d:"실폭도로·건물 폴리곤이 없어 폭을 잴 수 없다"},
 };
 const off = new Set();
 
@@ -195,23 +254,69 @@ map.addControl(new maplibregl.ScaleControl({maxWidth:110,unit:"metric"}),"bottom
 
 const $=s=>document.querySelector(s);
 const tip=$("#tip");
-let SEG=null, overlay=null, showUsage=true;
+let SEG=null, overlay=null;
+const DATA={};                 // 마커 데이터. 레이어 갱신 시 재사용
+const markerOff=new Set();     // 꺼진 마커 레이어
 
-const width = f => {
-  const u = f.properties.route_usage||0;
-  return showUsage ? 0.9 + Math.sqrt(u)*0.42 : 2.1;
+const POPUP={
+  "m-cctv": p=>`<b>CCTV</b> ${p.카메라대수}대<br>${p.카메라화소||"—"} · ${p.촬영방면||""}
+                <br>설치 ${p.최초설치}${p.최근설치!==p.최초설치?`~${p.최근설치}`:""} (${p.설치회차}회 증설)
+                <br><span class="a">${p.소재지도로명주소||""}</span>`,
+  "m-hyd":  p=>`<b>소화전</b> ${p.시설번호||""}<br>${p.상세위치||""}
+                <br>설치 ${p.설치연도||"—"} · 보호틀 ${p.보호틀유무||"—"}
+                <br><span class="a">${p.소재지도로명주소||""}</span>`,
+  "m-sta":  p=>`<b>${p["소방서 및 안전센터명"]}</b><br>출동 시작점
+                <br>${p.전화번호||""}<br><span class="a">${p.주소||""}</span>`,
+  "m-fs":   p=>`<b>${p["소방서 및 안전센터명"]}</b><br>관할 본서
+                <br>${p.전화번호||""}<br><span class="a">${p.주소||""}</span>`,
 };
 
+/* 선 굵기 = 실제 노면폭(m). lineWidthUnits:"meters" 라 지도 축척에 맞춰
+   그려진다. 즉 화면의 선 두께가 곧 그 골목의 실제 폭이다.
+   폭을 못 잰 구간(unknown)은 최소값으로 가늘게 그린다. */
+const width = f => f.properties.width_min_m || 1.0;
+
+/* 3D 마커. 건물과 같은 공간에 기둥으로 세운다.
+   2D 점은 기울인 화면에서 지면에 붙어 안 보인다. 높이가 있어야 읽힌다.
+   높이는 중요도 순서다: 안전센터 > 소방서 > 소화전 > CCTV */
+const MARKERS = [
+  {id:"m-cctv",  src:()=>DATA.cctv, color:[185,140,255], radius:3,  height:5,
+   elevate:f=>5+Math.min(f.properties.카메라대수,8)*1.6},
+  {id:"m-hyd",   src:()=>DATA.hyd,  color:[ 79,195,247], radius:4,  height:14},
+  {id:"m-fs",    src:()=>DATA.sta.features.filter(f=>f.properties.kind==="station"),
+   color:[255,176, 32], radius:11, height:34},
+  {id:"m-sta",   src:()=>DATA.sta.features.filter(f=>f.properties.kind==="center"),
+   color:[255, 77, 61], radius:7,  height:52},
+];
+
+function markerLayers(){
+  return MARKERS.filter(m=>!markerOff.has(m.id)).map(m=>new deck.ColumnLayer({
+    id:m.id, data:m.src(), diskResolution:16, radius:m.radius, extruded:true,
+    pickable:true, opacity:.92, radiusUnits:"meters", elevationScale:1,
+    getPosition:f=>f.geometry.coordinates,
+    getFillColor:m.color,
+    getElevation:m.elevate || (()=>m.height),
+    material:{ambient:.55, diffuse:.7, shininess:36, specularColor:[255,255,255]},
+    onClick:info=>{
+      if(!info.object) return;
+      const p=info.object.properties, fmt=POPUP[m.id];
+      new maplibregl.Popup({closeButton:false,maxWidth:"270px"})
+        .setLngLat(info.object.geometry.coordinates)
+        .setHTML(`<div class="pop">${fmt(p)}</div>`).addTo(map);
+    },
+  }));
+}
+
 function layers(){
-  return [ new deck.GeoJsonLayer({
+  return [ ...markerLayers(), new deck.GeoJsonLayer({
     id:"segments", data:SEG, pickable:true, stroked:false, filled:false,
-    lineWidthUnits:"meters", lineWidthMinPixels:1.3, lineWidthMaxPixels:22,
+    lineWidthUnits:"meters", lineWidthMinPixels:1.2, lineWidthMaxPixels:60,
     getLineColor: f => {
       const v = VERDICT[f.properties.verdict] || VERDICT.unknown;
       return off.has(f.properties.verdict) ? [...v.c, 26] : [...v.c, 232];
     },
     getLineWidth: width,
-    updateTriggers:{ getLineColor:[...off], getLineWidth:[showUsage] },
+    updateTriggers:{ getLineColor:[...off] },
     onHover: info => {
       if(!info.object){ tip.style.display="none"; return; }
       const p = info.object.properties, v = VERDICT[p.verdict]||VERDICT.unknown;
@@ -221,10 +326,13 @@ function layers(){
       tip.innerHTML =
         `<div class="id">${p.seg_id}</div>
          <div class="vd" style="color:rgb(${v.c})">${v.nm}</div>
-         <dl><dt>노면폭 하한</dt><dd>${n(p.width_min_m)}</dd>
-             <dt>담~담 상한</dt><dd>${n(p.width_max_m)}</dd>
-             <dt>연장</dt><dd>${p.length_m} m</dd>
-             <dt>출동 통행</dt><dd>${p.route_usage}회</dd></dl>
+         <dl><dt title="실폭도로 폴리곤으로 잰 값. 확실히 비어 있는 폭. 화면의 선 굵기가 이 값이다">노면폭 하한</dt><dd>${n(p.width_min_m)}</dd>
+             <dt title="양쪽 건물 사이 거리. 물리적으로 가능한 최대 통로폭">담~담 상한</dt><dd>${n(p.width_max_m)}</dd>
+             <dt title="이 구간의 길이">길이</dt><dd>${p.length_m} m</dd>
+             <dt title="같은 판정이 이어지는 연속 구간의 총 길이. 소방청 지정 기준은 100m 이상">연속 구간</dt><dd>${p.run_length_m ? p.run_length_m+" m" : "—"}</dd>
+             <dt title="119안전센터 2곳에서 건물출입구까지 최단경로 중 이 구간을 지난 경로 수">소방 동선</dt><dd>${p.route_usage}개</dd></dl>
+         ${p.nfa_designated?`<div class="nfa">소방청 지정 기준 충족 · 연속 100m 이상</div>`:""}
+         <div class="hint">${v.d}</div>
          ${flags.length?`<div class="flag">${flags.join(" · ")}</div>`:""}`;
       tip.style.display="block";
       tip.style.left = Math.min(info.x+14, innerWidth-200)+"px";
@@ -235,9 +343,11 @@ function layers(){
 
 map.on("load", async () => {
   const j = async p => (await fetch(p)).json();
-  const [seg,bld,bnd,hyd,sta] = await Promise.all(
-    ["segments","buildings","boundary","hydrants","stations"].map(n=>j(`./data/${n}.geojson`)));
+  const [seg,bld,bnd,hyd,sta,cctv,cov] = await Promise.all(
+    ["segments","buildings","boundary","hydrants","stations","cctv","cctv_coverage"]
+      .map(n=>j(`./data/${n}.geojson`)));
   SEG = seg;
+  Object.assign(DATA, {cctv, hyd, sta});
 
   /* 마스크 — 세계에서 동명동을 도려낸 폴리곤. 동 밖을 덮어 스코프를 눈으로 못박는다.
      UI 작업 범위가 동명동을 넘지 않는다는 걸 화면 자체가 말해준다. */
@@ -266,21 +376,33 @@ map.on("load", async () => {
     paint:{
       "fill-extrusion-color":["interpolate",["linear"],["get","flo"],
         1,"#1d2430", 3,"#2b3545", 6,"#3b4759", 12,"#4d5a6f"],
-      "fill-extrusion-height":["interpolate",["linear"],["zoom"],14,0,15.2,["get","h"]],
+      "fill-extrusion-height":["interpolate",["linear"],["zoom"],13.6,0,14.4,["get","h"]],
       "fill-extrusion-opacity":.88,
       "fill-extrusion-vertical-gradient":true}});
 
-  /* 소화전 · 안전센터 */
+  /* ── 시설 마커 ───────────────────────────────────────────
+     CCTV → 소화전 → 소방서 → 안전센터 순으로 쌓는다.
+     중요한 것이 위로 온다. 안전센터가 출동 시작점이라 최상단이다. */
+
+  /* CCTV. 177지점 312대. 야간 답사 대체 근거이자 시간대 분석의 출구다.
+     원 크기 = 카메라 대수 */
+  /* CCTV 는 지주 + 커버리지 원기둥으로 세운다.
+     촬영방면이 전부 360도라 방향 콘이 아니라 원이면 된다.
+     커버리지가 안 닿는 골목이 눈에 보이는 것이 요점이다.
+     가로등·보안등 공개 데이터가 없어 야간 시인성 논거를 이걸로 대체한다. */
+  map.addSource("cctv-cov",{type:"geojson",data:cov});
+  map.addLayer({id:"cctv-cov",type:"fill",source:"cctv-cov",
+    paint:{"fill-color":"#b98cff","fill-opacity":.09}});
+  map.addLayer({id:"cctv-cov-line",type:"line",source:"cctv-cov",
+    paint:{"line-color":"#b98cff","line-opacity":.22,"line-width":.8}});
+
+  /* 소화전. 스코프 전체 11개인데 동명동 안은 1개뿐이다. */
   map.addSource("hyd",{type:"geojson",data:hyd});
-  map.addLayer({id:"hyd-l",type:"circle",source:"hyd",
-    paint:{"circle-radius":["interpolate",["linear"],["zoom"],14,2.5,18,6],
-      "circle-color":"#4fc3f7","circle-stroke-color":"#0a0d13","circle-stroke-width":1.2}});
+
+  /* 소방서(본서)는 대인안전센터와 좌표가 같다(제봉로 210).
+     겹쳐 그리면 하나로 보이므로 바깥 링으로 표현한다. */
   map.addSource("sta",{type:"geojson",data:sta});
-  map.addLayer({id:"sta-l",type:"circle",source:"sta",
-    paint:{"circle-radius":9,"circle-color":"#ff4d3d",
-      "circle-stroke-color":"#fff","circle-stroke-width":2.5,"circle-opacity":.95}});
-  map.addLayer({id:"sta-halo",type:"circle",source:"sta",
-    paint:{"circle-radius":22,"circle-color":"#ff4d3d","circle-opacity":.14}},"sta-l");
+
 
   /* deck.gl interleaved — 건물과 z-오클루전이 맞는다 */
   overlay = new deck.MapboxOverlay({interleaved:true, layers:layers()});
@@ -305,7 +427,17 @@ map.on("load", async () => {
   $("#s-seg").textContent = seg.features.length;
   $("#s-use").textContent = `${used} (${(used/seg.features.length*100).toFixed(0)}%)`;
   $("#s-bld").textContent = bld.features.length.toLocaleString();
-  $("#s-hyd").textContent = hyd.features.length;
+  /* 동명동 안에 있는 것만 센다. 스코프 전체에는 11개가 있지만
+     정작 동명동 안은 1개뿐이라는 게 이 프로젝트의 논거다.
+     관할 588개 중 공개된 것이 31개(5%)이고 그중 동명동이 1개다. */
+  const inEmd = hyd.features.filter(f => {
+    const [x, y] = f.geometry.coordinates;
+    const [[a, b2], [c, d]] = VIEW.emdBounds;
+    return x >= a && x <= c && y >= b2 && y <= d;
+  }).length;
+  $("#s-hyd").textContent = `${inEmd} / ${hyd.features.length}`;
+  const cams = cctv.features.reduce((a,f)=>a+(f.properties.카메라대수||0),0);
+  $("#s-cctv").textContent = `${cctv.features.length} / ${cams}`;
 
   /* 폭 밴드 */
   const w = seg.features.map(f=>f.properties).filter(p=>p.width_min_m&&p.width_max_m);
@@ -326,12 +458,9 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   const on = !tg.classList.contains("on");
   tg.classList.toggle("on", on);
   if(t==="buildings") map.setLayoutProperty("bld-3d","visibility",on?"visible":"none");
-  if(t==="hydrants"){ ["hyd-l","sta-l","sta-halo"].forEach(l=>map.setLayoutProperty(l,"visibility",on?"visible":"none")); }
-  if(t==="sat"){ map.setLayoutProperty("sat","visibility",on?"visible":"none");
-                 map.setPaintProperty("base","raster-opacity",on?0:.82); }
-  if(t==="usage"){ showUsage=on; overlay.setProps({layers:layers()}); }
+  if(t.startsWith("m-")){ on?markerOff.delete(t):markerOff.add(t); overlay.setProps({layers:layers()}); }
+  if(t==="cctv-cov"){ ["cctv-cov","cctv-cov-line"].forEach(l=>map.setLayoutProperty(l,"visibility",on?"visible":"none")); }
   if(t==="mask"){ ["mask-l","mask-soft-l"].forEach(l=>map.setLayoutProperty(l,"visibility",on?"visible":"none")); }
-  if(t==="fit"){ map.fitBounds(on?VIEW.emdBounds:VIEW.bounds,{padding:{top:40,bottom:40,left:320,right:40},duration:900}); }
 });
 })();
 </script>
