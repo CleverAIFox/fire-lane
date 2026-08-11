@@ -22,7 +22,7 @@ def main():
         ["seg_id","width_min_m","width_max_m","verdict","width_verified",
          "midpoint_fallback","inherited","route_usage","length_m",
          "run_length_m","nfa_designated","cctv_dist_m","cv_feasible",
-         "unknown_reason","geometry"]
+         "unknown_reason","z","geometry"]
     ].to_file(W/"segments.geojson", **PREC)
 
     emd = gpd.read_file(P/"boundary_emd.geojson")
@@ -80,7 +80,8 @@ def main():
     b = b[b.intersects(scope)].copy()
     b["flo"] = b.GRO_FLO_CO.fillna(1).astype(float).clip(lower=1)   # 0층 291동 → 1층
     b["h"] = (b.flo*3.3).round(1)
-    b[["BUL_MAN_NO","BULD_NM","flo","h","geometry"]].to_crs(4326).to_file(W/"buildings.geojson", **PREC)
+    cols = ["BUL_MAN_NO","BULD_NM","flo","h"] + (["z"] if "z" in b.columns else [])
+    b[cols+["geometry"]].to_crs(4326).to_file(W/"buildings.geojson", **PREC)
 
     # ── 마커 3종 ────────────────────────────────────────────────
     # 전부 스코프로 자른다. 자르지 않으면 마스크가 덮은 어두운 영역 위에
@@ -89,8 +90,9 @@ def main():
     # 소화전. 관할 588개 중 공개 31개(5%), 그중 동명동 1개.
     # 이 희소성 자체가 발표 논거다.
     hyd = gpd.read_file(P/"hydrant_point.geojson")
-    hyd = hyd[hyd.within(scope4)][["시설번호", "소재지도로명주소", "상세위치",
-                                   "설치연도", "보호틀유무", "관할기관명", "geometry"]]
+    hcols = ["시설번호", "소재지도로명주소", "상세위치", "설치연도",
+             "보호틀유무", "관할기관명"] + (["z"] if "z" in hyd.columns else [])
+    hyd = hyd[hyd.within(scope4)][hcols + ["geometry"]]
     hyd.to_file(W/"hydrants.geojson", **PREC)
 
     # 소방서 / 119안전센터.
@@ -100,8 +102,8 @@ def main():
     sta = sta[sta.within(scope4)].copy()
     sta["kind"] = sta["유형"].astype(str).map(
         lambda v: "center" if "안전센터" in v else "station")
-    sta[["소방서 및 안전센터명", "주소", "전화번호", "kind", "geometry"]].to_file(
-        W/"stations.geojson", **PREC)
+    scols = ["소방서 및 안전센터명", "주소", "전화번호", "kind"] + (["z"] if "z" in sta.columns else [])
+    sta[scols + ["geometry"]].to_file(W/"stations.geojson", **PREC)
 
     # CCTV. 촬영방면·카메라대수·설치연도 보유.
     # 야간 답사 대체 근거이자 D-21 시간대 분석의 유일한 출구다.
@@ -120,6 +122,7 @@ def main():
         카메라대수=("카메라대수", "sum"),
         카메라화소=("카메라화소", "first"),
         촬영방면=("촬영방면", "first"),
+        z=("z", "first") if "z" in cctv.columns else ("카메라대수", "size"),
         최초설치=("설치연도", "min"),
         최근설치=("설치연도", "max"),
         설치회차=("설치연도", "size"),

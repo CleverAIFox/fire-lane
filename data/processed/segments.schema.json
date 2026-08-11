@@ -1,7 +1,7 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "76a04f9fd40203e22f1a492205b7377ce59f9ce758381785d263b4a9fac2a925",
-  "count": 641,
+  "sha256": "3644e7c8bf03ee79bc9bd45626da0bb9f35a06bd55056dbadf4ec8bbef76bb79",
+  "count": 1266,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
   "fields": {
@@ -20,9 +20,9 @@
     "cv_feasible": "bool CCTV 유효범위(25m) 안. 영상판정 성립 여부",
     "unknown_reason": "null|width|no_cctv unknown 이 된 이유"
   },
-  "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (중형펌프차 2.5m, 구간 100m)",
+  "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (구간 100m) + 2026-08-06 현장 답사 (통과 하한 3.0m)",
   "params": {
-    "truck_width_m": 2.5,
+    "truck_width_m": 3.0,
     "park_occupancy_m": 2.0,
     "nfa_run_m": 100.0,
     "cctv_range_m": 25.0,
@@ -32,8 +32,8 @@
     "snap_tol_m": 0.5
   },
   "verdict_rule": [
-    "wmax <  2.5 -> blocked (중형펌프차 폭 미달)",
-    "wmin >= 4.5 -> clear (주차 1대가 있어도 통과)",
+    "wmax <  3.0 -> blocked (통과 하한 미달)",
+    "wmin >= 7.0 -> clear (양쪽 주차해도 통과)",
     "wmin or wmax null -> unknown (reason=width)",
     "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가",
     "else -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)"

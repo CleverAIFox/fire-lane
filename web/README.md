@@ -1,6 +1,6 @@
 # web — 동명동 진입판정 지도
 
-MapLibre GL JS 5 + deck.gl 9 (interleaved) + V-World 배경.
+MapLibre GL JS 5 + deck.gl 9 (interleaved) + V-World.
 
 ## 실행
 
@@ -9,49 +9,59 @@ cd web && python -m http.server 8000
 # http://localhost:8000
 ```
 
-`fetch()`로 `./data/*.geojson`을 읽으므로 **file:// 로 열면 CORS로 막힌다.** 반드시 서버로 띄울 것.
+`index.html` 을 더블클릭하면 안 된다. `file://` 에서는 `fetch()` 가 CORS 로 막힌다.
 
-## V-World 배경 켜기
+## 파일 구조
 
-`index.html` 상단:
+한 파일에 다 넣으면 두 사람이 같은 줄을 고쳐 충돌한다. 계층으로 나눴다.
+
+| 파일 | 주인 | 내용 |
+|---|---|---|
+| `index.html` | 공동 | 뼈대. 패널 마크업. 거의 안 바뀐다 |
+| `style.css` | **@marscoolcat** | 색·간격·타이포·레이아웃 |
+| `config.js` | **공동** | 색상표·임계값·마커 형상·카메라 |
+| `app.js` | **@AIMasterFox** | 데이터 로딩·레이어·판정 렌더링 |
+| `data/` | 생성물 | `publish_web.py` 산출. 손으로 고치지 말 것 |
+
+**UI 작업은 `style.css` 와 `config.js` 만 만지면 된다.** `app.js` 를 건드릴 일이
+생기면 그건 로직 문제이므로 GIS 담당에게 알릴 것.
+
+## 출동 모드 · 미니맵
+
+`@marscoolcat` 기여(faf9774). 파일 분리 과정에서 새 구조로 옮겼다.
+
+| 기능 | 위치 |
+|---|---|
+| 출동 모드 토글 · FAB 버튼 | `index.html` + `style.css` + `app.js` |
+| 미니맵 (줌 16↑ 표시, 뷰박스·현위치 동기화) | `app.js` + `style.css` |
+| 소화전 물결 (출동 모드에서만) | `app.js` |
+| 출동 시 통과 구간 강조 · 나머지 흐림 | `app.js` + `config.js` |
+
+조정값은 `config.js` 의 `dispatch` 와 `minimap` 에 있다.
 
 ```js
-const USE_VWORLD = false;   // ← true 로 바꾸면 V-World
+dispatch: { clearWidthScale: 1.6, dimAlpha: 102, pulseMs: 1200 }
+minimap : { showFromZoom: 16 }
 ```
 
-기본값이 `false`이고 CARTO 다크 타일로 뜬다. V-World는 `&domain=` 파라미터가
-등록 URL과 **문자열까지 정확히** 일치해야 타일이 나오므로, V-World 사이트에
-`http://localhost:8000`을 먼저 등록한 뒤 `true`로 바꿀 것.
-WMTS 축 순서는 `{z}/{y}/{x}`다. `{z}/{x}/{y}`로 쓰면 타일이 어긋난다.
+소화전 물결은 지면에 링이 퍼지고 그 위에 3D 기둥이 서는 구조다.
+원본은 2D 원 마커 위에 그렸는데, 마커가 3D 로 바뀌면서 링만 지면에 남겼다.
 
-## 데이터
+## 값을 바꿀 때
 
-`data/` 는 `src/etl/segments.py` 산출물의 경량 사본이다. 직접 수정하지 말 것.
-갱신은 아래 순서.
+판정 임계값(3.0 / 7.0 / 25.0)의 **정본은 `src/etl/segments.py`** 다.
+`config.js` 의 같은 숫자는 화면 설명용 사본이라 바꿔도 판정은 안 바뀐다.
+파이프라인을 먼저 고치고 `config.js` 를 맞출 것.
 
-```bash
-python src/etl/ingest.py
-python src/etl/segments.py
-python src/etl/publish_web.py
-```
+## V-World 배경
 
-## 렌더링 분담
+`config.js` 의 `vworld.enabled` 를 `true` 로 바꾼다. 그 전에 V-World 에
+서비스 URL(`http://localhost:8000`) 을 등록해야 한다. `&domain=` 이 등록 문자열과
+정확히 같아야 타일이 나온다.
 
-| 레이어 | 렌더러 | 이유 |
-|---|---|---|
-| 건물 3D | MapLibre `fill-extrusion` | 네이티브가 가장 빠르다. 라이브러리 추가 불필요 |
-| 세그먼트 | deck.gl `GeoJsonLayer` | 속성 기반 색·굵기와 피킹이 압도적으로 편하다 |
-| 소화전·안전센터 | MapLibre `circle` | 단순 포인트 |
+## 지형
 
-deck.gl은 `MapboxOverlay({interleaved:true})`로 MapLibre의 WebGL2 컨텍스트에
-직접 그린다. 그래서 건물 뒤로 지나가는 도로가 제대로 가려진다.
-`interleaved`는 maplibre-gl 3 이상에서만 동작한다.
+`config.js` 의 `terrain.scale` 로 기복을 조절한다. 1.0 이 실제 비율이다.
 
-## 넘길 때 지켜야 할 것
-
-`data/segments.schema.json`의 `width_verified`가 **false**다.
-`width_min_m` / `width_max_m`는 D-25 레이저 실측 후 값이 바뀐다.
-
-- `verdict` **문자열**만 참조할 것. 임계값(3.0 / 5.0 / 7.0)을 UI 코드에 하드코딩하지 말 것.
-- 색상 매핑은 `VERDICT` 객체 한 곳에만 둘 것. 값이 바뀌어도 여기만 고치면 된다.
-- `midpoint_fallback` / `inherited`가 true인 구간은 정상 산출이 아니다. 결과 해석 시 구분할 것.
+**공개DEM 90m 를 8배 보간한 표현용 값이다.** 판정에는 쓰지 않는다.
+90m 격자는 골목 20개를 한 픽셀로 덮으므로 구간별 경사 산출이 불가능하다.

@@ -46,7 +46,8 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 2.5GB 가 저�
 
 ```bash
 uv run python src/etl/ingest.py        # raw → processed (15종)
-uv run python src/etl/segments.py      # 노딩 → 폭 → 판정 (641)
+uv run python src/etl/segments.py      # 노딩 → 폭 → 판정
+uv run python src/etl/terrain.py       # 공개DEM → z 표고 (표현용)
 uv run python src/etl/publish_web.py   # → web/data
 uv run pytest tests/test_contract.py   # 계약 확인
 ```

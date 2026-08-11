@@ -8,9 +8,13 @@
 /data/                   @AIMasterFox
 /docs/DATA_INVENTORY.md  @AIMasterFox
 
-# ── 표출. UI 담당이 자유롭게 고친다 ──────────────────
+# ── 표출 ─────────────────────────────────────────────
+# 파일을 계층으로 나눠 충돌을 구조적으로 막는다.
+/web/style.css           @marscoolcat            # UI 단독. 색·간격·타이포
 /web/index.html          @marscoolcat @AIMasterFox
 /web/README.md           @marscoolcat @AIMasterFox
+/web/config.js           @marscoolcat @AIMasterFox   # 양쪽이 함께 보는 유일한 파일
+/web/app.js              @AIMasterFox            # GIS 단독. 로직·레이어
 
 # ── 생성물. 아무도 손으로 고치지 않는다 ───────────────
 # publish_web.py 산출물이다. 수정하면 다음 실행에 덮어써진다.

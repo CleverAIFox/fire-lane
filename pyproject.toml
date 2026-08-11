@@ -16,22 +16,20 @@ dependencies = [
     "numpy>=1.26",
     "networkx>=3.3",
     "PyYAML>=6.0",
-
     # ── 서빙 ──
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "python-multipart>=0.0.9",
-
     # ── DB ──
     "SQLAlchemy>=2.0",
     "psycopg2-binary>=2.9",
     "GeoAlchemy2>=0.15",
-
     # ── 비전 ──
     "opencv-python>=4.10",
     "ultralytics>=8.3",
-
     "requests>=2.32",
+    "rasterio>=1.4.4",
+    "pillow>=12.3.0",
 ]
 
 [project.optional-dependencies]

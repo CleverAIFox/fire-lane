@@ -45,7 +45,10 @@ MIN_SEG_LEN   = 3.0          # 이하는 교차로 파편. 폭 미산출 후 인
 #   진입곤란  폭 3m 이상 도로 중 장애물·상습주차로 상시 장애, 구간 100m 이상
 #   기준 차량 중형펌프차량 폭 2.5m
 # 임의 임계값이 아니라 국가 기준이다. 바꾸지 말 것.
-TRUCK      = 2.5     # 중형펌프차량 전폭
+# 소방청 기준의 2.5m 는 "차량 전폭"이다. 실제 통과에는 사이드미러와 조향 여유가
+# 필요하고, 2026-08-06 현장 답사에서 3.0m 를 안정적 통과 하한으로 판단했다.
+# 국가 기준보다 보수적인 방향이므로 규정과 충돌하지 않는다.
+TRUCK      = 3.0     # 통과 하한 (차량 전폭 2.5m + 사이드미러·조향 여유)
 PARK       = 2.0     # 주차 1대 노면점유
 NFA_RUN_M  = 100.0   # 소방청 지정 최소 연속 구간장
 
@@ -158,6 +161,10 @@ def main():
             s2 = min((q.distance(p) for q in pr if (q.centroid.x-p.x)*ux + (q.centroid.y-p.y)*uy > 0), default=None)
             if s1 is not None and s2 is not None and 0.3 < s1+s2 < WMAX_CAP:
                 B = s1 + s2
+        # 벽 사이 폭은 도로 폭보다 좁을 수 없다. 상한(WMAX_CAP)에 걸려 잘린 경우
+        # 역전이 생기므로 도로 폭으로 끌어올린다.
+        if A is not None and B is not None and B < A:
+            B = A
         return A, B
 
     def widths(s):
@@ -174,25 +181,37 @@ def main():
                 a, b = measure(s, t)
                 if a and not A: A.append(a)
                 if b and not B: B.append(b)
-        return (round(min(A), 2) if A else None, round(min(B), 2) if B else None, fb)
+        wmin = round(min(A), 2) if A else None
+        wmax = round(min(B), 2) if B else None
+        # 벽 사이 폭이 도로 폭보다 좁을 수는 없다. 샘플별로는 맞아도
+        # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 에 걸린 경우).
+        if wmin is not None and wmax is not None and wmax < wmin:
+            wmax = wmin
+        return wmin, wmax, fb
 
     def verdict(wmin, wmax):
         """소방청 기준 판정 4종.
 
-            blocked   wmax <  2.5   중형펌프차 폭 미달. 장애물이 없어도 못 지나간다
-            clear     wmin >= 4.5   주차 1대가 있어도 통과. 영상판정 불필요
+            blocked   wmax <  3.0   통과 하한 미달. 장애물이 없어도 못 지나간다
+            clear     wmin >= 7.0   양쪽에 주차가 있어도 통과. 영상판정 불필요
             unknown   폭 산출 불가
             needs_cv  나머지        상습주차 여부로 갈린다. 영상판정 대상
         """
         if wmax is not None and wmax < TRUCK:         return "blocked"
-        if wmin is not None and wmin >= TRUCK + PARK: return "clear"
+        if wmin is not None and wmin >= TRUCK + 2*PARK: return "clear"
         if wmin is None or wmax is None:              return "unknown"
         return "needs_cv"
+
+    # 표출 범위 = 동명동 + 접근 회랑. 회랑도 판정 색상을 가져야
+    # "안전센터에서 오는 길이 어떤 상태인가"가 보인다.
+    keep = poly.buffer(KEEP_BUFFER)
+    if corr:
+        keep = keep.union(unary_union([c["geometry"] for c in corr]).buffer(70))
 
     rec = {}
     for i, (a, b, d) in enumerate(G.edges(data=True)):
         g = d["geom"]
-        if not g.intersects(poly.buffer(KEEP_BUFFER)):
+        if not g.intersects(keep):
             continue
         sid = f"DM{i:05d}"
         short = g.length < MIN_SEG_LEN
@@ -253,6 +272,11 @@ def main():
             for _, _, d in g2.edges(data=True):
                 rec[d["sid"]]["run_length_m"] = round(run, 1)
                 rec[d["sid"]]["nfa_designated"] = bool(run >= NFA_RUN_M)
+    # 인접에 폭 있는 세그먼트가 없어 상속에 실패한 파편은 unknown 으로 떨어뜨린다.
+    # verdict 어휘에 fragment 는 없다.
+    for r in rec.values():
+        if r["verdict"] == "fragment":
+            r["verdict"], r["unknown_reason"] = "unknown", "width"
     for r in rec.values():
         r.setdefault("run_length_m", None)
         r.setdefault("nfa_designated", False)
@@ -312,12 +336,12 @@ def main():
             "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",
             "cv_feasible": "bool CCTV 유효범위(25m) 안. 영상판정 성립 여부",
             "unknown_reason": "null|width|no_cctv unknown 이 된 이유"},
-        "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (중형펌프차 2.5m, 구간 100m)",
+        "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (구간 100m) + 2026-08-06 현장 답사 (통과 하한 3.0m)",
         "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK, "nfa_run_m": NFA_RUN_M, "cctv_range_m": CCTV_RANGE,
                    "intersection_exclusion_m": XSEC_EXCL, "wmax_cap_m": WMAX_CAP,
                    "min_seg_len_m": MIN_SEG_LEN, "snap_tol_m": SNAP_TOL},
-        "verdict_rule": ["wmax <  2.5 -> blocked (중형펌프차 폭 미달)",
-                         "wmin >= 4.5 -> clear (주차 1대가 있어도 통과)",
+        "verdict_rule": ["wmax <  3.0 -> blocked (통과 하한 미달)",
+                         "wmin >= 7.0 -> clear (양쪽 주차해도 통과)",
                          "wmin or wmax null -> unknown (reason=width)",
                          "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가",
                          "else -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)"],
