@@ -151,6 +151,67 @@ datasets:
         시군구코드 12210(동구) 조건 필수.
       동명동 1,070건 / 음식 421 소매 275.
 
+  # -- 행정경계·건물 (도로명주소 전자지도, 2026-08-11 승인) --
+  boundary_emd:
+    desc: 읍면동 행정구역경계. 동명동 정식 폴리곤 (EMD_CD 12210108)
+    kind: shp_zip
+    file: juso/juso_elctrnmap_jngj_20260811.zip
+    layer: TL_SCCO_EMD.shp
+    crs: EPSG:5179
+    encoding: cp949
+    url: https://business.juso.go.kr/addrlink/elctrnMapProvd/geoDBDwldList.do
+    license: 도로명주소법 시행령 제46조 심사 승인
+    retrieved: 2026-08-11
+    note: |
+      pending.boundary 해소. bbox_4326 대신 이 폴리곤으로 클립할 것.
+      동구 34개 읍면동 중 동명동 = EMD_CD 12210108, 면적 0.4289 km2.
+      레이어별 .prj 없음. 동봉 GRS80_UTMK.prj가 EPSG:5179와 파라미터 완전일치.
+      datum명이 ESRI식 D_ITRF_2000이라 to_epsg() 자동인식만 실패. set_crs로 강제할 것.
+      동 경계로 도로를 clip하면 그래프가 깨진다(연결요소 70개 / 최대 34%).
+      분석 대상은 동명동, 그래프는 buffer(200m) 포함으로 만들 것.
+
+  building:
+    desc: 건물 폴리곤. GRO_FLO_CO(지상층수) 보유 - 3D extrusion 재료
+    kind: shp_zip
+    file: juso/juso_elctrnmap_jngj_20260811.zip
+    layer: TL_SPBD_BULD.shp
+    crs: EPSG:5179
+    encoding: cp949
+    retrieved: 2026-08-11
+    note: |
+      pending.building 해소. raw_only.building_change(변동분 865건)는 폐기.
+      동명동 2,085동. GRO_FLO_CO 결측 0, 평균 1.43층, 1층이 55%(1,138동).
+      EMD_CD가 3자리('108')로 저장됨. 8자리 '12210108'과 직접 조인하면 0건.
+      0층 291동(14%) 존재. 무허가·부속건물 추정. 높이 환산 시 1층으로 클리핑.
+
+  building_entrance:
+    desc: 건물출입구 포인트. 소방차 도달 목표점
+    kind: shp_zip
+    file: juso/juso_elctrnmap_jngj_20260811.zip
+    layer: TL_SPBD_ENTRC.shp
+    crs: EPSG:5179
+    encoding: cp949
+    retrieved: 2026-08-11
+    note: |
+      동명동 1,313개. 도달점을 건물 중심점이 아니라 실제 출입구로 잡을 수 있다.
+      D-28 우회비용 비교의 목적지는 이 레이어다.
+
+  hydrant_point:
+    desc: 전국소방용수시설 표준데이터. 소화전 좌표
+    kind: csv_points
+    file: safety/safety_hydrant_point_jngj_20260809.csv
+    crs: EPSG:4326
+    encoding: utf-8
+    x_col: 경도
+    y_col: 위도
+    url: https://www.data.go.kr/data/15065056/standard.do
+    license: 공공누리 제1유형
+    retrieved: 2026-08-09
+    note: |
+      pending.hydrant_point 부분 해소. 단 공개율 5%.
+      hydrant_summary(집계표) 기준 동부소방서 관할 588개 중 공개 31개.
+      전량 확보는 여전히 D-30 인터뷰 필요. "588 중 31"은 그대로 발표 논거.
+
   # ── 좌표 없는 표 (참조용) ────────────────────────────────
   enforcement:
     desc: 동구 불법주정차 단속 85,380건 (2022-01 ~ 2023-10)
@@ -216,7 +277,7 @@ pending:
   - key: boundary
     desc: 행정구역경계 (읍면동) — 동명동 정식 폴리곤
     source: business.juso.go.kr → 도로명주소 전자지도
-    status: 심사 대기 (2026-08-09 신청)
+    status: 해소 2026-08-11 → datasets.boundary_emd
     blocking: |
       ★ 이게 없으면 bbox로 자를 수밖에 없고 세그먼트 수가 확정되지 않는다.
         기존 문서의 "222구간"은 근거 불명이고 bbox 노딩 시 4,336개가 나온다.
@@ -224,11 +285,11 @@ pending:
   - key: building
     desc: 건물 폴리곤 (전체분)
     source: 동일 (전자지도 11종에 포함)
-    status: 심사 대기
+    status: 해소 2026-08-11 → datasets.building
   - key: hydrant_point
     desc: 소화전 좌표 (동부소방서 관할 588개)
     source: D-30 소방서 인터뷰 협조요청
-    status: 미착수
+    status: 부분해소 2026-08-11 → datasets.hydrant_point (공개 31개, 5%)
   - key: streetlight
     desc: 가로등·보안등
     status: 공개 데이터 없음 확정. 야간 답사로 대체 (D-13)

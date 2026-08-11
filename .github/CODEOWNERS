@@ -1,0 +1,17 @@
+# 소유권 = 리뷰 승인 권한. 여기 적힌 경로는 소유자 승인 없이 머지되지 않는다.
+# GitHub Settings > Branches > gis 브랜치 보호 규칙에서
+# "Require review from Code Owners"를 켜야 실제로 동작한다.
+
+# ── GIS 코어. 값의 근거가 여기 있다 ──────────────────
+/sources.yaml            @AIMasterFox
+/src/etl/                @AIMasterFox
+/data/                   @AIMasterFox
+/docs/DATA_INVENTORY.md  @AIMasterFox
+
+# ── 표출. UI 담당이 자유롭게 고친다 ──────────────────
+/web/index.html          @marscoolcat @AIMasterFox
+/web/README.md           @marscoolcat @AIMasterFox
+
+# ── 생성물. 아무도 손으로 고치지 않는다 ───────────────
+# publish_web.py 산출물이다. 수정하면 다음 실행에 덮어써진다.
+/web/data/               @AIMasterFox

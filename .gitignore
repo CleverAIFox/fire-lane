@@ -15,3 +15,20 @@ __pycache__/
 *.pyc
 .venv/
 *.egg-info/
+
+# ── Fire-Lane ──────────────────────────────────────────
+# raw 원본 2.5GB. sources.yaml 의 url 로 재취득한다.
+data/raw/**
+!data/raw/README.md
+
+# 대용량 중간 산출물. ingest.py 로 재생성.
+data/processed/*.gpkg
+
+# UI 입력이므로 아래는 커밋한다 (지혜님이 raw 없이 작업 가능해야 함)
+!data/processed/segments.geojson
+!data/processed/segments.schema.json
+!data/processed/_manifest.json
+!web/data/**
+
+# ETL 임시
+.work/
