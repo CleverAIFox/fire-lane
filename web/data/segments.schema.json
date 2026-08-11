@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "ebbf2134e7bd975b5936948bf45188c3bae69a3a5d7cd6266593fd338a446e34",
+  "sha256": "76a04f9fd40203e22f1a492205b7377ce59f9ce758381785d263b4a9fac2a925",
   "count": 641,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
@@ -15,13 +15,17 @@
     "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
     "length_m": "float 이 구간의 길이(m)",
     "run_length_m": "float|null 같은 판정이 이어지는 연속 구간장(m)",
-    "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족"
+    "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족",
+    "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",
+    "cv_feasible": "bool CCTV 유효범위(25m) 안. 영상판정 성립 여부",
+    "unknown_reason": "null|width|no_cctv unknown 이 된 이유"
   },
   "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (중형펌프차 2.5m, 구간 100m)",
   "params": {
     "truck_width_m": 2.5,
     "park_occupancy_m": 2.0,
     "nfa_run_m": 100.0,
+    "cctv_range_m": 25.0,
     "intersection_exclusion_m": 5.0,
     "wmax_cap_m": 40.0,
     "min_seg_len_m": 3.0,
@@ -30,7 +34,8 @@
   "verdict_rule": [
     "wmax <  2.5 -> blocked (중형펌프차 폭 미달)",
     "wmin >= 4.5 -> clear (주차 1대가 있어도 통과)",
-    "wmin or wmax null -> unknown",
+    "wmin or wmax null -> unknown (reason=width)",
+    "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가",
     "else -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)"
   ]
 }

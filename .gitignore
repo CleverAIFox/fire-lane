@@ -32,3 +32,4 @@ data/processed/*.gpkg
 
 # ETL 임시
 .work/
+data/raw

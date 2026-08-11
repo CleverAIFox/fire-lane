@@ -12,7 +12,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 P, W = ROOT/"data"/"processed", ROOT/"web"/"data"
 EMD_CD = "12210108"
-CCTV_RADIUS    = 30    # CCTV 유효 커버리지 반경(m). 보수적 추정
+CCTV_RADIUS    = 25    # CCTV 유효 커버리지 반경(m). 보수적 추정
 STATION_RADIUS = 300   # 안전센터 주변 반경(m). 출발점 일대 도로 맥락 확보
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
 
@@ -21,7 +21,8 @@ def main():
     gpd.read_file(P/"segments.geojson")[
         ["seg_id","width_min_m","width_max_m","verdict","width_verified",
          "midpoint_fallback","inherited","route_usage","length_m",
-         "run_length_m","nfa_designated","geometry"]
+         "run_length_m","nfa_designated","cctv_dist_m","cv_feasible",
+         "unknown_reason","geometry"]
     ].to_file(W/"segments.geojson", **PREC)
 
     emd = gpd.read_file(P/"boundary_emd.geojson")
@@ -127,13 +128,6 @@ def main():
     cg = gpd.GeoDataFrame(agg, crs=4326)
     cg.to_file(W/"cctv.geojson", **PREC)
 
-    # CCTV 커버리지. 촬영방면이 전부 360도라 방향 콘이 아니라 원이다.
-    # 반경은 200만화소 기준 유효 식별거리의 보수적 추정치.
-    # 커버리지가 닿지 않는 골목을 보이게 하는 것이 목적이다.
-    # 가로등·보안등 공개 데이터가 없어 야간 시인성 논거를 이걸로 대체한다.
-    cov = cg.to_crs(5186)
-    cov["geometry"] = cov.geometry.buffer(CCTV_RADIUS)
-    cov[["카메라대수", "geometry"]].to_crs(4326).to_file(W/"cctv_coverage.geojson", **PREC)
 
     import shutil; shutil.copy(P/"segments.schema.json", W/"segments.schema.json")
     for f in sorted(W.iterdir()):

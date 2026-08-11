@@ -32,6 +32,7 @@ h1{font-size:15px;font-weight:700;letter-spacing:-.01em}
 .p span{font-family:var(--mono);font-size:10px;color:var(--dim)}
 .p.done{border-left-color:var(--clear)} .p.done span{color:var(--clear)}
 .p.todo{opacity:.55}
+#tip .rsn{margin:-3px 0 6px;font-size:10px;color:#8d97a8;line-height:1.4}
 #tip .nfa{margin-top:6px;padding:4px 7px;border-radius:4px;font-size:10px;
   background:rgba(255,77,61,.14);border:1px solid rgba(255,77,61,.3);color:#ff8b7d}
 #tip .hint{margin-top:6px;padding-top:5px;border-top:1px solid var(--line);
@@ -128,7 +129,8 @@ kbd{font-family:var(--mono);font-size:10px;background:#202834;border:1px solid v
     <div class="p todo"><b>3단계 · 현장 실측</b><span>D-25</span></div>
   </div>
   <div class="warn">현재 색상은 <b>도면 기반 1차 분류</b>입니다. 최종 판정이 아닙니다.<br>
-    주황(판정 보류)이 영상판정을 거쳐 초록·빨강으로 갈립니다.<br>
+    주황 72개만 영상판정으로 갈립니다.
+    <b>회색 195개는 CCTV 유효범위 25m 밖이라 영상판정 자체가 불가능</b>합니다.<br>
     폭 값은 미검증(<span style="font-family:var(--mono)">width_verified: false</span>)입니다.</div>
 
   <h2>진입 판정</h2>
@@ -153,7 +155,6 @@ kbd{font-family:var(--mono);font-size:10px;background:#202834;border:1px solid v
   <div class="row" data-t="m-fs"><span>소방서</span><i class="tg on"></i></div>
   <div class="row" data-t="m-hyd"><span>소화전</span><i class="tg on"></i></div>
   <div class="row" data-t="m-cctv"><span>CCTV</span><i class="tg on"></i></div>
-  <div class="row" data-t="cctv-cov"><span>CCTV 커버리지</span><i class="tg on"></i></div>
   <div class="row" data-t="mask"><span>스코프 밖 가리기</span><i class="tg on"></i></div>
 
   <h2>시설</h2>
@@ -168,6 +169,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#202834;border:1px solid v
   <div class="stat"><span>건물</span><b id="s-bld">–</b></div>
   <div class="stat"><span>소화전(동명동/전체)</span><b id="s-hyd">–</b></div>
   <div class="stat"><span>CCTV 지점/카메라</span><b id="s-cctv">–</b></div>
+  <div class="stat"><span>영상판정 가능</span><b id="s-cv">–</b></div>
   <div class="note">
     <b>경로 빈도</b>는 실제 출동 기록이 아닙니다. 119안전센터 2곳에서 동명동
     건물출입구 358곳까지 도로망 최단경로를 계산했을 때, 그 구간을 지나는 경로가
@@ -220,7 +222,12 @@ const VERDICT = {
   blocked  : {c:[255, 77, 61], nm:"도면상 불가",   d:"담~담 3.0m 미만. 주차 차량이 없어도 소방차가 못 지나간다"},
   needs_cv : {c:[255,171, 46], nm:"판정 보류",     d:"도면만으로 결론이 안 난다. 영상판정(호모그래피) 대상"},
   clear    : {c:[ 74,209,143], nm:"도면상 통과",   d:"노면폭 5m 이상. 양쪽에 주차가 있어도 통과. 영상판정 불필요"},
-  unknown  : {c:[ 90, 98,114], nm:"산출 불가",     d:"실폭도로·건물 폴리곤이 없어 폭을 잴 수 없다"},
+  unknown  : {c:[ 90, 98,114], nm:"판정 불가",     d:"도면으로도 영상으로도 확정할 수 없다"},
+};
+/* unknown 의 이유. 둘 다 회색이지만 성격이 다르다. */
+const REASON = {
+  no_cctv : "CCTV 유효범위 25m 밖 · 영상판정 불가",
+  width   : "실폭도로·건물 폴리곤 부재 · 폭 산출 불가",
 };
 const off = new Set();
 
@@ -326,11 +333,13 @@ function layers(){
       tip.innerHTML =
         `<div class="id">${p.seg_id}</div>
          <div class="vd" style="color:rgb(${v.c})">${v.nm}</div>
+         ${p.unknown_reason?`<div class="rsn">${REASON[p.unknown_reason]}</div>`:""}
          <dl><dt title="실폭도로 폴리곤으로 잰 값. 확실히 비어 있는 폭. 화면의 선 굵기가 이 값이다">노면폭 하한</dt><dd>${n(p.width_min_m)}</dd>
              <dt title="양쪽 건물 사이 거리. 물리적으로 가능한 최대 통로폭">담~담 상한</dt><dd>${n(p.width_max_m)}</dd>
              <dt title="이 구간의 길이">길이</dt><dd>${p.length_m} m</dd>
              <dt title="같은 판정이 이어지는 연속 구간의 총 길이. 소방청 지정 기준은 100m 이상">연속 구간</dt><dd>${p.run_length_m ? p.run_length_m+" m" : "—"}</dd>
-             <dt title="119안전센터 2곳에서 건물출입구까지 최단경로 중 이 구간을 지난 경로 수">소방 동선</dt><dd>${p.route_usage}개</dd></dl>
+             <dt title="119안전센터 2곳에서 건물출입구까지 최단경로 중 이 구간을 지난 경로 수">소방 동선</dt><dd>${p.route_usage}개</dd>
+             <dt title="가장 가까운 CCTV 까지의 거리. 25m 를 넘으면 호모그래피 오차가 급증해 영상판정이 성립하지 않는다">CCTV 거리</dt><dd>${p.cctv_dist_m} m</dd></dl>
          ${p.nfa_designated?`<div class="nfa">소방청 지정 기준 충족 · 연속 100m 이상</div>`:""}
          <div class="hint">${v.d}</div>
          ${flags.length?`<div class="flag">${flags.join(" · ")}</div>`:""}`;
@@ -343,8 +352,8 @@ function layers(){
 
 map.on("load", async () => {
   const j = async p => (await fetch(p)).json();
-  const [seg,bld,bnd,hyd,sta,cctv,cov] = await Promise.all(
-    ["segments","buildings","boundary","hydrants","stations","cctv","cctv_coverage"]
+  const [seg,bld,bnd,hyd,sta,cctv] = await Promise.all(
+    ["segments","buildings","boundary","hydrants","stations","cctv"]
       .map(n=>j(`./data/${n}.geojson`)));
   SEG = seg;
   Object.assign(DATA, {cctv, hyd, sta});
@@ -390,11 +399,6 @@ map.on("load", async () => {
      촬영방면이 전부 360도라 방향 콘이 아니라 원이면 된다.
      커버리지가 안 닿는 골목이 눈에 보이는 것이 요점이다.
      가로등·보안등 공개 데이터가 없어 야간 시인성 논거를 이걸로 대체한다. */
-  map.addSource("cctv-cov",{type:"geojson",data:cov});
-  map.addLayer({id:"cctv-cov",type:"fill",source:"cctv-cov",
-    paint:{"fill-color":"#b98cff","fill-opacity":.09}});
-  map.addLayer({id:"cctv-cov-line",type:"line",source:"cctv-cov",
-    paint:{"line-color":"#b98cff","line-opacity":.22,"line-width":.8}});
 
   /* 소화전. 스코프 전체 11개인데 동명동 안은 1개뿐이다. */
   map.addSource("hyd",{type:"geojson",data:hyd});
@@ -438,6 +442,8 @@ map.on("load", async () => {
   $("#s-hyd").textContent = `${inEmd} / ${hyd.features.length}`;
   const cams = cctv.features.reduce((a,f)=>a+(f.properties.카메라대수||0),0);
   $("#s-cctv").textContent = `${cctv.features.length} / ${cams}`;
+  const feas = seg.features.filter(f=>f.properties.cv_feasible).length;
+  $("#s-cv").textContent = `${feas} / ${seg.features.length} (${(feas/seg.features.length*100).toFixed(0)}%)`;
 
   /* 폭 밴드 */
   const w = seg.features.map(f=>f.properties).filter(p=>p.width_min_m&&p.width_max_m);
@@ -459,7 +465,6 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   tg.classList.toggle("on", on);
   if(t==="buildings") map.setLayoutProperty("bld-3d","visibility",on?"visible":"none");
   if(t.startsWith("m-")){ on?markerOff.delete(t):markerOff.add(t); overlay.setProps({layers:layers()}); }
-  if(t==="cctv-cov"){ ["cctv-cov","cctv-cov-line"].forEach(l=>map.setLayoutProperty(l,"visibility",on?"visible":"none")); }
   if(t==="mask"){ ["mask-l","mask-soft-l"].forEach(l=>map.setLayoutProperty(l,"visibility",on?"visible":"none")); }
 });
 })();

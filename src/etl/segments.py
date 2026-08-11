@@ -48,6 +48,11 @@ MIN_SEG_LEN   = 3.0          # 이하는 교차로 파편. 폭 미산출 후 인
 TRUCK      = 2.5     # 중형펌프차량 전폭
 PARK       = 2.0     # 주차 1대 노면점유
 NFA_RUN_M  = 100.0   # 소방청 지정 최소 연속 구간장
+
+# CCTV 유효 범위. 이 거리를 넘으면 호모그래피 오차가 급격히 커진다.
+# → 영상판정이 성립하지 않는다. CCTV가 없는 것과 같다.
+# 25m 는 잠정값이다. D-25 실측으로 검증 대상.
+CCTV_RANGE = 25.0
 STATIONS = {                 # 출동은 소방서가 아니라 119안전센터에서 나간다
     "대인119안전센터": (126.914765, 35.154579),
     "지산119안전센터": (126.938531, 35.149963),
@@ -120,6 +125,10 @@ def main():
         gpd.GeoDataFrame(corr, crs=CRS_M).to_file(OUT/"corridor_5186.gpkg", driver="GPKG", layer="corridor")
         print(f"접근 회랑 {len(corr)}엣지 / {sum(c['geometry'].length for c in corr):,.0f}m")
 
+    # CCTV 유효 범위. needs_cv 구간이 이 안에 없으면 영상판정 자체가 불가능하다.
+    cctv = gpd.read_file(OUT/"cctv_5186.gpkg").to_crs(CRS_M)
+    cctv_u = unary_union(list(cctv.geometry))
+
     rw_u  = unary_union([shapely.make_valid(g) for g in rw[rw.intersects(poly.buffer(80))].geometry])
     bld_u = unary_union([shapely.make_valid(g) for g in bld[bld.intersects(poly.buffer(80))].geometry])
     deg = Counter()
@@ -188,8 +197,24 @@ def main():
         sid = f"DM{i:05d}"
         short = g.length < MIN_SEG_LEN
         wmin, wmax, fb = (None, None, False) if short else widths(g)
+        v = "fragment" if short else verdict(wmin, wmax)
+
+        # 영상판정 가능성. 구간에서 가장 가까운 CCTV 까지의 거리로 판단한다.
+        d_cctv = round(g.distance(cctv_u), 1)
+        cv_ok = d_cctv <= CCTV_RANGE
+
+        # needs_cv 인데 CCTV 사각이면 영상판정이 성립하지 않는다.
+        # 도면으로도 확정 못 하고 영상으로도 확정 못 하므로 unknown 이다.
+        # blocked / clear 는 도면만으로 확정되므로 CCTV 와 무관하다.
+        reason = None
+        if v == "needs_cv" and not cv_ok:
+            v, reason = "unknown", "no_cctv"
+        elif v == "unknown":
+            reason = "width"
+
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
-                        verdict="fragment" if short else verdict(wmin, wmax),
+                        verdict=v, unknown_reason=reason,
+                        cctv_dist_m=d_cctv, cv_feasible=bool(cv_ok),
                         width_verified=False, midpoint_fallback=fb, inherited=False,
                         route_usage=use.get(frozenset((a, b)), 0),
                         length_m=round(g.length, 1), _n=(a, b), geometry=g)
@@ -207,7 +232,12 @@ def main():
             r["width_min_m"] = round(min(x["width_min_m"] for x in nb), 2)
             mx = [x["width_max_m"] for x in nb if x["width_max_m"] is not None]
             r["width_max_m"] = round(min(mx), 2) if mx else None
-            r["verdict"] = verdict(r["width_min_m"], r["width_max_m"])
+            v2 = verdict(r["width_min_m"], r["width_max_m"])
+            if v2 == "needs_cv" and not r["cv_feasible"]:
+                v2, r["unknown_reason"] = "unknown", "no_cctv"
+            elif v2 == "unknown":
+                r["unknown_reason"] = "width"
+            r["verdict"] = v2
             r["inherited"] = True
     # 소방청 지정 기준의 "구간 100m 이상"은 세그먼트 단위가 아니라 연속 구간 단위다.
     # 같은 판정을 가진 인접 세그먼트를 이어붙여 연속 길이를 잰다.
@@ -229,6 +259,38 @@ def main():
         r.pop("_n")
 
     g = gpd.GeoDataFrame(list(rec.values()), crs=CRS_M)
+
+    # ── 소방서 지정 구간 대조 ────────────────────────────────
+    # 동부소방서 소방통로확보대상 지역 현황(2025-07-31)의 폭과 비교한다.
+    # 좌표가 없어 도로명 단위로만 매칭되므로 참고값이다.
+    # 소방서가 지정한 것은 그 도로명 중 가장 좁은 구간이므로,
+    # 우리 값도 최솟값 쪽으로 비교하는 것이 타당하다.
+    fa = ROOT/"data"/"raw"/"safety"/"safety_fire_access_gj_dong_20250731.csv"
+    if fa.exists():
+        import csv, re
+        rows = list(csv.DictReader(fa.open(encoding="cp949")))
+        road = gpd.read_file(OUT/"road_link_5186.gpkg").to_crs(CRS_M)
+        print("\n[소방서 지정 구간 대조]")
+        for r in rows:
+            for rn in set(re.findall(r"[가-힣]+로\d*번?길", r["지역명"])):
+                sel = road[road.RN == rn]
+                if not len(sel):
+                    continue
+                ru = unary_union(list(sel.geometry))
+                hit = g[g.geometry.buffer(1).intersects(ru)].dropna(subset=["width_min_m"])
+                if not len(hit):
+                    continue
+                w_nfa = r["폭(m)"]
+                try:
+                    wf = float(str(w_nfa).split("~")[0])
+                except ValueError:
+                    continue
+                # 소방서 기록폭은 구간 대표폭으로 보인다. 최솟값이 아니라 중앙값과 비교한다.
+                # (하위10% 로 비교하면 교차로 근처 극협소 지점을 잡아 -3~-7m 로 벌어진다)
+                med = hit.width_min_m.median()
+                print(f"  {rn:14s} 소방서 {w_nfa:>7s}m │ 우리 중앙 {med:5.2f}m "
+                      f"({med - wf:+.2f}) │ 세그 {len(hit):3d} │ "
+                      + " ".join(f"{k}:{v}" for k, v in hit.verdict.value_counts().items()))
     g.to_file(OUT / "segments_5186.gpkg", driver="GPKG", layer="segments")
     g.to_crs(CRS_W).to_file(OUT / "segments.geojson", driver="GeoJSON")
     h = hashlib.sha256((OUT / "segments.geojson").read_bytes()).hexdigest()
@@ -246,14 +308,18 @@ def main():
             "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
             "length_m": "float 이 구간의 길이(m)",
             "run_length_m": "float|null 같은 판정이 이어지는 연속 구간장(m)",
-            "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족"},
+            "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족",
+            "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",
+            "cv_feasible": "bool CCTV 유효범위(25m) 안. 영상판정 성립 여부",
+            "unknown_reason": "null|width|no_cctv unknown 이 된 이유"},
         "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (중형펌프차 2.5m, 구간 100m)",
-        "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK, "nfa_run_m": NFA_RUN_M,
+        "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK, "nfa_run_m": NFA_RUN_M, "cctv_range_m": CCTV_RANGE,
                    "intersection_exclusion_m": XSEC_EXCL, "wmax_cap_m": WMAX_CAP,
                    "min_seg_len_m": MIN_SEG_LEN, "snap_tol_m": SNAP_TOL},
         "verdict_rule": ["wmax <  2.5 -> blocked (중형펌프차 폭 미달)",
                          "wmin >= 4.5 -> clear (주차 1대가 있어도 통과)",
-                         "wmin or wmax null -> unknown",
+                         "wmin or wmax null -> unknown (reason=width)",
+                         "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가",
                          "else -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)"],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(g.verdict.value_counts().to_string())

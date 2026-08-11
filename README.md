@@ -1,5 +1,38 @@
 # Fire-Lane
 
+동명동 소방차 진입 판정 시스템 · 전남광주통합특별시 동구
+
+**지도** https://woongtopia.github.io/fire-lane/
+
+## 문서
+
+| 문서 | 용도 |
+|---|---|
+| [`docs/MASTER.md`](docs/MASTER.md) | **여기부터.** 프로젝트 현재 상태 전체 |
+| [`docs/GLOSSARY.md`](docs/GLOSSARY.md) | 용어. 지도에 나오는 말들 |
+| [`docs/HANDOFF_UI.md`](docs/HANDOFF_UI.md) | UI 담당 인수인계 |
+| [`docs/WORKFLOW.md`](docs/WORKFLOW.md) | 브랜치·푸시 규칙 |
+| [`docs/DATA_INVENTORY.md`](docs/DATA_INVENTORY.md) | 데이터 이력 |
+| [`sources.yaml`](sources.yaml) | 데이터 정본 (기계가 읽는다) |
+
+## 실행
+
+```bash
+uv sync
+uv run python src/etl/ingest.py        # raw -> processed (18종)
+uv run python src/etl/segments.py      # 노딩 -> 폭 -> 판정 (641)
+uv run python src/etl/publish_web.py   # -> web/data
+uv run pytest tests/test_contract.py   # 계약 검증
+
+cd web && uv run python -m http.server 8000
+```
+
+`index.html` 을 더블클릭하면 안 된다. `file://` 에서는 `fetch()` 가 CORS 로 막힌다.
+
+---
+
+# Fire-Lane
+
 > 소방차 출동 경로 상에서 **불법 주정차로 통과 불가능해진 구간을 자동 판정**하고,
 > 그 판정을 반영한 **우회 경로를 산출**하는 119상황실용 웹 대시보드.
 
