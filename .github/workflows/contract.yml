@@ -23,5 +23,23 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install pytest
+      - name: JS 문법 검사
+        run: |
+          # app.js 가 문법 오류면 지도가 통째로 안 뜬다.
+          for f in web/app.js web/config.js; do
+            node --check "$f" && echo "OK  $f"
+          done
+
+      - name: web/data 용량 검사
+        run: |
+          # UI 담당이 raw 없이 작업하려면 web/data 를 커밋해야 한다.
+          # 다만 타일이 늘면 저장소가 급격히 무거워진다. 상한을 둔다.
+          SIZE=$(du -sm web/data | cut -f1)
+          echo "web/data ${SIZE}MB"
+          if [ "$SIZE" -ge 60 ]; then
+            echo "::error::web/data 가 60MB 를 넘었다. 타일 줌 단계를 줄이거나 외부 호스팅으로 옮길 것"
+            exit 1
+          fi
+
       - name: web/data 계약 검증
         run: pytest tests/test_contract.py -v

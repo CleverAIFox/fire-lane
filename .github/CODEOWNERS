@@ -6,7 +6,7 @@
 /sources.yaml            @AIMasterFox
 /src/etl/                @AIMasterFox
 /data/                   @AIMasterFox
-/docs/DATA_INVENTORY.md  @AIMasterFox
+/docs/MASTER.md          @AIMasterFox
 
 # ── 표출 ─────────────────────────────────────────────
 # 파일을 계층으로 나눠 충돌을 구조적으로 막는다.

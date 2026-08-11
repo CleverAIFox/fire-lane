@@ -10,6 +10,9 @@ import geopandas as gpd
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
+import sys as _sys; _sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import RAW, PROCESSED, WEB  # noqa: E402
+OUT = PROCESSED
 P, W = ROOT/"data"/"processed", ROOT/"web"/"data"
 EMD_CD = "12210108"
 CCTV_RADIUS    = 25    # CCTV 유효 커버리지 반경(m). 보수적 추정
@@ -18,12 +21,14 @@ PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
 
 def main():
     W.mkdir(parents=True, exist_ok=True)
-    gpd.read_file(P/"segments.geojson")[
-        ["seg_id","width_min_m","width_max_m","verdict","width_verified",
-         "midpoint_fallback","inherited","route_usage","length_m",
-         "run_length_m","nfa_designated","cctv_dist_m","cv_feasible",
-         "unknown_reason","z","geometry"]
-    ].to_file(W/"segments.geojson", **PREC)
+    # z 는 terrain.py 산출물이다. DEM 이 없으면 안 생기므로 선택 컬럼으로 둔다.
+    _seg = gpd.read_file(P/"segments.geojson")
+    _cols = ["seg_id","width_min_m","width_max_m","verdict","width_verified",
+             "midpoint_fallback","inherited","route_usage","length_m",
+             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible",
+             "unknown_reason"]
+    _cols += [c for c in ("z",) if c in _seg.columns]
+    _seg[_cols + ["geometry"]].to_file(W/"segments.geojson", **PREC)
 
     emd = gpd.read_file(P/"boundary_emd.geojson")
     emd = emd[emd.EMD_CD == EMD_CD]
@@ -63,6 +68,9 @@ def main():
     gpd.GeoDataFrame(geometry=[scope4.difference(emd4)], crs=4326).to_file(W/"mask_soft.geojson", **PREC)
 
     # 뷰 설정: bbox 를 코드에 하드코딩하지 않고 데이터에서 뽑아 내보낸다.
+    # terrain/ortho 가 기록한 타일 범위는 보존한다.
+    _vj = W/"view.json"
+    _prev = json.loads(_vj.read_text(encoding="utf-8")) if _vj.exists() else {}
     minx, miny, maxx, maxy = gpd.GeoSeries([scope4], crs=4326).total_bounds
     m = 0.002
     (W/"view.json").write_text(json.dumps({
@@ -70,6 +78,11 @@ def main():
         "bounds": [[round(minx, 4), round(miny, 4)], [round(maxx, 4), round(maxy, 4)]],
         "maxBounds": [[round(minx-m, 4), round(miny-m, 4)], [round(maxx+m, 4), round(maxy+m, 4)]],
         "minZoom": 13.6, "maxZoom": 20,
+        # terrain / ortho 타일의 실제 범위. 지도 소스의 bounds 로 쓴다.
+        # 없으면 브라우저가 범위 밖 타일을 요청해 404 가 뜬다.
+        # terrain.py / ortho.py 가 채운다. 여기서 새로 쓰면서 지우면 안 된다.
+        "terrainBounds": _prev.get("terrainBounds"),
+        "orthoBounds":   _prev.get("orthoBounds"),
         "emdBounds": [[round(*emd.to_crs(4326).total_bounds[:1], 4), round(emd.to_crs(4326).total_bounds[1], 4)],
                       [round(emd.to_crs(4326).total_bounds[2], 4), round(emd.to_crs(4326).total_bounds[3], 4)]],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -131,6 +144,89 @@ def main():
     cg = gpd.GeoDataFrame(agg, crs=4326)
     cg.to_file(W/"cctv.geojson", **PREC)
 
+
+    # ── 상가 POI ────────────────────────────────────────────
+    # 소상공인시장진흥공단 상가(상권)정보. 이미 파이프라인에 있는데 지도에 안 올렸었다.
+    # 네이버 지도처럼 상호가 보이면 어느 골목인지 즉시 감이 온다.
+    # 업종 대분류로 묶어 색을 나눈다. 층정보가 있으면 1층만 남긴다(간판이 보이는 것).
+    poi = gpd.read_file(P/"poi_store.geojson")
+    poi = poi[poi.within(scope4)].copy()
+    poi["cat"] = poi["상권업종대분류명"].fillna("기타")
+    poi["층"] = pd.to_numeric(poi["층정보"], errors="coerce")
+    poi = poi[(poi["층"].isna()) | (poi["층"] <= 1)]          # 지상 1층 = 골목에서 보이는 것
+    poi[["상호명", "cat", "상권업종중분류명", "도로명주소", "geometry"]].rename(
+        columns={"상호명": "name", "상권업종중분류명": "sub", "도로명주소": "addr"}
+    ).to_file(W/"poi.geojson", **PREC)
+    print(f"  상가 POI {len(poi)}개 (지상 1층 · {poi.cat.nunique()}개 업종)")
+
+    # ── 시설 마커를 건물과 같은 방식으로 ──────────────────────
+    # deck.gl 레이어는 map.setTerrain() 을 켜면 지형 아래로 묻힌다.
+    # 건물처럼 fill-extrusion 으로 그리면 지형을 따라간다.
+    # 그래서 포인트를 실제 시설 형상의 폴리곤으로 만들어 둔다.
+    #
+    # 비율은 실물을 따르되 크기는 과장한다. 소화전 실물 지름 0.2m 로는
+    # 1km 시야에서 보이지 않는다.
+    #   part: 아래에서 위로 쌓는 조각. base(바닥높이) / h(높이) / r(반지름)
+    import math
+
+    def solid(pt, parts, props):
+        """포인트를 원기둥 조각들의 폴리곤으로 만든다."""
+        out = []
+        for i, (r, base, h, color) in enumerate(parts):
+            # 반지름이 작을수록 각을 촘촘히. 소화전이 사각기둥으로 보이지 않게.
+            seg_n = 24 if r < 1 else 16
+            ring = [(pt.x + r*math.cos(t), pt.y + r*math.sin(t))
+                    for t in [k*2*math.pi/seg_n for k in range(seg_n + 1)]]
+            out.append({**props, "part": i, "base": base, "top": base + h,
+                        "mcolor": color, "geometry": Polygon(ring)})
+        return out
+
+    from shapely.geometry import Polygon
+    # (반지름m, 바닥높이m, 높이m, 색)
+    #
+    # ★ 실물 치수를 따르되 최소한만 키운다.
+    #   실물   소화전 지름 0.2m·높이 0.9m / CCTV 지주 4.5m / 건물 3~5층
+    #   과장   소화전 x2 (지름 0.4m·높이 1.8m) — 골목 폭 3m 대비 자연스럽다
+    #          CCTV 지주는 실물 그대로. 대수만큼만 높인다
+    #          안전센터·소방서는 실제 건물 규모(4~6층)를 따른다
+    #   이전에 소화전을 6m 로 세웠더니 2층 건물만 했다. 현실 반영이 우선이다.
+    MARKER_PARTS = {
+        "center":  [(6, 0, 15, "#ff4d3d"), (7, 15, 2, "#ff4d3d"), (1.2, 17, 6, "#ff968c")],
+        "station": [(7, 0, 18, "#ffb020"), (8, 18, 2, "#ffb020"), (0.8, 20, 7, "#ffd68c")],
+        "hydrant": [(0.34, 0,   0.16, "#286e96"),   # 받침
+                    (0.20, .16, 1.10, "#4fc3f7"),   # 몸통
+                    (0.30, 1.26, .14, "#286e96"),   # 플랜지
+                    (0.15, 1.40, .40, "#8cdcff")],  # 상단 캡  총 1.8m
+        "cctv":    [(0.09, 0,   4.5, "#78788a"),    # 지주 4.5m (실물)
+                    (0.28, 4.5, .45, "#b98cff"),    # 하우징
+                    (0.13, 4.8, .30, "#e1cdff")],   # 렌즈
+    }
+
+    feats = []
+    for _, r in sta.to_crs(5186).iterrows():
+        kind = "center" if r["kind"] == "center" else "station"
+        feats += solid(r.geometry, MARKER_PARTS[kind],
+                       {"kind": kind, "name": r["소방서 및 안전센터명"],
+                        "sub": "출동 시작점" if kind == "center" else "관할 본서",
+                        "addr": r.get("주소", ""), "z": r.get("z", 0)})
+    for _, r in hyd.to_crs(5186).iterrows():
+        feats += solid(r.geometry, MARKER_PARTS["hydrant"],
+                       {"kind": "hydrant", "name": f"소화전 {r.get('시설번호','')}",
+                        "sub": str(r.get("상세위치", "")), "addr": r.get("소재지도로명주소", ""),
+                        "z": r.get("z", 0)})
+    for _, r in cg.to_crs(5186).iterrows():
+        n = int(r["카메라대수"])
+        # 대수만큼 지주를 높인다. 실물 4.5m 에서 대당 0.5m.
+        h = 4.5 + min(n, 8) * 0.5
+        pts = [(0.09, 0, h, "#78788a"), (0.28, h, .45, "#b98cff"), (0.13, h + .3, .30, "#e1cdff")]
+        feats += solid(r.geometry, pts,
+                       {"kind": "cctv", "name": f"CCTV {n}대",
+                        "sub": f"{r.get('카메라화소','')} · 설치 {r.get('최초설치','')}",
+                        "addr": r.get("소재지도로명주소", ""), "z": r.get("z", 0)})
+
+    gpd.GeoDataFrame(feats, crs=5186).to_crs(4326).to_file(W/"markers.geojson", **PREC)
+    print(f"  시설 마커 {len(feats)}조각 "
+          f"(안전센터·소방서 {len(sta)} · 소화전 {len(hyd)} · CCTV {len(cg)})")
 
     import shutil; shutil.copy(P/"segments.schema.json", W/"segments.schema.json")
     for f in sorted(W.iterdir()):

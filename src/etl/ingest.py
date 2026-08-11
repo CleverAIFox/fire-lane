@@ -34,8 +34,11 @@ from pyproj import Transformer
 from shapely import make_valid
 
 ROOT = Path(__file__).resolve().parents[2]
-RAW = ROOT / "data" / "raw"
-OUT = ROOT / "data" / "processed"
+import sys as _sys; _sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import RAW, PROCESSED, WEB  # noqa: E402
+OUT = PROCESSED
+
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
@@ -76,8 +79,26 @@ def load_shp_in_zip(zp: Path, inner: str, crs: str, enc: str, tmp: Path):
     return g.set_crs(crs, allow_override=True)
 
 
+def read_csv_any(p: Path, enc: str | None = None, **kw):
+    """인코딩을 자동 판별해 읽는다.
+
+    ★ 같은 데이터셋도 다운로드 시점에 따라 인코딩이 바뀐다.
+      공공데이터포털 CSV 가 UTF-8 이었다가 CP949 로 내려오는 일이 흔하다.
+      sources.yaml 의 encoding 을 우선 시도하고, 실패하면 순서대로 넘어간다.
+    """
+    cands = [enc] if enc else []
+    cands += ["utf-8-sig", "utf-8", "cp949", "euc-kr"]
+    last = None
+    for c in dict.fromkeys(x for x in cands if x):
+        try:
+            return pd.read_csv(p, encoding=c, **kw)
+        except (UnicodeDecodeError, LookupError) as ex:
+            last = ex
+    raise last
+
+
 def load_csv_points(p: Path, xcol: str, ycol: str, enc: str, filt=None):
-    df = pd.read_csv(p, encoding=enc, dtype=str, low_memory=False)
+    df = read_csv_any(p, enc=enc, dtype=str, low_memory=False)
     if filt:
         df = filt(df)
     df = df.dropna(subset=[xcol, ycol])
@@ -96,7 +117,8 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         return {"key": key, "status": "MISSING", "file": e["file"]}
     src = hits[0]
     rec = {"key": key, "source_file": e["file"], "source_sha256": sha256(src),
-           "source_crs": e["crs"], "license": e.get("license", ""),
+           # csv_table / raw_only 는 좌표가 없다. crs 를 필수로 두면 거기서 죽는다.
+           "source_crs": e.get("crs", ""), "license": e.get("license", ""),
            "url": e.get("url", "")}
     kind = e["kind"]
 
@@ -122,7 +144,20 @@ def build(key: str, e: dict, tmp: Path) -> dict:
 
     elif kind == "csv_points_in_zip":
         with zipfile.ZipFile(src) as z:
-            name = [n for n in z.namelist() if e["inner_contains"] in n][0]
+            # zip 내부 한글 파일명이 CP437 로 깨져 들어온다.
+            # 원래 CP949 이므로 되돌려서 매칭한다.
+            def _kr(n: str) -> str:
+                try:
+                    return n.encode("cp437").decode("cp949")
+                except Exception:
+                    return n
+            want = e["inner_contains"]
+            hits = [n for n in z.namelist() if want in n or want in _kr(n)]
+            if not hits:
+                raise FileNotFoundError(
+                    f"zip 안에 '{want}' 를 포함한 파일이 없다. "
+                    f"내부: {[_kr(n) for n in z.namelist()[:5]]}")
+            name = hits[0]
             parts = []
             for c in pd.read_csv(io.TextIOWrapper(z.open(name), encoding="utf-8"),
                                  chunksize=200_000, dtype=str, low_memory=False):
@@ -152,11 +187,33 @@ def build(key: str, e: dict, tmp: Path) -> dict:
                 "columns": list(t.columns), "outputs": [f"{key}.csv"]}
         return rec
 
+    elif kind == "json_points":              # 공공데이터포털 표준데이터 JSON
+        # 같은 데이터셋이 CSV 로 오다가 JSON 으로 바뀌기도 한다.
+        # {"fields":[...], "records":[...]} 구조다.
+        import json as _json
+        raw = _json.loads(src.read_text(encoding="utf-8"))
+        rows = raw.get("records", raw if isinstance(raw, list) else [])
+        df = pd.DataFrame(rows).astype(str)
+        xc, yc = e["x_col"], e["y_col"]
+        df[xc] = pd.to_numeric(df[xc], errors="coerce")
+        df[yc] = pd.to_numeric(df[yc], errors="coerce")
+        df = df.dropna(subset=[xc, yc])
+        df = df[df[xc].between(BBOX_4326[0], BBOX_4326[2])
+                & df[yc].between(BBOX_4326[1], BBOX_4326[3])]
+        g = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[xc], df[yc]), crs=CRS_W)
+
     elif kind == "csv_table":                # 좌표 없는 표 — 그대로 복사
-        d = pd.read_csv(src, encoding=e.get("encoding", "cp949"), dtype=str)
+        d = read_csv_any(src, e.get("encoding"), dtype=str)
         d.to_csv(OUT / f"{key}.csv", index=False, encoding="utf-8-sig")
         rec |= {"status": "OK", "features": len(d), "geom": [],
                 "columns": list(d.columns), "outputs": [f"{key}.csv"]}
+        return rec
+
+    elif kind == "raw_only":                 # 읽지 않는다. 존재만 기록한다.
+        # 다른 스크립트가 raw 를 직접 읽는 경우다(예: terrain.py 의 DEM).
+        # 여기서 변환하지 않으므로 SKIP 으로 남긴다. FAIL 이 아니다.
+        rec |= {"status": "SKIP", "features": "", "geom": [],
+                "note": "raw_only — 별도 스크립트가 직접 읽는다", "outputs": []}
         return rec
 
     else:

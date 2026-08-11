@@ -56,16 +56,27 @@ const map = new maplibregl.Map({
         attribution:USE_VWORLD?"공간정보 오픈플랫폼(브이월드)":"© OpenStreetMap · CARTO"},
       sat :{type:"raster",tiles:[vw("Satellite")],tileSize:256,maxzoom:19,bounds:TB,
         attribution:"공간정보 오픈플랫폼(브이월드)"},
+      /* 항공정사영상 25cm. ortho.py 가 구운 배경 타일이다.
+         원본 TIF 에 좌표가 없어 도엽 격자로 역산해 붙였다.
+         V-World 위성보다 훨씬 선명하다. 판정에는 쓰지 않는다. */
+      /* bounds 는 실제로 구운 타일 범위다(view.json). 없으면 브라우저가
+         범위 밖 타일을 요청해 404 가 뜬다. */
+      ortho:{type:"raster",tiles:["./data/ortho/{z}/{x}/{y}.jpg"],
+        tileSize:256, minzoom:15, maxzoom:18, bounds:VIEW.orthoBounds || TB,
+        attribution:"항공정사영상 국토지리정보원"},
       /* 지형. terrain.py 가 구운 Terrain-RGB 타일이다.
          이 소스를 setTerrain 에 물려야 지면이 실제로 휜다.
          건물·선에 z 를 더하는 방식은 지면이 평면이라 공중에 뜬다. */
       dem :{type:"raster-dem",tiles:["./data/terrain/{z}/{x}/{y}.png"],
-        tileSize:256, minzoom:12, maxzoom:15, encoding:"mapbox"}
+        tileSize:256, minzoom:12, maxzoom:15, encoding:"mapbox",
+        bounds:VIEW.terrainBounds || TB}
     },
     layers:[
       {id:"bg",type:"background",paint:{"background-color":"#0a0d13"}},
       {id:"base",type:"raster",source:"base",paint:{"raster-opacity":.82,"raster-saturation":-.35}},
-      {id:"sat", type:"raster",source:"sat", layout:{visibility:"none"},paint:{"raster-opacity":.9}}
+      {id:"sat", type:"raster",source:"sat", layout:{visibility:"none"},paint:{"raster-opacity":.9}},
+      {id:"ortho",type:"raster",source:"ortho",layout:{visibility:"none"},
+        paint:{"raster-opacity":.95,"raster-fade-duration":200}}
     ]}
 });
 map.on("style.load", () => {
@@ -78,9 +89,14 @@ map.on("style.load", () => {
 map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),"bottom-right");
 map.addControl(new maplibregl.ScaleControl({maxWidth:110,unit:"metric"}),"bottom-right");
 
-const $=s=>document.querySelector(s);
+/* ★ 없는 요소를 참조하면 여기서 죽고 그 뒤 코드가 전부 안 돈다.
+   더미를 돌려주고 콘솔에 남긴다. 화면 일부가 비는 건 봐도 알지만
+   지도 절반이 안 뜨는 건 원인 찾기가 어렵다. */
+const $ = sel => document.querySelector(sel) || (
+  console.warn("DOM 없음:", sel), {style:{}, classList:{toggle(){},add(){},remove(){}},
+                                   set textContent(v){}, set innerHTML(v){}});
 const tip=$("#tip");
-let SEG=null, overlay=null;
+  let SEG=null;
 /* 출동 모드 · 미니맵. 기여: @marscoolcat (faf9774) */
 let dispatchMode=false, miniMap=null;
 const DATA={};                 // 마커 데이터. 레이어 갱신 시 재사용
@@ -116,86 +132,44 @@ const zOf = () => 0;
 /* 3D 마커. 건물과 같은 공간에 기둥으로 세운다.
    2D 점은 기울인 화면에서 지면에 붙어 안 보인다. 높이가 있어야 읽힌다.
    높이는 중요도 순서다: 안전센터 > 소방서 > 소화전 > CCTV */
-/* 마커는 실제 시설의 실루엣을 원기둥 몇 개로 쌓아 근사한다.
-   비율은 실물을 따르되 크기는 약 5배 과장한다. 실물 치수(소화전 0.9m)로 그리면
-   1km 시야에서 점 하나가 되어 안 보인다.
 
-   parts = [{r: 반지름m, z: 바닥높이m, h: 높이m, c: 색}] 아래에서 위로.  */
-const MARKERS = CONFIG.markers.map(m=>({
-  ...m,
-  src: () => m.kind ? (DATA[m.source]?.features||[]).filter(f=>f.properties.kind===m.kind)
-                    : DATA[m.source],
-}));
+/* 세그먼트 색상 표현식. MapLibre 네이티브 line 으로 그린다.
+   ★ deck.gl interleaved 레이어는 map.setTerrain() 을 켜면 지형 아래로 묻힌다.
+     피킹은 살아 있어 툴팁은 뜨지만 선이 안 보인다. 네이티브 line 은 지형을 따라간다. */
+const segColor = () => {
+  const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+  const base = ["case",
+    ["==",["get","unknown_reason"],"no_cctv"], rgb(NO_CCTV_COLOR),
+    ["match",["get","verdict"],
+      "blocked", rgb(VERDICT.blocked.c), "needs_cv", rgb(VERDICT.needs_cv.c),
+      "clear",   rgb(VERDICT.clear.c),   rgb(VERDICT.unknown.c)]];
+  return base;
+};
+const segOpacity = () => dispatchMode
+  ? ["case",["==",["get","verdict"],"clear"], 1, CONFIG.dispatch.dimAlpha/255]
+  : 0.92;
 
-function markerLayers(){
-  const out=[];
-  for(const m of MARKERS){
-    if(markerOff.has(m.id)) continue;
-    const data = m.src();
-    m.parts.forEach((pt,i)=>out.push(new deck.ColumnLayer({
-      id:`${m.id}-${i}`, data, diskResolution:20, radius:pt.r, extruded:true,
-      pickable:i===0, opacity:.95, radiusUnits:"meters",
-      getPosition:f=>[...f.geometry.coordinates.slice(0,2), pt.z + zOf(f)],
-      getFillColor:pt.c,
-      getElevation:()=>pt.h,
-      material:{ambient:.5, diffuse:.75, shininess:48, specularColor:[255,255,255]},
-      onClick:info=>{
-        if(!info.object) return;
-        new maplibregl.Popup({closeButton:false,maxWidth:"270px"})
-          .setLngLat(info.object.geometry.coordinates)
-          .setHTML(`<div class="pop">${POPUP[m.id](info.object.properties)}</div>`)
-          .addTo(map);
-      },
-    })));
-  }
-  return out;
-}
-
-function layers(){
-  return [ ...markerLayers(), new deck.GeoJsonLayer({
-    id:"segments", data:SEG, pickable:true, stroked:false, filled:false,
-    lineWidthUnits:"meters", lineWidthMinPixels:1.2, lineWidthMaxPixels:60,
-    getLineColor: f => {
-      const p = f.properties;
-      const v = VERDICT[p.verdict] || VERDICT.unknown;
-      const c = p.unknown_reason === "no_cctv" ? NO_CCTV_COLOR : v.c;
-      if(off.has(p.verdict)) return [...c, 26];            // 범례로 끈 판정
-      if(dispatchMode)                                      // 갈 수 있는 길만 살린다
-        return p.verdict === "clear" ? [...c, 255] : [...c, CONFIG.dispatch.dimAlpha];
-      return [...c, 232];
-    },
-    getLineWidth: width,
-    getElevation: zOf, extruded:false,
-    updateTriggers:{ getLineColor:[...off, dispatchMode], getLineWidth:[dispatchMode] },
-    onHover: info => {
-      if(!info.object){ tip.style.display="none"; return; }
-      const p = info.object.properties, v = VERDICT[p.verdict]||VERDICT.unknown;
-      const n = x => x==null ? "—" : x.toFixed(2)+" m";
-      const flags = [ p.midpoint_fallback && "중점 폴백으로 측정",
-                      p.inherited && "인접 구간에서 상속" ].filter(Boolean);
-      tip.innerHTML =
-        `<div class="id">${p.seg_id}</div>
-         <div class="vd" style="color:rgb(${v.c})">${v.nm}</div>
-         ${p.unknown_reason?`<div class="rsn">${REASON[p.unknown_reason]}</div>`:""}
-         <dl><dt title="포장된 도로 노면만 잰 폭. 장애물이 없을 때 확실히 비어 있다. 화면의 선 굵기가 이 값이다">도로 폭</dt><dd>${n(p.width_min_m)}</dd>
-             <dt title="양쪽 건물 벽에서 벽까지의 거리. 물리적으로 가능한 최대치">벽 사이 폭</dt><dd>${n(p.width_max_m)}</dd>
-             <dt title="이 구간의 길이">길이</dt><dd>${p.length_m} m</dd>
-             <dt title="같은 판정이 끊기지 않고 이어지는 총 길이. 소방청은 100m 이상일 때 지정한다">같은 상태로 이어진 길이</dt><dd>${p.run_length_m ? p.run_length_m+" m" : "—"}</dd>
-             <dt title="가장 가까운 CCTV 까지의 거리. 25m 를 넘으면 호모그래피 오차가 급증해 영상판정이 성립하지 않는다">CCTV 거리</dt><dd>${p.cctv_dist_m} m</dd></dl>
-         ${p.nfa_designated?`<div class="nfa">소방청 지정 기준 충족 · 연속 100m 이상</div>`:""}
-         <div class="hint">${v.d}</div>
-         ${flags.length?`<div class="flag">${flags.join(" · ")}</div>`:""}`;
-      tip.style.display="block";
-      tip.style.left = Math.min(info.x+14, innerWidth-200)+"px";
-      tip.style.top  = (info.y+14)+"px";
-    }
-  })];
+/* 선 굵기 = 실제 도로 폭(m).
+   MapLibre line-width 는 픽셀이므로 줌별 미터당 픽셀로 환산한다.
+   위도 35도 기준 px/m = 256 * 2^z / (40075016 * cos35°) */
+const PXM = z => 256 * Math.pow(2, z) / (40075016 * Math.cos(35.15 * Math.PI/180));
+const segWidth = () => {
+  const sc = dispatchMode ? CONFIG.dispatch.clearWidthScale : 1;
+  const f = ["case",["==",["get","verdict"],"clear"], sc, 1];
+  return ["interpolate",["exponential",2],["zoom"],
+    12, ["max", 0.8, ["*",["coalesce",["get","width_min_m"],1], f, PXM(12)]],
+    20, ["max", 1.2, ["*",["coalesce",["get","width_min_m"],1], f, PXM(20)]]];
+};
+function restyleSegments(){
+  if(!map.getLayer("seg-l")) return;
+  map.setPaintProperty("seg-l","line-opacity", segOpacity());
+  map.setPaintProperty("seg-l","line-width",   segWidth());
 }
 
 map.on("load", async () => {
   const j = async p => (await fetch(p)).json();
-  const [seg,bld,bnd,hyd,sta,cctv] = await Promise.all(
-    ["segments","buildings","boundary","hydrants","stations","cctv"]
+  const [seg,bld,bnd,hyd,sta,cctv,poi,markers] = await Promise.all(
+    ["segments","buildings","boundary","hydrants","stations","cctv","poi","markers"]
       .map(n=>j(`./data/${n}.geojson`)));
   SEG = seg;
   Object.assign(DATA, {cctv, hyd, sta});
@@ -269,9 +243,85 @@ map.on("load", async () => {
      가로등·보안등 공개 데이터가 없어 야간 시인성 논거를 이걸로 대체한다. */
 
 
-  /* deck.gl interleaved — 건물과 z-오클루전이 맞는다 */
-  overlay = new deck.MapboxOverlay({interleaved:true, layers:layers()});
-  map.addControl(overlay);
+  /* 세그먼트 — 판정 색상. 지형을 따라간다. */
+  map.addSource("seg",{type:"geojson",data:seg});
+  map.addLayer({id:"seg-l",type:"line",source:"seg",
+    layout:{"line-cap":"round","line-join":"round"},
+    paint:{"line-color":segColor(),"line-opacity":segOpacity(),"line-width":segWidth()}});
+
+  map.on("mousemove","seg-l", e => {
+    const p = e.features[0].properties;
+    const v = VERDICT[p.verdict] || VERDICT.unknown;
+    const n = x => (x==null||x==="") ? "—" : Number(x).toFixed(2)+" m";
+    const flags = [ p.midpoint_fallback==="true"||p.midpoint_fallback===true ? "중점 폴백으로 측정" : null,
+                    p.inherited==="true"||p.inherited===true ? "인접 구간에서 상속" : null ].filter(Boolean);
+    tip.innerHTML =
+      `<div class="id">${p.seg_id}</div>
+       <div class="vd" style="color:rgb(${v.c})">${v.nm}</div>
+       ${p.unknown_reason?`<div class="rsn">${REASON[p.unknown_reason]||""}</div>`:""}
+       <dl><dt title="포장된 도로 노면만 잰 폭. 화면의 선 굵기가 이 값이다">도로 폭</dt><dd>${n(p.width_min_m)}</dd>
+           <dt title="양쪽 건물 벽에서 벽까지의 거리">벽 사이 폭</dt><dd>${n(p.width_max_m)}</dd>
+           <dt>길이</dt><dd>${p.length_m} m</dd>
+           <dt title="같은 판정이 끊기지 않고 이어지는 총 길이. 소방청은 100m 이상일 때 지정">같은 상태로 이어진 길이</dt><dd>${p.run_length_m?p.run_length_m+" m":"—"}</dd>
+           <dt title="가장 가까운 CCTV 까지의 거리. 25m 초과면 영상판정이 성립하지 않는다">CCTV 거리</dt><dd>${p.cctv_dist_m} m</dd></dl>
+       ${(p.nfa_designated==="true"||p.nfa_designated===true)?`<div class="nfa">소방청 지정 기준 충족 · 연속 100m 이상</div>`:""}
+       <div class="hint">${v.d}</div>
+       ${flags.length?`<div class="flag">${flags.join(" · ")}</div>`:""}`;
+    tip.style.display="block";
+    tip.style.left = Math.min(e.point.x+14, innerWidth-210)+"px";
+    tip.style.top  = (e.point.y+14)+"px";
+  });
+  map.on("mouseleave","seg-l", () => { tip.style.display="none"; });
+
+  /* 시설 마커 — 건물과 같은 fill-extrusion 으로 그린다.
+     ★ deck.gl 레이어는 map.setTerrain() 을 켜면 지형 아래로 묻힌다.
+       세그먼트와 같은 문제다. 네이티브 레이어는 지형을 따라간다.
+     publish_web.py 가 포인트를 시설 형상의 폴리곤 조각으로 만들어 둔다.
+     비율은 실물, 크기는 과장. 소화전 실물 지름 0.2m 로는 안 보인다. */
+  map.addSource("markers",{type:"geojson",data:markers});
+  map.addLayer({id:"mk-3d",type:"fill-extrusion",source:"markers",
+    paint:{
+      "fill-extrusion-color":["get","mcolor"],
+      "fill-extrusion-base":  ["+",["coalesce",["get","z"],0],["get","base"]],
+      "fill-extrusion-height":["+",["coalesce",["get","z"],0],["get","top"]],
+      "fill-extrusion-opacity":.95}});
+
+  map.on("click","mk-3d", e => {
+    const p=e.features[0].properties;
+    new maplibregl.Popup({closeButton:false,maxWidth:"270px"})
+      .setLngLat(e.lngLat)
+      .setHTML(`<div class="pop"><b>${p.name}</b><br>${p.sub||""}
+                <br><span class="a">${p.addr||""}</span></div>`).addTo(map);
+  });
+  map.on("mouseenter","mk-3d",()=>map.getCanvas().style.cursor="pointer");
+  map.on("mouseleave","mk-3d",()=>map.getCanvas().style.cursor="");
+
+  /* 상가 POI — 네이버 지도처럼 상호를 띄운다.
+     지상 1층만 남겨서(간판이 골목에서 보이는 것) 2,077개.
+     줌 17 이상에서만 라벨을 그린다. 그 아래는 점만. */
+  map.addSource("poi",{type:"geojson",data:poi});
+  map.addLayer({id:"poi-dot",type:"circle",source:"poi",minzoom:16,
+    paint:{"circle-radius":["interpolate",["linear"],["zoom"],16,1.6,20,3.4],
+      "circle-color":["match",["get","cat"],
+        "음식","#ff9f6b", "소매","#7fd4ff", "생활서비스","#c9a0ff",
+        "숙박","#ffd166", "교육","#8ee6a8", "#8b94a3"],
+      "circle-opacity":.85}});
+  map.addLayer({id:"poi-label",type:"symbol",source:"poi",minzoom:CONFIG.poi.labelFromZoom,
+    layout:{"text-field":["get","name"],"text-size":11,
+      "text-offset":[0,.9],"text-anchor":"top","text-allow-overlap":false,
+      "text-padding":3,"symbol-sort-key":["get","name"]},
+    paint:{"text-color":"#e6ebf2","text-halo-color":"#0a0d13","text-halo-width":1.4}});
+
+  map.on("click","poi-dot", e => {
+    const p=e.features[0].properties;
+    new maplibregl.Popup({closeButton:false,maxWidth:"250px"})
+      .setLngLat(e.features[0].geometry.coordinates)
+      .setHTML(`<div class="pop"><b>${p.name}</b><br>${p.cat} · ${p.sub||""}
+                <br><span class="a">${p.addr||""}</span></div>`).addTo(map);
+  });
+  map.on("mouseenter","poi-dot",()=>map.getCanvas().style.cursor="pointer");
+  map.on("mouseleave","poi-dot",()=>map.getCanvas().style.cursor="");
+
 
   /* 범례 */
   const cnt = {};
@@ -303,13 +353,12 @@ map.on("load", async () => {
     const k=el.dataset.v;
     off.has(k) ? off.delete(k) : off.add(k);
     el.classList.toggle("off", off.has(k));
-    overlay.setProps({layers:layers()});
+    map.setFilter("seg-l", off.size
+      ? ["!",["in",["get","verdict"],["literal",[...off]]]] : null);
   });
 
   /* 통계 */
-  const used = seg.features.filter(f=>f.properties.route_usage>0).length;
   $("#s-seg").textContent = seg.features.length;
-  $("#s-use").textContent = `${used} (${(used/seg.features.length*100).toFixed(0)}%)`;
   $("#s-bld").textContent = bld.features.length.toLocaleString();
   /* 동명동 안에 있는 것만 센다. 스코프 전체에는 11개가 있지만
      정작 동명동 안은 1개뿐이라는 게 이 프로젝트의 논거다.
@@ -322,6 +371,7 @@ map.on("load", async () => {
   $("#s-hyd").textContent = `${inEmd} / ${hyd.features.length}`;
   const cams = cctv.features.reduce((a,f)=>a+(f.properties.카메라대수||0),0);
   $("#s-cctv").textContent = `${cctv.features.length} / ${cams}`;
+  $("#s-poi").textContent = poi.features.length.toLocaleString();
   const feas = seg.features.filter(f=>f.properties.cv_feasible).length;
   $("#s-cv").textContent = `${feas} / ${seg.features.length} (${(feas/seg.features.length*100).toFixed(0)}%)`;
 
@@ -338,61 +388,54 @@ map.on("load", async () => {
     `중앙값 기준 밴드 폭 <b>${(hi-lo).toFixed(2)}m</b>. 이 폭 안에서 판정이 갈리는 구간이
      <b>${amb}개</b>이고, 그만큼이 영상판정과 현장 실측의 몫입니다.`;
 
-  /* ── 미니맵 ────────────────────────────────────────────
-     줌 16 이상으로 확대하면 우하단에 전체 조망이 뜬다.
-     빨간 상자가 지금 보고 있는 영역이다. 기여: @marscoolcat */
-  try {
+  /* ── 미니맵: 확대(줌 16 이상)하면 우측에 현재 보는 영역을 표시 ──
+     기여: @marscoolcat (faf9774). 원본을 그대로 쓴다. */
   miniMap = new maplibregl.Map({
     container:"minimap", interactive:false, attributionControl:false,
     bounds:VIEW.emdBounds, fitBoundsOptions:{padding:4},
-    style:{version:8,
-      sources:{ mbase:{type:"raster",tiles:CARTO("dark"),tileSize:256,maxzoom:19} },
+    style:{version:8, sources:{ mbase:{type:"raster",tiles:CARTO("dark"),tileSize:256,maxzoom:19} },
       layers:[ {id:"mbg",type:"background",paint:{"background-color":"#0a0d13"}},
-               {id:"mbase",type:"raster",source:"mbase",
-                paint:{"raster-opacity":.8,"raster-saturation":-.4}} ]}
+        {id:"mbase",type:"raster",source:"mbase",paint:{"raster-opacity":.8,"raster-saturation":-.4}} ]}
   });
   const viewRect = () => {
-    const b=map.getBounds(), c=map.getCenter(), k=0.4;   // k<1 이면 빨간 상자가 작아진다
+    const b=map.getBounds(), c=map.getCenter(), k=0.4;   // k<1이면 빨간 상자가 작아진다
     const w=c.lng-(c.lng-b.getWest())*k, e=c.lng+(b.getEast()-c.lng)*k;
     const so=c.lat-(c.lat-b.getSouth())*k, no=c.lat+(b.getNorth()-c.lat)*k;
-    return {type:"Feature",geometry:{type:"Polygon",
-      coordinates:[[[w,so],[e,so],[e,no],[w,no],[w,so]]]}};
+    return {type:"Feature",geometry:{type:"Polygon",coordinates:[[[w,so],[e,so],[e,no],[w,no],[w,so]]]}};
   };
-  const posPoint = () => { const c=map.getCenter();
-    return {type:"Feature",geometry:{type:"Point",coordinates:[c.lng,c.lat]}}; };
+  const posPoint = () => { const c=map.getCenter(); return {type:"Feature",geometry:{type:"Point",coordinates:[c.lng,c.lat]}}; };
   function syncMini(){
     const rv = miniMap.getSource("mview"); if(rv) rv.setData(viewRect());
     const pv = miniMap.getSource("mpos");  if(pv) pv.setData(posPoint());
-    document.getElementById("minimap")
-      .classList.toggle("show", map.getZoom() >= CONFIG.minimap.showFromZoom);
+    document.getElementById("minimap").classList.toggle("show", map.getZoom() >= CONFIG.minimap.showFromZoom);
   }
-  window.syncMini = syncMini;
   miniMap.on("load", () => {
     miniMap.addSource("mbnd",{type:"geojson",data:bnd});
     miniMap.addLayer({id:"mbnd-l",type:"line",source:"mbnd",
       paint:{"line-color":"#5c6b82","line-width":1,"line-dasharray":[2,1.5]}});
+    /* 루트 — 일반: 판정 4색 / 출동: 초록 강조·나머지 흐림 (styleMiniRoute가 조정) */
     miniMap.addSource("mroute",{type:"geojson",data:seg});
     miniMap.addLayer({id:"mroute-l",type:"line",source:"mroute",
       paint:{"line-color":["match",["get","verdict"],
-        "blocked",`rgb(${VERDICT.blocked.c})`, "needs_cv",`rgb(${VERDICT.needs_cv.c})`,
-        "clear",`rgb(${VERDICT.clear.c})`, `rgb(${VERDICT.unknown.c})`],
+        "blocked","#ff4d3d","needs_cv","#ffab2e","clear","#4ad18f","#5a6272"],
         "line-width":1.3,"line-opacity":.9}});
     styleMiniRoute();
+    /* 현재 보는 영역 */
     miniMap.addSource("mview",{type:"geojson",data:viewRect()});
-    miniMap.addLayer({id:"mview-f",type:"fill",source:"mview",
-      paint:{"fill-color":"#ff4d3d","fill-opacity":.14}});
-    miniMap.addLayer({id:"mview-l",type:"line",source:"mview",
-      paint:{"line-color":"#ff4d3d","line-width":1.6}});
+    miniMap.addLayer({id:"mview-f",type:"fill",source:"mview",paint:{"fill-color":"#ff4d3d","fill-opacity":.14}});
+    miniMap.addLayer({id:"mview-l",type:"line",source:"mview",paint:{"line-color":"#ff4d3d","line-width":1.6}});
+    /* 현위치 — 현재 보는 화면의 중심 */
     miniMap.addSource("mpos",{type:"geojson",data:posPoint()});
     miniMap.addLayer({id:"mpos-halo",type:"circle",source:"mpos",
       paint:{"circle-radius":8,"circle-color":"#4fc3f7","circle-opacity":.22}});
     miniMap.addLayer({id:"mpos-l",type:"circle",source:"mpos",
-      paint:{"circle-radius":4,"circle-color":"#4fc3f7",
-             "circle-stroke-color":"#fff","circle-stroke-width":1.6}});
+      paint:{"circle-radius":4,"circle-color":"#4fc3f7","circle-stroke-color":"#fff","circle-stroke-width":1.6}});
     syncMini();
   });
+  miniMap.on("error", e => console.error("미니맵 오류", e && e.error));
   map.on("move", syncMini);
-  } catch(e) { console.error("미니맵 초기화 실패", e); }
+  map.on("zoom", syncMini);
+  syncMini();
 
 });
 
@@ -434,21 +477,35 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   tg.classList.toggle("on", on);
   if(t==="buildings") map.setLayoutProperty("bld-3d","visibility",on?"visible":"none");
   if(t.startsWith("m-")){
-    on ? markerOff.delete(t) : markerOff.add(t);
-    overlay.setProps({layers:layers()});
+    const kind = {"m-sta":"center","m-fs":"station","m-hyd":"hydrant","m-cctv":"cctv"}[t];
+    on ? markerOff.delete(kind) : markerOff.add(kind);
+    map.setFilter("mk-3d", markerOff.size
+      ? ["!",["in",["get","kind"],["literal",[...markerOff]]]] : null);
     if(t==="m-hyd") ["hyd-pulse","hyd-pulse2"]
       .forEach(l=>map.setLayoutProperty(l,"visibility",on?"visible":"none"));
   }
+  if(t==="ortho"){
+    map.setLayoutProperty("ortho","visibility",on?"visible":"none");
+    /* 항공영상을 켜면 배경 타일을 죽인다. 겹쳐 봐야 지저분하기만 하다. */
+    map.setPaintProperty("base","raster-opacity", on ? 0 : .82);
+    /* 건물은 영상 위에 반투명으로 얹어 형상만 보이게 한다 */
+    map.setPaintProperty("bld-3d","fill-extrusion-opacity", on ? .45 : .88);
+  }
+  if(t==="poi"){ ["poi-dot","poi-label"].forEach(l=>map.setLayoutProperty(l,"visibility",on?"visible":"none")); }
   if(t==="mask"){ ["mask-l","mask-soft-l"].forEach(l=>map.setLayoutProperty(l,"visibility",on?"visible":"none")); }
   if(t==="theme"){ setTheme(on?"light":"dark"); }
   if(t==="terrain"){
-    try { map.setTerrain(on ? {source:"dem", exaggeration:CONFIG.terrain.exaggeration} : null); }
-    catch(e){ console.warn("지형 전환 실패", e); }
+    try {
+      map.setTerrain(on ? {source:"dem", exaggeration:CONFIG.terrain.exaggeration} : null);
+      /* 지형을 켜고 끄면 MapLibre 가 레이어를 다시 올린다.
+         그 과정에서 페인트 표현식이 초기화될 수 있어 다시 칠한다. */
+      restyleSegments();
+    } catch(e){ console.warn("지형 전환 실패", e); }
   }
   if(t==="dispatch"){
     dispatchMode = on;
     document.getElementById("dispatch-fab")?.classList.toggle("on", on);
-    if(overlay) overlay.setProps({layers:layers()});
+    restyleSegments();
     styleMiniRoute();
   }
 });

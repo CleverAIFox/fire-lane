@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "3644e7c8bf03ee79bc9bd45626da0bb9f35a06bd55056dbadf4ec8bbef76bb79",
+  "sha256": "a99edac397df7155d542235e17ca234d655fd15e1eaf5ae32dccbb756551b427",
   "count": 1266,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
@@ -13,7 +13,7 @@
     "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
     "inherited": "bool 3m 미만 파편 → 인접 세그먼트 최솟값 상속",
     "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
-    "length_m": "float 이 구간의 길이(m)",
+    "length_m": "float 이 구간의 수평거리(m). 경사 보정 전이다. 동명동 평균경사 1.8도 기준 실주행거리는 약 0.05% 길고 최대 9도 구간에서 1.2% 길다. 보정에는 5m DEM 이 필요하다",
     "run_length_m": "float|null 같은 판정이 이어지는 연속 구간장(m)",
     "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족",
     "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",

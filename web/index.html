@@ -62,7 +62,9 @@
   <div class="row" data-t="m-fs"><span>소방서</span><i class="tg on"></i></div>
   <div class="row" data-t="m-hyd"><span>소화전</span><i class="tg on"></i></div>
   <div class="row" data-t="m-cctv"><span>CCTV</span><i class="tg on"></i></div>
-  <div class="row" data-t="terrain"><span>지형 기복</span><i class="tg on"></i></div>
+  <div class="row" data-t="ortho"><span>항공영상 25cm (줌 15↑)</span><i class="tg"></i></div>
+  <div class="row" data-t="poi"><span>상가 (줌 17↑ 상호)</span><i class="tg on"></i></div>
+  <div class="row" data-t="terrain"><span>지형 굴곡</span><i class="tg on"></i></div>
   <div class="row" data-t="mask"><span>스코프 밖 가리기</span><i class="tg on"></i></div>
   <div class="row" data-t="theme"><span>라이트 모드</span><i class="tg"></i></div>
 
@@ -79,6 +81,7 @@
   <div class="stat"><span>세그먼트</span><b id="s-seg">–</b></div>
   <div class="stat"><span>건물</span><b id="s-bld">–</b></div>
   <div class="stat"><span>소화전(동명동/전체)</span><b id="s-hyd">–</b></div>
+  <div class="stat"><span>상가(지상 1층)</span><b id="s-poi">–</b></div>
   <div class="stat"><span>CCTV 지점/카메라</span><b id="s-cctv">–</b></div>
   <div class="stat"><span>영상판정 가능</span><b id="s-cv">–</b></div>
   <div class="note">
@@ -108,7 +111,6 @@
 <button id="dispatch-fab" title="출동 모드 켜기/끄기">출동</button>
 
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.1.0/dist/maplibre-gl.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/deck.gl@9.0.38/dist.min.js"></script>
 <script src="./config.js"></script>
 <script src="./app.js"></script>
 </body>

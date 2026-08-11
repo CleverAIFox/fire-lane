@@ -30,7 +30,10 @@ from shapely.ops import unary_union, nearest_points
 from shapely.strtree import STRtree
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT  = ROOT / "data" / "processed"
+import sys as _sys; _sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import RAW, PROCESSED, WEB  # noqa: E402
+OUT = PROCESSED
+
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
 
 EMD_CD        = "12210108"   # 동명동
@@ -330,7 +333,7 @@ def main():
             "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
             "inherited": "bool 3m 미만 파편 → 인접 세그먼트 최솟값 상속",
             "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
-            "length_m": "float 이 구간의 길이(m)",
+            "length_m": "float 이 구간의 수평거리(m). 경사 보정 전이다. 동명동 평균경사 1.8도 기준 실주행거리는 약 0.05% 길고 최대 9도 구간에서 1.2% 길다. 보정에는 5m DEM 이 필요하다",
             "run_length_m": "float|null 같은 판정이 이어지는 연속 구간장(m)",
             "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족",
             "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",

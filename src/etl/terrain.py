@@ -40,7 +40,10 @@ import rasterio
 from rasterio.windows import from_bounds
 
 ROOT = Path(__file__).resolve().parents[2]
-RAW, OUT = ROOT / "data" / "raw", ROOT / "data" / "processed"
+import sys as _sys; _sys.path.insert(0, str(Path(__file__).resolve().parent))
+from paths import RAW, PROCESSED, WEB  # noqa: E402
+OUT = PROCESSED
+
 DEM_ZIP = RAW / "ngii" / "ngii_dem_gj35616_20251117.zip"
 ZOOM = 8          # 보간 배율. 90m -> 11.25m. 표현용이므로 정보량은 그대로다.
 LAYERS = ["segments", "building", "cctv", "hydrant_point", "fire_station"]
@@ -91,6 +94,7 @@ def build_terrain_tiles(up, tr, src_crs):
 
     inv = ~dtr
     count = 0
+    bounds_xyz = []
     for z in TILE_Z:
         n = 2 ** z
         span = 2 * ORIGIN / n                  # 타일 한 변의 미터
@@ -110,8 +114,12 @@ def build_terrain_tiles(up, tr, src_crs):
                 ri = np.clip(rr.astype(int), 0, dh - 1)
                 vals = merc[ri, ci]
                 inside = (cc >= 0) & (cc < dw) & (rr >= 0) & (rr < dh) & ~np.isnan(vals)
+                # ★ 빈 타일도 최저 표고로 채워서 굽는다.
+                #   건너뛰면 브라우저가 404 를 내고 그 자리에 구멍이 생긴다.
+                #   지형은 타일이 하나라도 비면 그 경계에서 절벽처럼 끊긴다.
                 if not inside.any():
-                    continue
+                    vals = np.full_like(vals, np.nanmin(merc))
+                    inside = np.ones_like(inside, dtype=bool)
                 # 범위 밖은 최저 표고로 채운다. 타일 경계에서 절벽이 생기지 않게.
                 vals = np.where(inside, vals, np.nanmin(merc))
                 v = np.clip(((vals + 10000.0) * 10.0).astype(np.int64), 0, 256**3 - 1)
@@ -119,7 +127,25 @@ def build_terrain_tiles(up, tr, src_crs):
                 out = tdir / str(z) / str(tx)
                 out.mkdir(parents=True, exist_ok=True)
                 Image.fromarray(rgb, "RGB").save(out / f"{ty}.png")
+                bounds_xyz.append((z, tx, ty))
                 count += 1
+    # 실제로 구운 범위를 view.json 에 기록한다.
+    # 지도가 이걸 소스 bounds 로 쓰면 범위 밖 타일을 요청하지 않는다(404 방지).
+    vj = ROOT / "web" / "data" / "view.json"
+    if vj.exists() and bounds_xyz:
+        import json as _j
+        z0 = TILE_Z[-1]; n = 2 ** z0; sp = 2 * ORIGIN / n
+        xs = [t[1] for t in bounds_xyz if t[0] == z0]
+        ys = [t[2] for t in bounds_xyz if t[0] == z0]
+        def _ll(mx, my):
+            return (mx / R * 180 / math.pi,
+                    (2 * math.atan(math.exp(my / R)) - math.pi / 2) * 180 / math.pi)
+        w, s_ = _ll(-ORIGIN + min(xs) * sp, ORIGIN - (max(ys) + 1) * sp)
+        e, n_ = _ll(-ORIGIN + (max(xs) + 1) * sp, ORIGIN - min(ys) * sp)
+        v = _j.loads(vj.read_text(encoding="utf-8"))
+        v["terrainBounds"] = [round(w, 4), round(s_, 4), round(e, 4), round(n_, 4)]
+        vj.write_text(_j.dumps(v, ensure_ascii=False, indent=2), encoding="utf-8")
+
     print(f"[OK     ] terrain tiles          {count}장 (z{TILE_Z[0]}~{TILE_Z[-1]})")
     return count
 

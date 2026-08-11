@@ -20,10 +20,14 @@ standard_crs:
 datasets:
 
   # ── 도로 그래프 뼈대 ─────────────────────────────────────
+  # ★ road_link / road_rw 는 juso_road_geom(291MB, 6월) 을 보고 있으나
+  #   juso_elctrnmap(7MB, 7월) 의 TL_SPRD_MANAGE / TL_SPRD_RW 와 동일하다.
+  #   전자지도로 통일하면 291MB 를 받지 않아도 되고 기준월도 맞는다.
+  #   전환 시 file 을 juso/juso_elctrnmap_jngj_20260711.zip 으로 바꾸면 된다.
   road_link:
     desc: 도로명주소 도로구간 (선형). RN·ROAD_BT 보유
     kind: shp_zip
-    file: juso/juso_road_geom_jngj_20260701.zip
+    file: juso/juso_elctrnmap_jngj_20260711.zip
     layer: TL_SPRD_MANAGE.shp
     crs: EPSG:5179
     encoding: cp949
@@ -41,7 +45,7 @@ datasets:
   road_rw:
     desc: 도로명주소 실폭도로 (면). 도로폭 폴백 소스
     kind: shp_zip
-    file: juso/juso_road_geom_jngj_20260701.zip
+    file: juso/juso_elctrnmap_jngj_20260711.zip
     layer: TL_SPRD_RW.shp
     crs: EPSG:5179
     encoding: cp949
@@ -72,7 +76,7 @@ datasets:
   node_link:
     desc: 표준노드링크 MOCT_LINK. 위상 정답지 + LANES/MAX_SPD
     kind: shp_zip
-    file: its/its_nodelink_gwangju_20260716.zip
+    file: its/its_nodelink_kr_20260810.zip
     layer: MOCT_LINK.shp
     crs: EPSG:5186
     url: https://www.its.go.kr/nodelink/nodelinkRef
@@ -87,7 +91,7 @@ datasets:
   node_point:
     desc: 표준노드링크 MOCT_NODE. 교차로 노드
     kind: shp_zip
-    file: its/its_nodelink_gwangju_20260716.zip
+    file: its/its_nodelink_kr_20260810.zip
     layer: MOCT_NODE.shp
     crs: EPSG:5186
     retrieved: 2026-08-09
@@ -95,7 +99,7 @@ datasets:
   turn_restriction:
     desc: 회전제한 TURNINFO. D-07 방향성 / D-08 회전 판정 근거
     kind: dbf_in_zip
-    file: its/its_nodelink_gwangju_20260716.zip
+    file: its/its_nodelink_kr_20260810.zip
     layer: TURNINFO.dbf
     crs: none
     retrieved: 2026-08-09
@@ -137,8 +141,11 @@ datasets:
   poi_store:
     desc: 소상공인 상가(상권)정보 광주권. 상가 밀집도 = 주차압력 프록시
     kind: csv_points_in_zip
-    file: sbiz/sbiz_store_gwangju_20260630.zip
-    inner_contains: sbiz_store
+    file: sbiz/sbiz_store_kr_20260630.zip
+    inner_contains: 광주
+    note_inner: |
+      전국판 zip 이라 시도별 CSV 가 들어 있다. 광주 파일만 고른다.
+      기존 광주권 개별 파일과 내용은 같다.
     crs: EPSG:4326
     x_col: 경도
     y_col: 위도
@@ -155,7 +162,7 @@ datasets:
   boundary_emd:
     desc: 읍면동 행정구역경계. 동명동 정식 폴리곤 (EMD_CD 12210108)
     kind: shp_zip
-    file: juso/juso_elctrnmap_jngj_20260811.zip
+    file: juso/juso_elctrnmap_jngj_20260711.zip
     layer: TL_SCCO_EMD.shp
     crs: EPSG:5179
     encoding: cp949
@@ -173,7 +180,7 @@ datasets:
   building:
     desc: 건물 폴리곤. GRO_FLO_CO(지상층수) 보유 - 3D extrusion 재료
     kind: shp_zip
-    file: juso/juso_elctrnmap_jngj_20260811.zip
+    file: juso/juso_elctrnmap_jngj_20260711.zip
     layer: TL_SPBD_BULD.shp
     crs: EPSG:5179
     encoding: cp949
@@ -187,7 +194,7 @@ datasets:
   building_entrance:
     desc: 건물출입구 포인트. 소방차 도달 목표점
     kind: shp_zip
-    file: juso/juso_elctrnmap_jngj_20260811.zip
+    file: juso/juso_elctrnmap_jngj_20260711.zip
     layer: TL_SPBD_ENTRC.shp
     crs: EPSG:5179
     encoding: cp949
@@ -199,7 +206,7 @@ datasets:
   hydrant_point:
     desc: 전국소방용수시설 표준데이터. 소화전 좌표
     kind: csv_points
-    file: safety/safety_hydrant_point_jngj_20260809.csv
+    file: safety/safety_hydrant_point_kr_20260811.csv
     crs: EPSG:4326
     encoding: utf-8
     x_col: 경도
@@ -252,20 +259,43 @@ datasets:
   parking:
     desc: 주차장 정보 (동구 + 도시공사)
     kind: csv_points
-    file: misc/misc_parking_jngj_20260811.csv
+    file: gjcity/gjcity_parking_dongu_20260811.csv
     crs: EPSG:4326
     encoding: utf-8-sig
     x_col: 경도
     y_col: 위도
     retrieved: 2026-08-11
     note: |
+      광주 동구 + 광주도시공사 주차장정보 병합본.
       스코프 안 65개(동명동 6개). 노외 64 / 노상 1.
       ★ 유효폭 산출에는 쓸 수 없다. 대부분 노외주차장이라 골목 노면과 무관하다.
       쓸 수 있는 것: 주차 부족이 골목 주차로 이어진다는 논거, 소방활동 전개 공간.
 
+  ortho:
+    desc: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
+    kind: raw_only
+    file: ngii/ngii_ortho_gj*.tif
+    crs: EPSG:5186
+    url: https://map.ngii.go.kr
+    license: 국토지리정보원
+    retrieved: 2026-08-11
+    note: |
+      원본 TIF 에 geotransform 이 없다. 메타데이터 XML 에
+      "TM 중부원점 / GRS80 / Easting 200000 / Northing 600000" (= EPSG:5186) 만 적혀 있다.
+      src/etl/ortho.py 가 도엽 격자로 좌표를 역산해 붙인다.
+      검증: 같은 도엽 수치지도(5179)와 도엽 간격 일치 (동서 2277.2m · 남북 2772.5m).
+      정사영상은 도엽보다 2379x2874m 로 커서 사방 약 51m 오버랩이다.
+      ★ 배경 텍스처 전용이다. 판정에는 쓰지 않는다.
+        래스터에서 도로 경계를 읽으려면 세그멘테이션이 필요하고
+        그림자·처마·주차 차량 때문에 정확도가 안 나온다.
+        폭은 벡터(실폭도로·건물 폴리곤)로 잰다.
+      산출: web/data/ortho/{z}/{x}/{y}.jpg (388장, z15~18, 8.3MB)
+      4도엽 전량 1.25GB. ingest 는 읽지 않는다(raw_only).
+
   # ── 좌표 없는 표 (참조용) ────────────────────────────────
   enforcement:
     desc: 동구 불법주정차 단속 85,380건 (2022-01 ~ 2023-10)
+    url: https://www.data.go.kr  # 광주광역시 동구_불법 주정차 단속현황
     kind: csv_table
     file: safety/safety_parking_enforce_dongu_20240108.csv
     crs: none
@@ -281,7 +311,8 @@ datasets:
       엣지 속성은 건수가 아니라 enforce_per_100m(길이 정규화)로 붙일 것.
 
   hydrant_summary:
-    desc: 소방용수시설 관할서별 집계
+    desc: 소방용수시설 관할서별 집계. 동부소방서 지상식 431 + 지하식 157 = 588
+    url: https://www.data.go.kr  # 전남광주통합특별시_소방용수시설 현황
     kind: csv_table
     file: safety/safety_hydrant_summary_jngj_20251231.csv
     crs: none

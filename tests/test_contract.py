@@ -101,3 +101,80 @@ def _coords(g):
         for p in c:
             for r in p:
                 yield from r
+
+
+# ── 웹 정적 검증 ──────────────────────────────────────────────
+# ★ 미니맵이 하루 종일 안 뜬 원인이 여기 걸렸을 문제였다.
+#   index.html 에서 지운 요소(#s-use)를 app.js 가 계속 참조했고,
+#   거기서 예외가 나 그 뒤 코드(폭 밴드·미니맵)가 통째로 안 돌았다.
+#   화면 일부가 비는 건 눈에 보이지만 "절반이 안 뜨는" 건 원인 찾기가 어렵다.
+
+WEBDIR = ROOT / "web"
+
+
+def _read(name):
+    return (WEBDIR / name).read_text(encoding="utf-8")
+
+
+def test_web_dom_refs_exist():
+    """app.js 가 참조하는 DOM id 가 index.html 에 전부 있어야 한다."""
+    import re
+    html, js = _read("index.html"), _read("app.js")
+    ids = set(re.findall(r'id="([^"]+)"', html))
+    used = (set(re.findall(r'\$\("#([^"]+)"\)', js))
+            | set(re.findall(r'getElementById\("([^"]+)"\)', js)))
+    missing = used - ids
+    assert not missing, f"index.html 에 없는 id 를 app.js 가 참조한다: {sorted(missing)}"
+
+
+def test_web_toggle_targets_handled():
+    """패널 토글(data-t)이 app.js 에서 처리되어야 한다."""
+    import re
+    html, js = _read("index.html"), _read("app.js")
+    for t in set(re.findall(r'data-t="([^"]+)"', html)):
+        key = "m-" if t.startswith("m-") else t
+        assert f'"{t}"' in js or f'"{key}"' in js, f"토글 '{t}' 가 app.js 에서 처리되지 않는다"
+
+
+def test_web_assets_linked():
+    """index.html 이 분리된 파일들을 참조해야 한다."""
+    html = _read("index.html")
+    for a in ("style.css", "config.js", "app.js"):
+        assert a in html, f"index.html 이 {a} 를 참조하지 않는다"
+    assert "<style>" not in html, "index.html 에 인라인 <style> 이 있다. style.css 로 옮길 것"
+
+
+def test_web_data_files_referenced():
+    """app.js 가 읽는 web/data 파일이 실제로 있어야 한다."""
+    import re
+    js = _read("app.js")
+    m = re.search(r'\[([^\]]*?)\]\s*\n?\s*\.map\(n=>j\(`\./data/\$\{n\}\.geojson`\)\)', js)
+    if not m:
+        m = re.search(r'\[((?:"[\w_]+",?\s*)+)\]', js)
+    for n in re.findall(r'"([\w_]+)"', m.group(1)):
+        assert (WEBDIR / "data" / f"{n}.geojson").exists(), f"web/data/{n}.geojson 없음"
+
+
+# ── ETL 스크립트 계약 ────────────────────────────────────────
+# ★ 같은 회귀가 세 번 반복됐다. 스크립트가 paths.py 를 안 쓰고 자체 RAW 를 정의하면
+#   FIRE_LANE_RAW 환경변수가 무시되고 원본을 못 찾는다(전부 MISSING).
+#   패치를 적용할 때마다 되돌아갔으므로 테스트로 고정한다.
+
+ETL = ROOT / "src" / "etl"
+
+
+def test_etl_uses_paths_module():
+    """ETL 스크립트는 경로를 자체 정의하지 않고 paths.py 를 써야 한다."""
+    import re
+    for f in ("ingest.py", "segments.py", "terrain.py", "ortho.py", "publish_web.py"):
+        src = (ETL / f).read_text(encoding="utf-8")
+        own = re.findall(r'^(?:RAW|OUT|PROCESSED|WEB)[\w,\s]*=\s*ROOT.*$', src, re.M)
+        assert not own, f"{f} 가 경로를 자체 정의한다: {own}. paths.py 를 쓸 것"
+        assert "from paths import" in src, f"{f} 가 paths.py 를 import 하지 않는다"
+
+
+def test_publish_z_is_optional():
+    """z 는 terrain.py 산출물이므로 필수 컬럼이면 DEM 없이 파이프라인이 죽는다."""
+    src = (ETL / "publish_web.py").read_text(encoding="utf-8")
+    assert '"unknown_reason","z","geometry"' not in src, \
+        "publish_web.py 가 z 를 필수 컬럼으로 요구한다. 선택 컬럼으로 둘 것"

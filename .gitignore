@@ -21,8 +21,9 @@ __pycache__/
 data/raw/**
 !data/raw/README.md
 
-# 대용량 중간 산출물. ingest.py 로 재생성.
+# 대용량 중간 산출물. ingest.py / terrain.py 로 재생성.
 data/processed/*.gpkg
+data/processed/*.tif
 
 # UI 입력이므로 아래는 커밋한다 (지혜님이 raw 없이 작업 가능해야 함)
 !data/processed/segments.geojson
@@ -32,3 +33,15 @@ data/processed/*.gpkg
 
 # ETL 임시
 .work/
+
+# ── 전수조사에서 나온 누락분 (2026-08-11) ─────────────
+# data/raw 자체가 심링크일 때 스테이징에 들어간 적이 있다.
+# 다만 `data/raw/` 로 디렉터리를 통째로 막으면 그 안의 `!README.md`
+# 예외가 무효가 된다. git 은 제외된 디렉터리 내부를 아예 훑지 않는다.
+# 그래서 하위 항목만 막고 README 만 되살린다. (위의 data/raw/** 규칙과 동일 취지)
+
+# 패치 적용 시 생기는 백업. 커밋 대상이 아니다.
+_backup_*/
+
+# pytest 캐시
+.pytest_cache/
