@@ -168,8 +168,8 @@ function restyleSegments(){
 
 map.on("load", async () => {
   const j = async p => (await fetch(p)).json();
-  const [seg,bld,bnd,hyd,sta,cctv,poi,markers] = await Promise.all(
-    ["segments","buildings","boundary","hydrants","stations","cctv","poi","markers"]
+  const [seg,bld,bnd,hyd,sta,cctv,poi] = await Promise.all(
+    ["segments","buildings","boundary","hydrants","stations","cctv","poi"]
       .map(n=>j(`./data/${n}.geojson`)));
   SEG = seg;
   Object.assign(DATA, {cctv, hyd, sta});
@@ -301,7 +301,38 @@ map.on("load", async () => {
        세그먼트와 같은 문제다. 네이티브 레이어는 지형을 따라간다.
      publish_web.py 가 포인트를 시설 형상의 폴리곤 조각으로 만들어 둔다.
      비율은 실물, 크기는 과장. 소화전 실물 지름 0.2m 로는 안 보인다. */
-  map.addSource("markers",{type:"geojson",data:markers});
+  /* 마커를 config.js(CONFIG.markers) 스펙으로 런타임 생성. 원기둥(r) + 박스(hw/hl) 지원.
+     이제 config.js만 고치면 재발행 없이 바로 반영된다. 기여: @marscoolcat + @AIMasterFox */
+  const MK_SRC = {cctv, hyd, sta};
+  function buildMarkers(){
+    const feats = [];
+    for (const spec of CONFIG.markers){
+      const src = MK_SRC[spec.source];
+      if (!src) continue;
+      for (const f of src.features){
+        if (spec.kind && f.properties.kind !== spec.kind) continue;
+        const lon = +f.geometry.coordinates[0], lat = +f.geometry.coordinates[1];
+        const mLat = 1/110540, mLon = 1/(111320*Math.cos(lat*Math.PI/180));
+        spec.parts.forEach((s, i) => {
+          let ring;
+          if (s.hw != null){            // 박스(직사각형): half-width, half-length
+            ring = [[lon-s.hw*mLon, lat-s.hl*mLat],[lon+s.hw*mLon, lat-s.hl*mLat],
+                    [lon+s.hw*mLon, lat+s.hl*mLat],[lon-s.hw*mLon, lat+s.hl*mLat],
+                    [lon-s.hw*mLon, lat-s.hl*mLat]];
+          } else {                      // 원기둥
+            const n = s.r < 1 ? 24 : 16;
+            ring = Array.from({length:n+1}, (_,k) => { const t = k*2*Math.PI/n;
+              return [lon + s.r*Math.cos(t)*mLon, lat + s.r*Math.sin(t)*mLat]; });
+          }
+          feats.push({type:"Feature", geometry:{type:"Polygon", coordinates:[ring]},
+            properties:{...f.properties, z:Number(f.properties.z)||0, kind:spec.id, label:spec.label, part:i,
+              base:s.z, top:s.z+s.h, mcolor:`rgb(${s.c[0]},${s.c[1]},${s.c[2]})`}});
+        });
+      }
+    }
+    return {type:"FeatureCollection", features:feats};
+  }
+  map.addSource("markers",{type:"geojson",data:buildMarkers()});
   map.addLayer({id:"mk-3d",type:"fill-extrusion",source:"markers",
     paint:{
       "fill-extrusion-color":["get","mcolor"],
