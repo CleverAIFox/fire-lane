@@ -93,6 +93,7 @@ def main():
     poly = shapely.make_valid(emd.loc[emd.EMD_CD == EMD_CD, "geometry"].iloc[0])
     road = load("road_link")
     rw   = load("road_rw")
+    ngii = load("ngii_road")       # 결정 63: 폭 주 소스(수치지도 도로경계면)
     bld  = load("building")
     ent  = load("building_entrance")
 
@@ -135,7 +136,13 @@ def main():
     cctv = gpd.read_file(OUT/"cctv_5186.gpkg").to_crs(CRS_M)
     cctv_u = unary_union(list(cctv.geometry))
 
-    rw_u  = unary_union([shapely.make_valid(g) for g in rw[rw.intersects(poly.buffer(80))].geometry])
+    # 결정 63 — 폭 주 소스 = 수치지도 도로경계면(NF_A_A01000), 폴백 = 실폭도로.
+    # 두 소스는 경쟁이 아니라 상보 관계다. 수치지도는 넓은 길을 정확히 그리지만
+    # 보행자 통로급 최협소 골목을 도로면으로 아예 그리지 않는다(표본 100 중 커버 70).
+    # 나머지를 실폭도로가 메운다.
+    _clip = poly.buffer(80)
+    ngii_u = unary_union([shapely.make_valid(g) for g in ngii[ngii.intersects(_clip)].geometry])
+    rw_u   = unary_union([shapely.make_valid(g) for g in rw[rw.intersects(_clip)].geometry])
     bld_u = unary_union([shapely.make_valid(g) for g in bld[bld.intersects(poly.buffer(80))].geometry])
     deg = Counter()
     for a, b in G.edges():
@@ -151,12 +158,26 @@ def main():
         ux, uy = -dy/L, dx/L
         r = LineString([(p.x-ux*60, p.y-uy*60), (p.x+ux*60, p.y+uy*60)])
         A = B = None
-        sg = r.intersection(rw_u)                      # 노면폭 = 하한
-        if not sg.is_empty:
+        src = None
+
+        def _span(poly_u):
+            """법선 r 이 폴리곤을 지나는 구간 중 중심점을 품는 것의 길이."""
+            sg = r.intersection(poly_u)
+            if sg.is_empty:
+                return None
             pr = [sg] if sg.geom_type == "LineString" else [q for q in sg.geoms if q.geom_type == "LineString"]
             v = max((q.length for q in pr if q.distance(p) < 0.6), default=None)
-            if v and 0.3 < v < 30:
-                A = v
+            return v if (v and 0.3 < v < 30) else None
+
+        # 주 소스(수치지도) 와 폴백(실폭도로) 을 각각 잰다.
+        # 둘 다 나오면 좁은 쪽을 채택한다 — §4-4 미탐 회피. 넓게 보는 실수가 치명적이다.
+        a_ngii, a_rw = _span(ngii_u), _span(rw_u)
+        if a_ngii is not None and a_rw is not None:
+            A, src = (a_ngii, "ngii") if a_ngii <= a_rw else (a_rw, "silpok")
+        elif a_ngii is not None:
+            A, src = a_ngii, "ngii"
+        elif a_rw is not None:
+            A, src = a_rw, "silpok"
         sg = r.intersection(bld_u)                     # 담~담 = 상한
         if not sg.is_empty:
             pr = [sg] if sg.geom_type == "LineString" else [q for q in sg.geoms if q.geom_type == "LineString"]
@@ -168,21 +189,22 @@ def main():
         # 역전이 생기므로 도로 폭으로 끌어올린다.
         if A is not None and B is not None and B < A:
             B = A
-        return A, B
+        return A, B, src
 
     def widths(s):
         A, B, fb = [], [], False
+        S = []
         for t in np.arange(1.0, max(s.length-1.0, 1.5), 2.0):
             if xn.distance(s.interpolate(t)) < XSEC_EXCL:
                 continue
-            a, b = measure(s, t)
-            if a: A.append(a)
+            a, b, sc = measure(s, t)
+            if a: A.append(a); S.append(sc)
             if b: B.append(b)
         if not A or not B:                              # 짧은 세그먼트 폴백
             fb = True
             for t in (s.length/2, s.length*.35, s.length*.65):
-                a, b = measure(s, t)
-                if a and not A: A.append(a)
+                a, b, sc = measure(s, t)
+                if a and not A: A.append(a); S.append(sc)
                 if b and not B: B.append(b)
         wmin = round(min(A), 2) if A else None
         wmax = round(min(B), 2) if B else None
@@ -190,7 +212,9 @@ def main():
         # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 에 걸린 경우).
         if wmin is not None and wmax is not None and wmax < wmin:
             wmax = wmin
-        return wmin, wmax, fb
+        # 채택된 최솟값이 어느 소스에서 나왔는지 기록한다(결정 64).
+        wsrc = S[A.index(min(A))] if A else None
+        return wmin, wmax, fb, wsrc
 
     def verdict(wmin, wmax):
         """소방청 기준 판정 4종.
@@ -223,7 +247,7 @@ def main():
             continue
         sid = f"DM{i:05d}"
         short = g.length < MIN_SEG_LEN
-        wmin, wmax, fb = (None, None, False) if short else widths(g)
+        wmin, wmax, fb, wsrc = (None, None, False, None) if short else widths(g)
         v = "fragment" if short else verdict(wmin, wmax)
 
         # 영상판정 가능성. 구간에서 가장 가까운 CCTV 까지의 거리로 판단한다.
@@ -244,6 +268,7 @@ def main():
                         verdict=v, unknown_reason=reason,
                         cctv_dist_m=d_cctv, cv_feasible=bool(cv_ok),
                         width_verified=False, midpoint_fallback=fb, inherited=False,
+                        width_src=wsrc,
                         _in_scope=in_scope,
                         route_usage=use.get(frozenset((a, b)), 0),
                         length_m=round(g.length, 1), _n=(a, b), geometry=g)
@@ -258,7 +283,9 @@ def main():
         nb = [rec[s] for n in r["_n"] for s in bynode[n]
               if s != sid and rec[s]["width_min_m"] is not None]
         if nb:
-            r["width_min_m"] = round(min(x["width_min_m"] for x in nb), 2)
+            _mn = min(nb, key=lambda x: x["width_min_m"])
+            r["width_min_m"] = round(_mn["width_min_m"], 2)
+            r["width_src"] = _mn.get("width_src")
             mx = [x["width_max_m"] for x in nb if x["width_max_m"] is not None]
             r["width_max_m"] = round(min(mx), 2) if mx else None
             v2 = verdict(r["width_min_m"], r["width_max_m"])
@@ -335,7 +362,8 @@ def main():
         "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
         "fields": {
             "seg_id": "str, 불변 키",
-            "width_min_m": "float|null 노면폭(하한). road_rw 트랜섹트",
+            "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
+            "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
             "width_max_m": "float|null 담~담(상한). building 트랜섹트. 대로는 null(건물이 40m 밖)",
             "verdict": "clear|needs_cv|blocked|unknown",
             "width_verified": "bool",
