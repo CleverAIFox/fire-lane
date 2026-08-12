@@ -55,6 +55,29 @@ datasets:
       GEOS TopologyException 발생. 실제로 터졌음.
       수치지도가 안 그리는 최협소 골목을 메우는 용도.
 
+  ngii1k:
+    desc: 수치지형도 1:1,000 도로경계 A0010000 — 폭 산출 주 소스
+    kind: ngii_1k
+    file: ngii_1k/
+    crs: 5186
+    url: https://map.ngii.go.kr/ms/map/NlipMap.do
+    note: |
+      도엽 하나가 456 x 555m. 스코프를 덮으려면 12장 이상 필요하다.
+      2022년~ SHP(N1A_/N1L_) · ~2020년 NGI 텍스트. GDAL 에 NGI 드라이버가
+      없어 src/etl/ngii1k.py 가 직접 파싱한다. 같은 도엽은 최신 연도 채택.
+
+  streetlight:
+    desc: 전남광주통합특별시 동구 가로등현황 (2024-04-15)
+    kind: csv_point
+    file: streetlight/*가로등현황*.csv
+    crs: 4326
+    encoding: cp949
+    note: |
+      동구 3,805행 / 고유 좌표 264곳. 동명동 159등 / 13곳.
+      지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
+      지도 마커로 쓰면 없는 위치를 그리는 것이 된다.
+      세그먼트 반경 50m 내 등수 합(light_count)으로만 쓴다.
+
   ngii_road:
     desc: 국가기본공간정보 수치지도 도로경계면 NF_A_A01000 (1:5,000) — 도로폭 주 소스
     kind: shp_zip_multi
