@@ -211,6 +211,11 @@ def main():
     if corr:
         keep = keep.union(unary_union([c["geometry"] for c in corr]).buffer(70))
 
+    # 폭 소스(rw_u / bld_u)는 poly.buffer(80) 으로 클립돼 있다.
+    # 그 밖의 회랑 구간은 "폭을 못 잰 것"이 아니라 "잴 대상이 아닌 것"이다.
+    # 둘을 같은 이름으로 부르면 화면이 "골목의 44%를 모른다"로 오독된다.
+    scope_w = poly.buffer(80)
+
     rec = {}
     for i, (a, b, d) in enumerate(G.edges(data=True)):
         g = d["geom"]
@@ -228,16 +233,18 @@ def main():
         # needs_cv 인데 CCTV 사각이면 영상판정이 성립하지 않는다.
         # 도면으로도 확정 못 하고 영상으로도 확정 못 하므로 unknown 이다.
         # blocked / clear 는 도면만으로 확정되므로 CCTV 와 무관하다.
+        in_scope = g.intersects(scope_w)
         reason = None
         if v == "needs_cv" and not cv_ok:
             v, reason = "unknown", "no_cctv"
         elif v == "unknown":
-            reason = "width"
+            reason = "width" if in_scope else "out_of_scope"
 
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
                         verdict=v, unknown_reason=reason,
                         cctv_dist_m=d_cctv, cv_feasible=bool(cv_ok),
                         width_verified=False, midpoint_fallback=fb, inherited=False,
+                        _in_scope=in_scope,
                         route_usage=use.get(frozenset((a, b)), 0),
                         length_m=round(g.length, 1), _n=(a, b), geometry=g)
 
@@ -258,7 +265,7 @@ def main():
             if v2 == "needs_cv" and not r["cv_feasible"]:
                 v2, r["unknown_reason"] = "unknown", "no_cctv"
             elif v2 == "unknown":
-                r["unknown_reason"] = "width"
+                r["unknown_reason"] = "width" if r["_in_scope"] else "out_of_scope"
             r["verdict"] = v2
             r["inherited"] = True
     # 소방청 지정 기준의 "구간 100m 이상"은 세그먼트 단위가 아니라 연속 구간 단위다.
@@ -279,11 +286,13 @@ def main():
     # verdict 어휘에 fragment 는 없다.
     for r in rec.values():
         if r["verdict"] == "fragment":
-            r["verdict"], r["unknown_reason"] = "unknown", "width"
+            r["verdict"] = "unknown"
+            r["unknown_reason"] = "width" if r["_in_scope"] else "out_of_scope"
     for r in rec.values():
         r.setdefault("run_length_m", None)
         r.setdefault("nfa_designated", False)
         r.pop("_n")
+        r.pop("_in_scope")
 
     g = gpd.GeoDataFrame(list(rec.values()), crs=CRS_M)
 
@@ -338,7 +347,7 @@ def main():
             "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족",
             "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",
             "cv_feasible": "bool CCTV 유효범위(25m) 안. 영상판정 성립 여부",
-            "unknown_reason": "null|width|no_cctv unknown 이 된 이유"},
+            "unknown_reason": "null|width|no_cctv|out_of_scope unknown 이 된 이유"},
         "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (구간 100m) + 2026-08-06 현장 답사 (통과 하한 3.0m)",
         "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK, "nfa_run_m": NFA_RUN_M, "cctv_range_m": CCTV_RANGE,
                    "intersection_exclusion_m": XSEC_EXCL, "wmax_cap_m": WMAX_CAP,
