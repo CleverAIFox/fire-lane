@@ -129,18 +129,25 @@ def main():
     # (동명동 53행 → 고유 좌표 29지점, 카메라 90대)
     # 좌표로 묶어 지점 단위로 만든다. 대수는 합산, 연도는 최초/최신을 둘 다 남긴다.
     cctv["_k"] = list(zip(cctv.geometry.x.round(6), cctv.geometry.y.round(6)))
-    agg = cctv.groupby("_k").agg(
+    _agg = dict(
         관리기관명=("관리기관명", "first"),
         소재지도로명주소=("소재지도로명주소", "first"),
         카메라대수=("카메라대수", "sum"),
         카메라화소=("카메라화소", "first"),
         촬영방면=("촬영방면", "first"),
-        z=("z", "first") if "z" in cctv.columns else ("카메라대수", "size"),
         최초설치=("설치연도", "min"),
         최근설치=("설치연도", "max"),
         설치회차=("설치연도", "size"),
         geometry=("geometry", "first"),
-    ).reset_index(drop=True)
+    )
+    # z 는 terrain.py 산출물이다. DEM 이 없으면 컬럼 자체를 만들지 않는다.
+    # 이전 fallback 이 ("카메라대수","size") 였어서 DEM 없이 돌리면
+    # 표고 자리에 그룹 행 수(1,2,3...)가 들어갔다. 표고 없음은 결측이지 카운트가 아니다.
+    # app.js 는 coalesce(z, 0) 이라 컬럼이 없어도 안전하다.
+    if "z" in cctv.columns:
+        _agg["z"] = ("z", "first")
+
+    agg = cctv.groupby("_k").agg(**_agg).reset_index(drop=True)
     cg = gpd.GeoDataFrame(agg, crs=4326)
     cg.to_file(W/"cctv.geojson", **PREC)
 
