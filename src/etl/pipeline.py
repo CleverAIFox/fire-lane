@@ -43,7 +43,10 @@ STEPS = [
 # 이 값과 다르면 뭔가 잘못된 것이다. 바뀌면 여기도 같이 고칠 것.
 EXPECT = {
     "segments": 1266,
-    "verdict": {"clear": 227, "needs_cv": 139, "blocked": 67, "unknown": 833},
+    # 2026-08-12 결정 63 반영(수치지도 주 소스 투입, 좁은 쪽 채택)으로 갱신.
+    # clear 227→202. 통과 판정 25구간이 판정 보류로 내려갔다 — 미탐 회피 방향.
+    "verdict": {"clear": 202, "needs_cv": 153, "blocked": 67, "unknown": 844},
+    "unknown_reason": {"out_of_scope": 502, "no_cctv": 290, "width": 52},
 }
 
 

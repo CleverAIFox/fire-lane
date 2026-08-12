@@ -25,7 +25,7 @@ def main():
     _seg = gpd.read_file(P/"segments.geojson")
     _cols = ["seg_id","width_min_m","width_max_m","verdict","width_verified",
              "midpoint_fallback","inherited","route_usage","length_m",
-             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible",
+             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src",
              "unknown_reason"]
     _cols += [c for c in ("z",) if c in _seg.columns]
     _seg[_cols + ["geometry"]].to_file(W/"segments.geojson", **PREC)
