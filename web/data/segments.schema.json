@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "a99edac397df7155d542235e17ca234d655fd15e1eaf5ae32dccbb756551b427",
+  "sha256": "a4ebe64f934499daff65008bb9e666190b12a941b00d6e07583293a38d4a3b3f",
   "count": 1266,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
@@ -18,7 +18,7 @@
     "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족",
     "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",
     "cv_feasible": "bool CCTV 유효범위(25m) 안. 영상판정 성립 여부",
-    "unknown_reason": "null|width|no_cctv unknown 이 된 이유"
+    "unknown_reason": "null|width|no_cctv|out_of_scope unknown 이 된 이유"
   },
   "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (구간 100m) + 2026-08-06 현장 답사 (통과 하한 3.0m)",
   "params": {
