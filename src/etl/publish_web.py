@@ -159,96 +159,12 @@ def main():
     ).to_file(W/"poi.geojson", **PREC)
     print(f"  상가 POI {len(poi)}개 (지상 1층 · {poi.cat.nunique()}개 업종)")
 
-    # ── 시설 마커를 건물과 같은 방식으로 ──────────────────────
-    # deck.gl 레이어는 map.setTerrain() 을 켜면 지형 아래로 묻힌다.
-    # 건물처럼 fill-extrusion 으로 그리면 지형을 따라간다.
-    # 그래서 포인트를 실제 시설 형상의 폴리곤으로 만들어 둔다.
-    #
-    # 비율은 실물을 따르되 크기는 과장한다. 소화전 실물 지름 0.2m 로는
-    # 1km 시야에서 보이지 않는다.
-    #   part: 아래에서 위로 쌓는 조각. base(바닥높이) / h(높이) / r(반지름)
-    import math
-
-    def solid(pt, parts, props):
-        """포인트를 원기둥 조각들의 폴리곤으로 만든다."""
-        out = []
-        for i, (r, base, h, color) in enumerate(parts):
-            # 반지름이 작을수록 각을 촘촘히. 소화전이 사각기둥으로 보이지 않게.
-            seg_n = 24 if r < 1 else 16
-            ring = [(pt.x + r*math.cos(t), pt.y + r*math.sin(t))
-                    for t in [k*2*math.pi/seg_n for k in range(seg_n + 1)]]
-            out.append({**props, "part": i, "base": base, "top": base + h,
-                        "mcolor": color, "geometry": Polygon(ring)})
-        return out
-
-    from shapely.geometry import Polygon
-
-    def slab(pt, parts, props):
-        """포인트를 직사각형 박스 조각들로 만든다 (소방서 119 간판)."""
-        out = []
-        for i, (hw, hl, base, h, color) in enumerate(parts):
-            ring = [(pt.x-hw, pt.y-hl), (pt.x+hw, pt.y-hl),
-                    (pt.x+hw, pt.y+hl), (pt.x-hw, pt.y+hl), (pt.x-hw, pt.y-hl)]
-            out.append({**props, "part": i, "base": base, "top": base + h,
-                        "mcolor": color, "geometry": Polygon(ring)})
-        return out
-
-    # 소방서 = 붉은 직사각형 119 간판(기둥 + 넓은 판 + 흰 테). (half_w, half_l, base, h, color)
-    STATION_BOX = [
-        (1.6, 1.6, 0,    13,  "#b8241a"),   # 지지 기둥
-        (7.0, 1.3, 13,   10,  "#e42a1e"),   # 붉은 119 간판(넓고 얇게)
-        (7.4, 1.7, 12.2, 1.4, "#f2f2f2"),   # 간판 아래 흰 테
-        (7.4, 1.7, 23,   1.4, "#f2f2f2"),   # 간판 위 흰 테
-    ]
-    # (반지름m, 바닥높이m, 높이m, 색)
-    #
-    # ★ 실물 치수를 따르되 최소한만 키운다.
-    #   실물   소화전 지름 0.2m·높이 0.9m / CCTV 지주 4.5m / 건물 3~5층
-    #   과장   소화전 x2 (지름 0.4m·높이 1.8m) — 골목 폭 3m 대비 자연스럽다
-    #          CCTV 지주는 실물 그대로. 대수만큼만 높인다
-    #          안전센터·소방서는 실제 건물 규모(4~6층)를 따른다
-    #   이전에 소화전을 6m 로 세웠더니 2층 건물만 했다. 현실 반영이 우선이다.
-    MARKER_PARTS = {
-        "center":  [(6, 0, 15, "#ff4d3d"), (7, 15, 2, "#ff4d3d"), (1.2, 17, 6, "#ff968c")],
-        "station": [(7, 0, 18, "#ffb020"), (8, 18, 2, "#ffb020"), (0.8, 20, 7, "#ffd68c")],
-        "hydrant": [(1.4, 0,    0.8, "#286e96"),    # 받침(크게)
-                    (0.9, 0.8,  5.2, "#4fc3f7"),    # 몸통(굵고 높게)
-                    (1.5, 6.0,  0.7, "#286e96"),    # 플랜지
-                    (0.7, 6.7,  1.8, "#8cdcff"),    # 상단 캡
-                    (0.4, 8.5, 28,   "#78d4ff")],   # 위로 솟는 빛기둥(건물 위로)
-        "cctv":    [(0.09, 0,   4.5, "#78788a"),    # 지주 4.5m (실물)
-                    (0.28, 4.5, .45, "#b98cff"),    # 하우징
-                    (0.13, 4.8, .30, "#e1cdff")],   # 렌즈
-    }
-
-    feats = []
-    for _, r in sta.to_crs(5186).iterrows():
-        base_props = {"name": r["소방서 및 안전센터명"],
-                      "addr": r.get("주소", ""), "z": r.get("z", 0)}
-        if r["kind"] == "center":
-            feats += solid(r.geometry, MARKER_PARTS["center"],
-                           {**base_props, "kind": "center", "sub": "출동 시작점"})
-        else:  # 소방서 = 붉은 직사각형 119 간판
-            feats += slab(r.geometry, STATION_BOX,
-                          {**base_props, "kind": "station", "sub": "관할 본서"})
-    for _, r in hyd.to_crs(5186).iterrows():
-        feats += solid(r.geometry, MARKER_PARTS["hydrant"],
-                       {"kind": "hydrant", "name": f"소화전 {r.get('시설번호','')}",
-                        "sub": str(r.get("상세위치", "")), "addr": r.get("소재지도로명주소", ""),
-                        "z": r.get("z", 0)})
-    for _, r in cg.to_crs(5186).iterrows():
-        n = int(r["카메라대수"])
-        # 대수만큼 지주를 높인다. 실물 4.5m 에서 대당 0.5m.
-        h = 4.5 + min(n, 8) * 0.5
-        pts = [(0.09, 0, h, "#78788a"), (0.28, h, .45, "#b98cff"), (0.13, h + .3, .30, "#e1cdff")]
-        feats += solid(r.geometry, pts,
-                       {"kind": "cctv", "name": f"CCTV {n}대",
-                        "sub": f"{r.get('카메라화소','')} · 설치 {r.get('최초설치','')}",
-                        "addr": r.get("소재지도로명주소", ""), "z": r.get("z", 0)})
-
-    gpd.GeoDataFrame(feats, crs=5186).to_crs(4326).to_file(W/"markers.geojson", **PREC)
-    print(f"  시설 마커 {len(feats)}조각 "
-          f"(안전센터·소방서 {len(sta)} · 소화전 {len(hyd)} · CCTV {len(cg)})")
+    # ── 시설 마커 ──────────────────────────────────────────────
+    # 형상·색·크기는 표현이다. web/config.js 의 markers[] 가 정본이고
+    # app.js 가 런타임에 폴리곤으로 만든다. 위치는 위에서 이미 발행했다
+    # (cctv.geojson / hydrants.geojson / stations.geojson).
+    # 여기서 형상을 굽지 않는다. 구우면 UI 가 값을 못 바꾼다.
+    (W/"markers.geojson").unlink(missing_ok=True)
 
     import shutil; shutil.copy(P/"segments.schema.json", W/"segments.schema.json")
     for f in sorted(W.iterdir()):
