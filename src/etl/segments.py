@@ -189,22 +189,22 @@ def main():
         # 역전이 생기므로 도로 폭으로 끌어올린다.
         if A is not None and B is not None and B < A:
             B = A
-        return A, B, src
+        return A, B, src, (a_ngii, a_rw)
 
     def widths(s):
         A, B, fb = [], [], False
-        S = []
+        S, D = [], []
         for t in np.arange(1.0, max(s.length-1.0, 1.5), 2.0):
             if xn.distance(s.interpolate(t)) < XSEC_EXCL:
                 continue
-            a, b, sc = measure(s, t)
-            if a: A.append(a); S.append(sc)
+            a, b, sc, pr = measure(s, t)
+            if a: A.append(a); S.append(sc); D.append(pr)
             if b: B.append(b)
         if not A or not B:                              # 짧은 세그먼트 폴백
             fb = True
             for t in (s.length/2, s.length*.35, s.length*.65):
-                a, b, sc = measure(s, t)
-                if a and not A: A.append(a); S.append(sc)
+                a, b, sc, pr = measure(s, t)
+                if a and not A: A.append(a); S.append(sc); D.append(pr)
                 if b and not B: B.append(b)
         wmin = round(min(A), 2) if A else None
         wmax = round(min(B), 2) if B else None
@@ -213,8 +213,16 @@ def main():
         if wmin is not None and wmax is not None and wmax < wmin:
             wmax = wmin
         # 채택된 최솟값이 어느 소스에서 나왔는지 기록한다(결정 64).
-        wsrc = S[A.index(min(A))] if A else None
-        return wmin, wmax, fb, wsrc
+        _i = A.index(min(A)) if A else None
+        wsrc = S[_i] if _i is not None else None
+        # 두 공공 소스가 같은 지점을 얼마나 다르게 기술하는가.
+        # 이 값이 큰 순서가 곧 D-25 실측 우선순위다(§7-2 관측점 선정).
+        wdis = None
+        if _i is not None:
+            _a, _b = D[_i]
+            if _a is not None and _b is not None:
+                wdis = round(abs(_a - _b), 2)
+        return wmin, wmax, fb, wsrc, wdis
 
     def verdict(wmin, wmax):
         """소방청 기준 판정 4종.
@@ -240,6 +248,21 @@ def main():
     # 둘을 같은 이름으로 부르면 화면이 "골목의 44%를 모른다"로 오독된다.
     scope_w = poly.buffer(80)
 
+    # 도로명. 노딩하면 원본 속성이 끊기므로 중점 최근접으로 되붙인다.
+    # seg_id(DM00001)만 보이면 사람이 어느 골목인지 알 수 없다.
+    _rn = road[road["RN"].notna()].copy()
+    _rn_geo = list(_rn.geometry)
+    _rn_nm = list(_rn["RN"])
+    _rn_tree = STRtree(_rn_geo)
+
+    def road_name(g):
+        m = g.interpolate(0.5, normalized=True)
+        idx = _rn_tree.query(m.buffer(25))
+        if len(idx) == 0:
+            return None
+        j = min(idx, key=lambda k: _rn_geo[k].distance(m))
+        return _rn_nm[j] if _rn_geo[j].distance(m) <= 25 else None
+
     rec = {}
     for i, (a, b, d) in enumerate(G.edges(data=True)):
         g = d["geom"]
@@ -247,7 +270,7 @@ def main():
             continue
         sid = f"DM{i:05d}"
         short = g.length < MIN_SEG_LEN
-        wmin, wmax, fb, wsrc = (None, None, False, None) if short else widths(g)
+        wmin, wmax, fb, wsrc, wdis = (None, None, False, None, None) if short else widths(g)
         v = "fragment" if short else verdict(wmin, wmax)
 
         # 영상판정 가능성. 구간에서 가장 가까운 CCTV 까지의 거리로 판단한다.
@@ -269,6 +292,9 @@ def main():
                         cctv_dist_m=d_cctv, cv_feasible=bool(cv_ok),
                         width_verified=False, midpoint_fallback=fb, inherited=False,
                         width_src=wsrc,
+                        width_disagree_m=wdis,
+                        road_name=road_name(g),
+                        in_emd=bool(g.intersects(poly)),
                         _in_scope=in_scope,
                         route_usage=use.get(frozenset((a, b)), 0),
                         length_m=round(g.length, 1), _n=(a, b), geometry=g)
@@ -286,6 +312,7 @@ def main():
             _mn = min(nb, key=lambda x: x["width_min_m"])
             r["width_min_m"] = round(_mn["width_min_m"], 2)
             r["width_src"] = _mn.get("width_src")
+            r["width_disagree_m"] = _mn.get("width_disagree_m")
             mx = [x["width_max_m"] for x in nb if x["width_max_m"] is not None]
             r["width_max_m"] = round(min(mx), 2) if mx else None
             v2 = verdict(r["width_min_m"], r["width_max_m"])
@@ -364,6 +391,9 @@ def main():
             "seg_id": "str, 불변 키",
             "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
             "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
+            "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",
+            "road_name": "str|null 도로명. 중점 최근접 역참조",
+            "in_emd": "bool 동명동 안인가. false 는 접근 회랑",
             "width_max_m": "float|null 담~담(상한). building 트랜섹트. 대로는 null(건물이 40m 밖)",
             "verdict": "clear|needs_cv|blocked|unknown",
             "width_verified": "bool",

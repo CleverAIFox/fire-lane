@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "08b19f109798cb6645bc02294cf5364facd9e2cfb9cb1757f5fc3ac16025c708",
+  "sha256": "fa89ee8f4e82deb1c09fa9681ec99a49a0726cb1e855d3082a8c29f51a8cfd38",
   "count": 1266,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
@@ -8,6 +8,9 @@
     "seg_id": "str, 불변 키",
     "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
     "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
+    "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",
+    "road_name": "str|null 도로명. 중점 최근접 역참조",
+    "in_emd": "bool 동명동 안인가. false 는 접근 회랑",
     "width_max_m": "float|null 담~담(상한). building 트랜섹트. 대로는 null(건물이 40m 밖)",
     "verdict": "clear|needs_cv|blocked|unknown",
     "width_verified": "bool",
