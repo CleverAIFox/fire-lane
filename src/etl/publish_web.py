@@ -182,6 +182,24 @@ def main():
         return out
 
     from shapely.geometry import Polygon
+
+    def slab(pt, parts, props):
+        """포인트를 직사각형 박스 조각들로 만든다 (소방서 119 간판)."""
+        out = []
+        for i, (hw, hl, base, h, color) in enumerate(parts):
+            ring = [(pt.x-hw, pt.y-hl), (pt.x+hw, pt.y-hl),
+                    (pt.x+hw, pt.y+hl), (pt.x-hw, pt.y+hl), (pt.x-hw, pt.y-hl)]
+            out.append({**props, "part": i, "base": base, "top": base + h,
+                        "mcolor": color, "geometry": Polygon(ring)})
+        return out
+
+    # 소방서 = 붉은 직사각형 119 간판(기둥 + 넓은 판 + 흰 테). (half_w, half_l, base, h, color)
+    STATION_BOX = [
+        (1.6, 1.6, 0,    13,  "#b8241a"),   # 지지 기둥
+        (7.0, 1.3, 13,   10,  "#e42a1e"),   # 붉은 119 간판(넓고 얇게)
+        (7.4, 1.7, 12.2, 1.4, "#f2f2f2"),   # 간판 아래 흰 테
+        (7.4, 1.7, 23,   1.4, "#f2f2f2"),   # 간판 위 흰 테
+    ]
     # (반지름m, 바닥높이m, 높이m, 색)
     #
     # ★ 실물 치수를 따르되 최소한만 키운다.
@@ -193,10 +211,11 @@ def main():
     MARKER_PARTS = {
         "center":  [(6, 0, 15, "#ff4d3d"), (7, 15, 2, "#ff4d3d"), (1.2, 17, 6, "#ff968c")],
         "station": [(7, 0, 18, "#ffb020"), (8, 18, 2, "#ffb020"), (0.8, 20, 7, "#ffd68c")],
-        "hydrant": [(0.34, 0,   0.16, "#286e96"),   # 받침
-                    (0.20, .16, 1.10, "#4fc3f7"),   # 몸통
-                    (0.30, 1.26, .14, "#286e96"),   # 플랜지
-                    (0.15, 1.40, .40, "#8cdcff")],  # 상단 캡  총 1.8m
+        "hydrant": [(1.4, 0,    0.8, "#286e96"),    # 받침(크게)
+                    (0.9, 0.8,  5.2, "#4fc3f7"),    # 몸통(굵고 높게)
+                    (1.5, 6.0,  0.7, "#286e96"),    # 플랜지
+                    (0.7, 6.7,  1.8, "#8cdcff"),    # 상단 캡
+                    (0.4, 8.5, 28,   "#78d4ff")],   # 위로 솟는 빛기둥(건물 위로)
         "cctv":    [(0.09, 0,   4.5, "#78788a"),    # 지주 4.5m (실물)
                     (0.28, 4.5, .45, "#b98cff"),    # 하우징
                     (0.13, 4.8, .30, "#e1cdff")],   # 렌즈
@@ -204,11 +223,14 @@ def main():
 
     feats = []
     for _, r in sta.to_crs(5186).iterrows():
-        kind = "center" if r["kind"] == "center" else "station"
-        feats += solid(r.geometry, MARKER_PARTS[kind],
-                       {"kind": kind, "name": r["소방서 및 안전센터명"],
-                        "sub": "출동 시작점" if kind == "center" else "관할 본서",
-                        "addr": r.get("주소", ""), "z": r.get("z", 0)})
+        base_props = {"name": r["소방서 및 안전센터명"],
+                      "addr": r.get("주소", ""), "z": r.get("z", 0)}
+        if r["kind"] == "center":
+            feats += solid(r.geometry, MARKER_PARTS["center"],
+                           {**base_props, "kind": "center", "sub": "출동 시작점"})
+        else:  # 소방서 = 붉은 직사각형 119 간판
+            feats += slab(r.geometry, STATION_BOX,
+                          {**base_props, "kind": "station", "sub": "관할 본서"})
     for _, r in hyd.to_crs(5186).iterrows():
         feats += solid(r.geometry, MARKER_PARTS["hydrant"],
                        {"kind": "hydrant", "name": f"소화전 {r.get('시설번호','')}",

@@ -194,9 +194,11 @@ map.on("load", async () => {
      출동 모드에서만 움직인다. 기여: @marscoolcat */
   map.addSource("hyd",{type:"geojson",data:hyd});
   map.addLayer({id:"hyd-pulse2",type:"circle",source:"hyd",
-    paint:{"circle-color":"#4fc3f7","circle-opacity":0,"circle-radius":6,"circle-stroke-width":0}});
+    paint:{"circle-color":"#4fc3f7","circle-opacity":0,"circle-radius":6,"circle-stroke-width":0,
+      "circle-pitch-alignment":"map","circle-pitch-scale":"map"}});
   map.addLayer({id:"hyd-pulse",type:"circle",source:"hyd",
-    paint:{"circle-color":"#4fc3f7","circle-opacity":0,"circle-radius":6,"circle-stroke-width":0}});
+    paint:{"circle-color":"#4fc3f7","circle-opacity":0,"circle-radius":6,"circle-stroke-width":0,
+      "circle-pitch-alignment":"map","circle-pitch-scale":"map"}});
   const HYD_T0 = performance.now(), HYD_SPEED = CONFIG.dispatch.pulseMs;
   (function ripple(now){
     if(map.getLayer("hyd-pulse")){
@@ -249,6 +251,27 @@ map.on("load", async () => {
     layout:{"line-cap":"round","line-join":"round"},
     paint:{"line-color":segColor(),"line-opacity":segOpacity(),"line-width":segWidth()}});
 
+  /* CCTV 커버리지 25m 원 — 지면에 반투명으로. 사각지대가 눈에 보이게. 기여: @marscoolcat */
+  const _circle = (lng,lat,m,steps=44) => {
+    const dLat=m/111320, dLng=m/(111320*Math.cos(lat*Math.PI/180)), c=[];
+    for(let i=0;i<=steps;i++){ const a=2*Math.PI*i/steps; c.push([lng+dLng*Math.cos(a), lat+dLat*Math.sin(a)]); }
+    return c;
+  };
+  const cctvCov = { type:"FeatureCollection", features:
+    ((DATA.cctv&&DATA.cctv.features)||[]).filter(f=>f.geometry&&f.geometry.type==="Point").map(f=>({
+      type:"Feature", properties:{},
+      geometry:{type:"Polygon", coordinates:[ _circle(f.geometry.coordinates[0], f.geometry.coordinates[1], 25) ]} })) };
+  map.addSource("cctv-cov",{type:"geojson",data:cctvCov});
+  map.addLayer({id:"cctv-cov-f",type:"fill",source:"cctv-cov",
+    layout:{visibility:"none"},
+    paint:{"fill-color":"#ffe680","fill-opacity":0.4}}, "seg-l");
+  map.addLayer({id:"cctv-cov-l",type:"line",source:"cctv-cov",
+    layout:{visibility:"none"},
+    paint:{"line-color":"#ffd84d","line-opacity":0.5,"line-width":1}}, "seg-l");
+
+  /* 소화전 물결을 건물 위로 — 건물에 가리지 않게(seg-l 아래·건물 위). 기여: @marscoolcat */
+  ["hyd-pulse2","hyd-pulse"].forEach(l=>{ if(map.getLayer(l)) map.moveLayer(l, "seg-l"); });
+
   map.on("mousemove","seg-l", e => {
     const p = e.features[0].properties;
     const v = VERDICT[p.verdict] || VERDICT.unknown;
@@ -285,6 +308,12 @@ map.on("load", async () => {
       "fill-extrusion-base":  ["+",["coalesce",["get","z"],0],["get","base"]],
       "fill-extrusion-height":["+",["coalesce",["get","z"],0],["get","top"]],
       "fill-extrusion-opacity":.95}});
+
+  /* 소방서·안전센터 119 표지 — 지점 위에 '119' 텍스트. 기여: @marscoolcat */
+  map.addSource("sta-pt",{type:"geojson",data:sta});
+  map.addLayer({id:"sta-119",type:"symbol",source:"sta-pt",
+    layout:{"text-field":"119","text-size":15,"text-anchor":"center","text-offset":[0,-0.3],"text-allow-overlap":true},
+    paint:{"text-color":"#ffffff","text-halo-color":"#c81e14","text-halo-width":2.2}});
 
   map.on("click","mk-3d", e => {
     const p=e.features[0].properties;
@@ -505,6 +534,7 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   if(t==="dispatch"){
     dispatchMode = on;
     document.getElementById("dispatch-fab")?.classList.toggle("on", on);
+    ["cctv-cov-f","cctv-cov-l"].forEach(l=>{ if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
     restyleSegments();
     styleMiniRoute();
   }
