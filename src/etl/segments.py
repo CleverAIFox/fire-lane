@@ -40,16 +40,23 @@ CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
 # 진단 스위치. 재현성 있게 저장소에 남긴다.
 #   FIRE_LANE_NO_MERGE=1        산출단위 병합을 끈다. 병합 전 기준값을 뽑을 때
 #   FIRE_LANE_DEBUG_SEG=DM03223 해당 단위의 표본을 전부 덤프한다
+#   FIRE_LANE_DEBUG_XY=192837,284314   좌표 최근접 단위를 덤프한다
+#                               seg_id 는 실행 간 유지되지 않는다. XY 를 쓸 것
+#   FIRE_LANE_OLD_SNAP=1        snap 을 소스별이 아닌 종전 방식으로 되돌린다.
+#                               소스별 snap 도입 전후를 한 바이너리로 비교할 때
 import os as _os
 NO_MERGE  = _os.environ.get("FIRE_LANE_NO_MERGE") == "1"
 DEBUG_SEG = [x.strip() for x in
              _os.environ.get("FIRE_LANE_DEBUG_SEG", "").split(",") if x.strip()]
+DEBUG_XY  = _os.environ.get("FIRE_LANE_DEBUG_XY", "").strip()
+OLD_SNAP  = _os.environ.get("FIRE_LANE_OLD_SNAP") == "1"
 _DBG = {"on": False}
 
 EMD_CD        = "12210108"   # 동명동
 GRAPH_BUFFER  = 1500.0       # 안전센터(대인 1.0km / 지산 1.2km)까지 포함
 KEEP_BUFFER   = 50.0         # 산출물에 남길 범위
 SNAP_TOL      = 0.5          # 끝점 투영 반경. T자 접합 해소
+SNAP_MAX      = 6.0          # 측정지점을 노면 안으로 끌어오는 최대 거리
 NODE_TOL      = 0.5          # 노드 동일시 반경. SNAP_TOL 과 같은 값을 쓴다.
                              # mm 반올림으로 노드를 식별하면 4cm 떨어진 두 점이
                              # 별개 노드가 되고 그 사이에 길이 0.04m 엣지가 남는다.
@@ -251,49 +258,45 @@ def main():
     xn = unary_union([Point(p) for p, d in deg.items() if d >= 3])
 
     def measure(s, t):
-        p = s.interpolate(t)
+        p0 = s.interpolate(t)
         a, b = s.interpolate(max(t-.5, 0)), s.interpolate(min(t+.5, s.length))
         dx, dy = b.x-a.x, b.y-a.y; L = np.hypot(dx, dy)
         if L == 0:
-            return None, None, None, (None, None, None), "L0"
+            return None, None, None, (None, None, None), "L0", {}
         ux, uy = -dy/L, dx/L
 
-        # 중심선이 노면 밖이면 법선이 도로면과 안 만나 폭이 안 나온다.
-        # 도로명주소 중심선은 위상용이라 실측 노면과 어긋난다. 재는 지점만
-        # 가장 가까운 노면 안으로 끌어온다(최대 6m). 옮긴 거리는 snap_m 에 남긴다.
-        _srcs = [u for u in (ngii1k_u, ngii_u, rw_u) if u is not None and not u.is_empty]
-        _snap = 0.0
-        _snapwhy = None
-        if not _srcs:
-            _snapwhy = "no_src"          # _clip 밖. 소스 폴리곤이 로드조차 안 됨
-        if _srcs and not any(u.covers(p) for u in _srcs):
-            _near = min(_srcs, key=lambda u: u.distance(p))
-            _d = _near.distance(p)
-            if _d > 6.0:
-                _snapwhy = f"snap_far{int(_d)}"   # 6m 밖. 중심선이 노면에서 이탈
-            if _d <= 6.0:
-                _q = nearest_points(_near, p)[0]
+        def _pt_for(u):
+            """이 소스 기준으로 잴 지점. 소스마다 독립으로 판정한다.
+
+            종전에는 세 소스 중 하나라도 p 를 덮으면 snap 을 통째로 건너뛰었다.
+            실폭도로의 1.8m 조각이 p 를 덮고 있으면 주 소스인 1:1,000 이
+            p 를 안 덮어도 아무 조치가 없었고, 그 소스는 no_run 으로 조용히
+            빠졌다(한 구간 30표본 중 20표본). 결정 63 의 주 소스가 무력화된다.
+
+            중심선이 노면 밖이면 법선이 도로면과 안 만나 폭이 안 나온다.
+            도로명주소 중심선은 위상용이라 실측 노면과 어긋난다.
+            재는 지점만 가장 가까운 노면 안으로 끌어온다(최대 SNAP_MAX).
+            """
+            if u is None or u.is_empty:
+                return None, None
+            if u.covers(p0):
+                return p0, 0.0
+            d = u.distance(p0)
+            if d > SNAP_MAX:
+                return None, None
+            q = nearest_points(u, p0)[0]
+            if d > 1e-9:
                 # 경계선 위가 아니라 노면 안쪽으로 들여놔야 한다.
                 # interpolate(length+0.2) 는 shapely 가 끝점으로 잘라 경계에 얹히고,
-                # 거기서 법선을 그으면 접선이 되어 폭이 안 나온다. 방향벡터로 밀어낸다.
-                if _d > 1e-9:
-                    _ux2, _uy2 = (_q.x - p.x) / _d, (_q.y - p.y) / _d
-                    for _push in (0.3, 0.8, 1.5):
-                        _cand = Point(_q.x + _ux2 * _push, _q.y + _uy2 * _push)
-                        if _near.covers(_cand):
-                            p = _cand
-                            break
-                    else:
-                        p = _q
-                else:
-                    p = _q
-                _snap = round(_d, 2)
+                # 거기서 법선을 그으면 접선이 되어 폭이 안 나온다. 방향벡터로 민다.
+                _ux2, _uy2 = (q.x - p0.x) / d, (q.y - p0.y) / d
+                for _push in (0.3, 0.8, 1.5):
+                    _c = Point(q.x + _ux2 * _push, q.y + _uy2 * _push)
+                    if u.covers(_c):
+                        return _c, round(d, 2)
+            return q, round(d, 2)
 
-        r = LineString([(p.x-ux*60, p.y-uy*60), (p.x+ux*60, p.y+uy*60)])
-        A = B = None
-        src = None
-
-        def _span(poly_u):
+        def _span(poly_u, p):
             """법선을 도로면으로 자른 조각들을 이어붙이고 좌우 거리를 잰다.
 
             실폭도로 폴리곤은 도로 중심선을 따라 좌/우로 쪼개져 있고
@@ -304,6 +307,7 @@ def main():
             교차로에서는 법선이 교차하는 길을 따라 빠져나가 한쪽이 수십 m 가
             된다. 그 표본은 폭이 아니므로 버린다.
             """
+            r = LineString([(p.x-ux*60, p.y-uy*60), (p.x+ux*60, p.y+uy*60)])
             sg = r.intersection(poly_u)
             if sg.is_empty:
                 return None, "empty"          # 법선이 이 소스와 아예 안 만난다
@@ -346,35 +350,91 @@ def main():
                 return None, "range"          # 0.3m 이하 조각
             return v, None
 
+        # ── 측정 지점 결정 ──────────────────────────────────
+        _srcs3 = ((ngii1k_u, "ngii1k"), (ngii_u, "ngii"), (rw_u, "silpok"))
+        if OLD_SNAP:
+            # 종전 방식. 소스 하나라도 덮으면 snap 없음, 아니면 최근접 하나로 전부 이동.
+            _live = [u for u, _ in _srcs3 if u is not None and not u.is_empty]
+            _pp = p0
+            if _live and not any(u.covers(p0) for u in _live):
+                _near = min(_live, key=lambda u: u.distance(p0))
+                _d = _near.distance(p0)
+                if _d <= SNAP_MAX:
+                    _q = nearest_points(_near, p0)[0]
+                    _pp = _q
+                    if _d > 1e-9:
+                        _u2, _v2 = (_q.x-p0.x)/_d, (_q.y-p0.y)/_d
+                        for _push in (0.3, 0.8, 1.5):
+                            _c = Point(_q.x+_u2*_push, _q.y+_v2*_push)
+                            if _near.covers(_c):
+                                _pp = _c
+                                break
+            _pts = {nm: (_pp, 0.0) for _, nm in _srcs3}
+        else:
+            _pts = {nm: _pt_for(u) for u, nm in _srcs3}
+
+        res = {}
+        for u, nm in _srcs3:
+            pt, sn = _pts[nm][0], _pts[nm][1]
+            if u is None or u.is_empty:
+                res[nm] = (None, "absent", None, None); continue
+            if pt is None:
+                res[nm] = (None, "far", None, None); continue
+            v, c = _span(u, pt)
+            # 자기일관성 검사. 폭 v 인 도로에 속한 점이라면 그 밖으로 벗어난
+            # 거리가 반폭을 넘을 수 없다. 4.3m 를 밀어 넣어 1.26m 폭을 쟀다면
+            # 원래 점은 그 조각 바깥 4.3m 에 있었던 것이고 1.26m 도로의 점일 수
+            # 없다. 다른 폴리곤 조각에 억지로 들어가 그 조각의 좁은 데를 잰 것이다.
+            # 45.9m 구간이 이런 표본 하나로 1.26m 판정을 받고 있었다.
+            # 측정값 자신으로 검증하므로 임계값을 새로 만들지 않는다.
+            if (not OLD_SNAP) and v is not None and sn is not None and sn > v / 2.0:
+                v, c = None, f"snap{sn:.1f}>w/2"
+            res[nm] = (v, c, pt, sn)
+
         # 세 소스를 다 재고 신뢰도 순으로 채택한다. 좁은 쪽을 고르지 않는다.
         # 실폭도로는 실측 11.8m 인 동계천로에 1.30m 짜리 측구 조각을 그려 놓았고
         # min() 은 그것을 무조건 채택했다. 틀린 값은 보수적인 게 아니라 틀린 것이다.
-        a_1k, c_1k = _span(ngii1k_u) if ngii1k_u is not None else (None, "absent")
-        (a_ngii, c_ngii), (a_rw, c_rw) = _span(ngii_u), _span(rw_u)
-        for _v, _s in ((a_1k, "ngii1k"), (a_ngii, "ngii"), (a_rw, "silpok")):
-            if _v is not None:
-                A, src = _v, _s
+        A, src, P = None, None, p0
+        for nm in ("ngii1k", "ngii", "silpok"):
+            if res[nm][0] is not None:
+                A, src, P = res[nm][0], nm, res[nm][2]
                 break
-        sg = r.intersection(bld_u)                     # 담~담 = 상한
+
+        # 담~담(상한)은 폭을 채택한 지점과 같은 곳에서 잰다. 다른 지점에서 재면
+        # wmin 과 wmax 가 서로 다른 단면을 기술하게 된다.
+        rb = LineString([(P.x-ux*60, P.y-uy*60), (P.x+ux*60, P.y+uy*60)])
+        B = None
+        sg = rb.intersection(bld_u)                    # 담~담 = 상한
         if not sg.is_empty:
-            pr = [sg] if sg.geom_type == "LineString" else [q for q in sg.geoms if q.geom_type == "LineString"]
-            s1 = min((q.distance(p) for q in pr if (q.centroid.x-p.x)*ux + (q.centroid.y-p.y)*uy < 0), default=None)
-            s2 = min((q.distance(p) for q in pr if (q.centroid.x-p.x)*ux + (q.centroid.y-p.y)*uy > 0), default=None)
+            if sg.geom_type == "LineString":
+                pr = [sg]
+            elif hasattr(sg, "geoms"):
+                pr = [q for q in sg.geoms if q.geom_type == "LineString"]
+            else:
+                pr = []
+            s1 = min((q.distance(P) for q in pr
+                      if (q.centroid.x-P.x)*ux + (q.centroid.y-P.y)*uy < 0), default=None)
+            s2 = min((q.distance(P) for q in pr
+                      if (q.centroid.x-P.x)*ux + (q.centroid.y-P.y)*uy > 0), default=None)
             if s1 is not None and s2 is not None and 0.3 < s1+s2 < WMAX_CAP:
                 B = s1 + s2
         # 벽 사이 폭은 도로 폭보다 좁을 수 없다. 상한(WMAX_CAP)에 걸려 잘린 경우
         # 역전이 생기므로 도로 폭으로 끌어올린다.
         if A is not None and B is not None and B < A:
             B = A
+
+        a_1k, a_ngii, a_rw = res["ngii1k"][0], res["ngii"][0], res["silpok"][0]
         if _DBG["on"]:
-            print(f"      snap={_snap:4.2f} 1k={a_1k if a_1k else c_1k}"
-                  f" ngii={a_ngii if a_ngii else c_ngii}"
-                  f" silpok={a_rw if a_rw else c_rw}"
-                  f" → A={A} src={src} B={B}")
+            print("      " + "  ".join(
+                f"{nm}={res[nm][0] if res[nm][0] is not None else res[nm][1]}"
+                f"(snap{res[nm][3] if res[nm][3] is not None else '-'})"
+                for nm in ("ngii1k", "ngii", "silpok"))
+                + f" → A={A} src={src} B={B}")
         why = None
         if A is None:
-            why = _snapwhy or f"1k:{c_1k}|ng:{c_ngii}|rw:{c_rw}"
-        return A, B, src, (a_1k, a_ngii, a_rw), why
+            why = "|".join(f"{k}:{res[n][1]}" for k, n in
+                           (("1k", "ngii1k"), ("ng", "ngii"), ("rw", "silpok")))
+        return A, B, src, (a_1k, a_ngii, a_rw), why, res
 
     def widths(s):
         A, B, fb = [], [], False
@@ -388,6 +448,18 @@ def main():
         if not _ts:
             _ts = [s.length/2]
         _nc, _nx_skip, _whys = 0, 0, []
+        _cov = {"ngii1k": 0, "ngii": 0, "silpok": 0}
+        _n_try = 0
+
+        def _covr():
+            """소스별 커버율. 정규 표본 중 그 소스가 값을 낸 비율.
+
+            표본마다 다른 소스가 채택되면 wmin=min(A) 이 소스 혼합 집합에서
+            최솟값을 뽑는다. 소스 축에서 폐기한 min() 이 표본 축으로 부활한 것이다.
+            구간 단위 채택으로 바꾸기 위한 관측값이다. (STEP 5-1)
+            """
+            return ({k: (round(v/_n_try, 3) if _n_try else None)
+                     for k, v in _cov.items()}, _n_try)
         for t in _ts:
             _nc += 1
             if not _short and xn.distance(s.interpolate(t)) < XSEC_EXCL:
@@ -398,7 +470,11 @@ def main():
             if _DBG["on"]:
                 _pp = s.interpolate(t)
                 print(f"    t={t:7.1f}  ({_pp.x:.1f},{_pp.y:.1f})")
-            a, b, sc, pr, _why = measure(s, t)
+            a, b, sc, pr, _why, _res = measure(s, t)
+            _n_try += 1
+            for _nm in ("ngii1k", "ngii", "silpok"):
+                if _res.get(_nm, (None,))[0] is not None:
+                    _cov[_nm] += 1
             if _why: _whys.append(_why)
             if a: A.append(a); S.append(sc); D.append(pr)
             if b: B.append(b)
@@ -424,7 +500,7 @@ def main():
         # 하나도 안 잡혔다는 것은 중심선이 도로면을 벗어났다는 뜻이다.
         # 그 값으로 판정하면 대로가 1.4m 로 나간다(DM02856 63m 구간).
         if _n_reg == 0 and s.length >= MIN_SEG_LEN * 2:
-            return None, None, True, None, None, _rsn
+            return None, None, True, None, None, _rsn, _covr()
 
         # 채택된 최솟값이 어느 소스에서 나왔는지 기록한다(결정 64).
         _i = A.index(min(A)) if A else None
@@ -436,7 +512,7 @@ def main():
             _vals = [v for v in D[_i] if v is not None]
             if len(_vals) >= 2:
                 wdis = round(max(_vals) - min(_vals), 2)
-        return wmin, wmax, fb, wsrc, wdis, _rsn
+        return wmin, wmax, fb, wsrc, wdis, _rsn, _covr()
 
     def verdict(wmin, wmax):
         """소방청 기준 판정 4종.
@@ -638,7 +714,7 @@ def main():
         short = g.length < MIN_SEG_LEN
         if uid not in W:
             W[uid] = widths(g)          # 병합으로 범위 안에 들어온 단위
-        wmin, wmax, fb, wsrc, wdis, wfail = W[uid]
+        wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt) = W[uid]
         _road_nm, _road_side, _road_bt = road_name(g)
         v = verdict(wmin, wmax)
         if short and wmin is None:
@@ -670,6 +746,8 @@ def main():
                         in_emd=bool(g.intersects(poly)),
                         route_usage=u["usage"],
                         merged_n=u["n"], merge_why=u["why"],
+                        cov_ngii1k=wcov["ngii1k"], cov_ngii=wcov["ngii"],
+                        cov_silpok=wcov["silpok"], n_sample=wnt,
                         length_m=round(g.length, 1), _n=(a, b), geometry=g)
 
     bynode = {}
@@ -712,7 +790,10 @@ def main():
     # 좌표가 없어 도로명 단위로만 매칭되므로 참고값이다.
     # 소방서가 지정한 것은 그 도로명 중 가장 좁은 구간이므로,
     # 우리 값도 최솟값 쪽으로 비교하는 것이 타당하다.
-    fa = ROOT/"data"/"raw"/"safety"/"safety_fire_access_gj_dong_20250731.csv"
+    # ★ RAW 는 $FIRE_LANE_RAW 다. ROOT/"data"/"raw" 로 박아두면 exists() 가
+    #   항상 거짓이라 이 블록이 통째로 죽는다. 실제로 한 번도 실행된 적이 없었다.
+    #   소방서 지정 구간은 우리 폭에 대한 유일한 외부 대조 수단이다.
+    fa = RAW/"safety"/"safety_fire_access_gj_dong_20250731.csv"
     if fa.exists():
         import csv, re
         rows = list(csv.DictReader(fa.open(encoding="cp949")))
@@ -738,6 +819,19 @@ def main():
                 print(f"  {rn:14s} 소방서 {w_nfa:>7s}m │ 우리 중앙 {med:5.2f}m "
                       f"({med - wf:+.2f}) │ 세그 {len(hit):3d} │ "
                       + " ".join(f"{k}:{v}" for k, v in hit.verdict.value_counts().items()))
+    # ── 소스별 커버율 ────────────────────────────────────────
+    # 표본 축 소스 혼합이 어디서 얼마나 일어나는지. 채택 규칙(STEP 5-1) 근거.
+    _gv = g[g.n_sample > 0]
+    print(f"\n[소스 커버율] 표본 있는 단위 {len(_gv)}"
+          f" · 소스별 snap {'OFF(종전)' if OLD_SNAP else 'ON'}")
+    print(_gv[["cov_ngii1k", "cov_ngii", "cov_silpok"]]
+          .describe(percentiles=[.25, .5, .75]).round(3).to_string())
+    _mix = _gv[(_gv.cov_ngii1k > 0) & (_gv.cov_ngii1k < 1)]
+    print(f"  1k 부분커버(0<cov<1) {len(_mix)} · 그중 채택소스가 1k 아닌 것 "
+          f"{int((_mix.width_src != 'ngii1k').sum())}")
+    print("  채택 소스 분포:",
+          dict(g.width_src.value_counts(dropna=False).items()))
+
     # ── 폭 미산출 진단 ───────────────────────────────────────
     # STEP 4-1. 사유별 분포를 보고 원인을 특정한다. 추정 금지.
     _w = g[g.unknown_reason == "width"]
@@ -774,7 +868,14 @@ def main():
     print(f"[길이분포] 중앙 {g.length_m.median():.1f}m · 최대 {g.length_m.max():.1f}m"
           f" · 100m초과 {(g.length_m > 100).sum()}")
 
-    for _sid in DEBUG_SEG:
+    _dbg_ids = list(DEBUG_SEG)
+    if DEBUG_XY:
+        _x, _y = (float(v) for v in DEBUG_XY.split(",")[:2])
+        _near = g.iloc[g.distance(Point(_x, _y)).values.argmin()]
+        print(f"\n[덤프대상] ({_x:.0f},{_y:.0f}) 최근접 = {_near.seg_id} "
+              f"{_near.road_name} {_near.length_m}m")
+        _dbg_ids.append(_near.seg_id)
+    for _sid in _dbg_ids:
         _row = g[g.seg_id == _sid]
         if not len(_row):
             print(f"\n[덤프] {_sid} 없음")
@@ -786,7 +887,7 @@ def main():
         _DBG["on"] = True
         _r = widths(_gg)
         _DBG["on"] = False
-        print(f"  → wmin={_r[0]} wmax={_r[1]} src={_r[3]} fail={_r[5]}")
+        print(f"  → wmin={_r[0]} wmax={_r[1]} src={_r[3]} fail={_r[5]} cov={_r[6]}")
 
     # 진단 컬럼은 산출물에 넣지 않는다. 스키마·sha 를 바꾸면 안 된다.
     g = g.drop(columns=["width_fail"])
@@ -813,6 +914,10 @@ def main():
             "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
             "inherited": "bool 사용하지 않는다. 항상 false",
             "merged_n": "int 이 산출단위가 묶은 그래프 엣지 수. 1 이면 병합 없음",
+            "cov_ngii1k": "float|null 정규표본 중 1:1,000 이 값을 낸 비율",
+            "cov_ngii": "float|null 정규표본 중 1:5,000 이 값을 낸 비율",
+            "cov_silpok": "float|null 정규표본 중 실폭도로가 값을 낸 비율",
+            "n_sample": "int 정규표본 수(교차로 제외 후)",
             "merge_why": "str|null 병합을 유발한 최초 폭 미산출 사유",
             "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
             "length_m": "float 이 구간의 수평거리(m). 경사 보정 전이다. 동명동 평균경사 1.8도 기준 실주행거리는 약 0.05% 길고 최대 9도 구간에서 1.2% 길다. 보정에는 5m DEM 이 필요하다",
