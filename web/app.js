@@ -275,10 +275,14 @@ map.on("load", async () => {
   map.addSource("cctv-cov",{type:"geojson",data:cctvCov});
   map.addLayer({id:"cctv-cov-f",type:"fill",source:"cctv-cov",
     layout:{visibility:"none"},
-    paint:{"fill-color":"#ffe680","fill-opacity":0.4}}, "seg-l");
+    /* 흰색 35%. 검은 배경에서 색상 대비가 아닌 명도 대비로 버틴다.
+       ★ 이 레이어는 "seg-l" 앞에 꽂혀 있어 판정 구간 선이 원 위에 그려진다.
+         그래서 원을 밝게 깔아도 도로 색(초록·주황·빨강)은 가려지지 않는다. */
+    paint:{"fill-color":"#ffffff","fill-opacity":0.5}}, "seg-l");
   map.addLayer({id:"cctv-cov-l",type:"line",source:"cctv-cov",
     layout:{visibility:"none"},
-    paint:{"line-color":"#ffd84d","line-opacity":0.5,"line-width":1}}, "seg-l");
+    /* 테두리는 강조하지 않는다. 면과 같은 흰색·같은 농도로 경계만 잡아준다. */
+    paint:{"line-color":"#ffffff","line-opacity":0.35,"line-width":1}}, "seg-l");
 
   /* 소화전 물결을 건물 위로 — 건물에 가리지 않게(seg-l 아래·건물 위). 기여: @marscoolcat */
   ["hyd-pulse2","hyd-pulse"].forEach(l=>{ if(map.getLayer(l)) map.moveLayer(l, "seg-l"); });
@@ -370,35 +374,93 @@ map.on("load", async () => {
        그래서 캔버스로 만든 표지판 이미지를 symbol 로 띄워 기둥 위에 세운다.
        화면상 결과는 "빨간 기둥 + 119 표지판"이고, 항상 카메라를 향해
        어느 각도에서 봐도 119 가 읽힌다는 장점이 있다. */
-  const SIGN_TOP_M = 42;          // config.js m-sta 의 h 와 같게 유지할 것
+  /* 간판을 올릴 높이. config.js 의 각 마커 총높이와 같게 유지할 것.
+     소방서(15m)와 안전센터(42m)는 높이가 달라서 값을 따로 둔다. */
+  const STA_TOP_M  = 42;          // m-sta  119안전센터 기둥
+  const FS_TOP_M   = 15;          // m-fs   소방서 박스
+  /* 간판을 꼭대기보다 더/덜 올리고 싶을 때 쓰는 배수. 1.0 = 정확히 꼭대기.
+     화면에서 간판이 낮아 보이면 1.1~1.2 로, 떠 보이면 0.9 로 조정한다. */
+  const SIGN_LIFT  = 1.0;
   const SIGN_PX    = 192;         // 아이콘 원본 크기(px). 확대해도 안 뭉개지게 크게 굽는다
 
   /* 표지판 이미지를 캔버스로 그려 지도에 등록한다.
      빨간 판 + 흰 테두리 + 흰 119. 손그림 시안과 같은 구성이다. */
-  function makeSignImage(){
-    const c = document.createElement("canvas");
-    c.width = c.height = SIGN_PX;
+  function makeTruckImage(){
+    const W = SIGN_PX, c = document.createElement("canvas");
+    c.width = c.height = W;
     const g = c.getContext("2d");
-    const r = 26, w = SIGN_PX, pad = 9;
+    const RED = "#e2221c";
+
+    /* 빨간 둥근 사각 판 + 흰 테두리.
+       소화전 간판은 '원'이라 멀리서도 형태만으로 둘이 구분된다. */
+    const r = 30, pad = 10;
     g.beginPath();
     g.moveTo(pad+r, pad);
-    g.arcTo(w-pad, pad,     w-pad, w-pad, r);
-    g.arcTo(w-pad, w-pad,   pad,   w-pad, r);
-    g.arcTo(pad,   w-pad,   pad,   pad,   r);
-    g.arcTo(pad,   pad,     w-pad, pad,   r);
+    g.arcTo(W-pad, pad,   W-pad, W-pad, r); g.arcTo(W-pad, W-pad, pad, W-pad, r);
+    g.arcTo(pad,   W-pad, pad,   pad,   r); g.arcTo(pad,   pad,   W-pad, pad,   r);
+    g.closePath();
+    g.fillStyle = RED; g.fill();
+    g.lineWidth = 9; g.strokeStyle = "#ffffff"; g.stroke();
+
+    /* 소방차(사다리차) 픽토그램 — 흰색.
+       칸을 나누는 선은 배경과 같은 빨강으로 그어야 덩어리로 안 뭉친다. */
+    g.fillStyle = "#ffffff";
+    const box = (x,y,w,h,rr=4)=>{ g.beginPath();
+      g.moveTo(x+rr,y); g.arcTo(x+w,y,x+w,y+h,rr); g.arcTo(x+w,y+h,x,y+h,rr);
+      g.arcTo(x,y+h,x,y,rr); g.arcTo(x,y,x+w,y,rr); g.closePath(); g.fill(); };
+
+    /* 사다리 — 기울여 얹는다 */
+    g.save();
+    g.translate(70, 60); g.rotate(-0.33);
+    box(-44, -7, 88, 14, 4);
+    g.fillStyle = RED;
+    [-33,-19,-5,9,23].forEach(x => g.fillRect(x, -7, 4, 14));
+    g.restore();
+
+    g.fillStyle = "#ffffff";
+    box(28, 82, 84, 46, 5);          // 적재함
+    box(112, 74, 48, 54, 6);         // 운전석
+    box(126, 62, 16, 10, 3);         // 경광등
+    g.strokeStyle = "#ffffff"; g.lineWidth = 5; g.lineCap = "round";
+    [[134,58,134,44],[124,60,116,50],[144,60,152,50]].forEach(([a,b,cc,d])=>{
+      g.beginPath(); g.moveTo(a,b); g.lineTo(cc,d); g.stroke(); });
+
+    g.fillStyle = RED;               // 창문 · 적재함 칸막이
+    box(121, 82, 28, 24, 4);
+    [46, 64, 82].forEach(x => g.fillRect(x, 100, 14, 5));
+
+    [[58,128],[136,128]].forEach(([x,y])=>{        // 바퀴
+      g.beginPath(); g.arc(x, y, 17, 0, Math.PI*2); g.fillStyle="#ffffff"; g.fill();
+      g.beginPath(); g.arc(x, y,  7, 0, Math.PI*2); g.fillStyle=RED;       g.fill(); });
+
+    return c;                      // 캔버스를 돌려준다 — 지도와 범례가 같이 쓴다
+  }
+  /* 소방서용 '119' 텍스트 간판. 안전센터(소방차)와 그림이 달라야
+     화면에서 '출동 시작점'과 '관할 본서'가 구분된다. 판 모양·색은 같게 간다. */
+  function make119Image(){
+    const W = SIGN_PX, c = document.createElement("canvas");
+    c.width = c.height = W;
+    const g = c.getContext("2d");
+    const r = 30, pad = 10;
+    g.beginPath();
+    g.moveTo(pad+r, pad);
+    g.arcTo(W-pad, pad,   W-pad, W-pad, r); g.arcTo(W-pad, W-pad, pad, W-pad, r);
+    g.arcTo(pad,   W-pad, pad,   pad,   r); g.arcTo(pad,   pad,   W-pad, pad,   r);
     g.closePath();
     g.fillStyle = "#e2221c"; g.fill();
     g.lineWidth = 9; g.strokeStyle = "#ffffff"; g.stroke();
     g.fillStyle = "#ffffff";
     g.textAlign = "center"; g.textBaseline = "middle";
     g.font = "800 78px Pretendard, system-ui, sans-serif";
-    g.fillText("119", w/2, w/2 + 3);
-    return c;                      // 캔버스를 돌려준다 — 지도와 범례가 같이 쓴다
+    g.fillText("119", W/2, W/2 + 3);
+    return c;
   }
-  const signCanvas = makeSignImage();
-  if (!map.hasImage("sign-119"))
-    map.addImage("sign-119",
-      signCanvas.getContext("2d").getImageData(0,0,SIGN_PX,SIGN_PX), {pixelRatio:2});
+
+  const truckCanvas = makeTruckImage();
+  const s119Canvas  = make119Image();
+  const bake = cv => cv.getContext("2d").getImageData(0,0,SIGN_PX,SIGN_PX);
+  if (!map.hasImage("sign-truck")) map.addImage("sign-truck", bake(truckCanvas), {pixelRatio:2});
+  if (!map.hasImage("sign-119"))   map.addImage("sign-119",   bake(s119Canvas),  {pixelRatio:2});
 
   /* 소화전 표지판. 119 와 같은 방식이지만 훨씬 작게 단다.
      소화전은 '어디에 있는지'가 정보의 전부라, 간판이 크면 그 위치를 가린다.
@@ -447,16 +509,6 @@ map.on("load", async () => {
     map.addImage("sign-hyd",
       hydCanvas.getContext("2d").getImageData(0,0,192,192), {pixelRatio:2});
 
-  /* 범례 아이콘. 지도에 쓴 캔버스를 그대로 재사용한다 —
-     간판 디자인을 고치면 범례도 자동으로 따라온다. 두 곳에 그리지 말 것. */
-  const legendIcon = (elId, canvas) => {
-    const el = document.getElementById(elId);
-    if(!el) return;
-    el.classList.add("sign");
-    el.style.background = `url(${canvas.toDataURL()}) center/contain no-repeat`;
-  };
-  legendIcon("lgi-sta", signCanvas);
-  legendIcon("lgi-hyd", hydCanvas);
 
   map.addLayer({id:"hyd-sign",type:"symbol",source:"hyd",
     layout:{
@@ -468,15 +520,25 @@ map.on("load", async () => {
     paint:{"icon-translate":[0,0], "icon-translate-anchor":"viewport"}});
 
   map.addSource("sta-pt",{type:"geojson",data:sta});
-  map.addLayer({id:"sta-119",type:"symbol",source:"sta-pt",
+  /* 안전센터 = 소방차 간판, 소방서 = 119 간판. 같은 sta 소스를 kind 로 가른다. */
+  const staSign = (id, img, kind, dx) => map.addLayer({
+    id, type:"symbol", source:"sta-pt",
+    filter:["==",["get","kind"],kind],
     layout:{
-      "icon-image":"sign-119",
-      "icon-anchor":"bottom",           // 표지판 밑변이 기준점에 온다
+      "icon-image":img, "icon-anchor":"bottom",
       "icon-allow-overlap":true, "icon-ignore-placement":true,
-      /* 확대하면 간판도 커진다. 20 이상은 더 키우지 않는다(화면을 다 덮는다). */
+      /* ★ 좌우로 벌린다. 소방서 본서 부지 안에 안전센터가 함께 있는 경우가 많아
+         두 간판이 같은 자리에 겹쳐 뒤엣것이 안 보였다.
+         icon-offset 단위는 icon-size 가 곱해지므로 확대·축소해도 간격이 유지된다.
+         아이콘 폭이 96 단위라 ±52(=104 간격)면 서로 안 닿는다. */
+      "icon-offset":[dx, 0],
+      /* 기존 값의 약 2/3. 지도를 덮지 않는 선까지 줄였다. */
       "icon-size":["interpolate",["linear"],["zoom"],
-        14,0.30, 16,0.55, 18,1.05, 20,1.70, 22,1.70]},
+        14,0.20, 16,0.36, 18,0.68, 20,1.10, 22,1.10]},
     paint:{"icon-translate":[0,0], "icon-translate-anchor":"viewport"}});
+
+  staSign("sta-truck", "sign-truck", "center",  -52);   // 119안전센터 — 왼쪽
+  staSign("sta-119",   "sign-119",   "station",  52);   // 소방서 — 오른쪽
 
   /* 표지판을 기둥 꼭대기에 붙이기.
      ─────────────────────────────────────────────────────────────
@@ -490,13 +552,36 @@ map.on("load", async () => {
           위에서 내려다보면(pitch 0) 기둥은 점으로 보여 올릴 필요가 없고,
           눕힐수록 길어진다. cos 을 쓰면 정반대로 움직인다.
      이제 기울이거나 위도가 달라져도 따라붙는다. */
+  /* 화면 1px 이 실제 몇 m 인지 지도에 직접 물어본다.
+     ★ 화면 '가로 방향'으로만 잰다. 앞서 경도 +100m 를 재던 방식은 지도를 회전하면
+       그 100m 가 화면 세로 성분을 갖게 되고, 세로는 기울기 때문에 눌려 보여서
+       측정값이 실제보다 짧게 나온다 → m/px 가 과대평가되고 간판이 덜 올라간다.
+       화면 중앙의 가로선 위 두 점을 unproject 하면 회전·기울기와 무관하다. */
+  function metersPerPixel(){
+    const cv = map.getCanvas();
+    const cx = cv.clientWidth / 2, cy = cv.clientHeight / 2;
+    const a = map.unproject([cx - 50, cy]), b = map.unproject([cx + 50, cy]);
+    const d = a.distanceTo(b);
+    return d > 0 ? d / 100 : 1;
+  }
+
   function placeSigns(){
-    const mPerPx = 78271.5170 * Math.cos(map.getCenter().lat * Math.PI/180)
-                 / Math.pow(2, map.getZoom());
-    const sinP = Math.sin(map.getPitch() * Math.PI/180);
-    [["sta-119", SIGN_TOP_M], ["hyd-sign", HYD_TOP_M]].forEach(([id, topM]) => {
+    const mPerPx = metersPerPixel();
+    const th   = map.getPitch() * Math.PI/180;
+    const sinP = Math.sin(th), cosP = Math.cos(th);
+    /* 카메라~화면중심 거리(px). MapLibre 기본 fov 에서 캔버스 높이의 1.5배다. */
+    const camD = (map.transform && map.transform.cameraToCenterDistance)
+               || map.getCanvas().clientHeight * 1.5;
+
+    [["sta-truck", STA_TOP_M], ["sta-119", FS_TOP_M],
+     ["hyd-sign",  HYD_TOP_M]].forEach(([id, topM]) => {
       if(!map.getLayer(id)) return;
-      map.setPaintProperty(id, "icon-translate", [0, -Math.round(topM*sinP/mPerPx)]);
+      const hPx = topM / mPerPx;                 // 기울이지 않았을 때의 높이(px)
+      /* 원근 보정. 기둥 꼭대기는 지면보다 카메라에 가까워서 실제로는 더 크게
+         잡힌다. 이 항을 빼면 높은 마커일수록 간판이 눈에 띄게 덜 올라간다. */
+      const persp = 1 / Math.max(0.35, 1 - (hPx * cosP) / camD);
+      map.setPaintProperty(id, "icon-translate",
+        [0, -Math.round(SIGN_LIFT * hPx * sinP * persp)]);
     });
   }
   placeSigns();
@@ -505,7 +590,7 @@ map.on("load", async () => {
   /* ★ 표지판을 맨 위로. 물결만 건물 위로 올리고 표지판을 안 올리면
      '링은 있는데 소화전이 없는' 칸이 생긴다 — 3D 마커(mk-3d)는 건물에 가려지는데
      물결은 건물 위에 강제로 그려지기 때문이다. 표지판은 그 어긋남을 메운다. */
-  ["hyd-sign","sta-119"].forEach(l=>{ if(map.getLayer(l)) map.moveLayer(l); });
+  ["hyd-sign","sta-119","sta-truck"].forEach(l=>{ if(map.getLayer(l)) map.moveLayer(l); });
 
   map.on("click","mk-3d", e => {
     const p=e.features[0].properties;
@@ -700,12 +785,18 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   tg.classList.toggle("on", on);
   if(t==="buildings") map.setLayoutProperty("bld-3d","visibility",on?"visible":"none");
   if(t.startsWith("m-")){
-    const kind = {"m-sta":"center","m-fs":"station","m-hyd":"hydrant","m-cctv":"cctv"}[t];
-    on ? markerOff.delete(kind) : markerOff.add(kind);
+    /* ★ buildMarkers() 가 properties.kind 에 넣는 값은 spec.id("m-sta" 등)다.
+       예전 코드는 이걸 "center"/"station"/"hydrant"/"cctv" 로 바꿔서 필터에 넣었는데,
+       그런 값은 데이터에 없으므로 필터가 아무것도 못 걸렀다. 그래서 토글을 꺼도
+       3D 마커가 그대로 남고 간판만 사라졌다. t 를 그대로 쓰는 것이 맞다. */
+    on ? markerOff.delete(t) : markerOff.add(t);
     map.setFilter("mk-3d", markerOff.size
       ? ["!",["in",["get","kind"],["literal",[...markerOff]]]] : null);
-    if(t==="m-hyd") ["hyd-pulse","hyd-pulse2","hyd-sign"]
-      .forEach(l=>{ if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
+    /* 마커를 끄면 그 간판도 같이 숨긴다. 안 그러면 간판만 공중에 남는다. */
+    const signOf = {"m-hyd":["hyd-pulse","hyd-pulse2","hyd-sign"],
+                    "m-sta":["sta-truck"], "m-fs":["sta-119"]}[t];
+    if(signOf) signOf.forEach(l=>{
+      if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
   }
   if(t==="ortho"){
     map.setLayoutProperty("ortho","visibility",on?"visible":"none");
