@@ -764,6 +764,15 @@ def main():
             v, reason = "unknown", "no_cctv"
         elif v == "unknown":
             reason = "width"
+            # 폭을 못 잰 것과 잴 만한 도로가 아닌 것은 다르다.
+            # 도로대장 명목폭(ROAD_BT)이 TRUCK 미만이면 소방차 진입 불가가
+            # 명백하다. 그런 구간을 "CCTV 없어 판정 보류" 회색으로 두면
+            # 영상판정으로 메울 수 있다는 뜻이 되는데, 카메라를 갖다 대도
+            # 못 들어간다. 도면으로 이미 확정된 것이다.
+            # 폭 미산출 구간에 한해서만 적용한다 — ROAD_BT 는 도로명 단위
+            # 대표값이라 실측값이 있으면 그쪽이 항상 우선한다.
+            if _road_bt is not None and _road_bt < TRUCK:
+                v, reason = "blocked", None
 
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
                         verdict=v, unknown_reason=reason,
@@ -974,7 +983,8 @@ def main():
         "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK, "nfa_run_m": NFA_RUN_M, "cctv_range_m": CCTV_RANGE,
                    "intersection_exclusion_m": XSEC_EXCL, "wmax_cap_m": WMAX_CAP,
                    "min_seg_len_m": MIN_SEG_LEN, "snap_tol_m": SNAP_TOL},
-        "verdict_rule": ["wmax <  3.0 -> blocked (통과 하한 미달)",
+        "verdict_rule": ["폭 미산출 + ROAD_BT < 3.0 -> blocked (명목폭 진입 불가)",
+                         "wmax <  3.0 -> blocked (통과 하한 미달)",
                          "wmin >= 7.0 -> clear (양쪽 주차해도 통과)",
                          "wmin or wmax null -> unknown (reason=width)",
                          "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가",
