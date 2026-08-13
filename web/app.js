@@ -26,14 +26,14 @@ const CARTO = t => ["a","b","c","d"].map(s=>
    '통과 확실'과 '통과 유력'을 나눌 실익이 없어 하나로 합쳤다.
    세부 구분이 필요하면 툴팁의 width_min_m 을 보면 된다. */
 /* 현재는 1단계(도면 프루닝) 결과다. 최종 판정이 아니다.
-   라벨에 "도면상"을 붙여 확정처럼 읽히지 않게 한다.
-   2단계(영상판정)가 붙으면 needs_cv 268개가 갈리고 라벨에서 "도면상"이 빠진다. */
+   라벨에서 "도면상"은 뺐다(2025-08 팀 요청). 대신 좌측 #warn 이
+   "도면 기반 1차 분류"라는 단서를 계속 진다. #warn 문구를 지우면
+   화면에 단서가 하나도 안 남으니 지우지 말 것. */
 const VERDICT = Object.fromEntries(Object.entries(CONFIG.verdict)
   .map(([k,v])=>[k,{c:v.color, nm:v.label, d:v.desc}]));
-/* CCTV 사각으로 죽은 구간은 순수 회색이 아니라 주황을 섞는다.
-   "원래 영상판정 대상이었는데 CCTV가 없어서 못 한다"가 색으로 읽혀야 한다. */
-const NO_CCTV_COLOR = CONFIG.noCctvColor;
-/* unknown 의 이유. 둘 다 회색이지만 성격이 다르다. */
+/* unknown 의 사유. 회색의 정의는 no_cctv 하나다.
+   width(폭 산출 실패)는 설계에 없던 버그 상태이며 0 으로 수렴시키는 중이다.
+   그 값이 0 이 아닌 동안에는 툴팁에 사유가 그대로 노출된다. */
 const REASON = CONFIG.reason;
 const off = new Set();
 
@@ -138,12 +138,13 @@ const zOf = () => 0;
      피킹은 살아 있어 툴팁은 뜨지만 선이 안 보인다. 네이티브 line 은 지형을 따라간다. */
 const segColor = () => {
   const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
-  const base = ["case",
-    ["==",["get","unknown_reason"],"no_cctv"], rgb(NO_CCTV_COLOR),
-    ["match",["get","verdict"],
-      "blocked", rgb(VERDICT.blocked.c), "needs_cv", rgb(VERDICT.needs_cv.c),
-      "clear",   rgb(VERDICT.clear.c),   rgb(VERDICT.unknown.c)]];
-  return base;
+  /* no_cctv 갈색 분기는 제거했다(2025-08 팀 결정).
+     회색(unknown)의 정의 자체가 "CCTV 없음 / 25m 밖"이라 하위 색이 필요 없다.
+     범례에 없는 색이 지도에만 남는 상태가 제일 나쁘다는 판단.
+     사유 구분은 구간 툴팁(.rsn)과 #warn 문장이 담당한다. */
+  return ["match",["get","verdict"],
+    "blocked", rgb(VERDICT.blocked.c), "needs_cv", rgb(VERDICT.needs_cv.c),
+    "clear",   rgb(VERDICT.clear.c),   rgb(VERDICT.unknown.c)];
 };
 const segOpacity = () => dispatchMode
   ? ["case",["==",["get","verdict"],"clear"], 1, CONFIG.dispatch.dimAlpha/255]
@@ -313,6 +314,12 @@ map.on("load", async () => {
         if (spec.kind && f.properties.kind !== spec.kind) continue;
         const lon = +f.geometry.coordinates[0], lat = +f.geometry.coordinates[1];
         const mLat = 1/110540, mLon = 1/(111320*Math.cos(lat*Math.PI/180));
+        /* ★ 지면 높이를 여기서 더하지 않는다.
+           MapLibre 는 setTerrain() 이 켜져 있으면 fill-extrusion 을 지형 위에
+           자동으로 얹는다(건물 bld-3d 가 base 0 으로도 지면에 붙는 이유다).
+           여기서 queryTerrainElevation 값을 또 더하면 표고가 두 번 계산되어
+           마커가 딱 그 표고만큼 공중에 뜬다. 산 위 지점일수록 더 높이 뜬다.
+           base/top 은 '지면 기준 상대 높이'만 담는다. */
         spec.parts.forEach((s, i) => {
           let ring;
           if (s.hw != null){            // 박스(직사각형): half-width, half-length
@@ -325,7 +332,7 @@ map.on("load", async () => {
               return [lon + s.r*Math.cos(t)*mLon, lat + s.r*Math.sin(t)*mLat]; });
           }
           feats.push({type:"Feature", geometry:{type:"Polygon", coordinates:[ring]},
-            properties:{...f.properties, z:Number(f.properties.z)||0, kind:spec.id, label:spec.label, part:i,
+            properties:{...f.properties, z:0, kind:spec.id, label:spec.label, part:i,
               base:s.z, top:s.z+s.h, mcolor:`rgb(${s.c[0]},${s.c[1]},${s.c[2]})`}});
         });
       }
@@ -333,11 +340,13 @@ map.on("load", async () => {
     return {type:"FeatureCollection", features:feats};
   }
   map.addSource("markers",{type:"geojson",data:buildMarkers()});
+  /* 예전에 있던 idle 재스냅(queryTerrainElevation 으로 z 를 다시 넣던 코드)은 제거했다.
+     지형 위 배치는 MapLibre 가 알아서 하므로 재스냅이 곧 이중 가산이었다. */
   map.addLayer({id:"mk-3d",type:"fill-extrusion",source:"markers",
     paint:{
       "fill-extrusion-color":["get","mcolor"],
-      "fill-extrusion-base":  ["+",["coalesce",["get","z"],0],["get","base"]],
-      "fill-extrusion-height":["+",["coalesce",["get","z"],0],["get","top"]],
+      "fill-extrusion-base":  ["get","base"],   /* 지면 기준 상대 높이. 지형 보정은 MapLibre 담당 */
+      "fill-extrusion-height":["get","top"],
       "fill-extrusion-opacity":.95}});
 
   /* 소방서·안전센터 119 표지 — 지점 위에 '119' 텍스트. 기여: @marscoolcat */
@@ -393,7 +402,9 @@ map.on("load", async () => {
   /* 숫자는 전부 데이터에서 계산한다. 본문에 박아두면 재산출할 때마다 썩는다. */
   const nNoCctv = seg.features.filter(f=>f.properties.unknown_reason==="no_cctv").length;
   const nCv     = cnt.needs_cv || 0;
-  $("#lg-nocctv").textContent = nNoCctv;
+  /* 'CCTV 없어 보류' 범례 줄은 내렸다. unknown 의 하위 구분이라 4색 체계가
+     5색으로 보이고 합계도 안 맞아 보인다는 지적. 사유는 구간 툴팁(.rsn)과
+     아래 #warn 문장에 남는다. nNoCctv 는 그 문장에서 계속 쓴다. */
   $("#warn").innerHTML =
     `현재 색상은 <b>도면 기반 1차 분류</b>입니다. 최종 판정이 아닙니다.<br>
      주황 <b>${nCv}개</b>만 영상판정으로 갈립니다.
