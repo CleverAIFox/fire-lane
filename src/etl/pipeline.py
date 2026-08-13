@@ -42,11 +42,12 @@ STEPS = [
 
 # 이 값과 다르면 뭔가 잘못된 것이다. 바뀌면 여기도 같이 고칠 것.
 EXPECT = {
-    "segments": 1266,
-    # 2026-08-12 결정 63 반영(수치지도 주 소스 투입, 좁은 쪽 채택)으로 갱신.
-    # clear 227→202. 통과 판정 25구간이 판정 보류로 내려갔다 — 미탐 회피 방향.
-    "verdict": {"clear": 331, "needs_cv": 288, "blocked": 67, "unknown": 580},
-    "unknown_reason": {"no_cctv": 546, "width": 34},
+    "segments": 1087,
+    # 2026-08-13 갱신. 노드접합 + 산출단위 병합 + 소스별 snap + 구간단위 소스채택.
+    # 폭 미산출 127 → 0. unknown 은 전부 no_cctv 다(영상판정 불가).
+    # 길이 0.0m 유령 피처 40개가 clear 로 표출되고 있었다.
+    "verdict": {"clear": 443, "needs_cv": 191, "blocked": 57, "unknown": 396},
+    "unknown_reason": {"no_cctv": 396, "width": 0},
 }
 
 
