@@ -1,7 +1,7 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "ff28704cb3d03952920b1d4cdb6699d2d5783e2387eadceaf166933346086355",
-  "count": 1266,
+  "sha256": "963838eeebc3f8fe5e0183fd0d186fae902fb43cf8039456c70feae1adf2795d",
+  "count": 1087,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
   "fields": {
@@ -18,7 +18,14 @@
     "verdict": "clear|needs_cv|blocked|unknown",
     "width_verified": "bool",
     "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
-    "inherited": "bool 3m 미만 파편 → 인접 세그먼트 최솟값 상속",
+    "inherited": "bool 사용하지 않는다. 항상 false",
+    "merged_n": "int 이 산출단위가 묶은 그래프 엣지 수. 1 이면 병합 없음",
+    "cov_ngii1k": "float|null 정규표본 중 1:1,000 이 값을 낸 비율",
+    "cov_ngii": "float|null 정규표본 중 1:5,000 이 값을 낸 비율",
+    "cov_silpok": "float|null 정규표본 중 실폭도로가 값을 낸 비율",
+    "n_sample": "int 정규표본 수(교차로 제외 후)",
+    "width_cov": "float|null 채택 소스가 이 구간 표본을 덮은 비율. 1 미만이면 못 잰 구간이 있다. D-25 실측 우선순위",
+    "merge_why": "str|null 병합을 유발한 최초 폭 미산출 사유",
     "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
     "length_m": "float 이 구간의 수평거리(m). 경사 보정 전이다. 동명동 평균경사 1.8도 기준 실주행거리는 약 0.05% 길고 최대 9도 구간에서 1.2% 길다. 보정에는 5m DEM 이 필요하다",
     "run_length_m": "float|null 같은 판정이 이어지는 연속 구간장(m)",
@@ -39,6 +46,7 @@
     "snap_tol_m": 0.5
   },
   "verdict_rule": [
+    "폭 미산출 + ROAD_BT < 3.0 -> blocked (명목폭 진입 불가)",
     "wmax <  3.0 -> blocked (통과 하한 미달)",
     "wmin >= 7.0 -> clear (양쪽 주차해도 통과)",
     "wmin or wmax null -> unknown (reason=width)",
