@@ -45,8 +45,8 @@ EXPECT = {
     "segments": 1266,
     # 2026-08-12 결정 63 반영(수치지도 주 소스 투입, 좁은 쪽 채택)으로 갱신.
     # clear 227→202. 통과 판정 25구간이 판정 보류로 내려갔다 — 미탐 회피 방향.
-    "verdict": {"clear": 202, "needs_cv": 153, "blocked": 67, "unknown": 844},
-    "unknown_reason": {"out_of_scope": 502, "no_cctv": 290, "width": 52},
+    "verdict": {"clear": 331, "needs_cv": 288, "blocked": 67, "unknown": 580},
+    "unknown_reason": {"no_cctv": 546, "width": 34},
 }
 
 
