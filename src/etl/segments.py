@@ -42,6 +42,7 @@ CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
 #   FIRE_LANE_DEBUG_SEG=DM03223 해당 단위의 표본을 전부 덤프한다
 #   FIRE_LANE_DEBUG_XY=192837,284314   좌표 최근접 단위를 덤프한다
 #                               seg_id 는 실행 간 유지되지 않는다. XY 를 쓸 것
+#   FIRE_LANE_MIX_SRC=1         구간 폭을 표본 혼합 집합의 최솟값으로 되돌린다(종전).
 #   FIRE_LANE_OLD_SNAP=1        snap 을 소스별이 아닌 종전 방식으로 되돌린다.
 #                               소스별 snap 도입 전후를 한 바이너리로 비교할 때
 import os as _os
@@ -50,6 +51,7 @@ DEBUG_SEG = [x.strip() for x in
              _os.environ.get("FIRE_LANE_DEBUG_SEG", "").split(",") if x.strip()]
 DEBUG_XY  = _os.environ.get("FIRE_LANE_DEBUG_XY", "").strip()
 OLD_SNAP  = _os.environ.get("FIRE_LANE_OLD_SNAP") == "1"
+MIX_SRC   = _os.environ.get("FIRE_LANE_MIX_SRC") == "1"
 _DBG = {"on": False}
 
 EMD_CD        = "12210108"   # 동명동
@@ -449,6 +451,7 @@ def main():
             _ts = [s.length/2]
         _nc, _nx_skip, _whys = 0, 0, []
         _cov = {"ngii1k": 0, "ngii": 0, "silpok": 0}
+        _by  = {"ngii1k": [], "ngii": [], "silpok": []}
         _n_try = 0
 
         def _covr():
@@ -477,6 +480,9 @@ def main():
                     _cov[_nm] += 1
             if _why: _whys.append(_why)
             if a: A.append(a); S.append(sc); D.append(pr)
+            for _nm, _vv in zip(("ngii1k", "ngii", "silpok"), pr):
+                if _vv is not None:
+                    _by[_nm].append(_vv)
             if b: B.append(b)
         if A:
             _rsn = None
@@ -490,7 +496,29 @@ def main():
         # 중심선이 도로면을 벗어난 것이고, 그때 억지로 낸 값은 근거가 없다.
         # 33m·63m 구간이 표본 1개로 1.3m 판정을 받고 있었다.
         _n_reg = len(A)
-        wmin = round(min(A), 2) if A else None
+
+        # ── 구간 단위 소스 채택 (STEP 5-1) ──────────────────
+        # 종전에는 wmin = min(A) 였는데 A 는 표본마다 다른 소스가 채택된
+        # 혼합 집합이다. 표본1 은 1:1,000 의 3.2m, 표본2 는 실폭도로의 1.8m
+        # 인데 그 둘의 최솟값을 구간 폭이라고 불렀다. 소스 축에서 폐기한
+        # min() 이 표본 축에 그대로 남아 있었던 것이다(1k 부분커버 302 구간).
+        #
+        # 값을 낸 최우선 소스 하나로 고정하고 그 소스의 표본만으로 최솟값을 낸다.
+        # 커버율이 높은 소스를 고르지 않는다 — 실폭도로가 0.955 로 가장 높은데
+        # 그것을 채택하면 결정 63(수치지도 주 소스)을 정면으로 뒤집는다.
+        # 부분커버 구간은 그 소스가 못 잰 구간을 모르는 채로 판정하는 것이므로
+        # width_cov 로 노출해 D-25 실측 우선순위에 쓴다.
+        _pick = None
+        if not MIX_SRC:
+            for _nm in ("ngii1k", "ngii", "silpok"):
+                if _by[_nm]:
+                    _pick = _nm
+                    break
+        wmin = None
+        if _pick is not None:
+            wmin = round(min(_by[_pick]), 2)
+        elif A:
+            wmin = round(min(A), 2)
         wmax = round(min(B), 2) if B else None
         # 벽 사이 폭이 도로 폭보다 좁을 수는 없다. 샘플별로는 맞아도
         # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 에 걸린 경우).
@@ -502,9 +530,13 @@ def main():
         if _n_reg == 0 and s.length >= MIN_SEG_LEN * 2:
             return None, None, True, None, None, _rsn, _covr()
 
-        # 채택된 최솟값이 어느 소스에서 나왔는지 기록한다(결정 64).
-        _i = A.index(min(A)) if A else None
-        wsrc = S[_i] if _i is not None else None
+        # 채택된 소스를 기록한다(결정 64). 구간 단위 단일 소스다.
+        if _pick is not None:
+            wsrc = _pick
+            _i = A.index(min(A)) if A else None
+        else:
+            _i = A.index(min(A)) if A else None
+            wsrc = S[_i] if _i is not None else None
         # 두 공공 소스가 같은 지점을 얼마나 다르게 기술하는가.
         # 이 값이 큰 순서가 곧 D-25 실측 우선순위다(§7-2 관측점 선정).
         wdis = None
@@ -748,6 +780,7 @@ def main():
                         merged_n=u["n"], merge_why=u["why"],
                         cov_ngii1k=wcov["ngii1k"], cov_ngii=wcov["ngii"],
                         cov_silpok=wcov["silpok"], n_sample=wnt,
+                        width_cov=(wcov.get(wsrc) if wsrc else None),
                         length_m=round(g.length, 1), _n=(a, b), geometry=g)
 
     bynode = {}
@@ -831,6 +864,15 @@ def main():
           f"{int((_mix.width_src != 'ngii1k').sum())}")
     print("  채택 소스 분포:",
           dict(g.width_src.value_counts(dropna=False).items()))
+    _wc = g.width_cov.dropna()
+    print(f"  채택소스 커버율 — 1.0 인 구간 {int((_wc >= 1.0).sum())}"
+          f" · 0.5 미만 {int((_wc < 0.5).sum())} · 평균 {_wc.mean():.3f}")
+    _thin = g[(g.width_cov.notna()) & (g.width_cov < 0.5)]
+    if len(_thin):
+        print("  커버율 0.5 미만 상위 (실측 우선순위)")
+        print(_thin.nsmallest(10, "width_cov")[
+            ["seg_id", "road_name", "length_m", "width_min_m",
+             "width_src", "width_cov", "n_sample"]].to_string(index=False))
 
     # ── 폭 미산출 진단 ───────────────────────────────────────
     # STEP 4-1. 사유별 분포를 보고 원인을 특정한다. 추정 금지.
@@ -918,6 +960,8 @@ def main():
             "cov_ngii": "float|null 정규표본 중 1:5,000 이 값을 낸 비율",
             "cov_silpok": "float|null 정규표본 중 실폭도로가 값을 낸 비율",
             "n_sample": "int 정규표본 수(교차로 제외 후)",
+            "width_cov": "float|null 채택 소스가 이 구간 표본을 덮은 비율. "
+                         "1 미만이면 못 잰 구간이 있다. D-25 실측 우선순위",
             "merge_why": "str|null 병합을 유발한 최초 폭 미산출 사유",
             "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
             "length_m": "float 이 구간의 수평거리(m). 경사 보정 전이다. 동명동 평균경사 1.8도 기준 실주행거리는 약 0.05% 길고 최대 9도 구간에서 1.2% 길다. 보정에는 5m DEM 이 필요하다",
