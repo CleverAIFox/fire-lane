@@ -194,12 +194,18 @@ map.on("load", async () => {
   /* 소화전 물결. 지면에 링이 퍼지고 그 위에 3D 기둥이 선다.
      출동 모드에서만 움직인다. 기여: @marscoolcat */
   map.addSource("hyd",{type:"geojson",data:hyd});
-  map.addLayer({id:"hyd-pulse2",type:"circle",source:"hyd",
-    paint:{"circle-color":"#4fc3f7","circle-opacity":0,"circle-radius":6,"circle-stroke-width":0,
-      "circle-pitch-alignment":"map","circle-pitch-scale":"map"}});
-  map.addLayer({id:"hyd-pulse",type:"circle",source:"hyd",
-    paint:{"circle-color":"#4fc3f7","circle-opacity":0,"circle-radius":6,"circle-stroke-width":0,
-      "circle-pitch-alignment":"map","circle-pitch-scale":"map"}});
+  /* ★ 채운 원 → 테두리 링(2025-08).
+     지면에 눕는 원(pitch-alignment:map)은 기울여 보면 타원으로 눌려 면적이 크게
+     줄고, 반투명 얼룩처럼 흐려진다. 같은 크기라도 선으로 된 링이 훨씬 잘 잡힌다.
+     그래서 circle-opacity(면)는 0 으로 고정하고 circle-stroke-*(선)만 애니메이션한다.
+     색은 하늘색 유지 — 소화전 몸통이 빨강으로 바뀌어도 물결은 그대로 간다. */
+  const ringPaint = {
+    "circle-color":"#4fc3f7", "circle-opacity":0,        // 면은 항상 투명
+    "circle-radius":6,
+    "circle-stroke-color":"#7fd8ff", "circle-stroke-width":2.5, "circle-stroke-opacity":0,
+    "circle-pitch-alignment":"map", "circle-pitch-scale":"map"};
+  map.addLayer({id:"hyd-pulse2",type:"circle",source:"hyd",paint:{...ringPaint}});
+  map.addLayer({id:"hyd-pulse", type:"circle",source:"hyd",paint:{...ringPaint}});
   const HYD_T0 = performance.now(), HYD_SPEED = CONFIG.dispatch.pulseMs;
   (function ripple(now){
     if(map.getLayer("hyd-pulse")){
@@ -207,13 +213,17 @@ map.on("load", async () => {
         const t  = ((now - HYD_T0) % HYD_SPEED) / HYD_SPEED;
         const t2 = (t + 0.5) % 1;
         const zf = Math.max(1, Math.min(4, 1 + (map.getZoom() - 15) * 0.7));  // 확대할수록 넓게
-        map.setPaintProperty("hyd-pulse",  "circle-radius", (6 + t*26)*zf);
-        map.setPaintProperty("hyd-pulse",  "circle-opacity", 0.5*(1-t));
-        map.setPaintProperty("hyd-pulse2", "circle-radius", (6 + t2*26)*zf);
-        map.setPaintProperty("hyd-pulse2", "circle-opacity", 0.5*(1-t2));
+        /* 퍼질수록 선을 가늘게 — 실제 물결처럼 보이고, 초기 링이 굵어 눈에 먼저 띈다 */
+        const ring = (id, u) => {
+          map.setPaintProperty(id, "circle-radius", (6 + u*26)*zf);
+          map.setPaintProperty(id, "circle-stroke-width", (3.4 - u*2.0)*Math.min(2, zf));
+          map.setPaintProperty(id, "circle-stroke-opacity", 0.95*(1-u)*(1-u));
+        };
+        ring("hyd-pulse",  t);
+        ring("hyd-pulse2", t2);
       } else {
-        map.setPaintProperty("hyd-pulse",  "circle-opacity", 0);
-        map.setPaintProperty("hyd-pulse2", "circle-opacity", 0);
+        map.setPaintProperty("hyd-pulse",  "circle-stroke-opacity", 0);
+        map.setPaintProperty("hyd-pulse2", "circle-stroke-opacity", 0);
       }
     }
     requestAnimationFrame(ripple);
@@ -272,6 +282,7 @@ map.on("load", async () => {
 
   /* 소화전 물결을 건물 위로 — 건물에 가리지 않게(seg-l 아래·건물 위). 기여: @marscoolcat */
   ["hyd-pulse2","hyd-pulse"].forEach(l=>{ if(map.getLayer(l)) map.moveLayer(l, "seg-l"); });
+
 
   map.on("mousemove","seg-l", e => {
     const p = e.features[0].properties;
@@ -349,11 +360,152 @@ map.on("load", async () => {
       "fill-extrusion-height":["get","top"],
       "fill-extrusion-opacity":.95}});
 
-  /* 소방서·안전센터 119 표지 — 지점 위에 '119' 텍스트. 기여: @marscoolcat */
+  /* 소방서·안전센터 119 표지 — 텍스트 대신 '이미지'로 찍는다. 기여: @marscoolcat
+     ─────────────────────────────────────────────────────────────
+     ★ 왜 박스 면에 직접 프린팅하지 않았나
+       MapLibre 의 fill-extrusion 은 면 텍스처를 지원하지 않는다.
+       fill-extrusion-pattern 이 있긴 하지만 '반복 타일'용이라 119 가 면마다
+       여러 번 잘려서 찍힌다. 한 면에 한 번만 정확히 붙이려면 커스텀
+       WebGL 레이어(three.js)로 지도 렌더링을 직접 짜야 한다 — 큰 작업이다.
+       그래서 캔버스로 만든 표지판 이미지를 symbol 로 띄워 기둥 위에 세운다.
+       화면상 결과는 "빨간 기둥 + 119 표지판"이고, 항상 카메라를 향해
+       어느 각도에서 봐도 119 가 읽힌다는 장점이 있다. */
+  const SIGN_TOP_M = 42;          // config.js m-sta 의 h 와 같게 유지할 것
+  const SIGN_PX    = 192;         // 아이콘 원본 크기(px). 확대해도 안 뭉개지게 크게 굽는다
+
+  /* 표지판 이미지를 캔버스로 그려 지도에 등록한다.
+     빨간 판 + 흰 테두리 + 흰 119. 손그림 시안과 같은 구성이다. */
+  function makeSignImage(){
+    const c = document.createElement("canvas");
+    c.width = c.height = SIGN_PX;
+    const g = c.getContext("2d");
+    const r = 26, w = SIGN_PX, pad = 9;
+    g.beginPath();
+    g.moveTo(pad+r, pad);
+    g.arcTo(w-pad, pad,     w-pad, w-pad, r);
+    g.arcTo(w-pad, w-pad,   pad,   w-pad, r);
+    g.arcTo(pad,   w-pad,   pad,   pad,   r);
+    g.arcTo(pad,   pad,     w-pad, pad,   r);
+    g.closePath();
+    g.fillStyle = "#e2221c"; g.fill();
+    g.lineWidth = 9; g.strokeStyle = "#ffffff"; g.stroke();
+    g.fillStyle = "#ffffff";
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = "800 78px Pretendard, system-ui, sans-serif";
+    g.fillText("119", w/2, w/2 + 3);
+    return c;                      // 캔버스를 돌려준다 — 지도와 범례가 같이 쓴다
+  }
+  const signCanvas = makeSignImage();
+  if (!map.hasImage("sign-119"))
+    map.addImage("sign-119",
+      signCanvas.getContext("2d").getImageData(0,0,SIGN_PX,SIGN_PX), {pixelRatio:2});
+
+  /* 소화전 표지판. 119 와 같은 방식이지만 훨씬 작게 단다.
+     소화전은 '어디에 있는지'가 정보의 전부라, 간판이 크면 그 위치를 가린다.
+     흰 원판 + 하늘색 테두리(물결과 같은 계열) + 빨간 소화전 픽토그램. */
+  const HYD_TOP_M = 16.8;         // config.js m-hyd 총높이와 같게 유지할 것
+
+  function makeHydrantImage(){
+    const W = 192, c = document.createElement("canvas");
+    c.width = c.height = W;
+    const g = c.getContext("2d");
+    const RED = "#e2221c";
+
+    /* 빨간 원판 + 흰 테두리 */
+    g.beginPath(); g.arc(W/2, W/2, 84, 0, Math.PI*2);
+    g.fillStyle = RED; g.fill();
+    g.lineWidth = 9; g.strokeStyle = "#ffffff"; g.stroke();
+
+    /* 소화전 픽토그램 — 흰색.
+       선까지 흰색으로 두면 몸통·플랜지·방수구가 한 덩어리로 뭉친다.
+       그래서 테두리는 배경과 같은 빨강으로 그어 형태를 갈라 놓는다. */
+    g.fillStyle = "#ffffff"; g.strokeStyle = RED;
+    g.lineWidth = 5; g.lineJoin = "round";
+    const box = (x,y,w,h,r=3)=>{ g.beginPath();
+      g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r);
+      g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); g.fill(); g.stroke(); };
+
+    box(52, 92, 15, 20, 3);          // 좌측 방수구
+    box(125,92, 15, 20, 3);          // 우측 방수구
+    box(58, 136, 76, 15, 4);         // 베이스 플랜지
+    g.beginPath();                   // 몸통 + 돔
+    g.moveTo(72, 136); g.lineTo(72, 70);
+    g.arc(96, 70, 24, Math.PI, 0);
+    g.lineTo(120, 136); g.closePath();
+    g.fill(); g.stroke();
+    box(60, 60, 72, 13, 3);          // 어깨 플랜지
+    box(89, 30, 14, 12, 3);          // 상단 캡
+    g.beginPath();                   // 중앙 밸브 — 빨강으로 반전
+    g.arc(96, 104, 13, 0, Math.PI*2);
+    g.fillStyle = RED; g.fill();
+    g.strokeStyle = "#ffffff"; g.lineWidth = 4; g.stroke();
+
+    return c;
+  }
+  const hydCanvas = makeHydrantImage();
+  if (!map.hasImage("sign-hyd"))
+    map.addImage("sign-hyd",
+      hydCanvas.getContext("2d").getImageData(0,0,192,192), {pixelRatio:2});
+
+  /* 범례 아이콘. 지도에 쓴 캔버스를 그대로 재사용한다 —
+     간판 디자인을 고치면 범례도 자동으로 따라온다. 두 곳에 그리지 말 것. */
+  const legendIcon = (elId, canvas) => {
+    const el = document.getElementById(elId);
+    if(!el) return;
+    el.classList.add("sign");
+    el.style.background = `url(${canvas.toDataURL()}) center/contain no-repeat`;
+  };
+  legendIcon("lgi-sta", signCanvas);
+  legendIcon("lgi-hyd", hydCanvas);
+
+  map.addLayer({id:"hyd-sign",type:"symbol",source:"hyd",
+    layout:{
+      "icon-image":"sign-hyd", "icon-anchor":"bottom",
+      "icon-allow-overlap":true, "icon-ignore-placement":true,
+      /* 119(0.30~1.70)의 약 60%. 위치를 가리지 않을 만큼만 키운다. */
+      "icon-size":["interpolate",["linear"],["zoom"],
+        14,0.18, 16,0.30, 18,0.55, 20,0.90, 22,0.90]},
+    paint:{"icon-translate":[0,0], "icon-translate-anchor":"viewport"}});
+
   map.addSource("sta-pt",{type:"geojson",data:sta});
   map.addLayer({id:"sta-119",type:"symbol",source:"sta-pt",
-    layout:{"text-field":"119","text-size":15,"text-anchor":"center","text-offset":[0,-0.3],"text-allow-overlap":true},
-    paint:{"text-color":"#ffffff","text-halo-color":"#c81e14","text-halo-width":2.2}});
+    layout:{
+      "icon-image":"sign-119",
+      "icon-anchor":"bottom",           // 표지판 밑변이 기준점에 온다
+      "icon-allow-overlap":true, "icon-ignore-placement":true,
+      /* 확대하면 간판도 커진다. 20 이상은 더 키우지 않는다(화면을 다 덮는다). */
+      "icon-size":["interpolate",["linear"],["zoom"],
+        14,0.30, 16,0.55, 18,1.05, 20,1.70, 22,1.70]},
+    paint:{"icon-translate":[0,0], "icon-translate-anchor":"viewport"}});
+
+  /* 표지판을 기둥 꼭대기에 붙이기.
+     ─────────────────────────────────────────────────────────────
+     기준점은 지면이므로 그대로 두면 기둥 발치에 붙는다. 꼭대기(SIGN_TOP_M)가
+     화면에서 몇 px 위인지 매 프레임 계산해 icon-translate 로 밀어 올린다.
+
+     ★ 줌 스톱을 미리 박아두는 방식에서 실시간 계산으로 바꿨다(2025-08). 이유 둘:
+       1) MapLibre 는 512px 타일이라 줌 z 의 해상도가 78271.5·cosφ/2^z 다.
+          256px 기준(156543)으로 계산하면 정확히 절반만 올라간다.
+       2) 세로로 선 기둥이 화면에서 차지하는 길이는 sin(pitch) 에 비례한다.
+          위에서 내려다보면(pitch 0) 기둥은 점으로 보여 올릴 필요가 없고,
+          눕힐수록 길어진다. cos 을 쓰면 정반대로 움직인다.
+     이제 기울이거나 위도가 달라져도 따라붙는다. */
+  function placeSigns(){
+    const mPerPx = 78271.5170 * Math.cos(map.getCenter().lat * Math.PI/180)
+                 / Math.pow(2, map.getZoom());
+    const sinP = Math.sin(map.getPitch() * Math.PI/180);
+    [["sta-119", SIGN_TOP_M], ["hyd-sign", HYD_TOP_M]].forEach(([id, topM]) => {
+      if(!map.getLayer(id)) return;
+      map.setPaintProperty(id, "icon-translate", [0, -Math.round(topM*sinP/mPerPx)]);
+    });
+  }
+  placeSigns();
+  map.on("move", placeSigns);
+
+  /* ★ 표지판을 맨 위로. 물결만 건물 위로 올리고 표지판을 안 올리면
+     '링은 있는데 소화전이 없는' 칸이 생긴다 — 3D 마커(mk-3d)는 건물에 가려지는데
+     물결은 건물 위에 강제로 그려지기 때문이다. 표지판은 그 어긋남을 메운다. */
+  ["hyd-sign","sta-119"].forEach(l=>{ if(map.getLayer(l)) map.moveLayer(l); });
 
   map.on("click","mk-3d", e => {
     const p=e.features[0].properties;
@@ -552,8 +704,8 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
     on ? markerOff.delete(kind) : markerOff.add(kind);
     map.setFilter("mk-3d", markerOff.size
       ? ["!",["in",["get","kind"],["literal",[...markerOff]]]] : null);
-    if(t==="m-hyd") ["hyd-pulse","hyd-pulse2"]
-      .forEach(l=>map.setLayoutProperty(l,"visibility",on?"visible":"none"));
+    if(t==="m-hyd") ["hyd-pulse","hyd-pulse2","hyd-sign"]
+      .forEach(l=>{ if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
   }
   if(t==="ortho"){
     map.setLayoutProperty("ortho","visibility",on?"visible":"none");
