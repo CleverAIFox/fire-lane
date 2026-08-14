@@ -31,7 +31,7 @@ from shapely.geometry import LineString, Polygon, Point
 LAYERS = {"A0010000": ("ngii1k", "도로경계"),
           "A0020000": ("ngii1k_center", "도로중심선")}
 SHEET = re.compile(r"(3561\d{5})")
-YEAR = re.compile(r"_(\d{4})_")
+YEAR = re.compile(r"_(\d{4})\d{4}(?!\d)")   # _20201231 → 2020
 
 
 # ── NGI 파서 ──────────────────────────────────────────────────

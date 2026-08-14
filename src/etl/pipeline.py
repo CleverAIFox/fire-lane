@@ -42,6 +42,9 @@ STEPS = [
 
 # 이 값과 다르면 뭔가 잘못된 것이다. 바뀌면 여기도 같이 고칠 것.
 EXPECT = {
+    # ingest 산출 기준선. 도엽이 빠지거나 소스가 바뀌면 여기서 먼저 걸린다.
+    "ingest": {"ngii1k": 3593, "ngii_road": 3740, "road_link": 1508,
+               "road_rw": 1957, "node_link": 1366, "streetlight": 1786},
     "segments": 1087,
     # 2026-08-13 갱신. 노드접합 + 산출단위 병합 + 소스별 snap + 구간단위 소스채택.
     # 폭 미산출 127 → 0. unknown 은 전부 no_cctv 다(영상판정 불가).

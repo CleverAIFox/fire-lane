@@ -55,6 +55,37 @@ datasets:
       GEOS TopologyException 발생. 실제로 터졌음.
       수치지도가 안 그리는 최협소 골목을 메우는 용도.
 
+  spotaddr_geom:
+    desc: 사물주소 도형 (전남광주통합특별시 동구, 2026-08-01 승인분)
+    kind: raw_only
+    file: juso/juso_spotaddr_geom_jngj_20260801.zip
+    crs: 5179
+    license: 도로명주소법 시행령 제46조 심사 승인
+    url: https://business.juso.go.kr/addrlink/elctrnMapProvd/geoDBDwldList.do
+    feeds: 미투입 — STEP 4 관측점 랜드마크 후보
+    note: |
+      동구 전체 27유형 중 실데이터 15유형. 동명동은 26건뿐이다.
+      공중전화 8 · 버스정류장 6 · 무더위쉼터 4 · 민방위대피소 4 ·
+      비상소화장치 1 · 우체통 1 · 자전거보관소 1 · 어린이보호구역 1.
+      폭 판정 · 그래프 · 영상판정 어디에도 기여하지 않는다.
+      쓸 자리는 §7-2 관측점 랜드마크 후보 하나뿐이며 STEP 4 이전에는
+      파이프라인에 붙이지 않는다.
+      ⚠ .prj 없음 → set_crs(5179) 명시 필요. TXT/DBF 는 CP949.
+      ⚠ 0건 유형 파일의 내용이 "No Data" 한 줄이라 파서가 죽는다.
+      ⚠ OutFireHydr(옥외소화전) 0건. 소화전 588개 좌표 문제는 그대로다.
+
+  spotaddr_ref:
+    desc: 사물주소 기준점 (동일 승인분)
+    kind: raw_only
+    file: juso/juso_spotaddr_ref_jngj_20260801.zip
+    crs: 5179
+    license: 도로명주소법 시행령 제46조 심사 승인
+    feeds: 미투입 — STEP 4 관측점 랜드마크 후보
+    note: |
+      파이프 구분 TXT. _M(사물) / _ADRES(주소·좌표) 짝이다.
+      좌표 정밀도가 m급이라 호모그래피 대응점으로는 쓸 수 없다.
+      landmark_desc 초안과 관측점 후보 선정에만 쓴다.
+
   ngii1k:
     desc: 수치지형도 1:1,000 도로경계 A0010000 — 폭 산출 주 소스
     kind: ngii_1k
@@ -68,10 +99,12 @@ datasets:
 
   streetlight:
     desc: 전남광주통합특별시 동구 가로등현황 (2024-04-15)
-    kind: csv_point
-    file: streetlight/*가로등현황*.csv
+    kind: csv_points
+    file: streetlight/*streetlight*.csv
     crs: 4326
     encoding: cp949
+    x_col: 경도
+    y_col: 위도
     note: |
       동구 3,805행 / 고유 좌표 264곳. 동명동 159등 / 13곳.
       지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
