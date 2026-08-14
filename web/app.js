@@ -110,18 +110,10 @@ let dispatchMode=false, miniMap=null;
 const DATA={};                 // 마커 데이터. 레이어 갱신 시 재사용
 const markerOff=new Set();     // 꺼진 마커 레이어
 
-const POPUP={
-  "m-cctv": p=>`<b>CCTV</b> ${p.카메라대수}대<br>${p.카메라화소||"—"} · ${p.촬영방면||""}
-                <br>설치 ${p.최초설치}${p.최근설치!==p.최초설치?`~${p.최근설치}`:""} (${p.설치회차}회 증설)
-                <br><span class="a">${p.소재지도로명주소||""}</span>`,
-  "m-hyd":  p=>`<b>소화전</b> ${p.시설번호||""}<br>${p.상세위치||""}
-                <br>설치 ${p.설치연도||"—"} · 보호틀 ${p.보호틀유무||"—"}
-                <br><span class="a">${p.소재지도로명주소||""}</span>`,
-  "m-sta":  p=>`<b>${p["소방서 및 안전센터명"]}</b><br>출동 시작점
-                <br>${p.전화번호||""}<br><span class="a">${p.주소||""}</span>`,
-  "m-fs":   p=>`<b>${p["소방서 및 안전센터명"]}</b><br>관할 본서
-                <br>${p.전화번호||""}<br><span class="a">${p.주소||""}</span>`,
-};
+/* 팝업은 CONFIG.markers 의 spec.popup 이 정본이다.
+   여기에 손딕셔너리를 두면 마커를 추가할 때마다 두 곳을 고쳐야 한다. */
+const POPUP = Object.fromEntries(
+  CONFIG.markers.filter(m=>m.popup).map(m=>[m.id, m.popup]));
 
 /* 선 굵기 = 실제 노면폭(m). lineWidthUnits:"meters" 라 지도 축척에 맞춰
    그려진다. 즉 화면의 선 두께가 곧 그 골목의 실제 폭이다.
@@ -177,11 +169,19 @@ function restyleSegments(){
 
 map.on("load", async () => {
   const j = async p => (await fetch(p)).json();
-  const [seg,bld,bnd,hyd,sta,cctv,poi] = await Promise.all(
-    ["segments","buildings","boundary","hydrants","stations","cctv","poi"]
-      .map(n=>j(`./data/${n}.geojson`)));
+  const BASE = ["segments","buildings","boundary","poi"];
+  /* 마커 데이터 파일은 CONFIG.markers 의 spec.data 에서 뽑는다.
+     여기에 손나열을 두면 마커 추가 시 config 와 app 두 곳을 고쳐야 한다. */
+  const MKF = [...new Set(CONFIG.markers.map(m=>m.data).filter(Boolean))];
+  const FILES = {cctv:"cctv", hyd:"hydrants", sta:"stations", streetlights:"streetlights"};
+  const loaded = await Promise.all(
+    [...BASE, ...MKF].map(n=>j(`./data/${FILES[n]||n}.geojson`)));
+  const D = Object.fromEntries([...BASE, ...MKF].map((n,i)=>[n, loaded[i]]));
+  const seg=D.segments, bld=D.buildings, bnd=D.boundary, poi=D.poi;
   SEG = seg;
-  Object.assign(DATA, {cctv, hyd, sta});
+  Object.assign(DATA, Object.fromEntries(MKF.map(n=>[n, D[n]])));
+  /* 기존 코드가 지역변수로 참조한다. DATA 가 정본이고 이건 별칭이다. */
+  const cctv=D.cctv, hyd=D.hyd, sta=D.sta, light=D.streetlights;
 
   /* 마스크 — 세계에서 동명동을 도려낸 폴리곤. 동 밖을 덮어 스코프를 눈으로 못박는다.
      UI 작업 범위가 동명동을 넘지 않는다는 걸 화면 자체가 말해준다. */
@@ -278,24 +278,34 @@ map.on("load", async () => {
     for(let i=0;i<=steps;i++){ const a=2*Math.PI*i/steps; c.push([lng+dLng*Math.cos(a), lat+dLat*Math.sin(a)]); }
     return c;
   };
-  const cctvCov = { type:"FeatureCollection", features:
-    ((DATA.cctv&&DATA.cctv.features)||[]).filter(f=>f.geometry&&f.geometry.type==="Point").map(f=>({
-      type:"Feature", properties:{},
-      geometry:{type:"Polygon", coordinates:[ _circle(f.geometry.coordinates[0], f.geometry.coordinates[1], 25) ]} })) };
-  map.addSource("cctv-cov",{type:"geojson",data:cctvCov});
-  map.addLayer({id:"cctv-cov-f",type:"fill",source:"cctv-cov",
-    layout:{visibility:"none"},
-    /* 하늘색 — CCTV 마커와 같은 색이라 "이 원이 무엇의 범위인지"가 바로 읽힌다.
-       ★ 이 레이어는 "seg-l" 앞에 꽂혀 있어 판정 구간 선이 원 위에 그려진다.
-         그래서 원을 밝게 깔아도 도로 색(초록·주황·빨강)은 가려지지 않는다.
-       ★ 흰색 때 쓰던 0.5 를 그대로 두면 하늘색은 더 무겁게 깔린다. 진하면 낮출 것. */
-    paint:{"fill-color":CONFIG.cctvCov.colorDark,
-           "fill-opacity":CONFIG.cctvCov.opacityDark}}, "seg-l");
-  map.addLayer({id:"cctv-cov-l",type:"line",source:"cctv-cov",
-    layout:{visibility:"none"},
-    /* 테두리는 강조하지 않는다. 면과 같은 색·같은 농도로 경계만 잡아준다. */
-    paint:{"line-color":CONFIG.cctvCov.colorDark,
-           "line-opacity":CONFIG.cctvCov.opacityDark*0.7,"line-width":1}}, "seg-l");
+  /* 커버리지 원 — CONFIG.markers 의 spec.cover 선언으로 만든다.
+     반경은 고정값(cover.radius) 또는 피처 속성(cover.by) 에서 온다.
+     ★ 의미가 마커마다 다르다. CCTV 는 "이 범위를 본다"(실선),
+       가로등은 "폴이 이 안 어딘가에 있다"(점선). 선 종류로 구분한다.
+     ★ CCTV 색은 CONFIG.cctvCov 가 정본이다(라이트/다크 테마 전환 대상).
+       syncCctv() 가 이 레이어 id 를 그대로 쓰므로 id 규칙을 바꾸지 말 것. */
+  for (const spec of CONFIG.markers){
+    const cv = spec.cover, src = DATA[spec.data];
+    if (!cv || !src) continue;
+    const fc = { type:"FeatureCollection", features:
+      (src.features||[]).filter(f=>f.geometry && f.geometry.type==="Point").map(f=>({
+        type:"Feature", properties:{...f.properties},
+        geometry:{type:"Polygon", coordinates:[ _circle(
+          f.geometry.coordinates[0], f.geometry.coordinates[1],
+          cv.by ? (+f.properties[cv.by] || 50) : cv.radius) ]} })) };
+    const id = spec.id + "-cov";
+    const themed = (spec.id === "m-cctv");
+    const col = themed ? CONFIG.cctvCov.colorDark : cv.color;
+    const op  = themed ? CONFIG.cctvCov.opacityDark : 0.10;
+    map.addSource(id, {type:"geojson", data:fc});
+    map.addLayer({id:id+"-f", type:"fill", source:id,
+      layout:{visibility:"none"},
+      paint:{"fill-color":col, "fill-opacity":op}}, "seg-l");
+    map.addLayer({id:id+"-l", type:"line", source:id,
+      layout:{visibility:"none"},
+      paint:{"line-color":col, "line-opacity":op*0.7, "line-width":1,
+             ...(cv.style==="dashed" ? {"line-dasharray":[2,2]} : {})}}, "seg-l");
+  }
 
   /* 소화전 물결을 건물 위로 — 건물에 가리지 않게(seg-l 아래·건물 위). 기여: @marscoolcat */
   syncCctv(lightTheme);   // 시작 시 CCTV 색 맞추기(범례 점 포함)
@@ -333,11 +343,11 @@ map.on("load", async () => {
      비율은 실물, 크기는 과장. 소화전 실물 지름 0.2m 로는 안 보인다. */
   /* 마커를 config.js(CONFIG.markers) 스펙으로 런타임 생성. 원기둥(r) + 박스(hw/hl) 지원.
      이제 config.js만 고치면 재발행 없이 바로 반영된다. 기여: @marscoolcat + @AIMasterFox */
-  const MK_SRC = {cctv, hyd, sta};
+  /* MK_SRC 손딕셔너리 제거. spec.data 로 DATA 에서 직접 찾는다. */
   function buildMarkers(){
     const feats = [];
     for (const spec of CONFIG.markers){
-      const src = MK_SRC[spec.source];
+      const src = DATA[spec.data];
       if (!src) continue;
       for (const f of src.features){
         if (spec.kind && f.properties.kind !== spec.kind) continue;
@@ -349,6 +359,16 @@ map.on("load", async () => {
            여기서 queryTerrainElevation 값을 또 더하면 표고가 두 번 계산되어
            마커가 딱 그 표고만큼 공중에 뜬다. 산 위 지점일수록 더 높이 뜬다.
            base/top 은 '지면 기준 상대 높이'만 담는다. */
+        /* 등 수에 따라 지주를 굵게. 136지점을 같은 굵기로 그리면
+           1등짜리와 41등짜리가 구분되지 않는다.
+           √n 을 쓰는 이유: 면적이 등 수에 비례해 보이려면 반지름은 √n 이다.
+           ★ 높이로 표현하지 않는다. "15층짜리 가로등"처럼 보인다. */
+        /* 굵기 배수. spec.scale 선언이 있을 때만 적용한다.
+           id 로 분기하면 마커가 늘 때마다 if 가 늘어난다. */
+        const sc = spec.scale, v = sc ? +f.properties[sc.by] : null;
+        const kMul = (sc && v > 0)
+          ? 1 + (sc.k ?? 0.28) * ((sc.mode === "sqrt" ? Math.sqrt(v) : v) - 1)
+          : 1;
         spec.parts.forEach((s, i) => {
           let ring;
           if (s.hw != null){            // 박스(직사각형): half-width, half-length
@@ -357,8 +377,9 @@ map.on("load", async () => {
                     [lon-s.hw*mLon, lat-s.hl*mLat]];
           } else {                      // 원기둥
             const n = s.r < 1 ? 24 : 16;
+            const rr = s.r * kMul;
             ring = Array.from({length:n+1}, (_,k) => { const t = k*2*Math.PI/n;
-              return [lon + s.r*Math.cos(t)*mLon, lat + s.r*Math.sin(t)*mLat]; });
+              return [lon + rr*Math.cos(t)*mLon, lat + rr*Math.sin(t)*mLat]; });
           }
           feats.push({type:"Feature", geometry:{type:"Polygon", coordinates:[ring]},
             properties:{...f.properties, z:0, kind:spec.id, label:spec.label, part:i,
@@ -932,6 +953,20 @@ function setTheme(mode){
   map.setPaintProperty("bnd-l","line-opacity", light ? .95 : .75);
 }
 
+/* 마커 토글 행 생성 — CONFIG.markers 가 정본이다.
+   ★ .row 바인딩보다 먼저 돌아야 한다. 나중에 넣으면 onclick 이 안 붙는다.
+   순서는 config 선언 순서를 뒤집는다(높은 시설이 위로 오게). */
+(() => {
+  const host = document.getElementById("mk-toggles");
+  if (!host) return;
+  [...CONFIG.markers].reverse().forEach(m => {
+    const d = document.createElement("div");
+    d.className = "row"; d.dataset.t = m.id;
+    d.innerHTML = `<span>${m.label}</span><i class="tg on"></i>`;
+    host.appendChild(d);
+  });
+})();
+
 /* 토글 */
 document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   const t = r.dataset.t, tg = r.querySelector(".tg");
@@ -973,7 +1008,7 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   if(t==="dispatch"){
     dispatchMode = on;
     document.getElementById("dispatch-fab")?.classList.toggle("on", on);
-    ["cctv-cov-f","cctv-cov-l"].forEach(l=>{ if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
+    CONFIG.markers.filter(m=>m.cover).flatMap(m=>[m.id+"-cov-f",m.id+"-cov-l"]).forEach(l=>{ if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
     restyleSegments();
     styleMiniRoute();
   }
