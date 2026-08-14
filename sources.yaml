@@ -450,3 +450,1643 @@ basemap:
     ★ 인증키 신청서에 WMTS/TMS API + 배경지도 API 체크 필요.
     ★ 브라우저 호출 시 &domain=등록URL 파라미터 필수. 문자열 정확히 일치해야 함.
     렌더러는 MapLibre GL JS (Mapbox GL v1 포크라 기존 Mapbox 코드 호환).
+
+# ===== AUTO: inventory — inventory.py 가 쓴다. 손으로 고치지 말 것 =====
+inventory:
+  at: '2026-08-14T11:07:43+09:00'
+  raw: /home/fox/fire-lane-raw
+  datasets:
+    road_link:
+      archives:
+      - file: juso_elctrnmap_jngj_20260711.zip
+        shp: 1
+      layers:
+        TL_SPRD_MANAGE:
+          geom_type: LineString
+          crs: null
+          fields:
+          - ALWNC_DE
+          - ALWNC_RESN
+          - BSI_INT
+          - ENG_RN
+          - MVMN_DE
+          - MVMN_RESN
+          - MVM_RES_CD
+          - NTFC_DE
+          - OPERT_DE
+          - RBP_CN
+          - RDS_DPN_SE
+          - RDS_MAN_NO
+          - REP_CN
+          - RN
+          - RN_CD
+          - ROAD_BT
+          - ROAD_LT
+          - ROA_CLS_SE
+          - SIG_CD
+          - WDR_RD_CD
+      kind: shp_zip
+      unused_fields:
+      - ALWNC_DE
+      - ALWNC_RESN
+      - BSI_INT
+      - ENG_RN
+      - MVMN_DE
+      - MVMN_RESN
+      - MVM_RES_CD
+      - NTFC_DE
+      - OPERT_DE
+      - RBP_CN
+      - RDS_MAN_NO
+      - REP_CN
+      - RN_CD
+      - ROAD_LT
+      - ROA_CLS_SE
+      - SIG_CD
+      - WDR_RD_CD
+    road_rw:
+      archives:
+      - file: juso_elctrnmap_jngj_20260711.zip
+        shp: 1
+      layers:
+        TL_SPRD_RW:
+          geom_type: Polygon
+          crs: null
+          fields:
+          - OPERT_DE
+          - RW_SN
+          - SIG_CD
+      kind: shp_zip
+      unused_fields:
+      - OPERT_DE
+      - RW_SN
+      - SIG_CD
+    spotaddr_geom:
+      status: 원본 없음
+      pattern: juso/juso_spotaddr_geom_jngj_20260801.zip
+    spotaddr_ref:
+      status: 원본 없음
+      pattern: juso/juso_spotaddr_ref_jngj_20260801.zip
+    ngii1k:
+      file_count:
+        ngi: 12
+        shp: 614
+      sampled_sheets: 3
+      layers:
+        A0010000:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - UFID
+          n_sample: 571
+          sheets: 3
+        A0020000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 도로번호
+          - 명칭
+          - 도로구분
+          - 시점
+          - 종점
+          - 포장재질
+          - 분리대유무
+          - 차로수
+          - 도로폭
+          - 일방통행
+          - 기타
+          - UFID
+          - 도로명
+          n_sample: 950
+          sheets: 3
+        A0033320:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 폭
+          - 재질
+          - 자전거도로유무
+          - 종류
+          - UFID
+          n_sample: 207
+          sheets: 3
+        A0080000:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 명칭
+          - 종류
+          - UFID
+          n_sample: 162
+          sheets: 3
+        B0010000:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 명칭
+          - 구분
+          - 종류
+          - 용도
+          - 주기
+          - 층수
+          - UFID
+          - 도로명
+          - 건물본번
+          - 건물부번
+          - 우편번호
+          n_sample: 2531
+          sheets: 3
+        B0020000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 구분
+          - 재질
+          - UFID
+          n_sample: 644
+          sheets: 3
+        C0070000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - UFID
+          n_sample: 2
+          sheets: 2
+        C0220000:
+          geom_type: POINT
+          fields:
+          - ID
+          - 구분
+          - UFID
+          n_sample: 469
+          sheets: 3
+        C0285311:
+          geom_type: POINT
+          fields:
+          - ID
+          - UFID
+          n_sample: 10
+          sheets: 1
+        C0380000:
+          geom_type: POINT
+          fields:
+          - ID
+          - 명칭
+          - 구분
+          - UFID
+          n_sample: 4
+          sheets: 2
+        C0390000:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 명칭
+          - 구조
+          - 폭
+          - UFID
+          n_sample: 3
+          sheets: 2
+        C0410000:
+          geom_type: POINT
+          fields:
+          - ID
+          - 용도
+          - UFID
+          n_sample: 117
+          sheets: 3
+        C0513369:
+          geom_type: POINT
+          fields:
+          - ID
+          - UFID
+          n_sample: 11
+          sheets: 3
+        D0010000:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 구분
+          - UFID
+          n_sample: 11
+          sheets: 3
+        D0030000:
+          geom_type: POINT
+          fields:
+          - ID
+          - 관리번호
+          - 명칭
+          - 구분
+          - 직경
+          - 높이
+          - 수령
+          - 수종
+          - 기타
+          - UFID
+          n_sample: 500
+          sheets: 3
+        E0020000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 하천번호
+          - 명칭
+          - 구분
+          - 형태
+          - 상태
+          - UFID
+          n_sample: 2
+          sheets: 2
+        F0010000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 구분
+          - 등고수치
+          - UFID
+          n_sample: 104
+          sheets: 3
+        F0020000:
+          geom_type: POINT
+          fields:
+          - ID
+          - 수치
+          - UFID
+          n_sample: 9
+          sheets: 3
+        F0030000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 구분
+          - 상하구분
+          - UFID
+          n_sample: 8
+          sheets: 1
+        F0040000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 종류
+          - 상하구분
+          - 연장
+          - 높이
+          - 재질
+          - UFID
+          n_sample: 59
+          sheets: 3
+        G0010000:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 명칭
+          - 구분
+          - UFID
+          n_sample: 35
+          sheets: 3
+        H0010000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 도엽명
+          - 도엽코드
+          - UFID
+          n_sample: 3
+          sheets: 3
+        H0037335:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - UFID
+          n_sample: 30
+          sheets: 3
+        H0040000:
+          geom_type: TEXT("북   구")
+          fields:
+          - ID
+          - 명칭
+          - 구분
+          - 형태
+          - UFID
+          n_sample: 32
+          sheets: 3
+        A0043325:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - UFID
+          n_sample: 52
+          sheets: 2
+        A0053326:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 구조
+          - 명칭
+          - UFID
+          n_sample: 10
+          sheets: 2
+        A0140000:
+          geom_type: POINT
+          fields:
+          - ID
+          - 명칭
+          - 용도
+          - UFID
+          n_sample: 39
+          sheets: 2
+        C0230000:
+          geom_type: POINT
+          fields:
+          - ID
+          - 구분
+          - 재질
+          - UFID
+          n_sample: 194
+          sheets: 2
+        C0250000:
+          geom_type: POINT
+          fields:
+          - ID
+          - 형태
+          - 관리기관
+          - UFID
+          n_sample: 70
+          sheets: 2
+        C0363361:
+          geom_type: POINT
+          fields:
+          - ID
+          - UFID
+          n_sample: 14
+          sheets: 2
+        C0430000:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 명칭
+          - 구분
+          - 수용량
+          - UFID
+          n_sample: 26
+          sheets: 2
+        C0463374:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 명칭
+          - 용도
+          - 관리기관
+          - UFID
+          n_sample: 12
+          sheets: 2
+        C0470000:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 용도
+          - 관리기관
+          - UFID
+          n_sample: 8
+          sheets: 2
+        C0493376:
+          geom_type: POINT
+          fields:
+          - ID
+          - 용도
+          - UFID
+          n_sample: 34
+          sheets: 2
+        C0503375:
+          geom_type: POINT
+          fields:
+          - ID
+          - 구분
+          - 관리기관
+          - UFID
+          n_sample: 173
+          sheets: 2
+        C0520000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 구조
+          - UFID
+          n_sample: 2
+          sheets: 2
+        E0052114:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 명칭
+          - 용도
+          - 면적
+          - 관리기관
+          - UFID
+          n_sample: 1
+          sheets: 1
+        G0030000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 용도
+          - UFID
+          n_sample: 225
+          sheets: 2
+        A0063321:
+          geom_type: POLYGON
+          fields:
+          - ID
+          - 명칭
+          - 연장
+          - 폭
+          - 높이
+          - 형태
+          - 기타
+          - UFID
+          n_sample: 1
+          sheets: 1
+        C0373362:
+          geom_type: POINT
+          fields:
+          - ID
+          - UFID
+          n_sample: 1
+          sheets: 1
+        C0400000:
+          geom_type: POINT
+          fields:
+          - ID
+          - 구분
+          - UFID
+          n_sample: 1
+          sheets: 1
+        C0530000:
+          geom_type: LINESTRING
+          fields:
+          - ID
+          - 명칭
+          - 재질
+          - UFID
+          n_sample: 1
+          sheets: 1
+      kind: ngii1k
+      unused_fields:
+      - UFID
+      - 건물본번
+      - 건물부번
+      - 관리기관
+      - 관리번호
+      - 구분
+      - 구조
+      - 높이
+      - 도로구분
+      - 도로명
+      - 도로번호
+      - 도엽명
+      - 도엽코드
+      - 등고수치
+      - 면적
+      - 명칭
+      - 분리대유무
+      - 상태
+      - 상하구분
+      - 수령
+      - 수용량
+      - 수종
+      - 수치
+      - 시점
+      - 연장
+      - 용도
+      - 우편번호
+      - 일방통행
+      - 자전거도로유무
+      - 재질
+      - 종류
+      - 종점
+      - 주기
+      - 직경
+      - 차로수
+      - 층수
+      - 포장재질
+      - 폭
+      - 하천번호
+      - 형태
+    streetlight:
+      files:
+      - file: gjcity_streetlight_dongu_20240415.csv
+        bytes: 247597
+        encoding: cp949
+        rows: 3805
+        fields:
+        - 관리번호
+        - 소재지도로명주소
+        - 소재지지번주소
+        - 위도
+        - 경도
+        - 데이터기준일자
+      kind: csv_points
+      unused_fields:
+      - 관리번호
+      - 데이터기준일자
+      - 소재지지번주소
+    ngii_road:
+      archives:
+      - file: ngii_basemap_gj037_20260806.zip
+        shp: 1
+      - file: ngii_basemap_gj038_20260807.zip
+        shp: 1
+      - file: ngii_basemap_gj047_20260807.zip
+        shp: 1
+      - file: ngii_basemap_gj048_20260806.zip
+        shp: 1
+      layers:
+        NF_A_A01000:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - area
+          - dvyn
+          - edpt
+          - fclt
+          - hjcd
+          - mmsl
+          - name
+          - onsd
+          - pvqt
+          - rbid
+          - rddv
+          - rdln
+          - rdnm
+          - rdnu
+          - rest
+          - rvwd
+          - stpt
+          - tpsl
+          - uops
+          - objectid
+          - shape_area
+          - shape_leng
+      kind: shp_zip_multi
+      unused_fields:
+      - area
+      - dvyn
+      - edpt
+      - fclt
+      - hjcd
+      - mmsl
+      - objectid
+      - onsd
+      - pvqt
+      - rbid
+      - rddv
+      - rdln
+      - rdnm
+      - rdnu
+      - rest
+      - rvwd
+      - shape_area
+      - shape_leng
+      - stpt
+      - tpsl
+      - uops
+    node_link:
+      archives:
+      - file: its_nodelink_kr_20260810.zip
+        shp: 1
+      layers:
+        MOCT_LINK:
+          geom_type: LineString
+          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS
+            1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+          fields:
+          - LINK_ID
+          - F_NODE
+          - T_NODE
+          - LANES
+          - ROAD_RANK
+          - ROAD_TYPE
+          - ROAD_NO
+          - ROAD_NAME
+          - ROAD_USE
+          - MULTI_LINK
+          - CONNECT
+          - MAX_SPD
+          - REST_VEH
+          - REST_W
+          - REST_H
+          - C-ITS
+          - LENGTH
+          - UPDATEDATE
+          - REMARK
+          - HIST_TYPE
+          - HISTREMARK
+      kind: shp_zip
+      unused_fields:
+      - C-ITS
+      - CONNECT
+      - F_NODE
+      - HISTREMARK
+      - HIST_TYPE
+      - LANES
+      - LENGTH
+      - LINK_ID
+      - MAX_SPD
+      - MULTI_LINK
+      - REMARK
+      - REST_H
+      - REST_VEH
+      - REST_W
+      - ROAD_NAME
+      - ROAD_NO
+      - ROAD_RANK
+      - ROAD_TYPE
+      - ROAD_USE
+      - T_NODE
+      - UPDATEDATE
+    node_point:
+      archives:
+      - file: its_nodelink_kr_20260810.zip
+        shp: 1
+      layers:
+        MOCT_NODE:
+          geom_type: Point
+          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS
+            1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+          fields:
+          - NODE_ID
+          - NODE_TYPE
+          - NODE_NAME
+          - TURN_P
+          - UPDATEDATE
+          - REMARK
+          - HIST_TYPE
+          - HISTREMARK
+      kind: shp_zip
+      unused_fields:
+      - HISTREMARK
+      - HIST_TYPE
+      - NODE_NAME
+      - NODE_TYPE
+      - REMARK
+      - TURN_P
+      - UPDATEDATE
+    turn_restriction:
+      archives:
+      - file: its_nodelink_kr_20260810.zip
+        shp: 2
+      layers:
+        MOCT_LINK:
+          geom_type: LineString
+          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS
+            1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+          fields:
+          - LINK_ID
+          - F_NODE
+          - T_NODE
+          - LANES
+          - ROAD_RANK
+          - ROAD_TYPE
+          - ROAD_NO
+          - ROAD_NAME
+          - ROAD_USE
+          - MULTI_LINK
+          - CONNECT
+          - MAX_SPD
+          - REST_VEH
+          - REST_W
+          - REST_H
+          - C-ITS
+          - LENGTH
+          - UPDATEDATE
+          - REMARK
+          - HIST_TYPE
+          - HISTREMARK
+        MOCT_NODE:
+          geom_type: Point
+          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS
+            1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+          fields:
+          - NODE_ID
+          - NODE_TYPE
+          - NODE_NAME
+          - TURN_P
+          - UPDATEDATE
+          - REMARK
+          - HIST_TYPE
+          - HISTREMARK
+      kind: dbf_in_zip
+      unused_fields:
+      - C-ITS
+      - CONNECT
+      - F_NODE
+      - HISTREMARK
+      - HIST_TYPE
+      - LANES
+      - LENGTH
+      - LINK_ID
+      - MAX_SPD
+      - MULTI_LINK
+      - NODE_NAME
+      - NODE_TYPE
+      - REMARK
+      - REST_H
+      - REST_VEH
+      - REST_W
+      - ROAD_NAME
+      - ROAD_NO
+      - ROAD_RANK
+      - ROAD_TYPE
+      - ROAD_USE
+      - TURN_P
+      - T_NODE
+      - UPDATEDATE
+    cctv:
+      files:
+      - file: safety_cctv_jngj_20260630.csv
+        bytes: 771408
+        encoding: cp949
+        rows: 6805
+        fields:
+        - 관리기관명
+        - 소재지지번주소
+        - 소재지도로명주소
+        - 카메라대수
+        - 카메라화소
+        - 촬영방면
+        - 보관일수
+        - 설치연도
+        - 위도
+        - 경도
+        - 데이터기준일자
+      kind: csv_points
+      unused_fields:
+      - 데이터기준일자
+      - 보관일수
+      - 소재지지번주소
+    fire_station:
+      files:
+      - file: safety_firestation_kr_20240901.csv
+        bytes: 169090
+        encoding: cp949
+        rows: 1216
+        fields:
+        - 번호
+        - 소방서 및 안전센터명
+        - 주소
+        - 상위 본부명
+        - 전화번호
+        - X좌표
+        - Y좌표
+        - 유형
+        - 등록일
+      kind: csv_points
+      unused_fields:
+      - X좌표
+      - Y좌표
+      - 등록일
+      - 번호
+      - 상위 본부명
+    poi_store:
+      files:
+      - file: sbiz_store_kr_20260630.zip![필독]파일열람방법.txt
+        encoding: utf-8-sig
+        fields: []
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_강원_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_경기_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_대구_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_대전_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_서울_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_세종_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_울산_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_인천_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_전남광주_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_전북_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_제주_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      - file: sbiz_store_kr_20260630.zip!소상공인시장진흥공단_상가(상권)정보_충북_202606.csv
+        encoding: utf-8-sig
+        fields:
+        - 상가업소번호
+        - 상호명
+        - 지점명
+        - 상권업종대분류코드
+        - 상권업종대분류명
+        - 상권업종중분류코드
+        - 상권업종중분류명
+        - 상권업종소분류코드
+        - 상권업종소분류명
+        - 표준산업분류코드
+        - 표준산업분류명
+        - 시도코드
+        - 시도명
+        - 시군구코드
+        - 시군구명
+        - 행정동코드
+        - 행정동명
+        - 법정동코드
+        - 법정동명
+        - 지번코드
+        - 대지구분코드
+        - 대지구분명
+        - 지번본번지
+        - 지번부번지
+        - 지번주소
+        - 도로명코드
+        - 도로명
+        - 건물본번지
+        - 건물부번지
+        - 건물관리번호
+        - 건물명
+        - 도로명주소
+        - 구우편번호
+        - 신우편번호
+        - 동정보
+        - 층정보
+        - 호정보
+        - 경도
+        - 위도
+      kind: csv_points_in_zip
+      unused_fields:
+      - 건물관리번호
+      - 건물명
+      - 건물본번지
+      - 건물부번지
+      - 구우편번호
+      - 대지구분명
+      - 대지구분코드
+      - 도로명
+      - 도로명코드
+      - 동정보
+      - 법정동명
+      - 법정동코드
+      - 상가업소번호
+      - 상권업종대분류코드
+      - 상권업종소분류명
+      - 상권업종소분류코드
+      - 상권업종중분류코드
+      - 시군구명
+      - 시군구코드
+      - 시도명
+      - 시도코드
+      - 신우편번호
+      - 지번본번지
+      - 지번부번지
+      - 지번주소
+      - 지번코드
+      - 지점명
+      - 표준산업분류명
+      - 표준산업분류코드
+      - 행정동명
+      - 행정동코드
+      - 호정보
+    boundary_emd:
+      archives:
+      - file: juso_elctrnmap_jngj_20260711.zip
+        shp: 1
+      layers:
+        TL_SCCO_EMD:
+          geom_type: Polygon
+          crs: null
+          fields:
+          - EMD_CD
+          - EMD_ENG_NM
+          - EMD_KOR_NM
+      kind: shp_zip
+      unused_fields:
+      - EMD_CD
+      - EMD_ENG_NM
+      - EMD_KOR_NM
+    building:
+      archives:
+      - file: juso_elctrnmap_jngj_20260711.zip
+        shp: 1
+      layers:
+        TL_SPBD_BULD:
+          geom_type: Polygon
+          crs: null
+          fields:
+          - BDTYP_CD
+          - BD_MGT_SN
+          - BSI_INT_SN
+          - BSI_ZON_NO
+          - BULD_MNNM
+          - BULD_NM
+          - BULD_NM_DC
+          - BULD_SE_CD
+          - BULD_SLNO
+          - BUL_DPN_SE
+          - BUL_ENG_NM
+          - BUL_MAN_NO
+          - EMD_CD
+          - EQB_MAN_SN
+          - GRO_FLO_CO
+          - LI_CD
+          - LNBR_MNNM
+          - LNBR_SLNO
+          - MNTN_YN
+          - MVMN_DE
+          - MVMN_RESN
+          - MVM_RES_CD
+          - NTFC_DE
+          - OPERT_DE
+          - POS_BUL_NM
+          - RDS_MAN_NO
+          - RDS_SIG_CD
+          - RN_CD
+          - SIG_CD
+          - UND_FLO_CO
+      kind: shp_zip
+      unused_fields:
+      - BDTYP_CD
+      - BD_MGT_SN
+      - BSI_INT_SN
+      - BSI_ZON_NO
+      - BULD_MNNM
+      - BULD_NM_DC
+      - BULD_SE_CD
+      - BULD_SLNO
+      - BUL_DPN_SE
+      - BUL_ENG_NM
+      - EMD_CD
+      - EQB_MAN_SN
+      - GRO_FLO_CO
+      - LI_CD
+      - LNBR_MNNM
+      - LNBR_SLNO
+      - MNTN_YN
+      - MVMN_DE
+      - MVMN_RESN
+      - MVM_RES_CD
+      - NTFC_DE
+      - OPERT_DE
+      - POS_BUL_NM
+      - RDS_MAN_NO
+      - RDS_SIG_CD
+      - RN_CD
+      - SIG_CD
+      - UND_FLO_CO
+    building_entrance:
+      archives:
+      - file: juso_elctrnmap_jngj_20260711.zip
+        shp: 1
+      layers:
+        TL_SPBD_ENTRC:
+          geom_type: Point
+          crs: null
+          fields:
+          - BUL_MAN_NO
+          - ENTRC_SE
+          - ENT_MAN_NO
+          - EQB_MAN_SN
+          - OPERT_DE
+          - SIG_CD
+      kind: shp_zip
+      unused_fields:
+      - ENTRC_SE
+      - ENT_MAN_NO
+      - EQB_MAN_SN
+      - OPERT_DE
+      - SIG_CD
+    hydrant_point:
+      files:
+      - file: safety_hydrant_point_kr_20260811.csv
+        bytes: 14266460
+        encoding: utf-8-sig
+        rows: 50000
+        fields:
+        - 시설번호
+        - 시설유형코드
+        - 시도명
+        - 시군구명
+        - 시군구코드
+        - 소재지도로명주소
+        - 소재지지번주소
+        - 위도
+        - 경도
+        - 상세위치
+        - 안전센터명
+        - 보호틀유무
+        - 설치연도
+        - 출수압력
+        - 관할기관명
+        - 관할기관전화번호
+        - 데이터기준일자
+        - 제공기관코드
+        - 제공기관명
+      kind: csv_points
+      unused_fields:
+      - 관할기관전화번호
+      - 데이터기준일자
+      - 소재지지번주소
+      - 시군구명
+      - 시군구코드
+      - 시도명
+      - 시설유형코드
+      - 안전센터명
+      - 제공기관명
+      - 제공기관코드
+      - 출수압력
+    fire_access:
+      files:
+      - file: safety_fire_access_gj_dong_20250731.csv
+        bytes: 2027
+        encoding: cp949
+        rows: 20
+        fields:
+        - 연번
+        - 지역명
+        - 구간거리(m)
+        - 폭(m)
+        - 세대수
+        - 데이터기준일자
+      kind: csv_table
+      unused_fields:
+      - 구간거리(m)
+      - 데이터기준일자
+      - 세대수
+      - 연번
+    dem_public:
+      files:
+      - file: ngii_dem_gj35616_20251117.zip
+        bytes: 298644
+        entries: 2
+        sample:
+        - 35616/
+        - 35616/35616.img
+      kind: raw_only
+      unused_fields: []
+    parking:
+      files:
+      - file: gjcity_parking_dongu_20260811.csv
+        bytes: 84019
+        encoding: utf-8-sig
+        rows: 297
+        fields:
+        - 주차장관리번호
+        - 주차장명
+        - 주차장구분
+        - 주차장유형
+        - 소재지도로명주소
+        - 소재지지번주소
+        - 주차구획수
+        - 급지구분
+        - 부제시행구분
+        - 운영요일
+        - 평일운영시작시각
+        - 평일운영종료시각
+        - 토요일운영시작시각
+        - 토요일운영종료시각
+        - 공휴일운영시작시각
+        - 공휴일운영종료시각
+        - 요금정보
+        - 주차기본시간
+        - 주차기본요금
+        - 추가단위시간
+        - 추가단위요금
+        - 1일주차권요금적용시간
+        - 1일주차권요금
+        - 월정기권요금
+        - 결제방법
+        - 특기사항
+        - 관리기관명
+        - 전화번호
+        - 위도
+        - 경도
+        - 장애인전용주차구역보유여부
+        - 데이터기준일자
+      kind: csv_points
+      unused_fields:
+      - 1일주차권요금
+      - 1일주차권요금적용시간
+      - 결제방법
+      - 공휴일운영시작시각
+      - 공휴일운영종료시각
+      - 급지구분
+      - 데이터기준일자
+      - 부제시행구분
+      - 소재지지번주소
+      - 요금정보
+      - 운영요일
+      - 월정기권요금
+      - 장애인전용주차구역보유여부
+      - 주차구획수
+      - 주차기본시간
+      - 주차기본요금
+      - 주차장관리번호
+      - 주차장구분
+      - 주차장명
+      - 주차장유형
+      - 추가단위시간
+      - 추가단위요금
+      - 토요일운영시작시각
+      - 토요일운영종료시각
+      - 특기사항
+      - 평일운영시작시각
+      - 평일운영종료시각
+    ortho:
+      files:
+      - file: ngii_ortho_gj037_20251231.tif
+        bytes: 328279928
+      - file: ngii_ortho_gj038_20251231.tif
+        bytes: 328622600
+      - file: ngii_ortho_gj047_20251231.tif
+        bytes: 328622600
+      - file: ngii_ortho_gj048_20251231.tif
+        bytes: 328693784
+      kind: raw_only
+      unused_fields: []
+    enforcement:
+      files:
+      - file: safety_parking_enforce_dongu_20240108.csv
+        bytes: 5009386
+        encoding: cp949
+        rows: 85380
+        fields:
+        - 위반일자
+        - 위반시간
+        - 위반장소명
+        - 과태료
+        - 비고
+        - 데이터기준일자
+      kind: csv_table
+      unused_fields:
+      - 과태료
+      - 데이터기준일자
+      - 비고
+      - 위반시간
+      - 위반일자
+      - 위반장소명
+    hydrant_summary:
+      files:
+      - file: safety_hydrant_summary_jngj_20251231.csv
+        bytes: 259
+        encoding: cp949
+        rows: 5
+        fields:
+        - 연번
+        - 구분
+        - 지상식소화전
+        - 일반지하식소화전
+        - 저수조
+        - 급수탑
+        - 데이터기준일자
+      kind: csv_table
+      unused_fields:
+      - 구분
+      - 급수탑
+      - 데이터기준일자
+      - 연번
+      - 일반지하식소화전
+      - 저수조
+      - 지상식소화전
+# ===== /AUTO =====
