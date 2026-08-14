@@ -23,7 +23,7 @@ def main():
     W.mkdir(parents=True, exist_ok=True)
     # z 는 terrain.py 산출물이다. DEM 이 없으면 안 생기므로 선택 컬럼으로 둔다.
     _seg = gpd.read_file(P/"segments.geojson")
-    _cols = ["seg_id","width_min_m","width_max_m","verdict","width_verified",
+    _cols = ["seg_uid","seg_id","width_min_m","width_max_m","verdict","width_verified",
              "midpoint_fallback","inherited","route_usage","length_m",
              "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","road_name","road_side","road_bt_m","in_emd","light_count",
              "unknown_reason"]

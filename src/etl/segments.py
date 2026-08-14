@@ -33,6 +33,7 @@ from shapely.strtree import STRtree
 ROOT = Path(__file__).resolve().parents[2]
 import sys as _sys; _sys.path.insert(0, str(Path(__file__).resolve().parent))
 from paths import RAW, PROCESSED, WEB  # noqa: E402
+from segkey import attach_seg_uid, uid_retention, save_uid_map  # noqa: E402
 OUT = PROCESSED
 
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
@@ -826,6 +827,16 @@ def main():
         r.pop("_n")
 
     g = gpd.GeoDataFrame(list(rec.values()), crs=CRS_M)
+    # ── seg_uid ──────────────────────────────────────────────
+    # seg_id 는 실행 간 유지되지 않는다. 노딩 규칙이 바뀌면서 1266 → 1087 이
+    # 되었을 때 번호가 전부 밀렸다. 실측값·관측점·영상판정 반환값·향후 DB PK 는
+    # 전부 seg_uid 에 붙는다. seg_id 는 콘솔·디버그 표시용으로만 남긴다.
+    g = attach_seg_uid(g)
+    _ret = uid_retention(OUT / "seg_uid_map.csv", g)
+    print(f"  seg_uid {g.seg_uid.nunique()}개 · 직전 실행 대비 유지율 {_ret:.1%}")
+    if _ret < 0.90:
+        print("  ! 유지율 90% 미만 — segkey 규칙 재검토 필요")
+    save_uid_map(g, OUT / "seg_uid_map.csv")
 
     # ── 소방서 지정 구간 대조 ────────────────────────────────
     # 동부소방서 소방통로확보대상 지역 현황(2025-07-31)의 폭과 비교한다.
@@ -950,7 +961,8 @@ def main():
         "crs": CRS_W, "sha256": h, "count": len(g), "width_verified": False,
         "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
         "fields": {
-            "seg_id": "str, 불변 키",
+            "seg_uid": "str, 실행 간 유지되는 키. {지역}-{중점X}-{중점Y}-{도로명해시}. 실측·관측점·영상판정·DB PK 는 전부 이 키를 쓴다",
+            "seg_id": "str, 실행 내 표시용 일련번호. ★불변이 아니다. 노딩 규칙이 바뀌면 번호가 전부 밀린다. 외부 참조 금지",
             "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
             "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
             "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",
