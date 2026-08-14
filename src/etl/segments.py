@@ -212,8 +212,15 @@ def main():
         G.add_edge(a, b, length=s.length, geom=s)
     print(f"  노드접합 {NODE_TOL}m · 엣지 {len(_E)} → {G.number_of_edges()}"
           f" (자기루프 {_loop} · 병렬 {len(_dups)}) · 노드 최대이동 {_dmax:.3f}m")
+    # 최대 컴포넌트만 남긴다. 나머지는 스코프 경계에서 잘린 자투리다.
+    # ★ 몇 개를 버리는지 찍는다. 안 찍으면 그 구역이 판정에서 통째로 빠져도
+    #   아무도 모른다. light_count 가 0 인 채 OK 를 찍던 것과 같은 종류다.
+    _ncomp = nx.number_connected_components(G)
+    _n0, _e0 = G.number_of_nodes(), G.number_of_edges()
     G = G.subgraph(max(nx.connected_components(G),
         key=lambda c: sum(d["length"] for _, _, d in G.subgraph(c).edges(data=True)))).copy()
+    print(f"  최대성분 채택: 컴포넌트 {_ncomp} → 1 · "
+          f"노드 {_n0}→{G.number_of_nodes()} · 엣지 {_e0}→{G.number_of_edges()}")
 
     nodes = list(G.nodes); npts = np.array(nodes)
     snapn = lambda x, y: nodes[int(np.argmin((npts[:, 0]-x)**2 + (npts[:, 1]-y)**2))]

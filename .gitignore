@@ -46,3 +46,4 @@ _backup_*/
 
 # pytest 캐시
 .pytest_cache/
+docs/lineage.mmd
