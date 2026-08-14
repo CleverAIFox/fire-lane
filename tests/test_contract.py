@@ -16,6 +16,7 @@ WEB = ROOT / "web" / "data"
 
 VERDICTS = {"clear", "needs_cv", "blocked", "unknown"}
 REQUIRED = {
+    "seg_uid": str,
     "seg_id": str,
     "width_min_m": (float, int, type(None)),
     "width_max_m": (float, int, type(None)),
@@ -178,3 +179,59 @@ def test_publish_z_is_optional():
     src = (ETL / "publish_web.py").read_text(encoding="utf-8")
     assert '"unknown_reason","z","geometry"' not in src, \
         "publish_web.py 가 z 를 필수 컬럼으로 요구한다. 선택 컬럼으로 둘 것"
+def test_optional_layers_not_silently_empty(seg):
+    """
+    조용한 결측 방어.
+
+    2026-08-14: raw 폴더를 gjcity/ 로 옮겼는데 segments.py 가 옛 경로를 읽고 있었다.
+    glob 이 빈 리스트를 돌려줬고 `if _lp:` 가 그냥 지나가서
+    light_count 가 전부 0 인 채 파이프라인이 "OK" 를 찍었다.
+    '있어야 할 데이터가 0건'은 정상이 아니다.
+    """
+    P = [f["properties"] for f in seg["features"]]
+    n = sum(1 for p in P if p.get("light_count"))
+    assert n > 0, "light_count 전부 0 — 가로등 CSV 경로 확인 (RAW/gjcity/*streetlight*.csv)"
+
+
+# ── seg_uid ──────────────────────────────────────────────────
+# seg_id 는 실행마다 갈린다(1266→1087 때 전부 밀렸다). 외부(실측 DB·영상판정·
+# 향후 DB PK)가 붙을 키는 seg_uid 하나뿐이므로 형식과 유일성을 계약으로 고정한다.
+import re
+
+SEG_UID_RE = re.compile(r"^[A-Z]{2}-\d{6}-\d{6}-[0-9A-Z]{4}$")
+
+
+def test_seg_uid_format(seg):
+    """형식이 깨지면 파싱하는 쪽(로그·DB·야장)이 전부 깨진다."""
+    for f in seg["features"]:
+        u = f["properties"]["seg_uid"]
+        assert SEG_UID_RE.match(u), f"seg_uid 형식 위반: {u}"
+
+
+def test_seg_uid_unique(seg):
+    """
+    중복은 중점이 1m 안에 겹치고 도로명도 같은 구간이 둘 이상이라는 뜻이다.
+    접미사로 회피하면 다음 실행에 접미사 순서가 바뀌어 키가 또 갈린다.
+    병합 규칙을 봐야 한다.
+    """
+    ids = [f["properties"]["seg_uid"] for f in seg["features"]]
+    dup = {i for i in ids if ids.count(i) > 1}
+    assert not dup, f"seg_uid 중복 {len(dup)}건: {sorted(dup)[:5]}"
+
+
+def test_seg_uid_retention():
+    """
+    직전 실행 대비 유지율 90%. 무너지면 실측값이 미아가 된다.
+    검증: NODE_TOL/SNAP_TOL 0.5 -> 0.6 에서 99.4% (2026-08-14)
+    """
+    import csv
+    p = ROOT / "data" / "processed" / "seg_uid_map.csv"
+    if not p.exists():
+        pytest.skip("최초 실행 — 비교 대상 없음")
+    prev = {r["seg_uid"] for r in csv.DictReader(p.open(encoding="utf-8"))}
+    if not prev:
+        pytest.skip("이력 없음")
+    cur = {f["properties"]["seg_uid"]
+           for f in json.loads((WEB / "segments.geojson").read_text(encoding="utf-8"))["features"]}
+    ret = len(prev & cur) / len(prev)
+    assert ret >= 0.90, f"seg_uid 유지율 {ret:.1%} — 키 규칙 재검토"

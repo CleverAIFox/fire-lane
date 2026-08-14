@@ -14,10 +14,8 @@ normalize_raw.py — 다운로드 폴더의 원본을 명명규칙에 맞게 dat
 
 기관별 폴더
     juso ngii its sbiz safety gjcity nsdi
-
-★ 예외 두 곳. 폴더명 = 기관명 규칙을 깬다. 코드가 이 경로를 직접 읽으므로 고정이다.
-    ngii_1k       ngii1k.py 가 폴더를 rglob. ngii/ 로 합치면 연속수치지도까지 집는다
-    streetlight   segments.py 가 RAW/"streetlight"/*.csv 로 읽는다
+★ 예외 한 곳. 폴더명 = 기관명 규칙을 깬다. 코드가 이 경로를 직접 읽으므로 고정이다.
+    ngii1k        ngii1k.py 가 폴더를 rglob. ngii/ 로 합치면 연속수치지도까지 집는다
   파일명 접두사는 규칙대로 기관명(ngii_ · gjcity_)을 쓴다.
 
 ★ 기준일은 다운로드일이 아니라 데이터 기준일이다.
@@ -63,24 +61,24 @@ RULES: list[tuple[str, str, str]] = [
     (r"b060.*정사영상_\d+_35616(\d{3})\.tif$",    "ngii",   "ngii_ortho_gj{0}_20251231.tif"),
     (r"b060.*정사영상메타데이터_\d+35616(\d{3})\.xml$", "ngii", "ngii_ortho_gj{0}_20251231.xml"),
     # 1:1,000 수치지형도 도엽. 폭 산출 주 소스(결정 63).
-    # ★ 폴더가 ngii 가 아니라 ngii_1k 다. ngii1k.py 가 폴더를 rglob 로 훑는데
+    # ★ 폴더가 ngii 가 아니라 ngii1k 다. ngii1k.py 가 폴더를 rglob 로 훑는데
     #   ngii/ 로 합치면 (B020)연속수치지도 294MB×2 까지 집어 파싱하려 든다.
     # ★ 기준일: 파일명에는 연도만 있고 실제 제작일은 도엽마다 다르다
     #   (356160995 → xml 상 2020-11-16). RULES 는 고정 문자열 구조라 파일별
     #   xml 을 읽을 수 없다. 연도+1231 은 정렬용 표기이며 기준일이 아니다.
     #   실제 일자는 sources.yaml 에 도엽번호↔일자 표로 남긴다. (회의 안건)
     # ★ (B010) 은 정규식에 넣지 않는다. 브라우저가 괄호를 바꾸는 경우가 있다.
-    (r"수치지도_(\d{9})_(\d{4})_\d+\.ngi$", "ngii_1k", "ngii_map1k_gj{0}_{1}1231.ngi"),
-    (r"수치지도_(\d{9})_(\d{4})_\d+\.nda$", "ngii_1k", "ngii_map1k_gj{0}_{1}1231.nda"),
-    (r"수치지도_(\d{9})_(\d{4})_\d+\.zip$", "ngii_1k", "ngii_map1k_gj{0}_{1}1231.zip"),
-    (r"수치지도_(\d{9})_(\d{4})_\d+\.xml$", "ngii_1k", "ngii_map1k_gj{0}_{1}1231.xml"),
+    (r"수치지도_(\d{9})_(\d{4})_\d+\.ngi$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.ngi"),
+    (r"수치지도_(\d{9})_(\d{4})_\d+\.nda$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.nda"),
+    (r"수치지도_(\d{9})_(\d{4})_\d+\.zip$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.zip"),
+    (r"수치지도_(\d{9})_(\d{4})_\d+\.xml$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.xml"),
     # 도엽 메타 증빙. 파일명에 (B010) 접두사가 없어 별도 규칙이 필요하다.
-    (r"^(\d{9})_(\d{4})_\d+\.xlsx$", "ngii_1k", "ngii_map1k_gj{0}_{1}1231.xlsx"),
-    (r"^ngii_map1k_gj\d{9}_\d{8}\.(ngi|nda|zip|xml|xlsx)$", "ngii_1k", None),
+    (r"^(\d{9})_(\d{4})_\d+\.xlsx$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.xlsx"),
+    (r"^ngii_map1k_gj\d{9}_\d{8}\.(ngi|nda|zip|xml|xlsx)$", "ngii1k", None),
     # 가로등. 지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
-    # ★ segments.py 가 RAW/"streetlight"/*.csv 로 직접 읽는다. 폴더명 고정.
-    (r"가로등현황_(\d{8})\.csv$", "streetlight", "gjcity_streetlight_dongu_{0}.csv"),
-    (r"^gjcity_streetlight_dongu_\d{8}\.csv$", "streetlight", None),
+    # ★ segments.py 가 RAW/"gjcity"/*.csv 로 직접 읽는다. 폴더명 고정.
+    (r"가로등현황_(\d{8})\.csv$", "gjcity", "gjcity_streetlight_dongu_{0}.csv"),
+    (r"^gjcity_streetlight_dongu_\d{8}\.csv$", "gjcity", None),
     # 교통
     (r"nodelinkdata\.zip$",                       "its",    "its_nodelink_kr_20260810.zip"),
     (r"^내역서\.csv$",                            "its",    "its_nodelink_changelog_20260810.csv"),
@@ -115,8 +113,8 @@ REQUIRED = [
     "gjcity/gjcity_parking_dongu_20260811.csv",
     "safety/safety_parking_enforce_dongu_20240108.csv",
     "safety/safety_hydrant_summary_jngj_20251231.csv",
-    "ngii_1k/ngii_map1k_gj356160995_20201231.ngi",
-    "streetlight/gjcity_streetlight_dongu_20240415.csv",
+    "ngii1k/ngii_map1k_gj356160995_20201231.ngi",
+    "gjcity/gjcity_streetlight_dongu_20240415.csv",
 ]
 
 

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T02:58:02.290174+09:00",
+  "generated_at": "2026-08-14T14:59:34.519584+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -55,7 +55,7 @@
       "source_file": "juso/juso_elctrnmap_jngj_20260711.zip",
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
       "source_crs": "EPSG:5179",
-      "license": "",
+      "license": "TODO",
       "url": "",
       "status": "OK",
       "features": 1957,
@@ -71,6 +71,46 @@
       "outputs": [
         "road_rw.geojson",
         "road_rw_5186.gpkg"
+      ]
+    },
+    {
+      "key": "spotaddr_geom",
+      "status": "MISSING",
+      "file": "juso/juso_spotaddr_geom_jngj_20260801.zip"
+    },
+    {
+      "key": "spotaddr_ref",
+      "status": "MISSING",
+      "file": "juso/juso_spotaddr_ref_jngj_20260801.zip"
+    },
+    {
+      "key": "ngii1k",
+      "status": "FAIL",
+      "error": "AttributeError: 'tuple' object has no attribute 'geom_type'"
+    },
+    {
+      "key": "streetlight",
+      "source_file": "gjcity/*streetlight*.csv",
+      "source_sha256": "7c7011029be8d66532240cbbf4f46831b9ff5fb6601e58b7637f7440c7b2a867",
+      "source_crs": 4326,
+      "license": "TODO",
+      "url": "",
+      "status": "OK",
+      "features": 1786,
+      "geom": [
+        "Point"
+      ],
+      "columns": [
+        "관리번호",
+        "소재지도로명주소",
+        "소재지지번주소",
+        "위도",
+        "경도",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "streetlight.geojson",
+        "streetlight_5186.gpkg"
       ]
     },
     {
@@ -160,7 +200,7 @@
       "source_file": "its/its_nodelink_kr_20260810.zip",
       "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
       "source_crs": "EPSG:5186",
-      "license": "",
+      "license": "TODO",
       "url": "",
       "status": "OK",
       "features": 968,
@@ -187,7 +227,7 @@
       "source_file": "its/its_nodelink_kr_20260810.zip",
       "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
       "source_crs": "none",
-      "license": "",
+      "license": "TODO",
       "url": "",
       "status": "OK",
       "features": 87,
@@ -240,7 +280,7 @@
       "source_file": "safety/safety_firestation_kr_20240901.csv",
       "source_sha256": "b65a8bb8e2197f8999384c259c9154247f2d537a10604f9e24d19b1244bb89b7",
       "source_crs": "EPSG:4326",
-      "license": "",
+      "license": "TODO",
       "url": "https://www.data.go.kr/data/15138232/fileData.do",
       "status": "OK",
       "features": 3,
@@ -348,7 +388,7 @@
       "source_file": "juso/juso_elctrnmap_jngj_20260711.zip",
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
       "source_crs": "EPSG:5179",
-      "license": "",
+      "license": "TODO",
       "url": "",
       "status": "OK",
       "features": 14479,
@@ -398,7 +438,7 @@
       "source_file": "juso/juso_elctrnmap_jngj_20260711.zip",
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
       "source_crs": "EPSG:5179",
-      "license": "",
+      "license": "TODO",
       "url": "",
       "status": "OK",
       "features": 11284,
@@ -483,7 +523,7 @@
       "source_file": "ngii/ngii_dem_gj35616_20251117.zip",
       "source_sha256": "56656fc18efb05ad78653d1b09ea18e6c9879eaa2e5940d33a2cce677b4ef128",
       "source_crs": "EPSG:5179",
-      "license": "",
+      "license": "TODO",
       "url": "",
       "status": "SKIP",
       "features": "",
@@ -496,7 +536,7 @@
       "source_file": "gjcity/gjcity_parking_dongu_20260811.csv",
       "source_sha256": "2d3ffbc50ad074ac4e771b2ca6d688593c640d8355c632e17b897f811da7b262",
       "source_crs": "EPSG:4326",
-      "license": "",
+      "license": "TODO",
       "url": "",
       "status": "OK",
       "features": 190,
@@ -560,7 +600,7 @@
       "source_file": "safety/safety_parking_enforce_dongu_20240108.csv",
       "source_sha256": "cf64a54d8dbe19c27621cec50d9b95319b9e7b9873422c5312a848cbece850e1",
       "source_crs": "none",
-      "license": "",
+      "license": "TODO",
       "url": "https://www.data.go.kr",
       "status": "OK",
       "features": 85380,
@@ -582,7 +622,7 @@
       "source_file": "safety/safety_hydrant_summary_jngj_20251231.csv",
       "source_sha256": "e3eb7b4178fdbadf8234aff793fc3b077c7bf4eec1f48a25fdee6d5f6f60c005",
       "source_crs": "none",
-      "license": "",
+      "license": "TODO",
       "url": "https://www.data.go.kr",
       "status": "OK",
       "features": 5,
@@ -619,7 +659,7 @@
     "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
     "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
     "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-08-13T02:07:13+00:00"
+    "generated_at": "2026-08-14T06:00:24+00:00"
   },
   "ortho": {
     "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
@@ -628,6 +668,6 @@
     "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
     "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (388장, z15~18, 8.3MB)",
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-08-13T02:07:23+00:00"
+    "generated_at": "2026-08-14T06:00:30+00:00"
   }
 }

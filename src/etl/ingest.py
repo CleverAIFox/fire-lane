@@ -54,6 +54,22 @@ def sha256(p: Path, chunk: int = 1 << 20) -> str:
     return h.hexdigest()
 
 
+def sha_of(p: Path) -> str:
+    """파일이면 그 해시, 디렉터리면 하위 파일 해시들의 해시.
+
+    도엽 디렉터리(ngii1k)처럼 '여러 파일이 한 데이터셋'인 경우가 있다.
+    도엽 한 장이 빠지거나 연도가 바뀌면 여기서 드러나야 한다.
+    """
+    if p.is_file():
+        return sha256(p)
+    files = sorted(x for x in p.rglob("*") if x.is_file() and not x.name.startswith("_"))
+    h = hashlib.sha256()
+    for f in files:
+        h.update(f.relative_to(p).as_posix().encode())
+        h.update(sha256(f).encode())
+    return h.hexdigest()
+
+
 def bbox_in(crs: str):
     t = Transformer.from_crs(CRS_W, crs, always_xy=True)
     x0, y0 = t.transform(BBOX_4326[0], BBOX_4326[1])
@@ -116,7 +132,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     if not hits:
         return {"key": key, "status": "MISSING", "file": e["file"]}
     src = hits[0]
-    rec = {"key": key, "source_file": e["file"], "source_sha256": sha256(src),
+    rec = {"key": key, "source_file": e["file"], "source_sha256": sha_of(src),
            # csv_table / raw_only 는 좌표가 없다. crs 를 필수로 두면 거기서 죽는다.
            "source_crs": e.get("crs", ""), "license": e.get("license", ""),
            "url": e.get("url", "")}
@@ -139,7 +155,44 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         g["geometry"] = g.geometry.apply(make_valid).buffer(0)
         rec["source_sha256"] = ",".join(sha256(z)[:16] for z in sorted(RAW.glob(e["file"])))
 
-    elif kind == "csv_points":
+    elif kind in ("ngii1k", "ngii_1k"):                  # 수치지형도 1:1,000 도엽 묶음
+        # NGI(텍스트) / SHP 혼재라 GDAL 로 못 읽는다. ngii1k.py 가 파싱한다.
+        # 여기서 호출하는 이유: 손으로 따로 돌리면 파이프라인이 재현되지 않는다.
+        from ngii1k import collect, read_sheet, LAYERS
+        want = list(LAYERS)
+        sheets = collect(src)
+        if not sheets:
+            raise FileNotFoundError(f"도엽 없음: {src}")
+        acc = {k: [] for k in want}
+        per_sheet = {}
+        for sh, (year, sk, path) in sorted(sheets.items()):
+            got = read_sheet(sk, path, want)
+            for k, v in got.items():
+                acc[k] += v
+            per_sheet[sh] = {"year": year, "kind": sk,
+                             **{k: len(got[k]) for k in want}}
+        # 도엽이 하나라도 0건이면 조용히 폭이 틀어진다. 즉시 세운다.
+        empty = [sh for sh, v in per_sheet.items() if v["A0010000"] == 0]
+        if empty:
+            raise ValueError(f"도로경계 0건 도엽: {empty} — zip/ngi 중복 여부 확인")
+        rec["sheets"] = per_sheet
+        keep = {"A0010000": ("ngii1k", "Polygon"),
+                "A0020000": ("ngii1k_center", "LineString")}
+        outs = []
+        for lay, (k2, typ) in keep.items():
+            geoms = [g for g in acc[lay] if g.geom_type == typ]
+            gg = gpd.GeoDataFrame({"src": ["ngii1k"] * len(geoms)},
+                                  geometry=geoms, crs=e["crs"])
+            if typ == "Polygon":
+                gg["geometry"] = gg.geometry.buffer(0)
+            info = save(gg, k2)
+            outs += [f"{k2}.geojson", f"{k2}_5186.gpkg"]
+            if k2 == key:
+                rec |= info
+        rec |= {"status": "OK", "outputs": outs}
+        return rec
+
+    elif kind in ("csv_points", "csv_point"):
         g = load_csv_points(src, e["x_col"], e["y_col"], e.get("encoding", "utf-8"))
 
     elif kind == "csv_points_in_zip":

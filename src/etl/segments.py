@@ -33,6 +33,7 @@ from shapely.strtree import STRtree
 ROOT = Path(__file__).resolve().parents[2]
 import sys as _sys; _sys.path.insert(0, str(Path(__file__).resolve().parent))
 from paths import RAW, PROCESSED, WEB  # noqa: E402
+from segkey import attach_seg_uid, uid_retention, save_uid_map  # noqa: E402
 OUT = PROCESSED
 
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
@@ -65,6 +66,20 @@ NODE_TOL      = 0.5          # 노드 동일시 반경. SNAP_TOL 과 같은 값�
                              # 피처로서 의미가 없고 폭도 잴 수 없다(51개).
 XSEC_EXCL     = 5.0          # 교차로 노드 제외 반경. blob 폭 폭발 방지
 WMAX_CAP      = 60.0         # 담~담 상한. 15m로 잡으면 대로가 전멸한다
+SNAP_TRUST    = 2.0          # 이보다 많이 끌어온 표본은 폭 산출에서 뺀다.
+COV_MIN       = 0.5          # 채택 자격. 구간의 절반 미만을 잰 소스는 대표시키지 않는다.
+#   소스 우선순위(결정 63)를 바꾸는 것이 아니라 자격 미달을 거르는 것이다.
+#   자격 미달로 탈락하면 다음 순위 소스가 자동으로 올라간다.
+#   근거: 정상 구간(<=15m)의 채택소스 커버율은 중앙 1.0 · p10 0.667 인데
+#   width_min>30m 이상값 43건은 0.038~0.286 이다. 두 무리가 겹치지 않는다.
+#   준법로(DM01608)는 ngii 가 26표본 중 1개(cov 0.038)를 쟀고 그 값이 53.2m 로
+#   구간 폭이 됐다. 나머지 23개는 silpok 1.30m 였다.
+#   snap 은 측정점을 도로면 안으로 끌어온 거리다. 크다는 것은 그 지점에
+#   그 소스의 도로면이 없다는 뜻이고, 끌어온 만큼 옆 도로를 잰 값이 된다.
+#   준법로(DM01609)는 표본 26개 중 23개가 silpok 1.30m 였는데,
+#   ngii 3개(snap 1.18/3.18/5.18)가 우선순위로 채택돼 wmin 이 53.1m 로 나갔다.
+#   width_min>30m 47구간이 전부 clear 로 판정되던 원인이다(미탐 방향).
+#   SNAP_MAX(6.0)는 측정 시도 한계이고 이 값은 신뢰 한계다. 별개다.
 MIN_SEG_LEN   = 3.0          # 이하는 교차로 파편. 폭 미산출 후 인접 상속
 # 소방청 「2025 화재현장 골든타임 확보 종합대책」 기준
 #   진입불가  폭 2m 이하, 또는 이동불가 장애물로 진입 불가한 구간이 100m 이상
@@ -119,7 +134,7 @@ def main():
     # 가로등. 지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
     # 지도 마커로 찍으면 없는 위치를 그리는 것이 되므로 구간 피처로만 쓴다.
     import glob as _glob
-    _lp = sorted(_glob.glob(str(RAW / "streetlight" / "*.csv")))
+    _lp = sorted(_glob.glob(str(RAW / "gjcity" / "*streetlight*.csv")))
     _light = None
     if _lp:
         _ldf = pd.read_csv(_lp[0], encoding="cp949")
@@ -197,8 +212,15 @@ def main():
         G.add_edge(a, b, length=s.length, geom=s)
     print(f"  노드접합 {NODE_TOL}m · 엣지 {len(_E)} → {G.number_of_edges()}"
           f" (자기루프 {_loop} · 병렬 {len(_dups)}) · 노드 최대이동 {_dmax:.3f}m")
+    # 최대 컴포넌트만 남긴다. 나머지는 스코프 경계에서 잘린 자투리다.
+    # ★ 몇 개를 버리는지 찍는다. 안 찍으면 그 구역이 판정에서 통째로 빠져도
+    #   아무도 모른다. light_count 가 0 인 채 OK 를 찍던 것과 같은 종류다.
+    _ncomp = nx.number_connected_components(G)
+    _n0, _e0 = G.number_of_nodes(), G.number_of_edges()
     G = G.subgraph(max(nx.connected_components(G),
         key=lambda c: sum(d["length"] for _, _, d in G.subgraph(c).edges(data=True)))).copy()
+    print(f"  최대성분 채택: 컴포넌트 {_ncomp} → 1 · "
+          f"노드 {_n0}→{G.number_of_nodes()} · 엣지 {_e0}→{G.number_of_edges()}")
 
     nodes = list(G.nodes); npts = np.array(nodes)
     snapn = lambda x, y: nodes[int(np.argmin((npts[:, 0]-x)**2 + (npts[:, 1]-y)**2))]
@@ -258,6 +280,26 @@ def main():
     for a, b in G.edges():
         deg[a] += 1; deg[b] += 1
     xn = unary_union([Point(p) for p, d in deg.items() if d >= 3])
+
+    # ── 교차부 형상 (A0080000 평면교차점) ─────────────────────
+    # 종전에는 노드에서 XSEC_EXCL(5.0m) 이내를 일괄 제외했다. 눈대중 반경이라
+    # 양쪽으로 틀렸다 — 실제 교차부 등가반경은 중앙 3.2m · p90 7.5m 라
+    # 작은 교차부에서는 과하게 도려내 표본을 죽이고, 큰 교차부에서는 부족해
+    # 오염이 샜다. 동명로25번길 t=29·31(끝에서 5.1m)이 후자다.
+    # NGII 가 실제 교차부 폴리곤을 준다(스코프 내 696건, 구간의 79%를 덮는다).
+    # 폴리곤이 없는 교차로는 기존 반경 방식으로 폴백한다.
+    _xp = OUT / "ngii1k_xsec_5186.gpkg"
+    xsec_poly = None
+    if _xp.exists():
+        try:
+            _xg = gpd.read_file(_xp, layer="ngii1k_xsec").to_crs(CRS_M)
+            xsec_poly = unary_union(_xg.geometry.buffer(0))
+            print(f"  교차부 폴리곤 {len(_xg)}건 적용")
+        except Exception as _e:
+            print(f"  ! 교차부 폴리곤 로드 실패 — 반경 {XSEC_EXCL}m 폴백: {_e}")
+    else:
+        # 조용히 넘기지 않는다. 없으면 판정 기준이 달라진다.
+        print(f"  ! ngii1k_xsec_5186.gpkg 없음 — 반경 {XSEC_EXCL}m 폴백")
 
     def measure(s, t):
         p0 = s.interpolate(t)
@@ -465,23 +507,61 @@ def main():
                      for k, v in _cov.items()}, _n_try)
         for t in _ts:
             _nc += 1
-            if not _short and xn.distance(s.interpolate(t)) < XSEC_EXCL:
+            _pt = s.interpolate(t)
+            if xsec_poly is not None:
+                # ★ 폴리곤이 근처에 있으면 폴리곤만 믿는다.
+                #   or 로 반경 폴백을 항상 같이 걸면 폴리곤이 무의미해진다.
+                #   작은 교차부(등가반경 중앙 3.2m)는 여전히 5m 씩 도려내지고,
+                #   큰 교차부(p90 7.5m)는 폴리곤 밖 오염이 그대로 남는다.
+                #   폴리곤이 아예 없는 교차로에서만 반경으로 폴백한다.
+                if xsec_poly.distance(_pt) < XSEC_EXCL * 2:
+                    _inx = xsec_poly.intersects(_pt)
+                else:
+                    _inx = xn.distance(_pt) < XSEC_EXCL
+            else:
+                _inx = xn.distance(_pt) < XSEC_EXCL
+            # ★ 짧은 조각도 교차부 폴리곤 안이면 제외한다.
+            #   종전에는 _short 면 교차부 제외를 통째로 건너뛰고 중점 한 점을
+            #   쟀는데, 그 한 점이 교차로 한복판이라 길이 1m 조각에서 55m 가
+            #   나왔다. 표본 0 을 피하려다 쓰레기 값을 만든 것이다.
+            #   MIN_SEG_LEN 주석이 이미 '폭 미산출 후 인접 상속'이라고 적고 있다.
+            #   상속 경로가 원래 설계에 있는데 억지 값 때문에 안 쓰이고 있었다.
+            #   교차부 폴리곤이 없을 때만 종전 동작(짧으면 재기)을 유지한다.
+            _skip = _inx if (xsec_poly is not None and not _short) else _inx
+            if _short and xsec_poly is not None:
+                _skip = xsec_poly.intersects(_pt)
+            elif _short:
+                _skip = False
+            if _skip:
                 _nx_skip += 1
                 if _DBG["on"]:
-                    print(f"    t={t:7.1f}  교차로 {xn.distance(s.interpolate(t)):.1f}m — 제외")
+                    _how = "폴리곤" if (xsec_poly is not None
+                                       and xsec_poly.intersects(_pt)) else "반경"
+                    print(f"    t={t:7.1f}  교차로 {xn.distance(_pt):.1f}m ({_how}) — 제외")
                 continue
             if _DBG["on"]:
                 _pp = s.interpolate(t)
                 print(f"    t={t:7.1f}  ({_pp.x:.1f},{_pp.y:.1f})")
             a, b, sc, pr, _why, _res = measure(s, t)
             _n_try += 1
+
+            def _trusted(_nm):
+                """이 지점에서 그 소스의 표본을 믿을 수 있는가."""
+                _r = _res.get(_nm)
+                if _r is None or _r[0] is None:
+                    return False
+                _sn = _r[3]
+                return _sn is None or _sn <= SNAP_TRUST
+
             for _nm in ("ngii1k", "ngii", "silpok"):
-                if _res.get(_nm, (None,))[0] is not None:
+                if _trusted(_nm):
                     _cov[_nm] += 1
             if _why: _whys.append(_why)
-            if a: A.append(a); S.append(sc); D.append(pr)
+            # 채택된 소스의 snap 이 크면 그 표본 자체를 버린다.
+            if a and (sc is None or _trusted(sc)):
+                A.append(a); S.append(sc); D.append(pr)
             for _nm, _vv in zip(("ngii1k", "ngii", "silpok"), pr):
-                if _vv is not None:
+                if _vv is not None and _trusted(_nm):
                     _by[_nm].append(_vv)
             if b: B.append(b)
         if A:
@@ -510,10 +590,23 @@ def main():
         # width_cov 로 노출해 D-25 실측 우선순위에 쓴다.
         _pick = None
         if not MIX_SRC:
+            # 커버율은 소스를 '고르는' 기준이 아니라 '자격'이다.
+            # 커버율로 고르면 실폭도로(0.955)가 항상 이겨 결정 63 이 뒤집힌다.
+            _covnow = _covr()[0]
             for _nm in ("ngii1k", "ngii", "silpok"):
-                if _by[_nm]:
-                    _pick = _nm
-                    break
+                if not _by[_nm]:
+                    continue
+                _cv = _covnow.get(_nm)
+                if _cv is not None and _cv < COV_MIN and _n_reg >= 3:
+                    continue          # 자격 미달. 다음 순위로 넘긴다
+                _pick = _nm
+                break
+            # 전부 자격 미달이면 우선순위대로 하나는 쓴다(폭을 못 내는 것보다 낫다).
+            if _pick is None:
+                for _nm in ("ngii1k", "ngii", "silpok"):
+                    if _by[_nm]:
+                        _pick = _nm
+                        break
         wmin = None
         if _pick is not None:
             wmin = round(min(_by[_pick]), 2)
@@ -546,7 +639,7 @@ def main():
                 wdis = round(max(_vals) - min(_vals), 2)
         return wmin, wmax, fb, wsrc, wdis, _rsn, _covr()
 
-    def verdict(wmin, wmax):
+    def verdict(wmin, wmax, nreg=None):
         """소방청 기준 판정 4종.
 
             blocked   wmax <  3.0   통과 하한 미달. 장애물이 없어도 못 지나간다
@@ -554,8 +647,20 @@ def main():
             unknown   폭 산출 불가
             needs_cv  나머지        상습주차 여부로 갈린다. 영상판정 대상
         """
+        # ★ 표본 1개로는 clear 를 주지 않는다.
+        #   DM02825(동계천로95번길, 길이 2.7m)는 표본 하나가 교차로를 대각선으로
+        #   가로질러 42.1m 가 나왔고 그것이 곧 wmin 이 되어 clear 로 판정됐다.
+        #   실제로는 사거리 한복판이다(네이버 거리뷰 확인, 2026-08-14).
+        #   표본이 하나면 커버율이 자동으로 1.0 이 되어 COV_MIN 검사도 통과한다.
+        #   clear 는 '영상판정조차 필요 없다'는 가장 강한 주장이라 근거가 필요하다.
+        #   blocked 는 막는 쪽이라 표본 1개여도 유지한다(미탐:오탐 = 100:1).
+        #   ※ widths() 에서 None 을 반환하면 3m 미만 구간이 fragment 로 떨어져
+        #     44개 구간이 산출물에서 사라진다. 그래서 판정 단계에서 막는다.
         if wmax is not None and wmax < TRUCK:           return "blocked"
-        if wmin is not None and wmin >= TRUCK + 2*PARK: return "clear"
+        if wmin is not None and wmin >= TRUCK + 2*PARK:
+            if nreg is not None and nreg <= 1:
+                return "needs_cv"
+            return "clear"
         # 도로폭이 있으면 판정한다. wmax(담~담) 가 없는 것은 실패가 아니다.
         # 대로는 건물이 WMAX_CAP(40m) 밖이라 벽 사이를 잴 수 없고,
         # 그런 구간은 도로폭만으로 이미 판정이 끝난다.
@@ -748,7 +853,7 @@ def main():
             W[uid] = widths(g)          # 병합으로 범위 안에 들어온 단위
         wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt) = W[uid]
         _road_nm, _road_side, _road_bt = road_name(g)
-        v = verdict(wmin, wmax)
+        v = verdict(wmin, wmax, wnt)
         if short and wmin is None:
             v = "fragment"
 
@@ -826,6 +931,16 @@ def main():
         r.pop("_n")
 
     g = gpd.GeoDataFrame(list(rec.values()), crs=CRS_M)
+    # ── seg_uid ──────────────────────────────────────────────
+    # seg_id 는 실행 간 유지되지 않는다. 노딩 규칙이 바뀌면서 1266 → 1087 이
+    # 되었을 때 번호가 전부 밀렸다. 실측값·관측점·영상판정 반환값·향후 DB PK 는
+    # 전부 seg_uid 에 붙는다. seg_id 는 콘솔·디버그 표시용으로만 남긴다.
+    g = attach_seg_uid(g)
+    _ret = uid_retention(OUT / "seg_uid_map.csv", g)
+    print(f"  seg_uid {g.seg_uid.nunique()}개 · 직전 실행 대비 유지율 {_ret:.1%}")
+    if _ret < 0.90:
+        print("  ! 유지율 90% 미만 — segkey 규칙 재검토 필요")
+    save_uid_map(g, OUT / "seg_uid_map.csv")
 
     # ── 소방서 지정 구간 대조 ────────────────────────────────
     # 동부소방서 소방통로확보대상 지역 현황(2025-07-31)의 폭과 비교한다.
@@ -950,7 +1065,8 @@ def main():
         "crs": CRS_W, "sha256": h, "count": len(g), "width_verified": False,
         "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
         "fields": {
-            "seg_id": "str, 불변 키",
+            "seg_uid": "str, 실행 간 유지되는 키. {지역}-{중점X}-{중점Y}-{도로명해시}. 실측·관측점·영상판정·DB PK 는 전부 이 키를 쓴다",
+            "seg_id": "str, 실행 내 표시용 일련번호. ★불변이 아니다. 노딩 규칙이 바뀌면 번호가 전부 밀린다. 외부 참조 금지",
             "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
             "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
             "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",

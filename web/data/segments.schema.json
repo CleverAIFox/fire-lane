@@ -1,11 +1,12 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "963838eeebc3f8fe5e0183fd0d186fae902fb43cf8039456c70feae1adf2795d",
-  "count": 1087,
+  "sha256": "00b123d545633b9f23e05e29e08f36775280e65134dc1101b8a3196d60670395",
+  "count": 1102,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
   "fields": {
-    "seg_id": "str, 불변 키",
+    "seg_uid": "str, 실행 간 유지되는 키. {지역}-{중점X}-{중점Y}-{도로명해시}. 실측·관측점·영상판정·DB PK 는 전부 이 키를 쓴다",
+    "seg_id": "str, 실행 내 표시용 일련번호. ★불변이 아니다. 노딩 규칙이 바뀌면 번호가 전부 밀린다. 외부 참조 금지",
     "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
     "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
     "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",
