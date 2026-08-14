@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone, timedelta
@@ -31,6 +32,9 @@ SOURCES = ROOT / "sources.yaml"
 PROCESSED = ROOT / "data" / "processed"
 MANIFEST = PROCESSED / "_manifest.json"
 BACKUP_TARGETS = ["data/raw", "data/norm", "data/field", "data/processed"]
+# raw 는 레포 밖($FIRE_LANE_RAW)에 있다. 상대경로만 훑으면 2.5GB 가 통째로 빠진다.
+# 백업 대상에서 raw 가 빠졌다는 것을 파일 개수로만 알 수 있으면 조용한 결측이다.
+EXTERNAL_TARGETS = [Path(os.environ["FIRE_LANE_RAW"])] if os.environ.get("FIRE_LANE_RAW") else []
 
 # ★ raw 와 field 는 재생성이 불가능하다. processed 는 재생성되지만 시간이 든다.
 #   이 우선순위가 백업 순서이자 복원 훈련 대상 순서다.
@@ -232,23 +236,29 @@ def cmd_backup(dest: str) -> None:
     D.mkdir(parents=True, exist_ok=True)
     index = {}
     n = 0
-    for rel in BACKUP_TARGETS:
-        base = ROOT / rel
+    _pairs = [(ROOT / rel, ROOT) for rel in BACKUP_TARGETS]
+    _pairs += [(ext, ext.parent) for ext in EXTERNAL_TARGETS]
+    for base, anchor in _pairs:
         if not base.exists():
+            print(f"  ! 백업 대상 없음: {base}")
             continue
         for p in _walk(base):
-            r = str(p.relative_to(ROOT))
+            r = str(p.relative_to(anchor))
             t = D / r
             t.parent.mkdir(parents=True, exist_ok=True)
             if not t.exists() or t.stat().st_size != p.stat().st_size:
-                shutil.copy2(p, t)
+                # ★ copy2 가 아니라 copyfile 이다.
+                #   WSL drvfs(외장 하드) 는 utime 설정을 막아 copy2 가
+                #   PermissionError 로 죽는다. 우리가 보존해야 하는 것은
+                #   타임스탬프가 아니라 내용이고, 그 검증은 sha256 이 한다.
+                shutil.copyfile(p, t)
             index[r] = {"sha256": sha256(p), "bytes": p.stat().st_size}
             n += 1
     (D / "_backup_index.json").write_text(
         json.dumps({"at": datetime.now(KST).isoformat(timespec="seconds"),
                     "files": index}, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"백업 {n}개 → {D}")
-    print("★ 월 1회 빈 폴더로 복원해서 파이프라인이 도는지 확인할 것.")
+    print("★ 복원 훈련 주기는 팀 합의 사항이다. 임의로 정하지 않는다.")
     print("  복원해 본 적 없는 백업은 백업이 아니다")
 
 
