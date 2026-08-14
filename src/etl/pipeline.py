@@ -45,11 +45,11 @@ EXPECT = {
     # ingest 산출 기준선. 도엽이 빠지거나 소스가 바뀌면 여기서 먼저 걸린다.
     "ingest": {"ngii1k": 3593, "ngii_road": 3740, "road_link": 1508,
                "road_rw": 1957, "node_link": 1366, "streetlight": 1786},
-    "segments": 1123,
+    "segments": 1102,
     # 2026-08-13 갱신. 노드접합 + 산출단위 병합 + 소스별 snap + 구간단위 소스채택.
     # 폭 미산출 127 → 0. unknown 은 전부 no_cctv 다(영상판정 불가).
     # 길이 0.0m 유령 피처 40개가 clear 로 표출되고 있었다.
-    "verdict": {"clear": 386, "needs_cv": 218, "blocked": 62, "unknown": 457},
+    "verdict": {"clear": 386, "needs_cv": 210, "blocked": 62, "unknown": 444},
     "unknown_reason": {"no_cctv": 396, "width": 0},
 }
 

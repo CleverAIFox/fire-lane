@@ -513,7 +513,19 @@ def main():
                     _inx = xn.distance(_pt) < XSEC_EXCL
             else:
                 _inx = xn.distance(_pt) < XSEC_EXCL
-            if not _short and _inx:
+            # ★ 짧은 조각도 교차부 폴리곤 안이면 제외한다.
+            #   종전에는 _short 면 교차부 제외를 통째로 건너뛰고 중점 한 점을
+            #   쟀는데, 그 한 점이 교차로 한복판이라 길이 1m 조각에서 55m 가
+            #   나왔다. 표본 0 을 피하려다 쓰레기 값을 만든 것이다.
+            #   MIN_SEG_LEN 주석이 이미 '폭 미산출 후 인접 상속'이라고 적고 있다.
+            #   상속 경로가 원래 설계에 있는데 억지 값 때문에 안 쓰이고 있었다.
+            #   교차부 폴리곤이 없을 때만 종전 동작(짧으면 재기)을 유지한다.
+            _skip = _inx if (xsec_poly is not None and not _short) else _inx
+            if _short and xsec_poly is not None:
+                _skip = xsec_poly.intersects(_pt)
+            elif _short:
+                _skip = False
+            if _skip:
                 _nx_skip += 1
                 if _DBG["on"]:
                     _how = "폴리곤" if (xsec_poly is not None
