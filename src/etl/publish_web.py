@@ -163,8 +163,21 @@ def main():
                if c in lt.columns]
         lt[_lc + ["geometry"]].to_file(W / "streetlights.geojson", **PREC)
         print(f"  가로등 {len(lt)}지점 · {int(lt.n_lights.sum())}등 (스코프 내)")
+
+    # ── 가로등 폴 (수치지형도 C0220000) ─────────────────────
+    # 측량 성과라 실제 폴 위치다. 지번 대표점(gjcity)과 중앙 74.1m 어긋난다.
+    # ±50m 원 안에 든 것이 30% 뿐이었다 — 원 표기가 진실을 담지 못했다.
+    # 위치는 이쪽이 정본이고, 등 수·관리번호는 gjcity 가 정본이다.
+    lpp = P / "ngii1k_light_5186.gpkg"
+    if lpp.exists():
+        lg = gpd.read_file(lpp, layer="ngii1k_light").to_crs(4326)
+        lg = lg[lg.within(scope4)].copy()
+        lg = lg.rename(columns={"구분": "pole_kind"})
+        lg[["pole_kind", "geometry"]].to_file(W / "lightpoles.geojson", **PREC)
+        print(f"  가로등 폴 {len(lg)}점 (스코프 내) "
+              + " · ".join(f"{k} {v}" for k, v in lg.pole_kind.value_counts().items()))
     else:
-        print("  ! streetlight_point.geojson 없음 — src/etl/streetlight.py 먼저")
+        print("  ! ngii1k_light_5186.gpkg 없음 — ngii1k.py 먼저")
 
 
     # ── 상가 POI ────────────────────────────────────────────
