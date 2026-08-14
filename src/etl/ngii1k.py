@@ -32,7 +32,8 @@ from ngi import read_ngi  # noqa: E402
 
 LAYERS = {"A0010000": ("ngii1k",        "도로경계"),
           "A0020000": ("ngii1k_center", "도로중심선"),
-          "A0033320": ("ngii1k_walk",   "보도")}
+          "A0033320": ("ngii1k_walk",   "보도"),
+          "A0080000": ("ngii1k_xsec",   "평면교차점")}
 
 # ★ 속성을 쓰는 레이어. .nda 에 있는데 그동안 통째로 버리고 있었다.
 #   A0020000 도로폭은 측량 성과다. 우리 기하 계산과 독립이라 대조 검증에 쓴다.
@@ -43,6 +44,9 @@ LAYERS = {"A0010000": ("ngii1k",        "도로경계"),
 ATTR_LAYERS = {
     "A0020000": ["도로폭", "일방통행", "차로수", "분리대유무", "포장재질"],
     "A0033320": ["폭", "재질", "자전거도로유무", "종류"],
+    # 평면교차점. 종류='평면교차점' 인 폴리곤이다.
+    # 지금 XSEC_EXCL(노드에서 5m) 은 눈대중 반경인데 이건 실제 교차부 형상이다.
+    "A0080000": ["명칭", "종류"],
 }
 SHEET = re.compile(r"(3561\d{5})")
 YEAR = re.compile(r"_(\d{4})\d{4}(?!\d)")   # _20201231 → 2020
@@ -143,7 +147,7 @@ def main():
             continue
 
         # 도로경계는 면, 나머지는 선. 선 조각은 면적의 0.1% 미만이라 무시한다.
-        keep = "Polygon" if key == "ngii1k" else "LineString"
+        keep = "Polygon" if key in ("ngii1k", "ngii1k_xsec") else "LineString"
         items = [(g, a) for g, a in items
                  if g is not None and g.geom_type == keep]
         if not items:

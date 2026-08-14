@@ -274,6 +274,26 @@ def main():
         deg[a] += 1; deg[b] += 1
     xn = unary_union([Point(p) for p, d in deg.items() if d >= 3])
 
+    # ── 교차부 형상 (A0080000 평면교차점) ─────────────────────
+    # 종전에는 노드에서 XSEC_EXCL(5.0m) 이내를 일괄 제외했다. 눈대중 반경이라
+    # 양쪽으로 틀렸다 — 실제 교차부 등가반경은 중앙 3.2m · p90 7.5m 라
+    # 작은 교차부에서는 과하게 도려내 표본을 죽이고, 큰 교차부에서는 부족해
+    # 오염이 샜다. 동명로25번길 t=29·31(끝에서 5.1m)이 후자다.
+    # NGII 가 실제 교차부 폴리곤을 준다(스코프 내 696건, 구간의 79%를 덮는다).
+    # 폴리곤이 없는 교차로는 기존 반경 방식으로 폴백한다.
+    _xp = OUT / "ngii1k_xsec_5186.gpkg"
+    xsec_poly = None
+    if _xp.exists():
+        try:
+            _xg = gpd.read_file(_xp, layer="ngii1k_xsec").to_crs(CRS_M)
+            xsec_poly = unary_union(_xg.geometry.buffer(0))
+            print(f"  교차부 폴리곤 {len(_xg)}건 적용")
+        except Exception as _e:
+            print(f"  ! 교차부 폴리곤 로드 실패 — 반경 {XSEC_EXCL}m 폴백: {_e}")
+    else:
+        # 조용히 넘기지 않는다. 없으면 판정 기준이 달라진다.
+        print(f"  ! ngii1k_xsec_5186.gpkg 없음 — 반경 {XSEC_EXCL}m 폴백")
+
     def measure(s, t):
         p0 = s.interpolate(t)
         a, b = s.interpolate(max(t-.5, 0)), s.interpolate(min(t+.5, s.length))
@@ -480,10 +500,25 @@ def main():
                      for k, v in _cov.items()}, _n_try)
         for t in _ts:
             _nc += 1
-            if not _short and xn.distance(s.interpolate(t)) < XSEC_EXCL:
+            _pt = s.interpolate(t)
+            if xsec_poly is not None:
+                # ★ 폴리곤이 근처에 있으면 폴리곤만 믿는다.
+                #   or 로 반경 폴백을 항상 같이 걸면 폴리곤이 무의미해진다.
+                #   작은 교차부(등가반경 중앙 3.2m)는 여전히 5m 씩 도려내지고,
+                #   큰 교차부(p90 7.5m)는 폴리곤 밖 오염이 그대로 남는다.
+                #   폴리곤이 아예 없는 교차로에서만 반경으로 폴백한다.
+                if xsec_poly.distance(_pt) < XSEC_EXCL * 2:
+                    _inx = xsec_poly.intersects(_pt)
+                else:
+                    _inx = xn.distance(_pt) < XSEC_EXCL
+            else:
+                _inx = xn.distance(_pt) < XSEC_EXCL
+            if not _short and _inx:
                 _nx_skip += 1
                 if _DBG["on"]:
-                    print(f"    t={t:7.1f}  교차로 {xn.distance(s.interpolate(t)):.1f}m — 제외")
+                    _how = "폴리곤" if (xsec_poly is not None
+                                       and xsec_poly.intersects(_pt)) else "반경"
+                    print(f"    t={t:7.1f}  교차로 {xn.distance(_pt):.1f}m ({_how}) — 제외")
                 continue
             if _DBG["on"]:
                 _pp = s.interpolate(t)
