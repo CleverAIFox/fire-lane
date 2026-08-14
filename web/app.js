@@ -30,7 +30,11 @@ const CARTO = t => ["a","b","c","d"].map(s=>
    "도면 기반 1차 분류"라는 단서를 계속 진다. #warn 문구를 지우면
    화면에 단서가 하나도 안 남으니 지우지 말 것. */
 const VERDICT = Object.fromEntries(Object.entries(CONFIG.verdict)
-  .map(([k,v])=>[k,{c:v.color, nm:v.label, d:v.desc}]));
+  .map(([k,v])=>[k,{c:v.color, cl:v.lightColor||v.color, nm:v.label, d:v.desc}]));
+/* 지금 테마에서 쓸 판정 색. setTheme() 이 이 값을 뒤집으면
+   지도 선·범례가 함께 따라온다. */
+let lightTheme = false;
+const vColor = k => (lightTheme ? VERDICT[k].cl : VERDICT[k].c);
 /* unknown 의 사유. 회색의 정의는 no_cctv 하나다.
    width(폭 산출 실패)는 설계에 없던 버그 상태이며 0 으로 수렴시키는 중이다.
    그 값이 0 이 아닌 동안에는 툴팁에 사유가 그대로 노출된다. */
@@ -74,6 +78,10 @@ const map = new maplibregl.Map({
     layers:[
       {id:"bg",type:"background",paint:{"background-color":"#0a0d13"}},
       {id:"base",type:"raster",source:"base",paint:{"raster-opacity":.82,"raster-saturation":-.35}},
+      /* 지면 색조. 배경(bg)은 타일 아래라 화면에 안 보인다. 색을 실제로 입히려면
+         타일 위를 덮어야 한다. 다크에서는 opacity 0 이라 없는 것과 같다. */
+      {id:"base-tint",type:"background",
+       paint:{"background-color":CONFIG.lightTint.color,"background-opacity":0}},
       {id:"sat", type:"raster",source:"sat", layout:{visibility:"none"},paint:{"raster-opacity":.9}},
       {id:"ortho",type:"raster",source:"ortho",layout:{visibility:"none"},
         paint:{"raster-opacity":.95,"raster-fade-duration":200}}
@@ -143,8 +151,8 @@ const segColor = () => {
      범례에 없는 색이 지도에만 남는 상태가 제일 나쁘다는 판단.
      사유 구분은 구간 툴팁(.rsn)과 #warn 문장이 담당한다. */
   return ["match",["get","verdict"],
-    "blocked", rgb(VERDICT.blocked.c), "needs_cv", rgb(VERDICT.needs_cv.c),
-    "clear",   rgb(VERDICT.clear.c),   rgb(VERDICT.unknown.c)];
+    "blocked", rgb(vColor("blocked")), "needs_cv", rgb(vColor("needs_cv")),
+    "clear",   rgb(vColor("clear")),   rgb(vColor("unknown"))];
 };
 const segOpacity = () => dispatchMode
   ? ["case",["==",["get","verdict"],"clear"], 1, CONFIG.dispatch.dimAlpha/255]
@@ -209,7 +217,9 @@ map.on("load", async () => {
   const HYD_T0 = performance.now(), HYD_SPEED = CONFIG.dispatch.pulseMs;
   (function ripple(now){
     if(map.getLayer("hyd-pulse")){
-      if(dispatchMode){
+      /* CONFIG.dispatch.hydPulse 가 false 면 아래 애니메이션을 통째로 건너뛴다.
+         코드는 지우지 않았다 — config.js 에서 true 로 되돌리면 그대로 다시 돈다. */
+      if(dispatchMode && CONFIG.dispatch.hydPulse){
         const t  = ((now - HYD_T0) % HYD_SPEED) / HYD_SPEED;
         const t2 = (t + 0.5) % 1;
         const zf = Math.max(1, Math.min(4, 1 + (map.getZoom() - 15) * 0.7));  // 확대할수록 넓게
@@ -275,16 +285,20 @@ map.on("load", async () => {
   map.addSource("cctv-cov",{type:"geojson",data:cctvCov});
   map.addLayer({id:"cctv-cov-f",type:"fill",source:"cctv-cov",
     layout:{visibility:"none"},
-    /* 흰색 35%. 검은 배경에서 색상 대비가 아닌 명도 대비로 버틴다.
+    /* 하늘색 — CCTV 마커와 같은 색이라 "이 원이 무엇의 범위인지"가 바로 읽힌다.
        ★ 이 레이어는 "seg-l" 앞에 꽂혀 있어 판정 구간 선이 원 위에 그려진다.
-         그래서 원을 밝게 깔아도 도로 색(초록·주황·빨강)은 가려지지 않는다. */
-    paint:{"fill-color":"#ffffff","fill-opacity":0.5}}, "seg-l");
+         그래서 원을 밝게 깔아도 도로 색(초록·주황·빨강)은 가려지지 않는다.
+       ★ 흰색 때 쓰던 0.5 를 그대로 두면 하늘색은 더 무겁게 깔린다. 진하면 낮출 것. */
+    paint:{"fill-color":CONFIG.cctvCov.colorDark,
+           "fill-opacity":CONFIG.cctvCov.opacityDark}}, "seg-l");
   map.addLayer({id:"cctv-cov-l",type:"line",source:"cctv-cov",
     layout:{visibility:"none"},
-    /* 테두리는 강조하지 않는다. 면과 같은 흰색·같은 농도로 경계만 잡아준다. */
-    paint:{"line-color":"#ffffff","line-opacity":0.35,"line-width":1}}, "seg-l");
+    /* 테두리는 강조하지 않는다. 면과 같은 색·같은 농도로 경계만 잡아준다. */
+    paint:{"line-color":CONFIG.cctvCov.colorDark,
+           "line-opacity":CONFIG.cctvCov.opacityDark*0.7,"line-width":1}}, "seg-l");
 
   /* 소화전 물결을 건물 위로 — 건물에 가리지 않게(seg-l 아래·건물 위). 기여: @marscoolcat */
+  syncCctv(lightTheme);   // 시작 시 CCTV 색 맞추기(범례 점 포함)
   ["hyd-pulse2","hyd-pulse"].forEach(l=>{ if(map.getLayer(l)) map.moveLayer(l, "seg-l"); });
 
 
@@ -296,7 +310,7 @@ map.on("load", async () => {
                     p.inherited==="true"||p.inherited===true ? "인접 구간에서 상속" : null ].filter(Boolean);
     tip.innerHTML =
       `<div class="id">${p.seg_id}</div>
-       <div class="vd" style="color:rgb(${v.c})">${v.nm}</div>
+       <div class="vd" style="color:rgb(${vColor(p.verdict in VERDICT ? p.verdict : "unknown")})">${v.nm}</div>
        ${p.unknown_reason?`<div class="rsn">${REASON[p.unknown_reason]||""}</div>`:""}
        <dl><dt title="포장된 도로 노면만 잰 폭. 화면의 선 굵기가 이 값이다">도로 폭</dt><dd>${n(p.width_min_m)}</dd>
            <dt title="양쪽 건물 벽에서 벽까지의 거리">벽 사이 폭</dt><dd>${n(p.width_max_m)}</dd>
@@ -348,7 +362,9 @@ map.on("load", async () => {
           }
           feats.push({type:"Feature", geometry:{type:"Polygon", coordinates:[ring]},
             properties:{...f.properties, z:0, kind:spec.id, label:spec.label, part:i,
-              base:s.z, top:s.z+s.h, mcolor:`rgb(${s.c[0]},${s.c[1]},${s.c[2]})`}});
+              base:s.z, top:s.z+s.h,
+              mcolor :`rgb(${s.c[0]},${s.c[1]},${s.c[2]})`,
+              mcolorL:`rgb(${(s.cl||s.c).join(",")})`}});
         });
       }
     }
@@ -359,6 +375,7 @@ map.on("load", async () => {
      지형 위 배치는 MapLibre 가 알아서 하므로 재스냅이 곧 이중 가산이었다. */
   map.addLayer({id:"mk-3d",type:"fill-extrusion",source:"markers",
     paint:{
+      /* setTheme() 이 "mcolor"(다크) ↔ "mcolorL"(라이트) 로 갈아끼운다 */
       "fill-extrusion-color":["get","mcolor"],
       "fill-extrusion-base":  ["get","base"],   /* 지면 기준 상대 높이. 지형 보정은 MapLibre 담당 */
       "fill-extrusion-height":["get","top"],
@@ -441,18 +458,52 @@ map.on("load", async () => {
     const W = SIGN_PX, c = document.createElement("canvas");
     c.width = c.height = W;
     const g = c.getContext("2d");
+    const RED = "#e2221c";
+
+    /* 판 모양·색은 안전센터와 같게 간다. 안의 그림으로만 구분한다. */
     const r = 30, pad = 10;
     g.beginPath();
     g.moveTo(pad+r, pad);
     g.arcTo(W-pad, pad,   W-pad, W-pad, r); g.arcTo(W-pad, W-pad, pad, W-pad, r);
     g.arcTo(pad,   W-pad, pad,   pad,   r); g.arcTo(pad,   pad,   W-pad, pad,   r);
     g.closePath();
-    g.fillStyle = "#e2221c"; g.fill();
+    g.fillStyle = RED; g.fill();
     g.lineWidth = 9; g.strokeStyle = "#ffffff"; g.stroke();
-    g.fillStyle = "#ffffff";
-    g.textAlign = "center"; g.textBaseline = "middle";
-    g.font = "800 78px Pretendard, system-ui, sans-serif";
-    g.fillText("119", W/2, W/2 + 3);
+
+    /* 헤드셋 쓴 상황실 요원 — 흰색.
+       ★ 그리는 순서가 중요하다. 헤드밴드·마이크를 먼저 깔고 머리·어깨를 나중에
+         덮어야 밴드가 머리 뒤로 지나가는 것처럼 보인다.
+       ★ 칸을 나누는 선은 배경과 같은 빨강으로 긋는다. 전부 흰색이면 뭉친다. */
+    g.lineJoin = "round"; g.lineCap = "round";
+
+    g.beginPath();                       // 헤드밴드(머리 위 아치)
+    g.arc(96, 86, 40, Math.PI, 2*Math.PI);
+    g.strokeStyle = "#ffffff"; g.lineWidth = 11; g.stroke();
+
+    g.beginPath();                       // 마이크 붐
+    g.moveTo(133, 104); g.quadraticCurveTo(130, 128, 108, 132);
+    g.strokeStyle = "#ffffff"; g.lineWidth = 8; g.stroke();
+    g.beginPath(); g.arc(104, 133, 8, 0, Math.PI*2);
+    g.fillStyle = "#ffffff"; g.fill();
+
+    const cup = (x)=>{ g.beginPath();    // 좌·우 이어컵
+      g.moveTo(x+6, 74); g.arcTo(x+18, 74, x+18, 104, 6);
+      g.arcTo(x+18, 104, x, 104, 6); g.arcTo(x, 104, x, 74, 6);
+      g.arcTo(x, 74, x+18, 74, 6); g.closePath();
+      g.fillStyle = "#ffffff"; g.fill();
+      g.strokeStyle = RED; g.lineWidth = 5; g.stroke(); };
+    cup(50); cup(124);
+
+    g.beginPath();                       // 머리
+    g.arc(96, 86, 26, 0, Math.PI*2);
+    g.fillStyle = "#ffffff"; g.fill();
+    g.strokeStyle = RED; g.lineWidth = 5; g.stroke();
+
+    g.beginPath();                       // 어깨(반원 몸통)
+    g.arc(96, 162, 40, Math.PI, 2*Math.PI); g.closePath();
+    g.fillStyle = "#ffffff"; g.fill();
+    g.strokeStyle = RED; g.lineWidth = 5; g.stroke();
+
     return c;
   }
 
@@ -465,7 +516,7 @@ map.on("load", async () => {
   /* 소화전 표지판. 119 와 같은 방식이지만 훨씬 작게 단다.
      소화전은 '어디에 있는지'가 정보의 전부라, 간판이 크면 그 위치를 가린다.
      흰 원판 + 하늘색 테두리(물결과 같은 계열) + 빨간 소화전 픽토그램. */
-  const HYD_TOP_M = 16.8;         // config.js m-hyd 총높이와 같게 유지할 것
+  const HYD_TOP_M = 10.9;         // config.js m-hyd 총높이와 같게 유지할 것
 
   function makeHydrantImage(){
     const W = 192, c = document.createElement("canvas");
@@ -634,7 +685,7 @@ map.on("load", async () => {
   seg.features.forEach(f=>{ const v=f.properties.verdict; cnt[v]=(cnt[v]||0)+1; });
   $("#legend").innerHTML = Object.entries(VERDICT).map(([k,v])=>
     `<div class="lg" data-v="${k}" title="${v.d}">
-       <i class="sw" style="background:rgb(${v.c})"></i>
+       <i class="sw" style="background:rgb(${vColor(k)})"></i>
        <span class="nm">${v.nm}</span><span class="ct">${cnt[k]||0}</span></div>`).join("");
   /* 숫자는 전부 데이터에서 계산한다. 본문에 박아두면 재산출할 때마다 썩는다. */
   const nNoCctv = seg.features.filter(f=>f.properties.unknown_reason==="no_cctv").length;
@@ -700,21 +751,45 @@ map.on("load", async () => {
      기여: @marscoolcat (faf9774). 원본을 그대로 쓴다. */
   miniMap = new maplibregl.Map({
     container:"minimap", interactive:false, attributionControl:false,
+    /* ★ 북쪽 고정. 큰 지도를 돌려도 미니맵은 따라 돌지 않는다.
+       미니맵의 역할이 "전체에서 지금 어디인가"라, 기준이 흔들리면 쓸모가 없다.
+       syncMini() 는 사각형만 갱신하고 bearing 은 건드리지 않는다. */
+    bearing:0, pitch:0,
     bounds:VIEW.emdBounds, fitBoundsOptions:{padding:4},
     style:{version:8, sources:{ mbase:{type:"raster",tiles:CARTO("dark"),tileSize:256,maxzoom:19} },
       layers:[ {id:"mbg",type:"background",paint:{"background-color":"#0a0d13"}},
         {id:"mbase",type:"raster",source:"mbase",paint:{"raster-opacity":.8,"raster-saturation":-.4}} ]}
   });
+  /* 지금 보는 영역을 미니맵에 그릴 사각형.
+     ─────────────────────────────────────────────────────────────
+     ★ 예전에는 map.getBounds() 를 썼다. 그건 화면을 감싸는 '북향 최소 사각형'이라,
+       지도를 돌리면 실제로 보는 영역보다 커지고 방향도 사라진다(초기 bearing 이
+       -18 도라 항상 어긋나 있었다). 화면 좌표를 직접 지리 좌표로 바꿔서
+       bearing 만큼 기울어진 진짜 사각형을 그린다.
+     ★ 세로 크기는 화면 '아래쪽' 절반으로 잰다. 기울인 상태에서 위쪽 끝은
+       지평선에 가까워 좌표가 발산할 수 있기 때문이다.
+     ★ k 는 사각형 크기 배수다. 1 이면 화면 그대로, 작을수록 사각형이 작아진다. */
   const viewRect = () => {
-    const b=map.getBounds(), c=map.getCenter(), k=0.4;   // k<1이면 빨간 상자가 작아진다
-    const w=c.lng-(c.lng-b.getWest())*k, e=c.lng+(b.getEast()-c.lng)*k;
-    const so=c.lat-(c.lat-b.getSouth())*k, no=c.lat+(b.getNorth()-c.lat)*k;
-    return {type:"Feature",geometry:{type:"Polygon",coordinates:[[[w,so],[e,so],[e,no],[w,no],[w,so]]]}};
+    const cv = map.getCanvas(), W = cv.clientWidth, H = cv.clientHeight, k = 0.9;
+    const c = map.getCenter();
+    const halfW = c.distanceTo(map.unproject([W/2 + W*k/2, H/2]));   // m
+    const halfH = c.distanceTo(map.unproject([W/2, H/2 + H*k/2]));   // m
+    const b = map.getBearing() * Math.PI/180;
+    const mLat = 111320, mLng = 111320 * Math.cos(c.lat * Math.PI/180);
+    const ring = [[-halfW,-halfH],[halfW,-halfH],[halfW,halfH],[-halfW,halfH]]
+      .map(([x,y]) => {           // x=화면 오른쪽, y=화면 아래
+        const e =  x*Math.cos(b) - y*Math.sin(b);
+        const n = -x*Math.sin(b) - y*Math.cos(b);
+        return [c.lng + e/mLng, c.lat + n/mLat];
+      });
+    ring.push(ring[0]);
+    return {type:"Feature",geometry:{type:"Polygon",coordinates:[ring]}};
   };
-  const posPoint = () => { const c=map.getCenter(); return {type:"Feature",geometry:{type:"Point",coordinates:[c.lng,c.lat]}}; };
+
   function syncMini(){
     const rv = miniMap.getSource("mview"); if(rv) rv.setData(viewRect());
-    const pv = miniMap.getSource("mpos");  if(pv) pv.setData(posPoint());
+    /* mpos(파란 점) 레이어를 뺐으므로 갱신할 것이 없다. 되살릴 때 함께 복구할 것.
+       const pv = miniMap.getSource("mpos");  if(pv) pv.setData(posPoint()); */
     document.getElementById("minimap").classList.toggle("show", map.getZoom() >= CONFIG.minimap.showFromZoom);
   }
   miniMap.on("load", () => {
@@ -730,14 +805,22 @@ map.on("load", async () => {
     styleMiniRoute();
     /* 현재 보는 영역 */
     miniMap.addSource("mview",{type:"geojson",data:viewRect()});
-    miniMap.addLayer({id:"mview-f",type:"fill",source:"mview",paint:{"fill-color":"#ff4d3d","fill-opacity":.14}});
-    miniMap.addLayer({id:"mview-l",type:"line",source:"mview",paint:{"line-color":"#ff4d3d","line-width":1.6}});
-    /* 현위치 — 현재 보는 화면의 중심 */
-    miniMap.addSource("mpos",{type:"geojson",data:posPoint()});
-    miniMap.addLayer({id:"mpos-halo",type:"circle",source:"mpos",
-      paint:{"circle-radius":8,"circle-color":"#4fc3f7","circle-opacity":.22}});
-    miniMap.addLayer({id:"mpos-l",type:"circle",source:"mpos",
-      paint:{"circle-radius":4,"circle-color":"#4fc3f7","circle-stroke-color":"#fff","circle-stroke-width":1.6}});
+    miniMap.addLayer({id:"mview-f",type:"fill",source:"mview",
+      paint:{"fill-color":"#ff4d3d","fill-opacity":.20}});
+    /* 어두운 배경 위 얇은 빨강은 도로망에 묻힌다. 검은 테두리를 먼저 깔아
+       주변과 떼어놓고 그 위에 굵은 빨강을 얹는다. */
+    miniMap.addLayer({id:"mview-halo",type:"line",source:"mview",
+      paint:{"line-color":"#000000","line-width":5,"line-opacity":.55,"line-blur":1}});
+    miniMap.addLayer({id:"mview-l",type:"line",source:"mview",
+      paint:{"line-color":"#ff4d3d","line-width":2.6}});
+    /* 파란 점(화면 중심 표시)은 제거했다(2025-08).
+       ★ 빨간 사각형이 이미 "지금 보는 영역"을 보여주므로 중심점은 정보가 겹친다.
+       ★ 지도에서 파란 점은 보통 GPS 내 위치로 읽힌다. 실제로는 카메라가 향한
+         지점일 뿐이라 오해를 부른다. 나중에 실제 출동 차량 위치를 찍을 때
+         그 자리를 비워두는 편이 낫다.
+       posPoint() 함수와 syncMini() 의 갱신 줄은 그대로 두었으니
+       되살리려면 아래 세 줄만 복구하면 된다. */
+    styleMiniTheme();
     syncMini();
   });
   miniMap.on("error", e => console.error("미니맵 오류", e && e.error));
@@ -748,6 +831,26 @@ map.on("load", async () => {
 });
 
 /* 미니맵 루트 스타일을 메인 지도 모드와 맞춘다. 기여: @marscoolcat */
+/* 미니맵 테마. 큰 지도만 밝아지고 미니맵이 검게 남으면 그 자체가 튄다.
+   ★ 판정 4색은 큰 지도와 같은 값을 써야 한다. 미니맵 도로가 큰 지도와
+     다른 색이면 "같은 구간인데 왜 색이 다르지"가 된다. vColor() 로 맞춘다. */
+function styleMiniTheme(){
+  if(!miniMap || !miniMap.getLayer || !miniMap.getLayer("mbase")) return;
+  const light = lightTheme, rgb = k => `rgb(${vColor(k)})`;
+  miniMap.getSource("mbase").setTiles(CARTO(light ? "light" : "dark"));
+  miniMap.setPaintProperty("mbg","background-color", light ? "#e8ebef" : "#0a0d13");
+  miniMap.setPaintProperty("mbase","raster-opacity",   light ? .9  : .8);
+  miniMap.setPaintProperty("mbase","raster-saturation",light ? -.15 : -.4);
+  if(miniMap.getLayer("mroute-l"))
+    miniMap.setPaintProperty("mroute-l","line-color",["match",["get","verdict"],
+      "blocked",rgb("blocked"),"needs_cv",rgb("needs_cv"),"clear",rgb("clear"),rgb("unknown")]);
+  if(miniMap.getLayer("mbnd-l"))
+    miniMap.setPaintProperty("mbnd-l","line-color", light ? "#4a5568" : "#5c6b82");
+  /* 사각형 밑선: 어두운 배경에선 검정, 밝은 배경에선 흰색이라야 떼어 놓인다 */
+  if(miniMap.getLayer("mview-halo"))
+    miniMap.setPaintProperty("mview-halo","line-color", light ? "#ffffff" : "#000000");
+}
+
 function styleMiniRoute(){
   if(!miniMap || !miniMap.getLayer || !miniMap.getLayer("mroute-l")) return;
   if(dispatchMode){
@@ -760,22 +863,73 @@ function styleMiniRoute(){
 }
 
 /* 다크/라이트 전환. CSS 변수·배경타일·건물색·마스크를 한 번에 바꾼다. */
+/* CCTV 색 전환 — 3D 마커·커버리지 원·범례 점을 한 번에 맞춘다.
+   ★ 시작 시점에도 호출한다. setTheme() 안에만 두면 테마를 한 번이라도
+     토글하기 전까지 범례 점이 index.html 에 박힌 옛 색으로 남는다. */
+function syncCctv(light){
+  const cc = CONFIG.cctvCov;
+  const color = light ? cc.colorLight : cc.colorDark;
+  const op    = light ? cc.opacityLight : cc.opacityDark;
+  if(map.getLayer("mk-3d"))
+    map.setPaintProperty("mk-3d","fill-extrusion-color",["get", light ? "mcolorL" : "mcolor"]);
+  if(map.getLayer("cctv-cov-f")){
+    map.setPaintProperty("cctv-cov-f","fill-color", color);
+    map.setPaintProperty("cctv-cov-f","fill-opacity", op);
+  }
+  if(map.getLayer("cctv-cov-l")){
+    map.setPaintProperty("cctv-cov-l","line-color", color);
+    map.setPaintProperty("cctv-cov-l","line-opacity", Math.min(1, op*1.6));
+    map.setPaintProperty("cctv-cov-l","line-width", light ? 1.6 : 1);
+  }
+  const lgc = document.getElementById("lgi-cctv");
+  if(lgc) lgc.style.background = color;
+}
+
 function setTheme(mode){
   const light = mode === "light";
+  lightTheme = light;
   document.documentElement.dataset.theme = light ? "light" : "";
+  /* 판정 색을 테마에 맞춰 다시 칠한다. 화면 면적을 제일 많이 차지하는 것이
+     구간 선이라, 여기만 바꿔도 라이트 모드의 눈부심이 크게 줄어든다. */
+  if(map.getLayer("seg-l")) map.setPaintProperty("seg-l","line-color", segColor());
+  syncCctv(light);
+  styleMiniTheme();
+  if(map.getLayer("base-tint"))
+    map.setPaintProperty("base-tint","background-opacity", light ? CONFIG.lightTint.opacity : 0);
+  /* 범례 스와치도 같은 색으로. 지도와 범례가 다른 색이면 범례가 거짓말이 된다. */
+  document.querySelectorAll("#legend .lg").forEach(el=>{
+    const sw = el.querySelector(".sw");
+    if(sw) sw.style.background = `rgb(${vColor(el.dataset.v)})`;
+  });
   if(!USE_VWORLD) map.getSource("base").setTiles(CARTO(mode));
   map.setPaintProperty("base","raster-opacity", light ? .95 : .82);
   map.setPaintProperty("base","raster-saturation", light ? -.1 : -.35);
-  map.setPaintProperty("bg","background-color", light ? "#eef1f5" : "#0a0d13");
+  /* 눈부심은 색이 아니라 '배경 밝기'로 잡는다. 사무실 모니터 기준.
+     ★ raster-brightness-max 로 타일의 흰 부분만 눌렀다. 불투명도를 낮추면
+       도로명·지명 라벨까지 흐려지지만, 밝기 상한은 라벨 대비를 유지한다. */
+  map.setPaintProperty("base","raster-brightness-max", light ? .88 : 1);
+  map.setPaintProperty("bg","background-color", light ? "#dfe3ea" : "#0a0d13");
   map.setPaintProperty("bld-3d","fill-extrusion-color",
     light ? ["interpolate",["linear"],["get","flo"],1,"#d3d9e2",3,"#c3cad6",6,"#b2bbc9",12,"#9fa9ba"]
           : ["interpolate",["linear"],["get","flo"],1,"#1d2430",3,"#2b3545",6,"#3b4759",12,"#4d5a6f"]);
   map.setPaintProperty("bld-3d","fill-extrusion-opacity", light ? .95 : .88);
+  /* 스코프 밖 가리개.
+     ★ 라이트에서 흰색(#eef1f5)을 쓰면 지면보다 '밝아서' 죽은 영역으로 안 읽힌다.
+       패널 흰색 → 밖 흰색 → 지면 베이지가 이어져 경계가 사라진다.
+       다크에서 밖이 더 어두운 것과 같은 논리를 라이트에도 적용해, 지면보다
+       한 단계 어두운 회색으로 간다. 색을 더하지 않는 이유는 '관심 밖'이라는
+       뜻이라 시선을 끌면 안 되기 때문이다. */
   ["mask-l","mask-soft-l"].forEach((l,i)=>{
-    map.setPaintProperty(l,"fill-color", light ? "#f4f6f9" : "#05070b");
-    map.setPaintProperty(l,"fill-opacity", light ? (i===0?.86:.4) : (i===0?.9:.42));
+    /* 지면(CARTO 베이지)보다는 어둡되 너무 무겁지 않은 지점.
+       #b8c0cc(대비 1.36)는 밖이 무거워 시선을 뺏었고, #d8dce2(1.08)는
+       티가 안 났다. 그 사이에서 한 칸 밝은 쪽으로 잡는다. */
+    map.setPaintProperty(l,"fill-color", light ? "#ccd2da" : "#05070b");
+    map.setPaintProperty(l,"fill-opacity", light ? (i===0?.82:.38) : (i===0?.9:.42));
   });
-  map.setPaintProperty("bnd-l","line-color", light ? "#6b7686" : "#5c6b82");
+  /* 동명동 경계. 안과 밖을 가르는 유일한 선이라 라이트에서 더 진하고 굵게 간다. */
+  map.setPaintProperty("bnd-l","line-color",   light ? "#4a5568" : "#5c6b82");
+  map.setPaintProperty("bnd-l","line-width",   light ? 2.0 : 1.4);
+  map.setPaintProperty("bnd-l","line-opacity", light ? .95 : .75);
 }
 
 /* 토글 */

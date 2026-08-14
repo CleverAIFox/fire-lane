@@ -12,9 +12,16 @@
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 [data-theme="light"]{
-  --void:#eef1f5; --panel:#ffffff; --line:#d5dbe4; --dim:#5c6675; --text:#161b22;
+  /* 패널을 순백에서 한 단계 낮춘다. 카드(.crit/.p)가 흰색이라, 배경도 흰색이면
+     '흰 위의 흰'이 되어 구획이 안 나뉜다. 다크에서 카드가 배경보다 밝은 것과
+     같은 관계를 라이트에서는 뒤집어 놓아야 한다. */
+  --void:#eef1f5; --panel:#f5f7fa; --line:#d5dbe4; --dim:#5c6675; --text:#161b22;
   --blocked:#d92b1c; --needs:#c47800; --clear:#0f8a55; --unknown:#8b94a3;
 }
+/* 라이트에서만 카드 배경을 흰색으로 올린다(다크는 rgba 흰 3.5% 그대로) */
+[data-theme="light"] .crit{background:#ffffff;border:1px solid var(--line)}
+[data-theme="light"] .p{background:#ffffff}
+[data-theme="light"] kbd{background:#ffffff}
 *{box-sizing:border-box;margin:0;padding:0}
 html{transition:background .25s}
 html,body{height:100%;background:var(--void);color:var(--text);
