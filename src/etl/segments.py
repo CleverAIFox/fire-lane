@@ -66,6 +66,20 @@ NODE_TOL      = 0.5          # 노드 동일시 반경. SNAP_TOL 과 같은 값�
                              # 피처로서 의미가 없고 폭도 잴 수 없다(51개).
 XSEC_EXCL     = 5.0          # 교차로 노드 제외 반경. blob 폭 폭발 방지
 WMAX_CAP      = 60.0         # 담~담 상한. 15m로 잡으면 대로가 전멸한다
+SNAP_TRUST    = 2.0          # 이보다 많이 끌어온 표본은 폭 산출에서 뺀다.
+COV_MIN       = 0.5          # 채택 자격. 구간의 절반 미만을 잰 소스는 대표시키지 않는다.
+#   소스 우선순위(결정 63)를 바꾸는 것이 아니라 자격 미달을 거르는 것이다.
+#   자격 미달로 탈락하면 다음 순위 소스가 자동으로 올라간다.
+#   근거: 정상 구간(<=15m)의 채택소스 커버율은 중앙 1.0 · p10 0.667 인데
+#   width_min>30m 이상값 43건은 0.038~0.286 이다. 두 무리가 겹치지 않는다.
+#   준법로(DM01608)는 ngii 가 26표본 중 1개(cov 0.038)를 쟀고 그 값이 53.2m 로
+#   구간 폭이 됐다. 나머지 23개는 silpok 1.30m 였다.
+#   snap 은 측정점을 도로면 안으로 끌어온 거리다. 크다는 것은 그 지점에
+#   그 소스의 도로면이 없다는 뜻이고, 끌어온 만큼 옆 도로를 잰 값이 된다.
+#   준법로(DM01609)는 표본 26개 중 23개가 silpok 1.30m 였는데,
+#   ngii 3개(snap 1.18/3.18/5.18)가 우선순위로 채택돼 wmin 이 53.1m 로 나갔다.
+#   width_min>30m 47구간이 전부 clear 로 판정되던 원인이다(미탐 방향).
+#   SNAP_MAX(6.0)는 측정 시도 한계이고 이 값은 신뢰 한계다. 별개다.
 MIN_SEG_LEN   = 3.0          # 이하는 교차로 파편. 폭 미산출 후 인접 상속
 # 소방청 「2025 화재현장 골든타임 확보 종합대책」 기준
 #   진입불가  폭 2m 이하, 또는 이동불가 장애물로 진입 불가한 구간이 100m 이상
@@ -476,13 +490,24 @@ def main():
                 print(f"    t={t:7.1f}  ({_pp.x:.1f},{_pp.y:.1f})")
             a, b, sc, pr, _why, _res = measure(s, t)
             _n_try += 1
+
+            def _trusted(_nm):
+                """이 지점에서 그 소스의 표본을 믿을 수 있는가."""
+                _r = _res.get(_nm)
+                if _r is None or _r[0] is None:
+                    return False
+                _sn = _r[3]
+                return _sn is None or _sn <= SNAP_TRUST
+
             for _nm in ("ngii1k", "ngii", "silpok"):
-                if _res.get(_nm, (None,))[0] is not None:
+                if _trusted(_nm):
                     _cov[_nm] += 1
             if _why: _whys.append(_why)
-            if a: A.append(a); S.append(sc); D.append(pr)
+            # 채택된 소스의 snap 이 크면 그 표본 자체를 버린다.
+            if a and (sc is None or _trusted(sc)):
+                A.append(a); S.append(sc); D.append(pr)
             for _nm, _vv in zip(("ngii1k", "ngii", "silpok"), pr):
-                if _vv is not None:
+                if _vv is not None and _trusted(_nm):
                     _by[_nm].append(_vv)
             if b: B.append(b)
         if A:
@@ -511,10 +536,23 @@ def main():
         # width_cov 로 노출해 D-25 실측 우선순위에 쓴다.
         _pick = None
         if not MIX_SRC:
+            # 커버율은 소스를 '고르는' 기준이 아니라 '자격'이다.
+            # 커버율로 고르면 실폭도로(0.955)가 항상 이겨 결정 63 이 뒤집힌다.
+            _covnow = _covr()[0]
             for _nm in ("ngii1k", "ngii", "silpok"):
-                if _by[_nm]:
-                    _pick = _nm
-                    break
+                if not _by[_nm]:
+                    continue
+                _cv = _covnow.get(_nm)
+                if _cv is not None and _cv < COV_MIN and _n_reg >= 3:
+                    continue          # 자격 미달. 다음 순위로 넘긴다
+                _pick = _nm
+                break
+            # 전부 자격 미달이면 우선순위대로 하나는 쓴다(폭을 못 내는 것보다 낫다).
+            if _pick is None:
+                for _nm in ("ngii1k", "ngii", "silpok"):
+                    if _by[_nm]:
+                        _pick = _nm
+                        break
         wmin = None
         if _pick is not None:
             wmin = round(min(_by[_pick]), 2)
@@ -547,7 +585,7 @@ def main():
                 wdis = round(max(_vals) - min(_vals), 2)
         return wmin, wmax, fb, wsrc, wdis, _rsn, _covr()
 
-    def verdict(wmin, wmax):
+    def verdict(wmin, wmax, nreg=None):
         """소방청 기준 판정 4종.
 
             blocked   wmax <  3.0   통과 하한 미달. 장애물이 없어도 못 지나간다
@@ -555,8 +593,20 @@ def main():
             unknown   폭 산출 불가
             needs_cv  나머지        상습주차 여부로 갈린다. 영상판정 대상
         """
+        # ★ 표본 1개로는 clear 를 주지 않는다.
+        #   DM02825(동계천로95번길, 길이 2.7m)는 표본 하나가 교차로를 대각선으로
+        #   가로질러 42.1m 가 나왔고 그것이 곧 wmin 이 되어 clear 로 판정됐다.
+        #   실제로는 사거리 한복판이다(네이버 거리뷰 확인, 2026-08-14).
+        #   표본이 하나면 커버율이 자동으로 1.0 이 되어 COV_MIN 검사도 통과한다.
+        #   clear 는 '영상판정조차 필요 없다'는 가장 강한 주장이라 근거가 필요하다.
+        #   blocked 는 막는 쪽이라 표본 1개여도 유지한다(미탐:오탐 = 100:1).
+        #   ※ widths() 에서 None 을 반환하면 3m 미만 구간이 fragment 로 떨어져
+        #     44개 구간이 산출물에서 사라진다. 그래서 판정 단계에서 막는다.
         if wmax is not None and wmax < TRUCK:           return "blocked"
-        if wmin is not None and wmin >= TRUCK + 2*PARK: return "clear"
+        if wmin is not None and wmin >= TRUCK + 2*PARK:
+            if nreg is not None and nreg <= 1:
+                return "needs_cv"
+            return "clear"
         # 도로폭이 있으면 판정한다. wmax(담~담) 가 없는 것은 실패가 아니다.
         # 대로는 건물이 WMAX_CAP(40m) 밖이라 벽 사이를 잴 수 없고,
         # 그런 구간은 도로폭만으로 이미 판정이 끝난다.
@@ -749,7 +799,7 @@ def main():
             W[uid] = widths(g)          # 병합으로 범위 안에 들어온 단위
         wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt) = W[uid]
         _road_nm, _road_side, _road_bt = road_name(g)
-        v = verdict(wmin, wmax)
+        v = verdict(wmin, wmax, wnt)
         if short and wmin is None:
             v = "fragment"
 
