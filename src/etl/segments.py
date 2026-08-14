@@ -132,16 +132,20 @@ def main():
     road = load("road_link")
     rw   = load("road_rw")
     # 가로등. 지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
-    # 지도 마커로 찍으면 없는 위치를 그리는 것이 되므로 구간 피처로만 쓴다.
-    import glob as _glob
-    _lp = sorted(_glob.glob(str(RAW / "gjcity" / "*streetlight*.csv")))
+    # 마커 표현은 streetlight.py 가 담당한다(group-by + count, 반경 50m 원).
+    # 여기서는 구간 피처 light_count 로만 쓴다. MASTER §6 (2026-08-14 개정)
+    # ★ 정본은 processed 다. RAW 를 직접 읽지 않는다.
+    #   RAW 를 읽으면 ingest(1786, 스코프 필터 후)와 여기(3805, 전체)가
+    #   서로 다른 값을 쓰게 된다. 실제로 그랬다. (2026-08-14)
+    _lp = [str(OUT / "streetlight_5186.gpkg")] if (OUT / "streetlight_5186.gpkg").exists() else []
     _light = None
     if _lp:
-        _ldf = pd.read_csv(_lp[0], encoding="cp949")
-        _light = gpd.GeoDataFrame(
-            _ldf, geometry=gpd.points_from_xy(_ldf["경도"], _ldf["위도"]),
-            crs=4326).to_crs(CRS_M)
-        print(f"  가로등 {len(_light)}등")
+        _light = gpd.read_file(_lp[0]).to_crs(CRS_M)
+        print(f"  가로등 {len(_light)}등 (processed 정본)")
+    else:
+        # ★ 조용히 넘기지 않는다. 없으면 light_count 가 전 구간 0 이 되는데
+        #   파이프라인은 OK 를 찍는다. 2026-08-14 에 실제로 겪었다.
+        print("  ! streetlight_5186.gpkg 없음 — light_count 가 전부 0 이 된다")
 
     ngii = load("ngii_road")
     # 1:1,000 수치지형도 도로경계(도엽 20장 병합). 폭 산출 주 소스.

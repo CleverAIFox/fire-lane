@@ -146,14 +146,50 @@ def test_web_assets_linked():
 
 
 def test_web_data_files_referenced():
-    """app.js 가 읽는 web/data 파일이 실제로 있어야 한다."""
+    """app.js 가 읽는 web/data 파일이 실제로 있어야 한다.
+
+    ★ 정규식으로 fetch 배열을 긁던 방식은 폐기했다. app.js 의 표현이 조금만
+      바뀌어도 엉뚱한 배열을 잡는다(2026-08-14 에 "a" 를 파일명으로 오인).
+      이제 근거는 두 곳이다 — app.js 의 BASE 선언과 config.js 의 marker.data.
+    """
     import re
     js = _read("app.js")
-    m = re.search(r'\[([^\]]*?)\]\s*\n?\s*\.map\(n=>j\(`\./data/\$\{n\}\.geojson`\)\)', js)
-    if not m:
-        m = re.search(r'\[((?:"[\w_]+",?\s*)+)\]', js)
-    for n in re.findall(r'"([\w_]+)"', m.group(1)):
-        assert (WEBDIR / "data" / f"{n}.geojson").exists(), f"web/data/{n}.geojson 없음"
+    cfg = _read("config.js")
+
+    m = re.search(r'const\s+BASE\s*=\s*\[([^\]]*)\]', js)
+    assert m, "app.js 에 const BASE = [...] 선언이 없다"
+    names = set(re.findall(r'"([\w_]+)"', m.group(1)))
+
+    # 마커 데이터는 config.js 의 spec.data 가 정본이다.
+    names |= set(re.findall(r'\bdata\s*:\s*"([\w_]+)"', cfg))
+
+    m2 = re.search(r'const\s+FILES\s*=\s*\{([^}]*)\}', js)
+    alias = dict(re.findall(r'(\w+)\s*:\s*"([\w_]+)"', m2.group(1))) if m2 else {}
+
+    assert names, "읽을 데이터 파일 목록이 비었다"
+    for n in sorted(names):
+        f = alias.get(n, n)
+        assert (WEBDIR / "data" / f"{f}.geojson").exists(), \
+            f"web/data/{f}.geojson 없음 (선언: {n})"
+
+
+def test_marker_spec_self_contained():
+    """마커 스펙이 자기 데이터·팝업을 들고 있어야 한다.
+
+    ★ 2026-08-14 리팩의 계약이다. 가로등 마커 하나를 추가하는 데 6곳을
+      고쳐야 했던 것이 계기였다. app.js 에 손딕셔너리가 되살아나면 여기서 걸린다.
+    """
+    import re
+    js = _read("app.js")
+    cfg = _read("config.js")
+    assert "MK_SRC = {" not in js, "MK_SRC 손딕셔너리가 되살아났다. spec.data 를 쓸 것"
+    assert "const POPUP={" not in js, "POPUP 손딕셔너리가 되살아났다. spec.popup 을 쓸 것"
+    assert 'spec.id === "m-' not in js, "마커 id 특수분기가 생겼다. 선언으로 뺄 것"
+    ids = re.findall(r'\bid\s*:\s*"(m-[\w-]+)"', cfg)
+    assert len(ids) >= 5, f"마커 스펙이 부족하다: {ids}"
+    for i in ids:
+        assert f'"{i}"' not in _read("index.html"), \
+            f"index.html 에 {i} 토글이 손으로 박혀 있다. app.js 가 생성한다"
 
 
 # ── ETL 스크립트 계약 ────────────────────────────────────────

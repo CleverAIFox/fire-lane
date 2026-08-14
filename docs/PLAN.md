@@ -928,3 +928,42 @@ GeoParquet 전환(§13-9) 시 함께 정리한다.
 4  norm/ 계층 분리               raw 원본 격리
 5  근거 없는 상수 5개에 근거 붙이기
 ```
+
+## 14-8. 마커 아키텍처 리팩 ✅ (2026-08-14)
+
+가로등 마커 하나를 추가하는 데 **6곳**을 고쳐야 했다.
+`config.js` 주석은 "config.js만 고치면 재발행 없이 반영된다"고 적고 있었으나
+**선언은 config 로 뺐는데 결선이 코드에 남아** 그 약속이 깨져 있었다.
+
+### 바뀐 것
+
+```
+config.js   스펙이 data · popup · scale · cover 를 전부 든다
+app.js      CONFIG.markers 를 돌며 선언대로 실행만 한다
+              fetch 손나열      → spec.data 에서 생성
+              MK_SRC 손딕셔너리 → DATA[spec.data]
+              POPUP 손딕셔너리  → spec.popup
+              굵기 id 특수분기  → spec.scale
+              cctv-cov 하드코딩 → spec.cover (radius | by | themed)
+index.html  마커 토글 행 손나열 → app.js 가 생성
+```
+
+**마커 추가 = `config.js` 한 곳 + 데이터 발행 한 곳.**
+
+### 계약 테스트가 지킨다
+
+`test_marker_spec_self_contained` 가 손딕셔너리·id 특수분기·손토글의 부활을
+잡는다. 실제로 지혜님 PR #18 과 충돌을 푸는 과정에서 `spec.id === "m-cctv"`
+분기를 되살렸다가 이 테스트에 걸렸다. 테마 연동은 `cover.themed` 로 뺐다.
+
+> **문서가 프롬프트로 쓰인다.** UI 담당이 MASTER §11 을 그대로 작업 지시로
+> 쓰기로 했으므로, §11 은 현재 코드와 어긋나면 안 된다. 구조를 바꿀 때
+> §11 을 같이 고치는 것을 기본 절차로 한다.
+
+## 14-9. publish 도 같은 문제 🟡
+
+`publish_web.py` 에 소스마다 발행 블록이 손으로 쌓여 있다.
+`sources.yaml` 의 `outputs` 에 `web_publish: true` 를 두면 루프로 돌릴 수 있다.
+2026-08-14 에 만든 대장이 여기서 쓰인다.
+
+→ 마커 쪽과 같은 방식. 선언을 대장에 두고 코드는 실행만 한다.

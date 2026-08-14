@@ -151,6 +151,21 @@ def main():
     cg = gpd.GeoDataFrame(agg, crs=4326)
     cg.to_file(W/"cctv.geojson", **PREC)
 
+    # ── 가로등 ──────────────────────────────────────────────
+    # 좌표가 지번 대표점이라 실제 폴 위치가 아니다. pos_accuracy_m(50)을
+    # 그대로 실어 보내 UI 가 반경 50m 원을 그리게 한다.
+    # ★ distinct 금지. streetlight.py 가 group-by + count 로 등 수를 보존했다.
+    lp = P / "streetlight_point.geojson"
+    if lp.exists():
+        lt = gpd.read_file(lp)
+        lt = lt[lt.within(scope4)].copy()
+        _lc = [c for c in ("n_lights","mgmt_no_sample","addr","pos_accuracy_m","verified")
+               if c in lt.columns]
+        lt[_lc + ["geometry"]].to_file(W / "streetlights.geojson", **PREC)
+        print(f"  가로등 {len(lt)}지점 · {int(lt.n_lights.sum())}등 (스코프 내)")
+    else:
+        print("  ! streetlight_point.geojson 없음 — src/etl/streetlight.py 먼저")
+
 
     # ── 상가 POI ────────────────────────────────────────────
     # 소상공인시장진흥공단 상가(상권)정보. 이미 파이프라인에 있는데 지도에 안 올렸었다.

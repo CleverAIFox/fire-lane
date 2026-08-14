@@ -35,6 +35,7 @@ ROOT = HERE.parents[1]
 STEPS = [
     ("ingest",   "ingest.py",      "raw → processed (19종)",      PROCESSED / "_manifest.json"),
     ("segments", "segments.py",    "노딩 → 폭 → 판정",             PROCESSED / "segments.geojson"),
+    ("streetlight", "streetlight.py", "가로등 → 지점 집계",       PROCESSED / "streetlight_point.geojson"),
     ("terrain",  "terrain.py",     "공개DEM → Terrain-RGB 타일",   WEB / "terrain"),
     ("ortho",    "ortho.py",       "항공정사영상 → 배경 타일",      WEB / "ortho"),
     ("publish",  "publish_web.py", "→ web/data",                   WEB / "segments.geojson"),

@@ -68,7 +68,13 @@ const CONFIG = {
     /* CCTV — 총 52.6m. 예전 소화전 높이를 그대로 가져왔다(2025-08).
        52m 기둥이라 멀리서도 지주가 먼저 보인다. 굵기는 높이에 비례해 키우지 않으면
        바늘처럼 보여서 안 잡히므로 r 을 0.55 → 0.9 로 올렸다. */
-    { id:"m-cctv", label:"CCTV", source:"cctv",
+    { id:"m-cctv", label:"CCTV", data:"cctv",
+      popup: p=>`<b>CCTV</b> ${p.카메라대수}대<br>${p.카메라화소||"—"} · ${p.촬영방면||""}
+                <br>설치 ${p.최초설치}${p.최근설치!==p.최초설치?`~${p.최근설치}`:""} (${p.설치회차}회 증설)
+                <br><span class="a">${p.소재지도로명주소||""}</span>`,
+      /* themed:"cctvCov" — 색·농도를 CONFIG.cctvCov 에서 가져온다.
+         라이트/다크 전환 시 syncCctv() 가 이 레이어를 다시 칠한다. */
+      cover:{ radius:25, style:"solid", themed:"cctvCov" },
       parts:[ {r:0.9, z:0,    h:44,  c:[150,155,170]},   // 지주(길게) — 회색을 조금 밝혔다
               /* c = 다크 모드, cl = 라이트 모드. cl 을 안 적으면 c 를 그대로 쓴다.
                  밝은 지면에서는 #fe9ffc 가 옅어 묻히므로 한 단계 진한 #fe75fc 로 간다. */
@@ -83,7 +89,9 @@ const CONFIG = {
        ★ 물결 애니메이션 색(#4fc3f7)은 app.js 에 따로 있다. 여기 색과 무관하다. */
     /* ★ 전체를 0.65 배로 축소(총높이 16.8 → 10.9m). 형상 비율은 그대로다.
          app.js 의 HYD_TOP_M 도 10.9 로 함께 맞췄다. 둘이 어긋나면 간판이 뜬다. */
-    { id:"m-hyd", label:"소화전", source:"hyd",
+    { id:"m-hyd", label:"소화전", data:"hyd", popup: p=>`<b>소화전</b> ${p.시설번호||""}<br>${p.상세위치||""}
+                <br>설치 ${p.설치연도||"—"} · 보호틀 ${p.보호틀유무||"—"}
+                <br><span class="a">${p.소재지도로명주소||""}</span>`,
       parts:[ {r:2.7, z:0,    h:0.8, c:[150, 22, 18]},   // 베이스 플랜지(어두운 적)
               {r:1.6, z:0.8,  h:4.1, c:[198, 30, 24]},   // 하부 배럴
               {r:2.0, z:4.9,  h:0.5, c:[150, 22, 18]},   // 볼트 플랜지
@@ -93,14 +101,37 @@ const CONFIG = {
               {r:1.4, z:9.2,  h:0.8, c:[240, 60, 50]},   // 보닛 상단(테이퍼)
               {r:0.8, z:10.0, h:0.6, c:[198, 30, 24]},   // 목
               {r:0.4, z:10.6, h:0.3, c:[255,120,105]} ]},// 오각 캡
-    { id:"m-fs", label:"소방서", source:"sta", kind:"station",
+    { id:"m-fs", label:"소방서", data:"sta", popup: p=>`<b>${p["소방서 및 안전센터명"]}</b><br>관할 본서
+                <br>${p.전화번호||""}<br><span class="a">${p.주소||""}</span>`, kind:"station",
       parts:[ {hw:7, hl:7, z:0, h:15, c:[226, 34, 28]} ]},   // 붉은 119 박스(정육면체)
-    { id:"m-sta", label:"119안전센터", source:"sta", kind:"center",
+    { id:"m-sta", label:"119안전센터", data:"sta", popup: p=>`<b>${p["소방서 및 안전센터명"]}</b><br>출동 시작점
+                <br>${p.전화번호||""}<br><span class="a">${p.주소||""}</span>`, kind:"center",
       /* 원기둥 3단 → 단일 직사각 기둥으로 교체(2025-08).
          119 표지판을 정면에 붙이려면 면이 평평해야 읽힌다.
          h 를 키우면 그만큼 표지판도 같이 올라간다(app.js SIGN_TOP_M 을 맞출 것). */
       parts:[ {hw:6, hl:6, z:0, h:42, c:[226, 34, 28]} ]},
+    /* 가로등 — 총 14.4m. 지주 + 암 + 등기구.
+       ★ 높이가 등 수를 뜻하지 않는다. 등 수는 지주 굵기 √n 로 표현한다.
+         높이로 하면 "15층짜리 가로등"처럼 보인다.
+       ★ 좌표는 지번 대표점이다. 실제 폴 위치가 아니므로 반경 50m 원
+         (app.js light-cov)과 반드시 같이 켜고 끈다. */
+    { id:"m-light", label:"가로등", data:"streetlights",
+      /* 굵기 = √(등 수). 면적이 등 수에 비례해 보이려면 반지름은 √n 이다.
+         ★ 높이로 표현하지 않는다. "15층짜리 가로등"처럼 보인다. */
+      scale:{ by:"n_lights", mode:"sqrt", k:0.28 },
+      /* ★ 이 원은 "빛이 닿는 범위"가 아니라 "폴이 이 안 어딘가에 있다"는 뜻이다.
+         CCTV 커버리지와 의미가 정반대이므로 점선을 쓴다. */
+      cover:{ by:"pos_accuracy_m", style:"dashed", color:"#ffd678" },
+      popup: p=>`<b>가로등</b> ${p.n_lights}등`
+        +`<br><span class="a">지번 대표점 · 실제 폴 위치 아님 (±${p.pos_accuracy_m||50}m)</span>`
+        +(p.mgmt_no_sample?`<br>관리번호 ${p.mgmt_no_sample}`:"")
+        +(p.addr?`<br><span class="a">${p.addr}</span>`:""),
+      parts:[ {r:0.35, z:0,    h:11,  c:[120,124,138]},   // 지주
+              {r:0.9,  z:11,   h:0.5, c:[120,124,138]},   // 암
+              {r:1.4,  z:11.5, h:1.2, c:[255,214,120]},   // 등기구
+              {r:0.7,  z:12.7, h:1.7, c:[255,236,180]} ]},// 발광부
   ],
+
 
   /* 카메라 초기값. 범위(maxBounds 등)는 web/data/view.json 에서 온다. */
   camera: { zoom:15.4, pitch:52, bearing:-18, maxPitch:80 },
