@@ -88,8 +88,8 @@ datasets:
 
   ngii1k:
     desc: 수치지형도 1:1,000 도로경계 A0010000 — 폭 산출 주 소스
-    kind: ngii_1k
-    file: ngii_1k/
+    kind: ngii1k
+    file: ngii1k/
     crs: 5186
     url: https://map.ngii.go.kr/ms/map/NlipMap.do
     note: |
@@ -100,7 +100,7 @@ datasets:
   streetlight:
     desc: 전남광주통합특별시 동구 가로등현황 (2024-04-15)
     kind: csv_points
-    file: streetlight/*streetlight*.csv
+    file: gjcity/*streetlight*.csv
     crs: 4326
     encoding: cp949
     x_col: 경도

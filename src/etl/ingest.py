@@ -57,7 +57,7 @@ def sha256(p: Path, chunk: int = 1 << 20) -> str:
 def sha_of(p: Path) -> str:
     """파일이면 그 해시, 디렉터리면 하위 파일 해시들의 해시.
 
-    도엽 디렉터리(ngii_1k)처럼 '여러 파일이 한 데이터셋'인 경우가 있다.
+    도엽 디렉터리(ngii1k)처럼 '여러 파일이 한 데이터셋'인 경우가 있다.
     도엽 한 장이 빠지거나 연도가 바뀌면 여기서 드러나야 한다.
     """
     if p.is_file():
@@ -155,7 +155,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         g["geometry"] = g.geometry.apply(make_valid).buffer(0)
         rec["source_sha256"] = ",".join(sha256(z)[:16] for z in sorted(RAW.glob(e["file"])))
 
-    elif kind == "ngii_1k":                  # 수치지형도 1:1,000 도엽 묶음
+    elif kind in ("ngii1k", "ngii_1k"):                  # 수치지형도 1:1,000 도엽 묶음
         # NGI(텍스트) / SHP 혼재라 GDAL 로 못 읽는다. ngii1k.py 가 파싱한다.
         # 여기서 호출하는 이유: 손으로 따로 돌리면 파이프라인이 재현되지 않는다.
         from ngii1k import collect, read_sheet, LAYERS

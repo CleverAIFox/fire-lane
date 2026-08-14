@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T02:58:02.290174+09:00",
+  "generated_at": "2026-08-14T10:11:01.647014+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -71,6 +71,186 @@
       "outputs": [
         "road_rw.geojson",
         "road_rw_5186.gpkg"
+      ]
+    },
+    {
+      "key": "spotaddr_geom",
+      "status": "MISSING",
+      "file": "juso/juso_spotaddr_geom_jngj_20260801.zip"
+    },
+    {
+      "key": "spotaddr_ref",
+      "status": "MISSING",
+      "file": "juso/juso_spotaddr_ref_jngj_20260801.zip"
+    },
+    {
+      "key": "ngii1k",
+      "source_file": "ngii1k/",
+      "source_sha256": "16c289c14af0fa79f82747b43518078825997ce3a9659474bb9bd4718832bfef",
+      "source_crs": 5186,
+      "license": "",
+      "url": "https://map.ngii.go.kr/ms/map/NlipMap.do",
+      "sheets": {
+        "356160900": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 22,
+          "A0020000": 36
+        },
+        "356160993": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 291,
+          "A0020000": 467
+        },
+        "356160994": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 258,
+          "A0020000": 447
+        },
+        "356160995": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 546,
+          "A0020000": 959
+        },
+        "356160996": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 521,
+          "A0020000": 688
+        },
+        "356160997": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 509,
+          "A0020000": 836
+        },
+        "356160999": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 50,
+          "A0020000": 81
+        },
+        "356161403": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 224,
+          "A0020000": 340
+        },
+        "356161404": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 319,
+          "A0020000": 389
+        },
+        "356161405": {
+          "year": 2020,
+          "kind": "NGI",
+          "A0010000": 276,
+          "A0020000": 326
+        },
+        "356161406": {
+          "year": 2022,
+          "kind": "SHP",
+          "A0010000": 468,
+          "A0020000": 692
+        },
+        "356161407": {
+          "year": 2022,
+          "kind": "SHP",
+          "A0010000": 399,
+          "A0020000": 513
+        },
+        "356161409": {
+          "year": 2022,
+          "kind": "SHP",
+          "A0010000": 188,
+          "A0020000": 248
+        },
+        "356161410": {
+          "year": 2022,
+          "kind": "SHP",
+          "A0010000": 48,
+          "A0020000": 41
+        },
+        "356161416": {
+          "year": 2022,
+          "kind": "SHP",
+          "A0010000": 273,
+          "A0020000": 93
+        },
+        "356161417": {
+          "year": 2022,
+          "kind": "SHP",
+          "A0010000": 181,
+          "A0020000": 23
+        },
+        "356161426": {
+          "year": 2022,
+          "kind": "SHP",
+          "A0010000": 288,
+          "A0020000": 211
+        },
+        "356161427": {
+          "year": 2022,
+          "kind": "SHP",
+          "A0010000": 139,
+          "A0020000": 54
+        },
+        "356161552": {
+          "year": 2019,
+          "kind": "NGI",
+          "A0010000": 50,
+          "A0020000": 101
+        },
+        "356161562": {
+          "year": 2019,
+          "kind": "NGI",
+          "A0010000": 16,
+          "A0020000": 34
+        }
+      },
+      "features": 3593,
+      "geom": [
+        "MultiPolygon",
+        "Polygon"
+      ],
+      "columns": [
+        "src"
+      ],
+      "status": "OK",
+      "outputs": [
+        "ngii1k.geojson",
+        "ngii1k_5186.gpkg",
+        "ngii1k_center.geojson",
+        "ngii1k_center_5186.gpkg"
+      ]
+    },
+    {
+      "key": "streetlight",
+      "source_file": "gjcity/*streetlight*.csv",
+      "source_sha256": "7c7011029be8d66532240cbbf4f46831b9ff5fb6601e58b7637f7440c7b2a867",
+      "source_crs": 4326,
+      "license": "",
+      "url": "",
+      "status": "OK",
+      "features": 1786,
+      "geom": [
+        "Point"
+      ],
+      "columns": [
+        "관리번호",
+        "소재지도로명주소",
+        "소재지지번주소",
+        "위도",
+        "경도",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "streetlight.geojson",
+        "streetlight_5186.gpkg"
       ]
     },
     {
@@ -619,7 +799,7 @@
     "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
     "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
     "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-08-13T02:07:13+00:00"
+    "generated_at": "2026-08-14T01:11:47+00:00"
   },
   "ortho": {
     "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
@@ -628,6 +808,6 @@
     "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
     "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (388장, z15~18, 8.3MB)",
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-08-13T02:07:23+00:00"
+    "generated_at": "2026-08-14T01:11:53+00:00"
   }
 }

@@ -178,3 +178,15 @@ def test_publish_z_is_optional():
     src = (ETL / "publish_web.py").read_text(encoding="utf-8")
     assert '"unknown_reason","z","geometry"' not in src, \
         "publish_web.py 가 z 를 필수 컬럼으로 요구한다. 선택 컬럼으로 둘 것"
+def test_optional_layers_not_silently_empty(seg):
+    """
+    조용한 결측 방어.
+
+    2026-08-14: raw 폴더를 gjcity/ 로 옮겼는데 segments.py 가 옛 경로를 읽고 있었다.
+    glob 이 빈 리스트를 돌려줬고 `if _lp:` 가 그냥 지나가서
+    light_count 가 전부 0 인 채 파이프라인이 "OK" 를 찍었다.
+    '있어야 할 데이터가 0건'은 정상이 아니다.
+    """
+    P = [f["properties"] for f in seg["features"]]
+    n = sum(1 for p in P if p.get("light_count"))
+    assert n > 0, "light_count 전부 0 — 가로등 CSV 경로 확인 (RAW/gjcity/*streetlight*.csv)"

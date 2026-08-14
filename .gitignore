@@ -24,6 +24,7 @@ data/raw/**
 # 대용량 중간 산출물. ingest.py / terrain.py 로 재생성.
 data/processed/*.gpkg
 data/processed/*.tif
+data/processed/*.geojson
 
 # UI 입력이므로 아래는 커밋한다 (지혜님이 raw 없이 작업 가능해야 함)
 !data/processed/segments.geojson

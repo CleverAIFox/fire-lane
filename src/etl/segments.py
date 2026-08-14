@@ -119,7 +119,7 @@ def main():
     # 가로등. 지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
     # 지도 마커로 찍으면 없는 위치를 그리는 것이 되므로 구간 피처로만 쓴다.
     import glob as _glob
-    _lp = sorted(_glob.glob(str(RAW / "streetlight" / "*.csv")))
+    _lp = sorted(_glob.glob(str(RAW / "gjcity" / "*streetlight*.csv")))
     _light = None
     if _lp:
         _ldf = pd.read_csv(_lp[0], encoding="cp949")
