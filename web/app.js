@@ -294,9 +294,11 @@ map.on("load", async () => {
           f.geometry.coordinates[0], f.geometry.coordinates[1],
           cv.by ? (+f.properties[cv.by] || 50) : cv.radius) ]} })) };
     const id = spec.id + "-cov";
-    const themed = (spec.id === "m-cctv");
-    const col = themed ? CONFIG.cctvCov.colorDark : cv.color;
-    const op  = themed ? CONFIG.cctvCov.opacityDark : 0.10;
+    /* 테마 연동은 선언(cover.themed)으로 정한다. id 로 분기하면
+       마커가 늘 때마다 if 가 늘어난다. */
+    const th = cv.themed ? CONFIG[cv.themed] : null;
+    const col = th ? th.colorDark : cv.color;
+    const op  = th ? th.opacityDark : 0.10;
     map.addSource(id, {type:"geojson", data:fc});
     map.addLayer({id:id+"-f", type:"fill", source:id,
       layout:{visibility:"none"},

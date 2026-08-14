@@ -72,7 +72,9 @@ const CONFIG = {
       popup: p=>`<b>CCTV</b> ${p.카메라대수}대<br>${p.카메라화소||"—"} · ${p.촬영방면||""}
                 <br>설치 ${p.최초설치}${p.최근설치!==p.최초설치?`~${p.최근설치}`:""} (${p.설치회차}회 증설)
                 <br><span class="a">${p.소재지도로명주소||""}</span>`,
-      cover:{ radius:25, style:"solid", color:"#7fd4ff" },
+      /* themed:"cctvCov" — 색·농도를 CONFIG.cctvCov 에서 가져온다.
+         라이트/다크 전환 시 syncCctv() 가 이 레이어를 다시 칠한다. */
+      cover:{ radius:25, style:"solid", themed:"cctvCov" },
       parts:[ {r:0.9, z:0,    h:44,  c:[150,155,170]},   // 지주(길게) — 회색을 조금 밝혔다
               /* c = 다크 모드, cl = 라이트 모드. cl 을 안 적으면 c 를 그대로 쓴다.
                  밝은 지면에서는 #fe9ffc 가 옅어 묻히므로 한 단계 진한 #fe75fc 로 간다. */
