@@ -2,7 +2,13 @@
 
 동명동 소방차 진입 판정 시스템 · 전남광주통합특별시 동구
 
-골목 1,266구간의 실제 통행 가능 폭을 산출해 소방차가 지나갈 수 있는지 판정하고,
+```
+착수      2026-08-03
+기간      4개월
+대상      동명동 + 119안전센터 접근 회랑
+```
+
+골목 1,093구간의 실제 통행 가능 폭을 산출해 소방차가 지나갈 수 있는지 판정하고,
 **판정할 수 없는 이유까지** 지도에 표시한다.
 
 **지도** https://woongtopia.github.io/fire-lane/
@@ -22,17 +28,32 @@
 **문서를 더 만들지 않는다.** 흩어지면 아무도 최신을 모른다.
 완료된 일은 PLAN 에서 지우고 MASTER 에 결과를 쓴다.
 
+### `D-XX` 는 날짜가 아니다
+
+**미결정 항목 번호(Decision)** 다. 2026-08-07 「미결정 사항 정리」에서 왔다.
+MASTER §10-0 에 대응표가 있다. 새 D 번호는 만들지 않는다.
+
+### 숫자의 정본은 문서가 아니다
+
+문서에 적힌 구간 수·판정 수는 **파이프라인 산출물의 사본**이다.
+정본은 `data/processed/segments.geojson`, 기대값은 `src/etl/pipeline.py` 의 `EXPECT` 다.
+셋이 어긋나면 산출물이 옳다.
+
+```bash
+uv run python tools/docnum_check.py     # 문서·EXPECT 가 산출물과 같은지
+```
+
 ---
 
 ## 실행
 
 ```bash
 uv sync
-uv add rasterio pillow                  # 최초 1회
+export FIRE_LANE_DATA="/mnt/ssd/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data"
 
-export FIRE_LANE_RAW="/경로/data/raw"   # 원본을 저장소 밖에 둘 때
-uv run python src/etl/normalize_raw.py <다운로드폴더>   # 원본 배치
-uv run python src/etl/pipeline.py                       # 전체 파이프라인
+uv run python src/etl/normalize_raw.py "$FIRE_LANE_DATA/landing" --dry-run
+uv run python src/etl/contract.py
+uv run python src/etl/pipeline.py
 
 cd web && uv run python -m http.server 8000
 ```
@@ -42,56 +63,130 @@ cd web && uv run python -m http.server 8000
 ### 파이프라인
 
 ```
-ingest → segments → terrain → ortho → publish → 계약 테스트 → 기대값 대조
+ingest → segments → streetlight → terrain → ortho → publish → 계약 테스트 → 기대값 대조
 ```
 
 ```bash
 uv run python src/etl/pipeline.py --check          # 실행 없이 상태만
 uv run python src/etl/pipeline.py --from segments  # 그 단계부터
-uv run python src/etl/pipeline.py --only terrain ortho
+uv run python src/etl/pipeline.py --only publish
 ```
 
+전량 재실행 약 285초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
+raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
+
 **단계를 하나씩 손으로 치지 마라.** 순서가 중요하고 빠뜨리기 쉽다.
+
+---
+
+## 데이터 계층
+
+```
+landing      SSD/landing/     다운로드 원본. 규칙 없음. ★ 백업 제외
+raw          SSD/raw/         30개 · 2.59GB · 제공기관 8폴더. 절대 수정 안 함
+norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다
+field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급
+_quarantine  대장에 없는 파일. 삭제하지 않고 격리
+processed    저장소 안. 백업도 커밋도 하지 않는다
+data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
+```
+
+제공기관 폴더 — `juso` `its` `ngii` `vworld` `safety` `gjcity` `sbiz` `eais`.
+**같은 수치지형도라도 원천이 다르면 폴더가 다르다.**
+
+### 게이트
+
+```
+uv run python src/etl/contract.py       대장 선언 ↔ raw 실물 대조. ingest 앞에 선다
+uv run python tools/scan_data.py        계층·명명·중복·격리 대상
+uv run python src/etl/datalog.py check  대장 정합성
+```
+
+`contract.py` 가 보는 것 — 인코딩 · 컬럼 소실 · 건수 · zip 안 레이어 ·
+**스코프 안 유효 건수(`scope_min`)**. 마지막 항목이 핵심이다.
+2026-08-15 소스 교체 때 소화전이 파싱은 되고 스코프에서 전멸해
+`OK 0건` 으로 통과한 적이 있다. 조용한 0건이 제일 나쁘다.
 
 ---
 
 ## 구조
 
 ```
-sources.yaml              데이터 정본. ingest 가 이것만 읽는다
+sources.yaml              데이터 정본. contract 블록 포함
 src/etl/
-  paths.py                경로 정본. FIRE_LANE_RAW 환경변수
-  normalize_raw.py        다운로드 폴더 → data/raw 명명규칙 배치
-  pipeline.py             단일 진입점
-  ingest.py               raw → processed (19종)
-  segments.py             노딩 → 폭 → 판정 (1,266)
-  terrain.py              공개DEM → Terrain-RGB 타일
-  ortho.py                항공정사영상 → 배경 타일 (25cm)
+  paths.py                경로 정본. FIRE_LANE_DATA 환경변수
+  normalize_raw.py        landing → raw 명명규칙 배치
+  contract.py             ★ 대장 ↔ 실물 계약 게이트
+  pipeline.py             단일 진입점. EXPECT 기대값
+  ingest.py               raw → processed
+  ngii1k.py               V-WORLD 1:1,000 74도엽 → 레이어별 gpkg
+  segments.py             노딩 → 폭 → 판정 (1,093)
+  streetlight.py          가로등 지점 단위 집계
+  terrain.py · ortho.py   DEM · 정사영상 타일
   publish_web.py          → web/data
-tests/test_contract.py    계약 12종. CI 가 검증한다
+  datalog.py              대장 정합성 · 계보 · 영향분석 · 백업 검증
+tools/
+  baseline.py             판정 산출물 봉인 · 실행 간 전이 대조
+  scan_data.py            데이터 레이크 구조 점검
+  docnum_check.py         문서 ↔ 산출물 숫자 대조
+  *_20260817.py           일회성 마이그레이션. 적용 후 이력으로 남긴다
+tests/test_contract.py    계약 19종. CI 가 검증한다
 web/
-  index.html              뼈대                     공동
-  style.css               색·간격·타이포            @marscoolcat
-  config.js               색상표·임계값·마커·카메라  공동
-  app.js                  로직·레이어              @AIMasterFox
+  index.html              뼈대                      공동
+  style.css               색·간격·타이포             @marscoolcat
+  config.js               색상표·임계값·마커·카메라   공동
+  app.js                  로직·레이어               @AIMasterFox
   data/                   생성물. 손으로 고치지 말 것
 ```
 
-**`data/raw` 는 저장소에 두지 않는다.** 심링크도 쓰지 않는다.
+**`raw` 를 저장소에 두지 않는다.** 심링크도 쓰지 않는다.
 심링크를 git 이 추적했다가 원본 2GB 가 두 번 소실된 적이 있다(2026-08-11, 08-12).
-`FIRE_LANE_RAW` 환경변수로 위치만 지정한다.
 
 ---
 
-## 지금 상태
+## 지금 상태 — 2026-08-17
 
 ```
-세그먼트     1,266   (동명동 641 + 119안전센터 접근 회랑)
-판정        도면상 통과 227 · 판정 보류 139 · 도면상 불가 67 · 판정 불가 833
+세그먼트     1,093   (동명동 414 + 119안전센터 접근 회랑)
+판정        통행 가능 383 · 판정 보류 216 · 통행 불가 65 · 영상판정 불가 429
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-외부 검증    소방서 지정 구간과 동명동 2건이 -0.30m · +1.34m 로 일치
-데이터      19종 · 2.0GB
+데이터      raw 30종 · 2.59GB
 ```
 
-**폭 값은 아직 미검증이다**(`width_verified: false`). 레이저 실측 후 바뀐다.
+`영상판정 불가` 429 는 전부 `no_cctv` 다. 폭 산출 불가는 0 이다.
+
+**폭 값은 아직 미검증이다**(`width_verified: false`, 전건). 레이저 실측 후 바뀐다.
 값은 바뀌어도 필드와 `verdict` 어휘는 안 바뀐다. 계약 테스트가 그것을 보장한다.
+
+### 2026-08-17 원본 전량 재취득
+
+```
+수치지형도   국토정보플랫폼 NGI 20도엽 (2020·2022)
+           → V-WORLD SHP 74도엽 (2026-03)   vintage 6년 · 도엽 3.7배 · 도로명 채워짐
+평면교차점   신규. A0080000 2,025개
+           → XSEC_EXCL 5.0(근거 없는 반경)을 실제 형상으로 대체
+연속수치지도  B030 국가기본공간정보 → B020 연속수치지도
+           도로경계면 밀도가 줄어 폭 채택에서 ngii 가 117 → 1 로 빠지고
+           silpok 폴백이 84 → 203 으로 늘었다. 버그가 아니라 제품 교체의 결과다
+```
+
+구 판정(1,102 / 386·210·62·444)은 원본이 소실돼 **재생성 불가**다.
+`data/baseline/20260814-ngii-ngi20/` 에 봉인돼 있다.
+
+```bash
+uv run python tools/baseline.py diff 20260814-ngii-ngi20
+```
+
+`seg_uid` 유지율 93.0% · 판정이 바뀐 구간 59 / 1,093 · 총연장 48,580m 동일.
+
+### 구간 수는 고정값이 아니다
+
+```
+641   동명동만 노딩 (8/11)
+1,266 접근 회랑 포함 (8/11)
+1,087 노드접합 · 산출단위 병합 (8/13)
+1,102 교차부 실제 폴리곤 반영 (8/14)
+1,093 수치지형도 교체 + 평면교차점 실형상 (8/17)   ← 현재 판정 단위
+```
+
+노딩 규칙이 바뀌면 `seg_id` 가 전부 밀린다. 외부 참조에는 `seg_uid` 를 쓴다.

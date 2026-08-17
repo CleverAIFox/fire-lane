@@ -44,14 +44,26 @@ STEPS = [
 # 이 값과 다르면 뭔가 잘못된 것이다. 바뀌면 여기도 같이 고칠 것.
 EXPECT = {
     # ingest 산출 기준선. 도엽이 빠지거나 소스가 바뀌면 여기서 먼저 걸린다.
-    "ingest": {"ngii1k": 3593, "ngii_road": 3740, "road_link": 1508,
+    # ★ 2026-08-17 원본 재취득 반영.
+    #   ngii1k  3593 → 6675  수치지형도 교체. 국토정보플랫폼 NGI 20도엽
+    #                        (2020·2022) → V-WORLD SHP 74도엽 (2026-03)
+    #   ngii_road 3740 → 216 제품이 바뀌었다. B030 국가기본공간정보
+    #                        → B020 연속수치지도. 도로경계면 밀도가 줄어
+    #                        폭 채택에서 ngii 가 117 → 1 로 사실상 빠졌고
+    #                        silpok 폴백이 84 → 203 으로 늘었다. 버그가 아니다.
+    "ingest": {"ngii1k": 6675, "ngii_road": 216, "road_link": 1508,
                "road_rw": 1957, "node_link": 1366, "streetlight": 1786},
-    "segments": 1102,
-    # 2026-08-13 갱신. 노드접합 + 산출단위 병합 + 소스별 snap + 구간단위 소스채택.
-    # 폭 미산출 127 → 0. unknown 은 전부 no_cctv 다(영상판정 불가).
-    # 길이 0.0m 유령 피처 40개가 clear 로 표출되고 있었다.
-    "verdict": {"clear": 386, "needs_cv": 210, "blocked": 62, "unknown": 444},
-    "unknown_reason": {"no_cctv": 396, "width": 0},
+    "segments": 1093,
+    # 2026-08-17 갱신. 수치지형도 교체 + 평면교차점 실형상 도입.
+    #   XSEC_EXCL 5.0(근거 없는 반경)이 A0080000 평면교차점 2,025개로 대체됐다.
+    #   구 판정 1102/386/210/62/444 는 재생성 불가라
+    #   data/baseline/20260814-ngii-ngi20 에 봉인돼 있다(MASTER 18-8-1).
+    #   전이 행렬: uv run python tools/baseline.py diff 20260814-ngii-ngi20
+    # ★ unknown_reason 은 2026-08-15 까지 여기 적혀만 있고 읽히지 않았다.
+    #   그 사이 no_cctv 396 이 unknown 444 와 어긋났는데 아무도 몰랐다.
+    #   기대값을 적어두고 대조하지 않으면 기대값이 아니라 주석이다.
+    "verdict": {"clear": 383, "needs_cv": 216, "blocked": 65, "unknown": 429},
+    "unknown_reason": {"no_cctv": 429, "width": 0},
 }
 
 
@@ -92,6 +104,13 @@ def verify():
     import collections
     g = json.loads((WEB / "segments.geojson").read_text(encoding="utf-8"))
     v = collections.Counter(f["properties"]["verdict"] for f in g["features"])
+    r = collections.Counter(
+        f["properties"].get("unknown_reason")
+        for f in g["features"] if f["properties"]["verdict"] == "unknown")
+    for k, want in EXPECT["unknown_reason"].items():
+        got = r.get(k, 0)
+        mark = c("OK", "32") if got == want else c(f"★ 기대 {want}", "33")
+        print(f"    unknown:{k:8s} {got:4d}  {mark}")
     for k, want in EXPECT["verdict"].items():
         got = v.get(k, 0)
         mark = c("OK", "32") if got == want else c(f"★ 기대 {want}", "33")

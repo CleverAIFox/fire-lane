@@ -30,6 +30,7 @@ dependencies = [
     "requests>=2.32",
     "rasterio>=1.4.4",
     "pillow>=12.3.0",
+    "ruamel-yaml>=0.19.1",
 ]
 
 [project.optional-dependencies]
