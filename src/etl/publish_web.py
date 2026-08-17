@@ -103,10 +103,26 @@ def main():
     # 소화전. 관할 588개 중 공개 31개(5%), 그중 동명동 1개.
     # 이 희소성 자체가 발표 논거다.
     hyd = gpd.read_file(P/"hydrant_point.geojson")
-    hcols = ["시설번호", "소재지도로명주소", "상세위치", "설치연도",
-             "보호틀유무", "관할기관명"] + (["z"] if "z" in hyd.columns else [])
-    hyd = hyd[hyd.within(scope4)][hcols + ["geometry"]]
-    hyd.to_file(W/"hydrants.geojson", **PREC)
+    # ★ 컬럼을 하드코딩하지 않는다. 2026-08-15 소스 교체 때 여기가
+    #   KeyError 로 파이프라인 전체를 세웠다. 있는 것만 싣는다.
+    #   결손은 폐기가 아니다 — 0건이어도 빈 레이어로 발행하고 지도는 뜬다.
+    #   다만 조용히 넘어가지도 않는다. 없으면 이름을 찍는다.
+    want = ["시설번호", "시설유형코드", "소재지도로명주소", "소재지지번주소",
+            "상세위치", "설치연도", "보호틀유무", "관할기관명", "안전센터명"]
+    have = [c for c in want if c in hyd.columns]
+    miss = [c for c in want if c not in hyd.columns]
+    if miss:
+        print(f"  ! 소화전 속성 없음 {miss} — 있는 것만 싣는다")
+    hcols = have + (["z"] if "z" in hyd.columns else [])
+    hyd = hyd[hyd.within(scope4)][hcols + ["geometry"]] if len(hyd) else hyd
+    print(f"  소화전 {len(hyd)}개 · 속성 {len(have)}종")
+    if len(hyd):
+        hyd.to_file(W/"hydrants.geojson", **PREC)
+    else:
+        # 빈 GeoDataFrame 은 드라이버가 거부한다. 빈 FeatureCollection 을 직접 쓴다.
+        (W/"hydrants.geojson").write_text(
+            '{"type":"FeatureCollection","features":[]}', encoding="utf-8")
+        print("    ★ 스코프 안 소화전 0개. 빈 레이어로 발행했다.")
 
     # 소방서 / 119안전센터.
     # 출동은 안전센터에서 나간다. 동부소방서는 대인안전센터와 주소가 같아(제봉로 210)

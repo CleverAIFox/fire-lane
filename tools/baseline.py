@@ -316,7 +316,8 @@ def main() -> int:
     d = sub.add_parser("diff"); d.add_argument("tag")
     d.add_argument("--tol", type=float, default=15.0)
     d.set_defaults(fn=cmd_diff)
-    return ap.parse_args().fn(ap.parse_args())
+    a = ap.parse_args()
+    return a.fn(a)
 
 
 if __name__ == "__main__":

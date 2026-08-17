@@ -49,6 +49,26 @@ for st in (sys.stdout, sys.stderr):
 # 원본 파일명 패턴 → (폴더, 목적지 파일명)
 # 정규식은 소문자 변환 후 매칭한다. 괄호는 브라우저가 &#40; 로 바꾸기도 해서 느슨하게 본다.
 RULES: list[tuple[str, str, str]] = [
+    # ── 2026-08-17 소방 계열 3종 재확보 ──────────────────────
+    #   ★ 아래 세 줄이 위쪽 기존 규칙보다 먼저 매칭돼야 한다.
+    #     "소방용수시설.?현황" 이 전남 판 좌표 파일을 summary 로 오분류했었다.
+    #
+    # 소화전 좌표. 전국 표준데이터 50,000행 절단본이나 광주는 전량 포함
+    # (광주 197 · 동구 31 · 데이터기준일자 2024-02-07).
+    # 전남 판(jngj_20250917)에는 광주가 0건이라 이것 말고 대안이 없다.
+    (r"전국소방용수시설표준데이터\.(csv|json)$",
+     "safety", "safety_hydrant_point_kr_20240207.csv"),
+    # 소화전 집계표. 좌표는 없고 총량만 있다. 지상418+지하171 = 589.
+    # "588 중 31" 공개율 논거의 분모가 이것이다. 소방차진입불가지역 컬럼도 있다.
+    (r"동부소방서.*소화전.?현황",
+     "safety", "safety_hydrant_summary_gj_dong_20250731.csv"),
+    # 소방서·119안전센터 좌표. X좌표=위도 · Y좌표=경도 (뒤바뀐 이름이 원본 그대로다).
+    # 접근 회랑과 D-28 시나리오 출발점이 여기서 나온다.
+    #   대인119안전센터 35.1545794 126.9147654
+    #   지산119안전센터 35.1499634 126.9385315
+    # 좌표 없는 "시도 소방서 현황"(20250701)은 규칙을 두지 않는다. landing 에 남긴다.
+    (r"전국소방서.?좌표현황",
+     "safety", "safety_firestation_kr_20240901.csv"),
     # ── juso · 도로명주소 ────────────────────────────────────
     # 전자지도 zip 하나에 5종이 들어 있다.
     # TL_SPRD_MANAGE(도로구간) TL_SPRD_RW(실폭도로) TL_SCCO_EMD(경계)
@@ -119,9 +139,10 @@ REQUIRED = [
     "ngii/ngii_basemap_gj9708_20260812.zip",
     "ngii/ngii_dem_gj35616_20251117.zip",
     "safety/safety_cctv_jngj_20260630.csv",
-    "safety/safety_hydrant_point_jngj_20250917.csv",
+    "safety/safety_hydrant_point_kr_20240207.csv",
+    "safety/safety_hydrant_summary_gj_dong_20250731.csv",
     "safety/safety_fire_access_gj_dong_20250731.csv",
-    "safety/safety_firestation_kr_20250701.csv",
+    "safety/safety_firestation_kr_20240901.csv",
     "gjcity/gjcity_streetlight_dongu_20240415.csv",
     "gjcity/gjcity_parking_enforce_dongu_20240108.csv",
     "sbiz/sbiz_store_kr_20260630.zip",

@@ -152,13 +152,26 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         g = g.set_crs(e["crs"], allow_override=True)
         b = bbox_in(e["crs"])
         g = g.cx[b[0]:b[2], b[1]:b[3]].copy()
-        g["geometry"] = g.geometry.apply(make_valid).buffer(0)
+        # ★ buffer(0) 은 폴리곤 자기교차 정리용이다. LineString 에 걸면
+        #   빈 폴리곤이 되어 전멸한다. ngii_road_center(선)가 0건이던 원인이다.
+        g["geometry"] = g.geometry.apply(make_valid)
+        if g.geom_type.isin(("Polygon", "MultiPolygon")).any():
+            g["geometry"] = g.geometry.buffer(0)
         rec["source_sha256"] = ",".join(sha256(z)[:16] for z in sorted(RAW.glob(e["file"])))
 
-    elif kind in ("ngii1k", "ngii_1k"):                  # 수치지형도 1:1,000 도엽 묶음
+    elif kind in ("ngii1k", "ngii_1k", "shp_dir"):                  # 수치지형도 1:1,000 도엽 묶음
         # NGI(텍스트) / SHP 혼재라 GDAL 로 못 읽는다. ngii1k.py 가 파싱한다.
         # 여기서 호출하는 이유: 손으로 따로 돌리면 파이프라인이 재현되지 않는다.
-        from ngii1k import collect, read_sheet, LAYERS
+        # ★ 2026-08-17. 여기가 두 가지로 깨져 있었다.
+        #   1) read_sheet 는 (geom, attrs) 튜플을 내는데 geom 으로 받아
+        #      'tuple' object has no attribute 'geom_type' 로 매 실행 FAIL 했다.
+        #      _manifest.json 에 FAIL 이 적힌 채 파이프라인은 OK 를 찍었다.
+        #   2) 설령 통과해도 src 컬럼만 만들어 도로폭·일방통행을 통째로 버렸다.
+        #      그래서 사람이 ngii1k.py 를 손으로 돌려야 했고, 폭 주 소스가
+        #      파이프라인 밖에서 만들어지고 있었다("파이프라인은 한 명령이다"가
+        #      폭에 대해서는 거짓이었다).
+        #   프레임 조립을 ngii1k.build 하나로 합쳐 두 곳에서 만들지 않는다.
+        from ngii1k import collect, read_sheet, build, LAYERS
         want = list(LAYERS)
         sheets = collect(src)
         if not sheets:
@@ -171,25 +184,31 @@ def build(key: str, e: dict, tmp: Path) -> dict:
                 acc[k] += v
             per_sheet[sh] = {"year": year, "kind": sk,
                              **{k: len(got[k]) for k in want}}
-        # 도엽이 하나라도 0건이면 조용히 폭이 틀어진다. 즉시 세운다.
+        # ★ 도엽별 0건은 오류가 아니다(2026-08-17 정정). ngii1k.main() 주석 참조.
+        #   V-WORLD 74도엽은 동구 전역이라 빈 도엽이 정상적으로 섞인다.
+        #   합계 0 만 오류로 본다. 도엽 목록은 대장에 남긴다.
         empty = [sh for sh, v in per_sheet.items() if v["A0010000"] == 0]
-        if empty:
-            raise ValueError(f"도로경계 0건 도엽: {empty} — zip/ngi 중복 여부 확인")
+        rec["empty_sheets"] = empty
+        if not acc["A0010000"]:
+            raise ValueError("도로경계 총 0건 — 레이어 코드/압축 구조 확인")
         rec["sheets"] = per_sheet
-        keep = {"A0010000": ("ngii1k", "Polygon"),
-                "A0020000": ("ngii1k_center", "LineString")}
         outs = []
-        for lay, (k2, typ) in keep.items():
-            geoms = [g for g in acc[lay] if g.geom_type == typ]
-            gg = gpd.GeoDataFrame({"src": ["ngii1k"] * len(geoms)},
-                                  geometry=geoms, crs=e["crs"])
-            if typ == "Polygon":
-                gg["geometry"] = gg.geometry.buffer(0)
+        made = []
+        for lay in want:
+            gg = build(lay, acc[lay])       # 타입 필터로 전멸하면 여기서 세운다
+            if gg is None:
+                continue
+            k2 = LAYERS[lay][0]
             info = save(gg, k2)
             outs += [f"{k2}.geojson", f"{k2}_5186.gpkg"]
+            made.append(k2)
             if k2 == key:
                 rec |= info
-        rec |= {"status": "OK", "outputs": outs}
+        # 폭 주 소스와 속성 소스는 반드시 나와야 한다.
+        for must in ("ngii1k", "ngii1k_center"):
+            if must not in made:
+                raise ValueError(f"{must} 산출 0건 — GEOM_OF / 레이어 코드 확인")
+        rec |= {"status": "OK", "outputs": outs, "layers": made}
         return rec
 
     elif kind in ("csv_points", "csv_point"):

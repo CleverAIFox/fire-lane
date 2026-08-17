@@ -55,9 +55,6 @@ datasets:
       2026-07-01 전남광주통합특별시 개편 반영본. SIG_CD가 12xxx로 변경됨
       (구 광주 동구 29110 → 12210). 기존 코드 필터 전부 수정 필요.
 
-    contract:
-      encoding: cp949
-      layer_must_exist: true
   road_rw:
     what: 도로명주소 실폭도로 (면). 도로폭 폴백 소스
     crs_native: 5179
@@ -75,9 +72,6 @@ datasets:
       GEOS TopologyException 발생. 실제로 터졌음.
       수치지도가 안 그리는 최협소 골목을 메우는 용도.
 
-    contract:
-      encoding: cp949
-      layer_must_exist: true
   spotaddr_geom:
     what: 사물주소 도형 (전남광주통합특별시 동구, 2026-08-01 승인분)
     crs_native: 5179
@@ -153,26 +147,16 @@ datasets:
       지도 마커로 쓰면 없는 위치를 그리는 것이 된다.
       세그먼트 반경 50m 내 등수 합(light_count)으로만 쓴다.
 
-    contract:
-      encoding: cp949
-      required_cols:
-      - 위도
-      - 경도
-      scope_min: 1
   ngii_road:
-    what: 연속수치지도 1:5,000 도로경계면 N3A_A0010000 — 폭 트랜섹트 소스(기하 전용)
+    what: 국가기본공간정보 수치지도 도로경계면 NF_A_A01000 (1:5,000) — 도로폭 주 소스
     crs_native: 5179
-    vintage: 20260812
-    desc: 연속수치지도 1:5,000 도로경계면 N3A_A0010000 — 폭 트랜섹트 소스(기하 전용)
-    # ★ 2026-08-17. 레이어명이 NF_A_A01000 → N3A_A0010000 으로 바뀌었고
-    #   rvwd(도로폭)가 이 면 레이어에서 사라져 도로중심선으로 옮겨갔다.
-    #   → datasets.ngii_road_center 참조. segments 는 폴리곤 기하로만 쓰므로
-    #     폭 산출에는 지장이 없다. 속성 교차검증 축만 그쪽으로 이동했다.
+    vintage: TODO
+    desc: 국가기본공간정보 수치지도 도로경계면 NF_A_A01000 (1:5,000) — 도로폭 주 소스
     kind: shp_zip_multi
     file: ngii/ngii_basemap_gj9*.zip      # 광주 037/038/047/048 4도엽
-    layer: N3A_A0010000.shp
+    layer: NF_A_A01000.shp
     crs: EPSG:5179
-    encoding: cp949                        # 2026-08-17 실물 확인. 구 선언 utf-8 은 틀렸다
+    encoding: utf-8                        # ★ cp949 아님. .cpg가 UTF-8
     url: https://map.ngii.go.kr
     license: 국토지리정보원
     retrieved: 2026-08-09
@@ -184,9 +168,6 @@ datasets:
         나머지는 road_rw 폴백.
       도엽 커버리지(5179): X 945,332~949,918 / Y 1,681,228~1,686,800
 
-    contract:
-      encoding: cp949
-      layer_must_exist: true
   node_link:
     what: 표준노드링크 MOCT_LINK. 위상 정답지 + LANES/MAX_SPD
     crs_native: 5186
@@ -205,8 +186,6 @@ datasets:
       그래프 뼈대로 쓰지 말고 위상 검증·간선망 대조용으로 쓸 것.
       REST_W(제한폭)는 전량 0. 미기입 필드.
 
-    contract:
-      layer_must_exist: true
   node_point:
     what: 표준노드링크 MOCT_NODE. 교차로 노드
     crs_native: 5186
@@ -219,8 +198,6 @@ datasets:
     crs: EPSG:5186
     retrieved: 2026-08-09
 
-    contract:
-      layer_must_exist: true
   turn_restriction:
     what: 회전제한 TURNINFO. D-07 방향성 / D-08 회전 판정 근거
     crs_native: none
@@ -242,7 +219,7 @@ datasets:
     kind: csv_points
     file: safety/safety_cctv_jngj_20260630.csv
     crs: EPSG:4326
-    encoding: cp949
+    encoding: utf-8
     x_col: 경도
     y_col: 위도
     url: https://www.data.go.kr/data/15084631/fileData.do
@@ -254,22 +231,16 @@ datasets:
         기존 문서의 "CCTV 53개소"는 근거 불명. 폐기하고 27로 통일할 것.
       촬영방면 전량 360도(PTZ) → 관측 방향 제약 없음.
 
-    contract:
-      encoding: cp949
-      required_cols:
-      - 위도
-      - 경도
-      scope_min: 1
   fire_station:
     what: 소방청 전국소방서 좌표현황. 소방서 + 119안전센터
     crs_native: 4326
-    vintage: 20240901
+    vintage: 2024
     license: TODO
     desc: 소방청 전국소방서 좌표현황. 소방서 + 119안전센터
     kind: csv_points
-    file: safety/safety_firestation_kr_20240901.csv
+    file: safety/safety_firestation_kr_20250701.csv
     crs: EPSG:4326
-    encoding: cp949
+    encoding: utf-8
     x_col: Y좌표          # ★ 컬럼명이 반대다. X좌표에 위도, Y좌표에 경도가 들어있음
     y_col: X좌표
     url: https://www.data.go.kr/data/15138232/fileData.do
@@ -280,17 +251,6 @@ datasets:
                     지산119안전센터(35.149963, 126.938531)
         D-28 시나리오 출발점은 이 둘이다.
 
-    contract:
-      encoding: cp949
-      required_cols:
-      - 소방서 및 안전센터명
-      - 주소
-      - X좌표
-      - Y좌표
-      - 유형
-      rows: 1216
-      rows_tolerance: 0.3
-      scope_min: 2
   poi_store:
     what: 소상공인 상가(상권)정보 광주권. 상가 밀집도 = 주차압력 프록시
     crs_native: 4326
@@ -336,9 +296,6 @@ datasets:
       동 경계로 도로를 clip하면 그래프가 깨진다(연결요소 70개 / 최대 34%).
       분석 대상은 동명동, 그래프는 buffer(200m) 포함으로 만들 것.
 
-    contract:
-      encoding: cp949
-      layer_must_exist: true
   building:
     what: 건물 폴리곤. GRO_FLO_CO(지상층수) 보유 - 3D extrusion 재료
     crs_native: 5179
@@ -357,9 +314,6 @@ datasets:
       EMD_CD가 3자리('108')로 저장됨. 8자리 '12210108'과 직접 조인하면 0건.
       0층 291동(14%) 존재. 무허가·부속건물 추정. 높이 환산 시 1층으로 클리핑.
 
-    contract:
-      encoding: cp949
-      layer_must_exist: true
   building_entrance:
     what: 건물출입구 포인트. 소방차 도달 목표점
     crs_native: 5179
@@ -376,18 +330,15 @@ datasets:
       동명동 1,313개. 도달점을 건물 중심점이 아니라 실제 출입구로 잡을 수 있다.
       D-28 우회비용 비교의 목적지는 이 레이어다.
 
-    contract:
-      encoding: cp949
-      layer_must_exist: true
   hydrant_point:
     what: 전국소방용수시설 표준데이터. 소화전 좌표
     crs_native: 4326
-    vintage: 20240207
+    vintage: 2026
     desc: 전국소방용수시설 표준데이터. 소화전 좌표
     kind: csv_points
-    file: safety/safety_hydrant_point_kr_20240207.csv
+    file: safety/safety_hydrant_point_jngj_20250917.csv
     crs: EPSG:4326
-    encoding: cp949
+    encoding: utf-8
     x_col: 경도
     y_col: 위도
     url: https://www.data.go.kr/data/15065056/standard.do
@@ -399,23 +350,6 @@ datasets:
       전량 확보는 여전히 D-30 인터뷰 필요. "588 중 31"은 그대로 발표 논거.
 
   # -- 검증·보조 (2026-08-11) --
-    contract:
-      encoding: cp949
-      required_cols:
-      - 시설번호
-      - 시도명
-      - 시군구명
-      - 위도
-      - 경도
-      - 안전센터명
-      - 소재지도로명주소
-      - 상세위치
-      - 보호틀유무
-      - 설치연도
-      - 관할기관명
-      rows: 50000
-      rows_tolerance: 0.05
-      scope_min: 1
   fire_access:
     crs_native: none      # 좌표 없는 표. 구간명으로 매칭한다
     what: 동부소방서 소방통로확보대상 지역 현황. 소방서가 직접 지정·관리하는 구간
@@ -437,8 +371,6 @@ datasets:
       ★ 8/9에 "미연결 파편"으로 분류했던 동명로20번길이 실제 소방서 지정 구간이었다.
         데이터 결함으로 본 곳이 위험구간이다.
 
-    contract:
-      encoding: cp949
   dem_public:
     what: 국토지리정보원 공개DEM 도엽 35616
     crs_native: 5179
@@ -461,13 +393,35 @@ datasets:
       다만 90m 로도 최대 경사 9.0°가 나와 소방차 등판 한계(11~17°)를 넘지 않는다.
       → 경사는 진입 제약 요인이 아님을 확인했고, 정밀 DEM 확보는 보류한다.
 
+  parking:
+    status: missing      # ★ 결손. 폐기가 아니다(MASTER §18-12)
+    missing_since: 2026-08-17
+    missing_why: 2026-08-17 재확보 때 못 받았다. 공공데이터포털 광주 동구 주차장정보
+    what: 주차장 정보 (동구 + 도시공사)
+    crs_native: 4326
+    vintage: 2026
+    license: TODO
+    desc: 주차장 정보 (동구 + 도시공사)
+    kind: csv_points
+    file: gjcity/gjcity_parking_dongu_20260811.csv
+    crs: EPSG:4326
+    encoding: utf-8-sig
+    x_col: 경도
+    y_col: 위도
+    retrieved: 2026-08-11
+    note: |
+      광주 동구 + 광주도시공사 주차장정보 병합본.
+      스코프 안 65개(동명동 6개). 노외 64 / 노상 1.
+      ★ 유효폭 산출에는 쓸 수 없다. 대부분 노외주차장이라 골목 노면과 무관하다.
+      쓸 수 있는 것: 주차 부족이 골목 주차로 이어진다는 논거, 소방활동 전개 공간.
+
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
     crs_native: 5186
     vintage: TODO
     desc: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
     kind: raw_only
-    file: ngii/ngii_ortho_gj*.*
+    file: ngii/ngii_ortho_gj*.tif
     crs: EPSG:5186
     url: https://map.ngii.go.kr
     license: 국토지리정보원
@@ -489,14 +443,14 @@ datasets:
   enforcement:
     what: 동구 불법주정차 단속 85,380건 (2022-01 ~ 2023-10)
     crs_native: none
-    vintage: 2025
+    vintage: 2024
     license: TODO
     desc: 동구 불법주정차 단속 85,380건 (2022-01 ~ 2023-10)
     url: https://www.data.go.kr  # 광주광역시 동구_불법 주정차 단속현황
     kind: csv_table
-    file: gjcity/gjcity_parking_enforce_dongu_*.csv
+    file: gjcity/gjcity_parking_enforce_dongu_20240108.csv
     crs: none
-    encoding: cp949
+    encoding: utf-8
     retrieved: 2026-08-09
     note: |
       ★ 기존 문서의 "동명동 3,228건"은 근거 불명. 원본은 85,380건.
@@ -507,24 +461,20 @@ datasets:
         시간대 분석에 쓸 수 없다. D-21 시간대 근거는 답사 촬영으로만.
       엣지 속성은 건수가 아니라 enforce_per_100m(길이 정규화)로 붙일 것.
 
-    contract:
-      encoding: cp949
-      required_cols:
-      - 위반일자
-      - 위반시간
-      - 위반장소명
-      - 과태료
   hydrant_summary:
+    status: missing      # ★ 결손. 폐기가 아니다(MASTER §18-12)
+    missing_since: 2026-08-17
+    missing_why: 2026-08-17 재확보 때 못 받았다. 소화전 집계표
     what: 소방용수시설 관할서별 집계. 동부소방서 지상식 431 + 지하식 157 = 588
     crs_native: none
-    vintage: 20250731
+    vintage: 2025
     license: TODO
     desc: 소방용수시설 관할서별 집계. 동부소방서 지상식 431 + 지하식 157 = 588
     url: https://www.data.go.kr  # 전남광주통합특별시_소방용수시설 현황
     kind: csv_table
-    file: safety/safety_hydrant_summary_gj_dong_20250731.csv
+    file: safety/safety_hydrant_summary_jngj_20251231.csv
     crs: none
-    encoding: cp949
+    encoding: utf-8
     retrieved: 2026-08-09
     note: |
       ★ 좌표 없음. 집계표다.
@@ -535,81 +485,6 @@ datasets:
         D-30 인터뷰 협조요청 근거이자 발표 논거로 사용.
 
 # ── 파이프라인 미투입 (원본만 보관) ─────────────────────────
-    contract:
-      encoding: cp949
-      required_cols:
-      - 구분
-      - 계
-      - 소방차진입불가지역
-      - 데이터기준일자
-      rows: 5
-      rows_tolerance: 0.4
-  ngii_road_center:
-    what: 연속수치지도 1:5,000 도로중심선 N3L_A0020000. rvwd(도로폭)·onsd(일방통행)
-    crs_native: 5179
-    crs: EPSG:5179
-    vintage: 20260812
-    kind: shp_zip_multi
-    file: ngii/ngii_basemap_gj9*.zip
-    layer: N3L_A0020000.shp
-    encoding: cp949
-    retrieved: '2026-08-17'
-    feeds: 미투입 — 폭 교차검증
-    note: "★ 구 NF_A_A01000 의 rvwd 가 여기로 옮겨왔다. 도로경계면에는 없다.\nrvwd 1.5~46.0m · 정수 76%. ROAD_BT(정수 90%, 2.0에 30% 몰림)보다 세분화.\n1:1,000 A0020000 도로폭과 같은 축이라 축척 간 대조가 가능하다.\n폭 산출 자체는 폴리곤 트랜섹트로 하므로 이것은 검증용이다.\n"
-    contract:
-      encoding: cp949
-      layer_must_exist: true
-  bin_trash:
-    what: 동구 쓰레기통 현황. 고정 장애물
-    crs_native: 4326
-    crs: EPSG:4326
-    vintage: 20241130
-    kind: csv_points
-    file: gjcity/gjcity_bin_trash_dongu_20241130.csv
-    encoding: cp949
-    retrieved: '2026-08-17'
-    feeds: 미투입 — 폭 산출 고정 장애물 차감
-    note: "주차 차량과 달리 움직이지 않는다. 영상판정 없이 도면 단계에서 뺄 수 있다.\n호모그래피 쪽 HARD/VEHICLE/SOFT 분류의 SOFT 에 대응한다.\n"
-    contract:
-      encoding: cp949
-      required_cols:
-      - 위도
-      - 경도
-      scope_min: 1
-    x_col: 경도
-    y_col: 위도
-  bin_cloth:
-    what: 동구 의류수거함 위치. 고정 장애물
-    crs_native: 4326
-    crs: EPSG:4326
-    vintage: 20250214
-    kind: csv_points
-    file: gjcity/gjcity_bin_cloth_dongu_20250214.csv
-    encoding: cp949
-    retrieved: '2026-08-17'
-    feeds: 미투입 — 폭 산출 고정 장애물 차감
-    note: "bin_trash 와 같은 성격. 고정물이라 도면 단계 차감 대상이다.\n"
-    contract:
-      encoding: cp949
-      required_cols:
-      - 위도
-      - 경도
-      scope_min: 1
-    x_col: 경도
-    y_col: 위도
-  building_ledger:
-    what: 건축물대장 표제부. 높이·주용도·주차대수·사용승인일
-    crs_native: none
-    crs: none
-    vintage: 20260817
-    kind: csv_table
-    file: eais/eais_bldg_ledger_gjdonggu_20260817.csv
-    encoding: utf-8-sig
-    retrieved: '2026-08-17'
-    feeds: 미투입 — 3D 높이 · 대피취약 · 회색 프루닝
-    note: "★ BOM 이 붙은 utf-8 이다. 다른 CSV 는 전부 cp949 인데 여기만 다르다.\n높이(m) 기재율 25%. 나머지는 지상층수로 추정해야 한다.\n주용도 숙박 251 · 교육연구 226 → 대피취약 지표.\n주차대수는 회색 구간 상습점유 추정의 입력이다.\n★ 조인키가 다르다. 여기는 관리건축물대장PK, building 은 BD_MGT_SN.\n  지번 또는 공간조인이 필요하다.\n"
-    contract:
-      encoding: utf-8-sig
 raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
@@ -617,11 +492,11 @@ raw_only:
     vintage: TODO
     desc: 항공정사영상 2025, GSD 0.25m, 광주 037/038/047/048
     files:
-    - _B060_정사영상_2025_35616037.tif      # 9516 x 11496
-    - _B060_정사영상_2025_35616038.tif      # 9516 x 11508
-    - _B060_정사영상_2025_35616047.tif      # 9516 x 11508
-    - _B060_정사영상_2025_35616048.tif      # 9528 x 11496
-    - _B060_정사영상메타데이터_*.xml
+      - _B060_정사영상_2025_35616037.tif    # 9516 x 11496
+      - _B060_정사영상_2025_35616038.tif    # 9516 x 11508
+      - _B060_정사영상_2025_35616047.tif    # 9516 x 11508
+      - _B060_정사영상_2025_35616048.tif    # 9528 x 11496
+      - _B060_정사영상메타데이터_*.xml
     size: 1.3 GB
     note: |
       ★ GeoTIFF 아님. 지오태그 없음, .tfw 미동봉, XML에도 도곽좌표 없음.
@@ -642,29 +517,29 @@ raw_only:
 
 # ── 미확보 ──────────────────────────────────────────────────
 pending:
-- key: boundary
-  desc: 행정구역경계 (읍면동) — 동명동 정식 폴리곤
-  source: business.juso.go.kr → 도로명주소 전자지도
-  status: 해소 2026-08-11 → datasets.boundary_emd
-  blocking: |
-    ★ 이게 없으면 bbox로 자를 수밖에 없고 세그먼트 수가 확정되지 않는다.
-      기존 문서의 "222구간"은 근거 불명이고 bbox 노딩 시 4,336개가 나온다.
-      정식 경계 확보 후 재산출하여 전 문서의 222를 교체할 것.
-- key: building
-  desc: 건물 폴리곤 (전체분)
-  source: 동일 (전자지도 11종에 포함)
-  status: 해소 2026-08-11 → datasets.building
-- key: hydrant_point
-  desc: 소화전 좌표 (동부소방서 관할 588개)
-  source: D-30 소방서 인터뷰 협조요청
-  status: 부분해소 2026-08-11 → datasets.hydrant_point (공개 31개, 5%)
-- key: streetlight
-  desc: 가로등·보안등
-  status: 공개 데이터 없음 확정. 야간 답사로 대체 (D-13)
-- key: fire_incident
-  desc: 화재 출동 이력 (동명동)
-  source: data.go.kr 소방청 화재현황 오픈API (읍면동까지 제공)
-  status: 활용신청 미착수
+  - key: boundary
+    desc: 행정구역경계 (읍면동) — 동명동 정식 폴리곤
+    source: business.juso.go.kr → 도로명주소 전자지도
+    status: 해소 2026-08-11 → datasets.boundary_emd
+    blocking: |
+      ★ 이게 없으면 bbox로 자를 수밖에 없고 세그먼트 수가 확정되지 않는다.
+        기존 문서의 "222구간"은 근거 불명이고 bbox 노딩 시 4,336개가 나온다.
+        정식 경계 확보 후 재산출하여 전 문서의 222를 교체할 것.
+  - key: building
+    desc: 건물 폴리곤 (전체분)
+    source: 동일 (전자지도 11종에 포함)
+    status: 해소 2026-08-11 → datasets.building
+  - key: hydrant_point
+    desc: 소화전 좌표 (동부소방서 관할 588개)
+    source: D-30 소방서 인터뷰 협조요청
+    status: 부분해소 2026-08-11 → datasets.hydrant_point (공개 31개, 5%)
+  - key: streetlight
+    desc: 가로등·보안등
+    status: 공개 데이터 없음 확정. 야간 답사로 대체 (D-13)
+  - key: fire_incident
+    desc: 화재 출동 이력 (동명동)
+    source: data.go.kr 소방청 화재현황 오픈API (읍면동까지 제공)
+    status: 활용신청 미착수
 
 # ── 배경지도 (다운로드 아님, 런타임 타일) ───────────────────
 basemap:
@@ -734,7 +609,7 @@ inventory:
       layers:
         TL_SPRD_MANAGE:
           geom_type: LineString
-          crs:
+          crs: null
           fields:
           - ALWNC_DE
           - ALWNC_RESN
@@ -782,7 +657,7 @@ inventory:
       layers:
         TL_SPRD_RW:
           geom_type: Polygon
-          crs:
+          crs: null
           fields:
           - OPERT_DE
           - RW_SN
@@ -1235,7 +1110,8 @@ inventory:
       layers:
         MOCT_LINK:
           geom_type: LineString
-          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS
+            1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
           fields:
           - LINK_ID
           - F_NODE
@@ -1288,7 +1164,8 @@ inventory:
       layers:
         MOCT_NODE:
           geom_type: Point
-          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS
+            1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
           fields:
           - NODE_ID
           - NODE_TYPE
@@ -1314,7 +1191,8 @@ inventory:
       layers:
         MOCT_LINK:
           geom_type: LineString
-          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS
+            1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
           fields:
           - LINK_ID
           - F_NODE
@@ -1339,7 +1217,8 @@ inventory:
           - HISTREMARK
         MOCT_NODE:
           geom_type: Point
-          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+          crs: PROJCS["ITRF2000_Central_Belt_60",GEOGCS["ITRF2000",DATUM["International_Terrestrial_Reference_Frame_2000",SPHEROID["GRS
+            1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6656"]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",38],PARAMETER["central_meridian",127],PARAMETER["scale_factor",1],PARAMETER["false_easting",200000],PARAMETER["false_northing",600000],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
           fields:
           - NODE_ID
           - NODE_TYPE
@@ -1969,7 +1848,7 @@ inventory:
       layers:
         TL_SCCO_EMD:
           geom_type: Polygon
-          crs:
+          crs: null
           fields:
           - EMD_CD
           - EMD_ENG_NM
@@ -1986,7 +1865,7 @@ inventory:
       layers:
         TL_SPBD_BULD:
           geom_type: Polygon
-          crs:
+          crs: null
           fields:
           - BDTYP_CD
           - BD_MGT_SN
@@ -2055,7 +1934,7 @@ inventory:
       layers:
         TL_SPBD_ENTRC:
           geom_type: Point
-          crs:
+          crs: null
           fields:
           - BUL_MAN_NO
           - ENTRC_SE
@@ -2132,6 +2011,9 @@ inventory:
         - 35616/35616.img
       kind: raw_only
       unused_fields: []
+    parking:
+      status: 원본 없음
+      pattern: gjcity/gjcity_parking_dongu_20260811.csv
     ortho:
       files:
       - file: ngii_ortho_gj037_20251231.tif
@@ -2176,19 +2058,20 @@ outputs:
   segments:
     produced_by: src/etl/segments.py
     path: data/processed/segments.geojson
-    inputs: [ngii1k, ngii_road, road_rw, road_link, building, building_entrance, boundary_emd, cctv, fire_station, node_link, turn_restriction]
+    inputs: [ngii1k, ngii_road, road_rw, road_link, building, building_entrance,
+             boundary_emd, cctv, fire_station, node_link, turn_restriction]
     stable_key: seg_uid
     consumers:
-    - web/app.js
-    - src/etl/publish_web.py
-    - src/etl/sample_design.py
-    - tests/test_contract.py
+      - web/app.js
+      - src/etl/publish_web.py
+      - src/etl/sample_design.py
+      - tests/test_contract.py
     what: 구간 단위 통행 판정. verdict 4종 + 폭 + CCTV 가시성
     verified: false
     known_issues:
-    - 폭 실측 검증 0건. 소방서 7구간 대조는 학습셋이라 검증이 아니다
-    - width>30m 24건 중 19건은 필문대로. 대로=40m 이상이라 정상값
-    - 실질 잔여 3건은 본선+측도 병합. 도로대장 청구 중(2026-08-14)
+      - 폭 실측 검증 0건. 소방서 7구간 대조는 학습셋이라 검증이 아니다
+      - width>30m 24건 중 19건은 필문대로. 대로=40m 이상이라 정상값
+      - 실질 잔여 3건은 본선+측도 병합. 도로대장 청구 중(2026-08-14)
 
   ngii1k_center:
     produced_by: src/etl/ngii1k.py
@@ -2200,8 +2083,8 @@ outputs:
       우리 기하 계산과 독립이라 대조 검증에 쓴다(절대편차 중앙 0.32m, n=909).
     verified: true
     known_issues:
-    - 도로폭 0.500 은 차량 통행 불가 통로 코드. 스코프 내 7건 전수 확인
-    - 짧은 링크에는 본선 폭이 붙는다. 검증 기준으로는 긴 구간만 쓸 것
+      - 도로폭 0.500 은 차량 통행 불가 통로 코드. 스코프 내 7건 전수 확인
+      - 짧은 링크에는 본선 폭이 붙는다. 검증 기준으로는 긴 구간만 쓸 것
 
   ngii1k_walk:
     produced_by: src/etl/ngii1k.py
@@ -2211,7 +2094,7 @@ outputs:
     what: 보도 A0033320. 차도폭 분리용
     verified: false
     known_issues:
-    - 772건이나 구간 커버율 13%. 전면 차감 불가
+      - 772건이나 구간 커버율 13%. 전면 차감 불가
 
   ngii1k_xsec:
     produced_by: src/etl/ngii1k.py
@@ -2241,4 +2124,4 @@ outputs:
     what: 실측 대상 25구간(트랙 A12/B8/C5) + 관측점 75. 시드 20260814
     verified: false
     known_issues:
-    - 트랙 C 5구간은 봉인. 분석에 쓰면 외부 검증 수단이 다시 0이 된다
+      - 트랙 C 5구간은 봉인. 분석에 쓰면 외부 검증 수단이 다시 0이 된다
