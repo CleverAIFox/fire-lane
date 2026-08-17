@@ -1,0 +1,43 @@
+{
+  "tag": "20260814-ngii-ngi20",
+  "frozen_at": "2026-08-17T11:43:30+09:00",
+  "git_sha": "173abbbba23283030088fa335bcb865d2a6a4385",
+  "note": "국토정보플랫폼 NGI 20도엽 2020-2022 기준 마지막 판정. 구 원본 2026-08-15 소실",
+  "tally": {
+    "n": 1102,
+    "verdict": {
+      "clear": 386,
+      "needs_cv": 210,
+      "blocked": 62,
+      "unknown": 444
+    },
+    "unknown_reason": {
+      "no_cctv": 444
+    },
+    "width_src": {
+      "ngii1k": 899,
+      "silpok": 84,
+      "ngii": 117,
+      "null": 2
+    },
+    "length_total_m": 48580,
+    "in_emd": 416,
+    "route_usage_pos": 580,
+    "nfa_designated": 152,
+    "width_verified": 0
+  },
+  "expect_snapshot": "EXPECT = {\n    # ingest 산출 기준선. 도엽이 빠지거나 소스가 바뀌면 여기서 먼저 걸린다.\n    \"ingest\": {\"ngii1k\": 3593, \"ngii_road\": 3740, \"road_link\": 1508,\n               \"road_rw\": 1957, \"node_link\": 1366, \"streetlight\": 1786},\n    \"segments\": 1102,\n    # 2026-08-13 갱신. 노드접합 + 산출단위 병합 + 소스별 snap + 구간단위 소스채택.\n    # 폭 미산출 127 → 0. unknown 은 전부 no_cctv 다(영상판정 불가).\n    # 길이 0.0m 유령 피처 40개가 clear 로 표출되고 있었다.\n    \"verdict\": {\"clear\": 386, \"needs_cv\": 210, \"blocked\": 62, \"unknown\": 444},\n    \"unknown_reason\": {\"no_cctv\": 396, \"width\": 0},\n}",
+  "sha256": {
+    "segments.geojson": "99fdc29313ef03764b9604e66bee2c8ec5c24c0d02e3c3c688ceb307fa30c962",
+    "segments.schema.json": "03bf93d6fc320df05f02695686585e85001e2439d2b2656d3ab005424038d9af",
+    "_manifest.json": "a849152ca2ebe9d706c1f63634424707633d4acb8375b32c2216715cee5c25f9",
+    "seg_uid_map.csv": "6b35f5114fb49bf93074c31d5715a505dde206eb081d27037e86dc34dfbe6beb",
+    "nfa_compare.json": "40be9b12229d0769c393d25e36f3ef547fb3ba629997d3f4d473fd99a6172c35"
+  },
+  "why": "구 원본(국토정보플랫폼 NGI 20도엽 2020·2022)이 2026-08-15 전량 재취득으로 소실됐다. 이 산출물은 재생성 불가다.",
+  "known_limits": [
+    "width_verified 전건 false. 레이저 실측 전이다",
+    "nfa_compare 는 검증이 아니라 적합(fit)이다",
+    "ngii1k 는 ingest 에서 FAIL 이었고 gpkg 는 손으로 돌려 만든 것이다"
+  ]
+}
