@@ -49,72 +49,90 @@ for st in (sys.stdout, sys.stderr):
 # 원본 파일명 패턴 → (폴더, 목적지 파일명)
 # 정규식은 소문자 변환 후 매칭한다. 괄호는 브라우저가 &#40; 로 바꾸기도 해서 느슨하게 본다.
 RULES: list[tuple[str, str, str]] = [
-    # 도로명주소
-    (r"전남광주통합특별시_동구\.zip$",           "juso",   "juso_elctrnmap_jngj_20260711.zip"),
-    (r"도로도형_전체분",                          "juso",   "juso_road_geom_jngj_20260701.zip"),
-    # 국토지리정보원
-    (r"b030.*국가기본공간정보.*7824",             "ngii",   "ngii_basemap_gj048_20260806.zip"),
-    (r"b030.*국가기본공간정보.*7825",             "ngii",   "ngii_basemap_gj037_20260806.zip"),
-    (r"b030.*국가기본공간정보.*7832",             "ngii",   "ngii_basemap_gj038_20260807.zip"),
-    (r"b030.*국가기본공간정보.*7833",             "ngii",   "ngii_basemap_gj047_20260807.zip"),
-    (r"b080.*공개dem.*35616",                     "ngii",   "ngii_dem_gj35616_20251117.zip"),
-    (r"b060.*정사영상_\d+_35616(\d{3})\.tif$",    "ngii",   "ngii_ortho_gj{0}_20251231.tif"),
-    (r"b060.*정사영상메타데이터_\d+35616(\d{3})\.xml$", "ngii", "ngii_ortho_gj{0}_20251231.xml"),
-    # 1:1,000 수치지형도 도엽. 폭 산출 주 소스(결정 63).
-    # ★ 폴더가 ngii 가 아니라 ngii1k 다. ngii1k.py 가 폴더를 rglob 로 훑는데
-    #   ngii/ 로 합치면 (B020)연속수치지도 294MB×2 까지 집어 파싱하려 든다.
-    # ★ 기준일: 파일명에는 연도만 있고 실제 제작일은 도엽마다 다르다
-    #   (356160995 → xml 상 2020-11-16). RULES 는 고정 문자열 구조라 파일별
-    #   xml 을 읽을 수 없다. 연도+1231 은 정렬용 표기이며 기준일이 아니다.
-    #   실제 일자는 sources.yaml 에 도엽번호↔일자 표로 남긴다. (회의 안건)
-    # ★ (B010) 은 정규식에 넣지 않는다. 브라우저가 괄호를 바꾸는 경우가 있다.
-    (r"수치지도_(\d{9})_(\d{4})_\d+\.ngi$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.ngi"),
-    (r"수치지도_(\d{9})_(\d{4})_\d+\.nda$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.nda"),
-    (r"수치지도_(\d{9})_(\d{4})_\d+\.zip$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.zip"),
-    (r"수치지도_(\d{9})_(\d{4})_\d+\.xml$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.xml"),
-    # 도엽 메타 증빙. 파일명에 (B010) 접두사가 없어 별도 규칙이 필요하다.
-    (r"^(\d{9})_(\d{4})_\d+\.xlsx$", "ngii1k", "ngii_map1k_gj{0}_{1}1231.xlsx"),
-    (r"^ngii_map1k_gj\d{9}_\d{8}\.(ngi|nda|zip|xml|xlsx)$", "ngii1k", None),
-    # 가로등. 지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
-    # ★ segments.py 가 RAW/"gjcity"/*.csv 로 직접 읽는다. 폴더명 고정.
-    (r"가로등현황_(\d{8})\.csv$", "gjcity", "gjcity_streetlight_dongu_{0}.csv"),
-    (r"^gjcity_streetlight_dongu_\d{8}\.csv$", "gjcity", None),
-    # 교통
-    (r"nodelinkdata\.zip$",                       "its",    "its_nodelink_kr_20260810.zip"),
-    (r"^내역서\.csv$",                            "its",    "its_nodelink_changelog_20260810.csv"),
-    # 상권
-    (r"소상공인시장진흥공단_상가",                "sbiz",   "sbiz_store_kr_20260630.zip"),
-    # 안전
-    (r"전남광주통합특별시_cctv",                  "safety", "safety_cctv_jngj_20260630.csv"),
-    (r"전국소방서.?좌표현황",                     "safety", "safety_firestation_kr_20240901.csv"),
-    # ★ 표는 전부 csv 로 통일한다. 같은 데이터셋이 csv 였다가 json 으로 오기도 한다.
-    #   포맷이 흔들리면 ingest 의 kind 도 흔들린다. 여기서 한 번에 맞춘다.
-    (r"전국소방용수시설표준데이터\.json$",        "safety", "safety_hydrant_point_kr_20260811.csv"),
-    (r"소방통로확보대상",                         "safety", "safety_fire_access_gj_dong_20250731.csv"),
-    (r"소방청_연간화재통계",                      "safety", "safety_fire_stat_kr_20241231.csv"),
-    (r"불법.?주정차.*단속|주정차.*단속현황",      "safety", "safety_parking_enforce_dongu_20240108.csv"),
-    (r"소방용수시설.?현황",                       "safety", "safety_hydrant_summary_jngj_20251231.csv"),
-    # 광주광역시·산하기관
-    (r"전남광주통합특별시_동구_주차장정보",       "gjcity", "gjcity_parking_dongu_20260811.csv"),
-    (r"광주광역시도시공사_주차장정보",            "gjcity", "gjcity_parking_corp_20260811.csv"),
-    # 공간정보
-    (r"건물.*변동|building_change",               "nsdi",   "nsdi_building_change_kr_20260806.zip"),
+    # ── juso · 도로명주소 ────────────────────────────────────
+    # 전자지도 zip 하나에 5종이 들어 있다.
+    # TL_SPRD_MANAGE(도로구간) TL_SPRD_RW(실폭도로) TL_SCCO_EMD(경계)
+    # TL_SPBD_BULD(건물) TL_SPBD_ENTRC(출입구)
+    (r"^전남광주통합특별시_동구\.zip$",   "juso", "juso_elctrnmap_jngj_20260711.zip"),
+    (r"사물주소도형.*동구\.zip$",         "juso", "juso_spotaddr_geom_jngj_20260801.zip"),
+    (r"사물주소기준점.*동구\.zip$",       "juso", "juso_spotaddr_ref_jngj_20260801.zip"),
+    (r"^juso_(elctrnmap|spotaddr_\w+)_jngj_\d{8}\.zip$", "juso", None),
+
+    # ── its · 국가교통정보센터 ───────────────────────────────
+    # ★ 258MB 전국이다. 광주 절단은 norm 이후 단계에서 한다.
+    #   raw 는 원본 보존이 원칙이므로 여기서 자르지 않는다.
+    (r"nodelinkdata\.zip$",  "its", "its_nodelink_kr_20260812.zip"),
+    (r"^내역서\.csv$",       "its", "its_nodelink_changelog_20260812.csv"),
+    (r"^its_nodelink_(kr|changelog)_\d{8}\.(zip|csv)$", "its", None),
+
+    # ── ngii · 국토정보플랫폼 ────────────────────────────────
+    # ★ (B020)(B060)(B080) 접두는 정규식에 넣지 않는다.
+    #   브라우저가 괄호를 인코딩해 내려주는 경우가 있다.
+    (r"연속수치지도_(\d{8})(\d{4})\.zip$",      "ngii", "ngii_basemap_gj{1}_{0}.zip"),
+    (r"정사영상_(\d{4})_35616(\d{3})\.tif$",    "ngii", "ngii_ortho_gj{1}_{0}1231.tif"),
+    (r"정사영상메타데이터_\d+35616(\d{3})\.xml$", "ngii", "ngii_ortho_gj{0}_20251231.xml"),
+    (r"공개dem_35616.*\.zip$",                   "ngii", "ngii_dem_gj35616_20251117.zip"),
+    (r"^ngii_(basemap|ortho|dem)_gj\w+_\d{8}\.(zip|tif|xml)$", "ngii", None),
+
+    # ── vworld · 브이월드 ────────────────────────────────────
+    # ★ ngii 와 폴더를 나눈다. 같은 수치지형도라도 원천이 다르면 폴더가 다르다.
+    #   섞으면 어느 판인지 파일명만으로 구분되지 않는다. (2026-08-17)
+    # ★ 도엽 zip 74개가 상위 zip 안에 중첩돼 있다. 이중 해제는 ingest 담당.
+    (r"^2map1000_shp_광주_동구\.zip$", "vworld", "vworld_map1k_gjdonggu_20260307.zip"),
+    (r"^vworld_map1k_gjdonggu_\d{8}\.zip$", "vworld", None),
+
+    # ── safety · 공공데이터포털(안전) ────────────────────────
+    (r"^전남광주통합특별시_cctv_(\d{8})\.csv$",     "safety", "safety_cctv_jngj_{0}.csv"),
+    (r"소방\s*용수시설\s*현황_(\d{8})\.csv$",      "safety", "safety_hydrant_point_jngj_{0}.csv"),
+    (r"소방통로확보대상.*_(\d{8})\.csv$",           "safety", "safety_fire_access_gj_dong_{0}.csv"),
+    (r"^소방청_시도\s*소방서\s*현황_(\d{8})\.csv$", "safety", "safety_firestation_kr_{0}.csv"),
+    (r"^safety_\w+_\d{8}\.csv$", "safety", None),
+
+    # ── gjcity · 공공데이터포털(광주 동구) ───────────────────
+    # ★ enforcement 가 safety 에서 여기로 옮겨왔다.
+    #   폴더 = 제공기관 원칙. 불법주정차 단속은 광주 동구가 제공한다.
+    (r"동구_가로등현황_(\d{8})\.csv$",              "gjcity", "gjcity_streetlight_dongu_{0}.csv"),
+    (r"동구_불법\s*주정차\s*단속현황_(\d{8})\.csv$", "gjcity", "gjcity_parking_enforce_dongu_{0}.csv"),
+    (r"동구_쓰레기통현황_(\d{8})\.csv$",            "gjcity", "gjcity_bin_trash_dongu_{0}.csv"),
+    (r"동구_의류수거함위치_(\d{8})\.csv$",          "gjcity", "gjcity_bin_cloth_dongu_{0}.csv"),
+    (r"동구_주차장정보.*(\d{8})\.csv$",             "gjcity", "gjcity_parking_dongu_{0}.csv"),
+    (r"^gjcity_\w+_dongu_\d{8}\.csv$", "gjcity", None),
+
+    # ── sbiz · 소상공인시장진흥공단 ──────────────────────────
+    # ★ 다운로드 사이트가 괄호를 HTML 엔티티로 준다(&#40; &#41;).
+    #   쉘·경로에서 계속 문제를 일으키므로 여기서 흡수한다.
+    (r"소상공인시장진흥공단_상가.*(\d{8})\.zip$", "sbiz", "sbiz_store_kr_{0}.zip"),
+    (r"^sbiz_store_kr_\d{8}\.zip$", "sbiz", None),
+
+    # ── eais · 건축HUB ───────────────────────────────────────
+    # ★ 원본이 "03. 표제부_20260817013434.csv" 다. 앞의 03 은 서식 번호이고
+    #   뒤 14자리는 다운로드 시각이다. 데이터 기준일이 아니므로 앞 8자리만 쓴다.
+    (r"표제부_(\d{8})\d{6}\.csv$", "eais", "eais_bldg_ledger_gjdonggu_{0}.csv"),
+    (r"^eais_bldg_ledger_\w+_\d{8}\.csv$", "eais", None),
 ]
 
 # 없으면 파이프라인이 도는 데 지장이 있는 것
 REQUIRED = [
     "juso/juso_elctrnmap_jngj_20260711.zip",
-    "its/its_nodelink_kr_20260810.zip",
-    "ngii/ngii_basemap_gj037_20260806.zip",
-    "sbiz/sbiz_store_kr_20260630.zip",
+    "vworld/vworld_map1k_gjdonggu_20260307.zip",     # 폭 산출 주 소스
+    "its/its_nodelink_kr_20260812.zip",
+    "ngii/ngii_basemap_gj9708_20260812.zip",
+    "ngii/ngii_dem_gj35616_20251117.zip",
     "safety/safety_cctv_jngj_20260630.csv",
-    "safety/safety_firestation_kr_20240901.csv",
+    "safety/safety_hydrant_point_jngj_20250917.csv",
     "safety/safety_fire_access_gj_dong_20250731.csv",
-    "gjcity/gjcity_parking_dongu_20260811.csv",
-    "safety/safety_parking_enforce_dongu_20240108.csv",
-    "safety/safety_hydrant_summary_jngj_20251231.csv",
-    "ngii1k/ngii_map1k_gj356160995_20201231.ngi",
+    "safety/safety_firestation_kr_20250701.csv",
     "gjcity/gjcity_streetlight_dongu_20240415.csv",
+    "gjcity/gjcity_parking_enforce_dongu_20240108.csv",
+    "sbiz/sbiz_store_kr_20260630.zip",
+    "eais/eais_bldg_ledger_gjdonggu_20260817.csv",
+]
+
+# 이번 재확보에서 못 받은 것. 결손이지 폐기가 아니다(MASTER §18-12).
+# 지우면 잊는다. 목록에 남겨야 다음에 받을 때 뜬다.
+MISSING = [
+    "gjcity/gjcity_parking_dongu_*.csv",             # 광주 동구 주차장
+    "safety/safety_hydrant_summary_jngj_*.csv",      # 소화전 집계표
 ]
 
 

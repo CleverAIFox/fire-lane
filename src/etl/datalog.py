@@ -31,7 +31,9 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCES = ROOT / "sources.yaml"
 PROCESSED = ROOT / "data" / "processed"
 MANIFEST = PROCESSED / "_manifest.json"
-BACKUP_TARGETS = ["data/raw", "data/norm", "data/field", "data/processed"]
+# ★ processed 는 백업하지 않는다. raw + 코드 + 대장으로 재생성된다.
+#   보관 우선순위: raw·field(재생성 불가) > norm(재정규화 가능) > processed(버림)
+BACKUP_TARGETS = ["data/raw", "data/norm", "data/field"]
 # raw 는 레포 밖($FIRE_LANE_RAW)에 있다. 상대경로만 훑으면 2.5GB 가 통째로 빠진다.
 # 백업 대상에서 raw 가 빠졌다는 것을 파일 개수로만 알 수 있으면 조용한 결측이다.
 EXTERNAL_TARGETS = [Path(os.environ["FIRE_LANE_RAW"])] if os.environ.get("FIRE_LANE_RAW") else []

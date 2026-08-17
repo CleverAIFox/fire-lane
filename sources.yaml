@@ -7,7 +7,17 @@
 #   * data/raw/ 안의 파일은 절대 수정·리네임하지 않는다.
 #   * 확보일(retrieved)을 비워두지 않는다. 발표에서 출처 질문이 반드시 나온다.
 #
-# 2026-08-09 기준 전량 확보 완료. 미확보는 pending 섹션 참조.
+# 2026-08-17 전량 재확보. 원본은 외장 SSD fire-lane-data/ (landing) 에 있고
+# acquire 로 raw 에 편입한다. 대장에 없는 파일은 _quarantine 으로 격리한다.
+#
+# 메타 항목 (URL 은 적지 않는다. 자주 깨지고 provider+scope 면 다시 찾는다)
+#   provider  어느 사이트에서 받았나
+#   updated   데이터 갱신일 (다운로드일 아님)
+#   acquired  우리가 받은 날
+#   scope     공간 범위 + 건수
+#   crs       좌표계. ★ "명시"와 "추정"을 구분해서 적을 것
+#
+# contract  는 편입 후 inventory.py 가 생성한다. MASTER §18-3b
 # ============================================================
 
 project: fire-lane
@@ -100,19 +110,24 @@ datasets:
       landmark_desc 초안과 관측점 후보 선정에만 쓴다.
 
   ngii1k:
-    what: 수치지형도 1:1,000 도로경계 A0010000 — 폭 산출 주 소스
+    what: 수치지형도 1:1,000. 도로경계·중심선·보도·평면교차점·가로등폴
+    provider: 브이월드
+    updated: 2026-03-07
+    acquired: 2026-08-17
+    scope: 광주 동구 74도엽
     crs_native: 5186
-    vintage: TODO
-    license: TODO
-    desc: 수치지형도 1:1,000 도로경계 A0010000 — 폭 산출 주 소스
-    kind: ngii1k
-    file: ngii1k/
-    crs: 5186
-    url: https://map.ngii.go.kr/ms/map/NlipMap.do
+    crs: EPSG:5186        # .prj 명시 (Korea_2000_Central_Belt_2010)
+    vintage: 20260307
+    kind: shp_dir
+    file: vworld/vworld_map1k_gjdonggu_20260307.zip
+    license: 공공누리
     note: |
-      도엽 하나가 456 x 555m. 스코프를 덮으려면 12장 이상 필요하다.
-      2022년~ SHP(N1A_/N1L_) · ~2020년 NGI 텍스트. GDAL 에 NGI 드라이버가
-      없어 src/etl/ngii1k.py 가 직접 파싱한다. 같은 도엽은 최신 연도 채택.
+      ★ 국토정보플랫폼 판(2019~2022, 20도엽)에서 교체했다. retired 참조.
+        vintage 6년 차이 · 도엽 3.7배 · NGI 텍스트 → SHP 직독 · 도로명 채워짐
+      도엽 zip 74개가 상위 zip 안에 중첩돼 있다. 이중 해제 필요.
+      A0010000 도로경계(면) · A0020000 중심선(도로폭·일방통행·차로수·도로명)
+      A0033320 보도(폭·재질) · A0080000 평면교차점 · C0220000 가로등·보안등
+      ★ 연속수치지도(ngii_road)는 EPSG:5179 다. 이것과 좌표계가 다르다.
 
   streetlight:
     what: 전남광주통합특별시 동구 가로등현황 (2024-04-15)
@@ -138,7 +153,7 @@ datasets:
     vintage: TODO
     desc: 국가기본공간정보 수치지도 도로경계면 NF_A_A01000 (1:5,000) — 도로폭 주 소스
     kind: shp_zip_multi
-    file: ngii/ngii_basemap_gj*.zip      # 광주 037/038/047/048 4도엽
+    file: ngii/ngii_basemap_gj9*.zip      # 광주 037/038/047/048 4도엽
     layer: NF_A_A01000.shp
     crs: EPSG:5179
     encoding: utf-8                        # ★ cp949 아님. .cpg가 UTF-8
@@ -159,7 +174,7 @@ datasets:
     vintage: 2026
     desc: 표준노드링크 MOCT_LINK. 위상 정답지 + LANES/MAX_SPD
     kind: shp_zip
-    file: its/its_nodelink_kr_20260810.zip
+    file: its/its_nodelink_kr_20260812.zip
     layer: MOCT_LINK.shp
     crs: EPSG:5186
     url: https://www.its.go.kr/nodelink/nodelinkRef
@@ -178,7 +193,7 @@ datasets:
     license: TODO
     desc: 표준노드링크 MOCT_NODE. 교차로 노드
     kind: shp_zip
-    file: its/its_nodelink_kr_20260810.zip
+    file: its/its_nodelink_kr_20260812.zip
     layer: MOCT_NODE.shp
     crs: EPSG:5186
     retrieved: 2026-08-09
@@ -190,7 +205,7 @@ datasets:
     license: TODO
     desc: 회전제한 TURNINFO. D-07 방향성 / D-08 회전 판정 근거
     kind: dbf_in_zip
-    file: its/its_nodelink_kr_20260810.zip
+    file: its/its_nodelink_kr_20260812.zip
     layer: TURNINFO.dbf
     crs: none
     retrieved: 2026-08-09
@@ -223,7 +238,7 @@ datasets:
     license: TODO
     desc: 소방청 전국소방서 좌표현황. 소방서 + 119안전센터
     kind: csv_points
-    file: safety/safety_firestation_kr_20240901.csv
+    file: safety/safety_firestation_kr_20250701.csv
     crs: EPSG:4326
     encoding: utf-8
     x_col: Y좌표          # ★ 컬럼명이 반대다. X좌표에 위도, Y좌표에 경도가 들어있음
@@ -321,7 +336,7 @@ datasets:
     vintage: 2026
     desc: 전국소방용수시설 표준데이터. 소화전 좌표
     kind: csv_points
-    file: safety/safety_hydrant_point_kr_20260811.csv
+    file: safety/safety_hydrant_point_jngj_20250917.csv
     crs: EPSG:4326
     encoding: utf-8
     x_col: 경도
@@ -379,6 +394,9 @@ datasets:
       → 경사는 진입 제약 요인이 아님을 확인했고, 정밀 DEM 확보는 보류한다.
 
   parking:
+    status: missing      # ★ 결손. 폐기가 아니다(MASTER §18-12)
+    missing_since: 2026-08-17
+    missing_why: 2026-08-17 재확보 때 못 받았다. 공공데이터포털 광주 동구 주차장정보
     what: 주차장 정보 (동구 + 도시공사)
     crs_native: 4326
     vintage: 2026
@@ -430,7 +448,7 @@ datasets:
     desc: 동구 불법주정차 단속 85,380건 (2022-01 ~ 2023-10)
     url: https://www.data.go.kr  # 광주광역시 동구_불법 주정차 단속현황
     kind: csv_table
-    file: safety/safety_parking_enforce_dongu_20240108.csv
+    file: gjcity/gjcity_parking_enforce_dongu_20240108.csv
     crs: none
     encoding: utf-8
     retrieved: 2026-08-09
@@ -444,6 +462,9 @@ datasets:
       엣지 속성은 건수가 아니라 enforce_per_100m(길이 정규화)로 붙일 것.
 
   hydrant_summary:
+    status: missing      # ★ 결손. 폐기가 아니다(MASTER §18-12)
+    missing_since: 2026-08-17
+    missing_why: 2026-08-17 재확보 때 못 받았다. 소화전 집계표
     what: 소방용수시설 관할서별 집계. 동부소방서 지상식 431 + 지하식 157 = 588
     crs_native: none
     vintage: 2025
@@ -535,10 +556,51 @@ basemap:
     ★ 브라우저 호출 시 &domain=등록URL 파라미터 필수. 문자열 정확히 일치해야 함.
     렌더러는 MapLibre GL JS (Mapbox GL v1 포크라 기존 Mapbox 코드 호환).
 
+# ── 폐기 기록 ────────────────────────────────────────────
+# 지운 것도 남긴다. 없으면 3개월 뒤에 또 받고 또 조사한다. MASTER §18-3c
+retired:
+  ngii1k_ngii_platform:
+    what: 국토정보플랫폼 수치지형도 1:1,000 (NGI/NDA + 일부 SHP)
+    vintage: 2019~2022 혼합 (도엽 20장)
+    at: 2026-08-17
+    successor: ngii1k (vworld)
+    reason: |
+      V-WORLD 판으로 교체. vintage 2020/2022 → 2026-03, 도엽 20 → 74,
+      NGI/NDA 텍스트 → 전부 SHP(GDAL 직독), 도로명 빈값 → 채워짐,
+      자동차전용 속성 추가. 좌표계는 둘 다 5186 으로 동일.
+      전용 파서 src/etl/ngi.py 가 불필요해진다.
+
+  ngii1k_meta_xlsx:
+    what: 국토정보플랫폼 수치지도에 딸려오던 xlsx 12개
+    at: 2026-08-17
+    reason: |
+      ISO 19115 메타데이터 작성 서식. 도엽 본체가 아니다.
+      12개가 전부 440KB 로 내용이 거의 같고 파이프라인이 읽은 적 없다.
+
+  cctv_spatialmarket:
+    what: 공간데이터마켓 CCTV 설치정보
+    at: 2026-08-16
+    reason: |
+      "전남"이 전라남도였다. 18,685건 중 광주 1건 · 동명동 0건.
+      좌표계 명시·설치목적 속성이 매력적이나 스코프 불일치.
+      광주 판이 올라오면 재검토.
+
+  precise_road_map:
+    what: 정밀도로지도 (국토정보플랫폼)
+    at: 2026-08-14
+    reason: 광주는 광산구·북구 시범운행지구만이고 동구는 0km.
+
+  dem_25cm_expectation:
+    what: '"공개DEM 25cm" 라는 기대'
+    at: 2026-08-17
+    reason: |
+      실제 격자는 90m (261×316, EPSG:5179). 25cm 는 정사영상 해상도다.
+      구간 경사 산출 불가. 경사 배제 결론(MASTER §13) 유효.
+
 # ===== AUTO: inventory — inventory.py 가 쓴다. 손으로 고치지 말 것 =====
 inventory:
-  at: '2026-08-14T11:07:43+09:00'
-  raw: /home/fox/fire-lane-raw
+  at: '2026-08-17T11:22:08+09:00'
+  raw: /mnt/ssd/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data/raw
   datasets:
     road_link:
       archives:
@@ -606,455 +668,40 @@ inventory:
       - RW_SN
       - SIG_CD
     spotaddr_geom:
-      status: 원본 없음
-      pattern: juso/juso_spotaddr_geom_jngj_20260801.zip
+      files:
+      - file: juso_spotaddr_geom_jngj_20260801.zip
+        bytes: 107135
+        entries: 186
+        sample:
+        - Total.JUSUAI.20260801.TI_SPOT_CHPARK_POINT.12210.shp
+        - Total.JUSUAI.20260801.TI_SPOT_CHPARK_POINT.12210.dbf
+        - Total.JUSUAI.20260801.TI_SPOT_CHPARK_POINT.12210.shx
+        - Total.JUSUAI.20260801.TI_SPOT_CHPARK_AREA.12210.shp
+        - Total.JUSUAI.20260801.TI_SPOT_CHPARK_AREA.12210.dbf
+        - Total.JUSUAI.20260801.TI_SPOT_CHPARK_AREA.12210.shx
+        - Total.JUSUAI.20260801.TI_SPOT_DRONEDP_POINT.12210.shp
+        - Total.JUSUAI.20260801.TI_SPOT_DRONEDP_POINT.12210.dbf
+      kind: raw_only
+      unused_fields: []
     spotaddr_ref:
-      status: 원본 없음
-      pattern: juso/juso_spotaddr_ref_jngj_20260801.zip
+      files:
+      - file: juso_spotaddr_ref_jngj_20260801.zip
+        bytes: 39627
+        entries: 56
+        sample:
+        - Total.JUSUAY.20260801.TI_SPOT_EQWAV_M.12210.TXT
+        - Total.JUSUAY.20260801.TI_SPOT_LIFESAV_M.12210.TXT
+        - Total.JUSUAY.20260801.TI_SPOT_RIVERPK_M.12210.TXT
+        - Total.JUSUAY.20260801.TI_SPOT_SCPARK_M.12210.TXT
+        - Total.JUSUAY.20260801.TI_SPOT_SLEEPRA_M.12210.TXT
+        - Total.JUSUAY.20260801.TI_SPOT_BTCHRSTN_M.12210.TXT
+        - Total.JUSUAY.20260801.TI_SPOT_CURBPK_M.12210.TXT
+        - Total.JUSUAY.20260801.TI_SPOT_BUSST_M.12210.TXT
+      kind: raw_only
+      unused_fields: []
     ngii1k:
-      file_count:
-        ngi: 12
-        shp: 614
-      sampled_sheets: 3
-      layers:
-        A0010000:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - UFID
-          n_sample: 571
-          sheets: 3
-        A0020000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 도로번호
-          - 명칭
-          - 도로구분
-          - 시점
-          - 종점
-          - 포장재질
-          - 분리대유무
-          - 차로수
-          - 도로폭
-          - 일방통행
-          - 기타
-          - UFID
-          - 도로명
-          n_sample: 950
-          sheets: 3
-        A0033320:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 폭
-          - 재질
-          - 자전거도로유무
-          - 종류
-          - UFID
-          n_sample: 207
-          sheets: 3
-        A0080000:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 명칭
-          - 종류
-          - UFID
-          n_sample: 162
-          sheets: 3
-        B0010000:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 명칭
-          - 구분
-          - 종류
-          - 용도
-          - 주기
-          - 층수
-          - UFID
-          - 도로명
-          - 건물본번
-          - 건물부번
-          - 우편번호
-          n_sample: 2531
-          sheets: 3
-        B0020000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 구분
-          - 재질
-          - UFID
-          n_sample: 644
-          sheets: 3
-        C0070000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - UFID
-          n_sample: 2
-          sheets: 2
-        C0220000:
-          geom_type: POINT
-          fields:
-          - ID
-          - 구분
-          - UFID
-          n_sample: 469
-          sheets: 3
-        C0285311:
-          geom_type: POINT
-          fields:
-          - ID
-          - UFID
-          n_sample: 10
-          sheets: 1
-        C0380000:
-          geom_type: POINT
-          fields:
-          - ID
-          - 명칭
-          - 구분
-          - UFID
-          n_sample: 4
-          sheets: 2
-        C0390000:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 명칭
-          - 구조
-          - 폭
-          - UFID
-          n_sample: 3
-          sheets: 2
-        C0410000:
-          geom_type: POINT
-          fields:
-          - ID
-          - 용도
-          - UFID
-          n_sample: 117
-          sheets: 3
-        C0513369:
-          geom_type: POINT
-          fields:
-          - ID
-          - UFID
-          n_sample: 11
-          sheets: 3
-        D0010000:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 구분
-          - UFID
-          n_sample: 11
-          sheets: 3
-        D0030000:
-          geom_type: POINT
-          fields:
-          - ID
-          - 관리번호
-          - 명칭
-          - 구분
-          - 직경
-          - 높이
-          - 수령
-          - 수종
-          - 기타
-          - UFID
-          n_sample: 500
-          sheets: 3
-        E0020000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 하천번호
-          - 명칭
-          - 구분
-          - 형태
-          - 상태
-          - UFID
-          n_sample: 2
-          sheets: 2
-        F0010000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 구분
-          - 등고수치
-          - UFID
-          n_sample: 104
-          sheets: 3
-        F0020000:
-          geom_type: POINT
-          fields:
-          - ID
-          - 수치
-          - UFID
-          n_sample: 9
-          sheets: 3
-        F0030000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 구분
-          - 상하구분
-          - UFID
-          n_sample: 8
-          sheets: 1
-        F0040000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 종류
-          - 상하구분
-          - 연장
-          - 높이
-          - 재질
-          - UFID
-          n_sample: 59
-          sheets: 3
-        G0010000:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 명칭
-          - 구분
-          - UFID
-          n_sample: 35
-          sheets: 3
-        H0010000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 도엽명
-          - 도엽코드
-          - UFID
-          n_sample: 3
-          sheets: 3
-        H0037335:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - UFID
-          n_sample: 30
-          sheets: 3
-        H0040000:
-          geom_type: TEXT("북   구")
-          fields:
-          - ID
-          - 명칭
-          - 구분
-          - 형태
-          - UFID
-          n_sample: 32
-          sheets: 3
-        A0043325:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - UFID
-          n_sample: 52
-          sheets: 2
-        A0053326:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 구조
-          - 명칭
-          - UFID
-          n_sample: 10
-          sheets: 2
-        A0140000:
-          geom_type: POINT
-          fields:
-          - ID
-          - 명칭
-          - 용도
-          - UFID
-          n_sample: 39
-          sheets: 2
-        C0230000:
-          geom_type: POINT
-          fields:
-          - ID
-          - 구분
-          - 재질
-          - UFID
-          n_sample: 194
-          sheets: 2
-        C0250000:
-          geom_type: POINT
-          fields:
-          - ID
-          - 형태
-          - 관리기관
-          - UFID
-          n_sample: 70
-          sheets: 2
-        C0363361:
-          geom_type: POINT
-          fields:
-          - ID
-          - UFID
-          n_sample: 14
-          sheets: 2
-        C0430000:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 명칭
-          - 구분
-          - 수용량
-          - UFID
-          n_sample: 26
-          sheets: 2
-        C0463374:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 명칭
-          - 용도
-          - 관리기관
-          - UFID
-          n_sample: 12
-          sheets: 2
-        C0470000:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 용도
-          - 관리기관
-          - UFID
-          n_sample: 8
-          sheets: 2
-        C0493376:
-          geom_type: POINT
-          fields:
-          - ID
-          - 용도
-          - UFID
-          n_sample: 34
-          sheets: 2
-        C0503375:
-          geom_type: POINT
-          fields:
-          - ID
-          - 구분
-          - 관리기관
-          - UFID
-          n_sample: 173
-          sheets: 2
-        C0520000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 구조
-          - UFID
-          n_sample: 2
-          sheets: 2
-        E0052114:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 명칭
-          - 용도
-          - 면적
-          - 관리기관
-          - UFID
-          n_sample: 1
-          sheets: 1
-        G0030000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 용도
-          - UFID
-          n_sample: 225
-          sheets: 2
-        A0063321:
-          geom_type: POLYGON
-          fields:
-          - ID
-          - 명칭
-          - 연장
-          - 폭
-          - 높이
-          - 형태
-          - 기타
-          - UFID
-          n_sample: 1
-          sheets: 1
-        C0373362:
-          geom_type: POINT
-          fields:
-          - ID
-          - UFID
-          n_sample: 1
-          sheets: 1
-        C0400000:
-          geom_type: POINT
-          fields:
-          - ID
-          - 구분
-          - UFID
-          n_sample: 1
-          sheets: 1
-        C0530000:
-          geom_type: LINESTRING
-          fields:
-          - ID
-          - 명칭
-          - 재질
-          - UFID
-          n_sample: 1
-          sheets: 1
-      kind: ngii1k
-      unused_fields:
-      - UFID
-      - 건물본번
-      - 건물부번
-      - 관리기관
-      - 관리번호
-      - 구분
-      - 구조
-      - 높이
-      - 도로구분
-      - 도로명
-      - 도로번호
-      - 도엽명
-      - 도엽코드
-      - 등고수치
-      - 면적
-      - 명칭
-      - 분리대유무
-      - 상태
-      - 상하구분
-      - 수령
-      - 수용량
-      - 수종
-      - 수치
-      - 시점
-      - 연장
-      - 용도
-      - 우편번호
-      - 일방통행
-      - 자전거도로유무
-      - 재질
-      - 종류
-      - 종점
-      - 주기
-      - 직경
-      - 차로수
-      - 층수
-      - 포장재질
-      - 폭
-      - 하천번호
-      - 형태
+      status: 원본 없음
+      pattern: vworld/vworld_map1k_gjdonggu_20260307.zip
     streetlight:
       files:
       - file: gjcity_streetlight_dongu_20240415.csv
@@ -1070,72 +717,395 @@ inventory:
         - 데이터기준일자
       kind: csv_points
       unused_fields:
-      - 관리번호
+      - 경도
       - 데이터기준일자
-      - 소재지지번주소
+      - 위도
     ngii_road:
       archives:
-      - file: ngii_basemap_gj037_20260806.zip
-        shp: 1
-      - file: ngii_basemap_gj038_20260807.zip
-        shp: 1
-      - file: ngii_basemap_gj047_20260807.zip
-        shp: 1
-      - file: ngii_basemap_gj048_20260806.zip
-        shp: 1
+      - file: ngii_basemap_gj9708_20260812.zip
+        shp: 25
+      - file: ngii_basemap_gj9712_20260812.zip
+        shp: 19
       layers:
-        NF_A_A01000:
+        N3A_A0010000:
           geom_type: Polygon
           crs: EPSG:5179
           fields:
-          - area
+          - gid
+          - fmta
+          - scls
+          - ufid
+        N3A_A0053326:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - fmta
+          - name
+          - scls
+          - stru
+          - ufid
+        N3A_A0070000:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - eymd
+          - fmta
+          - kind
+          - leng
+          - name
+          - qual
+          - rest
+          - rvnm
+          - scls
+          - ufid
+          - widt
+        N3A_B0010000:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - anno
+          - bjcd
+          - bonu
+          - bunu
+          - divi
+          - fmta
+          - gidn
+          - kind
+          - name
+          - nmly
+          - post
+          - rdnm
+          - scls
+          - serv
+          - ufid
+        N3A_C0390000:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - fmta
+          - name
+          - scls
+          - stru
+          - ufid
+          - widt
+        N3A_C0423365:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - bjcd
+          - fmta
+          - kind
+          - name
+          - scls
+          - ufid
+        N3A_C0430000:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - divi
+          - fmta
+          - name
+          - pknu
+          - scls
+          - ufid
+        N3A_D0010000:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - divi
+          - fmta
+          - scls
+          - ufid
+        N3A_G0010000:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - ufid
+          - bjcd
+          - name
+          - divi
+          - scls
+          - fmta
+        N3A_G0100000:
+          geom_type: MultiPolygon
+          crs: EPSG:5179
+          fields:
+          - ufid
+          - bjcd
+          - name
+          - divi
+          - scls
+          - fmta
+        N3A_G0110000:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - ufid
+          - bjcd
+          - name
+          - divi
+          - scls
+          - fmta
+        N3A_H0010000:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - dycd
+          - dynm
+          - mcom
+          - mymd
+          - mzon
+          - prdt
+          - pymd
+          - scal
+          - scls
+          - ufid
+        N3L_A0010000:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
+          - fmta
+          - scls
+          - ufid
+        N3L_A0020000:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
           - dvyn
           - edpt
-          - fclt
-          - hjcd
-          - mmsl
+          - fmta
           - name
           - onsd
           - pvqt
-          - rbid
           - rddv
           - rdln
           - rdnm
           - rdnu
           - rest
           - rvwd
+          - scls
           - stpt
-          - tpsl
-          - uops
-          - objectid
-          - shape_area
-          - shape_leng
+          - ufid
+        N3L_A0033320:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
+          - byyn
+          - fmta
+          - kind
+          - qual
+          - scls
+          - ufid
+          - widt
+        N3L_B0020000:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
+          - divi
+          - fmta
+          - qual
+          - scls
+          - ufid
+        N3L_C0070000:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
+          - fmta
+          - scls
+          - ufid
+        N3L_E0020000:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
+          - divi
+          - fmta
+          - name
+          - rvnu
+          - scls
+          - stat
+          - type
+          - ufid
+        N3L_F0010000:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
+          - cont
+          - divi
+          - fmta
+          - scls
+          - ufid
+        N3L_F0040000:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
+          - fmta
+          - heig
+          - kind
+          - leng
+          - qual
+          - scls
+          - uddi
+          - ufid
+        N3L_G0030000:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
+          - fmta
+          - scls
+          - serv
+          - ufid
+        N3P_C0330000:
+          geom_type: Point
+          crs: EPSG:5179
+          fields:
+          - gid
+          - bjcd
+          - divi
+          - fmta
+          - heig
+          - name
+          - rest
+          - scls
+          - ufid
+        N3P_C0380000:
+          geom_type: Point
+          crs: EPSG:5179
+          fields:
+          - gid
+          - divi
+          - fmta
+          - name
+          - scls
+          - ufid
+        N3P_F0020000:
+          geom_type: Point
+          crs: EPSG:5179
+          fields:
+          - gid
+          - fmta
+          - nume
+          - scls
+          - ufid
+        N3P_H0040000:
+          geom_type: Point
+          crs: EPSG:5179
+          fields:
+          - gid
+          - bjcd
+          - divi
+          - fmta
+          - name
+          - scls
+          - type
+          - ufid
+        N3A_E0010001:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - fmta
+          - scls
+          - ufid
+        N3A_E0032111:
+          geom_type: Polygon
+          crs: EPSG:5179
+          fields:
+          - gid
+          - fmta
+          - scls
+          - ufid
+        N3L_C0050000:
+          geom_type: LineString
+          crs: EPSG:5179
+          fields:
+          - gid
+          - divi
+          - fmta
+          - heig
+          - leng
+          - name
+          - qual
+          - scls
+          - uddi
+          - ufid
+        N3P_C0285311:
+          geom_type: Point
+          crs: EPSG:5179
+          fields:
+          - gid
+          - bjcd
+          - fmta
+          - scls
+          - ufid
       kind: shp_zip_multi
       unused_fields:
-      - area
+      - anno
+      - bjcd
+      - bonu
+      - bunu
+      - byyn
+      - cont
+      - divi
       - dvyn
+      - dycd
+      - dynm
       - edpt
-      - fclt
-      - hjcd
-      - mmsl
-      - objectid
+      - eymd
+      - fmta
+      - gid
+      - gidn
+      - heig
+      - leng
+      - mcom
+      - mymd
+      - mzon
+      - nmly
+      - nume
       - onsd
+      - pknu
+      - post
+      - prdt
       - pvqt
-      - rbid
+      - pymd
+      - qual
       - rddv
       - rdln
       - rdnm
       - rdnu
       - rest
+      - rvnm
+      - rvnu
       - rvwd
-      - shape_area
-      - shape_leng
+      - scal
+      - scls
+      - serv
+      - stat
       - stpt
-      - tpsl
-      - uops
+      - stru
+      - type
+      - uddi
+      - ufid
+      - widt
     node_link:
       archives:
-      - file: its_nodelink_kr_20260810.zip
+      - file: its_nodelink_kr_20260812.zip
         shp: 1
       layers:
         MOCT_LINK:
@@ -1189,7 +1159,7 @@ inventory:
       - UPDATEDATE
     node_point:
       archives:
-      - file: its_nodelink_kr_20260810.zip
+      - file: its_nodelink_kr_20260812.zip
         shp: 1
       layers:
         MOCT_NODE:
@@ -1216,7 +1186,7 @@ inventory:
       - UPDATEDATE
     turn_restriction:
       archives:
-      - file: its_nodelink_kr_20260810.zip
+      - file: its_nodelink_kr_20260812.zip
         shp: 2
       layers:
         MOCT_LINK:
@@ -1304,32 +1274,28 @@ inventory:
         - 데이터기준일자
       kind: csv_points
       unused_fields:
+      - 경도
       - 데이터기준일자
       - 보관일수
-      - 소재지지번주소
+      - 위도
     fire_station:
       files:
-      - file: safety_firestation_kr_20240901.csv
-        bytes: 169090
+      - file: safety_firestation_kr_20250701.csv
+        bytes: 20749
         encoding: cp949
-        rows: 1216
+        rows: 242
         fields:
-        - 번호
-        - 소방서 및 안전센터명
+        - 순번
+        - 소방본부
+        - 소방서
         - 주소
-        - 상위 본부명
         - 전화번호
-        - X좌표
-        - Y좌표
-        - 유형
-        - 등록일
+        - 팩스번호
       kind: csv_points
       unused_fields:
-      - X좌표
-      - Y좌표
-      - 등록일
-      - 번호
-      - 상위 본부명
+      - 소방본부
+      - 순번
+      - 팩스번호
     poi_store:
       files:
       - file: sbiz_store_kr_20260630.zip![필독]파일열람방법.txt
@@ -1845,6 +1811,7 @@ inventory:
       - 건물명
       - 건물본번지
       - 건물부번지
+      - 경도
       - 구우편번호
       - 대지구분명
       - 대지구분코드
@@ -1863,6 +1830,7 @@ inventory:
       - 시도명
       - 시도코드
       - 신우편번호
+      - 위도
       - 지번본번지
       - 지번부번지
       - 지번주소
@@ -1983,43 +1951,37 @@ inventory:
       - SIG_CD
     hydrant_point:
       files:
-      - file: safety_hydrant_point_kr_20260811.csv
-        bytes: 14266460
-        encoding: utf-8-sig
-        rows: 50000
+      - file: safety_hydrant_point_jngj_20250917.csv
+        bytes: 1998014
+        encoding: cp949
+        rows: 12622
         fields:
-        - 시설번호
-        - 시설유형코드
-        - 시도명
-        - 시군구명
-        - 시군구코드
-        - 소재지도로명주소
-        - 소재지지번주소
+        - 설치연도
+        - 소방서
+        - 안전센터
+        - 수리종별
+        - 수리번호_신
+        - 시_군
+        - 지번주소
+        - 도로명주소
         - 위도
         - 경도
-        - 상세위치
-        - 안전센터명
-        - 보호틀유무
-        - 설치연도
-        - 출수압력
-        - 관할기관명
-        - 관할기관전화번호
-        - 데이터기준일자
-        - 제공기관코드
-        - 제공기관명
+        - 출수압력(킬로그램_제곱센티미터)
+        - 배관구경_밀리미터
+        - 사용 가능여부
+        - 보호틀
       kind: csv_points
       unused_fields:
-      - 관할기관전화번호
-      - 데이터기준일자
-      - 소재지지번주소
-      - 시군구명
-      - 시군구코드
-      - 시도명
-      - 시설유형코드
-      - 안전센터명
-      - 제공기관명
-      - 제공기관코드
-      - 출수압력
+      - 경도
+      - 배관구경_밀리미터
+      - 보호틀
+      - 사용 가능여부
+      - 수리번호_신
+      - 수리종별
+      - 시_군
+      - 위도
+      - 지번주소
+      - 출수압력(킬로그램_제곱센티미터)
     fire_access:
       files:
       - file: safety_fire_access_gj_dong_20250731.csv
@@ -2050,73 +2012,8 @@ inventory:
       kind: raw_only
       unused_fields: []
     parking:
-      files:
-      - file: gjcity_parking_dongu_20260811.csv
-        bytes: 84019
-        encoding: utf-8-sig
-        rows: 297
-        fields:
-        - 주차장관리번호
-        - 주차장명
-        - 주차장구분
-        - 주차장유형
-        - 소재지도로명주소
-        - 소재지지번주소
-        - 주차구획수
-        - 급지구분
-        - 부제시행구분
-        - 운영요일
-        - 평일운영시작시각
-        - 평일운영종료시각
-        - 토요일운영시작시각
-        - 토요일운영종료시각
-        - 공휴일운영시작시각
-        - 공휴일운영종료시각
-        - 요금정보
-        - 주차기본시간
-        - 주차기본요금
-        - 추가단위시간
-        - 추가단위요금
-        - 1일주차권요금적용시간
-        - 1일주차권요금
-        - 월정기권요금
-        - 결제방법
-        - 특기사항
-        - 관리기관명
-        - 전화번호
-        - 위도
-        - 경도
-        - 장애인전용주차구역보유여부
-        - 데이터기준일자
-      kind: csv_points
-      unused_fields:
-      - 1일주차권요금
-      - 1일주차권요금적용시간
-      - 결제방법
-      - 공휴일운영시작시각
-      - 공휴일운영종료시각
-      - 급지구분
-      - 데이터기준일자
-      - 부제시행구분
-      - 소재지지번주소
-      - 요금정보
-      - 운영요일
-      - 월정기권요금
-      - 장애인전용주차구역보유여부
-      - 주차구획수
-      - 주차기본시간
-      - 주차기본요금
-      - 주차장관리번호
-      - 주차장구분
-      - 주차장명
-      - 주차장유형
-      - 추가단위시간
-      - 추가단위요금
-      - 토요일운영시작시각
-      - 토요일운영종료시각
-      - 특기사항
-      - 평일운영시작시각
-      - 평일운영종료시각
+      status: 원본 없음
+      pattern: gjcity/gjcity_parking_dongu_20260811.csv
     ortho:
       files:
       - file: ngii_ortho_gj037_20251231.tif
@@ -2131,7 +2028,7 @@ inventory:
       unused_fields: []
     enforcement:
       files:
-      - file: safety_parking_enforce_dongu_20240108.csv
+      - file: gjcity_parking_enforce_dongu_20240108.csv
         bytes: 5009386
         encoding: cp949
         rows: 85380
@@ -2151,30 +2048,9 @@ inventory:
       - 위반일자
       - 위반장소명
     hydrant_summary:
-      files:
-      - file: safety_hydrant_summary_jngj_20251231.csv
-        bytes: 259
-        encoding: cp949
-        rows: 5
-        fields:
-        - 연번
-        - 구분
-        - 지상식소화전
-        - 일반지하식소화전
-        - 저수조
-        - 급수탑
-        - 데이터기준일자
-      kind: csv_table
-      unused_fields:
-      - 구분
-      - 급수탑
-      - 데이터기준일자
-      - 연번
-      - 일반지하식소화전
-      - 저수조
-      - 지상식소화전
+      status: 원본 없음
+      pattern: safety/safety_hydrant_summary_jngj_20251231.csv
 # ===== /AUTO =====
-
 # ── 산출물 ────────────────────────────────────────────────────
 # consumers 가 "이 데이터를 지금 누가 쓰고 있나"다.
 # 이게 없으면 소스 하나를 못 건드린다. datalog.py impact 가 이걸 읽는다.
