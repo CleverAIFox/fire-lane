@@ -1291,7 +1291,7 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 됨
 **2026-08-18 에 해소했습니다.** 실측 노면폭과 도로대장 명목폭이 둘 다
 TRUCK 미만인 구간을 CCTV 강등보다 먼저 `blocked` 으로 확정합니다.
 전이는 `needs_cv → blocked` 19 · `unknown → blocked` 77 이고 `clear` 는
-불변입니다(`blocked` 63 → 159). 근거는 DECISIONS 를 보세요.
+불변입니다(`blocked` 63 → 159). 근거는 DECISIONS 를 보세요. <!--stale-ok-->
 
 ★ 그래도 `blocked` 159 는 **하한입니다.** 도로대장 명목폭이 3.0m 이상이거나
 없는 결손 구간 64개가 남아 있습니다. 이쪽은 실측이나 건물 형상 보완
