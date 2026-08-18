@@ -72,8 +72,14 @@ EXPECT = {
     #   seg_uid 유지율 99.1% · 판정 변경 27구간(2.5%) · 총연장 48,580m 불변.
     #   ※ 08-17 의 1093 은 ngii1k FAIL 상태에서 구 gpkg 로 낸 잡종이었고,
     #     08-18 의 1091 은 북부 미커버 상태였다. 둘 다 무효다.
-    "verdict": {"clear": 400, "needs_cv": 209, "blocked": 63, "unknown": 429},
-    "unknown_reason": {"no_cctv": 429, "width": 0},
+    # 2026-08-18 · ROAD_BT 예외를 상한 미산출 전반으로 확대(§3-3).
+    #   verdict() 는 blocked 를 wmax 로만 낸다. wmax 결손 496건 중 도로 폭
+    #   3.0m 미만이 160건이었고 그중 blocked 는 0 이었다(대조군 24%).
+    #   실측 노면폭과 도로대장 명목폭이 둘 다 TRUCK 미만인 96구간을 blocked
+    #   으로 확정한다. 전이는 needs_cv→blocked 19 · unknown→blocked 77 뿐이고
+    #   clear 400 은 불변, width_min_m 변화 |Δ|>1m 0건이다.
+    "verdict": {"clear": 400, "needs_cv": 190, "blocked": 159, "unknown": 352},
+    "unknown_reason": {"no_cctv": 352, "width": 0},
 }
 
 

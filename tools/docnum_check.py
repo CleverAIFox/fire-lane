@@ -74,9 +74,24 @@ HIST: dict[str, list[tuple[str, str]]] = {
 RETIRED: dict[str, list[str]] = {
     "세그먼트 수": ["1087", "1,087", "1091", "1,091", "1093", "1,093",
                  "1102", "1,102"],
-    "unknown(회색)": ["396"],
+    "unknown(회색)": ["396", "429"],
     "clear": ["392", "443", "386"],
-    "needs_cv": ["191"],
+    "needs_cv": ["191", "209"],
+    "blocked": ["57", "62", "63"],
+}
+
+# 값이 작으면 다른 뜻으로도 쓰인다 — "결정 63", "조립부 429줄", "46~57m".
+# 판정 계열은 같은 줄에 판정 어휘가 있을 때만 폐기값으로 본다.
+# 세그먼트 수는 네 자리라 이 조건이 필요 없다.
+#
+# ★ 놓치는 줄이 생긴다. 문맥 어휘 없이 숫자만 있는 서술이 그렇다.
+#   오탐 10건과 미탐 2건 중 후자를 택했다 — 오탐이 쌓이면 사람이
+#   출력 전체를 안 읽게 되고, 그러면 도구가 없는 것과 같아진다.
+CONTEXT = {
+    "unknown(회색)": ("unknown", "회색", "영상판정 불가"),
+    "clear": ("clear", "통행 가능", "초록"),
+    "needs_cv": ("needs_cv", "판정 보류", "주황"),
+    "blocked": ("blocked", "통행 불가", "빨강"),
 }
 
 
@@ -172,7 +187,8 @@ def main() -> int:
 
     # ── 2. RETIRED ────────────────────────────────────────────
     cur = {"세그먼트 수": c["n"], "unknown(회색)": c["unknown"],
-           "clear": c["clear"], "needs_cv": c["needs_cv"]}
+           "clear": c["clear"], "needs_cv": c["needs_cv"],
+           "blocked": c["blocked"]}
     for label, old in RETIRED.items():
         if label in cur and str(cur[label]) in old:
             print(f"! RETIRED[{label!r}] 에 현재값 {cur[label]} 이 있다 — 목록을 고쳐라")
@@ -183,6 +199,8 @@ def main() -> int:
     for rel in ("README.md", "docs/MASTER.md", "docs/PLAN.md"):
         for no, ln in live_lines(rel, read(rel)):
             for label, pat in pats.items():
+                if label in CONTEXT and not any(w in ln for w in CONTEXT[label]):
+                    continue
                 for hit in pat.findall(ln):
                     print(f"! {rel:16s}:{no:<5d} 폐기값 {hit} ({label}) — 현재 {cur.get(label, '?')}")
                     print(f"    {ln.strip()[:88]}")

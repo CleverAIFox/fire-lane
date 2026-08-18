@@ -330,6 +330,28 @@ def main():
         if short and wmin is None:
             v = "fragment"
 
+        # ── 도로대장 명목폭에 의한 확정 (2026-08-18 적용 범위 확대) ──
+        # verdict() 는 blocked 를 wmax 로만 낸다. wmax 가 없으면 아무리 좁아도
+        # blocked 로 갈 길이 없다. 결손 496건 중 도로 폭 3.0m 미만이 160건이며
+        # 그중 blocked 는 0 이었다(대조군은 24%). 폭 0.38m 짜리가 "CCTV 가 없어
+        # 판정 보류"로 표시됐다. 결손이 관대한 쪽으로 해석되고 있었다.
+        #
+        # 종전에는 아래 `elif v == "unknown"` 가지에만 걸려 적용이 2건이었다.
+        # 그 가지는 wmin 조차 없는 구간만 오는데, 실제로 막힌 것은
+        # wmin 은 있고 wmax 가 없는 구간이다.
+        #
+        # 두 근거가 독립적으로 일치할 때만 건다.
+        #     실측 노면폭 < TRUCK   그리고   도로대장 명목폭 < TRUCK
+        # 대장폭 단독으로 실측을 뒤집지 않는다(§3-3 원칙). 실측이 3.0 이상인데
+        # 대장이 미만인 모순 6건은 이 규칙에 걸리지 않는다.
+        #
+        # CCTV 강등보다 앞에 둔다. blocked 는 도면으로 확정되므로 카메라 유무와
+        # 무관하다. 뒤에 두면 needs_cv → no_cctv 로 먼저 내려가 규칙을 비껴간다.
+        if (wmax is None
+                and (wmin is None or wmin < TRUCK)
+                and _road_bt is not None and _road_bt < TRUCK):
+            v = "blocked"
+
         # 영상판정 가능성. 구간에서 가장 가까운 CCTV 까지의 거리로 판단한다.
         d_cctv = round(g.distance(cctv_u), 1)
         cv_ok = d_cctv <= CCTV_RANGE
@@ -341,16 +363,9 @@ def main():
         if v == "needs_cv" and not cv_ok:
             v, reason = "unknown", "no_cctv"
         elif v == "unknown":
+            # ROAD_BT 에 의한 확정은 위로 올렸다. 여기 남은 unknown 은
+            # 대장폭도 없거나 3.0m 이상인 구간이다.
             reason = "width"
-            # 폭을 못 잰 것과 잴 만한 도로가 아닌 것은 다르다.
-            # 도로대장 명목폭(ROAD_BT)이 TRUCK 미만이면 소방차 진입 불가가
-            # 명백하다. 그런 구간을 "CCTV 없어 판정 보류" 회색으로 두면
-            # 영상판정으로 메울 수 있다는 뜻이 되는데, 카메라를 갖다 대도
-            # 못 들어간다. 도면으로 이미 확정된 것이다.
-            # 폭 미산출 구간에 한해서만 적용한다 — ROAD_BT 는 도로명 단위
-            # 대표값이라 실측값이 있으면 그쪽이 항상 우선한다.
-            if _road_bt is not None and _road_bt < TRUCK:
-                v, reason = "blocked", None
 
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
                         verdict=v, unknown_reason=reason,

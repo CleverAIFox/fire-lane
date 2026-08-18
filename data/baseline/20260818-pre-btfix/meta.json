@@ -1,0 +1,43 @@
+{
+  "tag": "20260818-pre-btfix",
+  "frozen_at": "2026-08-18T15:45:25+09:00",
+  "git_sha": "3fe07b344107a09154f0143f1fa9f1974d32510d",
+  "note": "ROAD_BT 예외 확장 전",
+  "tally": {
+    "n": 1101,
+    "verdict": {
+      "clear": 400,
+      "needs_cv": 209,
+      "blocked": 63,
+      "unknown": 429
+    },
+    "unknown_reason": {
+      "no_cctv": 429
+    },
+    "width_src": {
+      "ngii1k": 1014,
+      "silpok": 84,
+      "ngii": 1,
+      "null": 2
+    },
+    "length_total_m": 48580,
+    "in_emd": 416,
+    "route_usage_pos": 579,
+    "nfa_designated": 153,
+    "width_verified": 0
+  },
+  "expect_snapshot": "EXPECT = {\n    # ingest 산출 기준선. 도엽이 빠지거나 소스가 바뀌면 여기서 먼저 걸린다.\n    # ★ 2026-08-17 원본 재취득 반영.\n    #   ngii1k  3593 → 6675  수치지형도 교체. 국토정보플랫폼 NGI 20도엽\n    #                        (2020·2022) → V-WORLD SHP 74도엽 (2026-03)\n    #   ngii_road 3740 → 216 제품이 바뀌었다. B030 국가기본공간정보\n    #                        → B020 연속수치지도. 도로경계면 밀도가 줄어\n    #                        폭 채택에서 ngii 가 117 → 1 로 사실상 빠졌고\n    #                        silpok 폴백이 84 → 203 으로 늘었다. 버그가 아니다.\n    # ★ 2026-08-18. ngii1k 6675 → 14336.\n    #   V-WORLD 동구 SHP 판(74도엽)이 1:5,000 부모 3561609 대를 통째로 흘려\n    #   스코프 1,091구간 중 755개(69%)가 도로경계 폴리곤 밖이었다.\n    #   같은 상품 NGI 포맷판(143도엽)을 함께 등재해 메웠다. 미커버 755 → 47.\n    \"ingest\": {\"ngii1k\": 14336, \"ngii_road\": 216, \"road_link\": 1508,\n               \"road_rw\": 1957, \"node_link\": 1366, \"streetlight\": 1786},\n    \"segments\": 1101,\n    # 2026-08-17 갱신. 수치지형도 교체 + 평면교차점 실형상 도입.\n    #   XSEC_EXCL 5.0(근거 없는 반경)이 A0080000 평면교차점 2,025개로 대체됐다.\n    #   구 판정 1102/386/210/62/444 는 재생성 불가라\n    #   data/baseline/20260814-ngii-ngi20 에 봉인돼 있다(MASTER 18-8-1).\n    #   전이 행렬: uv run python tools/baseline.py diff 20260814-ngii-ngi20\n    # ★ unknown_reason 은 2026-08-15 까지 여기 적혀만 있고 읽히지 않았다.\n    #   그 사이 no_cctv 396 이 unknown 444 와 어긋났는데 아무도 몰랐다.\n    #   기대값을 적어두고 대조하지 않으면 기대값이 아니라 주석이다.\n    # 2026-08-18 확정. 수치지형도 전환 + 북부 12도엽 보완 + 평면교차점 실형상.\n    #   폭 소스 구성이 베이스라인과 일치한다(silpok 84 · ngii1k 1014).\n    #   구 원본이 덮던 범위를 V-WORLD 74 + NGI 143도엽이 온전히 대체했다는 뜻이다.\n    #   seg_uid 유지율 99.1% · 판정 변경 27구간(2.5%) · 총연장 48,580m 불변.\n    #   ※ 08-17 의 1093 은 ngii1k FAIL 상태에서 구 gpkg 로 낸 잡종이었고,\n    #     08-18 의 1091 은 북부 미커버 상태였다. 둘 다 무효다.\n    \"verdict\": {\"clear\": 400, \"needs_cv\": 209, \"blocked\": 63, \"unknown\": 429},\n    \"unknown_reason\": {\"no_cctv\": 429, \"width\": 0},\n}",
+  "sha256": {
+    "segments.geojson": "17a5f80d7c28627f1141ab679bfce37296cc2fa940e8d4205890095c131fe8c3",
+    "segments.schema.json": "79638543d1c586796dc4d30bf4cd6f31f9b71028537996abc29a22eea17d07c9",
+    "_manifest.json": "88bba5cd7e78c3021d1881eac0d01d1194f806b38330ff290f25173cea6e5179",
+    "seg_uid_map.csv": "d2c00da3e409f6b4ca02b868b535d337b4e92e6858b3eeed7a5ea392565e6a6c",
+    "nfa_compare.json": "40be9b12229d0769c393d25e36f3ef547fb3ba629997d3f4d473fd99a6172c35"
+  },
+  "why": "구 원본(국토정보플랫폼 NGI 20도엽 2020·2022)이 2026-08-15 전량 재취득으로 소실됐다. 이 산출물은 재생성 불가다.",
+  "known_limits": [
+    "width_verified 전건 false. 레이저 실측 전이다",
+    "nfa_compare 는 검증이 아니라 적합(fit)이다",
+    "ngii1k 는 ingest 에서 FAIL 이었고 gpkg 는 손으로 돌려 만든 것이다"
+  ]
+}
