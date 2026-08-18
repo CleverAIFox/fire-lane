@@ -54,6 +54,11 @@ NFA = ROOT / "data/processed/nfa_compare.json"
 
 ALLOW = "<!--stale-ok-->"
 
+# 선택 필드 — 상류 단계가 안 돌면 정상적으로 없다. 없다고 실패시키지 않되
+# 조용히 넘기지도 않는다. 2026-08-18 에 `--only publish` 만 돌려 terrain 이
+# 안 탔고, 직전 산출물에 있던 z 가 소리 없이 빠진 채 커밋됐다.
+OPTIONAL = {"z"}
+
 # ── 이력 절 ────────────────────────────────────────────────────
 # 이 범위의 옛 숫자는 옳다. RETIRED 검사에서 뺀다.
 # (시작 헤딩, 끝 헤딩). 끝 헤딩 줄은 포함하지 않는다.
@@ -191,6 +196,10 @@ def main() -> int:
             print("! docs/MASTER.md  §11 `### 데이터 필드` 표를 못 찾았다")
             bad += 1
         for f in sorted(doc - real):
+            if f in OPTIONAL:
+                print(f"· MASTER §11      {f} 없음 — 선택 필드다. "
+                      f"상류 단계를 건너뛰지 않았는지 확인할 것")
+                continue
             print(f"! MASTER §11      {f} 를 웹 필드로 적었으나 산출물에 없다")
             bad += 1
         for f in sorted(real - doc):
