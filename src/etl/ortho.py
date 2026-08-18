@@ -2,6 +2,12 @@
 """
 ortho.py — 항공정사영상을 지오레퍼런싱해 배경 타일로 굽는다.
 
+
+IN    $FIRE_LANE_DATA/raw/ngii/ngii_ortho_*.tif + .xml  (도엽 4장)
+OUT   web/data/ortho/**  (배경 타일) · web/data/view.json · scope.geojson
+      processed/_manifest.json 의 ortho 절
+PARAM 도엽 격자 역산 상수(EPSG:5186 TM 중부원점)
+
   ingest.py → segments.py → terrain.py → **ortho.py** → publish_web.py
 
 ★ 원본 TIF 에는 좌표 정보가 없다.

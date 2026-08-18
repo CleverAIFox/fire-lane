@@ -2,6 +2,11 @@
 """
 streetlight.py — 가로등 원본 → 지점 단위 집계
 
+
+IN    processed/streetlight_5186.gpkg     ★ RAW 를 직접 읽지 않는다
+OUT   processed/streetlight_point.geojson
+PARAM pos_accuracy_m=50 (지번 대표점 반경)
+
     uv run python src/etl/streetlight.py
 
 ★ processed 계층에서 읽는다. RAW 를 직접 읽지 않는다.

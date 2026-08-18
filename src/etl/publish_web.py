@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내보낸다.
+"""
+publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내보낸다.
+
+
+IN    processed/*.geojson · processed/segments.schema.json
+OUT   web/data/{segments,buildings,boundary,hydrants,stations,cctv,poi,
+                markers,mask,mask_soft,scope,lightpoles,streetlights}.geojson
+PARAM 좌표 정밀도(PREC) · web/data 60MB 상한(CI 가 검사)
 
 좌표를 6자리(약 11cm)로 반올림하고 표출에 안 쓰는 컬럼을 버린다.
 web/data 는 생성물이다. 직접 수정하지 말 것.

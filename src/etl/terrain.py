@@ -2,6 +2,12 @@
 """
 terrain.py — 공개DEM 을 스코프로 클립·보간해 표고를 부여한다.
 
+
+IN    $FIRE_LANE_DATA/raw/ngii/**  (DEM) · processed/segments_5186.gpkg
+OUT   processed/dem_scope.tif · web/data/terrain/**  (Terrain-RGB 타일)
+      processed/_manifest.json 의 terrain 절
+PARAM 줌 단계 · exaggeration 기본 1.0
+
   ingest.py → segments.py → **terrain.py** → publish_web.py
 
 ★ 표현용이다. 판정에는 쓰지 않는다.
