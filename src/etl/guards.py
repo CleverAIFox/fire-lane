@@ -38,6 +38,23 @@ CRITICAL = ("ngii1k", "road_link", "road_rw", "node_link", "cctv")
 # 계보상 통과로 보는 상태. SKIP 은 "이번 실행에서 건드리지 않음"이다.
 PASS_STATUS = ("OK", "SKIP")
 
+# segments 가 실제로 여는 파일. key 가 OK 여도 이 중 하나가 옛 실행 것이면
+# 판정이 갈린다. 새 입력을 읽기 시작하면 여기에 추가할 것.
+#   ★ ngii1k_xsec 는 key 'ngii1k' 의 다섯 산출물 중 하나다. key 층 검사만으로는
+#     이것이 낡아도 통과한다 — 그 구멍을 막으려고 파일 층이 있다.
+REQUIRED_FILES = (
+    "ngii1k_5186.gpkg",
+    "ngii1k_xsec_5186.gpkg",
+    "road_link_5186.gpkg",
+    "road_rw_5186.gpkg",
+    "node_link_5186.gpkg",
+    "cctv_5186.gpkg",
+    "ngii_road_5186.gpkg",
+    "building_5186.gpkg",
+    "building_entrance_5186.gpkg",
+    "boundary_emd_5186.gpkg",
+)
+
 # 스코프 구간 중 폭 소스 폴리곤 밖에 있어도 되는 상한.
 # 2026-08-18 확정 실행에서 47/1101 = 4.3%. 여유를 두어 10%.
 MAX_UNCOVERED = 0.10
@@ -48,22 +65,54 @@ class GuardFailure(RuntimeError):
 
 
 # ── 1. 계보 ────────────────────────────────────────────────────
-def manifest_status(processed: Path) -> dict[str, str]:
-    """_manifest.json 의 key → status 를 읽는다."""
+def _manifest(processed: Path) -> dict:
     mp = Path(processed) / "_manifest.json"
     if not mp.exists():
         raise GuardFailure("_manifest.json 없음 — ingest 를 먼저 돌려라")
-    m = json.loads(mp.read_text(encoding="utf-8"))
-    return {d.get("key"): d.get("status") for d in m.get("datasets", [])}
+    return json.loads(mp.read_text(encoding="utf-8"))
 
 
-def lineage_check(processed: Path, critical=CRITICAL) -> None:
+def manifest_status(processed: Path) -> dict[str, str]:
+    """_manifest.json 의 key → status 를 읽는다."""
+    return {d.get("key"): d.get("status") for d in _manifest(processed).get("datasets", [])}
+
+
+def manifest_outputs(processed: Path) -> dict[str, str]:
+    """이번 실행이 만든 파일명 → 그것을 만든 key.
+
+    ★ 한 key 가 여러 파일을 낸다. ngii1k 하나가 10개(도로경계·중심선·보도·
+      평면교차점·가로등)를 만든다. key 만 보는 검사는 그 10개 중 일부만
+      갱신된 상태를 통과시킨다.
+    """
+    out: dict[str, str] = {}
+    for d in _manifest(processed).get("datasets", []):
+        if d.get("status") not in PASS_STATUS:
+            continue
+        for f in d.get("outputs") or []:
+            out[f] = d.get("key")
+    return out
+
+
+def lineage_check(processed: Path, critical=CRITICAL, required_files=REQUIRED_FILES) -> None:
     """읽을 입력의 마지막 ingest 가 OK 인지 본다. 아니면 GuardFailure.
 
     ★ 파일이 존재하는 것과 이번 계보에 속하는 것은 다르다.
       2026-08-17/18 이틀 연속, FAIL 난 ngii1k 의 낡은 gpkg 를 segments 가
       조용히 집어 판정 숫자가 갈렸다. _manifest.json 은 FAIL 을 알고
       있었지만 아무도 읽지 않았다 — 여기서 읽는다.
+
+    검사는 두 층이다.
+
+      1. key 층    핵심 데이터셋의 ingest 가 OK 인가
+      2. 파일 층   segments 가 실제로 여는 파일이 **이번 실행의 산출물 목록에
+                   있는가**. ★ 2026-08-18 추가.
+
+    파일 층이 왜 필요한가. ngii1k 는 한 번에 10개 파일을 낸다. 그중
+    `ngii1k_xsec_5186.gpkg`(평면교차점 4,542건)가 빠져도 key 는 OK 다.
+    segments 는 그 파일이 없으면 반경 폴백을 쓴다고 시끄럽게 말하지만,
+    **낡은 파일이 남아 있으면 아무 말 없이 그것을 쓴다.** 교차부 제외 형상이
+    옛 실행 것으로 바뀌면 폭 표본이 달라지고 판정이 조용히 갈린다.
+    key 층만으로는 1093 과 같은 사고가 한 단계 아래에서 그대로 재현된다.
     """
     st = manifest_status(processed)
     bad = [k for k in critical if st.get(k) not in PASS_STATUS]
@@ -74,6 +123,17 @@ def lineage_check(processed: Path, critical=CRITICAL) -> None:
             "  마지막 ingest 가 이 입력들을 만들지 못했다. 디스크에 파일이\n"
             "  있어도 그것은 옛 실행의 잔재다. 낡은 입력으로 판정하지 않는다.\n"
             "  → uv run python src/etl/pipeline.py --only ingest 를 먼저 통과시켜라")
+
+    made = manifest_outputs(processed)
+    orphan = [f for f in required_files
+              if (Path(processed) / f).exists() and f not in made]
+    if orphan:
+        raise GuardFailure(
+            "계보 검사 실패: 이번 실행이 만들지 않은 파일이 남아 있다\n"
+            + "".join(f"    {f}\n" for f in orphan)
+            + "  디스크에 있지만 마지막 ingest 의 산출물 목록에 없다.\n"
+              "  옛 실행의 잔재이며, 읽으면 판정이 조용히 갈린다.\n"
+              "  → 지우거나 .stale_ 로 개명한 뒤 ingest 를 다시 통과시켜라")
 
 
 # ── 2. 낡은 산출물 격리 ────────────────────────────────────────

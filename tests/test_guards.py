@@ -38,11 +38,13 @@ from guards import (  # noqa: E402
 
 
 # ── 1. 계보 검사 ────────────────────────────────────────────────
-def _manifest(tmp_path: Path, **status) -> Path:
+def _manifest(tmp_path: Path, outputs=None, **status) -> Path:
     d = tmp_path / "processed"
     d.mkdir(exist_ok=True)
+    outputs = outputs or {}
     (d / "_manifest.json").write_text(json.dumps(
-        {"datasets": [{"key": k, "status": v} for k, v in status.items()]}),
+        {"datasets": [{"key": k, "status": v, "outputs": outputs.get(k, [])}
+                      for k, v in status.items()]}),
         encoding="utf-8")
     return d
 
@@ -76,6 +78,52 @@ def test_lineage_blocks_on_missing_key(tmp_path):
 def test_lineage_blocks_without_manifest(tmp_path):
     with pytest.raises(GuardFailure, match="_manifest"):
         lineage_check(tmp_path / "없는곳")
+
+
+# ── 1b. 계보 — 파일 층 ─────────────────────────────────────────
+def test_lineage_blocks_orphan_derived_output(tmp_path):
+    """
+    ★ key 가 OK 여도 파생 산출물이 낡았을 수 있다.
+
+    ngii1k 는 한 번에 10개 파일을 낸다. 그중 평면교차점(xsec)만 옛 실행 것이
+    남아 있으면 key 층 검사는 통과한다. 그러면 교차부 제외 형상이 옛것이 되어
+    폭 표본이 달라지고 판정이 조용히 갈린다 — 1093 사고가 한 단계 아래에서
+    그대로 재현되는 경로다.
+    """
+    st = {k: "OK" for k in CRITICAL}
+    d = _manifest(tmp_path, outputs={"ngii1k": ["ngii1k_5186.gpkg"]}, **st)
+    (d / "ngii1k_5186.gpkg").write_text("new")
+    (d / "ngii1k_xsec_5186.gpkg").write_text("낡음")     # 대장에 없다
+    with pytest.raises(GuardFailure, match="xsec"):
+        lineage_check(d)
+
+
+def test_lineage_ok_when_all_outputs_declared(tmp_path):
+    st = {k: "OK" for k in CRITICAL}
+    d = _manifest(tmp_path,
+                  outputs={"ngii1k": ["ngii1k_5186.gpkg", "ngii1k_xsec_5186.gpkg"]},
+                  **st)
+    (d / "ngii1k_5186.gpkg").write_text("new")
+    (d / "ngii1k_xsec_5186.gpkg").write_text("new")
+    lineage_check(d)
+
+
+def test_lineage_ignores_absent_files(tmp_path):
+    """없는 파일은 이 검사 대상이 아니다. 하류가 FileNotFoundError 로 시끄럽게 죽는다.
+
+    조용한 오답과 시끄러운 죽음 중에서는 후자가 낫다.
+    """
+    st = {k: "OK" for k in CRITICAL}
+    lineage_check(_manifest(tmp_path, **st))
+
+
+def test_lineage_ignores_outputs_of_failed_key(tmp_path):
+    """FAIL 한 key 의 outputs 는 이번 계보로 치지 않는다."""
+    st = {k: "OK" for k in CRITICAL}
+    d = _manifest(tmp_path, outputs={"cctv": ["cctv_5186.gpkg"]}, **{**st, "cctv": "FAIL"})
+    (d / "cctv_5186.gpkg").write_text("x")
+    with pytest.raises(GuardFailure):
+        lineage_check(d)
 
 
 # ── 2. 낡은 산출물 격리 ─────────────────────────────────────────

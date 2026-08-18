@@ -2,6 +2,12 @@
 """
 ingest.py — data/raw 원본을 동명동 범위 표준 산출물로 변환한다.
 
+
+IN    sources.yaml (대장) · $FIRE_LANE_DATA/raw/**  (불변)
+OUT   data/processed/<key>_5186.gpkg + <key>.geojson  (19종)
+      data/processed/_manifest.json                    실행 기록 · 계보 정본
+PARAM sources.yaml 의 datasets.<key>.contract 블록
+
 원칙
   1. data/raw 는 불변. 어떤 코드도 여기에 쓰지 않는다.
   2. 모든 입력에 SHA-256을 찍는다. 원본이 바뀌면 즉시 드러난다.

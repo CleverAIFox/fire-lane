@@ -609,14 +609,20 @@ CCTV 가 없어 영상판정이 불가능한 223구간의 주차 압력을
 4. D-25 레이저 실측                       width_verified: false → true
 5. D-30 인터뷰                            소화전 좌표 + 소방통로 구간 좌표
 6. 5m DEM 신청
-7. ngii1k 를 pipeline STEPS 에 편입        재현성 구멍
-8. streetlight ingest kind 처리            csv_point 핸들러 없음
+7. 정보공개청구 도로대장 17337943         8/25경 회신 예정
+8. 건물 형상 고도화                        수치지형도 1:1,000 건물 레이어 검토
 ```
 
-**7·8 번은 2026-08-13 에 실제로 발목을 잡았다.** 기기를 옮겼더니
-`ngii1k_5186.gpkg` 가 없는 채로 파이프라인이 돌아 폭 주 소스가 실폭도로로
-떨어졌고(`clear` 392 → 346), 원인을 찾는 데 시간을 썼다. 두 단계가
-파이프라인 밖에 있어 `pipeline.py` 한 명령으로 재현되지 않는다.
+> ### 해소됨 — 구 7·8번 (2026-08-18)
+>
+> `ngii1k 를 pipeline STEPS 에 편입` · `streetlight ingest kind 처리` 는
+> 08-17~18 에 끝났다. `ingest.py` 가 `shp_dir` 와 `csv_points` 를 모두 분기하고
+> ngii1k 5개 레이어를 직접 만든다. 폭 주 소스가 파이프라인 밖에서 만들어지던
+> 문제(2026-08-13, `clear` 392 → 346)는 이것으로 닫혔다.
+>
+> 끝난 일이 목록에 남아 있으면 다음 사람이 이미 있는 것을 또 만든다.
+> `test_reproducibility.py::test_master_open_items_are_not_already_done` 이
+> 코드와 이 목록의 어긋남을 잡는다.
 
 **1번이 먼저다.** 새 데이터 없이 되고, 이것 없이 A*를 만들면 역주행 경로가 나온다.
 
@@ -2810,11 +2816,11 @@ retired:
 
 | 규칙 | 강제자 |
 |---|---|
-| R1 IN/OUT 선언 | — |
-| R2 파라미터 상수화 | — |
-| R3 상수 정본 하나 | — |
-| R4 시드 고정 | — |
-| R5 캐시 키에 입력 sha | — |
+| R1 IN/OUT 선언 | `test_reproducibility.py::test_r1_declares_in_and_out` |
+| R2 파라미터 상수화 | **권고** (매직넘버 탐지는 거짓 경보가 많다) |
+| R3 상수 정본 하나 | `test_seg_geom.py::test_params_are_not_redefined_in_segments` |
+| R4 시드 고정 | `test_reproducibility.py::test_r4_random_has_seed` |
+| R5 캐시 키에 입력 sha | `test_reproducibility.py::test_r5_no_bare_existence_cache` |
 | R6 조용한 실패 금지 | `guards.lineage_check` · `contract.py` |
 | R7 스키마 동시 갱신 | `test_contract.py::test_schema_matches_data` |
 | R8 일회성은 돌리고 지운다 | `test_guards.py::test_no_dated_scripts_in_tools` |
@@ -2822,6 +2828,21 @@ retired:
 | R10 공간 커버리지 | `guards.coverage_check` (segments 에 배선됨) |
 | R11 리팩은 산출물 불변을 증명한다 | `tools/golden.py` |
 | R12 방어의 실패 경로도 실행 가능해야 한다 | `test_static.py` |
+| R13 계보는 key 가 아니라 파일 단위로 본다 | `guards.lineage_check` |
+| R14 끝난 일은 §7 에서 지운다 | `test_reproducibility.py::test_master_open_items_are_not_already_done` |
+
+**R13. 계보 검사는 key 가 아니라 파일 단위로 한다**
+한 key 가 여러 파일을 낸다. `ngii1k` 하나가 도로경계·중심선·보도·평면교차점·
+가로등 10개를 만든다. key 만 보면 그중 `ngii1k_xsec_5186.gpkg` 가 옛 실행
+것으로 남아도 통과한다. 교차부 제외 형상이 바뀌면 폭 표본이 달라지고 판정이
+조용히 갈린다 — 1093 사고가 한 단계 아래에서 그대로 재현되는 경로다.
+`_manifest.json` 의 `outputs` 목록과 디스크를 대조한다.
+
+**R14. 끝난 일은 §7 에서 지운다**
+끝난 일이 '남은 일'에 남아 있으면 다음 사람이 이미 있는 것을 또 만든다.
+구 7·8번(ngii1k pipeline 편입 · streetlight ingest kind)이 08-17~18 에
+해소됐는데 08-18 오후까지 목록에 남아 있었다. `docnum_check` 는 판정 숫자만
+보므로 이런 어긋남을 못 잡는다.
 
 **R12. 방어를 넣을 때는 그 방어가 실패하는 경로도 한 번 태워본다**
 2026-08-18, `segments.py` 의 계보 검사와 공간 커버리지 검사가 `sys.exit` 을

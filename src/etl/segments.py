@@ -2,6 +2,16 @@
 """
 segments.py — 도로구간을 노딩해 통과판정 세그먼트 그래프를 만든다.
 
+
+IN    processed/{boundary_emd,road_link,road_rw,ngii_road,ngii1k,
+              ngii1k_xsec,building,building_entrance,cctv,streetlight}_5186.gpkg
+      processed/_manifest.json          ★ 계보 검사. 없으면 시작하지 않는다
+      processed/seg_uid_map.csv         직전 실행 키. 유지율 산출용
+      $FIRE_LANE_DATA/raw/safety/safety_fire_access_*.csv   외부 대조(선택)
+OUT   processed/segments_5186.gpkg · segments.geojson · segments.schema.json
+      processed/seg_uid_map.csv · nfa_compare.json · corridor_5186.gpkg
+PARAM seg/params.py 가 정본. TRUCK=3.0 PARK=2.0 CCTV_RANGE=25.0 등
+
 전제
   ingest.py 가 먼저 돌아야 한다. data/processed 의 road_link / road_rw /
   building / building_entrance / boundary_emd 를 입력으로 쓴다.
