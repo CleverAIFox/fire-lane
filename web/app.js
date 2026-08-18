@@ -180,6 +180,8 @@ map.on("load", async () => {
   const seg=D.segments, bld=D.buildings, bnd=D.boundary, poi=D.poi;
   SEG = seg;
   Object.assign(DATA, Object.fromEntries(MKF.map(n=>[n, D[n]])));
+  /* 검색 색인용 원본. 새 파일을 받지 않고 이미 읽은 것을 그대로 쓴다. */
+  DATA.poiRaw = poi.features; DATA.bldRaw = bld.features; DATA.segRaw = seg.features;
   /* 기존 코드가 지역변수로 참조한다. DATA 가 정본이고 이건 별칭이다. */
   const cctv=D.cctv, hyd=D.hyd, sta=D.sta, light=D.streetlights;
 
@@ -298,14 +300,19 @@ map.on("load", async () => {
        마커가 늘 때마다 if 가 늘어난다. */
     const th = cv.themed ? CONFIG[cv.themed] : null;
     const col = th ? th.colorDark : cv.color;
-    const op  = th ? th.opacityDark : 0.10;
+    /* ★ themed 가 없을 때의 기본 농도가 0.10 이었다. 테두리는 그 70% 인 0.07 이라
+       사실상 안 보였다. cover.opacity / cover.lineWidth 로 선언에서 올릴 수 있게 했다.
+       면은 옅게, 테두리는 진하게 — 검은 배경에서는 면적보다 윤곽이 먼저 읽힌다. */
+    const op   = th ? th.opacityDark : (cv.opacity ?? 0.10);
+    const lop  = th ? Math.min(1, op*1.6) : (cv.lineOpacity ?? Math.min(1, op*2.4));
+    const lw   = cv.lineWidth ?? 1;
     map.addSource(id, {type:"geojson", data:fc});
     map.addLayer({id:id+"-f", type:"fill", source:id,
       layout:{visibility:"none"},
       paint:{"fill-color":col, "fill-opacity":op}}, "seg-l");
     map.addLayer({id:id+"-l", type:"line", source:id,
       layout:{visibility:"none"},
-      paint:{"line-color":col, "line-opacity":op*0.7, "line-width":1,
+      paint:{"line-color":col, "line-opacity":lop, "line-width":lw,
              ...(cv.style==="dashed" ? {"line-dasharray":[2,2]} : {})}}, "seg-l");
   }
 
@@ -414,10 +421,8 @@ map.on("load", async () => {
        그래서 캔버스로 만든 표지판 이미지를 symbol 로 띄워 기둥 위에 세운다.
        화면상 결과는 "빨간 기둥 + 119 표지판"이고, 항상 카메라를 향해
        어느 각도에서 봐도 119 가 읽힌다는 장점이 있다. */
-  /* 간판을 올릴 높이. config.js 의 각 마커 총높이와 같게 유지할 것.
-     소방서(15m)와 안전센터(42m)는 높이가 달라서 값을 따로 둔다. */
-  const STA_TOP_M  = 42;          // m-sta  119안전센터 기둥
-  const FS_TOP_M   = 15;          // m-fs   소방서 박스
+  /* 간판 높이는 config.js 의 sign.top 이 정본이다. 여기 상수로 두지 말 것 —
+     마커가 늘 때마다 두 파일을 같이 고쳐야 하고 실제로 어긋난 적이 있다. */
   /* 간판을 꼭대기보다 더/덜 올리고 싶을 때 쓰는 배수. 1.0 = 정확히 꼭대기.
      화면에서 간판이 낮아 보이면 1.1~1.2 로, 떠 보이면 0.9 로 조정한다. */
   const SIGN_LIFT  = 1.0;
@@ -530,16 +535,11 @@ map.on("load", async () => {
     return c;
   }
 
-  const truckCanvas = makeTruckImage();
-  const s119Canvas  = make119Image();
   const bake = cv => cv.getContext("2d").getImageData(0,0,SIGN_PX,SIGN_PX);
-  if (!map.hasImage("sign-truck")) map.addImage("sign-truck", bake(truckCanvas), {pixelRatio:2});
-  if (!map.hasImage("sign-119"))   map.addImage("sign-119",   bake(s119Canvas),  {pixelRatio:2});
 
   /* 소화전 표지판. 119 와 같은 방식이지만 훨씬 작게 단다.
      소화전은 '어디에 있는지'가 정보의 전부라, 간판이 크면 그 위치를 가린다.
      흰 원판 + 하늘색 테두리(물결과 같은 계열) + 빨간 소화전 픽토그램. */
-  const HYD_TOP_M = 10.9;         // config.js m-hyd 총높이와 같게 유지할 것
 
   function makeHydrantImage(){
     const W = 192, c = document.createElement("canvas");
@@ -578,41 +578,79 @@ map.on("load", async () => {
 
     return c;
   }
-  const hydCanvas = makeHydrantImage();
-  if (!map.hasImage("sign-hyd"))
-    map.addImage("sign-hyd",
-      hydCanvas.getContext("2d").getImageData(0,0,192,192), {pixelRatio:2});
+  /* CCTV 표지판. 노란 원판 + 검은 테 + 검은 감시카메라 실루엣.
+     ★ 감시카메라 표지판의 관습색이다. 마커·커버리지 원도 같은 노랑이라
+       셋이 한 시설로 읽힌다. 색은 CONFIG.cctvCov 에서 가져온다 —
+       세 군데에 같은 값을 적어두면 반드시 한 곳만 고치고 잊는다.
+     ★ 가로등이 쓰던 노랑이라, 가로등은 파랑으로 비켰다(config.js m-light). */
+  function makeCctvImage(){
+    const W = SIGN_PX, c = document.createElement("canvas");
+    c.width = c.height = W;
+    const g = c.getContext("2d");
+    const DISC = CONFIG.cctvCov.colorDark, BLK = "#111111";
 
+    g.beginPath(); g.arc(W/2, W/2, 82, 0, Math.PI*2);
+    g.fillStyle = DISC; g.fill();
+    g.lineWidth = 12; g.strokeStyle = BLK; g.stroke();
 
-  map.addLayer({id:"hyd-sign",type:"symbol",source:"hyd",
-    layout:{
-      "icon-image":"sign-hyd", "icon-anchor":"bottom",
-      "icon-allow-overlap":true, "icon-ignore-placement":true,
-      /* 119(0.30~1.70)의 약 60%. 위치를 가리지 않을 만큼만 키운다. */
-      "icon-size":["interpolate",["linear"],["zoom"],
-        14,0.18, 16,0.30, 18,0.55, 20,0.90, 22,0.90]},
-    paint:{"icon-translate":[0,0], "icon-translate-anchor":"viewport"}});
+    g.fillStyle = BLK; g.strokeStyle = BLK;
+    g.lineJoin = "round"; g.lineCap = "round";
 
-  map.addSource("sta-pt",{type:"geojson",data:sta});
-  /* 안전센터 = 소방차 간판, 소방서 = 119 간판. 같은 sta 소스를 kind 로 가른다. */
-  const staSign = (id, img, kind, dx) => map.addLayer({
-    id, type:"symbol", source:"sta-pt",
-    filter:["==",["get","kind"],kind],
-    layout:{
-      "icon-image":img, "icon-anchor":"bottom",
-      "icon-allow-overlap":true, "icon-ignore-placement":true,
-      /* ★ 좌우로 벌린다. 소방서 본서 부지 안에 안전센터가 함께 있는 경우가 많아
-         두 간판이 같은 자리에 겹쳐 뒤엣것이 안 보였다.
-         icon-offset 단위는 icon-size 가 곱해지므로 확대·축소해도 간격이 유지된다.
-         아이콘 폭이 96 단위라 ±52(=104 간격)면 서로 안 닿는다. */
-      "icon-offset":[dx, 0],
-      /* 기존 값의 약 2/3. 지도를 덮지 않는 선까지 줄였다. */
-      "icon-size":["interpolate",["linear"],["zoom"],
-        14,0.20, 16,0.36, 18,0.68, 20,1.10, 22,1.10]},
-    paint:{"icon-translate":[0,0], "icon-translate-anchor":"viewport"}});
+    /* 벽 브래킷 — 몸통보다 먼저 깔아 뒤로 보낸다 */
+    g.lineWidth = 9;
+    g.beginPath(); g.moveTo(118, 96); g.lineTo(140, 112); g.stroke();
+    g.fillRect(138, 88, 13, 48);
 
-  staSign("sta-truck", "sign-truck", "center",  -52);   // 119안전센터 — 왼쪽
-  staSign("sta-119",   "sign-119",   "station",  52);   // 소방서 — 오른쪽
+    /* 카메라 몸통 — 왼쪽 위로 기울인 원통 */
+    g.save();
+    g.translate(88, 84); g.rotate(-0.30);
+    const bx=-44, by=-20, bw=80, bh=40, br=19;
+    g.beginPath();
+    g.moveTo(bx+br,by); g.arcTo(bx+bw,by,bx+bw,by+bh,br);
+    g.arcTo(bx+bw,by+bh,bx,by+bh,br); g.arcTo(bx,by+bh,bx,by,br);
+    g.arcTo(bx,by,bx+bw,by,br); g.closePath(); g.fill();
+    g.beginPath(); g.arc(bx+2, 0, 21, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(bx+2, 0, 11, 0, Math.PI*2);
+    g.fillStyle = DISC; g.fill();                      // 렌즈를 원판색으로 뚫는다
+    g.beginPath(); g.arc(bx+2, 0,  5, 0, Math.PI*2);
+    g.fillStyle = BLK; g.fill();
+    g.restore();
+
+    return c;
+  }
+
+  /* ── 간판 구동부 ──────────────────────────────────────────────
+     ★ 마커별로 addLayer 를 손으로 쓰던 것을 선언 구동으로 바꿨다.
+       결정 83(마커 스펙이 자기 것을 전부 든다)과 같은 취지다. 간판을 하나 더
+       달 때 app.js 에 분기를 추가하지 않는다 — config.js 에 sign 을 적으면 된다.
+
+     스펙:  sign:{ draw:"cctv", top:13.0, dx:0, size:[[14,0.2],[20,1.1]] }
+       draw  아래 SIGN_DRAW 에 등록된 그림 이름
+       top   기둥 총높이(m). parts 합계와 같게 유지할 것
+       dx    좌우 밀기(아이콘 단위, icon-size 가 곱해진다). 겹칠 때만 쓴다
+       size  줌별 크기. 없으면 기본 램프 */
+  const SIGN_DRAW = { truck:makeTruckImage, "119":make119Image,
+                      hydrant:makeHydrantImage, cctv:makeCctvImage };
+  const SIGN_SIZE_DEFAULT = [[14,0.18],[16,0.30],[18,0.55],[20,0.90],[22,0.90]];
+
+  for (const spec of CONFIG.markers){
+    const sg = spec.sign, painter = sg && SIGN_DRAW[sg.draw], src = DATA[spec.data];
+    if (!sg || !painter || !src) continue;
+    const img = "sign-" + sg.draw;
+    if (!map.hasImage(img)) map.addImage(img, bake(painter()), {pixelRatio:2});
+    const ptId = "pt-" + spec.data;
+    if (!map.getSource(ptId)) map.addSource(ptId, {type:"geojson", data:src});
+    map.addLayer({
+      id: spec.id + "-sign", type:"symbol", source: ptId,
+      ...(spec.kind ? {filter:["==",["get","kind"],spec.kind]} : {}),
+      layout:{
+        "icon-image":img, "icon-anchor":"bottom",
+        "icon-allow-overlap":true, "icon-ignore-placement":true,
+        "icon-offset":[sg.dx || 0, 0],
+        "icon-size":["interpolate",["linear"],["zoom"],
+          ...(sg.size || SIGN_SIZE_DEFAULT).flat()]},
+      paint:{"icon-translate":[0,0], "icon-translate-anchor":"viewport"}});
+  }
 
   /* 표지판을 기둥 꼭대기에 붙이기.
      ─────────────────────────────────────────────────────────────
@@ -647,8 +685,8 @@ map.on("load", async () => {
     const camD = (map.transform && map.transform.cameraToCenterDistance)
                || map.getCanvas().clientHeight * 1.5;
 
-    [["sta-truck", STA_TOP_M], ["sta-119", FS_TOP_M],
-     ["hyd-sign",  HYD_TOP_M]].forEach(([id, topM]) => {
+    CONFIG.markers.filter(m=>m.sign).forEach(spec => {
+      const id = spec.id + "-sign", topM = spec.sign.top;
       if(!map.getLayer(id)) return;
       const hPx = topM / mPerPx;                 // 기울이지 않았을 때의 높이(px)
       /* 원근 보정. 기둥 꼭대기는 지면보다 카메라에 가까워서 실제로는 더 크게
@@ -664,7 +702,8 @@ map.on("load", async () => {
   /* ★ 표지판을 맨 위로. 물결만 건물 위로 올리고 표지판을 안 올리면
      '링은 있는데 소화전이 없는' 칸이 생긴다 — 3D 마커(mk-3d)는 건물에 가려지는데
      물결은 건물 위에 강제로 그려지기 때문이다. 표지판은 그 어긋남을 메운다. */
-  ["hyd-sign","sta-119","sta-truck"].forEach(l=>{ if(map.getLayer(l)) map.moveLayer(l); });
+  CONFIG.markers.filter(m=>m.sign).forEach(m=>{
+    if(map.getLayer(m.id+"-sign")) map.moveLayer(m.id+"-sign"); });
 
   map.on("click","mk-3d", e => {
     const p=e.features[0].properties;
@@ -680,17 +719,28 @@ map.on("load", async () => {
      지상 1층만 남겨서(간판이 골목에서 보이는 것) 2,077개.
      줌 17 이상에서만 라벨을 그린다. 그 아래는 점만. */
   map.addSource("poi",{type:"geojson",data:poi});
+  /* 업종 색 — 점과 상호 글자가 같은 표를 쓴다. 정본은 CONFIG.poi.color 다.
+     ★ 한 곳에서 만들어 두 레이어에 같이 물린다. 예전처럼 점만 칠하고 글자는
+       흰색으로 두면 "이 라벨이 어느 점의 것인가"가 안 읽힌다.
+     ★ 검은 테두리가 두 테마 모두를 감당한다. 밝은 지면에서도 글자가 배경에서
+       떨어지므로 색을 테마별로 나눌 필요가 없다. */
+  const poiColorExpr = () => {
+    const t = CONFIG.poi.color;
+    return ["match",["get","cat"],
+      ...Object.entries(t).filter(([k])=>k!=="other").flat(), t.other];
+  };
   map.addLayer({id:"poi-dot",type:"circle",source:"poi",minzoom:16,
     paint:{"circle-radius":["interpolate",["linear"],["zoom"],16,1.6,20,3.4],
-      "circle-color":["match",["get","cat"],
-        "음식","#ff9f6b", "소매","#7fd4ff", "생활서비스","#c9a0ff",
-        "숙박","#ffd166", "교육","#8ee6a8", "#8b94a3"],
-      "circle-opacity":.85}});
+      "circle-color":poiColorExpr(),
+      "circle-stroke-color":CONFIG.poi.haloColor,"circle-stroke-width":.6,
+      "circle-opacity":.95}});
   map.addLayer({id:"poi-label",type:"symbol",source:"poi",minzoom:CONFIG.poi.labelFromZoom,
     layout:{"text-field":["get","name"],"text-size":11,
       "text-offset":[0,.9],"text-anchor":"top","text-allow-overlap":false,
       "text-padding":3,"symbol-sort-key":["get","name"]},
-    paint:{"text-color":"#e6ebf2","text-halo-color":"#0a0d13","text-halo-width":1.4}});
+    paint:{"text-color":poiColorExpr(),
+      "text-halo-color":CONFIG.poi.haloColor,
+      "text-halo-width":CONFIG.poi.haloWidth}});
 
   map.on("click","poi-dot", e => {
     const p=e.features[0].properties;
@@ -703,6 +753,151 @@ map.on("load", async () => {
   map.on("mouseleave","poi-dot",()=>map.getCanvas().style.cursor="");
 
 
+  /* ── 검색 ────────────────────────────────────────────────────
+     관제사는 "동명로 25번길 화재" 같은 말을 듣고 시작한다. 지도를 눈으로
+     뒤지게 두면 관제 화면이 아니다.
+
+     색인은 이미 있는 데이터로만 만든다. 새 파일을 받지 않는다.
+       상호 2,077 · 주소 1,260 · 건물명 189 · 도로명 94
+     ★ 건물은 3%만 이름이 있다. 나머지는 검색으로 못 찾는다 —
+       그래서 상호와 도로명이 실질적인 진입로다.
+     ★ 도로명은 세그먼트가 여러 개라 대표점 하나로 접는다. 신고는 보통
+       "○○로 몇번길"로 오므로 도로 전체로 날아가면 충분하다. */
+  const SEARCH = (() => {
+    const idx = [], seen = new Set();
+    const push = (kind, name, addr, lnglat) => {
+      if(!name) return;
+      const k = kind + "|" + name + "|" + addr;
+      if(seen.has(k)) return;
+      seen.add(k);
+      idx.push({kind, name, addr: addr || "", c: lnglat,
+                key: (name + " " + (addr||"")).toLowerCase().replace(/\s+/g,"")});
+    };
+    /* 상가 — 상호와 주소 둘 다 검색어에 들어간다 */
+    (DATA.poiRaw||[]).forEach(f =>
+      push("상가", f.properties.name, f.properties.addr, f.geometry.coordinates));
+    /* 건물 — 이름 있는 것만. 폴리곤이라 첫 좌표를 대표점으로 쓴다 */
+    (DATA.bldRaw||[]).forEach(f => {
+      const nm = f.properties.BULD_NM; if(!nm) return;
+      let c = f.geometry.coordinates;
+      while(Array.isArray(c[0])) c = c[0];
+      push("건물", nm, "", c);
+    });
+    /* 도로명 — 같은 이름의 세그먼트를 모아 길이 가중 중심점을 잡는다.
+       단순 평균을 쓰면 짧은 파편이 많은 쪽으로 중심이 끌려간다. */
+    const roads = {};
+    (DATA.segRaw||[]).forEach(f => {
+      const rn = f.properties.road_name; if(!rn) return;
+      const w = f.properties.length_m || 1;
+      let c = f.geometry.coordinates;
+      if(Array.isArray(c[0][0])) c = c[0];
+      const mid = c[Math.floor(c.length/2)];
+      const r = roads[rn] || (roads[rn] = {x:0, y:0, w:0, n:0});
+      r.x += mid[0]*w; r.y += mid[1]*w; r.w += w; r.n++;
+    });
+    Object.entries(roads).forEach(([rn, r]) =>
+      push("도로", rn, `${r.n}구간`, [r.x/r.w, r.y/r.w]));
+    return idx;
+  })();
+
+  /* 검색 실행. 공백을 지운 부분일치이고, 앞에서 일치할수록 위로 올린다. */
+  function runSearch(raw){
+    const q = (raw||"").trim().toLowerCase().replace(/\s+/g,"");
+    if(q.length < 1) return [];
+    const hit = [];
+    for(const it of SEARCH){
+      const at = it.key.indexOf(q);
+      if(at < 0) continue;
+      /* 정렬 점수 — 앞에서 걸릴수록, 이름이 짧을수록(=정확할수록) 위로.
+         도로명은 신고 접수 어휘라 살짝 가산한다. */
+      hit.push([at * 4 + it.name.length - (it.kind === "도로" ? 12 : 0), it]);
+      if(hit.length > 400) break;
+    }
+    hit.sort((a,b) => a[0] - b[0]);
+    return hit.slice(0, 12).map(h => h[1]);
+  }
+
+  /* 고른 지점 표시. 붉은 링을 지면에 찍고 지도를 옮긴다. */
+  map.addSource("q-pin", {type:"geojson", data:{type:"FeatureCollection", features:[]}});
+  map.addLayer({id:"q-pin-l", type:"circle", source:"q-pin",
+    paint:{"circle-radius":["interpolate",["linear"],["zoom"],14,7,20,26],
+      "circle-color":"#ff4d3d", "circle-opacity":.18,
+      "circle-stroke-color":"#ff4d3d", "circle-stroke-width":2.4,
+      "circle-pitch-alignment":"map"}});
+
+  function gotoHit(it){
+    map.getSource("q-pin").setData({type:"Feature",
+      geometry:{type:"Point", coordinates:it.c}, properties:{}});
+    /* 도로는 전체를 봐야 하므로 덜 당긴다. 지점은 골목이 보이게 바짝 당긴다. */
+    map.flyTo({center:it.c, zoom: it.kind === "도로" ? 16.6 : 18.2, duration:900});
+    $("#q-list").classList.remove("show");
+  }
+
+  /* ── 검색 UI 배선 ── */
+  {
+    const inp = $("#q"), list = $("#q-list"), clr = $("#q-clear"), box = $("#search");
+    let cur = [], sel = -1;
+    const render = () => {
+      /* 입력이 있으면 돋보기를 지우기 버튼으로 바꾼다. 같은 자리를 나눠 쓴다. */
+      box.classList.toggle("filled", !!inp.value);
+      if(!cur.length){
+        list.innerHTML = inp.value.trim()
+          ? '<div class="none">일치하는 곳이 없습니다</div>' : "";
+        list.classList.toggle("show", !!inp.value.trim());
+        return;
+      }
+      list.innerHTML = cur.map((it,i) =>
+        `<div class="qi${i===sel?" sel":""}" data-i="${i}">
+           <span class="k">${it.kind}</span>
+           <span class="nm">${it.name}</span>
+           <span class="ad">${it.addr}</span>
+         </div>`).join("");
+      list.classList.add("show");
+    };
+    inp.addEventListener("input", () => { cur = runSearch(inp.value); sel = -1; render(); });
+    inp.addEventListener("keydown", e => {
+      if(e.key === "ArrowDown" || e.key === "ArrowUp"){
+        e.preventDefault();
+        if(!cur.length) return;
+        sel = (sel + (e.key === "ArrowDown" ? 1 : cur.length-1)) % cur.length;
+        render();
+      } else if(e.key === "Enter"){
+        if(cur.length) gotoHit(cur[sel < 0 ? 0 : sel]);
+      } else if(e.key === "Escape"){
+        inp.value = ""; cur = []; sel = -1; render(); inp.blur();
+      }
+    });
+    list.addEventListener("click", e => {
+      const row = e.target.closest(".qi");
+      if(row) gotoHit(cur[+row.dataset.i]);
+    });
+    clr.addEventListener("click", () => {
+      inp.value = ""; cur = []; sel = -1; render();
+      map.getSource("q-pin").setData({type:"FeatureCollection", features:[]});
+      inp.focus();
+    });
+    /* 지도를 누르면 목록을 접는다. 입력값은 남긴다 — 다시 고를 수 있게. */
+    map.on("click", () => list.classList.remove("show"));
+  }
+
+  /* 상가 업종 범례. 색표와 건수를 데이터에서 직접 센다 —
+     패널에 손으로 적어두면 데이터가 바뀔 때 조용히 어긋난다. */
+  {
+    const host = $("#poi-legend");
+    if(host){
+      const n = {};
+      poi.features.forEach(f=>{ const c=f.properties.cat; n[c]=(n[c]||0)+1; });
+      const named = Object.keys(CONFIG.poi.color).filter(k=>k!=="other");
+      const rest  = Object.entries(n).filter(([k])=>!named.includes(k))
+                          .reduce((a,[,v])=>a+v, 0);
+      host.innerHTML =
+        named.map(k=>`<div class="mk"><i style="background:${CONFIG.poi.color[k]}"></i>${k}
+                      <span>${n[k]||0}</span></div>`).join("") +
+        `<div class="mk"><i style="background:${CONFIG.poi.color.other}"></i>${CONFIG.poi.otherLabel}
+         <span>${rest}</span></div>`;
+    }
+  }
+
   /* 범례 */
   const cnt = {};
   seg.features.forEach(f=>{ const v=f.properties.verdict; cnt[v]=(cnt[v]||0)+1; });
@@ -710,27 +905,10 @@ map.on("load", async () => {
     `<div class="lg" data-v="${k}" title="${v.d}">
        <i class="sw" style="background:rgb(${vColor(k)})"></i>
        <span class="nm">${v.nm}</span><span class="ct">${cnt[k]||0}</span></div>`).join("");
-  /* 숫자는 전부 데이터에서 계산한다. 본문에 박아두면 재산출할 때마다 썩는다. */
-  const nNoCctv = seg.features.filter(f=>f.properties.unknown_reason==="no_cctv").length;
-  const nCv     = cnt.needs_cv || 0;
-  /* 'CCTV 없어 보류' 범례 줄은 내렸다. unknown 의 하위 구분이라 4색 체계가
-     5색으로 보이고 합계도 안 맞아 보인다는 지적. 사유는 구간 툴팁(.rsn)과
-     아래 #warn 문장에 남는다. nNoCctv 는 그 문장에서 계속 쓴다. */
-  $("#warn").innerHTML =
-    `현재 색상은 <b>도면 기반 1차 분류</b>입니다. 최종 판정이 아닙니다.<br>
-     주황 <b>${nCv}개</b>만 영상판정으로 갈립니다.
-     <b>${nNoCctv}개는 CCTV 유효범위 25m 밖이라 영상판정 자체가 불가능</b>합니다.<br>
-     폭 값은 미검증(<span style="font-family:var(--mono)">width_verified: false</span>)입니다.`;
-  {
-    const q = seg.features.map(f=>f.properties)
-      .filter(p=>p.verdict==="needs_cv" && p.width_min_m && p.width_max_m);
-    const md = a => a.sort((x,y)=>x-y)[a.length>>1] || 0;
-    const lo2 = md(q.map(p=>p.width_min_m)), hi2 = md(q.map(p=>p.width_max_m));
-    $("#crit-msg").innerHTML =
-      `<b>판정 보류</b> 구간은 벽 사이로는 넓어 보이지만(중앙 ${hi2.toFixed(2)}m)
-       실제 도로는 좁습니다(중앙 ${lo2.toFixed(2)}m).
-       그 <b>${(hi2-lo2).toFixed(2)}m</b> 차이를 메우는 것이 영상판정의 역할입니다.`;
-  }
+  /* #warn(도면 기반 1차 분류 단서)과 #crit-msg(판정 보류 폭 차이 문구)는
+     패널에서 내렸다(2026-08-18). 채울 자리가 없어 계산도 함께 걷어냈다.
+     ★ 되살리려면 index.html 에 자리를 만들고 이 블록을 복구할 것. git 이력에 있다. */
+
   document.querySelectorAll(".lg").forEach(el=>el.onclick=()=>{
     const k=el.dataset.v;
     off.has(k) ? off.delete(k) : off.add(k);
@@ -758,17 +936,7 @@ map.on("load", async () => {
   $("#s-cv").textContent = `${feas} / ${seg.features.length} (${(feas/seg.features.length*100).toFixed(0)}%)`;
 
 
-  /* 폭 밴드 */
-  const w = seg.features.map(f=>f.properties).filter(p=>p.width_min_m&&p.width_max_m);
-  const med = a => a.sort((x,y)=>x-y)[a.length>>1];
-  const lo = med(w.map(p=>p.width_min_m)), hi = med(w.map(p=>p.width_max_m));
-  $("#b-lo").textContent = lo.toFixed(2)+" m";
-  $("#b-hi").textContent = hi.toFixed(2)+" m";
-  $("#bar-fill").style.cssText = `left:${lo/12*100}%;right:${100-hi/12*100}%`;
-  const amb = w.filter(p=>p.width_min_m<3 && p.width_max_m>=3).length;
-  $("#b-msg").innerHTML =
-    `중앙값 기준 밴드 폭 <b>${(hi-lo).toFixed(2)}m</b>. 이 폭 안에서 판정이 갈리는 구간이
-     <b>${amb}개</b>이고, 그만큼이 영상판정과 현장 실측의 몫입니다.`;
+  /* 폭 밴드(#band)는 화면에서 내렸다(2026-08-18). 갱신 코드도 함께 제거했다. */
 
   /* ── 미니맵: 확대(줌 16 이상)하면 우측에 현재 보는 영역을 표시 ──
      기여: @marscoolcat (faf9774). 원본을 그대로 쓴다. */
@@ -890,22 +1058,40 @@ function styleMiniRoute(){
    ★ 시작 시점에도 호출한다. setTheme() 안에만 두면 테마를 한 번이라도
      토글하기 전까지 범례 점이 index.html 에 박힌 옛 색으로 남는다. */
 function syncCctv(light){
-  const cc = CONFIG.cctvCov;
-  const color = light ? cc.colorLight : cc.colorDark;
-  const op    = light ? cc.opacityLight : cc.opacityDark;
+  /* 3D 마커 — 파트의 c(다크) / cl(라이트) 를 갈아끼운다. */
   if(map.getLayer("mk-3d"))
     map.setPaintProperty("mk-3d","fill-extrusion-color",["get", light ? "mcolorL" : "mcolor"]);
-  if(map.getLayer("cctv-cov-f")){
-    map.setPaintProperty("cctv-cov-f","fill-color", color);
-    map.setPaintProperty("cctv-cov-f","fill-opacity", op);
-  }
-  if(map.getLayer("cctv-cov-l")){
-    map.setPaintProperty("cctv-cov-l","line-color", color);
-    map.setPaintProperty("cctv-cov-l","line-opacity", Math.min(1, op*1.6));
-    map.setPaintProperty("cctv-cov-l","line-width", light ? 1.6 : 1);
-  }
+
+  /* 반경 원 — cover 선언이 있는 모든 마커를 돈다.
+     ★ 예전에는 "cctv-cov-f" 를 찾았는데 실제 레이어 id 는 spec.id + "-cov-f",
+       즉 "m-cctv-cov-f" 다. 이름이 안 맞아 라이트 모드에서 CCTV 원이 다크 색
+       그대로 남아 있었다(2026-08-17 수정). 가로등 원은 아예 전환 대상도 아니었다.
+     ★ themed 선언이 있으면 CONFIG 의 테마 색표를, 없으면 cover 자신의
+       colorLight / opacityLight 를 쓴다. 둘 다 없으면 다크 값을 그대로 쓴다. */
+  CONFIG.markers.filter(m=>m.cover).forEach(m=>{
+    const cv = m.cover, th = cv.themed ? CONFIG[cv.themed] : null;
+    const color = light ? (th ? th.colorLight   : (cv.colorLight   ?? cv.color))
+                        : (th ? th.colorDark    : cv.color);
+    const op    = light ? (th ? th.opacityLight : (cv.opacityLight ?? cv.opacity ?? 0.10))
+                        : (th ? th.opacityDark  : (cv.opacity ?? 0.10));
+    const lop   = light ? (cv.lineOpacityLight ?? Math.min(1, op*2.4))
+                        : (th ? Math.min(1, op*1.6) : (cv.lineOpacity ?? Math.min(1, op*2.4)));
+    const lw    = (light ? (cv.lineWidthLight ?? cv.lineWidth) : cv.lineWidth) ?? 1;
+    const f = m.id+"-cov-f", l = m.id+"-cov-l";
+    if(map.getLayer(f)){
+      map.setPaintProperty(f,"fill-color", color);
+      map.setPaintProperty(f,"fill-opacity", op);
+    }
+    if(map.getLayer(l)){
+      map.setPaintProperty(l,"line-color", color);
+      map.setPaintProperty(l,"line-opacity", lop);
+      map.setPaintProperty(l,"line-width", lw);
+    }
+  });
+
+  const cc = CONFIG.cctvCov;
   const lgc = document.getElementById("lgi-cctv");
-  if(lgc) lgc.style.background = color;
+  if(lgc) lgc.style.background = light ? cc.colorLight : cc.colorDark;
 }
 
 function setTheme(mode){
@@ -966,6 +1152,16 @@ function setTheme(mode){
     d.className = "row"; d.dataset.t = m.id;
     d.innerHTML = `<span>${m.label}</span><i class="tg on"></i>`;
     host.appendChild(d);
+    /* cover 선언이 있으면 반경 원 하위 토글을 같이 만든다.
+       ★ 원의 뜻이 마커마다 달라서(CCTV "이 범위를 본다" / 가로등 "이 안에 있다")
+         마커와 따로 켜고 끌 수 있어야 한다. */
+    if (m.cover){
+      const c = document.createElement("div");
+      c.className = "row sub"; c.dataset.t = m.id + "-cov";
+      const what = m.cover.radius ? `유효범위 ${m.cover.radius}m` : "위치 오차";
+      c.innerHTML = `<span>└ ${what} 원</span><i class="tg"></i>`;
+      host.appendChild(c);
+    }
   });
 })();
 
@@ -983,10 +1179,19 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
     on ? markerOff.delete(t) : markerOff.add(t);
     map.setFilter("mk-3d", markerOff.size
       ? ["!",["in",["get","kind"],["literal",[...markerOff]]]] : null);
-    /* 마커를 끄면 그 간판도 같이 숨긴다. 안 그러면 간판만 공중에 남는다. */
-    const signOf = {"m-hyd":["hyd-pulse","hyd-pulse2","hyd-sign"],
-                    "m-sta":["sta-truck"], "m-fs":["sta-119"]}[t];
-    if(signOf) signOf.forEach(l=>{
+    /* 마커를 끄면 딸린 것들도 같이 숨긴다. 안 그러면 간판만 공중에 남는다.
+       ★ 손딕셔너리를 두지 않는다. 무엇이 딸려 있는지는 선언에서 읽는다. */
+    const spec = CONFIG.markers.find(m => m.id === t) || {};
+    [ ...(spec.sign  ? [t + "-sign"] : []),
+      ...(spec.pulse ? ["hyd-pulse","hyd-pulse2"] : []),
+      ...(spec.cover ? [t + "-cov-f", t + "-cov-l"] : []) ]
+      .forEach(l=>{ if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
+    if(spec.cover && !on)
+      document.querySelector(`.row[data-t="${t}-cov"] .tg`)?.classList.remove("on");
+  }
+  /* 반경 원 하위 토글. m-cctv-cov / m-light-cov 처럼 마커 id + "-cov" 다. */
+  if(t.endsWith("-cov")){
+    [t+"-f", t+"-l"].forEach(l=>{
       if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
   }
   if(t==="ortho"){
@@ -1010,7 +1215,12 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   if(t==="dispatch"){
     dispatchMode = on;
     document.getElementById("dispatch-fab")?.classList.toggle("on", on);
-    CONFIG.markers.filter(m=>m.cover).flatMap(m=>[m.id+"-cov-f",m.id+"-cov-l"]).forEach(l=>{ if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
+    CONFIG.markers.filter(m=>m.cover).forEach(m=>{
+      [m.id+"-cov-f", m.id+"-cov-l"].forEach(l=>{
+        if(map.getLayer(l)) map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
+      /* 패널의 하위 토글 표시도 같이 맞춘다. 화면과 스위치가 어긋나면 안 된다. */
+      document.querySelector(`.row[data-t="${m.id}-cov"] .tg`)?.classList.toggle("on", on);
+    });
     restyleSegments();
     styleMiniRoute();
   }
