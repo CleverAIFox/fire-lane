@@ -198,3 +198,9 @@ kbd{font-family:var(--mono);font-size:10px;background:#202834;border:1px solid v
   #dispatch-fab{top:auto;bottom:120px;right:16px;width:66px;height:66px}
   #minimap{display:none}
 }
+
+/* 팝업 — seg_uid 는 지우지 않고 내린다. 현장 대조·버그 리포트에 필요하다. */
+#tip .uid{margin-top:6px;font-size:9px;letter-spacing:.02em;opacity:.38;
+          user-select:all;cursor:text;word-break:break-all}
+#tip .na{font-size:11px;opacity:.6}
+#tip .na.warn{opacity:.85;color:#d98324}
