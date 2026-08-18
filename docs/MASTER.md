@@ -629,31 +629,17 @@ CCTV 가 없어 영상판정이 불가능한 223구간의 주차 압력을
 **출동 시점의 상태가 아니라 사전 위험도다.** 그 구분을 흐리면 안 된다.
 시점 정보는 CCTV 유효범위 안에서만 얻을 수 있고, 그 밖은 확률로 대비하는 수밖에 없다.
 
-## 7. 남은 일
+## 7. 현재 산출물의 한계
 
-```
-1. node_link + turn_restriction 투입     A* 필수. 이미 보유
-2. A* 비용함수 설계                      거리 + 폭 + 통행제한 ∞ + 경사
-3. 영상판정(호모그래피) 모듈 연결         needs_cv 191구간
-4. D-25 레이저 실측                       width_verified: false → true
-5. D-30 인터뷰                            소화전 좌표 + 소방통로 구간 좌표
-6. 5m DEM 신청
-7. 정보공개청구 도로대장 17337943         8/25경 회신 예정
-8. 건물 형상 고도화                        수치지형도 1:1,000 건물 레이어 검토
-```
-
-> ### 해소됨 — 구 7·8번 (2026-08-18)
+> **남은 일은 여기 없다. `PLAN.md` §1 이 정본이다.**
 >
-> `ngii1k 를 pipeline STEPS 에 편입` · `streetlight ingest kind 처리` 는
-> 08-17~18 에 끝났다. `ingest.py` 가 `shp_dir` 와 `csv_points` 를 모두 분기하고
-> ngii1k 5개 레이어를 직접 만든다. 폭 주 소스가 파이프라인 밖에서 만들어지던
-> 문제(2026-08-13, `clear` 392 → 346)는 이것으로 닫혔다.
+> 한 항목은 한 문서에만 산다. 미래(PLAN) → 도래 → 현재(MASTER) → 회고
+> → 과거(DECISIONS). 같은 항목이 두 문서에 있으면 생애주기 단계가 둘인
+> 셈이고, 한쪽만 고치는 날이 온다. 2026-08-18 에 실제로 그랬다 — 08-17~18
+> 에 끝난 두 항목이 이 절에 남은 일로 남아 있었다.
 >
-> 끝난 일이 목록에 남아 있으면 다음 사람이 이미 있는 것을 또 만든다.
-> `test_reproducibility.py::test_master_open_items_are_not_already_done` 이
-> 코드와 이 목록의 어긋남을 잡는다.
-
-**1번이 먼저다.** 새 데이터 없이 되고, 이것 없이 A*를 만들면 역주행 경로가 나온다.
+> 이 절은 **지금 산출물이 무엇을 근사했고 무엇이 검증 안 됐는가**만 적는다.
+> 그것은 남은 일이 아니라 현재 상태다.
 
 ### 알려진 근사
 
@@ -2858,7 +2844,7 @@ retired:
 | R11 리팩은 산출물 불변을 증명한다 | `tools/golden.py` |
 | R12 방어의 실패 경로도 실행 가능해야 한다 | `test_static.py` |
 | R13 계보는 key 가 아니라 파일 단위로 본다 | `guards.lineage_check` |
-| R14 끝난 일은 §7 에서 지운다 | `test_reproducibility.py::test_master_open_items_are_not_already_done` |
+| R14 한 항목은 한 문서에만 산다 | `test_reproducibility.py::test_open_work_lives_only_in_plan` |
 | R15 문서는 넷. 시제가 다르면 문서가 다르다 | `test_reproducibility.py::test_no_fifth_doc` |
 | R16 README 구조는 실재 파일을 가리킨다 | `test_reproducibility.py::test_readme_structure_lists_real_files` |
 | R17 미결정 정본은 PLAN 하나 | `test_reproducibility.py::test_open_questions_live_in_plan_not_master` |
@@ -2877,11 +2863,16 @@ retired:
 조용히 갈린다 — 1093 사고가 한 단계 아래에서 그대로 재현되는 경로다.
 `_manifest.json` 의 `outputs` 목록과 디스크를 대조한다.
 
-**R14. 끝난 일은 §7 에서 지운다**
-끝난 일이 '남은 일'에 남아 있으면 다음 사람이 이미 있는 것을 또 만든다.
+**R14. 한 항목은 한 문서에만 산다**
+문서 셋은 병렬 축이 아니라 한 항목의 **생애주기**다.
+
+    PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과거)
+
+두 곳에 있으면 생애주기 단계가 둘인 셈이고, 한쪽만 고치는 날이 온다.
 구 7·8번(ngii1k pipeline 편입 · streetlight ingest kind)이 08-17~18 에
-해소됐는데 08-18 오후까지 목록에 남아 있었다. `docnum_check` 는 판정 숫자만
-보므로 이런 어긋남을 못 잡는다.
+해소됐는데 08-18 오후까지 MASTER §7 에 남은 일로 남아 있었다.
+그래서 남은 일 목록은 `PLAN §1` 하나뿐이고, MASTER §7 은 "현재 산출물의
+한계"만 적는다 — 근사와 미검증은 남은 일이 아니라 현재 상태다.
 
 **R12. 방어를 넣을 때는 그 방어가 실패하는 경로도 한 번 태워본다**
 2026-08-18, `segments.py` 의 계보 검사와 공간 커버리지 검사가 `sys.exit` 을
