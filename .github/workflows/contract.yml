@@ -49,8 +49,8 @@ jobs:
         #   산출을 만든 원인에 대한 방어다. 8/18 까지 테스트가 없어서 누가
         #   지워도 초록불이었다. 여기서 회귀를 막는다.
         run: |
-          pip install pytest shapely
-          pytest tests/test_guards.py -v
+          pip install pytest shapely numpy
+          pytest tests/test_guards.py tests/test_seg_*.py tests/test_static.py -v
 
       - name: 문서 숫자 대조
         # ★ 도구를 만들어놓고 수동 실행으로 두면 안 돌린다. 8/17 의 1093 은

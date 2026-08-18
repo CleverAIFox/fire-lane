@@ -199,6 +199,9 @@ def test_guard_calls_are_wired():
     assert "_lineage_check()" in seg, "segments 가 계보 검사를 부르지 않는다"
     assert "lineage_check" in seg, "segments 가 guards 를 쓰지 않는다"
     assert "quarantine_stale" in ing, "ingest 가 FAIL 산출물을 격리하지 않는다"
+    assert "coverage_check" in seg, (
+        "segments 가 공간 커버리지를 검사하지 않는다 — "
+        "함수만 있고 배선이 없으면 손으로 세는 것과 같다")
 
 
 def test_docnum_check_is_in_ci():

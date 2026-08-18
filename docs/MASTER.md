@@ -2819,7 +2819,25 @@ retired:
 | R7 스키마 동시 갱신 | `test_contract.py::test_schema_matches_data` |
 | R8 일회성은 돌리고 지운다 | `test_guards.py::test_no_dated_scripts_in_tools` |
 | R9 소스는 직접 고쳐 커밋 | `test_guards.py::test_no_source_patching_scripts` |
-| R10 공간 커버리지 | `guards.coverage_check` |
+| R10 공간 커버리지 | `guards.coverage_check` (segments 에 배선됨) |
+| R11 리팩은 산출물 불변을 증명한다 | `tools/golden.py` |
+| R12 방어의 실패 경로도 실행 가능해야 한다 | `test_static.py` |
+
+**R12. 방어를 넣을 때는 그 방어가 실패하는 경로도 한 번 태워본다**
+2026-08-18, `segments.py` 의 계보 검사와 공간 커버리지 검사가 `sys.exit` 을
+쓰면서 `import sys` 가 없었다(`import sys as _sys` 는 경로 삽입용이다).
+두 방어 다 실패하면 안내 메시지 대신 `NameError` 로 죽는 상태였고, 한 번도
+실패한 적이 없어서 80초짜리 실행이 내내 멀쩡히 돌았다. 계약 테스트도 golden 도
+**성공 경로의 산출물**만 보므로 이런 것을 못 잡는다.
+출처는 `tools/stale_guard_20260818.py` 다 — 붙이기만 하고 붙인 결과를 아무도
+실행하지 않았다. R9 가 금지하는 방식의 전형적인 결과다.
+
+**R11. 코드를 옮길 때는 산출물이 같다는 것을 증명하고 옮긴다**
+`baseline.py` 는 *소스가 바뀌었을 때* 판정이 어떻게 달라졌나를 본다.
+`golden.py` 는 반대로 *아무것도 달라지면 안 되는 상황*에서 쓴다.
+리팩 시작 전에 `golden.py lock`, 한 덩어리 옮길 때마다 `golden.py check`.
+다르면 그 자리에서 되돌린다. 쌓아두고 나중에 찾는 것이 08-17/18 에
+반나절씩 태운 방식이다.
 
 **R1. 스크립트는 입력과 출력을 상단에 선언한다**
 
@@ -2837,7 +2855,9 @@ PARAM TRUCK=3.0 PARK=2.0 CCTV_RANGE=25.0
 `if w < 3.0` 이 함수 중간에 박히면 임계 변경이 누락된다.
 
 **R3. 상수를 옮길 때는 정본을 하나만 둔다**
-`config.js` 의 3.0/7.0/25.0 은 **표시용 사본**이고 정본은 `segments.py` 다.
+`config.js` 의 3.0/7.0/25.0 은 **표시용 사본**이고 정본은 `src/etl/seg/params.py` 다.
+(2026-08-18 Stage 1 에서 `segments.py` 에서 꺼냈다. 값은 불변, 위치만 이동.
+`test_seg_geom.py::test_params_are_not_redefined_in_segments` 가 재정의를 막는다.)
 이건 이미 주석에 적혀 있다. 유지한다.
 
 **R4. 랜덤이 들어가면 시드를 파일 상단에 고정하고 매니페스트에 기록한다**
