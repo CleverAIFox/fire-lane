@@ -418,16 +418,45 @@ raw 는 `$FIRE_LANE_RAW` 다. `if fa.exists()` 가 항상 거짓이라 코드는
 data/raw/          2.5GB · git 제외 · sources.yaml 의 url 로 재취득
   ↓ src/etl/ingest.py            선언형. sources.yaml 만 고치면 된다
 data/processed/    19종 · EPSG:5186(계산) / 4326(표출)
-  ↓ src/etl/segments.py          노딩 → 폭 → 판정 → 경로
+  ↓ src/etl/segments.py          조립부 429줄. 계산은 seg/ 가 한다
+      seg/params.py                임계값 정본 (web/config.js 는 표시용 사본)
+      seg/graph.py                 노딩 · 최대성분 · 접근 회랑
+      seg/width.py                 폭 산출 — ngii1k 1014 · silpok 84 를 만든다
+      seg/geom.py                  verdict · _seal · _join · _dirv (순수 함수)
+      seg/roadname.py              노딩으로 끊긴 도로명 되붙이기
+      seg/report.py                소방서 대조 · 진단 · 산출물 기록
   ↓ src/etl/publish_web.py       표출용 경량 사본
 web/data/          12MB · UI 입력 · git 포함 (지형·정사영상 타일 포함)
   ↓ web/index.html               MapLibre 5 + deck.gl 9 (interleaved) + V-World
 GitHub Pages       gis 브랜치 푸시 시 자동 배포
 ```
 
+### 왜 나눴나 (2026-08-18)
+
+`segments.py` 는 1,168줄이었고 `main()` 하나가 1,041줄이었다. 중첩 함수 8개가
+바깥 로컬을 폐포로 잡고 있어 **단위 테스트가 물리적으로 불가능**했다.
+`verdict`(이 프로젝트의 결론), `widths`(폭 소스 우선순위), `road_name`
+(도로명 되붙이기) 셋 다 테스트가 0개였다.
+
+나눈 기준은 취향이 아니라 **폐포 의존성 실측**이다. AST 로 각 중첩 함수가
+잡는 바깥 이름을 세어, 항상 같이 움직이는 것끼리 묶었다.
+
+    폐포 0    _seal · verdict · _dirv · _join      → seg/geom
+    폐포 5    _rn_geo/_rn_nm/_rn_dpn/_rn_bt/_rn_tree → seg/roadname (RoadNameIndex)
+    폐포 6    ngii1k_u · ngii_u · rw_u · bld_u · xn · xsec_poly → seg/width (WidthEngine)
+
+산출물이 바뀌지 않았다는 것은 `tools/golden.py` 가 단계마다 증명했다.
+지문 `846422a86f541bf1` · 1101구간 · 판정 분포 전부 동일.
+
 ### 계약
 
-`tests/test_contract.py` 14종이 CI에서 검증한다.
+`tests/test_contract.py` 19종 + 방어·위생 130종이 CI에서 검증한다.
+
+    test_contract.py         GIS ↔ UI 경계 (좌표계 · 필드 · verdict 어휘)
+    test_guards.py           계보 2층 · 낡은 산출물 격리 · 공간 커버리지
+    test_seg_*.py            verdict · RoadNameIndex · WidthEngine 단위
+    test_static.py           정의되지 않은 이름 (실패 경로의 NameError)
+    test_reproducibility.py  §18-5 규약 R1 · R4 · R5 · R14 강제
 
 ```
 얼린다:  좌표계 EPSG:4326 · 필드명/타입 · verdict 어휘 4종
@@ -2830,6 +2859,16 @@ retired:
 | R12 방어의 실패 경로도 실행 가능해야 한다 | `test_static.py` |
 | R13 계보는 key 가 아니라 파일 단위로 본다 | `guards.lineage_check` |
 | R14 끝난 일은 §7 에서 지운다 | `test_reproducibility.py::test_master_open_items_are_not_already_done` |
+| R15 문서는 넷. 시제가 다르면 문서가 다르다 | `test_reproducibility.py::test_no_fifth_doc` |
+| R16 README 구조는 실재 파일을 가리킨다 | `test_reproducibility.py::test_readme_structure_lists_real_files` |
+| R17 미결정 정본은 PLAN 하나 | `test_reproducibility.py::test_open_questions_live_in_plan_not_master` |
+
+**R15~R17. 문서도 코드처럼 어긋남을 검사한다**
+2026-08-18 리팩으로 `seg/` 6모듈이 생기고 `tools/` 8개가 사라졌는데 README 는
+옛 구조를 적고 있었다. §7 은 이미 끝난 일을 남은 일로 적고 있었다. 문서가
+낡는 것을 사람의 성실성에 맡기면 반드시 낡는다.
+미결정은 `PLAN §5-7` 이 정본이고 MASTER 는 **가리키기만** 한다 — 선택지를
+두 곳에 적으면 한쪽만 고치는 날이 온다.
 
 **R13. 계보 검사는 key 가 아니라 파일 단위로 한다**
 한 key 가 여러 파일을 낸다. `ngii1k` 하나가 도로경계·중심선·보도·평면교차점·

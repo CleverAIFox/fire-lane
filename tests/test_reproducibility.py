@@ -137,3 +137,78 @@ def test_master_open_items_are_not_already_done():
     if 'kind in ("csv_points", "csv_point")' in ing:
         assert "streetlight ingest kind 처리" not in sec, (
             "ingest 가 이미 csv_points 를 분기하는데 §7 에 남은 일로 적혀 있다")
+
+
+# ── 문서 ↔ 저장소 동기화 ───────────────────────────────────────
+def test_no_fifth_doc():
+    """
+    ★ 문서는 넷이다. 다섯 번째는 만들지 않는다.
+
+    과거(DECISIONS) · 현재(MASTER) · 미래(PLAN) 세 시제가 다 찼다. 새 문서를
+    만들고 싶으면 그것은 셋 중 하나의 절이다.
+
+    이 규칙은 원래 "셋뿐이다" 였고 DECISIONS 가 그것을 어기고 생겼다.
+    규칙을 고쳤으니 이제는 지킨다.
+    """
+    allowed = {"MASTER.md", "PLAN.md", "DECISIONS.md"}
+    found = {p.name for p in (ROOT / "docs").glob("*.md")}
+    extra = sorted(found - allowed)
+    assert not extra, (
+        f"다섯 번째 문서: {extra}\n"
+        "  MASTER(현재) · PLAN(남은 일) · DECISIONS(왜 그렇게 됐나) 중\n"
+        "  어디의 절인지 정해서 옮겨라.")
+
+
+def test_readme_structure_lists_real_files():
+    """
+    ★ README 의 구조 목록이 실재하는 파일을 가리켜야 한다.
+
+    2026-08-18 리팩으로 `seg/` 6모듈이 생기고 `tools/*_2026*.py` 8개가
+    사라졌는데 README 는 옛 구조를 그대로 적고 있었다. 다음 사람이
+    1,168줄짜리 `segments.py` 를 찾다가 429줄을 보고 "뭐가 사라졌지" 한다.
+    """
+    rd = (ROOT / "README.md").read_text(encoding="utf-8")
+    block = re.search(r"## 구조\s*\n+```(.*?)```", rd, re.S)
+    assert block, "README 구조 블록을 찾을 수 없다"
+
+    missing = []
+    for line in block.group(1).splitlines():
+        name = line.strip().split()[0] if line.strip() else ""
+        if not name.endswith(".py"):
+            continue
+        if "*" in name:                      # 글롭 표기는 건너뛴다
+            continue
+        hits = list(ROOT.rglob(name.split("/")[-1]))
+        if not any("__pycache__" not in str(h) for h in hits):
+            missing.append(name)
+    assert not missing, f"README 에 적혔는데 없는 파일: {missing}"
+
+
+def test_readme_lists_the_seg_modules():
+    """`seg/` 는 이제 계산의 본체다. README 구조에서 빠지면 안 된다."""
+    rd = (ROOT / "README.md").read_text(encoding="utf-8")
+    for mod in ("params.py", "graph.py", "width.py", "geom.py",
+                "roadname.py", "report.py"):
+        assert mod in rd, f"README 구조에 seg/{mod} 가 없다"
+
+
+def test_open_questions_live_in_plan_not_master():
+    """
+    ★ 같은 미결정이 두 문서에 있으면 한쪽만 고치게 된다.
+
+    그래프 방향성과 회전 반경(내륜차)은 `PLAN §5-7` 이 정본이다.
+    MASTER 는 현재 상태를 적는 문서이므로 미결정 선택지를 나열하지 않는다.
+    """
+    m = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    plan = (ROOT / "docs/PLAN.md").read_text(encoding="utf-8")
+    assert "그래프 방향성" in plan, "PLAN 에서 그래프 방향성 미결정이 사라졌다"
+
+    # MASTER 가 언급하는 것 자체는 옳다 — D-XX 대장은 MASTER 에 있다.
+    # 다만 **선택지를 나열하지 말고 PLAN 을 가리켜야** 한다. 나열하면
+    # 두 문서에 같은 내용이 살고, 한쪽만 고치는 날이 온다.
+    for line in m.splitlines():
+        if "그래프 방향성" not in line:
+            continue
+        assert "PLAN" in line, (
+            f"MASTER 가 미결정을 정본 참조 없이 적었다:\n    {line.strip()}\n"
+            "  선택지는 PLAN §5-7 에만 둔다. MASTER 는 가리키기만 한다.")

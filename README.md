@@ -17,11 +17,25 @@
 
 ## 문서는 셋뿐이다
 
-| 문서 | 성격 |
-|---|---|
-| [`docs/MASTER.md`](docs/MASTER.md) | **현재 상태.** 판정 결과 · 데이터 · 용어 · UI 인수인계 · 협업 · 패치 적용 |
-| [`docs/PLAN.md`](docs/PLAN.md) | **남은 일.** 설계 결정 · 미구현 항목 · 담당 공백 |
-| `docs/기획서_Fire-Lane.docx` | 대외 제출용 |
+| 문서 | 성격 | 시제 |
+|---|---|---|
+| [`docs/MASTER.md`](docs/MASTER.md) | **현재 상태.** 판정 결과 · 데이터 · 용어 · UI 인수인계 · 협업 | 현재 |
+| [`docs/PLAN.md`](docs/PLAN.md) | **남은 일.** 설계 결정 · 미구현 항목 · 담당 공백 | 미래 |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | **왜 그렇게 됐나.** 사고 원인 · 되돌린 판단 (append-only) | 과거 |
+| `docs/기획서_Fire-Lane.docx` | 대외 제출용 | — |
+
+> ### 셋에서 넷이 된 이유 (2026-08-18)
+>
+> 이 절은 원래 "문서는 셋뿐이다" 였고 `DECISIONS.md` 는 그 규칙을 어기고
+> 생겼다. 어긴 것을 인정하고 규칙을 고친다.
+>
+> 08-17~18 에 `tools/` 로 일회성 패처 9개가 들어왔다. 코드로는 전부 죽었지만
+> **docstring 이 사고 원인의 유일한 기록**이었다. MASTER 는 3,100줄이라
+> 이력 226줄을 더 넣으면 아무도 안 읽는다. PLAN 이 MASTER 에서 갈라진 것과
+> 같은 논리다 — **시제가 다르면 문서가 다르다.**
+>
+> **다섯 번째는 만들지 않는다.** 과거·현재·미래 세 시제가 다 찼다.
+> `test_reproducibility.py::test_no_fifth_doc` 이 막는다.
 
 `sources.yaml` 은 데이터 정본이다. 기계가 읽으므로 손으로 고칠 때 주의할 것.
 
@@ -120,17 +134,31 @@ src/etl/
   pipeline.py             단일 진입점. EXPECT 기대값
   ingest.py               raw → processed
   ngii1k.py               V-WORLD 1:1,000 74도엽 → 레이어별 gpkg
-  segments.py             노딩 → 폭 → 판정 (1,101)
+  guards.py               ★ 방어 정본. 계보 · 낡은 산출물 격리 · 공간 커버리지
+  segments.py             조립부 429줄. 계산은 seg/ 가 한다
+  seg/
+    params.py             임계값 정본. web/config.js 는 표시용 사본
+    graph.py              노딩 · 최대성분 · 접근 회랑
+    width.py              폭 산출 (WidthEngine) — ngii1k 1014 · silpok 84
+    geom.py               verdict · _seal · _join · _dirv (폐포 없는 순수 함수)
+    roadname.py           도로명 되붙이기 (RoadNameIndex)
+    report.py             소방서 대조 · 진단 · 산출물 기록
   streetlight.py          가로등 지점 단위 집계
   terrain.py · ortho.py   DEM · 정사영상 타일
   publish_web.py          → web/data
   datalog.py              대장 정합성 · 계보 · 영향분석 · 백업 검증
 tools/
   baseline.py             판정 산출물 봉인 · 실행 간 전이 대조
+  golden.py               ★ 리팩 전후 산출물 동일 증명. baseline 과 반대 용도
   scan_data.py            데이터 레이크 구조 점검
   docnum_check.py         문서 ↔ 산출물 숫자 대조
-  *_20260817.py           일회성 마이그레이션. 적용 후 이력으로 남긴다
-tests/test_contract.py    계약 19종. CI 가 검증한다
+     ※ 날짜 붙은 일회성 스크립트는 두지 않는다(§18-5 R8). CI 가 막는다.
+tests/
+  test_contract.py        GIS ↔ UI 경계 19종
+  test_guards.py          계보 2층 · 격리 · 커버리지
+  test_seg_*.py           verdict · RoadNameIndex · WidthEngine 단위
+  test_static.py          정의되지 않은 이름 (실패 경로의 NameError)
+  test_reproducibility.py §18-5 규약 강제 · 문서 ↔ 코드 동기화
 web/
   index.html              뼈대                      공동
   style.css               색·간격·타이포             @marscoolcat
