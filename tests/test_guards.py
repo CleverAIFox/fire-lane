@@ -345,3 +345,26 @@ def test_expect_is_not_hardcoded():
     assert '"verdict": {"clear"' not in src, (
         "pipeline.py 에 판정 숫자가 하드코딩돼 있다.\n"
         "  data/golden/segments.fingerprint.json 에서 읽어라.")
+
+
+def test_one_layer_per_gpkg():
+    """
+    ★ 한 파일 = 한 레이어.
+
+    GPKG 는 컨테이너라 레이어가 여럿 살 수 있다. GeoPandas 는 레이어를
+    지정하지 않으면 첫 레이어를 읽으므로, 옛 레이어가 남아 있으면 하류가
+    조용히 옛 데이터를 집는다. 2026-08-18 에 segments 가 08-17 판
+    ngii1k(6,675개)를 읽어 미커버가 3.1% → 13.4% 로 벌어졌고, 파일은
+    갱신됐고 status 는 OK 라 어떤 가드도 보지 못했다.
+
+    ingest 가 쓰기 전에 파일을 지우도록 고쳤다. 이 테스트가 그것을 지킨다.
+    """
+    import pyogrio
+    bad = []
+    for f in sorted((ROOT / "data/processed").glob("*_5186.gpkg")):
+        names = [r[0] for r in pyogrio.list_layers(f)]
+        if len(names) > 1:
+            bad.append(f"{f.name}: {names}")
+    assert not bad, (
+        "gpkg 에 레이어가 둘 이상이다:\n  " + "\n  ".join(bad) +
+        "\n  rm -f data/processed/*.gpkg 후 파이프라인을 다시 돌려라.")
