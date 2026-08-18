@@ -48,3 +48,4 @@ _backup_*/
 .pytest_cache/
 docs/lineage.mmd
 *.bak_*
+data/desk/

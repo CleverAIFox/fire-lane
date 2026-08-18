@@ -2578,6 +2578,32 @@ uv run python src/etl/ngi.py FILE.ngi      NGI 도엽 레이어·속성 일람
 
 # 18. 데이터 관리
 
+## 18-0. 디렉터리 — 무엇이 어디 살고 무엇을 커밋하나
+
+새 산출물을 만들 때 어디에 두어야 하는지가 규약에 없었다. 2026-08-18 에
+`tools/desk_check.py` 가 `data/desk/` 를 조용히 만들었고, 그것은
+`bin_trash · bin_cloth · building_ledger` 가 대장에 없어 매 스캔 격리로
+떴던 것과 같은 상태다. **입력만 대장이 있고 산출물은 없었다.**
+
+| 경로 | 무엇 | 커밋 | 재생성 |
+|---|---|---|---|
+| `data/raw` | 원본. 불변 | ✗ | 불가 — 재취득 |
+| `data/processed` | 파이프라인 산출 | 일부* | `pipeline.py` |
+| `data/baseline` | 판정 봉인 | ✓ | 불가 — 그 시점의 기록 |
+| `data/golden` | 지문 | ✓ | `golden.py lock` |
+| `data/field` | 실측 야장 | ✓ | 불가 — 현장 기록 |
+| `data/desk` | 정사영상 대조 렌더 | ✗ | `desk_check.py` |
+
+\* `segments.geojson` · `segments.schema.json` · `_manifest.json` 만 커밋한다.
+
+판단 기준은 하나다. **재생성 가능하면 커밋하지 않는다.** 봉인·야장은
+재생성이 불가능해서 커밋하고, 렌더와 gpkg 는 가능해서 안 한다.
+
+★ 새 디렉터리를 만들면 이 표에 한 줄 넣고 `.gitignore` 를 같이 고친다.
+  둘 중 하나만 하면 다음 스캔에서 격리로 뜨거나, 재생성 가능한 파일이
+  저장소를 불린다.
+
+
 ## 18-1. 계층
 
 여섯 계층이고 각 계층에 **깨면 안 되는 규칙이 하나씩** 있다.
