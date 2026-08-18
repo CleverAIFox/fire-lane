@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""
+guards.py — 파이프라인 방어 로직 정본.
+
+    uv run python src/etl/guards.py lineage      계보 검사만 단독 실행
+    uv run python src/etl/guards.py coverage     공간 커버리지 검사만 단독 실행
+
+── 왜 이 파일이 생겼나 ─────────────────────────────────────────
+이 방어들은 2026-08-18 까지 `tools/stale_guard_20260818.py` 가 ingest.py 와
+segments.py 에 **문자열로 주입한 코드 덩어리**였다. 주입된 코드는
+
+    1. 테스트할 수 없다     — segments.py 는 import 만 해도 geopandas 를 끌고 온다
+    2. 지워져도 CI 가 모른다 — 누가 그 블록을 날려도 초록불이다
+    3. 두 곳에 흩어진다      — 같은 판단이 ingest 와 segments 에 따로 산다
+
+두 번 물린 병(1093 · 1091)을 막는 코드가 정작 회귀 테스트 없이 있었다.
+함수로 꺼내 `tests/test_guards.py` 가 직접 호출한다.
+
+── 무엇을 지키나 ───────────────────────────────────────────────
+lineage      FAIL 난 단계의 낡은 산출물을 하류가 조용히 먹는 것을 막는다
+quarantine   FAIL 시 그 key 의 옛 산출물을 개명해 물리적으로 떼어낸다
+coverage     스코프가 폭 소스 폴리곤 밖으로 새는 것을 막는다
+             ★ 2026-08-18 V-WORLD 동구 SHP 판이 1:50,000 부모 3561609 대
+               12장을 흘려 스코프의 69%(755/1091)가 도로경계 밖이었다.
+               건수·컬럼·CRS 검사는 전부 통과했다. 행정구역 단위 취득이
+               공간 스코프를 보장하지 않기 때문이다. 손으로 세 번 셌다.
+"""
+from __future__ import annotations
+
+import json
+import sys
+from datetime import date
+from pathlib import Path
+
+# 폭·골격·판정에 실제로 읽히는 핵심 입력.
+CRITICAL = ("ngii1k", "road_link", "road_rw", "node_link", "cctv")
+
+# 계보상 통과로 보는 상태. SKIP 은 "이번 실행에서 건드리지 않음"이다.
+PASS_STATUS = ("OK", "SKIP")
+
+# 스코프 구간 중 폭 소스 폴리곤 밖에 있어도 되는 상한.
+# 2026-08-18 확정 실행에서 47/1101 = 4.3%. 여유를 두어 10%.
+MAX_UNCOVERED = 0.10
+
+
+class GuardFailure(RuntimeError):
+    """방어 위반. 파이프라인은 여기서 멈춘다."""
+
+
+# ── 1. 계보 ────────────────────────────────────────────────────
+def manifest_status(processed: Path) -> dict[str, str]:
+    """_manifest.json 의 key → status 를 읽는다."""
+    mp = Path(processed) / "_manifest.json"
+    if not mp.exists():
+        raise GuardFailure("_manifest.json 없음 — ingest 를 먼저 돌려라")
+    m = json.loads(mp.read_text(encoding="utf-8"))
+    return {d.get("key"): d.get("status") for d in m.get("datasets", [])}
+
+
+def lineage_check(processed: Path, critical=CRITICAL) -> None:
+    """읽을 입력의 마지막 ingest 가 OK 인지 본다. 아니면 GuardFailure.
+
+    ★ 파일이 존재하는 것과 이번 계보에 속하는 것은 다르다.
+      2026-08-17/18 이틀 연속, FAIL 난 ngii1k 의 낡은 gpkg 를 segments 가
+      조용히 집어 판정 숫자가 갈렸다. _manifest.json 은 FAIL 을 알고
+      있었지만 아무도 읽지 않았다 — 여기서 읽는다.
+    """
+    st = manifest_status(processed)
+    bad = [k for k in critical if st.get(k) not in PASS_STATUS]
+    if bad:
+        detail = ", ".join(f"{k}={st.get(k)}" for k in bad)
+        raise GuardFailure(
+            f"계보 검사 실패: {detail}\n"
+            "  마지막 ingest 가 이 입력들을 만들지 못했다. 디스크에 파일이\n"
+            "  있어도 그것은 옛 실행의 잔재다. 낡은 입력으로 판정하지 않는다.\n"
+            "  → uv run python src/etl/pipeline.py --only ingest 를 먼저 통과시켜라")
+
+
+# ── 2. 낡은 산출물 격리 ────────────────────────────────────────
+def quarantine_stale(out: Path, key: str, tag: str | None = None) -> list[str]:
+    """key 의 기존 산출물을 <이름>.stale_YYYYMMDD 로 개명한다.
+
+    삭제가 아니라 개명이다 — 진단할 때 옛 파일이 증거가 된다(2026-08-18 실제로).
+    하류가 읽으려 하면 FileNotFoundError 로 즉시 죽는다. 조용히 못 집는다.
+    """
+    out = Path(out)
+    tag = tag or date.today().strftime("%Y%m%d")
+    pats = (f"{key}_5186.gpkg", f"{key}.geojson",
+            f"{key}_*_5186.gpkg", f"{key}_*.geojson")
+    staled: list[str] = []
+    for pat in pats:
+        for p in sorted(out.glob(pat)):
+            dst = p.with_name(p.name + f".stale_{tag}")
+            dst.unlink(missing_ok=True)
+            p.rename(dst)
+            staled.append(p.name)
+    return staled
+
+
+# ── 3. 공간 커버리지 ───────────────────────────────────────────
+def uncovered_ratio(lines, polys, buffer_m: float = 1.0) -> tuple[int, int]:
+    """폭 소스 폴리곤 밖에 있는 구간 수와 전체 수를 센다.
+
+    lines  구간 지오메트리 시퀀스 (미터 좌표계)
+    polys  도로경계 폴리곤 시퀀스 (같은 좌표계)
+
+    ★ 건수·컬럼·CRS 가 전부 맞아도 공간이 안 맞을 수 있다.
+      contract.py 의 scope_min 은 "스코프 안에 몇 건 있나"를 보지만,
+      그것은 폭 소스가 스코프를 **덮는가**와 다른 질문이다.
+    """
+    from shapely.strtree import STRtree
+
+    polys = [p for p in polys if p is not None and not p.is_empty]
+    lines = [g for g in lines if g is not None and not g.is_empty]
+    if not lines:
+        return 0, 0
+    if not polys:
+        return len(lines), len(lines)
+
+    tree = STRtree(polys)
+    miss = 0
+    for g in lines:
+        probe = g.buffer(buffer_m) if buffer_m else g
+        if not any(polys[i].intersects(probe) for i in tree.query(probe)):
+            miss += 1
+    return miss, len(lines)
+
+
+def coverage_check(lines, polys, max_uncovered: float = MAX_UNCOVERED,
+                   label: str = "폭 소스", buffer_m: float = 1.0) -> float:
+    """미커버 비율이 상한을 넘으면 GuardFailure. 넘지 않으면 비율을 반환한다."""
+    miss, total = uncovered_ratio(lines, polys, buffer_m)
+    if not total:
+        raise GuardFailure(f"{label} 커버리지 검사: 구간이 0개다")
+    ratio = miss / total
+    if ratio > max_uncovered:
+        raise GuardFailure(
+            f"{label} 커버리지 미달: {miss}/{total} ({ratio:.1%}) 가 폴리곤 밖\n"
+            f"  상한 {max_uncovered:.0%}. 취득 범위가 스코프를 덮지 못한다.\n"
+            "  ★ 행정구역 단위로 받았다고 공간이 덮이는 것이 아니다.\n"
+            "    도엽 목록에 1:50,000 부모가 통째로 빠졌는지 먼저 봐라.")
+    return ratio
+
+
+# ── CLI ────────────────────────────────────────────────────────
+def _cli() -> int:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from paths import PROCESSED  # noqa: E402
+
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "lineage"
+    try:
+        if cmd == "lineage":
+            lineage_check(PROCESSED)
+            print(f"계보 OK: {' · '.join(CRITICAL)}")
+        elif cmd == "coverage":
+            import geopandas as gpd
+            seg = gpd.read_file(PROCESSED / "segments.geojson").to_crs("EPSG:5186")
+            pol = gpd.read_file(PROCESSED / "ngii1k_5186.gpkg")
+            r = coverage_check(list(seg.geometry), list(pol.geometry))
+            print(f"커버리지 OK: 미커버 {r:.1%}")
+        else:
+            print(f"모르는 명령: {cmd}  (lineage | coverage)")
+            return 2
+    except GuardFailure as e:
+        print(f"★ {e}")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(_cli())

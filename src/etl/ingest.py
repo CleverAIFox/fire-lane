@@ -326,20 +326,12 @@ def main():
             # ★ FAIL 이면 이 key 의 기존 산출물을 개명해 하류에서 떼어낸다.
             #   2026-08-17 ngii1k FAIL 때 8/13 gpkg 가 남아 segments 가 그것으로
             #   판정을 냈고(1093), 다음 날 진짜 실행(1091)과 갈려 "기계 간
-            #   재현성 붕괴"로 오인해 반나절을 태웠다. 삭제가 아니라 개명이다 —
-            #   진단할 때 옛 파일이 증거가 된다.
-            from datetime import date as _date
-            _tag = _date.today().strftime("%Y%m%d")
-            _stale = []
-            for _p in sorted(OUT.glob(f"{key}_5186.gpkg")) + sorted(OUT.glob(f"{key}.geojson")) \
-                    + sorted(OUT.glob(f"{key}_*_5186.gpkg")) + sorted(OUT.glob(f"{key}_*.geojson")):
-                _dst = _p.with_name(_p.name + f".stale_{_tag}")
-                _dst.unlink(missing_ok=True)
-                _p.rename(_dst)
-                _stale.append(_p.name)
-            if _stale:
-                r["staled"] = _stale
-                print(f"          ★ 옛 산출물 {len(_stale)}개 격리(.stale_{_tag}) — 하류가 못 읽는다")
+            #   재현성 붕괴"로 오인해 반나절을 태웠다. 로직은 guards.py 정본.
+            from guards import quarantine_stale
+            staled = quarantine_stale(OUT, key)
+            if staled:
+                r["staled"] = staled
+                print(f"          ★ 옛 산출물 {len(staled)}개 격리(.stale_) — 하류가 못 읽는다")
         print(f"[{r.get('status','-'):7}] {key:20} {r.get('features',''):>8} feat")
         results.append(r)
 
