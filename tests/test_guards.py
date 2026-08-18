@@ -281,3 +281,67 @@ def test_repo_python_compiles():
     r = subprocess.run([sys.executable, "-m", "py_compile", *map(str, files)],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
+
+
+# ── 단계 간 계약 (2026-08-18) ──────────────────────────────────
+def _steps():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "pipeline", ROOT / "src/etl/pipeline.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(ROOT / "src/etl"))
+    # ★ @dataclass 는 cls.__module__ 로 sys.modules 를 되짚는다.
+    #   등록 없이 exec_module 하면 AttributeError 로 죽는다.
+    sys.modules["pipeline"] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_no_two_steps_write_the_same_path():
+    """
+    ★ 두 단계가 같은 파일을 쓰면 실행 순서에 따라 결과가 달라진다.
+
+    덧쓰기가 필요하면 `writes` 가 아니라 `mutates` 로 선언한다. terrain 이
+    segments.geojson 에 z 를 넣는 것이 그렇다. 이름을 나눠두면 "이 파일은
+    앞 단계 산출을 덧쓴다"가 코드에 드러나고, 그것이 2026-08-18 에
+    `--only publish` 로 z 가 소실된 원인이었다.
+    """
+    m = _steps()
+    seen = {}
+    for s in m.STEPS:
+        for w in s.writes:
+            assert w not in seen, (
+                f"{s.name} 과 {seen[w]} 이 같은 경로를 쓴다: {w}\n"
+                "  덧쓰기라면 mutates 로 선언해라.")
+            seen[w] = s.name
+
+
+def test_every_read_is_produced_by_an_earlier_step():
+    """
+    ★ 읽는 것은 앞 단계가 만든 것이거나 raw 여야 한다.
+
+    뒤 단계가 만드는 것을 앞 단계가 읽으면 첫 실행에서 죽거나, 더 나쁘게는
+    지난 실행의 산출물을 읽어 조용히 돈다. 2026-08-17 의 1093 이 그것이었다.
+    """
+    m = _steps()
+    made = [m.RAW]
+    for s in m.STEPS:
+        for r in s.consumes:
+            assert any(m.matches(r, d) for d in made), (
+                f"{s.name} 이 {r.name} 을 읽는데 앞 단계가 만들지 않는다.\n"
+                "  선언이 틀렸거나 STEPS 순서가 틀렸다.")
+        made += list(s.produces)
+
+
+def test_expect_is_not_hardcoded():
+    """
+    ★ 판정 숫자의 정본은 golden 지문 하나다.
+
+    2026-08-18 까지 pipeline.EXPECT · golden 지문 · 문서 셋이 같은 값을
+    따로 들고 있었다. 동기화 도구가 필요하다는 것은 정본이 하나가 아니라는
+    뜻이다. EXPECT 를 지우고 지문에서 읽는다.
+    """
+    src = (ROOT / "src/etl/pipeline.py").read_text(encoding="utf-8")
+    assert '"verdict": {"clear"' not in src, (
+        "pipeline.py 에 판정 숫자가 하드코딩돼 있다.\n"
+        "  data/golden/segments.fingerprint.json 에서 읽어라.")

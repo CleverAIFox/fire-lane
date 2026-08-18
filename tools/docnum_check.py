@@ -224,15 +224,11 @@ def main() -> int:
             print(f"! MASTER §11      {f} 가 산출물에 있으나 표에 없다")
             bad += 1
 
-    # ── 4. EXPECT 자기모순 ────────────────────────────────────
-    src = (ROOT / "src/etl/pipeline.py").read_text(encoding="utf-8")
-    for k in ("clear", "needs_cv", "blocked", "unknown"):
-        if f'"{k}": {c[k]}' not in src:
-            print(f"! pipeline.EXPECT   {k} {c[k]} 아님")
-            bad += 1
-    if f'"no_cctv": {c["unknown"]}' not in src:
-        print(f"! pipeline.EXPECT   unknown_reason.no_cctv 가 unknown({c['unknown']}) 과 다르다")
-        bad += 1
+    # ── 4. (삭제) EXPECT 자기모순 ─────────────────────────────
+    # 2026-08-18. pipeline.EXPECT 를 없앴다. 판정의 정본은 golden 지문
+    # 하나이고 pipeline 은 거기서 읽는다. 동기화할 대상이 사라졌으므로
+    # 검사도 사라진다. tests/test_guards.py::test_expect_is_not_hardcoded
+    # 가 되돌아오는 것을 막는다.
 
     # ── 5. 참고 ───────────────────────────────────────────────
     # 절대편차 합은 자동 검사하지 않는다. §4 에는 7.24 를 "옛 적합값"으로
