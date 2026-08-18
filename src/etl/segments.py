@@ -244,20 +244,42 @@ def main():
             _cvr = coverage_check([units[uid]["geom"] for uid in _ink], [ngii1k_u],
                                   label="ngii1k 도로경계")
             print(f"  공간 커버리지 OK · 미커버 {_cvr:.1%}")
-            # ★ 비율은 게이트고 목록은 작업 지시다. 둘 다 찍는다.
+            # ★ 비율은 게이트고 목록은 작업 지시다. 둘 다 남긴다.
             #   2026-08-18 까지 비율만 찍혔고 아무도 어느 구간인지 묻지
             #   않았다. 같은 날 정사영상 대조로 중심선이 도로를 안 따라가는
             #   구간을 찾았는데, 이 검사가 이미 그것을 세고 있었다.
+            #
+            # ★ 여기서 seg_uid 는 못 쓴다. 그것은 노딩·병합이 끝난 뒤에
+            #   붙는다. 대신 WGS84 중점 좌표를 낸다. 내부 단위 id 는
+            #   저장소 밖에서 무의미하지만 좌표는 네이버지도·거리뷰에
+            #   그대로 넣을 수 있다. 목록의 목적은 답사이지 추적이 아니다.
             from guards import uncovered_indices
             _ordered = sorted(_ink)
             _miss = uncovered_indices([units[uid]["geom"] for uid in _ordered],
                                       [ngii1k_u])
             if _miss:
-                print(f"    폴리곤 밖 {len(_miss)}구간 — 답사·재확인 대상")
-                for i in sorted(_miss,
-                                key=lambda j: -units[_ordered[j]]["geom"].length)[:15]:
-                    u = units[_ordered[i]]
-                    print(f"      {_ordered[i]}  {u['geom'].length:6.1f}m")
+                import json as _json
+
+                import pyproj as _pyproj
+                _to4326 = _pyproj.Transformer.from_crs(
+                    "EPSG:5186", "EPSG:4326", always_xy=True).transform
+                _rows = []
+                for _i in _miss:
+                    _g = units[_ordered[_i]]["geom"]
+                    _pt = _g.interpolate(0.5, normalized=True)
+                    _lon, _lat = _to4326(_pt.x, _pt.y)
+                    _rows.append({"unit": _ordered[_i],
+                                  "length_m": round(_g.length, 1),
+                                  "lat": round(_lat, 6), "lon": round(_lon, 6)})
+                _rows.sort(key=lambda r: -r["length_m"])
+                print(f"    폴리곤 밖 {len(_rows)}구간 — 답사·재확인 대상"
+                      f" (상위 10 · 전체는 uncovered_units.json)")
+                for _r in _rows[:10]:
+                    print(f"      {_r['length_m']:6.1f}m  "
+                          f"{_r['lat']:.6f},{_r['lon']:.6f}")
+                (PROCESSED / "uncovered_units.json").write_text(
+                    _json.dumps(_rows, ensure_ascii=False, indent=1),
+                    encoding="utf-8")
         except GuardFailure as _e:
             sys.exit(f"★ {_e}")
 
@@ -352,7 +374,7 @@ def main():
         #
         # 종전에는 아래 `elif v == "unknown"` 가지에만 걸려 적용이 2건이었다.
         # 그 가지는 wmin 조차 없는 구간만 오는데, 실제로 막힌 것은
-        # wmin 은 있고 wmax 가 없는 구간이다.
+        # **wmin 은 있고 wmax 가 없는** 구간이다.
         #
         # 두 근거가 독립적으로 일치할 때만 건다.
         #     실측 노면폭 < TRUCK   그리고   도로대장 명목폭 < TRUCK
@@ -360,7 +382,7 @@ def main():
         # 대장이 미만인 모순 6건은 이 규칙에 걸리지 않는다.
         #
         # CCTV 강등보다 앞에 둔다. blocked 는 도면으로 확정되므로 카메라 유무와
-        # 무관하다. 뒤에 두면 needs_cv → no_cctv 로 먼저 내려가 규칙을 비껴간다.
+        # 무관하다. 뒤에 두면 needs_cv → no_cctv 로 먼저 내려가 이 규칙을 비껴간다.
         if (wmax is None
                 and (wmin is None or wmin < TRUCK)
                 and _road_bt is not None and _road_bt < TRUCK):
