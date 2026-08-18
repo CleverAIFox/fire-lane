@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18T15:41:20.461096+09:00",
+  "generated_at": "2026-08-18T22:12:12.286929+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -2280,15 +2280,15 @@
     "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
     "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
     "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-08-18T07:22:09+00:00"
+    "generated_at": "2026-08-18T13:13:29+00:00"
   },
   "ortho": {
     "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
     "gsd_m": 0.25,
     "src_crs": "EPSG:5186",
     "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
-    "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (388장, z15~18, 8.3MB)",
+    "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.6MB)",
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-08-18T07:22:18+00:00"
+    "generated_at": "2026-08-18T13:13:43+00:00"
   }
 }
