@@ -2848,6 +2848,14 @@ retired:
 | R15 문서는 넷. 시제가 다르면 문서가 다르다 | `test_reproducibility.py::test_no_fifth_doc` |
 | R16 README 구조는 실재 파일을 가리킨다 | `test_reproducibility.py::test_readme_structure_lists_real_files` |
 | R17 미결정 정본은 PLAN 하나 | `test_reproducibility.py::test_open_questions_live_in_plan_not_master` |
+| R18 같은 설명이 여러 곳에 있으면 어긋남을 검사한다 | `test_reproducibility.py::test_every_doc_declares_the_same_lifecycle` |
+
+**R18. 같은 설명이 여러 곳에 살면 어긋남을 검사한다**
+문서 축 설명이 README · PLAN 머리 · MASTER 세 곳에 있다. 2026-08-18 에
+생애주기 규칙을 도입하면서 README 와 MASTER 만 고치고 PLAN 머리의 표는 옛
+3축(DECISIONS 없음)으로 남았다. **테스트 154개가 전부 통과했다** —
+`test_no_fifth_doc` 은 문서 개수만 세고 각 문서가 자기 축을 옳게 적었는지는
+아무도 안 봤기 때문이다. 없앨 수 없는 중복이라면 최소한 어긋남은 잡는다.
 
 **R15~R17. 문서도 코드처럼 어긋남을 검사한다**
 2026-08-18 리팩으로 `seg/` 6모듈이 생기고 `tools/` 8개가 사라졌는데 README 는
