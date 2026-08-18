@@ -232,3 +232,36 @@ def test_open_questions_live_in_plan_not_master():
         assert "PLAN" in line, (
             f"MASTER 가 미결정을 정본 참조 없이 적었다:\n    {line.strip()}\n"
             "  선택지는 PLAN §5-7 에만 둔다. MASTER 는 가리키기만 한다.")
+
+
+def test_every_doc_declares_the_same_lifecycle():
+    """
+    ★ 문서 축 설명이 세 곳에 흩어져 있다. 셋이 같은 말을 해야 한다.
+
+    2026-08-18, 이 규칙을 도입하면서 README 와 MASTER 는 갱신했는데
+    PLAN 머리의 문서표만 옛 3축(DECISIONS 없음)으로 남았다. 테스트 154개가
+    전부 통과했다 — `test_no_fifth_doc` 은 문서 **개수**만 세고, 각 문서가
+    자기 축을 옳게 적었는지는 아무도 안 봤기 때문이다.
+
+    설명이 여러 곳에 사는 것 자체가 냄새다. 없앨 수 없다면(README 는 첫 인상,
+    PLAN 머리는 그 문서를 여는 사람의 첫 화면) 최소한 어긋남은 잡는다.
+    """
+    for rel in ("README.md", "docs/PLAN.md", "docs/MASTER.md"):
+        txt = (ROOT / rel).read_text(encoding="utf-8")
+        if "docs/PLAN.md" not in txt and "PLAN.md" not in txt:
+            continue
+        # 문서 축을 설명하는 문서라면 셋을 다 언급해야 한다
+        if "MASTER" in txt and "PLAN" in txt and "문서" in txt:
+            assert "DECISIONS" in txt, (
+                f"{rel} 이 문서 축을 설명하면서 DECISIONS 를 빠뜨렸다 — "
+                "옛 3축 표가 남아 있다")
+
+
+def test_doc_axis_tables_are_consistent():
+    """문서표를 가진 곳은 전부 생애주기 표기를 쓴다."""
+    for rel in ("README.md", "docs/PLAN.md"):
+        txt = (ROOT / rel).read_text(encoding="utf-8")
+        if "| 문서 |" not in txt:
+            continue
+        assert "생애주기" in txt, (
+            f"{rel} 의 문서표가 생애주기 표기가 아니다 — 옛 병렬 축 표다")
