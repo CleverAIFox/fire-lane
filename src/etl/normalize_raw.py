@@ -100,6 +100,16 @@ RULES: list[tuple[str, str, str]] = [
     # ★ 도엽 zip 74개가 상위 zip 안에 중첩돼 있다. 이중 해제는 ingest 담당.
     (r"^2map1000_shp_광주_동구\.zip$", "vworld", "vworld_map1k_gjdonggu_20260307.zip"),
     (r"^vworld_map1k_gjdonggu_\d{8}\.zip$", "vworld", None),
+    # ★ 2026-08-18. 같은 브이월드 동구 상품의 NGI 포맷판을 함께 받는다.
+    #   SHP 판(74도엽)은 1:5,000 부모 3561609 대(동명동 북부 12도엽)를 통째로
+    #   흘린다. 행정구역 수출이 1:50,000 경계에 걸친 도엽을 빠뜨리는 것으로
+    #   보인다 — 북·남·서구 상품도 그 띠를 비껴가 세 묶음 합쳐 교차 0장이었다.
+    #   스코프 1,091구간 중 755개(69%)의 중점이 SHP 판 폴리곤 밖이었고,
+    #   그래서 폭 채택이 silpok 폴백으로 몰렸다(ngii1k 885 → 319).
+    #   NGI 판에 356160983~988 · 993~998 이 있어 그 띠를 정확히 메운다.
+    #   같은 도엽이 양쪽에 있으면 파서가 SHP 를 우선한다(ngii1k.collect).
+    (r"^2map1000_ngi_광주_동구\.zip$", "vworld", "vworld_map1k_ngi_gjdonggu_20260307.zip"),
+    (r"^vworld_map1k_ngi_gjdonggu_\d{8}\.zip$", "vworld", None),
 
     # ── safety · 공공데이터포털(안전) ────────────────────────
     (r"^전남광주통합특별시_cctv_(\d{8})\.csv$",     "safety", "safety_cctv_jngj_{0}.csv"),
@@ -135,6 +145,7 @@ RULES: list[tuple[str, str, str]] = [
 REQUIRED = [
     "juso/juso_elctrnmap_jngj_20260711.zip",
     "vworld/vworld_map1k_gjdonggu_20260307.zip",     # 폭 산출 주 소스
+    "vworld/vworld_map1k_ngi_gjdonggu_20260307.zip", # 북부 12도엽 보완분
     "its/its_nodelink_kr_20260812.zip",
     "ngii/ngii_basemap_gj9708_20260812.zip",
     "ngii/ngii_dem_gj35616_20251117.zip",
