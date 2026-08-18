@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import lineage  # noqa: E402
 from paths import PROCESSED, RAW, WEB  # noqa: E402
 
 for st in (sys.stdout, sys.stderr):
@@ -108,6 +109,17 @@ STEPS = [
          reads=(P / "segments.geojson", P / "streetlight_point.geojson"),
          writes=(WEB / "segments.geojson", WEB / "segments.schema.json")),
 ]
+
+
+def expand(decls) -> list[Path]:
+    """선언을 실제 경로로 편다. `*` 가 있으면 글롭, 없으면 그대로."""
+    out: list[Path] = []
+    for d in decls:
+        if "*" in d.name:
+            out += sorted(q for q in d.parent.glob(d.name) if q.exists())
+        else:
+            out.append(d)
+    return out
 
 
 def downstream(names: set[str]) -> list[Step]:
@@ -254,11 +266,23 @@ def main():
         name, desc = s.name, s.desc
         print(c(f"── {name}  {desc}", "36"))
         t = time.time()
+        # ★ 계보는 파이프라인이 본다. 단계 스크립트는 계보를 모른다.
+        #   종전에는 segments.py 안에서 lineage_check 를 불렀고, 그래서
+        #   단계마다 손으로 배선해야 했다. --only publish 가 그 구멍으로
+        #   빠져나가 z 를 소실시켰다. Step 선언이 이미 reads/writes 를
+        #   알고 있으므로 여기서 일괄로 처리한다.
+        try:
+            lineage.verify(PROCESSED, ROOT, s, expand, STEPS)
+        except lineage.LineageError as e:
+            print(c(f"\n★ {e}", "31"))
+            sys.exit(1)
+
         r = subprocess.run([sys.executable, str(HERE / s.script)], cwd=ROOT)
         if r.returncode:
             print(c(f"\n★ {name} 실패. 여기서 멈춘다.", "31"))
             print(f"  고친 뒤: python src/etl/pipeline.py --from {name}")
             sys.exit(1)
+        lineage.record(PROCESSED, ROOT, s, expand)
         print(c(f"   {time.time()-t:.1f}s", "90"))
 
     if not a.no_test:

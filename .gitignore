@@ -49,3 +49,4 @@ _backup_*/
 docs/lineage.mmd
 *.bak_*
 data/desk/
+data/processed/_lineage.json

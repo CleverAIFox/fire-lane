@@ -347,24 +347,59 @@ def test_expect_is_not_hardcoded():
         "  data/golden/segments.fingerprint.json 에서 읽어라.")
 
 
-def test_one_layer_per_gpkg():
+# ── 계보 (2026-08-18) ─────────────────────────────────────────
+def test_lineage_catches_tampered_input(tmp_path):
     """
-    ★ 한 파일 = 한 레이어.
+    ★ 상류가 쓴 것과 지금 디스크가 다르면 하류를 돌리지 않는다.
 
-    GPKG 는 컨테이너라 레이어가 여럿 살 수 있다. GeoPandas 는 레이어를
-    지정하지 않으면 첫 레이어를 읽으므로, 옛 레이어가 남아 있으면 하류가
-    조용히 옛 데이터를 집는다. 2026-08-18 에 segments 가 08-17 판
-    ngii1k(6,675개)를 읽어 미커버가 3.1% → 13.4% 로 벌어졌고, 파일은
-    갱신됐고 status 는 OK 라 어떤 가드도 보지 못했다.
-
-    ingest 가 쓰기 전에 파일을 지우도록 고쳤다. 이 테스트가 그것을 지킨다.
+    2026-08-18. `_manifest` 는 ngii1k 14336 을 적었는데 segments 는 옛
+    레이어 6,675 개를 읽고 있었다. 파일은 갱신됐고 mtime 도 새것이고
+    status 는 OK 라 어떤 가드도 보지 못했다. 숫자는 다 있었고 대조가
+    없었다. 이 테스트가 그 대조를 지킨다.
     """
-    import pyogrio
-    bad = []
-    for f in sorted((ROOT / "data/processed").glob("*_5186.gpkg")):
-        names = [r[0] for r in pyogrio.list_layers(f)]
-        if len(names) > 1:
-            bad.append(f"{f.name}: {names}")
-    assert not bad, (
-        "gpkg 에 레이어가 둘 이상이다:\n  " + "\n  ".join(bad) +
-        "\n  rm -f data/processed/*.gpkg 후 파이프라인을 다시 돌려라.")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "lineage", ROOT / "src/etl/lineage.py")
+    lg = importlib.util.module_from_spec(spec)
+    sys.modules["lineage"] = lg
+    spec.loader.exec_module(lg)
+
+    class S:
+        def __init__(self, name, reads, writes):
+            self.name, self.reads, self.writes, self.mutates = \
+                name, reads, writes, ()
+        consumes = property(lambda s: s.reads)
+        produces = property(lambda s: s.writes)
+
+    up_out = tmp_path / "a.json"
+    up_out.write_text('{"n": 1}', encoding="utf-8")
+    up = S("up", (), (up_out,))
+    down = S("down", (up_out,), (tmp_path / "b.json",))
+    steps = [up, down]
+
+    def expand(d):
+        return list(d)
+
+    lg.record(tmp_path, tmp_path, up, expand)
+    lg.record(tmp_path, tmp_path, down, expand)
+    lg.verify(tmp_path, tmp_path, down, expand, steps)     # 통과해야 한다
+
+    up_out.write_text('{"n": 2}', encoding="utf-8")        # 손으로 바꾼다
+    try:
+        lg.verify(tmp_path, tmp_path, down, expand, steps)
+        raise AssertionError("변조를 못 잡았다")
+    except lg.LineageError:
+        pass
+
+
+def test_lineage_is_pipeline_concern_not_step_concern():
+    """
+    ★ 계보는 파이프라인이 본다. 단계 스크립트는 계보를 모른다.
+
+    종전에는 segments.py 안에서 lineage_check 를 불렀다. 단계마다 손으로
+    배선해야 했고 `--only publish` 가 그 구멍으로 빠져나가 z 를 소실시켰다.
+    Step 선언이 reads/writes 를 알고 있으므로 pipeline 이 일괄로 한다.
+    """
+    src = (ROOT / "src/etl/pipeline.py").read_text(encoding="utf-8")
+    assert "lineage.verify" in src and "lineage.record" in src, \
+        "pipeline 이 계보를 배선하지 않는다"
