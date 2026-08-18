@@ -8,51 +8,30 @@
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <link href="./style.css" rel="stylesheet">
 </head>
-</head>
 <body>
 <div id="map"></div>
 <div id="tip"></div>
+
 
 <aside id="panel">
   <h1>Fire-Lane</h1>
   <div class="sub">전남광주통합특별시 동구 동명동</div>
 
-  <div class="phase">
-    <div class="p done"><b>1단계 · 도면 프루닝</b><span>완료</span></div>
-    <div class="p todo"><b>2단계 · 영상판정</b><span>미착수</span></div>
-    <div class="p todo"><b>3단계 · 현장 실측</b><span>D-25</span></div>
+  <!-- 신고 지점 찾기. 관제사는 "동명로 25번길 화재" 같은 말을 듣고 시작한다.
+       지도를 눈으로 뒤지게 두면 관제 화면이 아니다. 색인은 app.js 가 만든다. -->
+  <div id="search">
+    <input id="q" type="text" autocomplete="off" spellcheck="false"
+           placeholder="상호 · 주소 · 건물 · 도로명">
+    <button id="q-clear" title="지우기" aria-label="지우기">×</button>
+    <span id="q-icon" aria-hidden="true"></span>
+    <div id="q-list"></div>
   </div>
-  <div class="warn" id="warn">–</div>
 
   <!-- 출동 모드. 갈 수 있는 길만 남기고 나머지를 죽인다. @marscoolcat -->
   <div class="row dispatch" data-t="dispatch"><span>🚒 출동 모드 — 갈 수 있는 길 강조</span><i class="tg"></i></div>
 
   <h2>진입 판정</h2>
   <div id="legend"></div>
-
-  <!-- 판정 기준표. 색만 보고는 왜 그 색인지 알 수 없다는 지적에서 나왔다. -->
-  <div class="crit">
-    <b>소방청</b> 「2025 화재현장 골든타임 확보 종합대책」 기준<br>
-    중형펌프차 전폭 <b>2.5m</b> · 주차 1대 점유 <b>2.0m</b>
-    <table>
-      <tr><td>통행 가능</td><td>도로 폭 ≥ 4.5m</td></tr>
-      <tr><td>판정 보류</td><td>그 사이. 주정차가 결정</td></tr>
-      <tr><td>통행 불가</td><td>벽 사이 폭 &lt; 2.5m</td></tr>
-    </table>
-    <p id="crit-msg">–</p>
-  </div>
-  <div class="crit">
-    소방펌프차 전폭 <b>3.0m</b>(사이드미러 포함) · 주차 1대 점유 <b>2.0m</b> 기준
-    <table>
-      <tr><td>통과 가능</td><td>차도폭 ≥ 5.0m</td></tr>
-      <tr><td>영상판정</td><td>차도폭 &lt; 5.0m 이고 담~담 ≥ 3.0m</td></tr>
-      <tr><td>진입 불가</td><td>담~담 &lt; 3.0m</td></tr>
-    </table>
-    <p><b>차도폭</b>은 실폭도로, <b>담~담</b>은 건물 사이 거리입니다.
-    주황 구간은 담~담 기준으로는 넓어 보이지만(중앙 5.44m) 실제 차도는
-    좁아서(중앙 2.20m) 도면만으로 판정할 수 없는 곳입니다.
-    그 2.52m 차이를 메우는 것이 영상판정의 역할입니다.</p>
-  </div>
 
   <h2>레이어</h2>
   <div class="row" data-t="buildings"><span>건물 3D</span><i class="tg on"></i></div>
@@ -67,10 +46,18 @@
 
   <h2>시설</h2>
   <div class="mk fac"><i style="background:#e2221c"></i>119안전센터(소방차) · 소방서(119) · 소화전</div>
-  <div class="mk"><i id="lgi-cctv" style="background:#fe9ffc"></i>CCTV <span>지주 + 하우징</span></div>
+  <div class="mk"><i id="lgi-cctv" style="background:#ffd24a"></i>CCTV <span>지주 + 하우징</span></div>
+  <div class="mk"><i style="background:#3fb8d8"></i>가로등 <span>지주 + 등기구</span></div>
   <div class="note" style="padding:2px 7px;margin-top:2px">
     마커는 실제 형상 비율로 세웠고 크기는 약 5배 과장했습니다.
     실물 치수(소화전 0.9m)로는 화면에서 보이지 않습니다.</div>
+
+  <h2>상가 업종</h2>
+  <!-- 색표는 CONFIG.poi.color 로 app.js 가 생성한다. 손으로 나열하면 어긋난다. -->
+  <div id="poi-legend"></div>
+  <div class="note" style="padding:2px 7px;margin-top:2px">
+    지도에서 길을 짚을 때 쓰는 표시입니다. 판정과는 무관합니다.
+    줌 17 이상에서 상호가 뜹니다.</div>
 
   <h2>산출</h2>
   <div class="stat"><span>세그먼트</span><b id="s-seg">–</b></div>
@@ -79,28 +66,7 @@
   <div class="stat"><span>상가(지상 1층)</span><b id="s-poi">–</b></div>
   <div class="stat"><span>CCTV 지점/카메라</span><b id="s-cctv">–</b></div>
   <div class="stat"><span>영상판정 가능</span><b id="s-cv">–</b></div>
-  <div class="note">
-    <b>경로 빈도</b>는 실제 출동 기록이 아닙니다. 119안전센터 2곳에서 동명동
-    건물출입구 358곳까지 도로망 최단경로를 계산했을 때, 그 구간을 지나는 경로가
-    몇 개인지 센 <b>계산값</b>입니다. 소방관이 실제로 지나간 횟수가 아닙니다.
-    출동 이력 데이터는 공개되지 않습니다.
-    <br><br>소화전은 <b>동명동 안 / 스코프 전체</b> 순입니다. 관할 588개 중
-    공개된 것이 31개(5%)뿐이고, 그중 동명동은 1개입니다.
-    <br><br>지도 범위는 <b>동명동 + 접근 회랑 약 2.4×1.3km</b>로 고정돼 있습니다.
-    안전센터가 동 밖(대인 서 1.0km · 지산 동 1.2km)에 있어 출동 경로까지 담았습니다.
-    이 밖으로는 이동·축소가 되지 않습니다.
-    진입점 60곳 중 실사용은 23곳이고, <b>5곳이 출동의 80%</b>를 처리합니다.
-    <br><br>드래그 회전 <kbd>우클릭</kbd> · 기울이기 <kbd>Ctrl</kbd>+드래그
-  </div>
 </aside>
-
-<div id="band">
-  <div class="t">도로 폭 vs 벽 사이 폭</div>
-  <div class="bl"><span>도로 폭</span><span>벽 사이 폭</span></div>
-  <div class="bar"><i id="bar-fill"></i></div>
-  <div class="bl"><span id="b-lo">–</span><span id="b-hi">–</span></div>
-  <div class="msg" id="b-msg">–</div>
-</div>
 
 <div id="minimap"></div>
 <button id="dispatch-fab" title="출동 모드 켜기/끄기">출동</button>
