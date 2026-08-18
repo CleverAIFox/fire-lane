@@ -173,7 +173,10 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         #   프레임 조립을 ngii1k.build 하나로 합쳐 두 곳에서 만들지 않는다.
         from ngii1k import collect, read_sheet, build, LAYERS
         want = list(LAYERS)
-        sheets = collect(src)
+        # ★ 2026-08-18. src = hits[0] 라 글롭이 여러 zip 을 찾아도 첫 개만 썼다.
+        #   SHP 판(74도엽)만 들어가고 NGI 보완분(북부 12도엽)이 통째로 무시됐다.
+        #   대장이 글롭이면 글롭 전체가 소스다.
+        sheets = collect(hits if len(hits) > 1 else src)
         if not sheets:
             raise FileNotFoundError(f"도엽 없음: {src}")
         acc = {k: [] for k in want}
@@ -320,6 +323,23 @@ def main():
             r = build(key, e, tmp)
         except Exception as ex:                             # noqa: BLE001
             r = {"key": key, "status": "FAIL", "error": f"{type(ex).__name__}: {ex}"}
+            # ★ FAIL 이면 이 key 의 기존 산출물을 개명해 하류에서 떼어낸다.
+            #   2026-08-17 ngii1k FAIL 때 8/13 gpkg 가 남아 segments 가 그것으로
+            #   판정을 냈고(1093), 다음 날 진짜 실행(1091)과 갈려 "기계 간
+            #   재현성 붕괴"로 오인해 반나절을 태웠다. 삭제가 아니라 개명이다 —
+            #   진단할 때 옛 파일이 증거가 된다.
+            from datetime import date as _date
+            _tag = _date.today().strftime("%Y%m%d")
+            _stale = []
+            for _p in sorted(OUT.glob(f"{key}_5186.gpkg")) + sorted(OUT.glob(f"{key}.geojson")) \
+                    + sorted(OUT.glob(f"{key}_*_5186.gpkg")) + sorted(OUT.glob(f"{key}_*.geojson")):
+                _dst = _p.with_name(_p.name + f".stale_{_tag}")
+                _dst.unlink(missing_ok=True)
+                _p.rename(_dst)
+                _stale.append(_p.name)
+            if _stale:
+                r["staled"] = _stale
+                print(f"          ★ 옛 산출물 {len(_stale)}개 격리(.stale_{_tag}) — 하류가 못 읽는다")
         print(f"[{r.get('status','-'):7}] {key:20} {r.get('features',''):>8} feat")
         results.append(r)
 

@@ -103,6 +103,32 @@ STATIONS = {                 # 출동은 소방서가 아니라 119안전센터�
 }
 
 
+def _lineage_check():
+    """읽을 입력의 마지막 ingest 가 OK 인지 본다. 아니면 정지한다.
+
+    ★ 파일이 존재하는 것과 이번 계보에 속하는 것은 다르다.
+      2026-08-17/18 이틀 연속, FAIL 난 ngii1k 의 낡은 gpkg 를 segments 가
+      조용히 집어 판정 숫자가 갈렸다. _manifest.json 은 FAIL 을 알고
+      있었지만 아무도 읽지 않았다 — 여기서 읽는다.
+    """
+    import json as _json
+    mp = OUT / "_manifest.json"
+    if not mp.exists():
+        sys.exit("★ _manifest.json 없음 — ingest 를 먼저 돌려라")
+    m = _json.loads(mp.read_text(encoding="utf-8"))
+    st = {d.get("key"): d.get("status") for d in m.get("datasets", [])}
+    # 폭·골격·판정에 실제로 읽히는 핵심 입력.
+    critical = ["ngii1k", "road_link", "road_rw", "node_link", "cctv"]
+    bad = [k for k in critical if st.get(k) not in ("OK", "SKIP")]
+    if bad:
+        detail = ", ".join(f"{k}={st.get(k)}" for k in bad)
+        sys.exit(f"★ 계보 검사 실패: {detail}\n"
+                 f"  마지막 ingest 가 이 입력들을 만들지 못했다. 디스크에 파일이\n"
+                 f"  있어도 그것은 옛 실행의 잔재다. 낡은 입력으로 판정하지 않는다.\n"
+                 f"  → uv run python src/etl/pipeline.py --only ingest 를 먼저 통과시켜라")
+    print(f"  계보 OK: {' · '.join(critical)}")
+
+
 def load(key):
     return gpd.read_file(OUT / f"{key}_5186.gpkg").to_crs(CRS_M)
 
@@ -129,6 +155,7 @@ def endpoint_snap(lines, tol=SNAP_TOL):
 def main():
     emd = load("boundary_emd")
     poly = shapely.make_valid(emd.loc[emd.EMD_CD == EMD_CD, "geometry"].iloc[0])
+    _lineage_check()
     road = load("road_link")
     rw   = load("road_rw")
     # 가로등. 지번 단위 회로 대표점이라 개별 폴 위치가 아니다.

@@ -117,7 +117,11 @@ def stage(src: Path) -> Path:
     # ★ src 가 디렉터리일 수도 파일일 수도 있다.
     #   ingest 는 sources.yaml 의 file 값을 그대로 넘기므로 zip 파일 경로가 온다.
     #   손으로 돌릴 때는 도엽 디렉터리를 준다. 둘 다 받는다.
-    cands = [src] if src.is_file() else sorted(src.rglob("*.zip"))
+    # src 는 파일 · 디렉터리 · 목록 셋 다 온다(대장 file 이 글롭이면 목록).
+    if isinstance(src, (list, tuple)):
+        cands = [Path(x) for x in src]
+    else:
+        cands = [src] if src.is_file() else sorted(src.rglob("*.zip"))
     for z in cands:
         if z.suffix.lower() != ".zip":
             continue
@@ -129,6 +133,22 @@ def stage(src: Path) -> Path:
                          if n.lower().endswith(".zip")
                          and SHEET.search(Path(n).name)]
                 if not inner:
+                    # ★ NGI 판은 한 겹이다. 356160900.ngi + .nda 가 직접 들어 있다.
+                    #   SHP 판(도엽 zip 중첩)과 구조가 다르므로 따로 편다.
+                    flat = [n for n in zf.namelist()
+                            if n.lower().endswith((".ngi", ".nda"))
+                            and SHEET.search(Path(n).name)]
+                    if not flat:
+                        continue
+                    got = 0
+                    for n in flat:
+                        dst = WORK / Path(n).name
+                        if not dst.exists():
+                            dst.write_bytes(zf.read(n))
+                            got += 1
+                    ns = {SHEET.search(Path(n).name).group(1) for n in flat}
+                    print(f"  묶음 {z.name} → NGI 도엽 {len(ns)}장"
+                          f" (새로 편 것 {got} 파일)")
                     continue
                 got = 0
                 for n in inner:
@@ -148,7 +168,9 @@ def collect(src: Path) -> dict:
     """도엽번호 → (연도, 종류, 경로). 같은 도엽은 최신 연도만 남긴다."""
     stage(src)
     best: dict[str, tuple] = {}
-    roots = [WORK] + ([src] if src.is_dir() else [])
+    _dirs = [x for x in (src if isinstance(src, (list, tuple)) else [src])
+             if Path(x).is_dir()]
+    roots = [WORK] + [Path(x) for x in _dirs]
     for root in roots:
         if not root.exists():
             continue
