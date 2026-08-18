@@ -43,3 +43,21 @@ jobs:
 
       - name: web/data 계약 검증
         run: pytest tests/test_contract.py -v
+
+      - name: 방어 로직 · 저장소 위생
+        # ★ 계보 검사 / 낡은 산출물 격리 / 공간 커버리지 는 1093·1091 두 무효
+        #   산출을 만든 원인에 대한 방어다. 8/18 까지 테스트가 없어서 누가
+        #   지워도 초록불이었다. 여기서 회귀를 막는다.
+        run: |
+          pip install pytest shapely
+          pytest tests/test_guards.py -v
+
+      - name: 문서 숫자 대조
+        # ★ 도구를 만들어놓고 수동 실행으로 두면 안 돌린다. 8/17 의 1093 은
+        #   이것을 돌렸으면 그날 잡혔다. 산출물이 없는 러너에서는 건너뛴다.
+        run: |
+          if [ -f data/processed/segments.geojson ]; then
+            python tools/docnum_check.py
+          else
+            echo "data/processed 없음 — 로컬에서 확인할 것"
+          fi

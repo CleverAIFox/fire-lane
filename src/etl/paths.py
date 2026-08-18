@@ -26,6 +26,7 @@ paths.py — 경로 정본. 모든 ETL 스크립트가 여기를 본다.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,7 +36,19 @@ DATA = os.environ.get("FIRE_LANE_DATA")
 DATA = Path(DATA).expanduser() if DATA else None
 
 # 원본. 절대 수정하지 않는다.
-RAW = Path(os.environ.get("FIRE_LANE_RAW")
+# ★ FIRE_LANE_RAW 는 2026-08-15 개편으로 폐기됐다. 남아 있는 기계에서
+#   FIRE_LANE_DATA 를 **경고 없이 이기고** 있었다. 기계마다 .bashrc 를
+#   고치는 것은 해결이 아니다 — 코드가 알아채야 한다. 계속 인식하되
+#   충돌하면 시끄럽게 말한다.
+_legacy_raw = os.environ.get("FIRE_LANE_RAW")
+if _legacy_raw and DATA and Path(_legacy_raw).expanduser() != (DATA / "raw"):
+    print(f"★ FIRE_LANE_RAW(폐기) 가 FIRE_LANE_DATA 를 덮고 있다\n"
+          f"    FIRE_LANE_RAW   {_legacy_raw}   ← 이 값이 쓰인다\n"
+          f"    FIRE_LANE_DATA  {DATA / 'raw'}  ← 무시된다\n"
+          f"  기계 간 산출물이 갈리는 원인이다. unset FIRE_LANE_RAW 해라.",
+          file=sys.stderr)
+
+RAW = Path(_legacy_raw
            or (DATA / "raw" if DATA else ROOT / "data" / "raw")).expanduser()
 
 # 정규화본. 파일명·인코딩·확장자만 통일한다. 값은 안 바꾼다(MASTER §18-1).
