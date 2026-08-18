@@ -17,12 +17,21 @@
 
 ## 문서는 셋뿐이다
 
-| 문서 | 성격 | 시제 |
+문서 셋은 병렬 축이 아니라 **한 항목의 생애주기**다.
+
+```
+PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과거)
+```
+
+| 문서 | 시제 | 담는 것 |
 |---|---|---|
-| [`docs/MASTER.md`](docs/MASTER.md) | **현재 상태.** 판정 결과 · 데이터 · 용어 · UI 인수인계 · 협업 | 현재 |
-| [`docs/PLAN.md`](docs/PLAN.md) | **남은 일.** 설계 결정 · 미구현 항목 · 담당 공백 | 미래 |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | **왜 그렇게 됐나.** 사고 원인 · 되돌린 판단 (append-only) | 과거 |
-| `docs/기획서_Fire-Lane.docx` | 대외 제출용 | — |
+| [`docs/PLAN.md`](docs/PLAN.md) | 미래 | 남은 일 · 미결정 · 담당 공백 |
+| [`docs/MASTER.md`](docs/MASTER.md) | 현재 | 판정 결과 · 데이터 · 용어 · UI 인수인계 · 협업 |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | 과거 | 왜 그렇게 됐나 (append-only) |
+| `docs/기획서_Fire-Lane.docx` | — | 대외 제출용 |
+
+**한 항목은 한 문서에만 산다.** 두 곳에 있으면 한쪽만 고치는 날이 온다.
+남은 일의 정본은 `PLAN §1` 하나다.
 
 > ### 셋에서 넷이 된 이유 (2026-08-18)
 >

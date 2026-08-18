@@ -114,29 +114,49 @@ def test_master_rule_table_matches_reality():
     assert not missing, f"강제자로 적혔는데 없는 파일: {missing}"
 
 
-def test_master_open_items_are_not_already_done():
+def test_open_work_lives_only_in_plan():
     """
-    ★ 끝난 일이 '남은 일'에 남아 있으면 다음 사람이 이미 있는 것을 또 만든다.
+    ★ 문서 셋은 병렬 축이 아니라 한 항목의 **생애주기**다.
 
-    §7 의 7·8번(ngii1k pipeline 편입 · streetlight ingest kind)은 08-17~18 에
-    해소됐다. `ingest.py` 가 두 kind 를 모두 분기하고 ngii1k 를 직접 만든다.
-    그런데 목록에는 아직 남은 일로 적혀 있었다. docnum_check 는 판정 숫자만
-    보므로 이런 것을 못 잡는다.
+        PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과거)
+
+    한 항목은 한 문서에만 산다. 두 곳에 있으면 생애주기 단계가 둘인 셈이고,
+    한쪽만 고치는 날이 온다. 2026-08-18 에 실제로 그랬다 — 08-17~18 에 끝난
+    두 항목(ngii1k pipeline 편입 · streetlight ingest kind)이 MASTER §7 에
+    남은 일로 그대로 남아 있었다.
+
+    그래서 MASTER 에는 남은 일 **목록**을 두지 않는다. §7 은 "현재 산출물의
+    한계"(알려진 근사 · 미검증)만 적는다. 그것은 남은 일이 아니라 현재 상태다.
+    """
+    m = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    plan = (ROOT / "docs/PLAN.md").read_text(encoding="utf-8")
+
+    assert not re.search(r"^##+\s*\d*\.?\s*남은 일\s*$", m, re.M), (
+        "MASTER 에 '남은 일' 절이 있다 — 정본은 PLAN §1 이다.\n"
+        "  MASTER 는 현재 무엇이 어떤 값인지만 적는다.")
+    assert re.search(r"^#\s*1\.\s*남은 일\s*$", plan, re.M), (
+        "PLAN §1 남은 일이 사라졌다 — 남은 일의 정본이 없어졌다")
+
+
+def test_finished_work_is_not_listed_as_open():
+    """
+    ★ 끝난 일이 PLAN 에 남아 있으면 다음 사람이 이미 있는 것을 또 만든다.
+
+    코드를 근거로 판정한다. `docnum_check` 는 판정 숫자만 보므로 이런
+    어긋남을 못 잡는다.
     """
     ing = (ETL / "ingest.py").read_text(encoding="utf-8")
-    m = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
-    # ★ 목록 자체(코드블록)만 본다. 해소 기록은 그 항목을 인용하므로
-    #   절 전체를 보면 "끝났다고 적은 문장"을 위반으로 잡는다.
-    sec = re.search(r"## 7\. 남은 일\s*\n+```(.*?)```", m, re.S)
-    assert sec, "§7 목록 코드블록을 찾을 수 없다"
+    plan = (ROOT / "docs/PLAN.md").read_text(encoding="utf-8")
+    sec = re.search(r"#\s*1\.\s*남은 일(.*?)\n#\s", plan, re.S)
+    assert sec, "PLAN §1 을 찾을 수 없다"
     sec = sec.group(1)
 
-    if 'kind in ("ngii1k"' in ing or '"shp_dir"' in ing:
-        assert "ngii1k 를 pipeline STEPS 에 편입" not in sec, (
-            "ingest 가 이미 ngii1k 를 만드는데 §7 에 남은 일로 적혀 있다")
+    if '"shp_dir"' in ing:
+        assert "pipeline STEPS 에 편입" not in sec, (
+            "ingest 가 이미 ngii1k 를 만드는데 PLAN §1 에 남은 일로 적혀 있다")
     if 'kind in ("csv_points", "csv_point")' in ing:
-        assert "streetlight ingest kind 처리" not in sec, (
-            "ingest 가 이미 csv_points 를 분기하는데 §7 에 남은 일로 적혀 있다")
+        assert "streetlight ingest kind" not in sec, (
+            "ingest 가 이미 csv_points 를 분기하는데 PLAN §1 에 남아 있다")
 
 
 # ── 문서 ↔ 저장소 동기화 ───────────────────────────────────────
