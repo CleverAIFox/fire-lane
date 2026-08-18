@@ -960,6 +960,11 @@ def main():
         rows = list(csv.DictReader(fa.open(encoding="cp949")))
         road = gpd.read_file(OUT/"road_link_5186.gpkg").to_crs(CRS_M)
         print("\n[소방서 지정 구간 대조]")
+        # ★ 2026-08-18. print 만 하던 것을 파일로도 남긴다.
+        #   이 대조는 우리 폭에 대한 유일한 외부 대조 수단인데 두 번 소실됐다.
+        #   경로 오류로 죽어 있던 것이 8/13, 터미널에만 있던 것이 8/17 이다.
+        #   8/17 봉인 때 7.24m 를 문서에서 손으로 옮겨 적어야 했다.
+        _nfa_rows = []
         for r in rows:
             for rn in set(re.findall(r"[가-힣]+로\d*번?길", r["지역명"])):
                 sel = road[road.RN == rn]
@@ -980,6 +985,40 @@ def main():
                 print(f"  {rn:14s} 소방서 {w_nfa:>7s}m │ 우리 중앙 {med:5.2f}m "
                       f"({med - wf:+.2f}) │ 세그 {len(hit):3d} │ "
                       + " ".join(f"{k}:{v}" for k, v in hit.verdict.value_counts().items()))
+                _nfa_rows.append({
+                    "road": rn,
+                    "nfa_m": wf,
+                    "nfa_raw": str(w_nfa),
+                    "ours_median_m": round(float(med), 2),
+                    "dev_m": round(float(med) - wf, 2),
+                    "n_seg": int(len(hit)),
+                    "verdict": {k: int(v) for k, v in hit.verdict.value_counts().items()},
+                })
+
+        if _nfa_rows:
+            import json as _json
+            from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+            _abs = round(sum(abs(x["dev_m"]) for x in _nfa_rows), 2)
+            _out = {
+                "as_of": _dt.now(_tz(_td(hours=9))).isoformat(timespec="seconds"),
+                "source": str(fa.name),
+                "ref": "동부소방서 소방통로확보대상 지역 현황 (20구간 7,120m)",
+                "match_by": "도로명. 소방서 자료에 좌표가 없다",
+                "compare": "구간 대표폭이므로 중앙값과 비교. 최솟값이면 -3~-7m 로 벌어진다",
+                "caveat": ("★ 이것은 검증이 아니라 적합(fit)일 수 있다. 12.6 → 7.24 로 "
+                           "줄이는 과정에서 이 표를 게이트로 썼다. 게이트로 쓴 자료는 "
+                           "그 순간부터 외부 검증 수단이 아니다. MASTER 4절 참조."),
+                "abs_dev_sum_m": _abs,
+                "n_road": len(_nfa_rows),
+                "rows": sorted(_nfa_rows, key=lambda x: abs(x["dev_m"])),
+            }
+            (OUT / "nfa_compare.json").write_text(
+                _json.dumps(_out, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"  절대편차 합 {_abs}m · {len(_nfa_rows)}구간"
+                  f"  → {(OUT / 'nfa_compare.json').name}")
+        else:
+            # 없으면 소리를 낸다. 조용한 결측을 만들지 않는다.
+            print("  ★ 매칭 0구간. 도로명 매칭이 깨졌다 — RN 컬럼과 지역명 형식 확인")
     # ── 소스별 커버율 ────────────────────────────────────────
     # 표본 축 소스 혼합이 어디서 얼마나 일어나는지. 채택 규칙(STEP 5-1) 근거.
     _gv = g[g.n_sample > 0]
