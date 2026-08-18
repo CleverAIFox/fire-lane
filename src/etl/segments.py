@@ -244,6 +244,20 @@ def main():
             _cvr = coverage_check([units[uid]["geom"] for uid in _ink], [ngii1k_u],
                                   label="ngii1k 도로경계")
             print(f"  공간 커버리지 OK · 미커버 {_cvr:.1%}")
+            # ★ 비율은 게이트고 목록은 작업 지시다. 둘 다 찍는다.
+            #   2026-08-18 까지 비율만 찍혔고 아무도 어느 구간인지 묻지
+            #   않았다. 같은 날 정사영상 대조로 중심선이 도로를 안 따라가는
+            #   구간을 찾았는데, 이 검사가 이미 그것을 세고 있었다.
+            from guards import uncovered_indices
+            _ordered = sorted(_ink)
+            _miss = uncovered_indices([units[uid]["geom"] for uid in _ordered],
+                                      [ngii1k_u])
+            if _miss:
+                print(f"    폴리곤 밖 {len(_miss)}구간 — 답사·재확인 대상")
+                for i in sorted(_miss,
+                                key=lambda j: -units[_ordered[j]]["geom"].length)[:15]:
+                    u = units[_ordered[i]]
+                    print(f"      {_ordered[i]}  {u['geom'].length:6.1f}m")
         except GuardFailure as _e:
             sys.exit(f"★ {_e}")
 

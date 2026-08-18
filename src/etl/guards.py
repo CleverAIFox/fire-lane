@@ -177,13 +177,35 @@ def uncovered_ratio(lines, polys, buffer_m: float = 1.0) -> tuple[int, int]:
     if not polys:
         return len(lines), len(lines)
 
+    return len(uncovered_indices(lines, polys, buffer_m)), len(lines)
+
+
+def uncovered_indices(lines, polys, buffer_m: float = 1.0) -> list[int]:
+    """폴리곤 밖에 있는 구간의 **인덱스**를 준다.
+
+    ★ 2026-08-18. 종전에는 개수만 셌다. "공간 커버리지 OK · 미커버 3.1%" 가
+      매 실행 찍혔고 아무도 어느 구간인지 묻지 않았다. 같은 날 정사영상
+      대조로 중심선이 도로를 안 따라가는 구간을 찾았는데, 이 검사가 이미
+      그것을 세고 있었다.
+
+      EXPECT.unknown_reason · _manifest.json 의 FAIL · nfa_compare 가 전부
+      같은 병이었다 — 측정하고 대조하지 않으면 기록이 아니라 장식이다.
+      비율은 게이트고, 목록은 작업 지시다. 둘 다 있어야 한다.
+    """
+    from shapely.strtree import STRtree
+
+    polys = [p for p in polys if p is not None and not p.is_empty]
+    if not polys:
+        return list(range(len(lines)))
     tree = STRtree(polys)
-    miss = 0
-    for g in lines:
+    out = []
+    for i, g in enumerate(lines):
+        if g is None or g.is_empty:
+            continue
         probe = g.buffer(buffer_m) if buffer_m else g
-        if not any(polys[i].intersects(probe) for i in tree.query(probe)):
-            miss += 1
-    return miss, len(lines)
+        if not any(polys[j].intersects(probe) for j in tree.query(probe)):
+            out.append(i)
+    return out
 
 
 def coverage_check(lines, polys, max_uncovered: float = MAX_UNCOVERED,
@@ -193,6 +215,11 @@ def coverage_check(lines, polys, max_uncovered: float = MAX_UNCOVERED,
     if not total:
         raise GuardFailure(f"{label} 커버리지 검사: 구간이 0개다")
     ratio = miss / total
+    # ★ 비율만 반환하면 아무도 안 본다. 2026-08-18 에 정사영상 대조로
+    #   중심선이 건물을 관통하는 구간을 찾았는데, 이 검사가 이미 그것을
+    #   세고 있었다. "OK 미커버 3.1%" 로 통과했을 뿐이다.
+    #   측정하고 대조하지 않으면 기록이 아니라 장식이다.
+    coverage_check.last_miss = miss
     if ratio > max_uncovered:
         raise GuardFailure(
             f"{label} 커버리지 미달: {miss}/{total} ({ratio:.1%}) 가 폴리곤 밖\n"
@@ -216,8 +243,18 @@ def _cli() -> int:
             import geopandas as gpd
             seg = gpd.read_file(PROCESSED / "segments.geojson").to_crs("EPSG:5186")
             pol = gpd.read_file(PROCESSED / "ngii1k_5186.gpkg")
-            r = coverage_check(list(seg.geometry), list(pol.geometry))
+            L = list(seg.geometry)
+            r = coverage_check(L, list(pol.geometry))
             print(f"커버리지 OK: 미커버 {r:.1%}")
+            idx = uncovered_indices(L, list(pol.geometry))
+            if idx:
+                print(f"\n폴리곤 밖 {len(idx)}구간 — 답사·재확인 대상")
+                sub = seg.iloc[idx]
+                cols = [c for c in ("seg_uid", "road_name", "length_m",
+                                    "width_min_m", "width_src", "verdict")
+                        if c in sub.columns]
+                print(sub[cols].sort_values("length_m", ascending=False)
+                      .to_string(index=False))
         else:
             print(f"모르는 명령: {cmd}  (lineage | coverage)")
             return 2
