@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-18T12:58:40+09:00",
+  "as_of": "2026-08-18T22:55:03+09:00",
   "source": "safety_fire_access_gj_dong_20250731.csv",
   "ref": "동부소방서 소방통로확보대상 지역 현황 (20구간 7,120m)",
   "match_by": "도로명. 소방서 자료에 좌표가 없다",
@@ -31,8 +31,9 @@
       "n_seg": 41,
       "verdict": {
         "clear": 25,
-        "unknown": 12,
-        "needs_cv": 4
+        "unknown": 9,
+        "needs_cv": 4,
+        "blocked": 3
       }
     },
     {
@@ -44,7 +45,7 @@
       "n_seg": 3,
       "verdict": {
         "needs_cv": 2,
-        "unknown": 1
+        "blocked": 1
       }
     },
     {
@@ -81,7 +82,8 @@
       "n_seg": 19,
       "verdict": {
         "clear": 10,
-        "unknown": 9
+        "unknown": 7,
+        "blocked": 2
       }
     },
     {

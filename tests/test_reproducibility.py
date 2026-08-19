@@ -134,7 +134,7 @@ def test_open_work_lives_only_in_plan():
     assert not re.search(r"^##+\s*\d*\.?\s*남은 일\s*$", m, re.M), (
         "MASTER 에 '남은 일' 절이 있다 — 정본은 PLAN §1 이다.\n"
         "  MASTER 는 현재 무엇이 어떤 값인지만 적는다.")
-    assert re.search(r"^#\s*1\.\s*남은 일\s*$", plan, re.M), (
+    assert re.search(r"^#{1,2}\s*1\.\s*남은 일\s*$", plan, re.M), (
         "PLAN §1 남은 일이 사라졌다 — 남은 일의 정본이 없어졌다")
 
 
@@ -147,7 +147,7 @@ def test_finished_work_is_not_listed_as_open():
     """
     ing = (ETL / "ingest.py").read_text(encoding="utf-8")
     plan = (ROOT / "docs/PLAN.md").read_text(encoding="utf-8")
-    sec = re.search(r"#\s*1\.\s*남은 일(.*?)\n#\s", plan, re.S)
+    sec = re.search(r"#{1,2}\s*1\.\s*남은 일(.*?)\n#{1,2}\s", plan, re.S)
     assert sec, "PLAN §1 을 찾을 수 없다"
     sec = sec.group(1)
 
@@ -265,3 +265,93 @@ def test_doc_axis_tables_are_consistent():
             continue
         assert "생애주기" in txt, (
             f"{rel} 의 문서표가 생애주기 표기가 아니다 — 옛 병렬 축 표다")
+
+
+# ── 문서 형식 (2026-08-18) ────────────────────────────────────
+def _body_lines(rel: str) -> list[tuple[int, str]]:
+    """코드블록 밖의 줄만. ``` 안의 `## 작업` 은 셸 주석이지 절이 아니다."""
+    out, fence = [], False
+    for i, s in enumerate((ROOT / rel).read_text(encoding="utf-8").splitlines(), 1):
+        if s.lstrip().startswith("```"):
+            fence = not fence
+            continue
+        if not fence:
+            out.append((i, s))
+    return out
+
+
+def test_master_headings_are_numbered():
+    """
+    ★ 번호 없는 절은 외부에서 인용할 수 없다.
+
+    MASTER 는 46회 인용되는 문서인데 2026-08-18 까지 번호 없는 `##` 절이
+    11개였다(`## 순서` · `## 확인` · `## raw` …). 같은 제목이 여러 곳에
+    있어 "MASTER 의 순서 절"이 어디를 가리키는지 정해지지 않았다.
+
+    §0 서술 규약이 이것을 정한다. 이 테스트가 지킨다.
+    """
+    bad = [f"{rel}:{no}  {s}"
+           for rel in ("docs/MASTER.md",)
+           for no, s in _body_lines(rel)
+           if s.startswith("## ") and not s[3:4].isdigit()]
+    assert not bad, ("번호 없는 절:\n  " + "\n  ".join(bad) +
+                     "\n  §0 서술 규약 — 모든 절에 번호를 붙인다.")
+
+
+def test_master_has_one_h1():
+    """
+    ★ 문서 제목만 `#`. 절은 `##`.
+
+    2026-08-18 까지 §1~§9 는 `##`, §10~§18 은 `#` 이었다. 목차 도구와
+    앵커 검사가 두 층위를 다르게 읽는다. `docnum_check` 의 이력 절
+    앵커도 이 수준에 의존한다.
+    """
+    h1 = [s for _, s in _body_lines("docs/MASTER.md") if s.startswith("# ")]
+    assert len(h1) == 1, f"h1 이 {len(h1)}개다: {h1}"
+
+
+def test_master_is_not_a_letter():
+    """
+    ★ MASTER 는 특정 사람에게 보내는 편지가 아니다.
+
+    2026-08-18 까지 §11 은 경어체였고 사과문(`어제 충돌은 제 잘못입니다`)과
+    개인 호칭이 들어 있었다. 문서가 작업 로그에서 승격되며 문체를 안 바꾼
+    결과다. 회고와 사과는 DECISIONS 소관이다(R14).
+    """
+    body = "\n".join(s for _, s in _body_lines("docs/MASTER.md"))
+    hits = [w for w in ("습니다", "합니다", "제 잘못", "드립니다") if w in body]
+    assert not hits, (f"경어·사과 표현이 남아 있다: {hits}\n"
+                      "  §0 서술 규약 — 평어체 3인칭.")
+
+
+def test_plan_headings_are_numbered_and_unique():
+    """
+    ★ 같은 번호가 두 곳을 가리키면 인용이 성립하지 않는다.
+
+    2026-08-18 까지 PLAN 에는 `# 13. 2026-08-12 추가` 와
+    `# 13. 2026-08-13 신규 미결` 이 함께 있었고 §13-1~13-5 가 두 벌이었다.
+    날짜를 절 제목으로 쓴 결과다 — 그날 나온 것을 그날 절로 만들면
+    번호가 날짜만큼 늘어난다. 절은 주제로 나누고 날짜는 본문에 적는다.
+
+    `## 7-5. 호모그래피 기준점 실측` 은 통째로 두 벌이었다. 삽입 스크립트가
+    멱등하지 않아 두 번 들어갔고, 앵커 검사는 앵커가 하나라 통과했다.
+    """
+    import re
+    seen, dup, unnum, fence = {}, [], [], False
+    for no, s in enumerate(
+            (ROOT / "docs/PLAN.md").read_text(encoding="utf-8").splitlines(), 1):
+        if s.lstrip().startswith("```"):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        if s.startswith("## ") and not s[3:4].isdigit():
+            unnum.append(f"{no} {s}")
+        m = re.match(r"^#{2,3} ([\d-]+)\.", s)
+        if not m:
+            continue
+        if m.group(1) in seen:
+            dup.append(f"§{m.group(1)}  {no} 과 {seen[m.group(1)]}")
+        seen[m.group(1)] = no
+    assert not dup, "중복 절 번호:\n  " + "\n  ".join(dup)
+    assert not unnum, "번호 없는 절:\n  " + "\n  ".join(unnum)

@@ -2,13 +2,13 @@
  "L1": {
   "n": 1101,
   "verdict": {
-   "blocked": 63,
+   "blocked": 159,
    "clear": 400,
-   "needs_cv": 209,
-   "unknown": 429
+   "needs_cv": 190,
+   "unknown": 352
   },
   "unknown_reason": {
-   "no_cctv": 429
+   "no_cctv": 352
   },
   "width_src": {
    "ngii": 1,
@@ -307,29 +307,29 @@
    "route_usage": 0
   },
   "DM-192423-284145-GM2I": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.7,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 16.4,
    "route_usage": 0
   },
   "DM-192424-284303-D6CG": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.5,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 37.5,
    "route_usage": 0
   },
   "DM-192426-284172-66YK": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.1,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 33.4,
    "route_usage": 0
   },
@@ -388,11 +388,11 @@
    "route_usage": 0
   },
   "DM-192442-284309-D6CG": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.19,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 45.4,
    "route_usage": 0
   },
@@ -415,11 +415,11 @@
    "route_usage": 0
   },
   "DM-192455-284273-JFYG": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.3,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 32.6,
    "route_usage": 0
   },
@@ -442,11 +442,11 @@
    "route_usage": 235
   },
   "DM-192459-284326-D6CG": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.04,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 25.3,
    "route_usage": 0
   },
@@ -514,11 +514,11 @@
    "route_usage": 0
   },
   "DM-192479-284126-BH1S": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.83,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 58.1,
    "route_usage": 0
   },
@@ -550,11 +550,11 @@
    "route_usage": 235
   },
   "DM-192494-284140-BH1S": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.2,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 61.4,
    "route_usage": 0
   },
@@ -568,11 +568,11 @@
    "route_usage": 53
   },
   "DM-192499-284279-JFYG": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.68,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 95.2,
    "route_usage": 0
   },
@@ -640,11 +640,11 @@
    "route_usage": 49
   },
   "DM-192525-284255-JTSZ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.01,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 53.3,
    "route_usage": 0
   },
@@ -676,11 +676,11 @@
    "route_usage": 49
   },
   "DM-192530-284308-PF48": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.19,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 66.2,
    "route_usage": 0
   },
@@ -748,11 +748,11 @@
    "route_usage": 47
   },
   "DM-192551-284282-JTSZ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.57,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 53.9,
    "route_usage": 0
   },
@@ -775,11 +775,11 @@
    "route_usage": 235
   },
   "DM-192558-284056-X9DQ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.77,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 49.8,
    "route_usage": 0
   },
@@ -838,11 +838,11 @@
    "route_usage": 235
   },
   "DM-192584-284249-JTSZ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.98,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 56.5,
    "route_usage": 0
   },
@@ -874,11 +874,11 @@
    "route_usage": 0
   },
   "DM-192601-284190-PF48": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.74,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 24.2,
    "route_usage": 0
   },
@@ -892,11 +892,11 @@
    "route_usage": 4
   },
   "DM-192604-284207-PF48": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.05,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 23.2,
    "route_usage": 0
   },
@@ -910,11 +910,11 @@
    "route_usage": 47
   },
   "DM-192613-283843-N1HO": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.49,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 15.4,
    "route_usage": 0
   },
@@ -982,7 +982,7 @@
    "route_usage": 0
   },
   "DM-192627-284211-PF48": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.11,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -1054,7 +1054,7 @@
    "route_usage": 0
   },
   "DM-192661-284245-PF48": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 0.72,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -1063,20 +1063,20 @@
    "route_usage": 0
   },
   "DM-192662-283787-SLXC": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.69,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 21.2,
    "route_usage": 0
   },
   "DM-192662-283845-W4QT": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.88,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 54.6,
    "route_usage": 0
   },
@@ -1477,11 +1477,11 @@
    "route_usage": 47
   },
   "DM-192752-284375-X9DQ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.0,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 38.1,
    "route_usage": 0
   },
@@ -2413,7 +2413,7 @@
    "route_usage": 2
   },
   "DM-192912-283629-W4QT": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.68,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -2593,7 +2593,7 @@
    "route_usage": 21
   },
   "DM-192931-283617-W4QT": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.2,
    "width_max_m": null,
    "width_src": "silpok",
@@ -2791,11 +2791,11 @@
    "route_usage": 7
   },
   "DM-192947-283673-GO22": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.88,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 37.6,
    "route_usage": 0
   },
@@ -3277,7 +3277,7 @@
    "route_usage": 0
   },
   "DM-193018-284280-F0LS": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.52,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -4276,11 +4276,11 @@
    "route_usage": 17
   },
   "DM-193208-284024-2W3Y": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.18,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 18.3,
    "route_usage": 2
   },
@@ -4618,11 +4618,11 @@
    "route_usage": 9
   },
   "DM-193290-284132-52VO": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.83,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 12.3,
    "route_usage": 0
   },
@@ -4888,7 +4888,7 @@
    "route_usage": 0
   },
   "DM-193329-284097-4S4P": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.01,
    "width_max_m": null,
    "width_src": "silpok",
@@ -5320,11 +5320,11 @@
    "route_usage": 2
   },
   "DM-193390-283190-G89H": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.42,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 57.5,
    "route_usage": 0
   },
@@ -5392,7 +5392,7 @@
    "route_usage": 6
   },
   "DM-193399-284228-9UPP": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 0.38,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -5473,11 +5473,11 @@
    "route_usage": 0
   },
   "DM-193413-283208-G89H": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.94,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 21.5,
    "route_usage": 0
   },
@@ -5545,20 +5545,20 @@
    "route_usage": 2
   },
   "DM-193424-283194-G89H": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.15,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 36.7,
    "route_usage": 0
   },
   "DM-193424-284144-MCQE": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.16,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 47.0,
    "route_usage": 70
   },
@@ -5653,29 +5653,29 @@
    "route_usage": 101
   },
   "DM-193434-284114-MCQE": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.47,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 16.7,
    "route_usage": 70
   },
   "DM-193436-283225-G89H": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.56,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 34.4,
    "route_usage": 0
   },
   "DM-193441-284128-MCQE": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.88,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 28.0,
    "route_usage": 0
   },
@@ -5833,11 +5833,11 @@
    "route_usage": 106
   },
   "DM-193471-284133-MCQE": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.89,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 43.2,
    "route_usage": 0
   },
@@ -6094,11 +6094,11 @@
    "route_usage": 2
   },
   "DM-193512-284164-52VO": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.86,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 39.2,
    "route_usage": 0
   },
@@ -6562,11 +6562,11 @@
    "route_usage": 1
   },
   "DM-193577-283942-VV63": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.1,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 70.6,
    "route_usage": 0
   },
@@ -6616,7 +6616,7 @@
    "route_usage": 0
   },
   "DM-193583-284220-52VO": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.23,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -6679,7 +6679,7 @@
    "route_usage": 70
   },
   "DM-193592-284119-MCQE": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.99,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -6733,20 +6733,20 @@
    "route_usage": 0
   },
   "DM-193598-284008-VV63": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.04,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 67.7,
    "route_usage": 0
   },
   "DM-193598-284148-MCQE": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.78,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 20.8,
    "route_usage": 0
   },
@@ -6760,11 +6760,11 @@
    "route_usage": 6
   },
   "DM-193599-283895-6Z8Q": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.39,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 13.2,
    "route_usage": 0
   },
@@ -6787,25 +6787,25 @@
    "route_usage": 17
   },
   "DM-193602-283971-VV63": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.35,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 30.0,
    "route_usage": 0
   },
   "DM-193604-284082-KCLM": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.11,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 49.8,
    "route_usage": 0
   },
   "DM-193605-284190-52VO": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 2.28,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -6832,20 +6832,20 @@
    "route_usage": 0
   },
   "DM-193610-284063-KCLM": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.3,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 48.1,
    "route_usage": 0
   },
   "DM-193613-284134-MCQE": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.24,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 15.6,
    "route_usage": 0
   },
@@ -6931,11 +6931,11 @@
    "route_usage": 16
   },
   "DM-193623-284155-MCQE": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.41,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 16.9,
    "route_usage": 0
   },
@@ -6949,11 +6949,11 @@
    "route_usage": 0
   },
   "DM-193629-283984-VV63": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.8,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 13.8,
    "route_usage": 0
   },
@@ -7003,11 +7003,11 @@
    "route_usage": 3
   },
   "DM-193638-283937-LRZT": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.1,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 54.4,
    "route_usage": 0
   },
@@ -7066,11 +7066,11 @@
    "route_usage": 0
   },
   "DM-193644-284101-KCLM": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.1,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 28.7,
    "route_usage": 0
   },
@@ -7093,11 +7093,11 @@
    "route_usage": 0
   },
   "DM-193653-284060-KCLM": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.7,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 13.1,
    "route_usage": 0
   },
@@ -7165,11 +7165,11 @@
    "route_usage": 0
   },
   "DM-193658-283911-LRZT": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.46,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 34.8,
    "route_usage": 0
   },
@@ -7183,11 +7183,11 @@
    "route_usage": 4
   },
   "DM-193659-284077-KCLM": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.03,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 14.5,
    "route_usage": 0
   },
@@ -7246,11 +7246,11 @@
    "route_usage": 18
   },
   "DM-193671-283987-LRZT": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.81,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 58.0,
    "route_usage": 0
   },
@@ -7489,11 +7489,11 @@
    "route_usage": 1
   },
   "DM-193708-283447-OQSR": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.18,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 43.9,
    "route_usage": 0
   },
@@ -7534,11 +7534,11 @@
    "route_usage": 2
   },
   "DM-193719-283893-LRZT": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.26,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 39.0,
    "route_usage": 0
   },
@@ -7984,11 +7984,11 @@
    "route_usage": 2
   },
   "DM-193781-283733-U6CJ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.92,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 40.4,
    "route_usage": 0
   },
@@ -8029,11 +8029,11 @@
    "route_usage": 0
   },
   "DM-193788-283871-2K9Y": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.03,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 60.1,
    "route_usage": 0
   },
@@ -8074,11 +8074,11 @@
    "route_usage": 107
   },
   "DM-193797-283552-6ZG7": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.95,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 18.7,
    "route_usage": 0
   },
@@ -8092,7 +8092,7 @@
    "route_usage": 0
   },
   "DM-193798-283637-A5GM": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.09,
    "width_max_m": null,
    "width_src": "silpok",
@@ -8137,11 +8137,11 @@
    "route_usage": 2
   },
   "DM-193804-283789-6Z8Q": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.81,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 74.3,
    "route_usage": 0
   },
@@ -8155,11 +8155,11 @@
    "route_usage": 0
   },
   "DM-193806-283736-U6CJ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.33,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 30.0,
    "route_usage": 0
   },
@@ -8218,11 +8218,11 @@
    "route_usage": 0
   },
   "DM-193815-283846-6Z8Q": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.65,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 41.4,
    "route_usage": 0
   },
@@ -8236,11 +8236,11 @@
    "route_usage": 0
   },
   "DM-193818-283552-6ZG7": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.77,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 37.0,
    "route_usage": 0
   },
@@ -8317,11 +8317,11 @@
    "route_usage": 16
   },
   "DM-193834-283866-2K9Y": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.9,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 36.0,
    "route_usage": 0
   },
@@ -8398,11 +8398,11 @@
    "route_usage": 0
   },
   "DM-193849-284025-6RMT": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.47,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 12.9,
    "route_usage": 0
   },
@@ -8452,11 +8452,11 @@
    "route_usage": 107
   },
   "DM-193858-283458-RH2F": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.63,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 77.1,
    "route_usage": 0
   },
@@ -8479,11 +8479,11 @@
    "route_usage": 16
   },
   "DM-193867-283698-1QHK": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.84,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 41.6,
    "route_usage": 0
   },
@@ -8506,11 +8506,11 @@
    "route_usage": 0
   },
   "DM-193871-283839-6Z8Q": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.2,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 34.9,
    "route_usage": 0
   },
@@ -8524,11 +8524,11 @@
    "route_usage": 70
   },
   "DM-193875-283472-6ZG7": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.82,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 70.4,
    "route_usage": 0
   },
@@ -8551,7 +8551,7 @@
    "route_usage": 107
   },
   "DM-193880-283877-S9D5": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 0.83,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -8587,7 +8587,7 @@
    "route_usage": 17
   },
   "DM-193888-283806-6Z8Q": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.38,
    "width_max_m": null,
    "width_src": "silpok",
@@ -8713,11 +8713,11 @@
    "route_usage": 107
   },
   "DM-193911-283658-S9D5": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.89,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 34.5,
    "route_usage": 0
   },
@@ -8731,11 +8731,11 @@
    "route_usage": 158
   },
   "DM-193920-283596-PKWM": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.33,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 31.8,
    "route_usage": 0
   },
@@ -8767,7 +8767,7 @@
    "route_usage": 0
   },
   "DM-193923-283888-S9D5": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.96,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -8794,11 +8794,11 @@
    "route_usage": 0
   },
   "DM-193935-284029-6RMT": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.29,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 142.6,
    "route_usage": 0
   },
@@ -8848,11 +8848,11 @@
    "route_usage": 0
   },
   "DM-193946-283590-PKWM": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.57,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 43.1,
    "route_usage": 0
   },
@@ -8893,7 +8893,7 @@
    "route_usage": 0
   },
   "DM-193958-283886-S9D5": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.08,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -8920,11 +8920,11 @@
    "route_usage": 0
   },
   "DM-193967-283661-HJS3": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.87,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 34.8,
    "route_usage": 0
   },
@@ -8992,11 +8992,11 @@
    "route_usage": 0
   },
   "DM-193983-283617-PKWM": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.53,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 47.9,
    "route_usage": 0
   },
@@ -9010,11 +9010,11 @@
    "route_usage": 70
   },
   "DM-193992-284030-6RMT": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.19,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 150.4,
    "route_usage": 0
   },
@@ -9271,7 +9271,7 @@
    "route_usage": 0
   },
   "DM-194185-283693-HJS3": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.23,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -9352,11 +9352,11 @@
    "route_usage": 0
   },
   "DM-194204-283555-1AOQ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.0,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 90.0,
    "route_usage": 0
   },
@@ -9442,11 +9442,11 @@
    "route_usage": 265
   },
   "DM-194237-283747-AZHT": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.82,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 53.3,
    "route_usage": 0
   },
@@ -9541,11 +9541,11 @@
    "route_usage": 0
   },
   "DM-194273-283770-1AOQ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.94,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 20.9,
    "route_usage": 0
   },
@@ -9586,29 +9586,29 @@
    "route_usage": 0
   },
   "DM-194288-283613-1AOQ": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 0.72,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 74.0,
    "route_usage": 0
   },
   "DM-194291-283647-SAGS": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.0,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 42.1,
    "route_usage": 0
   },
   "DM-194294-283690-SAGS": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 2.22,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 45.7,
    "route_usage": 0
   },
@@ -9721,7 +9721,7 @@
    "route_usage": 335
   },
   "DM-194343-283652-SAGS": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.29,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -9730,7 +9730,7 @@
    "route_usage": 0
   },
   "DM-194343-283666-SAGS": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.22,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -9784,7 +9784,7 @@
    "route_usage": 0
   },
   "DM-194357-283671-SAGS": {
-   "verdict": "needs_cv",
+   "verdict": "blocked",
    "width_min_m": 1.71,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -9811,11 +9811,11 @@
    "route_usage": 0
   },
   "DM-194371-283611-X6GR": {
-   "verdict": "unknown",
+   "verdict": "blocked",
    "width_min_m": 1.31,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": null,
    "length_m": 68.1,
    "route_usage": 0
   },

@@ -30,7 +30,17 @@ def main():
     W.mkdir(parents=True, exist_ok=True)
     # z 는 terrain.py 산출물이다. DEM 이 없으면 안 생기므로 선택 컬럼으로 둔다.
     _seg = gpd.read_file(P/"segments.geojson")
-    _cols = ["seg_uid","seg_id","width_min_m","width_max_m","verdict","width_verified",
+    # seg_no — 도로명 안에서의 구간 순번. 화면 표기 전용이다.
+    # seg_uid 는 사람이 읽을 정보가 없고(DM-193399-284228-9UPP), seg_id 는
+    # 실행 간 유지되지 않아 외부 참조 금지다(MASTER §11). 팝업 머리글에
+    # seg_id 를 쓰고 있었던 것은 그 금지를 화면이 어긴 것이다.
+    # ★ 순번은 노딩 규칙이 바뀌면 밀린다. 표기용이지 키가 아니다.
+    _rep = _seg.geometry.representative_point()
+    _seg = _seg.assign(_ox=_rep.x, _oy=_rep.y)
+    _seg["seg_no"] = (_seg.sort_values(["road_name", "_oy", "_ox"])
+                          .groupby("road_name").cumcount() + 1)
+
+    _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict","width_verified",
              "midpoint_fallback","inherited","route_usage","length_m",
              "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","road_name","road_side","road_bt_m","in_emd","light_count",
              "unknown_reason"]

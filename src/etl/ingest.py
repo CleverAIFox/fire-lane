@@ -86,7 +86,23 @@ def bbox_in(crs: str):
 def save(gdf: gpd.GeoDataFrame, key: str) -> dict:
     OUT.mkdir(parents=True, exist_ok=True)
     gdf = gdf[~gdf.geometry.is_empty & gdf.geometry.notna()].copy()
-    gdf.to_crs(CRS_M).to_file(OUT / f"{key}_5186.gpkg", driver="GPKG", layer=key)
+    # ★ 2026-08-18. 쓰기 전에 파일을 지운다.
+    #   GPKG 는 컨테이너다. to_file(layer=key) 는 그 **레이어**를 덮어쓸 뿐
+    #   파일 안의 다른 레이어는 건드리지 않는다. layer= 를 안 쓰던 시절의
+    #   레이어가 남아 있었고, GeoPandas 는 레이어를 지정하지 않으면 첫
+    #   레이어를 읽는다. 그래서 segments 가 08-17 판 ngii1k_5186(6,675개)을
+    #   읽었고, 08-18 산출 14,336 개는 옆 레이어로 놀고 있었다.
+    #
+    #     More than one layer found in 'ngii1k_5186.gpkg':
+    #       'ngii1k_5186' (default), 'ngii1k'
+    #
+    #   결과: 스코프 북부 미커버 13.4%. 파일은 갱신됐고 mtime 은 새것이고
+    #   status 는 OK 라 어떤 가드도 보지 못했다. 근거는 DECISIONS 08-18.
+    #
+    #   한 파일 = 한 레이어를 불변식으로 세운다. 컨테이너에 누적하지 않는다.
+    _gpkg = OUT / f"{key}_5186.gpkg"
+    _gpkg.unlink(missing_ok=True)
+    gdf.to_crs(CRS_M).to_file(_gpkg, driver="GPKG", layer=key)
     gdf.to_crs(CRS_W).to_file(OUT / f"{key}.geojson", driver="GeoJSON")
     return {"features": len(gdf), "geom": sorted(set(gdf.geom_type)),
             "columns": [c for c in gdf.columns if c != "geometry"]}
