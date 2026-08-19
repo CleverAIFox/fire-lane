@@ -35,6 +35,16 @@ html,body{height:100%;background:var(--void);color:var(--text);
   border-right:1px solid var(--line);overflow-y:auto;padding:20px 18px 28px}
 h1{font-size:15px;font-weight:700;letter-spacing:-.01em}
 .sub{font-size:11px;color:var(--dim);margin-top:3px;font-family:var(--mono)}
+/* 판정 상태 경고. 제목 바로 아래에서 현재 한계를 먼저 읽게 한다.
+   판정색과 혼동되지 않도록 주황을 쓰되, 면적은 작게 유지한다. */
+.basis{margin:9px 0 0;padding:8px 10px;border-radius:6px;font-size:10.5px;
+  line-height:1.5;color:var(--text);background:rgba(255,171,46,.10);
+  border:1px solid rgba(255,171,46,.28);border-left:3px solid var(--needs)}
+.basis b{display:block;color:var(--needs);font-size:11px;font-weight:700}
+/* 검증되지 않은 두 전제를 한 줄에 묶어 경고의 이유가 바로 보이게 한다. */
+.basis span{display:block;margin-top:3px;color:var(--text);opacity:.78}
+[data-theme="light"] .basis{background:rgba(196,120,0,.09);border-color:rgba(196,120,0,.28);
+  border-left-color:var(--needs)}
 
 #tip .rsn{margin:-3px 0 6px;font-size:10px;color:#8d97a8;line-height:1.4}
 #tip .nfa{margin-top:6px;padding:4px 7px;border-radius:4px;font-size:10px;
