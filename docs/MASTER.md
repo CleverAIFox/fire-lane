@@ -436,18 +436,24 @@ raw 는 `$FIRE_LANE_RAW` 다. `if fa.exists()` 가 항상 거짓이라 코드는
 ```
 data/raw/          2.5GB · git 제외 · sources.yaml 의 url 로 재취득
   ↓ src/etl/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    20종 · EPSG:5186(계산) / 4326(표출)
-  ↓ src/etl/segments.py          조립부 429줄. 계산은 seg/ 가 한다
+data/processed/    대장 27종(OK 23 · SKIP 4) · gpkg 24개
+                   EPSG:5186(계산) / 4326(표출)
+  ↓ src/etl/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py                임계값 정본 (web/config.js 는 표시용 사본)
       seg/graph.py                 노딩 · 최대성분 · 접근 회랑
       seg/width.py                 폭 산출 — ngii1k 1014 · silpok 84 를 만든다
       seg/geom.py                  verdict · _seal · _join · _dirv (순수 함수)
       seg/roadname.py              노딩으로 끊긴 도로명 되붙이기
+      seg/basisno.py               기초구간 → seg_label (도로명주소 기초번호)
       seg/report.py                소방서 대조 · 진단 · 산출물 기록
   ↓ src/etl/publish_web.py       표출용 경량 사본
-web/data/          12MB · UI 입력 · git 포함 (지형·정사영상 타일 포함)
+web/data/          28.6MB · UI 입력 · git 포함 (지형·정사영상 타일 포함)
   ↓ web/index.html               MapLibre 5 + deck.gl 9 (interleaved) + V-World
-GitHub Pages       gis 브랜치 푸시 시 자동 배포
+GitHub Pages       main 브랜치 푸시 시 자동 배포
+
+src/etl/quiet_gdal.py            GDAL 잡음 억제. rasterio 보다 먼저 import
+tools/encoding_check.py          인코딩·개행 검사 (CI 게이트)
+tools/web_manifest.py            web/data 계보 지문
 ```
 
 ### 왜 나눴나 (2026-08-18)
@@ -469,7 +475,7 @@ GitHub Pages       gis 브랜치 푸시 시 자동 배포
 
 ### 계약
 
-`tests/test_contract.py` 20종 + 방어·위생 130종이 CI에서 검증한다.
+`tests/test_contract.py` 19종 + 방어·위생 171종이 CI에서 검증한다.
 
     test_contract.py         GIS ↔ UI 경계 (좌표계 · 필드 · verdict 어휘)
     test_guards.py           계보 2층 · 낡은 산출물 격리 · 공간 커버리지
@@ -509,7 +515,7 @@ GitHub Pages       gis 브랜치 푸시 시 자동 배포
 구간 수는 줄었지만 **동명동 범위 안에서는 같은 데이터**다.
 291MB 를 받지 않아도 되고 기준월도 7월로 맞는다.
 
-### 확보 (21종)
+### 확보 (27종 · 2026-08-21 `road_intrvl` 추가)
 
 도로구간 · 실폭도로 · **1:1,000 수치지형도 도로경계** · 1:5,000 수치지도
 도로경계면 · 표준노드링크 · 회전제한 · 행정경계 · 건물 · 건물출입구 ·
@@ -606,11 +612,15 @@ exFAT 에서 `git reset --hard` 시 경로 문자열 파일로 체크아웃되�
 원본 2.5GB 가 소실됐다(2026-08-11). `src/etl/paths.py` 의 환경변수 방식으로 대체했다.
 
 ```bash
-export FIRE_LANE_RAW="/mnt/f/.../FIRE_LANE/data/raw"     # 리눅스
-setx FIRE_LANE_RAW "D:\...\FIRE_LANE\data\raw"        # 윈도우
+export FIRE_LANE_DATA="<raw 상위 폴더 경로>"      # 리눅스
+setx FIRE_LANE_DATA "<raw 상위 폴더 경로>"       # 윈도우
 ```
 
 미설정 시 `<repo>/data/raw` 를 쓴다. 단일 머신이면 그걸로 충분하다.
+
+> **★ `FIRE_LANE_RAW` 는 폐기됐다(2026-08-21).** `paths.py` 가 이 변수를
+> 레거시로 처리하며, 설정돼 있으면 `FIRE_LANE_DATA` 를 덮어써 기계 간
+> 산출물이 갈린다. 실행 시 경고가 나온다. 셸 프로필에 남아 있으면 지울 것.
 
 `web/data` 는 CI 가 **60MB 상한**을 감시한다. 타일이 늘어 넘으면 머지가 막힌다.
 
@@ -1447,7 +1457,7 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 2.5GB 가 저�
 파이프라인은 오창준 로컬에서만 돈다.
 
 ```bash
-uv run python src/etl/ingest.py        # raw → processed (15종)
+uv run python src/etl/ingest.py        # ★ 직접 호출 금지. §12 참조
 uv run python src/etl/segments.py      # 노딩 → 폭 → 판정
 uv run python src/etl/terrain.py       # 공개DEM → Terrain-RGB 타일
 uv run python src/etl/ortho.py         # 항공정사영상 → 배경 타일 (25cm)
@@ -1577,7 +1587,8 @@ pytest tests/test_contract.py    # 계약 유지 확인
 | `web/data/` | ✓ | UI 담당이 raw 없이 작업할 수 있어야 한다 |
 
 **핵심은 지혜님이 2.5GB raw 없이도 지도를 띄울 수 있어야 한다는 것.**
-그래서 `web/data/` 1.2MB는 커밋한다.
+그래서 `web/data/` 를 커밋한다. 현재 28.6MB(정사영상 타일 포함)이며
+CI 가 40MB 상한을 감시한다.
 
 
 ---
@@ -2110,8 +2121,10 @@ publish 는 terrain/ortho 가 기록한 타일 범위를 읽어 보존한다.
 ### 14-3. raw 위치
 
 ```bash
-export FIRE_LANE_RAW="/mnt/f/.../FIRE_LANE/data/raw"
+export FIRE_LANE_DATA="<raw 상위 폴더 경로>"
 ```
+
+`FIRE_LANE_RAW` 는 폐기됐다. §6-2 참조.
 
 **심링크를 쓰지 않는다.** 심링크를 git 이 추적했다가 exFAT 에서
 `git reset --hard` 시 경로 문자열 파일로 체크아웃되면서 원본 2.5GB 가 소실됐다(2026-08-11).
