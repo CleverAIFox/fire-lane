@@ -97,10 +97,12 @@ STEPS = [
          writes=(P / "streetlight_point.geojson",)),
     Step("terrain", "terrain.py", "공개DEM → Terrain-RGB 타일",
          WEB / "terrain",
-         reads=(P / "_manifest.json",),
          writes=(WEB / "terrain", P / "dem_scope.tif"),
          # ★ 여기가 z 소실의 자리다. segments.geojson 을 읽어 z 를 덧쓴다.
-         mutates=(P / "segments.geojson",)),
+         # ★ _manifest.json 도 reads 가 아니라 mutates 다. terrain 기록을
+         #   덧쓴다("→ _manifest.json 에 terrain 기록"). reads 로 적어두면
+         #   선언과 실제가 달라 하류 무효화 경고가 안 뜬다.
+         mutates=(P / "segments.geojson", P / "_manifest.json")),
     Step("ortho", "ortho.py", "항공정사영상 → 배경 타일",
          WEB / "ortho",
          writes=(WEB / "ortho",)),
@@ -228,7 +230,22 @@ def main():
                     help="이 단계만")
     ap.add_argument("--check", action="store_true", help="실행 없이 상태만")
     ap.add_argument("--no-test", action="store_true", help="계약 테스트 생략")
+    ap.add_argument("--reset-lineage", action="store_true",
+                    help="계보 기록을 지우고 시작한다 (교착 탈출구)")
     a = ap.parse_args()
+
+    if a.reset_lineage:
+        # ★ 명시적 탈출구. 지금까지는 _lineage.json 을 손으로 rm 하는 것이
+        #   유일한 방법이었고 문서에도 없었다. 몰래 지우는 것보다 로그에
+        #   남는 편이 낫다 — 무엇을 근거로 넘어갔는지가 남는다.
+        _lin = PROCESSED / "_lineage.json"
+        if _lin.exists():
+            _lin.unlink()
+            print(f"★ 계보 기록을 지웠다: {_lin}")
+            print("  이번 실행의 입력은 대조 없이 진행한다. "
+                  "산출물이 낡았을 가능성을 사람이 책임진다.")
+        else:
+            print("· 계보 기록이 이미 없다")
 
     if a.check:
         check_only()

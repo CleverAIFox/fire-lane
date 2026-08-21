@@ -103,9 +103,38 @@ def fingerprint(p: Path) -> dict | None:
         except Exception as e:                       # noqa: BLE001
             # 조용히 넘어가지 않는다. 지문을 못 뜬 사실 자체를 기록한다.
             return {"kind": "vector", "error": f"{type(e).__name__}: {e}"[:120]}
+    if p.name == "_manifest.json":
+        return _manifest_digest(p)
     if ext in BYTES:
         return {"kind": "bytes", "sha256": _sha(p)}
     return {"kind": "stat", "bytes": p.stat().st_size}
+
+
+# ── _manifest.json 만 다르게 본다 ──────────────────────────────
+# 이 파일은 ingest 가 쓰고 terrain 이 자기 기록을 덧쓴다. 바이트 전체를
+# 비교하면 terrain 이 돌 때마다 segments 의 입력 지문이 어긋난다.
+# 전량 실행이 성공할 때마다 다음 --from segments 가 깨지는 원인이었다.
+#
+# segments 가 의존하는 것은 **ingest 가 쓴 datasets 블록** 이다.
+# 그 블록만 정규화해서 해시한다. 08-18 사고(ngii1k 14336 기록 vs 옛
+# 레이어 6675 사용)는 이 블록의 변화이므로 그대로 잡힌다.
+_MANIFEST_OWNED = ("datasets", "bbox_4326", "standard_crs")
+
+
+def _manifest_digest(p: Path) -> dict:
+    """대장의 ingest 소유 블록만으로 지문을 뜬다."""
+    import json as _json
+    try:
+        d = _json.loads(p.read_text(encoding="utf-8"))
+    except Exception:                                    # noqa: BLE001
+        # 파싱 실패는 숨기지 않는다. 바이트 해시로 떨어뜨린다.
+        return {"kind": "bytes", "sha256": _sha(p)}
+    owned = {k: d.get(k) for k in _MANIFEST_OWNED if k in d}
+    blob = _json.dumps(owned, sort_keys=True, ensure_ascii=False,
+                       separators=(",", ":")).encode("utf-8")
+    return {"kind": "manifest",
+            "sha256": hashlib.sha256(blob).hexdigest()[:16],
+            "n": len(d.get("datasets", []))}
 
 
 def _same(a: dict | None, b: dict | None) -> bool:
@@ -121,7 +150,7 @@ def _same(a: dict | None, b: dict | None) -> bool:
             a.get("features") == b.get("features")
     if a["kind"] == "tree":
         return a.get("n") == b.get("n") and a.get("bytes") == b.get("bytes")
-    if a["kind"] == "bytes":
+    if a["kind"] in ("bytes", "manifest"):
         return a.get("sha256") == b.get("sha256")
     return a.get("bytes") == b.get("bytes")
 
