@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-21T20:24:03.090911+09:00",
+  "generated_at": "2026-08-21T20:48:00.903329+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -1715,29 +1715,11 @@
     },
     {
       "key": "node_point",
-      "source_file": "its/its_nodelink_kr_20260812.zip",
-      "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
-      "source_crs": "EPSG:5186",
-      "license": "TODO",
-      "url": "",
-      "status": "OK",
-      "features": 968,
-      "geom": [
-        "Point"
-      ],
-      "columns": [
-        "NODE_ID",
-        "NODE_TYPE",
-        "NODE_NAME",
-        "TURN_P",
-        "UPDATEDATE",
-        "REMARK",
-        "HIST_TYPE",
-        "HISTREMARK"
-      ],
-      "outputs": [
-        "node_point.geojson",
-        "node_point_5186.gpkg"
+      "status": "FAIL",
+      "error": "OSError: [Errno 12] Cannot allocate memory",
+      "staled": [
+        "node_point_5186.gpkg",
+        "node_point.geojson"
       ]
     },
     {
@@ -1748,7 +1730,7 @@
       "license": "TODO",
       "url": "",
       "status": "OK",
-      "features": 87,
+      "features": 44125,
       "geom": [],
       "columns": [
         "NODE_ID",
@@ -2288,34 +2270,5 @@
         "building_ledger.csv"
       ]
     }
-  ],
-  "ortho": {
-    "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
-    "gsd_m": 0.25,
-    "src_crs": "EPSG:5186",
-    "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
-    "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.6MB)",
-    "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-08-21T11:41:47+00:00"
-  },
-  "terrain": {
-    "source": "dem_public (공개DEM 90m, 도엽 35616)",
-    "raster": "dem_scope.tif",
-    "grid_m": 11.25,
-    "upsample": 8,
-    "base_elev_m": 34.3,
-    "relief_m": 86.6,
-    "note_relief": "대상 영역 기준. 패딩 포함 창 전체는 더 넓다",
-    "applied_to": [
-      "segments",
-      "building",
-      "cctv",
-      "hydrant_point",
-      "fire_station"
-    ],
-    "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
-    "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
-    "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-08-21T11:30:57+00:00"
-  }
+  ]
 }

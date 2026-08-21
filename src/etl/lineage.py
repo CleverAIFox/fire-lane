@@ -216,6 +216,17 @@ def verify(processed: Path, root: Path, step, expand, steps) -> None:
 
     problems: list[str] = []
     unknown: list[str] = []
+
+    # ★ mutates 는 이 단계가 읽고 그 자리에 덧쓰는 대상이다. 그래서 이 단계가
+    #   기억하는 지문은 '덧쓴 뒤' 상태이고, 상류가 재실행되면 '덧쓰기 전'
+    #   상태가 된다. 구조적으로 매번 다르다 — ③ 자가대조의 오탐이다.
+    #
+    #   terrain 이 segments.geojson 에 z 를 넣는 것이 그 사례다.
+    #   기억 32dd6aac(z 있음) vs 디스크 372ee587(z 없음).
+    #
+    #   ② 상류 대조는 그대로 둔다. 08-18 사고를 잡는 것이 그쪽이다.
+    _mutated_keys = {_key(root, m) for m in expand(step.mutates)}
+
     for p in expand(step.consumes):
         k = _key(root, p)
         up = producer.get(k)
@@ -240,6 +251,10 @@ def verify(processed: Path, root: Path, step, expand, steps) -> None:
                 continue
 
         # ③ 자기가 지난번에 읽은 것과 다른가 — 상류가 없는 raw 도 여기서 걸린다
+        #   단, mutates 는 제외한다. 자기가 덧쓴 것을 자기가 다시 읽으면
+        #   다른 것이 정상이다. reads 는 아무도 덧쓰지 않으므로 그대로 본다.
+        if k in _mutated_keys:
+            continue
         mine = lg.get(step.name, {}).get("inputs", {}).get(k)
         if mine is not None and not _same(mine, now):
             problems.append(
