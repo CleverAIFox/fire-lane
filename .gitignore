@@ -23,6 +23,8 @@ data/processed/*.gpkg
 data/processed/*.tif
 data/processed/*.geojson
 data/processed/*.csv
+data/processed/*.json
+data/processed/*.stale_*
 data/processed/_lineage.json
 !data/processed/segments.geojson
 !data/processed/segments.schema.json
@@ -55,3 +57,10 @@ apply.sh
 
 # ingest 실패 시 격리되는 옛 산출물. 커밋 대상이 아니다.
 data/processed/*.stale_*
+
+# ── 루트의 일회성 스크립트 ─────────────────────────────────
+# README §18-5 R8. 이름 있는 도구는 tools/ 에 둔다.
+/*.sh
+
+# 계보 기록. 실행마다 달라진다.
+data/processed/_lineage.json

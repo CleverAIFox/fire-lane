@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit — 커밋 시점 방어
+#
+# CI 는 push 후에 돈다. 그때 잡히면 이미 히스토리에 박힌다.
+# 여기서 먼저 자른다.
+#
+# 활성화:  git config core.hooksPath .githooks
+# 우회:    git commit --no-verify   (이유를 커밋 메시지에 남길 것)
+set -uo pipefail
+
+fail=0
+run() {
+    local label="$1"; shift
+    if ! "$@"; then
+        printf '\033[31m✗ %s\033[0m\n' "$label"
+        fail=1
+    fi
+}
+
+if command -v uv >/dev/null 2>&1; then
+    PY="uv run python"
+else
+    PY="python3"
+fi
+
+run "커밋 정책"   $PY tools/commit_policy.py
+run "인코딩·개행" $PY tools/encoding_check.py
+
+# 스테이지된 파이썬만 문법 검사. 전체 린트는 CI 가 한다.
+mapfile -t pys < <(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
+if [ "${#pys[@]}" -gt 0 ]; then
+    run "파이썬 문법" $PY -m py_compile "${pys[@]}"
+fi
+
+# 스테이지된 JS 문법
+mapfile -t jss < <(git diff --cached --name-only --diff-filter=ACM | grep '^web/.*\.js$' || true)
+for f in "${jss[@]:-}"; do
+    [ -n "$f" ] && run "JS 문법 $f" node --check "$f"
+done
+
+if [ "$fail" -ne 0 ]; then
+    printf '\n커밋을 중단한다. 고치고 다시 커밋해라.\n'
+    printf '정말 필요하면  git commit --no-verify  (이유를 메시지에 남길 것)\n'
+    exit 1
+fi
+exit 0
