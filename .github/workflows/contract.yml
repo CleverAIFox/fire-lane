@@ -35,6 +35,11 @@ jobs:
       - name: 의존성
         run: pip install pytest shapely numpy ruff
 
+      - name: 커밋 정책
+        # ★ pre-commit 훅을 안 쓰는 사람·다른 기계를 여기서 막는다.
+        #   훅은 로컬 설정이라 클론에 자동 적용되지 않는다.
+        run: python tools/commit_policy.py --tracked
+
       - name: 인코딩·개행
         # ★ .gitattributes 는 커밋 시점에만 개입한다. 이미 들어온 것은
         #   못 잡는다. BOM 이 붙은 CSV 는 첫 컬럼명이 '\ufeffw_ngi' 가
