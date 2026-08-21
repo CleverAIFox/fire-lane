@@ -1,3 +1,28 @@
+#!/usr/bin/env bash
+# fix-intrvl2.sh — 기초구간(TL_SPRD_INTRVL) 기반 재작성
+#
+#   저장소 루트에서:  bash fix-intrvl2.sh
+#
+# ── 스키마가 확인됐다 ──────────────────────────────────────
+#   ODD_BSI_MN  홀수측 기초번호 본번
+#   EVE_BSI_MN  짝수측 기초번호 본번
+#   ODD_BSI_SL / EVE_BSI_SL   부번
+#   RDS_MAN_NO  도로구간 관리번호 (road_link 와 같은 키)
+#
+# 기초구간 조각마다 값이 박혀 있다. 그러면 우리가 할 일은 RoadNameIndex 와
+# 똑같다 — 겹침 길이가 가장 긴 기초구간의 번호를 가져오면 된다.
+#
+#   버린다:  linemerge · 기점 누적거리 · 오프셋 추정 · 홀드아웃 · REVERSED
+#   남긴다:  poi_store 대조. 이제 보정에 안 쓰이므로 진짜 독립 검증이다
+#
+# 이 스크립트는 새 모듈을 **쓰기만** 하고 파이프라인에 붙이지 않는다.
+# 붙이려면 road_intrvl 이 ingest 를 타야 하는데, 그 등록부 형식을
+# 아직 못 봤다. 아래 3번이 그것을 찍는다.
+set -euo pipefail
+[ -d .git ] || { echo "저장소 루트에서 실행할 것"; exit 1; }
+
+echo "── 1. 새 모듈 작성"
+cat > src/etl/seg/basisno.py <<'BASISNO_EOF'
 #!/usr/bin/env python3
 """
 seg/basisno.py — 구간 라벨을 도로명주소 기초번호로 만든다.
@@ -119,3 +144,52 @@ class BasisIntervalIndex:
         if s is None:
             return str(road_name)
         return f"{road_name} {s}" if s == e else f"{road_name} {s}-{e}"
+BASISNO_EOF
+python3 -m py_compile src/etl/seg/basisno.py && echo "  ✓ src/etl/seg/basisno.py — 기초구간 기반으로 재작성"
+
+echo
+echo "── 2. 추정 잔재 제거"
+rm -f data/basisno_offset.json tools/basisno_calibrate.py
+git rm --cached -q --ignore-unmatch data/basisno_offset.json tools/basisno_calibrate.py 2>/dev/null || true
+echo "  ✓ basisno_offset.json · basisno_calibrate.py 제거 (추정값이므로)"
+
+echo
+echo "── 3. ingest 등록부 형식 (읽기만 함)"
+echo
+echo "  ── sources.yaml 에서 같은 zip 을 쓰는 항목"
+grep -n -B2 -A10 "TL_SPRD_RW\|road_rw" sources.yaml | head -40 || echo "  (못 찾음)"
+echo
+echo "  ── ingest.py 가 sources.yaml 을 읽는 방식"
+grep -n "sources\|yaml\|layer\|for .* in .*:" src/etl/ingest.py | head -25
+echo
+echo "  ── ingest.py 앞부분"
+sed -n '1,45p' src/etl/ingest.py
+
+git add -A
+git diff --cached --quiet || {
+  git commit -q -m "refactor: 기초번호를 추정에서 기초구간(TL_SPRD_INTRVL) 정본으로
+
+ODD_BSI_MN · EVE_BSI_MN 에 도로명주소법 기초번호가 값으로 들어 있다.
+linemerge·기점 누적거리·오프셋 추정·홀드아웃을 전부 버린다.
+클리핑으로 선이 끊긴 181개 문제도 같이 사라진다 — 기초구간은
+조각마다 자기 번호를 갖는다."
+  echo
+  echo "  ✓ 커밋"
+}
+
+cat <<'NEXT'
+
+── 다음
+
+  위 3번 출력을 보여주면 ingest 등록 + segments 배선 패치를 만들어주겠다.
+  road_intrvl 이 data/processed 로 나와야 basisno 가 쓸 수 있다.
+
+  주의 — 이 zip 의 shapefile 에는 .prj 가 없다(CRS None).
+  road_link 와 같은 EPSG:5179 로 명시해야 한다. ingest 에 이미 그런
+  처리가 있으면 그대로 따르고, 없으면 set_crs(5179) 를 넣어야 한다.
+
+  배선 뒤 검증
+    flrun --from ingest
+    flgold                                   ← L1/L2/L3 통과해야 한다
+    uv run python tools/basisno_check.py     ← 이제 진짜 독립 검증
+NEXT
