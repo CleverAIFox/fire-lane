@@ -44,6 +44,11 @@ def install() -> None:
         return
     _installed = True
 
+    # 0. GDAL 이 stderr 로 직접 쓰는 경로. 파이썬 훅으로는 못 막는다.
+    import os
+    os.environ.setdefault("CPL_LOG_ERRORS", "OFF")
+    os.environ.setdefault("GDAL_PAM_ENABLED", "NO")
+
     # 1. geotransform 없음 경고
     try:
         from rasterio.errors import NotGeoreferencedWarning
@@ -65,3 +70,37 @@ def install() -> None:
 
 
 install()
+
+def disable_sidecar_scan() -> None:
+    """GDAL 이 래스터를 열 때 디렉터리를 훑지 않게 한다.
+
+    ── 왜 필요한가 ────────────────────────────────────────────
+    정사영상 TIF 옆에 같은 이름의 국토지리정보원 메타 `.xml` 이 있다.
+    GDAL 은 래스터를 열 때 사이드카를 찾으려고 디렉터리를 훑고, 그
+    과정에서 이 XML 을 C 레벨에서 디코딩하다 0xa0 에서 터진다.
+    콜백 안의 예외라 파이썬 훅으로는 못 막는다.
+
+    2026-08-21 실측:
+
+        XML 있음                                1회
+        XML 없음                                0회   ← 원인
+        GDAL_PAM_ENABLED=NO                     1회  (.aux.xml 만 막는다)
+        CPL_LOG_ERRORS=OFF                      1회
+        rasterio._env.log_error 치환            1회
+        LC_ALL=C.UTF-8                          1회  (로케일은 이미 UTF-8)
+        GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR  0회   ★
+
+    ── 부작용 ★ ──────────────────────────────────────────────
+    `.tfw` 같은 **정당한** 사이드카도 같이 막힌다. ortho.py 는 스코프
+    bbox 로 직접 배치하고 geotransform 을 쓰지 않으므로 안전하다.
+
+    PLAN #11(정사영상 정합 검증)을 제대로 하려면 사이드카 좌표가
+    필요해질 수 있다. 그때는 이 함수를 빼고 norm 계층에 XML 없는
+    심링크를 만드는 쪽으로 가라 — MASTER §5 의 "norm: 파일명·인코딩·
+    확장자만 통일" 이 원래 이 용도다.
+
+    그래서 import 만으로 걸지 않고 명시적으로 호출하게 둔다.
+    terrain 은 DEM 사이드카가 필요할 수 있으므로 부르지 않는다.
+    """
+    import os
+    os.environ["GDAL_DISABLE_READDIR_ON_OPEN"] = "EMPTY_DIR"
