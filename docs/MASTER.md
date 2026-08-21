@@ -1257,6 +1257,7 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 됨
 | `midpoint_fallback` | 정규표본이 없어 중점 하나로 잰 구간 |
 | `inherited` | 인접 구간에서 폭을 상속받았는가 |
 | `road_name` | 겹침 길이 최대 매칭 |
+| `seg_label` | 구간 라벨. 도로명 + 도로명주소 기초번호 (예: `필문대로205번길 11-17`). `road_intrvl` 정본. 기초구간을 못 찾으면 도로명만 |
 | `road_side` | `RDS_DPN_SE` 0/1/2. **의미 미확정.** 폭과의 상관만 확인됨 |
 | `road_bt_m` | 도로대장 명목폭. 참고값 (§3-3 예외 있음) |
 | `light_count` | 반경 50m 가로등 수. 지번 단위 집계라 근사다 (processed 정본) |
