@@ -35,6 +35,12 @@ jobs:
       - name: 의존성
         run: pip install pytest shapely numpy ruff
 
+      - name: 인코딩·개행
+        # ★ .gitattributes 는 커밋 시점에만 개입한다. 이미 들어온 것은
+        #   못 잡는다. BOM 이 붙은 CSV 는 첫 컬럼명이 '\ufeffw_ngi' 가
+        #   되고, 그것을 아무도 모른 채 파이프라인이 돈다.
+        run: python tools/encoding_check.py
+
       - name: 파이썬 린트
         run: ruff check src tools tests
 

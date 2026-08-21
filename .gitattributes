@@ -1,3 +1,42 @@
-*.geojson -text
-*.json -text
-*.py text eol=lf
+# 인코딩·개행 정규화
+#
+# 원칙 — 저장소 안 텍스트는 UTF-8(BOM 없음) · LF · 마지막 줄 개행.
+# raw 는 불변이므로 여기 대상이 아니다. 원본 인코딩은 sources.yaml 이
+# 선언하고 ingest 가 읽을 때 변환한다.
+#
+# 2026-08-21. 이전에는 `*.py text eol=lf` 하나뿐이라 csv·md·yaml·json 이
+# 제각각이었다. data/field CSV 에 BOM 이 붙어 첫 컬럼명이 '\ufeffw_ngi' 로
+# 읽히던 것이 그 결과다.
+
+# 기본: git 이 텍스트로 판단하면 저장소에는 LF 로 넣는다.
+* text=auto eol=lf
+
+# ── 텍스트 (명시) ──────────────────────────────────────────
+*.py     text eol=lf
+*.sh     text eol=lf
+*.md     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.csv    text eol=lf
+*.txt    text eol=lf
+*.html   text eol=lf
+*.css    text eol=lf
+*.js     text eol=lf
+
+# ── 바이너리 취급 (diff 하지 않는다) ───────────────────────
+# geojson/json 은 텍스트지만 좌표 배열이라 줄 단위 diff 가 의미 없다.
+# 다만 정규화는 받아야 하므로 -text 대신 eol 만 고정한다.
+*.geojson text eol=lf -diff
+*.json    text eol=lf
+
+*.gpkg   binary
+*.tif    binary
+*.zip    binary
+*.jpg    binary
+*.png    binary
+*.docx   binary
+*.hwpx   binary
+*.pdf    binary
+*.shp    binary
+*.dbf    binary
+*.shx    binary
