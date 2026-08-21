@@ -50,12 +50,20 @@ def main() -> int:
         return 1
 
     bnx = BasisNumberIndex.from_gdf(road)
-    print(f"도로 {len(bnx.line)}개 · BSI_INT 보유 {len(bnx.interval)}개")
+    n_off = bnx.load_offsets()
+    print(f"도로 {len(bnx.line)}개 · BSI_INT {len(bnx.interval)}개 · 오프셋 {n_off}개")
+    if n_off == 0:
+        print("  ★ data/basisno_offset.json 없음 — "
+              "tools/basisno_calibrate.py 를 먼저 돌려라.\n"
+              "    본선은 클리핑 때문에 편차가 크게 나온다.")
 
     rows = []
+    # poi 의 도로명은 '전남광주통합특별시 동구 충장로안길' 처럼 풀네임이다.
+    # road_link 의 RN 은 '충장로안길'. 마지막 토큰만 쓴다.
     for rn, num, geom in zip(poi["도로명"], poi["건물본번지"], poi.geometry):
         if rn is None or geom is None or geom.is_empty:
             continue
+        rn = str(rn).split()[-1]
         try:
             actual = int(num)
         except (TypeError, ValueError):
@@ -66,7 +74,8 @@ def main() -> int:
         if base is None:
             continue
         iv = bnx.interval.get(str(rn), 20.0)
-        rows.append((str(rn), actual, basis_no(base.project(geom), iv)))
+        off = int(bnx.offset.get(str(rn), 0))
+        rows.append((str(rn), actual, basis_no(base.project(geom), iv) + off))
 
     if not rows:
         print("대조 가능한 상가가 없다. 도로명 표기가 서로 다를 수 있다.")

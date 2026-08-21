@@ -76,6 +76,7 @@ class BasisNumberIndex:
     def __init__(self, geoms, names, intervals=None):
         self.line: dict[str, LineString] = {}
         self.interval: dict[str, float] = {}
+        self.offset: dict[str, float] = {}
         self.unmerged: set[str] = set()
 
         if intervals is None:
@@ -114,6 +115,21 @@ class BasisNumberIndex:
         iv = list(r["BSI_INT"]) if "BSI_INT" in r.columns else None
         return cls(list(r.geometry), list(r["RN"]), iv)
 
+    def load_offsets(self, path="data/basisno_offset.json") -> int:
+        """도로별 기점 오프셋을 읽는다. 없으면 0으로 둔다.
+
+        `tools/basisno_calibrate.py` 가 만든다. 커밋 대상이다 —
+        196행짜리 JSON 이라 git diff 로 변화를 볼 수 있다.
+        """
+        import json
+        import pathlib as _pl
+        f = _pl.Path(path)
+        if not f.exists():
+            return 0
+        d = json.loads(f.read_text(encoding="utf-8"))
+        self.offset = {k: float(v["offset_no"]) for k, v in d.get("roads", {}).items()}
+        return len(self.offset)
+
     def range_for(self, rn, geom) -> tuple[int | None, int | None]:
         """구간 `geom` 이 걸치는 기초번호 구간 (시작, 끝)."""
         if rn is None:
@@ -128,7 +144,9 @@ class BasisNumberIndex:
             return None, None
         lo, hi = (cs, ce) if cs <= ce else (ce, cs)
         iv = self.interval.get(str(rn), BASIS_INTERVAL_M)
-        return basis_no(lo, iv), basis_no(hi, iv)
+        # 클리핑 오프셋. 본선은 스코프 밖에 진짜 기점이 있다.
+        off = int(self.offset.get(str(rn), 0))
+        return basis_no(lo, iv) + off, basis_no(hi, iv) + off
 
     def label(self, rn, geom) -> str | None:
         """사람이 읽는 구간 이름. '필문대로205번길 11-17'."""
