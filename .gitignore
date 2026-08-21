@@ -1,52 +1,54 @@
-# 원본 데이터 (2.5GB급, S3/드라이브 백업)
-data/raw/*
+# Fire-Lane .gitignore
+#
+# 원칙 — README "데이터 계층" 과 일치시킨다.
+#   raw        저장소 밖. sources.yaml 의 url 로 재취득
+#   processed  재생성 가능(285초). 커밋하지 않는다
+#   web/data   UI 입력. 커밋한다 (지혜님이 raw 없이 작업해야 함)
+#
+# 2026-08-21 정리. 중복 4건(gpkg · .work · README 예외 · raw 이중규칙)을
+# 합치고, processed 의 *.csv 가 뚫려 있던 구멍을 막았다.
+# building_ledger.csv 11MB + enforcement.csv 5.4MB 가 그 구멍으로 들어와
+# 있었다 — README 는 "커밋하지 않는다" 라고 선언했으므로 규약과 강제자가
+# 어긋난 유일한 지점이었다.
+
+# ── raw ────────────────────────────────────────────────────
+# 2.5GB. 심링크는 쓰지 않는다(2026-08-11 소실 사고). FIRE_LANE_RAW 로 지정.
+# 디렉터리째 막으면 내부 !예외가 무효가 되므로 하위 항목만 막는다.
+data/raw/**
 !data/raw/README.md
 
-# 파이프라인 임시 작업
-.work/
-
-# 산출물
-# .geojson / .csv 는 커밋한다 (팀 공유·리뷰 대상, 텍스트라 diff 가능)
-# .gpkg 는 제외 — 바이너리라 diff 불가하고, ingest.py로 30초면 재생성된다
+# ── processed ──────────────────────────────────────────────
+# 전부 재생성 대상이다. 아래 4개만 UI 입력이라 예외.
 data/processed/*.gpkg
+data/processed/*.tif
+data/processed/*.geojson
+data/processed/*.csv
+data/processed/_lineage.json
+!data/processed/segments.geojson
+!data/processed/segments.schema.json
+!data/processed/_manifest.json
+!data/processed/seg_uid_map.csv
 
-# Python
+# ── web/data 는 커밋한다 ───────────────────────────────────
+!web/data/**
+
+# ── 작업 잔해 ──────────────────────────────────────────────
+.work/
+data/desk/
+_backup_*/
+*.bak_*
+docs/lineage.mmd
+
+# ── Python ─────────────────────────────────────────────────
 __pycache__/
 *.pyc
 .venv/
 *.egg-info/
-
-# ── Fire-Lane ──────────────────────────────────────────
-# raw 원본 2.5GB. sources.yaml 의 url 로 재취득한다.
-data/raw/**
-!data/raw/README.md
-
-# 대용량 중간 산출물. ingest.py / terrain.py 로 재생성.
-data/processed/*.gpkg
-data/processed/*.tif
-data/processed/*.geojson
-
-# UI 입력이므로 아래는 커밋한다 (지혜님이 raw 없이 작업 가능해야 함)
-!data/processed/segments.geojson
-!data/processed/segments.schema.json
-!data/processed/_manifest.json
-!web/data/**
-
-# ETL 임시
-.work/
-
-# ── 전수조사에서 나온 누락분 (2026-08-11) ─────────────
-# data/raw 자체가 심링크일 때 스테이징에 들어간 적이 있다.
-# 다만 `data/raw/` 로 디렉터리를 통째로 막으면 그 안의 `!README.md`
-# 예외가 무효가 된다. git 은 제외된 디렉터리 내부를 아예 훑지 않는다.
-# 그래서 하위 항목만 막고 README 만 되살린다. (위의 data/raw/** 규칙과 동일 취지)
-
-# 패치 적용 시 생기는 백업. 커밋 대상이 아니다.
-_backup_*/
-
-# pytest 캐시
 .pytest_cache/
-docs/lineage.mmd
-*.bak_*
-data/desk/
-data/processed/_lineage.json
+.ruff_cache/
+
+# ── 로컬 환경 ──────────────────────────────────────────────
+.env
+
+# 일회성 적용 스크립트. 저장소에 남기지 않는다.
+apply.sh
