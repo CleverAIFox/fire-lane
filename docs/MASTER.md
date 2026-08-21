@@ -436,7 +436,7 @@ raw 는 `$FIRE_LANE_RAW` 다. `if fa.exists()` 가 항상 거짓이라 코드는
 ```
 data/raw/          2.5GB · git 제외 · sources.yaml 의 url 로 재취득
   ↓ src/etl/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    19종 · EPSG:5186(계산) / 4326(표출)
+data/processed/    20종 · EPSG:5186(계산) / 4326(표출)
   ↓ src/etl/segments.py          조립부 429줄. 계산은 seg/ 가 한다
       seg/params.py                임계값 정본 (web/config.js 는 표시용 사본)
       seg/graph.py                 노딩 · 최대성분 · 접근 회랑
@@ -469,7 +469,7 @@ GitHub Pages       gis 브랜치 푸시 시 자동 배포
 
 ### 계약
 
-`tests/test_contract.py` 19종 + 방어·위생 130종이 CI에서 검증한다.
+`tests/test_contract.py` 20종 + 방어·위생 130종이 CI에서 검증한다.
 
     test_contract.py         GIS ↔ UI 경계 (좌표계 · 필드 · verdict 어휘)
     test_guards.py           계보 2층 · 낡은 산출물 격리 · 공간 커버리지
