@@ -10,12 +10,12 @@
 #
 # 켜는 법 (1회)
 #   Settings > Pages > Source 를 "GitHub Actions" 로 변경
-#   그러면 gis 브랜치에 푸시할 때마다 자동 갱신된다.
+#   그러면 main 브랜치에 푸시할 때마다 자동 갱신된다.
 name: 지도 배포
 
 on:
   push:
-    branches: [gis]
+    branches: [main]
     paths: ['web/**']          # 지도가 바뀔 때만 배포
   workflow_dispatch:            # 수동 실행 버튼
 

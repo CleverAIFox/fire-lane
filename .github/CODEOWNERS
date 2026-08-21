@@ -1,5 +1,5 @@
 # 소유권 = 리뷰 승인 권한. 여기 적힌 경로는 소유자 승인 없이 머지되지 않는다.
-# GitHub Settings > Branches > gis 브랜치 보호 규칙에서
+# GitHub Settings > Branches > main 브랜치 보호 규칙에서
 # "Require review from Code Owners"를 켜야 실제로 동작한다.
 
 # ── GIS 코어. 값의 근거가 여기 있다 ──────────────────
