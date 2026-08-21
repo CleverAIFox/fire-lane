@@ -12,6 +12,8 @@
 #   2. ruff 추가. pyproject 에 설정을 다 해놓고 CI 에서 안 돌렸다.
 #      로컬에서만 도는 린터는 안 도는 린터다.
 #   3. JS 검사를 glob 으로. app.js 를 모듈로 쪼개도 전부 잡힌다.
+#      → 2026-08-21 실제로 쪼갰다(web/js/). ES 모듈이라 `node --check` 로는
+#        import 해석까지는 못 본다. 그래서 아래에 순환 import 검사를 붙였다.
 #   4. web/data 상한 60MB → 40MB. ortho z19 를 버려 31MB → 4MB 가 됐으므로
 #      60 은 열 배 여유다. 여유가 크면 경보가 안 울린다.
 name: contract
@@ -31,9 +33,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
       - name: 의존성
-        run: pip install pytest shapely numpy ruff
+        # ★ `-e . --no-deps` — 패키지를 import 가능하게만 만든다.
+        #   테스트가 `from firelane.guards import ...` 를 하려면 설치가 필요한데,
+        #   geopandas·rasterio 전부 받으면 CI 가 몇 분씩 늘어난다.
+        #   여기서 도는 테스트들은 shapely·numpy 밖에 안 쓴다.
+        run: |
+          pip install pytest shapely numpy ruff
+          pip install -e . --no-deps
 
       - name: 커밋 정책
         # ★ pre-commit 훅을 안 쓰는 사람·다른 기계를 여기서 막는다.
@@ -49,11 +60,29 @@ jobs:
       - name: 파이썬 린트
         run: ruff check src tools tests
 
-      - name: JS 문법 검사
+      - name: JS 문법 검사 (클래식 스크립트)
+        # config.js 처럼 모듈이 아닌 파일만 여기서 본다.
+        # ★ web/js/**(ES 모듈)은 `node --check` 로 검사되지 않는다 —
+        #   Node 는 .js 를 CommonJS 로 읽고 export 에서 실패하면 조용히
+        #   넘어간다. 실측: `export const a=1; const b={{{;` → 종료코드 0.
+        #   모듈은 아래 js_graph_check 가 --input-type=module 로 본다.
         run: |
-          # app.js 가 문법 오류면 지도가 통째로 안 뜬다.
-          find web -name '*.js' -not -path '*/node_modules/*' -print0 \
-            | xargs -0 -n1 -I{} sh -c 'node --check "{}" && echo "OK  {}"'
+          find web -maxdepth 1 -name '*.js' -print0 \
+            | xargs -0 -r -n1 -I{} sh -c 'node --check "{}" && echo "OK  {}"'
+
+      - name: JS 부팅 스모크
+        # ★ 문법·그래프 검사가 통과해도 실행하면 죽는 경우가 있다.
+        #   app.js 분리 중 실제로 2건 나왔다(모듈 최상단 부수효과 ·
+        #   스코프를 넘어간 상수 참조). 자세한 것은 도구 헤더 참조.
+        run: |
+          npm install --no-save jsdom
+          node tools/web_boot_check.mjs
+
+      - name: JS 모듈 그래프 검사
+        # ★ app.js 1,260줄을 web/js/ 로 쪼갠 뒤 필요해졌다. 파일이 늘면
+        #   순환 import 가 생기고, 브라우저에서는 그것이 "지도가 안 뜬다"로만
+        #   보인다. 문법 검사로는 안 잡힌다.
+        run: node tools/js_graph_check.mjs
 
       - name: web/data 용량 검사
         run: |
@@ -82,7 +111,8 @@ jobs:
       - name: 방어 로직 · 저장소 위생
         run: |
           pytest tests/test_guards.py tests/test_seg_*.py \
-                 tests/test_static.py tests/test_reproducibility.py -v
+                 tests/test_static.py tests/test_reproducibility.py \
+                 tests/test_layering.py -v
 
       - name: 문서 숫자 대조
         run: |

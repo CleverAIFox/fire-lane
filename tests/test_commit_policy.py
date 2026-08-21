@@ -13,9 +13,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
 
-import commit_policy as cp  # noqa: E402
+import commit_policy as cp   # tools/ — pyproject 의 pytest pythonpath 로 잡힌다
 
 
 @pytest.mark.parametrize("path,rule", [
@@ -38,7 +37,7 @@ def test_금지_대상을_잡는다(path, rule):
     "data/processed/segments.schema.json",
     "data/processed/_manifest.json",
     "data/processed/seg_uid_map.csv",
-    "src/etl/segments.py",
+    "src/firelane/segments.py",
     "tools/commit_policy.py",
     "web/data/segments.geojson",
     ".env.example",

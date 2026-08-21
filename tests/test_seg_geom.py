@@ -9,19 +9,16 @@ test_seg_geom.py — 분리된 순수 함수 단위 테스트
 
 주석으로만 존재하던 규칙을 여기서 고정한다. 임계값을 건드리면 여기서 걸린다.
 """
-import sys
 from pathlib import Path
 
 import pytest
 from shapely.geometry import LineString, Polygon
 
+
+from firelane.seg.geom import _dirv, _join, _seal, verdict
+from firelane.seg.params import NODE_TOL, PARK, TRUCK
+
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src" / "etl"))
-
-from seg.geom import _dirv, _join, _seal, verdict  # noqa: E402
-from seg.params import NODE_TOL, PARK, TRUCK  # noqa: E402
-
-
 # ── verdict ────────────────────────────────────────────────────
 def test_below_truck_is_blocked():
     """차량 전폭 하한 미달. 장애물이 없어도 못 지나간다."""
@@ -159,7 +156,7 @@ def test_params_are_not_redefined_in_segments():
     그때는 segments.py 만 고치고 web/config.js 사본은 그대로 두는 식의
     어긋남이 조용히 생긴다.
     """
-    src = (ROOT / "src/etl/segments.py").read_text(encoding="utf-8")
+    src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
     for name in ("TRUCK", "PARK", "NODE_TOL", "COV_MIN", "WMAX_CAP"):
         assert f"\n{name}" not in src.replace(f"\n{name}_", "\n_"), (
             f"{name} 이 segments.py 에서 재정의됐다 — 정본은 seg/params.py")

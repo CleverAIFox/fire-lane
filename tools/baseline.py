@@ -153,7 +153,7 @@ def cmd_freeze(args) -> int:
     digests["nfa_compare.json"] = sha(dst / "nfa_compare.json")
 
     rows = load(dst / "segments.geojson")
-    src = (ROOT / "src/etl/pipeline.py").read_text(encoding="utf-8")
+    src = (ROOT / "src/firelane/pipeline.py").read_text(encoding="utf-8")
     expect = src.split("EXPECT = {", 1)[1].split("\n}", 1)[0] if "EXPECT = {" in src else ""
 
     meta = {

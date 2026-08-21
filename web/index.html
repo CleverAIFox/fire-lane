@@ -82,7 +82,12 @@
 <button id="dispatch-fab" title="출동 모드 켜기/끄기">출동</button>
 
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.1.0/dist/maplibre-gl.js"></script>
+<!-- ★ config.js 는 클래식 스크립트로 남긴다. UI 담당(@marscoolcat)의 파일이고
+     window.CONFIG 로 노출된다. js/config-access.js 가 그 전역을 읽는
+     유일한 곳이다 — 다른 모듈은 전부 정상 import 로 쓴다.
+     ★ 순서가 중요하다. config.js 가 먼저 실행돼야 한다.
+       module 은 defer 처럼 동작하므로 클래식 스크립트보다 항상 늦게 돈다. -->
 <script src="./config.js"></script>
-<script src="./app.js"></script>
+<script type="module" src="./js/main.js"></script>
 </body>
 </html>

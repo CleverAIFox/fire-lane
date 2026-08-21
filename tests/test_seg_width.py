@@ -11,20 +11,17 @@ golden 은 "리팩 전후가 같은가"만 본다. 지금 값이 **옳은가**�
 ★ 실제 데이터가 아니라 사각형 도로면을 쓴다. 실측 검증은 D-25 이고,
   여기서 지키는 것은 "규칙이 코드에 살아 있는가"다.
 """
-import sys
 from pathlib import Path
 
 import pytest
 from shapely.geometry import LineString, MultiPoint, Point, Polygon
 from shapely.ops import unary_union
 
+
+from firelane.seg.params import COV_MIN, SNAP_MAX, SNAP_TRUST, WMAX_CAP
+from firelane.seg.width import WidthEngine
+
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src" / "etl"))
-
-from seg.params import COV_MIN, SNAP_MAX, SNAP_TRUST, WMAX_CAP  # noqa: E402
-from seg.width import WidthEngine  # noqa: E402
-
-
 def road(width_m: float, length: float = 100.0, y0: float = 0.0):
     """y0 을 중심으로 폭 width_m 인 직선 도로면."""
     h = width_m / 2.0

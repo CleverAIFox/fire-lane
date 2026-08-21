@@ -59,7 +59,7 @@ MASTER §10-0 에 대응표가 있다. 새 D 번호는 만들지 않는다.
 ### 숫자의 정본은 문서가 아니다
 
 문서에 적힌 구간 수·판정 수는 **파이프라인 산출물의 사본**이다.
-정본은 `data/processed/segments.geojson`, 기대값은 `src/etl/pipeline.py` 의 `EXPECT` 다.
+정본은 `data/processed/segments.geojson`, 기대값은 `src/firelane/pipeline.py` 의 `EXPECT` 다.
 셋이 어긋나면 산출물이 옳다.
 
 ```bash
@@ -75,9 +75,9 @@ uv sync
 git config core.hooksPath .githooks   # 커밋 시점 방어. 클론 후 1회
 export FIRE_LANE_DATA="<raw 상위 폴더 경로>"   # 머신마다 다르다
 
-uv run python src/etl/normalize_raw.py "$FIRE_LANE_DATA/landing" --dry-run
-uv run python src/etl/contract.py
-uv run python src/etl/pipeline.py
+python -m firelane.normalize_raw "$FIRE_LANE_DATA/landing" --dry-run
+python -m firelane.contract
+fire-lane
 
 cd web && uv run python -m http.server 8000
 ```
@@ -91,9 +91,9 @@ ingest → segments → streetlight → terrain → ortho → publish → 계약
 ```
 
 ```bash
-uv run python src/etl/pipeline.py --check          # 실행 없이 상태만
-uv run python src/etl/pipeline.py --from segments  # 그 단계부터
-uv run python src/etl/pipeline.py --only publish
+fire-lane --check          # 실행 없이 상태만
+fire-lane --from segments  # 그 단계부터
+fire-lane --only publish
 ```
 
 전량 재실행 약 285초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
@@ -121,9 +121,9 @@ data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물
 ### 게이트
 
 ```
-uv run python src/etl/contract.py       대장 선언 ↔ raw 실물 대조. ingest 앞에 선다
+python -m firelane.contract       대장 선언 ↔ raw 실물 대조. ingest 앞에 선다
 uv run python tools/scan_data.py        계층·명명·중복·격리 대상
-uv run python src/etl/datalog.py check  대장 정합성
+python -m firelane.datalog check  대장 정합성
 ```
 
 `contract.py` 가 보는 것 — 인코딩 · 컬럼 소실 · 건수 · zip 안 레이어 ·
@@ -137,7 +137,7 @@ uv run python src/etl/datalog.py check  대장 정합성
 
 ```
 sources.yaml              데이터 정본. contract 블록 포함
-src/etl/
+src/firelane/
   paths.py                경로 정본. FIRE_LANE_DATA 환경변수
   normalize_raw.py        landing → raw 명명규칙 배치
   contract.py             ★ 대장 ↔ 실물 계약 게이트
@@ -176,7 +176,10 @@ web/
   index.html              뼈대                      공동
   style.css               색·간격·타이포             @marscoolcat
   config.js               색상표·임계값·마커·카메라   공동
-  app.js                  로직·레이어               @AIMasterFox
+  js/                     로직·레이어 (27개 모듈)   @AIMasterFox
+    main.js               부트스트랩. 순서만
+    data.js               ★ 데이터 접근 단일 지점
+    layers/ icons/ ui/
   data/                   생성물. 손으로 고치지 않는다
 ```
 

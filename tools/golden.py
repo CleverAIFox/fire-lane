@@ -124,7 +124,7 @@ def cmd_lock(_args) -> int:
     print(f"  구간 {L1['n']} · " + " · ".join(f"{k} {v}" for k, v in L1["verdict"].items()))
     print(f"  총연장 {L1['length_total_m']:,.0f}m · 기하 {fp['L3'][:12]}")
     print("\n이제 쪼개라. 한 덩어리마다:")
-    print("  uv run python src/etl/pipeline.py --only segments && uv run python tools/golden.py check")
+    print("  uv run fire-lane --only segments && uv run python tools/golden.py check")
     return 0
 
 

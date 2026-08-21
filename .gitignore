@@ -64,3 +64,4 @@ data/processed/*.stale_*
 
 # 계보 기록. 실행마다 달라진다.
 data/processed/_lineage.json
+node_modules/

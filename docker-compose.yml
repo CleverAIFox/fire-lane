@@ -17,7 +17,7 @@
 #   런타임에는 조회만 한다.
 #
 #   docker compose up web
-#   docker compose --profile etl run --rm etl uv run python src/etl/pipeline.py
+#   docker compose --profile etl run --rm etl uv run fire-lane
 
 services:
   web:
