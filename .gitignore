@@ -52,3 +52,6 @@ __pycache__/
 
 # 일회성 적용 스크립트. 저장소에 남기지 않는다.
 apply.sh
+
+# ingest 실패 시 격리되는 옛 산출물. 커밋 대상이 아니다.
+data/processed/*.stale_*
