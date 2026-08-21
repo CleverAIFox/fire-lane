@@ -72,6 +72,7 @@ uv run python tools/docnum_check.py     # 문서·EXPECT 가 산출물과 같은
 
 ```bash
 uv sync
+git config core.hooksPath .githooks   # 커밋 시점 방어. 클론 후 1회
 export FIRE_LANE_DATA="<raw 상위 폴더 경로>"   # 머신마다 다르다
 
 uv run python src/etl/normalize_raw.py "$FIRE_LANE_DATA/landing" --dry-run

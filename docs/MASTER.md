@@ -482,6 +482,7 @@ tools/web_manifest.py            web/data 계보 지문
     test_seg_*.py            verdict · RoadNameIndex · WidthEngine 단위
     test_static.py           정의되지 않은 이름 (실패 경로의 NameError)
     test_reproducibility.py  §18-5 규약 R1 · R4 · R5 · R14 강제
+    test_commit_policy.py    커밋 정책 — 산출물·일회성 스크립트·비밀값 차단
 
 ```
 얼린다:  좌표계 EPSG:4326 · 필드명/타입 · verdict 어휘 4종

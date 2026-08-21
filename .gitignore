@@ -23,6 +23,8 @@ data/processed/*.gpkg
 data/processed/*.tif
 data/processed/*.geojson
 data/processed/*.csv
+data/processed/*.json
+data/processed/*.stale_*
 data/processed/_lineage.json
 !data/processed/segments.geojson
 !data/processed/segments.schema.json
