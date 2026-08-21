@@ -53,11 +53,17 @@ BASIS_INTERVAL_M = 20.0
 REVERSED: set[str] = set()
 
 
-def basis_no(dist_m: float) -> int:
-    """기점에서 dist_m 떨어진 지점의 기초번호(홀수 계열)."""
+def basis_no(dist_m: float, interval_m: float = BASIS_INTERVAL_M) -> int:
+    """기점에서 dist_m 떨어진 지점의 기초번호(홀수 계열).
+
+    간격은 road_link 의 `BSI_INT` 를 쓴다. 대개 20m 지만 도로마다 다를 수
+    있으므로 인자로 받는다.
+    """
     if dist_m < 0:
         dist_m = 0.0
-    return int(dist_m // BASIS_INTERVAL_M) * 2 + 1
+    if not interval_m or interval_m <= 0:
+        interval_m = BASIS_INTERVAL_M
+    return int(dist_m // interval_m) * 2 + 1
 
 
 class BasisNumberIndex:
@@ -67,15 +73,29 @@ class BasisNumberIndex:
     쓰면 안 된다. RN 으로 묶어 `linemerge` 한 뒤 전체 기점부터 잰다.
     """
 
-    def __init__(self, geoms, names):
+    def __init__(self, geoms, names, intervals=None):
         self.line: dict[str, LineString] = {}
+        self.interval: dict[str, float] = {}
         self.unmerged: set[str] = set()
 
+        if intervals is None:
+            intervals = [None] * len(list(names))
+
         bucket: dict[str, list] = {}
-        for g, n in zip(geoms, names):
+        for g, n, iv in zip(geoms, names, intervals):
             if n is None or g is None or g.is_empty:
                 continue
-            bucket.setdefault(str(n), []).append(g)
+            rn = str(n)
+            bucket.setdefault(rn, []).append(g)
+            # BSI_INT 는 도로명주소 도로구간의 기초간격이다. 대개 20 이지만
+            # 데이터가 값을 갖고 있으므로 하드코딩하지 않는다.
+            if rn not in self.interval:
+                try:
+                    v = float(iv)
+                    if v > 0:
+                        self.interval[rn] = v
+                except (TypeError, ValueError):
+                    pass
 
         for rn, gs in bucket.items():
             merged = linemerge(unary_union(gs)) if len(gs) > 1 else gs[0]
@@ -91,7 +111,8 @@ class BasisNumberIndex:
     def from_gdf(cls, road):
         """`road_link` GeoDataFrame 에서 만든다. RN 이 빈 행은 버린다."""
         r = road[road["RN"].notna()]
-        return cls(list(r.geometry), list(r["RN"]))
+        iv = list(r["BSI_INT"]) if "BSI_INT" in r.columns else None
+        return cls(list(r.geometry), list(r["RN"]), iv)
 
     def range_for(self, rn, geom) -> tuple[int | None, int | None]:
         """구간 `geom` 이 걸치는 기초번호 구간 (시작, 끝)."""
@@ -106,7 +127,8 @@ class BasisNumberIndex:
         except Exception:
             return None, None
         lo, hi = (cs, ce) if cs <= ce else (ce, cs)
-        return basis_no(lo), basis_no(hi)
+        iv = self.interval.get(str(rn), BASIS_INTERVAL_M)
+        return basis_no(lo, iv), basis_no(hi, iv)
 
     def label(self, rn, geom) -> str | None:
         """사람이 읽는 구간 이름. '필문대로205번길 11-17'."""

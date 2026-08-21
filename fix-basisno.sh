@@ -1,3 +1,100 @@
+#!/usr/bin/env bash
+# fix-basisno.sh — 기초번호 검증 소스 정정
+#
+#   저장소 루트에서:  bash fix-basisno.sh
+#
+# 고치는 것 2개
+#   1. BSI_INT 사용 — road_link 에 도로별 기초간격이 이미 들어 있다.
+#      20m 를 하드코딩하고 있었는데, 데이터가 값을 갖고 있다.
+#   2. 검증 소스 교체 — building_entrance 는 수치지형도 출입구 레이어라
+#      주소가 없다(BUL_MAN_NO · ENTRC_SE · SIG_CD 뿐). poi_store 로 바꾼다.
+#      8,599건에 도로명 · 건물본번지 · 경도 · 위도가 전부 있다.
+set -euo pipefail
+[ -d .git ] || { echo "저장소 루트에서 실행할 것"; exit 1; }
+
+python3 - <<'PATCH'
+import pathlib
+
+p = pathlib.Path("src/etl/seg/basisno.py")
+s = p.read_text(encoding="utf-8")
+
+old_init = '''    def __init__(self, geoms, names):
+        self.line: dict[str, LineString] = {}
+        self.unmerged: set[str] = set()
+
+        bucket: dict[str, list] = {}
+        for g, n in zip(geoms, names):
+            if n is None or g is None or g.is_empty:
+                continue
+            bucket.setdefault(str(n), []).append(g)
+'''
+new_init = '''    def __init__(self, geoms, names, intervals=None):
+        self.line: dict[str, LineString] = {}
+        self.interval: dict[str, float] = {}
+        self.unmerged: set[str] = set()
+
+        if intervals is None:
+            intervals = [None] * len(list(names))
+
+        bucket: dict[str, list] = {}
+        for g, n, iv in zip(geoms, names, intervals):
+            if n is None or g is None or g.is_empty:
+                continue
+            rn = str(n)
+            bucket.setdefault(rn, []).append(g)
+            # BSI_INT 는 도로명주소 도로구간의 기초간격이다. 대개 20 이지만
+            # 데이터가 값을 갖고 있으므로 하드코딩하지 않는다.
+            if rn not in self.interval:
+                try:
+                    v = float(iv)
+                    if v > 0:
+                        self.interval[rn] = v
+                except (TypeError, ValueError):
+                    pass
+'''
+assert old_init in s, "__init__ 앵커 없음"
+s = s.replace(old_init, new_init)
+
+old_from = '''        r = road[road["RN"].notna()]
+        return cls(list(r.geometry), list(r["RN"]))'''
+new_from = '''        r = road[road["RN"].notna()]
+        iv = list(r["BSI_INT"]) if "BSI_INT" in r.columns else None
+        return cls(list(r.geometry), list(r["RN"]), iv)'''
+assert old_from in s, "from_gdf 앵커 없음"
+s = s.replace(old_from, new_from)
+
+old_range = '''        lo, hi = (cs, ce) if cs <= ce else (ce, cs)
+        return basis_no(lo), basis_no(hi)'''
+new_range = '''        lo, hi = (cs, ce) if cs <= ce else (ce, cs)
+        iv = self.interval.get(str(rn), BASIS_INTERVAL_M)
+        return basis_no(lo, iv), basis_no(hi, iv)'''
+assert old_range in s, "range_for 앵커 없음"
+s = s.replace(old_range, new_range)
+
+old_fn = '''def basis_no(dist_m: float) -> int:
+    """기점에서 dist_m 떨어진 지점의 기초번호(홀수 계열)."""
+    if dist_m < 0:
+        dist_m = 0.0
+    return int(dist_m // BASIS_INTERVAL_M) * 2 + 1'''
+new_fn = '''def basis_no(dist_m: float, interval_m: float = BASIS_INTERVAL_M) -> int:
+    """기점에서 dist_m 떨어진 지점의 기초번호(홀수 계열).
+
+    간격은 road_link 의 `BSI_INT` 를 쓴다. 대개 20m 지만 도로마다 다를 수
+    있으므로 인자로 받는다.
+    """
+    if dist_m < 0:
+        dist_m = 0.0
+    if not interval_m or interval_m <= 0:
+        interval_m = BASIS_INTERVAL_M
+    return int(dist_m // interval_m) * 2 + 1'''
+assert old_fn in s, "basis_no 앵커 없음"
+s = s.replace(old_fn, new_fn)
+
+p.write_text(s, encoding="utf-8")
+print("  ✓ src/etl/seg/basisno.py — BSI_INT 사용")
+PATCH
+
+cat > tools/basisno_check.py <<'CHECK_EOF'
 #!/usr/bin/env python3
 """
 tools/basisno_check.py — 계산한 기초번호를 실제 건물번호와 대조한다.
@@ -117,3 +214,16 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+CHECK_EOF
+echo "  ✓ tools/basisno_check.py — poi_store 로 교체"
+
+python3 -m py_compile src/etl/seg/basisno.py tools/basisno_check.py && echo "  ✓ 문법"
+
+git add -A
+git diff --cached --quiet || {
+  git commit -q -m "fix: 기초간격을 road_link BSI_INT 에서 읽고, 검증 소스를 poi_store 로 교체
+
+building_entrance 는 수치지형도 출입구라 주소가 없다.
+poi_store 는 8,599건에 도로명·건물본번지·좌표를 전부 갖고 있다."
+  echo "  ✓ 커밋"
+}
