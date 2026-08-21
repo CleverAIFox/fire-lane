@@ -78,6 +78,31 @@ datasets:
     contract:
       encoding: cp949
       layer_must_exist: true
+  road_intrvl:
+    what: 도로명주소 기초구간 (선형). 기초번호 정본
+    crs_native: 5179
+    vintage: 2026
+    license: TODO
+    desc: |
+      도로명주소법의 기초번호가 값으로 들어 있는 레이어.
+      ODD_BSI_MN 홀수측 본번 · EVE_BSI_MN 짝수측 본번 ·
+      RDS_MAN_NO 도로구간 관리번호 · BSI_INT_SN 기초구간 일련번호.
+    kind: shp_zip
+    file: juso/juso_elctrnmap_jngj_20260711.zip
+    layer: TL_SPRD_INTRVL.shp
+    crs: EPSG:5179
+    encoding: cp949
+    retrieved: 2026-08-21
+    note: |
+      ★ .prj 가 없다(CRS None). crs 값으로 set_crs 한 뒤 변환해야 한다.
+      segments 의 seg_label 이 이것을 쓴다. 이전에는 도로선을 linemerge 해서
+      기점부터 20m 씩 세었으나, road_link 가 스코프로 클리핑돼 본선의 진짜
+      기점이 선 밖에 있었다(무등로 +420 · 중앙로 +186 · 동일부호 100%).
+      클리핑으로 끊긴 도로도 181개였다. 정본이 raw 안에 있으므로 추정을 버렸다.
+    contract:
+      encoding: cp949
+      layer_must_exist: true
+
   spotaddr_geom:
     what: 사물주소 도형 (전남광주통합특별시 동구, 2026-08-01 승인분)
     crs_native: 5179

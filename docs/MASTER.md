@@ -436,7 +436,7 @@ raw 는 `$FIRE_LANE_RAW` 다. `if fa.exists()` 가 항상 거짓이라 코드는
 ```
 data/raw/          2.5GB · git 제외 · sources.yaml 의 url 로 재취득
   ↓ src/etl/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    19종 · EPSG:5186(계산) / 4326(표출)
+data/processed/    20종 · EPSG:5186(계산) / 4326(표출)
   ↓ src/etl/segments.py          조립부 429줄. 계산은 seg/ 가 한다
       seg/params.py                임계값 정본 (web/config.js 는 표시용 사본)
       seg/graph.py                 노딩 · 최대성분 · 접근 회랑
@@ -469,7 +469,7 @@ GitHub Pages       gis 브랜치 푸시 시 자동 배포
 
 ### 계약
 
-`tests/test_contract.py` 19종 + 방어·위생 130종이 CI에서 검증한다.
+`tests/test_contract.py` 20종 + 방어·위생 130종이 CI에서 검증한다.
 
     test_contract.py         GIS ↔ UI 경계 (좌표계 · 필드 · verdict 어휘)
     test_guards.py           계보 2층 · 낡은 산출물 격리 · 공간 커버리지
@@ -1257,6 +1257,7 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 됨
 | `midpoint_fallback` | 정규표본이 없어 중점 하나로 잰 구간 |
 | `inherited` | 인접 구간에서 폭을 상속받았는가 |
 | `road_name` | 겹침 길이 최대 매칭 |
+| `seg_label` | 구간 라벨. 도로명 + 도로명주소 기초번호 (예: `필문대로205번길 11-17`). `road_intrvl` 정본. 기초구간을 못 찾으면 도로명만 |
 | `road_side` | `RDS_DPN_SE` 0/1/2. **의미 미확정.** 폭과의 상관만 확인됨 |
 | `road_bt_m` | 도로대장 명목폭. 참고값 (§3-3 예외 있음) |
 | `light_count` | 반경 50m 가로등 수. 지번 단위 집계라 근사다 (processed 정본) |

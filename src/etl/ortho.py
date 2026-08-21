@@ -38,6 +38,8 @@ from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
+import quiet_gdal  # noqa: F401  GDAL cp949 로그 잡음 억제. rasterio 보다 먼저
+quiet_gdal.disable_sidecar_scan()  # 정사영상 옆 .xml 을 GDAL 이 읽지 않게
 import rasterio
 from PIL import Image
 from rasterio.transform import Affine

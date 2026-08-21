@@ -166,7 +166,7 @@ tools/
   desk_check.py           정사영상 위에 구간·폭 렌더 (책상 대조)
      ※ 날짜 붙은 일회성 스크립트는 두지 않는다(§18-5 R8). CI 가 막는다.
 tests/
-  test_contract.py        GIS ↔ UI 경계 19종
+  test_contract.py        GIS ↔ UI 경계 20종
   test_guards.py          계보 2층 · 격리 · 커버리지
   test_seg_*.py           verdict · RoadNameIndex · WidthEngine 단위
   test_static.py          정의되지 않은 이름 (실패 경로의 NameError)

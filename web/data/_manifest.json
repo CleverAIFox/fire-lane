@@ -1,0 +1,108 @@
+{
+ "generated_at": "2026-08-21T17:14:44+09:00",
+ "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
+ "source": {
+  "segments.geojson": {
+   "sha256": "4db771ec3bc0dcec3345e4bb58c586915b2f9b210ddf056be487c37d0333bab5",
+   "bytes": 1017012
+  },
+  "segments.schema.json": {
+   "sha256": "dd94198fe20a2410f2374a2326d8bff9d67fe5ec024a0e9fb9f35a22f561a9a5",
+   "bytes": 3724
+  },
+  "_manifest.json": {
+   "sha256": "781af9ed94621cc20692b76d237430876b8efe7dfaa5d1d9965c5b13dd2b374d",
+   "bytes": 55687
+  }
+ },
+ "files": {
+  "boundary.geojson": {
+   "sha256": "f0d00348c651316da360c26857d264a37e6038f2b3c158289c74316c6606e29b",
+   "bytes": 12116
+  },
+  "buildings.geojson": {
+   "sha256": "c5b4e22f65fcf0f859a5d32101068c59579214faadfbb98c160fdb871cbce7a9",
+   "bytes": 2167186
+  },
+  "cctv.geojson": {
+   "sha256": "f36d909299c83422b24019f2f702e4cfcd5bff644934c2c2c20ee38fc91b33a6",
+   "bytes": 39189
+  },
+  "hydrants.geojson": {
+   "sha256": "102422bc81a63bc75a42d5662cf785e686ff75fbdb350d315110f343ecd40b23",
+   "bytes": 5926
+  },
+  "lightpoles.geojson": {
+   "sha256": "9293409249ba470cb0f2366125bc696b08b8da735b96bae0c3596a8d6c8c2fe3",
+   "bytes": 167268
+  },
+  "mask.geojson": {
+   "sha256": "c9a3b5bca3e6fe56c54de613f58dca12dbc00f7da75f44c0a47efcc75ccfdc3d",
+   "bytes": 35476
+  },
+  "mask_soft.geojson": {
+   "sha256": "74e9805e3c0c38bcab24fcd4548e7d77581516480a214f1e30b4851a56ce27ca",
+   "bytes": 47111
+  },
+  "poi.geojson": {
+   "sha256": "b021f28899f0a8cc50ffa2bb5615a89038f67327cffc0e68f20a5502a38929d7",
+   "bytes": 524608
+  },
+  "scope.geojson": {
+   "sha256": "14c19761952df5620be03014e76e7588aadf15b920128b2ee4ad21b6f6c8058c",
+   "bytes": 35357
+  },
+  "segments.geojson": {
+   "sha256": "5913826cf1cf5e4865131cd38a05e67498a14320f111bed3c214b4f70a6891e2",
+   "bytes": 809514
+  },
+  "segments.schema.json": {
+   "sha256": "dd94198fe20a2410f2374a2326d8bff9d67fe5ec024a0e9fb9f35a22f561a9a5",
+   "bytes": 3724
+  },
+  "stations.geojson": {
+   "sha256": "9200490834e8747b3766894383f0a6878cf4fdb950e96819cb9a059e90f2fcbb",
+   "bytes": 1127
+  },
+  "streetlights.geojson": {
+   "sha256": "c5baf7507ada211c178eb9e860e67da4d326e8fbc762c4ab83cf4d81dbb22bf8",
+   "bytes": 12243
+  },
+  "view.json": {
+   "sha256": "453bc55a59046267a85e1e7b6737a2c974cbe87a021745511c44782f7085d2aa",
+   "bytes": 558
+  }
+ },
+ "tiles": {
+  "12": {
+   "count": 2,
+   "bytes": 5938
+  },
+  "13": {
+   "count": 2,
+   "bytes": 12920
+  },
+  "14": {
+   "count": 6,
+   "bytes": 25998
+  },
+  "15": {
+   "count": 24,
+   "bytes": 189048
+  },
+  "16": {
+   "count": 28,
+   "bytes": 540526
+  },
+  "17": {
+   "count": 72,
+   "bytes": 1823927
+  },
+  "18": {
+   "count": 276,
+   "bytes": 5782240
+  }
+ },
+ "tiles_digest": "01e5a60b24cdcc13",
+ "total_mb": 12.24
+}

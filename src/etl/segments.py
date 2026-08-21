@@ -53,6 +53,7 @@ CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
 # ★ 정본은 seg/ 다. 여기서 다시 정의하지 않는다(R3).
 from seg.geom import _dirv, _join, _seal, verdict  # noqa: E402
 from seg.roadname import RoadNameIndex  # noqa: E402
+from seg.basisno import BasisIntervalIndex  # noqa: E402
 from seg.width import WidthEngine  # noqa: E402
 from seg import graph as seg_graph  # noqa: E402
 from seg import report as seg_report  # noqa: E402
@@ -193,6 +194,16 @@ def main():
     # 도로명. 노딩하면 원본 속성이 끊기므로 중점 최근접으로 되붙인다.
     # seg_id(DM00001)만 보이면 사람이 어느 골목인지 알 수 없다.
     _rnx = RoadNameIndex.from_gdf(road)
+    # 기초구간 — 도로명주소법 기초번호 정본. 없으면 도로명만 라벨로 쓴다.
+    _bnx = None
+    try:
+        _intrvl = gpd.read_file(PROCESSED / "road_intrvl.geojson")
+        if road.crs is not None and _intrvl.crs != road.crs:
+            _intrvl = _intrvl.to_crs(road.crs)
+        _bnx = BasisIntervalIndex.from_gdf(_intrvl)
+        print(f"[기초번호] 기초구간 {len(_intrvl)}개")
+    except Exception as _e:                                   # noqa: BLE001
+        print(f"[기초번호] 기초구간을 못 읽었다 — seg_label 은 도로명만: {_e}")
 
 
     if _dups:
@@ -411,6 +422,7 @@ def main():
                         width_disagree_m=wdis,
                         width_fail=wfail,          # ★ 진단용. 저장 전 drop
                         road_name=_road_nm, road_side=_road_side, road_bt_m=_road_bt,
+                        seg_label=(_bnx.label(_road_nm, g) if _bnx else _road_nm),
                         light_count=(int(_light.intersects(g.buffer(50)).sum())
                                      if _light is not None else None),
                         in_emd=bool(g.intersects(poly)),

@@ -1,4 +1,4 @@
-﻿obs_id,seg_uid,track,seq,offset_m,bearing_deg,lon,lat,road_name,width_src,width_min_m,width_max_m,verdict,landmark,measured_m,kind
+obs_id,seg_uid,track,seq,offset_m,bearing_deg,lon,lat,road_name,width_src,width_min_m,width_max_m,verdict,landmark,measured_m,kind
 DM-194338-283699-6CJO#1,DM-194338-283699-6CJO,A,1,5.5,75.2,126.937731,35.149623,밤실로4번안길,ngii,6.01,,needs_cv,,,
 DM-194338-283699-6CJO#2,DM-194338-283699-6CJO,A,2,18.4,74.8,126.937867,35.149653,밤실로4번안길,ngii,6.01,,needs_cv,,,
 DM-194338-283699-6CJO#3,DM-194338-283699-6CJO,A,3,31.2,73.9,126.938002,35.149685,밤실로4번안길,ngii,6.01,,needs_cv,,,

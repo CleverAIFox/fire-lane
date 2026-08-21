@@ -103,9 +103,38 @@ def fingerprint(p: Path) -> dict | None:
         except Exception as e:                       # noqa: BLE001
             # 조용히 넘어가지 않는다. 지문을 못 뜬 사실 자체를 기록한다.
             return {"kind": "vector", "error": f"{type(e).__name__}: {e}"[:120]}
+    if p.name == "_manifest.json":
+        return _manifest_digest(p)
     if ext in BYTES:
         return {"kind": "bytes", "sha256": _sha(p)}
     return {"kind": "stat", "bytes": p.stat().st_size}
+
+
+# ── _manifest.json 만 다르게 본다 ──────────────────────────────
+# 이 파일은 ingest 가 쓰고 terrain 이 자기 기록을 덧쓴다. 바이트 전체를
+# 비교하면 terrain 이 돌 때마다 segments 의 입력 지문이 어긋난다.
+# 전량 실행이 성공할 때마다 다음 --from segments 가 깨지는 원인이었다.
+#
+# segments 가 의존하는 것은 **ingest 가 쓴 datasets 블록** 이다.
+# 그 블록만 정규화해서 해시한다. 08-18 사고(ngii1k 14336 기록 vs 옛
+# 레이어 6675 사용)는 이 블록의 변화이므로 그대로 잡힌다.
+_MANIFEST_OWNED = ("datasets", "bbox_4326", "standard_crs")
+
+
+def _manifest_digest(p: Path) -> dict:
+    """대장의 ingest 소유 블록만으로 지문을 뜬다."""
+    import json as _json
+    try:
+        d = _json.loads(p.read_text(encoding="utf-8"))
+    except Exception:                                    # noqa: BLE001
+        # 파싱 실패는 숨기지 않는다. 바이트 해시로 떨어뜨린다.
+        return {"kind": "bytes", "sha256": _sha(p)}
+    owned = {k: d.get(k) for k in _MANIFEST_OWNED if k in d}
+    blob = _json.dumps(owned, sort_keys=True, ensure_ascii=False,
+                       separators=(",", ":")).encode("utf-8")
+    return {"kind": "manifest",
+            "sha256": hashlib.sha256(blob).hexdigest()[:16],
+            "n": len(d.get("datasets", []))}
 
 
 def _same(a: dict | None, b: dict | None) -> bool:
@@ -121,7 +150,7 @@ def _same(a: dict | None, b: dict | None) -> bool:
             a.get("features") == b.get("features")
     if a["kind"] == "tree":
         return a.get("n") == b.get("n") and a.get("bytes") == b.get("bytes")
-    if a["kind"] == "bytes":
+    if a["kind"] in ("bytes", "manifest"):
         return a.get("sha256") == b.get("sha256")
     return a.get("bytes") == b.get("bytes")
 
@@ -156,6 +185,18 @@ def record(processed: Path, root: Path, step, expand) -> None:
         encoding="utf-8")
 
 
+def _skip_mutated(step) -> set:
+    """mutates 는 자기가 덧쓴다. 상류가 다시 만들면 지문이 당연히 달라진다.
+
+    terrain 이 segments.geojson 에 z 를 넣는다. 그러면 terrain 이 기억하는
+    지문은 'z 가 든 상태' 이고, segments 가 재실행되면 'z 가 없는 상태' 가
+    된다. 매번 다르다 — 이것은 오탐이다.
+
+    낡은 입력 탐지는 reads 로 충분하다. reads 는 아무도 덧쓰지 않는다.
+    """
+    return {str(p) for p in getattr(step, "mutates", ())}
+
+
 def verify(processed: Path, root: Path, step, expand, steps) -> None:
     """단계 실행 **전**. 세 가지를 본다. 어긋나면 LineageError."""
     lg = load(processed)
@@ -175,6 +216,17 @@ def verify(processed: Path, root: Path, step, expand, steps) -> None:
 
     problems: list[str] = []
     unknown: list[str] = []
+
+    # ★ mutates 는 이 단계가 읽고 그 자리에 덧쓰는 대상이다. 그래서 이 단계가
+    #   기억하는 지문은 '덧쓴 뒤' 상태이고, 상류가 재실행되면 '덧쓰기 전'
+    #   상태가 된다. 구조적으로 매번 다르다 — ③ 자가대조의 오탐이다.
+    #
+    #   terrain 이 segments.geojson 에 z 를 넣는 것이 그 사례다.
+    #   기억 32dd6aac(z 있음) vs 디스크 372ee587(z 없음).
+    #
+    #   ② 상류 대조는 그대로 둔다. 08-18 사고를 잡는 것이 그쪽이다.
+    _mutated_keys = {_key(root, m) for m in expand(step.mutates)}
+
     for p in expand(step.consumes):
         k = _key(root, p)
         up = producer.get(k)
@@ -199,6 +251,10 @@ def verify(processed: Path, root: Path, step, expand, steps) -> None:
                 continue
 
         # ③ 자기가 지난번에 읽은 것과 다른가 — 상류가 없는 raw 도 여기서 걸린다
+        #   단, mutates 는 제외한다. 자기가 덧쓴 것을 자기가 다시 읽으면
+        #   다른 것이 정상이다. reads 는 아무도 덧쓰지 않으므로 그대로 본다.
+        if k in _mutated_keys:
+            continue
         mine = lg.get(step.name, {}).get("inputs", {}).get(k)
         if mine is not None and not _same(mine, now):
             problems.append(

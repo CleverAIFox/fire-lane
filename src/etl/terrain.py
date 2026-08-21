@@ -42,6 +42,7 @@ import shutil
 
 import geopandas as gpd
 import numpy as np
+import quiet_gdal  # noqa: F401  GDAL cp949 로그 잡음 억제. rasterio 보다 먼저
 import rasterio
 from rasterio.windows import from_bounds
 
