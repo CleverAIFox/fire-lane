@@ -8,7 +8,10 @@
    "unknown": 352
   },
   "unknown_reason": {
-   "no_cctv": 352
+   "no_cctv_band": 152,
+   "no_cctv_narrow": 62,
+   "no_cctv_single": 10,
+   "no_cctv_thin": 128
   },
   "width_src": {
    "ngii": 1,
@@ -23,7 +26,7 @@
    "width_min_m": 6.16,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 73.3,
    "route_usage": 0
   },
@@ -113,7 +116,7 @@
    "width_min_m": 4.83,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 54.3,
    "route_usage": 53
   },
@@ -194,7 +197,7 @@
    "width_min_m": 2.88,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 97.5,
    "route_usage": 0
   },
@@ -203,7 +206,7 @@
    "width_min_m": 3.66,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 37.3,
    "route_usage": 0
   },
@@ -212,7 +215,7 @@
    "width_min_m": 4.27,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 15.2,
    "route_usage": 47
   },
@@ -230,7 +233,7 @@
    "width_min_m": 1.98,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 44.4,
    "route_usage": 0
   },
@@ -275,7 +278,7 @@
    "width_min_m": 2.0,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 34.8,
    "route_usage": 0
   },
@@ -293,7 +296,7 @@
    "width_min_m": 2.41,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 60.8,
    "route_usage": 0
   },
@@ -302,7 +305,7 @@
    "width_min_m": 6.87,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 15.1,
    "route_usage": 0
   },
@@ -347,7 +350,7 @@
    "width_min_m": 6.3,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 12.6,
    "route_usage": 0
   },
@@ -383,7 +386,7 @@
    "width_min_m": 5.61,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 55.9,
    "route_usage": 0
   },
@@ -401,7 +404,7 @@
    "width_min_m": 5.14,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 26.9,
    "route_usage": 235
   },
@@ -410,7 +413,7 @@
    "width_min_m": 5.26,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 47.0,
    "route_usage": 0
   },
@@ -437,7 +440,7 @@
    "width_min_m": 6.98,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 54.8,
    "route_usage": 235
   },
@@ -473,7 +476,7 @@
    "width_min_m": 4.78,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 17.6,
    "route_usage": 0
   },
@@ -491,7 +494,7 @@
    "width_min_m": 1.33,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 46.3,
    "route_usage": 0
   },
@@ -509,7 +512,7 @@
    "width_min_m": 5.19,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 26.2,
    "route_usage": 0
   },
@@ -527,7 +530,7 @@
    "width_min_m": 5.8,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 54.9,
    "route_usage": 0
   },
@@ -536,7 +539,7 @@
    "width_min_m": 4.25,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 50.8,
    "route_usage": 0
   },
@@ -608,7 +611,7 @@
    "width_min_m": 6.23,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 18.0,
    "route_usage": 0
   },
@@ -617,7 +620,7 @@
    "width_min_m": 0.57,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 42.0,
    "route_usage": 0
   },
@@ -626,7 +629,7 @@
    "width_min_m": 3.92,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 79.1,
    "route_usage": 0
   },
@@ -653,7 +656,7 @@
    "width_min_m": 6.18,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 66.9,
    "route_usage": 0
   },
@@ -662,7 +665,7 @@
    "width_min_m": 0.82,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 22.4,
    "route_usage": 0
   },
@@ -671,7 +674,7 @@
    "width_min_m": 7.3,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 2.6,
    "route_usage": 49
   },
@@ -716,7 +719,7 @@
    "width_min_m": 2.89,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 22.0,
    "route_usage": 0
   },
@@ -734,7 +737,7 @@
    "width_min_m": 2.5,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 57.1,
    "route_usage": 49
   },
@@ -761,7 +764,7 @@
    "width_min_m": 5.23,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 36.3,
    "route_usage": 0
   },
@@ -788,7 +791,7 @@
    "width_min_m": 2.69,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 25.1,
    "route_usage": 0
   },
@@ -797,7 +800,7 @@
    "width_min_m": 2.5,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 17.7,
    "route_usage": 0
   },
@@ -806,7 +809,7 @@
    "width_min_m": 2.22,
    "width_max_m": 5.13,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 78.6,
    "route_usage": 0
   },
@@ -815,7 +818,7 @@
    "width_min_m": 0.39,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 63.3,
    "route_usage": 0
   },
@@ -869,7 +872,7 @@
    "width_min_m": 3.48,
    "width_max_m": 14.49,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 70.3,
    "route_usage": 0
   },
@@ -887,7 +890,7 @@
    "width_min_m": 1.53,
    "width_max_m": 3.21,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 86.4,
    "route_usage": 4
   },
@@ -959,7 +962,7 @@
    "width_min_m": 5.6,
    "width_max_m": 6.04,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 117.5,
    "route_usage": 49
   },
@@ -968,7 +971,7 @@
    "width_min_m": 2.25,
    "width_max_m": 5.0,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 73.9,
    "route_usage": 0
   },
@@ -977,7 +980,7 @@
    "width_min_m": 6.0,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 57.9,
    "route_usage": 0
   },
@@ -1013,7 +1016,7 @@
    "width_min_m": 1.03,
    "width_max_m": 34.73,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 59.6,
    "route_usage": 0
   },
@@ -1022,7 +1025,7 @@
    "width_min_m": 2.1,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 35.5,
    "route_usage": 0
   },
@@ -1085,7 +1088,7 @@
    "width_min_m": 3.14,
    "width_max_m": 7.44,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 47.3,
    "route_usage": 1
   },
@@ -1103,7 +1106,7 @@
    "width_min_m": 1.13,
    "width_max_m": 3.7,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 45.0,
    "route_usage": 3
   },
@@ -1121,7 +1124,7 @@
    "width_min_m": 2.44,
    "width_max_m": 5.94,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 23.6,
    "route_usage": 0
   },
@@ -1139,7 +1142,7 @@
    "width_min_m": 3.41,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 42.2,
    "route_usage": 0
   },
@@ -1148,7 +1151,7 @@
    "width_min_m": 0.95,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 13.1,
    "route_usage": 0
   },
@@ -1157,7 +1160,7 @@
    "width_min_m": 7.38,
    "width_max_m": 14.35,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 2.5,
    "route_usage": 49
   },
@@ -1166,7 +1169,7 @@
    "width_min_m": 1.12,
    "width_max_m": 3.07,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 17.0,
    "route_usage": 0
   },
@@ -1202,7 +1205,7 @@
    "width_min_m": 1.06,
    "width_max_m": 3.44,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 56.4,
    "route_usage": 0
   },
@@ -1229,7 +1232,7 @@
    "width_min_m": 0.97,
    "width_max_m": 3.31,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 18.7,
    "route_usage": 0
   },
@@ -1238,7 +1241,7 @@
    "width_min_m": 2.62,
    "width_max_m": 8.53,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 26.6,
    "route_usage": 2
   },
@@ -1247,7 +1250,7 @@
    "width_min_m": 1.28,
    "width_max_m": 3.64,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 17.9,
    "route_usage": 0
   },
@@ -1301,7 +1304,7 @@
    "width_min_m": 5.78,
    "width_max_m": 7.44,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 62.3,
    "route_usage": 49
   },
@@ -1310,7 +1313,7 @@
    "width_min_m": 1.23,
    "width_max_m": 3.79,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 33.0,
    "route_usage": 2
   },
@@ -1319,7 +1322,7 @@
    "width_min_m": 5.78,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 56.9,
    "route_usage": 0
   },
@@ -1364,7 +1367,7 @@
    "width_min_m": 1.92,
    "width_max_m": 3.09,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 34.8,
    "route_usage": 2
   },
@@ -1373,7 +1376,7 @@
    "width_min_m": 1.98,
    "width_max_m": 3.72,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 69.1,
    "route_usage": 0
   },
@@ -1400,7 +1403,7 @@
    "width_min_m": 1.92,
    "width_max_m": 4.5,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 77.9,
    "route_usage": 0
   },
@@ -1418,7 +1421,7 @@
    "width_min_m": 5.99,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 62.5,
    "route_usage": 0
   },
@@ -1463,7 +1466,7 @@
    "width_min_m": 1.25,
    "width_max_m": 6.09,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 60.2,
    "route_usage": 2
   },
@@ -1553,7 +1556,7 @@
    "width_min_m": 0.67,
    "width_max_m": 3.18,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 57.0,
    "route_usage": 2
   },
@@ -1562,7 +1565,7 @@
    "width_min_m": 1.85,
    "width_max_m": 7.56,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 78.8,
    "route_usage": 4
   },
@@ -1580,7 +1583,7 @@
    "width_min_m": 1.98,
    "width_max_m": 3.9,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 157.6,
    "route_usage": 2
   },
@@ -1598,7 +1601,7 @@
    "width_min_m": 5.78,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 88.2,
    "route_usage": 0
   },
@@ -1679,7 +1682,7 @@
    "width_min_m": 6.59,
    "width_max_m": 8.61,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 72.4,
    "route_usage": 0
   },
@@ -1697,7 +1700,7 @@
    "width_min_m": 4.94,
    "width_max_m": 5.94,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 37.4,
    "route_usage": 57
   },
@@ -1778,7 +1781,7 @@
    "width_min_m": 5.61,
    "width_max_m": 7.35,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 21.8,
    "route_usage": 2
   },
@@ -1796,7 +1799,7 @@
    "width_min_m": 6.58,
    "width_max_m": 10.28,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 9.3,
    "route_usage": 26
   },
@@ -1823,7 +1826,7 @@
    "width_min_m": 3.8,
    "width_max_m": 5.07,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 13.2,
    "route_usage": 29
   },
@@ -1832,7 +1835,7 @@
    "width_min_m": 2.74,
    "width_max_m": 4.39,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 53.2,
    "route_usage": 0
   },
@@ -1886,7 +1889,7 @@
    "width_min_m": 1.28,
    "width_max_m": 4.36,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 18.9,
    "route_usage": 6
   },
@@ -1904,7 +1907,7 @@
    "width_min_m": 5.36,
    "width_max_m": 6.97,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 26.1,
    "route_usage": 22
   },
@@ -1913,7 +1916,7 @@
    "width_min_m": 1.66,
    "width_max_m": 3.99,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 20.9,
    "route_usage": 2
   },
@@ -1922,7 +1925,7 @@
    "width_min_m": 2.6,
    "width_max_m": 3.89,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 27.1,
    "route_usage": 0
   },
@@ -1940,7 +1943,7 @@
    "width_min_m": 0.98,
    "width_max_m": 5.57,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 28.5,
    "route_usage": 2
   },
@@ -1949,7 +1952,7 @@
    "width_min_m": 1.75,
    "width_max_m": 5.62,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 44.5,
    "route_usage": 2
   },
@@ -1958,7 +1961,7 @@
    "width_min_m": 2.44,
    "width_max_m": 4.54,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 23.0,
    "route_usage": 2
   },
@@ -1976,7 +1979,7 @@
    "width_min_m": 1.75,
    "width_max_m": 7.2,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 27.7,
    "route_usage": 2
   },
@@ -1985,7 +1988,7 @@
    "width_min_m": 6.64,
    "width_max_m": 8.66,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 47.3,
    "route_usage": 0
   },
@@ -1994,7 +1997,7 @@
    "width_min_m": 3.52,
    "width_max_m": 3.91,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 11.3,
    "route_usage": 5
   },
@@ -2012,7 +2015,7 @@
    "width_min_m": 4.53,
    "width_max_m": 17.05,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 28.1,
    "route_usage": 18
   },
@@ -2039,7 +2042,7 @@
    "width_min_m": 1.13,
    "width_max_m": 3.25,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 48.4,
    "route_usage": 29
   },
@@ -2048,7 +2051,7 @@
    "width_min_m": 3.41,
    "width_max_m": 4.66,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 31.8,
    "route_usage": 4
   },
@@ -2066,7 +2069,7 @@
    "width_min_m": 13.82,
    "width_max_m": 15.4,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 4.5,
    "route_usage": 8
   },
@@ -2102,7 +2105,7 @@
    "width_min_m": 0.97,
    "width_max_m": 4.4,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 15.1,
    "route_usage": 2
   },
@@ -2111,7 +2114,7 @@
    "width_min_m": 7.05,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 1.9,
    "route_usage": 86
   },
@@ -2201,7 +2204,7 @@
    "width_min_m": 1.15,
    "width_max_m": 3.4,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 39.0,
    "route_usage": 2
   },
@@ -2246,7 +2249,7 @@
    "width_min_m": 2.61,
    "width_max_m": 7.3,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 36.1,
    "route_usage": 76
   },
@@ -2255,7 +2258,7 @@
    "width_min_m": 1.54,
    "width_max_m": 4.46,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 47.9,
    "route_usage": 0
   },
@@ -2318,7 +2321,7 @@
    "width_min_m": 1.64,
    "width_max_m": 4.14,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 54.7,
    "route_usage": 8
   },
@@ -2345,7 +2348,7 @@
    "width_min_m": 3.96,
    "width_max_m": 8.83,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 28.7,
    "route_usage": 5
   },
@@ -2408,7 +2411,7 @@
    "width_min_m": 0.98,
    "width_max_m": 3.07,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 29.0,
    "route_usage": 2
   },
@@ -2435,7 +2438,7 @@
    "width_min_m": 5.3,
    "width_max_m": 7.58,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 5.7,
    "route_usage": 76
   },
@@ -2516,7 +2519,7 @@
    "width_min_m": 5.2,
    "width_max_m": 7.58,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 12.8,
    "route_usage": 76
   },
@@ -2543,7 +2546,7 @@
    "width_min_m": 2.12,
    "width_max_m": 4.28,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 65.0,
    "route_usage": 0
   },
@@ -2552,7 +2555,7 @@
    "width_min_m": 2.74,
    "width_max_m": 4.48,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 9.1,
    "route_usage": 7
   },
@@ -2660,7 +2663,7 @@
    "width_min_m": 1.36,
    "width_max_m": 6.17,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 59.1,
    "route_usage": 5
   },
@@ -2678,7 +2681,7 @@
    "width_min_m": 1.86,
    "width_max_m": 3.48,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 11.0,
    "route_usage": 7
   },
@@ -2687,7 +2690,7 @@
    "width_min_m": 1.39,
    "width_max_m": 4.2,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 12.5,
    "route_usage": 2
   },
@@ -2696,7 +2699,7 @@
    "width_min_m": 0.92,
    "width_max_m": 3.43,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 32.0,
    "route_usage": 9
   },
@@ -2705,7 +2708,7 @@
    "width_min_m": 1.94,
    "width_max_m": 4.07,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 56.9,
    "route_usage": 14
   },
@@ -2750,7 +2753,7 @@
    "width_min_m": 6.37,
    "width_max_m": 9.17,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 40.8,
    "route_usage": 17
   },
@@ -2759,7 +2762,7 @@
    "width_min_m": 5.22,
    "width_max_m": 7.65,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 32.3,
    "route_usage": 90
   },
@@ -2777,7 +2780,7 @@
    "width_min_m": 3.79,
    "width_max_m": 9.76,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 25.0,
    "route_usage": 0
   },
@@ -2786,7 +2789,7 @@
    "width_min_m": 2.46,
    "width_max_m": 5.94,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 17.3,
    "route_usage": 7
   },
@@ -2849,7 +2852,7 @@
    "width_min_m": 4.29,
    "width_max_m": 7.58,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 30.1,
    "route_usage": 0
   },
@@ -2858,7 +2861,7 @@
    "width_min_m": 5.69,
    "width_max_m": 9.08,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 49.4,
    "route_usage": 7
   },
@@ -2921,7 +2924,7 @@
    "width_min_m": 1.43,
    "width_max_m": 3.41,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 32.9,
    "route_usage": 2
   },
@@ -2948,7 +2951,7 @@
    "width_min_m": 1.08,
    "width_max_m": 4.17,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 55.7,
    "route_usage": 0
   },
@@ -2957,7 +2960,7 @@
    "width_min_m": 2.38,
    "width_max_m": 3.68,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 84.6,
    "route_usage": 0
   },
@@ -2966,7 +2969,7 @@
    "width_min_m": 1.89,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 18.8,
    "route_usage": 0
   },
@@ -2993,7 +2996,7 @@
    "width_min_m": 5.08,
    "width_max_m": 8.09,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 25.4,
    "route_usage": 90
   },
@@ -3029,7 +3032,7 @@
    "width_min_m": 1.89,
    "width_max_m": 3.25,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 64.7,
    "route_usage": 0
   },
@@ -3164,7 +3167,7 @@
    "width_min_m": 5.17,
    "width_max_m": 8.83,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 32.1,
    "route_usage": 90
   },
@@ -3191,7 +3194,7 @@
    "width_min_m": 1.67,
    "width_max_m": 5.21,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 76.6,
    "route_usage": 0
   },
@@ -3218,7 +3221,7 @@
    "width_min_m": 1.68,
    "width_max_m": 4.26,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 64.5,
    "route_usage": 0
   },
@@ -3272,7 +3275,7 @@
    "width_min_m": 1.24,
    "width_max_m": 3.06,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 80.6,
    "route_usage": 0
   },
@@ -3299,7 +3302,7 @@
    "width_min_m": 2.84,
    "width_max_m": 4.27,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 63.4,
    "route_usage": 10
   },
@@ -3344,7 +3347,7 @@
    "width_min_m": 6.11,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 17.0,
    "route_usage": 0
   },
@@ -3371,7 +3374,7 @@
    "width_min_m": 5.48,
    "width_max_m": 8.42,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 41.1,
    "route_usage": 100
   },
@@ -3398,7 +3401,7 @@
    "width_min_m": 2.42,
    "width_max_m": 4.98,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 82.2,
    "route_usage": 3
   },
@@ -3434,7 +3437,7 @@
    "width_min_m": 6.98,
    "width_max_m": 13.81,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 26.5,
    "route_usage": 6
   },
@@ -3452,7 +3455,7 @@
    "width_min_m": 0.87,
    "width_max_m": 3.49,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 23.7,
    "route_usage": 1
   },
@@ -3461,7 +3464,7 @@
    "width_min_m": 1.15,
    "width_max_m": 3.28,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 36.1,
    "route_usage": 0
   },
@@ -3515,7 +3518,7 @@
    "width_min_m": 2.14,
    "width_max_m": 7.59,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 21.9,
    "route_usage": 0
   },
@@ -3542,7 +3545,7 @@
    "width_min_m": 5.49,
    "width_max_m": 6.4,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 20.7,
    "route_usage": 85
   },
@@ -3569,7 +3572,7 @@
    "width_min_m": 1.3,
    "width_max_m": 3.01,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 15.7,
    "route_usage": 2
   },
@@ -3578,7 +3581,7 @@
    "width_min_m": 4.3,
    "width_max_m": 6.51,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 47.8,
    "route_usage": 29
   },
@@ -3587,7 +3590,7 @@
    "width_min_m": 1.0,
    "width_max_m": 4.89,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 10.2,
    "route_usage": 2
   },
@@ -3641,7 +3644,7 @@
    "width_min_m": 6.84,
    "width_max_m": 8.66,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 25.1,
    "route_usage": 4
   },
@@ -3668,7 +3671,7 @@
    "width_min_m": 2.84,
    "width_max_m": 4.64,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 19.7,
    "route_usage": 12
   },
@@ -3686,7 +3689,7 @@
    "width_min_m": 2.39,
    "width_max_m": 3.8,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 18.7,
    "route_usage": 0
   },
@@ -3722,7 +3725,7 @@
    "width_min_m": 4.96,
    "width_max_m": 8.67,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 66.8,
    "route_usage": 76
   },
@@ -3749,7 +3752,7 @@
    "width_min_m": 3.37,
    "width_max_m": 7.9,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 55.2,
    "route_usage": 0
   },
@@ -3758,7 +3761,7 @@
    "width_min_m": 5.64,
    "width_max_m": 6.23,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 101.9,
    "route_usage": 13
   },
@@ -3776,7 +3779,7 @@
    "width_min_m": 2.74,
    "width_max_m": 4.51,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 25.9,
    "route_usage": 12
   },
@@ -3803,7 +3806,7 @@
    "width_min_m": 5.93,
    "width_max_m": 7.45,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 22.4,
    "route_usage": 30
   },
@@ -3839,7 +3842,7 @@
    "width_min_m": 4.04,
    "width_max_m": 5.66,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 74.4,
    "route_usage": 85
   },
@@ -3848,7 +3851,7 @@
    "width_min_m": 3.1,
    "width_max_m": 5.01,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 21.2,
    "route_usage": 0
   },
@@ -3884,7 +3887,7 @@
    "width_min_m": 4.3,
    "width_max_m": 6.39,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 81.7,
    "route_usage": 0
   },
@@ -3938,7 +3941,7 @@
    "width_min_m": 4.28,
    "width_max_m": 6.59,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 35.6,
    "route_usage": 0
   },
@@ -3947,7 +3950,7 @@
    "width_min_m": 1.52,
    "width_max_m": 43.49,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 29.0,
    "route_usage": 2
   },
@@ -3983,7 +3986,7 @@
    "width_min_m": 3.81,
    "width_max_m": 8.06,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 28.2,
    "route_usage": 2
   },
@@ -4010,7 +4013,7 @@
    "width_min_m": 5.51,
    "width_max_m": 8.12,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 91.5,
    "route_usage": 0
   },
@@ -4019,7 +4022,7 @@
    "width_min_m": 0.68,
    "width_max_m": 4.07,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 20.7,
    "route_usage": 0
   },
@@ -4037,7 +4040,7 @@
    "width_min_m": 5.49,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 33.0,
    "route_usage": 2
   },
@@ -4055,7 +4058,7 @@
    "width_min_m": 4.19,
    "width_max_m": 9.91,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 6.8,
    "route_usage": 2
   },
@@ -4064,7 +4067,7 @@
    "width_min_m": 4.92,
    "width_max_m": 6.72,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 71.2,
    "route_usage": 76
   },
@@ -4073,7 +4076,7 @@
    "width_min_m": 1.1,
    "width_max_m": 3.28,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 16.4,
    "route_usage": 0
   },
@@ -4082,7 +4085,7 @@
    "width_min_m": 1.05,
    "width_max_m": 3.4,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 61.0,
    "route_usage": 2
   },
@@ -4100,7 +4103,7 @@
    "width_min_m": 2.61,
    "width_max_m": 5.05,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 26.4,
    "route_usage": 4
   },
@@ -4127,7 +4130,7 @@
    "width_min_m": 5.15,
    "width_max_m": 6.28,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 71.2,
    "route_usage": 83
   },
@@ -4136,7 +4139,7 @@
    "width_min_m": 6.67,
    "width_max_m": 9.36,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 45.0,
    "route_usage": 3
   },
@@ -4145,7 +4148,7 @@
    "width_min_m": 1.41,
    "width_max_m": 3.35,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 36.4,
    "route_usage": 2
   },
@@ -4163,7 +4166,7 @@
    "width_min_m": 6.4,
    "width_max_m": 42.3,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 15.5,
    "route_usage": 3
   },
@@ -4181,7 +4184,7 @@
    "width_min_m": 6.98,
    "width_max_m": 9.78,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 23.4,
    "route_usage": 5
   },
@@ -4208,7 +4211,7 @@
    "width_min_m": 6.62,
    "width_max_m": 8.67,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 59.2,
    "route_usage": 0
   },
@@ -4217,7 +4220,7 @@
    "width_min_m": 2.8,
    "width_max_m": 5.72,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 26.2,
    "route_usage": 2
   },
@@ -4289,7 +4292,7 @@
    "width_min_m": 6.61,
    "width_max_m": 12.07,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 60.6,
    "route_usage": 0
   },
@@ -4298,7 +4301,7 @@
    "width_min_m": 3.79,
    "width_max_m": 5.42,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 64.4,
    "route_usage": 3
   },
@@ -4307,7 +4310,7 @@
    "width_min_m": 6.4,
    "width_max_m": 7.67,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 57.6,
    "route_usage": 0
   },
@@ -4316,7 +4319,7 @@
    "width_min_m": 4.11,
    "width_max_m": 13.73,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 35.9,
    "route_usage": 17
   },
@@ -4370,7 +4373,7 @@
    "width_min_m": 5.56,
    "width_max_m": 11.55,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 20.2,
    "route_usage": 2
   },
@@ -4379,7 +4382,7 @@
    "width_min_m": 2.58,
    "width_max_m": 4.25,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 32.7,
    "route_usage": 2
   },
@@ -4388,7 +4391,7 @@
    "width_min_m": 1.0,
    "width_max_m": 41.42,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 18.6,
    "route_usage": 2
   },
@@ -4397,7 +4400,7 @@
    "width_min_m": 6.33,
    "width_max_m": 9.73,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 27.2,
    "route_usage": 9
   },
@@ -4415,7 +4418,7 @@
    "width_min_m": 5.5,
    "width_max_m": 8.03,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 34.8,
    "route_usage": 4
   },
@@ -4424,7 +4427,7 @@
    "width_min_m": 2.22,
    "width_max_m": 32.98,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 12.0,
    "route_usage": 4
   },
@@ -4442,7 +4445,7 @@
    "width_min_m": 1.51,
    "width_max_m": 4.43,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 49.7,
    "route_usage": 0
   },
@@ -4451,7 +4454,7 @@
    "width_min_m": 6.51,
    "width_max_m": 6.88,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 63.5,
    "route_usage": 0
   },
@@ -4460,7 +4463,7 @@
    "width_min_m": 4.02,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 32.1,
    "route_usage": 17
   },
@@ -4469,7 +4472,7 @@
    "width_min_m": 4.61,
    "width_max_m": 10.24,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 18.3,
    "route_usage": 4
   },
@@ -4505,7 +4508,7 @@
    "width_min_m": 1.94,
    "width_max_m": 3.56,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 35.7,
    "route_usage": 2
   },
@@ -4514,7 +4517,7 @@
    "width_min_m": 2.22,
    "width_max_m": 5.75,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 36.5,
    "route_usage": 0
   },
@@ -4532,7 +4535,7 @@
    "width_min_m": 1.24,
    "width_max_m": 3.57,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 20.8,
    "route_usage": 2
   },
@@ -4541,7 +4544,7 @@
    "width_min_m": 1.1,
    "width_max_m": 15.2,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 25.6,
    "route_usage": 3
   },
@@ -4550,7 +4553,7 @@
    "width_min_m": 1.38,
    "width_max_m": 4.29,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 14.9,
    "route_usage": 0
   },
@@ -4577,7 +4580,7 @@
    "width_min_m": 4.63,
    "width_max_m": 8.34,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 137.5,
    "route_usage": 83
   },
@@ -4586,7 +4589,7 @@
    "width_min_m": 0.54,
    "width_max_m": 4.96,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 25.5,
    "route_usage": 3
   },
@@ -4595,7 +4598,7 @@
    "width_min_m": 4.96,
    "width_max_m": 8.34,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 44.5,
    "route_usage": 4
   },
@@ -4631,7 +4634,7 @@
    "width_min_m": 1.2,
    "width_max_m": 5.46,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 42.6,
    "route_usage": 0
   },
@@ -4658,7 +4661,7 @@
    "width_min_m": 1.29,
    "width_max_m": 3.62,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 39.4,
    "route_usage": 0
   },
@@ -4667,7 +4670,7 @@
    "width_min_m": 0.93,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 10.9,
    "route_usage": 0
   },
@@ -4685,7 +4688,7 @@
    "width_min_m": 0.39,
    "width_max_m": 3.15,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 19.4,
    "route_usage": 2
   },
@@ -4721,7 +4724,7 @@
    "width_min_m": 2.84,
    "width_max_m": 5.36,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 78.7,
    "route_usage": 2
   },
@@ -4784,7 +4787,7 @@
    "width_min_m": 0.72,
    "width_max_m": 14.36,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 23.2,
    "route_usage": 0
   },
@@ -4802,7 +4805,7 @@
    "width_min_m": 1.3,
    "width_max_m": 7.07,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 23.1,
    "route_usage": 2
   },
@@ -4847,7 +4850,7 @@
    "width_min_m": 1.78,
    "width_max_m": 4.41,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 36.0,
    "route_usage": 0
   },
@@ -4973,7 +4976,7 @@
    "width_min_m": 1.35,
    "width_max_m": 4.22,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 14.7,
    "route_usage": 2
   },
@@ -4982,7 +4985,7 @@
    "width_min_m": 2.21,
    "width_max_m": 17.26,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 28.1,
    "route_usage": 2
   },
@@ -5090,7 +5093,7 @@
    "width_min_m": 5.0,
    "width_max_m": 7.65,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 43.2,
    "route_usage": 87
   },
@@ -5099,7 +5102,7 @@
    "width_min_m": 1.4,
    "width_max_m": 7.83,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 49.3,
    "route_usage": 0
   },
@@ -5126,7 +5129,7 @@
    "width_min_m": 2.18,
    "width_max_m": 12.67,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 18.9,
    "route_usage": 2
   },
@@ -5135,7 +5138,7 @@
    "width_min_m": 4.24,
    "width_max_m": 6.84,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 30.0,
    "route_usage": 2
   },
@@ -5171,7 +5174,7 @@
    "width_min_m": 1.11,
    "width_max_m": 46.19,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 79.9,
    "route_usage": 2
   },
@@ -5180,7 +5183,7 @@
    "width_min_m": 2.0,
    "width_max_m": 6.0,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 23.7,
    "route_usage": 0
   },
@@ -5207,7 +5210,7 @@
    "width_min_m": 1.98,
    "width_max_m": 3.14,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 42.4,
    "route_usage": 2
   },
@@ -5234,7 +5237,7 @@
    "width_min_m": 3.38,
    "width_max_m": 5.96,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 19.0,
    "route_usage": 2
   },
@@ -5243,7 +5246,7 @@
    "width_min_m": 0.69,
    "width_max_m": 3.6,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 21.0,
    "route_usage": 0
   },
@@ -5252,7 +5255,7 @@
    "width_min_m": 3.46,
    "width_max_m": 13.66,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 29.7,
    "route_usage": 6
   },
@@ -5270,7 +5273,7 @@
    "width_min_m": 1.14,
    "width_max_m": 3.9,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 48.6,
    "route_usage": 2
   },
@@ -5288,7 +5291,7 @@
    "width_min_m": 5.06,
    "width_max_m": 9.83,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 58.3,
    "route_usage": 6
   },
@@ -5333,7 +5336,7 @@
    "width_min_m": 14.26,
    "width_max_m": 27.1,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 3.7,
    "route_usage": 101
   },
@@ -5342,7 +5345,7 @@
    "width_min_m": 1.16,
    "width_max_m": 6.4,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 50.4,
    "route_usage": 2
   },
@@ -5360,7 +5363,7 @@
    "width_min_m": 2.45,
    "width_max_m": 47.84,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 59.5,
    "route_usage": 2
   },
@@ -5387,7 +5390,7 @@
    "width_min_m": 4.99,
    "width_max_m": 6.39,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 34.6,
    "route_usage": 6
   },
@@ -5450,7 +5453,7 @@
    "width_min_m": 4.74,
    "width_max_m": 6.59,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 88.7,
    "route_usage": 0
   },
@@ -5459,7 +5462,7 @@
    "width_min_m": 2.38,
    "width_max_m": 37.43,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 34.7,
    "route_usage": 2
   },
@@ -5567,7 +5570,7 @@
    "width_min_m": 4.85,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 23.4,
    "route_usage": 0
   },
@@ -5594,7 +5597,7 @@
    "width_min_m": 1.03,
    "width_max_m": 5.29,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 44.5,
    "route_usage": 2
   },
@@ -5603,7 +5606,7 @@
    "width_min_m": 1.4,
    "width_max_m": 8.02,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 17.5,
    "route_usage": 0
   },
@@ -5612,7 +5615,7 @@
    "width_min_m": 2.0,
    "width_max_m": 14.42,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 31.8,
    "route_usage": 2
   },
@@ -5630,7 +5633,7 @@
    "width_min_m": 4.98,
    "width_max_m": 10.4,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 40.1,
    "route_usage": 2
   },
@@ -5693,7 +5696,7 @@
    "width_min_m": 1.5,
    "width_max_m": 3.12,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 37.2,
    "route_usage": 0
   },
@@ -5711,7 +5714,7 @@
    "width_min_m": 2.57,
    "width_max_m": 3.45,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 41.5,
    "route_usage": 2
   },
@@ -5792,7 +5795,7 @@
    "width_min_m": 5.59,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 30.6,
    "route_usage": 0
   },
@@ -5810,7 +5813,7 @@
    "width_min_m": 6.14,
    "width_max_m": 8.33,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 29.1,
    "route_usage": 9
   },
@@ -5819,7 +5822,7 @@
    "width_min_m": 1.76,
    "width_max_m": 21.37,
    "width_src": "ngii",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 121.7,
    "route_usage": 2
   },
@@ -5873,7 +5876,7 @@
    "width_min_m": 1.81,
    "width_max_m": 6.35,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 18.4,
    "route_usage": 2
   },
@@ -5900,7 +5903,7 @@
    "width_min_m": 4.07,
    "width_max_m": 6.36,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 64.5,
    "route_usage": 2
   },
@@ -6026,7 +6029,7 @@
    "width_min_m": 2.31,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 18.2,
    "route_usage": 0
   },
@@ -6053,7 +6056,7 @@
    "width_min_m": 16.44,
    "width_max_m": 27.25,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 1.4,
    "route_usage": 2
   },
@@ -6062,7 +6065,7 @@
    "width_min_m": 5.46,
    "width_max_m": 7.41,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 47.4,
    "route_usage": 5
   },
@@ -6089,7 +6092,7 @@
    "width_min_m": 0.82,
    "width_max_m": 3.83,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 37.5,
    "route_usage": 2
   },
@@ -6116,7 +6119,7 @@
    "width_min_m": 1.97,
    "width_max_m": 5.55,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 27.8,
    "route_usage": 13
   },
@@ -6134,7 +6137,7 @@
    "width_min_m": 1.3,
    "width_max_m": 3.21,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 29.9,
    "route_usage": 2
   },
@@ -6179,7 +6182,7 @@
    "width_min_m": 5.57,
    "width_max_m": 8.43,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 41.9,
    "route_usage": 5
   },
@@ -6197,7 +6200,7 @@
    "width_min_m": 0.87,
    "width_max_m": 4.09,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 13.5,
    "route_usage": 2
   },
@@ -6206,7 +6209,7 @@
    "width_min_m": 2.04,
    "width_max_m": 4.46,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 89.7,
    "route_usage": 1
   },
@@ -6215,7 +6218,7 @@
    "width_min_m": 2.1,
    "width_max_m": 4.77,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 18.0,
    "route_usage": 15
   },
@@ -6224,7 +6227,7 @@
    "width_min_m": 2.66,
    "width_max_m": 17.93,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 26.7,
    "route_usage": 2
   },
@@ -6269,7 +6272,7 @@
    "width_min_m": 1.45,
    "width_max_m": 15.57,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 50.1,
    "route_usage": 7
   },
@@ -6278,7 +6281,7 @@
    "width_min_m": 1.21,
    "width_max_m": 4.24,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 31.0,
    "route_usage": 3
   },
@@ -6287,7 +6290,7 @@
    "width_min_m": 1.4,
    "width_max_m": 6.36,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 49.5,
    "route_usage": 0
   },
@@ -6305,7 +6308,7 @@
    "width_min_m": 1.23,
    "width_max_m": 3.88,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 14.3,
    "route_usage": 2
   },
@@ -6314,7 +6317,7 @@
    "width_min_m": 4.87,
    "width_max_m": 7.54,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 51.7,
    "route_usage": 5
   },
@@ -6323,7 +6326,7 @@
    "width_min_m": 5.99,
    "width_max_m": 8.1,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 25.4,
    "route_usage": 5
   },
@@ -6341,7 +6344,7 @@
    "width_min_m": 1.45,
    "width_max_m": 3.58,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 13.2,
    "route_usage": 2
   },
@@ -6359,7 +6362,7 @@
    "width_min_m": 3.47,
    "width_max_m": 8.84,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 5.1,
    "route_usage": 3
   },
@@ -6377,7 +6380,7 @@
    "width_min_m": 2.06,
    "width_max_m": 4.82,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 49.7,
    "route_usage": 3
   },
@@ -6386,7 +6389,7 @@
    "width_min_m": 4.62,
    "width_max_m": 6.72,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 86.5,
    "route_usage": 1
   },
@@ -6404,7 +6407,7 @@
    "width_min_m": 3.26,
    "width_max_m": 6.19,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 10.9,
    "route_usage": 3
   },
@@ -6440,7 +6443,7 @@
    "width_min_m": 1.92,
    "width_max_m": 3.83,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 21.3,
    "route_usage": 2
   },
@@ -6458,7 +6461,7 @@
    "width_min_m": 1.57,
    "width_max_m": 7.43,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 24.3,
    "route_usage": 6
   },
@@ -6494,7 +6497,7 @@
    "width_min_m": 1.03,
    "width_max_m": 3.79,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 54.7,
    "route_usage": 7
   },
@@ -6512,7 +6515,7 @@
    "width_min_m": 2.17,
    "width_max_m": 3.63,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 26.5,
    "route_usage": 2
   },
@@ -6521,7 +6524,7 @@
    "width_min_m": 3.34,
    "width_max_m": 4.45,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 15.1,
    "route_usage": 3
   },
@@ -6530,7 +6533,7 @@
    "width_min_m": 18.98,
    "width_max_m": 23.44,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 4.7,
    "route_usage": 106
   },
@@ -6602,7 +6605,7 @@
    "width_min_m": 6.0,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 33.7,
    "route_usage": 70
   },
@@ -6656,7 +6659,7 @@
    "width_min_m": 0.63,
    "width_max_m": 4.99,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 39.9,
    "route_usage": 2
   },
@@ -6665,7 +6668,7 @@
    "width_min_m": 1.17,
    "width_max_m": 4.59,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 75.3,
    "route_usage": 2
   },
@@ -6710,7 +6713,7 @@
    "width_min_m": 2.53,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 28.3,
    "route_usage": 0
   },
@@ -6719,7 +6722,7 @@
    "width_min_m": 2.16,
    "width_max_m": 4.94,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 66.2,
    "route_usage": 104
   },
@@ -6728,7 +6731,7 @@
    "width_min_m": 1.71,
    "width_max_m": 10.85,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 17.6,
    "route_usage": 0
   },
@@ -6944,7 +6947,7 @@
    "width_min_m": 2.01,
    "width_max_m": 3.96,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 78.7,
    "route_usage": 0
   },
@@ -6971,7 +6974,7 @@
    "width_min_m": 5.36,
    "width_max_m": 8.67,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 39.0,
    "route_usage": 3
   },
@@ -6998,7 +7001,7 @@
    "width_min_m": 2.08,
    "width_max_m": 5.33,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 49.9,
    "route_usage": 3
   },
@@ -7025,7 +7028,7 @@
    "width_min_m": 1.44,
    "width_max_m": 3.91,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 45.1,
    "route_usage": 3
   },
@@ -7043,7 +7046,7 @@
    "width_min_m": 1.53,
    "width_max_m": 4.45,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 47.3,
    "route_usage": 0
   },
@@ -7079,7 +7082,7 @@
    "width_min_m": 2.8,
    "width_max_m": 12.62,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 17.6,
    "route_usage": 1
   },
@@ -7106,7 +7109,7 @@
    "width_min_m": 1.08,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 28.8,
    "route_usage": 0
   },
@@ -7115,7 +7118,7 @@
    "width_min_m": 1.22,
    "width_max_m": 3.38,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 21.2,
    "route_usage": 2
   },
@@ -7124,7 +7127,7 @@
    "width_min_m": 4.28,
    "width_max_m": 8.76,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 35.2,
    "route_usage": 16
   },
@@ -7223,7 +7226,7 @@
    "width_min_m": 1.76,
    "width_max_m": 3.47,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 25.0,
    "route_usage": 1
   },
@@ -7232,7 +7235,7 @@
    "width_min_m": 0.86,
    "width_max_m": 4.27,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 15.7,
    "route_usage": 2
   },
@@ -7295,7 +7298,7 @@
    "width_min_m": 2.29,
    "width_max_m": 6.5,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 48.5,
    "route_usage": 0
   },
@@ -7313,7 +7316,7 @@
    "width_min_m": 1.34,
    "width_max_m": 3.63,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 18.7,
    "route_usage": 0
   },
@@ -7340,7 +7343,7 @@
    "width_min_m": 2.34,
    "width_max_m": 4.99,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 16.6,
    "route_usage": 1
   },
@@ -7367,7 +7370,7 @@
    "width_min_m": 5.71,
    "width_max_m": 7.55,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 25.6,
    "route_usage": 0
   },
@@ -7376,7 +7379,7 @@
    "width_min_m": 4.28,
    "width_max_m": 9.71,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 36.8,
    "route_usage": 16
   },
@@ -7412,7 +7415,7 @@
    "width_min_m": 3.13,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 45.9,
    "route_usage": 0
   },
@@ -7430,7 +7433,7 @@
    "width_min_m": 5.76,
    "width_max_m": 15.54,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 20.3,
    "route_usage": 107
   },
@@ -7439,7 +7442,7 @@
    "width_min_m": 1.28,
    "width_max_m": 4.44,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 24.6,
    "route_usage": 0
   },
@@ -7448,7 +7451,7 @@
    "width_min_m": 5.26,
    "width_max_m": 7.64,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 35.9,
    "route_usage": 0
   },
@@ -7466,7 +7469,7 @@
    "width_min_m": 1.67,
    "width_max_m": 3.02,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 28.6,
    "route_usage": 0
   },
@@ -7484,7 +7487,7 @@
    "width_min_m": 5.17,
    "width_max_m": 7.23,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 48.0,
    "route_usage": 1
   },
@@ -7520,7 +7523,7 @@
    "width_min_m": 5.05,
    "width_max_m": 12.49,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 14.3,
    "route_usage": 1
   },
@@ -7556,7 +7559,7 @@
    "width_min_m": 0.86,
    "width_max_m": 14.47,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 83.8,
    "route_usage": 0
   },
@@ -7574,7 +7577,7 @@
    "width_min_m": 3.97,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 30.1,
    "route_usage": 16
   },
@@ -7601,7 +7604,7 @@
    "width_min_m": 2.27,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 30.8,
    "route_usage": 0
   },
@@ -7646,7 +7649,7 @@
    "width_min_m": 5.25,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 37.1,
    "route_usage": 0
   },
@@ -7655,7 +7658,7 @@
    "width_min_m": 2.96,
    "width_max_m": 4.05,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 28.5,
    "route_usage": 0
   },
@@ -7691,7 +7694,7 @@
    "width_min_m": 1.1,
    "width_max_m": 3.9,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 46.2,
    "route_usage": 0
   },
@@ -7718,7 +7721,7 @@
    "width_min_m": 2.4,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 59.3,
    "route_usage": 0
   },
@@ -7727,7 +7730,7 @@
    "width_min_m": 0.93,
    "width_max_m": 3.1,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 74.1,
    "route_usage": 0
   },
@@ -7736,7 +7739,7 @@
    "width_min_m": 5.57,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 43.9,
    "route_usage": 0
   },
@@ -7754,7 +7757,7 @@
    "width_min_m": 2.38,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 38.1,
    "route_usage": 0
   },
@@ -7763,7 +7766,7 @@
    "width_min_m": 3.36,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 23.1,
    "route_usage": 0
   },
@@ -7790,7 +7793,7 @@
    "width_min_m": 3.92,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 26.9,
    "route_usage": 16
   },
@@ -7799,7 +7802,7 @@
    "width_min_m": 6.46,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 9.3,
    "route_usage": 0
   },
@@ -7808,7 +7811,7 @@
    "width_min_m": 2.32,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 19.8,
    "route_usage": 0
   },
@@ -7835,7 +7838,7 @@
    "width_min_m": 1.94,
    "width_max_m": 5.15,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 22.0,
    "route_usage": 32
   },
@@ -7844,7 +7847,7 @@
    "width_min_m": 5.5,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 16.6,
    "route_usage": 0
   },
@@ -7853,7 +7856,7 @@
    "width_min_m": 2.89,
    "width_max_m": 4.18,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 115.5,
    "route_usage": 107
   },
@@ -7898,7 +7901,7 @@
    "width_min_m": 2.15,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 55.0,
    "route_usage": 0
   },
@@ -7916,7 +7919,7 @@
    "width_min_m": 4.06,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 24.3,
    "route_usage": 0
   },
@@ -7943,7 +7946,7 @@
    "width_min_m": 3.1,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 21.0,
    "route_usage": 0
   },
@@ -7952,7 +7955,7 @@
    "width_min_m": 1.24,
    "width_max_m": 3.22,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 74.2,
    "route_usage": 0
   },
@@ -8006,7 +8009,7 @@
    "width_min_m": 4.88,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 74.2,
    "route_usage": 0
   },
@@ -8051,7 +8054,7 @@
    "width_min_m": 6.85,
    "width_max_m": 47.18,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 18.5,
    "route_usage": 2
   },
@@ -8123,7 +8126,7 @@
    "width_min_m": 2.0,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 28.5,
    "route_usage": 0
   },
@@ -8132,7 +8135,7 @@
    "width_min_m": 6.78,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 7.0,
    "route_usage": 2
   },
@@ -8186,7 +8189,7 @@
    "width_min_m": 44.35,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 6.7,
    "route_usage": 107
   },
@@ -8195,7 +8198,7 @@
    "width_min_m": 2.51,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 19.6,
    "route_usage": 0
   },
@@ -8231,7 +8234,7 @@
    "width_min_m": 2.04,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 52.3,
    "route_usage": 0
   },
@@ -8258,7 +8261,7 @@
    "width_min_m": 5.18,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 52.3,
    "route_usage": 0
   },
@@ -8285,7 +8288,7 @@
    "width_min_m": 5.35,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 24.5,
    "route_usage": 141
   },
@@ -8303,7 +8306,7 @@
    "width_min_m": 1.08,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 145.1,
    "route_usage": 0
   },
@@ -8339,7 +8342,7 @@
    "width_min_m": 6.94,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 68.6,
    "route_usage": 2
   },
@@ -8366,7 +8369,7 @@
    "width_min_m": 2.48,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 33.6,
    "route_usage": 0
   },
@@ -8375,7 +8378,7 @@
    "width_min_m": 1.75,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 26.7,
    "route_usage": 0
   },
@@ -8384,7 +8387,7 @@
    "width_min_m": 1.76,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 37.0,
    "route_usage": 0
   },
@@ -8393,7 +8396,7 @@
    "width_min_m": 6.26,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 116.1,
    "route_usage": 0
   },
@@ -8429,7 +8432,7 @@
    "width_min_m": 4.4,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 53.3,
    "route_usage": 1
   },
@@ -8438,7 +8441,7 @@
    "width_min_m": 4.73,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 25.8,
    "route_usage": 141
   },
@@ -8492,7 +8495,7 @@
    "width_min_m": 5.43,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 79.7,
    "route_usage": 0
   },
@@ -8564,7 +8567,7 @@
    "width_min_m": 3.88,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 31.1,
    "route_usage": 141
   },
@@ -8573,7 +8576,7 @@
    "width_min_m": 1.54,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 43.8,
    "route_usage": 0
   },
@@ -8600,7 +8603,7 @@
    "width_min_m": 4.88,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 96.4,
    "route_usage": 0
   },
@@ -8762,7 +8765,7 @@
    "width_min_m": 2.92,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 32.8,
    "route_usage": 0
   },
@@ -8780,7 +8783,7 @@
    "width_min_m": 4.06,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 22.3,
    "route_usage": 0
   },
@@ -8789,7 +8792,7 @@
    "width_min_m": 3.34,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 87.4,
    "route_usage": 0
   },
@@ -8834,7 +8837,7 @@
    "width_min_m": 4.75,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 7.9,
    "route_usage": 0
   },
@@ -8888,7 +8891,7 @@
    "width_min_m": 2.99,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 34.3,
    "route_usage": 0
   },
@@ -8906,7 +8909,7 @@
    "width_min_m": 5.3,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 144.6,
    "route_usage": 0
   },
@@ -8933,7 +8936,7 @@
    "width_min_m": 5.54,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 87.4,
    "route_usage": 107
   },
@@ -8942,7 +8945,7 @@
    "width_min_m": 8.34,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 12.6,
    "route_usage": 70
   },
@@ -9041,7 +9044,7 @@
    "width_min_m": 2.99,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 49.7,
    "route_usage": 0
   },
@@ -9050,7 +9053,7 @@
    "width_min_m": 5.31,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 155.3,
    "route_usage": 0
   },
@@ -9086,7 +9089,7 @@
    "width_min_m": 3.08,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 160.5,
    "route_usage": 0
   },
@@ -9140,7 +9143,7 @@
    "width_min_m": 4.84,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 47.8,
    "route_usage": 0
   },
@@ -9158,7 +9161,7 @@
    "width_min_m": 5.26,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 75.2,
    "route_usage": 0
   },
@@ -9212,7 +9215,7 @@
    "width_min_m": 2.07,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 34.2,
    "route_usage": 0
   },
@@ -9221,7 +9224,7 @@
    "width_min_m": 2.28,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 70.2,
    "route_usage": 0
   },
@@ -9257,7 +9260,7 @@
    "width_min_m": 4.82,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 28.8,
    "route_usage": 0
   },
@@ -9266,7 +9269,7 @@
    "width_min_m": 5.57,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 51.3,
    "route_usage": 0
   },
@@ -9284,7 +9287,7 @@
    "width_min_m": 2.1,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 66.1,
    "route_usage": 0
   },
@@ -9347,7 +9350,7 @@
    "width_min_m": 5.27,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 13.3,
    "route_usage": 0
   },
@@ -9374,7 +9377,7 @@
    "width_min_m": 2.72,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 20.6,
    "route_usage": 0
   },
@@ -9464,7 +9467,7 @@
    "width_min_m": 6.96,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 23.4,
    "route_usage": 0
   },
@@ -9572,7 +9575,7 @@
    "width_min_m": 2.0,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 36.6,
    "route_usage": 0
   },
@@ -9581,7 +9584,7 @@
    "width_min_m": 6.93,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 98.0,
    "route_usage": 0
   },
@@ -9617,7 +9620,7 @@
    "width_min_m": 5.37,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 32.1,
    "route_usage": 70
   },
@@ -9635,7 +9638,7 @@
    "width_min_m": 12.8,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_single",
    "length_m": 8.6,
    "route_usage": 0
   },
@@ -9653,7 +9656,7 @@
    "width_min_m": 5.22,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 24.8,
    "route_usage": 70
   },
@@ -9689,7 +9692,7 @@
    "width_min_m": 6.39,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 96.6,
    "route_usage": 0
   },
@@ -9770,7 +9773,7 @@
    "width_min_m": 1.55,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 23.8,
    "route_usage": 0
   },
@@ -9806,7 +9809,7 @@
    "width_min_m": 1.18,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 18.0,
    "route_usage": 0
   },
@@ -9824,7 +9827,7 @@
    "width_min_m": 5.34,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_band",
    "length_m": 28.6,
    "route_usage": 0
   },
@@ -9851,7 +9854,7 @@
    "width_min_m": 1.92,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 18.4,
    "route_usage": 0
   },
@@ -9860,7 +9863,7 @@
    "width_min_m": 2.85,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 22.5,
    "route_usage": 0
   },
@@ -9878,7 +9881,7 @@
    "width_min_m": 1.87,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 33.3,
    "route_usage": 0
   },
@@ -9905,7 +9908,7 @@
    "width_min_m": 1.54,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 38.0,
    "route_usage": 0
   },
@@ -9923,7 +9926,7 @@
    "width_min_m": 2.62,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": "no_cctv",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 58.9,
    "route_usage": 0
   }

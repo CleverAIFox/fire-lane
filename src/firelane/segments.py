@@ -53,7 +53,7 @@ from firelane.seg.width import WidthEngine
 from firelane.seg.params import (
     NO_MERGE, DEBUG_SEG, DEBUG_XY, _DBG,
     EMD_CD, GRAPH_BUFFER, KEEP_BUFFER, SNAP_TOL, XSEC_EXCL,
-    MIN_SEG_LEN, TRUCK, NFA_RUN_M, CCTV_RANGE,
+    MIN_SEG_LEN, TRUCK, PARK, NFA_RUN_M, CCTV_RANGE,
 )
 
 OUT = PROCESSED
@@ -402,9 +402,41 @@ def main():
         # needs_cv 인데 CCTV 사각이면 영상판정이 성립하지 않는다.
         # 도면으로도 확정 못 하고 영상으로도 확정 못 하므로 unknown 이다.
         # blocked / clear 는 도면만으로 확정되므로 CCTV 와 무관하다.
+        # ★ 2026-08-22. unknown 352구간이 전부 "no_cctv" 하나였다.
+        #   화면에서 회색 한 덩어리로 보이지만 안에는 성격이 다른 넷이 있다.
+        #   판정은 전부 정당하다 — 확인한 결과 오분류는 0건이었다. 다만
+        #   "왜 회색인가" 를 화면이 설명하지 못했다.
+        #
+        #     no_cctv_narrow  62  노면 < 3.0 이고 **대장폭도** < 3.0 이다.
+        #                         두 근거가 일치하는데도 blocked 가 아닌 이유는
+        #                         담~담이 3.0 이상이기 때문이다. 갓길로 지날
+        #                         여지가 있어 도면만으로 확정하지 않는다.
+        #                         (62건 전부 wmax >= 3.0 · 최대 17.26m)
+        #     no_cctv_thin   128  노면만 < 3.0 이고 대장폭은 3.0 이상이거나
+        #                         없다. 근거가 하나뿐이라 더 약하다.
+        #                         §3-3 — 대장폭 단독으로 실측을 뒤집지 않는다.
+        #     no_cctv_band   152  3.0~7.0 대역. 주정차 여부로 갈린다.
+        #                         영상판정의 본래 대상이다.
+        #     no_cctv_single  10  wmin >= 7.0 인데 정규표본이 1개라 clear 를
+        #                         보류했다. DM02825 사고(2.7m 구간이 표본
+        #                         하나로 42.1m → clear)의 방어다.
+        #     width          128  폭 산출 자체가 안 됐거나 근거가 하나다.
+        #
+        #   ★ 색은 바뀌지 않는다. 판정도 바뀌지 않는다. 툴팁만 정확해진다.
         reason = None
         if v == "needs_cv" and not cv_ok:
-            v, reason = "unknown", "no_cctv"
+            if wmin is None:
+                reason = "width"
+            elif wmin >= TRUCK + 2 * PARK:
+                reason = "no_cctv_single"      # 표본 부족으로 clear 보류
+            elif wmin < TRUCK:
+                # 대장폭이 같이 좁으면 근거 2개, 아니면 1개다. 갈라 적는다.
+                reason = ("no_cctv_narrow"
+                          if _road_bt is not None and _road_bt < TRUCK
+                          else "no_cctv_thin")
+            else:
+                reason = "no_cctv_band"        # 3~7m. 주정차로 갈린다
+            v = "unknown"
         elif v == "unknown":
             # ROAD_BT 에 의한 확정은 위로 올렸다. 여기 남은 unknown 은
             # 대장폭도 없거나 3.0m 이상인 구간이다.
