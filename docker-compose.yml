@@ -1,18 +1,45 @@
-services:
-  postgis:
-    image: postgis/postgis:16-3.4
-    environment:
-      POSTGRES_PASSWORD: parkingeye
-      POSTGRES_DB: parkingeye
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+# Fire-Lane 로컬 개발 환경
+#
+# ★ 2026-08-21 교체. 이전 파일은 PostGIS 컨테이너 하나였고
+#   POSTGRES_DB / POSTGRES_PASSWORD 가 `parkingeye` 였다 — 이전 프로젝트
+#   잔해다. src/ 어디에도 sqlalchemy · psycopg · geoalchemy 를 import 하는
+#   코드가 없어 아무도 쓰지 않고 있었고, 비밀번호만 평문으로 커밋돼 있었다.
+#
+# DB 를 지금 넣지 않는 이유
+#   segments.geojson 은 996KB · 1,101구간이다. PostGIS 를 쓸 규모가 아니다.
+#   파이프라인이 285초에 결정론적으로 전량 재생성되므로 DB 의 주 가치인
+#   상태 보존이 필요 없다. 그리고 GeoJSON 은 git diff 가 되고 DB 는 안 된다 —
+#   MASTER §3-9 의 "길이 0.0m 구간 40개" 를 잡아낸 것이 그 diff 다.
+#
+#   DB 가 필요해지는 시점은 PLAN §2-2 의 동적 계층이다. current_status 컬럼
+#   하나가 수 초~분 단위로 갱신될 때. 그때도 PostGIS 가 아니라
+#   seg_uid → status 한 테이블이면 된다. 공간 연산은 ETL 에서 끝나 있고
+#   런타임에는 조회만 한다.
+#
+#   docker compose up web
+#   docker compose --profile etl run --rm etl uv run python src/etl/pipeline.py
 
-volumes:
-  pgdata:
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  etl:
+    build: .
+    profiles: ["etl"]
+    env_file:
+      - .env
+    environment:
+      FIRE_LANE_RAW: /data/raw
+    volumes:
+      - ./data:/app/data
+      - ./src:/app/src
+      - "${FIRE_LANE_DATA:-./data}:/data:ro"
