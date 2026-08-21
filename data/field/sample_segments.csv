@@ -1,4 +1,4 @@
-﻿seg_uid,track,seg_id,road_name,width_src,band,width_min_m,width_max_m,disagree,verdict,usage,length_m
+seg_uid,track,seg_id,road_name,width_src,band,width_min_m,width_max_m,disagree,verdict,usage,length_m
 DM-194338-283699-6CJO,A,DM02200,밤실로4번안길,ngii,3to7,6.01,,3.02,needs_cv,335,36.7
 DM-194227-283721-AZHT,A,DM01606,밤실로23번길,ngii,ge7,8.09,,0.85,clear,0,17.1
 DM-192839-284313-X9DQ,A,DM03222,중앙로,ngii,lt3,2.85,46.87,2.94,needs_cv,0,45.9
