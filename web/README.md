@@ -5,7 +5,7 @@ MapLibre GL JS 5 + deck.gl 9 (interleaved) + V-World.
 ## 실행
 
 ```bash
-cd web && python -m http.server 8000
+uv run python tools/serve.py        # 캐시 없는 개발 서버
 # http://localhost:8000
 ```
 
@@ -20,10 +20,14 @@ cd web && python -m http.server 8000
 | `index.html` | 공동 | 뼈대. 패널 마크업. 거의 안 바뀐다 |
 | `style.css` | **@marscoolcat** | 색·간격·타이포·레이아웃 |
 | `config.js` | **공동** | 색상표·임계값·마커 형상·카메라 |
-| `app.js` | **@AIMasterFox** | 데이터 로딩·레이어·판정 렌더링 |
+| `js/main.js` | **@AIMasterFox** | 부트스트랩. 초기화 순서만 |
+| `js/data.js` | **@AIMasterFox** | ★ 데이터 접근 단일 지점 |
+| `js/layers/` | **@AIMasterFox** | 레이어·판정 렌더링 |
+| `js/icons/` | 공동 | 표지판 캔버스 그림 |
+| `js/ui/` | 공동 | 범례·검색·테마·토글·미니맵 |
 | `data/` | 생성물 | `publish_web.py` 산출. 손으로 고치지 말 것 |
 
-**UI 작업은 `style.css` 와 `config.js` 만 만지면 된다.** `app.js` 를 건드릴 일이
+**UI 작업은 `style.css` 와 `config.js` 만 만지면 된다.** `js/layers/` 를 건드릴 일이
 생기면 그건 로직 문제이므로 GIS 담당에게 알릴 것.
 
 ## 출동 모드 · 미니맵
@@ -32,10 +36,10 @@ cd web && python -m http.server 8000
 
 | 기능 | 위치 |
 |---|---|
-| 출동 모드 토글 · FAB 버튼 | `index.html` + `style.css` + `app.js` |
-| 미니맵 (줌 16↑ 표시, 뷰박스·현위치 동기화) | `app.js` + `style.css` |
-| 소화전 물결 (출동 모드에서만) | `app.js` |
-| 출동 시 통과 구간 강조 · 나머지 흐림 | `app.js` + `config.js` |
+| 출동 모드 토글 · FAB 버튼 | `index.html` + `style.css` + `js/ui/toggles.js` |
+| 미니맵 (줌 16↑ 표시, 뷰박스·현위치 동기화) | `js/ui/minimap.js` + `style.css` |
+| 소화전 물결 (출동 모드에서만) | `js/layers/hydrants.js` |
+| 출동 시 통과 구간 강조 · 나머지 흐림 | `js/layers/segments.js` + `config.js` |
 
 조정값은 `config.js` 의 `dispatch` 와 `minimap` 에 있다.
 
@@ -49,7 +53,7 @@ minimap : { showFromZoom: 16 }
 
 ## 값을 바꿀 때
 
-판정 임계값(3.0 / 7.0 / 25.0)의 **정본은 `src/etl/segments.py`** 다.
+판정 임계값(3.0 / 7.0 / 25.0)의 **정본은 `src/firelane/segments.py`** 다.
 `config.js` 의 같은 숫자는 화면 설명용 사본이라 바꿔도 판정은 안 바뀐다.
 파이프라인을 먼저 고치고 `config.js` 를 맞출 것.
 
@@ -65,3 +69,33 @@ minimap : { showFromZoom: 16 }
 
 **공개DEM 90m 를 8배 보간한 표현용 값이다.** 판정에는 쓰지 않는다.
 90m 격자는 골목 20개를 한 픽셀로 덮으므로 구간별 경사 산출이 불가능하다.
+
+
+## 모듈 구조 (2026-08-21)
+
+`app.js` 1,260줄을 `web/js/` 27개 모듈로 쪼갰다. 원문 로직은 그대로다.
+
+```
+js/
+  main.js            부트스트랩. 순서만 정한다. 로직을 여기 쓰지 마라
+  data.js            ★ 데이터 접근 단일 지점. SOURCE() 한 줄이 정적↔API 전환
+  config-access.js   전역 CONFIG 를 만지는 유일한 곳
+  state.js           공유 가변 상태. import 없음(그래프 뿌리)
+  map.js  basemap.js  verdict.js  dom.js
+  icons/   size · truck · ops119 · hydrant · cctv
+  layers/  segments · mask · hydrants · markers · coverage · signs · poi
+  ui/      tooltip · search · legend · stats · minimap · theme · toggles
+```
+
+검사 3종이 CI 에서 돈다:
+
+| 도구 | 잡는 것 |
+|---|---|
+| `tools/js_graph_check.mjs` | ESM 문법 · 미해결 import · 순환 의존 |
+| `tools/web_boot_check.mjs` | 실제 부팅. 모듈 최상단 부수효과 등 |
+| `tests/test_contract.py` | DOM id · 토글 · 데이터 파일 대조 |
+
+★ `node --check` 는 ES 모듈 문법 오류를 **못 잡는다**. `.js` 를 CommonJS 로
+읽다 `export` 에서 실패하면 조용히 넘어간다(실측: `export const a=1;
+const b={{{;` → 종료코드 0). 그래서 `js_graph_check` 가 `--input-type=module`
+로 다시 본다. `node --check` 만 믿으면 검사가 죽은 채 초록불이 뜬다.

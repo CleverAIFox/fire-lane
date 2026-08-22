@@ -16,29 +16,53 @@ dependencies = [
     "numpy>=1.26",
     "networkx>=3.3",
     "PyYAML>=6.0",
-    # ── 서빙 ──
-    "fastapi>=0.115",
-    "uvicorn[standard]>=0.30",
-    "python-multipart>=0.0.9",
-    # ── DB ──
-    "SQLAlchemy>=2.0",
-    "psycopg2-binary>=2.9",
-    "GeoAlchemy2>=0.15",
-    # ── 비전 ──
-    "opencv-python>=4.10",
-    "ultralytics>=8.3",
-    "requests>=2.32",
     "rasterio>=1.4.4",
     "pillow>=12.3.0",
     "ruamel-yaml>=0.19.1",
 ]
 
+# ★ 2026-08-21. 종전 dependencies 에 fastapi·uvicorn·python-multipart·
+#   SQLAlchemy·psycopg2-binary·GeoAlchemy2·opencv-python·ultralytics·requests
+#   9종이 있었는데 src·tools·tests 어디에서도 import 0회였다. src/api/ 는
+#   존재하지 않고 PostGIS 는 안 쓰기로 결정했다(HANDOFF §4).
+#   안 쓰는 의존성은 devcontainer 리빌드 시간이고, 더 나쁘게는
+#   "이 프로젝트가 DB 를 쓴다"는 거짓 신호다. 쓰기 시작할 때 올린다.
 [project.optional-dependencies]
+api = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+]
+vision = [
+    "opencv-python>=4.10",
+    "ultralytics>=8.3",
+]
 dev = [
     "ruff>=0.6",
     "pytest>=8.3",
     "pre-commit>=3.8",
 ]
+
+# ★ 단일 진입점. `python src/etl/pipeline.py` 는 cwd 에 따라 깨졌다.
+[project.scripts]
+fire-lane = "firelane.pipeline:main"
+
+# ── src 레이아웃 ──────────────────────────────────────────────
+# ★ 2026-08-21. 종전에는 패키지가 아니라 스크립트 더미였고, 모듈이 서로를
+#   찾으려고 sys.path.insert 를 17군데(src 14 · tests 3) 하고 있었다.
+#   그 결과 (1) import 가 코드 뒤에 와서 noqa: E402 가 12개 붙었고
+#   (2) 순환을 피하려고 함수 안에서 import 하는 자리가 생겼으며
+#   (3) 계층 규칙을 강제할 수단이 없었다 — 순수 기하 모듈이 인프라 경로를
+#   그냥 import 할 수 있었다. 패키지가 되면 순환은 import 시점에 죽는다.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.ruff]
 line-length = 100
@@ -49,8 +73,15 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# ★ tools/ 는 패키지가 아니라 단독 스크립트 모음이다(commit_policy · golden ·
+#   docnum_check ...). 그걸 테스트하려고 test_commit_policy.py 가
+#   sys.path.insert 를 하고 있었다. 선언으로 옮긴다 — 테스트 파일이
+#   경로를 조작하기 시작하면 다음 테스트도 따라 한다.
+pythonpath = ["tools"]
 
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
+    "ruff>=0.6",
+    "pre-commit>=3.8",
 ]

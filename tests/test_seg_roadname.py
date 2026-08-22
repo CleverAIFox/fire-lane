@@ -9,17 +9,14 @@ test_seg_roadname.py — 도로명 되붙이기 단위 테스트
 주석으로만 있던 규칙 — 중점 최근접이 아니라 겹침 길이, 절반 미만이면 포기 —
 을 여기서 고정한다.
 """
-import sys
 from pathlib import Path
 
 from shapely.geometry import LineString
 
+
+from firelane.seg.roadname import RoadNameIndex
+
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src" / "etl"))
-
-from seg.roadname import RoadNameIndex  # noqa: E402
-
-
 def idx(*rows):
     """(geom, name, dpn, bt) 튜플들로 인덱스를 만든다."""
     return RoadNameIndex([r[0] for r in rows], [r[1] for r in rows],

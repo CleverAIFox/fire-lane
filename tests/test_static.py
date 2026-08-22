@@ -18,7 +18,6 @@ test_static.py — 실행하지 않고 잡을 수 있는 것을 잡는다
 """
 import ast
 import builtins
-import sys
 from pathlib import Path
 
 import pytest
@@ -115,7 +114,7 @@ def test_guard_exit_paths_are_reachable():
     guards 는 GuardFailure 를 던지고, 호출부가 그것을 받아 sys.exit 로 바꾼다.
     그 sys 가 없으면 방어는 '조용히 잘못된 예외로' 죽는다.
     """
-    src = (ROOT / "src/etl/segments.py").read_text(encoding="utf-8")
+    src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
     if "sys.exit" in src:
         assert "import sys\n" in src or "import json, hashlib, sys\n" in src, (
             "sys.exit 를 쓰면서 sys 를 import 하지 않았다 "

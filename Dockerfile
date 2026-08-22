@@ -33,4 +33,4 @@ COPY sources.yaml ./
 RUN uv sync --frozen
 
 # 기본 동작은 상태 조회다. 실행 없이 무엇이 도는지만 보여준다.
-CMD ["uv", "run", "python", "src/etl/pipeline.py", "--check"]
+CMD ["uv", "run", "fire-lane", "--check"]

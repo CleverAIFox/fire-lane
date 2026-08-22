@@ -49,7 +49,7 @@
 | **processed (중간)** | `data/processed/*.gpkg` `*.tif` | ❌ | `pipeline.py` 한 명령으로 재생성 ← **R2 로 매번 확인** |
 | **processed (계약)** | `segments.geojson` `segments.schema.json` `_manifest.json` | ✅ | UI 담당이 raw 없이 작업해야 한다 |
 | **web/data** | 타일·GeoJSON | ✅ | 브라우저 입력. CI 가 60MB 상한 감시 |
-| **코드** | `src/etl/*` `sources.yaml` | ✅ | |
+| **코드** | `src/firelane/*` `sources.yaml` | ✅ | |
 
 **심링크 금지.** `data/raw` 를 심링크로 걸었더니 git 이 추적했고 exFAT 에서
 `git reset --hard` 시 원본 2.5GB 가 소실됐다(2026-08-11). 환경변수로만 지정한다.
@@ -79,7 +79,7 @@ setx FIRE_LANE_RAW "D:\...\FIRE_LANE\data\raw"           # 윈도우
 동일성은 파일을 옮겨서가 아니라 **해시로** 확인한다.
 
 ```bash
-python src/etl/ingest.py --check      # _manifest.json 의 source_sha256 대조
+python -m firelane.ingest --check      # _manifest.json 의 source_sha256 대조
 ```
 
 ### 전국판을 들고 다니지 않는다
@@ -101,7 +101,7 @@ sbiz_store_kr      337MB → 광주 축소 시 약 9.6MB
 1. sources.yaml 에 항목 추가 (kind · file · crs · feeds · license · url)
 2. 파일명 규칙에 맞춰 이름 변경  →  기관_주제_지역_날짜.확장자
 3. $FIRE_LANE_RAW/<기관>/ 에 배치
-4. python src/etl/ingest.py --only <key>
+4. python -m firelane.ingest --only <key>
 5. _manifest.json 에 features 수가 찍히는지 확인
 6. 이 README 인벤토리 표에 한 줄 추가
 ```
@@ -133,8 +133,8 @@ dbf_in_zip · json_points · csv_table · raw_only
 말이 아니라 이걸로 확인한다.
 
 ```bash
-python src/etl/pipeline.py --check     # 각 단계 산출물 존재
-python src/etl/pipeline.py             # 전량 재실행
+fire-lane --check     # 각 단계 산출물 존재
+fire-lane             # 전량 재실행
 ```
 
 `pipeline.py` 의 `EXPECT` 와 다르면 멈춘다.

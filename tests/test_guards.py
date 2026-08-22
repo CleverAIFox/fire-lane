@@ -24,10 +24,8 @@ from pathlib import Path
 import pytest
 from shapely.geometry import LineString, Polygon
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src" / "etl"))
 
-from guards import (  # noqa: E402
+from firelane.guards import (
     CRITICAL,
     GuardFailure,
     coverage_check,
@@ -35,6 +33,8 @@ from guards import (  # noqa: E402
     quarantine_stale,
     uncovered_ratio,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 # ── 1. 계보 검사 ────────────────────────────────────────────────
@@ -222,7 +222,7 @@ def test_no_source_patching_scripts():
     (ledger_20260817, ruamel.yaml 로 조작해 .replace 를 안 쓴다)는
     위의 날짜 규칙이 잡는다. 두 검사가 겹쳐서 덮는다.
     """
-    TARGETS = ("src/etl", "docs/MASTER", "sources.yaml", "README.md")
+    TARGETS = ("src/firelane", "docs/MASTER", "sources.yaml", "README.md")
     offenders = []
     for p in (ROOT / "tools").glob("*.py"):
         src = p.read_text(encoding="utf-8")
@@ -242,8 +242,8 @@ def test_guard_calls_are_wired():
     guards.py 를 통째로 지우는 것은 이 테스트가 잡고,
     호출부만 지우는 것은 여기가 잡는다.
     """
-    seg = (ROOT / "src/etl/segments.py").read_text(encoding="utf-8")
-    ing = (ROOT / "src/etl/ingest.py").read_text(encoding="utf-8")
+    seg = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
+    ing = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
     assert "_lineage_check()" in seg, "segments 가 계보 검사를 부르지 않는다"
     assert "lineage_check" in seg, "segments 가 guards 를 쓰지 않는다"
     assert "quarantine_stale" in ing, "ingest 가 FAIL 산출물을 격리하지 않는다"
@@ -271,7 +271,7 @@ def test_fire_lane_raw_does_not_silently_win():
     하나였다. .bashrc 를 기계마다 고치는 것은 해결이 아니다 — 코드가
     알아채야 한다.
     """
-    src = (ROOT / "src/etl/paths.py").read_text(encoding="utf-8")
+    src = (ROOT / "src/firelane/paths.py").read_text(encoding="utf-8")
     assert "_legacy_raw" in src or "폐기" in src, "paths.py 가 구 변수를 경고하지 않는다"
 
 
@@ -287,9 +287,8 @@ def test_repo_python_compiles():
 def _steps():
     import importlib.util
     spec = importlib.util.spec_from_file_location(
-        "pipeline", ROOT / "src/etl/pipeline.py")
+        "pipeline", ROOT / "src/firelane/pipeline.py")
     m = importlib.util.module_from_spec(spec)
-    sys.path.insert(0, str(ROOT / "src/etl"))
     # ★ @dataclass 는 cls.__module__ 로 sys.modules 를 되짚는다.
     #   등록 없이 exec_module 하면 AttributeError 로 죽는다.
     sys.modules["pipeline"] = m
@@ -341,7 +340,7 @@ def test_expect_is_not_hardcoded():
     따로 들고 있었다. 동기화 도구가 필요하다는 것은 정본이 하나가 아니라는
     뜻이다. EXPECT 를 지우고 지문에서 읽는다.
     """
-    src = (ROOT / "src/etl/pipeline.py").read_text(encoding="utf-8")
+    src = (ROOT / "src/firelane/pipeline.py").read_text(encoding="utf-8")
     assert '"verdict": {"clear"' not in src, (
         "pipeline.py 에 판정 숫자가 하드코딩돼 있다.\n"
         "  data/golden/segments.fingerprint.json 에서 읽어라.")
@@ -359,7 +358,7 @@ def test_lineage_catches_tampered_input(tmp_path):
     """
     import importlib.util
     spec = importlib.util.spec_from_file_location(
-        "lineage", ROOT / "src/etl/lineage.py")
+        "lineage", ROOT / "src/firelane/lineage.py")
     lg = importlib.util.module_from_spec(spec)
     sys.modules["lineage"] = lg
     spec.loader.exec_module(lg)
@@ -400,6 +399,6 @@ def test_lineage_is_pipeline_concern_not_step_concern():
     배선해야 했고 `--only publish` 가 그 구멍으로 빠져나가 z 를 소실시켰다.
     Step 선언이 reads/writes 를 알고 있으므로 pipeline 이 일괄로 한다.
     """
-    src = (ROOT / "src/etl/pipeline.py").read_text(encoding="utf-8")
+    src = (ROOT / "src/firelane/pipeline.py").read_text(encoding="utf-8")
     assert "lineage.verify" in src and "lineage.record" in src, \
         "pipeline 이 계보를 배선하지 않는다"

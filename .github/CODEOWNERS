@@ -4,7 +4,7 @@
 
 # ── GIS 코어. 값의 근거가 여기 있다 ──────────────────
 /sources.yaml            @AIMasterFox
-/src/etl/                @AIMasterFox
+/src/firelane/                @AIMasterFox
 /data/                   @AIMasterFox
 /docs/MASTER.md          @AIMasterFox
 
@@ -14,7 +14,14 @@
 /web/index.html          @marscoolcat @AIMasterFox
 /web/README.md           @marscoolcat @AIMasterFox
 /web/config.js           @marscoolcat @AIMasterFox   # 양쪽이 함께 보는 유일한 파일
-/web/app.js              @AIMasterFox            # GIS 단독. 로직·레이어
+
+# ★ app.js 1,260줄을 web/js/ 로 쪼갠 결과(2026-08-21). 파일 하나를 둘이
+#   건드리던 구조가 사라져 충돌이 경로로 갈린다.
+/web/js/main.js          @AIMasterFox            # 부트스트랩. 순서만 정한다
+/web/js/data.js          @AIMasterFox            # ★ 데이터 접근 단일 지점
+/web/js/layers/          @AIMasterFox            # GIS 단독. 레이어·판정 렌더링
+/web/js/icons/           @marscoolcat @AIMasterFox   # 캔버스 그림 — UI 감각이 필요하다
+/web/js/ui/              @marscoolcat @AIMasterFox   # 범례·검색·테마·토글
 
 # ── 생성물. 아무도 손으로 고치지 않는다 ───────────────
 # publish_web.py 산출물이다. 수정하면 다음 실행에 덮어써진다.

@@ -117,53 +117,69 @@ def _read(name):
     return (WEBDIR / name).read_text(encoding="utf-8")
 
 
+def _js():
+    """web/js/** 전체를 이어붙인 것.
+
+    ★ 2026-08-21. 종전에는 `_read("app.js")` 였다. app.js 1,260줄을
+      web/js/ 27개 모듈로 쪼갰으므로 파일 하나를 읽으면 아무것도 못 잡는다.
+      **여기를 안 고치면 테스트가 조용히 통과한다** — 검사 대상이 사라진
+      것이지 문제가 없어진 게 아니다. glob 으로 바꿔 모듈이 더 늘어도
+      전부 잡히게 한다(contract.yml 의 JS 검사가 glob 인 것과 같은 이유).
+    """
+    return "\n".join(p.read_text(encoding="utf-8")
+                      for p in sorted((WEBDIR / "js").rglob("*.js")))
+
+
 def test_web_dom_refs_exist():
     """app.js 가 참조하는 DOM id 가 index.html 에 전부 있어야 한다."""
     import re
-    html, js = _read("index.html"), _read("app.js")
+    html, js = _read("index.html"), _js()
     ids = set(re.findall(r'id="([^"]+)"', html))
     used = (set(re.findall(r'\$\("#([^"]+)"\)', js))
             | set(re.findall(r'getElementById\("([^"]+)"\)', js)))
     missing = used - ids
-    assert not missing, f"index.html 에 없는 id 를 app.js 가 참조한다: {sorted(missing)}"
+    assert not missing, f"index.html 에 없는 id 를 web/js 가 참조한다: {sorted(missing)}"
 
 
 def test_web_toggle_targets_handled():
-    """패널 토글(data-t)이 app.js 에서 처리되어야 한다."""
+    """패널 토글(data-t)이 web/js 에서 처리되어야 한다."""
     import re
-    html, js = _read("index.html"), _read("app.js")
+    html, js = _read("index.html"), _js()
     for t in set(re.findall(r'data-t="([^"]+)"', html)):
         key = "m-" if t.startswith("m-") else t
-        assert f'"{t}"' in js or f'"{key}"' in js, f"토글 '{t}' 가 app.js 에서 처리되지 않는다"
+        assert f'"{t}"' in js or f'"{key}"' in js, f"토글 '{t}' 가 web/js 에서 처리되지 않는다"
 
 
 def test_web_assets_linked():
     """index.html 이 분리된 파일들을 참조해야 한다."""
     html = _read("index.html")
-    for a in ("style.css", "config.js", "app.js"):
+    for a in ("style.css", "config.js", "js/main.js"):
         assert a in html, f"index.html 이 {a} 를 참조하지 않는다"
     assert "<style>" not in html, "index.html 에 인라인 <style> 이 있다. style.css 로 옮길 것"
+    assert 'type="module"' in html, (
+        "js/main.js 는 ES 모듈이다. type=\"module\" 없이 부르면 import 에서 죽는다")
 
 
 def test_web_data_files_referenced():
     """app.js 가 읽는 web/data 파일이 실제로 있어야 한다.
 
-    ★ 정규식으로 fetch 배열을 긁던 방식은 폐기했다. app.js 의 표현이 조금만
-      바뀌어도 엉뚱한 배열을 잡는다(2026-08-14 에 "a" 를 파일명으로 오인).
-      이제 근거는 두 곳이다 — app.js 의 BASE 선언과 config.js 의 marker.data.
+    ★ 정규식으로 fetch 배열을 긁던 방식은 폐기했다. 표현이 조금만 바뀌어도
+      엉뚱한 배열을 잡는다(2026-08-14 에 "a" 를 파일명으로 오인).
+      이제 근거는 두 곳이다 — data.js 의 BASE_KEYS 와 config.js 의 marker.data.
     """
     import re
-    js = _read("app.js")
+    js = _read("js/data.js")
     cfg = _read("config.js")
 
-    m = re.search(r'const\s+BASE\s*=\s*\[([^\]]*)\]', js)
-    assert m, "app.js 에 const BASE = [...] 선언이 없다"
+    m = re.search(r'BASE_KEYS\s*=\s*\[([^\]]*)\]', js)
+    assert m, "web/js/data.js 에 BASE_KEYS = [...] 선언이 없다"
     names = set(re.findall(r'"([\w_]+)"', m.group(1)))
 
     # 마커 데이터는 config.js 의 spec.data 가 정본이다.
     names |= set(re.findall(r'\bdata\s*:\s*"([\w_]+)"', cfg))
 
-    m2 = re.search(r'const\s+FILES\s*=\s*\{([^}]*)\}', js)
+    # 키 != 파일명인 것들(hyd → hydrants). data.js 의 FILENAME 이 정본이다.
+    m2 = re.search(r'FILENAME\s*=\s*\{([^}]*)\}', js)
     alias = dict(re.findall(r'(\w+)\s*:\s*"([\w_]+)"', m2.group(1))) if m2 else {}
 
     assert names, "읽을 데이터 파일 목록이 비었다"
@@ -177,10 +193,10 @@ def test_marker_spec_self_contained():
     """마커 스펙이 자기 데이터·팝업을 들고 있어야 한다.
 
     ★ 2026-08-14 리팩의 계약이다. 가로등 마커 하나를 추가하는 데 6곳을
-      고쳐야 했던 것이 계기였다. app.js 에 손딕셔너리가 되살아나면 여기서 걸린다.
+      고쳐야 했던 것이 계기였다. web/js 에 손딕셔너리가 되살아나면 여기서 걸린다.
     """
     import re
-    js = _read("app.js")
+    js = _js()
     cfg = _read("config.js")
     assert "MK_SRC = {" not in js, "MK_SRC 손딕셔너리가 되살아났다. spec.data 를 쓸 것"
     assert "const POPUP={" not in js, "POPUP 손딕셔너리가 되살아났다. spec.popup 을 쓸 것"
@@ -189,7 +205,7 @@ def test_marker_spec_self_contained():
     assert len(ids) >= 5, f"마커 스펙이 부족하다: {ids}"
     for i in ids:
         assert f'"{i}"' not in _read("index.html"), \
-            f"index.html 에 {i} 토글이 손으로 박혀 있다. app.js 가 생성한다"
+            f"index.html 에 {i} 토글이 손으로 박혀 있다. ui/toggles.js 가 생성한다"
 
 
 # ── ETL 스크립트 계약 ────────────────────────────────────────
@@ -197,7 +213,7 @@ def test_marker_spec_self_contained():
 #   FIRE_LANE_RAW 환경변수가 무시되고 원본을 못 찾는다(전부 MISSING).
 #   패치를 적용할 때마다 되돌아갔으므로 테스트로 고정한다.
 
-ETL = ROOT / "src" / "etl"
+ETL = ROOT / "src" / "firelane"
 
 
 def test_etl_uses_paths_module():
@@ -207,7 +223,7 @@ def test_etl_uses_paths_module():
         src = (ETL / f).read_text(encoding="utf-8")
         own = re.findall(r'^(?:RAW|OUT|PROCESSED|WEB)[\w,\s]*=\s*ROOT.*$', src, re.M)
         assert not own, f"{f} 가 경로를 자체 정의한다: {own}. paths.py 를 쓸 것"
-        assert "from paths import" in src, f"{f} 가 paths.py 를 import 하지 않는다"
+        assert "from firelane.paths import" in src, f"{f} 가 paths.py 를 import 하지 않는다"
 
 
 def test_publish_z_is_optional():
@@ -271,3 +287,43 @@ def test_seg_uid_retention():
            for f in json.loads((WEB / "segments.geojson").read_text(encoding="utf-8"))["features"]}
     ret = len(prev & cur) / len(prev)
     assert ret >= 0.90, f"seg_uid 유지율 {ret:.1%} — 키 규칙 재검토"
+
+
+def test_web_uses_stable_segment_key():
+    """표출은 seg_label 을 쓴다. seg_no / seg_uid 를 화면에 쓰지 않는다.
+
+    ★ 2026-08-22. seg_label(도로명주소 기초번호)을 만들어 산출물에 넣어놓고
+      툴팁은 계속 seg_no 를 쓰고 있었다. 아무 검사도 그것을 보지 않았다.
+      계약 테스트가 "DOM id 가 존재하는가" 는 봤지만 "어떤 컬럼을 쓰는가" 는
+      안 봤기 때문이다.
+
+        seg_no    정렬 순번. 노딩이 바뀌면 통째로 밀린다
+        seg_uid   내부 키. 향후 DB 기본키. 관제사에게 의미 없다
+        seg_label "동명로25번길 9-14". 기하 유도라 안정적이고
+                  119 가 무전에서 쓰는 표기와 같다(§5-1)
+    """
+    import re
+    js = _js()
+    # ★ 주석은 뺀다. 이 규칙을 왜 만들었는지 설명하려면 주석에 그 이름을
+    #   써야 하는데, 그것까지 잡으면 자기 문서를 자기가 막는다.
+    code = re.sub(r"/\*.*?\*/", "", js, flags=re.S)
+    code = re.sub(r"^\s*//.*$", "", code, flags=re.M)
+
+    assert "seg_label" in code, "표출이 seg_label 을 쓰지 않는다"
+    for bad, why in (("seg_no", "정렬 순번이라 노딩에 흔들린다"),
+                     ("seg_uid", "내부 키다. 화면에 띄우지 마라")):
+        assert bad not in code, (
+            f"web/js 가 {bad} 를 쓴다 — {why}. seg_label 이 정본이다")
+
+
+def test_web_css_has_no_dead_tip_rules():
+    """툴팁에서 쓰지 않는 #tip 규칙이 style.css 에 남아 있으면 안 된다.
+
+    화면에는 영향이 없지만, 다음 사람이 그 클래스가 살아 있다고 오해한다.
+    """
+    import re
+    css, js = _read("style.css"), _js()
+    dead = [c for c in re.findall(r'#tip \.([\w-]+)', css)
+            if f'class="{c}"' not in js and f"class='{c}'" not in js
+            and f'class="{c} ' not in js]
+    assert not dead, f"style.css 의 죽은 #tip 규칙: {sorted(set(dead))}"

@@ -25,7 +25,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-ETL = ROOT / "src" / "etl"
+ETL = ROOT / "src" / "firelane"
 
 # 파이프라인 단계로 실제로 실행되는 스크립트. 라이브러리 모듈은 제외한다
 # (seg/ 는 segments.py 가 부르는 부품이지 스스로 도는 단계가 아니다).

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-21T21:45:52.341232+09:00",
+  "generated_at": "2026-08-22T01:31:45.157424+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -23,6 +23,7 @@
       "geom": [
         "LineString"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "ALWNC_DE",
         "ALWNC_RESN",
@@ -60,9 +61,11 @@
       "status": "OK",
       "features": 1957,
       "geom": [
+        "GeometryCollection",
         "MultiPolygon",
         "Polygon"
       ],
+      "invalid_fixed": 10,
       "columns": [
         "OPERT_DE",
         "RW_SN",
@@ -85,6 +88,7 @@
       "geom": [
         "LineString"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "BSI_INT_SN",
         "EVE_BSI_MN",
@@ -1601,6 +1605,7 @@
         "MultiPolygon",
         "Polygon"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "src"
       ],
@@ -1637,6 +1642,7 @@
       "geom": [
         "Point"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "관리번호",
         "소재지도로명주소",
@@ -1662,6 +1668,7 @@
       "geom": [
         "Polygon"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "gid",
         "fmta",
@@ -1685,6 +1692,7 @@
       "geom": [
         "LineString"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "LINK_ID",
         "F_NODE",
@@ -1725,6 +1733,7 @@
       "geom": [
         "Point"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "NODE_ID",
         "NODE_TYPE",
@@ -1775,6 +1784,7 @@
       "geom": [
         "Point"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "관리기관명",
         "소재지지번주소",
@@ -1805,6 +1815,7 @@
       "geom": [
         "Point"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "번호",
         "소방서 및 안전센터명",
@@ -1833,6 +1844,7 @@
       "geom": [
         "Point"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "상가업소번호",
         "상호명",
@@ -1891,6 +1903,7 @@
       "geom": [
         "Polygon"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "EMD_CD",
         "EMD_ENG_NM",
@@ -1914,6 +1927,7 @@
         "MultiPolygon",
         "Polygon"
       ],
+      "invalid_fixed": 5,
       "columns": [
         "BDTYP_CD",
         "BD_MGT_SN",
@@ -1963,6 +1977,7 @@
       "geom": [
         "Point"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "BUL_MAN_NO",
         "ENTRC_SE",
@@ -1988,6 +2003,7 @@
       "geom": [
         "Point"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "시설번호",
         "시설유형코드",
@@ -2120,6 +2136,7 @@
       "geom": [
         "LineString"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "gid",
         "dvyn",
@@ -2155,6 +2172,7 @@
       "geom": [
         "Point"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "연번",
         "위치",
@@ -2181,6 +2199,7 @@
       "geom": [
         "Point"
       ],
+      "invalid_fixed": 0,
       "columns": [
         "연번",
         "자치구",
@@ -2307,7 +2326,7 @@
     "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
     "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
     "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-08-21T12:49:23+00:00"
+    "generated_at": "2026-08-21T18:40:44+00:00"
   },
   "ortho": {
     "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
@@ -2316,6 +2335,6 @@
     "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
     "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.6MB)",
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-08-21T12:50:02+00:00"
+    "generated_at": "2026-08-21T18:41:01+00:00"
   }
 }
