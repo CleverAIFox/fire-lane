@@ -327,3 +327,83 @@ def test_web_css_has_no_dead_tip_rules():
             if f'class="{c}"' not in js and f"class='{c}'" not in js
             and f'class="{c} ' not in js]
     assert not dead, f"style.css 의 죽은 #tip 규칙: {sorted(set(dead))}"
+
+
+def test_verdict_matches_rules_for_every_segment():
+    """1,101구간 **각각**이 규칙대로 칠해졌는가.
+
+    ★ 2026-08-22. 지금까지 아무도 이걸 검증한 적이 없다. 계약 테스트는
+      개수(159/400/190/352)만 봤고, 개별 구간이 규칙과 맞는지는 안 봤다.
+      seg_label 을 만들어놓고 툴팁이 seg_no 를 쓰던 것과 같은 구멍이다.
+      개수가 맞아도 안이 뒤바뀌었을 수 있다.
+
+    여기서 재현하는 규칙 — 정본은 seg/geom.py verdict() 와 segments.py 다.
+
+      1. wmax < 3.0                        blocked   담이 소방차보다 좁다
+      2. wmax 없음 · wmin < 3.0 ·
+         road_bt < 3.0                     blocked   ★ 두 근거 독립 일치
+                                                     (2026-08-18 도입.
+                                                      대장폭 단독으로는
+                                                      실측을 뒤집지 않는다)
+      3. wmin >= 7.0 · 정규표본 2개 이상    clear     양쪽 주정차해도 통과
+      4. wmin >= 7.0 · 정규표본 1개        needs_cv  DM02825 사고 방어
+      5. wmin 있음                         needs_cv
+      6. 그 외                             unknown
+      7. needs_cv 인데 CCTV 25m 밖         unknown
+
+    ★ 이 테스트가 깨지면 둘 중 하나다. 규칙을 고쳤는데 여기를 안 고쳤거나,
+      산출물이 규칙을 안 따르거나. 어느 쪽이든 멈추고 봐야 한다.
+    """
+    import json
+    from firelane.seg.params import TRUCK, PARK
+
+    seg = ROOT / "web" / "data" / "segments.geojson"
+    if not seg.exists():
+        pytest.skip("web/data/segments.geojson 없음 — publish 를 먼저 돌려라")
+
+    num = lambda v: float(v) if v not in (None, "") else None
+    feats = json.loads(seg.read_text(encoding="utf-8"))["features"]
+
+    # ★ 필요한 컬럼이 없으면 이 검사는 조용히 틀린 답을 낸다.
+    #   2026-08-22 에 실제로 겪었다 — n_sample 이 없는 옛 산출물로 돌렸더니
+    #   "표본 1개 방어" 18구간이 규칙 위반으로 잡혔다. 판정은 멀쩡했고
+    #   검사가 못 읽은 것이었다. 없으면 통과가 아니라 실패해야 한다.
+    need = {"width_min_m", "width_max_m", "road_bt_m", "n_sample",
+            "cv_feasible", "verdict"}
+    missing = need - set(feats[0]["properties"])
+    assert not missing, (
+        f"segments.geojson 에 컬럼이 없다: {sorted(missing)}\n"
+        "  publish 화이트리스트(publish_web.py _cols)를 확인하고 다시 발행할 것.\n"
+        "  이 컬럼 없이는 판정 검증이 성립하지 않는다.")
+
+    bad = []
+    for f in feats:
+        x = f["properties"]
+        wmin, wmax = num(x.get("width_min_m")), num(x.get("width_max_m"))
+        bt = num(x.get("road_bt_m"))
+        ns = x.get("n_sample")
+        ns = int(ns) if ns not in (None, "") else None
+
+        if wmax is not None and wmax < TRUCK:
+            exp = "blocked"
+        elif (wmax is None and (wmin is None or wmin < TRUCK)
+              and bt is not None and bt < TRUCK):
+            exp = "blocked"
+        elif wmin is not None and wmin >= TRUCK + 2 * PARK:
+            exp = "needs_cv" if (ns is not None and ns <= 1) else "clear"
+        elif wmin is not None:
+            exp = "needs_cv"
+        else:
+            exp = "unknown"
+
+        if exp == "needs_cv" and not x.get("cv_feasible"):
+            exp = "unknown"
+
+        if exp != x["verdict"]:
+            bad.append(f"{x.get('seg_id')} {x.get('road_name')}: "
+                       f"산출 {x['verdict']} · 규칙 {exp} "
+                       f"(wmin={wmin} wmax={wmax} bt={bt} n={ns})")
+
+    assert not bad, (
+        f"판정이 규칙과 어긋난 구간 {len(bad)}개\n  "
+        + "\n  ".join(bad[:15]))
