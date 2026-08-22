@@ -22,9 +22,25 @@
    ════════════════════════════════════════════════════════════ */
 import { CONFIG } from "./config-access.js";
 
+/* ── 캐시 무효화 ─────────────────────────────────────────────
+   ★ 2026-08-22. segments.geojson 은 파이프라인을 돌릴 때마다 바뀐다.
+     브라우저가 옛 것을 물고 있으면 **판정 색이 틀린 지도**가 뜬다.
+     관제사에게는 그것이 최악의 실패다.
+
+   ★ 순환을 어디서 끊는가.
+     스탬프는 view.json 의 build 에 있는데, view.json 자체도 데이터라
+     캐시된다. 그래서 view.json **만** 매 로드 고유한 URL 로 받는다
+     (?t=Date.now()). 1KB 짜리라 비용이 없고, 그 뒤 모든 데이터는
+     내용 해시 스탬프를 달아 캐시가 정상 동작한다.
+
+   ★ 스탬프는 판정 데이터의 내용 해시다(publish_web.py). 타임스탬프가
+     아니므로 데이터가 그대로면 URL 도 그대로고 캐시가 그대로 산다. */
+let _build = "";
+
 /* ── 갈아끼우는 곳 ───────────────────────────────────────────
    API 로 넘어갈 때 이 함수 하나만 고친다. 호출부는 안 건드린다. */
-const SOURCE = name => `./data/${name}.geojson`;
+const SOURCE = name =>
+  `./data/${name}.geojson${_build ? `?v=${_build}` : ""}`;
 
 /* 키 → 실제 파일명. 이름이 같으면 적지 않는다. */
 const FILENAME = {
@@ -56,9 +72,14 @@ export async function loadAll(keys) {
 /* ── 스코프 ──────────────────────────────────────────────────
    ★ 좌표를 코드에 하드코딩하지 않는다. web/data/view.json 이 정본이고
      그것은 publish_web.py 산출물이다. 동명동 bbox 는 약 1.04 x 1.04 km.
-   ★ view.json 은 .geojson 이 아니라 SOURCE() 를 안 탄다. */
+   ★ view.json 은 .geojson 이 아니라 SOURCE() 를 안 탄다.
+   ★ 여기만 매 로드 고유 URL 이다. 캐시 사슬을 끊는 자리이므로
+     ?t= 를 지우지 마라 — 지우면 스탬프 자체가 낡는다. */
 export const loadView = () => {
-  if (!_cache.has("__view")) _cache.set("__view", _get("./data/view.json"));
+  if (!_cache.has("__view")) {
+    _cache.set("__view", _get(`./data/view.json?t=${Date.now()}`)
+      .then(v => { _build = v.build || ""; return v; }));
+  }
   return _cache.get("__view");
 };
 
@@ -73,10 +94,13 @@ export const markerKeys = () =>
 export const BASE_KEYS = ["segments", "buildings", "boundary", "poi"];
 
 export async function loadInitial() {
+  // ★ view.json 을 **먼저** 받는다. 그래야 _build 가 채워지고 이후
+  //   데이터 URL 에 스탬프가 붙는다. 병렬로 돌리면 경합이 생겨
+  //   어떤 파일은 스탬프 없이 나가고 어떤 파일은 붙는다.
+  const view = await loadView();
   const keys = [...BASE_KEYS, ...markerKeys()];
-  const [data, view, mask, maskSoft] = await Promise.all([
+  const [data, mask, maskSoft] = await Promise.all([
     loadAll(keys),
-    loadView(),
     load("mask"),
     load("mask_soft"),
   ]);

@@ -11,7 +11,9 @@ PARAM 좌표 정밀도(PREC) · web/data 60MB 상한(CI 가 검사)
 좌표를 6자리(약 11cm)로 반올림하고 표출에 안 쓰는 컬럼을 버린다.
 web/data 는 생성물이다. 직접 수정하지 말 것.
 """
+import hashlib
 import json
+import re
 import geopandas as gpd
 import pandas as pd
 
@@ -81,6 +83,19 @@ def main():
     gpd.GeoDataFrame(geometry=[world.difference(scope4)], crs=4326).to_file(W/"mask.geojson", **PREC)
     gpd.GeoDataFrame(geometry=[scope4.difference(emd4)], crs=4326).to_file(W/"mask_soft.geojson", **PREC)
 
+    # ── 캐시 무효화 스탬프 ──────────────────────────────────────
+    # ★ 2026-08-22. 툴팁을 고치고 몇 번을 새로고침해도 옛 화면이 떴다.
+    #   개발 중에는 성가신 정도지만 배포에서는 다르다 — 관제사가 옛
+    #   segments.geojson 을 보면 **판정 색이 틀린 지도**를 본다.
+    #   이 프로젝트가 막으려는 바로 그 종류의 사고다.
+    #
+    # ★ 타임스탬프를 쓰지 않는다. 같은 입력에 같은 산출물이 나와야 하는
+    #   저장소다(golden 지문). 매 실행 값이 달라지면 index.html 이 계속
+    #   더러워지고 "재실행했더니 diff 가 떴다" 가 일상이 된다.
+    #   **판정 데이터의 내용 해시**를 쓴다. 데이터가 그대로면 스탬프도 그대로다.
+    _BUILD = hashlib.sha256(
+        (W/"segments.geojson").read_bytes()).hexdigest()[:8]
+
     # 뷰 설정: bbox 를 코드에 하드코딩하지 않고 데이터에서 뽑아 내보낸다.
     # terrain/ortho 가 기록한 타일 범위는 보존한다.
     _vj = W/"view.json"
@@ -95,6 +110,9 @@ def main():
         # terrain / ortho 타일의 실제 범위. 지도 소스의 bounds 로 쓴다.
         # 없으면 브라우저가 범위 밖 타일을 요청해 404 가 뜬다.
         # terrain.py / ortho.py 가 채운다. 여기서 새로 쓰면서 지우면 안 된다.
+        # ★ 캐시 무효화 스탬프. data.js 가 이 값을 읽어 데이터 URL 에 붙인다.
+        #   segments.geojson 은 매 실행 바뀌므로 옛 것을 보면 판정이 틀린다.
+        "build": _BUILD,
         "terrainBounds": _prev.get("terrainBounds"),
         "orthoBounds":   _prev.get("orthoBounds"),
         "emdBounds": [[round(*emd.to_crs(4326).total_bounds[:1], 4), round(emd.to_crs(4326).total_bounds[1], 4)],
@@ -232,6 +250,20 @@ def main():
     (W/"markers.geojson").unlink(missing_ok=True)
 
     import shutil; shutil.copy(P/"segments.schema.json", W/"segments.schema.json")
+
+    # ── index.html 에 스탬프 주입 ───────────────────────────────
+    # ★ ES 모듈 그래프는 진입점에 쿼리를 붙여도 그 안의 import 까지
+    #   전파되지 않는다. 그래서 데이터 URL 은 js/data.js 가 view.json 의
+    #   build 를 읽어 따로 붙이고, JS/CSS 파일 자체는 여기서 붙인다.
+    # ★ 내용 해시라 데이터가 그대로면 이 파일도 안 바뀐다. 재실행 diff 없음.
+    _ix = ROOT/"web"/"index.html"
+    _html = _ix.read_text(encoding="utf-8")
+    _new = re.sub(r'\?v=[0-9a-fA-F]{8}\b|\?v=BUILD', f"?v={_BUILD}", _html)
+    if _new != _html:
+        _ix.write_text(_new, encoding="utf-8")
+        print(f"  index.html 스탬프 → {_BUILD}")
+    else:
+        print(f"  index.html 스탬프 {_BUILD} (변화 없음)")
     for f in sorted(W.iterdir()):
         print(f"  {f.name:26} {f.stat().st_size/1024:7.0f} KB")
 

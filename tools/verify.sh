@@ -105,10 +105,7 @@ elif [ -z "${FIRE_LANE_DATA:-}${FIRE_LANE_RAW:-}" ] && [ ! -d data/raw/gjcity ];
     note "파이프라인 전량 + golden" "raw 가 없다. FIRE_LANE_DATA 설정 후 다시"
 else
     step "파이프라인 전량" uv run fire-lane
-    [ "$fail" -eq 0 ] && step "golden 판정 불변 (1,101구간)" \
-        uv run python tools/golden.py check \
-        || note "golden 판정 불변" "파이프라인이 실패해 옛 산출물만 남았다"
-    true #  uv run python tools/golden.py check
+    step "golden 판정 불변 (1,101구간)" uv run python tools/golden.py check
 fi
 
 # ── 결과 ─────────────────────────────────────────────────────
@@ -150,6 +147,6 @@ fi
 
 printf '%s자동 검증은 전부 통과했다.%s\n\n' "$G" "$Z"
 printf '  %s아직 사람이 봐야 하는 것 하나:%s\n' "$Y" "$Z"
-printf '    cd web && python -m http.server 8000\n'
+printf '    uv run python tools/serve.py\n'
 printf '    %sWebGL 렌더링은 스크립트가 못 본다. 지도가 실제로 그려지는지,%s\n' "$D" "$Z"
 printf '    %s판정 색·표지판·미니맵·검색이 눈으로 멀쩡한지 확인할 것.%s\n\n' "$D" "$Z"

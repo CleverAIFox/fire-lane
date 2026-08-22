@@ -5,7 +5,7 @@ MapLibre GL JS 5 + deck.gl 9 (interleaved) + V-World.
 ## 실행
 
 ```bash
-cd web && python -m http.server 8000
+uv run python tools/serve.py        # 캐시 없는 개발 서버
 # http://localhost:8000
 ```
 

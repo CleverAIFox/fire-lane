@@ -70,7 +70,10 @@ Object.defineProperty(w, "performance", { value: { now: () => 0 }, configurable:
 
 // data.js 의 fetch 를 실제 web/data 파일로 연결
 w.fetch = async (u) => {
-  const p = ROOT + "/web/" + u.replace("./", "");
+  // ★ 쿼리를 벗긴다. data.js 가 캐시 무효화 스탬프를 붙이므로
+  //   (?v=<해시> · view.json 은 ?t=<시각>) 그대로 두면 경로가 안 맞는다.
+  //   실제 서버는 쿼리를 무시하고 파일을 준다.
+  const p = ROOT + "/web/" + u.replace("./", "").split("?")[0];
   return { ok: true, status: 200, json: async () => JSON.parse(readFileSync(p, "utf8")) };
 };
 

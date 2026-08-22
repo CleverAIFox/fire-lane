@@ -79,7 +79,7 @@ python -m firelane.normalize_raw "$FIRE_LANE_DATA/landing" --dry-run
 python -m firelane.contract
 fire-lane
 
-cd web && uv run python -m http.server 8000
+uv run python tools/serve.py        # 캐시 없는 개발 서버
 ```
 
 `index.html` 을 더블클릭하면 안 된다. `file://` 에서는 `fetch()` 가 CORS 로 막힌다.

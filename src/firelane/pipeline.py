@@ -321,7 +321,7 @@ def main():
 
     verify()
     print(f"\n총 {time.time()-t0:.1f}s")
-    print("\n지도 확인:  cd web && python -m http.server 8000")
+    print("\n지도 확인:  uv run python tools/serve.py")
 
 
 if __name__ == "__main__":

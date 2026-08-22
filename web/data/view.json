@@ -25,6 +25,7 @@
   ],
   "minZoom": 13.6,
   "maxZoom": 20,
+  "build": "72297f4e",
   "terrainBounds": [
     126.9031,
     35.1379,
