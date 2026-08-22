@@ -287,3 +287,43 @@ def test_seg_uid_retention():
            for f in json.loads((WEB / "segments.geojson").read_text(encoding="utf-8"))["features"]}
     ret = len(prev & cur) / len(prev)
     assert ret >= 0.90, f"seg_uid 유지율 {ret:.1%} — 키 규칙 재검토"
+
+
+def test_web_uses_stable_segment_key():
+    """표출은 seg_label 을 쓴다. seg_no / seg_uid 를 화면에 쓰지 않는다.
+
+    ★ 2026-08-22. seg_label(도로명주소 기초번호)을 만들어 산출물에 넣어놓고
+      툴팁은 계속 seg_no 를 쓰고 있었다. 아무 검사도 그것을 보지 않았다.
+      계약 테스트가 "DOM id 가 존재하는가" 는 봤지만 "어떤 컬럼을 쓰는가" 는
+      안 봤기 때문이다.
+
+        seg_no    정렬 순번. 노딩이 바뀌면 통째로 밀린다
+        seg_uid   내부 키. 향후 DB 기본키. 관제사에게 의미 없다
+        seg_label "동명로25번길 9-14". 기하 유도라 안정적이고
+                  119 가 무전에서 쓰는 표기와 같다(§5-1)
+    """
+    import re
+    js = _js()
+    # ★ 주석은 뺀다. 이 규칙을 왜 만들었는지 설명하려면 주석에 그 이름을
+    #   써야 하는데, 그것까지 잡으면 자기 문서를 자기가 막는다.
+    code = re.sub(r"/\*.*?\*/", "", js, flags=re.S)
+    code = re.sub(r"^\s*//.*$", "", code, flags=re.M)
+
+    assert "seg_label" in code, "표출이 seg_label 을 쓰지 않는다"
+    for bad, why in (("seg_no", "정렬 순번이라 노딩에 흔들린다"),
+                     ("seg_uid", "내부 키다. 화면에 띄우지 마라")):
+        assert bad not in code, (
+            f"web/js 가 {bad} 를 쓴다 — {why}. seg_label 이 정본이다")
+
+
+def test_web_css_has_no_dead_tip_rules():
+    """툴팁에서 쓰지 않는 #tip 규칙이 style.css 에 남아 있으면 안 된다.
+
+    화면에는 영향이 없지만, 다음 사람이 그 클래스가 살아 있다고 오해한다.
+    """
+    import re
+    css, js = _read("style.css"), _js()
+    dead = [c for c in re.findall(r'#tip \.([\w-]+)', css)
+            if f'class="{c}"' not in js and f"class='{c}'" not in js
+            and f'class="{c} ' not in js]
+    assert not dead, f"style.css 의 죽은 #tip 규칙: {sorted(set(dead))}"
