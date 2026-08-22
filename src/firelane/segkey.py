@@ -106,7 +106,12 @@ def attach_seg_uid(g: gpd.GeoDataFrame, road_col: str = "road_name") -> gpd.GeoD
     g = g.copy()
     g["seg_uid"] = [
         make_seg_uid(geom, rn)
-        for geom, rn in zip(g.geometry, g.get(road_col, pd.Series([None] * len(g))))
+        # ★ strict=True. 길이가 다르면 zip 은 짧은 쪽에 맞춰 **조용히 자른다**.
+        #   그러면 seg_uid 가 일부만 생기고 나머지는 누락된다. seg_uid 는
+        #   실측·CCTV·기초번호가 전부 붙는 영구 키다. 조용히 어긋나느니 죽는다.
+        for geom, rn in zip(g.geometry,
+                            g.get(road_col, pd.Series([None] * len(g))),
+                            strict=True)
     ]
     dup = g.seg_uid[g.seg_uid.duplicated(keep=False)]
     if len(dup):

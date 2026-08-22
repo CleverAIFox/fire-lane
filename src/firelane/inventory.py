@@ -29,8 +29,6 @@ from __future__ import annotations
 import csv
 import glob as _glob
 import io
-import os
-import re
 import sys
 import zipfile
 from datetime import datetime, timedelta, timezone
@@ -38,8 +36,8 @@ from pathlib import Path
 
 import yaml
 
-from firelane.paths import RAW, ROOT
 from firelane import ngi
+from firelane.paths import RAW, ROOT
 
 KST = timezone(timedelta(hours=9))
 SOURCES = ROOT / "sources.yaml"

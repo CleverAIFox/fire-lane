@@ -58,6 +58,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
+
 from firelane.paths import ROOT
 
 WORK = ROOT / ".work" / "ngii1k"          # .gitignore 에 .work/ 가 있다
@@ -225,7 +226,9 @@ def read_sheet(kind: str, path: Path, want: list) -> dict:
             g = g.to_crs(5186)
             cols = [a for a in keep if a in g.columns]
             recs = g[cols].to_dict("records") if cols else [{}] * len(g)
-            out[k] += list(zip(g.geometry, recs))
+            # ★ 기하 수와 속성 레코드 수는 같은 GeoDataFrame 에서 나온다.
+            #   다르면 도형과 속성이 어긋난 것이라 조용히 넘기면 안 된다.
+            out[k] += list(zip(g.geometry, recs, strict=True))
     return out
 
 

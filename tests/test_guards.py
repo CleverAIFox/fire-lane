@@ -24,7 +24,6 @@ from pathlib import Path
 import pytest
 from shapely.geometry import LineString, Polygon
 
-
 from firelane.guards import (
     CRITICAL,
     GuardFailure,

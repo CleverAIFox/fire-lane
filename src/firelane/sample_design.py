@@ -29,7 +29,6 @@ data/field/fieldsheet.md          출력해서 들고 나갈 야장
 """
 from __future__ import annotations
 
-
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -82,7 +81,10 @@ def _near_threshold(w) -> bool:
 
 
 def main() -> None:
-    rng = np.random.default_rng(SEED)
+    # ★ 여기 있던 rng = np.random.default_rng(SEED) 는 삭제했다. 만들어
+    #   놓고 한 번도 쓰지 않았다. 실제 추출은 전부 pandas 의
+    #   random_state=SEED 를 쓰므로 재현성은 그쪽이 보장한다.
+    #   쓰지 않는 난수원이 남아 있으면 "시드가 두 개인가" 를 의심하게 된다.
     g = gpd.read_file(PROCESSED / "segments.geojson").to_crs(CRS_M)
     # segments.py 가 이미 seg_uid 를 붙였으면 그것이 정본이다.
     # 여기서 다시 계산하면 규칙이 두 군데가 되어 언젠가 어긋난다.
@@ -156,7 +158,9 @@ def main() -> None:
     # ── 관측점 3점 ────────────────────────────────────────────
     rows = []
     sel_w = sel.to_crs(4326)
-    for (_, r), (_, r4) in zip(sel.iterrows(), sel_w.iterrows()):
+    # ★ sel 과 sel_w 는 같은 프레임을 to_crs 한 것이라 행 수가 같다.
+    #   다르면 관측점이 엉뚱한 구간에 찍히므로 죽어야 한다.
+    for (_, r), (_, r4) in zip(sel.iterrows(), sel_w.iterrows(), strict=True):
         for i, frac in enumerate(OBS_FRAC, start=1):
             off = r.geometry.length * frac
             p4 = r4.geometry.interpolate(frac, normalized=True)

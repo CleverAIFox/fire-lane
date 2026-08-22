@@ -33,19 +33,19 @@ from __future__ import annotations
 
 import glob
 import json
+import shutil
 import tempfile
 import zipfile
-from datetime import datetime, timezone
-
-import shutil
+from datetime import UTC, datetime
 
 import geopandas as gpd
 import numpy as np
-from firelane import quiet_gdal  # noqa: F401  GDAL cp949 로그 잡음 억제. rasterio 보다 먼저
 import rasterio
 from rasterio.windows import from_bounds
 
-from firelane.paths import ROOT, RAW, PROCESSED, WEB
+from firelane import quiet_gdal  # noqa: F401  GDAL cp949 로그 잡음 억제. rasterio 보다 먼저
+from firelane.paths import PROCESSED, RAW, ROOT
+
 OUT = PROCESSED
 
 DEM_ZIP = RAW / "ngii" / "ngii_dem_gj35616_20251117.zip"
@@ -74,8 +74,9 @@ def build_terrain_tiles(up, tr, src_crs):
     으로 지면이 실제로 휘고, 그 위에 건물이 자연스럽게 얹힌다.
     """
     import math
+
     from PIL import Image
-    from rasterio.warp import calculate_default_transform, reproject, Resampling
+    from rasterio.warp import Resampling, calculate_default_transform, reproject
 
     dst_crs = "EPSG:3857"
     h, w = up.shape
@@ -96,7 +97,6 @@ def build_terrain_tiles(up, tr, src_crs):
     if tdir.exists():
         shutil.rmtree(tdir)
 
-    inv = ~dtr
     count = 0
     bounds_xyz = []
     for z in TILE_Z:
@@ -233,11 +233,11 @@ def main():
         "tiles": f"web/data/terrain/{{z}}/{{x}}/{{y}}.png ({n_tiles}장, z{TILE_Z[0]}~{TILE_Z[-1]})",
         "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
         "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     mf.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n→ dem_scope.tif ({abs(tr.a):.1f}m 격자) · 대상 기복 {np.nanmax(sub)-base:.1f}m")
-    print(f"→ _manifest.json 에 terrain 기록")
+    print("→ _manifest.json 에 terrain 기록")
 
 
 if __name__ == "__main__":

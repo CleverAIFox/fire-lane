@@ -14,10 +14,13 @@ web/data 는 생성물이다. 직접 수정하지 말 것.
 import hashlib
 import json
 import re
+import shutil
+
 import geopandas as gpd
 import pandas as pd
 
-from firelane.paths import ROOT, RAW, PROCESSED, WEB
+from firelane.paths import PROCESSED, ROOT
+
 OUT = PROCESSED
 P, W = ROOT/"data"/"processed", ROOT/"web"/"data"
 EMD_CD = "12210108"
@@ -176,7 +179,9 @@ def main():
     # 원본은 설치연도별로 행이 쪼개져 있다. 같은 지점이 여러 줄로 나온다.
     # (동명동 53행 → 고유 좌표 29지점, 카메라 90대)
     # 좌표로 묶어 지점 단위로 만든다. 대수는 합산, 연도는 최초/최신을 둘 다 남긴다.
-    cctv["_k"] = list(zip(cctv.geometry.x.round(6), cctv.geometry.y.round(6)))
+    # ★ 같은 GeoSeries 의 x, y 라 길이가 같아야 한다.
+    cctv["_k"] = list(zip(cctv.geometry.x.round(6),
+                          cctv.geometry.y.round(6), strict=True))
     _agg = dict(
         관리기관명=("관리기관명", "first"),
         소재지도로명주소=("소재지도로명주소", "first"),
@@ -249,7 +254,7 @@ def main():
     # 여기서 형상을 굽지 않는다. 구우면 UI 가 값을 못 바꾼다.
     (W/"markers.geojson").unlink(missing_ok=True)
 
-    import shutil; shutil.copy(P/"segments.schema.json", W/"segments.schema.json")
+    shutil.copy(P/"segments.schema.json", W/"segments.schema.json")
 
     # ── index.html 에 스탬프 주입 ───────────────────────────────
     # ★ ES 모듈 그래프는 진입점에 쿼리를 붙여도 그 안의 import 까지

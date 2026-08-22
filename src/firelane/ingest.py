@@ -30,7 +30,7 @@ import json
 import shutil
 import sys
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import geopandas as gpd
@@ -39,7 +39,8 @@ import yaml
 from pyproj import Transformer
 from shapely import make_valid
 
-from firelane.paths import ROOT, RAW, PROCESSED, WEB
+from firelane.paths import PROCESSED, RAW, ROOT
+
 OUT = PROCESSED
 
 
@@ -214,7 +215,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         #      파이프라인 밖에서 만들어지고 있었다("파이프라인은 한 명령이다"가
         #      폭에 대해서는 거짓이었다).
         #   프레임 조립을 ngii1k.build 하나로 합쳐 두 곳에서 만들지 않는다.
-        from firelane.ngii1k import collect, read_sheet, build, LAYERS
+        from firelane.ngii1k import LAYERS, build, collect, read_sheet
         want = list(LAYERS)
         # ★ 2026-08-18. src = hits[0] 라 글롭이 여러 zip 을 찾아도 첫 개만 썼다.
         #   SHP 판(74도엽)만 들어가고 NGI 보완분(북부 12도엽)이 통째로 무시됐다.
@@ -410,7 +411,7 @@ def main():
               f"→ {len(results)}종 유지")
 
     man.write_text(json.dumps({
-        "generated_at": datetime.now(timezone.utc).astimezone().isoformat(),
+        "generated_at": datetime.now(UTC).astimezone().isoformat(),
         "bbox_4326": BBOX_4326,
         "standard_crs": {"metric": CRS_M, "display": CRS_W},
         "datasets": results,

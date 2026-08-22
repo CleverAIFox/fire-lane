@@ -19,10 +19,17 @@ import json
 import geopandas as gpd
 from shapely.ops import unary_union
 
-from firelane.paths import RAW, PROCESSED
+from firelane.paths import PROCESSED, RAW
 from firelane.seg.params import (
-    CCTV_RANGE, MIN_SEG_LEN, NFA_RUN_M, OLD_SNAP, PARK, SNAP_TOL,
-    TRUCK, WMAX_CAP, XSEC_EXCL,
+    CCTV_RANGE,
+    MIN_SEG_LEN,
+    NFA_RUN_M,
+    OLD_SNAP,
+    PARK,
+    SNAP_TOL,
+    TRUCK,
+    WMAX_CAP,
+    XSEC_EXCL,
 )
 
 OUT = PROCESSED
@@ -41,7 +48,8 @@ def nfa_compare(g):
     #   소방서 지정 구간은 우리 폭에 대한 유일한 외부 대조 수단이다.
     fa = RAW/"safety"/"safety_fire_access_gj_dong_20250731.csv"
     if fa.exists():
-        import csv, re
+        import csv
+        import re
         rows = list(csv.DictReader(fa.open(encoding="cp949")))
         road = gpd.read_file(OUT/"road_link_5186.gpkg").to_crs(CRS_M)
         print("\n[소방서 지정 구간 대조]")
@@ -82,7 +90,9 @@ def nfa_compare(g):
 
         if _nfa_rows:
             import json as _json
-            from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+            from datetime import datetime as _dt
+            from datetime import timedelta as _td
+            from datetime import timezone as _tz
             _abs = round(sum(abs(x["dev_m"]) for x in _nfa_rows), 2)
             _out = {
                 "as_of": _dt.now(_tz(_td(hours=9))).isoformat(timespec="seconds"),

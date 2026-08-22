@@ -25,7 +25,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 WEB = Path("web/data")
@@ -70,7 +70,7 @@ def build() -> dict:
                 + sum(t["bytes"] for t in tiles.values())) / 1e6
 
     return {
-        "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).astimezone().isoformat(timespec="seconds"),
         "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
         "source": src,
         "files": files,

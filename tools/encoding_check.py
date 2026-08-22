@@ -112,7 +112,7 @@ def main() -> int:
             fixed += 1
 
     if not any(not g for _, _, g in hits):
-        print(f"인코딩 OK — 손으로 쓰는 파일은 전부 UTF-8 · LF · 개행 있음"
+        print("인코딩 OK — 손으로 쓰는 파일은 전부 UTF-8 · LF · 개행 있음"
               + (f" (생성물 {sum(1 for _,_,g in hits if g)}건은 대상 아님)" if hits else ""))
         return 0
 

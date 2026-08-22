@@ -14,11 +14,10 @@ golden 은 "리팩 전후가 같은가"만 본다. 지금 값이 **옳은가**�
 from pathlib import Path
 
 import pytest
-from shapely.geometry import LineString, MultiPoint, Point, Polygon
+from shapely.geometry import LineString, MultiPoint, Polygon
 from shapely.ops import unary_union
 
-
-from firelane.seg.params import COV_MIN, SNAP_MAX, SNAP_TRUST, WMAX_CAP
+from firelane.seg.params import COV_MIN, SNAP_MAX, WMAX_CAP
 from firelane.seg.width import WidthEngine
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -136,7 +136,9 @@ def parse_nda(path: Path, want=None) -> dict[str, dict]:
                 except Exception:
                     rows.append(None)
                     continue
-                rows.append(dict(zip(names, vals)))
+                # ★ 필드명 수와 값 수가 다르면 레코드가 조용히 잘린다.
+                #   DBF 파싱이 어긋난 것이므로 죽는 편이 낫다.
+                rows.append(dict(zip(names, vals, strict=True)))
         out[lay] = {"fields": fields, "rows": rows}
     return out
 

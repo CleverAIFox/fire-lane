@@ -14,7 +14,6 @@ from pathlib import Path
 import pytest
 from shapely.geometry import LineString, Polygon
 
-
 from firelane.seg.geom import _dirv, _join, _seal, verdict
 from firelane.seg.params import NODE_TOL, PARK, TRUCK
 

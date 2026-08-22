@@ -13,7 +13,6 @@ from pathlib import Path
 
 from shapely.geometry import LineString
 
-
 from firelane.seg.roadname import RoadNameIndex
 
 ROOT = Path(__file__).resolve().parents[1]

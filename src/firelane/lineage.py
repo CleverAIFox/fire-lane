@@ -54,7 +54,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 LINEAGE = "_lineage.json"
@@ -176,7 +176,7 @@ def record(processed: Path, root: Path, step, expand) -> None:
     """단계 실행 **후**. 읽은 것과 쓴 것의 지문을 남긴다."""
     lg = load(processed)
     lg[step.name] = {
-        "at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+        "at": datetime.now(UTC).astimezone().isoformat(timespec="seconds"),
         "inputs": {_key(root, p): fingerprint(p) for p in expand(step.consumes)},
         "outputs": {_key(root, p): fingerprint(p) for p in expand(step.produces)},
     }

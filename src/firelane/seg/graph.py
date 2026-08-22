@@ -20,7 +20,7 @@ from pathlib import Path
 import geopandas as gpd
 import networkx as nx
 import numpy as np
-from shapely.geometry import LineString, Point
+from shapely.geometry import Point
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
 
@@ -123,7 +123,9 @@ def access_corridor(G, ent, poly, out_dir: Path | None = None):
         for t in tgts:
             if t in pa:
                 pp = pa[t]
-                for a, b in zip(pp, pp[1:]):
+                # 경로의 인접쌍. pp[1:] 가 하나 짧은 것이 정상이므로
+                # strict=False 를 명시한다(기본값이지만 의도를 적는다).
+                for a, b in zip(pp, pp[1:], strict=False):
                     use[frozenset((a, b))] += 1
 
     # 접근 회랑: 최단경로 중 동 밖 구간. 표출 스코프 산정에 쓴다.

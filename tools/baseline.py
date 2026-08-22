@@ -43,11 +43,10 @@ import argparse
 import collections
 import hashlib
 import json
-import math
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -261,7 +260,7 @@ def cmd_diff(args) -> int:
     used = set()
     for _, xy, po in rest_o:
         best, bd = None, tol * tol
-        for i, (_, xy2, pn) in enumerate(rest_n):
+        for i, (_, xy2, _pn) in enumerate(rest_n):
             if i in used:
                 continue
             d = (xy[0] - xy2[0]) ** 2 + (xy[1] - xy2[1]) ** 2
