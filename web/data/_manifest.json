@@ -1,18 +1,18 @@
 {
- "generated_at": "2026-08-21T17:14:44+09:00",
+ "generated_at": "2026-08-22T23:57:05+09:00",
  "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
  "source": {
   "segments.geojson": {
-   "sha256": "4db771ec3bc0dcec3345e4bb58c586915b2f9b210ddf056be487c37d0333bab5",
-   "bytes": 1017012
+   "sha256": "82725196bda756820805f2aeae6156b129bbb0e527998ab4e93bfe570a6709ea",
+   "bytes": 1059976
   },
   "segments.schema.json": {
-   "sha256": "dd94198fe20a2410f2374a2326d8bff9d67fe5ec024a0e9fb9f35a22f561a9a5",
+   "sha256": "4109c1f1c953300a7df052f1f9eca6ffcadf5edc8b694423aff6749389ea2cd7",
    "bytes": 3724
   },
   "_manifest.json": {
-   "sha256": "781af9ed94621cc20692b76d237430876b8efe7dfaa5d1d9965c5b13dd2b374d",
-   "bytes": 55687
+   "sha256": "f09522511abc2df81fa3dd03d53581d466c6e12066fbb6a4193ba91df897b986",
+   "bytes": 56835
   }
  },
  "files": {
@@ -21,8 +21,8 @@
    "bytes": 12116
   },
   "buildings.geojson": {
-   "sha256": "c5b4e22f65fcf0f859a5d32101068c59579214faadfbb98c160fdb871cbce7a9",
-   "bytes": 2167186
+   "sha256": "c887134f116f095070c924a882ce1881c16ee47d70cb06ea44f678e5d53bb3e4",
+   "bytes": 2167415
   },
   "cctv.geojson": {
    "sha256": "f36d909299c83422b24019f2f702e4cfcd5bff644934c2c2c20ee38fc91b33a6",
@@ -53,11 +53,11 @@
    "bytes": 35357
   },
   "segments.geojson": {
-   "sha256": "5913826cf1cf5e4865131cd38a05e67498a14320f111bed3c214b4f70a6891e2",
-   "bytes": 809514
+   "sha256": "72297f4e553caf8b4ab12dcc092ae6a896c1184f9cf49dc54984562a39f641e3",
+   "bytes": 889976
   },
   "segments.schema.json": {
-   "sha256": "dd94198fe20a2410f2374a2326d8bff9d67fe5ec024a0e9fb9f35a22f561a9a5",
+   "sha256": "4109c1f1c953300a7df052f1f9eca6ffcadf5edc8b694423aff6749389ea2cd7",
    "bytes": 3724
   },
   "stations.geojson": {
@@ -69,8 +69,8 @@
    "bytes": 12243
   },
   "view.json": {
-   "sha256": "453bc55a59046267a85e1e7b6737a2c974cbe87a021745511c44782f7085d2aa",
-   "bytes": 558
+   "sha256": "0137bad386f1d6f21224a2ba1e9e05c79066518b192aeb0b68f78ee4c609d47a",
+   "bytes": 581
   }
  },
  "tiles": {
@@ -101,8 +101,12 @@
   "18": {
    "count": 276,
    "bytes": 5782240
+  },
+  "19": {
+   "count": 1035,
+   "bytes": 16338808
   }
  },
- "tiles_digest": "01e5a60b24cdcc13",
- "total_mb": 12.24
+ "tiles_digest": "aac821e4051f7be7",
+ "total_mb": 28.66
 }

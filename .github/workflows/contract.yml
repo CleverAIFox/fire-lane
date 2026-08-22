@@ -20,9 +20,10 @@ name: contract
 
 on:
   push:
-    branches: [main]
+    branches: [main, gis]
   pull_request:
-    branches: [main]
+    branches: [main, gis]
+  workflow_dispatch:
 
 jobs:
   contract:
