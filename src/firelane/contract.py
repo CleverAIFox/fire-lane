@@ -45,13 +45,11 @@ sources.yaml 의 각 데이터셋에 contract 블록을 둔다. 전부 선택 �
 from __future__ import annotations
 
 import argparse
-import io
 import sys
 import zipfile
 from pathlib import Path
+
 from firelane.paths import ROOT
-
-
 
 OK, WARN, FAIL = "OK", "경고", "★실패"
 

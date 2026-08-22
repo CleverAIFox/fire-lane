@@ -355,7 +355,8 @@ def test_verdict_matches_rules_for_every_segment():
       산출물이 규칙을 안 따르거나. 어느 쪽이든 멈추고 봐야 한다.
     """
     import json
-    from firelane.seg.params import TRUCK, PARK
+
+    from firelane.seg.params import PARK, TRUCK
 
     seg = ROOT / "web" / "data" / "segments.geojson"
     if not seg.exists():

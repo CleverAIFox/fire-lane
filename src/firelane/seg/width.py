@@ -26,8 +26,15 @@ from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
 
 from firelane.seg.params import (
-    _DBG, COV_MIN, MIN_SEG_LEN, MIX_SRC, OLD_SNAP, SNAP_MAX, SNAP_TRUST,
-    WMAX_CAP, XSEC_EXCL,
+    _DBG,
+    COV_MIN,
+    MIN_SEG_LEN,
+    MIX_SRC,
+    OLD_SNAP,
+    SNAP_MAX,
+    SNAP_TRUST,
+    WMAX_CAP,
+    XSEC_EXCL,
 )
 
 
@@ -294,8 +301,15 @@ class WidthEngine:
             a, b, sc, pr, _why, _res = self.measure(s, t)
             _n_try += 1
 
-            def _trusted(_nm):
-                """이 지점에서 그 소스의 표본을 믿을 수 있는가."""
+            def _trusted(_nm, _res=_res):
+                """이 지점에서 그 소스의 표본을 믿을 수 있는가.
+
+                ★ _res 를 기본인자로 묶는다. 그러지 않으면 클로저가 정의
+                  시점이 아니라 **호출 시점의** _res 를 읽는다. 지금은 같은
+                  반복 안에서만 부르므로 결과가 같지만, 이 함수가 루프 밖으로
+                  새거나 지연 평가되는 순간 **다른 표본의 값으로 신뢰도를
+                  판정한다**. 폭 채택 소스가 바뀌는 자리다.
+                """
                 _r = _res.get(_nm)
                 if _r is None or _r[0] is None:
                     return False
@@ -309,7 +323,10 @@ class WidthEngine:
             # 채택된 소스의 snap 이 크면 그 표본 자체를 버린다.
             if a and (sc is None or _trusted(sc)):
                 A.append(a); S.append(sc); D.append(pr)
-            for _nm, _vv in zip(("ngii1k", "ngii", "silpok"), pr):
+            # ★ pr 은 measure() 가 항상 3-튜플로 준다. strict=True 로
+            #   그 계약을 고정한다 — 소스가 늘거나 줄면 여기서 죽어야
+            #   조용히 한 소스가 빠지는 일이 없다.
+            for _nm, _vv in zip(("ngii1k", "ngii", "silpok"), pr, strict=True):
                 if _vv is not None and _trusted(_nm):
                     _by[_nm].append(_vv)
             if b: B.append(b)

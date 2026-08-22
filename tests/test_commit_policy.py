@@ -14,7 +14,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
-import commit_policy as cp   # tools/ — pyproject 의 pytest pythonpath 로 잡힌다
+import commit_policy as cp  # tools/ — pyproject 의 pytest pythonpath 로 잡힌다
 
 
 @pytest.mark.parametrize("path,rule", [

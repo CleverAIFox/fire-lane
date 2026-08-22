@@ -33,7 +33,7 @@ import glob
 import json
 import math
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import geopandas as gpd
@@ -224,7 +224,7 @@ def main():
         "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
         "tiles": f"web/data/ortho/{{z}}/{{x}}/{{y}}.jpg ({count}장, z{TILE_Z[0]}~{TILE_Z[-1]}, {size:.1f}MB)",
         "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     mf.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n→ 타일 {count}장 · {size:.1f}MB")

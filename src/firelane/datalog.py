@@ -21,10 +21,11 @@ import json
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
+
 from firelane.paths import ROOT
 
 KST = timezone(timedelta(hours=9))
@@ -87,7 +88,7 @@ def cmd_record() -> None:
             continue
         entry = {"sha256": sha256(p)[:32], "bytes": p.stat().st_size}
         # 대장에 선언된 산출물이면 계보를 함께 박는다
-        for key, meta in outputs.items():
+        for _key, meta in outputs.items():
             if meta.get("path", "").endswith(p.name):
                 entry["produced_by"] = meta.get("produced_by")
                 entry["inputs"] = meta.get("inputs", [])

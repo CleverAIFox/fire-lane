@@ -74,11 +74,11 @@ step "pytest" uv run pytest tests/ -q
 # ── 4. 계층 규칙 ─────────────────────────────────────────────
 step "계층 강제 (test_layering)" uv run pytest tests/test_layering.py -q
 
-# ── 5. 린트 (실패해도 머지 막지 않음 — 원본부터 빨간불이다) ──
-printf '%s── ruff (참고)%s\n' "$C" "$Z"
-RUFF=$(uv run ruff check src tools tests 2>/dev/null | grep -oE "Found [0-9]+ errors" | tail -1)
-printf '%s   참고%s  %s  %s(원본 155개에서 시작 · 머지는 막지 않는다)%s\n\n' "$Y" "$Z" "${RUFF:-측정 실패}" "$D" "$Z"
-NAMES+=("ruff"); RESULTS+=("참고"); NOTES+=("${RUFF:-측정 실패}")
+# ── 5. 린트 ─────────────────────────────────────────────────
+# ★ 2026-08-22 에 155 → 0 으로 정리했다. 이제 참고가 아니라 게이트다.
+#   되돌아가면 여기서 죽는다. 스타일 규칙 6종은 pyproject 에서 껐고
+#   끄는 근거를 각각 적어뒀다.
+step "ruff" uv run ruff check src tools tests
 
 # ── 6. JS 모듈 그래프 ────────────────────────────────────────
 step "JS 문법·순환·import" node tools/js_graph_check.mjs

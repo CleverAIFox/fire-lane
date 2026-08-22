@@ -173,7 +173,6 @@ def uncovered_ratio(lines, polys, buffer_m: float = 1.0) -> tuple[int, int]:
       contract.py 의 scope_min 은 "스코프 안에 몇 건 있나"를 보지만,
       그것은 폭 소스가 스코프를 **덮는가**와 다른 질문이다.
     """
-    from shapely.strtree import STRtree
 
     polys = [p for p in polys if p is not None and not p.is_empty]
     lines = [g for g in lines if g is not None and not g.is_empty]

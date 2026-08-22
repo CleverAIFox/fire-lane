@@ -264,7 +264,7 @@ def main():
             print(f"    {u}")
 
     if a.in_place:
-        print(f"\n제자리 정리 완료. 파일명·확장자가 규칙에 맞다.")
+        print("\n제자리 정리 완료. 파일명·확장자가 규칙에 맞다.")
         print(f"작업용 사본을 만들려면:  python -m firelane.normalize_raw {src}")
         return
 

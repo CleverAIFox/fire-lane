@@ -123,7 +123,7 @@ def main() -> int:
     else:
         prov = collections.Counter()
         psize = collections.Counter()
-        for rel, sz, _ in raw:
+        for rel, _sz, _ in raw:
             k = rel.parts[1] if len(rel.parts) > 1 else "(raw 직하 파일)"
             prov[k] += 1
             psize[k] += sz
@@ -138,7 +138,7 @@ def main() -> int:
     print("\n" + "=" * 62)
     print("3. 명명규칙 이탈 (raw 직속 파일만)")
     bad = []
-    for rel, sz, _ in raw:
+    for rel, _sz, _ in raw:
         if len(rel.parts) != 3:          # raw/provider/파일 이 정상
             bad.append((rel, "계층 깊이"))
         elif not NAME_RE.match(rel.name):
@@ -201,7 +201,7 @@ def main() -> int:
         same = {k: v for k, v in bysha.items() if len(v) > 1}
         waste = sum(v[0][1] * (len(v) - 1) for v in same.values())
         print(f"    {len(same)}종 · 낭비 {human(waste)}")
-        for k, v in sorted(same.items(), key=lambda x: -x[1][0][1])[:15]:
+        for _k, v in sorted(same.items(), key=lambda x: -x[1][0][1])[:15]:
             print(f"    {human(v[0][1]):>10s} × {len(v)}")
             for rel, _ in v[:4]:
                 print(f"        {rel}")

@@ -22,6 +22,7 @@ from __future__ import annotations
 #   FIRE_LANE_OLD_SNAP=1        snap 을 소스별이 아닌 종전 방식으로 되돌린다.
 #                               소스별 snap 도입 전후를 한 바이너리로 비교할 때
 import os as _os
+
 NO_MERGE  = _os.environ.get("FIRE_LANE_NO_MERGE") == "1"
 DEBUG_SEG = [x.strip() for x in
              _os.environ.get("FIRE_LANE_DEBUG_SEG", "").split(",") if x.strip()]

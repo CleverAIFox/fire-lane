@@ -30,6 +30,7 @@ PARAM seg/params.py 가 정본. TRUCK=3.0 PARK=2.0 CCTV_RANGE=25.0 등
   segments.geojson / segments_5186.gpkg / segments.schema.json
 """
 from __future__ import annotations
+
 import sys
 from collections import Counter
 
@@ -37,24 +38,35 @@ import geopandas as gpd
 import numpy as np
 import shapely
 from shapely.geometry import LineString, Point
-from shapely.ops import unary_union, nearest_points
+from shapely.ops import nearest_points, unary_union
 from shapely.strtree import STRtree
 
 from firelane.paths import PROCESSED
-from firelane.segkey import attach_seg_uid, uid_retention, save_uid_map
+
 # ── 파라미터 · 순수 함수 ──────────────────────────────────────
 # ★ 정본은 seg/ 다. 여기서 다시 정의하지 않는다(R3).
 from firelane.seg import graph as seg_graph
 from firelane.seg import report as seg_report
 from firelane.seg.basisno import BasisIntervalIndex
 from firelane.seg.geom import _dirv, _join, _seal, verdict
+from firelane.seg.params import (
+    _DBG,
+    CCTV_RANGE,
+    DEBUG_SEG,
+    DEBUG_XY,
+    EMD_CD,
+    KEEP_BUFFER,
+    MIN_SEG_LEN,
+    NFA_RUN_M,
+    NO_MERGE,
+    PARK,
+    SNAP_TOL,
+    TRUCK,
+    XSEC_EXCL,
+)
 from firelane.seg.roadname import RoadNameIndex
 from firelane.seg.width import WidthEngine
-from firelane.seg.params import (
-    NO_MERGE, DEBUG_SEG, DEBUG_XY, _DBG,
-    EMD_CD, GRAPH_BUFFER, KEEP_BUFFER, SNAP_TOL, XSEC_EXCL,
-    MIN_SEG_LEN, TRUCK, PARK, NFA_RUN_M, CCTV_RANGE,
-)
+from firelane.segkey import attach_seg_uid, save_uid_map, uid_retention
 
 OUT = PROCESSED
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
