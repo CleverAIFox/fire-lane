@@ -1264,6 +1264,8 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 됨
 | `route_usage` | 소방 동선 빈도(계산값) |
 | `width_src` | `ngii1k` \| `ngii` \| `silpok`. 채택 소스. 구간 단위 단일 소스 |
 | `width_disagree_m` | 소스 간 최대−최소. D-25 실측 지점 선정 기준 |
+| `width_cov` | 채택 소스의 커버율. 정규 표본 중 그 소스가 값을 낸 비율. 낮을수록 실측 우선순위가 높다 |
+| `n_sample` | 시도한 표본 수. 이 값이 1이면 `verdict()` 가 `clear` 를 보류한다(DM02825 사고 방어) |
 | `width_verified` | D-25 실측 완료 여부. 지금은 전건 `false` |
 | `midpoint_fallback` | 정규표본이 없어 중점 하나로 잰 구간 |
 | `inherited` | 인접 구간에서 폭을 상속받았는가 |
