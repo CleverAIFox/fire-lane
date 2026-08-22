@@ -108,7 +108,11 @@ STEPS = [
     Step("publish", "publish_web", "→ web/data",
          WEB / "segments.geojson",
          reads=(P / "segments.geojson", P / "streetlight_point.geojson"),
-         writes=(WEB / "segments.geojson", WEB / "segments.schema.json")),
+         # ★ web/data/_manifest.json 은 publish 가 마지막에 쓰는 계보다.
+         #   종전에는 tools/web_manifest.py 를 사람이 따로 돌려야 했고
+         #   아무도 안 돌렸다(2026-08-22 CI 가 처음 잡음).
+         writes=(WEB / "segments.geojson", WEB / "segments.schema.json",
+                 WEB / "_manifest.json")),
 ]
 
 

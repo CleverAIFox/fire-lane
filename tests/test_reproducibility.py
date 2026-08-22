@@ -355,3 +355,49 @@ def test_plan_headings_are_numbered_and_unique():
         seen[m.group(1)] = no
     assert not dup, "중복 절 번호:\n  " + "\n  ".join(dup)
     assert not unnum, "번호 없는 절:\n  " + "\n  ".join(unnum)
+
+
+def test_publish_writes_its_own_manifest():
+    """web/data 계보를 publish 가 직접 쓴다. 사람이 기억할 일이 아니다.
+
+    ★ 2026-08-22. 종전에는 tools/web_manifest.py 를 따로 돌려야 했고
+      아무도 안 돌렸다. CI 가 main 에서만 도는 바람에 2주 동안 몰랐고,
+      gis 로 켜자마자 바로 잡혔다. §5-5(ingest.py 직접 호출 시 계보가
+      빠져 다음 실행이 교착)와 같은 계열이다 — **순서를 사람이 기억해야
+      하는 구조는 언젠가 반드시 어긋난다.**
+
+    ingest 가 processed/_manifest.json 을 쓰듯, publish 가 web/data/
+    _manifest.json 을 쓴다. 그리고 Step 선언의 writes 에 그것이 있어야
+    계보 검사가 관리한다.
+    """
+    src = (ROOT / "src" / "firelane" / "publish_web.py").read_text(encoding="utf-8")
+    assert "webmanifest.write()" in src, (
+        "publish_web.py 가 web/data 계보를 쓰지 않는다.\n"
+        "  사람이 tools/web_manifest.py 를 기억해서 돌리는 구조로 되돌리지 마라.")
+
+    pipe = (ROOT / "src" / "firelane" / "pipeline.py").read_text(encoding="utf-8")
+    assert 'WEB / "_manifest.json"' in pipe, (
+        "pipeline 의 publish Step writes 에 web/data/_manifest.json 이 없다.\n"
+        "  선언에 없으면 계보 검사가 이 산출물을 관리하지 않는다.")
+
+
+def test_web_manifest_is_cwd_independent():
+    """계보 도구가 cwd 에 의존하면 안 된다.
+
+    ★ 종전 tools/web_manifest.py 는 `WEB = Path("web/data")` 였다.
+      저장소 루트에서만 동작했고, 그것이 이 도구를 파이프라인에 넣지
+      못한 이유 중 하나였다. paths 를 쓴다.
+    """
+    import re
+    src = (ROOT / "src" / "firelane" / "webmanifest.py").read_text(encoding="utf-8")
+    assert "from firelane.paths import" in src, "webmanifest 가 paths 를 안 쓴다"
+
+    # ★ 주석·독스트링을 뺀다. 이 규칙을 왜 만들었는지 설명하려면 옛 코드를
+    #   인용해야 하는데, 그것까지 잡으면 자기 문서를 자기가 막는다.
+    #   (2026-08-22 에 실제로 걸렸다. seg_no 검사 때와 같은 실수다)
+    code = re.sub(r'"""[\s\S]*?"""', "", src)
+    code = re.sub(r"^\s*#.*$", "", code, flags=re.M)
+
+    for bad in ('Path("web/data")', "Path('web/data')",
+                'Path("data/processed")', "Path('data/processed')"):
+        assert bad not in code, f"cwd 상대경로가 되살아났다: {bad}"
