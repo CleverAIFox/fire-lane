@@ -1048,3 +1048,38 @@ def test_naver_join_flags_small_samples():
     # 상한 계산이 판정보다 앞서야 경고가 의미를 갖는다
     assert src.index("sd_hi =") < src.index('if abs(med) < 0.3'), \
         "판정 뒤에 상한을 계산하면 경고가 늦다"
+
+
+def test_review_page_uses_our_own_ortho():
+    """대조 페이지가 **우리** 정사영상을 쓰는가.
+
+    ★ 2026-08-23. 네이버 지도로 대조하려다 접었다 — 하단 표기가
+      `국토지리정보원` 이고, 우리 `ortho`(정사영상 2025, 25cm)와 **같은
+      항공사진**이다. 같은 것을 두 번 보는 것이라 독립 검증이 아니다.
+
+      다만 "어느 쪽이 맞나" 를 가리는 데는 영상이 심판으로 쓸 수 있다.
+      그때도 남의 재압축본이 아니라 **도엽 원본**을 쓴다.
+
+    ★ 외부 지도 타일을 배경으로 끌어오면 이 구분이 무너진다.
+    """
+    src = (ROOT / "tools/jijeok_review.py").read_text(encoding="utf-8")
+    assert "data/ortho/{z}/{x}/{y}.jpg" in src, \
+        "우리 정사영상 타일을 안 쓴다"
+    for bad in ("map.naver.com", "map.kakao.com", "openstreetmap.org/{z}",
+                "tile.openstreetmap"):
+        assert bad not in src, f"외부 지도 타일을 배경으로 쓴다: {bad}"
+
+
+def test_review_page_hides_nothing_it_should_show():
+    """대조 페이지가 판정 어휘와 임계를 코드와 맞추는가.
+
+    ★ 임계 3.0m 를 페이지에 손으로 박으면 `seg/params.py` 의 TRUCK 이
+      바뀔 때 조용히 어긋난다(R3 — 임계값 정본은 params.py 하나다).
+    """
+    from firelane.seg.params import TRUCK
+    src = (ROOT / "tools/jijeok_review.py").read_text(encoding="utf-8")
+    assert f"TH = {TRUCK}" in src, \
+        f"jijeok_review.TH 가 params.TRUCK({TRUCK}) 과 다르다"
+    # 판정 넷이 다 있어야 CSV 가 해석된다
+    for k in ("우리가 맞다", "지적이 맞다", "둘 다 아니다", "못 보겠다"):
+        assert k in src, f"판정 어휘 누락: {k}"

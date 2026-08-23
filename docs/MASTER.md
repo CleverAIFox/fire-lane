@@ -2679,7 +2679,20 @@ uv run python -m firelane.datalog graph     계보 그래프 (docs/lineage.mmd, 
 uv run python -m firelane.datalog backup D  외장 백업 + sha256
 uv run python -m firelane.datalog verify D  백업 대조. 복사만 하고 검증 안 하면 백업이 아니다
 uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
+
+uv run python tools/tidy.py                머지 후 로컬 찌꺼기 (기본은 안 지운다)
+uv run python tools/acquire.py             landing → raw 획득 게이트 · sha 대조
+uv run python tools/jijeok_probe.py        지적 도로 필지로 폭 대조 (§18-13)
+uv run python tools/jijeok_review.py       갈리는 구간을 정사영상 위에서 판정
 ```
+
+★ 아래 셋은 **아무것도 안 바꾼다.** 읽고 표를 내거나 페이지를 만든다.
+`clearance_probe.py` 와 같은 성격이라 golden 지문에 영향이 없다.
+
+    clearance_probe.py    최대내접원 방식 (2026-08-22 기각. DECISIONS 참조)
+    jijeok_probe.py       연속지적도 도로 필지로 폭 산출 · 우리 값과 대조
+    jijeok_review.py      갈리는 구간을 정사영상 위에 띄우고 사람이 판정
+                          → web/review.html (생성물. gitignore)
 
 ---
 

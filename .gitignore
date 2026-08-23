@@ -39,6 +39,8 @@ data/processed/_lineage.json
 # ── 작업 잔해 ──────────────────────────────────────────────
 .work/
 data/desk/
+# ★ tools/jijeok_review.py 가 만드는 대조 페이지. 생성물이라 커밋하지 않는다.
+web/review.html
 _backup_*/
 *.bak_*
 docs/lineage.mmd
