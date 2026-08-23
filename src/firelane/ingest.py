@@ -184,13 +184,25 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     #   여기서 자동으로 최신을 고르지 않는다. 그러면 raw 에 파일 하나를
     #   떨구는 것만으로 산출물이 조용히 바뀐다 — 대장이 정본이라는 원칙이
     #   깨진다(§18-3). 대신 **시끄럽게 알리고** 사람이 대장을 고치게 한다.
-    if len(hits) > 1:
+    # ★ 2026-08-23 정정. 처음엔 `hits > 1` 이면 무조건 경고했다. 오탐이었다.
+    #   kind 마다 여러 파일이 **정상**인 것이 있다.
+    #
+    #     shp_zip_multi   도엽 여러 zip 을 병합한다. 여러 개가 정상
+    #     shp_dir         ngii1k.py 가 묶음 전체를 편다. 여러 개가 정상
+    #     raw_only        읽지 않는다. ortho.py 가 4도엽을 직접 읽는다
+    #
+    #   실전에서 5종이 경고를 냈고 그중 4종이 오탐이었다.
+    #   **매번 뜨는 경고는 아무도 안 읽는다** — 그러면 진짜 하나를 놓친다.
+    #   `hits[0]` 만 쓰는 kind 에서만 말한다.
+    SINGLE_PICK = {"shp_zip", "csv_points", "csv_point", "csv_points_in_zip",
+                   "dbf_in_zip", "json_points", "csv_table"}
+    if len(hits) > 1 and e["kind"] in SINGLE_PICK:
         rest = ", ".join(x.name for x in hits[1:])
-        print(f"  ★ {key}: 대장 glob 이 {len(hits)}개를 잡는다. "
-              f"쓰는 것은 {src.name}")
+        print(f"  ★ {key}: 대장 glob 이 {len(hits)}개를 잡는데 "
+              f"kind={e['kind']} 는 하나만 쓴다 → {src.name}")
         print(f"     쓰이지 않는 것: {rest}")
-        print("     sources.yaml 의 file 을 하나로 좁혀라. 신판을 쓰려면 "
-              "거기서 지목해야 한다.")
+        print("     날짜가 파일명에 있으므로 정렬 첫 번째는 대개 **옛 판**이다.")
+        print("     sources.yaml 의 file 을 하나로 좁혀라.")
     rec = {"key": key, "source_file": e["file"], "source_sha256": sha_of(src),
            "resolved": src.name,
            **({"ambiguous": [x.name for x in hits]} if len(hits) > 1 else {}),

@@ -728,10 +728,30 @@ def test_tidy_knows_the_leftovers_that_bit_us():
     import tidy  # tools/ — pyproject 의 pytest pythonpath 로 잡힌다
 
     globs = {g for _, gs, _ in tidy.RULES for g in gs}
-    for g, why in (("apply.sh", "08-23 — 옛 패처가 새 스크립트를 가렸다"),
-                   ("data/processed/*.stale_*", "08-18 — 격리본이 진단을 흐렸다"),
+    for g, why in (("data/processed/*.stale_*", "08-18 — 격리본이 진단을 흐렸다"),
                    (".work", "08-13 — raw 옆에 풀린 _unz_* 1,570파일")):
         assert g in globs, f"tidy 규칙에 {g} 가 없다 ({why})"
+
+    # ★ 글롭 문자열을 그대로 요구하면 규칙을 넓힐 때 테스트가 깨진다.
+    #   실제로 그랬다 — `fix-*.sh` 를 `*.sh` 로 넓히자 `apply.sh` 문자열이
+    #   사라져 빨간불이 됐다. **규칙이 나아졌는데 검사가 막는 건 잘못이다.**
+    #   문자열이 아니라 **행동**을 본다: 루트에 옛 패처를 놓고 잡히는가.
+    probe = tidy.ROOT / "apply.sh"
+    made = not probe.exists()
+    if made:
+        probe.write_text("#!/bin/bash\necho old\n", encoding="utf-8")
+    try:
+        hit = {p.name for _, p, _, _ in tidy.scan_fs()}
+        assert "apply.sh" in hit, \
+            "루트의 옛 패처를 tidy 가 안 잡는다 (08-23 — 새 스크립트를 가렸다)"
+    finally:
+        if made:
+            probe.unlink()
+
+    # tools/ 의 이름 있는 도구는 잡으면 안 된다
+    assert not any(p.parent.name == "tools" and p.suffix == ".sh"
+                   for _, p, _, _ in tidy.scan_fs()), \
+        "tools/*.sh 를 일회성으로 잡는다 — verify.sh 가 지워진다"
 
 
 def test_tools_declared_in_docs_exist():

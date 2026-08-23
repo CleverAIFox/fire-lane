@@ -125,13 +125,32 @@ def check_git(R: Report) -> None:
         R.ok("미푸시 커밋", f"{ahead}건")
 
     # CI 가 이 브랜치를 보는가 — 검사 없이 머지되는 것을 막는다
+    #
+    # ★ 2026-08-23. 처음엔 모든 `branches:` 목록에 현재 브랜치가 있어야
+    #   한다고 짰다. 오탐이었다. 두 트리거의 뜻이 다르다.
+    #
+    #     push          **소스** 브랜치. 여기에 밀면 검사가 돈다
+    #     pull_request  **대상** 브랜치. 거기로 PR 을 열면 검사가 돈다
+    #
+    #   `fix/review-0823 → gis` PR 은 `pull_request: [gis]` 가 잡는다.
+    #   작업 브랜치가 목록에 있을 이유가 없다. 봐야 하는 것은
+    #   **PR 대상이 될 브랜치가 pull_request 트리거에 있는가** 다.
     ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
-    lists = re.findall(r"branches:\s*\[([^\]]+)\]", ci)
-    seen = [{b.strip() for b in m.split(",")} for m in lists]
-    if seen and all(br in s for s in seen):
-        R.ok("CI 트리거", f"{br} 를 본다")
-    elif seen:
-        R.bad("CI 트리거", f"{br} 가 contract.yml 트리거에 없다 — 검사 없이 머지된다")
+
+    def _branches(kind: str) -> set[str]:
+        m = re.search(rf"{kind}:\s*\n\s*branches:\s*\[([^\]]+)\]", ci)
+        return {b.strip() for b in m.group(1).split(",")} if m else set()
+
+    push_b, pr_b = _branches("push"), _branches("pull_request")
+    base = next((b for b in ("gis", "main", "master") if b in pr_b), None)
+    if not pr_b:
+        R.bad("CI 트리거", "contract.yml 에 pull_request 트리거가 없다")
+    elif br in push_b:
+        R.ok("CI 트리거", f"push 로 {br} 를 본다")
+    elif base:
+        R.ok("CI 트리거", f"{br} → {base} PR 을 pull_request 가 본다")
+    else:
+        R.bad("CI 트리거", f"{br} 도 대상 브랜치도 트리거에 없다")
 
 
 # ── 코드 ───────────────────────────────────────────────────────

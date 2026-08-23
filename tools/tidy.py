@@ -68,7 +68,12 @@ def sh(*args: str) -> list[str] | None:
 #
 # ★ 글롭은 저장소 루트 기준이다. 데이터 계층은 넣지 않는다.
 RULES: list[tuple[str, list[str], str]] = [
-    ("일회성 패처", ["apply.sh", "apply.py", "push.py", "fix-*.sh"],
+    # ★ 2026-08-23. `fix-*.sh` 만 적어놨더니 여섯 개를 놓쳤다 —
+    #   doc-audit · doc-nums · doc-update · diag-0xa0 · diag-0xa0b · wsl-tune.
+    #   `ship.py` 가 "루트 .sh 전부" 로 세다가 발견했다.
+    #   접두를 나열하면 또 놓친다. **루트의 .sh 는 전부 일회성으로 본다** —
+    #   이름 있는 도구는 tools/ 에 둔다는 것이 R8 이다.
+    ("일회성 패처", ["*.sh", "apply.py", "push.py"],
      "§18-5 R8 — 돌리고 지운다. 남아 있으면 `bash apply.sh` 가 옛 것을 돌린다"),
     ("적용 백업", ["_backup_*", "_apply_backup_*"],
      "apply 스크립트가 만든 원복용 사본. 커밋 확인 뒤에는 쓸 일이 없다"),
