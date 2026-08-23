@@ -2609,20 +2609,10 @@ CCTV_RANGE 25m     잠정값. 352구간(회색 전부)의 판정을 가른다. �
 상수에 박으면 그 순간 근거 없는 상수가 하나 더 생긴다.**
 `dem_25cm_expectation` 이 "25cm 라는 기대" 로 폐기된 것과 같은 계열이다.
 
-**실험은 싸다.** 골목 하나에서 거리를 바꿔가며 찍고 레이저 거리계 1회
-실측과 대조하면 오차 계수가 정해진다.
+**실측 설계와 촬영 계획은 PLAN §1-23 · §1-24 에 있다**(R14 — 미래는 PLAN).
 
-    d = 5, 8, 12, 16, 20, 25m 에서 촬영
-    같은 지점 실측 1회
-    → 오차 곡선 → 0.3m 넘는 d 를 h 별로 확정
-
-**촬영 계획도 여기서 갈린다.** 구간 길이 중앙값이 36.3m 이므로 h=1.5m
-(유효 11m)면 구간당 3~4회 서야 한다. 1,101구간이면 감당이 안 된다.
-**높이를 올리는 것이 곧 촬영 횟수를 줄이는 것**이고, 그것이 장비 판단의
-근거다.
-
-재현: `tools/` 에 없다. 위 공식과 `web/data/cctv.geojson` 의 제원
-(200만 화소 · 360도 · 104지점)으로 계산했다.
+재현: 위 공식과 `web/data/cctv.geojson` 의 제원(200만 화소 · 360도 ·
+104지점)으로 계산했다. 전용 도구는 두지 않았다.
 
 
 ## 17. 작업 원칙
@@ -2680,11 +2670,22 @@ uv run python -m firelane.datalog backup D  외장 백업 + sha256
 uv run python -m firelane.datalog verify D  백업 대조. 복사만 하고 검증 안 하면 백업이 아니다
 uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 
+uv run python tools/ship.py                ★ 내보내기 전 단일 진입점
+uv run python tools/ship.py --fix --push   정리 + 검사 + push
 uv run python tools/tidy.py                머지 후 로컬 찌꺼기 (기본은 안 지운다)
 uv run python tools/acquire.py             landing → raw 획득 게이트 · sha 대조
 uv run python tools/jijeok_probe.py        지적 도로 필지로 폭 대조 (§18-13)
 uv run python tools/jijeok_review.py       갈리는 구간을 정사영상 위에서 판정
 ```
+
+★ `ship.py` 가 내보내기 전 검사를 한 번에 밟는다.
+
+    verify.sh   **코드가 도는가** — pytest · ruff · 파이프라인 · JS
+    ship.py     **내보내도 되는가** — 위 + 문서 4축 + 위생 + git 상태
+
+  `verify.sh` 를 부르므로 중복이 없다. 손으로 기억하는 목록은 언젠가
+  하나를 빠뜨린다 — 2026-08-23 에 세 번 났다(거짓 golden · 백업 8개 ·
+  CI 가 gis 미감시).
 
 ★ 아래 셋은 **아무것도 안 바꾼다.** 읽고 표를 내거나 페이지를 만든다.
 `clearance_probe.py` 와 같은 성격이라 golden 지문에 영향이 없다.

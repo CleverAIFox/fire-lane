@@ -92,6 +92,16 @@ bash tools/verify.sh --fast   # 파이프라인 전량(4분) 생략
 `uv pip install -e .` 은 치지 마라. `[build-system]` 이 있으므로 `uv sync` 가
 editable 로 알아서 깐다 — 스크립트 첫 단계가 그것이다.
 
+푸시 전에는 이것 하나면 된다.
+
+```bash
+uv run python tools/ship.py              # 검사만
+uv run python tools/ship.py --fix --push # 정리 + 검사 + push
+```
+
+`verify.sh`(코드가 도는가)에 더해 **문서 4축 · 위생 · git 상태**까지 본다.
+CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머지되는 일이 없다.
+
 머지하고 나면 로컬에 찌꺼기가 남는다. 그것도 한 명령이다.
 
 ```bash

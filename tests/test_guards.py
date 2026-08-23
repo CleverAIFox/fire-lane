@@ -1125,3 +1125,26 @@ def test_seg_label_is_not_used_as_an_identifier():
     assert '"uid": r.seg_uid' in src, "review 항목에 seg_uid 가 없다"
     assert "${d.uid}" in src, "화면에 seg_uid 를 안 띄운다"
     assert '"sib"' in src, "같은 라벨을 쓰는 형제 수를 안 센다"
+
+
+def test_ship_covers_the_release_checklist():
+    """`tools/ship.py` 가 내보내기 전 검사를 전부 부르는가.
+
+    ★ 2026-08-23. 푸시 전에 밟아야 하는 것이 흩어져 있었다 —
+      `verify.sh` · `tidy.py` · `docnum_check.py` · 문서 4축 · `golden`.
+      **손으로 기억해야 하는 목록은 언젠가 하나를 빠뜨린다.**
+      같은 날 세 번 났다: golden 을 파이프라인 없이 돌려 거짓 초록불을 봤고,
+      `_backup_apply_*` 가 여덟 개 쌓였고, CI 가 `gis` 를 안 보는 채로
+      PR 이 머지되고 있었다.
+
+    ★ `verify.sh` 와 역할이 다르다.
+        verify.sh   코드가 도는가
+        ship.py     내보내도 되는가 (위 + 문서 + 위생 + git)
+      중복 구현하지 않고 `verify.sh` 를 부른다.
+    """
+    src = (ROOT / "tools/ship.py").read_text(encoding="utf-8")
+    for tool in ("verify.sh", "tidy.py", "docnum_check.py", "golden.py"):
+        assert tool in src, f"ship.py 가 {tool} 을 안 부른다"
+    # 브랜치가 CI 트리거에 있는지 — 검사 없이 머지되는 것을 막는 핵심
+    assert "contract.yml" in src, "ship.py 가 CI 트리거를 안 본다"
+    assert "--push" in src, "push 까지 이어지지 않는다"
