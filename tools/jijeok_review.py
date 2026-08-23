@@ -64,6 +64,44 @@ SRC = "jijeok_width.gpkg"
 OUT = "review.html"
 
 
+def _tile_zooms() -> list[int]:
+    d = WEB / "ortho"
+    zs = sorted(int(q.name) for q in d.iterdir() if q.is_dir() and q.name.isdigit()) \
+        if d.is_dir() else []
+    return [zs[0], zs[-1]] if zs else [15, 19]
+
+
+def _tile_bounds() -> list[float] | None:
+    """구워진 타일의 실제 경계. 최대 줌 폴더를 스캔한다."""
+    import math
+    d = WEB / "ortho"
+    if not d.is_dir():
+        return None
+    zs = [int(q.name) for q in d.iterdir() if q.is_dir() and q.name.isdigit()]
+    if not zs:
+        return None
+    z = max(zs)
+    xs, ys = [], []
+    for xd in (d / str(z)).iterdir():
+        if not xd.is_dir():
+            continue
+        xs.append(int(xd.name))
+        ys += [int(f.stem) for f in xd.glob("*.jpg")]
+    if not xs or not ys:
+        return None
+
+    def ll(x, y):
+        n = 2 ** z
+        return (x / n * 360 - 180,
+                math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * y / n)))))
+
+    w, s = ll(min(xs), max(ys) + 1)
+    e, n = ll(max(xs) + 1, min(ys))
+    # 경계에서 정확히 반올림돼 밖으로 나가지 않도록 안쪽으로 조금 줄인다
+    return [round(w, 6) + 1e-5, round(s, 6) + 1e-5,
+            round(e, 6) - 1e-5, round(n, 6) - 1e-5]
+
+
 def main() -> int:
     src = RAW.parent.parent / SRC
     if not src.exists():
@@ -103,9 +141,17 @@ def main() -> int:
         })
 
     view = json.loads((WEB / "view.json").read_text(encoding="utf-8"))
+
+    # ★ 2026-08-23. `view.json` 의 orthoBounds 는 소수 4자리로 반올림돼 있어
+    #   타일 실제 범위보다 2m 넓다. 그만큼 MapLibre 가 존재하지 않는 y+1 을
+    #   요청하고 404 가 쏟아진다. **반올림 오차가 404 를 만든다.**
+    #   타일 폴더를 직접 스캔해서 정확한 범위를 넣는다.
+    view["orthoBounds"] = _tile_bounds() or view.get("orthoBounds")
+    view["orthoZoom"] = _tile_zooms()
     html = TEMPLATE.replace("__ITEMS__", json.dumps(items, ensure_ascii=False))
     html = html.replace("__VIEW__", json.dumps(view, ensure_ascii=False))
     html = html.replace("__BUILD__", str(view.get("build", "")))
+    html = html.replace("__TH__", str(TH))
 
     dst = WEBROOT / OUT
     dst.write_text(html, encoding="utf-8")
@@ -138,6 +184,8 @@ TEMPLATE = r"""<!doctype html>
        padding:8px 12px;border-radius:6px;box-shadow:0 1px 6px #0004;max-width:520px}
   #bar b{font-size:14px} kbd{background:#eee;border:1px solid #bbb;border-radius:3px;
        padding:0 4px;font-family:inherit}
+  #warn{position:absolute;top:96px;left:10px;z-index:6;background:#fee;
+        border:1px solid #d33;padding:8px 12px;border-radius:6px;max-width:520px}
   #ruler{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:5;
          background:#fff;padding:6px 10px;border-radius:6px;box-shadow:0 1px 6px #0004}
   #foot{position:absolute;bottom:10px;right:10px;z-index:5;background:#fff;
@@ -145,9 +193,10 @@ TEMPLATE = r"""<!doctype html>
   button{font:inherit;padding:4px 10px;cursor:pointer}
 </style>
 <div id="wrap">
-  <div id="side"><h1>갈리는 구간 <span id="cnt"></span></h1><div id="list"></div></div>
+  <div id="side"><h1>갈리는 구간 <span id="cnt"></span></h1><div style="padding:8px 12px;background:#fff8d0;font-size:12px;line-height:1.5">도면 <b>두 계보</b>가 3.0m 를 사이에 두고 갈리는 곳이다.<br><span style="color:#d33">■</span> 우리가 막았다 &nbsp;<span style="color:#36c">■</span> 우리가 열었다<br>항공영상에서 <b>담장~담장</b>을 보고 어느 쪽이 맞는지 찍는다.</div><div id="list"></div></div>
   <div id="map">
     <div id="bar"></div>
+    <div id="warn" style="display:none"></div>
     <div id="ruler"></div>
     <div id="foot">
       <button onclick="dump()">CSV 내려받기</button>
@@ -156,7 +205,7 @@ TEMPLATE = r"""<!doctype html>
   </div>
 </div>
 <script>
-const ITEMS = __ITEMS__, VIEW = __VIEW__, BUILD = "__BUILD__";
+const ITEMS = __ITEMS__, VIEW = __VIEW__, BUILD = "__BUILD__", TH = __TH__;
 const KEY = "jijeok_review_" + BUILD;
 let ans = JSON.parse(localStorage.getItem(KEY) || "{}");
 let cur = 0;
@@ -171,11 +220,28 @@ const map = new maplibregl.Map({
          네이버를 안 쓰는 이유 — 같은 국토지리정보원 항공사진이고,
          우리 것은 도엽 원본이라 재압축이 덜하다. */
       ortho: { type: "raster", tiles: ["data/ortho/{z}/{x}/{y}.jpg"],
-               tileSize: 256, minzoom: 15, maxzoom: 19,
+               tileSize: 256,
+               minzoom: VIEW.orthoZoom[0], maxzoom: VIEW.orthoZoom[1],
                bounds: VIEW.orthoBounds, attribution: "국토정보플랫폼 정사영상 2025" }
     },
-    layers: [{ id: "bg", type: "background", paint: { "background-color": "#111" } },
+    /* ★ 배경을 회색으로 둔다. 검정이면 타일이 안 오는 순간 화면이
+       통째로 까매져 "아무것도 안 보인다" 가 된다. 2026-08-23 에 겪었다. */
+    layers: [{ id: "bg", type: "background", paint: { "background-color": "#2b2f36" } },
              { id: "ortho", type: "raster", source: "ortho" }]
+  }
+});
+
+/* ★ 타일이 안 오면 조용히 까매지지 말고 말한다. */
+let tileErr = 0;
+map.on("error", e => {
+  if (String(e && e.error && e.error.message || "").includes("404") ||
+      (e && e.sourceId === "ortho")) {
+    if (++tileErr === 5) {
+      document.getElementById("warn").innerHTML =
+        "★ 정사영상 타일이 안 온다 — <code>fire-lane --only ortho</code> 로 굽거나 " +
+        "<code>web/data/ortho</code> 를 확인하라. 세그먼트만으로도 판정은 가능하다.";
+      document.getElementById("warn").style.display = "block";
+    }
   }
 });
 
@@ -207,12 +273,25 @@ function go(i) {
   const d = ITEMS[i];
   map.fitBounds(bounds(d.line), { padding: 140, duration: 500, maxZoom: 21 });
   map.setFilter("seg-hi", ["==", "n", d.n]);
+  /* ★ "지도에서 보세요" 는 안내가 아니다. 무엇을 보고 무엇을 누르는지
+     화면 안에 있어야 한다. 2026-08-23 에 좌표 목록만 주고 넘겨서
+     "뭘 보라는 거냐" 를 들었다. */
+  const gap = (d.jj - d.ours).toFixed(1);
   document.getElementById("bar").innerHTML =
-    `<b>${d.n}/${ITEMS.length} · ${d.label}</b> <span class=m>(${d.verdict})</span><br>` +
-    `우리 <b>${d.ours}m</b> ↔ 지적 <b>${d.jj}m</b> · 커버 ${d.cov} · 길이 ${d.len}m<br>` +
-    `<span class=m>담장~담장이 어느 쪽인가 &nbsp; ` +
-    `<kbd>A</kbd>우리 <kbd>B</kbd>지적 <kbd>C</kbd>둘다아님 <kbd>D</kbd>못보겠음 ` +
-    `&nbsp;<kbd>←</kbd><kbd>→</kbd>이동</span>`;
+    `<b>${d.n}/${ITEMS.length} · ${d.label}</b> ` +
+    `<span class=m>(현재 판정 ${d.verdict} · 길이 ${d.len}m)</span>` +
+    `<div style="margin:6px 0;font-size:15px">` +
+    `노란 선 위 <b>담장에서 담장까지</b>가 &nbsp;` +
+    `<span style="background:#fdd;padding:2px 6px;border-radius:3px">` +
+    `우리 ${d.ours}m</span> &nbsp;아니면&nbsp; ` +
+    `<span style="background:#ddf;padding:2px 6px;border-radius:3px">` +
+    `지적 ${d.jj}m</span> &nbsp;<span class=m>(차이 ${gap}m)</span></div>` +
+    `<span class=m>화면 아래 <b>초록 막대(승용차 1.8m)</b>와 견줘라. ` +
+    `${d.ours < TH ? "우리는 <b>막았고</b> 지적은 통과시킨다" :
+                     "우리는 <b>열었고</b> 지적은 막는다"}.<br>` +
+    `<kbd>A</kbd> 우리가 맞다 &nbsp;<kbd>B</kbd> 지적이 맞다 ` +
+    `&nbsp;<kbd>C</kbd> 둘 다 아니다 &nbsp;<kbd>D</kbd> 못 보겠다 ` +
+    `&nbsp;·&nbsp; <kbd>←</kbd><kbd>→</kbd> 이동</span>`;
   draw();
 }
 
