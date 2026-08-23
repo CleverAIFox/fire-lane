@@ -47,6 +47,23 @@ standard_crs:
   display: EPSG:4326    # 웹 표출 / GeoJSON
 
 datasets:
+  node_link_changelog:
+    what: 국가교통정보센터 표준노드링크 변경 내역서
+    kind: raw_only
+    file: its/its_nodelink_changelog_20260812.csv
+    provider: 국가교통정보센터
+    updated: '2026-08-12'
+    acquired: '2026-08-12'
+    scope: 전국
+    license: 공공누리 1유형
+    feeds: 미투입 — node_link 판이 바뀌었을 때 무엇이 변했는지 확인용
+    used_for: |
+      ★ 2026-08-23 등재. normalize_raw 가 `내역서.csv` 를 raw 로 옮기는
+      규칙은 있었는데 대장에 항목이 없어 획득 게이트가 격리 대상으로
+      잡았다. R4(feeds 를 못 채우면 raw 에 둘 이유가 없다)에 따라
+      "언제 쓸지" 를 적고 raw_only 로 둔다.
+      node_link 는 507배 오염 전력이 있는 소스다(PLAN §1-16). 판이 바뀌면
+      이 내역서로 무엇이 늘었는지 먼저 본다.
 
   # ── 도로 그래프 뼈대 ─────────────────────────────────────
   # ★ road_link / road_rw 는 juso_road_geom(291MB, 6월) 을 보고 있으나
@@ -736,6 +753,26 @@ basemap:
 # ── 폐기 기록 ────────────────────────────────────────────
 # 지운 것도 남긴다. 없으면 3개월 뒤에 또 받고 또 조사한다. MASTER §18-3c
 retired:
+  firestation_kr_20250701:
+    what: 소방청 시도 소방서 현황 (2025-07-01 판)
+    file: safety/safety_firestation_kr_20250701.csv
+    at: 2026-08-23
+    successor: fire_station (safety_firestation_kr_20240901.csv)
+    reason: |
+      좌표가 없다. 주소 문자열뿐이라 지오코딩을 한 번 더 거쳐야 하는데,
+      활성판(20240901)은 XY 좌표를 직접 갖는다. 더 최신인데 쓸 수 없는 것이라
+      "최신이 항상 낫다" 가 성립하지 않는 사례다.
+      2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
+  hydrant_point_jngj_20250917:
+    what: 전남광주통합특별시 소방 용수시설 현황 (2025-09-17)
+    file: safety/safety_hydrant_point_jngj_20250917.csv
+    at: 2026-08-23
+    successor: hydrant_point (safety_hydrant_point_kr_20240207.csv)
+    reason: |
+      전국 표준데이터(kr_20240207)와 겹치는 범위인데 스키마가 다르고
+      좌표 정밀도가 낮다. 동명동 소화전은 전국판으로 11개가 잡히며
+      그것이 현재 지도에 올라간 값이다.
+      2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
   ngii1k_ngii_platform:
     what: 국토정보플랫폼 수치지형도 1:1,000 (NGI/NDA + 일부 SHP)
     vintage: 2019~2022 혼합 (도엽 20장)

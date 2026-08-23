@@ -50,7 +50,7 @@ MASTER §18-12 는 이 도구를 **이름까지 적어놓고** 있었다.
   같다. 크기가 아니라 **내용**으로 판정하므로 그 약속이 실제로 성립한다.
 
 IN    $FIRE_LANE_DATA/landing · sources.yaml
-OUT   $FIRE_LANE_DATA/raw · _quarantine · raw/_acquire.json (sha 대장)
+OUT   $FIRE_LANE_DATA/raw · _quarantine · data/_acquire.json (sha 대장 · 커밋한다)
 PARAM 없음
 """
 from __future__ import annotations
@@ -69,7 +69,21 @@ from firelane.paths import QUARANTINE, RAW, ROOT
 
 KST = timezone(timedelta(hours=9))
 LANDING = RAW.parent / "landing"
-LEDGER = RAW / "_acquire.json"          # 무엇을 언제 어떤 sha 로 넣었나
+
+# 무엇을 언제 어떤 sha 로 넣었나.
+#
+# ★ 2026-08-23 정정. 처음에 `RAW / "_acquire.json"` 으로 만들었다가 되돌렸다.
+#   **raw 는 읽기 전용이다**(MASTER §18-1 · §18-10 "raw 파일 수정 → 원본이
+#   원본이 아니게 된다"). 검증하겠다고 만든 도구가 검증 대상을 건드리면
+#   그 순간 대장이 스스로를 무효화한다.
+#
+#   저장소 안에 둔다. 이유 둘.
+#     · raw 는 모든 기계에서 같아야 한다. 대장을 커밋하면 **기계 간 raw
+#       동일성**까지 이 파일 하나로 검증된다
+#     · SSD 를 안 꽂은 상태에서도 "무엇이 있어야 하는가" 를 볼 수 있다
+#
+#   `data/processed/` 가 아니다. 그쪽은 재생성 대상이고 .gitignore 가 막는다.
+LEDGER = ROOT / "data" / "_acquire.json"
 
 C = {"r": "\033[31m", "g": "\033[32m", "y": "\033[33m",
      "c": "\033[36m", "d": "\033[90m", "z": "\033[0m"}
@@ -107,12 +121,42 @@ def load_ledger() -> dict:
 def save_ledger(d: dict) -> None:
     d["at"] = datetime.now(KST).isoformat(timespec="seconds")
     LEDGER.parent.mkdir(parents=True, exist_ok=True)
-    LEDGER.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
+    # ★ 2026-08-23. 끝 개행이 없어 pre-commit 훅(encoding_check)이 커밋을
+    #   막았다. `json.dumps` 는 개행을 안 붙인다. 대장은 커밋 대상이므로
+    #   손으로 쓰는 파일과 같은 규칙(UTF-8 · LF · 끝 개행)을 지켜야 한다.
+    #   훅이 제 일을 한 것이다 — 막힌 쪽이 잘못이었다.
+    LEDGER.write_text(json.dumps(d, ensure_ascii=False, indent=1) + "\n",
+                      encoding="utf-8")
+
+
+def _yaml() -> dict:
+    return yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
 
 
 def dataset_globs() -> dict[str, str]:
-    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
-    return {k: (v or {}).get("file", "") for k, v in y.get("datasets", {}).items()}
+    return {k: (v or {}).get("file", "") for k, v in _yaml().get("datasets", {}).items()}
+
+
+def retired_names() -> dict[str, str]:
+    """폐기 등재된 파일 이름 → 사유 첫 줄.
+
+    ★ 격리 대상을 둘로 가른다. `retired` 에 근거가 있으면 **판단이 끝난
+      것**이라 내리기만 하면 되고, 없으면 사람이 정해야 한다.
+      둘을 한 무더기로 보여주면 매번 같은 조사를 다시 한다.
+
+    ★ `successor` 에서 파일명을 뽑으려 했다가 되돌렸다. successor 는
+      **대체한 쪽**, 즉 지금 쓰는 활성 파일이다. 그것을 폐기 목록에 넣으면
+      살아 있는 raw 파일을 "내려도 된다" 로 표시한다 — 정반대다.
+      폐기된 파일은 `file:` 로 명시한다. 추측하지 않는다.
+    """
+    out = {}
+    for k, v in (_yaml().get("retired") or {}).items():
+        v = v or {}
+        why = (v.get("reason") or v.get("what") or k).strip().splitlines()[0]
+        f = v.get("file")
+        if f:
+            out[Path(str(f)).name] = why
+    return out
 
 
 def raw_files() -> list[Path]:
@@ -152,11 +196,30 @@ def cmd_judge() -> int:
             print(f"      {k}")
         print(col("      결손은 폐기가 아니다. 재취득하거나 retired 로 옮겨라.", "d"))
     if orphan:
-        n = sum(p.stat().st_size for p in orphan)
-        print(f"  {col('★ 격리 대상', 'y')}  {len(orphan)}건 · {human(n)} — 대장에 없다")
-        for p in orphan:
-            print(f"      {human(p.stat().st_size):>10}  {p.relative_to(RAW)}")
-        print(col("      대장에 추가하거나 retired 에 사유를 적고 _quarantine 으로 내려라.", "d"))
+        ret = retired_names()
+        # 파일명 또는 그 줄기(확장자 뗀 것)가 retired 에 있으면 판단이 끝난 것
+        def _why(q: Path) -> str | None:
+            return ret.get(q.name) or ret.get(q.stem)
+
+        decided = [(q, w) for q in orphan if (w := _why(q))]
+        undecided = [q for q in orphan if not _why(q)]
+
+        if decided:
+            n = sum(q.stat().st_size for q, _ in decided)
+            print(f"  {col('폐기 등재됨 — 내리면 된다', 'c')}  {len(decided)}건 · {human(n)}")
+            for q, w in decided:
+                print(f"      {human(q.stat().st_size):>10}  {q.relative_to(RAW)}")
+                print(f"                  {col(w[:64], 'd')}")
+            print(col("      --quarantine --yes  로 _quarantine 으로 내린다.", "d"))
+        if undecided:
+            n = sum(q.stat().st_size for q in undecided)
+            print(f"  {col('★ 판단 필요', 'y')}  {len(undecided)}건 · {human(n)} — 대장에도 retired 에도 없다")
+            for q in undecided:
+                print(f"      {human(q.stat().st_size):>10}  {q.relative_to(RAW)}")
+            print(col("      §18-12 세 판정 중 하나를 골라라 —", "d"))
+            print(col("        쓴다      → sources.yaml datasets 에 등재 (feeds 필수)", "d"))
+            print(col("        안 쓴다   → retired 에 사유를 적고 _quarantine", "d"))
+            print(col("        모르겠다  → 일단 _quarantine. 지우지는 마라", "d"))
     if not missing and not orphan:
         print(f"  {col('대장과 실물이 일치한다', 'g')}")
     return 1 if (missing or orphan) else 0
@@ -244,6 +307,32 @@ def cmd_stage(dry: bool) -> int:
         return r.returncode
     if dry:
         return 0
+
+    # ★ 2026-08-23 설계 결함 수정. `--quarantine` 으로 내린 파일이 landing 에
+    #   원본으로 남아 있으면, 다음 `--stage` 가 규칙대로 **다시 끌어올린다.**
+    #   실제로 그렇게 됐다 — 격리한 `firestation_kr_20250701` ·
+    #   `hydrant_point_jngj_20250917` 이 raw 로 되돌아왔다.
+    #
+    #   격리와 편입이 서로를 되돌리는 무한 루프다. `normalize_raw` 는 이름
+    #   규칙만 알고 **대장을 안 읽는다** — 그것이 옳다(규칙 정본은 하나여야
+    #   하고, 이름 규칙과 대장은 다른 층이다). 그러니 판정하는 쪽이 막는다.
+    #
+    #   지우지 않는다. `_quarantine` 으로 되돌린다 — 판단이 안 끝난 것이지
+    #   버릴 것이 아니다(§18-12).
+    ret = retired_names()
+    undone = [q for q in raw_files() if q.name in ret]
+    if undone:
+        print(col("\n★ 폐기 등재된 파일이 landing 에서 다시 올라왔다", "y"))
+        for q in undone:
+            dst = QUARANTINE / q.relative_to(RAW)
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(q), str(dst))
+            print(f"  {col('되돌림', 'y')}  {q.relative_to(RAW)}  →  _quarantine")
+            print(f"          {col(ret[q.name][:62], 'd')}")
+        print(col("  landing 원본이 남아 있는 한 --stage 는 이것을 계속 올린다.", "d"))
+        print(col("  판단이 끝났으면 landing 원본도 정리하라(--prune-landing 은", "d"))
+        print(col("  격리본의 원본을 일부러 남긴다 — 유일본이 되지 않게).", "d"))
+
     print(col("\n── 편입 후 sha 기록", "c"))
     return cmd_verify()
 
@@ -264,12 +353,28 @@ def cmd_prune_landing(dry: bool) -> int:
     for p in raw_files():
         raw_sha.setdefault(sha256(p), []).append(p)
 
-    freed, keep = 0, []
+    # ★ 2026-08-23. `--quarantine` 을 먼저 돌리면 격리된 파일이 raw 에서
+    #   사라지므로 그 landing 원본이 "짝 없음" 으로 남는다. 실제로 그렇게 됐다 —
+    #   3건이 이유 없이 남은 것처럼 보였다.
+    #
+    #   격리본도 짝으로 인식하되 **지우지는 않는다.** raw 에서 내린 파일의
+    #   landing 원본을 지우면 유일본이 _quarantine 하나가 된다. 격리는
+    #   "판단이 안 끝났다" 는 뜻이지 "버려도 된다" 가 아니다(§18-12).
+    q_sha = {}
+    if QUARANTINE.is_dir():
+        for p in QUARANTINE.rglob("*"):
+            if p.is_file():
+                q_sha.setdefault(sha256(p), []).append(p)
+
+    freed, keep, quarantined = 0, [], []
     print(col("── landing 정리 (raw 와 내용이 같은 것만)", "c"))
     for p in sorted(LANDING.rglob("*")):
         if not p.is_file():
             continue
         s = sha256(p)
+        if s in q_sha and s not in raw_sha:
+            quarantined.append((p, q_sha[s][0]))
+            continue
         twin = raw_sha.get(s)
         if twin:
             freed += p.stat().st_size
@@ -280,11 +385,21 @@ def cmd_prune_landing(dry: bool) -> int:
         else:
             keep.append(p)
 
+    if quarantined:
+        n = sum(p.stat().st_size for p, _ in quarantined)
+        print(f"\n  {col('격리된 것의 원본 — 남긴다', 'c')}  {len(quarantined)}건 · {human(n)}")
+        for p, q in quarantined:
+            print(f"      {human(p.stat().st_size):>10}  {p.name}")
+            print(f"                  {col('= _quarantine/' + str(q.relative_to(QUARANTINE)), 'd')}")
+        print(col("      raw 에서 내려간 것이다. 이 원본까지 지우면 유일본이", "d"))
+        print(col("      _quarantine 하나가 된다. 처분이 끝날 때까지 둔다.", "d"))
+
     if keep:
-        print(f"\n  {col('raw 에 짝이 없다 — 남긴다', 'y')}  {len(keep)}건")
+        print(f"\n  {col('raw 에도 _quarantine 에도 짝이 없다', 'y')}  {len(keep)}건")
         for p in keep[:12]:
             print(f"      {human(p.stat().st_size):>10}  {p.name}")
-        print(col("      아직 편입 안 된 것이거나, 편입본과 내용이 다르다.", "d"))
+        print(col("      아직 편입 안 된 것이다. normalize_raw 의 RULES 에 규칙이", "d"))
+        print(col("      없거나, 편입본과 내용이 다르다.", "d"))
         print(col("      --stage 를 먼저 돌리고 --verify 로 확인하라.", "d"))
     print(f"\n  {col(('지울 수 있는' if dry else '지운') + f' 용량 {human(freed)}', 'g')}")
     if dry and freed:
@@ -325,6 +440,14 @@ def main() -> int:
         print(col(f"raw 가 없다: {RAW}", "r"))
         print("  export FIRE_LANE_DATA=<raw 상위 폴더>")
         return 1
+
+    # ★ 초판이 raw 안에 대장을 썼다. raw 는 읽기 전용이므로 옮기라고 알린다.
+    _stray = RAW / "_acquire.json"
+    if _stray.exists():
+        print(col(f"★ raw 안에 옛 sha 대장이 있다: {_stray}", "y"))
+        print("  raw 는 읽기 전용이다(§18-1). 저장소 안으로 옮겨라:")
+        print(f"    mv '{_stray}' '{LEDGER}'")
+        print("  이미 저장소에 있으면 그냥 지워도 된다.\n")
     print(f"{col('raw', 'd')}      {RAW}")
     print(f"{col('landing', 'd')}  {LANDING}{'' if LANDING.is_dir() else '   (없음)'}\n")
 

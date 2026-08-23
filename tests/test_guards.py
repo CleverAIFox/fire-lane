@@ -783,3 +783,119 @@ def test_acquisition_verifies_content_not_size():
         "normalize_raw 가 크기만 보고 '이미 있음' 을 판정한다.\n"
         "  같은 크기로 잘린 파일이 조용히 통과한다. sha 로 볼 것.")
     assert "_same(" in code, "normalize_raw 가 내용 비교(_same)를 쓰지 않는다"
+
+
+def test_nothing_writes_into_raw():
+    """어떤 코드도 `raw` 에 쓰지 않는가 (§18-1 R1 · §18-10).
+
+    ★ 2026-08-23. `tools/acquire.py` 를 만들면서 sha 대장을
+      `RAW / "_acquire.json"` 에 뒀다가 되돌렸다. **검증하겠다고 만든 도구가
+      검증 대상을 건드렸다.** 그 순간 대장이 스스로를 무효화한다.
+
+      raw 에 쓰는 것은 이 저장소가 이미 겪은 사고다 — 2026-08-13 에
+      `ngii1k.py` 가 zip 을 raw 옆에 풀어 `_unz_*` 8폴더 1,570파일을 만들었고
+      raw 파일 수가 40배로 보였다. 그래서 `.work/` 가 생겼다.
+
+    ★ 문자열 패턴으로 본다. 완벽하진 않지만 `RAW / "..."` 꼴의 쓰기 대상
+      선언은 잡는다. 읽기(`RAW.glob` · `RAW.rglob` · `RAW / x` 를 읽는 것)는
+      정상이므로 **대입되는 상수 경로**만 본다.
+    """
+    import re
+
+    # ★ 처음에 "RAW / 상수를 변수에 대입하면 쓸 작정" 이라고 짰다가 되돌렸다.
+    #   `report.py` 의 소방청 대조 CSV, `terrain.py` 의 DEM zip 은 **읽기**다.
+    #   대입 자체는 죄가 아니다. 보아야 하는 것은 **쓰기 동사**다.
+    WRITE = ("write_text", "write_bytes", "mkdir", "touch", "unlink",
+             "rename", "replace", "to_file", "to_csv", "rmtree")
+    bad = []
+    for p in sorted(list((ROOT / "src/firelane").rglob("*.py"))
+                    + list((ROOT / "tools").glob("*.py"))):
+        src = p.read_text(encoding="utf-8")
+        # ★ 별칭은 **모듈 상수만** 본다. 처음에 들여쓰기 없는 조건을 안 걸었더니
+        #   `cmd_verify` 의 `p = RAW / rel`(읽기) 때문에 `p` 가 파일 전체에서
+        #   raw 취급이 됐고, landing 파일을 지우는 `p.unlink()` 가 걸렸다.
+        #   지역 루프 변수는 재사용되므로 이름만으로 추적할 수 없다.
+        aliases = {"RAW"} | set(re.findall(r"^([A-Z_][A-Z0-9_]*)\s*=\s*RAW\s*/", src, re.M))
+        pat = "|".join(re.escape(a) for a in aliases)
+        for i, ln in enumerate(src.splitlines(), 1):
+            if ln.lstrip().startswith("#"):
+                continue
+            for verb in WRITE:
+                if re.search(rf"\b(?:{pat})\b[^#]*\.{verb}\s*\(", ln):
+                    bad.append(f"{p.relative_to(ROOT)}:{i}  {ln.strip()[:70]}")
+            # shutil.copy/move 의 **목적지** 가 raw 인 경우
+            if re.search(rf"(?:copyfile|copy2?|move)\s*\([^,]+,\s*(?:str\()?\s*(?:{pat})\b", ln):
+                bad.append(f"{p.relative_to(ROOT)}:{i}  {ln.strip()[:70]}")
+            # open(..., "w")
+            if re.search(rf"\b(?:{pat})\b[^#]*\.open\s*\(\s*[\'\"][wa]", ln):
+                bad.append(f"{p.relative_to(ROOT)}:{i}  {ln.strip()[:70]}")
+    assert not bad, (
+        "raw 에 쓰려는 코드:\n  " + "\n  ".join(bad)
+        + "\n  raw 는 읽기 전용이다(§18-1). 산출물은 processed·저장소 안·.work 로."
+    )
+
+
+def test_acquire_stage_and_quarantine_do_not_fight():
+    """편입과 격리가 서로를 되돌리지 않는가.
+
+    ★ 2026-08-23. `--quarantine` 으로 내린 파일이 landing 에 원본으로 남아
+      있으면 다음 `--stage` 가 규칙대로 **다시 끌어올렸다.** 실제로
+      `firestation_kr_20250701` · `hydrant_point_jngj_20250917` 이 raw 로
+      되돌아왔다. 두 명령이 서로를 무한히 되돌린다.
+
+      `normalize_raw` 는 이름 규칙만 알고 대장을 안 읽는다 — 그것이 옳다.
+      규칙 정본은 하나여야 하고, 이름 규칙과 대장은 다른 층이다.
+      그래서 **판정하는 쪽**(acquire)이 막는다.
+    """
+    import shutil
+    import subprocess
+    import sys
+    import tempfile
+
+    import yaml
+
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    ret = {v["file"] for v in (y.get("retired") or {}).values()
+           if isinstance(v, dict) and v.get("file")}
+    assert ret, "retired 에 file 이 적힌 항목이 없다 — 이 검사가 무의미해진다"
+
+    with tempfile.TemporaryDirectory() as d:
+        base = Path(d)
+        (base / "landing").mkdir()
+        (base / "raw").mkdir()
+        # 폐기 등재된 파일을 landing 에 놓고 편입시킨다
+        for rel in sorted(ret):
+            name = Path(rel).name
+            src = base / "raw" / rel
+            src.parent.mkdir(parents=True, exist_ok=True)
+            src.write_text("x\n", encoding="utf-8")
+            assert name  # 이름이 있어야 되돌림이 매칭된다
+
+        env = {**__import__("os").environ, "FIRE_LANE_DATA": str(base)}
+        r = subprocess.run([sys.executable, str(ROOT / "tools/acquire.py"),
+                            "--stage", "--yes"],
+                           capture_output=True, text=True, cwd=ROOT, env=env)
+        left = sorted(p.name for p in (base / "raw").rglob("*") if p.is_file()
+                      and not p.name.startswith("_"))
+        quarantined = sorted(p.name for p in (base / "_quarantine").rglob("*")
+                             if p.is_file()) if (base / "_quarantine").is_dir() else []
+        shutil.rmtree(base / "raw", ignore_errors=True)
+
+    names = {Path(x).name for x in ret}
+    assert not (set(left) & names), (
+        f"폐기 등재된 파일이 raw 에 남았다: {sorted(set(left) & names)}\n"
+        f"{r.stdout[-600:]}")
+    assert names <= set(quarantined), (
+        f"되돌려지지 않았다. _quarantine: {quarantined}\n{r.stdout[-600:]}")
+
+
+def test_acquire_ledger_ends_with_newline():
+    """sha 대장이 커밋 정책(UTF-8 · LF · 끝 개행)을 지키는가.
+
+    ★ `json.dumps` 는 끝 개행을 안 붙인다. 그래서 pre-commit 훅이 커밋을
+      막았다 — 훅이 제 일을 한 것이고 막힌 쪽이 잘못이었다.
+    """
+    src = (ROOT / "tools/acquire.py").read_text(encoding="utf-8")
+    i = src.index("LEDGER.write_text(")
+    assert '+ "\\n"' in src[i:i + 200], \
+        "LEDGER 를 쓸 때 끝 개행을 안 붙인다 — encoding_check 가 커밋을 막는다"

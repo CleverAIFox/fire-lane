@@ -121,7 +121,11 @@ RULES: list[tuple[str, str, str]] = [
     # ★ enforcement 가 safety 에서 여기로 옮겨왔다.
     #   폴더 = 제공기관 원칙. 불법주정차 단속은 광주 동구가 제공한다.
     (r"동구_가로등현황_(\d{8})\.csv$",              "gjcity", "gjcity_streetlight_dongu_{0}.csv"),
-    (r"동구_불법\s*주정차\s*단속현황_(\d{8})\.csv$", "gjcity", "gjcity_parking_enforce_dongu_{0}.csv"),
+    # ★ 2026-08-23. `단속현황` 을 선택으로 바꿨다. 제공기관이 2025-02-26 판부터
+    #   그 말을 뺐다 — `동구_불법 주정차_20250226.csv`. 규칙이 안 잡아서
+    #   landing 에 2.9MB 가 편입 안 된 채 남아 있었고, 획득 게이트를 만들고
+    #   나서야 보였다. 파일명은 제공기관 마음대로 바뀐다는 전제로 써야 한다.
+    (r"동구_불법\s*주정차(?:\s*단속현황)?_(\d{8})\.csv$", "gjcity", "gjcity_parking_enforce_dongu_{0}.csv"),
     (r"동구_쓰레기통현황_(\d{8})\.csv$",            "gjcity", "gjcity_bin_trash_dongu_{0}.csv"),
     (r"동구_의류수거함위치_(\d{8})\.csv$",          "gjcity", "gjcity_bin_cloth_dongu_{0}.csv"),
     (r"동구_주차장정보.*(\d{8})\.csv$",             "gjcity", "gjcity_parking_dongu_{0}.csv"),
