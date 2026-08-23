@@ -50,6 +50,11 @@ import geopandas as gpd
 
 from firelane.paths import RAW, ROOT, WEB
 
+# ★ paths.WEB 은 `web/data` 다(산출물 폴더). review.html 은 그 부모인
+#   `web/` 에 놓아야 serve.py 가 http://localhost:8000/review.html 로 준다.
+#   2026-08-23 에 여기를 WEB 으로 써서 404 가 났다.
+WEBROOT = WEB.parent
+
 TH = 3.0            # 판정 임계. seg/params.py TRUCK 과 같아야 한다
 MAX_W = 25.0        # 이보다 크면 도로구역 필지 잔재다(§ jijeok_probe ⑥)
 MIN_COV = 0.6       # 표본이 이보다 적으면 신뢰가 낮다
@@ -102,7 +107,7 @@ def main() -> int:
     html = html.replace("__VIEW__", json.dumps(view, ensure_ascii=False))
     html = html.replace("__BUILD__", str(view.get("build", "")))
 
-    dst = WEB / OUT
+    dst = WEBROOT / OUT
     dst.write_text(html, encoding="utf-8")
     print(f"\033[32m→\033[0m {dst.relative_to(ROOT)}  ({len(items)}곳)")
     print("\n  uv run python tools/serve.py")

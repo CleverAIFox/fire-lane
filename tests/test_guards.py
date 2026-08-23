@@ -1083,3 +1083,24 @@ def test_review_page_hides_nothing_it_should_show():
     # 판정 넷이 다 있어야 CSV 가 해석된다
     for k in ("우리가 맞다", "지적이 맞다", "둘 다 아니다", "못 보겠다"):
         assert k in src, f"판정 어휘 누락: {k}"
+
+
+def test_review_page_lands_where_serve_can_find_it():
+    """`review.html` 이 `serve.py` 가 주는 위치에 놓이는가.
+
+    ★ 2026-08-23. `paths.WEB` 이 `web/data` 인데 그걸 그대로 써서
+      `web/data/review.html` 에 만들었다. `serve.py` 는 `web/` 을 루트로
+      주므로 `http://localhost:8000/review.html` 이 404 였다.
+
+      도구가 "만들었다" 고 찍고 사람은 열지 못하는 상태다 — 이 저장소가
+      반복해 겪은 그 모양(초록불인데 실제로는 안 됨)의 파일 버전이다.
+    """
+    src = (ROOT / "tools/jijeok_review.py").read_text(encoding="utf-8")
+    assert "WEBROOT = WEB.parent" in src, \
+        "review.html 을 web/data 에 만든다 — serve.py 가 못 준다"
+    assert "dst = WEBROOT / OUT" in src, "저장 위치가 WEBROOT 이 아니다"
+    # 타일 상대경로는 web/ 기준이라야 맞는다
+    assert '"data/ortho/{z}/{x}/{y}.jpg"' in src, \
+        "web/ 기준 타일 경로가 아니다"
+    ign = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "web/review.html" in ign, "생성물인데 gitignore 에 없다"
