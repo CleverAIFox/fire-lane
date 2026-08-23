@@ -2,10 +2,10 @@
 """
 pipeline.py — 파이프라인 단일 진입점.
 
-    fire-lane                       # 전체
-    fire-lane --from segments       # 그 단계부터 끝까지
-    fire-lane --only terrain ortho
-    fire-lane --check               # 실행 없이 상태만
+    uv run fire-lane                       # 전체
+    uv run fire-lane --from segments       # 그 단계부터 끝까지
+    uv run fire-lane --only terrain ortho
+    uv run fire-lane --check               # 실행 없이 상태만
 
     (동등:  python -m firelane.pipeline ...)
 
@@ -398,7 +398,7 @@ def main():
         r = subprocess.run([sys.executable, "-m", f"firelane.{s.module}"], cwd=ROOT)
         if r.returncode:
             print(c(f"\n★ {name} 실패. 여기서 멈춘다.", "31"))
-            print(f"  고친 뒤: fire-lane --from {name}")
+            print(f"  고친 뒤: uv run fire-lane --from {name}")
             sys.exit(1)
         lineage.record(PROCESSED, ROOT, s, expand)
         done.add(s.name)

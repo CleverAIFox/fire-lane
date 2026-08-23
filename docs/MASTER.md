@@ -1467,9 +1467,9 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 2.5GB 가 저�
 파이프라인은 오창준 로컬에서만 돈다.
 
 ```bash
-fire-lane                       # 전체 (ingest → segments → … → publish → 계약)
-fire-lane --from segments       # 그 단계부터 끝까지
-fire-lane --only publish
+uv run fire-lane                       # 전체 (ingest → segments → … → publish → 계약)
+uv run fire-lane --from segments       # 그 단계부터 끝까지
+uv run fire-lane --only publish
 uv run pytest tests/test_contract.py
 ```
 
@@ -1500,7 +1500,7 @@ https://woongtopia.github.io/fire-lane/
 
 ```bash
 git checkout --theirs web/data/     # gis 쪽을 취한다
-fire-lane --only publish              # 또는 재생성
+uv run fire-lane --only publish              # 또는 재생성
 ```
 
 ### 커밋 메시지
@@ -1579,7 +1579,7 @@ CI가 즉시 잡는다.
 실측 후 갱신은 이 순서다. **UI 코드는 손대지 않는다.**
 
 ```bash
-fire-lane --from segments        # 폭 재산출 → web/data 갱신까지
+uv run fire-lane --from segments        # 폭 재산출 → web/data 갱신까지
 pytest tests/test_contract.py    # 계약 유지 확인
 ```
 
@@ -2093,10 +2093,10 @@ uv run python ~/_patch/apply.py ~/fire-lane
 ### 14-2. 파이프라인은 한 명령이다
 
 ```bash
-fire-lane                                    # 전체
-fire-lane --check                            # 실행 없이 상태만
-fire-lane --from segments                    # 그 단계부터 끝까지
-fire-lane --only terrain ortho
+uv run fire-lane                                    # 전체
+uv run fire-lane --check                            # 실행 없이 상태만
+uv run fire-lane --from segments                    # 그 단계부터 끝까지
+uv run fire-lane --only terrain ortho
 ```
 
 ```

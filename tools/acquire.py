@@ -119,8 +119,25 @@ def load_ledger() -> dict:
 
 
 def save_ledger(d: dict) -> None:
-    d["at"] = datetime.now(KST).isoformat(timespec="seconds")
+    """대장을 쓴다. **내용이 같으면 쓰지 않는다.**
+
+    ★ 2026-08-23. `at` 을 매번 갱신해서 sha 가 하나도 안 바뀌어도 파일이
+      바뀌었다. `--verify` 를 돌릴 때마다 `git diff` 가 생기고, 워킹트리가
+      더러워져 `apply` 가 두 번 막혔다.
+
+      "아무것도 안 바뀌었는데 diff 가 생긴다" 는 그 자체로 비용이다 —
+      리뷰어가 무의미한 변경을 매번 읽어야 하고, 진짜 변경이 그 속에 묻힌다.
+      시각은 **내용이 바뀔 때만** 찍는다.
+    """
     LEDGER.parent.mkdir(parents=True, exist_ok=True)
+    if LEDGER.exists():
+        try:
+            cur = json.loads(LEDGER.read_text(encoding="utf-8"))
+            if cur.get("files") == d.get("files"):
+                return                      # 같다. 손대지 않는다
+        except json.JSONDecodeError:
+            pass
+    d["at"] = datetime.now(KST).isoformat(timespec="seconds")
     # ★ 2026-08-23. 끝 개행이 없어 pre-commit 훅(encoding_check)이 커밋을
     #   막았다. `json.dumps` 는 개행을 안 붙인다. 대장은 커밋 대상이므로
     #   손으로 쓰는 파일과 같은 규칙(UTF-8 · LF · 끝 개행)을 지켜야 한다.

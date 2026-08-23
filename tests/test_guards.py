@@ -918,3 +918,114 @@ def test_verify_tells_quarantine_from_loss():
         "verify 가 _quarantine 을 안 본다 — 격리를 소실로 오판한다"
     assert "moved" in src and "gone" in src, \
         "verify 가 격리와 소실을 한 목록으로 다룬다"
+
+
+def test_docs_call_the_entrypoint_through_uv():
+    """문서의 `fire-lane` 실행 줄이 `uv run` 을 거치는가.
+
+    ★ 2026-08-23. 문서가 `fire-lane --from segments` 라고 적고 있었는데
+      진입점은 `.venv/bin/fire-lane` 에 설치되고 그 폴더는 PATH 에 없다.
+      `command not found` 로 죽는다.
+
+      더 나쁜 것은 그 뒤에 일어난 일이다. 파이프라인이 안 돈 채로
+      `tools/golden.py check` 를 돌렸고 **통과했다.** golden 은
+      `data/processed/segments.geojson` 을 읽는데 그것이 안 바뀌었으니
+      옛 산출물을 옛 지문과 비교한 것이다 — 아무것도 증명하지 않는데
+      초록불이 뜬다. R11("리팩 전후 동일을 증명하기 전에는 커밋하지 마라")을
+      만족한 것처럼 보이게 만든다.
+
+      `tools/verify.sh` 만 `uv run --project` 로 제대로 부르고 있어서
+      CI 에서도 안 드러났다.
+    """
+    import re
+
+    bad = []
+    for rel in ("README.md", "docs/MASTER.md", "docs/PLAN.md",
+                "src/firelane/README.md", "src/firelane/pipeline.py"):
+        p = ROOT / rel
+        if not p.exists():
+            continue
+        for i, ln in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            # 줄 맨 앞(들여쓰기 허용)에서 시작하는 실행 지시만 본다.
+            if re.match(r"^\s*fire-lane(\s|$)", ln) and "uv run" not in ln:
+                bad.append(f"{rel}:{i}  {ln.strip()[:60]}")
+    assert not bad, (
+        "PATH 에 없는 진입점을 그대로 부르는 줄:\n  " + "\n  ".join(bad)
+        + "\n  `uv run fire-lane ...` 로 적어라.")
+
+
+def test_golden_refuses_stale_artifacts():
+    """`golden check` 가 낡은 산출물로 통과하지 않는가.
+
+    ★ 2026-08-23. `fire-lane` 이 PATH 에 없어 파이프라인이 안 돈 채로
+      `golden.py check` 를 돌렸고 **L1·L2·L3 전부 통과했다.**
+      옛 산출물을 옛 지문과 비교했으니 당연하다 — 아무것도 증명하지 않는데
+      *"리팩 전후 동일. 다음 덩어리로 넘어가도 된다"* 가 찍힌다.
+
+      R11 은 "증명 전에 커밋하지 마라" 인데, 증명한 것처럼 보이게 만들면
+      규칙이 무력해진다. **거짓 초록불은 빨간불보다 나쁘다.**
+    """
+    import subprocess
+    import sys
+
+    src = (ROOT / "tools/golden.py").read_text(encoding="utf-8")
+    assert "_staleness" in src, "golden 에 낡음 검사가 없다"
+    assert "allow_stale" in src, "낡음을 알고 넘길 탈출구(--allow-stale)가 없다"
+
+    seg = ROOT / "data/processed/segments.geojson"
+    watched = ROOT / "src/firelane/seg/width.py"
+    if not (seg.exists() and watched.exists()):
+        pytest.skip("산출물이 없다")
+
+    import os
+    st = seg.stat()
+    try:
+        # 판정 코드가 산출물보다 최근인 상태를 만든다
+        os.utime(seg, (st.st_atime, watched.stat().st_mtime - 60))
+        r = subprocess.run([sys.executable, str(ROOT / "tools/golden.py"), "check"],
+                           capture_output=True, text=True, cwd=ROOT)
+        assert r.returncode != 0, (
+            "산출물이 코드보다 낡았는데 통과했다:\n" + r.stdout[-500:])
+        assert "낡" in r.stdout, "왜 막혔는지 말하지 않는다"
+    finally:
+        os.utime(seg, (st.st_atime, st.st_mtime))
+
+
+def test_tidy_ignores_the_virtualenv():
+    """`tidy` 가 `.venv` 를 훑지 않는가.
+
+    ★ 2026-08-23. `**/__pycache__` 가 `.venv/lib/.../site-packages` 안까지
+      훑어 130여 건이 목록에 올라왔다. 셋 다 나쁘다.
+        · uv 가 관리하는 영역이다
+        · 지워도 첫 import 때 다시 생긴다 — **매번 같은 목록이 뜬다**
+        · 진짜 찌꺼기(일회성 패처 12개 · 백업 7개)가 그 속에 묻힌다
+
+      정리 도구가 매번 백 건을 보고하면 사람이 목록을 안 읽게 된다.
+      그러면 도구가 있어도 없는 것과 같다.
+    """
+    import tidy
+    assert ".venv" in tidy.NEVER, "tidy.NEVER 에 .venv 가 없다"
+    assert tidy.guarded(tidy.ROOT / ".venv" / "lib" / "x" / "__pycache__"), \
+        "guarded() 가 .venv 하위를 막지 못한다"
+    hit = [str(p.relative_to(tidy.ROOT)) for _, p, _, _ in tidy.scan_fs()]
+    assert not [x for x in hit if x.startswith(".venv")], \
+        f"scan 결과에 .venv 가 들어있다: {[x for x in hit if x.startswith('.venv')][:3]}"
+
+
+def test_acquire_ledger_is_stable_when_nothing_changed():
+    """대장이 무변경일 때 파일을 건드리지 않는가.
+
+    ★ 2026-08-23. `at` 을 매번 갱신해서 sha 가 하나도 안 바뀌어도 파일이
+      바뀌었다. `--verify` 를 돌릴 때마다 `git diff` 가 생기고, 워킹트리가
+      더러워져 `apply` 가 **두 번** 막혔다.
+
+      "아무것도 안 바뀌었는데 diff 가 생긴다" 는 그 자체로 비용이다 —
+      진짜 변경이 무의미한 변경 속에 묻힌다.
+    """
+    src = (ROOT / "tools/acquire.py").read_text(encoding="utf-8")
+    i = src.index("def save_ledger")
+    body = src[i:i + 1200]
+    assert 'cur.get("files") == d.get("files")' in body, \
+        "save_ledger 가 내용 비교 없이 매번 쓴다"
+    assert body.index('d["at"]') > body.index("return"), \
+        "무변경 반환보다 먼저 at 을 찍으면 소용이 없다"

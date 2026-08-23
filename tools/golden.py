@@ -128,10 +128,48 @@ def cmd_lock(_args) -> int:
     return 0
 
 
+def _staleness() -> list[str]:
+    """산출물이 코드보다 낡았는가.
+
+    ★ 2026-08-23. `fire-lane` 이 PATH 에 없어 파이프라인이 안 돈 채로
+      이 검사를 돌렸고 **통과했다.** golden 은 `segments.geojson` 을 읽는데
+      그것이 안 바뀌었으니 옛 산출물을 옛 지문과 비교한 것이다 —
+      아무것도 증명하지 않는데 초록불이 뜬다.
+
+      R11 은 "리팩 전후 동일을 증명하기 전에는 커밋하지 마라" 인데,
+      증명한 것처럼 보이게 만드니 규칙 자체가 무력해진다.
+      **이 저장소가 반복해 겪은 그 모양이다 — 검사가 죽었는데 초록불.**
+
+      판정 로직보다 산출물이 오래됐으면 경고한다. 시각은 거칠지만,
+      "안 돌린 채로 통과" 를 막기에는 충분하다.
+    """
+    if not SEG.exists():
+        return []
+    out, seg_m = [], SEG.stat().st_mtime
+    watch = ["src/firelane/segments.py", "src/firelane/seg/width.py",
+             "src/firelane/seg/geom.py", "src/firelane/seg/params.py",
+             "src/firelane/seg/graph.py", "src/firelane/seg/report.py"]
+    for rel in watch:
+        q = ROOT / rel
+        if q.exists() and q.stat().st_mtime > seg_m:
+            out.append(rel)
+    return out
+
+
 def cmd_check(args) -> int:
     p = GOLD / "segments.fingerprint.json"
     if not p.exists():
         sys.exit("★ 잠근 지문이 없다 — 리팩 시작 전에 golden.py lock 을 했어야 한다")
+
+    stale = _staleness()
+    if stale and not getattr(args, "allow_stale", False):
+        print("★ 산출물이 판정 코드보다 낡았다. 이 대조는 아무것도 증명하지 않는다.")
+        for rel in stale:
+            print(f"    {rel}  가 segments.geojson 보다 최근이다")
+        print("\n  uv run fire-lane --from segments   ← 먼저 돌려라")
+        print("  (uv run 을 빼면 command not found 다. 진입점은 .venv/bin 에 있다)")
+        print("\n  정말 낡은 것을 알고 대조하려면 --allow-stale")
+        return 1
     old = json.loads(p.read_text(encoding="utf-8"))
     new = fingerprint()
     bad = 0
@@ -192,6 +230,8 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("lock").set_defaults(fn=cmd_lock)
     c = sub.add_parser("check")
+    c.add_argument("--allow-stale", action="store_true",
+                   help="산출물이 코드보다 낡아도 대조한다 (증명이 아님을 알고 쓸 것)")
     c.add_argument("--loose", action="store_true", help="L3 기하 해시를 건너뛴다")
     c.set_defaults(fn=cmd_check)
     a = ap.parse_args()

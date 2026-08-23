@@ -77,7 +77,7 @@ export FIRE_LANE_DATA="<raw 상위 폴더 경로>"   # 머신마다 다르다
 
 python -m firelane.normalize_raw "$FIRE_LANE_DATA/landing" --dry-run
 python -m firelane.contract
-fire-lane
+uv run fire-lane
 
 uv run python tools/serve.py        # 캐시 없는 개발 서버
 ```
@@ -116,10 +116,18 @@ ingest → segments → streetlight → terrain → ortho → publish → 계약
 ```
 
 ```bash
-fire-lane --check          # 실행 없이 상태만
-fire-lane --from segments  # 그 단계부터
-fire-lane --only publish
+uv run fire-lane --check          # 실행 없이 상태만
+uv run fire-lane --from segments  # 그 단계부터
+uv run fire-lane --only publish
 ```
+
+★ `uv run` 을 빼면 `command not found` 다. 진입점은 `.venv/bin/fire-lane` 에
+설치되고 그 폴더는 PATH 에 없다. `uv sync` 가 editable 로 깔아주지만
+**셸에 노출하지는 않는다** — 2026-08-23 에 이것 때문에 파이프라인이 안 돌았고,
+그 상태로 `golden.py check` 를 돌려 **통과했다.** 옛 산출물을 옛 지문과
+비교한 것이라 아무것도 증명하지 않는다. 가장 위험한 종류의 초록불이다.
+
+
 
 전량 재실행 약 285초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
 raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.

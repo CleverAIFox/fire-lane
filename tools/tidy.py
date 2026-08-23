@@ -93,7 +93,14 @@ NEVER = ("data/raw", "data/norm", "data/field", "web/data",
          "data/processed/segments.schema.json",
          "data/processed/_manifest.json",
          "data/processed/seg_uid_map.csv",
-         "data/golden", "data/baseline", ".git")
+         "data/golden", "data/baseline", ".git",
+         # ★ 2026-08-23. `.venv` 를 뺐다. `**/__pycache__` 가 그 안을 훑어
+         #   site-packages 캐시 130여 건이 목록에 올라왔다. 셋 다 나쁘다.
+         #     · uv 가 관리하는 영역이다. 남의 살림을 건드리는 셈이다
+         #     · 지워도 첫 import 때 다시 생긴다 — **매번 같은 목록이 뜬다**
+         #     · 진짜 찌꺼기(일회성 패처 12개 · 백업 7개)가 그 속에 묻힌다
+         #   정리 도구가 매번 백 건을 보고하면 사람이 목록을 안 읽게 된다.
+         ".venv", "venv", ".git")
 
 
 def guarded(p: Path) -> bool:
