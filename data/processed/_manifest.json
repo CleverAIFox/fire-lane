@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-22T01:31:45.157424+09:00",
+  "generated_at": "2026-08-23T22:21:31.862487+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -12,9 +12,24 @@
   },
   "datasets": [
     {
+      "key": "node_link_changelog",
+      "source_file": "its/its_nodelink_changelog_20260812.csv",
+      "source_sha256": "eefe2cbc8c8701b2d434d7eb52cba42bf6598c9c9b552043e23fa1c693634dfa",
+      "resolved": "its_nodelink_changelog_20260812.csv",
+      "source_crs": "",
+      "license": "공공누리 1유형",
+      "url": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
       "key": "road_link",
       "source_file": "juso/juso_elctrnmap_jngj_20260711.zip",
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
       "source_crs": "EPSG:5179",
       "license": "도로명주소법 시행령 제46조 심사 승인",
       "url": "https://business.juso.go.kr/addrlink/elctrnMapProvd/geoDBDwldList.do",
@@ -55,6 +70,7 @@
       "key": "road_rw",
       "source_file": "juso/juso_elctrnmap_jngj_20260711.zip",
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
       "source_crs": "EPSG:5179",
       "license": "TODO",
       "url": "",
@@ -80,6 +96,7 @@
       "key": "road_intrvl",
       "source_file": "juso/juso_elctrnmap_jngj_20260711.zip",
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
       "source_crs": "EPSG:5179",
       "license": "TODO",
       "url": "",
@@ -108,6 +125,7 @@
       "key": "spotaddr_geom",
       "source_file": "juso/juso_spotaddr_geom_jngj_20260801.zip",
       "source_sha256": "67d19479c563ae4b7629b1a1c5c5ed9efd0e064ff87d3bda8422553a7896e6f3",
+      "resolved": "juso_spotaddr_geom_jngj_20260801.zip",
       "source_crs": 5179,
       "license": "도로명주소법 시행령 제46조 심사 승인",
       "url": "https://business.juso.go.kr/addrlink/elctrnMapProvd/geoDBDwldList.do",
@@ -121,6 +139,7 @@
       "key": "spotaddr_ref",
       "source_file": "juso/juso_spotaddr_ref_jngj_20260801.zip",
       "source_sha256": "8822bdb54aa2b8a711854f525772d947f2aaf75aa6c7f29fe1194bb94f3b4c5d",
+      "resolved": "juso_spotaddr_ref_jngj_20260801.zip",
       "source_crs": 5179,
       "license": "도로명주소법 시행령 제46조 심사 승인",
       "url": "",
@@ -134,6 +153,11 @@
       "key": "ngii1k",
       "source_file": "vworld/vworld_map1k*_gjdonggu_20260307.zip",
       "source_sha256": "7b970e12ea3f77dfa0948ab9d9dbb28703872feed76fec5e621a5a61ddc6b893",
+      "resolved": "vworld_map1k_gjdonggu_20260307.zip",
+      "ambiguous": [
+        "vworld_map1k_gjdonggu_20260307.zip",
+        "vworld_map1k_ngi_gjdonggu_20260307.zip"
+      ],
       "source_crs": "EPSG:5186",
       "license": "공공누리",
       "url": "",
@@ -1634,6 +1658,7 @@
       "key": "streetlight",
       "source_file": "gjcity/*streetlight*.csv",
       "source_sha256": "7c7011029be8d66532240cbbf4f46831b9ff5fb6601e58b7637f7440c7b2a867",
+      "resolved": "gjcity_streetlight_dongu_20240415.csv",
       "source_crs": 4326,
       "license": "TODO",
       "url": "",
@@ -1658,32 +1683,20 @@
     },
     {
       "key": "ngii_road",
-      "source_file": "ngii/ngii_basemap_gj9*.zip",
-      "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
-      "source_crs": "EPSG:5179",
-      "license": "국토지리정보원",
-      "url": "https://map.ngii.go.kr",
-      "status": "OK",
-      "features": 216,
-      "geom": [
-        "Polygon"
-      ],
-      "invalid_fixed": 0,
-      "columns": [
-        "gid",
-        "fmta",
-        "scls",
-        "ufid"
-      ],
-      "outputs": [
+      "status": "FAIL",
+      "error": "OSError: [Errno 12] Cannot allocate memory",
+      "staled": [
+        "ngii_road_5186.gpkg",
         "ngii_road.geojson",
-        "ngii_road_5186.gpkg"
+        "ngii_road_center_5186.gpkg",
+        "ngii_road_center.geojson"
       ]
     },
     {
       "key": "node_link",
       "source_file": "its/its_nodelink_kr_20260812.zip",
       "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
+      "resolved": "its_nodelink_kr_20260812.zip",
       "source_crs": "EPSG:5186",
       "license": "공공누리 제1유형",
       "url": "https://www.its.go.kr/nodelink/nodelinkRef",
@@ -1725,6 +1738,7 @@
       "key": "node_point",
       "source_file": "its/its_nodelink_kr_20260812.zip",
       "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
+      "resolved": "its_nodelink_kr_20260812.zip",
       "source_crs": "EPSG:5186",
       "license": "TODO",
       "url": "",
@@ -1753,6 +1767,7 @@
       "key": "turn_restriction",
       "source_file": "its/its_nodelink_kr_20260812.zip",
       "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
+      "resolved": "its_nodelink_kr_20260812.zip",
       "source_crs": "none",
       "license": "TODO",
       "url": "",
@@ -1776,6 +1791,7 @@
       "key": "cctv",
       "source_file": "safety/safety_cctv_jngj_20260630.csv",
       "source_sha256": "96bf98b168cb6721c4c27b52dac10d2e895b244ecf7128b1e34bc15570901552",
+      "resolved": "safety_cctv_jngj_20260630.csv",
       "source_crs": "EPSG:4326",
       "license": "공공누리 제1유형",
       "url": "https://www.data.go.kr/data/15084631/fileData.do",
@@ -1807,6 +1823,7 @@
       "key": "fire_station",
       "source_file": "safety/safety_firestation_kr_20240901.csv",
       "source_sha256": "b65a8bb8e2197f8999384c259c9154247f2d537a10604f9e24d19b1244bb89b7",
+      "resolved": "safety_firestation_kr_20240901.csv",
       "source_crs": "EPSG:4326",
       "license": "TODO",
       "url": "https://www.data.go.kr/data/15138232/fileData.do",
@@ -1836,6 +1853,7 @@
       "key": "poi_store",
       "source_file": "sbiz/sbiz_store_kr_20260630.zip",
       "source_sha256": "57aa361544108ff4fc73334f87d2ced61e41fe8638dd70bcd842930f865d2386",
+      "resolved": "sbiz_store_kr_20260630.zip",
       "source_crs": "EPSG:4326",
       "license": "공공누리 제1유형",
       "url": "https://www.data.go.kr/data/15083033/fileData.do",
@@ -1895,6 +1913,7 @@
       "key": "boundary_emd",
       "source_file": "juso/juso_elctrnmap_jngj_20260711.zip",
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
       "source_crs": "EPSG:5179",
       "license": "도로명주소법 시행령 제46조 심사 승인",
       "url": "https://business.juso.go.kr/addrlink/elctrnMapProvd/geoDBDwldList.do",
@@ -1918,6 +1937,7 @@
       "key": "building",
       "source_file": "juso/juso_elctrnmap_jngj_20260711.zip",
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
       "source_crs": "EPSG:5179",
       "license": "TODO",
       "url": "",
@@ -1969,6 +1989,7 @@
       "key": "building_entrance",
       "source_file": "juso/juso_elctrnmap_jngj_20260711.zip",
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
       "source_crs": "EPSG:5179",
       "license": "TODO",
       "url": "",
@@ -1995,6 +2016,7 @@
       "key": "hydrant_point",
       "source_file": "safety/safety_hydrant_point_kr_20240207.csv",
       "source_sha256": "85a56e0ae97002b0fe8ea4eb3c9eadbf72ddb601b2f961d5f640662882a92437",
+      "resolved": "safety_hydrant_point_kr_20240207.csv",
       "source_crs": "EPSG:4326",
       "license": "공공누리 제1유형",
       "url": "https://www.data.go.kr/data/15065056/standard.do",
@@ -2034,6 +2056,7 @@
       "key": "fire_access",
       "source_file": "safety/safety_fire_access_gj_dong_20250731.csv",
       "source_sha256": "67a583bb97e8d027761dea9fd492012699ea8345f4bf7939f729754494dbdf9e",
+      "resolved": "safety_fire_access_gj_dong_20250731.csv",
       "source_crs": "",
       "license": "공공누리 제1유형",
       "url": "https://www.data.go.kr",
@@ -2056,6 +2079,7 @@
       "key": "dem_public",
       "source_file": "ngii/ngii_dem_gj35616_20251117.zip",
       "source_sha256": "56656fc18efb05ad78653d1b09ea18e6c9879eaa2e5940d33a2cce677b4ef128",
+      "resolved": "ngii_dem_gj35616_20251117.zip",
       "source_crs": "EPSG:5179",
       "license": "TODO",
       "url": "",
@@ -2069,6 +2093,17 @@
       "key": "ortho",
       "source_file": "ngii/ngii_ortho_gj*.*",
       "source_sha256": "afe2cbb4bcd151538b77617bf9ac1022639a61e79525227f09b0aaca0ed2bf8b",
+      "resolved": "ngii_ortho_gj037_20251231.tif",
+      "ambiguous": [
+        "ngii_ortho_gj037_20251231.tif",
+        "ngii_ortho_gj037_20251231.xml",
+        "ngii_ortho_gj038_20251231.tif",
+        "ngii_ortho_gj038_20251231.xml",
+        "ngii_ortho_gj047_20251231.tif",
+        "ngii_ortho_gj047_20251231.xml",
+        "ngii_ortho_gj048_20251231.tif",
+        "ngii_ortho_gj048_20251231.xml"
+      ],
       "source_crs": "EPSG:5186",
       "license": "국토지리정보원",
       "url": "https://map.ngii.go.kr",
@@ -2082,6 +2117,11 @@
       "key": "enforcement",
       "source_file": "gjcity/gjcity_parking_enforce_dongu_*.csv",
       "source_sha256": "cf64a54d8dbe19c27621cec50d9b95319b9e7b9873422c5312a848cbece850e1",
+      "resolved": "gjcity_parking_enforce_dongu_20240108.csv",
+      "ambiguous": [
+        "gjcity_parking_enforce_dongu_20240108.csv",
+        "gjcity_parking_enforce_dongu_20250226.csv"
+      ],
       "source_crs": "none",
       "license": "TODO",
       "url": "https://www.data.go.kr",
@@ -2104,6 +2144,7 @@
       "key": "hydrant_summary",
       "source_file": "safety/safety_hydrant_summary_gj_dong_20250731.csv",
       "source_sha256": "6a5b2690bd9cc2ecc13369da2e58f3418e1b1bea8f8a173e57be3695cf340586",
+      "resolved": "safety_hydrant_summary_gj_dong_20250731.csv",
       "source_crs": "none",
       "license": "TODO",
       "url": "https://www.data.go.kr",
@@ -2126,44 +2167,14 @@
     },
     {
       "key": "ngii_road_center",
-      "source_file": "ngii/ngii_basemap_gj9*.zip",
-      "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
-      "source_crs": "EPSG:5179",
-      "license": "",
-      "url": "",
-      "status": "OK",
-      "features": 487,
-      "geom": [
-        "LineString"
-      ],
-      "invalid_fixed": 0,
-      "columns": [
-        "gid",
-        "dvyn",
-        "edpt",
-        "fmta",
-        "name",
-        "onsd",
-        "pvqt",
-        "rddv",
-        "rdln",
-        "rdnm",
-        "rdnu",
-        "rest",
-        "rvwd",
-        "scls",
-        "stpt",
-        "ufid"
-      ],
-      "outputs": [
-        "ngii_road_center.geojson",
-        "ngii_road_center_5186.gpkg"
-      ]
+      "status": "FAIL",
+      "error": "OSError: [Errno 12] Cannot allocate memory"
     },
     {
       "key": "bin_trash",
       "source_file": "gjcity/gjcity_bin_trash_dongu_20241130.csv",
       "source_sha256": "8f6c649ddd76aa624e0039be21de6ae25878ac59040328a315497b286a6ebf77",
+      "resolved": "gjcity_bin_trash_dongu_20241130.csv",
       "source_crs": "EPSG:4326",
       "license": "",
       "url": "",
@@ -2191,6 +2202,7 @@
       "key": "bin_cloth",
       "source_file": "gjcity/gjcity_bin_cloth_dongu_20250214.csv",
       "source_sha256": "2a1478ade13dfda25f10cba77fe6c596eef612d1671b25e53ecbb4c1bc62b0b6",
+      "resolved": "gjcity_bin_cloth_dongu_20250214.csv",
       "source_crs": "EPSG:4326",
       "license": "",
       "url": "",
@@ -2218,6 +2230,7 @@
       "key": "building_ledger",
       "source_file": "eais/eais_bldg_ledger_gjdonggu_20260817.csv",
       "source_sha256": "b502e2c0071a400e46ea23eb1e7436d4eae57537783ea0db34787176de579e4a",
+      "resolved": "eais_bldg_ledger_gjdonggu_20260817.csv",
       "source_crs": "none",
       "license": "",
       "url": "",
@@ -2307,34 +2320,5 @@
         "building_ledger.csv"
       ]
     }
-  ],
-  "terrain": {
-    "source": "dem_public (공개DEM 90m, 도엽 35616)",
-    "raster": "dem_scope.tif",
-    "grid_m": 11.25,
-    "upsample": 8,
-    "base_elev_m": 34.3,
-    "relief_m": 86.6,
-    "note_relief": "대상 영역 기준. 패딩 포함 창 전체는 더 넓다",
-    "applied_to": [
-      "segments",
-      "building",
-      "cctv",
-      "hydrant_point",
-      "fire_station"
-    ],
-    "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
-    "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
-    "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-08-23T08:38:52+00:00"
-  },
-  "ortho": {
-    "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
-    "gsd_m": 0.25,
-    "src_crs": "EPSG:5186",
-    "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
-    "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.6MB)",
-    "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-08-23T08:39:11+00:00"
-  }
+  ]
 }
