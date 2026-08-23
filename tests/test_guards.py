@@ -1029,3 +1029,22 @@ def test_acquire_ledger_is_stable_when_nothing_changed():
         "save_ledger 가 내용 비교 없이 매번 쓴다"
     assert body.index('d["at"]') > body.index("return"), \
         "무변경 반환보다 먼저 at 을 찍으면 소용이 없다"
+
+
+def test_naver_join_flags_small_samples():
+    """네이버 대조가 표본이 작을 때 그것을 말하는가.
+
+    ★ 2026-08-23. `n=10` 에서도 "전수 대조에 쓸 수 있다" 고 단언했다.
+      표준편차 추정 자체가 흔들리는 크기다 — `n=10` 에 `sd=0.35` 를 관측하면
+      참값이 0.56 까지 갈 수 있고, 그것은 기준(0.5)을 넘는다.
+
+      이 저장소가 소방서 7구간을 게이트로 쓰고 그 결과를 "외부 검증" 이라
+      부른 것과 같은 종류다. **표본이 작다는 사실을 말하지 않는 결론은
+      결론이 아니다.**
+    """
+    src = (ROOT / "tools/naver_join.py").read_text(encoding="utf-8")
+    assert "sd_hi" in src, "산포의 신뢰 상한을 계산하지 않는다"
+    assert "잠정" in src, "표본이 작을 때 잠정임을 말하지 않는다"
+    # 상한 계산이 판정보다 앞서야 경고가 의미를 갖는다
+    assert src.index("sd_hi =") < src.index('if abs(med) < 0.3'), \
+        "판정 뒤에 상한을 계산하면 경고가 늦다"
