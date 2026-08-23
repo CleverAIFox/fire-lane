@@ -176,7 +176,24 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     if not hits:
         return {"key": key, "status": "MISSING", "file": e["file"]}
     src = hits[0]
+    # ★ 2026-08-23. glob 이 여러 개를 잡으면 **정렬 첫 번째**가 쓰인다.
+    #   날짜가 파일명에 있으므로 그것은 대개 **옛 판**이다.
+    #   2026-08-23 에 `gjcity_parking_enforce_dongu_20250226.csv` 를 새로
+    #   편입했는데 파이프라인은 계속 20240108 을 읽었고 아무도 몰랐다.
+    #
+    #   여기서 자동으로 최신을 고르지 않는다. 그러면 raw 에 파일 하나를
+    #   떨구는 것만으로 산출물이 조용히 바뀐다 — 대장이 정본이라는 원칙이
+    #   깨진다(§18-3). 대신 **시끄럽게 알리고** 사람이 대장을 고치게 한다.
+    if len(hits) > 1:
+        rest = ", ".join(x.name for x in hits[1:])
+        print(f"  ★ {key}: 대장 glob 이 {len(hits)}개를 잡는다. "
+              f"쓰는 것은 {src.name}")
+        print(f"     쓰이지 않는 것: {rest}")
+        print("     sources.yaml 의 file 을 하나로 좁혀라. 신판을 쓰려면 "
+              "거기서 지목해야 한다.")
     rec = {"key": key, "source_file": e["file"], "source_sha256": sha_of(src),
+           "resolved": src.name,
+           **({"ambiguous": [x.name for x in hits]} if len(hits) > 1 else {}),
            # csv_table / raw_only 는 좌표가 없다. crs 를 필수로 두면 거기서 죽는다.
            "source_crs": e.get("crs", ""), "license": e.get("license", ""),
            "url": e.get("url", "")}

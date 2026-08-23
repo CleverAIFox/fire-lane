@@ -264,25 +264,41 @@ def cmd_verify() -> int:
             #   놓치는 경우다 — 손상됐거나, 같은 크기의 다른 판이다.
             bad.append((rel, "★ 크기 같고 내용 다름",
                         f"{want['sha256'][:12]} → {got[:12]}"))
-    gone = [r for r in led if not (RAW / r).exists()]
+    # ★ 2026-08-23. 대장에 있는데 raw 에 없는 것을 전부 "사라짐" 으로 봤다.
+    #   `--quarantine` 으로 내린 파일이 거기 걸려 **정상 처분이 빨간불**이 됐다.
+    #   격리는 소실이 아니라 이동이다. `_quarantine` 에 있으면 그렇게 말한다.
+    gone, moved = [], []
+    for r in led:
+        if (RAW / r).exists():
+            continue
+        (moved if (QUARANTINE / r).exists() else gone).append(r)
 
     print(col("── sha 대조", "c"))
     print(f"  검사 {len(files)}개")
     for rel, why, detail in bad:
         print(f"  {col(why, 'r')}  {rel}\n      {col(detail, 'd')}")
+    for rel in moved:
+        print(f"  {col('격리됨', 'c')}  {rel}   (대장에서 뺀다)")
     for rel in gone:
         print(f"  {col('사라짐', 'r')}  {rel}")
     for rel in new:
         print(f"  {col('대장에 없음', 'y')}  {rel}   (--verify 를 다시 돌리면 기록된다)")
     if not (bad or gone):
         print(f"  {col('전부 일치', 'g')}")
-        if new:
+        if new or moved:
             led2 = load_ledger()
             for rel in new:
                 p = RAW / rel
                 led2["files"][rel] = {"sha256": sha256(p), "bytes": p.stat().st_size}
+            # 격리된 것은 대장에서 뺀다. 대장은 **raw 의 현재 상태**를 말한다 —
+            # 무엇이 있었는지의 역사는 sources.yaml 의 retired 가 맡는다.
+            for rel in moved:
+                led2["files"].pop(rel, None)
             save_ledger(led2)
-            print(f"  {col(f'새 파일 {len(new)}개 기록', 'd')}")
+            if new:
+                print(f"  {col(f'새 파일 {len(new)}개 기록', 'd')}")
+            if moved:
+                print(f"  {col(f'격리분 {len(moved)}개 대장에서 제거', 'd')}")
         return 0
     print(col("\n★ 손상되거나 바뀐 파일이 있다. raw 는 불변이어야 한다.", "r"))
     print("  landing 원본이 남아 있으면 --stage 로 다시 넣고, 없으면 재취득하라.")

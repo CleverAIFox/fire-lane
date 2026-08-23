@@ -899,3 +899,22 @@ def test_acquire_ledger_ends_with_newline():
     i = src.index("LEDGER.write_text(")
     assert '+ "\\n"' in src[i:i + 200], \
         "LEDGER 를 쓸 때 끝 개행을 안 붙인다 — encoding_check 가 커밋을 막는다"
+
+
+def test_verify_tells_quarantine_from_loss():
+    """`--verify` 가 격리(정상 처분)와 소실(사고)을 구분하는가.
+
+    ★ 2026-08-23. 대장에 있는데 raw 에 없으면 전부 "사라짐" 으로 봤다.
+      `--quarantine` 으로 내린 파일이 거기 걸려 **정상 처분이 빨간불**이 됐다.
+      게이트가 정상 상태에서 울리면 사람이 그 게이트를 무시하기 시작한다 —
+      그 순간 게이트가 없는 것과 같아진다.
+
+      격리는 소실이 아니라 이동이다. `_quarantine` 에 있으면 그렇게 말하고
+      대장에서 뺀다. 대장은 **raw 의 현재 상태**를 말하고, 무엇이 있었는지의
+      역사는 `sources.yaml` 의 `retired` 가 맡는다.
+    """
+    src = (ROOT / "tools/acquire.py").read_text(encoding="utf-8")
+    assert "QUARANTINE / r" in src, \
+        "verify 가 _quarantine 을 안 본다 — 격리를 소실로 오판한다"
+    assert "moved" in src and "gone" in src, \
+        "verify 가 격리와 소실을 한 목록으로 다룬다"
