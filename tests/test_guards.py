@@ -1104,3 +1104,24 @@ def test_review_page_lands_where_serve_can_find_it():
         "web/ 기준 타일 경로가 아니다"
     ign = (ROOT / ".gitignore").read_text(encoding="utf-8")
     assert "web/review.html" in ign, "생성물인데 gitignore 에 없다"
+
+
+def test_seg_label_is_not_used_as_an_identifier():
+    """`seg_label` 을 식별자처럼 쓰는 곳이 없는가.
+
+    ★ 2026-08-23. `seg_label` 은 표시용이다. 1,101구간 중 **273(24.8%)이
+      중복**이고 62종은 같은 라벨인데 판정이 다르다 —
+      `동계천로43번길 1-5` 하나가 unknown(5.26) · blocked(1.04) ·
+      blocked(1.19) 세 골목을 가리킨다.
+
+      대조 페이지가 라벨만 띄우는 바람에 사람이 어느 골목인지 못 골랐다.
+      네이버로 5.6m 를 잰 골목과 페이지가 보여준 1.19m 짜리가 서로 달랐다.
+
+      고유 식별자는 `seg_uid` 다(결정 72 · 중복 0 · 실행 간 유지).
+      MASTER §11 이 "화면 표기는 seg_label, 외부 참조는 seg_uid" 라고
+      적어놨는데 그 경계가 지켜지지 않았다.
+    """
+    src = (ROOT / "tools/jijeok_review.py").read_text(encoding="utf-8")
+    assert '"uid": r.seg_uid' in src, "review 항목에 seg_uid 가 없다"
+    assert "${d.uid}" in src, "화면에 seg_uid 를 안 띄운다"
+    assert '"sib"' in src, "같은 라벨을 쓰는 형제 수를 안 센다"

@@ -48,7 +48,7 @@ import sys
 
 import geopandas as gpd
 
-from firelane.paths import RAW, ROOT, WEB
+from firelane.paths import PROCESSED, RAW, ROOT, WEB
 
 # ★ paths.WEB 은 `web/data` 다(산출물 폴더). review.html 은 그 부모인
 #   `web/` 에 놓아야 serve.py 가 http://localhost:8000/review.html 로 준다.
@@ -122,6 +122,18 @@ def main() -> int:
     f["side"] = ["막았다" if w < TH else "열었다" for w in f.width_min_m]
     f = f.sort_values(["side", "jj_cov"], ascending=[True, False])
 
+    # ★ 2026-08-23. `seg_label` 은 표시용이지 식별자가 아니다.
+    #   1,101구간 중 273(24.8%)이 라벨 중복이고, 62종은 **같은 라벨인데
+    #   판정이 다르다** — `동계천로43번길 1-5` 하나가 unknown(5.26) ·
+    #   blocked(1.04) · blocked(1.19) 세 골목을 가리킨다.
+    #
+    #   화면에 라벨만 띄우면 사람이 어느 골목인지 못 고른다. 실제로 그래서
+    #   "뭘 보라는 건지 모르겠다" 가 나왔다 — 네이버로 5.6m 를 잰 골목과
+    #   페이지가 보여준 1.19m 짜리가 서로 달랐다.
+    #   `seg_uid` 를 같이 띄우고, 같은 라벨을 쓰는 형제 수도 적는다.
+    allseg = gpd.read_file(PROCESSED / "segments_5186.gpkg")
+    sib = allseg.groupby("seg_label").size().to_dict() if "seg_label" in allseg else {}
+
     items = []
     for i, r in enumerate(f.itertuples(), 1):
         geom = r.geometry
@@ -131,6 +143,7 @@ def main() -> int:
             "n": i,
             "label": str(r.seg_label or r.road_name or r.seg_uid),
             "uid": r.seg_uid,
+            "sib": int(sib.get(r.seg_label, 1)),
             "side": r.side,
             "verdict": r.verdict,
             "ours": round(float(r.width_min_m), 2),
@@ -279,7 +292,10 @@ function go(i) {
   const gap = (d.jj - d.ours).toFixed(1);
   document.getElementById("bar").innerHTML =
     `<b>${d.n}/${ITEMS.length} · ${d.label}</b> ` +
-    `<span class=m>(현재 판정 ${d.verdict} · 길이 ${d.len}m)</span>` +
+    `<span class=m>(현재 판정 ${d.verdict} · 길이 ${d.len}m)</span><br>` +
+    `<span class=m style="font-size:11px">${d.uid}` +
+    (d.sib > 1 ? ` &nbsp;<b style="color:#c60">★ 같은 라벨 ${d.sib}구간 —` +
+                 ` 노란 선이 가리키는 골목만 본다</b>` : "") + `</span>` +
     `<div style="margin:6px 0;font-size:15px">` +
     `노란 선 위 <b>담장에서 담장까지</b>가 &nbsp;` +
     `<span style="background:#fdd;padding:2px 6px;border-radius:3px">` +
@@ -317,7 +333,8 @@ function draw() {
     const t = a.v ? `<span class="tag ${a.v}">${a.v}</span> ` : "";
     return `<div class="it ${d.side === "막았다" ? "blk" : "opn"}` +
       `${i === cur ? " on" : ""}${a.v ? " done" : ""}" onclick="go(${i})">` +
-      `${t}<b>${d.n}. ${d.label}</b><br>` +
+      `${t}<b>${d.n}. ${d.label}</b>` +
+      (d.sib > 1 ? ` <span style="color:#c60">★${d.sib}</span>` : "") + `<br>` +
       `<span class=m>${d.side} · 우리 ${d.ours} ↔ 지적 ${d.jj} · 커버 ${d.cov}</span></div>`;
   }).join("");
   const done = Object.keys(ans).length;
