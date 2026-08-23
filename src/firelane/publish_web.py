@@ -19,6 +19,7 @@ import shutil
 import geopandas as gpd
 import pandas as pd
 
+from firelane import webmanifest
 from firelane.paths import PROCESSED, ROOT
 
 OUT = PROCESSED
@@ -261,6 +262,14 @@ def main():
     #   전파되지 않는다. 그래서 데이터 URL 은 js/data.js 가 view.json 의
     #   build 를 읽어 따로 붙이고, JS/CSS 파일 자체는 여기서 붙인다.
     # ★ 내용 해시라 데이터가 그대로면 이 파일도 안 바뀐다. 재실행 diff 없음.
+    # ── web/data 계보 ──────────────────────────────────────────
+    # ★ 2026-08-22. 종전에는 tools/web_manifest.py 를 사람이 따로 기억해서
+    #   돌려야 했고, 아무도 안 돌렸다. CI 가 main 에서만 도는 바람에 2주
+    #   동안 몰랐고 gis 로 켜자마자 바로 잡혔다.
+    #   생산자가 자기 산출물의 계보를 쓴다 — ingest 가 processed/
+    #   _manifest.json 을 쓰는 것과 같다. 순서를 기억할 필요가 없어진다.
+    # ★ index.html 스탬프보다 **뒤**여야 한다. 스탬프가 web/ 을 바꾸므로
+    #   먼저 뜨면 지문이 즉시 낡는다.
     _ix = ROOT/"web"/"index.html"
     _html = _ix.read_text(encoding="utf-8")
     _new = re.sub(r'\?v=[0-9a-fA-F]{8}\b|\?v=BUILD', f"?v={_BUILD}", _html)
@@ -269,6 +278,9 @@ def main():
         print(f"  index.html 스탬프 → {_BUILD}")
     else:
         print(f"  index.html 스탬프 {_BUILD} (변화 없음)")
+
+    _wm = webmanifest.write()
+    print(f"  web/data 계보 → {_wm['total_mb']}MB · 타일 {_wm['tiles_digest']}")
     for f in sorted(W.iterdir()):
         print(f"  {f.name:26} {f.stat().st_size/1024:7.0f} KB")
 

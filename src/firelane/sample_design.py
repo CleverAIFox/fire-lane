@@ -33,7 +33,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from firelane.paths import PROCESSED, ROOT
+from firelane.paths import FIELD, PROCESSED
 from firelane.segkey import attach_seg_uid, bearing_at
 
 # ★ 종전에는 `from paths import PROCESSED` 를 try/except 로 감싸고 실패하면
@@ -41,13 +41,6 @@ from firelane.segkey import attach_seg_uid, bearing_at
 #   있었기 때문이다. 패키지가 된 지금 그 폴백은 **경로 정본을 둘로 만드는
 #   버그**일 뿐이다 — cwd 가 다르면 다른 데이터를 읽고도 조용히 성공한다.
 
-# ★ 불일치. paths.FIELD 는 FIRE_LANE_DATA 가 있으면 SSD 를 가리키는데
-#   이 스크립트는 저장소 안(data/field)에 써왔고 그 산출물이 커밋돼 있다
-#   (sample_segments.csv · obs_points.csv · fieldsheet.md).
-#   여기서 paths.FIELD 로 갈아끼우면 야장이 조용히 SSD 로 이사한다.
-#   패키지화는 동작을 안 바꾸는 작업이므로 종전 경로를 유지한다.
-#   → 어느 쪽이 정본인지 정하는 것은 별건. DECISIONS 에 올릴 것.
-FIELD = ROOT / "data" / "field"
 CRS_M = "EPSG:5186"
 
 SEED = 20260814                 # 고정. 재현 안 되면 표본 설계가 아니다

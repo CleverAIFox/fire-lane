@@ -20,10 +20,9 @@ name: contract
 
 on:
   push:
-    branches: [main, gis]
+    branches: [main]
   pull_request:
-    branches: [main, gis]
-  workflow_dispatch:
+    branches: [main]
 
 jobs:
   contract:
@@ -96,6 +95,10 @@ jobs:
 
       - name: web/data 계보 검사
         # ★ 신설. web/data 는 publish_web.py 산출물인데 계보가 없었다.
+        #   ★ 2026-08-22. 이 검사가 오늘 처음 돌았다(CI 가 main 에서만
+        #     돌고 실제 작업은 gis 였다). 켜자마자 web/data 와 매니페스트가
+        #     어긋난 것을 잡았다. 원인은 tools/web_manifest.py 를 사람이
+        #     따로 돌려야 하는 구조였고, 이제 publish 가 직접 쓴다.
         #   data/processed/_manifest.json 은 source_sha256 까지 박아놨으면서
         #   표출 계층에서 그 원칙이 끊겼다. R5(생성물은 입력 지문으로 관리)의
         #   구멍이다. 타일이 어느 정사영상에서 나왔는지 기록이 없었다.
