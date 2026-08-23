@@ -80,6 +80,22 @@ step "계층 강제 (test_layering)" uv run pytest tests/test_layering.py -q
 #   끄는 근거를 각각 적어뒀다.
 step "ruff" uv run ruff check src tools tests
 
+# ── 5b. 저장소 위생 — CI 와 같은 것을 본다 ───────────────────
+# ★ 2026-08-23. 여기가 CI 검사 다섯을 안 돌고 있었다. README 는 "받자마자
+#   이것 하나면 된다" 고 하는데, verify.sh 초록불이어도 CI 는 빨간불이 될 수
+#   있었다 — 커밋 정책 · 인코딩 · web/data 계보 · 문서 숫자 · 용량 상한.
+#   로컬 검증이 CI 의 부분집합이면 "내 기계에서는 됐는데" 가 나온다.
+step "커밋 정책"        uv run python tools/commit_policy.py --tracked
+step "인코딩·개행"      uv run python tools/encoding_check.py
+step "문서 숫자 대조"   uv run python tools/docnum_check.py
+step "web/data 계보"    uv run python tools/web_manifest.py --check
+step "로컬 찌꺼기"      uv run python tools/tidy.py
+step "web/data 용량"    bash -c '
+    SIZE=$(du -sm web/data | cut -f1)
+    LIM=$(grep -oP "MAX_WEBDATA_MB\s*=\s*\K\d+" tools/commit_policy.py)
+    echo "web/data ${SIZE}MB / 상한 ${LIM}MB"
+    [ "$SIZE" -lt "$LIM" ]'
+
 # ── 6. JS 모듈 그래프 ────────────────────────────────────────
 step "JS 문법·순환·import" node tools/js_graph_check.mjs
 

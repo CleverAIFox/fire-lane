@@ -38,7 +38,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString
 
 CRS_M = "EPSG:5186"
 REGION = "DM"                 # 동명동. 스코프가 넓어지면 여기서 분기한다
@@ -170,11 +170,6 @@ def bearing_at(geom: LineString, offset_m: float,
     if dx == 0 and dy == 0:
         return 0.0
     return math.degrees(math.atan2(dx, dy)) % 360.0
-
-
-def offset_of(geom: LineString, pt: Point) -> float:
-    """관측점 좌표 → 구간 시점 기준 거리(m). 실측 지점을 구간에 붙일 때 쓴다."""
-    return geom.project(pt)
 
 
 def obs_context(g: gpd.GeoDataFrame, seg_uid: str, offset_m: float) -> dict:

@@ -18,11 +18,17 @@
 #      60 은 열 배 여유다. 여유가 크면 경보가 안 울린다.
 name: contract
 
+# ★ 2026-08-23. 트리거가 [main] 단독으로 되돌아가 있었다. 두 번째다.
+#   08-22 에 `gis` 를 추가하자마자 세 건(ruff 155 · web/data 계보 · 문서 숫자)을
+#   잡았다는 기록이 DECISIONS 에 남아 있는데, 워크플로는 main 만 본다.
+#   README · MASTER §8 · §12 · CODEOWNERS 는 전부 `gis` 를 정본으로 적고
+#   pages.yml 은 [main, gis] 둘 다 배포한다 — 셋이 갈려 있었다.
+#   실제 PR 이 gis 로 가는 한, main 단독 트리거는 **검사가 죽은 채 뜨는 초록불**이다.
 on:
   push:
-    branches: [main]
+    branches: [main, gis]
   pull_request:
-    branches: [main]
+    branches: [main, gis]
 
 jobs:
   contract:

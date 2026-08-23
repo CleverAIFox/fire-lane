@@ -195,6 +195,16 @@ def write_outputs(g):
             "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
             "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",
             "road_name": "str|null 도로명. 겹침길이 최대 매칭",
+            # ★ 2026-08-23 추가. seg_label 은 2026-08-21 에 만들고 08-22 에
+            #   툴팁 정본으로 승격시켰는데 스키마에 없었다(R7 위반).
+            #   화면이 쓰는 값이 계약에 없으면 UI 를 새로 짜는 사람이 못 찾는다.
+            "seg_label": "str|null 구간 라벨. 도로명 + 도로명주소법 기초번호 "
+                         "(예: 필문대로205번길 11-17). road_intrvl 이 정본이고 "
+                         "기초구간을 못 찾으면 도로명만, 도로명도 없으면 null. "
+                         "★ 화면 표기는 이것을 쓴다 — seg_no 는 정렬 순번이라 "
+                         "노딩이 바뀌면 밀리고 seg_uid 는 사람이 읽을 정보가 없다",
+            "z": "float|null 표고(m). ★ 선택 컬럼 — terrain 단계 산출물이라 "
+                 "DEM 없이 돌리면 아예 생기지 않는다. 표현용이며 판정에 쓰지 않는다",
             "road_side": "0=주도로 1=부속(측도). 같은 도로명이라도 폭이 다르다",
             "road_bt_m": "float|null 도로대장 명목폭. 참고용. 판정에는 쓰지 않는다",
             "in_emd": "bool 동명동 안인가. false 는 접근 회랑",
@@ -204,21 +214,31 @@ def write_outputs(g):
             "width_verified": "bool",
             "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
             "inherited": "bool 사용하지 않는다. 항상 false",
-            "merged_n": "int 이 산출단위가 묶은 그래프 엣지 수. 1 이면 병합 없음",
-            "cov_ngii1k": "float|null 정규표본 중 1:1,000 이 값을 낸 비율",
-            "cov_ngii": "float|null 정규표본 중 1:5,000 이 값을 낸 비율",
-            "cov_silpok": "float|null 정규표본 중 실폭도로가 값을 낸 비율",
+            "merged_n": "★ processed 전용(web 미발행) int 이 산출단위가 묶은 그래프 엣지 수. 1 이면 병합 없음",
+            "cov_ngii1k": "★ processed 전용(web 미발행) float|null 정규표본 중 1:1,000 이 값을 낸 비율",
+            "cov_ngii": "★ processed 전용(web 미발행) float|null 정규표본 중 1:5,000 이 값을 낸 비율",
+            "cov_silpok": "★ processed 전용(web 미발행) float|null 정규표본 중 실폭도로가 값을 낸 비율",
             "n_sample": "int 정규표본 수(교차로 제외 후)",
             "width_cov": "float|null 채택 소스가 이 구간 표본을 덮은 비율. "
                          "1 미만이면 못 잰 구간이 있다. D-25 실측 우선순위",
-            "merge_why": "str|null 병합을 유발한 최초 폭 미산출 사유",
+            "merge_why": "★ processed 전용(web 미발행) str|null 병합을 유발한 최초 폭 미산출 사유",
             "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
             "length_m": "float 이 구간의 수평거리(m). 경사 보정 전이다. 동명동 평균경사 1.8도 기준 실주행거리는 약 0.05% 길고 최대 9도 구간에서 1.2% 길다. 보정에는 5m DEM 이 필요하다",
             "run_length_m": "float|null 같은 판정이 이어지는 연속 구간장(m)",
             "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족",
             "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",
             "cv_feasible": "bool CCTV 유효범위(25m) 안. 영상판정 성립 여부",
-            "unknown_reason": "null|width|no_cctv 회색이 된 이유"},
+            # ★ 2026-08-23 정정. 08-22 에 no_cctv 를 넷으로 쪼갰는데 스키마는
+            #   옛 어휘를 그대로 적고 있었다(R7 위반). UI 가 이 표를 보고
+            #   분기하면 없는 키로 분기한다 — web/config.js 의 reason 표는
+            #   이미 넷을 갖고 있어 화면은 멀쩡했고, 그래서 아무도 몰랐다.
+            "unknown_reason": ("null|no_cctv_narrow|no_cctv_thin|no_cctv_band"
+                               "|no_cctv_single|width — 회색(unknown)이 된 이유. "
+                               "narrow=노면·대장폭 둘 다 3m 미만이나 담~담은 여유 있음 / "
+                               "thin=노면만 3m 미만(근거 하나) / "
+                               "band=3~7m 대역, 주정차로 갈림 / "
+                               "single=7m 이상이나 정규표본 1개라 clear 보류 / "
+                               "width=폭 산출 불가(현재 0건)")},
         "standard": "소방청 2025 화재현장 골든타임 확보 종합대책 (구간 100m) + 2026-08-06 현장 답사 (통과 하한 3.0m)",
         "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK, "nfa_run_m": NFA_RUN_M, "cctv_range_m": CCTV_RANGE,
                    "intersection_exclusion_m": XSEC_EXCL, "wmax_cap_m": WMAX_CAP,

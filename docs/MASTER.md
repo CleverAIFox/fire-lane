@@ -104,7 +104,9 @@ segments 1101
 
 **`unknown` 352 는 전부 `no_cctv` 다.** 8/12 에 127 개였던 `width`(폭 산출 불가)는
 8/13 에 0 이 됐고 지금도 0 이다. 회색은 한 가지 뜻만 갖는다 — 카메라가 없어 못 본다.
-`pipeline.py` 의 `EXPECT["unknown_reason"]` 이 매 실행 이것을 대조한다.
+`data/golden/segments.fingerprint.json` 의 `unknown_reason` 이 정본이고
+`pipeline.verify()` 가 매 실행 이것을 대조한다. (2026-08-18 에 `EXPECT` 를
+지웠다 — 판정 숫자의 정본이 셋이면 동기화 도구가 또 필요해진다)
 
 ```
 CCTV 유효범위(25m) 안   380 / 1,101   (34.5%)
@@ -435,10 +437,10 @@ raw 는 `$FIRE_LANE_RAW` 다. `if fa.exists()` 가 항상 거짓이라 코드는
 
 ```
 data/raw/          2.5GB · git 제외 · sources.yaml 의 url 로 재취득
-  ↓ src/etl/ingest.py            선언형. sources.yaml 만 고치면 된다
+  ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
 data/processed/    대장 27종(OK 23 · SKIP 4) · gpkg 24개
                    EPSG:5186(계산) / 4326(표출)
-  ↓ src/etl/segments.py          조립부. 계산은 seg/ 가 한다
+  ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py                임계값 정본 (web/config.js 는 표시용 사본)
       seg/graph.py                 노딩 · 최대성분 · 접근 회랑
       seg/width.py                 폭 산출 — ngii1k 1014 · silpok 84 를 만든다
@@ -446,12 +448,12 @@ data/processed/    대장 27종(OK 23 · SKIP 4) · gpkg 24개
       seg/roadname.py              노딩으로 끊긴 도로명 되붙이기
       seg/basisno.py               기초구간 → seg_label (도로명주소 기초번호)
       seg/report.py                소방서 대조 · 진단 · 산출물 기록
-  ↓ src/etl/publish_web.py       표출용 경량 사본
+  ↓ src/firelane/publish_web.py       표출용 경량 사본
 web/data/          28.6MB · UI 입력 · git 포함 (지형·정사영상 타일 포함)
   ↓ web/index.html               MapLibre 5 + deck.gl 9 (interleaved) + V-World
 GitHub Pages       main 브랜치 푸시 시 자동 배포
 
-src/etl/quiet_gdal.py            GDAL 잡음 억제. rasterio 보다 먼저 import
+src/firelane/quiet_gdal.py            GDAL 잡음 억제. rasterio 보다 먼저 import
 tools/encoding_check.py          인코딩·개행 검사 (CI 게이트)
 tools/web_manifest.py            web/data 계보 지문
 ```
@@ -532,7 +534,7 @@ CCTV · 소화전 · 소방서 · 상가정보 · 단속이력 · 소방통로�
 → ngii1k_center_5186.gpkg   도로중심선 6,579
 ```
 
-GDAL 에 NGI 드라이버가 없어 `src/etl/ngii1k.py` 가 직접 파싱한다.
+GDAL 에 NGI 드라이버가 없어 `src/firelane/ngii1k.py` 가 직접 파싱한다.
 같은 도엽은 최신 연도를 채택한다.
 
 **폴더명 `ngii_1k` 는 기관명 규칙을 깬다.** `ngii/` 로 합치면 `rglob` 이
@@ -603,14 +605,14 @@ group-by + count 로 등 수를 보존하고, 표현으로 불확실성을 드�
 ### 현재 — 로컬 + 환경변수
 
 ```
-data/raw        2.2GB · 저장소 밖 · FIRE_LANE_RAW 로 위치 지정
+data/raw        2.2GB · 저장소 밖 · FIRE_LANE_DATA 로 위치 지정
 data/processed  로컬 생성물 · *.gpkg / *.tif 는 git 제외
 web/data        13MB · git 포함 (UI 담당이 raw 없이 작업해야 한다)
 ```
 
 **심링크는 쓰지 않는다.** `data/raw` 를 심링크로 걸었더니 git 이 추적했고,
 exFAT 에서 `git reset --hard` 시 경로 문자열 파일로 체크아웃되면서
-원본 2.5GB 가 소실됐다(2026-08-11). `src/etl/paths.py` 의 환경변수 방식으로 대체했다.
+원본 2.5GB 가 소실됐다(2026-08-11). `src/firelane/paths.py` 의 환경변수 방식으로 대체했다.
 
 ```bash
 export FIRE_LANE_DATA="<raw 상위 폴더 경로>"      # 리눅스
@@ -623,7 +625,8 @@ setx FIRE_LANE_DATA "<raw 상위 폴더 경로>"       # 윈도우
 > 레거시로 처리하며, 설정돼 있으면 `FIRE_LANE_DATA` 를 덮어써 기계 간
 > 산출물이 갈린다. 실행 시 경고가 나온다. 셸 프로필에 남아 있으면 지울 것.
 
-`web/data` 는 CI 가 **60MB 상한**을 감시한다. 타일이 늘어 넘으면 머지가 막힌다.
+`web/data` 는 **40MB 상한**이다. 세 곳이 같은 값을 본다 — `contract.yml` ·
+`tools/commit_policy.py` · `pipeline.WEB_MAX_MB`. 넘으면 머지가 막힌다.
 
 ### 향후 — AWS S3
 
@@ -701,7 +704,7 @@ CCTV 가 없어 영상판정이 불가능한 223구간의 주차 압력을
 
 | | 담당 | 영역 |
 |---|---|---|
-| 오창준 `@AIMasterFox` | GIS | `src/etl/` · `sources.yaml` · `data/` |
+| 오창준 `@AIMasterFox` | GIS | `src/firelane/` · `sources.yaml` · `data/` |
 | 우지혜 `@marscoolcat` | UI · 3D | `web/index.html` |
 | 경계 | CI | `tests/test_contract.py` |
 
@@ -712,7 +715,7 @@ CCTV 가 없어 영상판정이 불가능한 223구간의 주차 압력을
 파일이 겹치지 않으므로 동시에 작업하고 각자 푸시하면 된다.
 
 ```
-GIS   src/etl/ · sources.yaml · data/ · docs/
+GIS   src/firelane/ · sources.yaml · data/ · docs/
 UI    web/index.html · app.js · config.js · style.css
 ```
 
@@ -726,9 +729,13 @@ UI    web/index.html · app.js · config.js · style.css
 
 숫자를 만들어내는 것이 아니라 **어디까지 알 수 있고 어디부터 모르는지를 긋는 것**이다.
 
-- 골목의 42%는 도면만으로 판정이 안 된다 → 주황으로 표시한다
-- 그중 다시 64%는 CCTV가 없어 영상판정도 안 된다 → 회색으로 표시한다
+- 골목의 49%는 도면만으로 판정이 안 된다 → 주황으로 표시한다
+- 그중 다시 65%는 CCTV가 없어 영상판정도 안 된다 → 회색으로 표시한다
 - 폭 값은 실측 전이다 → 화면 상단에 상시 경고한다
+
+> 실측 542 / 1,101 = 49.2%, 그중 352 / 542 = 64.9%. 종전에 적혀 있던
+> 42% · 64% 는 1,266구간 시절 값이다. <!--stale-ok--> 뒤 숫자는 §3-5 의 65% 와
+> 같은 값을 반올림만 달리한 것이었어서 표기를 통일했다.
 
 **모르는 것을 모른다고 표시하는 것**이 이 지도의 설계 원칙이다.
 전부 초록으로 칠하면 첫 질문에 무너진다.
@@ -825,7 +832,7 @@ clear     최소 폭 >= 3.0 + 2 x 2.0 = 7.0
 같은 판정이 이어지는 **연속 구간 전체**의 길이다. 5m짜리 조각 하나로는 지정되지 않는다.
 
 ```
-소방청 지정 기준 충족   139구간
+소방청 지정 기준 충족   158구간
 연속 구간 최장           505.5m
 ```
 
@@ -1158,7 +1165,7 @@ CCTV   실선   "이 범위를 본다"          radius 25m
 **의미가 정반대라 선 종류로 구분한다.** 범례에도 그렇게 적어주세요.
 가로등 좌표는 지번 단위 대표점이라 실제 폴 위치가 아닙니다.
 
-**임계값(3.0 / 7.0 / 25.0)의 정본은 `src/etl/segments.py` 이다.**
+**임계값(3.0 / 7.0 / 25.0)의 정본은 `src/firelane/seg/params.py` 이다**(R3).
 `config.js` 의 같은 숫자는 화면 설명용 사본이라 바꿔도 판정은 안 바뀝니다.
 
 ---
@@ -1460,12 +1467,10 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 2.5GB 가 저�
 파이프라인은 오창준 로컬에서만 돈다.
 
 ```bash
-uv run python src/etl/ingest.py        # ★ 직접 호출 금지. §12 참조
-uv run python src/etl/segments.py      # 노딩 → 폭 → 판정
-uv run python src/etl/terrain.py       # 공개DEM → Terrain-RGB 타일
-uv run python src/etl/ortho.py         # 항공정사영상 → 배경 타일 (25cm)
-uv run python src/etl/publish_web.py   # → web/data
-uv run pytest tests/test_contract.py   # 계약 확인
+fire-lane                       # 전체 (ingest → segments → … → publish → 계약)
+fire-lane --from segments       # 그 단계부터 끝까지
+fire-lane --only publish
+uv run pytest tests/test_contract.py
 ```
 
 이 4줄을 돌린 뒤 `web/data` 를 커밋하면 지혜님이 `git pull` 만으로 새 판정을 받는다.
@@ -1487,7 +1492,7 @@ https://woongtopia.github.io/fire-lane/
 
 | 경로 | 주인 |
 |---|---|
-| `src/etl/`, `sources.yaml`, `data/` | 오창준 |
+| `src/firelane/`, `sources.yaml`, `data/` | 오창준 |
 | `web/index.html` | 우지혜 |
 | `web/data/` | 생성물. 아무도 손으로 안 고친다 |
 
@@ -1495,7 +1500,7 @@ https://woongtopia.github.io/fire-lane/
 
 ```bash
 git checkout --theirs web/data/     # gis 쪽을 취한다
-uv run python src/etl/publish_web.py  # 또는 재생성
+fire-lane --only publish              # 또는 재생성
 ```
 
 ### 커밋 메시지
@@ -1517,8 +1522,8 @@ git add -A
 git commit -m "gis: 전자지도 승인분 반영 + 세그먼트 판정 + 표출 지도
 
 - sources.yaml: boundary_emd / building / building_entrance / hydrant_point 추가
-- src/etl/segments.py: 노딩(끝점투영 0.5m) → 폭 밴드 → 진입판정
-- src/etl/publish_web.py: web/data 경량 사본
+- src/firelane/segments.py: 노딩(끝점투영 0.5m) → 폭 밴드 → 진입판정
+- src/firelane/publish_web.py: web/data 경량 사본
 - web/: MapLibre + deck.gl(interleaved) + V-World
 - tests/test_contract.py: GIS↔UI 계약 검증 14종
 - 세그먼트 641개 확정 (기존 문서의 '222'는 근거 없음)"
@@ -1574,8 +1579,7 @@ CI가 즉시 잡는다.
 실측 후 갱신은 이 순서다. **UI 코드는 손대지 않는다.**
 
 ```bash
-python src/etl/segments.py       # 폭 재산출
-python src/etl/publish_web.py    # web/data 갱신
+fire-lane --from segments        # 폭 재산출 → web/data 갱신까지
 pytest tests/test_contract.py    # 계약 유지 확인
 ```
 
@@ -1684,11 +1688,11 @@ data/field/sample_segments.csv · obs_points.csv · fieldsheet.md
 #### 신규 도구
 
 ```
-src/etl/segkey.py         seg_uid + 관측점 방위각
-src/etl/ngi.py            NGI/NDA 리더. 기하만 읽고 .nda 를 버리고 있었다
-src/etl/inventory.py      원본 인벤토리 → sources.yaml AUTO 블록. 미사용 속성 267개
-src/etl/datalog.py        대장 정합성 · 계보 · 영향분석 · 백업 검증
-src/etl/sample_design.py  실측 표본 25구간 · 관측점 75
+src/firelane/segkey.py         seg_uid + 관측점 방위각
+src/firelane/ngi.py            NGI/NDA 리더. 기하만 읽고 .nda 를 버리고 있었다
+src/firelane/inventory.py      원본 인벤토리 → sources.yaml AUTO 블록. 미사용 속성 267개
+src/firelane/datalog.py        대장 정합성 · 계보 · 영향분석 · 백업 검증
+src/firelane/sample_design.py  실측 표본 25구간 · 관측점 75
 ```
 
 #### 발견한 결함
@@ -1872,8 +1876,8 @@ bbox 기준 4,336도 폐기.
 ```
 data/processed/segments.geojson · segments_5186.gpkg · segments.schema.json
 web/index.html + web/data/          MapLibre + deck.gl + V-World
-src/etl/segments.py                 노딩 → 폭 → 판정
-src/etl/publish_web.py              표출용 경량 사본
+src/firelane/segments.py                 노딩 → 폭 → 판정
+src/firelane/publish_web.py              표출용 경량 사본
 ```
 
 #### ⚠ ingest.py 알려진 문제
@@ -2089,10 +2093,10 @@ uv run python ~/_patch/apply.py ~/fire-lane
 ### 14-2. 파이프라인은 한 명령이다
 
 ```bash
-python src/etl/pipeline.py              # 전체
-python src/etl/pipeline.py --check      # 실행 없이 상태만
-python src/etl/pipeline.py --from segments   # 그 단계부터 끝까지
-python src/etl/pipeline.py --only terrain ortho
+fire-lane                                    # 전체
+fire-lane --check                            # 실행 없이 상태만
+fire-lane --from segments                    # 그 단계부터 끝까지
+fire-lane --only terrain ortho
 ```
 
 ```
@@ -2116,7 +2120,8 @@ publish 는 terrain/ortho 가 기록한 타일 범위를 읽어 보존한다.
 지형 타일 22장 · 항공영상 388장 · web/data 12MB
 ```
 
-이 숫자가 다르면 뭔가 잘못된 것이다. `src/etl/pipeline.py` 의 `EXPECT` 에 있다.
+이 숫자가 다르면 뭔가 잘못된 것이다. 기대값 정본은
+`data/golden/segments.fingerprint.json` 이며 `tools/golden.py lock` 으로 갱신한다.
 
 몇 번을 돌려도 결과가 같다. 두 번째부터는 "동일" 로 표시되고 백업도 안 생긴다.
 `--dry-run` 으로 무엇이 바뀌는지만 볼 수 있다.
@@ -2135,7 +2140,7 @@ export FIRE_LANE_DATA="<raw 상위 폴더 경로>"
 원본을 새로 받으면
 
 ```bash
-uv run python src/etl/normalize_raw.py /mnt/c/Users/Fox/Downloads
+uv run python -m firelane.normalize_raw /mnt/c/Users/Fox/Downloads
 ```
 
 ### 14-4. 푸시
@@ -2387,7 +2392,7 @@ index.html 에서 지운 요소를 app.js 가 참조하면 거기서 실행이 �
 #### 이렇게
 
 > ※ 수치 표기 원칙: 본 문서의 모든 수치는 **2026-08-12** 기준으로 원본 데이터에서
-> 코드로 재산출한 값이다(`src/etl/pipeline.py` 한 명령으로 재현된다).
+> 코드로 재산출한 값이다(`src/firelane/pipeline.py` 한 명령으로 재현된다).
 > 행정구역경계(EMD_CD 12210108)를 확보하여 bbox 기준 잠정치는 전부 교체했다.
 >
 > **폭 값은 아직 미검증이다**(`width_verified: false`). 레이저 거리계 실측 후
@@ -2566,7 +2571,7 @@ CCTV_RANGE 25m     잠정값. 429구간(회색 전부)의 판정을 가른다. �
 값을 못 내면 회색으로 도망치지 않는다. 정확한 소스로 푼다.
 색과 사유를 새로 만들지 않는다.
 문서에 적힌 값과 코드가 다르면 코드가 정본이고, 문서를 고친다.
-숫자가 바뀌면 EXPECT 를 같이 바꾸고 커밋 메시지에 남긴다.
+숫자가 바뀌면 `tools/golden.py lock` 으로 지문을 다시 뜨고 커밋 메시지에 남긴다.
 고치기 전에 검증 게이트를 먼저 정한다. 실패하면 그 안을 버린다.
 진단 없이 함수를 고치지 않는다. 사유 코드를 먼저 찍는다.
 재구현 진단 스크립트를 만들지 않는다. 파이프라인 안에 계측을 넣는다.
@@ -2588,6 +2593,9 @@ wmax/wmin > 5 를 자기모순으로 보는 안전장치를 넣었다 (담이 �
 .nda 속성을 통째로 버린 채 도로폭·일방통행을 다른 소스에서 구하려 했다
 같은 EDA 를 세 번 반복했다 (인벤토리가 없어서)
 소방서 7구간을 게이트로 쓰고 그 결과를 "외부 검증"이라 불렀다
+일회성 패처를 지우지 않아 새 스크립트가 옛 것에 가려 돌았다(08-23)
+scan_data 가 앞 루프의 마지막 크기를 더해 폴더 용량을 배수로 부풀렸다
+  — 숫자가 그럴듯해서 오래 안 보였다. 합계와 대조했으면 즉시 드러났다
 ```
 
 **진단 도구는 저장소에 있다.** `/tmp` 일회성 스크립트를 만들지 마라.
@@ -2601,13 +2609,13 @@ FIRE_LANE_DEBUG_SEG=DM00123   seg_id 지정. 실행 간 안 맞으니 XY 를 쓸
 ```
 
 ```
-uv run python src/etl/inventory.py --dry   원본 레이어·속성 인벤토리 (미사용 속성 표시)
-uv run python src/etl/datalog.py check     대장 정합성
-uv run python src/etl/datalog.py impact K  소스 K 를 바꾸면 깨지는 것
-uv run python src/etl/datalog.py graph     계보 그래프 (docs/lineage.mmd, 생성물)
-uv run python src/etl/datalog.py backup D  외장 백업 + sha256
-uv run python src/etl/datalog.py verify D  백업 대조. 복사만 하고 검증 안 하면 백업이 아니다
-uv run python src/etl/ngi.py FILE.ngi      NGI 도엽 레이어·속성 일람
+uv run python -m firelane.inventory --dry   원본 레이어·속성 인벤토리 (미사용 속성 표시)
+uv run python -m firelane.datalog check     대장 정합성
+uv run python -m firelane.datalog impact K  소스 K 를 바꾸면 깨지는 것
+uv run python -m firelane.datalog graph     계보 그래프 (docs/lineage.mmd, 생성물)
+uv run python -m firelane.datalog backup D  외장 백업 + sha256
+uv run python -m firelane.datalog verify D  백업 대조. 복사만 하고 검증 안 하면 백업이 아니다
+uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 ```
 
 ---
@@ -2640,6 +2648,37 @@ data/norm/   압축 해제 + 인코딩 통일 + 확장자 통일 + 파일명 규
 
 `field` 를 raw 등급으로 두는 이유: **실측은 다시 못 만든다.** 파이프라인은
 언제든 재실행되지만 8월 20일 오전 10시의 그 골목은 다시 안 온다.
+
+### 18-1a. 그라운드 룰 셋
+
+> ★ 2026-08-23 흡수. `data/raw/README.md` 에 따로 살던 규칙이다. 그 파일은
+> 다섯 번째 문서였고(R15), 대장·MASTER 와 셋이 서로 어긋나 있었다 —
+> `EXPECT 1087`(옛값) · `FIRE_LANE_RAW`(폐기) · `60MB`(상한은 40) · <!--stale-ok-->
+> 파일명 다수가 이관 전 이름이었다. 흡수하고 파일은 지운다.
+
+**R2. 재생성 가능성이 `.gitignore` 의 근거다**
+
+산출물을 제외하는 이유는 단 하나 — **한 명령으로 다시 만들 수 있어서**다.
+재생성이 안 되는 파일을 ignore 하면 그 파일은 사실상 소실된다.
+
+> `data/processed/*.gpkg` 를 "재생성된다"는 근거로 제외했는데
+> `ngii1k_5186.gpkg` 만 그 전제가 깨져 있었다(`ingest.py` 에 핸들러 없음).
+> 결과: 다른 기기에서 폭 주 소스 없이 파이프라인이 돌아 `clear 392 → 346`. <!--stale-ok-->
+> **ignore 목록에 넣기 전에 `fire-lane` 으로 재생성되는지 먼저 확인한다.**
+
+**R3. 등록되지 않은 데이터는 없는 데이터다**
+
+`sources.yaml` 에 항목이 없으면 파이프라인이 모른다. raw 폴더에 있어도
+없는 것이다. 새 데이터를 받으면 **파일을 옮기기 전에 대장부터 쓴다.**
+
+**R4. `feeds` 를 못 채우면 raw 에 둘 이유가 없다**
+
+모든 항목은 `feeds`(어느 산출물의 입력인가)를 갖는다. 채울 수 없으면
+`kind: raw_only` + `feeds: 미투입 — <언제 쓸지>` 로 명시한다.
+
+> 이 규칙이 없어서 `juso_road_geom` 291MB(전자지도로 대체된 구 소스)가
+> raw 에 남아 "2.2GB 인프라 문제"로 오인하게 만들었다.
+> **문제는 데이터를 모은 데서 안 나오고 안 치운 데서 나온다.**
 
 ---
 
@@ -2738,14 +2777,14 @@ datasets:
 
 outputs:
   segments:
-    produced_by: src/etl/segments.py
+    produced_by: src/firelane/segments.py
     path: data/processed/segments.geojson
     inputs: [ngii1k, ngii_road, road_rw, building, boundary_emd, cctv]
     stable_key: seg_uid
     consumers:
       - web/app.js
-      - src/etl/publish_web.py
-      - src/etl/sample_design.py
+      - src/firelane/publish_web.py
+      - src/firelane/sample_design.py
       - tests/test_contract.py
     what: 구간 단위 통행 판정. 1,101행
     verified: false
@@ -2762,7 +2801,8 @@ outputs:
 | `caveats` | 같은 함정에 두 번 빠진다 |
 | `crs_native` | 좌표계 사고. 이 프로젝트에서 이미 겪었다 |
 | `verified` | 미검증 값이 검증된 값처럼 쓰인다 |
-| `license` | 발표·공개 때 막힌다 |
+| `feeds` | 못 채우면 raw 에 둘 이유가 없다(R4). 안 치운 소스가 쌓인다 |
+| `license` | 발표·공개 때 막힌다. ★ `juso` 전자지도는 도로명주소법 시행령 제46조 **심사 승인** 데이터다 — 승인 당사자의 사용과 제3자 재배포는 다르다. 퍼블릭 버킷·공개 저장소에 올리지 않는다 |
 
 `consumers` 가 네가 말한 **"이 데이터가 지금 어디에 쓰이고 있는가"** 다.
 GIS 는 협업이라 이게 없으면 소스 하나를 못 건드린다.
@@ -2828,7 +2868,7 @@ retired:
         도로명   전부 빈 문자열 → 채워짐
         속성     자동차전용 추가
       좌표계는 둘 다 EPSG:5186 으로 동일하다.
-      전용 파서 src/etl/ngi.py 가 불필요해진다.
+      전용 파서 src/firelane/ngi.py 가 불필요해진다.
     at:        2026-08-17
     successor: ngii1k (vworld/2MAP1000_SHP_광주_동구.zip)
 
@@ -2883,7 +2923,7 @@ retired:
       "rows": 1087,
       "crs": 4326,
       "bbox": [126.911, 35.140, 126.941, 35.161],
-      "produced_by": "src/etl/segments.py",
+      "produced_by": "src/firelane/segments.py",
       "input_shas": {"ngii1k": "a11b...", "building": "77c2..."},
       "params": {"TRUCK": 3.0, "PARK": 2.0, "CCTV_RANGE": 25.0}
     }
@@ -2977,7 +3017,7 @@ retired:
 두 방어 다 실패하면 안내 메시지 대신 `NameError` 로 죽는 상태였고, 한 번도
 실패한 적이 없어서 80초짜리 실행이 내내 멀쩡히 돌았다. 계약 테스트도 golden 도
 **성공 경로의 산출물**만 보므로 이런 것을 못 잡는다.
-출처는 `tools/stale_guard_20260818.py` 다 — 붙이기만 하고 붙인 결과를 아무도
+출처는 `tools/stale_guard_20260818.py`(삭제됨) 다 — 붙이기만 하고 붙인 결과를 아무도
 실행하지 않았다. R9 가 금지하는 방식의 전형적인 결과다.
 
 **R11. 코드를 옮길 때는 산출물이 같다는 것을 증명하고 옮긴다**
@@ -3003,7 +3043,7 @@ PARAM TRUCK=3.0 PARK=2.0 CCTV_RANGE=25.0
 `if w < 3.0` 이 함수 중간에 박히면 임계 변경이 누락된다.
 
 **R3. 상수를 옮길 때는 정본을 하나만 둔다**
-`config.js` 의 3.0/7.0/25.0 은 **표시용 사본**이고 정본은 `src/etl/seg/params.py` 다.
+`config.js` 의 3.0/7.0/25.0 은 **표시용 사본**이고 정본은 `src/firelane/seg/params.py` 다.
 (2026-08-18 Stage 1 에서 `segments.py` 에서 꺼냈다. 값은 불변, 위치만 이동.
 `test_seg_geom.py::test_params_are_not_redefined_in_segments` 가 재정의를 막는다.)
 이건 이미 주석에 적혀 있다. 유지한다.
@@ -3033,7 +3073,7 @@ except Exception:
 계약 테스트에 **컬럼 집합 == 스키마 키 집합** 검사를 넣는다.
 
 **R8. 일회성 스크립트는 돌리고 지운다. 날짜를 파일명에 박지 않는다**
-`tools/docfix_20260817.py` 류 9개가 그렇게 쌓였다. 적용 뒤에는 no-op 이고
+`tools/docfix_20260817.py`(삭제됨) 류 9개가 그렇게 쌓였다. 적용 뒤에는 no-op 이고
 둘은 앵커가 깨져 재실행조차 불가능했다. 돌릴 수도 없고 돌릴 필요도 없는
 코드 1,000줄이 남는다. 남길 값이 있으면 **이유만** `docs/DECISIONS.md` 로
 옮긴다. `tools/` 에는 날짜 없는 재실행 가능한 도구만 둔다.
@@ -3082,8 +3122,8 @@ V-WORLD 동구 SHP 판은 모든 계약 검사를 통과하면서 스코프의 6
 `sources.yaml` 의 `inputs` / `consumers` 로 자동 생성한다. 손으로 안 그린다.
 
 ```bash
-uv run python src/etl/datalog.py graph        # → docs/lineage.mmd (mermaid)
-uv run python src/etl/datalog.py impact ngii1k  # ngii1k 바꾸면 깨지는 것 전부
+uv run python -m firelane.datalog graph        # → docs/lineage.mmd (mermaid)
+uv run python -m firelane.datalog impact ngii1k  # ngii1k 바꾸면 깨지는 것 전부
 ```
 
 `impact` 가 실무에서 제일 자주 쓴다. 소스 갱신 전에 이걸 돌린다.
@@ -3103,14 +3143,37 @@ uv run python src/etl/datalog.py impact ngii1k  # ngii1k 바꾸면 깨지는 것
 백업이 없어서가 아니라 백업이 깨진 걸 몰랐던 것이다.
 
 ```bash
-uv run python src/etl/datalog.py backup /Volumes/FIRELANE   # 복사 + sha 기록
-uv run python src/etl/datalog.py verify  /Volumes/FIRELANE  # 대조
+uv run python -m firelane.datalog backup /Volumes/FIRELANE   # 복사 + sha 기록
+uv run python -m firelane.datalog verify  /Volumes/FIRELANE  # 대조
 ```
 
 - `raw` 와 `field` 는 **매 실측 당일** 백업한다. 다시 못 만드는 데이터다
 - `processed` 는 주 1회. 재생성 가능하지만 재생성에 시간이 든다
 - **월 1회 복원 훈련.** 외장에서 빈 폴더로 복원해서 파이프라인이 도는지 본다.
   복원해 본 적 없는 백업은 백업이 아니다
+
+### 백업과 기기 간 이동은 다르다
+
+```
+백업   외장 SSD. 소실 대비. 읽을 일 없다
+이동   ✗ SSD 를 쓰지 않는다
+```
+
+**SSD 를 이동 수단으로 쓰면 단일 장애점이 된다.** GPU 학습 중이라 SSD 를
+못 빼서 하루가 날아간 적이 있다(2026-08-13). 이동은 **축소본을 각 기기에
+복제**하는 것으로 대신한다. 동일성은 파일을 옮겨서가 아니라 해시로 본다
+(`python -m firelane.ingest --check`).
+
+**전국판을 들고 다니지 않는다.**
+
+```
+its_nodelink_kr    258MB → 광주 축소 시 약 11MB
+sbiz_store_kr      337MB → 광주 축소 시 약 9.6MB
+합계               645MB → 약 70MB
+```
+
+축소 후 파이프라인을 재실행해 산출물이 동일한 것을 확인하고 나서 교체한다.
+전국 원본은 대장의 `provider` + `scope` 로 다시 받는다.
 
 ---
 
@@ -3174,7 +3237,7 @@ git_dirty 상태로 만든 산출물을 발표에 사용
 | 백업 검증 | 없음 | sha 대조 + 월 1회 복원 훈련 |
 | 안정 키 | 없음 | `seg_uid` ✅ |
 | 계약(contract) | 없음 | 데이터셋별 layers·fields·crs·rows_min |
-| 획득 게이트 | 없음 | landing → raw / _quarantine 3판정 |
+| 획득 게이트 | `tools/acquire.py` ✅ | landing → raw / _quarantine 3판정 + sha 검증 |
 | retired | 없음 | 폐기 5건 기록 ✅ |
 | 스키마 검사 | 일부 | 컬럼 집합 == 스키마 키 집합 |
 | GeoJSON 메타 | 불가 | GeoParquet 전환 시 헤더 |
@@ -3188,7 +3251,7 @@ git_dirty 상태로 만든 산출물을 발표에 사용
 
 ```
 landing (외장 SSD fire-lane-data/)     다운로드 원본. 손 안 댐
-        ↓  acquire.py stage  — 대장 매칭
+        ↓  tools/acquire.py --stage  — 대장 매칭 + sha 기록
 data/raw/<제공기관>/                    매칭됨. 원본 파일명 유지
 data/_quarantine/                      매칭 안 됨. 삭제하지 않고 격리
         ↓  normalize_raw.py
@@ -3204,6 +3267,31 @@ data/processed/
 대장에 있음 + 파일 없음   →  ★ 결손 경고
 대장에 없음 + 파일 있음   →  _quarantine. 사람이 대장 추가 or retired 등재
 ```
+
+### 명령
+
+```bash
+uv run python tools/acquire.py                  세 판정만 (아무것도 안 옮긴다)
+uv run python tools/acquire.py --stage --yes    landing → raw 편입 + sha 기록
+uv run python tools/acquire.py --verify         raw sha 대조. 종료코드가 게이트다
+uv run python tools/acquire.py --prune-landing  raw 와 sha 가 같은 원본만 삭제
+uv run python tools/acquire.py --quarantine     대장에 없는 파일 격리
+```
+
+> ### ★ 이 도구는 2026-08-23 까지 **없었다**
+>
+> 이 절이 `acquire.py stage` 라고 이름까지 적어놓고 있었는데 파일이 없었다.
+> `contract.py` 머리말이 적은 것과 같은 일이다 — *"설계는 있었고 구현이
+> 없었다."* 그래서 실제로는 `normalize_raw` 가 복사만 하고 **검증이 없었다.**
+>
+> 그 결과가 SSD 스캔에 그대로 찍혔다 — landing 32개 2.4GB 가 raw 32개와
+> 중복이고, 대장에 없는 파일 4건이 raw 에 앉아 있고, 그중 970MB 짜리는
+> 폴더 규칙·명명규칙·대장을 전부 벗어나 있었다.
+>
+> 더 나쁜 것은 `normalize_raw` 의 "이미 있음" 판정이 **크기만** 봤다는 것이다.
+> 313MB 정사영상이 전송 중 잘려도 통과한다. §18-8 이 백업에 대해 적은 문장이
+> 획득에도 그대로 적용된다 — *"문제는 백업이 없어서가 아니라 백업이 깨진 걸
+> 몰랐던 것이다."* 이제 두 곳 다 sha 로 본다.
 
 **두 번째가 제일 중요하다.** 2026-08-14 에 외장 백업이 중단됐는데 아무도
 몰랐다. raw 7개 폴더 중 4개만 넘어간 상태로 다른 기기에서 파이프라인을
@@ -3390,4 +3478,3 @@ ArUco 실측은 현실적으로 3~5회다. 그 몇 번으로 파이프라인 오
 
 ChArUco 는 카메라 내부 파라미터 보정용이고 현장 ArUco 는 H 오차 검증용이다.
 보드만으로 GIS 절대좌표가 생기지 않는다.
-

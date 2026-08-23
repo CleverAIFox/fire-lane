@@ -185,18 +185,6 @@ def record(processed: Path, root: Path, step, expand) -> None:
         encoding="utf-8")
 
 
-def _skip_mutated(step) -> set:
-    """mutates 는 자기가 덧쓴다. 상류가 다시 만들면 지문이 당연히 달라진다.
-
-    terrain 이 segments.geojson 에 z 를 넣는다. 그러면 terrain 이 기억하는
-    지문은 'z 가 든 상태' 이고, segments 가 재실행되면 'z 가 없는 상태' 가
-    된다. 매번 다르다 — 이것은 오탐이다.
-
-    낡은 입력 탐지는 reads 로 충분하다. reads 는 아무도 덧쓰지 않는다.
-    """
-    return {str(p) for p in getattr(step, "mutates", ())}
-
-
 def verify(processed: Path, root: Path, step, expand, steps,
            fresh: set[str] | None = None) -> None:
     """단계 실행 **전**. 세 가지를 본다. 어긋나면 LineageError.

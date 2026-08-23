@@ -27,16 +27,26 @@ MAX_WEBDATA_MB = 40        # contract.yml 과 같은 값
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def sh(*args: str) -> list[str]:
+def sh(*args: str) -> list[str] | None:
+    """git 출력. **명령 자체가 실패하면 None** 을 낸다.
+
+    ★ 2026-08-23. 종전에는 실패해도 빈 리스트를 냈고, main 이 그것을
+      "검사할 파일이 없다" 로 읽어 조용히 0 을 반환했다. git 이 없거나
+      저장소가 아닌 곳에서 돌리면 **아무것도 검사하지 않고 초록불**이다.
+      막는 것이 일인 도구가 못 보는 상태를 통과로 보고하면 안 된다 —
+      이 저장소가 반복해 겪은 "검사가 죽었는데 초록불" 그 자체다.
+    """
     r = subprocess.run(args, capture_output=True, text=True, cwd=ROOT)
+    if r.returncode:
+        return None
     return [x for x in r.stdout.splitlines() if x]
 
 
-def staged() -> list[str]:
+def staged() -> list[str] | None:
     return sh("git", "diff", "--cached", "--name-only", "--diff-filter=ACM")
 
 
-def tracked() -> list[str]:
+def tracked() -> list[str] | None:
     return sh("git", "ls-files")
 
 
@@ -137,8 +147,22 @@ def check_size(paths: list[str]) -> list[str]:
 def main() -> int:
     full = "--tracked" in sys.argv
     paths = tracked() if full else staged()
+
+    # ★ 못 본 것과 볼 것이 없는 것은 다르다.
+    if paths is None:
+        print("\033[31m커밋 정책: git 목록을 못 읽었다\033[0m")
+        print("  저장소가 아니거나 git 이 없다. 검사하지 못했으므로 통과가 아니다.")
+        return 1
+    if full and not paths:
+        print("\033[31m커밋 정책: 추적 파일이 0개다\033[0m")
+        print("  --tracked 는 저장소 전체를 보는 모드다. 0개는 정상이 아니다.")
+        return 1
     if not paths:
+        # 스테이지가 비어 있는 것은 정상이다(커밋할 것이 없다).
         return 0
+
+    # ★ web/data 상한은 스테이지 내용과 무관하게 본다. 종전에는 이 검사가
+    #   check_size(paths) 안에 묶여 있어, 스테이지가 비면 같이 죽었다.
 
     bad = check_paths(paths) + check_size(paths)
     if not bad:

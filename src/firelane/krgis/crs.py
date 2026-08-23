@@ -24,19 +24,12 @@ from pyproj.exceptions import CRSError
 # ─────────────────────────────────────────────────────────────
 CRS_METRIC = "EPSG:5186"   # 중부원점 GRS80, y+600000. 광주 전역이 중부원점 구역.
 CRS_WGS84 = "EPSG:4326"   # 웹 표출 / GeoJSON 표준
-CRS_WEBMERC = "EPSG:3857"   # 타일 좌표
 
-# 데이터 출처별 실제 좌표계 (2026-08 기준 확인값)
-SOURCE_CRS = {
-    "도로명주소 전자지도": "EPSG:5179",   # UTM-K(GRS80). 공식 고지: ITRF2000/GRS80/UTM
-    "도로명주소 실폭도로": "EPSG:5179",
-    "표준노드링크(ITS)": "EPSG:5186",
-    "연속지적도": "EPSG:5174",   # 구 지적 계열. towgs84 필수
-    "GIS건물통합정보": "EPSG:5179",
-    "수치지도 2.0": "EPSG:5186",
-    "소상공인 상가정보": "EPSG:4326",   # CSV의 경도/위도 컬럼
-    "공공데이터포털 CSV 위경도": "EPSG:4326",
-}
+# ★ SOURCE_CRS 표는 삭제했다(2026-08-23). 0회 참조였고, 같은 정보가
+#   sources.yaml 의 `crs` · `crs_native` 에 데이터셋별로 있다.
+#   대장이 정본인데 코드에 사본을 두면 한쪽만 고치는 날이 온다 —
+#   실제로 이 표는 "수치지도 2.0: EPSG:5186" 에서 멈춰 있었고,
+#   그 사이 ngii_road 는 5179 로, ngii1k 는 V-WORLD 5186 으로 갈렸다.
 
 # ─────────────────────────────────────────────────────────────
 # 좌표계 지문 (광주 동구 동명동 126.9245E, 35.1490N 기준 계산값)
@@ -108,32 +101,13 @@ def probe_crs(x: float, y: float, bbox=GWANGJU_BBOX,
     return out
 
 
-def assert_defined(gdf, name: str, expected: str | None = None):
-    """GeoDataFrame의 CRS가 정의돼 있는지, 기대값과 맞는지 검증.
-    정의 안 된 채로 파이프라인에 흘러들어가는 것을 여기서 끊는다."""
-    if gdf.crs is None:
-        raise ValueError(
-            f"[{name}] CRS 미정의. .prj가 없다. "
-            f"probe_crs()로 판별한 뒤 gdf.set_crs(코드, allow_override=True)로 "
-            f"'정의'하라. to_crs()는 정의가 아니라 '변환'이다. 헷갈리면 다 틀어진다."
-        )
-    if expected and CRS.from_user_input(gdf.crs) != CRS.from_user_input(expected):
-        raise ValueError(f"[{name}] CRS 불일치: 실제 {gdf.crs.to_string()} / 기대 {expected}")
-    return gdf
-
-
-def to_metric(gdf, name: str = "?"):
-    """거리·면적·버퍼 연산 전 항상 이걸 통과시킨다.
-    4326에서 buffer/length 계산하면 단위가 '도'라 결과가 쓰레기가 된다."""
-    assert_defined(gdf, name)
-    return gdf.to_crs(CRS_METRIC)
-
-
-def to_wgs84(gdf, name: str = "?"):
-    """웹 표출 직전 단 한 번만 호출. GeoJSON 규격상 4326이 표준이다."""
-    assert_defined(gdf, name)
-    return gdf.to_crs(CRS_WGS84)
-
+# ★ assert_defined / to_metric / to_wgs84 는 삭제했다(2026-08-23).
+#   셋 다 0회 참조였다. "정의(set_crs) 후 변환(to_crs)" 규약 자체는
+#   살아 있고, 강제자는 코드가 아니라 데이터 쪽에 있다 —
+#   ingest 가 sources.yaml 의 crs 로 set_crs 하고, contract.py 가
+#   선언과 실물을 대조하며, MASTER §18-12 의 CRS 검증 3단계가
+#   교차 정합까지 본다. 아무도 안 부르는 래퍼를 남겨두면 다음 사람이
+#   "쓰이나 보다" 하고 유지한다.
 
 def offset_between(x: float, y: float, crs_a: str, crs_b: str) -> float:
     """같은 수치 좌표를 두 좌표계로 각각 해석했을 때 지상에서 몇 m 벌어지는지.

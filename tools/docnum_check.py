@@ -76,6 +76,12 @@ RETIRED: dict[str, list[str]] = {
     "clear": ["392", "443", "386"],
     "needs_cv": ["191", "209"],
     "blocked": ["57", "62", "63"],
+    # ★ 2026-08-23 추가. 실제 nfa_designated 는 158 인데 MASTER §10 이 139,
+    #   PLAN §7-2-4 가 153 으로 적고 있었다. PRESENT 검사는 §2 표에 158 이
+    #   있다는 이유로 통과했다 — "있는지" 만 보는 검사의 한계 그대로다.
+    "소방청 지정": ["139", "153"],
+    # ★ width_cov 0.5 미만은 실측 4 인데 PLAN 두 곳이 69 였다.
+    "width_cov 0.5 미만": ["69"],
 }
 
 CONTEXT = {
@@ -83,6 +89,9 @@ CONTEXT = {
     "clear": ("clear", "통행 가능", "초록"),
     "needs_cv": ("needs_cv", "판정 보류", "주황"),
     "blocked": ("blocked", "통행 불가", "빨강"),
+    # 문맥 없이 139·153·69 를 잡으면 무관한 숫자가 무더기로 걸린다.
+    "소방청 지정": ("nfa_designated", "소방청 지정"),
+    "width_cov 0.5 미만": ("width_cov",),
 }
 
 
@@ -98,6 +107,10 @@ def counts() -> dict[str, int]:
         "in_emd": sum(1 for p in P if p["in_emd"]),
         "cctv_in": sum(1 for p in P if (p["cctv_dist_m"] or 9e9) <= 25),
         "nfa": sum(1 for p in P if p.get("nfa_designated")),
+        # 채택 소스가 구간의 절반도 못 덮은 것. D-25 실측 1순위이고
+        # MASTER §7 · PLAN §3-1 · §6-2 가 같은 숫자를 말해야 한다.
+        "cov_thin": sum(1 for p in P
+                        if p.get("width_cov") is not None and p["width_cov"] < 0.5),
     }
 
 
@@ -179,7 +192,8 @@ def main() -> int:
     # ── 2. RETIRED ────────────────────────────────────────────
     cur = {"세그먼트 수": c["n"], "unknown(회색)": c["unknown"],
            "clear": c["clear"], "needs_cv": c["needs_cv"],
-           "blocked": c["blocked"]}
+           "blocked": c["blocked"], "소방청 지정": c["nfa"],
+           "width_cov 0.5 미만": c["cov_thin"]}
     for label, old in RETIRED.items():
         if label in cur and str(cur[label]) in old:
             print(f"! RETIRED[{label!r}] 에 현재값 {cur[label]} 이 있다 — 목록을 고쳐라")

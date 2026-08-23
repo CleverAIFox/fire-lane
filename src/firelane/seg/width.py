@@ -283,10 +283,15 @@ class WidthEngine:
             #   MIN_SEG_LEN 주석이 이미 '폭 미산출 후 인접 상속'이라고 적고 있다.
             #   상속 경로가 원래 설계에 있는데 억지 값 때문에 안 쓰이고 있었다.
             #   교차부 폴리곤이 없을 때만 종전 동작(짧으면 재기)을 유지한다.
-            _skip = _inx if (self.xsec_poly is not None and not _short) else _inx
-            if _short and self.xsec_poly is not None:
+            # ★ 2026-08-23. 여기 삼항이 하나 있었는데 양쪽 가지가 `_inx` 로
+            #   같았다(`_inx if (...) else _inx`). 아무 일도 하지 않는 줄이라
+            #   지운다. 실제 분기는 아래 세 줄이 전부이고 동작은 그대로다.
+            #   ruff 는 이런 것을 안 잡는다.
+            if not _short:
+                _skip = _inx
+            elif self.xsec_poly is not None:
                 _skip = self.xsec_poly.intersects(_pt)
-            elif _short:
+            else:
                 _skip = False
             if _skip:
                 _nx_skip += 1

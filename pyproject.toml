@@ -6,6 +6,19 @@ requires-python = ">=3.11"
 
 # 전체 프로젝트 의존성. 팀원은 이 파일 하나만 보면 된다.
 # 스택이 바뀌면 여기만 고치고 devcontainer를 리빌드하면 전원에게 전파된다.
+#
+# ★ 2026-08-23. `requirements-etl.txt` 를 삭제했다. "GIS 만 만지는 사람의
+#   최소 세트" 라는 명분이었는데, 08-21 에 API·vision 9종을 extras 로 내리면서
+#   **아래 dependencies 가 곧 그 최소 세트**가 됐다. 손대장이 둘이 되면 반드시
+#   어긋난다(§18-3) — 실제로 어긋나 있었다.
+#
+#     requirements-etl 에 없는데 ETL 이 import 하던 것
+#       rasterio   terrain.py · ortho.py · quiet_gdal.py
+#       pillow     terrain.py · ortho.py
+#
+#   즉 그 파일로 설치하면 `fire-lane` 이 terrain 단계에서 ImportError 로 죽는다.
+#   참조하는 곳은 0곳이었다(Dockerfile 도 devcontainer 도 `uv sync` 를 쓴다).
+#   `tests/test_guards.py::test_etl_imports_are_declared` 가 재발을 막는다.
 dependencies = [
     # ── GIS / ETL (현재 파이프라인이 실제로 쓰는 것) ──
     "geopandas>=1.1,<2",

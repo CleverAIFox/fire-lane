@@ -57,8 +57,14 @@ def verdict(wmin, wmax, nreg=None):
             return "needs_cv"
         return "clear"
     # 도로폭이 있으면 판정한다. wmax(담~담) 가 없는 것은 실패가 아니다.
-    # 대로는 건물이 WMAX_CAP(40m) 밖이라 벽 사이를 잴 수 없고,
+    # 대로는 건물이 WMAX_CAP(60m) 밖이라 벽 사이를 잴 수 없고,
     # 그런 구간은 도로폭만으로 이미 판정이 끝난다.
+    # ★ 2026-08-23 주석 정정. 여기 40m 라고 적혀 있었으나 params.WMAX_CAP 은
+    #   60.0 이다. MASTER §16 미결 안건이 이 불일치를 적어두고도 안 고쳤다.
+    # ★ 그리고 이 설명은 결손 496건(45%)을 덮지 못한다. 폭 0~3m 골목의 38.7%가
+    #   결손인데 그런 골목에 건물이 60m 밖일 수는 없다. 진짜 원인은 width.py 의
+    #   담~담 측정이 **좌우 동시 검출을 요구**하는 것이다(DECISIONS 08-22
+    #   clearance 조사). 설명이 사례를 안 덮으면 설명이 틀린 것이다.
     # 이 줄이 없어서 필문대로·밤실로 같은 대로 392구간이 회색으로 떨어졌다.
     if wmin is not None:                            return "needs_cv"
     return "unknown"

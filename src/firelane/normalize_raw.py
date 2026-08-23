@@ -8,7 +8,7 @@ normalize_raw.py — 다운로드 폴더의 원본을 명명규칙에 맞게 dat
     python -m firelane.normalize_raw <폴더> --in-place    # 그 자리에서 이름만 정리
     python -m firelane.normalize_raw <폴더> --dry-run
 
-명명규칙 (data/raw/README.md)
+명명규칙 (MASTER §18-2)
     {기관}_{데이터}_{범위}_{기준일}.{확장자}
     폴더명 = 기관명
 
@@ -167,6 +167,26 @@ MISSING = [
 ]
 
 
+def _sha(p: Path, chunk: int = 1 << 20) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    with p.open("rb") as f:
+        while b := f.read(chunk):
+            h.update(b)
+    return h.hexdigest()
+
+
+def _same(a: Path, b: Path) -> bool:
+    """내용이 같은가. 크기가 다르면 sha 를 뜨지 않는다(2.4GB 를 매번 훑지 않게).
+
+    ★ 크기 비교만으로 "같다" 를 말하면 안 된다. 그것이 2026-08-23 까지의
+      동작이었고, 손상본을 조용히 통과시킨다.
+    """
+    if a.stat().st_size != b.stat().st_size:
+        return False
+    return _sha(a) == _sha(b)
+
+
 def convert(src: Path, dst: Path) -> bool:
     """확장자가 바뀌는 경우 내용을 변환한다. 아니면 False.
 
@@ -234,7 +254,19 @@ def main():
                 continue
             name = f.name if tmpl is None else (tmpl.format(*m.groups()) if m.groups() else tmpl)
             dst = (src / name) if a.in_place else (RAW / folder / name)
-            if dst == f or (dst.exists() and dst.stat().st_size == f.stat().st_size):
+            # ★ 2026-08-23. 여기가 **크기만** 보고 있었다.
+            #     if dst.exists() and dst.stat().st_size == f.stat().st_size:
+            #   313MB 정사영상이 전송 중 잘려도, 같은 크기의 다른 판이 와도
+            #   "이미 있음" 으로 통과한다. 실증했다 — 같은 크기 · 다른 sha 두
+            #   파일을 놓으면 그대로 넘어간다.
+            #
+            #   §18-8 이 백업에 대해 적은 것과 같은 병이다:
+            #   "문제는 백업이 없어서가 아니라 백업이 깨진 걸 몰랐던 것."
+            #   획득 쪽에 그 구멍이 그대로 있었다.
+            #
+            #   크기가 같을 때만 sha 를 뜬다. 다르면 어차피 다른 파일이고,
+            #   같으면 내용까지 봐야 "이미 있다" 를 말할 수 있다.
+            if dst == f or (dst.exists() and _same(f, dst)):
                 skip.append((f.name, name if a.in_place else f"{folder}/{name}"))
                 break
             size = f.stat().st_size      # ★ move 하면 원본이 사라지므로 먼저 잰다

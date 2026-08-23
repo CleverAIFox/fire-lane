@@ -62,6 +62,13 @@ def test_CI_가_정책을_돌린다():
 
 
 def test_추적_중인_파일이_정책을_지킨다():
+    # ★ 2026-08-23. 종전에는 저장소가 아닌 곳(배포 zip · 임시 체크아웃)에서도
+    #   이 테스트가 **통과**했다. commit_policy 가 git 실패를 빈 목록으로 읽고
+    #   0 을 반환했기 때문이다 — 테스트도 같이 조용히 통과한 것이다.
+    #   정책은 이제 1 을 반환한다. 테스트는 못 보는 상황을 통과로 위장하지
+    #   않고 명시적으로 건너뛴다.
+    if not (ROOT / ".git").exists():
+        pytest.skip("git 저장소가 아니다 — 추적 목록을 볼 수 없다")
     r = subprocess.run([sys.executable, str(ROOT / "tools" / "commit_policy.py"),
                         "--tracked"], capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, f"추적 파일이 정책을 위반한다\n{r.stdout}"

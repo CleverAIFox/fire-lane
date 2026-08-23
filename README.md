@@ -82,6 +82,31 @@ fire-lane
 uv run python tools/serve.py        # 캐시 없는 개발 서버
 ```
 
+받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
+
+```bash
+bash tools/verify.sh          # 8단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh --fast   # 파이프라인 전량(4분) 생략
+```
+
+`uv pip install -e .` 은 치지 마라. `[build-system]` 이 있으므로 `uv sync` 가
+editable 로 알아서 깐다 — 스크립트 첫 단계가 그것이다.
+
+머지하고 나면 로컬에 찌꺼기가 남는다. 그것도 한 명령이다.
+
+```bash
+uv run python tools/tidy.py          # 무엇이 지워질지만
+uv run python tools/tidy.py --yes    # 실제로
+```
+
+죽은 upstream · 머지된 브랜치 · 일회성 패처 · 격리 산출물 · 캐시를 본다.
+**데이터 계층은 건드리지 않는다** — `data/raw` · `norm` · `field` · `web/data`
+는 `NEVER` 로 막혀 있고 규칙에 실수로 넣어도 안 지워진다.
+
+**마지막 하나는 사람이 봐야 한다.** WebGL 렌더링은 스크립트가 못 본다.
+지도가 실제로 그려지는지, 판정 색·표지판·미니맵·검색이 눈으로 멀쩡한지는
+`tools/serve.py` 로 직접 확인한다.
+
 `index.html` 을 더블클릭하면 안 된다. `file://` 에서는 `fetch()` 가 CORS 로 막힌다.
 
 ### 파이프라인

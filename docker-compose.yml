@@ -38,7 +38,10 @@ services:
     env_file:
       - .env
     environment:
-      FIRE_LANE_RAW: /data/raw
+      # ★ 2026-08-23. FIRE_LANE_RAW 는 폐기됐다(MASTER §6-2). 심어두면
+      #   paths.py 가 매 실행 경고를 찍고, 그 경고가 옳다 — 이 변수가
+      #   FIRE_LANE_DATA 를 조용히 이긴다.
+      FIRE_LANE_DATA: /data
     volumes:
       - ./data:/app/data
       - ./src:/app/src

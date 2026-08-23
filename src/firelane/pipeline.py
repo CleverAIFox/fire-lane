@@ -148,8 +148,31 @@ def downstream(names: set[str]) -> list[Step]:
 #
 #   이제 `golden.py lock` 한 번이 정본을 옮긴다.
 #   ingest 기준선만 여기 남는다 — 그것은 산출이 아니라 입력 계약이다.
+# ★ 2026-08-23. 이 표는 선언만 있고 **아무도 읽지 않았다.** 죽은 코드였는데
+#   지울 것이 아니라 배선할 것이었다 — PLAN §1-16 이 정확히 이 게이트를
+#   요구한다.
+#
+#   2026-08-21, `turn_restriction` 이 87 이어야 하는데 전국 44,125행(507배)을
+#   읽고도 status 는 `OK` 였다. 좌표가 없는 DBF 라 `node_point` 가 만든 노드
+#   집합으로만 걸러지는데, `node_point` 가 실패하면 필터가 통째로 사라진다.
+#   재현 조건이 좁아 타이밍에 따라 오염되기도 하고 아니기도 한다 — 그만큼
+#   위험하다.
+#
+#   `pipeline.EXPECT`(판정 숫자)를 지운 것과 혼동하지 말 것. 그것은 **산출**
+#   이라 정본이 golden 지문이면 충분했다. 이것은 **입력 계약**이다.
+#   산출물 지문은 입력이 507배로 늘어난 것을 알려주지 않는다.
 INGEST_EXPECT = {"ngii1k": 14336, "ngii_road": 216, "road_link": 1508,
-                 "road_rw": 1957, "node_link": 1366, "streetlight": 1786}
+                 "road_rw": 1957, "node_link": 1366, "streetlight": 1786,
+                 # ★ 이 한 줄이 08-21 사고를 잡는다.
+                 "turn_restriction": 87}
+
+# 건수 허용 오차. contract.py 의 rows_tolerance 와 같은 값이다.
+INGEST_TOL = 0.30
+
+# web/data 용량 상한(MB). ★ 세 곳이 같은 값을 봐야 한다 —
+#   .github/workflows/contract.yml · tools/commit_policy.py · 여기.
+#   tests/test_guards.py::test_webdata_limit_is_one_number 가 강제한다.
+WEB_MAX_MB = 40
 
 
 def expect() -> dict:
@@ -174,7 +197,7 @@ def check_only():
         sz = sum(f.stat().st_size for f in RAW.rglob("*") if f.is_file()) / 1e9
         print(f"           {n}개 파일 · {sz:.2f} GB")
     else:
-        print(c("           없다. FIRE_LANE_RAW 설정 또는 normalize_raw.py 실행", "33"))
+        print(c("           없다. FIRE_LANE_DATA 설정 또는 normalize_raw 실행", "33"))
     print()
     for s in STEPS:
         name, desc, out = s.name, s.desc, s.out
@@ -184,6 +207,68 @@ def check_only():
         if ok and out.is_dir():
             extra = f"  ({sum(1 for _ in out.rglob('*') if _.is_file())}개)"
         print(f"  {mark} {name:9s} {desc:28s} {out.relative_to(ROOT)}{extra}")
+
+
+def verify_ingest() -> list[str]:
+    """대장의 건수를 입력 계약과 대조한다. 어긋난 것을 목록으로 낸다.
+
+    ★ 산출물이 아니라 **입력**을 본다. segments 지문이 같아도 입력이
+      507배로 늘어난 것은 못 잡는다(PLAN §1-16).
+    """
+    import json
+    man = PROCESSED / "_manifest.json"
+    if not man.exists():
+        return []
+    got = {d.get("key"): d.get("features")
+           for d in json.loads(man.read_text(encoding="utf-8")).get("datasets", [])}
+    bad = []
+    print(c("\n입력 계약 (대장 건수)", "36"))
+    for k, want in sorted(INGEST_EXPECT.items()):
+        n = got.get(k)
+        if n in (None, ""):
+            bad.append(f"{k}: 대장에 건수가 없다 (status 확인)")
+            print(f"  {k:18} {'—':>8}  " + c("★ 대장에 없음", "31"))
+            continue
+        n = int(n)
+        lo, hi = want * (1 - INGEST_TOL), want * (1 + INGEST_TOL)
+        ok = lo <= n <= hi
+        if not ok:
+            bad.append(f"{k}: {n:,} — 선언 {want:,} ±{INGEST_TOL:.0%} 밖")
+        mark = c("OK", "32") if ok else c(f"★ 선언 {want:,}", "31")
+        print(f"  {k:18} {n:8,}  {mark}")
+    return bad
+
+
+def verify_schema() -> list[str]:
+    """스키마 필드 집합이 산출물 키와 **정확히** 같은가.
+
+    ★ MASTER §18-5 R7 이 "계약 테스트에 컬럼 집합 == 스키마 키 집합 검사를
+      넣는다" 고 적어놓고 안 넣었다. `test_schema_matches_data` 는
+      `set(fields) >= set(REQUIRED)` — 부분집합만 본다.
+
+      그래서 둘이 오래 어긋나 있었다(2026-08-23 발견).
+        · `seg_label` — 08-21 에 만들고 08-22 에 툴팁 정본이 됐는데 스키마에 없음
+        · `merged_n` · `cov_*` · `merge_why` — processed 전용인데 web 스키마가
+          웹 필드처럼 서술. UI 가 그걸 보고 쓰면 undefined
+      2026-08-18 에 MASTER §11 필드표로 똑같이 겪은 일이 스키마 쪽에 남아 있었다.
+    """
+    import json
+    out = []
+    for tag, seg, sch in (("web", WEB / "segments.geojson", WEB / "segments.schema.json"),
+                          ("processed", PROCESSED / "segments.geojson",
+                           PROCESSED / "segments.schema.json")):
+        if not (seg.exists() and sch.exists()):
+            continue
+        feats = json.loads(seg.read_text(encoding="utf-8"))["features"]
+        if not feats:
+            continue
+        real = set(feats[0]["properties"])
+        doc = set(json.loads(sch.read_text(encoding="utf-8"))["fields"])
+        for k in sorted(real - doc):
+            out.append(f"{tag}: 산출물에 {k} 가 있는데 스키마에 없다")
+        for k in sorted(doc - real):
+            out.append(f"{tag}: 스키마가 {k} 를 적었는데 산출물에 없다")
+    return out
 
 
 def verify():
@@ -221,7 +306,11 @@ def verify():
             print(f"  {label} {sum(1 for _ in d.rglob('*') if _.is_file())}장")
     if WEB.is_dir():
         mb = sum(f.stat().st_size for f in WEB.rglob("*") if f.is_file()) / 1e6
-        warn = "" if mb < 60 else c("  ★ CI 상한 60MB 초과", "31")
+        # ★ 상한 정본은 하나여야 한다. contract.yml · tools/commit_policy.py 가
+        #   40 인데 여기만 60 이었다(PLAN #12 에서 60→40 으로 내리면서 누락).
+        #   40~60 구간에서 파이프라인은 초록불이고 CI 만 빨간불이 된다 —
+        #   "로컬에서는 되는데 CI 가 막는다" 가 정확히 이런 자리에서 나온다.
+        warn = "" if mb < WEB_MAX_MB else c(f"  ★ CI 상한 {WEB_MAX_MB}MB 초과", "31")
         print(f"  web/data {mb:.0f} MB{warn}")
 
 
@@ -263,7 +352,7 @@ def main():
 
     if not RAW.is_dir() or not any(RAW.rglob("*.zip")):
         print(c(f"★ raw 가 비어 있다: {RAW}", "31"))
-        print("  export FIRE_LANE_RAW=... 또는")
+        print("  export FIRE_LANE_DATA=<raw 상위 폴더> 또는")
         print("  python -m firelane.normalize_raw <다운로드폴더>")
         if "ingest" in [s.name for s in steps]:
             sys.exit(1)
@@ -324,7 +413,15 @@ def main():
             sys.exit(1)
 
     verify()
+    bad = verify_ingest() + verify_schema()
     print(f"\n총 {time.time()-t0:.1f}s")
+    if bad:
+        print(c("\n★ 계약 위반 — 산출물을 믿지 마라", "31"))
+        for b in bad:
+            print(f"    {b}")
+        print("  원본이 정말 바뀌었으면 pipeline.INGEST_EXPECT 를 고치고")
+        print("  커밋 메시지에 근거를 남겨라. 그 전에는 판정을 쓰지 않는다.")
+        sys.exit(1)
     print("\n지도 확인:  uv run python tools/serve.py")
 
 
