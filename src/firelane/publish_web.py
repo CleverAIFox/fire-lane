@@ -229,17 +229,17 @@ def main():
         lg = gpd.read_file(lpp, layer="ngii1k_light").to_crs(4326)
         lg = lg[lg.within(scope4)].copy()
         lg = lg.rename(columns={"구분": "pole_kind"})
-        # ★ 2026-08-23. 이 레이어는 **아직 화면이 읽지 않는다.** config.js 의
-        #   markers 에 스펙이 없고 data.js 도 안 부른다. 163KB 가 web/data 에
-        #   실려 나가지만 브라우저는 요청조차 하지 않는다.
+        # ★ 2026-08-23 배선 완료. `web/js/layers/poles.js` 가 읽는다.
+        #   그 전까지는 발행만 되고 아무도 안 읽었다 — 브라우저가 요청조차
+        #   하지 않는 163KB 였다.
         #
-        #   지우지 않는 이유: PLAN §10-4 #2("가로등 3D 마커 + C0220000 실제 폴
-        #   위치")가 예정 작업이고, 데이터를 먼저 발행해 둔 것이다. 의도된
-        #   미배선이다 — 다만 그 사실이 어디에도 적혀 있지 않아 다음 사람이
-        #   "쓰이나 보다" 하고 유지하거나, 반대로 고아로 보고 지운다.
+        #   ★ 46지점(streetlights)과 다른 데이터다. 지우지 마라.
+        #       streetlights   46지점 · 573등   지번 대표점(±50m). 등 수가 정본
+        #       lightpoles  1,143점          실제 폴 위치. 등 수 없음
+        #     위치를 보려면 이쪽, 등 수를 보려면 저쪽이다.
         #
-        #   `tests/test_contract.py::test_web_data_has_no_unintended_orphan` 이
-        #   화이트리스트로 관리한다. 마커를 붙이면 그 목록에서 빼라.
+        #   `test_web_data_has_no_unintended_orphan` 의 화이트리스트가 이제
+        #   비어 있다. 발행하고 안 읽는 레이어가 생기면 그 검사가 잡는다.
         lg[["pole_kind", "geometry"]].to_file(W / "lightpoles.geojson", **PREC)
         print(f"  가로등 폴 {len(lg)}점 (스코프 내) "
               + " · ".join(f"{k} {v}" for k, v in lg.pole_kind.value_counts().items()))

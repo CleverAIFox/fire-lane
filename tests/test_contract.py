@@ -503,10 +503,12 @@ def test_web_data_has_no_unintended_orphan():
     import re
 
     # 예정 작업이라 데이터를 먼저 발행해 둔 것. 배선하면 여기서 뺀다.
-    INTENDED = {
-        # PLAN §10-4 #2 — 가로등 3D 마커 + C0220000 실제 폴 위치
-        "lightpoles.geojson",
-    }
+    # ★ 2026-08-23. `lightpoles.geojson` 을 뺐다 — 배선했다.
+    #   `web/js/layers/poles.js` 가 읽고 `pole-dot` · `pole-glow` 로 그린다.
+    #   화이트리스트가 비는 것이 정상 상태다. 여기에 뭔가 있으면
+    #   "발행은 하는데 아무도 안 쓴다" 는 뜻이고, 그건 web/data 40MB
+    #   상한을 갉아먹는다.
+    INTENDED: set[str] = set()
 
     js = _read("js/data.js")
     cfg = _read("config.js")
