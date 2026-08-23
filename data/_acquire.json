@@ -1,0 +1,125 @@
+{
+ "files": {
+  "eais/eais_bldg_ledger_gjdonggu_20260817.csv": {
+   "sha256": "b502e2c0071a400e46ea23eb1e7436d4eae57537783ea0db34787176de579e4a",
+   "bytes": 11255612
+  },
+  "gjcity/gjcity_bin_cloth_dongu_20250214.csv": {
+   "sha256": "2a1478ade13dfda25f10cba77fe6c596eef612d1671b25e53ecbb4c1bc62b0b6",
+   "bytes": 6903
+  },
+  "gjcity/gjcity_bin_trash_dongu_20241130.csv": {
+   "sha256": "8f6c649ddd76aa624e0039be21de6ae25878ac59040328a315497b286a6ebf77",
+   "bytes": 3260
+  },
+  "gjcity/gjcity_parking_enforce_dongu_20240108.csv": {
+   "sha256": "cf64a54d8dbe19c27621cec50d9b95319b9e7b9873422c5312a848cbece850e1",
+   "bytes": 5009386
+  },
+  "gjcity/gjcity_streetlight_dongu_20240415.csv": {
+   "sha256": "7c7011029be8d66532240cbbf4f46831b9ff5fb6601e58b7637f7440c7b2a867",
+   "bytes": 247597
+  },
+  "its/its_nodelink_changelog_20260812.csv": {
+   "sha256": "eefe2cbc8c8701b2d434d7eb52cba42bf6598c9c9b552043e23fa1c693634dfa",
+   "bytes": 2358
+  },
+  "its/its_nodelink_kr_20260812.zip": {
+   "sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
+   "bytes": 269611477
+  },
+  "juso/juso_elctrnmap_jngj_20260711.zip": {
+   "sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+   "bytes": 7178540
+  },
+  "juso/juso_spotaddr_geom_jngj_20260801.zip": {
+   "sha256": "67d19479c563ae4b7629b1a1c5c5ed9efd0e064ff87d3bda8422553a7896e6f3",
+   "bytes": 107135
+  },
+  "juso/juso_spotaddr_ref_jngj_20260801.zip": {
+   "sha256": "8822bdb54aa2b8a711854f525772d947f2aaf75aa6c7f29fe1194bb94f3b4c5d",
+   "bytes": 39627
+  },
+  "ngii/ngii_basemap_gj9708_20260812.zip": {
+   "sha256": "cd4f56a0fcba89d9643630dd0b34d5cf267db953d61ed90ecd13dfb95ac0f65d",
+   "bytes": 294433822
+  },
+  "ngii/ngii_basemap_gj9712_20260812.zip": {
+   "sha256": "085ad532f61ea654908e23e2ce13058d28dfcfbf6de65c0099ca6f3289e97641",
+   "bytes": 294232250
+  },
+  "ngii/ngii_dem_gj35616_20251117.zip": {
+   "sha256": "56656fc18efb05ad78653d1b09ea18e6c9879eaa2e5940d33a2cce677b4ef128",
+   "bytes": 298644
+  },
+  "ngii/ngii_ortho_gj037_20251231.tif": {
+   "sha256": "afe2cbb4bcd151538b77617bf9ac1022639a61e79525227f09b0aaca0ed2bf8b",
+   "bytes": 328279928
+  },
+  "ngii/ngii_ortho_gj037_20251231.xml": {
+   "sha256": "4663108491cf8062ccfa4a1d60d85725934eed81b96967a61646b479bd0cf86c",
+   "bytes": 2428
+  },
+  "ngii/ngii_ortho_gj038_20251231.tif": {
+   "sha256": "d83eec9e4da02b1b3b70e41865a45c7ce1db1292d6957b1280b2df887857151c",
+   "bytes": 328622600
+  },
+  "ngii/ngii_ortho_gj038_20251231.xml": {
+   "sha256": "88fd1a2f4ffae93cabf4246e6e825b2c2d8eeb1ca3bd2f52b21583b9b645989f",
+   "bytes": 2428
+  },
+  "ngii/ngii_ortho_gj047_20251231.tif": {
+   "sha256": "c0d4850dfdbe197e32f8509cb73ce12446f00769b4da54550db0b96587d965b6",
+   "bytes": 328622600
+  },
+  "ngii/ngii_ortho_gj047_20251231.xml": {
+   "sha256": "59bd3db595bf636e8fe2f58de94d096952c99c842741d5d2476f86386df6df2b",
+   "bytes": 2428
+  },
+  "ngii/ngii_ortho_gj048_20251231.tif": {
+   "sha256": "074d2d29a73dcaeadfaedaea16cd8deaefcd2c1c7530f41215f511962525f84e",
+   "bytes": 328693784
+  },
+  "ngii/ngii_ortho_gj048_20251231.xml": {
+   "sha256": "4d4f370921c4af315fc5bd2d4fef4790a758e0d5620697b3a8af3c704f3aa52c",
+   "bytes": 2425
+  },
+  "safety/safety_cctv_jngj_20260630.csv": {
+   "sha256": "96bf98b168cb6721c4c27b52dac10d2e895b244ecf7128b1e34bc15570901552",
+   "bytes": 771408
+  },
+  "safety/safety_fire_access_gj_dong_20250731.csv": {
+   "sha256": "67a583bb97e8d027761dea9fd492012699ea8345f4bf7939f729754494dbdf9e",
+   "bytes": 2027
+  },
+  "safety/safety_firestation_kr_20240901.csv": {
+   "sha256": "b65a8bb8e2197f8999384c259c9154247f2d537a10604f9e24d19b1244bb89b7",
+   "bytes": 169090
+  },
+  "safety/safety_hydrant_point_kr_20240207.csv": {
+   "sha256": "85a56e0ae97002b0fe8ea4eb3c9eadbf72ddb601b2f961d5f640662882a92437",
+   "bytes": 11342211
+  },
+  "safety/safety_hydrant_summary_gj_dong_20250731.csv": {
+   "sha256": "6a5b2690bd9cc2ecc13369da2e58f3418e1b1bea8f8a173e57be3695cf340586",
+   "bytes": 278
+  },
+  "sbiz/sbiz_store_kr_20260630.zip": {
+   "sha256": "57aa361544108ff4fc73334f87d2ced61e41fe8638dd70bcd842930f865d2386",
+   "bytes": 352699739
+  },
+  "vworld/vworld_map1k_gjdonggu_20260307.zip": {
+   "sha256": "7b970e12ea3f77dfa0948ab9d9dbb28703872feed76fec5e621a5a61ddc6b893",
+   "bytes": 21626081
+  },
+  "vworld/vworld_map1k_ngi_gjdonggu_20260307.zip": {
+   "sha256": "1db699d03bc771282bd84beb3c1a9873580dc512e52b75e9da817d2ab875dd73",
+   "bytes": 17086559
+  },
+  "gjcity/gjcity_parking_enforce_dongu_20250226.csv": {
+   "sha256": "4cb4c4e95353af782b4fdf8cf9726603ca0fff2b1b12fbbc631f3939e49fbf78",
+   "bytes": 3046281
+  }
+ },
+ "at": "2026-08-23T17:29:09+09:00"
+}

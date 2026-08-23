@@ -77,10 +77,45 @@ export FIRE_LANE_DATA="<raw 상위 폴더 경로>"   # 머신마다 다르다
 
 python -m firelane.normalize_raw "$FIRE_LANE_DATA/landing" --dry-run
 python -m firelane.contract
-fire-lane
+uv run fire-lane
 
 uv run python tools/serve.py        # 캐시 없는 개발 서버
 ```
+
+받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
+
+```bash
+bash tools/verify.sh          # 8단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh --fast   # 파이프라인 전량(4분) 생략
+```
+
+`uv pip install -e .` 은 치지 마라. `[build-system]` 이 있으므로 `uv sync` 가
+editable 로 알아서 깐다 — 스크립트 첫 단계가 그것이다.
+
+푸시 전에는 이것 하나면 된다.
+
+```bash
+uv run python tools/ship.py              # 검사만
+uv run python tools/ship.py --fix --push # 정리 + 검사 + push
+```
+
+`verify.sh`(코드가 도는가)에 더해 **문서 4축 · 위생 · git 상태**까지 본다.
+CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머지되는 일이 없다.
+
+머지하고 나면 로컬에 찌꺼기가 남는다. 그것도 한 명령이다.
+
+```bash
+uv run python tools/tidy.py          # 무엇이 지워질지만
+uv run python tools/tidy.py --yes    # 실제로
+```
+
+죽은 upstream · 머지된 브랜치 · 일회성 패처 · 격리 산출물 · 캐시를 본다.
+**데이터 계층은 건드리지 않는다** — `data/raw` · `norm` · `field` · `web/data`
+는 `NEVER` 로 막혀 있고 규칙에 실수로 넣어도 안 지워진다.
+
+**마지막 하나는 사람이 봐야 한다.** WebGL 렌더링은 스크립트가 못 본다.
+지도가 실제로 그려지는지, 판정 색·표지판·미니맵·검색이 눈으로 멀쩡한지는
+`tools/serve.py` 로 직접 확인한다.
 
 `index.html` 을 더블클릭하면 안 된다. `file://` 에서는 `fetch()` 가 CORS 로 막힌다.
 
@@ -91,10 +126,18 @@ ingest → segments → streetlight → terrain → ortho → publish → 계약
 ```
 
 ```bash
-fire-lane --check          # 실행 없이 상태만
-fire-lane --from segments  # 그 단계부터
-fire-lane --only publish
+uv run fire-lane --check          # 실행 없이 상태만
+uv run fire-lane --from segments  # 그 단계부터
+uv run fire-lane --only publish
 ```
+
+★ `uv run` 을 빼면 `command not found` 다. 진입점은 `.venv/bin/fire-lane` 에
+설치되고 그 폴더는 PATH 에 없다. `uv sync` 가 editable 로 깔아주지만
+**셸에 노출하지는 않는다** — 2026-08-23 에 이것 때문에 파이프라인이 안 돌았고,
+그 상태로 `golden.py check` 를 돌려 **통과했다.** 옛 산출물을 옛 지문과
+비교한 것이라 아무것도 증명하지 않는다. 가장 위험한 종류의 초록불이다.
+
+
 
 전량 재실행 약 285초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
 raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.

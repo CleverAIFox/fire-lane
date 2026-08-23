@@ -73,16 +73,36 @@ export function addMarkers(){
       "fill-extrusion-opacity":.95}});
 }
 
-/* ★ 원본에 있던 `POPUP` 딕셔너리(CONFIG.markers 의 spec.popup 수집)는
-   옮기지 않았다. 정의만 있고 참조가 0곳이었다 — 팝업 HTML 은 아래에서
-   직접 만든다. spec.popup 을 실제로 쓰려면 이 함수를 고쳐야 한다. */
+/* ★ 2026-08-23. 팝업이 `p.name` · `p.sub` · `p.addr` 을 읽고 있었다.
+   그 세 이름은 **어느 마커 데이터에도 없다.** 실제 속성은 이렇다.
+
+     cctv        카메라대수 · 카메라화소 · 촬영방면 · 최초설치 · 소재지도로명주소
+     hydrants    시설번호 · 상세위치 · 설치연도 · 보호틀유무
+     stations    소방서 및 안전센터명 · 전화번호 · 주소
+     streetlights n_lights · pos_accuracy_m · mgmt_no_sample · addr
+
+   그래서 3D 마커를 누르면 **제목이 전부 "undefined"** 로 떴다.
+   app.js 를 web/js 로 쪼갤 때 POPUP 딕셔너리를 안 옮기면서 생겼고,
+   `test_marker_spec_self_contained` 는 손딕셔너리가 **없는지**만 보고
+   선언이 **쓰이는지**는 안 봐서 초록불이었다. 이 저장소가 반복해 겪은
+   그 병이다 — 측정은 하는데 대조가 없다.
+
+   정본은 config.js 의 `spec.popup` 이다(결정 83 · MASTER §11-2).
+   선언이 이미 정확한 HTML 을 만들고 있었으므로 그것을 부르기만 하면 된다.
+   `properties.kind` 에는 buildMarkers() 가 spec.id 를 넣는다. */
 export function bindMarkerPopups(){
+  const byId = Object.fromEntries(CONFIG.markers.map(m => [m.id, m]));
   S.map.on("click","mk-3d", e => {
-    const p=e.features[0].properties;
+    const p = e.features[0].properties;
+    const spec = byId[p.kind];
+    /* 선언이 없거나 팝업이 없는 마커는 라벨만 띄운다. 조용히 넘어가지 않는다 —
+       빈 팝업이 뜨면 "데이터가 없다" 로 오독된다. */
+    const html = (spec && spec.popup)
+      ? spec.popup(p)
+      : `<b>${p.label || p.kind}</b><br><span class="a">표시할 속성 선언 없음</span>`;
     new maplibregl.Popup({closeButton:false,maxWidth:"270px"})
       .setLngLat(e.lngLat)
-      .setHTML(`<div class="pop"><b>${p.name}</b><br>${p.sub||""}
-                <br><span class="a">${p.addr||""}</span></div>`).addTo(S.map);
+      .setHTML(`<div class="pop">${html}</div>`).addTo(S.map);
   });
   S.map.on("mouseenter","mk-3d",()=>S.map.getCanvas().style.cursor="pointer");
   S.map.on("mouseleave","mk-3d",()=>S.map.getCanvas().style.cursor="");

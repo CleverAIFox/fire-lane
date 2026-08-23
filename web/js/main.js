@@ -27,6 +27,7 @@ import { addCoverage } from "./layers/coverage.js";
 import { addMarkers, bindMarkerPopups } from "./layers/markers.js";
 import { addSigns, placeSigns } from "./layers/signs.js";
 import { addPoi } from "./layers/poi.js";
+import { addPoles, bindPolePopups } from "./layers/poles.js";
 
 import { bindTooltip } from "./ui/tooltip.js";
 import { initSearch } from "./ui/search.js";
@@ -69,6 +70,10 @@ map.on("load", () => {
   ["hyd-pulse2","hyd-pulse"].forEach(l=>{ if(map.getLayer(l)) map.moveLayer(l, "seg-l"); });
 
   bindTooltip();
+  /* ★ 가로등 폴을 POI 보다 먼저 깐다. 둘 다 점이라 겹치는데,
+     상호 라벨이 가로등에 가리면 안 된다. 가로등은 배경이다. */
+  addPoles(D.lightpoles);
+  bindPolePopups();
   addPoi(D.poi);
   initSearch();
 

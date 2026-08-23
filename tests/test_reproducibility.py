@@ -178,6 +178,35 @@ def test_no_fifth_doc():
         "  MASTER(현재) · PLAN(남은 일) · DECISIONS(왜 그렇게 됐나) 중\n"
         "  어디의 절인지 정해서 옮겨라.")
 
+    # ★ 2026-08-23. 종전에는 `docs/` 만 셌다. 그래서 `data/raw/README.md`
+    #   (그라운드 룰 · 계층 · 백업 · 인벤토리 · 라이선스 227줄)와
+    #   `MIGRATION-2026-08-21.md`(인수인계 223줄)가 규칙 밖에서 살았고,
+    #   둘 다 MASTER 와 어긋난 채 낡아 있었다. 규칙이 보는 곳이 좁으면
+    #   문서는 그 밖에서 자란다.
+    #
+    #   저장소 어디에 있든 **규약을 서술하는 md** 는 넷 안에 들어가야 한다.
+    #   아래는 그 성격이 아닌 것들이다.
+    ok = {
+        "README.md",                    # 저장소 첫 인상. 넷을 가리키기만 한다
+        "web/README.md",                # UI 담당용 실행 안내
+        "src/firelane/README.md",       # 대장 작성법 · kind 표
+        "data/field/fieldsheet.md",     # 야장. 들고 나가는 종이다
+    }
+    # ★ 백업·캐시는 저장소 내용이 아니다. `.gitignore` 가 이미 빼는 것들이고
+    #   여기서도 같은 선을 긋는다 — 안 그러면 배포 스크립트가 만든
+    #   `_backup_*` 안의 옛 문서를 "다섯 번째 문서" 로 잡는다(실제로 겪었다).
+    skip_dir = {".git", "node_modules", ".venv", ".work", ".pytest_cache",
+                ".ruff_cache", "__pycache__", "docs", "baseline"}
+    stray = sorted(
+        str(q.relative_to(ROOT)) for q in ROOT.rglob("*.md")
+        if not any(part in skip_dir or part.startswith("_backup_")
+                   for part in q.parts)
+        and str(q.relative_to(ROOT)) not in ok)
+    assert not stray, (
+        f"문서 넷 밖에서 자란 문서: {stray}\n"
+        "  MASTER · PLAN · DECISIONS 중 어디의 절인지 정해서 흡수하고 지워라.\n"
+        "  실행 안내라면 README 로 올린다.")
+
 
 def test_readme_structure_lists_real_files():
     """

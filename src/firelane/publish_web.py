@@ -6,7 +6,7 @@ publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내�
 IN    processed/*.geojson · processed/segments.schema.json
 OUT   web/data/{segments,buildings,boundary,hydrants,stations,cctv,poi,
                 markers,mask,mask_soft,scope,lightpoles,streetlights}.geojson
-PARAM 좌표 정밀도(PREC) · web/data 60MB 상한(CI 가 검사)
+PARAM 좌표 정밀도(PREC) · web/data 40MB 상한(CI · commit_policy · pipeline)
 
 좌표를 6자리(약 11cm)로 반올림하고 표출에 안 쓰는 컬럼을 버린다.
 web/data 는 생성물이다. 직접 수정하지 말 것.
@@ -14,7 +14,6 @@ web/data 는 생성물이다. 직접 수정하지 말 것.
 import hashlib
 import json
 import re
-import shutil
 
 import geopandas as gpd
 import pandas as pd
@@ -25,7 +24,10 @@ from firelane.paths import PROCESSED, ROOT
 OUT = PROCESSED
 P, W = ROOT/"data"/"processed", ROOT/"web"/"data"
 EMD_CD = "12210108"
-CCTV_RADIUS    = 25    # CCTV 유효 커버리지 반경(m). 보수적 추정
+# ★ CCTV_RADIUS 는 삭제했다(2026-08-23). 여기서 0회 참조였고, 커버리지
+#   원의 반경 정본은 web/config.js 의 markers[].cover.radius 다.
+#   판정 임계(CCTV_RANGE 25.0)의 정본은 seg/params.py 다. 같은 숫자를
+#   세 곳에 두면 반드시 한 곳만 고치고 잊는다.
 STATION_RADIUS = 300   # 안전센터 주변 반경(m). 출발점 일대 도로 맥락 확보
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
 
@@ -227,6 +229,17 @@ def main():
         lg = gpd.read_file(lpp, layer="ngii1k_light").to_crs(4326)
         lg = lg[lg.within(scope4)].copy()
         lg = lg.rename(columns={"구분": "pole_kind"})
+        # ★ 2026-08-23 배선 완료. `web/js/layers/poles.js` 가 읽는다.
+        #   그 전까지는 발행만 되고 아무도 안 읽었다 — 브라우저가 요청조차
+        #   하지 않는 163KB 였다.
+        #
+        #   ★ 46지점(streetlights)과 다른 데이터다. 지우지 마라.
+        #       streetlights   46지점 · 573등   지번 대표점(±50m). 등 수가 정본
+        #       lightpoles  1,143점          실제 폴 위치. 등 수 없음
+        #     위치를 보려면 이쪽, 등 수를 보려면 저쪽이다.
+        #
+        #   `test_web_data_has_no_unintended_orphan` 의 화이트리스트가 이제
+        #   비어 있다. 발행하고 안 읽는 레이어가 생기면 그 검사가 잡는다.
         lg[["pole_kind", "geometry"]].to_file(W / "lightpoles.geojson", **PREC)
         print(f"  가로등 폴 {len(lg)}점 (스코프 내) "
               + " · ".join(f"{k} {v}" for k, v in lg.pole_kind.value_counts().items()))
@@ -255,7 +268,31 @@ def main():
     # 여기서 형상을 굽지 않는다. 구우면 UI 가 값을 못 바꾼다.
     (W/"markers.geojson").unlink(missing_ok=True)
 
-    shutil.copy(P/"segments.schema.json", W/"segments.schema.json")
+    # ── 스키마는 그대로 복사하지 않는다 ────────────────────────
+    # ★ 2026-08-23. 종전에는 shutil.copy 였다. processed 스키마는 processed
+    #   산출물(31필드)을 서술하는데 web 은 27필드다. 그래서 web 스키마가
+    #   `merged_n` · `cov_*` · `merge_why` 5개를 **웹 필드처럼** 서술하고,
+    #   정작 web 에만 있는 `seg_no` 는 빠져 있었다.
+    #   UI 담당이 이 표를 보고 `merged_n` 으로 분기하면 undefined 가 나온다 —
+    #   2026-08-18 에 MASTER §11 필드표로 똑같이 겪은 일이다.
+    #
+    # `test_schema_matches_data` 는 `>=`(부분집합)만 봐서 못 잡았다.
+    # MASTER §18-5 R7 은 "컬럼 집합 == 스키마 키 집합" 검사를 넣겠다고
+    # 적어놓고 안 넣었다. `pipeline.verify()` 가 이제 그것을 본다.
+    _sch = json.loads((P/"segments.schema.json").read_text(encoding="utf-8"))
+    _pub = set(_cols) | {"seg_no"} | ({"z"} if "z" in _seg.columns else set())
+    _dropped = sorted(k for k in _sch["fields"] if k not in _pub)
+    _sch["fields"] = {k: v for k, v in _sch["fields"].items() if k in _pub}
+    _sch["fields"]["seg_no"] = ("int 도로명 안에서의 구간 순번. ★ 표기 전용이고 "
+                                "publish 가 만든다. 노딩이 바뀌면 밀린다 — "
+                                "외부 참조는 seg_uid, 화면 표기는 seg_label")
+    _sch["scope"] = "web — 표출용 사본. processed 전용 컬럼은 뺐다"
+    _sch["dropped_from_processed"] = _dropped
+    (W/"segments.schema.json").write_text(
+        json.dumps(_sch, ensure_ascii=False, indent=2), encoding="utf-8")
+    _missing = sorted(_pub - set(_sch["fields"]))
+    print(f"  스키마 {len(_sch['fields'])}필드 · processed 전용 {len(_dropped)} 제외"
+          + (f"  ★ 서술 없는 필드 {_missing}" if _missing else ""))
 
     # ── index.html 에 스탬프 주입 ───────────────────────────────
     # ★ ES 모듈 그래프는 진입점에 쿼리를 붙여도 그 안의 import 까지

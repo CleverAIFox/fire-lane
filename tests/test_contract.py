@@ -408,3 +408,192 @@ def test_verdict_matches_rules_for_every_segment():
     assert not bad, (
         f"판정이 규칙과 어긋난 구간 {len(bad)}개\n  "
         + "\n  ".join(bad[:15]))
+
+
+def test_marker_popup_declaration_is_used():
+    """`config.js` 의 `spec.popup` 이 화면에서 실제로 호출돼야 한다.
+
+    ★ 2026-08-23. `layers/markers.js` 가 팝업을 직접 만들면서
+      `p.name` · `p.sub` · `p.addr` 을 읽고 있었다. **그 세 이름은 어느
+      마커 데이터에도 없다** — cctv 는 `카메라대수`, hydrants 는 `시설번호`,
+      stations 는 `소방서 및 안전센터명` 이다. 그래서 3D 마커를 누르면
+      제목이 전부 `undefined` 로 떴다.
+
+      app.js 를 web/js 로 쪼갤 때 POPUP 수집을 안 옮기면서 생겼고,
+      `test_marker_spec_self_contained` 는 손딕셔너리가 **없는지**만 보고
+      선언이 **쓰이는지**는 안 봐서 초록불이었다.
+      결정 83 의 계약은 "선언이 자기 것을 전부 든다" 이고, 그 계약은
+      선언을 실제로 부를 때만 성립한다.
+    """
+    import re
+    mk = _read("js/layers/markers.js")
+    assert "spec.popup" in mk, (
+        "layers/markers.js 가 CONFIG.markers 의 spec.popup 을 호출하지 않는다.\n"
+        "  팝업 HTML 을 코드에서 직접 만들면 데이터 속성명과 조용히 어긋난다.")
+    # ★ poi.js 는 p.name / p.addr 을 정당하게 쓴다(상가 데이터에 그 속성이 있다).
+    #   검사는 마커 팝업 파일로만 좁힌다.
+    # ★ 주석은 뺀다. 이 규칙을 왜 만들었는지 설명하려면 그 이름을 써야 하는데,
+    #   그것까지 잡으면 자기 문서를 자기가 막는다(08-22 에 두 번 겪었다).
+    code = re.sub(r"/\*.*?\*/", "", mk, flags=re.S)
+    code = re.sub(r"^\s*//.*$", "", code, flags=re.M)
+    for dead in ("p.name}", "p.sub", "p.addr"):
+        assert dead not in code, (
+            f"마커 팝업이 `{dead}` 를 읽는다 — 마커 데이터에 없는 속성이다. "
+            "spec.popup 을 쓸 것")
+
+
+def test_unknown_reason_vocabulary_is_declared_in_three_places():
+    """`unknown_reason` 어휘가 산출·스키마·화면 셋에서 같아야 한다.
+
+    ★ 2026-08-23. 08-22 에 `no_cctv` 를 넷으로 쪼갰는데 `seg/report.py` 의
+      스키마는 `null|width|no_cctv` 라는 옛 어휘를 그대로 적고 있었다(R7 위반).
+      `web/config.js` 의 reason 표는 이미 넷을 갖고 있어 **화면은 멀쩡했고
+      그래서 아무도 몰랐다.** UI 를 새로 짜는 사람이 스키마를 보고 분기하면
+      없는 키로 분기한다.
+
+    `test_schema_matches_data` 는 컬럼 **집합**만 본다. 값 어휘는 안 본다.
+
+    ★ 산출물이 아니라 **코드**를 본다. 스키마 JSON 은 생성물이라 파이프라인을
+      다시 돌려야 갱신되는데, 그러면 이 검사가 재실행 시점에 의존한다.
+      어휘를 정하는 곳은 `segments.py` 이므로 거기서 읽는다.
+    """
+    import re
+    # ★ 주석을 먼저 걷어낸다. segments.py 는 이 어휘를 주석에서도 잔뜩
+    #   설명하므로, 안 걷으면 "설명만 있고 코드에는 없는" 값까지 잡는다.
+    seg_src = "\n".join(
+        re.sub(r"#.*$", "", ln)
+        for ln in (ROOT / "src/firelane/segments.py")
+        .read_text(encoding="utf-8").splitlines())
+    # ★ `reason = "..."` 만 보면 안 된다. 실제 코드에는 여러 줄 삼항이 있어
+    #   (`("no_cctv_narrow" if ... else "no_cctv_thin")`) 그 방식으로는
+    #   넷 중 둘을 놓친다. 값 자체를 찾는다.
+    emitted = set(re.findall(r'"(no_cctv[a-z_]*|width)"', seg_src))
+    assert len(emitted) >= 5, f"segments.py 에서 사유 어휘를 못 찾았다: {emitted}"
+
+    schema_src = (ROOT / "src/firelane/seg/report.py").read_text(encoding="utf-8")
+    blk = schema_src[schema_src.index('"unknown_reason"'):][:900]
+    miss_s = sorted(r for r in emitted if r not in blk)
+    assert not miss_s, (
+        f"seg/report.py 스키마가 설명하지 않는 사유: {miss_s}\n"
+        "  segments.py 가 내는 값과 스키마 서술을 같이 고칠 것(R7).")
+
+    cfg = _read("config.js")
+    reason_blk = cfg[cfg.index("reason: {"):][:900]
+    miss_c = sorted(r for r in emitted if r not in reason_blk)
+    assert not miss_c, (
+        f"web/config.js 의 reason 표에 없는 사유: {miss_c}\n"
+        "  툴팁이 빈칸으로 뜬다.")
+
+
+def test_web_data_has_no_unintended_orphan():
+    """발행되는데 아무도 안 읽는 레이어가 있는가.
+
+    ★ `test_web_data_files_referenced` 는 **한 방향**만 본다 —
+      "선언된 것이 실재하는가". 반대 방향(발행됐는데 소비자가 없는가)은
+      아무도 안 봤고, `lightpoles.geojson` 163KB 가 그 상태였다(2026-08-23).
+
+      web/data 는 40MB 상한을 받는 공간이다. 아무도 안 읽는 파일이 쌓이면
+      그 상한이 빨리 찬다. 더 나쁜 것은 다음 사람이 그것을 보고 "쓰이나 보다"
+      하고 유지하는 것이다 — 08-22 에 `zOf` · `width(f)` · `POPUP` 을 옮기지
+      않은 것과 같은 이유다.
+
+    ★ 의도된 미배선은 여기 적는다. **적는 행위가 곧 기록이다** —
+      `<!--stale-ok-->` 마커와 같은 방식이다.
+    """
+    import re
+
+    # 예정 작업이라 데이터를 먼저 발행해 둔 것. 배선하면 여기서 뺀다.
+    # ★ 2026-08-23. `lightpoles.geojson` 을 뺐다 — 배선했다.
+    #   `web/js/layers/poles.js` 가 읽고 `pole-dot` · `pole-glow` 로 그린다.
+    #   화이트리스트가 비는 것이 정상 상태다. 여기에 뭔가 있으면
+    #   "발행은 하는데 아무도 안 쓴다" 는 뜻이고, 그건 web/data 40MB
+    #   상한을 갉아먹는다.
+    INTENDED: set[str] = set()
+
+    js = _read("js/data.js")
+    cfg = _read("config.js")
+    alljs = _js()
+
+    m = re.search(r"BASE_KEYS\s*=\s*\[([^\]]*)\]", js)
+    names = set(re.findall(r'"([\w_]+)"', m.group(1)))
+    names |= set(re.findall(r'\bdata\s*:\s*"([\w_]+)"', cfg))
+    names |= set(re.findall(r'load\("([\w_]+)"\)', alljs))
+    m2 = re.search(r"FILENAME\s*=\s*\{([^}]*)\}", js)
+    alias = dict(re.findall(r'(\w+)\s*:\s*"([\w_]+)"', m2.group(1))) if m2 else {}
+    read = {alias.get(n, n) + ".geojson" for n in names}
+
+    # 파이프라인이 **읽는** 것도 소비자다(ortho 가 scope.geojson 을 읽는다).
+    # 쓰기(to_file)는 소비가 아니다 — 그것을 소비로 세면 모든 발행물이
+    # 자기 자신 덕에 통과한다.
+    pysrc = "\n".join(p.read_text(encoding="utf-8")
+                      for p in (ROOT / "src/firelane").rglob("*.py"))
+    read |= set(re.findall(r'read_file\(\s*(?:WEB|W)\s*/\s*"([\w_.]+)"', pysrc))
+    read |= set(re.findall(r'(?:WEB|W)\s*/\s*"([\w_.]+)"\s*\)\.read_text', pysrc))
+
+    published = {p.name for p in (WEB).glob("*.geojson")}
+    orphan = sorted(published - read - INTENDED)
+    assert not orphan, (
+        f"발행되는데 아무도 안 읽는 레이어: {orphan}\n"
+        "  배선하거나, publish_web.py 에서 발행을 멈추거나,\n"
+        "  의도된 미배선이면 이 테스트의 INTENDED 에 근거와 함께 적어라.")
+
+
+def test_segment_fields_are_internally_consistent(seg):
+    """구간 하나 안에서 필드끼리 모순이 없는가.
+
+    ★ `test_verdict_matches_rules_for_every_segment` 는 **판정 규칙**만 본다.
+      필드 사이의 관계는 아무도 안 봤다. 아래는 그중 코드를 읽지 않고도
+      참이어야 하는 것들이다 — 하나라도 깨지면 산출 로직이 어긋난 것이다.
+
+    ★ 2026-08-23 도입 시점에 1,101구간 전부 통과했다. 즉 이 검사는 지금
+      있는 버그를 잡으려고 만든 것이 아니라 **앞으로 생길 것**을 잡는다.
+      폭 산출을 손대는 작업(clearance 재검토 · wmax 결손 해소)이 예정돼
+      있으므로 그때 여기서 걸린다.
+    """
+    num = lambda v: None if v in (None, "") else float(v)
+    bad = []
+
+    def chk(cond, why, p):
+        if not cond:
+            bad.append(f"{p.get('seg_label') or p.get('seg_id')}: {why}")
+
+    for f in seg["features"]:
+        p = f["properties"]
+        wmin, wmax = num(p.get("width_min_m")), num(p.get("width_max_m"))
+        cov, ns = num(p.get("width_cov")), p.get("n_sample")
+        dist, rl = num(p.get("cctv_dist_m")), num(p.get("run_length_m"))
+
+        # 벽 사이 폭은 도로 폭보다 좁을 수 없다(width.py 가 보정한다)
+        if wmin is not None and wmax is not None:
+            chk(wmax >= wmin - 1e-9, f"wmax {wmax} < wmin {wmin}", p)
+        # 폭과 소스는 같이 있거나 같이 없다
+        chk((wmin is None) == (p.get("width_src") in (None, "")),
+            f"wmin={wmin} 인데 width_src={p.get('width_src')!r}", p)
+        # 커버율은 비율이다
+        if cov is not None:
+            chk(0.0 <= cov <= 1.0, f"width_cov {cov} 가 0~1 밖", p)
+        # 표본이 없으면 폭도 없다
+        if ns == 0:
+            chk(wmin is None, "n_sample 0 인데 폭이 있다", p)
+        # cv_feasible 은 cctv_dist_m 의 함수다(CCTV_RANGE)
+        if dist is not None:
+            from firelane.seg.params import CCTV_RANGE
+            chk(bool(p.get("cv_feasible")) == (dist <= CCTV_RANGE),
+                f"cv_feasible={p.get('cv_feasible')} 인데 cctv_dist_m={dist}", p)
+        # 회색이면 사유가 있고, 회색이 아니면 사유가 없다
+        chk((p["verdict"] == "unknown") == bool(p.get("unknown_reason")),
+            f"verdict={p['verdict']} · reason={p.get('unknown_reason')!r}", p)
+        # 소방청 지정은 연속 100m 이상과 동치다
+        from firelane.seg.params import NFA_RUN_M
+        want = rl is not None and rl >= NFA_RUN_M
+        chk(bool(p.get("nfa_designated")) == want,
+            f"nfa_designated={p.get('nfa_designated')} 인데 run_length={rl}", p)
+        # 길이는 양수다 — 08-13 에 길이 0.0m 구간 40개가 clear 로 표출됐다
+        chk(num(p["length_m"]) > 0, "length_m 이 0 이하", p)
+        # 폐기된 필드는 항상 거짓이다
+        chk(p.get("inherited") in (False, "false", None),
+            "inherited 가 참이다 — 상속은 08-12 에 폐기했다", p)
+        chk(p.get("width_verified") in (False, "false", None),
+            "width_verified 가 참이다 — D-25 실측 전이다", p)
+
+    assert not bad, (f"필드 간 모순 {len(bad)}건\n  " + "\n  ".join(bad[:15]))

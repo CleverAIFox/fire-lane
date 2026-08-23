@@ -42,6 +42,9 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   const on = !tg.classList.contains("on");
   tg.classList.toggle("on", on);
   if(t==="buildings") S.map.setLayoutProperty("bld-3d","visibility",on?"visible":"none");
+  /* ★ 가로등 폴은 마커(3D)가 아니라 점 레이어다. 두 레이어를 같이 끈다. */
+  if(t==="poles") ["pole-dot","pole-glow"].forEach(l=>{
+    if(S.map.getLayer(l)) S.map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
   if(t.startsWith("m-")){
     /* ★ buildMarkers() 가 properties.kind 에 넣는 값은 spec.id("m-sta" 등)다.
        예전 코드는 이걸 "center"/"station"/"hydrant"/"cctv" 로 바꿔서 필터에 넣었는데,

@@ -401,3 +401,838 @@ def test_lineage_is_pipeline_concern_not_step_concern():
     src = (ROOT / "src/firelane/pipeline.py").read_text(encoding="utf-8")
     assert "lineage.verify" in src and "lineage.record" in src, \
         "pipeline 이 계보를 배선하지 않는다"
+
+
+# ── 4. 단일 정본 — 같은 값이 세 곳에 살면 어긋난다 ──────────────
+# ★ 2026-08-23 신설. 아래 셋은 전부 "규칙은 있는데 강제자가 없어서
+#   조용히 갈라진" 자리다. 이 저장소가 계보·판정·문서·인코딩·계층에
+#   대해 이미 하고 있는 일을, 남은 자리에도 한다.
+
+def test_webdata_limit_is_one_number():
+    """web/data 용량 상한이 세 곳에서 같아야 한다.
+
+    ★ 실제로 갈라져 있었다 — contract.yml 40 · commit_policy 40 · pipeline 60.
+      PLAN #12 가 "60 → 40 으로 조정" 이라 적었는데 pipeline 만 안 고쳤다.
+      40~60 구간에서 **로컬 파이프라인은 초록불이고 CI 만 빨간불**이 된다.
+      값이 무엇이냐보다 하나냐가 중요하다.
+    """
+    import re
+
+    from firelane.pipeline import WEB_MAX_MB
+
+    ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
+    m = re.search(r'SIZE"?\s*-ge\s*(\d+)', ci) or re.search(r'-ge\s*"?(\d+)"?', ci)
+    assert m, "contract.yml 에서 web/data 상한을 못 찾았다"
+    ci_mb = int(m.group(1))
+
+    pol = (ROOT / "tools/commit_policy.py").read_text(encoding="utf-8")
+    m2 = re.search(r"MAX_WEBDATA_MB\s*=\s*(\d+)", pol)
+    assert m2, "commit_policy.py 에서 MAX_WEBDATA_MB 를 못 찾았다"
+    pol_mb = int(m2.group(1))
+
+    assert WEB_MAX_MB == ci_mb == pol_mb, (
+        f"web/data 상한이 갈렸다 — pipeline {WEB_MAX_MB} · "
+        f"contract.yml {ci_mb} · commit_policy {pol_mb}")
+
+
+def test_ci_watches_the_working_branch():
+    """CI 트리거가 실제 작업 브랜치를 포함해야 한다.
+
+    ★ 두 번 같은 사고가 났다. 08-22 에 `gis` 를 추가하자마자 세 건을
+      잡았다는 기록이 DECISIONS 에 남아 있는데, 워크플로가 다시
+      `[main]` 단독으로 되돌아가 있었다(2026-08-23 발견).
+
+      README · MASTER · CODEOWNERS 는 `gis` 를 정본 브랜치로 적고
+      pages.yml 은 `[main, gis]` 를 배포한다. contract 만 main 을 보면
+      **PR 이 검사 없이 머지된다** — 검사가 죽었는데 초록불이 뜨는,
+      이 저장소가 계속 겪은 바로 그 모양이다.
+    """
+    import re
+    ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
+    pages = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
+
+    def lists(txt):
+        """`branches: [...]` 선언을 **하나씩** 낸다.
+
+        ★ 합집합으로 보면 안 된다. contract.yml 에는 push 와 pull_request
+          두 개가 있고, 둘 중 하나만 gis 를 빠뜨려도 그쪽 이벤트가 검사를
+          비껴간다. 합집합 검사는 그것을 통과시킨다 — 실제로 이 테스트를
+          처음 쓸 때 그렇게 짰다가 역검증에서 걸렸다.
+        """
+        return [{b.strip() for b in m.split(",")}
+                for m in re.findall(r"branches:\s*\[([^\]]+)\]", txt)]
+
+    ci_lists = lists(ci)
+    pg_b = set().union(*lists(pages)) if lists(pages) else set()
+    assert ci_lists, "contract.yml 에 branches 선언이 없다"
+    for i, b in enumerate(ci_lists):
+        missing = pg_b - b
+        assert not missing, (
+            f"배포는 {sorted(pg_b)} 에서 도는데 contract.yml 의 트리거 "
+            f"{i + 1}번은 {sorted(b)} 만 본다.\n"
+            f"  검사를 비껴가는 브랜치: {sorted(missing)}\n"
+            "  pages.yml 이 배포하는 브랜치는 push · pull_request 양쪽에서 봐야 한다.")
+
+
+def test_docs_point_at_the_real_package():
+    """문서가 죽은 모듈 경로(`src/etl`)를 가리키면 안 된다.
+
+    ★ 2026-08-21 패키지화로 `src/etl/` → `src/firelane/` 이 됐는데
+      MASTER 51곳 · PLAN 5곳 · sources.yaml 13곳이 옛 경로로 남아 있었다.
+      그중 10줄은 **사람이 그대로 칠 수 있는 실행 명령**이었고 전부
+      "그런 파일 없음" 으로 죽는다.
+
+      R16(`test_readme_structure_lists_real_files`)은 README 의 구조
+      블록만 본다. 그 밖은 아무도 안 봤다.
+
+    ★ DECISIONS 와 MIGRATION 은 제외한다. 과거 기록이므로 그 시점의
+      경로를 적는 것이 옳다(R14 — 시제가 다르면 문서가 다르다).
+    """
+    stale = []
+    targets = ["README.md", "docs/MASTER.md", "docs/PLAN.md",
+               "sources.yaml", "web/config.js", "web/README.md"]
+    for rel in targets:
+        p = ROOT / rel
+        if not p.exists():
+            continue
+        for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            if "src/etl" in line:
+                stale.append(f"{rel}:{i}  {line.strip()[:70]}")
+    assert not stale, (
+        f"죽은 모듈 경로 src/etl 이 {len(stale)}곳 남아 있다:\n  "
+        + "\n  ".join(stale[:12]))
+
+
+def test_ingest_kinds_are_documented():
+    """`sources.yaml` 이 쓰는 `kind` 가 전부 ingest 분기에 있고, 문서 표와 같은가.
+
+    ★ 2026-08-23. `src/firelane/README.md` 는 "kind 가 여섯 종류로 모든
+      케이스를 덮는다" 고 적고 있었는데 실제 분기는 12개(별칭 포함)였고,
+      `sources.yaml` 이 실제로 쓰는 `shp_dir` · `raw_only` 가 문서에 없었다.
+
+      `data/raw/README.md` 는 아홉을 적었지만 `shp_dir` 대신 옛 이름
+      `ngii_1k` 였다. 문서 둘이 서로도 다르고 코드와도 달랐다.
+
+      대장에 없는 kind 를 쓰면 `unknown kind` 로 **시끄럽게** 죽는다.
+      문제는 그 반대다 — 코드에 있는데 문서에 없으면 다음 사람이 없는 줄 알고
+      새 분기를 또 만든다.
+    """
+    import re
+
+    import yaml
+
+    src = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
+    body = src[src.index("def build("):src.index("\ndef main(")]
+    impl = set()
+    for m in re.finditer(r'kind\s*==\s*"(\w+)"|kind\s+in\s*\(([^)]+)\)', body):
+        if m.group(1):
+            impl.add(m.group(1))
+        else:
+            impl |= {x.strip().strip('"') for x in m.group(2).split(",")}
+    assert len(impl) >= 8, f"ingest 분기를 못 읽었다: {impl}"
+
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    used = {(v or {}).get("kind") for v in y["datasets"].values()} - {None}
+    unknown = sorted(used - impl)
+    assert not unknown, (
+        f"sources.yaml 이 ingest 에 없는 kind 를 쓴다: {unknown}\n"
+        "  실행하면 ValueError('unknown kind') 로 죽는다.")
+
+    # ★ 문서 전체가 아니라 **표 행**에서 찾는다. 본문 어딘가에 이름이
+    #   언급된 것만으로 통과시키면 안 된다 — 실제로 별칭 설명 문단이
+    #   `shp_dir` 을 언급하는 바람에 표에서 빼도 통과했다(역검증에서 걸림).
+    doc = (ROOT / "src/firelane/README.md").read_text(encoding="utf-8")
+    rows = set(re.findall(r"^\|\s*`(\w+)`\s*\|", doc, re.M))
+    assert rows, "src/firelane/README.md 에서 kind 표를 못 찾았다"
+    missing = sorted(used - rows)
+    assert not missing, (
+        f"sources.yaml 이 쓰는 kind 가 src/firelane/README.md 표에 없다: {missing}")
+
+
+def test_etl_imports_are_declared():
+    """파이프라인이 import 하는 외부 패키지가 `pyproject` 필수 의존성에 전부 있는가.
+
+    ★ 2026-08-23. `requirements-etl.txt` 가 `rasterio` · `pillow` 를 빠뜨리고
+      있었다. 그 파일로 설치하면 `fire-lane` 이 terrain 단계에서 ImportError
+      로 죽는다. 참조하는 곳이 0곳이라 아무도 안 돌려봐서 몰랐다.
+
+      파일은 지웠고, 이제 정본은 `pyproject.dependencies` 하나다. 그것이
+      실제 import 를 덮는지는 사람이 아니라 여기가 본다.
+
+    ★ `[api]` · `[vision]` extras 는 보지 않는다. 그쪽은 아직 코드가 없다
+      (`src/api/` 는 존재하지 않는다). 필수 의존성만 파이프라인의 계약이다.
+    """
+    import ast
+    import re
+    import sys
+    import tomllib
+
+    pkg = ROOT / "src" / "firelane"
+    std = set(sys.stdlib_module_names)
+    # import 이름 → 배포 이름. 다른 것만 적는다.
+    DIST = {"PIL": "pillow", "yaml": "PyYAML", "ruamel": "ruamel-yaml"}
+
+    used: dict[str, set[str]] = {}
+    for f in sorted(pkg.rglob("*.py")):
+        tree = ast.parse(f.read_text(encoding="utf-8"))
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Import):
+                mods = [a.name for a in n.names]
+            elif isinstance(n, ast.ImportFrom) and n.module and n.level == 0:
+                mods = [n.module]
+            else:
+                continue
+            for m in mods:
+                top = m.split(".")[0]
+                if top in std or top == "firelane":
+                    continue
+                used.setdefault(DIST.get(top, top).lower(), set()).add(f.name)
+
+    proj = tomllib.load((ROOT / "pyproject.toml").open("rb"))["project"]
+    declared = {re.match(r"[\w\-]+", d).group(0).lower()
+                for d in proj["dependencies"]}
+
+    missing = {k: sorted(v) for k, v in used.items() if k not in declared}
+    assert not missing, (
+        "파이프라인이 import 하는데 pyproject 필수 의존성에 없다:\n  "
+        + "\n  ".join(f"{k}  ← {v}" for k, v in sorted(missing.items()))
+        + "\n  설치만 하고 돌리면 ImportError 로 죽는다.")
+
+
+def test_no_second_dependency_ledger():
+    """의존성 대장은 `pyproject.toml` 하나다.
+
+    ★ `requirements*.txt` 가 다시 생기면 잡는다. 손대장이 둘이 되면 반드시
+      어긋난다(§18-3) — `requirements-etl.txt` 가 `rasterio` · `pillow` 를
+      빠뜨린 채 살아 있었다.
+    """
+    stray = sorted(p.name for p in ROOT.glob("requirements*.txt"))
+    assert not stray, (
+        f"두 번째 의존성 대장: {stray}\n"
+        "  pyproject.toml 의 dependencies / optional-dependencies 로 옮겨라.")
+
+
+def test_local_verify_covers_ci():
+    """`tools/verify.sh` 가 CI 검사를 전부 포함하는가.
+
+    ★ 2026-08-23. README 는 "받자마자 이것 하나면 된다" 고 하는데
+      `verify.sh` 가 CI 검사 다섯을 안 돌고 있었다 — commit_policy ·
+      encoding_check · docnum_check · web_manifest · web/data 용량.
+      로컬 검증이 CI 의 부분집합이면 **"내 기계에서는 됐는데"** 가 나온다.
+      그것을 없애려고 만든 스크립트인데 스스로 그 상태였다.
+
+    ★ 반대 방향은 검사하지 않는다. `verify.sh` 는 `fire-lane` 전량과
+      `golden` 을 돌지만 CI 는 못 돈다 — raw 2.5GB 가 저장소에 없다.
+      로컬이 CI 보다 **더** 보는 것은 정상이다.
+    """
+    ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
+    vs = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
+
+    # ★ 2026-08-23 추가. 검사 목록이 같아도 **환경**이 다르면 결과가 갈린다.
+    #   로컬은 uv sync 로 전부 깔려 있고 CI 는 최소한만 깐다.
+    #   `verify.sh` 가 그 환경을 흉내내지 않으면 로컬 초록불이 보증이 안 된다.
+    assert "CI 환경 재현" in vs, \
+        "verify.sh 가 CI 의 좁은 환경을 재현하지 않는다 — 로컬 초록불이 보증이 아니다"
+
+    tools = ("commit_policy", "encoding_check", "docnum_check",
+             "web_manifest", "js_graph_check", "web_boot_check")
+    missing = [t for t in tools if t in ci and t not in vs]
+    assert not missing, (
+        f"CI 가 돌리는데 verify.sh 가 안 돌리는 검사: {missing}\n"
+        "  로컬이 CI 의 부분집합이면 '내 기계에서는 됐는데' 가 나온다.")
+
+    if "du -sm web/data" in ci:
+        assert "web/data" in vs and "du -sm" in vs, \
+            "CI 가 web/data 용량을 보는데 verify.sh 는 안 본다"
+
+
+def test_scan_data_sizes_add_up():
+    """`scan_data` 의 제공기관 크기 합이 raw 계층 크기와 같은가.
+
+    ★ 2026-08-23. `psize[k] += sz` 가 루프 변수(`_sz`)가 아니라 **앞 루프의
+      마지막 `sz`** 를 더하고 있었다. 함수 스코프에 이름이 살아 있어
+      NameError 도 안 나고 `test_static.py` 도 못 잡는다.
+
+      실측(외장 SSD): 전체 5.8GB 인데 폴더 합이 30GB 를 넘었다. 전부
+      970.2MB(마지막 파일 크기)의 배수였는데, 숫자가 그럴듯해서 오래 안 보였다.
+      **합계와 대조했으면 즉시 드러났다.** 그래서 여기서 대조한다.
+    """
+    import re
+    import subprocess
+    import sys
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as d:
+        base = Path(d)
+        for rel, n in (("raw/eais/a.csv", 1_000_000), ("raw/its/b.zip", 2_000_000),
+                       ("raw/its/c.zip", 3_000_000), ("landing/x.zip", 5_000_000)):
+            p = base / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(b"\0" * n)
+        r = subprocess.run([sys.executable, str(ROOT / "tools/scan_data.py"),
+                            "--root", str(base)], capture_output=True, text=True)
+    out = r.stdout
+    unit = {"B": 1, "KB": 1 << 10, "MB": 1 << 20, "GB": 1 << 30}
+    to_b = lambda v, u: float(v) * unit[u]
+
+    # ★ 기대값을 손으로 박지 않는다. §1 의 raw 계층 크기와 §2 의 제공기관
+    #   합이 **같아야 한다** 는 것이 불변식이다. 표기 단위가 바뀌어도 산다.
+    m = re.search(r"^  raw\s+\d+개\s+([\d.]+) (\w+)", out, re.M)
+    assert m, f"§1 에서 raw 계층 줄을 못 읽었다:\n{out}"
+    tier = to_b(m.group(1), m.group(2))
+
+    prov = re.findall(r"^  (eais|its)\s+\d+개\s+([\d.]+) (\w+)", out, re.M)
+    assert len(prov) == 2, f"§2 에서 제공기관 줄을 못 읽었다:\n{out}"
+    got = sum(to_b(v, u) for _, v, u in prov)
+
+    assert abs(got - tier) < tier * 0.02, (
+        f"제공기관 합 {got:,.0f}B 가 raw 계층 {tier:,.0f}B 와 다르다\n"
+        "  scan_data 의 psize 누적이 엉뚱한 변수를 더하고 있다.")
+
+
+def test_tidy_never_touches_data():
+    """`tools/tidy.py` 가 재생성 불가능한 계층을 절대 지우지 않는가.
+
+    ★ 정리 도구는 잘못 돌면 복구가 안 된다. 규칙(RULES)에 실수로 데이터
+      경로가 들어가도 `NEVER` 가 막아야 한다 — 규칙은 사람이 고치고,
+      안전장치는 고치지 않는다.
+
+      `data/raw` 는 2.5GB 이고 재취득에 며칠이 걸린다. `data/field` 는
+      **재생성 자체가 불가능하다**(8월 20일 오전 10시의 그 골목은 다시 안 온다).
+      2026-08-11 에 심링크를 git 이 추적해 원본 2.5GB 를 두 번 날린 저장소다.
+    """
+    import tidy  # tools/ — pyproject 의 pytest pythonpath 로 잡힌다
+
+    must = ("data/raw", "data/norm", "data/field", "web/data", ".git",
+            "data/golden", "data/baseline",
+            "data/processed/segments.geojson",
+            "data/processed/_manifest.json",
+            "data/processed/seg_uid_map.csv")
+    for m in must:
+        assert m in tidy.NEVER, f"tidy.NEVER 에 {m} 가 없다"
+        assert tidy.guarded(tidy.ROOT / m), f"guarded() 가 {m} 를 막지 못한다"
+        assert tidy.guarded(tidy.ROOT / m / "안쪽" / "파일.zip"), \
+            f"guarded() 가 {m} 하위를 막지 못한다"
+
+    # 규칙에 데이터 경로가 섞여도 scan 결과에 안 나와야 한다
+    orig = list(tidy.RULES)
+    try:
+        tidy.RULES.append(("테스트", ["data/raw", "web/data"], "일부러 넣는다"))
+        hit = {str(p.relative_to(tidy.ROOT)) for _, p, _, _ in tidy.scan_fs()}
+    finally:
+        tidy.RULES[:] = orig
+    assert not (hit & {"data/raw", "web/data"}), \
+        "규칙에 넣었더니 실제로 잡혔다 — NEVER 가 무력하다"
+
+
+def test_tidy_knows_the_leftovers_that_bit_us():
+    """실제로 사고를 낸 찌꺼기를 `tidy` 가 알고 있는가.
+
+    규칙 목록이 추상적인 위생 항목이 되면 다음에 또 같은 것에 물린다.
+    셋 다 **조용히 틀린 것이 실행된** 사고였다.
+    """
+    import tidy  # tools/ — pyproject 의 pytest pythonpath 로 잡힌다
+
+    globs = {g for _, gs, _ in tidy.RULES for g in gs}
+    for g, why in (("data/processed/*.stale_*", "08-18 — 격리본이 진단을 흐렸다"),
+                   (".work", "08-13 — raw 옆에 풀린 _unz_* 1,570파일")):
+        assert g in globs, f"tidy 규칙에 {g} 가 없다 ({why})"
+
+    # ★ 글롭 문자열을 그대로 요구하면 규칙을 넓힐 때 테스트가 깨진다.
+    #   실제로 그랬다 — `fix-*.sh` 를 `*.sh` 로 넓히자 `apply.sh` 문자열이
+    #   사라져 빨간불이 됐다. **규칙이 나아졌는데 검사가 막는 건 잘못이다.**
+    #   문자열이 아니라 **행동**을 본다: 루트에 옛 패처를 놓고 잡히는가.
+    probe = tidy.ROOT / "apply.sh"
+    made = not probe.exists()
+    if made:
+        probe.write_text("#!/bin/bash\necho old\n", encoding="utf-8")
+    try:
+        hit = {p.name for _, p, _, _ in tidy.scan_fs()}
+        assert "apply.sh" in hit, \
+            "루트의 옛 패처를 tidy 가 안 잡는다 (08-23 — 새 스크립트를 가렸다)"
+    finally:
+        if made:
+            probe.unlink()
+
+    # tools/ 의 이름 있는 도구는 잡으면 안 된다
+    assert not any(p.parent.name == "tools" and p.suffix == ".sh"
+                   for _, p, _, _ in tidy.scan_fs()), \
+        "tools/*.sh 를 일회성으로 잡는다 — verify.sh 가 지워진다"
+
+
+def test_tools_declared_in_docs_exist():
+    """문서가 이름까지 적어놓은 도구가 실재하는가.
+
+    ★ 2026-08-23. MASTER §18-12 가 획득 게이트를 `acquire.py stage` 라고
+      **이름까지 적어놓고** 있었는데 파일이 없었다. `contract.py` 머리말이
+      적은 것과 같은 일이다 — *"설계는 있었고 구현이 없었다."*
+
+      그 사이 실제 획득은 `normalize_raw` 가 복사만 하고 검증은 없었고,
+      landing 2.4GB 가 raw 와 중복된 채 쌓였다.
+
+    ★ R16(`test_readme_structure_lists_real_files`)은 README 구조 블록만 본다.
+      MASTER · PLAN 이 가리키는 도구는 아무도 안 봤다.
+    """
+    import re
+
+    missing = []
+    for rel in ("docs/MASTER.md", "docs/PLAN.md", "README.md"):
+        txt = (ROOT / rel).read_text(encoding="utf-8")
+        for i, ln in enumerate(txt.splitlines(), 1):
+            # `tools/xxx.py` · tools/xxx.py — 실행을 지시하는 표기만 본다
+            # ★ `(삭제됨)` 이 붙은 줄은 회고다. 08-18 에 지운 일회성 패처를
+            #   "이래서 지웠다" 로 인용하는 자리라 파일이 없는 것이 옳다.
+            #   `<!--stale-ok-->` 와 같은 방식 — 표기하는 행위가 곧 기록이다.
+            for m in re.findall(r"tools/([\w_]+\.(?:py|sh|mjs))`?\s*(\(삭제됨\))?", ln):
+                name, retired = m
+                if retired or (ROOT / "tools" / name).exists():
+                    continue
+                missing.append(f"{rel}:{i}  tools/{name}")
+    assert not missing, (
+        "문서가 가리키는데 없는 도구:\n  " + "\n  ".join(sorted(set(missing)))
+        + "\n  만들거나, 문서에서 지우거나, '미구현' 을 명시하라.")
+
+
+def test_acquisition_verifies_content_not_size():
+    """적재 판정이 크기가 아니라 내용을 보는가.
+
+    ★ `normalize_raw` 의 "이미 있음" 이 `st_size` 비교였다. 313MB 정사영상이
+      전송 중 잘려도, 같은 크기의 다른 판이 와도 통과한다. 실증했다 —
+      같은 크기 · 다른 sha 두 파일을 놓으면 "이미 있음 1건" 으로 넘어갔다.
+
+      §18-8 이 백업에 대해 적은 문장이 획득에도 그대로 적용된다:
+      *"문제는 백업이 없어서가 아니라 백업이 깨진 걸 몰랐던 것이다."*
+    """
+    src = (ROOT / "src/firelane/normalize_raw.py").read_text(encoding="utf-8")
+    code = "\n".join(l for l in src.splitlines() if not l.lstrip().startswith("#"))
+    assert "st_size == f.stat().st_size" not in code, (
+        "normalize_raw 가 크기만 보고 '이미 있음' 을 판정한다.\n"
+        "  같은 크기로 잘린 파일이 조용히 통과한다. sha 로 볼 것.")
+    assert "_same(" in code, "normalize_raw 가 내용 비교(_same)를 쓰지 않는다"
+
+
+def test_nothing_writes_into_raw():
+    """어떤 코드도 `raw` 에 쓰지 않는가 (§18-1 R1 · §18-10).
+
+    ★ 2026-08-23. `tools/acquire.py` 를 만들면서 sha 대장을
+      `RAW / "_acquire.json"` 에 뒀다가 되돌렸다. **검증하겠다고 만든 도구가
+      검증 대상을 건드렸다.** 그 순간 대장이 스스로를 무효화한다.
+
+      raw 에 쓰는 것은 이 저장소가 이미 겪은 사고다 — 2026-08-13 에
+      `ngii1k.py` 가 zip 을 raw 옆에 풀어 `_unz_*` 8폴더 1,570파일을 만들었고
+      raw 파일 수가 40배로 보였다. 그래서 `.work/` 가 생겼다.
+
+    ★ 문자열 패턴으로 본다. 완벽하진 않지만 `RAW / "..."` 꼴의 쓰기 대상
+      선언은 잡는다. 읽기(`RAW.glob` · `RAW.rglob` · `RAW / x` 를 읽는 것)는
+      정상이므로 **대입되는 상수 경로**만 본다.
+    """
+    import re
+
+    # ★ 처음에 "RAW / 상수를 변수에 대입하면 쓸 작정" 이라고 짰다가 되돌렸다.
+    #   `report.py` 의 소방청 대조 CSV, `terrain.py` 의 DEM zip 은 **읽기**다.
+    #   대입 자체는 죄가 아니다. 보아야 하는 것은 **쓰기 동사**다.
+    WRITE = ("write_text", "write_bytes", "mkdir", "touch", "unlink",
+             "rename", "replace", "to_file", "to_csv", "rmtree")
+    bad = []
+    for p in sorted(list((ROOT / "src/firelane").rglob("*.py"))
+                    + list((ROOT / "tools").glob("*.py"))):
+        src = p.read_text(encoding="utf-8")
+        # ★ 별칭은 **모듈 상수만** 본다. 처음에 들여쓰기 없는 조건을 안 걸었더니
+        #   `cmd_verify` 의 `p = RAW / rel`(읽기) 때문에 `p` 가 파일 전체에서
+        #   raw 취급이 됐고, landing 파일을 지우는 `p.unlink()` 가 걸렸다.
+        #   지역 루프 변수는 재사용되므로 이름만으로 추적할 수 없다.
+        aliases = {"RAW"} | set(re.findall(r"^([A-Z_][A-Z0-9_]*)\s*=\s*RAW\s*/", src, re.M))
+        pat = "|".join(re.escape(a) for a in aliases)
+        for i, ln in enumerate(src.splitlines(), 1):
+            if ln.lstrip().startswith("#"):
+                continue
+            for verb in WRITE:
+                if re.search(rf"\b(?:{pat})\b[^#]*\.{verb}\s*\(", ln):
+                    bad.append(f"{p.relative_to(ROOT)}:{i}  {ln.strip()[:70]}")
+            # shutil.copy/move 의 **목적지** 가 raw 인 경우
+            if re.search(rf"(?:copyfile|copy2?|move)\s*\([^,]+,\s*(?:str\()?\s*(?:{pat})\b", ln):
+                bad.append(f"{p.relative_to(ROOT)}:{i}  {ln.strip()[:70]}")
+            # open(..., "w")
+            if re.search(rf"\b(?:{pat})\b[^#]*\.open\s*\(\s*[\'\"][wa]", ln):
+                bad.append(f"{p.relative_to(ROOT)}:{i}  {ln.strip()[:70]}")
+    assert not bad, (
+        "raw 에 쓰려는 코드:\n  " + "\n  ".join(bad)
+        + "\n  raw 는 읽기 전용이다(§18-1). 산출물은 processed·저장소 안·.work 로."
+    )
+
+
+def test_acquire_stage_and_quarantine_do_not_fight():
+    """편입과 격리가 서로를 되돌리지 않는가.
+
+    ★ 2026-08-23. `--quarantine` 으로 내린 파일이 landing 에 원본으로 남아
+      있으면 다음 `--stage` 가 규칙대로 **다시 끌어올렸다.** 실제로
+      `firestation_kr_20250701` · `hydrant_point_jngj_20250917` 이 raw 로
+      되돌아왔다. 두 명령이 서로를 무한히 되돌린다.
+
+      `normalize_raw` 는 이름 규칙만 알고 대장을 안 읽는다 — 그것이 옳다.
+      규칙 정본은 하나여야 하고, 이름 규칙과 대장은 다른 층이다.
+      그래서 **판정하는 쪽**(acquire)이 막는다.
+    """
+    import shutil
+    import subprocess
+    import sys
+    import tempfile
+
+    import yaml
+
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    ret = {v["file"] for v in (y.get("retired") or {}).values()
+           if isinstance(v, dict) and v.get("file")}
+    assert ret, "retired 에 file 이 적힌 항목이 없다 — 이 검사가 무의미해진다"
+
+    with tempfile.TemporaryDirectory() as d:
+        base = Path(d)
+        (base / "landing").mkdir()
+        (base / "raw").mkdir()
+        # 폐기 등재된 파일을 landing 에 놓고 편입시킨다
+        for rel in sorted(ret):
+            name = Path(rel).name
+            src = base / "raw" / rel
+            src.parent.mkdir(parents=True, exist_ok=True)
+            src.write_text("x\n", encoding="utf-8")
+            assert name  # 이름이 있어야 되돌림이 매칭된다
+
+        env = {**__import__("os").environ, "FIRE_LANE_DATA": str(base)}
+        r = subprocess.run([sys.executable, str(ROOT / "tools/acquire.py"),
+                            "--stage", "--yes"],
+                           capture_output=True, text=True, cwd=ROOT, env=env)
+        left = sorted(p.name for p in (base / "raw").rglob("*") if p.is_file()
+                      and not p.name.startswith("_"))
+        quarantined = sorted(p.name for p in (base / "_quarantine").rglob("*")
+                             if p.is_file()) if (base / "_quarantine").is_dir() else []
+        shutil.rmtree(base / "raw", ignore_errors=True)
+
+    names = {Path(x).name for x in ret}
+    assert not (set(left) & names), (
+        f"폐기 등재된 파일이 raw 에 남았다: {sorted(set(left) & names)}\n"
+        f"{r.stdout[-600:]}")
+    assert names <= set(quarantined), (
+        f"되돌려지지 않았다. _quarantine: {quarantined}\n{r.stdout[-600:]}")
+
+
+def test_acquire_ledger_ends_with_newline():
+    """sha 대장이 커밋 정책(UTF-8 · LF · 끝 개행)을 지키는가.
+
+    ★ `json.dumps` 는 끝 개행을 안 붙인다. 그래서 pre-commit 훅이 커밋을
+      막았다 — 훅이 제 일을 한 것이고 막힌 쪽이 잘못이었다.
+    """
+    src = (ROOT / "tools/acquire.py").read_text(encoding="utf-8")
+    i = src.index("LEDGER.write_text(")
+    assert '+ "\\n"' in src[i:i + 200], \
+        "LEDGER 를 쓸 때 끝 개행을 안 붙인다 — encoding_check 가 커밋을 막는다"
+
+
+def test_verify_tells_quarantine_from_loss():
+    """`--verify` 가 격리(정상 처분)와 소실(사고)을 구분하는가.
+
+    ★ 2026-08-23. 대장에 있는데 raw 에 없으면 전부 "사라짐" 으로 봤다.
+      `--quarantine` 으로 내린 파일이 거기 걸려 **정상 처분이 빨간불**이 됐다.
+      게이트가 정상 상태에서 울리면 사람이 그 게이트를 무시하기 시작한다 —
+      그 순간 게이트가 없는 것과 같아진다.
+
+      격리는 소실이 아니라 이동이다. `_quarantine` 에 있으면 그렇게 말하고
+      대장에서 뺀다. 대장은 **raw 의 현재 상태**를 말하고, 무엇이 있었는지의
+      역사는 `sources.yaml` 의 `retired` 가 맡는다.
+    """
+    src = (ROOT / "tools/acquire.py").read_text(encoding="utf-8")
+    assert "QUARANTINE / r" in src, \
+        "verify 가 _quarantine 을 안 본다 — 격리를 소실로 오판한다"
+    assert "moved" in src and "gone" in src, \
+        "verify 가 격리와 소실을 한 목록으로 다룬다"
+
+
+def test_docs_call_the_entrypoint_through_uv():
+    """문서의 `fire-lane` 실행 줄이 `uv run` 을 거치는가.
+
+    ★ 2026-08-23. 문서가 `fire-lane --from segments` 라고 적고 있었는데
+      진입점은 `.venv/bin/fire-lane` 에 설치되고 그 폴더는 PATH 에 없다.
+      `command not found` 로 죽는다.
+
+      더 나쁜 것은 그 뒤에 일어난 일이다. 파이프라인이 안 돈 채로
+      `tools/golden.py check` 를 돌렸고 **통과했다.** golden 은
+      `data/processed/segments.geojson` 을 읽는데 그것이 안 바뀌었으니
+      옛 산출물을 옛 지문과 비교한 것이다 — 아무것도 증명하지 않는데
+      초록불이 뜬다. R11("리팩 전후 동일을 증명하기 전에는 커밋하지 마라")을
+      만족한 것처럼 보이게 만든다.
+
+      `tools/verify.sh` 만 `uv run --project` 로 제대로 부르고 있어서
+      CI 에서도 안 드러났다.
+    """
+    import re
+
+    bad = []
+    for rel in ("README.md", "docs/MASTER.md", "docs/PLAN.md",
+                "src/firelane/README.md", "src/firelane/pipeline.py"):
+        p = ROOT / rel
+        if not p.exists():
+            continue
+        for i, ln in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            # 줄 맨 앞(들여쓰기 허용)에서 시작하는 실행 지시만 본다.
+            if re.match(r"^\s*fire-lane(\s|$)", ln) and "uv run" not in ln:
+                bad.append(f"{rel}:{i}  {ln.strip()[:60]}")
+    assert not bad, (
+        "PATH 에 없는 진입점을 그대로 부르는 줄:\n  " + "\n  ".join(bad)
+        + "\n  `uv run fire-lane ...` 로 적어라.")
+
+
+def test_golden_refuses_stale_artifacts():
+    """`golden check` 가 낡은 산출물로 통과하지 않는가.
+
+    ★ 2026-08-23. `fire-lane` 이 PATH 에 없어 파이프라인이 안 돈 채로
+      `golden.py check` 를 돌렸고 **L1·L2·L3 전부 통과했다.**
+      옛 산출물을 옛 지문과 비교했으니 당연하다 — 아무것도 증명하지 않는데
+      *"리팩 전후 동일. 다음 덩어리로 넘어가도 된다"* 가 찍힌다.
+
+      R11 은 "증명 전에 커밋하지 마라" 인데, 증명한 것처럼 보이게 만들면
+      규칙이 무력해진다. **거짓 초록불은 빨간불보다 나쁘다.**
+    """
+    import subprocess
+    import sys
+
+    src = (ROOT / "tools/golden.py").read_text(encoding="utf-8")
+    assert "_staleness" in src, "golden 에 낡음 검사가 없다"
+    assert "allow_stale" in src, "낡음을 알고 넘길 탈출구(--allow-stale)가 없다"
+
+    seg = ROOT / "data/processed/segments.geojson"
+    watched = ROOT / "src/firelane/seg/width.py"
+    if not (seg.exists() and watched.exists()):
+        pytest.skip("산출물이 없다")
+
+    import os
+    st = seg.stat()
+    try:
+        # 판정 코드가 산출물보다 최근인 상태를 만든다
+        os.utime(seg, (st.st_atime, watched.stat().st_mtime - 60))
+        r = subprocess.run([sys.executable, str(ROOT / "tools/golden.py"), "check"],
+                           capture_output=True, text=True, cwd=ROOT)
+        assert r.returncode != 0, (
+            "산출물이 코드보다 낡았는데 통과했다:\n" + r.stdout[-500:])
+        assert "낡" in r.stdout, "왜 막혔는지 말하지 않는다"
+    finally:
+        os.utime(seg, (st.st_atime, st.st_mtime))
+
+
+def test_tidy_ignores_the_virtualenv():
+    """`tidy` 가 `.venv` 를 훑지 않는가.
+
+    ★ 2026-08-23. `**/__pycache__` 가 `.venv/lib/.../site-packages` 안까지
+      훑어 130여 건이 목록에 올라왔다. 셋 다 나쁘다.
+        · uv 가 관리하는 영역이다
+        · 지워도 첫 import 때 다시 생긴다 — **매번 같은 목록이 뜬다**
+        · 진짜 찌꺼기(일회성 패처 12개 · 백업 7개)가 그 속에 묻힌다
+
+      정리 도구가 매번 백 건을 보고하면 사람이 목록을 안 읽게 된다.
+      그러면 도구가 있어도 없는 것과 같다.
+    """
+    import tidy
+    assert ".venv" in tidy.NEVER, "tidy.NEVER 에 .venv 가 없다"
+    assert tidy.guarded(tidy.ROOT / ".venv" / "lib" / "x" / "__pycache__"), \
+        "guarded() 가 .venv 하위를 막지 못한다"
+    hit = [str(p.relative_to(tidy.ROOT)) for _, p, _, _ in tidy.scan_fs()]
+    assert not [x for x in hit if x.startswith(".venv")], \
+        f"scan 결과에 .venv 가 들어있다: {[x for x in hit if x.startswith('.venv')][:3]}"
+
+
+def test_acquire_ledger_is_stable_when_nothing_changed():
+    """대장이 무변경일 때 파일을 건드리지 않는가.
+
+    ★ 2026-08-23. `at` 을 매번 갱신해서 sha 가 하나도 안 바뀌어도 파일이
+      바뀌었다. `--verify` 를 돌릴 때마다 `git diff` 가 생기고, 워킹트리가
+      더러워져 `apply` 가 **두 번** 막혔다.
+
+      "아무것도 안 바뀌었는데 diff 가 생긴다" 는 그 자체로 비용이다 —
+      진짜 변경이 무의미한 변경 속에 묻힌다.
+    """
+    src = (ROOT / "tools/acquire.py").read_text(encoding="utf-8")
+    i = src.index("def save_ledger")
+    body = src[i:i + 1200]
+    assert 'cur.get("files") == d.get("files")' in body, \
+        "save_ledger 가 내용 비교 없이 매번 쓴다"
+    assert body.index('d["at"]') > body.index("return"), \
+        "무변경 반환보다 먼저 at 을 찍으면 소용이 없다"
+
+
+def test_naver_join_flags_small_samples():
+    """네이버 대조가 표본이 작을 때 그것을 말하는가.
+
+    ★ 2026-08-23. `n=10` 에서도 "전수 대조에 쓸 수 있다" 고 단언했다.
+      표준편차 추정 자체가 흔들리는 크기다 — `n=10` 에 `sd=0.35` 를 관측하면
+      참값이 0.56 까지 갈 수 있고, 그것은 기준(0.5)을 넘는다.
+
+      이 저장소가 소방서 7구간을 게이트로 쓰고 그 결과를 "외부 검증" 이라
+      부른 것과 같은 종류다. **표본이 작다는 사실을 말하지 않는 결론은
+      결론이 아니다.**
+    """
+    src = (ROOT / "tools/naver_join.py").read_text(encoding="utf-8")
+    assert "sd_hi" in src, "산포의 신뢰 상한을 계산하지 않는다"
+    assert "잠정" in src, "표본이 작을 때 잠정임을 말하지 않는다"
+    # 상한 계산이 판정보다 앞서야 경고가 의미를 갖는다
+    assert src.index("sd_hi =") < src.index('if abs(med) < 0.3'), \
+        "판정 뒤에 상한을 계산하면 경고가 늦다"
+
+
+def test_review_page_uses_our_own_ortho():
+    """대조 페이지가 **우리** 정사영상을 쓰는가.
+
+    ★ 2026-08-23. 네이버 지도로 대조하려다 접었다 — 하단 표기가
+      `국토지리정보원` 이고, 우리 `ortho`(정사영상 2025, 25cm)와 **같은
+      항공사진**이다. 같은 것을 두 번 보는 것이라 독립 검증이 아니다.
+
+      다만 "어느 쪽이 맞나" 를 가리는 데는 영상이 심판으로 쓸 수 있다.
+      그때도 남의 재압축본이 아니라 **도엽 원본**을 쓴다.
+
+    ★ 외부 지도 타일을 배경으로 끌어오면 이 구분이 무너진다.
+    """
+    src = (ROOT / "tools/jijeok_review.py").read_text(encoding="utf-8")
+    assert "data/ortho/{z}/{x}/{y}.jpg" in src, \
+        "우리 정사영상 타일을 안 쓴다"
+    for bad in ("map.naver.com", "map.kakao.com", "openstreetmap.org/{z}",
+                "tile.openstreetmap"):
+        assert bad not in src, f"외부 지도 타일을 배경으로 쓴다: {bad}"
+
+
+def test_review_page_hides_nothing_it_should_show():
+    """대조 페이지가 판정 어휘와 임계를 코드와 맞추는가.
+
+    ★ 임계 3.0m 를 페이지에 손으로 박으면 `seg/params.py` 의 TRUCK 이
+      바뀔 때 조용히 어긋난다(R3 — 임계값 정본은 params.py 하나다).
+    """
+    from firelane.seg.params import TRUCK
+    src = (ROOT / "tools/jijeok_review.py").read_text(encoding="utf-8")
+    assert f"TH = {TRUCK}" in src, \
+        f"jijeok_review.TH 가 params.TRUCK({TRUCK}) 과 다르다"
+    # 판정 넷이 다 있어야 CSV 가 해석된다
+    for k in ("우리가 맞다", "지적이 맞다", "둘 다 아니다", "못 보겠다"):
+        assert k in src, f"판정 어휘 누락: {k}"
+
+
+def test_review_page_lands_where_serve_can_find_it():
+    """`review.html` 이 `serve.py` 가 주는 위치에 놓이는가.
+
+    ★ 2026-08-23. `paths.WEB` 이 `web/data` 인데 그걸 그대로 써서
+      `web/data/review.html` 에 만들었다. `serve.py` 는 `web/` 을 루트로
+      주므로 `http://localhost:8000/review.html` 이 404 였다.
+
+      도구가 "만들었다" 고 찍고 사람은 열지 못하는 상태다 — 이 저장소가
+      반복해 겪은 그 모양(초록불인데 실제로는 안 됨)의 파일 버전이다.
+    """
+    src = (ROOT / "tools/jijeok_review.py").read_text(encoding="utf-8")
+    assert "WEBROOT = WEB.parent" in src, \
+        "review.html 을 web/data 에 만든다 — serve.py 가 못 준다"
+    assert "dst = WEBROOT / OUT" in src, "저장 위치가 WEBROOT 이 아니다"
+    # 타일 상대경로는 web/ 기준이라야 맞는다
+    assert '"data/ortho/{z}/{x}/{y}.jpg"' in src, \
+        "web/ 기준 타일 경로가 아니다"
+    ign = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "web/review.html" in ign, "생성물인데 gitignore 에 없다"
+
+
+def test_seg_label_is_not_used_as_an_identifier():
+    """`seg_label` 을 식별자처럼 쓰는 곳이 없는가.
+
+    ★ 2026-08-23. `seg_label` 은 표시용이다. 1,101구간 중 **273(24.8%)이
+      중복**이고 62종은 같은 라벨인데 판정이 다르다 —
+      `동계천로43번길 1-5` 하나가 unknown(5.26) · blocked(1.04) ·
+      blocked(1.19) 세 골목을 가리킨다.
+
+      대조 페이지가 라벨만 띄우는 바람에 사람이 어느 골목인지 못 골랐다.
+      네이버로 5.6m 를 잰 골목과 페이지가 보여준 1.19m 짜리가 서로 달랐다.
+
+      고유 식별자는 `seg_uid` 다(결정 72 · 중복 0 · 실행 간 유지).
+      MASTER §11 이 "화면 표기는 seg_label, 외부 참조는 seg_uid" 라고
+      적어놨는데 그 경계가 지켜지지 않았다.
+    """
+    src = (ROOT / "tools/jijeok_review.py").read_text(encoding="utf-8")
+    assert '"uid": r.seg_uid' in src, "review 항목에 seg_uid 가 없다"
+    assert "${d.uid}" in src, "화면에 seg_uid 를 안 띄운다"
+    assert '"sib"' in src, "같은 라벨을 쓰는 형제 수를 안 센다"
+
+
+def test_ship_covers_the_release_checklist():
+    """`tools/ship.py` 가 내보내기 전 검사를 전부 부르는가.
+
+    ★ 2026-08-23. 푸시 전에 밟아야 하는 것이 흩어져 있었다 —
+      `verify.sh` · `tidy.py` · `docnum_check.py` · 문서 4축 · `golden`.
+      **손으로 기억해야 하는 목록은 언젠가 하나를 빠뜨린다.**
+      같은 날 세 번 났다: golden 을 파이프라인 없이 돌려 거짓 초록불을 봤고,
+      `_backup_apply_*` 가 여덟 개 쌓였고, CI 가 `gis` 를 안 보는 채로
+      PR 이 머지되고 있었다.
+
+    ★ `verify.sh` 와 역할이 다르다.
+        verify.sh   코드가 도는가
+        ship.py     내보내도 되는가 (위 + 문서 + 위생 + git)
+      중복 구현하지 않고 `verify.sh` 를 부른다.
+    """
+    src = (ROOT / "tools/ship.py").read_text(encoding="utf-8")
+    for tool in ("verify.sh", "tidy.py", "docnum_check.py", "golden.py"):
+        assert tool in src, f"ship.py 가 {tool} 을 안 부른다"
+    # 브랜치가 CI 트리거에 있는지 — 검사 없이 머지되는 것을 막는 핵심
+    assert "contract.yml" in src, "ship.py 가 CI 트리거를 안 본다"
+    assert "--push" in src, "push 까지 이어지지 않는다"
+
+
+def test_ci_installs_what_the_tests_import():
+    """CI 가 테스트에서 쓰는 외부 패키지를 전부 깔았는가.
+
+    ★ 2026-08-23. `test_ingest_kinds_are_documented` 와
+      `test_acquire_stage_and_quarantine_do_not_fight` 가 `import yaml` 을
+      쓰는데 CI 는 `pytest shapely numpy ruff` 만 깔고 `--no-deps` 로
+      설치한다. **로컬은 `uv sync` 로 전부 깔려 초록불이었고 CI 만
+      빨간불이었다.**
+
+      `test_local_verify_covers_ci` 는 "verify.sh 가 CI 검사를 다 부르는가"
+      만 봤다. 반대 방향 — **CI 환경이 로컬보다 좁은가** — 은 아무도 안 봤다.
+      부분집합 검사는 양방향이어야 한다.
+
+    ★ 정규식으로 YAML 을 파싱해 우회하지 않는다. 대장은 중첩이 깊고
+      `retired.file` 처럼 두 단계 아래를 읽어야 한다. 취약한 파서를
+      테스트에 두면 그 파서가 또 하나의 버그 원천이 된다.
+    """
+    import ast
+    import re
+    import sys
+
+    ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
+    installed: set[str] = set()
+    for m in re.finditer(r"pip install ((?:[\w.\-\[\]]+ ?)+)", ci):
+        for tok in m.group(1).split():
+            if tok.startswith("-") or tok == ".":
+                continue
+            installed.add(re.split(r"[<>=\[]", tok)[0].lower())
+
+    # 로컬 전용 도구(pandas 등)를 쓰는 테스트는 skip 으로 빠지므로 제외한다.
+    # 여기서 보는 것은 **모듈 최상단** import — 그것은 수집 단계에서 죽는다.
+    std = set(sys.stdlib_module_names)
+    DIST = {"yaml": "pyyaml", "PIL": "pillow"}
+    CI_TESTS = ("test_guards.py", "test_static.py", "test_reproducibility.py",
+                "test_layering.py")
+
+    need: dict[str, set[str]] = {}
+    for name in CI_TESTS:
+        f = ROOT / "tests" / name
+        if not f.exists():
+            continue
+        tree = ast.parse(f.read_text(encoding="utf-8"))
+        for n in ast.walk(tree):
+            mods = []
+            if isinstance(n, ast.Import):
+                mods = [a.name for a in n.names]
+            elif isinstance(n, ast.ImportFrom) and n.module and n.level == 0:
+                mods = [n.module]
+            for m in mods:
+                top = m.split(".")[0]
+                if top in std or top in ("firelane", "tidy", "acquire", "pytest"):
+                    continue
+                need.setdefault(DIST.get(top, top).lower(), set()).add(name)
+
+    missing = {k: sorted(v) for k, v in need.items() if k not in installed}
+    assert not missing, (
+        "CI 가 안 깔았는데 테스트가 import 한다:\n  "
+        + "\n  ".join(f"{k}  ← {v}" for k, v in sorted(missing.items()))
+        + "\n  contract.yml 의 pip install 에 추가하라."
+        "\n  ★ 로컬은 uv sync 로 전부 깔려 있어 이 실패가 안 보인다.")

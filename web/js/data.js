@@ -91,7 +91,10 @@ export const markerKeys = () =>
   [...new Set(CONFIG.markers.map(m => m.data).filter(Boolean))];
 
 /* 화면이 처음 뜨는 데 필요한 전부. main.js 가 이것 하나만 부른다. */
-export const BASE_KEYS = ["segments", "buildings", "boundary", "poi"];
+/* ★ 2026-08-23 lightpoles 추가. 발행만 되고 아무도 안 읽던 레이어다.
+   `test_web_data_has_no_unintended_orphan` 의 화이트리스트에서도 뺀다. */
+export const BASE_KEYS = ["segments", "buildings", "boundary", "poi",
+                          "lightpoles"];
 
 export async function loadInitial() {
   // ★ view.json 을 **먼저** 받는다. 그래야 _build 가 채워지고 이후

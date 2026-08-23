@@ -15,7 +15,9 @@
 # 2.5GB. 심링크는 쓰지 않는다(2026-08-11 소실 사고). FIRE_LANE_RAW 로 지정.
 # 디렉터리째 막으면 내부 !예외가 무효가 되므로 하위 항목만 막는다.
 data/raw/**
-!data/raw/README.md
+# ★ 2026-08-23. `!data/raw/README.md` 예외를 뺐다. 그 파일은 다섯 번째
+#   문서였고(R15) MASTER §18 · sources.yaml · src/firelane/README.md 로
+#   흡수했다. raw 아래에는 이제 커밋할 것이 없다.
 
 # ── processed ──────────────────────────────────────────────
 # 전부 재생성 대상이다. 아래 4개만 UI 입력이라 예외.
@@ -37,6 +39,8 @@ data/processed/_lineage.json
 # ── 작업 잔해 ──────────────────────────────────────────────
 .work/
 data/desk/
+# ★ tools/jijeok_review.py 가 만드는 대조 페이지. 생성물이라 커밋하지 않는다.
+web/review.html
 _backup_*/
 *.bak_*
 docs/lineage.mmd

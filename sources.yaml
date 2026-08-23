@@ -20,6 +20,25 @@
 # contract  는 편입 후 inventory.py 가 생성한다. MASTER §18-3b
 # ============================================================
 
+# ── raw 취급 주의 (2026-08-23, data/raw/README.md 흡수분) ──────
+# 파일별 주의는 각 datasets 의 note 에 있다. 아래는 전역이다.
+#
+#   juso zip        내부 .dbf 가 CP949 · .prj 없음 → EPSG:5179 로 set_crs
+#                   내부 한글 파일명이 CP437 로 깨진다. CP949 로 되돌려 매칭
+#   ngii basemap    .cpg 는 UTF-8 이다(cp949 아님). EPSG:5179
+#   ngii1k          같은 도엽이 여러 해로 오면 최신 채택. 연도는 _YYYYMMDD 에서
+#                   뽑는다. ★ 다운로드 zip 을 추출본 옆에 두면 zip 이 우선
+#                   선택돼 **0건이 조용히 나온다**
+#   정사영상        GeoTIFF 가 아니다. .tfw · 도곽좌표 없음. EPSG:5186 이며
+#                   수치지도(5179)와 다르다. ortho.py 가 도엽 격자로 역산한다
+#   Bessel 계열     5174~5178 은 proj4 문자열을 손으로 쓰지 않는다. EPSG 코드로
+#                   정의할 것. towgs84 누락 시 약 390m, 5174 를 5181 로 잘못
+#                   정의하면 약 316m 어긋난다. 축척을 줄이면 정상으로 보여
+#                   발견이 늦다 (firelane.krgis.crs.offset_between 로 정량화)
+#
+# 명명규칙 · kind 목록 · 등록 절차는 src/firelane/README.md 가 정본이다.
+# 계층 · 백업 · 그라운드 룰은 docs/MASTER.md §18 이 정본이다.
+
 project: fire-lane
 target_area: 전남광주통합특별시 동구 동명동
 bbox_4326: [126.907, 35.140, 126.940, 35.162]   # 임시. 행정구역경계 확보 시 교체
@@ -28,6 +47,23 @@ standard_crs:
   display: EPSG:4326    # 웹 표출 / GeoJSON
 
 datasets:
+  node_link_changelog:
+    what: 국가교통정보센터 표준노드링크 변경 내역서
+    kind: raw_only
+    file: its/its_nodelink_changelog_20260812.csv
+    provider: 국가교통정보센터
+    updated: '2026-08-12'
+    acquired: '2026-08-12'
+    scope: 전국
+    license: 공공누리 1유형
+    feeds: 미투입 — node_link 판이 바뀌었을 때 무엇이 변했는지 확인용
+    used_for: |
+      ★ 2026-08-23 등재. normalize_raw 가 `내역서.csv` 를 raw 로 옮기는
+      규칙은 있었는데 대장에 항목이 없어 획득 게이트가 격리 대상으로
+      잡았다. R4(feeds 를 못 채우면 raw 에 둘 이유가 없다)에 따라
+      "언제 쓸지" 를 적고 raw_only 로 둔다.
+      node_link 는 507배 오염 전력이 있는 소스다(PLAN §1-16). 판이 바뀌면
+      이 내역서로 무엇이 늘었는지 먼저 본다.
 
   # ── 도로 그래프 뼈대 ─────────────────────────────────────
   # ★ road_link / road_rw 는 juso_road_geom(291MB, 6월) 을 보고 있으나
@@ -486,7 +522,7 @@ datasets:
       ★ 해상도 90m. 동명동 전체가 12x12 픽셀이다. 세그먼트별 경사 산출 불가.
         한 픽셀이 골목 20개를 덮는다. 평활화로 경사가 실제보다 낮게 나온다.
       ★ 판정에는 쓰지 않는다. 표현용으로만 쓴다.
-        src/etl/terrain.py 가 스코프로 클립 + 8배 이중선형 보간 후
+        src/firelane/terrain.py 가 스코프로 클립 + 8배 이중선형 보간 후
         data/processed/dem_scope.tif 와 각 레이어의 z 컬럼을 만든다.
         보간은 없는 정보를 만드는 게 아니라 계단 현상을 없애는 것이다.
       쓸 수 있는 것: 표고 33.3~75.3m, 기복 42m 라는 배경 서술 + 3D 입체감.
@@ -508,7 +544,7 @@ datasets:
     note: |
       원본 TIF 에 geotransform 이 없다. 메타데이터 XML 에
       "TM 중부원점 / GRS80 / Easting 200000 / Northing 600000" (= EPSG:5186) 만 적혀 있다.
-      src/etl/ortho.py 가 도엽 격자로 좌표를 역산해 붙인다.
+      src/firelane/ortho.py 가 도엽 격자로 좌표를 역산해 붙인다.
       검증: 같은 도엽 수치지도(5179)와 도엽 간격 일치 (동서 2277.2m · 남북 2772.5m).
       정사영상은 도엽보다 2379x2874m 로 커서 사방 약 51m 오버랩이다.
       ★ 배경 텍스처 전용이다. 판정에는 쓰지 않는다.
@@ -717,6 +753,26 @@ basemap:
 # ── 폐기 기록 ────────────────────────────────────────────
 # 지운 것도 남긴다. 없으면 3개월 뒤에 또 받고 또 조사한다. MASTER §18-3c
 retired:
+  firestation_kr_20250701:
+    what: 소방청 시도 소방서 현황 (2025-07-01 판)
+    file: safety/safety_firestation_kr_20250701.csv
+    at: 2026-08-23
+    successor: fire_station (safety_firestation_kr_20240901.csv)
+    reason: |
+      좌표가 없다. 주소 문자열뿐이라 지오코딩을 한 번 더 거쳐야 하는데,
+      활성판(20240901)은 XY 좌표를 직접 갖는다. 더 최신인데 쓸 수 없는 것이라
+      "최신이 항상 낫다" 가 성립하지 않는 사례다.
+      2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
+  hydrant_point_jngj_20250917:
+    what: 전남광주통합특별시 소방 용수시설 현황 (2025-09-17)
+    file: safety/safety_hydrant_point_jngj_20250917.csv
+    at: 2026-08-23
+    successor: hydrant_point (safety_hydrant_point_kr_20240207.csv)
+    reason: |
+      전국 표준데이터(kr_20240207)와 겹치는 범위인데 스키마가 다르고
+      좌표 정밀도가 낮다. 동명동 소화전은 전국판으로 11개가 잡히며
+      그것이 현재 지도에 올라간 값이다.
+      2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
   ngii1k_ngii_platform:
     what: 국토정보플랫폼 수치지형도 1:1,000 (NGI/NDA + 일부 SHP)
     vintage: 2019~2022 혼합 (도엽 20장)
@@ -726,7 +782,7 @@ retired:
       V-WORLD 판으로 교체. vintage 2020/2022 → 2026-03, 도엽 20 → 74,
       NGI/NDA 텍스트 → 전부 SHP(GDAL 직독), 도로명 빈값 → 채워짐,
       자동차전용 속성 추가. 좌표계는 둘 다 5186 으로 동일.
-      전용 파서 src/etl/ngi.py 가 불필요해진다.
+      전용 파서 src/firelane/ngi.py 가 불필요해진다.
 
   ngii1k_meta_xlsx:
     what: 국토정보플랫폼 수치지도에 딸려오던 xlsx 12개
@@ -2207,14 +2263,14 @@ inventory:
 # 이게 없으면 소스 하나를 못 건드린다. datalog.py impact 가 이걸 읽는다.
 outputs:
   segments:
-    produced_by: src/etl/segments.py
+    produced_by: src/firelane/segments.py
     path: data/processed/segments.geojson
     inputs: [ngii1k, ngii_road, road_rw, road_link, building, building_entrance, boundary_emd, cctv, fire_station, node_link, turn_restriction]
     stable_key: seg_uid
     consumers:
     - web/app.js
-    - src/etl/publish_web.py
-    - src/etl/sample_design.py
+    - src/firelane/publish_web.py
+    - src/firelane/sample_design.py
     - tests/test_contract.py
     what: 구간 단위 통행 판정. verdict 4종 + 폭 + CCTV 가시성
     verified: false
@@ -2224,10 +2280,10 @@ outputs:
     - 실질 잔여 3건은 본선+측도 병합. 도로대장 청구 중(2026-08-14)
 
   ngii1k_center:
-    produced_by: src/etl/ngii1k.py
+    produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_center_5186.gpkg
     inputs: [ngii1k]
-    consumers: [src/etl/segments.py]
+    consumers: [src/firelane/segments.py]
     what: |
       도로중심선 A0020000. 측량 성과 도로폭·일방통행·차로수 속성 보유.
       우리 기하 계산과 독립이라 대조 검증에 쓴다(절대편차 중앙 0.32m, n=909).
@@ -2237,7 +2293,7 @@ outputs:
     - 짧은 링크에는 본선 폭이 붙는다. 검증 기준으로는 긴 구간만 쓸 것
 
   ngii1k_walk:
-    produced_by: src/etl/ngii1k.py
+    produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_walk_5186.gpkg
     inputs: [ngii1k]
     consumers: []
@@ -2247,10 +2303,10 @@ outputs:
     - 772건이나 구간 커버율 13%. 전면 차감 불가
 
   ngii1k_xsec:
-    produced_by: src/etl/ngii1k.py
+    produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_xsec_5186.gpkg
     inputs: [ngii1k]
-    consumers: [src/etl/segments.py]
+    consumers: [src/firelane/segments.py]
     what: |
       평면교차점 A0080000. 교차부 실제 형상.
       XSEC_EXCL(노드 반경 5m) 눈대중을 대체한다.
@@ -2258,7 +2314,7 @@ outputs:
     verified: true
 
   seg_uid_map:
-    produced_by: src/etl/segkey.py
+    produced_by: src/firelane/segkey.py
     path: data/processed/seg_uid_map.csv
     inputs: [segments]
     consumers: [tests/test_contract.py]
@@ -2266,7 +2322,7 @@ outputs:
     verified: true
 
   field_sample:
-    produced_by: src/etl/sample_design.py
+    produced_by: src/firelane/sample_design.py
     path: data/field/sample_segments.csv
     inputs: [segments]
     stable_key: seg_uid

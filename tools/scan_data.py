@@ -123,10 +123,21 @@ def main() -> int:
     else:
         prov = collections.Counter()
         psize = collections.Counter()
-        for rel, _sz, _ in raw:
+        for rel, fsz, _ in raw:
             k = rel.parts[1] if len(rel.parts) > 1 else "(raw 직하 파일)"
             prov[k] += 1
-            psize[k] += sz
+            # ★ 2026-08-23 버그 수정. 여기가 `psize[k] += sz` 였다.
+            #   루프 변수는 `_sz` 인데 §1 루프의 마지막 `sz` 를 더하고 있었다.
+            #   함수 스코프에 `sz` 가 살아 있어 NameError 도 안 났고 —
+            #   `test_static.py`(정의되지 않은 이름)도 못 잡는다.
+            #
+            #   결과: 모든 제공기관 크기가 **마지막 파일 크기 × 파일 수** 였다.
+            #   실측(2026-08-23, 외장 SSD): 전체 5.8GB 인데 폴더 합이 30GB —
+            #   eais 1개 970.2MB · its 2개 1.9GB · ngii 11개 10.4GB,
+            #   전부 970.2MB(= nsdi/AL_D002 크기)의 배수였다.
+            #
+            #   숫자가 그럴듯해서 오래 안 보였다. 합계와 대조했으면 즉시 드러났다.
+            psize[k] += fsz
         for k in sorted(prov):
             tag = PROVIDERS.get(k, "★ 규칙에 없는 폴더")
             print(f"  {k:16s} {prov[k]:5,}개 {human(psize[k]):>10s}  {tag}")

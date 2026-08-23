@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -34,10 +33,23 @@ PROCESSED = ROOT / "data" / "processed"
 MANIFEST = PROCESSED / "_manifest.json"
 # ★ processed 는 백업하지 않는다. raw + 코드 + 대장으로 재생성된다.
 #   보관 우선순위: raw·field(재생성 불가) > norm(재정규화 가능) > processed(버림)
+# 저장소 **안**에 있을 때만 해당한다. 밖에 있으면 EXTERNAL_TARGETS 가 잡는다.
 BACKUP_TARGETS = ["data/raw", "data/norm", "data/field"]
-# raw 는 레포 밖($FIRE_LANE_RAW)에 있다. 상대경로만 훑으면 2.5GB 가 통째로 빠진다.
+# raw 는 레포 밖에 있다. 상대경로만 훑으면 2.5GB 가 통째로 빠진다.
 # 백업 대상에서 raw 가 빠졌다는 것을 파일 개수로만 알 수 있으면 조용한 결측이다.
-EXTERNAL_TARGETS = [Path(os.environ["FIRE_LANE_RAW"])] if os.environ.get("FIRE_LANE_RAW") else []
+#
+# ★ 2026-08-23 버그 수정. 종전에는 **폐기된 `FIRE_LANE_RAW` 만** 봤다.
+#   현행 변수는 `FIRE_LANE_DATA` 이고(MASTER §6-2), 그것만 설정한 기계에서는
+#   EXTERNAL_TARGETS 가 빈 리스트가 되어 **raw 가 백업에서 통째로 빠졌다.**
+#   `data/raw` 상대경로는 저장소 안이라 존재하지 않으므로 "백업 대상 없음"
+#   한 줄만 찍고 넘어간다 — 정확히 이 파일이 경고하는 조용한 결측이다.
+#   경로 정본은 paths.py 다. 여기서 환경변수를 직접 읽지 않는다.
+from firelane.paths import FIELD as _FIELD
+from firelane.paths import NORM as _NORM
+from firelane.paths import RAW as _RAW
+
+EXTERNAL_TARGETS = [q for q in (_RAW, _NORM, _FIELD)
+                    if q.exists() and ROOT not in q.parents and q != ROOT]
 
 # ★ raw 와 field 는 재생성이 불가능하다. processed 는 재생성되지만 시간이 든다.
 #   이 우선순위가 백업 순서이자 복원 훈련 대상 순서다.
@@ -239,8 +251,14 @@ def cmd_backup(dest: str) -> None:
     D.mkdir(parents=True, exist_ok=True)
     index = {}
     n = 0
-    _pairs = [(ROOT / rel, ROOT) for rel in BACKUP_TARGETS]
+    _pairs = [(ROOT / rel, ROOT) for rel in BACKUP_TARGETS
+              if (ROOT / rel).exists()]
+    # ★ 저장소 밖 계층(raw · norm). 위와 겹치지 않는다 — 위는 exists() 로
+    #   걸러지고 raw 가 밖에 있으면 저장소 안 경로는 존재하지 않는다.
     _pairs += [(ext, ext.parent) for ext in EXTERNAL_TARGETS]
+    if not _pairs:
+        print("  ★ 백업 대상이 하나도 없다. FIRE_LANE_DATA 를 확인하라.")
+        print("     복사할 것이 없는 것과 못 찾은 것은 다르다.")
     for base, anchor in _pairs:
         if not base.exists():
             print(f"  ! 백업 대상 없음: {base}")
