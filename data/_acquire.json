@@ -84,10 +84,6 @@
    "sha256": "4d4f370921c4af315fc5bd2d4fef4790a758e0d5620697b3a8af3c704f3aa52c",
    "bytes": 2425
   },
-  "nsdi/AL_D002_12_20260808.zip": {
-   "sha256": "3b8bc253baa0c9a151997ae43eb995c5090a10d9acb16d88be64b4885c6f18af",
-   "bytes": 1017278877
-  },
   "safety/safety_cctv_jngj_20260630.csv": {
    "sha256": "96bf98b168cb6721c4c27b52dac10d2e895b244ecf7128b1e34bc15570901552",
    "bytes": 771408
@@ -99,14 +95,6 @@
   "safety/safety_firestation_kr_20240901.csv": {
    "sha256": "b65a8bb8e2197f8999384c259c9154247f2d537a10604f9e24d19b1244bb89b7",
    "bytes": 169090
-  },
-  "safety/safety_firestation_kr_20250701.csv": {
-   "sha256": "ec7c27eef9a1a7547ae6da629199de2f4d46c6377931a8b1e242f3e76fb8087c",
-   "bytes": 20749
-  },
-  "safety/safety_hydrant_point_jngj_20250917.csv": {
-   "sha256": "07424bbf506efd0b8205e8718e53e8776315aa315c48a539abccf99adf8683cd",
-   "bytes": 1998014
   },
   "safety/safety_hydrant_point_kr_20240207.csv": {
    "sha256": "85a56e0ae97002b0fe8ea4eb3c9eadbf72ddb601b2f961d5f640662882a92437",
@@ -127,7 +115,11 @@
   "vworld/vworld_map1k_ngi_gjdonggu_20260307.zip": {
    "sha256": "1db699d03bc771282bd84beb3c1a9873580dc512e52b75e9da817d2ab875dd73",
    "bytes": 17086559
+  },
+  "gjcity/gjcity_parking_enforce_dongu_20250226.csv": {
+   "sha256": "4cb4c4e95353af782b4fdf8cf9726603ca0fff2b1b12fbbc631f3939e49fbf78",
+   "bytes": 3046281
   }
  },
- "at": "2026-08-23T14:27:58+09:00"
+ "at": "2026-08-23T17:29:09+09:00"
 }
