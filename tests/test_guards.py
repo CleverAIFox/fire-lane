@@ -628,6 +628,12 @@ def test_local_verify_covers_ci():
     ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
     vs = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
 
+    # ★ 2026-08-23 추가. 검사 목록이 같아도 **환경**이 다르면 결과가 갈린다.
+    #   로컬은 uv sync 로 전부 깔려 있고 CI 는 최소한만 깐다.
+    #   `verify.sh` 가 그 환경을 흉내내지 않으면 로컬 초록불이 보증이 안 된다.
+    assert "CI 환경 재현" in vs, \
+        "verify.sh 가 CI 의 좁은 환경을 재현하지 않는다 — 로컬 초록불이 보증이 아니다"
+
     tools = ("commit_policy", "encoding_check", "docnum_check",
              "web_manifest", "js_graph_check", "web_boot_check")
     missing = [t for t in tools if t in ci and t not in vs]
@@ -1168,3 +1174,65 @@ def test_ship_covers_the_release_checklist():
     # 브랜치가 CI 트리거에 있는지 — 검사 없이 머지되는 것을 막는 핵심
     assert "contract.yml" in src, "ship.py 가 CI 트리거를 안 본다"
     assert "--push" in src, "push 까지 이어지지 않는다"
+
+
+def test_ci_installs_what_the_tests_import():
+    """CI 가 테스트에서 쓰는 외부 패키지를 전부 깔았는가.
+
+    ★ 2026-08-23. `test_ingest_kinds_are_documented` 와
+      `test_acquire_stage_and_quarantine_do_not_fight` 가 `import yaml` 을
+      쓰는데 CI 는 `pytest shapely numpy ruff` 만 깔고 `--no-deps` 로
+      설치한다. **로컬은 `uv sync` 로 전부 깔려 초록불이었고 CI 만
+      빨간불이었다.**
+
+      `test_local_verify_covers_ci` 는 "verify.sh 가 CI 검사를 다 부르는가"
+      만 봤다. 반대 방향 — **CI 환경이 로컬보다 좁은가** — 은 아무도 안 봤다.
+      부분집합 검사는 양방향이어야 한다.
+
+    ★ 정규식으로 YAML 을 파싱해 우회하지 않는다. 대장은 중첩이 깊고
+      `retired.file` 처럼 두 단계 아래를 읽어야 한다. 취약한 파서를
+      테스트에 두면 그 파서가 또 하나의 버그 원천이 된다.
+    """
+    import ast
+    import re
+    import sys
+
+    ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
+    installed: set[str] = set()
+    for m in re.finditer(r"pip install ((?:[\w.\-\[\]]+ ?)+)", ci):
+        for tok in m.group(1).split():
+            if tok.startswith("-") or tok == ".":
+                continue
+            installed.add(re.split(r"[<>=\[]", tok)[0].lower())
+
+    # 로컬 전용 도구(pandas 등)를 쓰는 테스트는 skip 으로 빠지므로 제외한다.
+    # 여기서 보는 것은 **모듈 최상단** import — 그것은 수집 단계에서 죽는다.
+    std = set(sys.stdlib_module_names)
+    DIST = {"yaml": "pyyaml", "PIL": "pillow"}
+    CI_TESTS = ("test_guards.py", "test_static.py", "test_reproducibility.py",
+                "test_layering.py")
+
+    need: dict[str, set[str]] = {}
+    for name in CI_TESTS:
+        f = ROOT / "tests" / name
+        if not f.exists():
+            continue
+        tree = ast.parse(f.read_text(encoding="utf-8"))
+        for n in ast.walk(tree):
+            mods = []
+            if isinstance(n, ast.Import):
+                mods = [a.name for a in n.names]
+            elif isinstance(n, ast.ImportFrom) and n.module and n.level == 0:
+                mods = [n.module]
+            for m in mods:
+                top = m.split(".")[0]
+                if top in std or top in ("firelane", "tidy", "acquire", "pytest"):
+                    continue
+                need.setdefault(DIST.get(top, top).lower(), set()).add(name)
+
+    missing = {k: sorted(v) for k, v in need.items() if k not in installed}
+    assert not missing, (
+        "CI 가 안 깔았는데 테스트가 import 한다:\n  "
+        + "\n  ".join(f"{k}  ← {v}" for k, v in sorted(missing.items()))
+        + "\n  contract.yml 의 pip install 에 추가하라."
+        "\n  ★ 로컬은 uv sync 로 전부 깔려 있어 이 실패가 안 보인다.")

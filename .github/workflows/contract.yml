@@ -49,7 +49,17 @@ jobs:
         #   geopandas·rasterio 전부 받으면 CI 가 몇 분씩 늘어난다.
         #   여기서 도는 테스트들은 shapely·numpy 밖에 안 쓴다.
         run: |
-          pip install pytest shapely numpy ruff
+          # ★ 2026-08-23 pyyaml 추가. `sources.yaml` 은 대장이고 그것을 읽는
+          #   검사가 늘고 있다(kind 정합 · retired 대조 · 필수 필드).
+          #   여기 없어서 `test_ingest_kinds_are_documented` ·
+          #   `test_acquire_stage_and_quarantine_do_not_fight` 가
+          #   ModuleNotFoundError 로 죽었다 — **로컬은 uv sync 로 전부 깔려
+          #   초록불이었고 CI 만 빨간불이었다.**
+          #
+          #   정규식으로 YAML 을 파싱해 우회하지 않는다. 대장은 중첩이 깊고
+          #   `retired.file` 처럼 두 단계 아래를 읽어야 한다. 취약한 파서를
+          #   테스트에 두면 그 파서가 또 하나의 버그 원천이 된다.
+          pip install pytest shapely numpy ruff pyyaml
           pip install -e . --no-deps
 
       - name: 커밋 정책

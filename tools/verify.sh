@@ -85,6 +85,21 @@ step "ruff" uv run ruff check src tools tests
 #   이것 하나면 된다" 고 하는데, verify.sh 초록불이어도 CI 는 빨간불이 될 수
 #   있었다 — 커밋 정책 · 인코딩 · web/data 계보 · 문서 숫자 · 용량 상한.
 #   로컬 검증이 CI 의 부분집합이면 "내 기계에서는 됐는데" 가 나온다.
+# ★ 2026-08-23. CI 는 `pip install pytest shapely numpy ruff pyyaml` +
+#   `--no-deps` 로만 깐다. 로컬은 `uv sync` 로 전부 깔려 있어
+#   **로컬 초록불 · CI 빨간불**이 난다. 실제로 `import yaml` 을 쓰는
+#   테스트 둘이 그렇게 죽었다.
+#   CI 가 없는 패키지를 가려서 그 환경을 흉내낸다. 30초면 된다.
+step "CI 환경 재현"     bash -c '
+    B=$(mktemp -d)
+    # CI 가 안 까는 것들. contract.yml 의 pip install 목록에 없는 것.
+    for m in pandas geopandas pyogrio pyproj rasterio PIL ruamel; do
+        printf "raise ModuleNotFoundError(\"No module named %s\")\n" "$m" > "$B/$m.py"
+    done
+    PYTHONPATH="$B" uv run python -m pytest \
+        tests/test_guards.py tests/test_static.py \
+        tests/test_reproducibility.py tests/test_layering.py -q'
+
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
