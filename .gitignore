@@ -65,3 +65,8 @@ data/processed/*.stale_*
 # 계보 기록. 실행마다 달라진다.
 data/processed/_lineage.json
 node_modules/
+data/field/naver_check.csv
+data/field/naver_check.html
+data/field/naver_near.json
+data/field/.naver_sealed.csv
+data/field/naver_join.csv
