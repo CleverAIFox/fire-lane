@@ -51,10 +51,9 @@ import geopandas as gpd
 import pandas as pd
 from pyproj import Transformer
 
-from firelane.paths import PROCESSED, ROOT
+from firelane.paths import FIELD, PROCESSED
 
 CRS_M = "EPSG:5186"
-FIELD = ROOT / "data" / "field"
 SEED = 20260823            # ★ 고정. 재현 안 되면 표본 설계가 아니다
 MIN_LEN = 20.0             # 이보다 짧으면 네이버에서 두 점 찍기가 어렵다
 

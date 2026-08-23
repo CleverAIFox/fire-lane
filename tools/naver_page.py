@@ -29,9 +29,7 @@ from __future__ import annotations
 import csv
 import json
 
-from firelane.paths import ROOT
-
-FIELD = ROOT / "data" / "field"
+from firelane.paths import FIELD
 
 # ── 지도와 같은 팔레트를 쓴다. 같은 프로젝트의 도구다. ──────────
 CSS = """

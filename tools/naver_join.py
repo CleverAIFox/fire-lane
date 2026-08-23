@@ -36,9 +36,7 @@ import csv
 
 import pandas as pd
 
-from firelane.paths import ROOT
-
-FIELD = ROOT / "data" / "field"
+from firelane.paths import FIELD
 
 
 def load(p):

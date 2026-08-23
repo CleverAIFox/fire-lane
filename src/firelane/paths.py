@@ -55,7 +55,19 @@ RAW = Path(_legacy_raw
 NORM = (DATA / "norm") if DATA else (ROOT / "data" / "norm")
 
 # 실측 원자료. ★ 재생성 불가. raw 와 같은 등급으로 보호한다.
-FIELD = (DATA / "field") if DATA else (ROOT / "data" / "field")
+# ★ 2026-08-23. FIRE_LANE_DATA 를 타지 않는다. 저장소 안이 정본이다.
+#   종전에는 (DATA / "field") 였는데 그것이 문서 셋을 다 어겼다.
+#     MASTER §18-1 계층표      field → `data/field/`
+#     MASTER §6-2 보관 전략     FIRE_LANE_DATA 는 raw 2.2GB 를 저장소 밖에
+#                              두려는 것이다. field 를 옮기려는 것이 아니다
+#   야장은 CSV 세 개에 수십 KB 이고, UI 담당·심사위원이 clone 만으로 봐야
+#   하는 자료다. web/data 를 git 에 넣는 것과 같은 논리다.
+#
+#   ★ 이 정의를 쓰는 곳이 한 곳도 없었다. sample_design.py 는 자기 파일에
+#     ROOT/"data"/"field" 를 따로 두고 있었고 그쪽이 맞았다. 아무도 안 쓰는
+#     정의가 조용히 문서를 어기고 있었던 것이고, 쓰기 시작하는 순간
+#     FIRE_LANE_DATA 가 설정된 기계에서 야장이 SSD 로 이사했을 것이다.
+FIELD = ROOT / "data" / "field"
 
 # 대장에 없는 파일. 삭제하지 않고 격리한다(MASTER §18-12).
 QUARANTINE = (DATA / "_quarantine") if DATA else (ROOT / "data" / "_quarantine")

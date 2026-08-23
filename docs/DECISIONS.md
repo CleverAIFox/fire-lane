@@ -1166,3 +1166,37 @@ MASTER §19 에 정본을 둔다.
 (`-d .d.zip`) 자리표시자가 그대로 실행됐다(`<실패한 것들>`). ruff 출력이
 파일명으로 해석돼 **쓰레기 파일 18개가 커밋되기도 했다.** 그 뒤로 한 줄씩
 주는 방식으로 바꿨다.
+
+## `paths.FIELD` 가 문서 셋을 다 어기고 있었다
+
+    FIELD = (DATA / "field") if DATA else (ROOT / "data" / "field")
+
+`FIRE_LANE_DATA` 가 설정된 기계에서는 야장이 SSD 로 간다. 그런데 문서는
+반대를 적어놨다.
+
+    MASTER §18-1 계층표    field → `data/field/`
+    MASTER §6-2 보관 전략   FIRE_LANE_DATA 는 raw 2.2GB 를 저장소 밖에
+                          두려는 것이다. field 를 옮기려는 것이 아니다
+
+야장은 CSV 세 개에 수십 KB 이고, UI 담당·심사위원이 clone 만으로 봐야
+하는 자료다. `web/data` 를 git 에 넣는 것과 같은 논리다.
+
+★ **그 정의를 쓰는 곳이 한 곳도 없었다.** `sample_design.py` 는 자기
+파일에 `ROOT/"data"/"field"` 를 따로 두고 있었고 **그쪽이 맞았다.**
+아무도 안 쓰는 정의가 조용히 문서를 어기고 있었고, 쓰기 시작하는 순간
+야장이 SSD 로 이사했을 것이다.
+
+`naver_check.py` · `naver_page.py` · `naver_join.py` 도 같은 지역 정의를
+쓰고 있었다. 전부 `paths.FIELD` 로 모았다.
+
+`test_paths_match_layer_table` 이 강제한다. 환경변수를 타야 하는 계층
+(`raw` · `norm` · `quarantine`)과 타면 안 되는 계층(`field` · `processed`)을
+가른다.
+
+── 이 건에서 배운 것 ──────────────────────────────────────────
+08-22 작업 중 이것을 "불일치, DECISIONS 안건" 으로 분류하고 동작을
+유지했다. **방향이 반대였다.** `paths.py` 30줄과 MASTER §18-1 을 읽었으면
+안건이 아니라 버그였다.
+
+문서를 안 읽고 코드만 보고 판단한 결과다. 4축 문서가 있는데 그것을
+근거로 쓰지 않으면 문서가 있으나 마나다.

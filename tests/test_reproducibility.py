@@ -401,3 +401,43 @@ def test_web_manifest_is_cwd_independent():
     for bad in ('Path("web/data")', "Path('web/data')",
                 'Path("data/processed")', "Path('data/processed')"):
         assert bad not in code, f"cwd 상대경로가 되살아났다: {bad}"
+
+
+def test_paths_match_layer_table():
+    """paths.py 의 계층 경로가 MASTER §18-1 표와 같은가.
+
+    ★ 2026-08-23. paths.FIELD 가 `(DATA / "field") if DATA else ...` 였다.
+      MASTER §18-1 표는 `data/field/` 라고 적어놨고, §6-2 는
+      FIRE_LANE_DATA 가 **raw 2.2GB 를 저장소 밖에 두려는 것**이라고
+      적어놨다. field 는 CSV 세 개에 수십 KB 이고 UI 담당·심사위원이
+      clone 만으로 봐야 하는 자료다.
+
+      그런데 그 정의를 **쓰는 곳이 한 곳도 없었다.** sample_design.py 는
+      자기 파일에 ROOT/"data"/"field" 를 따로 두고 있었고 그쪽이 맞았다.
+      아무도 안 쓰는 정의가 조용히 문서를 어기고 있었고, 쓰기 시작하는
+      순간 FIRE_LANE_DATA 가 설정된 기계에서 야장이 SSD 로 이사했을 것이다.
+
+    ★ 검사 대상은 "환경변수를 타는가" 다. raw·norm·quarantine 은 타야 하고
+      field·processed 는 타면 안 된다.
+    """
+    src = (ROOT / "src" / "firelane" / "paths.py").read_text(encoding="utf-8")
+
+    import re
+    code = re.sub(r'"""[\s\S]*?"""', "", src)
+    code = re.sub(r"^\s*#.*$", "", code, flags=re.M)
+
+    for name, why in (
+        ("FIELD", "실측 원자료는 저장소 안이 정본이다 (MASTER §18-1)"),
+        ("PROCESSED", "재생성 가능하고 drvfs I/O 가 느리다"),
+    ):
+        m = re.search(rf"^{name}\s*=\s*(.+)$", code, re.M)
+        assert m, f"paths.py 에 {name} 정의가 없다"
+        assert "DATA" not in m.group(1), (
+            f"{name} 이 FIRE_LANE_DATA 를 탄다 — {why}\n"
+            f"  {m.group(0).strip()}")
+
+    for name in ("RAW", "NORM", "QUARANTINE"):
+        m = re.search(rf"^{name}\s*=\s*(.+)$", code, re.M)
+        assert m and ("DATA" in m.group(1) or "_legacy_raw" in m.group(1)), (
+            f"{name} 이 FIRE_LANE_DATA 를 타지 않는다. "
+            "저장소 밖에 둘 수 있어야 한다 (MASTER §6-2)")
