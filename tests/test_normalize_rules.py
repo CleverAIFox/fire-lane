@@ -124,3 +124,43 @@ def test_required_and_missing_lists_use_declared_folders():
     """`REQUIRED` · `MISSING` 의 폴더가 기관 목록 안에 있는가."""
     bad = [r for r in (*N.REQUIRED, *N.MISSING) if r.split("/")[0] not in ORG]
     assert not bad, ("기관 목록에 없는 폴더를 쓴다: " + ", ".join(bad))
+
+
+def test_rules_do_not_reimport_retired_files():
+    """★ 대장이 폐기했는데 정규화기가 다시 끌어오면 안 된다.
+
+    2026-08-24. `sources.yaml` 의 `retired` 에 사유까지 적어놓은 둘을
+    `normalize_raw.RULES` 가 여전히 raw 로 편입하고 있었다.
+
+        firestation_kr_20250701      좌표가 없다. 활성판은 XY 를 갖는다
+        hydrant_point_jngj_20250917  전남 판. 광주 0건
+
+    normalize_raw 주석은 *"좌표 없는 시도 소방서 현황(20250701)은 규칙을
+    두지 않는다"* 라고 적고 있었다. **주석과 코드가 정반대였다.**
+    landing 에서 파일을 옮겨 우회했더니 다음에 다시 받으면 또 났다.
+
+    정본이 둘이면 반드시 어긋난다(§18-3). 대장이 정본이고 규칙이 따른다.
+    """
+    import yaml
+    cfg = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    retired = {Path(str(v["file"])).name
+               for v in (cfg.get("retired") or {}).values()
+               if isinstance(v, dict) and v.get("file")}
+    if not retired:
+        return
+    # ★ 접두어로 비교하면 활성판까지 걸린다. `safety_firestation_kr_20240901`
+    #   (현역)과 `..._20250701`(폐기)은 접두어가 같다. 템플릿을 정규식으로
+    #   바꿔 **그 규칙이 실제로 그 이름을 낼 수 있는가**만 본다.
+    bad = []
+    for pat, folder, tmpl in N.RULES:
+        if tmpl is None:
+            continue
+        rx = re.compile("^" + "(.+)".join(
+            re.escape(x) for x in tmpl.split("{0}")) + "$")
+        for r in sorted(retired):
+            if rx.match(r):
+                bad.append(f"  {pat}\n      -> {folder}/{tmpl}  (retired: {r})")
+    assert not bad, (
+        "폐기 등재된 파일을 규칙이 다시 편입한다. 대장이 정본이다.\n"
+        + "\n".join(bad)
+        + "\n  규칙을 지우거나, 정말 쓸 것이면 retired 에서 빼고 datasets 로 옮겨라.")

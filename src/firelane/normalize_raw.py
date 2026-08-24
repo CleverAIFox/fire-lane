@@ -133,9 +133,17 @@ RULES: list[tuple[str, str, str]] = [
 
     # ── safety · 공공데이터포털(안전) ────────────────────────
     (r"^전남광주통합특별시_cctv_(\d{8})\.csv$",     "safety", "safety_cctv_jngj_{0}.csv"),
-    (r"소방\s*용수시설\s*현황_(\d{8})\.csv$",      "safety", "safety_hydrant_point_jngj_{0}.csv"),
     (r"소방통로확보대상.*_(\d{8})\.csv$",           "safety", "safety_fire_access_gj_dong_{0}.csv"),
-    (r"^소방청_시도\s*소방서\s*현황_(\d{8})\.csv$", "safety", "safety_firestation_kr_{0}.csv"),
+    # ★ 2026-08-24. 폐기 등재분 두 규칙을 지웠다.
+    #   `sources.yaml` 의 `retired` 에 사유까지 적어놓고도 정규화기가
+    #   계속 raw 로 끌어왔다 — 대장은 "폐기", 규칙은 "편입" 이었다.
+    #
+    #       firestation_kr_20250701      좌표 없음. 활성판은 XY 를 갖는다
+    #       hydrant_point_jngj_20250917  전남 판. 광주 0건
+    #
+    #   이 파일의 위쪽 주석은 *"좌표 없는 시도 소방서 현황(20250701)은
+    #   규칙을 두지 않는다"* 라고 적고 있었다. 주석과 코드가 반대였다.
+    #   `test_rules_do_not_reimport_retired_files` 가 대장과 대조한다.
     (r"^safety_\w+_\d{8}\.csv$", "safety", None),
 
     # ── gjcity · 공공데이터포털(광주 동구) ───────────────────
