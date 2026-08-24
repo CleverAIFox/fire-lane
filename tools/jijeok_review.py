@@ -2,8 +2,8 @@
 """
 tools/jijeok_review.py — 도면 두 계보가 갈리는 구간을 정사영상 위에서 판정한다
 
-    uv run python tools/jijeok_review.py          # web/data/review.html 생성
-    uv run python tools/serve.py                  # http://localhost:8000/data/review.html
+    uv run python tools/jijeok_review.py          # web/review.html 생성
+    uv run python tools/serve.py                  # http://localhost:8000/review.html
 
 ════════════════════════════════════════════════════════════════
 ★ 이 스크립트는 아무것도 안 바꾼다. 읽고 HTML 하나를 만든다.
@@ -37,7 +37,7 @@ tools/jijeok_review.py — 도면 두 계보가 갈리는 구간을 정사영상
 
 IN    $FIRE_LANE_DATA/../jijeok_width.gpkg   (jijeok_probe.py --save)
       web/data/view.json · segments.geojson
-OUT   web/data/review.html
+OUT   web/review.html
 PARAM 아래 상수
 ════════════════════════════════════════════════════════════════
 """
@@ -50,22 +50,10 @@ import geopandas as gpd
 
 from firelane.paths import INTERIM, PROCESSED, ROOT, WEB
 
-# ★ 2026-08-24. 종전에는 `WEB.parent`(= `web/`)에 놓았다. serve.py 가
-#   `web/` 을 루트로 서빙하므로 URL 이 짧아진다는 이유였다.
-#
-#   그러나 `web/` 루트는 CODEOWNERS 상 사람이 소유하는 영역이고, 코드가
-#   생성물을 그곳에 두면 소유 경계가 성립하지 않는다. 같은 날 publish_web
-#   이 index.html 을 수정하던 문제와 동일한 형태다(DECISIONS §62).
-#
-#   ★ 2026-08-23 에 여기를 WEB 으로 썼다가 404 가 났다. 그 기록을
-#     지우지 않는다 — 같은 실수를 반복하지 않기 위한 것이다.
-#     당시 404 의 원인은 URL 이었다. 파일 위치가 아니라 접근 경로가
-#     바뀌는 것이므로 아래 안내 문구를 함께 고친다.
-#
-#   `web/data` 로 옮긴다. serve.py 가 서빙하는 루트를 기준으로
-#   http://localhost:8000/data/review.html 로 열린다. 경로만 바뀐다.
-#   `tests/test_web_ownership.py` 가 이 경계를 강제한다.
-WEBROOT = WEB
+# ★ paths.WEB 은 `web/data` 다(산출물 폴더). review.html 은 그 부모인
+#   `web/` 에 놓아야 serve.py 가 http://localhost:8000/review.html 로 준다.
+#   2026-08-23 에 여기를 WEB 으로 써서 404 가 났다.
+WEBROOT = WEB.parent
 
 TH = 3.0            # 판정 임계. seg/params.py TRUCK 과 같아야 한다
 MAX_W = 25.0        # 이보다 크면 도로구역 필지 잔재다(§ jijeok_probe ⑥)
@@ -182,7 +170,7 @@ def main() -> int:
     dst.write_text(html, encoding="utf-8")
     print(f"\033[32m→\033[0m {dst.relative_to(ROOT)}  ({len(items)}곳)")
     print("\n  uv run python tools/serve.py")
-    print("  http://localhost:8000/data/review.html")
+    print("  http://localhost:8000/review.html")
     return 0
 
 
