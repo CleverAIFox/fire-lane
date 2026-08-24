@@ -887,6 +887,18 @@ basemap:
 # ── 폐기 기록 ────────────────────────────────────────────
 # 지운 것도 남긴다. 없으면 3개월 뒤에 또 받고 또 조사한다. MASTER §18-3c
 retired:
+  mas_optional_20241111:
+    what: 2025년 소방자동차 MAS 선택장비 규격 (2024-11-11)
+    file: safety/safety_mas_optional_20241111.hwp
+    at: 2026-08-24
+    successor: mas_vehicle_spec (safety_mas_vehicle_spec_20241111.hwp)
+    reason: |
+      차량 치수가 없다. 본문 전수 확인 결과 축거·축간거리·회전반경·
+      최소회전반경·전장·전폭·전고 **전부 0건**이다. 선택장비(옵션) 목록이며
+      차종별 제작규격은 mas_vehicle_spec 쪽이다.
+      #31(축거·최소회전반경 미확정)의 답은 여기 없다. D-30 인터뷰가 유일한 길이다.
+      2026-08-24 획득 게이트가 '판단 필요' 로 잡아냈고, 열어보고 정했다.
+      ★ 안 열어보고 내렸으면 3개월 뒤 또 받고 또 조사했을 것이다(§18-3c).
   firestation_kr_20250701:
     what: 소방청 시도 소방서 현황 (2025-07-01 판)
     file: safety/safety_firestation_kr_20250701.csv
