@@ -105,6 +105,241 @@ def endpoint_snap(lines, tol=SNAP_TOL):
     return out
 
 
+# ★ 표본 저장소. seg_uid → [{s, w, src, drop}]
+#   판정과 무관하다. `width_samples.csv` 로만 나간다.
+_SAMPLES: dict[str, list] = {}
+
+
+def _write_route(g) -> None:
+    """폭·내륜차를 반영한 2차 경로를 낸다.
+
+    ★ 판정을 안 바꾼다. `segments.geojson` 에 컬럼을 더하지 않는다.
+      `route_vehicle.csv` 로 따로 낸다 — golden 지문이 그대로다.
+
+    ── 왜 2차인가 ───────────────────────────────────────────────
+    `access_corridor()` 는 **폭 산출보다 먼저** 돈다(194줄 vs 435줄).
+    그래서 `weight="length"` 밖에 못 쓴다. 그 결과가 `route_usage` 다.
+
+    스키마는 정직하게 *"최단경로 사용횟수"* 라고 적혀 있다. 문제는 이름이
+    "출동 경로" 로 읽힌다는 것이다. 2026-08-24 실측:
+
+        route_usage > 0        579구간
+          그중 blocked          41   ★ 폭 0.41m 를 70회 지나간다
+          폭 3.0m 미만         168
+
+    폭이 나온 뒤 다시 돌면 그것을 고칠 수 있다. 순서를 바꾸는 대신
+    **한 번 더 돈다** — 경로 계산은 몇 초이고, 순서를 바꾸면 회랑 산정
+    (표출 스코프)이 폭에 의존하게 되어 계보가 꼬인다.
+
+    ── 왜 Dijkstra 인가 ────────────────────────────────────────
+    목적지가 다수다(119안전센터 2곳 → 모든 노드). `single_source_dijkstra`
+    가 한 번에 전부 낸다. A* 는 휴리스틱으로 탐색을 줄이지만 그 이점은
+    **목적지가 하나일 때** 나온다 — 목적지마다 다시 돌아야 한다.
+
+    네비게이션 앱은 출발 1 → 도착 1 이므로 그쪽은 A* 가 맞다.
+    같은 `vehicle.edge_cost` 를 쓰므로 코드가 갈리지 않는다.
+    """
+    import csv
+    import math
+    from collections import Counter
+
+    import networkx as nx
+
+    from firelane.seg import vehicle
+
+    try:
+        # 제원이 대장에 없으면 여기서 죽는다. 경로만 건너뛰고 나머지는 낸다.
+        vehicle.spec()
+    except vehicle.SpecMissing as e:
+        print(f"  차량 경로 생략 — {e}".split("\n")[0])
+        return
+
+    BIG = 1e7                      # inf 대체. 실제 거리 총합보다 크다
+
+    # ★ 2026-08-24 정정. 처음엔 끝점을 `round(x / 0.5)` 격자로 묶었다.
+    #   **0.02m 차이로 노드가 갈린다** — 10.24 는 격자 20, 10.26 은 21 이다.
+    #   그래서 폭 15~18m 대로가 "도달 불가" 로 나왔다.
+    #
+    #   `graph.py` 는 같은 문제를 union-find 로 푼다(§4 노드 접합).
+    #   경계가 없으므로 0.02m 차이가 노드를 가르지 않는다. 같은 방식을 쓴다.
+    #   **두 곳이 다른 규칙으로 노드를 묶으면 그래프가 두 개가 된다.**
+    from shapely.strtree import STRtree
+
+    from firelane.seg.params import NODE_TOL
+
+    _ends = []
+    for r in g.itertuples():
+        geom = r.geometry
+        co = list(geom.coords) if geom.geom_type == "LineString" \
+            else list(max(geom.geoms, key=lambda q: q.length).coords)
+        _ends.append((r, co[0], co[-1]))
+
+    _pts = [Point(q) for _, a, b in _ends for q in (a, b)]
+    _tree = STRtree(_pts)
+    _par = list(range(len(_pts)))
+
+    def _find(i):
+        while _par[i] != i:
+            _par[i] = _par[_par[i]]
+            i = _par[i]
+        return i
+
+    for i, pt in enumerate(_pts):
+        for j in _tree.query(pt.buffer(NODE_TOL)):
+            j = int(j)
+            if j != i and _pts[i].distance(_pts[j]) <= NODE_TOL:
+                ri, rj = _find(i), _find(j)
+                if ri != rj:
+                    _par[max(ri, rj)] = min(ri, rj)
+
+    H = nx.Graph()
+    meta = {}
+    for k, (r, _a, _b) in enumerate(_ends):
+        a, b = _find(2 * k), _find(2 * k + 1)
+        if a == b:
+            continue
+        geom = r.geometry
+        w = getattr(r, "width_min_m", None)
+        w = None if w is None or (isinstance(w, float) and w != w) else float(w)
+        c = vehicle.edge_cost(float(r.length_m), w, r.verdict,
+                              _curvature(geom))
+        d = {"cost": BIG if c == math.inf else c, "blocked": c == math.inf,
+             "seg_id": r.seg_id, "length": float(r.length_m), "a": a, "b": b}
+        prev = H.get_edge_data(a, b)
+        if prev is None or d["cost"] < prev["cost"]:
+            H.add_edge(a, b, **d)
+        meta[r.seg_id] = d
+
+    # ★ 2026-08-24 정정. 처음엔 막힌 엣지에 `BIG` 을 주고 그래프에 남겼다.
+    #   그러면 **다른 길이 없을 때 Dijkstra 가 그것을 쓴다.**
+    #   통행 불가 416 인데 경로에 996구간이 쓰인다는 결과가 나왔고,
+    #   그것은 "막힌 길로라도 도달" 이라 답이 아니다.
+    #
+    #   막힌 엣지를 **빼고** 돈다. 도달하지 못하면 그것이 사실이다 —
+    #   `unknown` 을 회색으로 남기는 것과 같은 규칙이다.
+    P = H.copy()
+    P.remove_edges_from([(u, v) for u, v, d in H.edges(data=True) if d["blocked"]])
+
+    nodes = list(P.nodes)
+    if not nodes:
+        return
+    import numpy as np
+    # 노드 대표 좌표 — union-find 그룹의 첫 점을 쓴다
+    _rep = {}
+    for i2, pt2 in enumerate(_pts):
+        _rep.setdefault(_find(i2), (pt2.x, pt2.y))
+    npts = np.array([_rep[n] for n in nodes], dtype=float)
+    use = Counter()
+    reach = set()
+    for lon, lat in seg_graph.STATIONS.values():
+        pt = gpd.GeoSeries([Point(lon, lat)], crs=CRS_W).to_crs(CRS_M).iloc[0]
+        i = int(np.argmin((npts[:, 0] - pt.x) ** 2 + (npts[:, 1] - pt.y) ** 2))
+        s = nodes[i]
+        paths = nx.single_source_dijkstra_path(P, s, weight="cost")
+        reach |= set(paths)
+        for pp in paths.values():
+            for u2, v2 in zip(pp, pp[1:], strict=False):
+                use[P.edges[u2, v2]["seg_id"]] += 1
+
+    dst = PROCESSED / "route_vehicle.csv"
+    n_blk = sum(1 for d in meta.values() if d["blocked"])
+    with dst.open("w", encoding="utf-8-sig", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["seg_uid", "seg_id", "route_vehicle", "cost",
+                    "passable", "reachable"])
+        for r in g.itertuples():
+            d = meta.get(r.seg_id)
+            if d is None:
+                continue
+            # 양 끝 노드가 모두 도달 가능해야 그 구간에 갈 수 있다
+            rc = int(d["a"] in reach and d["b"] in reach)
+            w.writerow([r.seg_uid, r.seg_id, use.get(r.seg_id, 0),
+                        round(d["cost"], 1), 0 if d["blocked"] else 1, rc])
+    n_reach = sum(1 for r in g.itertuples()
+                  if (d := meta.get(r.seg_id)) and d["a"] in reach and d["b"] in reach)
+    tot = len(meta)
+    print(f"  차량 경로 — 통행 불가 {n_blk:,}/{tot:,} · "
+          f"안전센터에서 도달 {n_reach:,} ({n_reach / tot * 100:.0f}%) · "
+          f"경로에 쓰인 구간 {sum(1 for v in use.values() if v):,} → {dst.name}")
+    if n_reach < tot:
+        print(f"    ★ 도달 불가 {tot - n_reach:,}구간 — 막힌 길을 빼면 끊긴다")
+
+
+def _curvature(geom):
+    """최소 곡률반경(m). 직선이면 None.
+
+    ★ 양쪽 변이 5m 이상인 꺾임만 본다. 짧은 변 사이의 각은 도로 곡률이
+      아니라 노딩(0.5m 접합)이 만든 정점 배치 노이즈다. 필터 없이 쟀다가
+      `R=0.2m` 가 나왔다(2026-08-23).
+    """
+    import math
+    co = list(geom.coords) if geom.geom_type == "LineString" \
+        else list(max(geom.geoms, key=lambda q: q.length).coords)
+    best = None
+    for i in range(1, len(co) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = co[i - 1], co[i], co[i + 1]
+        a = math.dist((x0, y0), (x1, y1))
+        b = math.dist((x1, y1), (x2, y2))
+        if a < 5.0 or b < 5.0:
+            continue
+        c = math.dist((x0, y0), (x2, y2))
+        s = abs((x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)) / 2
+        if s < 1e-9:
+            continue
+        r = a * b * c / (4 * s)
+        best = r if best is None else min(best, r)
+    return best
+
+
+def _write_samples(g) -> None:
+    """폭 표본을 CSV 로 남긴다.
+
+    ★ 판정에 안 쓴다. 산출물 컬럼도 안 더한다. golden 지문이 그대로다.
+
+    ── 왜 남기나 ────────────────────────────────────────────────
+    `widths()` 가 표본 배열을 만들고 `min` 만 뽑아 버렸다. 그래서 `w(s)` 를
+    **함수로** 다룰 수 없었다.
+
+    `min` 은 최악의 통계량이다 — 표본 하나가 틀리면 판정이 뒤집힌다.
+    커버율 0.056 구간에서 `wmin 10.51m` 가 나온 것이 그 예다.
+
+    배열이 있으면 이런 것들이 열린다.
+
+        μ{s : w(s) < TRUCK}   막힌 **길이**. 이상치 하나에 안 무너진다
+        opening(L_car)        차 길이만큼 연속으로 이어지는 폭
+                              소방펌프차 8m — 병목 0.5m 는 노이즈일 수 있다
+        w(s) 분포             커버율보다 정확한 신뢰도
+
+    ★ 결측도 남긴다. 커버율은 **몇 개**가 비었는지만 주고 **어디가**
+      비었는지는 못 준다. `drop` 컬럼이 그것을 준다
+      (`xsec` = 교차부 제외 · 그 외 = measure 실패 사유).
+    """
+    import csv
+
+    if not _SAMPLES:
+        return
+    dst = PROCESSED / "width_samples.csv"
+    # seg_id(DM00001) → seg_uid. 후자가 실행 간 유지되는 키다(결정 72).
+    uid_of = dict(zip(g.seg_id, g.seg_uid, strict=True)) if "seg_uid" in g else {}
+    n = ok = 0
+    with dst.open("w", encoding="utf-8-sig", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["seg_uid", "seg_id", "s_m", "w_m", "src", "drop"])
+        for sid, rows in _SAMPLES.items():
+            su = uid_of.get(sid)
+            if su is None:
+                continue                      # 병합으로 사라진 단위
+            for r in rows:
+                w.writerow([su, sid, r["s"], "" if r["w"] is None else r["w"],
+                            r["src"] or "", r["drop"] or ""])
+                n += 1
+                ok += r["w"] is not None
+    # ★ 쓴 것만 센다. 처음엔 `_SAMPLES` 전체를 세서 `0행 (19,393 유효 ·
+    #   -19,393 결측)` 이 나왔다 — **음수가 나온 순간 알아챘어야 했다.**
+    print(f"  폭 표본 {n:,}행 ({ok:,} 유효 · {n - ok:,} 결측) · "
+          f"구간 {len(uid_of):,} → {dst.name}")
+
+
 def main():
     emd = load("boundary_emd")
     poly = shapely.make_valid(emd.loc[emd.EMD_CD == EMD_CD, "geometry"].iloc[0])
@@ -379,7 +614,15 @@ def main():
         short = g.length < MIN_SEG_LEN
         if uid not in W:
             W[uid] = widths(g)          # 병합으로 범위 안에 들어온 단위
-        wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt) = W[uid]
+        wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt, wrows) = W[uid]
+        # ★ 2026-08-23. 표본을 버리지 않고 모은다. `w(s)` 를 함수로 다루려면
+        #   `min` 이 아니라 배열이 필요하다. 판정에는 안 쓴다.
+        # ★ 2026-08-23 정정. 처음엔 `_SAMPLES[uid]` 로 넣었다가 되돌렸다.
+        #   `uid` 는 **노딩 단위 키**이고 `seg_uid` 는 병합이 끝난 뒤
+        #   `attach_seg_uid()` 가 붙인다. 완전히 다른 키다.
+        #   그래서 19,393개를 모으고 **0행을 썼다** — 필터가 전부 걸렀다.
+        #   `sid`(DM00001)를 쓴다. 그것이 `rec` 의 키이자 `g.seg_id` 다.
+        _SAMPLES[sid] = wrows
         _road_nm, _road_side, _road_bt = _rnx.match(g)
         v = verdict(wmin, wmax, wnt)
         if short and wmin is None:
@@ -542,6 +785,8 @@ def main():
         _r = widths(_gg)
         _DBG["on"] = False
         print(f"  → wmin={_r[0]} wmax={_r[1]} src={_r[3]} fail={_r[5]} cov={_r[6]}")
+    _write_samples(g)
+    _write_route(g)
     seg_report.write_outputs(g)
 
 

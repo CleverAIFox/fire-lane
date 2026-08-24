@@ -395,9 +395,20 @@ def main():
         #   갱신되고 계보 기록은 빠져 다음 실행이 교착했다(HANDOFF §5-5,
         #   08-21 에 세 번). 이제 단계 모듈은 파이프라인이 부르는 대상이지
         #   사람이 치는 명령이 아니다. `-m` 은 그 사실을 표기로 만든다.
-        r = subprocess.run([sys.executable, "-m", f"firelane.{s.module}"], cwd=ROOT)
+        _extra = []
+        # ★ 2026-08-23. ingest 는 `.work` 를 남긴다. 매번 지웠더니
+        #   `캐시 0` 이 매 실행 떴고, ingest 180초의 대부분이 재압축이었다.
+        #   실패하면 ingest 가 스스로 지운다(반쯤 풀린 것이 오염을 만든다).
+        if s.module == "ingest":
+            _extra.append("--keep-work")
+        r = subprocess.run([sys.executable, "-m", f"firelane.{s.module}", *_extra],
+                           cwd=ROOT)
         if r.returncode:
             print(c(f"\n★ {name} 실패. 여기서 멈춘다.", "31"))
+            if s.module == "ingest":
+                # ★ 19종 중 몇 종만 실패했을 것이다. 200초를 다시 태우지 마라.
+                print(c("  실패한 소스만:  uv run python -m firelane.ingest "
+                        "--retry-failed", "36"))
             print(f"  고친 뒤: uv run fire-lane --from {name}")
             sys.exit(1)
         lineage.record(PROCESSED, ROOT, s, expand)

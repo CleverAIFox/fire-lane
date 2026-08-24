@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T22:21:31.862487+09:00",
+  "generated_at": "2026-08-24T01:44:34.819029+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -11,6 +11,30 @@
     "display": "EPSG:4326"
   },
   "datasets": [
+    {
+      "key": "kfs_pumptruck",
+      "status": "MISSING",
+      "file": "safety/safety_kfs_pumptruck_20251224.*"
+    },
+    {
+      "key": "kfs_ladder_small",
+      "status": "MISSING",
+      "file": "safety/safety_kfs_ladder_small_20251224.*"
+    },
+    {
+      "key": "mas_vehicle_spec",
+      "source_file": "safety/safety_mas_vehicle_spec_20241111.*",
+      "source_sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
+      "resolved": "safety_mas_vehicle_spec_20241111.hwp",
+      "source_crs": "",
+      "license": "공공저작물",
+      "url": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
     {
       "key": "node_link_changelog",
       "source_file": "its/its_nodelink_changelog_20260812.csv",
@@ -1683,13 +1707,31 @@
     },
     {
       "key": "ngii_road",
-      "status": "FAIL",
-      "error": "OSError: [Errno 12] Cannot allocate memory",
-      "staled": [
-        "ngii_road_5186.gpkg",
+      "source_file": "ngii/ngii_basemap_gj9*.zip",
+      "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
+      "resolved": "ngii_basemap_gj9708_20260812.zip",
+      "ambiguous": [
+        "ngii_basemap_gj9708_20260812.zip",
+        "ngii_basemap_gj9712_20260812.zip"
+      ],
+      "source_crs": "EPSG:5179",
+      "license": "국토지리정보원",
+      "url": "https://map.ngii.go.kr",
+      "status": "OK",
+      "features": 216,
+      "geom": [
+        "Polygon"
+      ],
+      "invalid_fixed": 0,
+      "columns": [
+        "gid",
+        "fmta",
+        "scls",
+        "ufid"
+      ],
+      "outputs": [
         "ngii_road.geojson",
-        "ngii_road_center_5186.gpkg",
-        "ngii_road_center.geojson"
+        "ngii_road_5186.gpkg"
       ]
     },
     {
@@ -2167,8 +2209,44 @@
     },
     {
       "key": "ngii_road_center",
-      "status": "FAIL",
-      "error": "OSError: [Errno 12] Cannot allocate memory"
+      "source_file": "ngii/ngii_basemap_gj9*.zip",
+      "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
+      "resolved": "ngii_basemap_gj9708_20260812.zip",
+      "ambiguous": [
+        "ngii_basemap_gj9708_20260812.zip",
+        "ngii_basemap_gj9712_20260812.zip"
+      ],
+      "source_crs": "EPSG:5179",
+      "license": "",
+      "url": "",
+      "status": "OK",
+      "features": 487,
+      "geom": [
+        "LineString"
+      ],
+      "invalid_fixed": 0,
+      "columns": [
+        "gid",
+        "dvyn",
+        "edpt",
+        "fmta",
+        "name",
+        "onsd",
+        "pvqt",
+        "rddv",
+        "rdln",
+        "rdnm",
+        "rdnu",
+        "rest",
+        "rvwd",
+        "scls",
+        "stpt",
+        "ufid"
+      ],
+      "outputs": [
+        "ngii_road_center.geojson",
+        "ngii_road_center_5186.gpkg"
+      ]
     },
     {
       "key": "bin_trash",

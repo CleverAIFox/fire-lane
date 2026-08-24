@@ -93,7 +93,11 @@ def test_sys_path_해킹이_없다():
         if p.name == "test_layering.py":
             continue
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
-            if "sys.path.insert" in line or "sys.path.append" in line:
+            # ★ 2026-08-23. 주석은 뺀다. 이 규칙을 **왜 만들었는지** 설명하려면
+            #   그 이름을 써야 하는데, 그것까지 잡으면 자기 문서를 자기가 막는다.
+            #   같은 문제를 `markers.js` 팝업 검사에서도 겪었다.
+            code = line.split("#", 1)[0]
+            if "sys.path.insert" in code or "sys.path.append" in code:
                 hits.append(f"{p.relative_to(ROOT)}:{i}")
     assert not hits, (
         "sys.path 조작이 돌아왔다:\n  " + "\n  ".join(hits) +

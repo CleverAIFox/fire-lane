@@ -160,11 +160,19 @@ def check_code(R: Report, fast: bool) -> None:
     if fast:
         args.append("--fast")
     rc, out = sh(*args)
-    tail = [x for x in out.splitlines() if x.strip()][-1:]
     if rc:
-        R.bad("verify.sh", (tail[0] if tail else "실패")[:60])
-        for line in out.splitlines()[-8:]:
-            print(f"        {col(line[:100], 'd')}")
+        # ★ 2026-08-24. 처음엔 마지막 줄을 실패 사유로 썼다. 그런데
+        #   `verify.sh` 는 실패 시 안내 문구를 마지막에 찍는다 —
+        #   "원본으로 되돌리려면: web/app.js.orig …". 그것이 실패 사유로
+        #   표시돼 **없는 파일을 찾게 만들었다.**
+        #   `실패` 로 표시된 줄을 골라 보여준다.
+        import re
+
+        hit = [re.sub(r"\x1b\[[0-9;]*m", "", x).strip()
+               for x in out.splitlines() if "실패" in x and "머지" not in x]
+        R.bad("verify.sh", (hit[0] if hit else "실패")[:70])
+        for x in hit[1:4]:
+            print(f"        {col(x[:96], 'd')}")
     else:
         R.ok("verify.sh", ("--fast" if fast else "전량") + " 통과")
 

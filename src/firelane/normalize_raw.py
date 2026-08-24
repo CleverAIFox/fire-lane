@@ -81,6 +81,17 @@ RULES: list[tuple[str, str, str]] = [
     # ★ 258MB 전국이다. 광주 절단은 norm 이후 단계에서 한다.
     #   raw 는 원본 보존이 원칙이므로 여기서 자르지 않는다.
     (r"nodelinkdata\.zip$",  "its", "its_nodelink_kr_20260812.zip"),
+    # ★ 2026-08-23. 소방장비 기본규격. 차량 제원의 유일한 공식 출처다.
+    #   파일명이 소방청 게시판에서 받은 그대로라 규칙으로 정규화한다.
+    (r"소방펌프차[_ ]?\(?KFS.*\.(hwpx?|pdf)$",
+     "safety", "safety_kfs_pumptruck_20251224.{0}"),
+    (r"소형사다리차[_ ]?\(?KFS.*\.(hwpx?|pdf)$",
+     "safety", "safety_kfs_ladder_small_20251224.{0}"),
+    (r"소방자동차.*다수공급자.*차종별.*\.(hwpx?|pdf)$",
+     "safety", "safety_mas_vehicle_spec_20241111.{0}"),
+    (r"소방자동차.*다수공급자.*선택장비.*\.(hwpx?|pdf)$",
+     "safety", "safety_mas_optional_20241111.{0}"),
+
     (r"^내역서\.csv$",       "its", "its_nodelink_changelog_20260812.csv"),
     (r"^its_nodelink_(kr|changelog)_\d{8}\.(zip|csv)$", "its", None),
 

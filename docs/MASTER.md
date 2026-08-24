@@ -86,7 +86,7 @@ segments 1101
 > ```
 > 1093  08-17  ngii1k 이 FAIL 인데 <!--stale-ok--> 08-13 구 gpkg 가 남아 그것으로 판정했다
 >              _manifest 에 FAIL 이 적혔지만 아무도 읽지 않았다
-> 1091  08-18  진짜 V-WORLD 인데 <!--stale-ok--> 동구 SHP 판이 스코프 북부를 안 덮었다
+> 1091  08-18  V-WORLD 판인데 <!--stale-ok--> 동구 SHP 판이 스코프 북부를 안 덮었다
 >              1,091구간 중 755개(69%)가 도로경계 폴리곤 밖이었다 <!--stale-ok-->
 > 1101  08-18  NGI 보완분 143도엽 등재. 미커버 47(4%). 확정
 > ```
@@ -1540,7 +1540,7 @@ git push -u origin gis
 - ☑ Require status checks to pass → `contract`
 - ☐ Allow force pushes (끄기)
 
-이걸 안 켜면 `.github/CODEOWNERS`는 그냥 텍스트 파일이다.
+이것을 켜지 않으면 `.github/CODEOWNERS` 는 효력 없는 텍스트 파일이다.
 
 ### 3. UI 담당 (지혜님)
 
@@ -1762,7 +1762,7 @@ blocked 67 → 60 · unknown 844 → 559
 ```
 
 실폭도로가 11.8m 도로에 1.30m 측구 조각을 그려 놓았고 `min()` 은 그것을
-무조건 채택했다. **좁은 값이 항상 보수적인 것이 아니다. 틀린 값은 그냥 틀린 것이다.**
+무조건 채택했다. **좁은 값이 항상 보수적인 것은 아니다. 틀린 값은 방향과 무관하게 틀린 값이다.**
 
 가로등 3,805등 확보. 상속·폴백 폐기.
 
@@ -1798,7 +1798,7 @@ blocked 67 → 60 · unknown 844 → 559
 206도 219도 222가 아니다. **전 문서의 "222"를 641로 교체할 것.**
 bbox 기준 4,336도 폐기.
 
-#### ★ 노딩 실패의 진짜 원인 = T자 접합
+#### ★ 노딩 실패의 실제 원인 — T자 접합
 
 `unary_union`만으로는 부족하다. 지선 끝점이 본선 세그먼트의 *중간*에 접하는데
 밀리미터 단위로 벌어져 있어 위상이 생기지 않는다. 파편 21개 중 18개가
@@ -2539,6 +2539,9 @@ index.html(토글 행)
 ### 미결 안건
 
 ```
+도달 가능       687/1101 (62%). 안전센터에서 막힌 길 없이 갈 수 있는 구간.
+                2026-08-24 산출. `route_vehicle.csv` · 판정에 미반영
+차량 제원       KFS-1-0073-2025-00 §3.3 확보. 축거·회전반경은 규격에 없어 추정
 G-06 폐기          시군구코드 29110 통일. 실행하면 파이프라인이 죽는다 (12210 유지)
 P-46               역할 배정 확정. 세 회의 연속 미확정
 CCTV_RANGE 25m     잠정값. 352구간(회색 전부)의 판정을 가른다. ★ 2026-08-23 —
@@ -2675,6 +2678,9 @@ uv run python tools/ship.py --fix --push   정리 + 검사 + push
 uv run python tools/tidy.py                머지 후 로컬 찌꺼기 (기본은 안 지운다)
 uv run python tools/acquire.py             landing → raw 획득 게이트 · sha 대조
 uv run python tools/jijeok_probe.py        지적 도로 필지로 폭 대조 (§18-13)
+uv run python tools/width_fn.py            폭을 함수 w(s) 로 — min vs 통과폭
+uv run python tools/lanes_probe.py         표준노드링크 차로수로 폭 하한 대조
+uv run python tools/route_probe.py         소방차 통행 비용으로 경로 — 거리만 vs 차량
 uv run python tools/jijeok_review.py       갈리는 구간을 정사영상 위에서 판정
 ```
 
@@ -2691,6 +2697,9 @@ uv run python tools/jijeok_review.py       갈리는 구간을 정사영상 위�
 `clearance_probe.py` 와 같은 성격이라 golden 지문에 영향이 없다.
 
     clearance_probe.py    최대내접원 방식 (2026-08-22 기각. DECISIONS 참조)
+    width_fn.py           폭 표본을 함수로 — 막힌 길이 · 통과폭(opening)
+    lanes_probe.py        node_link 의 LANES · REST_W — 계보가 다른 하한
+    route_probe.py        폭·내륜차·회전반경을 넣은 경로. 판정 불변
     jijeok_probe.py       연속지적도 도로 필지로 폭 산출 · 우리 값과 대조
     jijeok_review.py      갈리는 구간을 정사영상 위에 띄우고 사람이 판정
                           → web/review.html (생성물. gitignore)
@@ -3156,7 +3165,7 @@ except Exception:
 옮긴다. `tools/` 에는 날짜 없는 재실행 가능한 도구만 둔다.
 
 **R9. 소스는 직접 고쳐서 커밋한다. 고치는 스크립트를 커밋하지 않는다**
-문자열 치환 패처는 git 이 이미 하는 일의 열등한 사본이다. 진짜 코드가
+문자열 치환 패처는 git 이 이미 수행하는 일의 열등한 사본이다. 실제 코드가
 어디 있는지 두 곳이 되고, 리뷰어가 diff 대신 OLD/NEW 문자열 쌍을 읽어야
 한다. 앵커가 깨지면 그 기록은 실행도 안 되는 텍스트가 된다.
 
@@ -3258,7 +3267,7 @@ sbiz_store_kr      337MB → 광주 축소 시 약 9.6MB
 
 지금은 파일로 충분하다. 옮길 시점은 **네비 API 가 붙을 때**다.
 
-`sources.yaml` 이 곧 DDL 이 되게 설계한다.
+`sources.yaml` 이 곧 DDL 이 되도록 설계한다.
 
 ```sql
 CREATE SCHEMA core;      -- 파이프라인 산출. 읽기 전용
@@ -3418,7 +3427,7 @@ crs:       5186                 # ★ 선언 근거를 함께. prj/xml 명시 vs
                좌표계를 틀리면 수백 미터 어긋나 즉시 드러난다
 ```
 
-**3번이 진짜 검증이다.** 1·2번은 형식이고 3번은 물리다.
+**3번이 실질 검증이다.** 1·2번은 형식 검사이고 3번은 물리 검사다.
 
 ---
 

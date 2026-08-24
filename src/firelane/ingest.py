@@ -376,7 +376,33 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--check", action="store_true")
+    # ★ 2026-08-23. 실패한 것만 다시 돌린다.
+    #
+    #   19종을 한 덩어리로 돌아서 **하나가 FAIL 하면 전체가 무효**였다.
+    #   그리고 그 실패가 비결정적이다(PLAN §1-19) — 같은 입력·같은 코드로
+    #   1회차 `turn_restriction`·`cctv`, 2회차 통과, 3회차 `ngii_road`,
+    #   4회차 `node_link`. 하루에 세 번 났고 매번 다른 소스였다.
+    #
+    #   그때마다 200초를 다시 태웠다. 성공한 18종은 산출물이 멀쩡한데도.
+    #   `_manifest.json` 에 소스별 status 가 이미 있으므로 읽어서 고르면 된다.
+    ap.add_argument("--retry-failed", action="store_true",
+                    help="지난 실행에서 FAIL·MISSING 인 소스만 다시 돌린다")
+    ap.add_argument("--keep-work", action="store_true",
+                    help=".work 압축 해제분을 남긴다 (다음 실행이 빨라진다)")
     a = ap.parse_args()
+
+    if a.retry_failed:
+        man0 = OUT / "_manifest.json"
+        if not man0.exists():
+            sys.exit("★ _manifest.json 이 없다. 전량을 한 번 돌려라.")
+        prev0 = json.loads(man0.read_text(encoding="utf-8")).get("datasets", [])
+        bad = [r["key"] for r in prev0
+               if isinstance(r, dict) and r.get("status") in ("FAIL", "MISSING")]
+        if not bad:
+            print("실패한 소스가 없다. 할 일이 없다.")
+            return 0
+        print(f"지난 실행 실패 {len(bad)}종만 다시 돌린다: {', '.join(bad)}")
+        a.only = bad
 
     cfg = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
     tmp = ROOT / ".work"
@@ -408,7 +434,24 @@ def main():
         print(f"[{r.get('status','-'):7}] {key:20} {r.get('features',''):>8} feat")
         results.append(r)
 
-    shutil.rmtree(tmp, ignore_errors=True)   # 압축 해제 잔여물 정리
+    # ★ 2026-08-23. 매 실행 지웠더니 `캐시 0` 이 매번 떴다.
+    #   `ngii1k` 묶음만 도엽 74장 + NGI 143장을 다시 푼다 — ingest 180초의
+    #   대부분이 여기다. 그리고 `--retry-failed` 로 한 소스만 돌릴 때도
+    #   그 소스가 쓰는 zip 을 통째로 다시 풀어야 했다.
+    #
+    #   ★ 지우는 것이 안전한 이유는 있었다 — 2026-08-13 에 `_unz_*` 8폴더
+    #     1,570파일이 raw 옆에 풀려 raw 파일 수가 40배로 보였다. 그래서
+    #     `.work` 가 생겼다. **지금은 raw 밖이라 그 사고가 안 난다.**
+    #     `tidy.py` 가 `.work` 를 정리 대상으로 알고 있으므로 쌓이지도 않는다.
+    #
+    #   실패했을 때는 지운다. 반쯤 풀린 것이 다음 실행을 오염시킨다.
+    _failed = any(r.get("status") == "FAIL" for r in results)
+    if _failed or not a.keep_work:
+        shutil.rmtree(tmp, ignore_errors=True)
+    else:
+        _n = sum(1 for _ in tmp.rglob("*") if _.is_file())
+        print(f"  · .work 유지 {_n:,}파일 — 다음 실행이 빨라진다 "
+              f"(정리: uv run python tools/tidy.py --yes)")
 
     OUT.mkdir(parents=True, exist_ok=True)
     man = OUT / "_manifest.json"

@@ -999,22 +999,26 @@ def test_golden_refuses_stale_artifacts():
     assert "allow_stale" in src, "낡음을 알고 넘길 탈출구(--allow-stale)가 없다"
 
     seg = ROOT / "data/processed/segments.geojson"
-    watched = ROOT / "src/firelane/seg/width.py"
-    if not (seg.exists() and watched.exists()):
+    fp = ROOT / "data/processed/.code_fingerprint"
+    if not seg.exists():
         pytest.skip("산출물이 없다")
 
-    import os
-    st = seg.stat()
+    # ★ 2026-08-23. 처음엔 `os.utime` 으로 mtime 을 조작해 검증했다.
+    #   지금은 **판정 로직의 내용 해시**를 보므로 mtime 은 무관하다.
+    #   지문을 다른 값으로 바꿔 "코드가 바뀐 상태" 를 만든다.
+    keep = fp.read_text(encoding="utf-8") if fp.exists() else None
     try:
-        # 판정 코드가 산출물보다 최근인 상태를 만든다
-        os.utime(seg, (st.st_atime, watched.stat().st_mtime - 60))
+        fp.write_text("0000000000000000\n", encoding="utf-8")
         r = subprocess.run([sys.executable, str(ROOT / "tools/golden.py"), "check"],
                            capture_output=True, text=True, cwd=ROOT)
         assert r.returncode != 0, (
-            "산출물이 코드보다 낡았는데 통과했다:\n" + r.stdout[-500:])
+            "판정 로직이 바뀌었는데 통과했다:\n" + r.stdout[-500:])
         assert "낡" in r.stdout, "왜 막혔는지 말하지 않는다"
     finally:
-        os.utime(seg, (st.st_atime, st.st_mtime))
+        if keep is not None:
+            fp.write_text(keep, encoding="utf-8")
+        else:
+            fp.unlink(missing_ok=True)
 
 
 def test_tidy_ignores_the_virtualenv():
@@ -1226,7 +1230,12 @@ def test_ci_installs_what_the_tests_import():
                 mods = [n.module]
             for m in mods:
                 top = m.split(".")[0]
-                if top in std or top in ("firelane", "tidy", "acquire", "pytest"):
+                # ★ tools/ 의 모듈은 pyproject 의 pytest pythonpath 로 잡힌다.
+                #   외부 패키지가 아니므로 pip install 대상이 아니다.
+                #   목록을 손으로 유지하지 않는다 — 파일 존재로 판정한다.
+                if top in std or top == "firelane" or top == "pytest":
+                    continue
+                if (ROOT / "tools" / f"{top}.py").exists():
                     continue
                 need.setdefault(DIST.get(top, top).lower(), set()).add(name)
 
@@ -1236,3 +1245,495 @@ def test_ci_installs_what_the_tests_import():
         + "\n  ".join(f"{k}  ← {v}" for k, v in sorted(missing.items()))
         + "\n  contract.yml 의 pip install 에 추가하라."
         "\n  ★ 로컬은 uv sync 로 전부 깔려 있어 이 실패가 안 보인다.")
+
+
+def test_width_samples_are_kept():
+    """`widths()` 가 표본을 버리지 않는가.
+
+    ★ 2026-08-23. 표본 배열을 만들고 `min` 만 뽑아 버렸다. 그래서 폭을
+      **함수 `w(s)` 로** 다룰 수가 없었다.
+
+      `min` 은 최악의 통계량이다 — 표본 하나가 틀리면 판정이 뒤집힌다.
+      `DM02647`(커버율 0.056 · wmin 10.51m) · `DM02916`(0.231 · 27.46m)
+      둘 다 `min` 이 이상치를 집은 것이고, 파이프라인이 커버율로 이미
+      지목하고 있었다.
+
+    ★ 판정은 안 바꾼다. 산출물 컬럼도 안 더한다. `width_samples.csv` 를
+      따로 낼 뿐이라 golden 지문이 그대로다.
+    """
+    w = (ROOT / "src/firelane/seg/width.py").read_text(encoding="utf-8")
+    assert "_rows" in w, "widths() 가 표본을 모으지 않는다"
+    assert "_n_try, _rows" in w, "_covr() 가 표본을 반환하지 않는다"
+
+    s = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
+    assert "wcov, wnt, wrows" in s, "호출부가 표본을 안 받는다"
+    assert "width_samples.csv" in s, "표본을 파일로 안 남긴다"
+    # 결측도 남겨야 "어디가 비었는지" 를 알 수 있다
+    assert '"drop"' in w, "결측 사유(drop)를 안 남긴다"
+
+
+def test_passage_width_is_not_just_min():
+    """통과폭이 `min` 과 다른 정의인가 — 그리고 물리적으로 맞는가.
+
+    ★ 2026-08-23. `tools/width_fn.py` 를 만들면서 정의를 한 번 틀렸다.
+      "차 길이만큼 연속으로 이어지는 폭" 으로 짰는데 그것은 **주차 가능
+      여부**지 통과가 아니다. 40m 구간 가운데 12m 가 2m 로 막혔는데
+      양쪽이 넓다는 이유로 5.0 을 줬다.
+
+      **들어갈 수 있다와 통과한다는 다르다.**
+
+          통과폭 = max{ c : w(s) < c 인 모든 구간의 길이가 car 미만 }
+
+      `car = 0` 이면 `wmin` 과 같아진다. 지금 판정이 그 특수 경우다.
+    """
+    import width_fn  # tools/ — pyproject 의 pytest pythonpath
+
+    def pts(f):
+        return [(float(s), f(s)) for s in range(0, 41, 2)]
+
+    CAR = 8.0
+    # 한 점만 좁다 → 병목 길이가 차보다 짧다 → 통과
+    noise = pts(lambda s: 2.0 if s == 20 else 5.0)
+    assert abs(width_fn.opening(noise, CAR) - 5.0) < 0.01, \
+        "짧은 병목을 통과 불가로 본다 — min 과 다를 게 없어진다"
+
+    # 12m 가 좁다 → 차보다 길다 → 못 간다
+    wall = pts(lambda s: 2.0 if 14 <= s <= 26 else 5.0)
+    assert abs(width_fn.opening(wall, CAR) - 2.0) < 0.01, \
+        "차보다 긴 병목을 통과로 본다 — 못 가는 길을 간다고 한다"
+
+    # car=0 이면 min 과 같다
+    assert abs(width_fn.opening(wall, 0.0) - 2.0) < 0.01
+
+    # ★ 2026-08-23 두 번째 정정. 구간이 차보다 짧으면 **병목이 car 를 넘을
+    #   수가 없어** 모든 후보가 통과가 되고 최댓값이 나왔다.
+    #   실제 산출에서 길이 5.8m 구간이 `opening 49.30m` 를 받았다 —
+    #   49m 짜리 골목은 없다. **낙관적으로 틀리느니 min 을 쓴다.**
+    assert abs(width_fn.opening([(1.4, 2.75), (4.3, 49.3)], CAR) - 2.75) < 0.01, \
+        "구간이 차보다 짧은데 통과폭을 낙관적으로 준다"
+
+    # 표본이 적으면 병목 길이를 잴 수 없다. 표본 간격 2m 라 4개는 있어야 한다.
+    assert abs(width_fn.opening([(2.0, 1.7), (10.0, 45.5), (18.0, 8.0)], CAR)
+               - 1.7) < 0.01, "표본 3개로 병목 길이를 판정한다"
+
+    # 막힌 길이 — ★ 표본 사이는 선형 보간한다.
+    #   s=12 에서 5m, s=14 에서 2m 이므로 3m 를 지나는 지점은 s=13.33 이다.
+    #   양끝 합쳐 13.33m 가 정답이고 12m 가 아니다.
+    #   처음에 12m 를 기대값으로 박았다가 걸렸다 — 표본 격자에 값을
+    #   반올림하면 그것이 곧 오차가 된다.
+    assert abs(width_fn.blocked_len(wall, 3.0) - 13.33) < 0.1
+    assert abs(width_fn.blocked_len(noise, 3.0) - 1.33) < 0.1
+
+
+def test_golden_staleness_ignores_comments():
+    """`golden` 의 낡음 검사가 **주석 변경**을 로직 변경으로 보지 않는가.
+
+    ★ 2026-08-23. 처음엔 `mtime` 을 봤다. 조잡했다 — **주석 한 줄만 고쳐도
+      "낡았다"** 가 뜬다. 하루에 판정 파일을 스무 번 고쳤고 그중 판정을
+      바꾼 것은 0 번인데 매번 막혔다.
+
+      **게이트가 정상 상태에서 울리면 사람이 `--allow-stale` 을 쓰기
+      시작하고, 그 순간 게이트가 죽는다.** `unknown` 을 회색으로 두는 것과
+      같은 이유로, 경고는 참일 때만 울려야 한다.
+
+      주석·docstring·빈 줄을 AST 로 걷어내고 남은 것만 해시한다.
+
+    ★ 이 검사를 만들면서 테스트를 한 번 틀렸다. `TRUCK      = 3.0` 이
+      정렬 공백을 갖고 있는데 `replace("TRUCK = 3.0", ...)` 로 바꾸려 해서
+      아무것도 안 바뀌었고, **해시가 정상인데 고장 난 줄 알았다.**
+      여기서는 정규식으로 바꾼다.
+    """
+    import re
+    import subprocess
+    import sys
+
+    fp = ROOT / "data/processed/.code_fingerprint"
+    seg = ROOT / "data/processed/segments.geojson"
+    if not seg.exists():
+        pytest.skip("산출물이 없다")
+
+    def stale() -> str:
+        # ★ `sys.path.insert` 를 문자열로 쓰면 `test_sys_path_해킹이_없다`
+        #   가 잡는다. 정당한 지적이라 PYTHONPATH 로 넘긴다 —
+        #   경로 조작을 코드에 심지 않는다는 규칙은 문자열 안에서도 같다.
+        import os
+        env = dict(os.environ, PYTHONPATH=str(ROOT / "tools"))
+        r = subprocess.run(
+            [sys.executable, "-c",
+             "import golden; print(golden._staleness())"],
+            capture_output=True, text=True, cwd=ROOT, env=env)
+        return r.stdout.strip()
+
+    keep = fp.read_text(encoding="utf-8") if fp.exists() else None
+    W = ROOT / "src/firelane/seg/width.py"
+    P = ROOT / "src/firelane/seg/params.py"
+    w0, p0 = W.read_text(encoding="utf-8"), P.read_text(encoding="utf-8")
+    try:
+        fp.unlink(missing_ok=True)
+        assert stale() == "[]", "기준선을 만들 때 낡았다고 한다"
+
+        W.write_text(w0.replace("class WidthEngine", "# 주석\nclass WidthEngine", 1),
+                     encoding="utf-8")
+        assert stale() == "[]", \
+            "주석만 고쳤는데 낡았다고 한다 — 게이트가 정상 상태에서 울린다"
+        W.write_text(w0, encoding="utf-8")
+
+        P.write_text(re.sub(r"^TRUCK\s*=\s*3\.0", "TRUCK      = 3.5",
+                            p0, count=1, flags=re.M), encoding="utf-8")
+        assert stale() != "[]", "임계값을 바꿨는데 안 잡는다 — 게이트가 죽었다"
+    finally:
+        W.write_text(w0, encoding="utf-8")
+        P.write_text(p0, encoding="utf-8")
+        if keep is not None:
+            fp.write_text(keep, encoding="utf-8")
+        else:
+            fp.unlink(missing_ok=True)
+
+
+def test_sample_writer_uses_a_key_that_survives_merging():
+    """표본 파일이 **병합 후에도 유효한 키**를 쓰는가.
+
+    ★ 2026-08-23. `_SAMPLES[uid]` 로 넣었다. `uid` 는 노딩 단위 키이고
+      `seg_uid` 는 병합이 끝난 뒤 `attach_seg_uid()` 가 붙인다.
+      **완전히 다른 키다.** 그래서 19,393개를 모으고 **0행을 썼다** —
+      필터가 전부 걸렀다.
+
+      더 나쁜 것은 로그가 그걸 말하고 있었다는 점이다.
+
+          폭 표본 0행 (19,393 유효 · -19,393 결측)
+
+      **음수가 나온 순간 알아챘어야 했다.** 집계도 쓴 것이 아니라 모은 것
+      전부를 세고 있었다.
+    """
+    src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
+    assert "_SAMPLES[sid]" in src, \
+        "표본 키가 sid 가 아니다 — 병합 후 매칭이 안 된다"
+    assert "zip(g.seg_id, g.seg_uid" in src, \
+        "seg_id → seg_uid 매핑 없이 쓴다"
+    # 집계는 쓴 행 기준이어야 한다
+    i = src.index("def _write_samples")
+    body = src[i:i + 2500]
+    assert "ok += r[" in body, "쓴 행이 아니라 모은 것 전부를 센다"
+
+
+def test_ingest_can_retry_only_what_failed():
+    """`ingest` 가 실패한 소스만 다시 돌릴 수 있는가.
+
+    ★ 2026-08-23. 19종을 한 덩어리로 돌아서 **하나가 FAIL 하면 전체가
+      무효**였다. 그리고 그 실패가 비결정적이다(PLAN §1-19) — 같은 입력·
+      같은 코드로 1회차 `turn_restriction`·`cctv`, 2회차 통과, 3회차
+      `ngii_road`, 4회차 `node_link`. **하루에 세 번 났고 매번 다른
+      소스였다.** 그때마다 200초를 다시 태웠다. 성공한 18종은 산출물이
+      멀쩡한데도.
+
+      `_manifest.json` 에 소스별 status 가 이미 있었다. 구조는 있는데
+      그것을 읽어 고르는 경로가 없었을 뿐이다.
+
+    ★ `--only` 가 대장을 통째로 덮어쓰던 문제(2026-08-22)는 이미 병합으로
+      고쳐져 있다. `--retry-failed` 는 그 위에 올라간다.
+    """
+    src = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
+    assert "--retry-failed" in src, "실패분만 재시도할 방법이 없다"
+    assert '"FAIL", "MISSING"' in src, "무엇을 실패로 볼지 안 적혀 있다"
+    assert "a.only = bad" in src, "고른 것을 --only 경로에 태우지 않는다"
+
+    # 파이프라인이 실패했을 때 그 방법을 알려줘야 한다
+    pl = (ROOT / "src/firelane/pipeline.py").read_text(encoding="utf-8")
+    assert "--retry-failed" in pl, "ingest 실패 시 재시도 방법을 안 알려준다"
+
+
+def test_ingest_keeps_the_unzip_cache():
+    """`.work` 압축 해제분을 성공 시 남기는가.
+
+    ★ 2026-08-23. 매 실행 지웠더니 `캐시 0` 이 매번 떴다. `ngii1k` 묶음만
+      도엽 74장 + NGI 143장을 다시 푼다 — ingest 180초의 대부분이 여기다.
+
+    ★ 지우던 이유는 있었다 — 2026-08-13 에 `_unz_*` 8폴더 1,570파일이
+      raw 옆에 풀려 raw 파일 수가 40배로 보였다. 그래서 `.work` 가 생겼다.
+      **지금은 raw 밖이라 그 사고가 안 난다.**
+
+    ★ 실패했을 때는 지운다. 반쯤 풀린 것이 다음 실행을 오염시킨다.
+    """
+    src = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
+    assert "--keep-work" in src, ".work 를 남길 방법이 없다"
+    assert "_failed or not a.keep_work" in src, \
+        "실패했을 때도 .work 를 남긴다 — 반쯤 풀린 것이 오염을 만든다"
+
+    pl = (ROOT / "src/firelane/pipeline.py").read_text(encoding="utf-8")
+    assert "--keep-work" in pl, "파이프라인이 캐시를 안 쓴다"
+
+    # tidy 가 .work 를 알고 있어야 쌓이지 않는다
+    import tidy
+    assert any(".work" in g for _, gs, _ in tidy.RULES for g in gs), \
+        "tidy 가 .work 를 모른다 — 캐시가 무한히 쌓인다"
+
+
+def test_every_dataset_says_where_it_is_used():
+    """대장의 모든 소스가 `feeds` 를 갖는가 (R4 · MASTER §18-3a).
+
+    ★ 2026-08-23. 28종 중 **21종이 비어 있었다.**
+      §18-3a 가 *"못 채우면 raw 에 둘 이유가 없다"* 라고 적어놨는데
+      아무도 안 채웠다. 규칙은 있고 강제자가 없었다 — 오늘 반복해 본 그 모양.
+
+      채우고 나니 **참조 0곳이 넷** 드러났다.
+
+          node_point        turn_restriction 필터로만. 직접 참조 0
+          fire_access       report.py 가 raw CSV 를 직접 읽는다
+          enforcement       85,380행을 ingest 하고 아무도 안 읽는다
+          hydrant_summary   5행. 미투입
+
+      `feeds` 는 문서가 아니라 **"이 데이터를 왜 받았나" 의 답**이다.
+      못 적으면 안 받는 게 맞다.
+    """
+    import yaml
+
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    miss = [k for k, v in (y.get("datasets") or {}).items()
+            if not (v or {}).get("feeds")]
+    assert not miss, (
+        f"feeds 가 비어 있다 ({len(miss)}종): {miss}\n"
+        "  R4 — 못 채우면 raw 에 둘 이유가 없다.\n"
+        "  '어디에 쓰이는가' 를 적어라. 안 쓰이면 그렇게 적어라."
+    )
+
+
+def test_vehicle_offtracking_is_physical():
+    """내륜차 계산이 물리적으로 맞는가.
+
+    ★ 회전할 때 뒷바퀴가 앞바퀴보다 안쪽으로 돈다. 그만큼 폭이 더 필요하다.
+
+          Δ = R - √(R² - L²)        1차 근사는 L²/(2R)
+
+      R 이 L 에 가까워지면 근사가 무너진다. 골목에는 R < 8m 인 곳이 실제로
+      있으므로 정확식을 쓴다. R=8·L=4 에서 근사 1.000 vs 정확 1.072 —
+      7cm 차이고 그것이 3.0m 임계 근처에서는 판정을 가른다.
+    """
+    import math
+
+    from firelane.seg import vehicle as V
+
+    assert V.offtracking(None) == 0.0
+    assert V.offtracking(1e9) == 0.0, "직선인데 내륜차가 있다"
+
+    for R in (50.0, 20.0, 12.0, 8.0):
+        got = V.offtracking(R)
+        exact = R - math.sqrt(R * R - V.WHEELBASE ** 2)
+        assert abs(got - exact) < 1e-6, f"R={R} 에서 근사식을 쓴다"
+
+    # 반경이 작을수록 더 필요하다
+    assert V.offtracking(8.0) > V.offtracking(20.0) > V.offtracking(50.0)
+    # 축거보다 작은 반경은 물리적으로 못 돈다
+    assert V.offtracking(2.0) == V.WHEELBASE
+    assert not V.can_turn(6.0), "최소회전반경보다 급한데 돌 수 있다고 한다"
+    assert V.can_turn(None), "직선을 못 돈다고 한다"
+
+    # 직선 필요폭이 params.TRUCK 과 맞물려야 한다
+    from firelane.seg.params import TRUCK
+    assert abs(V.required_width() - TRUCK) < 1e-9, (
+        f"직선 필요폭 {V.required_width()} 와 TRUCK {TRUCK} 이 어긋난다 — "
+        "둘 중 하나만 고치면 판정과 경로가 갈린다")
+
+
+def test_edge_cost_blocks_what_cannot_pass():
+    """통행 비용이 못 가는 길을 실제로 막는가.
+
+    ★ 경로 탐색은 이미 있었다 — `graph.access_corridor()` 가 Dijkstra 로
+      `route_usage` 를 낸다(579구간). **없던 것은 비용 함수다.**
+      `weight="length"` 라 거리만 봐서 `blocked` 159구간도 최단이면
+      지나갔다. 그러면 "소방차가 갈 수 있는 길" 이 아니라 "제일 짧은 선" 이다.
+
+    ★ `unknown` 352 + `needs_cv` 190 = 절반이 "모른다" 다. 전부 막으면
+      그래프가 끊겨 경로가 아예 안 나온다. `lenient` 로 가른다.
+      **어느 쪽이든 `blocked` 는 막는다** — 그것만은 판정이 확정이다.
+    """
+    import math
+
+    from firelane.seg import vehicle as V
+
+    assert V.edge_cost(40, 1.2, "blocked") == math.inf
+    assert V.edge_cost(40, 9.9, "blocked", lenient=True) == math.inf, \
+        "lenient 에서 blocked 가 뚫린다"
+    assert V.edge_cost(40, 2.8, "clear") == math.inf, "필요폭 미만인데 통과"
+    assert V.edge_cost(40, 5.0, "clear", 6.0) == math.inf, \
+        "최소회전반경보다 급한데 통과"
+
+    # 넓은 직선은 거리 그대로
+    assert V.edge_cost(40, 5.0, "clear") == 40.0
+    # 여유가 적으면 비싸다
+    assert V.edge_cost(40, 3.2, "clear") > 40.0
+    # 모르는 곳은 lenient 에서 싸진다
+    strict = V.edge_cost(40, None, "unknown")
+    soft = V.edge_cost(40, None, "unknown", lenient=True)
+    assert math.isfinite(strict) and soft < strict, \
+        "lenient 가 모르는 곳을 안 열어준다 — 그래프가 끊긴다"
+
+
+def test_vehicle_spec_has_a_source():
+    """차량 제원이 대장에 있고 출처를 갖는가.
+
+    ★ 2026-08-23. `seg/vehicle.py` 를 만들면서 전폭 2.5 · 축거 4.0 ·
+      최소회전반경 8.0m 를 **모듈 상수로 박았다.** "표준규격 중앙값" 이라고
+      적었을 뿐 어느 문서 몇 쪽인지가 없었다.
+
+      **그것이 이 저장소가 계속 막아온 "근거 없는 상수" 다.** 같은 날
+      `CCTV_RANGE = 25.0` 을 두고 *"계산으로 예상한 값을 그대로 상수에
+      박으면 그 순간 근거 없는 상수가 하나 더 생긴다"* 고 적어놓고 어겼다.
+
+      제원은 `sources.yaml` 의 `vehicle_spec` 에서 읽는다. **기본값을 두지
+      않는다** — 없으면 모듈이 죽는다. 기본값을 두면 아무도 안 채우고
+      그 값이 판정에 들어간다(`feeds` 21종이 비어 있던 것과 같은 이유).
+    """
+    import yaml
+
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    s = y.get("vehicle_spec")
+    assert s, "sources.yaml 에 vehicle_spec 이 없다"
+    for k in ("width_m", "length_m", "wheelbase_m", "turn_radius_m",
+              "clearance_m", "source", "verified", "feeds"):
+        assert s.get(k) not in (None, ""), f"vehicle_spec.{k} 가 비었다"
+
+    # 모듈이 상수를 다시 박지 않았는가
+    src = (ROOT / "src/firelane/seg/vehicle.py").read_text(encoding="utf-8")
+    import re
+    hard = re.findall(r"^(WIDTH|LENGTH|WHEELBASE|TURN_R|CLEARANCE)\s*=\s*[\d.]",
+                      src, re.M)
+    assert not hard, f"모듈에 제원 상수가 박혀 있다: {hard}"
+    assert "SpecMissing" in src, "제원이 없을 때 죽지 않는다"
+
+    # 직선 필요폭이 params.TRUCK 과 맞물려야 한다
+    from firelane.seg import vehicle as V
+    from firelane.seg.params import TRUCK
+    assert abs(V.required_width() - TRUCK) < 1e-9, (
+        f"vehicle_spec 의 width_m + clearance_m = {V.required_width()} 인데 "
+        f"TRUCK = {TRUCK} 이다 — 판정과 경로가 갈린다")
+
+
+def test_unverified_vehicle_spec_is_announced():
+    """미검증 제원으로 낸 결과가 그 사실을 말하는가.
+
+    ★ 폭 값이 `width_verified: false` 라 화면 상단에 경고가 뜨는 것과
+      같은 규칙이다. **미검증 값이 검증된 값처럼 쓰이면** 그 순간
+      숫자가 사실이 된다(MASTER §18-3a `verified` 항목).
+    """
+    src = (ROOT / "tools/route_probe.py").read_text(encoding="utf-8")
+    assert 'get("verified")' in src, "제원 검증 여부를 안 본다"
+    assert "참고값이지 판정이 아니다" in src, "미검증임을 화면에 안 알린다"
+
+
+def test_route_usage_is_not_a_passability_claim():
+    """`route_usage` 가 통행 가능성을 주장하지 않는가.
+
+    ★ 2026-08-24 실측. `access_corridor()` 는 **폭 산출보다 먼저** 돈다
+      (`segments.py` 194줄 vs 435줄). 그래서 `weight="length"` 밖에 못 쓴다.
+
+          route_usage > 0        579구간
+            그중 blocked          41   ★ 폭 0.41m 를 70회 지나간다
+            폭 3.0m 미만         168
+
+      스키마는 정직하게 *"최단경로 사용횟수"* 라고 적혀 있다. 문제는 이름이
+      **"출동 경로" 로 읽힌다**는 것이다. 화면이 아직 이 값을 안 써서
+      잘못된 지도가 나가지는 않았다.
+
+    ★ 순서를 바꾸는 대신 **한 번 더 돈다**(`_write_route`). 순서를 바꾸면
+      회랑 산정(표출 스코프)이 폭에 의존하게 되어 계보가 꼬인다.
+      결과는 `route_vehicle.csv` 로 따로 낸다 — 산출물 컬럼을 안 더하므로
+      golden 지문이 그대로다.
+    """
+    rep = (ROOT / "src/firelane/seg/report.py").read_text(encoding="utf-8")
+    i = rep.index('"route_usage"')
+    desc = rep[i:i + 200]
+    for bad in ("통행 가능", "진입 가능", "소방차가 갈"):
+        assert bad not in desc, \
+            f"route_usage 설명이 통행 가능성을 주장한다: {bad}"
+
+    seg = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
+    assert "_write_route" in seg, "차량 비용 경로를 안 낸다"
+    assert "route_vehicle.csv" in seg, "2차 경로 결과를 안 남긴다"
+    # 산출물 컬럼을 더하면 golden 이 깨진다
+    assert "route_vehicle=" not in seg, \
+        "route_vehicle 을 segments 컬럼으로 넣었다 — golden 이 깨진다"
+
+
+def test_route_does_not_pass_through_blocked_edges():
+    """차량 경로가 통행 불가 엣지를 지나가지 않는가.
+
+    ★ 2026-08-24. 처음엔 막힌 엣지에 `BIG = 1e7` 을 주고 그래프에 남겼다.
+      `math.inf` 를 networkx 가 못 다루기 때문이었다. 그러나 **다른 길이
+      없으면 Dijkstra 가 그 엣지를 쓴다.**
+
+          통행 불가 416  ·  경로에 쓰인 구간 996
+
+      "막힌 길로라도 도달" 이라 답이 아니다. 막힌 엣지를 **빼고** 돈다.
+      도달하지 못하면 그것이 사실이다 — `unknown` 352구간을 회색으로
+      남기는 것과 같은 규칙이다.
+
+    ★ `reachable` 은 양 끝 노드가 모두 도달 가능할 때만 1 이다.
+      한쪽만 닿으면 그 구간에 들어갈 수 없다.
+    """
+    src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
+    i = src.index("def _write_route")
+    body = src[i:i + 6000]
+    assert "P.remove_edges_from" in body, \
+        "막힌 엣지를 그래프에 남겨둔 채 경로를 돈다"
+    assert 'd["blocked"]]' in body, "무엇을 뺄지 blocked 로 안 고른다"
+    assert "reachable" in body, "도달 가능 여부를 안 낸다"
+    assert 'd["a"] in reach and d["b"] in reach' in body, \
+        "한쪽 끝만 닿아도 도달로 본다 — 그 구간에는 못 들어간다"
+
+
+def test_route_graph_snaps_nodes_like_build_graph():
+    """2차 경로가 `graph.py` 와 같은 규칙으로 노드를 묶는가.
+
+    ★ 2026-08-24. `_write_route` 가 끝점을 `round(x / 0.5)` 격자로 묶었다.
+      **0.02m 차이로 노드가 갈린다** — 10.24 는 격자 20, 10.26 은 21 이다.
+      그 결과 폭 15~18m 대로가 "도달 불가" 로 나왔다.
+
+          동계로 6-323      clear  폭 14.96  282m   ← 도달 불가
+          경양로347번길 1-347 clear  폭 15.0   255m   ← 도달 불가
+
+      `graph.py` 는 같은 문제를 union-find 로 푼다(§4 노드 접합).
+      `NODE_TOL` 안의 끝점을 묶으므로 경계가 없다.
+
+    ★ **두 곳이 다른 규칙으로 노드를 묶으면 그래프가 두 개가 된다.**
+      `route_usage` 와 `route_vehicle` 이 서로 다른 위상 위에서 계산되면
+      비교 자체가 성립하지 않는다.
+    """
+    src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
+    i = src.index("def _write_route")
+    body = src[i:i + 8000]
+    # ★ 문자열 존재가 아니라 **실제로 도는지**를 본다. 처음에 `"STRtree" in
+    #   body` 로만 봤더니 import 줄을 지워도 주석에 남은 이름 때문에 통과했다.
+    assert "_tree = STRtree(_pts)" in body, "격자 반올림으로 노드를 묶는다"
+    assert "_pts[i].distance(_pts[j]) <= NODE_TOL" in body, \
+        "graph.py 와 다른 허용치로 묶는다"
+    assert "_par[max(ri, rj)] = min(ri, rj)" in body, "union-find 접합이 없다"
+    assert "round(co[0][0] / TOL" not in body, "격자 반올림이 남아 있다"
+
+    # 실제로 import 되는가 — 모듈을 불러 확인한다
+    import firelane.segments as _S
+    assert hasattr(_S, "_write_route")
+
+    # graph.py 도 같은 상수를 쓰는지
+    gp = (ROOT / "src/firelane/seg/graph.py").read_text(encoding="utf-8")
+    assert "NODE_TOL" in gp, "graph.py 가 NODE_TOL 을 안 쓴다"
+
+
+def test_ship_reports_the_real_failure():
+    """`ship` 이 실패 사유로 안내 문구를 집지 않는가.
+
+    ★ 2026-08-24. `verify.sh` 출력의 **마지막 줄**을 실패 사유로 썼다.
+      그런데 `verify.sh` 는 실패 시 안내 문구를 마지막에 찍는다 —
+      *"원본으로 되돌리려면: web/app.js.orig 가 분리 전 app.js 다."*
+
+      그것이 실패 사유로 표시되어 **없는 파일(08-21 분리 때 삭제)을 찾게
+      만들었다.** 진짜 원인은 그 위에 있었다.
+
+      **오진을 유도하는 오류 메시지는 오류보다 나쁘다.**
+      `실패` 로 표시된 줄을 골라 보여준다.
+    """
+    src = (ROOT / "tools/ship.py").read_text(encoding="utf-8")
+    i = src.index("def check_code")
+    body = src[i:i + 1500]
+    assert '"실패" in x' in body, "실패 표시가 있는 줄을 안 고른다"
+    assert "tail[0]" not in body, "마지막 줄을 실패 사유로 쓴다"
+    assert '"머지" not in x' in body, "머지 안내 문구를 걸러내지 않는다"

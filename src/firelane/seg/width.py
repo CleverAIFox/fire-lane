@@ -252,6 +252,24 @@ class WidthEngine:
         _by  = {"ngii1k": [], "ngii": [], "silpok": []}
         _n_try = 0
 
+        # ★ 2026-08-23. 표본을 버리지 않고 남긴다.
+        #
+        #   지금까지 `widths()` 는 표본 배열을 만들고 `min` 만 뽑아 버렸다.
+        #   그래서 `w(s)` 를 **함수로** 다룰 수가 없었다.
+        #
+        #   `min` 은 최악의 통계량이다 — 표본 하나가 틀리면 판정이 뒤집힌다.
+        #   커버율 0.056 구간에서 `wmin 10.51m` 가 나온 것이 그 예다.
+        #   함수로 보면 이런 것들이 열린다.
+        #
+        #       μ{s : w(s) < 3.0}    막힌 **길이**. 이상치 하나에 안 무너진다
+        #       opening(L_car)       차 길이만큼 연속으로 이어지는 폭
+        #                            소방펌프차 8m — 병목 0.5m 는 노이즈일 수 있다
+        #       w(s) 분포            커버율보다 정확한 신뢰도
+        #
+        #   ★ 판정은 건드리지 않는다. 산출물 컬럼도 안 더한다.
+        #     `width_samples.csv` 를 따로 낼 뿐이라 golden 지문이 그대로다.
+        _rows = []
+
         def _covr():
             """소스별 커버율. 정규 표본 중 그 소스가 값을 낸 비율.
 
@@ -259,8 +277,12 @@ class WidthEngine:
             최솟값을 뽑는다. 소스 축에서 폐기한 min() 이 표본 축으로 부활한 것이다.
             구간 단위 채택으로 바꾸기 위한 관측값이다. (STEP 5-1)
             """
+            # ★ 2026-08-23. 세 번째로 표본 배열을 같이 낸다.
+            #   `widths()` 는 이미 7-튜플이라 여덟 번째를 더하면 호출부가
+            #   깨진다. `_covr()` 은 이미 튜플이므로 여기를 늘리는 것이
+            #   변경 면적이 제일 작다 — 호출부는 언패킹 한 줄만 바뀐다.
             return ({k: (round(v/_n_try, 3) if _n_try else None)
-                     for k, v in _cov.items()}, _n_try)
+                     for k, v in _cov.items()}, _n_try, _rows)
         for t in _ts:
             _nc += 1
             _pt = s.interpolate(t)
@@ -295,6 +317,8 @@ class WidthEngine:
                 _skip = False
             if _skip:
                 _nx_skip += 1
+                _rows.append({"s": round(t, 2), "w": None, "src": None,
+                              "drop": "xsec"})
                 if _DBG["on"]:
                     _how = "폴리곤" if (self.xsec_poly is not None
                                        and self.xsec_poly.intersects(_pt)) else "반경"
@@ -328,6 +352,13 @@ class WidthEngine:
             # 채택된 소스의 snap 이 크면 그 표본 자체를 버린다.
             if a and (sc is None or _trusted(sc)):
                 A.append(a); S.append(sc); D.append(pr)
+                _rows.append({"s": round(t, 2), "w": round(float(a), 3),
+                              "src": sc, "drop": None})
+            else:
+                # 잰 시도는 했는데 값이 안 나온 자리. `w(s)` 의 결측이다 —
+                # 커버율은 이 개수만 세지만 **어디가** 비었는지는 못 준다.
+                _rows.append({"s": round(t, 2), "w": None, "src": None,
+                              "drop": _why or "no_value"})
             # ★ pr 은 measure() 가 항상 3-튜플로 준다. strict=True 로
             #   그 계약을 고정한다 — 소스가 늘거나 줄면 여기서 죽어야
             #   조용히 한 소스가 빠지는 일이 없다.
