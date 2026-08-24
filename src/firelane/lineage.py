@@ -40,6 +40,11 @@ GPKG 는 매 실행 바이트가 달라진다(타임스탬프 · 페이지 배�
 3 이 종전에 없던 것이다. 사람이 손으로 파일을 만들어 둔 경우, `--only` 로
 일부만 돈 경우, 다른 기계 산출물을 복사한 경우가 전부 여기서 걸린다.
 
+★ 3 에는 **적용 범위가 있다.** 파이프라인 안에 생산자가 있는 입력만 본다.
+  `raw` 처럼 밖에서 오는 입력은 대조할 두 번째 근거가 없고, 그것이
+  바뀌는 것은 오류가 아니라 이 단계를 돌려야 할 이유다. 이 범위가 없어서
+  `ingest` 가 자기 자신을 상류로 가리키는 교착이 났다(2026-08-24).
+
 ── 계층 ────────────────────────────────────────────────────────
 단계 스크립트는 계보를 **모른다.** `pipeline.py` 가 실행 전 `verify`,
 실행 후 `record` 를 부른다. 종전에는 `segments.py` 안에서 `lineage_check`
@@ -244,6 +249,9 @@ def verify(processed: Path, root: Path, step, expand, steps,
     for p in expand(step.consumes):
         k = _key(root, p)
         up = producer.get(k)
+        # ★ 파이프라인 안에서 만들어지는 입력인가. ① 이 up 을 None 으로
+        #   되돌리므로 그 전에 잡아둔다.
+        has_producer = k in producer
         now = fingerprint(p)
 
         # ★ 이번 실행에서 상류가 방금 만든 입력. "지난 실행의 기억" 과
@@ -258,6 +266,26 @@ def verify(processed: Path, root: Path, step, expand, steps,
         if up and up not in lg:
             unknown.append(f"  {k}  ← {up} 기록 없음")
             up = None          # ② 는 못 하지만 ③ 은 그대로 한다
+
+        # ★ 2026-08-24. mutates 예외를 ② 앞으로 올린다.
+        #
+        #   terrain 이 segments.geojson 을 덧쓴다. 그러면 그 파일의 디스크
+        #   상태는 **항상** segments 가 기록한 것과 다르다 — terrain 이
+        #   그 뒤에 z 를 넣었으니까. ② 는 그것을 "상류가 쓴 것과 다르다"
+        #   로 읽고 막는다.
+        #
+        #       segments 가 쓴 것  sha 44136fa3   (z 없음)
+        #       지금 디스크        sha 7433b26f   (z 있음)
+        #
+        #   `--from terrain` · `--only terrain` 에서 재현된다. 종전에는
+        #   mutates 예외가 ③ 에만 있어 이 경로가 열려 있었다.
+        #   `test_mutated_input_is_not_self_compared` 가 잡았다.
+        #
+        #   덧쓰기 대상은 이 단계가 읽고 다시 쓰는 것이므로, 상류 기록과
+        #   달라진 것 자체가 정상이다. 그 대신 상류가 **이번 실행에서
+        #   돌았는지**는 fresh 가 본다.
+        if k in _mutated_keys:
+            continue
 
         # ② 입력 변경 — 상류가 쓴 것과 지금 디스크가 다른가
         if up:
@@ -284,9 +312,30 @@ def verify(processed: Path, root: Path, step, expand, steps,
                 continue
 
         # ③ 상류 기록이 없는 입력만. raw 가 여기서 걸린다.
-        #   단, mutates 는 제외한다. 자기가 덧쓴 것을 자기가 다시 읽으면
-        #   다른 것이 정상이다. reads 는 아무도 덧쓰지 않으므로 그대로 본다.
-        if k in _mutated_keys:
+        #   mutates 는 위에서 이미 걸러졌다(② 앞).
+        # ★ 2026-08-24. 계보 교착 **네 번째**. 상류가 아예 없는 입력(raw)은
+        #   자가대조하지 않는다.
+        #
+        #     ingest.consumes = (RAW,) 이고 RAW 를 만드는 단계가 없다
+        #     → producer 가 비어 ①② 를 지나 ③ 에 닿는다
+        #     → raw 30→32 로 바뀌자 "상류부터 다시 돌려라" 로 막았다
+        #     → ingest 가 최상류다. 자기 자신을 상류로 가리켰다
+        #
+        #   ③ 은 구조적으로 하드 실패로 쓸 수 없는 검사다. `verify()` 는
+        #   단계를 **돌리기 직전**에 불린다. "내 입력이 지난 실행 이후
+        #   바뀌었다" 는 막을 이유가 아니라 **돌아야 할 이유**다.
+        #   위반을 증명할 수 있는 것은 ② 뿐이다 — ② 에는 상류 기록이라는
+        #   두 번째 증인이 있고, ③ 은 증인이 자기 하나다.
+        #
+        #   08-22 의 ②→③ 흘러넘침, terrain 의 mutates, 그리고 이번 raw.
+        #   셋 다 이 가지에서 났다. 우연이 아니다.
+        #
+        #   08-18 방어(상류가 안 돌았는데 입력이 바뀜)는 ② 가 잡는다.
+        #   `test_lineage_branches` 가 여섯 조합을 전부 태운다.
+        if not has_producer:
+            was = lg.get(step.name, {}).get("inputs", {}).get(k)
+            if was is not None and not _same(was, now):
+                print(f"  외부 입력 변경 {k} — {step.name} 을 다시 돌린다")
             continue
         mine = lg.get(step.name, {}).get("inputs", {}).get(k)
         if mine is not None and not _same(mine, now):

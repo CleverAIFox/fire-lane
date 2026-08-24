@@ -83,9 +83,19 @@ RULES: list[tuple[str, str, str]] = [
     (r"nodelinkdata\.zip$",  "its", "its_nodelink_kr_20260812.zip"),
     # ★ 2026-08-23. 소방장비 기본규격. 차량 제원의 유일한 공식 출처다.
     #   파일명이 소방청 게시판에서 받은 그대로라 규칙으로 정규화한다.
-    (r"소방펌프차[_ ]?\(?KFS.*\.(hwpx?|pdf)$",
+    # ★ 2026-08-24. 이 두 줄이 `KFS` 대문자로 쓰여 있었다. 매칭은
+    #   `low = f.name.lower()` 로 하므로 **영원히 안 걸린다.** RULES 40줄
+    #   중 대문자를 포함한 정규식이 이 둘뿐이었고, MISSING 도 정확히 이
+    #   둘이었다(kfs_pumptruck · kfs_ladder_small). mas 두 종은 규칙이 전부
+    #   한글이라 통과했다 — 그래서 같은 날 같은 폴더에 받았는데 한쪽만
+    #   raw 에 들어갔다.
+    #
+    #   3주 동안 안 보인 이유는 `규칙에 없는 파일 N건 (건너뜀)` 이 종료코드
+    #   0 이기 때문이다. `tests/test_normalize_rules.py` 가 이제 규칙 전수를
+    #   본다 — 대문자 금지 · 대표 파일명 매칭 · 왕복 멱등.
+    (r"소방펌프차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
      "safety", "safety_kfs_pumptruck_20251224.{0}"),
-    (r"소형사다리차[_ ]?\(?KFS.*\.(hwpx?|pdf)$",
+    (r"소형사다리차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
      "safety", "safety_kfs_ladder_small_20251224.{0}"),
     (r"소방자동차.*다수공급자.*차종별.*\.(hwpx?|pdf)$",
      "safety", "safety_mas_vehicle_spec_20241111.{0}"),
@@ -182,6 +192,15 @@ MISSING = [
 ]
 
 
+def assert_rules_are_lowercase() -> list[str]:
+    """규칙에 대문자 ASCII 가 들어 있으면 영원히 안 걸린다.
+
+    매칭이 `f.name.lower()` 이므로 규칙도 소문자여야 한다. 이 불변식을
+    깬 것이 kfs 2종 누락의 원인이었다. 테스트가 이 함수를 부른다.
+    """
+    return [pat for pat, _, _ in RULES if re.search(r"[A-Z]", pat)]
+
+
 def _sha(p: Path, chunk: int = 1 << 20) -> str:
     import hashlib
     h = hashlib.sha256()
@@ -255,15 +274,26 @@ def main():
 
     # ★ 이미 규칙에 맞는 이름이면 그대로 배치한다.
     #   --in-place 로 한 번 정리한 폴더를 다시 원본으로 쓸 수 있어야 한다.
-    ORG = {"juso", "ngii", "its", "sbiz", "safety", "gjcity", "nsdi"}
-    for org in ORG:
-        RULES.append((rf"^{org}_[a-z0-9_]+_\d{{8}}\.(zip|csv|tif|xml)$", org, None))
+    # ★ 2026-08-24. 목록이 세 곳에서 달랐다 — MASTER §18-2a 는 8종(nsdi 없음),
+    #   여기는 7종(vworld·eais 없음). `vworld`·`eais` 는 명시 규칙이 따로 있어
+    #   **우연히** 돌고 있었다. MASTER 를 아홉으로 통일하고 여기를 맞춘다.
+    ORG = {"juso", "ngii", "its", "sbiz", "safety", "gjcity",
+           "nsdi", "vworld", "eais"}
+    # ★ 확장자 화이트리스트에 hwp·pdf·ngi·nda 가 없었다. 그래서 규칙명으로
+    #   한 번 정리한 `safety_kfs_pumptruck_20251224.hwp` 를 다시 넣으면
+    #   "규칙에 없는 파일" 로 떨어졌다 — 위 주석이 약속한 왕복 멱등이
+    #   hwp·pdf 에 대해 거짓이었다.
+    EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+    # ★ RULES 는 모듈 전역이다. main() 안에서 append 하면 같은 프로세스에서
+    #   두 번 부를 때 규칙이 중복 누적된다. 지역 사본에 붙인다.
+    rules = RULES + [(rf"^{org}_[a-z0-9_]+_\d{{8}}\.({EXT})$", org, None)
+                     for org in sorted(ORG)]
 
     files = [f for f in src.iterdir() if f.is_file()]
     done, skip = [], []
     for f in files:
         low = f.name.lower()
-        for pat, folder, tmpl in RULES:
+        for pat, folder, tmpl in rules:
             m = re.search(pat, low)
             if not m:
                 continue
