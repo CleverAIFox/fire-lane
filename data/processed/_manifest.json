@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-24T01:44:34.819029+09:00",
+  "generated_at": "2026-08-24T10:16:04.164684+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -13,13 +13,31 @@
   "datasets": [
     {
       "key": "kfs_pumptruck",
-      "status": "MISSING",
-      "file": "safety/safety_kfs_pumptruck_20251224.*"
+      "source_file": "safety/safety_kfs_pumptruck_20251224.*",
+      "source_sha256": "0908c1232cd2102ec4f8e081043a4f83141680504e82c428b4237fd18a4d8d42",
+      "resolved": "safety_kfs_pumptruck_20251224.hwpx",
+      "source_crs": "",
+      "license": "공공저작물 (소방청 고시)",
+      "url": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
     },
     {
       "key": "kfs_ladder_small",
-      "status": "MISSING",
-      "file": "safety/safety_kfs_ladder_small_20251224.*"
+      "source_file": "safety/safety_kfs_ladder_small_20251224.*",
+      "source_sha256": "5c5ab15422d304dcfe51bec3bc63272bde1fd723dc49cfc64f0f417ccb50924a",
+      "resolved": "safety_kfs_ladder_small_20251224.pdf",
+      "source_crs": "",
+      "license": "공공저작물 (소방청 고시)",
+      "url": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
     },
     {
       "key": "mas_vehicle_spec",
