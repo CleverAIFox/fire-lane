@@ -92,11 +92,25 @@ def test_codeowners_covers_every_web_path():
     owned = [l.split()[0].strip("/")
              for l in co.read_text(encoding="utf-8").splitlines()
              if l.strip() and not l.lstrip().startswith("#")]
+
+    # ★ 2026-08-24. 디스크가 아니라 **git 이 추적하는 것**만 본다.
+    #
+    #   종전에는 `rglob("*")` 로 디스크를 훑었다. 그래서 기기마다 결과가
+    #   달랐다 — 같은 커밋에서 한쪽은 통과하고 다른 쪽은 실패했다.
+    #   원인은 `.gitignore` 에 등재된 생성물이 로컬에만 남아 있던 것이다
+    #   (`web/review.html`, `jijeok_review.py` 산출물).
+    #
+    #   CODEOWNERS 는 **리뷰 권한**을 정하는 파일이다. 저장소에 들어오지
+    #   않는 파일은 리뷰 대상이 아니므로 소유자를 요구할 이유가 없다.
+    #   `index.html` 처럼 커밋되는 파일과는 성격이 다르다.
+    #
+    #   ★ 이 변경이 검사의 기기 의존성도 함께 제거한다.
+    import subprocess
+    tracked = subprocess.run(
+        ["git", "ls-files", "web"], cwd=ROOT,
+        capture_output=True, text=True).stdout.split()
     bad = []
-    for p in sorted((ROOT / "web").rglob("*")):
-        if not p.is_file():
-            continue
-        rel = str(p.relative_to(ROOT))
+    for rel in sorted(tracked):
         if not any(rel == o or rel.startswith(o.rstrip("/") + "/") for o in owned):
             bad.append(f"  {rel}")
     assert not bad, (
