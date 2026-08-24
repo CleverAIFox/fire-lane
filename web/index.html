@@ -6,7 +6,7 @@
 <title>Fire-Lane · 동명동 소방차 진입 판정</title>
 <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.1.0/dist/maplibre-gl.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
-<link href="./style.css?v=72297f4e" rel="stylesheet">
+<link href="./style.css?v=BUILD" rel="stylesheet">
 </head>
 <body>
 <div id="map"></div>
@@ -85,7 +85,7 @@
 <button id="dispatch-fab" title="출동 모드 켜기/끄기">출동</button>
 
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.1.0/dist/maplibre-gl.js"></script>
-<!-- ★ ?v=72297f4e 는 publish_web.py 가 매 실행 실제 스탬프로 치환한다.
+<!-- ★ ?v=BUILD 는 publish_web.py 가 매 실행 실제 스탬프로 치환한다.
      저장소에 커밋된 상태에서는 문자 그대로 "BUILD" 이고, 그래도 동작한다
      (쿼리는 파일 조회에 영향 없음). 치환이 안 된 화면을 보고 있다면
      publish 를 안 돌린 것이다.
@@ -105,7 +105,7 @@
      유일한 곳이다 — 다른 모듈은 전부 정상 import 로 쓴다.
      ★ 순서가 중요하다. config.js 가 먼저 실행돼야 한다.
        module 은 defer 처럼 동작하므로 클래식 스크립트보다 항상 늦게 돈다. -->
-<script src="./config.js?v=72297f4e"></script>
-<script type="module" src="./js/main.js?v=72297f4e"></script>
+<script src="./config.js?v=BUILD"></script>
+<script type="module" src="./js/main.js?v=BUILD"></script>
 </body>
 </html>

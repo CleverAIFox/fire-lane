@@ -218,7 +218,8 @@ def write_outputs(g):
             "cov_ngii1k": "★ processed 전용(web 미발행) float|null 정규표본 중 1:1,000 이 값을 낸 비율",
             "cov_ngii": "★ processed 전용(web 미발행) float|null 정규표본 중 1:5,000 이 값을 낸 비율",
             "cov_silpok": "★ processed 전용(web 미발행) float|null 정규표본 중 실폭도로가 값을 낸 비율",
-            "n_sample": "int 정규표본 수(교차로 제외 후)",
+            "n_sample": "int 정규표본 수(교차로 제외 후). verdict 가 이것을 본다",
+            "n_try": "int 시도한 표본 수. n_sample/n_try 가 곧 커버율이다",
             "width_cov": "float|null 채택 소스가 이 구간 표본을 덮은 비율. "
                          "1 미만이면 못 잰 구간이 있다. D-25 실측 우선순위",
             "merge_why": "★ processed 전용(web 미발행) str|null 병합을 유발한 최초 폭 미산출 사유",

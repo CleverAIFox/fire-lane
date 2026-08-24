@@ -15,10 +15,22 @@
 /web/README.md           @marscoolcat @AIMasterFox
 /web/config.js           @marscoolcat @AIMasterFox   # 양쪽이 함께 보는 유일한 파일
 
+# ★ 2026-08-24. 분할 당시 여섯 파일이 이 목록에서 누락돼 있었다
+#   (state · map · basemap · verdict · config-access · dom).
+#   소유자가 없으면 보호 규칙이 리뷰를 요구하지 않는다 —
+#   verdict.js 는 판정 색을 그리는 파일인데 아무도 검토하지 않았다.
+#   tests/test_web_ownership.py 가 web/ 전 경로의 소유 여부를 검사한다.
+#
 # ★ app.js 1,260줄을 web/js/ 로 쪼갠 결과(2026-08-21). 파일 하나를 둘이
 #   건드리던 구조가 사라져 충돌이 경로로 갈린다.
 /web/js/main.js          @AIMasterFox            # 부트스트랩. 순서만 정한다
 /web/js/data.js          @AIMasterFox            # ★ 데이터 접근 단일 지점
+/web/js/state.js         @AIMasterFox            # 공유 상태. 레이어 간 계약
+/web/js/map.js           @AIMasterFox            # 지도 인스턴스 생성
+/web/js/basemap.js       @AIMasterFox            # 배경 타일 · 지형
+/web/js/verdict.js       @AIMasterFox            # ★ 판정 4종 → 색. 정본은 seg/geom.py
+/web/js/config-access.js @AIMasterFox            # config.js 를 모듈에서 읽는 유일한 통로
+/web/js/dom.js           @marscoolcat @AIMasterFox   # DOM 조회 헬퍼. 마크업과 맞물린다
 /web/js/layers/          @AIMasterFox            # GIS 단독. 레이어·판정 렌더링
 /web/js/icons/           @marscoolcat @AIMasterFox   # 캔버스 그림 — UI 감각이 필요하다
 /web/js/ui/              @marscoolcat @AIMasterFox   # 범례·검색·테마·토글

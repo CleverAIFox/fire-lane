@@ -97,6 +97,20 @@ RULES: list[tuple[str, str, str]] = [
      "safety", "safety_kfs_pumptruck_20251224.{0}"),
     (r"소형사다리차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
      "safety", "safety_kfs_ladder_small_20251224.{0}"),
+    # ★ 2026-08-24. KFS 5종 추가. 소방청 게시판 파일명은
+    #   `75. 기본규격 영문화 소방물탱크차(KFS-1-0075-2025-00).hwpx` 처럼
+    #   **번호 접두어**가 붙는다. 차종명만 잡으면 그것까지 함께 걸린다.
+    #   규칙은 반드시 소문자로 쓴다 — `low = f.name.lower()` 로 매칭한다.
+    (r"소방물탱크차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
+     "safety", "safety_kfs_watertank_20251224.{0}"),
+    (r"소방화학차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
+     "safety", "safety_kfs_chemical_20251224.{0}"),
+    (r"소방굴절차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
+     "safety", "safety_kfs_ladder_articulated_20251224.{0}"),
+    (r"구조차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
+     "safety", "safety_kfs_rescue_20251224.{0}"),
+    (r"특수구급차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
+     "safety", "safety_kfs_ambulance_special_20251224.{0}"),
     (r"소방자동차.*다수공급자.*차종별.*\.(hwpx?|pdf)$",
      "safety", "safety_mas_vehicle_spec_20241111.{0}"),
     # ★ 2026-08-24. mas_optional 규칙을 지웠다. 본문 전수 확인 결과
