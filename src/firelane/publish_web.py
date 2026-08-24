@@ -47,7 +47,7 @@ def main():
 
     _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict","width_verified",
              "midpoint_fallback","inherited","route_usage","length_m",
-             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_cov","n_sample","road_name","seg_label","road_side","road_bt_m","in_emd","light_count",
+             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_cov","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count",
              "unknown_reason"]
     _cols += [c for c in ("z",) if c in _seg.columns]
     _seg[_cols + ["geometry"]].to_file(W/"segments.geojson", **PREC)

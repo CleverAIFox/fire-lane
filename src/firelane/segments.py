@@ -614,7 +614,7 @@ def main():
         short = g.length < MIN_SEG_LEN
         if uid not in W:
             W[uid] = widths(g)          # 병합으로 범위 안에 들어온 단위
-        wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt, wrows) = W[uid]
+        wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt, wrows, wneff) = W[uid]
         # ★ 2026-08-23. 표본을 버리지 않고 모은다. `w(s)` 를 함수로 다루려면
         #   `min` 이 아니라 배열이 필요하다. 판정에는 안 쓴다.
         # ★ 2026-08-23 정정. 처음엔 `_SAMPLES[uid]` 로 넣었다가 되돌렸다.
@@ -624,7 +624,20 @@ def main():
         #   `sid`(DM00001)를 쓴다. 그것이 `rec` 의 키이자 `g.seg_id` 다.
         _SAMPLES[sid] = wrows
         _road_nm, _road_side, _road_bt = _rnx.match(g)
-        v = verdict(wmin, wmax, wnt)
+        # ★ 2026-08-24 회수(a64a8c5, 2026-08-19). 종전에는 wnt(**시도**
+        #   표본 수)를 넘겼다. verdict 의 '표본 1개로는 clear 를 주지
+        #   않는다' 규칙은 **값이 나온** 표본을 세야 한다.
+        #
+        #       DM02647 구성로238번길
+        #         시도 18 · 유효 1(width_cov 0.056) · wmin 10.51m
+        #         도로대장 명목폭 2.0m
+        #       근거 하나로 clear 가 나갔다. clear 는 '영상판정조차 필요
+        #       없다' 는 가장 강한 주장이라 근거가 필요하다.
+        #
+        #   ★ 파라미터 이름이 처음부터 `nreg` 였다. 이름이 맞지 않는 것을
+        #     아무도 못 봤다. 이 수정은 2026-08-19 에 이미 있었으나
+        #     feat/audit-eval-wmin 브랜치에 갇혀 있었다(#40 계열).
+        v = verdict(wmin, wmax, wneff)
         if short and wmin is None:
             v = "fragment"
 
@@ -712,7 +725,31 @@ def main():
                         route_usage=u["usage"],
                         merged_n=u["n"], merge_why=u["why"],
                         cov_ngii1k=wcov["ngii1k"], cov_ngii=wcov["ngii"],
-                        cov_silpok=wcov["silpok"], n_sample=wnt,
+                        # ★ 2026-08-24. n_sample 의 뜻을 바로잡는다.
+                        #
+                        #   종전 n_sample = wnt(**시도** 표본 수)였다.
+                        #
+                        #   판단 근거는 verdict 의 규칙 자체다 — "근거
+                        #   하나로 clear 를 주지 않는다". 그 규칙이 세야
+                        #   하는 것은 **값이 나온** 표본이다. 시도만 하고
+                        #   실패한 표본은 근거가 아니다. 따라서 그 수를
+                        #   담는 필드가 n_sample 이어야 한다.
+                        #
+                        #   ★ 문서가 그렇게 적어서가 아니다. §17 은 코드가
+                        #     정본이라 정한다. 실제로 문서는 하나가 틀려
+                        #     있었고 그것은 고칠 대상이다 —
+                        #       MASTER 1275  "시도한 표본 수"      틀렸다
+                        #       MASTER 1296  "정규표본 수"         맞다
+                        #       schema.json  "정규표본 수"         맞다
+                        #     같은 문서가 두 번 다르게 적은 것이 이 버그를
+                        #     5일간 가렸다. verdict(wmin, wmax, nreg) 의
+                        #     파라미터 이름은 처음부터 nreg 였다.
+                        #
+                        #   시도 수는 버리지 않는다 — n_sample/n_try 가 곧
+                        #   커버율이고 실측 우선순위 판단에 쓴다. 이름이
+                        #   거짓인 필드를 남기면 같은 함정을 다시 판다.
+                        cov_silpok=wcov["silpok"], n_sample=wneff,
+                        n_try=wnt,
                         width_cov=(wcov.get(wsrc) if wsrc else None),
                         length_m=round(g.length, 1), _n=(a, b), geometry=g)
 

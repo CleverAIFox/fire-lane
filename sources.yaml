@@ -273,6 +273,108 @@ datasets:
 
       ★ 축거 · 최소회전반경은 이 규격에 없다.
     caveats: 규격은 상한("이하")만 정한다. 실제 차폭은 그보다 작을 수 있다.
+  kfs_watertank:
+    what: 소방장비 기본규격 — 소방물탱크차 (KFS-1-0075-2025-00)
+    kind: raw_only
+    file: safety/safety_kfs_watertank_20251224.*
+    provider: 소방청
+    updated: '2025-12-24'
+    acquired: '2026-08-24'
+    scope: 전국
+    license: 공공저작물 (소방청 고시)
+    url: https://www.nfa.go.kr/nfa/releaseinformation/0010/0001/
+    feeds: 차종별 판정(#31). 전장이 펌프차보다 1.5m 길다
+    used_for: |
+      §3.3 (영문판 원문 확인, 2026-08-24)
+
+          구분   전장     전폭     전고     물탱크
+          대형   10.0 이하 2.5 이하 3.7 이하 12,000ℓ 이상
+          중형    8.5 이하 2.5 이하 3.4 이하  6,000ℓ 이상
+          소형    7.8 이하 2.5 이하 3.2 이하  4,500ℓ 이상
+
+      ★ 전폭이 펌프차와 같은 2.5m 다. 전장만 8.5 → 10.0 이다.
+        인터뷰(2026-08-24, 전북소방)가 "물탱크차는 커서 진입이 불가능할
+        때가 있다" 고 했는데, **폭이 같은데 못 들어간다는 것은 코너를
+        못 돈다는 뜻이다.** 우리 판정은 폭만 본다.
+  kfs_chemical:
+    what: 소방장비 기본규격 — 소방화학차 (KFS-1-0074-2025-00)
+    kind: raw_only
+    file: safety/safety_kfs_chemical_20251224.*
+    provider: 소방청
+    updated: '2025-12-24'
+    acquired: '2026-08-24'
+    scope: 전국
+    license: 공공저작물 (소방청 고시)
+    url: https://www.nfa.go.kr/nfa/releaseinformation/0010/0001/
+    feeds: 차종별 제원 비교
+    used_for: |
+      §3.3 (영문판 원문 확인, 2026-08-24. 본문이 section1.xml 에 있다)
+
+          구분     전장     전폭     전고
+          중형      7.8 이하 2.5 이하 3.2 이하
+          대형      9.0 이하 2.5 이하 3.4 이하
+          고성능   12.0 이하 2.5 이하 3.8 이하
+  kfs_ladder_articulated:
+    what: 소방장비 기본규격 — 소방굴절차 (KFS-1-0077-2025-00)
+    kind: raw_only
+    file: safety/safety_kfs_ladder_articulated_20251224.*
+    provider: 소방청
+    updated: '2025-12-24'
+    acquired: '2026-08-24'
+    scope: 전국
+    license: 공공저작물 (소방청 고시)
+    url: https://www.nfa.go.kr/nfa/releaseinformation/0010/0001/
+    feeds: |
+      ★ KFS 6종 중 **축 구성을 적은 유일한 문서**다. #31 축거 추정의
+      단서가 여기밖에 없다.
+    used_for: |
+      §3.3 (영문판 원문 확인, 2026-08-24)
+
+          구분         전장     전폭     전고     섀시
+          33m 미만급   10.0 이하 2.5 이하 3.8 이하 6x4(3축) 이하
+          33m급 이상   12.5 이하 2.5 이하 3.9 이하 6x4(3축) 이하
+          50m급 이상   13.0 이하 2.5 이하 4.0 이하 8x4(4축) 이하
+
+      ★ 축거 자체는 없다. 전장과 축수로 범위만 좁혀진다. 그리고 이것은
+        굴절차 값이라 펌프차에 그대로 못 쓴다. D-30 은 여전히 필요하다.
+  kfs_rescue:
+    what: 소방장비 기본규격 — 구조차 (KFS-1-0076-2025-00)
+    kind: raw_only
+    file: safety/safety_kfs_rescue_20251224.*
+    provider: 소방청
+    updated: '2025-12-24'
+    acquired: '2026-08-24'
+    scope: 전국
+    license: 공공저작물 (소방청 고시)
+    url: https://www.nfa.go.kr/nfa/releaseinformation/0010/0001/
+    feeds: 차종별 제원 비교 — 선착대 구성에 포함된다
+    used_for: |
+      §3.3 (영문판 원문 확인, 2026-08-24. 단위가 mm 다)
+
+          구분   전장       전폭       전고
+          대형   8,500 이하 2,500 이하 3,500 이하
+          중형   7,800 이하 2,500 이하 3,200 이하
+  kfs_ambulance_special:
+    what: 소방장비 기본규격 — 특수구급차 (KFS-1-0029-2025-01)
+    kind: raw_only
+    file: safety/safety_kfs_ambulance_special_20251224.*
+    provider: 소방청
+    updated: '2025-12-24'
+    acquired: '2026-08-24'
+    scope: 전국
+    license: 공공저작물 (소방청 고시)
+    url: https://www.nfa.go.kr/nfa/releaseinformation/0010/0001/
+    feeds: |
+      가장 작은 차종. 통행 가능 범위의 상한을 준다.
+      ★ 인터뷰 — 야간은 소방보다 구급 출동이 잦다.
+    used_for: |
+      ★ 제원 미확인. 이 문서만 한글판(.hwp)이고 나머지 다섯은 영문판
+        (.hwpx)이다. 바이너리 스트림 디코딩이 깨져 §3.3 을 못 읽었다.
+        읽힌 것은 부칙뿐이다 — "3.3.1 개정사항은 2027-04-02 부터 시행".
+
+        ★ 개정 예정이 있다는 뜻이므로 2027-04 이후 재취득해야 한다.
+        한컴오피스로 열어 표를 옮겨 적는 것이 지금은 제일 빠르다.
+    caveats: 한글판 .hwp 라 프로그램으로 못 읽는다. 나머지 5종은 .hwpx 다.
   kfs_ladder_small:
     what: 소방장비 기본규격 — 소형사다리차 (KFS-1-0030-2025-01)
     kind: raw_only

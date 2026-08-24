@@ -1272,7 +1272,8 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 됨
 | `width_src` | `ngii1k` \| `ngii` \| `silpok`. 채택 소스. 구간 단위 단일 소스 |
 | `width_disagree_m` | 소스 간 최대−최소. D-25 실측 지점 선정 기준 |
 | `width_cov` | 채택 소스의 커버율. 정규 표본 중 그 소스가 값을 낸 비율. 낮을수록 실측 우선순위가 높다 |
-| `n_sample` | 시도한 표본 수. 이 값이 1이면 `verdict()` 가 `clear` 를 보류한다(DM02825 사고 방어) |
+| `n_sample` | **정규표본 수**(값이 나온 표본). 이 값이 1이면 `verdict()` 가 `clear` 를 보류한다(DM02825 사고 방어). ★ 2026-08-24 정정 — 여기 "시도한 표본 수" 라고 적혀 있었고 §11 뒤쪽 표와 반대였다 |
+| `n_try` | 시도한 표본 수. `n_sample / n_try` 가 곧 커버율이다 |
 | `width_verified` | D-25 실측 완료 여부. 지금은 전건 `false` |
 | `midpoint_fallback` | 정규표본이 없어 중점 하나로 잰 구간 |
 | `inherited` | 인접 구간에서 폭을 상속받았는가 |
@@ -1293,7 +1294,8 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 됨
 |---|---|
 | width_cov | 채택 소스가 이 구간 표본을 덮은 비율. 1 미만이면 못 잰 구간이 있다 |
 | cov_ngii1k · cov_ngii · cov_silpok | 소스별 커버율 |
-| n_sample | 정규표본 수(교차로 제외 후) |
+| n_sample | 정규표본 수(교차로 제외 후). `verdict` 가 이것을 본다 |
+| n_try | 시도한 표본 수 |
 | merged_n | 이 산출단위가 묶은 그래프 엣지 수. 1 이면 병합 없음 |
 | merge_why | 병합을 유발한 최초 폭 미산출 사유 |
 

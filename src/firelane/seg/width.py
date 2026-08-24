@@ -281,8 +281,13 @@ class WidthEngine:
             #   `widths()` 는 이미 7-튜플이라 여덟 번째를 더하면 호출부가
             #   깨진다. `_covr()` 은 이미 튜플이므로 여기를 늘리는 것이
             #   변경 면적이 제일 작다 — 호출부는 언패킹 한 줄만 바뀐다.
+            # ★ 2026-08-24. 네 번째로 **유효표본 수**를 같이 낸다.
+            #   `verdict(wmin, wmax, nreg)` 의 세 번째 인자는 이름 그대로
+            #   정규 표본 수인데, 호출부가 `_n_try`(시도 수)를 넘기고
+            #   있었다. `_n_reg = len(A)` 는 여기보다 아래에서 정의되므로
+            #   클로저로 못 잡는다. `A` 를 직접 센다 — 같은 값이다.
             return ({k: (round(v/_n_try, 3) if _n_try else None)
-                     for k, v in _cov.items()}, _n_try, _rows)
+                     for k, v in _cov.items()}, _n_try, _rows, len(A))
         for t in _ts:
             _nc += 1
             _pt = s.interpolate(t)

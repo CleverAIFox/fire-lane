@@ -120,10 +120,6 @@
    "sha256": "4cb4c4e95353af782b4fdf8cf9726603ca0fff2b1b12fbbc631f3939e49fbf78",
    "bytes": 3046281
   },
-  "safety/safety_mas_optional_20241111.hwp": {
-   "sha256": "975e4a08fb4e02fdc376e92fc588eb7f22d4cd194b1f875c70d705641f712425",
-   "bytes": 162304
-  },
   "safety/safety_mas_vehicle_spec_20241111.hwp": {
    "sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
    "bytes": 1320960
@@ -135,7 +131,27 @@
   "safety/safety_kfs_pumptruck_20251224.hwpx": {
    "sha256": "0908c1232cd2102ec4f8e081043a4f83141680504e82c428b4237fd18a4d8d42",
    "bytes": 207497
+  },
+  "safety/safety_kfs_ambulance_special_20251224.hwp": {
+   "sha256": "a8b309c908d13b2d4760bba08a9845063d1a1622147efab7b72edc132cc73e81",
+   "bytes": 715776
+  },
+  "safety/safety_kfs_chemical_20251224.hwpx": {
+   "sha256": "9688a70902502279b7a406aacb914585d4a1dcb3019b52e5335b007b4d877b73",
+   "bytes": 208187
+  },
+  "safety/safety_kfs_ladder_articulated_20251224.hwpx": {
+   "sha256": "a2cab9811eadacec60c2d945c2f03151db3329f83db5c674219d36e197ee7129",
+   "bytes": 197316
+  },
+  "safety/safety_kfs_rescue_20251224.hwpx": {
+   "sha256": "ce1ab827276df7439c50cfef6d44153313c71ef7f34527a856da2a76d18134cd",
+   "bytes": 149777
+  },
+  "safety/safety_kfs_watertank_20251224.hwpx": {
+   "sha256": "8b0c7fa291f5217efb7d5064f9134e1e7c9785c12b0f80309b39313a6f1f1ccd",
+   "bytes": 139529
   }
  },
- "at": "2026-08-24T10:16:06+09:00"
+ "at": "2026-08-24T13:50:41+09:00"
 }
