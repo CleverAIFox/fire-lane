@@ -102,6 +102,12 @@ QUARANTINE = (DATA / "_quarantine") if DATA else (ROOT / "data" / "_quarantine")
 #   산출물만 보관하는 것은 "함수 결과는 저장하고 함수는 안 저장하는 것"이다.
 #   재현 증적은 _manifest.json 의 git_sha 가 담당한다.
 # ★ SSD(drvfs)에 두지 않는다. 파일당 I/O 가 경계를 넘어 크게 느려진다.
+# ★ 2026-08-24 정정. 아래 주석은 "백업·커밋 안 함" 이라 적는데 실제로는
+#   넷을 커밋한다(`.gitignore` 의 `!` 예외 — segments.geojson ·
+#   segments.schema.json · _manifest.json · seg_uid_map.csv). UI 담당이
+#   raw 2.6GB 없이 지도를 띄워야 하고 재현 증적이 저장소에 남아야 해서다.
+#   `sources.yaml` layers.processed.committed_exceptions 가 정본이고
+#   `datalog fsck` 가 git 추적 목록과 대조한다.
 PROCESSED = ROOT / "data" / "processed"
 
 # 표출용. 저장소 안. UI 담당이 raw 없이 작업할 수 있어야 하므로 커밋한다.

@@ -112,6 +112,145 @@ vehicle_spec:
     wheelbase_m · turn_radius_m · clearance_m 은 미확정.
 
 
+# ── 계층 ──────────────────────────────────────────────────────
+# ★ 2026-08-24 신설. MASTER §18-1 이 계층을 산문으로 선언하고 `paths.py` 가
+#   경로를 따로 잡고 있었다. 둘이 어긋나도 아무도 몰랐고, `interim` 은
+#   **양쪽 다 없어서** 탐색 도구가 프로젝트 루트에 산출물을 떨궜다
+#   (`jijeok_probe._side()` → `RAW.parent.parent`, 11.7MB).
+#
+#   역할을 나눈다. 중복이 아니라 분리다 —
+#     paths.py       경로 해석의 정본. 환경변수를 탄다(기계마다 다르다)
+#     여기           정책의 정본. 기계와 무관하다
+#     layers.py      둘을 이름으로 묶는다. 이 블록은 거기서만 읽는다
+#     datalog fsck   선언과 실물을 대조한다
+#
+#   `params.py`(임계값 정본) ↔ `config.js`(표시용 사본) 와 같은 구조다.
+#
+# base        data = $FIRE_LANE_DATA 아래 · repo = 저장소 안
+# required    없으면 파이프라인을 세운다. 조용한 폴백을 금지한다
+# mutable     사람이 파일을 넣고 빼도 되는가
+# committed   git 이 추적하는가. .gitignore 와 대조된다
+# backup      datalog backup 대상인가
+# regenerable 한 명령으로 다시 만들 수 있는가 (R2)
+#             ★ regenerable:false 인데 committed:false 면 소실 대기다
+# naming      파일명 규칙. 위반 목록을 fsck 가 낸다
+# status      미구현이면 적는다. 격차를 산문이 아니라 데이터로 둔다
+layers:
+  landing:
+    base: data
+    sub: landing
+    required: false
+    mutable: true
+    committed: false
+    backup: false
+    regenerable: false
+    naming: null
+    what: 다운로드 원본 수집소. 규칙 없음. acquire.py 가 raw 로 편입한다
+
+  raw:
+    base: data
+    sub: raw
+    required: true
+    mutable: false
+    committed: false
+    backup: true
+    regenerable: false
+    naming: '^(juso|its|ngii|vworld|safety|gjcity|sbiz|eais|nsdi)/'
+    what: 받은 그대로. 인코딩조차 고치지 않는다
+    caveats:
+      - 2026-08-11 에 심링크를 git 이 추적해 exFAT 에서 2.5GB 를 날렸다
+
+  norm:
+    base: data
+    sub: norm
+    required: false
+    mutable: false
+    committed: false
+    backup: false
+    regenerable: true
+    naming: '^\w+_[a-z-]+_[a-z0-9]+_\d{4}_v\d+\.'
+    encoding: utf-8
+    status: 미구현
+    migrated: []
+    what: raw 를 형식만 정규화한 것. 값은 안 바꾼다
+    caveats:
+      - 디렉터리 문제가 아니라 변환 문제다. ingest 입력 경로가 전부 바뀐다
+      - 소스 하나씩 옮기고 매 건 golden.py check. migrated 에 키를 쌓는다
+
+  interim:
+    base: data
+    sub: interim
+    required: false
+    mutable: true
+    committed: false
+    backup: false
+    regenerable: true
+    naming: null
+    what: 탐색·대조 산출물. 대장에 없고 지워도 된다
+    caveats:
+      - 2026-08-24 신설. 그전까지 없어서 SSD 루트에 11.7MB 가 떨어졌다
+
+  processed:
+    base: repo
+    sub: data/processed
+    required: false
+    mutable: false
+    committed: false
+    committed_exceptions:
+      # ★ 폴더는 ignore 하고 이 넷만 추적한다(.gitignore 의 `!` 예외).
+      #   UI 담당·심사위원이 raw 2.6GB 없이 지도를 띄울 수 있어야 하고,
+      #   재현 증적이 저장소 안에 남아야 한다.
+      - segments.geojson
+      - segments.schema.json
+      - _manifest.json
+      - seg_uid_map.csv
+    backup: false
+    regenerable: true
+    naming: null
+    what: 파이프라인 정본. 사람이 손으로 만들지 않는다
+    caveats:
+      - SSD 에 두지 않는다. drvfs 는 파일당 I/O 가 경계를 넘어 크게 느리다
+
+  field:
+    base: repo
+    sub: data/field
+    required: false
+    mutable: true
+    committed: true
+    backup: true
+    regenerable: false
+    naming: null
+    what: 실측 원자료. 사람이 만드는 유일한 데이터
+    caveats:
+      - 8월 20일 오전 10시의 그 골목은 다시 안 온다. raw 등급으로 보호한다
+      - 저장소 안이 정본이다. clone 만으로 보여야 한다 (2026-08-23 정정)
+
+  quarantine:
+    base: data
+    sub: _quarantine
+    required: false
+    mutable: true
+    committed: false
+    backup: true
+    regenerable: false
+    naming: null
+    what: 대장에 없는 파일. 삭제하지 않고 격리한다
+    caveats:
+      - 격리는 판단 보류지 폐기가 아니다. 재생성 불가라 백업 대상이다
+      - 2026-08-24 현재 연속지적도 970MB 가 여기 있다(PLAN #20 편입 대기)
+
+  web:
+    base: repo
+    sub: web/data
+    required: false
+    mutable: false
+    committed: true
+    backup: false
+    regenerable: true
+    naming: null
+    max_mb: 40
+    what: 표출용 경량 사본. UI 담당이 raw 없이 작업할 수 있어야 한다
+
 datasets:
   kfs_pumptruck:
     what: 소방장비 기본규격 — 소방펌프차 (KFS-1-0073-2025-00)

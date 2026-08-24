@@ -8,6 +8,7 @@ datalog.py — 데이터 대장 도구
     python -m firelane.datalog backup DIR  외장으로 복사 + sha 기록
     python -m firelane.datalog verify DIR  외장 대조
     python -m firelane.datalog check       대장 정합성 검사
+    python -m firelane.datalog fsck        계층 선언 ↔ 실물 대조
 
 ── 설계 원칙 ──────────────────────────────────────────────────
 사람이 손으로 쓰는 대장은 sources.yaml 하나다.
@@ -305,10 +306,153 @@ def cmd_verify(dest: str) -> None:
     sys.exit(1 if (missing or corrupt) else 0)
 
 
+
+# ── fsck — 계층 선언과 실물을 대조한다 ────────────────────────
+def cmd_fsck() -> None:
+    """`sources.yaml` 의 layers 선언과 디스크·git·기계 설정을 대조한다.
+
+    ★ 2026-08-24 신설. 이 저장소가 반복해 배운 것은 하나다 —
+      **측정은 하는데 대조가 없다.** 계층도 같았다. 문서가 여섯이라 적고
+      코드가 넷만 알아도 아무도 몰랐고, 없는 계층을 쓰려던 도구는 자기
+      자리를 발명했다(SSD 루트 11.7MB).
+    """
+    import os
+    import subprocess
+
+    from firelane import layers as L
+
+    bad: list[str] = []
+    warn: list[str] = []
+    print("── 계층 fsck")
+
+    for n in L.names():
+        pol, p = L.policy(n), L.path(n)
+        mark = "OK  " if p.is_dir() else "없음"
+        note = ""
+        # ① required — 조용한 폴백을 금지한다
+        if pol["required"] and not p.is_dir():
+            bad.append(f"{n}: required 인데 없다 — {p}")
+            mark = "★없음"
+        if pol.get("status") == "미구현":
+            note = "  (선언상 미구현)"
+        # ② base 가 선언대로인가
+        want = L.expected_base(n)
+        try:
+            p.relative_to(want)
+        except ValueError:
+            bad.append(f"{n}: base={pol['base']} 인데 {want} 아래가 아니다 — {p}")
+        print(f"  {mark} {n:11s} {pol['base']:5s} {p}{note}")
+
+    # ③ naming — 규칙 위반 파일
+    print("\n── 파일명 규칙")
+    for n in L.names():
+        rx = pol_rx = L.policy(n).get("naming")
+        p = L.path(n)
+        if not rx or not p.is_dir():
+            continue
+        import re as _re
+        pat = _re.compile(pol_rx)
+        off = [str(q.relative_to(p)) for q in p.rglob("*")
+               if q.is_file() and not q.name.startswith("_")
+               and not pat.match(str(q.relative_to(p)))]
+        print(f"  {n:11s} 위반 {len(off)}건")
+        for q in off[:5]:
+            bad.append(f"{n}: 명명규칙 위반 — {q}")
+
+    # ④ committed 선언 ↔ .gitignore 실제
+    print("\n── git 추적")
+    for n in L.names():
+        pol, p = L.policy(n), L.path(n)
+        try:
+            rel = p.relative_to(ROOT)
+        except ValueError:
+            continue                     # 저장소 밖이면 git 이 볼 일이 없다
+        # ★ 백업 대상인데 저장소 밖인 계층(raw · quarantine)은 여기 안 온다.
+        #   그쪽은 datalog verify 가 sha 로 본다.
+        r = subprocess.run(["git", "check-ignore", "-q", str(rel)],
+                           cwd=ROOT, capture_output=True)
+        ignored = (r.returncode == 0)
+        # ★ 2026-08-24. 폴더만 보면 안 된다. `.gitignore` 가 폴더를 막고
+        #   `!` 로 몇 개만 여는 패턴이 있다(processed 넷). 선언의
+        #   committed_exceptions 와 실제 추적 목록을 대조한다.
+        exc = set(pol.get("committed_exceptions") or [])
+        tracked = set()
+        if rel:
+            out = subprocess.run(["git", "ls-files", str(rel)], cwd=ROOT,
+                                 capture_output=True, text=True).stdout.split()
+            tracked = {Path(x).name for x in out}
+        if exc:
+            miss, extra = sorted(exc - tracked), sorted(tracked - exc)
+            ok = not miss and not extra
+            print(f"  {'OK  ' if ok else '★   '} {n:11s} "
+                  f"예외 {len(exc)}개 · 추적 {len(tracked)}개")
+            for q in miss:
+                bad.append(f"{n}: 선언은 {q} 를 추적한다는데 git 이 모른다")
+            for q in extra:
+                bad.append(f"{n}: git 이 {q} 를 추적하는데 선언에 없다")
+        else:
+            ok = (ignored != bool(pol["committed"]))
+            print(f"  {'OK  ' if ok else '★   '} {n:11s} "
+                  f"committed={pol['committed']} · gitignore={ignored}")
+            if not ok:
+                bad.append(f"{n}: committed={pol['committed']} 인데 "
+                           f"gitignore={ignored} — 선언과 실제가 다르다")
+
+    # ⑤ regenerable:false 인데 커밋도 안 되고 백업도 아니면 소실 대기
+    print("\n── 소실 위험 (R2)")
+    for n in L.names():
+        pol = L.policy(n)
+        if pol["regenerable"] or pol["committed"] or pol["backup"]:
+            continue
+        if not L.path(n).is_dir():
+            continue
+        warn.append(f"{n}: 재생성 불가인데 커밋도 백업도 아니다 — 소실 대기")
+        print(f"  ★    {n}")
+    if not warn:
+        print("  없음")
+
+    # ⑥ backup — 마지막 백업 시각
+    print("\n── 백업")
+    for n in L.of("backup"):
+        p = L.path(n)
+        print(f"  {n:11s} {'있음' if p.is_dir() else '없음'}  {p}")
+    print("  ★ 마지막 백업 시각은 datalog verify DIR 로 확인한다")
+
+    # ⑦ 기계 설정 — 환경변수도 검사 대상이다
+    print("\n── 기계 설정")
+    if os.environ.get("FIRE_LANE_RAW"):
+        bad.append("FIRE_LANE_RAW(폐기) 가 설정돼 있다 — "
+                   "FIRE_LANE_DATA 를 덮어써 기계 간 산출물이 갈린다")
+        print("  ★    FIRE_LANE_RAW 잔존")
+    else:
+        print("  OK   FIRE_LANE_RAW 없음")
+    if not os.environ.get("FIRE_LANE_DATA"):
+        warn.append("FIRE_LANE_DATA 미설정 — raw 가 저장소 안으로 떨어진다")
+        print("  ★    FIRE_LANE_DATA 미설정")
+    else:
+        print("  OK   FIRE_LANE_DATA 설정됨")
+    hp = subprocess.run(["git", "config", "core.hooksPath"],
+                        cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    if hp != ".githooks":
+        warn.append("core.hooksPath 미설정 — .githooks 가 텍스트 파일이다. "
+                    "git config core.hooksPath .githooks")
+        print(f"  ★    core.hooksPath = {hp or '(없음)'}")
+    else:
+        print("  OK   core.hooksPath = .githooks")
+
+    print()
+    for w in warn:
+        print(f"  ⚠ {w}")
+    for b in bad:
+        print(f"  ★ {b}")
+    print(f"\n{'계층 선언과 실물이 일치한다' if not bad else f'★ {len(bad)}건 어긋남'}")
+    sys.exit(1 if bad else 0)
+
 # ──────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(__doc__); sys.exit(1)
     cmd, *rest = sys.argv[1:]
     {"record": cmd_record, "graph": cmd_graph, "check": cmd_check,
-     "impact": cmd_impact, "backup": cmd_backup, "verify": cmd_verify}[cmd](*rest)
+     "impact": cmd_impact, "backup": cmd_backup, "verify": cmd_verify,
+     "fsck": cmd_fsck}[cmd](*rest)
