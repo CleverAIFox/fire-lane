@@ -1698,6 +1698,8 @@ def test_route_graph_snaps_nodes_like_build_graph():
       `route_usage` 와 `route_vehicle` 이 서로 다른 위상 위에서 계산되면
       비교 자체가 성립하지 않는다.
     """
+    pytest.importorskip("geopandas")   # ★ CI 는 로컬보다 좁다.
+    # 2026-08-24. 이 테스트는 PR #40 이 먹어서 한 번도 CI 를 안 거쳤다.
     src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
     i = src.index("def _write_route")
     body = src[i:i + 8000]
