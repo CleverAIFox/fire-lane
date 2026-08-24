@@ -129,7 +129,7 @@ jobs:
         #   구멍이다. 타일이 어느 정사영상에서 나왔는지 기록이 없었다.
         run: |
           if [ -f web/data/_manifest.json ]; then
-            python tools/web_manifest.py --check
+            uv run python tools/web_manifest.py --check
           else
             echo "::warning::web/data/_manifest.json 없음 — publish_web.py 실행 필요"
           fi
@@ -139,14 +139,14 @@ jobs:
 
       - name: 방어 로직 · 저장소 위생
         run: |
-          pytest tests/test_guards.py tests/test_seg_*.py \
+          uv run pytest tests/test_guards.py tests/test_seg_*.py \
                  tests/test_static.py tests/test_reproducibility.py \
                  tests/test_layering.py -v
 
       - name: 문서 숫자 대조
         run: |
           if [ -f data/processed/segments.geojson ]; then
-            python tools/docnum_check.py
+            uv run python tools/docnum_check.py
           else
             echo "data/processed 없음 — 로컬에서 확인할 것"
           fi

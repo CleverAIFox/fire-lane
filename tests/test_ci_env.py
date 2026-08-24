@@ -58,7 +58,13 @@ def test_ci_runs_everything_through_uv():
     for p in WF:
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             code = line.split("#", 1)[0]
-            m = re.search(r"run:\s*(python3?|pytest|ruff)\b", code)
+            # ★ 2026-08-24 확대. 종전에는 `run:` 바로 뒤만 봤다. 그래서
+            #   `run: |` 블록 안의 `if [ -f x ]; then python ...` 를 놓쳤고,
+            #   CI 가 `web/data 계보 검사` 에서 ModuleNotFoundError 로 죽었다.
+            #   **검사가 사고와 같은 사각을 갖고 있었다.**
+            if "uv run" in code or "uv sync" in code:
+                continue
+            m = re.search(r"(?<![-\w/.])(python3?|pytest|ruff|pip)(?=\s)", code)
             if m:
                 bad.append(f"  {p.name}:{i}  {line.strip()[:60]}")
     assert not bad, (
