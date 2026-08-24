@@ -48,7 +48,7 @@ import sys
 
 import geopandas as gpd
 
-from firelane.paths import INTERIM, PROCESSED, RAW, ROOT, WEB
+from firelane.paths import INTERIM, PROCESSED, ROOT, WEB
 
 # ★ paths.WEB 은 `web/data` 다(산출물 폴더). review.html 은 그 부모인
 #   `web/` 에 놓아야 serve.py 가 http://localhost:8000/review.html 로 준다.
