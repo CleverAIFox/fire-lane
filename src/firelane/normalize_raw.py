@@ -81,6 +81,29 @@ RULES: list[tuple[str, str, str]] = [
     # ★ 258MB 전국이다. 광주 절단은 norm 이후 단계에서 한다.
     #   raw 는 원본 보존이 원칙이므로 여기서 자르지 않는다.
     (r"nodelinkdata\.zip$",  "its", "its_nodelink_kr_20260812.zip"),
+    # ★ 2026-08-23. 소방장비 기본규격. 차량 제원의 유일한 공식 출처다.
+    #   파일명이 소방청 게시판에서 받은 그대로라 규칙으로 정규화한다.
+    # ★ 2026-08-24. 이 두 줄이 `KFS` 대문자로 쓰여 있었다. 매칭은
+    #   `low = f.name.lower()` 로 하므로 **영원히 안 걸린다.** RULES 40줄
+    #   중 대문자를 포함한 정규식이 이 둘뿐이었고, MISSING 도 정확히 이
+    #   둘이었다(kfs_pumptruck · kfs_ladder_small). mas 두 종은 규칙이 전부
+    #   한글이라 통과했다 — 그래서 같은 날 같은 폴더에 받았는데 한쪽만
+    #   raw 에 들어갔다.
+    #
+    #   3주 동안 안 보인 이유는 `규칙에 없는 파일 N건 (건너뜀)` 이 종료코드
+    #   0 이기 때문이다. `tests/test_normalize_rules.py` 가 이제 규칙 전수를
+    #   본다 — 대문자 금지 · 대표 파일명 매칭 · 왕복 멱등.
+    (r"소방펌프차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
+     "safety", "safety_kfs_pumptruck_20251224.{0}"),
+    (r"소형사다리차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
+     "safety", "safety_kfs_ladder_small_20251224.{0}"),
+    (r"소방자동차.*다수공급자.*차종별.*\.(hwpx?|pdf)$",
+     "safety", "safety_mas_vehicle_spec_20241111.{0}"),
+    # ★ 2026-08-24. mas_optional 규칙을 지웠다. 본문 전수 확인 결과
+    #   축거·축간거리·회전반경·최소회전반경·전장·전폭·전고가 **전부 0건**
+    #   이다. 선택장비 목록이고 차종별 제작규격은 mas_vehicle_spec 이다.
+    #   retired 에 사유를 적었으므로 규칙도 같이 내린다 — 대장이 정본이다.
+
     (r"^내역서\.csv$",       "its", "its_nodelink_changelog_20260812.csv"),
     (r"^its_nodelink_(kr|changelog)_\d{8}\.(zip|csv)$", "its", None),
 
@@ -112,9 +135,17 @@ RULES: list[tuple[str, str, str]] = [
 
     # ── safety · 공공데이터포털(안전) ────────────────────────
     (r"^전남광주통합특별시_cctv_(\d{8})\.csv$",     "safety", "safety_cctv_jngj_{0}.csv"),
-    (r"소방\s*용수시설\s*현황_(\d{8})\.csv$",      "safety", "safety_hydrant_point_jngj_{0}.csv"),
     (r"소방통로확보대상.*_(\d{8})\.csv$",           "safety", "safety_fire_access_gj_dong_{0}.csv"),
-    (r"^소방청_시도\s*소방서\s*현황_(\d{8})\.csv$", "safety", "safety_firestation_kr_{0}.csv"),
+    # ★ 2026-08-24. 폐기 등재분 두 규칙을 지웠다.
+    #   `sources.yaml` 의 `retired` 에 사유까지 적어놓고도 정규화기가
+    #   계속 raw 로 끌어왔다 — 대장은 "폐기", 규칙은 "편입" 이었다.
+    #
+    #       firestation_kr_20250701      좌표 없음. 활성판은 XY 를 갖는다
+    #       hydrant_point_jngj_20250917  전남 판. 광주 0건
+    #
+    #   이 파일의 위쪽 주석은 *"좌표 없는 시도 소방서 현황(20250701)은
+    #   규칙을 두지 않는다"* 라고 적고 있었다. 주석과 코드가 반대였다.
+    #   `test_rules_do_not_reimport_retired_files` 가 대장과 대조한다.
     (r"^safety_\w+_\d{8}\.csv$", "safety", None),
 
     # ── gjcity · 공공데이터포털(광주 동구) ───────────────────
@@ -169,6 +200,15 @@ MISSING = [
     "gjcity/gjcity_parking_dongu_*.csv",             # 광주 동구 주차장
     "safety/safety_hydrant_summary_jngj_*.csv",      # 소화전 집계표
 ]
+
+
+def assert_rules_are_lowercase() -> list[str]:
+    """규칙에 대문자 ASCII 가 들어 있으면 영원히 안 걸린다.
+
+    매칭이 `f.name.lower()` 이므로 규칙도 소문자여야 한다. 이 불변식을
+    깬 것이 kfs 2종 누락의 원인이었다. 테스트가 이 함수를 부른다.
+    """
+    return [pat for pat, _, _ in RULES if re.search(r"[A-Z]", pat)]
 
 
 def _sha(p: Path, chunk: int = 1 << 20) -> str:
@@ -244,15 +284,26 @@ def main():
 
     # ★ 이미 규칙에 맞는 이름이면 그대로 배치한다.
     #   --in-place 로 한 번 정리한 폴더를 다시 원본으로 쓸 수 있어야 한다.
-    ORG = {"juso", "ngii", "its", "sbiz", "safety", "gjcity", "nsdi"}
-    for org in ORG:
-        RULES.append((rf"^{org}_[a-z0-9_]+_\d{{8}}\.(zip|csv|tif|xml)$", org, None))
+    # ★ 2026-08-24. 목록이 세 곳에서 달랐다 — MASTER §18-2a 는 8종(nsdi 없음),
+    #   여기는 7종(vworld·eais 없음). `vworld`·`eais` 는 명시 규칙이 따로 있어
+    #   **우연히** 돌고 있었다. MASTER 를 아홉으로 통일하고 여기를 맞춘다.
+    ORG = {"juso", "ngii", "its", "sbiz", "safety", "gjcity",
+           "nsdi", "vworld", "eais"}
+    # ★ 확장자 화이트리스트에 hwp·pdf·ngi·nda 가 없었다. 그래서 규칙명으로
+    #   한 번 정리한 `safety_kfs_pumptruck_20251224.hwp` 를 다시 넣으면
+    #   "규칙에 없는 파일" 로 떨어졌다 — 위 주석이 약속한 왕복 멱등이
+    #   hwp·pdf 에 대해 거짓이었다.
+    EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+    # ★ RULES 는 모듈 전역이다. main() 안에서 append 하면 같은 프로세스에서
+    #   두 번 부를 때 규칙이 중복 누적된다. 지역 사본에 붙인다.
+    rules = RULES + [(rf"^{org}_[a-z0-9_]+_\d{{8}}\.({EXT})$", org, None)
+                     for org in sorted(ORG)]
 
     files = [f for f in src.iterdir() if f.is_file()]
     done, skip = [], []
     for f in files:
         low = f.name.lower()
-        for pat, folder, tmpl in RULES:
+        for pat, folder, tmpl in rules:
             m = re.search(pat, low)
             if not m:
                 continue

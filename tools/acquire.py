@@ -65,10 +65,9 @@ from pathlib import Path
 
 import yaml
 
-from firelane.paths import QUARANTINE, RAW, ROOT
+from firelane.paths import LANDING, QUARANTINE, RAW, ROOT
 
 KST = timezone(timedelta(hours=9))
-LANDING = RAW.parent / "landing"
 
 # 무엇을 언제 어떤 sha 로 넣었나.
 #

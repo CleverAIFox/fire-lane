@@ -48,7 +48,7 @@ import sys
 
 import geopandas as gpd
 
-from firelane.paths import PROCESSED, RAW, ROOT, WEB
+from firelane.paths import INTERIM, PROCESSED, ROOT, WEB
 
 # ★ paths.WEB 은 `web/data` 다(산출물 폴더). review.html 은 그 부모인
 #   `web/` 에 놓아야 serve.py 가 http://localhost:8000/review.html 로 준다.
@@ -103,7 +103,7 @@ def _tile_bounds() -> list[float] | None:
 
 
 def main() -> int:
-    src = RAW.parent.parent / SRC
+    src = INTERIM / SRC          # 2026-08-24. 종전 RAW.parent.parent
     if not src.exists():
         print(f"\033[31m{src} 가 없다.\033[0m")
         print("  uv run python tools/jijeok_probe.py --save 를 먼저 돌려라.")

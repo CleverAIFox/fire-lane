@@ -87,7 +87,7 @@ from shapely.geometry import LineString
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
 
-from firelane.paths import PROCESSED, QUARANTINE, RAW
+from firelane.paths import INTERIM, PROCESSED, QUARANTINE, RAW
 
 # ── 상수 ───────────────────────────────────────────────────────
 CRS = 5186                  # 연속지적도 .prj = Korea_2000_Korea_Central_Belt_2010
@@ -120,8 +120,15 @@ def col(s: str, k: str) -> str:
 
 
 def _side() -> Path:
-    """저장소 밖 작업 위치. 아직 대장에 없는 탐색 산출물이라 여기 둔다."""
-    return RAW.parent.parent
+    """탐색 산출물 자리. `interim` 계층이다(MASTER §18-1).
+
+    ★ 2026-08-24. 종전에는 `RAW.parent.parent` — 프로젝트 루트였다.
+      "아직 대장에 없는 탐색 산출물이라 여기 둔다" 고 적어놓았는데,
+      그 결과 SSD 루트에 jijeok_*.gpkg 11.7MB 가 널렸다. 갈 계층이
+      없으면 파일은 아무 데나 떨어진다.
+    """
+    INTERIM.mkdir(parents=True, exist_ok=True)
+    return INTERIM
 
 
 def find_zip() -> Path | None:

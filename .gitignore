@@ -27,6 +27,9 @@ data/processed/*.geojson
 data/processed/*.csv
 data/processed/*.json
 data/processed/*.stale_*
+# ★ golden 의 판정 로직 지문. 산출물이 어느 코드로 나왔는지 기억한다.
+#   생성물이라 커밋하지 않는다.
+data/processed/.code_fingerprint
 data/processed/_lineage.json
 !data/processed/segments.geojson
 !data/processed/segments.schema.json
@@ -74,3 +77,6 @@ data/field/naver_check.html
 data/field/naver_near.json
 data/field/.naver_sealed.csv
 data/field/naver_join.csv
+
+# 중간 산출물. 탐색·대조용이라 재생성된다 (MASTER §18-1)
+data/interim/

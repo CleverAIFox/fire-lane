@@ -46,7 +46,120 @@ standard_crs:
   metric: EPSG:5186     # 거리·면적·버퍼 계산은 무조건 이쪽
   display: EPSG:4326    # 웹 표출 / GeoJSON
 
+# ── 차량 제원 ─────────────────────────────────────────────────
+# ★ 2026-08-23. 경로 비용(`seg/vehicle.py`)이 이 값을 읽는다.
+#   판정을 바꾸는 값이므로 **출처 없이는 쓰지 않는다** — 없으면 모듈이 죽는다.
+#
+# ── 출처 ──────────────────────────────────────────────────────
+#   소방청 「소방장비 기본규격」 소방펌프차 KFS-1-0073-2025-00 §3.3
+#   고시 2025-12-24. 영문판 원문 표기는 "or less"(이하).
+#
+#       구분   전장(m)    전폭(m)    전고(m)   물탱크(ℓ)
+#       대형   8.5 이하   2.5 이하   3.4 이하   4,500 이상
+#       중형   8.0 이하   2.5 이하   3.2 이하   2,800 이상
+#       소형   6.8 이하   2.2 이하   2.8 이하   1,200 이상
+#       경형   5.2 이하   1.9 이하   2.8 이하     500 이상
+#
+#   소형사다리차 KFS-1-0030-2025-01 §3.3 (작업높이 15~25m)
+#       전장 8.5 이하 · 전폭 2.5 이하 · 전고 3.8 이하
+#
+# ★ **규격은 상한만 정한다.** "2.5 이하" 는 실제 차폭이 아니라 제작 한계다.
+#   보수적으로 상한을 쓴다 — 실제 차가 그보다 좁으면 판정이 안전한 쪽으로
+#   틀린다.
+#
+# ★ **축거와 최소회전반경은 공식 규격에 없다.** KFS-1-0073 · KFS-1-0030 ·
+#   2025년 MAS 차종별 제작규격 셋을 전수 확인했으나 규정하지 않는다.
+#   내륜차 계산에 그 둘이 필요하므로 지금 값은 **추정**이고
+#   `wheelbase_verified: false` 가 그 표시다.
+#
+#   확정 경로: D-30 동부소방서 인터뷰 — 보유 차종의 제작사 제원표
+#
+# ★ 차종은 동부소방서가 동명동에 실제로 보내는 것으로 정해야 한다.
+#   폭 3m 골목에 대형(전폭 2.5m)은 여유가 0.5m 뿐이라 실제로는
+#   소형(2.2m)이나 경형(1.9m)이 나갈 수 있다. 그러면 판정이 크게 바뀐다.
+vehicle_spec:
+  what: 소방펌프차 제원 — 판정·경로 비용의 기준 차량
+  kind: 중형펌프차
+  width_m: 2.5              # KFS-1-0073 §3.3 중형 "2.5 이하"
+  length_m: 8.0             # 같은 표 중형
+  height_m: 3.2             # 같은 표 중형
+  wheelbase_m: 4.0          # ★ 추정. 공식 규격에 없다
+  turn_radius_m: 8.0        # ★ 추정. 공식 규격에 없다
+  clearance_m: 0.5          # ★ 추정. width_m + 이 값 = params.TRUCK 3.0
+  verified: false
+  wheelbase_verified: false
+  source: |
+    소방청 「소방장비 기본규격」
+      · 소방펌프차 KFS-1-0073-2025-00 §3.3 (2025-12-24 고시) — 전장·전폭·전고
+      · 소형사다리차 KFS-1-0030-2025-01 §3.3 — 전장 8.5 · 전폭 2.5 · 전고 3.8
+      · 2025년 소방자동차 다수공급자 계약(MAS) 차종별 제작규격
+    raw/nfa/ 에 원본을 둔다.
+
+    ★ 축거 · 최소회전반경 · 여유(clearance_m)는 위 셋 어디에도 없다.
+      지금 값은 추정이며 D-30 동부소방서 인터뷰로 확정한다.
+  caveats: |
+    규격은 **상한**만 정한다("이하"). 실제 차폭은 그보다 작을 수 있고,
+    그 경우 판정은 안전한 쪽으로 틀린다.
+
+    차종에 따라 결과가 크게 달라진다. 폭 3m 골목에 중형(2.5m)은 여유가
+    0.5m 뿐이다. 실제로는 소형(2.2m) · 경형(1.9m)이 나갈 수 있고,
+    그러면 통과 판정 구간이 늘어난다. 동부소방서 보유 차종 확인이 선행이다.
+
+    사다리차 · 화학차 · 구조차는 제원이 다르다.
+  feeds: seg/vehicle.py 통행 비용 · 내륜차 · 회전 가능 판정
+  verified_note: |
+    width_m · length_m · height_m 은 공식 규격 확인 완료(2026-08-23).
+    wheelbase_m · turn_radius_m · clearance_m 은 미확정.
+
+
 datasets:
+  kfs_pumptruck:
+    what: 소방장비 기본규격 — 소방펌프차 (KFS-1-0073-2025-00)
+    kind: raw_only
+    file: safety/safety_kfs_pumptruck_20251224.*
+    provider: 소방청
+    updated: '2025-12-24'
+    acquired: '2026-08-23'
+    scope: 전국
+    license: 공공저작물 (소방청 고시)
+    feeds: sources.yaml vehicle_spec 의 width_m · length_m · height_m 출처
+    used_for: |
+      §3.3 제원표가 차량 제원의 유일한 공식 근거다.
+
+          구분   전장     전폭     전고
+          대형   8.5 이하  2.5 이하  3.4 이하
+          중형   8.0 이하  2.5 이하  3.2 이하
+          소형   6.8 이하  2.2 이하  2.8 이하
+          경형   5.2 이하  1.9 이하  2.8 이하
+
+      ★ 축거 · 최소회전반경은 이 규격에 없다.
+    caveats: 규격은 상한("이하")만 정한다. 실제 차폭은 그보다 작을 수 있다.
+  kfs_ladder_small:
+    what: 소방장비 기본규격 — 소형사다리차 (KFS-1-0030-2025-01)
+    kind: raw_only
+    file: safety/safety_kfs_ladder_small_20251224.*
+    provider: 소방청
+    updated: '2025-12-24'
+    acquired: '2026-08-23'
+    scope: 전국
+    license: 공공저작물 (소방청 고시)
+    feeds: 차종별 제원 비교 — 골목 진입 차종 판단
+    used_for: |
+      §3.3 작업높이 15~25m · 전장 8.5 이하 · 전폭 2.5 이하 · 전고 3.8 이하.
+      동명동 골목에 실제로 들어가는 차종이 펌프차가 아닐 수 있어 같이 받았다.
+  mas_vehicle_spec:
+    what: 2025년 소방자동차 다수공급자 계약(MAS) 차종별 제작규격
+    kind: raw_only
+    file: safety/safety_mas_vehicle_spec_20241111.*
+    provider: 소방청
+    updated: '2024-11-11'
+    acquired: '2026-08-23'
+    scope: 전국
+    license: 공공저작물
+    feeds: 조달 계약 차종의 실제 제작 치수 — vehicle_spec 교차 확인
+    used_for: |
+      표 헤더에 전장·전폭·전고(㎜ 이하)가 있다.
+      ★ 축거 · 최소회전반경은 여기에도 없다(2026-08-23 전수 확인).
   node_link_changelog:
     what: 국가교통정보센터 표준노드링크 변경 내역서
     kind: raw_only
@@ -72,6 +185,7 @@ datasets:
   #   전환 시 file 을 juso/juso_elctrnmap_jngj_20260711.zip 으로 바꾸면 된다.
   road_link:
     what: 도로명주소 도로구간 (선형). RN·ROAD_BT 보유
+    feeds: segments 골격(노딩 입력) · basisno 기초번호 매칭 · guards CRITICAL
     crs_native: 5179
     vintage: 2026
     desc: 도로명주소 도로구간 (선형). RN·ROAD_BT 보유
@@ -96,6 +210,7 @@ datasets:
       layer_must_exist: true
   road_rw:
     what: 도로명주소 실폭도로 (면). 도로폭 폴백 소스
+    feeds: 폭 산출 소스 silpok(채택 84구간) · clearance_probe 대조
     crs_native: 5179
     vintage: 2026
     license: TODO
@@ -116,6 +231,7 @@ datasets:
       layer_must_exist: true
   road_intrvl:
     what: 도로명주소 기초구간 (선형). 기초번호 정본
+    feeds: basisno 기초구간 10,334개 — seg_label 생성
     crs_native: 5179
     vintage: 2026
     license: TODO
@@ -178,6 +294,7 @@ datasets:
 
   ngii1k:
     what: 수치지형도 1:1,000. 도로경계·중심선·보도·평면교차점·가로등폴
+    feeds: 폭 산출 주 소스(채택 1,014구간) · 교차부 폴리곤 · 가로등 폴 · 도로중심선
     provider: 브이월드
     updated: 2026-03-07
     acquired: 2026-08-17
@@ -206,6 +323,7 @@ datasets:
 
   streetlight:
     what: 전남광주통합특별시 동구 가로등현황 (2024-04-15)
+    feeds: 구간별 light_count(반경 50m) · streetlight_point 지점 집계
     crs_native: 4326
     vintage: TODO
     license: TODO
@@ -230,6 +348,7 @@ datasets:
       scope_min: 1
   ngii_road:
     what: 연속수치지도 1:5,000 도로경계면 N3A_A0010000 — 폭 트랜섹트 소스(기하 전용)
+    feeds: 폭 트랜섹트 보조 소스 ngii(채택 1구간) · 기하 전용
     crs_native: 5179
     vintage: 20260812
     desc: 연속수치지도 1:5,000 도로경계면 N3A_A0010000 — 폭 트랜섹트 소스(기하 전용)
@@ -258,6 +377,7 @@ datasets:
       layer_must_exist: true
   node_link:
     what: 표준노드링크 MOCT_LINK. 위상 정답지 + LANES/MAX_SPD
+    feeds: ★ 판정에는 안 쓴다. guards CRITICAL 과 계보 게이트에만 있다. LANES·REST_W 를 lanes_probe 로 대조 중(2026-08-23)
     crs_native: 5186
     vintage: 2026
     desc: 표준노드링크 MOCT_LINK. 위상 정답지 + LANES/MAX_SPD
@@ -278,6 +398,7 @@ datasets:
       layer_must_exist: true
   node_point:
     what: 표준노드링크 MOCT_NODE. 교차로 노드
+    feeds: ★ turn_restriction 이 좌표 없는 DBF 라 그것을 스코프로 거르는 데만 쓴다. 직접 참조 0곳
     crs_native: 5186
     vintage: 2026
     license: TODO
@@ -292,6 +413,7 @@ datasets:
       layer_must_exist: true
   turn_restriction:
     what: 회전제한 TURNINFO. D-07 방향성 / D-08 회전 판정 근거
+    feeds: ★ 입력 계약 건수 게이트(87)로만 쓴다. 판정에는 미투입 — A* 에 회전 제약을 넣을 때 살린다
     crs_native: none
     vintage: 2026
     license: TODO
@@ -305,6 +427,7 @@ datasets:
   # ── 공간 조인 레이어 ─────────────────────────────────────
   cctv:
     what: 전남광주통합특별시 CCTV. 촬영방면·설치연도 포함
+    feeds: cv_feasible 판정 · cctv_dist_m · unknown_reason 4종 · 화면 마커 104지점
     crs_native: 4326
     vintage: 2026
     desc: 전남광주통합특별시 CCTV. 촬영방면·설치연도 포함
@@ -331,6 +454,7 @@ datasets:
       scope_min: 1
   fire_station:
     what: 소방청 전국소방서 좌표현황. 소방서 + 119안전센터
+    feeds: 화면 마커 · terrain z 부여 · 계약 테스트
     crs_native: 4326
     vintage: 20240901
     license: TODO
@@ -362,6 +486,7 @@ datasets:
       scope_min: 2
   poi_store:
     what: 소상공인 상가(상권)정보 광주권. 상가 밀집도 = 주차압력 프록시
+    feeds: 화면 상가 2,077개 · basisno 주소 대조 · naver_check 표본
     crs_native: 4326
     vintage: 2026
     desc: 소상공인 상가(상권)정보 광주권. 상가 밀집도 = 주차압력 프록시
@@ -386,6 +511,7 @@ datasets:
   # -- 행정경계·건물 (도로명주소 전자지도, 2026-08-11 승인) --
   boundary_emd:
     what: 읍면동 행정구역경계. 동명동 정식 폴리곤 (EMD_CD 12210108)
+    feeds: 스코프 경계 · in_emd 판정 · mask/mask_soft 생성
     crs_native: 5179
     vintage: 2026
     desc: 읍면동 행정구역경계. 동명동 정식 폴리곤 (EMD_CD 12210108)
@@ -410,6 +536,7 @@ datasets:
       layer_must_exist: true
   building:
     what: 건물 폴리곤. GRO_FLO_CO(지상층수) 보유 - 3D extrusion 재료
+    feeds: wmax 담~담 폭 소스 · 화면 3D 5,713동
     crs_native: 5179
     vintage: 2026
     license: TODO
@@ -431,6 +558,7 @@ datasets:
       layer_must_exist: true
   building_entrance:
     what: 건물출입구 포인트. 소방차 도달 목표점
+    feeds: 출입구 점 — segments 에서 읽으나 판정 미반영
     crs_native: 5179
     vintage: 2026
     license: TODO
@@ -450,6 +578,7 @@ datasets:
       layer_must_exist: true
   hydrant_point:
     what: 전국소방용수시설 표준데이터. 소화전 좌표
+    feeds: 화면 소화전 11개 · terrain z · 계약 테스트
     crs_native: 4326
     vintage: 20240207
     desc: 전국소방용수시설 표준데이터. 소화전 좌표
@@ -488,6 +617,7 @@ datasets:
   fire_access:
     crs_native: none      # 좌표 없는 표. 구간명으로 매칭한다
     what: 동부소방서 소방통로확보대상 지역 현황. 소방서가 직접 지정·관리하는 구간
+    feeds: ★ report.py 가 raw CSV 를 직접 읽는다. ingest 산출물은 미사용 — 소방청 지정 7구간 대조(nfa_compare)
     vintage: 2025
     desc: 동부소방서 소방통로확보대상 지역 현황. 소방서가 직접 지정·관리하는 구간
     kind: csv_table
@@ -510,6 +640,7 @@ datasets:
       encoding: cp949
   dem_public:
     what: 국토지리정보원 공개DEM 도엽 35616
+    feeds: terrain 타일 22장 · 구간 z. 90m 격자라 경사 산출 불가(§16-1)
     crs_native: 5179
     vintage: 2025
     license: TODO
@@ -532,6 +663,7 @@ datasets:
 
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
+    feeds: 항공영상 타일 1,423장. ortho.py 가 4도엽을 직접 읽는다(raw_only)
     crs_native: 5186
     vintage: TODO
     desc: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
@@ -557,6 +689,7 @@ datasets:
   # ── 좌표 없는 표 (참조용) ────────────────────────────────
   enforcement:
     what: 동구 불법주정차 단속 85,380건 (2022-01 ~ 2023-10)
+    feeds: ★ 참조 0곳. 85,380행을 ingest 하고 아무도 안 읽는다. 시간대별 주차 밀도로 needs_cv 를 가르는 데 쓸 수 있다
     crs_native: none
     vintage: 2025
     license: TODO
@@ -585,6 +718,7 @@ datasets:
       - 과태료
   hydrant_summary:
     what: 소방용수시설 관할서별 집계. 동부소방서 지상식 431 + 지하식 157 = 588
+    feeds: ★ 참조 0곳. 5행. 동부소방서 지역별 소화전 현황 — 소화전 11개 대조용으로 받았으나 미투입
     crs_native: none
     vintage: 20250731
     license: TODO
@@ -753,6 +887,18 @@ basemap:
 # ── 폐기 기록 ────────────────────────────────────────────
 # 지운 것도 남긴다. 없으면 3개월 뒤에 또 받고 또 조사한다. MASTER §18-3c
 retired:
+  mas_optional_20241111:
+    what: 2025년 소방자동차 MAS 선택장비 규격 (2024-11-11)
+    file: safety/safety_mas_optional_20241111.hwp
+    at: 2026-08-24
+    successor: mas_vehicle_spec (safety_mas_vehicle_spec_20241111.hwp)
+    reason: |
+      차량 치수가 없다. 본문 전수 확인 결과 축거·축간거리·회전반경·
+      최소회전반경·전장·전폭·전고 **전부 0건**이다. 선택장비(옵션) 목록이며
+      차종별 제작규격은 mas_vehicle_spec 쪽이다.
+      #31(축거·최소회전반경 미확정)의 답은 여기 없다. D-30 인터뷰가 유일한 길이다.
+      2026-08-24 획득 게이트가 '판단 필요' 로 잡아냈고, 열어보고 정했다.
+      ★ 안 열어보고 내렸으면 3개월 뒤 또 받고 또 조사했을 것이다(§18-3c).
   firestation_kr_20250701:
     what: 소방청 시도 소방서 현황 (2025-07-01 판)
     file: safety/safety_firestation_kr_20250701.csv

@@ -54,6 +54,30 @@ RAW = Path(_legacy_raw
 # 정규화본. 파일명·인코딩·확장자만 통일한다. 값은 안 바꾼다(MASTER §18-1).
 NORM = (DATA / "norm") if DATA else (ROOT / "data" / "norm")
 
+# 다운로드 원본 수집소. 규칙 없음. acquire.py 가 여기서 raw 로 편입한다.
+# ★ 2026-08-24. 종전에는 acquire.py 안에 `RAW.parent / "landing"` 로 있었다.
+#   계층인데 계층 모듈이 모르면 도구마다 자기 자리를 발명한다.
+LANDING = (DATA / "landing") if DATA else (ROOT / "data" / "landing")
+
+# 중간 산출물. 언제든 지워도 재생성된다(MASTER §18-1).
+#
+# ★ 2026-08-24 신설. 그전까지 이 계층은 **문서에만 있었다.** §18-1 이 여섯
+#   계층을 선언하는데 `interim` 은 선언조차 없었고, 그래서 탐색 도구들이
+#   갈 곳이 없어 프로젝트 루트에 떨궜다. `jijeok_probe._side()` 가 그것을
+#   주석으로 자백하고 있었다 —
+#
+#       """저장소 밖 작업 위치. 아직 대장에 없는 탐색 산출물이라 여기 둔다."""
+#       return RAW.parent.parent
+#
+#   결과: SSD 루트에 jijeok_*.gpkg 11.7MB + check27/42 가 널렸다.
+#   **계층이 없으면 파일은 아무 데나 떨어진다.** 규율의 문제가 아니라
+#   구조의 문제다.
+#
+# ★ processed 와 다르다. processed 는 파이프라인 정본이고 여기는 탐색·
+#   대조 산출물이다. 대장에 없고, 커밋하지 않고, 지워도 된다.
+# ★ SSD 에 둔다. raw 옆이라야 970MB 지적도 파싱 결과를 다시 안 만든다.
+INTERIM = (DATA / "interim") if DATA else (ROOT / "data" / "interim")
+
 # 실측 원자료. ★ 재생성 불가. raw 와 같은 등급으로 보호한다.
 # ★ 2026-08-23. FIRE_LANE_DATA 를 타지 않는다. 저장소 안이 정본이다.
 #   종전에는 (DATA / "field") 였는데 그것이 문서 셋을 다 어겼다.
@@ -104,7 +128,8 @@ def check() -> None:
         n = sum(1 for _ in RAW.rglob("*") if _.is_file())
         sz = sum(f.stat().st_size for f in RAW.rglob("*") if f.is_file()) / 1e9
         print(f"          {n}개 파일 · {sz:.2f} GB")
-    for nm, p in (("NORM", NORM), ("FIELD", FIELD), ("QUARANTINE", QUARANTINE)):
+    for nm, p in (("LANDING", LANDING), ("NORM", NORM), ("INTERIM", INTERIM),
+                  ("FIELD", FIELD), ("QUARANTINE", QUARANTINE)):
         print(f"{nm:9} {p}{'' if p.is_dir() else '   (없음)'}")
     print(f"PROCESSED {PROCESSED}   [재생성 가능. 백업·커밋 안 함]")
     print(f"WEB       {WEB}")

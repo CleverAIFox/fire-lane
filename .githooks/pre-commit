@@ -26,10 +26,17 @@ fi
 run "커밋 정책"   $PY tools/commit_policy.py
 run "인코딩·개행" $PY tools/encoding_check.py
 
-# 스테이지된 파이썬만 문법 검사. 전체 린트는 CI 가 한다.
+# 스테이지된 파이썬만 본다. 전량 린트는 CI 가 한다.
 mapfile -t pys < <(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
 if [ "${#pys[@]}" -gt 0 ]; then
     run "파이썬 문법" $PY -m py_compile "${pys[@]}"
+    # ★ 2026-08-24 추가. 종전 주석은 "전체 린트는 CI 가 한다" 였고, 그 틈으로
+    #   F401 이 나갔다 — jijeok_review 의 _side() 를 INTERIM 으로 바꾸면서
+    #   RAW 가 미사용이 됐는데 import 를 안 뺐다. pytest 는 ruff 를 안 돌리니
+    #   로컬은 283 초록이었고 CI 가 잡았다. 스테이지분만 보면 0초다.
+    if command -v uv >/dev/null 2>&1; then
+        run "ruff" uv run ruff check "${pys[@]}"
+    fi
 fi
 
 # 스테이지된 JS 문법

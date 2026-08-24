@@ -199,7 +199,12 @@ def main() -> int:
             print(f"! RETIRED[{label!r}] 에 현재값 {cur[label]} 이 있다 — 목록을 고쳐라")
             bad += 1
 
-    pats = {label: re.compile(r"(?<![\d,.])(" + "|".join(map(re.escape, old)) + r")(?![\d,.])")
+    # ★ 2026-08-24. 뒤에 `%` 나 `m` 이 붙으면 판정 건수가 아니다.
+    #   `도달 가능 687(62%)` 의 62 를 옛 blocked 값으로 잡았다.
+    #   앞에 `(` 가 오는 경우도 같다 — 괄호 안 백분율이다.
+    #   **검사가 문맥 없이 숫자만 보면 새 사실을 쓸 수 없게 만든다.**
+    pats = {label: re.compile(r"(?<![\d,.])(" + "|".join(map(re.escape, old))
+                              + r")(?![\d,.]|\s*[%％]|\s*[mM]\b|\s*분\b|\s*초\b)")
             for label, old in RETIRED.items()}
     for rel in ("README.md", "docs/MASTER.md", "docs/PLAN.md"):
         for no, ln in live_lines(rel, read(rel)):

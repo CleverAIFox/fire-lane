@@ -119,7 +119,23 @@
   "gjcity/gjcity_parking_enforce_dongu_20250226.csv": {
    "sha256": "4cb4c4e95353af782b4fdf8cf9726603ca0fff2b1b12fbbc631f3939e49fbf78",
    "bytes": 3046281
+  },
+  "safety/safety_mas_optional_20241111.hwp": {
+   "sha256": "975e4a08fb4e02fdc376e92fc588eb7f22d4cd194b1f875c70d705641f712425",
+   "bytes": 162304
+  },
+  "safety/safety_mas_vehicle_spec_20241111.hwp": {
+   "sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
+   "bytes": 1320960
+  },
+  "safety/safety_kfs_ladder_small_20251224.pdf": {
+   "sha256": "5c5ab15422d304dcfe51bec3bc63272bde1fd723dc49cfc64f0f417ccb50924a",
+   "bytes": 720640
+  },
+  "safety/safety_kfs_pumptruck_20251224.hwpx": {
+   "sha256": "0908c1232cd2102ec4f8e081043a4f83141680504e82c428b4237fd18a4d8d42",
+   "bytes": 207497
   }
  },
- "at": "2026-08-23T17:29:09+09:00"
+ "at": "2026-08-24T10:16:06+09:00"
 }
