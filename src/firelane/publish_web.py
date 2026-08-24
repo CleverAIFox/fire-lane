@@ -13,7 +13,6 @@ web/data 는 생성물이다. 직접 수정하지 말 것.
 """
 import hashlib
 import json
-import re
 
 import geopandas as gpd
 import pandas as pd
@@ -307,14 +306,25 @@ def main():
     #   _manifest.json 을 쓰는 것과 같다. 순서를 기억할 필요가 없어진다.
     # ★ index.html 스탬프보다 **뒤**여야 한다. 스탬프가 web/ 을 바꾸므로
     #   먼저 뜨면 지문이 즉시 낡는다.
-    _ix = ROOT/"web"/"index.html"
-    _html = _ix.read_text(encoding="utf-8")
-    _new = re.sub(r'\?v=[0-9a-fA-F]{8}\b|\?v=BUILD', f"?v={_BUILD}", _html)
-    if _new != _html:
-        _ix.write_text(_new, encoding="utf-8")
-        print(f"  index.html 스탬프 → {_BUILD}")
-    else:
-        print(f"  index.html 스탬프 {_BUILD} (변화 없음)")
+    # ★ 2026-08-24. index.html 을 더 이상 고치지 않는다.
+    #
+    #   이 파일은 CODEOWNERS 상 @marscoolcat @AIMasterFox 공동 소유다.
+    #   그런데 여기서 스탬프를 주입하면 **판정이 바뀔 때마다** 그 파일이
+    #   바뀌고, GIS 가 파이프라인만 돌려도 UI 리뷰가 걸린다.
+    #   스탬프가 내용 해시라 잡음이 아니라 **의미 있는 작업을 한 그
+    #   순간에만** 걸린다. 더 나쁘다.
+    #
+    #   index.html 주석이 이미 정답을 적어놨다 —
+    #     "저장소에 커밋된 상태에서는 문자 그대로 BUILD 이고,
+    #      그래도 동작한다(쿼리는 파일 조회에 영향 없음)"
+    #   저장소는 BUILD 로 두고 **배포 시점에** 찍는다(.github/workflows/
+    #   pages.yml). 값은 view.json 의 build 를 그대로 쓴다 — 여기서 이미
+    #   썼고 data.js 가 읽는 그 값이다.
+    #
+    #   ★ 경계는 경로로 갈린다. 생성물은 web/data/ 안에서 끝나야 하고
+    #     사람 파일을 코드가 고치면 안 된다.
+    #     tests/test_web_ownership.py 가 이 구조를 지킨다.
+    print(f"  스탬프 {_BUILD} → view.json (index.html 은 배포 시 주입)")
 
     _wm = webmanifest.write()
     print(f"  web/data 계보 → {_wm['total_mb']}MB · 타일 {_wm['tiles_digest']}")

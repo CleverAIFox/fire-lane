@@ -36,6 +36,23 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: 캐시 무효화 스탬프 주입
+        # ★ 2026-08-24 신설. 종전에는 publish_web.py 가 저장소의
+        #   index.html 을 직접 고쳤다. 그 파일은 CODEOWNERS 상 UI 담당과
+        #   공동 소유라, GIS 가 파이프라인만 돌려도 UI 리뷰가 걸렸다.
+        #   스탬프가 내용 해시라 **판정이 바뀐 그 순간에만** 걸린다.
+        #
+        #   저장소는 ?v=BUILD 로 두고 여기서 찍는다. 값은 view.json 의
+        #   build 로, publish_web.py 가 쓰고 js/data.js 가 읽는 그 값이다.
+        #   정본이 하나다.
+        run: |
+          B=$(sed -n 's/.*"build": *"\([0-9a-f]*\)".*/\1/p' web/data/view.json)
+          test -n "$B" || { echo "view.json 에 build 가 없다"; exit 1; }
+          echo "스탬프 $B"
+          sed -i "s/?v=BUILD/?v=$B/g" web/index.html
+          grep -c "?v=$B" web/index.html
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
