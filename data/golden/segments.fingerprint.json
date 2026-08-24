@@ -3,14 +3,14 @@
   "n": 1101,
   "verdict": {
    "blocked": 159,
-   "clear": 400,
-   "needs_cv": 190,
-   "unknown": 352
+   "clear": 397,
+   "needs_cv": 191,
+   "unknown": 354
   },
   "unknown_reason": {
    "no_cctv_band": 152,
    "no_cctv_narrow": 62,
-   "no_cctv_single": 10,
+   "no_cctv_single": 12,
    "no_cctv_thin": 128
   },
   "width_src": {
@@ -922,7 +922,7 @@
    "route_usage": 0
   },
   "DM-192616-284261-PF48": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 10.51,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -1282,11 +1282,11 @@
    "route_usage": 3
   },
   "DM-192702-284165-X9DQ": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 24.92,
    "width_max_m": 36.99,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_single",
    "length_m": 7.3,
    "route_usage": 3
   },
@@ -5953,11 +5953,11 @@
    "route_usage": 70
   },
   "DM-193490-283404-VXVD": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 27.46,
    "width_max_m": 30.15,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_single",
    "length_m": 13.1,
    "route_usage": 2
   },
