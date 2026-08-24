@@ -99,8 +99,10 @@ RULES: list[tuple[str, str, str]] = [
      "safety", "safety_kfs_ladder_small_20251224.{0}"),
     (r"소방자동차.*다수공급자.*차종별.*\.(hwpx?|pdf)$",
      "safety", "safety_mas_vehicle_spec_20241111.{0}"),
-    (r"소방자동차.*다수공급자.*선택장비.*\.(hwpx?|pdf)$",
-     "safety", "safety_mas_optional_20241111.{0}"),
+    # ★ 2026-08-24. mas_optional 규칙을 지웠다. 본문 전수 확인 결과
+    #   축거·축간거리·회전반경·최소회전반경·전장·전폭·전고가 **전부 0건**
+    #   이다. 선택장비 목록이고 차종별 제작규격은 mas_vehicle_spec 이다.
+    #   retired 에 사유를 적었으므로 규칙도 같이 내린다 — 대장이 정본이다.
 
     (r"^내역서\.csv$",       "its", "its_nodelink_changelog_20260812.csv"),
     (r"^its_nodelink_(kr|changelog)_\d{8}\.(zip|csv)$", "its", None),
