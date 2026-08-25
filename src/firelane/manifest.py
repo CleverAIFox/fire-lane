@@ -59,16 +59,26 @@ def write_stable(path: Path, obj: dict, *,
     """시각을 뺀 내용이 같으면 쓰지 않는다. 썼으면 True.
 
     ★ mtime 도 안 건드린다. 안 쓰는 것이 곧 "안 바뀌었다" 의 표현이다.
+
+    ★ 2026-08-25 정정. 비교를 **JSON 왕복 뒤에** 한다. 파이썬 객체끼리 비교하면
+      파일에 나가는 형태와 다르다.
+
+          BBOX_4326 = (126.907, ...)      ingest 가 넘기는 튜플
+          "bbox_4326": [126.907, ...]     파일 안의 리스트
+          (1, 2) != [1, 2]                → 항상 달라졌다고 본다
+
+      실측 diff 는 `generated_at` 한 줄뿐인데 비교는 계속 실패하는, 눈으로는
+      안 보이는 자리였다. 직렬화도 한 번만 한다 — 쓸 때 이 문자열을 그대로 쓴다.
     """
+    text = json.dumps(obj, ensure_ascii=False, indent=2)
     if path.exists():
         try:
             old = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             old = None
-        if isinstance(old, dict) and _borrow_stamps(obj, old, keys) == old:
+        if isinstance(old, dict) and _borrow_stamps(json.loads(text), old, keys) == old:
             return False
-    path.write_text(json.dumps(obj, ensure_ascii=False, indent=2),
-                    encoding="utf-8")
+    path.write_text(text, encoding="utf-8")
     return True
 
 

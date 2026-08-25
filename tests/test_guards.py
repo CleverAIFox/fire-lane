@@ -1805,6 +1805,16 @@ def test_manifest_write_is_idempotent(tmp_path):
     assert manifest.write_stable(f, b) is False, "시각만 달라졌는데 썼다"
     assert f.read_text(encoding="utf-8") == before, "파일이 바뀌었다"
 
+    # ★ 2026-08-25. 파이썬 객체와 JSON 표현이 다른 자리. `ingest` 는
+    #   `BBOX_4326` 을 **튜플**로 넘기는데 파일에는 리스트로 저장된다.
+    #   객체끼리 비교하면 `(1, 2) != [1, 2]` 라 매번 "달라졌다" 가 되고,
+    #   실측 diff 는 시각 한 줄뿐인데 churn 이 안 죽는다.
+    t = dict(b, bbox=(1.0, 2.0))
+    assert manifest.write_stable(f, t) is True, "새 키는 써야 한다"
+    t2 = dict(t, generated_at="2026-08-26T00:00:00+09:00")
+    assert manifest.write_stable(f, t2) is False, (
+        "튜플을 다시 넘겼는데 또 썼다 — JSON 왕복 없이 비교하고 있다")
+
     c = dict(b, datasets=[{"key": "y"}])
     assert manifest.write_stable(f, c) is True, "내용이 달라졌는데 안 썼다"
     assert "18:30" in f.read_text(encoding="utf-8"), (

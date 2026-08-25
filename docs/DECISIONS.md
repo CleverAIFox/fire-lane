@@ -2415,7 +2415,27 @@ L1·L2·L3 는 전 과정에서 동일했다.
 **한 곳을 고치려고 통로를 모으면 나머지가 드러난다.** 이 저장소가 계층 ·
 계보 · 인코딩에서 반복해 겪은 그 순서다.
 
-강제자  `tests/test_guards.py::test_manifest_write_is_idempotent` ·
+── 첫 판은 churn 을 못 죽였다 ─────────────────────────────────
+
+`write_stable` 이 **파이썬 객체끼리** 비교했다. 파일에 나가는 것은 JSON 이고
+두 표현은 같지 않다.
+
+    BBOX_4326 = (126.907, 35.140, 126.940, 35.162)     ingest 가 넘기는 튜플
+    "bbox_4326": [126.907, 35.14, 126.94, 35.162]      파일 안의 리스트
+    (1, 2) != [1, 2]                                    → 항상 달라졌다고 본다
+
+그래서 실측 diff 는 `generated_at` 한 줄뿐인데 비교는 계속 실패했다.
+**증상과 원인이 같은 화면에 안 나오는 자리**였다.
+
+★ 검증을 **파일에서 읽은 값으로만** 돌린 것이 원인이다. 그러면 양쪽이 다
+리스트라 통과한다. 실제 writer 가 넘기는 객체로 돌렸어야 했다. R12 가 말하는
+것과 같다 — **성공 경로만 태우는 검사는 통과율만 높인다.**
+
+비교를 `json.loads(json.dumps(obj))` 뒤로 옮겼다. 직렬화는 한 번만 하고 쓸 때
+그 문자열을 그대로 쓴다.
+
+강제자  `tests/test_guards.py::test_manifest_write_is_idempotent`
+        (튜플을 넘기는 경우를 포함한다) ·
         `test_manifest_writers_go_through_write_stable` ·
         `test_ingest_keeps_manifest_keys_it_does_not_own`
 재현    `uv run fire-lane` 을 두 번 돌리고 `git status --short` 가 비는지 본다
