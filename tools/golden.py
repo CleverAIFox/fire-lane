@@ -275,10 +275,85 @@ def cmd_check(args) -> int:
     return 0
 
 
+def cmd_selftest(_args) -> int:
+    """게이트가 울고, 또 풀리는가.
+
+    ★ 2026-08-25. `lock` 이 `.code_fingerprint` 를 갱신하지 않아 판정 코드가
+      한 번 바뀌면 게이트가 영구히 울었다(DECISIONS §69). 산출물 지문
+      L1·L2·L3 가 전부 동일한데도 낡았다고 떴고, 남는 길은 손으로 지우기
+      아니면 `--allow-stale` 뿐이었다.
+
+      **게이트를 만들 때는 정상적으로 해제되는 경로를 같이 만든다.**
+      그 경로가 실제로 도는지를 여기서 본다.
+
+    ★ 실제 지문 파일을 건드리지 않는다. 임시 폴더로 갈아끼우고 되돌린다.
+      검사가 정본을 덮어쓰면 그 검사 자체가 사고 원인이 된다.
+    """
+    import contextlib
+    import io
+    import tempfile
+    global GOLD, CODE_FP
+
+    if not SEG.exists():
+        print("· 산출물이 없다 — 건너뛴다 (raw 가 있는 기계에서 돌릴 것)")
+        return 0
+
+    keep_gold, keep_fp = GOLD, CODE_FP
+    bad = 0
+    with tempfile.TemporaryDirectory() as td:
+        GOLD = Path(td) / "golden"
+        CODE_FP = Path(td) / ".code_fingerprint"
+
+        class _A:
+            allow_stale = False
+            loose = False
+
+        def q(fn) -> int:
+            """소리 없이 돌린다. lock/check 의 정상 출력이 섞이면 읽을 수 없다."""
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                return fn(_A())
+
+        try:
+            q(cmd_lock)
+            if not CODE_FP.exists():
+                print("★ ① lock 이 .code_fingerprint 를 안 남긴다"); bad += 1
+            elif CODE_FP.read_text(encoding="utf-8").strip() != _logic_fingerprint():
+                print("★ ① 코드 지문이 로직 해시와 다르다"); bad += 1
+            else:
+                print("  ① lock 이 코드 지문을 남긴다  OK")
+
+            if q(cmd_check) != 0:
+                print("★ ② 방금 잠근 것을 check 가 통과 못 한다"); bad += 1
+            else:
+                print("  ② lock 직후 check 통과      OK")
+
+            CODE_FP.write_text("0" * 16 + "\n", encoding="utf-8")
+            if q(cmd_check) == 0:
+                print("★ ③ 코드 지문이 어긋났는데 통과한다 — 게이트가 죽었다"); bad += 1
+            else:
+                print("  ③ 지문이 어긋나면 운다      OK")
+
+            q(cmd_lock)
+            if q(cmd_check) != 0:
+                print("★ ④ lock 해도 안 풀린다 — 해제 경로가 없다"); bad += 1
+            else:
+                print("  ④ lock 으로 해제된다        OK")
+        finally:
+            GOLD, CODE_FP = keep_gold, keep_fp
+
+    if bad:
+        print(f"\n★ 게이트 자기검사 {bad}건 실패")
+        return 1
+    print("\n게이트는 울고, 또 풀린다.")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("lock").set_defaults(fn=cmd_lock)
+    sub.add_parser("selftest").set_defaults(fn=cmd_selftest)
     c = sub.add_parser("check")
     c.add_argument("--allow-stale", action="store_true",
                    help="산출물이 코드보다 낡아도 대조한다 (증명이 아님을 알고 쓸 것)")

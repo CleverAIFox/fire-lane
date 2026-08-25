@@ -2343,8 +2343,26 @@ L1·L2·L3 는 전 과정에서 동일했다.
 반복해 기록한 형태(§30 · §56)의 후속이며, 이번에는 강제자 자신이 그 자리에
 있었다.
 
-강제자  `tests/test_guards.py::test_golden_refuses_stale_artifacts` (기존) ·
-        `cmd_lock` 이 지문을 찍으므로 갱신 여부가 화면에 남는다
-        ★ **"lock 후 check 가 통과하는가" 를 보는 검사는 아직 없다.**
-        이 절을 쓰는 시점에 그 검사를 못 만들었다. 없다는 사실을 적는다
-재현    `uv run python tools/golden.py lock && uv run python tools/golden.py check`
+── 해제 경로에도 강제자를 붙였다 ──────────────────────────────
+
+이 절을 처음 쓸 때는 *"lock 후 check 가 통과하는가 를 보는 검사는 아직
+없다"* 라고 적었다. 같은 날 만들었다. `golden.py selftest` 가 임시 폴더로
+지문을 갈아끼우고 네 단계를 밟는다.
+
+    ① lock         → .code_fingerprint 가 생기고 로직 해시와 같다
+    ② check        → 통과한다
+    ③ 지문 오염     → check 가 실패한다
+    ④ lock → check → 다시 통과한다
+
+★ **③ 이 핵심이다.** 해제만 검사하면 "항상 통과하는 검사" 를 만들 수 있다.
+울지 않는 게이트는 게이트가 아니므로 우는 것도 같이 본다.
+
+실제 지문 파일은 건드리지 않는다. **검사가 정본을 덮어쓰면 그 검사 자체가
+사고 원인이 된다.**
+
+강제자  `tests/test_guards.py::test_golden_lock_writes_the_code_fingerprint`
+        (구조. 데이터 없이 CI 에서도 돈다) ·
+        `tests/test_guards.py::test_golden_lock_releases_the_gate`
+        (실행. 산출물이 없으면 건너뛴다) ·
+        `tools/verify.sh` 의 `golden 게이트 해제 경로` 단계
+재현    `uv run python tools/golden.py selftest`
