@@ -1743,3 +1743,41 @@ def test_ship_reports_the_real_failure():
     assert '"실패" in x' in body, "실패 표시가 있는 줄을 안 고른다"
     assert "tail[0]" not in body, "마지막 줄을 실패 사유로 쓴다"
     assert '"머지" not in x' in body, "머지 안내 문구를 걸러내지 않는다"
+
+
+# ── golden 게이트의 해제 경로 (2026-08-25) ─────────────────────
+def test_golden_lock_writes_the_code_fingerprint():
+    """`lock` 이 판정 코드 지문을 같이 남기는가.
+
+    ★ DECISIONS §69. 종전에는 `.code_fingerprint` 를 **파일이 아예 없을 때만**
+      썼다. 그래서 판정 코드가 정당하게 바뀐 뒤에는 파이프라인을 다시 돌려도
+      `lock` 을 다시 해도 낡음 경보가 영구히 울었다. 남는 길이 손으로 지우기
+      아니면 `--allow-stale` 뿐이었고, 둘 다 게이트를 죽이는 습관을 만든다.
+
+      **잠그는 법만 있고 푸는 법이 없으면 사람은 우회로를 만든다.**
+
+    ★ 이 검사는 데이터 없이 돈다. 구조만 본다.
+    """
+    src = (ROOT / "tools/golden.py").read_text(encoding="utf-8")
+    i = src.index("def cmd_lock")
+    body = src[i:src.index("def _staleness", i)]
+    assert "CODE_FP.write_text" in body, (
+        "cmd_lock 이 .code_fingerprint 를 갱신하지 않는다 — "
+        "게이트가 한 번 울면 해제할 길이 없다")
+    assert "_logic_fingerprint()" in body, "lock 이 로직 해시를 쓰지 않는다"
+
+
+def test_golden_lock_releases_the_gate():
+    """게이트가 실제로 울고, 또 풀리는가.
+
+    구조 검사(위)는 `write_text` 가 있는지만 본다. 그것이 옳은 값을 쓰는지,
+    어긋난 지문에서 실제로 우는지는 돌려봐야 안다.
+
+    ★ 산출물이 없으면 건너뛴다. CI 에는 `data/raw` 가 없어 판정을 만들 수
+      없다. **로컬이 CI 보다 더 보는 것은 정상이다**(verify.sh 머리말).
+    """
+    if not (ROOT / "data/processed/segments.geojson").exists():
+        pytest.skip("산출물이 없다 — 파이프라인이 도는 기계에서만 검사한다")
+    r = subprocess.run([sys.executable, str(ROOT / "tools/golden.py"), "selftest"],
+                       capture_output=True, text=True, cwd=ROOT)
+    assert r.returncode == 0, f"golden 게이트 자기검사 실패\n{r.stdout}{r.stderr}"
