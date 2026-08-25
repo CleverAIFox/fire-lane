@@ -1849,3 +1849,48 @@ def test_ingest_keeps_manifest_keys_it_does_not_own():
     src = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
     assert "manifest.read(man)" in src, (
         "ingest 가 기존 매니페스트를 안 읽는다 — 자기 것이 아닌 키를 지운다")
+
+
+# ── 여러 판으로 오는 소스 (2026-08-25) ─────────────────────────
+def test_multi_part_sources_are_not_read_as_one():
+    """글롭이 여러 개를 잡는 소스가 하나만 읽히고 있지 않은가.
+
+    ★ DECISIONS §71. `enforcement` 는 대장이 두 판을 잡는데 `kind: csv_table`
+      이 정렬 첫 번째 하나만 읽었다. 파일명에 날짜가 있으므로 그것은 옛 판이다.
+      대장 note 와 `contract.py` 는 두 판을 전제하고 있었는데 파이프라인만
+      한 판을 읽었다 — **검사는 두 판을 보고 산출은 한 판이었다.**
+
+    ★ 파일 존재는 안 본다. raw 는 저장소에 없다. 대장 선언만 본다.
+    """
+    import yaml
+
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    SINGLE = {"shp_zip", "csv_points", "csv_point", "csv_points_in_zip",
+              "dbf_in_zip", "json_points", "csv_table"}
+    bad = []
+    for k, v in (y.get("datasets") or {}).items():
+        f, kind = (v or {}).get("file", ""), (v or {}).get("kind", "")
+        note = str((v or {}).get("note", "")) + str((v or {}).get("what", ""))
+        if kind in SINGLE and any(ch in f for ch in "*?[") and "이어붙" in note:
+            bad.append(f"  {k}: kind={kind} 인데 대장이 '이어붙인다' 고 적었다")
+    assert not bad, (
+        "대장 서술과 kind 가 어긋난다 — 한 판만 읽힌다.\n" + "\n".join(bad)
+        + "\n  여러 판을 쓰려면 kind 를 csv_table_multi 로 바꿔라.")
+
+
+def test_multi_part_reader_refuses_mixed_columns():
+    """판마다 컬럼이 다르면 세우는가.
+
+    ★ `pd.concat` 은 없는 컬럼을 조용히 NaN 으로 메운다. 그러면 판이 섞인
+      채로 통과하고, 그 결과를 아무도 못 본다(R6 — 조용한 실패 금지).
+    """
+    src = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
+    i = src.find('kind == "csv_table_multi"')
+    assert i > 0, "csv_table_multi 핸들러가 없다"
+    body = src[i:i + 2200]
+    assert '"status": "FAIL"' in body, "컬럼 불일치에 FAIL 하지 않는다"
+    assert '"_src"' in body, "어느 판에서 온 행인지 산출물에 안 남긴다"
+    # ★ 예외는 대장 선언으로만 열린다. 코드에 박은 화이트리스트는
+    #   3개월 뒤에 근거를 알 수 없다(§18-3).
+    assert "optional_cols" in body, "결손 허용이 대장 선언을 안 본다"
+    assert "undeclared" in body, "선언되지 않은 컬럼 차이를 그냥 넘긴다"

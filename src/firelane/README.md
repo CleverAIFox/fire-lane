@@ -24,7 +24,8 @@ python -m firelane.ingest --check          # 원본 존재·체크섬만
   새키:
     desc: 한 줄 설명
     kind: shp_zip | shp_zip_multi | shp_dir | csv_points | csv_points_in_zip
-        | dbf_in_zip | json_points | csv_table | raw_only
+        | dbf_in_zip | json_points | csv_table | csv_table_multi
+        | raw_only
     file: 폴더/파일명.zip        # data/raw 기준 상대경로. 와일드카드 가능
     layer: XXX.shp               # zip 안의 레이어 (shp 계열만)
     crs: EPSG:5179               # ★ probe.py crs 로 검증한 실제값
@@ -48,6 +49,7 @@ python -m firelane.ingest --check          # 원본 존재·체크섬만
 | `dbf_in_zip` | 지오메트리 없는 DBF (회전제한) |
 | `json_points` | 표준데이터 JSON. CSV 로 오다 바뀌는 경우 |
 | `csv_table` | 좌표 없는 표. 그대로 복사 |
+| `csv_table_multi` | 좌표 없는 표 여러 판. 이어붙인다. 컬럼이 다르면 FAIL · `_src` 에 원본 파일명 |
 | `raw_only` | 읽지 않는다. 존재만 기록(SKIP) |
 
 **새 형식이면 핸들러를 먼저 추가하고 대장을 쓴다.** 목록 밖의 `kind` 는

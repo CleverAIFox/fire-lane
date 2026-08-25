@@ -655,8 +655,8 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 | 지적도(소유권) | 소유권 경계 ≠ 통행 노면 |
 | 정밀도로지도 | 광주는 광산구·북구 시범운행지구만. 동구는 대상 아님 |
 
-단속이력의 **빈도는 유효하다.** 85,380건(2022-01~2023-10) + 56,176건(2024)이며
-고유 장소 2,123개다. 도로명 상위는 충장로 5,068 · 구성로 3,797 · 금남로 3,739 ·
+단속이력의 **빈도는 유효하다.** 두 판(2022-01~2023-10 · 2024)을 이어붙여 쓰며
+어느 판에서 온 행인지는 `_src` 컬럼에 남는다. 고유 장소 2,123개다. 도로명 상위는 충장로 5,068 · 구성로 3,797 · 금남로 3,739 ·
 백서로 2,462 · 동계천로 2,432 다. 이것이 상습주차 추정 모델의 **레이블**이 된다.
 **출동 시점의 상태가 아니라 사전 위험도다.** 그 구분을 흐리지 않는다.
 
@@ -1323,6 +1323,7 @@ uv run python tools/jijeok_review.py    갈리는 구간을 정사영상 위에�
 uv run python tools/lanes_probe.py      표준노드링크 차로수로 폭 하한 대조
 uv run python tools/route_probe.py      소방차 통행 비용으로 경로 — 거리만 대 차량
 uv run python tools/clearance_probe.py  최대내접원 방식 (2026-08-22 기각)
+uv run python tools/corner_probe.py     코너 꺾임각·반경 — 회전 가능성 대조
 uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
 uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치는 규모
 uv run python tools/scan_data.py        데이터 레이크 구조 점검
