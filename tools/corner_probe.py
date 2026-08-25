@@ -80,6 +80,22 @@ CRS_M = "EPSG:5186"
 # 코너가 수천 개가 되어 분포가 무의미해진다.
 DEG_STRAIGHT = 15.0
 
+# 이 각 이상은 **코너가 아니라 나란함**이다. 꺾임 180° 는 두 바깥벡터가
+# 같은 방향을 본다는 뜻 — 노드에서 두 팔이 겹쳐 나간다. 물리적 U턴이
+# 아니라 기하 파편이다.
+#
+# ★ 2026-08-25. `지호로 × 지산로` 가 폭 11.7m · 9.2m 인데 32.65m 가
+#   모자란다고 나왔다. 꺾임 176.7° 였다 — 바깥벡터가 3.3° 밖에 안 벌어졌다.
+#   cos(Δ/2) 가 0 으로 가면서 필요폭이 Ro 전체로 밀려 올라간 것이다.
+#
+#   `_node_key` 가 격자 반올림이라(segments.py 는 union-find 다) 나란한
+#   두 구간이 한 칸에 들어가면 이렇게 잡힌다.
+#
+# ★ 새 상수를 박지 않는다(§16-2). DEG_STRAIGHT 의 거울이다 —
+#   "15° 미만은 직진 잡음" 이면 "165° 초과는 나란함 잡음" 이다.
+#   같은 관용을 반대편에 쓴다.
+DEG_PARALLEL = 180.0 - DEG_STRAIGHT
+
 # 방향을 재는 구간 길이(m). 끝점 두 점만 쓰면 노딩 잡음에 각이 튄다.
 SAMPLE_M = 5.0
 
@@ -226,10 +242,19 @@ def main() -> int:
     L = float(V["wheelbase_m"])
     W = float(V["width_m"])
     C = float(V["clearance_m"])
-    verified = bool(V.get("wheelbase_verified"))
+    # ★ 2026-08-25. 종전에는 `wheelbase_verified` 하나로 축거와 회전반경을
+    #   **둘 다** 판단했다. 회전반경은 자동차규칙 제9조① 12m 로 근거가 생겼고
+    #   대장이 `turn_radius_verified` 로 그것을 말한다. 둘을 갈라야 화면이
+    #   사실을 말한다 — 지금 미확정인 것은 축거뿐이다.
+    wb_ok = bool(V.get("wheelbase_verified"))
+    tr_ok = bool(V.get("turn_radius_verified"))
+    unsure = [n for n, ok in (("축거", wb_ok), ("회전반경", tr_ok)) if not ok]
 
     print(f"차량  전폭 {W} · 축거 {L} · 회전반경 {R}"
-          + ("" if verified else "   ★ 축거·회전반경 미확정. 참고값이지 판정이 아니다"))
+          + ("" if not unsure
+             else f"   ★ {'·'.join(unsure)} 미확정. 참고값이지 판정이 아니다"))
+    if tr_ok:
+        print("      회전반경 근거 — 자동차규칙 제9조① 법정 상한(전 차종 공통)")
     print("      대칭 코너 통과 하한 폭 — "
           + " · ".join(f"{d}° {corner_min_width(d, R, L, W, C):.2f}m"
                        for d in (60, 90, 120)))
@@ -251,6 +276,7 @@ def main() -> int:
     # 구간별 최대 꺾임각 — 이 구간을 드나들 때 만나는 가장 급한 코너
     worst = [0.0] * len(g)
     turns: list[tuple[float, int, int]] = []
+    parallel: list[tuple[float, int, int]] = []   # 나란함(노딩 파편). 진단용
     corners: list[tuple[float, int, int, tuple[float, float], tuple[float, float]]] = []
     for members in ends.values():
         if len(members) < 2:
@@ -264,6 +290,10 @@ def main() -> int:
                 d = _deflection(va, vb)
                 if d < DEG_STRAIGHT:
                     continue
+                if d > DEG_PARALLEL:
+                    # 코너가 아니라 겹친 기하다. 세되 판정에는 안 넣는다.
+                    parallel.append((d, i, j))
+                    continue
                 turns.append((d, i, j))
                 corners.append((d, i, j, va, vb))
                 worst[i] = max(worst[i], d)
@@ -275,10 +305,15 @@ def main() -> int:
     if len(tdf):
         print(f"  중앙 {tdf.median():.0f}° · p75 {tdf.quantile(.75):.0f}° "
               f"· p90 {tdf.quantile(.90):.0f}° · 최대 {tdf.max():.0f}°")
-        for lo, hi in ((15, 30), (30, 60), (60, 90), (90, 120), (120, 181)):
+        for lo, hi in ((15, 30), (30, 60), (60, 90), (90, 120), (120, 166)):
             n = int(((tdf >= lo) & (tdf < hi)).sum())
             print(f"  {lo:3d}~{hi:3d}°  {n:5,}  {'█' * min(40, n * 40 // max(1, len(tdf)))}")
     print(f"  꺾임 있는 구간 {sum(1 for v in worst if v >= DEG_STRAIGHT):,} / {len(g):,}")
+    if parallel:
+        print(f"  ★ 나란함 {len(parallel):,}개 제외 ({DEG_PARALLEL:.0f}° 초과) — "
+              f"코너가 아니라 겹친 기하다")
+        print("     노드 격자 반올림이 만든 것이다. segments.py 는 union-find 로")
+        print("     묶는다 — 두 곳의 노딩 규칙이 다르다는 뜻이므로 점검 대상이다")
 
     # ── 2. 코너 반경 (평면교차점 폴리곤) ──────────────────────
     xsec_p = PROCESSED / "ngii1k_xsec_5186.gpkg"
