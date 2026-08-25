@@ -152,7 +152,8 @@ def test_doc_enum_vocabulary_matches_golden():
     ★ docnum_check 는 숫자(PRESENT/RETIRED)와 필드명(FIELDS)을 검사하며
       **어휘 값**은 검사 대상이 아니었다. 2026-08-23 에 unknown_reason 을
       넷으로 분리했으나 MASTER 는 `no_cctv | null` 로 기술하고 있었다.
-      UI 담당이 그 표를 기준으로 구현하면 매칭이 성립하지 않는다(§12-6).
+      UI 담당이 그 표를 기준으로 구현하면 매칭이 성립하지 않는다
+      (DECISIONS §67 — 마커 아키텍처 리팩).
     """
     if not GOLDEN.exists():
         return

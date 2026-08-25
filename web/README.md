@@ -53,7 +53,7 @@ minimap : { showFromZoom: 16 }
 
 ## 값을 바꿀 때
 
-판정 임계값(3.0 / 7.0 / 25.0)의 **정본은 `src/firelane/segments.py`** 다.
+판정 임계값(3.0 / 7.0 / 25.0)의 **정본은 `src/firelane/seg/params.py`** 다.
 `config.js` 의 같은 숫자는 화면 설명용 사본이라 바꿔도 판정은 안 바뀐다.
 파이프라인을 먼저 고치고 `config.js` 를 맞출 것.
 
@@ -65,7 +65,7 @@ minimap : { showFromZoom: 16 }
 
 ## 지형
 
-`config.js` 의 `terrain.scale` 로 기복을 조절한다. 1.0 이 실제 비율이다.
+`config.js` 의 `terrain.exaggeration` 으로 기복을 조절한다. 1.0 이 실제 비율이다.
 
 **공개DEM 90m 를 8배 보간한 표현용 값이다.** 판정에는 쓰지 않는다.
 90m 격자는 골목 20개를 한 픽셀로 덮으므로 구간별 경사 산출이 불가능하다.
