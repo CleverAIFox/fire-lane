@@ -2366,3 +2366,56 @@ L1·L2·L3 는 전 과정에서 동일했다.
         (실행. 산출물이 없으면 건너뛴다) ·
         `tools/verify.sh` 의 `golden 게이트 해제 경로` 단계
 재현    `uv run python tools/golden.py selftest`
+
+---
+
+## 70. 커밋되는 파일이 매 실행 바뀌고 있었다
+
+> 2026-08-25
+
+`data/processed/_manifest.json` 과 `web/data/_manifest.json` 은 커밋되는
+재현성 기록이다(MASTER §12-6). 그런데 매 실행 `generated_at` 만 바뀌었다.
+그래서 검사를 한 번 돌릴 때마다 워킹트리가 더러워졌고, 브랜치를 옮기려 할 때
+이렇게 막혔다.
+
+    error: Your local changes to the following files would be overwritten
+            data/processed/_manifest.json
+            web/data/_manifest.json
+
+같은 날 두 번 걸렸고, 그중 한 번은 `git checkout gis` 가 실패한 채 다음
+명령이 그대로 이어져 **의도하지 않은 브랜치 위에 작업 브랜치가 만들어졌다.**
+사소한 잡음이 아니라 조작 사고를 만드는 자리였다.
+
+── 원인은 파일이 두 일을 겸한 것이다 ──────────────────────────
+
+    커밋해야 하는 것    입력 sha · 건수 · 상태. 재현성 기록이다
+    매 실행 바뀌는 것   generated_at
+
+**한 파일이 "고정된 기록"과 "실행 로그" 를 겸하면 둘 중 하나는 반드시
+불편해진다.** 셋 중 하나를 골라야 했다.
+
+    그대로 두기      의미 없는 diff 가 커밋 이력에 쌓인다
+    커밋에서 빼기    재현성 기록이 사라진다. R2 위반
+    시각을 안정화    ← 채택
+
+`generated_at` 의 뜻을 **"마지막 실행 시각"에서 "내용이 마지막으로 실제
+달라진 시각"으로** 바꿨다. 재현성 기록으로는 후자가 옳다 — 같은 입력으로 같은
+산출을 냈다는 사실이 시각 때문에 흐려지지 않는다.
+
+★ **시각을 지우지 않았다.** 지우면 "언제 만들어진 기록인가"를 잃는다.
+바뀌지 않았을 때 갱신하지 않을 뿐이다.
+
+── 같이 드러난 것 ─────────────────────────────────────────────
+
+네 writer 를 한 통로로 모으면서 `ingest` 가 대장을 **통째로 덮어쓰고**
+있다는 것이 드러났다. `terrain` · `ortho` 가 넣은 기록이 매번 지워지고 있었고,
+전량 실행에서는 뒤 단계가 다시 넣어주므로 안 보였다. `--only ingest` 는 그
+기록을 날린다. 자기 것이 아닌 최상위 키를 보존하도록 고쳤다.
+
+**한 곳을 고치려고 통로를 모으면 나머지가 드러난다.** 이 저장소가 계층 ·
+계보 · 인코딩에서 반복해 겪은 그 순서다.
+
+강제자  `tests/test_guards.py::test_manifest_write_is_idempotent` ·
+        `test_manifest_writers_go_through_write_stable` ·
+        `test_ingest_keeps_manifest_keys_it_does_not_own`
+재현    `uv run fire-lane` 을 두 번 돌리고 `git status --short` 가 비는지 본다

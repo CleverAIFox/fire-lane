@@ -45,6 +45,7 @@ import json
 import sys
 from datetime import UTC, datetime
 
+from firelane import manifest
 from firelane.paths import PROCESSED, WEB
 
 MANIFEST = WEB / "_manifest.json"
@@ -99,7 +100,8 @@ def build() -> dict:
 def write() -> dict:
     """지문을 떠서 기록한다. publish_web.py 가 마지막에 부른다."""
     m = build()
-    MANIFEST.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
+    # ★ 내용이 같으면 쓰지 않는다. 시각만 바뀌는 diff 가 커밋을 막았다.
+    manifest.write_stable(MANIFEST, m)
     return m
 
 

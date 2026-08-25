@@ -1781,3 +1781,61 @@ def test_golden_lock_releases_the_gate():
     r = subprocess.run([sys.executable, str(ROOT / "tools/golden.py"), "selftest"],
                        capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, f"golden 게이트 자기검사 실패\n{r.stdout}{r.stderr}"
+
+
+# ── 매니페스트 churn (2026-08-25) ──────────────────────────────
+def test_manifest_write_is_idempotent(tmp_path):
+    """같은 내용을 두 번 쓰면 파일이 안 바뀌는가.
+
+    ★ DECISIONS §70. `_manifest.json` 두 개가 매 실행 `generated_at` 만
+      바뀌어 diff 가 났고, `verify.sh` 를 한 번 돌릴 때마다 워킹트리가
+      더러워져 `git checkout` 이 막혔다. 커밋해야 하는 파일과 매 실행
+      바뀌는 파일이 같은 파일이었다.
+    """
+    from firelane import manifest
+
+    f = tmp_path / "_manifest.json"
+    a = {"generated_at": "2026-08-25T09:00:00+09:00", "datasets": [{"key": "x"}],
+         "terrain": {"tiles": 22, "generated_at": "2026-08-25T09:00:01+09:00"}}
+    assert manifest.write_stable(f, a) is True, "처음에는 써야 한다"
+    before = f.read_text(encoding="utf-8")
+
+    b = dict(a, generated_at="2026-08-25T18:30:00+09:00")
+    b["terrain"] = dict(a["terrain"], generated_at="2026-08-25T18:30:01+09:00")
+    assert manifest.write_stable(f, b) is False, "시각만 달라졌는데 썼다"
+    assert f.read_text(encoding="utf-8") == before, "파일이 바뀌었다"
+
+    c = dict(b, datasets=[{"key": "y"}])
+    assert manifest.write_stable(f, c) is True, "내용이 달라졌는데 안 썼다"
+    assert "18:30" in f.read_text(encoding="utf-8"), (
+        "내용이 바뀌었으면 시각도 새것이어야 한다 — "
+        "그래야 '언제 실제로 달라졌나' 가 남는다")
+
+
+def test_manifest_writers_go_through_write_stable():
+    """매니페스트를 쓰는 곳이 전부 같은 통로를 쓰는가.
+
+    ★ 한 곳만 직접 쓰면 그 파일만 churn 이 남고, 그 자리가 다시
+      `git checkout` 을 막는다. **정본이 둘이면 반드시 어긋난다.**
+    """
+    bad = []
+    for rel in ("ingest.py", "terrain.py", "ortho.py", "webmanifest.py"):
+        src = (ROOT / "src/firelane" / rel).read_text(encoding="utf-8")
+        if "manifest.write_stable" not in src:
+            bad.append(f"  {rel}: write_stable 을 안 쓴다")
+        for ln in src.splitlines():
+            code = ln.split("#", 1)[0]
+            if "_manifest" in code and ".write_text(" in code:
+                bad.append(f"  {rel}: 매니페스트를 직접 쓴다 — {ln.strip()[:60]}")
+    assert not bad, ("매니페스트 쓰기가 통로를 벗어났다.\n" + "\n".join(bad))
+
+
+def test_ingest_keeps_manifest_keys_it_does_not_own():
+    """`ingest` 가 terrain · ortho 기록을 지우지 않는가.
+
+    ★ 종전에는 대장을 통째로 덮어썼다. 전량 실행에서는 뒤 단계가 다시
+      넣어주므로 안 보였지만 `--only ingest` 는 그 기록을 날린다.
+    """
+    src = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
+    assert "manifest.read(man)" in src, (
+        "ingest 가 기존 매니페스트를 안 읽는다 — 자기 것이 아닌 키를 지운다")

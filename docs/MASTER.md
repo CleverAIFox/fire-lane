@@ -1727,6 +1727,15 @@ retired:
 - `params` 를 박는 이유는 임계값을 바꾼 뒤 옛 산출물과 비교할 때 어느 쪽이
   어떤 임계로 나왔는지 알아야 하기 때문이다.
 
+★ **`generated_at` 은 "마지막 실행 시각"이 아니라 "내용이 마지막으로 실제
+달라진 시각"이다.** 두 매니페스트는 커밋되는 파일이라, 매 실행 시각만 바뀌면
+검사를 한 번 돌릴 때마다 워킹트리가 더러워지고 `git checkout` 이 막힌다.
+`src/firelane/manifest.py::write_stable` 이 시각을 뺀 내용을 대조해 같으면
+아예 쓰지 않는다. 시각을 지우는 것이 아니라 **안 바뀌었을 때 갱신하지 않는
+것**이며, 재현성 기록으로는 이쪽이 옳다.
+강제자 — `tests/test_guards.py::test_manifest_write_is_idempotent` ·
+`test_manifest_writers_go_through_write_stable`
+
 ---
 
 ## 18-5. 재현성 규약

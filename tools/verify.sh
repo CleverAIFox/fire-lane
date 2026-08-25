@@ -48,9 +48,9 @@ printf '%suv    %s  %s\n\n' "$D" "$Z" "$(uv --version 2>/dev/null || echo '없�
 step "의존성 동기화 (uv sync)" uv sync
 
 # ── 1. 패키지가 실제로 import 되는가 ─────────────────────────
-step "패키지 import 28종" uv run python -c '
+step "패키지 import 29종" uv run python -c '
 import importlib, sys
-mods = ["paths","quiet_gdal","krgis.crs","seg.params","seg.geom","seg.width",
+mods = ["paths","manifest","quiet_gdal","krgis.crs","seg.params","seg.geom","seg.width",
         "seg.roadname","seg.basisno","seg.graph","seg.report","segkey","guards",
         "lineage","ngi","ngii1k","probe","contract","inventory","datalog",
         "normalize_raw","sample_design","ingest","segments","streetlight",

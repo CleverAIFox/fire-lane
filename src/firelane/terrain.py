@@ -235,7 +235,8 @@ def main():
         "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
-    mf.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
+    from firelane import manifest
+    manifest.write_stable(mf, m)   # 내용이 같으면 쓰지 않는다
     print(f"\n→ dem_scope.tif ({abs(tr.a):.1f}m 격자) · 대상 기복 {np.nanmax(sub)-base:.1f}m")
     print("→ _manifest.json 에 terrain 기록")
 
