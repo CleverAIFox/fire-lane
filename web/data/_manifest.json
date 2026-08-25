@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-25T09:56:38+09:00",
+  "generated_at": "2026-08-25T10:38:31+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
@@ -11,7 +11,7 @@
       "bytes": 4885
     },
     "_manifest.json": {
-      "sha256": "7b6c657af54daeb62f5b6e6ffa0232b4e315a52370ca0440413bbbdda70f29e8",
+      "sha256": "e7019bd22e22bb5486e4191fa17732238eabdc1cc5814295f0aa35440d279e47",
       "bytes": 64007
     }
   },

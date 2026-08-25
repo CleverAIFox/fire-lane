@@ -226,7 +226,8 @@ def main():
         "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
-    mf.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
+    from firelane import manifest
+    manifest.write_stable(mf, m)   # 내용이 같으면 쓰지 않는다
     print(f"\n→ 타일 {count}장 · {size:.1f}MB")
 
 

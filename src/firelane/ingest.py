@@ -39,6 +39,7 @@ import yaml
 from pyproj import Transformer
 from shapely import make_valid
 
+from firelane import manifest
 from firelane.paths import PROCESSED, RAW, ROOT
 
 OUT = PROCESSED
@@ -482,13 +483,21 @@ def main():
         print(f"  · 대장 병합: 기존 {len(prev)}종 중 {len(a.only)}종 갱신 "
               f"→ {len(results)}종 유지")
 
-    man.write_text(json.dumps({
+    # ★ 2026-08-25. 자기 것이 아닌 최상위 키를 보존한다.
+    #   종전에는 대장을 통째로 덮어써 terrain · ortho 기록을 지웠다.
+    #   전량 실행에서는 뒤 단계가 다시 넣어주므로 안 보였지만
+    #   `--only ingest` 는 그 기록을 날린다.
+    doc = {k: v for k, v in manifest.read(man).items()
+           if k not in ("generated_at", "bbox_4326", "standard_crs", "datasets")}
+    doc.update({
         "generated_at": datetime.now(UTC).astimezone().isoformat(),
         "bbox_4326": BBOX_4326,
         "standard_crs": {"metric": CRS_M, "display": CRS_W},
         "datasets": results,
-    }, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\n→ {man}")
+    })
+    # ★ 내용이 같으면 쓰지 않는다. 시각만 바뀌는 diff 가 커밋을 막았다.
+    wrote = manifest.write_stable(man, doc)
+    print(f"\n→ {man}" + ("" if wrote else "  (내용 동일 — 갱신 없음)"))
 
     # ★ FAIL 이 있으면 종료코드로 알린다. 종전에는 대장에만 적고 0 을
     #   반환해서 pipeline 의 `if r.returncode:` 가 안 걸렸다 — 실패가
