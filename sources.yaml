@@ -86,6 +86,7 @@ vehicle_spec:
   wheelbase_m: 4.0          # ★ 추정. 공식 규격에 없다
   turn_radius_m: 8.0        # ★ 추정. 공식 규격에 없다
   clearance_m: 0.5          # ★ 추정. width_m + 이 값 = params.TRUCK 3.0
+  gradeability_pct: 18      # KFS 5종 §4.4.1 공통. 전진·후진 모두. = 10.2°
   verified: false
   wheelbase_verified: false
   source: |
@@ -97,6 +98,11 @@ vehicle_spec:
 
     ★ 축거 · 최소회전반경 · 여유(clearance_m)는 위 셋 어디에도 없다.
       지금 값은 추정이며 D-30 동부소방서 인터뷰로 확정한다.
+
+    ★ gradeability_pct 는 추정이 아니다. KFS-1-0073 · 0074 · 0075 · 0076 ·
+      0077 §4.4.1 이 전부 같은 문장을 갖는다(2026-08-25 원문 5종 확인) —
+      "18 % gradient in both forward and reverse directions".
+      tan⁻¹(0.18) = 10.204° 다.
   caveats: |
     규격은 **상한**만 정한다("이하"). 실제 차폭은 그보다 작을 수 있고,
     그 경우 판정은 안전한 쪽으로 틀린다.
@@ -110,6 +116,179 @@ vehicle_spec:
   verified_note: |
     width_m · length_m · height_m 은 공식 규격 확인 완료(2026-08-23).
     wheelbase_m · turn_radius_m · clearance_m 은 미확정.
+
+# ── 차종별 제원 ───────────────────────────────────────────────
+# ★ 2026-08-25 신설. 위 `vehicle_spec` 은 **판정 기준 차량 한 대**다.
+#   여기는 KFS 7종에서 읽은 **차종별 표**이고 판정에 들어가지 않는다.
+#   용도는 셋 — 화면 차종 선택 · D-30 질문지 · 차종 비교.
+#
+#   판정을 바꾸려면 `vehicle_spec` 을 바꾼다. 둘을 섞지 않는다.
+#   섞으면 "어느 차로 낸 지도인가" 를 아무도 못 말한다.
+#
+# ★ 전부 **상한("이하")** 이다. 실측 제원이 아니다.
+# ★ 축거 · 최소회전반경은 7개 문서 **전부 0건**이다. 그래서 여기에도 없다.
+#   근거 없이 채우지 않는다(§16-2). D-30 인터뷰가 유일한 경로다.
+vehicle_profiles:
+  what: 차종별 전장·전폭·전고 — 표출·비교용. 판정은 vehicle_spec 이 한다
+  default: pump_medium        # vehicle_spec 이 이것과 같은 값이어야 한다
+  unit: m ("이하" 상한값)
+  feeds: 미투입 — web 차종 선택 UI · D-30 질문지
+  source: |
+    소방청 「소방장비 기본규격」 7종. 고시 2025-12-24 (본문 부칙 2025-12-29).
+    스코프 전국 단일 — 지역·소방서별로 다르지 않다.
+    원문은 datasets 의 kfs_* 항목이 가리킨다.
+  absent:
+    wheelbase_m: 7종 전수 확인 0건. D-30 인터뷰로만 채운다
+    turn_radius_m: 7종 전수 확인 0건. D-30 인터뷰로만 채운다
+    ambulance: |
+      특수구급차 KFS-1-0029-2025-01 §3.2.1「차량의 제원」이
+      "구급차 제작기준 또는 수요기관의 정하는 바에 따른다" 한 줄뿐이다.
+      표가 없다. 값이 없으므로 items 에 넣지 않는다.
+      ★ §3.3 은 제원이 아니라 **환자실**이다. 조항 번호를 헷갈리지 마라.
+  notes: |
+    ★ 전폭은 경형·소형펌프차(1.9 · 2.2)를 빼면 **전 차종 2.5 로 같다.**
+      인터뷰(2026-08-24 전북소방)의 "물탱크차는 커서 못 들어간다" 는
+      폭이 아니라 **전장**이다 — 물탱크 대형 10.0 대 펌프 중형 8.0.
+      폭만 보는 지금 판정으로는 이 차이가 안 나온다.
+
+    ★ 굴절차만 축 수를 적는다(6x4 3축 / 8x4 4축). KFS 7종 중 축 구성이
+      적힌 유일한 문서다. D-30 질문지에 "보유 굴절차 몇 축이냐" 를 넣는다.
+
+    ★ 구조차 원문 단위는 mm 다. 여기서 m 로 옮겼다.
+
+    ★ 2025년 MAS 제작규격 본편(펌프·물탱크·화학·구조 4종)을 대조했다.
+      네 차종 모두 KFS 고시값과 **일치**한다. 단 물탱크차만 MAS 가
+      경형을 하나 더 둔다(water_light).
+
+    ★ 소형사다리차 작업높이는 원문이 "15m 이상 25m 미만" 이다.
+  items:
+    pump_large:
+      label: 펌프차 대형
+      ledger: kfs_pumptruck
+      doc: KFS-1-0073-2025-00
+      length_m: 8.5
+      width_m: 2.5
+      height_m: 3.4
+    pump_medium:
+      label: 펌프차 중형
+      ledger: kfs_pumptruck
+      doc: KFS-1-0073-2025-00
+      length_m: 8.0
+      width_m: 2.5
+      height_m: 3.2
+    pump_small:
+      label: 펌프차 소형
+      ledger: kfs_pumptruck
+      doc: KFS-1-0073-2025-00
+      length_m: 6.8
+      width_m: 2.2
+      height_m: 2.8
+    pump_light:
+      label: 펌프차 경형
+      ledger: kfs_pumptruck
+      doc: KFS-1-0073-2025-00
+      length_m: 5.2
+      width_m: 1.9
+      height_m: 2.8
+    water_large:
+      label: 물탱크차 대형
+      ledger: kfs_watertank
+      doc: KFS-1-0075-2025-00
+      length_m: 10.0
+      width_m: 2.5
+      height_m: 3.7
+    water_medium:
+      label: 물탱크차 중형
+      ledger: kfs_watertank
+      doc: KFS-1-0075-2025-00
+      length_m: 8.5
+      width_m: 2.5
+      height_m: 3.4
+    water_small:
+      label: 물탱크차 소형
+      ledger: kfs_watertank
+      doc: KFS-1-0075-2025-00
+      length_m: 7.8
+      width_m: 2.5
+      height_m: 3.2
+    water_light:
+      label: 물탱크차 경형
+      ledger: mas_vehicle_spec
+      doc: 2025년 MAS 소방자동차 제작규격 §소방물탱크차
+      length_m: 6.8
+      width_m: 2.2
+      height_m: 2.8
+      note: |
+        ★ KFS-1-0075 에는 **없는 등급**이다. 고시 규격은 대·중·소 3종인데
+          조달 규격(MAS)이 경형을 하나 더 둔다. 전폭 2.2m 라 판정이 바뀐다.
+    chemical_medium:
+      label: 화학차 중형
+      ledger: kfs_chemical
+      doc: KFS-1-0074-2025-00
+      length_m: 7.8
+      width_m: 2.5
+      height_m: 3.2
+    chemical_large:
+      label: 화학차 대형
+      ledger: kfs_chemical
+      doc: KFS-1-0074-2025-00
+      length_m: 9.0
+      width_m: 2.5
+      height_m: 3.4
+    chemical_high:
+      label: 화학차 고성능
+      ledger: kfs_chemical
+      doc: KFS-1-0074-2025-00
+      length_m: 12.0
+      width_m: 2.5
+      height_m: 3.8
+    rescue_large:
+      label: 구조차 대형
+      ledger: kfs_rescue
+      doc: KFS-1-0076-2025-00
+      length_m: 8.5
+      width_m: 2.5
+      height_m: 3.5
+      note: 원문 mm (8,500 / 2,500 / 3,500)
+    rescue_medium:
+      label: 구조차 중형
+      ledger: kfs_rescue
+      doc: KFS-1-0076-2025-00
+      length_m: 7.8
+      width_m: 2.5
+      height_m: 3.2
+      note: 원문 mm (7,800 / 2,500 / 3,200)
+    articulated_u33:
+      label: 굴절차 33m 미만급
+      ledger: kfs_ladder_articulated
+      doc: KFS-1-0077-2025-00
+      length_m: 10.0
+      width_m: 2.5
+      height_m: 3.8
+      chassis: 6x4(3축) 이하
+    articulated_33:
+      label: 굴절차 33m급 이상
+      ledger: kfs_ladder_articulated
+      doc: KFS-1-0077-2025-00
+      length_m: 12.5
+      width_m: 2.5
+      height_m: 3.9
+      chassis: 6x4(3축) 이하
+    articulated_50:
+      label: 굴절차 50m급 이상
+      ledger: kfs_ladder_articulated
+      doc: KFS-1-0077-2025-00
+      length_m: 13.0
+      width_m: 2.5
+      height_m: 4.0
+      chassis: 8x4(4축) 이하
+    ladder_small:
+      label: 소형사다리차 15~25m
+      ledger: kfs_ladder_small
+      doc: KFS-1-0030-2025-01
+      length_m: 8.5
+      width_m: 2.5
+      height_m: 3.8
 
 
 # ── 계층 ──────────────────────────────────────────────────────
@@ -368,13 +547,20 @@ datasets:
       가장 작은 차종. 통행 가능 범위의 상한을 준다.
       ★ 인터뷰 — 야간은 소방보다 구급 출동이 잦다.
     used_for: |
-      ★ 제원 미확인. 이 문서만 한글판(.hwp)이고 나머지 다섯은 영문판
-        (.hwpx)이다. 바이너리 스트림 디코딩이 깨져 §3.3 을 못 읽었다.
-        읽힌 것은 부칙뿐이다 — "3.3.1 개정사항은 2027-04-02 부터 시행".
+      ★ 2026-08-25 PDF 판으로 본문 확인 완료. **제원표가 아예 없다.**
 
-        ★ 개정 예정이 있다는 뜻이므로 2027-04 이후 재취득해야 한다.
-        한컴오피스로 열어 표를 옮겨 적는 것이 지금은 제일 빠르다.
-    caveats: 한글판 .hwp 라 프로그램으로 못 읽는다. 나머지 5종은 .hwpx 다.
+        §3.2.1 「차량의 제원」
+          "구급차 제작기준 또는 수요기관의 정하는 바에 따른다"
+
+        이 한 줄이 전부다. 전장·전폭·전고 수치가 없으므로
+        vehicle_profiles.items 에 넣지 않는다.
+
+      ★ §3.3 은 제원이 아니라 **환자실**이다(이전 기록의 조항 번호 오류).
+        §3.3.1 이 「구급차의 기준 및 응급환자이송업의 시설 등 기준에 관한
+        규칙」제4조·제5조를 준용한다 — 치수 기준이 KFS 밖 그 규칙에 있을
+        수 있다. 미확인.
+
+      ★ 부칙 "3.3.1 개정사항은 2027-04-02 부터 시행" — 2027-04 이후 재취득.
   kfs_ladder_small:
     what: 소방장비 기본규격 — 소형사다리차 (KFS-1-0030-2025-01)
     kind: raw_only
@@ -386,7 +572,7 @@ datasets:
     license: 공공저작물 (소방청 고시)
     feeds: 차종별 제원 비교 — 골목 진입 차종 판단
     used_for: |
-      §3.3 작업높이 15~25m · 전장 8.5 이하 · 전폭 2.5 이하 · 전고 3.8 이하.
+      §3.3 작업높이 15m 이상 25m 미만 · 전장 8.5 이하 · 전폭 2.5 이하 · 전고 3.8 이하.
       동명동 골목에 실제로 들어가는 차종이 펌프차가 아닐 수 있어 같이 받았다.
   mas_vehicle_spec:
     what: 2025년 소방자동차 다수공급자 계약(MAS) 차종별 제작규격
@@ -399,8 +585,19 @@ datasets:
     license: 공공저작물
     feeds: 조달 계약 차종의 실제 제작 치수 — vehicle_spec 교차 확인
     used_for: |
-      표 헤더에 전장·전폭·전고(㎜ 이하)가 있다.
-      ★ 축거 · 최소회전반경은 여기에도 없다(2026-08-23 전수 확인).
+      ★ 2026-08-25 PDF 판으로 본편 확인 완료. **옵션장비편이 아니다** —
+        차종별 「차량제원」 표를 4개 갖는다(펌프 · 물탱크 · 화학 · 구조).
+        옵션(선택)장비편은 retired.mas_optional_20241111 쪽이며 차량 치수
+        0건이다. 둘은 다른 문서다.
+
+      ★ 네 차종 값이 KFS 고시값과 전부 일치한다. 교차 확인 통과.
+
+      ★ 다만 **물탱크차만 등급이 하나 더 많다** — 경형물탱크차
+        (1,800ℓ 이상 · 6,800 · 2,200 · 2,800 ㎜ 이하). KFS-1-0075 에는
+        없다. 전폭 2.2m 라 통과 판정이 바뀐다. vehicle_profiles.water_light.
+
+      ★ 굴절차 · 사다리차 · 구급차는 MAS 본편에 없다(4차종뿐).
+      ★ 축거 · 최소회전반경은 여기에도 없다(2026-08-25 재확인, 212쪽 0건).
   node_link_changelog:
     what: 국가교통정보센터 표준노드링크 변경 내역서
     kind: raw_only
@@ -899,8 +1096,19 @@ datasets:
         보간은 없는 정보를 만드는 게 아니라 계단 현상을 없애는 것이다.
       쓸 수 있는 것: 표고 33.3~75.3m, 기복 42m 라는 배경 서술 + 3D 입체감.
       A* 경사 비용함수에는 5m DEM 이 필요하나, 안심구역은 원본 반출이 안 된다.
-      다만 90m 로도 최대 경사 9.0°가 나와 소방차 등판 한계(11~17°)를 넘지 않는다.
-      → 경사는 진입 제약 요인이 아님을 확인했고, 정밀 DEM 확보는 보류한다.
+
+      ★ 2026-08-25 정정. 종전 기록은 "등판 한계(11~17°)를 넘지 않는다" 였다.
+        **그 11~17° 는 출처가 없다.** 공식값은 KFS 5종 §4.4.1 이 정하는
+        18 % 등판 = **10.204°** 이며, 가정했던 하한 11° 보다도 낮다.
+
+            공개DEM 90m 최대 경사   9.0°
+            KFS §4.4.1 등판 한계   10.2°
+            여유                    1.2°
+
+        위 두 줄이 "평활화로 경사가 실제보다 낮게 나온다" 고 적고 있다.
+        낮게 나오는 값이 한계선 1.2° 아래에 있다 — 경사 배제 결론의 근거는
+        종전에 적힌 것보다 훨씬 얇다. 결론을 뒤집지는 않되, 정밀 DEM 보류
+        판단(PLAN §8-3)은 이 숫자로 다시 봐야 한다.
 
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
