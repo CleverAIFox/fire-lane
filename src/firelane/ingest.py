@@ -358,6 +358,66 @@ def build(key: str, e: dict, tmp: Path) -> dict:
                 "columns": list(d.columns), "outputs": [f"{key}.csv"]}
         return rec
 
+    elif kind == "csv_table_multi":          # 좌표 없는 표 여러 판 — 이어붙인다
+        # ★ 2026-08-25. `csv_table` 은 hits[0] 하나만 읽는다. 같은 데이터셋이
+        #   기간별로 나뉘어 오는 소스는 그 규칙에서 **옛 판만 읽힌다.**
+        #   대장 note 와 contract 는 두 판을 전제하고 있었는데 파이프라인만
+        #   한 판을 읽었다(DECISIONS §71).
+        # ★ 판마다 없을 수 있는 컬럼은 **대장에 선언한다.** 코드에서 조용히
+        #   봐주면 다음 판이 왔을 때 "이건 원래 없는 거였나" 를 다시 조사하게
+        #   된다. 선언에 없는 컬럼이 다르면 여전히 세운다.
+        optional = list((e.get("contract") or {}).get("optional_cols") or [])
+        parts, filled = [], []
+        cols = None
+        for q in hits:
+            d1 = read_csv_any(q, e.get("encoding"), dtype=str, low_memory=False)
+            if cols is None:
+                cols = list(d1.columns)
+            elif list(d1.columns) != cols:
+                only_new = [c for c in d1.columns if c not in cols]
+                only_old = [c for c in cols if c not in d1.columns]
+                # 선언된 것만 결손을 허용한다. 그것도 조용히는 아니다.
+                undeclared = [c for c in only_new + only_old if c not in optional]
+                if undeclared:
+                    rec |= {"status": "FAIL", "features": "", "geom": [],
+                            "note": f"{q.name} 컬럼 불일치 — 신규 {only_new} · 소실 {only_old}",
+                            "outputs": []}
+                    print(f"  ★ {key}: {q.name} 의 컬럼이 {hits[0].name} 과 다르다")
+                    print(f"     신규 {only_new} · 소실 {only_old}")
+                    print(f"     선언되지 않은 것: {undeclared}")
+                    print("     이어붙이면 판이 섞인 채로 통과한다. 대장을 먼저 고쳐라.")
+                    print("     없어도 되는 컬럼이면 contract.optional_cols 에 적어라.")
+                    return rec
+                for c2 in only_old:
+                    # ★ NaN 이 아니라 빈 문자열. 이 표는 dtype=str 이라
+                    #   결측 표현이 섞이면 하류에서 판별이 안 된다.
+                    d1[c2] = ""
+                    filled.append(f"{q.name}:{c2}")
+                for c2 in only_new:
+                    cols.append(c2)
+                    for x in parts:
+                        x[c2] = ""
+                        filled.append(f"{x['_src'].iloc[0]}:{c2}")
+                d1 = d1[cols]
+            # 어느 판에서 온 행인지 산출물에 남긴다.
+            d1["_src"] = q.name
+            parts.append(d1)
+        if filled:
+            # R6 — 대체가 일어났다는 사실이 산출물에 남아야 한다.
+            print(f"  · {key}: 선언된 결손 컬럼을 빈 값으로 채웠다 — "
+                  + " · ".join(filled))
+            rec["note"] = "optional_cols 결손 보정: " + ", ".join(filled)
+        d = pd.concat(parts, ignore_index=True)
+        d.to_csv(OUT / f"{key}.csv", index=False, encoding="utf-8-sig")
+        rec["source_sha256"] = ",".join(sha256(q)[:16] for q in hits)
+        rec["resolved"] = " + ".join(q.name for q in hits)
+        rec.pop("ambiguous", None)          # 여러 개가 정상이다. 모호하지 않다
+        print(f"  · {key}: {len(hits)}판 이어붙임 — "
+              + " · ".join(f"{q.name} {len(x):,}행" for q, x in zip(hits, parts, strict=True)))
+        rec |= {"status": "OK", "features": len(d), "geom": [],
+                "columns": list(d.columns), "outputs": [f"{key}.csv"]}
+        return rec
+
     elif kind == "raw_only":                 # 읽지 않는다. 존재만 기록한다.
         # 다른 스크립트가 raw 를 직접 읽는 경우다(예: terrain.py 의 DEM).
         # 여기서 변환하지 않으므로 SKIP 으로 남긴다. FAIL 이 아니다.
