@@ -119,13 +119,62 @@ def cmd_lock(_args) -> int:
     fp = fingerprint()
     (GOLD / "segments.fingerprint.json").write_text(
         json.dumps(fp, ensure_ascii=False, indent=1), encoding="utf-8")
+
+    # ★ 2026-08-25. 코드 지문을 같이 남긴다.
+    #   `lock` 의 뜻은 **"이 산출물이 지금 판정 코드의 정답이다"** 다.
+    #   종전에는 `.code_fingerprint` 를 파일이 아예 없을 때만 썼다. 그래서
+    #   판정 코드가 정당하게 바뀐 뒤에는 파이프라인을 다시 돌려도, lock 을
+    #   다시 해도 낡음 경보가 계속 울렸다. 남는 길이 손으로 지우기 아니면
+    #   `--allow-stale` 뿐이었고, 둘 다 게이트를 죽이는 습관을 만든다.
+    code_fp = _logic_fingerprint()
+    CODE_FP.write_text(code_fp + "\n", encoding="utf-8")
+
     L1 = fp["L1"]
     print("잠갔다 →", GOLD / "segments.fingerprint.json")
+    print(f"  판정 코드 지문 {code_fp}  → {CODE_FP.name}")
     print(f"  구간 {L1['n']} · " + " · ".join(f"{k} {v}" for k, v in L1["verdict"].items()))
     print(f"  총연장 {L1['length_total_m']:,.0f}m · 기하 {fp['L3'][:12]}")
     print("\n이제 쪼개라. 한 덩어리마다:")
     print("  uv run fire-lane --only segments && uv run python tools/golden.py check")
     return 0
+
+
+def _logic_fingerprint() -> str:
+    """판정에 관여하는 코드의 로직 해시.
+
+    ★ 주석 · docstring · 빈 줄을 걷어낸 AST 만 본다. 주석 한 줄을 고쳤다고
+      게이트가 울면 사람이 `--allow-stale` 을 쓰기 시작하고, 그 순간
+      게이트가 죽는다.
+    """
+    import ast
+
+    watch = ["src/firelane/segments.py", "src/firelane/seg/width.py",
+             "src/firelane/seg/geom.py", "src/firelane/seg/params.py",
+             "src/firelane/seg/graph.py", "src/firelane/seg/report.py"]
+
+    def _logic(src: str) -> str:
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            return src
+        for n in ast.walk(tree):
+            if isinstance(n, (ast.Module, ast.ClassDef,
+                              ast.FunctionDef, ast.AsyncFunctionDef)):
+                d = ast.get_docstring(n)
+                if d is not None and n.body:
+                    n.body = n.body[1:] or [ast.Pass()]
+        return ast.dump(tree)
+
+    h = hashlib.sha256()
+    for rel in sorted(watch):
+        q = ROOT / rel
+        if q.exists():
+            h.update(rel.encode())
+            h.update(_logic(q.read_text(encoding="utf-8")).encode())
+    return h.hexdigest()[:16]
+
+
+CODE_FP = SEG.parent / ".code_fingerprint"
 
 
 def _staleness() -> list[str]:
@@ -145,51 +194,14 @@ def _staleness() -> list[str]:
     """
     if not SEG.exists():
         return []
-    watch = ["src/firelane/segments.py", "src/firelane/seg/width.py",
-             "src/firelane/seg/geom.py", "src/firelane/seg/params.py",
-             "src/firelane/seg/graph.py", "src/firelane/seg/report.py"]
-
-    # ★ 2026-08-23 정정. 처음엔 mtime 을 봤다. 조잡했다 —
-    #   **주석 한 줄만 고쳐도 "낡았다"** 가 뜬다. 하루에 스무 번 고쳤고
-    #   그중 판정을 바꾼 것은 0 번인데 매번 막혔다.
-    #   게이트가 정상 상태에서 울리면 사람이 `--allow-stale` 을 쓰기
-    #   시작하고, 그 순간 게이트가 죽는다.
-    #
-    #   **판정에 관여하는 코드만** 해시한다. 주석 · 문서화 문자열 ·
-    #   빈 줄을 걷어내고 남은 것이 바뀌었을 때만 낡은 것이다.
-    #   지문은 산출물 옆에 둔다(`.code_fingerprint`). 생성물이라 gitignore.
-    import ast
-
-    def _logic(src: str) -> str:
-        """주석과 docstring 을 걷어낸 소스."""
-        try:
-            tree = ast.parse(src)
-        except SyntaxError:
-            return src
-        for n in ast.walk(tree):
-            if isinstance(n, (ast.Module, ast.ClassDef,
-                              ast.FunctionDef, ast.AsyncFunctionDef)):
-                d = ast.get_docstring(n)
-                if d is not None and n.body:
-                    n.body = n.body[1:] or [ast.Pass()]
-        return ast.dump(tree)
-
-    h = hashlib.sha256()
-    for rel in sorted(watch):
-        q = ROOT / rel
-        if q.exists():
-            h.update(rel.encode())
-            h.update(_logic(q.read_text(encoding="utf-8")).encode())
-    now = h.hexdigest()[:16]
-
-    fp = SEG.parent / ".code_fingerprint"
-    was = fp.read_text(encoding="utf-8").strip() if fp.exists() else None
+    now = _logic_fingerprint()
+    was = CODE_FP.read_text(encoding="utf-8").strip() if CODE_FP.exists() else None
     if was == now:
         return []
     if was is None:
         # 기준선이 없다. 이번 산출물이 지금 코드로 나온 것으로 본다 —
         # 아니라면 golden 대조 자체가 곧 잡는다.
-        fp.write_text(now + "\n", encoding="utf-8")
+        CODE_FP.write_text(now + "\n", encoding="utf-8")
         return []
     return [f"판정 로직이 바뀌었다 ({was} → {now})"]
 

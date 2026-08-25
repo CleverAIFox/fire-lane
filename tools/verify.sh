@@ -172,7 +172,7 @@ printf '  통과 %d · 실패 %d · 생략/참고 %d\n\n' "$pass" "$fail" "$skip
 
 if [ "$fail" -gt 0 ]; then
     printf '%s실패가 있다. 머지하지 마라.%s\n' "$R" "$Z"
-    printf '  원본으로 되돌리려면: web/app.js.orig 가 분리 전 app.js 다.\n\n'
+    printf '  되돌리려면 git 을 쓴다:  git checkout -- <경로>\n\n'
     exit 1
 fi
 
