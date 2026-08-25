@@ -2505,7 +2505,7 @@
     "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
     "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
     "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-08-24T07:15:54+00:00"
+    "generated_at": "2026-08-25T00:07:33+00:00"
   },
   "ortho": {
     "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
@@ -2514,6 +2514,6 @@
     "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
     "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.6MB)",
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-08-24T07:16:04+00:00"
+    "generated_at": "2026-08-25T00:07:52+00:00"
   }
 }
