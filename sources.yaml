@@ -313,6 +313,45 @@ vehicle_profiles:
       height_m: 3.8
 
 
+# ── 스코프 통제 어휘 ──────────────────────────────────────────
+# ★ 신설. 종전에는 `scope: 전국` 처럼 산문이었고, 파일명 토큰은 여섯
+#   갈래가 **세 개 축**을 한 자리에 뭉개고 있었다 —
+#
+#     행정구역   kr · jngj · gjdonggu · dongu · (없음)
+#     관할기관   gj_dong          ← 동부소방서다. 동구가 아니다
+#     도엽       gj9708 · gj35616 · gj037
+#
+#   `gj_dong` 과 `dongu` 가 눈으로 안 갈리는 것이 제일 나쁘다. 관할서
+#   자료를 행정구역으로 클립하면 결손이 조용히 난다.
+#
+#   축을 셋으로 가른다 — scope(여기) · authority(항목 필드) · part(파일명).
+#   `firelane.scope` 가 이 블록을 읽고 `firelane.naming` 이 파일명 문법의
+#   고정점으로 쓴다. **별칭 안에 언더스코어를 쓰지 않는다** — 그것이
+#   파일명 필드 구분자라 `gj_dong` 처럼 경계를 못 찾게 된다.
+scopes:
+  kr:
+    level: nation
+    code: null
+    label: 전국
+    parent: null
+  jngj:
+    level: sido
+    code: '12'
+    label: 전남광주통합특별시
+    parent: kr
+  jngj-dong:
+    level: sigungu
+    code: '12210'
+    label: 전남광주통합특별시 동구
+    parent: jngj
+    former_code: '29110'
+    note: 2026-07-01 개편. 구 광주 동구 29110 → 12210
+  jngj-dong-dm:
+    level: emd
+    code: '12210108'
+    label: 전남광주통합특별시 동구 동명동
+    parent: jngj-dong
+
 # ── 계층 ──────────────────────────────────────────────────────
 # ★ 2026-08-24 신설. MASTER §18-1 이 계층을 산문으로 선언하고 `paths.py` 가
 #   경로를 따로 잡고 있었다. 둘이 어긋나도 아무도 몰랐고, `interim` 은
@@ -482,7 +521,7 @@ datasets:
   kfs_pumptruck:
     what: 소방장비 기본규격 — 소방펌프차 (KFS-1-0073-2025-00)
     kind: raw_only
-    file: safety/safety_kfs_pumptruck_20251224.*
+    file: safety/safety_kfs_pumptruck_kr_20251224.hwpx
     provider: 소방청
     updated: '2025-12-24'
     acquired: '2026-08-23'
@@ -503,7 +542,7 @@ datasets:
   kfs_watertank:
     what: 소방장비 기본규격 — 소방물탱크차 (KFS-1-0075-2025-00)
     kind: raw_only
-    file: safety/safety_kfs_watertank_20251224.*
+    file: safety/safety_kfs_watertank_kr_20251224.hwpx
     provider: 소방청
     updated: '2025-12-24'
     acquired: '2026-08-24'
@@ -526,7 +565,7 @@ datasets:
   kfs_chemical:
     what: 소방장비 기본규격 — 소방화학차 (KFS-1-0074-2025-00)
     kind: raw_only
-    file: safety/safety_kfs_chemical_20251224.*
+    file: safety/safety_kfs_chemical_kr_20251224.hwpx
     provider: 소방청
     updated: '2025-12-24'
     acquired: '2026-08-24'
@@ -544,7 +583,7 @@ datasets:
   kfs_ladder_articulated:
     what: 소방장비 기본규격 — 소방굴절차 (KFS-1-0077-2025-00)
     kind: raw_only
-    file: safety/safety_kfs_ladder_articulated_20251224.*
+    file: safety/safety_kfs_ladder_articulated_kr_20251224.hwpx
     provider: 소방청
     updated: '2025-12-24'
     acquired: '2026-08-24'
@@ -567,7 +606,7 @@ datasets:
   kfs_rescue:
     what: 소방장비 기본규격 — 구조차 (KFS-1-0076-2025-00)
     kind: raw_only
-    file: safety/safety_kfs_rescue_20251224.*
+    file: safety/safety_kfs_rescue_kr_20251224.hwpx
     provider: 소방청
     updated: '2025-12-24'
     acquired: '2026-08-24'
@@ -584,7 +623,7 @@ datasets:
   kfs_ambulance_special:
     what: 소방장비 기본규격 — 특수구급차 (KFS-1-0029-2025-01)
     kind: raw_only
-    file: safety/safety_kfs_ambulance_special_20251224.*
+    file: safety/safety_kfs_ambulance_special_kr_20251224.hwp
     provider: 소방청
     updated: '2025-12-24'
     acquired: '2026-08-24'
@@ -612,7 +651,7 @@ datasets:
   kfs_ladder_small:
     what: 소방장비 기본규격 — 소형사다리차 (KFS-1-0030-2025-01)
     kind: raw_only
-    file: safety/safety_kfs_ladder_small_20251224.*
+    file: safety/safety_kfs_ladder_small_kr_20251224.pdf
     provider: 소방청
     updated: '2025-12-24'
     acquired: '2026-08-23'
@@ -625,7 +664,7 @@ datasets:
   mas_vehicle_spec:
     what: 2025년 소방자동차 다수공급자 계약(MAS) 차종별 제작규격
     kind: raw_only
-    file: safety/safety_mas_vehicle_spec_20241111.*
+    file: safety/safety_mas_vehicle_spec_kr_20241111.hwp
     provider: 소방청
     updated: '2024-11-11'
     acquired: '2026-08-23'
@@ -833,6 +872,7 @@ datasets:
       - 경도
       scope_min: 1
   ngii_road:
+    scope: jngj-dong
     what: 연속수치지도 1:5,000 도로경계면 N3A_A0010000 — 폭 트랜섹트 소스(기하 전용)
     feeds: 폭 트랜섹트 보조 소스 ngii(채택 1구간) · 기하 전용
     crs_native: 5179
@@ -1101,13 +1141,15 @@ datasets:
       rows_tolerance: 0.05
       scope_min: 1
   fire_access:
+    scope: jngj-dong
+    authority: 동부소방서
     crs_native: none      # 좌표 없는 표. 구간명으로 매칭한다
     what: 동부소방서 소방통로확보대상 지역 현황. 소방서가 직접 지정·관리하는 구간
     feeds: ★ report.py 가 raw CSV 를 직접 읽는다. ingest 산출물은 미사용 — 소방청 지정 7구간 대조(nfa_compare)
     vintage: 2025
     desc: 동부소방서 소방통로확보대상 지역 현황. 소방서가 직접 지정·관리하는 구간
     kind: csv_table
-    file: safety/safety_fire_access_gj_dong_20250731.csv
+    file: safety/safety_fire_access_jngj-dong_20250731.csv
     encoding: cp949
     url: https://www.data.go.kr
     license: 공공누리 제1유형
@@ -1125,6 +1167,8 @@ datasets:
     contract:
       encoding: cp949
   dem_public:
+    scope: jngj-dong
+    part: '35616'
     what: 국토지리정보원 공개DEM 도엽 35616
     feeds: terrain 타일 22장 · 구간 z. 90m 격자라 경사 산출 불가(§16-1)
     crs_native: 5179
@@ -1132,7 +1176,7 @@ datasets:
     license: TODO
     desc: 국토지리정보원 공개DEM 도엽 35616
     kind: raw_only
-    file: ngii/ngii_dem_gj35616_20251117.zip
+    file: ngii/ngii_dem_jngj-dong_20251117_35616.zip
     crs: EPSG:5179
     retrieved: 2026-08-11
     note: |
@@ -1159,6 +1203,7 @@ datasets:
         판단(PLAN §8-3)은 이 숫자로 다시 봐야 한다.
 
   ortho:
+    scope: jngj-dong
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
     feeds: 항공영상 타일 1,423장. ortho.py 가 4도엽을 직접 읽는다(raw_only)
     crs_native: 5186
@@ -1223,6 +1268,8 @@ datasets:
       optional_cols:
       - 비고
   hydrant_summary:
+    scope: jngj-dong
+    authority: 동부소방서
     what: 소방용수시설 관할서별 집계. 동부소방서 지상식 431 + 지하식 157 = 588
     feeds: ★ 참조 0곳. 5행. 동부소방서 지역별 소화전 현황 — 소화전 11개 대조용으로 받았으나 미투입
     crs_native: none
@@ -1231,7 +1278,7 @@ datasets:
     desc: 소방용수시설 관할서별 집계. 동부소방서 지상식 431 + 지하식 157 = 588
     url: https://www.data.go.kr  # 전남광주통합특별시_소방용수시설 현황
     kind: csv_table
-    file: safety/safety_hydrant_summary_gj_dong_20250731.csv
+    file: safety/safety_hydrant_summary_jngj-dong_20250731.csv
     crs: none
     encoding: cp949
     retrieved: 2026-08-09
@@ -1254,6 +1301,7 @@ datasets:
       rows: 5
       rows_tolerance: 0.4
   ngii_road_center:
+    scope: jngj-dong
     what: 연속수치지도 1:5,000 도로중심선 N3L_A0020000. rvwd(도로폭)·onsd(일방통행)
     crs_native: 5179
     crs: EPSG:5179
@@ -1274,7 +1322,7 @@ datasets:
     crs: EPSG:4326
     vintage: 20241130
     kind: csv_points
-    file: gjcity/gjcity_bin_trash_dongu_20241130.csv
+    file: gjcity/gjcity_bin_trash_jngj-dong_20241130.csv
     encoding: cp949
     retrieved: '2026-08-17'
     feeds: 미투입 — 폭 산출 고정 장애물 차감
@@ -1293,7 +1341,7 @@ datasets:
     crs: EPSG:4326
     vintage: 20250214
     kind: csv_points
-    file: gjcity/gjcity_bin_cloth_dongu_20250214.csv
+    file: gjcity/gjcity_bin_cloth_jngj-dong_20250214.csv
     encoding: cp949
     retrieved: '2026-08-17'
     feeds: 미투입 — 폭 산출 고정 장애물 차감
@@ -1312,7 +1360,7 @@ datasets:
     crs: none
     vintage: 20260817
     kind: csv_table
-    file: eais/eais_bldg_ledger_gjdonggu_20260817.csv
+    file: eais/eais_bldg_ledger_jngj-dong_20260817.csv
     encoding: utf-8-sig
     retrieved: '2026-08-17'
     feeds: 미투입 — 3D 높이 · 대피취약 · 회색 프루닝
@@ -1397,7 +1445,7 @@ retired:
     what: 2025년 소방자동차 MAS 선택장비 규격 (2024-11-11)
     file: safety/safety_mas_optional_20241111.hwp
     at: 2026-08-24
-    successor: mas_vehicle_spec (safety_mas_vehicle_spec_20241111.hwp)
+    successor: mas_vehicle_spec (safety_mas_vehicle_spec_kr_20241111.hwp)
     reason: |
       차량 치수가 없다. 본문 전수 확인 결과 축거·축간거리·회전반경·
       최소회전반경·전장·전폭·전고 **전부 0건**이다. 선택장비(옵션) 목록이며
@@ -1495,7 +1543,9 @@ outputs:
     known_issues:
     - 폭 실측 검증 0건. 소방서 7구간 대조는 학습셋이라 검증이 아니다
     - width>30m 24건 중 19건은 필문대로. 대로=40m 이상이라 정상값
-    - 실질 잔여 3건은 본선+측도 병합. 도로대장 청구 중(2026-08-14)
+    - 실질 잔여 3건은 본선+측도 병합. 도로대장 정보공개청구(17337943)는
+      2026-08-24 부존재 종결 — "취합·가공" 사유. 재청구 중이나 전건이
+      아니다. 분리는 ngii1k_center 중심선으로 한다(PLAN §1-26 · §4-7)
 
   ngii1k_center:
     produced_by: src/firelane/ngii1k.py

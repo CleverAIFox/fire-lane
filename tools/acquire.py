@@ -365,6 +365,35 @@ def cmd_stage(dry: bool) -> int:
         print(col("  판단이 끝났으면 landing 원본도 정리하라(--prune-landing 은", "d"))
         print(col("  격리본의 원본을 일부러 남긴다 — 유일본이 되지 않게).", "d"))
 
+    # ── 이름 게이트 ───────────────────────────────────────────
+    # ★ 2026-08-26 신설. 종전에는 raw 파일명이 규칙에 맞는지 **아무도 안
+    #   봤다.** `intake.py --audit` 이 있었지만 사람이 쳐야 보이고,
+    #   `test_intake_rules` 는 순수 함수만 봐서 실물을 모른다.
+    #   CI 도 raw 가 없어 못 본다 — **감사는 있고 게이트가 없었다.**
+    #
+    #   이 저장소가 반복해 배운 형태 그대로다: 규약은 문서에 있고 강제하는
+    #   검사가 없다. 여기가 raw 실물을 보는 유일한 자리이므로 여기에 단다.
+    #
+    # ★ 막지 않고 말한다. 편입을 거부하면 대장에 없는 새 소스를 받을 때마다
+    #   막히고, 그러면 사람이 게이트를 끄는 법을 배운다. 시끄럽게 세되
+    #   흐름은 끊지 않는다 — `--strict` 를 준 사람만 종료코드를 받는다.
+    from firelane import naming as _nm
+    _bad = []
+    for q in raw_files():
+        _rel = str(q.relative_to(RAW))
+        _folder, _, _fn = _rel.partition("/")
+        _ok, _msgs = _nm.check(_fn, folder=_folder)
+        if _msgs:
+            _bad.append((_rel, _msgs[0].splitlines()[0]))
+    if _bad:
+        print(col(f"\n★ 이름 규칙 위반 {len(_bad)}건", "y"))
+        for _rel, _m in _bad[:12]:
+            print(f"  {_rel}\n      {col(_m, 'd')}")
+        if len(_bad) > 12:
+            print(col(f"  … 외 {len(_bad) - 12}건", "d"))
+        print(col("  판단을 대장에 적어라 — scope · part · authority.", "d"))
+        print(col("  적고 나면 migrate_names.py 가 개명을 따라 한다.", "d"))
+
     print(col("\n── 편입 후 sha 기록", "c"))
     return cmd_verify()
 

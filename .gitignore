@@ -80,3 +80,4 @@ data/field/naver_join.csv
 
 # 중간 산출물. 탐색·대조용이라 재생성된다 (MASTER §18-1)
 data/interim/
+data/_migrate_journal.json

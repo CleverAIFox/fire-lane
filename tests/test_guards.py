@@ -222,14 +222,31 @@ def test_no_source_patching_scripts():
     위의 날짜 규칙이 잡는다. 두 검사가 겹쳐서 덮는다.
     """
     TARGETS = ("src/firelane", "docs/MASTER", "sources.yaml", "README.md")
+
+    # ★ 좁은 예외 하나. **git 밖의 실물과 함께 움직여야 하는 것**만 허용한다.
+    #
+    #   이 규칙의 근거는 "패치 스크립트는 diff 의 열등한 사본" 이다. 그것이
+    #   성립하려면 바꾸려는 대상이 **git 안에 있어야** 한다. raw 는 아니다 —
+    #   2.6GB 가 저장소 밖 SSD 에 있고, 파일 하나를 개명하면 세 곳이 동시에
+    #   바뀌어야 한다(실물 · _acquire.json 키 · 대장 file). diff 로는 셋 중
+    #   둘밖에 못 담고, 나머지 하나가 어긋나면 어느 쪽이 정본인지 모른다.
+    #
+    #   허용 조건은 마커 한 줄이다. 실수로 붙지 않을 만큼 길고, 붙이려면
+    #   이유를 읽게 되어 있다.
+    ALLOW_MARKER = "FL_DATA_MIGRATION — git 밖 실물과 원자적으로 움직인다"
+    ALLOWED = {"migrate_names.py"}
+
     offenders = []
     for p in (ROOT / "tools").glob("*.py"):
         src = p.read_text(encoding="utf-8")
         # 패처의 서명: 정본 파일을 읽어 문자열 치환하고 되쓴다.
         # 읽기만 하는 도구(baseline.py 가 EXPECT 를 읽는 등)는 해당 없다.
-        if (".write_text(" in src and ".replace(" in src
+        if not (".write_text(" in src and ".replace(" in src
                 and any(x in src for x in TARGETS)):
-            offenders.append(p.name)
+            continue
+        if p.name in ALLOWED and ALLOW_MARKER in src:
+            continue
+        offenders.append(p.name)
     assert not offenders, (
         f"src 를 문자열로 패치하는 스크립트: {offenders}\n"
         "  소스를 직접 고치고 커밋해라. 패치 스크립트는 diff 의 열등한 사본이다.")
