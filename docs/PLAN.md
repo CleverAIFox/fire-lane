@@ -83,15 +83,16 @@
 | 28 | `LANES` 매칭률 24% | 🟡 | 266/1,101 만 매칭. 소스 문제인지 매칭 로직 문제인지 아직 안 갈렸다 |
 | 29 | 미불용지 82구간 | 🟡 | 우리 노선이 지목 `대`(사유지)를 밟는 구간. 폭이 충분해도 권리 문제다 |
 | 30 | 소방서 대조 봉인 사본이 낡았다 | 🟡 | `nfa_compare.json` 은 매 실행 생성되나 `data/baseline/*` 의 세 벌은 2026-08-13 자 손제작 판이다. `baseline.py` 가 봉인 시점 산출물을 복사하도록 고쳐야 실행 간 자동 비교가 성립한다(MASTER §4-3) |
-| 31 | `web/data` 타일 1,445장이 추적된다 | 🟡 | `.gitignore` 40행 `!web/data/**` 가 벡터뿐 아니라 정사영상 1,423장 · 음영기복 22장까지 포함한다. `ortho.py` · `terrain.py` 가 재생성하며 UI 작업에 원본을 요구하지 않는다. 저장소 36.0MB 중 23.6MB. §8-5 |
+| 31 | `web/data` 타일 1,445장이 추적된다 | ⬛ | **2026-08-26 기각.** `web/js/map.js` 가 상대경로로 읽고 `pages.yml` 이 그 트리를 발행한다 — 빼면 배포 지도가 깨진다. 재생성에 raw 1.3GB 가 필요해 CI 도 못 만든다. 저장소 밖 호스팅은 배포 인프라 결정이다. §8-7 |
 | 32 | 봉인 베이스라인이 전량 복사다 | 🟡 | `data/baseline/*` 세 벌이 `segments.geojson` 을 통째로 담는다. `segments.schema.json` 은 계층까지 합쳐 다섯 벌이며 전부 해시가 다르다. 태그 + `golden/segments.fingerprint.json` 으로 대체 가능한지 판정한다. #30 과 함께 처리한다 |
 | 33 | 계층 간 스키마 드리프트 | 📄 | `data/processed` 만 `cov_ngii` · `cov_ngii1k` · `cov_silpok` · `merge_why` · `merged_n` 를, `web/data` 만 `seg_no` 를 가진다. 2026-08-26 에 판정 규칙·임계값은 강제자로 막았으나 **필드 집합 차이는 아직 대조하지 않는다** |
-| 34 | `tools/` 에 조사 스크립트가 상주한다 | 🟡 | `clearance_probe` · `corner_probe` · `jijeok_probe` · `lanes_probe` · `route_probe` 는 조사가 끝났고 `naver_check` · `naver_join` · `naver_page` 는 한 작업이 셋으로 갈려 있다. 릴리스 도구(`ship` · `golden` · `verify`)와 같은 자리에 있어 무엇을 실행해야 하는지 구분되지 않는다 |
+| 34 | `tools/` 에 조사 스크립트가 상주한다 | 🟡 | 여덟 종이며 **하류가 있다** — `test_guards`(route_probe · naver_join) · `paths.py` · `layers.py` · `test_layers`(jijeok_probe) · 스크립트 간 상호 참조 넷. 옮기려면 임포트 다섯 곳을 함께 고친다. 종전에 "하류 없음"으로 적었던 것을 2026-08-26 에 정정했다 |
 | 35 | `DECISIONS §1~§9` 가 삭제된 파일을 적는다 | 🟡 | 아홉 절 전부 이미 지운 일회성 스크립트의 부검이며 이력은 git 이 보관한다. 절 번호는 자산이므로 비우지 않고 같은 시제의 다른 내용으로 채운다(MASTER §0-2) |
 | 36 | 문서의 죽은 경로 참조 | 🟡 | `MASTER` 가 `data/processed/nfa_compare.json` 을, `PLAN §7` 이 `data/processed/eval.json` 을 가리키나 두 파일 모두 추적되지 않는다. 경로 참조 유효성에는 강제자가 없다 |
 | 37 | 문서 세 곳이 데이터 관리를 적는다 | 🟡 | `README 데이터 계층` · `MASTER §18` · `PLAN §8`. 정본을 `MASTER §18` 로 두고 나머지는 참조만 남긴다. 지금은 `test_doc_style.py` 가 그 정합을 대신 붙잡고 있다 |
 | 38 | `sources.yaml` AUTO 블록 재생성 확인 | 🟡 | 2026-08-26 에 `inventory` 를 `data/interim/inventory.json` 으로 뺐다(2,986 → 1,551줄). `python -m firelane.inventory` 를 raw 가 붙은 기계에서 한 번 돌려 산출 형식이 같은지 확인한다. `at` 은 2026-08-17 자로 9일 낡았다 |
 | 39 | 계층 밖 경로 조립 잔존 | 📄 | 2026-08-26 에 `golden` · `baseline` 을 계층으로 등재하고 `paths.GOLDEN` · `paths.BASELINE` 을 신설했다. `pipeline.py` 가 아직 `ROOT / "data/golden/..."` 를 문자열로 조립한다. 상수로 바꾼다 |
+| 40 | 임포트 시점 디스크 접근 | 📄 | 2026-08-26 에 `datalog.EXTERNAL_TARGETS` 를 `external_targets()` 로 바꿨다. 최상위 상수가 `q.exists()` 를 돌려 외장 SSD 마운트가 끊기면 `OSError: Errno 19` 로 모듈을 못 불러왔고, 문서만 고치는 작업까지 `verify.sh` 에서 막혔다. **다른 모듈에도 같은 형태가 있는지 훑는다** |
 
 ### 1-23. 영상판정 유효거리 실측 설계
 
@@ -987,19 +988,20 @@ raw 를 오브젝트 스토리지로 옮기고 CI 와 엮으면 데이터 파이
 
 ### 8-7. 저장소 위생 🟡
 
-세 항목이 같은 성격이다 — **재생성 가능한 것과 git 이 이미 하는 일을
-저장소가 중복해서 들고 있다.** 순서는 하류 영향 역순이다.
+**★ 2026-08-26 재판정.** 세 항목을 "하류 없음"으로 묶었으나 실제로 대조하니
+둘이 틀렸다. 근거 없이 묶은 것이 원인이다.
 
-| 순 | 대상 | 근거 | 하류 영향 |
+| 순 | 대상 | 판정 | 근거 |
 |---|---|---|---|
-| 1 | `web/data/{ortho,terrain}` 타일 | 재생성 가능. 23.6MB | 없음. `pages.yml` 이 발행한다 |
-| 2 | 조사 스크립트 다섯 · `naver_*` 셋 | 조사 종료. clearance 는 DECISIONS §32 에서 기각됐다 | 없음. `verify.sh` 가 호출하지 않는다 |
-| 3 | `data/baseline/*` 전량 복사 | git 태그와 지문이 같은 일을 한다 | **있다.** `baseline.py` · MASTER §13 · §1 #30 |
+| 1 | `web/data/{ortho,terrain}` 타일 | **기각** | `web/js/map.js` 가 `./data/ortho/{z}/{x}/{y}.jpg` 를 상대경로로 읽는다. `pages.yml` 은 `checkout` 한 트리를 그대로 발행하므로, 추적을 끊으면 **배포된 지도의 정사영상·지형이 사라진다.** 재생성에는 raw 정사영상 1.3GB 가 필요해 CI 가 만들 수 없다 |
+| 2 | 조사 스크립트 여덟 | **보류** | 하류가 있다. `test_guards` 가 `route_probe` · `naver_join` 을, `paths.py` · `layers.py` · `test_layers` 가 `jijeok_probe` 를, `width_fn` · `corner_probe` · `jijeok_review` · `naver_page` 가 서로를 참조한다. 옮기려면 임포트 다섯 곳을 함께 고친다 |
+| 3 | `data/baseline/*` 전량 복사 | 유효 | git 태그와 지문이 같은 일을 한다. `baseline.py` 를 고칠 때 §1 #30 과 함께 판정한다 |
 
-★ 3번은 단독으로 처리하지 않는다. `nfa_compare.json` 봉인 사본이 손제작
-판이라는 문제(§1 #30)와 원인이 같으므로 `baseline.py` 를 고칠 때 함께 판정한다.
+1 번을 정말 걷어내려면 타일을 저장소 밖(오브젝트 스토리지)에 두고 `map.js` 가
+절대 URL 을 보게 해야 한다. **그것은 배포 인프라 결정이라 여기서 다루지 않는다.**
+23.6MB 는 지금 아무것도 막고 있지 않다.
 
-1·2번은 하류가 없어 즉시 가능하다. §1 #31 · #32 · #34
+§1 #26 · #31 · #34 · #35
 
 ## 9. 외부 의존
 
