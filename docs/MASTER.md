@@ -1530,6 +1530,8 @@ uv run python -m firelane.datalog fsck
 | `field` | 실측 원자료. 사람이 만드는 유일한 데이터 |
 | `quarantine` | 대장에 없는 파일. 판단 보류지 폐기가 아니다 |
 | `web` | 표출용. UI 담당이 raw 없이 작업해야 한다 |
+| `golden` | 판정 불변 증명. 재생성 불가라 저장소 안에 둔다 |
+| `baseline` | 봉인 스냅샷. 실행 간 판정 전이를 대조한다 |
 
 `base` 가 둘뿐인 것이 요점이다 — `data`(SSD)냐 `repo`(저장소 안)냐.
 그것이 곧 **"이 계층이 왜 거기 있나"** 의 답이다.

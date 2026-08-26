@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from firelane import lineage
-from firelane.paths import PROCESSED, RAW, ROOT, WEB
+from firelane.paths import GOLDEN, PROCESSED, RAW, ROOT, WEB
 
 for st in (sys.stdout, sys.stderr):
     try:
@@ -178,7 +178,7 @@ WEB_MAX_MB = 40
 def expect() -> dict:
     """golden 지문에서 기대 판정을 읽는다. 없으면 검증을 건너뛴다."""
     import json
-    f = ROOT / "data/golden/segments.fingerprint.json"
+    f = GOLDEN / "segments.fingerprint.json"
     if not f.exists():
         return {}
     L1 = json.loads(f.read_text(encoding="utf-8"))["L1"]

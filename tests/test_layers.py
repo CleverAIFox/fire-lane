@@ -28,8 +28,12 @@ from firelane import paths
 ROOT = Path(__file__).resolve().parent.parent
 
 # MASTER §18-1 이 선언하는 계층. 여기와 문서가 어긋나면 한쪽이 낡은 것이다.
-DECLARED = ["LANDING", "RAW", "NORM", "INTERIM",
-            "PROCESSED", "FIELD", "QUARANTINE", "WEB"]
+# ★ 2026-08-26. 손으로 적던 목록을 `layers.BIND` 에서 유도한다.
+#   `golden` · `baseline` 을 등재했을 때 이 목록만 낡아 실패했다 —
+#   계층이 늘 때마다 여기를 고쳐야 하는 구조 자체가 드리프트 원인이다.
+from firelane import layers as _layers  # noqa: E402
+
+DECLARED = sorted(_layers.BIND.values())
 
 
 def test_every_declared_layer_exists_in_paths():

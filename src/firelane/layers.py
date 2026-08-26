@@ -47,6 +47,8 @@ BIND = {
     "field": "FIELD",
     "quarantine": "QUARANTINE",
     "web": "WEB",
+    "golden": "GOLDEN",
+    "baseline": "BASELINE",
 }
 
 REQUIRED_FIELDS = ("base", "sub", "required", "mutable",

@@ -34,14 +34,14 @@ PROCESSED = ROOT / "data" / "processed"
 MANIFEST = PROCESSED / "_manifest.json"
 # ★ processed 는 백업하지 않는다. raw + 코드 + 대장으로 재생성된다.
 #   보관 우선순위: raw·field(재생성 불가) > norm(재정규화 가능) > processed(버림)
-# 저장소 **안**에 있을 때만 해당한다. 밖에 있으면 EXTERNAL_TARGETS 가 잡는다.
+# 저장소 **안**에 있을 때만 해당한다. 밖에 있으면 external_targets() 가 잡는다.
 BACKUP_TARGETS = ["data/raw", "data/norm", "data/field"]
 # raw 는 레포 밖에 있다. 상대경로만 훑으면 2.5GB 가 통째로 빠진다.
 # 백업 대상에서 raw 가 빠졌다는 것을 파일 개수로만 알 수 있으면 조용한 결측이다.
 #
 # ★ 2026-08-23 버그 수정. 종전에는 **폐기된 `FIRE_LANE_RAW` 만** 봤다.
 #   현행 변수는 `FIRE_LANE_DATA` 이고(MASTER §6-2), 그것만 설정한 기계에서는
-#   EXTERNAL_TARGETS 가 빈 리스트가 되어 **raw 가 백업에서 통째로 빠졌다.**
+#   external_targets() 가 빈 리스트가 되어 **raw 가 백업에서 통째로 빠졌다.**
 #   `data/raw` 상대경로는 저장소 안이라 존재하지 않으므로 "백업 대상 없음"
 #   한 줄만 찍고 넘어간다 — 정확히 이 파일이 경고하는 조용한 결측이다.
 #   경로 정본은 paths.py 다. 여기서 환경변수를 직접 읽지 않는다.
@@ -49,8 +49,26 @@ from firelane.paths import FIELD as _FIELD
 from firelane.paths import NORM as _NORM
 from firelane.paths import RAW as _RAW
 
-EXTERNAL_TARGETS = [q for q in (_RAW, _NORM, _FIELD)
-                    if q.exists() and ROOT not in q.parents and q != ROOT]
+
+def external_targets() -> list[Path]:
+    """저장소 밖에 있는 백업 대상. **호출 시점에** 판정한다.
+
+    ★ 2026-08-26. 종전에는 모듈 최상위 상수였다. `q.exists()` 가 임포트
+      시점에 돌았고, 외장 SSD 마운트가 끊기면 `OSError: [Errno 19]
+      No such device` 로 **모듈을 불러오지도 못했다.** 그날 문서만
+      고치던 작업까지 `verify.sh` 에서 통째로 막혔다.
+
+      계층 경로는 기계마다 다르고 마운트는 언제든 끊긴다(§18-1).
+      그 사실을 임포트가 아니라 호출이 감당해야 한다.
+    """
+    out = []
+    for q in (_RAW, _NORM, _FIELD):
+        try:
+            if q.exists() and ROOT not in q.parents and q != ROOT:
+                out.append(q)
+        except OSError:
+            continue          # 마운트 끊김. 대상이 아닐 뿐 오류가 아니다
+    return out
 
 # ★ raw 와 field 는 재생성이 불가능하다. processed 는 재생성되지만 시간이 든다.
 #   이 우선순위가 백업 순서이자 복원 훈련 대상 순서다.
@@ -256,7 +274,7 @@ def cmd_backup(dest: str) -> None:
               if (ROOT / rel).exists()]
     # ★ 저장소 밖 계층(raw · norm). 위와 겹치지 않는다 — 위는 exists() 로
     #   걸러지고 raw 가 밖에 있으면 저장소 안 경로는 존재하지 않는다.
-    _pairs += [(ext, ext.parent) for ext in EXTERNAL_TARGETS]
+    _pairs += [(ext, ext.parent) for ext in external_targets()]
     if not _pairs:
         print("  ★ 백업 대상이 하나도 없다. FIRE_LANE_DATA 를 확인하라.")
         print("     복사할 것이 없는 것과 못 찾은 것은 다르다.")

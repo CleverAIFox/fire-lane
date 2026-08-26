@@ -110,6 +110,13 @@ QUARANTINE = (DATA / "_quarantine") if DATA else (ROOT / "data" / "_quarantine")
 #   `datalog fsck` 가 git 추적 목록과 대조한다.
 PROCESSED = ROOT / "data" / "processed"
 
+# ★ 2026-08-26. 계층 선언 밖에 있던 둘을 등재했다. `pipeline.py` 가
+#   `ROOT / "data/golden/..."` 를 문자열로 조립하고 `baseline.py` 가
+#   자기 자리를 따로 잡고 있었다 — 계층이 없으면 파일은 아무 데나 떨어진다.
+#   base 는 repo 다. 재생성 불가라 clone 만으로 보여야 한다.
+GOLDEN = ROOT / "data" / "golden"
+BASELINE = ROOT / "data" / "baseline"
+
 # 표출용. 저장소 안. UI 담당이 raw 없이 작업할 수 있어야 하므로 커밋한다.
 WEB = ROOT / "web" / "data"
 
