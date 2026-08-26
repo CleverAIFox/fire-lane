@@ -29,6 +29,8 @@ from __future__ import annotations
 import csv
 import glob as _glob
 import io
+import json
+import re
 import sys
 import zipfile
 from datetime import datetime, timedelta, timezone
@@ -37,7 +39,7 @@ from pathlib import Path
 import yaml
 
 from firelane import ngi
-from firelane.paths import RAW, ROOT
+from firelane.paths import INTERIM, RAW, ROOT
 
 KST = timezone(timedelta(hours=9))
 SOURCES = ROOT / "sources.yaml"
@@ -256,23 +258,32 @@ def collect(only: str | None = None) -> dict:
         n = len(got.get("layers") or got.get("files") or [])
         print(f"  {key:<20} {kind:<18} {n:>3}  미사용속성 {len(unused)}")
 
-    return {"at": _now(), "raw": str(RAW), "datasets": inv}
+    # ★ 2026-08-26. `raw: str(RAW)` 를 뺐다. 기계 고유 절대경로가 커밋되는
+    #   파일에 박히면 두 대에서 쓰는 순간 무의미해진다. 경로는 실행 시점에
+    #   `FIRE_LANE_DATA` 로 해석한다 — 그것이 paths.py 의 역할이다.
+    return {"at": _now(), "datasets": inv}
 
 
 def write_block(inv: dict) -> None:
-    """sources.yaml 하단 AUTO 블록만 교체한다. 위쪽 주석은 그대로 둔다."""
-    body = yaml.safe_dump({"inventory": inv}, allow_unicode=True,
-                          sort_keys=False, width=100)
+    """스캔 결과를 `interim` 계층에 쓴다.
+
+    ★ 2026-08-26. 종전에는 `sources.yaml` 하단 AUTO 블록을 교체했다.
+      그 블록 하나가 대장 2,986줄 중 1,434줄이었다 — 사람이 쓰는 선언과
+      도구가 만드는 스캔 결과가 한 파일에 섞여 있었다. 재생성 가능한 것은
+      `interim` 이 제자리다(MASTER §18-1).
+
+      대장에는 `at` 과 `path` 만 남긴다. 어디를 보라는 안내다.
+    """
+    out = INTERIM / "inventory.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(inv, ensure_ascii=False, indent=1) + "\n",
+                   encoding="utf-8")
+    print(f"\n→ {out}")
+
     txt = SOURCES.read_text(encoding="utf-8")
-    block = f"{BEGIN}\n{body}{END}\n"
-    if BEGIN in txt:
-        pre = txt.split(BEGIN)[0]
-        post = txt.split(END, 1)[1] if END in txt else "\n"
-        txt = pre + block + post.lstrip("\n")
-    else:
-        txt = txt.rstrip() + "\n\n" + block
+    txt = re.sub(r"^  at: .*$", f"  at: {inv['at']}", txt, count=1, flags=re.M)
     SOURCES.write_text(txt, encoding="utf-8")
-    print(f"\n→ {SOURCES} AUTO 블록 갱신")
+    print(f"→ {SOURCES} inventory.at 갱신")
 
 
 if __name__ == "__main__":
