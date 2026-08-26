@@ -20,6 +20,7 @@ import geopandas as gpd
 from shapely.ops import unary_union
 
 from firelane.paths import PROCESSED, RAW
+from firelane.seg.geom import VERDICT_RULE
 from firelane.seg.params import (
     CCTV_RANGE,
     MIN_SEG_LEN,
@@ -244,12 +245,7 @@ def write_outputs(g):
         "params": {"truck_width_m": TRUCK, "park_occupancy_m": PARK, "nfa_run_m": NFA_RUN_M, "cctv_range_m": CCTV_RANGE,
                    "intersection_exclusion_m": XSEC_EXCL, "wmax_cap_m": WMAX_CAP,
                    "min_seg_len_m": MIN_SEG_LEN, "snap_tol_m": SNAP_TOL},
-        "verdict_rule": ["폭 미산출 + ROAD_BT < 3.0 -> blocked (명목폭 진입 불가)",
-                         "wmax <  3.0 -> blocked (통과 하한 미달)",
-                         "wmin >= 7.0 -> clear (양쪽 주차해도 통과)",
-                         "wmin or wmax null -> unknown (reason=width)",
-                         "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가",
-                         "else -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)"],
+        "verdict_rule": list(VERDICT_RULE),
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(g.verdict.value_counts().to_string())
     print(f"\n→ segments {len(g)} · 경로사용 {(g.route_usage>0).sum()} · sha {h[:16]}")
