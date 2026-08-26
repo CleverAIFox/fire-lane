@@ -321,6 +321,8 @@ tests/
   test_reproducibility.py 재현성 규약 강제 · 문서 ↔ 코드 동기화
   test_doc_style.py       문서 문체 · 절 번호 · 어휘
   test_declaration_sync.py ★ 역방향 — 실물이 선언돼 있는가
+  test_ledger_outputs.py  대장 outputs ↔ 실제 산출물
+  test_place_idempotent.py 지점 집계 멱등성
 web/
   index.html              뼈대                      공동
   style.css               색·간격·타이포             @marscoolcat

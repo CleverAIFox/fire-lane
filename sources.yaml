@@ -1486,7 +1486,7 @@ outputs:
     inputs: [ngii1k, ngii_road, road_rw, road_link, building, building_entrance, boundary_emd, cctv, fire_station, node_link, turn_restriction]
     stable_key: seg_uid
     consumers:
-    - web/app.js
+    - web/js/data.js
     - src/firelane/publish_web.py
     - src/firelane/sample_design.py
     - tests/test_contract.py

@@ -93,6 +93,7 @@
 | 38 | `sources.yaml` AUTO 블록 재생성 확인 | 🟡 | 2026-08-26 에 `inventory` 를 `data/interim/inventory.json` 으로 뺐다(2,986 → 1,551줄). `python -m firelane.inventory` 를 raw 가 붙은 기계에서 한 번 돌려 산출 형식이 같은지 확인한다. `at` 은 2026-08-17 자로 9일 낡았다 |
 | 39 | 계층 밖 경로 조립 잔존 | 📄 | 2026-08-26 에 `golden` · `baseline` 을 계층으로 등재하고 `paths.GOLDEN` · `paths.BASELINE` 을 신설했다. `pipeline.py` 가 아직 `ROOT / "data/golden/..."` 를 문자열로 조립한다. 상수로 바꾼다 |
 | 40 | 임포트 시점 디스크 접근 | 📄 | 2026-08-26 에 `datalog.EXTERNAL_TARGETS` 를 `external_targets()` 로 바꿨다. 최상위 상수가 `q.exists()` 를 돌려 외장 SSD 마운트가 끊기면 `OSError: Errno 19` 로 모듈을 못 불러왔고, 문서만 고치는 작업까지 `verify.sh` 에서 막혔다. **다른 모듈에도 같은 형태가 있는지 훑는다** |
+| 41 | 대장 `outputs` 미등재 20여건 | 🟡 | `data/processed` 산출물 중 `sources.yaml` `outputs` 에 없는 것이 스무 건 남짓이다. 대장에 없으면 `datalog impact` 가 파일을 못 따라가고 검증 상태·known_issues 가 어디에도 안 적힌다. 항목마다 `produced_by` · `path` · `inputs` · `consumers` · `what` · `verified` 를 채운다. `test_ledger_outputs.py::test_no_undeclared_output` 이 xfail 로 대기한다 |
 
 ### 1-23. 영상판정 유효거리 실측 설계
 
