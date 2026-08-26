@@ -34,6 +34,26 @@ def _seal(polys):
     return u.buffer(0.15, join_style=2).buffer(-0.15, join_style=2)
 
 
+VERDICT_RULE = (
+    "wmax < 3.0 -> blocked (통과 하한 미달)",
+    "wmax 없음 + wmin 없거나 < 3.0 + ROAD_BT < 3.0 -> blocked (두 근거 독립 일치)",
+    "wmin >= 7.0 + 정규표본 2개 이상 -> clear (양쪽 주차해도 통과)",
+    "wmin >= 7.0 + 정규표본 1개 -> needs_cv (표본 하나로 clear 를 주지 않는다)",
+    "wmin 있음 -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)",
+    "그 외 -> unknown (reason=width). 폭 산출 불가",
+    "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가",
+)
+"""판정 규칙의 문언 정본.
+
+산출물 스키마(`segments.schema.json`)의 `verdict_rule` 은 이 상수에서
+생성된다. 손으로 적으면 규칙을 고칠 때 한쪽만 바뀐다 — 실제로
+`nreg <= 1` 보류 규칙이 코드·테스트·UI 에는 있고 스키마에만 없었다.
+
+순서는 아래 `verdict()` 의 분기 순서이며, 마지막 줄만 `segments.py` 가
+CCTV 거리로 적용한다. 강제자 — `tests/test_declaration_sync.py`
+"""
+
+
 def verdict(wmin, wmax, nreg=None):
     """소방청 기준 판정 4종.
 

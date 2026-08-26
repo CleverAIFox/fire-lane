@@ -50,11 +50,12 @@
     "snap_tol_m": 0.5
   },
   "verdict_rule": [
-    "폭 미산출 + ROAD_BT < 3.0 -> blocked (명목폭 진입 불가)",
-    "wmax <  3.0 -> blocked (통과 하한 미달)",
-    "wmin >= 7.0 -> clear (양쪽 주차해도 통과)",
-    "wmin or wmax null -> unknown (reason=width)",
-    "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가",
-    "else -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)"
+    "wmax < 3.0 -> blocked (통과 하한 미달)",
+    "wmax 없음 + wmin 없거나 < 3.0 + ROAD_BT < 3.0 -> blocked (두 근거 독립 일치)",
+    "wmin >= 7.0 + 정규표본 2개 이상 -> clear (양쪽 주차해도 통과)",
+    "wmin >= 7.0 + 정규표본 1개 -> needs_cv (표본 하나로 clear 를 주지 않는다)",
+    "wmin 있음 -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)",
+    "그 외 -> unknown (reason=width). 폭 산출 불가",
+    "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가"
   ]
 }

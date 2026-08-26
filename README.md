@@ -307,6 +307,9 @@ tools/
   serve.py                캐시 없는 개발 서버
   wmax_audit.py           width_max_m 결손이 판정에 미치는 규모
   desk_check.py           정사영상 위에 구간·폭 렌더
+  docpatch.py             문서 절 단위 멱등 교체 · 표 행 추가
+  js_graph_check.mjs      ES 모듈 의존 그래프 · 순환 참조
+  web_boot_check.mjs      UI 부팅 경로 점검
      ※ 날짜 붙은 일회성 스크립트는 두지 않는다(MASTER §18-5 R8). CI 가 막는다.
 tests/
   test_contract.py        GIS ↔ UI 경계
@@ -317,6 +320,7 @@ tests/
   test_static.py          정의되지 않은 이름 (실패 경로의 NameError)
   test_reproducibility.py 재현성 규약 강제 · 문서 ↔ 코드 동기화
   test_doc_style.py       문서 문체 · 절 번호 · 어휘
+  test_declaration_sync.py ★ 역방향 — 실물이 선언돼 있는가
 web/
   index.html              뼈대                      공동
   style.css               색·간격·타이포             @marscoolcat

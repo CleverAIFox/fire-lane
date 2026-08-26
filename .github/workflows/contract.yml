@@ -137,11 +137,12 @@ jobs:
       - name: web/data 계약 검증
         run: uv run pytest tests/test_contract.py -v
 
-      - name: 방어 로직 · 저장소 위생
-        run: |
-          uv run pytest tests/test_guards.py tests/test_seg_*.py \
-                 tests/test_static.py tests/test_reproducibility.py \
-                 tests/test_layering.py -v
+      - name: 방어 로직 · 문서 규약 · 저장소 위생
+        # ★ 2026-08-26. 파일을 열거하던 것을 전량으로 바꿨다. `test_doc_style`
+        #   이 MASTER §0-1 의 강제자로 지목돼 있는데 CI 가 부르지 않았고,
+        #   `test_web_ownership` 등 6개도 같은 상태였다. 열거식은 테스트가
+        #   늘 때마다 여기를 고쳐야 하고, 안 고치면 조용히 빠진다.
+        run: uv run pytest tests/ -q
 
       - name: 문서 숫자 대조
         run: |
