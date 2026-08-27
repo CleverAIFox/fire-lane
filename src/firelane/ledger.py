@@ -224,3 +224,58 @@ if __name__ == "__main__":
           f"WARN {sum(i.level == WARN for i in issues)}")
     print("활용도 —", summary())
     sys.exit(1 if any(i.level == FAIL for i in issues) else 0)
+
+
+# ── 역산 대신 조회 ────────────────────────────────────────────
+# ★ 2026-08-27. `file` 값에서 provider_dataset 을 **역산**하는 코드가
+#   세 곳에 각기 다르게 있었다 —
+#     migrate_names.plan() · normalize_raw._entry_for() · _repair_globs()
+#   한 곳을 고칠 때마다 다른 곳을 안 봤고 같은 사고가 세 번 났다.
+#
+#   [B] 로 대장에 `stem` 을 명시했으므로 **조회**가 가능하다.
+#   조회기는 하나여야 하고, 대장을 아는 이 모듈이 그 자리다.
+
+
+def stem_index() -> dict[str, tuple[str, dict]]:
+    """provider_dataset → (대장 키, 항목). 묶음은 stem 마다 등록한다."""
+    out: dict[str, tuple[str, dict]] = {}
+    for k, e in (load().get("datasets") or {}).items():
+        for st in (e.get("stems") or ([e["stem"]] if e.get("stem") else [])):
+            out.setdefault(str(st), (k, e))
+    return out
+
+
+def entry_of(rel: str) -> tuple[str | None, dict]:
+    """raw 상대경로 → (대장 키, 항목). 못 찾으면 (None, {}).
+
+    ★ 파일명에서 **스코프·날짜 뒤를 떨어내** provider_dataset 만 남긴다.
+      이것은 역산이 아니라 파싱이다 — 문법이 `firelane.naming` 에
+      정의돼 있고 파서가 하나뿐이다.
+    """
+    from firelane import naming as nm
+    idx = stem_index()
+    name = rel.rsplit("/", 1)[-1]
+    try:
+        n = nm.parse(name, strict=False)
+        hit = idx.get(f"{n.provider}_{n.dataset}")
+        if hit:
+            return hit
+    except nm.NameError_:
+        pass
+
+    # ★ 스코프 토큰이 없는 **옛 이름**도 조회돼야 한다. 개명 대상이
+    #   정확히 그 형태이기 때문이다 —
+    #     safety_kfs_pumptruck_20251224.hwpx   (스코프 없음)
+    #   파서는 스코프를 고정점으로 쓰므로 여기서 실패한다. 그러면
+    #   `migrate_names` 가 대장 항목을 못 찾고 "개명 대상 0건" 이 된다.
+    #   오늘 12건이 그렇게 조용히 실패했다.
+    #
+    #   접두가 가장 긴 stem 을 고른다. `safety_kfs_ladder_small` 과
+    #   `safety_kfs_ladder_articulated` 처럼 접두가 겹치는 것이 있으므로
+    #   짧은 쪽이 먼저 잡히면 안 된다.
+    stem = name.rsplit(".", 1)[0]
+    best = None
+    for st, hit in idx.items():
+        if stem.startswith(st + "_") and (best is None or len(st) > best[0]):
+            best = (len(st), hit)
+    return best[1] if best else (None, {})

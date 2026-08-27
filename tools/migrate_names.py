@@ -53,13 +53,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from firelane.paths import RAW, ROOT
+import yaml
+
+from firelane import scope as sc
+from firelane.paths import QUARANTINE, RAW, ROOT
 
 KST = timezone(timedelta(hours=9))
 LEDGER = ROOT / "data" / "_acquire.json"
@@ -90,27 +94,19 @@ def sha256(p: Path, *, chunk: int = 1 << 20) -> str:
 
 def plan() -> list[dict]:
     """(old, new) 목록. **규칙은 naming.canonical() 이 정한다.**"""
-    import yaml
 
     from firelane import naming as nm
     led = json.loads(LEDGER.read_text(encoding="utf-8"))["files"]
-    d = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
-    ds = d.get("datasets") or {}
 
-    # raw 상대경로 → 대장 항목. 글롭은 접두로 맞춘다.
-    entry_of: dict[str, dict] = {}
-    for _k, e in ds.items():
-        pat = e.get("file", "")
-        base = pat.rsplit("/", 1)[-1].split("*")[0].rsplit(".", 1)[0]
-        if not base:
-            continue
-        for rel in led:
-            if rel.rsplit("/", 1)[-1].startswith(base):
-                entry_of.setdefault(rel, e)
+    # ★ 역산을 걷어냈다(2026-08-27). `firelane.ledger.entry_of` 로 조회한다.
+    #   종전에는 대장 `file` 에서 정규식으로 provider_dataset 을 복원했고,
+    #   그 규칙이 `normalize_raw` 와 달라 12건이 "개명 대상 0건" 으로
+    #   조용히 실패했다. 조회기는 하나여야 한다.
+    from firelane.ledger import entry_of
 
     out = []
     for rel in sorted(led):
-        new = nm.canonical(rel, entry_of.get(rel, {}))
+        new = nm.canonical(rel, entry_of(rel)[1])
         if new:
             out.append({"old": rel, "new": new,
                         "sha256": led[rel]["sha256"], "bytes": led[rel]["bytes"]})
@@ -163,6 +159,94 @@ def _fix_ext_wildcards(*, apply: bool) -> list[str]:
     return out
 
 
+
+def _repair_globs(*, apply: bool) -> list[str]:
+    """개명 뒤 **아무 실물도 못 잡는 글롭**을 다시 만든다.
+
+    ★ 첫 판은 개명 저널을 봤다. 틀렸다 — 저널은 **매 실행 덮어써진다.**
+      이전 실행의 개명 기록이 없으면 복구가 통째로 실패하고, 실제로
+      2026-08-26 에 넷이 "이력에도 없다" 로 빠졌다.
+
+      **이력에 의존하면 안 된다.** 실물은 지금 거기 있고, 대장 항목은
+      자기가 어느 provider · 어느 dataset 인지 안다. 그 둘만으로 복구된다.
+      과거를 안 봐도 되는 설계가 항상 낫다.
+
+    ★ 추측하지 않는다. `provider_dataset` 접두로 후보를 모으고, 옛 글롭이
+      요구하던 **확장자**가 같은 것만 남긴다. 하나도 없거나 애매하면
+      손을 뗀다.
+    """
+    import fnmatch
+    led = json.loads(LEDGER.read_text(encoding="utf-8"))["files"]
+    s = YAML.read_text(encoding="utf-8")
+    d = yaml.safe_load(s) or {}
+    out = []
+    for key, e in (d.get("datasets") or {}).items():
+        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+            pat = str(pat)
+            # ★ 글롭만 보지 않는다. **정확한 이름도 죽는다** —
+            #   실물은 개명됐는데 대장이 옛 이름을 가리키는 상태가 있다
+            #   (롤백 후 재적용 · 대장만 되돌린 경우). `plan()` 은 실물이
+            #   이미 정규명이라 0건을 내고, 그러면 `_yaml_rewrite` 가 돌지
+            #   않아 대장이 영영 옛 이름으로 남는다. 실증했다(9건).
+            #
+            #   복구는 **가리키는 쪽이 0건이냐**만 보면 된다. 글롭인지
+            #   정확한 이름인지는 상관없다.
+            if [r for r in led if fnmatch.fnmatch(r, pat)]:
+                continue                       # 살아 있다
+            folder = pat.split("/", 1)[0]
+            stem = pat.rsplit("/", 1)[-1]
+            # provider_dataset — 첫 와일드카드 앞까지에서 마지막 `_` 제거
+            head = re.split(r"[*?\[]", stem)[0]
+            head = head.rsplit(".", 1)[0] if "." in head else head
+            head = head.rstrip("_")
+            # 옛 이름에서 스코프·도엽 토큰을 떨어낸다: provider_dataset 만 남긴다
+            bits = head.split("_")
+            while len(bits) > 2 and (bits[-1].isdigit()
+                                     or bits[-1] in ("dongu", "gjdonggu", "gj")
+                                     or bits[-1].startswith("gj")):
+                bits.pop()
+            head = "_".join(bits)
+            ext = Path(stem).suffix
+            cand_files = [r for r in led
+                          if r.startswith(f"{folder}/{head}_")
+                          and (not ext or ext == ".*" or r.endswith(ext))]
+            if not cand_files:
+                out.append(f"★ {pat} — {folder}/{head}_* 로도 0건. 손으로 봐라")
+                continue
+            cand_files.sort()
+            # ★ 1순위 — **옛 글롭의 구조를 보존**하고 스코프 토큰만 바꾼다.
+            #   commonprefix 는 파일 하나가 다른 하나의 접두일 때 무너진다:
+            #     vworld_map1k_jngj-dong_...zip
+            #     vworld_map1k_ngi_jngj-dong_...zip
+            #   → `map1k_*_jngj-dong` 이 되어 앞의 것을 놓친다(1/2건).
+            #   옛 글롭 `vworld_map1k*_gjdonggu_...` 에서 토큰만 갈면
+            #   `vworld_map1k*_jngj-dong_...` 이 되어 둘 다 잡는다.
+            keep = pat
+            for old_tok, new_tok in sc.LEGACY.items():
+                keep = keep.replace(f"_{old_tok}_", f"_{new_tok}_")
+            if keep != pat:
+                got0 = sorted(r for r in led if fnmatch.fnmatch(r, keep))
+                if got0 == cand_files:
+                    s = s.replace(pat, keep)
+                    out.append(f"[{key}] {pat} → {keep}  ({len(got0)}건)")
+                    continue
+            pre = os.path.commonprefix(cand_files)
+            suf = os.path.commonprefix([x[::-1] for x in cand_files])[::-1]
+            cand = (pre + "*" + suf) if len(cand_files) > 1 else cand_files[0]
+            if not any(c in pat for c in "*?[") and len(cand_files) == 1:
+                cand = cand_files[0]           # 정확한 이름은 정확하게
+            got = sorted(r for r in led if fnmatch.fnmatch(r, cand))
+            if got != cand_files:
+                out.append(f"★ {pat} → {cand} 가 {len(got)}건(후보 "
+                           f"{len(cand_files)}건)을 잡는다. 채택하지 않는다")
+                continue
+            s = s.replace(pat, cand)
+            out.append(f"[{key}] {pat} → {cand}  ({len(got)}건)")
+    if apply and out:
+        YAML.write_text(s, encoding="utf-8")
+    return out
+
+
 def _ledger_rewrite(pairs: list[dict], *, apply: bool) -> None:
     d = json.loads(LEDGER.read_text(encoding="utf-8"))
     for p in pairs:
@@ -187,7 +271,24 @@ def _move_files(pairs: list[dict]) -> list[dict]:
             print(f"    ! {p['old']}  실물 없음 — 건너뛴다")
             continue
         if dst.exists():
-            sys.exit(f"✗ 대상이 이미 있다: {dst}\n  덮어쓰지 않는다. 손으로 확인해라.")
+            # ★ 옛 이름과 새 이름이 **둘 다** raw 에 있는 상태.
+            #   개명이 중간에 끊긴 채 acquire 가 새 이름으로 또 넣으면
+            #   이렇게 된다(2026-08-27, 3건).
+            #
+            #   sha 가 같으면 완전한 중복이므로 옛 것을 격리한다.
+            #   다르면 판단이 필요하니 **거기서만** 멈춘다 — 종전에는
+            #   첫 충돌에서 전체가 죽어 나머지 개명이 통째로 막혔다.
+            if sha256(src) == sha256(dst):
+                q = QUARANTINE / p["old"]
+                q.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(src), str(q))
+                print(f"    격리 {p['old']}  (새 이름과 sha 동일 — 중복)")
+                done.append({**p, "quarantined": True})
+                continue
+            print(f"    ✗ {p['old']}\n"
+                  f"      대상이 이미 있고 sha 가 다르다: {dst.name}\n"
+                  f"      어느 쪽이 정본인지 사람이 정해야 한다. 건너뛴다.")
+            continue
         got = sha256(src)
         if got != p["sha256"]:
             sys.exit(
@@ -212,6 +313,13 @@ def cmd_rollback() -> int:
         return 0
     j = json.loads(JOURNAL.read_text(encoding="utf-8"))
     for p in reversed(j["moved"]):
+        if p.get("quarantined"):
+            q, back = QUARANTINE / p["old"], RAW / p["old"]
+            if q.exists() and not back.exists():
+                back.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(q), str(back))
+                print(f"  ← 격리해제 {p['old']}")
+            continue
         src, dst = RAW / p["new"], RAW / p["old"]
         if src.exists() and not dst.exists():
             shutil.move(str(src), str(dst))
@@ -223,6 +331,11 @@ def cmd_rollback() -> int:
 
 
 def main() -> int:
+    # ★ 관문. 레이크가 없으면 여기서 멈춘다 — 판정만 하고 안 막으면
+    #   엉뚱한 곳에 계층을 만든다(2026-08-27).
+    from firelane.paths import require_lake
+    require_lake(need=("raw",))
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--yes", action="store_true", help="실물을 실제로 옮긴다")
@@ -238,6 +351,10 @@ def main() -> int:
 
     print("\n═══ 대장 file 확장자 와일드카드 ═══")
     for line in _fix_ext_wildcards(apply=False):
+        print(f"  {line}")
+
+    print("\n═══ 죽은 글롭 ═══")
+    for line in _repair_globs(apply=False):
         print(f"  {line}")
 
     if not (a.apply and a.yes):
@@ -261,6 +378,9 @@ def main() -> int:
     #   확장자는 **실물을 봐야만** 정할 수 있으므로 순서가 강제된다.
     print("④ sources.yaml — 확장자 와일드카드 확정")
     for line in _fix_ext_wildcards(apply=True):
+        print(f"    {line}")
+    print("⑤ sources.yaml — 죽은 참조 복구")
+    for line in _repair_globs(apply=True):
         print(f"    {line}")
 
     print("\n검증 —")

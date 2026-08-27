@@ -191,6 +191,10 @@ def test_no_fifth_doc():
         "web/README.md",                # UI 담당용 실행 안내
         "src/firelane/README.md",       # 대장 작성법 · kind 표
         "data/field/fieldsheet.md",     # 야장. 들고 나가는 종이다
+        # ★ 2026-08-27. 규약을 서술하는 문서가 아니라 **양식**이다.
+        #   GitHub 이 PR 화면에 자동으로 채워 넣는 폼이고, 내용의 정본은
+        #   MASTER §12 다. 강제자는 tools/pr_body_check.py 가 따로 든다.
+        ".github/pull_request_template.md",
     }
     # ★ 백업·캐시는 저장소 내용이 아니다. `.gitignore` 가 이미 빼는 것들이고
     #   여기서도 같은 선을 긋는다 — 안 그러면 배포 스크립트가 만든

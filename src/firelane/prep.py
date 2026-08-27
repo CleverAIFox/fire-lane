@@ -159,7 +159,7 @@ def run(*, apply: bool) -> int:
 
     if apply:
         st["at"] = datetime.now(KST).isoformat(timespec="seconds")
-        STATE.write_text(json.dumps(st, ensure_ascii=False, indent=1),
+        STATE.write_text(json.dumps(st, ensure_ascii=False, indent=1) + "\n",
                          encoding="utf-8")
     print(f"\n{'정규화' if apply else '대상'} {done} · 최신 {skip} · 결손 {miss}")
     if not apply and done:

@@ -60,7 +60,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import shutil
 import sys
@@ -71,49 +70,25 @@ import yaml
 
 from firelane import naming as nm
 from firelane.paths import LANDING, ROOT
+from firelane.paths import inbox as _inbox
 
 KST = timezone(timedelta(hours=9))
 LEDGER = ROOT / "data" / "_intake.json"
 
 # 브라우저가 실제로 떨구는 부산물. landing 으로 올리지 않는다.
-JUNK = re.compile(r"\.(crdownload|part|tmp|partial)$|^~\$|^\.DS_Store$")
+# 브라우저·OS 부산물과 **작업 스크립트**. landing 으로 올리지 않는다.
+# ★ 2026-08-26. `apply.sh` · `docx_fix.py` · `desktop.ini` 가 landing 에
+#   올라갔다. 다운로드 폴더는 사용자의 작업 공간이라 데이터만 있지 않다.
+#   확장자 화이트리스트가 아니라 블랙리스트인 이유는, 새 데이터 형식이
+#   왔을 때 조용히 막히는 편보다 쓰레기가 한 번 섞이는 편이 낫기 때문이다.
+JUNK = re.compile(
+    r"\.(crdownload|part|tmp|partial|sh|py|mjs|ini|lnk|url|exe|msi|bat)$"
+    r"|^~\$|^\.DS_Store$|^desktop\.ini$", re.IGNORECASE)
 
 
-def inbox() -> Path:
-    """출발지. 정적이다.
-
-    ★ WSL 에서 윈도우 다운로드는 `/mnt/c/Users/<user>/Downloads` 다.
-      사용자명이 기계마다 다르므로 자동탐색하되, **찾은 결과를 출력**한다.
-      조용히 다른 폴더를 보는 것이 제일 나쁘다.
-    """
-    env = os.environ.get("FIRE_LANE_INBOX")
-    if env:
-        return Path(env).expanduser()
-    # 이름으로 거르지 않는다. `Default User` 를 빼먹어 빈 폴더를 출발지로
-    # 잡은 적이 있다(2026-08-26). 시스템 계정 이름은 기계·로케일마다 달라
-    # 목록으로는 못 막는다. **파일이 실제로 있는 곳**을 고르고, 후보가
-    # 여럿이면 말한다.
-    cands = []
-    for base in (Path("/mnt/c/Users"), Path("/c/Users")):
-        if not base.is_dir():
-            continue
-        for u in sorted(base.iterdir()):
-            d = u / "Downloads"
-            try:
-                n = sum(1 for x in d.iterdir() if x.is_file())
-            except OSError:
-                continue
-            if n:
-                cands.append((n, d))
-    if not cands:
-        return Path.home() / "Downloads"
-    cands.sort(reverse=True)
-    if len(cands) > 1:
-        print("★ 다운로드 후보가 여럿이다. FIRE_LANE_INBOX 로 못박아라 —")
-        for n, d in cands:
-            print(f"    {n:5}개  {d}")
-    return cands[0][1]
-
+# ★ inbox() 는 `firelane.paths` 로 옮겼다(2026-08-26). 경로 정본은 거기다 —
+#   여기 두었더니 `doctor.py` 가 쓰려고 sys.path 를 조작했고 규칙에 걸렸다.
+inbox = _inbox
 
 def sha256(p: Path, *, chunk: int = 1 << 20) -> str:
     h = hashlib.sha256()
@@ -140,11 +115,52 @@ def sources_index() -> dict[str, dict]:
 
 
 # ── 원본명 → 정규명 제안 ──────────────────────────────────────
-DOC_NO = re.compile(r"(KFS-\d-\d{4}-\d{4}(?:-\d{2})?)", re.I)
+DOC_NO = re.compile(r"(KFS-\d-\d{4}-\d{4}(?:-\d{2})?)", re.IGNORECASE)
+
+
+def _by_rules(name: str) -> str | None:
+    """`normalize_raw.RULES` 가 이 원본명을 배치할 수 있나 → raw 상대경로.
+
+    ★ 2026-08-27 신설. 종전에는 **KFS 문서번호로만** 매칭했다. 그래서
+      문서번호가 없는 일반 데이터가 전부 "대장에 없다" 로 막혔다 —
+      `전남광주통합특별시 동구_불법 주정차 단속현황_20240108.csv` 가
+      그랬다. `enforcement` 는 대장에 있고 RULES 도 이 이름을 잡는데,
+      `propose()` 가 RULES 를 안 봐서 난 오탐이다.
+
+      **관문은 정확해야 한다.** 정상 파일을 막으면 사람이 `--force` 를
+      습관처럼 쓰게 되고, 그러면 관문이 없는 것과 같아진다.
+    """
+    import re as _re
+
+    from firelane.normalize_raw import RULES
+    for pat, folder, tmpl in RULES:
+        m = _re.search(pat, name)
+        if not m:
+            continue
+        return f"{folder}/{tmpl.format(*m.groups()) if tmpl else name}"
+    return None
+
+
+def _stem_of(rel: str) -> str:
+    """raw 상대경로 → provider_dataset. 스코프·날짜 뒤를 떨어낸다."""
+    import re as _re
+
+    from firelane import scope as sc
+    stem = rel.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    toks = "|".join(_re.escape(x) for x in
+                    sorted(list(sc.spec()) + list(sc.LEGACY),
+                           key=len, reverse=True))
+    return _re.sub(rf"_(?:{toks})?_?\d{{4,8}}.*$", "", stem).rstrip("_")
 
 
 def propose(src: Path, ds: dict) -> dict:
-    """정규명 후보를 낸다. **채택하지 않는다.**"""
+    """정규명 후보를 낸다. **채택하지 않는다.**
+
+    단서를 셋 본다. 강한 순서다 —
+      ① KFS 문서번호   대장 본문에 그대로 적혀 있다. 제일 확실하다
+      ② 취득 규칙      `normalize_raw.RULES` 가 배치할 수 있는가
+      ③ 없음           사람이 정한다
+    """
     stem, ext = nm.split_ext(src.name)
     out = {"origin_name": src.name, "ext": ext, "doc_no": None,
            "matched_key": None, "suggest": None, "why": []}
@@ -153,21 +169,43 @@ def propose(src: Path, ds: dict) -> dict:
     if m:
         out["doc_no"] = m.group(1).upper()
 
-    # 대장에 이미 있는 항목인가 — 문서번호가 제일 강한 단서다.
+    # ① 문서번호
     if out["doc_no"]:
         for k, v in ds.items():
-            blob = json.dumps(v, ensure_ascii=False)
+            blob = json.dumps(v, ensure_ascii=False, default=str)
             if out["doc_no"] in blob.upper():
                 out["matched_key"] = k
                 pat = v.get("file", "")
                 base = pat.rsplit("/", 1)[-1].rsplit(".", 1)[0]
                 if "*" not in base:
-                    out["suggest"] = f"{v.get('file','').split('/')[0]}/{base}.{ext}"
+                    out["suggest"] = f"{pat.split('/')[0]}/{base}.{ext}"
                     out["why"].append(
                         f"문서번호 {out['doc_no']} 가 대장 {k} 에 있다")
                 break
 
-    if out["suggest"] is None:
+    # ② 취득 규칙 — 규칙이 배치할 수 있으면 그 결과로 대장 항목을 찾는다
+    if out["matched_key"] is None:
+        placed = _by_rules(src.name)
+        if placed:
+            out["suggest"] = placed
+            # ★ RULES 는 **옛 이름**을 만든다(`..._dongu_...`). 그대로
+            #   stem 을 조회하면 어긋난다. `normalize_raw` 가 그러듯
+            #   여기서도 파서를 거쳐 provider_dataset 만 뽑는다.
+            pstem = _stem_of(placed)
+            for k, v in ds.items():
+                st = v.get("stem") or ""
+                stems = v.get("stems") or ([st] if st else [])
+                if pstem in stems:
+                    out["matched_key"] = k
+                    out["why"].append(
+                        f"취득 규칙이 {placed} 로 배치한다 → 대장 {k}")
+                    break
+            else:
+                out["why"].append(
+                    f"취득 규칙은 {placed} 로 배치하는데 대장 항목이 없다 — "
+                    "stem 이 맞는지 확인하라")
+
+    if out["matched_key"] is None:
         slug = nm.slugify(stem)
         out["why"].append(
             f"대장 매칭 실패. 후보 토큰 — {slug!r} (사람이 정한다)")
@@ -228,8 +266,24 @@ def cmd_plan(inb: Path) -> int:
     return 0
 
 
-def cmd_stage(inb: Path, *, apply: bool) -> int:
-    """다운로드 → landing. **원본은 지우지 않는다.**"""
+def cmd_stage(inb: Path, *, apply: bool, force: bool = False) -> int:
+    """다운로드 → landing. **원본은 지우지 않는다.**
+
+    ★ 관문 둘을 통과해야 한다 —
+      ① 레이크가 붙어 있는가(`require_lake`)
+      ② 대장이 아는 파일인가
+
+      ②가 없어서 `apply.sh` · `fire-lane-gis.zip` · 진행일지 PDF 가
+      landing 에 올라갔다. `--plan` 은 "★ 대장에 없는 문서다" 라고
+      경고해 놓고 `--stage` 는 그냥 복사했다 — **경고가 게이트로
+      이어지지 않았다.** 이 저장소가 반복해 배운 그 형태다.
+
+      확장자로는 못 막는다. `.zip` 은 정상 데이터 형식이고
+      `fire-lane-gis.zip` 은 저장소 사본이다. **대장이 판단한다.**
+    """
+    from firelane.paths import require_lake
+    require_lake(need=("raw",))
+    ds = sources_index()
     L = load_ledger()
     known = {v["sha256"] for v in L["files"].values()}
     LANDING.mkdir(parents=True, exist_ok=True)
@@ -239,6 +293,12 @@ def cmd_stage(inb: Path, *, apply: bool) -> int:
             continue
         s = sha256(p)
         if s in known:
+            skipped += 1
+            continue
+        if not force and propose(p, ds)["matched_key"] is None:
+            print(f"건너뜀  {p.name}\n"
+                  f"        대장에 없다. 먼저 datasets 또는 retired 에 적어라"
+                  f"(§18-3c). 정말 올리려면 --force")
             skipped += 1
             continue
         dst = LANDING / p.name          # ★ landing 은 원본명 그대로다
@@ -262,7 +322,7 @@ def cmd_stage(inb: Path, *, apply: bool) -> int:
         L["at"] = datetime.now(KST).isoformat(timespec="seconds")
         LEDGER.parent.mkdir(parents=True, exist_ok=True)
         LEDGER.write_text(
-            json.dumps(L, ensure_ascii=False, indent=1), encoding="utf-8")
+            json.dumps(L, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"\n{'편입' if apply else '편입 예정'} {moved} · 건너뜀 {skipped}")
     if not apply and moved:
         print("  실제로 옮기려면 --yes")
@@ -301,6 +361,8 @@ def main() -> int:
     ap.add_argument("--stage", action="store_true", help="다운로드 → landing")
     ap.add_argument("--audit", action="store_true", help="raw·대장 문법 심사")
     ap.add_argument("--yes", action="store_true", help="실제로 복사한다")
+    ap.add_argument("--force", action="store_true",
+                    help="대장에 없는 파일도 올린다. ★ 먼저 대장에 적어라")
     a = ap.parse_args()
     if a.audit:
         return cmd_audit()
@@ -308,7 +370,7 @@ def main() -> int:
     if a.plan:
         return cmd_plan(inb)
     if a.stage:
-        return cmd_stage(inb, apply=a.yes)
+        return cmd_stage(inb, apply=a.yes, force=a.force)
     return cmd_observe(inb)
 
 

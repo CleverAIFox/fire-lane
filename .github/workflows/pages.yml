@@ -10,12 +10,14 @@
 #
 # 켜는 법 (1회)
 #   Settings > Pages > Source 를 "GitHub Actions" 로 변경
-#   그러면 main·gis 브랜치에 푸시할 때마다 자동 갱신된다.
+#   그러면 main 브랜치에 푸시할 때마다 자동 갱신된다.
+#   ★ 2026-08-27. gis 트렁크 폐기. 배포 게이트는 main 단독이다 —
+#     dev 는 트렁크, main 은 배포 스냅샷이다.
 name: 지도 배포
 
 on:
   push:
-    branches: [main, gis]
+    branches: [main]
     paths: ['web/**']
   workflow_dispatch:
 

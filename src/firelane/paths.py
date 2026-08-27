@@ -59,6 +59,40 @@ NORM = (DATA / "norm") if DATA else (ROOT / "data" / "norm")
 #   계층인데 계층 모듈이 모르면 도구마다 자기 자리를 발명한다.
 LANDING = (DATA / "landing") if DATA else (ROOT / "data" / "landing")
 
+# ── 출발지 ────────────────────────────────────────────────────
+# 브라우저가 떨구는 곳. **파이프라인의 머리이자 우리가 소유하지 않는 유일한
+# 계층**이다. 읽기 전용으로 취급한다 — 사용자의 폴더지 우리 것이 아니다.
+#
+# ★ 2026-08-26. 처음에 `tools/intake.py` 안에 박아뒀더니 `doctor.py` 가
+#   그것을 쓰려고 `sys.path.insert` 를 했고 `test_layering` 에 걸렸다.
+#   **경로 정본은 여기다**(모듈 머리말). 도구 안에 두면 다른 도구가
+#   자기 자리를 발명하거나 남의 자리를 훔친다 — interim 때와 같은 형태다.
+#
+# WSL 에서 윈도우 다운로드는 `/mnt/c/Users/<user>/Downloads` 다. 사용자명이
+# 기계마다 다르므로 자동탐색하되, **이름으로 거르지 않는다** — `Default User`
+# 를 빼먹어 빈 폴더를 출발지로 잡은 적이 있다. 파일이 실제로 있는 곳을 고른다.
+def inbox() -> Path:
+    env = os.environ.get("FIRE_LANE_INBOX")
+    if env:
+        return Path(env).expanduser()
+    cands = []
+    for base in (Path("/mnt/c/Users"), Path("/c/Users")):
+        if not base.is_dir():
+            continue
+        for u in sorted(base.iterdir()):
+            d = u / "Downloads"
+            try:
+                n = sum(1 for x in d.iterdir() if x.is_file())
+            except OSError:
+                continue
+            if n:
+                cands.append((n, d))
+    if not cands:
+        return Path.home() / "Downloads"
+    cands.sort(reverse=True)
+    return cands[0][1]
+
+
 # 중간 산출물. 언제든 지워도 재생성된다(MASTER §18-1).
 #
 # ★ 2026-08-24 신설. 그전까지 이 계층은 **문서에만 있었다.** §18-1 이 여섯
@@ -150,3 +184,52 @@ def check() -> None:
 
 if __name__ == "__main__":
     check()
+
+
+def require_lake(*, need: tuple[str, ...] = ("raw",)) -> None:
+    """레이크가 실제로 붙어 있는가. **없으면 여기서 멈춘다.**
+
+    ★ 2026-08-27. `raw` 가 없는 기계에서 `intake --stage` 가 그대로 돌아
+      `landing` 을 새로 만들고 파일 10건을 복사했다. `doctor` 는
+      `✗ layers.raw 이 required 인데 없다` 를 정확히 냈는데, **진단과
+      게이트가 연결돼 있지 않았다.** 판정만 하고 아무도 안 막았다.
+
+      같은 날 두 번 났다 — 리전에서 `apply*.sh` 6건, 그램에서 프로젝트
+      산출물 4건. 도구마다 따로 검사하면 또 빠뜨린다. 관문은 하나여야
+      하고, 경로 해석의 정본인 이 모듈이 그 자리다.
+
+    ★ **빈 디렉터리는 붙은 것으로 치지 않는다.** WSL 은 마운트가 없어도
+      `/mnt/d` 를 만들어 두고, 그러면 `is_dir()` 이 참이 된다.
+      그것을 믿고 쓴 것이 이번 사고다.
+    """
+    import sys
+    table = {"raw": RAW, "landing": LANDING, "norm": NORM,
+             "interim": INTERIM, "quarantine": QUARANTINE}
+    bad = []
+    for n in need:
+        d = table.get(n)
+        if d is None:
+            continue
+        try:
+            empty = not any(d.iterdir())
+        except OSError:
+            empty = True
+        if empty:
+            bad.append((n, d))
+    if not bad:
+        return
+    lines = ["✗ 데이터 레이크가 붙어 있지 않다."]
+    lines += [f"    {n:10} {d}" for n, d in bad]
+    lines += [
+        "",
+        "  확인 —",
+        "    ls /mnt/                          드라이브 문자",
+        '    cmd.exe /c "wmic logicaldisk get name"',
+        "    export FIRE_LANE_DATA=<fire-lane-data 경로>",
+        "",
+        "  ★ 빈 디렉터리는 붙은 것이 아니다. WSL 은 마운트가 없어도",
+        "    /mnt/d 를 만들어 둔다 — 그것을 믿고 쓰다 landing 을",
+        "    엉뚱한 곳에 만들었다(2026-08-27).",
+    ]
+    print("\n".join(lines))
+    sys.exit(2)

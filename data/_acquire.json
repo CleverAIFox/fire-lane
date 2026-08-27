@@ -24,7 +24,7 @@
    "sha256": "7c7011029be8d66532240cbbf4f46831b9ff5fb6601e58b7637f7440c7b2a867",
    "bytes": 247597
   },
-  "its/its_nodelink_changelog_20260812.csv": {
+  "its/its_nodelink_changelog_kr_20260812.csv": {
    "sha256": "eefe2cbc8c8701b2d434d7eb52cba42bf6598c9c9b552043e23fa1c693634dfa",
    "bytes": 2358
   },
@@ -112,6 +112,10 @@
    "sha256": "a8b309c908d13b2d4760bba08a9845063d1a1622147efab7b72edc132cc73e81",
    "bytes": 715776
   },
+  "safety/safety_kfs_ambulance_special_kr_20251224.pdf": {
+   "sha256": "b4fec99a5e721e396d92995bb11d18412cbd8bbbb4836cce214298f36985813d",
+   "bytes": 630841
+  },
   "safety/safety_kfs_chemical_kr_20251224.hwpx": {
    "sha256": "9688a70902502279b7a406aacb914585d4a1dcb3019b52e5335b007b4d877b73",
    "bytes": 208187
@@ -140,6 +144,10 @@
    "sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
    "bytes": 1320960
   },
+  "safety/safety_mas_vehicle_spec_kr_20241111.pdf": {
+   "sha256": "0a535f5e927a726410ce9a3c35bbf8aaeea0093cce35cd100799d017ef253ced",
+   "bytes": 1153787
+  },
   "sbiz/sbiz_store_kr_20260630.zip": {
    "sha256": "57aa361544108ff4fc73334f87d2ced61e41fe8638dd70bcd842930f865d2386",
    "bytes": 352699739
@@ -153,5 +161,5 @@
    "bytes": 17086559
   }
  },
- "at": "2026-08-26T23:16:51+09:00"
+ "at": "2026-08-27T10:07:10+09:00"
 }

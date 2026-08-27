@@ -94,6 +94,13 @@
 | 39 | 계층 밖 경로 조립 잔존 | 📄 | 2026-08-26 에 `golden` · `baseline` 을 계층으로 등재하고 `paths.GOLDEN` · `paths.BASELINE` 을 신설했다. `pipeline.py` 가 아직 `ROOT / "data/golden/..."` 를 문자열로 조립한다. 상수로 바꾼다 |
 | 40 | 임포트 시점 디스크 접근 | 📄 | 2026-08-26 에 `datalog.EXTERNAL_TARGETS` 를 `external_targets()` 로 바꿨다. 최상위 상수가 `q.exists()` 를 돌려 외장 SSD 마운트가 끊기면 `OSError: Errno 19` 로 모듈을 못 불러왔고, 문서만 고치는 작업까지 `verify.sh` 에서 막혔다. **다른 모듈에도 같은 형태가 있는지 훑는다** |
 | 41 | 대장 `outputs` 미등재 20여건 | 🟡 | `data/processed` 산출물 중 `sources.yaml` `outputs` 에 없는 것이 스무 건 남짓이다. 대장에 없으면 `datalog impact` 가 파일을 못 따라가고 검증 상태·known_issues 가 어디에도 안 적힌다. 항목마다 `produced_by` · `path` · `inputs` · `consumers` · `what` · `verified` 를 채운다. `test_ledger_outputs.py::test_no_undeclared_output` 이 xfail 로 대기한다 |
+| 42 | `contract-strict` 가 저장소 전체를 잠갔다 | 🔴 | 2026-08-27 신설된 잡인데 기존 코드가 **1,291건** 걸린다(`dev` 에서도 동일). Required 가 아니라 머지는 되지만 매번 빨간불이면 아무도 안 읽는다. ① `--ignore` 확장 — 이 저장소 문체와 충돌하는 것(`TRY003`·`EM101`·`EM102` 는 예외 메시지에 "왜" 와 "고치는 법" 을 길게 적는 규약, `PLR2004` 는 `1990 <= y <= 2100` 같은 것이 상수화하면 덜 읽힌다, `C901`·`PLR0912` 는 파서·검증기의 성격, `PLC0415` 는 순환 임포트 회피, `CPY001` 은 이 저장소가 저작권 헤더를 안 쓴다) ② 또는 `CODEOWNERS` 범위를 신규 파일로 축소 — 워크플로 머리말의 취지가 그것이다("범위를 좁혀서 강도를 유지한다") |
+| 43 | `.code_fingerprint` 가 커밋되지 않는다 | 🟡 | `data/processed/` 가 gitignore 라 지문이 저장소에 안 올라간다. 다른 기계에서 `golden.py check` 가 매번 stale 로 뜨고, 그러면 사람이 `--allow-stale` 을 습관처럼 쓴다 — **게이트를 죽이는 습관**이다. `data/golden/` 으로 옮기는 편이 낫다. 지문은 잠금의 일부이지 산출물이 아니다 |
+| 44 | `prep.source_path()` 가 죽은 코드다 | 🔴 | `prep.py` 안에만 있고 `ingest.py` 에 없다. `layers.norm.migrated` 를 채워도 아무 일이 안 난다. 배선 지점은 `ingest.py:176 · 238 · 495`. ★ **이 작업만 파이프라인이 읽는 파일 자체를 바꾼다** — 소스 하나씩 옮기고 매 건 `golden.py check`. 첫 건은 `cctv`(CSV 단일 · 컬럼 11 · 소비자 3곳) |
+| 45 | `_quarantine` 사유 기록 없음 | 🟡 | 16건 1.03GB. 그중 970MB 가 `AL_D002_12_20260808.zip` 이고 두 달째다. `QUARANTINE.md` 에 파일별 **사유 · 판단일 · 처리계획**. 격리는 판단 보류지 폐기가 아니다(`MASTER §18-12`) |
+| 46 | `file`/`files` 줄 제거 | 📄 | `acquire._derive_files()` 가 재료(stem·scope·vintage·ext·parts)에서 파생하고 그것이 이미 이긴다. 남은 `file` 줄은 사본이라 어긋날 수 있다. ★ 글롭이 정답인 소스는 남긴다 — `enforcement`(판이 늘어난다) · `ngii1k`(도엽 묶음) · `ortho` · `streetlight` |
+| 47 | `feeds` 산문 36건 | 🟡 | `tools/ledger_feeds.py` 가 판정 3축(대장 키 · raw 파일명 · 산출물 이름)으로 unused 16건을 낸다. 그중 15건은 대장이 스스로 "미투입"·"참조 0곳" 이라 적은 것과 일치한다. 이게 끝나야 `ledger.grade()` 가 활용도를 자동 산출하고 #23 을 손으로 안 센다 |
+| 48 | `license: TODO` 11건 · KFS-1-0006 미판단 | 📄 | `road_rw`·`road_intrvl`·`building`·`building_entrance` 는 `boundary_emd` 와 같은 zip·같은 승인 조건이다. 복붙이면 끝난다. 공개 배포물이므로 재현성이 아니라 **배포 가능성** 문제다. `KFS-1-0006`(소방차 도장 및 표지)은 진입 판정과 무관하니 `retired` 에 "무관" 으로 등재한다 |
 
 ### 1-23. 영상판정 유효거리 실측 설계
 
@@ -730,9 +737,9 @@ C  5구간   단순 무작위 · 봉인                외부 검증용
 하고, 12m 이상은 재봐야 판정이 안 바뀌므로 얇게 한다.
 
 ```
-tools/naver_check.py    표본 + 봉인
-tools/naver_page.py     입력 페이지 (미니맵 · 방위)
-tools/naver_join.py     봉인 해제 + 대조
+tools/naver_check.py (삭제됨)    표본 + 봉인
+tools/naver_page.py (삭제됨)     입력 페이지 (미니맵 · 방위)
+tools/naver_join.py (삭제됨)     봉인 해제 + 대조
 ```
 
 **판단 기준**

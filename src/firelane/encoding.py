@@ -143,7 +143,7 @@ def detect(path: Path, *, sample: int = 1 << 20) -> Verdict:
     #    ★ 여기를 utf-8 로 단정하면 `encoding: cp949` 선언과 충돌하는
     #      것으로 보고돼 오탐이 난다. ASCII 는 넷 모두와 호환이므로
     #      "겹친다" 고 말해야지 "utf-8 이다" 라고 말하면 안 된다.
-    if not raw.translate(None, bytes(range(0x00, 0x80))):
+    if not raw.translate(None, bytes(range(0x80))):
         notes.append("ASCII 전용이라 인코딩을 특정할 수 없다(모두와 호환)")
         return Verdict("ascii", "strong", 0.0, nl, False, notes)
 
@@ -168,9 +168,27 @@ def detect(path: Path, *, sample: int = 1 << 20) -> Verdict:
         return Verdict("utf-8", "strong", hr, nl, False, notes)
 
     # ② CP949 — 디코드는 거의 항상 된다. 한글이 나와야 증거다.
+    text = None
     try:
         text = raw.decode("cp949", errors="strict")
     except UnicodeDecodeError:
+        # ★ 표본 끝에서 멀티바이트가 잘린 경우를 먼저 배제한다.
+        #   UTF-8 경로에는 이 보정이 있었는데 CP949 경로에는 없었다.
+        #   그래서 1MB 표본을 읽는 5MB CSV 가 **매번 U+FFFD 1개**를 냈고,
+        #   "이미 깨진 뒤 저장됐다 — 재취득 대상" 이라는 오탐이 떴다.
+        #   재취득해도 같은 경고가 나와 무엇이 진짜인지 알 수 없었다
+        #   (2026-08-27, gjcity_parking_enforce_..._20240108.csv).
+        #
+        #   ★ 잘못된 경보는 진짜 경보를 못 믿게 만든다. 경계 오차를
+        #     손상으로 세면 안 된다.
+        for back in range(1, 3):
+            try:
+                text = raw[:-back].decode("cp949", errors="strict")
+                notes.append("표본 끝 멀티바이트 경계 보정")
+                break
+            except UnicodeDecodeError:
+                continue
+    if text is None:
         text = raw.decode("cp949", errors="replace")
         notes.append("cp949 로도 완전히 안 읽힌다 — 이진 파일이거나 손상")
     hr = _hangul_ratio(text)
@@ -244,8 +262,7 @@ def to_norm(src: Path, dst: Path, *, declared: str | None = None) -> dict:
         raise EncodingError_(
             f"{src} 의 인코딩을 확정할 수 없다. 대장에 encoding 을 적어라.")
     text = src.read_bytes().decode(enc, errors="strict")
-    if text.startswith("\ufeff"):
-        text = text[1:]
+    text = text.removeprefix("\ufeff")
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_bytes(text.encode("utf-8"))

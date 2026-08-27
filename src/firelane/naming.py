@@ -424,7 +424,7 @@ def audit_pattern(pat: str) -> list[str]:
             "    묶으면 ingest 의 hits[0] 가 조용히 뒤집힌다(2026-08-25).\n"
             "    files: 리스트 + primary: 로 적어라.")
     if WILDCARD & set(stem.rpartition(".")[0]) and not stem.startswith(
-            pat.split("/")[0]):
+            pat.split("/", maxsplit=1)[0]):
         out.append(
             f"글롭이 provider 접두를 강제하지 않는다: {pat!r} — "
             "다른 기관 파일이 걸릴 수 있다")
