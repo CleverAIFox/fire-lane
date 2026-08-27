@@ -310,6 +310,14 @@ tools/
   pr_body_check.py        PR 본문이 템플릿을 실제로 채웠는가
   docx_check.py           기획서 ↔ 산출물 숫자·폐기 용어 대조
   docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
+  doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
+  intake.py               Downloads → landing 게이트 · 대장 미매칭 차단
+  migrate_names.py        raw 개명 백필 — 실물·sha대장·대장을 원자적으로
+  refcheck.py             선언이 가리키는 것이 실재하는가 · --gc
+  ledger_stem.py          대장 stem 이관 · 무손실 증명
+  ledger_fields.py        대장 별칭 필드 통합
+  ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
+  ledger_feeds.py         feeds 산문 → 소비자 리스트
   serve.py                캐시 없는 개발 서버
   wmax_audit.py           width_max_m 결손이 판정에 미치는 규모
   desk_check.py           정사영상 위에 구간·폭 렌더
@@ -324,6 +332,7 @@ tests/
   test_seg_width.py       WidthEngine 단위
   test_seg_roadname.py    RoadNameIndex 단위
   test_static.py          정의되지 않은 이름 (실패 경로의 NameError)
+  test_intake_rules.py    명명·스코프·인코딩 규칙 — raw 없이 도는 강제자
   test_reproducibility.py 재현성 규약 강제 · 문서 ↔ 코드 동기화
   test_doc_style.py       문서 문체 · 절 번호 · 어휘
   test_declaration_sync.py ★ 역방향 — 실물이 선언돼 있는가
