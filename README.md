@@ -259,6 +259,8 @@ uv run python -m firelane.datalog fsck    계층 선언 ↔ 실물
 
 ```
 sources.yaml              데이터 정본. layers · datasets · outputs · retired
+src/contracts/            ★ 파트 간 유일한 접점. 세 파트가 이것만 import 한다
+  vision.py               영상판정 인터페이스 (MASTER §19 의 실행 가능한 사본)
 src/firelane/
   paths.py                경로 정본. FIRE_LANE_DATA 환경변수
   layers.py               계층 선언과 경로를 이름으로 묶는다
@@ -304,6 +306,10 @@ tools/
   commit_policy.py        산출물 · 일회성 스크립트 · 비밀값 차단
   encoding_check.py       인코딩 · 개행
   web_manifest.py         web/data 계보 검사
+  owned_paths.py          ★ CODEOWNERS 를 소유권·검사강도의 정본으로 읽는다
+  pr_body_check.py        PR 본문이 템플릿을 실제로 채웠는가
+  docx_check.py           기획서 ↔ 산출물 숫자·폐기 용어 대조
+  docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
   serve.py                캐시 없는 개발 서버
   wmax_audit.py           width_max_m 결손이 판정에 미치는 규모
   desk_check.py           정사영상 위에 구간·폭 렌더
@@ -321,6 +327,9 @@ tests/
   test_reproducibility.py 재현성 규약 강제 · 문서 ↔ 코드 동기화
   test_doc_style.py       문서 문체 · 절 번호 · 어휘
   test_declaration_sync.py ★ 역방향 — 실물이 선언돼 있는가
+  test_ownership.py       ★ 미소유 경로가 없는가. CODEOWNERS 전수 검사
+  test_ops_html_sync.py   docs/ops.html ↔ 브랜치·팀·워크플로 대조
+  test_contract_vision.py GIS ↔ CV 경계 (MASTER §19)
   test_ledger_outputs.py  대장 outputs ↔ 실제 산출물
   test_place_idempotent.py 지점 집계 멱등성
 web/

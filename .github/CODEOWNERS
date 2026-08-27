@@ -1,40 +1,127 @@
-# 소유권 = 리뷰 승인 권한. 여기 적힌 경로는 소유자 승인 없이 머지되지 않는다.
-# GitHub Settings > Branches > main 브랜치 보호 규칙에서
-# "Require review from Code Owners"를 켜야 실제로 동작한다.
+# 소유권 = 리뷰 승인 권한 + 검사 강도. 이 파일이 둘의 단일 정본이다.
+#
+# ★ 이 파일은 두 가지를 동시에 정한다.
+#     1. 리뷰 승인 권한        GitHub 가 읽는다
+#     2. 엄격 검사 적용 범위    tools/owned_paths.py 가 `# !strict` 를 읽는다
+#   별도 파일을 만들지 않는 이유는 하나다 — 정본이 둘이면 반드시 어긋난다.
+#   이 저장소가 contract.yml 브랜치 목록(2회) · requirements-etl ·
+#   CI 의존성 손목록에서 이미 배웠다(MASTER §18-3).
+#
+# ★ 매치 규칙은 **마지막에 걸린 것이 이긴다**(GitHub 사양).
+#   그래서 아래는 넓은 것 → 좁은 것 순서다. 순서를 바꾸지 마라.
+#
+# ★ `**` 를 쓰지 않는다. GitHub 과 owned_paths.py 의 해석이 갈릴 여지를
+#   남기지 않는다. `/dir/` · `/path/file` · `*.ext` 만 쓴다.
+#
+# ── 팀 ──────────────────────────────────────────────────────────
+#   @woongtopia/gis     오창준(@AIMasterFox) · 우지혜(@marscoolcat)
+#   @woongtopia/cv      이가연(@gayeoniii) · 백진욱(@wlsdnr052475)
+#   @woongtopia/infra   김재웅(@diyon13)
+#
+#   ★ 팀에게 저장소 **Write 권한**을 줘야 CODEOWNERS 가 동작한다.
+#     Settings > Collaborators and teams > Add teams > Write
+#     권한 없는 팀을 적으면 GitHub 이 조용히 무시하고 그 경로는
+#     리뷰 없이 머지된다 — 보호되는 것처럼 보이면서.
+#
+#   ★ 팀을 쓰는 이유는 멤버십이 바뀌어도 이 파일을 안 고쳐도 되기
+#     때문이다. 개인 핸들은 그 사람만 승인 가능한 자리에만 쓴다.
+#
+# ── ★ 자기 PR 은 자기가 승인 못 한다 (GitHub 사양) ──────────────
+#   `/src/firelane/` 을 @AIMasterFox 단독으로 두면 **본인이 본인 PR 을
+#   머지할 수 없다.** 그래서 GIS 코어는 `@woongtopia/gis` 팀 소유로 둔다.
+#   지혜님이 승인권을 갖되 판정 로직 리뷰를 강요하지는 않는다 —
+#   실제 방어는 계약 테스트가 한다(MASTER §12-5).
 
-# ── GIS 코어. 값의 근거가 여기 있다 ──────────────────
-/sources.yaml            @AIMasterFox
-/src/firelane/                @AIMasterFox
-/data/                   @AIMasterFox
-/docs/MASTER.md          @AIMasterFox
 
-# ── 표출 ─────────────────────────────────────────────
-# 파일을 계층으로 나눠 충돌을 구조적으로 막는다.
-/web/style.css           @marscoolcat            # UI 단독. 색·간격·타이포
+# ── 0. 기본값. 미소유를 없앤다 ──────────────────────────────────
+# ★ 이 줄이 이 파일에서 제일 중요하다. "전부 대관리자 소유" 라는 뜻이
+#   아니라 **분류되지 않은 새 파일이 떨어지는 자리**다. 아래 좁은
+#   규칙들이 전부 덮어쓴다. 하는 일은 하나뿐이다 —
+#   미소유 상태를 불가능하게 만드는 것.
+*                        @AIMasterFox
+
+
+# ── 1. GIS 코어. 값의 근거가 여기 있다 ──────────────────────────
+/sources.yaml            @woongtopia/gis          # !strict
+/src/firelane/           @woongtopia/gis          # !strict
+/data/                   @woongtopia/gis          # !strict
+/docs/MASTER.md          @woongtopia/gis          # !strict
+/docs/PLAN.md            @woongtopia/gis          # !strict
+/docs/DECISIONS.md       @woongtopia/gis          # !strict
+
+
+# ── 2. 비전 ─────────────────────────────────────────────────────
+# 마스킹 · 캘리브레이션 · 객체탐지 · 세그멘테이션 · 호모그래피 · 폭 판정
+# ★ !strict 를 걸지 않는다. 파트가 자기 속도로 붙을 수 있어야 한다.
+#   실제 방어는 아래 §4 계약이 한다. 규칙이 시끄러우면 사람이 우회한다.
+/src/cv/                 @woongtopia/cv
+/src/cv/README.md        @woongtopia/cv
+/tests/test_cv_.py       @woongtopia/cv
+
+
+# ── 3. 파이프라인 · 인프라 ──────────────────────────────────────
+# FastAPI · 폴링 스케줄러 · DB · 도커 · AWS
+/src/api/                @woongtopia/infra
+/src/api/README.md       @woongtopia/infra
+/infra/                  @woongtopia/infra
+/Dockerfile              @woongtopia/infra @woongtopia/gis
+/Dockerfile.api          @woongtopia/infra
+/Dockerfile.vision       @woongtopia/infra @woongtopia/cv
+/docker-compose.yml      @woongtopia/infra @woongtopia/gis
+
+
+# ── 4. ★ 경계 계약. 파트 간 유일한 접점 ─────────────────────────
+# 세 파트 전부 이것만 import 하고 서로의 코드는 import 하지 않는다.
+# 여기가 바뀌면 전원이 영향을 받으므로 세 파트 승인이 모두 필요하다.
+# 정본 서술은 MASTER §19.
+/src/contracts/          @woongtopia/gis @woongtopia/cv @woongtopia/infra   # !strict
+/tests/test_contract.py  @woongtopia/gis @woongtopia/cv @woongtopia/infra   # !strict
+
+
+# ── 5. 표출 ─────────────────────────────────────────────────────
+# 파일을 계층으로 나눠 충돌을 구조적으로 막는다(DECISIONS §27).
+/web/style.css           @marscoolcat
 /web/index.html          @marscoolcat @AIMasterFox
 /web/README.md           @marscoolcat @AIMasterFox
-/web/config.js           @marscoolcat @AIMasterFox   # 양쪽이 함께 보는 유일한 파일
+/web/config.js           @marscoolcat @AIMasterFox                          # !strict
+/web/js/main.js          @AIMasterFox                                       # !strict
+/web/js/data.js          @AIMasterFox                                       # !strict
+/web/js/state.js         @AIMasterFox                                       # !strict
+/web/js/map.js           @AIMasterFox                                       # !strict
+/web/js/basemap.js       @AIMasterFox                                       # !strict
+/web/js/verdict.js       @AIMasterFox                                       # !strict
+/web/js/config-access.js @AIMasterFox                                       # !strict
+/web/js/dom.js           @marscoolcat @AIMasterFox
+/web/js/layers/          @AIMasterFox                                       # !strict
+/web/js/icons/           @marscoolcat @AIMasterFox
+/web/js/ui/              @marscoolcat @AIMasterFox
+/web/data/               @woongtopia/gis
 
-# ★ 2026-08-24. 분할 당시 여섯 파일이 이 목록에서 누락돼 있었다
-#   (state · map · basemap · verdict · config-access · dom).
-#   소유자가 없으면 보호 규칙이 리뷰를 요구하지 않는다 —
-#   verdict.js 는 판정 색을 그리는 파일인데 아무도 검토하지 않았다.
-#   tests/test_web_ownership.py 가 web/ 전 경로의 소유 여부를 검사한다.
-#
-# ★ app.js 1,260줄을 web/js/ 로 쪼갠 결과(2026-08-21). 파일 하나를 둘이
-#   건드리던 구조가 사라져 충돌이 경로로 갈린다.
-/web/js/main.js          @AIMasterFox            # 부트스트랩. 순서만 정한다
-/web/js/data.js          @AIMasterFox            # ★ 데이터 접근 단일 지점
-/web/js/state.js         @AIMasterFox            # 공유 상태. 레이어 간 계약
-/web/js/map.js           @AIMasterFox            # 지도 인스턴스 생성
-/web/js/basemap.js       @AIMasterFox            # 배경 타일 · 지형
-/web/js/verdict.js       @AIMasterFox            # ★ 판정 4종 → 색. 정본은 seg/geom.py
-/web/js/config-access.js @AIMasterFox            # config.js 를 모듈에서 읽는 유일한 통로
-/web/js/dom.js           @marscoolcat @AIMasterFox   # DOM 조회 헬퍼. 마크업과 맞물린다
-/web/js/layers/          @AIMasterFox            # GIS 단독. 레이어·판정 렌더링
-/web/js/icons/           @marscoolcat @AIMasterFox   # 캔버스 그림 — UI 감각이 필요하다
-/web/js/ui/              @marscoolcat @AIMasterFox   # 범례·검색·테마·토글
 
-# ── 생성물. 아무도 손으로 고치지 않는다 ───────────────
-# publish_web.py 산출물이다. 수정하면 다음 실행에 덮어써진다.
-/web/data/               @AIMasterFox
+# ── 6. 공용 선언물. 손으로 머지한다 ─────────────────────────────
+# ★ 5인 체제의 실제 충돌 지점이다. 의존성은 extras 로 갈라
+#   각자 자기 블록만 만진다. [project.dependencies] 코어를 건드리면
+#   세 파트 리뷰가 걸린다.
+# ★ uv.lock 충돌은 손으로 풀지 않는다 —
+#   git checkout --theirs uv.lock && uv lock
+/pyproject.toml          @woongtopia/gis @woongtopia/cv @woongtopia/infra
+/uv.lock                 @woongtopia/gis @woongtopia/cv @woongtopia/infra
+/.github/                @woongtopia/gis                                    # !strict
+/.githooks/              @woongtopia/gis                                    # !strict
+/.gitignore              @woongtopia/gis                                    # !strict
+/.gitattributes          @woongtopia/gis                                    # !strict
+/.devcontainer/          @woongtopia/gis @woongtopia/infra
+/.env.example            @woongtopia/gis @woongtopia/infra
+
+
+# ── 7. 강제자 ───────────────────────────────────────────────────
+# ★ 강제자를 아무나 지울 수 있으면 강제자가 아니다.
+/tests/                  @woongtopia/gis                                    # !strict
+/tools/                  @woongtopia/gis                                    # !strict
+
+
+# ── 8. 운영 문서 ────────────────────────────────────────────────
+# docs/ops.html 은 MASTER §12 의 **표시용 사본**이다.
+# web/config.js 가 seg/params.py 의 사본인 것과 같은 관계(R3).
+/docs/ops.html           @woongtopia/gis                                    # !strict
+

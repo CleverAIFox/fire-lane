@@ -47,7 +47,7 @@ def nfa_compare(g):
     # ★ RAW 는 $FIRE_LANE_RAW 다. ROOT/"data"/"raw" 로 박아두면 exists() 가
     #   항상 거짓이라 이 블록이 통째로 죽는다. 실제로 한 번도 실행된 적이 없었다.
     #   소방서 지정 구간은 우리 폭에 대한 유일한 외부 대조 수단이다.
-    fa = RAW/"safety"/"safety_fire_access_gj_dong_20250731.csv"
+    fa = RAW / "safety" / "safety_fire_access_jngj-dong_20250731.csv"
     if fa.exists():
         import csv
         import re

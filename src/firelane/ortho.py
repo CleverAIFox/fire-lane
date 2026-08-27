@@ -29,7 +29,6 @@ PARAM 도엽 격자 역산 상수(EPSG:5186 TM 중부원점)
 """
 from __future__ import annotations
 
-import glob
 import json
 import math
 import shutil
@@ -43,6 +42,7 @@ from PIL import Image
 from rasterio.transform import Affine
 from rasterio.warp import Resampling, reproject
 
+from firelane import naming as nm
 from firelane import quiet_gdal
 from firelane.paths import PROCESSED, RAW, WEB
 
@@ -91,8 +91,27 @@ def sheet_origin_5186(key: str, w_px: int, h_px: int) -> Affine:
     return Affine(GSD, 0, box[0] - pad_x, 0, -GSD, box[3] + pad_y)
 
 
+def _ortho_tifs() -> list[str]:
+    """정사영상 TIF 목록. **대장이 정본이다.**
+
+    ★ `RAW/"ngii"/"ngii_ortho_gj*.tif"` 로 하드코딩돼 있었다. 개명 뒤
+      0건이 되고, 그러면 `[SKIP] 정사영상 TIF 없음` 을 찍고 조용히
+      넘어간다 — 배경 타일이 통째로 빠진 채 성공으로 보인다.
+    """
+    import yaml
+
+    from firelane.paths import ROOT as _R
+    d = yaml.safe_load((_R / "sources.yaml").read_text(encoding="utf-8")) or {}
+    e = (d.get("datasets") or {}).get("ortho") or {}
+    out: list[str] = []
+    for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        out += [str(x) for x in RAW.glob(str(pat)) if x.suffix.lower() == ".tif"]
+    return sorted(set(out))
+
+
 def main():
-    tifs = sorted(glob.glob(str(RAW / "ngii" / "ngii_ortho_gj*.tif")))
+    # ★ 글롭도 개명을 탄다. 대장이 정본이므로 거기서 읽는다.
+    tifs = _ortho_tifs()
     if not tifs:
         print("[SKIP] 정사영상 TIF 없음. sources.yaml 의 ortho 참조")
         return
@@ -104,7 +123,16 @@ def main():
     # 스코프에 걸치는 부분만 읽어 붙인다. 4장 전량(1.25GB)을 메모리에 올리지 않는다.
     pieces = []
     for f in tifs:
-        key = Path(f).stem.split("_")[2][2:]        # ngii_ortho_gj037_... → 037
+        # ★ 2026-08-27. 종전에는 `stem.split("_")[2][2:]` 였다 —
+        #   **세 번째 토큰이 도엽**이라는 가정이다. 개명으로 그 자리가
+        #   `jngj-dong`(스코프)이 되면서 `gj-dong` 이 나와 KeyError 로
+        #   파이프라인이 죽었다.
+        #
+        #   파일명 문법의 정본은 `firelane.naming` 이다. 인덱스로 토큰을
+        #   꺼내는 코드는 문법이 바뀌는 순간 조용히 틀리거나 시끄럽게
+        #   죽는다. 파서를 쓴다.
+        key = nm.parse(Path(f).name, strict=False).part or ""
+        key = key[2:] if key.startswith("gj") else key
         with rasterio.open(f) as r:
             tr = sheet_origin_5186(key, r.width, r.height)
             inv = ~tr

@@ -204,6 +204,24 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         print(f"     쓰이지 않는 것: {rest}")
         print("     날짜가 파일명에 있으므로 정렬 첫 번째는 대개 **옛 판**이다.")
         print("     sources.yaml 의 file 을 하나로 좁혀라.")
+
+    # ── FL_EXT_COLLISION ─────────────────────────────────────
+    # 줄기가 같고 확장자만 다른 파일이 raw 에 함께 있으면, 어느 것을
+    # 읽는지가 **사전순 우연**으로 정해진다. kind 와 무관하다.
+    #
+    # 2026-08-25 에 KFS 규격서를 PDF 판으로 다시 읽고 결론을 뒤집었는데,
+    # 대장이 `..._20251224.*` 라 두 판을 한 항목으로 보고 있었다.
+    # raw_only 는 위 SINGLE_PICK 경고 밖이라 아무 말도 안 났을 것이다.
+    _stems = {}
+    for h in hits:
+        _stems.setdefault(h.name.rsplit(".", 1)[0], []).append(h.name)
+    for _st, _fs in _stems.items():
+        if len(_fs) > 1:
+            print(f"  ★ {key}: 확장자만 다른 동명 파일 {len(_fs)}개 — "
+                  f"{', '.join(sorted(_fs))}")
+            print(f"     지금 읽는 것은 {src.name} 이고, 그 선택은 사전순이다.")
+            print("     포맷이 다르면 다른 자산이다. 대장을 files: + primary:")
+            print("     로 적어 못박아라(firelane.ledger 가 강제한다).")
     rec = {"key": key, "source_file": e["file"], "source_sha256": sha_of(src),
            "resolved": src.name,
            **({"ambiguous": [x.name for x in hits]} if len(hits) > 1 else {}),

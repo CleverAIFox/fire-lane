@@ -461,7 +461,9 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 필요하며 D-30 인터뷰 요청 항목이다.
 
 필문대로289번길은 본선과 측도가 한 폴리곤인 구간이다. 정보공개청구 17337943
-도로대장이 여기에 걸려 있다.
+도로대장을 여기에 걸었으나 **부존재로 종결됐다**(2026-08-24 · PLAN §1-26).
+★ 도로대장은 검증축이 아니다. 독립 대조는 `ngii1k_center` 의 측량 성과
+도로폭이 맡고(n=909 · 절대편차 중앙 0.32m), 정본은 D-25 실측이다.
 
 ### 4-3. ★ 이 표는 파일로 남지만 봉인 사본이 낡았다
 
@@ -1098,13 +1100,65 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 된다
 
 ## 12. 협업
 
-브랜치는 `gis` 하나가 정본이다. 각자 작업 브랜치를 파서 PR 로 합친다.
+브랜치는 4계층이다. `dev` 가 트렁크이고 `main` 은 배포 스냅샷이다.
+표시용 사본은 `docs/ops.html` 이며 어긋남은 `tests/test_ops_html_sync.py` 가 잡는다.
 
 ```
-gis ─────────────────────── 정본. 여기가 항상 동작해야 한다
- ├ gis-*   오창준 (@AIMasterFox)   데이터·판정·경로
- └ ui/*    우지혜 (@marscoolcat)   화면·3D
+main ────────────────────── 배포 스냅샷. AWS 자동 배포. 김재웅 전담
+ └ dev ─────────────────── 트렁크. 여기가 항상 동작해야 한다
+    ├ part/gis ─────────── 오창준(@AIMasterFox) · 우지혜(@marscoolcat)
+    ├ part/cv ──────────── 이가연(@gayeoniii) · 백진욱(@wlsdnr052475)
+    └ part/infra ───────── 김재웅(@diyon13)
+       └ feat/*   임시. 자유. 당일 삭제
 ```
+
+| 팀 | 경로 | 담당 |
+|---|---|---|
+| `@woongtopia/gis` | `src/firelane/` · `data/` · `web/` · `docs/` | 데이터 · 판정 · 경로 · 화면 |
+| `@woongtopia/cv` | `src/cv/` | 마스킹 · 캘리브레이션 · 세그멘테이션 · 호모그래피 |
+| `@woongtopia/infra` | `src/api/` · `infra/` | FastAPI · 폴링 스케줄러 · DB · 도커 · AWS |
+
+★ **브랜치는 폴더가 아니다.** `part/gis` 에도 `src/cv/` 와 `src/api/` 가 다
+있다. 차이는 하나 — dev 에 아직 안 올라간 커밋이 몇 개 더 있느냐. 파트
+브랜치는 "우리 파트 전용 공간" 이 아니라 **dev 보다 조금 앞선 저장소 전체**다.
+아침에 `git merge origin/dev` 를 빼먹으면 사흘 뒤 대형 충돌이 난다.
+
+### 12-1. 룰셋
+
+| 대상 | 삭제 금지 | force push 금지 | PR 필수 | 필수 검사 |
+|---|---|---|---|---|
+| `main` | ✔ | ✔ | ✔ + Code Owners | shared · strict |
+| `dev` | ✔ | ✔ | ✔ | shared |
+| `part/**` | ✔ | ✔ | ✔ | shared |
+| `feat/**` | — | — | — | — |
+
+★ 접두사를 섞지 않는다. 통합 브랜치는 `part/`, 임시 브랜치는 `feat/` 다.
+둘 다 `feat/` 로 두면 룰셋이 구분하지 못해 임시 브랜치까지 force push 가
+막히거나 통합 브랜치가 삭제 가능해진다.
+
+★ `dev` 브랜치가 있으면 `dev/무엇` 은 ref 충돌로 만들 수 없다. `part` 라는
+이름의 브랜치를 만들지 않는다.
+
+### 12-2. 소유권
+
+`.github/CODEOWNERS` 가 **리뷰 권한과 검사 강도의 단일 정본**이다.
+줄 끝 `# !strict` 태그가 붙은 경로만 `contract-strict` 가 검사한다.
+`tools/owned_paths.py` 가 읽는다.
+
+★ 미소유 경로는 존재할 수 없다(`tests/test_ownership.py`). 새 공용 파일이
+소유자 없이 들어오면 그 PR 에서 빨간불이 뜬다. **목록을 미리 관리하지
+않고 규칙 없는 상태로는 머지가 안 되게 한다.**
+
+★ 자기 PR 은 자기가 승인할 수 없다(GitHub 사양). 그래서 GIS 코어를 팀
+소유로 둔다. 실제 방어는 승인이 아니라 계약 테스트가 한다.
+
+### 12-3. 충돌
+
+| 대상 | 처리 |
+|---|---|
+| `uv.lock` | `git checkout --theirs uv.lock && uv lock` — 손으로 풀지 않는다 |
+| `web/data/` | `git checkout --theirs web/data/` 후 재생성. 생성물이다 |
+| 그 외 | 아침에 `git merge origin/dev` 를 빼먹은 것이다 |
 
 ★ `gis/*` 는 `gis` 브랜치와 ref 충돌로 생성 불가하다. `gis-*` 를 쓴다.
 `gis` 는 보호 브랜치이며 직푸시가 막힌다 — **오창준도 PR 이 필요하다.**
@@ -1327,7 +1381,6 @@ uv run python tools/corner_probe.py     코너 꺾임각·반경 — 회전 가�
 uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
 uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치는 규모
 uv run python tools/scan_data.py        데이터 레이크 구조 점검
-uv run python tools/naver_check.py      네이버 지도 준-실측 표본 + 봉인
 ```
 
 **측정하고 대조한 뒤에 판정을 바꾼다.**

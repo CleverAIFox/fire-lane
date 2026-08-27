@@ -48,7 +48,7 @@ from firelane.paths import PROCESSED, RAW, ROOT
 
 OUT = PROCESSED
 
-DEM_ZIP = RAW / "ngii" / "ngii_dem_gj35616_20251117.zip"
+DEM_ZIP = RAW / "ngii" / "ngii_dem_jngj-dong_20251117_35616.zip"
 ZOOM = 8          # 보간 배율. 90m -> 11.25m. 표현용이므로 정보량은 그대로다.
 LAYERS = ["segments", "building", "cctv", "hydrant_point", "fire_station"]
 TILE_Z = (12, 13, 14, 15)   # 원본이 90m 라 z15 면 이미 과표본이다. 그 이상은 무의미

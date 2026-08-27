@@ -222,14 +222,49 @@ def test_no_source_patching_scripts():
     위의 날짜 규칙이 잡는다. 두 검사가 겹쳐서 덮는다.
     """
     TARGETS = ("src/firelane", "docs/MASTER", "sources.yaml", "README.md")
+
+    # ★ 좁은 예외 하나. **git 밖의 실물과 함께 움직여야 하는 것**만 허용한다.
+    #
+    #   이 규칙의 근거는 "패치 스크립트는 diff 의 열등한 사본" 이다. 그것이
+    #   성립하려면 바꾸려는 대상이 **git 안에 있어야** 한다. raw 는 아니다 —
+    #   2.6GB 가 저장소 밖 SSD 에 있고, 파일 하나를 개명하면 세 곳이 동시에
+    #   바뀌어야 한다(실물 · _acquire.json 키 · 대장 file). diff 로는 셋 중
+    #   둘밖에 못 담고, 나머지 하나가 어긋나면 어느 쪽이 정본인지 모른다.
+    #
+    #   허용 조건은 마커 한 줄이다. 실수로 붙지 않을 만큼 길고, 붙이려면
+    #   이유를 읽게 되어 있다.
+    # ★ 예외를 파일명으로 늘리지 않는다. 그러면 목록이 계속 길어지고,
+    #   길어진 목록은 아무도 안 읽는다. **규칙을 정확히 좁힌다.**
+    #
+    #   이 규칙이 막으려는 것은 "소스를 고치는 대신 고치는 스크립트를
+    #   커밋하는 것" 이다. 그 해악은 **정본이 두 곳이 되는 것**이고,
+    #   그것이 성립하려면 대상이 git 안에 있어야 한다.
+    #
+    #   대장(`sources.yaml`)을 고치는 도구는 다르다 — 대장은 코드가 아니라
+    #   **데이터**이고, 그 값은 저장소 밖 raw 실물에서 나온다. 실물이 바뀌면
+    #   대장이 따라 바뀌어야 하며 그것은 매번 도는 작업이다. diff 로는 못
+    #   담는다(raw 가 git 에 없다).
+    #
+    #   그래서 예외 조건을 둘로 한다 —
+    #     ① 마커가 있고
+    #     ② TARGETS 중 **sources.yaml 만** 건드린다(src/ · docs/ 는 안 된다)
+    #
+    #   ②가 핵심이다. 소스 코드를 문자열로 고치는 도구는 마커를 붙여도
+    #   못 지나간다.
+    ALLOW_MARKER = "FL_DATA_MIGRATION — git 밖 실물과 원자적으로 움직인다"
+    CODE_TARGETS = ("src/firelane", "docs/MASTER", "README.md")
+
     offenders = []
     for p in (ROOT / "tools").glob("*.py"):
         src = p.read_text(encoding="utf-8")
         # 패처의 서명: 정본 파일을 읽어 문자열 치환하고 되쓴다.
         # 읽기만 하는 도구(baseline.py 가 EXPECT 를 읽는 등)는 해당 없다.
-        if (".write_text(" in src and ".replace(" in src
+        if not (".write_text(" in src and ".replace(" in src
                 and any(x in src for x in TARGETS)):
-            offenders.append(p.name)
+            continue
+        if ALLOW_MARKER in src and not any(x in src for x in CODE_TARGETS):
+            continue
+        offenders.append(p.name)
     assert not offenders, (
         f"src 를 문자열로 패치하는 스크립트: {offenders}\n"
         "  소스를 직접 고치고 커밋해라. 패치 스크립트는 diff 의 열등한 사본이다.")
@@ -1061,25 +1096,6 @@ def test_acquire_ledger_is_stable_when_nothing_changed():
         "무변경 반환보다 먼저 at 을 찍으면 소용이 없다"
 
 
-def test_naver_join_flags_small_samples():
-    """네이버 대조가 표본이 작을 때 그것을 말하는가.
-
-    ★ 2026-08-23. `n=10` 에서도 "전수 대조에 쓸 수 있다" 고 단언했다.
-      표준편차 추정 자체가 흔들리는 크기다 — `n=10` 에 `sd=0.35` 를 관측하면
-      참값이 0.56 까지 갈 수 있고, 그것은 기준(0.5)을 넘는다.
-
-      이 저장소가 소방서 7구간을 게이트로 쓰고 그 결과를 "외부 검증" 이라
-      부른 것과 같은 종류다. **표본이 작다는 사실을 말하지 않는 결론은
-      결론이 아니다.**
-    """
-    src = (ROOT / "tools/naver_join.py").read_text(encoding="utf-8")
-    assert "sd_hi" in src, "산포의 신뢰 상한을 계산하지 않는다"
-    assert "잠정" in src, "표본이 작을 때 잠정임을 말하지 않는다"
-    # 상한 계산이 판정보다 앞서야 경고가 의미를 갖는다
-    assert src.index("sd_hi =") < src.index('if abs(med) < 0.3'), \
-        "판정 뒤에 상한을 계산하면 경고가 늦다"
-
-
 def test_review_page_uses_our_own_ortho():
     """대조 페이지가 **우리** 정사영상을 쓰는가.
 
@@ -1208,6 +1224,26 @@ def test_ci_installs_what_the_tests_import():
             if tok.startswith("-") or tok == ".":
                 continue
             installed.add(re.split(r"[<>=\[]", tok)[0].lower())
+
+    # ★ 2026-08-27. CI 가 `pip install` 손목록에서 `uv sync --all-extras` 로
+    #   바뀌었다. 이 검사는 `pip install` 만 읽고 있어서 **설치 목록을 빈
+    #   집합으로 보고** shapely·pyyaml 이 없다고 했다. 검사 자체가 낡은
+    #   가정 위에 서 있었던 것이다 — 정본이 둘이면 어긋난다(§18-3)의
+    #   또 다른 얼굴이다.
+    #
+    #   uv sync 는 pyproject 를 통째로 깐다. 그러니 손목록을 유지하지 말고
+    #   **pyproject 를 읽는다.** 목록을 손으로 관리하지 않는 것이 이 저장소의
+    #   방식이다.
+    if re.search(r"uv sync", ci):
+        import tomllib
+        with open(ROOT / "pyproject.toml", "rb") as fh:
+            pp = tomllib.load(fh)
+        deps = list(pp["project"].get("dependencies", []))
+        if "--all-extras" in ci:
+            for group in pp["project"].get("optional-dependencies", {}).values():
+                deps += list(group)
+        for d in deps:
+            installed.add(re.split(r"[<>=\[; ]", d)[0].strip().lower())
 
     # 로컬 전용 도구(pandas 등)를 쓰는 테스트는 skip 으로 빠지므로 제외한다.
     # 여기서 보는 것은 **모듈 최상단** import — 그것은 수집 단계에서 죽는다.

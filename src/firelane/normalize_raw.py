@@ -47,6 +47,14 @@ for st in (sys.stdout, sys.stderr):
 
 # 원본 파일명 패턴 → (폴더, 목적지 파일명)
 # 정규식은 소문자 변환 후 매칭한다. 괄호는 브라우저가 &#40; 로 바꾸기도 해서 느슨하게 본다.
+# FL_HYPHEN_SCOPE
+# ★ 2026-08-27. 패스스루 규칙이 `\w+` 를 쓰고 있었는데 `\w` 는 하이픈을
+#   포함하지 않는다. 스코프 별칭이 `jngj-dong` 으로 바뀌면서 **규칙이
+#   자기가 만든 파일을 못 잡게 됐다.** 재취득하면 landing 에 갇힌다 —
+#   2026-08-23 의 `동구_불법 주정차_20250226.csv` 2.9MB 와 같은 사고다.
+#
+#   `test_every_required_file_is_reachable_by_rules` 가 잡았다.
+#   별칭 문법을 바꿀 때 그것을 읽는 곳을 전부 세지 않은 결과다.
 RULES: list[tuple[str, str, str]] = [
     # ── 2026-08-17 소방 계열 3종 재확보 ──────────────────────
     #   ★ 아래 세 줄이 위쪽 기존 규칙보다 먼저 매칭돼야 한다.
@@ -128,7 +136,7 @@ RULES: list[tuple[str, str, str]] = [
     (r"정사영상_(\d{4})_35616(\d{3})\.tif$",    "ngii", "ngii_ortho_gj{1}_{0}1231.tif"),
     (r"정사영상메타데이터_\d+35616(\d{3})\.xml$", "ngii", "ngii_ortho_gj{0}_20251231.xml"),
     (r"공개dem_35616.*\.zip$",                   "ngii", "ngii_dem_gj35616_20251117.zip"),
-    (r"^ngii_(basemap|ortho|dem)_gj\w+_\d{8}\.(zip|tif|xml)$", "ngii", None),
+    (r"^ngii_(basemap|ortho|dem)_gj[\w-]+_\d{8}\.(zip|tif|xml)$", "ngii", None),
 
     # ── vworld · 브이월드 ────────────────────────────────────
     # ★ ngii 와 폴더를 나눈다. 같은 수치지형도라도 원천이 다르면 폴더가 다르다.
@@ -160,7 +168,7 @@ RULES: list[tuple[str, str, str]] = [
     #   이 파일의 위쪽 주석은 *"좌표 없는 시도 소방서 현황(20250701)은
     #   규칙을 두지 않는다"* 라고 적고 있었다. 주석과 코드가 반대였다.
     #   `test_rules_do_not_reimport_retired_files` 가 대장과 대조한다.
-    (r"^safety_\w+_\d{8}\.csv$", "safety", None),
+    (r"^safety_[\w-]+_\d{8}\.csv$", "safety", None),
 
     # ── gjcity · 공공데이터포털(광주 동구) ───────────────────
     # ★ enforcement 가 safety 에서 여기로 옮겨왔다.
@@ -174,39 +182,57 @@ RULES: list[tuple[str, str, str]] = [
     (r"동구_쓰레기통현황_(\d{8})\.csv$",            "gjcity", "gjcity_bin_trash_dongu_{0}.csv"),
     (r"동구_의류수거함위치_(\d{8})\.csv$",          "gjcity", "gjcity_bin_cloth_dongu_{0}.csv"),
     (r"동구_주차장정보.*(\d{8})\.csv$",             "gjcity", "gjcity_parking_dongu_{0}.csv"),
-    (r"^gjcity_\w+_dongu_\d{8}\.csv$", "gjcity", None),
+    (r"^gjcity_[\w-]+_[\w-]+_\d{8}\.csv$", "gjcity", None),
 
     # ── sbiz · 소상공인시장진흥공단 ──────────────────────────
     # ★ 다운로드 사이트가 괄호를 HTML 엔티티로 준다(&#40; &#41;).
     #   쉘·경로에서 계속 문제를 일으키므로 여기서 흡수한다.
     (r"소상공인시장진흥공단_상가.*(\d{8})\.zip$", "sbiz", "sbiz_store_kr_{0}.zip"),
-    (r"^sbiz_store_kr_\d{8}\.zip$", "sbiz", None),
+    (r"^sbiz_store_[\w-]+_\d{8}\.zip$", "sbiz", None),
 
     # ── eais · 건축HUB ───────────────────────────────────────
     # ★ 원본이 "03. 표제부_20260817013434.csv" 다. 앞의 03 은 서식 번호이고
     #   뒤 14자리는 다운로드 시각이다. 데이터 기준일이 아니므로 앞 8자리만 쓴다.
     (r"표제부_(\d{8})\d{6}\.csv$", "eais", "eais_bldg_ledger_gjdonggu_{0}.csv"),
-    (r"^eais_bldg_ledger_\w+_\d{8}\.csv$", "eais", None),
+    (r"^eais_bldg_ledger_[\w-]+_\d{8}\.csv$", "eais", None),
 ]
 
 # 없으면 파이프라인이 도는 데 지장이 있는 것
-REQUIRED = [
-    "juso/juso_elctrnmap_jngj_20260711.zip",
-    "vworld/vworld_map1k_gjdonggu_20260307.zip",     # 폭 산출 주 소스
-    "vworld/vworld_map1k_ngi_gjdonggu_20260307.zip", # 북부 12도엽 보완분
-    "its/its_nodelink_kr_20260812.zip",
-    "ngii/ngii_basemap_gj9708_20260812.zip",
-    "ngii/ngii_dem_gj35616_20251117.zip",
-    "safety/safety_cctv_jngj_20260630.csv",
-    "safety/safety_hydrant_point_kr_20240207.csv",
-    "safety/safety_hydrant_summary_gj_dong_20250731.csv",
-    "safety/safety_fire_access_gj_dong_20250731.csv",
-    "safety/safety_firestation_kr_20240901.csv",
-    "gjcity/gjcity_streetlight_dongu_20240415.csv",
-    "gjcity/gjcity_parking_enforce_dongu_20240108.csv",
-    "sbiz/sbiz_store_kr_20260630.zip",
-    "eais/eais_bldg_ledger_gjdonggu_20260817.csv",
-]
+#
+# ★ 2026-08-26. 종전에는 옛 파일명 15개를 하드코딩했다. 개명 뒤 9건이
+#   "★없음 — 재취득할 것" 으로 떴는데 **전부 오탐**이었다. 실물은 있고
+#   목록만 낡았다. 잘못된 경보는 진짜 경보를 못 믿게 만든다.
+#
+#   대장에서 유도한다. 대장의 `file` 이 정본이고, 그것은 개명과 함께 움직인다.
+def _required() -> list[str]:
+    import yaml
+
+    from firelane.paths import ROOT as _R
+    try:
+        d = yaml.safe_load((_R / "sources.yaml").read_text(encoding="utf-8")) or {}
+    except OSError:
+        return []
+    out = []
+    for e in (d.get("datasets") or {}).values():
+        if e.get("kind") in (None, "raw_only"):
+            continue                       # 문서·참고자료는 필수가 아니다
+        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+            pat = str(pat)
+            # ★ 글롭은 뺀다. 이 목록은 **규칙이 배치할 수 있는가**를
+            #   검사하는 데 쓰이는데(`test_every_required_file_is_
+            #   reachable_by_rules`), 글롭은 실물 이름이 아니라 패턴이라
+            #   `place()` 에 넣을 수 없다. 도엽 묶음처럼 여러 장인 소스는
+            #   글롭이 정상이므로 목록에서 빼는 것이 맞다 —
+            #   그 실물들은 acquire 의 세 판정이 따로 본다.
+            if any(c in pat for c in "*?["):
+                continue
+            out.append(pat)
+    return sorted(set(out))
+
+
+# ★ 이름은 그대로 둔다. `test_normalize_rules` 가 이 이름으로 참조하고,
+#   MASTER 도 그렇게 적는다. **바뀐 것은 값의 출처이지 계약이 아니다.**
+REQUIRED = _required()
 
 # 이번 재확보에서 못 받은 것. 결손이지 폐기가 아니다(MASTER §18-12).
 # 지우면 잊는다. 목록에 남겨야 다음에 받을 때 뜬다.
@@ -280,6 +306,18 @@ def find_downloads() -> Path | None:
     return None
 
 
+
+def _entry_for(rel: str) -> dict | None:
+    """이 상대경로가 어느 대장 항목인가. **조회다. 역산이 아니다.**
+
+    ★ 종전에는 대장 `file` 에서 정규식으로 provider_dataset 을 역산했고,
+      그 규칙이 `migrate_names` 와 달라 12건이 개명되지 않았다(08-27).
+      `firelane.ledger.entry_of` 하나로 합쳤다.
+    """
+    from firelane.ledger import entry_of
+    return entry_of(rel)[1] or None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("src", nargs="?", help="다운로드 폴더")
@@ -322,6 +360,22 @@ def main():
             if not m:
                 continue
             name = f.name if tmpl is None else (tmpl.format(*m.groups()) if m.groups() else tmpl)
+            # ── FL_CANON_POST ────────────────────────────────
+            # ★ RULES 의 템플릿은 **옛 이름**을 만든다
+            #   (`safety_kfs_pumptruck_{0}.hwpx` — 스코프 토큰이 없다).
+            #   `naming.canonical` 이 새 이름을 만든다. 규칙이 두 곳에 있으면
+            #   **무한 왕복**이 난다 — acquire 가 옛 이름으로 넣고,
+            #   migrate_names 가 새 이름으로 고치고, 다음 acquire 가 되돌린다.
+            #   2026-08-26 에 실제로 12건이 그렇게 되돌아갔다.
+            #
+            #   RULES 는 "어느 소스인가" 만 정하고 **파일명은 canonical 이
+            #   정한다.** 정본은 하나다.
+            from firelane import naming as _nm
+            _rel = f"{folder}/{name}"
+            _ent = _entry_for(_rel)
+            _canon = _nm.canonical(_rel, _ent) if _ent is not None else None
+            if _canon:
+                folder, name = _canon.split("/", 1)
             dst = (src / name) if a.in_place else (RAW / folder / name)
             # ★ 2026-08-23. 여기가 **크기만** 보고 있었다.
             #     if dst.exists() and dst.stat().st_size == f.stat().st_size:
@@ -371,7 +425,7 @@ def main():
 
     print("\n[필수 파일 점검]")
     miss = []
-    for r in REQUIRED:
+    for r in _required():
         ok = (RAW / r).exists()
         print(f"  {'OK  ' if ok else '★없음'} {r}")
         if not ok:
