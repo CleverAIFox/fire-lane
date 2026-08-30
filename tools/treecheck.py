@@ -76,6 +76,9 @@ from pathlib import Path
 
 from firelane import layers as L
 from firelane import ledger as LD
+
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
 from firelane import naming as nm
 from firelane import paths
 from firelane import providers as P
@@ -260,7 +263,7 @@ def check_lake(*, offline: bool) -> list[F]:
 
     used = set()
     for e in (LD.load().get("datasets") or {}).values():
-        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        for pat in _led.globs(e):
             used.add(str(pat).split("/")[0])
     for p in sorted(P.active() - used):
         out.append(F("D9", WARN, f"providers:{p}",

@@ -148,6 +148,7 @@ raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
 ```bash
 uv run python tools/ship.py --fix --push   ★ 내보내기 전 단일 진입점
 uv run python tools/tidy.py --yes          로컬 찌꺼기
+uv run python tools/absorb.py --yes        ★ Downloads → raw 한 명령 (아래 참조)
 uv run python tools/acquire.py             landing → raw 획득 게이트
 uv run python tools/scan_data.py           데이터 레이크 구조 점검
 uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간 전이 대조
@@ -245,6 +246,22 @@ uv run python -m firelane.datalog check   대장 정합성
 uv run python -m firelane.datalog fsck    계층 선언 ↔ 실물
 ```
 
+획득은 네 단계인데 **명령도 넷이었다.** 그중 `--prune-landing` 은 `--verify`
+없이도 돈다 — 편입이 성공했다는 확인 없이 원본을 지운다. 그것이 소실이다.
+
+```bash
+uv run python tools/absorb.py          관측만
+uv run python tools/absorb.py --yes    이관 → 편입 → 검증 → 사본삭제
+```
+
+★ **삭제는 검증에 매달려 있다.** `③ verify` 가 0 이 아니면 `④` 는 실행되지
+않고 landing 원본이 그대로 남는다. 순서를 주석이 아니라 자료구조로 들고 있고
+`tests/test_intake_rules.py::test_absorb_*` 가 그것을 강제한다 —
+게이트를 뚫는 · None 을 0 으로 읽는 · 통과 경로를 막는 세 방향 전부 본다.
+
+단계별로 손으로 치고 싶으면 `intake.py` · `acquire.py` 를 직접 쓴다.
+absorb 는 그 둘을 부를 뿐 판정을 다시 쓰지 않는다.
+
 `contract.py` 가 보는 것 — 인코딩 · 컬럼 소실 · 건수 · zip 안 레이어 ·
 **스코프 안 유효 건수(`scope_min`)**. 마지막 항목이 핵심이다. 소스 교체 때
 소화전이 파싱은 되고 스코프에서 전멸해 `OK 0건` 으로 통과한 적이 있다.
@@ -312,6 +329,7 @@ tools/
   docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
   doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
   intake.py               Downloads → landing 게이트 · 대장 미매칭 차단
+  absorb.py               ★ 이관→편입→검증→사본삭제. 삭제는 검증에 매달려 있다
   migrate_names.py        raw 개명 백필 — 실물·sha대장·대장을 원자적으로
   refcheck.py             선언이 가리키는 것이 실재하는가 · --gc
   ledger_stem.py          대장 stem 이관 · 무손실 증명

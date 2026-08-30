@@ -42,6 +42,8 @@ from PIL import Image
 from rasterio.transform import Affine
 from rasterio.warp import Resampling, reproject
 
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
 from firelane import naming as nm
 from firelane import quiet_gdal
 from firelane.paths import PROCESSED, RAW, WEB
@@ -104,7 +106,7 @@ def _ortho_tifs() -> list[str]:
     d = yaml.safe_load((_R / "sources.yaml").read_text(encoding="utf-8")) or {}
     e = (d.get("datasets") or {}).get("ortho") or {}
     out: list[str] = []
-    for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+    for pat in _led.globs(e):
         out += [str(x) for x in RAW.glob(str(pat)) if x.suffix.lower() == ".tif"]
     return sorted(set(out))
 

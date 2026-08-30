@@ -42,7 +42,7 @@ FL_DATA_MIGRATION — git 밖 실물과 원자적으로 움직인다
   그것은 `ingest.shp_zip_multi` 의 동작을 건드린다. 별도 작업이다.
 
 ★ `gj_dong`(2건)도 안 한다. 그것은 개명이 아니라 **축 분리**다 —
-  `scope: jngj-dong` + `authority: 동부소방서`. 사람이 판단해야 한다.
+  `scope: jngj-donggu` + `authority: 동부소방서`. 사람이 판단해야 한다.
 
 IN    $FIRE_LANE_DATA/raw · data/_acquire.json · sources.yaml
 OUT   위 셋 · data/_migrate_journal.json
@@ -62,6 +62,8 @@ from pathlib import Path
 
 import yaml
 
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
 from firelane import scope as sc
 from firelane.paths import QUARANTINE, RAW, ROOT
 
@@ -181,7 +183,7 @@ def _repair_globs(*, apply: bool) -> list[str]:
     d = yaml.safe_load(s) or {}
     out = []
     for key, e in (d.get("datasets") or {}).items():
-        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        for pat in _led.globs(e):
             pat = str(pat)
             # ★ 글롭만 보지 않는다. **정확한 이름도 죽는다** —
             #   실물은 개명됐는데 대장이 옛 이름을 가리키는 상태가 있다
@@ -216,11 +218,11 @@ def _repair_globs(*, apply: bool) -> list[str]:
             cand_files.sort()
             # ★ 1순위 — **옛 글롭의 구조를 보존**하고 스코프 토큰만 바꾼다.
             #   commonprefix 는 파일 하나가 다른 하나의 접두일 때 무너진다:
-            #     vworld_map1k_jngj-dong_...zip
-            #     vworld_map1k_ngi_jngj-dong_...zip
-            #   → `map1k_*_jngj-dong` 이 되어 앞의 것을 놓친다(1/2건).
+            #     vworld_map1k_jngj-donggu_...zip
+            #     vworld_map1k_ngi_jngj-donggu_...zip
+            #   → `map1k_*_jngj-donggu` 이 되어 앞의 것을 놓친다(1/2건).
             #   옛 글롭 `vworld_map1k*_gjdonggu_...` 에서 토큰만 갈면
-            #   `vworld_map1k*_jngj-dong_...` 이 되어 둘 다 잡는다.
+            #   `vworld_map1k*_jngj-donggu_...` 이 되어 둘 다 잡는다.
             keep = pat
             for old_tok, new_tok in sc.LEGACY.items():
                 keep = keep.replace(f"_{old_tok}_", f"_{new_tok}_")

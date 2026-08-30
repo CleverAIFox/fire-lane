@@ -137,19 +137,37 @@ def main():
     # 전부 스코프로 자른다. 자르지 않으면 마스크가 덮은 어두운 영역 위에
     # 점이 떠서 "저게 뭐냐"는 오해를 부른다. (소화전 18개 중 스코프 밖이 7개였다)
 
-    # 소화전. 관할 588개 중 공개 31개(5%), 그중 동명동 1개.
-    # 이 희소성 자체가 발표 논거다.
+    # 소화전. ★ 2026-08-31 실측 — processed 524 · 스코프 안 153 · 동명동 41.
+    # 종전 주석의 "공개 31개 · 동명동 1개" 는 소스 교체 전 값이고 9개월 낡았다.
+    # 희소성 논거를 그 숫자로 쓰면 안 된다(MASTER §3-12 도 같이 고쳤다).
     hyd = gpd.read_file(P/"hydrant_point.geojson")
     # ★ 컬럼을 하드코딩하지 않는다. 2026-08-15 소스 교체 때 여기가
     #   KeyError 로 파이프라인 전체를 세웠다. 있는 것만 싣는다.
     #   결손은 폐기가 아니다 — 0건이어도 빈 레이어로 발행하고 지도는 뜬다.
     #   다만 조용히 넘어가지도 않는다. 없으면 이름을 찍는다.
-    want = ["시설번호", "시설유형코드", "소재지도로명주소", "소재지지번주소",
-            "상세위치", "설치연도", "보호틀유무", "관할기관명", "안전센터명"]
-    have = [c for c in want if c in hyd.columns]
-    miss = [c for c in want if c not in hyd.columns]
+    # ★ 2026-08-31. 종전 `want` 는 **한글 컬럼명**이었고 실물은 영문
+    #   카멜케이스다. 9종 전부 못 찾아 `속성 0종` 으로 발행됐고 지도
+    #   팝업이 비어 있었다. "있는 것만 싣는다" 가 **아무것도 안 싣는
+    #   것**을 조용히 통과시킨 것이다 — 경고는 매 실행 찍혔지만
+    #   0종을 실패로 보는 곳이 없었다.
+    #
+    #   표시명 ← 원본명 으로 못박는다. MASTER §11-5 가 표시명을 적는다.
+    want = {"시설번호": "fcltyNo", "시설유형코드": "fcltySeCode",
+            "소재지도로명주소": "rdnmadr", "소재지지번주소": "lnmadr",
+            "상세위치": "descLc", "설치연도": "installationYear",
+            "보호틀유무": "prtcYn", "관할기관명": "institutionNm",
+            "안전센터명": "safeCnterNm"}
+    have = {k: v for k, v in want.items() if v in hyd.columns}
+    miss = [k for k, v in want.items() if v not in hyd.columns]
     if miss:
         print(f"  ! 소화전 속성 없음 {miss} — 있는 것만 싣는다")
+    # ★ 0종은 결손이 아니라 매핑이 통째로 틀어진 것이다. 조용히 넘기지 않는다.
+    if not have and len(hyd):
+        raise KeyError(
+            f"소화전 속성 매핑이 전부 빗나갔다. 실물 컬럼: {list(hyd.columns)[:12]}\n"
+            "  publish_web.want 를 실물에 맞춰라. 0종 발행은 팝업을 비운다.")
+    hyd = hyd.rename(columns={v: k for k, v in have.items()})
+    have = list(have)
     hcols = have + (["z"] if "z" in hyd.columns else [])
     hyd = hyd[hyd.within(scope4)][hcols + ["geometry"]] if len(hyd) else hyd
     print(f"  소화전 {len(hyd)}개 · 속성 {len(have)}종")

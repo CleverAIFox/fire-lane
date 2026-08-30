@@ -109,14 +109,17 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
         r.add(WARN, "contract 블록 없음 — 검사할 수 없다")
         return r
 
-    pat = e.get("file")
-    if not pat:
-        r.add(FAIL, "file 선언 없음")
+    # ★ 2026-08-30. `e.get("file")` 단수를 읽고 있었다. 대장에서 그
+    #   필드가 사라지자 42종 전부 "file 선언 없음" 이 됐다 — 계약 검사가
+    #   실물을 한 번도 안 보고 끝난다. 조회기는 ledger 하나다.
+    from firelane import ledger as _led
+    pats = _led.globs(e)
+    if not pats:
+        r.add(FAIL, "files 선언 없음")
         return r
-    hits = sorted(raw.glob(pat)) if any(ch in pat for ch in "*?[") else (
-        [raw / pat] if (raw / pat).exists() else [])
+    hits = _led.paths_of(e, raw)
     if not hits:
-        r.add(FAIL, f"파일 없음: {pat}")
+        r.add(FAIL, f"파일 없음: {' · '.join(pats)}")
         return r
 
     # ── 인코딩 ────────────────────────────────────────────

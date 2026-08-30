@@ -40,6 +40,8 @@ import shutil
 import sys
 from pathlib import Path
 
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
 from firelane import providers
 from firelane.paths import RAW
 
@@ -53,7 +55,7 @@ for st in (sys.stdout, sys.stderr):
 # 정규식은 소문자 변환 후 매칭한다. 괄호는 브라우저가 &#40; 로 바꾸기도 해서 느슨하게 본다.
 # FL_HYPHEN_SCOPE
 # ★ 2026-08-27. 패스스루 규칙이 `\w+` 를 쓰고 있었는데 `\w` 는 하이픈을
-#   포함하지 않는다. 스코프 별칭이 `jngj-dong` 으로 바뀌면서 **규칙이
+#   포함하지 않는다. 스코프 별칭이 `jngj-donggu` 으로 바뀌면서 **규칙이
 #   자기가 만든 파일을 못 잡게 됐다.** 재취득하면 landing 에 갇힌다 —
 #   2026-08-23 의 `동구_불법 주정차_20250226.csv` 2.9MB 와 같은 사고다.
 #
@@ -220,7 +222,7 @@ def _required() -> list[str]:
     for e in (d.get("datasets") or {}).values():
         if e.get("kind") in (None, "raw_only"):
             continue                       # 문서·참고자료는 필수가 아니다
-        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        for pat in _led.globs(e):
             pat = str(pat)
             # ★ 글롭은 뺀다. 이 목록은 **규칙이 배치할 수 있는가**를
             #   검사하는 데 쓰이는데(`test_every_required_file_is_

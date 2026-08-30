@@ -32,6 +32,7 @@ ledger.py — 대장 항목 스키마의 정본. **산문을 필드로 바꾼다
     active      파이프라인이 읽고 산출물에 반영된다
     reference   보관·대조용. 읽되 판정에 안 들어간다 (raw_only)
     unused      ★ feeds 가 비었다. R4 대상 — raw 에 둘 이유를 못 댄다
+                사유를 `feeds_why` 에 적으면 판정은 남고 경보만 거둔다
     declared    선언만 있고 실물이 없다 (pending)
 
 `grade` 를 사람이 못 쓰게 하는 것이 요점이다. 쓸 수 있으면 낙관적으로 적고,
@@ -52,14 +53,23 @@ from firelane import naming as nm
 from firelane import paths
 from firelane import scope as sc
 
-REQUIRED = ("what", "provider", "scope", "updated", "acquired",
-            "license", "files", "schema", "feeds")
+# ★ 2026-08-30. provider · acquired · license 는 대장 재작성에서 제거된
+#   필드다. 여기 남겨두면 검증기가 대장 42종을 전부 거부한다(126 FAIL).
+#   **파생값을 지우려면 그것을 읽는 곳이 하나여야 한다** — 이 줄이 그
+#   원칙을 어긴 열한 번째 자리였고, 하필 그 원칙을 강제하는 도구다.
+REQUIRED = ("what", "scope", "updated", "files", "kind", "schema", "feeds")
+
+# raw_only 는 파이프라인이 읽지 않는다. 구조 선언을 요구할 근거가 없다.
+NO_SCHEMA_KINDS = {"raw_only"}
 
 # 텍스트 소스는 인코딩 선언이 있어야 한다. 실물과 대조하기 위해서다.
 TEXT_KINDS = {"csv_points", "csv_table", "csv_table_multi",
               "csv_points_in_zip", "csv_point", "json_points"}
 # hits[0] 하나만 읽는 kind. 여러 파일이 걸리면 조용히 뒤집힌다.
-SINGLE_PICK = TEXT_KINDS | {"shp_zip", "dbf_in_zip"}
+# ★ csv_table_multi 는 hits 전부를 이어붙인다(ingest.py 의 해당 분기).
+#   여기 넣으면 "하나만 읽는데 files 가 2개다" 를 매번 오탐한다.
+#   ingest 가 이 집합을 import 한다 — 같은 개념의 사본을 두지 않는다.
+SINGLE_PICK = (TEXT_KINDS - {"csv_table_multi"}) | {"shp_zip", "dbf_in_zip"}
 
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 FORBIDDEN_VALUES = {"TODO", "todo", "TBD", "?", "-", ""}
@@ -103,6 +113,8 @@ def check_entry(key: str, e: dict) -> list[Issue]:
         return v is None or (isinstance(v, str) and v.strip() in FORBIDDEN_VALUES)
 
     for f in REQUIRED:
+        if f == "schema" and e.get("kind") in NO_SCHEMA_KINDS:
+            continue
         if f not in e:
             out.append(Issue(FAIL, key, f"필수 필드 없음: {f}"))
         elif bad(e[f]):
@@ -125,24 +137,27 @@ def check_entry(key: str, e: dict) -> list[Issue]:
             out.append(Issue(FAIL, key, str(ex).splitlines()[0]))
 
     # ── 날짜 ──────────────────────────────────────────────────
-    for f in ("updated", "acquired"):
+    # ★ 2026-08-30. 종전 조건이 `isinstance(v, str)` 이었다. YAML 은
+    #   따옴표 없는 `updated: 2026-03-07` 을 **date 객체**로 읽으므로 그
+    #   항목만 형식 검사에서 조용히 빠졌다. 검사가 있는데 안 도는 자리다.
+    #   대장에 두 표기가 섞여 있다(dem_public 문자열 · ngii1k date).
+    #   문자열로 눌러서 본다 — 그러면 표기 혼재 자체도 드러난다.
+    for f in ("updated",):
         v = e.get(f)
-        if isinstance(v, str) and not DATE.match(v):
+        if v is not None and not DATE.match(str(v)):
             out.append(Issue(WARN, key, f"{f} 가 YYYY-MM-DD 가 아니다: {v!r}"))
-    if isinstance(e.get("updated"), str) and isinstance(e.get("acquired"), str):
-        if DATE.match(e["updated"]) and DATE.match(e["acquired"]):
-            if e["acquired"] < e["updated"]:
-                out.append(Issue(
-                    FAIL, key,
-                    f"갱신일({e['updated']}) 이 취득일({e['acquired']}) 보다 "
-                    "뒤다. 아직 없던 판을 받을 수는 없다"))
+    # acquired 대조는 제거했다. 대장에 없는 필드를 보는 검사는 영원히
+    # 통과한다 — 근거 없이 초록불을 켜는 것이 아무 검사도 없는 것보다 나쁘다.
 
     # ── 파일 ──────────────────────────────────────────────────
-    files = e.get("files")
-    if files is None and "file" in e:
-        out.append(Issue(WARN, key,
-                         "`file` 단수는 옛 형식이다. `files:` 리스트로 옮긴다"))
-        files = [e["file"]]
+    files = globs(e)
+
+    # stem 은 조회의 열쇠다. 없으면 stem_index() 에서 빠지고 migrate_names
+    # 가 "개명 대상 0건" 을 낸다 — 없는 것이 아니라 못 찾은 것이다.
+    if not (e.get("stems") or e.get("stem")):
+        out.append(Issue(FAIL, key,
+                         "stem 도 stems 도 없다. 조회 인덱스에서 빠져 "
+                         "개명·격리 판정이 조용히 이 항목을 건너뛴다"))
     for f in (files or []):
         for m in nm.audit_pattern(f):
             out.append(Issue(FAIL, key, m.splitlines()[0]))
@@ -174,14 +189,19 @@ def check_entry(key: str, e: dict) -> list[Issue]:
         out.append(Issue(FAIL, key,
                          "grade 는 자동 산출이다. 대장에 손으로 쓰지 않는다"))
     g = grade(e)
-    if g == "prose":
+    # ★ 2026-08-30. 산문 feeds 는 항목마다 WARN 하지 않는다.
+    #   42종이 전부 산문이라 42줄이 같은 말을 했고, 그 사이에 진짜
+    #   FAIL 4건이 묻혔다. **근거 없이 우는 검사가 아니라, 옳은데
+    #   너무 자주 우는 검사도 진짜 경보를 죽인다.**
+    #   판정은 유지하고(summary 가 센다) 출력만 총계로 낸다.
+    if g == "unused" and not e.get("feeds_why"):
+        # ★ 2026-08-30. `feeds_why` 가 있으면 판단이 끝난 것이다.
+        #   unused 는 판정 결과로 남기고(summary 가 센다) 경보만 거둔다.
+        #   판단이 끝난 사안을 미해결처럼 보이게 하는 것이 잘못된 경보다
+        #   — backup_policy 와 같은 자리.
         out.append(Issue(WARN, key,
-                         "feeds 가 산문이다. 소비자 키 리스트로 옮긴다 — "
-                         "산문은 셀 수 없고, 못 세면 R4 를 손으로 세다 틀린다"))
-    elif g == "unused":
-        out.append(Issue(WARN, key,
-                         "★ feeds 가 비었다(R4). raw 에 둘 이유를 대거나 "
-                         "retired 로 내린다"))
+                         "★ feeds 가 비었다(R4). raw 에 둘 이유를 "
+                         "feeds_why 에 적거나 retired 로 내린다"))
     return out
 
 
@@ -195,7 +215,7 @@ def check_all() -> list[Issue]:
     # 같은 실물을 두 항목이 다른 스코프로 적으면 하나는 틀린 것이다.
     byfile: dict[str, list[tuple[str, str]]] = {}
     for k, e in ds.items():
-        for f in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        for f in globs(e):
             byfile.setdefault(f, []).append((k, str(e.get("scope"))))
     for f, rows in byfile.items():
         scopes = {s for _, s in rows}
@@ -215,6 +235,49 @@ def summary() -> dict[str, int]:
     return tally
 
 
+# ── 대장 → raw · 단일 조회기 ──────────────────────────────────
+# ★ 2026-08-30. `e.get("files") or ([e["file"]] if "file" in e else [])` 가
+#   **열 곳**에 각기 복사돼 있었다. 대장에서 `file` 단수를 제거하자
+#   ingest 만 `e["file"]` 를 대괄호로 읽어 42종이 전부 죽었고, 나머지
+#   아홉 곳은 조용히 빈 리스트가 됐다. **죽은 쪽이 나은 쪽이었다.**
+#
+#   조회기는 하나여야 한다. 대장을 아는 이 모듈이 그 자리다
+#   (`stem_index` · `entry_of` 와 같은 이유).
+
+
+def globs(e: dict) -> list[str]:
+    """대장 항목 → raw 상대 글롭 패턴 목록. 없으면 빈 리스트."""
+    v = e.get("files")
+    if v is None and "file" in e:      # 옛 형식. 대장에는 이제 없다
+        v = [e["file"]]
+    return [str(x) for x in (v or [])]
+
+
+def paths_of(e: dict, root) -> list:
+    """대장 항목 → 실물 경로(정렬·중복 제거). 글롭이 아닌 것도 받는다."""
+    out = []
+    for pat in globs(e):
+        if any(c in pat for c in "*?["):
+            out += list(root.glob(pat))
+        elif (root / pat).exists():
+            out.append(root / pat)
+    return sorted(set(out))
+
+
+def crs_of(e: dict) -> str:
+    """crs_native → 'EPSG:NNNN'.
+
+    ★ 대장은 `crs_native: 5186` 으로 **정수**를 적는다(종전 `crs` 는
+      'EPSG:5186' 문자열이었다). pyproj 는 둘 다 받지만 계보에 정수가
+      박히면 문자열로 비교하는 하류가 조용히 어긋난다. 여기서 정규화한다.
+    """
+    v = e.get("crs_native")
+    if v in (None, ""):
+        return ""
+    s = str(v).strip()
+    return f"EPSG:{s}" if s.isdigit() else s
+
+
 if __name__ == "__main__":
     import sys
     issues = check_all()
@@ -222,7 +285,12 @@ if __name__ == "__main__":
         print(i)
     print(f"\nFAIL {sum(i.level == FAIL for i in issues)} · "
           f"WARN {sum(i.level == WARN for i in issues)}")
-    print("활용도 —", summary())
+    tally = summary()
+    print("활용도 —", tally)
+    if tally.get("prose"):
+        print(f"  ! feeds 가 산문인 항목 {tally['prose']}종 — 소비자 키 "
+              "리스트로 옮겨야 R4 를 셀 수 있다 (uv run python "
+              "tools/ledger_feeds.py)")
     sys.exit(1 if any(i.level == FAIL for i in issues) else 0)
 
 
@@ -279,3 +347,4 @@ def entry_of(rel: str) -> tuple[str | None, dict]:
         if stem.startswith(st + "_") and (best is None or len(st) > best[0]):
             best = (len(st), hit)
     return best[1] if best else (None, {})
+

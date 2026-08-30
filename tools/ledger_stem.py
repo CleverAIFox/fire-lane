@@ -30,7 +30,7 @@ landing 에 갇히게 됐다.
 
 ── 새 스키마 ──────────────────────────────────────────────────
     stem      provider_dataset. 예: `safety_kfs_pumptruck`     [필수]
-    scope     통제 어휘. 예: `kr` · `jngj-dong`                 [필수]
+    scope     통제 어휘. 예: `kr` · `jngj-donggu`                 [필수]
     updated   ISO 갱신일. 파일명 vintage 는 여기서 유도          [필수]
     ext       확장자 목록. `.hwp` 와 `.pdf` 는 다른 자산이다     [필수]
     primary   파이프라인이 읽는 확장자                          [복수일 때]
@@ -55,6 +55,9 @@ import sys
 from pathlib import Path
 
 import yaml
+
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
@@ -104,7 +107,7 @@ def read(key: str, e: dict) -> tuple[dict | None, str, list[str]]:
     """
     from firelane import naming as nm
     pats = [str(x) for x in
-            (e.get("files") or ([e["file"]] if "file" in e else []))]
+            _led.globs(e)]
     if not pats:
         return None, "file/files 가 없다", []
     if any(c in p for c in "*?[" for p in pats):
@@ -162,10 +165,10 @@ def read(key: str, e: dict) -> tuple[dict | None, str, list[str]]:
     #   ★ 세 축이 전부 같아야 한다. 그래야 `fire-lane-gis.zip` 같은
     #     무관한 파일이 섞이지 않는다 — 관문의 정확도가 여기서도 요건이다.
     _st, _sc, _vt = sorted(stems)[0], sorted(scopes)[0], sorted(vints)[0]
-    _led = ROOT / "data" / "_acquire.json"
-    if _led.exists():
+    _acq = ROOT / "data" / "_acquire.json"
+    if _acq.exists():
         import json as _json
-        for rel in _json.loads(_led.read_text(encoding="utf-8"))["files"]:
+        for rel in _json.loads(_acq.read_text(encoding="utf-8"))["files"]:
             if rel in pats:
                 continue
             try:

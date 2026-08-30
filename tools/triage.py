@@ -204,7 +204,7 @@ def probe_csv(p: Path, declared: str | None, entry: dict | None = None) -> dict:
                            round(max(xs), 4), round(max(ys), 4)]
             b = cfg().get("bbox_4326") or []
             if len(b) == 4:
-                inside = sum(1 for x, y in zip(xs, ys, strict=True)
+                inside = sum(1 for x, y in zip(xs, ys, strict=False)
                              if b[0] <= x <= b[2] and b[1] <= y <= b[3])
                 out["대상지_내"] = f"{inside} / {len(xs)}"
                 # ★ 0건이면 축을 바꿔서 한 번 더 본다. 한국에서 경도는
@@ -212,7 +212,7 @@ def probe_csv(p: Path, declared: str | None, entry: dict | None = None) -> dict:
                 #   "0건" 과 "축이 뒤집혔다" 는 완전히 다른 결론이고,
                 #   전자로 오판하면 멀쩡한 자산을 버린다.
                 if inside == 0:
-                    swap = sum(1 for x, y in zip(xs, ys, strict=True)
+                    swap = sum(1 for x, y in zip(xs, ys, strict=False)
                                if b[0] <= y <= b[2] and b[1] <= x <= b[3])
                     if swap:
                         out["★축반전"] = f"x↔y 로 보면 {swap}건이 대상지 안이다"

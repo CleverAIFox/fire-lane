@@ -54,6 +54,7 @@ from pathlib import Path
 
 import yaml
 
+from firelane import ledger as _led
 from firelane import providers
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -124,7 +125,7 @@ def run(*, apply: bool) -> int:
 
         # ── ② updated — 파일명 8자리에서 ──────────────────────
         if "updated" not in e:
-            fn = str(e.get("file", ""))
+            fn = " ".join(_led.globs(e))
             m = DATE8.search(fn + ".")
             if m:
                 plan.append((key, "add", f"updated: '{_iso(m.group(1))}'"))
@@ -140,7 +141,8 @@ def run(*, apply: bool) -> int:
                                       "원문은 note 로 옮겨라"))
         elif cur is None:
             from firelane import scope as sc
-            fn = str(e.get("file", "")).rsplit("/", 1)[-1].rsplit(".", 1)[0]
+            fn = ((_led.globs(e) or [""])[0]
+                  .rsplit("/", 1)[-1].rsplit(".", 1)[0])
             toks = [b for b in fn.split("_") if sc.known(b) or b in sc.LEGACY]
             if len(toks) == 1:
                 alias, _ = sc.resolve(toks[0])
@@ -149,12 +151,14 @@ def run(*, apply: bool) -> int:
                 plan.append((key, "skip", f"scope — 파일명 토큰 {toks or '없음'}"))
 
         # ── ④ files — file 단수를 리스트로 ────────────────────
-        if "files" not in e and "file" in e:
-            plan.append((key, "add", f"files: [{e['file']}]"))
+        # ★ 2026-08-30. `file` 단수는 대장에서 완전히 사라졌다(42/42 가
+        #   `files:` 리스트다). 이 계획문은 영원히 안 나온다 — 남겨두면
+        #   "아직 할 일이 있다" 로 읽힌다. 마이그레이션은 끝났다.
+        pass
 
         # ── ⑤ provider — 후보만 ──────────────────────────────
         if "provider" not in e:
-            folder = str(e.get("file", "")).split("/", 1)[0]
+            folder = (_led.globs(e) or [""])[0].split("/", 1)[0]
             hints.append(f"  {key:22} {PROVIDER_HINT.get(folder, '?')}")
 
     # ── 출력 ──────────────────────────────────────────────────

@@ -42,6 +42,7 @@ OUT   없음. --fix 는 tidy 를 돌리고, --push 는 git push 한다
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import re
 import subprocess
 import sys
@@ -126,31 +127,55 @@ def check_git(R: Report) -> None:
 
     # CI 가 이 브랜치를 보는가 — 검사 없이 머지되는 것을 막는다
     #
-    # ★ 2026-08-23. 처음엔 모든 `branches:` 목록에 현재 브랜치가 있어야
-    #   한다고 짰다. 오탐이었다. 두 트리거의 뜻이 다르다.
-    #
-    #     push          **소스** 브랜치. 여기에 밀면 검사가 돈다
-    #     pull_request  **대상** 브랜치. 거기로 PR 을 열면 검사가 돈다
-    #
-    #   `fix/review-0823 → gis` PR 은 `pull_request: [gis]` 가 잡는다.
-    #   작업 브랜치가 목록에 있을 이유가 없다. 봐야 하는 것은
-    #   **PR 대상이 될 브랜치가 pull_request 트리거에 있는가** 다.
-    ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
-
-    def _branches(kind: str) -> set[str]:
-        m = re.search(rf"{kind}:\s*\n\s*branches:\s*\[([^\]]+)\]", ci)
-        return {b.strip() for b in m.group(1).split(",")} if m else set()
-
-    push_b, pr_b = _branches("push"), _branches("pull_request")
-    base = next((b for b in ("gis", "main", "master") if b in pr_b), None)
+    # ★ 2026-08-23 의 근거("push 는 소스, pull_request 는 대상이므로 작업
+    #   브랜치가 목록에 있을 이유가 없다")는 2-브랜치 시절 것이다. 08-27
+    #   4단 전환으로 작업 브랜치 자체가 `feat/**` 로 push 트리거에 들어왔고,
+    #   그때 이 판정을 안 고쳤다. 판정 본체는 branch_covered() 로 뺐다.
+    push_b, pr_b = ci_branches("push"), ci_branches("pull_request")
     if not pr_b:
         R.bad("CI 트리거", "contract.yml 에 pull_request 트리거가 없다")
-    elif br in push_b:
+    elif branch_covered(br, push_b):
         R.ok("CI 트리거", f"push 로 {br} 를 본다")
-    elif base:
-        R.ok("CI 트리거", f"{br} → {base} PR 을 pull_request 가 본다")
     else:
-        R.bad("CI 트리거", f"{br} 도 대상 브랜치도 트리거에 없다")
+        R.bad("CI 트리거",
+              f"{br} 는 push 트리거({', '.join(sorted(push_b))}) 밖이다 — "
+              "밀어도 CI 가 안 돈다. feat/* 로 개명하라")
+
+
+
+# ── CI 트리거 판정 ─────────────────────────────────────────────
+# ★ 순수 함수로 뺐다. 종전에는 check_git() 안에 묻혀 있어 아무도
+#   검사할 수 없었고, 그래서 **어떤 브랜치 이름을 넣어도 초록불을 내는
+#   상태로 오래 갔다.** 강제자는 tests/test_ops_html_sync.py 가 든다.
+CI_YML = ROOT / ".github/workflows/contract.yml"
+
+
+def ci_branches(kind: str, text: str | None = None) -> set[str]:
+    """contract.yml 의 push / pull_request 트리거 브랜치 목록.
+
+    ★ 2026-08-31. 종전엔 따옴표를 안 벗겼다. 트리거가
+      `[main, dev, 'part/**', 'feat/**']` 라 집합에 `'feat/**'` 가
+      **따옴표째** 들어갔고 `feat/gis-x` 는 영원히 안 맞았다.
+    """
+    t = text if text is not None else CI_YML.read_text(encoding="utf-8")
+    body = "\n".join(x for x in t.splitlines() if not x.lstrip().startswith("#"))
+    m = re.search(rf"{kind}:\s*\n\s*branches:\s*\[([^\]]+)\]", body)
+    return {b.strip().strip("\"'") for b in m.group(1).split(",")} if m else set()
+
+
+def branch_covered(name: str, pats: set[str]) -> bool:
+    """이 브랜치를 CI 가 보는가. 글롭을 편다.
+
+    ★ 2026-08-31. 종전 판정은 `base` 를 ("gis","main","master") 에서 찾아
+      하나라도 pr 트리거에 있으면 OK 를 냈다. main 은 항상 있으므로
+      `wip/…` 도 `아무거나-쓰레기` 도 통과했다(실측했다). 검사가 죽은 채
+      떴고, 그 사이 wip 브랜치에 F 계열 버그 셋이 앉아 있었다.
+      `gis` 트렁크는 08-27 에 폐기됐는데 후보 1순위로 남아 있었다.
+
+    판정을 하나로 좁힌다 — **push 트리거에 걸리는가.** 운영방침상 작업
+    브랜치는 feat/* 또는 part/* 다. 그 밖의 이름은 밀어도 CI 가 안 돈다.
+    """
+    return any(fnmatch.fnmatch(name, p.replace("**", "*")) for p in pats)
 
 
 # ── 코드 ───────────────────────────────────────────────────────

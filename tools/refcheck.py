@@ -50,6 +50,9 @@ from pathlib import Path
 
 import yaml
 
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
+
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
 LEDGER = ROOT / "data" / "_acquire.json"
@@ -61,7 +64,8 @@ DOC_PATH = re.compile(
 FAIL, WARN = "✗", "!"
 
 
-def _led() -> dict:
+def _acq() -> dict:
+    """획득 대장(data/_acquire.json)의 raw 실물 목록. 모듈 별칭 _led 와 다르다."""
     if not LEDGER.exists():
         return {}
     return json.loads(LEDGER.read_text(encoding="utf-8"))["files"]
@@ -70,12 +74,12 @@ def _led() -> dict:
 def check() -> list[tuple[str, str, str]]:
     d = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
     ds = d.get("datasets") or {}
-    led = _led()
+    led = _acq()
     out: list[tuple[str, str, str]] = []
 
     # ① 대장 → raw
     for k, e in ds.items():
-        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        for pat in _led.globs(e):
             pat = str(pat)
             hit = ([r for r in led if fnmatch.fnmatch(r, pat)]
                    if any(c in pat for c in "*?[") else
@@ -165,7 +169,7 @@ def gc() -> None:
     pats = []
     for e in (d.get("datasets") or {}).values():
         pats += [str(p) for p in
-                 (e.get("files") or ([e["file"]] if "file" in e else []))]
+                 _led.globs(e)]
     if RAW.is_dir():
         stray = [str(p.relative_to(RAW)) for p in sorted(RAW.rglob("*"))
                  if p.is_file()

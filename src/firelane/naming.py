@@ -177,7 +177,7 @@ def parse(name: str, *, folder: str | None = None, strict: bool = True) -> Name:
 
     # ── 고정점은 scope 다 ─────────────────────────────────────
     # ★ 처음엔 오른쪽 끝을 vintage 로 잡았다. 틀렸다 —
-    #     ngii_ortho_jngj-dong_20251231_35616037.tif
+    #     ngii_ortho_jngj-donggu_20251231_35616037.tif
     #   에서 도엽번호 `35616037` 도 8자리 숫자라 vintage 와 안 갈린다.
     #   `3561-60-37` 은 달력에도 있는 날이 되어 조용히 통과했다.
     #
@@ -185,7 +185,7 @@ def parse(name: str, *, folder: str | None = None, strict: bool = True) -> Name:
     #   scope 를 오른쪽부터 찾고, 그 뒤는 전부 vintage·part·rev,
     #   그 앞은 전부 provider·dataset 이다.
     # ★ 두 번 훑는다. **정규·옛 스코프가 도엽 접두보다 우선**이다.
-    #   한 번에 훑으면 `ngii_basemap_jngj-dong_20260812_gj9708` 에서
+    #   한 번에 훑으면 `ngii_basemap_jngj-donggu_20260812_gj9708` 에서
     #   오른쪽의 `gj9708`(도엽)을 먼저 잡아 이미 정규화된 이름을 위반으로
     #   판정한다. 개명해 놓고 그것을 다시 지적하는 꼴이었다.
     idx = None
@@ -239,7 +239,7 @@ def parse(name: str, *, folder: str | None = None, strict: bool = True) -> Name:
                 f"    `gj_dong` 은 행정구역 동구가 아니라 **동부소방서**다\n"
                 f"    (fire_access · hydrant_summary). 관할기관은 행정구역과\n"
                 f"    경계가 다르므로 scope 에 적으면 안 된다 —\n"
-                f"      scope: jngj-dong   authority: 동부소방서")
+                f"      scope: jngj-donggu   authority: 동부소방서")
         raise NameError_(
             f"vintage 형식이 아니다: {vintage!r} (YYYYMMDD|YYYYMM|YYYY){hint}")
     if not _plausible_date(vintage):
@@ -413,6 +413,15 @@ def audit_pattern(pat: str) -> list[str]:
     확장자 와일드카드는 **금지**다. 나머지 와일드카드는 kind 에 따라
     정상일 수 있으므로(도엽 묶음 등) 경고까지만 한다.
     """
+    # ★ 2026-08-30. 빈 문자열을 받으면 "provider 폴더가 없다" 를
+    #   정상적으로 냈다. 그래서 호출부가 대장을 못 읽고 있어도 검사는
+    #   **옳게 우는 것처럼 보였다** — 42종이 전부 같은 말을 했고,
+    #   원인은 검사가 아니라 호출부였다.
+    #   **빈 입력에 정상적으로 우는 검사는 오탐 공장이다.** 여기서 죽는다.
+    if not str(pat).strip():
+        raise ValueError(
+            "audit_pattern 이 빈 패턴을 받았다. 호출부가 대장을 못 읽고 "
+            "있다 — firelane.ledger.globs(e) 를 써라")
     out = []
     if "/" not in pat:
         out.append(f"provider 폴더가 없다: {pat!r}")

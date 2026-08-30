@@ -43,11 +43,13 @@ import argparse
 import fnmatch
 import hashlib
 import json
-import re
 import sys
 from pathlib import Path
 
 import yaml
+
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
@@ -56,8 +58,14 @@ INTAKE = ROOT / "data" / "_intake.json"
 
 OK, WARN, BAD = "✓", "!", "✗"
 
-# 브라우저 부산물. landing 으로 올리지 않는다.
-JUNK = re.compile(r"\.(crdownload|part|tmp|partial)$|^~\$|^\.DS_Store$")
+# ★ 2026-08-30. JUNK 가 이 파일에 **두 번** 정의돼 있었고 둘 다 낡았다.
+#   `intake.JUNK` 는 `.sh` · `.py` 를 막는데 여기 사본은 안 막아서,
+#   Downloads 에 둔 도구 파일을 doctor 가 "편입 대기 중" 이라고 말했다.
+#   같은 개념의 사본은 정의가 갈리는 것이 아니라 **판정이 갈린다.**
+#   _sha 와 _sha256 도 본문이 같은 사본이었다.
+from firelane.intake_rules import JUNK
+
+_todo: list[str] = []
 
 
 def _sha(p: Path, *, chunk: int = 1 << 20) -> str:
@@ -66,18 +74,9 @@ def _sha(p: Path, *, chunk: int = 1 << 20) -> str:
         while b := f.read(chunk):
             h.update(b)
     return h.hexdigest()
-_todo: list[str] = []
 
 
-JUNK = re.compile(r"\.(crdownload|part|tmp|partial)$|^~\$|^\.DS_Store$")
-
-
-def _sha256(p: Path, *, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with p.open("rb") as f:
-        while b := f.read(chunk):
-            h.update(b)
-    return h.hexdigest()
+_sha256 = _sha
 
 
 def _scan(p: Path) -> tuple[int, int, list[tuple[int, Path]]]:
@@ -156,10 +155,22 @@ def pipeline_report() -> None:
         raw_sha = {v["sha256"] for v in led.values()}
         stuck = [p for p in LANDING.rglob("*")
                  if p.is_file() and _sha(p) not in raw_sha]
-        m = WARN if stuck else OK
-        print(f"{m} landing → raw        미편입 {len(stuck)}건 / landing {lc}건")
-        for p in stuck[:6]:
-            print(f"    {p.name}")
+        # ★ 2026-08-30. 처분이 결정된 것은 "대기 중" 이 아니다.
+        #   §4-4 의 판단이 HANDOFF 에만 있어 검사가 매번 6건을 세었다.
+        #   결정은 sources.yaml.landing_disposition 에 있다.
+        _dy = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
+        _disp = {str(i.get("file")): str(i.get("action"))
+                 for i in ((_dy.get("landing_disposition") or {})
+                           .get("items") or [])}
+        decided = [p for p in stuck if _disp.get(p.name) in
+                   ("retired", "ingested")]
+        todo_l = [p for p in stuck if p not in decided]
+        m = WARN if todo_l else OK
+        print(f"{m} landing → raw        미편입 {len(todo_l)}건 "
+              f"· 처분 결정됨 {len(decided)}건 / landing {lc}건")
+        for p in todo_l[:6]:
+            print(f"    {p.name}  [{_disp.get(p.name, '미판단')}]")
+        stuck = todo_l
         if stuck:
             _todo.append("uv run python tools/acquire.py --stage --yes"
                          f"   (landing {len(stuck)}건이 대기 중)")
@@ -218,7 +229,7 @@ def integrity_report() -> None:
     d = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
     dead = []
     for k, e in (d.get("datasets") or {}).items():
-        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        for pat in _led.globs(e):
             if not [r for r in led if fnmatch.fnmatch(r, str(pat))]:
                 dead.append(k)
     m = BAD if dead else OK

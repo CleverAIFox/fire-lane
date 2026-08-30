@@ -51,6 +51,8 @@ from pathlib import Path
 
 import yaml
 
+from firelane import ledger as _led
+
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
 
@@ -102,7 +104,7 @@ def probe(key: str, e: dict) -> dict | None:
     kind = e.get("kind")
     if kind in (None, "raw_only"):
         return None
-    files = e.get("files") or ([e["file"]] if "file" in e else [])
+    files = _led.globs(e)
     if not files:
         return None
     pat = str(files[0])
