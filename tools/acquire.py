@@ -226,8 +226,15 @@ def retired_names() -> dict[str, str]:
     for k, v in (_yaml().get("retired") or {}).items():
         v = v or {}
         why = (v.get("reason") or v.get("what") or k).strip().splitlines()[0]
-        f = v.get("file")
-        if f:
+        # ★ 2026-08-31. 종전엔 `file:` 만 읽었다. 08-27 에 같은 배포물의
+        #   다른 포맷을 담으려고 `files:` 를 도입했는데 이쪽을 안 고쳤다.
+        #   그래서 mas_optional 의 pdf 와 kfs_paint_marking 전체가
+        #   폐기 등재돼 있는데도 **매 스캔마다 "판단 필요" 로 떴다.**
+        #   사유는 적혀 있었고 도구가 그것을 안 읽은 것이다.
+        #
+        #   조회기의 정본은 firelane.ledger.globs 하나다. 따로 구현하지 않는다.
+        from firelane import ledger as _led
+        for f in _led.globs(v):
             out[Path(str(f)).name] = why
     return out
 

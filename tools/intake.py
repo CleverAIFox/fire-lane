@@ -68,6 +68,7 @@ from pathlib import Path
 
 import yaml
 
+from firelane import ledger as _led
 from firelane import naming as nm
 from firelane.paths import LANDING, ROOT
 from firelane.paths import inbox as _inbox
@@ -75,16 +76,8 @@ from firelane.paths import inbox as _inbox
 KST = timezone(timedelta(hours=9))
 LEDGER = ROOT / "data" / "_intake.json"
 
-# 브라우저가 실제로 떨구는 부산물. landing 으로 올리지 않는다.
-# 브라우저·OS 부산물과 **작업 스크립트**. landing 으로 올리지 않는다.
-# ★ 2026-08-26. `apply.sh` · `docx_fix.py` · `desktop.ini` 가 landing 에
-#   올라갔다. 다운로드 폴더는 사용자의 작업 공간이라 데이터만 있지 않다.
-#   확장자 화이트리스트가 아니라 블랙리스트인 이유는, 새 데이터 형식이
-#   왔을 때 조용히 막히는 편보다 쓰레기가 한 번 섞이는 편이 낫기 때문이다.
-JUNK = re.compile(
-    r"\.(crdownload|part|tmp|partial|sh|py|mjs|ini|lnk|url|exe|msi|bat)$"
-    r"|^~\$|^\.DS_Store$|^desktop\.ini$", re.IGNORECASE)
-
+# JUNK 정본은 firelane.intake_rules 다. 여기서 재정의하지 않는다.
+from firelane.intake_rules import JUNK  # noqa: F401
 
 # ★ inbox() 는 `firelane.paths` 로 옮겼다(2026-08-26). 경로 정본은 거기다 —
 #   여기 두었더니 `doctor.py` 가 쓰려고 sys.path 를 조작했고 규칙에 걸렸다.
@@ -338,9 +331,13 @@ def cmd_audit() -> int:
     bad = 0
     print("═══ 대장 file 패턴 ═══")
     for k, v in ds.items():
-        for msg in nm.audit_pattern(v.get("file", "")):
-            bad += 1
-            print(f"  [{k}] {msg}")
+        # ★ 2026-08-30. `v.get("file", "")` — 대장에서 `file` 단수가
+        #   사라지자 42종 전부 빈 문자열을 넘겼고, audit_pattern 이
+        #   42번 "provider 폴더가 없다: ''" 를 냈다. 열한 번째 사본이다.
+        for _pat in _led.globs(v):
+            for msg in nm.audit_pattern(_pat):
+                bad += 1
+                print(f"  [{k}] {msg}")
     acq = ROOT / "data" / "_acquire.json"
     if acq.exists():
         print("\n═══ raw 파일명 문법 ═══")

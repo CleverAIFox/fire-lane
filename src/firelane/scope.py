@@ -19,7 +19,7 @@ raw 36건의 스코프 토큰이 여섯 갈래였고, 그 여섯이 **서로 다
 
 축을 셋으로 가른다. 파일명은 `scope` 하나만 갖고, 나머지 둘은 대장 필드다.
 
-    scope      행정구역. 포함관계가 성립한다 (kr ⊃ jngj ⊃ jngj-dong ⊃ …)
+    scope      행정구역. 포함관계가 성립한다 (kr ⊃ jngj ⊃ jngj-donggu ⊃ …)
     authority  관할기관. 행정구역과 경계가 다르다. 파일명에 넣지 않는다
     part       도엽·분할본. 파일명의 선택 필드이며 스코프가 아니다
 
@@ -46,7 +46,7 @@ LEVELS = {"nation": 0, "sido": 1, "sigungu": 2, "emd": 3}
 
 # 별칭 문법. 언더스코어는 파일명의 필드 구분자이므로 **토큰 안에서 금지**한다.
 # `gj_dong` 이 `gj` + `dong` 인지 `gj_dong` 한 덩어리인지 파서가 못 가른 것이
-# 애초의 사고 원인이다. 계층은 하이픈으로 잇는다 — `jngj-dong-dm`.
+# 애초의 사고 원인이다. 계층은 하이픈으로 잇는다 — `jngj-dongmyeong`.
 ALIAS_RE = r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
 
 
@@ -61,25 +61,31 @@ DEFAULT = {
     "kr": {"level": "nation", "code": None, "label": "전국", "parent": None},
     "jngj": {"level": "sido", "code": "12", "label": "전남광주통합특별시",
              "parent": "kr"},
-    "jngj-dong": {"level": "sigungu", "code": "12210",
+    "jngj-donggu": {"level": "sigungu", "code": "12210",
                   "label": "전남광주통합특별시 동구", "parent": "jngj",
                   "former_code": "29110",
                   "note": "2026-07-01 개편. 구 광주 동구 29110 → 12210"},
-    "jngj-dong-dm": {"level": "emd", "code": "12210108",
+    "jngj-dongmyeong": {"level": "emd", "code": "12210108",
                      "label": "전남광주통합특별시 동구 동명동",
-                     "parent": "jngj-dong"},
+                     "parent": "jngj-donggu"},
 }
 
 # 옛 파일명이 쓰던 토큰 → 정규 별칭. **마이그레이션 전용이다.**
 # 새 파일이 이 표에 걸리면 통과가 아니라 경고다 — 표는 과거를 읽기 위한
 # 것이지 미래를 허용하기 위한 것이 아니다.
 LEGACY = {
-    "gjdonggu": "jngj-dong",
-    "dongu": "jngj-dong",
+    "gjdonggu": "jngj-donggu",
+    "dongu": "jngj-donggu",
     "gj": "jngj",
+    # ★ 2026-08-29. `jngj-dong` 이 **동구**인데 **동명동**으로 읽혔다.
+    #   두 사람이 같은 오독을 했다 — 그게 이름이 나쁘다는 증거다.
+    #   `dm` 은 무엇의 약자인지 이름만 봐서는 알 수 없었다.
+    #   토큰을 늘려 모호함을 없앤다. 옛 파일명은 이 표로 읽는다.
+    "jngj-dong": "jngj-donggu",
+    "jngj-dong-dm": "jngj-dongmyeong",
     # ★ gj_dong 은 스코프가 아니다. 동부소방서 관할이며 행정구역과 경계가
     #   다르다. 별칭을 주지 않는다 — 주는 순간 그 사실이 지워진다.
-    #   대장에서 scope: jngj-dong + authority: 동부소방서 로 쪼갠다.
+    #   대장에서 scope: jngj-donggu + authority: 동부소방서 로 쪼갠다.
 }
 
 # 스코프인 척했지만 실은 도엽인 것들. 접두만 보고 판정한다.
@@ -139,7 +145,7 @@ def resolve(token: str) -> tuple[str, str]:
 
 
 def chain(alias: str) -> list[str]:
-    """자기부터 최상위까지. `jngj-dong-dm` → [dm, dong, jngj, kr]"""
+    """자기부터 최상위까지. `jngj-dongmyeong` → [dm, dong, jngj, kr]"""
     S, out, cur = spec(), [], alias
     seen = set()
     while cur is not None:
@@ -156,7 +162,7 @@ def contains(outer: str, inner: str) -> bool:
     return outer in chain(inner)
 
 
-def covers_project(alias: str, target: str = "jngj-dong-dm") -> bool:
+def covers_project(alias: str, target: str = "jngj-dongmyeong") -> bool:
     """이 데이터의 범위가 분석 대상을 덮나.
 
     ★ 덮지 못하는 소스는 결손이 조용히 난다. 2026-08-18 에 V-WORLD

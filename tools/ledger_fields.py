@@ -54,6 +54,9 @@ from pathlib import Path
 
 import yaml
 
+from firelane import ledger as _led
+from firelane import providers
+
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
 
@@ -61,16 +64,11 @@ YAML = ROOT / "sources.yaml"
 ALIAS = {"retrieved": "acquired", "desc": "what"}
 
 # 폴더 코드 → 기관명 후보. **자동 적용하지 않는다.** 제시만 한다.
-PROVIDER_HINT = {
-    "juso": "도로명주소(행정안전부)",
-    "its": "국가교통정보센터",
-    "ngii": "국토지리정보원",
-    "vworld": "브이월드",
-    "gjcity": "전남광주통합특별시 동구",
-    "sbiz": "소상공인시장진흥공단",
-    "eais": "건축행정시스템 세움터",
-    "safety": "★ 섞여 있다 — 소방청 · 공공데이터포털. 항목마다 확인",
-}
+# ★ 2026-08-27. 여기 8종이 하드코딩돼 있었다(nsdi 없음). 같은 목록이
+#   여섯 곳에 있었고 값이 갈려 있었다. 정본은 layers.raw.providers 다.
+#   `safety` 처럼 기관이 섞인 것은 등재 쪽 org 에 적는다 — 힌트가 두
+#   군데면 어느 쪽이 맞는지 다음 사람이 판단해야 한다.
+PROVIDER_HINT = {k: v["org"] for k, v in providers.spec().items()}
 
 DATE8 = re.compile(r"_(\d{8})(?:_|\.)")
 
@@ -127,7 +125,7 @@ def run(*, apply: bool) -> int:
 
         # ── ② updated — 파일명 8자리에서 ──────────────────────
         if "updated" not in e:
-            fn = str(e.get("file", ""))
+            fn = " ".join(_led.globs(e))
             m = DATE8.search(fn + ".")
             if m:
                 plan.append((key, "add", f"updated: '{_iso(m.group(1))}'"))
@@ -143,7 +141,8 @@ def run(*, apply: bool) -> int:
                                       "원문은 note 로 옮겨라"))
         elif cur is None:
             from firelane import scope as sc
-            fn = str(e.get("file", "")).rsplit("/", 1)[-1].rsplit(".", 1)[0]
+            fn = ((_led.globs(e) or [""])[0]
+                  .rsplit("/", 1)[-1].rsplit(".", 1)[0])
             toks = [b for b in fn.split("_") if sc.known(b) or b in sc.LEGACY]
             if len(toks) == 1:
                 alias, _ = sc.resolve(toks[0])
@@ -152,12 +151,14 @@ def run(*, apply: bool) -> int:
                 plan.append((key, "skip", f"scope — 파일명 토큰 {toks or '없음'}"))
 
         # ── ④ files — file 단수를 리스트로 ────────────────────
-        if "files" not in e and "file" in e:
-            plan.append((key, "add", f"files: [{e['file']}]"))
+        # ★ 2026-08-30. `file` 단수는 대장에서 완전히 사라졌다(42/42 가
+        #   `files:` 리스트다). 이 계획문은 영원히 안 나온다 — 남겨두면
+        #   "아직 할 일이 있다" 로 읽힌다. 마이그레이션은 끝났다.
+        pass
 
         # ── ⑤ provider — 후보만 ──────────────────────────────
         if "provider" not in e:
-            folder = str(e.get("file", "")).split("/", 1)[0]
+            folder = (_led.globs(e) or [""])[0].split("/", 1)[0]
             hints.append(f"  {key:22} {PROVIDER_HINT.get(folder, '?')}")
 
     # ── 출력 ──────────────────────────────────────────────────

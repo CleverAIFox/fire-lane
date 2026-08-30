@@ -152,3 +152,60 @@ def test_master_points_at_ops_html():
         "  §12 에 '표시용 사본은 docs/ops.html' 한 줄을 넣어라.\n"
         "  정본이 사본의 존재를 모르면 정본을 고칠 때 사본을 잊는다.")
 
+
+
+def test_ship_ci_check_actually_discriminates():
+    """★ 역방향 — `ship.py` 의 CI 트리거 판정이 **입력을 검사하는가.**
+
+    2026-08-31. 위 `test_ops_html_branches_match_ci_triggers` 는 문서가
+    적는 계층이 트리거에 있는지만 봤다. 정방향이라 통과했다. 그런데
+    `ship.py` 쪽 판정은 `base` 를 ("gis","main","master") 에서 찾아
+    하나라도 pr 트리거에 있으면 OK 를 냈고, `main` 은 항상 있으므로
+    **어떤 브랜치 이름에도 초록불을 냈다.**
+
+    같은 병을 두 번 겪었다 — `audit_pattern('')` 이 42번 정상적으로 울었고
+    원인은 호출부였다. 옳게 우는 것처럼 보이는 검사가 제일 오래 간다.
+    여기서는 **틀린 입력에 실제로 빨간불이 뜨는지**를 본다.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("ship", ROOT / "tools/ship.py")
+    ship = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ship)
+
+    push_b = ship.ci_branches("push")
+    assert push_b, "contract.yml 에서 push 트리거를 못 읽었다"
+
+    for good in TIERS + ["feat/gis-x", "part/gis"]:
+        assert ship.branch_covered(good, push_b), (
+            f"운영방침상 정상 브랜치 {good} 가 CI 밖으로 판정된다.\n"
+            f"  push 트리거: {sorted(push_b)}")
+
+    for bad in ("wip/data-hygiene-20260830", "hotfix/x", "아무거나-쓰레기"):
+        assert not ship.branch_covered(bad, push_b), (
+            f"방침 밖 브랜치 {bad} 가 CI 대상으로 판정된다 — 검사가 죽었다.\n"
+            "  이 검사가 초록불이면 밀어도 CI 가 안 도는 브랜치를 알 수 없다.")
+
+
+def test_ci_trigger_has_no_retired_trunk():
+    """폐기된 `gis` 트렁크가 **실행되는 값**으로 남아 있지 않은가.
+
+    08-27 에 4단으로 갔는데 `ship.py` 가 `gis` 를 base 후보 1순위로
+    들고 있었다. 낡은 이름은 조용히 판정을 왜곡한다.
+
+    ★ 산문은 잡지 않는다. 이 저장소는 판단의 근거를 주석·독스트링에
+      남기는 것이 규약이고, 거기 적힌 `gis` 는 이력이지 값이 아니다.
+      AST 로 **문자열 상수만** 본다.
+    """
+    import ast
+
+    tree = ast.parse((ROOT / "tools/ship.py").read_text(encoding="utf-8"))
+    docs = {id(ast.get_docstring(n, clean=False)) for n in ast.walk(tree)
+            if isinstance(n, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef,
+                              ast.ClassDef))}
+    hit = [n.lineno for n in ast.walk(tree)
+           if isinstance(n, ast.Constant) and isinstance(n.value, str)
+           and n.value == "gis" and id(n.value) not in docs]
+    assert not hit, (
+        f"tools/ship.py {hit} 행에 폐기된 트렁크 `gis` 가 값으로 남아 있다.\n"
+        "  08-27 에 main ← dev ← part/* ← feat/* 4단으로 갔다.")

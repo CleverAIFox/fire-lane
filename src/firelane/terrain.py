@@ -31,12 +31,12 @@ PARAM 줌 단계 · exaggeration 기본 1.0
 """
 from __future__ import annotations
 
-import glob
 import json
 import shutil
 import tempfile
 import zipfile
 from datetime import UTC, datetime
+from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
@@ -48,7 +48,23 @@ from firelane.paths import PROCESSED, RAW, ROOT
 
 OUT = PROCESSED
 
-DEM_ZIP = RAW / "ngii" / "ngii_dem_jngj-dong_20251117_35616.zip"
+# ★ 2026-08-30. 여기가 하드코딩이었다. 스코프를 `jngj-donggu` 로 개명하자
+#   경로가 안 맞아 **조용히 [SKIP]** 됐고, 지형 타일이 없어 z 컬럼이
+#   사라졌고, 그것이 계약 위반으로 하류에서 터졌다. 연쇄다.
+#   그리고 golden 은 L1·L2·L3 를 통과했다 — z 를 안 보기 때문이다.
+#   **두 검사가 다른 것을 본다. golden 만으로는 회귀를 못 잡는다.**
+def _dem_zip():
+    from firelane import ledger as _led
+    e = (_led.load().get("datasets") or {}).get("dem_public") or {}
+    hits = _led.paths_of(e, RAW)
+    if not hits:
+        raise FileNotFoundError(
+            "dem_public 실물이 없다 — 대장 글롭 "
+            f"{_led.globs(e) or '(선언 없음)'} 가 raw 에서 0건.\n"
+            "  ★ 종전에는 여기서 조용히 SKIP 했다. 그러면 z 컬럼이 빠진 채"
+            " 파이프라인이 초록불로 끝나고, 하류가 계약 위반으로 터진다.\n"
+            "  없으면 여기서 죽는다. 원인 자리에서 죽는 것이 낫다.")
+    return hits[0]
 ZOOM = 8          # 보간 배율. 90m -> 11.25m. 표현용이므로 정보량은 그대로다.
 LAYERS = ["segments", "building", "cctv", "hydrant_point", "fire_station"]
 TILE_Z = (12, 13, 14, 15)   # 원본이 90m 라 z15 면 이미 과표본이다. 그 이상은 무의미
@@ -155,16 +171,14 @@ def build_terrain_tiles(up, tr, src_crs):
 
 
 def main():
-    if not DEM_ZIP.exists():
-        print(f"[SKIP] {DEM_ZIP.name} 없음. sources.yaml 의 dem_public 참조")
-        return
+    dem_zip = _dem_zip()
 
     scope = gpd.read_file(OUT / "segments_5186.gpkg").to_crs(5179)
     minx, miny, maxx, maxy = scope.total_bounds
     pad = 200
     with tempfile.TemporaryDirectory() as td:
-        zipfile.ZipFile(DEM_ZIP).extractall(td)
-        img = glob.glob(f"{td}/**/*.img", recursive=True)[0]
+        zipfile.ZipFile(dem_zip).extractall(td)
+        img = str(next(Path(td).rglob("*.img")))
         with rasterio.open(img) as r:
             win = from_bounds(minx - pad, miny - pad, maxx + pad, maxy + pad,
                               r.transform).round_offsets().round_lengths()

@@ -454,7 +454,7 @@ def main():
         print("  남긴길이  버린길이   비  위치도로")
         _bad = 0
         for _kl, _ll, _c in sorted(_dups, key=lambda x: -x[1]/max(x[0], 1e-9)):
-            _r = _kl and _ll / _kl or 0
+            _r = (_kl and _ll / _kl) or 0
             _nm = _rnx.nearest(_c, 15.0)
             if _r > 1.5:
                 _bad += 1

@@ -43,11 +43,13 @@ import argparse
 import fnmatch
 import hashlib
 import json
-import re
 import sys
 from pathlib import Path
 
 import yaml
+
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
@@ -56,8 +58,14 @@ INTAKE = ROOT / "data" / "_intake.json"
 
 OK, WARN, BAD = "✓", "!", "✗"
 
-# 브라우저 부산물. landing 으로 올리지 않는다.
-JUNK = re.compile(r"\.(crdownload|part|tmp|partial)$|^~\$|^\.DS_Store$")
+# ★ 2026-08-30. JUNK 가 이 파일에 **두 번** 정의돼 있었고 둘 다 낡았다.
+#   `intake.JUNK` 는 `.sh` · `.py` 를 막는데 여기 사본은 안 막아서,
+#   Downloads 에 둔 도구 파일을 doctor 가 "편입 대기 중" 이라고 말했다.
+#   같은 개념의 사본은 정의가 갈리는 것이 아니라 **판정이 갈린다.**
+#   _sha 와 _sha256 도 본문이 같은 사본이었다.
+from firelane.intake_rules import JUNK
+
+_todo: list[str] = []
 
 
 def _sha(p: Path, *, chunk: int = 1 << 20) -> str:
@@ -66,18 +74,9 @@ def _sha(p: Path, *, chunk: int = 1 << 20) -> str:
         while b := f.read(chunk):
             h.update(b)
     return h.hexdigest()
-_todo: list[str] = []
 
 
-JUNK = re.compile(r"\.(crdownload|part|tmp|partial)$|^~\$|^\.DS_Store$")
-
-
-def _sha256(p: Path, *, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with p.open("rb") as f:
-        while b := f.read(chunk):
-            h.update(b)
-    return h.hexdigest()
+_sha256 = _sha
 
 
 def _scan(p: Path) -> tuple[int, int, list[tuple[int, Path]]]:
@@ -156,10 +155,22 @@ def pipeline_report() -> None:
         raw_sha = {v["sha256"] for v in led.values()}
         stuck = [p for p in LANDING.rglob("*")
                  if p.is_file() and _sha(p) not in raw_sha]
-        m = WARN if stuck else OK
-        print(f"{m} landing → raw        미편입 {len(stuck)}건 / landing {lc}건")
-        for p in stuck[:6]:
-            print(f"    {p.name}")
+        # ★ 2026-08-30. 처분이 결정된 것은 "대기 중" 이 아니다.
+        #   §4-4 의 판단이 HANDOFF 에만 있어 검사가 매번 6건을 세었다.
+        #   결정은 sources.yaml.landing_disposition 에 있다.
+        _dy = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
+        _disp = {str(i.get("file")): str(i.get("action"))
+                 for i in ((_dy.get("landing_disposition") or {})
+                           .get("items") or [])}
+        decided = [p for p in stuck if _disp.get(p.name) in
+                   ("retired", "ingested")]
+        todo_l = [p for p in stuck if p not in decided]
+        m = WARN if todo_l else OK
+        print(f"{m} landing → raw        미편입 {len(todo_l)}건 "
+              f"· 처분 결정됨 {len(decided)}건 / landing {lc}건")
+        for p in todo_l[:6]:
+            print(f"    {p.name}  [{_disp.get(p.name, '미판단')}]")
+        stuck = todo_l
         if stuck:
             _todo.append("uv run python tools/acquire.py --stage --yes"
                          f"   (landing {len(stuck)}건이 대기 중)")
@@ -184,6 +195,28 @@ def integrity_report() -> None:
     m = BAD if (only_led or only_disk) else OK
     print(f"{m} 대장 {len(led)} · 실물 {len(disk)} · "
           f"대장만 {len(only_led)} · 실물만 {len(only_disk)}")
+
+    # ★ 2026-08-27. 위 줄은 파일만 센다 — `p.is_file()` 이 디렉터리를
+    #   거른다. 폴더는 대장 항목이 없어 대조 대상이 아니고, 비어 있으면
+    #   파일 대조에도 안 걸린다. **검사의 사각이다.**
+    #   `acquire.cmd_quarantine()` 이 `shutil.move` 만 하고 빈 부모를 안
+    #   지우므로 격리한 자리마다 빈 폴더가 남는다.
+    #   진단과 게이트를 잇는 원칙대로 여기서 같이 센다.
+    from firelane import providers as _P
+    dirs = ({str(p.relative_to(RAW)) for p in RAW.rglob("*") if p.is_dir()}
+            if RAW.is_dir() else set())
+    top = {d for d in dirs if "/" not in d}
+    have = {t for t in top if any(f.startswith(t + "/") for f in disk)}
+    ghost = sorted((top - have) | (top & _P.reserved()))
+    deep = sorted(d for d in dirs if d.count("/") >= _P.depth() - 1)
+    m = BAD if (ghost or deep) else OK
+    print(f"{m} 폴더 {len(top)}개 · 근거 없는 빈 폴더 {len(ghost)} · "
+          f"깊이 위반 {len(deep)}")
+    for x in (ghost + deep)[:6]:
+        print(f"    raw/{x}/")
+    if ghost or deep:
+        _todo.append("uv run python tools/treecheck.py"
+                     f"   (디렉터리 결함 {len(ghost) + len(deep)}건)")
     for x in (only_led + only_disk)[:6]:
         print(f"    {x}")
     if only_led:
@@ -196,7 +229,7 @@ def integrity_report() -> None:
     d = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
     dead = []
     for k, e in (d.get("datasets") or {}).items():
-        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        for pat in _led.globs(e):
             if not [r for r in led if fnmatch.fnmatch(r, str(pat))]:
                 dead.append(k)
     m = BAD if dead else OK
@@ -265,11 +298,23 @@ def backup_report() -> None:
             print(f"{OK} {b}  {len(idx['files'])}건 · {idx['at']}")
             found = True
     if not found:
-        print(f"{WARN} 백업 흔적이 없다(_backup_index.json 미발견)")
-        _todo.append("uv run python -m firelane.datalog backup <외장경로>"
-                     "   · 그 뒤 verify")
-        _todo.append("★ 복원해 본 적 없는 백업은 백업이 아니다(§18-8). "
-                     "주기는 팀 합의 사항이다")
+        # ★ 2026-08-27. 종전에는 무조건 경고했다. 결정을 안 적어 뒀으니
+        #   검사가 매번 같은 말을 반복했고, 그것이 잘못된 경보다 —
+        #   판단이 끝난 사안을 미해결처럼 보이게 한다. 판단은 선언에
+        #   올렸다(layers.backup_policy). 검사는 그것을 읽는다.
+        import yaml as _y
+        _d = _y.safe_load(YAML.read_text(encoding="utf-8")) or {}
+        pol = _d.get("backup_policy") or {}
+        if pol.get("state") == "single_copy":
+            print(f"{OK} 한 벌 운용 (결정 {pol.get('decided')} · "
+                  f"{pol.get('by')})")
+            print(f"    {pol.get('why')}")
+            print(f"    재검토 조건 — {pol.get('revisit')}")
+        else:
+            print(f"{WARN} 백업 흔적이 없고 결정도 적혀 있지 않다")
+            _todo.append("layers.backup_policy 에 판단을 적거나 "
+                         "uv run python -m firelane.datalog backup <외장경로>")
+            _todo.append("★ 복원해 본 적 없는 백업은 백업이 아니다(§18-8)")
 
 
 def main() -> int:

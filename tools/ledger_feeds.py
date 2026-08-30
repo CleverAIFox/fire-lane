@@ -53,6 +53,9 @@ from pathlib import Path
 
 import yaml
 
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
+
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
 
@@ -109,7 +112,7 @@ def consumers() -> dict[str, list[str]]:
     alias: dict[str, set[str]] = {}
     for k, e in ds.items():
         names = {k}
-        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        for pat in _led.globs(e):
             stem = str(pat).rsplit("/", 1)[-1]
             names.add(stem)
             names.add(stem.split("*")[0].rstrip("_"))   # 글롭 접두

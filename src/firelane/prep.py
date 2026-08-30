@@ -51,6 +51,7 @@ from pathlib import Path
 import yaml
 
 from firelane import encoding as enc
+from firelane import ledger as _led
 from firelane.paths import NORM, RAW, ROOT
 
 KST = timezone(timedelta(hours=9))
@@ -106,7 +107,7 @@ def _targets() -> list[tuple[str, str, dict]]:
     """(key, 상대경로, 대장항목). 텍스트 파일만."""
     out = []
     for key, e in (_sources().get("datasets") or {}).items():
-        files = e.get("files") or ([e["file"]] if "file" in e else [])
+        files = _led.globs(e)
         for pat in files:
             if any(c in pat for c in "*?["):
                 for p in sorted(RAW.glob(pat)):

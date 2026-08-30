@@ -92,9 +92,29 @@ export function addMarkers(){
    `properties.kind` 에는 buildMarkers() 가 spec.id 를 넣는다. */
 export function bindMarkerPopups(){
   const byId = Object.fromEntries(CONFIG.markers.map(m => [m.id, m]));
-  S.map.on("click","mk-3d", e => {
+
+  /* ★ 2026-08-31. 종전에는 `mk-3d` 에만 걸었다. 그런데 **사용자가 클릭하는
+     것은 표지판이다** — 마커 본체는 실물 비례(소화전 0.2m)라 5배 과장해도
+     1m 남짓이라 화면에서 픽셀 몇 개다. 눈에 보이는 빨간 아이콘은
+     `m-hyd-sign` 이고 top 10.9m 위에 크게 떠 있다.
+
+     실측: 소화전 지점에서 queryRenderedFeatures 가
+       m-hyd-sign 2건 · mk-3d 0건.
+     즉 팝업 코드는 처음부터 멀쩡했고 **닿지 않는 레이어에 걸려 있었다.**
+     클릭해도 아무 반응이 없으니 "데이터가 없다" 로 오독된다. */
+  /* ★ getLayer() 로 거르지 않는다. `main.js` 는 addMarkers → bindMarkerPopups
+     → addSigns 순이라 **여기서는 sign 레이어가 아직 없다.** 존재 검사를
+     안전장치로 넣었더니 네 레이어를 전부 걸러 팝업이 하나도 안 붙었다.
+     MapLibre 는 나중에 생기는 레이어에도 핸들러가 붙는다. */
+  const LAYERS = ["mk-3d", ...CONFIG.markers
+    .filter(m => m.sign).map(m => `${m.id}-sign`)];
+
+  LAYERS.forEach(lid => S.map.on("click", lid, e => {
     const p = e.features[0].properties;
-    const spec = byId[p.kind];
+    /* ★ `kind` 로 찾지 않는다. sign 레이어는 원본 GeoJSON 을 그대로 소스로
+       쓰므로 `markers.js` 가 넣는 `kind` 가 없다(실측: 속성 9종에 kind 없음).
+       **어느 레이어를 눌렀는지는 이미 알고 있다.** 그것으로 찾는다. */
+    const spec = byId[p.kind] || byId[lid.replace(/-sign$/, "")];
     /* 선언이 없거나 팝업이 없는 마커는 라벨만 띄운다. 조용히 넘어가지 않는다 —
        빈 팝업이 뜨면 "데이터가 없다" 로 오독된다. */
     const html = (spec && spec.popup)
@@ -103,7 +123,10 @@ export function bindMarkerPopups(){
     new maplibregl.Popup({closeButton:false,maxWidth:"270px"})
       .setLngLat(e.lngLat)
       .setHTML(`<div class="pop">${html}</div>`).addTo(S.map);
+  }));
+
+  LAYERS.forEach(lid => {
+    S.map.on("mouseenter", lid, ()=>S.map.getCanvas().style.cursor="pointer");
+    S.map.on("mouseleave", lid, ()=>S.map.getCanvas().style.cursor="");
   });
-  S.map.on("mouseenter","mk-3d",()=>S.map.getCanvas().style.cursor="pointer");
-  S.map.on("mouseleave","mk-3d",()=>S.map.getCanvas().style.cursor="");
 }

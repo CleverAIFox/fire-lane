@@ -4,7 +4,7 @@ manifest.py — 매니페스트를 내용이 바뀔 때만 쓴다.
 
 ── 왜 생겼나 ───────────────────────────────────────────────────
 `data/processed/_manifest.json` 과 `web/data/_manifest.json` 은 커밋되는
-재현성 기록이다(MASTER §12-6). 그런데 매 실행 `generated_at` 만 바뀌어
+재현성 기록이다(MASTER §12-10). 그런데 매 실행 `generated_at` 만 바뀌어
 diff 가 났고, `verify.sh` 를 한 번 돌릴 때마다 워킹트리가 더러워져
 `git checkout` 이 막혔다.
 

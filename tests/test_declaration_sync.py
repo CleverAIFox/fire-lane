@@ -260,7 +260,16 @@ def test_plan_unreferenced_sources_count_is_current():
         _code_only(p.read_text(encoding="utf-8", errors="ignore"))
         for p in list((ROOT / "src").rglob("*.py")) + list((ROOT / "tools").glob("*.py"))
     )
-    zero = sorted(k for k in ledger.get("datasets", {}) if k not in code)
+    # ★ 2026-08-31. `raw_only` 를 뺀다. 사람이 열어보는 근거 문서(hwp·pdf·
+    #   원본 tif)라 **배선할 코드가 애초에 없다.** 종전에는 14종 전부를
+    #   후보로 두고 "이름이 코드 어딘가에 나오는가" 로만 걸렀는데, 그러면
+    #   normalize_raw 의 파일명 문자열에 우연히 박힌 12종은 빠지고
+    #   안 박힌 2종만 "미배선" 으로 뜬다 — 기준이 우연이었다.
+    #   실제로 mas_optional_spec 을 등재하자마자 이 검사가 울었고,
+    #   그것은 배선 누락이 아니라 근거 문서를 새로 적었다는 뜻이었다.
+    _ds = ledger.get("datasets", {})
+    zero = sorted(k for k, e in _ds.items()
+                  if k not in code and (e or {}).get("kind") != "raw_only")
 
     plan = PLAN.read_text(encoding="utf-8")
     m = re.search(r"참조 0곳인 소스 (\d+)종", plan)

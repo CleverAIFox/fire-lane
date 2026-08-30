@@ -146,7 +146,49 @@
    "origin_name": "전남광주통합특별시 동구_불법 주정차 단속현황_20240108.csv",
    "seen_at": "2026-08-27T10:05:56+09:00",
    "from": "/mnt/c/Users/foxlo/Downloads"
+  },
+  "gjcity_enforce_cam_jngj-donggu_20260828.csv": {
+   "sha256": "d004286bc2ddee1d85bb4ce8296b65a5d820686a713338a0023267d128a88e36",
+   "bytes": 7602,
+   "origin_name": "gjcity_enforce_cam_jngj-donggu_20260828.csv",
+   "seen_at": "2026-08-30T00:39:10+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "gjcity_parking_lot_jngj-donggu_20260828.csv": {
+   "sha256": "420e129d56f2eb4fbd9cc85a266c9b0e6f51182933d25a5db7c2c728263fa2c2",
+   "bytes": 18315,
+   "origin_name": "gjcity_parking_lot_jngj-donggu_20260828.csv",
+   "seen_at": "2026-08-30T00:39:10+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "gjcity_parking_zone_jngj-donggu_20260828.csv": {
+   "sha256": "4b26dc91d4a10c8ef396b465f4e6373dc0c4562497559bf859cb33c0e4675571",
+   "bytes": 1450,
+   "origin_name": "gjcity_parking_zone_jngj-donggu_20260828.csv",
+   "seen_at": "2026-08-30T00:39:10+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "gjcity_school_zone_jngj-donggu_20260828.csv": {
+   "sha256": "87232a954770a877c5df727b38f90ef9ad899221a4980d0f36855949a034e33f",
+   "bytes": 3003,
+   "origin_name": "gjcity_school_zone_jngj-donggu_20260828.csv",
+   "seen_at": "2026-08-30T00:39:10+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "safety_station_jrsdc_jngj_20260429.csv": {
+   "sha256": "d3373012c78ace322f83f59f8e0d3b6380e208f9349b3853a249b125fac258c9",
+   "bytes": 3223,
+   "origin_name": "safety_station_jrsdc_jngj_20260429.csv",
+   "seen_at": "2026-08-30T00:39:10+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "safety_hydrant_point_jngj_20240207.csv": {
+   "sha256": "bffc507dc053be38883800daec15f8c4bff0daea231e1bddcb403a2e482b4861",
+   "bytes": 1401550,
+   "origin_name": "safety_hydrant_point_jngj_20240207.csv",
+   "seen_at": "2026-08-30T11:57:55+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
   }
  },
- "at": "2026-08-27T10:05:56+09:00"
+ "at": "2026-08-30T11:57:55+09:00"
 }

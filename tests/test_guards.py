@@ -1528,8 +1528,15 @@ def test_every_dataset_says_where_it_is_used():
     import yaml
 
     y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    # ★ 2026-08-30. `feeds: []` 는 **판정 결과**다(grade → unused, R4).
+    #   그것을 금지하면 unused 가 영원히 나올 수 없고 R4 목록이 다시 빈다
+    #   — 08-23 에 고친 그 상태로 되돌아간다.
+    #
+    #   이 docstring 이 이미 답을 적고 있다: *"안 쓰이면 그렇게 적어라."*
+    #   요구는 "비지 않을 것" 이 아니라 **판단을 적을 것** 이다.
+    #   빈 값 + 사유(feeds_why) 는 판단이고, 사유 없는 빈 값은 방치다.
     miss = [k for k, v in (y.get("datasets") or {}).items()
-            if not (v or {}).get("feeds")]
+            if not ((v or {}).get("feeds") or (v or {}).get("feeds_why"))]
     assert not miss, (
         f"feeds 가 비어 있다 ({len(miss)}종): {miss}\n"
         "  R4 — 못 채우면 raw 에 둘 이유가 없다.\n"

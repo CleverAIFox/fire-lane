@@ -13,7 +13,10 @@ normalize_raw.py — 다운로드 폴더의 원본을 명명규칙에 맞게 dat
     폴더명 = 기관명
 
 기관별 폴더
-    juso ngii its sbiz safety gjcity nsdi
+    ★ 목록을 여기 적지 않는다. 정본은 `layers.raw.providers` 이고
+      `firelane.providers.all()` 로 읽는다. 이 머리말이 7종을 적고
+      `ORG` 가 9종을 적어 2026-08-24 에 정정했는데, 정정한 값이 다시
+      네 곳에 복사됐다. 사본이 남으면 또 갈린다.
 ★ 예외 한 곳. 폴더명 = 기관명 규칙을 깬다. 코드가 이 경로를 직접 읽으므로 고정이다.
     ngii1k        ngii1k.py 가 폴더를 rglob. ngii/ 로 합치면 연속수치지도까지 집는다
   파일명 접두사는 규칙대로 기관명(ngii_ · gjcity_)을 쓴다.
@@ -37,6 +40,9 @@ import shutil
 import sys
 from pathlib import Path
 
+# 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import ledger as _led
+from firelane import providers
 from firelane.paths import RAW
 
 for st in (sys.stdout, sys.stderr):
@@ -49,7 +55,7 @@ for st in (sys.stdout, sys.stderr):
 # 정규식은 소문자 변환 후 매칭한다. 괄호는 브라우저가 &#40; 로 바꾸기도 해서 느슨하게 본다.
 # FL_HYPHEN_SCOPE
 # ★ 2026-08-27. 패스스루 규칙이 `\w+` 를 쓰고 있었는데 `\w` 는 하이픈을
-#   포함하지 않는다. 스코프 별칭이 `jngj-dong` 으로 바뀌면서 **규칙이
+#   포함하지 않는다. 스코프 별칭이 `jngj-donggu` 으로 바뀌면서 **규칙이
 #   자기가 만든 파일을 못 잡게 됐다.** 재취득하면 landing 에 갇힌다 —
 #   2026-08-23 의 `동구_불법 주정차_20250226.csv` 2.9MB 와 같은 사고다.
 #
@@ -216,7 +222,7 @@ def _required() -> list[str]:
     for e in (d.get("datasets") or {}).values():
         if e.get("kind") in (None, "raw_only"):
             continue                       # 문서·참고자료는 필수가 아니다
-        for pat in (e.get("files") or ([e["file"]] if "file" in e else [])):
+        for pat in _led.globs(e):
             pat = str(pat)
             # ★ 글롭은 뺀다. 이 목록은 **규칙이 배치할 수 있는가**를
             #   검사하는 데 쓰이는데(`test_every_required_file_is_
@@ -338,9 +344,10 @@ def main():
     #   --in-place 로 한 번 정리한 폴더를 다시 원본으로 쓸 수 있어야 한다.
     # ★ 2026-08-24. 목록이 세 곳에서 달랐다 — MASTER §18-2a 는 8종(nsdi 없음),
     #   여기는 7종(vworld·eais 없음). `vworld`·`eais` 는 명시 규칙이 따로 있어
-    #   **우연히** 돌고 있었다. MASTER 를 아홉으로 통일하고 여기를 맞춘다.
-    ORG = {"juso", "ngii", "its", "sbiz", "safety", "gjcity",
-           "nsdi", "vworld", "eais"}
+    #   **우연히** 돌고 있었다.
+    # ★ 2026-08-27 정정. 값을 맞추는 것으로 끝나지 않았다 — 통일한 아홉이
+    #   네 곳에 복사됐고 강제자가 없었다. 정본을 대장으로 올린다.
+    ORG = providers.all()
     # ★ 확장자 화이트리스트에 hwp·pdf·ngi·nda 가 없었다. 그래서 규칙명으로
     #   한 번 정리한 `safety_kfs_pumptruck_20251224.hwp` 를 다시 넣으면
     #   "규칙에 없는 파일" 로 떨어졌다 — 위 주석이 약속한 왕복 멱등이

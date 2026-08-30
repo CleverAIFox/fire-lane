@@ -78,8 +78,8 @@ def make_seg_uid(geom: LineString, road_name: str | None,
                  region: str = REGION) -> str:
     """구간 하나의 seg_uid. geom 은 반드시 CRS_M(미터) 좌표계여야 한다."""
     mid = geom.interpolate(0.5, normalized=True)
-    x = int(round(mid.x))
-    y = int(round(mid.y))
+    x = round(mid.x)
+    y = round(mid.y)
     if not (10 ** (COORD_DIGITS - 1) <= x < 10 ** COORD_DIGITS):
         # 좌표계를 잘못 넣은 것이다(4326 을 넣으면 여기서 걸린다). 조용히 넘기면
         # 전부 같은 접두사를 받아 키가 무의미해진다.
