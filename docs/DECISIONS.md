@@ -2374,7 +2374,7 @@ L1·L2·L3 는 전 과정에서 동일했다.
 > 2026-08-25
 
 `data/processed/_manifest.json` 과 `web/data/_manifest.json` 은 커밋되는
-재현성 기록이다(MASTER §12-6). 그런데 매 실행 `generated_at` 만 바뀌었다.
+재현성 기록이다(MASTER §12-10). 그런데 매 실행 `generated_at` 만 바뀌었다.
 그래서 검사를 한 번 돌릴 때마다 워킹트리가 더러워졌고, 브랜치를 옮기려 할 때
 이렇게 막혔다.
 
