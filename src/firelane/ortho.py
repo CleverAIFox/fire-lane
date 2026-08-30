@@ -164,7 +164,7 @@ def main():
     for a, tr in pieces:
         x, y = tr * (0, 0)
         c, rr = inv * (x, y)
-        c, rr = int(round(c)), int(round(rr))
+        c, rr = round(c), round(rr)
         h, w = a.shape[1], a.shape[2]
         cs, rs = max(c, 0), max(rr, 0)
         ce, re = min(c + w, W), min(rr + h, H)

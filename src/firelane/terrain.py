@@ -31,12 +31,12 @@ PARAM 줌 단계 · exaggeration 기본 1.0
 """
 from __future__ import annotations
 
-import glob
 import json
 import shutil
 import tempfile
 import zipfile
 from datetime import UTC, datetime
+from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
@@ -164,7 +164,7 @@ def main():
     pad = 200
     with tempfile.TemporaryDirectory() as td:
         zipfile.ZipFile(DEM_ZIP).extractall(td)
-        img = glob.glob(f"{td}/**/*.img", recursive=True)[0]
+        img = str(next(Path(td).rglob("*.img")))
         with rasterio.open(img) as r:
             win = from_bounds(minx - pad, miny - pad, maxx + pad, maxy + pad,
                               r.transform).round_offsets().round_lengths()

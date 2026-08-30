@@ -85,7 +85,7 @@ def nfa_compare(g):
                     "nfa_raw": str(w_nfa),
                     "ours_median_m": round(float(med), 2),
                     "dev_m": round(float(med) - wf, 2),
-                    "n_seg": int(len(hit)),
+                    "n_seg": len(hit),
                     "verdict": {k: int(v) for k, v in hit.verdict.value_counts().items()},
                 })
 
