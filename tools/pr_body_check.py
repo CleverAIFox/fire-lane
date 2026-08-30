@@ -37,8 +37,15 @@ DODGE = re.compile(r"전체\s*(확인|리뷰|검토)|전부\s*(확인|봐)|알�
                    r"다\s*확인|특별히\s*없", re.I)
 
 # 파일 경로처럼 보이는 것. `src/cv/mask.py:212` · `web/js/map.js`
-PATHISH = re.compile(r"[\w./-]+\.(?:py|js|md|yml|yaml|json|html|css|toml|sh)"
-                     r"(?::\d+)?")
+PATHISH = re.compile(
+    # 확장자가 있는 경로
+    r"[\w./-]+\.(?:py|js|md|yml|yaml|json|html|css|toml|sh|txt|lock|geojson)(?::\d+)?"
+    # 확장자 없는 관례적 파일. 2026-08-30 에 `.github/CODEOWNERS:64` 를
+    # 지목한 PR 이 "경로가 없다" 로 막혔다. 규칙이 현실을 못 따라간 것이다.
+    r"|(?:[\w./-]*/)?(?:CODEOWNERS|Dockerfile|Makefile|LICENSE)(?:\.\w+)?(?::\d+)?"
+    # 디렉토리 지목도 인정한다. `src/contracts/` 처럼
+    r"|(?:[\w-]+/){1,}(?::\d+)?"
+)
 
 CHECKED = re.compile(r"^\s*-\s*\[[xX]\]", re.M)
 
