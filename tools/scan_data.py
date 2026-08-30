@@ -30,15 +30,17 @@ import re
 import sys
 from pathlib import Path
 
+from firelane import providers
+
 ROOT_REPO = Path(__file__).resolve().parent.parent
 
 # MASTER 18-2. 폴더 = 제공기관.
-PROVIDERS = {
-    "juso": "도로명주소", "its": "국가교통정보센터",
-    "ngii": "국토정보플랫폼", "vworld": "브이월드",
-    "safety": "공공데이터포털(안전)", "gjcity": "공공데이터포털(광주 동구)",
-    "sbiz": "소상공인시장진흥공단", "eais": "건축HUB",
-}
+# ★ 2026-08-27. 여기에 8종이 하드코딩돼 있었다(nsdi 없음). 같은 목록이
+#   layers.raw.naming · normalize_raw 머리말 · ORG · 테스트 두 곳까지
+#   **다섯 벌**이었고 값이 갈려 있었다. DECISIONS §73 이 "세 곳에서
+#   달랐다" 고 적고 통일했는데, 통일한 값이 또 복사된 것이다.
+#   정본은 layers.raw.providers 다. 여기는 읽기만 한다.
+PROVIDERS = {k: v["org"] for k, v in providers.spec().items()}
 TIERS = ["raw", "norm", "field", "_quarantine", "landing"]
 
 # provider_dataset_scope_date.ext  — 소문자·숫자·밑줄·하이픈·점만

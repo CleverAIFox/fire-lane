@@ -184,6 +184,28 @@ def integrity_report() -> None:
     m = BAD if (only_led or only_disk) else OK
     print(f"{m} 대장 {len(led)} · 실물 {len(disk)} · "
           f"대장만 {len(only_led)} · 실물만 {len(only_disk)}")
+
+    # ★ 2026-08-27. 위 줄은 파일만 센다 — `p.is_file()` 이 디렉터리를
+    #   거른다. 폴더는 대장 항목이 없어 대조 대상이 아니고, 비어 있으면
+    #   파일 대조에도 안 걸린다. **검사의 사각이다.**
+    #   `acquire.cmd_quarantine()` 이 `shutil.move` 만 하고 빈 부모를 안
+    #   지우므로 격리한 자리마다 빈 폴더가 남는다.
+    #   진단과 게이트를 잇는 원칙대로 여기서 같이 센다.
+    from firelane import providers as _P
+    dirs = ({str(p.relative_to(RAW)) for p in RAW.rglob("*") if p.is_dir()}
+            if RAW.is_dir() else set())
+    top = {d for d in dirs if "/" not in d}
+    have = {t for t in top if any(f.startswith(t + "/") for f in disk)}
+    ghost = sorted((top - have) | (top & _P.reserved()))
+    deep = sorted(d for d in dirs if d.count("/") >= _P.depth() - 1)
+    m = BAD if (ghost or deep) else OK
+    print(f"{m} 폴더 {len(top)}개 · 근거 없는 빈 폴더 {len(ghost)} · "
+          f"깊이 위반 {len(deep)}")
+    for x in (ghost + deep)[:6]:
+        print(f"    raw/{x}/")
+    if ghost or deep:
+        _todo.append("uv run python tools/treecheck.py"
+                     f"   (디렉터리 결함 {len(ghost) + len(deep)}건)")
     for x in (only_led + only_disk)[:6]:
         print(f"    {x}")
     if only_led:
@@ -265,11 +287,23 @@ def backup_report() -> None:
             print(f"{OK} {b}  {len(idx['files'])}건 · {idx['at']}")
             found = True
     if not found:
-        print(f"{WARN} 백업 흔적이 없다(_backup_index.json 미발견)")
-        _todo.append("uv run python -m firelane.datalog backup <외장경로>"
-                     "   · 그 뒤 verify")
-        _todo.append("★ 복원해 본 적 없는 백업은 백업이 아니다(§18-8). "
-                     "주기는 팀 합의 사항이다")
+        # ★ 2026-08-27. 종전에는 무조건 경고했다. 결정을 안 적어 뒀으니
+        #   검사가 매번 같은 말을 반복했고, 그것이 잘못된 경보다 —
+        #   판단이 끝난 사안을 미해결처럼 보이게 한다. 판단은 선언에
+        #   올렸다(layers.backup_policy). 검사는 그것을 읽는다.
+        import yaml as _y
+        _d = _y.safe_load(YAML.read_text(encoding="utf-8")) or {}
+        pol = _d.get("backup_policy") or {}
+        if pol.get("state") == "single_copy":
+            print(f"{OK} 한 벌 운용 (결정 {pol.get('decided')} · "
+                  f"{pol.get('by')})")
+            print(f"    {pol.get('why')}")
+            print(f"    재검토 조건 — {pol.get('revisit')}")
+        else:
+            print(f"{WARN} 백업 흔적이 없고 결정도 적혀 있지 않다")
+            _todo.append("layers.backup_policy 에 판단을 적거나 "
+                         "uv run python -m firelane.datalog backup <외장경로>")
+            _todo.append("★ 복원해 본 적 없는 백업은 백업이 아니다(§18-8)")
 
 
 def main() -> int:

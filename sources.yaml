@@ -375,6 +375,32 @@ scopes:
 #             ★ regenerable:false 인데 committed:false 면 소실 대기다
 # naming      파일명 규칙. 위반 목록을 fsck 가 낸다
 # status      미구현이면 적는다. 격차를 산문이 아니라 데이터로 둔다
+# ── 백업 정책 ────────────────────────────────────────────────
+# ★ 2026-08-27. `backup: true` 인 계층이 셋인데 `_backup_index.json` 이
+#   없어서 `doctor ④ 백업` 이 매번 경고를 냈다. 근거 없이 우는 검사는
+#   사람이 무시하게 되고, 무시가 습관이 되면 **진짜 경보도 같이 죽는다**
+#   (DECISIONS §73 "잘못된 경보가 진짜 경보를 죽인다").
+#
+#   그래서 판단을 여기 적는다. 검사를 지우는 것이 아니라 **판단을
+#   선언에 올려** 검사가 그것을 읽게 한다.
+#
+#     결정   raw 2.4GB 는 외장 SSD 한 벌로 둔다. 추가 백업을 뜨지 않는다
+#     근거   sources.yaml 의 url 로 전량 재취득 가능하고, `_acquire.json`
+#            40건의 sha 가 재취득본의 동일성을 증명한다. 사본을 늘리는
+#            것보다 **재취득 경로를 살려 두는 것**이 이 자료의 성질에 맞다
+#     한계   재취득에 걸리는 시간(1.8GB 정사영상 포함)은 측정한 적이 없다.
+#            `field/` 는 실측이라 재취득이 **불가능**하지만 저장소 안에
+#            있어 git 이 사본을 보관한다
+#     재검토 raw 가 5GB 를 넘거나, 재취득 불가 자산이 레이크에 생기면
+#     결정자 오창준 · 2026-08-27
+backup_policy:
+  state: single_copy
+  decided: 2026-08-27
+  by: 오창준
+  what: 외장 SSD 한 벌. 추가 백업 없음
+  why: sources.yaml 의 url 로 재취득 가능하고 sha 대장이 동일성을 증명한다
+  revisit: raw 5GB 초과 · 재취득 불가 자산 편입 · 팀 인원 증가
+
 layers:
   landing:
     base: data
@@ -397,8 +423,44 @@ layers:
     regenerable: false
     naming: '^(juso|its|ngii|vworld|safety|gjcity|sbiz|eais|nsdi)/'
     what: 받은 그대로. 인코딩조차 고치지 않는다
+    depth: 2
+    # ★ provider 폴더의 정본. 2026-08-27 까지 이 목록이 네 곳에 있었다 —
+    #   위 naming 정규식 · normalize_raw 머리말(7종) · normalize_raw.ORG(9종) ·
+    #   테스트 두 곳의 하드코딩. §18-2a 정정 때 "세 곳에서 달랐다" 고 적어
+    #   놓고도 네 번째를 만들었다. 여기가 정본이고 나머지는 firelane.providers
+    #   를 통해 읽는다. naming 정규식은 test_provider_registry 가 대조한다.
+    #
+    #   state — 폴더가 존재해도 되는 근거다. 폴더는 대장 항목이 없어서
+    #           아무 검사도 대조하지 않는다. 근거를 여기 적는다.
+    #     active    대장 datasets 가 실제로 읽는다. 파일 0건이면 결손이다
+    #     reserved  등재만 돼 있다. 파일 0건이 정상이고 폴더도 없어야 한다
+    providers:
+      juso:    {org: 도로명주소 안내시스템,        state: active}
+      its:     {org: 국가교통정보센터,             state: active}
+      ngii:    {org: 국토지리정보원,               state: active}
+      vworld:  {org: 브이월드,                     state: active}
+      safety:  {org: 소방청·행정안전부,            state: active}
+      gjcity:  {org: 전남광주통합특별시,           state: active}
+      sbiz:    {org: 소상공인시장진흥공단,         state: active}
+      eais:    {org: 건축행정시스템 세움터,        state: active}
+      nsdi:
+        org: 국가공간정보포털
+        state: reserved
+        # raw/nsdi/AL_D002_12_20260808.zip(연속지적도) 970MB 를 격리했다
+        # (DECISIONS · acquire.py 머리말). 대장 밖 · 명명규칙 밖이라 raw 에
+        # 둘 근거가 없었다. 재도입하려면 격리에서 꺼내는 것이 아니라 대장에
+        # 등재하고 intake 를 다시 태운다.
+        #
+        # ★ `acquire.cmd_quarantine()` 은 `shutil.move` 만 하고 빈 부모를
+        #   지우지 않는다. 그러므로 `raw/nsdi/` 가 빈 폴더로 남아 있을
+        #   것으로 본다 — **아직 실물로 확인하지 않았다.** treecheck 의 D2·D3
+        #   이 그것을 확인하는 자리다. 확인되면 여기에 날짜를 적어라.
+        #
+        # jijeok_probe.py:135 가 아직 raw/nsdi/ 를 후보 경로로 본다.
     caveats:
       - 2026-08-11 에 심링크를 git 이 추적해 exFAT 에서 2.5GB 를 날렸다
+      - 무결성 검사가 파일만 세고 디렉터리를 안 본다(doctor 의 p.is_file()).
+        빈 폴더는 대장 항목이 없어 대조 대상도 아니다 — tools/treecheck.py 신설
 
   norm:
     base: data
@@ -1700,6 +1762,12 @@ basemap:
 retired:
   mas_optional_20241111:
     what: 2025년 소방자동차 MAS 선택장비 규격 (2024-11-11)
+    # ★ 2026-08-27. `file:` 이 hwp 만 적어서 같은 배포물의 pdf 가 폐기
+    #   등재 밖이었고, 매 스캔마다 "미상" 으로 떠 다시 조사하게 만들었다.
+    #   포맷이 다르면 다른 파일이다(naming.py) — 그러므로 **둘 다 적는다.**
+    files:
+      - safety/safety_mas_optional_20241111.hwp
+      - safety/safety_mas_optional_20241111.pdf
     file: safety/safety_mas_optional_20241111.hwp
     at: 2026-08-24
     successor: mas_vehicle_spec (safety_mas_vehicle_spec_kr_20241111.hwp)
@@ -1710,6 +1778,20 @@ retired:
       #31(축거·최소회전반경 미확정)의 답은 여기 없다. D-30 인터뷰가 유일한 길이다.
       2026-08-24 획득 게이트가 '판단 필요' 로 잡아냈고, 열어보고 정했다.
       ★ 안 열어보고 내렸으면 3개월 뒤 또 받고 또 조사했을 것이다(§18-3c).
+  kfs_paint_marking_20241224:
+    what: 소방차 도장 및 표지 (KFS-1-0006-2024-01)
+    files:
+      - safety/safety_kfs_paint_marking_kr_20241224.pdf
+    at: 2026-08-27
+    successor: null
+    reason: |
+      진입 판정과 무관하다. 차량 외관 도색·표지 규격이며 치수·중량·
+      회전반경이 없다. 다른 KFS 규격서(펌프차·물탱크차 등)는 제원표가
+      있어 vehicle 프로파일의 근거가 되지만 이것은 아니다.
+      ★ 지우기만 하면 3개월 뒤 또 받고 또 열어본다. 그래서 등재한다
+      (PLAN #47 · mas_optional 과 같은 이유).
+      파일명은 정규명 기준이다. landing 원본은
+      "6. 소방차 도장 및 표지(KFS-1-0006-2024-01).pdf".
   firestation_kr_20250701:
     what: 소방청 시도 소방서 현황 (2025-07-01 판)
     file: safety/safety_firestation_kr_20250701.csv
