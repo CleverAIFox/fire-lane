@@ -337,6 +337,7 @@ tests/
   test_doc_style.py       문서 문체 · 절 번호 · 어휘
   test_declaration_sync.py ★ 역방향 — 실물이 선언돼 있는가
   test_ownership.py       ★ 미소유 경로가 없는가. CODEOWNERS 전수 검사
+  test_docref.py          절 참조 무결성 · 하위 절 번호 유일·연속
   test_ops_html_sync.py   docs/ops.html ↔ 브랜치·팀·워크플로 대조
   test_contract_vision.py GIS ↔ CV 경계 (MASTER §19)
   test_ledger_outputs.py  대장 outputs ↔ 실제 산출물
