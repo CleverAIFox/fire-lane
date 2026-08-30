@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import date
+from datetime import UTC, datetime
 from pathlib import Path
 
 # 폭·골격·판정에 실제로 읽히는 핵심 입력.
@@ -149,7 +149,7 @@ def quarantine_stale(out: Path, key: str, tag: str | None = None) -> list[str]:
     하류가 읽으려 하면 FileNotFoundError 로 즉시 죽는다. 조용히 못 집는다.
     """
     out = Path(out)
-    tag = tag or date.today().strftime("%Y%m%d")
+    tag = tag or datetime.now(UTC).astimezone().date().strftime("%Y%m%d")
     pats = (f"{key}_5186.gpkg", f"{key}.geojson",
             f"{key}_*_5186.gpkg", f"{key}_*.geojson")
     staled: list[str] = []

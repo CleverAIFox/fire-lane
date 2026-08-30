@@ -146,9 +146,23 @@ jobs:
         run: |
           FILES=$(uv run python tools/owned_paths.py --py-only)
           test -n "$FILES" || exit 0
+          # ★ 2026-08-30. `--select ALL` 을 폐기했다.
+          #
+          #   재보니 1,694건이었고 상위 5개가 전부 오탐이었다 —
+          #   S101 445(테스트의 assert) · PLC0415 197(의도된 지연 import) ·
+          #   PLR2004 142(params.py 가 정본인 상수) · N806 121(수학 관례 대문자) ·
+          #   CPY001 101(안 쓰기로 한 저작권 헤더).
+          #   규칙이 코드베이스를 못 따라간 것이지 코드가 나쁜 것이 아니다.
+          #
+          #   그래서 --ignore 110개짜리 손대장으로 덮었고, 그것이 곧
+          #   "검사가 죽은 채 뜨는 초록불" 이었다. 8-27 의 한시 완화가 그것이다.
+          #
+          #   **끌 것을 나열하지 않고 켤 것을 고른다.** 손대장 110 → 8 이 되고
+          #   남는 15건은 전부 실제 버그이거나 명백한 개선이었다 —
+          #   DTZ011 은 어제 계약에서 막은 시간대 누락 버그가 코드에도 있던 것이다.
           uv run ruff check $FILES \
-            --select ALL \
-            --ignore ANN,D,COM812,ISC001,E501,E701,E702,E741,E731,E402,T201,ERA001,RUF001,RUF002,RUF003,TRY003,EM101,EM102,PLR2004,C901,PLR0911,PLR0912,PLR0915,PLC0415,CPY001,FBT001,FBT003,S101,N801,N802,N803,N806,N812,N818,PLC2401,S603,S607,S112,PLW1510,BLE001,FURB167,FURB171,FURB192,PERF401,RUF005,RUF059,C420,PT018,INP001,PLR0913,PLR0917,PLW2901,SIM102,SIM103,TC001,TC002,TC003,Q000,Q003,RET504,TRY300,ARG001,PLC0206,PLC0207,PLC1802,PLR1714,PLW0108,PTH110,RUF010,RUF034,S104,SIM114,SIM115,SIM300,ISC002,ISC004,RUF100,RUF007,RUF046,RUF021,C408,PLW0603,PTH123,PTH207,FBT002,PERF102,S110,SIM105,PD011,PIE810,PLR0124,PLR1736,PT006,RET503,DTZ011,FURB188,ICN001,EXE001,EXE002
+            --select B,RUF,PTH,I,UP,DTZ \
+            --ignore RUF001,RUF002,RUF003,PTH123,RUF005,RUF007,RUF059,RUF100
 
       - name: 문서 규약 · 재현성
         run: uv run pytest tests/test_doc_style.py tests/test_reproducibility.py -q

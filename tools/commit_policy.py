@@ -77,7 +77,7 @@ def r_root_script(p: str) -> bool:
 def r_env(p: str) -> bool:
     """비밀 값. .env.example 만 커밋한다."""
     name = Path(p).name
-    return name == ".env" or name.startswith(".env.") and name != ".env.example"
+    return name == ".env" or (name.startswith(".env.") and name != ".env.example")
 
 
 def r_work(p: str) -> bool:

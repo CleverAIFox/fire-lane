@@ -76,9 +76,9 @@ def test_domain_모듈은_파일을_쓰지_않는다(rel):
             if node.func.attr in ("to_file", "write_text", "write_bytes", "to_csv"):
                 # out_dir 를 인자로 받아 쓰는 것은 허용 — 경로를 아는 게 아니다
                 if not any(
-                    isinstance(a, ast.Name) and "dir" in a.id
-                    or isinstance(a, ast.BinOp)
-                    and isinstance(a.left, ast.Name) and "dir" in a.left.id
+                    (isinstance(a, ast.Name) and "dir" in a.id)
+                    or (isinstance(a, ast.BinOp)
+                    and isinstance(a.left, ast.Name) and "dir" in a.left.id)
                     for a in node.args
                 ):
                     bad.append(f"{node.func.attr}() @ line {node.lineno}")

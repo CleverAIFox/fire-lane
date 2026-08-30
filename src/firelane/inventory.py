@@ -61,7 +61,7 @@ def _resolve(pattern: str) -> list[Path]:
     p = RAW / pattern
     if pattern.endswith("/"):
         return [p] if p.is_dir() else []
-    hits = [Path(x) for x in _glob.glob(str(p))]
+    hits = [Path(x) for x in _glob.iglob(str(p))]  # noqa: PTH207  패턴이 절대경로라 Path.glob 로 못 바꾼다
     return sorted(hits)
 
 

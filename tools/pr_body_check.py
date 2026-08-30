@@ -31,6 +31,7 @@ import json
 import os
 import re
 import sys
+from pathlib import Path
 
 # 회피 문구. 이게 있으면 지목이 아니다.
 DODGE = re.compile(r"전체\s*(확인|리뷰|검토)|전부\s*(확인|봐)|알아서|아무데나|"
@@ -112,7 +113,7 @@ def main() -> int:
         body = open(a.body_file, encoding="utf-8").read()
     else:
         ev = os.environ.get("GITHUB_EVENT_PATH")
-        if not ev or not os.path.exists(ev):
+        if not ev or not Path(ev).exists():
             print("PR 컨텍스트가 아니다 — 건너뛴다")
             return 0
         with open(ev, encoding="utf-8") as f:
