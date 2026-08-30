@@ -61,8 +61,8 @@
 
 # ── 3. 파이프라인 · 인프라 ──────────────────────────────────────
 # FastAPI · 폴링 스케줄러 · DB · 도커 · AWS
-/src/api/                @woongtopia/infra
-/src/api/README.md       @woongtopia/infra
+/src/api/                @woongtopia/infra @woongtopia/gis
+/src/api/README.md       @woongtopia/infra @woongtopia/gis
 /infra/                  @woongtopia/infra
 /Dockerfile              @woongtopia/infra @woongtopia/gis
 /Dockerfile.api          @woongtopia/infra
