@@ -63,6 +63,38 @@ def declared_paths() -> dict[str, str]:
                 f"outputs.{k}.derives[{dp}] 에 what 이 없다 — "
                 "파생물도 왜 존재하는지는 적어야 한다")
             out[dp] = f"{k}/파생"
+
+    # ── ingest 산출물은 매니페스트가 정본이다 ────────────────
+    # ★ 2026-08-31. 종전에는 `outputs` 만 봤고 그래서 `bin_cloth.geojson`
+    #   같은 **대장 키와 1:1 인 42건**이 전부 "미등재" 로 떴다. 그것을
+    #   `outputs` 에 적으면 한 산출물이 두 대장에 산다 — R14 위반이고
+    #   키 하나 늘 때마다 또 어긋난다.
+    #
+    #   `ingest` 는 키마다 `_manifest.json` 의 `datasets[].outputs` 에
+    #   무엇을 냈는지 기록한다(`ingest.py:382`). R13 이 "계보는
+    #   매니페스트 목록과 디스크를 대조한다" 고 적는 그 자리다.
+    #   ★ `datasets` 는 **list** 다. 원소 키 — key · found · sha256 ·
+    #     outputs · layers. dict 로 읽으면 AttributeError 로 죽는다.
+    mf = ROOT / "data/processed/_manifest.json"
+    if mf.exists():
+        import json
+        rows = json.loads(mf.read_text(encoding="utf-8")).get("datasets") or []
+        if isinstance(rows, dict):
+            rows = list(rows.values())
+        for rec in rows:
+            for f in (rec or {}).get("outputs") or []:
+                out[f"data/processed/{f}"] = f"{(rec or {}).get('key')}/ingest"
+
+    # ★ 단계 산출물도 매니페스트가 든다. `terrain.raster` 가 그 예다.
+    #   최상위 키에 흩어져 있어 `datasets` 순회로는 안 잡힌다.
+    if mf.exists():
+        for k, rec in json.loads(mf.read_text(encoding="utf-8")).items():
+            if not isinstance(rec, dict):
+                continue
+            for v in rec.values():
+                if isinstance(v, str) and v.endswith((".tif", ".gpkg", ".geojson",
+                                                      ".csv", ".json")):
+                    out[f"data/processed/{v}"] = f"{k}/단계"
     return out
 
 
@@ -125,12 +157,6 @@ def test_declared_paths_point_into_a_declared_layer():
 
 @pytest.mark.skipif(not PROCESSED.is_dir() or not actual_files(),
                     reason="파이프라인 미실행 — data/processed 가 비었다")
-# ★ 2026-08-31. `strict=False` 였다. 고쳐져도 조용히 초록이라 표시를
-#   떼야 하는 순간을 아무도 모른다 — "안 된다" 로 적어두고 잊는 장치다.
-#   `strict=True` 면 전건 등재되는 순간 xpass 로 빨간불이 뜬다.
-#   실측 54건(종전 문서는 "20여건" 이었다. 두 배 넘게 틀렸다).
-@pytest.mark.xfail(reason="대장 outputs 미등재 54건. PLAN §1 #41",
-                   strict=True)
 def test_no_undeclared_output():
     """processed 에 있는데 대장에 없는 파일이 없다.
 

@@ -1995,6 +1995,13 @@ outputs:
       2026-08-24 부존재 종결 — "취합·가공" 사유. 재청구 중이나 전건이
       아니다. 분리는 ngii1k_center 중심선으로 한다(PLAN §1-26 · §4-7)
 
+    derives:
+      - path: data/processed/segments_5186.gpkg
+        what: 같은 구간의 5186 판. QGIS·공간연산용. geojson 은 4326 이라 거리 계산이 안 된다
+      - path: data/processed/width_samples.csv
+        what: 구간별 폭 표본 원자료. 채택 전 전량이라 w(s) 함수로 다룰 수 있다(tools/width_fn.py)
+      - path: data/processed/uncovered_units.json
+        what: 폭 소스가 못 덮은 산출단위. width_cov 0.5 미만 추적용(PLAN §3-1)
   ngii1k_center:
     produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_center_5186.gpkg
@@ -2051,6 +2058,34 @@ outputs:
 # ── landing 처분 결정 (2026-08-30) ────────────────────────────
 # ★ 판단은 끝났는데 도구가 모르면 검사가 매번 같은 말을 한다.
 #   근거 없이 우는 검사는 진짜 경보를 죽인다 — backup_policy 와 같은 자리.
+  corridor:
+    produced_by: src/firelane/seg/graph.py
+    path: data/processed/corridor_5186.gpkg
+    inputs: [ngii1k, boundary_emd]
+    consumers: [src/firelane/segments.py, src/firelane/publish_web.py]
+    what: 동명동 + 접근 회랑 폴리곤. 스코프 판정의 공간 기준
+    verified: false
+  nfa_compare:
+    produced_by: src/firelane/seg/report.py
+    path: data/processed/nfa_compare.json
+    inputs: [segments, fire_access]
+    consumers: [src/firelane/guards.py, src/firelane/pipeline.py]
+    what: 소방서 소방통로 지정구간 대 우리 판정 대조. ★ 게이트로 썼으므로 검증이 아니다(MASTER §15-2)
+    verified: false
+  route_vehicle:
+    produced_by: src/firelane/segments.py
+    path: data/processed/route_vehicle.csv
+    inputs: [segments, node_link, turn_restriction]
+    consumers: [tools/route_probe.py]
+    what: 소방차 통행 비용 기준 경로 산출. 거리만 대 차등 비교용
+    verified: false
+  streetlight_point:
+    produced_by: src/firelane/streetlight.py
+    path: data/processed/streetlight_point.geojson
+    inputs: [streetlight]
+    consumers: [src/firelane/publish_web.py, src/firelane/pipeline.py]
+    what: 가로등 점형. 야간 가시성 · 폭 차감 후보
+    verified: false
 landing_disposition:
   decided: '2026-08-30'
   by: 오창준
