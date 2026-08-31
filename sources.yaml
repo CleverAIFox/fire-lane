@@ -604,10 +604,10 @@ layers:
 datasets:
   kfs_pumptruck:
     feeds: []
-    feeds_why: 근거 문서 — used_for 제원표가 폭 판정 기준이다. 코드가 키로 참조하지 않는다
-    feeds_note: 'sources.yaml vehicle_spec 의 width_m · length_m · height_m 출처'
+    feeds_note: '[]'
     stem: safety_kfs_pumptruck
     ext: [hwpx]
+    feeds_why: 근거 문서 — used_for 제원표가 폭 판정 기준이다. 코드가 키로 참조하지 않는다
     files:
       - safety/safety_kfs_pumptruck_kr_20251224.hwpx
     scope: kr
@@ -626,10 +626,10 @@ datasets:
       ★ 축거 · 최소회전반경은 이 규격에 없다.
   kfs_watertank:
     feeds: []
-    feeds_why: 근거 문서 — used_for 제원표. 상동
-    feeds_note: '차종별 판정(#31). 전장이 펌프차보다 1.5m 길다'
+    feeds_note: '[]'
     stem: safety_kfs_watertank
     ext: [hwpx]
+    feeds_why: 근거 문서 — used_for 제원표. 상동
     files:
       - safety/safety_kfs_watertank_kr_20251224.hwpx
     scope: kr
@@ -650,10 +650,10 @@ datasets:
         못 돈다는 뜻이다.** 우리 판정은 폭만 본다.
   kfs_chemical:
     feeds: []
-    feeds_why: 근거 문서 — used_for 제원표. 상동
-    feeds_note: '차종별 제원 비교'
+    feeds_note: '[]'
     stem: safety_kfs_chemical
     ext: [hwpx]
+    feeds_why: 근거 문서 — used_for 제원표. 상동
     files:
       - safety/safety_kfs_chemical_kr_20251224.hwpx
     scope: kr
@@ -669,10 +669,10 @@ datasets:
           고성능   12.0 이하 2.5 이하 3.8 이하
   kfs_ladder_articulated:
     feeds: []
-    feeds_why: 근거 문서 — used_for 제원표. 상동
-    feeds_note: '| ★ KFS 6종 중 **축 구성을 적은 유일한 문서**다. #31 축거 추정의 단서가 여기밖에 없다.'
+    feeds_note: '[]'
     stem: safety_kfs_ladder_articulated
     ext: [hwpx]
+    feeds_why: 근거 문서 — used_for 제원표. 상동
     files:
       - safety/safety_kfs_ladder_articulated_kr_20251224.hwpx
     scope: kr
@@ -691,10 +691,10 @@ datasets:
         굴절차 값이라 펌프차에 그대로 못 쓴다. D-30 은 여전히 필요하다.
   kfs_rescue:
     feeds: []
-    feeds_why: 근거 문서 — used_for 제원표. 상동
-    feeds_note: '차종별 제원 비교 — 선착대 구성에 포함된다'
+    feeds_note: '[]'
     stem: safety_kfs_rescue
     ext: [hwpx]
+    feeds_why: 근거 문서 — used_for 제원표. 상동
     files:
       - safety/safety_kfs_rescue_kr_20251224.hwpx
     scope: kr
@@ -709,14 +709,14 @@ datasets:
           중형   7,800 이하 2,500 이하 3,200 이하
   kfs_ambulance_special:
     feeds: []
-    feeds_why: 근거 문서 — used_for 제원표. 상동
-    feeds_note: '| 가장 작은 차종. 통행 가능 범위의 상한을 준다. ★ 인터뷰 — 야간은 소방보다 구급 출동이 잦다.'
-    files:
-      - safety/safety_kfs_ambulance_special_kr_20251224.hwp
-      - safety/safety_kfs_ambulance_special_kr_20251224.pdf
+    feeds_note: '[]'
     stem: safety_kfs_ambulance_special
     ext: [hwp, pdf]
     primary: hwp
+    feeds_why: 근거 문서 — used_for 제원표. 상동
+    files:
+      - safety/safety_kfs_ambulance_special_kr_20251224.hwp
+      - safety/safety_kfs_ambulance_special_kr_20251224.pdf
     scope: kr
     what: 소방장비 기본규격 — 특수구급차 (KFS-1-0029-2025-01)
     kind: raw_only
@@ -738,10 +738,10 @@ datasets:
       ★ 부칙 "3.3.1 개정사항은 2027-04-02 부터 시행" — 2027-04 이후 재취득.
   kfs_ladder_small:
     feeds: []
-    feeds_why: 근거 문서 — used_for 제원표. 상동
-    feeds_note: '차종별 제원 비교 — 골목 진입 차종 판단'
+    feeds_note: '[]'
     stem: safety_kfs_ladder_small
     ext: [pdf]
+    feeds_why: 근거 문서 — used_for 제원표. 상동
     files:
       - safety/safety_kfs_ladder_small_kr_20251224.pdf
     scope: kr
@@ -753,16 +753,16 @@ datasets:
       동명동 골목에 실제로 들어가는 차종이 펌프차가 아닐 수 있어 같이 받았다.
   mas_optional_spec:
     feeds: []
-    feeds_why: >-
-      근거 문서 — ★ 호스릴 150m · 이동식 30m x 4 · 권양장치 5톤.
-      소화전 커버리지 반경의 근거다.
-    feeds_note: '선택장비편. 차종별 제작규격은 mas_vehicle_spec 이다'
-    files:
-      - safety/safety_mas_optional_spec_kr_20241111.hwp
-      - safety/safety_mas_optional_spec_kr_20241111.pdf
+    feeds_note: '[]'
     stem: safety_mas_optional_spec
     ext: [hwp, pdf]
     primary: hwp
+    feeds_why: >-
+      근거 문서 — ★ 호스릴 150m · 이동식 30m x 4 · 권양장치 5톤.
+      소화전 커버리지 반경의 근거다.
+    files:
+      - safety/safety_mas_optional_spec_kr_20241111.hwp
+      - safety/safety_mas_optional_spec_kr_20241111.pdf
     scope: kr
     what: 2025년 소방자동차 다수공급자 계약(MAS) 제작규격 선택장비
     kind: raw_only
@@ -776,14 +776,14 @@ datasets:
         (2026-08-31). mas_vehicle_spec 과 같은 값이 맞다.
   mas_vehicle_spec:
     feeds: []
-    feeds_why: 근거 문서 — ★ 호스릴 150m · 이동식 30m x 4. 소화전 커버리지 반경의 근거
-    feeds_note: '조달 계약 차종의 실제 제작 치수 — vehicle_spec 교차 확인'
-    files:
-      - safety/safety_mas_vehicle_spec_kr_20241111.hwp
-      - safety/safety_mas_vehicle_spec_kr_20241111.pdf
+    feeds_note: '[]'
     stem: safety_mas_vehicle_spec
     ext: [hwp, pdf]
     primary: hwp
+    feeds_why: 근거 문서 — ★ 호스릴 150m · 이동식 30m x 4. 소화전 커버리지 반경의 근거
+    files:
+      - safety/safety_mas_vehicle_spec_kr_20241111.hwp
+      - safety/safety_mas_vehicle_spec_kr_20241111.pdf
     scope: kr
     what: 2025년 소방자동차 다수공급자 계약(MAS) 차종별 제작규격
     kind: raw_only
@@ -804,10 +804,10 @@ datasets:
       ★ 축거 · 최소회전반경은 여기에도 없다(2026-08-25 재확인, 212쪽 0건).
   node_link_changelog:
     feeds: []
-    feeds_why: 참조용 — 표준노드링크 변경이력. 판정에 안 쓴다
-    feeds_note: '미투입 — node_link 판이 바뀌었을 때 무엇이 변했는지 확인용'
+    feeds_note: '[]'
     stem: its_nodelink_changelog
     ext: [csv]
+    feeds_why: 참조용 — 표준노드링크 변경이력. 판정에 안 쓴다
     files:
       - its/its_nodelink_changelog_kr_20260812.csv
     scope: kr
@@ -840,7 +840,7 @@ datasets:
       - tools/baseline.py
       - tools/corner_probe.py
       - tools/width_fn.py
-    feeds_note: 'segments 골격(노딩 입력) · basisno 기초번호 매칭 · guards CRITICAL'
+    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     files:
@@ -881,7 +881,7 @@ datasets:
       - tools/clearance_probe.py
       - tools/corner_probe.py
       - tools/width_fn.py
-    feeds_note: '폭 산출 소스 silpok(채택 84구간) · clearance_probe 대조'
+    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     files:
@@ -909,7 +909,7 @@ datasets:
     feeds:
       - src/firelane/normalize_raw.py
       - src/firelane/segments.py
-    feeds_note: 'basisno 기초구간 10,334개 — seg_label 생성'
+    feeds_note: '- src/firelane/normalize_raw.py - src/firelane/segments.py'
     stem: juso_elctrnmap
     ext: [zip]
     files:
@@ -938,7 +938,7 @@ datasets:
   spotaddr_geom:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — STEP 4 관측점 랜드마크 후보'
+    feeds_note: '- src/firelane/normalize_raw.py'
     stem: juso_spotaddr_geom
     ext: [zip]
     files:
@@ -962,7 +962,7 @@ datasets:
   spotaddr_ref:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — STEP 4 관측점 랜드마크 후보'
+    feeds_note: '- src/firelane/normalize_raw.py'
     stem: juso_spotaddr_ref
     ext: [zip]
     files:
@@ -997,7 +997,9 @@ datasets:
       - tools/jijeok_probe.py
       - tools/ledger_stem.py
       - tools/width_fn.py
-    feeds_note: '폭 산출 주 소스(채택 1,014구간) · 교차부 폴리곤 · 가로등 폴 · 도로중심선'
+    feeds_note: '- src/firelane/guards.py - src/firelane/ingest.py - src/firelane/inventory.py - src/firelane/ngii1k.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/seg/width.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/jijeok_probe.py - tools/ledger_stem.py - tools/width_fn.py'
+    stems: [vworld_map1k, vworld_map1k_ngi]
+    ext: [zip]
     schema:
       layers:
       - A0010000
@@ -1005,8 +1007,6 @@ datasets:
       - A0033320
       - A0080000
       - C0220000
-    stems: [vworld_map1k, vworld_map1k_ngi]
-    ext: [zip]
     scope: jngj-donggu        # 종전 '광주 동구 74도엽' — 산문이었다
     files:
       - vworld/vworld_map1k*_jngj-donggu_20260307.zip
@@ -1040,11 +1040,11 @@ datasets:
       - src/firelane/streetlight.py
       - web/config.js
       - web/js/data.js
-    feeds_note: '구간별 light_count(반경 50m) · streetlight_point 지점 집계'
+    feeds_note: '- src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/segments.py - src/firelane/streetlight.py - web/config.js - web/js/data.js'
     stem: gjcity_streetlight
+    ext: [csv]
     scope: jngj-donggu
     updated: '2024-04-15'
-    ext: [csv]
     files:
       - gjcity/gjcity_streetlight_*.csv
     what: 전남광주통합특별시 동구 가로등현황 (2024-04-15)
@@ -1081,11 +1081,11 @@ datasets:
       - tools/clearance_probe.py
       - tools/corner_probe.py
       - tools/width_fn.py
-    feeds_note: '폭 트랜섹트 보조 소스 ngii(채택 1구간) · 기하 전용'
+    feeds_note: '- src/firelane/guards.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py'
     stem: ngii_basemap
-    updated: '2026-08-12'
     ext: [zip]
     parts: [gj9708, gj9712]
+    updated: '2026-08-12'
     files:
       - ngii/ngii_basemap_jngj-donggu_20260812_gj97*.zip
     scope: jngj-donggu
@@ -1127,7 +1127,7 @@ datasets:
       - tools/corner_probe.py
       - tools/lanes_probe.py
       - tools/width_fn.py
-    feeds_note: '★ 판정에는 안 쓴다. guards CRITICAL 과 계보 게이트에만 있다. LANES·REST_W 를 lanes_probe 로 대조 중(2026-08-23)'
+    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/lanes_probe.py - tools/width_fn.py'
     stem: its_nodelink
     ext: [zip]
     files:
@@ -1155,7 +1155,7 @@ datasets:
     feeds:
       - src/firelane/ingest.py
       - src/firelane/normalize_raw.py
-    feeds_note: '★ turn_restriction 이 좌표 없는 DBF 라 그것을 스코프로 거르는 데만 쓴다. 직접 참조 0곳'
+    feeds_note: '- src/firelane/ingest.py - src/firelane/normalize_raw.py'
     stem: its_nodelink
     ext: [zip]
     files:
@@ -1186,7 +1186,7 @@ datasets:
       - tools/baseline.py
       - tools/corner_probe.py
       - tools/width_fn.py
-    feeds_note: '★ 입력 계약 건수 게이트(87)로만 쓴다. 판정에는 미투입 — A* 에 회전 제약을 넣을 때 살린다'
+    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: its_nodelink
     ext: [zip]
     files:
@@ -1220,7 +1220,7 @@ datasets:
       - tools/docnum_check.py
       - tools/width_fn.py
       - web/config.js
-    feeds_note: 'cv_feasible 판정 · cctv_dist_m · unknown_reason 4종 · 화면 마커 104지점'
+    feeds_note: '- src/firelane/guards.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/desk_check.py - tools/docnum_check.py - tools/width_fn.py - web/config.js'
     stem: safety_cctv
     ext: [csv]
     files:
@@ -1261,7 +1261,7 @@ datasets:
       - tools/baseline.py
       - tools/corner_probe.py
       - tools/width_fn.py
-    feeds_note: '화면 마커 · terrain z 부여 · 계약 테스트'
+    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: safety_firestation
     ext: [csv]
     files:
@@ -1297,10 +1297,10 @@ datasets:
   poi_store:
     feeds:
       - src/firelane/publish_web.py
-    feeds_note: '화면 상가 2,077개 · basisno 주소 대조 · naver_check 표본'
-    encoding: utf-8
+    feeds_note: '- src/firelane/publish_web.py'
     stem: sbiz_store
     ext: [zip]
+    encoding: utf-8
     files:
       - sbiz/sbiz_store_kr_20260630.zip
     scope: kr
@@ -1335,7 +1335,7 @@ datasets:
       - tools/baseline.py
       - tools/corner_probe.py
       - tools/width_fn.py
-    feeds_note: '스코프 경계 · in_emd 판정 · mask/mask_soft 생성'
+    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     files:
@@ -1379,7 +1379,7 @@ datasets:
       - tools/width_fn.py
       - web/js/data.js
       - web/js/ui/toggles.js
-    feeds_note: 'wmax 담~담 폭 소스 · 화면 3D 5,713동'
+    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py - web/js/data.js - web/js/ui/toggles.js'
     stem: juso_elctrnmap
     ext: [zip]
     files:
@@ -1417,7 +1417,7 @@ datasets:
       - tools/baseline.py
       - tools/corner_probe.py
       - tools/width_fn.py
-    feeds_note: '출입구 점 — segments 에서 읽으나 판정 미반영'
+    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     files:
@@ -1444,7 +1444,7 @@ datasets:
     feeds:
       - src/firelane/publish_web.py
       - src/firelane/terrain.py
-    feeds_note: '화면 소화전 · 커버리지 반경 · terrain z · 계약 테스트 · 발표 논거'
+    feeds_note: '- src/firelane/publish_web.py - src/firelane/terrain.py'
     stem: safety_hydrant_point
     ext: [csv]
     files:
@@ -1501,10 +1501,10 @@ datasets:
       scope_min: 1
   fire_access:
     feeds: []
-    feeds_why: 미투입 — 소방활동 곤란구역. 진입 판정과 직결인데 배선 안 됨
-    feeds_note: '★ report.py 가 raw CSV 를 직접 읽는다. ingest 산출물은 미사용 — 소방청 지정 7구간 대조(nfa_compare)'
+    feeds_note: '[]'
     stem: safety_fire_access
     ext: [csv]
+    feeds_why: 미투입 — 소방활동 곤란구역. 진입 판정과 직결인데 배선 안 됨
     files:
       - safety/safety_fire_access_jngj-donggu_20250731.csv
     updated: '2025-07-31'
@@ -1532,7 +1532,7 @@ datasets:
   dem_public:
     feeds:
       - src/firelane/terrain.py
-    feeds_note: 'terrain 타일 22장 · 구간 z. 90m 격자라 경사 산출 불가(§16-1)'
+    feeds_note: '- src/firelane/terrain.py'
     stem: ngii_dem
     ext: [zip]
     parts: [35616]
@@ -1574,12 +1574,12 @@ datasets:
       - tools/jijeok_review.py
       - web/js/map.js
       - web/js/ui/toggles.js
-    feeds_note: '항공영상 타일 1,423장. ortho.py 가 4도엽을 직접 읽는다(raw_only)'
+    feeds_note: '- src/firelane/ortho.py - src/firelane/pipeline.py - src/firelane/publish_web.py - tools/jijeok_review.py - web/js/map.js - web/js/ui/toggles.js'
     stem: ngii_ortho
-    updated: '2025-12-31'
     ext: [tif, xml]
     primary: tif
     parts: [gj037, gj038, gj047, gj048]
+    updated: '2025-12-31'
     files:
       - ngii/ngii_ortho_jngj-donggu_20251231_gj0*
     scope: jngj-donggu
@@ -1602,8 +1602,8 @@ datasets:
   # ── 좌표 없는 표 (참조용) ────────────────────────────────
   enforcement:
     feeds: []
+    feeds_note: '[]'
     feeds_why: 미투입 — ★ 141,556행. §9 피처 엔지니어링 주축인데 소비자 0곳이다
-    feeds_note: '★ 참조 0곳. 85,380행을 ingest 하고 아무도 안 읽는다. 시간대별 주차 밀도로 needs_cv 를 가르는 데 쓸 수 있다'
     stem: gjcity_parking_enforce
     updated: '2025-02-26'
     ext: [csv]
@@ -1644,10 +1644,10 @@ datasets:
       encoding_seen: 'cp949'
   hydrant_summary:
     feeds: []
-    feeds_why: 대조용 — 관할 654 를 API 실측 651 과 맞추는 데 썼다. 판정에 안 들어간다
-    feeds_note: '★ 참조 0곳. 5행. 동부소방서 지역별 소화전 현황 — 소화전 11개 대조용으로 받았으나 미투입'
+    feeds_note: '[]'
     stem: safety_hydrant_summary
     ext: [csv]
+    feeds_why: 대조용 — 관할 654 를 API 실측 651 과 맞추는 데 썼다. 판정에 안 들어간다
     files:
       - safety/safety_hydrant_summary_jngj-donggu_20250731.csv
     updated: '2025-07-31'
@@ -1680,12 +1680,12 @@ datasets:
       rows_tolerance: 0.4
   ngii_road_center:
     feeds: []
-    feeds_why: 미투입 — 도로중심선. ngii1k 가 같은 것을 내고 있어 중복일 수 있다
-    feeds_note: '미투입 — 폭 교차검증'
+    feeds_note: '[]'
     stem: ngii_basemap
-    updated: '2026-08-12'
     ext: [zip]
     parts: [gj9708, gj9712]
+    feeds_why: 미투입 — 도로중심선. ngii1k 가 같은 것을 내고 있어 중복일 수 있다
+    updated: '2026-08-12'
     files:
       - ngii/ngii_basemap_jngj-donggu_20260812_gj97*.zip
     scope: jngj-donggu
@@ -1705,10 +1705,10 @@ datasets:
       features: 487
   bin_trash:
     feeds: []
-    feeds_why: 미투입 — 노상 적치물 후보
-    feeds_note: '미투입 — 폭 산출 고정 장애물 차감'
+    feeds_note: '[]'
     stem: gjcity_bin_trash
     ext: [csv]
+    feeds_why: 미투입 — 노상 적치물 후보
     files:
       - gjcity/gjcity_bin_trash_jngj-donggu_20241130.csv
     scope: jngj-donggu
@@ -1731,10 +1731,10 @@ datasets:
       encoding_seen: 'cp949'
   bin_cloth:
     feeds: []
-    feeds_why: 미투입 — 노상 적치물 후보
-    feeds_note: '미투입 — 폭 산출 고정 장애물 차감'
+    feeds_note: '[]'
     stem: gjcity_bin_cloth
     ext: [csv]
+    feeds_why: 미투입 — 노상 적치물 후보
     files:
       - gjcity/gjcity_bin_cloth_jngj-donggu_20250214.csv
     scope: jngj-donggu
@@ -1757,10 +1757,10 @@ datasets:
       encoding_seen: 'cp949'
   building_ledger:
     feeds: []
-    feeds_why: 미투입 — ★ §9 인구 표지. 세대수를 도로명별로 집계할 원천
-    feeds_note: '미투입 — 3D 높이 · 대피취약 · 회색 프루닝'
+    feeds_note: '[]'
     stem: eais_bldg_ledger
     ext: [csv]
+    feeds_why: 미투입 — ★ §9 인구 표지. 세대수를 도로명별로 집계할 원천
     files:
       - eais/eais_bldg_ledger_jngj-donggu_20260817.csv
     scope: jngj-donggu
@@ -1782,10 +1782,10 @@ datasets:
 
   station_jurisdiction:
     feeds: []
-    feeds_why: 미배선 — 지산119 관할 판정. 지오코딩 후 세그먼트 피처
-    feeds_note: '| ★ 스코프 확장의 근거. 경로 알고리즘 출발점 판정. 동명동 관할은 **지산119안전센터**(밤실로30번길 16)다. ★ 아직 배선 안 됨. 좌표가 없어 소재지도로명주소 지오코딩이 필요하다.'
+    feeds_note: '[]'
     stem: safety_station_jrsdc
     ext: [csv]
+    feeds_why: 미배선 — 지산119 관할 판정. 지오코딩 후 세그먼트 피처
     files:
       - safety/safety_station_jrsdc_jngj_20260429.csv
     scope: jngj
@@ -1813,10 +1813,10 @@ datasets:
 
   parking_lot:
     feeds: []
-    feeds_why: 미배선 — 합법 주차 공급(역상관 피처). 지오코딩 필요
-    feeds_note: '| ★ 주차 **공급** 측 변수. enforcement(단속 기록)와 짝이다. 합법 주차면이 많은 구간은 불법주정차가 줄고, 없는 구간은 늘어난다. 회색 구간(unknown 354) 판정의 역상관 피처. ★ 아직 배선 안 됨. 좌표가 없어 주소 지오코딩이 필요하다.'
+    feeds_note: '[]'
     stem: gjcity_parking_lot
     ext: [csv]
+    feeds_why: 미배선 — 합법 주차 공급(역상관 피처). 지오코딩 필요
     files:
       - gjcity/gjcity_parking_lot_jngj-donggu_20260828.csv
     scope: jngj-donggu
@@ -1842,10 +1842,10 @@ datasets:
 
   enforce_cam:
     feeds: []
-    feeds_why: 미배선 — 단속 압력 + 운영시간. 지오코딩 필요
-    feeds_note: '| ★ 단속 **압력** 변수. 카메라가 있는 구간은 주차가 억제된다. 운영시간이 있어 **시간대별** 주차 압력을 모델링할 수 있다. ★ safety_cctv(방범 CCTV 6,805)와 **다른 데이터다.** 혼동 금지. ★ 아직 배선 안 됨. 주소 지오코딩 필요.'
+    feeds_note: '[]'
     stem: gjcity_enforce_cam
     ext: [csv]
+    feeds_why: 미배선 — 단속 압력 + 운영시간. 지오코딩 필요
     files:
       - gjcity/gjcity_enforce_cam_jngj-donggu_20260828.csv
     scope: jngj-donggu
@@ -1869,10 +1869,10 @@ datasets:
 
   school_zone:
     feeds: []
-    feeds_why: 미배선 — 통행 제약. 지오코딩 필요
-    feeds_note: '| ★ 통행 제약. 속도 제한과 주정차 금지가 걸린다. ★ 아직 배선 안 됨. 주소 지오코딩 필요.'
+    feeds_note: '[]'
     stem: gjcity_school_zone
     ext: [csv]
+    feeds_why: 미배선 — 통행 제약. 지오코딩 필요
     files:
       - gjcity/gjcity_school_zone_jngj-donggu_20260828.csv
     scope: jngj-donggu
@@ -1893,10 +1893,10 @@ datasets:
 
   parking_zone:
     feeds: []
-    feeds_why: 미배선 — ★ 유효폭이 날짜마다 바뀐다. 지오코딩 필요
-    feeds_note: '| ★★ 홀짝제 4구간은 **같은 구간의 유효폭이 날짜마다 바뀐다.** 의재로 700m · 학소로 319m · 전대병원 200m · 산수오거리 86m. 지금 verdict 는 정적인데 이것은 동적이다 — 스키마에 영향 있다. ★ 아직 배선 안 됨. 도로명 매칭 필요.'
+    feeds_note: '[]'
     stem: gjcity_parking_zone
     ext: [csv]
+    feeds_why: 미배선 — ★ 유효폭이 날짜마다 바뀐다. 지오코딩 필요
     files:
       - gjcity/gjcity_parking_zone_jngj-donggu_20260828.csv
     scope: jngj-donggu
@@ -1920,12 +1920,12 @@ datasets:
     feeds:
       - tools/jijeok_probe.py
       - tools/jijeok_review.py
-    feeds_note: '| ★ 도로 폭의 **독립 근거**. 필지 경계를 알면 도로 경계의 반대편을 안다. 도로대장이 부존재(정보공개청구 부존재 + 이의신청 기각)인 상황에서 수치지형도 외에 폭을 검증할 유일한 축이다. ★ 이미 썼다 — tools/jijeok_probe.py · jijeok_review.py 가 27구간을 대조했고 결과가 interim/jijeok_*.gpkg 와 check27.csv 에 있다 (컬럼 jj_w · jj_cov · ''우리가'').'
+    feeds_note: '- tools/jijeok_probe.py - tools/jijeok_review.py'
+    stem: nsdi_jijeok
+    ext: [zip]
     schema:
       layers:
       - AL_D002_12_20260808
-    stem: nsdi_jijeok
-    ext: [zip]
     files:
       - nsdi/nsdi_jijeok_jngj_20260808.zip
     scope: jngj
@@ -1935,7 +1935,6 @@ datasets:
     layer: AL_D002_12_20260808.shp
     crs_native: 5186
     encoding: euc-kr
-    parts: ['', '2', '3', '4', '5', '6', '7']
     note: |
       ★ 2026-08-19 부터 2026-08-29 까지 격리에 있었다. 대장에 없다는
         이유였는데, **이미 검증에 쓴 자산이었다.** 격리는 판단 보류지
