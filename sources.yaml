@@ -608,8 +608,6 @@ datasets:
     stem: safety_kfs_pumptruck
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표가 폭 판정 기준이다. 코드가 키로 참조하지 않는다
-    files:
-      - safety/safety_kfs_pumptruck_kr_20251224.hwpx
     scope: kr
     what: 소방장비 기본규격 — 소방펌프차 (KFS-1-0073-2025-00)
     kind: raw_only
@@ -630,8 +628,6 @@ datasets:
     stem: safety_kfs_watertank
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
-    files:
-      - safety/safety_kfs_watertank_kr_20251224.hwpx
     scope: kr
     what: 소방장비 기본규격 — 소방물탱크차 (KFS-1-0075-2025-00)
     kind: raw_only
@@ -654,8 +650,6 @@ datasets:
     stem: safety_kfs_chemical
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
-    files:
-      - safety/safety_kfs_chemical_kr_20251224.hwpx
     scope: kr
     what: 소방장비 기본규격 — 소방화학차 (KFS-1-0074-2025-00)
     kind: raw_only
@@ -673,8 +667,6 @@ datasets:
     stem: safety_kfs_ladder_articulated
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
-    files:
-      - safety/safety_kfs_ladder_articulated_kr_20251224.hwpx
     scope: kr
     what: 소방장비 기본규격 — 소방굴절차 (KFS-1-0077-2025-00)
     kind: raw_only
@@ -695,8 +687,6 @@ datasets:
     stem: safety_kfs_rescue
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
-    files:
-      - safety/safety_kfs_rescue_kr_20251224.hwpx
     scope: kr
     what: 소방장비 기본규격 — 구조차 (KFS-1-0076-2025-00)
     kind: raw_only
@@ -714,9 +704,6 @@ datasets:
     ext: [hwp, pdf]
     primary: hwp
     feeds_why: 근거 문서 — used_for 제원표. 상동
-    files:
-      - safety/safety_kfs_ambulance_special_kr_20251224.hwp
-      - safety/safety_kfs_ambulance_special_kr_20251224.pdf
     scope: kr
     what: 소방장비 기본규격 — 특수구급차 (KFS-1-0029-2025-01)
     kind: raw_only
@@ -742,8 +729,6 @@ datasets:
     stem: safety_kfs_ladder_small
     ext: [pdf]
     feeds_why: 근거 문서 — used_for 제원표. 상동
-    files:
-      - safety/safety_kfs_ladder_small_kr_20251224.pdf
     scope: kr
     what: 소방장비 기본규격 — 소형사다리차 (KFS-1-0030-2025-01)
     kind: raw_only
@@ -760,9 +745,6 @@ datasets:
     feeds_why: >-
       근거 문서 — ★ 호스릴 150m · 이동식 30m x 4 · 권양장치 5톤.
       소화전 커버리지 반경의 근거다.
-    files:
-      - safety/safety_mas_optional_spec_kr_20241111.hwp
-      - safety/safety_mas_optional_spec_kr_20241111.pdf
     scope: kr
     what: 2025년 소방자동차 다수공급자 계약(MAS) 제작규격 선택장비
     kind: raw_only
@@ -781,9 +763,6 @@ datasets:
     ext: [hwp, pdf]
     primary: hwp
     feeds_why: 근거 문서 — ★ 호스릴 150m · 이동식 30m x 4. 소화전 커버리지 반경의 근거
-    files:
-      - safety/safety_mas_vehicle_spec_kr_20241111.hwp
-      - safety/safety_mas_vehicle_spec_kr_20241111.pdf
     scope: kr
     what: 2025년 소방자동차 다수공급자 계약(MAS) 차종별 제작규격
     kind: raw_only
@@ -808,8 +787,6 @@ datasets:
     stem: its_nodelink_changelog
     ext: [csv]
     feeds_why: 참조용 — 표준노드링크 변경이력. 판정에 안 쓴다
-    files:
-      - its/its_nodelink_changelog_kr_20260812.csv
     scope: kr
     what: 국가교통정보센터 표준노드링크 변경 내역서
     kind: raw_only
@@ -843,8 +820,6 @@ datasets:
     feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
-    files:
-      - juso/juso_elctrnmap_jngj_20260711.zip
     scope: jngj
     updated: '2026-07-11'
     what: 도로명주소 도로구간 (선형). RN·ROAD_BT 보유
@@ -884,8 +859,6 @@ datasets:
     feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
-    files:
-      - juso/juso_elctrnmap_jngj_20260711.zip
     scope: jngj
     updated: '2026-07-11'
     what: 도로명주소 실폭도로 (면). 도로폭 폴백 소스
@@ -912,8 +885,6 @@ datasets:
     feeds_note: '- src/firelane/normalize_raw.py - src/firelane/segments.py'
     stem: juso_elctrnmap
     ext: [zip]
-    files:
-      - juso/juso_elctrnmap_jngj_20260711.zip
     scope: jngj
     updated: '2026-07-11'
     what: 도로명주소 기초구간 (선형). 기초번호 정본
@@ -941,8 +912,6 @@ datasets:
     feeds_note: '- src/firelane/normalize_raw.py'
     stem: juso_spotaddr_geom
     ext: [zip]
-    files:
-      - juso/juso_spotaddr_geom_jngj_20260801.zip
     scope: jngj
     updated: '2026-08-01'
     what: 사물주소 도형 (전남광주통합특별시 동구, 2026-08-01 승인분)
@@ -965,8 +934,6 @@ datasets:
     feeds_note: '- src/firelane/normalize_raw.py'
     stem: juso_spotaddr_ref
     ext: [zip]
-    files:
-      - juso/juso_spotaddr_ref_jngj_20260801.zip
     scope: jngj
     updated: '2026-08-01'
     what: 사물주소 기준점 (동일 승인분)
@@ -1045,8 +1012,6 @@ datasets:
     ext: [csv]
     scope: jngj-donggu
     updated: '2024-04-15'
-    files:
-      - gjcity/gjcity_streetlight_*.csv
     what: 전남광주통합특별시 동구 가로등현황 (2024-04-15)
     crs_native: 4326
     kind: csv_points
@@ -1086,8 +1051,6 @@ datasets:
     ext: [zip]
     parts: [gj9708, gj9712]
     updated: '2026-08-12'
-    files:
-      - ngii/ngii_basemap_jngj-donggu_20260812_gj97*.zip
     scope: jngj-donggu
     what: 연속수치지도 1:5,000 도로경계면 N3A_A0010000 — 폭 트랜섹트 소스(기하 전용)
     crs_native: 5179
@@ -1223,8 +1186,6 @@ datasets:
     feeds_note: '- src/firelane/guards.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/desk_check.py - tools/docnum_check.py - tools/width_fn.py - web/config.js'
     stem: safety_cctv
     ext: [csv]
-    files:
-      - safety/safety_cctv_jngj_20260630.csv
     scope: jngj
     updated: '2026-06-30'
     what: 전남광주통합특별시 CCTV. 촬영방면·설치연도 포함
@@ -1264,8 +1225,6 @@ datasets:
     feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: safety_firestation
     ext: [csv]
-    files:
-      - safety/safety_firestation_kr_20240901.csv
     scope: kr
     updated: '2024-09-01'
     what: 소방청 전국소방서 좌표현황. 소방서 + 119안전센터
@@ -1301,8 +1260,6 @@ datasets:
     stem: sbiz_store
     ext: [zip]
     encoding: utf-8
-    files:
-      - sbiz/sbiz_store_kr_20260630.zip
     scope: kr
     updated: '2026-06-30'
     what: 소상공인 상가(상권)정보 광주권. 상가 밀집도 = 주차압력 프록시
@@ -1338,8 +1295,6 @@ datasets:
     feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
-    files:
-      - juso/juso_elctrnmap_jngj_20260711.zip
     scope: jngj
     updated: '2026-07-11'
     what: 읍면동 행정구역경계. 동명동 정식 폴리곤 (EMD_CD 12210108)
@@ -1382,8 +1337,6 @@ datasets:
     feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py - web/js/data.js - web/js/ui/toggles.js'
     stem: juso_elctrnmap
     ext: [zip]
-    files:
-      - juso/juso_elctrnmap_jngj_20260711.zip
     scope: jngj
     updated: '2026-07-11'
     what: 건물 폴리곤. GRO_FLO_CO(지상층수) 보유 - 3D extrusion 재료
@@ -1420,8 +1373,6 @@ datasets:
     feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
-    files:
-      - juso/juso_elctrnmap_jngj_20260711.zip
     scope: jngj
     updated: '2026-07-11'
     what: 건물출입구 포인트. 소방차 도달 목표점
@@ -1447,8 +1398,6 @@ datasets:
     feeds_note: '- src/firelane/publish_web.py - src/firelane/terrain.py'
     stem: safety_hydrant_point
     ext: [csv]
-    files:
-      - safety/safety_hydrant_point_jngj_20240207.csv
     scope: jngj
     updated: '2024-02-07'
     what: 전국소방용수시설표준데이터 — 광주 전역분. 소화전 좌표
@@ -1505,8 +1454,6 @@ datasets:
     stem: safety_fire_access
     ext: [csv]
     feeds_why: 미투입 — 소방활동 곤란구역. 진입 판정과 직결인데 배선 안 됨
-    files:
-      - safety/safety_fire_access_jngj-donggu_20250731.csv
     updated: '2025-07-31'
     scope: jngj-donggu
     authority: 동부소방서
@@ -1536,8 +1483,6 @@ datasets:
     stem: ngii_dem
     ext: [zip]
     parts: [35616]
-    files:
-      - ngii/ngii_dem_jngj-donggu_20251117_35616.zip
     updated: '2025-11-17'
     scope: jngj-donggu
     what: 국토지리정보원 공개DEM 도엽 35616
@@ -1580,8 +1525,6 @@ datasets:
     primary: tif
     parts: [gj037, gj038, gj047, gj048]
     updated: '2025-12-31'
-    files:
-      - ngii/ngii_ortho_jngj-donggu_20251231_gj0*
     scope: jngj-donggu
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
     crs_native: 5186
@@ -1606,8 +1549,6 @@ datasets:
     stem: safety_hydrant_summary
     ext: [csv]
     feeds_why: 대조용 — 관할 654 를 API 실측 651 과 맞추는 데 썼다. 판정에 안 들어간다
-    files:
-      - safety/safety_hydrant_summary_jngj-donggu_20250731.csv
     updated: '2025-07-31'
     scope: jngj-donggu
     authority: 동부소방서
@@ -1644,8 +1585,6 @@ datasets:
     parts: [gj9708, gj9712]
     feeds_why: 미투입 — 도로중심선. ngii1k 가 같은 것을 내고 있어 중복일 수 있다
     updated: '2026-08-12'
-    files:
-      - ngii/ngii_basemap_jngj-donggu_20260812_gj97*.zip
     scope: jngj-donggu
     what: 연속수치지도 1:5,000 도로중심선 N3L_A0020000. rvwd(도로폭)·onsd(일방통행)
     crs_native: 5179
@@ -1667,8 +1606,6 @@ datasets:
     stem: gjcity_bin_trash
     ext: [csv]
     feeds_why: 미투입 — 노상 적치물 후보
-    files:
-      - gjcity/gjcity_bin_trash_jngj-donggu_20241130.csv
     scope: jngj-donggu
     updated: '2024-11-30'
     what: 동구 쓰레기통 현황. 고정 장애물
@@ -1693,8 +1630,6 @@ datasets:
     stem: gjcity_bin_cloth
     ext: [csv]
     feeds_why: 미투입 — 노상 적치물 후보
-    files:
-      - gjcity/gjcity_bin_cloth_jngj-donggu_20250214.csv
     scope: jngj-donggu
     updated: '2025-02-14'
     what: 동구 의류수거함 위치. 고정 장애물
@@ -1719,8 +1654,6 @@ datasets:
     stem: safety_station_jrsdc
     ext: [csv]
     feeds_why: 미배선 — 지산119 관할 판정. 지오코딩 후 세그먼트 피처
-    files:
-      - safety/safety_station_jrsdc_jngj_20260429.csv
     scope: jngj
     updated: '2026-04-29'
     what: 전남광주통합특별시 119안전센터 위치 및 관할구역 (5개 소방서 · 27센터)
@@ -1750,8 +1683,6 @@ datasets:
     stem: gjcity_parking_lot
     ext: [csv]
     feeds_why: 미배선 — 합법 주차 공급(역상관 피처). 지오코딩 필요
-    files:
-      - gjcity/gjcity_parking_lot_jngj-donggu_20260828.csv
     scope: jngj-donggu
     updated: '2026-08-28'
     what: 동구 공영주차장 현황 (노외 103 · 노상 35 · 총 5,258면)
@@ -1779,8 +1710,6 @@ datasets:
     stem: gjcity_enforce_cam
     ext: [csv]
     feeds_why: 미배선 — 단속 압력 + 운영시간. 지오코딩 필요
-    files:
-      - gjcity/gjcity_enforce_cam_jngj-donggu_20260828.csv
     scope: jngj-donggu
     updated: '2026-08-28'
     what: 동구 불법주정차 단속 무인카메라 (57지점 · 방향 65)
@@ -1806,8 +1735,6 @@ datasets:
     stem: gjcity_school_zone
     ext: [csv]
     feeds_why: 미배선 — 통행 제약. 지오코딩 필요
-    files:
-      - gjcity/gjcity_school_zone_jngj-donggu_20260828.csv
     scope: jngj-donggu
     updated: '2026-08-28'
     what: 동구 어린이보호구역 (초·유·특수·보육 32곳)
@@ -1830,8 +1757,6 @@ datasets:
     stem: gjcity_parking_zone
     ext: [csv]
     feeds_why: 미배선 — ★ 유효폭이 날짜마다 바뀐다. 지오코딩 필요
-    files:
-      - gjcity/gjcity_parking_zone_jngj-donggu_20260828.csv
     scope: jngj-donggu
     updated: '2026-08-28'
     what: 동구 주차 규제 구간 (홀짝제 4 · 시범거리 5 · 중점단속 12 · 명절허용 1)
@@ -1859,8 +1784,6 @@ datasets:
     schema:
       layers:
       - AL_D002_12_20260808
-    files:
-      - nsdi/nsdi_jijeok_jngj_20260808.zip
     scope: jngj
     updated: '2026-08-08'
     what: 연속지적도 (도엽 7세트 · 970MB)

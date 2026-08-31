@@ -75,7 +75,7 @@
 | 20 | 영상판정 유효거리 실측 | 🔴 | `CCTV_RANGE` 가 단일 상수로 못 잡힌다(MASTER §16-1). §1-23 |
 | 21 | 촬영 높이 결정 | 🟡 | 유효거리가 높이에 비례한다. #20 결과가 나오면 장비를 정한다. §1-24 |
 | 22 | `min` → 통과폭 재판정 | 🟡 | `min` 은 표본 하나에 뒤집힌다. `width_fn.py` 로 대조 중. **판정 반영은 실측 후** |
-| 23 | 참조 0곳인 소스 5종 | 🟡 | 2026-08-31 배치로 `unused` 22종을 정리했다 — 차량 제원 9종 · 발표 분모 3종 · A* 예정 8종은 `feeds: 미투입 — <용도>` 로 근거를 달았고, `enforcement`(8.1MB) · `building_ledger`(11.3MB)는 retired 로 내렸다. 남은 것: `enforce_cam` · `parking_lot` · `parking_zone` · `school_zone` · `station_jurisdiction`. ★ `raw_only` 는 배선할 코드가 애초에 없으므로 이 수에서 뺀다 |
+| 23 | 참조 0곳인 소스 6종 | 🟡 | 2026-08-31 배치로 `unused` 22종을 정리했다 — 차량 제원 9종 · 발표 분모 3종 · A* 예정 8종은 `feeds: 미투입 — <용도>` 로 근거를 달았고, `enforcement`(8.1MB) · `building_ledger`(11.3MB)는 retired 로 내렸다. 남은 것: `enforce_cam` · `ngii_road_center` · `parking_lot` · `parking_zone` · `school_zone` · `station_jurisdiction`. ★ `raw_only` 는 배선할 코드가 애초에 없으므로 이 수에서 뺀다 |
 | 24 | `node_link` 속성 투입 | 🟡 | `LANES` · `REST_W` 는 **계보가 다른 폭 하한**이다 |
 | 25 | 경로 비용을 차량 기준으로 | 🟡 | `access_corridor()` 가 거리만 쓴다. 판정 반영은 golden 재잠금이 필요하다 |
 | 26 | 차량 제원 확정 | 🔴 | 축거·최소회전반경이 추정값이다. **D-30 에서 보유 차종으로 바꾼다** |
