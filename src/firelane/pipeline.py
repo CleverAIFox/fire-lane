@@ -16,6 +16,7 @@ pipeline.py — 파이프라인 단일 진입점.
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 import time
@@ -401,8 +402,11 @@ def main():
         #   실패하면 ingest 가 스스로 지운다(반쯤 풀린 것이 오염을 만든다).
         if s.module == "ingest":
             _extra.append("--keep-work")
+        # ★ 2026-08-31. `FIRE_LANE_STAGE` 로 "파이프라인이 부른 것" 을 표시한다.
+        #   단계 모듈이 이 값을 보고 직접 호출 경고를 낸다(guards.warn_direct_call).
         r = subprocess.run([sys.executable, "-m", f"firelane.{s.module}", *_extra],
-                           cwd=ROOT)
+                           cwd=ROOT,
+                           env={**os.environ, "FIRE_LANE_STAGE": s.name})
         if r.returncode:
             print(c(f"\n★ {name} 실패. 여기서 멈춘다.", "31"))
             if s.module == "ingest":

@@ -24,7 +24,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GOLDEN = ROOT / "data/golden/segments.fingerprint.json"
+from firelane import paths as _p
+
+GOLDEN = _p.GOLDEN / "segments.fingerprint.json"
 
 
 def rules() -> list[tuple[str, str, str]]:

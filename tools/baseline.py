@@ -51,7 +51,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PROC = ROOT / "data" / "processed"
-BASE = ROOT / "data" / "baseline"
+from firelane import paths as _p
+
+BASE = _p.BASELINE
 KST = timezone(timedelta(hours=9))
 
 FILES = ["segments.geojson", "segments.schema.json",
