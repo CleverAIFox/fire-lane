@@ -603,7 +603,7 @@ layers:
 
 datasets:
   kfs_pumptruck:
-    feeds: []
+    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
     stem: safety_kfs_pumptruck
     ext: [hwpx]
@@ -625,7 +625,7 @@ datasets:
 
       ★ 축거 · 최소회전반경은 이 규격에 없다.
   kfs_watertank:
-    feeds: []
+    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
     stem: safety_kfs_watertank
     ext: [hwpx]
@@ -649,7 +649,7 @@ datasets:
         때가 있다" 고 했는데, **폭이 같은데 못 들어간다는 것은 코너를
         못 돈다는 뜻이다.** 우리 판정은 폭만 본다.
   kfs_chemical:
-    feeds: []
+    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
     stem: safety_kfs_chemical
     ext: [hwpx]
@@ -668,7 +668,7 @@ datasets:
           대형      9.0 이하 2.5 이하 3.4 이하
           고성능   12.0 이하 2.5 이하 3.8 이하
   kfs_ladder_articulated:
-    feeds: []
+    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
     stem: safety_kfs_ladder_articulated
     ext: [hwpx]
@@ -690,7 +690,7 @@ datasets:
       ★ 축거 자체는 없다. 전장과 축수로 범위만 좁혀진다. 그리고 이것은
         굴절차 값이라 펌프차에 그대로 못 쓴다. D-30 은 여전히 필요하다.
   kfs_rescue:
-    feeds: []
+    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
     stem: safety_kfs_rescue
     ext: [hwpx]
@@ -708,7 +708,7 @@ datasets:
           대형   8,500 이하 2,500 이하 3,500 이하
           중형   7,800 이하 2,500 이하 3,200 이하
   kfs_ambulance_special:
-    feeds: []
+    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
     stem: safety_kfs_ambulance_special
     ext: [hwp, pdf]
@@ -737,7 +737,7 @@ datasets:
 
       ★ 부칙 "3.3.1 개정사항은 2027-04-02 부터 시행" — 2027-04 이후 재취득.
   kfs_ladder_small:
-    feeds: []
+    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
     stem: safety_kfs_ladder_small
     ext: [pdf]
@@ -752,7 +752,7 @@ datasets:
       §3.3 작업높이 15m 이상 25m 미만 · 전장 8.5 이하 · 전폭 2.5 이하 · 전고 3.8 이하.
       동명동 골목에 실제로 들어가는 차종이 펌프차가 아닐 수 있어 같이 받았다.
   mas_optional_spec:
-    feeds: []
+    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
     stem: safety_mas_optional_spec
     ext: [hwp, pdf]
@@ -775,7 +775,7 @@ datasets:
         같고 본편 84쪽 · 옵션편 3쪽이라 같은 배포물임을 확인했다
         (2026-08-31). mas_vehicle_spec 과 같은 값이 맞다.
   mas_vehicle_spec:
-    feeds: []
+    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
     stem: safety_mas_vehicle_spec
     ext: [hwp, pdf]
@@ -803,7 +803,7 @@ datasets:
       ★ 굴절차 · 사다리차 · 구급차는 MAS 본편에 없다(4차종뿐).
       ★ 축거 · 최소회전반경은 여기에도 없다(2026-08-25 재확인, 212쪽 0건).
   node_link_changelog:
-    feeds: []
+    feeds: 미투입 — 표준노드링크 판 대조. #1 그래프 투입 시 사용
     feeds_note: '[]'
     stem: its_nodelink_changelog
     ext: [csv]
@@ -1500,7 +1500,7 @@ datasets:
       rows_tolerance: 0.0
       scope_min: 1
   fire_access:
-    feeds: []
+    feeds: 미투입 — 소방통로 지정구간. D-30 인터뷰 대조 항목
     feeds_note: '[]'
     stem: safety_fire_access
     ext: [csv]
@@ -1600,50 +1600,8 @@ datasets:
       4도엽 전량 1.25GB. ingest 는 읽지 않는다(raw_only).
 
   # ── 좌표 없는 표 (참조용) ────────────────────────────────
-  enforcement:
-    feeds: []
-    feeds_note: '[]'
-    feeds_why: 미투입 — ★ 141,556행. §9 피처 엔지니어링 주축인데 소비자 0곳이다
-    stem: gjcity_parking_enforce
-    updated: '2025-02-26'
-    ext: [csv]
-    files:
-      - gjcity/gjcity_parking_enforce_jngj-donggu_202*.csv
-    scope: jngj-donggu
-    what: 동구 불법주정차 단속 2판 (2022-01~2023-10 85,380건 + 2024년). 이어붙여 쓴다
-    crs_native: none
-    # ★ 2026-08-25. csv_table 은 정렬 첫 번째 하나만 읽어 **옛 판만**
-    #   쓰이고 있었다. 두 판을 이어붙이는 kind 로 바꾼다(DECISIONS §71).
-    kind: csv_table_multi
-    encoding: cp949
-    note: |
-      ★ 기존 문서의 "동명동 3,228건"은 근거 불명.
-      ★ 두 판을 이어붙인다. 어느 판에서 온 행인지는 `_src` 컬럼에 남는다.
-        컬럼 집합이 다르면 ingest 가 FAIL 한다 — 섞인 채로 통과시키지 않는다.
-      ★ 좌표 없음. 위반장소명이 도로명주소 → RN으로 road_link에 조인.
-        단 절반이 랜드마크 명칭("문화전당 부설주차장" 3,137 등). 필터 필수.
-        동명동권 도로명 1차 매칭 2,379건.
-      ★ 위반시간 필드 오염. 14시가 전체의 39%(33,412건) = 입력 기본값.
-        시간대 분석에 쓸 수 없다. D-21 시간대 근거는 답사 촬영으로만.
-      엣지 속성은 건수가 아니라 enforce_per_100m(길이 정규화)로 붙일 것.
-
-    contract:
-      encoding: cp949
-      required_cols:
-      - 위반일자
-      - 위반시간
-      - 위반장소명
-      - 과태료
-      # ★ 2026-08-25. 판마다 없을 수 있는 컬럼. 2025-02-26 판에 `비고` 가 없다.
-      #   required 가 아니므로 손실이 아니지만, 선언해야 다음 판에서 다시
-      #   조사하지 않는다. ingest 가 빈 값으로 채우고 그 사실을 기록한다.
-      optional_cols:
-      - 비고
-    schema:                       # AUTO — ledger_schema.py 가 쓴다
-      columns: ['위반일자', '위반시간', '위반장소명', '과태료', '비고', '데이터기준일자']
-      encoding_seen: 'cp949'
   hydrant_summary:
-    feeds: []
+    feeds: 미투입 — 소방용수 분모 근거(MASTER §3-12). 표준데이터 441 대 관할 589
     feeds_note: '[]'
     stem: safety_hydrant_summary
     ext: [csv]
@@ -1679,7 +1637,7 @@ datasets:
       rows: 5
       rows_tolerance: 0.4
   ngii_road_center:
-    feeds: []
+    feeds: 미투입 — 본선·측도 분리(#3-1 road_side). 도로대장 부존재의 대안 경로
     feeds_note: '[]'
     stem: ngii_basemap
     ext: [zip]
@@ -1704,7 +1662,7 @@ datasets:
       columns: ['gid', 'dvyn', 'edpt', 'fmta', 'name', 'onsd', 'pvqt', 'rddv', 'rdln', 'rdnm', 'rdnu', 'rest', 'rvwd', 'scls', 'stpt', 'ufid']
       features: 487
   bin_trash:
-    feeds: []
+    feeds: 미투입 — 고정 장애물 후보(#2). 폭 차감 대상
     feeds_note: '[]'
     stem: gjcity_bin_trash
     ext: [csv]
@@ -1730,7 +1688,7 @@ datasets:
       columns: ['연번', '위치', '개수', '비고', '위도', '경도', '데이터기준일자']
       encoding_seen: 'cp949'
   bin_cloth:
-    feeds: []
+    feeds: 미투입 — 고정 장애물 후보(#2). 폭 차감 대상
     feeds_note: '[]'
     stem: gjcity_bin_cloth
     ext: [csv]
@@ -1755,33 +1713,8 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['연번', '자치구', '설치지역(동명)', '설치위치(장소)', '위도', '경도', '데이터기준일자']
       encoding_seen: 'cp949'
-  building_ledger:
-    feeds: []
-    feeds_note: '[]'
-    stem: eais_bldg_ledger
-    ext: [csv]
-    feeds_why: 미투입 — ★ §9 인구 표지. 세대수를 도로명별로 집계할 원천
-    files:
-      - eais/eais_bldg_ledger_jngj-donggu_20260817.csv
-    scope: jngj-donggu
-    updated: '2026-08-17'
-    what: 건축물대장 표제부. 높이·주용도·주차대수·사용승인일
-    crs_native: none
-    kind: csv_table
-    encoding: utf-8-sig
-    note: "★ BOM 이 붙은 utf-8 이다. 다른 CSV 는 전부 cp949 인데 여기만 다르다.\n높이(m) 기재율 25%. 나머지는 지상층수로 추정해야 한다.\n주용도 숙박 251 · 교육연구 226 → 대피취약 지표.\n주차대수는 회색 구간 상습점유 추정의 입력이다.\n★ 조인키가 다르다. 여기는 관리건축물대장PK, building 은 BD_MGT_SN.\n  지번 또는 공간조인이 필요하다.\n"
-    contract:
-      encoding: utf-8-sig
-    schema:                       # AUTO — ledger_schema.py 가 쓴다
-      columns: ['대지위치', '시군구코드', '법정동코드', '대지구분코드', '번', '지', '관리건축물대장PK', '대장구분코드', '대장구분코드명', '대장종류코드', '대장종류코드명', '도로명대지위치', '건물명', '특수지명', '블록', '로트', '외필지수', '새주소도로코드', '새주소법정동코드', '새주소지상지하코드', '새주소본번', '새주소부번', '동명칭', '주부속구분코드', '주부속구분코드명', '대지면적(㎡)', '건축면적(㎡)', '건폐율(%)', '연면적(㎡)', '용적률산정연면적(㎡)', '용적률(%)', '구조코드', '구조코드명', '기타구조', '주용도코드', '주용도코드명', '기타용동', '지붕코드', '지붕코드명', '기타지붕', '세대수(세대)', '가구수(가구)', '높이(m)', '지상층수', '지하층수', '승용승강기수', '비상용승강기수', '부속건축물수', '부속건축물면적(㎡)', '총동연면적(㎡)', '옥내기계식대수(대)', '옥내기계식면적(㎡)', '옥외기계식대수(대)', '옥외기계식면적(㎡)', '옥내자주식대수(대)', '옥내자주식면적(㎡)', '옥외자주식대수(대)', '옥외자주식면적(㎡)', '허가일', '착공일', '사용승인일', '허가번호년', '허가번호기관코드', '허가번호기관코드명', '허가번호구분코드', '허가번호구분코드명', '호수(호)', '에너지효율등급', '에너지절감률', 'EPI점수', '친환경건축물등급', '친환경건축물인증점수', '지능형건축물등급', '지능형건축물인증점수', '생성일자', '내진설계적용여부', '내진능력']
-      encoding_seen: 'utf-8-sig'
-
-  # ══ 2026-08-29 신설 ═══════════════════════════════════════════
-  # ★ 이 아래 6건은 EDA 로 실물을 전수로 열어 보고 등재했다. 대장이
-  #   먼저고 파일은 그다음이라는 순서를 지킨 첫 사례다.
-
   station_jurisdiction:
-    feeds: []
+    feeds: 미투입 — 관할 경계 근거(MASTER §3-12). 동부소방서 범위 확정용
     feeds_note: '[]'
     stem: safety_station_jrsdc
     ext: [csv]
@@ -1812,7 +1745,7 @@ datasets:
       encoding_seen: cp949
 
   parking_lot:
-    feeds: []
+    feeds: 미투입 — A* 비용함수 입력(#2). 노외 103 · 노상 35
     feeds_note: '[]'
     stem: gjcity_parking_lot
     ext: [csv]
@@ -1841,7 +1774,7 @@ datasets:
       encoding_seen: utf-8
 
   enforce_cam:
-    feeds: []
+    feeds: 미투입 — A* 비용함수 입력(#2). 무인카메라 57지점
     feeds_note: '[]'
     stem: gjcity_enforce_cam
     ext: [csv]
@@ -1868,7 +1801,7 @@ datasets:
       encoding_seen: utf-8
 
   school_zone:
-    feeds: []
+    feeds: 미투입 — A* 비용함수 입력(#2). 보호구역 32곳
     feeds_note: '[]'
     stem: gjcity_school_zone
     ext: [csv]
@@ -1892,7 +1825,7 @@ datasets:
       encoding_seen: utf-8
 
   parking_zone:
-    feeds: []
+    feeds: 미투입 — A* 비용함수 입력(#2). 규제 구간
     feeds_note: '[]'
     stem: gjcity_parking_zone
     ext: [csv]
@@ -2019,6 +1952,16 @@ basemap:
 # ── 폐기 기록 ────────────────────────────────────────────
 # 지운 것도 남긴다. 없으면 3개월 뒤에 또 받고 또 조사한다. MASTER §18-3c
 retired:
+  building_ledger:
+    what:      건축물대장 표제부. 높이·주용도·주차대수·사용승인일
+    reason:    높이·주차대수만 있고 건물 형상은 building 이 이미 낸다. 11.3MB 소비자 0곳
+    at:        2026-08-31
+    successor: building
+  enforcement:
+    what:      동구 불법주정차 단속 2판 (2022-01~2023-10 85,380건 + 2024년). 이어붙여 쓴다
+    reason:    단속 이력이지 현재 장애물이 아니다. 같은 목적을 enforce_cam·parking_zone 이 더 정확히 덮는다. 8.1MB 를 매 실행 읽을 이유가 없다
+    at:        2026-08-31
+    successor: enforce_cam
   kfs_paint_marking_20241224:
     what: 소방차 도장 및 표지 (KFS-1-0006-2024-01)
     files:

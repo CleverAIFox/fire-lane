@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-08-31T10:49:33.785778+09:00",
+  "generated_at": "2026-08-31T10:55:31.387387+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -270,14 +270,6 @@
       ]
     },
     {
-      "key": "enforcement",
-      "found": 2,
-      "sha256": [
-        "cf64a54d8dbe19c2",
-        "4cb4c4e95353af78"
-      ]
-    },
-    {
       "key": "hydrant_summary",
       "found": 1,
       "sha256": [
@@ -304,13 +296,6 @@
       "found": 1,
       "sha256": [
         "2a1478ade13dfda2"
-      ]
-    },
-    {
-      "key": "building_ledger",
-      "found": 1,
-      "sha256": [
-        "b502e2c0071a400e"
       ]
     },
     {
