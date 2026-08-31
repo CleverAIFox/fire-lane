@@ -305,3 +305,40 @@ def test_canon_docs_workflow_table_matches_contract_yml():
         f"  contract.yml 실물: {sorted(declared)}\n"
         f"  MASTER 표: {row.strip()[:90]}\n"
         "  문서가 좁게 적으면 사람이 검사되는 브랜치를 좁게 안다.")
+
+
+# ── 룰셋 방침의 정본이 셋이다 ───────────────────────────────────
+# ★ 2026-08-31. 같은 방침이 세 곳에 있다 —
+#     tools/ruleset_check.py  EXPECT   실물과 대조하는 코드판
+#     docs/workflow.html      §4 표     팀이 읽는 표
+#     docs/MASTER.md          §12-1     정본 산문
+#
+#   그날 아침 MASTER 에 승인 열을 넣으면서 `dev` 를 1로 적었는데 실물은
+#   0이었고, 오후 룰셋 재구축 뒤에도 MASTER 만 낡은 채로 남았다.
+#   **정본이 셋인데 대조가 없으면 반드시 갈린다**(R3 · DECISIONS §78).
+def test_ruleset_policy_agrees_across_three_places():
+    """`ruleset_check.EXPECT` ↔ workflow §4 ↔ MASTER §12-1."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "rsc", ROOT / "tools/ruleset_check.py")
+    rsc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rsc)
+
+    html = _wf()
+    master = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    bad = []
+    for name, want in rsc.EXPECT.items():
+        for doc, text in (("workflow.html", html), ("MASTER.md", master)):
+            if want["ref"] not in text:
+                bad.append(f"  {doc}: 대상 `{want['ref']}` 가 없다 ({name})")
+            if name not in text:
+                bad.append(f"  {doc}: 룰셋 이름 `{name}` 이 없다")
+        # 머지 방식은 이름이 문서마다 달라 대소문자를 무시하고 본다.
+        for doc, text in (("workflow.html", html), ("MASTER.md", master)):
+            if want["merge"][0].lower() not in text.lower():
+                bad.append(f"  {doc}: 머지 방식 `{want['merge'][0]}` 이 없다 ({name})")
+    assert not bad, (
+        "룰셋 방침이 세 곳에서 갈린다:\n" + "\n".join(sorted(set(bad)))
+        + "\n\n  정본은 tools/ruleset_check.py 의 EXPECT 다 — 실물과 대조하는 것이 그것뿐이다.\n"
+        "  거기를 고치면 workflow §4 와 MASTER §12-1 도 같이 고친다.")
