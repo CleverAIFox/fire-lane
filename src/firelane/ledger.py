@@ -286,6 +286,12 @@ def globs(e: dict) -> list[str]:
     """
     if v := e.get("files"):
         return [str(x) for x in v]
+    # ★ 2026-08-31. `file` 단수를 지웠다가 되살렸다. `datasets` 에는 없지만
+    #   **`retired` 블록이 아직 쓴다** — 이 함수는 두 블록을 다 받는다.
+    #   지운 뒤 acquire 의 폐기 판정이 조용히 빈 목록을 받았고,
+    #   `test_acquire_stage_and_quarantine_do_not_fight` 가 그것을 잡았다.
+    if f := e.get("file"):
+        return [str(f)]
     stems = e.get("stems") or ([e["stem"]] if e.get("stem") else [])
     return [f"**/{s}_*" for s in stems]
 
