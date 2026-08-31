@@ -36,6 +36,12 @@ golden.py — 산출물 지문을 뜨고, 리팩 전후가 같은지 증명한�
 
 지문은 `data/golden/` 에 남는다. 산출물이 아니라 **판정의 사진**이므로
 가볍고(수백 KB) 커밋해도 된다. 리팩이 끝나면 지우거나 그대로 둔다.
+
+★ **이것은 안 본다**(R23). `data/processed/segments.geojson` 하나만 읽는다.
+  입력 계층(raw·norm) · 대장 정합 · `_manifest.json` 계보 · 파이썬 문법 ·
+  충돌 마커는 전부 사각지대다. 08-31 에 셋을 동시에 놓쳤다.
+  각각 `test_norm_wiring` · `firelane.ledger` · `test_manifest_keeps_lineage` ·
+  `test_static` 이 든다. **이 초록불은 "판정이 안 변했다" 만 뜻한다.**
 """
 from __future__ import annotations
 
