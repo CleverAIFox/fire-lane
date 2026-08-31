@@ -1478,6 +1478,7 @@ uv run python tools/corner_probe.py     코너 꺾임각·반경 — 회전 가�
 uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
 uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치는 규모
 uv run python tools/scan_data.py        데이터 레이크 구조 점검
+uv run python tools/ruleset_check.py    GitHub 룰셋 실물 ↔ §12-1 표 대조
 ```
 
 **측정하고 대조한 뒤에 판정을 바꾼다.**

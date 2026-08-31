@@ -309,18 +309,12 @@ fix:   버그</code></pre>
 <h2>7 · 한시 완화 대장</h2>
 
 <div class="note">
-  ⚠ <b>§4 표는 목표값이고 아래가 현재값이다.</b> 둘이 같으면 이 표는 비어 있어야 한다.
+  ⚠ <b>§4 표는 목표값이고 아래가 현재값이다.</b> 둘이 같으면 이 표는 비어 있어야 한다.<br><br>★ <b>2026-08-31 재구축.</b> 룰셋 셋을 지우고 <code style="color:#fca5a5">release</code>(main) · <code style="color:#fca5a5">trunk</code>(dev) · <code style="color:#fca5a5">part</code>(part/**) 로 다시 만들었다. <b>bypass actor 도 지웠다</b> — 한 사람이 PR 요구를 우회할 수 있었고 그 사실이 어느 문서에도 없었다. 이제 예외가 없다.<br><br>★ <b>실물로 확인했다.</b> `main` · `part/gis` 직푸시가 둘 다 <code>remote rejected</code> 로 막혔다. 켰다고 믿지 않고 빨간불을 눈으로 본다.
 </div>
 
 <table>
   <tr><th>대상</th><th>방침(§4)</th><th>현재</th><th>내린 날</th><th>되돌릴 날</th><th>사유</th></tr>
-  <tr><td class="mono">main</td><td>승인 1 + Code Owners</td>
-      <td class="no">승인 0 · Code Owners 꺼짐</td><td>08-31</td><td><b>main 머지 직후</b></td>
-      <td>데이터 관리 체계 정비 중. 룰셋 재구축과 함께 켠다</td></tr>
-  <tr><td class="mono">dev</td><td>승인 0</td><td class="yes">그대로</td><td>—</td><td>—</td>
-      <td>목표값이 0이다. 완화가 아니다</td></tr>
-  <tr><td class="mono">part/**</td><td>승인 0</td><td class="yes">그대로</td><td>—</td><td>—</td>
-      <td>목표값이 0이다. 완화가 아니다</td></tr>
+  <tr><td colspan="6" class="yes">비어 있다. §4 목표값과 실물이 일치한다 — 2026-08-31 룰셋 재구축.</td></tr>
 </table>
 
 <div class="note">
@@ -335,6 +329,18 @@ fix:   버그</code></pre>
   ⚠ <b>강제자가 없다.</b> 룰셋은 저장소 밖이라 코드가 못 본다. 이 표는 사람이 손으로 적는다.
   실물 확인은 <code style="color:#fca5a5">gh api repos/:owner/:repo/rulesets</code> 로 한다.
   <b>2026-08-31 에 이 표가 실물과 달랐다</b> — 문서는 승인 1이라 적었는데 룰셋에는 애초에 없었다.
+</div>
+
+
+<div class="note ok">
+  ★ <b>강제자가 생겼다 — <code style="color:#6ee7b7">tools/ruleset_check.py</code></b><br>
+  실물 룰셋을 읽어 §4 표와 대조한다. 승인 수 · Code Owners · 머지 방식 · 필수 검사 ·
+  <b>bypass actor</b> 를 본다.<br><br>
+  <code style="color:#6ee7b7">uv run python tools/ruleset_check.py</code><br><br>
+  ★ <b>언제 치나 — 릴리즈 직전.</b> 어차피 그때 <code style="color:#6ee7b7">main</code> 을
+  건드리므로 잊을 자리가 없다.<br><br>
+  ⚠ <b>CI 에 붙이지 않는다.</b> 룰셋 읽기에는 관리자 토큰이 필요하고, 그 토큰을 CI 시크릿에
+  두면 <b>룰셋을 지킬 물건이 룰셋을 바꿀 수 있게 된다.</b> 사람이 친다.
 </div>
 
 
