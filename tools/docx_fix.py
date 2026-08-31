@@ -58,6 +58,122 @@ def rules() -> list[tuple[str, str, str]]:
         (r"PostgreSQL\s*\+\s*PostGIS", "동적 상태 테이블", "PostGIS 미채택"),
         (r"(?<![\w])PostGIS(?![\w])", "상태 DB", "PostGIS 미채택"),
     ]
+    # ── 판정 모델 (PLAN §12-4 · MASTER §2-2 · §3-4) ──
+    # ★ 2026-08-31. 기획서가 **폐기된 설계**를 적고 있었다. 실물
+    #   `segments.geojson` 에는 `width_m` 도 `tier` 도 없다 —
+    #     실물   width_min_m(도로경계 최소) · width_max_m(벽~벽 최대)
+    #            verdict = clear / needs_cv / blocked / unknown
+    #     기획서 width_m(중앙값) · width_min_m(하위 5% 분위수)
+    #            tier = FIXED_PASS / CANDIDATE / FIXED_BLOCK · 임계 12.0/2.0
+    #
+    #   `docx_check` 가 이것을 못 잡은 이유는 **판정 숫자만 보기 때문**이다.
+    #   필드명과 어휘는 대상이 아니었다. 아래 규칙과 함께 RETIRED 에도 넣는다.
+    out += [
+        (r"하위\s*5%\s*분위수를\s*width_min_m\s*으?로\s*확정한다",
+         "도로경계 기준 최소 폭을 width_min_m 으로, 건물 폴리곤 기준 "
+         "벽~벽 최대 폭을 width_max_m 으로 확정한다", "MASTER §3-4"),
+        (r"남은\s*샘플의\s*중앙값을\s*width_m\(표시용\),\s*하위\s*5%\s*분위수를\s*"
+         r"width_min_m\(판정용\)으로\s*확정한다",
+         "남은 샘플로 width_min_m(도로경계 기준 최소 폭)을 내고, 건물 폴리곤에서 "
+         "width_max_m(벽~벽 최대 폭)을 따로 낸다. 둘의 중앙 차이는 +2.08m 이며 "
+         "그 사이에 전신주·화분·실외기·주차 차량이 들어 있다", "MASTER §3-4"),
+        # ★ 표 셀은 `<w:t>` 하나에 담긴다. 앞 셀(필드명)까지 이어 잡으려 하면
+        #   xml 에서 안 맞는다 — 평문으로만 이어 보이는 것이다.
+        (r"중심선\s*샘플\s*폭의\s*중앙값\s*\(표시용\)",
+         "건물 폴리곤 기준 벽~벽 최대 폭. 605/1,101 만 값이 있다", "MASTER §3-4"),
+        (r"교차로\s*5m\s*제외\s*후\s*하위\s*5%\s*분위수\s*\(판정용\)",
+         "도로경계 기준 최소 폭. 확실히 비어 있는 폭", "MASTER §3-4"),
+        # 필드명 셀 자체
+        (r"^width_m$", "width_max_m", "MASTER §3-4"),
+        (r"width_min_m\s*12\.0m\s*이상은\s*FIXED_PASS,\s*2\.0m\s*미만은\s*"
+         r"FIXED_BLOCK,\s*그\s*사이는\s*CANDIDATE로\s*분류하여\s*CANDIDATE만\s*"
+         r"영상\s*판정\s*대상으로\s*한다",
+         "최대 폭이 3.0m 미만이면 blocked, 최소 폭이 7.0m 이상이면 clear, "
+         "그 사이는 needs_cv 로 분류하여 needs_cv 만 영상 판정 대상으로 한다. "
+         "7.0 = 통과 하한 3.0 + 양쪽 주차 2 x 2.0 이다", "MASTER §2-2"),
+        (r"width_m\s*/\s*width_min_m", "width_min_m / width_max_m", "MASTER §3-4"),
+        (r"세그먼트\s*도형,\s*width_m,\s*width_min_m,",
+         "세그먼트 도형, width_min_m, width_max_m,", "MASTER §3-4"),
+    ]
+
+    # ── tier 표 (셀 단위) ──
+    #   실물 verdict 는 clear / needs_cv / blocked / unknown 이고
+    #   tier 어휘는 존재하지 않는다. 임계도 7.0 / 3.0 이다(MASTER §2-2).
+    out += [
+        (r"≥\s*12\.0\s*m", "최소 폭 ≥ 7.0 m", "MASTER §2-2"),
+        (r"2\.0\s*~\s*12\.0\s*m", "그 사이", "MASTER §2-2"),
+        (r"&lt;\s*2\.0\s*m", "최대 폭 &lt; 3.0 m", "MASTER §2-2"),
+        (r"3단\s*tier\s*분류\s*\(FIXED_PASS\s*/\s*CANDIDATE\s*/\s*FIXED_BLOCK\)",
+         "판정 4종 (clear / needs_cv / blocked / unknown)", "MASTER §2-2"),
+        (r"3단\s*tier\s*분류", "판정 4종 분류", "MASTER §2-2"),
+        (r"FIXED_PASS", "clear", "MASTER §2-2"),
+        (r"FIXED_BLOCK", "blocked", "MASTER §2-2"),
+        (r"CANDIDATE", "needs_cv", "MASTER §2-2"),
+        (r"tiertextFIXED_PASS\s*\|\s*CANDIDAT", "verdicttextclear | needs_cv", "MASTER §2-2"),
+        # "12.0m 상한은 팀 자체 추정치" — 임계 자체가 없어졌다.
+        (r"12\.0m\s*상한\s*임계값은\s*팀\s*자체\s*추정치이며\s*발표\s*시\s*그\s*사실을\s*명시한다",
+         "통과 하한 3.0m 는 소방청 「2025 화재현장 골든타임 확보 종합대책」의 "
+         "진입불가 기준(폭 2m 이하)에 차량 전폭 2.5m + 미러·조향 여유 0.5m 를 "
+         "더한 값이다. clear 하한 7.0m 는 여기에 양쪽 주차 2 x 2.0m 를 더한 것이다",
+         "MASTER §2-2"),
+        (r"상한\s*12\.0m는\s*팀\s*자체\s*추정치\(4\.0\s*→\s*8\.0\s*→\s*12\.0으로\s*조정\)이며,\s*"
+         r"발표\s*시\s*자체\s*추정임을\s*명시한다",
+         "clear 하한 7.0m 는 통과 하한 3.0m 에 양쪽 주차 2 x 2.0m 를 더한 값이며, "
+         "양방 주차가 상시인 골목에서 한쪽만 가정하면 판정이 낙관 쪽으로 기운다",
+         "MASTER §2-2"),
+    ]
+
+    # ── 2차 정리 (셀 원문 확인 후) ──
+    # ★ 1차에서 27 run 을 고쳤으나 여섯 자리가 남았다. `&lt; 2.0 m` 은 셀
+    #   하나에 통째로 들어 있었고 내 정규식이 공백을 잘못 잡았다.
+    #   **평문으로 보이는 것과 xml 실물이 다르다** — 셀 원문을 뜬 뒤에야 맞았다.
+    out += [
+        (r"&lt;\s*2\.0\s*m", "최대 폭 &lt; 3.0 m", "MASTER §2-2"),
+        (r"하한\s*2\.0m는\s*소방청\s*진입불가\s*기준과\s*일치하므로\s*외부\s*방어가\s*가능하다",
+         "blocked 하한 3.0m 는 소방청 진입불가 기준(폭 2m 이하)에 차량 전폭 2.5m + "
+         "미러·조향 여유 0.5m 를 더한 값이라 외부 방어가 가능하다", "MASTER §2-2"),
+        (r"needs_cv그\s*사이영상\s*판정\s*대상",
+         "needs_cv최소 폭 3.0 ~ 7.0 m영상 판정 대상", "MASTER §2-2"),
+        # 폭 산출 절차 — 분위수는 폐기됐다
+        (r"수치지도\s*트랜섹트\s*하위\s*5%\s*분위수를\s*판정\s*입력으로\s*사용",
+         "수치지도 트랜섹트 도로경계 기준 최소 폭을 판정 입력으로 사용", "MASTER §3-4"),
+        (r"폭\s*측정에는\s*최댓값이\s*아니라\s*하위\s*5%\s*분위수를\s*사용하는데",
+         "폭은 최소(도로경계)와 최대(벽~벽) 둘을 함께 내는데", "MASTER §3-4"),
+        (r"교차로\s*반경\s*5m\s*샘플\s*제외\s*후\s*하위\s*5%\s*분위수\s*산출",
+         "교차로 반경 5m 샘플 제외 후 최소·최대 폭 산출", "MASTER §3-4"),
+        (r"교차로\s*제외\s*분위수\s*산출", "교차로 제외 최소·최대 폭 산출", "MASTER §3-4"),
+        (r"교차로\s*제외\s*분위수노드", "교차로 제외 폭 산출노드", "MASTER §3-4"),
+        (r"최댓값이\s*아니라\s*하위\s*분위수를\s*쓰는\s*이유는\s*소방차가\s*구간의\s*평균\s*폭이\s*"
+         r"아니라\s*가장\s*좁은\s*병목을\s*통과하지\s*못하기\s*때문이다",
+         "판정에 최소 폭을 쓰는 이유는 소방차가 구간의 평균 폭이 아니라 "
+         "가장 좁은 병목을 통과하지 못하기 때문이다", "MASTER §3-4"),
+        # tier → verdict (실물 필드명)
+        (r"tiertextclear\s*\|\s*needs_cv\s*\|\s*blocked",
+         "verdicttextclear | needs_cv | blocked | unknown", "실물 필드"),
+        (r"width_src,\s*tier,\s*cctv_coverage", "width_src, verdict, cctv_coverage", "실물 필드"),
+        (r"폭\s*소스,\s*tier,\s*현재\s*상태", "폭 소스, verdict, 현재 상태", "실물 필드"),
+        (r"폭,\s*폭\s*소스,\s*tier,\s*CCTV", "폭, 폭 소스, verdict, CCTV", "실물 필드"),
+        (r"bbox\s*및\s*tier\s*필터", "bbox 및 verdict 필터", "실물 필드"),
+        (r"bbox·tier\s*필터", "bbox·verdict 필터", "실물 필드"),
+        (r"\(도형·폭·tier·커버리지\)", "(도형·폭·verdict·커버리지)", "실물 필드"),
+        (r"tier\s*값\(clear\)은\s*유지해", "verdict 값(clear)은 유지해", "실물 필드"),
+        (r"tier\s*재분류\s*및\s*4색\s*분포\s*확정", "verdict 재분류 및 4색 분포 확정", "실물 필드"),
+    ]
+
+    # ── 3차 (셀 경계를 넘지 않는다) ──
+    # ★ 2차에서 넷이 또 안 잡혔다. `needs_cv그 사이…` 처럼 **앞 셀까지 이어**
+    #   잡으려 했기 때문이다. 평문에서는 이어 보이지만 xml 에서는 각각
+    #   다른 `<w:t>` 다. 셀 하나 안의 문자열만으로 좁힌다.
+    #   같은 실수를 세 번 했다 — 평문을 보고 정규식을 쓰면 반드시 이렇게 된다.
+    out += [
+        (r"^그 사이$", "최소 폭 3.0 ~ 7.0 m", "MASTER §2-2"),
+        (r"^&lt; 2\.0 m$", "최대 폭 &lt; 3.0 m", "MASTER §2-2"),
+        (r"^Tier$", "판정", "실물 필드 — tier 어휘는 없다"),
+        (r"교차로 제외 분위수노드", "교차로 제외 폭 산출노드", "MASTER §3-4"),
+        (r"tiertextclear \| needs_cv \| blocked",
+         "verdicttextclear | needs_cv | blocked | unknown", "실물 필드"),
+    ]
+
     # ── 소방용수 (PLAN §12-7 · MASTER §3-12) ──
     # 기획서는 소화전과 소방용수시설을 한 숫자로 뭉쳐 588 이라 적었다.
     # 둘은 다른 집계다 — 소화전 589 는 소방용수시설 654 의 부분집합이다.
