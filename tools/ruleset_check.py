@@ -53,9 +53,19 @@ EXPECT = {
         "ref": "refs/heads/dev", "approvals": 0, "codeowners": False,
         "merge": ["merge"], "checks": ["contract-shared"],
     },
+    # ★ 2026-08-31 정정. 처음엔 `["squash"]` 단독으로 걸었다. **해보고 틀린 것을
+    #   알았다** — `part` 가 `dev` 를 받는 PR 자체가 squash 로 막힌다.
+    #   그것을 squash 하면 `dev` 커밋이 조상에서 사라져 다음 통합이 통째로
+    #   충돌한다(§12-2, 여섯 번 겪음).
+    #
+    #   ★ 예외가 생겼지만 **취향이 아니라 PR 종류로 결정된다.**
+    #       feat → part   작업        squash
+    #       dev  → part   일일 동기화  merge commit
+    #     "이 PR 이 base 밖 커밋을 흡수했나" 는 사실 판단이고,
+    #     `base 와의 간극` 스텝이 이미 그것을 재고 있다.
     "part": {
         "ref": "refs/heads/part/**", "approvals": 0, "codeowners": False,
-        "merge": ["squash"], "checks": ["contract-shared"],
+        "merge": ["squash", "merge"], "checks": ["contract-shared"],
     },
 }
 

@@ -79,3 +79,7 @@ data/field/naver_join.csv
 data/interim/
 data/_migrate_journal.json
 .apply-stamp
+
+# ★ 빌드 산출물. pages.yml 이 docs/workflow.html 에서 복사한다.
+#   정본은 docs/ 이고 여기 커밋하면 사본이 둘이 된다.
+web/workflow.html

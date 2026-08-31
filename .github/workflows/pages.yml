@@ -6,6 +6,8 @@
 #
 # 배포되는 것
 #   web/ 폴더 전체. index.html + data/*.geojson (약 1.2MB)
+#   docs/workflow.html 도 빌드 때 web/ 으로 복사해 함께 올린다 —
+#   팀이 매일 읽는 문서라 URL 하나로 열려야 한다(2026-08-31).
 #   data/raw 는 .gitignore 로 저장소에 없으므로 애초에 올라가지 않는다.
 #
 # 켜는 법 (1회)
@@ -18,7 +20,7 @@ name: 지도 배포
 on:
   push:
     branches: [main]
-    paths: ['web/**']
+    paths: ['web/**', 'docs/workflow.html']
   workflow_dispatch:
 
 permissions:
@@ -54,6 +56,20 @@ jobs:
           echo "스탬프 $B"
           sed -i "s/?v=BUILD/?v=$B/g" web/index.html
           grep -c "?v=$B" web/index.html
+
+      - name: 협업 방침 문서 동봉
+        # ★ 2026-08-31 신설. `docs/workflow.html` 은 팀이 매일 읽는 문서인데
+        #   저장소 안에만 있어서 **클론하거나 raw 로 열어야 했다.** HTML 인데
+        #   렌더링이 안 되는 상태였다.
+        #
+        #   ★ 복사는 CI 가 한다. 사람이 손으로 두 곳을 유지하면 그것이 곧
+        #     낡을 자리다 — `web/config.js` 가 `seg/params.py` 의 사본인 것과
+        #     같은 관계이되(R3), 여기서는 **사람이 사본을 만들지 않는다.**
+        #   ★ 정본은 `docs/workflow.html` 이다. `web/workflow.html` 은
+        #     빌드 산출물이며 저장소에 커밋하지 않는다.
+        run: |
+          cp docs/workflow.html web/workflow.html
+          echo "동봉: $(wc -c < web/workflow.html) bytes"
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
