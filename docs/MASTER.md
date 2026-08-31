@@ -500,7 +500,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 36종(OK 23 · SKIP 13)
+data/processed/    대장 41종(OK 27 · SKIP 14)
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -586,7 +586,8 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격.
 
-대장은 `sources.yaml` 하나다. `datasets` 36종 · `retired` 8종.
+대장은 `sources.yaml` 하나다. `datasets` 41종 · `retired` 10종.
+★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 ### 6-2. 데이터 보관
 
@@ -1141,7 +1142,7 @@ main ────────────────────── 배포 �
 |---|---|---|---|---|---|
 | `release` | `refs/heads/main` | 1 | ✔ | shared · strict | Merge |
 | `trunk` | `refs/heads/dev` | 0 | — | shared | Merge |
-| `part` | `refs/heads/part/**` | 0 | — | shared | Squash |
+| `part` | `refs/heads/part/**` | 0 | — | shared | Squash · Merge |
 | — | `feat/**` | — | — | — | — |
 
 셋 다 `deletion` · `non_fast_forward` · `pull_request` ·
@@ -1151,9 +1152,15 @@ main ────────────────────── 배포 �
 1인 파트다. 승인 1을 걸면 영구 차단된다. 실제로 막는 것은 승인이 아니라
 `contract-shared` 다. **게이트는 `main` 하나로 모은다.**
 
-★ **머지 방식이 브랜치마다 하나뿐이다.** 고를 여지가 있으면 사람이 틀린다.
-`part` 가 Squash 인 것은 `part` 가 매일 `dev` 를 받기 때문이다 — `feat` 은
-`part` 에서만 받으므로 squash 해도 잃을 조상이 없다.
+★ **머지 방식은 PR 종류가 정한다.** `main` · `dev` 는 Merge 단독이다.
+`part/**` 만 둘을 허용하며 기준은 취향이 아니라 사실이다 —
+
+    feat → part   작업            squash
+    dev  → part   일일 동기화      merge commit
+
+08-31 에 `part` 를 Squash 단독으로 걸었다가 **해보고 틀린 것을 알았다.**
+`part` 가 `dev` 를 받는 PR 자체가 막혔고, 그것을 squash 하면 `dev` 커밋이
+조상에서 사라져 다음 통합이 통째로 충돌한다(§12-2).
 
 ★ 실물 대조는 `uv run python tools/ruleset_check.py` 가 한다.
 정본은 그 파일의 `EXPECT` 이며 이 표와 `workflow §4` 는 사람이 읽는 사본이다.
@@ -1878,7 +1885,7 @@ CRS 변경               ★ 중단. 무조건
 ## 18-3c. retired — 폐기 기록
 
 **지운 것도 대장에 남긴다.** 없으면 3개월 뒤에 또 받고 또 조사한다.
-현재 `retired` 8종이 있다.
+현재 `retired` 10종이 있다.
 
 ```yaml
 retired:
