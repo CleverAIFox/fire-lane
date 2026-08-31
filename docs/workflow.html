@@ -275,6 +275,14 @@ fix:   버그</code></pre>
   <tr><td>그 외 충돌</td><td>아침에 <code>git merge origin/dev</code> 를 빼먹은 것이다</td></tr>
   <tr><td>레이크가 안 붙는다</td><td>드라이브 문자는 기계마다 다르다. <code>ls</code> 가 비어도 붙은 게 아니다 —<br>
       <code>sudo mount -t drvfs D: /mnt/d</code>. 자세한 것은 <code>.env.example</code></td></tr>
+<tr><td>머지 버튼이 비활성</td><td><b>base 가 앞서 나갔다.</b> <b>Update branch</b> 를 누른다.<br>
+      룰셋의 strict 정책이 "base 최신 위에서 검사가 통과할 것" 을 요구한다.<br>
+      ★ 이것이 §4 의 <code>base 와의 간극</code> 스텝과 짝이다 — 그 스텝은 얼마나
+      뒤처졌는지 재고, strict 정책은 뒤처진 채로 머지하지 못하게 막는다</td></tr>
+  <tr><td>PR 본문 검사가 막는다</td><td>세 절을 채운다 — <code>리뷰어가 볼 곳</code>(파일:줄 하나) ·
+      <code>산출물이 바뀌는가</code>(하나 체크) · <code>계약을 건드리는가</code>(하나 체크).<br>
+      접힌 <code>&lt;details&gt;</code> 체크리스트는 채워도 되고 안 채워도 된다 —
+      검사는 <code>---</code> 위쪽만 본다</td></tr>
   <tr><td>main 에 잘못 머지됨</td><td>GitHub <b>Revert</b> 버튼. force push 를 쓰지 않는다</td></tr>
   <tr><td>브랜치 실수로 지움</td><td>룰셋이 막는다. <code>feat/**</code> 이면 <code>git reflog</code></td></tr>
 </table>
@@ -303,6 +311,33 @@ fix:   버그</code></pre>
 <div class="note">
   ⚠ 릴리즈 후에는 <b>dev 가 main 을 다시 흡수</b>해야 한다. 머지 커밋이라
   부모 관계가 살아야 다음 릴리즈에서 충돌하지 않는다.
+</div>
+
+
+<h3>태그 — 되돌릴 지점</h3>
+
+<p>릴리즈 PR 이 <code>main</code> 에 머지되면 태그를 건다.</p>
+<pre><code>git fetch origin
+git tag -a v0.2 origin/main -m "무엇을 담았는지 한 줄"
+git push origin v0.2</code></pre>
+
+<div class="note">
+  ⚠ <b>태그는 main 커밋에만 건다.</b> <code style="color:#fca5a5">feat</code> ·
+  <code style="color:#fca5a5">part</code> 브랜치는 사라지고 태그만 남으면 그 태그가
+  무엇을 가리키는지 아무도 모른다.<br><br>
+  ⚠ <b>머지가 끝난 것을 확인하고 건다.</b> 08-31 에 릴리즈 PR 을 머지하기 전에
+  태그부터 걸어 <b>오늘 작업이 하나도 없는 커밋</b>을 가리켰다. 확인 명령 —
+  <code>git rev-list --count origin/main..origin/dev</code> 가 0 이어야 한다.<br><br>
+  ⚠ <b>태그가 되돌리는 것은 코드와 커밋된 산출물뿐이다.</b>
+  <code style="color:#fca5a5">data/raw</code> 3.6GB 는 저장소 밖이라 안 따라온다 —
+  레이크는 SSD 가 별도로 든다. "태그가 있으니 안전하다" 가 아니다.
+</div>
+
+<div class="note ok">
+  ★ 되돌리는 법 — <code style="color:#6ee7b7">git switch --detach v0.2</code><br>
+  ★ 릴리즈 직전에 <code style="color:#6ee7b7">uv run python tools/ruleset_check.py</code> 를
+  친다. 룰셋 실물이 §4 표와 같은지 보는 유일한 도구이며, 관리자 토큰이 필요해
+  CI 에 못 붙인다.
 </div>
 
 
@@ -346,20 +381,51 @@ fix:   버그</code></pre>
 
 <h2>8 · 오창준 이후</h2>
 
-<div class="note">
-  ⚠ <b>작성 중.</b> 2026-09-07 이전에 채운다. 빈 절을 두는 것보다 미완이라 적는 것이 낫다.
-</div>
-
 <table>
-  <tr><th>항목</th><th>지금 아는 것</th></tr>
-  <tr><td>GIS 파트</td><td>우지혜(@marscoolcat) 단독. <code>@woongtopia/gis</code> 팀에서 오창준을 빼면
-      코어 리뷰가 자동으로 넘어간다</td></tr>
-  <tr><td>레이크</td><td>외장 SSD 하나. <code>raw</code> · <code>field</code> · <code>_quarantine</code> 이
-      재생성 불가라 백업 대상이다(<code>layers</code> 선언이 정본)</td></tr>
-  <tr><td>매일 볼 것</td><td><code>uv run python tools/doctor.py</code> — 대장·실물·백업을 한 화면에 낸다</td></tr>
-  <tr><td>이관 롤백</td><td><b>불가.</b> <code>data/_migrate_journal.json</code> 이 어느 기계에도 없다</td></tr>
-  <tr><td>넘기는 것</td><td>PLAN §1 의 🟡·🔴 항목. 억지로 닫지 않았다 —
-      "완료" 라고 적혔는데 안 된 것이 제일 비싸다</td></tr>
+  <tr><th>항목</th><th>내용</th></tr>
+
+  <tr><td><b>파트 인계</b></td><td>GIS 는 우지혜(@marscoolcat) 단독.
+      <code>@woongtopia/gis</code> 팀에서 오창준을 빼면 <code>CODEOWNERS</code> 의 코어 리뷰가
+      자동으로 넘어간다. 룰셋·CODEOWNERS 파일은 안 고쳐도 된다</td></tr>
+
+  <tr><td><b>레이크</b></td><td>외장 SSD 하나. <code>raw</code>(3.6GB) · <code>field</code> ·
+      <code>_quarantine</code>(38MB)이 재생성 불가라 백업 대상이다.
+      정본은 <code>sources.yaml</code> 의 <code>layers</code> 선언이고
+      <code>datalog.BACKUP_TARGETS</code> 가 거기서 유도한다 — 손목록이 아니다.<br>
+      ★ 드라이브 문자는 기계마다 다르다. <code>.env.example</code> 참조</td></tr>
+
+  <tr><td><b>매일</b></td><td><code>uv run python tools/doctor.py</code> — 대장·실물·백업을
+      한 화면에. ✗ 가 있으면 그 줄이 무엇을 하라는지 적혀 있다</td></tr>
+
+  <tr><td><b>아침 첫 일</b></td><td><code>dev → part/*</code> PR.
+      §1 의 "받는 방향" 이며, 이것을 하면 <code>feat → part</code> squash 가 항상 안전하다</td></tr>
+
+  <tr><td><b>릴리즈 직전</b></td><td><code>uv run python tools/ruleset_check.py</code> —
+      룰셋 실물 ↔ §4 표. 사람이 친다(관리자 토큰 필요)</td></tr>
+
+  <tr><td><b>내보내기 전</b></td><td><code>uv run python tools/ship.py</code> —
+      <code>verify.sh</code> + 문서 4축 + 위생 + git 상태를 한 번에</td></tr>
+
+  <tr><td><b>이관 롤백</b></td><td><b>불가.</b> <code>data/_migrate_journal.json</code> 이
+      어느 기계에도 없다. 이름 이관은 이미 끝나 커밋됐으므로 되돌릴 일은 없다</td></tr>
+
+  <tr><td><b>강제자가 보는 것</b></td><td>
+      <code>golden</code> 판정 불변 · <code>ledger</code> 대장 정합 ·
+      <code>doctor</code> 대장↔실물↔백업 · <code>docnum_check</code> 문서 숫자 ·
+      <code>ruleset_check</code> 룰셋 · <code>pytest</code> 494종.<br>
+      ★ <b>각 검사는 자기가 보는 것만 본다.</b> <code>golden</code> 은
+      <code>segments.geojson</code> 하나만 읽어 문법 오류·대장 파손·계보 소실 위에서도
+      초록불을 낸다(DECISIONS §78 · R23). 전체는 <code>bash tools/verify.sh</code></td></tr>
+
+  <tr><td><b>넘기는 것</b></td><td>PLAN §1 의 🟡·🔴 항목.
+      <b>억지로 닫지 않았다</b> — "완료" 라고 적혔는데 안 된 것이 제일 비싸다.
+      판정 정확도 축(#1 #2 A* · #3 CV · #4 D-25 실측)은 외부 의존이라 남는다</td></tr>
+
+  <tr><td><b>안 한 것</b></td><td>
+      `#17` <code>ingest</code> OOM — WSL2 5GB 에서 재현·측정이 필요하다<br>
+      `#42` <code>contract-strict</code> 1,291건 — 범위 결정이 남았다<br>
+      `#30` `#32` 봉인 베이스라인 — 전량 복사 구조. 설계 판단이다<br>
+      <code>tidy</code> 가 저장소 루트의 <code>*.sh</code> 를 안 본다 — 08-31 에 12개를 손으로 지웠다</td></tr>
 </table>
 
 
