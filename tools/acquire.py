@@ -234,8 +234,17 @@ def retired_names() -> dict[str, str]:
         #
         #   조회기의 정본은 firelane.ledger.globs 하나다. 따로 구현하지 않는다.
         from firelane import ledger as _led
+        # ★ 2026-08-31. `globs()` 가 stem 기반이 되면서 **패턴**을 낸다
+        #   (`**/eais_bldg_ledger_*`). 그것의 `.name` 을 그대로 키로 쓰면
+        #   실제 파일명과 영원히 안 맞는다 — 옛 `file:` 은 리터럴이라
+        #   먹었을 뿐이다. 패턴은 RAW 에 풀어서 실물 이름을 얻는다.
         for f in _led.globs(v):
-            out[Path(str(f)).name] = why
+            s = str(f)
+            if any(c in s for c in "*?["):
+                for q in RAW.glob(s):
+                    out[q.name] = why
+            else:
+                out[Path(s).name] = why
     return out
 
 
