@@ -197,3 +197,55 @@ def test_no_todo_in_ledger():
     assert not stale, (
         "TODO 가 남은 대장 항목:\n  " + "\n  ".join(stale) +
         "\n\n  뼈대만 깔고 내용을 안 적으면 대장의 의미가 없다.")
+
+
+# ── 조회는 상태를 바꾸지 않는다 (R22) ───────────────────────────
+# ★ 2026-08-31. `ingest --check` 가 `_manifest.json` 을 덮어썼다. `--check`
+#   레코드는 `key·found·sha256` 셋뿐이라 **계보 27건이 0건이 됐고**, 그
+#   커밋에 `rewrite (95%)` 가 찍혔는데 `golden` 은 L1·L2·L3 전부 OK 를 냈다.
+#   `segments.geojson` 하나만 읽으니 입력 계보가 죽은 것을 모른다.
+#   복구에 전량 재실행 317초.
+#
+#   이 파일이 같은 병을 세 번 겪었다 — `--only` 가 대장을 통째로 덮은 것
+#   (08-22), 최상위 키를 날린 것(08-25), 그리고 이번. 전부 **조회·부분
+#   실행이 전체 상태를 파괴**한 형태다. 네 번째를 여기서 막는다.
+def test_check_does_not_write():
+    """`--check` 후 매니페스트 내용이 그대로인가."""
+    import hashlib
+    import os
+    import subprocess
+    import sys
+
+    man = ROOT / "data/processed/_manifest.json"
+    if not man.exists():
+        pytest.skip("파이프라인 미실행")
+    before = hashlib.sha256(man.read_bytes()).hexdigest()
+    r = subprocess.run([sys.executable, "-m", "firelane.ingest", "--check"],
+                       cwd=ROOT, capture_output=True, text=True,
+                       env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
+    after = hashlib.sha256(man.read_bytes()).hexdigest()
+    assert before == after, (
+        "`ingest --check` 가 _manifest.json 을 바꿨다.\n"
+        "  조회는 읽기만 한다. 쓰기 경로 앞에서 return 하는지 보라 —\n"
+        "  src/firelane/ingest.py 의 `if a.check:` 분기.\n"
+        f"  종료코드 {r.returncode}")
+
+
+def test_manifest_keeps_lineage():
+    """매니페스트가 계보를 들고 있는가.
+
+    ★ 위 검사는 `--check` 한 경로만 본다. 이것은 **결과 자체**를 본다.
+      어떤 경로로든 계보가 날아가면 여기가 운다. `outputs` 가 없으면
+      `datalog impact` 가 산출물을 못 따라가고 R13 이 성립하지 않는다.
+    """
+    man = ROOT / "data/processed/_manifest.json"
+    if not man.exists():
+        pytest.skip("파이프라인 미실행")
+    import json
+    d = json.loads(man.read_text(encoding="utf-8")).get("datasets") or []
+    rows = d if isinstance(d, list) else list(d.values())
+    has = sum(1 for r in rows if (r or {}).get("outputs"))
+    assert has, (
+        f"매니페스트 {len(rows)}종 중 `outputs` 를 든 것이 0건이다.\n"
+        "  얕은 판이 계보를 덮었다. `uv run fire-lane` 으로 전량 재실행하면\n"
+        "  복구된다(약 300초). golden 은 이 상태를 초록불로 통과시킨다.")
