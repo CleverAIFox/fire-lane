@@ -148,6 +148,7 @@ raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
 ```bash
 uv run python tools/ship.py --fix --push   ★ 내보내기 전 단일 진입점
 uv run python tools/tidy.py --yes          로컬 찌꺼기
+uv run python tools/absorb.py --yes        ★ Downloads → raw 한 명령 (아래 참조)
 uv run python tools/acquire.py             landing → raw 획득 게이트
 uv run python tools/scan_data.py           데이터 레이크 구조 점검
 uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간 전이 대조
@@ -245,6 +246,22 @@ uv run python -m firelane.datalog check   대장 정합성
 uv run python -m firelane.datalog fsck    계층 선언 ↔ 실물
 ```
 
+획득은 네 단계인데 **명령도 넷이었다.** 그중 `--prune-landing` 은 `--verify`
+없이도 돈다 — 편입이 성공했다는 확인 없이 원본을 지운다. 그것이 소실이다.
+
+```bash
+uv run python tools/absorb.py          관측만
+uv run python tools/absorb.py --yes    이관 → 편입 → 검증 → 사본삭제
+```
+
+★ **삭제는 검증에 매달려 있다.** `③ verify` 가 0 이 아니면 `④` 는 실행되지
+않고 landing 원본이 그대로 남는다. 순서를 주석이 아니라 자료구조로 들고 있고
+`tests/test_intake_rules.py::test_absorb_*` 가 그것을 강제한다 —
+게이트를 뚫는 · None 을 0 으로 읽는 · 통과 경로를 막는 세 방향 전부 본다.
+
+단계별로 손으로 치고 싶으면 `intake.py` · `acquire.py` 를 직접 쓴다.
+absorb 는 그 둘을 부를 뿐 판정을 다시 쓰지 않는다.
+
 `contract.py` 가 보는 것 — 인코딩 · 컬럼 소실 · 건수 · zip 안 레이어 ·
 **스코프 안 유효 건수(`scope_min`)**. 마지막 항목이 핵심이다. 소스 교체 때
 소화전이 파싱은 되고 스코프에서 전멸해 `OK 0건` 으로 통과한 적이 있다.
@@ -259,6 +276,8 @@ uv run python -m firelane.datalog fsck    계층 선언 ↔ 실물
 
 ```
 sources.yaml              데이터 정본. layers · datasets · outputs · retired
+src/contracts/            ★ 파트 간 유일한 접점. 세 파트가 이것만 import 한다
+  vision.py               영상판정 인터페이스 (MASTER §19 의 실행 가능한 사본)
 src/firelane/
   paths.py                경로 정본. FIRE_LANE_DATA 환경변수
   layers.py               계층 선언과 경로를 이름으로 묶는다
@@ -304,6 +323,19 @@ tools/
   commit_policy.py        산출물 · 일회성 스크립트 · 비밀값 차단
   encoding_check.py       인코딩 · 개행
   web_manifest.py         web/data 계보 검사
+  owned_paths.py          ★ CODEOWNERS 를 소유권·검사강도의 정본으로 읽는다
+  pr_body_check.py        PR 본문이 템플릿을 실제로 채웠는가
+  docx_check.py           기획서 ↔ 산출물 숫자·폐기 용어 대조
+  docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
+  doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
+  intake.py               Downloads → landing 게이트 · 대장 미매칭 차단
+  absorb.py               ★ 이관→편입→검증→사본삭제. 삭제는 검증에 매달려 있다
+  migrate_names.py        raw 개명 백필 — 실물·sha대장·대장을 원자적으로
+  refcheck.py             선언이 가리키는 것이 실재하는가 · --gc
+  ledger_stem.py          대장 stem 이관 · 무손실 증명
+  ledger_fields.py        대장 별칭 필드 통합
+  ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
+  ledger_feeds.py         feeds 산문 → 소비자 리스트
   serve.py                캐시 없는 개발 서버
   wmax_audit.py           width_max_m 결손이 판정에 미치는 규모
   desk_check.py           정사영상 위에 구간·폭 렌더
@@ -318,9 +350,14 @@ tests/
   test_seg_width.py       WidthEngine 단위
   test_seg_roadname.py    RoadNameIndex 단위
   test_static.py          정의되지 않은 이름 (실패 경로의 NameError)
+  test_intake_rules.py    명명·스코프·인코딩 규칙 — raw 없이 도는 강제자
   test_reproducibility.py 재현성 규약 강제 · 문서 ↔ 코드 동기화
   test_doc_style.py       문서 문체 · 절 번호 · 어휘
   test_declaration_sync.py ★ 역방향 — 실물이 선언돼 있는가
+  test_ownership.py       ★ 미소유 경로가 없는가. CODEOWNERS 전수 검사
+  test_docref.py          절 참조 무결성 · 하위 절 번호 유일·연속
+  test_ops_html_sync.py   docs/ops.html ↔ 브랜치·팀·워크플로 대조
+  test_contract_vision.py GIS ↔ CV 경계 (MASTER §19)
   test_ledger_outputs.py  대장 outputs ↔ 실제 산출물
   test_place_idempotent.py 지점 집계 멱등성
 web/

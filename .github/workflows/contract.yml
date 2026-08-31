@@ -1,38 +1,48 @@
-# GIS ↔ UI 계약 검증
+# GIS ↔ UI ↔ CV ↔ API 계약 검증
 #
 # 값(폭·판정)은 실측 후 바뀐다. 구조는 안 바뀐다. 그 경계를 여기서 지킨다.
-# 깨지면 GIS 쪽이 UI 를 말없이 부순 것이다.
 #
-# job 이름을 contract 로 고정한다. 브랜치 보호의
-# "Require status checks to pass" 목록에 이 이름으로 뜬다.
+# ★ 2026-08-27. 5인 체제 전환. 변경 3건.
 #
-# ★ 2026-08-21 변경 4건
-#   1. 트리거를 main 으로 단일화. gis 를 트렁크로 쓰던 것을 정리했다.
-#      롱리브드 브랜치는 머지를 이벤트로 만들고, 이벤트가 되면 안 하게 된다.
-#   2. ruff 추가. pyproject 에 설정을 다 해놓고 CI 에서 안 돌렸다.
-#      로컬에서만 도는 린터는 안 도는 린터다.
-#   3. JS 검사를 glob 으로. app.js 를 모듈로 쪼개도 전부 잡힌다.
-#      → 2026-08-21 실제로 쪼갰다(web/js/). ES 모듈이라 `node --check` 로는
-#        import 해석까지는 못 본다. 그래서 아래에 순환 import 검사를 붙였다.
-#   4. web/data 상한 60MB → 40MB. ortho z19 를 버려 31MB → 4MB 가 됐으므로
-#      60 은 열 배 여유다. 여유가 크면 경보가 안 울린다.
+#   1. 브랜치 4단. `gis` 트렁크를 폐기하고
+#      main ← dev ← part/* ← feat/* 로 간다.
+#      ★ 접두사를 갈랐다. part/* 는 보호되는 파트 통합 브랜치,
+#        feat/* 는 자유로운 임시 브랜치다. 둘 다 feat/ 로 두면
+#        룰셋이 구분하지 못한다.
+#      배포 게이트는 main 단독이다(pages.yml). dev 는 트렁크,
+#      main 은 배포 스냅샷이다.
+#
+#      ★ 트리거에서 part/** 를 빼지 마라. 파트 통합 브랜치를 CI 가
+#        안 보면 검사를 비껴간 코드가 dev 까지 올라온다. 이 저장소는
+#        같은 사고를 **두 번** 겪었다(08-22 · 08-23). 세 번째는 없다.
+#
+#   2. job 을 둘로 쪼갠다.
+#
+#        contract-shared   전 경로. 전원이 통과해야 하는 최소선
+#        contract-strict   CODEOWNERS 단독 소유 경로만. 엄격 검사
+#
+#      엄격 검사를 전 경로에 걸면 신규 인원이 첫 주 내내 빨간불만
+#      본다. 그러면 사람이 검사를 우회하기 시작하고, 우회가 습관이
+#      되면 강제자 전체가 무력해진다. **범위를 좁혀서 강도를 유지한다.**
+#
+#      범위의 정본은 CODEOWNERS 하나다. `tools/owned_paths.py` 가
+#      읽는다. 소유권과 검사 강도가 한 파일에서 같이 움직인다 —
+#      정본이 둘이면 반드시 어긋난다(MASTER §18-3).
+#
+#   3. `contract-shared` 를 필수 체크로, `contract-strict` 도 필수로
+#      건다. strict 가 선택이면 안 도는 것과 같다.
 name: contract
 
-# ★ 2026-08-23. 트리거가 [main] 단독으로 되돌아가 있었다. 두 번째다.
-#   08-22 에 `gis` 를 추가하자마자 세 건(ruff 155 · web/data 계보 · 문서 숫자)을
-#   잡았다는 기록이 DECISIONS 에 남아 있는데, 워크플로는 main 만 본다.
-#   README · MASTER §8 · §12 · CODEOWNERS 는 전부 `gis` 를 정본으로 적고
-#   pages.yml 은 [main, gis] 둘 다 배포한다 — 셋이 갈려 있었다.
-#   실제 PR 이 gis 로 가는 한, main 단독 트리거는 **검사가 죽은 채 뜨는 초록불**이다.
 on:
   push:
-    branches: [main, gis]
+    branches: [main, dev, 'part/**', 'feat/**']
   pull_request:
-    branches: [main, gis]
+    branches: [main, dev, 'part/**', 'feat/**']
 
 jobs:
-  contract:
-    name: contract
+  # ── 전원 공통. 여기가 최소선이다 ─────────────────────────────
+  contract-shared:
+    name: contract-shared
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,71 +52,48 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-
       - uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
       - name: 의존성 — uv.lock 이 정본이다
-        # ★ 2026-08-24 교체. 종전에는 이랬다.
-        #
-        #       pip install pytest shapely numpy ruff pyyaml
-        #       pip install -e . --no-deps
-        #
-        #   사유는 "geopandas·rasterio 전부 받으면 CI 가 몇 분씩 늘어난다.
-        #   여기서 도는 테스트들은 shapely·numpy 밖에 안 쓴다" 였다.
-        #   **그 전제가 이미 거짓이었다** — 로컬 283 vs CI 216. 67개가 CI 에서
-        #   한 번도 안 돌았고, 그중 하나가 PR #40 이 2,468줄을 지운 것을 잡을
-        #   수 있었다.
-        #
-        #   그리고 이 목록은 **손으로 관리하는 두 번째 정본**이다. 새 모듈을
-        #   쓰는 검사가 들어올 때마다 여기를 같이 고쳐야 했고, 08-23 에
-        #   pyyaml 을 뒤늦게 붙인 것이 그 증거다. 이 저장소가 계보·판정·문서·
-        #   계층에서 반복해 배운 그것이다 — **정본이 둘이면 반드시 어긋난다.**
-        #
-        #   `uv.lock` 이 이미 저장소에 있다. 락을 쓰면 CI 와 로컬이 구조적으로
-        #   같아지고, 캐시가 걸리면 첫 실행 뒤로는 시간 근거도 사라진다.
-        #   `test_ci_env.py` 가 이 구조를 지킨다.
         run: uv sync --frozen --all-extras
 
+      - name: ★ 소유권 — 미소유 경로가 없는가
+        # 제일 먼저 돈다. 새 공용 파일이 소유자 없이 들어오는 것을
+        # 그 PR 에서 막는다. 목록을 미리 관리하지 않아도 되는 이유다.
+        run: uv run pytest tests/test_ownership.py -q
+
+      - name: ★ PR 본문 — 리뷰 지목이 있는가
+        # ★ 필수 체크 이름을 새로 만들지 않는다. 별도 job 으로 빼면
+        #   룰셋에 이름을 추가해야 하고, 그 이름이 존재하기 전까지
+        #   모든 PR 이 "Waiting for status to be reported" 로 영구 대기한다.
+        #   2026-08-27 에 실제로 그 데드락을 겪었다. 스텝으로 붙인다.
+        if: github.event_name == 'pull_request'
+        run: uv run python tools/pr_body_check.py
 
       - name: 커밋 정책
-        # ★ pre-commit 훅을 안 쓰는 사람·다른 기계를 여기서 막는다.
-        #   훅은 로컬 설정이라 클론에 자동 적용되지 않는다.
         run: uv run python tools/commit_policy.py --tracked
 
       - name: 인코딩·개행
-        # ★ .gitattributes 는 커밋 시점에만 개입한다. 이미 들어온 것은
-        #   못 잡는다. BOM 이 붙은 CSV 는 첫 컬럼명이 '\ufeffw_ngi' 가
-        #   되고, 그것을 아무도 모른 채 파이프라인이 돈다.
         run: uv run python tools/encoding_check.py
 
-      - name: 파이썬 린트
+      - name: 파이썬 린트 (공용 최소 룰셋)
+        # pyproject 의 [tool.ruff.lint] 그대로. 엄격판은 strict job 이 돈다.
         run: uv run ruff check src tools tests
 
       - name: JS 문법 검사 (클래식 스크립트)
-        # config.js 처럼 모듈이 아닌 파일만 여기서 본다.
-        # ★ web/js/**(ES 모듈)은 `node --check` 로 검사되지 않는다 —
-        #   Node 는 .js 를 CommonJS 로 읽고 export 에서 실패하면 조용히
-        #   넘어간다. 실측: `export const a=1; const b={{{;` → 종료코드 0.
-        #   모듈은 아래 js_graph_check 가 --input-type=module 로 본다.
         run: |
           find web -maxdepth 1 -name '*.js' -print0 \
             | xargs -0 -r -n1 -I{} sh -c 'node --check "{}" && echo "OK  {}"'
 
       - name: JS 부팅 스모크
-        # ★ 문법·그래프 검사가 통과해도 실행하면 죽는 경우가 있다.
-        #   app.js 분리 중 실제로 2건 나왔다(모듈 최상단 부수효과 ·
-        #   스코프를 넘어간 상수 참조). 자세한 것은 도구 헤더 참조.
         run: |
           npm install --no-save jsdom
           node tools/web_boot_check.mjs
 
       - name: JS 모듈 그래프 검사
-        # ★ app.js 1,260줄을 web/js/ 로 쪼갠 뒤 필요해졌다. 파일이 늘면
-        #   순환 import 가 생기고, 브라우저에서는 그것이 "지도가 안 뜬다"로만
-        #   보인다. 문법 검사로는 안 잡힌다.
         run: node tools/js_graph_check.mjs
 
       - name: web/data 용량 검사
@@ -118,31 +105,70 @@ jobs:
             exit 1
           fi
 
-      - name: web/data 계보 검사
-        # ★ 신설. web/data 는 publish_web.py 산출물인데 계보가 없었다.
-        #   ★ 2026-08-22. 이 검사가 오늘 처음 돌았다(CI 가 main 에서만
-        #     돌고 실제 작업은 gis 였다). 켜자마자 web/data 와 매니페스트가
-        #     어긋난 것을 잡았다. 원인은 tools/web_manifest.py 를 사람이
-        #     따로 돌려야 하는 구조였고, 이제 publish 가 직접 쓴다.
-        #   data/processed/_manifest.json 은 source_sha256 까지 박아놨으면서
-        #   표출 계층에서 그 원칙이 끊겼다. R5(생성물은 입력 지문으로 관리)의
-        #   구멍이다. 타일이 어느 정사영상에서 나왔는지 기록이 없었다.
-        run: |
-          if [ -f web/data/_manifest.json ]; then
-            uv run python tools/web_manifest.py --check
-          else
-            echo "::warning::web/data/_manifest.json 없음 — publish_web.py 실행 필요"
-          fi
-
-      - name: web/data 계약 검증
+      - name: 계약 테스트 — 파트 경계
+        # ★ 여기가 CV·API 파트가 GIS 코드를 안 보고 붙을 수 있는 근거다.
         run: uv run pytest tests/test_contract.py -v
 
-      - name: 방어 로직 · 문서 규약 · 저장소 위생
-        # ★ 2026-08-26. 파일을 열거하던 것을 전량으로 바꿨다. `test_doc_style`
-        #   이 MASTER §0-1 의 강제자로 지목돼 있는데 CI 가 부르지 않았고,
-        #   `test_web_ownership` 등 6개도 같은 상태였다. 열거식은 테스트가
-        #   늘 때마다 여기를 고쳐야 하고, 안 고치면 조용히 빠진다.
+      - name: 전체 테스트
         run: uv run pytest tests/ -q
+
+  # ── 단독 소유 경로만. 강도를 유지하는 자리 ───────────────────
+  contract-strict:
+    name: contract-strict
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: 의존성
+        run: uv sync --frozen --all-extras
+
+      - name: 검사 범위 표시
+        # ★ 범위가 0건이면 이 job 은 아무것도 안 하고 초록불이 된다.
+        #   tests/test_ownership.py::test_strict_scope_is_not_empty 가
+        #   그것을 막지만, 여기서도 눈에 보이게 찍는다.
+        run: |
+          N=$(uv run python tools/owned_paths.py --py-only | wc -l)
+          echo "엄격 검사 대상 ${N}개 파일"
+          uv run python tools/owned_paths.py --py-only | head -40
+          test "$N" -gt 0 || { echo "::error::엄격 검사 대상이 0건이다"; exit 1; }
+
+      - name: 엄격 린트
+        # ★ per-file-ignores 는 규칙을 **약하게** 하는 방향이라
+        #   반대 용도로 못 쓴다. 그래서 파일 목록을 넘겨 별도 실행한다.
+        #   ANN·D 는 지금 코드베이스와 안 맞아 뺀다. 나머지는 전부 켠다.
+        run: |
+          FILES=$(uv run python tools/owned_paths.py --py-only)
+          test -n "$FILES" || exit 0
+          # ★ 2026-08-30. `--select ALL` 을 폐기했다.
+          #
+          #   재보니 1,694건이었고 상위 5개가 전부 오탐이었다 —
+          #   S101 445(테스트의 assert) · PLC0415 197(의도된 지연 import) ·
+          #   PLR2004 142(params.py 가 정본인 상수) · N806 121(수학 관례 대문자) ·
+          #   CPY001 101(안 쓰기로 한 저작권 헤더).
+          #   규칙이 코드베이스를 못 따라간 것이지 코드가 나쁜 것이 아니다.
+          #
+          #   그래서 --ignore 110개짜리 손대장으로 덮었고, 그것이 곧
+          #   "검사가 죽은 채 뜨는 초록불" 이었다. 8-27 의 한시 완화가 그것이다.
+          #
+          #   **끌 것을 나열하지 않고 켤 것을 고른다.** 손대장 110 → 8 이 되고
+          #   남는 15건은 전부 실제 버그이거나 명백한 개선이었다 —
+          #   DTZ011 은 어제 계약에서 막은 시간대 누락 버그가 코드에도 있던 것이다.
+          uv run ruff check $FILES \
+            --select B,RUF,PTH,I,UP,DTZ \
+            --ignore RUF001,RUF002,RUF003,PTH123,RUF005,RUF007,RUF059,RUF100
+
+      - name: 문서 규약 · 재현성
+        run: uv run pytest tests/test_doc_style.py tests/test_reproducibility.py -q
+
+      - name: 방어 로직 · 계보
+        run: uv run pytest tests/test_guards.py tests/test_declaration_sync.py -q
 
       - name: 문서 숫자 대조
         run: |
@@ -151,3 +177,4 @@ jobs:
           else
             echo "data/processed 없음 — 로컬에서 확인할 것"
           fi
+

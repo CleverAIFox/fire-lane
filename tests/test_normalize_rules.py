@@ -30,12 +30,14 @@ import re
 from pathlib import Path
 
 from firelane import normalize_raw as N
+from firelane import providers
 
 ROOT = Path(__file__).resolve().parent.parent
 
 # main() 이 지역 사본에 붙이는 통과 규칙. 값이 갈리면 안 되므로 여기 한 번만 적는다.
-ORG = {"juso", "ngii", "its", "sbiz", "safety", "gjcity",
-       "nsdi", "vworld", "eais"}
+#  ★ 목록을 여기 적지 않는다. 정본은 layers.raw.providers 다.
+#    test_provider_registry 가 사본을 금지한다.
+ORG = providers.all()
 EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
 
 

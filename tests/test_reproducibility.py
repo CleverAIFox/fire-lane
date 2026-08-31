@@ -170,13 +170,21 @@ def test_no_fifth_doc():
     이 규칙은 원래 "셋뿐이다" 였고 DECISIONS 가 그것을 어기고 생겼다.
     규칙을 고쳤으니 이제는 지킨다.
     """
+    # ★ 2026-08-31. 종전에는 `docs/*.md` 만 셌다(비재귀). 아래 저장소 전수
+    #   검사는 skip_dir 에 "docs" 가 있어 docs/ 를 통째로 건너뛴다. 그래서
+    #   `docs/_patch/` 가 두 검사 **사이로** 빠져나가 규칙 밖에서 살았다 —
+    #   PLAN 에 이미 흡수된 사본 셋이 남았고, 그중 #31 · #34 는 PLAN 이
+    #   2026-08-26 에 기각·정정한 옛 판정을 그대로 들고 있었다.
+    #   한 항목이 두 곳에 있으면 한쪽만 고치는 날이 온다 — 그날이 왔다.
+    #   `glob` → `rglob` 으로 하위 폴더까지 본다.
     allowed = {"MASTER.md", "PLAN.md", "DECISIONS.md"}
-    found = {p.name for p in (ROOT / "docs").glob("*.md")}
-    extra = sorted(found - allowed)
+    extra = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "docs").rglob("*.md")
+                   if p.name not in allowed or p.parent != ROOT / "docs")
     assert not extra, (
         f"다섯 번째 문서: {extra}\n"
         "  MASTER(현재) · PLAN(남은 일) · DECISIONS(왜 그렇게 됐나) 중\n"
-        "  어디의 절인지 정해서 옮겨라.")
+        "  어디의 절인지 정해서 옮겨라.\n"
+        "  이미 흡수했다면 사본을 지워라 — 남겨두면 둘이 갈라진다.")
 
     # ★ 2026-08-23. 종전에는 `docs/` 만 셌다. 그래서 `data/raw/README.md`
     #   (그라운드 룰 · 계층 · 백업 · 인벤토리 · 라이선스 227줄)와
@@ -191,6 +199,10 @@ def test_no_fifth_doc():
         "web/README.md",                # UI 담당용 실행 안내
         "src/firelane/README.md",       # 대장 작성법 · kind 표
         "data/field/fieldsheet.md",     # 야장. 들고 나가는 종이다
+        # ★ 2026-08-27. 규약을 서술하는 문서가 아니라 **양식**이다.
+        #   GitHub 이 PR 화면에 자동으로 채워 넣는 폼이고, 내용의 정본은
+        #   MASTER §12 다. 강제자는 tools/pr_body_check.py 가 따로 든다.
+        ".github/pull_request_template.md",
     }
     # ★ 백업·캐시는 저장소 내용이 아니다. `.gitignore` 가 이미 빼는 것들이고
     #   여기서도 같은 선을 긋는다 — 안 그러면 배포 스크립트가 만든

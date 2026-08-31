@@ -103,7 +103,7 @@ def main() -> int:
     for p in cand:
         print(f"  {p['seg_uid']:24s} {str(p['road_name'])[:15]:16s}"
               f" {p['width_min_m']:5.2f} {p['length_m']:6.1f}m"
-              f" {str(p['road_bt_m']):>6s}  {p['verdict']}")
+              f" {p['road_bt_m']!s:>6s}  {p['verdict']}")
     print("\n  대조군도 같이 보라 — 결손만 보면 '원래 그런가보다'로 끝난다.")
     for p in sorted(narrow_ok, key=lambda p: -p["length_m"])[:3]:
         print(f"  {p['seg_uid']:24s} {str(p['road_name'])[:15]:16s}"

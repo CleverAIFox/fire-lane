@@ -58,6 +58,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import sys
 from datetime import datetime, timedelta, timezone
@@ -149,8 +150,64 @@ def _yaml() -> dict:
     return yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
 
 
-def dataset_globs() -> dict[str, str]:
-    return {k: (v or {}).get("file", "") for k, v in _yaml().get("datasets", {}).items()}
+def dataset_globs() -> dict[str, list[str]]:
+    """대장 키 → 이 소스가 주장하는 raw 경로 **전부**.
+
+    ★ 2026-08-27. 종전에는 `file` 단수만 냈다. 그래서 `ext: [hwp, pdf]`
+      처럼 양판을 가진 소스의 `.pdf` 가 **영원히 고아**로 남아 매번
+      격리 대상이 됐다. 2026-08-25 에 근거로 인용한 PDF 두 건이 그렇게
+      내려갔다.
+
+      대장이 `files` 리스트를 갖고 있는데 소비자가 안 읽는 상태였다 —
+      **선언은 갱신됐는데 읽는 쪽이 안 따라간** 것이고, 오늘 반복된
+      바로 그 형태다.
+
+    ★ `ext` 가 있으면 그것으로 파생한다. `files` 를 손으로 고치고
+      `ext` 를 잊는 일이 없도록, 재료가 있으면 재료가 이긴다.
+    """
+    out: dict[str, list[str]] = {}
+    for k, v in _yaml().get("datasets", {}).items():
+        v = v or {}
+        derived = _derive_files(v)
+        if derived:
+            out[k] = derived
+            continue
+        fs = v.get("files") or ([v["file"]] if v.get("file") else [])
+        out[k] = [str(x) for x in fs]
+    return out
+
+
+def _derive_files(e: dict) -> list[str]:
+    """재료(stem·scope·vintage·ext·parts) → raw 경로. 없으면 빈 목록.
+
+    ★ [B] 의 핵심. `file` 은 파생값이고 재료가 정본이다. 재료가 갖춰진
+      항목은 여기서 만들며, 그러면 대장과 실물이 어긋날 수 없다.
+    """
+    stems = e.get("stems") or ([e["stem"]] if e.get("stem") else [])
+    exts = e.get("ext") or []
+    scope = e.get("scope")
+    if not (stems and exts and scope):
+        return []
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", str(e.get("updated") or ""))
+    vt = "".join(m.groups()) if m else str(e.get("vintage") or "")
+    # ★ **8자리만 파생한다.** `vintage: 2025` 처럼 연도만 있으면 판이
+    #   특정되지 않는다. 그런데도 파생하면 `..._2025.csv` 한 개를 만들고,
+    #   실물 두 판(20240108 · 20250226)이 통째로 고아가 된다 —
+    #   그러면 `--quarantine` 이 **살아 있는 파일을 내리려 든다**(08-27).
+    #
+    #   판이 여럿인 소스(`csv_table_multi`)는 글롭이 정답이다. 앞으로도
+    #   판이 늘어나므로 목록을 손으로 유지하는 편이 더 나쁘다.
+    if not re.fullmatch(r"\d{8}", vt):
+        return []
+    parts = e.get("parts") or [None]
+    out = []
+    for st in stems:
+        prov = str(st).split("_", 1)[0]
+        for x in exts:
+            for pt in parts:
+                bits = [str(st), str(scope), vt] + ([str(pt)] if pt else [])
+                out.append(f"{prov}/{'_'.join(bits)}.{x}")
+    return sorted(set(out))
 
 
 def retired_names() -> dict[str, str]:
@@ -169,8 +226,15 @@ def retired_names() -> dict[str, str]:
     for k, v in (_yaml().get("retired") or {}).items():
         v = v or {}
         why = (v.get("reason") or v.get("what") or k).strip().splitlines()[0]
-        f = v.get("file")
-        if f:
+        # ★ 2026-08-31. 종전엔 `file:` 만 읽었다. 08-27 에 같은 배포물의
+        #   다른 포맷을 담으려고 `files:` 를 도입했는데 이쪽을 안 고쳤다.
+        #   그래서 mas_optional 의 pdf 와 kfs_paint_marking 전체가
+        #   폐기 등재돼 있는데도 **매 스캔마다 "판단 필요" 로 떴다.**
+        #   사유는 적혀 있었고 도구가 그것을 안 읽은 것이다.
+        #
+        #   조회기의 정본은 firelane.ledger.globs 하나다. 따로 구현하지 않는다.
+        from firelane import ledger as _led
+        for f in _led.globs(v):
             out[Path(str(f)).name] = why
     return out
 
@@ -189,15 +253,18 @@ def judge() -> tuple[dict, list[str], list[Path]]:
     matched: dict[str, list[Path]] = {}
     claimed: set[Path] = set()
     missing: list[str] = []
-    for k, g in globs.items():
-        if not g:
-            continue
-        hits = sorted(RAW.glob(g)) if RAW.is_dir() else []
+    for k, gs in globs.items():
+        hits = []
+        for g in (gs if isinstance(gs, list) else [gs]):
+            if not g:
+                continue
+            hits += sorted(RAW.glob(g)) if RAW.is_dir() else []
+        hits = sorted(set(hits))
         if hits:
             matched[k] = hits
-            claimed |= set(hits)
+            claimed.update(hits)
         else:
-            missing.append(k)
+            missing.append((k, ", ".join(gs) if isinstance(gs, list) else gs))
     orphan = [p for p in raw_files() if p not in claimed]
     return matched, missing, orphan
 
@@ -365,6 +432,35 @@ def cmd_stage(dry: bool) -> int:
         print(col("  판단이 끝났으면 landing 원본도 정리하라(--prune-landing 은", "d"))
         print(col("  격리본의 원본을 일부러 남긴다 — 유일본이 되지 않게).", "d"))
 
+    # ── 이름 게이트 ───────────────────────────────────────────
+    # ★ 2026-08-26 신설. 종전에는 raw 파일명이 규칙에 맞는지 **아무도 안
+    #   봤다.** `intake.py --audit` 이 있었지만 사람이 쳐야 보이고,
+    #   `test_intake_rules` 는 순수 함수만 봐서 실물을 모른다.
+    #   CI 도 raw 가 없어 못 본다 — **감사는 있고 게이트가 없었다.**
+    #
+    #   이 저장소가 반복해 배운 형태 그대로다: 규약은 문서에 있고 강제하는
+    #   검사가 없다. 여기가 raw 실물을 보는 유일한 자리이므로 여기에 단다.
+    #
+    # ★ 막지 않고 말한다. 편입을 거부하면 대장에 없는 새 소스를 받을 때마다
+    #   막히고, 그러면 사람이 게이트를 끄는 법을 배운다. 시끄럽게 세되
+    #   흐름은 끊지 않는다 — `--strict` 를 준 사람만 종료코드를 받는다.
+    from firelane import naming as _nm
+    _bad = []
+    for q in raw_files():
+        _rel = str(q.relative_to(RAW))
+        _folder, _, _fn = _rel.partition("/")
+        _ok, _msgs = _nm.check(_fn, folder=_folder)
+        if _msgs:
+            _bad.append((_rel, _msgs[0].splitlines()[0]))
+    if _bad:
+        print(col(f"\n★ 이름 규칙 위반 {len(_bad)}건", "y"))
+        for _rel, _m in _bad[:12]:
+            print(f"  {_rel}\n      {col(_m, 'd')}")
+        if len(_bad) > 12:
+            print(col(f"  … 외 {len(_bad) - 12}건", "d"))
+        print(col("  판단을 대장에 적어라 — scope · part · authority.", "d"))
+        print(col("  적고 나면 migrate_names.py 가 개명을 따라 한다.", "d"))
+
     print(col("\n── 편입 후 sha 기록", "c"))
     return cmd_verify()
 
@@ -440,12 +536,51 @@ def cmd_prune_landing(dry: bool) -> int:
 
 
 # ── 격리 ───────────────────────────────────────────────────────
-def cmd_quarantine(dry: bool) -> int:
+def cmd_quarantine(dry: bool, force: bool = False) -> int:
+    """★ **"대장 밖" 과 "폐기 대상" 은 다르다.**
+
+    종전에는 대장이 안 잡는 파일을 전부 격리 대상으로 봤다. 그런데
+    대장은 계속 불완전하다 — 새 판이 들어오거나, 양판(`.hwp`/`.pdf`)이
+    생기거나, `ext` 가 반쪽만 기록되면 살아 있는 파일이 대장 밖이 된다.
+
+    2026-08-27 에 두 번 났다 —
+      · 08-25 에 근거로 인용한 PDF 두 건
+      · 불법주정차 두 판 (vintage 가 연도만이라 파생이 어긋남)
+
+    그리고 이것이 **순환**이다. `ledger_stem` 이 실물을 읽어 대장을
+    고치고, 그 대장으로 격리가 실물을 판정한다. 한쪽이 불완전하면
+    다른 쪽이 실물을 지우려 든다.
+
+    ★ 끊는 법 — 자동 판정과 파괴적 행위를 가른다.
+
+        retired 에 근거가 있다   판단이 끝났다. 내려도 안전하다
+        대장에 없다              대장이 **아직 모르는** 것이다.
+                                 보고만 하고 내리지 않는다
+
+      후자를 내리려면 `--force` 를 준다. 그 전에 대장에 적는 것이
+      정상 경로다.
+    """
     _, _, orphan = judge()
     if not orphan:
         print(col("격리할 것이 없다.", "g"))
         return 0
-    print(col("── 격리 (삭제하지 않는다)", "c"))
+    known = retired_names()
+    ready = [p for p in orphan if p.name in known]
+    unsure = [p for p in orphan if p.name not in known]
+
+    if unsure:
+        print(col(f"\n★ 대장에 없다 {len(unsure)}건 — 내리지 않는다", "y"))
+        for p in unsure:
+            print(f"  {p.relative_to(RAW)}")
+        print(col("  폐기가 아니라 **대장이 아직 모르는** 것이다.", "d"))
+        print(col("  datasets 나 retired 에 적어라. 그래도 내리려면 --force", "d"))
+    if force and unsure:
+        print(col("  --force 다. 대장에 없는 것도 내린다.", "y"))
+        ready += unsure
+    if not ready:
+        return 0
+    orphan = ready
+    print(col("\n── 격리 (삭제하지 않는다)", "c"))
     for p in orphan:
         dst = QUARANTINE / p.relative_to(RAW)
         print(f"  {col('격리', 'y')}  {p.relative_to(RAW)}  →  {dst.relative_to(QUARANTINE.parent)}")
@@ -460,11 +595,18 @@ def cmd_quarantine(dry: bool) -> int:
 
 
 def main() -> int:
+    # ★ 관문. 레이크가 없으면 여기서 멈춘다 — 판정만 하고 안 막으면
+    #   엉뚱한 곳에 계층을 만든다(2026-08-27).
+    from firelane.paths import require_lake
+    require_lake(need=("raw",))
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage", action="store_true", help="landing → raw 편입")
     ap.add_argument("--verify", action="store_true", help="raw sha 대조")
     ap.add_argument("--prune-landing", action="store_true", help="중복 원본 삭제")
     ap.add_argument("--quarantine", action="store_true", help="대장에 없는 파일 격리")
+    ap.add_argument("--force", action="store_true",
+                    help="대장에 없는 것도 격리한다. ★ 먼저 대장에 적어라")
     ap.add_argument("--yes", action="store_true", help="실제로 옮기거나 지운다")
     a = ap.parse_args()
 
@@ -492,7 +634,7 @@ def main() -> int:
     if a.prune_landing:
         return cmd_prune_landing(not a.yes)
     if a.quarantine:
-        return cmd_quarantine(not a.yes)
+        return cmd_quarantine(not a.yes, force=a.force)
     return cmd_judge()
 
 

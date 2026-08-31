@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-26T09:26:06+09:00",
+  "generated_at": "2026-08-31T09:52:52+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
@@ -11,8 +11,8 @@
       "bytes": 5046
     },
     "_manifest.json": {
-      "sha256": "26a500d264d19020639494cd7aeb4e75ad383310773ddd3d5ca67114c71a0e3d",
-      "bytes": 63997
+      "sha256": "c3813bfdbf92ae7da66841d5a85701d3aa3afd3ae7a2873ffa07249d6944b6de",
+      "bytes": 67285
     }
   },
   "files": {
@@ -29,8 +29,8 @@
       "bytes": 39189
     },
     "hydrants.geojson": {
-      "sha256": "102422bc81a63bc75a42d5662cf785e686ff75fbdb350d315110f343ecd40b23",
-      "bytes": 5926
+      "sha256": "c7f1b2cec072e8e4cc927dd553235a50770fe471d46efa466d9055dd984ae2fa",
+      "bytes": 76964
     },
     "lightpoles.geojson": {
       "sha256": "9293409249ba470cb0f2366125bc696b08b8da735b96bae0c3596a8d6c8c2fe3",
@@ -108,5 +108,5 @@
     }
   },
   "tiles_digest": "aac821e4051f7be7",
-  "total_mb": 28.68
+  "total_mb": 28.75
 }

@@ -39,7 +39,7 @@ import yaml
 from pyproj import Transformer
 from shapely import make_valid
 
-from firelane import manifest
+from firelane import ledger, manifest, prep
 from firelane.paths import PROCESSED, RAW, ROOT
 
 OUT = PROCESSED
@@ -172,10 +172,34 @@ def load_csv_points(p: Path, xcol: str, ycol: str, enc: str, filt=None):
                             crs=CRS_W)
 
 
+def paths_for(key: str, e: dict) -> list[Path]:
+    """이 소스의 실물 경로. **입력 계층을 여기 한 곳에서 가른다.**
+
+    ★ 2026-08-31. 종전에는 raw 하드코딩이 두 곳에 박혀 있었다.
+      `layers.norm.migrated` 를 채워도 아무 일이 안 났고, `golden.py check` 는
+      `segments.geojson` 하나만 보므로 **통과했다**(DECISIONS §77).
+      선언이 실물보다 앞선 것이다. `tests/test_norm_wiring.py` 가 그 상태를
+      이제 빨간불로 만든다.
+
+    글롭은 raw 에서 푼다. raw 는 절대 수정하지 않으므로 항상 전량이 있고,
+    norm 은 같은 상대 경로에 정규화 사본을 둔다. 상대 경로를
+    `prep.source_path()` 에 넘기면 이관 여부에 따라 갈린다 — 선언은 됐는데
+    실물이 없으면 거기서 `FileNotFoundError` 로 죽는다. **조용히 raw 로
+    떨어지지 않는 것**이 이 함수의 요점이다.
+    """
+    if key not in prep.migrated():
+        return ledger.paths_of(e, RAW)
+    rels = [q.relative_to(RAW).as_posix() for q in ledger.paths_of(e, RAW)]
+    if not rels:
+        rels = [g for g in ledger.globs(e) if not any(c in g for c in "*?[")]
+    return sorted({prep.source_path(key, r) for r in rels})
+
+
 def build(key: str, e: dict, tmp: Path) -> dict:
-    hits = sorted(RAW.glob(e["file"]))
+    pats = ledger.globs(e)
+    hits = paths_for(key, e)
     if not hits:
-        return {"key": key, "status": "MISSING", "file": e["file"]}
+        return {"key": key, "status": "MISSING", "files": pats}
     src = hits[0]
     # ★ 2026-08-23. glob 이 여러 개를 잡으면 **정렬 첫 번째**가 쓰인다.
     #   날짜가 파일명에 있으므로 그것은 대개 **옛 판**이다.
@@ -195,8 +219,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     #   실전에서 5종이 경고를 냈고 그중 4종이 오탐이었다.
     #   **매번 뜨는 경고는 아무도 안 읽는다** — 그러면 진짜 하나를 놓친다.
     #   `hits[0]` 만 쓰는 kind 에서만 말한다.
-    SINGLE_PICK = {"shp_zip", "csv_points", "csv_point", "csv_points_in_zip",
-                   "dbf_in_zip", "json_points", "csv_table"}
+    SINGLE_PICK = ledger.SINGLE_PICK      # 정본은 ledger. 사본을 두지 않는다
     if len(hits) > 1 and e["kind"] in SINGLE_PICK:
         rest = ", ".join(x.name for x in hits[1:])
         print(f"  ★ {key}: 대장 glob 이 {len(hits)}개를 잡는데 "
@@ -204,34 +227,105 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         print(f"     쓰이지 않는 것: {rest}")
         print("     날짜가 파일명에 있으므로 정렬 첫 번째는 대개 **옛 판**이다.")
         print("     sources.yaml 의 file 을 하나로 좁혀라.")
-    rec = {"key": key, "source_file": e["file"], "source_sha256": sha_of(src),
+
+    # ── FL_EXT_COLLISION ─────────────────────────────────────
+    # 줄기가 같고 확장자만 다른 파일이 raw 에 함께 있으면, 어느 것을
+    # 읽는지가 **사전순 우연**으로 정해진다. kind 와 무관하다.
+    #
+    # 2026-08-25 에 KFS 규격서를 PDF 판으로 다시 읽고 결론을 뒤집었는데,
+    # 대장이 `..._20251224.*` 라 두 판을 한 항목으로 보고 있었다.
+    # raw_only 는 위 SINGLE_PICK 경고 밖이라 아무 말도 안 났을 것이다.
+    # ★ 2026-08-30. `.xml` `.prj` `.tfw` 등은 사이드카다 — 본체와 함께
+    #   오는 부속이지 "포맷이 다른 별개 자산" 이 아니다. 종전에는
+    #   ortho 가 매 실행 4건을 오탐했고, 매번 뜨는 경고는 진짜 하나를
+    #   죽인다(바로 위 SINGLE_PICK 주석이 같은 이유로 적혀 있다).
+    SIDECAR = {".xml", ".prj", ".tfw", ".cpg", ".aux", ".ovr", ".meta"}
+    _stems = {}
+    for h in hits:
+        if h.suffix.lower() in SIDECAR:
+            continue
+        _stems.setdefault(h.name.rsplit(".", 1)[0], []).append(h.name)
+    for _st, _fs in _stems.items():
+        if len(_fs) > 1:
+            print(f"  ★ {key}: 확장자만 다른 동명 파일 {len(_fs)}개 — "
+                  f"{', '.join(sorted(_fs))}")
+            print(f"     사전순 첫 번째는 {sorted(_fs)[0]} 다.")
+            print("     포맷이 다르면 다른 자산이다. 대장을 files: + primary:")
+            print("     로 적어 못박아라(firelane.ledger 가 강제한다).")
+    crs = ledger.crs_of(e)
+    rec = {"key": key, "source_files": pats, "source_sha256": sha_of(src),
            "resolved": src.name,
            **({"ambiguous": [x.name for x in hits]} if len(hits) > 1 else {}),
            # csv_table / raw_only 는 좌표가 없다. crs 를 필수로 두면 거기서 죽는다.
-           "source_crs": e.get("crs", ""), "license": e.get("license", ""),
-           "url": e.get("url", "")}
+           # ★ license · url 은 대장에서 제거됐다. 빈 칸을 계보에 박으면
+           #   "출처 불명" 과 "출처를 안 적는 정책" 이 같은 모양이 된다.
+           "source_crs": crs}
     kind = e["kind"]
 
     if kind == "shp_zip":
-        g = load_shp_in_zip(src, e["layer"], e["crs"], e.get("encoding", "cp949"), tmp)
+        g = load_shp_in_zip(src, e["layer"], crs, e.get("encoding", "cp949"), tmp)
 
     elif kind == "shp_zip_multi":            # 수치지도 4도엽 병합
-        parts = []
-        for z in sorted(RAW.glob(e["file"])):
+        # ★ 2026-08-30. 종전에는 zip 하나당 shp 하나를 가정하고
+        #   `tmp/z.stem/e["layer"]` 한 장만 읽었다. `jijeok` 은 zip 하나
+        #   안에 shp 7장이 들어 있고 — 대장이 `parts` 로 그것을 이미
+        #   적고 있었다 — 첫 장만 읽혔다. 그 장이 BBOX 밖이라 0건이
+        #   나왔고 status 는 OK 였다. **970MB 를 읽고 초록불이 났다.**
+        #
+        #   선언이 있는데 읽는 곳이 없으면 그 선언은 주석이다.
+        #   여기서는 **실물을 세고 대장과 대조한다** — 이름 규칙을
+        #   코드에 박으면(`f"{stem}({n}).shp"`) 원본 명명이 바뀔 때
+        #   또 조용히 0건이 된다. 실물이 근거이고 대장이 기대치다.
+        _want = e["layer"]
+        _base = _want.rsplit(".", 1)[0]
+        parts, _read = [], []
+        for z in hits:
             with zipfile.ZipFile(z) as zf:
                 zf.extractall(tmp / z.stem)
-            p = tmp / z.stem / e["layer"]
-            parts.append(gpd.read_file(p, encoding=e.get("encoding", "utf-8")))
+            found = sorted(x for x in (tmp / z.stem).rglob("*")
+                           if x.suffix.lower() == ".shp"
+                           and x.name.rsplit(".", 1)[0].startswith(_base))
+            if not found:
+                raise FileNotFoundError(
+                    f"{z.name} 안에 {_want} 계열 shp 가 없다")
+            for p in found:
+                parts.append(gpd.read_file(
+                    p, encoding=e.get("encoding", "utf-8")))
+                _read.append(p.name)
+        # ★ 2026-08-31. 종전에는 **zip 하나마다** `len(found) != len(parts)`
+        #   를 봤다. `parts` 가 두 뜻으로 쓰이는 것을 못 본 것이다 —
+        #
+        #     jijeok      ['', '2'..'7']       zip 1개 **안의** shp 7장
+        #     ngii_road   ['gj9708','gj9712']  zip 2개의 **도엽 토큰**
+        #     ortho/dem   ['gj037'...]         같은 파일명 토큰(naming.part)
+        #
+        #   파일명 토큰이 다수이고 `naming.py` 가 `part` 를 그렇게 정의한다.
+        #   zip 단위로 대조하면 도엽이 여럿인 소스는 **구조적으로 항상**
+        #   실패한다(zip 2개 × 각 1장 → 1 != 2). 실제로 ngii_road ·
+        #   ngii_road_center 가 그렇게 죽었고 소비자가 11곳이다.
+        #
+        #   대조는 유지하되 **합계로** 본다. 조용히 덜 읽는 것을 막는다는
+        #   목적은 그대로고, 세는 단위만 zip → 전체로 옮긴다.
+        _decl = e.get("parts")
+        if _decl is not None and len(_read) != len(_decl):
+            raise ValueError(
+                f"{key}: 실물 shp 합계 {len(_read)}장 · 대장 parts "
+                f"{len(_decl)}개. 어느 쪽이 맞는지 사람이 정해야 한다 — "
+                f"수가 다르면 조용히 덜 읽는다 (zip {len(hits)}개: "
+                f"{', '.join(z.name for z in hits)})")
+        rec["parts_read"] = _read
+        print(f"  · {key}: zip {len(hits)} · shp {len(_read)}장 "
+              f"{sum(len(x) for x in parts):,}행")
         g = pd.concat(parts).pipe(gpd.GeoDataFrame, crs=parts[0].crs)
-        g = g.set_crs(e["crs"], allow_override=True)
-        b = bbox_in(e["crs"])
+        g = g.set_crs(crs, allow_override=True)
+        b = bbox_in(crs)
         g = g.cx[b[0]:b[2], b[1]:b[3]].copy()
         # ★ buffer(0) 은 폴리곤 자기교차 정리용이다. LineString 에 걸면
         #   빈 폴리곤이 되어 전멸한다. ngii_road_center(선)가 0건이던 원인이다.
         g["geometry"] = g.geometry.apply(make_valid)
         if g.geom_type.isin(("Polygon", "MultiPolygon")).any():
             g["geometry"] = g.geometry.buffer(0)
-        rec["source_sha256"] = ",".join(sha256(z)[:16] for z in sorted(RAW.glob(e["file"])))
+        rec["source_sha256"] = ",".join(sha256(z)[:16] for z in hits)
 
     elif kind in ("ngii1k", "ngii_1k", "shp_dir"):                  # 수치지형도 1:1,000 도엽 묶음
         # NGI(텍스트) / SHP 혼재라 GDAL 로 못 읽는다. ngii1k.py 가 파싱한다.
@@ -308,7 +402,11 @@ def build(key: str, e: dict, tmp: Path) -> dict:
                     f"내부: {[_kr(n) for n in z.namelist()[:5]]}")
             name = hits[0]
             parts = []
-            for c in pd.read_csv(io.TextIOWrapper(z.open(name), encoding="utf-8"),
+            for c in pd.read_csv(io.TextIOWrapper(z.open(name),
+                                     # ★ 대장의 encoding 을 읽는다.
+                                     #   종전 utf-8 하드코딩은 대장에
+                                     #   무엇을 적든 무시했다.
+                                     encoding=e.get("encoding", "utf-8")),
                                  chunksize=200_000, dtype=str, low_memory=False):
                 c[e["x_col"]] = pd.to_numeric(c[e["x_col"]], errors="coerce")
                 c[e["y_col"]] = pd.to_numeric(c[e["y_col"]], errors="coerce")
@@ -428,7 +526,24 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     else:
         raise ValueError(f"unknown kind: {kind}")
 
-    rec |= {"status": "OK"} | save(g, key)
+    info = save(g, key)
+    # ★ 2026-08-30. 종전에는 0건도 status: OK 였다. `jijeok` 이 970MB 를
+    #   읽고 0건을 내면서 초록불이었다 — 파일은 생겼고 mtime 은 새것이고
+    #   어떤 가드도 보지 못한다. 2026-08-18 gpkg 레이어 사고와 같은 형태다.
+    #
+    #   **조용히 덜 하는 것이 시끄럽게 죽는 것보다 나쁘다.** 0건이
+    #   정상인 소스가 있다면 대장에 선언하게 한다 — 코드가 봐주지 않는다.
+    _min = int((e.get("contract") or {}).get("scope_min", 1))
+    if info["features"] < _min:
+        rec |= {"status": "FAIL", **info,
+                "error": f"산출 {info['features']}건 < scope_min {_min}. "
+                         "좌표계·BBOX·필터를 확인하라. 0건이 정상이면 "
+                         "contract.scope_min 에 선언해라",
+                "outputs": []}
+        print(f"  ★ {key}: 산출 {info['features']}건 — scope_min {_min} 미달")
+        print(f"     source_crs={crs} · 읽은 것 {src.name}")
+        return rec
+    rec |= {"status": "OK"} | info
     rec["outputs"] = [f"{key}.geojson", f"{key}_5186.gpkg"]
     return rec
 
@@ -474,7 +589,7 @@ def main():
         if a.only and key not in a.only:
             continue
         if a.check:
-            hits = sorted(RAW.glob(e["file"]))
+            hits = paths_for(key, e)
             results.append({"key": key, "found": len(hits),
                             "sha256": [sha256(h)[:16] for h in hits]})
             print(f"[{'OK ' if hits else 'MISS'}] {key:20} {len(hits)}개")

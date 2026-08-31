@@ -388,8 +388,7 @@ def _cli() -> int:
         for name, rec in lg.items():
             for tag in ("inputs", "outputs"):
                 for k, was in rec.get(tag, {}).items():
-                    now = fingerprint(Path(k) if Path(k).is_absolute()
-                                      else Path(k))
+                    now = fingerprint(Path(k))
                     if was is not None and not _same(was, now):
                         print(f"! {name}.{tag}  {k}\n    기록 {was}\n    현재 {now}")
                         bad += 1

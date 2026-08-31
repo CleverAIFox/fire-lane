@@ -25,6 +25,8 @@ import re
 import pytest
 
 # 개명 과도기 동안 양쪽을 받는다. 개명이 끝나면 위 줄만 남긴다.
+from firelane import providers
+
 try:
     from firelane import place_raw as M
 except ImportError:  # pragma: no cover
@@ -56,8 +58,9 @@ PRODUCED = [
     "eais/eais_bldg_ledger_gjdonggu_20260817.csv",
 ]
 
-ORG = {"juso", "ngii", "its", "sbiz", "safety", "gjcity",
-       "nsdi", "vworld", "eais"}
+#  ★ 목록을 여기 적지 않는다. 정본은 layers.raw.providers 다.
+#    test_provider_registry 가 사본을 금지한다.
+ORG = providers.all()
 EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
 
 
