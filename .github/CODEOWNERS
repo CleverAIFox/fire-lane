@@ -121,7 +121,7 @@
 
 
 # ── 8. 운영 문서 ────────────────────────────────────────────────
-# docs/ops.html 은 MASTER §12 의 **표시용 사본**이다.
+# docs/workflow.html 은 MASTER §12 의 **표시용 사본**이다.
 # web/config.js 가 seg/params.py 의 사본인 것과 같은 관계(R3).
-/docs/ops.html           @woongtopia/gis                                    # !strict
+/docs/workflow.html           @woongtopia/gis                                    # !strict
 

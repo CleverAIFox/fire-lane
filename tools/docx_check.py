@@ -38,7 +38,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GOLDEN = ROOT / "data/golden/segments.fingerprint.json"
+from firelane import paths as _p
+
+GOLDEN = _p.GOLDEN / "segments.fingerprint.json"
 
 # 폐기된 이름. 문서에 남아 있으면 독자가 그대로 따라 한다.
 RETIRED = {

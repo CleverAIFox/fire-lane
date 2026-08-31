@@ -39,7 +39,7 @@ import yaml
 from pyproj import Transformer
 from shapely import make_valid
 
-from firelane import ledger, manifest
+from firelane import ledger, manifest, prep
 from firelane.paths import PROCESSED, RAW, ROOT
 
 OUT = PROCESSED
@@ -172,9 +172,32 @@ def load_csv_points(p: Path, xcol: str, ycol: str, enc: str, filt=None):
                             crs=CRS_W)
 
 
+def paths_for(key: str, e: dict) -> list[Path]:
+    """이 소스의 실물 경로. **입력 계층을 여기 한 곳에서 가른다.**
+
+    ★ 2026-08-31. 종전에는 raw 하드코딩이 두 곳에 박혀 있었다.
+      `layers.norm.migrated` 를 채워도 아무 일이 안 났고, `golden.py check` 는
+      `segments.geojson` 하나만 보므로 **통과했다**(DECISIONS §77).
+      선언이 실물보다 앞선 것이다. `tests/test_norm_wiring.py` 가 그 상태를
+      이제 빨간불로 만든다.
+
+    글롭은 raw 에서 푼다. raw 는 절대 수정하지 않으므로 항상 전량이 있고,
+    norm 은 같은 상대 경로에 정규화 사본을 둔다. 상대 경로를
+    `prep.source_path()` 에 넘기면 이관 여부에 따라 갈린다 — 선언은 됐는데
+    실물이 없으면 거기서 `FileNotFoundError` 로 죽는다. **조용히 raw 로
+    떨어지지 않는 것**이 이 함수의 요점이다.
+    """
+    if key not in prep.migrated():
+        return ledger.paths_of(e, RAW)
+    rels = [q.relative_to(RAW).as_posix() for q in ledger.paths_of(e, RAW)]
+    if not rels:
+        rels = [g for g in ledger.globs(e) if not any(c in g for c in "*?[")]
+    return sorted({prep.source_path(key, r) for r in rels})
+
+
 def build(key: str, e: dict, tmp: Path) -> dict:
     pats = ledger.globs(e)
-    hits = ledger.paths_of(e, RAW)
+    hits = paths_for(key, e)
     if not hits:
         return {"key": key, "status": "MISSING", "files": pats}
     src = hits[0]
@@ -566,7 +589,7 @@ def main():
         if a.only and key not in a.only:
             continue
         if a.check:
-            hits = ledger.paths_of(e, RAW)
+            hits = paths_for(key, e)
             results.append({"key": key, "found": len(hits),
                             "sha256": [sha256(h)[:16] for h in hits]})
             print(f"[{'OK ' if hits else 'MISS'}] {key:20} {len(hits)}개")
@@ -605,6 +628,26 @@ def main():
         _n = sum(1 for _ in tmp.rglob("*") if _.is_file())
         print(f"  · .work 유지 {_n:,}파일 — 다음 실행이 빨라진다 "
               f"(정리: uv run python tools/tidy.py --yes)")
+
+    # ★ 2026-08-31. **`--check` 는 조회다. 아무것도 쓰지 않는다.**
+    #
+    #   종전에는 `if a.check:` 가 루프를 `continue` 로 건너뛸 뿐이었고,
+    #   아래 쓰기 경로로 그대로 떨어졌다. `--check` 의 레코드는
+    #   `key·found·sha256` 셋뿐이라 **계보 27건을 얕은 판으로 덮었다.**
+    #   그날 커밋에 `rewrite _manifest.json (95%)` 가 찍혔고 `golden` 은
+    #   L1·L2·L3 전부 OK 를 냈다 — `segments.geojson` 하나만 읽으니
+    #   입력 계보가 죽은 것을 모른다. 복구에 전량 재실행 317초를 태웠다.
+    #
+    #   같은 형태를 이 파일이 이미 두 번 겪었다 — `--only` 가 대장을
+    #   통째로 덮은 것(08-22), 최상위 키를 날린 것(08-25). 셋 다
+    #   **조회·부분실행이 전체 상태를 파괴**한 것이다.
+    #   강제자 — `tests/test_ledger_outputs.py::test_check_does_not_write`
+    if a.check:
+        _miss = [r["key"] for r in results if not r["found"]]
+        print(f"\n조회만 했다 — {len(results)}종 · 없음 {len(_miss)}종"
+              + (f": {', '.join(_miss)}" if _miss else ""))
+        print("  대장은 건드리지 않았다. 갱신하려면 --check 없이 돌린다.")
+        return 0
 
     OUT.mkdir(parents=True, exist_ok=True)
     man = OUT / "_manifest.json"
@@ -663,4 +706,7 @@ def main():
 
 
 if __name__ == "__main__":
+    from firelane.guards import warn_direct_call
+
+    warn_direct_call(__name__)
     main()

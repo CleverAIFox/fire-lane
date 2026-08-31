@@ -197,13 +197,95 @@ def test_committed_exceptions_match_gitignore_negations():
 
 
 def test_unimplemented_layers_declare_it():
-    """`norm` 처럼 아직 없는 계층은 status 로 밝힌다.
+    """계층의 `status` 와 `migrated` 가 서로를 배반하지 않는가.
 
     미구현을 현황처럼 적으면 다음 사람이 있는 줄 알고 쓴다.
     격차는 산문이 아니라 데이터여야 한다.
+
+    ★ 2026-08-31. 종전에는 `not implemented("norm")` 과 `migrated == []`
+      을 못 박아 **norm 이 영원히 미구현일 것**을 가정했다. 배선하고
+      첫 한 건(`cctv`)을 옮기자 이 검사가 울었다 — 부분 이관이라는
+      상태를 몰랐던 것이다.
+
+      `layers.norm.caveats` 는 "소스 하나씩 옮기고 매 건 golden.py check"
+      를 시킨다. 부분 이관은 사고가 아니라 **설계상 정상 상태**다.
+      상태를 셋으로 넓힌다.
+
+          미구현    migrated 가 비어야 한다
+          진행중    migrated 에 하나 이상 있어야 한다
+          (없음)    전량 이관. migrated 가 비면 안 된다
+
+      배선이 실제로 있는지는 여기서 안 본다 — `sources.yaml` 만 읽는
+      검사라 코드를 모른다. 그것은 `tests/test_norm_wiring.py` 가
+      `ingest` 를 직접 읽어 본다. 선언과 배선을 한 검사에 섞으면
+      어느 쪽이 틀렸는지 실패 메시지가 못 가린다.
     """
     L = _L()
-    assert not L.implemented("norm"), \
-        "norm 이 구현됐으면 status 를 지우고 migrated 를 채워라"
-    assert L.policy("norm").get("migrated") == [], \
-        "norm.migrated 는 이관한 dataset_key 목록이다. 하나씩 + golden check"
+    pol = L.policy("norm")
+    status = (pol.get("status") or "").strip()
+    mig = pol.get("migrated") or []
+
+    if status == "미구현":
+        assert not mig, (
+            f"norm.status 는 '미구현' 인데 migrated 에 {len(mig)}건이 있다.\n"
+            f"  {mig}\n"
+            "  한 건이라도 옮겼으면 '진행중' 이다. doctor.py ② 가 이 문자열을\n"
+            "  읽어 '해야 할 것' 을 낸다 — 낡으면 안내가 틀린다.")
+    elif status == "진행중":
+        assert mig, (
+            "norm.status 가 '진행중' 인데 migrated 가 비어 있다.\n"
+            "  옮긴 dataset_key 를 쌓아라. 하나씩 + golden check.")
+    else:
+        assert mig, (
+            f"norm.status 가 '{status or '(없음)'}' 인데 migrated 가 비어 있다.\n"
+            "  status 를 지우는 것은 **전량 이관**을 뜻한다. 아직이면\n"
+            "  '진행중' 으로 되돌려라.")
+
+
+# ── R2 · 재생성 가능성이 .gitignore 의 근거다 ───────────────────
+# ★ 2026-08-31. R2 는 08-14 부터 **권고**였고 강제자가 없었다. 그 사이
+#   `datalog.BACKUP_TARGETS` 가 손목록으로 굳어 `quarantine`(18.9MB ·
+#   재생성 불가)이 백업에서 빠지고 `norm`(재생성 가능)이 들어갔다.
+#   `tools/doctor.py` 는 같은 것을 `layers` 에서 옳게 유도하고 있었다 —
+#   **정본이 둘이었고 어긋난 쪽을 아무도 안 봤다.**
+def test_no_layer_is_orphaned():
+    """실물이 있는 계층은 committed · regenerable · backup 중 하나가 참인가.
+
+    셋 다 거짓이면 그 파일은 **저장소에도 없고 백업도 없고 재생성도
+    안 된다** — 정의상 소실 예정이다. `landing` 은 예외다. 다운로드를
+    던져두는 통과 지점이고 `intake --stage` 가 비우는 것이 정상이다.
+    """
+    from firelane import layers
+    bad = []
+    for n in layers.names():
+        if n == "landing":
+            continue
+        pol = layers.policy(n)
+        if any(pol.get(k) for k in ("committed", "regenerable", "backup")):
+            continue
+        try:
+            p = layers.path(n)
+            cnt = sum(1 for q in p.rglob("*") if q.is_file()) if p.exists() else 0
+        except OSError:
+            continue          # 마운트 끊김. 판정 대상이 아니다
+        if cnt:
+            bad.append(f"  {n}  {cnt}개 — committed·regenerable·backup 전부 거짓")
+    assert not bad, (
+        "소실 예정 계층에 실물이 있다:\n" + "\n".join(bad) +
+        "\n  sources.yaml 의 layers 에서 셋 중 하나를 참으로 하거나,\n"
+        "  파이프라인이 비우도록 만들어라. 지금은 아무도 이 파일을 지키지 않는다.")
+
+
+def test_backup_scope_follows_layers():
+    """백업 범위가 `layers` 선언에서 유도되는가 — 손목록 금지.
+
+    ★ 역방향이 핵심이다. 선언을 바꿨는데 백업 범위가 안 바뀌면
+      `datalog` 가 다시 손목록으로 돌아간 것이다.
+    """
+    from firelane import datalog, layers
+    want = {"data/" + n for n in layers.names() if layers.policy(n).get("backup")}
+    got = set(datalog.BACKUP_TARGETS)
+    assert want == got, (
+        f"백업 범위가 layers 선언과 다르다.\n  선언: {sorted(want)}\n"
+        f"  datalog: {sorted(got)}\n"
+        "  BACKUP_TARGETS 를 손으로 적지 마라. layers 가 정본이다(R2·R3).")

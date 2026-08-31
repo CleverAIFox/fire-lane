@@ -2825,3 +2825,86 @@ L1·L2·L3 전부 동일하게 나왔고 그것을 "norm 이 값을 안 바꾼�
 강제자  없다. `migrated` 가 비어 있지 않은데 `ingest` 가 `source_path` 를
         안 부르면 실패하는 검사를 만든다 — PLAN #44 와 함께.
 재현    `grep -n source_path src/firelane/ingest.py` → 0건
+
+## 78. 낡음은 둘뿐이다 — 하드코딩이거나 참조가 낡거나
+
+> 2026-08-31
+
+강제자 — `tests/test_ledger_outputs.py::test_check_does_not_write` (R22) ·
+`test_manifest_keeps_lineage` · `tests/test_static.py::test_no_conflict_markers` ·
+`test_tracked_python_compiles` · `tests/test_layers.py::test_no_layer_is_orphaned` (§18-1a 의 R2 — R 표의 R2 와 다른 체계다) ·
+`test_backup_scope_follows_layers` (§18-1a 의 R2) · `tests/test_normalize_rules.py::test_missing_list_is_actually_missing` ·
+`tools/docnum_check.py` (대장 대조)
+
+2026-08-31. 하루에 열두 건을 잡았다. 새로 생긴 버그는 **하나도 없다.**
+전부 이미 있던 것이고 검사 범위를 넓히자마자 나왔다.
+
+    golden 이 안 보던 것         범위를 넓히자 3건
+    docnum_check 가 .md 만 봄    대장을 추가하자 4건
+    BACKUP_TARGETS 손목록        layers 유도로 바꾸자 quarantine 18.9MB
+    declared_paths 가 outputs만  매니페스트를 인정하자 54 → 0
+    MISSING 결손 목록            실물과 대조하자 2건 전부 낡음
+
+**한 번도 예외가 없었다.** "얼마나 낡았나" 의 답은 "안 본 만큼" 이다.
+
+### 78-1. 두 형태
+
+낡음을 원인으로 가르면 둘뿐이고, 고치는 법이 다르다.
+
+| 형태 | 실례 | 고치는 법 |
+|---|---|---|
+| **하드코딩이 낡음** | `BACKUP_TARGETS` 가 `layers` 와 갈림 · `MISSING` 에 받은 것이 남음 · 대장 `what` 의 431+157=588 · PLAN 의 "8종"·"20여건" | **유도로 바꾼다** |
+| **참조가 낡음** | `globs()` 를 바꿨는데 `REQUIRED`·`retired_names` 가 안 따라옴 · `CODE_FP` 가 gitignore 계층을 가리킴 · `.gitignore` 주석이 R2 를 반대로 적용 | 유도가 안 된다. **소비자 전수를 먼저 센다** |
+
+★ **하드코딩은 기계가 고칠 수 있고 참조 낡음은 못 고친다.** 그날
+`BACKUP_TARGETS` 는 소비자를 먼저 세고 한 번에 끝냈다. `globs()` 는 그러지
+않았고 **세 번에 나눠 찾았다** — 1차에 놓친 `REQUIRED` 가 37종을 죽였고,
+2차에 놓친 `retired_names` 가 18.4MB 를 "판단 필요" 로 띄웠다.
+
+**정본을 바꿀 때는 소비자를 먼저 세고, 그 수만큼 고쳤는지 확인한다.**
+
+### 78-2. 선언을 보고 대책을 정하지 않는다
+
+그날 여섯 번, 선언을 믿고 대책을 논하다가 실물을 보니 대책이 필요 없었다.
+
+    "part/gis 승인 1"         실제 0. 룰셋에 애초에 없었다
+    "PR #79 승인 대기 중"      이미 MERGED
+    "참조 0곳 8종"             실제 22종
+    "outputs 미등재 20여건"    실제 54건
+    "결손 2건"                 받았는데 목록이 낡음. 0건
+    대장 소화전 588            실물 589. 덧셈까지 안 맞았다
+
+**실물을 먼저 본다.** 실물은 유일하게 거짓말을 못 한다. 의심 순서는
+문서 → 대장 → 실물이고, 둘이 일치하고 하나가 다르면 다른 쪽이 틀렸다.
+
+### 78-3. 한 달에 여덟 번 구조를 바꿨다
+
+낡음이 많은 것이 이상해 보이지만 날짜를 보면 전부 **구조를 바꾼 날**이다.
+
+    08-14  R2 를 권고로 두고 강제자를 안 만듦
+    08-22  --only 가 대장을 덮음          (조회·부분실행 1차)
+    08-25  최상위 키를 날림                (2차)
+    08-27  gis → part/** 4계층 전환
+    08-27  BACKUP_TARGETS 가 layers 와 갈림
+    08-28  parking_dongu → parking_lot·parking_zone 분할
+    08-30  globs() 를 files 기반으로 정리 — 소비자 셋 중 둘만 고침
+    08-31  --check 가 계보를 덮음          (3차)
+
+오래된 저장소가 안정적인 것은 낡지 않아서가 아니라 **구조를 안 바꿔서**다.
+바꾸는 동안에는 낡음이 계속 생기고, 그것을 막는 유일한 방법은 **바꿀 때마다
+대조를 같이 넓히는 것**이다.
+
+### 78-4. 그날 세운 규칙
+
+`R22` 조회는 상태를 바꾸지 않는다 — `--check`·`--only`·`--retry-failed` 가
+같은 자리에서 세 번 넘어졌다. 셋 다 `golden` 은 초록이었다.
+
+`R23` 강제자는 자기 사각지대를 선언한다 (권고) — 무엇을 보는지는 다들 적는데
+무엇을 **안** 보는지는 아무도 안 적는다. 그래서 초록불의 범위를 오해한다.
+`golden.py` 머리말에 "이것은 안 본다" 를 실제로 적었다.
+
+★ **양방향 검사는 한쪽만 추가하지 않는다.** `docnum_check` 는 08-18 에
+`PRESENT`(있는가)와 `RETIRED`(없는가)를 짝으로 갖췄는데, 08-31 에 소화전을
+`PRESENT` 에만 넣었다. 10만 자 대장에서 "어딘가 418 이 있는가" 는 무의미했고
+틀린 값을 넣어도 통과했다. **역방향 시험이 그것을 잡았다** — 안 돌렸으면
+그 검사도 초록불인 채로 커밋됐다.

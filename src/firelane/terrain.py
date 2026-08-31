@@ -256,4 +256,7 @@ def main():
 
 
 if __name__ == "__main__":
+    from firelane.guards import warn_direct_call
+
+    warn_direct_call(__name__)
     main()
