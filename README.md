@@ -223,7 +223,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 ```
 landing      SSD/landing/     다운로드 원본. 규칙 없음. ★ 백업 제외
 raw          SSD/raw/         제공기관 8폴더. 절대 수정 안 함
-norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. ★ 미구현
+norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
 field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급

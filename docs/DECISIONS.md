@@ -2832,8 +2832,8 @@ L1·L2·L3 전부 동일하게 나왔고 그것을 "norm 이 값을 안 바꾼�
 
 강제자 — `tests/test_ledger_outputs.py::test_check_does_not_write` (R22) ·
 `test_manifest_keeps_lineage` · `tests/test_static.py::test_no_conflict_markers` ·
-`test_tracked_python_compiles` · `tests/test_layers.py::test_no_layer_is_orphaned` (R2) ·
-`test_backup_scope_follows_layers` · `tests/test_normalize_rules.py::test_missing_list_is_actually_missing` ·
+`test_tracked_python_compiles` · `tests/test_layers.py::test_no_layer_is_orphaned` (§18-1a 의 R2 — R 표의 R2 와 다른 체계다) ·
+`test_backup_scope_follows_layers` (§18-1a 의 R2) · `tests/test_normalize_rules.py::test_missing_list_is_actually_missing` ·
 `tools/docnum_check.py` (대장 대조)
 
 2026-08-31. 하루에 열두 건을 잡았다. 새로 생긴 버그는 **하나도 없다.**

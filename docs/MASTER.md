@@ -593,7 +593,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 ```
 landing      SSD · 다운로드 원본. 규칙 없음. 백업 제외
 raw          SSD · 제공기관 8폴더. 절대 수정하지 않는다
-norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. ★ 미구현 (실물 17건은 있다 · PLAN #44)
+norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료(08-31)
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
 field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급. 저장소 안
@@ -1674,7 +1674,7 @@ uv run python -m firelane.datalog fsck
 |---|---|
 | `landing` | 다운로드 원본. 규칙 없이 던져두는 곳이 하나는 필요하다 |
 | `raw` | 받은 그대로. 인코딩조차 고치지 않아야 원본이 원본이다 |
-| `norm` | 형식만 통일. **미구현** — 실물 17건과 `_prep.json` 은 정합하나 `ingest` 가 여전히 `raw` 를 읽는다. 선언의 `status` 가 그것을 밝힌다(PLAN #44) |
+| `norm` | 형식만 통일. **텍스트 14종 이관 완료**(2026-08-31). `ingest.paths_for()` 가 `layers.norm.migrated` 를 보고 입력 계층을 가른다. 바이너리(gpkg·zip·tif)는 대상이 아니다 — `prep.TEXT_EXT` 가 그 경계다 |
 | `interim` | 탐색·대조 산출물. 대장에 없고 지워도 된다 |
 | `processed` | 파이프라인 정본. 손으로 만들지 않는다 |
 | `field` | 실측 원자료. 사람이 만드는 유일한 데이터 |
@@ -1910,6 +1910,7 @@ retired:
 |---|---|
 | R1 IN/OUT 선언 | `test_reproducibility.py::test_r1_declares_in_and_out` |
 | R2 파라미터 상수화 | **권고** (매직넘버 탐지는 거짓 경보가 많다) |
+| ★ 주의 — `§18-1a` 의 `R2`(재생성 가능성)는 **다른 체계다.** 같은 이름이 두 곳에 있다 | 데이터 그라운드 룰 쪽은 `test_layers.py::test_no_layer_is_orphaned` 가 든다 |
 | R3 상수 정본 하나 | `test_seg_geom.py::test_params_are_not_redefined_in_segments` |
 | R4 시드 고정 | `test_reproducibility.py::test_r4_random_has_seed` |
 | R5 캐시 키에 입력 sha | `test_reproducibility.py::test_r5_no_bare_existence_cache` |
