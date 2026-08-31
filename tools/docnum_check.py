@@ -249,6 +249,12 @@ def main() -> int:
         ("sources.yaml", c.get("hyd_up", 0), "소화전 지상식"),
         ("sources.yaml", c.get("hyd_dn", 0), "소화전 지하식"),
         ("sources.yaml", c.get("hyd_sum", 0), "소화전 합"),
+        # ★ 2026-08-31. 대장 규모. MASTER 가 세 곳에서 낡아 있었다 —
+        #   `datasets 36종 · retired 8종`(실제 41 · 10) · `대장 36종`.
+        #   사람이 손으로 세는 숫자는 반드시 낡는다.
+        ("docs/MASTER.md", c.get("ds", 0), "대장 datasets 종수"),
+        ("docs/MASTER.md", c.get("retired", 0), "대장 retired 종수"),
+        ("docs/MASTER.md", c.get("migrated", 0), "norm 이관 종수"),
     ]
     for rel, want, label in RULES:
         if not any(t in read(rel) for t in fmt(want)):
