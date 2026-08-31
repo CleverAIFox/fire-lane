@@ -1142,7 +1142,7 @@ main ────────────────────── 배포 �
 |---|---|---|---|---|---|
 | `release` | `refs/heads/main` | 1 | ✔ | shared · strict | Merge |
 | `trunk` | `refs/heads/dev` | 0 | — | shared | Merge |
-| `part` | `refs/heads/part/**` | 0 | — | shared | Squash |
+| `part` | `refs/heads/part/**` | 0 | — | shared | Squash · Merge |
 | — | `feat/**` | — | — | — | — |
 
 셋 다 `deletion` · `non_fast_forward` · `pull_request` ·
@@ -1152,9 +1152,15 @@ main ────────────────────── 배포 �
 1인 파트다. 승인 1을 걸면 영구 차단된다. 실제로 막는 것은 승인이 아니라
 `contract-shared` 다. **게이트는 `main` 하나로 모은다.**
 
-★ **머지 방식이 브랜치마다 하나뿐이다.** 고를 여지가 있으면 사람이 틀린다.
-`part` 가 Squash 인 것은 `part` 가 매일 `dev` 를 받기 때문이다 — `feat` 은
-`part` 에서만 받으므로 squash 해도 잃을 조상이 없다.
+★ **머지 방식은 PR 종류가 정한다.** `main` · `dev` 는 Merge 단독이다.
+`part/**` 만 둘을 허용하며 기준은 취향이 아니라 사실이다 —
+
+    feat → part   작업            squash
+    dev  → part   일일 동기화      merge commit
+
+08-31 에 `part` 를 Squash 단독으로 걸었다가 **해보고 틀린 것을 알았다.**
+`part` 가 `dev` 를 받는 PR 자체가 막혔고, 그것을 squash 하면 `dev` 커밋이
+조상에서 사라져 다음 통합이 통째로 충돌한다(§12-2).
 
 ★ 실물 대조는 `uv run python tools/ruleset_check.py` 가 한다.
 정본은 그 파일의 `EXPECT` 이며 이 표와 `workflow §4` 는 사람이 읽는 사본이다.
