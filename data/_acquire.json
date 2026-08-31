@@ -1,9 +1,5 @@
 {
  "files": {
-  "eais/eais_bldg_ledger_jngj-donggu_20260817.csv": {
-   "sha256": "b502e2c0071a400e46ea23eb1e7436d4eae57537783ea0db34787176de579e4a",
-   "bytes": 11255612
-  },
   "gjcity/gjcity_bin_cloth_jngj-donggu_20250214.csv": {
    "sha256": "2a1478ade13dfda25f10cba77fe6c596eef612d1671b25e53ecbb4c1bc62b0b6",
    "bytes": 6903
@@ -15,14 +11,6 @@
   "gjcity/gjcity_enforce_cam_jngj-donggu_20260828.csv": {
    "sha256": "d004286bc2ddee1d85bb4ce8296b65a5d820686a713338a0023267d128a88e36",
    "bytes": 7602
-  },
-  "gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv": {
-   "sha256": "cf64a54d8dbe19c27621cec50d9b95319b9e7b9873422c5312a848cbece850e1",
-   "bytes": 5009386
-  },
-  "gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv": {
-   "sha256": "4cb4c4e95353af782b4fdf8cf9726603ca0fff2b1b12fbbc631f3939e49fbf78",
-   "bytes": 3046281
   },
   "gjcity/gjcity_parking_lot_jngj-donggu_20260828.csv": {
    "sha256": "420e129d56f2eb4fbd9cc85a266c9b0e6f51182933d25a5db7c2c728263fa2c2",
@@ -193,5 +181,5 @@
    "bytes": 245690
   }
  },
- "at": "2026-08-30T17:47:40+09:00"
+ "at": "2026-08-31T14:43:19+09:00"
 }
