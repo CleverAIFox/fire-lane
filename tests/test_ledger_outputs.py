@@ -125,7 +125,12 @@ def test_declared_paths_point_into_a_declared_layer():
 
 @pytest.mark.skipif(not PROCESSED.is_dir() or not actual_files(),
                     reason="파이프라인 미실행 — data/processed 가 비었다")
-@pytest.mark.xfail(reason="대장 outputs 미등재 20여건. PLAN §1 #41", strict=False)
+# ★ 2026-08-31. `strict=False` 였다. 고쳐져도 조용히 초록이라 표시를
+#   떼야 하는 순간을 아무도 모른다 — "안 된다" 로 적어두고 잊는 장치다.
+#   `strict=True` 면 전건 등재되는 순간 xpass 로 빨간불이 뜬다.
+#   실측 54건(종전 문서는 "20여건" 이었다. 두 배 넘게 틀렸다).
+@pytest.mark.xfail(reason="대장 outputs 미등재 54건. PLAN §1 #41",
+                   strict=True)
 def test_no_undeclared_output():
     """processed 에 있는데 대장에 없는 파일이 없다.
 
