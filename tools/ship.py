@@ -146,7 +146,7 @@ def check_git(R: Report) -> None:
 # ── CI 트리거 판정 ─────────────────────────────────────────────
 # ★ 순수 함수로 뺐다. 종전에는 check_git() 안에 묻혀 있어 아무도
 #   검사할 수 없었고, 그래서 **어떤 브랜치 이름을 넣어도 초록불을 내는
-#   상태로 오래 갔다.** 강제자는 tests/test_ops_html_sync.py 가 든다.
+#   상태로 오래 갔다.** 강제자는 tests/test_workflow_html_sync.py 가 든다.
 CI_YML = ROOT / ".github/workflows/contract.yml"
 
 
