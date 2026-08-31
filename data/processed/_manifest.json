@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-08-31T09:51:46.272317+09:00",
+  "generated_at": "2026-08-31T11:43:36.137754+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -43,7 +43,7 @@
     {
       "key": "kfs_pumptruck",
       "source_files": [
-        "safety/safety_kfs_pumptruck_kr_20251224.hwpx"
+        "**/safety_kfs_pumptruck_*"
       ],
       "source_sha256": "0908c1232cd2102ec4f8e081043a4f83141680504e82c428b4237fd18a4d8d42",
       "resolved": "safety_kfs_pumptruck_kr_20251224.hwpx",
@@ -57,7 +57,7 @@
     {
       "key": "kfs_watertank",
       "source_files": [
-        "safety/safety_kfs_watertank_kr_20251224.hwpx"
+        "**/safety_kfs_watertank_*"
       ],
       "source_sha256": "8b0c7fa291f5217efb7d5064f9134e1e7c9785c12b0f80309b39313a6f1f1ccd",
       "resolved": "safety_kfs_watertank_kr_20251224.hwpx",
@@ -71,7 +71,7 @@
     {
       "key": "kfs_chemical",
       "source_files": [
-        "safety/safety_kfs_chemical_kr_20251224.hwpx"
+        "**/safety_kfs_chemical_*"
       ],
       "source_sha256": "9688a70902502279b7a406aacb914585d4a1dcb3019b52e5335b007b4d877b73",
       "resolved": "safety_kfs_chemical_kr_20251224.hwpx",
@@ -85,7 +85,7 @@
     {
       "key": "kfs_ladder_articulated",
       "source_files": [
-        "safety/safety_kfs_ladder_articulated_kr_20251224.hwpx"
+        "**/safety_kfs_ladder_articulated_*"
       ],
       "source_sha256": "a2cab9811eadacec60c2d945c2f03151db3329f83db5c674219d36e197ee7129",
       "resolved": "safety_kfs_ladder_articulated_kr_20251224.hwpx",
@@ -99,7 +99,7 @@
     {
       "key": "kfs_rescue",
       "source_files": [
-        "safety/safety_kfs_rescue_kr_20251224.hwpx"
+        "**/safety_kfs_rescue_*"
       ],
       "source_sha256": "ce1ab827276df7439c50cfef6d44153313c71ef7f34527a856da2a76d18134cd",
       "resolved": "safety_kfs_rescue_kr_20251224.hwpx",
@@ -113,8 +113,7 @@
     {
       "key": "kfs_ambulance_special",
       "source_files": [
-        "safety/safety_kfs_ambulance_special_kr_20251224.hwp",
-        "safety/safety_kfs_ambulance_special_kr_20251224.pdf"
+        "**/safety_kfs_ambulance_special_*"
       ],
       "source_sha256": "a8b309c908d13b2d4760bba08a9845063d1a1622147efab7b72edc132cc73e81",
       "resolved": "safety_kfs_ambulance_special_kr_20251224.hwp",
@@ -132,7 +131,7 @@
     {
       "key": "kfs_ladder_small",
       "source_files": [
-        "safety/safety_kfs_ladder_small_kr_20251224.pdf"
+        "**/safety_kfs_ladder_small_*"
       ],
       "source_sha256": "5c5ab15422d304dcfe51bec3bc63272bde1fd723dc49cfc64f0f417ccb50924a",
       "resolved": "safety_kfs_ladder_small_kr_20251224.pdf",
@@ -146,8 +145,7 @@
     {
       "key": "mas_optional_spec",
       "source_files": [
-        "safety/safety_mas_optional_spec_kr_20241111.hwp",
-        "safety/safety_mas_optional_spec_kr_20241111.pdf"
+        "**/safety_mas_optional_spec_*"
       ],
       "source_sha256": "975e4a08fb4e02fdc376e92fc588eb7f22d4cd194b1f875c70d705641f712425",
       "resolved": "safety_mas_optional_spec_kr_20241111.hwp",
@@ -165,8 +163,7 @@
     {
       "key": "mas_vehicle_spec",
       "source_files": [
-        "safety/safety_mas_vehicle_spec_kr_20241111.hwp",
-        "safety/safety_mas_vehicle_spec_kr_20241111.pdf"
+        "**/safety_mas_vehicle_spec_*"
       ],
       "source_sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
       "resolved": "safety_mas_vehicle_spec_kr_20241111.hwp",
@@ -184,9 +181,9 @@
     {
       "key": "node_link_changelog",
       "source_files": [
-        "its/its_nodelink_changelog_kr_20260812.csv"
+        "**/its_nodelink_changelog_*"
       ],
-      "source_sha256": "eefe2cbc8c8701b2d434d7eb52cba42bf6598c9c9b552043e23fa1c693634dfa",
+      "source_sha256": "574f2d294fa6ff1008c653af1436a4373f8b1a32ad7c198d02789d2abf3207fb",
       "resolved": "its_nodelink_changelog_kr_20260812.csv",
       "source_crs": "",
       "status": "SKIP",
@@ -198,7 +195,7 @@
     {
       "key": "road_link",
       "source_files": [
-        "juso/juso_elctrnmap_jngj_20260711.zip"
+        "**/juso_elctrnmap_*"
       ],
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
       "resolved": "juso_elctrnmap_jngj_20260711.zip",
@@ -239,7 +236,7 @@
     {
       "key": "road_rw",
       "source_files": [
-        "juso/juso_elctrnmap_jngj_20260711.zip"
+        "**/juso_elctrnmap_*"
       ],
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
       "resolved": "juso_elctrnmap_jngj_20260711.zip",
@@ -265,7 +262,7 @@
     {
       "key": "road_intrvl",
       "source_files": [
-        "juso/juso_elctrnmap_jngj_20260711.zip"
+        "**/juso_elctrnmap_*"
       ],
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
       "resolved": "juso_elctrnmap_jngj_20260711.zip",
@@ -294,7 +291,7 @@
     {
       "key": "spotaddr_geom",
       "source_files": [
-        "juso/juso_spotaddr_geom_jngj_20260801.zip"
+        "**/juso_spotaddr_geom_*"
       ],
       "source_sha256": "67d19479c563ae4b7629b1a1c5c5ed9efd0e064ff87d3bda8422553a7896e6f3",
       "resolved": "juso_spotaddr_geom_jngj_20260801.zip",
@@ -308,7 +305,7 @@
     {
       "key": "spotaddr_ref",
       "source_files": [
-        "juso/juso_spotaddr_ref_jngj_20260801.zip"
+        "**/juso_spotaddr_ref_*"
       ],
       "source_sha256": "8822bdb54aa2b8a711854f525772d947f2aaf75aa6c7f29fe1194bb94f3b4c5d",
       "resolved": "juso_spotaddr_ref_jngj_20260801.zip",
@@ -1827,9 +1824,9 @@
     {
       "key": "streetlight",
       "source_files": [
-        "gjcity/gjcity_streetlight_*.csv"
+        "**/gjcity_streetlight_*"
       ],
-      "source_sha256": "7c7011029be8d66532240cbbf4f46831b9ff5fb6601e58b7637f7440c7b2a867",
+      "source_sha256": "96ada85a38ef85c96d3fc83c20349bfd60032e49b53334bce9b571af0d9079cc",
       "resolved": "gjcity_streetlight_jngj-donggu_20240415.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -1854,7 +1851,7 @@
     {
       "key": "ngii_road",
       "source_files": [
-        "ngii/ngii_basemap_jngj-donggu_20260812_gj97*.zip"
+        "**/ngii_basemap_*"
       ],
       "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
       "resolved": "ngii_basemap_jngj-donggu_20260812_gj9708.zip",
@@ -1982,7 +1979,7 @@
     {
       "key": "cctv",
       "source_files": [
-        "safety/safety_cctv_jngj_20260630.csv"
+        "**/safety_cctv_*"
       ],
       "source_sha256": "8351c711177587674ad402e7677abc013e102da91919bede68dc831094be4808",
       "resolved": "safety_cctv_jngj_20260630.csv",
@@ -2014,9 +2011,9 @@
     {
       "key": "fire_station",
       "source_files": [
-        "safety/safety_firestation_kr_20240901.csv"
+        "**/safety_firestation_*"
       ],
-      "source_sha256": "b65a8bb8e2197f8999384c259c9154247f2d537a10604f9e24d19b1244bb89b7",
+      "source_sha256": "8f3fca285b8f14d63992d41c9da15eef3018960241be5338b27d8b350d425e10",
       "resolved": "safety_firestation_kr_20240901.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -2044,7 +2041,7 @@
     {
       "key": "poi_store",
       "source_files": [
-        "sbiz/sbiz_store_kr_20260630.zip"
+        "**/sbiz_store_*"
       ],
       "source_sha256": "57aa361544108ff4fc73334f87d2ced61e41fe8638dd70bcd842930f865d2386",
       "resolved": "sbiz_store_kr_20260630.zip",
@@ -2104,7 +2101,7 @@
     {
       "key": "boundary_emd",
       "source_files": [
-        "juso/juso_elctrnmap_jngj_20260711.zip"
+        "**/juso_elctrnmap_*"
       ],
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
       "resolved": "juso_elctrnmap_jngj_20260711.zip",
@@ -2128,7 +2125,7 @@
     {
       "key": "building",
       "source_files": [
-        "juso/juso_elctrnmap_jngj_20260711.zip"
+        "**/juso_elctrnmap_*"
       ],
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
       "resolved": "juso_elctrnmap_jngj_20260711.zip",
@@ -2180,7 +2177,7 @@
     {
       "key": "building_entrance",
       "source_files": [
-        "juso/juso_elctrnmap_jngj_20260711.zip"
+        "**/juso_elctrnmap_*"
       ],
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
       "resolved": "juso_elctrnmap_jngj_20260711.zip",
@@ -2207,9 +2204,9 @@
     {
       "key": "hydrant_point",
       "source_files": [
-        "safety/safety_hydrant_point_jngj_20240207.csv"
+        "**/safety_hydrant_point_*"
       ],
-      "source_sha256": "bffc507dc053be38883800daec15f8c4bff0daea231e1bddcb403a2e482b4861",
+      "source_sha256": "ef46ab01d76a5c0ece02a40662f14f0f41cbc5359bf0bb5237d3446b629a61f4",
       "resolved": "safety_hydrant_point_jngj_20240207.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -2247,9 +2244,9 @@
     {
       "key": "fire_access",
       "source_files": [
-        "safety/safety_fire_access_jngj-donggu_20250731.csv"
+        "**/safety_fire_access_*"
       ],
-      "source_sha256": "67a583bb97e8d027761dea9fd492012699ea8345f4bf7939f729754494dbdf9e",
+      "source_sha256": "15fb8022f1b2f9ee2a6ecd84c2c6fbcd86b976753cf69f41c4a72942ea0b4f5b",
       "resolved": "safety_fire_access_jngj-donggu_20250731.csv",
       "source_crs": "none",
       "status": "OK",
@@ -2270,7 +2267,7 @@
     {
       "key": "dem_public",
       "source_files": [
-        "ngii/ngii_dem_jngj-donggu_20251117_35616.zip"
+        "**/ngii_dem_*"
       ],
       "source_sha256": "56656fc18efb05ad78653d1b09ea18e6c9879eaa2e5940d33a2cce677b4ef128",
       "resolved": "ngii_dem_jngj-donggu_20251117_35616.zip",
@@ -2284,7 +2281,7 @@
     {
       "key": "ortho",
       "source_files": [
-        "ngii/ngii_ortho_jngj-donggu_20251231_gj0*"
+        "**/ngii_ortho_*"
       ],
       "source_sha256": "afe2cbb4bcd151538b77617bf9ac1022639a61e79525227f09b0aaca0ed2bf8b",
       "resolved": "ngii_ortho_jngj-donggu_20251231_gj037.tif",
@@ -2306,36 +2303,11 @@
       "outputs": []
     },
     {
-      "key": "enforcement",
-      "source_files": [
-        "gjcity/gjcity_parking_enforce_jngj-donggu_202*.csv"
-      ],
-      "source_sha256": "cf64a54d8dbe19c2,4cb4c4e95353af78",
-      "resolved": "gjcity_parking_enforce_jngj-donggu_20240108.csv + gjcity_parking_enforce_jngj-donggu_20250226.csv",
-      "source_crs": "none",
-      "note": "optional_cols 결손 보정: gjcity_parking_enforce_jngj-donggu_20250226.csv:비고",
-      "status": "OK",
-      "features": 141556,
-      "geom": [],
-      "columns": [
-        "위반일자",
-        "위반시간",
-        "위반장소명",
-        "과태료",
-        "비고",
-        "데이터기준일자",
-        "_src"
-      ],
-      "outputs": [
-        "enforcement.csv"
-      ]
-    },
-    {
       "key": "hydrant_summary",
       "source_files": [
-        "safety/safety_hydrant_summary_jngj-donggu_20250731.csv"
+        "**/safety_hydrant_summary_*"
       ],
-      "source_sha256": "6a5b2690bd9cc2ecc13369da2e58f3418e1b1bea8f8a173e57be3695cf340586",
+      "source_sha256": "4f516236bfdc457bab9d3bbfb78bbeadf3d723edecd7ce0922d1bd1d3515617f",
       "resolved": "safety_hydrant_summary_jngj-donggu_20250731.csv",
       "source_crs": "none",
       "status": "OK",
@@ -2358,7 +2330,7 @@
     {
       "key": "ngii_road_center",
       "source_files": [
-        "ngii/ngii_basemap_jngj-donggu_20260812_gj97*.zip"
+        "**/ngii_basemap_*"
       ],
       "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
       "resolved": "ngii_basemap_jngj-donggu_20260812_gj9708.zip",
@@ -2403,9 +2375,9 @@
     {
       "key": "bin_trash",
       "source_files": [
-        "gjcity/gjcity_bin_trash_jngj-donggu_20241130.csv"
+        "**/gjcity_bin_trash_*"
       ],
-      "source_sha256": "8f6c649ddd76aa624e0039be21de6ae25878ac59040328a315497b286a6ebf77",
+      "source_sha256": "ea65b6f8c4bc7179427dc1502a3426bca2a50789fafbb05bb45800222c640e6c",
       "resolved": "gjcity_bin_trash_jngj-donggu_20241130.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -2431,9 +2403,9 @@
     {
       "key": "bin_cloth",
       "source_files": [
-        "gjcity/gjcity_bin_cloth_jngj-donggu_20250214.csv"
+        "**/gjcity_bin_cloth_*"
       ],
-      "source_sha256": "2a1478ade13dfda25f10cba77fe6c596eef612d1671b25e53ecbb4c1bc62b0b6",
+      "source_sha256": "e8c6aa4f557b5fc367c7bdd1ff529179808401221cc15e94fb60df1f242385e0",
       "resolved": "gjcity_bin_cloth_jngj-donggu_20250214.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -2457,105 +2429,11 @@
       ]
     },
     {
-      "key": "building_ledger",
-      "source_files": [
-        "eais/eais_bldg_ledger_jngj-donggu_20260817.csv"
-      ],
-      "source_sha256": "b502e2c0071a400e46ea23eb1e7436d4eae57537783ea0db34787176de579e4a",
-      "resolved": "eais_bldg_ledger_jngj-donggu_20260817.csv",
-      "source_crs": "none",
-      "status": "OK",
-      "features": 25681,
-      "geom": [],
-      "columns": [
-        "대지위치",
-        "시군구코드",
-        "법정동코드",
-        "대지구분코드",
-        "번",
-        "지",
-        "관리건축물대장PK",
-        "대장구분코드",
-        "대장구분코드명",
-        "대장종류코드",
-        "대장종류코드명",
-        "도로명대지위치",
-        "건물명",
-        "특수지명",
-        "블록",
-        "로트",
-        "외필지수",
-        "새주소도로코드",
-        "새주소법정동코드",
-        "새주소지상지하코드",
-        "새주소본번",
-        "새주소부번",
-        "동명칭",
-        "주부속구분코드",
-        "주부속구분코드명",
-        "대지면적(㎡)",
-        "건축면적(㎡)",
-        "건폐율(%)",
-        "연면적(㎡)",
-        "용적률산정연면적(㎡)",
-        "용적률(%)",
-        "구조코드",
-        "구조코드명",
-        "기타구조",
-        "주용도코드",
-        "주용도코드명",
-        "기타용동",
-        "지붕코드",
-        "지붕코드명",
-        "기타지붕",
-        "세대수(세대)",
-        "가구수(가구)",
-        "높이(m)",
-        "지상층수",
-        "지하층수",
-        "승용승강기수",
-        "비상용승강기수",
-        "부속건축물수",
-        "부속건축물면적(㎡)",
-        "총동연면적(㎡)",
-        "옥내기계식대수(대)",
-        "옥내기계식면적(㎡)",
-        "옥외기계식대수(대)",
-        "옥외기계식면적(㎡)",
-        "옥내자주식대수(대)",
-        "옥내자주식면적(㎡)",
-        "옥외자주식대수(대)",
-        "옥외자주식면적(㎡)",
-        "허가일",
-        "착공일",
-        "사용승인일",
-        "허가번호년",
-        "허가번호기관코드",
-        "허가번호기관코드명",
-        "허가번호구분코드",
-        "허가번호구분코드명",
-        "호수(호)",
-        "에너지효율등급",
-        "에너지절감률",
-        "EPI점수",
-        "친환경건축물등급",
-        "친환경건축물인증점수",
-        "지능형건축물등급",
-        "지능형건축물인증점수",
-        "생성일자",
-        "내진설계적용여부",
-        "내진능력"
-      ],
-      "outputs": [
-        "building_ledger.csv"
-      ]
-    },
-    {
       "key": "station_jurisdiction",
       "source_files": [
-        "safety/safety_station_jrsdc_jngj_20260429.csv"
+        "**/safety_station_jrsdc_*"
       ],
-      "source_sha256": "d3373012c78ace322f83f59f8e0d3b6380e208f9349b3853a249b125fac258c9",
+      "source_sha256": "67654b6e6bc4fb1e3c59241140f77d6b9712d59cba59929a3f11587bfc7e2a65",
       "resolved": "safety_station_jrsdc_jngj_20260429.csv",
       "source_crs": "",
       "status": "OK",
@@ -2575,9 +2453,9 @@
     {
       "key": "parking_lot",
       "source_files": [
-        "gjcity/gjcity_parking_lot_jngj-donggu_20260828.csv"
+        "**/gjcity_parking_lot_*"
       ],
-      "source_sha256": "420e129d56f2eb4fbd9cc85a266c9b0e6f51182933d25a5db7c2c728263fa2c2",
+      "source_sha256": "0f38436f5d4ce8b16cd67829cd12983cb5955d3ee5f4f868746e9a6af7ed3921",
       "resolved": "gjcity_parking_lot_jngj-donggu_20260828.csv",
       "source_crs": "",
       "status": "OK",
@@ -2603,9 +2481,9 @@
     {
       "key": "enforce_cam",
       "source_files": [
-        "gjcity/gjcity_enforce_cam_jngj-donggu_20260828.csv"
+        "**/gjcity_enforce_cam_*"
       ],
-      "source_sha256": "d004286bc2ddee1d85bb4ce8296b65a5d820686a713338a0023267d128a88e36",
+      "source_sha256": "79dac019117d57e34f12f3f95f7b43ff84e2b039e4d45d76ecc93f12fad64df0",
       "resolved": "gjcity_enforce_cam_jngj-donggu_20260828.csv",
       "source_crs": "",
       "status": "OK",
@@ -2627,9 +2505,9 @@
     {
       "key": "school_zone",
       "source_files": [
-        "gjcity/gjcity_school_zone_jngj-donggu_20260828.csv"
+        "**/gjcity_school_zone_*"
       ],
-      "source_sha256": "87232a954770a877c5df727b38f90ef9ad899221a4980d0f36855949a034e33f",
+      "source_sha256": "cb565f28d1b2fd1ff58be40a1d0352b9e9162df2822ce157f02f5b7effb491f1",
       "resolved": "gjcity_school_zone_jngj-donggu_20260828.csv",
       "source_crs": "",
       "status": "OK",
@@ -2648,9 +2526,9 @@
     {
       "key": "parking_zone",
       "source_files": [
-        "gjcity/gjcity_parking_zone_jngj-donggu_20260828.csv"
+        "**/gjcity_parking_zone_*"
       ],
-      "source_sha256": "4b26dc91d4a10c8ef396b465f4e6373dc0c4562497559bf859cb33c0e4675571",
+      "source_sha256": "fc114cb3aadfd3b7642dd7d368b29d21f3d785a6b1adfae5ca52b074010d6867",
       "resolved": "gjcity_parking_zone_jngj-donggu_20260828.csv",
       "source_crs": "",
       "status": "OK",
@@ -2670,7 +2548,7 @@
     {
       "key": "jijeok",
       "source_files": [
-        "nsdi/nsdi_jijeok_jngj_20260808.zip"
+        "**/nsdi_jijeok_*"
       ],
       "source_sha256": "3b8bc253baa0c9a1",
       "resolved": "nsdi_jijeok_jngj_20260808.zip",

@@ -240,3 +240,52 @@ def test_unimplemented_layers_declare_it():
             f"norm.status 가 '{status or '(없음)'}' 인데 migrated 가 비어 있다.\n"
             "  status 를 지우는 것은 **전량 이관**을 뜻한다. 아직이면\n"
             "  '진행중' 으로 되돌려라.")
+
+
+# ── R2 · 재생성 가능성이 .gitignore 의 근거다 ───────────────────
+# ★ 2026-08-31. R2 는 08-14 부터 **권고**였고 강제자가 없었다. 그 사이
+#   `datalog.BACKUP_TARGETS` 가 손목록으로 굳어 `quarantine`(18.9MB ·
+#   재생성 불가)이 백업에서 빠지고 `norm`(재생성 가능)이 들어갔다.
+#   `tools/doctor.py` 는 같은 것을 `layers` 에서 옳게 유도하고 있었다 —
+#   **정본이 둘이었고 어긋난 쪽을 아무도 안 봤다.**
+def test_no_layer_is_orphaned():
+    """실물이 있는 계층은 committed · regenerable · backup 중 하나가 참인가.
+
+    셋 다 거짓이면 그 파일은 **저장소에도 없고 백업도 없고 재생성도
+    안 된다** — 정의상 소실 예정이다. `landing` 은 예외다. 다운로드를
+    던져두는 통과 지점이고 `intake --stage` 가 비우는 것이 정상이다.
+    """
+    from firelane import layers
+    bad = []
+    for n in layers.names():
+        if n == "landing":
+            continue
+        pol = layers.policy(n)
+        if any(pol.get(k) for k in ("committed", "regenerable", "backup")):
+            continue
+        try:
+            p = layers.path(n)
+            cnt = sum(1 for q in p.rglob("*") if q.is_file()) if p.exists() else 0
+        except OSError:
+            continue          # 마운트 끊김. 판정 대상이 아니다
+        if cnt:
+            bad.append(f"  {n}  {cnt}개 — committed·regenerable·backup 전부 거짓")
+    assert not bad, (
+        "소실 예정 계층에 실물이 있다:\n" + "\n".join(bad) +
+        "\n  sources.yaml 의 layers 에서 셋 중 하나를 참으로 하거나,\n"
+        "  파이프라인이 비우도록 만들어라. 지금은 아무도 이 파일을 지키지 않는다.")
+
+
+def test_backup_scope_follows_layers():
+    """백업 범위가 `layers` 선언에서 유도되는가 — 손목록 금지.
+
+    ★ 역방향이 핵심이다. 선언을 바꿨는데 백업 범위가 안 바뀌면
+      `datalog` 가 다시 손목록으로 돌아간 것이다.
+    """
+    from firelane import datalog, layers
+    want = {"data/" + n for n in layers.names() if layers.policy(n).get("backup")}
+    got = set(datalog.BACKUP_TARGETS)
+    assert want == got, (
+        f"백업 범위가 layers 선언과 다르다.\n  선언: {sorted(want)}\n"
+        f"  datalog: {sorted(got)}\n"
+        "  BACKUP_TARGETS 를 손으로 적지 마라. layers 가 정본이다(R2·R3).")

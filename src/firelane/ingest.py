@@ -629,6 +629,26 @@ def main():
         print(f"  · .work 유지 {_n:,}파일 — 다음 실행이 빨라진다 "
               f"(정리: uv run python tools/tidy.py --yes)")
 
+    # ★ 2026-08-31. **`--check` 는 조회다. 아무것도 쓰지 않는다.**
+    #
+    #   종전에는 `if a.check:` 가 루프를 `continue` 로 건너뛸 뿐이었고,
+    #   아래 쓰기 경로로 그대로 떨어졌다. `--check` 의 레코드는
+    #   `key·found·sha256` 셋뿐이라 **계보 27건을 얕은 판으로 덮었다.**
+    #   그날 커밋에 `rewrite _manifest.json (95%)` 가 찍혔고 `golden` 은
+    #   L1·L2·L3 전부 OK 를 냈다 — `segments.geojson` 하나만 읽으니
+    #   입력 계보가 죽은 것을 모른다. 복구에 전량 재실행 317초를 태웠다.
+    #
+    #   같은 형태를 이 파일이 이미 두 번 겪었다 — `--only` 가 대장을
+    #   통째로 덮은 것(08-22), 최상위 키를 날린 것(08-25). 셋 다
+    #   **조회·부분실행이 전체 상태를 파괴**한 것이다.
+    #   강제자 — `tests/test_ledger_outputs.py::test_check_does_not_write`
+    if a.check:
+        _miss = [r["key"] for r in results if not r["found"]]
+        print(f"\n조회만 했다 — {len(results)}종 · 없음 {len(_miss)}종"
+              + (f": {', '.join(_miss)}" if _miss else ""))
+        print("  대장은 건드리지 않았다. 갱신하려면 --check 없이 돌린다.")
+        return 0
+
     OUT.mkdir(parents=True, exist_ok=True)
     man = OUT / "_manifest.json"
 
@@ -686,4 +706,7 @@ def main():
 
 
 if __name__ == "__main__":
+    from firelane.guards import warn_direct_call
+
+    warn_direct_call(__name__)
     main()

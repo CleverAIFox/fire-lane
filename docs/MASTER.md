@@ -593,7 +593,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 ```
 landing      SSD · 다운로드 원본. 규칙 없음. 백업 제외
 raw          SSD · 제공기관 8폴더. 절대 수정하지 않는다
-norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. ★ 미구현 (실물 17건은 있다 · PLAN #44)
+norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료(08-31)
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
 field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급. 저장소 안
@@ -1113,7 +1113,7 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 된다
 ## 12. 협업
 
 브랜치는 4계층이다. `dev` 가 트렁크이고 `main` 은 배포 스냅샷이다.
-표시용 사본은 `docs/ops.html` 이며 어긋남은 `tests/test_ops_html_sync.py` 가 잡는다.
+표시용 사본은 `docs/workflow.html` 이며 어긋남은 `tests/test_workflow_html_sync.py` 가 잡는다.
 
 ```
 main ────────────────────── 배포 스냅샷. AWS 자동 배포. 김재웅 전담
@@ -1157,7 +1157,7 @@ main ────────────────────── 배포 �
 풀어도 계속 막힌다. 규칙이 둘이면 **끄는 사람이 무엇을 껐는지 모른다.**
 브랜치 보호 규칙은 삭제했다. 이 표가 유일한 정본이며 문서는 룰셋만 적는다.
 
-★ 이 표는 **목표값**이다. 한시로 낮춘 것이 있으면 `docs/ops.html` §7 이
+★ 이 표는 **목표값**이다. 한시로 낮춘 것이 있으면 `docs/workflow.html` §7 이
 현재값을 적는다. 지금은 두 건이 낮아져 있다(PLAN #51).
 
 ### 12-2. 머지 방식
@@ -1674,7 +1674,7 @@ uv run python -m firelane.datalog fsck
 |---|---|
 | `landing` | 다운로드 원본. 규칙 없이 던져두는 곳이 하나는 필요하다 |
 | `raw` | 받은 그대로. 인코딩조차 고치지 않아야 원본이 원본이다 |
-| `norm` | 형식만 통일. **미구현** — 실물 17건과 `_prep.json` 은 정합하나 `ingest` 가 여전히 `raw` 를 읽는다. 선언의 `status` 가 그것을 밝힌다(PLAN #44) |
+| `norm` | 형식만 통일. **텍스트 14종 이관 완료**(2026-08-31). `ingest.paths_for()` 가 `layers.norm.migrated` 를 보고 입력 계층을 가른다. 바이너리(gpkg·zip·tif)는 대상이 아니다 — `prep.TEXT_EXT` 가 그 경계다 |
 | `interim` | 탐색·대조 산출물. 대장에 없고 지워도 된다 |
 | `processed` | 파이프라인 정본. 손으로 만들지 않는다 |
 | `field` | 실측 원자료. 사람이 만드는 유일한 데이터 |
@@ -1910,6 +1910,7 @@ retired:
 |---|---|
 | R1 IN/OUT 선언 | `test_reproducibility.py::test_r1_declares_in_and_out` |
 | R2 파라미터 상수화 | **권고** (매직넘버 탐지는 거짓 경보가 많다) |
+| ★ 주의 — `§18-1a` 의 `R2`(재생성 가능성)는 **다른 체계다.** 같은 이름이 두 곳에 있다 | 데이터 그라운드 룰 쪽은 `test_layers.py::test_no_layer_is_orphaned` 가 든다 |
 | R3 상수 정본 하나 | `test_seg_geom.py::test_params_are_not_redefined_in_segments` |
 | R4 시드 고정 | `test_reproducibility.py::test_r4_random_has_seed` |
 | R5 캐시 키에 입력 sha | `test_reproducibility.py::test_r5_no_bare_existence_cache` |
@@ -1929,6 +1930,8 @@ retired:
 | R19 문체·절 번호·어휘 | `test_doc_style.py` |
 | R20 소유자 없는 경로는 존재할 수 없다 | `test_ownership.py::test_every_tracked_path_has_an_owner` |
 | R21 절 참조는 실재하는 절을 가리킨다 | `test_docref.py` |
+| R22 조회는 상태를 바꾸지 않는다 | `test_ledger_outputs.py::test_check_does_not_write` |
+| R23 머지를 끝내지 않은 파일은 커밋되지 않는다 | `test_static.py::test_no_conflict_markers` |
 
 **R1. 스크립트는 입력과 출력을 상단에 선언한다**
 
@@ -1994,6 +1997,24 @@ processed 전용 필드가 웹 필드처럼 서술되는 것을 못 잡는다.
 
 두 곳에 있으면 생애주기 단계가 둘인 셈이고, 한쪽만 고치는 날이 온다.
 남은 일 목록은 `PLAN §1` 하나뿐이고, MASTER §7 은 "현재 산출물의 한계"만 적는다.
+
+**R22. 조회·부분실행은 전체 상태를 파괴하지 않는다**
+
+`--check` · `--only` · `--retry-failed` 처럼 **일부만 보는 명령**이 전체
+기록을 덮으면, 다음 실행이 없는 계보를 근거로 판정한다. 이 저장소는 같은
+자리에서 세 번 넘어졌다 — `--only` 가 대장 27종을 1종으로(08-22), 최상위
+`terrain`·`ortho` 키를 삭제(08-25), `--check` 가 계보 27건을 0건으로(08-31).
+
+★ 세 번 다 **`golden` 은 초록불이었다.** `segments.geojson` 하나만 읽으므로
+입력 계보가 죽은 것을 모른다. 통과가 증명이 아닌 전형이다.
+
+**R23. 강제자는 자기 사각지대를 선언한다** (권고)
+
+무엇을 보는지는 다들 적는데 **무엇을 안 보는지는 아무도 안 적는다.** 그래서
+초록불의 범위를 오해한다. 08-31 하루에 `golden` 이 세 번 거짓 안심을 줬다 —
+충돌 마커가 남은 문법 오류 위에서, 대장 FAIL 37 위에서, 계보가 죽은 위에서.
+도구 머리말에 "이것은 안 본다" 한 줄을 적는다. 강제자를 만들기 어려워
+권고로 둔다 — 다만 `R2` 가 권고로 남아 실제로 곪은 전례가 있다.
 
 **R15~R18. 문서도 코드처럼 어긋남을 검사한다**
 문서가 낡는 것을 사람의 성실성에 맡기면 반드시 낡는다. 없앨 수 없는 중복이라면

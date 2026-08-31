@@ -223,7 +223,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 ```
 landing      SSD/landing/     다운로드 원본. 규칙 없음. ★ 백업 제외
 raw          SSD/raw/         제공기관 8폴더. 절대 수정 안 함
-norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. ★ 미구현
+norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
 field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급
@@ -356,7 +356,7 @@ tests/
   test_declaration_sync.py ★ 역방향 — 실물이 선언돼 있는가
   test_ownership.py       ★ 미소유 경로가 없는가. CODEOWNERS 전수 검사
   test_docref.py          절 참조 무결성 · 하위 절 번호 유일·연속
-  test_ops_html_sync.py   docs/ops.html ↔ 브랜치·팀·워크플로 대조
+  test_workflow_html_sync.py   docs/workflow.html ↔ 브랜치·팀·워크플로 대조
   test_contract_vision.py GIS ↔ CV 경계 (MASTER §19)
   test_ledger_outputs.py  대장 outputs ↔ 실제 산출물
   test_place_idempotent.py 지점 집계 멱등성
