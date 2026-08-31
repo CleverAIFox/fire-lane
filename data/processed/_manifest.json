@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-08-31T11:20:26.972312+09:00",
+  "generated_at": "2026-08-31T11:43:36.137754+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -183,7 +183,7 @@
       "source_files": [
         "**/its_nodelink_changelog_*"
       ],
-      "source_sha256": "eefe2cbc8c8701b2d434d7eb52cba42bf6598c9c9b552043e23fa1c693634dfa",
+      "source_sha256": "574f2d294fa6ff1008c653af1436a4373f8b1a32ad7c198d02789d2abf3207fb",
       "resolved": "its_nodelink_changelog_kr_20260812.csv",
       "source_crs": "",
       "status": "SKIP",
@@ -1826,7 +1826,7 @@
       "source_files": [
         "**/gjcity_streetlight_*"
       ],
-      "source_sha256": "7c7011029be8d66532240cbbf4f46831b9ff5fb6601e58b7637f7440c7b2a867",
+      "source_sha256": "96ada85a38ef85c96d3fc83c20349bfd60032e49b53334bce9b571af0d9079cc",
       "resolved": "gjcity_streetlight_jngj-donggu_20240415.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -2013,7 +2013,7 @@
       "source_files": [
         "**/safety_firestation_*"
       ],
-      "source_sha256": "b65a8bb8e2197f8999384c259c9154247f2d537a10604f9e24d19b1244bb89b7",
+      "source_sha256": "8f3fca285b8f14d63992d41c9da15eef3018960241be5338b27d8b350d425e10",
       "resolved": "safety_firestation_kr_20240901.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -2206,7 +2206,7 @@
       "source_files": [
         "**/safety_hydrant_point_*"
       ],
-      "source_sha256": "bffc507dc053be38883800daec15f8c4bff0daea231e1bddcb403a2e482b4861",
+      "source_sha256": "ef46ab01d76a5c0ece02a40662f14f0f41cbc5359bf0bb5237d3446b629a61f4",
       "resolved": "safety_hydrant_point_jngj_20240207.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -2246,7 +2246,7 @@
       "source_files": [
         "**/safety_fire_access_*"
       ],
-      "source_sha256": "67a583bb97e8d027761dea9fd492012699ea8345f4bf7939f729754494dbdf9e",
+      "source_sha256": "15fb8022f1b2f9ee2a6ecd84c2c6fbcd86b976753cf69f41c4a72942ea0b4f5b",
       "resolved": "safety_fire_access_jngj-donggu_20250731.csv",
       "source_crs": "none",
       "status": "OK",
@@ -2307,7 +2307,7 @@
       "source_files": [
         "**/safety_hydrant_summary_*"
       ],
-      "source_sha256": "6a5b2690bd9cc2ecc13369da2e58f3418e1b1bea8f8a173e57be3695cf340586",
+      "source_sha256": "4f516236bfdc457bab9d3bbfb78bbeadf3d723edecd7ce0922d1bd1d3515617f",
       "resolved": "safety_hydrant_summary_jngj-donggu_20250731.csv",
       "source_crs": "none",
       "status": "OK",
@@ -2377,7 +2377,7 @@
       "source_files": [
         "**/gjcity_bin_trash_*"
       ],
-      "source_sha256": "8f6c649ddd76aa624e0039be21de6ae25878ac59040328a315497b286a6ebf77",
+      "source_sha256": "ea65b6f8c4bc7179427dc1502a3426bca2a50789fafbb05bb45800222c640e6c",
       "resolved": "gjcity_bin_trash_jngj-donggu_20241130.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -2405,7 +2405,7 @@
       "source_files": [
         "**/gjcity_bin_cloth_*"
       ],
-      "source_sha256": "2a1478ade13dfda25f10cba77fe6c596eef612d1671b25e53ecbb4c1bc62b0b6",
+      "source_sha256": "e8c6aa4f557b5fc367c7bdd1ff529179808401221cc15e94fb60df1f242385e0",
       "resolved": "gjcity_bin_cloth_jngj-donggu_20250214.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
@@ -2433,7 +2433,7 @@
       "source_files": [
         "**/safety_station_jrsdc_*"
       ],
-      "source_sha256": "d3373012c78ace322f83f59f8e0d3b6380e208f9349b3853a249b125fac258c9",
+      "source_sha256": "67654b6e6bc4fb1e3c59241140f77d6b9712d59cba59929a3f11587bfc7e2a65",
       "resolved": "safety_station_jrsdc_jngj_20260429.csv",
       "source_crs": "",
       "status": "OK",
@@ -2455,7 +2455,7 @@
       "source_files": [
         "**/gjcity_parking_lot_*"
       ],
-      "source_sha256": "420e129d56f2eb4fbd9cc85a266c9b0e6f51182933d25a5db7c2c728263fa2c2",
+      "source_sha256": "0f38436f5d4ce8b16cd67829cd12983cb5955d3ee5f4f868746e9a6af7ed3921",
       "resolved": "gjcity_parking_lot_jngj-donggu_20260828.csv",
       "source_crs": "",
       "status": "OK",
@@ -2483,7 +2483,7 @@
       "source_files": [
         "**/gjcity_enforce_cam_*"
       ],
-      "source_sha256": "d004286bc2ddee1d85bb4ce8296b65a5d820686a713338a0023267d128a88e36",
+      "source_sha256": "79dac019117d57e34f12f3f95f7b43ff84e2b039e4d45d76ecc93f12fad64df0",
       "resolved": "gjcity_enforce_cam_jngj-donggu_20260828.csv",
       "source_crs": "",
       "status": "OK",
@@ -2507,7 +2507,7 @@
       "source_files": [
         "**/gjcity_school_zone_*"
       ],
-      "source_sha256": "87232a954770a877c5df727b38f90ef9ad899221a4980d0f36855949a034e33f",
+      "source_sha256": "cb565f28d1b2fd1ff58be40a1d0352b9e9162df2822ce157f02f5b7effb491f1",
       "resolved": "gjcity_school_zone_jngj-donggu_20260828.csv",
       "source_crs": "",
       "status": "OK",
@@ -2528,7 +2528,7 @@
       "source_files": [
         "**/gjcity_parking_zone_*"
       ],
-      "source_sha256": "4b26dc91d4a10c8ef396b465f4e6373dc0c4562497559bf859cb33c0e4675571",
+      "source_sha256": "fc114cb3aadfd3b7642dd7d368b29d21f3d785a6b1adfae5ca52b074010d6867",
       "resolved": "gjcity_parking_zone_jngj-donggu_20260828.csv",
       "source_crs": "",
       "status": "OK",

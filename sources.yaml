@@ -495,7 +495,7 @@ layers:
     #   **migrated 를 채워도 아무 일이 안 난다.** 한 번 16종을 적었다가
     #   되돌렸다. 선언만 채우면 다음 사람이 '이관됐다' 로 읽는다.
     #   배선 지점 ingest.py:176 · 238 · 495. 한 건씩 옮기고 매 건 golden.
-    migrated: [cctv]
+    migrated: [bin_cloth, bin_trash, cctv, enforce_cam, fire_access, fire_station, hydrant_point, hydrant_summary, node_link_changelog, parking_lot, parking_zone, school_zone, station_jurisdiction, streetlight]
     what: raw 를 형식만 정규화한 것. 값은 안 바꾼다
     caveats:
       - 디렉터리 문제가 아니라 변환 문제다. ingest 입력 경로가 전부 바뀐다
