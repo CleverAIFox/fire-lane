@@ -231,11 +231,11 @@ fix:   버그</code></pre>
 <h2>4 · 룰셋 — 게이트는 main 하나다</h2>
 
 <table>
-  <tr><th class="mono">대상</th><th>삭제 금지</th><th>force push 금지</th><th>PR 필수</th><th>승인</th><th>Code Owners</th><th>필수 검사</th><th>머지 방식</th></tr>
-  <tr><td class="mono">main</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">1</td><td class="yes">✓</td><td>shared · strict</td><td>Merge 단독</td></tr>
-  <tr><td class="mono">dev</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">0</td><td class="no">—</td><td>shared</td><td>Merge</td></tr>
-  <tr><td class="mono">part/**</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">0</td><td class="no">—</td><td>shared</td><td>Squash · Merge</td></tr>
-  <tr><td class="mono">feat/**</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+  <tr><th>룰셋</th><th class="mono">대상</th><th>승인</th><th>Code Owners</th><th>필수 검사</th><th>머지 방식</th></tr>
+  <tr><td class="mono">release</td><td class="mono">refs/heads/main</td><td class="yes">1</td><td class="yes">✓</td><td>shared · strict</td><td>Merge</td></tr>
+  <tr><td class="mono">trunk</td><td class="mono">refs/heads/dev</td><td class="no">0</td><td class="no">—</td><td>shared</td><td>Merge</td></tr>
+  <tr><td class="mono">part</td><td class="mono">refs/heads/part/**</td><td class="no">0</td><td class="no">—</td><td>shared</td><td>Squash</td></tr>
+  <tr><td class="no">—</td><td class="mono">feat/**</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
 </table>
 
 <div class="note why">

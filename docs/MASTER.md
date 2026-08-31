@@ -1137,12 +1137,27 @@ main ────────────────────── 배포 �
 
 ### 12-1. 룰셋
 
-| 대상 | 삭제 금지 | force push 금지 | PR 필수 | 필수 검사 |
-|---|---|---|---|---|
-| `main` | ✔ | ✔ | ✔ + Code Owners | shared · strict |
-| `dev` | ✔ | ✔ | ✔ | shared |
-| `part/**` | ✔ | ✔ | ✔ | shared |
-| `feat/**` | — | — | — | — |
+| 룰셋 | 대상 | 승인 | Code Owners | 필수 검사 | 머지 방식 |
+|---|---|---|---|---|---|
+| `release` | `refs/heads/main` | 1 | ✔ | shared · strict | Merge |
+| `trunk` | `refs/heads/dev` | 0 | — | shared | Merge |
+| `part` | `refs/heads/part/**` | 0 | — | shared | Squash |
+| — | `feat/**` | — | — | — | — |
+
+셋 다 `deletion` · `non_fast_forward` · `pull_request` ·
+`required_status_checks` 넷을 든다. **`bypass_actors` 는 비어 있다.**
+
+★ **승인이 0인 이유.** 자기 PR 은 자기가 승인할 수 없는데(§12-3) GIS·infra 는
+1인 파트다. 승인 1을 걸면 영구 차단된다. 실제로 막는 것은 승인이 아니라
+`contract-shared` 다. **게이트는 `main` 하나로 모은다.**
+
+★ **머지 방식이 브랜치마다 하나뿐이다.** 고를 여지가 있으면 사람이 틀린다.
+`part` 가 Squash 인 것은 `part` 가 매일 `dev` 를 받기 때문이다 — `feat` 은
+`part` 에서만 받으므로 squash 해도 잃을 조상이 없다.
+
+★ 실물 대조는 `uv run python tools/ruleset_check.py` 가 한다.
+정본은 그 파일의 `EXPECT` 이며 이 표와 `workflow §4` 는 사람이 읽는 사본이다.
+강제자 — `tests/test_workflow_html_sync.py::test_ruleset_policy_agrees_across_three_places`
 
 ★ 접두사를 섞지 않는다. 통합 브랜치는 `part/`, 임시 브랜치는 `feat/` 다.
 둘 다 `feat/` 로 두면 룰셋이 구분하지 못해 임시 브랜치까지 force push 가
