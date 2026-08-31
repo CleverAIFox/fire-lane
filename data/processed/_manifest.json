@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-08-31T09:51:46.272317+09:00",
+  "generated_at": "2026-08-30T18:28:47.470110+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -1984,7 +1984,7 @@
       "source_files": [
         "safety/safety_cctv_jngj_20260630.csv"
       ],
-      "source_sha256": "8351c711177587674ad402e7677abc013e102da91919bede68dc831094be4808",
+      "source_sha256": "96bf98b168cb6721c4c27b52dac10d2e895b244ecf7128b1e34bc15570901552",
       "resolved": "safety_cctv_jngj_20260630.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
