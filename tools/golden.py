@@ -180,7 +180,20 @@ def _logic_fingerprint() -> str:
     return h.hexdigest()[:16]
 
 
-CODE_FP = SEG.parent / ".code_fingerprint"
+# ★ 2026-08-31. `SEG.parent`(= data/processed) 에 있었다. 그 계층은
+#   `regenerable: true` 라 gitignore 이고, 그래서 **지문이 저장소에 안
+#   남아 다른 기계에서 매번 stale 이 떴다**(PLAN #43).
+#
+#   .gitignore 주석은 "생성물이라 커밋하지 않는다" 고 적었는데 그것이
+#   틀렸다. 이 값은 **그 시점 코드의 기억**이라 지금 코드로 다시 만들면
+#   다른 값이 나온다 — 재생성 가능한 것이 아니다. R2 가 말하는 근거
+#   ("재생성 가능성이 .gitignore 의 근거다")를 반대로 적용한 것이다.
+#
+#   `golden` 계층이 `committed: true · regenerable: false` 이고 지문의
+#   성격이 정확히 그것이다. 옆의 `segments.fingerprint.json` 과 같은 자리에 둔다.
+from firelane import layers as _ly
+
+CODE_FP = _ly.path("golden") / ".code_fingerprint"
 
 
 def _staleness() -> list[str]:

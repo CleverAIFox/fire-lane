@@ -29,7 +29,6 @@ PROCESSED = ROOT / "data" / "processed"
 META = {
     "_manifest.json",       # 재현 증적. git_sha · 타이밍
     "_lineage.json",        # datalog 계보
-    ".code_fingerprint",    # golden 재잠금 판단
     "segments.schema.json", # segments 의 스키마. 본체와 한 쌍이다
 }
 
