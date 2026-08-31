@@ -269,3 +269,36 @@ def _cli() -> int:
 
 if __name__ == "__main__":
     sys.exit(_cli())
+
+def warn_direct_call(mod: str) -> None:
+    """파이프라인 단계를 사람이 직접 부를 때 알린다. **막지는 않는다.**
+
+    ★ 2026-08-31 신설(PLAN #15). 단계 모듈은 파이프라인이 부르는 대상이지
+      사람이 치는 명령이 아니다. 직접 부르면 대장은 갱신되고 계보 기록이
+      빠져 다음 실행이 교착한다(DECISIONS §23). 그런데 **그 사실이 어디에도
+      안 떴다.** 문서에만 적혀 있었고 규약은 강제되지 않으면 장식이다(§17).
+
+    ★ 막지 않는 이유 — 디버깅에는 직접 호출이 필요하다. 정상을 막으면
+      사람이 우회를 습관으로 만들고, 그러면 관문이 없는 것과 같아진다
+      (MASTER §18-13). 경고는 하되 종료코드는 건드리지 않는다.
+
+    ★ 문구를 여섯 모듈에 복사하지 않는다. 복사한 순간 그것이 낡을 자리다.
+    """
+    import os
+    import sys as _sys
+
+    if os.environ.get("FIRE_LANE_STAGE"):
+        return
+    # ★ `python -m` 으로 부르면 `__name__` 이 "__main__" 이라 모듈명을 못 얻는다.
+    #   호출부가 넘긴 값이 그것이면 `__spec__.name` 에서 되찾는다.
+    if mod in ("__main__", "__mp_main__"):
+        # ★ `import __main__` 을 쓰지 않는다. `test_etl_imports_are_declared`
+        #   가 그것을 외부 패키지로 세어 "pyproject 에 없다" 로 운다.
+        #   `sys.modules` 로 같은 것을 얻는다.
+        _m = _sys.modules.get("__main__")
+        spec = getattr(_m, "__spec__", None)
+        mod = getattr(spec, "name", None) or mod
+    name = mod.rsplit(".", 1)[-1]
+    print(f"★ firelane.{name} 은 파이프라인이 부르는 단계다.", file=_sys.stderr)
+    print(f"  계보 기록이 빠질 수 있다 — `uv run fire-lane --only {name}` 을 쓴다.",
+          file=_sys.stderr)

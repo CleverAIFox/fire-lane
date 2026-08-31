@@ -119,3 +119,33 @@ def test_guard_exit_paths_are_reachable():
         assert "import sys\n" in src or "import json, hashlib, sys\n" in src, (
             "sys.exit 를 쓰면서 sys 를 import 하지 않았다 "
             "(import sys as _sys 는 경로 삽입용이라 별개다)")
+
+
+# ── 충돌 마커 · 컴파일 ──────────────────────────────────────────
+# ★ 2026-08-31. `part/gis` 에 `origin/dev` 를 흡수하던 중 `ingest.py` 에
+#   마커가 남은 상태로 `golden check` 가 **L1·L2·L3 전부 OK** 를 냈다.
+#   `docx_check` 도 초록이었다. 저장소가 컴파일조차 안 되는데 검사 둘이
+#   통과한 것이다. 저장소에 마커 검사도 컴파일 검사도 없었다.
+def test_no_conflict_markers():
+    import subprocess
+    out = subprocess.run(
+        ["git", "grep", "-lE", r"^(<<<<<<< |>>>>>>> |=======$)", "--",
+         ":!*.md", ":!tests/test_static.py"],
+        cwd=ROOT, capture_output=True, text=True).stdout.split()
+    assert not out, (
+        f"충돌 마커가 추적 파일에 남아 있다: {out}\n"
+        "  머지를 끝내지 않고 커밋했다. 이 상태로도 golden 은 초록불이다.")
+
+
+def test_tracked_python_compiles():
+    import subprocess
+    files = subprocess.run(["git", "ls-files", "*.py"], cwd=ROOT,
+                           capture_output=True, text=True).stdout.split()
+    bad = []
+    for f in files:
+        src = (ROOT / f).read_text(encoding="utf-8", errors="replace")
+        try:
+            compile(src, f, "exec")
+        except SyntaxError as e:
+            bad.append(f"  {f}:{e.lineno}  {e.msg}")
+    assert not bad, "추적 파이썬이 컴파일되지 않는다:\n" + "\n".join(bad)

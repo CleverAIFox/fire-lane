@@ -1034,7 +1034,7 @@ def test_golden_refuses_stale_artifacts():
     assert "allow_stale" in src, "낡음을 알고 넘길 탈출구(--allow-stale)가 없다"
 
     seg = ROOT / "data/processed/segments.geojson"
-    fp = ROOT / "data/processed/.code_fingerprint"
+    fp = ROOT / "data/golden/.code_fingerprint"
     if not seg.exists():
         pytest.skip("산출물이 없다")
 
@@ -1387,7 +1387,7 @@ def test_golden_staleness_ignores_comments():
     import subprocess
     import sys
 
-    fp = ROOT / "data/processed/.code_fingerprint"
+    fp = ROOT / "data/golden/.code_fingerprint"
     seg = ROOT / "data/processed/segments.geojson"
     if not seg.exists():
         pytest.skip("산출물이 없다")

@@ -234,8 +234,17 @@ def retired_names() -> dict[str, str]:
         #
         #   조회기의 정본은 firelane.ledger.globs 하나다. 따로 구현하지 않는다.
         from firelane import ledger as _led
+        # ★ 2026-08-31. `globs()` 가 stem 기반이 되면서 **패턴**을 낸다
+        #   (`**/eais_bldg_ledger_*`). 그것의 `.name` 을 그대로 키로 쓰면
+        #   실제 파일명과 영원히 안 맞는다 — 옛 `file:` 은 리터럴이라
+        #   먹었을 뿐이다. 패턴은 RAW 에 풀어서 실물 이름을 얻는다.
         for f in _led.globs(v):
-            out[Path(str(f)).name] = why
+            s = str(f)
+            if any(c in s for c in "*?["):
+                for q in RAW.glob(s):
+                    out[q.name] = why
+            else:
+                out[Path(s).name] = why
     return out
 
 
@@ -589,8 +598,28 @@ def cmd_quarantine(dry: bool, force: bool = False) -> int:
             shutil.move(str(p), str(dst))
     if dry:
         print("\n  실제로 옮기려면:  --quarantine --yes")
-    else:
-        print(col(f"\n  {len(orphan)}건 격리. 대장에 추가할지 retired 로 보낼지 정하라.", "d"))
+        return 0
+
+    # ★ 2026-08-31. **옮겼으면 대장을 고치는 것까지가 한 동작이다.**
+    #   종전에는 `shutil.move` 만 하고 끝냈다. 그래서 `_acquire.json` 에
+    #   격리분이 남아 `doctor` 가 "대장 48 · 실물 45 · 대장만 3" 으로 울었고,
+    #   비워진 `raw/eais/` 가 "근거 없는 빈 폴더" 로 떴다. 고치는 절차는
+    #   있었지만(`--verify`) **사람이 기억해야 했고, 그날 아무도 안 했다.**
+    #
+    #   ★ §18-14 가 경고한 순환과는 방향이 다르다. 그것은 "대장을 읽어
+    #     실물을 지우는" 것이고, 이것은 "실물을 옮겼으니 대장에 반영하는"
+    #     것이다. 파괴는 이미 끝났고 여기서는 기록만 따라간다.
+    for d in sorted((q for q in RAW.rglob("*") if q.is_dir()),
+                    key=lambda q: -len(q.parts)):
+        try:
+            if not any(d.iterdir()):
+                d.rmdir()
+                print(col(f"  빈 폴더 제거  {d.relative_to(RAW)}", "d"))
+        except OSError:
+            pass
+
+    print(col(f"\n  {len(orphan)}건 격리 — 대장을 재동기한다", "d"))
+    cmd_verify()
     return 0
 
 

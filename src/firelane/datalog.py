@@ -35,7 +35,17 @@ MANIFEST = PROCESSED / "_manifest.json"
 # ★ processed 는 백업하지 않는다. raw + 코드 + 대장으로 재생성된다.
 #   보관 우선순위: raw·field(재생성 불가) > norm(재정규화 가능) > processed(버림)
 # 저장소 **안**에 있을 때만 해당한다. 밖에 있으면 external_targets() 가 잡는다.
-BACKUP_TARGETS = ["data/raw", "data/norm", "data/field"]
+# ★ 2026-08-31. 손목록이었고 `layers` 선언과 **양방향으로 어긋났다** —
+#   `quarantine`(18.9MB · 판단 보류)은 `backup: true` 인데 빠져 있었고,
+#   `norm` 은 `regenerable: true` 라 대상이 아닌데 들어 있었다.
+#   같은 것을 `tools/doctor.py` 는 `layers` 에서 옳게 유도하고 있었다.
+#   **정본이 둘이면 반드시 어긋난다**(R3). 이제 하나만 읽는다.
+def _layer_rels(flag: str) -> list[str]:
+    from firelane import layers as _ly
+    return [n for n in _ly.names() if _ly.policy(n).get(flag)]
+
+
+BACKUP_TARGETS = ["data/" + n for n in _layer_rels("backup")]
 # raw 는 레포 밖에 있다. 상대경로만 훑으면 2.5GB 가 통째로 빠진다.
 # 백업 대상에서 raw 가 빠졌다는 것을 파일 개수로만 알 수 있으면 조용한 결측이다.
 #
@@ -72,7 +82,9 @@ def external_targets() -> list[Path]:
 
 # ★ raw 와 field 는 재생성이 불가능하다. processed 는 재생성되지만 시간이 든다.
 #   이 우선순위가 백업 순서이자 복원 훈련 대상 순서다.
-CRITICAL = ["data/raw", "data/field"]
+# ★ 재생성 불가 = `regenerable` 이 거짓인 계층. 손으로 세지 않는다.
+CRITICAL = ["data/" + n for n in _layer_rels("backup")
+            if not _layer_rels("regenerable").count(n)]
 
 
 # ──────────────────────────────────────────────────────────────

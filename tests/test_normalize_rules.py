@@ -29,6 +29,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 from firelane import normalize_raw as N
 from firelane import providers
 
@@ -166,3 +168,35 @@ def test_rules_do_not_reimport_retired_files():
         "폐기 등재된 파일을 규칙이 다시 편입한다. 대장이 정본이다.\n"
         + "\n".join(bad)
         + "\n  규칙을 지우거나, 정말 쓸 것이면 retired 에서 빼고 datasets 로 옮겨라.")
+
+
+def test_missing_list_is_actually_missing():
+    """`MISSING` 에 적힌 것이 raw 에 없는가.
+
+    ★ 2026-08-31. `safety_hydrant_summary_jngj_*` 가 목록에 있는데 실물이
+      raw 에 있었다. **받았는데 "못 받았다" 고 적힌 것**이고, 이 파일이
+      `docnum_check` 의 소화전 집계(418/171)를 세는 바로 그 원본이다.
+      결손 목록이 낡으면 매번 없는 경고가 뜨고, 잦은 오탐은 진짜 경보를
+      못 믿게 만든다(MASTER §18-13).
+
+    ★ 글롭이 안 맞아도 같은 자산이면 걸린다 — `jngj_` 대 `jngj-donggu_`.
+      실제로 그 형태였다. 그래서 stem 으로 느슨하게 본다.
+    """
+    from firelane import normalize_raw as nr
+    from firelane import paths
+
+    try:
+        if not paths.RAW.exists():
+            pytest.skip("레이크 미마운트")
+    except OSError:
+        pytest.skip("레이크 미마운트")
+
+    found = []
+    for pat in nr.MISSING:
+        stem = pat.split("/")[-1].split("*")[0].rstrip("_")
+        hits = sorted(paths.RAW.rglob(f"*{stem}*"))
+        if hits:
+            found.append(f"  {pat}  ← 실물 있음: {[q.name for q in hits[:2]]}")
+    assert not found, (
+        "MISSING 에 적힌 것이 raw 에 있다:\n" + "\n".join(found) +
+        "\n  받았으면 목록에서 빼라. 결손 목록이 낡으면 없는 경고가 매번 뜬다.")

@@ -89,6 +89,12 @@ RETIRED: dict[str, list[str]] = {
     "소방청 지정": ["139", "153"],
     # ★ width_cov 0.5 미만은 실측 4 인데 PLAN 두 곳이 69 였다.
     "width_cov 0.5 미만": ["69"],
+    # ★ 2026-08-31. 대장이 세 곳에서 431+157=588 로 적고 있었다. 실물
+    #   집계표는 418+171=589 다 — **덧셈까지 안 맞았다.** 이 검사가
+    #   `.md` 만 돌아서 대장은 아무도 안 봤다.
+    "소화전 지상식": ["431"],
+    "소화전 지하식": ["157"],
+    "소화전 합": ["588"],
 }
 
 CONTEXT = {
@@ -99,6 +105,9 @@ CONTEXT = {
     # 문맥 없이 139·153·69 를 잡으면 무관한 숫자가 무더기로 걸린다.
     "소방청 지정": ("nfa_designated", "소방청 지정"),
     "width_cov 0.5 미만": ("width_cov",),
+    "소화전 지상식": ("소화전", "지상식", "hydrant"),
+    "소화전 지하식": ("소화전", "지하식", "hydrant"),
+    "소화전 합": ("소화전", "소방용수", "hydrant"),
 }
 
 
@@ -118,7 +127,48 @@ def counts() -> dict[str, int]:
         # MASTER §7 · PLAN §3-1 · §6-2 가 같은 숫자를 말해야 한다.
         "cov_thin": sum(1 for p in P
                         if p.get("width_cov") is not None and p["width_cov"] < 0.5),
+        **ledger_counts(),
     }
+
+
+def ledger_counts() -> dict[str, int]:
+    """대장·계층·실물에서 센 값.
+
+    ★ 2026-08-31 신설. 종전에는 `segments.geojson` 하나만 셌다.
+      `golden` 이 같은 파일만 읽는 것과 같은 사각지대이고, 그래서
+      **대장과 문서의 숫자는 아무도 안 봤다.**
+
+      그날 손으로 센 숫자가 여섯 개 틀렸다 — 대장 `what` 의 소화전
+      431+157=588(실물은 418+171=589. 덧셈까지 안 맞았다), PLAN #23 의
+      "8종"(실제 22종), #41 의 "20여건"(실제 54건), 핸드오프의 룰셋 승인
+      수와 PR 상태, norm 이관 건수. **코드가 센 숫자는 한 번도 안 틀렸다.**
+
+      ★ 소화전은 **실물 CSV 에서 센다.** 대장도 MASTER 도 사람이 쓰지만
+        집계표는 아니다. 사람이 안 쓰는 유일한 출처가 정본이어야 한다.
+    """
+    import csv
+    import io
+
+    import yaml
+
+    from firelane import paths, prep
+
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    out = {
+        "ds": len(y.get("datasets") or {}),
+        "retired": len(y.get("retired") or {}),
+        "migrated": len(prep.migrated()),
+    }
+    hits = sorted(paths.RAW.rglob("*hydrant_summary*"))
+    if hits:
+        rows = list(csv.reader(io.StringIO(
+            hits[0].read_text(encoding="cp949", errors="replace"))))
+        n = {r[0].strip(): int(r[1]) for r in rows[1:] if len(r) > 1 and r[1].isdigit()}
+        up, dn = n.get("지상식소화전", 0), n.get("지하식소화전", 0)
+        out |= {"hyd_up": up, "hyd_dn": dn, "hyd_sum": up + dn,
+                "water": up + dn + n.get("저수조", 0) + n.get("급수탑", 0)
+                         + n.get("비상소화장치", 0)}
+    return out
 
 
 def fmt(n: int) -> tuple[str, ...]:
@@ -190,6 +240,15 @@ def main() -> int:
         # ★ PLAN 도 본다. 08-18 에 PLAN 만 1,087 로 남아 있었다.
         ("docs/PLAN.md", c["n"], "세그먼트 수"),
         ("docs/PLAN.md", c["unknown"], "unknown"),
+        # ★ 2026-08-31. 대장·실물 계열. 위 판정 수와 달리 **사람이 손으로
+        #   적던 자리**이고 그래서 실제로 여러 번 틀렸다.
+        ("docs/MASTER.md", c.get("hyd_up", 0), "소화전 지상식"),
+        ("docs/MASTER.md", c.get("hyd_dn", 0), "소화전 지하식"),
+        ("docs/MASTER.md", c.get("hyd_sum", 0), "소화전 합"),
+        ("docs/MASTER.md", c.get("water", 0), "소방용수시설 총계"),
+        ("sources.yaml", c.get("hyd_up", 0), "소화전 지상식"),
+        ("sources.yaml", c.get("hyd_dn", 0), "소화전 지하식"),
+        ("sources.yaml", c.get("hyd_sum", 0), "소화전 합"),
     ]
     for rel, want, label in RULES:
         if not any(t in read(rel) for t in fmt(want)):
@@ -200,7 +259,10 @@ def main() -> int:
     cur = {"세그먼트 수": c["n"], "unknown(회색)": c["unknown"],
            "clear": c["clear"], "needs_cv": c["needs_cv"],
            "blocked": c["blocked"], "소방청 지정": c["nfa"],
-           "width_cov 0.5 미만": c["cov_thin"]}
+           "width_cov 0.5 미만": c["cov_thin"],
+           "소화전 지상식": c.get("hyd_up", 0),
+           "소화전 지하식": c.get("hyd_dn", 0),
+           "소화전 합": c.get("hyd_sum", 0)}
     for label, old in RETIRED.items():
         if label in cur and str(cur[label]) in old:
             print(f"! RETIRED[{label!r}] 에 현재값 {cur[label]} 이 있다 — 목록을 고쳐라")
@@ -236,6 +298,32 @@ def main() -> int:
         for f in sorted(real - doc):
             print(f"! MASTER §11      {f} 가 산출물에 있으나 표에 없다")
             bad += 1
+
+    # ── 2b. 대장도 본다 ──────────────────────────────────────
+    # ★ 2026-08-31 신설. 종전에는 `.md` 셋만 돌았다. 대장은 사람이 손으로
+    #   쓰는 문서인데 아무도 안 봤고, 범위를 넓히자마자 넷이 나왔다 —
+    #   `hydrant_summary` 의 431+157=588(실물 418+171=589. 덧셈까지 안 맞았다),
+    #   `ngii1k` 의 옛 구간 수 1,091.
+    #
+    #   ★ **원문 줄을 그대로 본다.** `yaml.dump()` 로 다시 뽑으면 긴
+    #     문자열이 재접힘돼 줄 번호가 어긋나고, `<!--stale-ok-->` 마커가
+    #     엉뚱한 줄에 걸린다. 실제로 그렇게 두 건이 안 먹었다.
+    #   ★ `retired:` 블록은 뺀다. 거기 옛 숫자는 폐기 기록이다(§18-3c).
+    _src = read("sources.yaml").splitlines()
+    _in_ret = False
+    for _no, _ln in enumerate(_src, 1):
+        if re.match(r"^\w", _ln):
+            _in_ret = _ln.startswith("retired:")
+        if _in_ret or ALLOW in _ln:
+            continue
+        for label, pat in pats.items():
+            if label in CONTEXT and not any(w in _ln for w in CONTEXT[label]):
+                continue
+            for hit in pat.findall(_ln):
+                print(f"! sources.yaml   :{_no:<5d} 폐기값 {hit} ({label})"
+                      f" — 현재 {cur.get(label, '?')}")
+                print(f"    {_ln.strip()[:88]}")
+                bad += 1
 
     # ── 4. (삭제) EXPECT 자기모순 ─────────────────────────────
     # 2026-08-18. pipeline.EXPECT 를 없앴다. 판정의 정본은 golden 지문

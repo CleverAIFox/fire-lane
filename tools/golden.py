@@ -36,6 +36,12 @@ golden.py — 산출물 지문을 뜨고, 리팩 전후가 같은지 증명한�
 
 지문은 `data/golden/` 에 남는다. 산출물이 아니라 **판정의 사진**이므로
 가볍고(수백 KB) 커밋해도 된다. 리팩이 끝나면 지우거나 그대로 둔다.
+
+★ **이것은 안 본다**(R23). `data/processed/segments.geojson` 하나만 읽는다.
+  입력 계층(raw·norm) · 대장 정합 · `_manifest.json` 계보 · 파이썬 문법 ·
+  충돌 마커는 전부 사각지대다. 08-31 에 셋을 동시에 놓쳤다.
+  각각 `test_norm_wiring` · `firelane.ledger` · `test_manifest_keeps_lineage` ·
+  `test_static` 이 든다. **이 초록불은 "판정이 안 변했다" 만 뜻한다.**
 """
 from __future__ import annotations
 
@@ -48,7 +54,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SEG = ROOT / "data/processed/segments.geojson"
-GOLD = ROOT / "data/golden"
+from firelane import paths as _p
+
+GOLD = _p.GOLDEN
 
 # L2 에서 구간마다 비교할 필드. 판정에 직접 관계된 것만 넣는다.
 # 진단용 컬럼(merged_n, n_sample 등)은 리팩으로 바뀌어도 무해하므로 뺀다.
@@ -126,8 +134,8 @@ def cmd_lock(_args) -> int:
     #   판정 코드가 정당하게 바뀐 뒤에는 파이프라인을 다시 돌려도, lock 을
     #   다시 해도 낡음 경보가 계속 울렸다. 남는 길이 손으로 지우기 아니면
     #   `--allow-stale` 뿐이었고, 둘 다 게이트를 죽이는 습관을 만든다.
-    code_fp = _logic_fingerprint()
-    CODE_FP.write_text(code_fp + "\n", encoding="utf-8")
+    code_fp, code_per = _logic_fingerprint()
+    CODE_FP.write_text(_dump_fp(code_fp, code_per), encoding="utf-8")
 
     L1 = fp["L1"]
     print("잠갔다 →", GOLD / "segments.fingerprint.json")
@@ -139,8 +147,16 @@ def cmd_lock(_args) -> int:
     return 0
 
 
-def _logic_fingerprint() -> str:
-    """판정에 관여하는 코드의 로직 해시.
+def _logic_fingerprint() -> tuple[str, dict[str, str]]:
+    """판정에 관여하는 코드의 로직 해시. (전체, 파일별) 을 낸다.
+
+    ★ 2026-08-31. 종전에는 전체 해시 하나만 냈다. 그래서 게이트가 울어도
+      **여섯 파일 중 어느 것이 바뀌었는지 알 수 없었다.** 그날 실제로
+      무관한 파일(`guards.py`)을 원인으로 추측했고 틀렸다 — 진짜 원인은
+      `origin/dev` 흡수가 가져온 `segments.py`·`seg/report.py` 변경이었다.
+
+      **왜 울었는지 모르는 게이트는 `--allow-stale` 을 습관으로 만든다.**
+      거짓 경보가 아니라 진단 불가가 그 게이트를 죽인다.
 
     ★ 주석 · docstring · 빈 줄을 걷어낸 AST 만 본다. 주석 한 줄을 고쳤다고
       게이트가 울면 사람이 `--allow-stale` 을 쓰기 시작하고, 그 순간
@@ -165,16 +181,48 @@ def _logic_fingerprint() -> str:
                     n.body = n.body[1:] or [ast.Pass()]
         return ast.dump(tree)
 
+    per = {}
     h = hashlib.sha256()
     for rel in sorted(watch):
         q = ROOT / rel
         if q.exists():
+            logic = _logic(q.read_text(encoding="utf-8")).encode()
+            per[rel] = hashlib.sha256(logic).hexdigest()[:12]
             h.update(rel.encode())
-            h.update(_logic(q.read_text(encoding="utf-8")).encode())
-    return h.hexdigest()[:16]
+            h.update(logic)
+    return h.hexdigest()[:16], per
 
 
-CODE_FP = SEG.parent / ".code_fingerprint"
+# ★ 2026-08-31. `SEG.parent`(= data/processed) 에 있었다. 그 계층은
+#   `regenerable: true` 라 gitignore 이고, 그래서 **지문이 저장소에 안
+#   남아 다른 기계에서 매번 stale 이 떴다**(PLAN #43).
+#
+#   .gitignore 주석은 "생성물이라 커밋하지 않는다" 고 적었는데 그것이
+#   틀렸다. 이 값은 **그 시점 코드의 기억**이라 지금 코드로 다시 만들면
+#   다른 값이 나온다 — 재생성 가능한 것이 아니다. R2 가 말하는 근거
+#   ("재생성 가능성이 .gitignore 의 근거다")를 반대로 적용한 것이다.
+#
+#   `golden` 계층이 `committed: true · regenerable: false` 이고 지문의
+#   성격이 정확히 그것이다. 옆의 `segments.fingerprint.json` 과 같은 자리에 둔다.
+from firelane import layers as _ly
+
+CODE_FP = _ly.path("golden") / ".code_fingerprint"
+
+
+def _read_fp(raw: str) -> tuple[str, dict[str, str]]:
+    """`.code_fingerprint` 를 읽는다. 옛 한 줄 형식도 받는다."""
+    raw = raw.strip()
+    if not raw:
+        return "", {}
+    if raw.startswith("{"):
+        d = json.loads(raw)
+        return d.get("all", ""), d.get("files", {})
+    return raw, {}          # 옛 형식 — 파일별 기록이 없다
+
+
+def _dump_fp(all_: str, per: dict[str, str]) -> str:
+    return json.dumps({"all": all_, "files": per},
+                      ensure_ascii=False, indent=1) + "\n"
 
 
 def _staleness() -> list[str]:
@@ -194,16 +242,23 @@ def _staleness() -> list[str]:
     """
     if not SEG.exists():
         return []
-    now = _logic_fingerprint()
-    was = CODE_FP.read_text(encoding="utf-8").strip() if CODE_FP.exists() else None
-    if was == now:
+    now, per = _logic_fingerprint()
+    raw = CODE_FP.read_text(encoding="utf-8").strip() if CODE_FP.exists() else ""
+    old_all, old_per = _read_fp(raw)
+    if old_all == now:
         return []
-    if was is None:
-        # 기준선이 없다. 이번 산출물이 지금 코드로 나온 것으로 본다 —
-        # 아니라면 golden 대조 자체가 곧 잡는다.
-        CODE_FP.write_text(now + "\n", encoding="utf-8")
+    if not old_all:
+        CODE_FP.write_text(_dump_fp(now, per), encoding="utf-8")
         return []
-    return [f"판정 로직이 바뀌었다 ({was} → {now})"]
+    out = [f"판정 로직이 바뀌었다 ({old_all} → {now})"]
+    if old_per:
+        for rel in sorted(per):
+            a, b = old_per.get(rel), per[rel]
+            out.append(f"    {'★ 변경' if a != b else '  불변'}  {rel}"
+                       + (f"   {a} → {b}" if a != b else ""))
+    else:
+        out.append("    (옛 지문에 파일별 기록이 없다. 다음 lock 부터 나온다)")
+    return out
 
 
 def cmd_check(args) -> int:
@@ -214,8 +269,11 @@ def cmd_check(args) -> int:
     stale = _staleness()
     if stale and not getattr(args, "allow_stale", False):
         print("★ 산출물이 판정 코드보다 낡았다. 이 대조는 아무것도 증명하지 않는다.")
-        for rel in stale:
-            print(f"    {rel}  가 segments.geojson 보다 최근이다")
+        # ★ 2026-08-31. `_staleness()` 가 파일별 내역까지 내면서 여러 줄이
+        #   됐다. 종전처럼 전 줄에 접미사를 붙이면 "불변 … 가 최근이다" 라는
+        #   모순된 문장이 나온다. **지저분한 경보는 안 읽힌다.**
+        for i, rel in enumerate(stale):
+            print(f"    {rel}" + ("  — segments.geojson 보다 최근이다" if i == 0 else ""))
         print("\n  uv run fire-lane --from segments   ← 먼저 돌려라")
         print("  (uv run 을 빼면 command not found 다. 진입점은 .venv/bin 에 있다)")
         print("\n  정말 낡은 것을 알고 대조하려면 --allow-stale")
@@ -318,7 +376,7 @@ def cmd_selftest(_args) -> int:
             q(cmd_lock)
             if not CODE_FP.exists():
                 print("★ ① lock 이 .code_fingerprint 를 안 남긴다"); bad += 1
-            elif CODE_FP.read_text(encoding="utf-8").strip() != _logic_fingerprint():
+            elif _read_fp(CODE_FP.read_text(encoding="utf-8"))[0] != _logic_fingerprint()[0]:
                 print("★ ① 코드 지문이 로직 해시와 다르다"); bad += 1
             else:
                 print("  ① lock 이 코드 지문을 남긴다  OK")

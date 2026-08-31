@@ -593,7 +593,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 ```
 landing      SSD · 다운로드 원본. 규칙 없음. 백업 제외
 raw          SSD · 제공기관 8폴더. 절대 수정하지 않는다
-norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. ★ 미구현 (실물 17건은 있다 · PLAN #44)
+norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료(08-31)
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
 field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급. 저장소 안
@@ -886,7 +886,7 @@ CCTV 원본은 설치연도별로 행이 쪼개져 있어 좌표로 묶어 지�
 ### 11-1. 30초 안에 띄우기
 
 ```bash
-git checkout gis && git pull
+git switch part/gis && git merge origin/dev
 uv run python tools/serve.py        # 캐시 없는 개발 서버
 # http://localhost:8000
 ```
@@ -1113,7 +1113,7 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 된다
 ## 12. 협업
 
 브랜치는 4계층이다. `dev` 가 트렁크이고 `main` 은 배포 스냅샷이다.
-표시용 사본은 `docs/ops.html` 이며 어긋남은 `tests/test_ops_html_sync.py` 가 잡는다.
+표시용 사본은 `docs/workflow.html` 이며 어긋남은 `tests/test_workflow_html_sync.py` 가 잡는다.
 
 ```
 main ────────────────────── 배포 스냅샷. AWS 자동 배포. 김재웅 전담
@@ -1150,6 +1150,15 @@ main ────────────────────── 배포 �
 
 ★ `dev` 브랜치가 있으면 `dev/무엇` 은 ref 충돌로 만들 수 없다. `part` 라는
 이름의 브랜치를 만들지 않는다.
+
+★ **보호는 룰셋 한 벌이다.** 구식 `Branch protection rules` 를 같이 켜지
+않는다. 08-31 에 `main` 이 두 벌로 보호돼 있었고 어느 쪽이 실제로 막는지
+화면만 봐서는 알 수 없었다 — 룰셋을 풀어도 계속 막히고, 브랜치 보호를
+풀어도 계속 막힌다. 규칙이 둘이면 **끄는 사람이 무엇을 껐는지 모른다.**
+브랜치 보호 규칙은 삭제했다. 이 표가 유일한 정본이며 문서는 룰셋만 적는다.
+
+★ 이 표는 **목표값**이다. 한시로 낮춘 것이 있으면 `docs/workflow.html` §7 이
+현재값을 적는다. 지금은 두 건이 낮아져 있다(PLAN #51).
 
 ### 12-2. 머지 방식
 
@@ -1188,17 +1197,22 @@ main ────────────────────── 배포 �
 | `web/data/` | `git checkout --theirs web/data/` 후 재생성. 생성물이다 |
 | 그 외 | 아침에 `git merge origin/dev` 를 빼먹은 것이다 |
 
-★ `gis/*` 는 `gis` 브랜치와 ref 충돌로 생성 불가하다. `gis-*` 를 쓴다.
-`gis` 는 보호 브랜치이며 직푸시가 막힌다 — **오창준도 PR 이 필요하다.**
+★ `main` · `dev` · `part/**` 는 전부 보호 브랜치이며 직푸시가 막힌다 —
+**오창준도 PR 이 필요하다.** 자유롭게 만들고 지울 수 있는 것은 `feat/**` 뿐이다.
 
 ### 12-5. 하루 흐름
 
 ```bash
-git checkout gis && git pull
-git checkout -b ui/오늘작업이름          # 또는 gis-오늘작업이름
+git switch part/gis
+git merge origin/dev                     # ★ 아침. 남들 작업을 먼저 받는다
+git switch -c feat/gis-오늘작업이름
 git add -A && git commit -m "ui: 판정 색상 대비 조정"
-git push -u origin ui/오늘작업이름
+git push -u origin feat/gis-오늘작업이름
+# PR:  base part/gis  ←  compare feat/gis-오늘작업이름   (squash)
 ```
+
+파트 브랜치를 `dev` 에 올리는 것은 하루 한 번이다. `part/*` → `dev` 도
+PR 이며 머지 커밋을 쓴다(§12-2).
 
 미완성이면 Draft PR 로 열어둔다. **하루 안에 머지하고 브랜치를 지운다.**
 브랜치가 오래 떠 있으면 같은 파일이 양쪽에서 바뀌어 충돌이 커진다.
@@ -1222,24 +1236,79 @@ fix:  버그
 
 | 워크플로 | 시점 | 하는 일 |
 |---|---|---|
-| `contract` | `main` · `gis` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
-| `pages` | `main` · `gis` 의 `web/**` 변경 | GitHub Pages 갱신 |
+| `contract` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
+| `pages` | `main` 의 `web/**` 변경 | GitHub Pages 갱신 |
 
-★ **두 워크플로의 브랜치 목록이 같아야 한다.** 배포되는 브랜치가 검사되지
-않으면 검사를 비껴간 코드가 그대로 공개된다.
+★ **검사 범위가 배포 범위를 덮어야 한다.** `contract` 의 브랜치 목록에서
+`part/**` 를 빼면 검사를 비껴간 코드가 `dev` 까지 올라온다.
+
+★ 배포 게이트는 `main` 단독이다. `dev` 는 트렁크이고 `main` 은 배포
+스냅샷이다 — 이 비대칭이 `dev` 를 판 이유다. 사람이 검증을 건너뛰어도
+공개된 것은 안 바뀐다.
 강제자 — `tests/test_guards.py` 의 트리거 대조
 
 CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소에 없기 때문이다.
 파이프라인은 GIS 담당 로컬에서만 돈다.
 
-### 12-8. 충돌이 나면
+### 12-8. 배포 — 밑그림
 
-거의 안 난다. 파일이 갈려 있다. `web/data/` 에서 충돌이 나면 손으로 풀지 않는다.
+★ **아직 없다.** 지금 `main` 이 배포하는 것은 `pages` 하나이며 정적 지도뿐이다.
+아래는 확정이 아니라 방향이다. 실물이 생기면 이 절을 사실로 다시 쓴다.
 
-```bash
-git checkout --theirs web/data/      # gis 쪽을 취한다
-uv run fire-lane --only publish      # 또는 재생성
-```
+`dev` 를 판 이유가 여기 있다. `main` 에 AWS 배포를 물리는 순간 `main` 은
+"검증된 것만 들어가는 곳"이 되어야 하고, 그러면 통합용 트렁크가 따로
+필요하다. 순서를 뒤집어 배포를 먼저 붙이면 되돌릴 자리가 없다.
+
+| 갈래 | 트리거 | 산출 |
+|---|---|---|
+| `pages` | `main` 의 `web/**` | GitHub Pages. 정적 지도 |
+| `deploy` (예정) | `main` 의 `src/api/**` · `src/contracts/**` · `Dockerfile.api` | ECR 이미지 → ECS 서비스 갱신 |
+
+이미지는 용도별로 가른다. `Dockerfile` 머리말이 그 이유를 적는다 — ETL 은
+GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 딸려가면
+콜드스타트만 길어진다.
+
+| 이미지 | 내용 | 실행 형태 |
+|---|---|---|
+| `etl` | GDAL · geopandas · rasterio | 배치. 상시 아님 |
+| `api` | fastapi · uvicorn · shapely | ECS 상시 |
+| `vision` | opencv · ultralytics | CV 파트가 붙을 때 |
+
+미리 정해 두는 것 셋.
+
+- **자격 증명은 OIDC 다.** 장기 키를 저장소에 두지 않는다. 신뢰 정책의
+  `sub` 조건은 `main` 으로 못 박는다. 저장소 전체(`:*`)로 열면 `feat/**`
+  에서도 배포가 가능해진다.
+- **이미지 태그는 커밋 해시다.** 배포된 것이 어느 코드인지 되짚을 수
+  없으면 롤백이 추측이 된다.
+- **승인 게이트를 둔다.** `production` Environment 의 리뷰어는 릴리즈
+  매니저다(§12-3 의 표).
+
+### 12-8a. 매체 저장 — 밑그림
+
+사진은 저장소에 넣지 않는다. `web/data` 40MB 상한(§12-10)과 같은 이유이며,
+한 번 커밋되면 히스토리에서 뺄 수 없다.
+
+버킷을 둘로 가른다. **어느 쪽에도 미마스킹 프레임을 두지 않는다.**
+
+| 버킷 | 내용 | 접근 |
+|---|---|---|
+| 1차 | 얼굴·번호판 마스킹만 적용. 기하 보정 전 | 비공개. 파이프라인만 |
+| 2차 | 왜곡 보정 · 호모그래피 적용 완료 | 비공개. 화면 표시는 presigned URL |
+
+1차를 지우지 않는 이유는 둘이다 — 판정이 틀렸을 때 되짚을 대상이 그것뿐이고,
+호모그래피나 캘리브레이션 값이 바뀌면 1차에서 다시 계산해야 한다. 2차만
+남기면 파라미터를 고칠 때마다 재촬영해야 한다.
+
+키는 `seg_uid` 로 시작한다. `src/contracts/vision.py` 의 `SEG_UID_RE` 가 이미
+그 형식을 강제하므로 계약이 저장소 배치까지 덮는다.
+
+★ **마스킹은 업로드 전에 끝난다.** 촬영 기기에서 S3 로 가는 경로에 미마스킹
+프레임이 놓이는 구간이 있으면 그 구간이 곧 위험 구간이다. 1차 버킷이
+"원본 보관소" 가 되는 순간 이 설계의 전제가 무너진다.
+
+★ 마스킹 후에도 보관 기간 · 접근 주체 · 파기 시점은 방침 문서에 적어야 한다.
+정본은 PLAN 이며 여기에 복사하지 않는다.
 
 ### 12-9. 락이 3중인 이유
 
@@ -1250,7 +1319,7 @@ uv run fire-lane --only publish      # 또는 재생성
 | **계약 테스트** | **구조 파괴** | **실제로 막는 건 이것** |
 
 CODEOWNERS 는 "누가 봐야 하는가"를 정하고, 계약 테스트는 "무엇이 깨지면 안
-되는가"를 정한다. 후자가 본체다. 브랜치 보호 규칙에서
+되는가"를 정한다. 후자가 본체다. 룰셋의
 `Require review from Code Owners` 를 켜지 않으면 CODEOWNERS 는 효력 없는
 텍스트 파일이다.
 
@@ -1605,7 +1674,7 @@ uv run python -m firelane.datalog fsck
 |---|---|
 | `landing` | 다운로드 원본. 규칙 없이 던져두는 곳이 하나는 필요하다 |
 | `raw` | 받은 그대로. 인코딩조차 고치지 않아야 원본이 원본이다 |
-| `norm` | 형식만 통일. **미구현** — 실물 17건과 `_prep.json` 은 정합하나 `ingest` 가 여전히 `raw` 를 읽는다. 선언의 `status` 가 그것을 밝힌다(PLAN #44) |
+| `norm` | 형식만 통일. **텍스트 14종 이관 완료**(2026-08-31). `ingest.paths_for()` 가 `layers.norm.migrated` 를 보고 입력 계층을 가른다. 바이너리(gpkg·zip·tif)는 대상이 아니다 — `prep.TEXT_EXT` 가 그 경계다 |
 | `interim` | 탐색·대조 산출물. 대장에 없고 지워도 된다 |
 | `processed` | 파이프라인 정본. 손으로 만들지 않는다 |
 | `field` | 실측 원자료. 사람이 만드는 유일한 데이터 |
@@ -1841,6 +1910,7 @@ retired:
 |---|---|
 | R1 IN/OUT 선언 | `test_reproducibility.py::test_r1_declares_in_and_out` |
 | R2 파라미터 상수화 | **권고** (매직넘버 탐지는 거짓 경보가 많다) |
+| ★ 주의 — `§18-1a` 의 `R2`(재생성 가능성)는 **다른 체계다.** 같은 이름이 두 곳에 있다 | 데이터 그라운드 룰 쪽은 `test_layers.py::test_no_layer_is_orphaned` 가 든다 |
 | R3 상수 정본 하나 | `test_seg_geom.py::test_params_are_not_redefined_in_segments` |
 | R4 시드 고정 | `test_reproducibility.py::test_r4_random_has_seed` |
 | R5 캐시 키에 입력 sha | `test_reproducibility.py::test_r5_no_bare_existence_cache` |
@@ -1860,6 +1930,8 @@ retired:
 | R19 문체·절 번호·어휘 | `test_doc_style.py` |
 | R20 소유자 없는 경로는 존재할 수 없다 | `test_ownership.py::test_every_tracked_path_has_an_owner` |
 | R21 절 참조는 실재하는 절을 가리킨다 | `test_docref.py` |
+| R22 조회는 상태를 바꾸지 않는다 | `test_ledger_outputs.py::test_check_does_not_write` |
+| R23 머지를 끝내지 않은 파일은 커밋되지 않는다 | `test_static.py::test_no_conflict_markers` |
 
 **R1. 스크립트는 입력과 출력을 상단에 선언한다**
 
@@ -1925,6 +1997,24 @@ processed 전용 필드가 웹 필드처럼 서술되는 것을 못 잡는다.
 
 두 곳에 있으면 생애주기 단계가 둘인 셈이고, 한쪽만 고치는 날이 온다.
 남은 일 목록은 `PLAN §1` 하나뿐이고, MASTER §7 은 "현재 산출물의 한계"만 적는다.
+
+**R22. 조회·부분실행은 전체 상태를 파괴하지 않는다**
+
+`--check` · `--only` · `--retry-failed` 처럼 **일부만 보는 명령**이 전체
+기록을 덮으면, 다음 실행이 없는 계보를 근거로 판정한다. 이 저장소는 같은
+자리에서 세 번 넘어졌다 — `--only` 가 대장 27종을 1종으로(08-22), 최상위
+`terrain`·`ortho` 키를 삭제(08-25), `--check` 가 계보 27건을 0건으로(08-31).
+
+★ 세 번 다 **`golden` 은 초록불이었다.** `segments.geojson` 하나만 읽으므로
+입력 계보가 죽은 것을 모른다. 통과가 증명이 아닌 전형이다.
+
+**R23. 강제자는 자기 사각지대를 선언한다** (권고)
+
+무엇을 보는지는 다들 적는데 **무엇을 안 보는지는 아무도 안 적는다.** 그래서
+초록불의 범위를 오해한다. 08-31 하루에 `golden` 이 세 번 거짓 안심을 줬다 —
+충돌 마커가 남은 문법 오류 위에서, 대장 FAIL 37 위에서, 계보가 죽은 위에서.
+도구 머리말에 "이것은 안 본다" 한 줄을 적는다. 강제자를 만들기 어려워
+권고로 둔다 — 다만 `R2` 가 권고로 남아 실제로 곪은 전례가 있다.
 
 **R15~R18. 문서도 코드처럼 어긋남을 검사한다**
 문서가 낡는 것을 사람의 성실성에 맡기면 반드시 낡는다. 없앨 수 없는 중복이라면

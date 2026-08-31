@@ -350,4 +350,7 @@ def main():
         print(f"  {f.name:26} {f.stat().st_size/1024:7.0f} KB")
 
 if __name__ == "__main__":
+    from firelane.guards import warn_direct_call
+
+    warn_direct_call(__name__)
     main()

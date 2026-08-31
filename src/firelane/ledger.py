@@ -20,7 +20,8 @@ ledger.py — 대장 항목 스키마의 정본. **산문을 필드로 바꾼다
     updated     데이터 갱신일. 다운로드일이 아니다             [필수]
     acquired    우리가 받은 날                                 [필수]
     license     이용 조건. TODO 금지                           [필수]
-    files       실물 파일 목록. 와일드카드 금지                [필수]
+    stem        실물 파일 접두. ext 와 짝을 이룬다              [필수]
+    files       stem 으로 못 가르는 항목의 글롭 예외            [선택]
     primary     그중 파이프라인이 읽는 하나                    [단수 kind 필수]
     encoding    선언 인코딩. 실물과 대조된다                   [텍스트 필수]
     schema      구조 — columns / layers / key                  [필수]
@@ -57,7 +58,16 @@ from firelane import scope as sc
 #   필드다. 여기 남겨두면 검증기가 대장 42종을 전부 거부한다(126 FAIL).
 #   **파생값을 지우려면 그것을 읽는 곳이 하나여야 한다** — 이 줄이 그
 #   원칙을 어긴 열한 번째 자리였고, 하필 그 원칙을 강제하는 도구다.
-REQUIRED = ("what", "scope", "updated", "files", "kind", "schema", "feeds")
+# ★ 2026-08-31. `files` 를 필수에서 뺐다(PLAN #46). 실물 경로의 정본은
+#   `stem` + `ext` 이고 `files` 는 그것으로 표현 못 하는 항목만 남는
+#   **글롭 예외**다. 종전에는 두 자리가 같은 것을 따로 요구했다 —
+#   `globs()` 는 `files` 를 읽고 `REQUIRED` 는 그 존재를 강제했다.
+#   그래서 `globs()` 만 stem 우선으로 바꾸면 37종이 "필수 필드 없음"
+#   으로 죽는다. 실제로 그렇게 죽였고 `golden` 은 초록불이었다 —
+#   `segments.geojson` 만 읽으니 대장이 깨진 것을 모른다.
+REQUIRED = ("what", "scope", "updated", "kind", "schema", "feeds")
+# 실물 경로를 낼 수 있어야 한다 — `stem`(또는 `stems`) 이나 `files` 중 하나.
+PATHABLE = ("stem", "stems", "files")
 
 # raw_only 는 파이프라인이 읽지 않는다. 구조 선언을 요구할 근거가 없다.
 NO_SCHEMA_KINDS = {"raw_only"}
@@ -119,6 +129,19 @@ def check_entry(key: str, e: dict) -> list[Issue]:
             out.append(Issue(FAIL, key, f"필수 필드 없음: {f}"))
         elif bad(e[f]):
             out.append(Issue(FAIL, key, f"{f} 가 비었거나 TODO 다: {e[f]!r}"))
+
+    # ── 실물 경로를 낼 수 있는가 ──────────────────────────────
+    # ★ 2026-08-31. `files` 를 REQUIRED 에서 뺐다(#46). 빼기만 하면 경로를
+    #   못 내는 항목이 조용히 통과한다 — 선언은 지웠는데 배선을 안 한
+    #   그 형태다(DECISIONS §77). 그래서 **선언과 실물을 둘 다** 본다.
+    if not any(e.get(f) for f in PATHABLE):
+        out.append(Issue(FAIL, key,
+                         "실물 경로를 낼 수 없다 — stem · stems · files 중 "
+                         "하나가 있어야 한다"))
+    elif not globs(e):
+        out.append(Issue(FAIL, key,
+                         "선언은 있는데 globs() 가 빈 목록이다. "
+                         "stem 이 비었거나 files 가 빈 리스트다"))
 
     # ── 스코프 ────────────────────────────────────────────────
     s = e.get("scope")
@@ -246,11 +269,31 @@ def summary() -> dict[str, int]:
 
 
 def globs(e: dict) -> list[str]:
-    """대장 항목 → raw 상대 글롭 패턴 목록. 없으면 빈 리스트."""
-    v = e.get("files")
-    if v is None and "file" in e:      # 옛 형식. 대장에는 이제 없다
-        v = [e["file"]]
-    return [str(x) for x in (v or [])]
+    """대장 항목 → raw 상대 글롭 패턴 목록. 없으면 빈 리스트.
+
+    ★ 2026-08-31. `stem` 우선으로 뒤집었다(PLAN #46). `files` 는 stem 으로
+      표현할 수 없는 항목만 남는 **명시적 글롭 예외**다.
+
+        ngii1k                    도엽 74+143 묶음. 글롭이 곧 정체성
+        node_link · node_point ·  `its_nodelink_*` 가
+        turn_restriction          `its_nodelink_changelog_*` 를 함께 잡는다.
+                                  구분자 `_` 를 붙여도 안 갈린다 —
+                                  `changelog` 가 같은 토큰 자리에 온다
+
+      **접두사 포함 관계는 stem 으로 못 가른다.** 실물 대조로 확인했다 —
+      38종은 두 방식이 같은 파일을 잡았고 셋만 갈렸다. 확인 없이 지웠으면
+      그 셋이 남의 파일을 먹었다.
+    """
+    if v := e.get("files"):
+        return [str(x) for x in v]
+    # ★ 2026-08-31. `file` 단수를 지웠다가 되살렸다. `datasets` 에는 없지만
+    #   **`retired` 블록이 아직 쓴다** — 이 함수는 두 블록을 다 받는다.
+    #   지운 뒤 acquire 의 폐기 판정이 조용히 빈 목록을 받았고,
+    #   `test_acquire_stage_and_quarantine_do_not_fight` 가 그것을 잡았다.
+    if f := e.get("file"):
+        return [str(f)]
+    stems = e.get("stems") or ([e["stem"]] if e.get("stem") else [])
+    return [f"**/{s}_*" for s in stems]
 
 
 def paths_of(e: dict, root) -> list:

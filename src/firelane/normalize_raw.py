@@ -242,10 +242,24 @@ REQUIRED = _required()
 
 # 이번 재확보에서 못 받은 것. 결손이지 폐기가 아니다(MASTER §18-12).
 # 지우면 잊는다. 목록에 남겨야 다음에 받을 때 뜬다.
-MISSING = [
-    "gjcity/gjcity_parking_dongu_*.csv",             # 광주 동구 주차장
-    "safety/safety_hydrant_summary_jngj_*.csv",      # 소화전 집계표
-]
+# ★ 2026-08-31. `safety_hydrant_summary_jngj_*` 를 뺐다. 실물이 raw 에 있다.
+#   강제자 — `test_normalize_rules.py::test_missing_list_is_actually_missing`
+# ★ 2026-08-31. **목록을 비웠다. 결손이 0건이다.**
+#
+#   둘 다 낡은 것이었다 —
+#     safety_hydrant_summary_jngj_*   실물은 `..._jngj-donggu_20250731.csv`.
+#                                     받았는데 글롭이 안 맞아 결손으로 떴다
+#     gjcity_parking_dongu_*          08-28 에 `parking_lot` · `parking_zone`
+#                                     둘로 쪼개 받았다. 옛 이름만 남았다
+#
+#   ★ **"결손인 채로 대장에 남긴다" 는 상태를 두지 않는다.** §18-3c 가
+#     "지우면 잊는다" 고 적는 것은 옳지만, 그것은 *받을 수 없는* 것에
+#     대한 말이다. 받았거나 받을 수 있는 것을 결손으로 두면 매 실행
+#     없는 경고가 뜨고, 잦은 오탐은 진짜 경보를 못 믿게 만든다(§18-13).
+#     세 갈래뿐이다 — 받는다 · retired 로 내린다 · (부존재면) 사유를 적는다.
+#
+#   강제자 — `test_normalize_rules.py::test_missing_list_is_actually_missing`
+MISSING: list[str] = []
 
 
 def assert_rules_are_lowercase() -> list[str]:
