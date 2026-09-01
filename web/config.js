@@ -15,7 +15,7 @@ const CONFIG = {
      WMTS 축 순서는 {z}/{y}/{x} 다. {z}/{x}/{y} 로 쓰면 타일이 어긋난다. */
   vworld: {
     key    : "95E47552-4B32-36AB-885B-E9DC3FCB5352",
-    enabled: false,          // 도메인 등록 전이면 false. CARTO 다크로 뜬다
+    enabled: true,           // 2026-09-01 woongtopia.github.io 등록 완료
   },
 
   /* 판정 색상. style.css 의 --blocked 등과 같은 값을 유지할 것.
