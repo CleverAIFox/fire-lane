@@ -80,6 +80,33 @@ step "계층 강제 (test_layering)" uv run pytest tests/test_layering.py -q
 #   끄는 근거를 각각 적어뒀다.
 step "ruff" uv run ruff check src tools tests
 
+# ── 5a. 엄격 린트 — CI 의 contract-strict 와 같은 것 ─────────
+# ★ 2026-09-02. 여기가 비어 있었다. 위 5번은 pyproject 기본 규칙만 돌고,
+#   CI 의 `contract-strict` 는 `--select B,RUF,PTH,I,UP,DTZ` 를 켠다.
+#   그래서 로컬 14/15 초록 · CI 빨간불이 하루에 두 번 났다 —
+#   `DTZ011`(시간대 없는 date.today) 이 그중 하나였고 실제 버그였다.
+#
+# ★ **인자를 여기 복사하지 않는다.** 정본은 `.github/workflows/contract.yml`
+#   이고 아래에서 뽑아 쓴다. 복사하면 또 갈린다 — 이 파일 5b 가 적은
+#   "로컬 검증이 CI 의 부분집합이면" 과 같은 사고를 인자 층에서 반복하는 것이다.
+#
+# ★ 대상 파일은 CI 와 같은 도구가 낸다(`owned_paths.py --py-only`).
+#   CODEOWNERS 단독 소유 경로만이라, 공동 소유 파일에는 엄격 규칙을 안 건다.
+step "엄격 린트 (CI 와 같은 인자)" bash -c '
+    Y=.github/workflows/contract.yml
+    # ★ 주석에도 --select 가 나온다("손대장 110 → 8" 처럼). 주석 줄을 걷고
+    #   실행 줄에서만 뽑는다. grep 으로 yml 을 읽는 것 자체가 사본이므로
+    #   PLAN #65 가 인자를 파일 하나로 빼는 것을 든다.
+    SEL=$(grep -v "^\s*#" "$Y" | grep -oE -- "--select [A-Za-z0-9,]+" | head -1 | cut -d" " -f2)
+    IGN=$(grep -v "^\s*#" "$Y" | grep -oE -- "--ignore [A-Za-z0-9,]+" | head -1 | cut -d" " -f2)
+    [ -n "$SEL" ] || { echo "contract.yml 에서 --select 를 못 뽑았다"; exit 1; }
+    FILES=$(uv run python tools/owned_paths.py --py-only)
+    [ -n "$FILES" ] || { echo "엄격 검사 대상이 0건이다"; exit 1; }
+    echo "대상 $(echo "$FILES" | wc -l)개 · select $SEL"
+    uv run ruff check $FILES --select "$SEL" --ignore "$IGN"
+'
+
+
 # ── 5b. 저장소 위생 — CI 와 같은 것을 본다 ───────────────────
 # ★ 2026-08-23. 여기가 CI 검사 다섯을 안 돌고 있었다. README 는 "받자마자
 #   이것 하나면 된다" 고 하는데, verify.sh 초록불이어도 CI 는 빨간불이 될 수

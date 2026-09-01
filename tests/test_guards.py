@@ -1978,3 +1978,60 @@ def test_multi_part_reader_refuses_mixed_columns():
     #   3개월 뒤에 근거를 알 수 없다(§18-3).
     assert "optional_cols" in body, "결손 허용이 대장 선언을 안 본다"
     assert "undeclared" in body, "선언되지 않은 컬럼 차이를 그냥 넘긴다"
+
+
+def test_verify_covers_every_ci_job():
+    """`verify.sh` 가 CI 잡을 전부 덮는가.
+
+    ★ 2026-09-02. `verify.sh` 는 스스로 *"CI 전체 위생 검사 로컬 고속 재현"*
+      이라고 선언하는데 `contract-strict` 를 안 돌고 있었다. 그래서 로컬
+      초록 · CI 빨간불이 하루에 두 번 났다.
+
+      같은 사고가 2026-08-23 에도 있었고(5b 주석) 그때는 다섯을 손으로
+      채웠다. **손으로 채우면 다음 잡이 늘 때 또 갈린다.** 이 검사가
+      그 자리를 대신한다.
+
+    ★ 잡 이름을 그대로 찾지 않는다. `verify.sh` 의 단계 이름은 사람이 읽는
+      말이라 잡 이름과 다를 수 있다. 대신 **각 잡이 실제로 부르는 명령**이
+      `verify.sh` 어딘가에 있는지를 본다.
+    """
+    import re
+    yml = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
+    vfy = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
+
+    jobs = re.findall(r"^  ([a-z][\w-]*):\n    name:", yml, re.M)
+    assert jobs, "contract.yml 에서 잡을 못 찾았다"
+
+    # 잡마다 "이것이 로컬에도 있어야 한다" 는 표식
+    NEEDS = {
+        "contract-strict": "owned_paths.py",
+        "contract-shared": "pytest",
+    }
+    miss = [f"{j} → verify.sh 에 `{k}` 가 없다"
+            for j, k in NEEDS.items() if j in jobs and k not in vfy]
+    assert not miss, (
+        "verify.sh 가 CI 잡을 다 안 돈다\n" + "\n".join("  · " + m for m in miss)
+        + "\n\n  로컬 검증이 CI 의 부분집합이면 '내 기계에서는 됐는데' 가 나온다.")
+
+    unknown = [j for j in jobs if j not in NEEDS]
+    assert not unknown, (
+        f"CI 에 새 잡이 생겼다 — {', '.join(unknown)}\n"
+        "  verify.sh 에 같은 검사를 넣고 위 NEEDS 에 표식을 등재해라.\n"
+        "  등재하지 않으면 그 잡은 로컬에서 재현되지 않는다.")
+
+
+def test_strict_lint_args_are_not_copied():
+    """엄격 린트 인자가 두 곳에 적혀 있지 않은가.
+
+    ★ 정본은 `contract.yml` 이고 `verify.sh` 는 거기서 뽑아 쓴다.
+      복사하면 갈린다 — 오늘 문서에서 겪은 것과 같은 형태다(DECISIONS 88-4).
+    """
+    vfy = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
+    if "엄격 린트" not in vfy:
+        return
+    bad = [ln.strip() for ln in vfy.splitlines()
+           if "--select" in ln and not ln.lstrip().startswith("#")
+           and "grep" not in ln and "$SEL" not in ln]
+    assert not bad, (
+        "verify.sh 가 --select 를 직접 적고 있다 — contract.yml 에서 뽑아라\n"
+        + "\n".join("  · " + b for b in bad))
