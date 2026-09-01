@@ -1657,6 +1657,8 @@ ship.py     내보내도 되는가 (위 + 문서 4축 + 위생 + git 상태)
 
 ### 14-4a. 사람이 부르는 나머지 도구
 
+    pull_data.py     **반입 입구.** Downloads → landing → raw → norm 여덟 단계
+    doc_fsck.py      문서끼리 어긋난 데가 있는가 — 다섯(§87 · §88-3)
     doctor.py        대장 · 실물 · 백업을 한 화면에. **매일 첫 번째로 본다**
     refcheck.py      문서·코드의 참조가 낡았는가
     intake.py        받은 것을 landing 으로 들인다
@@ -1668,6 +1670,8 @@ ship.py     내보내도 되는가 (위 + 문서 4축 + 위생 + git 상태)
 ### 14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다
 
     pr_body_check    PR 본문이 템플릿을 채웠는가
+    doc_fsck         문서끼리 어긋난 데가 있는가. ★ 2026-09-07 이 지나면
+                     bypass 회수 전까지 안 풀린다(§88-5)
     encoding_check   UTF-8 · LF · 개행
     treecheck        트리 구조
     docx_check       기획서 숫자 ↔ 대장
@@ -2379,15 +2383,30 @@ git_dirty 상태로 만든 산출물을 발표에 사용
 ## 18-11. 획득 · 업서트 게이트
 
 ```
-landing (외장 SSD)                     다운로드 원본. 손 안 댐
-        ↓  tools/acquire.py --stage  — 대장 매칭 + sha 기록
+윈도우 다운로드                         받은 그대로. 읽기 전용 — 지우지 않는다
+        ↓  tools/intake.py --stage --yes
+landing (외장 SSD)                     규칙 없음. 개명과 판단의 대기실
+        ↓  tools/acquire.py --stage --yes    대장 매칭 + sha 기록
 data/raw/<제공기관>/                    매칭됨. 원본 파일명 유지
 data/_quarantine/                      매칭 안 됨. 삭제하지 않고 격리
-        ↓  normalize_raw.py
-data/norm/                             규칙 파일명 + 인코딩·확장자 통일
+        ↓  firelane.prep --apply             인코딩 · 개행 · 정규명만
+data/norm/                             값은 안 바꾼다
         ↓  contract.py — 계약 대조(§18-3b)
 data/processed/
 ```
+
+★ **입구는 `tools/pull_data.py` 하나다.** 위 여섯을 순서대로 돌리고 한
+단계라도 실패하면 멈춘다. 사람이 순서를 외우면 반드시 빠뜨린다 —
+2026-09-01 에 `acquire` 를 인자 없이 돌려 관측만 하고 편입이 된 줄 알았다
+(DECISIONS 88).
+
+    uv run python tools/pull_data.py            관측만
+    uv run python tools/pull_data.py --yes       반입 · 편입 · norm
+    uv run python tools/pull_data.py --yes --all 위 + 파이프라인 + golden
+
+★ `raw → norm` 은 **`prep.py`** 다. 종전에 이 절은 `normalize_raw.py` 라고
+적었는데 그것은 **Downloads → raw** 이고 `acquire` 가 대체한 옛 경로다.
+체인에 넣으면 편입이 두 번 돌고 크기만 보는 판정이 되살아난다.
 
 ### 세 판정
 

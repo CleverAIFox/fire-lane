@@ -406,3 +406,12 @@ web/data    28.7MB (지형 22타일 · 정사영상 1,423타일 포함)
 
 노딩 규칙이 바뀌면 `seg_id` 가 전부 밀린다. 외부 참조에는 `seg_uid` 를 쓴다.
 중간 단계의 구간 수와 그 사유는 `DECISIONS.md` 가 든다.
+
+## 도구
+
+```
+uv run python tools/pull_data.py --yes   데이터 반입 (입구 하나)
+uv run python tools/doc_fsck.py          문서끼리 어긋난 데
+uv run python tools/doctor.py            대장 · 실물 · 백업
+uv run python tools/golden.py check      판정 지문
+```
