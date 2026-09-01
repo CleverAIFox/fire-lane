@@ -335,7 +335,8 @@ tools/
   ledger_stem.py          대장 stem 이관 · 무손실 증명
   ledger_fields.py        대장 별칭 필드 통합
   ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
-  render_workflow.py      MASTER 12절 → web/workflow.html 재생성 (CI 가 배포 때 부른다)
+  render_workflow.py      MASTER 12절 → web/workflow.html   MASTER §12 자동 생성본
+  web/playbook.html   상황별 안내서(사람이 쓴다). data-slot 으로 MASTER 와 도킹 재생성 (CI 가 배포 때 부른다)
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
   ledger_feeds.py         feeds 산문 → 소비자 리스트
   serve.py                캐시 없는 개발 서버
@@ -358,7 +359,7 @@ tests/
   test_declaration_sync.py ★ 역방향 — 실물이 선언돼 있는가
   test_ownership.py       ★ 미소유 경로가 없는가. CODEOWNERS 전수 검사
   test_docref.py          절 참조 무결성 · 하위 절 번호 유일·연속
-  test_workflow_html_sync.py   docs/workflow.html ↔ 브랜치·팀·워크플로 대조
+  test_workflow_html_sync.py   web/workflow.html ↔ 브랜치·팀·워크플로 대조
   test_contract_vision.py GIS ↔ CV 경계 (MASTER §19)
   test_ledger_outputs.py  대장 outputs ↔ 실제 산출물
   test_place_idempotent.py 지점 집계 멱등성
@@ -405,3 +406,41 @@ web/data    28.7MB (지형 22타일 · 정사영상 1,423타일 포함)
 
 노딩 규칙이 바뀌면 `seg_id` 가 전부 밀린다. 외부 참조에는 `seg_uid` 를 쓴다.
 중간 단계의 구간 수와 그 사유는 `DECISIONS.md` 가 든다.
+
+## 도구
+
+```
+uv run python tools/pull_data.py --yes   데이터 반입 (입구 하나)
+uv run python tools/doc_fsck.py          문서끼리 어긋난 데
+uv run python tools/doctor.py            대장 · 실물 · 백업
+uv run python tools/golden.py check      판정 지문
+```
+
+## 나는 어느 파트인가
+
+★ 이 파일은 루트라 **누구든 처음 본다.** 지금은 GIS 파이프라인 서술이 많은데
+그것은 `src/firelane/README.md` 가 정본이다(PLAN 이 그 정리를 든다).
+
+| 나는 | 브랜치 | 볼 곳 | 문서 |
+|---|---|---|---|
+| GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
+| Vision · CV | `part/cv` | `src/cv/` | (해당 파트가 쓴다) |
+| Infra · API | `part/infra` | `src/api/` `infra/` `Dockerfile.*` | (해당 파트가 쓴다) |
+
+**데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
+`web/data/`(40MB 상한)만으로 작업할 수 있다.
+
+    아침에 뭐 하나 · 충돌 · CI 빨간불 · 되돌리기   web/playbook.html
+    협업 방침 (MASTER §12 생성물)                web/workflow.html
+
+## 문서는 어디에
+
+| 무엇 | 시제 | 담는 것 |
+|---|---|---|
+| `docs/MASTER.md` | 현재 | 지금 이렇다 — 규약 · 수치 · 계약 · 운영 |
+| `docs/PLAN.md` | 미래 | 아직 안 됐다 — 미결 · 다음 할 것 |
+| `docs/DECISIONS.md` | 과거 | 왜 그렇게 됐나 — 경위 · 기각안 (append-only) |
+| `docs/기획서_Fire-Lane.docx` | 제출용 | 외부가 읽는 유일한 문서 |
+
+넷은 병렬 축이 아니라 생애주기다(PLAN → MASTER → DECISIONS). 한 항목은 한
+문서에만 쓴다. 어긋나면 `uv run python tools/doc_fsck.py` 가 운다.

@@ -219,8 +219,11 @@ def main() -> int:
 
     tight = [(u, d) for u, d in meta.items()
              if d["radius"] and not V.can_turn(d["radius"])]
+    _tv = bool(V.spec().get("turn_radius_verified"))
     print(f"\n{col('④ 회전 불가', 'c')} {len(tight)}구간 — "
-          f"폭과 무관하게 최소회전반경 {V.TURN_R}m 미만")
+          + (f"폭과 무관하게 최소회전반경 {V.TURN_R}m 미만" if _tv else
+             f"★ 회전으로 막지 않는다. {V.TURN_R}m 는 법정 상한이지 성능값이"
+             f" 아니다(DECISIONS 81). D-30 에서 확정하면 켜진다"))
     for u, d in sorted(tight, key=lambda t: t[1]["radius"])[:8]:
         r = seg[seg.seg_uid == u]
         lb = r.seg_label.iloc[0] if len(r) and "seg_label" in r else u

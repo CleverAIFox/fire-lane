@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fire-Lane 깃허브 협업 플레이북</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: #ffffff;
+      color: #333333;
+    }
+
+    h1, h2, h3, h4 {
+      color: #0f172a;
+    }
+
+    /* 본문 가운데 정렬 컨테이너 */
+    .app-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* 코드블록: 옅은 회색(#f6f8fa) + 좌측 3px 색띠 */
+    .code-box {
+      background-color: #f6f8fa;
+      border: 1px solid #d0d7de;
+      border-left: 3px solid #0969da;
+      position: relative;
+    }
+    .code-box.accent-amber { border-left-color: #d97706; }
+    .code-box.accent-emerald { border-left-color: #059669; }
+    .code-box.accent-rose { border-left-color: #dc2626; }
+    .code-box.accent-purple { border-left-color: #7c3aed; }
+    .code-box.accent-slate { border-left-color: #475569; }
+    .code-box.accent-cyan { border-left-color: #0891b2; }
+
+    /* 커밋 접두사 고유 색상 */
+    .prefix-gis  { color: #0284c7; font-weight: 700; }
+    .prefix-cv   { color: #7c3aed; font-weight: 700; }
+    .prefix-ui   { color: #db2777; font-weight: 700; }
+    .prefix-api  { color: #059669; font-weight: 700; }
+    .prefix-fix  { color: #dc2626; font-weight: 700; }
+    .prefix-docs { color: #475569; font-weight: 700; }
+
+    .badge-gis  { color: #0284c7; background: #f0f9ff; border: 1px solid #bae6fd; }
+    .badge-cv   { color: #7c3aed; background: #f5f3ff; border: 1px solid #ddd6fe; }
+    .badge-ui   { color: #db2777; background: #fdf2f8; border: 1px solid #fbcfe8; }
+    .badge-api  { color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; }
+    .badge-fix  { color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; }
+    .badge-docs { color: #475569; background: #f8fafc; border: 1px solid #cbd5e1; }
+
+    /* 탭 버튼 스타일 */
+    .tab-btn {
+      background-color: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      font-weight: 600;
+    }
+    .tab-btn.active {
+      background-color: #ffffff;
+      color: #0f172a;
+      border-bottom: 2px solid #0969da;
+      border-top: 2px solid #0969da;
+    }
+
+    /* 위험 박스 고대비 격리 */
+    .danger-box {
+      background-color: #fff5f5;
+      border: 2px solid #e11d48;
+      border-left: 6px solid #e11d48;
+    }
+
+    /* 정본 출처 통일 표기용 스타일 */
+    .canon-tag {
+      font-size: 10px;
+      color: #94a3b8;
+      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* A4 인쇄 최적화 (탭 전체 펼침, A4 4~5장 레이아웃) */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 10pt;
+        line-height: 1.35;
+      }
+      .app-container {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      header, .tab-nav-container, .copy-btn, #rule-modal {
+        display: none !important;
+      }
+      .tab-content {
+        display: block !important;
+        margin-bottom: 1.2rem !important;
+        page-break-inside: avoid;
+      }
+      .print-title {
+        display: block !important;
+        font-size: 11.5pt;
+        font-weight: 800;
+        color: #0f172a;
+        margin-top: 1rem;
+        margin-bottom: 0.3rem;
+        border-bottom: 1.5px solid #0f172a;
+        padding-bottom: 2px;
+      }
+      .code-box {
+        background: #fafafa !important;
+        border: 1px solid #999999 !important;
+        border-left: 3px solid #333333 !important;
+      }
+      .danger-box {
+        background: #ffffff !important;
+        border: 2px solid #000000 !important;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+    }
+    .print-title {
+      display: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="border-b border-slate-200 bg-white sticky top-0 z-40 shadow-sm">
+    <div class="app-container py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-mono text-xs font-bold">RULES §12</span>
+        <h1 class="text-base font-bold text-slate-900 tracking-tight">Fire-Lane 깃허브 협업 플레이북</h1>
+      </div>
+      
+      <!-- Protected Badges -->
+      <div class="flex items-center gap-1.5 text-xs font-mono">
+        <span class="text-slate-500 text-[11px] mr-1 hidden sm:inline">Protected:</span>
+        <button onclick="openRuleModal('main')" class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded hover:bg-rose-100 transition flex items-center gap-1">
+          <i class="fa-solid fa-lock text-[10px]"></i> main
+        </button>
+        <button onclick="openRuleModal('dev')" class="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded hover:bg-amber-100 transition flex items-center gap-1">
+          <i class="fa-solid fa-shield text-[10px]"></i> dev
+        </button>
+        <button onclick="openRuleModal('part')" class="bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded hover:bg-sky-100 transition flex items-center gap-1">
+          <i class="fa-solid fa-code-branch text-[10px]"></i> part/*
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-container py-6 space-y-6">
+
+    <!-- 정본 배너 -->
+    <div class="bg-slate-50 border border-slate-300 rounded-lg p-3.5 text-xs text-slate-700 space-y-1 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="font-bold text-slate-900 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-info text-blue-600"></i> 안내서 정본 및 렌더러 동기화 기준
+        </span>
+        <span class="font-mono text-[11px] text-slate-500">
+          기준: MASTER.md <!--MASTER_REV--> &middot; 생성일 <!--BUILT_AT-->
+        </span>
+      </div>
+      <p class="leading-relaxed text-slate-600">
+        이 문서는 읽는 안내서다. 규칙의 정본은 <code class="text-slate-900 font-bold">docs/MASTER.md</code>이고 자동 생성본은 <code class="text-slate-900 font-bold">web/workflow.html</code>이다. 셋이 다르면 MASTER가 맞다.
+      </p>
+    </div>
+
+    <!-- 오늘 나는 무엇을 하나 -->
+    <section class="border border-slate-200 rounded-lg p-4 bg-white shadow-sm space-y-3">
+      <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+        <i class="fa-solid fa-user-check text-blue-600"></i> 오늘 나는 무엇을 하나 (역할별 작업 시작점)
+      </h2>
+      <div class="border border-slate-200 rounded overflow-hidden text-xs">
+        <table class="w-full text-left">
+          <thead class="bg-slate-50 text-slate-800 border-b border-slate-200 font-bold">
+            <tr>
+              <th class="p-2.5">나는</th>
+              <th class="p-2.5">아침에</th>
+              <th class="p-2.5">오늘 볼 곳</th>
+              <th class="p-2.5 font-mono">PR base</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-700">
+            <tr>
+              <td class="p-2.5 font-bold text-sky-700">GIS</td>
+              <td class="p-2.5"><code class="font-mono">part/gis</code> pull 조건 확인</td>
+              <td class="p-2.5 font-mono">src/firelane/ data/ web/ docs/</td>
+              <td class="p-2.5 font-mono text-sky-700 font-semibold">part/gis</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-purple-700">CV</td>
+              <td class="p-2.5"><code class="font-mono">part/cv</code></td>
+              <td class="p-2.5 font-mono">src/cv/</td>
+              <td class="p-2.5 font-mono text-purple-700 font-semibold">part/cv</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-emerald-700">Infra</td>
+              <td class="p-2.5"><code class="font-mono">part/infra</code></td>
+              <td class="p-2.5 font-mono">src/api/ infra/ Dockerfile.*</td>
+              <td class="p-2.5 font-mono text-emerald-700 font-semibold">part/infra</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-slate-900">파트 통합 담당</td>
+              <td class="p-2.5"><code class="font-mono">파트 &rarr; dev</code> PR</td>
+              <td class="p-2.5">파트 전체 diff</td>
+              <td class="p-2.5 font-mono text-amber-700 font-semibold">dev</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 브랜치 4계층 위계 -->
+    <section class="border border-slate-200 rounded-lg p-4 bg-white shadow-sm space-y-3" data-slot="12-1" data-canon="MASTER §12-1">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-network-wired text-blue-600"></i> 브랜치 4계층 위계 구조 (§12-1)
+        </h2>
+        <span class="canon-tag">정본: MASTER §12-1</span>
+      </div>
+      
+      <div class="flex flex-col gap-2 font-mono text-xs">
+        
+        <!-- 1. main -->
+        <div class="bg-rose-50 border border-rose-300 rounded p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-rose-700 text-sm">main (배포 스냅샷)</span>
+            <span class="text-[10px] bg-white border border-rose-200 text-rose-700 px-1.5 py-0.5 rounded font-bold">Release</span>
+          </div>
+          <div class="text-[11px] text-slate-700 space-y-0.5 font-sans">
+            <div>&bull; <b>누가:</b> 김재웅 전담 (AWS / Pages 자동 배포)</div>
+            <div>&bull; <b>머지 방식:</b> Merge Commit (승인 1 + Code Owners 통과 필수)</div>
+            <div>&bull; <b>수명:</b> 영구</div>
+          </div>
+        </div>
+
+        <div class="text-center text-slate-400 font-bold text-xs py-0.5">
+          &uarr;&darr; Merge Commit
+        </div>
+
+        <!-- 2. dev -->
+        <div class="bg-amber-50 border border-amber-300 rounded p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-amber-800 text-sm">dev (통합 트렁크)</span>
+            <span class="text-[10px] bg-white border border-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-bold">Trunk</span>
+          </div>
+          <div class="text-[11px] text-slate-700 space-y-0.5 font-sans">
+            <div>&bull; <b>누가:</b> 팀 전원 (항상 안정 동작 상태 유지)</div>
+            <div>&bull; <b>머지 방식:</b> Merge Commit (CI 검사 통과 필수, 승인 0)</div>
+            <div>&bull; <b>수명:</b> 영구</div>
+          </div>
+        </div>
+
+        <div class="text-center text-slate-400 font-bold text-xs py-0.5">
+          &uarr;&darr; Merge Commit
+        </div>
+
+        <!-- 3. part/* -->
+        <div class="bg-sky-50 border border-sky-300 rounded p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-sky-700 text-sm">part/* (파트별 최신 통합)</span>
+            <span class="text-[10px] bg-white border border-sky-200 text-sky-700 px-1.5 py-0.5 rounded font-bold">Staging</span>
+          </div>
+          <div class="text-[11px] text-slate-700 space-y-0.5 font-sans">
+            <div>&bull; <b>누가:</b> gis(오창준, 우지혜) / cv(이가연, 백진욱) / infra(김재웅)</div>
+            <div>&bull; <b>머지 방식:</b> feat &rarr; part는 Squash / dev &rarr; part는 Merge Commit</div>
+            <div>&bull; <b>수명:</b> 영구 (직푸시 차단)</div>
+          </div>
+        </div>
+
+        <div class="text-center text-rose-600 font-bold text-xs py-0.5">
+          &uarr; Squash
+        </div>
+
+        <!-- 4. feat/* -->
+        <div class="bg-emerald-50 border border-emerald-300 rounded p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-emerald-700 text-sm">feat/* (단기 작업 브랜치)</span>
+            <span class="text-[10px] bg-white border border-emerald-200 text-emerald-700 px-1.5 py-0.5 rounded font-bold">Temporary</span>
+          </div>
+          <div class="text-[11px] text-slate-700 space-y-0.5 font-sans">
+            <div>&bull; <b>누가:</b> 개별 작업자 (자유 생성)</div>
+            <div>&bull; <b>머지 방식:</b> Squash Merge 후 part/*에 흡수</div>
+            <div>&bull; <b>수명:</b> 당일 생성 &middot; 당일 삭제 (&lt; 1 Day)</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 상황별 탭 내비게이션 -->
+    <div class="tab-nav-container">
+      <div class="flex flex-wrap gap-1.5 p-1 bg-slate-100 border border-slate-200 rounded-lg text-xs">
+        <button onclick="switchTab('tab-setup')" id="btn-tab-setup" class="tab-btn active flex-1 min-w-[120px] py-2 px-2.5 rounded transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-sliders text-slate-600"></i><span>0. 최초 설정</span>
+        </button>
+        <button onclick="switchTab('tab-morning')" id="btn-tab-morning" class="tab-btn flex-1 min-w-[120px] py-2 px-2.5 rounded transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-sun text-amber-500"></i><span>1. 아침 작업</span>
+        </button>
+        <button onclick="switchTab('tab-done')" id="btn-tab-done" class="tab-btn flex-1 min-w-[120px] py-2 px-2.5 rounded transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-circle-check text-emerald-600"></i><span>2. 작업 완료 (PR)</span>
+        </button>
+        <button onclick="switchTab('tab-pull')" id="btn-tab-pull" class="tab-btn flex-1 min-w-[120px] py-2 px-2.5 rounded transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-cloud-arrow-down text-cyan-600"></i><span>3. 데이터 반입</span>
+        </button>
+        <button onclick="switchTab('tab-conflict')" id="btn-tab-conflict" class="tab-btn flex-1 min-w-[120px] py-2 px-2.5 rounded transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation text-amber-600"></i><span>4. 충돌 해결</span>
+        </button>
+        <button onclick="switchTab('tab-ci')" id="btn-tab-ci" class="tab-btn flex-1 min-w-[120px] py-2 px-2.5 rounded transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-circle-xmark text-rose-600"></i><span>5. CI 빨간불</span>
+        </button>
+        <button onclick="switchTab('tab-undo')" id="btn-tab-undo" class="tab-btn flex-1 min-w-[120px] py-2 px-2.5 rounded transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-rotate-left text-indigo-600"></i><span>6. 되돌리기</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 0: 내 기계 최초 설정 -->
+    <div id="tab-setup" class="tab-content space-y-4">
+      <div class="print-title">0. 내 기계 최초 설정 — Git 훅 및 환경 변수 (§12-11, §14-1)</div>
+      
+      <!-- 카드 1: 전원 필수 -->
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-3" data-slot="12-11" data-canon="MASTER §12-11">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="bg-blue-100 text-blue-800 border border-blue-300 text-[11px] font-bold px-2 py-0.5 rounded">전원 필수</span>
+            <span class="text-xs font-bold text-slate-900 uppercase">Git 기본 환경 및 인코딩 &middot; 훅 설정</span>
+          </div>
+          <span class="canon-tag">정본: MASTER §12-11</span>
+        </div>
+
+        <div class="code-box accent-slate rounded p-3">
+          <button onclick="copyCode('c-setup-all')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+            <i class="fa-regular fa-copy mr-1"></i> 복사
+          </button>
+          <pre id="c-setup-all" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto">git config --global core.quotepath false
+git config --global core.precomposeunicode true
+git config core.hooksPath .githooks</pre>
+        </div>
+
+        <p class="text-xs text-slate-600 leading-relaxed">
+          한글 파일명 NFD 자모 분리 방지, 경로 escape 방지 및 로컬 커밋 정책 강제를 위한 훅 경로를 연결합니다(§12-11). 팀원 전원 필수 설정입니다.
+        </p>
+      </div>
+
+      <!-- 카드 2: 데이터 레이크 보유자만 -->
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-3" data-slot="14-1" data-canon="MASTER §14-1">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="bg-amber-100 text-amber-800 border border-amber-300 text-[11px] font-bold px-2 py-0.5 rounded">데이터 레이크 보유자</span>
+            <span class="text-xs font-bold text-slate-900 uppercase">로컬 데이터 레이크 경로 설정</span>
+          </div>
+          <span class="canon-tag">정본: MASTER §14-1</span>
+        </div>
+
+        <div class="code-box accent-amber rounded p-3">
+          <button onclick="copyCode('c-setup-gis')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+            <i class="fa-regular fa-copy mr-1"></i> 복사
+          </button>
+          <pre id="c-setup-gis" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto"># ~/.bashrc 에 추가
+export FIRE_LANE_DATA=/mnt/f/&lt;...&gt;/fire-lane-data
+export FIRE_LANE_INBOX=/mnt/c/Users/&lt;사용자명&gt;/Downloads</pre>
+        </div>
+
+        <p class="text-xs text-slate-600 leading-relaxed">
+          파이프라인 전량을 직접 빌드하는 사람만 설정합니다. 경로만 맞으면 외장&middot;내장 어느 매체든 상관없습니다. CV&middot;Infra 담당은 git으로 추적되는 <code class="text-slate-800 font-mono font-semibold">web/data/</code>(40MB 상한)만으로 작업할 수 있습니다(§12-10).
+        </p>
+      </div>
+    </div>
+
+    <!-- TAB 1: 아침에 뭐 하나 -->
+    <div id="tab-morning" class="tab-content hidden space-y-4">
+      <div class="print-title">1. 아침에 뭐 하나 — 원격 정렬 및 브랜치 분기 (§12-5)</div>
+      
+      <!-- 아침 pull 조건 판단 가이드 -->
+      <div class="border border-slate-200 rounded-lg p-4 bg-white shadow-sm space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+          <span class="text-xs font-bold text-slate-900 uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-clipboard-check text-amber-600"></i> 아침 pull 조건 판단 (매일 의무 아님)
+          </span>
+          <span class="text-[11px] text-slate-500 font-mono">0 커밋이면 생략 가능</span>
+        </div>
+
+        <div class="code-box accent-amber rounded p-2.5">
+          <button onclick="copyCode('c-check-rev')" class="copy-btn absolute right-2 top-2 bg-white hover:bg-slate-100 text-slate-700 text-[11px] px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+            <i class="fa-regular fa-copy mr-1"></i> 복사
+          </button>
+          <pre id="c-check-rev" class="font-mono text-xs text-slate-800 overflow-x-auto">git fetch -q && git rev-list --count part/gis..origin/dev   # 0 이면 안 해도 된다</pre>
+        </div>
+
+        <div class="border border-slate-200 rounded overflow-hidden text-xs">
+          <table class="w-full text-left">
+            <thead class="bg-slate-50 text-slate-800 border-b border-slate-200 font-bold">
+              <tr>
+                <th class="p-2">상황</th>
+                <th class="p-2">아침 pull</th>
+                <th class="p-2">이유 및 작업 방향</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-slate-700">
+              <tr>
+                <td class="p-2 font-semibold">origin/dev에 새 커밋이 있다</td>
+                <td class="p-2 font-bold text-blue-700">필요</td>
+                <td class="p-2">통합 PR 담당자가 dev &rarr; part 동기화 후 최신 상태를 받아야 함</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-semibold">0 커밋</td>
+                <td class="p-2 text-slate-500">불필요</td>
+                <td class="p-2">아무도 dev에 올리지 않았으므로 fetch 확인 후 바로 작업</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-semibold">어제 Draft를 이어간다</td>
+                <td class="p-2 text-slate-500">불필요</td>
+                <td class="p-2">새 브랜치를 따지 않고 어제 작업하던 feat 브랜치로 바로 switch</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-semibold">새 작업을 시작한다</td>
+                <td class="p-2 font-bold text-rose-700">필요</td>
+                <td class="p-2">남의 작업 위에서 시작해야 충돌이 최소화됨</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="bg-amber-50/70 border border-amber-200 p-2.5 rounded text-xs text-amber-900">
+          ★ <b>새 작업인데 건너뛰면 그날 밤 PR에서 충돌이 몰립니다.</b> 아침 1분이 밤 30분을 아낍니다(§12-5).
+        </div>
+      </div>
+
+      <!-- 기본 CLI 카드 -->
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-3" data-slot="12-5" data-canon="MASTER §12-5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-900 tracking-wide uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-down-long text-amber-600"></i> 새 작업 시작 시 브랜치 분기 (§12-5)
+          </span>
+          <span class="canon-tag">정본: MASTER §12-5</span>
+        </div>
+
+        <div class="code-box accent-amber rounded p-3">
+          <button onclick="copyCode('c-morning')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded border border-slate-300 shadow-sm font-sans">
+            <i class="fa-regular fa-copy mr-1"></i> 복사
+          </button>
+          <pre id="c-morning" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto">git switch part/gis && git pull --ff-only   # 1. 원격 상태를 그대로 받는다
+git switch -c feat/gis-오늘작업이름          # 2. 오늘 작업할 임시 브랜치 생성</pre>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600 pt-1">
+          <div class="bg-slate-50 p-3 rounded border border-slate-200">
+            <b class="text-slate-900 block mb-1">왜 로컬 머지를 하지 않고 pull --ff-only인가?</b>
+            모든 파트 브랜치는 직푸시가 차단되어 있습니다(§12-1). 로컬에서 dev를 merge하면 원격과 로컬이 어긋나 Behind 커밋이 쌓입니다. dev &rarr; part 흡수는 파트 통합 담당자가 올리는 PR로만 이루어집니다(§12-8c).
+          </div>
+          <div class="bg-slate-50 p-3 rounded border border-slate-200">
+            <b class="text-slate-900 block mb-1">파트별 브랜치</b>
+            GIS: <code class="text-sky-700 font-semibold font-mono">part/gis</code> | CV: <code class="text-purple-700 font-semibold font-mono">part/cv</code> | Infra: <code class="text-emerald-700 font-semibold font-mono">part/infra</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 작업 끝났다 (PR) -->
+    <div id="tab-done" class="tab-content hidden space-y-4">
+      <div class="print-title">2. 작업 끝났다 — PR 생성 및 커밋 접두사 규약 (§12-6)</div>
+      
+      <!-- 완료 시 머지 카드 -->
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-4" data-slot="12-6" data-canon="MASTER §12-6">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-900 tracking-wide uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-up-long text-emerald-600"></i> 작업 완료: 커밋 및 파트 브랜치로 PR 생성
+          </span>
+          <span class="canon-tag">정본: MASTER §12-6</span>
+        </div>
+
+        <div class="code-box accent-emerald rounded p-3">
+          <button onclick="copyCode('c-done')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+            <i class="fa-regular fa-copy mr-1"></i> 복사
+          </button>
+          <pre id="c-done" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto">git add -A
+git commit -m "gis: 세그먼트 폭 산출 파이프라인 보정"
+git push -u origin feat/gis-오늘작업이름
+# GitHub PR: base: part/gis  <--  compare: feat/gis-오늘작업이름</pre>
+        </div>
+
+        <!-- 커밋 접두사 고유 색상 뱃지 -->
+        <div class="space-y-2">
+          <span class="text-xs font-bold text-slate-900">표준 커밋 접두사 (§12-6)</span>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-xs font-mono">
+            <div class="badge-gis p-2 rounded text-center"><span class="prefix-gis">gis:</span> <span class="block text-[11px] text-slate-600 font-sans mt-0.5">데이터·판정</span></div>
+            <div class="badge-cv p-2 rounded text-center"><span class="prefix-cv">cv:</span> <span class="block text-[11px] text-slate-600 font-sans mt-0.5">비전·캘리브</span></div>
+            <div class="badge-ui p-2 rounded text-center"><span class="prefix-ui">ui:</span> <span class="block text-[11px] text-slate-600 font-sans mt-0.5">화면·스타일</span></div>
+            <div class="badge-api p-2 rounded text-center"><span class="prefix-api">api:</span> <span class="block text-[11px] text-slate-600 font-sans mt-0.5">FastAPI·서버</span></div>
+            <div class="badge-fix p-2 rounded text-center"><span class="prefix-fix">fix:</span> <span class="block text-[11px] text-slate-600 font-sans mt-0.5">버그 수정</span></div>
+            <div class="badge-docs p-2 rounded text-center"><span class="prefix-docs">docs:</span> <span class="block text-[11px] text-slate-600 font-sans mt-0.5">문서 갱신</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 파트 통합 PR 담당 카드 -->
+      <div class="border border-slate-200 rounded-lg p-3.5 bg-white shadow-sm flex items-center justify-between text-xs" data-slot="12-8c" data-canon="MASTER §12-8c">
+        <div class="text-blue-900">
+          <b>파트 통합 PR 담당 (§12-8c):</b> <code class="font-mono">part/* &rarr; dev</code> PR은 충돌 방지를 위해 파트별 1인(GIS: <b>우지혜</b> / CV: <b>이가연</b> / Infra: <b>김재웅</b>)만 올립니다.
+        </div>
+        <span class="canon-tag ml-2 shrink-0">정본: MASTER §12-8c</span>
+      </div>
+
+      <!-- 이어서 작업할 때 (Draft PR) 카드 -->
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-900 uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-file-pen text-blue-600"></i> 이어서 작업할 때 (Draft PR)
+          </span>
+          <span class="text-[11px] text-rose-700 font-mono font-bold">미완성 작업 머지 금지</span>
+        </div>
+
+        <p class="text-xs text-slate-600 leading-relaxed">
+          미완성 작업은 <code class="text-slate-900 font-mono">part/*</code>에 머지하지 않습니다. 팀원이 그 위에서 분기하므로 깨진 코드 위에서 시작하게 됩니다. <b>Squash는 완성된 것에만 씁니다.</b>
+        </p>
+
+        <div class="code-box accent-emerald rounded p-3">
+          <button onclick="copyCode('c-draft')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+            <i class="fa-regular fa-copy mr-1"></i> 복사
+          </button>
+          <pre id="c-draft" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto"># 오늘 못 끝냈다 — Draft 로 열어둔다
+git push -u origin feat/gis-오늘작업이름
+gh pr create --draft --base part/gis
+
+# 다음날 이어가기 — 브랜치를 지우지 않았으므로 그대로 이어간다
+git switch feat/gis-오늘작업이름</pre>
+        </div>
+
+        <p class="text-xs text-slate-500">완성되면 GitHub에서 Draft를 해제(Ready for review)하고 Squash로 머지합니다.</p>
+      </div>
+
+      <!-- rebase vs merge 가이드 카드 -->
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+          <span class="text-xs font-bold text-slate-900 uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-code-compare text-indigo-600"></i> rebase vs merge 선택 기준
+          </span>
+          <span class="text-[11px] text-slate-500 font-mono">상황별 동기화 방식</span>
+        </div>
+
+        <div class="border border-slate-200 rounded overflow-hidden text-xs">
+          <table class="w-full text-left">
+            <thead class="bg-slate-50 text-slate-800 border-b border-slate-200 font-bold">
+              <tr>
+                <th class="p-2">상황</th>
+                <th class="p-2">무엇을</th>
+                <th class="p-2">왜 그렇게 하는가</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-slate-700">
+              <tr>
+                <td class="p-2 font-semibold">아직 push 안 한 feat</td>
+                <td class="p-2 font-mono text-blue-700 font-bold">git rebase origin/part/gis</td>
+                <td class="p-2">내 로컬 브랜치라 이력을 깔끔하게 다시 써도 됨</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-semibold">이미 push한 feat (Draft PR)</td>
+                <td class="p-2 font-mono text-emerald-700 font-bold">git merge origin/part/gis</td>
+                <td class="p-2">rebase 시 force push가 필요한데 룰셋이 막음</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-semibold">part/* &middot; dev &middot; main</td>
+                <td class="p-2 font-mono text-rose-700 font-bold">rebase 절대 금지</td>
+                <td class="p-2">보호 브랜치임. 되돌리기는 오직 revert로만 수행</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="danger-box p-3 rounded text-xs text-rose-950">
+          ★ <b>이미 원격에 민 브랜치를 rebase하면 push가 거부되고, --force는 룰셋이 차단합니다.</b> 밀기 전엔 rebase, 민 뒤엔 merge입니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 데이터 반입 -->
+    <div id="tab-pull" class="tab-content hidden space-y-4">
+      <div class="print-title">3. 데이터 반입 — 원본 수집 및 파이프라인 자동화 (§18-11)</div>
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-4" data-slot="18-11" data-canon="MASTER §18-11">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-900 tracking-wide uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-cloud-arrow-down text-cyan-600"></i> 8단계 데이터 반입 파이프라인
+          </span>
+          <span class="canon-tag">정본: MASTER §18-11</span>
+        </div>
+
+        <div class="code-box accent-cyan rounded p-3">
+          <button onclick="copyCode('c-pull')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+            <i class="fa-regular fa-copy mr-1"></i> 복사
+          </button>
+          <pre id="c-pull" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto">uv run python tools/pull_data.py             # 1. 관측 (상태 확인)
+uv run python tools/pull_data.py --yes       # 2. 반입 실행
+uv run python tools/pull_data.py --yes --all # 3. 반입 후 파이프라인 전체 구동</pre>
+        </div>
+
+        <!-- 8단계 프로세스 설명 -->
+        <div class="bg-slate-50 p-3.5 rounded border border-slate-200 space-y-2 text-xs">
+          <span class="font-bold text-slate-900 block">반입 8단계 시퀀스:</span>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-[11px]">
+            <div class="bg-white p-1.5 rounded border border-slate-200">1. intake (수집)</div>
+            <div class="bg-white p-1.5 rounded border border-slate-200">2. stage (적재)</div>
+            <div class="bg-white p-1.5 rounded border border-slate-200">3. verify (무결성 검증)</div>
+            <div class="bg-white p-1.5 rounded border border-slate-200">4. prune (정리)</div>
+            <div class="bg-white p-1.5 rounded border border-slate-200">5. quarantine (격리)</div>
+            <div class="bg-white p-1.5 rounded border border-slate-200">6. judge (대장 판정)</div>
+            <div class="bg-white p-1.5 rounded border border-slate-200">7. prep (정규화)</div>
+            <div class="bg-white p-1.5 rounded border border-slate-200">8. prep-check (검증)</div>
+          </div>
+          <p class="text-rose-700 leading-relaxed font-sans pt-1">
+            ★ <b>한 단계라도 실패하면 즉시 멈춥니다.</b> 낡은 raw로 산출물이 생성되면 golden 검사를 통과해 거짓 초록불(거짓 안심)이 발생하므로 중간 실패를 묵인하지 않습니다.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: 충돌 해결 -->
+    <div id="tab-conflict" class="tab-content hidden space-y-4">
+      <div class="print-title">4. 충돌 해결 (§12-4)</div>
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-4" data-slot="12-4" data-canon="MASTER §12-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-900 tracking-wide uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-wrench text-amber-600"></i> 대상별 충돌 해결 레시피 (§12-4)
+          </span>
+          <span class="canon-tag">정본: MASTER §12-4</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Lockfile -->
+          <div class="code-box accent-amber rounded p-3 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-900 font-mono">1. uv.lock 충돌</span>
+              <button onclick="copyCode('c-lock')" class="copy-btn bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+                <i class="fa-regular fa-copy mr-1"></i> 복사
+              </button>
+            </div>
+            <pre id="c-lock" class="font-mono text-xs text-slate-800 overflow-x-auto">git checkout --theirs uv.lock
+uv lock
+git add uv.lock && git commit -m "fix: uv.lock 재생성"</pre>
+            <p class="text-[11px] text-slate-500">theirs로 덮고 uv lock으로 재계산합니다.</p>
+          </div>
+
+          <!-- Generated web data -->
+          <div class="code-box accent-amber rounded p-3 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-900 font-mono">2. web/data/* 충돌</span>
+              <button onclick="copyCode('c-webdata')" class="copy-btn bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+                <i class="fa-regular fa-copy mr-1"></i> 복사
+              </button>
+            </div>
+            <pre id="c-webdata" class="font-mono text-xs text-slate-800 overflow-x-auto">git checkout --theirs web/data/
+uv run fire-lane --only publish
+git add web/data/ && git commit -m "fix: web data 재생성"</pre>
+            <p class="text-[11px] text-slate-500">theirs로 받은 후 파이프라인에서 다시 발행합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: CI 빨간불 -->
+    <div id="tab-ci" class="tab-content hidden space-y-4">
+      <div class="print-title">5. CI 빨간불 — 검사 목록 및 로컬 재현 커맨드</div>
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-900 tracking-wide uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-bug text-rose-600"></i> CI 실패 원인 분석 및 로컬 재현 커맨드
+          </span>
+          <span class="text-[11px] text-slate-500 font-mono">Contract, Layering & Lineage</span>
+        </div>
+
+        <!-- 로컬 재현 커맨드 -->
+        <div class="code-box accent-rose rounded p-3">
+          <button onclick="copyCode('c-reproduce')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+            <i class="fa-regular fa-copy mr-1"></i> 복사
+          </button>
+          <pre id="c-reproduce" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto">uv run pytest -q                    # 1. 단위 및 계약 테스트 전체 구동
+uv run python tools/golden.py check    # 2. 골든 지문 대조 (산출물 불변성 검증)
+uv run python tools/docnum_check.py    # 3. MASTER.md 수치와 코드 동기화 대조
+bash tools/verify.sh --fast         # 4. CI 전체 위생 검사 고속 재현</pre>
+        </div>
+
+        <!-- 검사 항목 테이블 -->
+        <div class="border border-slate-200 rounded overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-800 border-b border-slate-200 font-bold">
+              <tr>
+                <th class="p-2.5">검사 항목 / 도구</th>
+                <th class="p-2.5">무엇을 막는가</th>
+                <th class="p-2.5">해결 방법</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-slate-700">
+              <tr>
+                <td class="p-2.5 font-mono text-rose-700 font-bold">test_contract.py</td>
+                <td class="p-2.5">좌표계(EPSG:4326), 필드명, verdict 4종 어휘 파괴</td>
+                <td class="p-2.5">인터페이스 계약 스키마 원복 (§5-2)</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono text-rose-700 font-bold">test_layering.py</td>
+                <td class="p-2.5">계층 구조 선언(raw, norm, processed)과 경로 불일치</td>
+                <td class="p-2.5">sources.yaml 계층 경로 정합 (§18-1)</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono text-rose-700 font-bold">test_workflow_html_sync.py</td>
+                <td class="p-2.5">MASTER.md §12 룰셋 테이블과 workflow.html 사본 불일치</td>
+                <td class="p-2.5">render_workflow.py 재실행 (§12-7)</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono text-rose-700 font-bold">golden.py check</td>
+                <td class="p-2.5">리팩터링 중 산출물 판정 수치 임의 변경</td>
+                <td class="p-2.5">로직 원복 또는 golden lock (§18-5 R11)</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-mono text-rose-700 font-bold">pr_body_check / commit_policy</td>
+                <td class="p-2.5">PR 본문 템플릿 미작성 또는 40MB 초과 파일/raw 데이터 커밋</td>
+                <td class="p-2.5">PR 본문 작성 / 대용량 파일 제외 (§12-10)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: 잘못 밀었다 (되돌리기) -->
+    <div id="tab-undo" class="tab-content hidden space-y-4">
+      <div class="print-title">6. 잘못 밀었다 — 비상 복구 및 롤백 (§12)</div>
+      <div class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-900 tracking-wide uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-rotate-left text-indigo-600"></i> 비상 복구 및 롤백 가이드
+          </span>
+          <span class="text-[11px] text-rose-700 font-mono font-bold">FORCE PUSH 금지</span>
+        </div>
+
+        <!-- 위험 구역 격리 1: FORCE PUSH -->
+        <div class="danger-box p-3.5 rounded text-xs text-rose-950 space-y-1">
+          <b class="flex items-center gap-1.5 text-rose-700 text-sm">
+            <i class="fa-solid fa-triangle-exclamation"></i> FORCE PUSH 절대 금지 (main / dev / part/*)
+          </b>
+          <p class="leading-relaxed">
+            보호 브랜치에 강제 푸시를 시도하면 룰셋에 의해 차단됩니다. 원격에 푸시된 잘못된 커밋은 반드시 <b>revert</b>를 통해 역방향 커밋으로 취소해야 합니다.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <!-- Undo 1 -->
+          <div class="code-box accent-purple rounded p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-900">1. 로컬 직전 커밋 수정</span>
+              <button onclick="copyCode('c-undo1')" class="copy-btn bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+            <pre id="c-undo1" class="font-mono text-xs text-slate-800 overflow-x-auto">git add .
+git commit --amend -m "올바른 메시지"</pre>
+            <p class="text-[11px] text-slate-500">푸시 전 로컬 커밋 메시지 및 누락 파일을 수정합니다.</p>
+          </div>
+
+          <!-- Undo 2 -->
+          <div class="code-box accent-purple rounded p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-900">2. 푸시된 커밋 취소</span>
+              <button onclick="copyCode('c-undo2')" class="copy-btn bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+            <pre id="c-undo2" class="font-mono text-xs text-slate-800 overflow-x-auto">git revert &lt;커밋해시&gt;
+git push origin feat/내브랜치</pre>
+            <p class="text-[11px] text-slate-500">원격에 푸시된 특정 커밋을 안전하게 취소합니다.</p>
+          </div>
+
+          <!-- Undo 3 -->
+          <div class="code-box accent-purple rounded p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-900">3. 잘못된 머지 취소</span>
+              <button onclick="copyCode('c-undo3')" class="copy-btn bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+            <pre id="c-undo3" class="font-mono text-xs text-slate-800 overflow-x-auto">git revert -m 1 &lt;머지커밋해시&gt;
+git push origin part/gis</pre>
+            <p class="text-[11px] text-slate-500">Merge Commit의 1번 부모를 기준으로 되돌립니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 판정 어휘 및 문서 관리 기준 표 -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+      
+      <!-- 판정 어휘 표 -->
+      <div class="border border-slate-200 rounded-lg p-4 bg-white shadow-sm space-y-2.5" data-slot="10-2" data-canon="MASTER §10-2">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+          <h3 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+            <i class="fa-solid fa-tags text-blue-600"></i> 판정 어휘 계약 (§10-2)
+          </h3>
+          <span class="canon-tag">정본: MASTER §10-2</span>
+        </div>
+        <div class="border border-slate-200 rounded overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-800 border-b border-slate-200 font-bold">
+              <tr>
+                <th class="p-2 font-mono">verdict</th>
+                <th class="p-2">화면</th>
+                <th class="p-2">뜻</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-slate-700">
+              <tr>
+                <td class="p-2 font-mono text-emerald-600 font-bold">clear</td>
+                <td class="p-2 font-semibold">통행 가능</td>
+                <td class="p-2">폭 7.0m 이상</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-mono text-amber-600 font-bold">needs_cv</td>
+                <td class="p-2 font-semibold">판정 보류</td>
+                <td class="p-2">3.0~7.0m &middot; CCTV 25m 안</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-mono text-rose-600 font-bold">blocked</td>
+                <td class="p-2 font-semibold">통행 불가</td>
+                <td class="p-2">3.0m 미만</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-mono text-slate-500 font-bold">unknown</td>
+                <td class="p-2 font-semibold">영상판정 불가</td>
+                <td class="p-2">CCTV 사각</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-tight">
+          ★ <b>다섯 번째 색을 만들지 않습니다.</b> 세 번 시도했고 세 번 지웠습니다(§10-2).
+        </p>
+      </div>
+
+      <!-- 문서 어디에 쓰나 표 -->
+      <div class="border border-slate-200 rounded-lg p-4 bg-white shadow-sm space-y-2.5" data-slot="0" data-canon="MASTER §0">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+          <h3 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+            <i class="fa-solid fa-file-lines text-indigo-600"></i> 문서 어디에 쓰나 (§0)
+          </h3>
+          <span class="canon-tag">정본: MASTER §0</span>
+        </div>
+        <div class="border border-slate-200 rounded overflow-hidden text-xs">
+          <table class="w-full text-left">
+            <thead class="bg-slate-50 text-slate-800 border-b border-slate-200 font-bold">
+              <tr>
+                <th class="p-2 font-mono">무엇</th>
+                <th class="p-2">시제</th>
+                <th class="p-2">담는 내용</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-slate-700">
+              <tr>
+                <td class="p-2 font-mono font-bold text-blue-700">MASTER.md</td>
+                <td class="p-2 font-semibold text-slate-900">현재</td>
+                <td class="p-2">지금 이렇다 — 규약 &middot; 수치 &middot; 계약 &middot; 운영 (정본)</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-mono font-bold text-amber-700">PLAN.md</td>
+                <td class="p-2 font-semibold text-slate-900">미래</td>
+                <td class="p-2">아직 안 됐다 — 미결 &middot; 다음 할 것</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-mono font-bold text-purple-700">DECISIONS.md</td>
+                <td class="p-2 font-semibold text-slate-900">과거</td>
+                <td class="p-2">왜 그렇게 됐나 — 경위 &middot; 기각안 (append-only)</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-mono font-bold text-slate-700">기획서 docx</td>
+                <td class="p-2 font-semibold text-slate-900">제출용</td>
+                <td class="p-2">외부가 읽는 유일한 문서</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-tight">
+          ★ 문서 넷은 병렬 축이 아니라 <b>생애주기</b>입니다(PLAN &rarr; MASTER &rarr; DECISIONS). 한 항목은 한 문서에만 씁니다.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- 정규 릴리즈 절차 (§12-8b) -->
+    <section class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-3" data-slot="12-8b" data-canon="MASTER §12-8b">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-rocket text-purple-600"></i> 정규 릴리즈 4단계 절차 (§12-8b)
+        </h3>
+        <span class="canon-tag">정본: MASTER §12-8b</span>
+      </div>
+
+      <!-- 위험 구역 격리 2: 릴리즈 3·4단계 -->
+      <div class="danger-box p-3.5 rounded text-xs text-rose-950 space-y-1">
+        <b class="flex items-center gap-1.5 text-rose-700 text-sm">
+          <i class="fa-solid fa-triangle-exclamation"></i> 3단계(main &rarr; dev 흡수)와 4단계(dev &rarr; part 정렬) 필수
+        </b>
+        <p class="leading-relaxed">
+          뒤 둘을 빼먹으면 다음 릴리즈에서 조상 커밋 연결이 끊겨 대형 머지 충돌이 발생합니다.
+        </p>
+      </div>
+
+      <div class="code-box accent-purple rounded p-3">
+        <button onclick="copyCode('c-release')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+          <i class="fa-regular fa-copy mr-1"></i> 복사
+        </button>
+        <pre id="c-release" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto"># 1단계: dev -> main PR (Merge Commit / 승인 1 + Code Owners 통과)
+# 2단계: 태그 생성 및 배포 푸시
+git switch main && git pull origin main
+git tag v&lt;다음버전&gt; && git push origin v&lt;다음버전&gt;
+
+# 3단계: [필수] main -> dev 흡수 (Merge Commit)
+git switch dev && git merge origin/main && git push origin dev
+
+# 4단계: [필수] dev -> part 3종 일제 정렬
+git switch part/gis && git merge origin/dev && git push origin part/gis
+git switch part/cv && git merge origin/dev && git push origin part/cv
+git switch part/infra && git merge origin/dev && git push origin part/infra</pre>
+      </div>
+    </section>
+
+    <!-- 파트별 매트릭스, 머지 정책, 바이패스 규정 -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+
+      <!-- 파트별 역할 및 소유권 -->
+      <div class="border border-slate-200 rounded-lg p-4 bg-white space-y-2.5 shadow-sm" data-slot="12-3" data-canon=".github/CODEOWNERS">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+            <i class="fa-solid fa-users text-sky-600"></i> 소유권 & 담당 경로 (§12-3)
+          </h3>
+          <span class="canon-tag">정본: .github/CODEOWNERS</span>
+        </div>
+        <div class="space-y-2 font-mono text-[11px]">
+          <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
+            <span class="text-sky-700 font-bold block">GIS / Web (오창준, 우지혜)</span>
+            <span class="text-slate-700 font-sans block mt-0.5">경로: <code class="text-slate-900">src/firelane/, data/, web/, docs/</code></span>
+            <span class="text-slate-500 font-sans text-[10px]">데이터 파이프라인, 판정 알고리즘, 지도 UI</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
+            <span class="text-purple-700 font-bold block">Vision / CV (이가연, 백진욱)</span>
+            <span class="text-slate-700 font-sans block mt-0.5">경로: <code class="text-slate-900">src/cv/</code></span>
+            <span class="text-slate-500 font-sans text-[10px]">마스킹, 캘리브레이션, 호모그래피</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
+            <span class="text-emerald-700 font-bold block">Infra / API (김재웅)</span>
+            <span class="text-slate-700 font-sans block mt-0.5">경로: <code class="text-slate-900">src/api/, infra/, Dockerfile.*</code></span>
+            <span class="text-slate-500 font-sans text-[10px]">FastAPI 서빙, 스케줄러, ECS 배포</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 머지 방식 차이의 이유 -->
+      <div class="border border-slate-200 rounded-lg p-4 bg-white space-y-2.5 shadow-sm" data-slot="12-2" data-canon="MASTER §12-2">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+            <i class="fa-solid fa-book text-amber-600"></i> 머지 방식이 왜 다른가? (§12-2)
+          </h3>
+          <span class="canon-tag">정본: MASTER §12-2</span>
+        </div>
+        <div class="space-y-2 text-[11px] leading-relaxed">
+          <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
+            <b class="text-rose-700">feat &rarr; part 는 왜 Squash인가?</b>
+            <p class="text-slate-600 mt-0.5">feat은 당일 삭제되는 임시 브랜치이므로 커밋 이력을 남길 이유가 없습니다. 하나의 커밋으로 압축 병합합니다.</p>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
+            <b class="text-emerald-700">dev &harr; main 은 왜 Merge Commit인가?</b>
+            <p class="text-slate-600 mt-0.5">양방향 부모 이력을 남겨야 다음 흡수 때 충돌이 안 나며, 롤백 시 <code class="text-slate-900 font-mono">revert -m 1</code>이 정상 동작합니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bypass 회수일 및 데이터 기준 -->
+      <div class="border border-slate-200 rounded-lg p-4 bg-white space-y-2.5 shadow-sm" data-slot="12-10" data-canon="MASTER §12-10">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <h3 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+              <i class="fa-solid fa-key text-rose-600"></i> BYPASS 회수 & 데이터 추적
+            </h3>
+            <span class="bg-rose-100 text-rose-800 border border-rose-300 text-[9px] font-bold px-1.5 py-0.2 rounded" data-expires="2026-09-07">만료 2026-09-07</span>
+          </div>
+          <span class="canon-tag">정본: MASTER §12-10</span>
+        </div>
+        <div class="space-y-2 text-[11px]">
+          <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
+            <b class="text-rose-700 block mb-0.5">Admin Bypass 회수 예정 (§12-1)</b>
+            <p class="text-slate-600 leading-tight">
+              현재 main 정비용으로 5인 Admin Bypass 적용 중. <b class="text-amber-800">2026-09-07 전원 회수 예정</b> (회수 후 승인 1 + Code Owners 필수).
+            </p>
+            <p class="text-[10px] text-slate-400 mt-1 border-t border-slate-200 pt-1">
+              ※ 회수하면 이 카드를 통째로 지운다. 지난 날짜가 적힌 안내는 안 지킨 규칙처럼 읽힌다.
+            </p>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded border border-slate-200 font-mono">
+            <div class="flex justify-between text-rose-700"><span>data/raw/, *.tif, *.gpkg</span> <b>Git 제외 (X)</b></div>
+            <div class="flex justify-between text-emerald-700"><span>data/field/, web/data/</span> <b>Git 추적 (O)</b></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ③ 이 문서가 낡았는지 확인하는 법 -->
+    <section class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-clock-rotate-left text-slate-700"></i> 이 문서가 낡았는지 확인하는 법
+        </h3>
+        <span class="canon-tag">동기화 검증 도구</span>
+      </div>
+
+      <p class="text-xs text-slate-600 leading-relaxed">
+        이 문서는 사람이 쓴 것이라 자동 검사가 직접 걸지 못합니다. <code class="text-slate-900 font-mono font-bold">data-slot</code>이 렌더러와 도킹하는 자리이며, MASTER §12에서 절이 사라지면 렌더러가 그 슬롯을 못 채우고 정지합니다.
+      </p>
+
+      <div class="code-box accent-slate rounded p-3">
+        <button onclick="copyCode('c-doc-check')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
+          <i class="fa-regular fa-copy mr-1"></i> 복사
+        </button>
+        <pre id="c-doc-check" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto">uv run python tools/render_workflow.py --check   # 자동 생성본이 MASTER 와 같은가
+uv run python tools/doc_fsck.py                  # 문서끼리 어긋난 데가 있는가</pre>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Protected Rule Spec Modal -->
+  <div id="rule-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-md w-full p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+        <h4 id="modal-title" class="font-mono font-bold text-sm text-slate-900">Rule Spec</h4>
+        <button onclick="closeRuleModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="modal-body" class="text-xs space-y-2 text-slate-700 leading-relaxed font-mono">
+      </div>
+      <div class="text-right">
+        <button onclick="closeRuleModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs px-3 py-1.5 rounded border border-slate-300">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function copyCode(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('명령어가 클립보드에 복사되었습니다.');
+      });
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('active');
+      });
+      
+      document.getElementById(tabId).classList.remove('hidden');
+      const activeBtn = document.getElementById('btn-' + tabId);
+      activeBtn.classList.add('active');
+    }
+
+    const modalData = {
+      main: {
+        title: "Rule: refs/heads/main (Release)",
+        desc: "• 목적: AWS / Pages 자동 배포 스냅샷<br>• 승인: 1인 이상 (Code Owners 필수)<br>• 필수 검사: contract-shared, contract-strict<br>• 머지 방식: Merge Commit 단독 (Squash 금지)<br>• 관리자: 김재웅(@diyon13)"
+      },
+      dev: {
+        title: "Rule: refs/heads/dev (Trunk)",
+        desc: "• 목적: 항상 안정 동작해야 하는 통합 트렁크<br>• 승인: 0인 (병목 제거)<br>• 필수 검사: contract-shared 통과 필수<br>• 머지 방식: Merge Commit 단독<br>• 관리: 상시 양방향 동기화"
+      },
+      part: {
+        title: "Rule: refs/heads/part/** (Staging)",
+        desc: "• 목적: 파트별 최신 작업 통합 브랜치<br>• 승인: 0인 (직푸시 차단)<br>• 필수 검사: contract-shared 통과<br>• 머지 방식: feat->part는 Squash, dev->part는 Merge Commit"
+      }
+    };
+
+    function openRuleModal(branch) {
+      const data = modalData[branch];
+      document.getElementById('modal-title').innerText = data.title;
+      document.getElementById('modal-body').innerHTML = data.desc;
+      document.getElementById('rule-modal').classList.remove('hidden');
+    }
+
+    function closeRuleModal() {
+      document.getElementById('rule-modal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
+

@@ -1582,7 +1582,6 @@ def test_vehicle_offtracking_is_physical():
     assert V.offtracking(8.0) > V.offtracking(20.0) > V.offtracking(50.0)
     # 축거보다 작은 반경은 물리적으로 못 돈다
     assert V.offtracking(2.0) == V.WHEELBASE
-    assert not V.can_turn(6.0), "최소회전반경보다 급한데 돌 수 있다고 한다"
     assert V.can_turn(None), "직선을 못 돈다고 한다"
 
     # 직선 필요폭이 params.TRUCK 과 맞물려야 한다
@@ -1612,9 +1611,6 @@ def test_edge_cost_blocks_what_cannot_pass():
     assert V.edge_cost(40, 9.9, "blocked", lenient=True) == math.inf, \
         "lenient 에서 blocked 가 뚫린다"
     assert V.edge_cost(40, 2.8, "clear") == math.inf, "필요폭 미만인데 통과"
-    assert V.edge_cost(40, 5.0, "clear", 6.0) == math.inf, \
-        "최소회전반경보다 급한데 통과"
-
     # 넓은 직선은 거리 그대로
     assert V.edge_cost(40, 5.0, "clear") == 40.0
     # 여유가 적으면 비싸다
@@ -1624,6 +1620,40 @@ def test_edge_cost_blocks_what_cannot_pass():
     soft = V.edge_cost(40, None, "unknown", lenient=True)
     assert math.isfinite(strict) and soft < strict, \
         "lenient 가 모르는 곳을 안 열어준다 — 그래프가 끊긴다"
+
+
+def test_turn_block_requires_a_verified_radius():
+    """회전으로 막는 것이 검증된 반경을 요구하는가.
+
+    ★ 2026-09-01. `turn_radius_m: 12.0` 은 자동차규칙 제9조① 의 **법정
+      상한**이지 그 차가 실제로 도는 반경이 아니다. 상한을 임계로 쓰면
+      R < 12m 인 코너를 전부 막는데 골목 코너는 거의 다 그렇다 —
+      근거 없이 39구간을 막고 있었다(DECISIONS 81).
+
+    ★ **양방향으로 검사한다.** 미검증이면 안 막는 것과, 검증되면 막는 것
+      둘 다 본다. 한 방향만 보면 누가 `turn_radius_verified` 를 도로
+      올려도 아무도 모른다(DECISIONS 79).
+    """
+    import math
+
+    from firelane.seg import vehicle as V
+
+    verified = bool(V.spec().get("turn_radius_verified"))
+    R = float(V.spec()["turn_radius_m"])
+    tight = R / 2                      # 임계보다 확실히 급한 코너
+
+    if verified:
+        assert not V.can_turn(tight), "검증된 반경인데 급한 코너를 안 막는다"
+        assert V.edge_cost(40, 9.9, "clear", tight) == math.inf, \
+            "회전 불가인데 통과"
+    else:
+        assert V.can_turn(tight), (
+            "미검증 반경으로 막고 있다 — 지금 값은 법정 상한이다(DECISIONS 81)")
+        assert math.isfinite(V.edge_cost(40, 9.9, "clear", tight)), \
+            "미검증 반경이 경로를 끊는다"
+
+    # 어느 쪽이든 필요폭은 반경을 반영한다. 비용을 올리는 것은 안전측이다.
+    assert V.required_width(6.0) > V.required_width(20.0) > V.required_width()
 
 
 def test_vehicle_spec_has_a_source():
@@ -1948,3 +1978,82 @@ def test_multi_part_reader_refuses_mixed_columns():
     #   3개월 뒤에 근거를 알 수 없다(§18-3).
     assert "optional_cols" in body, "결손 허용이 대장 선언을 안 본다"
     assert "undeclared" in body, "선언되지 않은 컬럼 차이를 그냥 넘긴다"
+
+
+def test_verify_covers_every_ci_job():
+    """`verify.sh` 가 CI 잡을 전부 덮는가.
+
+    ★ 2026-09-02. `verify.sh` 는 스스로 *"CI 전체 위생 검사 로컬 고속 재현"*
+      이라고 선언하는데 `contract-strict` 를 안 돌고 있었다. 그래서 로컬
+      초록 · CI 빨간불이 하루에 두 번 났다.
+
+      같은 사고가 2026-08-23 에도 있었고(5b 주석) 그때는 다섯을 손으로
+      채웠다. **손으로 채우면 다음 잡이 늘 때 또 갈린다.** 이 검사가
+      그 자리를 대신한다.
+
+    ★ 잡 이름을 그대로 찾지 않는다. `verify.sh` 의 단계 이름은 사람이 읽는
+      말이라 잡 이름과 다를 수 있다. 대신 **각 잡이 실제로 부르는 명령**이
+      `verify.sh` 어딘가에 있는지를 본다.
+    """
+    import re
+    yml = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
+    vfy = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
+
+    jobs = re.findall(r"^  ([a-z][\w-]*):\n    name:", yml, re.M)
+    assert jobs, "contract.yml 에서 잡을 못 찾았다"
+
+    # 잡마다 "이것이 로컬에도 있어야 한다" 는 표식
+    NEEDS = {
+        "contract-strict": "owned_paths.py",
+        "contract-shared": "pytest",
+    }
+    miss = [f"{j} → verify.sh 에 `{k}` 가 없다"
+            for j, k in NEEDS.items() if j in jobs and k not in vfy]
+    assert not miss, (
+        "verify.sh 가 CI 잡을 다 안 돈다\n" + "\n".join("  · " + m for m in miss)
+        + "\n\n  로컬 검증이 CI 의 부분집합이면 '내 기계에서는 됐는데' 가 나온다.")
+
+    unknown = [j for j in jobs if j not in NEEDS]
+    assert not unknown, (
+        f"CI 에 새 잡이 생겼다 — {', '.join(unknown)}\n"
+        "  verify.sh 에 같은 검사를 넣고 위 NEEDS 에 표식을 등재해라.\n"
+        "  등재하지 않으면 그 잡은 로컬에서 재현되지 않는다.")
+
+
+def test_strict_lint_args_have_one_home():
+    """엄격 린트 인자가 한 곳에만 있는가.
+
+    ★ 2026-09-02. 같은 사고를 세 층에서 세 번 겪었다 — verify.sh 가 CI 검사
+      다섯을 안 돌았고(08-23), contract-strict 를 안 돌았고(09-02), 그 인자를
+      grep 으로 긁다 주석을 물었다(09-02). **두 번은 우연이고 세 번은
+      구조다.** 인자를 데이터로 빼고 둘이 읽게 했다.
+
+    ★ `sources.yaml` 이 계층 규칙의 정본인 것과 같은 구조다 — 선언을
+      데이터로 빼면 코드가 그것을 읽지, 서로를 읽지 않는다.
+    """
+    import tomllib
+    cfg = ROOT / ".ruff-strict.toml"
+    assert cfg.exists(), (
+        ".ruff-strict.toml 이 없다. 엄격 린트 설정의 정본이다.")
+    d = tomllib.loads(cfg.read_text(encoding="utf-8"))
+    sel = d.get("lint", {}).get("select") or []
+    assert sel, ".ruff-strict.toml 의 [lint].select 가 비었다"
+
+    bad = []
+    for rel in (".github/workflows/contract.yml", "tools/verify.sh"):
+        f = ROOT / rel
+        if not f.exists():
+            continue
+        txt = f.read_text(encoding="utf-8")
+        if "--config .ruff-strict.toml" not in txt:
+            bad.append(f"{rel} 이 .ruff-strict.toml 를 안 읽는다")
+        for ln in txt.splitlines():
+            s = ln.strip()
+            if s.startswith("#") or ".ruff-strict.toml" in s:
+                continue
+            if "--select" in s or "--ignore" in s:
+                bad.append(f"{rel} 이 인자를 직접 적는다 — {s[:70]}")
+    assert not bad, (
+        "엄격 린트 인자가 두 곳에 있다\n"
+        + "\n".join("  · " + b for b in bad)
+        + "\n\n  정본은 .ruff-strict.toml 다. 둘 다 @ 로 읽는다.")

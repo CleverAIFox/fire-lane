@@ -201,9 +201,9 @@ jobs:
           #   **끌 것을 나열하지 않고 켤 것을 고른다.** 손대장 110 → 8 이 되고
           #   남는 15건은 전부 실제 버그이거나 명백한 개선이었다 —
           #   DTZ011 은 어제 계약에서 막은 시간대 누락 버그가 코드에도 있던 것이다.
-          uv run ruff check $FILES \
-            --select B,RUF,PTH,I,UP,DTZ \
-            --ignore RUF001,RUF002,RUF003,PTH123,RUF005,RUF007,RUF059,RUF100
+          # ★ 인자의 정본은 .ruff-strict.toml 다. 여기 적지 않는다 —
+          #   적으면 tools/verify.sh 와 갈린다(2026-09-02).
+          uv run ruff check $FILES --config .ruff-strict.toml
 
       - name: 문서 규약 · 재현성
         run: uv run pytest tests/test_doc_style.py tests/test_reproducibility.py -q

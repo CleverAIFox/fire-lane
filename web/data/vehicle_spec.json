@@ -1,0 +1,12 @@
+{
+  "kind": "중형펌프차",
+  "width_m": 2.5,
+  "length_m": 8.0,
+  "height_m": 3.2,
+  "clearance_m": 0.5,
+  "gradeability_pct": 18,
+  "verified": false,
+  "wheelbase_verified": false,
+  "turn_radius_verified": false,
+  "_note": "성격 선언이다. *_verified 가 false 면 그 값으로 화면이 말하지 않는다 — DECISIONS 81 · 86-5"
+}
