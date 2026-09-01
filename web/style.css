@@ -8,6 +8,8 @@
 :root{
   /* 다크(기본). 라이트는 [data-theme="light"] 에서 덮어쓴다. */
   --void:#0a0d13; --panel:#141922; --line:#232b38; --dim:#7c8798; --text:#e6ebf2;
+  /* 패널보다 한 단계 밝은 면. 드롭다운 상자와 펼친 목록이 쓴다. */
+  --panel-up:#1e2634;
   --blocked:#ff4d3d; --needs:#ffab2e; --clear:#4ad18f; --unknown:#5a6272;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
@@ -16,6 +18,7 @@
      '흰 위의 흰'이 되어 구획이 안 나뉜다. 다크에서 카드가 배경보다 밝은 것과
      같은 관계를 라이트에서는 뒤집어 놓아야 한다. */
   --void:#eef1f5; --panel:#f5f7fa; --line:#d5dbe4; --dim:#5c6675; --text:#161b22;
+  --panel-up:#ffffff;
   --blocked:#d92b1c; --needs:#c47800; --clear:#0f8a55; --unknown:#8b94a3;
 }
 /* 라이트에서만 카드 배경을 흰색으로 올린다(다크는 rgba 흰 3.5% 그대로) */
@@ -155,6 +158,28 @@ kbd{font-family:var(--mono);font-size:10px;background:#202834;border:1px solid v
 #tip dl{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;font-family:var(--mono);font-size:10.5px}
 #tip dt{color:var(--dim)} #tip dd{text-align:right}
 
+/* 통과 여유. 선택한 기준 차량에 따라 값과 색이 바뀌는 유일한 자리다.
+   ★ 지도 색은 안 바뀐다. 판정은 파이프라인의 verdict 가 정본이고
+     화면은 재판정하지 않는다(설계 원칙 6). 바뀌는 것은 이 숫자뿐이다.
+   ★ 판정 4색(--blocked/--needs/--clear)을 쓰지 않는다. 같은 색을 쓰면
+     "구급차를 고르니 이 골목이 초록이 됐다"로 읽힌다 — 정확히 원칙 6이
+     막으려는 오독이다. 그래서 채도를 낮춘 별도 3색으로 간다.
+   ★ tight(여유 0~30cm)를 초록으로 두지 않는다. 인터뷰에서 현장은 여유
+     8cm 에도 진입한다고 했다. 들어가지긴 하지만 긁힌다는 뜻이라 색이
+     "괜찮다"고 말하면 안 된다. */
+#tip .mgn{font-weight:700}
+#tip .mgn.ok{color:#6fbf9a}
+#tip .mgn.tight{color:#d9a441}
+#tip .mgn.bad{color:#e07a6a}
+#tip .mgn.none{color:var(--dim);font-weight:400}
+[data-theme="light"] #tip .mgn.ok{color:#1c7a52}
+[data-theme="light"] #tip .mgn.tight{color:#9a6b00}
+[data-theme="light"] #tip .mgn.bad{color:#b23a26}
+
+/* 기준 차량 줄. 기준을 안 밝힌 수치는 뜻을 잃는다(설계 원칙 5). */
+#tip .basis-v{margin-top:5px;padding-top:5px;border-top:1px solid var(--line);
+  font-size:9.5px;line-height:1.45;color:var(--dim)}
+
 @media(max-width:820px){
   #panel{width:100%;height:auto;bottom:auto;max-height:47%;border-right:none;
     border-bottom:1px solid var(--line)}
@@ -210,3 +235,89 @@ kbd{font-family:var(--mono);font-size:10px;background:#202834;border:1px solid v
   #minimap{display:none}
 }
 
+
+/* ── 기준 차량 선택 ──────────────────────────────
+   화면설계서 FRLN_DISP_02 의 관제 화면판. js/ui/vehicle.js 가 채운다.
+
+   ★ 판정 4색(--blocked/--needs/--clear/--unknown)을 여기 쓰지 않는다.
+     차량 회전 등급은 구간 판정이 아니다. 같은 색을 쓰면 "이 차를 고르면
+     구간이 초록이 된다"로 읽힌다 — 설계 원칙 6 이 막으려는 오독이다.
+     그래서 등급은 무채색 + 하나의 청색 강조로만 구분한다.
+   ★ 예외가 하나 있다. "추정"·"없음" 배지는 주황(--needs)을 쓴다.
+     이건 등급이 아니라 경고이고, 판정 보류와 같은 종류의 말이다 —
+     "이 수치는 아직 근거가 약하다". 색이 같은 것이 오히려 맞다. */
+/* 드롭다운. 화살표는 래퍼의 ::after 로 그린다 —
+   <select> 자체에는 가상 요소를 붙일 수 없다. */
+#veh .veh-pick{position:relative}
+#veh .veh-pick::after{content:"";position:absolute;right:10px;top:50%;
+  width:6px;height:6px;margin-top:-4px;pointer-events:none;
+  border-right:1.5px solid var(--dim);border-bottom:1.5px solid var(--dim);
+  transform:rotate(45deg)}
+#veh select{font:inherit;font-size:11.5px;width:100%;cursor:pointer;
+  padding:8px 26px 8px 10px;border-radius:6px;color:var(--text);
+  background:var(--panel-up);border:1px solid var(--line);
+  -webkit-appearance:none;appearance:none;
+  transition:border-color .12s;
+  /* ★ 사파리(macOS)는 option 의 background·color 를 무시하고 팝업을 OS
+     기본값으로 그린다. 대신 color-scheme 은 본다 — 색을 지정하는 게 아니라
+     "이 컨트롤은 어두운 화면에 있다"고 알려주는 속성이라, 브라우저가 자기
+     다크 팝업을 꺼내 쓴다. 아래 option 규칙이 안 먹는 곳에서 이것이 받는다.
+     ★ 테마 토글과 함께 뒤집어야 한다. 라이트 모드에서 dark 로 두면 흰
+       패널 위에 검은 팝업이 뜬다. */
+  color-scheme:dark}
+[data-theme="light"] #veh select{color-scheme:light}
+#veh select:hover{border-color:var(--dim)}
+#veh select:focus-visible{outline:none;border-color:var(--text)}
+
+/* 펼친 목록. 기본값이면 OS 가 흰 배경 + 옅은 회색 글자로 그려서 다크
+   테마에서 거의 안 읽힌다(2026-09-01 확인). 면은 패널보다 한 단계 밝게,
+   글자는 흰색으로 못 박는다.
+   ★ 크롬·엣지·파이어폭스에서 먹는다. 사파리(macOS)는 option 색을 무시하고
+     OS 기본으로 그린다 — 거기서는 라이트 목록이 뜬다. 막을 방법이 없다.
+   ★ 묶음 이름(optgroup)은 항목보다 어둡게 둔다. 고를 수 없는 줄이라
+     항목과 같은 밝기면 눌러보게 된다. */
+#veh select option{background:var(--panel-up);color:#ffffff;padding:6px 8px}
+#veh select optgroup{background:var(--panel-up);color:var(--dim);
+  font-style:normal;font-weight:600;font-size:10px}
+[data-theme="light"] #veh select option{color:var(--text)}
+
+/* 선택 요약. 기준 차량을 상시 노출하는 자리다(설계 원칙 5). */
+#veh .veh-sum{margin-top:8px;padding:8px 10px;border-radius:6px;
+  background:rgba(255,255,255,.035);border:1px solid var(--line)}
+[data-theme="light"] #veh .veh-sum{background:#ffffff}
+#veh .veh-name{font-size:11.5px;font-weight:700;color:var(--text);margin-bottom:5px;
+  display:flex;align-items:center;gap:6px}
+#veh dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;
+  font-family:var(--mono);font-size:10.5px}
+#veh dt{color:var(--dim)}
+#veh dd{text-align:right;color:var(--text)}
+
+/* 회전 등급 배지. 폭 옆에 붙지만 판정이 아니라는 것이 읽혀야 한다. */
+#veh .veh-grade{font-style:normal;font-size:9.5px;margin-left:5px;
+  padding:1px 5px;border-radius:3px;border:1px solid var(--line);color:var(--dim)}
+#veh .veh-grade.g-ok{color:#7fb2ff;border-color:rgba(127,178,255,.45)}
+#veh .veh-grade.g-warn{color:var(--dim)}
+#veh .veh-grade.g-none{color:var(--dim);opacity:.7}
+[data-theme="light"] #veh .veh-grade.g-ok{color:#1c5fbf;border-color:rgba(28,95,191,.4)}
+
+/* 제원 대응 신뢰도. 확정은 조용하게, 추정·없음은 눈에 띄게. */
+#veh .veh-match{font-style:normal;font-weight:600;font-size:9px;
+  padding:1px 5px;border-radius:3px;border:1px solid var(--line);color:var(--dim)}
+#veh .veh-match.m-guess,
+#veh .veh-match.m-none{color:var(--needs);border-color:rgba(255,171,46,.45)}
+[data-theme="light"] #veh .veh-match.m-guess,
+[data-theme="light"] #veh .veh-match.m-none{border-color:rgba(196,120,0,.45)}
+
+/* 추정 사유. 왜 이 숫자를 믿으면 안 되는지가 화면에 남아야 한다. */
+#veh .veh-warn{margin-top:6px;padding:5px 7px;border-radius:4px;
+  font-size:9.5px;line-height:1.5;color:var(--text);
+  background:rgba(255,171,46,.10);border:1px solid rgba(255,171,46,.28)}
+#veh .veh-warn b{color:var(--needs)}
+[data-theme="light"] #veh .veh-warn{background:rgba(196,120,0,.09);
+  border-color:rgba(196,120,0,.28)}
+
+/* 회전·높이 미판정 고지. 이 문장을 지우지 말 것 —
+   화면이 폭만 본다는 사실을 숨기면 현장이 화면을 과신한다. */
+#veh .veh-note{margin-top:6px;font-size:10px;line-height:1.5;color:var(--dim)}
+/* 보유 대수 출처. 공공누리 4유형이라 표기가 의무다. */
+#veh .veh-src{margin-top:4px;font-size:9px;line-height:1.4;color:var(--dim);opacity:.75}

@@ -1582,7 +1582,6 @@ def test_vehicle_offtracking_is_physical():
     assert V.offtracking(8.0) > V.offtracking(20.0) > V.offtracking(50.0)
     # 축거보다 작은 반경은 물리적으로 못 돈다
     assert V.offtracking(2.0) == V.WHEELBASE
-    assert not V.can_turn(6.0), "최소회전반경보다 급한데 돌 수 있다고 한다"
     assert V.can_turn(None), "직선을 못 돈다고 한다"
 
     # 직선 필요폭이 params.TRUCK 과 맞물려야 한다
@@ -1612,9 +1611,6 @@ def test_edge_cost_blocks_what_cannot_pass():
     assert V.edge_cost(40, 9.9, "blocked", lenient=True) == math.inf, \
         "lenient 에서 blocked 가 뚫린다"
     assert V.edge_cost(40, 2.8, "clear") == math.inf, "필요폭 미만인데 통과"
-    assert V.edge_cost(40, 5.0, "clear", 6.0) == math.inf, \
-        "최소회전반경보다 급한데 통과"
-
     # 넓은 직선은 거리 그대로
     assert V.edge_cost(40, 5.0, "clear") == 40.0
     # 여유가 적으면 비싸다
@@ -1624,6 +1620,40 @@ def test_edge_cost_blocks_what_cannot_pass():
     soft = V.edge_cost(40, None, "unknown", lenient=True)
     assert math.isfinite(strict) and soft < strict, \
         "lenient 가 모르는 곳을 안 열어준다 — 그래프가 끊긴다"
+
+
+def test_turn_block_requires_a_verified_radius():
+    """회전으로 막는 것이 검증된 반경을 요구하는가.
+
+    ★ 2026-09-01. `turn_radius_m: 12.0` 은 자동차규칙 제9조① 의 **법정
+      상한**이지 그 차가 실제로 도는 반경이 아니다. 상한을 임계로 쓰면
+      R < 12m 인 코너를 전부 막는데 골목 코너는 거의 다 그렇다 —
+      근거 없이 39구간을 막고 있었다(DECISIONS 81).
+
+    ★ **양방향으로 검사한다.** 미검증이면 안 막는 것과, 검증되면 막는 것
+      둘 다 본다. 한 방향만 보면 누가 `turn_radius_verified` 를 도로
+      올려도 아무도 모른다(DECISIONS 79).
+    """
+    import math
+
+    from firelane.seg import vehicle as V
+
+    verified = bool(V.spec().get("turn_radius_verified"))
+    R = float(V.spec()["turn_radius_m"])
+    tight = R / 2                      # 임계보다 확실히 급한 코너
+
+    if verified:
+        assert not V.can_turn(tight), "검증된 반경인데 급한 코너를 안 막는다"
+        assert V.edge_cost(40, 9.9, "clear", tight) == math.inf, \
+            "회전 불가인데 통과"
+    else:
+        assert V.can_turn(tight), (
+            "미검증 반경으로 막고 있다 — 지금 값은 법정 상한이다(DECISIONS 81)")
+        assert math.isfinite(V.edge_cost(40, 9.9, "clear", tight)), \
+            "미검증 반경이 경로를 끊는다"
+
+    # 어느 쪽이든 필요폭은 반경을 반영한다. 비용을 올리는 것은 안전측이다.
+    assert V.required_width(6.0) > V.required_width(20.0) > V.required_width()
 
 
 def test_vehicle_spec_has_a_source():

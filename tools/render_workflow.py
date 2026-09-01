@@ -216,6 +216,21 @@ def as_rules(md: str) -> str:
     return "".join(out)
 
 
+def anchor(num: str) -> str:
+    """`12-1` → `#12-1-룰셋`. GitHub 이 헤딩에서 만드는 앵커 규칙을 따른다.
+
+    ★ 소문자화 · 공백을 하이픈 · 마침표와 백틱 등 구두점 제거.
+      제목이 바뀌면 앵커도 바뀐다. 그래서 실물 제목에서 만든다.
+    """
+    m = re.search(rf"^#+\s*{re.escape(num)}\.\s*(.+)$", SRC.read_text(encoding="utf-8"), re.M)
+    if not m:
+        return ""
+    slug = m.group(1).strip().lower()
+    slug = re.sub(r"[`*_\[\]().,·—:/]", "", slug)
+    slug = re.sub(r"\s+", "-", slug)
+    return f"#{num}-{slug}"
+
+
 def render(groups: dict) -> str:
     # 절별 산문을 미리 모은다. 각 절 끝에 <details> 로 붙는다.
     prose: dict[str, list[str]] = {}
@@ -230,10 +245,14 @@ def render(groups: dict) -> str:
         sec = re.match(r"§(12-[0-9a-z]+)", title)
         link = ""
         if sec:
-            link = (f'<a class="more" href="https://github.com/woongtopia/'
-                    f'fire-lane/blob/main/docs/MASTER.md">MASTER §{sec.group(1)} 전문 →</a>')
+            link = (f'<a class="more" target="_blank" rel="noopener"'
+                    f' href="https://github.com/woongtopia/fire-lane/blob/main/'
+                    f'docs/MASTER.md{anchor(sec.group(1))}">MASTER §{sec.group(1)} 전문 →</a>')
+        # ★ 내용을 div 하나로 감싼다. CSS 가 이 div 만 띄우면 되므로
+        #   문단이 여럿이어도 서로 포개지지 않는다.
         return ('<details class="why"><summary>왜 이렇게 정했나</summary>'
-                + "".join(as_prose(m) for m in md) + link + "</details>")
+                '<div class="pop">'
+                + "".join(as_prose(m) for m in md) + link + "</div></details>")
 
     def block(kind: str) -> str:
         parts, last = [], None
@@ -381,6 +400,15 @@ footer b{{color:#334155}}
 .cv{{color:#0f172a;font-weight:700;text-align:right}}
 .cv.free{{color:#cbd5e1;font-weight:400}}
 /* 각주 */
+/* ★ 2026-09-01. <details> 는 열면 아래 내용을 밀어낸다. 읽던 자리를
+   잃으므로 각주는 제자리에 뜬다 — 위치는 그대로 두고 겹쳐 띄운다.
+   details 그대로 쓰므로 JS 없이 동작하고 키보드·스크린리더도 그대로다. */
+details.why[open]{{position:relative;overflow:visible}}
+details.why[open]>.pop{{position:absolute;z-index:40;left:0;right:0;
+  top:100%;background:#fff;border:1px solid #cbd5e1;border-radius:12px;
+  box-shadow:0 12px 32px rgba(15,23,42,.18);padding:4px 0 14px;
+  max-height:60vh;overflow-y:auto}}
+details.why[open]>.pop>p:first-of-type{{padding-top:18px}}
 details.why{{margin:16px 0 26px;background:#fff;border-radius:12px;
  border:1px solid #e2e8f0;overflow:hidden}}
 details.why summary{{cursor:pointer;padding:14px 20px;font-size:14px;
