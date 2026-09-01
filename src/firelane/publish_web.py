@@ -342,6 +342,24 @@ def main():
     #   ★ 경계는 경로로 갈린다. 생성물은 web/data/ 안에서 끝나야 하고
     #     사람 파일을 코드가 고치면 안 된다.
     #     tests/test_web_ownership.py 가 이 구조를 지킨다.
+    # ★ 2026-09-01. 판정 반영 경로를 앱이 읽을 수 있게 낸다(MASTER §20-5).
+    #   `route_usage` 는 거리만 본 1차이고 이것이 폭·내륜차·판정을 반영한
+    #   2차다. 조인 키는 `seg_uid` — `seg_id` 는 실행 간 유지되지 않는다.
+    _rv = P / "route_vehicle.csv"
+    if _rv.exists():
+        _d = pd.read_csv(_rv)
+        _out = {r.seg_uid: {"use": int(r.route_vehicle),
+                            "cost": round(float(r.cost), 1),
+                            "passable": int(r.passable),
+                            "reachable": int(r.reachable)}
+                for r in _d.itertuples()}
+        (W / "route_vehicle.json").write_text(
+            json.dumps(_out, ensure_ascii=False, separators=(",", ":")),
+            encoding="utf-8")
+        print(f"  route_vehicle.json {len(_out):,}구간")
+    else:
+        print("  ! route_vehicle.csv 없음 — 2차 경로를 안 낸다")
+
     print(f"  스탬프 {_BUILD} → view.json (index.html 은 배포 시 주입)")
 
     _wm = webmanifest.write()
