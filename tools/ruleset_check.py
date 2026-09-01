@@ -5,7 +5,7 @@ ruleset_check.py — GitHub 룰셋 실물이 문서의 방침과 같은가.
     uv run python tools/ruleset_check.py
 
 ── 왜 생겼나 ───────────────────────────────────────────────────
-2026-08-31. `docs/workflow.html` §7 이 스스로 이렇게 적고 있었다 —
+2026-08-31. `MASTER §12-1` 이 스스로 이렇게 적고 있었다 —
 *"강제자가 없다. 룰셋은 저장소 밖이라 코드가 못 본다. 이 표는 사람이
 손으로 적는다."*
 
@@ -42,7 +42,7 @@ import sys
 
 REPO = "woongtopia/fire-lane"
 
-# docs/workflow.html §4 · docs/MASTER.md §12-1 의 표와 같아야 한다.
+# docs/MASTER.md §12-1 의 표와 같아야 한다.
 # 여기를 고치면 그 둘도 같이 고친다.
 EXPECT = {
     "release": {
@@ -151,8 +151,8 @@ def main() -> int:
         print("★ 룰셋 실물이 방침과 다르다.\n")
         for b in bad:
             print(f"  ✗ {b}")
-        print("\n  정본 — docs/workflow.html §4 · docs/MASTER.md §12-1")
-        print("  한시로 낮춘 것이면 workflow §7 대장에 **되돌릴 날과 함께** 적어라.")
+        print("\n  정본 — docs/MASTER.md §12-1")
+        print("  한시로 낮춘 것이면 MASTER §12-1 에 **되돌릴 날과 함께** 적어라.")
         print("  적어두지 않은 완화는 영구가 된다(DECISIONS §76).")
         return 1
 

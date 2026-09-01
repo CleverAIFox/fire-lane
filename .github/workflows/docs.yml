@@ -1,0 +1,51 @@
+# 협업 방침 화면을 MASTER §12 에서 생성한다.
+#
+# 왜 별도인가
+#   `pages.yml` 은 배포만 한다. 생성은 여기서 하고 결과를 커밋한다.
+#   Pages 는 저장소당 사이트 하나라, 두 워크플로가 각자 deploy 하면
+#   서로 덮어쓴다. 생성과 배포를 갈라 그 충돌을 없앤다.
+#
+# ★ 정본은 `docs/MASTER.md §12` 다. `web/workflow.html` 은 생성물이며
+#   손으로 고치면 다음 실행에 덮인다.
+name: 협업 방침 생성
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/MASTER.md', 'tools/render_workflow.py']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: render-workflow
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - run: uv sync --frozen --all-extras
+      - name: MASTER §12 → web/workflow.html
+        run: uv run python tools/render_workflow.py
+      - name: 바뀌었으면 커밋
+        # ★ 생성물이 저장소에 들어간다. `web/data` 가 이미 그렇고
+        #   이유도 같다 — 배포가 그것을 읽는다(MASTER §12-10).
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- web/workflow.html; then
+            echo "변경 없음"; exit 0
+          fi
+          git add web/workflow.html
+          git commit -m "docs: 협업 방침 화면 재생성 (MASTER §12)"
+          git push
