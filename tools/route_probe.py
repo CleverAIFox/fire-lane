@@ -14,6 +14,10 @@ tools/route_probe.py — 소방차가 실제로 갈 수 있는 길로 경로를 
 경로 탐색은 **이미 있었다.** `graph.access_corridor()` 가 119안전센터
 2곳에서 건물 출입구까지 Dijkstra 를 돌리고 `route_usage` 를 낸다(579구간).
 
+★ 2026-09-01. 아래 서술은 낡았다. `segments.py::_write_route()` 가
+  이미 `edge_cost` 로 2차 경로를 내고 `route_vehicle.csv` 로 쓴다(MASTER §20-2).
+  이 도구는 두 방식의 **차이를 보는** 용도로만 남는다.
+
 **없던 것은 비용 함수다.** `weight="length"` 라 거리만 봤다.
 `blocked` 159구간도 최단이면 지나갔다. 그러면 "소방차가 갈 수 있는 길" 이
 아니라 **"제일 짧은 선"** 이다.

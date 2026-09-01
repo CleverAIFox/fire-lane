@@ -1340,7 +1340,8 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소�
 
 ### 12-8. 배포 — 밑그림
 
-★ **아직 없다.** 지금 `main` 이 배포하는 것은 `pages` 하나이며 정적 지도뿐이다.
+★ **아직 없다.** 지금 `main` 이 배포하는 것은 정적 사이트 하나뿐이다
+(`지도 배포` · `협업 방침 배포` 둘 다 같은 Pages 사이트를 올린다, §12-7).
 아래는 확정이 아니라 방향이다. 실물이 생기면 이 절을 사실로 다시 쓴다.
 
 `dev` 를 판 이유가 여기 있다. `main` 에 AWS 배포를 물리는 순간 `main` 은
@@ -1551,6 +1552,35 @@ ship.py     내보내도 되는가 (위 + 문서 4축 + 위생 + git 상태)
 지도가 실제로 그려지는지, 판정 색·표지판·미니맵·검색이 눈으로 멀쩡한지는
 `tools/serve.py` 로 직접 확인한다.
 
+### 14-4a. 사람이 부르는 나머지 도구
+
+    doctor.py        대장 · 실물 · 백업을 한 화면에. **매일 첫 번째로 본다**
+    refcheck.py      문서·코드의 참조가 낡았는가
+    intake.py        받은 것을 landing 으로 들인다
+    absorb.py        landing 을 raw 로 흡수한다
+    triage.py        받은 더미를 분류한다
+    docpatch.py      docx 를 규칙으로 고친다
+    docx_fix.py      docx 위생
+
+### 14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다
+
+    pr_body_check    PR 본문이 템플릿을 채웠는가
+    encoding_check   UTF-8 · LF · 개행
+    treecheck        트리 구조
+    docx_check       기획서 숫자 ↔ 대장
+    docnum_check     문서 숫자 ↔ 실물
+    ledger_stem      대장 stem 이관 · 무손실 증명
+    ledger_fields    대장 별칭 필드 통합
+    ledger_schema    실물에서 스키마 추출 · --check 드리프트
+    ledger_feeds     feeds 산문 → 소비자 리스트
+    migrate_names    파일명 규칙 이관
+    web_manifest     web/data 매니페스트
+    render_workflow  MASTER §12 → web/workflow.html
+
+★ 이 목록의 정본은 `README.md` 이며
+`test_declaration_sync.py::test_readme_lists_tools_the_automation_calls` 가
+자동화가 부르는 것과 대조한다.
+
 ### 14-5. 대조 도구 — 아무것도 안 바꾼다
 
 읽고 표를 내거나 페이지를 만들 뿐이라 golden 지문에 영향이 없다.
@@ -1595,6 +1625,26 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 ```
 
 ---
+
+### 14-7. 데이터 실물은 저장소에 없다
+
+`data/raw` 와 `norm` · `landing` 은 `.gitignore` 로 빠져 있다. 실물은
+`FIRE_LANE_DATA` 가 가리키는 외장 매체에 있으며 **3.5GB** 다.
+
+    저장소에 있는 것    processed/segments.geojson · schema · _manifest ·
+                        seg_uid_map · baseline · field · golden · web/data
+    저장소에 없는 것    raw · norm · landing · interim · _quarantine
+
+★ **`web/data` 를 커밋하는 이유가 이것이다.** UI 담당이 raw 없이 화면을
+만들 수 있어야 한다(`.gitignore` 6줄).
+
+★ **인수인계 방법 — `FIRE_LANE_DATA` 폴더를 통째로 압축해 넘긴다.**
+받는 쪽은 임의 경로에 풀고 `.env` 에 `FIRE_LANE_DATA` 를 그 경로로 적는다.
+원본을 새로 받는 절차는 §14-3 이지만, 재취득은 기관 신청이 걸려 있어
+빠르지 않다. **압축 전달이 정본 경로다.**
+
+★ 파이프라인은 **GIS 담당 로컬에서만 돈다.** CI 는 데이터를 만들지
+않는다(§12-7). 이 매체가 없으면 `uv run fire-lane` 이 첫 단계에서 멈춘다.
 
 ## 15. 대외 산출물
 
@@ -2531,3 +2581,31 @@ BEV 는 디버그 플래그 뒤에 둔다.
 
 ★ 흐름도의 `A*` 는 **앱 관점**이다. 파이프라인 구현은 Dijkstra 이며
 둘이 모순이 아니다.
+
+### 20-5. 앱은 무엇을 받는가 — 엔드포인트
+
+**서버가 없다. 정적 파일이 인터페이스다.**
+
+파이프라인은 오프라인 배치다(전량 285초). 런타임 계산이 없으므로 앱은
+`web/data/` 를 `fetch` 하기만 한다. 파이썬 코드를 앱으로 옮기지 않는다.
+
+    web/data/segments.geojson   구간 · 판정 · 폭 · route_usage(1차)
+    web/data/view.json          중심 · 범위 · 캐시 스탬프(build)
+    web/data/_manifest.json     파일 목록과 해시
+    web/data/hydrants·cctv·poi·buildings·mask·scope·boundary.geojson
+
+★ **`route_vehicle` 은 아직 안 나간다.** `data/processed/route_vehicle.csv`
+로만 있다. 앱이 판정 반영 경로를 그리려면 `publish_web.py` 가 이것을
+`web/data/route_vehicle.json` 으로 실어야 한다. **남은 작업은 그것 하나다.**
+
+    스키마(제안)  { "<seg_uid>": { "use": 1, "cost": 90.9, "passable": 1 } }
+    조인 키       seg_uid — `seg_id` 는 실행 간 유지되지 않는다(§11)
+
+★ **출발지는 119안전센터 2곳으로 고정이다**(`seg/params.py::STATIONS`).
+경로가 사전 계산이라 임의 출발지는 지원하지 않는다. 지원하려면 비용
+그래프를 JSON 으로 내고 앱이 직접 탐색해야 한다 — `edge_cost` 의 규칙을
+JS 로 옮기는 유일한 지점이다. 하지 않았다.
+
+★ GPS 1인칭 시점은 **전적으로 앱 몫**이다. 현재 위치는 브라우저가 주고
+경로는 위 파일에 있다. 파이프라인과 무관하다.
+
