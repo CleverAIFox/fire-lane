@@ -191,17 +191,53 @@ def check_field_ledger(led: dict) -> list[str]:
     return bad
 
 
-# ── 5. 만료 — 지난 날짜가 규칙인 척 남아 있는가 ────────────────
+# ── 5. 만료 — 한시가 한시로 끝나는가 ──────────────────────────
+# ★ 오창준 이탈일. 09-07 이 마지막 근무일이고 09-08 부터 없다.
+#   그날까지 bypass 를 회수하고 admin 을 축소해야 한다.
+DEPARTURE = "2026-09-07"
+LEAVING = "AIMasterFox"
+
+_BANNER = """
+  ████████████████████████████████████████████████████████████
+  ██                                                        ██
+  ██   기한이 지난 예외가 살아 있다. 이건 경고가 아니다.      ██
+  ██   회수하기 전에는 이 검사가 안 풀린다.                  ██
+  ██                                                        ██
+  ████████████████████████████████████████████████████████████
+"""
+
+_TODO = """
+  ── 할 일 (전부 끝나야 초록이 된다) ─────────────────────────
+   1  GitHub 룰셋에서 bypass_actors 를 전부 비운다
+        Settings → Rules → main · dev · part/* → Bypass list 비우기
+        확인:  uv run python tools/ruleset_check.py
+   2  tools/ruleset_check.py 의 ADMINS 에서 이탈자를 뺀다
+   3  @woongtopia/gis 팀에서 이탈자를 뺀다
+        CODEOWNERS 파일은 고치지 않는다 — 팀에서 빼면 리뷰가 자동으로
+        남은 gis 팀원에게 넘어간다(MASTER §8)
+   4  web/playbook.html 의 BYPASS 카드를 통째로 지운다
+   5  MASTER §12-1 의 회수일 서술을 지운다
+   6  doc_fsck.py 의 DEPARTURE · LEAVING 두 줄을 지운다  ← 이 검사를 끈다
+  ────────────────────────────────────────────────────────────
+"""
+
+
 def check_expiry() -> list[str]:
-    """`data-expires` 와 문서 안 회수일이 지났는가.
+    """기한이 지난 예외가 남아 있는가.
 
-    ★ 2026-09-02. `DECISIONS 80` 이 bypass 를 **한시** 부여하고 회수를 사람
-      기억에 맡겼다. 한시가 한시로 끝나려면 시계가 있어야 한다. 여기 있는
-      것은 알림이 아니라 **게이트**다 — 날짜가 지나면 CI 가 빨간불이 되고,
-      회수하거나 날짜를 다시 정하기 전에는 안 풀린다.
+    ★ 2026-09-02. `§80` 이 bypass 를 **한시** 부여하고 회수를 사람 기억에
+      맡겼다. 한시가 한시로 끝나려면 시계가 있어야 한다. 여기 있는 것은
+      알림이 아니라 **게이트**다 — 날짜가 지나면 CI 가 빨간불이 되고
+      회수하기 전에는 안 풀린다.
 
-    ★ 같은 날짜를 세 곳이 든다 — `web/playbook.html` 의 `data-expires`,
-      `MASTER §12-1` 의 회수일, 룰셋의 실제 bypass. 앞 둘이 어긋나도 운다.
+    ★ 날짜만 보지 않는다. **회수됐는지까지 본다** —
+      `ruleset_check.ADMINS` 에 이탈자가 남아 있으면 실패한다. 날짜만
+      보면 "카드를 지웠으니 됐다" 로 끝나고 룰셋은 그대로 남는다.
+      룰셋 실물은 관리자 토큰이 있어야 읽으므로 `ruleset_check` 가 보고,
+      이쪽은 **그 도구가 무엇을 기대하는지**를 본다.
+
+    ★ 실패 메시지를 크게 낸다. 빨간 줄 하나면 다른 팀원이 무슨 일인지
+      모르고 당황한다. 무엇을 해야 하는지가 화면에 다 있어야 한다.
     """
     import datetime as _dt
     today = _dt.date.today().isoformat()
@@ -212,20 +248,34 @@ def check_expiry() -> list[str]:
             txt = f.read_text(encoding="utf-8", errors="ignore")
             for d in re.findall(r'data-expires="(\d{4}-\d{2}-\d{2})"', txt):
                 seen.setdefault(d, []).append(str(f.relative_to(ROOT)))
-                if d < today:
-                    bad.append(f"{f.relative_to(ROOT)} 의 data-expires {d} 이 "
-                               f"지났다 (오늘 {today}). 그 카드를 지우거나 "
-                               f"날짜를 다시 정해라")
 
-    # MASTER 가 적은 회수일과 화면의 날짜가 같은가
+    # 화면과 MASTER 가 같은 날짜를 드는가 — 지나기 전에도 본다
     mst = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
     m = re.search(r"(\d{4}-\d{2}-\d{2})\s*[에]?\s*회수", mst)
-    if m and seen and m.group(1) not in seen:
-        bad.append(f"MASTER 는 회수일을 {m.group(1)} 로 적는데 화면은 "
-                   f"{' · '.join(sorted(seen))} 을 든다")
-    if m and m.group(1) < today:
-        bad.append(f"MASTER 의 회수일 {m.group(1)} 이 지났다 — "
-                   f"bypass 를 회수하고 그 서술을 지워라")
+    if seen and DEPARTURE not in seen:
+        bad.append(f"화면의 data-expires 는 {' · '.join(sorted(seen))} 인데 "
+                   f"이탈일은 {DEPARTURE} 다. 하나로 맞춰라")
+    if m and m.group(1) != DEPARTURE:
+        bad.append(f"MASTER 는 회수일을 {m.group(1)} 로 적는데 "
+                   f"이탈일은 {DEPARTURE} 다")
+
+    if today <= DEPARTURE:
+        return bad
+
+    # ── 기한이 지났다. 여기서부터는 크게 운다 ──────────────────
+    bad.append(_BANNER.rstrip())
+    bad.append(f"이탈일 {DEPARTURE} 이 지났다 (오늘 {today}).")
+
+    rs = ROOT / "tools/ruleset_check.py"
+    if rs.exists() and LEAVING in rs.read_text(encoding="utf-8"):
+        bad.append(f"★ ruleset_check.ADMINS 에 {LEAVING} 이 아직 있다 — "
+                   "룰셋을 회수하지 않았거나 명단을 안 고쳤다")
+    for d, where in sorted(seen.items()):
+        if d <= DEPARTURE:
+            bad.append(f"★ {' · '.join(where)} 의 BYPASS 카드가 남아 있다")
+    if m:
+        bad.append("★ MASTER §12-1 에 회수일 서술이 남아 있다")
+    bad.append(_TODO.rstrip())
     return bad
 
 

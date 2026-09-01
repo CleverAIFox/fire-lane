@@ -124,4 +124,5 @@
 # web/workflow.html 은 MASTER §12 의 **생성물**이다. 손으로 고치지 않는다 —
 # tools/render_workflow.py 가 만들고 docs.yml 이 커밋한다. 소유는 GIS 다.
 /web/workflow.html            @woongtopia/gis                                    # !strict
+/web/playbook.html      @woongtopia/gis                                    # !strict
 
