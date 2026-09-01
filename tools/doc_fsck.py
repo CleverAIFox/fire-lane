@@ -32,7 +32,6 @@ PARAM FIELD_EXEMPT — 등재 유예 목록. 비우는 것이 목표다
 """
 from __future__ import annotations
 
-import json
 import re
 import sys
 from pathlib import Path
@@ -240,7 +239,12 @@ def check_expiry() -> list[str]:
       모르고 당황한다. 무엇을 해야 하는지가 화면에 다 있어야 한다.
     """
     import datetime as _dt
-    today = _dt.date.today().isoformat()
+    # ★ 시간대를 명시한다. `date.today()` 는 실행 머신의 시간대를 쓰는데
+    #   CI 는 UTC 이고 사람은 KST 다. 이탈일 저녁에 사람은 "지났다" 로 보고
+    #   CI 는 "안 지났다" 로 봐서 게이트가 아홉 시간 늦게 운다.
+    #   회수는 한국 시각으로 하므로 KST 를 기준으로 삼는다.
+    _KST = _dt.timezone(_dt.timedelta(hours=9))
+    today = _dt.datetime.now(tz=_KST).date().isoformat()
     bad, seen = [], {}
 
     for g in ("web/*.html", "docs/*.md"):
