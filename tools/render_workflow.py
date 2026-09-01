@@ -72,6 +72,43 @@ def section12(text: str) -> list[str]:
     return lines[s:e]
 
 
+PLAYBOOK = ROOT / "web/playbook.html"
+
+
+def slots() -> None:
+    """반대 방향 — **화면이 요구하는 절이 MASTER 에 있는가.**
+
+    ★ `audit()` 은 MASTER → 화면을 본다. 이쪽은 화면 → MASTER 다.
+      둘이 있어야 도킹이 닫힌다. 한 방향만 보면 목록을 두 벌 유지해야
+      하는데, `data-slot` 하나로 맞추면 목록이 한 벌이다.
+
+    ★ 왜 필요한가. `§12-8b`(릴리즈 4단계)를 MASTER 에서 지우면 플레이북의
+      그 카드가 근거 없는 서술이 된다. 지금은 아무도 안 운다 — 화면은
+      사람이 쓴 것이라 MASTER 를 안 읽기 때문이다. `data-slot` 이 그
+      연결을 만든다.
+
+    ★ 플레이북이 없으면 건너뛴다. 이 렌더러의 산출물은 `workflow.html`
+      이고 플레이북은 별개 문서다 — 없다고 렌더가 막힐 이유가 없다.
+    """
+    if not PLAYBOOK.exists():
+        return
+    html = PLAYBOOK.read_text(encoding="utf-8", errors="ignore")
+    want = sorted(set(re.findall(r'data-slot="([^"]+)"', html)))
+    if not want:
+        print("  playbook 에 data-slot 이 없다 — 도킹 안 함")
+        return
+    mst = SRC.read_text(encoding="utf-8")
+    miss = [s for s in want
+            if not re.search(rf"^#{{2,3}} {re.escape(s)}\. ", mst, re.M)]
+    if miss:
+        raise SystemExit(
+            f"★ web/playbook.html 이 가리키는 절 {len(miss)}개가 MASTER 에 없다 —\n"
+            f"    {', '.join('§' + s for s in miss)}\n"
+            "  절을 지웠으면 플레이북의 그 카드도 지워라. 근거 없는 서술이 된다.\n"
+            "  절 번호를 바꿨으면 data-slot 을 같이 고쳐라.")
+    print(f"  playbook 슬롯 {len(want)}개 전건 MASTER 에 실재")
+
+
 def audit(lines: list[str], groups: dict) -> None:
     """파싱 결과가 원문과 어긋나지 않는지 센다. 어긋나면 죽는다.
 
@@ -495,6 +532,7 @@ def main() -> int:
     _lines = section12(SRC.read_text(encoding="utf-8"))
     _groups = classify(_lines)
     audit(_lines, _groups)          # ★ 구조가 바뀌면 여기서 죽는다
+    slots()                         # ★ 반대 방향 — 화면 → MASTER
     doc = render(_groups)
 
     if a.check:

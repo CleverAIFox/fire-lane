@@ -191,11 +191,50 @@ def check_field_ledger(led: dict) -> list[str]:
     return bad
 
 
+# ── 5. 만료 — 지난 날짜가 규칙인 척 남아 있는가 ────────────────
+def check_expiry() -> list[str]:
+    """`data-expires` 와 문서 안 회수일이 지났는가.
+
+    ★ 2026-09-02. `DECISIONS 80` 이 bypass 를 **한시** 부여하고 회수를 사람
+      기억에 맡겼다. 한시가 한시로 끝나려면 시계가 있어야 한다. 여기 있는
+      것은 알림이 아니라 **게이트**다 — 날짜가 지나면 CI 가 빨간불이 되고,
+      회수하거나 날짜를 다시 정하기 전에는 안 풀린다.
+
+    ★ 같은 날짜를 세 곳이 든다 — `web/playbook.html` 의 `data-expires`,
+      `MASTER §12-1` 의 회수일, 룰셋의 실제 bypass. 앞 둘이 어긋나도 운다.
+    """
+    import datetime as _dt
+    today = _dt.date.today().isoformat()
+    bad, seen = [], {}
+
+    for g in ("web/*.html", "docs/*.md"):
+        for f in ROOT.glob(g):
+            txt = f.read_text(encoding="utf-8", errors="ignore")
+            for d in re.findall(r'data-expires="(\d{4}-\d{2}-\d{2})"', txt):
+                seen.setdefault(d, []).append(str(f.relative_to(ROOT)))
+                if d < today:
+                    bad.append(f"{f.relative_to(ROOT)} 의 data-expires {d} 이 "
+                               f"지났다 (오늘 {today}). 그 카드를 지우거나 "
+                               f"날짜를 다시 정해라")
+
+    # MASTER 가 적은 회수일과 화면의 날짜가 같은가
+    mst = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    m = re.search(r"(\d{4}-\d{2}-\d{2})\s*[에]?\s*회수", mst)
+    if m and seen and m.group(1) not in seen:
+        bad.append(f"MASTER 는 회수일을 {m.group(1)} 로 적는데 화면은 "
+                   f"{' · '.join(sorted(seen))} 을 든다")
+    if m and m.group(1) < today:
+        bad.append(f"MASTER 의 회수일 {m.group(1)} 이 지났다 — "
+                   f"bypass 를 회수하고 그 서술을 지워라")
+    return bad
+
+
 CHECKS = (
     ("① 스키마   문서가 드는 키 ↔ 실물이 쓰는 키", lambda led: check_schema(led)),
     ("② 경로     문서·설정이 가리키는 파일 ↔ 실재", lambda led: check_paths()),
     ("③ 부재선언 '없다' 고 적은 값 ↔ 실물", lambda led: check_absent(led)),
     ("④ 등재     사람이 만드는 계층 ↔ 대장", lambda led: check_field_ledger(led)),
+    ("⑤ 만료     한시로 정한 것이 한시로 끝났는가", lambda led: check_expiry()),
 )
 
 

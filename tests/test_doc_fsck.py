@@ -72,6 +72,14 @@ def test_human_made_layer_is_in_the_ledger(led):
           "유예가 필요하면 doc_fsck.FIELD_EXEMPT 에 사유와 날짜를 적는다.")
 
 
+def test_temporary_things_actually_expire():
+    """★ 2026-09-02. `DECISIONS 80` 이 bypass 를 한시로 부여하고 회수를 사람
+    기억에 맡겼다. **한시가 한시로 끝나려면 시계가 있어야 한다.**"""
+    _fail("한시로 정한 것의 기한이 지났다", doc_fsck.check_expiry(),
+          "회수하고 그 카드·서술을 지우거나, 날짜를 다시 정해라. "
+          "지난 날짜가 적힌 안내는 안 지킨 규칙처럼 읽힌다.")
+
+
 def test_the_gate_actually_cries():
     """★ 해제만 검사하면 항상 통과하는 검사를 만들게 된다(§69).
     없는 경로를 하나 심어 ② 가 우는지 본다."""
