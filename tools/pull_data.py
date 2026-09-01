@@ -83,16 +83,16 @@ def steps(a) -> list[Step]:
         Step("intake", "Downloads → landing",
              T("intake.py") + ["--stage", "--yes"]),
         Step("stage", "landing → raw (대장 매칭)",
-             T("acquire.py") + ["--stage"]),
+             T("acquire.py") + ["--stage", "--yes"]),
         Step("verify", "raw ↔ landing sha 대조",
              T("acquire.py") + ["--verify"]),
     ]
     if not a.keep_landing:
         out.append(Step("prune", "sha 같은 landing 원본 정리",
-                        T("acquire.py") + ["--prune-landing"]))
+                        T("acquire.py") + ["--prune-landing", "--yes"]))
     out += [
         Step("quarantine", "대장에 없는 raw 파일 격리",
-             T("acquire.py") + ["--quarantine"]),
+             T("acquire.py") + ["--quarantine", "--yes"]),
         Step("judge", "세 판정 — 결손이 남았는가",
              T("acquire.py"), only_yes=False),
         Step("prep", "raw → norm (인코딩·개행·정규명만)",

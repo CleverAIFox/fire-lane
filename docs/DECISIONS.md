@@ -3331,7 +3331,8 @@ PLAN 참조 유효)
 ★ 4유형은 **출처표시 + 상업적이용금지 + 변경금지**다. 화면과 발표 자료 어디에
 쓰든 출처를 표기해야 한다. 패널에서는 `CONFIG.fleetSource` 가 그 일을 한다.
 
-★ `data/field/fire_fleet_dongbu_20260514.csv` 는 원문의 부서 × 차종 행렬을 긴
+★ `raw/safety/safety_fleet_jngj-donggu_20260514.csv` (2026-09-01 이관 · §87-5)
+  는 원문의 부서 × 차종 행렬을 긴
 형태(`station,unit,vehicle_type,count`)로 편 것이다. 수치는 고치지 않았고
 합계 34대와 부서별 합계 7개가 원문과 일치한다. 변경금지 조항이 있으므로
 발표 자료에 표를 실을 때는 원문 형태를 쓴다.
