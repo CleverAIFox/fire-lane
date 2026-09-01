@@ -84,8 +84,8 @@ vehicle_spec:
   length_m: 8.0             # 같은 표 중형
   height_m: 3.2             # 같은 표 중형
   wheelbase_m: 4.0          # ★ 추정. 공식 규격에 없다
-  turn_radius_m: 12.0       # 자동차규칙 제9조① 법정 상한. 추정이 아니다
-  turn_radius_verified: true
+  turn_radius_m: 12.0       # ★ 법정 상한이지 성능값이 아니다(DECISIONS 81)
+  turn_radius_verified: false
   clearance_m: 0.5          # ★ 추정. width_m + 이 값 = params.TRUCK 3.0
   gradeability_pct: 18      # KFS 5종 §4.4.1 공통. 전진·후진 모두. = 10.2°
   verified: false

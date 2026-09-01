@@ -160,7 +160,23 @@ def can_turn(radius_m: float | None) -> bool:
 
     ★ 폭과 무관하다. 아무리 넓어도 최소회전반경보다 급하면 못 돈다 —
       후진해서 여러 번 꺾으면 되지만 출동 중에 그럴 시간이 없다.
+
+    ★ 2026-09-01. **미검증 반경으로는 막지 않는다.** 대장의
+      `turn_radius_verified` 가 false 면 항상 True 를 돌려준다.
+
+      지금 `turn_radius_m: 12.0` 은 자동차규칙 제9조① 의 **법정 상한**이다.
+      "12m 를 초과해서는 안 된다" 는 제조 규제이므로 실제 차량은 그보다
+      작게 돈다. 그것을 성능값으로 쓰면 R=11.2m 코너를 못 돈다고 낸다 —
+      근거 없이 39구간을 막고 있었다.
+
+      PLAN §4-5 도 같은 결론이다 — "전 구간 적용 시 골목 대부분 탈락 →
+      그래프 붕괴". 회전은 시연 경로 코너에서 `corner_probe` 로 검증한다.
+
+      D-30 에서 실제 반경이 나오면 대장 한 줄(`turn_radius_verified: true`)로
+      켜진다. 코드는 안 고친다.
     """
+    if not spec().get("turn_radius_verified"):
+        return True
     return radius_m is None or radius_m >= float(spec()["turn_radius_m"])
 
 
