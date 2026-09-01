@@ -283,12 +283,53 @@ def check_expiry() -> list[str]:
     return bad
 
 
+# ── 6. 기획서 최종 수정일 ──────────────────────────────────────
+def check_docx_revised() -> list[str]:
+    """기획서를 고쳤는데 표지의 최종 수정일이 그대로인가.
+
+    ★ 2026-09-02. 표지가 `2026. 08. 14.` 하나만 들고 있었고 그 뒤로 다섯 번
+      고쳤다. **외부가 읽는 유일한 문서라 날짜가 곧 신뢰다** — 심사위원이
+      8월 문서를 받으면 그동안 아무것도 안 한 것으로 읽는다.
+
+    ★ 파일 mtime 이 아니라 **git 이 아는 마지막 수정 커밋일**과 비교한다.
+      mtime 은 clone 하면 전부 오늘이 된다.
+    """
+    import subprocess
+    docs = list(ROOT.glob("docs/*.docx"))
+    if not docs:
+        return []
+    f = docs[0]
+    try:
+        r = subprocess.run(
+            ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(f)],
+            cwd=ROOT, capture_output=True, text=True, timeout=10)
+        last = r.stdout.strip()
+    except Exception:                                     # noqa: BLE001
+        return []
+    if not last:
+        return []
+    try:
+        import docx as _dx
+        txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
+    except Exception:                                     # noqa: BLE001
+        return []
+    shown = re.findall(r"20\d\d\.\s*\d{1,2}\.\s*\d{1,2}", txt)
+    if not shown:
+        return [f"{f.name} 표지에 날짜가 없다. 작성일과 최종 수정일을 적어라"]
+    norm = {re.sub(r"[.\s]", "", s) for s in shown}
+    if re.sub(r"-", "", last) not in norm:
+        return [f"{f.name} 의 마지막 수정 커밋은 {last} 인데 표지는 "
+                f"{' · '.join(shown)} 만 든다. 최종 수정일을 갱신해라"]
+    return []
+
+
 CHECKS = (
     ("① 스키마   문서가 드는 키 ↔ 실물이 쓰는 키", lambda led: check_schema(led)),
     ("② 경로     문서·설정이 가리키는 파일 ↔ 실재", lambda led: check_paths()),
     ("③ 부재선언 '없다' 고 적은 값 ↔ 실물", lambda led: check_absent(led)),
     ("④ 등재     사람이 만드는 계층 ↔ 대장", lambda led: check_field_ledger(led)),
     ("⑤ 만료     한시로 정한 것이 한시로 끝났는가", lambda led: check_expiry()),
+    ("⑥ 기획서    고쳤는데 최종 수정일이 그대로인가", lambda led: check_docx_revised()),
 )
 
 
