@@ -415,3 +415,32 @@ uv run python tools/doc_fsck.py          문서끼리 어긋난 데
 uv run python tools/doctor.py            대장 · 실물 · 백업
 uv run python tools/golden.py check      판정 지문
 ```
+
+## 나는 어느 파트인가
+
+★ 이 파일은 루트라 **누구든 처음 본다.** 지금은 GIS 파이프라인 서술이 많은데
+그것은 `src/firelane/README.md` 가 정본이다(PLAN 이 그 정리를 든다).
+
+| 나는 | 브랜치 | 볼 곳 | 문서 |
+|---|---|---|---|
+| GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
+| Vision · CV | `part/cv` | `src/cv/` | (해당 파트가 쓴다) |
+| Infra · API | `part/infra` | `src/api/` `infra/` `Dockerfile.*` | (해당 파트가 쓴다) |
+
+**데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
+`web/data/`(40MB 상한)만으로 작업할 수 있다.
+
+    아침에 뭐 하나 · 충돌 · CI 빨간불 · 되돌리기   web/playbook.html
+    협업 방침 (MASTER §12 생성물)                web/workflow.html
+
+## 문서는 어디에
+
+| 무엇 | 시제 | 담는 것 |
+|---|---|---|
+| `docs/MASTER.md` | 현재 | 지금 이렇다 — 규약 · 수치 · 계약 · 운영 |
+| `docs/PLAN.md` | 미래 | 아직 안 됐다 — 미결 · 다음 할 것 |
+| `docs/DECISIONS.md` | 과거 | 왜 그렇게 됐나 — 경위 · 기각안 (append-only) |
+| `docs/기획서_Fire-Lane.docx` | 제출용 | 외부가 읽는 유일한 문서 |
+
+넷은 병렬 축이 아니라 생애주기다(PLAN → MASTER → DECISIONS). 한 항목은 한
+문서에만 쓴다. 어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
