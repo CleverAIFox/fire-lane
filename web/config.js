@@ -230,24 +230,33 @@ const CONFIG = {
      fetch 해서 profile 키로 붙인다. 숫자를 여기 복사하지 말 것 —
      실측으로 교체될 때 두 곳이 갈라진다.
 
-   ★ 왜 profiles.json 10종을 다 띄우지 않는가.
-     그 파일은 조달 규격 분류라 전국 대표 제원이다. 동명동에 실제로
-     출동하는 차와 다르다. 예를 들어 대형 펌프차(회전 10.7m)는 동부소방서에
-     한 대도 없다 — 그것을 목록에 두면 있지도 않은 차의 회전반경을 근거로
-     골목을 판단하게 된다.
+   ★ **동명동은 지산119안전센터 관할이다.** 대인이 아니다.
+     「전남광주통합특별시_동부소방서 관할구역 현황」(2025-07-31, 공공데이터포털
+     15048895) 이 지산을 "동명동 등 4개 법정동" 으로 적는다. 2021년 기준
+     디지털광주문화대전 서술과도 일치한다.
 
-   ★ 목록의 근거. 동부소방서 소방차량현황(2026-05-14 기준, 소방안전본부)의
-     안전센터별 보유 대수 표다. 여기 담은 것은 web/data/stations.geojson 에
-     들어 있는 세 곳 — 대인119안전센터(1.05km) · 지산119안전센터(1.13km) ·
-     동부소방서 본서(1.05km) 다. 용산119안전센터는 GRAPH_BUFFER 1.5km 밖이라
-     데이터에 없고 여기에도 넣지 않는다.
-     https://www.gwangju.go.kr/fire/contentsView.do?pageId=fire224
-     공공누리 4유형(출처표시·상업적이용금지·변경금지) — 화면에 출처를 밝힌다.
+     그런데 지산 보유는 펌프차(중형) 2 · 구급차 1 · 생활안전차 1 이 전부다.
+     물탱크차 · 화학차 · 사다리차 2종 · 조연차는 **전부 대인에만 있다.**
+     인터뷰의 "물탱크차는 커서 못 들어갈 때가 있다" 도 대인 차량 이야기다.
+
+   ★ 그래서 소속 센터로 묶는다. 선착/후발로 가르지 않는다 —
+     대인이 화재 시 동시 출동하는지 요청 후 오는지를 아직 모른다.
+     관할은 문서로 확정된 사실이고 출동 편성은 추론이다. 확정된 것만 쓴다.
+     D-30 광주 인터뷰 질문 목록에 넣을 것.
+
+   ★ 펌프차와 구급차가 두 묶음에 각각 나온다. 중복이 아니라 사실이다 —
+     지산 펌프차 2대와 대인 펌프차 2대는 따로 움직이는 자원이다. 제원이
+     같아 통과선은 같지만, "어디서 오는 차인가" 가 관제사의 판단 재료다.
+
+   ★ 왜 profiles.json 10종을 다 띄우지 않는가.
+     그 파일은 조달 규격 분류라 전국 대표 제원이다. 동부소방서에 대형
+     펌프차는 한 대도 없다 — 목록에 두면 있지도 않은 차의 회전반경을
+     근거로 골목을 판단하게 된다.
 
    ★ 뺀 것과 이유. 생활안전차(대인1·지산1)는 화재 출동 차량이 아니고,
      구조버스(2)는 인원 수송이라 골목 진입 대상이 아니다. 행정·순찰·진단·
      화물·화재조사·트레일러·장비운반·교육차는 출동 차량이 아니다.
-     되살릴 일이 생기면 근거를 함께 적을 것.
+     용산119안전센터는 관할이 다르고 GRAPH_BUFFER 1.5km 밖이라 뺐다.
 
    ★ match — profiles.json 항목과의 대응 신뢰도. 이것을 화면에 밝힌다.
        확정  보유 대장의 차종명이 profiles.json 항목과 그대로 맞는다
@@ -259,60 +268,61 @@ const CONFIG = {
    ★ grade 를 문자열로 박아 둔 이유. 화면이 반경 수치를 보고 등급을
      계산하면 그것도 일종의 재판정이다. 등급은 선언이지 계산이 아니다.
 
-   ★ 차량을 바꿔도 지도 색은 바뀌지 않는다(설계 원칙 6). 색은 데이터의
-     verdict 문자열이 정한다. 선택이 바꾸는 것은 통과선과 여유 표기뿐이다.
-     폭으로는 차종이 거의 안 갈린다 — 구급차(1.995m)만 빼고 전부 2.5m 다.
+   ★ 차량을 바꿔도 지도 색은 바뀌지 않는다(설계 원칙 6).
 
        id       내부 키
        label    화면에 뜨는 이름. 보유 대장의 어휘를 그대로 쓴다
        profile  profiles.json 의 id. 없으면 null
-       count    동명동 관할 보유 대수
+       count    그 센터의 보유 대수
        at       배치된 곳
+       group    드롭다운 묶음. 소속 센터. fleetGroups 의 값이어야 한다
        match    "확정" · "추정" · "없음"
        grade    "여유" · "주의" · "미판정"
-       group    드롭다운 묶음. fleetGroups 의 값 중 하나여야 한다
-       turnUnknown  true 면 profiles.json 의 회전반경을 안 가져온다.
-                    제원표 값이 실물과 다르다는 근거가 있을 때만 쓴다
-       outrigger    아우트리거 최대 전개너비(m). 붐을 세우는 데 드는 폭이다.
-                    ★ 전폭과 다른 축이다 — 2.5m 로 골목에 들어가도 이 폭이
-                      안 나오면 세울 수 없다. 지금 판정은 이것을 안 본다.
+       turnUnknown  true 면 profiles.json 의 회전반경을 안 가져온다
+       outrigger    아우트리거 최대 전개너비(m). 전폭과 다른 축이다
        note     추정·없음일 때 그 사유. 화면에 그대로 뜬다
-
-   ★ group 을 쓰임새로 가른 이유. 배치(대인·지산·본서)로 가르면 펌프차가
-     두 묶음에 걸친다 — 대인 2대와 지산 2대는 같은 차종이다. 배치는 선택
-     요약에서 "보유" 줄로 이미 보여준다.
    ──────────────────────────────────────────────────────────── */
   fleet: [
-    { id:"pump",    label:"펌프차 (중형)",         profile:"pump_medium",     group:"진압",
-      count:4, at:"대인 2 · 지산 2", match:"확정", grade:"여유" },
-    { id:"tanker",  label:"물탱크차 (대형)",        profile:"tanker_large",    group:"진압",
+    /* ── 지산119안전센터 — 동명동 관할 ── */
+    { id:"pump-js",  label:"펌프차 (중형)",      profile:"pump_medium",     group:"지산119안전센터",
+      count:2, at:"지산", match:"확정", grade:"여유" },
+    { id:"amb-js",   label:"구급차",           profile:"ambulance_current_example", group:"지산119안전센터",
+      count:1, at:"지산", match:"확정", grade:"미판정",
+      note:"제원표에 회전반경이 비어 있다" },
+
+    /* ── 대인119안전센터 — 관할은 아니나 특수차가 전부 여기 있다 ── */
+    { id:"pump-di",  label:"펌프차 (중형)",      profile:"pump_medium",     group:"대인119안전센터",
+      count:2, at:"대인", match:"확정", grade:"여유" },
+    { id:"tanker",   label:"물탱크차 (대형)",     profile:"tanker_large",    group:"대인119안전센터",
       count:1, at:"대인", match:"확정", grade:"주의" },
-    { id:"chem",    label:"화학차",              profile:"chemical_large",  group:"진압",
+    { id:"chem",     label:"화학차",           profile:"chemical_large",  group:"대인119안전센터",
       count:1, at:"대인", match:"추정", grade:"주의",
       note:"보유 대장에 대형·고성능 구분이 없어 대형으로 잡았다" },
-    { id:"ladder-s",label:"직진형 사다리차 53m",    profile:"ladder_33m_plus", group:"사다리",
+    { id:"ladder-s", label:"직진형 사다리차 53m", profile:"ladder_33m_plus", group:"대인119안전센터",
       count:1, at:"대인", match:"추정", grade:"미판정",
       turnUnknown:true, outrigger:6.0,
       note:"광주 규격서(2025-06)에 회전반경 규정이 없다. 차대가 6x4 3축·전장 13m 이하라 제원표의 2축 대표값(11.89m)은 실제보다 작다 — 그래서 안 띄운다" },
-    { id:"ladder-a",label:"굴절형 사다리차 27m",    profile:"ladder_under_33m",group:"사다리",
+    { id:"ladder-a", label:"굴절형 사다리차 27m", profile:"ladder_under_33m",group:"대인119안전센터",
       count:1, at:"대인", match:"추정", grade:"미판정",
       turnUnknown:true,
       note:"제원표는 길이로 갈리는데 굴절형은 관절 유무로 갈린다. 다른 축이라 회전반경을 가져오지 않는다" },
-    { id:"rescue",  label:"구조차",              profile:"rescue_5t",       group:"구조·구급",
-      count:2, at:"본서 119구조대", match:"확정", grade:"미판정",
+    { id:"amb-di",   label:"구급차",           profile:"ambulance_current_example", group:"대인119안전센터",
+      count:3, at:"대인", match:"확정", grade:"미판정",
       note:"제원표에 회전반경이 비어 있다" },
-    { id:"amb",     label:"구급차",              profile:"ambulance_current_example", group:"구조·구급",
-      count:4, at:"대인 3 · 지산 1", match:"확정", grade:"미판정",
-      note:"제원표에 회전반경이 비어 있다" },
-    { id:"light",   label:"조연차",              profile:null,              group:"진압",
+    { id:"light",    label:"조연차",           profile:null,              group:"대인119안전센터",
       count:1, at:"대인", match:"없음", grade:"미판정",
       note:"제원표에 항목이 없다. 전폭 미상" },
+
+    /* ── 동부소방서 본서 — 119구조대는 동구 전역이 관할이다 ── */
+    { id:"rescue",   label:"구조차",           profile:"rescue_5t",       group:"본서 119구조대",
+      count:2, at:"본서 · 동구 전역", match:"확정", grade:"미판정",
+      note:"제원표에 회전반경이 비어 있다" },
   ],
-  /* 드롭다운 묶음의 표시 순서. 여기 없는 group 은 맨 뒤에 "그 외"로 묶인다.
-     골목 진입 가능성이 높은 순서다 — 관제사가 처음 보는 것이 펌프차여야 한다. */
-  fleetGroups: ["진압", "사다리", "구조·구급"],
-  /* 기본 선택. 동명동 관할에서 가장 많고(4대) 골목 진입을 실제로 시도하는 차다. */
-  fleetDefault: "pump",
+  /* 묶음 표시 순서. 관할 센터가 맨 위여야 한다 —
+     관제사가 드롭다운을 열었을 때 처음 보는 것이 동명동에 오는 차다. */
+  fleetGroups: ["지산119안전센터", "대인119안전센터", "본서 119구조대"],
+  /* 기본 선택. 동명동 관할 센터의 차이고 골목 진입을 실제로 시도한다. */
+  fleetDefault: "pump-js",
   /* 제원 정본 위치. vehicle.js 가 이 경로를 fetch 한다. */
   vehicleProfiles: "./assets/vehicles/profiles.json",
   /* 통과선 = 전폭 + 안전여유. 2.5 + 0.5 = 3.0 이 params.py 의 TRUCK 과 맞는다.
@@ -321,11 +331,11 @@ const CONFIG = {
   vehicleClearance: 0.5,
   /* 회전·높이 미판정 고지. 화면설계서 FRLN_DISP_02 3번과 같은 문장이다. */
   turnNote: "경로 판정에는 전폭만 반영됩니다. 회전반경·높이는 판정하지 않습니다.",
-  /* 보유 대수 출처. 공공누리 4유형이라 화면 표기가 의무다.
+  /* 출처. 대수는 공공누리 4유형이라 화면 표기가 의무다.
      제원 출처는 profiles.json 이고, 사다리차 전폭·전고·차대·아우트리거는
-     「소방고가차-사다리차(53m) 규격서」(2025-06, 광주 소방안전본부 119대응과,
-     나라장터 R25BK00911861)에서 확인했다. 근거는 data/field/ 를 볼 것. */
-  fleetSource: "동부소방서 소방차량현황 (2026-05-14) · 광주광역시 소방안전본부",
+     「소방고가차-사다리차(53m) 규격서」(2025-06, 나라장터 R25BK00911861)다.
+     근거는 docs/DECISIONS.md §84 를 볼 것. */
+  fleetSource: "보유 대수 — 동부소방서 소방차량현황 (2026-05-14) · 관할 — 동부소방서 관할구역 현황 (2025-07-31) · 광주광역시 소방안전본부",
 
   /* 카메라 초기값. 범위(maxBounds 등)는 web/data/view.json 에서 온다. */
   camera: { zoom:15.4, pitch:52, bearing:-18, maxPitch:80 },
