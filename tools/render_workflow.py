@@ -370,139 +370,88 @@ def render(groups: dict) -> str:
 <!-- ★ 생성물이다. 손으로 고치지 마라. 정본은 docs/MASTER.md §12 이고
      tools/render_workflow.py 가 만든다. 고치면 다음 배포에 덮인다. -->
 <style>
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard","Noto Sans KR",sans-serif;
- background:#f6f8fb;color:#1e293b;padding:32px 20px;line-height:1.75;font-size:16px}}
-.wrap{{max-width:1040px;margin:0 auto}}
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-header{{background:linear-gradient(135deg,#2563eb,#0891b2);border-radius:16px;
- padding:30px 32px;color:#fff;box-shadow:0 10px 30px rgba(37,99,235,.22)}}
-h1{{font-size:28px;font-weight:800;letter-spacing:-.6px}}
-.sub{{font-size:14px;opacity:.9;margin-top:8px}}
-.canon{{display:inline-block;margin-top:14px;font-size:12.5px;
- background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
- padding:7px 14px;border-radius:20px}}
-.canon b{{color:#fff}}
+/* ★ 2026-09-02. 와꾸를 web/playbook.html 과 맞췄다. 종전에는 파란 그라데이션
+   헤더에 어두운 코드블록이었고, 같은 사이트에 나란히 배포되는 두 화면이
+   서로 다른 디자인이었다. 팀원은 둘을 오가며 읽는다.
+   ★ A4 는 흰색이다. 이 문서는 인쇄되거나 PDF 로 돌아다닌다. */
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,
+ "Segoe UI","Noto Sans KR",sans-serif;
+ background:#fff;color:#333;padding:32px 0;line-height:1.75;font-size:16px}}
+.wrap{{max-width:1100px;margin:0 auto;padding:0 24px}}
+
+header{{border:1px solid #d0d7de;border-left:4px solid #0969da;
+ border-radius:10px;padding:26px 28px;background:#f6f8fa}}
+h1{{font-size:26px;font-weight:800;letter-spacing:-.5px;color:#0f172a}}
+.sub{{font-size:14px;color:#57606a;margin-top:8px}}
+.canon{{display:inline-block;margin-top:14px;font-size:12.5px;color:#57606a;
+ background:#fff;border:1px solid #d0d7de;padding:7px 14px;border-radius:20px}}
+.canon b{{color:#0969da}}
 
 input[name=t]{{display:none}}
-.tabs{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:26px 0 24px}}
-.tabs label{{cursor:pointer;padding:14px 12px;border-radius:12px;background:#fff;
- border:2px solid #e2e8f0;text-align:center;transition:.18s;
- box-shadow:0 1px 3px rgba(15,23,42,.05)}}
-.tabs label b{{display:block;font-size:16px;color:#475569;font-weight:700}}
-.tabs label span{{display:block;font-size:12px;color:#94a3b8;margin-top:4px}}
-.tabs label:hover{{border-color:#93c5fd;transform:translateY(-1px)}}
+/* ★ 탭을 줄바꿈시킨다. 가로 스크롤은 있는 줄도 모르게 만든다. */
+.tabs{{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 24px}}
+.tabs label{{flex:1 1 200px;cursor:pointer;padding:13px 14px;border-radius:10px;
+ background:#fff;border:1px solid #d0d7de;text-align:center;transition:.15s}}
+.tabs label b{{display:block;font-size:15px;color:#24292f;font-weight:700}}
+.tabs label span{{display:block;font-size:12px;color:#8c959f;margin-top:4px}}
+.tabs label:hover{{border-color:#0969da;background:#f6f8fa}}
 
 section{{display:none}}
 #t0:checked~.tabs label[for=t0],#t1:checked~.tabs label[for=t1],
 #t2:checked~.tabs label[for=t2],#t3:checked~.tabs label[for=t3]
- {{background:linear-gradient(135deg,#2563eb,#0891b2);border-color:transparent;
-   box-shadow:0 6px 16px rgba(37,99,235,.3)}}
+ {{background:#0969da;border-color:#0969da}}
 #t0:checked~.tabs label[for=t0] b,#t1:checked~.tabs label[for=t1] b,
 #t2:checked~.tabs label[for=t2] b,#t3:checked~.tabs label[for=t3] b{{color:#fff}}
 #t0:checked~.tabs label[for=t0] span,#t1:checked~.tabs label[for=t1] span,
 #t2:checked~.tabs label[for=t2] span,#t3:checked~.tabs label[for=t3] span
- {{color:rgba(255,255,255,.82)}}
+ {{color:rgba(255,255,255,.85)}}
 #t0:checked~.p0,#t1:checked~.p1,#t2:checked~.p2,#t3:checked~.p3{{display:block}}
 
 h3{{font-size:15px;font-weight:800;color:#0f172a;margin:34px 0 14px;
- padding-left:12px;border-left:4px solid #2563eb}}
+ padding-left:12px;border-left:4px solid #0969da}}
 h3:first-child{{margin-top:6px}}
 
-pre{{background:#0f172a;border-radius:12px;padding:22px 24px;overflow-x:auto;
- margin:14px 0;font-family:"D2Coding",Consolas,Monaco,monospace;
- font-size:14.5px;line-height:2;color:#e0f2fe;
- box-shadow:0 4px 14px rgba(15,23,42,.14)}}
+/* 코드블록 — 옅은 회색 + 좌측 3px 색띠. 어두운 배경을 쓰지 않는다. */
+pre{{background:#f6f8fa;border:1px solid #d0d7de;border-left:3px solid #0969da;
+ border-radius:8px;padding:18px 20px;overflow-x:auto;margin:14px 0;
+ font-family:"D2Coding",Consolas,Monaco,monospace;
+ font-size:14px;line-height:1.9;color:#24292f}}
 
 table{{width:100%;border-collapse:separate;border-spacing:0;font-size:15px;
- margin:14px 0;background:#fff;border-radius:12px;overflow:hidden;
- box-shadow:0 2px 10px rgba(15,23,42,.07)}}
-th,td{{padding:13px 16px;text-align:left;vertical-align:top;
- border-bottom:1px solid #eef2f7}}
-th{{background:#f1f5f9;color:#334155;font-size:13px;font-weight:800;
- letter-spacing:.3px}}
+ margin:14px 0;background:#fff;border:1px solid #d0d7de;border-radius:8px;
+ overflow:hidden}}
+th,td{{padding:12px 15px;text-align:left;vertical-align:top;
+ border-bottom:1px solid #eaeef2}}
+th{{background:#f6f8fa;color:#24292f;font-size:13px;font-weight:800}}
 tr:last-child td{{border-bottom:none}}
-tbody tr:hover,table tr:hover{{background:#f8fafc}}
+tbody tr:hover,table tr:hover{{background:#f6f8fa}}
 
 code{{font-family:"D2Coding",Consolas,Monaco,monospace;font-size:14px;
- background:#eff6ff;color:#1d4ed8;padding:2px 7px;border-radius:5px}}
+ background:#eff6ff;color:#0550ae;padding:2px 7px;border-radius:5px}}
 pre code{{background:none;color:inherit;padding:0}}
 b{{color:#0f172a;font-weight:700}}
-p{{margin:14px 0;font-size:15.5px;color:#334155}}
-p.star{{background:#eff6ff;border-left:4px solid #2563eb;
- padding:15px 20px;border-radius:0 10px 10px 0;color:#1e3a8a}}
-p.star b{{color:#1e3a8a}}
+p{{margin:14px 0;font-size:15.5px;color:#333}}
 
-footer{{margin-top:44px;padding:20px 24px;background:#fff;border-radius:12px;
- font-size:13px;color:#64748b;box-shadow:0 1px 4px rgba(15,23,42,.06)}}
-footer b{{color:#334155}}
-@media(max-width:720px){{.tabs{{grid-template-columns:repeat(2,1fr)}}
- body{{font-size:15px;padding:20px 14px}}h1{{font-size:23px}}}}
+/* 커밋 접두사 색 — playbook 과 같은 값. 본문 어디에 나오든 같은 색이면
+   눈으로 스캔이 빨라진다(§12-6). */
+code.p-gis{{color:#0284c7}} code.p-cv{{color:#7c3aed}}
+code.p-ui{{color:#db2777}} code.p-api{{color:#059669}}
+code.p-fix{{color:#dc2626}} code.p-docs{{color:#475569}}
 
-/* 트리 */
-.tree{{background:#fff;border-radius:14px;padding:22px;margin:14px 0;
- box-shadow:0 2px 10px rgba(15,23,42,.07)}}
-.tnode{{display:flex;align-items:center;gap:12px;padding:11px 16px;margin:7px 0;
- border-radius:10px;border-left:5px solid}}
-.tname{{font-family:Consolas,monospace;font-weight:800;font-size:15px;min-width:104px}}
-.tdesc{{font-size:13.5px;color:#475569}}
-.n-main{{background:#eef2ff;border-color:#6366f1}}.n-main .tname{{color:#4338ca}}
-.n-dev{{background:#ecfdf5;border-color:#10b981}}.n-dev .tname{{color:#047857}}
-.n-part{{background:#eff6ff;border-color:#3b82f6}}.n-part .tname{{color:#1d4ed8}}
-.n-tmp{{background:#f8fafc;border-color:#cbd5e1;border-left-style:dashed}}
-.n-tmp .tname{{color:#64748b}}
-/* 방향 */
-.flow{{display:grid;gap:12px;margin:14px 0}}
-.frow{{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 20px;
- border-radius:12px;background:#fff;box-shadow:0 2px 10px rgba(15,23,42,.07);
- border-left:5px solid}}
-.f-in{{border-color:#10b981}}.f-out{{border-color:#6366f1}}
-.flabel{{font-weight:800;font-size:16px;min-width:64px}}
-.f-in .flabel{{color:#047857}}.f-out .flabel{{color:#4338ca}}
-.fbox{{font-family:Consolas,monospace;font-size:14px;background:#f1f5f9;
- padding:7px 13px;border-radius:8px;color:#334155}}
-.farrow{{font-size:20px;color:#94a3b8}}
-.fnote{{margin-left:auto;font-size:13px;color:#64748b}}
-/* 룰셋 카드 */
-.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));
- gap:14px;margin:14px 0}}
-.card{{background:#fff;border-radius:14px;padding:20px;
- box-shadow:0 2px 12px rgba(15,23,42,.08);border-top:4px solid #2563eb}}
-.cname{{font-family:Consolas,monospace;font-weight:800;font-size:17px;
- color:#1d4ed8;margin-bottom:14px}}
-.crow{{display:flex;justify-content:space-between;gap:10px;padding:7px 0;
- border-bottom:1px solid #f1f5f9;font-size:13.5px}}
-.crow:last-child{{border:none}}
-.ck{{color:#94a3b8;font-weight:600}}
-.cv{{color:#0f172a;font-weight:700;text-align:right}}
-.cv.free{{color:#cbd5e1;font-weight:400}}
-/* 각주 */
-/* ★ 2026-09-01. <details> 는 열면 아래 내용을 밀어낸다. 읽던 자리를
-   잃으므로 각주는 제자리에 뜬다 — 위치는 그대로 두고 겹쳐 띄운다.
-   details 그대로 쓰므로 JS 없이 동작하고 키보드·스크린리더도 그대로다. */
-details.why[open]{{position:relative;overflow:visible}}
-details.why[open]>.pop{{position:absolute;z-index:40;left:0;right:0;
-  top:100%;background:#fff;border:1px solid #cbd5e1;border-radius:12px;
-  box-shadow:0 12px 32px rgba(15,23,42,.18);padding:4px 0 14px;
-  max-height:60vh;overflow-y:auto}}
-details.why[open]>.pop>p:first-of-type{{padding-top:18px}}
-details.why{{margin:16px 0 26px;background:#fff;border-radius:12px;
- border:1px solid #e2e8f0;overflow:hidden}}
-details.why summary{{cursor:pointer;padding:14px 20px;font-size:14px;
- font-weight:700;color:#2563eb;background:#f8fafc;list-style:none;user-select:none}}
-details.why summary::before{{content:"▸ ";color:#94a3b8}}
-details.why[open] summary::before{{content:"▾ "}}
-details.why summary:hover{{background:#eff6ff}}
-details.why>p{{padding:0 20px}}
-details.why>p:first-of-type{{padding-top:14px}}
-a.more{{display:inline-block;margin:8px 20px 18px;font-size:13px;
- color:#2563eb;text-decoration:none;font-weight:600}}
-a.more:hover{{text-decoration:underline}}
-
+/* ★ 인쇄. 이 문서는 결국 A4 로 나가거나 PDF 로 돌아다닌다.
+   탭이 접힌 채 인쇄되면 넷 중 하나만 보인다. 전부 펼친다. */
 @media print{{
-  input[name=t]~section{{display:block !important}}
+  body{{padding:0;font-size:12pt;background:#fff}}
+  .wrap{{max-width:none;padding:0}}
   .tabs{{display:none}}
-  details.why{{page-break-inside:avoid}}
+  section{{display:block !important;page-break-inside:auto}}
+  section+section{{page-break-before:always}}
+  header{{border:1px solid #999;background:#fff}}
+  pre,table{{page-break-inside:avoid}}
+  a[href]:after{{content:""}}
 }}
 </style>
 </head>
