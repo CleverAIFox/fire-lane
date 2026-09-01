@@ -1177,7 +1177,27 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 | — | `feat/**` | — | — | — | — |
 
 셋 다 `deletion` · `non_fast_forward` · `pull_request` ·
-`required_status_checks` 넷을 든다. **`bypass_actors` 는 비어 있다.**
+`required_status_checks` 넷을 든다.
+
+★ **`bypass_actors` 는 2026-09-01 현재 비어 있지 않다.** 세 룰셋 모두
+`Repository admin` 역할(actor_id 5)이 `always` 로 들어 있다. main 정비가
+다수 남아 매 건 승인 대기가 병목이 됐고, 한시로 부여했다(DECISIONS 80).
+
+**되돌릴 날 2026-09-06.** 오창준 이탈(09-07) 전날이다. 그날 세 룰셋의
+`bypass_actors` 를 비우고 `release` 의 승인 1 · Code Owners 를 함께 켠다.
+
+★ **저장소 admin 은 팀 전원 다섯이다.**
+
+    AIMasterFox  diyon13  gayeoniii  marscoolcat  wlsdnr052475
+
+bypass 는 개인이 아니라 역할에 준다. **admin 이 늘면 우회 가능자도 는다.**
+`ruleset_check` 의 `ADMINS` 가 이 명단이며 실물과 다르면 운다. 09-06 에
+bypass 를 걷을 때 admin 도 함께 줄인다 — 릴리즈 매니저 외에는 write 로
+충분하다.
+
+★ `gh api .../rulesets` **목록 조회는 `bypass_actors` 를 빈 배열로 준다.**
+개별 조회 `.../rulesets/{id}` 가 실물이다. 2026-09-01 에 목록 조회를 믿고
+"bypass 없음" 으로 두 번 판단했고 두 번 다 틀렸다.
 
 ★ **승인이 0인 이유.** 자기 PR 은 자기가 승인할 수 없는데(§12-3) GIS·infra 는
 1인 파트다. 승인 1을 걸면 영구 차단된다. 실제로 막는 것은 승인이 아니라
@@ -1290,7 +1310,22 @@ fix:  버그
 | 워크플로 | 시점 | 하는 일 |
 |---|---|---|
 | `contract` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
-| `pages` | `main` 의 `web/**` 변경 | GitHub Pages 갱신 |
+| `지도 배포` (`pages.yml`) | `main` 의 `web/**` 변경 | `web/` **전체** 배포 |
+| `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` 변경 | 재생성 후 `web/` **전체** 배포 |
+
+★ **워크플로 이름은 촉발 조건이지 배포 대상이 아니다.** 둘 다 사이트
+전체를 올린다. Pages 는 저장소당 사이트가 하나라, 한쪽이 부분만 올리면
+다른 쪽 파일이 사이트에서 사라진다. 08-31 에 그 사고가 났다.
+
+★ **`협업 방침 배포` 는 생성물을 커밋하지 않는다.** 종전에는 봇이
+`web/workflow.html` 을 `main` 에 밀었고, 그러려면 룰셋에 구멍이 필요했다.
+배포 시점에 생성하는 것으로 바꿔 그 구멍을 없앴다. 커밋된
+`web/workflow.html` 은 `test_workflow_html_sync` 가 재생성 결과와
+대조하므로 낡을 수 없다.
+
+★ `contract` 의 `pull_request` 트리거는 `types` 에 **`edited` 를 포함한다.**
+없으면 PR 본문을 고쳐도 `pr_body_check` 가 다시 돌지 않아, 실패 메시지의
+"본문을 편집하면 검사가 다시 돈다" 는 안내가 거짓이 된다.
 
 ★ **검사 범위가 배포 범위를 덮어야 한다.** `contract` 의 브랜치 목록에서
 `part/**` 를 빼면 검사를 비껴간 코드가 `dev` 까지 올라온다.
@@ -1305,7 +1340,8 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소�
 
 ### 12-8. 배포 — 밑그림
 
-★ **아직 없다.** 지금 `main` 이 배포하는 것은 `pages` 하나이며 정적 지도뿐이다.
+★ **아직 없다.** 지금 `main` 이 배포하는 것은 정적 사이트 하나뿐이다
+(`지도 배포` · `협업 방침 배포` 둘 다 같은 Pages 사이트를 올린다, §12-7).
 아래는 확정이 아니라 방향이다. 실물이 생기면 이 절을 사실로 다시 쓴다.
 
 `dev` 를 판 이유가 여기 있다. `main` 에 AWS 배포를 물리는 순간 `main` 은
@@ -1516,6 +1552,35 @@ ship.py     내보내도 되는가 (위 + 문서 4축 + 위생 + git 상태)
 지도가 실제로 그려지는지, 판정 색·표지판·미니맵·검색이 눈으로 멀쩡한지는
 `tools/serve.py` 로 직접 확인한다.
 
+### 14-4a. 사람이 부르는 나머지 도구
+
+    doctor.py        대장 · 실물 · 백업을 한 화면에. **매일 첫 번째로 본다**
+    refcheck.py      문서·코드의 참조가 낡았는가
+    intake.py        받은 것을 landing 으로 들인다
+    absorb.py        landing 을 raw 로 흡수한다
+    triage.py        받은 더미를 분류한다
+    docpatch.py      docx 를 규칙으로 고친다
+    docx_fix.py      docx 위생
+
+### 14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다
+
+    pr_body_check    PR 본문이 템플릿을 채웠는가
+    encoding_check   UTF-8 · LF · 개행
+    treecheck        트리 구조
+    docx_check       기획서 숫자 ↔ 대장
+    docnum_check     문서 숫자 ↔ 실물
+    ledger_stem      대장 stem 이관 · 무손실 증명
+    ledger_fields    대장 별칭 필드 통합
+    ledger_schema    실물에서 스키마 추출 · --check 드리프트
+    ledger_feeds     feeds 산문 → 소비자 리스트
+    migrate_names    파일명 규칙 이관
+    web_manifest     web/data 매니페스트
+    render_workflow  MASTER §12 → web/workflow.html
+
+★ 이 목록의 정본은 `README.md` 이며
+`test_declaration_sync.py::test_readme_lists_tools_the_automation_calls` 가
+자동화가 부르는 것과 대조한다.
+
 ### 14-5. 대조 도구 — 아무것도 안 바꾼다
 
 읽고 표를 내거나 페이지를 만들 뿐이라 golden 지문에 영향이 없다.
@@ -1560,6 +1625,26 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 ```
 
 ---
+
+### 14-7. 데이터 실물은 저장소에 없다
+
+`data/raw` 와 `norm` · `landing` 은 `.gitignore` 로 빠져 있다. 실물은
+`FIRE_LANE_DATA` 가 가리키는 외장 매체에 있으며 **3.5GB** 다.
+
+    저장소에 있는 것    processed/segments.geojson · schema · _manifest ·
+                        seg_uid_map · baseline · field · golden · web/data
+    저장소에 없는 것    raw · norm · landing · interim · _quarantine
+
+★ **`web/data` 를 커밋하는 이유가 이것이다.** UI 담당이 raw 없이 화면을
+만들 수 있어야 한다(`.gitignore` 6줄).
+
+★ **인수인계 방법 — `FIRE_LANE_DATA` 폴더를 통째로 압축해 넘긴다.**
+받는 쪽은 임의 경로에 풀고 `.env` 에 `FIRE_LANE_DATA` 를 그 경로로 적는다.
+원본을 새로 받는 절차는 §14-3 이지만, 재취득은 기관 신청이 걸려 있어
+빠르지 않다. **압축 전달이 정본 경로다.**
+
+★ 파이프라인은 **GIS 담당 로컬에서만 돈다.** CI 는 데이터를 만들지
+않는다(§12-7). 이 매체가 없으면 `uv run fire-lane` 이 첫 단계에서 멈춘다.
 
 ## 15. 대외 산출물
 
@@ -2435,3 +2520,92 @@ BEV 는 디버그 플래그 뒤에 둔다.
 ★ 사진과 영상은 다른 `calib_id` 다. 같은 물리 렌즈라도 해상도 · 센서 크롭 ·
 화각이 다르면 왜곡 계수가 다르다. ChArUco 는 카메라 내부 파라미터 보정용이고
 현장 ArUco 는 H 오차 검증용이다. **보드만으로 GIS 절대좌표가 생기지 않는다.**
+
+## 20. 경로
+
+경로 탐색은 **이미 있다.** 없는 것은 비용이다.
+
+### 20-1. 지금 무엇으로 푸는가
+
+`seg/graph.py::access_corridor()` 가 119안전센터 2곳에서 건물 출입구까지
+`networkx.single_source_dijkstra_path` 를 돌린다. 가중치는 `weight="length"`
+다 — **거리만 본다.**
+
+★ **판정을 안 본다.** `blocked` 구간도 최단이면 지나간다. 그러면 "소방차가
+갈 수 있는 길" 이 아니라 **"제일 짧은 선"** 이다.
+
+★ `access_corridor()` 는 **폭 산출보다 먼저** 돈다(`segments.py` 194줄 대
+435줄). 순서를 바꾸지 않으면 폭을 비용에 넣을 수 없다.
+
+### 20-2. 두 번 돈다
+
+`access_corridor()` 는 폭 산출보다 먼저 돌아 `weight="length"` 밖에 못 쓴다.
+순서를 바꾸지 않는다 — 바꾸면 회랑 산정(표출 스코프)이 폭에 의존하게 되어
+계보가 꼬인다. 대신 **폭이 나온 뒤 한 번 더 돈다.** 경로 계산은 몇 초다.
+
+    1차  access_corridor()           weight="length"     → route_usage
+    2차  segments.py::_write_route()  vehicle.edge_cost() → route_vehicle.csv
+
+`_write_route()` 는 826줄에서 호출된다. 폭 · 내륜차 · 회전반경 · 판정을
+반영한 2차 그래프를 새로 만들어 Dijkstra 를 다시 돌린다.
+
+★ **판정을 안 바꾼다.** `segments.geojson` 에 컬럼을 더하지 않고
+`route_vehicle.csv` 로 따로 낸다. golden 지문이 그대로다.
+
+★ 막힌 엣지는 그래프에서 **뺀다.** 2026-08-24 에 `BIG` 을 주고 남겼더니
+**다른 길이 없을 때 Dijkstra 가 그것을 썼다.**
+
+### 20-3. `route_usage` 를 출동 경로로 읽으면 안 된다
+
+스키마는 정직하게 "최단경로 사용횟수" 라고 적혀 있다. 문제는 이름이
+"출동 경로" 로 읽힌다는 것이다. 2026-08-24 실측 —
+
+    route_usage > 0        579구간
+      그중 blocked          41      ★ 폭 0.41m 를 70회 지나간다
+      폭 3.0m 미만         168
+
+★ **지도가 지금 보여주는 것은 1차다.** `route_vehicle.csv` 는 파일로만
+나가고 `web/data` 로 가지 않는다. 발표에서 "판정을 반영한 경로" 를
+보이려면 `publish_web.py` 가 이것을 실어야 한다. **남은 작업은 그것이다.**
+
+★ `tools/route_probe.py` 의 머리말 주석은 `_write_route()` 도입 **이전**에
+쓰였다. "비용 함수가 배선되지 않았다" 는 서술은 낡았다.
+
+### 20-4. 왜 Dijkstra 인가
+
+목적지가 다수다(119안전센터 2곳 → 모든 노드). `single_source_dijkstra` 가
+한 번에 전부 낸다. A* 의 이점은 **목적지가 하나일 때** 나온다.
+
+네비게이션 앱은 출발 1 → 도착 1 이므로 그쪽은 A* 가 맞다. 같은
+`vehicle.edge_cost` 를 쓰므로 코드가 갈리지 않는다.
+
+★ 흐름도의 `A*` 는 **앱 관점**이다. 파이프라인 구현은 Dijkstra 이며
+둘이 모순이 아니다.
+
+### 20-5. 앱은 무엇을 받는가 — 엔드포인트
+
+**서버가 없다. 정적 파일이 인터페이스다.**
+
+파이프라인은 오프라인 배치다(전량 285초). 런타임 계산이 없으므로 앱은
+`web/data/` 를 `fetch` 하기만 한다. 파이썬 코드를 앱으로 옮기지 않는다.
+
+    web/data/segments.geojson   구간 · 판정 · 폭 · route_usage(1차)
+    web/data/view.json          중심 · 범위 · 캐시 스탬프(build)
+    web/data/_manifest.json     파일 목록과 해시
+    web/data/hydrants·cctv·poi·buildings·mask·scope·boundary.geojson
+
+★ **`route_vehicle` 은 아직 안 나간다.** `data/processed/route_vehicle.csv`
+로만 있다. 앱이 판정 반영 경로를 그리려면 `publish_web.py` 가 이것을
+`web/data/route_vehicle.json` 으로 실어야 한다. **남은 작업은 그것 하나다.**
+
+    스키마(제안)  { "<seg_uid>": { "use": 1, "cost": 90.9, "passable": 1 } }
+    조인 키       seg_uid — `seg_id` 는 실행 간 유지되지 않는다(§11)
+
+★ **출발지는 119안전센터 2곳으로 고정이다**(`seg/params.py::STATIONS`).
+경로가 사전 계산이라 임의 출발지는 지원하지 않는다. 지원하려면 비용
+그래프를 JSON 으로 내고 앱이 직접 탐색해야 한다 — `edge_cost` 의 규칙을
+JS 로 옮기는 유일한 지점이다. 하지 않았다.
+
+★ GPS 1인칭 시점은 **전적으로 앱 몫**이다. 현재 위치는 브라우저가 주고
+경로는 위 파일에 있다. 파이프라인과 무관하다.
+
