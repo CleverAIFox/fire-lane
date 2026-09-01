@@ -307,6 +307,35 @@ def main():
     _sch["dropped_from_processed"] = _dropped
     (W/"segments.schema.json").write_text(
         json.dumps(_sch, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # ── 차량 제원 대장 → 화면 ──────────────────────────────────
+    # ★ 2026-09-01. 화면이 최소회전반경 7.30m 을 확정값처럼 띄우는데
+    #   대장의 `turn_radius_verified` 는 false 이고 `can_turn()` 은 그
+    #   플래그를 보고 **아무것도 막지 않는다**(DECISIONS 81). 판정은
+    #   "못 믿는 값" 으로 아는데 화면만 몰랐다(DECISIONS 86-5).
+    # ★ 값을 config.js 에 손으로 옮겨 적지 않는다. 대장이 정본인데 사본을
+    #   만들면 갈린다 — 실제로 갈려 있었다(DECISIONS 87 ③).
+    #   `web/config.js` 의 CONFIG.fleet 이 제원 숫자를 안 적는 것과 같은 규칙.
+    from firelane import ledger as _ld
+    _spec = (_ld.load() if hasattr(_ld, "load") else
+             __import__("yaml").safe_load(
+                 (ROOT/"sources.yaml").read_text(encoding="utf-8"))
+             ).get("vehicle_spec", {})
+    # ★ 미검증 값은 아예 안 보낸다. 대장이 `absent` 로 "없다" 고 선언한
+    #   축거·회전반경을 그대로 실으면 대장과 발행물이 어긋난다 —
+    #   `doc_fsck ③` 이 그것을 잡았다(2026-09-01). 화면은 그 숫자를 쓰지
+    #   않고 **플래그만** 쓰므로 보낼 이유도 없다. 안 보내면 실수로 쓸
+    #   위험까지 같이 사라진다.
+    _keep = ("kind", "width_m", "length_m", "height_m", "clearance_m",
+             "gradeability_pct",
+             "verified", "wheelbase_verified", "turn_radius_verified")
+    (W/"vehicle_spec.json").write_text(json.dumps(
+        {k: _spec[k] for k in _keep if k in _spec}
+        | {"_note": ("성격 선언이다. *_verified 가 false 면 그 값으로 "
+                     "화면이 말하지 않는다 — DECISIONS 81 · 86-5")},
+        ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"  차량 제원 대장 발행 · 회전반경 검증 "
+          f"{'O' if _spec.get('turn_radius_verified') else 'X'}")
     _missing = sorted(_pub - set(_sch["fields"]))
     print(f"  스키마 {len(_sch['fields'])}필드 · processed 전용 {len(_dropped)} 제외"
           + (f"  ★ 서술 없는 필드 {_missing}" if _missing else ""))

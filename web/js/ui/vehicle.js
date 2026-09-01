@@ -55,6 +55,22 @@ const MATCH_CLASS = { "확정":"m-fix", "추정":"m-guess", "없음":"m-none" };
 
 let PROFILES = null;   // id → profile. fetch 실패 시 null 로 남는다
 
+/* 대장(sources.yaml)의 vehicle_spec. publish_web 이 web/data 로 발행한다.
+   ★ 여기 있는 것은 값이 아니라 **값의 성격**이다 — turn_radius_verified 가
+     false 면 그 값으로 아무것도 말하지 않는다.
+   ★ 왜 config.js 에 안 적나. 대장이 정본인데 화면에 손으로 옮겨 적으면
+     둘이 갈린다. 2026-09-01 에 실제로 갈려 있었다 — 대장은 회전반경을
+     "7종 전수 확인 0건" 이라 선언하는데 화면은 7.30m 을 띄우고 있었다
+     (DECISIONS 87 ③). 숫자를 복사하지 않는 규칙(§84)을 플래그에도 적용한다. */
+let SPEC = null;
+
+/* 회전반경을 말해도 되는가. 대장이 미검증이면 전 차종이 공백이다.
+   ★ can_turn() 이 같은 플래그를 보고 아무것도 막지 않는다(DECISIONS 81).
+     판정이 "못 믿는 값" 으로 아는데 화면만 모르면, 관제사는 그 숫자를 보고
+     시스템이 회전을 반영한다고 읽는다. 반영하지 않는다.
+   ★ SPEC 을 못 받았을 때도 false 다. 모르면 말하지 않는 쪽으로 기운다. */
+const turnTrusted = () => SPEC?.turn_radius_verified === true;
+
 /* #veh 컨테이너. 안쪽 요소는 전부 여기서 찾는다.
    ★ document.getElementById 로 찾지 않는다. 안쪽 요소(select · 요약 카드)는
      이 모듈이 실행 중에 만드는 것이라 index.html 에 없다.
@@ -79,6 +95,11 @@ function profileOf(entry){
      실제보다 작은 값을 띄우면 오차가 안전과 반대 방향으로 난다.
      빈칸이 틀린 숫자보다 낫다. */
 export const turnOf = entry => {
+  /* ★ 2026-09-01. 차종별 turnUnknown 위에 대장 플래그를 얹는다.
+     사다리차 둘만 하드코딩으로 빼고 펌프차 7.30m 은 그대로 나가고 있었다.
+     플래그 하나가 전 차종을 지배한다 — D-30 실측이 오면 sources.yaml
+     한 줄(turn_radius_verified: true)로 화면과 판정이 같이 켜진다. */
+  if (!turnTrusted()) return null;
   if (entry.turnUnknown) return null;
   const pr = profileOf(entry);
   return pr ? mm2m(pr.turningRadius) : null;
@@ -102,7 +123,9 @@ function rowsFor(entry){
       <dt>통과선</dt><dd>${pl == null ? dash : pl.toFixed(2) + " m"}</dd>
       ${out}
       <dt>최소회전반경</dt><dd>${t == null ? dash : t.toFixed(2) + " m"}
-        <i class="veh-grade ${GRADE_CLASS[entry.grade] || "g-none"}">${entry.grade}</i></dd>
+        ${t == null && !turnTrusted()
+          ? `<i class="veh-grade g-none" title="대장(sources.yaml)의 turn_radius_verified 가 false 다. 판정도 이 값으로 막지 않는다 — DECISIONS 81">실측 전</i>`
+          : `<i class="veh-grade ${GRADE_CLASS[entry.grade] || "g-none"}">${entry.grade}</i>`}</dd>
     </dl>`;
 }
 
@@ -183,14 +206,33 @@ export async function initVehicleSelect(){
   /* 먼저 대수·배치로 한 번 그린다. 제원표가 늦거나 실패해도 화면은 선다. */
   setVehicle(CONFIG.fleetDefault || list[0].id);
 
+  /* ★ 둘을 나란히 받는다. 하나가 실패해도 나머지는 붙는다 —
+     제원표가 없으면 치수가 비고, 대장이 없으면 회전반경이 빈다.
+     둘 다 없어도 대수와 배치는 뜬다. */
+  const [profRes, specRes] = await Promise.allSettled([
+    fetch(CONFIG.vehicleProfiles || "./assets/vehicles/profiles.json"),
+    fetch(CONFIG.vehicleSpec || "./data/vehicle_spec.json"),
+  ]);
+
   try {
-    const r = await fetch(CONFIG.vehicleProfiles || "./assets/vehicles/profiles.json");
-    if (!r.ok) throw new Error(String(r.status));
-    const j = await r.json();
+    if (profRes.status !== "fulfilled" || !profRes.value.ok)
+      throw new Error(String(profRes.reason || profRes.value?.status));
+    const j = await profRes.value.json();
     PROFILES = Object.fromEntries((j.profiles || []).map(p => [p.id, p]));
-    /* 제원이 붙었으니 현재 선택을 다시 그린다. */
-    setVehicle(S.vehicle ? S.vehicle.id : (CONFIG.fleetDefault || list[0].id));
   } catch (err) {
     console.warn("차량 제원(profiles.json) 로드 실패 — 대수만 표시한다", err);
   }
+
+  try {
+    if (specRes.status !== "fulfilled" || !specRes.value.ok)
+      throw new Error(String(specRes.reason || specRes.value?.status));
+    SPEC = await specRes.value.json();
+  } catch (err) {
+    /* 못 받으면 turnTrusted() 가 false 라 회전반경이 전부 빈칸이 된다.
+       모르는 것을 아는 것처럼 띄우는 것보다 낫다. */
+    console.warn("차량 제원 대장(vehicle_spec.json) 로드 실패 — 회전반경을 띄우지 않는다", err);
+  }
+
+  /* 제원·대장이 붙었으니 현재 선택을 다시 그린다. */
+  setVehicle(S.vehicle ? S.vehicle.id : (CONFIG.fleetDefault || list[0].id));
 }

@@ -119,8 +119,12 @@ def main() -> int:
     a = ap.parse_args()
 
     try:
-        sys.path.insert(0, str(ROOT / "src"))
-        from firelane import paths as P
+        # ★ sys.path 를 건드리지 않는다. tests/test_layering.py 가 막는다.
+        import importlib.util
+        _s = importlib.util.spec_from_file_location(
+            "_fl_paths", ROOT / "src" / "firelane" / "paths.py")
+        P = importlib.util.module_from_spec(_s)
+        _s.loader.exec_module(P)
         print(c("반입 체인", "1"))
         print(f"  inbox    {P.inbox()}")
         print(f"  landing  {P.LANDING}")
@@ -128,9 +132,6 @@ def main() -> int:
     except Exception as e:                                # noqa: BLE001
         print(c(f"  경로를 못 읽었다: {e}", "31"))
         return 2
-    finally:
-        if sys.path and sys.path[0] == str(ROOT / "src"):
-            sys.path.pop(0)
 
     plan = steps(a)
     if not a.yes:

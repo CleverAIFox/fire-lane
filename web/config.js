@@ -325,6 +325,11 @@ const CONFIG = {
   fleetDefault: "pump-js",
   /* 제원 정본 위치. vehicle.js 가 이 경로를 fetch 한다. */
   vehicleProfiles: "./assets/vehicles/profiles.json",
+  /* 차량 제원 **대장**. publish_web 이 sources.yaml 의 vehicle_spec 을
+     발행한다. 여기 담기는 것은 값이 아니라 값의 성격이다 —
+     turn_radius_verified 가 false 면 vehicle.js 가 회전반경을 안 띄운다.
+     ★ 숫자를 이 파일에 옮겨 적지 말 것. 대장이 정본이다(DECISIONS 87 ③). */
+  vehicleSpec: "./data/vehicle_spec.json",
   /* 통과선 = 전폭 + 안전여유. 2.5 + 0.5 = 3.0 이 params.py 의 TRUCK 과 맞는다.
      ★ 정본은 src/firelane/seg/params.py 의 TRUCK(3.0)이다. 여기 값을 바꿔도
        판정은 안 바뀐다 — 화면에 적히는 통과선만 바뀐다. 어긋나게 두지 말 것. */
