@@ -16,7 +16,7 @@
 #   그러면 main 브랜치에 푸시할 때마다 자동 갱신된다.
 #   ★ 2026-08-27. gis 트렁크 폐기. 배포 게이트는 main 단독이다 —
 #     dev 는 트렁크, main 은 배포 스냅샷이다.
-name: Pages 배포
+name: 지도 배포
 
 on:
   push:
@@ -31,7 +31,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true      # 연달아 푸시하면 마지막 것만 배포
+  cancel-in-progress: false     # 협업 방침 배포와 직렬화한다
 
 jobs:
   deploy:
@@ -41,6 +41,19 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - run: uv sync --frozen --all-extras
+
+      - name: MASTER §12 → web/workflow.html
+        # ★ 여기서도 생성한다. 이 워크플로도 web/ 전체를 올리므로
+        #   생성하지 않으면 낡은 협업 방침이 배포된다.
+        run: uv run python tools/render_workflow.py
 
       - name: 캐시 무효화 스탬프 주입
         # ★ 2026-08-24 신설. 종전에는 publish_web.py 가 저장소의
