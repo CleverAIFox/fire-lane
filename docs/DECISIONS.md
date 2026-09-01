@@ -2999,15 +2999,22 @@ FAIL 37 위에서, 계보가 죽은 위에서 전부 초록불이었다.
 `--deepen` 으로 고치고 CI 로그에서 `0 커밋 뒤처져 있다` 를 확인했다.
 못 찾을 때는 세지 않는다 — **모를 때 막지 않는다.**
 
-## §80 admin 이 룰셋을 우회한다는 사실의 기록 (2026-09-01)
+## 80. release/trunk/part bypass 한시 부여
 
-`bypass_actors` 가 세 룰셋 모두 0 인데도 admin 계정의 직접 푸시가
-통과했다. 원격이 `Bypassed rule violations` 를 찍었다.
+> 2026-09-01
 
-★ 즉 `bypass_actors` 0 은 구멍 없음을 뜻하지 않는다. admin 권한 자체가
-별도 경로로 룰셋을 넘는다. `ruleset_check` 는 이 경로를 보지 못한다.
+강제자 — `tools/ruleset_check.py` (`ADMINS` 대조 · bypass 경고)
 
-- 2026-09-01 dev · part/gis · part/cv · part/infra 정렬 푸시가 이 경로로 나갔다.
-- 오창준 이탈(2026-09-07) 뒤 admin 보유자가 이 사실을 모르면 룰셋을
-  실제보다 강하게 믿는다. DECISIONS §76 이 경고한 것과 같은 구조다.
-- 후속 과제 — `ruleset_check` 가 admin 명단을 함께 읽고 대조한다.
+main 정비가 다수 남아 매 건 승인 대기가 병목이 됐다. `Repository admin`
+역할(actor_id 5)에 세 룰셋 bypass 를 부여했다.
+
+- 되돌릴 날 **2026-09-06**. 오창준 이탈(09-07) 전날이다.
+- 저장소 admin 은 2026-09-01 기준 팀 전원 다섯이다. 개인 지정은 룰셋이
+  지원하지 않으므로 다섯 명 전부가 대상이다.
+- `ruleset_check` 가 이 완화를 계속 경고한다. 조용해지면 되돌리는 것을
+  잊으므로 경고를 끄지 않는다.
+
+★ 조사 중 `gh api .../rulesets` 목록 조회가 `bypass_actors` 를 빈 배열로
+돌려주었다. 개별 조회 `.../rulesets/{id}` 는 실물을 준다. **목록 조회를
+근거로 bypass 없음을 판단하면 안 된다.** 이 세션에서 그 오독으로
+"admin 이 별도 경로로 룰셋을 넘는다" 는 틀린 결론을 한 번 기록했다.

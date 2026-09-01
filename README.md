@@ -335,6 +335,7 @@ tools/
   ledger_stem.py          대장 stem 이관 · 무손실 증명
   ledger_fields.py        대장 별칭 필드 통합
   ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
+  render_workflow.py      MASTER 12절 → web/workflow.html 재생성 (CI 가 배포 때 부른다)
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
   ledger_feeds.py         feeds 산문 → 소비자 리스트
   serve.py                캐시 없는 개발 서버
