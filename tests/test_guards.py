@@ -2020,18 +2020,40 @@ def test_verify_covers_every_ci_job():
         "  등재하지 않으면 그 잡은 로컬에서 재현되지 않는다.")
 
 
-def test_strict_lint_args_are_not_copied():
-    """엄격 린트 인자가 두 곳에 적혀 있지 않은가.
+def test_strict_lint_args_have_one_home():
+    """엄격 린트 인자가 한 곳에만 있는가.
 
-    ★ 정본은 `contract.yml` 이고 `verify.sh` 는 거기서 뽑아 쓴다.
-      복사하면 갈린다 — 오늘 문서에서 겪은 것과 같은 형태다(DECISIONS 88-4).
+    ★ 2026-09-02. 같은 사고를 세 층에서 세 번 겪었다 — verify.sh 가 CI 검사
+      다섯을 안 돌았고(08-23), contract-strict 를 안 돌았고(09-02), 그 인자를
+      grep 으로 긁다 주석을 물었다(09-02). **두 번은 우연이고 세 번은
+      구조다.** 인자를 데이터로 빼고 둘이 읽게 했다.
+
+    ★ `sources.yaml` 이 계층 규칙의 정본인 것과 같은 구조다 — 선언을
+      데이터로 빼면 코드가 그것을 읽지, 서로를 읽지 않는다.
     """
-    vfy = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
-    if "엄격 린트" not in vfy:
-        return
-    bad = [ln.strip() for ln in vfy.splitlines()
-           if "--select" in ln and not ln.lstrip().startswith("#")
-           and "grep" not in ln and "$SEL" not in ln]
+    import tomllib
+    cfg = ROOT / ".ruff-strict.toml"
+    assert cfg.exists(), (
+        ".ruff-strict.toml 이 없다. 엄격 린트 설정의 정본이다.")
+    d = tomllib.loads(cfg.read_text(encoding="utf-8"))
+    sel = d.get("lint", {}).get("select") or []
+    assert sel, ".ruff-strict.toml 의 [lint].select 가 비었다"
+
+    bad = []
+    for rel in (".github/workflows/contract.yml", "tools/verify.sh"):
+        f = ROOT / rel
+        if not f.exists():
+            continue
+        txt = f.read_text(encoding="utf-8")
+        if "--config .ruff-strict.toml" not in txt:
+            bad.append(f"{rel} 이 .ruff-strict.toml 를 안 읽는다")
+        for ln in txt.splitlines():
+            s = ln.strip()
+            if s.startswith("#") or ".ruff-strict.toml" in s:
+                continue
+            if "--select" in s or "--ignore" in s:
+                bad.append(f"{rel} 이 인자를 직접 적는다 — {s[:70]}")
     assert not bad, (
-        "verify.sh 가 --select 를 직접 적고 있다 — contract.yml 에서 뽑아라\n"
-        + "\n".join("  · " + b for b in bad))
+        "엄격 린트 인자가 두 곳에 있다\n"
+        + "\n".join("  · " + b for b in bad)
+        + "\n\n  정본은 .ruff-strict.toml 다. 둘 다 @ 로 읽는다.")

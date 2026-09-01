@@ -93,17 +93,15 @@ step "ruff" uv run ruff check src tools tests
 # ★ 대상 파일은 CI 와 같은 도구가 낸다(`owned_paths.py --py-only`).
 #   CODEOWNERS 단독 소유 경로만이라, 공동 소유 파일에는 엄격 규칙을 안 건다.
 step "엄격 린트 (CI 와 같은 인자)" bash -c '
-    Y=.github/workflows/contract.yml
-    # ★ 주석에도 --select 가 나온다("손대장 110 → 8" 처럼). 주석 줄을 걷고
-    #   실행 줄에서만 뽑는다. grep 으로 yml 을 읽는 것 자체가 사본이므로
-    #   PLAN #65 가 인자를 파일 하나로 빼는 것을 든다.
-    SEL=$(grep -v "^\s*#" "$Y" | grep -oE -- "--select [A-Za-z0-9,]+" | head -1 | cut -d" " -f2)
-    IGN=$(grep -v "^\s*#" "$Y" | grep -oE -- "--ignore [A-Za-z0-9,]+" | head -1 | cut -d" " -f2)
-    [ -n "$SEL" ] || { echo "contract.yml 에서 --select 를 못 뽑았다"; exit 1; }
+    # ★ 인자를 여기 적지 않는다. 정본은 .ruff-strict.toml 이고 CI 도 같은
+    #   파일을 읽는다. 종전에는 contract.yml 을 grep 으로 긁었는데 주석의
+    #   "손대장 110 → 8" 을 규칙 이름으로 물어 죽었다 — 텍스트를 긁는 것
+    #   자체가 또 하나의 사본이었다(2026-09-02).
+    test -f .ruff-strict.toml || { echo ".ruff-strict.toml 가 없다"; exit 1; }
     FILES=$(uv run python tools/owned_paths.py --py-only)
     [ -n "$FILES" ] || { echo "엄격 검사 대상이 0건이다"; exit 1; }
-    echo "대상 $(echo "$FILES" | wc -l)개 · select $SEL"
-    uv run ruff check $FILES --select "$SEL" --ignore "$IGN"
+    echo "대상 $(echo "$FILES" | wc -l)개 · 인자 .ruff-strict.toml"
+    uv run ruff check $FILES --config .ruff-strict.toml
 '
 
 
