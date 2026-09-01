@@ -1177,7 +1177,27 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 | — | `feat/**` | — | — | — | — |
 
 셋 다 `deletion` · `non_fast_forward` · `pull_request` ·
-`required_status_checks` 넷을 든다. **`bypass_actors` 는 비어 있다.**
+`required_status_checks` 넷을 든다.
+
+★ **`bypass_actors` 는 2026-09-01 현재 비어 있지 않다.** 세 룰셋 모두
+`Repository admin` 역할(actor_id 5)이 `always` 로 들어 있다. main 정비가
+다수 남아 매 건 승인 대기가 병목이 됐고, 한시로 부여했다(DECISIONS 80).
+
+**되돌릴 날 2026-09-06.** 오창준 이탈(09-07) 전날이다. 그날 세 룰셋의
+`bypass_actors` 를 비우고 `release` 의 승인 1 · Code Owners 를 함께 켠다.
+
+★ **저장소 admin 은 팀 전원 다섯이다.**
+
+    AIMasterFox  diyon13  gayeoniii  marscoolcat  wlsdnr052475
+
+bypass 는 개인이 아니라 역할에 준다. **admin 이 늘면 우회 가능자도 는다.**
+`ruleset_check` 의 `ADMINS` 가 이 명단이며 실물과 다르면 운다. 09-06 에
+bypass 를 걷을 때 admin 도 함께 줄인다 — 릴리즈 매니저 외에는 write 로
+충분하다.
+
+★ `gh api .../rulesets` **목록 조회는 `bypass_actors` 를 빈 배열로 준다.**
+개별 조회 `.../rulesets/{id}` 가 실물이다. 2026-09-01 에 목록 조회를 믿고
+"bypass 없음" 으로 두 번 판단했고 두 번 다 틀렸다.
 
 ★ **승인이 0인 이유.** 자기 PR 은 자기가 승인할 수 없는데(§12-3) GIS·infra 는
 1인 파트다. 승인 1을 걸면 영구 차단된다. 실제로 막는 것은 승인이 아니라
@@ -1290,7 +1310,22 @@ fix:  버그
 | 워크플로 | 시점 | 하는 일 |
 |---|---|---|
 | `contract` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
-| `pages` | `main` 의 `web/**` 변경 | GitHub Pages 갱신 |
+| `지도 배포` (`pages.yml`) | `main` 의 `web/**` 변경 | `web/` **전체** 배포 |
+| `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` 변경 | 재생성 후 `web/` **전체** 배포 |
+
+★ **워크플로 이름은 촉발 조건이지 배포 대상이 아니다.** 둘 다 사이트
+전체를 올린다. Pages 는 저장소당 사이트가 하나라, 한쪽이 부분만 올리면
+다른 쪽 파일이 사이트에서 사라진다. 08-31 에 그 사고가 났다.
+
+★ **`협업 방침 배포` 는 생성물을 커밋하지 않는다.** 종전에는 봇이
+`web/workflow.html` 을 `main` 에 밀었고, 그러려면 룰셋에 구멍이 필요했다.
+배포 시점에 생성하는 것으로 바꿔 그 구멍을 없앴다. 커밋된
+`web/workflow.html` 은 `test_workflow_html_sync` 가 재생성 결과와
+대조하므로 낡을 수 없다.
+
+★ `contract` 의 `pull_request` 트리거는 `types` 에 **`edited` 를 포함한다.**
+없으면 PR 본문을 고쳐도 `pr_body_check` 가 다시 돌지 않아, 실패 메시지의
+"본문을 편집하면 검사가 다시 돈다" 는 안내가 거짓이 된다.
 
 ★ **검사 범위가 배포 범위를 덮어야 한다.** `contract` 의 브랜치 목록에서
 `part/**` 를 빼면 검사를 비껴간 코드가 `dev` 까지 올라온다.
