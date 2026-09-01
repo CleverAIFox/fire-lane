@@ -161,7 +161,14 @@ vehicle_profiles:
     원문은 datasets 의 kfs_* 항목이 가리킨다.
   absent:
     wheelbase_m: 7종 전수 확인 0건. D-30 인터뷰로만 채운다
-    turn_radius_m: 7종 전수 확인 0건. D-30 인터뷰로만 채운다
+    turn_radius_m: |
+      KFS 7종에는 0건이다. 그러나 **없는 값이 아니다** — 두 곳에 있다.
+        · 자동차규칙 제9조① 법정 상한 12m (vehicle_spec.turn_radius_m)
+        · web/assets/vehicles/profiles.json 차종별 7,300~11,889mm
+          (강원 인제소방서 자료 · 나라장터 공고. 미검증)
+      ★ 2026-09-01 정정. 종전에 "0건" 이라고만 적어 대장이 거짓 선언을
+        하고 있었다 — 화면은 그 값을 띄우는데 대장은 없다고 했다.
+        D-30 은 여전히 필요하다. 위 둘 다 실측이 아니다.
     ambulance: |
       특수구급차 KFS-1-0029-2025-01 §3.2.1「차량의 제원」이
       "구급차 제작기준 또는 수요기관의 정하는 바에 따른다" 한 줄뿐이다.
@@ -479,7 +486,16 @@ layers:
     committed: false
     backup: false
     regenerable: true
-    naming: '^\w+_[a-z-]+_[a-z0-9]+_\d{4}_v\d+\.'
+    # ★ 2026-09-01. 종전 규칙 '^\w+_[a-z-]+_[a-z0-9]+_\d{4}_v\d+\.' 은
+    #   실물 16건이 **전건 위반**이었다. 둘이 틀렸다 — 날짜가 8자리인데
+    #   \d{4} 로 4자리를 요구했고, 쓴 적 없는 _v\d+ 버전 접미사를 요구했다.
+    #   d094622「계층을 선언으로」에서 layers 를 선언할 때 같이 들어왔고
+    #   한 번도 강제된 적이 없다. **죽은 규칙을 살려두면 raw 의 naming 까지
+    #   못 믿게 된다**(DECISIONS §73). 규칙을 실물에 맞춘다.
+    #
+    #   버전이 필요해지면 _prep.json 이 이미 실행 이력을 갖고 있으므로
+    #   파일명이 아니라 거기서 찾는다.
+    naming: '^\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}\.'
     encoding: utf-8
     # ★ 2026-08-31. status 는 통제 어휘다 — layers.implemented() 가
     #   "미구현" 하나만 본다. 한 번 "미배선" 으로 바꿨다가 되돌렸다.
@@ -1801,6 +1817,51 @@ datasets:
       ★ 원본 파일명이 `AL_D002_12_20260808(2).shp` 식이다. 괄호가 도엽
         번호 노릇을 한다 — 명명규칙 밖이라 parts 로 옮겨 적는다.
 
+  gjfire_fleet_dongbu:
+    feeds: 미투입 — web/config.js 의 CONFIG.fleet 목록 근거. 코드가 키로 참조하지 않는다
+    feeds_note: '[]'
+    feeds_why: 근거 자료 — 어느 차종이 몇 대 있는가. 치수는 kfs_* 7종이 낸다
+    stem: safety_fleet
+    ext: [csv]
+    scope: jngj-donggu
+    what: 동부소방서 소방차량현황 — 부서·안전센터별 보유 대수 34대
+    kind: raw_only
+    updated: '2026-05-14'
+    used_for: |
+      부서 8 × 차종 20 행렬. 세로합 34 가 원문 「계」 행과 일치한다.
+      DECISIONS 84 · 85 의 근거이며 CONFIG.fleet 8종 15대가 여기서 나왔다.
+      profiles.json 10종을 다 띄우지 않는 근거다 — 대형 펌프차는 0대다.
+
+      ★ 제원이 없다. 전폭도 회전반경도 이 표에 없다.
+      ★ 지산119안전센터 보유는 펌프차(중형) 2 · 구급차 1 · 생활안전차 1
+        뿐이다. 동명동은 지산 관할이므로 진압 차량은 중형펌프차가 전부다.
+        물탱크 · 화학 · 사다리 2종 · 조연은 대인에만 있다.
+      ★ 구조차 2 · 구조버스 2 는 119구조대 · 재난대응단 소속이라 특정
+        센터에 매이지 않는다. 동구 전역이 관할이다.
+    note: |
+      ★ 2026-09-01. 파일 제공이 아니라 홈페이지 표다. HTML 표를 그대로
+        CSV 로 떠서 원본으로 삼는다 — 동구청 어린이보호구역 · 주정차단속
+        때와 같은 처리다. 원문 20열 행렬이 raw 이고 긴 형태
+        (station,unit,vehicle_type,count) 는 파생이다.
+      ★ 종전에 data/field 에 긴 형태만 있었다. field 는 재취득 불가한
+        실측 자리인데 이것은 재취득 가능하다. 계층이 틀렸었다.
+
+  gjfire_district_dongbu:
+    feeds: 미투입 — CONFIG.fleetGroups 묶음 근거
+    feeds_note: '[]'
+    feeds_why: 근거 자료 — 동명동이 어느 안전센터 관할인가
+    stem: safety_district
+    ext: [csv]
+    scope: jngj-donggu
+    what: 동부소방서 관할구역 현황 — 안전센터 3곳의 관할 법정동·면적·인구
+    kind: raw_only
+    updated: '2025-07-31'
+    used_for: |
+      지산119안전센터 = 밤실로30번길 16 (4.99㎢) · 동명동 등 4개 법정동 ·
+      인구 22,443. 동명동은 대인이 아니라 지산 관할이다.
+      DECISIONS 85 의 근거이며 차량 목록을 센터로 가른 이유다.
+    note: 원본이 CP949 다. 편입 시 UTF-8 로 옮기고 수치는 고치지 않는다
+
 raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
@@ -1816,7 +1877,7 @@ raw_only:
     size: 1.3 GB
     note: |
       ★ GeoTIFF 아님. 지오태그 없음, .tfw 미동봉, XML에도 도곽좌표 없음.
-        복원 규칙과 도엽별 X0/Y0는 docs/마스터_문서.md §10 참조 (EPSG:5186).
+        복원 규칙과 도엽별 X0/Y0는 docs/MASTER.md §10 참조 (EPSG:5186).
       Phase 3-A(정사영상 DL 세그멘테이션) 재료. 우선순위 4위.
       현 단계 파이프라인 미투입. S3에만 두고 로컬에서 지워도 무방.
 
@@ -2043,6 +2104,28 @@ outputs:
     consumers: [tests/test_contract.py]
     what: 런 간 seg_uid 유지율 대조 이력. 게이트 90%
     verified: true
+
+  obs_points:
+    produced_by: 현장 실측 (사람)
+    path: data/field/obs_points.csv
+    inputs: [field_sample]
+    consumers: [data/field/fieldsheet.md]
+    what: 관측점 좌표·기준 지물 서술. 실측 야장의 원자료
+    verified: false
+    known_issues:
+    - ★ 2026-09-01 등재. 그전까지 대장 밖에서 자랐다. field 는 regenerable
+      false 라 대장에 없으면 백업 대상 목록에서도 빠진다
+
+  ngi_width_check:
+    produced_by: src/firelane/seg/width.py (수동 추출)
+    path: data/field/ngi_width_05_check.csv
+    inputs: [ngii1k]
+    what: 폭 0.5m 로 나온 51행 대조표. 광주 동구 전체에서 뽑았다
+    verified: false
+    known_issues:
+    - ★ 파생물이다. field 에 있으나 실측이 아니라 재생성 가능하다.
+      DECISIONS 가 근거로 인용하므로 인용이 깨지지 않게 봉인해 둔다
+    - 컬럼 w_ngi · lanes · oneway · len_m · lat · lon
 
   field_sample:
     produced_by: src/firelane/sample_design.py
