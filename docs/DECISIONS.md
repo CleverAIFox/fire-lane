@@ -2999,13 +2999,15 @@ FAIL 37 위에서, 계보가 죽은 위에서 전부 초록불이었다.
 `--deepen` 으로 고치고 CI 로그에서 `0 커밋 뒤처져 있다` 를 확인했다.
 못 찾을 때는 세지 않는다 — **모를 때 막지 않는다.**
 
-## §80 release/trunk/part bypass 한시 부여 (2026-09-01)
+## §80 admin 이 룰셋을 우회한다는 사실의 기록 (2026-09-01)
 
-main 정비가 다수 남아 매 건 승인 대기가 병목이 됐다. `Repository admin`
-역할에 세 룰셋 bypass 를 부여한다.
+`bypass_actors` 가 세 룰셋 모두 0 인데도 admin 계정의 직접 푸시가
+통과했다. 원격이 `Bypassed rule violations` 를 찍었다.
 
-- 되돌릴 날 **2026-09-06**. 오창준 이탈(09-07) 전날이다.
-- admin 을 가진 계정 전부가 대상이다. 개인 지정은 룰셋이 지원하지 않는다.
-- 되돌리는 법 — `gh api -X PUT repos/woongtopia/fire-lane/rulesets/<id>`
-  로 `bypass_actors` 를 빈 배열로 되돌린 뒤 `ruleset_check` 로 확인한다.
-- ★ 적어두지 않은 완화는 영구가 된다(DECISIONS §76). 이 절이 그 방지책이다.
+★ 즉 `bypass_actors` 0 은 구멍 없음을 뜻하지 않는다. admin 권한 자체가
+별도 경로로 룰셋을 넘는다. `ruleset_check` 는 이 경로를 보지 못한다.
+
+- 2026-09-01 dev · part/gis · part/cv · part/infra 정렬 푸시가 이 경로로 나갔다.
+- 오창준 이탈(2026-09-07) 뒤 admin 보유자가 이 사실을 모르면 룰셋을
+  실제보다 강하게 믿는다. DECISIONS §76 이 경고한 것과 같은 구조다.
+- 후속 과제 — `ruleset_check` 가 admin 명단을 함께 읽고 대조한다.
