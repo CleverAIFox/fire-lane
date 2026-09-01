@@ -44,6 +44,11 @@ REPO = "woongtopia/fire-lane"
 
 # docs/MASTER.md §12-1 의 표와 같아야 한다.
 # 여기를 고치면 그 둘도 같이 고친다.
+# ★ bypass 는 개인이 아니라 역할에 준다. admin 이 늘면 우회 가능자도
+#   는다(DECISIONS 80). 2026-09-01 실측에서 팀 전원이 admin 이었고
+#   MASTER §12-1 에 그 선언이 없었다. 실물이 이 목록과 다르면 운다.
+ADMINS = ["AIMasterFox", "diyon13", "gayeoniii", "marscoolcat", "wlsdnr052475"]
+
 EXPECT = {
     "release": {
         "ref": "refs/heads/main", "approvals": 1, "codeowners": True,
@@ -146,6 +151,13 @@ def main() -> int:
             bad.append(f"{name}: bypass actor {who}"
                        "\n      ★ 예외는 문서 밖에서 자란다. 08-31 에 한 사람이"
                        "\n        PR 요구를 우회할 수 있었고 아무 문서에도 없었다")
+
+    admins = sorted(c["login"] for c in _gh(f"repos/{REPO}/collaborators")
+                    if (c.get("permissions") or {}).get("admin"))
+    if admins != sorted(ADMINS):
+        bad.append(f"admin 명단 {admins} != {sorted(ADMINS)}"
+                   "\n      ★ admin 이 늘면 bypass 대상도 는다. 개인 지정은"
+                   "\n        룰셋이 지원하지 않는다(DECISIONS 80)")
 
     if bad:
         print("★ 룰셋 실물이 방침과 다르다.\n")
