@@ -259,8 +259,19 @@ def test_no_source_patching_scripts():
         src = p.read_text(encoding="utf-8")
         # 패처의 서명: 정본 파일을 읽어 문자열 치환하고 되쓴다.
         # 읽기만 하는 도구(baseline.py 가 EXPECT 를 읽는 등)는 해당 없다.
-        if not (".write_text(" in src and ".replace(" in src
-                and any(x in src for x in TARGETS)):
+        # ★ 2026-08-31. 종전에는 TARGETS 문자열이 **어디에든** 있으면 잡았다.
+        #   그래서 `render_workflow.py` 가 걸렸다 — `docs/MASTER.md` 를 **읽어**
+        #   `web/workflow.html` 을 쓰는 도구인데, 규칙이 막으려는 것과 방향이
+        #   반대다. `publish_web.py` 가 processed 를 읽어 web/data 를 쓰는 것과
+        #   같은 계층 이동이다.
+        #
+        #   이 규칙의 해악은 "정본을 문자열로 고쳐 정본이 둘이 되는 것" 이므로
+        #   **쓰기 대상이 정본인지**를 본다. 읽기는 해당 없다.
+        writes = re.findall(r"(\w+)\.write_text\(", src)
+        target_write = any(
+            re.search(rf"{w}\s*=\s*.*?(?:{'|'.join(re.escape(x) for x in TARGETS)})",
+                      src) for w in writes)
+        if not (target_write and ".replace(" in src):
             continue
         if ALLOW_MARKER in src and not any(x in src for x in CODE_TARGETS):
             continue

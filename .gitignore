@@ -80,6 +80,6 @@ data/interim/
 data/_migrate_journal.json
 .apply-stamp
 
-# ★ 빌드 산출물. pages.yml 이 docs/workflow.html 에서 복사한다.
-#   정본은 docs/ 이고 여기 커밋하면 사본이 둘이 된다.
-web/workflow.html
+# ★ web/workflow.html 은 생성물이지만 **커밋한다.** `docs.yml` 이
+#   MASTER §12 에서 만들고, `pages.yml` 이 그것을 배포한다.
+#   `web/data` 와 같은 취급이다(MASTER §12-10).
