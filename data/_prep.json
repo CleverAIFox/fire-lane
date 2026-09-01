@@ -208,7 +208,31 @@
     "★ 이중 디코드 지문. UTF-8 을 CP949 로 읽은 꼴이다"
    ],
    "at": "2026-08-30T11:58:23+09:00"
+  },
+  "safety/safety_fleet_jngj-donggu_20260514.csv": {
+   "key": "gjfire_fleet_dongbu",
+   "src_sha256": "dac553bb5e289ae8a594ce464800eda97f7f8a850c100a6b504dbc527917e581",
+   "dst_sha256": "dac553bb5e289ae8a594ce464800eda97f7f8a850c100a6b504dbc527917e581",
+   "src_encoding": "utf-8",
+   "src_newline": "lf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "hangul_ratio": 0.3081,
+   "notes": [],
+   "at": "2026-09-01T23:16:35+09:00"
+  },
+  "safety/safety_district_jngj-donggu_20250731.csv": {
+   "key": "gjfire_district_dongbu",
+   "src_sha256": "eb6ffedeb0301d5b9c5d3a0dcbc4d668877cad67711334449b08b34c57e07c38",
+   "dst_sha256": "eb6ffedeb0301d5b9c5d3a0dcbc4d668877cad67711334449b08b34c57e07c38",
+   "src_encoding": "utf-8",
+   "src_newline": "lf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "hangul_ratio": 0.3348,
+   "notes": [],
+   "at": "2026-09-01T23:16:35+09:00"
   }
  },
- "at": "2026-08-31T11:39:19+09:00"
+ "at": "2026-09-01T23:16:35+09:00"
 }

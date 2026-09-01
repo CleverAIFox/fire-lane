@@ -179,7 +179,15 @@
   "safety/safety_mas_optional_spec_kr_20241111.pdf": {
    "sha256": "90c188fc2bd192df76f1b4f50d2baf689987ee747088e931525b8932ccb0796d",
    "bytes": 245690
+  },
+  "safety/safety_district_jngj-donggu_20250731.csv": {
+   "sha256": "eb6ffedeb0301d5b9c5d3a0dcbc4d668877cad67711334449b08b34c57e07c38",
+   "bytes": 380
+  },
+  "safety/safety_fleet_jngj-donggu_20260514.csv": {
+   "sha256": "dac553bb5e289ae8a594ce464800eda97f7f8a850c100a6b504dbc527917e581",
+   "bytes": 640
   }
  },
- "at": "2026-08-31T14:43:19+09:00"
+ "at": "2026-09-01T23:15:41+09:00"
 }

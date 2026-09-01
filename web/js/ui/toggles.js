@@ -12,6 +12,29 @@ import { S } from "../state.js";
 import { restyleSegments } from "../layers/segments.js";
 import { setTheme } from "./theme.js";
 import { styleMiniRoute } from "./minimap.js";
+import { initVehicleSelect } from "./vehicle.js";
+
+/* ── CCTV 표지판은 평시에 끈다 ────────────────────────────────
+   기여: @marscoolcat · 2026-09-01
+
+   ★ 왜 끄나. CCTV 지점이 104곳이라 표지판이 상시로 켜져 있으면 노랑 아이콘
+     104개가 판정 4색 위를 덮는다. 평시 화면의 주인공은 구간 판정이다.
+     반면 출동 모드에서는 CCTV 가 "이 구간 판정을 무엇으로 했는가"의 근거라
+     그때는 보이는 편이 낫다.
+   ★ 3D 지주는 그대로 둔다. 끄는 것은 꼭대기 표지판뿐이다. 시설이 거기
+     있다는 사실 자체는 평시에도 알아야 한다.
+   ★ 마커 토글과 출동 모드가 둘 다 이 레이어를 건드리므로 한 함수로 모은다.
+     양쪽에서 setLayoutProperty 를 따로 부르면 "출동 모드인데 표지판이 없는"
+     상태가 생긴다 — 실제로 그렇게 짰다가 되돌렸다.
+   ★ 다른 마커의 표지판(소화전·119)은 평시에도 켜 둔다. 개수가 적고
+     인터뷰에서 직접 요청받은 시설이다.
+   ──────────────────────────────────────────────────────────── */
+export function syncCctvSign(){
+  const l = "m-cctv-sign";
+  if (!S.map || !S.map.getLayer(l)) return;
+  const on = S.dispatchMode && !S.markerOff.has("m-cctv");
+  S.map.setLayoutProperty(l, "visibility", on ? "visible" : "none");
+}
 
 export function buildToggleRows(){
   const host = document.getElementById("mk-toggles");
@@ -36,6 +59,19 @@ export function buildToggleRows(){
 
 export function bindToggles(){
   const map = S.map;
+
+  /* 기준 차량 선택. 패널 DOM 만 쓰므로 지도 로드를 기다리지 않는다.
+     ★ 원래 자리는 main.js 다 — 그 파일 머리말이 "새 기능은 layers/ 나 ui/ 에
+       모듈을 만들고 여기에는 호출 한 줄만 추가한다"고 스스로 규정하고 있다.
+       main.js 는 GIS 담당 파일이라 여기서 부르고 있다. 한 줄 옮길 수 있게
+       되면 옮길 것. */
+  initVehicleSelect();
+
+  /* CCTV 표지판 초기 상태(평시 = 꺼짐).
+     ★ main.js 의 map.on("load") 가 먼저 등록돼 있으므로 addSigns() 다음에
+       실행된다. 등록 순서가 곧 실행 순서다. 이 줄을 위로 옮기면 아직 없는
+       레이어를 건드려 아무 일도 안 일어난다. */
+  map.on("load", syncCctvSign);
 /* 토글 */
 document.querySelectorAll(".row").forEach(r => r.onclick = () => {
   const t = r.dataset.t, tg = r.querySelector(".tg");
@@ -62,6 +98,9 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
       .forEach(l=>{ if(S.map.getLayer(l)) S.map.setLayoutProperty(l,"visibility",on?"visible":"none"); });
     if(spec.cover && !on)
       document.querySelector(`.row[data-t="${t}-cov"] .tg`)?.classList.remove("on");
+    /* ★ 위 forEach 가 표지판을 마커와 같이 켜 버린다. CCTV 만 평시 규칙으로
+       다시 덮는다. 순서가 중요하다 — 앞에 두면 forEach 가 도로 켠다. */
+    syncCctvSign();
   }
   /* 반경 원 하위 토글. m-cctv-cov / m-light-cov 처럼 마커 id + "-cov" 다. */
   if(t.endsWith("-cov")){
@@ -95,6 +134,8 @@ document.querySelectorAll(".row").forEach(r => r.onclick = () => {
       /* 패널의 하위 토글 표시도 같이 맞춘다. 화면과 스위치가 어긋나면 안 된다. */
       document.querySelector(`.row[data-t="${m.id}-cov"] .tg`)?.classList.toggle("on", on);
     });
+    /* CCTV 표지판을 함께 켠다. 출동 모드에서는 판정 근거가 보여야 한다. */
+    syncCctvSign();
     restyleSegments();
     styleMiniRoute();
   }

@@ -40,6 +40,14 @@
   <!-- 출동 모드. 갈 수 있는 길만 남기고 나머지를 죽인다. @marscoolcat -->
   <div class="row dispatch" data-t="dispatch"><span>🚒 출동 모드 — 갈 수 있는 길 강조</span><i class="tg"></i></div>
 
+  <!-- 기준 차량. 화면설계서 FRLN_DISP_02 의 관제 화면판이다.
+       ★ 설계 원칙 5 — 기준 차량을 항상 밝힌다. 기준을 안 밝힌 수치는 뜻을
+         잃는다. 그래서 접는 메뉴가 아니라 패널 상단에 상시 노출한다.
+       ★ 설계 원칙 6 — 차종을 바꿔도 지도 색은 안 바뀐다. 선택이 바꾸는 것은
+         통과선과 여유 표기뿐이다. 내용은 js/ui/vehicle.js 가 채운다. -->
+  <h2>기준 차량</h2>
+  <div id="veh"></div>
+
   <h2>진입 판정</h2>
   <div id="legend"></div>
 
@@ -62,8 +70,9 @@
   <div class="mk"><i id="lgi-cctv" style="background:#ffd24a"></i>CCTV <span>지주 + 하우징</span></div>
   <div class="mk"><i style="background:#3fb8d8"></i>가로등 <span>지주 + 등기구</span></div>
   <div class="note" style="padding:2px 7px;margin-top:2px">
-    마커는 실제 형상 비율로 세웠고 크기는 약 5배 과장했습니다.
-    실물 치수(소화전 0.9m)로는 화면에서 보이지 않습니다.</div>
+    마커는 실제 형상 비율로 세웠고 크기는 2~3배 과장했습니다.
+    실물 치수(소화전 0.9m)로는 화면에서 보이지 않습니다.
+    CCTV 표지판은 출동 모드에서만 표시됩니다.</div>
 
   <h2>상가 업종</h2>
   <!-- 색표는 CONFIG.poi.color 로 app.js 가 생성한다. 손으로 나열하면 어긋난다. -->

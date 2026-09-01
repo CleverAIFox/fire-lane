@@ -51,10 +51,87 @@ TROUBLE = "12-4"          # 이 절은 통째로 '막히면' 탭
 
 
 def section12(text: str) -> list[str]:
+    """`## 12.` ~ `## 13.` 사이.
+
+    ★ 2026-09-01. 종전에는 `next()` 두 개였고 못 찾으면 `StopIteration` 이
+      맨몸으로 터졌다. 값이 낡는 것은 `--check` 가 잡지만 **구조가 바뀌는
+      것**은 아무도 설명해 주지 않았다. 제목이 바뀌었는지 절이 사라졌는지
+      추적 하나만 보고는 안 갈린다.
+    """
     lines = text.splitlines()
-    s = next(i for i, l in enumerate(lines) if l.startswith("## 12. 협업"))
-    e = next(i for i in range(s + 1, len(lines)) if lines[i].startswith("## 13."))
+    s = next((i for i, l in enumerate(lines) if l.startswith("## 12. 협업")), None)
+    if s is None:
+        raise SystemExit(
+            "★ MASTER 에 `## 12. 협업` 절이 없다.\n"
+            "  제목이 바뀌었으면 이 파서도 같이 고쳐라. 화면만 비는 것이\n"
+            "  제일 나쁘다 — 규약이 사라진 줄 아무도 모른다.")
+    e = next((i for i in range(s + 1, len(lines))
+              if lines[i].startswith("## 13.")), None)
+    if e is None:
+        raise SystemExit("★ MASTER 에 `## 13.` 이 없다. §12 의 끝을 못 찾는다.")
     return lines[s:e]
+
+
+PLAYBOOK = ROOT / "web/playbook.html"
+
+
+def slots() -> None:
+    """반대 방향 — **화면이 요구하는 절이 MASTER 에 있는가.**
+
+    ★ `audit()` 은 MASTER → 화면을 본다. 이쪽은 화면 → MASTER 다.
+      둘이 있어야 도킹이 닫힌다. 한 방향만 보면 목록을 두 벌 유지해야
+      하는데, `data-slot` 하나로 맞추면 목록이 한 벌이다.
+
+    ★ 왜 필요한가. `§12-8b`(릴리즈 4단계)를 MASTER 에서 지우면 플레이북의
+      그 카드가 근거 없는 서술이 된다. 지금은 아무도 안 운다 — 화면은
+      사람이 쓴 것이라 MASTER 를 안 읽기 때문이다. `data-slot` 이 그
+      연결을 만든다.
+
+    ★ 플레이북이 없으면 건너뛴다. 이 렌더러의 산출물은 `workflow.html`
+      이고 플레이북은 별개 문서다 — 없다고 렌더가 막힐 이유가 없다.
+    """
+    if not PLAYBOOK.exists():
+        return
+    html = PLAYBOOK.read_text(encoding="utf-8", errors="ignore")
+    want = sorted(set(re.findall(r'data-slot="([^"]+)"', html)))
+    if not want:
+        print("  playbook 에 data-slot 이 없다 — 도킹 안 함")
+        return
+    mst = SRC.read_text(encoding="utf-8")
+    miss = [s for s in want
+            if not re.search(rf"^#{{2,3}} {re.escape(s)}\. ", mst, re.M)]
+    if miss:
+        raise SystemExit(
+            f"★ web/playbook.html 이 가리키는 절 {len(miss)}개가 MASTER 에 없다 —\n"
+            f"    {', '.join('§' + s for s in miss)}\n"
+            "  절을 지웠으면 플레이북의 그 카드도 지워라. 근거 없는 서술이 된다.\n"
+            "  절 번호를 바꿨으면 data-slot 을 같이 고쳐라.")
+    print(f"  playbook 슬롯 {len(want)}개 전건 MASTER 에 실재")
+
+
+def audit(lines: list[str], groups: dict) -> None:
+    """파싱 결과가 원문과 어긋나지 않는지 센다. 어긋나면 죽는다.
+
+    ★ 여기서 보는 것은 **값이 아니라 구조**다. `--check` 는 "생성물이
+      MASTER 와 다른가" 를 보고, 이쪽은 "MASTER 를 제대로 읽었는가" 를 본다.
+      전자는 사람이 HTML 을 손으로 고쳤을 때 울고, 후자는 MASTER 의 절
+      구성이 바뀌었을 때 운다. 2026-09-01 에 후자가 없었다.
+    """
+    subs = [m.group(1) for ln in lines
+            if (m := re.match(r"^### (12-[0-9a-z]+)\.", ln))]
+    if not subs:
+        raise SystemExit("★ §12 에 `### 12-x.` 하위 절이 하나도 없다. "
+                         "제목 형식이 바뀌었는지 봐라.")
+    picked = {t.split()[0].lstrip("§")
+              for xs in groups.values() for t, _ in xs
+              if t.startswith("§")}
+    lost = [s for s in subs if s not in picked]
+    if lost:
+        raise SystemExit(
+            f"★ §12 하위 절 {len(lost)}개가 화면에 안 담겼다 — {', '.join(lost)}\n"
+            "  그 절의 내용이 표도 그림도 산문도 아닌 형태라 분류에서 빠졌다.\n"
+            "  classify() 를 고치거나 MASTER 쪽 형식을 맞춰라.")
+    print(f"  §12 하위 절 {len(subs)}개 전건 반영")
 
 
 def classify(lines: list[str]) -> dict[str, list[tuple[str, str]]]:
@@ -452,7 +529,11 @@ def main() -> int:
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
 
-    doc = render(classify(section12(SRC.read_text(encoding="utf-8"))))
+    _lines = section12(SRC.read_text(encoding="utf-8"))
+    _groups = classify(_lines)
+    audit(_lines, _groups)          # ★ 구조가 바뀌면 여기서 죽는다
+    slots()                         # ★ 반대 방향 — 화면 → MASTER
+    doc = render(_groups)
 
     if a.check:
         cur = OUT.read_text(encoding="utf-8") if OUT.exists() else ""

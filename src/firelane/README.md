@@ -22,20 +22,36 @@ python -m firelane.ingest --check          # 원본 존재·체크섬만
 
 ```yaml
   새키:
-    desc: 한 줄 설명
+    what: 한 줄 설명
     kind: shp_zip | shp_zip_multi | shp_dir | csv_points | csv_points_in_zip
         | dbf_in_zip | json_points | csv_table | csv_table_multi
         | raw_only
-    file: 폴더/파일명.zip        # data/raw 기준 상대경로. 와일드카드 가능
+    scope: jngj-donggu           # 공간 범위. 전국이면 kr
+    updated: '2026-08-09'        # ★ 데이터 갱신일이지 다운로드일이 아니다
+    stem: safety_cctv_jngj       # 파일명 어간. ext 와 합쳐 실물을 찾는다
+    ext: [csv]
+    feeds: [data/processed/cctv_5186.gpkg]   # 무엇을 먹이나
+    feeds_note: '[]'
     layer: XXX.shp               # zip 안의 레이어 (shp 계열만)
-    crs: EPSG:5179               # ★ probe.py crs 로 검증한 실제값
+    crs_native: EPSG:5179        # ★ probe.py crs 로 검증한 실제값
     encoding: cp949 | utf-8
     x_col: 경도                  # csv 계열만
     y_col: 위도
-    url: ...
-    license: ...
-    retrieved: 2026-08-09
+    schema: {컬럼명: 뜻}         # 편입 후 inventory.py 가 채운다
+    contract: {rows: 5002}       # 같음. 건수·컬럼 계약
+    feeds_why: 왜 이것을 먹이나   # feeds 가 비어 있으면 사유를 여기 적는다
+    note: 믿으면 안 되는 것
 ```
+
+★ **`url` · `license` · `retrieved` 를 적지 않는다.** URL 은 자주 깨지고
+`provider + scope` 면 다시 찾는다. 메타 항목의 정본은 **`sources.yaml`
+머리말**이며 거기 다섯이 전부다 — `provider` `updated` `acquired`
+`scope` `crs`.
+
+★ 이 예시는 2026-09-01 에 실물 41개와 맞췄다. 그전까지 `desc` `file`
+`crs` `url` `license` `retrieved` 를 들고 있었는데 **실제로 그 여섯을 쓰는
+항목이 0건**이었고, 그 예시를 보고 대장 초안을 쓰면 어긋났다.
+`tests/test_doc_fsck.py::test_ledger_schema_doc_matches_reality` 가 지킨다.
 
 ### `kind` — 정본은 `ingest.py` 의 `build()` 다
 
@@ -73,6 +89,10 @@ python -m firelane.ingest --check          # 원본 존재·체크섬만
 
 한글·공백·괄호·대문자 금지, CSV는 UTF-8.
 제공기관 폴더와 계층 규칙은 `docs/MASTER.md` §18-1 · §18-2 가 정본이다.
+
+★ **이 규칙은 `raw` 전용이다.** 계층마다 `sources.yaml` 의 `layers.<계층>.naming`
+이 정본이고, `landing` · `interim` · `field` · `processed` 는 `null`(규칙 없음)
+이다. `norm` 은 별도 규칙을 갖는다.
 
 ## 규칙
 
