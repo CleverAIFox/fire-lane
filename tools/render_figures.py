@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -59,7 +60,38 @@ def _params() -> dict:
     return out
 
 
+def _fits(body: str, w: int, h: int) -> list[str]:
+    """모든 요소가 `viewBox` 안에 있는가.
+
+    ★ 2026-09-02. `fig_branch` 는 파트가 셋이라 `x = 60 + i*200` 으로 720
+      안에 들어간다. **넷이 되면 넘친다.** 그런데 넘쳐도 SVG 는 오류 없이
+      그려진다 — 박스가 화면 밖으로 나갈 뿐이고 **아무도 모른다.**
+
+      `--check` 는 값이 바뀐 것을 잡지 배치가 깨진 것은 못 잡는다.
+      좌표가 코드에 박혀 있는 한(레이아웃 엔진이 없다) 이 검사가 그
+      자리를 대신한다(DECISIONS §111).
+    """
+    bad = []
+    for m in re.finditer(r'<rect x="([\d.]+)" y="([\d.]+)" '
+                         r'width="([\d.]+)" height="([\d.]+)"', body):
+        x, y, bw, bh = (float(g) for g in m.groups())
+        if x < 0 or y < 0 or x + bw > w or y + bh > h:
+            bad.append(f"박스 ({x:g},{y:g} {bw:g}x{bh:g}) 가 {w}x{h} 밖이다")
+    for m in re.finditer(r'<text x="([\d.]+)" y="([\d.]+)"', body):
+        x, y = float(m.group(1)), float(m.group(2))
+        if x < 0 or y < 0 or x > w or y > h:
+            bad.append(f"글자 ({x:g},{y:g}) 가 {w}x{h} 밖이다")
+    return bad
+
+
 def _svg(body: str, *, w: int = W, h: int = H) -> str:
+    over = _fits(body, w, h)
+    if over:
+        raise SystemExit(
+            "★ 그림이 화면을 넘는다 — " + " · ".join(over[:4])
+            + "\n  노드가 늘어 좌표가 안 맞는다. 배치를 손보거나 폭을 늘려라.\n"
+            "  ★ 넘쳐도 SVG 는 오류 없이 그려진다 — 이 검사가 없으면\n"
+            "    아무도 모른다(DECISIONS §111).")
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" '
             f'width="{w}" height="{h}" font-family="{FONT}">'
             f'<rect width="{w}" height="{h}" fill="#fff"/>{body}</svg>\n')
@@ -166,11 +198,120 @@ def fig_unknown() -> str:
     return _svg("".join(body), h=80 + 4 * 44 + 16)
 
 
+def _rulesets() -> list[tuple[str, str, str]]:
+    """`MASTER §12-1` 룰셋 표에서 (룰셋, 대상, 승인). 정본은 그 표다."""
+    txt = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    out = []
+    for m in re.finditer(r"^\|\s*`(\w+)`\s*\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|",
+                         txt, re.M):
+        out.append((m.group(1), m.group(2), m.group(3)))
+    return out
+
+
+def fig_branch() -> str:
+    """브랜치 4계층. `MASTER §12-1` 룰셋 표와 CODEOWNERS 가 정본이다.
+
+    ★ 값이 아니라 **구조**를 그린다. 2026-09-02 에 틀린 것이 그 종류였다 —
+      [그림 24] 가 EC2 인데 §12-8 은 ECS 였고, 숫자가 아니라 관계가 갈렸다.
+      값 그림은 docnum_check 가 반쯤 잡는데 구조 그림은 아무도 안 봤다.
+    """
+    rs = {r[0]: r for r in _rulesets()}
+    # ★ 파트 목록은 CODEOWNERS 가 정본이다. 파트가 늘면 그림도 따라온다 —
+    #   그리고 넷이 되면 `_fits()` 가 넘침을 잡는다(DECISIONS §111).
+    parts = sorted(set(re.findall(
+        r"@woongtopia/(\w+)",
+        (ROOT / ".github/CODEOWNERS").read_text(encoding="utf-8"))))
+
+    def box(x, y, w, label, sub_, fill, stroke):
+        return (f'<rect x="{x}" y="{y}" width="{w}" height="46" rx="6" '
+                f'fill="{fill}" stroke="{stroke}"/>'
+                f'<text x="{x + w / 2}" y="{y + 21}" font-size="13" '
+                f'font-weight="700" fill="#0f172a" text-anchor="middle">{label}</text>'
+                f'<text x="{x + w / 2}" y="{y + 37}" font-size="10" '
+                f'fill="#64748b" text-anchor="middle">{sub_}</text>')
+
+    def arrow(x1, y1, x2, y2):
+        return (f'<path d="M{x1} {y1} L{x2} {y2}" stroke="#94a3b8" '
+                f'fill="none" marker-end="url(#a)"/>')
+
+    body = ['<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" '
+            'markerWidth="6" markerHeight="6" orient="auto">'
+            '<path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/></marker></defs>',
+            '<text x="12" y="28" font-size="15" font-weight="700" '
+            'fill="#0f172a">브랜치 4계층 — 정본 MASTER §12-1</text>']
+
+    rel = rs.get("release", ("release", "refs/heads/main", "?"))
+    tr = rs.get("trunk", ("trunk", "refs/heads/dev", "?"))
+    pt = rs.get("part", ("part", "refs/heads/part/**", "?"))
+
+    body.append(box(280, 50, 160, "main", f"승인 {rel[2]} · 배포", "#fee2e2", "#ef4444"))
+    body.append(box(280, 130, 160, "dev", f"승인 {tr[2]} · 통합", "#dbeafe", "#3b82f6"))
+    body.append(arrow(360, 130, 360, 100))
+    for i, p in enumerate(parts):
+        x = 60 + i * 200
+        body.append(box(x, 210, 160, f"part/{p}", f"승인 {pt[2]} · 파트", "#dcfce7", "#22c55e"))
+        body.append(arrow(x + 80, 210, 360, 180))
+        body.append(box(x, 285, 160, f"feat/{p}-*", "당일 · 룰셋 밖", "#f1f5f9", "#cbd5e1"))
+        body.append(arrow(x + 80, 285, x + 80, 260))
+    body.append('<text x="12" y="352" font-size="11" fill="#64748b">'
+                '화살표는 PR 방향이다. 위 셋은 보호 브랜치이며 직푸시가 막힌다 — '
+                '자유롭게 만들고 지울 수 있는 것은 feat 뿐이다(§12-4).</text>')
+    return _svg("".join(body), h=372)
+
+
+def fig_deploy() -> str:
+    """배포. `MASTER §12-8` · `workflows/*.yml` · `docker-compose.yml` 이 정본."""
+    wf = sorted(p.stem for p in (ROOT / ".github/workflows").glob("*.yml"))
+    svcs = re.findall(r"^  (\w+):", (ROOT / "docker-compose.yml")
+                      .read_text(encoding="utf-8"), re.M)
+
+    def box(x, y, w, h, label, sub_, fill, stroke):
+        out = (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6" '
+               f'fill="{fill}" stroke="{stroke}"/>'
+               f'<text x="{x + w / 2}" y="{y + 20}" font-size="12" '
+               f'font-weight="700" fill="#0f172a" text-anchor="middle">{label}</text>')
+        for i, line in enumerate(sub_):
+            out += (f'<text x="{x + w / 2}" y="{y + 38 + i * 15}" font-size="10" '
+                    f'fill="#64748b" text-anchor="middle">{line}</text>')
+        return out
+
+    body = ['<defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" '
+            'markerWidth="6" markerHeight="6" orient="auto">'
+            '<path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/></marker></defs>',
+            '<text x="12" y="28" font-size="15" font-weight="700" '
+            'fill="#0f172a">배포 — 정본 MASTER §12-8 · workflows · compose</text>',
+            box(20, 55, 170, 90, "main 푸시", wf[:4], "#f1f5f9", "#cbd5e1"),
+            box(230, 55, 150, 90, "GitHub Pages",
+                ["지도 · 협업 방침", "플레이북 · 기획서", "정적 파일"],
+                "#dbeafe", "#3b82f6"),
+            box(420, 55, 150, 90, "ECR", ["이미지 태그 =", "커밋 해시"],
+                "#fef3c7", "#f59e0b"),
+            box(610, 55, 90, 90, "EC2 한 대", ["Compose"], "#dcfce7", "#22c55e"),
+            box(420, 175, 280, 80, "docker compose",
+                [" · ".join(svcs) or "web · etl", "restart: unless-stopped"],
+                "#f8fafc", "#cbd5e1"),
+            '<path d="M190 100 L228 100" stroke="#94a3b8" marker-end="url(#b)"/>',
+            '<path d="M380 100 L418 100" stroke="#94a3b8" marker-end="url(#b)"/>',
+            '<path d="M570 100 L608 100" stroke="#94a3b8" marker-end="url(#b)"/>',
+            '<path d="M655 145 L600 173" stroke="#94a3b8" marker-end="url(#b)"/>',
+            '<text x="20" y="285" font-size="11" fill="#64748b">'
+            '★ ECS 가 아니다. 상시 서비스가 API 하나이고 ETL 은 배치이며 DB 가 '
+            '없다. 되돌릴 조건은 DECISIONS §93-4 가 든다.</text>',
+            '<text x="20" y="305" font-size="11" fill="#64748b">'
+            '★ 한 대는 단일 장애점이다. 자동 복구는 restart 하나이고 '
+            '인스턴스가 죽으면 사람이 띄운다.</text>']
+    return _svg("".join(body), h=325)
+
+
 FIGURES = {
     "verdict": fig_verdict,
     "threshold": fig_threshold,
     "cctv": fig_cctv,
     "unknown": fig_unknown,
+    # ★ 구조 그림. 값이 아니라 관계를 그린다 — 2026-09-02 에 틀린 것이
+    #   그 종류였다(DECISIONS §110).
+    "branch": fig_branch,
+    "deploy": fig_deploy,
 }
 
 

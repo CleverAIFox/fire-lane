@@ -922,7 +922,9 @@ git push -u origin feat/gis-revert   # PR 로 되돌린다</pre>
           <i class="fa-regular fa-copy mr-1"></i> 복사
         </button>
         <pre id="c-release" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto" data-fill="12-8b" data-kind="pic">
-<pre>v0.1-team5  v0.2  …   `v` + 소수점. 판정이나 화면이 눈에 띄게 바뀔 때</pre><pre>1  dev → main   PR · merge commit · 승인 1 + Code Owners
+<pre>v0.1-team5  v0.2  …   `v` + 소수점. 판정이나 화면이 눈에 띄게 바뀔 때</pre><pre>0  uv run python tools/release_brief.py --base main --md
+   → 그 표를 PR 본문에 붙인다. 리뷰어가 볼 것이 그것이다
+1  dev → main   PR · merge commit · 승인 1 + Code Owners
    ★ 머지 완료를 확인한 뒤 2 로 간다
      gh pr merge &lt;번호&gt; --merge
      git switch main &amp;&amp; git pull --ff-only &amp;&amp; git log --oneline -1
@@ -995,7 +997,7 @@ gh pr create --base part/&lt;파트&gt; --head dev --fill &amp;&amp; gh pr merge
             <h3 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
               <i class="fa-solid fa-key text-rose-600"></i> BYPASS 회수 & 데이터 추적
             </h3>
-            <span class="bg-rose-100 text-rose-800 border border-rose-300 text-[9px] font-bold px-1.5 py-0.2 rounded" data-expires="2026-09-02">만료 2026-09-02</span>
+            <span class="bg-rose-100 text-rose-800 border border-rose-300 text-[9px] font-bold px-1.5 py-0.2 rounded" data-expires="2026-09-03">만료 2026-09-02</span>
           </div>
           <span class="canon-tag">정본: MASTER §12-10</span>
         </div>
