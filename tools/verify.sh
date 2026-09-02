@@ -128,6 +128,14 @@ step "CI 환경 재현"     bash -c '
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
+# ★ 2026-09-02 배선. 오늘 캡션 절까지 붙여놓고 **어디서도 안 부르고
+#   있었다.** 사람이 손으로 칠 때만 도는 도구는 이탈 후 아무도 안 부른다.
+step "기획서 대조"     uv run python tools/docx_check.py
+# ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
+step "선언 ↔ 실물"     uv run python tools/refcheck.py
+# ★ 전수 스캔. `--repo` 는 데이터 레이크 없이 저장소 트리만 본다 —
+#   항목에서 출발하는 검사는 **항목이 없는 것을 영원히 못 본다.**
+step "트리 전수 대조"   uv run python tools/treecheck.py --repo
 step "web/data 계보"    uv run python tools/web_manifest.py --check
 step "로컬 찌꺼기"      uv run python tools/tidy.py
 step "web/data 용량"    bash -c '

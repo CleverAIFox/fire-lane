@@ -7,7 +7,7 @@ docx_check.py — 기획서가 산출물과 어긋나지 않는가.
 시제 규칙 밖이라는 이유로 강제자가 없었다. 그래서 낡았다.
 
     docnum_check.py     README · MASTER · PLAN · DECISIONS  ← md 만 본다
-    (없음)              기획서_Fire-Lane.docx               ← 아무도 안 본다
+    (없음)              proposal.docx               ← 아무도 안 본다
 
 `PLAN §12` 가 갱신 대상 열 건을 표로 들고 있었으나 그 표 자체가 낡았다 —
 "대상 222구간" 을 고치라고 적혀 있는데 문서에 `222` 는 없고 실제로는
@@ -53,10 +53,21 @@ RETIRED = {
 
 # 그림 캡션에서만 보는 어휘. 본문에서는 맥락이 다를 수 있어 캡션에 한정한다.
 CAPTION_STALE = {
-    "원천 11종":
-        "대장은 datasets 41종 · retired 10종이다(MASTER §6). 11 의 근거가"
-        " 저장소에 없다(PLAN §12 #20)",
+    # ★ 2026-09-02. 종전에 `datasets 41종` 을 **하드코딩**했다가 하루 만에
+    #   낡았다(실물 43). 도구가 스스로 같은 병에 걸린 것이다. 대장에서 센다.
+    "원천 11종": (
+        "기획서 `§ 원천 데이터 목록` 표(T16)의 행 수를 센 값이다. 그 표가"
+        " 낡았다 — 대장은 {ds}종이다(MASTER §6). 캡션만 고치면 안 되고"
+        " 표와 다섯 자리를 같이 본다(PLAN §12 #20)"),
 }
+
+
+def _ledger_counts() -> dict[str, int]:
+    """대장 규모. 숫자를 손으로 적지 않는다."""
+    import yaml
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    return {"ds": len(y.get("datasets") or {}),
+            "ret": len(y.get("retired") or {})}
 
 
 def _load_docx(p: Path) -> list[tuple[str, str]]:
@@ -140,6 +151,7 @@ def audit(p: Path) -> list[str]:
             continue
         for name, why in CAPTION_STALE.items():
             if name in txt:
+                why = why.format(**_ledger_counts())
                 bad.append(f"  [{where}] 캡션이 낡았다: `{name}` — {why}\n"
                            f"      …{txt.strip()[:70]}…")
 

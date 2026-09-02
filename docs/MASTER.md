@@ -10,7 +10,7 @@
 > | `docs/PLAN.md` | 미래 | 남은 일 · 미결정 · 담당 공백 |
 > | **`docs/MASTER.md`** | **현재** | **판정 · 데이터 · 용어 · UI 계약 · 운영 (이 문서)** |
 > | `docs/DECISIONS.md` | 과거 | 왜 그렇게 됐나 (append-only) |
-> | `docs/기획서_Fire-Lane.docx` | — | 대외 제출용. 시제 규칙 밖 |
+> | `docs/proposal.docx` | — | 대외 제출용. 시제 규칙 밖 |
 >
 > 문서 넷은 병렬 축이 아니라 한 항목의 **생애주기**다.
 > 데이터 정본만 `sources.yaml` 이 따로 든다(기계가 읽는다).
@@ -531,7 +531,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 41종(OK 27 · SKIP 14)
+data/processed/    대장 43종(OK 27 · SKIP 16)
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -543,7 +543,7 @@ data/processed/    대장 41종(OK 27 · SKIP 14)
       seg/vehicle.py    차량 제원 · 엣지 비용
       seg/report.py     소방서 대조 · 진단 · 산출물 기록
   ↓ src/firelane/publish_web.py       표출용 경량 사본
-web/data/          28.7MB · UI 입력 · git 포함 (지형·정사영상 타일 포함)
+web/data/          UI 입력 · git 포함 (지형·정사영상 타일 포함)
   ↓ web/index.html   MapLibre GL JS 5 + deck.gl 9 (interleaved) + V-World
 GitHub Pages       gis · main 푸시 시 자동 배포
 ```
@@ -617,7 +617,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격.
 
-대장은 `sources.yaml` 하나다. `datasets` 41종 · `retired` 10종.
+대장은 `sources.yaml` 하나다. `datasets` 43종 · `retired` 10종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 ### 6-2. 데이터 보관
@@ -1274,6 +1274,41 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 | 룰셋 | 실수를 규율이 아니라 **형식**으로 막는다 |
 | 계약 (`src/contracts/`) | 파트 간 **유일한** 접점. 깨지면 남의 파트가 멈춘다 |
 
+### 12-0. 상황별 색인
+
+**이 표가 협업 화면의 인터페이스다.** 렌더러와 플레이북이 여기를 읽는다.
+
+| 상황 | 절 |
+|---|---|
+| `0` 최초 설정 | §12-11 · §14-1 |
+| `1` 아침 | §12-5 |
+| `2` 작업 끝 | §12-6 · §12-8c |
+| `3` 데이터 반입 | §18-11 |
+| `4` 충돌 | §12-4 |
+| `5` CI 빨간불 | §12-7 |
+| `6` 롤백 · 릴리즈 | §12-2 · §12-8b |
+| `구조` 브랜치 · 권한 | §12-1 · §12-3 · §12-9 · §12-10 |
+| `밑그림` 아직 없는 것 | §12-8 · §12-8a |
+| `어휘` 판정 4종 | §10-2 |
+| `지도` 문서 넷 | §0 |
+
+★ **한 절은 정확히 한 상황에 산다.** 두 곳에 넣고 싶어지면 그 절이 두
+가지를 하고 있는 것이고, 그때 쪼갠다. 절을 쪼개는 근거를 이 표가 만든다.
+
+★ **`§12` 밖도 든다.** 사람은 "아침에 뭐 하나" 로 찾지 "몇 절인가" 로 찾지
+않는다. `data-slot` 이 이미 `§0` · `§10-2` · `§14-1` · `§18-11` 을 다루고
+있었으므로 새로 만드는 것이 아니라 **정본이 그 사실을 따라잡는 것**이다.
+
+★ **`밑그림` 은 상황이 아니다.** 아직 실물이 없어 아무 상황에도 안 속하는
+절을 담는 자리다. 실물이 생기면 그때 제 상황으로 옮긴다. 이 칸이 비면
+밑그림이 다 걷힌 것이다.
+
+강제자 — `tools/render_workflow.py` 의 `index()`. 색인에 없는 §12 절이
+있으면 렌더가 죽는다. 2026-09-02 에 이 검사를 붙이자 `§12-7` · `§12-8` ·
+`§12-8a` · `§12-9` 넷이 **어느 상황에도 안 붙은 채 화면 어디에도 안 나오고
+있었다.** `audit` 는 MASTER → 화면을, `slots` 는 화면 → MASTER 를 보는데
+**MASTER → 상황** 방향이 없었다(DECISIONS §94).
+
 ### 12-1. 룰셋
 
 | 룰셋 | 대상 | 승인 | Code Owners | 필수 검사 | 머지 방식 |
@@ -1617,12 +1652,12 @@ CODEOWNERS 는 "누가 봐야 하는가"를 정하고, 계약 테스트는 "무�
 
 `web/data` 는 **40MB 상한**이다. 세 곳이 같은 값을 본다 —
 `.github/workflows/contract.yml` · `tools/commit_policy.py` ·
-`pipeline.WEB_MAX_MB`. 현재 28.7MB 다.
+`pipeline.WEB_MAX_MB`. 현재값은 `tools/web_manifest.py` 가 낸다 — 문서에 적지 않는다. 세는 방법이 셋이라(추적 파일 합 · `du` · 계보) 값을 적으면 어느 것과도 안 맞는다.
 강제자 — `tests/test_guards.py::test_webdata_limit_is_one_number`
 
 ### 12-11. 한글 파일명
 
-`docs/기획서_Fire-Lane.docx` 가 윈도우/리눅스를 오가면서 삭제 + 미추적으로
+`docs/proposal.docx` 가 윈도우/리눅스를 오가면서 삭제 + 미추적으로
 갈린 적이 있다. git 이 한글 파일명을 escape 로 저장하는데 두 OS 의 정규화
 방식이 다르기 때문이다.
 
@@ -1633,6 +1668,11 @@ git config --global core.precomposeunicode true
 
 `git status` 에 `#Uae30#Ud68d...` 같은 것이 뜨면 이 설정이 안 된 것이다.
 **앞으로 새로 만드는 파일은 영문 파일명을 쓴다.**
+
+★ 2026-09-02. 이 규칙의 **유일한 예외였던 기획서를 `proposal.docx` 로**
+바꿨다. zip 으로 옮길 때마다 `#Uae30#Ud68d...` 로 깨졌고, 배포 URL 에서도
+같은 문제가 난다. 규칙을 적어놓고 정작 그 규칙을 어기는 파일 하나가
+남아 있으면 다음 사람이 그것을 근거로 한글 파일명을 또 만든다.
 
 ---
 

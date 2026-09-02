@@ -28,7 +28,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 | [`docs/PLAN.md`](docs/PLAN.md) | 미래 | 남은 일 · 미결정 · 담당 공백 |
 | [`docs/MASTER.md`](docs/MASTER.md) | 현재 | 판정 · 데이터 · 용어 · UI 계약 · 운영 |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 과거 | 왜 그렇게 됐나 (append-only) |
-| `docs/기획서_Fire-Lane.docx` | — | 대외 제출용. 시제 규칙 밖 |
+| `docs/proposal.docx` | — | 대외 제출용. 시제 규칙 밖 |
 
 **한 항목은 한 문서에만 산다.** 두 곳에 있으면 한쪽만 고치는 날이 온다.
 남은 일의 정본은 `PLAN §1` 하나다.
@@ -332,10 +332,12 @@ tools/
   absorb.py               ★ 이관→편입→검증→사본삭제. 삭제는 검증에 매달려 있다
   migrate_names.py        raw 개명 백필 — 실물·sha대장·대장을 원자적으로
   refcheck.py             선언이 가리키는 것이 실재하는가 · --gc
+  treecheck.py            ★ 전수 스캔 — 항목이 아니라 트리에서 출발한다
   ledger_stem.py          대장 stem 이관 · 무손실 증명
   ledger_fields.py        대장 별칭 필드 통합
   ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
   render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
+  stage_pages.py          ★ 배포 준비 한 곳 — docs/proposal.docx → web/
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
   ledger_feeds.py         feeds 산문 → 소비자 리스트
   serve.py                캐시 없는 개발 서버
@@ -380,8 +382,8 @@ web/
 도달 가능    687 (62%)   119안전센터에서 막힌 길 없이 갈 수 있는 구간
 총연장       48,579.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        36종 (OK 23 · SKIP 13)
-web/data    28.7MB (지형 22타일 · 정사영상 1,423타일 포함)
+대장        `datasets` 43종 · `retired` 10종
+web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 ```
 
 `영상판정 불가` 354 는 전부 CCTV 사각이다. 폭 산출 불가는 0 이다.
@@ -420,8 +422,16 @@ web/data    28.7MB (지형 22타일 · 정사영상 1,423타일 포함)
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
 `web/data/`(40MB 상한)만으로 작업할 수 있다.
 
-    아침에 뭐 하나 · 충돌 · CI 빨간불 · 되돌리기   web/playbook.html
-    협업 방침 (MASTER §12 생성물)                web/workflow.html
+배포된 화면 넷이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른
+이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
+가는 길은 여기 하나다(DECISIONS §99).
+
+```
+지도        woongtopia.github.io/fire-lane/
+협업 방침    woongtopia.github.io/fire-lane/workflow.html   MASTER §12 생성물
+플레이북     woongtopia.github.io/fire-lane/playbook.html   상황별 안내서
+기획서       woongtopia.github.io/fire-lane/proposal.html   docs/proposal.docx 를 그대로 그린다
+```
 
 ## 문서는 어디에
 
