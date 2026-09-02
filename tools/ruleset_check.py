@@ -78,6 +78,25 @@ EXPECT = {
 REQUIRED_RULES = {"deletion", "non_fast_forward", "pull_request",
                   "required_status_checks"}
 
+# ★ 2026-09-02. 룰셋만 보고 **저장소 설정**은 안 봤다. 그래서
+#   `delete_branch_on_merge: true` 를 아무도 못 봤고, 그것이 4계층 모델과
+#   충돌해 영구 브랜치가 두 번 사라졌다(`main` · `part/gis`).
+#
+#   ★ 룰셋에는 `deletion` 이 **있었다.** bypass_actors 가 그것도 뚫었다 —
+#     머지를 admin 이 하므로 자동 삭제가 admin 권한으로 실행된다.
+#     규칙이 있어도 예외가 있으면 없는 것과 같다(DECISIONS §79 · §101).
+REPO_SETTINGS = {
+    # 켜면 **머지된 head 브랜치를 전부** 지운다. head 를 가리지 않는다 —
+    # `part → dev` 는 head 가 `part/gis` 이고 `main → dev` 는 `main` 이다.
+    # feat 정리는 .github/workflows/branch_cleanup.yml 이 대신한다.
+    "delete_branch_on_merge": False,
+    # 보호 브랜치는 rebase 로 되돌리지 않는다(§12-2). merge · squash 만.
+    "allow_rebase_merge": False,
+}
+
+# 수명이 영구인 브랜치. 사라지면 그 사실을 아무도 안 알려준다.
+PERMANENT = ("main", "dev", "part/gis", "part/cv", "part/infra")
+
 
 def _gh(path: str):
     r = subprocess.run(["gh", "api", path], capture_output=True, text=True)
@@ -100,6 +119,32 @@ def main() -> int:
         got[row["name"]] = _gh(f"repos/{REPO}/rulesets/{row['id']}")
 
     bad: list[str] = []
+
+    # ── 저장소 설정 ──
+    repo = _gh(f"repos/{REPO}")
+    for k, want in REPO_SETTINGS.items():
+        cur = repo.get(k)
+        if cur != want:
+            bad.append(
+                f"저장소 설정 {k}: {cur} != {want}\n"
+                f"      gh api -X PATCH repos/{REPO} -f {k}={str(want).lower()}")
+
+    # ── 영구 브랜치가 실재하는가 ──
+    # ★ 사라져도 아무도 안 운다. 2026-09-02 에 `main` 과 `part/gis` 가
+    #   차례로 사라졌고, 사라진 동안 **룰셋이 안 붙어 직푸시가 나갔다.**
+    try:
+        refs = {b["name"] for b in _gh(f"repos/{REPO}/branches?per_page=100")}
+    except Exception as e:                      # noqa: BLE001
+        refs = None
+        print(f"  (브랜치 목록을 못 읽었다: {e})")
+    if refs is not None:
+        gone = [b for b in PERMANENT if b not in refs]
+        if gone:
+            bad.append(
+                f"영구 브랜치가 없다: {gone}\n"
+                "      ★ 수명이 영구인 브랜치다(§12-1). 머지 자동 삭제나\n"
+                "        실수로 지워진 것이며, 없는 동안은 룰셋도 안 붙는다.\n"
+                "        git push origin <복구커밋>:refs/heads/<이름>")
 
     missing = sorted(set(EXPECT) - set(got))
     extra = sorted(set(got) - set(EXPECT))

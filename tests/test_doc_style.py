@@ -100,6 +100,46 @@ VOICE = {
 }
 
 
+def test_star_density():
+    """`★` 이 한 절에 다섯을 넘지 않는가.
+
+    ★ 2026-09-02. 종전 규약은 **절당 1회**였고 지켜진 적이 없다 —
+      MASTER 38절 중 17절이 초과, `§12` 는 33회였다. 규칙이 있는데 아무도
+      안 지키면 다른 규칙도 안 지켜도 되는 것으로 읽힌다(DECISIONS §103).
+
+    ★ 여덟을 넘는 것은 **강조가 과한 것이 아니라 절이 너무 큰 것**이다.
+      별표를 지우지 말고 절을 쪼개라.
+    """
+    # ★ 세는 단위는 **하위 절**이다. `## 12.` 같은 상위 절은 하위를 다
+    #   품으므로 거기서 세면 규칙이 절 크기를 재는 것이 아니라 상위 절
+    #   개수를 재게 된다. 실측 후 정했다 — 하위 절 기준 여덟이다.
+    # ★ 세는 단위는 **하위 절**이다. 상위 절은 하위를 다 품으므로 거기서
+    #   세면 절 크기가 아니라 하위 절 개수를 재게 된다.
+    #
+    # ★ 표 줄은 안 센다. `PLAN §1` 은 행이 일흔이 넘는 **목록**이고 그
+    #   안의 별표는 각 행의 강조지 절의 강조가 아니다. 절을 쪼개라는
+    #   신호로 쓸 수 없는 자리다.
+    limit = 8
+    bad = []
+    for p in NUMBERED_DOCS:
+        cur, n = None, 0
+        for line in p.read_text(encoding="utf-8").splitlines():
+            if line.startswith(("## ", "### ")):
+                if cur and n > limit:
+                    bad.append(f"  {p.name}  §{cur}  ★ {n}개")
+                cur, n = line.lstrip("# ").split(".")[0], 0
+                continue
+            if line.startswith("|"):
+                continue
+            n += line.count("★")
+        if cur and n > limit:
+            bad.append(f"  {p.name}  §{cur}  ★ {n}개")
+    assert not bad, (
+        f"한 하위 절의 `★` 이 {limit} 을 넘는다.\n" + "\n".join(bad)
+        + "\n\n  별표를 지우지 말고 절을 쪼개라 — 여덟을 넘는다는 것은\n"
+          "  그 절이 여러 가지를 한다는 뜻이다(MASTER §0-3).")
+
+
 def test_docs_are_plain_third_person():
     bad: list[str] = []
     for p in DOCS:
