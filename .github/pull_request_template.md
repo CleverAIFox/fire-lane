@@ -41,7 +41,7 @@
 ```
 uv.lock       git checkout --theirs uv.lock && uv lock     손으로 풀지 않는다
 web/data/     git checkout --theirs web/data/ 후 재생성    생성물이다
-그 외          아침에 git merge origin/dev 를 빼먹은 것이다
+그 외          아침에 git pull --ff-only 를 빼먹은 것이다
 ```
 
 LLM 에 붙일 때는 위 세 절을 그대로 넘긴다 — 무엇을 바꿨고, 어디를 봐야 하고,
@@ -52,7 +52,7 @@ LLM 에 붙일 때는 위 세 절을 그대로 넘긴다 — 무엇을 바꿨고
 <summary>체크리스트 (펼치기)</summary>
 
 - [ ] `git config core.hooksPath .githooks` 를 이 기계에서 한 번 쳤다
-- [ ] 아침에 `git merge origin/dev` 를 했다
+- [ ] 아침에 `git pull --ff-only` 로 원격을 받았다
 - [ ] base 브랜치가 맞다 — 개인 → `part/*` · 파트 → `dev` · 릴리즈 → `main`
 - [ ] CI 초록불. 빨간불이면 **실패 메시지를 끝까지 읽었다** (고치는 법이 그 안에 있다)
 </details>

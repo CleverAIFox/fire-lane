@@ -132,7 +132,7 @@
 | 67 | 운전요원 여정지도 복원 | 📄 | 원본이 소실됐고 페르소나(문재현)는 남아 있어 복원 가능하다. ★ **지금 그리지 않는다** — `P-60`(독립 앱 대 패드 부가기능)이 열려 있어 접점이 흔들린 상태다. `D-30` 이후 그려야 근거가 선다. 관제사 여정지도는 최저점이 「이동 중 지원」(-4)이며 `MASTER §9-2` 가 든다 |
 | 68 | README 가 루트인데 GIS 전용이다 | 🟡 | clone 한 사람이 처음 보는 파일인데 파이프라인만 설명한다. `src/firelane/README.md` 가 이미 파트 문서의 선례다. 루트는 **무엇을 만드나 · 5분 시작 · 파트별 갈림길 · 문서 어디에** 넷만 두고 나머지를 내린다. `src/cv/README.md` · `web/README.md` 는 해당 파트가 쓴다 |
 | 69 | 문서 참조 표기 강제자가 PLAN 에만 있다 | 🟡 | `MASTER §0-2` 가 문서명 없는 `§N` 을 MASTER 로 못박았다. PLAN 은 `test_declaration_sync.py::test_plan_section_refs_resolve` 가 이미 지키지만 **MASTER · DECISIONS 에는 같은 검사가 없다.** `test_docref` 는 하위 절이 1부터 연속인 상위 절만 보므로 대상이 `MASTER §12` · `MASTER §18` 둘뿐이고, 나머지 400여 참조는 세 문서 합집합으로 느슨하게 통과한다. `PLAN #NN` 표기도 안 센다. 좁히면 오탐이 몇 건인지 먼저 재고 정한다 |
-| 70 | 커밋된 `web/data` 가 낡아도 우는 곳이 없다 | 🟡 | 2026-09-02 에 `route_vehicle.json` 이 **08-31 산출인 채로 커밋돼 있었다.** `publish` 를 다시 돌리니 43구간의 `use` 가 각각 +1 로 바뀌었다. 재실행은 결정적이고(두 번 돌려 동일) `segments.geojson` 지문도 불변이라 **`DECISIONS §70` 재발이 아니라 생성물만 뒤처진 것**이다. 문제는 그 상태로 모든 게이트를 통과했다는 것이다 — `web_manifest` 는 **있는 것의 해시**를 뜰 뿐 "생산자를 다시 돌렸을 때 같은가"를 안 보고, `golden` 은 `segments.geojson` 만 본다. `DECISIONS §39` 가 반만 닫혀 있었다. ★ 붙일 곳은 `verify.sh` 다 — 파이프라인 전량 뒤에 `git diff --quiet web/data` 를 걸면 낡음이 즉시 보인다. CI 는 raw 가 없어 못 한다 |
+| 70 | 커밋된 `web/data` 가 낡아도 우는 곳이 없다 | ⬛ | **2026-09-02 완료.** `route_vehicle.json` 이 08-31 산출인 채로 전 게이트를 통과했다 — `web_manifest` 는 **있는 것의 해시**를 뜰 뿐 "생산자를 다시 돌렸을 때 같은가"를 안 보고 `golden` 은 `segments.geojson` 만 본다. `verify.sh` 의 파이프라인 전량 뒤에 `git diff --quiet -- web/data` 를 걸었다. **CI 는 raw 가 없어 못 하는 검사라 사람 쪽 게이트다** — `--fast` 로는 안 돈다. `DECISIONS §39` 가 반만 닫혀 있던 자리 |
 
 ### 1-23. 영상판정 유효거리 실측 설계
 

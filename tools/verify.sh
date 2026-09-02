@@ -165,6 +165,21 @@ else
     # ★ 게이트가 울고 또 풀리는가. check 가 통과하는 것만으로는
     #   해제 경로가 있는지 알 수 없다(DECISIONS §69).
     step "golden 게이트 해제 경로" uv run python tools/golden.py selftest
+    # ★ 생산자를 돌린 직후에만 알 수 있다. 커밋된 web/data 가 낡아도
+    #   web_manifest 는 **있는 것의 해시**를 뜰 뿐이고 golden 은
+    #   segments.geojson 만 본다. 2026-09-02 에 route_vehicle.json 이
+    #   08-31 산출인 채로 전 게이트를 통과했다(PLAN #70 · DECISIONS §39).
+    step "커밋된 web/data 가 최신인가" bash -c '
+        if git diff --quiet -- web/data data/processed/segments.geojson; then
+            echo "생산자 재실행과 커밋본이 같다"
+        else
+            echo "★ 낡았다 — 파이프라인 산출이 커밋본과 다르다:"
+            git diff --name-only -- web/data data/processed/segments.geojson
+            echo "  생성물이므로 그대로 커밋하면 된다. 다만 무엇이 왜"
+            echo "  움직였는지 먼저 본다 — golden 이 불변이면 값이 아니라"
+            echo "  커밋본이 뒤처진 것이다(PLAN #70)."
+            exit 1
+        fi'
 fi
 
 # ── 결과 ─────────────────────────────────────────────────────

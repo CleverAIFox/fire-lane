@@ -386,7 +386,10 @@ def check_docx_revised() -> list[str]:
 # ★ DECISIONS 는 보지 않는다. 폐기한 명령을 증거로 인용하는 것이 그 문서의
 #   일이고, 그것까지 세면 회고를 쓸 수 없게 된다(test_doc_style 과 같은 이유).
 CMD_DOCS = ("README.md", "docs/MASTER.md", "docs/PLAN.md",
-            "src/firelane/README.md", "web/README.md", "web/playbook.html")
+            "src/firelane/README.md", "web/README.md", "web/playbook.html",
+            # ★ 2026-09-02 추가. PR 을 여는 사람이 매번 읽는 문서인데
+            #   대상 밖이라 `git merge origin/dev` 두 곳이 살아 있었다.
+            ".github/pull_request_template.md")
 
 
 def _blocks(rel: str) -> list[list[str]]:
