@@ -331,6 +331,37 @@ def as_table(md: str) -> str:
     return "<table>" + "".join(body) + "</table>"
 
 
+def as_rows(md: str, *, cols: int | None = None) -> str:
+    """MASTER 표를 `<tr>` **만**으로. 표 껍데기는 템플릿 것이다.
+
+    ★ 2026-09-02. `as_table()` 은 `<table>` 을 통째로 만든다. 그것을
+      템플릿의 `<table class="w-full text-left text-xs">` 자리에 넣으면
+      Tailwind 스타일이 사라지고 헤더가 그냥 텍스트로 흐른다 — 실제로
+      그랬다(DECISIONS §107).
+
+      `<pre>` 는 요소를 살리고 안쪽만 갈아쳐서 복사 버튼이 남았는데,
+      표는 요소째 갈아쳐서 잃었다. 같은 원리를 표에도 적용한다.
+
+    ★ 헤더 행은 버린다. 템플릿의 `<thead>` 가 그 자리다. 대신 **열 수를
+      대조**한다 — MASTER 가 열을 늘렸는데 템플릿 헤더가 그대로면 표가
+      어긋나고, 그것은 조용히 일어난다.
+    """
+    rows = [r for r in md.splitlines() if not re.match(r"^\|[-\s|]+\|$", r)]
+    if not rows:
+        return ""
+    head = [c.strip() for c in rows[0].strip().strip("|").split("|")]
+    if cols is not None and len(head) != cols:
+        raise SystemExit(
+            f"★ 표의 열 수가 템플릿과 다르다 — MASTER {len(head)} · 템플릿 {cols}\n"
+            f"  MASTER 쪽 머리: {' | '.join(head)}\n"
+            "  템플릿의 <thead> 를 같이 고쳐라. 안 맞으면 표가 밀린다.")
+    out = []
+    for r in rows[1:]:
+        cells = [c.strip() for c in r.strip().strip("|").split("|")]
+        out.append("<tr>" + "".join(f"<td>{inline(c)}</td>" for c in cells) + "</tr>")
+    return "".join(out)
+
+
 def as_prose(md: str) -> str:
     out = []
     for para in re.split(r"\n(?=★)", md):
@@ -472,6 +503,14 @@ def fill(groups: dict) -> str:
         if sec is None:
             continue
         num = sec.group(1)
+        # ★ 2026-09-02. 템플릿이 **원하는 형태를 선언**한다.
+        #   `data-kind="pic"` 이면 그 자리에는 코드 블록만, `tbl` 이면 표만.
+        #   껍데기(복사 버튼 · 표 스타일)는 템플릿 것이고 내용만 정본에서
+        #   온다. 없으면 전부 넣는다(DECISIONS §106).
+        kind_want = None
+        km = re.search(r'data-kind="([^"]+)"', attrs)
+        if km:
+            kind_want = {k.strip() for k in km.group(1).split()}
         # 여는 태그 다음부터 짝이 맞는 닫는 태그까지가 채울 자리다.
         i, depth = m.end(), 1
         end = None
@@ -487,13 +526,37 @@ def fill(groups: dict) -> str:
         if not parts:
             missing.append(num)
             continue
+        if kind_want is not None:
+            # `rows` 는 표의 한 갈래다. 원본 조각의 형태는 `tbl` 이다.
+            _want = {"tbl"} if kind_want == {"rows"} else kind_want
+            parts = [(k, md) for k, md in parts if k in _want]
+            # ★ 한 절에 표가 여럿일 수 있다. `data-nth="1"` 로 고른다.
+            #   §10-2 는 판정 4종(4열)과 어휘 크로스워크(3열) 둘이다.
+            _nth = re.search(r'data-nth="(\d+)"', attrs)
+            if _nth and kind_want == {"rows"}:
+                k = int(_nth.group(1))
+                parts = parts[k - 1:k] if 0 < k <= len(parts) else []
+                if not parts:
+                    raise SystemExit(
+                        f'★ data-fill="{num}" data-nth="{k}" 인데 그 절에'
+                        f" 표가 그만큼 없다.")
+            if not parts:
+                raise SystemExit(
+                    f'★ data-fill="{num}" data-kind="{km.group(1)}" 인데 '
+                    f"그 절에 그 형태가 없다.\n"
+                    "  MASTER 쪽 형식이 바뀌었거나 data-kind 가 낡았다.")
         body = []
         for kind, md in parts:
             if kind == "pic":
                 body.append(as_tree(md) or as_flow(md)
                             or f"<pre>{html.escape(md)}</pre>")
             elif kind == "tbl":
-                body.append(as_rules(md) or as_table(md))
+                if kind_want == {"rows"}:
+                    # ★ 템플릿의 <thead> 열 수를 세어 대조한다.
+                    ths = len(re.findall(r"<th\b", tpl[max(0, m.start() - 900):m.start()]))
+                    body.append(as_rows(md, cols=ths or None))
+                else:
+                    body.append(as_rules(md) or as_table(md))
             else:
                 body.append(as_prose(md))
         out.append(tpl[pos:m.end()])
@@ -508,7 +571,21 @@ def fill(groups: dict) -> str:
             f"{', '.join('§' + x for x in missing)}\n"
             "  `data-fill` 이 드는 절이 §12-0 색인에 있어야 파싱 대상이 된다.")
 
-    print(f"  템플릿 주입 {filled}자리")
+    # ── 껍데기 검사 ──
+    # ★ 사람이 눈으로 보는 것은 미학이고, **구조 파괴는 기계가 잡는다.**
+    #   주입은 요소의 **안쪽만** 갈아친다는 것이 이 설계의 전제다. 태그나
+    #   클래스가 사라졌다면 자리를 잘못 걸었다는 뜻이고, 그것이 §10-2 표가
+    #   Tailwind 스타일을 잃은 경로였다(DECISIONS §107).
+    doc = "".join(out)
+    for mm in re.finditer(r"<(\w+)([^>]*\bdata-fill\b[^>]*)>", tpl):
+        shell = f"<{mm.group(1)}{mm.group(2)}>"
+        if shell not in doc:
+            raise SystemExit(
+                f"★ 주입 자리의 껍데기가 사라졌다 — {shell[:70]}\n"
+                "  fill() 은 요소의 **안쪽만** 갈아친다. 태그·클래스가\n"
+                "  바뀌었다면 자리를 잘못 걸었다.")
+
+    print(f"  템플릿 주입 {filled}자리 · 껍데기 유지 확인")
     return "".join(out)
 
 
