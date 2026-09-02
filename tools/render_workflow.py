@@ -18,7 +18,8 @@ render_workflow.py — MASTER §12 를 협업 방침 화면으로 렌더한다.
   손으로 쓴 HTML 에는 그 셋 중 무엇도 안 걸렸다.
 
 ── 무엇을 하는가 ───────────────────────────────────────────────
-`MASTER §12` 를 읽어 **종류별로 갈라** 탭 넷에 나눈다.
+`MASTER §12` 를 읽어 **종류별로 갈라** 탭 셋에 나눈다.
+판단 근거는 각 절의 `<details>` 안으로 접는다.
 
     들여쓴 블록 · ``` 블록   → 그림    도식과 명령
     | 표 |                   → 표      룰셋 · 용어 · 충돌 처리
@@ -32,7 +33,7 @@ render_workflow.py — MASTER §12 를 협업 방침 화면으로 렌더한다.
   보므로 여기 스크립트가 들어가면 검사 밖에서 자란다.
 
 IN    docs/MASTER.md §12
-OUT   web/workflow.html  (생성물. gitignore)
+OUT   web/workflow.html  (생성물이지만 커밋한다 — .gitignore 주석 참조)
 PARAM --check
 """
 from __future__ import annotations
@@ -73,6 +74,95 @@ def section12(text: str) -> list[str]:
 
 
 PLAYBOOK = ROOT / "web/playbook.html"
+
+
+INDEX_HEAD = "### 12-0. 상황별 색인"
+
+
+def index(lines: list[str]) -> dict[str, list[str]]:
+    """§12-0 색인표를 읽는다. **이것이 템플릿의 인터페이스다.**
+
+    ★ 세 번째 방향이다.
+
+        audit    MASTER §12 → 화면      절이 화면에 담겼는가
+        slots    화면 → MASTER          화면이 든 절이 실재하는가
+        index    MASTER §12 → 상황      ★ 절이 어느 상황에 속하는가
+
+      앞의 둘만 있으면 **절이 화면에 담기기만 하면 통과**한다. 그래서
+      `§12-7` · `§12-8` · `§12-8a` · `§12-9` 가 형태별 탭 어딘가에는
+      들어가면서 정작 "언제 읽는 절인가" 가 없는 채로 남았다. 사람은
+      "아침에 뭐 하나" 로 찾지 "몇 절인가" 로 찾지 않는다.
+
+    ★ 색인은 `§12` 밖도 든다. `data-slot` 이 이미 `§0` · `§10-2` ·
+      `§14-1` · `§18-11` 을 다루고 있었다 — 정본이 그 사실을 따라잡는다.
+    """
+    mst = SRC.read_text(encoding="utf-8")
+    if INDEX_HEAD not in mst:
+        raise SystemExit(
+            f"★ MASTER 에 `{INDEX_HEAD}` 가 없다.\n"
+            "  협업 화면의 인터페이스가 그 표다. 지웠으면 렌더러도 같이 고쳐라.")
+    body = mst.split(INDEX_HEAD, 1)[1]
+    body = body.split("\n### ", 1)[0]
+
+    situ: dict[str, list[str]] = {}
+    for row in re.findall(r"^\|([^|]+)\|([^|]+)\|\s*$", body, re.M):
+        name, refs = (c.strip() for c in row)
+        if name.startswith("-") or name in ("상황",):
+            continue
+        got = re.findall(r"§(\d+(?:-\d+[a-z]?)?)", refs)
+        if got:
+            situ[name] = got
+
+    if not situ:
+        raise SystemExit("★ §12-0 색인표에서 절을 하나도 못 읽었다. 표 형식을 봐라.")
+
+    # ── 전사 · 모든 §12 절이 정확히 한 상황에 있는가 ──
+    subs = [m.group(1) for ln in lines
+            if (m := re.match(r"^### (12-[0-9a-z]+)\.", ln))
+            and m.group(1) != "12-0"]
+    placed: dict[str, list[str]] = {}
+    for name, refs in situ.items():
+        for r in refs:
+            placed.setdefault(r, []).append(name)
+
+    lost = [s for s in subs if s not in placed]
+    if lost:
+        raise SystemExit(
+            f"★ §12 절 {len(lost)}개가 어느 상황에도 없다 — "
+            f"{', '.join('§' + s for s in lost)}\n"
+            "  §12-0 색인표에 넣어라. 넣을 상황이 없으면 그 절은 아직\n"
+            "  아무도 안 읽는다는 뜻이고, `밑그림` 칸이 그 자리다.")
+
+    dup = {r: v for r, v in placed.items() if len(v) > 1}
+    if dup:
+        raise SystemExit(
+            "★ 한 절이 두 상황에 있다 — "
+            + " · ".join(f"§{r}({'·'.join(v)})" for r, v in dup.items())
+            + "\n  그 절이 두 가지를 하고 있다. 쪼개거나 한쪽을 지워라.")
+
+    # ── 단사 · 색인이 드는 절이 실재하는가 (§12 밖 포함) ──
+    ghost = [r for r in placed
+             if not re.search(rf"^#{{2,3}} {re.escape(r)}\. ", mst, re.M)]
+    if ghost:
+        raise SystemExit(
+            f"★ 색인이 없는 절을 든다 — {', '.join('§' + g for g in ghost)}\n"
+            "  절을 지웠거나 번호가 바뀌었다.")
+
+    # ── 소비 · 화면이 쓰는 슬롯이 색인 안에 있는가 ──
+    if PLAYBOOK.exists():
+        html = PLAYBOOK.read_text(encoding="utf-8", errors="ignore")
+        want = set(re.findall(r'data-slot="([^"]+)"', html))
+        off = sorted(w for w in want if w not in placed)
+        if off:
+            raise SystemExit(
+                f"★ playbook 이 색인 밖 절을 든다 — "
+                f"{', '.join('§' + o for o in off)}\n"
+                "  화면에 있으면 상황이 있다는 뜻이다. 색인에 넣어라.")
+
+    print(f"  §12-0 색인 {len(situ)}상황 · 절 {len(placed)}개 "
+          f"전사·단사·소비 닫힘")
+    return situ
+
 
 
 def slots() -> None:
@@ -453,9 +543,11 @@ code.p-fix{{color:#dc2626}} code.p-docs{{color:#475569}}
   pre,table{{page-break-inside:avoid}}
   a[href]:after{{content:""}}
 }}
+
 </style>
 </head>
-<body><div class="wrap">
+<body>
+<div class="wrap">
 <header>
   <h1>Fire-Lane · 협업 방침</h1>
   <div class="sub">5인 · 4계층 브랜치 · main 단독 배포 · 승인 대신 검사</div>
@@ -482,6 +574,7 @@ def main() -> int:
     _groups = classify(_lines)
     audit(_lines, _groups)          # ★ 구조가 바뀌면 여기서 죽는다
     slots()                         # ★ 반대 방향 — 화면 → MASTER
+    index(_lines)                   # ★ 세 번째 — 절 → 상황
     doc = render(_groups)
 
     if a.check:

@@ -105,6 +105,11 @@ def check() -> list[tuple[str, str, str]]:
         for f in ([o.get("produced_by")] if o.get("produced_by") else []) \
                 + list(o.get("consumers") or []):
             f = str(f).split("::")[0]
+            # ★ 2026-09-02. 경로가 아닌 것을 거른다. 괄호나 공백이 있으면
+            #   사람이 만드는 산출의 **설명문**이다(`현장 실측 (사람)`).
+            #   경로로 대조하면 영원히 빨간불이고 사람이 검사를 끈다(§69).
+            if " " in f or "(" in f:
+                continue
             if not (ROOT / f).exists():
                 out.append((FAIL, f"outputs.{k}", f"{f} — 저장소에 없다"))
 
@@ -119,9 +124,21 @@ def check() -> list[tuple[str, str, str]]:
     for doc in sorted((ROOT / "docs").glob("*.md")) + [ROOT / "README.md"]:
         if not doc.exists():
             continue
-        for m in sorted(set(DOC_PATH.findall(doc.read_text(encoding="utf-8")))):
-            if not (ROOT / m).exists():
-                out.append((WARN, doc.name, f"{m} — 없다"))
+        _txt = doc.read_text(encoding="utf-8")
+        # ★ 2026-09-02. `DECISIONS §1~§9` 는 지운 일회성 스크립트의 **부검**
+        #   이다. 제목이 `(삭제됨)` 이라고 명시한다. 그것을 죽은 참조로 세면
+        #   회고를 쓸 수 없게 되고, 그러면 사람이 검사를 끈다 —
+        #   `stale-ok` · `voice-ok` 와 같은 자리다(DECISIONS §97).
+        #   같은 줄이나 같은 절 제목에 폐기 표시가 있으면 넘긴다.
+        _gone = {ln for ln in _txt.splitlines()
+                 if any(k in ln for k in
+                        ("삭제", "폐기", "지웠다", "되돌렸다", "없앴다"))}
+        for m in sorted(set(DOC_PATH.findall(_txt))):
+            if (ROOT / m).exists():
+                continue
+            if any(m in ln for ln in _gone):
+                continue
+            out.append((WARN, doc.name, f"{m} — 없다"))
 
     # ⑨ ★ 코드가 하드코딩한 raw 경로 — 대장을 안 거치는 것들
     #
@@ -141,7 +158,20 @@ def check() -> list[tuple[str, str, str]]:
         for m in HARD.finditer(txt):
             rel = (f"{m.group(1)}/{m.group(2)}" if m.group(1)
                    else m.group(3))
-            if rel.startswith("_") or "*" in rel:
+            # ★ `...` 은 머리말의 생략 표기지 경로가 아니다.
+            #   `ledger_feeds` docstring 의 `RAW/"safety"/"safety_..._.csv"` 가
+            #   그것이다. 실행되는 코드가 아니라 설명이다.
+            if rel.startswith("_") or "*" in rel or "..." in rel:
+                continue
+            # ★ 2026-09-02. 대장은 `stem` + `ext` 로 실물을 찾는데 이 검사만
+            #   **경로 문자열 정확 일치**로 봤다. 그래서
+            #   `safety/safety_fire_access_jngj-dong_20250731.csv` 가
+            #   대장의 `stem: safety_fire_access` 와 같은 것을 가리키는데도
+            #   걸렸다. 대장이 쓰는 방식과 같은 방식으로 대조한다.
+            #   ★ 그래도 **하드코딩은 하드코딩이다** — 개명하면 깨진다.
+            #     그 위험은 PLAN #74 가 든다.
+            _stem = Path(rel).name.split("_20")[0]
+            if any(r == rel or Path(r).name.startswith(_stem) for r in led):
                 continue
             if not any(r == rel for r in led):
                 out.append((FAIL, str(py.relative_to(ROOT)),

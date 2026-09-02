@@ -128,6 +128,14 @@ step "CI 환경 재현"     bash -c '
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
+# ★ 2026-09-02 배선. 오늘 캡션 절까지 붙여놓고 **어디서도 안 부르고
+#   있었다.** 사람이 손으로 칠 때만 도는 도구는 이탈 후 아무도 안 부른다.
+step "기획서 대조"     uv run python tools/docx_check.py
+# ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
+step "선언 ↔ 실물"     uv run python tools/refcheck.py
+# ★ 전수 스캔. `--repo` 는 데이터 레이크 없이 저장소 트리만 본다 —
+#   항목에서 출발하는 검사는 **항목이 없는 것을 영원히 못 본다.**
+step "트리 전수 대조"   uv run python tools/treecheck.py --repo
 step "web/data 계보"    uv run python tools/web_manifest.py --check
 step "로컬 찌꺼기"      uv run python tools/tidy.py
 step "web/data 용량"    bash -c '
@@ -165,6 +173,21 @@ else
     # ★ 게이트가 울고 또 풀리는가. check 가 통과하는 것만으로는
     #   해제 경로가 있는지 알 수 없다(DECISIONS §69).
     step "golden 게이트 해제 경로" uv run python tools/golden.py selftest
+    # ★ 생산자를 돌린 직후에만 알 수 있다. 커밋된 web/data 가 낡아도
+    #   web_manifest 는 **있는 것의 해시**를 뜰 뿐이고 golden 은
+    #   segments.geojson 만 본다. 2026-09-02 에 route_vehicle.json 이
+    #   08-31 산출인 채로 전 게이트를 통과했다(PLAN #70 · DECISIONS §39).
+    step "커밋된 web/data 가 최신인가" bash -c '
+        if git diff --quiet -- web/data data/processed/segments.geojson; then
+            echo "생산자 재실행과 커밋본이 같다"
+        else
+            echo "★ 낡았다 — 파이프라인 산출이 커밋본과 다르다:"
+            git diff --name-only -- web/data data/processed/segments.geojson
+            echo "  생성물이므로 그대로 커밋하면 된다. 다만 무엇이 왜"
+            echo "  움직였는지 먼저 본다 — golden 이 불변이면 값이 아니라"
+            echo "  커밋본이 뒤처진 것이다(PLAN #70)."
+            exit 1
+        fi'
 fi
 
 # ── 결과 ─────────────────────────────────────────────────────

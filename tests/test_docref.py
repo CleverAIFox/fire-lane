@@ -198,11 +198,17 @@ def test_subsection_numbers_are_contiguous():
             continue                           # 18-2a 류는 알파벳 분기다
         by_top.setdefault(m.group(1), []).append(int(m.group(2)))
 
+    # ★ 0 부터 시작하는 것을 인정한다. `§10-0` 처럼 **머리말 슬롯**이
+    #   앞에 붙는 절이 있고, MASTER 자신이 `## 0. 서술 규약` 을 쓴다.
+    #   섞이는 것만 막으면 된다 — 0..n-1 이거나 1..n 이거나 하나여야 한다.
     bad = []
     for top, nums in sorted(by_top.items(), key=lambda kv: int(kv[0])):
-        want = list(range(1, len(nums) + 1))
-        if sorted(nums) != want:
-            bad.append(f"  §{top}: {sorted(nums)} — 1..{len(nums)} 이어야 한다")
+        got = sorted(nums)
+        ok = (got == list(range(1, len(got) + 1))
+              or got == list(range(0, len(got))))
+        if not ok:
+            bad.append(f"  §{top}: {got} — 1..{len(got)} 또는 "
+                       f"0..{len(got) - 1} 이어야 한다")
 
     assert not bad, ("하위 절 번호가 연속이 아니다\n" + "\n".join(bad)
                      + "\n\n  지운 절은 슬롯을 유지한다(MASTER §0).")
