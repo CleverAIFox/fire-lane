@@ -51,7 +51,9 @@ ADMINS = ["AIMasterFox", "diyon13", "gayeoniii", "marscoolcat", "wlsdnr052475"]
 
 EXPECT = {
     "release": {
-        "ref": "refs/heads/main", "approvals": 1, "codeowners": True,
+        # ★ Code Owners 는 끈다. 켜면 릴리즈 PR 을 올리는 사람이 곧 포괄
+        #   소유자라 자기 PR 을 자기가 승인 못 한다(DECISIONS §108).
+        "ref": "refs/heads/main", "approvals": 1, "codeowners": False,
         "merge": ["merge"], "checks": ["contract-shared", "contract-strict"],
     },
     "trunk": {
