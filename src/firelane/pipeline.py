@@ -192,8 +192,11 @@ def c(t, k):
 
 
 def check_only():
+    from firelane import paths as _paths
+
     print(f"RAW        {RAW}")
-    if RAW.is_dir():
+    # ★ 마운트가 끊기면 `is_dir()` 이 예외를 던진다(§104).
+    if _paths.alive(RAW):
         n = sum(1 for _ in RAW.rglob("*") if _.is_file())
         sz = sum(f.stat().st_size for f in RAW.rglob("*") if f.is_file()) / 1e9
         print(f"           {n}개 파일 · {sz:.2f} GB")

@@ -191,6 +191,49 @@ def test_plan_row_numbers_are_contiguous_and_sorted():
     assert not dup, f"중복 번호: {dup}"
 
 
+def test_master_and_decisions_bare_refs_resolve():
+    """문서명 없는 `§N` 은 MASTER 를 가리킨다(MASTER §0-2).
+
+    ★ 2026-09-02. `PLAN` 에만 이 검사가 있었다(`test_plan_section_refs_resolve`).
+      규약은 세 문서 전부에 적용되는데 강제자가 하나뿐이었다 — `PLAN #69` 가
+      그 공백을 들고 있었고 이것이 그것을 닫는다(DECISIONS §103).
+
+    ★ 자기 문서를 가리키는 것도 허용한다. `DECISIONS` 안의 `§86` 은
+      맥락상 자기 절이고, MASTER 절 번호와 겹치면 어느 쪽인지 사람이
+      가린다 — 여기서는 **어디에도 없는 번호**만 잡는다.
+    """
+    # ★ 세 문서 합집합으로 푼다. `MASTER` 가 `DECISIONS §79` 를 bare `§79`
+    #   로 쓰는 관행이 이미 굳어 있고, 그것까지 잡으면 수백 곳이 걸려
+    #   사람이 검사를 끈다(§78-4). 여기서 잡는 것은 **어디에도 없는 번호**다.
+    master_secs: set[str] = set()
+    for _rel in ("docs/MASTER.md", "docs/PLAN.md", "docs/DECISIONS.md"):
+        master_secs |= set(re.findall(
+            r"^#{2,3} ([0-9]+(?:-[0-9a-z]+)?)\. ",
+            (ROOT / _rel).read_text(encoding="utf-8"), re.M))
+    for rel in ("docs/MASTER.md", "docs/DECISIONS.md"):
+        txt = (ROOT / rel).read_text(encoding="utf-8")
+        own = set(re.findall(r"^#{2,3} ([0-9]+(?:-[0-9a-z]+)?)\. ", txt, re.M))
+        bad = set()
+        # ★ 들여쓴 블록은 **인용**이다. `DECISIONS §18` 이 무너진 번호
+        #   체계를 그대로 옮겨 적는데, 실체가 없는 것이 그 문장의 요지다.
+        #   과거를 적는 문서에서 과거를 위반으로 세면 그 문서를 못 쓴다.
+        body = "\n".join(l for l in txt.splitlines()
+                          if not (l.startswith("    ") and l.strip()))
+        for m in re.finditer(r"(?<![A-Za-z])§\s?([0-9]+(?:-[0-9a-z]+)?)", body):
+            # 앞에 문서명이 붙은 것은 그 문서 소관이다.
+            head = body[max(0, m.start() - 12):m.start()]
+            if any(k in head for k in ("MASTER", "PLAN", "DECISIONS", "기획서",
+                                       "workflow", "playbook")):
+                continue
+            num = m.group(1)
+            if num not in master_secs and num not in own:
+                bad.add(num)
+        assert not bad, (
+            f"{rel} 안에 실체가 없는 절 참조: {sorted(bad)}\n"
+            "  문서명 없는 `§N` 은 MASTER 를 가리킨다(MASTER §0-2).\n"
+            "  다른 문서면 `PLAN §4-5` 처럼 소속을 적어라.")
+
+
 def test_plan_section_refs_resolve():
     """`§N` · `§N-M` 참조가 이 문서 안에 실재해야 한다.
 

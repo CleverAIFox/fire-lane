@@ -107,7 +107,8 @@ class F:
 def walk(base: Path) -> tuple[list[str], list[str]]:
     """(파일, 디렉터리). **정렬해서 돌려준다 — 멱등의 전제다.**"""
     files, dirs = [], []
-    if not base.is_dir():
+    # ★ 마운트가 끊기면 `is_dir()` 이 예외를 던진다(DECISIONS §104).
+    if not paths.alive(base):
         return files, dirs
     for p in base.rglob("*"):
         if any(part in SKIP_DIRS for part in p.relative_to(base).parts):
