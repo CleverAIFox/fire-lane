@@ -434,177 +434,82 @@ def anchor(num: str) -> str:
     return f"#{num}-{slug}"
 
 
-def render(groups: dict, order: list[str]) -> str:
-    # 절별 산문을 미리 모은다. 각 절 끝에 <details> 로 붙는다.
-    prose: dict[str, list[str]] = {}
+def fill(groups: dict) -> str:
+    """**하네스.** 템플릿의 `data-fill` 영역에 MASTER 절을 끼운다.
+
+    ★ 템플릿은 `web/playbook.html` 이다. 처음부터 그랬다 —
+      `data-slot="12-1"` · `data-canon="MASTER §12-1"` 이 그 선언이고,
+      `slots()` 가 그것을 읽어 MASTER 와 대조해 왔다. **읽기만 하고
+      쓰지는 않았다.**
+
+    ★ 2026-09-02 까지 `render()` 는 HTML 을 f-string 으로 처음부터 새로
+      짰다. 같은 내용을 두 모양으로 만든 셈이고, 상황이 열둘이 되자
+      탭 CSS 가 넷까지만 알아서 화면이 비었다. 모양은 한 곳에만 있어야
+      한다(DECISIONS §105).
+
+    ── 규칙 ─────────────────────────────────────────────────
+    `data-fill` 이 있는 요소의 **안쪽만** 갈아끼운다. 카드 껍데기
+    (제목 · `canon-tag` · 스타일)는 템플릿 것이고 건드리지 않는다.
+    `data-fill` 이 없는 카드는 손으로 쓴 산문이므로 그대로 둔다 —
+    **자동으로 채울 것과 사람이 쓸 것을 슬롯 하나로 가른다.**
+    """
+    tpl = PLAYBOOK.read_text(encoding="utf-8")
+
+    # 절 번호 → 그 절의 조각들
+    by_sec: dict[str, list[tuple[str, str]]] = {}
     for xs in groups.values():
         for title, kind, md in xs:
-            if kind == "why":
-                prose.setdefault(title, []).append(md)
+            m = re.match(r"§([0-9]+(?:-[0-9a-z]+)?)", title)
+            if m:
+                by_sec.setdefault(m.group(1), []).append((kind, md))
 
-    def detail(title: str) -> str:
-        """그 절의 '왜' — 접힌 채로 둔다. 층 2다."""
-        md = prose.get(title)
-        if not md:
-            return ""
-        sec = re.match(r"§([0-9]+(?:-[0-9a-z]+)?)", title)
-        link = ""
-        if sec:
-            link = (f'<a class="more" target="_blank" rel="noopener"'
-                    f' href="https://github.com/woongtopia/fire-lane/blob/main/'
-                    f'docs/MASTER.md{anchor(sec.group(1))}">MASTER §{sec.group(1)} 전문 →</a>')
-        # ★ 내용을 div 하나로 감싼다. CSS 가 이 div 만 띄우면 되므로
-        #   문단이 여럿이어도 서로 포개지지 않는다.
-        return ('<details class="why"><summary>왜 이렇게 정했나</summary>'
-                '<div class="pop">'
-                + "".join(as_prose(m) for m in md) + link + "</div></details>")
+    filled, missing = 0, []
+    out = []
+    pos = 0
+    for m in re.finditer(r'<(\w+)([^>]*\bdata-fill\b[^>]*)>', tpl):
+        tag, attrs = m.group(1), m.group(2)
+        sec = re.search(r'data-fill="([^"]+)"', attrs)
+        if sec is None:
+            continue
+        num = sec.group(1)
+        # 여는 태그 다음부터 짝이 맞는 닫는 태그까지가 채울 자리다.
+        i, depth = m.end(), 1
+        end = None
+        for mm in re.finditer(rf"</?{tag}\b", tpl[i:]):
+            depth += -1 if mm.group(0).startswith("</") else 1
+            if depth == 0:
+                end = i + mm.start()
+                break
+        if end is None:
+            raise SystemExit(f"★ 템플릿의 data-fill=\"{num}\" 이 안 닫혔다.")
 
-    def block(situ: str) -> str:
-        """한 상황의 조각들. **형태는 그리는 방법일 뿐 가르는 축이 아니다.**"""
-        parts, last = [], None
-        for title, kind, md in groups.get(situ, []):
-            if title != last:
-                if last:
-                    parts.append(detail(last))
-                parts.append(f"<h3>{html.escape(title)}</h3>")
-                last = title
+        parts = by_sec.get(num)
+        if not parts:
+            missing.append(num)
+            continue
+        body = []
+        for kind, md in parts:
             if kind == "pic":
-                parts.append(as_tree(md) or as_flow(md)
-                             or f"<pre>{html.escape(md)}</pre>")
+                body.append(as_tree(md) or as_flow(md)
+                            or f"<pre>{html.escape(md)}</pre>")
             elif kind == "tbl":
-                parts.append(as_rules(md) or as_table(md))
-        if last:
-            parts.append(detail(last))
-        return "".join(parts) or "<p>없음</p>"
+                body.append(as_rules(md) or as_table(md))
+            else:
+                body.append(as_prose(md))
+        out.append(tpl[pos:m.end()])
+        out.append("\n" + "".join(body) + "\n")
+        pos = end
+        filled += 1
+    out.append(tpl[pos:])
 
-    # ★ 탭은 `MASTER §12-0` 색인표의 **표 순서**를 그대로 따른다. 여기서
-    #   순서를 정하지 않는다 — 정하면 색인과 화면이 갈리고 그것이 §94 다.
-    #   `order` 는 main 이 색인에서 읽어 넘긴다(dict 는 삽입 순서를 지킨다).
-    tabs = [(s, re.sub(r"`([^`]+)`\s*", r"\1 ", s).strip(), "")
-            for s in order if s in groups]
+    if missing:
+        raise SystemExit(
+            f"★ 템플릿이 채울 절을 못 찾는다 — "
+            f"{', '.join('§' + x for x in missing)}\n"
+            "  `data-fill` 이 드는 절이 §12-0 색인에 있어야 파싱 대상이 된다.")
 
-    radios = "".join(
-        f'<input type="radio" name="t" id="t{i}"{" checked" if i == 0 else ""}>'
-        for i, _ in enumerate(tabs))
-    labels = "".join(
-        f'<label for="t{i}"><b>{t}</b></label>'
-        for i, (_, t, _d) in enumerate(tabs))
-    panes = "".join(
-        f'<section class="p{i}">{block(k)}</section>'
-        for i, (k, _, _) in enumerate(tabs))
-
-    return f"""<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fire-Lane 협업 방침</title>
-<!-- ★ 생성물이다. 손으로 고치지 마라. 정본은 docs/MASTER.md §12 이고
-     tools/render_workflow.py 가 만든다. 고치면 다음 배포에 덮인다. -->
-<style>
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-
-/* ★ 2026-09-02. 와꾸를 web/playbook.html 과 맞췄다. 종전에는 파란 그라데이션
-   헤더에 어두운 코드블록이었고, 같은 사이트에 나란히 배포되는 두 화면이
-   서로 다른 디자인이었다. 팀원은 둘을 오가며 읽는다.
-   ★ A4 는 흰색이다. 이 문서는 인쇄되거나 PDF 로 돌아다닌다. */
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,
- "Segoe UI","Noto Sans KR",sans-serif;
- background:#fff;color:#333;padding:32px 0;line-height:1.75;font-size:16px}}
-.wrap{{max-width:1100px;margin:0 auto;padding:0 24px}}
-
-header{{border:1px solid #d0d7de;border-left:4px solid #0969da;
- border-radius:10px;padding:26px 28px;background:#f6f8fa}}
-h1{{font-size:26px;font-weight:800;letter-spacing:-.5px;color:#0f172a}}
-.sub{{font-size:14px;color:#57606a;margin-top:8px}}
-.canon{{display:inline-block;margin-top:14px;font-size:12.5px;color:#57606a;
- background:#fff;border:1px solid #d0d7de;padding:7px 14px;border-radius:20px}}
-.canon b{{color:#0969da}}
-
-input[name=t]{{display:none}}
-/* ★ 탭을 줄바꿈시킨다. 가로 스크롤은 있는 줄도 모르게 만든다. */
-.tabs{{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 24px}}
-.tabs label{{flex:1 1 200px;cursor:pointer;padding:13px 14px;border-radius:10px;
- background:#fff;border:1px solid #d0d7de;text-align:center;transition:.15s}}
-.tabs label b{{display:block;font-size:15px;color:#24292f;font-weight:700}}
-.tabs label span{{display:block;font-size:12px;color:#8c959f;margin-top:4px}}
-.tabs label:hover{{border-color:#0969da;background:#f6f8fa}}
-
-section{{display:none}}
-#t0:checked~.tabs label[for=t0],#t1:checked~.tabs label[for=t1],
-#t2:checked~.tabs label[for=t2],#t3:checked~.tabs label[for=t3]
- {{background:#0969da;border-color:#0969da}}
-#t0:checked~.tabs label[for=t0] b,#t1:checked~.tabs label[for=t1] b,
-#t2:checked~.tabs label[for=t2] b,#t3:checked~.tabs label[for=t3] b{{color:#fff}}
-#t0:checked~.tabs label[for=t0] span,#t1:checked~.tabs label[for=t1] span,
-#t2:checked~.tabs label[for=t2] span,#t3:checked~.tabs label[for=t3] span
- {{color:rgba(255,255,255,.85)}}
-#t0:checked~.p0,#t1:checked~.p1,#t2:checked~.p2,#t3:checked~.p3{{display:block}}
-
-h3{{font-size:15px;font-weight:800;color:#0f172a;margin:34px 0 14px;
- padding-left:12px;border-left:4px solid #0969da}}
-h3:first-child{{margin-top:6px}}
-
-/* 코드블록 — 옅은 회색 + 좌측 3px 색띠. 어두운 배경을 쓰지 않는다. */
-pre{{background:#f6f8fa;border:1px solid #d0d7de;border-left:3px solid #0969da;
- border-radius:8px;padding:18px 20px;overflow-x:auto;margin:14px 0;
- font-family:"D2Coding",Consolas,Monaco,monospace;
- font-size:14px;line-height:1.9;color:#24292f}}
-
-table{{width:100%;border-collapse:separate;border-spacing:0;font-size:15px;
- margin:14px 0;background:#fff;border:1px solid #d0d7de;border-radius:8px;
- overflow:hidden}}
-th,td{{padding:12px 15px;text-align:left;vertical-align:top;
- border-bottom:1px solid #eaeef2}}
-th{{background:#f6f8fa;color:#24292f;font-size:13px;font-weight:800}}
-tr:last-child td{{border-bottom:none}}
-tbody tr:hover,table tr:hover{{background:#f6f8fa}}
-
-code{{font-family:"D2Coding",Consolas,Monaco,monospace;font-size:14px;
- background:#eff6ff;color:#0550ae;padding:2px 7px;border-radius:5px}}
-pre code{{background:none;color:inherit;padding:0}}
-b{{color:#0f172a;font-weight:700}}
-p{{margin:14px 0;font-size:15.5px;color:#333}}
-
-/* 커밋 접두사 색 — playbook 과 같은 값. 본문 어디에 나오든 같은 색이면
-   눈으로 스캔이 빨라진다(§12-6). */
-code.p-gis{{color:#0284c7}} code.p-cv{{color:#7c3aed}}
-code.p-ui{{color:#db2777}} code.p-api{{color:#059669}}
-code.p-fix{{color:#dc2626}} code.p-docs{{color:#475569}}
-
-/* ★ 인쇄. 이 문서는 결국 A4 로 나가거나 PDF 로 돌아다닌다.
-   탭이 접힌 채 인쇄되면 넷 중 하나만 보인다. 전부 펼친다. */
-@media print{{
-  body{{padding:0;font-size:12pt;background:#fff}}
-  .wrap{{max-width:none;padding:0}}
-  .tabs{{display:none}}
-  section{{display:block !important;page-break-inside:auto}}
-  section+section{{page-break-before:always}}
-  header{{border:1px solid #999;background:#fff}}
-  pre,table{{page-break-inside:avoid}}
-  a[href]:after{{content:""}}
-}}
-
-</style>
-</head>
-<body>
-<div class="wrap">
-<header>
-  <h1>Fire-Lane · 협업 방침</h1>
-  <div class="sub">5인 · 4계층 브랜치 · main 단독 배포 · 승인 대신 검사</div>
-  <div class="canon">정본은 <b>docs/MASTER.md §12</b> — 이 화면은 생성물이다</div>
-</header>
-{radios}
-<div class="tabs">{labels}</div>
-{panes}
-<footer>
-  생성 <b>tools/render_workflow.py</b> · 정본 <b>docs/MASTER.md §12</b><br>
-  이 파일을 손으로 고치면 다음 배포에 덮인다. 정본을 고쳐라.
-</footer>
-</div></body>
-</html>
-"""
+    print(f"  템플릿 주입 {filled}자리")
+    return "".join(out)
 
 
 def build() -> str:
@@ -622,7 +527,7 @@ def build() -> str:
     groups = classify(lines, {r: s for s, rs in situ.items() for r in rs})
     audit(lines, groups, want)
     slots()
-    return render(groups, list(situ))
+    return fill(groups)
 
 
 def main() -> int:
