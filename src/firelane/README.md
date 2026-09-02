@@ -1,24 +1,32 @@
 # src/firelane — 데이터 파이프라인
 
-## 파일
+파일별 역할은 루트 `README.md` 의 **구조** 절이 든다. 이 문서는 **대장에
+데이터를 추가하는 방법**이 본체다.
 
-| 파일 | 역할 |
-|---|---|
-| `ingest.py` | `data/raw` → `data/processed` 전체 변환. 유일한 진입점 |
-| `probe.py` | 좌표계 역추정 / 그래프 위상 진단 |
-| `krgis/crs.py` | 한국 좌표계 판별·안전 변환 유틸 |
-
-## 실행
+## 실행 — 진입점은 하나다
 
 ```bash
-python -m firelane.ingest                  # 전체
-python -m firelane.ingest --only ngii_road # 개별
-python -m firelane.ingest --check          # 원본 존재·체크섬만
+uv run fire-lane                  # 전량. ingest → … → publish → 계약 → 지문
+uv run fire-lane --check          # 실행 없이 상태만
+uv run fire-lane --from segments  # 그 단계부터
+uv run fire-lane --only publish
 ```
+
+★ **`uv run` 을 빼면 `command not found` 다.** 진입점은 `.venv/bin/fire-lane`
+에 설치되고 그 폴더는 PATH 에 없다.
+
+★ **단계를 직접 부르지 않는다.** `python -m firelane.ingest` 는 돌기는 하나
+`pipeline` 이 세우는 `FIRE_LANE_STAGE` 가 없어 계보가 빠진다.
+`guards.warn_direct_call()` 이 그때 경고한다 — 막지는 않는다. 디버깅에는
+필요하고, 정상 경로를 막으면 사람이 우회를 습관으로 만든다(MASTER §18-13).
+
+    ingest → segments → streetlight → terrain → ortho → publish
+
+상세는 `MASTER §14-2`. 게이트와 계층은 `MASTER §18` 이 정본이다.
 
 ## 새 데이터를 추가할 때
 
-**코드를 고치지 마라. `sources.yaml`에 항목을 추가한다.**
+**코드를 고치지 않는다. `sources.yaml` 에 항목을 추가한다.**
 
 ```yaml
   새키:
@@ -74,7 +82,7 @@ python -m firelane.ingest --check          # 원본 존재·체크섬만
 ★ 별칭이 넷 살아 있다 — `ngii1k` · `ngii_1k` 는 `shp_dir` 의 옛 이름이고
 `csv_point` 는 `csv_points` 의 오타판이다. 2026-08-13 에 `kind: csv_point`
 가 핸들러 이름(`csv_points`)과 달라 `streetlight` 가 두 겹으로 막혀 있던
-사고가 있었고, 그때 받아주기로 한 것이다. **새 대장 항목에는 쓰지 마라.**
+사고가 있었고, 그때 받아주기로 한 것이다. **새 대장 항목에는 쓰지 않는다.**
 `tests/test_guards.py::test_ingest_kinds_are_documented` 가 이 표를 지킨다.
 
 ## 파일 명명 규칙

@@ -159,21 +159,45 @@ vehicle_profiles:
     소방청 「소방장비 기본규격」 7종. 고시 2025-12-24 (본문 부칙 2025-12-29).
     스코프 전국 단일 — 지역·소방서별로 다르지 않다.
     원문은 datasets 의 kfs_* 항목이 가리킨다.
+  # ★ 2026-09-02. `absent` 는 **어느 출처에 없는가**를 든다. 스코프가
+  #   없으면 "어디에도 없다" 로 읽히고, 실제로 그렇게 읽혀서 셋 다
+  #   거짓 선언이 됐다(DECISIONS §91). 세 필드가 필수다 —
+  #     in         이 출처에 없다
+  #     elsewhere  값이 있는 곳. 있으면 "부재" 가 아니라 "출처 밖" 이다
+  #     json_key   그 파일의 **실제 키**. 이름을 추측하지 않는다(§49)
   absent:
-    wheelbase_m: 7종 전수 확인 0건. D-30 인터뷰로만 채운다
-    turn_radius_m: |
-      KFS 7종에는 0건이다. 그러나 **없는 값이 아니다** — 두 곳에 있다.
-        · 자동차규칙 제9조① 법정 상한 12m (vehicle_spec.turn_radius_m)
-        · web/assets/vehicles/profiles.json 차종별 7,300~11,889mm
-          (강원 인제소방서 자료 · 나라장터 공고. 미검증)
-      ★ 2026-09-01 정정. 종전에 "0건" 이라고만 적어 대장이 거짓 선언을
-        하고 있었다 — 화면은 그 값을 띄우는데 대장은 없다고 했다.
+    wheelbase_m:
+      in: KFS 7종 규격
+      elsewhere: web/assets/vehicles/profiles.json
+      json_key: wheelbase
+      note: |
+        규격 7종 전수 확인 0건. profiles.json 은 4,260 · 4,925mm 를 든다
+        (구조공작차 · 구급차는 null). 강원 인제소방서 자료이며 미검증이고
+        출처가 대장 밖이다(PLAN #59). 정본은 D-30 인터뷰다.
+    turn_radius_m:
+      in: KFS 7종 규격
+      elsewhere: web/assets/vehicles/profiles.json
+      json_key: turningRadius
+      note: |
+        KFS 7종에는 0건이다. 그러나 **없는 값이 아니다** — 두 곳에 있다.
+          · 자동차규칙 제9조① 법정 상한 12m (vehicle_spec.turn_radius_m)
+          · profiles.json 차종별 7,300~11,889mm
+            (강원 인제소방서 자료 · 나라장터 공고. 미검증)
+        ★ 2026-09-01 정정. 종전에 "0건" 이라고만 적어 대장이 거짓 선언을
+          하고 있었다 — 화면은 그 값을 띄우는데 대장은 없다고 했다.
+        ★ 2026-09-02. 그 정정은 산문뿐이었고 키는 `absent` 에 그대로 있었다.
+          검사는 이름이 엇갈려(turn_radius_m ↔ turningRadius) 통과했다.
         D-30 은 여전히 필요하다. 위 둘 다 실측이 아니다.
-    ambulance: |
-      특수구급차 KFS-1-0029-2025-01 §3.2.1「차량의 제원」이
-      "구급차 제작기준 또는 수요기관의 정하는 바에 따른다" 한 줄뿐이다.
-      표가 없다. 값이 없으므로 items 에 넣지 않는다.
-      ★ §3.3 은 제원이 아니라 **환자실**이다. 조항 번호를 헷갈리지 마라.
+    ambulance:
+      in: KFS-1-0029-2025-01 §3.2.1
+      elsewhere: web/assets/vehicles/profiles.json
+      json_key: ambulance_current_example
+      note: |
+        특수구급차 §3.2.1「차량의 제원」이 "구급차 제작기준 또는 수요기관의
+        정하는 바에 따른다" 한 줄뿐이다. 규격에 표가 없으므로 items 에
+        넣지 않는다. profiles.json 은 나라장터 공고의 현행 예시
+        (5,270 x 1,995 x 2,410)를 든다 — 규격값이 아니다.
+        ★ §3.3 은 제원이 아니라 **환자실**이다. 조항 번호를 헷갈리지 않는다.
   notes: |
     ★ 전폭은 경형·소형펌프차(1.9 · 2.2)를 빼면 **전 차종 2.5 로 같다.**
       인터뷰(2026-08-24 전북소방)의 "물탱크차는 커서 못 들어간다" 는

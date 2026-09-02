@@ -36,9 +36,16 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# ★ 2026-09-02. 종전에는 루트 README 만 봤다. **README 는 하나가 아니다** —
+#   `src/firelane/README.md` 는 루트가 GIS 정본으로 지목하는 문서인데
+#   문체·참조 검사 밖에 있었고, 그 사이에 폐기된 실행법을 적고 있었다.
+#   번호 검사는 그대로 넷만 본다(부속 문서에는 절 번호 체계가 없다).
 DOCS = [ROOT / "README.md", ROOT / "docs/MASTER.md",
-        ROOT / "docs/PLAN.md", ROOT / "docs/DECISIONS.md"]
-NUMBERED_DOCS = [p for p in DOCS if p.name != "README.md"]
+        ROOT / "docs/PLAN.md", ROOT / "docs/DECISIONS.md",
+        ROOT / "src/firelane/README.md", ROOT / "web/README.md",
+        ROOT / ".github/pull_request_template.md"]
+NUMBERED_DOCS = [ROOT / "docs/MASTER.md", ROOT / "docs/PLAN.md",
+                 ROOT / "docs/DECISIONS.md"]
 ALLOW = "<!--voice-ok-->"
 
 
@@ -78,6 +85,18 @@ VOICE = {
     #   써야 한다.
     "깨진 활용": re.compile(
         r"(?:안 보이다|보이다|표현하지 않다|완만한다)" + _END),
+    # ★ 2026-09-02. 이 검사의 assert 메시지는 처음부터 "경어·명령형·1인칭을
+    #   쓰지 않는다" 였는데 **명령형 패턴이 없었다.** PLAN 절 제목 넷과
+    #   README 두 곳이 통과했다. 검사가 없는 것보다 있다고 적혀 있는데
+    #   없는 것이 나쁘다(§69 · §76).
+    #
+    #   `~라` 종결만 본다. 청유형(`~하자`)은 연결어미(`추가하자 잡혔다`)와
+    #   구분이 안 돼 오탐이 크므로 넣지 않는다 — 검사가 시끄러우면 끈다.
+    #   뒤에 한글이 오면 제외한다(`말라는` · `마라고` 는 서술이다).
+    "명령형": re.compile(
+        r"(?:[가-힣]지\s*(?:마라|말라)|해라|하라|봐라|보라|써라|쳐라|둬라"
+        r"|들어라|물어라|적어라|지워라|옮겨라|받아라|만들어라|정해라"
+        r"|고쳐라|넣어라|빼라|걸어라|돌려라)(?![가-힣])"),
 }
 
 

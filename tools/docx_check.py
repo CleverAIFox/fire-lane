@@ -7,7 +7,7 @@ docx_check.py — 기획서가 산출물과 어긋나지 않는가.
 시제 규칙 밖이라는 이유로 강제자가 없었다. 그래서 낡았다.
 
     docnum_check.py     README · MASTER · PLAN · DECISIONS  ← md 만 본다
-    (없음)              기획서_Fire-Lane.docx               ← 아무도 안 본다
+    (없음)              proposal.docx               ← 아무도 안 본다
 
 `PLAN §12` 가 갱신 대상 열 건을 표로 들고 있었으나 그 표 자체가 낡았다 —
 "대상 222구간" 을 고치라고 적혀 있는데 문서에 `222` 는 없고 실제로는
@@ -50,6 +50,24 @@ RETIRED = {
     "PostGIS": "미채택. segments.geojson 996KB 규모라 쓸 자리가 아니다",
     "apply.py": "패치 zip 절차를 폐기했다(DECISIONS §65)",
 }
+
+# 그림 캡션에서만 보는 어휘. 본문에서는 맥락이 다를 수 있어 캡션에 한정한다.
+CAPTION_STALE = {
+    # ★ 2026-09-02. 종전에 `datasets 41종` 을 **하드코딩**했다가 하루 만에
+    #   낡았다(실물 43). 도구가 스스로 같은 병에 걸린 것이다. 대장에서 센다.
+    "원천 11종": (
+        "기획서 `§ 원천 데이터 목록` 표(T16)의 행 수를 센 값이다. 그 표가"
+        " 낡았다 — 대장은 {ds}종이다(MASTER §6). 캡션만 고치면 안 되고"
+        " 표와 다섯 자리를 같이 본다(PLAN §12 #20)"),
+}
+
+
+def _ledger_counts() -> dict[str, int]:
+    """대장 규모. 숫자를 손으로 적지 않는다."""
+    import yaml
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    return {"ds": len(y.get("datasets") or {}),
+            "ret": len(y.get("retired") or {})}
 
 
 def _load_docx(p: Path) -> list[tuple[str, str]]:
@@ -95,11 +113,20 @@ def audit(p: Path) -> list[str]:
     # ── 1 · 구간 수 ──
     if n:
         for where, txt in cells:
-            for m in re.finditer(r"(\d{1,2},?\d{3})\s*구간", txt):
-                val = int(m.group(1).replace(",", ""))
+            # ★ 2026-09-02. 종전에는 `구간` 뒤에 붙은 수만 봤다. 기획서는
+            #   같은 것을 `산출단위` · `세그먼트` 로도 부르고, 실제로
+            #   `산출단위 1,102` 가 두 곳에 살아 있었다 — **이 도구의 머리말이
+            #   그 숫자를 만들어진 이유로 드는데 정작 못 잡고 있었다.**
+            #   어휘가 갈려 검사가 비껴간 세 번째다(§49 · §91 · §92).
+            #   수가 앞에 오는 형태(`1,102 산출단위`)도 함께 본다.
+            for m in re.finditer(
+                    r"(?:(\d{1,2},?\d{3})\s*(?:구간|산출단위|세그먼트)"
+                    r"|(?:구간|산출단위|세그먼트)\s*(\d{1,2},?\d{3}))", txt):
+                val = int((m.group(1) or m.group(2)).replace(",", ""))
                 if 900 < val < 1400 and val != n:
                     bad.append(
-                        f"  [{where}] 구간 수 {m.group(1)} → **{n:,}**\n"
+                        f"  [{where}] 구간 수 {m.group(1) or m.group(2)}"
+                        f" → **{n:,}**\n"
                         f"      …{txt.strip()[:70]}…")
 
     # ── 2 · 판정 4종 ──
@@ -114,7 +141,21 @@ def audit(p: Path) -> list[str]:
                         f"  [{where}] {label} {m.group(1)} → **{want}**\n"
                         f"      …{txt.strip()[:70]}…")
 
-    # ── 3 · 폐기된 이름 ──
+    # ── 3 · 그림 캡션 ──
+    # ★ 그림은 이미지라 기계가 못 본다. 그러나 **캡션은 텍스트다.**
+    #   24장 전부 `[그림 N] 제목 — 설명` 형식이 일정해서 파싱이 되고,
+    #   캡션에 든 고유명이 저장소 어휘와 다르면 그림도 낡았을 가능성이 높다.
+    #   그림 자체는 여전히 사람이 봐야 한다 — 여기서 잡는 것은 절반이다.
+    for where, txt in cells:
+        if not re.match(r"\s*\[?그림\s*\d+", txt):
+            continue
+        for name, why in CAPTION_STALE.items():
+            if name in txt:
+                why = why.format(**_ledger_counts())
+                bad.append(f"  [{where}] 캡션이 낡았다: `{name}` — {why}\n"
+                           f"      …{txt.strip()[:70]}…")
+
+    # ── 4 · 폐기된 이름 ──
     for where, txt in cells:
         for name, why in RETIRED.items():
             if name in txt:

@@ -28,7 +28,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 | [`docs/PLAN.md`](docs/PLAN.md) | 미래 | 남은 일 · 미결정 · 담당 공백 |
 | [`docs/MASTER.md`](docs/MASTER.md) | 현재 | 판정 · 데이터 · 용어 · UI 계약 · 운영 |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 과거 | 왜 그렇게 됐나 (append-only) |
-| `docs/기획서_Fire-Lane.docx` | — | 대외 제출용. 시제 규칙 밖 |
+| `docs/proposal.docx` | — | 대외 제출용. 시제 규칙 밖 |
 
 **한 항목은 한 문서에만 산다.** 두 곳에 있으면 한쪽만 고치는 날이 온다.
 남은 일의 정본은 `PLAN §1` 하나다.
@@ -47,7 +47,7 @@ uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 ```
 
 문체·절 번호·어휘·생애주기·죽은 경로를 전부 코드가 본다.
-**규약을 새로 적을 때는 강제자를 같이 만든다**(MASTER §18-5).
+**규약을 새로 적을 때는 강제자를 같이 만든다**(MASTER §17).
 
 ### `D-XX` 는 날짜가 아니다
 
@@ -76,7 +76,7 @@ uv run fire-lane
 uv run python tools/serve.py        # 캐시 없는 개발 서버
 ```
 
-`uv pip install -e .` 은 치지 마라. `[build-system]` 이 있으므로 `uv sync` 가
+`uv pip install -e .` 은 쓰지 않는다. `[build-system]` 이 있으므로 `uv sync` 가
 editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이다.
 
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
@@ -139,7 +139,7 @@ uv run fire-lane --only publish
 전량 재실행 약 285초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
 raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
 
-**단계를 하나씩 손으로 치지 마라.** 순서가 중요하고 빠뜨리기 쉽다.
+**단계를 하나씩 손으로 치지 않는다.** 순서가 중요하고 빠뜨리기 쉽다.
 
 ---
 
@@ -332,11 +332,12 @@ tools/
   absorb.py               ★ 이관→편입→검증→사본삭제. 삭제는 검증에 매달려 있다
   migrate_names.py        raw 개명 백필 — 실물·sha대장·대장을 원자적으로
   refcheck.py             선언이 가리키는 것이 실재하는가 · --gc
+  treecheck.py            ★ 전수 스캔 — 항목이 아니라 트리에서 출발한다
   ledger_stem.py          대장 stem 이관 · 무손실 증명
   ledger_fields.py        대장 별칭 필드 통합
   ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
-  render_workflow.py      MASTER 12절 → web/workflow.html   MASTER §12 자동 생성본
-  web/playbook.html   상황별 안내서(사람이 쓴다). data-slot 으로 MASTER 와 도킹 재생성 (CI 가 배포 때 부른다)
+  render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
+  stage_pages.py          ★ 배포 준비 한 곳 — docs/proposal.docx → web/
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
   ledger_feeds.py         feeds 산문 → 소비자 리스트
   serve.py                캐시 없는 개발 서버
@@ -373,7 +374,7 @@ web/
 
 ---
 
-## 지금 상태 — 2026-08-24
+## 지금 상태
 
 ```
 세그먼트     1,101   (동명동 416 + 119안전센터 접근 회랑)
@@ -381,8 +382,8 @@ web/
 도달 가능    687 (62%)   119안전센터에서 막힌 길 없이 갈 수 있는 구간
 총연장       48,579.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        36종 (OK 23 · SKIP 13)
-web/data    28.7MB (지형 22타일 · 정사영상 1,423타일 포함)
+대장        `datasets` 43종 · `retired` 10종
+web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 ```
 
 `영상판정 불가` 354 는 전부 CCTV 사각이다. 폭 산출 불가는 0 이다.
@@ -407,15 +408,6 @@ web/data    28.7MB (지형 22타일 · 정사영상 1,423타일 포함)
 노딩 규칙이 바뀌면 `seg_id` 가 전부 밀린다. 외부 참조에는 `seg_uid` 를 쓴다.
 중간 단계의 구간 수와 그 사유는 `DECISIONS.md` 가 든다.
 
-## 도구
-
-```
-uv run python tools/pull_data.py --yes   데이터 반입 (입구 하나)
-uv run python tools/doc_fsck.py          문서끼리 어긋난 데
-uv run python tools/doctor.py            대장 · 실물 · 백업
-uv run python tools/golden.py check      판정 지문
-```
-
 ## 나는 어느 파트인가
 
 ★ 이 파일은 루트라 **누구든 처음 본다.** 지금은 GIS 파이프라인 서술이 많은데
@@ -430,17 +422,18 @@ uv run python tools/golden.py check      판정 지문
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
 `web/data/`(40MB 상한)만으로 작업할 수 있다.
 
-    아침에 뭐 하나 · 충돌 · CI 빨간불 · 되돌리기   web/playbook.html
-    협업 방침 (MASTER §12 생성물)                web/workflow.html
+배포된 화면 넷이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른
+이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
+가는 길은 여기 하나다(DECISIONS §99).
+
+```
+지도        woongtopia.github.io/fire-lane/
+협업 방침    woongtopia.github.io/fire-lane/workflow.html   MASTER §12 생성물
+플레이북     woongtopia.github.io/fire-lane/playbook.html   상황별 안내서
+기획서       woongtopia.github.io/fire-lane/proposal.html   docs/proposal.docx 를 그대로 그린다
+```
 
 ## 문서는 어디에
 
-| 무엇 | 시제 | 담는 것 |
-|---|---|---|
-| `docs/MASTER.md` | 현재 | 지금 이렇다 — 규약 · 수치 · 계약 · 운영 |
-| `docs/PLAN.md` | 미래 | 아직 안 됐다 — 미결 · 다음 할 것 |
-| `docs/DECISIONS.md` | 과거 | 왜 그렇게 됐나 — 경위 · 기각안 (append-only) |
-| `docs/기획서_Fire-Lane.docx` | 제출용 | 외부가 읽는 유일한 문서 |
-
-넷은 병렬 축이 아니라 생애주기다(PLAN → MASTER → DECISIONS). 한 항목은 한
-문서에만 쓴다. 어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
+머리의 [문서는 넷이다](#문서는-넷이다) 표가 정본이다.
+어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
