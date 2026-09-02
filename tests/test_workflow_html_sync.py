@@ -46,8 +46,11 @@ def test_generated_matches_master():
     if not GEN.exists():
         pytest.skip("아직 생성 전이다")
     m = _mod()
-    want = m.render(m.classify(m.section12(
-        (ROOT / "docs/MASTER.md").read_text(encoding="utf-8"))))
+    # ★ 2026-09-02. 종전에는 `render(classify(section12(...)))` 로
+    #   **내부를 직접 조립**했다. 파이프라인이 바뀌면 이 줄도 같이 고쳐야
+    #   했고 실제로 상황별 재편에서 터졌다. 검사가 구현을 알면 구현을
+    #   못 바꾼다. 조립은 `build()` 하나이고 검사는 그것만 부른다.
+    want = m.build()
     assert GEN.read_text(encoding="utf-8") == want, (
         "web/workflow.html 이 MASTER §12 와 다르다.\n"
         "  uv run python tools/render_workflow.py  로 재생성하라.\n"
