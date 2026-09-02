@@ -1342,8 +1342,18 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 | `delete_branch_on_merge` | `false` | 켜면 머지된 **head 를 가리지 않고** 지운다. `part → dev` 의 head 는 `part/gis` 이고 `main → dev` 의 head 는 `main` 이다 |
 | `allow_rebase_merge` | `false` | 보호 브랜치는 rebase 로 되돌리지 않는다(§12-2) |
 
-★ `feat/*` 정리는 `.github/workflows/branch_cleanup.yml` 이 한다. GitHub 에
-base/head 별 설정이 없어 설정을 끄고 워크플로에서 가른다.
+★ **`feat/*` 는 손으로 지운다.** GitHub 에 base/head 별 설정이 없어
+설정을 끄면 `feat` 도 안 지워진다. 워크플로로 가르는 안은 2026-09-02 에
+만들었다가 같은 날 걷었다 — Actions 사이드바가 `.github/workflows/`
+전부를 나열하는데 숨기는 방법이 없어 **배포 셋 사이에 정리 작업이
+끼면 그 화면이 무엇을 보여주는 자리인지 흐려진다**(`DECISIONS §101-4`).
+
+```bash
+git push origin --delete feat/<이름>
+```
+
+`feat` 은 수명이 하루라 남아 있으면 `git branch -a` 에서 바로 보인다.
+영구 브랜치가 조용히 사라지는 것과 달리 **티가 나는 실수**다.
 
 ★ **룰셋의 `deletion` 은 이 사고를 못 막았다.** 규칙은 있었는데
 `bypass_actors` 가 뚫었다 — 머지를 admin 이 하므로 자동 삭제도 admin
