@@ -21,6 +21,7 @@ PARAM 없음
 from __future__ import annotations
 
 import importlib.util
+import re
 from pathlib import Path
 
 import pytest
@@ -105,8 +106,19 @@ def test_generated_has_components():
     if not GEN.exists():
         pytest.skip("아직 생성 전이다")
     doc = GEN.read_text(encoding="utf-8")
-    for cls, what in (("tree", "브랜치 트리"), ("flow", "방향 도식"),
-                      ("cards", "룰셋 카드"), ("details class=\"why\"", "각주")):
-        assert f'class="{cls}"' in doc or cls in doc, (
-            f"{what} 컴포넌트가 없다 — 파서가 실패해 <pre> 로 떨어졌다.\n"
-            "  tools/render_workflow.py 의 as_tree · as_flow · as_rules 를 보라.")
+    # ★ 2026-09-02. 종전에는 `tree` · `flow` · `cards` · 각주 넷을 찾았다.
+    #   그것은 f-string 렌더가 §12 전체를 그리던 시절의 컴포넌트다. 지금은
+    #   `playbook.html` 이 템플릿이고 카드 모양은 거기 있으며, 렌더러는
+    #   `data-fill` 자리에만 끼운다(§105).
+    #
+    #   ★ 취지는 같다 — **주입이 실제로 일어났는가.** 자리는 있는데 비어
+    #     있으면 하네스가 안 돈 것이고, 그것이 옛 `<pre>` 흘러내림과 같은
+    #     실패다.
+    fills = re.findall(r'data-fill="([^"]+)"(.*?)</div>', doc, re.S)
+    assert fills, (
+        "템플릿에 data-fill 자리가 없다 — playbook.html 이 템플릿이고\n"
+        "  tools/render_workflow.py 의 fill() 이 거기에 끼운다(DECISIONS §105).")
+    empty = [num for num, body in fills if len(body.strip()) < 40]
+    assert not empty, (
+        f"data-fill 자리가 비었다 — {', '.join('§' + x for x in empty)}\n"
+        "  하네스가 안 돌았거나 그 절이 §12-0 색인 밖이다.")
