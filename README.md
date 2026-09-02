@@ -338,6 +338,8 @@ tools/
   ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
   render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
   stage_pages.py          ★ 배포 준비 한 곳 — docs/proposal.docx → web/
+  render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 대조
+  release_brief.py        ★ 이 PR 이 무엇을 흡수하나 — 판정·계보·대장·계약
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
   ledger_feeds.py         feeds 산문 → 소비자 리스트
   serve.py                캐시 없는 개발 서버
