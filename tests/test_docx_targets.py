@@ -22,7 +22,7 @@ test_docx_targets.py — `PLAN §12` 가 지목한 것이 기획서에 실재하
 ★ ⬛ 행은 보지 않는다. 이미 처리됐고, 고친 뒤에는 옛 문자열이 없는 것이
   정상이다. 그것까지 검사하면 정반대로 운다.
 
-IN    docs/PLAN.md §12 · docs/기획서_Fire-Lane.docx
+IN    docs/PLAN.md §12 · docs/proposal.docx
 OUT   없음 (검사)
 PARAM 없음
 """
@@ -36,7 +36,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = ROOT / "docs/PLAN.md"
-DOCX = ROOT / "docs/기획서_Fire-Lane.docx"
+DOCX = ROOT / "docs/proposal.docx"
 
 # 지목이 아니라 **참조**인 것. 문서 안에 있을 이유가 없다.
 # ★ 도구·필드·파일 이름이 여기 들어온다. `#2` 가 처리 수단으로 적은

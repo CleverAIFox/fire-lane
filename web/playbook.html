@@ -788,8 +788,8 @@ git push origin feat/내브랜치</pre>
                 <i class="fa-regular fa-copy"></i>
               </button>
             </div>
-            <pre id="c-undo3" class="font-mono text-xs text-slate-800 overflow-x-auto">git revert -m 1 &lt;머지커밋해시&gt;
-git push origin part/gis</pre>
+            <pre id="c-undo3" class="font-mono text-xs text-slate-800 overflow-x-auto">git switch -c feat/gis-revert && git revert -m 1 &lt;머지커밋해시&gt;
+git push -u origin feat/gis-revert   # PR 로 되돌린다</pre>
             <p class="text-[11px] text-slate-500">Merge Commit의 1번 부모를 기준으로 되돌립니다.</p>
           </div>
         </div>
@@ -917,17 +917,17 @@ git push origin part/gis</pre>
           <i class="fa-regular fa-copy mr-1"></i> 복사
         </button>
         <pre id="c-release" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto"># 1단계: dev -> main PR (Merge Commit / 승인 1 + Code Owners 통과)
-# 2단계: 태그 생성 및 배포 푸시
-git switch main && git pull origin main
+#      ★ 머지 완료를 확인한 뒤 2단계로 간다
+git switch main && git pull --ff-only && git log --oneline -1
+
+# 2단계: 태그 (그 머지 커밋이 보여야 붙인다)
 git tag v&lt;다음버전&gt; && git push origin v&lt;다음버전&gt;
 
-# 3단계: [필수] main -> dev 흡수 (Merge Commit)
-git switch dev && git merge origin/main && git push origin dev
+# 3단계: [필수] main -> dev 흡수 — 릴리즈 매니저
+gh pr create --base dev --head main --fill && gh pr merge --merge
 
-# 4단계: [필수] dev -> part 3종 일제 정렬
-git switch part/gis && git merge origin/dev && git push origin part/gis
-git switch part/cv && git merge origin/dev && git push origin part/cv
-git switch part/infra && git merge origin/dev && git push origin part/infra</pre>
+# 4단계: [필수] dev -> part — 각 파트 통합 담당이 자기 브랜치로
+gh pr create --base part/&lt;파트&gt; --head dev --fill && gh pr merge --merge</pre>
       </div>
     </section>
 

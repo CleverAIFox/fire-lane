@@ -95,6 +95,13 @@
 /web/js/layers/          @AIMasterFox                                       # !strict
 /web/js/icons/           @marscoolcat @AIMasterFox
 /web/js/ui/              @marscoolcat @AIMasterFox
+/web/assets/             @marscoolcat @woongtopia/gis
+# ★ profiles.json 은 DECISIONS §84 가 드는 **치수 정본**이다. 스타일
+#   자산이 아니라 데이터라 GIS 팀이 함께 든다. 개인이 아니라 팀 핸들로
+#   두는 이유는 소유자가 이탈하면 그 줄이 죽기 때문이다.
+/web/assets/vehicles/    @woongtopia/gis @marscoolcat
+# 기획서 뷰어. 정본은 docs/proposal.docx 이고 이 화면은 그것을 그린다.
+/web/proposal.html       @woongtopia/gis @marscoolcat
 /web/data/               @woongtopia/gis
 
 
