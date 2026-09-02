@@ -298,14 +298,49 @@ def test_every_doc_declares_the_same_lifecycle():
                 "옛 3축 표가 남아 있다")
 
 
+_AXIS = re.compile(
+    r"\|\s*\[?\**`?(docs/(?:MASTER|PLAN|DECISIONS)\.md)`?\**\]?[^|]*\|"
+    r"\s*\**([^|*]+?)\**\s*\|\s*([^|]+?)\s*\|")
+
+
+def _axis(rel: str) -> dict[str, tuple[str, str]]:
+    """문서 축 표를 {문서: (시제, 담는 것)} 로. 강조·링크·꼬리말은 벗긴다."""
+    txt = (ROOT / rel).read_text(encoding="utf-8")
+    out: dict[str, tuple[str, str]] = {}
+    for doc, tense, what in _AXIS.findall(txt):
+        w = re.sub(r"\s*\(이 문서\)", "", what.replace("*", "").replace("`", ""))
+        out.setdefault(doc, (tense.strip(), w.strip()))
+    return out
+
+
 def test_doc_axis_tables_are_consistent():
-    """문서표를 가진 곳은 전부 생애주기 표기를 쓴다."""
-    for rel in ("README.md", "docs/PLAN.md"):
-        txt = (ROOT / rel).read_text(encoding="utf-8")
-        if "| 문서 |" not in txt:
+    """
+    ★ 문서 축 표는 여러 곳에 산다. **같은 말을 해야 한다.**
+
+    2026-09-02. 종전 이 검사는 파일에 `생애주기` 라는 **단어가 있는지만**
+    봤다. 그래서 README 가 서로 다른 문구의 표 두 벌을 400줄 간격으로
+    들고도 통과했다 — 위쪽은 "판정 · 데이터 · 용어 · UI 계약 · 운영",
+    아래쪽은 "지금 이렇다 — 규약 · 수치 · 계약 · 운영". 한 항목은 한 곳에
+    산다는 규칙이 정작 그 규칙을 적는 표에서 깨져 있었다.
+
+    이제 행 내용을 대조한다. 표를 하나로 줄이거나, 두 벌이면 같게 쓴다.
+    """
+    have = {rel: _axis(rel) for rel in
+            ("README.md", "docs/PLAN.md", "docs/MASTER.md")}
+    base_rel = "docs/MASTER.md"
+    base = have[base_rel]
+    assert base, "MASTER 에 문서 축 표가 없다"
+    bad = []
+    for rel, tbl in have.items():
+        if rel == base_rel or not tbl:
             continue
-        assert "생애주기" in txt, (
-            f"{rel} 의 문서표가 생애주기 표기가 아니다 — 옛 병렬 축 표다")
+        for doc, row in tbl.items():
+            if doc in base and base[doc] != row:
+                bad.append(f"  {rel}  {doc}\n"
+                           f"    이 문서 {row}\n    MASTER  {base[doc]}")
+    assert not bad, (
+        "문서 축 표가 곳마다 다르다 — 정본은 MASTER 머리의 표다.\n"
+        + "\n".join(bad))
 
 
 # ── 문서 형식 (2026-08-18) ────────────────────────────────────

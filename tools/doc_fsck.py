@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-doc_fsck.py — 문서가 하는 말과 실물이 어긋나는 곳을 넷만 본다.
+doc_fsck.py — 문서가 하는 말과 실물이 어긋나는 곳을 여덟만 본다.
 
 ── 왜 생겼나 ───────────────────────────────────────────────────
 강제자 23종이 전부 **문서 ↔ 실물** 한 방향이었다. `docnum_check` 는 숫자를,
@@ -21,7 +21,8 @@ doc_fsck.py — 문서가 하는 말과 실물이 어긋나는 곳을 넷만 본
 ── 안 하는 것 ──────────────────────────────────────────────────
 ★ **자연어 모순은 잡지 않는다.** "A 문서와 B 문서가 다른 말을 한다" 를 기계가
   판정하려면 두 서술의 의미를 비교해야 하고, 그것은 이 도구의 범위가 아니다.
-  여기서 보는 것은 **구조** 넷뿐이다 — 키 목록 · 파일 경로 · 부재 선언 · 등재.
+  여기서 보는 것은 **구조**뿐이다 — 키 목록 · 파일 경로 · 부재 선언 · 등재 ·
+  만료 · 표지 날짜 · **셸 명령** · **기한**. 판단이 아니라 대조다.
 
 ★ 정본이 어느 쪽인지도 판정하지 않는다. 어긋난 자리를 짚고 사람에게 넘긴다.
   최신이 정본인 것이 보통이지만 그 판단은 사람이 한다.
@@ -38,6 +39,22 @@ from pathlib import Path
 
 import yaml
 
+
+def _today() -> str:
+    """오늘(KST).
+
+    ★ 시간대를 명시한다. `date.today()` 는 실행 머신의 시간대를 쓰는데
+      CI 는 UTC 이고 사람은 KST 다. 게이트가 아홉 시간 늦게 운다.
+      `.ruff-strict.toml` 의 DTZ011 이 이것을 막는다.
+
+    ★ 계산을 한 곳에 둔다. 종전에는 `check_expiry` 안에만 있었고
+      `check_deferred` 가 생기면서 두 벌이 됐다(§73 과 같은 형태).
+    """
+    import datetime as _dt
+    return _dt.datetime.now(
+        tz=_dt.timezone(_dt.timedelta(hours=9))).date().isoformat()
+
+
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "sources.yaml"
 PIPE_README = ROOT / "src/firelane/README.md"
@@ -46,6 +63,14 @@ PIPE_README = ROOT / "src/firelane/README.md"
 #   무엇인지 저장소가 설명하지 못한다. PLAN 이 이 목록의 처리를 든다.
 FIELD_EXEMPT = {
     "fieldsheet.md",            # sources.yaml consumers 가 든다
+    # ── 2026-09-02. DECISIONS §42 네이버 준-실측 실험의 산출 넷.
+    #    봉인·해제 도구(naver_check · naver_page · naver_join)는 PLAN §6-8 이
+    #    "삭제됨" 으로 적는다 — **도구가 없어 봉인을 풀 수도 없다.**
+    #    field 는 재생성 불가 등급이라 지우지 않고 판단을 이탈 전에 둔다.
+    #    해소 = 넷을 interim 으로 내리거나 대장에 등재하고 이 다섯 줄을 지운다.
+    #    기한은 `DEFERRED` 가 든다(2026-09-07).
+    ".naver_sealed.csv", "naver_check.csv",
+    "naver_check.html", "naver_near.json",
 }
 
 # ★ 한시 유예. **늘리지 마라.** 사유와 해소 조건을 함께 적는다(§80 과 같은 형태).
@@ -129,22 +154,38 @@ def check_paths() -> list[str]:
 
 # ── 3. 부재 선언 — "없다" 고 적은 값이 실물에 있는가 ──────────────
 def check_absent(led: dict) -> list[str]:
-    """`absent:` 로 없다고 선언한 필드명이 저장소 데이터에 나타나면 운다."""
-    names: dict[str, str] = {}
+    """`absent:` 선언을 실물과 **양방향**으로 대조한다.
+
+    ★ `absent` 는 "어디에도 없다" 가 아니라 **"이 출처에 없다"** 다.
+      스코프가 없으면 후자로 읽히고, 2026-09-02 에 셋 다 거짓 선언으로
+      드러났다 — `profiles.json` 이 커밋되자 값이 다 있었다.
+
+    ★ 이름을 추측하지 않는다. 종전에는 `turn_radius_m` 을 camelCase 로
+      바꾸고 접미를 떼어 찾았는데 실물은 `turningRadius` 였다. **우연히
+      엇갈려 통과했다.** 소화전 속성이 `속성 0종` 으로 조용히 발행된 것과
+      같은 형태다(DECISIONS §49). `json_key` 로 못박는다.
+
+    판정 둘 —
+        elsewhere 있음   그 파일에 json_key 가 **있어야** 한다. 없으면
+                        이름이 바뀐 것이고 선언이 낡았다
+        elsewhere 없음   진짜 부재. 저장소 어디에도 **없어야** 한다
+    """
+    entries: list[tuple[str, str, object]] = []
 
     def walk(node, trail: str):
         if isinstance(node, dict):
             for k, v in node.items():
                 if k == "absent" and isinstance(v, dict):
-                    for f in v:
-                        names[f] = trail or "(최상위)"
+                    entries.extend((trail or "(최상위)", f, s)
+                                   for f, s in v.items())
                 else:
                     walk(v, f"{trail}.{k}" if trail else k)
 
     walk(led, "")
-    if not names:
+    if not entries:
         return []
 
+    bad: list[str] = []
     hay: list[tuple[str, str]] = []
     for g in ("web/**/*.json", "web/**/*.js", "data/field/*.csv",
               "data/processed/*.json"):
@@ -153,16 +194,35 @@ def check_absent(led: dict) -> list[str]:
                 hay.append((str(f.relative_to(ROOT)),
                             f.read_text(encoding="utf-8", errors="ignore")))
 
-    bad = []
-    for field, where in names.items():
-        cam = re.sub(r"_([a-z])", lambda m: m.group(1).upper(), field)
-        stem = re.sub(r"_m$|_pct$", "", field)
-        hits = sorted({p for p, t in hay
-                       if re.search(rf"\b({re.escape(field)}|{re.escape(cam)}"
-                                    rf"|{re.escape(stem)})\b", t)})
-        if hits:
-            bad.append(f"{where}.absent.{field} 은 없다고 선언했는데 "
-                       f"{' · '.join(hits[:3])} 에 있다")
+    for where, field, spec in entries:
+        tag = f"{where}.absent.{field}"
+        if not isinstance(spec, dict):
+            bad.append(f"{tag} 이 스코프를 안 든다. `in:` · `json_key:` 를 "
+                       f"적는다 — absent 는 '어디에도 없다' 가 아니라 "
+                       f"'그 출처에 없다' 이다(DECISIONS §91)")
+            continue
+        for need in ("in", "json_key"):
+            if not spec.get(need):
+                bad.append(f"{tag} 에 `{need}:` 가 없다")
+        key = spec.get("json_key")
+        if not key:
+            continue
+        src = spec.get("elsewhere")
+        if src:
+            p = ROOT / src
+            if not p.exists():
+                bad.append(f"{tag}.elsewhere 가 가리키는 {src} 이 없다")
+            elif f'"{key}"' not in p.read_text(encoding="utf-8",
+                                               errors="ignore"):
+                bad.append(f"{tag} 은 {src} 에 `{key}` 로 있다고 하는데 "
+                           f"그 키가 없다. 이름이 바뀌었거나 선언이 낡았다 "
+                           f"— 추측으로 메우지 않는다(§49)")
+        else:
+            hits = sorted({p for p, t in hay if f'"{key}"' in t})
+            if hits:
+                bad.append(f"{tag} 은 없다고 선언했는데 "
+                           f"{' · '.join(hits[:3])} 에 `{key}` 가 있다. "
+                           f"`elsewhere:` 로 어디에 있는지 적는다")
     return bad
 
 
@@ -238,13 +298,7 @@ def check_expiry() -> list[str]:
     ★ 실패 메시지를 크게 낸다. 빨간 줄 하나면 다른 팀원이 무슨 일인지
       모르고 당황한다. 무엇을 해야 하는지가 화면에 다 있어야 한다.
     """
-    import datetime as _dt
-    # ★ 시간대를 명시한다. `date.today()` 는 실행 머신의 시간대를 쓰는데
-    #   CI 는 UTC 이고 사람은 KST 다. 이탈일 저녁에 사람은 "지났다" 로 보고
-    #   CI 는 "안 지났다" 로 봐서 게이트가 아홉 시간 늦게 운다.
-    #   회수는 한국 시각으로 하므로 KST 를 기준으로 삼는다.
-    _KST = _dt.timezone(_dt.timedelta(hours=9))
-    today = _dt.datetime.now(tz=_KST).date().isoformat()
+    today = _today()
     bad, seen = [], {}
 
     for g in ("web/*.html", "docs/*.md"):
@@ -323,6 +377,138 @@ def check_docx_revised() -> list[str]:
     return []
 
 
+# ── ⑦ 명령 ────────────────────────────────────────────────────
+# 문서가 적은 셸 명령을 저장소 실물과 대조한다. 2026-09-02 감사에서 나온
+# 낡음의 절반이 여기였다 — MASTER §12-5 의 `git merge origin/dev`,
+# §12-8b 3·4단계의 직푸시, src/firelane/README 의 `python -m firelane.ingest`.
+# 셋 다 **읽으면 보이는데 대조할 상대가 없었다**(§78 · §79).
+#
+# ★ DECISIONS 는 보지 않는다. 폐기한 명령을 증거로 인용하는 것이 그 문서의
+#   일이고, 그것까지 세면 회고를 쓸 수 없게 된다(test_doc_style 과 같은 이유).
+CMD_DOCS = ("README.md", "docs/MASTER.md", "docs/PLAN.md",
+            "src/firelane/README.md", "web/README.md", "web/playbook.html")
+
+
+def _blocks(rel: str) -> list[list[str]]:
+    """명령이 사는 자리만. .md 는 펜스·4칸 블록, .html 은 <pre>."""
+    p = ROOT / rel
+    if not p.exists():
+        return []
+    txt = p.read_text(encoding="utf-8")
+    if rel.endswith(".html"):
+        import html as _h
+        return [_h.unescape(re.sub(r"<[^>]+>", "", m)).splitlines()
+                for m in re.findall(r"<pre[^>]*>(.*?)</pre>", txt, re.S)]
+    out, cur, fence = [], [], False
+    for line in txt.splitlines():
+        if line.lstrip().startswith("```"):
+            fence = not fence
+            if not fence and cur:
+                out.append(cur)
+            cur = []
+            continue
+        if fence:
+            cur.append(line)
+        elif line.startswith("    ") and line.strip():
+            cur.append(line.strip())
+        elif cur:
+            out.append(cur)
+            cur = []
+    if cur:
+        out.append(cur)
+    return out
+
+
+def _protected() -> list[str]:
+    """보호 브랜치를 §12-1 룰셋 표에서 읽는다. 목록을 손으로 들지 않는다."""
+    t = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    return [r.replace("/**", "/") for r
+            in re.findall(r"refs/heads/(\S+?)`", t)]
+
+
+def _direct_stages() -> set[str]:
+    """단계 직접 호출을 경고하는 모듈 = 파이프라인이 부르는 단계다."""
+    d = ROOT / "src/firelane"
+    return {p.stem for p in d.glob("*.py")
+            if p.stem not in ("guards", "pipeline")
+            and "warn_direct_call" in p.read_text(encoding="utf-8")}
+
+
+def check_commands() -> list[str]:
+    prot = _protected()
+    stages = _direct_stages()
+    tools = {p.name for p in (ROOT / "tools").iterdir()} if (
+        ROOT / "tools").exists() else set()
+    bad: list[str] = []
+    for rel in CMD_DOCS:
+        for blk in _blocks(rel):
+            onprot = any(re.search(r"git switch (?:-c )?(" + "|".join(
+                re.escape(b) for b in prot) + r")", ln) for ln in blk)
+            for ln in blk:
+                s = ln.strip()
+                for b in prot:
+                    if re.search(rf"git push \S+ {re.escape(b)}(\S*)?\s*$", s) \
+                            or re.search(rf"git push \S+ {re.escape(b)}\S*\s*&&", s):
+                        bad.append(f"{rel}  보호 브랜치 직푸시 — {s[:64]}"
+                                   f"  (§12-1 이 pull_request 필수로 든다)")
+                if onprot and re.search(r"git merge\b", s):
+                    bad.append(f"{rel}  보호 브랜치에서 로컬 머지 — {s[:64]}"
+                               f"  (원격과 갈린다. PR 로 받는다 §12-5)")
+                if m := re.search(r"python -m firelane\.(\w+)", s):
+                    if m.group(1) in stages:
+                        bad.append(f"{rel}  단계 직접 호출 — {s[:64]}"
+                                   f"  (계보가 빠진다. uv run fire-lane §14-2)")
+                if "uv pip install" in s:
+                    bad.append(f"{rel}  uv pip install — {s[:64]}"
+                               f"  (uv sync 가 editable 로 깐다)")
+                # ★ 지운 것을 지웠다고 적은 줄은 기록이다. 그것까지 세면
+                #   폐기 이력을 쓸 수 없게 된다(DECISIONS 를 뺀 것과 같은 이유).
+                if not re.search(r"삭제됨|폐기|제거함", s):
+                    for m in re.finditer(r"tools/([\w.]+\.(?:py|mjs|sh))", s):
+                        if tools and m.group(1) not in tools:
+                            bad.append(f"{rel}  없는 도구 — tools/{m.group(1)}")
+    return sorted(set(bad))
+
+
+# ── ⑧ 기한 ────────────────────────────────────────────────────
+# 날짜 없이 미룬 것은 이탈 후 아무도 안 한다(PLAN #64 가 그렇게 적는다).
+# ★ 양방향이다. 기한이 지나도 울고, **이미 해소됐는데 표에 남아도 운다.**
+#   해제만 검사하면 항상 통과하는 검사가 된다(§69). render_workflow 의
+#   audit ↔ slots 과 같은 형태다.
+#
+# 문서에는 아무 표기도 넣지 않는다. 기대값은 여기 산다 — `stale-ok` ·
+# `voice-ok` 에 세 번째 escape 를 더하지 않기 위해서다.
+DEFERRED = (
+    ("2026-09-04", "docs/PLAN.md",
+     "그림 자체가 여전히 반경 5m 원을 그린다", "기획서 [그림 13] 재생성"),
+    ("2026-09-04", "docs/PLAN.md",
+     "개요서가 §10-2 확정 전에 쓰였다", "개요서 판정 표기를 4종으로"),
+    ("2026-09-04", "docs/PLAN.md",
+     "PLAN §10 우선순위에 그 날짜를 넣는 것만 남았다", "MVP 09-30 을 PLAN §10 에"),
+    ("2026-09-07", "docs/PLAN.md",
+     "한 달째 미착수이고 공문도 안 나갔다", "D-30 인터뷰 일정 확정"),
+    # ★ 앵커가 이 파일 자신이다. 넷을 치우고 FIELD_EXEMPT 를 비우면
+    #   이 줄이 "해소됐다" 로 울어 스스로 지워지기를 요구한다.
+    ("2026-09-07", "tools/doc_fsck.py",
+     '".naver_sealed.csv"', "data/field 네이버 잔류 4건 처분 (PLAN §6-8)"),
+)
+
+
+def check_deferred() -> list[str]:
+    today = _today()
+    bad = []
+    for due, rel, anchor, what in DEFERRED:
+        p = ROOT / rel
+        live = p.exists() and anchor in p.read_text(encoding="utf-8")
+        if live and today > due:
+            bad.append(f"기한 {due} 이 지났다 — {what} ({rel})")
+        if not live:
+            bad.append(f"해소됐다 — {what}. `doc_fsck.DEFERRED` 에서 그 줄을 "
+                       f"지운다 (남겨두면 항상 통과하는 검사가 된다)")
+    return bad
+
+
+
 CHECKS = (
     ("① 스키마   문서가 드는 키 ↔ 실물이 쓰는 키", lambda led: check_schema(led)),
     ("② 경로     문서·설정이 가리키는 파일 ↔ 실재", lambda led: check_paths()),
@@ -330,6 +516,8 @@ CHECKS = (
     ("④ 등재     사람이 만드는 계층 ↔ 대장", lambda led: check_field_ledger(led)),
     ("⑤ 만료     한시로 정한 것이 한시로 끝났는가", lambda led: check_expiry()),
     ("⑥ 기획서    고쳤는데 최종 수정일이 그대로인가", lambda led: check_docx_revised()),
+    ("⑦ 명령     문서가 적은 셸 명령 ↔ 룰셋 · 진입점 · tools 실물", lambda led: check_commands()),
+    ("⑧ 기한     미룬 것이 기한 안에 끝났는가 (양방향)", lambda led: check_deferred()),
 )
 
 

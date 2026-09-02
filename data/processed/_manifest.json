@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-08-31T11:43:36.137754+09:00",
+  "generated_at": "2026-09-02T10:28:34.015946+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -2582,6 +2582,34 @@
         "jijeok.geojson",
         "jijeok_5186.gpkg"
       ]
+    },
+    {
+      "key": "gjfire_fleet_dongbu",
+      "source_files": [
+        "**/safety_fleet_*"
+      ],
+      "source_sha256": "dac553bb5e289ae8a594ce464800eda97f7f8a850c100a6b504dbc527917e581",
+      "resolved": "safety_fleet_jngj-donggu_20260514.csv",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "gjfire_district_dongbu",
+      "source_files": [
+        "**/safety_district_*"
+      ],
+      "source_sha256": "eb6ffedeb0301d5b9c5d3a0dcbc4d668877cad67711334449b08b34c57e07c38",
+      "resolved": "safety_district_jngj-donggu_20250731.csv",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
     }
   ]
 }

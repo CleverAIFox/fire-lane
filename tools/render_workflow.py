@@ -18,7 +18,8 @@ render_workflow.py — MASTER §12 를 협업 방침 화면으로 렌더한다.
   손으로 쓴 HTML 에는 그 셋 중 무엇도 안 걸렸다.
 
 ── 무엇을 하는가 ───────────────────────────────────────────────
-`MASTER §12` 를 읽어 **종류별로 갈라** 탭 넷에 나눈다.
+`MASTER §12` 를 읽어 **종류별로 갈라** 탭 셋에 나눈다.
+판단 근거는 각 절의 `<details>` 안으로 접는다.
 
     들여쓴 블록 · ``` 블록   → 그림    도식과 명령
     | 표 |                   → 표      룰셋 · 용어 · 충돌 처리
@@ -32,7 +33,7 @@ render_workflow.py — MASTER §12 를 협업 방침 화면으로 렌더한다.
   보므로 여기 스크립트가 들어가면 검사 밖에서 자란다.
 
 IN    docs/MASTER.md §12
-OUT   web/workflow.html  (생성물. gitignore)
+OUT   web/workflow.html  (생성물이지만 커밋한다 — .gitignore 주석 참조)
 PARAM --check
 """
 from __future__ import annotations

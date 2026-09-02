@@ -47,7 +47,7 @@ uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 ```
 
 문체·절 번호·어휘·생애주기·죽은 경로를 전부 코드가 본다.
-**규약을 새로 적을 때는 강제자를 같이 만든다**(MASTER §18-5).
+**규약을 새로 적을 때는 강제자를 같이 만든다**(MASTER §17).
 
 ### `D-XX` 는 날짜가 아니다
 
@@ -76,7 +76,7 @@ uv run fire-lane
 uv run python tools/serve.py        # 캐시 없는 개발 서버
 ```
 
-`uv pip install -e .` 은 치지 마라. `[build-system]` 이 있으므로 `uv sync` 가
+`uv pip install -e .` 은 쓰지 않는다. `[build-system]` 이 있으므로 `uv sync` 가
 editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이다.
 
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
@@ -139,7 +139,7 @@ uv run fire-lane --only publish
 전량 재실행 약 285초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
 raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
 
-**단계를 하나씩 손으로 치지 마라.** 순서가 중요하고 빠뜨리기 쉽다.
+**단계를 하나씩 손으로 치지 않는다.** 순서가 중요하고 빠뜨리기 쉽다.
 
 ---
 
@@ -335,8 +335,7 @@ tools/
   ledger_stem.py          대장 stem 이관 · 무손실 증명
   ledger_fields.py        대장 별칭 필드 통합
   ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
-  render_workflow.py      MASTER 12절 → web/workflow.html   MASTER §12 자동 생성본
-  web/playbook.html   상황별 안내서(사람이 쓴다). data-slot 으로 MASTER 와 도킹 재생성 (CI 가 배포 때 부른다)
+  render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
   ledger_feeds.py         feeds 산문 → 소비자 리스트
   serve.py                캐시 없는 개발 서버
@@ -373,7 +372,7 @@ web/
 
 ---
 
-## 지금 상태 — 2026-08-24
+## 지금 상태
 
 ```
 세그먼트     1,101   (동명동 416 + 119안전센터 접근 회랑)
@@ -407,15 +406,6 @@ web/data    28.7MB (지형 22타일 · 정사영상 1,423타일 포함)
 노딩 규칙이 바뀌면 `seg_id` 가 전부 밀린다. 외부 참조에는 `seg_uid` 를 쓴다.
 중간 단계의 구간 수와 그 사유는 `DECISIONS.md` 가 든다.
 
-## 도구
-
-```
-uv run python tools/pull_data.py --yes   데이터 반입 (입구 하나)
-uv run python tools/doc_fsck.py          문서끼리 어긋난 데
-uv run python tools/doctor.py            대장 · 실물 · 백업
-uv run python tools/golden.py check      판정 지문
-```
-
 ## 나는 어느 파트인가
 
 ★ 이 파일은 루트라 **누구든 처음 본다.** 지금은 GIS 파이프라인 서술이 많은데
@@ -435,12 +425,5 @@ uv run python tools/golden.py check      판정 지문
 
 ## 문서는 어디에
 
-| 무엇 | 시제 | 담는 것 |
-|---|---|---|
-| `docs/MASTER.md` | 현재 | 지금 이렇다 — 규약 · 수치 · 계약 · 운영 |
-| `docs/PLAN.md` | 미래 | 아직 안 됐다 — 미결 · 다음 할 것 |
-| `docs/DECISIONS.md` | 과거 | 왜 그렇게 됐나 — 경위 · 기각안 (append-only) |
-| `docs/기획서_Fire-Lane.docx` | 제출용 | 외부가 읽는 유일한 문서 |
-
-넷은 병렬 축이 아니라 생애주기다(PLAN → MASTER → DECISIONS). 한 항목은 한
-문서에만 쓴다. 어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
+머리의 [문서는 넷이다](#문서는-넷이다) 표가 정본이다.
+어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
