@@ -1321,12 +1321,32 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 셋 다 `deletion` · `non_fast_forward` · `pull_request` ·
 `required_status_checks` 넷을 든다.
 
+**룰셋 밖에 저장소 설정이 있다.** 룰셋만 적어두면 이 층이 안 보인다 —
+2026-09-02 에 여기서 사고가 났다(`DECISIONS §101`).
+
+| 설정 | 값 | 왜 |
+|---|---|---|
+| `delete_branch_on_merge` | `false` | 켜면 머지된 **head 를 가리지 않고** 지운다. `part → dev` 의 head 는 `part/gis` 이고 `main → dev` 의 head 는 `main` 이다 |
+| `allow_rebase_merge` | `false` | 보호 브랜치는 rebase 로 되돌리지 않는다(§12-2) |
+
+★ `feat/*` 정리는 `.github/workflows/branch_cleanup.yml` 이 한다. GitHub 에
+base/head 별 설정이 없어 설정을 끄고 워크플로에서 가른다.
+
+★ **룰셋의 `deletion` 은 이 사고를 못 막았다.** 규칙은 있었는데
+`bypass_actors` 가 뚫었다 — 머지를 admin 이 하므로 자동 삭제도 admin
+권한으로 실행된다. **규칙이 있어도 예외가 있으면 없는 것과 같다**(§79).
+
 ★ **`bypass_actors` 는 2026-09-01 현재 비어 있지 않다.** 세 룰셋 모두
 `Repository admin` 역할(actor_id 5)이 `always` 로 들어 있다. main 정비가
 다수 남아 매 건 승인 대기가 병목이 됐고, 한시로 부여했다(DECISIONS §80).
 
 **되돌릴 날 2026-09-07.** 오창준 이탈일이자 마지막 근무일이다. 그날 세 룰셋의
 `bypass_actors` 를 비우고 `release` 의 승인 1 · Code Owners 를 함께 켠다.
+
+★ **`release` 의 승인·Code Owners 는 이미 꺼져 있다.** 2026-09-02 에
+`ruleset_check` 가 `승인 0 != 1` · `Code Owners False != True` 를 냈다.
+언제 낮아졌는지 기록이 없다 — `§76`("적어두지 않은 완화는 영구가 된다")
+그 자리다. 회수 때 함께 켠다.
 
 ★ **저장소 admin 은 팀 전원 다섯이다.**
 
