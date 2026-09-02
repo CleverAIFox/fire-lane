@@ -71,6 +71,8 @@ jobs:
           sed -i "s/?v=BUILD/?v=$B/g" web/index.html
           grep -c "?v=$B" web/index.html
 
+      - name: 배포 준비 (docs/proposal.docx → web/)
+        run: uv run python tools/stage_pages.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

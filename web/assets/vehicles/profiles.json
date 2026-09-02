@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "usage": "Representative routing envelopes only. Replace with the measured dimensions of each local fleet vehicle before operational deployment.",
+  "units": "mm",
+  "profiles": [
+    {"id":"pump_medium","label":"중형 펌프차","icon":"pump.svg","length":8000,"width":2500,"height":3200,"wheelbase":4260,"turningRadius":7300,"capacityLiters":3000,"source":"https://inje119.gwd.go.kr/egf/bp/board/article/download?fileSeq=1222463"},
+    {"id":"pump_large","label":"대형 펌프차","icon":"pump.svg","length":8500,"width":2500,"height":3400,"wheelbase":4925,"turningRadius":10718,"capacityLiters":4700,"source":"https://inje119.gwd.go.kr/egf/bp/board/article/download?fileSeq=1222463"},
+    {"id":"tanker_medium","label":"중형 물탱크차","icon":"tanker.svg","length":8500,"width":2500,"height":3400,"wheelbase":4260,"turningRadius":10718,"capacityLiters":6000,"source":"https://inje119.gwd.go.kr/egf/bp/board/article/download?fileSeq=1222463"},
+    {"id":"tanker_large","label":"대형 물탱크차","icon":"tanker.svg","length":10000,"width":2500,"height":3700,"wheelbase":4925,"turningRadius":11158,"capacityLiters":12000,"source":"https://inje119.gwd.go.kr/egf/bp/board/article/download?fileSeq=1222463"},
+    {"id":"ladder_under_33m","label":"33m 미만 사다리차","icon":"ladder.svg","length":10000,"width":2500,"height":3800,"wheelbase":4925,"turningRadius":11340,"capacityLiters":null,"source":"https://inje119.gwd.go.kr/egf/bp/board/article/download?fileSeq=1222463"},
+    {"id":"ladder_33m_plus","label":"33m 이상 사다리차","icon":"ladder.svg","length":12500,"width":2500,"height":3900,"wheelbase":4925,"turningRadius":11889,"capacityLiters":null,"source":"https://inje119.gwd.go.kr/egf/bp/board/article/download?fileSeq=1222463"},
+    {"id":"rescue_5t","label":"5톤 구조공작차","icon":"rescue.svg","length":7950,"width":2500,"height":3100,"wheelbase":null,"turningRadius":null,"capacityLiters":null,"dimensionType":"maximum procurement envelope","source":"https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01327034&bidPbancOrd=000&fileSeq=4&fileType=&prcmBsneSeCd=01"},
+    {"id":"chemical_large","label":"대형 화학차","icon":"chemical.svg","length":9000,"width":2500,"height":3400,"wheelbase":4925,"turningRadius":10718,"capacityLiters":4000,"source":"https://inje119.gwd.go.kr/egf/bp/board/article/download?fileSeq=1222463"},
+    {"id":"chemical_high_performance","label":"고성능 화학차","icon":"chemical.svg","length":12000,"width":2500,"height":3800,"wheelbase":4925,"turningRadius":11158,"capacityLiters":11000,"source":"https://inje119.gwd.go.kr/egf/bp/board/article/download?fileSeq=1222463"},
+    {"id":"ambulance_current_example","label":"119 구급차 예시","icon":"ambulance.svg","length":5270,"width":1995,"height":2410,"wheelbase":null,"turningRadius":null,"capacityLiters":null,"dimensionType":"current station design example","source":"https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadFile.do?bidPbancNo=R26BK01452564&bidPbancOrd=000&fileSeq=2&fileType=&prcmBsneSeCd=03"}
+  ]
+}

@@ -19,7 +19,7 @@ import json
 import geopandas as gpd
 from shapely.ops import unary_union
 
-from firelane.paths import PROCESSED, RAW
+from firelane.paths import PROCESSED
 from firelane.seg.geom import VERDICT_RULE
 from firelane.seg.params import (
     CCTV_RANGE,
@@ -37,6 +37,32 @@ OUT = PROCESSED
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
 
 
+def _fire_access_csv():
+    """소방서 지정 구간 CSV 를 **대장에서** 찾는다.
+
+    ★ 못 찾으면 `None` 을 주되 **왜 못 찾았는지 찍는다.** 조용히 넘기면
+      대조가 0건인 채로 초록불이 되고, 그것이 이 저장소가 두 번 겪은
+      사고다 — 경로 오류로 죽어 있던 것이 2026-08-13, 터미널에만 있던 것이
+      08-17 이다. `MASTER §4` 는 이 대조를 **우리 폭에 대한 유일한 외부
+      대조 수단**이라고 든다.
+    """
+    from firelane import ledger
+    from firelane.paths import RAW as _RAW
+
+    e = (ledger.load().get("datasets") or {}).get("fire_access")
+    if e is None:
+        print("  [소방서 대조] 대장에 `fire_access` 가 없다 — 건너뛴다")
+        return None
+    hits = [p for p in ledger.paths_of(e, _RAW) if p.exists()]
+    if not hits:
+        print("  [소방서 대조] 대장은 `fire_access` 를 들지만 raw 에 실물이 "
+              "없다 — 건너뛴다")
+        return None
+    if len(hits) > 1:
+        print(f"  [소방서 대조] 후보 {len(hits)}개 — 최신을 쓴다: {hits[-1].name}")
+    return sorted(hits)[-1]
+
+
 def nfa_compare(g):
     """소방서 지정 구간과 우리 폭을 도로명 단위로 대조하고 파일로 남긴다."""
     # ── 소방서 지정 구간 대조 ────────────────────────────────
@@ -47,8 +73,13 @@ def nfa_compare(g):
     # ★ RAW 는 $FIRE_LANE_RAW 다. ROOT/"data"/"raw" 로 박아두면 exists() 가
     #   항상 거짓이라 이 블록이 통째로 죽는다. 실제로 한 번도 실행된 적이 없었다.
     #   소방서 지정 구간은 우리 폭에 대한 유일한 외부 대조 수단이다.
-    fa = RAW / "safety" / "safety_fire_access_jngj-dong_20250731.csv"
-    if fa.exists():
+    # ★ 2026-09-02. 경로를 직접 조립하지 않는다. 대장이 `stem` + `ext` 로
+    #   실물을 찾고 코드는 그 결과만 받는다 — 개명하면 대장·sha대장·실물
+    #   셋이 함께 움직이는데, 코드가 그 셋 밖에서 경로를 만들면 혼자
+    #   남는다. 2026-08-13 에 그 사고가 있었고 그때는 **한 번도 실행된 적이
+    #   없었다.** 예외가 안 나고 블록이 통째로 조용히 죽는다(DECISIONS §98).
+    fa = _fire_access_csv()
+    if fa is not None and fa.exists():
         import csv
         import re
         rows = list(csv.DictReader(fa.open(encoding="cp949")))

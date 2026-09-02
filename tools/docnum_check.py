@@ -255,8 +255,42 @@ def main() -> int:
         ("docs/MASTER.md", c.get("ds", 0), "대장 datasets 종수"),
         ("docs/MASTER.md", c.get("retired", 0), "대장 retired 종수"),
         ("docs/MASTER.md", c.get("migrated", 0), "norm 이관 종수"),
+        # ★ 2026-09-02. README 가 빠져 있었다. 저장소를 clone 한 사람이
+        #   **처음 보는 파일**인데 `대장 36종`(실물 43)이 살아 있었다.
+        #   README 도 `\`datasets\` N종` 서식으로 맞췄으므로 같은 문맥
+        #   패턴이 그대로 걸린다.
+        ("README.md", c.get("ds", 0), "대장 datasets 종수"),
+        ("README.md", c.get("retired", 0), "대장 retired 종수"),
     ]
+    # ★ 2026-09-02. 종전에는 **정답이 파일 어딘가에 있나**만 봤다.
+    #   그래서 라벨 옆에 오답이 붙어 있어도 통과했다 — MASTER 가
+    #   `datasets 41종`(실물 43)인 채로 초록불이었고, 그 절은 바로 위에
+    #   "이 세 숫자는 docnum_check 가 대장에서 세어 대조한다 — 손으로
+    #   적으면 낡는다" 고 적고 있었다. `docx_check` 의 `1,102` 와 같은
+    #   형태다(DECISIONS §95).
+    #
+    #   라벨 옆의 수를 직접 읽어 비교한다. 문맥 패턴이 없는 항목은
+    #   종전대로 존재 대조로 둔다 — 넓히다 오탐이 나면 사람이 검사를 끈다.
+    # 라벨 → 그 수가 실제로 적히는 자리. 여기 있는 것만 문맥 대조한다.
+    CONTEXT_PAT = {
+        "대장 datasets 종수": r"`datasets` (\d+)종",
+        "대장 retired 종수": r"`retired` (\d+)종",
+    }
+
     for rel, want, label in RULES:
+        pat = CONTEXT_PAT.get(label)
+        txt = read(rel)
+        if pat:
+            got = [int(g.replace(",", "")) for g in re.findall(pat, txt)]
+            wrong = [g for g in got if g != want]
+            if wrong:
+                print(f"! {rel:16s} {label} {wrong} → {want}")
+                bad += 1
+                continue
+            if not got:
+                print(f"! {rel:16s} {label} 서술을 못 찾았다 — 패턴이 낡았다")
+                bad += 1
+            continue
         if not any(t in read(rel) for t in fmt(want)):
             print(f"! {rel:16s} {label} {want} 없음")
             bad += 1
