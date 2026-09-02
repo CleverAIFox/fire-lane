@@ -131,6 +131,11 @@ step "문서 숫자 대조"   uv run python tools/docnum_check.py
 # ★ 2026-09-02 배선. 오늘 캡션 절까지 붙여놓고 **어디서도 안 부르고
 #   있었다.** 사람이 손으로 칠 때만 도는 도구는 이탈 후 아무도 안 부른다.
 step "기획서 대조"     uv run python tools/docx_check.py
+# ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
+step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
+# ★ 막는 검사가 아니라 **보여주는** 것이다. 승인이 형식이 되지 않게
+#   리뷰어에게 무엇이 움직였는지 준다(DECISIONS §109).
+note "흡수 대상" "$(uv run python tools/release_brief.py 2>&1 | tail -1)"
 # ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
 step "선언 ↔ 실물"     uv run python tools/refcheck.py
 # ★ 전수 스캔. `--repo` 는 데이터 레이크 없이 저장소 트리만 본다 —

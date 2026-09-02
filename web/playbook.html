@@ -131,7 +131,21 @@
     .print-title {
       display: none;
     }
-  </style>
+    /* ── 주입된 내용의 모양 ─────────────────────────────────
+     ★ 렌더러는 이 클래스를 모른다. 껍데기가 스타일을 갖고 내용만
+       들어오므로 여기가 그 자리다. 렌더러가 클래스를 알기 시작하면
+       모양이 다시 코드로 돌아간다(DECISIONS §105). */
+  .fl-table td{padding:.5rem;vertical-align:top;
+    border-bottom:1px solid #f1f5f9;color:#334155}
+  .fl-table tbody tr:last-child td{border-bottom:0}
+  .fl-table td:first-child{white-space:nowrap;font-weight:600;color:#0f172a}
+  .fl-table td code{font-family:ui-monospace,monospace;font-size:.92em}
+  .fl-fill p{margin:.35rem 0;color:#475569;font-size:.78rem;line-height:1.6}
+  .fl-fill pre,pre[data-fill]{white-space:pre-wrap;word-break:break-all}
+  .fl-fill table{width:100%;font-size:.75rem;text-align:left}
+  .fl-fill table th,.fl-fill table td{padding:.4rem .5rem;
+    border-bottom:1px solid #f1f5f9}
+</style>
 </head>
 <body class="min-h-screen">
 
@@ -446,13 +460,13 @@ export FIRE_LANE_INBOX=/mnt/c/Users/&lt;사용자명&gt;/Downloads</pre>
           </span>
           <span class="canon-tag">정본: MASTER §12-5</span>
         </div>
+        
 
         <div class="code-box accent-amber rounded p-3">
           <button onclick="copyCode('c-morning')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded border border-slate-300 shadow-sm font-sans">
             <i class="fa-regular fa-copy mr-1"></i> 복사
           </button>
-          <pre id="c-morning" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto">git switch part/gis && git pull --ff-only   # 1. 원격 상태를 그대로 받는다
-git switch -c feat/gis-오늘작업이름          # 2. 오늘 작업할 임시 브랜치 생성</pre>
+          <pre id="c-morning" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto" data-fill="12-5" data-kind="pic"></pre>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600 pt-1">
@@ -635,10 +649,19 @@ uv run python tools/pull_data.py --yes --all # 3. 반입 후 파이프라인 전
           </span>
           <span class="canon-tag">정본: MASTER §12-4</span>
         </div>
+        
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <!-- Lockfile -->
-          <div class="code-box accent-amber rounded p-3 space-y-1.5">
+          <div class="border border-slate-200 rounded overflow-hidden">
+            <table class="w-full text-left text-xs fl-table">
+              <thead class="bg-slate-50 text-slate-800 border-b border-slate-200 font-bold">
+                <tr><th class="p-2">대상</th><th class="p-2">처리</th></tr>
+              </thead>
+              <tbody data-fill="12-4" data-kind="rows" data-nth="1"></tbody>
+            </table>
+          </div>
+        <div class="code-box accent-amber rounded p-3 space-y-1.5">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold text-slate-900 font-mono">1. uv.lock 충돌</span>
               <button onclick="copyCode('c-lock')" class="copy-btn bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
@@ -692,41 +715,11 @@ bash tools/verify.sh --fast         # 4. CI 전체 위생 검사 고속 재현</
 
         <!-- 검사 항목 테이블 -->
         <div class="border border-slate-200 rounded overflow-hidden">
-          <table class="w-full text-left text-xs">
+          <table class="w-full text-left text-xs fl-table">
             <thead class="bg-slate-50 text-slate-800 border-b border-slate-200 font-bold">
-              <tr>
-                <th class="p-2.5">검사 항목 / 도구</th>
-                <th class="p-2.5">무엇을 막는가</th>
-                <th class="p-2.5">해결 방법</th>
-              </tr>
+              <tr><th class="p-2">색</th><th class="p-2">라벨</th><th class="p-2">기준</th><th class="p-2">뜻</th></tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 text-slate-700">
-              <tr>
-                <td class="p-2.5 font-mono text-rose-700 font-bold">test_contract.py</td>
-                <td class="p-2.5">좌표계(EPSG:4326), 필드명, verdict 4종 어휘 파괴</td>
-                <td class="p-2.5">인터페이스 계약 스키마 원복 (§5-2)</td>
-              </tr>
-              <tr>
-                <td class="p-2.5 font-mono text-rose-700 font-bold">test_layering.py</td>
-                <td class="p-2.5">계층 구조 선언(raw, norm, processed)과 경로 불일치</td>
-                <td class="p-2.5">sources.yaml 계층 경로 정합 (§18-1)</td>
-              </tr>
-              <tr>
-                <td class="p-2.5 font-mono text-rose-700 font-bold">test_workflow_html_sync.py</td>
-                <td class="p-2.5">MASTER.md §12 룰셋 테이블과 workflow.html 사본 불일치</td>
-                <td class="p-2.5">render_workflow.py 재실행 (§12-7)</td>
-              </tr>
-              <tr>
-                <td class="p-2.5 font-mono text-rose-700 font-bold">golden.py check</td>
-                <td class="p-2.5">리팩터링 중 산출물 판정 수치 임의 변경</td>
-                <td class="p-2.5">로직 원복 또는 golden lock (§18-5 R11)</td>
-              </tr>
-              <tr>
-                <td class="p-2.5 font-mono text-rose-700 font-bold">pr_body_check / commit_policy</td>
-                <td class="p-2.5">PR 본문 템플릿 미작성 또는 40MB 초과 파일/raw 데이터 커밋</td>
-                <td class="p-2.5">PR 본문 작성 / 대용량 파일 제외 (§12-10)</td>
-              </tr>
-            </tbody>
+            <tbody data-fill="10-2" data-kind="rows" data-nth="1"></tbody>
           </table>
         </div>
       </div>
@@ -901,6 +894,7 @@ git push -u origin feat/gis-revert   # PR 로 되돌린다</pre>
         </h3>
         <span class="canon-tag">정본: MASTER §12-8b</span>
       </div>
+        
 
       <!-- 위험 구역 격리 2: 릴리즈 3·4단계 -->
       <div class="danger-box p-3.5 rounded text-xs text-rose-950 space-y-1">
@@ -916,18 +910,7 @@ git push -u origin feat/gis-revert   # PR 로 되돌린다</pre>
         <button onclick="copyCode('c-release')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
           <i class="fa-regular fa-copy mr-1"></i> 복사
         </button>
-        <pre id="c-release" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto"># 1단계: dev -> main PR (Merge Commit / 승인 1 + Code Owners 통과)
-#      ★ 머지 완료를 확인한 뒤 2단계로 간다
-git switch main && git pull --ff-only && git log --oneline -1
-
-# 2단계: 태그 (그 머지 커밋이 보여야 붙인다)
-git tag v&lt;다음버전&gt; && git push origin v&lt;다음버전&gt;
-
-# 3단계: [필수] main -> dev 흡수 — 릴리즈 매니저
-gh pr create --base dev --head main --fill && gh pr merge --merge
-
-# 4단계: [필수] dev -> part — 각 파트 통합 담당이 자기 브랜치로
-gh pr create --base part/&lt;파트&gt; --head dev --fill && gh pr merge --merge</pre>
+        <pre id="c-release" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto" data-fill="12-8b" data-kind="pic"></pre>
       </div>
     </section>
 
@@ -988,7 +971,7 @@ gh pr create --base part/&lt;파트&gt; --head dev --fill && gh pr merge --merge
             <h3 class="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
               <i class="fa-solid fa-key text-rose-600"></i> BYPASS 회수 & 데이터 추적
             </h3>
-            <span class="bg-rose-100 text-rose-800 border border-rose-300 text-[9px] font-bold px-1.5 py-0.2 rounded" data-expires="2026-09-07">만료 2026-09-07</span>
+            <span class="bg-rose-100 text-rose-800 border border-rose-300 text-[9px] font-bold px-1.5 py-0.2 rounded" data-expires="2026-09-03">만료 2026-09-02</span>
           </div>
           <span class="canon-tag">정본: MASTER §12-10</span>
         </div>
@@ -996,7 +979,7 @@ gh pr create --base part/&lt;파트&gt; --head dev --fill && gh pr merge --merge
           <div class="bg-slate-50 p-2.5 rounded border border-slate-200">
             <b class="text-rose-700 block mb-0.5">Admin Bypass 회수 예정 (§12-1)</b>
             <p class="text-slate-600 leading-tight">
-              현재 main 정비용으로 5인 Admin Bypass 적용 중. <b class="text-amber-800">2026-09-07 전원 회수 예정</b> (회수 후 승인 1 + Code Owners 필수).
+              현재 main 정비용으로 5인 Admin Bypass 적용 중. <b class="text-amber-800">2026-09-02 전원 회수 예정</b> (회수 후 승인 1 + Code Owners 필수).
             </p>
             <p class="text-[10px] text-slate-400 mt-1 border-t border-slate-200 pt-1">
               ※ 회수하면 이 카드를 통째로 지운다. 지난 날짜가 적힌 안내는 안 지킨 규칙처럼 읽힌다.
