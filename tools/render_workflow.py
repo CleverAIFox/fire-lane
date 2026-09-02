@@ -51,26 +51,50 @@ OUT = ROOT / "web/workflow.html"
 TROUBLE = "12-4"          # 이 절은 통째로 '막히면' 탭
 
 
-def section12(text: str) -> list[str]:
-    """`## 12.` ~ `## 13.` 사이.
+def sections(text: str, want: set[str]) -> list[str]:
+    """색인이 드는 절들을 MASTER 에서 잘라 이어 붙인다.
 
-    ★ 2026-09-01. 종전에는 `next()` 두 개였고 못 찾으면 `StopIteration` 이
-      맨몸으로 터졌다. 값이 낡는 것은 `--check` 가 잡지만 **구조가 바뀌는
-      것**은 아무도 설명해 주지 않았다. 제목이 바뀌었는지 절이 사라졌는지
-      추적 하나만 보고는 안 갈린다.
+    ★ 2026-09-02. 종전 `section12()` 는 `## 12.` ~ `## 13.` 한 덩어리만
+      읽었다. 그런데 `data-slot` 은 이미 `§0` · `§10-2` · `§14-1` ·
+      `§18-11` 을 다루고 있었다 — 화면이 §12 밖을 쓰는데 렌더러만 못
+      따라갔다(DECISIONS §94).
+
+    ★ 절 번호로 자른다. 제목 문구가 바뀌어도 견딘다. 종전에는 `## 12. 협업`
+      이라는 **문구**를 찾아서, 제목을 손보면 화면이 통째로 비었다.
     """
     lines = text.splitlines()
-    s = next((i for i, l in enumerate(lines) if l.startswith("## 12. 협업")), None)
-    if s is None:
+    heads: list[tuple[int, str]] = []
+    for i, ln in enumerate(lines):
+        m = re.match(r"^#{2,3} ([0-9]+(?:-[0-9a-z]+)?)\. ", ln)
+        if m:
+            heads.append((i, m.group(1)))
+    if not heads:
+        raise SystemExit("★ MASTER 에 번호 붙은 절이 하나도 없다. 제목 형식을 봐라.")
+
+    out: list[str] = []
+    got: set[str] = set()
+    for idx, (i, num) in enumerate(heads):
+        if num not in want:
+            continue
+        # 같은 깊이 이상의 다음 제목까지가 그 절이다.
+        depth = len(num.split("-"))
+        e = len(lines)
+        for j, (k, n2) in enumerate(heads):
+            if j <= idx:
+                continue
+            if len(n2.split("-")) <= depth:
+                e = k
+                break
+        out.extend(lines[i:e])
+        got.add(num)
+
+    lost = sorted(want - got)
+    if lost:
         raise SystemExit(
-            "★ MASTER 에 `## 12. 협업` 절이 없다.\n"
-            "  제목이 바뀌었으면 이 파서도 같이 고쳐라. 화면만 비는 것이\n"
-            "  제일 나쁘다 — 규약이 사라진 줄 아무도 모른다.")
-    e = next((i for i in range(s + 1, len(lines))
-              if lines[i].startswith("## 13.")), None)
-    if e is None:
-        raise SystemExit("★ MASTER 에 `## 13.` 이 없다. §12 의 끝을 못 찾는다.")
-    return lines[s:e]
+            f"★ 색인이 드는 절을 MASTER 에서 못 찾는다 — "
+            f"{', '.join('§' + x for x in lost)}\n"
+            "  절을 지웠거나 번호가 바뀌었다. §12-0 색인표를 같이 고쳐라.")
+    return out
 
 
 PLAYBOOK = ROOT / "web/playbook.html"
@@ -199,35 +223,44 @@ def slots() -> None:
     print(f"  playbook 슬롯 {len(want)}개 전건 MASTER 에 실재")
 
 
-def audit(lines: list[str], groups: dict) -> None:
+def audit(lines: list[str], groups: dict, want: set[str]) -> None:
     """파싱 결과가 원문과 어긋나지 않는지 센다. 어긋나면 죽는다.
 
     ★ 여기서 보는 것은 **값이 아니라 구조**다. `--check` 는 "생성물이
       MASTER 와 다른가" 를 보고, 이쪽은 "MASTER 를 제대로 읽었는가" 를 본다.
-      전자는 사람이 HTML 을 손으로 고쳤을 때 울고, 후자는 MASTER 의 절
-      구성이 바뀌었을 때 운다. 2026-09-01 에 후자가 없었다.
+
+    ★ 2026-09-02. 대상이 §12 하위 절에서 **색인이 드는 절 전체**로 넓어졌다.
+      §12 밖(`§0` · `§10-2` · `§14-1` · `§18-11`)도 담겼는지 센다.
     """
-    subs = [m.group(1) for ln in lines
-            if (m := re.match(r"^### (12-[0-9a-z]+)\.", ln))]
-    if not subs:
-        raise SystemExit("★ §12 에 `### 12-x.` 하위 절이 하나도 없다. "
-                         "제목 형식이 바뀌었는지 봐라.")
     picked = {t.split()[0].lstrip("§")
-              for xs in groups.values() for t, _ in xs
+              for xs in groups.values() for t, _, _ in xs
               if t.startswith("§")}
-    lost = [s for s in subs if s not in picked]
+    lost = sorted(want - picked)
     if lost:
         raise SystemExit(
-            f"★ §12 하위 절 {len(lost)}개가 화면에 안 담겼다 — {', '.join(lost)}\n"
+            f"★ 색인이 든 절 {len(lost)}개가 화면에 안 담겼다 — "
+            f"{', '.join('§' + x for x in lost)}\n"
             "  그 절의 내용이 표도 그림도 산문도 아닌 형태라 분류에서 빠졌다.\n"
             "  classify() 를 고치거나 MASTER 쪽 형식을 맞춰라.")
-    print(f"  §12 하위 절 {len(subs)}개 전건 반영")
+    print(f"  색인 절 {len(want)}개 전건 반영")
 
 
-def classify(lines: list[str]) -> dict[str, list[tuple[str, str]]]:
-    """(제목, 조각) 을 탭별로 모은다."""
-    out = {"pic": [], "tbl": [], "trb": [], "why": []}
+def classify(lines: list[str],
+             situ_of: dict[str, str]) -> dict[str, list[tuple[str, str, str]]]:
+    """(제목, 형태, 조각) 을 **상황별로** 모은다.
+
+    ★ 2026-09-02. 종전에는 마크다운 서식으로 갈랐다 — 들여쓴 블록이면
+      그림, `|` 로 시작하면 표, 나머지는 산문. **서식이 곧 스키마인데
+      아무도 그렇게 선언한 적이 없었다.** 누가 표를 목록으로 바꾸면 그 절이
+      다른 탭으로 조용히 옮겨간다(DECISIONS §94-1).
+
+      이제 `MASTER §12-0` 색인표가 상황을 정하고 렌더러는 그것을 읽는다.
+      형태는 **조각마다 남겨** 렌더 방식(코드블록/표/산문)에만 쓴다 —
+      가르는 축이 아니라 그리는 방법이다.
+    """
+    out: dict[str, list[tuple[str, str, str]]] = {}
     cur = "시작 — 구조와 방향"
+    situ = next(iter(situ_of.values()), "구조")
     fence = False
     buf: list[str] = []
     kind = None
@@ -235,44 +268,47 @@ def classify(lines: list[str]) -> dict[str, list[tuple[str, str]]]:
     def flush():
         nonlocal buf, kind
         if buf and kind:
-            out[kind].append((cur, "\n".join(buf)))
+            out.setdefault(situ, []).append((cur, kind, "\n".join(buf)))
         buf, kind = [], None
 
     for ln in lines:
-        m = re.match(r"^### (12-[0-9a-z]+)\. (.+)$", ln)
+        m = re.match(r"^#{2,3} ([0-9]+(?:-[0-9a-z]+)?)\. (.+)$", ln)
         if m:
             flush()
-            cur = f"§{m.group(1)}  {m.group(2)}"
-            continue
-        if ln.startswith("## 12."):
+            num = m.group(1)
+            cur = f"§{num}  {m.group(2)}"
+            situ = situ_of.get(num, situ)
             continue
 
         if ln.startswith("```"):
             fence = not fence
-            if not fence:
-                flush()
-            else:
-                flush(); kind = "pic"
+            flush()
+            if fence:
+                kind = "pic"
             continue
-
-        trouble = cur.startswith(f"§{TROUBLE}")
-        want = "trb" if trouble else None
 
         if fence:
             kind = kind or "pic"
-            buf.append(ln); continue
+            buf.append(ln)
+            continue
         if ln.startswith("    ") and ln.strip():
-            tgt = want or "pic"
-            if kind != tgt: flush(); kind = tgt
-            buf.append(ln[4:]); continue
+            if kind != "pic":
+                flush()
+                kind = "pic"
+            buf.append(ln[4:])
+            continue
         if ln.startswith("|"):
-            tgt = want or "tbl"
-            if kind != tgt: flush(); kind = tgt
-            buf.append(ln); continue
+            if kind != "tbl":
+                flush()
+                kind = "tbl"
+            buf.append(ln)
+            continue
         if not ln.strip():
-            flush(); continue
-        if kind not in (None, "why", "trb"): flush()
-        kind = want or "why"
+            flush()
+            continue
+        if kind not in (None, "why"):
+            flush()
+        kind = "why"
         buf.append(ln)
     flush()
     return out
@@ -398,18 +434,20 @@ def anchor(num: str) -> str:
     return f"#{num}-{slug}"
 
 
-def render(groups: dict) -> str:
+def render(groups: dict, order: list[str]) -> str:
     # 절별 산문을 미리 모은다. 각 절 끝에 <details> 로 붙는다.
     prose: dict[str, list[str]] = {}
-    for title, md in groups["why"]:
-        prose.setdefault(title, []).append(md)
+    for xs in groups.values():
+        for title, kind, md in xs:
+            if kind == "why":
+                prose.setdefault(title, []).append(md)
 
     def detail(title: str) -> str:
         """그 절의 '왜' — 접힌 채로 둔다. 층 2다."""
         md = prose.get(title)
         if not md:
             return ""
-        sec = re.match(r"§(12-[0-9a-z]+)", title)
+        sec = re.match(r"§([0-9]+(?:-[0-9a-z]+)?)", title)
         link = ""
         if sec:
             link = (f'<a class="more" target="_blank" rel="noopener"'
@@ -421,32 +459,36 @@ def render(groups: dict) -> str:
                 '<div class="pop">'
                 + "".join(as_prose(m) for m in md) + link + "</div></details>")
 
-    def block(kind: str) -> str:
+    def block(situ: str) -> str:
+        """한 상황의 조각들. **형태는 그리는 방법일 뿐 가르는 축이 아니다.**"""
         parts, last = [], None
-        for title, md in groups[kind]:
+        for title, kind, md in groups.get(situ, []):
             if title != last:
                 if last:
                     parts.append(detail(last))
-                parts.append(f"<h3>{html.escape(title)}</h3>"); last = title
+                parts.append(f"<h3>{html.escape(title)}</h3>")
+                last = title
             if kind == "pic":
                 parts.append(as_tree(md) or as_flow(md)
                              or f"<pre>{html.escape(md)}</pre>")
-            else:
+            elif kind == "tbl":
                 parts.append(as_rules(md) or as_table(md))
         if last:
             parts.append(detail(last))
         return "".join(parts) or "<p>없음</p>"
 
-    tabs = [("pic", "1 · 그림", "브랜치 구조와 하루 흐름"),
-            ("tbl", "2 · 표", "룰셋 · 용어 · 커밋 접두사"),
-            ("trb", "3 · 막히면", "충돌 · 자주 겪는 것")]
+    # ★ 탭은 `MASTER §12-0` 색인표의 **표 순서**를 그대로 따른다. 여기서
+    #   순서를 정하지 않는다 — 정하면 색인과 화면이 갈리고 그것이 §94 다.
+    #   `order` 는 main 이 색인에서 읽어 넘긴다(dict 는 삽입 순서를 지킨다).
+    tabs = [(s, re.sub(r"`([^`]+)`\s*", r"\1 ", s).strip(), "")
+            for s in order if s in groups]
 
     radios = "".join(
         f'<input type="radio" name="t" id="t{i}"{" checked" if i == 0 else ""}>'
         for i, _ in enumerate(tabs))
     labels = "".join(
-        f'<label for="t{i}"><b>{t}</b><span>{d}</span></label>'
-        for i, (_, t, d) in enumerate(tabs))
+        f'<label for="t{i}"><b>{t}</b></label>'
+        for i, (_, t, _d) in enumerate(tabs))
     panes = "".join(
         f'<section class="p{i}">{block(k)}</section>'
         for i, (k, _, _) in enumerate(tabs))
@@ -565,17 +607,30 @@ code.p-fix{{color:#dc2626}} code.p-docs{{color:#475569}}
 """
 
 
+def build() -> str:
+    """MASTER → HTML **한 덩어리**. `main` 도 검사도 이것만 부른다.
+
+    ★ 2026-09-02. 종전에는 `tests/test_workflow_html_sync.py` 가
+      `render(classify(section12(...)))` 로 내부를 직접 조립했다. 파이프라인이
+      바뀌면 검사도 같이 고쳐야 했고, 실제로 이번 상황별 재편에서 터졌다.
+      **검사가 구현을 알면 구현을 못 바꾼다.**
+    """
+    txt = SRC.read_text(encoding="utf-8")
+    situ = index(sections(txt, {"12"}))
+    want = {r for rs in situ.values() for r in rs}
+    lines = sections(txt, want)
+    groups = classify(lines, {r: s for s, rs in situ.items() for r in rs})
+    audit(lines, groups, want)
+    slots()
+    return render(groups, list(situ))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
 
-    _lines = section12(SRC.read_text(encoding="utf-8"))
-    _groups = classify(_lines)
-    audit(_lines, _groups)          # ★ 구조가 바뀌면 여기서 죽는다
-    slots()                         # ★ 반대 방향 — 화면 → MASTER
-    index(_lines)                   # ★ 세 번째 — 절 → 상황
-    doc = render(_groups)
+    doc = build()
 
     if a.check:
         cur = OUT.read_text(encoding="utf-8") if OUT.exists() else ""
