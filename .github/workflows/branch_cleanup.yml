@@ -1,0 +1,32 @@
+# 머지된 `feat/*` 만 지운다.
+#
+# ★ 왜 워크플로인가. 저장소 설정 `delete_branch_on_merge` 는 head 를
+#   **가리지 않는다** — `part → dev` 의 head 는 `part/gis` 이고
+#   `main → dev` 의 head 는 `main` 이다. 2026-09-02 에 그 둘이 차례로
+#   사라졌고 사라진 동안 룰셋이 안 붙어 직푸시가 나갔다(DECISIONS §101).
+#
+#   base/head 별 설정이 GitHub 에 없으므로 설정을 끄고 여기서 가른다.
+#   `feat/**` 는 룰셋 대상이 아니고 수명이 당일이다(MASTER §12-1).
+name: feat 정리
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  rm:
+    if: >-
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'feat/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 머지된 feat 브랜치 삭제
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          echo "삭제: $REF"
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$REF"
