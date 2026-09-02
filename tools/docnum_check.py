@@ -159,6 +159,10 @@ def ledger_counts() -> dict[str, int]:
         "retired": len(y.get("retired") or {}),
         "migrated": len(prep.migrated()),
     }
+    # ★ 마운트가 끊기면 `rglob` 이 예외를 던진다(DECISIONS §104).
+    #   소화전 수치는 raw 에서만 나오므로 대장 종수만 돌려준다.
+    if not paths.alive(paths.RAW):
+        return out
     hits = sorted(paths.RAW.rglob("*hydrant_summary*"))
     if hits:
         rows = list(csv.reader(io.StringIO(

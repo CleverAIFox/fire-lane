@@ -159,6 +159,28 @@ CRS_M = "EPSG:5186"
 CRS_W = "EPSG:4326"
 
 
+def alive(p: Path) -> bool:
+    """디렉터리가 **실제로 붙어 있는가.**
+
+    ★ 2026-09-02. 외장 매체를 뽑은 채 `verify.sh` 를 돌리자 세 곳이 같은
+      형태로 죽었다 — `pipeline.check_only` · `docnum_check` · `treecheck`.
+
+          OSError: [Errno 19] No such device: '.../fire-lane-data/raw'
+
+      `FIRE_LANE_DATA` 는 잡혀 있는데 **장치가 없는 상태**다. `is_dir()` 은
+      경로가 없으면 `False` 를 주지만 마운트가 끊기면 예외를 던진다.
+      "없다" 와 "죽었다" 를 코드가 안 갈랐다.
+
+    ★ 2026-09-07 에 매체를 GIS 통합 담당에게 넘기면 **이것이 상시
+      상태**가 된다. 그때 verify 가 세 곳에서 터지면 원인을 찾는 데
+      시간을 쓴다(DECISIONS §104).
+    """
+    try:
+        return p.is_dir()
+    except OSError:
+        return False
+
+
 def check() -> None:
     """경로 상태를 사람이 읽을 수 있게 출력한다."""
     if DATA:
@@ -169,7 +191,7 @@ def check() -> None:
         src = "기본값(repo/data)"
     print(f"DATA      {DATA or '—'}   [{src}]")
     print(f"RAW       {RAW}")
-    if not RAW.is_dir():
+    if not alive(RAW):
         print("          ★ 없다. FIRE_LANE_DATA 를 설정하거나 원본을 배치할 것")
     else:
         n = sum(1 for _ in RAW.rglob("*") if _.is_file())
@@ -177,7 +199,7 @@ def check() -> None:
         print(f"          {n}개 파일 · {sz:.2f} GB")
     for nm, p in (("LANDING", LANDING), ("NORM", NORM), ("INTERIM", INTERIM),
                   ("FIELD", FIELD), ("QUARANTINE", QUARANTINE)):
-        print(f"{nm:9} {p}{'' if p.is_dir() else '   (없음)'}")
+        print(f"{nm:9} {p}{'' if alive(p) else '   (없음)'}")
     print(f"PROCESSED {PROCESSED}   [재생성 가능. 백업·커밋 안 함]")
     print(f"WEB       {WEB}")
 
