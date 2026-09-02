@@ -68,7 +68,7 @@ FIELD_EXEMPT = {
     #    "삭제됨" 으로 적는다 — **도구가 없어 봉인을 풀 수도 없다.**
     #    field 는 재생성 불가 등급이라 지우지 않고 판단을 이탈 전에 둔다.
     #    해소 = 넷을 interim 으로 내리거나 대장에 등재하고 이 다섯 줄을 지운다.
-    #    기한은 `DEFERRED` 가 든다(2026-09-07).
+    #    기한은 `DEFERRED` 가 든다(2026-09-02).
     ".naver_sealed.csv", "naver_check.csv",
     "naver_check.html", "naver_near.json",
 }
@@ -251,9 +251,9 @@ def check_field_ledger(led: dict) -> list[str]:
 
 
 # ── 5. 만료 — 한시가 한시로 끝나는가 ──────────────────────────
-# ★ 오창준 이탈일. 09-07 이 마지막 근무일이고 09-08 부터 없다.
+# ★ 오창준 이탈일. 09-02 이 마지막 근무일이고 09-08 부터 없다.
 #   그날까지 bypass 를 회수하고 admin 을 축소해야 한다.
-DEPARTURE = "2026-09-07"
+DEPARTURE = "2026-09-02"
 LEAVING = "AIMasterFox"
 
 _BANNER = """
@@ -488,11 +488,11 @@ DEFERRED = (
      "개요서가 §10-2 확정 전에 쓰였다", "개요서 판정 표기를 4종으로"),
     ("2026-09-04", "docs/PLAN.md",
      "PLAN §10 우선순위에 그 날짜를 넣는 것만 남았다", "MVP 09-30 을 PLAN §10 에"),
-    ("2026-09-07", "docs/PLAN.md",
+    ("2026-09-02", "docs/PLAN.md",
      "한 달째 미착수이고 공문도 안 나갔다", "D-30 인터뷰 일정 확정"),
     # ★ 앵커가 이 파일 자신이다. 넷을 치우고 FIELD_EXEMPT 를 비우면
     #   이 줄이 "해소됐다" 로 울어 스스로 지워지기를 요구한다.
-    ("2026-09-07", "tools/doc_fsck.py",
+    ("2026-09-02", "tools/doc_fsck.py",
      '".naver_sealed.csv"', "data/field 네이버 잔류 4건 처분 (PLAN §6-8)"),
 )
 
