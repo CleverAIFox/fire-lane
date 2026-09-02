@@ -1457,20 +1457,26 @@ fix:  버그
 CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소에 없기 때문이다.
 파이프라인은 GIS 담당 로컬에서만 돈다.
 
-### 12-8. 배포 — 밑그림
+### 12-8. 배포
 
 ★ **아직 없다.** 지금 `main` 이 배포하는 것은 정적 사이트 하나뿐이다
 (`지도 배포` · `협업 방침 배포` 둘 다 같은 Pages 사이트를 올린다, §12-7).
-아래는 확정이 아니라 방향이다. 실물이 생기면 이 절을 사실로 다시 쓴다.
+아래는 **정해 둔 것**이며 실물이 생기면 이 절을 사실로 다시 쓴다.
 
-`dev` 를 판 이유가 여기 있다. `main` 에 AWS 배포를 물리는 순간 `main` 은
+`dev` 를 판 이유가 여기 있다. `main` 에 배포를 물리는 순간 `main` 은
 "검증된 것만 들어가는 곳"이 되어야 하고, 그러면 통합용 트렁크가 따로
 필요하다. 순서를 뒤집어 배포를 먼저 붙이면 되돌릴 자리가 없다.
 
 | 갈래 | 트리거 | 산출 |
 |---|---|---|
 | `pages` | `main` 의 `web/**` | GitHub Pages. 정적 지도 |
-| `deploy` (예정) | `main` 의 `src/api/**` · `src/contracts/**` · `Dockerfile.api` | ECR 이미지 → ECS 서비스 갱신 |
+| `deploy` (예정) | `main` 의 `src/api/**` · `src/contracts/**` · `Dockerfile.api` | ECR 이미지 → EC2 한 대가 pull · `docker compose up -d` |
+
+★ **EC2 한 대에 Docker Compose 다. ECS 가 아니다.**
+기획서 `[그림 24]` 가 이미 그렇게 나갔고, 실물 조건도 그쪽이 맞다 —
+상시 서비스가 API 하나뿐이고, ETL 은 GDAL 때문에 1.5GB 인 **배치**이며,
+DB 가 없다(`docker-compose.yml` 머리말이 그 근거를 적는다). 기각 근거와
+되돌릴 조건은 `DECISIONS §93` 이 든다.
 
 이미지는 용도별로 가른다. `Dockerfile` 머리말이 그 이유를 적는다 — ETL 은
 GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 딸려가면
@@ -1478,19 +1484,24 @@ GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 
 
 | 이미지 | 내용 | 실행 형태 |
 |---|---|---|
-| `etl` | GDAL · geopandas · rasterio | 배치. 상시 아님 |
-| `api` | fastapi · uvicorn · shapely | ECS 상시 |
+| `etl` | GDAL · geopandas · rasterio | 배치. `docker compose run --rm etl` |
+| `api` | fastapi · uvicorn · shapely | Compose 상시 서비스 |
 | `vision` | opencv · ultralytics | CV 파트가 붙을 때 |
 
-미리 정해 두는 것 셋.
+미리 정해 두는 것 넷.
 
 - **자격 증명은 OIDC 다.** 장기 키를 저장소에 두지 않는다. 신뢰 정책의
   `sub` 조건은 `main` 으로 못 박는다. 저장소 전체(`:*`)로 열면 `feat/**`
-  에서도 배포가 가능해진다.
+  에서도 배포가 가능해진다. **EC2 로 바꿔도 이건 그대로다** — 배포는
+  SSH 키가 아니라 SSM Run Command 로 건다. 키를 Secrets 에 넣지 않는다.
 - **이미지 태그는 커밋 해시다.** 배포된 것이 어느 코드인지 되짚을 수
-  없으면 롤백이 추측이 된다.
+  없으면 롤백이 추측이 된다. 롤백은 옛 태그로 `compose up -d` 하나다.
 - **승인 게이트를 둔다.** `production` Environment 의 리뷰어는 릴리즈
   매니저다(§12-3 의 표).
+- ★ **한 대는 단일 장애점이다.** 그 사실을 숨기지 않는다 — 재부팅 시
+  자동 복구는 `restart: unless-stopped` 하나이고, 인스턴스가 죽으면
+  사람이 띄운다. **중간평가까지는 그것으로 충분하고, 부족해지는 시점이
+  곧 ECS 로 가는 시점이다**(§93).
 
 ### 12-8a. 매체 저장 — 밑그림
 

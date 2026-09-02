@@ -51,6 +51,13 @@ RETIRED = {
     "apply.py": "패치 zip 절차를 폐기했다(DECISIONS §65)",
 }
 
+# 그림 캡션에서만 보는 어휘. 본문에서는 맥락이 다를 수 있어 캡션에 한정한다.
+CAPTION_STALE = {
+    "원천 11종":
+        "대장은 datasets 41종 · retired 10종이다(MASTER §6). 11 의 근거가"
+        " 저장소에 없다(PLAN §12 #20)",
+}
+
 
 def _load_docx(p: Path) -> list[tuple[str, str]]:
     """(위치, 텍스트) 목록. 표 안까지 본다."""
@@ -95,11 +102,20 @@ def audit(p: Path) -> list[str]:
     # ── 1 · 구간 수 ──
     if n:
         for where, txt in cells:
-            for m in re.finditer(r"(\d{1,2},?\d{3})\s*구간", txt):
-                val = int(m.group(1).replace(",", ""))
+            # ★ 2026-09-02. 종전에는 `구간` 뒤에 붙은 수만 봤다. 기획서는
+            #   같은 것을 `산출단위` · `세그먼트` 로도 부르고, 실제로
+            #   `산출단위 1,102` 가 두 곳에 살아 있었다 — **이 도구의 머리말이
+            #   그 숫자를 만들어진 이유로 드는데 정작 못 잡고 있었다.**
+            #   어휘가 갈려 검사가 비껴간 세 번째다(§49 · §91 · §92).
+            #   수가 앞에 오는 형태(`1,102 산출단위`)도 함께 본다.
+            for m in re.finditer(
+                    r"(?:(\d{1,2},?\d{3})\s*(?:구간|산출단위|세그먼트)"
+                    r"|(?:구간|산출단위|세그먼트)\s*(\d{1,2},?\d{3}))", txt):
+                val = int((m.group(1) or m.group(2)).replace(",", ""))
                 if 900 < val < 1400 and val != n:
                     bad.append(
-                        f"  [{where}] 구간 수 {m.group(1)} → **{n:,}**\n"
+                        f"  [{where}] 구간 수 {m.group(1) or m.group(2)}"
+                        f" → **{n:,}**\n"
                         f"      …{txt.strip()[:70]}…")
 
     # ── 2 · 판정 4종 ──
@@ -114,7 +130,20 @@ def audit(p: Path) -> list[str]:
                         f"  [{where}] {label} {m.group(1)} → **{want}**\n"
                         f"      …{txt.strip()[:70]}…")
 
-    # ── 3 · 폐기된 이름 ──
+    # ── 3 · 그림 캡션 ──
+    # ★ 그림은 이미지라 기계가 못 본다. 그러나 **캡션은 텍스트다.**
+    #   24장 전부 `[그림 N] 제목 — 설명` 형식이 일정해서 파싱이 되고,
+    #   캡션에 든 고유명이 저장소 어휘와 다르면 그림도 낡았을 가능성이 높다.
+    #   그림 자체는 여전히 사람이 봐야 한다 — 여기서 잡는 것은 절반이다.
+    for where, txt in cells:
+        if not re.match(r"\s*\[?그림\s*\d+", txt):
+            continue
+        for name, why in CAPTION_STALE.items():
+            if name in txt:
+                bad.append(f"  [{where}] 캡션이 낡았다: `{name}` — {why}\n"
+                           f"      …{txt.strip()[:70]}…")
+
+    # ── 4 · 폐기된 이름 ──
     for where, txt in cells:
         for name, why in RETIRED.items():
             if name in txt:
