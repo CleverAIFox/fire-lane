@@ -83,7 +83,7 @@ vehicle_spec:
   width_m: 2.5              # KFS-1-0073 §3.3 중형 "2.5 이하"
   length_m: 8.0             # 같은 표 중형
   height_m: 3.2             # 같은 표 중형
-  wheelbase_m: 4.0          # ★ 추정. 공식 규격에 없다
+  wheelbase_m: 4.0          # ★ 추정. 미검증 — wheelbase_verified: false
   turn_radius_m: 12.0       # ★ 법정 상한이지 성능값이 아니다(DECISIONS 81)
   turn_radius_verified: false
   clearance_m: 0.5          # ★ 추정. width_m + 이 값 = params.TRUCK 3.0
@@ -97,8 +97,69 @@ vehicle_spec:
       · 2025년 소방자동차 다수공급자 계약(MAS) 차종별 제작규격
     raw/nfa/ 에 원본을 둔다.
 
-    ★ 축거 · 여유(clearance_m)는 위 셋 어디에도 없다. 지금 값은 추정이며
+    ★ 여유(clearance_m)는 위 셋 어디에도 없다. 지금 값은 추정이며
       D-30 동부소방서 인터뷰로 확정한다.
+
+    ★ **축거 — 2026-09-03 우지혜 조사. 전역값은 쓰지 않는다.**
+
+      ★ **범주 최대는 그 범주 전량을 알 때만 최대다.** 한 대라도 모르면
+        나머지가 그보다 클 수 있으므로 최대라고 장담할 수 없다.
+        그래서 전역 `wheelbase_m` 에 특정 센터의 값을 넣지 않는다 —
+        2026-09-03 에 4.3 을 전역에 넣었다가 되돌렸다. 기본 판정 차량이
+        지산 펌프차인데 4.3 은 대인 파비스에서 나온 값이었다.
+
+      ★ 판정 단위는 **센터 × 차종**이고 서로 독립이다. 그 조합의 보유
+        대수만큼 차종을 전부 알 때만 그 조합의 최대가 확정된다.
+        확정된 조합만 내륜차를 계산하고 나머지는 비활성이다.
+        값은 `web/config.js` 의 `CONFIG.fleet` 항목이 든다.
+
+      축거는 소방청이 아니라 **트럭 제조사**가 정한다. 섀시 제원이라
+      소방 규격에 없는 것이 정상이다 — 회전반경이 KFS 가 아니라
+      자동차규칙 제9조①에 있었던 것과 같은 구조다(DECISIONS §81).
+
+      ★ **범주 최대를 쓰는 근거.** 도로폭은 구간의 **최소**로 판정한다 —
+        제일 좁은 데를 못 지나면 못 지난다. 차량은 그 뒤집음이다.
+        범주의 **최대** 축거로 판정하면 그 범주의 나머지는 전부 통과한다.
+        보유 34대를 전수로 알므로 범주별 최대만 확정하면 그 범주가 닫힌다.
+        전 차량 축거를 다 알 필요가 없다.
+
+      섀시별 축거(mm) — 참고표
+        현대 메가트럭   단축 3,845 · 장축 4,260 · 초장축 4,895
+        현대 파비스     15.5t 샤시캡 단축 3,900 · 장축 4,300
+        타타대우 구쎈   고하중 4x2 단축 3,730 · 장축 4,430 ·
+                        초장축 4,930 · 초장축+ 5,330 · 극초장축 5,630 · 5,830
+
+      확정된 조합(2026-09-03)
+        대인 · 펌프차(중형) 2대 = 5호·6호 둘 다 파비스 → 최대 4,300
+        대인 · 굴절사다리 27m 1대 = 11호 구쎈(2022~) → 사양 미확정(4,930~5,830)
+      미확정
+        지산 · 펌프차 2대 · 구급차 1대 — 0대 확인
+        대인 · 물탱크 · 화학 · 직진사다리 · 구급 · 조연 — 0대 확인
+
+      ★ 초장축(메가트럭 4,895 등)은 뺐다. 중형펌프차는 전장 8,000mm 이하
+        (2025 MAS 제작규격)이고 초장축 섀시에 3,000L 물탱크 특장 공간이
+        안 나온다. **배제 근거를 여기 적는다** — 안 적으면 다음 사람이
+        왜 뺐는지 못 찾는다.
+
+      ★ 값 4.0 은 후보 어느 것도 아니다. 방향도 나쁘다 —
+        Δ = R − √(R² − L²) 는 L 이 클수록 크므로 축거를 작게 잡으면
+        필요폭이 작게 나오고 그것은 **미탐**이다(MASTER §3-13).
+          R=8m 기준   L 4.00 → Δ 0.98 → 필요폭 3.98
+                      L 4.30 → Δ 1.15 → 필요폭 4.15     +17cm · 13코너(1.5%)
+
+      ★ 특정된 것은 대인 5호(998더7382) · 6호(998더7376)이고 캡 측면
+        `PAVISE` 워드마크로 파비스 확인이다. 단축/장축은 미확정.
+        **판정 기준 차량은 지산 소속(CONFIG.fleetDefault = pump-js)이며
+        그 2대는 아직 미확인이다.** 대인 차로 지산 차를 유추하지 않는다 —
+        2019년 파비스가 메가트럭을 대체했으므로 도입 연도가 다르면 섀시가
+        다르다. 그래서 `wheelbase_verified` 는 여전히 false 다.
+
+      ★ **스키마 결함이 함께 드러났다.** `vehicle_profiles` 는 차종당 축거
+        하나인데 같은 중형펌프차가 섀시 세대로 갈린다. 축거를 확보해도
+        넣을 자리가 없다 — 값보다 스키마가 먼저다(PLAN #26).
+
+      출처 등급 — 섀시 축거는 위키백과·카눈에서 왔고 **정본이 아니다.**
+      현대 상용차 카탈로그 또는 이트럭스 제원 DB 로 갈아야 한다.
 
     ★ 최소회전반경은 2026-08-25 에 근거를 찾았다. **소방장비 규격이 아니라
       상위 법령에 있다** —
@@ -1909,6 +1970,160 @@ datasets:
       DECISIONS 85 의 근거이며 차량 목록을 센터로 가른 이유다.
     note: 원본이 CP949 다. 편입 시 UTF-8 로 옮기고 수치는 고치지 않는다
 
+  # ══ 2026-09-03 반입. 소방청 소방안전 빅데이터 플랫폼 ══════════
+  # ★ 전부 **동구/동명동 필터 파생본**만 저장소에 둔다. 원본 전국분은
+  #   합 2.85GB 이고 재취득 가능하므로 raw 에 넣지 않는다(§12-10).
+  # ★ 인코딩은 전부 utf-8-sig 다. cp949 로 열면 죽는다(2026-09-03 확인).
+
+  nfa_dispatch_119:
+    feeds: 미투입 — 경로 비용의 외부 검증축. 산출물이 아니라 대조 대상이다
+    feeds_note: '[]'
+    feeds_why: |
+      ★ route_vehicle.csv 의 cost 는 한 번도 실물과 대조된 적이 없다.
+        폭에는 ngii1k_center 라는 독립 검증축이 있는데(n=909 · 절대편차
+        중앙 0.32m) 경로 비용에는 그런 축이 없었다.
+        DSPT_DRTV_DT → GRNDS_ARVL_DT 가 실제 도달 소요이고
+        DCLR_PSTN_LOT/LAT 이 그 지점이다.
+    stem: nfa_dispatch_119
+    ext: [csv]
+    scope: jngj-dongmyeong
+    authority: 소방청 소방안전 빅데이터 플랫폼
+    updated: TODO 원자료 데이터 기준일 (파일 안 어디에도 없어 확보처 확인 필요)
+    what: 전국 119 신고접수 현황 2022~2025 → 동명동 필터 파생본
+    kind: csv_table
+    encoding: utf-8-sig
+    crs_native: 4326
+    note: |
+      ★ 원본 4개년 1.24GB. CLMTY_EMD_NM='동명동' 필터본만 반입한다.
+      ★ DCLR_PSTN_LAT/LOT 이 0.0 인 행이 있다. 결측을 0 으로 채운 것이므로
+        lat > 0 조건이 필수다.
+      ★ 좌표는 신고자 위치(휴대폰)이지 반드시 현장이 아니다.
+    contract: {encoding: utf-8-sig}
+
+  nfa_rescue:
+    feeds: 미투입 — 구조 출동 검증축. 119 신고접수와 같은 급이다
+    feeds_note: '[]'
+    feeds_why: |
+      ★ 51열 중 DCLR_PSTN_LOT/LAT(좌표) · EMD_NM · FRSTN_GRNDS_DSTNC
+        (소방서→현장 거리) · 출동/도착 시각이 모두 있다.
+      ★ 조기석 인터뷰 — "불은 번지지만 않으면 구조가 더 중요하다".
+        기준 차량을 펌프차로 둔 전제를 다시 볼 근거가 여기 있다.
+    stem: nfa_rescue
+    ext: [csv]
+    scope: jngj-dongmyeong
+    authority: 소방청 소방안전 빅데이터 플랫폼
+    updated: TODO
+    what: 전국 구조 현황 2019~ → 동명동 필터 파생본
+    kind: csv_table
+    encoding: utf-8-sig
+    crs_native: 4326
+    contract: {encoding: utf-8-sig}
+
+  nfa_fire_incident:
+    feeds: 미투입 — 거리↔소요시간 회귀로 cost 모델을 검증한다
+    feeds_note: '[]'
+    feeds_why: |
+      ★ 좌표는 없다. 대신 **거리와 시간이 직접 들어 있다** —
+        FRSTN_GRNDS_DSTNC · CNTR_GRNDS_DSTNC · LFDAU_GRNDS_DSTNC ·
+        DSPT_REQ_HR(출동소요시간) · DSPT_DT → GRNDS_ARVL_DT.
+        구간에 못 붙여도 우리 cost 의 거리-시간 관계를 회귀로 볼 수 있다.
+      ★ 발표 논거로도 쓴다 — 화재 건수 대비 blocked 구간 분포.
+    stem: nfa_fire_incident
+    ext: [csv]
+    scope: jngj-donggu
+    authority: 소방청 소방안전 빅데이터 플랫폼
+    updated: TODO
+    what: 전국 화재 현황 2019~2025 → 광주 동구 필터 파생본
+    kind: csv_table
+    encoding: utf-8-sig
+    note: |
+      ★ scope 가 jngj-donggu 다. **EMD_NM 열이 없어 동명동으로 못 좁힌다** —
+        SGG_NM 까지가 한계다(60열 전수 확인, 2026-09-03).
+    absent:
+      DCLR_PSTN_LAT:
+        in: 화재 현황 CSV 60열 (2019~2025 전 연도)
+        json_key: DCLR_PSTN_LAT
+        note: |
+          좌표 열이 없다. 2026-09-03 헤더 전수 확인.
+          대신 FRSTN_GRNDS_DSTNC · CNTR_GRNDS_DSTNC · LFDAU_GRNDS_DSTNC 가
+          거리를 직접 든다. 좌표가 필요하면 nfa_dispatch_119 · nfa_rescue 를 쓴다
+      EMD_NM:
+        in: 화재 현황 CSV 60열
+        json_key: EMD_NM
+        note: |
+          읍면동 열이 없다. SGG_NM 까지가 한계라 scope 가 jngj-donggu 다.
+          같은 플랫폼의 구조 현황에는 EMD_NM 이 있다 — 표마다 다르다
+    contract: {encoding: utf-8-sig}
+
+  nfa_vehicle_spec_2024:
+    feeds: 미투입 — vehicle_spec 의 상한 대비 실차 대표값 대조축
+    feeds_note: '[]'
+    feeds_why: |
+      ★ 지금 vehicle_spec 의 2.5 / 8.0 / 3.2 는 제작규격의 **상한**("이하")이다.
+        이 자료는 실차 대표값이라 중형펌프차 7.54 / 2.31 / 2.97 을 준다.
+        상한이 안전측이라 값은 안 바꾸되, 과잉 차단 폭(0.19m)을 아는 근거다.
+      ★ 조연차 전폭 2.5 · 전장 7.8 · 전고 3.2 가 여기 있다.
+        CONFIG.fleet 의 "제원표에 항목이 없다" 를 이 자료가 해소한다.
+    stem: nfa_vehicle_spec
+    ext: [pdf]
+    scope: kr
+    authority: 소방청
+    updated: '2024-03-04'
+    what: 주력소방차 제원 — 16차종 전장·전폭·전고·총중량 + 고가차 작업반경
+    kind: raw_only
+    note: |
+      ★ 2024-03-04 은 **게시글 등록일**이고 최종 갱신일은 원문에 없다.
+      ★ 첨부표의 「작업반경」은 붐이 뻗는 거리이지 **최소회전반경이 아니다.**
+        굴절 70M 의 24m 를 회전반경으로 읽으면 판정이 망가진다.
+    absent:
+      wheelbase_m:
+        in: 주력소방차 제원 PDF (소방청, 16차종 5쪽)
+        elsewhere: web/assets/vehicles/profiles.json
+        json_key: wheelbase
+        note: |
+          이 PDF 에 축거 항목이 없다. 2026-09-03 전수 0건.
+          값 자체는 profiles.json 이 4,260 · 4,925mm 를 든다 —
+          강원 인제소방서 자료이고 미검증이며 대장 밖이다(PLAN #59)
+      turn_radius_m:
+        in: 주력소방차 제원 PDF
+        elsewhere: web/assets/vehicles/profiles.json
+        json_key: turningRadius
+        note: |
+          이 PDF 에 최소회전반경 항목이 없다. 첨부표의 「작업반경」은
+          붐이 뻗는 거리이지 회전반경이 아니다 — 굴절 70M 의 24m 를
+          회전반경으로 읽으면 판정이 망가진다.
+          값 자체는 profiles.json 이 7,300~11,889mm 를 든다(미검증)
+
+  nfa_mas_spec_2025:
+    feeds: 미투입 — vehicle_spec 상한의 근거 원문
+    feeds_note: '[]'
+    feeds_why: |
+      ★ 이 대장이 "KFS-1-0073 §3.3" 으로 인용해 온 상한의 실물이다.
+        대형펌프차 8,500 / 2,500 / 3,400 · 중형 8,000 / 2,500 —
+        지금 vehicle_spec 값이 여기서 나왔다. 인용만 있고 원문이 대장 밖이었다.
+    stem: nfa_mas_spec
+    ext: [hwp, pdf]
+    scope: kr
+    authority: 소방청
+    updated: TODO 고시일 또는 발행일 (문서명은 "2025년")
+    what: 2025년 MAS 계약 차종별 제작규격 · 경쟁입찰 8종 제작규격
+    kind: raw_only
+    note: |
+      ★ 축거·최소회전반경·윤거·오버행 전부 0건. 본문 111,091자 전수 확인
+        (2026-09-03). 2020년판과 「차량제원」표 값이 동일하다.
+      ★ **소방청 계열 규격서에서 축거를 찾는 것은 여기서 끝났다.**
+        남은 경로는 나라장터 지자체 규격서의 첨부 외관도, 또는
+        차대 모델명 → 제작사 카탈로그 둘뿐이다.
+    absent:
+      wheelbase_m:
+        in: 2025년 MAS 제작규격 hwp 본문 111,091자 + 경쟁입찰 8종
+        elsewhere: web/assets/vehicles/profiles.json
+        json_key: wheelbase
+        note: |
+          축거·최소회전반경·윤거·오버행 전부 0건. 2026-09-03 전수 확인.
+          제작규격은 성능·안전 기준이라 개별 치수를 안 든다.
+          「차량제원」표는 전장·전폭·전고 상한만 든다
+
 raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
@@ -1941,6 +2156,23 @@ raw_only:
 
 # ── 미확보 ──────────────────────────────────────────────────
 pending:
+- key: nfa_ems
+  desc: 소방청 전국 구급 현황. 소방안전 빅데이터 플랫폼
+  source: 사용자 로컬 확보 2026-09-03 (1.38GB)
+  blocking: |
+    ★ 좌표가 없다. GRNDS_DSTNC(현장거리)만 있어 구간에 못 붙인다.
+      nfa_dispatch_119 · nfa_rescue 가 좌표를 갖고 있으므로 검증축으로는
+      이 둘이 앞선다. 환자정보(심정지·중증외상·이송분류)를 쓸 용도가
+      정해지기 전에는 반입하지 않는다 — R4.
+- key: nfa_target_building
+  desc: 전국 소방대상물 현황. 소방안전 빅데이터 플랫폼
+  source: 사용자 로컬 확보 2026-09-03 (7.9MB)
+  blocking: |
+    ★ 좌표가 없고 ADDR 문자열과 EMD_NM 뿐이다(23열 전수 확인).
+      BDST_SN 은 소방대상물 일련번호이지 건축물대장 PK 가 아니므로
+      buildings.geojson 과 키로 조인되지 않는다. 주소 문자열 매칭은
+      신뢰도가 낮다 — fire_access 에서 같은 문제를 이미 겪었다.
+      조인 키를 정하기 전에는 반입하지 않는다.
 - key: boundary
   desc: 행정구역경계 (읍면동) — 동명동 정식 폴리곤
   source: business.juso.go.kr → 도로명주소 전자지도

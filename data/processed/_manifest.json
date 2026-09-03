@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-09-02T10:28:34.015946+09:00",
+  "generated_at": "2026-09-03T15:52:23.479554+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -2610,6 +2610,41 @@
       "geom": [],
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
       "outputs": []
+    },
+    {
+      "key": "nfa_dispatch_119",
+      "status": "MISSING",
+      "files": [
+        "**/nfa_dispatch_119_*"
+      ]
+    },
+    {
+      "key": "nfa_rescue",
+      "status": "MISSING",
+      "files": [
+        "**/nfa_rescue_*"
+      ]
+    },
+    {
+      "key": "nfa_fire_incident",
+      "status": "MISSING",
+      "files": [
+        "**/nfa_fire_incident_*"
+      ]
+    },
+    {
+      "key": "nfa_vehicle_spec_2024",
+      "status": "MISSING",
+      "files": [
+        "**/nfa_vehicle_spec_*"
+      ]
+    },
+    {
+      "key": "nfa_mas_spec_2025",
+      "status": "MISSING",
+      "files": [
+        "**/nfa_mas_spec_*"
+      ]
     }
   ]
 }

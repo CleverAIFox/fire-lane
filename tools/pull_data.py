@@ -194,7 +194,10 @@ def main() -> int:
         # ★ 게이트. 선행 단계가 **돌았고 0 으로 끝났는가**. 순차 실행이
         #   이미 앞을 보장하는 것 같지만, 그 보장은 `steps()` 의 나열
         #   순서에만 기대는 것이다. 여기서 자료구조로 다시 확인한다.
-        if s.needs is not None:
+        # ★ 게이트는 --yes 일 때만 건다. 관측 모드는 비파괴 단계만 남기고
+        #   나머지를 거르므로 선행이 `seen` 에 없는 것이 정상이다.
+        #   2026-09-03 회귀 — 게이트를 붙이면서 이 경우를 안 봤다.
+        if a.yes and s.needs is not None:
             prev = seen.get(s.needs)
             if prev is None:
                 print(c(f"  ✗ 선행 단계 {s.needs} 가 안 돌았다 — 멈춘다", "31"))

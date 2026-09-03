@@ -543,7 +543,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 43종(OK 27 · SKIP 16)
+data/processed/    대장 48종(OK 27 · SKIP 21)
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -629,7 +629,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격.
 
-대장은 `sources.yaml` 하나다. `datasets` 43종 · `retired` 10종.
+대장은 `sources.yaml` 하나다. `datasets` 48종 · `retired` 10종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 ### 6-2. 데이터 보관
@@ -1572,7 +1572,7 @@ fix:  버그
 강제자 — `tests/test_guards.py` 의 트리거 대조
 
 CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소에 없기 때문이다.
-파이프라인은 우지혜 로컬에서만 돈다(§14-7).
+파이프라인은 매체를 가진 기계에서만 돈다(§14-7).
 
 ### 12-8. 배포
 
@@ -1966,7 +1966,8 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 원본을 새로 받는 절차는 §14-3 이지만, 재취득은 기관 신청이 걸려 있어
 빠르지 않다. **압축 전달이 정본 경로다.**
 
-★ 파이프라인은 **우지혜 로컬에서만 돈다**(2026-09-02 이관). CI 는
+★ **2026-09-02 우지혜에게 사본 전달 완료.** 원본 매체는 오창준 소유이며
+  2026-09-03 이탈 후에는 우지혜 로컬이 유일한 실행 환경이다. CI 는
 데이터를 만들지 않는다(§12-7). 이 매체가 없으면 `uv run fire-lane` 이 첫
 단계에서 멈춘다. **"GIS 담당" 이라고 적지 않는다** — 담당이 바뀌면 그
 말이 누구를 가리키는지 다음 사람이 못 찾는다.

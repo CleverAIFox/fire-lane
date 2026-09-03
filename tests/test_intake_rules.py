@@ -378,3 +378,28 @@ def test_confirm_flag_matches_what_the_tool_accepts():
             assert "--yes" not in s.argv(True), f"{s.name}"
         elif s.mutating:
             assert s.argv(True)[-1] == s.confirm, f"{s.name}"
+
+
+def test_observation_mode_does_not_trip_the_gate():
+    """관측 모드는 비파괴 단계만 돈다. 걸러진 선행 단계로 멈추면 안 된다.
+
+    ★ 2026-09-03 회귀. `needs` 게이트를 붙이면서 관측 모드를 안 봤다.
+      `verify.needs="stage"` 인데 관측 모드는 `stage` 를 거르므로
+      "선행이 안 돌았다" 로 즉시 멈췄다. **게이트는 옳고 범위가 틀렸다.**
+    """
+    src = (Path(__file__).resolve().parents[1]
+           / "tools/pull_data.py").read_text(encoding="utf-8")
+    assert "if a.yes and s.needs is not None:" in src, (
+        "게이트가 --yes 여부와 무관하게 걸린다.\n"
+        "  관측 모드에서는 선행이 걸러지므로 게이트를 걸지 않는다.")
+
+
+def test_observation_mode_keeps_only_non_mutating_steps():
+    """관측 모드에 남는 것이 전부 비파괴인가."""
+    m = _pull()
+    a = types.SimpleNamespace(keep_landing=False, all=False)
+    obs = [s for s in m.steps(a) if not s.mutating]
+    assert {s.name for s in obs} == {"verify", "judge", "prep-check"}, (
+        f"관측 단계 구성이 바뀌었다: {[s.name for s in obs]}")
+    for s in obs:
+        assert "--yes" not in s.argv(True), f"{s.name} 이 파괴 인자를 받는다"
