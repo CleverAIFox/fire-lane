@@ -3,9 +3,22 @@
 publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내보낸다.
 
 
-IN    processed/*.geojson · processed/segments.schema.json
-OUT   web/data/{segments,buildings,boundary,hydrants,stations,cctv,poi,
-                markers,mask,mask_soft,scope,lightpoles,streetlights}.geojson
+IN    processed/*.geojson · processed/segments.schema.json ·
+      processed/route_vehicle.csv · processed/corridor_5186.gpkg ·
+      processed/building_5186.gpkg · processed/ngii1k_light_5186.gpkg
+OUT   web/data/  — 아래 열여섯. ★ 중괄호 축약을 쓰지 않는다. 선언은
+      기계가 대조하는 것이고(tests/test_declaration_reality.py) 축약하면
+      그 대조가 이름을 못 찾는다.
+        segments.geojson      boundary.geojson     scope.geojson
+        mask.geojson          mask_soft.geojson    buildings.geojson
+        hydrants.geojson      stations.geojson     cctv.geojson
+        poi.geojson           streetlights.geojson lightpoles.geojson
+        segments.schema.json  vehicle_spec.json    route_vehicle.json
+        _manifest.json
+      ★ web/data/view.json 은 terrain·ortho 가 넣어둔 타일 범위를 읽어
+        보존하고 다시 쓴다 — writes 가 아니라 **mutates** 다
+      ★ markers.geojson 은 **내지 않는다.** 286줄이 남은 것을 지운다 —
+        종전에 이 줄이 산출물로 적혀 있었다(2026-09-03 정정)
 PARAM 좌표 정밀도(PREC) · web/data 40MB 상한(CI · commit_policy · pipeline)
 
 좌표를 6자리(약 11cm)로 반올림하고 표출에 안 쓰는 컬럼을 버린다.

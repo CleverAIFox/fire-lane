@@ -2071,6 +2071,11 @@ outputs:
     - src/firelane/publish_web.py
     - src/firelane/sample_design.py
     - tests/test_contract.py
+    # ★ 2026-09-03. 셋을 더했다. `test_declaration_reality` 가 실물에서
+    #   찾아냈다 — 손대장이라 읽는 쪽이 늘어도 아무도 안 적었다.
+    - src/firelane/guards.py
+    - src/firelane/pipeline.py
+    - tools/width_fn.py
     what: 구간 단위 통행 판정. verdict 4종 + 폭 + CCTV 가시성
     verified: false
     known_issues:

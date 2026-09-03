@@ -251,10 +251,17 @@ def check_field_ledger(led: dict) -> list[str]:
 
 
 # ── 5. 만료 — 한시가 한시로 끝나는가 ──────────────────────────
-# ★ 오창준 이탈일. 09-03 이 마지막 근무일이고 09-08 부터 없다.
-#   그날까지 bypass 를 회수하고 admin 을 축소해야 한다.
-DEPARTURE = "2026-09-03"
-LEAVING = "AIMasterFox"
+# ★ 2026-09-03. 회수 완료. bypass_actors 를 비우고 ADMINS 를 줄이고
+#   BYPASS 카드를 지웠으므로 이 게이트는 걸 대상이 없다.
+#
+# ★ **절과 기계는 남긴다.** 번호는 자산이고(MASTER §0-2), 다음 한시
+#   예외가 생기면 아래 두 줄만 채우면 즉시 시계가 돈다. 코드를 지우면
+#   다음 사람이 `§80` 처럼 회수를 사람 기억에 맡긴다.
+#
+#     DEPARTURE = "YYYY-MM-DD"   회수 기한
+#     LEAVING   = "<핸들>"        ruleset_check.ADMINS 에서 빠져야 하는 사람
+DEPARTURE: str | None = None
+LEAVING: str | None = None
 
 _BANNER = """
   ████████████████████████████████████████████████████████████
@@ -298,6 +305,17 @@ def check_expiry() -> list[str]:
     ★ 실패 메시지를 크게 낸다. 빨간 줄 하나면 다른 팀원이 무슨 일인지
       모르고 당황한다. 무엇을 해야 하는지가 화면에 다 있어야 한다.
     """
+    if DEPARTURE is None:
+        # ★ 걸 대상이 없다. 그래도 **화면에 남은 만료 뱃지는 잡는다** —
+        #   회수했는데 카드가 남으면 지난 날짜가 지침처럼 읽힌다.
+        stray = []
+        for g in ("web/*.html", "docs/*.md"):
+            for f in ROOT.glob(g):
+                if 'data-expires="' in f.read_text(encoding="utf-8", errors="ignore"):
+                    stray.append(f"{f.relative_to(ROOT)} 에 data-expires 가 남았다 — "
+                                 "회수가 끝났으면 그 카드를 지운다")
+        return stray
+
     today = _today()
     bad, seen = [], {}
 

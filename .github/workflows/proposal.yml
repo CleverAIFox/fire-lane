@@ -42,6 +42,16 @@ jobs:
       - run: uv sync --frozen --all-extras
       - name: MASTER §12 → web/workflow.html
         run: uv run python tools/render_workflow.py
+      - name: 캐시 무효화 스탬프 주입
+        # ★ 2026-09-03 신설. 이 워크플로만 이 스텝이 없었다. 그래서
+        #   기획서만 고쳐 push 하면 `?v=BUILD` 리터럴이 박힌 채 배포되고,
+        #   상수라서 style.css·config.js·main.js 가 **영구 캐시된다.**
+        #   스탬프를 만든 목적이 정확히 그것을 막는 것이었다.
+        run: |
+          B=$(sed -n 's/.*"build": *"\([0-9a-f]*\)".*/\1/p' web/data/view.json)
+          test -n "$B" || { echo "view.json 에 build 가 없다"; exit 1; }
+          sed -i "s/?v=BUILD/?v=$B/g" web/index.html
+
       - name: 배포 준비 (docs/proposal.docx → web/)
         run: uv run python tools/stage_pages.py
       - uses: actions/configure-pages@v5

@@ -9,7 +9,7 @@ scan_data.py — 데이터 레이크 구조를 훑고 대장과 대조한다.
 
 ── 무엇을 보나 ────────────────────────────────────────────────
 1. 계층      landing / raw / norm / field / _quarantine 이 규칙대로 있는가
-2. 제공기관   raw 하위가 8폴더 규칙을 지키는가 (MASTER 18-2)
+2. 제공기관   raw 하위가 9폴더 규칙을 지키는가 (MASTER 18-2)
 3. 명명규칙   provider_dataset_scope_date.ext 를 따르는가
 4. 대장 대조  ★ 이것이 본체다 (MASTER 18-3 게이트)
                 대장에 있음 + 파일 있음  →  정상
@@ -170,13 +170,23 @@ def main() -> int:
         rawset = {str(rel.relative_to("raw")).replace(os.sep, "/") for rel, _, _ in raw}
         claimed = set()
         missing = []
+        # ★ 2026-09-03 배선 복구. 종전에는 `e.get("file")` 단수만 읽었다.
+        #   2026-08-31 에 `file`/`files` 를 37종에서 빼고 `stem`+`ext` 로
+        #   뒤집었는데(PLAN #46) 이 소비자만 이관에서 빠졌다. 그 결과
+        #   44종 중 42종이 "file 선언 없음" 으로 빠져나가 **claimed 가
+        #   공집합이 됐고, raw 전량이 격리 대상으로 떴다.**
+        #   조용히 안 하는 게 아니라 시끄럽게 틀린 것을 말했다(§18-13).
+        #   정본은 `ledger.globs()` 하나다 — 여기서 다시 쓰지 않는다.
+        from firelane import ledger as _led
         for key, e in sorted(ds.items()):
-            pat = (e or {}).get("file")
-            if not pat:
-                print(f"  · {key:22s} file 선언 없음")
+            pats = [str(g) for g in _led.globs(e)] if e else []
+            if not pats:
+                print(f"  ★ {key:22s} 경로 선언이 없다 (stem·file·files 전부 없음)")
                 continue
-            pat = pat.rstrip("/")
-            hit = {r for r in rawset if fnmatch.fnmatch(r, pat) or r.startswith(pat + "/")}
+            hit = {r for r in rawset
+                   for pat in pats
+                   if fnmatch.fnmatch(r, pat) or r.startswith(pat.rstrip("/") + "/")}
+            pat = " · ".join(pats[:2])
             if hit:
                 claimed |= hit
                 print(f"  OK {key:22s} {len(hit):4d}개  {pat}")

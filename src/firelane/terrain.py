@@ -5,6 +5,10 @@ terrain.py — 공개DEM 을 스코프로 클립·보간해 표고를 부여한�
 
 IN    $FIRE_LANE_DATA/raw/ngii/**  (DEM) · processed/segments_5186.gpkg
 OUT   processed/dem_scope.tif · web/data/terrain/**  (Terrain-RGB 타일)
+      ★ processed/segments.geojson 에 z 를 **덧쓴다.** 이 줄이 없어서
+        2026-08-18 에 `--only publish` 로 z 가 소실됐다
+      ★ web/data/view.json 에 demBounds 를 덧쓴다 (publish 산출. 후진 의존)
+      ★ processed/_manifest.json 에 terrain 기록을 덧쓴다
       processed/_manifest.json 의 terrain 절
 PARAM 줌 단계 · exaggeration 기본 1.0
 

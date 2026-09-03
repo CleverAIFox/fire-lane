@@ -47,7 +47,9 @@ REPO = "woongtopia/fire-lane"
 # ★ bypass 는 개인이 아니라 역할에 준다. admin 이 늘면 우회 가능자도
 #   는다(DECISIONS 80). 2026-09-01 실측에서 팀 전원이 admin 이었고
 #   MASTER §12-1 에 그 선언이 없었다. 실물이 이 목록과 다르면 운다.
-ADMINS = ["AIMasterFox", "diyon13", "gayeoniii", "marscoolcat", "wlsdnr052475"]
+# ★ 2026-09-03. AIMasterFox 이탈로 제거. bypass 는 개인이 아니라 역할에
+#   주므로 admin 이 줄면 우회 가능자도 준다(MASTER §12-1a).
+ADMINS = ["diyon13", "gayeoniii", "marscoolcat", "wlsdnr052475"]
 
 EXPECT = {
     "release": {

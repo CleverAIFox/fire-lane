@@ -4,7 +4,11 @@ ortho.py — 항공정사영상을 지오레퍼런싱해 배경 타일로 굽는
 
 
 IN    $FIRE_LANE_DATA/raw/ngii/ngii_ortho_*.tif + .xml  (도엽 4장)
-OUT   web/data/ortho/**  (배경 타일) · web/data/view.json · scope.geojson
+OUT   web/data/ortho/**  (배경 타일)
+      ★ web/data/view.json 에 orthoBounds 를 덧쓴다 · _manifest.json 에 기록
+IN2   web/data/scope.geojson  ★ publish 산출을 읽는다. **후진 의존이다** —
+      스코프가 바뀌면 정사영상이 한 실행 늦게 따라온다
+      (tests/test_guards.py::BACKWARD · PLAN)
       processed/_manifest.json 의 ortho 절
 PARAM 도엽 격자 역산 상수(EPSG:5186 TM 중부원점)
 

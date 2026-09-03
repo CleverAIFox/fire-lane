@@ -360,6 +360,29 @@ def test_no_two_steps_write_the_same_path():
             seen[w] = s.name
 
 
+# ★ 2026-09-03. 알려진 후진 의존. **사유와 해소 조건을 함께 적는다.**
+#
+#   선언을 실물에 맞추자 둘이 드러났다. 종전에는 `reads` 가 비어 있어
+#   이 검사가 볼 것이 없었고, 그래서 **잡으라고 만든 버그를 그대로 두고
+#   초록불이었다.** 여기 적는 것은 면제가 아니라 **등록**이다 —
+#   숨어 있던 것을 이름 붙여 꺼내 놓고 처리를 PLAN 이 든다.
+#
+#   ★ 지금 안 죽는 이유는 `web/data` 가 커밋돼 있어 파일이 늘 존재하기
+#     때문이다. 위험은 죽는 것이 아니라 **한 실행 늦게 따라오는 것**이다.
+BACKWARD = {
+    ("ortho", "scope.geojson"):
+        "publish 산출을 ortho 가 읽는다. 스코프가 바뀌면 정사영상이 한 "
+        "실행 늦는다. 해소 = scope 산출을 segments 로 올린다(PLAN)",
+    ("terrain", "view.json"):
+        "publish 산출에 구운 범위를 덧쓴다. `if vj.exists()` 가 첫 실행을 "
+        "넘긴다. 해소 = 타일 범위를 processed 로 내고 publish 가 합친다(PLAN)",
+}
+# ★ ("ortho","view.json") 은 여기 없다. 처음에 적었다가
+#   test_backward_entries_are_still_real 이 **바로 잡았다** — terrain 이
+#   앞에서 mutates 로 선언하므로 ortho 시점에는 이미 만들어진 것이다.
+#   역방향 검사가 없었으면 근거 없는 면제 한 줄이 영구히 남았을 자리다.
+
+
 def test_every_read_is_produced_by_an_earlier_step():
     """
     ★ 읽는 것은 앞 단계가 만든 것이거나 raw 여야 한다.
@@ -371,10 +394,33 @@ def test_every_read_is_produced_by_an_earlier_step():
     made = [m.RAW]
     for s in m.STEPS:
         for r in s.consumes:
+            if (s.name, r.name) in BACKWARD:
+                continue
             assert any(m.matches(r, d) for d in made), (
                 f"{s.name} 이 {r.name} 을 읽는데 앞 단계가 만들지 않는다.\n"
-                "  선언이 틀렸거나 STEPS 순서가 틀렸다.")
+                "  선언이 틀렸거나 STEPS 순서가 틀렸다.\n"
+                "  알려진 후진 의존이면 BACKWARD 에 **사유와 해소 조건**을 적어라.")
         made += list(s.produces)
+
+
+def test_backward_entries_are_still_real():
+    """BACKWARD 가 이미 해소된 것을 들면 목록이 낡은 것이다. **양방향이다.**
+
+    ★ 해제만 검사하면 항상 통과하는 검사가 된다(DECISIONS §69).
+      후진 의존을 고쳐 놓고 이 줄을 안 지우면, 다음에 진짜 후진 의존이
+      같은 이름으로 생겼을 때 조용히 면제된다.
+    """
+    m = _steps()
+    made = [m.RAW]
+    pos = {}
+    for s in m.STEPS:
+        for r in s.consumes:
+            pos[(s.name, r.name)] = any(m.matches(r, d) for d in made)
+        made += list(s.produces)
+    stale = sorted(k for k in BACKWARD if pos.get(k) is not False)
+    assert not stale, (
+        f"BACKWARD 가 후진 의존이 아닌 것을 든다 — {stale}\n"
+        "  해소됐으면 그 줄을 지워라.")
 
 
 def test_expect_is_not_hardcoded():
