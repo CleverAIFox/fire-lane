@@ -77,43 +77,82 @@ def matches(path: Path, decl: Path) -> bool:
 
 
 P = PROCESSED
+# ★ 2026-09-03. 선언을 실물에 맞췄다. 종전에는 STEPS 가 실제 산출물의
+#   부분집합이었고, 그래서 이 파일 머리말이 약속한 셋(writes 충돌 ·
+#   하류 무효화 · 후진 의존)이 **볼 것이 없어 전부 조용했다.**
+#   `tests/test_declaration_reality.py` 가 소스와 대조해 재발을 막는다.
 STEPS = [
-    Step("ingest", "ingest", "raw → processed (19종)",
+    Step("ingest", "ingest", "raw → processed",
          P / "_manifest.json",
          reads=(RAW,),
-         # 소스 19종을 정규화한다. 하나씩 적으면 대장(sources.yaml)과
-         # 이중 관리가 되므로 패턴으로 선언한다. matches() 가 풀어준다.
-         writes=(P / "_manifest.json", P / "*_5186.gpkg")),
+         # 소스를 하나씩 적으면 대장(sources.yaml)과 이중 관리가 되므로
+         # 패턴으로 선언한다. matches() 가 풀어준다.
+         # ★ 다만 **하류가 이름으로 읽는 것**은 명시한다. 글롭만 두면
+         #   test_every_read_is_produced_by_an_earlier_step 이 하류의
+         #   reads 를 못 잇는다 — 선언의 목적이 그 연결이다.
+         writes=(P / "_manifest.json", P / "*_5186.gpkg",
+                 P / "boundary_emd.geojson", P / "fire_station.geojson",
+                 P / "hydrant_point.geojson", P / "cctv.geojson",
+                 P / "poi_store.geojson", P / "road_intrvl.geojson")),
     Step("segments", "segments", "노딩 → 폭 → 판정",
          P / "segments.geojson",
-         reads=(P / "ngii1k_5186.gpkg", P / "road_link_5186.gpkg",
-                P / "road_rw_5186.gpkg", P / "node_link_5186.gpkg",
-                P / "cctv_5186.gpkg", P / "_manifest.json"),
+         reads=(P / "ngii1k_5186.gpkg", P / "ngii1k_xsec_5186.gpkg",
+                P / "road_link_5186.gpkg", P / "road_rw_5186.gpkg",
+                P / "node_link_5186.gpkg", P / "cctv_5186.gpkg",
+                P / "streetlight_5186.gpkg", P / "road_intrvl.geojson",
+                P / "_manifest.json"),
+         # ★ route_vehicle.csv 가 여기 없어서 publish 가 stale 로 안 잡혔고,
+         #   커밋된 web/data/route_vehicle.json 이 이틀 낡은 채 전 게이트를
+         #   통과했다(PLAN #70 · DECISIONS §39).
          writes=(P / "segments.geojson", P / "segments_5186.gpkg",
-                 P / "nfa_compare.json", P / "seg_uid_map.csv")),
+                 P / "segments.schema.json", P / "corridor_5186.gpkg",
+                 P / "nfa_compare.json", P / "seg_uid_map.csv",
+                 P / "route_vehicle.csv")),
     Step("streetlight", "streetlight", "가로등 → 지점 집계",
          P / "streetlight_point.geojson",
          reads=(P / "streetlight_5186.gpkg",),
          writes=(P / "streetlight_point.geojson",)),
     Step("terrain", "terrain", "공개DEM → Terrain-RGB 타일",
          WEB / "terrain",
+         reads=(RAW, P / "segments_5186.gpkg"),
          writes=(WEB / "terrain", P / "dem_scope.tif"),
          # ★ 여기가 z 소실의 자리다. segments.geojson 을 읽어 z 를 덧쓴다.
          # ★ _manifest.json 도 reads 가 아니라 mutates 다. terrain 기록을
-         #   덧쓴다("→ _manifest.json 에 terrain 기록"). reads 로 적어두면
-         #   선언과 실제가 달라 하류 무효화 경고가 안 뜬다.
-         mutates=(P / "segments.geojson", P / "_manifest.json")),
+         #   덧쓴다. reads 로 적어두면 하류 무효화 경고가 안 뜬다.
+         # ★ view.json 은 publish 가 만드는데 여기서 덧쓴다 — 후진 의존이다.
+         #   `if vj.exists()` 로 첫 실행을 넘긴다. test_guards.BACKWARD 가 든다.
+         mutates=(P / "segments.geojson", P / "_manifest.json",
+                  WEB / "view.json")),
     Step("ortho", "ortho", "항공정사영상 → 배경 타일",
          WEB / "ortho",
-         writes=(WEB / "ortho",)),
+         # ★ scope.geojson 은 publish 산출이다. **후진 의존이며 지난 실행의
+         #   산출물을 읽는다** — 스코프가 바뀌면 정사영상이 한 실행 늦게
+         #   따라온다. test_guards.BACKWARD 와 PLAN 이 든다.
+         reads=(RAW, WEB / "scope.geojson"),
+         writes=(WEB / "ortho",),
+         mutates=(WEB / "view.json", P / "_manifest.json")),
     Step("publish", "publish_web", "→ web/data",
          WEB / "segments.geojson",
-         reads=(P / "segments.geojson", P / "streetlight_point.geojson"),
+         reads=(P / "segments.geojson", P / "segments.schema.json",
+                P / "streetlight_point.geojson", P / "boundary_emd.geojson",
+                P / "fire_station.geojson", P / "hydrant_point.geojson",
+                P / "cctv.geojson", P / "poi_store.geojson",
+                P / "corridor_5186.gpkg", P / "building_5186.gpkg",
+                P / "ngii1k_light_5186.gpkg", P / "route_vehicle.csv"),
          # ★ web/data/_manifest.json 은 publish 가 마지막에 쓰는 계보다.
          #   종전에는 tools/web_manifest.py 를 사람이 따로 돌려야 했고
          #   아무도 안 돌렸다(2026-08-22 CI 가 처음 잡음).
          writes=(WEB / "segments.geojson", WEB / "segments.schema.json",
-                 WEB / "_manifest.json")),
+                 WEB / "_manifest.json", WEB / "boundary.geojson",
+                 WEB / "scope.geojson", WEB / "mask.geojson",
+                 WEB / "mask_soft.geojson", WEB / "buildings.geojson",
+                 WEB / "hydrants.geojson", WEB / "stations.geojson",
+                 WEB / "cctv.geojson", WEB / "poi.geojson",
+                 WEB / "streetlights.geojson", WEB / "lightpoles.geojson",
+                 WEB / "vehicle_spec.json", WEB / "route_vehicle.json"),
+         # ★ view.json 은 terrain·ortho 가 구운 범위를 넣어둔 것을 읽어
+         #   보존하고 다시 쓴다. writes 가 아니라 mutates 다.
+         mutates=(WEB / "view.json",)),
 ]
 
 

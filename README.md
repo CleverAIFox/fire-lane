@@ -98,8 +98,9 @@ verify.sh   코드가 도는가 — pytest · ruff · 파이프라인 · JS · �
 ship.py     내보내도 되는가 — 위 + 문서 4축 + 위생 + git 상태
 ```
 
-`ship.py` 가 `verify.sh` 를 부르므로 중복이 없다. CI 가 지금 브랜치를
-감시하는지도 확인하므로 검사 없이 머지되는 일이 없다.
+`ship.py` 가 `verify.sh` 를 부른다. 셋(`docnum_check` · `tidy` · `golden`)은
+양쪽에서 도는데, `ship.py` 쪽은 문서 4축·git 상태와 묶어 판정하므로 남긴다.
+CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머지되는 일이 없다.
 
 머지하고 나면 로컬에 찌꺼기가 남는다. 그것도 한 명령이다.
 
@@ -222,7 +223,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 
 ```
 landing      SSD/landing/     다운로드 원본. 규칙 없음. ★ 백업 제외
-raw          SSD/raw/         제공기관 8폴더. 절대 수정 안 함
+raw          SSD/raw/         제공기관 9폴더. 절대 수정 안 함
 norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
@@ -232,7 +233,8 @@ web/data     표출용. 커밋한다. 40MB 상한
 data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
 ```
 
-제공기관 폴더 — `juso` `its` `ngii` `vworld` `safety` `gjcity` `sbiz` `eais`.
+제공기관 폴더 — `juso` `its` `ngii` `vworld` `safety` `gjcity` `sbiz` `eais` `nsdi`.
+정본은 `sources.yaml` 의 `layers.raw.providers` 이고 `firelane.providers` 가 읽는다.
 **같은 수치지형도라도 원천이 다르면 폴더가 다르다.**
 
 계층 선언의 정본은 `sources.yaml` 의 `layers` 블록이고 경로 해석은
@@ -370,7 +372,7 @@ web/
   index.html              뼈대                      공동
   style.css               색·간격·타이포             @marscoolcat
   config.js               색상표·임계값·마커·카메라   공동
-  js/                     로직·레이어 27개 모듈      @AIMasterFox
+  js/                     로직·레이어 29개 모듈      @AIMasterFox
   data/                   생성물. 손으로 고치지 않는다
 ```
 

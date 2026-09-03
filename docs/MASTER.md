@@ -636,7 +636,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 
 ```
 landing      SSD · 다운로드 원본. 규칙 없음. 백업 제외
-raw          SSD · 제공기관 8폴더. 절대 수정하지 않는다
+raw          SSD · 제공기관 9폴더. 절대 수정하지 않는다
 norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료(08-31)
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
@@ -780,10 +780,12 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 
 ★ **오창준은 2026-09-03 에 이탈한다.** `@woongtopia/gis` 팀에서 빼면
 `CODEOWNERS` 의 코어 리뷰가 남은 gis 팀원에게 자동으로 넘어가므로 룰셋과
-`CODEOWNERS` 파일은 고치지 않는다. 함께 처리할 것은 셋이다 — 룰셋 bypass
-회수(§12-1) · `ruleset_check` 의 `ADMINS` 축소 · 데이터 실물 3.5GB 전달
-(§14-7). 파이프라인이 GIS 담당 로컬에서만 돌므로 매체가 안 넘어가면
-`uv run fire-lane` 이 첫 단계에서 멈춘다.
+`CODEOWNERS` 파일은 고치지 않는다. 함께 처리할 것은 둘이다 — 룰셋 bypass
+회수(§12-1) · `ruleset_check` 의 `ADMINS` 축소.
+
+★ **데이터 실물 3.5GB 는 2026-09-02 에 우지혜에게 넘어갔다**(§14-7).
+파이프라인은 이제 **우지혜 로컬에서 돈다.** `FIRE_LANE_DATA` 가 그 기계의
+경로를 가리키며, CI 는 데이터를 만들지 않는다(§12-7).
 
 ---
 
@@ -1045,14 +1047,15 @@ CORS 로 막힌다. 설치할 것은 없다. MapLibre 와 deck.gl 은 CDN 에서
 | `web/style.css` | **@marscoolcat 단독** | 색·간격·타이포·애니메이션·레이아웃 |
 | `web/index.html` | 공동 | 뼈대 마크업. 거의 안 바뀐다 |
 | `web/config.js` | **공동** | 판정 색상·마커 스펙·카메라·출동모드·미니맵 |
-| `web/js/` | @AIMasterFox | 로직·레이어 27개 모듈 |
+| `web/js/` | @AIMasterFox | 로직·레이어 29개 모듈 |
 | `web/js/icons/` · `ui/` | 공동 | 캔버스 그림 · 범례·검색·테마·토글 |
 | `web/data/` | 생성물 | `publish_web.py` 산출. 손으로 고치지 않는다 |
 
 **UI 작업은 `style.css` 와 `config.js` 두 파일이면 된다.** `web/js/layers/` 를
 건드려야 하는 상황은 로직 문제이므로 GIS 담당에게 넘긴다.
 
-`app.js` 는 없다. 1,260줄이던 그 파일은 `web/js/` 27개 모듈로 갈렸다.
+`app.js` 는 없다. 1,260줄이던 그 파일은 `web/js/` 29개 모듈로 갈렸다.
+수의 정본은 `node tools/js_graph_check.mjs` 출력이다.
 모듈 구조는 `web/README.md` 가 정본이다.
 
 ### 11-3. `config.js` — UI 담당이 조정하는 값
@@ -1388,13 +1391,13 @@ git push origin --delete feat/<이름>
 지금 룰셋 실물이 위 표와 어긋난 것들이다. **되돌릴 날과 함께 적는다** —
 적어두지 않은 완화는 영구가 된다(`DECISIONS §76`).
 
-★ **`bypass_actors` 는 2026-09-01 현재 비어 있지 않다.** 세 룰셋 모두
-`Repository admin` 역할(actor_id 5)이 `always` 로 들어 있다. main 정비가
-다수 남아 매 건 승인 대기가 병목이 됐고, 한시로 부여했다(DECISIONS §80).
+★ **`bypass_actors` 는 2026-09-03 에 회수됐다.** 세 룰셋 모두 비어 있고
+`release` 의 승인 1 을 켰다. 2026-08-27 에 `Repository admin` 역할(actor_id 5)을
+`always` 로 넣었던 것이고(DECISIONS §80), 한시로 부여한 것을 한시로 끝냈다.
+`web/playbook.html` 의 BYPASS 카드와 `doc_fsck.DEPARTURE` 도 같은 날 걷었다.
 
-**되돌릴 날 2026-09-03.** 오창준 이탈일이자 마지막 근무일이다.
-★ 2026-09-02 에 **종전 기한에서 앞당겼다** — 이탈이 그날로 정해졌다. 그날 세 룰셋의
-`bypass_actors` 를 비우고 `release` 의 **승인 1 만** 켠다.
+★ **`actor_id 5` 는 사람 수가 아니라 역할 번호다.** 화면 안내가 그것을
+"5인 bypass" 로 읽고 적은 적이 있다. bypass 는 개인이 아니라 역할에 준다.
 
 ★ **Code Owners 는 켜지 않는다.** 켜면 릴리즈 PR 을 올리는 사람이 곧
 포괄 소유자(릴리즈 매니저)라 자기 PR 을 자기가 승인 못 하고, 그러면
@@ -1544,6 +1547,7 @@ fix:  버그
 | `contract` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
 | `지도 배포` (`pages.yml`) | `main` 의 `web/**` 변경 | `web/` **전체** 배포 |
 | `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` 변경 | 재생성 후 `web/` **전체** 배포 |
+| `기획서 배포` (`proposal.yml`) | `main` 의 `docs/proposal.docx` · `web/proposal.html` · `stage_pages.py` 변경 | `stage_pages` 후 `web/` **전체** 배포 |
 
 ★ **워크플로 이름은 촉발 조건이지 배포 대상이 아니다.** 둘 다 사이트
 전체를 올린다. Pages 는 저장소당 사이트가 하나라, 한쪽이 부분만 올리면
@@ -1568,7 +1572,7 @@ fix:  버그
 강제자 — `tests/test_guards.py` 의 트리거 대조
 
 CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소에 없기 때문이다.
-파이프라인은 GIS 담당 로컬에서만 돈다.
+파이프라인은 우지혜 로컬에서만 돈다(§14-7).
 
 ### 12-8. 배포
 
@@ -1852,8 +1856,9 @@ verify.sh   코드가 도는가
 ship.py     내보내도 되는가 (위 + 문서 4축 + 위생 + git 상태)
 ```
 
-`ship.py` 가 `verify.sh` 를 부르므로 중복이 없다. CI 가 지금 브랜치를
-감시하는지도 확인하므로 검사 없이 머지되는 일이 없다.
+`ship.py` 가 `verify.sh` 를 부른다. `docnum_check` · `tidy` · `golden` 셋은
+양쪽에서 돌며, `ship.py` 쪽은 문서 4축·git 상태와 묶어 판정한다.
+CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머지되는 일이 없다.
 
 머지 뒤 로컬 찌꺼기는 `uv run python tools/tidy.py --yes` 로 정리한다.
 죽은 upstream · 머지된 브랜치 · 백업 폴더 · 캐시를 본다.
@@ -1954,13 +1959,16 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 ★ **`web/data` 를 커밋하는 이유가 이것이다.** UI 담당이 raw 없이 화면을
 만들 수 있어야 한다(`.gitignore` 6줄).
 
-★ **인수인계 방법 — `FIRE_LANE_DATA` 폴더를 통째로 압축해 넘긴다.**
+★ **2026-09-02 우지혜에게 전달 완료.** 방법은 아래가 정본이며 다음
+인수인계 때 그대로 쓴다 — `FIRE_LANE_DATA` 폴더를 통째로 압축해 넘긴다.
 받는 쪽은 임의 경로에 풀고 `.env` 에 `FIRE_LANE_DATA` 를 그 경로로 적는다.
 원본을 새로 받는 절차는 §14-3 이지만, 재취득은 기관 신청이 걸려 있어
 빠르지 않다. **압축 전달이 정본 경로다.**
 
-★ 파이프라인은 **GIS 담당 로컬에서만 돈다.** CI 는 데이터를 만들지
-않는다(§12-7). 이 매체가 없으면 `uv run fire-lane` 이 첫 단계에서 멈춘다.
+★ 파이프라인은 **우지혜 로컬에서만 돈다**(2026-09-02 이관). CI 는
+데이터를 만들지 않는다(§12-7). 이 매체가 없으면 `uv run fire-lane` 이 첫
+단계에서 멈춘다. **"GIS 담당" 이라고 적지 않는다** — 담당이 바뀌면 그
+말이 누구를 가리키는지 다음 사람이 못 찾는다.
 
 ## 15. 대외 산출물
 
@@ -2072,7 +2080,7 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 | 상수 | 값 | 상태 |
 |---|---:|---|
 | `CCTV_RANGE` | 25.0 | 354구간의 판정을 가른다. §16-1 |
-| `WMAX_CAP` | 60.0 | ★ 주석에는 40m 로 적혀 있다. 문서-코드 불일치 |
+| `WMAX_CAP` | 60.0 | 담~담 상한. 근거는 "15m 로 잡으면 대로가 전멸한다" 뿐이다 |
 | `SNAP_MAX` | 6.0 | 눈대중 |
 | `MIN_SEG_LEN` | 3.0 | 눈대중 |
 
@@ -2184,11 +2192,16 @@ uv run python -m firelane.datalog fsck
 
 폴더는 그대로 **제공기관**으로 구분한다.
 
+★ **정본은 `sources.yaml` 의 `layers.raw.providers` 다.** 아래는 사람이 읽는
+사본이고 `firelane.providers.spec()` 이 유일한 조회 경로다 — 이 목록이 한때
+다섯 벌이었고 값이 갈렸다(DECISIONS §73).
+
 ```
-juso     도로명주소(주소기반산업지원)     its      국가교통정보센터
-ngii     국토정보플랫폼                  vworld   브이월드
-safety   공공데이터포털(안전)             gjcity   공공데이터포털(광주 동구)
-sbiz     공공데이터포털(소상공인)         eais     건축HUB
+juso     도로명주소 안내시스템      its      국가교통정보센터
+ngii     국토지리정보원            vworld   브이월드
+safety   소방청·행정안전부          gjcity   전남광주통합특별시
+sbiz     소상공인시장진흥공단       eais     건축행정시스템 세움터
+nsdi     국가공간정보포털
 ```
 
 ★ `ngii` 와 `vworld` 를 나눈다. 같은 수치지형도라도 **원천이 다르면 폴더가
@@ -2899,9 +2912,9 @@ BEV 는 디버그 플래그 뒤에 둔다.
       그중 blocked          41      ★ 폭 0.41m 를 70회 지나간다
       폭 3.0m 미만         168
 
-★ **지도가 지금 보여주는 것은 1차다.** `route_vehicle.csv` 는 파일로만
-나가고 `web/data` 로 가지 않는다. 발표에서 "판정을 반영한 경로" 를
-보이려면 `publish_web.py` 가 이것을 실어야 한다. **남은 작업은 그것이다.**
+★ **지도가 지금 보여주는 것은 1차다.** 2차는 `publish_web.py:379` 가
+`web/data/route_vehicle.json` 으로 **이미 발행한다**(2026-08-31). 남은 것은
+발행이 아니라 **소비**다 — `web/js/` 어디에도 그 파일을 읽는 코드가 없다.
 
 ★ `tools/route_probe.py` 의 머리말 주석은 `_write_route()` 도입 **이전**에
 쓰였다. "비용 함수가 배선되지 않았다" 는 서술은 낡았다.
@@ -2929,11 +2942,15 @@ BEV 는 디버그 플래그 뒤에 둔다.
     web/data/_manifest.json     파일 목록과 해시
     web/data/hydrants·cctv·poi·buildings·mask·scope·boundary.geojson
 
-★ **`route_vehicle` 은 아직 안 나간다.** `data/processed/route_vehicle.csv`
-로만 있다. 앱이 판정 반영 경로를 그리려면 `publish_web.py` 가 이것을
-`web/data/route_vehicle.json` 으로 실어야 한다. **남은 작업은 그것 하나다.**
+    web/data/route_vehicle.json 차량 비용 경로. 1,101구간
 
-    스키마(제안)  { "<seg_uid>": { "use": 1, "cost": 90.9, "passable": 1 } }
+★ **`route_vehicle.json` 은 나간다.** `publish_web.py:379` 가
+`data/processed/route_vehicle.csv` 를 읽어 발행한다. **읽는 쪽이 없다** —
+`web/js/` 에 참조 0건이라 83KB 가 소비자 없이 커밋돼 있다. 남은 작업은
+화면 결선이고 PLAN 이 그 항목을 든다.
+
+    스키마(실물)  { "<seg_uid>": { "use": 1, "cost": 90.9,
+                                  "passable": 1, "reachable": 1 } }
     조인 키       seg_uid — `seg_id` 는 실행 간 유지되지 않는다(§11)
 
 ★ **출발지는 119안전센터 2곳으로 고정이다**(`seg/params.py::STATIONS`).
