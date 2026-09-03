@@ -1872,11 +1872,12 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
 ### 14-4a. 사람이 부르는 나머지 도구
 
     pull_data.py     **반입 입구.** Downloads → landing → raw → norm 여덟 단계
+                     (intake · stage · verify · prune · quarantine ·
+                      judge · prep --apply · prep --check)
     doc_fsck.py      문서끼리 어긋난 데가 있는가 — 여덟(§87 · §88-3 · §91)
     doctor.py        대장 · 실물 · 백업을 한 화면에. **매일 첫 번째로 본다**
     refcheck.py      문서·코드의 참조가 낡았는가
     intake.py        받은 것을 landing 으로 들인다
-    absorb.py        landing 을 raw 로 흡수한다
     triage.py        받은 더미를 분류한다
     docpatch.py      docx 를 규칙으로 고친다
     docx_fix.py      docx 위생
@@ -2617,7 +2618,7 @@ data/norm/                             값은 안 바꾼다
 data/processed/
 ```
 
-★ **입구는 `tools/pull_data.py` 하나다.** 위 여섯을 순서대로 돌리고 한
+★ **입구는 `tools/pull_data.py` 하나다.** 여덟 단계를 순서대로 돌리고 한
 단계라도 실패하면 멈춘다. 사람이 순서를 외우면 반드시 빠뜨린다 —
 2026-09-01 에 `acquire` 를 인자 없이 돌려 관측만 하고 편입이 된 줄 알았다
 (DECISIONS §88).
