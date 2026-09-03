@@ -223,7 +223,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 
 ```
 landing      SSD/landing/     다운로드 원본. 규칙 없음. ★ 백업 제외
-raw          SSD/raw/         제공기관 9폴더. 절대 수정 안 함
+raw          SSD/raw/         제공기관 10폴더. 절대 수정 안 함
 norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
@@ -233,7 +233,7 @@ web/data     표출용. 커밋한다. 40MB 상한
 data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
 ```
 
-제공기관 폴더 — `juso` `its` `ngii` `vworld` `safety` `gjcity` `sbiz` `eais` `nsdi`.
+제공기관 폴더 — `juso` `its` `ngii` `vworld` `safety` `gjcity` `sbiz` `eais` `nsdi` `nfa`.
 정본은 `sources.yaml` 의 `layers.raw.providers` 이고 `firelane.providers` 가 읽는다.
 **같은 수치지형도라도 원천이 다르면 폴더가 다르다.**
 
@@ -322,7 +322,7 @@ tools/
   acquire.py              landing → raw 획득 게이트 · sha 대조
   baseline.py             판정 산출물 봉인 · 실행 간 전이 대조
   golden.py               ★ 리팩 전후 산출물 동일 증명. baseline 과 반대 용도
-  scan_data.py            데이터 레이크 구조 점검
+  scan_data.py            데이터 레이크 구조 점검. §7 이 레이크 **밖**도 본다
   docnum_check.py         문서 ↔ 산출물 숫자 · 필드표 대조
   commit_policy.py        산출물 · 일회성 스크립트 · 비밀값 차단
   encoding_check.py       인코딩 · 개행
@@ -391,7 +391,7 @@ web/
 도달 가능    687 (62%)   119안전센터에서 막힌 길 없이 갈 수 있는 구간
 총연장       48,579.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 48종 · `retired` 10종
+대장        `datasets` 54종 · `retired` 10종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 ```
 

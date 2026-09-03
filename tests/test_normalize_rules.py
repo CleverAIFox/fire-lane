@@ -200,3 +200,53 @@ def test_missing_list_is_actually_missing():
     assert not found, (
         "MISSING 에 적힌 것이 raw 에 있다:\n" + "\n".join(found) +
         "\n  받았으면 목록에서 빼라. 결손 목록이 낡으면 없는 경고가 매번 뜬다.")
+
+
+def test_rules_do_not_redo_the_general_rule():
+    """RULES 가 정규명을 다시 받지 않는가. **두 벌 금지.**
+
+    ★ 2026-09-03. RULES 40줄 중 아홉이 `^juso_...` `^safety_...` 처럼
+      정규명을 다시 받고 있었다. 정규명은 `main()` 의 일반 규칙 하나가
+      전 제공기관에 대해 받으므로 같은 일을 두 벌로 한 것이다.
+
+    ★ 그리고 실제로 어긋났다. 일반 규칙이 `[a-z0-9_]` 라 하이픈을 못 받는
+      동안 `^safety_[\\w-]+_...` 는 받고 있었다. 같은 스코프를 쓰는 파일이
+      제공기관에 따라 되기도 하고 안 되기도 했다 — 한쪽이 덮어서 안 보였다.
+
+    RULES 는 취득처가 준 이름만 다룬다. 우리가 지은 이름은 일반 규칙이다.
+    """
+    import re
+
+    from firelane import normalize_raw as n
+    bad = [f"  {org:8s} {pat}" for pat, org, tmpl in n.RULES
+           if tmpl is None and re.match(rf"\^{re.escape(org)}_", pat)]
+    assert not bad, (
+        "RULES 가 정규명을 다시 받는다 — 일반 규칙과 두 벌이다.\n"
+        + "\n".join(bad)
+        + "\n\n  지워라. main() 의 일반 규칙이 덮는다.")
+
+
+def test_general_rule_accepts_every_scope_alias():
+    """일반 규칙이 대장 `scopes` 별칭을 전부 받는가. **양방향이다.**
+
+    ★ 2026-09-03. 대장은 `jngj-donggu` 처럼 하이픈을 쓰는데 일반 규칙이
+      `[a-z0-9_]` 라 못 받았다. 대장이 정본인데 코드가 더 좁았고,
+      `nfa_*` CSV 넷이 "규칙에 없는 파일" 로 떨어졌다.
+
+    ★ `test_provider_registry` 가 `providers` 로 하는 대조를 `scopes` 에도 한다.
+    """
+    import re
+    from pathlib import Path
+
+    import yaml
+    root = Path(__file__).resolve().parents[1]
+    led = yaml.safe_load((root / "sources.yaml").read_text(encoding="utf-8"))
+    scopes = list(led.get("scopes") or {})
+    assert scopes, "대장에 scopes 가 없다"
+    EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+    pat = re.compile(rf"^nfa_[a-z0-9_-]+_\d{{8}}\.({EXT})$")
+    bad = [s for s in scopes if not pat.match(f"nfa_x_{s}_20260101.csv")]
+    assert not bad, (
+        f"일반 규칙이 못 받는 스코프 별칭 — {', '.join(bad)}\n"
+        "  normalize_raw.main() 의 문자 클래스를 넓혀라.\n"
+        "  대장 scopes 가 정본이고 정규식이 그것을 따라간다.")

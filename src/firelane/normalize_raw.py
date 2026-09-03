@@ -61,6 +61,20 @@ for st in (sys.stdout, sys.stderr):
 #
 #   `test_every_required_file_is_reachable_by_rules` 가 잡았다.
 #   별칭 문법을 바꿀 때 그것을 읽는 곳을 전부 세지 않은 결과다.
+# ★ 2026-09-03. **RULES 는 취득처가 준 이름만 다룬다.**
+#
+#   정규명(`<stem>_<scope>_<날짜>.<ext>`)은 `main()` 의 일반 규칙 하나가
+#   전 제공기관에 대해 받는다. 그런데 RULES 에 `^juso_...` `^safety_...`
+#   처럼 **정규명을 다시 받는 줄이 아홉** 있었다 — 같은 일을 두 벌로 한
+#   것이고, 정본이 둘이면 반드시 어긋난다.
+#
+#   실제로 어긋났다. 일반 규칙이 `[a-z0-9_]` 라 하이픈을 못 받는 동안
+#   `^safety_[\w-]+_...` 는 받고 있었다. 그래서 같은 스코프를 쓰는 파일이
+#   제공기관에 따라 되기도 하고 안 되기도 했다 —
+#   **한쪽이 덮어서 안 보였다.**
+#
+#   ★ 아홉을 지웠다. 일반 규칙이 전부 덮는다.
+#     남은 줄은 전부 **한글·원본 파일명**을 정규명으로 바꾸는 것들이다.
 RULES: list[tuple[str, str, str]] = [
     # ── 2026-08-17 소방 계열 3종 재확보 ──────────────────────
     #   ★ 아래 세 줄이 위쪽 기존 규칙보다 먼저 매칭돼야 한다.
@@ -89,7 +103,6 @@ RULES: list[tuple[str, str, str]] = [
     (r"^전남광주통합특별시_동구\.zip$",   "juso", "juso_elctrnmap_jngj_20260711.zip"),
     (r"사물주소도형.*동구\.zip$",         "juso", "juso_spotaddr_geom_jngj_20260801.zip"),
     (r"사물주소기준점.*동구\.zip$",       "juso", "juso_spotaddr_ref_jngj_20260801.zip"),
-    (r"^juso_(elctrnmap|spotaddr_\w+)_jngj_\d{8}\.zip$", "juso", None),
 
     # ── its · 국가교통정보센터 ───────────────────────────────
     # ★ 258MB 전국이다. 광주 절단은 norm 이후 단계에서 한다.
@@ -133,7 +146,6 @@ RULES: list[tuple[str, str, str]] = [
     #   retired 에 사유를 적었으므로 규칙도 같이 내린다 — 대장이 정본이다.
 
     (r"^내역서\.csv$",       "its", "its_nodelink_changelog_20260812.csv"),
-    (r"^its_nodelink_(kr|changelog)_\d{8}\.(zip|csv)$", "its", None),
 
     # ── ngii · 국토정보플랫폼 ────────────────────────────────
     # ★ (B020)(B060)(B080) 접두는 정규식에 넣지 않는다.
@@ -142,14 +154,12 @@ RULES: list[tuple[str, str, str]] = [
     (r"정사영상_(\d{4})_35616(\d{3})\.tif$",    "ngii", "ngii_ortho_gj{1}_{0}1231.tif"),
     (r"정사영상메타데이터_\d+35616(\d{3})\.xml$", "ngii", "ngii_ortho_gj{0}_20251231.xml"),
     (r"공개dem_35616.*\.zip$",                   "ngii", "ngii_dem_gj35616_20251117.zip"),
-    (r"^ngii_(basemap|ortho|dem)_gj[\w-]+_\d{8}\.(zip|tif|xml)$", "ngii", None),
 
     # ── vworld · 브이월드 ────────────────────────────────────
     # ★ ngii 와 폴더를 나눈다. 같은 수치지형도라도 원천이 다르면 폴더가 다르다.
     #   섞으면 어느 판인지 파일명만으로 구분되지 않는다. (2026-08-17)
     # ★ 도엽 zip 74개가 상위 zip 안에 중첩돼 있다. 이중 해제는 ingest 담당.
     (r"^2map1000_shp_광주_동구\.zip$", "vworld", "vworld_map1k_gjdonggu_20260307.zip"),
-    (r"^vworld_map1k_gjdonggu_\d{8}\.zip$", "vworld", None),
     # ★ 2026-08-18. 같은 브이월드 동구 상품의 NGI 포맷판을 함께 받는다.
     #   SHP 판(74도엽)은 1:5,000 부모 3561609 대(동명동 북부 12도엽)를 통째로
     #   흘린다. 행정구역 수출이 1:50,000 경계에 걸친 도엽을 빠뜨리는 것으로
@@ -159,7 +169,6 @@ RULES: list[tuple[str, str, str]] = [
     #   NGI 판에 356160983~988 · 993~998 이 있어 그 띠를 정확히 메운다.
     #   같은 도엽이 양쪽에 있으면 파서가 SHP 를 우선한다(ngii1k.collect).
     (r"^2map1000_ngi_광주_동구\.zip$", "vworld", "vworld_map1k_ngi_gjdonggu_20260307.zip"),
-    (r"^vworld_map1k_ngi_gjdonggu_\d{8}\.zip$", "vworld", None),
 
     # ── safety · 공공데이터포털(안전) ────────────────────────
     (r"^전남광주통합특별시_cctv_(\d{8})\.csv$",     "safety", "safety_cctv_jngj_{0}.csv"),
@@ -174,7 +183,6 @@ RULES: list[tuple[str, str, str]] = [
     #   이 파일의 위쪽 주석은 *"좌표 없는 시도 소방서 현황(20250701)은
     #   규칙을 두지 않는다"* 라고 적고 있었다. 주석과 코드가 반대였다.
     #   `test_rules_do_not_reimport_retired_files` 가 대장과 대조한다.
-    (r"^safety_[\w-]+_\d{8}\.csv$", "safety", None),
 
     # ── gjcity · 공공데이터포털(광주 동구) ───────────────────
     # ★ enforcement 가 safety 에서 여기로 옮겨왔다.
@@ -188,19 +196,16 @@ RULES: list[tuple[str, str, str]] = [
     (r"동구_쓰레기통현황_(\d{8})\.csv$",            "gjcity", "gjcity_bin_trash_dongu_{0}.csv"),
     (r"동구_의류수거함위치_(\d{8})\.csv$",          "gjcity", "gjcity_bin_cloth_dongu_{0}.csv"),
     (r"동구_주차장정보.*(\d{8})\.csv$",             "gjcity", "gjcity_parking_dongu_{0}.csv"),
-    (r"^gjcity_[\w-]+_[\w-]+_\d{8}\.csv$", "gjcity", None),
 
     # ── sbiz · 소상공인시장진흥공단 ──────────────────────────
     # ★ 다운로드 사이트가 괄호를 HTML 엔티티로 준다(&#40; &#41;).
     #   쉘·경로에서 계속 문제를 일으키므로 여기서 흡수한다.
     (r"소상공인시장진흥공단_상가.*(\d{8})\.zip$", "sbiz", "sbiz_store_kr_{0}.zip"),
-    (r"^sbiz_store_[\w-]+_\d{8}\.zip$", "sbiz", None),
 
     # ── eais · 건축HUB ───────────────────────────────────────
     # ★ 원본이 "03. 표제부_20260817013434.csv" 다. 앞의 03 은 서식 번호이고
     #   뒤 14자리는 다운로드 시각이다. 데이터 기준일이 아니므로 앞 8자리만 쓴다.
     (r"표제부_(\d{8})\d{6}\.csv$", "eais", "eais_bldg_ledger_gjdonggu_{0}.csv"),
-    (r"^eais_bldg_ledger_[\w-]+_\d{8}\.csv$", "eais", None),
 ]
 
 # 없으면 파이프라인이 도는 데 지장이 있는 것
@@ -369,7 +374,16 @@ def main():
     EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
     # ★ RULES 는 모듈 전역이다. main() 안에서 append 하면 같은 프로세스에서
     #   두 번 부를 때 규칙이 중복 누적된다. 지역 사본에 붙인다.
-    rules = RULES + [(rf"^{org}_[a-z0-9_]+_\d{{8}}\.({EXT})$", org, None)
+    # ★ 2026-09-03. `[a-z0-9_]` 에 하이픈이 없어 스코프 별칭을 못 받았다.
+    #   대장 `scopes` 는 `jngj-donggu` · `jngj-dongmyeong` 처럼 하이픈을 쓰고,
+    #   그 블록 주석이 "별칭 안에 **언더스코어**를 쓰지 않는다" 고 못 박는다 —
+    #   언더스코어가 필드 구분자라서다. 즉 하이픈은 처음부터 허용이었고
+    #   이 정규식만 몰랐다. **대장이 정본인데 코드가 더 좁았다.**
+    #
+    #   지금까지 안 걸린 이유는 `sbiz`·`gjcity` 가 명시 규칙으로 들어와
+    #   이 일반 규칙을 탄 적이 없어서다. 2026-09-03 에 `nfa_*` CSV 넷이
+    #   처음 탔고 전부 "규칙에 없는 파일" 로 떨어졌다.
+    rules = RULES + [(rf"^{org}_[a-z0-9_-]+_\d{{8}}\.({EXT})$", org, None)
                      for org in sorted(ORG)]
 
     files = [f for f in src.iterdir() if f.is_file()]
