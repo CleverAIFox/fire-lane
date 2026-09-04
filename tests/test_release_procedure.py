@@ -5,7 +5,7 @@ test_release_procedure.py — 릴리즈 절차가 룰셋과 어긋나지 않는�
 ── 왜 생겼나 ───────────────────────────────────────────────────
 2026-09-02. `MASTER §12-8b` 3·4단계가 `git push origin dev` ·
 `git push origin part/*` 였다. 세 룰셋 전부 `pull_request` 필수인데(§12-1)
-`bypass_actors` 가 살아 있어 통과했다. **09-07 회수 후에는 막힌다.**
+`bypass_actors` 가 살아 있어 통과했다. **09-03 회수 후에는 막힌다.**
 규약은 있고 강제자가 없었다(§17). DECISIONS §90.
 
 IN    docs/MASTER.md §12-8b

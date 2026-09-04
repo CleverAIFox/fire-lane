@@ -26,10 +26,20 @@ ROOT = Path(__file__).resolve().parents[1]
 PROCESSED = ROOT / "data" / "processed"
 
 # 산출물이 아닌 것. 파이프라인 메타데이터이며 대장의 대상이 아니다.
+# ★ META 는 **파이프라인 메타데이터만** 든다. 산출물은 대장이 든다.
+#
+# ★ 2026-09-04. 여기 `segments.schema.json` 이 있었다. 사유가
+#   "segments 의 스키마. 본체와 한 쌍이다" 였는데 **그것은 등재를 면제할
+#   이유가 못 된다** — 한 쌍이면 둘 다 등재하면 된다. 그 한 줄 때문에
+#   `test_no_undeclared_output` 이 이 파일을 영영 못 봤고, 대장에 없는 채로
+#   `Step.writes` 와 `committed_exceptions` 에만 이름이 있었다.
+#   같은 파일을 세 곳이 각자 들고 강제는 한 곳에도 안 걸린 상태였다.
+#
+# ★ 늘리려면 사유가 "파이프라인이 자기 실행을 기록하는 것"이어야 한다.
+#   산출물이면 대장에 등재한다.
 META = {
     "_manifest.json",       # 재현 증적. git_sha · 타이밍
     "_lineage.json",        # datalog 계보
-    "segments.schema.json", # segments 의 스키마. 본체와 한 쌍이다
 }
 
 # 중간 산출물 접미사. 대장 대상이 아니다.
@@ -274,3 +284,65 @@ def test_manifest_keeps_lineage():
         f"매니페스트 {len(rows)}종 중 `outputs` 를 든 것이 0건이다.\n"
         "  얕은 판이 계보를 덮었다. `uv run fire-lane` 으로 전량 재실행하면\n"
         "  복구된다(약 300초). golden 은 이 상태를 초록불로 통과시킨다.")
+
+
+def test_step_writes_are_declared_in_the_ledger():
+    """`pipeline.Step.writes` 가 대장 `outputs` 에 있는가. **파이프라인 없이.**
+
+    ★ 2026-09-04. `test_no_undeclared_output` 은 `actual_files()` 로 디스크를
+      훑는다 — **820초를 태우고 나서야 미등재를 안다.** 그날 `scope_5186.gpkg`
+      가 그렇게 잡혔고, 등재 누락은 이 저장소가 반복해 겪은 형태다.
+
+    ★ 그런데 `Step.writes` 에는 이미 적혀 있었다. 같은 사실을 두 곳이
+      따로 관리하는데 한쪽만 강제됐던 것이다. 선언끼리 대조하면
+      **파이프라인을 돌리기 전에** 잡힌다.
+
+    ★ 글롭(`*_5186.gpkg`)과 디렉터리는 건너뛴다. 대장은 개별 산출물을
+      드는 자리이고, 그 둘은 ingest 처럼 대장이 이미 datasets 로 관리한다.
+    """
+    import importlib.util
+    import sys
+
+    spec = importlib.util.spec_from_file_location(
+        "pipeline", ROOT / "src/firelane/pipeline.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules["pipeline"] = m
+    spec.loader.exec_module(m)
+
+    known = {str(Path(x)) for x in declared_paths()}
+    bad = []
+    for s in m.STEPS:
+        for w in (*s.writes, *s.mutates):
+            rel = str(w.relative_to(ROOT)) if w.is_absolute() else str(w)
+            if "*" in rel or not Path(rel).suffix:
+                continue
+            if rel.startswith("web/data/") or rel.endswith("_manifest.json"):
+                continue
+            if rel not in known:
+                bad.append(f"  Step({s.name!r}) 가 {rel} 을 내는데 대장에 없다")
+    assert not bad, (
+        "Step 선언에는 있는데 대장 outputs 에 없다.\n" + "\n".join(bad)
+        + "\n\n  sources.yaml 의 outputs 에 등재하라 —"
+          "\n  produced_by · path · inputs · consumers · note"
+          "\n  ★ 이 검사는 파이프라인을 안 돌려도 돈다. 820초 전에 잡으라고 있다.")
+
+
+def test_meta_entries_are_not_real_outputs():
+    """`META` 가 진짜 산출물을 면제하지 않는가. **역방향이다.**
+
+    ★ 2026-09-04. `META` 는 검사에서 파일을 통째로 빼는 정적 목록인데,
+      그 목록이 실물·대장과 맞는지 보는 검사가 없었다. 그래서
+      `segments.schema.json` 한 줄이 등재 누락을 영영 가렸다.
+
+    ★ 오늘 같은 형태를 넷 고쳤다 — ALLOW · FIELD_EXEMPT · BACKWARD ·
+      여기. **정적 면제 목록에는 반드시 역방향 검사를 붙인다.**
+
+    판정 — META 에 있는 이름이 대장 `outputs` 에도 있으면 그것은
+    메타데이터가 아니라 산출물이다. 둘 중 하나를 지워야 한다.
+    """
+    named = {Path(p).name for p in declared_paths()}
+    overlap = sorted(META & named)
+    assert not overlap, (
+        f"META 가 대장 산출물을 면제한다 — {', '.join(overlap)}\n"
+        "  대장에 등재했으면 META 에서 빼라. META 는 파이프라인이\n"
+        "  자기 실행을 기록하는 것(_manifest · _lineage)만 든다.")

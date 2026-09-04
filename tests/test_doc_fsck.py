@@ -91,3 +91,44 @@ def test_the_gate_actually_cries():
         assert doc_fsck.check_paths(), "없는 경로를 심었는데 ② 가 조용하다"
     finally:
         probe.write_text(original, encoding="utf-8")
+
+
+def test_elsewhere_points_at_committed_files():
+    """`absent.elsewhere` 가 **커밋되는 파일**을 가리키는가.
+
+    ★ 2026-09-04. `data/processed/nfa_dispatch_119.csv` 를 가리켰는데
+      `.gitignore:27` 이 `data/processed/*.csv` 를 뺀다. 로컬에는 있고
+      **CI 에는 없어서** 로컬만 통과하는 검사가 됐다.
+
+    ★ `elsewhere` 는 "그 출처에는 없지만 여기 있다" 를 증명하는 자리다.
+      증명이 기계에 안 보이면 선언이 아니라 주석이다.
+      커밋되는 것 — `_manifest.json` · `web/**` · `data/field/*`.
+    """
+    import subprocess
+
+    import yaml
+
+    led = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    targets = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k == "absent" and isinstance(v, dict):
+                    for spec in v.values():
+                        if isinstance(spec, dict) and spec.get("elsewhere"):
+                            targets.add(spec["elsewhere"])
+                else:
+                    walk(v)
+    walk(led)
+
+    bad = []
+    for rel in sorted(targets):
+        r = subprocess.run(["git", "check-ignore", "-q", rel],
+                           cwd=ROOT, capture_output=True)
+        if r.returncode == 0:
+            bad.append(f"  {rel} 은 .gitignore 대상이다 — CI 에 없다")
+    assert not bad, (
+        "absent.elsewhere 가 커밋 안 되는 파일을 가리킨다.\n" + "\n".join(bad)
+        + "\n\n  로컬에서만 통과하는 검사가 된다."
+          "\n  data/processed/_manifest.json 이 컬럼 목록을 들고 커밋된다.")

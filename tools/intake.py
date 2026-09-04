@@ -149,10 +149,22 @@ def _stem_of(rel: str) -> str:
 def propose(src: Path, ds: dict) -> dict:
     """정규명 후보를 낸다. **채택하지 않는다.**
 
-    단서를 셋 본다. 강한 순서다 —
+    단서를 넷 본다. 강한 순서다 —
       ① KFS 문서번호   대장 본문에 그대로 적혀 있다. 제일 확실하다
       ② 취득 규칙      `normalize_raw.RULES` 가 배치할 수 있는가
-      ③ 없음           사람이 정한다
+      ③ 대장 stem      파일명이 이미 정규명인가
+      ④ 없음           사람이 정한다
+
+    ★ 2026-09-03. ③을 신설했다. **`intake` 가 대장 `stem` 을 안 봤다.**
+      2026-08-31 에 `file`/`files` 를 37종에서 빼고 `stem`+`ext` 로 뒤집었는데
+      (PLAN #46) 이 소비자가 이관에서 빠졌다 — `scan_data §4` 와 같은 자리다.
+
+      그래서 파일명이 대장 규칙(`<stem>_<scope>_<날짜>.<ext>`)과 완전히
+      일치해도 "대장에 없다" 로 걸렀다. 2026-09-03 에 `nfa_*` 15개가
+      전부 그렇게 막혔다. 대장에 등재돼 있었는데도.
+
+      ★ `RULES` 는 **취득처가 준 이름**을 다루는 규칙이고, `stem` 은
+        **우리가 정한 이름**이다. 둘은 다른 단계라 ②로는 못 잡는다.
     """
     stem, ext = nm.split_ext(src.name)
     out = {"origin_name": src.name, "ext": ext, "doc_no": None,
@@ -174,6 +186,19 @@ def propose(src: Path, ds: dict) -> dict:
                     out["suggest"] = f"{pat.split('/')[0]}/{base}.{ext}"
                     out["why"].append(
                         f"문서번호 {out['doc_no']} 가 대장 {k} 에 있다")
+                break
+
+    # ③ 대장 stem — 파일명이 이미 정규명인 경우
+    #    ★ ②보다 먼저 본다. 이미 우리 규칙으로 지은 이름이면 RULES 를
+    #      거칠 이유가 없고, RULES 가 옛 이름을 만들어 오히려 어긋난다.
+    if out["matched_key"] is None:
+        for k, v in ds.items():
+            st = (v or {}).get("stem")
+            if st and stem.startswith(f"{st}_"):
+                out["matched_key"] = k
+                org = (v or {}).get("provider") or st.split("_", 1)[0]
+                out["suggest"] = f"{org}/{src.name}"
+                out["why"].append(f"파일명이 대장 {k} 의 stem 으로 시작한다")
                 break
 
     # ② 취득 규칙 — 규칙이 배치할 수 있으면 그 결과로 대장 항목을 찾는다
