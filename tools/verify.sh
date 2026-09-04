@@ -71,8 +71,10 @@ step "진입점 · cwd 독립성" bash -c \
 # ── 3. 파이썬 테스트 ─────────────────────────────────────────
 step "pytest" uv run pytest tests/ -q
 
-# ── 4. 계층 규칙 ─────────────────────────────────────────────
-step "계층 강제 (test_layering)" uv run pytest tests/test_layering.py -q
+# ── 4. (삭제) 계층 규칙 ──────────────────────────────────────
+# ★ 2026-09-03. `pytest tests/ -q` 가 이미 test_layering 을 돌린다.
+#   같은 환경에서 두 번 돌아 표에 줄만 하나 더 찍혔다. 아래 'CI 환경
+#   재현' 은 모듈을 가린 **다른 환경**이라 그것은 남긴다.
 
 # ── 5. 린트 ─────────────────────────────────────────────────
 # ★ 2026-08-22 에 155 → 0 으로 정리했다. 이제 참고가 아니라 게이트다.
@@ -128,6 +130,10 @@ step "CI 환경 재현"     bash -c '
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
+# ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
+#   ⑥ 기획서 수정일 · ⑦ 셸 명령 · ⑧ 기한은 **사람이 손으로 칠 때만**
+#   돌았다. 그 사람이 나가면 아무도 안 친다.
+step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 # ★ 2026-09-02 배선. 오늘 캡션 절까지 붙여놓고 **어디서도 안 부르고
 #   있었다.** 사람이 손으로 칠 때만 도는 도구는 이탈 후 아무도 안 부른다.
 step "기획서 대조"     uv run python tools/docx_check.py
@@ -173,7 +179,9 @@ if [ "$FAST" = "1" ]; then
 elif [ -z "${FIRE_LANE_DATA:-}${FIRE_LANE_RAW:-}" ] && [ ! -d data/raw/gjcity ]; then
     note "파이프라인 전량 + golden" "raw 가 없다. FIRE_LANE_DATA 설정 후 다시"
 else
-    step "파이프라인 전량" uv run fire-lane
+    # ★ --no-test. 계약 테스트는 위 pytest 가 이미 돌렸다. 파이프라인이
+    #   끝에서 또 부르면 한 번의 verify 에 test_contract 가 세 번 돈다.
+    step "파이프라인 전량" uv run fire-lane --no-test
     step "golden 판정 불변 (1,101구간)" uv run python tools/golden.py check
     # ★ 게이트가 울고 또 풀리는가. check 가 통과하는 것만으로는
     #   해제 경로가 있는지 알 수 없다(DECISIONS §69).
