@@ -22,8 +22,11 @@ gitignore 문법의 부분집합만 쓴다 — `/dir/` · `/path/file` · `*.ext
 
 IN    .github/CODEOWNERS
 OUT   stdout (경로 목록) 또는 import 해서 함수로
-PARAM --owner <핸들>   단독 소유 경로만 출력. 기본 @AIMasterFox
+PARAM 없음             인자 없이 치면 `# !strict` 경로를 출력한다
+      --owner <핸들>   그중 그 핸들이 소유한 것만. 기본값 없음
       --all            추적되는 전 경로와 소유자를 표로
+      --unowned        소유자 없는 경로만 (test_ownership 이 든다)
+      --py-only        `*.py` 만
 """
 from __future__ import annotations
 

@@ -20,12 +20,16 @@ uv run python tools/serve.py        # 캐시 없는 개발 서버
 | `index.html` | 공동 | 뼈대. 패널 마크업. 거의 안 바뀐다 |
 | `style.css` | **@marscoolcat** | 색·간격·타이포·레이아웃 |
 | `config.js` | **공동** | 색상표·임계값·마커 형상·카메라 |
-| `js/main.js` | **@AIMasterFox** | 부트스트랩. 초기화 순서만 |
-| `js/data.js` | **@AIMasterFox** | ★ 데이터 접근 단일 지점 |
-| `js/layers/` | **@AIMasterFox** | 레이어·판정 렌더링 |
+| `js/main.js` | **공백** | 부트스트랩. 초기화 순서만 |
+| `js/data.js` | **공백** | ★ 데이터 접근 단일 지점 |
+| `js/layers/` | **공백** | 레이어·판정 렌더링 |
 | `js/icons/` | 공동 | 표지판 캔버스 그림 |
 | `js/ui/` | 공동 | 범례·검색·테마·토글·미니맵 |
 | `data/` | 생성물 | `publish_web.py` 산출. 손으로 고치지 말 것 |
+
+★ **`공백` 은 소유자가 이탈해 비었다는 뜻이다.** `CODEOWNERS` 에는 아직
+`@AIMasterFox` 로 적혀 있고 GitHub 은 그 줄을 조용히 무시한다 — 리뷰가 걸리는
+것처럼 보이지만 안 걸린다(`MASTER §8` · `PLAN #79`).
 
 **UI 작업은 `style.css` 와 `config.js` 만 만지면 된다.** `js/layers/` 를 건드릴 일이
 생기면 그건 로직 문제이므로 GIS 담당에게 알릴 것.
@@ -73,7 +77,7 @@ minimap : { showFromZoom: 16 }
 
 ## 모듈 구조 (2026-08-21)
 
-`app.js` 1,260줄을 `web/js/` 27개 모듈로 쪼갰다. 원문 로직은 그대로다.
+`app.js` 1,260줄을 `web/js/` 29개 모듈로 쪼갰다. 원문 로직은 그대로다.
 
 ```
 js/

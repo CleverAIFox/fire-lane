@@ -9,7 +9,7 @@ scan_data.py — 데이터 레이크 구조를 훑고 대장과 대조한다.
 
 ── 무엇을 보나 ────────────────────────────────────────────────
 1. 계층      landing / raw / norm / field / _quarantine 이 규칙대로 있는가
-2. 제공기관   raw 하위가 8폴더 규칙을 지키는가 (MASTER 18-2)
+2. 제공기관   raw 하위가 10폴더 규칙을 지키는가 (MASTER 18-2)
 3. 명명규칙   provider_dataset_scope_date.ext 를 따르는가
 4. 대장 대조  ★ 이것이 본체다 (MASTER 18-3 게이트)
                 대장에 있음 + 파일 있음  →  정상
@@ -170,13 +170,23 @@ def main() -> int:
         rawset = {str(rel.relative_to("raw")).replace(os.sep, "/") for rel, _, _ in raw}
         claimed = set()
         missing = []
+        # ★ 2026-09-03 배선 복구. 종전에는 `e.get("file")` 단수만 읽었다.
+        #   2026-08-31 에 `file`/`files` 를 37종에서 빼고 `stem`+`ext` 로
+        #   뒤집었는데(PLAN #46) 이 소비자만 이관에서 빠졌다. 그 결과
+        #   44종 중 42종이 "file 선언 없음" 으로 빠져나가 **claimed 가
+        #   공집합이 됐고, raw 전량이 격리 대상으로 떴다.**
+        #   조용히 안 하는 게 아니라 시끄럽게 틀린 것을 말했다(§18-13).
+        #   정본은 `ledger.globs()` 하나다 — 여기서 다시 쓰지 않는다.
+        from firelane import ledger as _led
         for key, e in sorted(ds.items()):
-            pat = (e or {}).get("file")
-            if not pat:
-                print(f"  · {key:22s} file 선언 없음")
+            pats = [str(g) for g in _led.globs(e)] if e else []
+            if not pats:
+                print(f"  ★ {key:22s} 경로 선언이 없다 (stem·file·files 전부 없음)")
                 continue
-            pat = pat.rstrip("/")
-            hit = {r for r in rawset if fnmatch.fnmatch(r, pat) or r.startswith(pat + "/")}
+            hit = {r for r in rawset
+                   for pat in pats
+                   if fnmatch.fnmatch(r, pat) or r.startswith(pat.rstrip("/") + "/")}
+            pat = " · ".join(pats[:2])
             if hit:
                 claimed |= hit
                 print(f"  OK {key:22s} {len(hit):4d}개  {pat}")
@@ -232,6 +242,51 @@ def main() -> int:
     print("\n  큰 파일 상위 15")
     for rel, sz, _ in sorted(files, key=lambda f: -f[1])[:15]:
         print(f"    {human(sz):>10s}  {rel}")
+
+    # ── 7. 선언 밖 형제 ★ ──────────────────────────────────
+    #
+    # ★ 2026-09-03 신설. **모든 검사가 선언된 루트에서 아래로만 봤다.**
+    #   treecheck · refcheck · doc_fsck ④ · acquire 가 전부 그렇다.
+    #   그래서 `FIRE_LANE_DATA` 의 **형제**에 있는 것은 아무도 못 봤다.
+    #
+    #   실제 사고 — SSD 에 `data/field/` 가 `fire-lane-data/` 와 나란히
+    #   남아 있었고 그 안에 DECISIONS §42 의 네이버 산출 넷이 있었다.
+    #   `paths.FIELD` 는 저장소 `data/field` 를 가리키므로(paths.py:128)
+    #   SSD 쪽은 어떤 선언에도 안 들어간다. 옮기고 원본을 안 지운 것이다.
+    #
+    # ★ 이것은 방향이 아니라 **범위**의 단방향이다. 오늘 감사에서 나온
+    #   "검사가 한 방향만 본다" 와 같은 병이고, 고치는 법도 같다 —
+    #   선언에서 실물로만 가지 말고 실물에서 선언으로도 온다.
+    print("\n" + "=" * 62)
+    print("7. 선언 밖 형제 (FIRE_LANE_DATA 의 이웃)")
+    from firelane.paths import DATA
+    if DATA is None:
+        print("  FIRE_LANE_DATA 가 없다. 저장소 안에서 도는 중이라 형제가 없다.")
+    else:
+        lake = Path(DATA)
+        base = lake.parent
+        stray = []
+        for d in sorted(base.iterdir()):
+            if not d.is_dir() or d.resolve() == lake.resolve():
+                continue
+            if d.name.startswith((".", "$")) or d.name == "System Volume Information":
+                continue
+            fs = [f for f in d.rglob("*") if f.is_file()]
+            if fs:
+                stray.append((d, fs))
+        if not stray:
+            print(f"  없다. {base} 아래는 {lake.name} 하나뿐이다.")
+        else:
+            print(f"  ★ {len(stray)}개 — 데이터 레이크 밖이라 대장도 강제자도 못 본다")
+            for d, fs in stray:
+                sz = sum(f.stat().st_size for f in fs)
+                print(f"    {d.name:24s} {len(fs):4d}개 {human(sz):>10s}  {d}")
+                for f in sorted(fs)[:12]:
+                    print(f"        {f.relative_to(d)}")
+                if len(fs) > 12:
+                    print(f"        … 외 {len(fs) - 12}건")
+            print("\n  처분은 사람이 정한다 — 레이크로 편입하거나, 대장에 등재하거나,")
+            print("  이미 옮긴 원본이면 지운다. **그대로 두지 마라.**")
     return 0
 
 

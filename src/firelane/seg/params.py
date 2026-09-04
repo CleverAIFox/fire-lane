@@ -32,6 +32,10 @@ MIX_SRC   = _os.environ.get("FIRE_LANE_MIX_SRC") == "1"
 _DBG = {"on": False}
 
 EMD_CD        = "12210108"   # 동명동
+# ★ 2026-09-04. `publish_web.py:43` 에 있던 것을 올렸다. 스코프 계산이
+#   segments 로 옮겨오면서 두 모듈이 함께 쓴다. publish_web 에 두면
+#   segments 가 그것을 import 해야 해서 계층이 거꾸로 선다.
+STATION_RADIUS = 300         # 안전센터 주변 반경(m). 출발점 일대 도로 맥락
 GRAPH_BUFFER  = 1500.0       # 안전센터(대인 1.0km / 지산 1.2km)까지 포함
 KEEP_BUFFER   = 50.0         # 산출물에 남길 범위
 SNAP_TOL      = 0.5          # 끝점 투영 반경. T자 접합 해소
