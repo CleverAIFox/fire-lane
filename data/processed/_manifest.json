@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-09-02T10:28:34.015946+09:00",
+  "generated_at": "2026-09-04T00:05:16.752387+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -186,11 +186,19 @@
       "source_sha256": "574f2d294fa6ff1008c653af1436a4373f8b1a32ad7c198d02789d2abf3207fb",
       "resolved": "its_nodelink_changelog_kr_20260812.csv",
       "source_crs": "",
-      "status": "SKIP",
-      "features": "",
+      "status": "OK",
+      "features": 35,
       "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "columns": [
+        "구분",
+        "노선명",
+        "노드(건)",
+        "링크(건)",
+        "링크연장(km)"
+      ],
+      "outputs": [
+        "node_link_changelog.csv"
+      ]
     },
     {
       "key": "road_link",
@@ -2591,11 +2599,35 @@
       "source_sha256": "dac553bb5e289ae8a594ce464800eda97f7f8a850c100a6b504dbc527917e581",
       "resolved": "safety_fleet_jngj-donggu_20260514.csv",
       "source_crs": "",
-      "status": "SKIP",
-      "features": "",
+      "status": "OK",
+      "features": 8,
       "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "columns": [
+        "부서",
+        "계",
+        "펌프차(중형)",
+        "물탱크차(대형)",
+        "화학차",
+        "조연차",
+        "직진형사다리차(53m)",
+        "굴절형사다리차(27m)",
+        "지휘차",
+        "구조차",
+        "구조버스",
+        "구급차",
+        "생활안전차",
+        "소방안전교육차",
+        "순찰차",
+        "행정차",
+        "화물차",
+        "화재조사차",
+        "트레일러",
+        "장비운반차",
+        "진단차"
+      ],
+      "outputs": [
+        "gjfire_fleet_dongbu.csv"
+      ]
     },
     {
       "key": "gjfire_district_dongbu",
@@ -2604,6 +2636,350 @@
       ],
       "source_sha256": "eb6ffedeb0301d5b9c5d3a0dcbc4d668877cad67711334449b08b34c57e07c38",
       "resolved": "safety_district_jngj-donggu_20250731.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 3,
+      "geom": [],
+      "columns": [
+        "구 분",
+        "위 치",
+        "관 할 구 역",
+        "인구",
+        "1인당담당인구",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "gjfire_district_dongbu.csv"
+      ]
+    },
+    {
+      "key": "nfa_dispatch_119",
+      "source_files": [
+        "**/nfa_dispatch_119_*"
+      ],
+      "source_sha256": "740dedf4e0c6f6de0424971e59391c04f6e58d9f37747fa6d822352471950371",
+      "resolved": "nfa_dispatch_119_jngj-dongmyeong_20260903.csv",
+      "source_crs": "EPSG:4326",
+      "status": "OK",
+      "features": 183,
+      "geom": [],
+      "columns": [
+        "DCLR_RCPT_NO",
+        "DCLR_DT",
+        "DCLR_YMD",
+        "DCLR_TM",
+        "DCLR_YR",
+        "DCLR_MM",
+        "DCLR_DAY",
+        "DCLR_HR",
+        "DCLR_MN",
+        "DCLR_DOW",
+        "SEASN_NM",
+        "QTR_NO",
+        "CTPV_NM",
+        "SGG_NM",
+        "EMD_NM",
+        "CTY_FRMVL_SE_NM",
+        "EMD_SE_NM",
+        "RCPT_END_DT",
+        "RCPT_END_YMD",
+        "RCPT_END_TM",
+        "OTR_CTPV_DCLR_YN",
+        "DCLR_PSTN_LOT",
+        "DCLR_PSTN_LAT",
+        "DSPT_DRTV_DT",
+        "GRNDS_ARVL_DT",
+        "HSPTL_ARVL_DT",
+        "CBK_DT",
+        "SITTN_END_DT",
+        "FRSTN_NM",
+        "CNTR_NM",
+        "CLMTY_CTPV_NM",
+        "CLMTY_SGG_NM",
+        "CLMTY_EMD_NM",
+        "LOT",
+        "LAT"
+      ],
+      "outputs": [
+        "nfa_dispatch_119.csv"
+      ]
+    },
+    {
+      "key": "nfa_rescue",
+      "source_files": [
+        "**/nfa_rescue_*"
+      ],
+      "source_sha256": "66cd210b56f6fb13f4dbd7f26b560e2059936e34f4a06a38a9b3ce820d7363f5",
+      "resolved": "nfa_rescue_jngj-dongmyeong_20260903.csv",
+      "source_crs": "EPSG:4326",
+      "status": "OK",
+      "features": 212,
+      "geom": [],
+      "columns": [
+        "CLMTY_RSCU_RPTP_NO",
+        "ACDNT_CS_NM",
+        "PRCS_RSLT_SE_NM",
+        "DCLR_YMD",
+        "DCLR_TM",
+        "DCLR_YR",
+        "SEASN_NM",
+        "DCLR_MM",
+        "DCLR_DAY",
+        "DCLR_HR",
+        "DCLR_MN",
+        "DCLR_DOW",
+        "DSPT_YMD",
+        "DSPT_TM",
+        "DSPT_YR",
+        "DSPT_MM",
+        "DSPT_DAY",
+        "DSPT_HR",
+        "DSPT_MN",
+        "GRNDS_ARVL_YMD",
+        "GRNDS_ARVL_TM",
+        "GRNDS_ARVL_YR",
+        "GRNDS_ARVL_MM",
+        "GRNDS_ARVL_DAY",
+        "GRNDS_ARVL_HR",
+        "GRNDS_ARVL_MN",
+        "RSCU_CMPTN_YMD",
+        "RSCU_CMPTN_TM",
+        "RSCU_CMPTN_YR",
+        "RSCU_CMPTN_MM",
+        "RSCU_CMPTN_DAY",
+        "RSCU_CMPTN_HR",
+        "RSCU_CMPTN_MN",
+        "CBK_YMD",
+        "CBK_TM",
+        "CBK_YR",
+        "CBK_MM",
+        "CBK_DAY",
+        "CBK_HR",
+        "CBK_MN",
+        "CTPV_NM",
+        "SGG_NM",
+        "EMD_NM",
+        "CTY_FRMVL_SE_NM",
+        "EMD_SE_NM",
+        "DCLR_PSTN_LOT",
+        "DCLR_PSTN_LAT",
+        "FRSTN_GRNDS_DSTNC",
+        "ACDNT_PLC_DTL_NM",
+        "FRSTN_NM",
+        "CNTR_NM"
+      ],
+      "outputs": [
+        "nfa_rescue.csv"
+      ]
+    },
+    {
+      "key": "nfa_fire_incident",
+      "source_files": [
+        "**/nfa_fire_incident_*"
+      ],
+      "source_sha256": "c1f98a86160ef4f7d545d609ac953e33a288ad4d8113e25b45f0371e95f2f621",
+      "resolved": "nfa_fire_incident_jngj-donggu_20260903.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 367,
+      "geom": [],
+      "columns": [
+        "WRINV_NO",
+        "FIRE_TYPE_NM",
+        "BLDG_SRTFRM_NM",
+        "BLDG_STRCTR_NM",
+        "BLDG_SRTRF_NM",
+        "BLDG_RSCU_DNGCT",
+        "GRND_NOFL",
+        "UDGD_NOFL",
+        "BLDG_GFA",
+        "BTTM_AREA",
+        "BLDG_STTS_NM",
+        "SPFPTG_NM",
+        "SMTPR_LCLSF_NM",
+        "SMTPR_SCLSF_NM",
+        "DTH_CNT",
+        "INJPSN_CNT",
+        "HNL_DAM_CNT",
+        "PRPT_DAM_AMT",
+        "DOW_NM",
+        "FRSTN_NM",
+        "CNTR_NM",
+        "RCPT_DT",
+        "DSPT_DT",
+        "GRNDS_ARVL_DT",
+        "BGNN_POTFR_DT",
+        "PRFECT_POTFR_DT",
+        "CBK_DT",
+        "DSPT_REQ_HR",
+        "FIRE_SUPESN_HR",
+        "CTPV_NM",
+        "SGG_NM",
+        "FRSTN_GRNDS_DSTNC",
+        "CNTR_GRNDS_DSTNC",
+        "LFDAU_GRNDS_DSTNC",
+        "IGTN_HTSRC_NM",
+        "IGTN_HTSRC_SCLSF_NM",
+        "IGTN_DMNT_LCLSF_NM",
+        "IGTN_DMNT_SCLSF_NM",
+        "FRST_IGOBJ_LCLSF_NM",
+        "FRST_IGOBJ_SCLSF_NM",
+        "IGTN_ISTR_LCLSF_NM",
+        "IGTN_ISTR_SCLSF_NM",
+        "CMBS_EXPOBJ_LCLSF_NM",
+        "CMBS_EXPOBJ_SCLSF_NM",
+        "FCLT_PLC_LCLSF_NM",
+        "FCLT_PLC_MCLSF_NM",
+        "FCLT_PLC_SCLSF_NM",
+        "IGTN_FLR_NM",
+        "SO_AREA",
+        "FIRE_INSRNC_OBLG_TRGT_YN",
+        "ARSON_MNG_TRGT_YN",
+        "MUB_YN",
+        "VHCL_PLC_NM",
+        "VHCL_IGTN_PSTN_NM",
+        "FND_FIRE_SE_NM",
+        "FND_IGTN_PSTN_NM",
+        "HR_UNIT_ARTMP",
+        "HR_UNIT_WSPD_INFO",
+        "WNDRCT_BRNG",
+        "HR_UNIT_HUM"
+      ],
+      "outputs": [
+        "nfa_fire_incident.csv"
+      ]
+    },
+    {
+      "key": "nfa_vehicle_spec_2024",
+      "source_files": [
+        "**/nfa_vehicle_spec_*"
+      ],
+      "source_sha256": "3c5d91db980d0b896e8f2cfd2b2c51a385e580d40f7b355f6b5b6835509ba623",
+      "resolved": "nfa_vehicle_spec_kr_20240304.pdf",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "nfa_mas_spec_2025",
+      "source_files": [
+        "**/nfa_mas_spec_*"
+      ],
+      "source_sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
+      "resolved": "nfa_mas_spec_kr_20260610.hwp",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "nfa_target_building",
+      "source_files": [
+        "**/nfa_target_building_*"
+      ],
+      "source_sha256": "d85ec9f5b7fbdca363c3fb2a569aee5cca8d139169f54f00aee1b8f11f934394",
+      "resolved": "nfa_target_building_jngj-dongmyeong_20260903.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 23,
+      "geom": [],
+      "columns": [
+        "BDST_SN",
+        "FRSTN_NM",
+        "CNTR_NM",
+        "TRGTOBJ_NM",
+        "REG_YMD",
+        "CTPV_NM",
+        "SGG_NM",
+        "EMD_NM",
+        "ADDR",
+        "BLDG_NM",
+        "FIRE_INSRNC_JOIN_YMD",
+        "FIRE_INSRNC_MTRY_YMD",
+        "FIRE_INSRNC_CO_NM",
+        "USE_APRV_YMD",
+        "PBNST_YN",
+        "CLTPTY_YN",
+        "ARSON_MNG_TRGT_YN",
+        "ISF_CHCK_TRGT_YN",
+        "ISF_CHCK_TRGT_TYPE_NM",
+        "LGZ_FIRE_WKTRGT_YN",
+        "FRFGH_FCLT_CPCST_CMCRT_YMD",
+        "USE_YN",
+        "FRFGH_MFBIZ_YN"
+      ],
+      "outputs": [
+        "nfa_target_building.csv"
+      ]
+    },
+    {
+      "key": "nfa_spec_chem_gj",
+      "source_files": [
+        "**/nfa_spec_chem_gj_*"
+      ],
+      "source_sha256": "6f228f5abb327b0d9e2416119af4658db08dbe5549f16583fb57e71be2063a35",
+      "resolved": "nfa_spec_chem_gj_jngj_20260101.hwp",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "nfa_spec_pump_jn",
+      "source_files": [
+        "**/nfa_spec_pump_jn_*"
+      ],
+      "source_sha256": "9ed65818b458d88df47b3e2d7614445ae65baed7dbebf9d86b8910c67265ad06",
+      "resolved": "nfa_spec_pump_jn_kr_20260101.hwp",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "nfa_spec_tanker_cn",
+      "source_files": [
+        "**/nfa_spec_tanker_cn_*"
+      ],
+      "source_sha256": "9653d2700a31f841770d0f83ec2d81afe9927d068adc6eebec5909192c72b537",
+      "resolved": "nfa_spec_tanker_cn_kr_20260101.pdf",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "nfa_spec_rescue_jn",
+      "source_files": [
+        "**/nfa_spec_rescue_jn_*"
+      ],
+      "source_sha256": "8e14e2c2672162ac323e50c4b8aec90299f03a2e79be266790549cfd75e21c07",
+      "resolved": "nfa_spec_rescue_jn_kr_20260101.hwpx",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "nfa_spec_ladder_jn",
+      "source_files": [
+        "**/nfa_spec_ladder_jn_*"
+      ],
+      "source_sha256": "268c025482249f392516078495fabf9065465a25741bff308256054ecbb79bab",
+      "resolved": "nfa_spec_ladder_jn_kr_20260101.hwp",
       "source_crs": "",
       "status": "SKIP",
       "features": "",

@@ -6,7 +6,7 @@ ortho.py — 항공정사영상을 지오레퍼런싱해 배경 타일로 굽는
 IN    $FIRE_LANE_DATA/raw/ngii/ngii_ortho_*.tif + .xml  (도엽 4장)
 OUT   web/data/ortho/**  (배경 타일)
       ★ web/data/view.json 에 orthoBounds 를 덧쓴다 · _manifest.json 에 기록
-IN2   web/data/scope.geojson  ★ publish 산출을 읽는다. **후진 의존이다** —
+IN2   processed/scope_5186.gpkg  ★ publish 산출을 읽는다. **후진 의존이다** —
       스코프가 바뀌면 정사영상이 한 실행 늦게 따라온다
       (tests/test_guards.py::BACKWARD · PLAN)
       processed/_manifest.json 의 ortho 절
@@ -122,7 +122,9 @@ def main():
         print("[SKIP] 정사영상 TIF 없음. sources.yaml 의 ortho 참조")
         return
 
-    scope = gpd.read_file(WEB / "scope.geojson").to_crs(ORTHO_CRS).geometry.iloc[0]
+    # ★ 2026-09-04. 종전에는 WEB/"scope.geojson" 을 읽었다. publish 산출이고
+    #   STEPS 에서 ortho 보다 뒤라 지난 실행 산출물을 읽고 있었다.
+    scope = gpd.read_file(PROCESSED / "scope_5186.gpkg").to_crs(ORTHO_CRS).geometry.iloc[0]
     sb = scope.bounds
     print(f"스코프(5186) {sb[0]:.0f},{sb[1]:.0f} ~ {sb[2]:.0f},{sb[3]:.0f}")
 

@@ -49,6 +49,12 @@ uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 문체·절 번호·어휘·생애주기·죽은 경로를 전부 코드가 본다.
 **규약을 새로 적을 때는 강제자를 같이 만든다**(MASTER §17).
 
+★ 강제자를 만들 때는 **그 강제자 자신의 목록 · 범위 · 형식 · 환경**을
+실물과 대조한다(`DECISIONS §114-7`). 면제 목록에는 역방향을, 루트 기준
+순회에는 형제 확인을, 형식 의존 검색에는 형식별 판독을 함께 붙이고,
+참조하는 파일이 CI 에도 있는지 본다 — gitignore 대상이면 로컬에서만
+통과하는 검사가 된다.
+
 ### `D-XX` 는 날짜가 아니다
 
 **미결정 항목 번호(Decision)** 다. 2026-08-07 「미결정 사항 정리」에서 왔고
@@ -149,7 +155,7 @@ raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
 ```bash
 uv run python tools/ship.py --fix --push   ★ 내보내기 전 단일 진입점
 uv run python tools/tidy.py --yes          로컬 찌꺼기
-uv run python tools/absorb.py --yes        ★ Downloads → raw 한 명령 (아래 참조)
+uv run python tools/pull_data.py --yes     ★ Downloads → norm 한 명령 (아래 참조)
 uv run python tools/acquire.py             landing → raw 획득 게이트
 uv run python tools/scan_data.py           데이터 레이크 구조 점검
 uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간 전이 대조
@@ -223,7 +229,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 
 ```
 landing      SSD/landing/     다운로드 원본. 규칙 없음. ★ 백업 제외
-raw          SSD/raw/         제공기관 9폴더. 절대 수정 안 함
+raw          SSD/raw/         제공기관 10폴더. 절대 수정 안 함
 norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
@@ -233,7 +239,7 @@ web/data     표출용. 커밋한다. 40MB 상한
 data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
 ```
 
-제공기관 폴더 — `juso` `its` `ngii` `vworld` `safety` `gjcity` `sbiz` `eais` `nsdi`.
+제공기관 폴더 — `juso` `its` `ngii` `vworld` `safety` `gjcity` `sbiz` `eais` `nsdi` `nfa`.
 정본은 `sources.yaml` 의 `layers.raw.providers` 이고 `firelane.providers` 가 읽는다.
 **같은 수치지형도라도 원천이 다르면 폴더가 다르다.**
 
@@ -248,21 +254,23 @@ uv run python -m firelane.datalog check   대장 정합성
 uv run python -m firelane.datalog fsck    계층 선언 ↔ 실물
 ```
 
-획득은 네 단계인데 **명령도 넷이었다.** 그중 `--prune-landing` 은 `--verify`
+획득은 여덟 단계인데 **한때 명령이 넷이었다.** 그중 `--prune-landing` 은 `--verify`
 없이도 돈다 — 편입이 성공했다는 확인 없이 원본을 지운다. 그것이 소실이다.
 
 ```bash
-uv run python tools/absorb.py          관측만
-uv run python tools/absorb.py --yes    이관 → 편입 → 검증 → 사본삭제
+uv run python tools/pull_data.py            관측만
+uv run python tools/pull_data.py --yes       이관 → 편입 → 검증 → 사본삭제
+                                             → 격리 → 판정 → norm 이관 → 정합
+uv run python tools/pull_data.py --yes --all 위 + 파이프라인 + golden
 ```
 
 ★ **삭제는 검증에 매달려 있다.** `③ verify` 가 0 이 아니면 `④` 는 실행되지
 않고 landing 원본이 그대로 남는다. 순서를 주석이 아니라 자료구조로 들고 있고
-`tests/test_intake_rules.py::test_absorb_*` 가 그것을 강제한다 —
+`tests/test_intake_rules.py` 의 `test_prune_needs_verify` 외 다섯이 그것을 강제한다 —
 게이트를 뚫는 · None 을 0 으로 읽는 · 통과 경로를 막는 세 방향 전부 본다.
 
 단계별로 손으로 치고 싶으면 `intake.py` · `acquire.py` 를 직접 쓴다.
-absorb 는 그 둘을 부를 뿐 판정을 다시 쓰지 않는다.
+pull_data 는 그 둘을 부를 뿐 판정을 다시 쓰지 않는다.
 
 `contract.py` 가 보는 것 — 인코딩 · 컬럼 소실 · 건수 · zip 안 레이어 ·
 **스코프 안 유효 건수(`scope_min`)**. 마지막 항목이 핵심이다. 소스 교체 때
@@ -320,7 +328,7 @@ tools/
   acquire.py              landing → raw 획득 게이트 · sha 대조
   baseline.py             판정 산출물 봉인 · 실행 간 전이 대조
   golden.py               ★ 리팩 전후 산출물 동일 증명. baseline 과 반대 용도
-  scan_data.py            데이터 레이크 구조 점검
+  scan_data.py            데이터 레이크 구조 점검. §7 이 레이크 **밖**도 본다
   docnum_check.py         문서 ↔ 산출물 숫자 · 필드표 대조
   commit_policy.py        산출물 · 일회성 스크립트 · 비밀값 차단
   encoding_check.py       인코딩 · 개행
@@ -331,7 +339,10 @@ tools/
   docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
   doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
   intake.py               Downloads → landing 게이트 · 대장 미매칭 차단
-  absorb.py               ★ 이관→편입→검증→사본삭제. 삭제는 검증에 매달려 있다
+  pull_data.py            ★ 반입 입구. 여덟 단계. 삭제는 검증에 매달려 있다
+  triage.py               받은 더미를 분류한다
+  doc_fsck.py             문서끼리 어긋난 데가 있는가 (여덟)
+  corner_probe.py         코너 꺾임각·반경 — 회전 가능성 대조
   migrate_names.py        raw 개명 백필 — 실물·sha대장·대장을 원자적으로
   refcheck.py             선언이 가리키는 것이 실재하는가 · --gc
   treecheck.py            ★ 전수 스캔 — 항목이 아니라 트리에서 출발한다
@@ -372,7 +383,7 @@ web/
   index.html              뼈대                      공동
   style.css               색·간격·타이포             @marscoolcat
   config.js               색상표·임계값·마커·카메라   공동
-  js/                     로직·레이어 29개 모듈      @AIMasterFox
+  js/                     로직·레이어 29개 모듈      공백 (PLAN #79)
   data/                   생성물. 손으로 고치지 않는다
 ```
 
@@ -386,7 +397,7 @@ web/
 도달 가능    687 (62%)   119안전센터에서 막힌 길 없이 갈 수 있는 구간
 총연장       48,579.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 43종 · `retired` 10종
+대장        `datasets` 54종 · `retired` 10종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 ```
 

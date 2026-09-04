@@ -63,14 +63,20 @@ PIPE_README = ROOT / "src/firelane/README.md"
 #   무엇인지 저장소가 설명하지 못한다. PLAN 이 이 목록의 처리를 든다.
 FIELD_EXEMPT = {
     "fieldsheet.md",            # sources.yaml consumers 가 든다
-    # ── 2026-09-02. DECISIONS §42 네이버 준-실측 실험의 산출 넷.
-    #    봉인·해제 도구(naver_check · naver_page · naver_join)는 PLAN §6-8 이
-    #    "삭제됨" 으로 적는다 — **도구가 없어 봉인을 풀 수도 없다.**
-    #    field 는 재생성 불가 등급이라 지우지 않고 판단을 이탈 전에 둔다.
-    #    해소 = 넷을 interim 으로 내리거나 대장에 등재하고 이 다섯 줄을 지운다.
-    #    기한은 `DEFERRED` 가 든다(2026-09-02).
-    ".naver_sealed.csv", "naver_check.csv",
-    "naver_check.html", "naver_near.json",
+    # ── 2026-09-03. 네이버 산출 넷(DECISIONS §42)을 지웠다.
+    #
+    # ★ **저장소에는 한 번도 없었다.** 실물은 SSD 의 `data/field/` 에 있었고
+    #   그것은 `FIRE_LANE_DATA`(fire-lane-data/)의 **형제**라 어떤 선언에도
+    #   안 들어간다. `paths.FIELD` 는 저장소 `data/field` 를 가리킨다
+    #   (paths.py:128 — 2026-08 이동 기록). 옮기고 원본을 안 지운 것이다.
+    #
+    # ★ 그래서 이 EXEMPT 가 **없는 파일을 면제하고 있었다.** 목록이 실물보다
+    #   넓으면 그 목록은 방패가 아니라 사각지대다(오늘 감사 A-4 와 같은 형태).
+    #
+    # ★ 지운 근거 — 봉인·해제 도구 셋이 §41 에서 삭제돼 값을 풀 수도 없다.
+    #   field 는 재생성 불가 등급이지만 읽을 수 없는 봉인은 자료가 아니다.
+    #
+    # ★ 재발 방지 — `scan_data §7` 이 `FIRE_LANE_DATA` 의 형제를 훑는다.
 }
 
 # ★ 한시 유예. **늘리지 마라.** 사유와 해소 조건을 함께 적는다(§80 과 같은 형태).
@@ -153,6 +159,33 @@ def check_paths() -> list[str]:
 
 
 # ── 3. 부재 선언 — "없다" 고 적은 값이 실물에 있는가 ──────────────
+def _key_in_text(path: str, text: str, key: str) -> bool:
+    """그 파일 형식에서 `key` 가 **필드로** 있는가.
+
+    ★ 2026-09-03. 종전에는 형식과 무관하게 `f'"{key}"'` 로만 찾았다 —
+      큰따옴표로 감싼 JSON 키 문법이다. 그래서 CSV 는 헤더에 컬럼이
+      분명히 있어도 영원히 "그 키가 없다" 로 울었다.
+
+      `nfa_dispatch_119.csv` 의 헤더가 `DCLR_PSTN_LAT,DCLR_PSTN_LOT,...`
+      인데 검사는 `"DCLR_PSTN_LAT"` 를 찾았다. **필드 이름이 `json_key`
+      인데 대장은 CSV 컬럼도 그 이름으로 적게 되어 있다** — 이름과
+      실제 형식이 어긋난 것이고, 건초더미에 `.csv` 를 더해도 안 풀렸다.
+
+    ★ 형식으로 갈라 본다. `json_key` 라는 필드명은 그대로 둔다 —
+      바꾸면 대장 전건과 DECISIONS §91 참조가 함께 움직여야 한다.
+    """
+    if path.endswith(".csv"):
+        head = text.split("\n", 1)[0]
+        cols = [c.strip().strip('"').lstrip("\ufeff") for c in head.split(",")]
+        return key in cols
+    return f'"{key}"' in text
+
+
+def _has_key(p, key: str) -> bool:
+    return _key_in_text(str(p).replace("\\", "/"), 
+                        p.read_text(encoding="utf-8", errors="ignore"), key)
+
+
 def check_absent(led: dict) -> list[str]:
     """`absent:` 선언을 실물과 **양방향**으로 대조한다.
 
@@ -187,8 +220,14 @@ def check_absent(led: dict) -> list[str]:
 
     bad: list[str] = []
     hay: list[tuple[str, str]] = []
+    # ★ 2026-09-03. 건초더미가 `data/processed/*.json` 만 봤다. 그런데
+    #   `ingest` 는 `<key>.csv` 도 낸다(nfa_dispatch_119.csv 등).
+    #   그래서 `.csv` 를 `elsewhere` 로 적으면 파일이 실재해도 영원히
+    #   "그 키가 없다" 로 울었다 — **검사 범위가 실물보다 좁았다.**
+    #   오늘 네 번째로 같은 형태다(scan_data §4 · intake stem ·
+    #   normalize_raw 정규식 · 여기).
     for g in ("web/**/*.json", "web/**/*.js", "data/field/*.csv",
-              "data/processed/*.json"):
+              "data/processed/*.json", "data/processed/*.csv"):
         for f in ROOT.glob(g):
             if f.is_file():
                 hay.append((str(f.relative_to(ROOT)),
@@ -212,13 +251,13 @@ def check_absent(led: dict) -> list[str]:
             p = ROOT / src
             if not p.exists():
                 bad.append(f"{tag}.elsewhere 가 가리키는 {src} 이 없다")
-            elif f'"{key}"' not in p.read_text(encoding="utf-8",
-                                               errors="ignore"):
+            elif not _has_key(p, key):
                 bad.append(f"{tag} 은 {src} 에 `{key}` 로 있다고 하는데 "
                            f"그 키가 없다. 이름이 바뀌었거나 선언이 낡았다 "
                            f"— 추측으로 메우지 않는다(§49)")
         else:
-            hits = sorted({p for p, t in hay if f'"{key}"' in t})
+            hits = sorted({q for q, txt in hay
+                            if _key_in_text(q, txt, key)})
             if hits:
                 bad.append(f"{tag} 은 없다고 선언했는데 "
                            f"{' · '.join(hits[:3])} 에 `{key}` 가 있다. "
@@ -506,12 +545,16 @@ DEFERRED = (
      "개요서가 §10-2 확정 전에 쓰였다", "개요서 판정 표기를 4종으로"),
     ("2026-09-04", "docs/PLAN.md",
      "PLAN §10 우선순위에 그 날짜를 넣는 것만 남았다", "MVP 09-30 을 PLAN §10 에"),
-    ("2026-09-03", "docs/PLAN.md",
+    # ★ 2026-09-03. 기한이 지났다. **연기하되 사유를 적는다**(§76 —
+    #   적어두지 않은 완화는 영구가 된다).
+    #   그날 우지혜가 정보공개청구를 넣었다. 인터뷰 일정보다 그쪽이
+    #   먼저 답이 오고, 물어볼 것도 그 결과에 따라 갈린다 —
+    #   축거를 청구로 받으면 D-30 질문 다섯 중 셋이 없어진다.
+    #   ★ 오창준 이탈일이라 이 항목의 담당은 우지혜다.
+    ("2026-09-17", "docs/PLAN.md",
      "한 달째 미착수이고 공문도 안 나갔다", "D-30 인터뷰 일정 확정"),
-    # ★ 앵커가 이 파일 자신이다. 넷을 치우고 FIELD_EXEMPT 를 비우면
-    #   이 줄이 "해소됐다" 로 울어 스스로 지워지기를 요구한다.
-    ("2026-09-03", "tools/doc_fsck.py",
-     '".naver_sealed.csv"', "data/field 네이버 잔류 4건 처분 (PLAN §6-8)"),
+    # ★ 2026-09-03 해소. 네이버 넷을 지우고 FIELD_EXEMPT 를 걷었다.
+    #   앵커가 사라졌으므로 이 줄도 함께 지운다 — 설계대로다.
 )
 
 

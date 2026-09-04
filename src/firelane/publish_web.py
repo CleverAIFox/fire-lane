@@ -9,7 +9,7 @@ IN    processed/*.geojson · processed/segments.schema.json ·
 OUT   web/data/  — 아래 열여섯. ★ 중괄호 축약을 쓰지 않는다. 선언은
       기계가 대조하는 것이고(tests/test_declaration_reality.py) 축약하면
       그 대조가 이름을 못 찾는다.
-        segments.geojson      boundary.geojson     scope.geojson
+        segments.geojson      boundary.geojson
         mask.geojson          mask_soft.geojson    buildings.geojson
         hydrants.geojson      stations.geojson     cctv.geojson
         poi.geojson           streetlights.geojson lightpoles.geojson
@@ -40,7 +40,6 @@ EMD_CD = "12210108"
 #   원의 반경 정본은 web/config.js 의 markers[].cover.radius 다.
 #   판정 임계(CCTV_RANGE 25.0)의 정본은 seg/params.py 다. 같은 숫자를
 #   세 곳에 두면 반드시 한 곳만 고치고 잊는다.
-STATION_RADIUS = 300   # 안전센터 주변 반경(m). 출발점 일대 도로 맥락 확보
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
 
 def main():
@@ -67,28 +66,19 @@ def main():
     emd = gpd.read_file(P/"boundary_emd.geojson")
     emd = emd[emd.EMD_CD == EMD_CD]
     emd.to_file(W/"boundary.geojson", **PREC)
-    poly = emd.to_crs(5186).geometry.iloc[0]
 
-    # ── 접근 회랑 ──────────────────────────────────────────────
-    # 119안전센터는 동명동 밖이다(대인 서 1.0km / 지산 동 1.2km).
-    # 출동 경로가 화면에 나와야 하므로 동 경계만 잠그면 안 된다.
-    # 회랑 = 최단경로 중 동 밖 구간의 union. 전 광주가 아니라 얇은 리본이다.
-    #   진입점 60개 중 실사용 23개, 그중 5개가 통행량의 80%를 담당한다.
-    corr = None
-    cp = P/"corridor_5186.gpkg"
-    if cp.exists():
-        corr = gpd.read_file(cp).to_crs(5186).union_all().buffer(70)
-
-    # 안전센터 주변도 스코프에 넣는다. 회랑만으로는 리본이 너무 얇아
-    # 출발점 일대의 도로 맥락이 안 보인다.
-    sta_src = gpd.read_file(P/"fire_station.geojson").to_crs(5186)
-    sta_buf = sta_src.geometry.union_all().buffer(STATION_RADIUS)
-
-    scope = poly.buffer(60)
-    if corr is not None:
-        scope = scope.union(corr)
-    scope = scope.union(sta_buf)
-    gpd.GeoDataFrame(geometry=[scope], crs=5186).to_crs(4326).to_file(W/"scope.geojson", **PREC)
+    # ★ 2026-09-04. 계산을 `segments._write_scope()` 로 옮겼다.
+    #   `ortho` 가 이 결과를 읽는데 STEPS 순서가 … → ortho → publish 라
+    #   뒤 단계 산출을 앞 단계가 읽고 있었다.
+    #
+    #   ★ web/data/scope.geojson 은 **더 이상 내지 않는다.** 처음부터
+    #     화면이 읽지 않았다 — web/js 참조가 어느 커밋에도 없고, 최초
+    #     커밋 185876d 의 view.json 이 이미 bounds·maxBounds·emdBounds 를
+    #     들고 있다. 화면 범위는 view.json 이, 마스킹은 mask·mask_soft 가
+    #     맡는다. 이것은 ortho 전용 중간 산출물이었고, 그것을 web/data 에
+    #     둔 것이 후진 의존의 원인이었다.
+    scope = gpd.read_file(P/"scope_5186.gpkg").to_crs(5186).geometry.iloc[0]
+    (W/"scope.geojson").unlink(missing_ok=True)
 
     # 3단 마스크
     #   tier1 동명동      = 원본 밝기

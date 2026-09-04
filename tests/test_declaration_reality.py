@@ -64,6 +64,11 @@ ALLOW: dict[str, str] = {
     "_lineage.json": "계보 기록 자신. lineage.record 가 쓴다",
     # 산출물이 아니라 **잔재 제거**다. publish_web:286 이 unlink 한다.
     "markers.geojson": "옛 산출물의 잔재를 지운다. 만들지 않는다(2026-09-03)",
+    # ★ 2026-09-04. 발행을 멈추면서 잔재 제거만 남았다. 처음부터 화면이
+    #   읽지 않았고 ortho 전용 중간 산출물이었다 — 그것을 web/data 에 둔
+    #   것이 ortho → publish 후진 의존의 원인이었다.
+    #   정본은 processed/scope_5186.gpkg 다.
+    "scope.geojson": "발행 중단. publish 가 남은 것을 지운다(2026-09-04)",
 }
 
 # `X / "이름.확장자"` · `X/"이름.확장자"` 꼴만 잡는다.
@@ -271,3 +276,85 @@ def test_document_counts_match_reality():
           "\n    제공기관  python -c \"import yaml;print(len(yaml.safe_load("
           "open('sources.yaml'))['layers']['raw']['providers']))\""
           "\n    JS 모듈   node tools/js_graph_check.mjs")
+
+
+# ── 검증은 양쪽에서 한다 — 방향뿐 아니라 **범위**도 ────────────
+# ★ 2026-09-03. 모든 검사가 선언된 루트에서 **아래로만** 봤다.
+#   treecheck · refcheck · doc_fsck ④ · acquire 가 전부 그렇다.
+#   그래서 `FIRE_LANE_DATA` 의 **형제**에 있는 것은 아무도 못 봤고,
+#   SSD 에 `data/field/`(네이버 산출 넷 포함)가 몇 달간 남아 있었다.
+#
+#   방향의 단방향은 오늘 ALLOW·BACKWARD 역방향으로 막았다.
+#   범위의 단방향은 `scan_data §7` 이 막는다. 그 절이 살아 있는지 여기서 본다.
+def test_scan_data_looks_outside_the_declared_lake():
+    """`scan_data` 가 데이터 레이크의 **형제**를 훑는가.
+
+    ★ 선언 안쪽만 보는 검사는 "선언 밖에 둔 것" 을 영원히 못 본다.
+      숨기려는 사람이 아니라 **옮기고 원본을 안 지운 사람** 때문에 생긴다.
+    """
+    src = (ROOT / "tools/scan_data.py").read_text(encoding="utf-8")
+    assert "7. 선언 밖 형제" in src, (
+        "scan_data 에 형제 스캔 절이 없다.\n"
+        "  FIRE_LANE_DATA 의 이웃 폴더는 어떤 선언에도 안 들어간다.")
+    assert "lake.parent" in src or "base = lake.parent" in src, (
+        "형제를 보려면 레이크의 부모에서 훑어야 한다.")
+
+
+def test_field_exempt_has_no_ghosts():
+    """`doc_fsck.FIELD_EXEMPT` 가 없는 파일을 면제하지 않는가. **역방향이다.**
+
+    ★ 목록이 실물보다 넓으면 방패가 아니라 사각지대다. 그 이름의 파일이
+      다시 생겨도 조용히 통과한다(오늘 감사 A-4 · PATH_EXEMPT 와 같은 형태).
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("doc_fsck", ROOT / "tools/doc_fsck.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    field = ROOT / "data" / "field"
+    if not field.exists():
+        return
+    real = {p.name for p in field.iterdir() if p.is_file()}
+    ghost = sorted(n for n in m.FIELD_EXEMPT if n not in real)
+    assert not ghost, (
+        f"FIELD_EXEMPT 가 없는 파일을 면제한다 — {', '.join(ghost)}\n"
+        "  그 파일이 사라졌으면 줄도 지워라.")
+
+
+def test_raw_only_is_true_to_the_lake():
+    """`kind: raw_only` 가 실물과 맞는가. **양방향이다.**
+
+    ★ `raw_only` 는 "ingest 가 읽지 않는다. 존재만 기록한다" 다
+      (ingest.py:523). 그러면 `norm` 에 그 파일이 있을 수 없다.
+
+    ★ 2026-09-03. `gjfire_district_dongbu` · `node_link_changelog` 가
+      `raw_only` 인데 norm 에 실물이 있었다 — **선언이 거짓이었다.**
+      note 는 "편입 시 UTF-8 로 옮긴다" 고 정확히 적고 있었고 kind 만 틀렸다.
+      "소비자가 없다" 와 "형식이 정규화 불가다" 를 구분하지 않은 것이다.
+
+    ★ norm 은 저장소 밖(SSD)이라 CI 에서는 건너뛴다. 데이터가 붙은
+      기계에서만 판정한다 — 그 사실을 여기 적는다(R23).
+    """
+    import yaml
+
+    from firelane.paths import NORM
+
+    norm = Path(NORM)
+    if not norm.exists():
+        return  # 레이크가 없다. CI 다.
+
+    led = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    have = {f.name for f in norm.rglob("*") if f.is_file()}
+    bad = []
+    for k, e in (led.get("datasets") or {}).items():
+        e = e or {}
+        if e.get("kind") != "raw_only":
+            continue
+        st = e.get("stem")
+        if st and any(n.startswith(f"{st}_") for n in have):
+            bad.append(f"  {k:26s} stem={st}  norm 에 실물이 있다")
+    assert not bad, (
+        "raw_only 인데 norm 에 실물이 있다 — 선언이 거짓이다.\n"
+        + "\n".join(bad)
+        + "\n\n  ingest 가 실제로 읽고 있다면 kind 를 고쳐라"
+          "\n  (csv_table · shp_zip 등). raw_only 는 형식이 정규화"
+          "\n  불가일 때만 쓴다 — 소비자가 없는 것은 feeds 가 든다.")

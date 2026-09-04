@@ -59,7 +59,6 @@ EXEMPT = {
     "pull_data": "데이터 반입. raw 를 건드린다",
     "intake": "Downloads → landing 게이트",
     "acquire": "landing → raw 획득 게이트",
-    "absorb": "이관→편입→검증→사본삭제. 파일을 지운다",
     "doctor": "전 계층 진단. 데이터 레이크가 있어야 한다",
     "ruleset_check": "관리자 토큰이 필요해 CI 에 못 붙인다(MASTER §12-1)",
     "docx_fix": "기획서를 실제로 고친다. 사람이 확인하고 친다",

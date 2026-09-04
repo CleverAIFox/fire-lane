@@ -6,18 +6,50 @@
   <title>Fire-Lane 깃허브 협업 플레이북</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- ★ 2026-09-03. 글꼴을 <link> 로 올렸다. CSS 안의 @import 는 스타일시트를
+       다 읽은 뒤에야 요청이 나가서 첫 화면이 시스템 글꼴로 뜬다. 본문이
+       한 번 흔들리는 그것이 "글꼴이 지저분하다" 의 절반이었다.
+       본문 IBM Plex Sans KR · 코드 JetBrains Mono — 같은 계열의 각진 고딕이라
+       본문과 코드가 따로 놀지 않는다. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
   <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     
     body {
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      font-family: 'IBM Plex Sans KR', -apple-system, BlinkMacSystemFont,
+                   system-ui, 'Malgun Gothic', sans-serif;
       background-color: #ffffff;
-      color: #333333;
+      /* ★ #333 은 흰 배경에 대비 12:1 이라 눈이 아프다. 본문은 #1e293b(9:1)
+           로 낮추고 위계를 색이 아니라 굵기로 준다. */
+      color: #1e293b;
+      /* ★ 한글은 자간을 살짝 좁혀야 각진 고딕이 정돈돼 보인다. */
+      letter-spacing: -0.011em;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    code, pre, .font-mono, [class*="font-mono"] {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular,
+                   Menlo, Consolas, monospace !important;
+      letter-spacing: 0;
     }
 
     h1, h2, h3, h4 {
       color: #0f172a;
+      letter-spacing: -0.02em;
     }
+
+    /* ── 글자 크기 ★ ───────────────────────────────────────
+       Tailwind 의 text-xs(12px) · text-[11px] · text-[10px] 가 화면 전체에
+       깔려 있었다. 인쇄 밀도 기준이라 화면에서는 읽기 힘들다.
+       ★ 클래스를 바꾸지 않고 크기만 올린다 — 마크업을 건드리면
+         render_workflow 의 껍데기 대조가 흔들린다(DECISIONS §105). */
+    main .text-xs        { font-size: 13.5px; line-height: 1.65; }
+    main .text-\[11px\]  { font-size: 12.5px; }
+    main .text-\[10px\]  { font-size: 11.5px; }
+    main table           { font-size: 13px; line-height: 1.6; }
+    main p               { line-height: 1.7; }
+    main h2              { font-size: 13px; letter-spacing: 0.04em; }
 
     /* 본문 가운데 정렬 컨테이너 */
     .app-container {
@@ -28,10 +60,17 @@
 
     /* 코드블록: 옅은 회색(#f6f8fa) + 좌측 3px 색띠 */
     .code-box {
-      background-color: #f6f8fa;
-      border: 1px solid #d0d7de;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
       border-left: 3px solid #0969da;
+      border-radius: 6px;
       position: relative;
+    }
+    /* ★ 코드는 본문보다 크게. 여기가 실제로 사람이 복사해 가는 곳이다. */
+    .code-box, .code-box pre, .code-box code {
+      font-size: 13px;
+      line-height: 1.75;
+      color: #0f172a;
     }
     .code-box.accent-amber { border-left-color: #d97706; }
     .code-box.accent-emerald { border-left-color: #059669; }
@@ -55,6 +94,16 @@
     .badge-fix  { color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; }
     .badge-docs { color: #475569; background: #f8fafc; border: 1px solid #cbd5e1; }
 
+    /* ★ Protected 배지가 헤더에서 지나치게 컸다. 셋이 나란히 서서
+       제목만큼 무게를 가져갔다. 크기를 낮추고 각지게 만든다. */
+    header button {
+      font-size: 11.5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: -0.01em;
+    }
+    header button i { font-size: 9px; opacity: .75; }
+
     /* 탭 버튼 스타일 */
     .tab-btn {
       background-color: #f1f5f9;
@@ -76,13 +125,25 @@
       border-left: 6px solid #e11d48;
     }
 
-    /* 정본 출처 통일 표기용 스타일 */
+    /* ── 정본 출처 표기 ★ ─────────────────────────────────
+       카드마다 우측 하단에 상시로 떠 있어 화면을 잡아먹었고, 반복이라
+       읽히지도 않았다. **지우지는 않는다** — 절 번호가 틀렸을 때
+       (2026-09-03 BYPASS 카드가 §12-10 을 가리켰다) 눈으로 잡는 것이
+       이 태그다. 그리고 A4 로 뽑아 회의에 들고 갈 때는 출처가 있어야 한다.
+       ★ 화면에서는 카드에 마우스를 올릴 때만 뜨고, 인쇄에는 항상 나온다.
+       ★ 검증이 읽는 것은 `data-slot` 속성이지 이 텍스트가 아니다
+         (render_workflow.py:210). 숨겨도 slots() 는 안 깨진다. */
     .canon-tag {
-      font-size: 10px;
-      color: #94a3b8;
+      font-size: 10.5px;
+      color: #cbd5e1;
       text-align: right;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      opacity: 0;
+      transition: opacity .15s ease;
+      user-select: none;
     }
+    section:hover .canon-tag,
+    .code-box:hover .canon-tag { opacity: 1; }
 
     /* A4 인쇄 최적화 (탭 전체 펼침, A4 4~5장 레이아웃) */
     @media print {
@@ -127,6 +188,8 @@
       .page-break {
         page-break-before: always;
       }
+      /* ★ 화면에서는 접었지만 인쇄에는 출처가 있어야 한다. */
+      .canon-tag { opacity: 1 !important; color: #64748b !important; }
     }
     .print-title {
       display: none;
@@ -145,6 +208,66 @@
   .fl-fill table{width:100%;font-size:.75rem;text-align:left}
   .fl-fill table th,.fl-fill table td{padding:.4rem .5rem;
     border-bottom:1px solid #f1f5f9}
+
+    /* ── 탭을 위로 ★ 2026-09-03 ─────────────────────────────
+       화면 절반이 정적 섹션이고 탭이 그 아래(380줄) 파묻혀 있었다.
+       탭을 눌러도 위쪽이 안 바뀌니 정적 구간 전체가 "매번 반복되는
+       꼬리말" 로 읽혔다. 착시가 아니라 실제 구조가 그랬다.
+       ★ 마크업을 옮기지 않고 flex + order 로 화면 순서만 바꾼다.
+         렌더러는 껍데기를 통째로 복사하므로 DOM 을 옮겨도 따라오지만,
+         CSS 로 되는 일에 마크업을 건드릴 이유가 없다. */
+    main.app-container { display: flex; flex-direction: column; }
+    /* ★ 약한 자리. 이 선택자만 **위치**에 기댄다 — 정본 배너 앞에 다른
+         div 를 끼우면 그것이 -3 을 가져가고 배너가 탭 아래로 내려간다.
+         나머지(.tab-nav-container · .tab-content · main section > h2)는
+         전부 클래스라 MASTER 가 바뀌어도 안 흔들린다. 여기만 다르다.
+         고치려면 배너에 클래스를 하나 주고 그것을 잡으면 된다. */
+    main > div:first-of-type { order: -3; }   /* 정본 배너 — 진짜 머리말 */
+    .tab-nav-container {
+      order: -2; position: sticky; top: 52px; z-index: 30;
+      background: #fff; padding: 10px 0 8px;
+      border-bottom: 1px solid #e2e8f0; margin-bottom: 4px;
+    }
+    .tab-content { order: -1; }
+
+    /* ── 위계 ★ ────────────────────────────────────────────
+       카드·제목·표가 전부 같은 무게였다. 뭐가 중요한지 화면이 말을
+       안 하면 사람은 아무것도 안 읽는다. */
+    main section > h2 {
+      font-size: 14.5px !important;
+      text-transform: none !important;
+      letter-spacing: -0.01em !important;
+      padding-left: 9px;
+      border-left: 3px solid #0969da;
+      line-height: 1.3;
+    }
+    main section { border-radius: 8px; }
+    main table thead th {
+      background: #f1f5f9; font-weight: 700; color: #0f172a;
+      padding: 7px 9px; letter-spacing: -0.01em;
+    }
+    main table tbody tr:nth-child(even) { background: #fafbfc; }
+    main table tbody td { padding: 7px 9px; }
+
+    /* ── 글꼴 ★ ────────────────────────────────────────────
+       Tailwind CDN 의 preflight 가 body 선언을 이긴다. 요청은 나가는데
+       (fonts.googleapis.com 200) 적용이 안 됐다. */
+    body, main, main * {
+      font-family: 'IBM Plex Sans KR', -apple-system, system-ui,
+                   'Malgun Gothic', sans-serif;
+    }
+    code, pre, .font-mono, [class*="font-mono"], .canon-tag {
+      font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace !important;
+    }
+    /* ★ 아이콘 예외. main * 로 덮으면 Font Awesome 이 전부 네모가 된다. */
+    .fa, .fas, .far, .fab, [class^="fa-"], [class*=" fa-"] {
+      font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+    }
+
+    @media print {
+      main.app-container { display: block; }
+      .tab-nav-container { position: static; }
+    }
 </style>
 </head>
 <body class="min-h-screen">
@@ -254,7 +377,7 @@
           </div>
           <div class="text-[11px] text-slate-700 space-y-0.5 font-sans">
             <div>&bull; <b>누가:</b> 김재웅 전담 (AWS / Pages 자동 배포)</div>
-            <div>&bull; <b>머지 방식:</b> Merge Commit (승인 1 + Code Owners 통과 필수)</div>
+            <div>&bull; <b>머지 방식:</b> Merge Commit (승인 1 · Code Owners 는 끈다)</div>
             <div>&bull; <b>수명:</b> 영구</div>
           </div>
         </div>
@@ -915,7 +1038,7 @@ git push -u origin feat/gis-revert   # PR 로 되돌린다</pre>
     </section>
 
     <!-- 파트별 매트릭스, 머지 정책, 바이패스 규정 -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
 
       <!-- 파트별 역할 및 소유권 -->
       <div class="border border-slate-200 rounded-lg p-4 bg-white space-y-2.5 shadow-sm" data-slot="12-3" data-canon=".github/CODEOWNERS">
@@ -963,10 +1086,15 @@ git push -u origin feat/gis-revert   # PR 로 되돌린다</pre>
           </div>
         </div>
       </div>
+      </div>
 
     </section>
 
-    <!-- ③ 이 문서가 낡았는지 확인하는 법 -->
+
+    <!-- ③ 이 문서가 낡았는지 확인하는 법
+         ★ 2026-09-03. 위 grid 안으로 옮겨봤다가 되돌렸다.
+           명령이 세 줄이라 3분할 칸에서 가로가 안 나온다.
+           대신 위 grid 를 cols-3 → cols-2 로 바꿔 공백을 없앴다. -->
     <section class="border border-slate-200 rounded-lg p-5 bg-white shadow-sm space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -983,9 +1111,9 @@ git push -u origin feat/gis-revert   # PR 로 되돌린다</pre>
         <button onclick="copyCode('c-doc-check')" class="copy-btn absolute right-2.5 top-2.5 bg-white hover:bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded border border-slate-300 shadow-sm font-sans">
           <i class="fa-regular fa-copy mr-1"></i> 복사
         </button>
-        <pre id="c-doc-check" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto">uv run python tools/render_workflow.py --check   # 자동 생성본이 MASTER 와 같은가
-uv run python tools/doc_fsck.py                  # 문서끼리 어긋난 데가 있는가</pre>
-      </div>
+        <pre id="c-doc-check" class="font-mono text-xs text-slate-800 leading-relaxed overflow-x-auto">uv run python tools/render_workflow.py   # 재생성 · 슬롯 ↔ MASTER 대조
+uv run python tools/doc_fsck.py          # 문서끼리 어긋난 데가 있는가 (여덟)
+uv run python tools/docnum_check.py      # 문서가 적은 숫자 ↔ 산출물</pre>
     </section>
 
   </main>
@@ -1027,7 +1155,7 @@ uv run python tools/doc_fsck.py                  # 문서끼리 어긋난 데가
     const modalData = {
       main: {
         title: "Rule: refs/heads/main (Release)",
-        desc: "• 목적: AWS / Pages 자동 배포 스냅샷<br>• 승인: 1인 이상 (Code Owners 필수)<br>• 필수 검사: contract-shared, contract-strict<br>• 머지 방식: Merge Commit 단독 (Squash 금지)<br>• 관리자: 김재웅(@diyon13)"
+        desc: "• 목적: AWS / Pages 자동 배포 스냅샷<br>• 승인: 1인 이상 (Code Owners 는 끈다 — 켜면 릴리즈가 영구 차단된다)<br>• 필수 검사: contract-shared, contract-strict<br>• 머지 방식: Merge Commit 단독 (Squash 금지)<br>• 관리자: 김재웅(@diyon13)"
       },
       dev: {
         title: "Rule: refs/heads/dev (Trunk)",

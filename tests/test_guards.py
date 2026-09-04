@@ -370,9 +370,10 @@ def test_no_two_steps_write_the_same_path():
 #   ★ 지금 안 죽는 이유는 `web/data` 가 커밋돼 있어 파일이 늘 존재하기
 #     때문이다. 위험은 죽는 것이 아니라 **한 실행 늦게 따라오는 것**이다.
 BACKWARD = {
-    ("ortho", "scope.geojson"):
-        "publish 산출을 ortho 가 읽는다. 스코프가 바뀌면 정사영상이 한 "
-        "실행 늦는다. 해소 = scope 산출을 segments 로 올린다(PLAN)",
+    # ★ 2026-09-04 해소. ("ortho","scope.geojson") 이 여기 있었다.
+    #   scope 계산을 `segments._write_scope()` 로 올려 순방향이 됐고,
+    #   `test_backward_entries_are_still_real` 이 "후진 의존이 아닌 것을
+    #   든다" 로 울어 이 줄을 지우기를 요구했다 — 설계대로다.
     ("terrain", "view.json"):
         "publish 산출에 구운 범위를 덧쓴다. `if vj.exists()` 가 첫 실행을 "
         "넘긴다. 해소 = 타일 범위를 processed 로 내고 publish 가 합친다(PLAN)",
@@ -1601,7 +1602,17 @@ def test_every_dataset_says_where_it_is_used():
     )
 
 
-def test_vehicle_offtracking_is_physical():
+def _verified_spec(monkeypatch, m, wb=4.3):
+    """★ 2026-09-03. `offtracking` 이 `wheelbase_verified` 를 보게 됐다.
+    물리식 자체를 보는 검사는 **검증된 상태를 만들어 놓고** 봐야 한다 —
+    게이트가 생겼다고 물리식 검사를 지우면 그 식이 무방비가 된다."""
+    base = dict(m.spec())
+    base.update(wheelbase_m=wb, wheelbase_verified=True)
+    monkeypatch.setattr(m, "spec", lambda: base)
+    return base
+
+
+def test_vehicle_offtracking_is_physical(monkeypatch):
     """내륜차 계산이 물리적으로 맞는가.
 
     ★ 회전할 때 뒷바퀴가 앞바퀴보다 안쪽으로 돈다. 그만큼 폭이 더 필요하다.
@@ -1616,12 +1627,17 @@ def test_vehicle_offtracking_is_physical():
 
     from firelane.seg import vehicle as V
 
+    # ★ 축거 미검증이면 0.0 이 정상이다. 물리식은 검증된 상태에서 본다.
+    assert V.offtracking(8.0) == 0.0, "미검증 축거로 내륜차를 계산한다"
+    s = _verified_spec(monkeypatch, V, wb=4.3)
+
     assert V.offtracking(None) == 0.0
     assert V.offtracking(1e9) == 0.0, "직선인데 내륜차가 있다"
 
+    wb = s["wheelbase_m"]
     for R in (50.0, 20.0, 12.0, 8.0):
         got = V.offtracking(R)
-        exact = R - math.sqrt(R * R - V.WHEELBASE ** 2)
+        exact = R - math.sqrt(R * R - wb ** 2)
         assert abs(got - exact) < 1e-6, f"R={R} 에서 근사식을 쓴다"
 
     # 반경이 작을수록 더 필요하다
@@ -1668,7 +1684,7 @@ def test_edge_cost_blocks_what_cannot_pass():
         "lenient 가 모르는 곳을 안 열어준다 — 그래프가 끊긴다"
 
 
-def test_turn_block_requires_a_verified_radius():
+def test_turn_block_requires_a_verified_radius(monkeypatch):
     """회전으로 막는 것이 검증된 반경을 요구하는가.
 
     ★ 2026-09-01. `turn_radius_m: 12.0` 은 자동차규칙 제9조① 의 **법정
@@ -1698,8 +1714,18 @@ def test_turn_block_requires_a_verified_radius():
         assert math.isfinite(V.edge_cost(40, 9.9, "clear", tight)), \
             "미검증 반경이 경로를 끊는다"
 
-    # 어느 쪽이든 필요폭은 반경을 반영한다. 비용을 올리는 것은 안전측이다.
-    assert V.required_width(6.0) > V.required_width(20.0) > V.required_width()
+    # ★ 2026-09-03. 필요폭이 반경을 반영하려면 **축거가 검증돼야 한다.**
+    #   범주 최대는 그 범주 전량을 알 때만 최대이므로, 미검증 축거로
+    #   내륜차를 계산하면 근거 없는 수로 비용을 올리는 것이 된다.
+    #   `can_turn` 과 같은 선택이다 — 근거 없으면 하지 않는다.
+    if V.spec().get("wheelbase_verified"):
+        assert V.required_width(6.0) > V.required_width(20.0) > V.required_width()
+    else:
+        assert V.required_width(6.0) == V.required_width(), (
+            "미검증 축거인데 내륜차가 필요폭에 들어간다")
+        _verified_spec(monkeypatch, V, wb=4.3)
+        assert V.required_width(6.0) > V.required_width(20.0) > V.required_width(), (
+            "검증된 축거인데 필요폭이 반경을 반영하지 않는다")
 
 
 def test_vehicle_spec_has_a_source():

@@ -100,6 +100,7 @@ STEPS = [
                 P / "road_link_5186.gpkg", P / "road_rw_5186.gpkg",
                 P / "node_link_5186.gpkg", P / "cctv_5186.gpkg",
                 P / "streetlight_5186.gpkg", P / "road_intrvl.geojson",
+                P / "fire_station.geojson",
                 P / "_manifest.json"),
          # ★ route_vehicle.csv 가 여기 없어서 publish 가 stale 로 안 잡혔고,
          #   커밋된 web/data/route_vehicle.json 이 이틀 낡은 채 전 게이트를
@@ -107,7 +108,7 @@ STEPS = [
          writes=(P / "segments.geojson", P / "segments_5186.gpkg",
                  P / "segments.schema.json", P / "corridor_5186.gpkg",
                  P / "nfa_compare.json", P / "seg_uid_map.csv",
-                 P / "route_vehicle.csv")),
+                 P / "route_vehicle.csv", P / "scope_5186.gpkg")),
     Step("streetlight", "streetlight", "가로등 → 지점 집계",
          P / "streetlight_point.geojson",
          reads=(P / "streetlight_5186.gpkg",),
@@ -128,7 +129,7 @@ STEPS = [
          # ★ scope.geojson 은 publish 산출이다. **후진 의존이며 지난 실행의
          #   산출물을 읽는다** — 스코프가 바뀌면 정사영상이 한 실행 늦게
          #   따라온다. test_guards.BACKWARD 와 PLAN 이 든다.
-         reads=(RAW, WEB / "scope.geojson"),
+         reads=(RAW, P / "scope_5186.gpkg"),
          writes=(WEB / "ortho",),
          mutates=(WEB / "view.json", P / "_manifest.json")),
     Step("publish", "publish_web", "→ web/data",
@@ -138,13 +139,13 @@ STEPS = [
                 P / "fire_station.geojson", P / "hydrant_point.geojson",
                 P / "cctv.geojson", P / "poi_store.geojson",
                 P / "corridor_5186.gpkg", P / "building_5186.gpkg",
-                P / "ngii1k_light_5186.gpkg", P / "route_vehicle.csv"),
+                P / "ngii1k_light_5186.gpkg", P / "route_vehicle.csv", P / "scope_5186.gpkg"),
          # ★ web/data/_manifest.json 은 publish 가 마지막에 쓰는 계보다.
          #   종전에는 tools/web_manifest.py 를 사람이 따로 돌려야 했고
          #   아무도 안 돌렸다(2026-08-22 CI 가 처음 잡음).
          writes=(WEB / "segments.geojson", WEB / "segments.schema.json",
                  WEB / "_manifest.json", WEB / "boundary.geojson",
-                 WEB / "scope.geojson", WEB / "mask.geojson",
+                 WEB / "mask.geojson",
                  WEB / "mask_soft.geojson", WEB / "buildings.geojson",
                  WEB / "hydrants.geojson", WEB / "stations.geojson",
                  WEB / "cctv.geojson", WEB / "poi.geojson",
@@ -455,6 +456,14 @@ def main():
                 # ★ 19종 중 몇 종만 실패했을 것이다. 200초를 다시 태우지 마라.
                 print(c("  실패한 소스만:  uv run python -m firelane.ingest "
                         "--retry-failed", "36"))
+            # ★ 2026-09-04. 실패하면 하류를 막으려고 옛 산출물을
+            #   `.stale_<날짜>` 로 격리한다(ingest.py:613). 그것이 남으면
+            #   `data/processed` 에 27MB 씩 쌓이는데 안내가 없어서
+            #   사람이 알아채지 못했다 — 2026-09-03 에 jijeok OOM 으로
+            #   두 개가 남았고 손으로 지웠다.
+            print(c("  격리된 옛 산출물이 남았을 수 있다:", "33"))
+            print(c("    uv run python tools/tidy.py          무엇이 남았나", "36"))
+            print(c("    uv run python tools/tidy.py --yes    지운다", "36"))
             print(f"  고친 뒤: uv run fire-lane --from {name}")
             sys.exit(1)
         lineage.record(PROCESSED, ROOT, s, expand)

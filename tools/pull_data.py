@@ -70,10 +70,48 @@ def c(s: str, code: str) -> str:
 
 
 class Step:
+    """★ `needs` 는 주석이 아니라 **자료구조다.**
+
+    2026-09-03. `absorb.py` 를 흡수하면서 그 설계를 그대로 가져왔다.
+    종전 `pull_data` 는 순서를 평범한 for 루프 + `if rc: return` 으로만
+    들고 있었다. 그러면 `steps()` 의 순서를 바꾸거나 한 줄을 위로 옮기는
+    것만으로 **검증 없이 원본을 지울 수 있다** — landing 은 윈도우
+    Downloads 사본이고 그것을 지우면 되돌릴 데가 없다.
+
+    `needs="verify"` 는 "verify 가 **돌았고 0으로 끝났을 때만**" 을 뜻한다.
+    안 돈 것과 실패한 것을 구분한다 — None 을 0 으로 읽으면 게이트가 뚫린다.
+    """
+
     def __init__(self, name: str, what: str, cmd: list[str], *,
-                 only_yes: bool = True, optional: bool = False):
+                 mutating: bool = True, optional: bool = False,
+                 needs: str | None = None, confirm: str | None = "--yes"):
         self.name, self.what, self.cmd = name, what, cmd
-        self.only_yes, self.optional = only_yes, optional
+        self.mutating, self.optional, self.needs = mutating, optional, needs
+        # ★ 확인 인자는 도구마다 다르다. `firelane.prep` 은 `--apply` 자체가
+        #   확인이라 `--yes` 를 안 받는다. 없는 인자를 붙이면 argparse 가
+        #   죽는데, 그 실패는 게이트가 아니라 **오타**다. 구분해 둔다.
+        self.confirm = confirm
+
+    @property
+    def only_yes(self) -> bool:
+        """--yes 없이는 안 도는가. `mutating` 과 같은 말이다.
+
+        ★ 종전에 이 둘이 **따로 있었다.** `only_yes` 는 "관측 모드에서
+          거를까" 를, argv 의 `--yes` 는 "실제로 지울까" 를 각자 들었다.
+          둘을 사람이 맞춰야 했고, 어긋나면 관측 모드가 파괴 명령을 돈다.
+          하나로 묶어 그 어긋남을 **불가능하게** 한다.
+        """
+        return self.mutating
+
+    def argv(self, apply: bool) -> list[str]:
+        """실제로 실행할 인자. ★ `--yes` 는 **여기서만** 붙는다.
+
+        자료구조에 `--yes` 를 박아두면 관측 모드 필터가 한 줄 어긋나는
+        것만으로 파괴 명령이 돈다. 붙일 수 없게 만드는 것이 규율보다 낫다.
+        """
+        if self.mutating and apply and self.confirm:
+            return [*self.cmd, self.confirm]
+        return list(self.cmd)
 
 
 def steps(a) -> list[Step]:
@@ -81,30 +119,34 @@ def steps(a) -> list[Step]:
     T = lambda n: [*py, str(ROOT / "tools" / n)]          # noqa: E731
     out = [
         Step("intake", "Downloads → landing",
-             T("intake.py") + ["--stage", "--yes"]),
+             T("intake.py") + ["--stage"]),
         Step("stage", "landing → raw (대장 매칭)",
-             T("acquire.py") + ["--stage", "--yes"]),
+             T("acquire.py") + ["--stage"], needs="intake"),
         Step("verify", "raw ↔ landing sha 대조",
-             T("acquire.py") + ["--verify"]),
+             T("acquire.py") + ["--verify"], needs="stage", mutating=False),
     ]
     if not a.keep_landing:
+        # ★ 삭제는 검증에 매달려 있다. verify 가 0 이 아니면 안 돈다.
         out.append(Step("prune", "sha 같은 landing 원본 정리",
-                        T("acquire.py") + ["--prune-landing", "--yes"]))
+                        T("acquire.py") + ["--prune-landing"],
+                        needs="verify"))
     out += [
         Step("quarantine", "대장에 없는 raw 파일 격리",
-             T("acquire.py") + ["--quarantine", "--yes"]),
+             T("acquire.py") + ["--quarantine"], needs="stage"),
         Step("judge", "세 판정 — 결손이 남았는가",
-             T("acquire.py"), only_yes=False),
+             T("acquire.py"), mutating=False),
+        # ★ confirm=None. `--apply` 가 곧 확인이다. `--yes` 를 안 받는다.
         Step("prep", "raw → norm (인코딩·개행·정규명만)",
-             [*py, "-m", "firelane.prep", "--apply"]),
+             [*py, "-m", "firelane.prep", "--apply"], confirm=None),
         Step("prep-check", "norm 이 raw 와 정합한가",
-             [*py, "-m", "firelane.prep", "--check"], only_yes=False),
+             [*py, "-m", "firelane.prep", "--check"], mutating=False),
     ]
     if a.all:
         out += [
-            Step("pipeline", "raw/norm → processed · web", ["fire-lane"]),
+            Step("pipeline", "raw/norm → processed · web", ["fire-lane"],
+                 confirm=None),
             Step("golden", "판정 지문 대조",
-                 T("golden.py") + ["check"], only_yes=False),
+                 T("golden.py") + ["check"], mutating=False),
         ]
     return out
 
@@ -134,6 +176,7 @@ def main() -> int:
         return 2
 
     plan = steps(a)
+    seen: dict[str, int] = {}
     if not a.yes:
         print(c("\n관측만 한다. 실제로 반입하려면 --yes 를 붙여라.\n", "33"))
         for i, s in enumerate(plan, 1):
@@ -148,8 +191,25 @@ def main() -> int:
     t0 = time.time()
     for i, s in enumerate(plan, 1):
         print(c(f"\n[{i}/{len(plan)}] {s.name} — {s.what}", "1;36"))
-        print(c("  $ " + " ".join(s.cmd), "90"))
-        r = subprocess.run(s.cmd, cwd=ROOT)
+        # ★ 게이트. 선행 단계가 **돌았고 0 으로 끝났는가**. 순차 실행이
+        #   이미 앞을 보장하는 것 같지만, 그 보장은 `steps()` 의 나열
+        #   순서에만 기대는 것이다. 여기서 자료구조로 다시 확인한다.
+        # ★ 게이트는 --yes 일 때만 건다. 관측 모드는 비파괴 단계만 남기고
+        #   나머지를 거르므로 선행이 `seen` 에 없는 것이 정상이다.
+        #   2026-09-03 회귀 — 게이트를 붙이면서 이 경우를 안 봤다.
+        if a.yes and s.needs is not None:
+            prev = seen.get(s.needs)
+            if prev is None:
+                print(c(f"  ✗ 선행 단계 {s.needs} 가 안 돌았다 — 멈춘다", "31"))
+                return 3
+            if prev != 0:
+                print(c(f"  ⏸ {s.needs} 가 {prev} 로 끝나 {s.name} 을 "
+                        "돌리지 않는다", "33"))
+                return prev
+        argv = s.argv(a.yes)
+        print(c("  $ " + " ".join(argv), "90"))
+        r = subprocess.run(argv, cwd=ROOT)
+        seen[s.name] = r.returncode
         if r.returncode != 0:
             if s.optional:
                 print(c(f"  ! {s.name} 실패 — 선택 단계라 계속한다", "33"))
