@@ -5,6 +5,10 @@ ingest.py — data/raw 원본을 동명동 범위 표준 산출물로 변환한�
 
 IN    sources.yaml (대장) · $FIRE_LANE_DATA/raw/**  (불변)
 OUT   data/processed/<key>_5186.gpkg + <key>.geojson  (20종)
+      data/processed/_manifest.json
+      ★ 하류가 이름으로 읽는 것 — boundary_emd.geojson · fire_station.geojson ·
+        hydrant_point.geojson · cctv.geojson · poi_store.geojson ·
+        road_intrvl.geojson. `pipeline.Step` 이 그 여섯을 명시한다
       data/processed/_manifest.json                    실행 기록 · 계보 정본
 PARAM sources.yaml 의 datasets.<key>.contract 블록
 

@@ -187,7 +187,51 @@
   "safety/safety_fleet_jngj-donggu_20260514.csv": {
    "sha256": "dac553bb5e289ae8a594ce464800eda97f7f8a850c100a6b504dbc527917e581",
    "bytes": 640
+  },
+  "nfa/nfa_mas_spec_kr_20260610.hwp": {
+   "sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
+   "bytes": 1320960
+  },
+  "nfa/nfa_spec_chem_gj_jngj_20260101.hwp": {
+   "sha256": "6f228f5abb327b0d9e2416119af4658db08dbe5549f16583fb57e71be2063a35",
+   "bytes": 518144
+  },
+  "nfa/nfa_spec_ladder_jn_kr_20260101.hwp": {
+   "sha256": "268c025482249f392516078495fabf9065465a25741bff308256054ecbb79bab",
+   "bytes": 439296
+  },
+  "nfa/nfa_spec_pump_jn_kr_20260101.hwp": {
+   "sha256": "9ed65818b458d88df47b3e2d7614445ae65baed7dbebf9d86b8910c67265ad06",
+   "bytes": 544768
+  },
+  "nfa/nfa_spec_rescue_jn_kr_20260101.hwpx": {
+   "sha256": "8e14e2c2672162ac323e50c4b8aec90299f03a2e79be266790549cfd75e21c07",
+   "bytes": 388252
+  },
+  "nfa/nfa_spec_tanker_cn_kr_20260101.pdf": {
+   "sha256": "9653d2700a31f841770d0f83ec2d81afe9927d068adc6eebec5909192c72b537",
+   "bytes": 523935
+  },
+  "nfa/nfa_vehicle_spec_kr_20240304.pdf": {
+   "sha256": "3c5d91db980d0b896e8f2cfd2b2c51a385e580d40f7b355f6b5b6835509ba623",
+   "bytes": 466483
+  },
+  "nfa/nfa_dispatch_119_jngj-dongmyeong_20260903.csv": {
+   "sha256": "740dedf4e0c6f6de0424971e59391c04f6e58d9f37747fa6d822352471950371",
+   "bytes": 62671
+  },
+  "nfa/nfa_fire_incident_jngj-donggu_20260903.csv": {
+   "sha256": "c1f98a86160ef4f7d545d609ac953e33a288ad4d8113e25b45f0371e95f2f621",
+   "bytes": 193220
+  },
+  "nfa/nfa_rescue_jngj-dongmyeong_20260903.csv": {
+   "sha256": "66cd210b56f6fb13f4dbd7f26b560e2059936e34f4a06a38a9b3ce820d7363f5",
+   "bytes": 83820
+  },
+  "nfa/nfa_target_building_jngj-dongmyeong_20260903.csv": {
+   "sha256": "d85ec9f5b7fbdca363c3fb2a569aee5cca8d139169f54f00aee1b8f11f934394",
+   "bytes": 4755
   }
  },
- "at": "2026-09-01T23:15:41+09:00"
+ "at": "2026-09-03T22:22:01+09:00"
 }

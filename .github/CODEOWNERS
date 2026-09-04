@@ -82,27 +82,27 @@
 # 세 파트 전부 이것만 import 하고 서로의 코드는 import 하지 않는다.
 # 여기가 바뀌면 전원이 영향을 받으므로 세 파트 승인이 모두 필요하다.
 # 정본 서술은 MASTER §19.
-/src/contracts/          @woongtopia/gis @woongtopia/cv @woongtopia/infra   # !strict
-/tests/test_contract.py  @woongtopia/gis @woongtopia/cv @woongtopia/infra   # !strict
+/src/contracts/          @woongtopia/gis @woongtopia/cv @woongtopia/infra  # !strict
+/tests/test_contract.py  @woongtopia/gis @woongtopia/cv @woongtopia/infra  # !strict
 
 
 # ── 5. 표출 ─────────────────────────────────────────────────────
 # 파일을 계층으로 나눠 충돌을 구조적으로 막는다(DECISIONS §27).
 /web/style.css           @marscoolcat
-/web/index.html          @marscoolcat @AIMasterFox
-/web/README.md           @marscoolcat @AIMasterFox
-/web/config.js           @marscoolcat @AIMasterFox                          # !strict
-/web/js/main.js          @AIMasterFox                                       # !strict
-/web/js/data.js          @AIMasterFox                                       # !strict
-/web/js/state.js         @AIMasterFox                                       # !strict
-/web/js/map.js           @AIMasterFox                                       # !strict
-/web/js/basemap.js       @AIMasterFox                                       # !strict
-/web/js/verdict.js       @AIMasterFox                                       # !strict
-/web/js/config-access.js @AIMasterFox                                       # !strict
-/web/js/dom.js           @marscoolcat @AIMasterFox
-/web/js/layers/          @AIMasterFox                                       # !strict
-/web/js/icons/           @marscoolcat @AIMasterFox
-/web/js/ui/              @marscoolcat @AIMasterFox
+/web/index.html          @marscoolcat @woongtopia/gis
+/web/README.md           @marscoolcat @woongtopia/gis
+/web/config.js           @marscoolcat @woongtopia/gis  # !strict
+/web/js/main.js          @woongtopia/gis          # !strict
+/web/js/data.js          @woongtopia/gis          # !strict
+/web/js/state.js         @woongtopia/gis          # !strict
+/web/js/map.js           @woongtopia/gis          # !strict
+/web/js/basemap.js       @woongtopia/gis          # !strict
+/web/js/verdict.js       @woongtopia/gis          # !strict
+/web/js/config-access.js @woongtopia/gis          # !strict
+/web/js/dom.js           @marscoolcat @woongtopia/gis
+/web/js/layers/          @woongtopia/gis          # !strict
+/web/js/icons/           @marscoolcat @woongtopia/gis
+/web/js/ui/              @marscoolcat @woongtopia/gis
 /web/assets/             @marscoolcat @woongtopia/gis
 # ★ profiles.json 은 DECISIONS §84 가 드는 **치수 정본**이다. 스타일
 #   자산이 아니라 데이터라 GIS 팀이 함께 든다. 개인이 아니라 팀 핸들로
@@ -121,23 +121,23 @@
 #   git checkout --theirs uv.lock && uv lock
 /pyproject.toml          @woongtopia/gis @woongtopia/cv @woongtopia/infra
 /uv.lock                 @woongtopia/gis @woongtopia/cv @woongtopia/infra
-/.github/                @woongtopia/gis                                    # !strict
-/.githooks/              @woongtopia/gis                                    # !strict
-/.gitignore              @woongtopia/gis                                    # !strict
-/.gitattributes          @woongtopia/gis                                    # !strict
+/.github/                @woongtopia/gis          # !strict
+/.githooks/              @woongtopia/gis          # !strict
+/.gitignore              @woongtopia/gis          # !strict
+/.gitattributes          @woongtopia/gis          # !strict
 /.devcontainer/          @woongtopia/gis @woongtopia/infra
 /.env.example            @woongtopia/gis @woongtopia/infra
 
 
 # ── 7. 강제자 ───────────────────────────────────────────────────
 # ★ 강제자를 아무나 지울 수 있으면 강제자가 아니다.
-/tests/                  @woongtopia/gis                                    # !strict
-/tools/                  @woongtopia/gis                                    # !strict
+/tests/                  @woongtopia/gis          # !strict
+/tools/                  @woongtopia/gis          # !strict
 
 
 # ── 8. 운영 문서 ────────────────────────────────────────────────
 # web/workflow.html 은 MASTER §12 의 **생성물**이다. 손으로 고치지 않는다 —
 # tools/render_workflow.py 가 만들고 docs.yml 이 커밋한다. 소유는 GIS 다.
-/web/workflow.html            @woongtopia/gis                                    # !strict
-/web/playbook.html      @woongtopia/gis                                    # !strict
+/web/workflow.html            @woongtopia/gis     # !strict
+/web/playbook.html      @woongtopia/gis           # !strict
 

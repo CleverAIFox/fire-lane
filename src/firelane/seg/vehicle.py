@@ -141,6 +141,20 @@ def offtracking(radius_m: float) -> float:
     if radius_m is None or radius_m <= 0:
         return 0.0
     s = spec()
+    # ★ 2026-09-03. **미검증 축거로는 내륜차를 계산하지 않는다.**
+    #   `can_turn()` 이 `turn_radius_verified` 를 보는 것과 같은 구조다.
+    #
+    #   범주 최대는 그 범주 전량을 알 때만 최대다. 한 대라도 모르면
+    #   나머지가 그보다 클 수 있다. 판정 단위는 **센터 × 차종**이고
+    #   그 조합의 보유 대수만큼 차종을 전부 알 때만 확정된다.
+    #   확정 여부는 `web/config.js` 의 `CONFIG.fleet` 항목이 들고,
+    #   대장은 `vehicle_spec.wheelbase_verified` 로 전역 기본을 든다.
+    #
+    #   ★ 0.0 을 돌려주면 필요폭이 직선 하한(전폭+여유)만 남는다.
+    #     그것은 미탐 방향이다 — 근거 없이 **막지 않는** 쪽이고
+    #     `can_turn` 과 같은 선택이다(DECISIONS §81 · §86-4).
+    if not s.get("wheelbase_verified", False):
+        return 0.0
     wb = float(s["wheelbase_m"])
     if radius_m >= wb * wb / (2 * 0.05):
         return 0.0
@@ -181,8 +195,14 @@ def can_turn(radius_m: float | None) -> bool:
       PLAN §4-5 도 같은 결론이다 — "전 구간 적용 시 골목 대부분 탈락 →
       그래프 붕괴". 회전은 시연 경로 코너에서 `corner_probe` 로 검증한다.
 
-      D-30 에서 실제 반경이 나오면 대장 한 줄(`turn_radius_verified: true`)로
-      켜진다. 코드는 안 고친다.
+      ★ 2026-09-03 정정. **해소는 D-30 인터뷰가 아니다.** 최소회전반경은
+        제작사 제원표에 실린 공개 수치이고, 관내 보유 차종은
+        `gjfire_fleet_dongbu`(2026-05-14) 가 이미 든다. 종전 서술이 이것을
+        인터뷰 대기로 걸어 **닫을 수 있는 항목을 병목으로 남겼다.**
+
+        차종별 실값을 넣고 `turn_radius_verified: true` 로 올리면 켜진다.
+        코드는 안 고친다. ★ 켜면 판정이 움직이므로 `golden.py lock`
+        재잠금이 붙는다 — 별 PR 로 낸다.
 
     ★ 2026-09-01. **이 플래그가 화면까지 흐르지 않았다.** 판정은 "못 믿는
       값" 으로 아는데 `web/js/ui/vehicle.js` 는 `profiles.json` 의 7.30m 을

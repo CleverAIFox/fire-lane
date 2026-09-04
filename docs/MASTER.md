@@ -543,7 +543,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 43종(OK 27 · SKIP 16)
+data/processed/    대장 54종(OK 27 · SKIP 27)
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -629,14 +629,14 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격.
 
-대장은 `sources.yaml` 하나다. `datasets` 43종 · `retired` 10종.
+대장은 `sources.yaml` 하나다. `datasets` 54종 · `retired` 10종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 ### 6-2. 데이터 보관
 
 ```
 landing      SSD · 다운로드 원본. 규칙 없음. 백업 제외
-raw          SSD · 제공기관 8폴더. 절대 수정하지 않는다
+raw          SSD · 제공기관 10폴더. 절대 수정하지 않는다
 norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료(08-31)
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
@@ -768,8 +768,7 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 | 담당 | 파트 | 영역 |
 |---|---|---|
 | 김재웅 `@diyon13` | infra | PM · 파이프라인 · DB · 릴리즈 매니저 · `src/api/` · `infra/` |
-| 오창준 `@AIMasterFox` | gis | `src/firelane/` · `sources.yaml` · `data/` · `web/js/` · 판정 · 경로 |
-| 우지혜 `@marscoolcat` | gis | UI · 3D · `web/style.css` · `web/index.html` · 소방서 인터뷰 |
+| 우지혜 `@marscoolcat` | gis | UI · 3D · `web/` 전반 · 소방서 인터뷰 · `part/gis` 통합 |
 | 이가연 `@gayeoniii` | cv | 캘리브레이션 · 호모그래피 · `src/cv/` |
 | 백진욱 `@wlsdnr052475` | cv | 세그멘테이션 · 데이터 소스 검증 |
 | 경계 | CI | `tests/test_contract.py` · `.github/CODEOWNERS` |
@@ -778,12 +777,23 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 `.github/CODEOWNERS` 이며, 소유자 없는 경로가 생기면
 `tests/test_ownership.py` · `tests/test_web_ownership.py` 가 잡는다.
 
-★ **오창준은 2026-09-03 에 이탈한다.** `@woongtopia/gis` 팀에서 빼면
-`CODEOWNERS` 의 코어 리뷰가 남은 gis 팀원에게 자동으로 넘어가므로 룰셋과
-`CODEOWNERS` 파일은 고치지 않는다. 함께 처리할 것은 셋이다 — 룰셋 bypass
-회수(§12-1) · `ruleset_check` 의 `ADMINS` 축소 · 데이터 실물 3.5GB 전달
-(§14-7). 파이프라인이 GIS 담당 로컬에서만 돌므로 매체가 안 넘어가면
-`uv run fire-lane` 이 첫 단계에서 멈춘다.
+★ **오창준(`@AIMasterFox`)은 2026-09-03 에 이탈했다.** `@woongtopia/gis`
+팀으로 적힌 줄은 팀에서 빼는 것만으로 리뷰가 남은 팀원에게 넘어간다 —
+`sources.yaml` · `src/firelane/` · `data/` · `docs/` · `web/data/` 가 그쪽이다.
+
+★ **개인 핸들로 적힌 줄은 넘어가지 않는다.** `CODEOWNERS` 는 `web/js/` 아래
+**15개 파일을 `@AIMasterFox` 단독**으로 든다. 이탈자를 소유자로 적은 줄을
+GitHub 은 **조용히 무시하므로** 그 경로는 보호되는 것처럼 보이면서 리뷰
+없이 머지된다. 같은 파일 §5 가 그 이유를 이미 적고 있다 —
+*"개인이 아니라 팀 핸들로 두는 이유는 소유자가 이탈하면 그 줄이 죽기
+때문이다."* `PLAN #79` 가 이 이관을 든다.
+
+★ **`web/js/` 의 GIS 로직 담당이 공백이다.** 판정 렌더링 · 데이터 접근 ·
+레이어가 그쪽이며 이관 전까지 소유자가 없다(`PLAN #80`).
+
+★ **데이터 실물 3.5GB 는 2026-09-02 에 우지혜에게 넘어갔다**(§14-7).
+파이프라인은 이제 **우지혜 로컬에서 돈다.** `FIRE_LANE_DATA` 가 그 기계의
+경로를 가리키며, CI 는 데이터를 만들지 않는다(§12-7).
 
 ---
 
@@ -1045,14 +1055,15 @@ CORS 로 막힌다. 설치할 것은 없다. MapLibre 와 deck.gl 은 CDN 에서
 | `web/style.css` | **@marscoolcat 단독** | 색·간격·타이포·애니메이션·레이아웃 |
 | `web/index.html` | 공동 | 뼈대 마크업. 거의 안 바뀐다 |
 | `web/config.js` | **공동** | 판정 색상·마커 스펙·카메라·출동모드·미니맵 |
-| `web/js/` | @AIMasterFox | 로직·레이어 27개 모듈 |
+| `web/js/` | **공백** | 로직·레이어 29개 모듈. 이탈로 소유자 없음(§8 · `PLAN #79`) |
 | `web/js/icons/` · `ui/` | 공동 | 캔버스 그림 · 범례·검색·테마·토글 |
 | `web/data/` | 생성물 | `publish_web.py` 산출. 손으로 고치지 않는다 |
 
 **UI 작업은 `style.css` 와 `config.js` 두 파일이면 된다.** `web/js/layers/` 를
 건드려야 하는 상황은 로직 문제이므로 GIS 담당에게 넘긴다.
 
-`app.js` 는 없다. 1,260줄이던 그 파일은 `web/js/` 27개 모듈로 갈렸다.
+`app.js` 는 없다. 1,260줄이던 그 파일은 `web/js/` 29개 모듈로 갈렸다.
+수의 정본은 `node tools/js_graph_check.mjs` 출력이다.
 모듈 구조는 `web/README.md` 가 정본이다.
 
 ### 11-3. `config.js` — UI 담당이 조정하는 값
@@ -1215,7 +1226,7 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 된다
 | `segments.geojson` | 1,101 | 판정 본체 |
 | `buildings.geojson` | 5,713 | `h` = 층수 × 3.3. 동명동 안은 2,085동 |
 | `poi.geojson` | 2,077 | 상가정보 |
-| `boundary` · `scope` · `mask` · `mask_soft` | 각 1 | 행정경계 · 표출 범위 · 덮개 |
+| `boundary` · `mask` · `mask_soft` | 각 1 | 행정경계 · 덮개 |
 | `view.json` | — | 중심·경계·줌 한계 |
 | `terrain/{z}/{x}/{y}.png` | 22 | Terrain-RGB |
 | `ortho/{z}/{x}/{y}.jpg` | 1,423 | 항공정사영상 z17 · z19 |
@@ -1262,7 +1273,7 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 된다
 ```
 main ────────────────────── 배포 스냅샷. AWS 자동 배포. 김재웅 전담
  └ dev ─────────────────── 트렁크. 여기가 항상 동작해야 한다
-    ├ part/gis ─────────── 오창준(@AIMasterFox) · 우지혜(@marscoolcat)
+    ├ part/gis ─────────── 우지혜(@marscoolcat)
     ├ part/cv ──────────── 이가연(@gayeoniii) · 백진욱(@wlsdnr052475)
     └ part/infra ───────── 김재웅(@diyon13)
        └ feat/*   임시. 자유. 당일 삭제
@@ -1381,39 +1392,41 @@ git push origin --delete feat/<이름>
 
 ★ **룰셋의 `deletion` 은 이 사고를 못 막았다.** 규칙은 있었는데
 `bypass_actors` 가 뚫었다 — 머지를 admin 이 하므로 자동 삭제도 admin
-권한으로 실행된다. **규칙이 있어도 예외가 있으면 없는 것과 같다**(§79).
+권한으로 실행된다. **규칙이 있어도 예외가 있으면 없는 것과 같다**(`DECISIONS §79`).
 
 ### 12-1a. 예외와 회수
 
 지금 룰셋 실물이 위 표와 어긋난 것들이다. **되돌릴 날과 함께 적는다** —
 적어두지 않은 완화는 영구가 된다(`DECISIONS §76`).
 
-★ **`bypass_actors` 는 2026-09-01 현재 비어 있지 않다.** 세 룰셋 모두
-`Repository admin` 역할(actor_id 5)이 `always` 로 들어 있다. main 정비가
-다수 남아 매 건 승인 대기가 병목이 됐고, 한시로 부여했다(DECISIONS §80).
+★ **`bypass_actors` 는 2026-09-03 에 회수됐다.** 세 룰셋 모두 비어 있고
+`release` 의 승인 1 을 켰다. 2026-08-27 에 `Repository admin` 역할(actor_id 5)을
+`always` 로 넣었던 것이고(DECISIONS §80), 한시로 부여한 것을 한시로 끝냈다.
+`web/playbook.html` 의 BYPASS 카드와 `doc_fsck.DEPARTURE` 도 같은 날 걷었다.
 
-**되돌릴 날 2026-09-03.** 오창준 이탈일이자 마지막 근무일이다.
-★ 2026-09-02 에 **종전 기한에서 앞당겼다** — 이탈이 그날로 정해졌다. 그날 세 룰셋의
-`bypass_actors` 를 비우고 `release` 의 **승인 1 만** 켠다.
+★ **`actor_id 5` 는 사람 수가 아니라 역할 번호다.** 화면 안내가 그것을
+"5인 bypass" 로 읽고 적은 적이 있다. bypass 는 개인이 아니라 역할에 준다.
 
 ★ **Code Owners 는 켜지 않는다.** 켜면 릴리즈 PR 을 올리는 사람이 곧
 포괄 소유자(릴리즈 매니저)라 자기 PR 을 자기가 승인 못 하고, 그러면
 릴리즈가 영구 차단된다(§12-3). 승인은 아무나 한 명이면 된다 —
 실제로 막는 것은 승인이 아니라 `contract-shared` 다(DECISIONS §108).
 
-★ **`release` 의 승인·Code Owners 는 이미 꺼져 있다.** 2026-09-02 에
-`ruleset_check` 가 `승인 0 != 1` · `Code Owners False != True` 를 냈다.
-언제 낮아졌는지 기록이 없다 — `§76`("적어두지 않은 완화는 영구가 된다")
-그 자리다. 회수 때 함께 켠다.
+★ **`release` 의 승인은 한때 0으로 낮아져 있었다.** 2026-09-02 에
+`ruleset_check` 가 `승인 0 != 1` 을 냈고 언제 낮아졌는지 기록이 없다 —
+`DECISIONS §76`("적어두지 않은 완화는 영구가 된다") 그 자리다. 회수와 함께
+1로 되돌렸다. **Code Owners 는 그때도 지금도 끄는 것이 정답이며**
+`EXPECT["release"]["codeowners"]` 가 `False` 다.
 
-★ **저장소 admin 은 팀 전원 다섯이다.**
+★ **저장소 admin 은 넷이다.**
 
-    AIMasterFox  diyon13  gayeoniii  marscoolcat  wlsdnr052475
+    diyon13  gayeoniii  marscoolcat  wlsdnr052475
 
 bypass 는 개인이 아니라 역할에 준다. **admin 이 늘면 우회 가능자도 는다.**
-`ruleset_check` 의 `ADMINS` 가 이 명단이며 실물과 다르면 운다. 09-02 에
-bypass 를 걷을 때 admin 도 함께 줄인다 — 릴리즈 매니저 외에는 write 로
-충분하다.
+`ruleset_check` 의 `ADMINS` 가 이 명단이며 실물과 다르면 운다. 이탈자
+`AIMasterFox` 는 2026-09-03 에 bypass 회수와 함께 뺐다. **남은 넷은 admin 을
+유지한다** — 1인 파트가 둘이라 릴리즈 매니저 하나로 줄이면 나머지가 자기
+파트 설정을 못 만진다. 줄이려면 `ADMINS` 를 먼저 고치고 그다음이 실물이다.
 
 ★ `gh api .../rulesets` **목록 조회는 `bypass_actors` 를 빈 배열로 준다.**
 개별 조회 `.../rulesets/{id}` 가 실물이다. 2026-09-01 에 목록 조회를 믿고
@@ -1423,7 +1436,9 @@ bypass 를 걷을 때 admin 도 함께 줄인다 — 릴리즈 매니저 외에�
 1인 파트다. 승인 1을 걸면 영구 차단된다. 실제로 막는 것은 승인이 아니라
 `contract-shared` 다. **게이트는 `main` 하나로 모은다.**
 
-### 12-1b. 브랜치 이름과 보호\n\n★ **머지 방식은 PR 종류가 정한다.** `main` · `dev` 는 Merge 단독이다.
+### 12-1b. 브랜치 이름과 보호
+
+★ **머지 방식은 PR 종류가 정한다.** `main` · `dev` 는 Merge 단독이다.
 `part/**` 만 둘을 허용하며 기준은 취향이 아니라 사실이다 —
 
     feat → part   작업            squash
@@ -1436,7 +1451,10 @@ bypass 를 걷을 때 admin 도 함께 줄인다 — 릴리즈 매니저 외에�
 ★ 실물 대조는 `uv run python tools/ruleset_check.py` 가 한다.
 정본은 그 파일의 `EXPECT` 이며 이 표와 `web/workflow.html` 의 `§12-1` 카드는
 사람이 읽는 사본이다.
-강제자 — `tests/test_workflow_html_sync.py::test_ruleset_policy_agrees_across_three_places`
+강제자 — `tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check`
+★ 그 검사는 이름·대상 ref·머지 방식만 본다. **승인 수와 Code Owners 는 아무
+검사도 대조하지 않는다** — 이 표와 `EXPECT` 가 갈려도 조용하다. 릴리즈 직전에
+`ruleset_check` 를 치는 것이 그 자리를 메우는 유일한 수단이다.
 
 ★ 접두사를 섞지 않는다. 통합 브랜치는 `part/`, 임시 브랜치는 `feat/` 다.
 둘 다 `feat/` 로 두면 룰셋이 구분하지 못해 임시 브랜치까지 force push 가
@@ -1451,15 +1469,16 @@ bypass 를 걷을 때 admin 도 함께 줄인다 — 릴리즈 매니저 외에�
 풀어도 계속 막힌다. 규칙이 둘이면 **끄는 사람이 무엇을 껐는지 모른다.**
 브랜치 보호 규칙은 삭제했다. 이 표가 유일한 정본이며 문서는 룰셋만 적는다.
 
-★ 이 표는 **목표값**이다. 지금 어긋난 것은 위의 `bypass_actors` 한 건이며
-회수일은 2026-09-03 이다. 룰셋 실물과의 대조는 `ruleset_check` 가 한다.
+★ 이 표는 **목표값이 아니라 지금 값**이다. 어긋난 항목은 없으며 확인은
+`uv run python tools/ruleset_check.py` 하나로 한다. **이 문서가 아니라 그
+도구의 초록불이 근거다** — 룰셋은 저장소 밖이라 문서만 봐서는 알 수 없다.
 
-
-★ **bypass 회수일은 오창준 이탈일(2026-09-03)이며 검사가 든다.** 그날이 지나면
-`doc_fsck ⑤` 가 빨간불을 내고 회수하거나 날짜를 다시 정하기 전에는
-안 풀린다. `DECISIONS §80` 이 한시로 부여하고 회수를 사람 기억에
-맡겼는데, **한시가 한시로 끝나려면 시계가 있어야 한다.**
-같은 날짜를 `web/playbook.html` 의 `data-expires` 가 함께 든다.
+★ **회수 게이트는 지금 걸 대상이 없어 꺼져 있다.** `DECISIONS §80` 이
+bypass 를 한시로 부여하고 회수를 사람 기억에 맡겼으므로 `doc_fsck ⑤` 를
+시계로 세웠고, 2026-09-03 회수와 함께 `doc_fsck.DEPARTURE` 를 `None` 으로
+내렸다. **절과 기계는 남아 있다** — 다음 한시 예외가 생기면 `DEPARTURE` ·
+`LEAVING` 두 줄만 채우면 즉시 시계가 돈다. `web/playbook.html` 의
+`data-expires` 도 같이 걷었으며 남아 있으면 `doc_fsck ⑤` 가 그것만 잡는다.
 
 ### 12-2. 머지 방식
 
@@ -1544,6 +1563,7 @@ fix:  버그
 | `contract` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
 | `지도 배포` (`pages.yml`) | `main` 의 `web/**` 변경 | `web/` **전체** 배포 |
 | `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` 변경 | 재생성 후 `web/` **전체** 배포 |
+| `기획서 배포` (`proposal.yml`) | `main` 의 `docs/proposal.docx` · `web/proposal.html` · `stage_pages.py` 변경 | `stage_pages` 후 `web/` **전체** 배포 |
 
 ★ **워크플로 이름은 촉발 조건이지 배포 대상이 아니다.** 둘 다 사이트
 전체를 올린다. Pages 는 저장소당 사이트가 하나라, 한쪽이 부분만 올리면
@@ -1568,7 +1588,7 @@ fix:  버그
 강제자 — `tests/test_guards.py` 의 트리거 대조
 
 CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소에 없기 때문이다.
-파이프라인은 GIS 담당 로컬에서만 돈다.
+파이프라인은 매체를 가진 기계에서만 돈다(§14-7).
 
 ### 12-8. 배포
 
@@ -1614,7 +1634,7 @@ GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 
 - ★ **한 대는 단일 장애점이다.** 그 사실을 숨기지 않는다 — 재부팅 시
   자동 복구는 `restart: unless-stopped` 하나이고, 인스턴스가 죽으면
   사람이 띄운다. **중간평가까지는 그것으로 충분하고, 부족해지는 시점이
-  곧 ECS 로 가는 시점이다**(§93).
+  곧 ECS 로 가는 시점이다**(`DECISIONS §93`).
 
 ### 12-8a. 매체 저장 — 밑그림
 
@@ -1653,7 +1673,7 @@ GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 
 
     0  uv run python tools/release_brief.py --base main --md
        → 그 표를 PR 본문에 붙인다. 리뷰어가 볼 것이 그것이다
-    1  dev → main   PR · merge commit · 승인 1 + Code Owners
+    1  dev → main   PR · merge commit · 승인 1 (Code Owners 는 끈다 §12-1a)
        ★ 머지 완료를 확인한 뒤 2 로 간다
          gh pr merge <번호> --merge
          git switch main && git pull --ff-only && git log --oneline -1
@@ -1852,8 +1872,9 @@ verify.sh   코드가 도는가
 ship.py     내보내도 되는가 (위 + 문서 4축 + 위생 + git 상태)
 ```
 
-`ship.py` 가 `verify.sh` 를 부르므로 중복이 없다. CI 가 지금 브랜치를
-감시하는지도 확인하므로 검사 없이 머지되는 일이 없다.
+`ship.py` 가 `verify.sh` 를 부른다. `docnum_check` · `tidy` · `golden` 셋은
+양쪽에서 돌며, `ship.py` 쪽은 문서 4축·git 상태와 묶어 판정한다.
+CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머지되는 일이 없다.
 
 머지 뒤 로컬 찌꺼기는 `uv run python tools/tidy.py --yes` 로 정리한다.
 죽은 upstream · 머지된 브랜치 · 백업 폴더 · 캐시를 본다.
@@ -1867,11 +1888,13 @@ ship.py     내보내도 되는가 (위 + 문서 4축 + 위생 + git 상태)
 ### 14-4a. 사람이 부르는 나머지 도구
 
     pull_data.py     **반입 입구.** Downloads → landing → raw → norm 여덟 단계
-    doc_fsck.py      문서끼리 어긋난 데가 있는가 — 여덟(§87 · §88-3 · §91)
+                     (intake · stage · verify · prune · quarantine ·
+                      judge · prep --apply · prep --check)
+    doc_fsck.py      문서끼리 어긋난 데가 있는가 — 여덟
+                     (`DECISIONS §87` · `§88-3` · `§91`)
     doctor.py        대장 · 실물 · 백업을 한 화면에. **매일 첫 번째로 본다**
     refcheck.py      문서·코드의 참조가 낡았는가
     intake.py        받은 것을 landing 으로 들인다
-    absorb.py        landing 을 raw 로 흡수한다
     triage.py        받은 더미를 분류한다
     docpatch.py      docx 를 규칙으로 고친다
     docx_fix.py      docx 위생
@@ -1879,8 +1902,9 @@ ship.py     내보내도 되는가 (위 + 문서 4축 + 위생 + git 상태)
 ### 14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다
 
     pr_body_check    PR 본문이 템플릿을 채웠는가
-    doc_fsck         문서끼리 어긋난 데가 있는가. ★ 2026-09-02 이 지나면
-                     bypass 회수 전까지 안 풀린다(§88-5)
+    doc_fsck         문서끼리 어긋난 데가 있는가. ★ ⑤ 만료 게이트는
+                     2026-09-03 회수로 걸 대상이 없어 꺼져 있다
+                     (`DECISIONS §88-5` · §12-1b)
     encoding_check   UTF-8 · LF · 개행
     treecheck        트리 구조
     docx_check       기획서 숫자 ↔ 대장
@@ -1954,13 +1978,17 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 ★ **`web/data` 를 커밋하는 이유가 이것이다.** UI 담당이 raw 없이 화면을
 만들 수 있어야 한다(`.gitignore` 6줄).
 
-★ **인수인계 방법 — `FIRE_LANE_DATA` 폴더를 통째로 압축해 넘긴다.**
+★ **2026-09-02 우지혜에게 전달 완료.** 방법은 아래가 정본이며 다음
+인수인계 때 그대로 쓴다 — `FIRE_LANE_DATA` 폴더를 통째로 압축해 넘긴다.
 받는 쪽은 임의 경로에 풀고 `.env` 에 `FIRE_LANE_DATA` 를 그 경로로 적는다.
 원본을 새로 받는 절차는 §14-3 이지만, 재취득은 기관 신청이 걸려 있어
 빠르지 않다. **압축 전달이 정본 경로다.**
 
-★ 파이프라인은 **GIS 담당 로컬에서만 돈다.** CI 는 데이터를 만들지
-않는다(§12-7). 이 매체가 없으면 `uv run fire-lane` 이 첫 단계에서 멈춘다.
+★ **2026-09-02 우지혜에게 사본 전달 완료.** 원본 매체는 오창준 소유이며
+  2026-09-03 이탈 후에는 우지혜 로컬이 유일한 실행 환경이다. CI 는
+데이터를 만들지 않는다(§12-7). 이 매체가 없으면 `uv run fire-lane` 이 첫
+단계에서 멈춘다. **"GIS 담당" 이라고 적지 않는다** — 담당이 바뀌면 그
+말이 누구를 가리키는지 다음 사람이 못 찾는다.
 
 ## 15. 대외 산출물
 
@@ -2072,7 +2100,7 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 | 상수 | 값 | 상태 |
 |---|---:|---|
 | `CCTV_RANGE` | 25.0 | 354구간의 판정을 가른다. §16-1 |
-| `WMAX_CAP` | 60.0 | ★ 주석에는 40m 로 적혀 있다. 문서-코드 불일치 |
+| `WMAX_CAP` | 60.0 | 담~담 상한. 근거는 "15m 로 잡으면 대로가 전멸한다" 뿐이다 |
 | `SNAP_MAX` | 6.0 | 눈대중 |
 | `MIN_SEG_LEN` | 3.0 | 눈대중 |
 
@@ -2184,11 +2212,16 @@ uv run python -m firelane.datalog fsck
 
 폴더는 그대로 **제공기관**으로 구분한다.
 
+★ **정본은 `sources.yaml` 의 `layers.raw.providers` 다.** 아래는 사람이 읽는
+사본이고 `firelane.providers.spec()` 이 유일한 조회 경로다 — 이 목록이 한때
+다섯 벌이었고 값이 갈렸다(DECISIONS §73).
+
 ```
-juso     도로명주소(주소기반산업지원)     its      국가교통정보센터
-ngii     국토정보플랫폼                  vworld   브이월드
-safety   공공데이터포털(안전)             gjcity   공공데이터포털(광주 동구)
-sbiz     공공데이터포털(소상공인)         eais     건축HUB
+juso     도로명주소 안내시스템      its      국가교통정보센터
+ngii     국토지리정보원            vworld   브이월드
+safety   소방청·행정안전부          gjcity   전남광주통합특별시
+sbiz     소상공인시장진흥공단       eais     건축행정시스템 세움터
+nsdi     국가공간정보포털
 ```
 
 ★ `ngii` 와 `vworld` 를 나눈다. 같은 수치지형도라도 **원천이 다르면 폴더가
@@ -2604,7 +2637,7 @@ data/norm/                             값은 안 바꾼다
 data/processed/
 ```
 
-★ **입구는 `tools/pull_data.py` 하나다.** 위 여섯을 순서대로 돌리고 한
+★ **입구는 `tools/pull_data.py` 하나다.** 여덟 단계를 순서대로 돌리고 한
 단계라도 실패하면 멈춘다. 사람이 순서를 외우면 반드시 빠뜨린다 —
 2026-09-01 에 `acquire` 를 인자 없이 돌려 관측만 하고 편입이 된 줄 알았다
 (DECISIONS §88).
@@ -2899,9 +2932,9 @@ BEV 는 디버그 플래그 뒤에 둔다.
       그중 blocked          41      ★ 폭 0.41m 를 70회 지나간다
       폭 3.0m 미만         168
 
-★ **지도가 지금 보여주는 것은 1차다.** `route_vehicle.csv` 는 파일로만
-나가고 `web/data` 로 가지 않는다. 발표에서 "판정을 반영한 경로" 를
-보이려면 `publish_web.py` 가 이것을 실어야 한다. **남은 작업은 그것이다.**
+★ **지도가 지금 보여주는 것은 1차다.** 2차는 `publish_web.py:379` 가
+`web/data/route_vehicle.json` 으로 **이미 발행한다**(2026-08-31). 남은 것은
+발행이 아니라 **소비**다 — `web/js/` 어디에도 그 파일을 읽는 코드가 없다.
 
 ★ `tools/route_probe.py` 의 머리말 주석은 `_write_route()` 도입 **이전**에
 쓰였다. "비용 함수가 배선되지 않았다" 는 서술은 낡았다.
@@ -2929,11 +2962,15 @@ BEV 는 디버그 플래그 뒤에 둔다.
     web/data/_manifest.json     파일 목록과 해시
     web/data/hydrants·cctv·poi·buildings·mask·scope·boundary.geojson
 
-★ **`route_vehicle` 은 아직 안 나간다.** `data/processed/route_vehicle.csv`
-로만 있다. 앱이 판정 반영 경로를 그리려면 `publish_web.py` 가 이것을
-`web/data/route_vehicle.json` 으로 실어야 한다. **남은 작업은 그것 하나다.**
+    web/data/route_vehicle.json 차량 비용 경로. 1,101구간
 
-    스키마(제안)  { "<seg_uid>": { "use": 1, "cost": 90.9, "passable": 1 } }
+★ **`route_vehicle.json` 은 나간다.** `publish_web.py:379` 가
+`data/processed/route_vehicle.csv` 를 읽어 발행한다. **읽는 쪽이 없다** —
+`web/js/` 에 참조 0건이라 83KB 가 소비자 없이 커밋돼 있다. 남은 작업은
+화면 결선이고 PLAN 이 그 항목을 든다.
+
+    스키마(실물)  { "<seg_uid>": { "use": 1, "cost": 90.9,
+                                  "passable": 1, "reachable": 1 } }
     조인 키       seg_uid — `seg_id` 는 실행 간 유지되지 않는다(§11)
 
 ★ **출발지는 119안전센터 2곳으로 고정이다**(`seg/params.py::STATIONS`).

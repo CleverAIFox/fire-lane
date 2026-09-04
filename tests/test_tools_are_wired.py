@@ -6,7 +6,7 @@ test_tools_are_wired.py — 만들어놓고 안 부르는 도구가 있는가.
 2026-09-02. `tools/docx_check.py` 에 캡션 절을 새로 붙였다. 그날 그것으로
 기획서의 `1,102` 셋과 낡은 캡션 둘을 잡았다. 그런데 **그 도구는
 `verify.sh` 에도 CI 에도 테스트에도 걸려 있지 않았다.** 사람이 손으로
-칠 때만 돌았고, 그 사람은 2026-09-07 에 나간다.
+칠 때만 돌았고, 그 사람은 2026-09-03 에 나간다.
 
 같은 상태인 것이 넷이었다 — `docx_check` · `refcheck` · `treecheck` ·
 `triage`. 만드는 것과 **거는 것**은 다른 일인데 거는 쪽에 강제자가 없었다.
@@ -59,7 +59,6 @@ EXEMPT = {
     "pull_data": "데이터 반입. raw 를 건드린다",
     "intake": "Downloads → landing 게이트",
     "acquire": "landing → raw 획득 게이트",
-    "absorb": "이관→편입→검증→사본삭제. 파일을 지운다",
     "doctor": "전 계층 진단. 데이터 레이크가 있어야 한다",
     "ruleset_check": "관리자 토큰이 필요해 CI 에 못 붙인다(MASTER §12-1)",
     "docx_fix": "기획서를 실제로 고친다. 사람이 확인하고 친다",
