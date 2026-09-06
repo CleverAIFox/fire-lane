@@ -71,6 +71,38 @@ jobs:
           sed -i "s/?v=BUILD/?v=$B/g" web/index.html
           grep -c "?v=$B" web/index.html
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/navi/package-lock.json
+
+      - name: 내비 빌드 (web/navi → web/navi/dist)
+        # ★ `web/navi/dist` 는 .gitignore 다. `web/data` 를 커밋하는 것과
+        #   반대인데 이유가 다르다 — web/data 는 재생성에 raw 2.5GB 가
+        #   필요하고 dist 는 `npm ci` 하나면 된다.
+        #
+        # ★ `npm ci` 다. `install` 은 package-lock 을 갱신할 수 있고,
+        #   CI 가 잠금을 바꾸면 "내 기계에서는 됐는데" 가 재현된다.
+        #   `uv sync --frozen` 과 같은 자리다.
+        #
+        # ★ base 는 `github.repository` 에서 온다. Pages 가
+        #   `https://<user>.github.io/<repo>/` 로 서빙하므로 내비는
+        #   `/<repo>/navi/` 아래에 산다. 저장소 이름을 손으로 박지 않는다.
+        #
+        # ★ 빌드가 실패하면 **배포가 멈춘다.** 낡은 내비가 올라가면
+        #   그것이 web/data 와 갈리고, 갈렸다는 것을 아무도 모른다.
+        env:
+          VITE_MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
+        run: |
+          REPO="${GITHUB_REPOSITORY#*/}"
+          echo "base = /$REPO/navi/"
+          cd web/navi
+          npm ci
+          VITE_BASE="/$REPO/navi/" npm run build
+          test -f dist/index.html || { echo "★ dist/index.html 이 없다"; exit 1; }
+          echo "내비 빌드 $(du -sh dist | cut -f1)"
+
       - name: 배포 준비 (docs/proposal.docx → web/)
         run: uv run python tools/stage_pages.py
       - uses: actions/configure-pages@v5
