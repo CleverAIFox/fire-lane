@@ -12,6 +12,7 @@
 **판정할 수 없는 이유까지** 지도에 표시한다.
 
 **지도** https://woongtopia.github.io/fire-lane/
+**내비** https://woongtopia.github.io/fire-lane/navi/
 
 ---
 
@@ -399,9 +400,16 @@ web/
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
 대장        `datasets` 54종 · `retired` 10종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
+내비        web/navi/ — GPS 스냅 · A* · 턴바이턴. edge_cost 는 파이썬과 전량 대조
+KPI         폭 미인지 내비가 통행불가를 지나는 목적지 224/588 (38%)
 ```
 
 `영상판정 불가` 354 는 전부 CCTV 사각이다. 폭 산출 불가는 0 이다.
+
+**시간을 줄이는 앱이 아니라 못 가는 길로 보내지 않는 앱이다.** 폭을 모르는
+내비의 최단경로는 세 번 중 한 번 이상 소방차가 못 지나가는 구간을 지난다.
+우리 경로는 그것을 피하면서 실거리가 더 길지 않다 — 중앙값 1.00배.
+숫자는 `uv run python tools/kpi.py` 가 계산 조건과 함께 낸다.
 사유는 `no_cctv_band` 152 · `no_cctv_thin` 128 · `no_cctv_narrow` 62 ·
 `no_cctv_single` 12 넷으로 갈라 적는다.
 
@@ -437,7 +445,7 @@ web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_ma
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
 `web/data/`(40MB 상한)만으로 작업할 수 있다.
 
-배포된 화면 넷이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른
+배포된 화면 다섯이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른
 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
 가는 길은 여기 하나다(DECISIONS §99).
 
@@ -446,6 +454,7 @@ web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_ma
 협업 방침    woongtopia.github.io/fire-lane/workflow.html   MASTER §12 생성물
 플레이북     woongtopia.github.io/fire-lane/playbook.html   상황별 안내서
 기획서       woongtopia.github.io/fire-lane/proposal.html   docs/proposal.docx 를 그대로 그린다
+내비        woongtopia.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
 ```
 
 ## 문서는 어디에
