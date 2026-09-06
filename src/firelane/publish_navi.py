@@ -100,8 +100,8 @@ def _verdict_style() -> dict:
         rgb = [int(x) for x in c.split(",")]
         light = [int(x) for x in lc.split(",")] if lc else rgb
         out[k] = {
-            "color": "rgb(%d,%d,%d)" % tuple(rgb),
-            "lightColor": "rgb(%d,%d,%d)" % tuple(light),
+            "color": f"rgb({rgb[0]},{rgb[1]},{rgb[2]})",
+            "lightColor": f"rgb({light[0]},{light[1]},{light[2]})",
             "label": label,
             "desc": desc,
         }
@@ -118,7 +118,7 @@ def _verdict_style() -> dict:
 
 def _node_key(x: float, y: float, tol: float) -> tuple[int, int]:
     """미터 좌표를 tol 격자로 양자화한다. union-find 의 씨앗."""
-    return (int(round(x / tol)), int(round(y / tol)))
+    return (round(x / tol), round(y / tol))
 
 
 def _isna(v) -> bool:

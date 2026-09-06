@@ -158,7 +158,7 @@ def main():
             v = sorted(g[k])
             hi = sum(1 for x in v if x >= 0.5)
             med = v[len(v) // 2]
-            print(f"  {str(k):>10s}  n={len(v):4d}  중앙 {med:.3f}  "
+            print(f"  {k!s:>10s}  n={len(v):4d}  중앙 {med:.3f}  "
                   f"conf>=0.5 {hi:4d} ({hi/len(v)*100:3.0f}%)")
 
     summarize(lambda r: r["verdict"], "판정별")
