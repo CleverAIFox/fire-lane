@@ -1332,7 +1332,7 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 | `2` 작업 끝 | §12-6 · §12-8c |
 | `3` 데이터 반입 | §18-11 |
 | `4` 충돌 | §12-4 |
-| `5` CI 빨간불 | §12-7 |
+| `5` CI 빨간불 | §12-7 · §12-7a |
 | `6` 롤백 · 릴리즈 | §12-2 · §12-8b |
 | `구조` 브랜치 · 권한 | §12-1 · §12-1b · §12-3 · §12-9 · §12-10 |
 | `예외` 지금 어긋난 것 | §12-1a |
@@ -1561,7 +1561,7 @@ fix:  버그
 | 워크플로 | 시점 | 하는 일 |
 |---|---|---|
 | `contract` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
-| `지도 배포` (`pages.yml`) | `main` 의 `web/**` 변경 | `web/` **전체** 배포 |
+| `지도 배포` (`pages.yml`) | `main` 의 `web/**` 변경 | 내비 빌드 후 `web/` **전체** 배포 |
 | `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` 변경 | 재생성 후 `web/` **전체** 배포 |
 | `기획서 배포` (`proposal.yml`) | `main` 의 `docs/proposal.docx` · `web/proposal.html` · `stage_pages.py` 변경 | `stage_pages` 후 `web/` **전체** 배포 |
 
@@ -1589,6 +1589,31 @@ fix:  버그
 
 CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소에 없기 때문이다.
 파이프라인은 매체를 가진 기계에서만 돈다(§14-7).
+
+### 12-7a. 내비 빌드
+
+★ **`지도 배포` 가 내비를 빌드한다**(2026-09-06). `web/navi/dist` 는
+`.gitignore` 라 저장소에 없고 CI 가 만든다 — `web/data` 를 커밋하는 것과
+반대 원칙인데 이유가 다르다. `web/data` 는 재생성에 raw 2.5GB 가 필요하고
+`dist` 는 `npm ci` 하나면 된다.
+
+    setup-node → npm ci → VITE_BASE=/<repo>/navi/ npm run build → dist 확인
+
+★ `npm ci` 다. `install` 은 `package-lock.json` 을 갱신할 수 있고, CI 가
+  잠금을 바꾸면 "내 기계에서는 됐는데" 가 그대로 재현된다.
+  `uv sync --frozen` 과 같은 자리다.
+
+★ base 를 `github.repository` 에서 읽는다. Pages 가
+  `https://<user>.github.io/<repo>/` 로 서빙하므로 내비는 `/<repo>/navi/`
+  아래에 산다. **저장소 이름을 손으로 박지 않는다.**
+
+★ **빌드가 실패하면 배포가 멈춘다.** `dist/index.html` 존재를 확인하고
+  없으면 죽는다. 낡은 내비가 올라가면 그것이 `web/data` 와 갈리고,
+  갈렸다는 것을 아무도 모른다.
+
+★ Mapbox 토큰은 `secrets.MAPBOX_TOKEN` 이다. **없어도 배포된다** —
+  `config.ts` 의 `MATCHING_ENABLED` 가 false 로 떨어지고 음성 안내가 전부
+  자체 문구로 나간다. 소유자가 바뀌면 Secret 하나만 갈아끼운다.
 
 ### 12-8. 배포
 
@@ -2056,6 +2081,10 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 | 81 | 08-14 | 교차부 제외는 `A0080000` 실제 폴리곤으로 판정 | 적용 |
 | 82 | 08-14 | `A0020000.도로폭 0.500` 은 차량 통행 불가 통로 코드 | 적용 |
 | 83 | 08-14 | 마커는 `config.js` 스펙이 자기 데이터·팝업·표현을 전부 든다 | 적용 |
+| 115 | 09-06 | 안내 문턱은 거리가 아니라 시간이다 (12·6·2.5초) | 적용 |
+| 116 | 09-06 | 스냅은 활성 경로에 할인을 준다. 하드 제한이 아니다 | 적용 |
+| 117 | 09-06 | 하이브리드 경계는 폭 3.0m — 물리가 고른 선이다 | 적용 |
+| 118 | 09-06 | 내비 계층은 의존이 한 방향이다. 순환은 setState 되먹임에서 온다 | 적용 |
 
 ★ **번호는 재사용하지 않는다.** 새 결정은 `DECISIONS.md` 의 다음 절 번호로
 기록하고, 그것이 효력을 갖는 규칙이면 이 표에 한 줄을 더한다.
@@ -2103,6 +2132,13 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 | `WMAX_CAP` | 60.0 | 담~담 상한. 근거는 "15m 로 잡으면 대로가 전멸한다" 뿐이다 |
 | `SNAP_MAX` | 6.0 | 눈대중 |
 | `MIN_SEG_LEN` | 3.0 | 눈대중 |
+| 115 | 09-06 | 경로 계산은 클라이언트에서. 서버가 필요한 순간이 오지 않게 한다 | 적용 |
+| 116 | 09-06 | KPI 는 시간 단축이 아니라 진입 실패 방지다 (38%) | 적용 |
+| 117 | 09-06 | 회전 안내 기준은 각도가 아니라 분기 유무다 | 적용 |
+| 118 | 09-06 | 안내 문턱은 거리가 아니라 시간이다 (12·6·2.5초) | 적용 |
+| 119 | 09-06 | 스냅은 활성 경로에 할인을 준다. 하드 제한이 아니다 | 적용 |
+| 120 | 09-06 | 하이브리드 경계는 폭 3.0m — 물리가 고른 선이다 | 적용 |
+| 121 | 09-06 | 내비 계층은 의존이 한 방향이다. 순환은 setState 되먹임에서 온다 | 적용 |
 
 ★ **`XSEC_EXCL 5.0` 은 주 경로에서만 해소됐다.** `A0080000` 평면교차점
 2,025개 실형상이 판정을 맡고, **형상이 없는 교차로에서는 이 상수가 폴백으로
@@ -2952,32 +2988,49 @@ BEV 는 디버그 플래그 뒤에 둔다.
 
 ### 20-5. 앱은 무엇을 받는가 — 엔드포인트
 
-**서버가 없다. 정적 파일이 인터페이스다.**
+서버가 없다. **정적 파일이 인터페이스다.**
 
-파이프라인은 오프라인 배치다(전량 285초). 런타임 계산이 없으므로 앱은
-`web/data/` 를 `fetch` 하기만 한다. 파이썬 코드를 앱으로 옮기지 않는다.
+```
+web/data/segments.geojson   판정 · 폭 · 도형          지도가 읽는다
+web/data/route_vehicle.json 안전센터 2곳 사전계산      대조에 쓴다
+web/data/navi_graph.json    노드 989 · 엣지 1,101     내비가 읽는다  468KB
+web/data/fleet.json         차종 10종 15대
+```
 
-    web/data/segments.geojson   구간 · 판정 · 폭 · route_usage(1차)
-    web/data/view.json          중심 · 범위 · 캐시 스탬프(build)
-    web/data/_manifest.json     파일 목록과 해시
-    web/data/hydrants·cctv·poi·buildings·mask·scope·boundary.geojson
+임의 출발지 경로 탐색은 `edge_cost` 규칙을 JS 로 옮기는 유일한 지점이다.
+**2026-09-06 에 했다**(DECISIONS §112).
 
-    web/data/route_vehicle.json 차량 비용 경로. 1,101구간
+`web/navi/src/domain/vehicle.ts` 가 `edge_cost` 를 옮겨 들고,
+`verifyAgainstPrecomputed()` 가 앱이 켜질 때마다 `route_vehicle.json` 의
+파이썬 결과와 대조한다 — 1,101구간 전량 일치.
 
-★ **`route_vehicle.json` 은 나간다.** `publish_web.py:379` 가
-`data/processed/route_vehicle.csv` 를 읽어 발행한다. **읽는 쪽이 없다** —
-`web/js/` 에 참조 0건이라 83KB 가 소비자 없이 커밋돼 있다. 남은 작업은
-화면 결선이고 PLAN 이 그 항목을 든다.
+★ 두 언어에 같은 규칙이 산다. 원본이 바뀌면 사본도 바꿔야 하고, 그 강제자가
+  저 대조 함수다. **소비자가 없던 83KB 파일이 이제 골든 테스트다.**
 
-    스키마(실물)  { "<seg_uid>": { "use": 1, "cost": 90.9,
-                                  "passable": 1, "reachable": 1 } }
-    조인 키       seg_uid — `seg_id` 는 실행 간 유지되지 않는다(§11)
+★ 발행은 새 파일로만 했다. `segments.geojson` 에 컬럼을 더하지 않는다 —
+  golden 지문이 걸려 있고 `route_vehicle.csv` 를 별 파일로 뺀 것과 같다(§20-2).
 
-★ **출발지는 119안전센터 2곳으로 고정이다**(`seg/params.py::STATIONS`).
-경로가 사전 계산이라 임의 출발지는 지원하지 않는다. 지원하려면 비용
-그래프를 JSON 으로 내고 앱이 직접 탐색해야 한다 — `edge_cost` 의 규칙을
-JS 로 옮기는 유일한 지점이다. 하지 않았다.
+#### 20-5a. `navi_graph.json` 이 싣는 것
 
-★ GPS 1인칭 시점은 **전적으로 앱 몫**이다. 현재 위치는 브라우저가 주고
-경로는 위 파일에 있다. 파이프라인과 무관하다.
+**소비자를 먼저 만들고 필드를 늘린다.** `route_vehicle.json` 이 83KB 로
+발행되고 소비자가 0이던 상태를 반복하지 않는다.
 
+```
+seg_uid · verdict · width_min_m · width_max_m · length_m
+seg_label · road_name · in_emd                       경로·표시
+width_cov · n_sample · cctv_dist_m · unknown_reason  병목 상세 패널
+road_bt_m                                            속도 추정
+coords · a · b                                       도형 · 접합 노드
+style                                                판정 4색
+```
+
+★ `width_cov` 는 화면이 **"측정 신뢰도"** 로 띄운다. `n_sample` 이 1이면
+  `verdict()` 가 통과 확정을 보류한다는 사실도 함께 보여준다.
+
+★ `road_bt_m` 은 **판정에 안 쓴다.** 정수 90% · 2.0 에 30% 몰려 있어 폭
+  판정의 근거가 못 된다(대장 `road_link.note`). `domain/speed.ts` 가 폭이
+  없을 때 속도 추정에 쓸 뿐이고, 그 표 자체가 미검증이라 이 해상도로 족하다.
+
+★ `style` 은 `web/config.js` 에서 뽑아 싣는다. 앱이 `config.js` 를 직접 못
+  읽는다 — `const CONFIG = {` 로 시작하는 스크립트라 ES 모듈이 아니다.
+  **정본은 여전히 `config.js` 하나다**(§10-2).
