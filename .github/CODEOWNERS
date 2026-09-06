@@ -141,3 +141,10 @@
 /web/workflow.html            @woongtopia/gis     # !strict
 /web/playbook.html      @woongtopia/gis           # !strict
 
+
+# ── React 내비 (PLAN #63) ──────────────────────────────────
+# lib/ 는 로직이라 계약 대조가 걸린다. components/ 는 화면이라 UI 소관이다.
+# 둘을 가른 이유는 지혜님이 화면만 고칠 때 로직 리뷰가 걸리지 않게 하려는 것이다.
+/web/navi/src/lib/        @CleverAIFox   # !strict
+/web/navi/src/components/ @CleverAIFox
+/web/navi/                @CleverAIFox
