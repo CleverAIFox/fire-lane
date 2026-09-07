@@ -1,0 +1,75 @@
+# React 내비를 배포한다.
+#
+# ★ 왜 별도 워크플로인가
+#   Pages 는 저장소당 사이트 하나라 어느 워크플로가 돌든 web/ **전체**를
+#   올린다. 그래도 **무엇이 바뀌면 다시 올릴 것인가**는 갈라야 한다 —
+#   `proposal.yml` 머리말이 적은 그대로다. 내비만 고쳤는데 아무 워크플로도
+#   안 돌면 뷰어가 낡은 앱을 본다. 2026-09-02 에 기획서가 그 상태였다.
+#
+# ★ 넷이 같은 `concurrency: group: pages` 로 직렬화된다. 부분 배포가 서로를
+#   덮던 2026-08-31 사고의 해소책은 "워크플로를 줄이는 것"이 아니라
+#   "전부 web/ 전체를 올리는 것"이었다. 그 규약을 그대로 따른다.
+#
+# ★ 빌드는 `.github/actions/build-navi` 가 정본이다. 넷이 같이 쓴다 —
+#   블록을 복붙하면 정본이 넷이 되고 반드시 어긋난다(R3).
+name: 내비 배포
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/navi/**'
+      - '.github/actions/build-navi/action.yml'
+      - '.github/workflows/navi.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false     # 나머지 셋과 직렬화한다
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}navi/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - run: uv sync --frozen --all-extras
+
+      # ★ 이 워크플로도 web/ 전체를 올린다. 생성물을 안 만들면 낡은
+      #   협업 방침이 같이 배포된다. 넷이 같은 순서를 유지한다.
+      - name: MASTER §12 → web/workflow.html
+        run: uv run python tools/render_workflow.py
+
+      - name: 캐시 무효화 스탬프 주입
+        run: |
+          B=$(sed -n 's/.*"build": *"\([0-9a-f]*\)".*/\1/p' web/data/view.json)
+          test -n "$B" || { echo "view.json 에 build 가 없다"; exit 1; }
+          echo "스탬프 $B"
+          sed -i "s/?v=BUILD/?v=$B/g" web/index.html
+
+      - uses: ./.github/actions/build-navi
+        with:
+          mapbox-token: ${{ secrets.MAPBOX_TOKEN }}
+
+      - name: 배포 준비 (docs/proposal.docx → web/)
+        run: uv run python tools/stage_pages.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,65 @@
+# 내비(React) 빌드 — 배포 워크플로 넷이 공유하는 정본.
+#
+# ★ 왜 합성 액션인가
+#   Pages 는 저장소당 사이트 하나라 배포 워크플로 넷이 전부 `web/` **전체**를
+#   올린다(proposal.yml 머리말). 그런데 `web/navi/dist` 는 `.gitignore` 라
+#   저장소에 없다 — **빌드하는 워크플로만 내비를 올린다.**
+#
+#   2026-09-05 에 내비를 붙이면서 `pages.yml` 에만 빌드를 넣었다. 그래서
+#   `docs.yml`(협업 방침) 이나 `proposal.yml`(기획서) 이 나중에 돌면
+#   `/navi/` 가 404 가 된다. `docs.yml` 머리말의 *"어느 쪽이 나중에 돌아도
+#   결과가 완전하다"* 가 그날부터 거짓이었다. **2026-08-31 부분 배포 사고와
+#   같은 형태다** — 그때는 파일이 빠졌고 이번엔 폴더가 빠진다.
+#
+#   같은 블록을 넷에 복붙하면 정본이 넷이 된다(R3). 한 곳에 둔다.
+name: 내비 빌드
+description: web/navi 를 빌드해 web/navi/dist 에 둔다. Pages 아티팩트에 실린다.
+
+inputs:
+  mapbox-token:
+    description: Mapbox public token. 없으면 스냅(Map Matching)이 죽는다.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+        cache: npm
+        cache-dependency-path: web/navi/package-lock.json
+
+    - name: 내비 빌드 (web/navi → web/navi/dist)
+      shell: bash
+      env:
+        VITE_MAPBOX_TOKEN: ${{ inputs.mapbox-token }}
+      run: |
+        # ★ 토큰이 없으면 여기서 죽는다. 종전에는 빈 문자열이 들어가고
+        #   `config.ts` 가 `?? ""` 로 받아 **빌드도 배포도 성공했다.**
+        #   런타임에 Map Matching 만 죽는다 — 초록불인데 실제로는 안 되는,
+        #   이 저장소가 반복해 겪은 그 형태다. 원인 자리에서 죽는 편이 낫다.
+        test -n "$VITE_MAPBOX_TOKEN" || {
+          echo "★ MAPBOX_TOKEN 시크릿이 없다."
+          echo "  Settings > Secrets and variables > Actions > New repository secret"
+          echo "  이름 MAPBOX_TOKEN · 값은 Mapbox 의 pk. 토큰"
+          echo "  ★ 번들에 박히므로 Mapbox 쪽에서 URL 제한을 같이 걸어라."
+          exit 1
+        }
+
+        # ★ base 는 `github.repository` 에서 온다. Pages 가
+        #   `https://<user>.github.io/<repo>/` 로 서빙하므로 내비는
+        #   `/<repo>/navi/` 아래에 산다. 저장소 이름을 손으로 박지 않는다.
+        REPO="${GITHUB_REPOSITORY#*/}"
+        echo "base = /$REPO/navi/"
+
+        # ★ `npm ci` 다. `install` 은 package-lock 을 갱신할 수 있고,
+        #   CI 가 잠금을 바꾸면 "내 기계에서는 됐는데" 가 재현된다.
+        #   `uv sync --frozen` 과 같은 자리다.
+        cd web/navi
+        npm ci
+        VITE_BASE="/$REPO/navi/" npm run build
+
+        # ★ 빌드가 실패하면 배포가 멈춘다. 낡은 내비가 올라가면 그것이
+        #   web/data 와 갈리고, 갈렸다는 것을 아무도 모른다.
+        test -f dist/index.html || { echo "★ dist/index.html 이 없다"; exit 1; }
+        echo "내비 빌드 $(du -sh dist | cut -f1)"
