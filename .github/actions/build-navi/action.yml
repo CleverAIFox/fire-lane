@@ -63,3 +63,33 @@ runs:
         #   web/data 와 갈리고, 갈렸다는 것을 아무도 모른다.
         test -f dist/index.html || { echo "★ dist/index.html 이 없다"; exit 1; }
         echo "내비 빌드 $(du -sh dist | cut -f1)"
+
+        # ★ 2026-09-07. **dist 를 navi/ 자리에 앉힌다.** 이 세 줄이 없어서
+        #   09-05 부터 내비가 안 떴다.
+        #
+        #   `upload-pages-artifact` 는 `path: web` 을 올린다. 그러면
+        #       web/navi/index.html       → /<repo>/navi/        소스
+        #       web/navi/dist/index.html  → /<repo>/navi/dist/   빌드본
+        #   이 되어 **소스가 빌드본을 가린다.** 브라우저가 받는 것은 Vite
+        #   개발용 `index.html` 이고 `<script src="/src/main.tsx">` 를 그대로
+        #   요청한다 — 404 다. 게다가 `VITE_BASE` 가 `/navi/` 라 `/navi/dist/`
+        #   로 직접 들어가도 자산 경로가 안 맞는다.
+        #
+        #   `pages_add_navi.py` 는 빌드 스텝만 넣고 **결과 URL 을 확인하지
+        #   않았다.** 빌드는 내내 성공하고 있었다. 자리가 틀렸을 뿐이다.
+        #
+        #   ★ 워킹트리를 부수지만 CI 는 일회용이고, 이 뒤 단계는 `web/navi`
+        #     소스를 읽지 않는다(stage_pages 는 docs/proposal.docx 만 만진다).
+        cd "$GITHUB_WORKSPACE/web"
+        mv navi/dist navi.dist
+        rm -rf navi
+        mv navi.dist navi
+
+        # ★ 자리가 맞는지 여기서 본다. 배포된 뒤에 브라우저로 확인하면
+        #   늦고, 캐시 때문에 원인도 안 갈린다.
+        grep -q 'src="/[^"]*/navi/assets/' navi/index.html || {
+          echo "★ navi/index.html 이 빌드본이 아니다 — 자리 바꾸기가 실패했다"
+          grep -o '<script[^>]*>' navi/index.html || true
+          exit 1
+        }
+        echo "자리 확인 OK  $(grep -o 'src=\"[^\"]*\"' navi/index.html | head -1)"
