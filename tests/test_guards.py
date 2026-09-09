@@ -635,9 +635,8 @@ def test_ingest_kinds_are_documented():
     #   `json_points` 는 ingest 에 있고 ledger_schema · inventory 에는 없었다.
     #   둘 다 실패하지 않고 조용히 건너뛰었으므로 아무도 못 봤다.
     #   정적 목록에는 반드시 역방향 검사를 붙인다(2026-09-04, 넷 고침).
-    from firelane.kinds import KINDS
-
     from firelane.inventory import PROBES
+    from firelane.kinds import KINDS
 
     assert impl == set(KINDS), (
         "ingest 분기와 kinds.KINDS 가 어긋난다.\n"
