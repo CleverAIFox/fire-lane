@@ -946,6 +946,9 @@ datasets:
       node_link 는 507배 오염 전력이 있는 소스다(PLAN §1-16). 판이 바뀌면
       이 내역서로 무엇이 늘었는지 먼저 본다.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['구분', '노선명', '노드(건)', '링크(건)', '링크연장(km)']
+      encoding_seen: 'cp949'
   # ── 도로 그래프 뼈대 ─────────────────────────────────────
   # ★ road_link / road_rw 는 juso_road_geom(291MB, 6월) 을 보고 있으나
   #   juso_elctrnmap(7MB, 7월) 의 TL_SPRD_MANAGE / TL_SPRD_RW 와 동일하다.
@@ -1114,13 +1117,6 @@ datasets:
     feeds_note: '- src/firelane/guards.py - src/firelane/ingest.py - src/firelane/inventory.py - src/firelane/ngii1k.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/seg/width.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/jijeok_probe.py - tools/ledger_stem.py - tools/width_fn.py'
     stems: [vworld_map1k, vworld_map1k_ngi]
     ext: [zip]
-    schema:
-      layers:
-      - A0010000
-      - A0020000
-      - A0033320
-      - A0080000
-      - C0220000
     scope: jngj-donggu        # 종전 '광주 동구 74도엽' — 산문이었다
     files:
       - vworld/vworld_map1k*_jngj-donggu_20260307.zip
@@ -1145,6 +1141,8 @@ datasets:
       ★ 행정구역 단위 취득은 스코프를 보장하지 않는다. 취득 후 반드시 스코프
         bbox 와 교차 검증할 것.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: []
   streetlight:
     feeds:
       - src/firelane/normalize_raw.py
@@ -1423,7 +1421,7 @@ datasets:
 
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['상가업소번호', '상호명', '지점명', '상권업종대분류코드', '상권업종대분류명', '상권업종중분류코드', '상권업종중분류명', '상권업종소분류코드', '상권업종소분류명', '표준산업분류코드', '표준산업분류명', '시도코드', '시도명', '시군구코드', '시군구명', '행정동코드', '행정동명', '법정동코드', '법정동명', '지번코드', '대지구분코드', '대지구분명', '지번본번지', '지번부번지', '지번주소', '도로명코드', '도로명', '건물본번지', '건물부번지', '건물관리번호', '건물명', '도로명주소', '구우편번호', '신우편번호', '동정보', '층정보', '호정보', '경도', '위도']
-      encoding_seen: 'utf-8-sig'
+      encoding_seen: 'utf-8'
       source: '소상공인시장진흥공단_상가(상권)정보_전남광주_202606.csv'
   # -- 행정경계·건물 (도로명주소 전자지도, 2026-08-11 승인) --
   boundary_emd:
@@ -1580,13 +1578,6 @@ datasets:
         을 보면 의심해야 한다. 종전 contract.rows 가 50000 이라 **상한을
         정상으로 인정하고 있었다.**
 
-    schema:
-      columns: [fcltyNo, fcltySeCode, ctprvnNm, signguNm, signguCode,
-                rdnmadr, lnmadr, latitude, longitude, descLc,
-                safeCnterNm, prtcYn, installationYear, waterPressr,
-                institutionNm, institutionPhoneNumber, referenceDate,
-                insttCode, insttNm]
-      encoding_seen: utf-8
     contract:
       encoding: utf-8
       required_cols: [fcltyNo, ctprvnNm, signguNm, latitude, longitude,
@@ -1595,6 +1586,9 @@ datasets:
       rows: 5002
       rows_tolerance: 0.0
       scope_min: 1
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['fcltyNo', 'fcltySeCode', 'ctprvnNm', 'signguNm', 'signguCode', 'rdnmadr', 'lnmadr', 'latitude', 'longitude', 'descLc', 'safeCnterNm', 'prtcYn', 'installationYear', 'waterPressr', 'institutionNm', 'institutionPhoneNumber', 'referenceDate', 'insttCode', 'insttNm']
+      encoding_seen: 'utf-8'
   fire_access:
     feeds: 미투입 — 소방통로 지정구간. D-30 인터뷰 대조 항목
     feeds_note: '[]'
@@ -1820,10 +1814,10 @@ datasets:
       encoding: cp949
       required_cols: [소방서, 안전센터, 소재지도로명주소, 관할구역]
       rows: 27
-    schema:
-      columns: [소방서, 안전센터, 소재지도로명주소, 관할구역, 데이터기준일]
-      encoding_seen: cp949
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['소방서', '안전센터', '소재지도로명주소', '관할구역', '데이터기준일']
+      encoding_seen: 'cp949'
   parking_lot:
     feeds: 미투입 — A* 비용함수 입력(#2). 노외 103 · 노상 35
     feeds_note: '[]'
@@ -1846,11 +1840,10 @@ datasets:
       encoding: utf-8
       required_cols: [주차장명, 주소, 면수, 행정동]
       rows: 138
-    schema:
-      columns: [구분, 종류, 연번, 주차장명, 주소, 면적_㎡, 면수, 행정동,
-                관리주체, 주차요금, 비고]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['구분', '종류', '연번', '주차장명', '주소', '면적_㎡', '면수', '행정동', '관리주체', '주차요금', '비고']
+      encoding_seen: 'utf-8'
   enforce_cam:
     feeds: 미투입 — A* 비용함수 입력(#2). 무인카메라 57지점
     feeds_note: '[]'
@@ -1871,11 +1864,10 @@ datasets:
       encoding: utf-8
       required_cols: [번호, 대상명칭, 주소, 평일_운영시간]
       rows: 65
-    schema:
-      columns: [번호, 대상명칭, 주소, 평일_운영시간, 주말공휴일_운영시간,
-                점심시간, 개별적용사항]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['번호', '대상명칭', '주소', '평일_운영시간', '주말공휴일_운영시간', '점심시간', '개별적용사항']
+      encoding_seen: 'utf-8'
   school_zone:
     feeds: 미투입 — A* 비용함수 입력(#2). 보호구역 32곳
     feeds_note: '[]'
@@ -1894,10 +1886,10 @@ datasets:
       encoding: utf-8
       required_cols: [학교명, 시설유형, 주소]
       rows: 32
-    schema:
-      columns: [연번, 학교명, 시설유형, 주소]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['연번', '학교명', '시설유형', '주소']
+      encoding_seen: 'utf-8'
   parking_zone:
     feeds: 미투입 — A* 비용함수 입력(#2). 규제 구간
     feeds_note: '[]'
@@ -1917,10 +1909,10 @@ datasets:
       encoding: utf-8
       required_cols: [구분, 도로명]
       rows: 22
-    schema:
-      columns: [구분, 도로명, 구간, 연장_m, 내용]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['구분', '도로명', '구간', '연장_m', '내용']
+      encoding_seen: 'utf-8'
   jijeok:
     feeds:
       - tools/jijeok_probe.py
@@ -1928,9 +1920,6 @@ datasets:
     feeds_note: '- tools/jijeok_probe.py - tools/jijeok_review.py'
     stem: nsdi_jijeok
     ext: [zip]
-    schema:
-      layers:
-      - AL_D002_12_20260808
     scope: jngj
     updated: '2026-08-08'
     what: 연속지적도 (도엽 7세트 · 970MB)
@@ -1948,6 +1937,11 @@ datasets:
       ★ 원본 파일명이 `AL_D002_12_20260808(2).shp` 식이다. 괄호가 도엽
         번호 노릇을 한다 — 명명규칙 밖이라 parts 로 옮겨 적는다.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['AL_D002_12_20260808', 'AL_D002_12_20260808(2)', 'AL_D002_12_20260808(3)', 'AL_D002_12_20260808(4)', 'AL_D002_12_20260808(5)', 'AL_D002_12_20260808(6)', 'AL_D002_12_20260808(7)']
+      layer_used: 'AL_D002_12_20260808.shp'
+      columns: ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']
+      features: 1000000
   gjfire_fleet_dongbu:
     feeds: 미투입 — web/config.js 의 CONFIG.fleet 목록 근거. 코드가 키로 참조하지 않는다
     feeds_note: '[]'
@@ -1983,6 +1977,9 @@ datasets:
       ★ 종전에 data/field 에 긴 형태만 있었다. field 는 재취득 불가한
         실측 자리인데 이것은 재취득 가능하다. 계층이 틀렸었다.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['부서', '계', '펌프차(중형)', '물탱크차(대형)', '화학차', '조연차', '직진형사다리차(53m)', '굴절형사다리차(27m)', '지휘차', '구조차', '구조버스', '구급차', '생활안전차', '소방안전교육차', '순찰차', '행정차', '화물차', '화재조사차', '트레일러', '장비운반차', '진단차']
+      encoding_seen: 'utf-8-sig'
   gjfire_district_dongbu:
     feeds: 미투입 — CONFIG.fleetGroups 묶음 근거
     feeds_note: '[]'
@@ -2003,6 +2000,9 @@ datasets:
       DECISIONS 85 의 근거이며 차량 목록을 센터로 가른 이유다.
     note: 원본이 CP949 다. 편입 시 UTF-8 로 옮기고 수치는 고치지 않는다
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['구 분', '위 치', '관 할 구 역', '인구', '1인당담당인구', '데이터기준일자']
+      encoding_seen: 'utf-8-sig'
   # ══ 2026-09-03 반입. 소방청 소방안전 빅데이터 플랫폼 ══════════
   # ★ 전부 **동구/동명동 필터 파생본**만 저장소에 둔다. 원본 전국분은
   #   합 2.85GB 이고 재취득 가능하므로 raw 에 넣지 않는다(§12-10).
@@ -2034,6 +2034,9 @@ datasets:
       ★ 좌표는 신고자 위치(휴대폰)이지 반드시 현장이 아니다.
     contract: {encoding: utf-8-sig}
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['DCLR_RCPT_NO', 'DCLR_DT', 'DCLR_YMD', 'DCLR_TM', 'DCLR_YR', 'DCLR_MM', 'DCLR_DAY', 'DCLR_HR', 'DCLR_MN', 'DCLR_DOW', 'SEASN_NM', 'QTR_NO', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'CTY_FRMVL_SE_NM', 'EMD_SE_NM', 'RCPT_END_DT', 'RCPT_END_YMD', 'RCPT_END_TM', 'OTR_CTPV_DCLR_YN', 'DCLR_PSTN_LOT', 'DCLR_PSTN_LAT', 'DSPT_DRTV_DT', 'GRNDS_ARVL_DT', 'HSPTL_ARVL_DT', 'CBK_DT', 'SITTN_END_DT', 'FRSTN_NM', 'CNTR_NM', 'CLMTY_CTPV_NM', 'CLMTY_SGG_NM', 'CLMTY_EMD_NM', 'LOT', 'LAT']
+      encoding_seen: 'utf-8-sig'
   nfa_rescue:
     feeds: 미투입 — 구조 출동 검증축. 119 신고접수와 같은 급이다
     feeds_note: '[]'
@@ -2054,6 +2057,9 @@ datasets:
     crs_native: 4326
     contract: {encoding: utf-8-sig}
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['CLMTY_RSCU_RPTP_NO', 'ACDNT_CS_NM', 'PRCS_RSLT_SE_NM', 'DCLR_YMD', 'DCLR_TM', 'DCLR_YR', 'SEASN_NM', 'DCLR_MM', 'DCLR_DAY', 'DCLR_HR', 'DCLR_MN', 'DCLR_DOW', 'DSPT_YMD', 'DSPT_TM', 'DSPT_YR', 'DSPT_MM', 'DSPT_DAY', 'DSPT_HR', 'DSPT_MN', 'GRNDS_ARVL_YMD', 'GRNDS_ARVL_TM', 'GRNDS_ARVL_YR', 'GRNDS_ARVL_MM', 'GRNDS_ARVL_DAY', 'GRNDS_ARVL_HR', 'GRNDS_ARVL_MN', 'RSCU_CMPTN_YMD', 'RSCU_CMPTN_TM', 'RSCU_CMPTN_YR', 'RSCU_CMPTN_MM', 'RSCU_CMPTN_DAY', 'RSCU_CMPTN_HR', 'RSCU_CMPTN_MN', 'CBK_YMD', 'CBK_TM', 'CBK_YR', 'CBK_MM', 'CBK_DAY', 'CBK_HR', 'CBK_MN', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'CTY_FRMVL_SE_NM', 'EMD_SE_NM', 'DCLR_PSTN_LOT', 'DCLR_PSTN_LAT', 'FRSTN_GRNDS_DSTNC', 'ACDNT_PLC_DTL_NM', 'FRSTN_NM', 'CNTR_NM']
+      encoding_seen: 'utf-8-sig'
   nfa_fire_incident:
     feeds: 미투입 — 거리↔소요시간 회귀로 cost 모델을 검증한다
     feeds_note: '[]'
@@ -2100,6 +2106,9 @@ datasets:
           같은 플랫폼의 구조 현황에는 EMD_NM 이 있다 — 표마다 다르다
     contract: {encoding: utf-8-sig}
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['WRINV_NO', 'FIRE_TYPE_NM', 'BLDG_SRTFRM_NM', 'BLDG_STRCTR_NM', 'BLDG_SRTRF_NM', 'BLDG_RSCU_DNGCT', 'GRND_NOFL', 'UDGD_NOFL', 'BLDG_GFA', 'BTTM_AREA', 'BLDG_STTS_NM', 'SPFPTG_NM', 'SMTPR_LCLSF_NM', 'SMTPR_SCLSF_NM', 'DTH_CNT', 'INJPSN_CNT', 'HNL_DAM_CNT', 'PRPT_DAM_AMT', 'DOW_NM', 'FRSTN_NM', 'CNTR_NM', 'RCPT_DT', 'DSPT_DT', 'GRNDS_ARVL_DT', 'BGNN_POTFR_DT', 'PRFECT_POTFR_DT', 'CBK_DT', 'DSPT_REQ_HR', 'FIRE_SUPESN_HR', 'CTPV_NM', 'SGG_NM', 'FRSTN_GRNDS_DSTNC', 'CNTR_GRNDS_DSTNC', 'LFDAU_GRNDS_DSTNC', 'IGTN_HTSRC_NM', 'IGTN_HTSRC_SCLSF_NM', 'IGTN_DMNT_LCLSF_NM', 'IGTN_DMNT_SCLSF_NM', 'FRST_IGOBJ_LCLSF_NM', 'FRST_IGOBJ_SCLSF_NM', 'IGTN_ISTR_LCLSF_NM', 'IGTN_ISTR_SCLSF_NM', 'CMBS_EXPOBJ_LCLSF_NM', 'CMBS_EXPOBJ_SCLSF_NM', 'FCLT_PLC_LCLSF_NM', 'FCLT_PLC_MCLSF_NM', 'FCLT_PLC_SCLSF_NM', 'IGTN_FLR_NM', 'SO_AREA', 'FIRE_INSRNC_OBLG_TRGT_YN', 'ARSON_MNG_TRGT_YN', 'MUB_YN', 'VHCL_PLC_NM', 'VHCL_IGTN_PSTN_NM', 'FND_FIRE_SE_NM', 'FND_IGTN_PSTN_NM', 'HR_UNIT_ARTMP', 'HR_UNIT_WSPD_INFO', 'WNDRCT_BRNG', 'HR_UNIT_HUM']
+      encoding_seen: 'utf-8-sig'
   nfa_vehicle_spec_2024:
     feeds: 미투입 — vehicle_spec 의 상한 대비 실차 대표값 대조축
     feeds_note: '[]'
@@ -2216,6 +2225,9 @@ datasets:
           좌표 열이 없다. ADDR 문자열로만 위치를 안다.
           건물 위치는 buildings.geojson 이 갖고 있으므로 주소로 잇는다.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['BDST_SN', 'FRSTN_NM', 'CNTR_NM', 'TRGTOBJ_NM', 'REG_YMD', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'ADDR', 'BLDG_NM', 'FIRE_INSRNC_JOIN_YMD', 'FIRE_INSRNC_MTRY_YMD', 'FIRE_INSRNC_CO_NM', 'USE_APRV_YMD', 'PBNST_YN', 'CLTPTY_YN', 'ARSON_MNG_TRGT_YN', 'ISF_CHCK_TRGT_YN', 'ISF_CHCK_TRGT_TYPE_NM', 'LGZ_FIRE_WKTRGT_YN', 'FRFGH_FCLT_CPCST_CMCRT_YMD', 'USE_YN', 'FRFGH_MFBIZ_YN']
+      encoding_seen: 'utf-8-sig'
   nfa_spec_chem_gj:
     feeds: 미투입 — 화학차 치수 상한. CONFIG.fleet 의 chem 이 "추정" 이다
     feeds_note: '[]'
@@ -2367,13 +2379,12 @@ datasets:
       encoding: utf-8
       rows: 1989
       required_cols: [PLOT_PSTN, MN_USG_CD_NM, FML_CNT, HH_CNT]
-    schema:
-      root: {Description: 필드사전, Data: 행배열}
-      columns_used: [PLOT_PSTN, ROAD_NM_PLOT_PSTN, BLDG_NM, MN_USG_CD_NM,
-                     FML_CNT, HH_CNT, HG, GRND_NOFL, INDR_SFPRPL_CNTOM,
-                     OTDR_SFPRPL_CNTOM, INDR_MCNCL_CNTOM, OTDR_MCNCL_CNTOM]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['PLOT_PSTN', 'SGG_CD', 'STDG_CD', 'PLOT_SE_CD', 'MNO', 'SNO', 'BDRG_SN', 'LDGR_SE_CD', 'LDGR_SE_CD_NM', 'LDGR_KIND_CD', 'LDGR_KIND_CD_NM', 'ROAD_NM_PLOT_PSTN', 'BLDG_NM', 'SPAREA_NM', 'BLCK', 'LOT', 'BYLT_CNT', 'NA_ROAD_CD', 'NA_STDG_CD', 'NA_GRND_UDGD_CD', 'NA_MNO', 'NA_SNO', 'DNG_NM', 'MANX_SE_CD', 'MANX_SE_CD_NM', 'SIAR', 'BDAR', 'BDCVRT', 'GFA', 'FART_CMPTTN_GFA', 'FART', 'STRCT_CD', 'STRCT_CD_NM', 'ETC_STRCT', 'MN_USG_CD', 'MN_USG_CD_NM', 'ETC_USG', 'ROOF_CD', 'ROOF_CD_NM', 'ETC_ROOF', 'HH_CNT', 'FML_CNT', 'HG', 'GRND_NOFL', 'UDGD_NOFL', 'PSNGR_ELVTR_CNT', 'EUSE_ELVTR_CNT', 'ANX_BDST_CNT', 'ANX_BDST_AREA', 'TOL_DNG_GFA', 'INDR_MCNCL_CNTOM', 'INDR_MCNCL_AREA', 'OTDR_MCNCL_CNTOM', 'OTDR_MCNCL_AREA', 'INDR_SFPRPL_CNTOM', 'INDR_SFPRPL_AREA', 'OTDR_SFPRPL_CNTOM', 'OTDR_SFPRPL_AREA', 'PRMSN_DAY', 'BGNCST_DAY']
+      features: 1989
+      encoding_seen: 'utf-8'
+      layers_total: 77
   child_zone_std:
     crs_native: EPSG:4326
     stem:       mois_child_zone_std
@@ -2402,13 +2413,11 @@ datasets:
       encoding: utf-8
       rows: 14652
       required_cols: [대상시설명, 위도, 경도, 소재지도로명주소]
-    schema:
-      root: {fields: 필드정의, records: 행배열}
-      columns: [시설종류, 대상시설명, 소재지도로명주소, 소재지지번주소,
-                위도, 경도, 관리기관명, 관할경찰서명, CCTV설치여부,
-                CCTV설치대수, 보호구역도로폭, 데이터기준일자]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['시설종류', '대상시설명', '소재지도로명주소', '소재지지번주소', '위도', '경도', '관리기관명', '관할경찰서명', 'CCTV설치여부', 'CCTV설치대수', '보호구역도로폭', '데이터기준일자', '제공기관코드', '제공기관명']
+      features: 14652
+      encoding_seen: 'utf-8'
   senior_zone_std:
     crs_native: EPSG:4326
     stem:       mois_senior_zone_std
@@ -2431,13 +2440,11 @@ datasets:
       encoding: utf-8
       rows: 4120
       required_cols: [대상시설명, 위도, 경도, 제한속도]
-    schema:
-      root: {fields: 필드정의, records: 행배열}
-      columns: [장소유형코드, 대상시설명, 시도명, 시군구명, 시군구코드,
-                소재지도로명주소, 소재지지번주소, 위도, 경도, 제한속도,
-                보호구역도로폭, 데이터기준일자]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['장소유형코드', '대상시설명', '시도명', '시군구명', '시군구코드', '소재지도로명주소', '소재지지번주소', '위도', '경도', '제한속도', '관리기관명', '관리기관전화번호', '관할경찰서명', 'CCTV설치여부', 'CCTV설치대수', '보호구역도로폭', '데이터기준일자', '제공기관코드', '제공기관명']
+      features: 4120
+      encoding_seen: 'utf-8'
   speedbump:
     stem:       gjcity_speedbump
     ext:        [csv]
@@ -2463,16 +2470,10 @@ datasets:
       encoding: cp949
       rows: 342
       required_cols: [WGS84위도, WGS84경도, 설치장소, 과속방지턱형태구분]
-    schema:
-      columns: [개방자치단체코드, 관리번호, 과속방지턱관리번호, 도로명, 시도명,
-                시군구명, 소재지도로명주소, 소재지지번주소, 설치장소,
-                과속방지턱재료, 과속방지턱형태구분, 과속방지턱높이,
-                과속방지턱폭, 과속방지턱연장, 도로유형구분, 규격여부,
-                WGS84위도, WGS84경도, 보차분리여부, 연속형여부,
-                과속방지턱설치연도, 관리기관명, 관리기관전화번호,
-                데이터기준일자, 데이터갱신구분, 데이터갱신시점, 최종수정시점]
-      encoding_seen: cp949
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['개방자치단체코드', '관리번호', '과속방지턱관리번호', '도로명', '시도명', '시군구명', '소재지도로명주소', '소재지지번주소', '설치장소', '과속방지턱재료', '과속방지턱형태구분', '과속방지턱높이', '과속방지턱폭', '과속방지턱연장', '도로유형구분', '규격여부', 'WGS84위도', 'WGS84경도', '보차분리여부', '연속형여부', '과속방지턱설치연도', '관리기관명', '관리기관전화번호', '데이터기준일자', '데이터갱신구분', '데이터갱신시점', '최종수정시점']
+      encoding_seen: 'cp949'
   admin_cctv:
     stem:       gjcity_admin_cctv
     ext:        [csv]
@@ -2497,14 +2498,10 @@ datasets:
       encoding: cp949
       rows: 81
       required_cols: [WGS84위도, WGS84경도, 설치목적구분, 관리기관명]
-    schema:
-      columns: [개방자치단체코드, 관리번호, 관리기관명, 소재지도로명주소,
-                소재지지번주소, 설치목적구분, 카메라대수, 카메라화소수,
-                촬영방면정보, 보관일수, 설치연월, 관리기관전화번호,
-                WGS84위도, WGS84경도, 데이터기준일자, 데이터갱신구분,
-                데이터갱신시점, 최종수정시점]
-      encoding_seen: cp949
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['개방자치단체코드', '관리번호', '관리기관명', '소재지도로명주소', '소재지지번주소', '설치목적구분', '카메라대수', '카메라화소수', '촬영방면정보', '보관일수', '설치연월', '관리기관전화번호', 'WGS84위도', 'WGS84경도', '데이터기준일자', '데이터갱신구분', '데이터갱신시점', '최종수정시점']
+      encoding_seen: 'cp949'
   speed_cam:
     stem:       gjbg_traffic_cam
     ext:        [csv]
@@ -2531,12 +2528,10 @@ datasets:
       encoding: utf-8-sig
       rows: 510
       required_cols: [위도, 경도, 제한속도, 설치장소, 시군구명]
-    schema:
-      columns: [무인교통단속카메라관리번호, 시군구명, 도로노선번호, 도로노선명,
-                도로노선방향, 위도, 경도, 설치장소, 단속구분, 제한속도,
-                보호구역구분, 설치년도]
-      encoding_seen: utf-8-sig
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['무인교통단속카메라관리번호', '시군구명', '도로노선번호', '도로노선명', '도로노선방향', '위도', '경도', '설치장소', '단속구분', '제한속도', '보호구역구분', '설치년도']
+      encoding_seen: 'utf-8-sig'
   juso_building_db:
     inner_contains: build_jeonnamgwangju
     select:     {col: 0, prefix: '1221010800'}
