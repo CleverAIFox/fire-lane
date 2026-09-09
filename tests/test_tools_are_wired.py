@@ -41,7 +41,6 @@ EXEMPT = {
     "kpi": "진입 실패율 산출. 발표에서 인용할 숫자라 사람이 조건과 함께 부른다",
     "its_linkmap": "ITS 소통정보 링크 ↔ seg_uid 대조표. 외부 API 규격 확인용이라 CI 에 못 건다",
     "install_navi": "내비 소스 설치. 1회성 배치이며 멱등이다",
-    "ledger_add_2026_09_06": "2026-09-06 확보분 대장 등재. 1회성 배치이며 멱등이다",
     "pages_add_navi": "pages.yml 에 내비 빌드 스텝. 1회성 배치이며 멱등이다",
     "matchcheck": "Mapbox Map Matching 커버리지 대조. 토큰 필요·외부 API 라 CI 에 못 건다",
     "bridge_audit": "다리 분석으로 실측 우선순위 산출. 사람이 답사 계획을 세우려고 부른다",

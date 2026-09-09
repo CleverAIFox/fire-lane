@@ -193,18 +193,77 @@ def probe_raw_only(paths: list[Path]) -> dict:
     return out
 
 
-PROBES = {
-    "ngii1k": lambda ps: probe_ngi_dir(ps[0]),
-    "ngii_1k": lambda ps: probe_ngi_dir(ps[0]),
-    "shp_zip": probe_shp_zip,
-    "shp_zip_multi": probe_shp_zip,
-    "dbf_in_zip": probe_shp_zip,
-    "csv_points": probe_csv,
-    "csv_point": probe_csv,
-    "csv_table": probe_csv,
-    "csv_points_in_zip": probe_csv_in_zip,
+from firelane.kinds import KINDS as _KINDS  # noqa: E402
+
+
+def probe_json(paths: list[Path]) -> dict:
+    """표준데이터 JSON · 건축물대장 JSON. 키 이름과 건수만 본다."""
+    import json as _json
+    out = {"files": []}
+    for p in paths:
+        rec = {"file": p.name, "bytes": p.stat().st_size}
+        try:
+            raw = _json.loads(p.read_text(encoding="utf-8"))
+            rows = raw if isinstance(raw, list) else (
+                raw.get("records") or raw.get("Data") or [])
+            rec.update(encoding="utf-8", rows=len(rows),
+                       fields=list(rows[0]) if rows else [])
+        except Exception as ex:                    # noqa: BLE001
+            rec["error"] = f"{type(ex).__name__}: {ex}"[:80]
+        out["files"].append(rec)
+    return out
+
+
+def probe_delim(paths: list[Path]) -> dict:
+    """구분자 텍스트. **헤더가 없다** — 열 개수만 센다.
+
+    ★ csv 로 재면 첫 행을 컬럼명으로 먹고 1행을 잃는다. 컬럼명은 파일에
+      없고 제공처 활용가이드에만 있다.
+    """
+    out = {"files": []}
+    for p in paths:
+        rec = {"file": p.name, "bytes": p.stat().st_size}
+        try:
+            if p.suffix.lower() == ".zip":
+                with zipfile.ZipFile(p) as z:
+                    inner = sorted(n for n in z.namelist()
+                                   if not n.endswith("/"))
+                    rec["members"] = len(inner)
+                    with z.open(inner[0]) as f:
+                        head = f.read(1 << 16)
+                    rec["source"] = inner[0]
+            else:
+                head = p.read_bytes()[:1 << 16]
+            for enc in CSV_ENCODINGS:
+                try:
+                    text = head.decode(enc)
+                except UnicodeDecodeError:
+                    continue
+                first = next((L for L in text.splitlines() if L.strip()), "")
+                rec.update(encoding=enc, cols=len(first.split("|")),
+                           note="헤더 없음")
+                break
+            else:
+                rec["error"] = "인코딩 판별 실패"
+        except Exception as ex:                    # noqa: BLE001
+            rec["error"] = f"{type(ex).__name__}: {ex}"[:80]
+        out["files"].append(rec)
+    return out
+
+
+# ★ 2026-09-07. 손목록을 `firelane.kinds` 에서 유도한다. 종전에는
+#   `json_points` 가 여기 **없어서** "kind 미지원" 을 status 에 적고
+#   조용히 넘어갔다. 실패하지 않으므로 아무도 못 봤다.
+_PROBE_FN = {
+    "ngi_dir": lambda ps: probe_ngi_dir(ps[0]),
+    "shp": probe_shp_zip,
+    "csv": probe_csv,
+    "csv_in_zip": probe_csv_in_zip,
+    "json": probe_json,
+    "delim": probe_delim,
     "raw_only": probe_raw_only,
 }
+PROBES = {k: _PROBE_FN[v.probe] for k, v in _KINDS.items()}
 
 
 # ──────────────────────────────────────────────────────────────

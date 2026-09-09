@@ -542,7 +542,9 @@ layers:
     committed: false
     backup: true
     regenerable: false
-    naming: '^(eais|gjcity|its|juso|nfa|ngii|nsdi|safety|sbiz|vworld)/'
+    # ★ 손으로 고치지 마라. `providers.pattern()` 이 만드는 값이고
+    #   `test_naming_regex_is_generated_not_handwritten` 이 대조한다.
+    naming: '^(eais|gjbg|gjcity|its|juso|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/'
     what: 받은 그대로. 인코딩조차 고치지 않는다
     depth: 2
     # ★ provider 폴더의 정본. 2026-08-27 까지 이 목록이 네 곳에 있었다 —
@@ -564,6 +566,12 @@ layers:
       gjcity:  {org: 전남광주통합특별시,           state: active}
       sbiz:    {org: 소상공인시장진흥공단,         state: active}
       eais:    {org: 건축행정시스템 세움터,        state: active}
+      # ★ 2026-09-07 추가. stem 접두가 이 어휘 밖이면 acquire 가
+      #   _quarantine 으로 보낸다. 실물 반입 전이라 state 는 reserved 다
+      #   — "reserved 는 등재만. 파일 0건이 정상이고 폴더도 없어야 한다".
+      #   반입이 끝나면 active 로 올린다.
+      mois:    {org: 행정안전부 공공데이터포털,    state: reserved}
+      gjbg:    {org: 전남광주통합특별시 빅데이터 통합플랫폼, state: reserved}
       nfa:
         org: 소방청
         state: active
@@ -2322,6 +2330,258 @@ datasets:
       ★ 같은 zip 의 제안요청서·산출내역서는 반입하지 않았다.
       ★ 축거 0건. `차대` 10건은 정의문이다.
 
+  bldg_ledger_dm:
+    stem:       eais_bldgledger_dm
+    ext:        [json]
+    scope:      jngj-dongmyeong
+    updated:    "2026-09-06"
+    authority:  국토교통부 건축행정시스템
+    kind:       json_table
+    encoding:   utf-8
+    what:       건축물대장 표제부. 동명동 1,989동 · 필드 77
+    note: |
+      ★ `retired.building_ledger`(2026-08-31 폐기)의 후속이다.
+        그때 사유는 "높이·주차대수만 있고 건물 형상은 building 이 이미
+        낸다. 11.3MB 소비자 0곳" 이었고 **그 판단은 틀리지 않았다.**
+        바뀐 것은 상황이다 — β 점유위험도(#62)와 주차 0인 주거건물
+        84% 가 이 표를 읽는다. 소비자가 생겼다.
+      ★ 같은 자료가 아니다. 폐기분은 전국 11.3MB 였고 이것은 동명동
+        1,989동으로 좁힌 판이다. stem 도 `_dm` 이 붙는다.
+    feeds:      미투입 — β 점유위험도(#62) · 원룸 판별 · 건물높이 대조축
+    feeds_why: |
+      ★ **이 파일 하나가 세 문제를 푼다.**
+        ① 원룸 판별 — 단독주택 932동 중 다가구(가구3+) 170 · 2가구 184.
+          상세주소DB 는 "몇 동 몇 호" 를 주지만 **원룸인지는 안 준다.**
+        ② β 근거 — 가구+세대 2,431 대 주차면 1,792. 주거건물 951동 중
+          **주차 0 인 곳이 803동(84%)**. 그 차들은 골목에 선다.
+          단속 이력은 "적발된 것" 만 보는데 이것은 **압력 자체**를 준다.
+        ③ 건물높이 523동 — buildings.h(층수 추정)의 실측 대조축.
+    note: |
+      ★ **좌표가 없다.** 대지위치(지번) 1,989 · 도로명대지위치 1,873 뿐.
+        jijeok(24,183) 이나 building 폴리곤과 **지번으로 붙여야** 한다.
+      ★ {Description, Data} 구조다. Description 이 필드 사전이다.
+      ★ 광주 동구 주차 확보율은 통계상 136.3% 인데 동명동 주거는 31% 다.
+        상업·업무가 평균을 끌어올린 것 — **주차장은 있는데 사람 사는 곳에
+        없다.** 이 괴리가 β 의 논거다.
+    contract:
+      encoding: utf-8
+      rows: 1989
+      required_cols: [PLOT_PSTN, MN_USG_CD_NM, FML_CNT, HH_CNT]
+    schema:
+      root: {Description: 필드사전, Data: 행배열}
+      columns_used: [PLOT_PSTN, ROAD_NM_PLOT_PSTN, BLDG_NM, MN_USG_CD_NM,
+                     FML_CNT, HH_CNT, HG, GRND_NOFL, INDR_SFPRPL_CNTOM,
+                     OTDR_SFPRPL_CNTOM, INDR_MCNCL_CNTOM, OTDR_MCNCL_CNTOM]
+      encoding_seen: utf-8
+
+  child_zone_std:
+    crs_native: EPSG:4326
+    stem:       mois_child_zone_std
+    ext:        [json]
+    scope:      kr
+    updated:    "2026-07-28"
+    authority:  행정안전부 (전국 표준데이터)
+    kind:       json_points
+    encoding:   utf-8
+    x_col:      경도
+    y_col:      위도
+    what:       전국 어린이보호구역 14,652 → 광주 동구 32 → 스코프 8
+    feeds:      미투입 — TBT 안내 · A* 우회 가중치(#2) · **폭 판정 대조축**
+    feeds_why: |
+      ★ `보호구역도로폭` 이 **행정 고시값**이다. 폭 판정의 외부 대조축이
+        하나 더 생긴다 — 지금은 ngii1k_center 하나뿐이다.
+        스코프 표본에서 셋이 1m 안쪽으로 일치했다
+        (중앙초 5m/6.01 · 서석초 6m/6.53 · 동구어린이집 15m/16.4).
+      ★ 대장의 school_zone(32곳)과 **같은 대상이다.** 그쪽은 주소만 있어
+        지오코딩이 필요했는데 이쪽은 좌표가 붙어 온다.
+    note: |
+      ★ 보호구역 **경계 폴리곤이 아니다.** 시설 좌표뿐이라 반경으로
+        근사해야 하고, 그 반경이 또 미검증 상수가 된다.
+      ★ 전국분이다. 스코프 밖 14,644건은 ingest 에서 버린다.
+    contract:
+      encoding: utf-8
+      rows: 14652
+      required_cols: [대상시설명, 위도, 경도, 소재지도로명주소]
+    schema:
+      root: {fields: 필드정의, records: 행배열}
+      columns: [시설종류, 대상시설명, 소재지도로명주소, 소재지지번주소,
+                위도, 경도, 관리기관명, 관할경찰서명, CCTV설치여부,
+                CCTV설치대수, 보호구역도로폭, 데이터기준일자]
+      encoding_seen: utf-8
+
+  senior_zone_std:
+    crs_native: EPSG:4326
+    stem:       mois_senior_zone_std
+    ext:        [json]
+    scope:      kr
+    updated:    "2026-06-19"
+    authority:  행정안전부 (전국 표준데이터)
+    kind:       json_points
+    encoding:   utf-8
+    x_col:      경도
+    y_col:      위도
+    what:       전국 노인·장애인보호구역 4,120 → 광주 동구 17 → 스코프 10
+    feeds:      미투입 — TBT 안내 · A* 우회 가중치(#2)
+    feeds_why:  보호구역 제한속도 30km/h. 어린이보호구역과 같은 축이다
+    note: |
+      ★ `장소유형코드` 가 1(노인) · 2(장애인) 이다. 문자열이 아니다.
+      ★ `보호구역도로폭` 은 동구 17건 중 1건만 채워져 있다 —
+        대조축으로는 child_zone_std 만 쓴다.
+    contract:
+      encoding: utf-8
+      rows: 4120
+      required_cols: [대상시설명, 위도, 경도, 제한속도]
+    schema:
+      root: {fields: 필드정의, records: 행배열}
+      columns: [장소유형코드, 대상시설명, 시도명, 시군구명, 시군구코드,
+                소재지도로명주소, 소재지지번주소, 위도, 경도, 제한속도,
+                보호구역도로폭, 데이터기준일자]
+      encoding_seen: utf-8
+
+  speedbump:
+    stem:       gjcity_speedbump
+    ext:        [csv]
+    scope:      jngj-donggu
+    updated:    "2023-04-05"
+    authority:  동구청 건설과
+    kind:       csv_table
+    encoding:   cp949
+    what:       동구 과속방지턱 342개소 → 스코프 46
+    feeds:      미투입 — TBT 안내
+    feeds_why: |
+      스코프 46개. 전부 소로 · 규격 미달(N) · 원호형 28 · 가상형 18.
+      ★ `가상형` 은 도색만 있고 실제 턱이 없다 — 데이터는 남기되 안내
+        여부는 앱이 정한다(domain/hazard.ts::shouldAnnounce).
+    note: |
+      ★ **기준일자가 2023-04-05 다. 3년 묵었다.** 그 사이 신설·철거가
+        있었을 수 있고, 화면이 그것을 확정으로 말하면 안 된다.
+      ★ `과속방지턱높이` 는 스코프 46건 전량 0 이다. 미기입 필드라 못 쓴다.
+      ★ 행정안전부 REST API 의 **스냅샷**이다. 앱에서 API 를 부르지 않는다 —
+        서버가 없고, 응답이 바뀌면 golden 이 깨진다. 파일이면 sha 로 못박힌다.
+        인증키는 저장소에 넣지 않는다.
+    contract:
+      encoding: cp949
+      rows: 342
+      required_cols: [WGS84위도, WGS84경도, 설치장소, 과속방지턱형태구분]
+    schema:
+      columns: [개방자치단체코드, 관리번호, 과속방지턱관리번호, 도로명, 시도명,
+                시군구명, 소재지도로명주소, 소재지지번주소, 설치장소,
+                과속방지턱재료, 과속방지턱형태구분, 과속방지턱높이,
+                과속방지턱폭, 과속방지턱연장, 도로유형구분, 규격여부,
+                WGS84위도, WGS84경도, 보차분리여부, 연속형여부,
+                과속방지턱설치연도, 관리기관명, 관리기관전화번호,
+                데이터기준일자, 데이터갱신구분, 데이터갱신시점, 최종수정시점]
+      encoding_seen: cp949
+
+  admin_cctv:
+    stem:       gjcity_admin_cctv
+    ext:        [csv]
+    scope:      jngj-donggu
+    updated:    "2020-08-14"
+    authority:  서남동행정복지센터
+    kind:       csv_table
+    encoding:   cp949
+    what:       동구 행정 CCTV 81대 (쓰레기단속·생활방범·다목적) → 스코프 33
+    feeds:      미투입 — bin_trash 대조축
+    feeds_why: |
+      ★ **영상판정에 못 쓴다.** 목적이 노면이 아니다 — 스코프 33건 중
+        쓰레기단속이 26건이고 화각이 배출지를 향한다.
+        우리 cctv(방범 678건)와 **다른 자산이다.**
+      ★ 대신 **쓰레기 배출지는 골목의 고정 장애물**이다. bin_trash 31건의
+        대조축으로 쓴다.
+    note: |
+      ★ **기준일자가 2020-08-14 다. 6년 묵었다.** 판정에 쓰지 마라.
+      ★ `시군구명` 컬럼이 없다. 파일 자체가 동구분이다.
+      ★ 화각을 확인하면 일부는 영상판정에 쓸 수도 있다 — 지금은 못 한다.
+    contract:
+      encoding: cp949
+      rows: 81
+      required_cols: [WGS84위도, WGS84경도, 설치목적구분, 관리기관명]
+    schema:
+      columns: [개방자치단체코드, 관리번호, 관리기관명, 소재지도로명주소,
+                소재지지번주소, 설치목적구분, 카메라대수, 카메라화소수,
+                촬영방면정보, 보관일수, 설치연월, 관리기관전화번호,
+                WGS84위도, WGS84경도, 데이터기준일자, 데이터갱신구분,
+                데이터갱신시점, 최종수정시점]
+      encoding_seen: cp949
+
+  speed_cam:
+    stem:       gjbg_traffic_cam
+    ext:        [csv]
+    scope:      jngj
+    updated:    "2025-12-31"
+    authority:  광주광역시 빅데이터 통합플랫폼
+    kind:       csv_table
+    encoding:   utf-8-sig
+    what:       광주 무인교통단속카메라 510 → 동구 49 → 스코프 9
+    feeds:      미투입 — **실측 제한속도** · TBT 안내
+    feeds_why: |
+      ★ `제한속도` 가 **실측값**이다. domain/speed.ts 의 폭 추정을 덮는다.
+        준법로 폭 18.6m → 표 추정 50km/h → **실제 30km/h**(동산초교 스쿨존).
+        폭만 보면 절대 못 얻는 값이다.
+      ★ 스코프 9곳이 전부 큰길이다 — 30km/h 스쿨존 6 · 50km/h 사거리 3.
+        **골목에는 하나도 없다.**
+      ★ `보호구역구분`(2=어린이)이 child_zone_std 와 교차 검증된다.
+    note: |
+      ★ 소방차는 긴급자동차라 과속단속 대상이 아니다. 안내는 상용 동등성을
+        위한 것이지 기능이 아니다 — **제한속도 쪽이 본체다.**
+      ★ 기준일자 컬럼이 없다. 파일명의 2025 를 따랐다.
+      ★ 인코딩이 utf-8-sig 다. 다른 지자체 CSV(cp949)와 다르다.
+    contract:
+      encoding: utf-8-sig
+      rows: 510
+      required_cols: [위도, 경도, 제한속도, 설치장소, 시군구명]
+    schema:
+      columns: [무인교통단속카메라관리번호, 시군구명, 도로노선번호, 도로노선명,
+                도로노선방향, 위도, 경도, 설치장소, 단속구분, 제한속도,
+                보호구역구분, 설치년도]
+      encoding_seen: utf-8-sig
+
+  juso_building_db:
+    inner_contains: build_jeonnamgwangju
+    select:     {col: 0, prefix: '1221010800'}
+    stem:       juso_building_db
+    ext:        [zip]
+    scope:      jngj
+    updated:    "2026-07-31"
+    authority:  행정안전부 도로명주소
+    kind:       text_table
+    encoding:   cp949
+    what:       도로명주소 건물DB. 전남광주 1,327,372행 → 동구 20,458 → 동명동 2,078
+    feeds:      미투입 — 목적지 검색(건물명)
+    feeds_why: |
+      poi.geojson 은 상가 2,077 뿐이라 **학교·병원·관공서가 통째로 없다.**
+      전남여자고등학교가 검색에 안 잡히는 이유다. 이 파일에 건물명이 있다.
+    note: |
+      ★ **좌표가 없다.** 주소 DB 라 건물명·도로명·건물번호만 있다.
+        지도에 찍으려면 juso 내비게이션용DB(건물중심점·출입구 좌표)가
+        필요하다 — 승인 대기.
+      ★ `|` 구분 · CRLF 개행 · cp949.
+      ★ `updated` 근거 — 이 zip 에는 기준일 문서가 없다(가이드 PDF 뿐).
+        형제 자료 `202608_주소DB_전체분.zip` 에
+        `[자료건수]주소DB(2026년 08월 31일 기준).txt` 가 동봉돼 있어
+        **제공처가 월말을 기준일로 쓴다**는 것이 확인된다. 그래서
+        202607 → 2026-07-31 로 적는다. zip 내부 타임스탬프 2026-08-04 는
+        제작일이지 기준일이 아니다(ledger.py:20 "다운로드일이 아니다").
+        ★ 추정이 섞인 유일한 칸이다. 제공처 확인이 되면 고쳐라.
+      ★ **전국 전체분을 raw 에 넣지 마라.** build_jeonnamgwangju.txt 가
+        205MB 다. 동명동 2,078건만 잘라낸다 — enforcement(8.1MB)가
+        용량으로 retired 됐다.
+      ★ **법정동코드로 자른다. 동 이름으로 자르지 마라.**
+        `c[3] == '동명동'` 으로 거르면 2,701 이 나오고 그중 623 이
+        **목포시 동명동**이다. 전남+광주 통합 파일이라 같은 파일에 있다.
+        행정동명까지 합치면 5,683 이 된다 — 종전 이 칸의 5,718 이
+        그 경로에서 나온 수다.
+            법정동코드 [0] == '1221010800'  →  2,078   ★ 이것이 정답
+        scope.py 가 "코드는 선언에 둔다" 고 적은 이유가 이것이다.
+    contract:
+      encoding: cp949
+      delimiter: "|"
+    schema:
+      files: [build_jeonnamgwangju.txt, jibun_jeonnamgwangju.txt]
+      primary: build_jeonnamgwangju.txt
+      encoding_seen: cp949
+
 raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
@@ -2401,7 +2661,16 @@ retired:
     what:      건축물대장 표제부. 높이·주용도·주차대수·사용승인일
     reason:    높이·주차대수만 있고 건물 형상은 building 이 이미 낸다. 11.3MB 소비자 0곳
     at:        2026-08-31
-    successor: building
+    # ★ 2026-09-07. 후속의 stem 을 `eais_bldgledger_dm` 으로 **일부러
+    #   붙여 썼다.** `eais_bldg_ledger_dm` 으로 두면 이 항목의 stem
+    #   (`eais_bldg_ledger`)을 접두로 삼아 `acquire --stage` 가
+    #   "폐기 등재된 파일이 다시 올라왔다" 로 판정해 격리한다.
+    #   실제로 그렇게 격리됐다. 검사가 옳고 이름이 틀렸던 것이다.
+    # ★ 2026-09-07. successor 를 building → bldg_ledger_dm 으로 고친다.
+    #   폐기 사유는 "소비자 0곳" 이었고 그 판단은 유효했다. 상황이 바뀌어
+    #   (β 점유위험도 #62) 동명동으로 좁힌 판이 복귀했다. 폐기 기록을
+    #   지우면 "왜 한 번 뺐다가 다시 넣었나" 가 사라진다.
+    successor: bldg_ledger_dm
   enforcement:
     stem:      gjcity_parking_enforce
     what:      동구 불법주정차 단속 2판 (2022-01~2023-10 85,380건 + 2024년). 이어붙여 쓴다

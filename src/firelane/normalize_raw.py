@@ -96,6 +96,47 @@ RULES: list[tuple[str, str, str]] = [
     # 좌표 없는 "시도 소방서 현황"(20250701)은 규칙을 두지 않는다. landing 에 남긴다.
     (r"전국소방서.?좌표현황",
      "safety", "safety_firestation_kr_20240901.csv"),
+    # ── 2026-09-06 확보분 일곱 ───────────────────────────────
+    #   ★ 정규명의 8자리가 대장 `updated` 의 정본이다(ledger_fields.py:25).
+    #     "8자리를 못 얻으면 채우지 않는다. 추측하지 않는다."
+    #     그래서 날짜 근거를 줄마다 적는다.
+
+    # 건축물대장 표제부. 파일명 뒤 14자리는 **내려받은 시각**이다.
+    # 앞 8자리만 쓴다(normalize_raw:207 의 규칙 그대로).
+    # ★ `retired.building_ledger`(08-31 폐기)의 후속이라 stem 에 `_dm` 이 붙는다.
+    (r"표제부_(\d{8})\d{6}\.json$",
+     "eais", "eais_bldgledger_dm_jngj-dongmyeong_{0}.json"),
+
+    # 전국 어린이보호구역 표준데이터. updated 는 레코드의 데이터기준일자
+    # 최댓값 2026-07-28 이다. 파일명에는 날짜가 없다.
+    (r"^전국어린이보호구역표준데이터\.json$",
+     "mois", "mois_child_zone_std_kr_20260728.json"),
+    # 전국 노인·장애인보호구역. 같은 방식으로 2026-06-19.
+    (r"^전국노인장애인보호구역표준데이터\.json$",
+     "mois", "mois_senior_zone_std_kr_20260619.json"),
+
+    # 동구 과속방지턱 342개소. 데이터기준일자 2023-04-05 (전 행 동일).
+    # ★ 데이터갱신시점 2026-07-01 은 **행정구역 개편일**이고 주소 문자열만
+    #   일괄 갱신된 것이다. 그것을 updated 로 쓰면 거짓이 된다.
+    (r"^과속방지턱정보_전남광주동구\.csv$",
+     "gjcity", "gjcity_speedbump_jngj-donggu_20230405.csv"),
+    # 동구 행정 CCTV 81대. 데이터기준일자 2020-08-14(77) · 08-18(4) 중 최빈.
+    (r"^cctv정보_전남광주동구\.csv$",
+     "gjcity", "gjcity_admin_cctv_jngj-donggu_20200814.csv"),
+
+    # 광주 무인교통단속카메라 510. 빅데이터 통합플랫폼 2025년판.
+    (r"^gjbg_lsi_006_traffic_cctv_tb_2025\.csv$",
+     "gjbg", "gjbg_traffic_cam_jngj_20251231.csv"),
+
+    # 도로명주소 건물DB 전국 전체분. 205MB 의 build_jeonnamgwangju.txt 가
+    # 들어 있다. ★ 동명동 절단은 **법정동코드 1221010800** 으로 한다 —
+    # 이름으로 거르면 목포시 동명동 623건이 딸려온다.
+    # ★ 이 zip 에는 기준일 문서가 없다. 형제 자료 202608_주소DB 에
+    #   `[자료건수]주소DB(2026년 08월 31일 기준).txt` 가 동봉돼 있어
+    #   제공처가 월말을 기준일로 쓴다는 것이 확인된다. 202607 → 07-31.
+    (r"^202607_건물db_전체분\.zip$",
+     "juso", "juso_building_db_jngj_20260731.zip"),
+
     # ── juso · 도로명주소 ────────────────────────────────────
     # 전자지도 zip 하나에 5종이 들어 있다.
     # TL_SPRD_MANAGE(도로구간) TL_SPRD_RW(실폭도로) TL_SCCO_EMD(경계)
@@ -319,16 +360,22 @@ def convert(src: Path, dst: Path) -> bool:
 
 
 def find_downloads() -> Path | None:
-    for c in (Path.home() / "Downloads",
-              Path("/mnt/c/Users") ):
-        if c.name == "Downloads" and c.is_dir():
-            return c
-        if c.is_dir():
-            for u in c.iterdir():
-                d = u / "Downloads"
-                if d.is_dir() and any(d.iterdir()):
-                    return d
-    return None
+    """다운로드 폴더. **정본은 `paths.inbox()` 다.**
+
+    ★ 2026-09-07. 여기 있던 사본을 지웠다(PLAN #B3-12). 같은 일을 두 곳이
+      따로 하고 있었고 규칙이 달랐다 —
+
+          paths.inbox()      FIRE_LANE_INBOX 를 먼저 본다.
+                             후보가 여럿이면 **파일이 가장 많은** 폴더
+          여기(옛 사본)       환경변수를 안 본다.
+                             **첫 번째로 찾은** 폴더
+
+      사용자 계정이 둘이면 서로 다른 폴더를 가리킬 수 있었다. 20종을
+      옮기는 경로라 갈리면 되돌리기 번거롭다. 정본이 둘이면 어긋난다.
+    """
+    from firelane.paths import inbox
+    d = inbox()
+    return d if d.is_dir() else None
 
 
 
@@ -371,7 +418,9 @@ def main():
     #   한 번 정리한 `safety_kfs_pumptruck_20251224.hwp` 를 다시 넣으면
     #   "규칙에 없는 파일" 로 떨어졌다 — 위 주석이 약속한 왕복 멱등이
     #   hwp·pdf 에 대해 거짓이었다.
-    EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+    # ★ 2026-09-07. `json` 추가. 공공데이터포털 표준데이터와 건축물대장
+    #   표제부가 JSON 이다. 없으면 통과 규칙을 못 타 멱등이 깨진다.
+    EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson"
     # ★ RULES 는 모듈 전역이다. main() 안에서 append 하면 같은 프로세스에서
     #   두 번 부를 때 규칙이 중복 누적된다. 지역 사본에 붙인다.
     # ★ 2026-09-03. `[a-z0-9_]` 에 하이픈이 없어 스코프 별칭을 못 받았다.

@@ -631,6 +631,28 @@ def test_ingest_kinds_are_documented():
         f"sources.yaml 이 ingest 에 없는 kind 를 쓴다: {unknown}\n"
         "  실행하면 ValueError('unknown kind') 로 죽는다.")
 
+    # ★ 2026-09-07. 여기까지는 **한 방향**이다. 반대 방향이 사각지대였다 —
+    #   `json_points` 는 ingest 에 있고 ledger_schema · inventory 에는 없었다.
+    #   둘 다 실패하지 않고 조용히 건너뛰었으므로 아무도 못 봤다.
+    #   정적 목록에는 반드시 역방향 검사를 붙인다(2026-09-04, 넷 고침).
+    from firelane.kinds import KINDS
+
+    from firelane.inventory import PROBES
+
+    assert impl == set(KINDS), (
+        "ingest 분기와 kinds.KINDS 가 어긋난다.\n"
+        f"  등록부에만: {sorted(set(KINDS) - impl)}\n"
+        f"  분기에만  : {sorted(impl - set(KINDS))}\n"
+        "  새 kind 는 kinds.KINDS 에 한 줄 + ingest 분기 하나다.")
+
+    assert set(PROBES) == set(KINDS), (
+        "inventory.PROBES 와 kinds.KINDS 가 어긋난다.\n"
+        f"  차이: {sorted(set(PROBES) ^ set(KINDS))}\n"
+        "  PROBES 는 KINDS 에서 유도돼야 한다 — 손으로 나열하지 마라.")
+
+    assert used <= set(KINDS), (
+        f"대장이 등록부에 없는 kind 를 쓴다: {sorted(used - set(KINDS))}")
+
     # ★ 문서 전체가 아니라 **표 행**에서 찾는다. 본문 어딘가에 이름이
     #   언급된 것만으로 통과시키면 안 된다 — 실제로 별칭 설명 문단이
     #   `shp_dir` 을 언급하는 바람에 표에서 빼도 통과했다(역검증에서 걸림).

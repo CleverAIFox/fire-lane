@@ -543,7 +543,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 54종(OK 27 · SKIP 27)
+data/processed/    대장 61종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -629,14 +629,14 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격.
 
-대장은 `sources.yaml` 하나다. `datasets` 54종 · `retired` 10종.
+대장은 `sources.yaml` 하나다. `datasets` 61종 · `retired` 10종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 ### 6-2. 데이터 보관
 
 ```
 landing      SSD · 다운로드 원본. 규칙 없음. 백업 제외
-raw          SSD · 제공기관 10폴더. 절대 수정하지 않는다
+raw          SSD · 제공기관 12폴더. 절대 수정하지 않는다
 norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료(08-31)
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성

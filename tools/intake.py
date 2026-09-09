@@ -126,8 +126,14 @@ def _by_rules(name: str) -> str | None:
     import re as _re
 
     from firelane.normalize_raw import RULES
+    # ★ 2026-09-07. `normalize_raw.main()` 은 `low = f.name.lower()` 로
+    #   매칭한다. 여기가 원본 그대로 매칭해서 **대문자가 든 파일명만**
+    #   관문에 막혔다(건물DB · CCTV정보 · GJBG_LSI…). 08-24 KFS 사고의
+    #   거울상이다 — 그때는 규칙이 대문자였고 이번엔 매칭이 소문자를
+    #   안 했다. 두 곳이 같은 방식으로 매칭해야 한다.
+    low = name.lower()
     for pat, folder, tmpl in RULES:
-        m = _re.search(pat, name)
+        m = _re.search(pat, low)
         if not m:
             continue
         return f"{folder}/{tmpl.format(*m.groups()) if tmpl else name}"

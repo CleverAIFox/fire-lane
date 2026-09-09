@@ -66,20 +66,30 @@ from firelane import scope as sc
 #   으로 죽는다. 실제로 그렇게 죽였고 `golden` 은 초록불이었다 —
 #   `segments.geojson` 만 읽으니 대장이 깨진 것을 모른다.
 REQUIRED = ("what", "scope", "updated", "kind", "schema", "feeds")
+# ★ 2026-09-07. **코드가 읽지 않는 문서 필드.** 검사 대상이 아니다.
+#   `used_for` 는 12종에 있고 전부 차량 제원표다 — `vehicle.py` 의
+#   전폭 2.5m · 축거 · 최소회전반경의 유일한 공식 근거가 여기 산다.
+#   코드 참조가 0 이라고 지우면 근거가 사라진다. 지우지 않고, 필수로도
+#   요구하지 않는다는 것을 선언으로 남긴다.
+DOC_FIELDS = ("used_for", "note", "feeds_why", "feeds_note", "authority")
 # 실물 경로를 낼 수 있어야 한다 — `stem`(또는 `stems`) 이나 `files` 중 하나.
 PATHABLE = ("stem", "stems", "files")
 
-# raw_only 는 파이프라인이 읽지 않는다. 구조 선언을 요구할 근거가 없다.
-NO_SCHEMA_KINDS = {"raw_only"}
-
-# 텍스트 소스는 인코딩 선언이 있어야 한다. 실물과 대조하기 위해서다.
-TEXT_KINDS = {"csv_points", "csv_table", "csv_table_multi",
-              "csv_points_in_zip", "csv_point", "json_points"}
-# hits[0] 하나만 읽는 kind. 여러 파일이 걸리면 조용히 뒤집힌다.
-# ★ csv_table_multi 는 hits 전부를 이어붙인다(ingest.py 의 해당 분기).
-#   여기 넣으면 "하나만 읽는데 files 가 2개다" 를 매번 오탐한다.
-#   ingest 가 이 집합을 import 한다 — 같은 개념의 사본을 두지 않는다.
-SINGLE_PICK = (TEXT_KINDS - {"csv_table_multi"}) | {"shp_zip", "dbf_in_zip"}
+# ★ 2026-09-07. 셋을 손으로 나열하던 것을 `firelane.kinds` 에서 유도한다.
+#   kind 분류가 여섯 자리에 흩어져 있었고 `json_points` 는 그중 **둘에만**
+#   들어갔다 — `ledger_schema` 와 `inventory` 가 빠졌다. 둘 다 실패하지
+#   않고 조용히 건너뛰었다. 정본은 하나고 나머지는 사본이거나 없어야 한다.
+#
+#     NO_SCHEMA_KINDS  schema is None    구조 선언을 요구할 근거가 없다
+#     TEXT_KINDS       text=True         인코딩 선언이 있어야 실물과 대조한다
+#     SINGLE_PICK      single=True       hits[0] 하나만 읽는다
+#       ★ csv_table_multi 는 hits 전부를 이어붙이므로 single=False 다.
+#         넣으면 "하나만 읽는데 files 가 2개다" 를 매번 오탐한다.
+from firelane.kinds import (  # noqa: E402
+    NO_SCHEMA_KINDS,
+    SINGLE_PICK,
+    TEXT_KINDS,
+)
 
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 FORBIDDEN_VALUES = {"TODO", "todo", "TBD", "?", "-", ""}

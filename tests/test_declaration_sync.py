@@ -278,9 +278,30 @@ def _code_only(src: str) -> str:
 
     ★ 문자열 리터럴은 남긴다. 소비자는 이름을 문자열로 부르므로
       그것까지 지우면 이번엔 반대 방향으로 틀린다. 지우는 것은
-      docstring 과 주석 둘뿐이다.
+      docstring 과 주석, 그리고 `RULES` 표 셋이다.
+
+    ★ 2026-09-07. `RULES` 를 더 걷는다. **그것은 소비가 아니다.**
+      취득처가 준 파일명을 정규명으로 바꾸는 표이고, 정규명 문법이
+      `{provider}_{dataset}_{scope}_{vintage}` 라 **대장 키를 부분문자열로
+      품는다.** `gjcity_school_zone_...` 안에 `school_zone` 이 들어 있다.
+
+      그래서 RULES 에 줄을 추가하면 그 데이터셋이 자동으로 "참조됨" 이
+      됐다. 실제로 PLAN §1 #23 이 *"2026-09-06 에 12종이 됐다 —
+      `school_zone` 이 코드에 붙었다"* 고 적었는데, `school_zone` 은
+      `src`·`tools` 어디에도 없다. **파일명 규칙에 이름이 들어간 것을
+      코드 참조로 읽었고 그 오판이 문서에 근거까지 붙어 기록됐다.**
+      `bin_trash` · `bin_cloth` 도 같은 이유로 숨어 있었다.
+
+      2026-08-26 의 `enforcement` 오판(주석 한 줄을 참조로 셈)과 같은
+      형태다. 그때는 주석을 걷어 고쳤고 이번에는 RULES 를 걷는다 —
+      **미참조 수를 줄이는 쪽으로 틀리는 오류는 낡음을 숨긴다.**
     """
     import ast
+    import re as _re
+
+    # RULES 표는 원본 파일명 목록이다. ast 로는 대입문이라 남으므로 먼저 뗀다.
+    src = _re.sub(r"^RULES: list\[tuple\[str, str, str\]\] = \[.*?^\]",
+                  "", src, flags=_re.S | _re.M)
     tree = ast.parse(src)
     for node in ast.walk(tree):
         if isinstance(node, (ast.Module, ast.FunctionDef,
