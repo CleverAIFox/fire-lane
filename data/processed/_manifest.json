@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-09-04T00:05:16.752387+09:00",
+  "generated_at": "2026-09-09T20:50:42.501228+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -2986,6 +2986,331 @@
       "geom": [],
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
       "outputs": []
+    },
+    {
+      "key": "bldg_ledger_dm",
+      "source_files": [
+        "**/eais_bldgledger_dm_*"
+      ],
+      "source_sha256": "82d938c21281441c166e4e8dcef539a983f603b6195d949281f3d5f05f93bd63",
+      "resolved": "eais_bldgledger_dm_jngj-dongmyeong_20260906.json",
+      "source_crs": "",
+      "status": "OK",
+      "features": 1989,
+      "geom": [],
+      "columns": [
+        "PLOT_PSTN",
+        "SGG_CD",
+        "STDG_CD",
+        "PLOT_SE_CD",
+        "MNO",
+        "SNO",
+        "BDRG_SN",
+        "LDGR_SE_CD",
+        "LDGR_SE_CD_NM",
+        "LDGR_KIND_CD",
+        "LDGR_KIND_CD_NM",
+        "ROAD_NM_PLOT_PSTN",
+        "BLDG_NM",
+        "SPAREA_NM",
+        "BLCK",
+        "LOT",
+        "BYLT_CNT",
+        "NA_ROAD_CD",
+        "NA_STDG_CD",
+        "NA_GRND_UDGD_CD",
+        "NA_MNO",
+        "NA_SNO",
+        "DNG_NM",
+        "MANX_SE_CD",
+        "MANX_SE_CD_NM",
+        "SIAR",
+        "BDAR",
+        "BDCVRT",
+        "GFA",
+        "FART_CMPTTN_GFA",
+        "FART",
+        "STRCT_CD",
+        "STRCT_CD_NM",
+        "ETC_STRCT",
+        "MN_USG_CD",
+        "MN_USG_CD_NM",
+        "ETC_USG",
+        "ROOF_CD",
+        "ROOF_CD_NM",
+        "ETC_ROOF",
+        "HH_CNT",
+        "FML_CNT",
+        "HG",
+        "GRND_NOFL",
+        "UDGD_NOFL",
+        "PSNGR_ELVTR_CNT",
+        "EUSE_ELVTR_CNT",
+        "ANX_BDST_CNT",
+        "ANX_BDST_AREA",
+        "TOL_DNG_GFA",
+        "INDR_MCNCL_CNTOM",
+        "INDR_MCNCL_AREA",
+        "OTDR_MCNCL_CNTOM",
+        "OTDR_MCNCL_AREA",
+        "INDR_SFPRPL_CNTOM",
+        "INDR_SFPRPL_AREA",
+        "OTDR_SFPRPL_CNTOM",
+        "OTDR_SFPRPL_AREA",
+        "PRMSN_DAY",
+        "BGNCST_DAY",
+        "USE_APRV_DAY",
+        "PRMSN_NO_YR",
+        "PRMSN_NO_INST_CD",
+        "PRMSN_NO_INST_CD_NM",
+        "PRMSN_NO_SE_CD",
+        "PRMSN_NO_SE_CD_NM",
+        "HO_CNT",
+        "ENRG_EFCNY_GRD_VL",
+        "ENRG_RTRDT",
+        "EPI_SCR",
+        "ECFRD_BDST_GRD_VL",
+        "ECFRD_BDST_CERT_SCR",
+        "INTG_BDST_GRD_VL",
+        "INTG_BDST_CERT_SCR",
+        "FRST_CRT_DT",
+        "RSERTHQK_DSGN_APPLY_YN",
+        "RSERTHQK_ABLTY"
+      ],
+      "outputs": [
+        "bldg_ledger_dm.csv"
+      ]
+    },
+    {
+      "key": "child_zone_std",
+      "source_files": [
+        "**/mois_child_zone_std_*"
+      ],
+      "source_sha256": "5a9a8d10bf3d17e099f7745c3c6cf9370aba76b483751deb6b4c2acd1ff31f79",
+      "resolved": "mois_child_zone_std_kr_20260728.json",
+      "source_crs": "EPSG:4326",
+      "status": "OK",
+      "features": 18,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "columns": [
+        "시설종류",
+        "대상시설명",
+        "소재지도로명주소",
+        "소재지지번주소",
+        "위도",
+        "경도",
+        "관리기관명",
+        "관할경찰서명",
+        "CCTV설치여부",
+        "CCTV설치대수",
+        "보호구역도로폭",
+        "데이터기준일자",
+        "제공기관코드",
+        "제공기관명"
+      ],
+      "outputs": [
+        "child_zone_std.geojson",
+        "child_zone_std_5186.gpkg"
+      ]
+    },
+    {
+      "key": "senior_zone_std",
+      "source_files": [
+        "**/mois_senior_zone_std_*"
+      ],
+      "source_sha256": "c10e7ccbaa7c1e98daf2e98a48d1057ed0cb04a786d6737f84385463b52ad017",
+      "resolved": "mois_senior_zone_std_kr_20260619.json",
+      "source_crs": "EPSG:4326",
+      "status": "OK",
+      "features": 14,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "columns": [
+        "장소유형코드",
+        "대상시설명",
+        "시도명",
+        "시군구명",
+        "시군구코드",
+        "소재지도로명주소",
+        "소재지지번주소",
+        "위도",
+        "경도",
+        "제한속도",
+        "관리기관명",
+        "관리기관전화번호",
+        "관할경찰서명",
+        "CCTV설치여부",
+        "CCTV설치대수",
+        "보호구역도로폭",
+        "데이터기준일자",
+        "제공기관코드",
+        "제공기관명"
+      ],
+      "outputs": [
+        "senior_zone_std.geojson",
+        "senior_zone_std_5186.gpkg"
+      ]
+    },
+    {
+      "key": "speedbump",
+      "source_files": [
+        "**/gjcity_speedbump_*"
+      ],
+      "source_sha256": "5ce87804c5054a09a5b9336f5c40acce127669c4497e9667be0c2cd963ab7f7c",
+      "resolved": "gjcity_speedbump_jngj-donggu_20230405.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 342,
+      "geom": [],
+      "columns": [
+        "개방자치단체코드",
+        "관리번호",
+        "과속방지턱관리번호",
+        "도로명",
+        "시도명",
+        "시군구명",
+        "소재지도로명주소",
+        "소재지지번주소",
+        "설치장소",
+        "과속방지턱재료",
+        "과속방지턱형태구분",
+        "과속방지턱높이",
+        "과속방지턱폭",
+        "과속방지턱연장",
+        "도로유형구분",
+        "규격여부",
+        "WGS84위도",
+        "WGS84경도",
+        "보차분리여부",
+        "연속형여부",
+        "과속방지턱설치연도",
+        "관리기관명",
+        "관리기관전화번호",
+        "데이터기준일자",
+        "데이터갱신구분",
+        "데이터갱신시점",
+        "최종수정시점"
+      ],
+      "outputs": [
+        "speedbump.csv"
+      ]
+    },
+    {
+      "key": "admin_cctv",
+      "source_files": [
+        "**/gjcity_admin_cctv_*"
+      ],
+      "source_sha256": "d6be41274b0f8632219bc8458271adff6e9e7ad2bf1c67a736e5aad150551608",
+      "resolved": "gjcity_admin_cctv_jngj-donggu_20200814.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 81,
+      "geom": [],
+      "columns": [
+        "개방자치단체코드",
+        "관리번호",
+        "관리기관명",
+        "소재지도로명주소",
+        "소재지지번주소",
+        "설치목적구분",
+        "카메라대수",
+        "카메라화소수",
+        "촬영방면정보",
+        "보관일수",
+        "설치연월",
+        "관리기관전화번호",
+        "WGS84위도",
+        "WGS84경도",
+        "데이터기준일자",
+        "데이터갱신구분",
+        "데이터갱신시점",
+        "최종수정시점"
+      ],
+      "outputs": [
+        "admin_cctv.csv"
+      ]
+    },
+    {
+      "key": "speed_cam",
+      "source_files": [
+        "**/gjbg_traffic_cam_*"
+      ],
+      "source_sha256": "c4680175becb0bdd4d946849001f542d681ec2b46ad9fd849637b8e58c57a35d",
+      "resolved": "gjbg_traffic_cam_jngj_20251231.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 510,
+      "geom": [],
+      "columns": [
+        "무인교통단속카메라관리번호",
+        "시군구명",
+        "도로노선번호",
+        "도로노선명",
+        "도로노선방향",
+        "위도",
+        "경도",
+        "설치장소",
+        "단속구분",
+        "제한속도",
+        "보호구역구분",
+        "설치년도"
+      ],
+      "outputs": [
+        "speed_cam.csv"
+      ]
+    },
+    {
+      "key": "juso_building_db",
+      "source_files": [
+        "**/juso_building_db_*"
+      ],
+      "source_sha256": "3d6dc01f6cb1bf8a95cff3c5d956dd2d5a87b37647ffb80f621848e5ab4efad9",
+      "resolved": "juso_building_db_jngj_20260731.zip",
+      "source_crs": "",
+      "status": "OK",
+      "features": 2078,
+      "geom": [],
+      "columns": [
+        "c00",
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05",
+        "c06",
+        "c07",
+        "c08",
+        "c09",
+        "c10",
+        "c11",
+        "c12",
+        "c13",
+        "c14",
+        "c15",
+        "c16",
+        "c17",
+        "c18",
+        "c19",
+        "c20",
+        "c21",
+        "c22",
+        "c23",
+        "c24",
+        "c25",
+        "c26",
+        "c27",
+        "c28",
+        "c29",
+        "c30"
+      ],
+      "outputs": [
+        "juso_building_db.csv"
+      ]
     }
   ]
 }
