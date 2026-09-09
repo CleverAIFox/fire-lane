@@ -38,7 +38,7 @@ import pytest
 
 # ★ sys.path 를 조작하지 않는다(test_layering). `tools/` 는 pyproject 의
 #   `[tool.pytest.ini_options] pythonpath = ["tools"]` 가 이미 잡는다.
-from owned_paths import CODEOWNERS, owners_of, rules, tracked, unowned
+from owned_paths import CODEOWNERS, rules, unowned
 
 ROOT = Path(__file__).resolve().parent.parent
 
