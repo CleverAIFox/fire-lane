@@ -32,7 +32,6 @@ PARAM 없음
 from __future__ import annotations
 
 import re
-import sys
 from pathlib import Path
 
 import pytest
@@ -153,7 +152,6 @@ def test_contracts_surface_is_signed():
     if not d.exists():
         pytest.skip("src/contracts 가 없다")
 
-    sys.path.insert(0, str(ROOT / "src"))
     import contracts as C
 
     surface = {
