@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-09-09T20:50:42.501228+09:00",
+  "generated_at": "2026-09-10T21:26:15.304365+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -40,6 +40,62 @@
     "display": "EPSG:4326"
   },
   "datasets": [
+    {
+      "key": "gjcity_road_facility",
+      "source_files": [
+        "**/gjcity_road_facility_*"
+      ],
+      "source_sha256": "c0810ad6ed35388fe6c881dc2005ddaad5a77821216ab2eb105c1c3c895f77bc",
+      "resolved": "gjcity_road_facility_jngj_20220914.hwp",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "juso_bldg_geom",
+      "source_files": [
+        "**/juso_bldg_geom_*"
+      ],
+      "source_sha256": "03808c2a5d858785589e864cc85a275d87656fe07fc6f5875304e4b3924a92cd",
+      "resolved": "juso_bldg_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "juso_bldggrp_geom",
+      "source_files": [
+        "**/juso_bldggrp_geom_*"
+      ],
+      "source_sha256": "4867537948920da1a014db26bb614c9190bf1623362ec16f7e4f6deec2f305ed",
+      "resolved": "juso_bldggrp_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "juso_etc_geom",
+      "source_files": [
+        "**/juso_etc_geom_*"
+      ],
+      "source_sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
+      "resolved": "juso_etc_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
     {
       "key": "kfs_pumptruck",
       "source_files": [

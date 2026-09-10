@@ -729,7 +729,16 @@ def main():
             if staled:
                 r["staled"] = staled
                 print(f"          ★ 옛 산출물 {len(staled)}개 격리(.stale_) — 하류가 못 읽는다")
-        print(f"[{r.get('status','-'):7}] {key:20} {r.get('features',''):>8} feat")
+        # ★ 2026-09-10. 종전에는 status 와 건수만 찍고 error 는
+        #   _manifest.json 에만 적었다. 실패 사유를 보려면 JSON 을
+        #   손으로 파싱해야 했고, 그 바람에 juso 3종 FAIL 의 원인을
+        #   **세 번 추측**했다(vector → shp_zip_multi → raw_only).
+        #   339행이 같은 병을 이미 적어놨다. 화면에 낸다.
+        _st = r.get("status", "-")
+        _msg = f"{r.get('features', ''):>8} feat"
+        if _st in ("FAIL", "MISSING") and r.get("error"):
+            _msg = str(r["error"])[:78]
+        print(f"[{_st:7}] {key:20} {_msg}")
         results.append(r)
 
     # ★ 2026-08-23. 매 실행 지웠더니 `캐시 0` 이 매번 떴다.

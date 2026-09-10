@@ -543,7 +543,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 61종
+data/processed/    대장 65종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -629,7 +629,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격.
 
-대장은 `sources.yaml` 하나다. `datasets` 61종 · `retired` 10종.
+대장은 `sources.yaml` 하나다. `datasets` 65종 · `retired` 16종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 ### 6-2. 데이터 보관
@@ -651,11 +651,22 @@ exFAT 에서 `git reset --hard` 시 경로 문자열 파일로 체크아웃되�
 소실됐다. `src/firelane/paths.py` 의 환경변수 방식으로 대체했다.
 
 ```bash
-export FIRE_LANE_DATA="<raw 상위 폴더 경로>"      # 리눅스
-setx FIRE_LANE_DATA "<raw 상위 폴더 경로>"        # 윈도우
+export FIRE_LANE_DATA="<raw 상위 폴더 경로>"          # 리눅스
+export FIRE_LANE_INBOX="/mnt/c/Users/<사용자명>/Downloads"
+setx FIRE_LANE_DATA "<raw 상위 폴더 경로>"            # 윈도우
 ```
 
 미설정 시 `<repo>/data/raw` 를 쓴다. 단일 머신이면 그걸로 충분하다.
+
+★ **`FIRE_LANE_INBOX` 는 파이프라인의 머리다.** `tools/intake.py` 가
+브라우저 다운로드 폴더를 관측하는 자리이고, `tools/lakecheck.py` L3 와
+`tools/sweep.py` 가 기본 스캔 대상으로 쓴다. 없으면 **레이크 밖을
+아무도 안 본다** — 2026-08-25 에 KFS PDF 두 판을 열어보고 대장 결론을
+뒤집었는데 그 PDF 가 raw 에 편입되지 않았고 아무 도구도 그 사실을 몰랐다.
+
+★ 2026-09-10 정정. 이 줄이 **`web/playbook.html` 에는 있는데 여기 없었다.**
+그 HTML 은 `render_workflow.py` 가 이 문서에서 생성하는 것이라 정본에
+없는 내용이 생성물에만 있던 셈이다. 협업자가 보는 문서와 대장이 갈렸다.
 
 ★ **`FIRE_LANE_RAW` 는 폐기됐다.** `paths.py` 가 레거시로 처리하며, 설정돼
 있으면 `FIRE_LANE_DATA` 를 덮어써 기계 간 산출물이 갈린다. 실행 시 경고가
@@ -2389,7 +2400,7 @@ CRS 변경               ★ 중단. 무조건
 ### 18-3c. retired — 폐기 기록
 
 **지운 것도 대장에 남긴다.** 없으면 3개월 뒤에 또 받고 또 조사한다.
-현재 `retired` 10종이 있다.
+현재 `retired` 16종이 있다.
 
 ```yaml
 retired:

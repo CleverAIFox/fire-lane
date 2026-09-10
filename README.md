@@ -44,6 +44,8 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 
 ```bash
 uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
+uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
+uv run python tools/sweep.py            # 다운로드·레이크 스캔 → 근거 있는 것만 정리
 uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 ```
 
@@ -398,7 +400,7 @@ web/
 도달 가능    687 (62%)   119안전센터에서 막힌 길 없이 갈 수 있는 구간
 총연장       48,579.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 61종 · `retired` 10종
+대장        `datasets` 65종 · `retired` 16종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 스냅 · A* · 턴바이턴. edge_cost 는 파이썬과 전량 대조
 KPI         폭 미인지 내비가 통행불가를 지나는 목적지 224/588 (38%)

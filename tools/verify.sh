@@ -232,6 +232,16 @@ for i in "${!NAMES[@]}"; do
     printf '%s%s%s\n' "$D" "${NOTES[$i]}" "$Z"
 done
 printf '%s══════════════════════════════════════════════%s\n' "$D" "$Z"
+# ── 데이터 레이크 정합 ──────────────────────────────────────────
+# ★ 선언과 실물이 갈리는 것을 fsck 가 다 보지 못했다 — 제공기관 state ·
+#   격리 잔재 · landing 우회 · ext 어휘 · norm 계보 다섯 축이 밖에 있었다.
+#   lakecheck 이 그 축을 든다. FIRE_LANE_INBOX 를 기본 스캔 대상으로 쓴다.
+step "레이크 선언↔실물" uv run python tools/lakecheck.py
+
+# ★ 스캔만 한다. 지우려면 --sweep --yes 를 사람이 친다.
+#   "정리는 사람이 한다" 를 도구가 대신하되 삭제는 명시적으로.
+step "레이크 정리 대상" uv run python tools/sweep.py
+
 printf '  통과 %d · 실패 %d · 생략/참고 %d\n\n' "$pass" "$fail" "$skip"
 
 if [ "$fail" -gt 0 ]; then

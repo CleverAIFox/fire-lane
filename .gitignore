@@ -95,3 +95,11 @@ data/_migrate_journal.json
 web/navi/node_modules/
 web/navi/dist/
 web/navi/.vite/
+
+# ── 검사 도구의 출력 (2026-09-10) ───────────────────────────────
+# 실행할 때마다 바뀌고 정본은 도구 코드지 그 출력이 아니다.
+LAKELIST.json
+REDLIST.json
+BATCH_MAP.json
+# b2_* 배치가 뜬 sources.yaml 백업. git 이 이력을 갖는다
+sources.yaml.b2*
