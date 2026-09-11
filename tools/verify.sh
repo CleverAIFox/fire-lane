@@ -242,6 +242,23 @@ step "레이크 선언↔실물" uv run python tools/lakecheck.py
 #   "정리는 사람이 한다" 를 도구가 대신하되 삭제는 명시적으로.
 step "레이크 정리 대상" uv run python tools/sweep.py
 
+# ★ 검사가 죽었는지를 검사한다. 프로브 다섯이 정적으로 센다 —
+#   빈 그물 · 손목록 · 조용한 통과 · 죽은 게이트 · 좁은 범위.
+#   --selftest 는 프로브가 살아 있는지 먼저 본다(양성 대조).
+step "검사가 죽었는가" uv run python tools/deadcheck.py --selftest
+
+
+# ── 배치가 세운 상태가 유지되는가 (B1/W4) ───────────────────────
+# ★ 적용 뒤 no-op 이 되는 배치 도구를 EXEMPT 로 재우면, 상태가 되돌아가도
+#   우는 곳이 없어진다. 지우는 대신 `--check` 를 달아 강제자로 승격했다.
+#   넷은 각자 다른 것을 본다 — 공통 껍데기를 씌우지 않았다.
+step "대장 별칭 이관 유지" uv run python tools/ledger_fields.py --check
+step "내비 소스 목록"      uv run python tools/install_navi.py --check
+step "배포에 내비 빌드"    uv run python tools/pages_add_navi.py --check
+step "루트 잔재·유령 면제" uv run python tools/navi_setup.py --check
+step "문서 제목 무결"      uv run python tools/docpatch.py check \
+     docs/MASTER.md docs/PLAN.md docs/DECISIONS.md
+
 printf '  통과 %d · 실패 %d · 생략/참고 %d\n\n' "$pass" "$fail" "$skip"
 
 if [ "$fail" -gt 0 ]; then

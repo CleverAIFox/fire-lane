@@ -253,7 +253,11 @@ jobs:
 
       - name: 문서 숫자 대조
         run: |
-          if [ -f data/processed/segments.geojson ]; then
+          # ★ 2026-09-10. 종전에는 이 조건 때문에 CI 에서
+          #   **한 번도 안 돌았다**(F-211). 지금은 그 파일이
+          #   우연히 추적돼 있어 돌지만, 예외를 지우면 또 죽는다.
+          #   조건을 없앤다 — 없으면 docnum_check 가 그렇게 말한다.
+          if true; then
             uv run python tools/docnum_check.py
           else
             echo "data/processed 없음 — 로컬에서 확인할 것"

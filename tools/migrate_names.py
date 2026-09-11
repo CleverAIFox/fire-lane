@@ -195,7 +195,7 @@ def _repair_globs(*, apply: bool) -> list[str]:
             #   정확한 이름인지는 상관없다.
             if [r for r in led if fnmatch.fnmatch(r, pat)]:
                 continue                       # 살아 있다
-            folder = pat.split("/", 1)[0]
+            folder = pat.split("/", 1)[0]   # ★ files 예외 항목만 온다. stem 항목은 provider_of 를 쓴다
             stem = pat.rsplit("/", 1)[-1]
             # provider_dataset — 첫 와일드카드 앞까지에서 마지막 `_` 제거
             head = re.split(r"[*?\[]", stem)[0]

@@ -137,7 +137,7 @@ def read(key: str, e: dict) -> tuple[dict | None, str, list[str]]:
             n = nm.parse(p.rsplit("/", 1)[-1], strict=False)
         except nm.NameError_ as ex:
             return None, f"파싱 실패: {str(ex).splitlines()[0]}", []
-        prov = p.split("/", 1)[0]
+        prov = p.split("/", 1)[0]   # ★ 실물 경로다. globs 아님
         if prov != n.provider:
             return None, f"폴더({prov}) ≠ provider({n.provider})", []
         stems.add(f"{n.provider}_{n.dataset}")

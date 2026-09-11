@@ -264,8 +264,10 @@ def check_lake(*, offline: bool) -> list[F]:
 
     used = set()
     for e in (LD.load().get("datasets") or {}).values():
-        for pat in _led.globs(e):
-            used.add(str(pat).split("/")[0])
+        # ★ globs() 는 `**/stem_*` 를 낸다. 폴더를 뽑으면 `**` 다.
+        #   provider 는 유도한다(ledger.provider_of).
+        if _p := _led.provider_of(e):
+            used.add(_p)
     for p in sorted(P.active() - used):
         out.append(F("D9", WARN, f"providers:{p}",
                      "active 로 등재됐는데 대장 datasets 가 하나도 안 쓴다."

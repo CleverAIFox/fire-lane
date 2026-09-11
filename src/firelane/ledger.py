@@ -278,6 +278,31 @@ def summary() -> dict[str, int]:
 #   (`stem_index` · `entry_of` 와 같은 이유).
 
 
+def provider_of(e: dict) -> str | None:
+    """대장 항목 → provider(= raw 폴더명). **유도한다. 적지 않는다.**
+
+    ★ 2026-09-10 신설. `globs()` 가 stem 기반이 되면서(PLAN #46) 패턴이
+      `**/juso_elctrnmap_*` 꼴이 됐고, 그 결과 `globs()[0].split("/")[0]`
+      로 폴더를 뽑던 곳이 전부 `"**"` 를 받았다. `treecheck` D9 는 그것으로
+      provider 사용 여부를 세어 **열 개를 "안 쓰인다" 로 잡았다.**
+
+      같은 자리 넷이 있었다 — treecheck:268 · ledger_fields:161 ·
+      ledger_stem:140 · migrate_names:198. 소비자를 하나씩 고치면 여섯 번째가
+      생긴다. 유도를 여기 한 곳에 둔다.
+
+    ★ 근거는 파일명 문법이다 — `{provider}_{dataset}_{scope}_{vintage}`.
+      실측하면 stem 첫 토큰이 provider 어휘 안에 65/65 있다. `files` 를
+      쓰는 예외 항목은 그 경로의 첫 조각이 곧 폴더다.
+    """
+    if st := e.get("stem"):
+        return str(st).split("_", 1)[0]
+    for f in (e.get("files") or []):
+        head = str(f).split("/", 1)[0]
+        if head and "*" not in head:
+            return head
+    return None
+
+
 def globs(e: dict) -> list[str]:
     """대장 항목 → raw 상대 글롭 패턴 목록. 없으면 빈 리스트.
 

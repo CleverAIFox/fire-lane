@@ -27,11 +27,33 @@ ROOT = Path(__file__).resolve().parents[1]
 DST = ROOT / "web" / "navi" / "src"
 
 
+
+# ── 앉힌 것이 그대로 있는가 ─────────────────────────────────────
+# ★ 내용은 안 본다 — 지문은 golden 이 이미 한다. 여기서 또 하면 지문
+#   구현이 여섯 번째가 된다. 여기는 **목록**만 책임진다.
+def check() -> int:
+    dst = ROOT / "web" / "navi" / "src"
+    if not dst.is_dir():
+        print("\u2717 web/navi/src 가 없다 — 내비 소스가 앉지 않았다")
+        return 1
+    n = sum(1 for p in dst.rglob("*") if p.is_file())
+    if not n:
+        print("\u2717 web/navi/src 가 비었다")
+        return 1
+    print(f"\u2713 web/navi/src {n}파일 — 내용 대조는 golden 소관")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--from", dest="src", required=True, help="내려받은 navi 트리")
+    ap.add_argument("--from", dest="src", help="내려받은 navi 트리")
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--check", action="store_true",
+                    help="상태만 본다. 아무것도 안 바꾼다")
     a = ap.parse_args()
+    # ★ --check 는 아무것도 안 바꾼다. verify.sh 전용
+    if a.check:
+        return check()
 
     src = Path(a.src).expanduser()
     if (src / "src").is_dir():

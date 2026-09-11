@@ -45,6 +45,15 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 ```bash
 uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
 uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
+uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
+uv run python tools/widen.py            # 검사 범위를 넓히면 뭐가 걸리나
+uv run python tools/codepatch.py        # 파이썬 소스 멱등 편집기 (배치용)
+
+# 배치가 세운 상태가 유지되는가 — verify.sh 가 부른다
+uv run python tools/install_navi.py --check    # web/navi/src 목록
+uv run python tools/pages_add_navi.py --check  # 배포에 내비 빌드
+uv run python tools/navi_setup.py --check      # 루트 잔재 · 유령 면제
+uv run python tools/ledger_fields.py --check   # 폐기 별칭 부활
 uv run python tools/sweep.py            # 다운로드·레이크 스캔 → 근거 있는 것만 정리
 uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 ```

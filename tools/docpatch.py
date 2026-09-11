@@ -116,6 +116,26 @@ def check(doc: Path) -> str:
     return f"{doc} — 제목 {len(heads)}개, 중복 없음"
 
 
+
+# ★ check() 는 문자열을 돌려주고 main 은 그것을 print 만 했다. 중복을
+#   찾아도 종료코드가 0 이라 **게이트에 달아도 안 운다** — "검사가
+#   있는데 안 운다" 의 교과서다(F-142).
+def check_many(docs: list[Path]) -> int:
+    bad = 0
+    for d in docs:
+        if not d.exists():
+            print(f"\u2717 {d} 없음")
+            bad += 1
+            continue
+        msg = check(d)
+        if msg.startswith("중복"):
+            print(f"\u2717 {d} — {msg}")
+            bad += 1
+        else:
+            print(f"\u2713 {msg}")
+    return 1 if bad else 0
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -132,7 +152,7 @@ def main() -> None:
     b.add_argument("fragment")
 
     c = sub.add_parser("check")
-    c.add_argument("doc")
+    c.add_argument("doc", nargs="+")
 
     ns = p.parse_args()
     if ns.cmd == "ensure-section":
@@ -140,7 +160,7 @@ def main() -> None:
     elif ns.cmd == "append-rows":
         print(append_rows(Path(ns.doc), ns.key, Path(ns.fragment)))
     else:
-        print(check(Path(ns.doc)))
+        return check_many([Path(x) for x in ns.doc])
 
 
 if __name__ == "__main__":

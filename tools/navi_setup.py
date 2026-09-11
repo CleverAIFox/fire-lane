@@ -64,16 +64,49 @@ CODEOWNERS_BLOCK = """
 
 EXEMPT_ADD = {
     "matchcheck": "Mapbox Map Matching 커버리지 대조. 토큰 필요·외부 API 라 CI 에 못 건다",
-    "bottleneck": "다리 분석으로 실측 우선순위 산출. 사람이 답사 계획을 세우려고 부른다",
+    # ★ 2026-09-10 제거. `bottleneck` 이라는 도구는 없다 —
+    #   실물은 `bridge_audit.py` 이고 그 머리말이 옛 이름을
+    #   그대로 적고 있었다(F-096). 공유 목록에 유령이 낀 것이다.
+    "bridge_audit": "다리 분석으로 실측 우선순위 산출. 사람이 답사 계획을 세우려고 부른다",
     "navi_setup": "저장소 정리. 1회성 배치이며 멱등이다. 자동 실행 대상이 아니다",
 }
+
+
+
+# ── 정리한 상태가 유지되는가 ────────────────────────────────────
+# ★ 이 도구는 루트에 떨어진 일회성 스크립트·산출물을 치운다. 치우고 나면
+#   no-op 이 되고, no-op 이라 EXEMPT 로 들어갔고, 그래서 **다시 떨어져도
+#   아무도 안 운다.** 그 역방향을 여기 둔다.
+def check() -> int:
+    bad = []
+    for n in ONESHOT + ARTIFACT:
+        if (ROOT / n).exists():
+            kind = "일회성 스크립트" if n in ONESHOT else "산출물"
+            bad.append(f"루트에 {kind} `{n}` 이 다시 떨어졌다")
+    # ★ 면제 목록이 실재하는 도구를 가리키는가. `bottleneck` 은 없는 파일
+    #   이었다(실물은 bridge_audit.py) — 공유 목록에 유령이 낀다.
+    for stem in EXEMPT_ADD:
+        if not (ROOT / "tools" / f"{stem}.py").exists():
+            bad.append(f"EXEMPT_ADD 의 `{stem}` 은 실재하지 않는 도구다")
+    if bad:
+        print(f"\u2717 {len(bad)}건")
+        for b in bad:
+            print(f"   {b}")
+        return 1
+    print(f"\u2713 루트 잔재 0건 · 면제 등재 {len(EXEMPT_ADD)}종 전부 실재")
+    return 0
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="실제로 바꾼다")
+    ap.add_argument("--check", action="store_true",
+                    help="상태만 본다. 아무것도 안 바꾼다")
     ap.add_argument("--owner", default="@CleverAIFox", help="CODEOWNERS 에 적을 소유자")
     a = ap.parse_args()
+    # ★ --check 는 아무것도 안 바꾼다. verify.sh 전용
+    if a.check:
+        return check()
     act = a.apply
     tag = "" if act else "  (dry-run — --apply 로 실행)"
     print(f"저장소 {ROOT}{tag}\n")

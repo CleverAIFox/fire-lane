@@ -2724,8 +2724,6 @@ raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
     crs_native: 5186
-    vintage: TODO
-    desc: 항공정사영상 2025, GSD 0.25m, 광주 037/038/047/048
     files:
     - _B060_정사영상_2025_35616037.tif      # 9516 x 11496
     - _B060_정사영상_2025_35616038.tif      # 9516 x 11508
@@ -2740,13 +2738,13 @@ raw_only:
       현 단계 파이프라인 미투입. S3에만 두고 로컬에서 지워도 무방.
 
   building_change:
-    desc: GIS건물통합정보 일변동분
+    what: GIS건물통합정보 일변동분
     files: [CH_D010_00_20260806.zip]
     crs: EPSG:5186
     note: 변동분 865건(동명동 1건). 전체분이 아니라 사용 불가. 전자지도 승인 대기.
 
   nodelink_manifest:
-    desc: 표준노드링크 갱신 내역서
+    what: 표준노드링크 갱신 내역서
     files: [내역서.csv]
     note: 이번 갱신분 노선 목록. 참고용.
 
@@ -2821,7 +2819,6 @@ retired:
     ext: [csv]
     provider: safety
     source_hint: 공공데이터포털 CSV 내려받기 (상한 50,000행)
-    file: safety/safety_hydrant_point_kr_20240207_truncated.csv
     at: '2026-09-10'
     successor: hydrant_point (safety_hydrant_point_jngj_20240207.csv)
     reason: |
@@ -2903,7 +2900,6 @@ retired:
     ext: [csv]
     provider: safety
     source_hint: 공공데이터포털 소방청 표준데이터
-    file: safety/safety_firestation_kr_20250701.csv
     at: 2026-08-23
     successor: fire_station (safety_firestation_kr_20240901.csv)
     reason: |
@@ -2917,7 +2913,6 @@ retired:
     ext: [csv]
     provider: safety
     source_hint: 전남광주통합특별시 소방본부
-    file: safety/safety_hydrant_point_jngj_20250917.csv
     at: 2026-08-23
     successor: hydrant_point (safety_hydrant_point_jngj_20240207.csv)
     reason: |
@@ -2927,7 +2922,6 @@ retired:
       2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
   ngii1k_ngii_platform:
     what: 국토정보플랫폼 수치지형도 1:1,000 (NGI/NDA + 일부 SHP)
-    vintage: 2019~2022 혼합 (도엽 20장)
     at: 2026-08-17
     successor: ngii1k (vworld)
     reason: |
