@@ -88,6 +88,7 @@ from shapely.ops import unary_union
 from shapely.strtree import STRtree
 
 from firelane.paths import INTERIM, PROCESSED, QUARANTINE, RAW
+from firelane.seg.params import COV_MIN
 
 # ── 상수 ───────────────────────────────────────────────────────
 CRS = 5186                  # 연속지적도 .prj = Korea_2000_Korea_Central_Belt_2010
@@ -106,7 +107,9 @@ HALF = 40.0                 # 법선 편측 길이(m). 2×HALF 가 폭 상한
 SAT = 0.99                  # 법선 길이의 이 비율 넘으면 포화 — 버린다
 MAX_PARCEL = 5000.0         # 필지가 이보다 크면 도로구역이다. 폭 못 준다
 SNAP = 0.01                 # 좌표 격자(m). 지적 필지 공유 경계 어긋남 보정
-COV_MIN = 0.5               # 유효 표본이 이 비율 미만이면 산출하지 않는다
+# COV_MIN — 정본을 import 한다(위). 구간의 절반 미만을 잰 소스는
+#           대표시키지 않는다. 폭 판정과 지적 대조가 같은 자격을 써야
+#           두 값의 비교가 선다.
 
 SCOPE_GPKG = "jijeok_scope.gpkg"
 OUT_GPKG = "jijeok_width.gpkg"

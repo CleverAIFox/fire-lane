@@ -49,6 +49,7 @@ import sys
 import zipfile
 from pathlib import Path
 
+from firelane.encoding import CANDIDATES_REPORT
 from firelane.paths import ROOT
 
 OK, WARN, FAIL = "OK", "경고", "★실패"
@@ -128,8 +129,7 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
     if enc and csvs:
         for p in csvs:
             if not decode_ok(p, enc):
-                got = [x for x in ("cp949", "utf-8-sig", "utf-8", "utf-16")
-                       if decode_ok(p, x)]
+                got = [x for x in CANDIDATES_REPORT if decode_ok(p, x)]
                 r.add(FAIL, f"{p.name} 인코딩 {enc} 아님. 실제 {got or '판별 실패'}")
 
     # ── zip 안 레이어 ─────────────────────────────────────

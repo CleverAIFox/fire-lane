@@ -61,19 +61,17 @@ PRODUCED = [
 #  ★ 목록을 여기 적지 않는다. 정본은 layers.raw.providers 다.
 #    test_provider_registry 가 사본을 금지한다.
 ORG = providers.all()
-EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+EXT = M.PASSTHROUGH_EXT          # 정본. 이 사본에는 json 이 빠져 있었다
 
 
 def rules():
-    """main() 이 조립하는 것과 같은 규칙 표.
+    """main() 이 조립하는 것과 **같은** 규칙 표. 이제 진짜로 같다.
 
-    ★ main() 안에서 조립하므로 여기서 재현한다. 이 이중화 자체가 냄새다 —
-      규칙 조립을 함수로 빼면 이 블록이 사라진다. TODO.
+    ★ 2026-09-11 (B3). 위 TODO 를 닫았다. 재현하던 사본은 두 축에서
+      낡아 있었다 — `[a-z0-9_]`(하이픈 없음) · EXT 에 json 없음.
+      그래서 하이픈 별칭 파일과 json 이 **멱등 검사를 안 탔다.**
     """
-    return M.RULES + [
-        (rf"^{org}_[a-z0-9_]+_\d{{8}}\.({EXT})$", org, None)
-        for org in sorted(ORG)
-    ]
+    return M.passthrough_rules(ORG)
 
 
 def place(basename: str):

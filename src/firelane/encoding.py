@@ -59,6 +59,36 @@ CP437_MANGLED = re.compile(r"[\u2500-\u25ff\u2190-\u21ff]{2,}")
 
 TEXT_EXT = {"csv", "txt", "tsv", "json", "yaml", "xml", "prj", "cpg", "dbf"}
 
+# ══ 흩어져 있던 후보·확장자 목록의 정본 ═══════════════════════════
+# ★ 2026-09-11 (B3). 네 파일에 있던 것을 **값과 순서를 그대로 둔 채**
+#   여기로 올렸다. 합치지 않았다 — 아래 셋은 서로 다르고, 다른 이유가 있다.
+#
+#   합치는 판단은 B4 다. 순서를 바꾸면 판별 결과가 바뀌기 때문이다
+#   (cp949 를 먼저 보면 UTF-8 도 "읽히고" 모지바케가 된다).
+#   지금은 차이를 한 화면에 모아 사람이 볼 수 있게만 한다.
+
+# ingest 가 CSV 를 **읽을 때**. sources.yaml 의 선언을 먼저 쓰고 이걸 잇는다.
+#   euc-kr 이 있고 utf-16 · cp437 이 없다 — 공공데이터포털 CSV 만 상대한다.
+CANDIDATES_CSV_READ = ("utf-8-sig", "utf-8", "cp949", "euc-kr")
+
+# inventory 가 스키마 표본을 **훑을 때**.
+#   ★ cp949 가 utf-8 보다 앞이다. CANDIDATES 와 순서가 다르다.
+#     의도인지 사고인지 확인되지 않았다. B4 항목.
+CANDIDATES_CSV_SCAN = ("utf-8-sig", "cp949", "utf-8")
+
+# contract 가 "선언과 다르다" 를 **보고할 때** 실제 인코딩 후보.
+#   ★ cp949 가 맨 앞이다. 판별이 아니라 열거라 순서가 화면 출력 순서다.
+CANDIDATES_REPORT = ("cp949", "utf-8-sig", "utf-8", "utf-16")
+
+# prep 이 바이트를 정규화할 대상. 점을 포함한다(`Path.suffix` 와 대조).
+#   zip · tif · shp 는 바이트를 건드릴 수 없어 빠져 있다.
+TEXT_EXT_PREP = {".csv", ".txt", ".tsv", ".json", ".prj", ".cpg"}
+
+# encoding_check 가 검사할 **저장소 소스**. 자료 형식이 아니라 우리 코드다.
+TEXT_EXT_SOURCE = {".py", ".sh", ".md", ".yml", ".yaml", ".csv", ".txt",
+                   ".html", ".css", ".js", ".json", ".geojson", ".cfg", ".toml"}
+# ══════════════════════════════════════════════════════════════════
+
 
 class EncodingError_(RuntimeError):
     pass

@@ -52,13 +52,16 @@ import yaml
 
 from firelane import encoding as enc
 from firelane import ledger as _led
+from firelane.encoding import TEXT_EXT_PREP
 from firelane.paths import NORM, RAW, ROOT
 
 KST = timezone(timedelta(hours=9))
 STATE = ROOT / "data" / "_prep.json"
 
 # 텍스트만 정규화한다. zip · tif · shp 는 바이트를 건드릴 수 없다.
-TEXT_EXT = {".csv", ".txt", ".tsv", ".json", ".prj", ".cpg"}
+# 정본은 firelane/encoding.py. 이름이 쓰임을 말한다 — 여기 것은 '전처리 대상'이고
+# encoding.TEXT_EXT(자료 형식)와 값이 다르다. 같은 이름을 쓰던 것이 잘못이었다.
+TEXT_EXT = TEXT_EXT_PREP
 
 
 def sha256(p: Path, *, chunk: int = 1 << 20) -> str:
