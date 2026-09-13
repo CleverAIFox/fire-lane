@@ -40,17 +40,13 @@ ROOT = Path(__file__).resolve().parent.parent
 #  ★ 목록을 여기 적지 않는다. 정본은 layers.raw.providers 다.
 #    test_provider_registry 가 사본을 금지한다.
 ORG = providers.all()
-EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+EXT = N.PASSTHROUGH_EXT          # 정본. 여기 적으면 또 갈린다
 
 
 def _rules(passthrough: bool):
-    r = list(N.RULES)
-    if passthrough:
-        # ★ 하이픈. 스코프 별칭이 `jngj-donggu` 처럼 하이픈을 쓴다.
-        #   main() 은 09-03 에 고쳤고 이 사본이 남아 있었다.
-        r += [(rf"^{o}_[a-z0-9_-]+_\d{{8}}\.({EXT})$", o, None)
-              for o in sorted(ORG)]
-    return r
+    # ★ 2026-09-11 (B3). 손으로 재현하던 것을 정본 조립기로 바꿨다.
+    #   하이픈 사본이 여기 남아 있던 것이 09-03 정정이 안 따라온 흔적이다.
+    return N.passthrough_rules(ORG) if passthrough else list(N.RULES)
 
 
 def _match(name: str, passthrough: bool = False):
@@ -262,8 +258,8 @@ def test_general_rule_accepts_every_scope_alias():
     led = yaml.safe_load((root / "sources.yaml").read_text(encoding="utf-8"))
     scopes = list(led.get("scopes") or {})
     assert scopes, "대장에 scopes 가 없다"
-    EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson"
-    pat = re.compile(rf"^nfa_[a-z0-9_-]+_\d{{8}}\.({EXT})$")
+    # 정본을 쓴다. 이 지역 사본이 네 번째 벌이었다(2026-09-11 B3).
+    pat = re.compile(rf"^nfa_[a-z0-9_-]+_\d{{8}}\.({N.PASSTHROUGH_EXT})$")
     bad = [s for s in scopes if not pat.match(f"nfa_x_{s}_20260101.csv")]
     assert not bad, (
         f"일반 규칙이 못 받는 스코프 별칭 — {', '.join(bad)}\n"

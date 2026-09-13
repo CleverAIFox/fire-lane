@@ -44,6 +44,7 @@ from pyproj import Transformer
 from shapely import make_valid
 
 from firelane import ledger, manifest, prep
+from firelane.encoding import CANDIDATES_CSV_READ
 from firelane.paths import PROCESSED, RAW, ROOT
 
 OUT = PROCESSED
@@ -152,7 +153,7 @@ def read_csv_any(p: Path, enc: str | None = None, **kw):
       sources.yaml 의 encoding 을 우선 시도하고, 실패하면 순서대로 넘어간다.
     """
     cands = [enc] if enc else []
-    cands += ["utf-8-sig", "utf-8", "cp949", "euc-kr"]
+    cands += list(CANDIDATES_CSV_READ)
     last = None
     for c in dict.fromkeys(x for x in cands if x):
         try:

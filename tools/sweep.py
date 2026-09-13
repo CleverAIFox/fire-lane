@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-b2_sweep.py — **스캔 → 검증 → 정리.** 근거 있는 것만 지운다.
+sweep.py — **스캔 → 검증 → 정리.** 근거 있는 것만 지운다.
 
-    uv run python tools/b2_sweep.py               스캔·판정만 (아무것도 안 지운다)
-    uv run python tools/b2_sweep.py --sweep       지울 것을 보여준다
-    uv run python tools/b2_sweep.py --sweep --yes 실제로 지운다
+    uv run python tools/sweep.py               스캔·판정만 (아무것도 안 지운다)
+    uv run python tools/sweep.py --sweep       지울 것을 보여준다
+    uv run python tools/sweep.py --sweep --yes 실제로 지운다
 
 환경변수는 **이미 쓰던 것**을 그대로 쓴다. 새로 만들지 않는다.
 
@@ -159,7 +159,7 @@ setx FIRE_LANE_DATA "<raw 상위 폴더 경로>"            # 윈도우
 
 ★ **`FIRE_LANE_INBOX` 는 파이프라인의 머리다.** `tools/intake.py` 가
 브라우저 다운로드 폴더를 관측하는 자리이고, `tools/lakecheck.py` L3 와
-`tools/b2_sweep.py` 가 기본 스캔 대상으로 쓴다. 없으면 **레이크 밖을
+`tools/sweep.py` 가 기본 스캔 대상으로 쓴다. 없으면 **레이크 밖을
 아무도 안 본다** — 2026-08-25 에 KFS PDF 두 판을 열어보고 대장 결론을
 뒤집었는데 그 PDF 가 raw 에 편입되지 않았고 아무 도구도 그 사실을 몰랐다.
 

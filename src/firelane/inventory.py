@@ -39,6 +39,7 @@ from pathlib import Path
 import yaml
 
 from firelane import ngi
+from firelane.encoding import CANDIDATES_CSV_SCAN
 from firelane.paths import INTERIM, RAW, ROOT
 
 KST = timezone(timedelta(hours=9))
@@ -49,7 +50,7 @@ END = "# ===== /AUTO ====="
 # NGI 도엽은 3,000개가 넘는다. 전수 파싱은 몇 분씩 걸리고 매번 같은 결과다.
 # 도엽 스키마는 도엽마다 같으므로 표본만 훑는다.
 NGI_SAMPLE = 3
-CSV_ENCODINGS = ("utf-8-sig", "cp949", "utf-8")
+CSV_ENCODINGS = CANDIDATES_CSV_SCAN   # 정본 firelane/encoding.py
 
 
 def _now() -> str:

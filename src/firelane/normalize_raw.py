@@ -75,6 +75,36 @@ for st in (sys.stdout, sys.stderr):
 #
 #   ★ 아홉을 지웠다. 일반 규칙이 전부 덮는다.
 #     남은 줄은 전부 **한글·원본 파일명**을 정규명으로 바꾸는 것들이다.
+# 통과 규칙의 확장자 화이트리스트. **모듈 전역이다.**
+# ★ main() 안에 두면 테스트가 베낀다. 실제로 두 벌이 생겼고 한 벌은
+#   `json` 이 빠진 채 굳었다(2026-09-11 B3 에서 발견).
+#   hwp·pdf·ngi·nda 가 없어 왕복 멱등이 거짓이었던 이력도 같은 병이다.
+PASSTHROUGH_EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+
+
+def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
+    """`RULES` + 제공기관별 통과 규칙. **규칙 표의 정본 조립기다.**
+
+    ★ 2026-09-11 (B3). main() 안에 있던 조립을 여기로 뺐다. 테스트 두 개가
+      같은 표를 손으로 재현하고 있었고 셋이 서로 달랐다 — 하이픈 허용 여부와
+      EXT 의 json 포함 여부에서 갈렸다. 소비자를 하나씩 고치지 않고
+      **유도를 정본으로** 만든다(HANDOFF 원칙 ⑤ · `ledger.provider_of` 와 같은 수).
+
+    ★ 반드시 `RULES` 의 **사본**을 돌려준다. 모듈 전역에 append 하면 같은
+      프로세스에서 두 번 부를 때 규칙이 중복 누적된다.
+
+    ★ 하이픈. 대장 `scopes` 가 `jngj-donggu` 처럼 하이픈을 쓰고 그 블록이
+      "별칭 안에 언더스코어를 쓰지 않는다" 고 못 박는다 — 언더스코어가 필드
+      구분자라서다. 하이픈은 처음부터 허용이었고 이 정규식만 몰랐다.
+      **대장이 정본인데 코드가 더 좁았다.**
+    """
+    org_list = providers.all() if orgs is None else orgs
+    return list(RULES) + [
+        (rf"^{o}_[a-z0-9_-]+_\d{{8}}\.({PASSTHROUGH_EXT})$", o, None)
+        for o in sorted(org_list)
+    ]
+
+
 RULES: list[tuple[str, str, str]] = [
     # ── 2026-08-17 소방 계열 3종 재확보 ──────────────────────
     #   ★ 아래 세 줄이 위쪽 기존 규칙보다 먼저 매칭돼야 한다.
@@ -448,7 +478,7 @@ def main():
     #   hwp·pdf 에 대해 거짓이었다.
     # ★ 2026-09-07. `json` 추가. 공공데이터포털 표준데이터와 건축물대장
     #   표제부가 JSON 이다. 없으면 통과 규칙을 못 타 멱등이 깨진다.
-    EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+    # EXT · 조립은 모듈 전역 passthrough_rules() 가 정본이다(위).
     # ★ RULES 는 모듈 전역이다. main() 안에서 append 하면 같은 프로세스에서
     #   두 번 부를 때 규칙이 중복 누적된다. 지역 사본에 붙인다.
     # ★ 2026-09-03. `[a-z0-9_]` 에 하이픈이 없어 스코프 별칭을 못 받았다.
@@ -460,8 +490,7 @@ def main():
     #   지금까지 안 걸린 이유는 `sbiz`·`gjcity` 가 명시 규칙으로 들어와
     #   이 일반 규칙을 탄 적이 없어서다. 2026-09-03 에 `nfa_*` CSV 넷이
     #   처음 탔고 전부 "규칙에 없는 파일" 로 떨어졌다.
-    rules = RULES + [(rf"^{org}_[a-z0-9_-]+_\d{{8}}\.({EXT})$", org, None)
-                     for org in sorted(ORG)]
+    rules = passthrough_rules(ORG)
 
     files = [f for f in src.iterdir() if f.is_file()]
     done, skip = [], []

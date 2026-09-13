@@ -45,7 +45,7 @@ printf '%suv    %s  %s\n\n' "$D" "$Z" "$(uv --version 2>/dev/null || echo '없�
 # ── 0. 잠금파일 갱신 ─────────────────────────────────────────
 # ★ pyproject 에 [build-system] 이 생겼고 의존성 9개가 extras 로 내려갔다.
 #   uv.lock 이 그 전에 만들어진 것이라 다시 풀어야 한다.
-step "의존성 동기화 (uv sync)" uv sync
+step "의존성 동기화 (uv sync --dev)" uv sync --dev
 
 # ── 1. 패키지가 실제로 import 되는가 ─────────────────────────
 step "패키지 import 29종" uv run python -c '
@@ -129,6 +129,7 @@ step "CI 환경 재현"     bash -c '
 
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
+step "환경변수 선언↔실물" uv run python tools/env_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
 #   ⑥ 기획서 수정일 · ⑦ 셸 명령 · ⑧ 기한은 **사람이 손으로 칠 때만**
