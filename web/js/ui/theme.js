@@ -8,6 +8,9 @@
 import { CONFIG } from "../config-access.js";
 import { S } from "../state.js";
 import { vColor } from "../verdict.js";
+
+/* 크롬 색 정본. 생성부(layers/mask.js · ui/minimap.js)와 같은 것을 본다. */
+const CH = CONFIG.chrome;
 import { CARTO, USE_VWORLD } from "../basemap.js";
 import { segColor } from "../layers/segments.js";
 import { styleMiniTheme } from "./minimap.js";
@@ -72,10 +75,10 @@ export function setTheme(mode){
      ★ raster-brightness-max 로 타일의 흰 부분만 눌렀다. 불투명도를 낮추면
        도로명·지명 라벨까지 흐려지지만, 밝기 상한은 라벨 대비를 유지한다. */
   S.map.setPaintProperty("base","raster-brightness-max", light ? .88 : 1);
-  S.map.setPaintProperty("bg","background-color", light ? "#dfe3ea" : "#0a0d13");
+  S.map.setPaintProperty("bg","background-color", light ? CH.bg.light : CH.bg.dark);
   S.map.setPaintProperty("bld-3d","fill-extrusion-color",
-    light ? ["interpolate",["linear"],["get","flo"],1,"#d3d9e2",3,"#c3cad6",6,"#b2bbc9",12,"#9fa9ba"]
-          : ["interpolate",["linear"],["get","flo"],1,"#1d2430",3,"#2b3545",6,"#3b4759",12,"#4d5a6f"]);
+    ((r)=>["interpolate",["linear"],["get","flo"],1,r[0],3,r[1],6,r[2],12,r[3]])(
+      light ? CH.bldRamp.light : CH.bldRamp.dark));
   S.map.setPaintProperty("bld-3d","fill-extrusion-opacity", light ? .95 : .88);
   /* 스코프 밖 가리개.
      ★ 라이트에서 흰색(#eef1f5)을 쓰면 지면보다 '밝아서' 죽은 영역으로 안 읽힌다.
@@ -87,11 +90,11 @@ export function setTheme(mode){
     /* 지면(CARTO 베이지)보다는 어둡되 너무 무겁지 않은 지점.
        #b8c0cc(대비 1.36)는 밖이 무거워 시선을 뺏었고, #d8dce2(1.08)는
        티가 안 났다. 그 사이에서 한 칸 밝은 쪽으로 잡는다. */
-    S.map.setPaintProperty(l,"fill-color", light ? "#ccd2da" : "#05070b");
+    S.map.setPaintProperty(l,"fill-color", light ? CH.mask.light : CH.mask.dark);
     S.map.setPaintProperty(l,"fill-opacity", light ? (i===0?.82:.38) : (i===0?.9:.42));
   });
   /* 동명동 경계. 안과 밖을 가르는 유일한 선이라 라이트에서 더 진하고 굵게 간다. */
-  S.map.setPaintProperty("bnd-l","line-color",   light ? "#4a5568" : "#5c6b82");
+  S.map.setPaintProperty("bnd-l","line-color",   light ? CH.bnd.light : CH.bnd.dark);
   S.map.setPaintProperty("bnd-l","line-width",   light ? 2.0 : 1.4);
   S.map.setPaintProperty("bnd-l","line-opacity", light ? .95 : .75);
 }

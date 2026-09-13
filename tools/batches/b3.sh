@@ -52,6 +52,7 @@ BATCHES=(
     "tools/batches/b3_params.py|임계값 3벌 — COV_MIN · NODE_TOL · TRUCK"
     "tools/batches/b3_const.py|인코딩 후보 4벌 · TEXT_EXT 3벌 — 모으되 합치지 않는다"
     "tools/batches/b3_rules.py|규칙 조립 4벌 — passthrough_rules() 정본화"
+    "tools/batches/b3_palette.py|색 사본 — chrome 정본 · verdictMatch() 유도 정본"
 )
 
 # ── 스냅샷 대상. 배치가 건드리는 파일 전부 ────────────────────────
@@ -68,6 +69,12 @@ TARGETS=(
     src/firelane/normalize_raw.py
     tests/test_normalize_rules.py
     tests/test_place_idempotent.py
+    web/config.js
+    web/js/verdict.js
+    web/js/layers/mask.js
+    web/js/layers/segments.js
+    web/js/ui/theme.js
+    web/js/ui/minimap.js
 )
 
 snapshot() {                  # snapshot <파일명>
