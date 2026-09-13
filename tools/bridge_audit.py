@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-tools/bottleneck.py — 끊기면 뒤가 통째로 막히는 구간을 찾는다.
+tools/bridge_audit.py — 끊기면 뒤가 통째로 막히는 구간을 찾는다.
 
-    uv run python tools/bottleneck.py                    표만
-    uv run python tools/bottleneck.py --csv out.csv      좌표까지
-    uv run python tools/bottleneck.py --min-lost 5       임계 조정
+    uv run python tools/bridge_audit.py                    표만
+    uv run python tools/bridge_audit.py --csv out.csv      좌표까지
+    uv run python tools/bridge_audit.py --min-lost 5       임계 조정
 
 ── 왜 생겼나 ───────────────────────────────────────────────────
 실측 우선순위 축이 하나뿐이었다 — `width_disagree_m`·`width_cov` 는

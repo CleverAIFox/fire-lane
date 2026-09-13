@@ -1,0 +1,3 @@
+791147a659720161  # 경계 계약 표면 지문. 바뀌면 test_contracts_surface_is_signed 가 운다.
+# 서명일 2026-09-09 · 모델 ObsSpec, VisionResult
+# 재서명 전에 MASTER §19 와 소비자(cv · api · web)를 확인한다.

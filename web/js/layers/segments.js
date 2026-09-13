@@ -5,7 +5,7 @@
    ──────────────────────────────────────────────────────────── */
 import { CONFIG } from "../config-access.js";
 import { S } from "../state.js";
-import { vColor } from "../verdict.js";
+import { verdictMatch } from "../verdict.js";
 
 /* 세그먼트 색상 표현식. MapLibre 네이티브 line 으로 그린다.
    ★ deck.gl interleaved 레이어는 map.setTerrain() 을 켜면 지형 아래로 묻힌다.
@@ -16,9 +16,8 @@ export const segColor = () => {
      회색(unknown)의 정의 자체가 "CCTV 없음 / 25m 밖"이라 하위 색이 필요 없다.
      범례에 없는 색이 지도에만 남는 상태가 제일 나쁘다는 판단.
      사유 구분은 구간 툴팁(.rsn)과 #warn 문장이 담당한다. */
-  return ["match",["get","verdict"],
-    "blocked", rgb(vColor("blocked")), "needs_cv", rgb(vColor("needs_cv")),
-    "clear",   rgb(vColor("clear")),   rgb(vColor("unknown"))];
+  /* 유도의 정본은 verdict.js 다. 미니맵도 같은 것을 쓴다(B3 2026-09-11). */
+  return verdictMatch();
 };
 export const segOpacity = () => S.dispatchMode
   ? ["case",["==",["get","verdict"],"clear"], 1, CONFIG.dispatch.dimAlpha/255]
