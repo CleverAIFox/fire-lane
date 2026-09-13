@@ -2916,7 +2916,7 @@ L1·L2·L3 전부 동일하게 나왔고 그것을 "norm 이 값을 안 바꾼�
 > 2026-08-31
 
 강제자 — `tools/ruleset_check.py` ·
-`tests/test_workflow_html_sync.py::test_ruleset_policy_agrees_across_three_places`
+`tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check`
 
 `§78` 이 낡음을 다뤘다면 이것은 **예외**다. 낡음은 문서 안에서 생기고
 사람이 읽으면 보인다. 예외는 문서 밖에서 자라서 **읽어도 안 보인다.**
@@ -2951,7 +2951,7 @@ L1·L2·L3 전부 동일하게 나왔고 그것을 "norm 이 값을 안 바꾼�
     docs/workflow.html      §4 표      팀이 읽는 표
     docs/MASTER.md          §12-1      정본 산문
 
-셋이 갈리는 것은 `test_ruleset_policy_agrees_across_three_places` 가 막는다.
+셋이 갈리는 것은 `test_rules_table_agrees_with_ruleset_check` 가 막는다.
 실제로 그날 `MASTER §12-1` 만 낡아 있었다 — 아침에 승인 열을 넣었는데
 `dev` 흡수 머지에서 조용히 옛 판으로 돌아갔고 **아무도 몰랐다.**
 
