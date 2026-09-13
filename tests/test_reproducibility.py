@@ -203,6 +203,10 @@ def test_no_fifth_doc():
         #   GitHub 이 PR 화면에 자동으로 채워 넣는 폼이고, 내용의 정본은
         #   MASTER §12 다. 강제자는 tools/pr_body_check.py 가 따로 든다.
         ".github/pull_request_template.md",
+        # ★ 2026-09-10. 규약이 아니라 **폴더 사용법**이다 —
+        #   일회성 배치와 재현적 도구를 가르는 판별식을 적는다.
+        #   src/firelane/README.md(대장 작성법)와 같은 성격이다.
+        "tools/batches/README.md",
     }
     # ★ 백업·캐시는 저장소 내용이 아니다. `.gitignore` 가 이미 빼는 것들이고
     #   여기서도 같은 선을 긋는다 — 안 그러면 배포 스크립트가 만든

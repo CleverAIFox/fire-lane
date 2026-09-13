@@ -40,15 +40,13 @@ ROOT = Path(__file__).resolve().parent.parent
 #  ★ 목록을 여기 적지 않는다. 정본은 layers.raw.providers 다.
 #    test_provider_registry 가 사본을 금지한다.
 ORG = providers.all()
-EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+EXT = N.PASSTHROUGH_EXT          # 정본. 여기 적으면 또 갈린다
 
 
 def _rules(passthrough: bool):
-    r = list(N.RULES)
-    if passthrough:
-        r += [(rf"^{o}_[a-z0-9_]+_\d{{8}}\.({EXT})$", o, None)
-              for o in sorted(ORG)]
-    return r
+    # ★ 2026-09-11 (B3). 손으로 재현하던 것을 정본 조립기로 바꿨다.
+    #   하이픈 사본이 여기 남아 있던 것이 09-03 정정이 안 따라온 흔적이다.
+    return N.passthrough_rules(ORG) if passthrough else list(N.RULES)
 
 
 def _match(name: str, passthrough: bool = False):
@@ -88,6 +86,23 @@ SAMPLES = {
         ("vworld", "vworld_map1k_gjdonggu_20260307.zip"),
     "내역서.csv":
         ("its", "its_nodelink_changelog_20260812.csv"),
+    # ── 2026-09-06 확보분 일곱 ───────────────────────────────
+    # ★ 하이픈 스코프가 여기 처음 들어온다. 통과 규칙 사본이 09-03 부터
+    #   `[a-z0-9_]` 로 남아 있어 멱등 검사가 이것으로 터졌다.
+    "03__표제부_20260906134027.json":
+        ("eais", "eais_bldgledger_dm_jngj-dongmyeong_20260906.json"),
+    "전국어린이보호구역표준데이터.json":
+        ("mois", "mois_child_zone_std_kr_20260728.json"),
+    "전국노인장애인보호구역표준데이터.json":
+        ("mois", "mois_senior_zone_std_kr_20260619.json"),
+    "과속방지턱정보_전남광주동구.csv":
+        ("gjcity", "gjcity_speedbump_jngj-donggu_20230405.csv"),
+    "CCTV정보_전남광주동구.csv":
+        ("gjcity", "gjcity_admin_cctv_jngj-donggu_20200814.csv"),
+    "GJBG_LSI_006_TRAFFIC_CCTV_TB_2025.csv":
+        ("gjbg", "gjbg_traffic_cam_jngj_20251231.csv"),
+    "202607_건물DB_전체분.zip":
+        ("juso", "juso_building_db_jngj_20260731.zip"),
 }
 
 
@@ -243,8 +258,8 @@ def test_general_rule_accepts_every_scope_alias():
     led = yaml.safe_load((root / "sources.yaml").read_text(encoding="utf-8"))
     scopes = list(led.get("scopes") or {})
     assert scopes, "대장에 scopes 가 없다"
-    EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
-    pat = re.compile(rf"^nfa_[a-z0-9_-]+_\d{{8}}\.({EXT})$")
+    # 정본을 쓴다. 이 지역 사본이 네 번째 벌이었다(2026-09-11 B3).
+    pat = re.compile(rf"^nfa_[a-z0-9_-]+_\d{{8}}\.({N.PASSTHROUGH_EXT})$")
     bad = [s for s in scopes if not pat.match(f"nfa_x_{s}_20260101.csv")]
     assert not bad, (
         f"일반 규칙이 못 받는 스코프 별칭 — {', '.join(bad)}\n"

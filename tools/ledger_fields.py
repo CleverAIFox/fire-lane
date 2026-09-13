@@ -158,7 +158,7 @@ def run(*, apply: bool) -> int:
 
         # ── ⑤ provider — 후보만 ──────────────────────────────
         if "provider" not in e:
-            folder = (_led.globs(e) or [""])[0].split("/", 1)[0]
+            folder = _led.provider_of(e) or ""
             hints.append(f"  {key:22} {PROVIDER_HINT.get(folder, '?')}")
 
     # ── 출력 ──────────────────────────────────────────────────
@@ -214,10 +214,64 @@ def run(*, apply: bool) -> int:
     return 0
 
 
+
+# ── 이관이 유지되는가 ────────────────────────────────────────────
+# ★ 별칭을 싸잡아 금지하지 않는다. 실측하면 `files` 4/61 · `parts` 4/61 이
+#   **정상으로 살아 있다** — 한 항목이 여러 파일을 지목하는 정당한 필드다.
+#   획일적으로 막으면 정상 8건이 빨간불이 되고, 잘못된 경보는 진짜 경보를
+#   죽인다(DECISIONS §73). 죽은 것만 든다.
+RETIRED_FIELDS = {
+    "file": ("2026-08-31 stem+ext 로 이관(PLAN #46)", "stem + ext. 여럿이면 files"),
+    "vintage": ("파일명 토큰이 정본이다", "naming.parse(파일명).vintage"),
+    "retrieved": ("acquired 로 통합", "acquired"),
+    "desc": ("what 로 통합", "what"),
+}
+SCAN_BLOCKS = ("datasets", "retired", "outputs", "raw_only")
+
+
+def check() -> int:
+    """폐기된 별칭이 되살아났는가. run() 의 역방향이다.
+
+    값이 옳은지는 안 본다 — 그것은 datalog fsck 소관이다.
+    여기는 **스키마가 되돌아갔는가** 하나만 본다.
+    """
+    import yaml
+
+    led = yaml.safe_load(load())
+    bad = []
+    for blk in SCAN_BLOCKS:
+        for key, e in (led.get(blk) or {}).items():
+            if isinstance(e, dict):
+                for f in RETIRED_FIELDS:
+                    if e.get(f) not in (None, "", [], {}):
+                        bad.append((f"{blk}.{key}", f, str(e[f])[:40]))
+    if not bad:
+        n = sum(len(led.get(b) or {}) for b in SCAN_BLOCKS)
+        print(f"\u2713 폐기 별칭 0건 — {n}개 항목에서 이관이 유지된다")
+        return 0
+    print(f"\u2717 폐기된 별칭 필드 {len(bad)}건이 살아 있다")
+    for where, f, val in bad:
+        why, canon = RETIRED_FIELDS[f]
+        print(f"   {where}.{f} = {val}")
+        print(f"      폐기 {why} · 정본 {canon}")
+    # ★ 2026-09-10. 종전에는 "되돌리려면 --apply" 라 적었는데
+    #   `run()` 은 authority 를 채우는 함수지 별칭을 지우지 않는다.
+    #   잘못된 안내는 없는 안내보다 나쁘다.
+    print("\n   ★ --apply 는 이것을 안 지운다(authority 를 채운다).")
+    print("     대장에서 직접 떼라. stem 이 있으면 file 은 잔재다.")
+    return 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
-    return run(apply=ap.parse_args().apply)
+    ap.add_argument("--check", action="store_true",
+                    help="상태만 본다. 아무것도 안 바꾼다")
+    a = ap.parse_args()
+    # ★ --check 는 아무것도 안 바꾼다. verify.sh 전용
+    if a.check:
+        return check()
+    return run(apply=a.apply)
 
 
 if __name__ == "__main__":

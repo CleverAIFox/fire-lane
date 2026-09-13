@@ -230,11 +230,42 @@ def cmd_check() -> None:
                 print(f"  ! {k}.inputs 의 '{i}' 가 대장에 없다"); bad += 1
 
     # 2. 필수 필드 누락
-    need_ds = ["what", "crs_native", "license", "vintage"]
+    # ★ 2026-09-07. 여기가 **대장 필수 필드의 두 번째 정본**이었다.
+    #
+    #     ledger.REQUIRED   what · scope · updated · kind · schema · feeds
+    #     datalog.need_ds   what · crs_native · license · vintage
+    #
+    #   겹치는 것이 `what` 하나뿐이다. 그래서 `ledger.check_all()` 은
+    #   통과하는데 `datalog check` 는 158건을 냈다. 내역은 이렇다 —
+    #
+    #     vintage      0/61   `updated` 로 통합이 끝났다(ledger_fields.py:17).
+    #                         "한 축에 이름이 둘이면 사람은 아무 쪽에나 적는다"
+    #                         고 적어놓고 이 검사만 옛 이름을 계속 봤다
+    #     license      0/61   어느 종에도 없고 코드 참조 0. 죽은 요구다
+    #     crs_native  33/61   그중 31 이 **좌표가 없는 kind** 다.
+    #                         raw_only 문서에까지 좌표계를 요구했다
+    #
+    #   ★ 게이트가 정상 상태에서 울면 사람이 무시하기 시작하고, 그 순간
+    #     게이트가 죽는다. `golden` 낡음 검사에서 이미 배운 것이다
+    #     (2026-08-23). 158건은 아무도 안 읽고 있었다.
+    #
+    #   정본은 `ledger.REQUIRED` 하나다. 여기서는 그것을 읽고, 이 검사에만
+    #   해당하는 축(`crs_native`)을 **조건부로** 더한다.
+    from firelane import kinds as _K
+    from firelane import ledger as _L
+
     for k, v in ds.items():
-        for f in need_ds:
+        for f in _L.REQUIRED:
+            if f == "schema" and v.get("kind") in _L.NO_SCHEMA_KINDS:
+                continue          # raw_only 는 구조 선언을 요구할 근거가 없다
             if not v.get(f):
                 print(f"  ! datasets.{k} 에 {f} 없음"); bad += 1
+        # ★ 좌표가 나오는 kind 에만 좌표계를 요구한다. `kinds.KINDS[*].geom`
+        #   이 정본이다 — 여기 목록을 또 만들면 사본이 하나 더 생긴다.
+        kd = _K.KINDS.get(v.get("kind"))
+        if kd and kd.geom and not v.get("crs_native"):
+            print(f"  ! datasets.{k} 에 crs_native 없음 (좌표가 나오는 kind 다)")
+            bad += 1
     for k, v in out.items():
         for f in ["produced_by", "inputs", "consumers", "what"]:
             # consumers 는 빈 리스트가 정상일 수 있다(아직 아무도 안 쓰는 산출물).

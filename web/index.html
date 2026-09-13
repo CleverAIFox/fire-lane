@@ -116,6 +116,9 @@
      유일한 곳이다 — 다른 모듈은 전부 정상 import 로 쓴다.
      ★ 순서가 중요하다. config.js 가 먼저 실행돼야 한다.
        module 은 defer 처럼 동작하므로 클래식 스크립트보다 항상 늦게 돈다. -->
+<!-- ★ config.js 보다 먼저다. window.__VWORLD_KEY__ 를 정의한다.
+     생성물이라 저장소에 없다 — tools/stage_pages.py 가 만든다. -->
+<script src="./key.js?v=BUILD"></script>
 <script src="./config.js?v=BUILD"></script>
 <script type="module" src="./js/main.js?v=BUILD"></script>
 </body>
