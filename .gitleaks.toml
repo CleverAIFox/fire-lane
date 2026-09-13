@@ -6,17 +6,21 @@ useDefault = true
 id = "generic-api-key"
 [rules.allowlist]
 description = """
-V-World WMTS 키. 2026-09-13 이전 커밋의 web/config.js 에 평문으로 박혀 있다.
+sources.yaml 대장의 **데이터셋 키**다. 비밀이 아니다.
 
-★ 숨길 수 없는 키다. 브라우저가 WMTS 를 직접 부르니 빌드 결과에 실려
-  나가고 F12 한 번에 보인다. 실효 방어는 도메인 잠금 하나이고
-  만료는 2027-02-04 다(DECISIONS §146 · HANDOFF §4).
+  tools/batches/b2_final.py:105   key: juso_spotaddr_geom_2608
+  tools/batches/b2_close.py:196   같음
 
-★ 무료 발급이고 도메인이 고정돼 있어 이력 노출은 **감수한다.**
-  판단이며 누락이 아니다. 재발급하지 않는다.
+★ generic-api-key 규칙이 \ 뒤의 영숫자를 본다. 대장 YAML 이
+  \ 를 필드명으로 쓰므로 전부 걸린다. 엔트로피 3.9 로 낮다.
 
-★ 지금은 web/key.js(생성물 · gitignore)로 뺐다. 앞으로는 안 쌓인다.
-  이 allowlist 는 **과거 커밋에만** 해당한다 — 새 키가 들어오면
-  regex 가 안 맞으므로 그대로 잡힌다.
+★ **규칙 전체를 끄지 않는다.** 대장 키의 형태만 막는다 —
+  <제공기관>_<자료>_<연월> 이고 소문자·숫자·밑줄뿐이다.
+  진짜 키는 대문자나 하이픈이 섞여 이 정규식에 안 맞는다.
+
+★ V-World 키는 별건이다. web/config.js 에 평문으로 있었고
+  2026-09-13 에 web/key.js(생성물)로 뺐다. 이력에는 남지만
+  무료·도메인 고정이라 감수한다 — DECISIONS §146.
+  그쪽은 아직 이 스캔에 안 걸렸다. 걸리면 그때 근거와 함께 더한다.
 """
-regexes = ['''95E47552-4B32-36AB-885B-E9DC3FCB5352''']
+regexes = ['''key: [a-z][a-z0-9_]{8,}''']
