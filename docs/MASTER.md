@@ -543,7 +543,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 54종(OK 27 · SKIP 27)
+data/processed/    대장 65종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -629,14 +629,14 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격.
 
-대장은 `sources.yaml` 하나다. `datasets` 54종 · `retired` 10종.
+대장은 `sources.yaml` 하나다. `datasets` 65종 · `retired` 16종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 ### 6-2. 데이터 보관
 
 ```
 landing      SSD · 다운로드 원본. 규칙 없음. 백업 제외
-raw          SSD · 제공기관 10폴더. 절대 수정하지 않는다
+raw          SSD · 제공기관 12폴더. 절대 수정하지 않는다
 norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료(08-31)
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
@@ -651,11 +651,22 @@ exFAT 에서 `git reset --hard` 시 경로 문자열 파일로 체크아웃되�
 소실됐다. `src/firelane/paths.py` 의 환경변수 방식으로 대체했다.
 
 ```bash
-export FIRE_LANE_DATA="<raw 상위 폴더 경로>"      # 리눅스
-setx FIRE_LANE_DATA "<raw 상위 폴더 경로>"        # 윈도우
+export FIRE_LANE_DATA="<raw 상위 폴더 경로>"          # 리눅스
+export FIRE_LANE_INBOX="/mnt/c/Users/<사용자명>/Downloads"
+setx FIRE_LANE_DATA "<raw 상위 폴더 경로>"            # 윈도우
 ```
 
 미설정 시 `<repo>/data/raw` 를 쓴다. 단일 머신이면 그걸로 충분하다.
+
+★ **`FIRE_LANE_INBOX` 는 파이프라인의 머리다.** `tools/intake.py` 가
+브라우저 다운로드 폴더를 관측하는 자리이고, `tools/lakecheck.py` L3 와
+`tools/sweep.py` 가 기본 스캔 대상으로 쓴다. 없으면 **레이크 밖을
+아무도 안 본다** — 2026-08-25 에 KFS PDF 두 판을 열어보고 대장 결론을
+뒤집었는데 그 PDF 가 raw 에 편입되지 않았고 아무 도구도 그 사실을 몰랐다.
+
+★ 2026-09-10 정정. 이 줄이 **`web/playbook.html` 에는 있는데 여기 없었다.**
+그 HTML 은 `render_workflow.py` 가 이 문서에서 생성하는 것이라 정본에
+없는 내용이 생성물에만 있던 셈이다. 협업자가 보는 문서와 대장이 갈렸다.
 
 ★ **`FIRE_LANE_RAW` 는 폐기됐다.** `paths.py` 가 레거시로 처리하며, 설정돼
 있으면 `FIRE_LANE_DATA` 를 덮어써 기계 간 산출물이 갈린다. 실행 시 경고가
@@ -1335,7 +1346,7 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 | `5` CI 빨간불 | §12-7 · §12-7a |
 | `6` 롤백 · 릴리즈 | §12-2 · §12-8b |
 | `구조` 브랜치 · 권한 | §12-1 · §12-1b · §12-3 · §12-9 · §12-10 |
-| `예외` 지금 어긋난 것 | §12-1a |
+| `예외` 지금 어긋난 것 | §12-1c · §12-1a |
 | `밑그림` 아직 없는 것 | §12-8 · §12-8a |
 | `어휘` 판정 4종 | §10-2 |
 | `지도` 문서 넷 | §0 |
@@ -1404,6 +1415,32 @@ git push origin --delete feat/<이름>
 `always` 로 넣었던 것이고(DECISIONS §80), 한시로 부여한 것을 한시로 끝냈다.
 `web/playbook.html` 의 BYPASS 카드와 `doc_fsck.DEPARTURE` 도 같은 날 걷었다.
 
+### 12-1c. 지금 살아 있는 예외
+
+위 §12-1a 는 **회수가 끝난 것의 기록**이다. 여기는 **지금 실물에
+남아 있는 것**만 적는다. 둘을 한 절에 두면 무엇이 지금 유효한지
+읽는 사람이 못 가린다.
+
+★ **`bypass_actors` 를 2026-09-12 에 다시 넣었다 — 이번엔 영구다.**
+
+| | |
+|---|---|
+| 대상 | `release` · `trunk` · `part` 셋 다 |
+| 예외 | `RepositoryRole:5`(Repository admin) · `always` |
+| 사유 | 저장소가 `woongtopia` 조직에서 `CleverAIFox` 개인으로 **미러 이관**됐다. `release` 가 요구하는 승인 1은 **자기 PR 을 자기가 승인할 수 없어**(§12-3) 혼자서는 만족할 수 없다 |
+| 회수 | **본인 외 협업자가 생기면** 제거한다. 날짜가 아니라 조건이다 |
+
+★ 날짜를 안 쓴 이유. 날짜는 지나가도 아무 일이 안 일어나지만 조건은
+  **검사가 잡는다.** `ruleset_check` 이 `collaborators` 를 세고 있고,
+  둘이 되는 순간 "회수 조건이 찼다" 를 낸다. `§76` 이 막으려던 것은
+  "적어두지 않은 완화" 이지 "날짜 없는 예외" 가 아니다.
+
+★ 규칙을 낮추지 않고 예외를 뒀다. 승인을 0으로 내리면 팀이 돌아왔을 때
+  낮은 채로 남는다. 예외는 지우면 끝난다. **위 표(§12-1)를 안 고치는
+  이유가 그것이다** — 이 저장소는 팀 운영 방식을 기록으로 남긴다.
+
+### 12-1a-2. 역할 번호와 조회 함정
+
 ★ **`actor_id 5` 는 사람 수가 아니라 역할 번호다.** 화면 안내가 그것을
 "5인 bypass" 로 읽고 적은 적이 있다. bypass 는 개인이 아니라 역할에 준다.
 
@@ -1418,9 +1455,13 @@ git push origin --delete feat/<이름>
 1로 되돌렸다. **Code Owners 는 그때도 지금도 끄는 것이 정답이며**
 `EXPECT["release"]["codeowners"]` 가 `False` 다.
 
-★ **저장소 admin 은 넷이다.**
+★ **저장소 admin 은 하나다(2026-09-12~).**
 
-    diyon13  gayeoniii  marscoolcat  wlsdnr052475
+    CleverAIFox
+
+이관 전 넷은 기록으로 남긴다 — `diyon13` · `gayeoniii` · `marscoolcat` ·
+`wlsdnr052475`. 개인 저장소라 팀 핸들을 쓸 수 없고 `CODEOWNERS` 도
+단독 소유로 정리했다. **이관의 결과이지 고장이 아니다.**
 
 bypass 는 개인이 아니라 역할에 준다. **admin 이 늘면 우회 가능자도 는다.**
 `ruleset_check` 의 `ADMINS` 가 이 명단이며 실물과 다르면 운다. 이탈자
@@ -1902,6 +1943,12 @@ ship.py     내보내도 되는가 (위 + 문서 4축 + 위생 + git 상태)
 CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머지되는 일이 없다.
 
 머지 뒤 로컬 찌꺼기는 `uv run python tools/tidy.py --yes` 로 정리한다.
+
+★ **청소는 층이 셋이다** — 기계(`hygiene.sh`) · 저장소(`tidy.py`) ·
+레이크(`sweep.py`). 입구는 `tools/janitor.sh` 이고 층별 건수를 한 표로 낸다.
+합치지 않는 이유는 `DECISIONS §150` 에 있다 — 하나가 죽어도 나머지가 돌아야
+한다. `/mnt/f` 가 빠지면 `sweep` 이 실패하는데 그때 `tidy` 까지 안 돌면
+저장소를 못 치운다.
 죽은 upstream · 머지된 브랜치 · 백업 폴더 · 캐시를 본다.
 **데이터 계층은 건드리지 않는다** — `raw` · `norm` · `field` · `web/data` 는
 `NEVER` 로 막혀 있고 규칙에 실수로 넣어도 안 지워진다.
@@ -2389,7 +2436,7 @@ CRS 변경               ★ 중단. 무조건
 ### 18-3c. retired — 폐기 기록
 
 **지운 것도 대장에 남긴다.** 없으면 3개월 뒤에 또 받고 또 조사한다.
-현재 `retired` 10종이 있다.
+현재 `retired` 16종이 있다.
 
 ```yaml
 retired:

@@ -42,9 +42,14 @@ import json
 import sys
 from pathlib import Path
 
+# 정본. params.py 는 os 말고 아무것도 import 하지 않으므로 이 도구의
+# 순수 표준 라이브러리 성격이 깨지지 않는다.
+from firelane.seg.params import TRUCK
+
 ROOT = Path(__file__).resolve().parent.parent
 SEG = ROOT / "data/processed/segments.geojson"
-TRUCK = 3.0
+# TRUCK — 정본을 import 한다(위). 이 도구는 판정을 고치지 않고 규모만
+#         재므로, 임계가 정본과 갈리면 잰 숫자가 곧바로 무의미해진다.
 
 BINS = [(0, 3), (3, 5), (5, 7), (7, 10), (10, 1e9)]
 

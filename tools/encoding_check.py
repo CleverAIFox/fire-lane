@@ -27,9 +27,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-# 검사 대상 확장자
-TEXT_EXT = {".py", ".sh", ".md", ".yml", ".yaml", ".csv", ".txt",
-            ".html", ".css", ".js", ".json", ".geojson", ".cfg", ".toml"}
+# 검사 대상 확장자. 정본은 firelane/encoding.py 의 TEXT_EXT_SOURCE 다.
+# ★ 자료 형식이 아니라 **저장소 소스**다. encoding.TEXT_EXT 와 다른 것이 정상이다.
+from firelane.encoding import TEXT_EXT_SOURCE as TEXT_EXT
 
 # 예외 — 윈도우가 직접 읽는 파일은 CRLF 를 유지한다.
 CRLF_OK = {".wslconfig", ".bat", ".cmd", ".ps1"}
