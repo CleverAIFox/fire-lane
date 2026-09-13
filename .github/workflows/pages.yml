@@ -81,8 +81,12 @@ jobs:
         with:
           mapbox-token: ${{ secrets.MAPBOX_TOKEN }}
 
-      - name: 배포 준비 (docs/proposal.docx → web/)
+      - name: 배포 준비 (docs/proposal.docx → web/ · web/key.js 생성)
+        # ★ web/key.js 는 생성물이다. V-World 키를 저장소에 안 둔다.
+        #   로컬은 .env, 여기는 Secrets — stage_pages.py 한 곳이 읽는다.
         run: uv run python tools/stage_pages.py
+        env:
+          VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

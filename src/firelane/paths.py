@@ -31,6 +31,39 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+
+def _load_dotenv() -> None:
+    """저장소 루트 `.env` 를 환경에 얹는다. **셸에 이미 있으면 안 덮는다.**
+
+    ★ 2026-09-12 (B5). 종전에는 `~/.fire-lane.local` 이 설정 파일인 척
+      했지만 **읽는 코드가 한 줄도 없었다.** `.bashrc` 가 source 해야만
+      동작하는 구조였고, 기계를 갈아엎으면 조용히 사라진다. 실제로 사라졌다.
+
+    ★ 우선순위 — 셸 > .env. 뒤집으면 폐기 변수가 현역을 이기던 사고가
+      그대로 재현된다(위 FIRE_LANE_RAW 주석). `.env` 는 기본값이고
+      `export` 는 그것을 덮는 일회성 판단이다.
+
+    ★ 의존성을 안 쓴다. 이 모듈은 순수 표준 라이브러리 도구도 타고 들어온다.
+    """
+    p = ROOT / ".env"
+    if not p.exists():
+        return
+    for raw in p.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        line = line.removeprefix("export ").strip()
+        key, sep, val = line.partition("=")
+        if not sep:
+            continue
+        key = key.strip()
+        val = val.strip().strip('"').strip("'")
+        if key and val and key not in os.environ:  # 빈 값은 미설정이다      # ★ 셸이 이긴다
+            os.environ[key] = val
+
+
+_load_dotenv()
+
 # ── 데이터 레이크 루트 ────────────────────────────────────────
 DATA = os.environ.get("FIRE_LANE_DATA")
 DATA = Path(DATA).expanduser() if DATA else None
