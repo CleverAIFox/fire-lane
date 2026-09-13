@@ -61,9 +61,12 @@ from firelane.seg import vehicle as V
 
 # 119안전센터. graph.py 의 STATIONS 와 같은 정본을 쓴다.
 from firelane.seg.graph import STATIONS
+from firelane.seg.params import NODE_TOL
 
 CRS_M = 5186
-NODE_TOL = 0.5
+# NODE_TOL — 정본을 import 한다(위). `corner_probe.py` 와 같은 격자
+#            반올림이다. 다른 값을 쓰면 경로 그래프의 노드가 segments 와
+#            갈리고, 같은 도로가 두 그래프에서 다르게 끊긴다.
 
 C = {"r": "\033[31m", "g": "\033[32m", "y": "\033[33m",
      "c": "\033[36m", "d": "\033[90m", "z": "\033[0m"}

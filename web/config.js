@@ -14,8 +14,18 @@ const CONFIG = {
      &domain= 이 등록 URL 과 문자열까지 같아야 타일이 나온다.
      WMTS 축 순서는 {z}/{y}/{x} 다. {z}/{x}/{y} 로 쓰면 타일이 어긋난다. */
   vworld: {
-    key    : "95E47552-4B32-36AB-885B-E9DC3FCB5352",
-    enabled: true,           // 2026-09-01 woongtopia.github.io 등록 완료
+    /* ★ 키는 여기 적지 않는다. `web/key.js`(생성물 · gitignore)가 넣는다.
+       tools/stage_pages.py 가 환경(.env · GitHub Secrets)에서 만든다.
+       ★ 2026-09-12 이전 커밋에는 평문으로 박혀 있다. 이력은 못 지운다 —
+         **재발급해야 복구된다.** */
+    key    : (typeof window !== "undefined"
+              && window.__VWORLD_KEY__) || "",
+    enabled: true,           // 등록 도메인 cleveraifox.github.io (2026-09-12 갱신)
+                             // ★ 이관 전 등록은 woongtopia.github.io 였다. 두 주소가
+                             //   다 살아 있으니 어느 쪽을 쓰는지 배포 origin 으로 본다:
+                             //     gh api repos/<owner>/fire-lane/pages --jq .html_url
+                             // ★ 이 키는 브라우저가 쓴다. 숨길 수 없다 —
+                             //   실효 방어는 도메인 잠금 하나뿐이고 만료는 2027-02-04.
   },
 
   /* 판정 색상. style.css 의 --blocked 등과 같은 값을 유지할 것.
@@ -58,6 +68,36 @@ const CONFIG = {
        베이지가 그대로 나온다(2025-08 판단: 그쪽이 낫다).
        하늘색을 다시 보고 싶으면 0.4 정도로 올리면 된다. */
   lightTint: { color:"#cfe0ee", opacity:0 },
+
+  /* 지도 크롬 색. 판정 4색(verdict)이 아닌 것 — 배경 · 가리개 · 경계 · 건물.
+     ★ 2026-09-11 (B3). 여기 모으기 전에는 **같은 값이 두 벌**이었다.
+       레이어 생성부(`layers/mask.js` · `ui/minimap.js`)가 다크값을 박고,
+       테마 전환부(`ui/theme.js`)가 다크·라이트를 또 박았다. 다크를 고치면
+       전환 한 번에 되돌아오는 종류의 버그가 나온다.
+
+     dark 는 레이어를 만들 때, light 는 setTheme() 이 쓴다.
+     ★ 지도는 항상 다크로 만들어지고 setTheme() 이 그 위를 덮는다.
+       생성부에서 '현재 테마' 를 읽으면 안 된다 — 값이 흔들린다. */
+  chrome: {
+    bg:      { dark:"#0a0d13", light:"#dfe3ea" },   /* 큰 지도 배경 */
+    bgMini:  { dark:"#0a0d13", light:"#e8ebef" },   /* 미니맵 배경. 라이트만 다르다 */
+    /* 스코프 밖 가리개.
+       ★ 라이트에서 흰색(#eef1f5)을 쓰면 지면보다 '밝아서' 죽은 영역으로 안 읽힌다.
+         #b8c0cc(대비 1.36)는 밖이 무거워 시선을 뺏었고 #d8dce2(1.08)는 티가 안 났다. */
+    mask:    { dark:"#05070b", light:"#ccd2da" },
+    /* 동명동 경계. 안과 밖을 가르는 유일한 선이라 라이트에서 더 진하게 간다. */
+    bnd:     { dark:"#5c6b82", light:"#4a5568" },
+    /* 건물 3D 층수 램프. flo 1 · 3 · 6 · 12 에 대응하는 네 값이다. */
+    bldRamp: { dark:["#1d2430","#2b3545","#3b4759","#4d5a6f"],
+               light:["#d3d9e2","#c3cad6","#b2bbc9","#9fa9ba"] },
+    /* 미니맵 '지금 보는 영역' 사각형. 테마를 안 탄다(양쪽 배경에서 다 읽힌다).
+       ★ 값이 blocked 와 같지만 **파생이 아니다.** 판정색을 바꿔도 이건
+         따라가면 안 된다 — 여기 빨강은 '판정' 이 아니라 '현재 위치' 다.
+         모르는 것을 아는 척 묶지 않는다(원칙 ⑥). */
+    view:     "#ff4d3d",
+    /* 어두운 배경 위 얇은 빨강은 도로망에 묻힌다. 테두리를 먼저 깔고 그 위에 얹는다. */
+    viewHalo: { dark:"#000000", light:"#ffffff" },
+  },
 
   /* noCctvColor(갈색)는 제거했다. 화면 색은 verdict 4종이 전부다.
      CCTV 사각 구간은 unknown(회색)에 그대로 포함된다 — 회색의 정의가 곧

@@ -78,10 +78,31 @@ NODE_STEP = """      - uses: actions/setup-node@v4
 """
 
 
+
+# ── 배포에 내비 빌드가 얹혀 있는가 ──────────────────────────────
+# ★ 원래 앵커가 한국어 주석(`내비 빌드 (web/navi → …)`)이었다. 주석을
+#   다듬는 순간 검사가 죽는다. **동작**을 앵커로 잡는다.
+def check() -> int:
+    f = ROOT / ".github" / "workflows" / "pages.yml"
+    if not f.exists():
+        print("\u2717 pages.yml 이 없다")
+        return 1
+    if "./.github/actions/build-navi" not in f.read_text(encoding="utf-8"):
+        print("\u2717 pages.yml 에 build-navi 액션이 없다 — 배포에서 내비가 빠진다")
+        return 1
+    print("\u2713 pages.yml 이 build-navi 액션을 부른다")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--check", action="store_true",
+                    help="상태만 본다. 아무것도 안 바꾼다")
     a = ap.parse_args()
+    # ★ --check 는 아무것도 안 바꾼다. verify.sh 전용
+    if a.check:
+        return check()
 
     if not F.exists():
         print(f"★ {F} 가 없다"); return 1
