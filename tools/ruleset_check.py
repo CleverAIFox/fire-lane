@@ -37,10 +37,46 @@ PARAM 없음
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
+from pathlib import Path
 
-REPO = "woongtopia/fire-lane"
+ROOT = Path(__file__).resolve().parent.parent
+
+def _repo_slug() -> str:
+    """`git remote` 에서 owner/name 을 읽는다. **저장소가 자기 이름의 정본이다.**
+
+    ★ 2026-09-12 (B5). 종전에는 `"woongtopia/fire-lane"` 이 상수로 박혀 있었고,
+      개인 계정으로 미러 이관한 뒤 `gh api` 가 404 를 냈다. 화면은
+      "로그인·권한을 확인하라" 고 해서 원인을 엉뚱한 데서 찾게 만들었다.
+      **룰셋 검사가 도는 척하고 아무것도 안 봤다.**
+
+    ★ 새 값으로 바꾸기만 하면 다음 이관에서 똑같이 깨진다.
+      remote 를 못 읽을 때만 상수로 떨어지고, **떨어졌다는 사실을 적는다** —
+      모르는 것을 아는 척하지 않는다(HANDOFF 원칙 ⑥).
+    """
+    try:
+        url = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            capture_output=True, text=True, cwd=ROOT, timeout=5,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        url = ""
+    if url:
+        slug = url.removesuffix(".git")
+        slug = slug.split(":")[-1] if slug.startswith("git@") else \
+            "/".join(slug.split("/")[-2:])
+        if slug.count("/") == 1 and all(slug.split("/")):
+            return slug
+    print("★ git remote 를 못 읽었다 — 아래 값으로 진행한다. 틀릴 수 있다.",
+          file=sys.stderr)
+    return FALLBACK_REPO
+
+
+# remote 가 없을 때만 쓴다. 정본이 아니다.
+FALLBACK_REPO = "CleverAIFox/fire-lane"
+REPO = _repo_slug()
 
 # docs/MASTER.md §12-1 의 표와 같아야 한다.
 # 여기를 고치면 그 둘도 같이 고친다.
@@ -49,7 +85,11 @@ REPO = "woongtopia/fire-lane"
 #   MASTER §12-1 에 그 선언이 없었다. 실물이 이 목록과 다르면 운다.
 # ★ 2026-09-03. AIMasterFox 이탈로 제거. bypass 는 개인이 아니라 역할에
 #   주므로 admin 이 줄면 우회 가능자도 준다(MASTER §12-1a).
-ADMINS = ["diyon13", "gayeoniii", "marscoolcat", "wlsdnr052475"]
+# ★ MASTER §12-1a 가 선언한 예외. 여기 없는 bypass 는 운다.
+#   "RepositoryRole:5" 는 Repository admin 역할이다 — 개인이 아니라 역할에 준다.
+BYPASS_DECLARED = {"RepositoryRole:5(always)"}
+
+ADMINS = ["CleverAIFox"]  # 2026-09-12 개인 저장소 이관. 옛 팀 넷은 MASTER §12-1 이력에 남는다
 
 EXPECT = {
     "release": {
@@ -109,6 +149,50 @@ def _gh(path: str):
         print("  " + (r.stderr or "").strip()[:200])
         sys.exit(2)
     return json.loads(r.stdout)
+
+
+def _secret_gaps() -> list[str]:
+    """워크플로가 부르는 `secrets.X` 중 **등록 안 된 것**을 돌려준다.
+
+    ★ 2026-09-12 (B5). `pages.yml` 에 Secret 참조를 넣고 등록을 안 하면
+      빈 문자열이 조용히 들어간다. 워크플로는 초록불이고 배포본만 깨진다.
+      VWORLD_KEY 를 배선하면서 실제로 그 상태를 한 번 만들었다.
+
+    ★ **값은 못 본다.** API 가 이름과 시각만 준다. 그래서 이 검사가
+      보증하는 것은 "있다" 뿐이다. 값이 맞는지 · 만료됐는지는 사람 몫이다.
+
+    ★ 반대 방향(등록됐는데 안 쓴다)은 일부러 안 본다. 다른 워크플로나
+      수동 실행이 쓸 수 있어서 지우라고 할 근거가 없다.
+
+    ★ `secrets.GITHUB_TOKEN` 은 GitHub 이 자동으로 준다. 등록 대상이 아니다.
+    """
+    want: dict[str, list[str]] = {}
+    wf = ROOT / ".github/workflows"
+    for p in sorted(wf.glob("*.yml")):
+        for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            code = line.split("#", 1)[0]
+            for m in re.finditer(r"secrets\.([A-Z_][A-Z0-9_]*)", code):
+                name = m.group(1)
+                if name == "GITHUB_TOKEN":
+                    continue
+                want.setdefault(name, []).append(f"{p.name}:{i}")
+
+    if not want:
+        # ★ 0건이 청결인지 죽음인지 가른다(HANDOFF 원칙 ④).
+        return ["워크플로가 부르는 Secret 이 0건이다 — 프로브를 의심하라"
+                "\n      ★ pages.yml 은 최소 MAPBOX_TOKEN 을 부른다"]
+
+    try:
+        have = {s["name"] for s in _gh(f"repos/{REPO}/actions/secrets")["secrets"]}
+    except (KeyError, TypeError, SystemExit):
+        return ["Secret 목록을 못 읽었다 — gh 권한(repo)이 필요하다"
+                "\n      ★ 못 읽은 것을 '없다' 로 적지 않는다"]
+
+    return [f"Secret 미등록: {n}   ← {', '.join(want[n])}"
+            "\n      ★ 참조는 있는데 값이 없으면 **빈 문자열**이 들어간다."
+            "\n        워크플로는 초록불이고 배포본만 깨진다."
+            f"\n        gh secret set {n} --repo {REPO}"
+            for n in sorted(set(want) - have)]
 
 
 def main() -> int:
@@ -197,16 +281,36 @@ def main() -> int:
         if by:
             who = [f"{a.get('actor_type')}:{a.get('actor_id')}"
                    f"({a.get('bypass_mode')})" for a in by]
+            # ★ 선언된 예외는 통과시킨다. MASTER §12-1a (2026-09-12).
+            #   개인 저장소라 승인 1을 혼자 만족할 수 없다. 규칙을 낮추지
+            #   않고 예외를 뒀다. **회수는 날짜가 아니라 조건이다** —
+            #   협업자가 둘이 되면 아래에서 운다.
+            if set(who) <= BYPASS_DECLARED:
+                continue
             bad.append(f"{name}: bypass actor {who}"
                        "\n      ★ 예외는 문서 밖에서 자란다. 08-31 에 한 사람이"
                        "\n        PR 요구를 우회할 수 있었고 아무 문서에도 없었다")
 
-    admins = sorted(c["login"] for c in _gh(f"repos/{REPO}/collaborators")
+    people = _gh(f"repos/{REPO}/collaborators")
+
+    # ★ 회수 조건. §12-1a 가 "본인 외 협업자가 생기면 제거한다" 고 적었고
+    #   여기가 그것을 **실제로 거는** 자리다. 문서만 적으면 잊는다 —
+    #   `contract.yml` 죽은 게이트가 CI 에서 한 번도 안 돌았던 그 모양이다.
+    if len(people) > 1 and BYPASS_DECLARED:
+        bad.append(
+            f"bypass 회수 조건이 찼다 — 협업자 {len(people)}명"
+            "\n      ★ MASTER §12-1a 의 예외는 '본인 외 협업자가 생기면"
+            "\n        제거한다' 는 조건부다. 지금이 그때다."
+            "\n        룰셋 셋에서 bypass_actors 를 비우고 §12-1a 를 회수로 고쳐라")
+
+    admins = sorted(c["login"] for c in people
                     if (c.get("permissions") or {}).get("admin"))
     if admins != sorted(ADMINS):
         bad.append(f"admin 명단 {admins} != {sorted(ADMINS)}"
                    "\n      ★ admin 이 늘면 bypass 대상도 는다. 개인 지정은"
                    "\n        룰셋이 지원하지 않는다(DECISIONS 80)")
+
+    bad += _secret_gaps()
 
     if bad:
         print("★ 룰셋 실물이 방침과 다르다.\n")

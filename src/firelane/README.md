@@ -32,8 +32,8 @@ uv run fire-lane --only publish
   새키:
     what: 한 줄 설명
     kind: shp_zip | shp_zip_multi | shp_dir | csv_points | csv_points_in_zip
-        | dbf_in_zip | json_points | csv_table | csv_table_multi
-        | raw_only
+        | dbf_in_zip | json_points | json_table | csv_table | csv_table_multi
+        | text_table | raw_only
     scope: jngj-donggu           # 공간 범위. 전국이면 kr
     updated: '2026-08-09'        # ★ 데이터 갱신일이지 다운로드일이 아니다
     stem: safety_cctv_jngj       # 파일명 어간. ext 와 합쳐 실물을 찾는다
@@ -74,6 +74,8 @@ uv run fire-lane --only publish
 | `json_points` | 표준데이터 JSON. CSV 로 오다 바뀌는 경우 |
 | `csv_table` | 좌표 없는 표. 그대로 복사 |
 | `csv_table_multi` | 좌표 없는 표 여러 판. 이어붙인다. 컬럼이 다르면 FAIL · `_src` 에 원본 파일명 |
+| `json_table` | 좌표 없는 JSON 표. `records`(표준데이터) · `Data`(건축물대장) 둘 다 받는다 |
+| `text_table` | 구분자 텍스트. **헤더 없음** — 컬럼명은 `contract.columns` 에 사람이 적는다 |
 | `raw_only` | 읽지 않는다. 존재만 기록(SKIP) |
 
 **새 형식이면 핸들러를 먼저 추가하고 대장을 쓴다.** 목록 밖의 `kind` 는

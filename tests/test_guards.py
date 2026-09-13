@@ -631,6 +631,27 @@ def test_ingest_kinds_are_documented():
         f"sources.yaml 이 ingest 에 없는 kind 를 쓴다: {unknown}\n"
         "  실행하면 ValueError('unknown kind') 로 죽는다.")
 
+    # ★ 2026-09-07. 여기까지는 **한 방향**이다. 반대 방향이 사각지대였다 —
+    #   `json_points` 는 ingest 에 있고 ledger_schema · inventory 에는 없었다.
+    #   둘 다 실패하지 않고 조용히 건너뛰었으므로 아무도 못 봤다.
+    #   정적 목록에는 반드시 역방향 검사를 붙인다(2026-09-04, 넷 고침).
+    from firelane.inventory import PROBES
+    from firelane.kinds import KINDS
+
+    assert impl == set(KINDS), (
+        "ingest 분기와 kinds.KINDS 가 어긋난다.\n"
+        f"  등록부에만: {sorted(set(KINDS) - impl)}\n"
+        f"  분기에만  : {sorted(impl - set(KINDS))}\n"
+        "  새 kind 는 kinds.KINDS 에 한 줄 + ingest 분기 하나다.")
+
+    assert set(PROBES) == set(KINDS), (
+        "inventory.PROBES 와 kinds.KINDS 가 어긋난다.\n"
+        f"  차이: {sorted(set(PROBES) ^ set(KINDS))}\n"
+        "  PROBES 는 KINDS 에서 유도돼야 한다 — 손으로 나열하지 마라.")
+
+    assert used <= set(KINDS), (
+        f"대장이 등록부에 없는 kind 를 쓴다: {sorted(used - set(KINDS))}")
+
     # ★ 문서 전체가 아니라 **표 행**에서 찾는다. 본문 어딘가에 이름이
     #   언급된 것만으로 통과시키면 안 된다 — 실제로 별칭 설명 문단이
     #   `shp_dir` 을 언급하는 바람에 표에서 빼도 통과했다(역검증에서 걸림).
@@ -974,9 +995,34 @@ def test_acquire_stage_and_quarantine_do_not_fight():
     import yaml
 
     y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
-    ret = {v["file"] for v in (y.get("retired") or {}).values()
-           if isinstance(v, dict) and v.get("file")}
-    assert ret, "retired 에 file 이 적힌 항목이 없다 — 이 검사가 무의미해진다"
+    # ★ 2026-09-10. 종전에는 `v["file"]` 단수만 읽었다. 그래서 retired
+    #   10종 중 **2종만** 이 검사를 받았고(F-148), 별칭을 폐기하자
+    #   0건이 되어 `assert ret` 가 죽었다 — **대장을 고치면 검사가 깨지는
+    #   구조**였다. 감사가 그 구조를 미리 적어 두었다.
+    #
+    #   `acquire.retired_names()` 는 `ledger.globs(v)` 로 지목을 유도한다
+    #   (acquire:241). 같은 파일 235행 — "조회기의 정본은
+    #   firelane.ledger.globs 하나다. 따로 구현하지 않는다."
+    #   **테스트만 그 규칙 밖에 있었다.** 같은 조회기를 쓴다.
+    from firelane import ledger as _led
+
+    ret = set()
+    for v in (y.get("retired") or {}).values():
+        if not isinstance(v, dict):
+            continue
+        for g in _led.globs(v):
+            s = str(g)
+            if not any(c in s for c in "*?["):
+                ret.add(s)                      # files 예외 항목 — 리터럴이다
+                continue
+            # `**/stem_*` 는 패턴이다. 이 검사는 실물을 만들어 acquire 에
+            # 먹이므로 그 패턴에 맞는 **구체적 이름**이 필요하다.
+            if st := v.get("stem"):
+                ext = (v.get("ext") or ["csv"])[0]
+                ret.add(f"{_led.provider_of(v)}/{st}_jngj_20200101.{ext}")
+    assert ret, (
+        "retired 가 아무 파일도 지목하지 않는다 — 이 검사가 무의미해진다.\n"
+        "  stem 도 files 도 없는 항목만 남았다는 뜻이다.")
 
     with tempfile.TemporaryDirectory() as d:
         base = Path(d)

@@ -132,3 +132,50 @@ def test_elsewhere_points_at_committed_files():
         "absent.elsewhere 가 커밋 안 되는 파일을 가리킨다.\n" + "\n".join(bad)
         + "\n\n  로컬에서만 통과하는 검사가 된다."
           "\n  data/processed/_manifest.json 이 컬럼 목록을 들고 커밋된다.")
+
+
+def test_plan_has_no_closed_items():
+    """PLAN 에 닫힌 항목(⬛)이 **하나도 없어야 한다.**
+
+    ★ 2026-09-13. 어제 만든 `test_closed_plan_items_are_slots` 를 뒤집었다.
+      그 검사는 "슬롯이면 통과" 였고 §0-2 의 *"슬롯만 남는다"* 를 그대로
+      강제했다. **그 규약이 틀렸다.** PLAN 은 빚 목록이고 갚은 빚은
+      목록에 안 남는다. 개발이 끝나면 이 문서는 비어야 한다.
+
+    ★ **잘못된 것을 정확히 지키게 만드는 검사가 제일 위험하다.**
+      아무도 의심하지 않게 되기 때문이다. 검사가 있다는 사실 자체가
+      규약을 검증한 것처럼 보이게 한다.
+
+    닫는 법 — 결과는 MASTER 로, 이유는 DECISIONS 로 옮기고 **행을 지운다.**
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    plan = (root / "docs/PLAN.md").read_text(encoding="utf-8")
+    rows = re.findall(r"^\| *(\d+) *\| *(.+?) *\| *⬛ *\|", plan, re.M)
+    assert not rows, (
+        f"PLAN 에 닫힌 항목이 {len(rows)}개 남아 있다. **행을 지워라.**\n  "
+        + "\n  ".join(f"#{i} {t[:46]}" for i, t in rows)
+        + "\n\n  PLAN 은 앞으로 할 일만 담는다(§0-2). 끝난 것은\n"
+          "  결과를 MASTER 로, 이유를 DECISIONS 로 옮기고 행을 지운다.\n"
+          "  옮기는 도구 — tools/batches/b5_plan.py\n"
+          "  ★ 갚은 빚은 목록에 안 남는다. 개발이 끝나면 이 문서는 빈다.")
+
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    rows = re.findall(r"^\| *(\d+) *\| *(.+?) *\| *⬛ *\| *(.*?) *\|\s*$",
+                      (root / "docs/PLAN.md").read_text(encoding="utf-8"), re.M)
+    bad = [f"  #{i} {t[:40]}  — 본문 {len(b)}자"
+           for i, t, b in rows
+           if len(b) > 60 and not re.search(r"(DECISIONS|MASTER) §\d+", b)]
+    assert not bad, (
+        "닫힌 PLAN 항목이 본문을 들고 있다. **슬롯만 남겨라.**\n"
+        + "\n".join(bad)
+        + "\n\n  본문은 DECISIONS 로 옮기고 여기는 가리키기만 한다:\n"
+          "      | 15 | 제목 | ⬛ | → `DECISIONS §123` |\n"
+          "  옮기는 도구 — tools/batches/b5_plan.py\n"
+          "  ★ PLAN 은 미래만 담는다. 끝난 것이 여기 남으면 중복이 쌓이고\n"
+          "    어느 쪽이 정본인지 모르게 된다(PLAN §0-2).")

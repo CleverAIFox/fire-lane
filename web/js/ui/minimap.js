@@ -13,7 +13,10 @@
 import { CONFIG } from "../config-access.js";
 import { S } from "../state.js";
 import { CARTO } from "../basemap.js";
-import { vColor } from "../verdict.js";
+import { vColor, vDark, verdictMatch } from "../verdict.js";
+
+/* 크롬 색 정본. 큰 지도(layers/mask.js)와 같은 것을 본다. */
+const CH = CONFIG.chrome;
 
 export function initMiniMap(seg, bnd){
   const map = S.map, VIEW = S.VIEW;
@@ -25,7 +28,7 @@ export function initMiniMap(seg, bnd){
     bearing:0, pitch:0,
     bounds:VIEW.emdBounds, fitBoundsOptions:{padding:4},
     style:{version:8, sources:{ mbase:{type:"raster",tiles:CARTO("dark"),tileSize:256,maxzoom:19} },
-      layers:[ {id:"mbg",type:"background",paint:{"background-color":"#0a0d13"}},
+      layers:[ {id:"mbg",type:"background",paint:{"background-color":CH.bgMini.dark}},
         {id:"mbase",type:"raster",source:"mbase",paint:{"raster-opacity":.8,"raster-saturation":-.4}} ]}
   });
   /* 지금 보는 영역을 미니맵에 그릴 사각형.
@@ -63,24 +66,25 @@ export function initMiniMap(seg, bnd){
   S.miniMap.on("load", () => {
     S.miniMap.addSource("mbnd",{type:"geojson",data:bnd});
     S.miniMap.addLayer({id:"mbnd-l",type:"line",source:"mbnd",
-      paint:{"line-color":"#5c6b82","line-width":1,"line-dasharray":[2,1.5]}});
+      paint:{"line-color":CH.bnd.dark,"line-width":1,"line-dasharray":[2,1.5]}});
     /* 루트 — 일반: 판정 4색 / 출동: 초록 강조·나머지 흐림 (styleMiniRoute가 조정) */
     S.miniMap.addSource("mroute",{type:"geojson",data:seg});
     S.miniMap.addLayer({id:"mroute-l",type:"line",source:"mroute",
-      paint:{"line-color":["match",["get","verdict"],
-        "blocked","#ff4d3d","needs_cv","#ffab2e","clear","#4ad18f","#5a6272"],
+      /* ★ 머리말의 약속을 생성부도 지킨다 — 판정 4색은 큰 지도와 같은 값이다.
+         vDark 는 다크 고정. 지도는 다크로 만들어지고 styleMiniTheme() 이 덮는다. */
+      paint:{"line-color":verdictMatch(vDark),
         "line-width":1.3,"line-opacity":.9}});
     styleMiniRoute();
     /* 현재 보는 영역 */
     S.miniMap.addSource("mview",{type:"geojson",data:viewRect()});
     S.miniMap.addLayer({id:"mview-f",type:"fill",source:"mview",
-      paint:{"fill-color":"#ff4d3d","fill-opacity":.20}});
+      paint:{"fill-color":CH.view,"fill-opacity":.20}});
     /* 어두운 배경 위 얇은 빨강은 도로망에 묻힌다. 검은 테두리를 먼저 깔아
        주변과 떼어놓고 그 위에 굵은 빨강을 얹는다. */
     S.miniMap.addLayer({id:"mview-halo",type:"line",source:"mview",
-      paint:{"line-color":"#000000","line-width":5,"line-opacity":.55,"line-blur":1}});
+      paint:{"line-color":CH.viewHalo.dark,"line-width":5,"line-opacity":.55,"line-blur":1}});
     S.miniMap.addLayer({id:"mview-l",type:"line",source:"mview",
-      paint:{"line-color":"#ff4d3d","line-width":2.6}});
+      paint:{"line-color":CH.view,"line-width":2.6}});
     /* 파란 점(화면 중심 표시)은 제거했다(2025-08).
        ★ 빨간 사각형이 이미 "지금 보는 영역"을 보여주므로 중심점은 정보가 겹친다.
        ★ 지도에서 파란 점은 보통 GPS 내 위치로 읽힌다. 실제로는 카메라가 향한
@@ -103,19 +107,18 @@ export function initMiniMap(seg, bnd){
      다른 색이면 "같은 구간인데 왜 색이 다르지"가 된다. vColor() 로 맞춘다. */
 export function styleMiniTheme(){
   if(!S.miniMap || !S.miniMap.getLayer || !S.miniMap.getLayer("mbase")) return;
-  const light = S.lightTheme, rgb = k => `rgb(${vColor(k)})`;
+  const light = S.lightTheme;
   S.miniMap.getSource("mbase").setTiles(CARTO(light ? "light" : "dark"));
-  S.miniMap.setPaintProperty("mbg","background-color", light ? "#e8ebef" : "#0a0d13");
+  S.miniMap.setPaintProperty("mbg","background-color", light ? CH.bgMini.light : CH.bgMini.dark);
   S.miniMap.setPaintProperty("mbase","raster-opacity",   light ? .9  : .8);
   S.miniMap.setPaintProperty("mbase","raster-saturation",light ? -.15 : -.4);
   if(S.miniMap.getLayer("mroute-l"))
-    S.miniMap.setPaintProperty("mroute-l","line-color",["match",["get","verdict"],
-      "blocked",rgb("blocked"),"needs_cv",rgb("needs_cv"),"clear",rgb("clear"),rgb("unknown")]);
+    S.miniMap.setPaintProperty("mroute-l","line-color", verdictMatch());
   if(S.miniMap.getLayer("mbnd-l"))
-    S.miniMap.setPaintProperty("mbnd-l","line-color", light ? "#4a5568" : "#5c6b82");
+    S.miniMap.setPaintProperty("mbnd-l","line-color", light ? CH.bnd.light : CH.bnd.dark);
   /* 사각형 밑선: 어두운 배경에선 검정, 밝은 배경에선 흰색이라야 떼어 놓인다 */
   if(S.miniMap.getLayer("mview-halo"))
-    S.miniMap.setPaintProperty("mview-halo","line-color", light ? "#ffffff" : "#000000");
+    S.miniMap.setPaintProperty("mview-halo","line-color", light ? CH.viewHalo.light : CH.viewHalo.dark);
 }
 
 export function styleMiniRoute(){

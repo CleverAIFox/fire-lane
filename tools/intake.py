@@ -107,6 +107,38 @@ def sources_index() -> dict[str, dict]:
     return d.get("datasets", {})
 
 
+def _retired() -> dict:
+    """폐기 대장. `_ledger()` 가 datasets 만 읽어서 신설했다.
+
+    ★ 2026-09-10. 실패 메시지는 "datasets **또는 retired** 에 적어라" 인데
+      코드는 datasets 만 봤다. retired 에 적어도 통과가 안 되니 사람이
+      `--force` 를 쓰게 되고, 그 순간 관문이 죽는다 — 같은 파일 123행이
+      "관문은 정확해야 한다. 정상 파일을 막으면 사람이 --force 를 쓴다"
+      고 스스로 적어놓은 그 자리다.
+    """
+    f = ROOT / "sources.yaml"
+    d = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+    return d.get("retired", {}) or {}
+
+
+def retired_hit(name: str) -> str | None:
+    """이 원본명이 폐기 대장에 있나 → 항목 키.
+
+    ★ 폐기는 **판단이 끝난 것**이다. 다시 묻지 않고 조용히 건너뛴다.
+      `_quarantine` 이 "판단 보류지 폐기가 아니다" 인 것과 짝이다.
+    """
+    for k, v in _retired().items():
+        if not isinstance(v, dict):
+            continue
+        if v.get("origin_name") == name:
+            return k
+        st = v.get("stem")
+        stem = name.rsplit(".", 1)[0]
+        if st and stem.startswith(st):
+            return k
+    return None
+
+
 # ── 원본명 → 정규명 제안 ──────────────────────────────────────
 DOC_NO = re.compile(r"(KFS-\d-\d{4}-\d{4}(?:-\d{2})?)", re.IGNORECASE)
 
@@ -126,8 +158,14 @@ def _by_rules(name: str) -> str | None:
     import re as _re
 
     from firelane.normalize_raw import RULES
+    # ★ 2026-09-07. `normalize_raw.main()` 은 `low = f.name.lower()` 로
+    #   매칭한다. 여기가 원본 그대로 매칭해서 **대문자가 든 파일명만**
+    #   관문에 막혔다(건물DB · CCTV정보 · GJBG_LSI…). 08-24 KFS 사고의
+    #   거울상이다 — 그때는 규칙이 대문자였고 이번엔 매칭이 소문자를
+    #   안 했다. 두 곳이 같은 방식으로 매칭해야 한다.
+    low = name.lower()
     for pat, folder, tmpl in RULES:
-        m = _re.search(pat, name)
+        m = _re.search(pat, low)
         if not m:
             continue
         return f"{folder}/{tmpl.format(*m.groups()) if tmpl else name}"
@@ -311,6 +349,13 @@ def cmd_stage(inb: Path, *, apply: bool, force: bool = False) -> int:
             continue
         s = sha256(p)
         if s in known:
+            skipped += 1
+            continue
+        rk = retired_hit(p.name)
+        if rk:
+            # ★ 판단이 끝난 것이다. 다시 묻지 않는다.
+            print(f"건너뜀  {p.name}\n"
+                  f"        폐기 대장 `{rk}` 에 있다. 편입하지 않는다")
             skipped += 1
             continue
         if not force and propose(p, ds)["matched_key"] is None:

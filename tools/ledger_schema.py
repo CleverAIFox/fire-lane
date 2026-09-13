@@ -56,9 +56,16 @@ from firelane import ledger as _led
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
 
-CSV_KINDS = {"csv_points", "csv_point", "csv_table", "csv_table_multi",
-             "csv_points_in_zip"}
-SHP_KINDS = {"shp_zip", "shp_zip_multi", "dbf_in_zip", "shp_dir"}
+# ★ 2026-09-07. 손목록을 `firelane.kinds` 에서 유도한다.
+#   종전 CSV_KINDS 에 `json_points` 가 **없었다.** 그래서 표준데이터 JSON
+#   소스는 `--check` 가 실물 변경을 못 잡았다 — 조용히 None 을 냈다.
+#   ngii1k·ngii_1k 는 shp_dir 의 옛 이름인데 SHP_KINDS 에만 빠져 있었다.
+from firelane.kinds import (  # noqa: E402
+    CSV_KINDS,
+    DELIM_KINDS,
+    JSON_KINDS,
+    SHP_KINDS,
+)
 
 MAX_COLS = 60          # 이보다 많으면 접는다. 대장이 읽을 수 없게 된다
 
@@ -116,6 +123,49 @@ def probe(key: str, e: dict) -> dict | None:
     declared = e.get("encoding")
 
     try:
+        if kind in JSON_KINDS:
+            # ★ 값은 안 읽는다. 키 이름과 개수만 본다(이 파일 머리말).
+            #   {"fields":[{"id":…}], "records":[…]}  표준데이터
+            #   {"Description":{…}, "Data":[…]}       건축물대장
+            import json as _json
+            raw = _json.loads(src.read_text(encoding=declared or "utf-8"))
+            if isinstance(raw, list):
+                rows = raw
+            else:
+                rows = raw.get("records") or raw.get("Data") or []
+            cols = list(rows[0]) if rows else []
+            out = {"columns": cols[:MAX_COLS], "features": len(rows),
+                   "encoding_seen": declared or "utf-8"}
+            if len(cols) > MAX_COLS:
+                out["layers_total"] = len(cols)
+            return out
+
+        if kind in DELIM_KINDS:
+            # ★ **헤더가 없다.** 첫 행은 데이터다. csv 분기로 보내면 그 행을
+            #   컬럼명으로 먹고 조용히 1행을 잃는다. 컬럼명은 파일에 없고
+            #   제공처 활용가이드 PDF 에만 있으므로 `contract.columns` 에
+            #   사람이 적는다 — 여기서는 **열 개수와 행 수만** 센다.
+            delim = (e.get("contract") or {}).get("delimiter", "|")
+            inner_key = e.get("inner_contains", "")
+            if src.suffix.lower() == ".zip":
+                with zipfile.ZipFile(src) as z:
+                    inner = [n for n in z.namelist()
+                             if not n.endswith("/") and inner_key in n]
+                    if not inner:
+                        return {"error": "zip 안에 대상 파일이 없다"}
+                    pick = sorted(inner)[0]
+                    with z.open(pick) as f:
+                        head = f.read(1 << 16)
+                out_src = pick
+            else:
+                head, out_src = src.read_bytes()[:1 << 16], src.name
+            text, used = _decode(head, declared)
+            first = next((L for L in text.splitlines() if L.strip()), "")
+            return {"columns": [f"c{i:02d}" for i in
+                                range(len(first.split(delim)))][:MAX_COLS],
+                    "encoding_seen": used, "source": out_src,
+                    "error": "헤더 없음 — 컬럼명은 contract 에 사람이 적는다"}
+
         if kind in CSV_KINDS:
             if src.suffix.lower() == ".zip":
                 with zipfile.ZipFile(src) as z:
