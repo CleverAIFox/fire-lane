@@ -13,24 +13,28 @@
 # ★ `**` 를 쓰지 않는다. GitHub 과 owned_paths.py 의 해석이 갈릴 여지를
 #   남기지 않는다. `/dir/` · `/path/file` · `*.ext` 만 쓴다.
 #
-# ── 팀 ──────────────────────────────────────────────────────────
-#   @woongtopia/gis     오창준(@AIMasterFox) · 우지혜(@marscoolcat)
-#   @woongtopia/cv      이가연(@gayeoniii) · 백진욱(@wlsdnr052475)
-#   @woongtopia/infra   김재웅(@diyon13)
+# ── ★ 2026-09-09 분기. 단독 소유로 전환한다 ─────────────────────
+#   저장소가 `woongtopia` 조직에서 `CleverAIFox` 개인 계정으로 옮겼고
+#   팀 구성이 갈렸다. 이 파일이 쓰던 `@woongtopia/gis` · `/cv` · `/infra`
+#   **팀 참조는 개인 계정 저장소에서 해석되지 않는다.**
 #
-#   ★ 팀에게 저장소 **Write 권한**을 줘야 CODEOWNERS 가 동작한다.
-#     Settings > Collaborators and teams > Add teams > Write
-#     권한 없는 팀을 적으면 GitHub 이 조용히 무시하고 그 경로는
-#     리뷰 없이 머지된다 — 보호되는 것처럼 보이면서.
+#   ★ 그런데 `test_ownership` 은 통과하고 있었다. `owned_paths.py` 가
+#     소유자 토큰을 **문자열로만** 보고 GitHub 해석 여부는 안 보기
+#     때문이다. 즉 `# !strict` 범위는 살아 있었고 **리뷰 승인 권한만
+#     조용히 죽어 있었다.** 이 파일 머리말이 스스로 경고한 그 상태다 —
+#     *"권한 없는 팀을 적으면 GitHub 이 조용히 무시하고 그 경로는
+#     리뷰 없이 머지된다 — 보호되는 것처럼 보이면서."*
 #
-#   ★ 팀을 쓰는 이유는 멤버십이 바뀌어도 이 파일을 안 고쳐도 되기
-#     때문이다. 개인 핸들은 그 사람만 승인 가능한 자리에만 쓴다.
+#   ★ 그래서 소유자를 전부 `@CleverAIFox` 로 통일한다. 1인 저장소에서
+#     리뷰 승인은 의미가 없고, **이 파일의 남은 일은 `# !strict` 범위를
+#     정하는 것 하나**다. 그 역할은 그대로 유지된다.
 #
-# ── ★ 자기 PR 은 자기가 승인 못 한다 (GitHub 사양) ──────────────
-#   `/src/firelane/` 을 @AIMasterFox 단독으로 두면 **본인이 본인 PR 을
-#   머지할 수 없다.** 그래서 GIS 코어는 `@woongtopia/gis` 팀 소유로 둔다.
-#   지혜님이 승인권을 갖되 판정 로직 리뷰를 강요하지는 않는다 —
-#   실제 방어는 계약 테스트가 한다(MASTER §12-5).
+#   ★ 자기 PR 자기 승인 문제(GitHub 사양)는 1인 저장소에서 사라진다.
+#     대신 방어가 사람에서 검사로 완전히 옮겨간다 — `verify.sh` ·
+#     `ship.py` · 계약 테스트가 유일한 관문이다(MASTER §12-5).
+#
+#   ★ 다시 협업으로 돌아가면 여기부터 고친다. 팀 참조를 쓰려면
+#     조직 저장소로 옮기고 팀에 **Write 권한**을 주어야 한다.
 
 
 # ── 0. 기본값. 미소유를 없앤다 ──────────────────────────────────
@@ -38,79 +42,81 @@
 #   아니라 **분류되지 않은 새 파일이 떨어지는 자리**다. 아래 좁은
 #   규칙들이 전부 덮어쓴다. 하는 일은 하나뿐이다 —
 #   미소유 상태를 불가능하게 만드는 것.
-# ★ 2026-09-02. 포괄 소유자를 릴리즈 매니저(김재웅)로 옮긴다. 종전
+# ★ 2026-09-02. 포괄 소유자를 릴리즈 매니저(김재웅)로 옮겼다. 종전
 #   `@AIMasterFox` 는 이탈자이고, 그대로 두면 **모든 파일의 최종
 #   소유자가 없는 사람**이 된다.
+# ★ 2026-09-09. 분기로 다시 `@CleverAIFox` 로 돌아온다. 같은 이유다 —
+#   이 저장소에 권한이 없는 사람을 최종 소유자로 두면 안 된다.
 #
 #   ★ 소유와 승인은 다른 자리다. 소유자는 리뷰 요청이 자동으로 가는
 #     사람이고, 승인은 아무나 한 명이면 된다. `release` 의 Code Owners
 #     를 켜면 **릴리즈 PR 을 올리는 사람이 곧 소유자**라 자기 PR 을
 #     자기가 승인 못 해 영구 차단된다(§12-1 · DECISIONS §108).
-*                        @wlsdnr052475
+*                        @CleverAIFox
 
 
 # ── 1. GIS 코어. 값의 근거가 여기 있다 ──────────────────────────
-/sources.yaml            @woongtopia/gis          # !strict
-/src/firelane/           @woongtopia/gis          # !strict
-/data/                   @woongtopia/gis          # !strict
-/docs/MASTER.md          @woongtopia/gis          # !strict
-/docs/PLAN.md            @woongtopia/gis          # !strict
-/docs/DECISIONS.md       @woongtopia/gis          # !strict
+/sources.yaml            @CleverAIFox           # !strict
+/src/firelane/           @CleverAIFox           # !strict
+/data/                   @CleverAIFox           # !strict
+/docs/MASTER.md          @CleverAIFox           # !strict
+/docs/PLAN.md            @CleverAIFox           # !strict
+/docs/DECISIONS.md       @CleverAIFox           # !strict
 
 
 # ── 2. 비전 ─────────────────────────────────────────────────────
 # 마스킹 · 캘리브레이션 · 객체탐지 · 세그멘테이션 · 호모그래피 · 폭 판정
 # ★ !strict 를 걸지 않는다. 파트가 자기 속도로 붙을 수 있어야 한다.
 #   실제 방어는 아래 §4 계약이 한다. 규칙이 시끄러우면 사람이 우회한다.
-/src/cv/                 @woongtopia/cv
-/src/cv/README.md        @woongtopia/cv
-/tests/test_cv_.py       @woongtopia/cv
+/src/cv/                 @CleverAIFox
+/src/cv/README.md        @CleverAIFox
+/tests/test_cv_.py       @CleverAIFox
 
 
 # ── 3. 파이프라인 · 인프라 ──────────────────────────────────────
 # FastAPI · 폴링 스케줄러 · DB · 도커 · AWS
-/src/api/                @woongtopia/infra @woongtopia/gis
-/src/api/README.md       @woongtopia/infra @woongtopia/gis
-/infra/                  @woongtopia/infra
-/Dockerfile              @woongtopia/infra @woongtopia/gis
-/Dockerfile.api          @woongtopia/infra
-/Dockerfile.vision       @woongtopia/infra @woongtopia/cv
-/docker-compose.yml      @woongtopia/infra @woongtopia/gis
+/src/api/                @CleverAIFox
+/src/api/README.md       @CleverAIFox
+/infra/                  @CleverAIFox
+/Dockerfile              @CleverAIFox
+/Dockerfile.api          @CleverAIFox
+/Dockerfile.vision       @CleverAIFox
+/docker-compose.yml      @CleverAIFox
 
 
 # ── 4. ★ 경계 계약. 파트 간 유일한 접점 ─────────────────────────
 # 세 파트 전부 이것만 import 하고 서로의 코드는 import 하지 않는다.
 # 여기가 바뀌면 전원이 영향을 받으므로 세 파트 승인이 모두 필요하다.
 # 정본 서술은 MASTER §19.
-/src/contracts/          @woongtopia/gis @woongtopia/cv @woongtopia/infra  # !strict
-/tests/test_contract.py  @woongtopia/gis @woongtopia/cv @woongtopia/infra  # !strict
+/src/contracts/          @CleverAIFox           # !strict
+/tests/test_contract.py  @CleverAIFox           # !strict
 
 
 # ── 5. 표출 ─────────────────────────────────────────────────────
 # 파일을 계층으로 나눠 충돌을 구조적으로 막는다(DECISIONS §27).
-/web/style.css           @marscoolcat
-/web/index.html          @marscoolcat @woongtopia/gis
-/web/README.md           @marscoolcat @woongtopia/gis
-/web/config.js           @marscoolcat @woongtopia/gis  # !strict
-/web/js/main.js          @woongtopia/gis          # !strict
-/web/js/data.js          @woongtopia/gis          # !strict
-/web/js/state.js         @woongtopia/gis          # !strict
-/web/js/map.js           @woongtopia/gis          # !strict
-/web/js/basemap.js       @woongtopia/gis          # !strict
-/web/js/verdict.js       @woongtopia/gis          # !strict
-/web/js/config-access.js @woongtopia/gis          # !strict
-/web/js/dom.js           @marscoolcat @woongtopia/gis
-/web/js/layers/          @woongtopia/gis          # !strict
-/web/js/icons/           @marscoolcat @woongtopia/gis
-/web/js/ui/              @marscoolcat @woongtopia/gis
-/web/assets/             @marscoolcat @woongtopia/gis
+/web/style.css           @CleverAIFox
+/web/index.html          @CleverAIFox
+/web/README.md           @CleverAIFox
+/web/config.js           @CleverAIFox           # !strict
+/web/js/main.js          @CleverAIFox           # !strict
+/web/js/data.js          @CleverAIFox           # !strict
+/web/js/state.js         @CleverAIFox           # !strict
+/web/js/map.js           @CleverAIFox           # !strict
+/web/js/basemap.js       @CleverAIFox           # !strict
+/web/js/verdict.js       @CleverAIFox           # !strict
+/web/js/config-access.js @CleverAIFox           # !strict
+/web/js/dom.js           @CleverAIFox
+/web/js/layers/          @CleverAIFox           # !strict
+/web/js/icons/           @CleverAIFox
+/web/js/ui/              @CleverAIFox
+/web/assets/             @CleverAIFox
 # ★ profiles.json 은 DECISIONS §84 가 드는 **치수 정본**이다. 스타일
 #   자산이 아니라 데이터라 GIS 팀이 함께 든다. 개인이 아니라 팀 핸들로
 #   두는 이유는 소유자가 이탈하면 그 줄이 죽기 때문이다.
-/web/assets/vehicles/    @woongtopia/gis @marscoolcat
+/web/assets/vehicles/    @CleverAIFox
 # 기획서 뷰어. 정본은 docs/proposal.docx 이고 이 화면은 그것을 그린다.
-/web/proposal.html       @woongtopia/gis @marscoolcat
-/web/data/               @woongtopia/gis
+/web/proposal.html       @CleverAIFox
+/web/data/               @CleverAIFox
 
 
 # ── 6. 공용 선언물. 손으로 머지한다 ─────────────────────────────
@@ -119,32 +125,32 @@
 #   세 파트 리뷰가 걸린다.
 # ★ uv.lock 충돌은 손으로 풀지 않는다 —
 #   git checkout --theirs uv.lock && uv lock
-/pyproject.toml          @woongtopia/gis @woongtopia/cv @woongtopia/infra
-/uv.lock                 @woongtopia/gis @woongtopia/cv @woongtopia/infra
-/.github/                @woongtopia/gis          # !strict
-/.githooks/              @woongtopia/gis          # !strict
-/.gitignore              @woongtopia/gis          # !strict
-/.gitattributes          @woongtopia/gis          # !strict
-/.devcontainer/          @woongtopia/gis @woongtopia/infra
-/.env.example            @woongtopia/gis @woongtopia/infra
+/pyproject.toml          @CleverAIFox
+/uv.lock                 @CleverAIFox
+/.github/                @CleverAIFox           # !strict
+/.githooks/              @CleverAIFox           # !strict
+/.gitignore              @CleverAIFox           # !strict
+/.gitattributes          @CleverAIFox           # !strict
+/.devcontainer/          @CleverAIFox
+/.env.example            @CleverAIFox
 
 
 # ── 7. 강제자 ───────────────────────────────────────────────────
 # ★ 강제자를 아무나 지울 수 있으면 강제자가 아니다.
-/tests/                  @woongtopia/gis          # !strict
-/tools/                  @woongtopia/gis          # !strict
+/tests/                  @CleverAIFox           # !strict
+/tools/                  @CleverAIFox           # !strict
 
 
 # ── 8. 운영 문서 ────────────────────────────────────────────────
 # web/workflow.html 은 MASTER §12 의 **생성물**이다. 손으로 고치지 않는다 —
 # tools/render_workflow.py 가 만들고 docs.yml 이 커밋한다. 소유는 GIS 다.
-/web/workflow.html            @woongtopia/gis     # !strict
-/web/playbook.html      @woongtopia/gis           # !strict
+/web/workflow.html       @CleverAIFox           # !strict
+/web/playbook.html       @CleverAIFox           # !strict
 
 
 # ── React 내비 (PLAN #63) ──────────────────────────────────
 # lib/ 는 로직이라 계약 대조가 걸린다. components/ 는 화면이라 UI 소관이다.
 # 둘을 가른 이유는 지혜님이 화면만 고칠 때 로직 리뷰가 걸리지 않게 하려는 것이다.
-/web/navi/src/lib/        @CleverAIFox   # !strict
+/web/navi/src/lib/       @CleverAIFox           # !strict
 /web/navi/src/components/ @CleverAIFox
-/web/navi/                @CleverAIFox
+/web/navi/               @CleverAIFox

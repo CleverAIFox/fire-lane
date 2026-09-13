@@ -231,7 +231,51 @@
   "nfa/nfa_target_building_jngj-dongmyeong_20260903.csv": {
    "sha256": "d85ec9f5b7fbdca363c3fb2a569aee5cca8d139169f54f00aee1b8f11f934394",
    "bytes": 4755
+  },
+  "eais/eais_bldgledger_dm_jngj-dongmyeong_20260906.json": {
+   "sha256": "82d938c21281441c166e4e8dcef539a983f603b6195d949281f3d5f05f93bd63",
+   "bytes": 3225676
+  },
+  "gjbg/gjbg_traffic_cam_jngj_20251231.csv": {
+   "sha256": "c4680175becb0bdd4d946849001f542d681ec2b46ad9fd849637b8e58c57a35d",
+   "bytes": 74898
+  },
+  "gjcity/gjcity_admin_cctv_jngj-donggu_20200814.csv": {
+   "sha256": "d6be41274b0f8632219bc8458271adff6e9e7ad2bf1c67a736e5aad150551608",
+   "bytes": 22130
+  },
+  "gjcity/gjcity_speedbump_jngj-donggu_20230405.csv": {
+   "sha256": "5ce87804c5054a09a5b9336f5c40acce127669c4497e9667be0c2cd963ab7f7c",
+   "bytes": 98250
+  },
+  "juso/juso_building_db_jngj_20260731.zip": {
+   "sha256": "3d6dc01f6cb1bf8a95cff3c5d956dd2d5a87b37647ffb80f621848e5ab4efad9",
+   "bytes": 149246529
+  },
+  "mois/mois_child_zone_std_kr_20260728.json": {
+   "sha256": "5a9a8d10bf3d17e099f7745c3c6cf9370aba76b483751deb6b4c2acd1ff31f79",
+   "bytes": 7901542
+  },
+  "mois/mois_senior_zone_std_kr_20260619.json": {
+   "sha256": "c10e7ccbaa7c1e98daf2e98a48d1057ed0cb04a786d6737f84385463b52ad017",
+   "bytes": 2784907
+  },
+  "juso/juso_bldg_geom_jngj_20260801.zip": {
+   "sha256": "03808c2a5d858785589e864cc85a275d87656fe07fc6f5875304e4b3924a92cd",
+   "bytes": 3206513
+  },
+  "juso/juso_bldggrp_geom_jngj_20260801.zip": {
+   "sha256": "4867537948920da1a014db26bb614c9190bf1623362ec16f7e4f6deec2f305ed",
+   "bytes": 1002603
+  },
+  "juso/juso_etc_geom_jngj_20260801.zip": {
+   "sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
+   "bytes": 130647
+  },
+  "gjcity/gjcity_road_facility_jngj_20220914.hwp": {
+   "sha256": "c0810ad6ed35388fe6c881dc2005ddaad5a77821216ab2eb105c1c3c895f77bc",
+   "bytes": 102400
   }
  },
- "at": "2026-09-03T22:22:01+09:00"
+ "at": "2026-09-10T13:06:18+09:00"
 }

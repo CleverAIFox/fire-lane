@@ -265,7 +265,70 @@
    "origin_name": "nfa_vehicle_spec_kr_20240304.pdf",
    "seen_at": "2026-09-03T21:55:54+09:00",
    "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "03. 표제부_20260906134027.json": {
+   "sha256": "82d938c21281441c166e4e8dcef539a983f603b6195d949281f3d5f05f93bd63",
+   "bytes": 3225676,
+   "origin_name": "03. 표제부_20260906134027.json",
+   "seen_at": "2026-09-10T12:50:48+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "202607_건물DB_전체분.zip": {
+   "sha256": "3d6dc01f6cb1bf8a95cff3c5d956dd2d5a87b37647ffb80f621848e5ab4efad9",
+   "bytes": 149246529,
+   "origin_name": "202607_건물DB_전체분.zip",
+   "seen_at": "2026-09-10T12:50:53+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "CCTV정보_전남광주동구.csv": {
+   "sha256": "d6be41274b0f8632219bc8458271adff6e9e7ad2bf1c67a736e5aad150551608",
+   "bytes": 22130,
+   "origin_name": "CCTV정보_전남광주동구.csv",
+   "seen_at": "2026-09-10T12:50:54+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "GJBG_LSI_006_TRAFFIC_CCTV_TB_2025.csv": {
+   "sha256": "c4680175becb0bdd4d946849001f542d681ec2b46ad9fd849637b8e58c57a35d",
+   "bytes": 74898,
+   "origin_name": "GJBG_LSI_006_TRAFFIC_CCTV_TB_2025.csv",
+   "seen_at": "2026-09-10T12:50:54+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "과속방지턱정보_전남광주동구.csv": {
+   "sha256": "5ce87804c5054a09a5b9336f5c40acce127669c4497e9667be0c2cd963ab7f7c",
+   "bytes": 98250,
+   "origin_name": "과속방지턱정보_전남광주동구.csv",
+   "seen_at": "2026-09-10T12:50:54+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "사물주소도형_전체분_전남광주통합특별시_동구.zip": {
+   "sha256": "67d19479c563ae4b7629b1a1c5c5ed9efd0e064ff87d3bda8422553a7896e6f3",
+   "bytes": 107135,
+   "origin_name": "사물주소도형_전체분_전남광주통합특별시_동구.zip",
+   "seen_at": "2026-09-10T12:50:54+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "전국노인장애인보호구역표준데이터.json": {
+   "sha256": "c10e7ccbaa7c1e98daf2e98a48d1057ed0cb04a786d6737f84385463b52ad017",
+   "bytes": 2784907,
+   "origin_name": "전국노인장애인보호구역표준데이터.json",
+   "seen_at": "2026-09-10T12:50:54+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "전국어린이보호구역표준데이터.json": {
+   "sha256": "5a9a8d10bf3d17e099f7745c3c6cf9370aba76b483751deb6b4c2acd1ff31f79",
+   "bytes": 7901542,
+   "origin_name": "전국어린이보호구역표준데이터.json",
+   "seen_at": "2026-09-10T12:50:54+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "기타자료_전체분_전남광주통합특별시_동구.zip": {
+   "sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
+   "bytes": 130647,
+   "origin_name": "기타자료_전체분_전남광주통합특별시_동구.zip",
+   "seen_at": "2026-09-10T12:59:48+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
   }
  },
- "at": "2026-09-03T22:21:33+09:00"
+ "at": "2026-09-10T13:05:43+09:00"
 }

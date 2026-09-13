@@ -1,0 +1,22 @@
+# gitleaks 설정. 기본 규칙을 그대로 쓰고 allowlist 만 더한다.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+[rules.allowlist]
+description = """
+V-World WMTS 키. 2026-09-13 이전 커밋의 web/config.js 에 평문으로 박혀 있다.
+
+★ 숨길 수 없는 키다. 브라우저가 WMTS 를 직접 부르니 빌드 결과에 실려
+  나가고 F12 한 번에 보인다. 실효 방어는 도메인 잠금 하나이고
+  만료는 2027-02-04 다(DECISIONS §146 · HANDOFF §4).
+
+★ 무료 발급이고 도메인이 고정돼 있어 이력 노출은 **감수한다.**
+  판단이며 누락이 아니다. 재발급하지 않는다.
+
+★ 지금은 web/key.js(생성물 · gitignore)로 뺐다. 앞으로는 안 쌓인다.
+  이 allowlist 는 **과거 커밋에만** 해당한다 — 새 키가 들어오면
+  regex 가 안 맞으므로 그대로 잡힌다.
+"""
+regexes = ['''95E47552-4B32-36AB-885B-E9DC3FCB5352''']

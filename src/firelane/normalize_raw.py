@@ -75,6 +75,36 @@ for st in (sys.stdout, sys.stderr):
 #
 #   ★ 아홉을 지웠다. 일반 규칙이 전부 덮는다.
 #     남은 줄은 전부 **한글·원본 파일명**을 정규명으로 바꾸는 것들이다.
+# 통과 규칙의 확장자 화이트리스트. **모듈 전역이다.**
+# ★ main() 안에 두면 테스트가 베낀다. 실제로 두 벌이 생겼고 한 벌은
+#   `json` 이 빠진 채 굳었다(2026-09-11 B3 에서 발견).
+#   hwp·pdf·ngi·nda 가 없어 왕복 멱등이 거짓이었던 이력도 같은 병이다.
+PASSTHROUGH_EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+
+
+def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
+    """`RULES` + 제공기관별 통과 규칙. **규칙 표의 정본 조립기다.**
+
+    ★ 2026-09-11 (B3). main() 안에 있던 조립을 여기로 뺐다. 테스트 두 개가
+      같은 표를 손으로 재현하고 있었고 셋이 서로 달랐다 — 하이픈 허용 여부와
+      EXT 의 json 포함 여부에서 갈렸다. 소비자를 하나씩 고치지 않고
+      **유도를 정본으로** 만든다(HANDOFF 원칙 ⑤ · `ledger.provider_of` 와 같은 수).
+
+    ★ 반드시 `RULES` 의 **사본**을 돌려준다. 모듈 전역에 append 하면 같은
+      프로세스에서 두 번 부를 때 규칙이 중복 누적된다.
+
+    ★ 하이픈. 대장 `scopes` 가 `jngj-donggu` 처럼 하이픈을 쓰고 그 블록이
+      "별칭 안에 언더스코어를 쓰지 않는다" 고 못 박는다 — 언더스코어가 필드
+      구분자라서다. 하이픈은 처음부터 허용이었고 이 정규식만 몰랐다.
+      **대장이 정본인데 코드가 더 좁았다.**
+    """
+    org_list = providers.all() if orgs is None else orgs
+    return list(RULES) + [
+        (rf"^{o}_[a-z0-9_-]+_\d{{8}}\.({PASSTHROUGH_EXT})$", o, None)
+        for o in sorted(org_list)
+    ]
+
+
 RULES: list[tuple[str, str, str]] = [
     # ── 2026-08-17 소방 계열 3종 재확보 ──────────────────────
     #   ★ 아래 세 줄이 위쪽 기존 규칙보다 먼저 매칭돼야 한다.
@@ -96,6 +126,75 @@ RULES: list[tuple[str, str, str]] = [
     # 좌표 없는 "시도 소방서 현황"(20250701)은 규칙을 두지 않는다. landing 에 남긴다.
     (r"전국소방서.?좌표현황",
      "safety", "safety_firestation_kr_20240901.csv"),
+    # ── 2026-09-06 확보분 일곱 ───────────────────────────────
+    #   ★ 정규명의 8자리가 대장 `updated` 의 정본이다(ledger_fields.py:25).
+    #     "8자리를 못 얻으면 채우지 않는다. 추측하지 않는다."
+    #     그래서 날짜 근거를 줄마다 적는다.
+
+    # 건축물대장 표제부. 파일명 뒤 14자리는 **내려받은 시각**이다.
+    # 앞 8자리만 쓴다(normalize_raw:207 의 규칙 그대로).
+    # ★ `retired.building_ledger`(08-31 폐기)의 후속이라 stem 에 `_dm` 이 붙는다.
+    (r"표제부_(\d{8})\d{6}\.json$",
+     "eais", "eais_bldgledger_dm_jngj-dongmyeong_{0}.json"),
+
+    # 전국 어린이보호구역 표준데이터. updated 는 레코드의 데이터기준일자
+    # 최댓값 2026-07-28 이다. 파일명에는 날짜가 없다.
+    (r"^전국어린이보호구역표준데이터\.json$",
+     "mois", "mois_child_zone_std_kr_20260728.json"),
+    # 전국 노인·장애인보호구역. 같은 방식으로 2026-06-19.
+    (r"^전국노인장애인보호구역표준데이터\.json$",
+     "mois", "mois_senior_zone_std_kr_20260619.json"),
+
+    # 동구 과속방지턱 342개소. 데이터기준일자 2023-04-05 (전 행 동일).
+    # ★ 데이터갱신시점 2026-07-01 은 **행정구역 개편일**이고 주소 문자열만
+    #   일괄 갱신된 것이다. 그것을 updated 로 쓰면 거짓이 된다.
+    (r"^과속방지턱정보_전남광주동구\.csv$",
+     "gjcity", "gjcity_speedbump_jngj-donggu_20230405.csv"),
+    # 동구 행정 CCTV 81대. 데이터기준일자 2020-08-14(77) · 08-18(4) 중 최빈.
+    (r"^cctv정보_전남광주동구\.csv$",
+     "gjcity", "gjcity_admin_cctv_jngj-donggu_20200814.csv"),
+
+    # 광주 무인교통단속카메라 510. 빅데이터 통합플랫폼 2025년판.
+    (r"^gjbg_lsi_006_traffic_cctv_tb_2025\.csv$",
+     "gjbg", "gjbg_traffic_cam_jngj_20251231.csv"),
+
+    # 도로명주소 건물DB 전국 전체분. 205MB 의 build_jeonnamgwangju.txt 가
+    # 들어 있다. ★ 동명동 절단은 **법정동코드 1221010800** 으로 한다 —
+    # 이름으로 거르면 목포시 동명동 623건이 딸려온다.
+    # ★ 이 zip 에는 기준일 문서가 없다. 형제 자료 202608_주소DB 에
+    #   `[자료건수]주소DB(2026년 08월 31일 기준).txt` 가 동봉돼 있어
+    #   제공처가 월말을 기준일로 쓴다는 것이 확인된다. 202607 → 07-31.
+    (r"^202607_건물db_전체분\.zip$",
+     "juso", "juso_building_db_jngj_20260731.zip"),
+
+    # ── 2026-09-10 승인분 3종 ────────────────────────────────
+    #   도로명주소 승인이 나서 받은 건물·건물군·기타 도형이다.
+    #   zip 내부가 `Total.JUS???.20260801.*` 이라 회차는 2026-08-01 이고,
+    #   기존 spotaddr_geom·spotaddr_ref 와 같은 회차다.
+    #
+    #   ★ 이 세 줄이 없으면 `intake --plan` 이 "대장 매칭 없음" 을 낸다.
+    #     대장 등재만으로는 안 된다 — `propose()` ③(stem)은 파일명이 이미
+    #     정규명일 때만 붙고, 취득처가 준 원본명은 ②(RULES)로만 잡힌다.
+    #
+    #   ★ 건물 도형에는 TL_SPOT_CNTC(건물↔도로 접속선) 15,518건이 있다.
+    #     CNT_DST_LN 중앙 7.6m · 최대 402.5m. 출동 종점을 "도로 위
+    #     최근접점" 이 아니라 실제 출입구로 잡을 수 있다.
+    (r"^건물도형_전체분_전남광주통합특별시_동구\.zip$",
+     "juso", "juso_bldg_geom_jngj_20260801.zip"),
+    (r"^건물군내동도형_전체분_전남광주통합특별시_동구\.zip$",
+     "juso", "juso_bldggrp_geom_jngj_20260801.zip"),
+    #   ★ 기타자료에 터널 10(지산·산수·지원·소태) · 고가 4(너릿재로·
+    #     제2순환로) · 교량 36 이 있다. sources.yaml 이 "동명동에 터널·
+    #     고가 하부는 없다" 를 근거 없이 단정했는데 이것이 확인 수단이다.
+    (r"^기타자료_전체분_전남광주통합특별시_동구\.zip$",
+     "juso", "juso_etc_geom_jngj_20260801.zip"),
+
+    # 도로시설물 현황 378개소. 제공처 미상이라 파일명이 첨부 ID 그대로다.
+    # ★ updated 8자리는 그 ID 를 밀리초로 읽은 추정값이다(2022-09-14).
+    #   "8자리를 못 얻으면 채우지 않는다" 원칙의 예외라 대장 note 에 적었다.
+    (r"^1663144302440\.hwp$",
+     "gjcity", "gjcity_road_facility_jngj_20220914.hwp"),
+
     # ── juso · 도로명주소 ────────────────────────────────────
     # 전자지도 zip 하나에 5종이 들어 있다.
     # TL_SPRD_MANAGE(도로구간) TL_SPRD_RW(실폭도로) TL_SCCO_EMD(경계)
@@ -319,16 +418,22 @@ def convert(src: Path, dst: Path) -> bool:
 
 
 def find_downloads() -> Path | None:
-    for c in (Path.home() / "Downloads",
-              Path("/mnt/c/Users") ):
-        if c.name == "Downloads" and c.is_dir():
-            return c
-        if c.is_dir():
-            for u in c.iterdir():
-                d = u / "Downloads"
-                if d.is_dir() and any(d.iterdir()):
-                    return d
-    return None
+    """다운로드 폴더. **정본은 `paths.inbox()` 다.**
+
+    ★ 2026-09-07. 여기 있던 사본을 지웠다(PLAN #B3-12). 같은 일을 두 곳이
+      따로 하고 있었고 규칙이 달랐다 —
+
+          paths.inbox()      FIRE_LANE_INBOX 를 먼저 본다.
+                             후보가 여럿이면 **파일이 가장 많은** 폴더
+          여기(옛 사본)       환경변수를 안 본다.
+                             **첫 번째로 찾은** 폴더
+
+      사용자 계정이 둘이면 서로 다른 폴더를 가리킬 수 있었다. 20종을
+      옮기는 경로라 갈리면 되돌리기 번거롭다. 정본이 둘이면 어긋난다.
+    """
+    from firelane.paths import inbox
+    d = inbox()
+    return d if d.is_dir() else None
 
 
 
@@ -371,7 +476,9 @@ def main():
     #   한 번 정리한 `safety_kfs_pumptruck_20251224.hwp` 를 다시 넣으면
     #   "규칙에 없는 파일" 로 떨어졌다 — 위 주석이 약속한 왕복 멱등이
     #   hwp·pdf 에 대해 거짓이었다.
-    EXT = "zip|csv|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+    # ★ 2026-09-07. `json` 추가. 공공데이터포털 표준데이터와 건축물대장
+    #   표제부가 JSON 이다. 없으면 통과 규칙을 못 타 멱등이 깨진다.
+    # EXT · 조립은 모듈 전역 passthrough_rules() 가 정본이다(위).
     # ★ RULES 는 모듈 전역이다. main() 안에서 append 하면 같은 프로세스에서
     #   두 번 부를 때 규칙이 중복 누적된다. 지역 사본에 붙인다.
     # ★ 2026-09-03. `[a-z0-9_]` 에 하이픈이 없어 스코프 별칭을 못 받았다.
@@ -383,8 +490,7 @@ def main():
     #   지금까지 안 걸린 이유는 `sbiz`·`gjcity` 가 명시 규칙으로 들어와
     #   이 일반 규칙을 탄 적이 없어서다. 2026-09-03 에 `nfa_*` CSV 넷이
     #   처음 탔고 전부 "규칙에 없는 파일" 로 떨어졌다.
-    rules = RULES + [(rf"^{org}_[a-z0-9_-]+_\d{{8}}\.({EXT})$", org, None)
-                     for org in sorted(ORG)]
+    rules = passthrough_rules(ORG)
 
     files = [f for f in src.iterdir() if f.is_file()]
     done, skip = [], []
