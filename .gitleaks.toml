@@ -1,4 +1,9 @@
 # gitleaks 설정. 기본 규칙을 그대로 쓰고 allowlist 만 더한다.
+#
+# 주의 — TOML 여러줄 문자열 안에서는 백슬래시가 이스케이프로 해석된다.
+#   2026-09-13 에 백틱을 감싸려고 넣은 백슬래시가 "invalid escaped
+#   character U+0020" 로 파싱을 깨뜨렸고, 설정이 통째로 안 읽혔다.
+#   설정이 안 읽히면 조용히 기본값으로 도니까 더 나쁘다. 백슬래시를 쓰지 않는다.
 [extend]
 useDefault = true
 
@@ -6,21 +11,20 @@ useDefault = true
 id = "generic-api-key"
 [rules.allowlist]
 description = """
-sources.yaml 대장의 **데이터셋 키**다. 비밀이 아니다.
+sources.yaml 대장의 데이터셋 키다. 비밀이 아니다.
 
   tools/batches/b2_final.py:105   key: juso_spotaddr_geom_2608
   tools/batches/b2_close.py:196   같음
 
-★ generic-api-key 규칙이 \ 뒤의 영숫자를 본다. 대장 YAML 이
-  \ 를 필드명으로 쓰므로 전부 걸린다. 엔트로피 3.9 로 낮다.
+generic-api-key 규칙이 'key:' 뒤의 영숫자를 본다. 대장 YAML 이 'key:' 를
+필드명으로 쓰므로 전부 걸린다. 엔트로피 3.9 로 낮다.
 
-★ **규칙 전체를 끄지 않는다.** 대장 키의 형태만 막는다 —
-  <제공기관>_<자료>_<연월> 이고 소문자·숫자·밑줄뿐이다.
-  진짜 키는 대문자나 하이픈이 섞여 이 정규식에 안 맞는다.
+규칙 전체를 끄지 않는다. 대장 키의 형태만 막는다 —
+<제공기관>_<자료>_<연월> 이고 소문자·숫자·밑줄뿐이다.
+진짜 키는 대문자나 하이픈이 섞여 이 정규식에 안 맞는다.
 
-★ V-World 키는 별건이다. web/config.js 에 평문으로 있었고
-  2026-09-13 에 web/key.js(생성물)로 뺐다. 이력에는 남지만
-  무료·도메인 고정이라 감수한다 — DECISIONS §146.
-  그쪽은 아직 이 스캔에 안 걸렸다. 걸리면 그때 근거와 함께 더한다.
+V-World 키는 별건이다. web/config.js 에 평문으로 있었고 2026-09-13 에
+web/key.js(생성물)로 뺐다. 이력에는 남지만 무료·도메인 고정이라
+감수한다 — DECISIONS §146. 그쪽은 아직 이 스캔에 안 걸렸다.
 """
 regexes = ['''key: [a-z][a-z0-9_]{8,}''']
