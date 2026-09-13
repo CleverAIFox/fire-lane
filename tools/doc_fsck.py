@@ -85,6 +85,10 @@ PATH_EXEMPT = {
     #   config.js:327 · vehicle.js:187 이 fetch 하고, 없으면 화면이
     #   "제원 미확인" 만 띄운다. PLAN 이 이 항목을 든다.
     "web/assets/vehicles/profiles.json",
+    # 2026-09-13. 생성물이다 — tools/stage_pages.py 가 환경에서 만든다.
+    #   V-World 키가 들어가므로 커밋하지 않는다(.gitignore). clone 직후와
+    #   CI 에는 없는 것이 정상이고, web/proposal.docx 와 같은 부류다.
+    "web/key.js",
 }
 
 # 경로 참조를 찾을 때 저장소 안인 것만 본다. data/raw · norm · landing ·

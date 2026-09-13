@@ -33,7 +33,7 @@ from __future__ import annotations
 
 import argparse
 import re
-from datetime import date
+from datetime import UTC, datetime
 from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
@@ -83,7 +83,7 @@ def main() -> int:
         pid, title, body = m.group(1), m.group(2), m.group(3)
         add.append(
             f"\n## {no}. {title.strip('`')}\n\n"
-            f"> {date.today().isoformat()} · 오창준\n\n"
+            f"> {datetime.now(UTC).astimezone().date().isoformat()} · 오창준\n\n"
             f"강제자  `tests/test_doc_fsck.py::test_closed_plan_items_are_slots`\n"
             f"        — ⬛ 항목이 본문을 들고 있으면 운다.\n\n"
             f"★ `PLAN #{pid}` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**\n"

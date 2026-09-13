@@ -105,3 +105,4 @@ REDLIST.json
 BATCH_MAP.json
 # b2_* 배치가 뜬 sources.yaml 백업. git 이 이력을 갖는다
 sources.yaml.b2*
+HANDOFF_*.md
