@@ -342,8 +342,10 @@ tools/
   golden.py               ★ 리팩 전후 산출물 동일 증명. baseline 과 반대 용도
   scan_data.py            데이터 레이크 구조 점검. §7 이 레이크 **밖**도 본다
   docnum_check.py         문서 ↔ 산출물 숫자 · 필드표 대조
+  plan_renumber.py        PLAN §1 표 번호를 1..N 으로 · 결번 해소
   commit_policy.py        산출물 · 일회성 스크립트 · 비밀값 차단
   encoding_check.py       인코딩 · 개행
+  env_check.py            환경변수 선언(.env.example) ↔ 실물 · 단일 독자
   web_manifest.py         web/data 계보 검사
   owned_paths.py          ★ CODEOWNERS 를 소유권·검사강도의 정본으로 읽는다
   pr_body_check.py        PR 본문이 템플릿을 실제로 채웠는가

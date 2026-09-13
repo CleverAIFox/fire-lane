@@ -186,7 +186,14 @@ def test_plan_row_numbers_are_contiguous_and_sorted():
     assert nums, "PLAN §1 에서 표 행을 찾지 못했다"
     assert nums == sorted(nums), f"번호가 오름차순이 아니다: {nums}"
     gaps = sorted(set(range(1, max(nums) + 1)) - set(nums))
-    assert not gaps, f"결번: {gaps}. 항목을 지웠으면 뒤 번호를 당기지 말고 슬롯을 채운다"
+    assert not gaps, (
+        f"결번: {gaps}. **뒤 번호를 당긴다.**\n"
+        "  uv run python tools/plan_renumber.py --apply\n\n"
+        "  ★ 2026-09-13 이전 안내는 '당기지 말고 슬롯을 채운다' 였다.\n"
+        "    슬롯을 남기던 시절의 규약이고, 지금은 닫힌 항목의 행을\n"
+        "    지운다(PLAN §0-2). 번호는 영구 식별자가 아니라 현재\n"
+        "    목록의 순번이다 — 영구 식별자는 DECISIONS §N 이 맡는다.\n"
+        "  ★ 검사가 옛 규약을 말하면 다음 사람이 그것을 따른다.")
     dup = sorted({n for n in nums if nums.count(n) > 1})
     assert not dup, f"중복 번호: {dup}"
 
