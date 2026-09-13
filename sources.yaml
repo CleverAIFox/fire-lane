@@ -11,11 +11,21 @@
 # acquire 로 raw 에 편입한다. 대장에 없는 파일은 _quarantine 으로 격리한다.
 #
 # 메타 항목 (URL 은 적지 않는다. 자주 깨지고 provider+scope 면 다시 찾는다)
-#   provider  어느 사이트에서 받았나
+#
+# ★ 2026-09-10 정정. 이 머리말이 요구하던 provider · acquired · crs 는
+#   **어느 항목에도 없다**(0/61). 이관되면서 자리가 옮겨갔는데 머리말만
+#   안 따라왔다. 대장이 자기 스키마를 틀리게 적고 있었다.
+#
+#   stem      파일명 첫 토큰이자 raw 폴더명. provider 의 자리다
+#             (종전 `provider` 필드. layers.raw.providers 가 어휘 정본)
 #   updated   데이터 갱신일 (다운로드일 아님)
-#   acquired  우리가 받은 날
+#             ★ 모르면 추정이라고 적는다. 비워두지 않는다
 #   scope     공간 범위 + 건수
-#   crs       좌표계. ★ "명시"와 "추정"을 구분해서 적을 것
+#   crs_native  좌표계. ★ "명시"와 "추정"을 구분해서 적을 것
+#             (.prj 가 없으면 추정이다. 그렇게 적는다)
+#
+#   받은 날은 여기 적지 않는다 — `_acquire.json` 이 sha 와 함께 갖는다
+#   (종전 `acquired` 필드)
 #
 # contract  는 편입 후 inventory.py 가 생성한다. MASTER §18-3b
 # ============================================================
@@ -542,7 +552,9 @@ layers:
     committed: false
     backup: true
     regenerable: false
-    naming: '^(eais|gjcity|its|juso|nfa|ngii|nsdi|safety|sbiz|vworld)/'
+    # ★ 손으로 고치지 마라. `providers.pattern()` 이 만드는 값이고
+    #   `test_naming_regex_is_generated_not_handwritten` 이 대조한다.
+    naming: '^(eais|gjbg|gjcity|its|juso|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/'
     what: 받은 그대로. 인코딩조차 고치지 않는다
     depth: 2
     # ★ provider 폴더의 정본. 2026-08-27 까지 이 목록이 네 곳에 있었다 —
@@ -564,6 +576,12 @@ layers:
       gjcity:  {org: 전남광주통합특별시,           state: active}
       sbiz:    {org: 소상공인시장진흥공단,         state: active}
       eais:    {org: 건축행정시스템 세움터,        state: active}
+      # ★ 2026-09-07 추가. stem 접두가 이 어휘 밖이면 acquire 가
+      #   _quarantine 으로 보낸다. 실물 반입 전이라 state 는 reserved 다
+      #   — "reserved 는 등재만. 파일 0건이 정상이고 폴더도 없어야 한다".
+      #   반입이 끝나면 active 로 올린다.
+      mois:    {org: 행정안전부 공공데이터포털,    state: active}
+      gjbg:    {org: 전남광주통합특별시 빅데이터 통합플랫폼, state: active}
       nfa:
         org: 소방청
         state: active
@@ -614,7 +632,16 @@ layers:
     #
     #   버전이 필요해지면 _prep.json 이 이미 실행 이력을 갖고 있으므로
     #   파일명이 아니라 거기서 찾는다.
-    naming: '^\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}\.'
+    # ★ 2026-09-10. 종전 규칙은 실물 29/29 를 위반으로 냈다. 파일명만으로는
+    #   전건 통과하는데, norm 도 raw 처럼 **제공기관 폴더**를 쓰고 fsck 는
+    #   상대경로로 맞추기 때문이다. 파일이 아니라 규칙이 폴더를 몰랐다.
+    #   같은 병이 한 번 있었고(위 주석의 \d{4} 건) 그때도 규칙이 틀렸다.
+    #
+    #   ★ provider 목록을 여기 손으로 적지 마라. 2026-08-27 까지 그 목록이
+    #     네 곳에 있었고 세 곳에서 달랐다(§18-2a). raw 와 **같은 생성기**를
+    #     탄다 — providers.pattern_file() 이 만들고
+    #     test_provider_registry 가 대조한다.
+    naming: '^(eais|gjbg|gjcity|its|juso|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}\.'
     encoding: utf-8
     # ★ 2026-08-31. status 는 통제 어휘다 — layers.implemented() 가
     #   "미구현" 하나만 본다. 한 번 "미배선" 으로 바꿨다가 되돌렸다.
@@ -737,6 +764,130 @@ layers:
     what: 표출용 경량 사본. UI 담당이 raw 없이 작업할 수 있어야 한다
 
 datasets:
+  # ── 2026-09-10 도로시설물 (제공처 미상) ──────────────────────
+  gjcity_road_facility:
+    stem: gjcity_road_facility
+    ext: [hwp]
+    kind: raw_only
+    layer: raw
+    scope: jngj
+    updated: '2022-09-14'
+    origin_name: 1663144302440.hwp
+    what: |
+      도로시설물 현황 378개소 — 교량 207 · 고가교 14 · 복개도로 2 ·
+      천변구조물 4 · 지하차도 15 · 터널/공동구 17 · 옹벽 111 · 절토사면 7
+    feeds: []
+    feeds_why: |
+      ★ 미투입이다. `kind: raw_only` 이라 ingest 가 SKIP 한다. 표를
+        파싱하지 않고 사람이 읽은 값을 여기 적는다 — nfa_spec_* 7종과
+        같은 방식이다.
+    used_for: |
+      ★ sources.yaml 이 "동명동에 터널·고가 하부는 없다" 를 근거 없이
+        단정했다. 이 표가 그 확인 수단 중 하나다(다른 하나는
+        juso_etc_geom 의 TL_SPOT_TUNNEL 10건).
+        동구 지명 출현 — 지산 4 · 서석 1 · 두암 1 · 동구 2.
+    note: |
+      ★ **제공처 미상.** 2026-09-06 에 hwp 를 열어 PDF 로 저장한 흔적만
+        남았고 원본 URL 을 잃었다. 기관은 내용으로 확정했다 — 유촌3교 ·
+        광신대교 · 어등대교 · 첨단대교 · 평동 · 비아 · 하남산단이 나오므로
+        광주 전역 시설물이고 provider 는 gjcity 다.
+      ★ `updated` 2022-09-14 는 **추정**이다. 첨부 ID 1663144302440 을
+        밀리초 시각으로 읽은 값이고, 표 안의 유일한 날짜는 2021.10.29 다.
+        기준일 표기가 없다. 제공처를 찾으면 고친다.
+  # ── 2026-09-10 juso 승인분 4종 ──────────────────────────────
+  # ★ .prj 가 없다. 좌표 범위(X 946k~952k · Y 1675k~1686k)로 EPSG:5179
+  #   (Korea 2000 / Unified CS)로 **추정**했다. 명시가 아니다.
+  # ★ SIG_CD 는 12210(새 코드)인데 BD_MGT_SN 접두는 29110·29155·29170 이다
+  #   — 새 동구가 옛 동구·서구·광산구 일부를 흡수했다. 스코프 대장에 그
+  #   사실이 없다. jngj-donggu 로 필터한 종전 자료들이 새 경계와 다른
+  #   범위를 담고 있을 수 있고, BD_MGT_SN 이 그 대조 키다.
+  juso_bldg_geom:
+    stem: juso_bldg_geom
+    ext: [zip]
+    kind: raw_only
+    read_note: |
+      ★ 2026-09-10. `kind: raw_only` 인 이유 — **한 zip 에 성격이 다른
+        레이어가 여럿**이다. ingest 의 shp 계열은 `layer` 키로 zip 안
+        SHP 하나를 지목하는데(ingest.py:283), 이 자산은 하나로 못 고른다.
+        합치면 폴리곤과 점과 선이 한 GeoDataFrame 에 섞인다.
+
+        읽으려면 레이어별로 항목을 나누거나 새 kind 를 만들어야 한다.
+        그 판단은 판정 규칙 변경이라 B4 소관이다. 지금은 존재만 기록한다.
+
+        zip 안 레이어 —
+      TL_SGCO_RNADR_MST   건물 폴리곤        15,518
+      TL_SPBD_ENTRC       건물 출입구 점     17,069
+      TL_SPOT_CNTC        건물↔도로 접속선   15,518 (CNT_DST_LN 중앙 7.6m · 최대 402.5m)
+    scope: jngj
+    updated: '2026-08-01'
+    crs_native: EPSG:5179
+    what: |
+      도로명주소 건물 도형 전체분 — 건물 15,518 · 출입구 17,069 ·
+      접속선 15,518 (TL_SGCO_RNADR_MST · TL_SPBD_ENTRC · TL_SPOT_CNTC)
+    feeds: []
+    feeds_why: |
+      ★ 아직 배선하지 않았다. TL_SPOT_CNTC 의 접속선을 어떻게 쓸지는
+        판정 규칙 변경이므로 B4(재잠금)에서 정한다. 지금은 반입만 한다.
+    note: |
+      ★ TL_SPOT_CNTC 가 이 자산의 핵심이다. CNT_DST_LN(접속거리) 중앙
+        7.6m · 최대 402.5m · 0m 0건, CNT_DRC_LN 은 L 8,053 / R 7,462.
+        출동 종점을 "도로 위 최근접점" 이 아니라 실제 출입구로 잡을 수 있다.
+
+  juso_bldggrp_geom:
+    stem: juso_bldggrp_geom
+    ext: [zip]
+    kind: raw_only
+    read_note: |
+      ★ 2026-09-10. `kind: raw_only` 인 이유 — **한 zip 에 성격이 다른
+        레이어가 여럿**이다. ingest 의 shp 계열은 `layer` 키로 zip 안
+        SHP 하나를 지목하는데(ingest.py:283), 이 자산은 하나로 못 고른다.
+        합치면 폴리곤과 점과 선이 한 GeoDataFrame 에 섞인다.
+
+        읽으려면 레이어별로 항목을 나누거나 새 kind 를 만들어야 한다.
+        그 판단은 판정 규칙 변경이라 B4 소관이다. 지금은 존재만 기록한다.
+
+        zip 안 레이어 —
+      TL_SGCO_RNADR_DONG  건물군 내 동 도형   8,221
+      TL_SPBD_ENTRC_DONG  동 출입구 점          939
+    scope: jngj
+    updated: '2026-08-01'
+    crs_native: EPSG:5179
+    what: 건물군 내 동 도형 8,221 · 동 출입구 939
+    feeds: []
+    feeds_why: 아직 배선하지 않았다. 아파트 단지 내부 진입 판정에 쓸 후보다.
+
+
+  juso_etc_geom:
+    stem: juso_etc_geom
+    ext: [zip]
+    kind: raw_only
+    read_note: |
+      ★ 2026-09-10. `kind: raw_only` 인 이유 — **한 zip 에 성격이 다른
+        레이어가 여럿**이다. ingest 의 shp 계열은 `layer` 키로 zip 안
+        SHP 하나를 지목하는데(ingest.py:283), 이 자산은 하나로 못 고른다.
+        합치면 폴리곤과 점과 선이 한 GeoDataFrame 에 섞인다.
+
+        읽으려면 레이어별로 항목을 나누거나 새 kind 를 만들어야 한다.
+        그 판단은 판정 규칙 변경이라 B4 소관이다. 지금은 존재만 기록한다.
+
+        zip 안 레이어 —
+      TL_SPOT_TUNNEL      터널 10 (지산·산수·지원·소태)
+      TL_SPOT_OVERPASS    고가  4 (너릿재로·제2순환로)
+      TL_SPOT_BRIDGE      교량 36 · 공원 34 · 하천 27
+      TL_SPOT_SUBWAY*     지하철역 6 · 출입구 26
+    scope: jngj
+    updated: '2026-08-01'
+    crs_native: EPSG:5179
+    what: |
+      기타자료 — 터널 10 · 고가 4 · 교량 36 · 공원 34 · 하천 27 ·
+      지하철역 6 · 지하철출입구 26
+    feeds: []
+    feeds_why: |
+      ★ 아직 배선하지 않았다. 그러나 이 자산은 **선언 하나를 반증한다** —
+        sources.yaml 이 "동명동에 터널·고가 하부는 없다" 를 근거 없이
+        단정했는데 동구에 터널 10(지산·산수·지원·소태) · 고가 4(너릿재로·
+        제2순환로)가 실재한다. 동명동 안인지는 좌표로 확인해야 하고,
+        어느 쪽이든 그 문장은 고쳐야 한다. B4 에서 다룬다.
   kfs_pumptruck:
     feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
     feeds_note: '[]'
@@ -938,6 +1089,9 @@ datasets:
       node_link 는 507배 오염 전력이 있는 소스다(PLAN §1-16). 판이 바뀌면
       이 내역서로 무엇이 늘었는지 먼저 본다.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['구분', '노선명', '노드(건)', '링크(건)', '링크연장(km)']
+      encoding_seen: 'cp949'
   # ── 도로 그래프 뼈대 ─────────────────────────────────────
   # ★ road_link / road_rw 는 juso_road_geom(291MB, 6월) 을 보고 있으나
   #   juso_elctrnmap(7MB, 7월) 의 TL_SPRD_MANAGE / TL_SPRD_RW 와 동일하다.
@@ -1106,13 +1260,6 @@ datasets:
     feeds_note: '- src/firelane/guards.py - src/firelane/ingest.py - src/firelane/inventory.py - src/firelane/ngii1k.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/seg/width.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/jijeok_probe.py - tools/ledger_stem.py - tools/width_fn.py'
     stems: [vworld_map1k, vworld_map1k_ngi]
     ext: [zip]
-    schema:
-      layers:
-      - A0010000
-      - A0020000
-      - A0033320
-      - A0080000
-      - C0220000
     scope: jngj-donggu        # 종전 '광주 동구 74도엽' — 산문이었다
     files:
       - vworld/vworld_map1k*_jngj-donggu_20260307.zip
@@ -1137,6 +1284,8 @@ datasets:
       ★ 행정구역 단위 취득은 스코프를 보장하지 않는다. 취득 후 반드시 스코프
         bbox 와 교차 검증할 것.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: []
   streetlight:
     feeds:
       - src/firelane/normalize_raw.py
@@ -1415,7 +1564,7 @@ datasets:
 
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['상가업소번호', '상호명', '지점명', '상권업종대분류코드', '상권업종대분류명', '상권업종중분류코드', '상권업종중분류명', '상권업종소분류코드', '상권업종소분류명', '표준산업분류코드', '표준산업분류명', '시도코드', '시도명', '시군구코드', '시군구명', '행정동코드', '행정동명', '법정동코드', '법정동명', '지번코드', '대지구분코드', '대지구분명', '지번본번지', '지번부번지', '지번주소', '도로명코드', '도로명', '건물본번지', '건물부번지', '건물관리번호', '건물명', '도로명주소', '구우편번호', '신우편번호', '동정보', '층정보', '호정보', '경도', '위도']
-      encoding_seen: 'utf-8-sig'
+      encoding_seen: 'utf-8'
       source: '소상공인시장진흥공단_상가(상권)정보_전남광주_202606.csv'
   # -- 행정경계·건물 (도로명주소 전자지도, 2026-08-11 승인) --
   boundary_emd:
@@ -1572,13 +1721,6 @@ datasets:
         을 보면 의심해야 한다. 종전 contract.rows 가 50000 이라 **상한을
         정상으로 인정하고 있었다.**
 
-    schema:
-      columns: [fcltyNo, fcltySeCode, ctprvnNm, signguNm, signguCode,
-                rdnmadr, lnmadr, latitude, longitude, descLc,
-                safeCnterNm, prtcYn, installationYear, waterPressr,
-                institutionNm, institutionPhoneNumber, referenceDate,
-                insttCode, insttNm]
-      encoding_seen: utf-8
     contract:
       encoding: utf-8
       required_cols: [fcltyNo, ctprvnNm, signguNm, latitude, longitude,
@@ -1587,6 +1729,9 @@ datasets:
       rows: 5002
       rows_tolerance: 0.0
       scope_min: 1
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['fcltyNo', 'fcltySeCode', 'ctprvnNm', 'signguNm', 'signguCode', 'rdnmadr', 'lnmadr', 'latitude', 'longitude', 'descLc', 'safeCnterNm', 'prtcYn', 'installationYear', 'waterPressr', 'institutionNm', 'institutionPhoneNumber', 'referenceDate', 'insttCode', 'insttNm']
+      encoding_seen: 'utf-8'
   fire_access:
     feeds: 미투입 — 소방통로 지정구간. D-30 인터뷰 대조 항목
     feeds_note: '[]'
@@ -1812,10 +1957,10 @@ datasets:
       encoding: cp949
       required_cols: [소방서, 안전센터, 소재지도로명주소, 관할구역]
       rows: 27
-    schema:
-      columns: [소방서, 안전센터, 소재지도로명주소, 관할구역, 데이터기준일]
-      encoding_seen: cp949
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['소방서', '안전센터', '소재지도로명주소', '관할구역', '데이터기준일']
+      encoding_seen: 'cp949'
   parking_lot:
     feeds: 미투입 — A* 비용함수 입력(#2). 노외 103 · 노상 35
     feeds_note: '[]'
@@ -1838,11 +1983,10 @@ datasets:
       encoding: utf-8
       required_cols: [주차장명, 주소, 면수, 행정동]
       rows: 138
-    schema:
-      columns: [구분, 종류, 연번, 주차장명, 주소, 면적_㎡, 면수, 행정동,
-                관리주체, 주차요금, 비고]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['구분', '종류', '연번', '주차장명', '주소', '면적_㎡', '면수', '행정동', '관리주체', '주차요금', '비고']
+      encoding_seen: 'utf-8'
   enforce_cam:
     feeds: 미투입 — A* 비용함수 입력(#2). 무인카메라 57지점
     feeds_note: '[]'
@@ -1863,11 +2007,10 @@ datasets:
       encoding: utf-8
       required_cols: [번호, 대상명칭, 주소, 평일_운영시간]
       rows: 65
-    schema:
-      columns: [번호, 대상명칭, 주소, 평일_운영시간, 주말공휴일_운영시간,
-                점심시간, 개별적용사항]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['번호', '대상명칭', '주소', '평일_운영시간', '주말공휴일_운영시간', '점심시간', '개별적용사항']
+      encoding_seen: 'utf-8'
   school_zone:
     feeds: 미투입 — A* 비용함수 입력(#2). 보호구역 32곳
     feeds_note: '[]'
@@ -1886,10 +2029,10 @@ datasets:
       encoding: utf-8
       required_cols: [학교명, 시설유형, 주소]
       rows: 32
-    schema:
-      columns: [연번, 학교명, 시설유형, 주소]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['연번', '학교명', '시설유형', '주소']
+      encoding_seen: 'utf-8'
   parking_zone:
     feeds: 미투입 — A* 비용함수 입력(#2). 규제 구간
     feeds_note: '[]'
@@ -1909,10 +2052,10 @@ datasets:
       encoding: utf-8
       required_cols: [구분, 도로명]
       rows: 22
-    schema:
-      columns: [구분, 도로명, 구간, 연장_m, 내용]
-      encoding_seen: utf-8
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['구분', '도로명', '구간', '연장_m', '내용']
+      encoding_seen: 'utf-8'
   jijeok:
     feeds:
       - tools/jijeok_probe.py
@@ -1920,9 +2063,6 @@ datasets:
     feeds_note: '- tools/jijeok_probe.py - tools/jijeok_review.py'
     stem: nsdi_jijeok
     ext: [zip]
-    schema:
-      layers:
-      - AL_D002_12_20260808
     scope: jngj
     updated: '2026-08-08'
     what: 연속지적도 (도엽 7세트 · 970MB)
@@ -1940,6 +2080,11 @@ datasets:
       ★ 원본 파일명이 `AL_D002_12_20260808(2).shp` 식이다. 괄호가 도엽
         번호 노릇을 한다 — 명명규칙 밖이라 parts 로 옮겨 적는다.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['AL_D002_12_20260808', 'AL_D002_12_20260808(2)', 'AL_D002_12_20260808(3)', 'AL_D002_12_20260808(4)', 'AL_D002_12_20260808(5)', 'AL_D002_12_20260808(6)', 'AL_D002_12_20260808(7)']
+      layer_used: 'AL_D002_12_20260808.shp'
+      columns: ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']
+      features: 1000000
   gjfire_fleet_dongbu:
     feeds: 미투입 — web/config.js 의 CONFIG.fleet 목록 근거. 코드가 키로 참조하지 않는다
     feeds_note: '[]'
@@ -1975,6 +2120,9 @@ datasets:
       ★ 종전에 data/field 에 긴 형태만 있었다. field 는 재취득 불가한
         실측 자리인데 이것은 재취득 가능하다. 계층이 틀렸었다.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['부서', '계', '펌프차(중형)', '물탱크차(대형)', '화학차', '조연차', '직진형사다리차(53m)', '굴절형사다리차(27m)', '지휘차', '구조차', '구조버스', '구급차', '생활안전차', '소방안전교육차', '순찰차', '행정차', '화물차', '화재조사차', '트레일러', '장비운반차', '진단차']
+      encoding_seen: 'utf-8-sig'
   gjfire_district_dongbu:
     feeds: 미투입 — CONFIG.fleetGroups 묶음 근거
     feeds_note: '[]'
@@ -1995,6 +2143,9 @@ datasets:
       DECISIONS 85 의 근거이며 차량 목록을 센터로 가른 이유다.
     note: 원본이 CP949 다. 편입 시 UTF-8 로 옮기고 수치는 고치지 않는다
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['구 분', '위 치', '관 할 구 역', '인구', '1인당담당인구', '데이터기준일자']
+      encoding_seen: 'utf-8-sig'
   # ══ 2026-09-03 반입. 소방청 소방안전 빅데이터 플랫폼 ══════════
   # ★ 전부 **동구/동명동 필터 파생본**만 저장소에 둔다. 원본 전국분은
   #   합 2.85GB 이고 재취득 가능하므로 raw 에 넣지 않는다(§12-10).
@@ -2026,6 +2177,9 @@ datasets:
       ★ 좌표는 신고자 위치(휴대폰)이지 반드시 현장이 아니다.
     contract: {encoding: utf-8-sig}
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['DCLR_RCPT_NO', 'DCLR_DT', 'DCLR_YMD', 'DCLR_TM', 'DCLR_YR', 'DCLR_MM', 'DCLR_DAY', 'DCLR_HR', 'DCLR_MN', 'DCLR_DOW', 'SEASN_NM', 'QTR_NO', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'CTY_FRMVL_SE_NM', 'EMD_SE_NM', 'RCPT_END_DT', 'RCPT_END_YMD', 'RCPT_END_TM', 'OTR_CTPV_DCLR_YN', 'DCLR_PSTN_LOT', 'DCLR_PSTN_LAT', 'DSPT_DRTV_DT', 'GRNDS_ARVL_DT', 'HSPTL_ARVL_DT', 'CBK_DT', 'SITTN_END_DT', 'FRSTN_NM', 'CNTR_NM', 'CLMTY_CTPV_NM', 'CLMTY_SGG_NM', 'CLMTY_EMD_NM', 'LOT', 'LAT']
+      encoding_seen: 'utf-8-sig'
   nfa_rescue:
     feeds: 미투입 — 구조 출동 검증축. 119 신고접수와 같은 급이다
     feeds_note: '[]'
@@ -2046,6 +2200,9 @@ datasets:
     crs_native: 4326
     contract: {encoding: utf-8-sig}
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['CLMTY_RSCU_RPTP_NO', 'ACDNT_CS_NM', 'PRCS_RSLT_SE_NM', 'DCLR_YMD', 'DCLR_TM', 'DCLR_YR', 'SEASN_NM', 'DCLR_MM', 'DCLR_DAY', 'DCLR_HR', 'DCLR_MN', 'DCLR_DOW', 'DSPT_YMD', 'DSPT_TM', 'DSPT_YR', 'DSPT_MM', 'DSPT_DAY', 'DSPT_HR', 'DSPT_MN', 'GRNDS_ARVL_YMD', 'GRNDS_ARVL_TM', 'GRNDS_ARVL_YR', 'GRNDS_ARVL_MM', 'GRNDS_ARVL_DAY', 'GRNDS_ARVL_HR', 'GRNDS_ARVL_MN', 'RSCU_CMPTN_YMD', 'RSCU_CMPTN_TM', 'RSCU_CMPTN_YR', 'RSCU_CMPTN_MM', 'RSCU_CMPTN_DAY', 'RSCU_CMPTN_HR', 'RSCU_CMPTN_MN', 'CBK_YMD', 'CBK_TM', 'CBK_YR', 'CBK_MM', 'CBK_DAY', 'CBK_HR', 'CBK_MN', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'CTY_FRMVL_SE_NM', 'EMD_SE_NM', 'DCLR_PSTN_LOT', 'DCLR_PSTN_LAT', 'FRSTN_GRNDS_DSTNC', 'ACDNT_PLC_DTL_NM', 'FRSTN_NM', 'CNTR_NM']
+      encoding_seen: 'utf-8-sig'
   nfa_fire_incident:
     feeds: 미투입 — 거리↔소요시간 회귀로 cost 모델을 검증한다
     feeds_note: '[]'
@@ -2092,6 +2249,9 @@ datasets:
           같은 플랫폼의 구조 현황에는 EMD_NM 이 있다 — 표마다 다르다
     contract: {encoding: utf-8-sig}
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['WRINV_NO', 'FIRE_TYPE_NM', 'BLDG_SRTFRM_NM', 'BLDG_STRCTR_NM', 'BLDG_SRTRF_NM', 'BLDG_RSCU_DNGCT', 'GRND_NOFL', 'UDGD_NOFL', 'BLDG_GFA', 'BTTM_AREA', 'BLDG_STTS_NM', 'SPFPTG_NM', 'SMTPR_LCLSF_NM', 'SMTPR_SCLSF_NM', 'DTH_CNT', 'INJPSN_CNT', 'HNL_DAM_CNT', 'PRPT_DAM_AMT', 'DOW_NM', 'FRSTN_NM', 'CNTR_NM', 'RCPT_DT', 'DSPT_DT', 'GRNDS_ARVL_DT', 'BGNN_POTFR_DT', 'PRFECT_POTFR_DT', 'CBK_DT', 'DSPT_REQ_HR', 'FIRE_SUPESN_HR', 'CTPV_NM', 'SGG_NM', 'FRSTN_GRNDS_DSTNC', 'CNTR_GRNDS_DSTNC', 'LFDAU_GRNDS_DSTNC', 'IGTN_HTSRC_NM', 'IGTN_HTSRC_SCLSF_NM', 'IGTN_DMNT_LCLSF_NM', 'IGTN_DMNT_SCLSF_NM', 'FRST_IGOBJ_LCLSF_NM', 'FRST_IGOBJ_SCLSF_NM', 'IGTN_ISTR_LCLSF_NM', 'IGTN_ISTR_SCLSF_NM', 'CMBS_EXPOBJ_LCLSF_NM', 'CMBS_EXPOBJ_SCLSF_NM', 'FCLT_PLC_LCLSF_NM', 'FCLT_PLC_MCLSF_NM', 'FCLT_PLC_SCLSF_NM', 'IGTN_FLR_NM', 'SO_AREA', 'FIRE_INSRNC_OBLG_TRGT_YN', 'ARSON_MNG_TRGT_YN', 'MUB_YN', 'VHCL_PLC_NM', 'VHCL_IGTN_PSTN_NM', 'FND_FIRE_SE_NM', 'FND_IGTN_PSTN_NM', 'HR_UNIT_ARTMP', 'HR_UNIT_WSPD_INFO', 'WNDRCT_BRNG', 'HR_UNIT_HUM']
+      encoding_seen: 'utf-8-sig'
   nfa_vehicle_spec_2024:
     feeds: 미투입 — vehicle_spec 의 상한 대비 실차 대표값 대조축
     feeds_note: '[]'
@@ -2208,6 +2368,9 @@ datasets:
           좌표 열이 없다. ADDR 문자열로만 위치를 안다.
           건물 위치는 buildings.geojson 이 갖고 있으므로 주소로 잇는다.
 
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['BDST_SN', 'FRSTN_NM', 'CNTR_NM', 'TRGTOBJ_NM', 'REG_YMD', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'ADDR', 'BLDG_NM', 'FIRE_INSRNC_JOIN_YMD', 'FIRE_INSRNC_MTRY_YMD', 'FIRE_INSRNC_CO_NM', 'USE_APRV_YMD', 'PBNST_YN', 'CLTPTY_YN', 'ARSON_MNG_TRGT_YN', 'ISF_CHCK_TRGT_YN', 'ISF_CHCK_TRGT_TYPE_NM', 'LGZ_FIRE_WKTRGT_YN', 'FRFGH_FCLT_CPCST_CMCRT_YMD', 'USE_YN', 'FRFGH_MFBIZ_YN']
+      encoding_seen: 'utf-8-sig'
   nfa_spec_chem_gj:
     feeds: 미투입 — 화학차 치수 상한. CONFIG.fleet 의 chem 이 "추정" 이다
     feeds_note: '[]'
@@ -2322,12 +2485,245 @@ datasets:
       ★ 같은 zip 의 제안요청서·산출내역서는 반입하지 않았다.
       ★ 축거 0건. `차대` 10건은 정의문이다.
 
+  bldg_ledger_dm:
+    stem:       eais_bldgledger_dm
+    ext:        [json]
+    scope:      jngj-dongmyeong
+    updated:    "2026-09-06"
+    authority:  국토교통부 건축행정시스템
+    kind:       json_table
+    encoding:   utf-8
+    what:       건축물대장 표제부. 동명동 1,989동 · 필드 77
+    note: |
+      ★ `retired.building_ledger`(2026-08-31 폐기)의 후속이다.
+        그때 사유는 "높이·주차대수만 있고 건물 형상은 building 이 이미
+        낸다. 11.3MB 소비자 0곳" 이었고 **그 판단은 틀리지 않았다.**
+        바뀐 것은 상황이다 — β 점유위험도(#62)와 주차 0인 주거건물
+        84% 가 이 표를 읽는다. 소비자가 생겼다.
+      ★ 같은 자료가 아니다. 폐기분은 전국 11.3MB 였고 이것은 동명동
+        1,989동으로 좁힌 판이다. stem 도 `_dm` 이 붙는다.
+    feeds:      미투입 — β 점유위험도(#62) · 원룸 판별 · 건물높이 대조축
+    feeds_why: |
+      ★ **이 파일 하나가 세 문제를 푼다.**
+        ① 원룸 판별 — 단독주택 932동 중 다가구(가구3+) 170 · 2가구 184.
+          상세주소DB 는 "몇 동 몇 호" 를 주지만 **원룸인지는 안 준다.**
+        ② β 근거 — 가구+세대 2,431 대 주차면 1,792. 주거건물 951동 중
+          **주차 0 인 곳이 803동(84%)**. 그 차들은 골목에 선다.
+          단속 이력은 "적발된 것" 만 보는데 이것은 **압력 자체**를 준다.
+        ③ 건물높이 523동 — buildings.h(층수 추정)의 실측 대조축.
+    note: |
+      ★ **좌표가 없다.** 대지위치(지번) 1,989 · 도로명대지위치 1,873 뿐.
+        jijeok(24,183) 이나 building 폴리곤과 **지번으로 붙여야** 한다.
+      ★ {Description, Data} 구조다. Description 이 필드 사전이다.
+      ★ 광주 동구 주차 확보율은 통계상 136.3% 인데 동명동 주거는 31% 다.
+        상업·업무가 평균을 끌어올린 것 — **주차장은 있는데 사람 사는 곳에
+        없다.** 이 괴리가 β 의 논거다.
+    contract:
+      encoding: utf-8
+      rows: 1989
+      required_cols: [PLOT_PSTN, MN_USG_CD_NM, FML_CNT, HH_CNT]
+
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['PLOT_PSTN', 'SGG_CD', 'STDG_CD', 'PLOT_SE_CD', 'MNO', 'SNO', 'BDRG_SN', 'LDGR_SE_CD', 'LDGR_SE_CD_NM', 'LDGR_KIND_CD', 'LDGR_KIND_CD_NM', 'ROAD_NM_PLOT_PSTN', 'BLDG_NM', 'SPAREA_NM', 'BLCK', 'LOT', 'BYLT_CNT', 'NA_ROAD_CD', 'NA_STDG_CD', 'NA_GRND_UDGD_CD', 'NA_MNO', 'NA_SNO', 'DNG_NM', 'MANX_SE_CD', 'MANX_SE_CD_NM', 'SIAR', 'BDAR', 'BDCVRT', 'GFA', 'FART_CMPTTN_GFA', 'FART', 'STRCT_CD', 'STRCT_CD_NM', 'ETC_STRCT', 'MN_USG_CD', 'MN_USG_CD_NM', 'ETC_USG', 'ROOF_CD', 'ROOF_CD_NM', 'ETC_ROOF', 'HH_CNT', 'FML_CNT', 'HG', 'GRND_NOFL', 'UDGD_NOFL', 'PSNGR_ELVTR_CNT', 'EUSE_ELVTR_CNT', 'ANX_BDST_CNT', 'ANX_BDST_AREA', 'TOL_DNG_GFA', 'INDR_MCNCL_CNTOM', 'INDR_MCNCL_AREA', 'OTDR_MCNCL_CNTOM', 'OTDR_MCNCL_AREA', 'INDR_SFPRPL_CNTOM', 'INDR_SFPRPL_AREA', 'OTDR_SFPRPL_CNTOM', 'OTDR_SFPRPL_AREA', 'PRMSN_DAY', 'BGNCST_DAY']
+      features: 1989
+      encoding_seen: 'utf-8'
+      layers_total: 77
+  child_zone_std:
+    crs_native: EPSG:4326
+    stem:       mois_child_zone_std
+    ext:        [json]
+    scope:      kr
+    updated:    "2026-07-28"
+    authority:  행정안전부 (전국 표준데이터)
+    kind:       json_points
+    encoding:   utf-8
+    x_col:      경도
+    y_col:      위도
+    what:       전국 어린이보호구역 14,652 → 광주 동구 32 → 스코프 8
+    feeds:      미투입 — TBT 안내 · A* 우회 가중치(#2) · **폭 판정 대조축**
+    feeds_why: |
+      ★ `보호구역도로폭` 이 **행정 고시값**이다. 폭 판정의 외부 대조축이
+        하나 더 생긴다 — 지금은 ngii1k_center 하나뿐이다.
+        스코프 표본에서 셋이 1m 안쪽으로 일치했다
+        (중앙초 5m/6.01 · 서석초 6m/6.53 · 동구어린이집 15m/16.4).
+      ★ 대장의 school_zone(32곳)과 **같은 대상이다.** 그쪽은 주소만 있어
+        지오코딩이 필요했는데 이쪽은 좌표가 붙어 온다.
+    note: |
+      ★ 보호구역 **경계 폴리곤이 아니다.** 시설 좌표뿐이라 반경으로
+        근사해야 하고, 그 반경이 또 미검증 상수가 된다.
+      ★ 전국분이다. 스코프 밖 14,644건은 ingest 에서 버린다.
+    contract:
+      encoding: utf-8
+      rows: 14652
+      required_cols: [대상시설명, 위도, 경도, 소재지도로명주소]
+
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['시설종류', '대상시설명', '소재지도로명주소', '소재지지번주소', '위도', '경도', '관리기관명', '관할경찰서명', 'CCTV설치여부', 'CCTV설치대수', '보호구역도로폭', '데이터기준일자', '제공기관코드', '제공기관명']
+      features: 14652
+      encoding_seen: 'utf-8'
+  senior_zone_std:
+    crs_native: EPSG:4326
+    stem:       mois_senior_zone_std
+    ext:        [json]
+    scope:      kr
+    updated:    "2026-06-19"
+    authority:  행정안전부 (전국 표준데이터)
+    kind:       json_points
+    encoding:   utf-8
+    x_col:      경도
+    y_col:      위도
+    what:       전국 노인·장애인보호구역 4,120 → 광주 동구 17 → 스코프 10
+    feeds:      미투입 — TBT 안내 · A* 우회 가중치(#2)
+    feeds_why:  보호구역 제한속도 30km/h. 어린이보호구역과 같은 축이다
+    note: |
+      ★ `장소유형코드` 가 1(노인) · 2(장애인) 이다. 문자열이 아니다.
+      ★ `보호구역도로폭` 은 동구 17건 중 1건만 채워져 있다 —
+        대조축으로는 child_zone_std 만 쓴다.
+    contract:
+      encoding: utf-8
+      rows: 4120
+      required_cols: [대상시설명, 위도, 경도, 제한속도]
+
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['장소유형코드', '대상시설명', '시도명', '시군구명', '시군구코드', '소재지도로명주소', '소재지지번주소', '위도', '경도', '제한속도', '관리기관명', '관리기관전화번호', '관할경찰서명', 'CCTV설치여부', 'CCTV설치대수', '보호구역도로폭', '데이터기준일자', '제공기관코드', '제공기관명']
+      features: 4120
+      encoding_seen: 'utf-8'
+  speedbump:
+    stem:       gjcity_speedbump
+    ext:        [csv]
+    scope:      jngj-donggu
+    updated:    "2023-04-05"
+    authority:  동구청 건설과
+    kind:       csv_table
+    encoding:   cp949
+    what:       동구 과속방지턱 342개소 → 스코프 46
+    feeds:      미투입 — TBT 안내
+    feeds_why: |
+      스코프 46개. 전부 소로 · 규격 미달(N) · 원호형 28 · 가상형 18.
+      ★ `가상형` 은 도색만 있고 실제 턱이 없다 — 데이터는 남기되 안내
+        여부는 앱이 정한다(domain/hazard.ts::shouldAnnounce).
+    note: |
+      ★ **기준일자가 2023-04-05 다. 3년 묵었다.** 그 사이 신설·철거가
+        있었을 수 있고, 화면이 그것을 확정으로 말하면 안 된다.
+      ★ `과속방지턱높이` 는 스코프 46건 전량 0 이다. 미기입 필드라 못 쓴다.
+      ★ 행정안전부 REST API 의 **스냅샷**이다. 앱에서 API 를 부르지 않는다 —
+        서버가 없고, 응답이 바뀌면 golden 이 깨진다. 파일이면 sha 로 못박힌다.
+        인증키는 저장소에 넣지 않는다.
+    contract:
+      encoding: cp949
+      rows: 342
+      required_cols: [WGS84위도, WGS84경도, 설치장소, 과속방지턱형태구분]
+
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['개방자치단체코드', '관리번호', '과속방지턱관리번호', '도로명', '시도명', '시군구명', '소재지도로명주소', '소재지지번주소', '설치장소', '과속방지턱재료', '과속방지턱형태구분', '과속방지턱높이', '과속방지턱폭', '과속방지턱연장', '도로유형구분', '규격여부', 'WGS84위도', 'WGS84경도', '보차분리여부', '연속형여부', '과속방지턱설치연도', '관리기관명', '관리기관전화번호', '데이터기준일자', '데이터갱신구분', '데이터갱신시점', '최종수정시점']
+      encoding_seen: 'cp949'
+  admin_cctv:
+    stem:       gjcity_admin_cctv
+    ext:        [csv]
+    scope:      jngj-donggu
+    updated:    "2020-08-14"
+    authority:  서남동행정복지센터
+    kind:       csv_table
+    encoding:   cp949
+    what:       동구 행정 CCTV 81대 (쓰레기단속·생활방범·다목적) → 스코프 33
+    feeds:      미투입 — bin_trash 대조축
+    feeds_why: |
+      ★ **영상판정에 못 쓴다.** 목적이 노면이 아니다 — 스코프 33건 중
+        쓰레기단속이 26건이고 화각이 배출지를 향한다.
+        우리 cctv(방범 678건)와 **다른 자산이다.**
+      ★ 대신 **쓰레기 배출지는 골목의 고정 장애물**이다. bin_trash 31건의
+        대조축으로 쓴다.
+    note: |
+      ★ **기준일자가 2020-08-14 다. 6년 묵었다.** 판정에 쓰지 마라.
+      ★ `시군구명` 컬럼이 없다. 파일 자체가 동구분이다.
+      ★ 화각을 확인하면 일부는 영상판정에 쓸 수도 있다 — 지금은 못 한다.
+    contract:
+      encoding: cp949
+      rows: 81
+      required_cols: [WGS84위도, WGS84경도, 설치목적구분, 관리기관명]
+
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['개방자치단체코드', '관리번호', '관리기관명', '소재지도로명주소', '소재지지번주소', '설치목적구분', '카메라대수', '카메라화소수', '촬영방면정보', '보관일수', '설치연월', '관리기관전화번호', 'WGS84위도', 'WGS84경도', '데이터기준일자', '데이터갱신구분', '데이터갱신시점', '최종수정시점']
+      encoding_seen: 'cp949'
+  speed_cam:
+    stem:       gjbg_traffic_cam
+    ext:        [csv]
+    scope:      jngj
+    updated:    "2025-12-31"
+    authority:  광주광역시 빅데이터 통합플랫폼
+    kind:       csv_table
+    encoding:   utf-8-sig
+    what:       광주 무인교통단속카메라 510 → 동구 49 → 스코프 9
+    feeds:      미투입 — **실측 제한속도** · TBT 안내
+    feeds_why: |
+      ★ `제한속도` 가 **실측값**이다. domain/speed.ts 의 폭 추정을 덮는다.
+        준법로 폭 18.6m → 표 추정 50km/h → **실제 30km/h**(동산초교 스쿨존).
+        폭만 보면 절대 못 얻는 값이다.
+      ★ 스코프 9곳이 전부 큰길이다 — 30km/h 스쿨존 6 · 50km/h 사거리 3.
+        **골목에는 하나도 없다.**
+      ★ `보호구역구분`(2=어린이)이 child_zone_std 와 교차 검증된다.
+    note: |
+      ★ 소방차는 긴급자동차라 과속단속 대상이 아니다. 안내는 상용 동등성을
+        위한 것이지 기능이 아니다 — **제한속도 쪽이 본체다.**
+      ★ 기준일자 컬럼이 없다. 파일명의 2025 를 따랐다.
+      ★ 인코딩이 utf-8-sig 다. 다른 지자체 CSV(cp949)와 다르다.
+    contract:
+      encoding: utf-8-sig
+      rows: 510
+      required_cols: [위도, 경도, 제한속도, 설치장소, 시군구명]
+
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['무인교통단속카메라관리번호', '시군구명', '도로노선번호', '도로노선명', '도로노선방향', '위도', '경도', '설치장소', '단속구분', '제한속도', '보호구역구분', '설치년도']
+      encoding_seen: 'utf-8-sig'
+  juso_building_db:
+    inner_contains: build_jeonnamgwangju
+    select:     {col: 0, prefix: '1221010800'}
+    stem:       juso_building_db
+    ext:        [zip]
+    scope:      jngj
+    updated:    "2026-07-31"
+    authority:  행정안전부 도로명주소
+    kind:       text_table
+    encoding:   cp949
+    what:       도로명주소 건물DB. 전남광주 1,327,372행 → 동구 20,458 → 동명동 2,078
+    feeds:      미투입 — 목적지 검색(건물명)
+    feeds_why: |
+      poi.geojson 은 상가 2,077 뿐이라 **학교·병원·관공서가 통째로 없다.**
+      전남여자고등학교가 검색에 안 잡히는 이유다. 이 파일에 건물명이 있다.
+    note: |
+      ★ **좌표가 없다.** 주소 DB 라 건물명·도로명·건물번호만 있다.
+        지도에 찍으려면 juso 내비게이션용DB(건물중심점·출입구 좌표)가
+        필요하다 — 승인 대기.
+      ★ `|` 구분 · CRLF 개행 · cp949.
+      ★ `updated` 근거 — 이 zip 에는 기준일 문서가 없다(가이드 PDF 뿐).
+        형제 자료 `202608_주소DB_전체분.zip` 에
+        `[자료건수]주소DB(2026년 08월 31일 기준).txt` 가 동봉돼 있어
+        **제공처가 월말을 기준일로 쓴다**는 것이 확인된다. 그래서
+        202607 → 2026-07-31 로 적는다. zip 내부 타임스탬프 2026-08-04 는
+        제작일이지 기준일이 아니다(ledger.py:20 "다운로드일이 아니다").
+        ★ 추정이 섞인 유일한 칸이다. 제공처 확인이 되면 고쳐라.
+      ★ **전국 전체분을 raw 에 넣지 마라.** build_jeonnamgwangju.txt 가
+        205MB 다. 동명동 2,078건만 잘라낸다 — enforcement(8.1MB)가
+        용량으로 retired 됐다.
+      ★ **법정동코드로 자른다. 동 이름으로 자르지 마라.**
+        `c[3] == '동명동'` 으로 거르면 2,701 이 나오고 그중 623 이
+        **목포시 동명동**이다. 전남+광주 통합 파일이라 같은 파일에 있다.
+        행정동명까지 합치면 5,683 이 된다 — 종전 이 칸의 5,718 이
+        그 경로에서 나온 수다.
+            법정동코드 [0] == '1221010800'  →  2,078   ★ 이것이 정답
+        scope.py 가 "코드는 선언에 둔다" 고 적은 이유가 이것이다.
+    contract:
+      encoding: cp949
+      delimiter: "|"
+    schema:
+      files: [build_jeonnamgwangju.txt, jibun_jeonnamgwangju.txt]
+      primary: build_jeonnamgwangju.txt
+      encoding_seen: cp949
+
 raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
     crs_native: 5186
-    vintage: TODO
-    desc: 항공정사영상 2025, GSD 0.25m, 광주 037/038/047/048
     files:
     - _B060_정사영상_2025_35616037.tif      # 9516 x 11496
     - _B060_정사영상_2025_35616038.tif      # 9516 x 11508
@@ -2342,13 +2738,13 @@ raw_only:
       현 단계 파이프라인 미투입. S3에만 두고 로컬에서 지워도 무방.
 
   building_change:
-    desc: GIS건물통합정보 일변동분
+    what: GIS건물통합정보 일변동분
     files: [CH_D010_00_20260806.zip]
     crs: EPSG:5186
     note: 변동분 865건(동명동 1건). 전체분이 아니라 사용 불가. 전자지도 승인 대기.
 
   nodelink_manifest:
-    desc: 표준노드링크 갱신 내역서
+    what: 표준노드링크 갱신 내역서
     files: [내역서.csv]
     note: 이번 갱신분 노선 목록. 참고용.
 
@@ -2373,6 +2769,32 @@ pending:
 - key: streetlight
   desc: 가로등·보안등
   status: 공개 데이터 없음 확정. 야간 답사로 대체 (D-13)
+- key: vehicle_spec_measured
+  desc: 소방차 축거·회전반경 실측 (D-30)
+  source: 동부소방서 인터뷰 · 정보공개청구
+  status: 외부 진행 — 웅토피아 4인. 우지혜가 청구를 넣었다(2026-09-03)
+  blocking: |
+    ★ 2026-09-10. `doc_fsck.DEFERRED` 에서 여기로 옮겼다. 그쪽은 **우리가
+      할 일**을 재는 기계인데 이것은 남이 하고 결과만 받는 일이다. 기한이
+      와도 우리가 할 수 있는 것이 없으므로 매주 울기만 한다 — 우는 것
+      말고 대응이 없는 빨간불은 사람이 검사를 끄게 만든다(DECISIONS §73).
+
+      `retired` 도 아니다. 개인 프로젝트로 갈라진 뒤에도 연락이 오가므로
+      결과를 실제로 받을 수 있다. 포기한 것이 아니라 **우리가 일정을
+      못 정하는 것**이다.
+
+      막고 있는 것 — `vehicle_spec.wheelbase_verified` ·
+      `turn_radius_verified` 가 둘 다 false 라 내륜차가 0 으로 나온다.
+      회전 판정이 사실상 폭 판정과 같아진다.
+  fallback: |
+    ★ 결과가 안 와도 앞으로 간다. 관측 최대값으로 못박는다(안전 방향) —
+      축거 4.3m · 회전반경 KFS 규격 상한. **값을 크게 잡는 쪽이 안전하다**
+      — 작게 잡으면 필요폭이 작게 나오고 그것이 미탐이다(MASTER §3-13).
+
+    ★ 그래도 `wheelbase_verified` 는 **false 로 남긴다.** 값을 정하는 것과
+      검증됐다고 적는 것은 다르다. 화면에도 "추정" 이 나가야 한다.
+
+    이 판단은 B4(판정 규칙)에서 확정한다. 그때까지 값은 그대로 둔다.
 - key: fire_incident
   desc: 화재 출동 이력 (동명동)
   source: data.go.kr 소방청 화재현황 오픈API (읍면동까지 제공)
@@ -2401,15 +2823,91 @@ retired:
     what:      건축물대장 표제부. 높이·주용도·주차대수·사용승인일
     reason:    높이·주차대수만 있고 건물 형상은 building 이 이미 낸다. 11.3MB 소비자 0곳
     at:        2026-08-31
-    successor: building
+    # ★ 2026-09-07. 후속의 stem 을 `eais_bldgledger_dm` 으로 **일부러
+    #   붙여 썼다.** `eais_bldg_ledger_dm` 으로 두면 이 항목의 stem
+    #   (`eais_bldg_ledger`)을 접두로 삼아 `acquire --stage` 가
+    #   "폐기 등재된 파일이 다시 올라왔다" 로 판정해 격리한다.
+    #   실제로 그렇게 격리됐다. 검사가 옳고 이름이 틀렸던 것이다.
+    # ★ 2026-09-07. successor 를 building → bldg_ledger_dm 으로 고친다.
+    #   폐기 사유는 "소비자 0곳" 이었고 그 판단은 유효했다. 상황이 바뀌어
+    #   (β 점유위험도 #62) 동명동으로 좁힌 판이 복귀했다. 폐기 기록을
+    #   지우면 "왜 한 번 뺐다가 다시 넣었나" 가 사라진다.
+    successor: bldg_ledger_dm
   enforcement:
     stem:      gjcity_parking_enforce
     what:      동구 불법주정차 단속 2판 (2022-01~2023-10 85,380건 + 2024년). 이어붙여 쓴다
     reason:    단속 이력이지 현재 장애물이 아니다. 같은 목적을 enforce_cam·parking_zone 이 더 정확히 덮는다. 8.1MB 를 매 실행 읽을 이유가 없다
     at:        2026-08-31
     successor: enforce_cam
+  hydrant_point_kr_20240207_truncated:
+    what: 전국 소방용수시설 표준데이터 — 50,000행 절단본 (2024-02-07)
+    stem: safety_hydrant_point
+    ext: [csv]
+    provider: safety
+    source_hint: 공공데이터포털 CSV 내려받기 (상한 50,000행)
+    at: '2026-09-10'
+    successor: hydrant_point (safety_hydrant_point_jngj_20240207.csv)
+    reason: |
+      포털 CSV 내려받기 상한 50,000 에 걸려 잘린 판이다. 재취득한 전량과
+      비교하면 종전 197건이 새 파일에 **전부 포함**된다(겹침 197 · 기존에만 0)
+      — 커버리지가 다른 것이 아니라 잘린 것이고 새 파일이 상위집합이다.
+      ★ 지우지 않는다. 이것이 "딱 떨어지는 행수는 자연수가 아니라 상한이다.
+        50,000 · 10,000 · 1,000 을 보면 의심해야 한다" 의 유일한 물증이다.
+        종전 contract.rows 가 50000 이라 상한을 정상으로 인정하고 있었다.
+      ★ 2026-09-10 lakecheck L2 가 "격리 사유가 대장에 없다" 로 잡아냈다.
+
+  road_facility_pdf_2022:
+    what: 도로시설물 현황 378개소 — PDF 판 (hwp 에서 저장)
+    origin_name: 1663144302440.pdf
+    at: '2026-09-10'
+    successor: gjcity_road_facility (hwp 판)
+    reason: |
+      2026-09-06 에 hwp 를 열어 한컴에서 PDF 로 저장한 것이다
+      (Creator: Hwp 2020 · CreationDate D:20260906184943). 배포 원본이
+      아니라 우리가 만든 사본이므로 hwp 만 남긴다.
+
+  its_api_guide_hwp:
+    what: 교통소통정보 API 제공 안내 (한글)
+    origin_name: 교통소통정보 API 제공.hwp
+    at: '2026-09-10'
+    successor: null
+    reason: |
+      API 사용 안내 문서다. 데이터가 아니다. its 계열은 이미
+      nodelink·changelog 로 반입돼 있고 이 문서에는 좌표도 제원도 없다.
+
+  its_road_section_pdf:
+    what: 교통소통정보 도로구간정보 설명서
+    origin_name: 교통소통정보_도로구간정보_설명.pdf
+    at: '2026-09-10'
+    successor: null
+    reason: |
+      컬럼 설명서다. 데이터가 아니다. 실제 스키마는 반입 후
+      inventory 가 contract 로 기록한다 — 문서를 대장에 둘 이유가 없다.
+
+  juso_bldg_alter_2608:
+    what: 도로명주소 건물 도형 일변동분 (AlterD 31일치)
+    origin_name: 도로명주소 건물 도형.zip
+    at: '2026-09-10'
+    successor: juso_bldg_geom (전체분)
+    reason: |
+      AlterD.JUSURB.2026080X.ZIP 31개가 든 일변동분이다. 전체분
+      (juso_bldg_geom · 2026-08-01)이 있으면 불필요하다. 변동 이력이
+      필요해지면 그때 다시 받는다 — 제공처가 한 달치를 상시 배포한다.
+
+  juso_bldggrp_alter_2608:
+    what: 건물군 내 상세주소 동 도형 일변동분 (AlterD 31일치)
+    origin_name: 건물군 내 상세주소 동 도형.zip
+    at: '2026-09-10'
+    successor: juso_bldggrp_geom (전체분)
+    reason: |
+      위와 같다. 전체분(juso_bldggrp_geom)이 있으면 불필요하다.
+
   kfs_paint_marking_20241224:
     what: 소방차 도장 및 표지 (KFS-1-0006-2024-01)
+    stem: safety_kfs_paint_marking
+    ext: [pdf]
+    provider: safety
+    source_hint: 소방청 소방장비 기술기준(KFS) 고시 첨부
     files:
       - safety/safety_kfs_paint_marking_kr_20241224.pdf
     at: 2026-08-27
@@ -2424,7 +2922,10 @@ retired:
       "6. 소방차 도장 및 표지(KFS-1-0006-2024-01).pdf".
   firestation_kr_20250701:
     what: 소방청 시도 소방서 현황 (2025-07-01 판)
-    file: safety/safety_firestation_kr_20250701.csv
+    stem: safety_firestation
+    ext: [csv]
+    provider: safety
+    source_hint: 공공데이터포털 소방청 표준데이터
     at: 2026-08-23
     successor: fire_station (safety_firestation_kr_20240901.csv)
     reason: |
@@ -2434,7 +2935,10 @@ retired:
       2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
   hydrant_point_jngj_20250917:
     what: 전남광주통합특별시 소방 용수시설 현황 (2025-09-17)
-    file: safety/safety_hydrant_point_jngj_20250917.csv
+    stem: safety_hydrant_point
+    ext: [csv]
+    provider: safety
+    source_hint: 전남광주통합특별시 소방본부
     at: 2026-08-23
     successor: hydrant_point (safety_hydrant_point_jngj_20240207.csv)
     reason: |
@@ -2444,7 +2948,6 @@ retired:
       2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
   ngii1k_ngii_platform:
     what: 국토정보플랫폼 수치지형도 1:1,000 (NGI/NDA + 일부 SHP)
-    vintage: 2019~2022 혼합 (도엽 20장)
     at: 2026-08-17
     successor: ngii1k (vworld)
     reason: |
@@ -2676,6 +3179,102 @@ landing_disposition:
   decided: '2026-08-30'
   by: 오창준
   items:
+    # ── 2026-09-10 추가 ────────────────────────────────────────
+    # ★ action 에 `held` 를 더한다. **판단 보류도 처분이다** — 안 적힌 것과
+    #   다르다. _quarantine 이 "판단 보류지 폐기가 아니다" 인 것과 같다.
+    #   landing 은 backup·committed 가 둘 다 false 라 소실 대기 상태이므로,
+    #   무엇이 왜 거기 있는지가 적혀 있어야 한다.
+    - file: 건물도형_전체분_전남광주통합특별시_동구.zip
+      key: juso_bldg_geom
+      action: ledgered
+      why: >-
+        ★ 2026-09-10 승인. 건물 15,518 · 출입구 17,069 · 접속선 15,518.
+        TL_SPOT_CNTC 가 건물 출입구와 도로를 잇고 접속거리를 준다
+        (중앙 7.6m · 최대 402m) — 출동 종점이 "도로 위 최근접점" 이
+        아니라 실제 출입구가 된다.
+    - file: 건물군내동도형_전체분_전남광주통합특별시_동구.zip
+      key: juso_bldggrp_geom
+      action: ledgered
+      why: 건물군 내 동 도형 8,221 · 동 출입구 939. 아파트 단지 내부 진입.
+    - file: 사물주소도형_전체분_전남광주통합특별시_동구.zip
+      key: spotaddr_geom
+      action: ingested
+      why: >-
+        소화전 30 · 비상급수 12 · 버스정류장 190. 186파일 중 다수가 0건
+        빈 껍데기다. ★ LMTT_HG(제한높이)가 전 레이어 0.0 이라 높이
+        판정에는 못 쓴다 — 컬럼이 있다고 값이 있는 것이 아니다.
+    - file: 기타자료_전체분_전남광주통합특별시_동구.zip
+      key: juso_etc_geom
+      action: ledgered
+      why: >-
+        ★ 터널 10(지산·산수·지원·소태) · 고가 4(너릿재로·제2순환로) ·
+        교량 36. sources.yaml 이 "동명동에 터널·고가 하부는 없다" 를
+        근거 없이 단정했는데 이것이 확인 수단이다.
+    - file: 도로명주소 건물 도형.zip
+      key: null
+      action: retired
+      why: AlterD 일변동분 31개. 전체분(건물도형)이 있으면 불필요하다.
+    - file: 건물군 내 상세주소 동 도형.zip
+      key: null
+      action: retired
+      why: AlterD 일변동분 31개. 전체분(건물군내동도형)이 있으면 불필요하다.
+    - file: 202607_사물주소_전체분.zip
+      key: null
+      action: held
+      why: >-
+        전국분이다. 동구 판(사물주소도형_전체분)이 이미 있어 우선순위가
+        낮다. 전국 비교가 필요해지면 그때 자른다.
+    - file: 202608_내비게이션용DB_전체분.7z
+      key: null
+      action: held
+      why: >-
+        ★ 2026-09-10 승인. match_build_*.txt 시도별 전량이라 풀면 수 GB다.
+        juso_building_db 선례대로 match_build_jeonnamgwangju.txt 만 뽑아
+        법정동 1221010800 으로 자른다. 자른 결과가 csv 로 들어가면
+        `.7z` 가 ext 어휘 밖인 문제도 같이 없어진다 — 어휘를 넓히지 않는다.
+    - file: 202608_상세주소DB_전체분.zip
+      key: null
+      action: held
+      why: 승인 계열. 상세주소는 원룸 구분을 안 주므로 우선순위가 낮다.
+    - file: 202607_상세주소 표시_전체분.zip
+      key: null
+      action: held
+      why: 승인 계열. 위와 같다.
+    - file: 202608_주소DB_전체분.zip
+      key: null
+      action: held
+      why: 좌표가 없다. 내비게이션용DB 와 짝이어야 지도에 찍힌다.
+    - file: 민원행정기관전자지도_240124.zip
+      key: null
+      action: held
+      why: >-
+        SHP 세트. 내부 한글 파일명이 CP437 로 깨져 있다(CP949 로 되돌려
+        매칭). 정체 확인 전까지 보류한다.
+    - file: 제35회+동구통계연보(2024기준).pdf
+      key: null
+      action: held
+      why: 244MB 참조용. 인구·시설 통계이며 진입 판정에 직접 쓰지 않는다.
+    - file: 1663144302440.hwp
+      key: gjcity_road_facility
+      action: ledgered
+      why: >-
+        ★ 도로시설물 현황 378개소 — 교량 207 · 지하차도 15 · 터널/공동구 17 ·
+        고가교 14. 동구 지명 출현 지산 4 · 서석 1 · 두암 1 · 동구 2.
+        기타자료 SHP 와 함께 "터널·고가 없음" 단정의 확인 근거다.
+        ★ 제공처 미상. 2026-09-06 에 hwp 를 열어 PDF 로 저장한 흔적만
+        남았고(Creator Hwp 2020 · CreationDate 20260906) 원본 URL 을 잃었다.
+        기관은 내용으로 확정했다 — 광주 전역 시설물이므로 gjcity.
+    - file: 1739345334447.xls
+      key: null
+      action: retired
+      why: >-
+        동구청 공용차량 보유현황 128대(2024-12-31). 관용차량이고 소방차가
+        아니다. 소방차 보유는 gjfire_fleet_dongbu 가 이미 갖고 있다.
+        진입 판정과 무관하다.
+    - file: 교통소통정보_도로구간정보_설명.pdf
+      key: null
+      action: retired
+      why: API 설명서다. 데이터가 아니다.
     - file: 2025년 소방자동차 다수공급자 계약(MAS) 제작규격 선택장비.hwp
       key: mas_optional_spec
       action: ledgered
