@@ -125,6 +125,7 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
 ```bash
 uv run python tools/tidy.py          # 무엇이 지워질지만
 uv run python tools/tidy.py --yes    # 실제로
+uv run python tools/janitor.sh       # 기계·저장소·레이크 세 층을 한 표로
 ```
 
 죽은 upstream · 머지된 브랜치 · 백업 폴더 · 캐시를 본다.
