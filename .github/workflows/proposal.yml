@@ -17,7 +17,17 @@ name: 기획서 배포
 on:
   push:
     branches: [main]
-    paths: ['docs/proposal.docx', 'web/proposal.html', 'tools/stage_pages.py']
+      # ★ 2026-09-15. **공유 액션을 paths 에 넣는다.** 배포 넷이 전부
+      #   `build-navi` 를 부르는데(action.yml 머리말) 그 액션이 깨지면
+      #   넷 다 죽는다. 그런데 고쳐도 자기 paths 가 안 걸리면 **빨간 채로
+      #   남는다** — 09-15 에 셋이 다섯 시간 그 상태였고, 화면은 멀쩡한데
+      #   Actions 목록만 빨개서 진짜 실패와 구별이 안 됐다.
+      #   `navi.yml` 은 이미 이렇게 돼 있다. 셋을 맞춘다.
+    paths:
+      - 'docs/proposal.docx'
+      - 'web/proposal.html'
+      - 'tools/stage_pages.py'
+      - '.github/actions/build-navi/action.yml'
   workflow_dispatch:
 
 permissions:
