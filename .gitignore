@@ -97,6 +97,10 @@ data/_migrate_journal.json
 web/navi/node_modules/
 web/navi/dist/
 web/navi/.vite/
+# ★ 2026-09-15. `tsc -b` 의 증분 캐시다. 추적돼 있어서 로컬에서 내비를
+#   한 번 빌드할 때마다 나무가 더러워지고, 그러면 `dms.py seal` 이
+#   거부한다 — 20분짜리를 또 돌게 만드는 자리였다. 산출물이다.
+web/navi/tsconfig.tsbuildinfo
 
 # ── 검사 도구의 출력 (2026-09-10) ───────────────────────────────
 # 실행할 때마다 바뀌고 정본은 도구 코드지 그 출력이 아니다.

@@ -252,6 +252,26 @@ else
     note "JS 부팅 스모크" "npm 이 없다"
 fi
 
+# ── 7b. 내비 타입 검사 (web/navi) ────────────────────────────
+# ★ 2026-09-15 신설. 6·7 은 `web/*.js` 클래식 스크립트만 본다. 내비는
+#   React/TS 라 그 셋에 안 걸리고, 컴파일하는 곳은 배포 액션 하나뿐이다.
+#   그래서 maplibre-gl 6 이 로컬 39단계 전부 초록인 채로 main 까지 갔다.
+#   **여기가 비어 있어서 로컬이 CI 의 부분집합도 아니었다**(5b 와 같은 사고).
+# ★ 타입만 본다. `vite build` 는 토큰이 필요하고, 이번 사고는 타입에서
+#   잡혔다. 토큰 없는 빌드는 배포 액션이 맡는다.
+if [ -d web/navi/node_modules ]; then
+    step "내비 타입 검사" bash -c 'cd web/navi && npm run -s typecheck'
+elif command -v npm >/dev/null 2>&1; then
+    printf '%s── 내비 타입 검사%s\n%s   npm ci 중...%s\n' "$C" "$Z" "$D" "$Z"
+    if (cd web/navi && npm ci --no-audit --no-fund >/dev/null 2>&1); then
+        step "내비 타입 검사" bash -c 'cd web/navi && npm run -s typecheck'
+    else
+        note "내비 타입 검사" "npm ci 실패 — cd web/navi && npm ci"
+    fi
+else
+    note "내비 타입 검사" "npm 이 없다"
+fi
+
 # ── 8. 파이프라인 전량 + 판정 불변 ───────────────────────────
 # ★ 여기가 진짜 검증이다. 위의 전부가 통과해도 판정이 바뀌면 실패다.
 if [ "$FAST" = "1" ]; then
