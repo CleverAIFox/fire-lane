@@ -133,49 +133,107 @@ def test_elsewhere_points_at_committed_files():
         + "\n\n  로컬에서만 통과하는 검사가 된다."
           "\n  data/processed/_manifest.json 이 컬럼 목록을 들고 커밋된다.")
 
+import re
+from pathlib import Path
 
-def test_plan_has_no_closed_items():
-    """PLAN 에 닫힌 항목(⬛)이 **하나도 없어야 한다.**
+ROOT = Path(__file__).resolve().parents[1]
 
-    ★ 2026-09-13. 어제 만든 `test_closed_plan_items_are_slots` 를 뒤집었다.
-      그 검사는 "슬롯이면 통과" 였고 §0-2 의 *"슬롯만 남는다"* 를 그대로
-      강제했다. **그 규약이 틀렸다.** PLAN 은 빚 목록이고 갚은 빚은
-      목록에 안 남는다. 개발이 끝나면 이 문서는 비어야 한다.
 
-    ★ **잘못된 것을 정확히 지키게 만드는 검사가 제일 위험하다.**
-      아무도 의심하지 않게 되기 때문이다. 검사가 있다는 사실 자체가
-      규약을 검증한 것처럼 보이게 한다.
+def _plan() -> str:
+    return (ROOT / "docs/PLAN.md").read_text(encoding="utf-8")
+
+
+def _legend(text: str) -> set[str]:
+    """`§0-2 상태 표기` 표에 선언된 표식.
+
+    ★ 표식 목록을 여기 적지 않는다. 문서가 정본이다. 종전 검사는 `⬛` 를
+      코드에 박아뒀는데 2026-09-13 에 슬롯 규약이 폐지되며 그 표식이
+      문서에서 사라졌다. **찾을 것이 없어진 검사는 영원히 0건이고 영원히
+      초록이다** — 그래서 `✅` 셋이 아흐레를 버텼다.
+    """
+    lines = text.splitlines(keepends=True)
+    i = next(k for k, v in enumerate(lines) if v.startswith("### 0-2."))
+    j = next(k for k in range(i + 1, len(lines))
+             if lines[k].startswith(("### ", "## ")))
+    out = set()
+    for m in re.finditer(r"^\| *([^|\-][^|]*?) *\| *[^|]+ *\|$",
+                         "".join(lines[i:j]), re.M):
+        cell = m.group(1).strip()
+        if cell != "표기":
+            out.add(cell)
+    return out
+
+
+def _rows(text: str) -> list[tuple[str, str, str]]:
+    """`## 1. 남은 일` 부터 다음 `### ` 앞까지의 (번호, 제목, 상태).
+
+    ★ 범위를 `plan_renumber._span` 과 **같게 잡는다.** 문서 전체를 긁으면
+      §7 기획서 대조표가 섞인다 — 그 표는 3번째 칸이 상태가 아니라
+      '바꿀 것' 이라 어휘가 다르다. 범위가 다르면 도구와 검사가 다른 것을
+      세고, 그러면 고쳐도 계속 운다.
+    """
+    lines = text.splitlines(keepends=True)
+    i = next(k for k, v in enumerate(lines) if v.startswith("## 1. 남은 일"))
+    j = next(k for k in range(i + 1, len(lines)) if lines[k].startswith("### "))
+    return [(m.group(1), m.group(2).strip(), m.group(3).strip())
+            for m in re.finditer(
+                r"^\| *(\d+\w*) *\| *([^|]*?) *\| *([^|]*?) *\|",
+                "".join(lines[i:j]), re.M)]
+
+
+def _offenders(text: str) -> list[tuple[str, str, str]]:
+    ok = _legend(text)
+    return [r for r in _rows(text) if r[2] not in ok]
+
+
+def test_plan_status_vocabulary_is_closed():
+    """§1 표의 상태 칸은 **§0-2 에 선언된 표식만** 쓴다.
+
+    ★ 2026-09-15. 종전 `test_plan_has_no_closed_items` 는 `⬛` 만 찾았다.
+      09-13 에 슬롯 규약이 폐지되며 닫힘 표식이 `✅` 로 바뀌었는데 검사는
+      옛 표식을 계속 찾았고, `PLAN` 범례는 둘 다 모르는 채였다.
+      **검사 · 문서 · 범례 셋이 갈려 있었고 아무도 울지 않았다.**
+
+    ★ 닫힘 표식을 어휘에 넣지 않는 것이 요점이다(§0-2). 표식이 있으면
+      사람은 행을 지우는 대신 표식을 단다. PLAN 은 빚 목록이고 갚은 빚은
+      목록에 없다. `✅` 든 `⬛` 든 어휘 밖이므로 여기서 걸린다.
 
     닫는 법 — 결과는 MASTER 로, 이유는 DECISIONS 로 옮기고 **행을 지운다.**
+    그 뒤 `uv run python tools/plan_renumber.py --apply` 로 번호를 당긴다.
     """
-    import re
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[1]
-    plan = (root / "docs/PLAN.md").read_text(encoding="utf-8")
-    rows = re.findall(r"^\| *(\d+) *\| *(.+?) *\| *⬛ *\|", plan, re.M)
-    assert not rows, (
-        f"PLAN 에 닫힌 항목이 {len(rows)}개 남아 있다. **행을 지워라.**\n  "
-        + "\n  ".join(f"#{i} {t[:46]}" for i, t in rows)
-        + "\n\n  PLAN 은 앞으로 할 일만 담는다(§0-2). 끝난 것은\n"
-          "  결과를 MASTER 로, 이유를 DECISIONS 로 옮기고 행을 지운다.\n"
-          "  ★ 손으로 옮긴다. 옮기는 배치는 저장소에 안 남긴다.\n"
-          "  ★ 갚은 빚은 목록에 안 남는다. 개발이 끝나면 이 문서는 빈다.")
-
-    import re
-    from pathlib import Path
-
-    root = Path(__file__).resolve().parents[1]
-    rows = re.findall(r"^\| *(\d+) *\| *(.+?) *\| *⬛ *\| *(.*?) *\|\s*$",
-                      (root / "docs/PLAN.md").read_text(encoding="utf-8"), re.M)
-    bad = [f"  #{i} {t[:40]}  — 본문 {len(b)}자"
-           for i, t, b in rows
-           if len(b) > 60 and not re.search(r"(DECISIONS|MASTER) §\d+", b)]
+    text = _plan()
+    bad = _offenders(text)
     assert not bad, (
-        "닫힌 PLAN 항목이 본문을 들고 있다. **슬롯만 남겨라.**\n"
-        + "\n".join(bad)
-        + "\n\n  본문은 DECISIONS 로 옮기고 여기는 가리키기만 한다:\n"
-          "      | 15 | 제목 | ⬛ | → `DECISIONS §123` |\n"
-          "  ★ 손으로 옮긴다. 옮기는 배치는 저장소에 안 남긴다.\n"
-          "  ★ PLAN 은 미래만 담는다. 끝난 것이 여기 남으면 중복이 쌓이고\n"
-          "    어느 쪽이 정본인지 모르게 된다(PLAN §0-2).")
+        f"§1 표에 어휘 밖 상태 표식이 {len(bad)}개 있다.\n  "
+        + "\n  ".join(f"#{i} [{st}] {t[:44]}" for i, t, st in bad)
+        + "\n\n  선언된 표식: " + " · ".join(sorted(_legend(text)))
+        + "\n\n  ★ 닫힘 표식은 없다. 완료면 **행을 지운다**(§0-2).\n"
+          "    결과는 MASTER 로, 이유는 DECISIONS 로 옮긴다.\n"
+          "    그 뒤 uv run python tools/plan_renumber.py --apply\n"
+          "  ★ 손으로 옮긴다. 옮기는 배치는 저장소에 안 남긴다.")
+
+
+def test_plan_status_probe_is_alive():
+    """카나리아 — 위 검사가 **실제로 잡는가.**
+
+    ★ 0 이 목표인 검사는 0 을 죽음으로 읽으면 안 되고, 0 을 성공으로만
+      읽어서도 안 된다. 어느 쪽인지 가리는 것은 양성 대조뿐이다.
+      `env_check --selftest` 가 같은 이유로 생겼다(DECISIONS §150).
+
+    ★ 실물 문서를 안 건드린다. 합성 문자열로 프로브만 흔든다.
+    """
+    text = _plan()
+    ok = _legend(text)
+    assert ok, "§0-2 범례를 못 읽었다 — 표식 파서가 죽었다"
+    assert len(_rows(text)) > 20, "§1 표 행을 못 찾았다 — 행 파서가 죽었다"
+
+    synth = text.replace("| 1 | ", "| 1 | ", 1)
+    lines = synth.splitlines(keepends=True)
+    i = next(k for k, v in enumerate(lines) if v.startswith("## 1. 남은 일"))
+    j = next(k for k in range(i + 1, len(lines)) if lines[k].startswith("|---"))
+    lines.insert(j + 1, "| 999 | 합성 카나리아 행 | \u2705 | 프로브 양성 대조 |\n")
+    caught = _offenders("".join(lines))
+    assert any(r[0] == "999" for r in caught), (
+        "카나리아가 안 잡혔다. 어휘 밖 표식을 심었는데 검사가 조용하다 —\n"
+        "  `_legend` 나 `_rows` 의 정규식이 문서 형식 변경으로 죽었다.\n"
+        "  이 검사가 초록인 것은 PLAN 이 깨끗해서가 아니다.")

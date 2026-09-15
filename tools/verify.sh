@@ -286,7 +286,25 @@ elif [ -z "${FIRE_LANE_DATA:-}${FIRE_LANE_RAW:-}" ] && [ ! -d data/raw/gjcity ];
 else
     # ★ --no-test. 계약 테스트는 위 pytest 가 이미 돌렸다. 파이프라인이
     #   끝에서 또 부르면 한 번의 verify 에 test_contract 가 세 번 돈다.
-    step "파이프라인 전량" uv run fire-lane --no-test
+    # ★ PLAN #68. **raw 가 봉인과 같으면 판정도 같다.** 전량 4분30초를
+    #   근거 있게 생략한다. 지금 `--fast` 는 근거 없이 전부/전무로
+    #   건너뛰고 그 로그로 봉인하면 반쪽 증표다 — 이쪽은 입력이 같다는
+    #   증거가 있다.
+    #
+    # ★ `note` 를 쓰지 않는다. `note` 는 `생략` 으로 찍히고 `seal` 이
+    #   그것을 닫힘으로 읽는다(PLAN #70). 여기는 건너뛴 것이 아니라
+    #   **대조를 통과한 것**이므로 한 단계로 묶어 초록을 낸다.
+    #   무엇을 근거로 생략했는지는 아래 echo 가 로그에 남긴다.
+    #
+    # ★ 모르면 안 건너뛴다. 봉인이 없거나 지문을 못 재면 `rawdiff` 가
+    #   1 을 내고 전량이 돈다. 의심스러울 때 생략하는 것은 검사를
+    #   끄는 것과 같다.
+    step "파이프라인 전량" bash -c '
+        if uv run python tools/dms.py rawdiff; then
+            echo "★ raw 가 봉인과 같아 전량을 생략했다 (PLAN #68)."
+        else
+            uv run fire-lane --no-test --split
+        fi'
     step "golden 판정 불변 (1,101구간)" uv run python tools/golden.py check
     # ★ 게이트가 울고 또 풀리는가. check 가 통과하는 것만으로는
     #   해제 경로가 있는지 알 수 없다(DECISIONS §69).
@@ -353,6 +371,13 @@ step "norm 계보 재현" uv run python -m firelane.prep --check --max 0
 #   우는 곳이 없어진다. 지우는 대신 `--check` 를 달아 강제자로 승격했다.
 #   넷은 각자 다른 것을 본다 — 공통 껍데기를 씌우지 않았다.
 step "대장 별칭 이관 유지" uv run python tools/ledger_fields.py --check
+# ★ 2026-09-15 배선. 종전에는 `test_declaration_sync` 의 실패 메시지 안에
+#   안내문으로만 있었다 — 결번이 생겨야 울고, 그 전에 참조가 썩는 것은
+#   아무도 안 봤다. 이 도구는 인자 없이 돌면 검사다.
+# ★ 이 도구의 REF 정규식이 `\\d` 로 적혀 있어 **만든 날부터 참조를 0건
+#   찾았다.** 죽은 참조 안전장치도 참조 치환도 둘 다 안 돌았다. 고치고
+#   나니 그 자리에서 죽은 참조 셋이 나왔다(DECISIONS §159).
+step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 step "내비 소스 목록"      uv run python tools/install_navi.py --check
 step "배포에 내비 빌드"    uv run python tools/pages_add_navi.py --check
 step "루트 잔재·유령 면제" uv run python tools/navi_setup.py --check
