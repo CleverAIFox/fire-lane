@@ -17,7 +17,7 @@ export PATH="$HOME/.local/bin:$PATH"
 uv sync
 
 # 커밋 시점 방어. 이걸 안 걸면 산출물·비밀값이 그냥 들어간다(MASTER §12-11).
-git config core.hooksPath .githooks
+# ★ 지웠다 — 전역 훅이 저장소 `.githooks` 에 위임한다. **로컬로 박으면** 전역이 죽고 자격증명 검사가 사라진다
 git config core.quotepath false
 git config core.precomposeunicode true
 

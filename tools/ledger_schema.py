@@ -66,6 +66,7 @@ from firelane.kinds import (  # noqa: E402
     JSON_KINDS,
     SHP_KINDS,
 )
+from firelane.ledger import yaml_span as _led_yaml_span
 
 MAX_COLS = 60          # 이보다 많으면 접는다. 대장이 읽을 수 없게 된다
 
@@ -231,13 +232,10 @@ def _fmt(sch: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _span(s: str, key: str) -> tuple[int, int, str]:
-    m = re.search(rf"^  {re.escape(key)}:\n", s, re.MULTILINE)
-    if not m:
-        return -1, -1, ""
-    b = re.search(rf"^  {re.escape(key)}:\n((?:    .*\n|      .*\n|\n)*)",
-                  s, re.MULTILINE)
-    return m.end(), m.end() + len(b.group(1)), b.group(1)
+# ★ 2026-09-13. 구현은 `firelane.ledger.yaml_span` 한 곳이다. 여기와
+#   짝 파일이 글자 하나까지 같았다 — `sources.yaml` 의 구조를 아는 것은
+#   `ledger` 소관이고, 두 벌이면 한쪽만 고치는 날이 온다.
+_span = _led_yaml_span
 
 
 def _drop_schema(body: str) -> str:

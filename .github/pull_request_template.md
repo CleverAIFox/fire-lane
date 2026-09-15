@@ -51,7 +51,7 @@ LLM 에 붙일 때는 위 세 절을 그대로 넘긴다 — 무엇을 바꿨고
 <details>
 <summary>체크리스트 (펼치기)</summary>
 
-- [ ] `git config core.hooksPath .githooks` 를 이 기계에서 한 번 쳤다
+- [ ] 전역 훅이 저장소 `.githooks` 에 위임한다. **로컬로 박으면** 전역이 죽고 자격증명 검사가 사라진다
 - [ ] 아침에 `git pull --ff-only` 로 원격을 받았다
 - [ ] base 브랜치가 맞다 — 개인 → `part/*` · 파트 → `dev` · 릴리즈 → `main`
 - [ ] CI 초록불. 빨간불이면 **실패 메시지를 끝까지 읽었다** (고치는 법이 그 안에 있다)

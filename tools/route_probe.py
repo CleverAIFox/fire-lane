@@ -48,7 +48,6 @@ from __future__ import annotations
 
 import argparse
 import math
-import sys
 from collections import Counter
 
 import geopandas as gpd
@@ -56,6 +55,7 @@ import networkx as nx
 import numpy as np
 from shapely.geometry import Point
 
+from firelane.console import col
 from firelane.paths import PROCESSED
 from firelane.seg import vehicle as V
 
@@ -68,12 +68,6 @@ CRS_M = 5186
 #            반올림이다. 다른 값을 쓰면 경로 그래프의 노드가 segments 와
 #            갈리고, 같은 도로가 두 그래프에서 다르게 끊긴다.
 
-C = {"r": "\033[31m", "g": "\033[32m", "y": "\033[33m",
-     "c": "\033[36m", "d": "\033[90m", "z": "\033[0m"}
-
-
-def col(s: str, k: str) -> str:
-    return f"{C[k]}{s}{C['z']}" if sys.stdout.isatty() else s
 
 
 def curvature(geom) -> float | None:

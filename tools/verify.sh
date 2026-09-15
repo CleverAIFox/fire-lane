@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # tools/verify.sh — 리팩터링 검증 일괄
 #
-#   bash tools/verify.sh          전체
-#   bash tools/verify.sh --fast   파이프라인 전량(4분) 생략
+#   bash tools/verify.sh            전체
+#   bash tools/verify.sh --fast     파이프라인 전량(4분) 생략
+#   bash tools/verify.sh --table    통과한 것까지 전부 표로
+#   bash tools/verify.sh --only=pytest   ★ 이름이 맞는 단계만. 부분 실행이다
+#
+# ★ `--only` 로 돈 결과는 전수가 아니다. 건너뛴 것은 통과가 아니므로
+#   마지막에 `부분 실행` 단계를 일부러 실패시킨다 — 그래야 `dms.py seal`
+#   이 반쪽 실행을 봉인하지 않는다.
 #
 # ★ 손으로 8줄 치지 마라. 중간에 뭐가 깨졌는지 못 짚는다.
 #   여기서는 실패해도 끝까지 돌고 마지막에 표로 보여준다.
@@ -12,33 +18,106 @@ cd "$(dirname "$0")/.." || exit 1
 ROOT=$(pwd)
 FAST=0; [ "${1:-}" = "--fast" ] && FAST=1
 
+# ── .env 를 셸로 올린다 ──────────────────────────────────────
+# ★ `.env` 는 `paths.py`(파이썬)가 읽는다. **bash 는 안 읽는다.**
+#   그래서 FIRE_LANE_DATA 를 .env 에만 적어두면 8번 파이프라인 단계가
+#   영영 `생략` 으로 빠진다. 생략은 실패로 안 세므로 verify.sh 는
+#   "전부 통과했다" 고 말한다 — 조용한 통과다(deadcheck ③).
+# ★ 셸이 이긴다. paths.py 와 같은 규칙이다(빈 값은 미설정).
+if [ -f .env ]; then                                    # dotenv
+    while IFS='=' read -r k v; do
+        case "$k" in ''|\#*) continue;; esac
+        k="${k%"${k##*[![:space:]]}"}"; v="${v%$'\r'}"
+        [ -n "$v" ] && [ -z "$(eval "printf '%s' \"\${$k:-}\"")" ] \
+            && export "$k=$v"
+    done < .env
+fi
+
 R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; C=$'\033[36m'; D=$'\033[90m'; Z=$'\033[0m'
-declare -a NAMES RESULTS NOTES
+declare -a NAMES RESULTS NOTES SECS
 pass=0; fail=0; skip=0
+
+# ── 진행 표시 ────────────────────────────────────────────────
+# ★ 36단계 4분이다. 어디까지 왔는지 안 보이면 멈춘 건지 도는 건지 모른다.
+TOTAL=$(grep -cE '^[[:space:]]*step "' "$0")
+IDX=0; T_ALL=$(date +%s)
+ONLY=""; TABLE=0
+for arg in "$@"; do
+    case "$arg" in
+        --only=*) ONLY="${arg#--only=}" ;;
+        --table)  TABLE=1 ;;
+    esac
+done
+
+hms() {                       # 초 → "51초" · "2분41초"
+    if [ "$1" -lt 60 ]; then printf '%d초' "$1"
+    else printf '%d분%02d초' $(( $1 / 60 )) $(( $1 % 60 )); fi
+}
 
 step() {                      # step "이름" "명령..."
     local name="$1"; shift
+    IDX=$((IDX+1))
+    # ★ --only 로 뺀 것은 `건너뜀` 이다. **통과가 아니다.**
+    if [ -n "$ONLY" ] && ! printf '%s' "$name" | grep -qE "$ONLY"; then
+        NAMES+=("$name"); RESULTS+=("건너뜀"); NOTES+=("--only 로 뺐다"); SECS+=(0)
+        skip=$((skip+1)); return
+    fi
+    # ★ `── 이름` 형식은 건드리지 않는다. dms.py 의 봉인 파서가 이 줄로
+    #   단계를 가른다. 진행 표시는 아래 별도 줄에 둔다.
     printf '%s── %s%s\n' "$C" "$name" "$Z"
-    local out rc
-    out=$("$@" 2>&1); rc=$?
+    local t0 tmp out rc pid e
+    t0=$(date +%s); tmp=$(mktemp)
+    # ★ 2026-09-14. `</dev/null` 이 없어서 `verify.sh | tee` 로 돌리면
+    #   자식이 파이프 stdin 을 물려받았다. 큰 zip 을 푸는 단계가 뭔가
+    #   읽으려는 순간 죽었고 `ngii_road` · `jijeok` 이 그렇게 FAIL 났다.
+    #   단독 실행은 stdin 이 터미널이라 멀쩡했다 — **여기서만 죽었다.**
+    #   배치 파이프라인은 대화형 입력을 기대하지 않는다. 막는 것이 맞다.
+    "$@" >"$tmp" 2>&1 </dev/null &
+    pid=$!
+    if [ -t 1 ]; then         # 파이프로 넘길 때는 \r 을 안 쓴다
+        while kill -0 "$pid" 2>/dev/null; do
+            e=$(( $(date +%s) - t0 ))
+            printf '\r%s   [%2d/%2d]  %s%s\033[K' "$D" "$IDX" "$TOTAL" "$(hms $e)" "$Z"
+            sleep 1
+        done
+    fi
+    wait "$pid"; rc=$?
+    e=$(( $(date +%s) - t0 ))
+    printf '\r%s   [%2d/%2d]  %s%s\033[K\n' "$D" "$IDX" "$TOTAL" "$(hms $e)" "$Z"
+    out=$(cat "$tmp"); rm -f "$tmp"
+    SECS+=("$e")
     if [ $rc -eq 0 ]; then
         printf '%s   OK%s  %s\n' "$G" "$Z" "$(printf '%s' "$out" | tail -1)"
         NAMES+=("$name"); RESULTS+=("OK"); NOTES+=("$(printf '%s' "$out" | tail -1)")
         pass=$((pass+1))
     else
         printf '%s   실패%s\n' "$R" "$Z"
+        # ★ 2026-09-14. 전문을 파일로 남긴다. `tail -15` 만 찍다가
+        #   `jijeok` 의 진짜 사유를 못 봐서 전량(20분)을 **다섯 번** 돌렸다.
+        #   실패한 단계를 다시 돌려야만 사유를 볼 수 있는 보고는
+        #   보고가 아니다 — 그것이 이 저장소의 진짜 병목이었다.
+        # ★ 한글 이름은 전부 `_` 가 되어 서로 겹친다. 단계 번호를 앞에 붙인다.
+        _flog="/tmp/verify-$(printf '%02d' "$IDX")-$(printf '%s' "$name"                | tr -c 'A-Za-z0-9' '_' | cut -c1-24).log"
+        printf '%s\n' "$out" > "$_flog"
         printf '%s' "$out" | tail -15 | sed 's/^/     /'
+        printf '%s     전문 %s%s\n' "$D" "$_flog" "$Z"
         NAMES+=("$name"); RESULTS+=("실패"); NOTES+=("$(printf '%s' "$out" | tail -1)")
         fail=$((fail+1))
     fi
     echo
 }
 
-note() { NAMES+=("$1"); RESULTS+=("생략"); NOTES+=("$2"); skip=$((skip+1))
+note() { NAMES+=("$1"); RESULTS+=("생략"); NOTES+=("$2"); SECS+=(0); skip=$((skip+1))
          printf '%s── %s%s\n%s   생략%s  %s\n\n' "$C" "$1" "$Z" "$Y" "$Z" "$2"; }
 
 echo
 printf '%s저장소%s  %s\n' "$D" "$Z" "$ROOT"
+# ★ 2026-09-14. HEAD 를 찍는다. `dms.py seal --log` 가 이 줄을 읽어
+#   로그가 지금 나무를 말하는지 판정한다. 종전에는 파일 mtime 으로
+#   봤는데 **내용이 안 바뀌어도 잡혀서** 30분짜리 재실행을 시켰다.
+printf 'HEAD    %s%s\n' \
+  "$(git rev-parse --short HEAD 2>/dev/null || echo '(git 밖)')" \
+  "$(git status --porcelain 2>/dev/null | grep -q . && echo ' +미커밋' || true)"
 printf '%s노드  %s  %s\n' "$D" "$Z" "$(node --version 2>/dev/null || echo '없음')"
 printf '%suv    %s  %s\n\n' "$D" "$Z" "$(uv --version 2>/dev/null || echo '없음')"
 
@@ -204,35 +283,6 @@ else
         fi'
 fi
 
-# ── 결과 ─────────────────────────────────────────────────────
-echo
-printf '%s══════════════════════════════════════════════%s\n' "$D" "$Z"
-# ★ printf 의 %-34s 는 글자 수로 센다. 한글은 화면에서 두 칸을 먹으므로
-#   그대로 두면 표가 어긋난다. 화면 폭으로 직접 채운다.
-pad() {                       # pad <문자열> <목표 화면폭>
-    # ★ printf 의 %-34s 는 글자 수로 센다. 한글은 화면에서 두 칸을 먹으므로
-    #   그대로 두면 표가 어긋난다.
-    # ★ 한글 범위를 regex 로 잡는 방식은 로케일·collation 을 타서 못 쓴다.
-    #   바이트로 센다: UTF-8 에서 한글은 3바이트 · 화면 2칸, ASCII 는 1·1.
-    #   폭 = 글자수 + (바이트수 - 글자수) / 2  →  한글 한 자당 정확히 +1.
-    local s="$1" target="$2" chars bytes w
-    chars=${#s}
-    bytes=$(LC_ALL=C; printf '%s' "$s" | wc -c)
-    w=$(( chars + (bytes - chars) / 2 ))
-    printf '%s' "$s"
-    while [ "$w" -lt "$target" ]; do printf ' '; w=$((w+1)); done
-}
-for i in "${!NAMES[@]}"; do
-    case "${RESULTS[$i]}" in
-        OK)   c="$G" ;;
-        실패) c="$R" ;;
-        *)    c="$Y" ;;
-    esac
-    printf '  %s' "$c"; pad "${RESULTS[$i]}" 5; printf '%s ' "$Z"
-    pad "${NAMES[$i]}" 34
-    printf '%s%s%s\n' "$D" "${NOTES[$i]}" "$Z"
-done
-printf '%s══════════════════════════════════════════════%s\n' "$D" "$Z"
 # ── 데이터 레이크 정합 ──────────────────────────────────────────
 # ★ 선언과 실물이 갈리는 것을 fsck 가 다 보지 못했다 — 제공기관 state ·
 #   격리 잔재 · landing 우회 · ext 어휘 · norm 계보 다섯 축이 밖에 있었다.
@@ -248,6 +298,30 @@ step "레이크 정리 대상" uv run python tools/sweep.py
 #   --selftest 는 프로브가 살아 있는지 먼저 본다(양성 대조).
 step "검사가 죽었는가" uv run python tools/deadcheck.py --selftest
 
+# ── 소급 · 사본 (B5 ⓪ · 원칙 ⑥) ────────────────────────────────
+# ★ `delta` 는 봉인 뒤 바뀐 절만 센다. 전수는 `seal` 이 한 번 돈다.
+#   기준선이 없으면 전수가 곧 분모라고 스스로 말한다.
+step "강제자 소급 증분" uv run python tools/dms.py delta
+
+# ★ 문턱 40 에서 시작한다. 25 로 내리면 10군이다. 검사를 무르게 만드는
+#   것이 아니라 **지금 값에서 시작해 내리는 것**이 일이다(env_check 선례).
+step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
+
+# ★ 파일명의 날짜가 자료 기준일인가 내려받은 날인가. `naming` 규약은
+#   "다운로드일이 아니다" 라고 적었는데 `_plausible_date` 는 형식만 본다 —
+#   규약은 있고 강제자가 그 규약을 안 지켰다(원칙 ①·②). 대가가
+#   `its_nodelink` 258MB 두 벌이었다.
+# ★ 대장 글롭으로 보면 안 보인다. `files:` 가 한 벌을 못박아놔서 두 번째
+#   벌은 대장 밖이다. 이 도구는 **레이크를 직접 훑는다.**
+step "vintage 정합" uv run python tools/vintage_check.py --max 0
+
+# ★ norm 이 지금의 raw 에서 나온 것인가. **재현성 게이트다.**
+#   2026-09-14 까지 이 축은 verify.sh 밖에 있었다 — 손상이 늘어도 우는
+#   곳이 없었다. `--check` 를 고쳐 미등록까지 세게 만들어놓고 배선을
+#   안 했다. **세는 것과 거는 것은 다른 일이다.**
+# ★ 상한 래칫이다. 0 을 요구하면 영영 빨갛고, 빨간 게이트는 안 읽힌다.
+step "norm 계보 재현" uv run python -m firelane.prep --check --max 0
+
 
 # ── 배치가 세운 상태가 유지되는가 (B1/W4) ───────────────────────
 # ★ 적용 뒤 no-op 이 되는 배치 도구를 EXEMPT 로 재우면, 상태가 되돌아가도
@@ -260,7 +334,108 @@ step "루트 잔재·유령 면제" uv run python tools/navi_setup.py --check
 step "문서 제목 무결"      uv run python tools/docpatch.py check \
      docs/MASTER.md docs/PLAN.md docs/DECISIONS.md
 
-printf '  통과 %d · 실패 %d · 생략/참고 %d\n\n' "$pass" "$fail" "$skip"
+
+# ── 결과 ─────────────────────────────────────────────────────
+echo
+# ── 부분 실행이면 전수가 아니다 ──────────────────────────────
+# ★ 건너뛴 것은 통과가 아니다. 여기서 울지 않으면 `dms.py seal` 이
+#   반쪽 실행을 전수로 착각하고 봉인한다 — 가짜 증표가 된다.
+if [ -n "$ONLY" ]; then
+    # ★ 이 단계 자신이 --only 에 걸려 건너뛰면 안전장치가 무력해진다.
+    #   면제를 만들 때 자기 자신을 면제하는 것과 같은 형태다.
+    _only_keep="$ONLY"; ONLY=""
+    step "부분 실행" bash -c 'echo "--only 로 돌았다. 전수가 아니다."; exit 1'
+    ONLY="$_only_keep"
+fi
+
+
+printf '%s══════════════════════════════════════════════%s\n' "$D" "$Z"
+# ★ printf 의 %-34s 는 글자 수로 센다. 한글은 화면에서 두 칸을 먹으므로
+#   그대로 두면 표가 어긋난다. 화면 폭으로 직접 채운다.
+# ★ 화면폭은 바이트로 못 잰다. UTF-8 3바이트 중 두 칸인 것은 한글·한자뿐이고
+#   `↔ · — ─ ★` 는 3바이트인데 한 칸이다. 종전 식은 그것들을 두 칸으로 쳐서
+#   이름이 비고를 밀고 들어갔다.
+# ★ `grep -o '[가-힣]'` 로 세는 방식은 C 로케일에서 범위가 바이트로 풀려
+#   개수가 튄다. 로케일에 의존하는 판정은 기계마다 답이 다르다 — 안 쓴다.
+# ★ `east_asian_width` 는 유니코드 표준값이라 로케일을 안 탄다.
+#   이름 35개를 **한 번의 호출로** 다 재서 담는다.
+declare -A WIDE NOTECUT
+measure() {
+    command -v python3 >/dev/null 2>&1 || return 0
+    local i
+    while IFS=$'\t' read -r w s; do WIDE["$s"]=$w; done < <(
+        printf '%s\n' "${NAMES[@]}" | python3 -c '
+import sys, unicodedata
+for line in sys.stdin.read().split("\n")[:-1]:
+    print(sum(2 if unicodedata.east_asian_width(c) in "WF" else 1
+              for c in line), line, sep="\t")')
+    # ★ 비고 자르기도 글자 단위로. 바이트로 자르면 한글이 반토막 난다.
+    # ★ 앞공백도 턴다. 도구가 `  저장소가 아니거나…` 처럼 들여쓴 줄을 내는데
+    #   그대로 찍으면 이름 칸은 맞는데 비고가 두세 칸씩 밀려 보인다 —
+    #   정렬이 틀린 것처럼 보이는 진짜 원인이 이것이었다(pad 는 맞았다).
+    i=0
+    while IFS= read -r line; do NOTECUT["$i"]="$line"; i=$((i+1)); done < <(
+        printf '%s\n' "${NOTES[@]}" | python3 -c '
+import sys
+for line in sys.stdin.read().split("\n")[:-1]:
+    print(line.strip()[:64])')
+}
+
+pad() {                       # pad <문자열> <목표 화면폭>
+    local s="$1" target="$2" w
+    w=${WIDE["$s"]:-${#s}}
+    printf '%s' "$s"
+    while [ "$w" -lt "$target" ]; do printf ' '; w=$((w+1)); done
+}
+# ★ 실패를 먼저, 통과는 숫자로 접는다. 통과 29줄이 실패 6줄을 덮으면
+#   실패를 안 읽는다 — 원칙 ③ 의 화면판이다. 전체는 `--table`.
+row() {
+    local c="$1" mark="$2" i="$3"
+    printf '    %s%s%s ' "$c" "$mark" "$Z"; pad "${NAMES[$i]}" 34; printf ' '
+    printf '%s%s%s\n' "$D" "${NOTECUT[$i]:-${NOTES[$i]}}" "$Z"
+}
+measure                       # ★ row 를 부르기 전에 한 번
+printf '  %s · 통과 %d · 실패 %d · 생략 %d\n\n' \
+       "$(hms $(( $(date +%s) - T_ALL )))" "$pass" "$fail" "$skip"
+
+if [ "$fail" -gt 0 ]; then
+    printf '  %s실패 %d%s\n' "$R" "$fail" "$Z"
+    for i in "${!NAMES[@]}"; do
+        [ "${RESULTS[$i]}" = "실패" ] && row "$R" "✗" "$i"
+    done
+    echo
+fi
+if [ "$skip" -gt 0 ]; then
+    printf '  %s생략·건너뜀 %d%s\n' "$Y" "$skip" "$Z"
+    for i in "${!NAMES[@]}"; do
+        case "${RESULTS[$i]}" in 생략|건너뜀) row "$Y" "-" "$i" ;; esac
+    done
+    echo
+fi
+if [ "$TABLE" = "1" ]; then
+    printf '  %s전체%s\n' "$D" "$Z"
+    for i in "${!NAMES[@]}"; do
+        case "${RESULTS[$i]}" in
+            OK)   row "$G" "✓" "$i" ;;
+            실패) row "$R" "✗" "$i" ;;
+            *)    row "$Y" "-" "$i" ;;
+        esac
+    done
+    echo
+else
+    printf '  %s통과 %d — 전부 보려면 --table%s\n\n' "$D" "$pass" "$Z"
+fi
+
+# ★ 어디서 시간이 가는지 모르면 줄일 데를 못 고른다.
+printf '  %s오래 걸린 것%s\n' "$D" "$Z"
+for i in "${!NAMES[@]}"; do
+    printf '%06d\t%s\n' "${SECS[$i]:-0}" "${NAMES[$i]}"
+done | sort -rn | head -5 | while IFS=$'\t' read -r s n; do
+    [ "$((10#$s))" -gt 0 ] || continue
+    printf '    '; pad "$n" 34; printf ' %s%s%s\n' "$D" "$(hms $((10#$s)))" "$Z"
+done
+echo
+printf '%s══════════════════════════════════════════════%s\n' "$D" "$Z"
 
 if [ "$fail" -gt 0 ]; then
     printf '%s실패가 있다. 머지하지 마라.%s\n' "$R" "$Z"

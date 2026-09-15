@@ -288,3 +288,44 @@ def require_lake(*, need: tuple[str, ...] = ("raw",)) -> None:
     ]
     print("\n".join(lines))
     sys.exit(2)
+
+
+# ── 환경변수 접근자 ───────────────────────────────────────────
+# ★ 2026-09-14. `paths.py` 가 환경변수의 **유일한 독자**다. 목록을 세는
+#   검사는 이름을 바꾸면 눈이 먼다 — 같은 미탐을 하루에 세 번 봤다
+#   (`_os` 별칭 · `_j` 별칭 · `_meta` 글롭). 자리를 하나로 만드는 것이
+#   목록을 정교하게 만드는 것보다 세다.
+# ★ `env_check` 가 "paths.py 밖에서 os.environ 금지" 를 문법으로 강제한다.
+#   빠져나갈 구멍이 없는 규칙이라야 강제자가 성립한다.
+def env(key: str, default: str = "") -> str:
+    """일반 환경변수. 없으면 `default`."""
+    return os.environ.get(key, default)
+
+
+def flag(key: str) -> bool:
+    """`"1"` 스위치. 그 외 값은 전부 꺼짐으로 본다.
+
+    ★ `"true"` · `"yes"` 를 받지 않는다. 받기 시작하면 기계마다 다른
+      글자를 쓰고, 어느 것이 켜짐인지 아무도 모르게 된다.
+    """
+    return os.environ.get(key, "") == "1"
+
+
+class _Secret(str):
+    """값을 감추는 문자열. `print`·예외·로그에 통째로 안 실린다."""
+
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return f"<secret {len(self)}자>" if self else "<secret 없음>"
+
+
+def secret(key: str) -> _Secret:
+    """비밀. API 키 · 토큰.
+
+    ★ 일반 접근자로 읽으면 언젠가 예외 메시지나 디버그 출력에 값이
+      통째로 찍힌다. 갈라놓으면 그 사고가 구조적으로 안 난다.
+      ★ `str` 이므로 그대로 쓸 수 있다. 다만 `repr` 이 값을 안 낸다 —
+        `f"{k}"` 는 값이 나오고 `f"{k!r}"` 은 안 나온다. 로그는 후자를 쓴다.
+    """
+    return _Secret(os.environ.get(key, ""))

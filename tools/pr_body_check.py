@@ -33,6 +33,8 @@ import re
 import sys
 from pathlib import Path
 
+from firelane import paths  # noqa: F401  ★ import 만으로 .env 를 환경에 얹는다
+
 # 회피 문구. 이게 있으면 지목이 아니다.
 DODGE = re.compile(r"전체\s*(확인|리뷰|검토)|전부\s*(확인|봐)|알아서|아무데나|"
                    r"다\s*확인|특별히\s*없", re.I)

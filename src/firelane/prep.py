@@ -42,13 +42,10 @@ PARAM 없음
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-
-import yaml
 
 from firelane import encoding as enc
 from firelane import ledger as _led
@@ -64,17 +61,18 @@ STATE = ROOT / "data" / "_prep.json"
 TEXT_EXT = TEXT_EXT_PREP
 
 
-def sha256(p: Path, *, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with p.open("rb") as f:
-        while b := f.read(chunk):
-            h.update(b)
-    return h.hexdigest()
+from firelane.hashing import sha256 as _h_sha256
+
+
+def sha256(p, chunk: int = 1 << 20) -> str:
+    # ★ 2026-09-13. 구현은 `firelane.hashing` 한 곳이다.
+    #   이름은 호출부 때문에 남긴다 — 옮긴 것과 고친 것을
+    #   한 커밋에 섞지 않는다(원칙 ⑤).
+    return _h_sha256(p, chunk)
 
 
 def _sources() -> dict:
-    return yaml.safe_load(
-        (ROOT / "sources.yaml").read_text(encoding="utf-8")) or {}
+    return _led.load_sources()
 
 
 def migrated() -> set[str]:
@@ -107,16 +105,23 @@ def _load_state() -> dict:
 
 
 def _targets() -> list[tuple[str, str, dict]]:
-    """(key, 상대경로, 대장항목). 텍스트 파일만."""
+    """(key, 상대경로, 대장항목). 텍스트 파일만.
+
+    ★ 취득 사이드카는 `ledger.is_acquisition_meta` 로 뺀다. **`ingest` 와
+      같은 규칙을 봐야 한다.** 둘이 다른 집합을 보면 한쪽이 안 만든 것을
+      다른 쪽이 요구한다 — 2026-09-13 `hydrant_point` 가 그랬다.
+    """
     out = []
     for key, e in (_sources().get("datasets") or {}).items():
         files = _led.globs(e)
         for pat in files:
             if any(c in pat for c in "*?["):
                 for p in sorted(RAW.glob(pat)):
-                    if p.suffix.lower() in TEXT_EXT:
+                    if (p.suffix.lower() in TEXT_EXT
+                            and not _led.is_acquisition_meta(p)):
                         out.append((key, str(p.relative_to(RAW)), e))
-            elif Path(pat).suffix.lower() in TEXT_EXT:
+            elif (Path(pat).suffix.lower() in TEXT_EXT
+                    and not _led.is_acquisition_meta(pat)):
                 out.append((key, pat, e))
     return out
 
@@ -171,10 +176,23 @@ def run(*, apply: bool) -> int:
     return 1 if miss else 0
 
 
-def check() -> int:
-    """norm 이 지금의 raw 에서 나온 것인가. **재현성 게이트다.**"""
+def check(cap: int | None = None) -> int:
+    """norm 이 지금의 raw 에서 나온 것인가. **재현성 게이트다.**
+
+    ★ `cap` 은 허용 상한이다. 지금 값에서 시작해 내린다 — 0 을
+      요구하면 게이트가 영영 빨갛고, 빨간 게이트는 아무도 안 본다.
+    """
     st = _load_state()
     stale = broken = ok = 0
+    # ★ 2026-09-13. 종전에는 `st["files"]` 만 돌았다. **상태 파일에 없는
+    #   대상은 아예 안 셌다.** `정상 18` 의 18은 과거에 처리한 것 개수지
+    #   지금 있어야 할 것 개수가 아니었다 — 자기가 아는 것만 자기가 맞다고
+    #   확인하는 검사다(deadcheck ① 빈 그물). 대상 집합과 대조한다.
+    want = {rel for _k, rel, _e in _targets()}
+    unseen = sorted(want - set(st["files"]))
+    for rel in unseen:
+        print(f"  미등록  {rel}   대상인데 _prep.json 에 없다 — --apply 를 돌려라")
+    broken += len(unseen)
     for rel, rec in st["files"].items():
         src, dst = RAW / rel, NORM / rel
         if not dst.exists():
@@ -189,15 +207,80 @@ def check() -> int:
         else:
             ok += 1
     print(f"\n정상 {ok} · 낡음 {stale} · 손상 {broken}")
-    return 1 if (stale or broken) else 0
+    n = stale + broken
+    if cap is None:
+        return 1 if n else 0
+    # ★ 2026-09-14. 래칫. 지금 값에서 시작해 내린다 — 0 을 요구하면
+    #   영영 빨갛고, 빨간 게이트는 아무도 안 본다(원칙 ③).
+    if n > cap:
+        print(f"\u2717 상한 {cap} 을 넘었다 ({n}). 늘었다.")
+        return 1
+    if n < cap:
+        print(f"\u2605 상한 {cap} 보다 {cap - n} 적다 "
+              f"— verify.sh 를 `--max {n}` 으로 조여라")
+    return 0
 
+
+
+def prune(apply: bool = False) -> int:
+    """raw 에도 norm 에도 **없는** 상태 항목을 뺀다.
+
+    ★ 2026-09-14. `_prep.json` 이 레이크를 안 따라간다. `eais_bldg_ledger`
+      가 2026-09-07 에 후속(`eais_bldgledger_dm`)에 자리를 내줬는데 상태
+      파일만 옛 항목을 붙들고 있었고, `--check` 가 그것을 `누락` 으로 울었다.
+
+    ★ **둘 다 없을 때만** 뺀다. 하나라도 있으면 그것은 `--apply` 대상이지
+      제거 대상이 아니다 — 실물이 있는데 기록을 지우면 계보가 끊긴다.
+
+    ★ 지우기 전에 무엇을 왜 지우는지 낸다. 근거를 찾고 지우는 것과
+      지울 만해 보여서 지우는 것은 다르다.
+    """
+    # ★ 레이크가 안 붙었으면 **전부** 없어 보인다. 그대로 지우면 상태
+    #   파일이 통째로 날아간다. `lakecheck` 와 같은 방침이다 —
+    #   못 쟀는데 깨끗하다고 하면 안 되고, 못 쟀는데 지우면 더 안 된다.
+    if not RAW.is_dir() or not any(RAW.iterdir()):
+        print("✗ raw 가 없거나 비었다 — 레이크가 안 붙었다. 아무것도 안 뺀다.")
+        print("  ★ 0건이 아니라 실패다. 못 잰 것과 없는 것은 다르다.")
+        return 1
+    st = _load_state()
+    gone = [rel for rel in st["files"]
+            if not (RAW / rel).exists() and not (NORM / rel).exists()]
+    for rel in gone:
+        print(f"  제거  {rel}   raw·norm 둘 다 없다")
+    if not gone:
+        print("  뺄 것이 없다.")
+        return 0
+    # ★ 절반을 넘게 지우려 하면 그것은 정리가 아니라 사고다.
+    #   레이크가 다른 곳을 가리키거나 절반만 붙은 상태일 수 있다.
+    if len(gone) * 2 > len(st["files"]):
+        print(f"\n✗ {len(st['files'])}건 중 {len(gone)}건을 빼려 한다. 너무 많다.")
+        print("  ★ 레이크가 다른 곳을 가리키거나 반만 붙었을 수 있다.")
+        print("    `lakecheck` 로 먼저 보고, 정말 맞으면 손으로 지워라.")
+        return 1
+    if not apply:
+        print(f"\n{len(gone)}건. `--prune --apply` 로 뺀다.")
+        return 0
+    for rel in gone:
+        st["files"].pop(rel, None)
+    st["at"] = datetime.now(KST).isoformat(timespec="seconds")
+    STATE.write_text(json.dumps(st, ensure_ascii=False, indent=1) + "\n",
+                     encoding="utf-8")
+    print(f"\n{len(gone)}건을 뺐다 \u2192 {STATE}")
+    return 0
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--prune", action="store_true",
+                    help="raw·norm 둘 다 없는 상태 항목을 뺀다")
+    ap.add_argument("--max", type=int, default=None,
+                    help="허용 상한. \u2605 지금 값에서 시작해 내린다")
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
-    return check() if a.check else run(apply=a.apply)
+    if a.prune:
+        return prune(apply=a.apply)
+    return (check(a.max) if a.check
+            else run(apply=a.apply))
 
 
 if __name__ == "__main__":

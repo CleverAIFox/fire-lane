@@ -41,7 +41,6 @@ from __future__ import annotations
 
 import argparse
 import collections
-import hashlib
 import json
 import shutil
 import subprocess
@@ -83,12 +82,14 @@ NFA_COMPARE = {
 }
 
 
-def sha(p: Path) -> str:
-    h = hashlib.sha256()
-    with p.open("rb") as f:
-        for b in iter(lambda: f.read(1 << 20), b""):
-            h.update(b)
-    return h.hexdigest()
+from firelane.hashing import sha256 as _h_sha256
+
+
+def sha(p, chunk: int = 1 << 20) -> str:
+    # ★ 2026-09-13. 구현은 `firelane.hashing` 한 곳이다.
+    #   이름은 호출부 때문에 남긴다 — 옮긴 것과 고친 것을
+    #   한 커밋에 섞지 않는다(원칙 ⑤).
+    return _h_sha256(p, chunk)
 
 
 def git_sha() -> str:
@@ -150,7 +151,7 @@ def cmd_freeze(args) -> int:
         digests[f] = sha(dst / f)
 
     (dst / "nfa_compare.json").write_text(
-        json.dumps(NFA_COMPARE, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(NFA_COMPARE, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     digests["nfa_compare.json"] = sha(dst / "nfa_compare.json")
 
     rows = load(dst / "segments.geojson")
@@ -174,7 +175,7 @@ def cmd_freeze(args) -> int:
         ],
     }
     (dst / "meta.json").write_text(
-        json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     t = meta["tally"]
     (dst / "README.md").write_text(f"""# 베이스라인 `{args.tag}`
