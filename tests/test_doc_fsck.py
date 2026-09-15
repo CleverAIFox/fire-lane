@@ -237,3 +237,57 @@ def test_plan_status_probe_is_alive():
         "카나리아가 안 잡혔다. 어휘 밖 표식을 심었는데 검사가 조용하다 —\n"
         "  `_legend` 나 `_rows` 의 정규식이 문서 형식 변경으로 죽었다.\n"
         "  이 검사가 초록인 것은 PLAN 이 깨끗해서가 아니다.")
+
+
+def _proposal_rows(text: str) -> list[tuple[str, str, str]]:
+    """`§12 기획서 갱신 대상` 표의 (번호, 서술, 상태).
+
+    ★ §1 과 어휘가 다르다. 여기 상태 칸은 `완료` · `🟡` 를 쓴다.
+      그래서 §1 용 검사를 그대로 쓰면 안 되고, 범위도 따로 잡아야 한다.
+    """
+    k = text.find("| # | 기획서의 서술 |")
+    if k < 0:
+        return []
+    end = text.find("\n## ", k)
+    blk = text[k:] if end < 0 else text[k:end]
+    return [(m.group(1), m.group(2).strip(), m.group(3).strip())
+            for m in re.finditer(
+                r"^\| *(\d+\w*) *\| *([^|]*?) *\| *[^|]*? *\| *([^|]*?) *\|",
+                blk, re.M)]
+
+
+def test_proposal_table_has_no_closed_rows():
+    """`§12` 에 **닫힌 행이 남아 있으면 안 된다.**
+
+    ★ 2026-09-15 신설. §1 은 `✅` 를 잡는 검사가 생겼는데 §12 는 아무도
+      안 봤다. `완료` 행 여섯이 그대로 남아 있었고 그중 하나(`4a`)는
+      폐지된 `⬛` 를 **상태가 아닌 칸**에 달고 있었다. 표가 둘이면
+      검사도 둘이어야 한다 — 하나만 만들면 나머지가 그늘이 된다.
+
+    ★ 닫는 법은 §1 과 같다. 기획서를 실제로 고쳤으면 그 사실은
+      `MASTER` 에 있다. 여기는 **앞으로 고칠 것**만 담는다.
+    """
+    text = _plan()
+    bad = [r for r in _proposal_rows(text) if "완료" in r[2]]
+    assert not bad, (
+        f"§12 에 닫힌 행이 {len(bad)}개 남았다. **행을 지워라.**\n  "
+        + "\n  ".join(f"#{i} {t[:44]}" for i, t, _ in bad)
+        + "\n\n  갱신했으면 결과는 MASTER 에 있다. 이 절은 남은 것만 담는다.\n"
+          "  ★ 손으로 지운다. 지우는 배치는 저장소에 안 남긴다.")
+
+
+def test_proposal_probe_is_alive():
+    """카나리아 — 위 검사가 실제로 잡는가.
+
+    ★ §12 가 비면 `_proposal_rows` 가 0건을 내고 0건은 초록이다.
+      그것이 깨끗해서인지 파서가 죽어서인지 합성 행으로 가린다(§159).
+    """
+    text = _plan()
+    k = text.find("| # | 기획서의 서술 |")
+    assert k >= 0, "§12 표 머리를 못 찾았다 — 파서가 죽었다"
+    j = text.index("\n", text.index("\n", k) + 1)
+    synth = text[:j + 1] + "| 998 | 합성 카나리아 | 프로브 양성 대조 | 완료 |\n" + text[j + 1:]
+    caught = [r for r in _proposal_rows(synth) if "완료" in r[2]]
+    assert any(r[0] == "998" for r in caught), (
+        "카나리아가 안 잡혔다. 닫힌 행을 심었는데 검사가 조용하다 —\n"
+        "  `_proposal_rows` 의 정규식이 표 형식 변경으로 죽었다.")
