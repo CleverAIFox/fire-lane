@@ -1873,7 +1873,7 @@ uv run python tools/baseline.py diff 20260824-pre-nreg
 
 ```bash
 uv sync
-git config core.hooksPath .githooks   # 커밋 시점 방어. 클론 후 1회
+# 전역 훅이 저장소 `.githooks` 에 위임한다. **로컬로 박으면** 전역이 죽고 자격증명 검사가 사라진다
 export FIRE_LANE_DATA="<raw 상위 폴더 경로>"
 ```
 
@@ -3081,3 +3081,88 @@ style                                                판정 4색
 ★ `style` 은 `web/config.js` 에서 뽑아 싣는다. 앱이 `config.js` 를 직접 못
   읽는다 — `const CONFIG = {` 로 시작하는 스크립트라 ES 모듈이 아니다.
   **정본은 여전히 `config.js` 하나다**(§10-2).
+
+강제자  `tests/test_declaration_reality.py::test_step_declares_every_artifact_its_module_names`
+
+
+## 21. 감사 축 · 봉인
+
+강제자  `tools/verify.sh` — §21-1 의 축 도구 전부를 단계로 부른다
+
+### 21-1. 축 — 분모가 재현되는 것만 센다
+
+2026-09-13 까지 감사 분모는 "232건" 이었다. 그 내역이 저장소에 없다 —
+`BASELINE.txt` · `ROUNDS.md` 가 커밋되지 않았다. **재현되지 않는 숫자는
+분모가 아니다.** 같은 이유로 강제자 칸 "417절" 도 재현되지 않아 351 로
+갈아탔다.
+
+그래서 **축마다 도구가 세고, 도구가 `verify.sh` 에서 돈다.**
+
+| 축 | 도구 | 상한 |
+|---|---|---|
+| 강제자 칸(DMS) | `dms.py delta` | 증분만 — 봉인 뒤 바뀐 절 |
+| 죽은 강제자 참조 | `dms.py verify` | 0 |
+| 사본군 | `dupcheck.py --min 40` | `--max` 래칫 |
+| `os.environ` 독자 | `env_check.py` | 0 — `paths.py` 가 유일 독자 |
+| vintage 결함 | `vintage_check.py --max 0` | 0 |
+| norm 계보 | `prep --check --max 0` | 0 |
+| 레이크 L1~L6 | `lakecheck.py` | 0 |
+| 트리 전수 | `treecheck.py` | 0 |
+| 저장소 내 일회성 | `test_no_one_off_in_repo` | 0 |
+| 개행 생성기 | `test_generators_end_json_with_newline` | 0 |
+| `verify.sh` 빨강 | `dms.py seal` | 선언된 것만 |
+
+★ **축이 전부라는 보장은 없다**(원칙 ⑥). 2026-09-14 하루에 축 넷을 새로
+만들었고 **넷 다 결함을 냈다.** 사본 10군 34함수 · 저장소 내 일회성 34개 ·
+강제자 칸 351 · norm 미등록 10 — 232 에 없던 것들이다.
+
+★ 상한을 0 으로 걸지 않는다. 지금 값에서 시작해 내린다. 0 을 요구하면
+게이트가 영영 빨갛고, **빨간 게이트는 아무도 안 본다**(원칙 ③).
+
+강제자  `tools/verify.sh` — 위 도구를 전부 단계로 부른다
+
+### 21-2. 봉인 — 여기까지는 정합이 보장된다
+
+`dms.py seal` 이 `verify.sh` 전 단계를 돌리고 **전부 통과해야** 지문을
+박는다. `data/dms/SEAL.json` 에 절 540개의 (제목+본문) 해시 · 문서 4개
+해시 · 커밋 · **도구 자신의 해시**가 들어간다.
+
+```bash
+bash tools/verify.sh 2>&1 | tee /tmp/verify.log
+uv run python tools/dms.py seal --log /tmp/verify.log
+```
+
+봉인이 깨지는 조건은 셋이다.
+
+| 조건 | 결과 |
+|---|---|
+| 절 내용이 바뀌었다 | 그 절만 다시 본다 |
+| 절이 생겼다·사라졌다 | 그 절만 다시 본다 |
+| **도구가 바뀌었다** | 전수 재검사. 봉인 전체가 무효 |
+
+★ 셋째가 핵심이다. 판정 규칙이 바뀌면 옛 통과는 증표가 아니다.
+`golden.py lock` 이 코드 지문을 같이 넣는 것과 같은 이유다.
+
+★ 분모가 0 이 아니어도 봉인한다. **봉인은 완료가 아니라 기준선이다.**
+기준선이 서야 `delta` 가 증분만 볼 수 있다.
+
+강제자  `tools/verify.sh` §29 `강제자 소급 증분` — `dms.py delta`
+
+### 21-3. `RED.txt` — 선언은 유예지 면제가 아니다
+
+아는 빨강은 `data/dms/RED.txt` 에 `이름 | 사유` 로 적는다. **사유가 없으면
+선언이 아니다** — 이름만 적어 입을 막는 길을 닫는다.
+
+| 장치 | 왜 |
+|---|---|
+| 사유 필수 | 이름만 적으면 왜 빨간지가 사라진다 |
+| 3회째부터 표시 | 닫겠다고 적어놓고 안 닫는 것을 보이게 한다 |
+| **6회째면 봉인 거부** | 선언이 영구 면제가 되는 것을 막는다 |
+| **닫힌 선언은 봉인 거부** | 남은 줄이 진짜 빨강을 덮는다 |
+
+★ 마지막 둘이 `EXEMPT` 에서 배운 것이다. 2026-09-14 에 `EXEMPT` 여섯 중
+**다섯이 이미 `verify.sh` 가 부르는 도구**였는데 면제 목록에 남아 있었다.
+배선을 끊어도 우는 곳이 없었다. **사유를 적는 순간 그 항목은 검사에서
+빠지고, 빠진 것은 낡는다.**
+
+강제자  `tools/dms.py --selftest` — 닫힌 선언 카나리아 둘

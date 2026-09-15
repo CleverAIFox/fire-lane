@@ -36,12 +36,14 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import os
 import sys
 from collections import defaultdict
 from pathlib import Path
 
-import yaml
+from firelane import (
+    ledger,
+    paths,  # noqa: F401  ★ import 만으로 .env 를 환경에 얹는다
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 JUNK = {".tmp", ".crdownload", ".part", ".partial"}
@@ -62,7 +64,7 @@ def sha(p: Path) -> str:
 
 
 def led() -> dict:
-    return yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8")) or {}
+    return ledger.load_sources()
 
 
 def retired_names(y: dict) -> dict[str, str]:
@@ -209,8 +211,8 @@ def main() -> int:
     ap.add_argument("--yes", action="store_true", help="실제로 지운다")
     a = ap.parse_args()
 
-    D = os.environ.get("FIRE_LANE_DATA")
-    IN = os.environ.get("FIRE_LANE_INBOX")
+    D = str(paths.DATA or "")
+    IN = paths.env("FIRE_LANE_INBOX")
     if not D or not Path(D).is_dir():
         print("✗ FIRE_LANE_DATA 가 없거나 폴더가 아니다")
         print("  ★ 0건이 아니라 실패다 — 스캔을 못 했는데 깨끗하다고 하면 안 된다")

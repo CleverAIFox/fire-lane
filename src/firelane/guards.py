@@ -37,6 +37,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from firelane import paths
+
 # 폭·골격·판정에 실제로 읽히는 핵심 입력.
 CRITICAL = ("ngii1k", "road_link", "road_rw", "node_link", "cctv")
 
@@ -284,10 +286,9 @@ def warn_direct_call(mod: str) -> None:
 
     ★ 문구를 여섯 모듈에 복사하지 않는다. 복사한 순간 그것이 낡을 자리다.
     """
-    import os
     import sys as _sys
 
-    if os.environ.get("FIRE_LANE_STAGE"):
+    if paths.env("FIRE_LANE_STAGE"):
         return
     # ★ `python -m` 으로 부르면 `__name__` 이 "__main__" 이라 모듈명을 못 얻는다.
     #   호출부가 넘긴 값이 그것이면 `__spec__.name` 에서 되찾는다.

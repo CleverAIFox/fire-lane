@@ -186,7 +186,7 @@ def record(processed: Path, root: Path, step, expand) -> None:
         "outputs": {_key(root, p): fingerprint(p) for p in expand(step.produces)},
     }
     (Path(processed) / LINEAGE).write_text(
-        json.dumps(lg, ensure_ascii=False, indent=1, sort_keys=True),
+        json.dumps(lg, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
         encoding="utf-8")
 
 

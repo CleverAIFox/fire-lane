@@ -126,7 +126,7 @@ def cmd_lock(_args) -> int:
     GOLD.mkdir(parents=True, exist_ok=True)
     fp = fingerprint()
     (GOLD / "segments.fingerprint.json").write_text(
-        json.dumps(fp, ensure_ascii=False, indent=1), encoding="utf-8")
+        json.dumps(fp, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
     # ★ 2026-08-25. 코드 지문을 같이 남긴다.
     #   `lock` 의 뜻은 **"이 산출물이 지금 판정 코드의 정답이다"** 다.
@@ -268,14 +268,25 @@ def cmd_check(args) -> int:
 
     stale = _staleness()
     if stale and not getattr(args, "allow_stale", False):
-        print("★ 산출물이 판정 코드보다 낡았다. 이 대조는 아무것도 증명하지 않는다.")
+        print("★ 잠긴 코드 지문과 지금 코드가 다르다. 이 대조는 아무것도 증명하지 않는다.")
         # ★ 2026-08-31. `_staleness()` 가 파일별 내역까지 내면서 여러 줄이
         #   됐다. 종전처럼 전 줄에 접미사를 붙이면 "불변 … 가 최근이다" 라는
         #   모순된 문장이 나온다. **지저분한 경보는 안 읽힌다.**
-        for i, rel in enumerate(stale):
-            print(f"    {rel}" + ("  — segments.geojson 보다 최근이다" if i == 0 else ""))
-        print("\n  uv run fire-lane --from segments   ← 먼저 돌려라")
-        print("  (uv run 을 빼면 command not found 다. 진입점은 .venv/bin 에 있다)")
+        for rel in stale:
+            print(f"    {rel}")
+        # ★ 2026-09-14. 문구를 고쳤다. 종전에는 "산출물이 낡았다 ·
+        #   segments.geojson 보다 최근이다 · `--from segments` 를 먼저
+        #   돌려라" 였는데 **셋 다 사실이 아니다.** `_staleness()` 는
+        #   산출물도 mtime 도 안 본다 — `.code_fingerprint` 에 잠긴
+        #   지문과 지금 코드 지문만 견준다. 파이프라인을 몇 번 돌리든
+        #   안 닫힌다. 그 말을 믿고 전량을 세 번, 한 시간 넘게 돌렸다.
+        #   틀린 사유는 침묵보다 나쁘다 — 사람을 엉뚱한 작업으로 보낸다.
+        print("\n  ★ 파이프라인을 다시 돌려도 안 닫힌다. 산출물 문제가 아니다.")
+        print("    잠긴 코드 지문과 지금 코드 지문이 다르다는 뜻이다.")
+        print("\n  판정을 **바꿀 생각이 없었다면** — 재잠금한다:")
+        print("    uv run fire-lane --from segments    산출물을 지금 코드로 맞추고")
+        print("    uv run python tools/golden.py lock  기준선을 다시 찍는다")
+        print("\n  판정이 **바뀌었어야 한다면** — 무엇이 몇 구간 움직였는지 먼저 본다.")
         print("\n  정말 낡은 것을 알고 대조하려면 --allow-stale")
         return 1
     old = json.loads(p.read_text(encoding="utf-8"))

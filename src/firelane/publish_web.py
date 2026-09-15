@@ -125,7 +125,7 @@ def main():
         "orthoBounds":   _prev.get("orthoBounds"),
         "emdBounds": [[round(*emd.to_crs(4326).total_bounds[:1], 4), round(emd.to_crs(4326).total_bounds[1], 4)],
                       [round(emd.to_crs(4326).total_bounds[2], 4), round(emd.to_crs(4326).total_bounds[3], 4)]],
-    }, ensure_ascii=False, indent=2), encoding="utf-8")
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     # 건물은 스코프 전체를 덮는다. 동명동만 자르면 안전센터 주변이
     # 길만 남아 3D 가 안 선다. (2,518동 → 5,713동)
@@ -309,7 +309,7 @@ def main():
     _sch["scope"] = "web — 표출용 사본. processed 전용 컬럼은 뺐다"
     _sch["dropped_from_processed"] = _dropped
     (W/"segments.schema.json").write_text(
-        json.dumps(_sch, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(_sch, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     # ── 차량 제원 대장 → 화면 ──────────────────────────────────
     # ★ 2026-09-01. 화면이 최소회전반경 7.30m 을 확정값처럼 띄우는데
@@ -338,7 +338,7 @@ def main():
         {k: _spec[k] for k in _keep if k in _spec}
         | {"_note": ("성격 선언이다. *_verified 가 false 면 그 값으로 "
                      "화면이 말하지 않는다 — DECISIONS 81 · 86-5")},
-        ensure_ascii=False, indent=2), encoding="utf-8")
+        ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"  차량 제원 대장 발행 · 회전반경 검증 "
           f"{'O' if _spec.get('turn_radius_verified') else 'X'}")
     _missing = sorted(_pub - set(_sch["fields"]))
@@ -388,7 +388,7 @@ def main():
                             "reachable": int(r.reachable)}
                 for r in _d.itertuples()}
         (W / "route_vehicle.json").write_text(
-            json.dumps(_out, ensure_ascii=False, separators=(",", ":")),
+            json.dumps(_out, ensure_ascii=False, separators=(",", ":")) + "\n",
             encoding="utf-8")
         print(f"  route_vehicle.json {len(_out):,}구간")
     else:

@@ -241,14 +241,12 @@ def main():
         z0 = TILE_Z[-1]; n = 2 ** z0; sp = 2 * ORIGIN / n
         xs = [t[1] for t in bounds_xyz if t[0] == z0]
         ys = [t[2] for t in bounds_xyz if t[0] == z0]
-        def _ll(mx, my):
-            return (mx / R * 180 / math.pi,
-                    (2 * math.atan(math.exp(my / R)) - math.pi / 2) * 180 / math.pi)
+        from firelane.mercator import to_lonlat as _ll
         w, s_ = _ll(-ORIGIN + min(xs) * sp, ORIGIN - (max(ys) + 1) * sp)
         e, n_ = _ll(-ORIGIN + (max(xs) + 1) * sp, ORIGIN - min(ys) * sp)
         v = json.loads(vj.read_text(encoding="utf-8"))
         v["orthoBounds"] = [round(w, 4), round(s_, 4), round(e, 4), round(n_, 4)]
-        vj.write_text(json.dumps(v, ensure_ascii=False, indent=2), encoding="utf-8")
+        vj.write_text(json.dumps(v, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     size = sum(f.stat().st_size for f in tdir.rglob("*.jpg")) / 1e6
     mf = OUT / "_manifest.json"

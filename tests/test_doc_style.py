@@ -281,6 +281,23 @@ def test_decisions_entries_carry_a_date():
         + "\n".join(bad[:20]))
 
 
+
+# ★ 줄머리 칸. 뒤에 한글 조사가 붙으면 산문이다 — `강제자가 없었다`
+_FIELD = re.compile(r"^\s{0,6}(?:[-*>]\s*)?\*{0,2}강제자\*{0,2}(?![가-힣])")
+
+
+def _has_enforcer_field(body) -> bool:
+    """절 본문에 강제자 **칸**이 있는가. 산문 언급은 칸이 아니다."""
+    fence = False
+    for line in body:
+        if line.lstrip().startswith(("```", "~~~")):
+            fence = not fence
+            continue
+        if not fence and _FIELD.match(line):
+            return True
+    return False
+
+
 def test_recent_decisions_name_their_enforcer():
     """각 결정이 '누가 이것을 지키는가' 를 밝히는가.
 
@@ -302,7 +319,11 @@ def test_recent_decisions_name_their_enforcer():
         m = re.search(r"^> (\d{4}-\d{2}-\d{2})", text, re.M)
         if not m or m.group(1) < TEMPLATE_FROM:
             continue
-        if "강제자" not in text:
+        # ★ 2026-09-13. 종전에는 `if "강제자" not in text` 였다. 부분문자열이라
+        #   산문 "**강제자가 없었다.**" 로도 통과했다 — DECISIONS 에 23곳.
+        #   검사 자기 범위 안에서만 35절이 칸 없이 초록이었다. 원칙 ② 그 자체다.
+        #   이제 **줄머리 칸**만 센다. 코드펜스 안은 칸이 아니다.
+        if not _has_enforcer_field(body):
             bad.append(f"  DECISIONS.md:{n}  ## {title[:56]}")
     assert not bad, (
         f"{TEMPLATE_FROM} 이후 항목에 `강제자` 기술이 없다. {len(bad)}건\n"

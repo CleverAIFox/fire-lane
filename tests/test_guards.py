@@ -2175,3 +2175,187 @@ def test_strict_lint_args_have_one_home():
         "엄격 린트 인자가 두 곳에 있다\n"
         + "\n".join("  · " + b for b in bad)
         + "\n\n  정본은 .ruff-strict.toml 다. 둘 다 @ 로 읽는다.")
+
+
+def test_generators_end_json_with_newline():
+    """JSON 을 쓰는 코드가 **개행으로 끝맺는가.**
+
+    ★ 산출물이 아니라 **생성기**를 본다. 산출물을 보면 `data/` 가 없는
+      기계에서 이 검사가 조용히 통과한다 — 빈 그물이다(deadcheck ①).
+
+    2026-09-13. 훅이 생성물 22건을 개행 없음으로 잡았다. 파일만 고치면
+    다음 생성 때 돌아온다. 규약은 있었고 생성 시점 강제자가 없었다(원칙 ①).
+
+    ★ 2026-09-14. 문자열 대조를 AST 로 바꿨다. 종전 판은 `json.dumps(`
+      라는 **글자**를 셌고, `terrain.py` 가 `import json as _j` 로 별칭을
+      쓰는 바람에 `view.json` 을 개행 없이 쓰는 것을 못 봤다.
+      같은 별칭 미탐을 이 세션에 `env_check` 에서도 냈다 — 이름을 세는
+      검사는 이름을 바꾸면 눈이 먼다.
+    """
+    bad = []
+    for p in sorted((ROOT / "src").rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py")):
+        if "batches" in p.parts:
+            continue
+        for line in _json_writes_without_newline(p.read_text(encoding="utf-8")):
+            bad.append(f"  {p.relative_to(ROOT)}:{line}")
+    assert not bad, (
+        "JSON 을 쓰면서 개행을 안 붙인다. " + str(len(bad)) + "건\n"
+        + "\n".join(bad[:20])
+        + "\n\n  `json.dumps(x)` → `json.dumps(x) + \"\\n\"`\n"
+        "  ★ 산출물을 고치지 마라. 다음 생성 때 돌아온다.")
+
+
+def _json_writes_without_newline(src: str) -> list[int]:
+    """`write_text(<json 모듈>.dumps(...))` 인데 개행을 안 붙인 줄.
+
+    ★ `import json as _j` 를 따라간다. 별칭을 안 따라가면 검사가 **좁아지고**,
+      좁아진 검사는 숫자가 줄어서 오히려 일이 잘 되는 것처럼 보인다.
+    """
+    import ast
+
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return []
+    names = {"json"}
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            for al in n.names:
+                if al.name == "json":
+                    names.add(al.asname or "json")
+    out = []
+    for n in ast.walk(tree):
+        if not (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                and n.func.attr == "write_text" and n.args):
+            continue
+        arg = n.args[0]
+        if (isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.Add)
+                and isinstance(arg.right, ast.Constant)
+                and str(arg.right.value).endswith("\n")):
+            continue                      # 개행이 붙어 있다
+        for sub in ast.walk(arg):
+            if (isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute)
+                    and sub.func.attr == "dumps"
+                    and isinstance(sub.func.value, ast.Name)
+                    and sub.func.value.id in names):
+                out.append(n.lineno)
+                break
+    return out
+
+
+def test_json_newline_probe_follows_aliases():
+    """★ 위 검사가 **별칭을 따라가는가.** 카나리아다.
+
+    2026-09-14. `json.dumps` 라는 글자만 세던 판이 `_j.dumps` 를 못 봤다.
+    프로브가 좁아지는 쪽으로 망가지면 결함 수가 줄어 통과한다 —
+    0건이 청결인지 죽음인지 가를 장치가 없으면 그렇게 된다.
+    """
+    forms = {
+        "json.dumps": "import json\np.write_text(json.dumps(x))\n",
+        "별칭 _j.dumps": "import json as _j\np.write_text(_j.dumps(x))\n",
+    }
+    blind = [k for k, code in forms.items()
+             if not _json_writes_without_newline(code)]
+    assert not blind, (
+        "개행 프로브가 이 형태를 못 본다: " + ", ".join(blind)
+        + "\n  이름을 세는 검사는 이름을 바꾸면 눈이 먼다.")
+    ok = "import json\np.write_text(json.dumps(x) + \"\\n\")\n"
+    assert not _json_writes_without_newline(ok), (
+        "개행이 붙어 있는데 결함으로 셌다 — 오탐이다.")
+
+def test_interrupt_does_not_keep_work():
+    """중단된 `ingest` 가 `.work` 를 남기지 않는가. **모양을 본다.**
+
+    ★ 실제 Ctrl-C 를 재현하지 않는다. 16분짜리를 CI 에서 끊는 검사는
+      그 자체가 불안정하다 — 불안정한 검사는 무시당하고, 무시당하는
+      검사는 없는 검사다(원칙 ③).
+
+    2026-09-13. `seal` 을 Ctrl-C 로 끊었더니 `verify.sh` → `fire-lane` 이
+    압축 해제 도중 죽었고, 반쯤 풀린 `.work` 를 다음 실행이 캐시로 믿어
+    `ngii_road` 에서 죽었다. 16분 36초를 버렸다. 정리 규율은 있었는데
+    **그 줄까지 도달해야 도는 규율**이었다.
+    """
+    src = (ROOT / "src" / "firelane" / "ingest.py").read_text(encoding="utf-8")
+    bad = []
+    if "finally:" not in src:
+        bad.append("  ingest 에 finally 가 없다")
+    if "if not _done:" not in src:
+        bad.append("  정상 종료 표식(_done)이 없다")
+    i, j = src.find("try:"), src.find("finally:")
+    k = src.find('for key, e in cfg["datasets"].items():')
+    if not (0 <= i < k < j):
+        bad.append("  소스 루프가 try/finally 안에 없다")
+    assert not bad, (
+        "중단되면 `.work` 가 남는다.\n" + "\n".join(bad)
+        + "\n\n  반쯤 풀린 압축 해제분을 다음 실행이 캐시로 믿는다.\n"
+        "  16분짜리 파이프라인이 그것 때문에 죽는다.")
+
+
+def test_landing_disposition_needs_why():
+    """`landing_disposition` 의 모든 항목이 사유를 갖는가.
+
+    ★ `disposed()` 가 여기 적힌 것을 `lakecheck L3` 에서 뺀다. 그리고
+      2026-09-13 부터 **글롭을 받는다** — `file: "*"` 한 줄이면 그
+      검사가 통째로 꺼진다. 사유를 강제하면 그것을 적는 순간 눈에 띈다.
+      `RED.txt` 에서 "사유 없는 이름은 선언이 아니다" 라고 한 것과 같다.
+    """
+    import yaml
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    items = (y.get("landing_disposition") or {}).get("items") or []
+    bad = [str((it or {}).get("file", "(이름 없음)")) for it in items
+           if not str((it or {}).get("why") or "").strip()]
+    assert not bad, (
+        "처분에 사유가 없다. 그 줄은 검사를 끄기만 한다.\n  "
+        + "\n  ".join(bad)
+        + "\n\n  무엇을 왜 뺐는지 `why` 에 적어라.")
+
+
+def test_verify_background_steps_close_stdin():
+    """`verify.sh` 가 자식을 띄울 때 **stdin 을 막는가.**
+
+    ★ 2026-09-14. `step()` 이 `"$@" >"$tmp" 2>&1 &` 로 띄우면서 stdin 을
+      안 막았다. `verify.sh | tee` 로 돌리면 자식이 파이프 stdin 을
+      물려받고, 큰 zip 을 푸는 단계가 뭔가 읽으려는 순간 죽는다.
+      `ngii_road` · `jijeok` 이 그렇게 FAIL 났고 **단독 실행은 멀쩡했다** —
+      그래서 원인을 찾는 데 전량(20분)을 다섯 번 돌렸다.
+
+    ★ 모양을 고정한다. 실제로 파이프를 만들어 재현하는 검사는 20분이
+      걸리고, 20분짜리 검사는 아무도 안 돌린다.
+    """
+    import re
+    src = (ROOT / "tools" / "verify.sh").read_text(encoding="utf-8")
+    bad = [ln.strip() for ln in src.splitlines()
+           if re.search(r"&\s*$", ln) and "</dev/null" not in ln
+           and not ln.lstrip().startswith("#")
+           and "&&" not in ln]
+    assert not bad, (
+        "백그라운드로 띄우면서 stdin 을 안 막는다.\n  "
+        + "\n  ".join(bad)
+        + "\n\n  `</dev/null` 을 붙여라. 배치 파이프라인은 대화형\n"
+        "  입력을 기대하지 않는다 — 물려주면 파이프에서 죽는다.")
+
+
+def test_unconsumed_sources_are_on_demand():
+    """판정이 안 읽는 소스가 **전량에서 도는가.**
+
+    ★ 2026-09-14. `jijeok` 이 1.0GB 를 풀어 630만 행을 파싱하는데 소비자가
+      `tools/` 의 탐색 도구 둘뿐이었다. 8GB 기계에서 전량이 그것 때문에
+      OOM 으로 죽었고, 같은 증상을 두 번 오진하며 20분짜리를 다섯 번 돌렸다.
+
+    ★ `feeds` 가 `tools/` 뿐이면 파이프라인이 그 산출물을 안 쓴다는 뜻이다.
+      그런 소스는 `on_demand` 라야 한다 — 판정이 안 읽는 것을 판정
+      파이프라인이 매번 읽을 이유가 없다.
+    """
+    import yaml
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    bad = []
+    for k, e in (y.get("datasets") or {}).items():
+        feeds = e.get("feeds") or []
+        if not feeds or not all(str(f).startswith("tools/") for f in feeds):
+            continue
+        if not e.get("on_demand"):
+            bad.append(f"  {k}   feeds={feeds}")
+    assert not bad, (
+        "판정이 안 읽는데 전량에서 도는 소스가 있다.\n" + "\n".join(bad)
+        + "\n\n  `on_demand: true` 를 달아라. 필요할 때\n"
+        "  `uv run python -m firelane.ingest --only <키>` 로 만든다.")

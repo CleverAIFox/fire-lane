@@ -62,6 +62,8 @@ import sys
 import time
 from pathlib import Path
 
+from firelane import paths  # noqa: F401  ★ import 만으로 .env 를 환경에 얹는다
+
 ROOT = Path(__file__).resolve().parents[1]
 
 

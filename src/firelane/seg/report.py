@@ -140,7 +140,8 @@ def nfa_compare(g):
                 "rows": sorted(_nfa_rows, key=lambda x: abs(x["dev_m"])),
             }
             (OUT / "nfa_compare.json").write_text(
-                _json.dumps(_out, ensure_ascii=False, indent=2), encoding="utf-8")
+                _json.dumps(_out, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8")
             print(f"  절대편차 합 {_abs}m · {len(_nfa_rows)}구간"
                   f"  → {(OUT / 'nfa_compare.json').name}")
         else:
@@ -277,6 +278,6 @@ def write_outputs(g):
                    "intersection_exclusion_m": XSEC_EXCL, "wmax_cap_m": WMAX_CAP,
                    "min_seg_len_m": MIN_SEG_LEN, "snap_tol_m": SNAP_TOL},
         "verdict_rule": list(VERDICT_RULE),
-    }, ensure_ascii=False, indent=2), encoding="utf-8")
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(g.verdict.value_counts().to_string())
     print(f"\n→ segments {len(g)} · 경로사용 {(g.route_usage>0).sum()} · sha {h[:16]}")

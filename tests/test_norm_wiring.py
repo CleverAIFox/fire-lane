@@ -156,3 +156,36 @@ def test_norm_naming_is_stricter_than_raw():
         "  norm 의 존재 이유가 BOM · cp949 · CRLF 를 한 자리에서 없애는 것이다"
         "(PLAN #16).")
     re.compile(lay["naming"])  # 깨진 정규식이면 여기서 죽는다
+
+
+def test_data_globs_skip_acquisition_sidecars():
+    """자료 글롭이 취득 사이드카를 먹지 않는가.
+
+    ★ 레이크 없이 돈다. 가짜 트리를 만들어 규칙만 본다 — 이 파일의
+      다른 검사와 같은 방침이다(CI 에는 레이크가 없다).
+
+    2026-09-13. `**/safety_hydrant_point_*` 가 확장자를 안 가려
+    `_meta/….meta.json` 까지 잡았다. `prep` 은 그것을 norm 에 안 만들고
+    `ingest` 는 요구해서, 파이프라인이 16분 돌다 거기서 죽었다.
+    **레이크에 `_meta` 는 하나뿐이었다** — 하나가 열이 되기 전에 막는다.
+    """
+    import tempfile
+
+    from firelane import ledger as L
+
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / "safety" / "_meta").mkdir(parents=True)
+        body = root / "safety" / "safety_hydrant_point_jngj_20240207.csv"
+        meta = root / "safety" / "_meta" / "safety_hydrant_point_jngj_20260830.meta.json"
+        body.write_text("x\n", encoding="utf-8")
+        meta.write_text("{}\n", encoding="utf-8")
+        got = L.paths_of({"files": ["**/safety_hydrant_point_*"]}, root)
+
+    names = sorted(p.name for p in got)
+    assert names == [body.name], (
+        "자료 글롭이 취득 사이드카를 먹었다.\n  " + "\n  ".join(names)
+        + "\n\n  `_meta/` 와 `*.meta.json` 은 취득 기록이지 자료가 아니다.\n"
+        "  `ledger.is_acquisition_meta` 가 거른다 — prep 과 ingest 가\n"
+        "  같은 규칙을 봐야 한다. 다른 집합을 보면 한쪽이 안 만든 것을\n"
+        "  다른 쪽이 요구한다.")

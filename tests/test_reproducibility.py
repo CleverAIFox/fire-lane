@@ -203,10 +203,6 @@ def test_no_fifth_doc():
         #   GitHub 이 PR 화면에 자동으로 채워 넣는 폼이고, 내용의 정본은
         #   MASTER §12 다. 강제자는 tools/pr_body_check.py 가 따로 든다.
         ".github/pull_request_template.md",
-        # ★ 2026-09-10. 규약이 아니라 **폴더 사용법**이다 —
-        #   일회성 배치와 재현적 도구를 가르는 판별식을 적는다.
-        #   src/firelane/README.md(대장 작성법)와 같은 성격이다.
-        "tools/batches/README.md",
     }
     # ★ 백업·캐시는 저장소 내용이 아니다. `.gitignore` 가 이미 빼는 것들이고
     #   여기서도 같은 선을 긋는다 — 안 그러면 배포 스크립트가 만든
@@ -521,3 +517,28 @@ def test_paths_match_layer_table():
         assert m and ("DATA" in m.group(1) or "_legacy_raw" in m.group(1)), (
             f"{name} 이 FIRE_LANE_DATA 를 타지 않는다. "
             "저장소 밖에 둘 수 있어야 한다 (MASTER §6-2)")
+
+
+def test_no_one_off_in_repo():
+    """일회성 스크립트가 저장소에 사는가.
+
+    ★ 판별식은 README 에 있다 — 내년에도 돌릴 일이 없으면 저장소 밖이다.
+      재현적 도구는 `tools/` 에 남고 `verify.sh` 가 부른다.
+
+    2026-09-13. 종전 규약은 `tools/batches/` 에 **남기라고** 적었고 34개가
+    쌓였다. 그 규약에는 강제자가 없어서 디렉터리를 통째로 지워도 `pytest` ·
+    `refcheck` · `doc_fsck` 중 어느 것도 울지 않았다. 규약만 있고 그것을
+    지키게 하는 것이 없으면 안 지켜진다.
+    """
+    import re
+    bad = []
+    if (ROOT / "tools" / "batches").exists():
+        bad.append("  tools/batches/ 가 있다 — 저장소 밖으로 옮겨라")
+    pat = re.compile(r"^b\d+[_.]")
+    for p in sorted((ROOT / "tools").rglob("*")):
+        if p.is_file() and pat.match(p.name):
+            bad.append(f"  {p.relative_to(ROOT)} — 배치 번호가 붙어 있다")
+    assert not bad, (
+        "일회성 스크립트가 저장소에 있다.\n" + "\n".join(bad)
+        + "\n\n  `~/oneoff/<저장소>/` 에서 돌리고 커밋하지 않는다.\n"
+        "  무엇을 왜 바꿨는지는 DECISIONS 가 정본이다 — 두 벌로 두지 않는다.")

@@ -331,15 +331,37 @@ def globs(e: dict) -> list[str]:
     return [f"**/{s}_*" for s in stems]
 
 
+# ★ 취득 사이드카. **자료가 아니다.**
+#   2026-09-13. `**/safety_hydrant_point_*` 가 확장자를 안 가려서
+#   `_meta/safety_hydrant_point_jngj_20260830.meta.json` 까지 잡았다.
+#   `prep` 은 그것을 norm 에 안 만들고 `ingest` 는 요구해서 파이프라인이
+#   16분 돌다 죽었다. 파일은 레이크 전체에 하나뿐이었지만 고칠 것은
+#   파일이 아니라 글롭이다 — 하나 더 생기는 날 똑같이 터진다.
+META_DIR = "_meta"
+
+
+def is_acquisition_meta(p) -> bool:
+    """취득 기록인가. `prep` 과 `ingest` 가 **같은 규칙**을 봐야 한다.
+
+    ★ `pathlib` 을 안 쓴다. 이 모듈은 그것을 import 하지 않고, 검사
+      하나 때문에 import 를 늘리면 계층 검사가 그 이유를 못 읽는다.
+    """
+    s = "/" + str(p).replace("\\", "/").lower()
+    return f"/{META_DIR}/" in s or s.endswith(".meta.json")
+
+
 def paths_of(e: dict, root) -> list:
-    """대장 항목 → 실물 경로(정렬·중복 제거). 글롭이 아닌 것도 받는다."""
+    """대장 항목 → 실물 경로(정렬·중복 제거). 글롭이 아닌 것도 받는다.
+
+    ★ 취득 사이드카는 뺀다. 자료 글롭은 자료만 잡는다.
+    """
     out = []
     for pat in globs(e):
         if any(c in pat for c in "*?["):
             out += list(root.glob(pat))
         elif (root / pat).exists():
             out.append(root / pat)
-    return sorted(set(out))
+    return sorted({p for p in set(out) if not is_acquisition_meta(p)})
 
 
 def crs_of(e: dict) -> str:
@@ -426,3 +448,40 @@ def entry_of(rel: str) -> tuple[str | None, dict]:
             best = (len(st), hit)
     return best[1] if best else (None, {})
 
+
+def yaml_span(s: str, key: str) -> tuple[int, int, str]:
+    """`sources.yaml` 원문에서 `  <key>:` 블록의 (시작, 끝, 본문).
+
+    ★ 2026-09-13. `ledger_feeds` · `ledger_schema` 가 같은 구현을 한 벌씩
+      들고 있었다(96노드). `sources.yaml` 의 들여쓰기 규약을 아는 것은
+      대장 모듈의 일이다 — 두 벌이면 규약이 바뀌는 날 한쪽만 따라온다.
+
+    ★ 원문을 그대로 다루는 이유는 `yaml.safe_load` → `dump` 왕복이
+      주석과 블록 스칼라를 잃기 때문이다. 대장은 사람이 읽는 문서다.
+    """
+    import re as _re
+
+    m = _re.search(rf"^  {_re.escape(key)}:\n", s, _re.MULTILINE)
+    if not m:
+        return -1, -1, ""
+    b = _re.search(rf"^  {_re.escape(key)}:\n((?:    .*\n|      .*\n|\n)*)",
+                   s, _re.MULTILINE)
+    return m.end(), m.end() + len(b.group(1)), b.group(1)
+
+
+def load_sources() -> dict:
+    """`sources.yaml` 을 읽는 **유일한 자리.**
+
+    ★ 2026-09-14. 같은 일을 하는 함수가 다섯이었다 —
+      `prep._sources` · `sweep.led` · `vintage_check._sources` ·
+      `acquire._yaml` · `lakecheck.led`.
+
+    ★ 그런데 **다섯이 같은 함수가 아니었다.** 셋은 `or {}` 가 있고
+      둘은 없다. 빈 파일일 때 한쪽은 `{}` 를, 다른 쪽은 `None` 을 낸다.
+      사본을 합치는 것이 아니라 **갈린 동작을 하나로 세우는 것**이다.
+      `dupcheck` 가 "합칠지는 사람이 정한다" 고 한 자리가 이런 곳이다.
+
+    ★ `ledger` 가 `sources.yaml` 의 주인이다. 읽는 법도 여기 있어야 한다.
+    """
+    return yaml.safe_load(
+        (paths.ROOT / "sources.yaml").read_text(encoding="utf-8")) or {}

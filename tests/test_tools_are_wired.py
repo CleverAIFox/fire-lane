@@ -37,17 +37,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 # 자동 실행하지 않는 것. 사유 없이 늘리지 않는다.
+# ★ 2026-09-13. 여섯을 뺐다 — verify.sh 가 `step` 으로 **실제로 부르는데**
+#   면제 목록에 남아 있었다. `--check` 로 강제자 승격만 하고 여기서 안 뺐다.
+#   그 상태에서는 verify.sh 배선을 끊어도 우는 곳이 없다. 면제가 사각지대다.
 EXEMPT = {
     "widen": "넓혔을 때를 **재는** 도구다. 지금 상태에서 항상 수십 건을 내므로\n             배선하면 매번 뜨는 경고가 되고, 그러면 아무도 안 읽는다",
     "codepatch": "배치 스크립트가 import 하는 **라이브러리**다. 실행 대상이 아니다",
 
     "kpi": "진입 실패율 산출. 발표에서 인용할 숫자라 사람이 조건과 함께 부른다",
     "its_linkmap": "ITS 소통정보 링크 ↔ seg_uid 대조표. 외부 API 규격 확인용이라 CI 에 못 건다",
-    "install_navi": "내비 소스 설치. 1회성 배치이며 멱등이다",
-    "pages_add_navi": "pages.yml 에 내비 빌드 스텝. 1회성 배치이며 멱등이다",
     "matchcheck": "Mapbox Map Matching 커버리지 대조. 토큰 필요·외부 API 라 CI 에 못 건다",
     "bridge_audit": "다리 분석으로 실측 우선순위 산출. 사람이 답사 계획을 세우려고 부른다",
-    "navi_setup": "저장소 정리. 1회성 배치이며 멱등이다. 자동 실행 대상이 아니다",
     # ── 조사 도구. 사람이 판단하려고 부른다. 아무것도 안 바꾼다(README).
     "clearance_probe": "최대내접원 방식 대조. 2026-08-22 기각(DECISIONS §32)",
     "corner_probe": "코너 기하 조사",
@@ -60,11 +60,9 @@ EXEMPT = {
     "wmax_audit": "width_max_m 결손이 판정에 미치는 규모",
     # ── 일회성 이관. 돌리고 나면 no-op 이다(R8).
     "ledger_feeds": "feeds 산문 → 소비자 리스트. 이관 완료",
-    "ledger_fields": "대장 별칭 필드 통합. 이관 완료",
     "ledger_stem": "대장 stem 이관. 완료",
     "ledger_schema": "실물에서 스키마 추출. --check 는 사람이 부른다",
     "migrate_names": "raw 개명 백필",
-    "docpatch": "문서 절 단위 멱등 교체. 배치 작업 도구",
     # ── 사람이 부르는 것. 자동으로 돌면 안 되는 이유가 있다.
     "pull_data": "데이터 반입. raw 를 건드린다",
     "intake": "Downloads → landing 게이트",
@@ -75,7 +73,6 @@ EXEMPT = {
     "baseline": "봉인. 사람이 시점을 정한다",
     "scan_data": "데이터 레이크 구조 점검. raw 필요",
     "serve": "개발 서버",
-    "tidy": "로컬 찌꺼기. verify 가 관측만 부른다",
     "triage": "대장 밖 파일을 내용으로 판정. Downloads·landing 을 본다",
 }
 

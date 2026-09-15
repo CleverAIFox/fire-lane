@@ -199,11 +199,8 @@ def w6() -> tuple[int, list[str]]:
                     ) if f.exists() else set()
     REF = re.compile(r"(MASTER|PLAN|DECISIONS)?\s*§\s*(\d+)(?:-(\d+))?")
     bad: list[str] = []
-    # ★ tools/batches 는 **과거를 적는 문서**다. 이미 끝난 배치가
-    #   왜 그렇게 했는지를 적으며 남의 문서 절 번호를 인용한다 —
-    #   DECISIONS §18 의 인용 블록을 면제한 것과 같은 이유다.
-    _t = [p for p in pys("src", "tools", "tests")
-          if "batches" not in p.parts]
+    # ★ 2026-09-13. `batches` 면제를 뺐다. 디렉터리가 없어졌다.
+    _t = list(pys("src", "tools", "tests"))
     for p in _t + sorted((ROOT / "docs").glob("*.md")) \
             + sorted((ROOT / "web").rglob("*.js")):
         s = src(p)

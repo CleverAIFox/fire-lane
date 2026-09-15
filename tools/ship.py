@@ -48,14 +48,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from firelane.console import col
+
 ROOT = Path(__file__).resolve().parents[1]
 
-C = {"r": "\033[31m", "g": "\033[32m", "y": "\033[33m",
-     "c": "\033[36m", "d": "\033[90m", "z": "\033[0m"}
-
-
-def col(s: str, k: str) -> str:
-    return f"{C[k]}{s}{C['z']}" if sys.stdout.isatty() else s
 
 
 def sh(*args: str, cwd: Path | None = None) -> tuple[int, str]:

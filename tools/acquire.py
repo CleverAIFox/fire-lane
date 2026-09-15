@@ -56,15 +56,12 @@ PARAM 없음
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import shutil
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-
-import yaml
 
 from firelane.paths import LANDING, QUARANTINE, RAW, ROOT
 
@@ -85,28 +82,20 @@ KST = timezone(timedelta(hours=9))
 #   `data/processed/` 가 아니다. 그쪽은 재생성 대상이고 .gitignore 가 막는다.
 LEDGER = ROOT / "data" / "_acquire.json"
 
-C = {"r": "\033[31m", "g": "\033[32m", "y": "\033[33m",
-     "c": "\033[36m", "d": "\033[90m", "z": "\033[0m"}
 
 
-def col(s: str, k: str) -> str:
-    return f"{C[k]}{s}{C['z']}" if sys.stdout.isatty() else s
 
 
-def human(n: float) -> str:
-    for u in ("B", "KB", "MB", "GB"):
-        if n < 1024 or u == "GB":
-            return f"{n:.1f} {u}"
-        n /= 1024
-    return ""
+from firelane import ledger
+from firelane.console import col, human
+from firelane.hashing import sha256 as _h_sha256
 
 
-def sha256(p: Path, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with p.open("rb") as f:
-        while b := f.read(chunk):
-            h.update(b)
-    return h.hexdigest()
+def sha256(p, chunk: int = 1 << 20) -> str:
+    # ★ 2026-09-13. 구현은 `firelane.hashing` 한 곳이다.
+    #   이름은 호출부 때문에 남긴다 — 옮긴 것과 고친 것을
+    #   한 커밋에 섞지 않는다(원칙 ⑤).
+    return _h_sha256(p, chunk)
 
 
 def load_ledger() -> dict:
@@ -147,7 +136,9 @@ def save_ledger(d: dict) -> None:
 
 
 def _yaml() -> dict:
-    return yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    # ★ 2026-09-14. 종전에는 `or {}` 가 없어 빈 파일에서 None 을 냈다.
+    #   같은 일을 하는 다섯 함수의 동작이 갈려 있었다.
+    return ledger.load_sources()
 
 
 def dataset_globs() -> dict[str, list[str]]:

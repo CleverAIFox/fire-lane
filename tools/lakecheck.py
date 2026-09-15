@@ -25,14 +25,17 @@ lakecheck.py — 데이터 레이크의 **선언과 실물**을 대조한다.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
-import os
 import re
 import sys
 from collections import Counter
 from pathlib import Path
 
-import yaml
+from firelane import (
+    ledger,
+    paths,  # noqa: F401  ★ import 만으로 .env 를 환경에 얹는다
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 HITS: list[dict] = []
@@ -43,23 +46,36 @@ def hit(probe: str, what: str, detail: str = "", fix: str = "") -> None:
 
 
 def lake() -> Path | None:
-    d = os.environ.get("FIRE_LANE_DATA")
-    return Path(d) if d and Path(d).is_dir() else None
+    # ★ 2026-09-14. 환경변수를 직접 안 읽는다. `paths.DATA` 가 정본이고
+    #   여기서 또 읽으면 `.env` 로딩 규칙이 두 벌이 된다.
+    d = paths.DATA
+    return d if d and d.is_dir() else None
 
 
 def led() -> dict:
-    return yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    # ★ 2026-09-14. 종전에는 `or {}` 가 없어 빈 파일에서 None 을 냈다.
+    return ledger.load_sources()
 
 
-def disposed(y: dict) -> set[str]:
-    """`landing_disposition` 에 처분이 적힌 파일 이름.
+def disposed(y: dict) -> list[str]:
+    """`landing_disposition` 에 처분이 적힌 파일 이름·패턴.
 
     ★ **판단 보류도 처분이다.** `_quarantine` 이 "판단 보류지 폐기가
       아니다" 인 것과 같다. 적힌 것은 운지 않는다 — 영구 빨간불은
       사람이 검사를 끄게 만든다.
+
+    ★ 2026-09-13. 글롭을 받는다. 다운로드 폴더는 **공용**이라 남의
+      프로젝트 파일이 온다. 파일 하나에 한 줄씩 적게 하면 열 개가
+      떨어졌을 때 안 적고, 안 적으면 영구 빨간불이 된다.
+
+    ★ **사유가 없으면 처분이 아니다.** 글롭은 넓어서 `file: "*"` 한 줄로
+      이 검사 전체를 끌 수 있다. 사유를 강제하면 그것을 적는 순간
+      사람 눈에 띈다 — 이름만 적어 입을 막는 길을 닫는다.
     """
     d = (y.get("landing_disposition") or {}).get("items") or []
-    return {str((it or {}).get("file", "")) for it in d if isinstance(it, dict)}
+    return [str(it["file"]) for it in d
+            if isinstance(it, dict) and it.get("file")
+            and str(it.get("why") or "").strip()]
 
 
 # ── L1  제공기관 state ↔ 실물 ───────────────────────────────────
@@ -162,8 +178,8 @@ def l3(D: Path, y: dict, scan: list[Path]) -> None:
     n_land = sum(1 for p in landing.rglob("*") if p.is_file()) if landing.is_dir() else 0
     print(f"     landing {n_land}건")
 
-    if not scan and os.environ.get("FIRE_LANE_INBOX"):
-        scan = [Path(os.environ["FIRE_LANE_INBOX"])]     # ★ 손으로 주면 그것도 사본이다
+    if not scan and paths.env("FIRE_LANE_INBOX"):
+        scan = [paths.inbox()]     # ★ 손으로 주면 그것도 사본이다
     if not scan:
         hit("L3", "★ --scan 도 FIRE_LANE_INBOX 도 없다 — 레이크 밖은 아무도 안 본다",
             "다운로드 폴더 등 사람이 파일을 받는 자리",
@@ -181,8 +197,9 @@ def l3(D: Path, y: dict, scan: list[Path]) -> None:
                if p.is_file() and p.suffix.lower() in DATA_EXT
                and p.name not in have and p.stat().st_size > 100_000]
         out = [p for p in out if _sha(p) not in fp]
-        skip = disposed(y)          # ★ 적힌 것은 운지 않는다
-        out = [p for p in out if p.name not in skip]
+        skip = disposed(y)          # ★ 적힌 것은 운지 않는다. 글롭을 받는다
+        out = [p for p in out
+               if not any(fnmatch.fnmatch(p.name, s) for s in skip)]
         for p in sorted(out, key=lambda x: -x.stat().st_size):
             hit("L3", f"{p.name}: 레이크 밖에 있다",
                 f"{p.stat().st_size / 1e6:.0f}MB · {d}",

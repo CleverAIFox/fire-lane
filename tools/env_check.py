@@ -50,13 +50,27 @@ RETIRED = {"FIRE_LANE_RAW"}
 # ── 단일 독자 면제 ────────────────────────────────────────────
 #   paths      정본
 #   quiet_gdal GDAL_* 를 끄는 자리. 우리 변수가 아니다
-#   batches/   일회성. 이미 돌았고 다시 안 돈다(tools/batches/README.md)
 #   tests/     검사가 환경을 흉내 내는 것은 정상이다
-EXEMPT = ("src/firelane/paths.py", "src/firelane/quiet_gdal.py",
-          "tools/batches/", "tests/")
+# ★ 2026-09-13. `tools/batches/` 를 뺐다. 디렉터리가 없어졌고, 사문화된
+#   면제를 남기면 같은 이름이 다시 들어왔을 때 조용히 통과한다.
+# ★ 2026-09-14. 넷을 더했다. **접근자로 못 바꾸는 것들**이고, 사유 없이
+#   넣지 않는다 — 사유 없는 면제는 검사를 끄기만 한다(RED.txt 와 같은 규율).
+#   pipeline        자식 프로세스에 환경을 **넘긴다.** 읽는 것이 아니다
+#   doctor          기계 진단이 본업. 동적 접근이 그 도구의 내용이다
+#   pr_body_check   GITHUB_*. CI 가 주는 값이지 우리 변수가 아니다
+#   pull_data       NO_COLOR. 표시용 관례 변수다
+EXEMPT = ("src/firelane/paths.py", "src/firelane/quiet_gdal.py", "tests/",
+          "src/firelane/pipeline.py", "tools/doctor.py",
+          "tools/pr_body_check.py", "tools/pull_data.py")
 
+# ★ 2026-09-14. `paths.env|flag|secret("KEY")` 를 같이 본다.
+#   단일 독자로 옮기는 순간 종전 판은 그 키를 **못 보게 됐다** —
+#   `guards.py` 가 접근자로 바뀌자 `FIRE_LANE_STAGE` 가 "코드가 안 쓴다"
+#   로 울었다. 자리를 하나로 만드는 것의 값은 스캐너가 그 자리를 알아야
+#   나온다. 옮기면서 같이 안 옮기면 옮긴 만큼 눈이 먼다.
 ENV_RE = re.compile(r"""os\.environ(?:\.get)?[\[(]\s*["']([A-Z_]+)["']|"""
-                    r"""getenv\(\s*["']([A-Z_]+)["']""")
+                    r"""getenv\(\s*["']([A-Z_]+)["']|"""
+                    r"""paths\.(?:env|flag|secret)\(\s*["']([A-Z_]+)["']""")
 READ_RE = re.compile(r"os\.environ|os\.getenv")
 
 
@@ -68,7 +82,7 @@ def used_keys() -> dict[str, list[str]]:
     out: dict[str, list[str]] = {}
     for p in _py():
         for m in ENV_RE.finditer(p.read_text(encoding="utf-8", errors="replace")):
-            k = m.group(1) or m.group(2)
+            k = m.group(1) or m.group(2) or m.group(3)
             if k and k.startswith("FIRE_LANE"):
                 out.setdefault(k, []).append(str(p.relative_to(ROOT)))
     return out
@@ -89,17 +103,64 @@ def declared_keys() -> set[str]:
 
 
 def readers() -> list[tuple[str, int, str]]:
+    """`os.environ` 을 **코드에서** 읽는 곳.
+
+    ★ 2026-09-13. 종전에는 줄 단위 정규식이었고 `#` 뒤만 잘라냈다. 그래서
+      **도크스트링과 print 문자열을 독자로 셌다** — 이 파일 자신의 6줄이
+      그렇게 잡혔고, 26곳 중 6곳이 오탐이었다.
+
+      틀린 분모로는 줄어드는지 알 수 없다. `dms` 가 417 을 못 재현해
+      350 으로 갈아탄 것과 같은 문제다(2026-09-13).
+
+    ★ AST 로 보면 문자열은 애초에 코드가 아니다. 정규식을 정교하게
+      만드는 길로 가지 않는다 — 문법을 아는 것이 문법을 흉내 내는 것을
+      이긴다.
+    """
     hits = []
     for p in _py():
         rel = str(p.relative_to(ROOT))
-        if rel.startswith(EXEMPT) or any(rel.startswith(e) for e in EXEMPT):
+        if any(rel.startswith(e) for e in EXEMPT):
             continue
-        for i, line in enumerate(p.read_text(encoding="utf-8", errors="replace")
-                                 .splitlines(), 1):
-            code = line.split("#", 1)[0]
-            if READ_RE.search(code):
-                hits.append((rel, i, line.strip()[:70]))
-    return hits
+        src = p.read_text(encoding="utf-8", errors="replace")
+        for i in _environ_lines(src):
+            hits.append((rel, i, src.splitlines()[i - 1].strip()[:70]))
+    return sorted(set(hits))
+
+
+def _environ_lines(src: str) -> list[int]:
+    """`os.environ` 에 닿는 줄 번호.
+
+    ★ 2026-09-13. `import os as _os` 를 따라간다. 별칭을 안 따라가던
+      판이 `seg/params.py` 다섯 곳을 통째로 놓쳤다 — 오탐 6을 없애며
+      미탐 5를 만들었고, 숫자가 줄어서 일이 잘 되는 것처럼 보였다.
+      **프로브가 좁아지는 쪽으로 망가지면 아무도 모른다.**
+
+    ★ `from os import environ` 도 본다. 그쪽이 더 안 보인다.
+    """
+    import ast
+
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return []
+    names, bare = {"os"}, set()
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            for al in n.names:
+                if al.name == "os":
+                    names.add(al.asname or "os")
+        elif isinstance(n, ast.ImportFrom) and n.module == "os":
+            for al in n.names:
+                if al.name == "environ":
+                    bare.add(al.asname or "environ")
+    out = []
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Attribute) and n.attr == "environ"
+                and isinstance(n.value, ast.Name) and n.value.id in names):
+            out.append(n.lineno)
+        elif isinstance(n, ast.Name) and bare and n.id in bare:
+            out.append(n.lineno)
+    return out
 
 
 def main() -> int:
@@ -119,8 +180,31 @@ def main() -> int:
         ok2 = bool(set(probe) - decl - SWITCHES - RETIRED)
         print(f"  · 유령 키 미검출 상태  {ok1}")
         print(f"  · 넣으면 검출          {ok2}")
-        print(f"  · 독자 프로브          {len(readers())}곳 (0 이면 프로브를 의심하라)")
-        return 0 if (ok1 and ok2 and readers()) else 1
+        # ★ 2026-09-14. `(0 이면 프로브를 의심하라)` 를 뗐다. 그 말은 실물
+        #   0 이 청결인지 죽음인지 가를 장치가 없던 시절의 것이다. 지금은
+        #   아래 카나리아가 그 일을 하고, **0 은 목표 달성**이다.
+        print(f"  · 독자 프로브          {len(readers())}곳 (0 이 목표다)")
+        # ★ 별칭 카나리아. 2026-09-13 에 `import os as _os` 를 못 봐서
+        #   `seg/params.py` 다섯 곳을 통째로 놓쳤다. 프로브가 **좁아지는**
+        #   쪽으로 망가지면 숫자가 줄어 일이 잘 되는 것처럼 보인다.
+        forms = {
+            "os.environ": "import os\nx = os.environ.get('A')\n",
+            "별칭 _os.environ": "import os as _os\nx = _os.environ.get('A')\n",
+            "from os import environ": "from os import environ\nx = environ.get('A')\n",
+        }
+        ok3 = True
+        for label, code in forms.items():
+            got = bool(_environ_lines(code))
+            print(f"  · {label:24} {got}")
+            ok3 = ok3 and got
+        # ★ 2026-09-14. `readers()` 를 생존 조건에서 뺐다. 그것이 비면
+        #   빨강이라는 규칙은 독자가 남아 있던 시절에 맞았다 — 목표를
+        #   이루는 순간 프로브가 자기가 죽은 줄 안다.
+        #   **생존은 카나리아가 증명한다. 실물 수는 결과지 증거가 아니다.**
+        # ★ 분모가 0 에 닿는 검사는 전부 같은 함정을 갖는다.
+        #   `dupcheck` · `vintage_check` · `dms verify` 도 그렇다 —
+        #   셋은 카나리아나 `--max` 래칫이 있어서 아직 안 걸렸을 뿐이다.
+        return 0 if (ok1 and ok2 and ok3) else 1
 
     if a.readers:
         r = readers()
