@@ -2061,6 +2061,7 @@ datasets:
       - tools/jijeok_probe.py
       - tools/jijeok_review.py
     feeds_note: '- tools/jijeok_probe.py - tools/jijeok_review.py'
+    on_demand: true             # ★ 전량에서 건너뛴다. `--only jijeok` 으로 만든다
     stem: nsdi_jijeok
     ext: [zip]
     scope: jngj
@@ -2077,6 +2078,17 @@ datasets:
       ★ prj 가 Korea_2000_Korea_Central_Belt_2010 = EPSG:5186.
         standard_crs 와 같다. 재투영 없이 붙는다.
       ★ cpg 가 EUC-KR.
+      ★ 2026-09-14. `on_demand: true` 를 달았다. 1.0GB 를 풀어 630만 행을
+        파싱하는데 **판정도 화면도 이 산출물을 안 읽는다** — `segments.py` ·
+        `seg/*.py` · `web/js` 어디에도 없고 소비자는 `jijeok_probe` ·
+        `jijeok_review` 둘뿐이다. 8GB 기계에서 `verify.sh` 안의 전량이
+        `OSError: [Errno 12] Cannot allocate memory` 로 죽었다.
+        앞선 단계가 `buff/cache` 를 4GB 채운 뒤라 `mmap` 이 실패한다 —
+        단독 실행은 캐시가 비어서 통과하므로 **되기도 하고 안 되기도** 했다.
+      ★ 같은 일이 2026-09-03 에도 있었고 `pipeline.py:462` 주석에만
+        적혀 있었다. 대장이 소스의 집이다. 여기 적어야 다음 사람이 찾는다.
+      ★ 필요할 때 —  uv run fire-lane --only ingest 뒤
+                     uv run python -m firelane.ingest --only jijeok
       ★ 원본 파일명이 `AL_D002_12_20260808(2).shp` 식이다. 괄호가 도엽
         번호 노릇을 한다 — 명명규칙 밖이라 parts 로 옮겨 적는다.
 
@@ -3000,6 +3012,32 @@ inventory:
 # consumers 가 "이 데이터를 지금 누가 쓰고 있나"다.
 # 이게 없으면 소스 하나를 못 건드린다. datalog.py impact 가 이걸 읽는다.
 outputs:
+  jijeok:
+    produced_by: src/firelane/ingest.py
+    path: data/processed/jijeok.geojson
+    inputs: [jijeok]
+    consumers:
+    - tools/jijeok_probe.py
+    - tools/jijeok_review.py
+    what: 연속지적도 24,183 필지
+    note: |
+      ★ 2026-09-14 등재. 디스크에 있는데 대장에 없었다. `on_demand: true`
+        를 달면서 더 중요해졌다 — 전량에서 안 만들어지므로, 대장에 없으면
+        "이 파일이 왜 여기 있나" 를 아무도 모른다.
+      ★ 판정은 이것을 안 읽는다. `segments.py` · `seg/*.py` · `web/js`
+        어디에도 없다. 소비자는 탐색 도구 둘뿐이다.
+      ★ 만들려면 —  uv run python -m firelane.ingest --only jijeok
+    verified: false
+  jijeok_5186:
+    produced_by: src/firelane/ingest.py
+    path: data/processed/jijeok_5186.gpkg
+    inputs: [jijeok]
+    consumers:
+    - tools/jijeok_probe.py
+    what: 위와 같은 것의 5186 GeoPackage 판. 공간 질의용
+    note: |
+      ★ 2026-09-14 등재. `jijeok.geojson` 과 짝이다. ingest 가 같이 낸다.
+    verified: false
   segments_schema:
     produced_by: src/firelane/segments.py
     path: data/processed/segments.schema.json
@@ -3175,11 +3213,50 @@ outputs:
     consumers: [src/firelane/publish_web.py, src/firelane/pipeline.py]
     what: 가로등 점형. 야간 가시성 · 폭 차감 후보
     verified: false
+  hydrant_point:
+    produced_by: src/firelane/ingest.py
+    path: data/processed/hydrant_point.geojson
+    inputs: [hydrant_point]
+    consumers:
+    - src/firelane/publish_web.py
+    - src/firelane/terrain.py
+    - src/firelane/contract.py
+    what: 소화전 점형. 광주 5,002 · 동구 651
+    note: |
+      ★ 2026-09-13 등재. `Step('ingest').writes` 에는 처음부터 있었고
+        대장 `outputs` 에만 없었다. 검사는 있었는데 **레이크가 붙은
+        기계에서만 이것을 봤다.** 레이크 없이 잰 `pytest 534 passed` 가
+        기준선으로 쓰이고 있었고, 그 숫자가 이 결함을 덮고 있었다.
+      ★ 0건으로 통과하는 소스다(`contract.py` §24 — 광주 스코프 전멸).
+        0건인 것과 선언이 없는 것은 다르다.
+    verified: false
 landing_disposition:
   decided: '2026-08-30'
   by: 오창준
   items:
     # ── 2026-09-10 추가 ────────────────────────────────────────
+    - file: d0*-*.zip
+      key: null
+      action: foreign
+      why: >-
+        ★ 2026-09-14. hathor 프로젝트 산출물이다. 파일명의 `d0NNN` 은 그쪽
+        결정 번호다. 다운로드 폴더는 기계 층이라 저장소마다 공유되고,
+        `L3` 는 그 폴더 전체를 fire-lane 의 landing 대기열로 본다.
+        그물을 좁히면 진짜 우회를 놓치므로 넓은 채로 두고 여기 적어 뺀다.
+        ★ **지우지 않는다.** 그쪽 세션이 아직 안 받았을 수 있다.
+    - file: thoth-*.zip
+      key: null
+      action: foreign
+      why: hathor(thoth) 저장소 사본. 남의 것이다. 지우지 않는다.
+    - file: hathor-*
+      key: null
+      action: foreign
+      why: >-
+        ★ 2026-09-13. hathor 프로젝트 파일이다. 다운로드 폴더는 기계 층이라
+        저장소마다 공유되고, `L3` 는 그 폴더 전체를 fire-lane 의 landing
+        대기열로 본다. 그물을 좁히면 진짜 우회를 놓치므로 넓은 채로 두고
+        남의 것을 여기 적어 뺀다. `foreign` 은 판단할 것이 아니다 —
+        `held`(판단 보류)로 적으면 언젠가 판단해야 할 것처럼 목록에 남는다.
     # ★ action 에 `held` 를 더한다. **판단 보류도 처분이다** — 안 적힌 것과
     #   다르다. _quarantine 이 "판단 보류지 폐기가 아니다" 인 것과 같다.
     #   landing 은 backup·committed 가 둘 다 false 라 소실 대기 상태이므로,

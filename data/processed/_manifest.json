@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-09-12T16:40:28.719052+09:00",
+  "generated_at": "2026-09-15T09:45:24.141658+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -2611,41 +2611,11 @@
     },
     {
       "key": "jijeok",
-      "source_files": [
-        "**/nsdi_jijeok_*"
-      ],
-      "source_sha256": "3b8bc253baa0c9a1",
-      "resolved": "nsdi_jijeok_jngj_20260808.zip",
-      "source_crs": "EPSG:5186",
-      "parts_read": [
-        "AL_D002_12_20260808(2).shp",
-        "AL_D002_12_20260808(3).shp",
-        "AL_D002_12_20260808(4).shp",
-        "AL_D002_12_20260808(5).shp",
-        "AL_D002_12_20260808(6).shp",
-        "AL_D002_12_20260808(7).shp",
-        "AL_D002_12_20260808.shp"
-      ],
-      "status": "OK",
-      "features": 24183,
-      "geom": [
-        "Polygon"
-      ],
-      "invalid_fixed": 0,
-      "columns": [
-        "A0",
-        "A1",
-        "A2",
-        "A3",
-        "A4",
-        "A5",
-        "A6",
-        "A7"
-      ],
-      "outputs": [
-        "jijeok.geojson",
-        "jijeok_5186.gpkg"
-      ]
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "outputs": [],
+      "note": "on_demand — --only 로 지목할 때만 읽는다"
     },
     {
       "key": "gjfire_fleet_dongbu",

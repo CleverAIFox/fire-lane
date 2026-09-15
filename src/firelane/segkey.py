@@ -74,10 +74,28 @@ def _road_hash(road_name: str | None) -> str:
     return _b36(int.from_bytes(h, "big"), HASH_LEN)
 
 
+def midpoint(geom: LineString):
+    """곡선의 **길이 기준** 중점. 좌표 개수의 중간이 아니다.
+
+    ★ 2026-09-14. 정의를 여기 둔다. `segments.py` 가 같은 수식을 따로
+      들고 있었다 — 목적은 다르지만(하나는 `seg_uid` 자체, 하나는 답사
+      좌표 표시) **정의가 갈리면 안 된다.** 한쪽이 `normalized=False`
+      로 바뀌면 조용히 어긋나고, `seg_uid` 는 실측·관측점·영상판정·
+      DB PK 가 전부 쓰는 키다(DECISIONS §144).
+
+    ★ 꺾인 선분의 연속에서 "가운데" 는 애매하다. 좌표 개수의 중간을
+      쓰면 꺾임이 촘촘한 쪽으로 쏠린다. 길이의 절반이라야 실제 중간이다.
+
+    ★ `dupcheck` 는 이 사본을 **못 잡았다.** 함수가 아니라 인라인
+      한 줄이었기 때문이다 — 그 도구의 알려진 한계다.
+    """
+    return geom.interpolate(0.5, normalized=True)
+
+
 def make_seg_uid(geom: LineString, road_name: str | None,
                  region: str = REGION) -> str:
     """구간 하나의 seg_uid. geom 은 반드시 CRS_M(미터) 좌표계여야 한다."""
-    mid = geom.interpolate(0.5, normalized=True)
+    mid = midpoint(geom)
     x = round(mid.x)
     y = round(mid.y)
     if not (10 ** (COORD_DIGITS - 1) <= x < 10 ** COORD_DIGITS):

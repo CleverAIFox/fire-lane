@@ -51,7 +51,6 @@ PARAM 없음
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -72,12 +71,14 @@ LEDGER = ROOT / "data" / "_acquire.json"
 YAML = ROOT / "sources.yaml"
 JOURNAL = ROOT / "data" / "_migrate_journal.json"
 
-def sha256(p: Path, *, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with p.open("rb") as f:
-        while b := f.read(chunk):
-            h.update(b)
-    return h.hexdigest()
+from firelane.hashing import sha256 as _h_sha256
+
+
+def sha256(p, chunk: int = 1 << 20) -> str:
+    # ★ 2026-09-13. 구현은 `firelane.hashing` 한 곳이다.
+    #   이름은 호출부 때문에 남긴다 — 옮긴 것과 고친 것을
+    #   한 커밋에 섞지 않는다(원칙 ⑤).
+    return _h_sha256(p, chunk)
 
 
 # ── 개명 규칙은 여기 없다 ─────────────────────────────────────

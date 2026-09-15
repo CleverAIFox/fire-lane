@@ -44,12 +44,12 @@ OUT   없음. --save 를 주면 $FIRE_LANE_DATA/interim/lanes_join.csv
 from __future__ import annotations
 
 import argparse
-import sys
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+from firelane.console import col
 from firelane.paths import INTERIM, PROCESSED
 from firelane.seg.params import TRUCK
 
@@ -60,12 +60,6 @@ ANGLE = 35.0        # 방위 차이가 이보다 크면 다른 길이다(도)
 # ★ 하한이다. "이보다 좁을 수는 없다" 만 말한다.
 LANE_MIN = {1: 3.0, 2: 5.5, 3: 8.5, 4: 11.5, 5: 14.5, 6: 17.5}
 
-C = {"r": "\033[31m", "g": "\033[32m", "y": "\033[33m",
-     "c": "\033[36m", "d": "\033[90m", "z": "\033[0m"}
-
-
-def col(s: str, k: str) -> str:
-    return f"{C[k]}{s}{C['z']}" if sys.stdout.isatty() else s
 
 
 def _coords(g):

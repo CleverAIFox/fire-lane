@@ -41,7 +41,6 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
-import hashlib
 import json
 import sys
 from pathlib import Path
@@ -68,15 +67,17 @@ from firelane.intake_rules import JUNK
 _todo: list[str] = []
 
 
-def _sha(p: Path, *, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with p.open("rb") as f:
-        while b := f.read(chunk):
-            h.update(b)
-    return h.hexdigest()
+from firelane.hashing import sha256 as _h_sha256
 
 
-_sha256 = _sha
+def _sha(p, chunk: int = 1 << 20) -> str:
+    # ★ 2026-09-13. 구현은 `firelane.hashing` 한 곳이다.
+    #   이름은 호출부 때문에 남긴다 — 옮긴 것과 고친 것을
+    #   한 커밋에 섞지 않는다(원칙 ⑤).
+    return _h_sha256(p, chunk)
+
+
+_sha256 = _sha   # ★ 같은 것을 두 이름으로 부른다. 호출부 정리 전까지만
 
 
 def _scan(p: Path) -> tuple[int, int, list[tuple[int, Path]]]:

@@ -23,7 +23,6 @@ PARAM --check
 """
 from __future__ import annotations
 
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -49,7 +48,7 @@ def _write_key_js() -> None:
     ★ 값이 없으면 빈 문자열을 쓰되 화면에 적는다. 조용히 빈 지도를 주면
       "왜 배경이 안 뜨지" 로 한 시간을 쓴다(원칙 ⑥ — 모르면 모른다고 적는다).
     """
-    key = os.environ.get("VWORLD_KEY", "")
+    key = paths.secret("VWORLD_KEY")
     if not key:
         print("  ★ VWORLD_KEY 가 없다 — 배경지도 없이 나간다.\n"
               "    로컬:  .env 에 VWORLD_KEY=... 를 적는다\n"
