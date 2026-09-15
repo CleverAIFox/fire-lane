@@ -35,8 +35,23 @@
  * 내비에 필요한 것은 건물 **형상**이고 `buildings.geojson` 의 h·z·flo 다.
  */
 import { useEffect, useRef } from "react";
-import maplibregl from "maplibre-gl";
+// ★ 2026-09-15. `import maplibregl from` 이 아니다. maplibre-gl 6 은
+//   ESM 전용이 되면서 **기본 내보내기를 없앴다.** UMD·CSP·CJS 번들도
+//   같이 사라졌다. 네임스페이스 임포트나 명명 임포트만 산다.
+//   Dependabot 이 5→6 을 올린 PR 은 초록이었다 — CI 의 `JS 검사 셋`이
+//   `web/*.js`(maxdepth 1) 만 보고 `web/navi` 를 통째로 지나치기
+//   때문이다. 내비를 컴파일하는 곳은 배포 액션 하나뿐이고 그건
+//   push:main 에서만 돈다. **PR 초록 · 릴리즈 사망**이었다.
+import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+// ★ 2026-09-15. v6 는 워커를 `new URL("./maplibre-gl-worker.mjs", import.meta.url)`
+//   로 **런타임에 계산한다.** 번들러는 그 문자열을 정적으로 못 보므로
+//   Rollup 이 워커를 산출물에 안 넣는다 — `vite build` 는 초록이고
+//   브라우저에서 워커가 404 다. 타일 파싱이 워커에서 도니 지도만 안 그려진다.
+//   dev 서버에서는 `.vite/deps` 를 보다가 같은 이유로 죽는다.
+//   `?worker&url` 로 Vite 에게 명시하면 공유 청크까지 같이 묶어 자산으로
+//   내보내고 그 URL 을 준다. 빌드·개발 양쪽이 같은 경로를 쓴다.
+import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { angleDelta, type LngLat } from "../domain/geo";
 import type { RoutePlan, VerdictStyle, View } from "../domain/types";
 import type { LiveFix } from "../app/useNavigation";
@@ -45,6 +60,10 @@ import {
   GLYPHS, sources, baseLayers, markerLayers, routeLayers,
   stationLayers, pinLayers,
 } from "./layers";
+
+// ★ 모듈 적재 시 한 번. `new maplibregl.Map()` 보다 먼저여야 한다 —
+//   워커는 지도 생성 시점에 뜬다.
+maplibregl.setWorkerUrl(workerUrl);
 
 export interface Pin {
   point: LngLat;

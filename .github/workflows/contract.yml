@@ -177,6 +177,27 @@ jobs:
       - name: JS 모듈 그래프 검사
         run: node tools/js_graph_check.mjs
 
+      - name: ★ 내비 타입 검사 (web/navi)
+        # ★ 2026-09-15 신설. 위의 JS 셋은 전부 `web/*.js` 클래식 스크립트만
+        #   본다 — `find web -maxdepth 1` 이라 `web/navi` 는 한 번도 안 열린다.
+        #   내비를 컴파일하는 곳은 `.github/actions/build-navi` 하나뿐이고
+        #   그건 **push:main 에서만** 돈다. 그래서 maplibre-gl 5→6 ·
+        #   vite 5→6 이 PR 초록 · 0 vulnerabilities 로 통과해 main 에
+        #   들어갔고, 거기서 `TS1192 has no default export` 로 죽었다.
+        #   릴리즈가 죽을 때까지 아무도 몰랐다 — 이 저장소가 반복해 겪은
+        #   "초록불인데 실제로는 안 되는" 그 형태다.
+        #
+        # ★ 빌드가 아니라 **타입만** 본다. `vite build` 는 MAPBOX_TOKEN 이
+        #   필요하고 그 시크릿은 배포 환경에만 있다. 이번 사고는 타입
+        #   단계에서 잡혔으므로 게이트는 여기까지가 맞다. 빌드는 배포
+        #   액션이 계속 맡는다(정본을 둘로 만들지 않는다 — R3).
+        #
+        # ★ `npm ci` 다. `install` 은 잠금을 갱신할 수 있다.
+        run: |
+          cd web/navi
+          npm ci --no-audit --no-fund
+          npm run typecheck
+
       - name: web/data 용량 검사
         run: |
           SIZE=$(du -sm web/data | cut -f1)

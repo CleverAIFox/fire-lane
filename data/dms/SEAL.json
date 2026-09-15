@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-09-15T10:36:04+09:00",
- "commit": "6a0dc48",
+ "sealed_at": "2026-09-15T15:31:41+09:00",
+ "commit": "2ecdeac",
  "tool": "ad3fcdbb01a3460d",
  "scope": "verify.sh 로그",
  "docs": {
@@ -3312,7 +3312,7 @@
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 42 packages in 0.74ms"
+   "tail": "Checked 42 packages in 12ms"
   },
   "verify/패키지 import 29종": {
    "rc": 0,
@@ -3327,7 +3327,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "548 passed, 47 skipped in 77.29s (0:01:17)"
+   "tail": "548 passed, 47 skipped in 74.36s (0:01:14)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3342,7 +3342,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "223 passed, 48 skipped in 18.79s"
+   "tail": "223 passed, 48 skipped in 19.24s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -3419,6 +3419,11 @@
    "state": "OK",
    "tail": "OK  부팅 · 필수 레이어 16개 전부 생성"
   },
+  "verify/내비 타입 검사": {
+   "rc": 0,
+   "state": "OK",
+   "tail": ""
+  },
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
@@ -3482,7 +3487,7 @@
   "verify/내비 소스 목록": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ web/navi/src 34파일 — 내용 대조는 golden 소관"
+   "tail": "✓ web/navi/src 35파일 — 내용 대조는 golden 소관"
   },
   "verify/배포에 내비 빌드": {
    "rc": 0,
@@ -3502,7 +3507,7 @@
   "verify.sh(집계)": {
    "rc": 0,
    "state": "생략",
-   "tail": "단계 38"
+   "tail": "단계 39"
   },
   "probe/deadcheck": {
    "rc": 0,
