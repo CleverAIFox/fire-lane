@@ -366,6 +366,18 @@ def main():
                     help="이 단계만")
     ap.add_argument("--check", action="store_true", help="실행 없이 상태만")
     ap.add_argument("--no-test", action="store_true", help="계약 테스트 생략")
+    # ★ PLAN #15. ingest 를 소스별 자식 프로세스로 돌린다. 사유는
+    #   `ingest._spawn` 에 있다.
+    # ★ 환경변수로 안 한다. `os.environ` 독자는 `paths.py` 하나라는 것이
+    #   축이고(`env_check`), 여기서 읽으면 그 축이 는다. 플래그가 맞다 —
+    #   누가 켰는지가 명령줄에 남는다.
+    # ★ 기본값이 아닌 이유 — 실측 2m45 → 3m59 다. 74초는 자식마다
+    #   `geopandas`·`pyproj` 를 다시 import 하는 값이고(import 만 0.85초
+    #   × 40종) 코드로는 못 줄인다. 평소 실행은 빠른 쪽이 맞고,
+    #   `verify.sh` 처럼 **앞 단계가 이미 메모리를 먹은 맥락**에서만 켠다.
+    #   그 맥락이 정확히 `Errno 12` 가 나는 자리다.
+    ap.add_argument("--split", action="store_true",
+                    help="ingest 를 소스별 자식 프로세스로 (메모리 반납)")
     ap.add_argument("--reset-lineage", action="store_true",
                     help="계보 기록을 지우고 시작한다 (교착 탈출구)")
     a = ap.parse_args()
@@ -445,6 +457,8 @@ def main():
         #   실패하면 ingest 가 스스로 지운다(반쯤 풀린 것이 오염을 만든다).
         if s.module == "ingest":
             _extra.append("--keep-work")
+            if a.split:
+                _extra.append("--split")
         # ★ 2026-08-31. `FIRE_LANE_STAGE` 로 "파이프라인이 부른 것" 을 표시한다.
         #   단계 모듈이 이 값을 보고 직접 호출 경고를 낸다(guards.warn_direct_call).
         r = subprocess.run([sys.executable, "-m", f"firelane.{s.module}", *_extra],

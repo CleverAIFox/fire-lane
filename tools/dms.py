@@ -695,6 +695,10 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
                   "pytest+프로브" if quick else "verify.sh 전 단계"),
         "docs": {rel: _sha((ROOT / rel).read_text(encoding="utf-8"))
                  for rel in DOCS},
+        # ★ PLAN #68. 입력이 봉인과 같으면 판정도 같다. `rawdiff` 가
+        #   이것을 대조해 파이프라인 전량(4분30초)을 **근거 있게** 생략한다.
+        #   못 재면 None 이고, None 이면 다음 대조가 생략하지 않는다.
+        "raw": raw_print(),
         "sections": now,
         "denominator": blank,
         "dead_refs": len(verify(data)),
@@ -831,11 +835,88 @@ def selftest() -> int:
     return len(bad)
 
 
+# ── raw 지문 (PLAN #68) ────────────────────────────────────────
+# ★ 입력이 봉인과 같으면 판정도 같다. 그런데 `SEAL.json` 이 문서·절·도구
+#   지문만 갖고 raw 지문이 없어서 `verify.sh` 가 매번 파이프라인 전량
+#   4분30초를 돈다. 하루에 다섯 번 돌리면 그것만 20분 이상이다.
+#
+# ★ **대장(`_manifest.json`)의 `source_sha256` 을 쓰지 않는다.** 그것은
+#   ingest 가 돌 때 찍힌 값이라 raw 가 바뀌어도 ingest 전까지 안 바뀐다.
+#   그 값으로 대조하면 "같다" 가 항상 참인 죽은 검사가 된다 —
+#   오늘(2026-09-15) `⬛` 를 찾던 문서 검사와 같은 형태다(DECISIONS §159).
+#   실물을 훑는 것은 `ingest --check` 이고, 그것은 아무것도 쓰지 않는다.
+#
+# ★ 못 재면 `None` 이다. **빈 dict 가 아니다.** 빈 dict 는 "raw 가 0종"
+#   으로 읽혀 다음 대조에서 조용히 통과한다. 모르는 것을 아는 척하지
+#   않는다 — 지문이 없으면 생략도 없다.
+_RAW_MARK = "@@ingest-result@@ "
+
+
+def raw_print() -> dict[str, list[str]] | None:
+    """raw 실물의 소스별 sha256. 못 재면 None."""
+    cmd = [sys.executable, "-c",
+           "from firelane.ingest import main; main()",
+           "--check", "--emit-json"]
+    try:
+        p = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
+                           stdin=subprocess.DEVNULL, timeout=900, check=False)
+    except Exception:                                       # noqa: BLE001
+        return None
+    if p.returncode:
+        return None
+    out = {}
+    for line in p.stdout.splitlines():
+        if line.startswith(_RAW_MARK):
+            r = json.loads(line[len(_RAW_MARK):])
+            if r.get("key") and r.get("sha256"):
+                out[r["key"]] = r["sha256"]
+    return out or None
+
+
+def cmd_rawdiff() -> int:
+    """raw 가 봉인 지점과 같은가. **같으면 0, 다르면 1.**
+
+    `verify.sh` 가 이 결과로 파이프라인 전량을 생략할지 정한다.
+
+    ★ 지금 `--fast` 는 **근거 없이** 전부/전무로 건너뛴다. 그 로그로
+      봉인하면 반쪽 증표다. 여기는 근거가 있다 — 입력이 같다.
+    ★ 모르면 **안 건너뛴다.** 봉인이 없거나 지문을 못 재면 1 이다.
+      의심스러울 때 생략하는 것은 검사를 끄는 것과 같다.
+    """
+    p = STATE / SEAL
+    if not p.exists():
+        print("봉인이 없다 — 전량을 돈다.")
+        return 1
+    old = json.loads(p.read_text(encoding="utf-8")).get("raw")
+    if not old:
+        print("봉인에 raw 지문이 없다(옛 봉인) — 전량을 돈다.")
+        return 1
+    now = raw_print()
+    if now is None:
+        print("raw 지문을 못 쟀다 — 전량을 돈다.")
+        return 1
+    gone = sorted(set(old) - set(now))
+    new = sorted(set(now) - set(old))
+    moved = sorted(k for k in now if k in old and now[k] != old[k])
+    if not (gone or new or moved):
+        print(f"raw 가 봉인과 같다 — {len(now)}종 전부 일치.")
+        return 0
+    print(f"raw 가 다르다 — 신설 {len(new)} · 변경 {len(moved)} · 삭제 {len(gone)}")
+    for k in (new + moved + gone)[:12]:
+        tag = "신설" if k in new else ("변경" if k in moved else "삭제")
+        print(f"  {tag}  {k}")
+    print("\n  바뀐 소스만 돌리려면:")
+    print("    uv run python -m firelane.ingest --only "
+          + " ".join((new + moved)[:8]))
+    return 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", nargs="?", default="scan",
                     choices=["scan", "verify", "round", "mark",
-                             "propose", "fill", "seal", "delta"])
+                             "propose", "fill", "seal", "delta",
+                             "rawdiff"])
     ap.add_argument("ids", nargs="*")
     ap.add_argument("--size", type=int, default=20)
     ap.add_argument("--apply", action="store_true")
@@ -855,6 +936,10 @@ def main() -> int:
     if a.cmd == "mark":
         cmd_mark(a.ids)
         return 0
+
+    # ★ scan() 이 필요 없다. 문서가 아니라 raw 를 본다.
+    if a.cmd == "rawdiff":
+        return cmd_rawdiff()
 
     if a.cmd == "fill":
         if not a.ids:

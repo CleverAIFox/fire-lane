@@ -1,13 +1,220 @@
 {
- "sealed_at": "2026-09-15T17:34:24+09:00",
- "commit": "58fd8d4",
- "tool": "ad3fcdbb01a3460d",
+ "sealed_at": "2026-09-15T21:17:33+09:00",
+ "commit": "ce0e889",
+ "tool": "cd51e11c1a5987c0",
  "scope": "verify.sh 로그",
  "docs": {
   "docs/MASTER.md": "7c5ad0a8d7a95a0a",
-  "docs/DECISIONS.md": "14f576bb24d8a44e",
-  "docs/PLAN.md": "32ad35a4dff75388",
+  "docs/DECISIONS.md": "920c1346ee82313c",
+  "docs/PLAN.md": "ad19bcf0c354f3df",
   "README.md": "9498a95847ace146"
+ },
+ "raw": {
+  "gjcity_road_facility": [
+   "c0810ad6ed35388f"
+  ],
+  "juso_bldg_geom": [
+   "03808c2a5d858785"
+  ],
+  "juso_bldggrp_geom": [
+   "4867537948920da1"
+  ],
+  "juso_etc_geom": [
+   "bf665b6b74e218b2"
+  ],
+  "kfs_pumptruck": [
+   "0908c1232cd2102e"
+  ],
+  "kfs_watertank": [
+   "8b0c7fa291f5217e"
+  ],
+  "kfs_chemical": [
+   "9688a70902502279"
+  ],
+  "kfs_ladder_articulated": [
+   "a2cab9811eadacec"
+  ],
+  "kfs_rescue": [
+   "ce1ab827276df743"
+  ],
+  "kfs_ambulance_special": [
+   "a8b309c908d13b2d",
+   "b4fec99a5e721e39"
+  ],
+  "kfs_ladder_small": [
+   "5c5ab15422d304dc"
+  ],
+  "mas_optional_spec": [
+   "975e4a08fb4e02fd",
+   "90c188fc2bd192df"
+  ],
+  "mas_vehicle_spec": [
+   "9ec7d8d516e631a4",
+   "0a535f5e927a7264"
+  ],
+  "node_link_changelog": [
+   "574f2d294fa6ff10"
+  ],
+  "road_link": [
+   "895df207b4159c56"
+  ],
+  "road_rw": [
+   "895df207b4159c56"
+  ],
+  "road_intrvl": [
+   "895df207b4159c56"
+  ],
+  "spotaddr_geom": [
+   "67d19479c563ae4b"
+  ],
+  "spotaddr_ref": [
+   "8822bdb54aa2b8a7"
+  ],
+  "ngii1k": [
+   "7b970e12ea3f77df",
+   "1db699d03bc77128"
+  ],
+  "streetlight": [
+   "96ada85a38ef85c9"
+  ],
+  "ngii_road": [
+   "cd4f56a0fcba89d9",
+   "085ad532f61ea654"
+  ],
+  "node_link": [
+   "5bbf5a01d677b6dc"
+  ],
+  "node_point": [
+   "5bbf5a01d677b6dc"
+  ],
+  "turn_restriction": [
+   "5bbf5a01d677b6dc"
+  ],
+  "cctv": [
+   "8351c71117758767"
+  ],
+  "fire_station": [
+   "8f3fca285b8f14d6"
+  ],
+  "poi_store": [
+   "57aa361544108ff4"
+  ],
+  "boundary_emd": [
+   "895df207b4159c56"
+  ],
+  "building": [
+   "895df207b4159c56"
+  ],
+  "building_entrance": [
+   "895df207b4159c56"
+  ],
+  "hydrant_point": [
+   "ef46ab01d76a5c0e"
+  ],
+  "fire_access": [
+   "15fb8022f1b2f9ee"
+  ],
+  "dem_public": [
+   "56656fc18efb05ad"
+  ],
+  "ortho": [
+   "afe2cbb4bcd15153",
+   "4663108491cf8062",
+   "d83eec9e4da02b1b",
+   "88fd1a2f4ffae93c",
+   "c0d4850dfdbe197e",
+   "59bd3db595bf636e",
+   "074d2d29a73dcaea",
+   "4d4f370921c4af31"
+  ],
+  "hydrant_summary": [
+   "4f516236bfdc457b"
+  ],
+  "ngii_road_center": [
+   "cd4f56a0fcba89d9",
+   "085ad532f61ea654"
+  ],
+  "bin_trash": [
+   "ea65b6f8c4bc7179"
+  ],
+  "bin_cloth": [
+   "e8c6aa4f557b5fc3"
+  ],
+  "station_jurisdiction": [
+   "67654b6e6bc4fb1e"
+  ],
+  "parking_lot": [
+   "0f38436f5d4ce8b1"
+  ],
+  "enforce_cam": [
+   "79dac019117d57e3"
+  ],
+  "school_zone": [
+   "cb565f28d1b2fd1f"
+  ],
+  "parking_zone": [
+   "fc114cb3aadfd3b7"
+  ],
+  "gjfire_fleet_dongbu": [
+   "dac553bb5e289ae8"
+  ],
+  "gjfire_district_dongbu": [
+   "eb6ffedeb0301d5b"
+  ],
+  "nfa_dispatch_119": [
+   "740dedf4e0c6f6de"
+  ],
+  "nfa_rescue": [
+   "66cd210b56f6fb13"
+  ],
+  "nfa_fire_incident": [
+   "c1f98a86160ef4f7"
+  ],
+  "nfa_vehicle_spec_2024": [
+   "3c5d91db980d0b89"
+  ],
+  "nfa_mas_spec_2025": [
+   "9ec7d8d516e631a4"
+  ],
+  "nfa_target_building": [
+   "d85ec9f5b7fbdca3"
+  ],
+  "nfa_spec_chem_gj": [
+   "6f228f5abb327b0d"
+  ],
+  "nfa_spec_pump_jn": [
+   "9ed65818b458d88d"
+  ],
+  "nfa_spec_tanker_cn": [
+   "9653d2700a31f841"
+  ],
+  "nfa_spec_rescue_jn": [
+   "8e14e2c2672162ac"
+  ],
+  "nfa_spec_ladder_jn": [
+   "268c025482249f39"
+  ],
+  "bldg_ledger_dm": [
+   "82d938c21281441c"
+  ],
+  "child_zone_std": [
+   "5a9a8d10bf3d17e0"
+  ],
+  "senior_zone_std": [
+   "c10e7ccbaa7c1e98"
+  ],
+  "speedbump": [
+   "5ce87804c5054a09"
+  ],
+  "admin_cctv": [
+   "d6be41274b0f8632"
+  ],
+  "speed_cam": [
+   "c4680175becb0bdd"
+  ],
+  "juso_building_db": [
+   "3d6dc01f6cb1bf8a"
+  ]
  },
  "sections": {
   "MASTER-001": {
@@ -2782,6 +2989,30 @@
    "doc": "docs/DECISIONS.md",
    "title": "155. 오진 넷 — 증상이 맞아떨어진다고 원인이 아니다"
   },
+  "DECISIONS-314": {
+   "h": "5f776135e05b9635",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "156. GPS → 구간 스냅 함수"
+  },
+  "DECISIONS-315": {
+   "h": "2fd54b0ce8e9fb3a",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "157. React 내비 뼈대"
+  },
+  "DECISIONS-316": {
+   "h": "0b176d9a121cbae6",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "158. 문서 4축에 내비를 반영"
+  },
+  "DECISIONS-317": {
+   "h": "9e3c3ecdc6ddd420",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "159. 닫힘 표식을 만들지 않는다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -2795,13 +3026,13 @@
    "title": "0-1. 서술 규약"
   },
   "PLAN-003": {
-   "h": "9724c09952a73b1f",
+   "h": "6f1b34d03deb07e5",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "891ae44158da8833",
+   "h": "3447568f04e54e6f",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -3312,7 +3543,7 @@
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 42 packages in 0.66ms"
+   "tail": "Checked 42 packages in 0.42ms"
   },
   "verify/패키지 import 29종": {
    "rc": 0,
@@ -3327,7 +3558,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "548 passed, 47 skipped in 76.14s (0:01:16)"
+   "tail": "549 passed, 47 skipped in 73.46s (0:01:13)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3342,7 +3573,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "223 passed, 48 skipped in 21.29s"
+   "tail": "223 passed, 48 skipped in 18.01s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -3462,7 +3693,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 549절이 아니다."
+   "tail": "전수로 보고 다시 `seal` 을 찍어라."
   },
   "verify/사본군": {
    "rc": 0,
@@ -3484,6 +3715,11 @@
    "state": "OK",
    "tail": "✓ 폐기 별칭 0건 — 101개 항목에서 이관이 유지된다"
   },
+  "verify/PLAN 번호·참조 정합": {
+   "rc": 0,
+   "state": "OK",
+   "tail": "✓ 없음 — 행 73개가 1..73 로 연속이다"
+  },
   "verify/내비 소스 목록": {
    "rc": 0,
    "state": "OK",
@@ -3502,12 +3738,12 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 314개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 318개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
    "state": "생략",
-   "tail": "단계 39"
+   "tail": "단계 40"
   },
   "probe/deadcheck": {
    "rc": 0,
