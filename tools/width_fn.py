@@ -54,21 +54,15 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import sys
 from collections import defaultdict
 
+from firelane.console import col
 from firelane.paths import PROCESSED, WEB
 from firelane.seg.params import TRUCK
 
 CAR_L = 8.0          # 소방펌프차 길이(m). 전장 7~9m 이고 8m 를 기준으로 둔다
 STEP = 2.0           # width.py 의 표본 간격. 표본 사이는 선형으로 본다
 
-C = {"r": "\033[31m", "g": "\033[32m", "y": "\033[33m",
-     "c": "\033[36m", "d": "\033[90m", "z": "\033[0m"}
-
-
-def col(s: str, k: str) -> str:
-    return f"{C[k]}{s}{C['z']}" if sys.stdout.isatty() else s
 
 
 def load() -> dict[str, list[tuple[float, float]]]:

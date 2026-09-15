@@ -40,12 +40,36 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 
 `sources.yaml` 은 데이터 정본이다. 기계가 읽으므로 손으로 고칠 때 주의할 것.
 
+
+### 일회성 도구는 저장소에 두지 않는다
+
+    "내년에도 이걸 돌릴 일이 있나"
+      있다  →  `tools/`            재현적이다. `verify.sh` 에 배선하고 README 에 적는다
+      없다  →  저장소 밖에서 돈다   `~/oneoff/<저장소>/`. 커밋하지 않는다
+
+한 번 돌고 끝난 스크립트는 남기지 않는다. 무엇을 왜 바꿨는지는
+`DECISIONS` 가 정본이고, 스크립트를 같이 남기면 같은 기록이 두 벌이 된다.
+어느 쪽이 정본인지 모르게 되는 것이 이 저장소가 232번 당한 형태다.
+
+★ 2026-09-13 까지는 규약이 정반대였다. `tools/batches/` 에 34개가 쌓였고
+그 규약에 강제자가 없어 디렉터리를 통째로 지워도 우는 곳이 없었다.
+`tests/test_reproducibility.py::test_no_one_off_in_repo` 가 지금은 막는다.
+
 ### 문서에도 검사가 붙어 있다
 
 ```bash
 uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
 uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
 uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
+uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증분)
+uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
+# ★ 위 도구가 세는 사본을 합친 자리 —
+#   src/firelane/hashing.py    파일 sha256. 10곳이 한 벌이었다
+#   src/firelane/console.py    col · human · 팔레트. 17곳
+#   src/firelane/mercator.py   웹 메르카토르 역변환. 2곳
+#   ledger.yaml_span · load_sources   대장 원문 파싱. 7곳
+uv run python tools/vintage_check.py    # 파일명 날짜 ↔ 대장 updated (자료 기준일)
+uv run python -m firelane.prep --check  # norm 이 지금의 raw 에서 나왔나 (재현성)
 uv run python tools/widen.py            # 검사 범위를 넓히면 뭐가 걸리나
 uv run python tools/codepatch.py        # 파이썬 소스 멱등 편집기 (배치용)
 
@@ -67,6 +91,8 @@ uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 참조하는 파일이 CI 에도 있는지 본다 — gitignore 대상이면 로컬에서만
 통과하는 검사가 된다.
 
+강제자 없음 — 사유: README 는 도구 목록이고 test_declaration_sync.py::test_readme_lists_tools_the_automation_calls 가 verify.sh 와 대조한다. 절 자체를 강제하는 것은 아니다
+
 ### `D-XX` 는 날짜가 아니다
 
 **미결정 항목 번호(Decision)** 다. 2026-08-07 「미결정 사항 정리」에서 왔고
@@ -84,7 +110,7 @@ uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 
 ```bash
 uv sync
-git config core.hooksPath .githooks   # 커밋 시점 방어. 클론 후 1회
+# 전역 훅이 저장소 `.githooks` 에 위임한다. **로컬로 박으면** 전역이 죽고 자격증명 검사가 사라진다
 export FIRE_LANE_DATA="<raw 상위 폴더 경로>"   # 머신마다 다르다
 
 uv run python -m firelane.normalize_raw "$FIRE_LANE_DATA/landing" --dry-run

@@ -35,25 +35,14 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
-import sys
 from pathlib import Path
+
+from firelane.console import col, human
 
 ROOT = Path(__file__).resolve().parents[1]
 
-C = {"r": "\033[31m", "g": "\033[32m", "y": "\033[33m", "c": "\033[36m",
-     "d": "\033[90m", "z": "\033[0m"}
 
 
-def col(s: str, k: str) -> str:
-    return f"{C[k]}{s}{C['z']}" if sys.stdout.isatty() else s
-
-
-def human(n: int) -> str:
-    for u in ("B", "KB", "MB", "GB"):
-        if n < 1024 or u == "GB":
-            return f"{n:.1f} {u}" if u != "B" else f"{n} B"
-        n /= 1024
-    return ""
 
 
 def sh(*args: str) -> list[str] | None:

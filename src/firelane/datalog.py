@@ -17,7 +17,6 @@ datalog.py — 데이터 대장 도구
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import subprocess
 import sys
@@ -88,12 +87,15 @@ CRITICAL = ["data/" + n for n in _layer_rels("backup")
 
 
 # ──────────────────────────────────────────────────────────────
-def sha256(p: Path, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with p.open("rb") as f:
-        while b := f.read(chunk):
-            h.update(b)
-    return h.hexdigest()
+from firelane import paths
+from firelane.hashing import sha256 as _h_sha256
+
+
+def sha256(p, chunk: int = 1 << 20) -> str:
+    # ★ 2026-09-13. 구현은 `firelane.hashing` 한 곳이다.
+    #   이름은 호출부 때문에 남긴다 — 옮긴 것과 고친 것을
+    #   한 커밋에 섞지 않는다(원칙 ⑤).
+    return _h_sha256(p, chunk)
 
 
 def git_state() -> dict:
@@ -148,7 +150,7 @@ def cmd_record() -> None:
                 "git": g, "python": sys.version.split()[0]},
         "outputs": rec,
     }
-    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2),
+    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
                         encoding="utf-8")
 
     n_und = sum(1 for v in rec.values() if v.get("undeclared"))
@@ -339,7 +341,7 @@ def cmd_backup(dest: str) -> None:
             n += 1
     (D / "_backup_index.json").write_text(
         json.dumps({"at": datetime.now(KST).isoformat(timespec="seconds"),
-                    "files": index}, ensure_ascii=False, indent=1), encoding="utf-8")
+                    "files": index}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"백업 {n}개 → {D}")
     print("★ 복원 훈련 주기는 팀 합의 사항이다. 임의로 정하지 않는다.")
     print("  복원해 본 적 없는 백업은 백업이 아니다")
@@ -377,7 +379,6 @@ def cmd_fsck() -> None:
       코드가 넷만 알아도 아무도 몰랐고, 없는 계층을 쓰려던 도구는 자기
       자리를 발명했다(SSD 루트 11.7MB).
     """
-    import os
     import subprocess
 
     from firelane import layers as L
@@ -481,13 +482,13 @@ def cmd_fsck() -> None:
 
     # ⑦ 기계 설정 — 환경변수도 검사 대상이다
     print("\n── 기계 설정")
-    if os.environ.get("FIRE_LANE_RAW"):
+    if paths.env("FIRE_LANE_RAW"):
         bad.append("FIRE_LANE_RAW(폐기) 가 설정돼 있다 — "
                    "FIRE_LANE_DATA 를 덮어써 기계 간 산출물이 갈린다")
         print("  ★    FIRE_LANE_RAW 잔존")
     else:
         print("  OK   FIRE_LANE_RAW 없음")
-    if not os.environ.get("FIRE_LANE_DATA"):
+    if not paths.env("FIRE_LANE_DATA"):
         warn.append("FIRE_LANE_DATA 미설정 — raw 가 저장소 안으로 떨어진다")
         print("  ★    FIRE_LANE_DATA 미설정")
     else:

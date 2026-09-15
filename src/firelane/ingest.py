@@ -707,9 +707,40 @@ def main():
     tmp = ROOT / ".work"
     tmp.mkdir(exist_ok=True)
     results = []
+    _done = False
 
-    for key, e in cfg["datasets"].items():
+    # ★ 2026-09-13. `finally` 로 감쌌다. 아래의 "실패했을 때는 지운다" 는
+    #   맞는 규율인데 **그 줄까지 도달해야 돈다.** Ctrl-C 는 루프 한가운데서
+    #   스택을 걷어내므로 반쯤 풀린 `.work` 가 그대로 남고, 다음 실행이
+    #   그것을 캐시로 믿는다.
+    # ★ 2026-09-14 재정정. `ngii_road` · `jijeok` 이 죽은 진짜 원인은
+    #   **메모리**였다(`Errno 12`). `.work` 오염도 stdin 누락도 아니었다.
+    #   같은 증상을 두 번 오진했다 — 증상이 맞아떨어진다고 원인이 아니다.
+    #   이 `finally` 자체는 옳으므로 남긴다. 중단된 실행이 반쯤 풀린
+    #   `.work` 를 남기는 것은 사실이고, 막는 것이 맞다.
+    # ★ 아래 옛 사유는 틀렸다. 지우지 않고 남겨 둔다 — 무엇을 잘못
+    #   짚었는지가 다음 사람에게 정보다.
+    # ☓ 2026-09-14 (틀림). 그날 `ngii_road` 가 죽은 원인은 이것이 아니었다.
+    #   진범은 `verify.sh` 의 `step()` 이 자식에게 파이프 stdin 을 물려준
+    #   것이었다(`</dev/null` 누락). 같은 자리에서 같은 증상이 두 번 났으면
+    #   공통 원인을 먼저 의심했어야 했다. 이 `finally` 자체는 옳으므로
+    #   남기되, **사유를 고쳐 적는다** — 틀린 사유는 침묵보다 나쁘다.
+    try:
+      for key, e in cfg["datasets"].items():
         if a.only and key not in a.only:
+            continue
+        # ★ 2026-09-14. 요청할 때만 읽는다. `jijeok` 은 1.0GB 를 풀어
+        #   630만 행을 파싱해 24,183건을 내는데 **판정도 화면도 안 읽는다** —
+        #   소비자가 `tools/jijeok_probe.py` · `jijeok_review.py` 둘뿐이다.
+        #   8GB 기계에서 `verify.sh` 안의 전량이 그것 때문에 OOM 으로
+        #   죽었다(Errno 12). 2026-09-03 에도 같은 일이 있었다.
+        # ★ `raw_only` 로 안 바꾼다. 그것은 "읽지 않는다" 이고 이쪽은
+        #   **읽을 수는 있어야** 한다 — 탐색 도구가 산출물을 쓴다.
+        if e.get("on_demand") and not a.only:
+            results.append({"key": key, "status": "SKIP", "features": "",
+                            "geom": [], "outputs": [],
+                            "note": "on_demand — --only 로 지목할 때만 읽는다"})
+            print(f"[SKIP   ] {key:22} on_demand")
             continue
         if a.check:
             hits = paths_for(key, e)
@@ -741,6 +772,11 @@ def main():
             _msg = str(r["error"])[:78]
         print(f"[{_st:7}] {key:20} {_msg}")
         results.append(r)
+      _done = True
+    finally:
+        if not _done:
+            # 끊겼거나 터졌다. 압축 해제분을 남기지 않는다.
+            shutil.rmtree(tmp, ignore_errors=True)
 
     # ★ 2026-08-23. 매 실행 지웠더니 `캐시 0` 이 매번 떴다.
     #   `ngii1k` 묶음만 도엽 74장 + NGI 143장을 다시 푼다 — ingest 180초의

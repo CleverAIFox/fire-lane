@@ -159,7 +159,7 @@ def test_plan_has_no_closed_items():
         + "\n  ".join(f"#{i} {t[:46]}" for i, t in rows)
         + "\n\n  PLAN 은 앞으로 할 일만 담는다(§0-2). 끝난 것은\n"
           "  결과를 MASTER 로, 이유를 DECISIONS 로 옮기고 행을 지운다.\n"
-          "  옮기는 도구 — tools/batches/b5_plan.py\n"
+          "  ★ 손으로 옮긴다. 옮기는 배치는 저장소에 안 남긴다.\n"
           "  ★ 갚은 빚은 목록에 안 남는다. 개발이 끝나면 이 문서는 빈다.")
 
     import re
@@ -176,6 +176,6 @@ def test_plan_has_no_closed_items():
         + "\n".join(bad)
         + "\n\n  본문은 DECISIONS 로 옮기고 여기는 가리키기만 한다:\n"
           "      | 15 | 제목 | ⬛ | → `DECISIONS §123` |\n"
-          "  옮기는 도구 — tools/batches/b5_plan.py\n"
+          "  ★ 손으로 옮긴다. 옮기는 배치는 저장소에 안 남긴다.\n"
           "  ★ PLAN 은 미래만 담는다. 끝난 것이 여기 남으면 중복이 쌓이고\n"
           "    어느 쪽이 정본인지 모르게 된다(PLAN §0-2).")

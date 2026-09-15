@@ -74,7 +74,6 @@ PARAM 아래 상수
 from __future__ import annotations
 
 import argparse
-import sys
 import zipfile
 from pathlib import Path
 
@@ -87,6 +86,7 @@ from shapely.geometry import LineString
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
 
+from firelane.console import col
 from firelane.paths import INTERIM, PROCESSED, QUARANTINE, RAW
 from firelane.seg.params import COV_MIN
 
@@ -114,12 +114,6 @@ SNAP = 0.01                 # 좌표 격자(m). 지적 필지 공유 경계 어�
 SCOPE_GPKG = "jijeok_scope.gpkg"
 OUT_GPKG = "jijeok_width.gpkg"
 
-C = {"r": "\033[31m", "g": "\033[32m", "y": "\033[33m",
-     "c": "\033[36m", "d": "\033[90m", "z": "\033[0m"}
-
-
-def col(s: str, k: str) -> str:
-    return f"{C[k]}{s}{C['z']}" if sys.stdout.isatty() else s
 
 
 def _side() -> Path:

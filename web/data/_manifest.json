@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-12T19:33:25+09:00",
+  "generated_at": "2026-09-15T09:47:02+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
@@ -7,12 +7,12 @@
       "bytes": 1073981
     },
     "segments.schema.json": {
-      "sha256": "e5dd21b05acc535c7d2d892d8458ee567bc4db4b1eb635329a0929e234e86ef5",
-      "bytes": 5046
+      "sha256": "02364f2402e84ac54b1fdbce7e47e9a282b968f919aedcadf058601db9374f7c",
+      "bytes": 5047
     },
     "_manifest.json": {
-      "sha256": "999789a87df431a19ad98220ec62bb6207d3bd2f878d0548c656dbc599a8f191",
-      "bytes": 82999
+      "sha256": "06fbdef9c971b7a0bb623e78190163cfac6f33c641f16fec8d1a027867708ad0",
+      "bytes": 82337
     }
   },
   "files": {
@@ -57,16 +57,16 @@
       "bytes": 524608
     },
     "route_vehicle.json": {
-      "sha256": "6570c927dd6851c0b60a2be0979906ce0d0742be4ef961f77444ed75c0e87fa9",
-      "bytes": 83103
+      "sha256": "3b7b40dcc46a3afd31e4b8362159c59fdc0a5bb9323f6436f2a351c858a7ae78",
+      "bytes": 83104
     },
     "segments.geojson": {
       "sha256": "2a038ad89c150b2664c03463059d8d717f5323cd4f77f24a2045cc7dae1b94ad",
       "bytes": 903981
     },
     "segments.schema.json": {
-      "sha256": "dbb7f9fc228c773972b40776e5e09ff94c8619f1ba6ebe63ca81381062d1d523",
-      "bytes": 4841
+      "sha256": "6b117a3fcbed6ca1394732d3a97b055b93af2e7fc07712b9767397367b92029d",
+      "bytes": 4842
     },
     "stations.geojson": {
       "sha256": "9200490834e8747b3766894383f0a6878cf4fdb950e96819cb9a059e90f2fcbb",
@@ -77,12 +77,12 @@
       "bytes": 12243
     },
     "vehicle_spec.json": {
-      "sha256": "8d11de2e23dc2e9068e0d9aad0383c4bee97c92e6f257b0432a8d982a7e93261",
-      "bytes": 349
+      "sha256": "3a601395aaf5d95881959fee5fc88fcb34d4ab9041071930caaf5ed57a31fa6b",
+      "bytes": 350
     },
     "view.json": {
-      "sha256": "63c88c7f2bdab2705f5f55d437cfb6a8cfb7a274355c0649e20506a2dd4c7940",
-      "bytes": 581
+      "sha256": "7a6533accf644d6a49353d82e314c014da2178a0f4291304d02a70494fc11762",
+      "bytes": 582
     }
   },
   "tiles": {

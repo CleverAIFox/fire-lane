@@ -24,7 +24,6 @@ from __future__ import annotations
 import argparse
 import collections
 import fnmatch
-import hashlib
 import os
 import re
 import sys
@@ -49,19 +48,18 @@ NAME_RE = re.compile(r"^[a-z0-9]+(_[a-z0-9\-]+)+_\d{8}\.[a-z0-9]+$")
 SKIP = {".ds_store", "thumbs.db", "desktop.ini"}
 
 
-def human(n: int) -> str:
-    for u in ("B", "KB", "MB", "GB", "TB"):
-        if n < 1024 or u == "TB":
-            return f"{n:,.1f} {u}" if u != "B" else f"{n} B"
-        n /= 1024
 
 
-def sha256(p: Path) -> str:
-    h = hashlib.sha256()
-    with p.open("rb") as f:
-        for b in iter(lambda: f.read(1 << 20), b""):
-            h.update(b)
-    return h.hexdigest()
+from firelane import paths
+from firelane.console import human
+from firelane.hashing import sha256 as _h_sha256
+
+
+def sha256(p, chunk: int = 1 << 20) -> str:
+    # ★ 2026-09-13. 구현은 `firelane.hashing` 한 곳이다.
+    #   이름은 호출부 때문에 남긴다 — 옮긴 것과 고친 것을
+    #   한 커밋에 섞지 않는다(원칙 ⑤).
+    return _h_sha256(p, chunk)
 
 
 def load_ledger() -> dict:
@@ -81,7 +79,7 @@ def load_ledger() -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--root", default=os.environ.get("FIRE_LANE_DATA", ""))
+    ap.add_argument("--root", default=str(paths.DATA or ""))
     ap.add_argument("--full", action="store_true")
     ap.add_argument("--sha", action="store_true")
     a = ap.parse_args()

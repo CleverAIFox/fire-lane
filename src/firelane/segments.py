@@ -44,6 +44,7 @@ from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points, unary_union
 from shapely.strtree import STRtree
 
+from firelane import segkey as _segkey
 from firelane.paths import PROCESSED
 
 # ── 파라미터 · 순수 함수 ──────────────────────────────────────
@@ -566,7 +567,7 @@ def main():
                 _rows = []
                 for _i in _miss:
                     _g = units[_ordered[_i]]["geom"]
-                    _pt = _g.interpolate(0.5, normalized=True)
+                    _pt = _segkey.midpoint(_g)
                     _lon, _lat = _to4326(_pt.x, _pt.y)
                     _rows.append({"unit": _ordered[_i],
                                   "length_m": round(_g.length, 1),
@@ -578,7 +579,7 @@ def main():
                     print(f"      {_r['length_m']:6.1f}m  "
                           f"{_r['lat']:.6f},{_r['lon']:.6f}")
                 (PROCESSED / "uncovered_units.json").write_text(
-                    _json.dumps(_rows, ensure_ascii=False, indent=1),
+                    _json.dumps(_rows, ensure_ascii=False, indent=1) + "\n",
                     encoding="utf-8")
         except GuardFailure as _e:
             sys.exit(f"★ {_e}")

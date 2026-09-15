@@ -106,3 +106,12 @@ BATCH_MAP.json
 # b2_* 배치가 뜬 sources.yaml 백업. git 이 이력을 갖는다
 sources.yaml.b2*
 HANDOFF_*.md
+
+# ★ DMS 회차 작업지. 사람이 숫자만 적고 버리는 것이라 산출물이다.
+#   봉인(SEAL.json)과 북마크(BOOKMARK.json)는 증표라서 **커밋한다.**
+data/dms/round-*.txt
+
+# ★ DMS 산출물. `dms.py scan` 이 매번 다시 낸다 — 커밋하면 매 실행마다 diff 다.
+#   증표인 SEAL.json · RED.txt · BOOKMARK.json 은 커밋한다(위 규칙 참조).
+data/dms/DMS.json
+.coverage

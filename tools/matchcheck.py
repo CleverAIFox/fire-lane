@@ -17,13 +17,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import random
 import sys
 import time
 import urllib.parse
 import urllib.request
 from collections import Counter, defaultdict
+
+from firelane import paths  # noqa: F401  ★ import 만으로 .env 를 환경에 얹는다
 
 API = "https://api.mapbox.com/matching/v5/mapbox/driving/"
 SEED = 20260904  # 재현성. sample_design.py 와 같은 원칙
@@ -83,7 +84,7 @@ def main():
     ap.add_argument("--out", default="matchcheck.csv")
     a = ap.parse_args()
 
-    token = os.environ.get("MAPBOX_TOKEN")
+    token = paths.secret("MAPBOX_TOKEN")
     if not token:
         sys.exit("MAPBOX_TOKEN 이 없다.  export MAPBOX_TOKEN='pk....'")
 
