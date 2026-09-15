@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-09-15T15:31:41+09:00",
- "commit": "2ecdeac",
+ "sealed_at": "2026-09-15T17:34:24+09:00",
+ "commit": "58fd8d4",
  "tool": "ad3fcdbb01a3460d",
  "scope": "verify.sh 로그",
  "docs": {
@@ -3312,7 +3312,7 @@
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 42 packages in 12ms"
+   "tail": "Checked 42 packages in 0.66ms"
   },
   "verify/패키지 import 29종": {
    "rc": 0,
@@ -3327,7 +3327,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "548 passed, 47 skipped in 74.36s (0:01:14)"
+   "tail": "548 passed, 47 skipped in 76.14s (0:01:16)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3342,7 +3342,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "223 passed, 48 skipped in 19.24s"
+   "tail": "223 passed, 48 skipped in 21.29s"
   },
   "verify/커밋 정책": {
    "rc": 0,
