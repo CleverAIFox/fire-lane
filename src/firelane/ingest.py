@@ -32,6 +32,7 @@ import hashlib
 import io
 import json
 import shutil
+import subprocess
 import sys
 import zipfile
 from datetime import UTC, datetime
@@ -671,6 +672,69 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     return rec
 
 
+# ★ 부모가 자식에게 결과를 받는 표식. 자식의 화면 출력을 그대로
+#   흘리면서도 결과 한 줄만 골라내야 한다.
+_MARK = "@@ingest-result@@ "
+
+
+def _spawn(key: str) -> dict:
+    """소스 하나를 **자식 프로세스**로 돌리고 결과 dict 를 받는다.
+
+    ── 왜 자식인가 (PLAN #15) ─────────────────────────────────────
+    `geopandas` 가 놓은 메모리를 OS 에 안 돌려줘 한 프로세스로 66종을
+    돌면 RSS 가 단조증가한다. 뒤쪽 무거운 소스가 `Errno 12` 로 죽는다.
+    종료 시 OS 가 회수하게 하면 누적이 0 으로 리셋된다.
+
+    ★ **"무거운 것만" 이 아니라 전부 자식으로 돌린다.** 2026-09-14 에
+      `jijeok`(1.0GB · 630만 행)을 `on_demand` 로 뺐더니 OOM 이
+      `ngii_road` 로 **옮겨갔다.** 문제는 개별 크기가 아니라 누적이므로,
+      무거운 것을 고르는 일 자체가 답이 아니다. `_manifest` 에 시간도
+      없어서 고를 근거도 없다.
+
+    ★ `--keep-work` 를 준다. 자식마다 `.work` 를 지우면 `ngii1k` 가
+      도엽 74장 + NGI 143장을 매번 다시 푼다 — ingest 시간의 대부분이
+      거기다(아래 2026-08-23 주석). **OOM 을 고치고 시간을 폭발시키면
+      안 바꾼 것만 못하다.** `.work` 는 부모가 마지막에 한 번 판단한다.
+
+    ★ `--emit-json` 을 준다. 자식은 대장을 쓰지 않는다. 40번 쓰면 I/O 도
+      낭비고, 중간에 죽으면 대장이 반쯤 갱신된 채 남는다 — `--check` 가
+      "조회는 아무것도 쓰지 않는다" 로 세운 선과 같은 이유다(2026-08-31).
+
+    ★ `python -m firelane.ingest` 가 아니라 `main()` 을 직접 부른다.
+      전자는 `warn_direct_call` 이 자식마다 경고를 찍어 화면이 40줄
+      늘어난다. 그 경고는 **사람**이 단계를 직접 부를 때를 위한 것이고
+      부모가 부르는 것은 그 경우가 아니다.
+
+    실패는 예외로 낸다. 호출부의 `except` 가 `quarantine_stale` 까지
+    이미 처리하므로 새 경로를 만들지 않는다.
+    """
+    cmd = [sys.executable, "-c",
+           "from firelane.ingest import main; main()",
+           "--only", key, "--keep-work", "--emit-json"]
+    p = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
+                       stdin=subprocess.DEVNULL, check=False)
+    # ★ 자식의 진행 줄은 삼킨다. 부모가 같은 내용을 `[OK ]` 로 다시
+    #   찍으므로 안 삼키면 **한 소스가 두 줄**이 된다. `.work 유지` 도
+    #   자식 것은 거짓이다 — 정리 판단은 부모 몫이고 자식은 항상 남긴다.
+    #   부모가 못 내는 것(원본 행수·select 내역)만 흘린다.
+    for line in p.stdout.splitlines():
+        if line.startswith(_MARK) or line.startswith(("[", "  · .work")):
+            continue
+        print(line)
+    if p.stderr.strip():
+        print(p.stderr.rstrip(), file=sys.stderr)
+    for line in reversed(p.stdout.splitlines()):
+        if line.startswith(_MARK):
+            return json.loads(line[len(_MARK):])
+    # ★ 결과가 없다 = 자식이 중간에 죽었다. OOM 이면 rc 가 -9(SIGKILL) 다.
+    #   그것을 그대로 사유로 적는다 — "실패했다" 만 적으면 다음 사람이
+    #   또 추측한다(2026-09-14 오진 넷).
+    raise RuntimeError(
+        f"자식이 결과를 안 냈다 (rc={p.returncode}"
+        + (" · SIGKILL — 메모리일 가능성이 높다" if p.returncode in (-9, 137) else "")
+        + ")")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", nargs="*")
@@ -688,6 +752,13 @@ def main():
                     help="지난 실행에서 FAIL·MISSING 인 소스만 다시 돌린다")
     ap.add_argument("--keep-work", action="store_true",
                     help=".work 압축 해제분을 남긴다 (다음 실행이 빨라진다)")
+    # ★ PLAN #15. 소스마다 자식 프로세스로 돌려 메모리를 OS 에 반납한다.
+    #   사유는 `_spawn` 에 있다. 기본값은 실측 뒤에 정한다.
+    ap.add_argument("--split", action="store_true",
+                    help="소스마다 자식 프로세스로 돌린다 (메모리 반납)")
+    # ★ 자식 전용. 대장을 쓰지 않고 결과 한 줄만 낸다.
+    ap.add_argument("--emit-json", action="store_true",
+                    help=argparse.SUPPRESS)
     a = ap.parse_args()
 
     if a.retry_failed:
@@ -749,7 +820,7 @@ def main():
             print(f"[{'OK ' if hits else 'MISS'}] {key:20} {len(hits)}개")
             continue
         try:
-            r = build(key, e, tmp)
+            r = _spawn(key) if a.split else build(key, e, tmp)
         except Exception as ex:                             # noqa: BLE001
             r = {"key": key, "status": "FAIL", "error": f"{type(ex).__name__}: {ex}"}
             # ★ FAIL 이면 이 key 의 기존 산출물을 개명해 하류에서 떼어낸다.
@@ -796,6 +867,19 @@ def main():
         _n = sum(1 for _ in tmp.rglob("*") if _.is_file())
         print(f"  · .work 유지 {_n:,}파일 — 다음 실행이 빨라진다 "
               f"(정리: uv run python tools/tidy.py --yes)")
+
+    # ★ 자식 모드. **대장을 쓰지 않는다.** `--check` 와 같은 선이고 같은
+    #   이유다 — 부분 실행이 전체 상태를 파괴하는 것을 막는다(아래 08-31).
+    #   결과는 부모가 모아서 한 번에 쓴다.
+    # ★ `--check` **앞**에 둔다. `--check --emit-json` 이면 raw 실물의
+    #   sha256 이 나오고 `dms.py` 가 그것을 봉인 지문으로 쓴다(PLAN #68).
+    #   대장의 `source_sha256` 을 쓰면 안 된다 — 그것은 ingest 가 돌 때
+    #   찍힌 값이라 **raw 가 바뀌어도 ingest 전까지 안 바뀐다.** 그 값으로
+    #   대조하면 "같다" 가 항상 참인 죽은 검사가 된다.
+    if a.emit_json:
+        for r in results:
+            print(_MARK + json.dumps(r, ensure_ascii=False, sort_keys=True))
+        return 0
 
     # ★ 2026-08-31. **`--check` 는 조회다. 아무것도 쓰지 않는다.**
     #
