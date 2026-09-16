@@ -122,7 +122,9 @@ printf '%s저장소%s  %s\n' "$D" "$Z" "$ROOT"
 #   봤는데 **내용이 안 바뀌어도 잡혀서** 30분짜리 재실행을 시켰다.
 printf 'HEAD    %s%s\n' \
   "$(git rev-parse --short HEAD 2>/dev/null || echo '(git 밖)')" \
-  "$(git status --porcelain 2>/dev/null | grep -q . && echo ' +미커밋' || true)"
+  "$(git status --porcelain 2>/dev/null \
+       | grep -v '^.. \(web/data/\|data/processed/\|data/dms/\)' \
+       | grep -q . && echo ' +미커밋' || true)"
 printf '%s노드  %s  %s\n' "$D" "$Z" "$(node --version 2>/dev/null || echo '없음')"
 printf '%suv    %s  %s\n\n' "$D" "$Z" "$(uv --version 2>/dev/null || echo '없음')"
 
@@ -378,6 +380,13 @@ step "대장 별칭 이관 유지" uv run python tools/ledger_fields.py --check
 #   찾았다.** 죽은 참조 안전장치도 참조 치환도 둘 다 안 돌았다. 고치고
 #   나니 그 자리에서 죽은 참조 셋이 나왔다(DECISIONS §159).
 step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
+# ★ 2026-09-15 신설. 커버리지 래칫. 위 `pytest` 단계와 따로 도는 이유는
+#   커버리지를 켜면 75초가 127초가 되기 때문이다 — 매번 두 배를 내지
+#   않고 문턱만 여기서 본다.
+# ★ 숫자를 올릴 때 이 줄의 `--cov-fail-under` 를 같이 올린다. 안 올리면
+#   되돌아간다(`dupcheck --max` 와 같은 규율).
+step "커버리지 래칫 14%" uv run pytest tests/ -q \
+    --cov=src --cov=tools --cov-report= --cov-fail-under=14
 step "내비 소스 목록"      uv run python tools/install_navi.py --check
 step "배포에 내비 빌드"    uv run python tools/pages_add_navi.py --check
 step "루트 잔재·유령 면제" uv run python tools/navi_setup.py --check
@@ -390,11 +399,14 @@ echo
 # ── 부분 실행이면 전수가 아니다 ──────────────────────────────
 # ★ 건너뛴 것은 통과가 아니다. 여기서 울지 않으면 `dms.py seal` 이
 #   반쪽 실행을 전수로 착각하고 봉인한다 — 가짜 증표가 된다.
-if [ -n "$ONLY" ]; then
+# ★ 2026-09-15. `--fast` 도 여기 걸린다. 종전에는 `--only` 만 봤는데
+#   `--fast` 는 `파이프라인 전량` 을 통째로 생략하면서도 전수처럼
+#   통과했다 — 건너뛴 것은 통과가 아니다. 같은 자리에 같은 규율이다.
+if [ -n "$ONLY" ] || [ "$FAST" = "1" ]; then
     # ★ 이 단계 자신이 --only 에 걸려 건너뛰면 안전장치가 무력해진다.
     #   면제를 만들 때 자기 자신을 면제하는 것과 같은 형태다.
     _only_keep="$ONLY"; ONLY=""
-    step "부분 실행" bash -c 'echo "--only 로 돌았다. 전수가 아니다."; exit 1'
+    step "부분 실행" bash -c 'echo "--only 또는 --fast 로 돌았다. 전수가 아니다."; exit 1'
     ONLY="$_only_keep"
 fi
 
