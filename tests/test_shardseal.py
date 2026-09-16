@@ -261,3 +261,41 @@ def test_gpkg_print_does_not_crash_on_a_broken_file(tmp_path):
     assert got.startswith("bytes:"), "깨진 gpkg 에 죽거나 내용 지문인 척한다"
     p.write_bytes(b"not-a-database-v2")
     assert shardseal.gpkg_print(p) != got
+
+
+def test_doc_only_globals_do_not_tear(shard):
+    """소비자 목록 같은 문서성 전역을 바꿔도 샤드가 안 찢어진다 — 찢어지면 OOM 이다."""
+    cfg = {**CFG, "outputs": {"segments": {"consumers": ["tests/new_test.py"]}},
+           "inventory": {"x": 1}, "pending": ["y"]}
+    ok, why = shardseal.check(shard["rec"], cfg, "road", shard["hits"], shard["out"], "code-v1")
+    assert ok, why
+
+
+def test_scope_global_tears(shard):
+    """범위가 바뀌면 ingest 가 자르는 영역이 바뀐다 — 찢어져야 한다."""
+    cfg = {**CFG, "scopes": {"core": {"buffer_m": 300}}}
+    ok, why = shardseal.check(shard["rec"], cfg, "road", shard["hits"], shard["out"], "code-v1")
+    assert not ok and "sources.yaml 설정이 바뀌었다" in why
+
+
+def test_ingest_global_keys_are_declared():
+    """ingest 닫힘이 `x["<최상위 키>"]` · `x.get("<최상위 키>")` 로 읽는 키가 INGEST_GLOBAL 에 있는가.
+
+    ★ 레코드 필드 이름과 겹치는 `outputs` 는 뺀다(대장 레코드의 산출물 목록이다).
+    """
+    import ast
+
+    import yaml
+    top = set(yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8")))
+    read = set()
+    for p in shardseal.code_closure():
+        for n in ast.walk(ast.parse(p.read_text(encoding="utf-8"))):
+            if isinstance(n, ast.Subscript) and isinstance(n.slice, ast.Constant):
+                read.add(n.slice.value)
+            elif (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                  and n.func.attr == "get" and n.args and isinstance(n.args[0], ast.Constant)):
+                read.add(n.args[0].value)
+    used = (read & top) - {"datasets", "outputs"}
+    assert "layers" in used or "raw_only" in used, "탐지가 아무것도 못 찾았다 — 카나리아가 죽었다"
+    missing = used - set(shardseal.INGEST_GLOBAL)
+    assert not missing, f"ingest 가 읽는 전역 키가 cfg 칸에 없다: {sorted(missing)} — 바뀌어도 샤드가 안 찢어진다"

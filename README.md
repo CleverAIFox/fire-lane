@@ -407,9 +407,11 @@ web/
   index.html              뼈대                      공동
   style.css               색·간격·타이포             @marscoolcat
   config.js               색상표·임계값·마커·카메라   공동
-  js/                     로직·레이어 29개 모듈      공백 (PLAN #79)
+  js/                     로직·레이어 30개 모듈      @CleverAIFox
   data/                   생성물. 손으로 고치지 않는다
 ```
+
+강제자 없음 — 사유: 구조 블록의 실재는 test_readme_structure_lists_real_files 가 본다
 
 ---
 

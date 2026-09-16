@@ -104,6 +104,7 @@
 /web/js/map.js           @CleverAIFox           # !strict
 /web/js/basemap.js       @CleverAIFox           # !strict
 /web/js/verdict.js       @CleverAIFox           # !strict
+/web/js/reach.js         @CleverAIFox           # !strict   2026-09-16 도달 불가 조인 (DECISIONS §166)
 /web/js/config-access.js @CleverAIFox           # !strict
 /web/js/dom.js           @CleverAIFox
 /web/js/layers/          @CleverAIFox           # !strict
