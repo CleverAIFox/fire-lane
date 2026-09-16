@@ -1092,16 +1092,18 @@ CORS 로 막힌다. 설치할 것은 없다. MapLibre 와 deck.gl 은 CDN 에서
 | `web/style.css` | **@marscoolcat 단독** | 색·간격·타이포·애니메이션·레이아웃 |
 | `web/index.html` | 공동 | 뼈대 마크업. 거의 안 바뀐다 |
 | `web/config.js` | **공동** | 판정 색상·마커 스펙·카메라·출동모드·미니맵 |
-| `web/js/` | **공백** | 로직·레이어 29개 모듈. 이탈로 소유자 없음(§8 · `PLAN #79`) |
+| `web/js/` | `@CleverAIFox` | 로직·레이어 30개 모듈. 1인 저장소라 공백이 없다(DECISIONS §163-5) |
 | `web/js/icons/` · `ui/` | 공동 | 캔버스 그림 · 범례·검색·테마·토글 |
 | `web/data/` | 생성물 | `publish_web.py` 산출. 손으로 고치지 않는다 |
 
 **UI 작업은 `style.css` 와 `config.js` 두 파일이면 된다.** `web/js/layers/` 를
 건드려야 하는 상황은 로직 문제이므로 GIS 담당에게 넘긴다.
 
-`app.js` 는 없다. 1,260줄이던 그 파일은 `web/js/` 29개 모듈로 갈렸다.
+`app.js` 는 없다. 1,260줄이던 그 파일은 `web/js/` 모듈들로 갈렸다(지금 30개 모듈).
 수의 정본은 `node tools/js_graph_check.mjs` 출력이다.
 모듈 구조는 `web/README.md` 가 정본이다.
+
+강제자  `tests/test_guards.py::test_docs_point_at_the_real_package` — 파일 구조 표가 실제 패키지 경로를 가리키는지 본다
 
 ### 11-3. `config.js` — UI 담당이 조정하는 값
 

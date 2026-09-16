@@ -303,7 +303,17 @@ def test_web_uses_stable_segment_key():
                   119 가 무전에서 쓰는 표기와 같다(§5-1)
     """
     import re
-    js = _js()
+    # ★ 2026-09-16. `reach.js` 는 seg_uid 를 **조인 키로만** 쓴다(route_vehicle.json 이
+    #   seg_uid 로 색인된다). 화면에 띄우지 않는다는 것을 아래에서 따로 본다.
+    #   웅토피아 저장소가 같은 자리(경로 결선)에서 같은 예외를 뒀다(DECISIONS §166).
+    JOIN_ONLY = {"reach.js"}
+    js = "\n".join(p.read_text(encoding="utf-8")
+                   for p in sorted((WEBDIR / "js").rglob("*.js")) if p.name not in JOIN_ONLY)
+    for name in JOIN_ONLY:
+        src = re.sub(r"/\*.*?\*/", "", (WEBDIR / "js" / name).read_text(encoding="utf-8"),
+                     flags=re.S)
+        assert not re.search(r"innerHTML|textContent|insertAdjacent|console\.log|`", src), (
+            f"{name} 는 조인 전용으로 예외를 받았는데 화면·문자열 출력을 한다")
     # ★ 주석은 뺀다. 이 규칙을 왜 만들었는지 설명하려면 주석에 그 이름을
     #   써야 하는데, 그것까지 잡으면 자기 문서를 자기가 막는다.
     code = re.sub(r"/\*.*?\*/", "", js, flags=re.S)

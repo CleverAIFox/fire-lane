@@ -6746,3 +6746,96 @@ R-tree 색인은 뺀다. 읽지 못하는 파일은 바이트로 떨어져 정�
 추적 파일이 안 바뀌는지 본다. 8분짜리 verify 로 알게 되는 것을 2분에 먼저 안다.
 
 강제자  `tests/test_shardseal.py::test_gpkg_print_is_content_not_bytes` · `::test_seal_logic_itself_is_not_in_code_print`
+
+## 166. 배치 D2 — 도달 불가를 지도에 올리고 웅토피아 경로 수정을 대조했다
+
+> 2026-09-16 · 오창준
+
+강제자 없음 — 사유: 하위 절 166-1~166-7 이 각자 강제자 칸을 든다
+
+### 166-1. 도달 불가 오버레이
+
+행 「`route_vehicle.json` 결선 (지도)」 을 닫았다. 1,101 구간 중 **413**(37.5%)이 거점에서
+차량 경로로 닿지 않는데 지도에 없었다. 행은 414 로 적었다. 데이터는 발행돼 있었고 조인
+키(`seg_uid`)도 1:1 이었다.
+
+`web/js/reach.js` 가 `reachable` 을 구간 속성에 붙이고, `seg-l` 위에 점선 레이어
+`seg-unreach` 를 얹는다. 판정 색은 안 건드린다 — 판정 4종(MASTER §10-2)은 그대로이고
+범례와 섞이지 않는다. 툴팁에 한 줄을 더했다.
+
+★ 오버레이는 조용히 틀린다. 조인이 어긋나면 점선이 **하나도 안 그려지는데** 부팅은
+멀쩡하다. 그래서 키 1:1 · 도달 불가 수가 0 이 아닌지(카나리아) · 빗나간 조인을 0 이
+아니라 null 로 두는지(0 이면 거짓 점선)를 본다. 부팅 스모크 필수 레이어에 넣고,
+`addUnreachable()` 호출을 빼면 스모크가 **정확히 우는 것**을 확인했다.
+
+강제자  `tests/test_reach_overlay.py` · `tools/web_boot_check.mjs` 필수 레이어 `seg-unreach`
+
+### 166-2. 계약 예외 — `reach.js` 는 `seg_uid` 를 조인에만 쓴다
+
+`test_web_uses_stable_segment_key` 가 `web/js` 의 `seg_uid` 를 막는다 — 화면에 내부 키를
+띄우지 않는다는 규약이다. 조인은 표출이 아니다. 문자열을 우회해 검사를 속이지 않고 **사유를 적은
+예외**를 뒀다. 대신 그 파일이 화면 · 문자열을 내면 우는 반대 대조를 같이 뒀고, 조작해
+확인했다.
+
+출처 — 웅토피아 저장소가 같은 자리(경로 결선 `route.js`)에서 같은 예외를 뒀다
+(2026-09-15 수령 zip · 웅토피아 DECISIONS §134). 코드는 가져오지 않았다.
+
+강제자  `tests/test_contract.py::test_web_uses_stable_segment_key` — `JOIN_ONLY` 반대 대조
+
+### 166-3. 샤드 봉인지 cfg 칸을 ingest 가 읽는 전역으로 좁혔다
+
+166-1 을 하며 `sources.yaml` 의 `outputs.segments.consumers` 에 테스트 파일 한 줄을 적었다.
+샤드 봉인지 `cfg` 칸이 **datasets 밖 전역 전부**를 재고 있어서, 그 한 줄로 40 샤드가
+전부 찢어질 뻔했다 — 이 기계에서 그것은 OOM 이다(§165).
+
+전역은 ingest 산출에 닿는 여섯 키(`target_area` · `bbox_4326` · `standard_crs` · `scopes` ·
+`layers` · `raw_only`)만 잰다. 소비자 목록 · 인벤토리 같은 문서성 전역은 안 찢고, 범위는
+찢는다 — 양쪽을 테스트했다. ingest 가 새 전역 키를 읽기 시작하면 가드가 운다.
+
+★ 봉인지 형식이 바뀌어 40 샤드가 한 번 찢어진다. §165-7 의 기계 근거(main 밖 ingest
+함수 AST 불변 — 이번에 ingest.py 는 안 바뀐다)로 재stamp 한다.
+
+강제자  `tests/test_shardseal.py::test_doc_only_globals_do_not_tear` · `::test_scope_global_tears` · `::test_ingest_global_keys_are_declared`
+
+### 166-4. 웅토피아 §134 대조 — 결함 둘 중 하나가 내 내비에 있다
+
+웅토피아는 지도에서 출발 · 도착을 골라 경로를 짜는 패널(`od.js` · `route.js`)을 만들며
+두 결함을 고쳤다. **패널은 가져오지 않는다** — 이 저장소의 경로 화면은 내비(`web/navi`)이고,
+지도에 경로 패널을 또 두면 같은 기능이 두 곳에 산다. 결함만 대조했다.
+
+    ① 출발·도착을 가장 가까운 노드에 붙인다     내 내비에 있다 — graph.ts findRoute → nearestNode
+    ② 끊긴 도로면 옆 도로로 옮겨 "성공" 처리    없다 — 목표에 못 닿으면 null 을 돌려준다
+
+①은 PLAN 에 행으로 올렸다. 투영 · 부분 구간 비용은 내비 TypeScript 와 타입 검사 · 테스트를
+함께 고쳐야 해서 이 배치에 넣지 않았다.
+
+강제자 없음 — 사유: 대조 기록이다. 수정의 강제자는 PLAN 행이 닫힐 때 만든다
+
+### 166-5. MVP 날짜를 옮겼다
+
+배치 B(§162-6)에서 개요서 v1.6 의 MVP 2026-09-30 을 `PLAN §10-2` 에 넣었다. 팀 23회
+진행일지(2026-09-16)가 **10-08 MVP 통합 · 11-13 결과물**로 바꿨다. §162-6 이 스스로 적은
+규약(날짜를 넘기면 사유를 먼저 적고 옮긴다)대로 사유를 적고 옮겼다.
+
+강제자 없음 — 사유: 외부 일정이다
+
+### 166-6. 정정 — `part/cv` 는 merge commit 으로는 영원히 ff 가 안 된다
+
+§164-4 는 *"이제 조상 관계가 맞아 다음부터는 ff 다"* 라고 적었다. **틀렸다.** part/cv 에
+올린 merge commit 은 dev 에 들어가지 않으므로 part/cv 는 매번 dev 보다 하나 앞서고,
+다음 동기화에 또 merge commit 이 쌓였다(PR #26 뒤 실측). 옛 조직 PR 머지 기록을 태그
+`archive/part-cv-woongtopia` 로 붙잡고, 내용이 dev 와 같음을 확인한 뒤
+`--force-with-lease` 로 dev 에 맞췄다.
+
+강제자 없음 — 사유: 한 번의 정리다. `merge_batch.sh` 가 내용 동일일 때만 merge commit 을 쓰는 동작은 그대로다
+
+### 166-7. 정정 — `web/js` 소유 서술 · `fleet.json` 출처 잘림
+
+README 와 MASTER §8 이 `web/js` 를 **"공백 · 이탈로 소유자 없음 (PLAN #79)"** 으로 들고
+있었다. §163-5 로 닫힌 행이고 PLAN #79 는 없다. `@CleverAIFox` 로 고쳤다.
+
+`publish_fleet.py` 가 출처 문구를 300자에서 잘라 축거 근거가 끊긴다고 앞서 짚었다.
+실측하니 `fleet.json` 의 `source` 를 **읽는 곳이 없다** — 화면에 안 나간다. 고칠 결함이
+아니라서 두었다.
+
+강제자  `tests/test_declaration_reality.py::test_document_counts_match_reality` — 모듈 수 대조가 README · MASTER · web/README 를 잡았다

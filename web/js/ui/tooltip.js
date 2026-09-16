@@ -103,6 +103,7 @@ export function bindTooltip(){
       `<div class="id">${name}</div>
        <div class="vd" style="color:rgb(${vColor(p.verdict in VERDICT ? p.verdict : "unknown")})">${v.nm}</div>
        ${p.unknown_reason?`<div class="rsn">${REASON[p.unknown_reason]||""}</div>`:""}
+       ${p.reachable===0?`<div class="rsn">차량 경로로 도달 불가 — 거점에서 여기까지 통행 가능한 길이 없다</div>`:""}
        <dl><dt title="포장된 도로 노면만 잰 폭. 화면의 선 굵기가 이 값이다">도로 폭</dt><dd>${n(p.width_min_m)}</dd>
          ${marginRow(p.width_min_m)}</dl>
        ${basisRow()}

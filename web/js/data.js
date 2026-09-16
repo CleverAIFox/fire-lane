@@ -96,16 +96,22 @@ export const markerKeys = () =>
 export const BASE_KEYS = ["segments", "buildings", "boundary", "poi",
                           "lightpoles"];
 
+/* 차량 경로 산출(route_vehicle.json). .geojson 이 아니라 SOURCE() 를 안 탄다.
+   ★ 2026-09-16 결선. 발행만 되고 지도가 안 읽던 파일이다(DECISIONS §166). */
+export const loadRoute = () =>
+  _get(`./data/route_vehicle.json${_build ? `?v=${_build}` : ""}`);
+
 export async function loadInitial() {
   // ★ view.json 을 **먼저** 받는다. 그래야 _build 가 채워지고 이후
   //   데이터 URL 에 스탬프가 붙는다. 병렬로 돌리면 경합이 생겨
   //   어떤 파일은 스탬프 없이 나가고 어떤 파일은 붙는다.
   const view = await loadView();
   const keys = [...BASE_KEYS, ...markerKeys()];
-  const [data, mask, maskSoft] = await Promise.all([
+  const [data, mask, maskSoft, route] = await Promise.all([
     loadAll(keys),
     load("mask"),
     load("mask_soft"),
+    loadRoute(),
   ]);
-  return { ...data, view, mask, maskSoft };
+  return { ...data, view, mask, maskSoft, route };
 }

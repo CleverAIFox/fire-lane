@@ -104,8 +104,15 @@ def code_print(start: str = "firelane.ingest") -> str:
     return _short("\n".join(lines))
 
 
+# ★ 2026-09-16. cfg 칸의 전역은 **ingest 산출에 닿는 최상위 키만**이다. 종전에는
+#   datasets 밖 전부였고, `outputs.<x>.consumers` 에 테스트 파일 한 줄을 적는 것만으로
+#   40 샤드가 찢어질 뻔했다 — 이 기계에서 그것은 OOM 이다(DECISIONS §166-3).
+#   ingest 가 새 최상위 키를 읽기 시작하면 test_ingest_global_keys_are_declared 가 운다.
+INGEST_GLOBAL = ("target_area", "bbox_4326", "standard_crs", "scopes", "layers", "raw_only")
+
+
 def cfg_print(cfg: dict, key: str) -> str:
-    glob = {k: v for k, v in cfg.items() if k != "datasets"}
+    glob = {k: cfg.get(k) for k in INGEST_GLOBAL}
     own = cfg.get("datasets", {}).get(key)
     return _short(json.dumps({"global": glob, "own": own}, sort_keys=True,
                              ensure_ascii=False, default=str))

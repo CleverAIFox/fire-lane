@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-09-16T18:27:26.007202+09:00",
+  "generated_at": "2026-09-16T19:20:39.730487+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -257,7 +257,7 @@
       ],
       "seal": {
         "raw": "574f2d294fa6ff10",
-        "cfg": "281736fd068900f6",
+        "cfg": "0c8544bb8a68567c",
         "code": "6fcd9638a9112ea5",
         "out": {
           "node_link_changelog.csv": "56e7966570ac1746"
@@ -306,7 +306,7 @@
       ],
       "seal": {
         "raw": "895df207b4159c56",
-        "cfg": "747a0eb29067af45",
+        "cfg": "f8ee91a7a5116a9f",
         "code": "6fcd9638a9112ea5",
         "out": {
           "road_link.geojson": "4a73c0e457ce46ca",
@@ -341,7 +341,7 @@
       ],
       "seal": {
         "raw": "895df207b4159c56",
-        "cfg": "50d2ec7ab8648f2f",
+        "cfg": "8260bcd0abef6dde",
         "code": "6fcd9638a9112ea5",
         "out": {
           "road_rw.geojson": "83e5103532146531",
@@ -379,7 +379,7 @@
       ],
       "seal": {
         "raw": "895df207b4159c56",
-        "cfg": "46a4a64c28f46059",
+        "cfg": "baba4bfe0ac7be7a",
         "code": "6fcd9638a9112ea5",
         "out": {
           "road_intrvl.geojson": "1f030babf6abe153",
@@ -1921,7 +1921,7 @@
       ],
       "seal": {
         "raw": "7b970e12ea3f77df,1db699d03bc77128",
-        "cfg": "67afc4c6ddc38b8c",
+        "cfg": "84b3f740f8ec5a4c",
         "code": "6fcd9638a9112ea5",
         "out": {
           "ngii1k.geojson": "199131418de418fe",
@@ -1965,7 +1965,7 @@
       ],
       "seal": {
         "raw": "96ada85a38ef85c9",
-        "cfg": "aa16835ac9169d88",
+        "cfg": "4c8c707303c11314",
         "code": "6fcd9638a9112ea5",
         "out": {
           "streetlight.geojson": "119bb623d7e7e464",
@@ -2007,7 +2007,7 @@
       ],
       "seal": {
         "raw": "cd4f56a0fcba89d9,085ad532f61ea654",
-        "cfg": "d5c7599a1b48dfa5",
+        "cfg": "1d51a21c2a7be0ad",
         "code": "6fcd9638a9112ea5",
         "out": {
           "ngii_road.geojson": "25ccee65b4f0396e",
@@ -2058,7 +2058,7 @@
       ],
       "seal": {
         "raw": "5bbf5a01d677b6dc",
-        "cfg": "50b1b0f88173ecad",
+        "cfg": "c6dc159be549f556",
         "code": "6fcd9638a9112ea5",
         "out": {
           "node_link.geojson": "d4453f032982a048",
@@ -2096,7 +2096,7 @@
       ],
       "seal": {
         "raw": "5bbf5a01d677b6dc",
-        "cfg": "0b041ea5ac4996b4",
+        "cfg": "ed8f23daa33ae25b",
         "code": "6fcd9638a9112ea5",
         "out": {
           "node_point.geojson": "ff2816ee25f590d5",
@@ -2129,7 +2129,7 @@
       ],
       "seal": {
         "raw": "5bbf5a01d677b6dc",
-        "cfg": "b3aee927804de035",
+        "cfg": "72b3397948fcc61e",
         "code": "6fcd9638a9112ea5",
         "out": {
           "turn_restriction.csv": "4101841d894123e1"
@@ -2169,7 +2169,7 @@
       ],
       "seal": {
         "raw": "8351c71117758767",
-        "cfg": "7d2399a7d22c4229",
+        "cfg": "c4d51b06ff1bd4a7",
         "code": "6fcd9638a9112ea5",
         "out": {
           "cctv.geojson": "2f681f338710f997",
@@ -2208,7 +2208,7 @@
       ],
       "seal": {
         "raw": "8f3fca285b8f14d6",
-        "cfg": "f706b7216eeb189d",
+        "cfg": "a7b67ffa7e5b06d8",
         "code": "6fcd9638a9112ea5",
         "out": {
           "fire_station.geojson": "5c863428f2bf5612",
@@ -2277,7 +2277,7 @@
       ],
       "seal": {
         "raw": "57aa361544108ff4",
-        "cfg": "c93e5f77360130cc",
+        "cfg": "baad5194f6faf9b3",
         "code": "6fcd9638a9112ea5",
         "out": {
           "poi_store.geojson": "da2984b0784a16ef",
@@ -2310,7 +2310,7 @@
       ],
       "seal": {
         "raw": "895df207b4159c56",
-        "cfg": "0999ea45d5aad9c8",
+        "cfg": "d391a46a28dc4b0b",
         "code": "6fcd9638a9112ea5",
         "out": {
           "boundary_emd.geojson": "54f928b063314270",
@@ -2371,7 +2371,7 @@
       ],
       "seal": {
         "raw": "895df207b4159c56",
-        "cfg": "872655157e3b896b",
+        "cfg": "7629800cd84f347f",
         "code": "6fcd9638a9112ea5",
         "out": {
           "building.geojson": "8fac3135d6d94a76",
@@ -2407,7 +2407,7 @@
       ],
       "seal": {
         "raw": "895df207b4159c56",
-        "cfg": "052dbaa57725f7cc",
+        "cfg": "9008071a383c27c4",
         "code": "6fcd9638a9112ea5",
         "out": {
           "building_entrance.geojson": "956e92eb8c9658d5",
@@ -2456,7 +2456,7 @@
       ],
       "seal": {
         "raw": "ef46ab01d76a5c0e",
-        "cfg": "dfcb7432e3750309",
+        "cfg": "49957853b657145f",
         "code": "6fcd9638a9112ea5",
         "out": {
           "hydrant_point.geojson": "bde315dbdea91b97",
@@ -2488,7 +2488,7 @@
       ],
       "seal": {
         "raw": "15fb8022f1b2f9ee",
-        "cfg": "d8d174c0558e892e",
+        "cfg": "4208d1ff7bba63c4",
         "code": "6fcd9638a9112ea5",
         "out": {
           "fire_access.csv": "25c12d9afba5854f"
@@ -2559,7 +2559,7 @@
       ],
       "seal": {
         "raw": "4f516236bfdc457b",
-        "cfg": "eb4c19c2820b85e2",
+        "cfg": "242b12b6842952ce",
         "code": "6fcd9638a9112ea5",
         "out": {
           "hydrant_summary.csv": "be97577638a804b1"
@@ -2612,7 +2612,7 @@
       ],
       "seal": {
         "raw": "cd4f56a0fcba89d9,085ad532f61ea654",
-        "cfg": "a5569c7710429d59",
+        "cfg": "e56a48b500b4e742",
         "code": "6fcd9638a9112ea5",
         "out": {
           "ngii_road_center.geojson": "6e811b7664cdee27",
@@ -2649,7 +2649,7 @@
       ],
       "seal": {
         "raw": "ea65b6f8c4bc7179",
-        "cfg": "232b3a7a95037bd7",
+        "cfg": "d0575ac09b7b93e5",
         "code": "6fcd9638a9112ea5",
         "out": {
           "bin_trash.geojson": "468abbf53432a563",
@@ -2686,7 +2686,7 @@
       ],
       "seal": {
         "raw": "e8c6aa4f557b5fc3",
-        "cfg": "ef170dbe4040a9f3",
+        "cfg": "4c1dd35548e434cb",
         "code": "6fcd9638a9112ea5",
         "out": {
           "bin_cloth.geojson": "bb3d895a99b8410e",
@@ -2717,7 +2717,7 @@
       ],
       "seal": {
         "raw": "67654b6e6bc4fb1e",
-        "cfg": "e633f0eefc7e3471",
+        "cfg": "a6550d0cde97aa89",
         "code": "6fcd9638a9112ea5",
         "out": {
           "station_jurisdiction.csv": "b1eec06e437474e1"
@@ -2753,7 +2753,7 @@
       ],
       "seal": {
         "raw": "0f38436f5d4ce8b1",
-        "cfg": "5827501bee7c8bab",
+        "cfg": "3a8d0426b8839e99",
         "code": "6fcd9638a9112ea5",
         "out": {
           "parking_lot.csv": "dbc009458abc9d0d"
@@ -2785,7 +2785,7 @@
       ],
       "seal": {
         "raw": "79dac019117d57e3",
-        "cfg": "3f5068f1b408f0c9",
+        "cfg": "66b214d6a8f933a5",
         "code": "6fcd9638a9112ea5",
         "out": {
           "enforce_cam.csv": "f0b41866f035d9dd"
@@ -2814,7 +2814,7 @@
       ],
       "seal": {
         "raw": "cb565f28d1b2fd1f",
-        "cfg": "7f1b70075e061c00",
+        "cfg": "4e910c159f070d25",
         "code": "6fcd9638a9112ea5",
         "out": {
           "school_zone.csv": "660de16b352b8c06"
@@ -2844,7 +2844,7 @@
       ],
       "seal": {
         "raw": "fc114cb3aadfd3b7",
-        "cfg": "391a148edca98278",
+        "cfg": "585a6520ea4a824c",
         "code": "6fcd9638a9112ea5",
         "out": {
           "parking_zone.csv": "87457c67c300dc11"
@@ -2898,7 +2898,7 @@
       ],
       "seal": {
         "raw": "dac553bb5e289ae8",
-        "cfg": "794159d624c79b6a",
+        "cfg": "159e215204614487",
         "code": "6fcd9638a9112ea5",
         "out": {
           "gjfire_fleet_dongbu.csv": "8b67a44c8e7ec6f0"
@@ -2929,7 +2929,7 @@
       ],
       "seal": {
         "raw": "eb6ffedeb0301d5b",
-        "cfg": "768ab6541349b175",
+        "cfg": "f3663ad7f786cf99",
         "code": "6fcd9638a9112ea5",
         "out": {
           "gjfire_district_dongbu.csv": "d1bb848237c0fa6f"
@@ -2989,7 +2989,7 @@
       ],
       "seal": {
         "raw": "740dedf4e0c6f6de",
-        "cfg": "390b002d37b2e809",
+        "cfg": "f68208c341dd1184",
         "code": "6fcd9638a9112ea5",
         "out": {
           "nfa_dispatch_119.csv": "740dedf4e0c6f6de"
@@ -3065,7 +3065,7 @@
       ],
       "seal": {
         "raw": "66cd210b56f6fb13",
-        "cfg": "1a0d4ace6abc45d0",
+        "cfg": "a48dc583a0dba2cc",
         "code": "6fcd9638a9112ea5",
         "out": {
           "nfa_rescue.csv": "66cd210b56f6fb13"
@@ -3150,7 +3150,7 @@
       ],
       "seal": {
         "raw": "c1f98a86160ef4f7",
-        "cfg": "38a50bd547420946",
+        "cfg": "a7b862e0e2e6b984",
         "code": "6fcd9638a9112ea5",
         "out": {
           "nfa_fire_incident.csv": "c1f98a86160ef4f7"
@@ -3226,7 +3226,7 @@
       ],
       "seal": {
         "raw": "d85ec9f5b7fbdca3",
-        "cfg": "76b83dd6327ab649",
+        "cfg": "048ed234e7a4145e",
         "code": "6fcd9638a9112ea5",
         "out": {
           "nfa_target_building.csv": "d85ec9f5b7fbdca3"
@@ -3398,7 +3398,7 @@
       ],
       "seal": {
         "raw": "82d938c21281441c",
-        "cfg": "802022f1270e5cfb",
+        "cfg": "d8d8d2960defc081",
         "code": "6fcd9638a9112ea5",
         "out": {
           "bldg_ledger_dm.csv": "7cf98f45416607eb"
@@ -3441,7 +3441,7 @@
       ],
       "seal": {
         "raw": "5a9a8d10bf3d17e0",
-        "cfg": "12a9c9edd079b04a",
+        "cfg": "51aba467e2ebfb34",
         "code": "6fcd9638a9112ea5",
         "out": {
           "child_zone_std.geojson": "f96d451f8e1fafe7",
@@ -3490,7 +3490,7 @@
       ],
       "seal": {
         "raw": "c10e7ccbaa7c1e98",
-        "cfg": "046b2801de5c81bc",
+        "cfg": "6d5657b83f45837f",
         "code": "6fcd9638a9112ea5",
         "out": {
           "senior_zone_std.geojson": "21d82148b6330799",
@@ -3543,7 +3543,7 @@
       ],
       "seal": {
         "raw": "5ce87804c5054a09",
-        "cfg": "2c0f34f8362e7eab",
+        "cfg": "c7e8a5aed07ff311",
         "code": "6fcd9638a9112ea5",
         "out": {
           "speedbump.csv": "d984a8b1f00392fe"
@@ -3586,7 +3586,7 @@
       ],
       "seal": {
         "raw": "d6be41274b0f8632",
-        "cfg": "f78ec08b87f63425",
+        "cfg": "647f6a09e327a217",
         "code": "6fcd9638a9112ea5",
         "out": {
           "admin_cctv.csv": "d89684f4f2acd3ce"
@@ -3623,7 +3623,7 @@
       ],
       "seal": {
         "raw": "c4680175becb0bdd",
-        "cfg": "756cf2aebc6019f5",
+        "cfg": "52b5f908313b3960",
         "code": "6fcd9638a9112ea5",
         "out": {
           "speed_cam.csv": "30d996fc31af0e72"
@@ -3679,7 +3679,7 @@
       ],
       "seal": {
         "raw": "3d6dc01f6cb1bf8a",
-        "cfg": "863c419e96a625f9",
+        "cfg": "1958e3ba98682bba",
         "code": "6fcd9638a9112ea5",
         "out": {
           "juso_building_db.csv": "bc238a98e7446a50"

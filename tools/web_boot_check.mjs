@@ -103,7 +103,7 @@ console.log("on        :", calls.on.join(" "));
 console.log("addControl:", calls.addControl);
 
 /* ── 기대치 대조 ──────────────────────────────────────────── */
-const MUST_LAYERS = ["seg-l","bld-3d","bnd-l","mask-l","mask-soft-l",
+const MUST_LAYERS = ["seg-l","seg-unreach","bld-3d","bnd-l","mask-l","mask-soft-l",
                      "hyd-pulse","hyd-pulse2","mk-3d","poi-dot","poi-label",
                      "q-pin-l","mbnd-l","mroute-l","mview-f","mview-halo","mview-l"];
 const missing = MUST_LAYERS.filter(l => !calls.addLayer.includes(l));
