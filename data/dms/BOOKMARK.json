@@ -1,7 +1,13 @@
 {
   "done": [
+    "MASTER-092",
     "MASTER-145",
     "PLAN-004",
-    "README-003"
+    "PLAN-058",
+    "PLAN-060",
+    "PLAN-068",
+    "README-003",
+    "README-006",
+    "README-007"
   ]
 }
