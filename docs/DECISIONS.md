@@ -6839,3 +6839,19 @@ README 와 MASTER §8 이 `web/js` 를 **"공백 · 이탈로 소유자 없음 (
 아니라서 두었다.
 
 강제자  `tests/test_declaration_reality.py::test_document_counts_match_reality` — 모듈 수 대조가 README · MASTER · web/README 를 잡았다
+
+## 167. 문서 정리 — 도달 가능 687 은 688 이었다 · 전량 생략 서술을 두 겹으로
+
+> 2026-09-16 · 오창준
+
+배치 D 를 닫으며 README · MASTER 를 한 번 훑었다.
+
+**도달 가능 수가 하나 어긋나 있었다.** README 두 곳과 MASTER 가 687 을 들었는데 발행된
+`route_vehicle.json` 은 `reachable = 1` 이 **688**, `0` 이 413 이다(합 1,101). 오버레이가
+그리는 413 과 맞추려고 688 로 고쳤다. 687 이 어디서 왔는지는 찾지 못했다 — 산출이
+바뀐 뒤 문서만 남은 것으로 본다. 이 수를 대조하는 강제자가 없었다.
+
+전량 생략 서술(README · MASTER §14-4)이 "raw 가 봉인과 같으면" 한 겹만 적고 있었다.
+§164 코드 지문 · §165 샤드 봉인 두 겹으로 고쳤다.
+
+강제자 없음 — 사유: 도달 가능 수 대조는 `docnum_check` 의 EXPECT 에 넣는 것이 맞고, 문서 배치가 아니라 다음 코드 배치에서 한다
