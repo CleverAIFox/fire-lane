@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-16T09:52:56+09:00",
- "commit": "b7355b6",
+ "sealed_at": "2026-09-16T10:57:27+09:00",
+ "commit": "087d445",
  "tool": "7a56c426602945c9",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "f3cfcacf80bc0d7e",
-  "docs/DECISIONS.md": "6726c16a3ac84184",
-  "docs/PLAN.md": "61d766eb9230ba34",
-  "README.md": "1dff6feceeaa5ac2"
+  "docs/MASTER.md": "b92d6e1f60de3339",
+  "docs/DECISIONS.md": "76d309f24d1277a5",
+  "docs/PLAN.md": "d808fcd0ebd2961f",
+  "README.md": "7fac4ce7933f8959"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -380,26 +380,26 @@
    "title": "4-3. ★ 이 표는 파일로 남지만 봉인 사본이 낡았다"
   },
   "MASTER-028": {
-   "h": "e3cd262702cff444",
-   "state": "blank",
+   "h": "386ecbc8eb5255e3",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5. 시스템 구성"
   },
   "MASTER-029": {
    "h": "f2b6f1c465f2aa8c",
-   "state": "blank",
+   "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "5-1. 왜 나눴나"
   },
   "MASTER-030": {
    "h": "b99994436d503966",
-   "state": "blank",
+   "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "5-2. 계약"
   },
   "MASTER-031": {
    "h": "c9564bde9f5d75ab",
-   "state": "blank",
+   "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "5-3. 보조 모듈"
   },
@@ -512,8 +512,8 @@
    "title": "10-1a. 이 저장소가 쓰는 말"
   },
   "MASTER-050": {
-   "h": "a9d3c2c342a7a5c4",
-   "state": "blank",
+   "h": "d9ae5d7a220815be",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "10-2. 판정 4종"
   },
@@ -3025,6 +3025,72 @@
    "doc": "docs/DECISIONS.md",
    "title": "161. `SEAL` 에 raw 지문"
   },
+  "DECISIONS-320": {
+   "h": "222b109433436955",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "162. 배치 B — 문서·규약 행 열을 판정했다"
+  },
+  "DECISIONS-321": {
+   "h": "fbfdf5c437abd340",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-1. 조사 스크립트 아홉을 `tools/` 에 둔다"
+  },
+  "DECISIONS-322": {
+   "h": "d70cd0d4cc2c4f5e",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-2. `DECISIONS §1~§9` 를 다른 내용으로 채우지 않는다"
+  },
+  "DECISIONS-323": {
+   "h": "f7edc91b90b5e80a",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-3. 죽은 경로 참조 — 행이 자기 경고를 끄고 있었다"
+  },
+  "DECISIONS-324": {
+   "h": "1364bf616be8537c",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-4. 데이터 관리 서술을 `MASTER §18` 하나로"
+  },
+  "DECISIONS-325": {
+   "h": "79bdc168f3eb7e0d",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-5. 회의록 대응표를 동결한다"
+  },
+  "DECISIONS-326": {
+   "h": "c3bc9d68d6d27db4",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-6. 개요서 v1.6 — 대응표로 닫고 MVP 기한을 계획에 넣었다"
+  },
+  "DECISIONS-327": {
+   "h": "26a874fe5abcf52c",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-7. 여정지도 복원을 `⏳` 로 재분류했다"
+  },
+  "DECISIONS-328": {
+   "h": "1ad0eca5fbdae456",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-8. README 재편을 룰셋·소유 배치 뒤로 민다"
+  },
+  "DECISIONS-329": {
+   "h": "107e7b423c919530",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-9. 검증과 데이터 관리 — 겹침이 아니라 층이다"
+  },
+  "DECISIONS-330": {
+   "h": "2069b7b5e66beeb3",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "162-10. 발견 — `PLAN #N` 을 PLAN 밖에서 인용하면 재배번에 썩는다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3044,7 +3110,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "e206cc048cbf57b2",
+   "h": "5cda22a3fa1f9510",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -3368,7 +3434,7 @@
    "title": "8-6. 대장 · 매니페스트 격차 🟡"
   },
   "PLAN-058": {
-   "h": "a941656f5aacf6b9",
+   "h": "6c30d9a3d3d1f652",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "8-7. 저장소 위생 🟡"
@@ -3410,8 +3476,8 @@
    "title": "10-1. 지금 막혀 있는 것"
   },
   "PLAN-065": {
-   "h": "23f6673ecab771e3",
-   "state": "blank",
+   "h": "67412cbcf3c0830f",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "10-2. 순서"
   },
@@ -3506,14 +3572,14 @@
    "title": "도달 가능성은 개별 판정과 다르다"
   },
   "README-013": {
-   "h": "ba5feffd19dc62d6",
-   "state": "blank",
+   "h": "f74318b8a9dd74c8",
+   "state": "none",
    "doc": "README.md",
    "title": "데이터 계층"
   },
   "README-014": {
-   "h": "14d421a270116757",
-   "state": "blank",
+   "h": "0cab77442891491b",
+   "state": "none",
    "doc": "README.md",
    "title": "게이트"
   },
@@ -3548,14 +3614,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 338,
+ "denominator": 330,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 1ms"
+   "tail": "Checked 44 packages in 0.46ms"
   },
   "verify/패키지 import 29종": {
    "rc": 0,
@@ -3570,7 +3636,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "551 passed, 47 skipped in 96.58s (0:01:36)"
+   "tail": "551 passed, 47 skipped in 72.65s (0:01:12)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3585,7 +3651,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "223 passed, 48 skipped in 24.40s"
+   "tail": "223 passed, 48 skipped in 18.57s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -3705,7 +3771,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 555절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 566절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -3730,12 +3796,12 @@
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 없음 — 행 71개가 1..71 로 연속이다"
+   "tail": "✓ 없음 — 행 64개가 1..64 로 연속이다"
   },
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "551 passed, 47 skipped in 134.81s (0:02:14)"
+   "tail": "551 passed, 47 skipped in 88.26s (0:01:28)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -3755,7 +3821,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 320개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 331개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
