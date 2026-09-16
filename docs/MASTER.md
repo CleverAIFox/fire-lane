@@ -1787,10 +1787,20 @@ GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 
     3  main → dev   흡수 PR (merge commit) — 릴리즈 매니저
     4  dev → part   각 파트 통합 담당이 자기 브랜치로 PR (§12-8c)
 
-★ **3·4단계는 직푸시가 아니라 PR 이다.** `dev` · `part/**` 는 셋 다
-`pull_request` 필수다(§12-1). `git push origin dev` 로 되던 것은
-`bypass_actors` 때문이었고 **2026-09-03 회수 후에는 막힌다.** 승인은
-둘 다 0이라 실질 비용은 CI 대기뿐이다.
+★ **1인 운용(§12-1c) 동안 3·4단계는 fast-forward 직푸시다.** 흡수와
+파트 동기화는 **내용이 같은 커밋 이동**이라 PR 을 열면 CI 대기만 는다.
+`bash tools/merge_batch.sh --release` 가 1~4 를 순서대로 밟는다 — CI 초록
+확인 · merge commit · 스쿼시 흔적 흡수 · 태그 형식 검사 · 파트별 ff.
+ff 가 안 되는 파트는 dev 를 합쳐 보고 **내용이 dev 와 같을 때만** merge
+commit 으로 올린다. 파트 고유 내용이 있으면 손대지 않는다.
+
+★ 협업자가 둘이 되어 bypass 가 회수되면 **3·4단계는 PR 로 돌아간다.**
+`dev` · `part/**` 는 `pull_request` 필수이고(§12-1) 승인은 0이라 비용은 CI
+대기뿐이다. 2026-09-03 ~ 09-12 가 그 기간이었다.
+
+★ **스쿼시로 머지하지 않는다.** `EXPECT` 가 dev · main 을 merge 만 허용한다.
+PR #23 을 스쿼시로 넣어 main 이 dev 조상에서 빠졌고, 그 뒤 릴리즈마다
+`git merge origin/main` 이 먼저 필요해졌다.
 
 ★ **4단계는 릴리즈 매니저가 대신 하지 않는다.** 파트 브랜치는 그 파트
 통합 담당의 것이고(§12-8c · CODEOWNERS), 남이 올리면 그 파트가 자기
@@ -1814,6 +1824,8 @@ gh pr create --base part/<파트> --head dev --fill && gh pr merge --merge
 
 ★ 릴리즈 직전에 `uv run python tools/ruleset_check.py` 를 돌린다. 룰셋 실물이
 §12-1 과 어긋나면 여기서만 잡힌다.
+
+강제자  `tools/merge_batch.sh` — 1~4단계를 순서대로 밟고 CI 초록 · merge commit · 태그 형식을 검사한다
 
 ### 12-8c. 파트 통합 담당
 

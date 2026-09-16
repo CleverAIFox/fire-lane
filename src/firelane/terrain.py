@@ -5,6 +5,12 @@ terrain.py — 공개DEM 을 스코프로 클립·보간해 표고를 부여한�
 
 IN    $FIRE_LANE_DATA/raw/ngii/**  (DEM) · processed/segments_5186.gpkg
 OUT   processed/dem_scope.tif · web/data/terrain/**  (Terrain-RGB 타일)
+      덧쓰기(z) processed/{segments,building,cctv,hydrant_point,fire_station}_5186.gpkg ·
+                building.geojson · cctv.geojson · hydrant_point.geojson · fire_station.geojson ·
+                segments_5186.gpkg · building_5186.gpkg · cctv_5186.gpkg ·
+                hydrant_point_5186.gpkg · fire_station_5186.gpkg
+      ★ 2026-09-16 머리말에 적었다. ingest 산출물을 제자리 덧쓰므로 샤드 봉인지의
+        out 칸을 파이프라인이 이 단계 뒤에 고친다(DECISIONS §165-6).
       ★ processed/segments.geojson 에 z 를 **덧쓴다.** 이 줄이 없어서
         2026-08-18 에 `--only publish` 로 z 가 소실됐다
       ★ web/data/view.json 에 demBounds 를 덧쓴다 (publish 산출. 후진 의존)
