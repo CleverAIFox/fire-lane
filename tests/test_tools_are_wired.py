@@ -132,7 +132,7 @@ def test_exempt_entries_carry_a_reason():
     assert not blank, f"사유 없는 EXEMPT — {', '.join(blank)}"
 
 
-# ★ 2026-09-17. README 는 *"재현적이면 `tools/` 에 두고 verify.sh 에 배선하고 README 에
+# ★ 2026-09-16. README 는 *"재현적이면 `tools/` 에 두고 verify.sh 에 배선하고 README 에
 #   적는다"* 고 적는다. 위 검사는 배선 반쪽만 봤다. 적는 반쪽에 강제자가 없어서
 #   `bridge_audit` · `its_linkmap` · `matchcheck` · `merge_batch.sh` 넷이 README 에 없었다 —
 #   머지 진입점까지 찾을 곳이 없었다(DECISIONS §168).

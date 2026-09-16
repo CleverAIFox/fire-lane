@@ -1,11 +1,11 @@
 {
- "sealed_at": "2026-09-16T21:33:45+09:00",
- "commit": "29c896f",
+ "sealed_at": "2026-09-16T22:38:19+09:00",
+ "commit": "37867e4",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "755e218b1c5d3e1c",
-  "docs/DECISIONS.md": "7abb9d607183396f",
+  "docs/MASTER.md": "02b19cbd36981687",
+  "docs/DECISIONS.md": "03fc4ce51f22026b",
   "docs/PLAN.md": "2351276625c12eb4",
   "README.md": "f079b0af3fbe76cb"
  },
@@ -217,7 +217,7 @@
   ]
  },
  "code": {
-  "sha256": "ffcd1e8e4fddf431",
+  "sha256": "a08c362122518a35",
   "files": 60
  },
  "sections": {
@@ -768,7 +768,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER-092": {
-   "h": "4516c6e5749f9c62",
+   "h": "924a7656e80154fc",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -3317,6 +3317,36 @@
    "doc": "docs/DECISIONS.md",
    "title": "168-3. README 에 없는 도구 넷 — 규약의 반쪽에 강제자가 없었다"
   },
+  "DECISIONS-368": {
+   "h": "9c4d0a6f885be144",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "169. 흡수-1 — 추출 범위를 대장 한 곳으로 모으고 동쪽을 넓혔다"
+  },
+  "DECISIONS-369": {
+   "h": "8dc434e2e1f18acc",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "169-1. BBOX 가 두 벌이었다"
+  },
+  "DECISIONS-370": {
+   "h": "c0ae0860df9f0ec4",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "169-2. 동쪽 126.940 → 126.943 — 지산안전센터 300m 원이 잘리고 있었다"
+  },
+  "DECISIONS-371": {
+   "h": "c27f284df0b8aada",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "169-3. 흡수 배치의 전제가 셋 틀렸다 — 핸드오프 서술 정정"
+  },
+  "DECISIONS-372": {
+   "h": "2bf970651e2839ba",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "169-4. 정정 — §168 의 날짜와 구분자"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3847,7 +3877,7 @@
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 0.83ms"
+   "tail": "Checked 44 packages in 0.91ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -3862,7 +3892,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "598 passed, 48 skipped in 77.54s (0:01:17)"
+   "tail": "602 passed, 48 skipped in 93.02s (0:01:33)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3877,12 +3907,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "225 passed, 49 skipped in 18.47s"
+   "tail": "225 passed, 49 skipped in 20.75s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1765개 추적"
+   "tail": "커밋 정책 OK · 1766개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -3917,7 +3947,7 @@
   "verify/흡수 대상": {
    "rc": 1,
    "state": "생략",
-   "tail": "움직인 것 0개"
+   "tail": "움직인 것 2개"
   },
   "verify/선언 ↔ 실물": {
    "rc": 0,
@@ -3932,7 +3962,7 @@
   "verify/web/data 계보": {
    "rc": 0,
    "state": "OK",
-   "tail": "web/data 계보 OK · 29.28MB · 타일 52fbcae161f7edea"
+   "tail": "web/data 계보 OK · 29.29MB · 타일 52fbcae161f7edea"
   },
   "verify/로컬 찌꺼기": {
    "rc": 0,
@@ -3997,7 +4027,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 603절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 608절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4027,7 +4057,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "598 passed, 48 skipped in 89.41s (0:01:29)"
+   "tail": "602 passed, 48 skipped in 97.33s (0:01:37)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4047,7 +4077,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 368개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 373개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
