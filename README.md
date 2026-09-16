@@ -282,58 +282,25 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 
 ## 데이터 계층
 
-```
-landing      SSD/landing/     다운로드 원본. 규칙 없음. ★ 백업 제외
-raw          SSD/raw/         제공기관 12폴더. 절대 수정 안 함
-norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료
-interim      탐색·대조 산출물. 대장에 없고 지워도 된다
-processed    저장소 안. 4개만 커밋하고 나머지는 재생성
-field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급
-_quarantine  대장에 없는 파일. 삭제하지 않고 격리
-web/data     표출용. 커밋한다. 40MB 상한
-data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
-```
+정본은 **`MASTER §18`** 이다. 계층 선언은 `sources.yaml` 의 `layers` 블록,
+경로 해석은 `src/firelane/paths.py`, 계층별 책임(획득 · 계약 · 생산 · 재현)은
+`MASTER §5-3a` 가 든다. 여기에는 입구만 적는다.
 
-제공기관 폴더 — `juso` `its` `ngii` `vworld` `safety` `gjcity` `sbiz` `eais` `nsdi` `nfa`.
-정본은 `sources.yaml` 의 `layers.raw.providers` 이고 `firelane.providers` 가 읽는다.
-**같은 수치지형도라도 원천이 다르면 폴더가 다르다.**
-
-계층 선언의 정본은 `sources.yaml` 의 `layers` 블록이고 경로 해석은
-`src/firelane/paths.py` 다. 둘이 어긋나면 `datalog fsck` 가 잡는다.
+강제자 없음 — 사유: 정본은 MASTER §18 이고 이 절은 참조만 둔다
 
 ### 게이트
 
 ```bash
-uv run python -m firelane.contract        대장 선언 ↔ raw 실물. ingest 앞에 선다
-uv run python -m firelane.datalog check   대장 정합성
-uv run python -m firelane.datalog fsck    계층 선언 ↔ 실물
-```
-
-획득은 여덟 단계인데 **한때 명령이 넷이었다.** 그중 `--prune-landing` 은 `--verify`
-없이도 돈다 — 편입이 성공했다는 확인 없이 원본을 지운다. 그것이 소실이다.
-
-```bash
 uv run python tools/pull_data.py            관측만
-uv run python tools/pull_data.py --yes       이관 → 편입 → 검증 → 사본삭제
-                                             → 격리 → 판정 → norm 이관 → 정합
+uv run python tools/pull_data.py --yes       반입 · 편입 · norm
 uv run python tools/pull_data.py --yes --all 위 + 파이프라인 + golden
 ```
 
-★ **삭제는 검증에 매달려 있다.** `③ verify` 가 0 이 아니면 `④` 는 실행되지
-않고 landing 원본이 그대로 남는다. 순서를 주석이 아니라 자료구조로 들고 있고
-`tests/test_intake_rules.py` 의 `test_prune_needs_verify` 외 다섯이 그것을 강제한다 —
-게이트를 뚫는 · None 을 0 으로 읽는 · 통과 경로를 막는 세 방향 전부 본다.
+★ 이 절이 계층 표 · 게이트 · 제공기관 폴더를 따로 들고 있었고, 제공기관을
+**12폴더라 적고 이름은 열 개만** 나열하고 있었다(`mois` · `gjbg` 누락).
+사본은 이렇게 낡는다(DECISIONS §162-4).
 
-단계별로 손으로 치고 싶으면 `intake.py` · `acquire.py` 를 직접 쓴다.
-pull_data 는 그 둘을 부를 뿐 판정을 다시 쓰지 않는다.
-
-`contract.py` 가 보는 것 — 인코딩 · 컬럼 소실 · 건수 · zip 안 레이어 ·
-**스코프 안 유효 건수(`scope_min`)**. 마지막 항목이 핵심이다. 소스 교체 때
-소화전이 파싱은 되고 스코프에서 전멸해 `OK 0건` 으로 통과한 적이 있다.
-조용한 0건이 제일 나쁘다.
-
-**`raw` 를 저장소에 두지 않는다.** 심링크도 쓰지 않는다 — 심링크를 git 이
-추적했다가 원본 수 GB 가 두 번 소실된 적이 있다.
+강제자 없음 — 사유: 입구 명령이다. 게이트 강제자는 MASTER §18-11 이 든다
 
 ---
 

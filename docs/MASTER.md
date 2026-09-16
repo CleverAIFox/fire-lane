@@ -560,6 +560,26 @@ web/data/          UI 입력 · git 포함 (지형·정사영상 타일 포함)
 GitHub Pages       gis · main 푸시 시 자동 배포
 ```
 
+**계층별 책임** — 데이터를 **만드는 것** · **맞는지 보는 것** · **다시 만들어도
+같은지 증명하는 것**은 다른 일이다. 같은 `ingest` 가 두 층에 나타나도 겹침이 아니다.
+
+| 층 | 무엇이 | 쓰는가 | 증명하는 것 |
+|---|---|---|---|
+| 획득 | `tools/pull_data.py` (`intake` · `acquire`) | landing → raw | 파일이 대장 선언대로 들어왔다 |
+| 계약 | `python -m firelane.contract` | 안 쓴다 | raw 실물이 대장 선언과 맞다. `ingest` 앞에 선다 |
+| 형식 | `python -m firelane.prep` | raw → norm | `--check` — norm 이 **지금의** raw 에서 나왔다 |
+| 레이크 | `tools/lakecheck.py` | 안 쓴다 | 레이크 선언 ↔ 실물 (L1~L6) |
+| **생산** | `ingest` → `segments` → `publish_web` | processed · web/data | — **검사가 아니다** |
+| **재현** | `verify.sh` 의 `파이프라인 전량` + `golden 판정 불변` | processed 를 다시 만든다 | 같은 입력 · 같은 코드면 같은 판정 |
+| 봉인 | `tools/dms.py seal` · `rawdiff` | `data/dms/SEAL.json` | raw 가 봉인과 같다 → 전량 생략 근거 |
+
+★ **`verify.sh` 가 `ingest` 를 다시 돌리는 것은 검사를 두 번 하는 것이 아니다.**
+생산을 한 번 더 해서 `golden` 과 대조하는 것이 곧 재현성 증명이다. 획득 · 계약 ·
+형식 · 레이크 넷은 **입력이 선언과 맞는가**를 보고, 재현은 **출력이 입력의 함수인가**를
+본다. 비용 문제는 겹침이 아니라 **주기**이고 `rawdiff` 가 가른다(DECISIONS §161).
+
+강제자  `tools/verify.sh` — 계층별 책임 표의 재현 층을 이 스크립트가 실행한다
+
 ### 5-1. 왜 나눴나
 
 `segments.py` 는 1,168줄이었고 `main()` 하나가 1,041줄이었다. 중첩 함수 8개가
@@ -954,16 +974,22 @@ CCTV 배치가 선행돼야 한다.
 GSD 유효범위 밖까지 포함하는 넓은 상태이고, 지금 산출의 `unknown` 은
 CCTV 사각 하나뿐이다. 좁은 쪽을 넓은 이름으로 부르면 현재 산출을 과장한다.
 
-| 산출 `verdict` | 지도 라벨 | 기획서 |
-|---|---|---|
-| `clear` | 통행 가능 | GREEN |
-| `needs_cv` | 판정 보류 | YELLOW · 확인 필요 |
-| `blocked` | 통행 불가 | RED |
-| `unknown` | 영상판정 불가 | GRAY · 미측정 **(기획서 쪽이 더 넓다)** |
+| 산출 `verdict` | 지도 라벨 | 기획서 | 개요서 v1.6 |
+|---|---|---|---|
+| `clear` | 통행 가능 | GREEN | PASS |
+| `needs_cv` | 판정 보류 | YELLOW · 확인 필요 | CAUTION |
+| `blocked` | 통행 불가 | RED | BLOCK |
+| `unknown` | 영상판정 불가 | GRAY · 미측정 **(기획서 쪽이 더 넓다)** | 미측정 |
+
+개요서 v1.6(2026-08-19 외부 제출)은 **3색 + 미측정**으로 적는다. 대응이 일대일이라
+어긋남이 아니라 표기 차이다. 저장소가 정본이고 대외 문서가 다음 판에서 이 표를 따른다.
+개요서의 "내부 5단계" 는 산출 어휘에 없으므로 인용하지 않는다.
 
 `needs_cv` 는 폭 3.0~7.0m 이면서 CCTV 25m 안인 구간이다. 같은 폭 대역이라도
 CCTV 밖이면 `unknown`(`no_cctv_band` 152)으로 내려간다(§2-1). 기획서의
 "needs_cv + CCTV 있음" 서술은 이것과 같은 모델이다.
+
+강제자  `tests/test_contract.py::test_verdict_matches_rules_for_every_segment`
 
 ### 10-3. 연속 구간 (`run_length_m`)
 
