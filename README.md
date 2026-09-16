@@ -62,6 +62,8 @@ uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드�
 uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
 uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
 uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증분)
+uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
+uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 (--apply 로 당긴다)
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 # ★ 위 도구가 세는 사본을 합친 자리 —
 #   src/firelane/hashing.py    파일 sha256. 10곳이 한 벌이었다
@@ -126,9 +128,13 @@ editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
 
 ```bash
-bash tools/verify.sh          # 전부. 실패해도 끝까지 돌고 표로 보여준다
-bash tools/verify.sh --fast   # 파이프라인 전량 생략
+bash tools/verify.sh          # 41단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh --fast   # 급할 때. ★ `부분 실행` 에서 일부러 빨갛게 죽는다
 ```
+
+★ `--fast` 로 찍은 로그로는 **봉인할 수 없다.** 건너뛴 것은 통과가 아니다.
+근거 있는 생략은 `dms.py rawdiff` 가 한다 — raw 가 봉인과 같으면 파이프라인
+전량을 안 돈다(5분21초 → 44초). 모르면 안 건너뛴다.
 
 푸시 전에는 이것 하나면 된다.
 
@@ -164,6 +170,8 @@ bash tools/janitor.sh       # 기계·저장소·레이크 세 층을 한 표로
 
 `index.html` 을 더블클릭하면 안 된다. `file://` 에서는 `fetch()` 가 CORS 로 막힌다.
 
+강제자  `tools/verify.sh`
+
 ### 파이프라인
 
 ```
@@ -174,7 +182,13 @@ ingest → segments → streetlight → terrain → ortho → publish → 계약
 uv run fire-lane --check          # 실행 없이 상태만
 uv run fire-lane --from segments  # 그 단계부터
 uv run fire-lane --only publish
+uv run fire-lane --split          # ingest 를 소스별 자식 프로세스로 (메모리 반납)
 ```
+
+★ `--split` 은 기본값이 아니다. 8GB 기계에서 `Errno 12` 를 막지만 2분45초가
+3분59초가 된다 — 자식마다 `geopandas` 를 다시 import 하는 값이라 코드로 못
+줄인다. `verify.sh` 처럼 앞 단계가 이미 메모리를 먹은 맥락에서만 켠다
+(`DECISIONS §160`).
 
 ★ `uv run` 을 빼면 `command not found` 다. 진입점은 `.venv/bin/fire-lane` 에
 설치되고 그 폴더는 PATH 에 없다. `uv sync` 가 editable 로 깔아주지만
@@ -186,6 +200,8 @@ uv run fire-lane --only publish
 raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
 
 **단계를 하나씩 손으로 치지 않는다.** 순서가 중요하고 빠뜨리기 쉽다.
+
+강제자  `tests/test_guards.py::test_docs_call_the_entrypoint_through_uv`
 
 ---
 

@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-15T23:12:12+09:00",
- "commit": "b2ddc84",
+ "sealed_at": "2026-09-16T09:52:56+09:00",
+ "commit": "b7355b6",
  "tool": "7a56c426602945c9",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "7c5ad0a8d7a95a0a",
+  "docs/MASTER.md": "f3cfcacf80bc0d7e",
   "docs/DECISIONS.md": "6726c16a3ac84184",
   "docs/PLAN.md": "61d766eb9230ba34",
-  "README.md": "9498a95847ace146"
+  "README.md": "1dff6feceeaa5ac2"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -764,8 +764,8 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER-092": {
-   "h": "74d1a40e272ad52b",
-   "state": "blank",
+   "h": "361a145c08e9efcd",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
   },
@@ -3446,7 +3446,7 @@
    "title": "일회성 도구는 저장소에 두지 않는다"
   },
   "README-003": {
-   "h": "6e7db5dcb268c88a",
+   "h": "97b762cfd361f968",
    "state": "none",
    "doc": "README.md",
    "title": "문서에도 검사가 붙어 있다"
@@ -3464,14 +3464,14 @@
    "title": "숫자의 정본은 문서가 아니다"
   },
   "README-006": {
-   "h": "5517fb5ce64b1b62",
-   "state": "blank",
+   "h": "d181d98c1a14d769",
+   "state": "wired",
    "doc": "README.md",
    "title": "실행"
   },
   "README-007": {
-   "h": "104f18d795fc1a55",
-   "state": "blank",
+   "h": "8920f038b1bce78b",
+   "state": "wired",
    "doc": "README.md",
    "title": "파이프라인"
   },
@@ -3548,14 +3548,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 341,
+ "denominator": 338,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 0.78ms"
+   "tail": "Checked 44 packages in 1ms"
   },
   "verify/패키지 import 29종": {
    "rc": 0,
@@ -3570,7 +3570,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "551 passed, 47 skipped in 92.33s (0:01:32)"
+   "tail": "551 passed, 47 skipped in 96.58s (0:01:36)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3585,7 +3585,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "223 passed, 48 skipped in 25.18s"
+   "tail": "223 passed, 48 skipped in 24.40s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -3705,7 +3705,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "전수로 보고 다시 `seal` 을 찍어라."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 555절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -3735,7 +3735,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "551 passed, 47 skipped in 115.80s (0:01:55)"
+   "tail": "551 passed, 47 skipped in 134.81s (0:02:14)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
