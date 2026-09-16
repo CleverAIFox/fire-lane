@@ -2019,6 +2019,12 @@ uv run fire-lane --no-test --split     # ingest 를 소스별 자식 프로세�
   — 74초는 자식마다 `geopandas`·`pyproj` 를 다시 import 하는 값이라 코드로
   못 줄인다. **앞 단계가 이미 메모리를 먹은 맥락**(=`verify.sh`)에서만 켠다.
 
+★ **`shp_zip_multi` 는 읽는 시점에 bbox 로 거른다**(2026-09-17 · `DECISIONS §168`).
+  `jijeok`(zip 하나 안의 shp 7장 × 100만 필지)이 조각을 전부 올린 뒤 잘라서
+  죽던 자리다. 데이터셋은 하나 그대로이고 `on_demand` 도 그대로다 — 판정이 안 읽는
+  소스라서다(`DECISIONS §154`). 만들 때는 `uv run python -m firelane.ingest --only jijeok --split`.
+  같은 분기를 `ngii_road` · `ngii_road_center` 가 탄다.
+
 ```bash
 uv run python tools/ship.py              # 내보내기 전 검사만
 uv run python tools/ship.py --fix --push # 정리 + 검사 + push

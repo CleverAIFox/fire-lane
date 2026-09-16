@@ -6855,3 +6855,52 @@ README 와 MASTER §8 이 `web/js` 를 **"공백 · 이탈로 소유자 없음 (
 §164 코드 지문 · §165 샤드 봉인 두 겹으로 고쳤다.
 
 강제자 없음 — 사유: 도달 가능 수 대조는 `docnum_check` 의 EXPECT 에 넣는 것이 맞고, 문서 배치가 아니라 다음 코드 배치에서 한다
+
+## 168. 배치 E1 — 연속지적도는 쪼개지 않고 읽는 시점에 거른다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 168-1~168-3 이 각자 강제자 칸을 든다
+
+### 168-1. OOM 의 자리는 파일 크기가 아니라 읽는 순서였다
+
+PLAN 「연속지적도 편입」 을 닫았다. 핸드오프는 *"7조각을 한 데이터셋으로 두면 한 프로세스가
+700만 필지를 읽어 죽는다 — 조각마다 데이터셋으로 쪼개 샤드 7개로"* 를 처방했다. **틀렸다.**
+코드를 읽으니 셋이 걸린다 —
+
+    ① 7장이 zip **하나 안**에 있다. 데이터셋 7개의 글롭이 같은 1.0GB zip 을 잡고 7번 푼다
+    ② 층 선택이 `startswith(_base)` 다. `AL_D002_12_20260808(2)` 도 base 로 시작하므로
+       쪼갠 데이터셋마다 **7장을 전부** 읽는다 — 7배로 나빠진다
+    ③ 원인은 `shp_zip_multi` 가 조각을 bbox 없이 전부 올린 뒤 `.cx` 로 자르던 것이다
+
+같은 zip 을 `tools/jijeok_probe.py --extract` 는 `/vsizip/` + bbox 로 읽어 **이미 살아 있었고**,
+그 docstring 이 이 핸들러가 죽는 이유를 적고 있었다. `shp_zip` 도 처음부터 bbox 로 읽는다.
+핸들러가 조각마다 `read_file(bbox=…)` 로 읽고, 뒤의 `.cx` 는 그대로 둔다. 데이터셋은 하나 ·
+`on_demand` 도 그대로다 — 판정이 안 읽는 소스이고 §154 강제자가 그것을 요구한다.
+
+★ `/vsizip/` 은 가져오지 않았다. 압축 해제는 디스크 · 시간 문제지 메모리 문제가 아니고,
+  `ngii_road` zip 안 파일명 인코딩을 확인하지 않은 채 같은 분기를 바꾸면 판정 입력이 흔들린다.
+
+실측 (레이크 기계, 적용 스크립트가 채운다)
+
+    jijeok --only --split        24,183 필지 · 최대 RSS 287 MB · 112초
+    ngii_road 재빌드              ngii_road 산출 동일(out 칸 일치) · 최대 RSS 139MB;ngii_road_center 산출 동일(out 칸 일치) · 최대 RSS 138MB
+
+강제자  `tests/test_shp_zip_multi_bbox.py` — 조각마다 bbox · 전량→`.cx` 와 산출 동일 · 외곽 사각형 드라이버 카나리아
+
+### 168-2. `.cx` 카나리아가 처음엔 죽어 있었다
+
+외곽 사각형만 걸치는 삼각형을 넣고 `.cx` 를 지우면 울 줄 알았다. **안 울었다** — 이 기계의
+GDAL 은 GEOS 로 정확한 교차를 본다. GEOS 없이 빌드된 GDAL 은 외곽 사각형으로만 거르므로,
+그 드라이버를 흉내 낸 `read_file` 로 새는 도형을 넣게 바꿨다. `.cx` 를 지우면 운다 · bbox 를
+지우면 운다 — 둘 다 조작해 확인했다.
+
+강제자  `tests/test_shp_zip_multi_bbox.py::test_envelope_only_driver_does_not_leak`
+
+### 168-3. README 에 없는 도구 넷 — 규약의 반쪽에 강제자가 없었다
+
+README 규약은 *"재현적이면 verify.sh 에 배선하고 README 에 적는다"* 인데 `test_tools_are_wired`
+는 배선만 봤다. `bridge_audit` · `its_linkmap` · `matchcheck` · `merge_batch.sh` 가 README 에
+없었다. 머지 진입점까지 찾을 곳이 없었다. 적고, 이름 대조를 붙였다.
+
+강제자  `tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme`

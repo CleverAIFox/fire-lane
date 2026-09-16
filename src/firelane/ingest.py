@@ -282,8 +282,17 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         #   여기서는 **실물을 세고 대장과 대조한다** — 이름 규칙을
         #   코드에 박으면(`f"{stem}({n}).shp"`) 원본 명명이 바뀔 때
         #   또 조용히 0건이 된다. 실물이 근거이고 대장이 기대치다.
+        # ★ 2026-09-17. **읽는 시점에** bbox 를 건다(DECISIONS §168).
+        #   종전에는 조각 7장 × 100만 필지를 전부 메모리에 올린 뒤 아래
+        #   `.cx` 로 24,183건을 잘랐다 — `jijeok` OOM 의 진짜 자리가 여기다.
+        #   `tools/jijeok_probe.py --extract` 가 같은 zip 을 bbox 로 읽어
+        #   이미 살아 있었다. `shp_zip`(load_shp_in_zip)도 처음부터 이렇게 읽는다.
+        #   bbox 필터는 GDAL 빌드에 따라 외곽 사각형 기준이라(GEOS 없으면)
+        #   결과가 넓거나 같다. 정확한 교차는 아래 `.cx` 가 그대로 자른다 —
+        #   산출 행 집합은 같다. `.cx` 를 지우면 테스트 카나리아가 운다.
         _want = e["layer"]
         _base = _want.rsplit(".", 1)[0]
+        _bb = bbox_in(crs)
         parts, _read = [], []
         for z in hits:
             with zipfile.ZipFile(z) as zf:
@@ -296,7 +305,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
                     f"{z.name} 안에 {_want} 계열 shp 가 없다")
             for p in found:
                 parts.append(gpd.read_file(
-                    p, encoding=e.get("encoding", "utf-8")))
+                    p, bbox=_bb, encoding=e.get("encoding", "utf-8")))
                 _read.append(p.name)
         # ★ 2026-08-31. 종전에는 **zip 하나마다** `len(found) != len(parts)`
         #   를 봤다. `parts` 가 두 뜻으로 쓰이는 것을 못 본 것이다 —
@@ -324,8 +333,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
               f"{sum(len(x) for x in parts):,}행")
         g = pd.concat(parts).pipe(gpd.GeoDataFrame, crs=parts[0].crs)
         g = g.set_crs(crs, allow_override=True)
-        b = bbox_in(crs)
-        g = g.cx[b[0]:b[2], b[1]:b[3]].copy()
+        g = g.cx[_bb[0]:_bb[2], _bb[1]:_bb[3]].copy()
         # ★ buffer(0) 은 폴리곤 자기교차 정리용이다. LineString 에 걸면
         #   빈 폴리곤이 되어 전멸한다. ngii_road_center(선)가 0건이던 원인이다.
         g["geometry"] = g.geometry.apply(make_valid)
