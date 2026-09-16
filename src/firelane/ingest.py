@@ -4,7 +4,7 @@ ingest.py — data/raw 원본을 동명동 범위 표준 산출물로 변환한�
 
 
 IN    sources.yaml (대장) · $FIRE_LANE_DATA/raw/**  (불변)
-OUT   data/processed/<key>_5186.gpkg + <key>.geojson  (20종)
+OUT   data/processed/<key>_5186.gpkg + <key>.geojson  (20종) — 예: building.geojson
       data/processed/_manifest.json
       ★ 하류가 이름으로 읽는 것 — boundary_emd.geojson · fire_station.geojson ·
         hydrant_point.geojson · cctv.geojson · poi_store.geojson ·
@@ -759,6 +759,12 @@ def main():
     # ★ 자식 전용. 대장을 쓰지 않고 결과 한 줄만 낸다.
     ap.add_argument("--emit-json", action="store_true",
                     help=argparse.SUPPRESS)
+    ap.add_argument("--rebuild", action="store_true",
+                    help="샤드 봉인을 무시하고 전부 다시 빌드한다")
+    ap.add_argument("--reseal-out", action="store_true",
+                    help="하류가 덧쓴 산출물로 샤드 봉인지의 out 칸만 고친다 (파이프라인이 terrain 뒤에 부른다)")
+    ap.add_argument("--stamp", action="store_true",
+                    help="빌드 없이, 지금 산출물에 샤드 봉인지를 붙인다 (사람이 판단해서 부른다)")
     a = ap.parse_args()
 
     if a.retry_failed:
@@ -775,6 +781,70 @@ def main():
         a.only = bad
 
     cfg = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+
+    # ★ 2026-09-16. 샤드(소스 하나) 봉인 — shardseal.py 머리말. 봉인지 네 칸
+    #   (raw · cfg · code · out)이 전부 같으면 다시 빌드하지 않는다. 이 8GB
+    #   기계에서 `ngii_road` 는 다시 빌드하면 거의 반드시 죽는다(DECISIONS §165).
+    from firelane import shardseal
+    _code = shardseal.code_print()
+    _man0 = OUT / "_manifest.json"
+    _prev = {}
+    if _man0.exists():
+        try:
+            _prev = {r["key"]: r for r in json.loads(_man0.read_text(encoding="utf-8"))
+                     .get("datasets", []) if isinstance(r, dict) and "key" in r}
+        except Exception:                                   # noqa: BLE001
+            _prev = {}
+
+    if a.reseal_out:
+        if not _man0.exists():
+            return 0
+        _doc = manifest.read(_man0)
+        _fixed, _missing = shardseal.reseal_out(_doc.get("datasets", []), OUT)
+        wrote = manifest.write_stable(_man0, _doc)
+        print(f"샤드 봉인지 out 갱신 {len(_fixed)}종"
+              + (f" ({', '.join(_fixed)})" if _fixed else "")
+              + (f" · 산출물 없음 {len(_missing)}종: {', '.join(_missing)}" if _missing else "")
+              + ("" if wrote else " · 대장 불변"))
+        return 0
+
+    if a.stamp:
+        # 빌드하지 않는다. 지금 디스크의 산출물이 지금 코드 · raw 로 만든 것이라는
+        # 판단은 **사람이** 한다(직전 전량 성공 · golden 불변). 여기서는 잴 수 있는
+        # 것만 잰다 — 산출물이 대장에 적힌 대로 다 있는가.
+        if a.only:
+            sys.exit("★ --stamp 는 --only 와 같이 쓰지 않는다. 대장 전체에 붙인다.")
+        stamped, left = 0, []
+        for key, e in cfg["datasets"].items():
+            r = _prev.get(key)
+            if not r or r.get("status") != "OK":
+                continue
+            try:
+                _h = paths_for(key, e)
+            except Exception:                               # noqa: BLE001
+                _h = []
+            s = shardseal.make(cfg, key, _h, OUT, r.get("outputs", []), _code)
+            if s is None:
+                left.append(key)
+                continue
+            r["seal"] = s
+            stamped += 1
+        results = [_prev[k] for k in cfg["datasets"] if k in _prev] + \
+                  [v for k, v in _prev.items() if k not in cfg["datasets"]]
+        print(f"샤드 봉인지 {stamped}종 · 못 붙인 것 {len(left)}종"
+              + (f": {', '.join(left)}" if left else ""))
+        if left:
+            print("  못 붙인 샤드는 산출물이 없거나 raw 를 못 쟀다. 다음 실행에서 다시 빌드된다.")
+        doc = {k: v for k, v in manifest.read(_man0).items()
+               if k not in ("generated_at", "bbox_4326", "standard_crs", "datasets")}
+        doc.update({"generated_at": datetime.now(UTC).astimezone().isoformat(),
+                    "bbox_4326": BBOX_4326,
+                    "standard_crs": {"metric": CRS_M, "display": CRS_W},
+                    "datasets": results})
+        wrote = manifest.write_stable(_man0, doc)
+        print(f"→ {_man0}" + ("" if wrote else "  (내용 동일 — 갱신 없음)"))
+        return 0
+
     tmp = ROOT / ".work"
     tmp.mkdir(exist_ok=True)
     results = []
@@ -819,8 +889,25 @@ def main():
                             "sha256": [sha256(h)[:16] for h in hits]})
             print(f"[{'OK ' if hits else 'MISS'}] {key:20} {len(hits)}개")
             continue
+        # ★ 샤드 재사용. 지목(--only)·조회·자식·--rebuild 에서는 안 한다.
+        if not (a.only or a.emit_json or a.rebuild):
+            try:
+                _hits = paths_for(key, e)
+            except Exception:                               # noqa: BLE001
+                _hits = []                                  # 못 재면 재사용 안 한다
+            _ok, _why = shardseal.check(_prev.get(key), cfg, key, _hits, OUT, _code)
+            if _ok:
+                results.append(_prev[key])
+                print(f"[SEALED ] {key:20} 봉인 일치 — 다시 빌드하지 않는다")
+                continue
+            if _prev.get(key, {}).get("status") == "OK":
+                print(f"          {key}: 봉인지 찢어짐 — {_why}")
         try:
             r = _spawn(key) if a.split else build(key, e, tmp)
+            if r.get("status") == "OK" and not a.emit_json:
+                _s = shardseal.make(cfg, key, paths_for(key, e), OUT, r.get("outputs", []), _code)
+                if _s:
+                    r["seal"] = _s
         except Exception as ex:                             # noqa: BLE001
             r = {"key": key, "status": "FAIL", "error": f"{type(ex).__name__}: {ex}"}
             # ★ FAIL 이면 이 key 의 기존 산출물을 개명해 하류에서 떼어낸다.
@@ -828,7 +915,7 @@ def main():
             #   판정을 냈고(1093), 다음 날 진짜 실행(1091)과 갈려 "기계 간
             #   재현성 붕괴"로 오인해 반나절을 태웠다. 로직은 guards.py 정본.
             from firelane.guards import quarantine_stale
-            staled = quarantine_stale(OUT, key)
+            staled = quarantine_stale(OUT, key, keys=list(cfg["datasets"]))
             if staled:
                 r["staled"] = staled
                 print(f"          ★ 옛 산출물 {len(staled)}개 격리(.stale_) — 하류가 못 읽는다")

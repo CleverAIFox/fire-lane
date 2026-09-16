@@ -1,11 +1,11 @@
 {
- "sealed_at": "2026-09-16T11:30:29+09:00",
- "commit": "3615800",
- "tool": "7a56c426602945c9",
+ "sealed_at": "2026-09-16T18:37:20+09:00",
+ "commit": "f8d8982",
+ "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "c366f916f4257359",
-  "docs/DECISIONS.md": "07a3bf3b02551072",
+  "docs/MASTER.md": "040e2b501148cfed",
+  "docs/DECISIONS.md": "79189d6d92f89706",
   "docs/PLAN.md": "0583cdc338607a84",
   "README.md": "7fac4ce7933f8959"
  },
@@ -215,6 +215,10 @@
   "juso_building_db": [
    "3d6dc01f6cb1bf8a"
   ]
+ },
+ "code": {
+  "sha256": "36290f55f2424506",
+  "files": 60
  },
  "sections": {
   "MASTER-001": {
@@ -704,8 +708,8 @@
    "title": "12-8a. 매체 저장 — 밑그림"
   },
   "MASTER-082": {
-   "h": "2916eddbd39b6f7c",
-   "state": "blank",
+   "h": "5433f419ffd7d4d4",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-8b. 릴리즈 절차"
   },
@@ -3151,6 +3155,90 @@
    "doc": "docs/DECISIONS.md",
    "title": "163-9. 발견 — 스쿼시 머지가 봉인 커밋을 고아로 만든다"
   },
+  "DECISIONS-341": {
+   "h": "16a1debbc66439ec",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "164. 전량 생략이 코드 변경을 못 봤다 — 배치 D1"
+  },
+  "DECISIONS-342": {
+   "h": "a8d3e89032fa6d8d",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "164-1. `rawdiff` 에 파이프라인 코드 지문을 넣었다"
+  },
+  "DECISIONS-343": {
+   "h": "3b96cceb5de67acd",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "164-2. 머지 스크립트를 저장소에 들였다"
+  },
+  "DECISIONS-344": {
+   "h": "18069687f551d975",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "164-3. 옛 판 스크립트가 조용히 돌았다"
+  },
+  "DECISIONS-345": {
+   "h": "ca817a96f87aaae1",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "164-4. `part/cv` 는 머지 커밋만으로 갈라져 있었다"
+  },
+  "DECISIONS-346": {
+   "h": "5d208058e373d1ca",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "165. ingest 샤드 봉인 — 정해놓고 반만 들어간 것을 채웠다"
+  },
+  "DECISIONS-347": {
+   "h": "648e2471efa6a0c1",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "165-1. 정한 것과 들어간 것"
+  },
+  "DECISIONS-348": {
+   "h": "f2f283923f1ea9a0",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "165-2. 봉인 단위를 소스 하나로 내렸다"
+  },
+  "DECISIONS-349": {
+   "h": "476603e78c72c51d",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "165-3. 기존 산출물에 봉인지를 붙이는 `--stamp`"
+  },
+  "DECISIONS-350": {
+   "h": "865310da3208824e",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "165-4. FAIL 격리가 옆 소스를 같이 격리했다"
+  },
+  "DECISIONS-351": {
+   "h": "b3d8dba29d9bea51",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "165-5. verify 의 import 단계 이름에서 숫자를 뺐다"
+  },
+  "DECISIONS-352": {
+   "h": "d45512b3e907f95b",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "165-6. terrain 이 ingest 산출물을 덧쓰고 있었다 — 선언 누락"
+  },
+  "DECISIONS-353": {
+   "h": "ec55c53320446dcc",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "165-7. 코드 지문을 바이트가 아니라 로직으로 잰다"
+  },
+  "DECISIONS-354": {
+   "h": "ce43bf3e1f01a273",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "165-8. gpkg 는 바이트가 아니라 내용으로 잰다 · 봉인 로직은 코드 지문에서 뺀다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3674,19 +3762,19 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 328,
+ "denominator": 327,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 0.71ms"
+   "tail": "Checked 44 packages in 0.57ms"
   },
-  "verify/패키지 import 29종": {
+  "verify/패키지 import": {
    "rc": 0,
    "state": "OK",
-   "tail": "import 29/29"
+   "tail": "import 30/30"
   },
   "verify/진입점 · cwd 독립성": {
    "rc": 0,
@@ -3696,7 +3784,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "553 passed, 47 skipped in 70.21s (0:01:10)"
+   "tail": "586 passed, 48 skipped in 77.80s (0:01:17)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3711,12 +3799,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "223 passed, 48 skipped in 18.93s"
+   "tail": "225 passed, 49 skipped in 19.81s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1758개 추적"
+   "tail": "커밋 정책 OK · 1762개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -3796,7 +3884,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ raw 가 봉인과 같아 전량을 생략했다 (PLAN #68)."
+   "tail": "지도 확인:  uv run python tools/serve.py"
   },
   "verify/golden 판정 불변 (1,101구간)": {
    "rc": 0,
@@ -3831,7 +3919,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 576절이 아니다."
+   "tail": "전수로 보고 다시 `seal` 을 찍어라."
   },
   "verify/사본군": {
    "rc": 0,
@@ -3861,7 +3949,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "553 passed, 47 skipped in 86.67s (0:01:26)"
+   "tail": "586 passed, 48 skipped in 90.72s (0:01:30)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -3881,7 +3969,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 341개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 355개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
