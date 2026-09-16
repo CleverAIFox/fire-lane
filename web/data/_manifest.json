@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-09-16T21:24:36+09:00",
+  "generated_at": "2026-09-16T22:13:59+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
-      "sha256": "a51d51c43d1dfec49d45af71b43dff2c4bd90dd15e2c6b806eb250a49bf483a8",
+      "sha256": "4d9914e0683998927eb6fdbe9eaf7241f87e4c79c41562795d0f5633237dd025",
       "bytes": 1073981
     },
     "segments.schema.json": {
-      "sha256": "02364f2402e84ac54b1fdbce7e47e9a282b968f919aedcadf058601db9374f7c",
+      "sha256": "50d1ac003358f50ddaf06a3ab9ddce71043f5e1b8f9b877895bfbeb637aa6ccd",
       "bytes": 5047
     },
     "_manifest.json": {
-      "sha256": "93646bff92c65a4cb344642bd13c6bc087c29004828d5476c404ee7ea5e76469",
-      "bytes": 92293
+      "sha256": "fafc69c54042ac5d3e01c48a4842580ab6e94fca4b285de760ce24e0147d4dbc",
+      "bytes": 92294
     }
   },
   "files": {
@@ -21,8 +21,8 @@
       "bytes": 12116
     },
     "buildings.geojson": {
-      "sha256": "c887134f116f095070c924a882ce1881c16ee47d70cb06ea44f678e5d53bb3e4",
-      "bytes": 2167415
+      "sha256": "b213d4b12ef29d032bae839931a68eea4ebcb874a4789994cada441d1ea502e1",
+      "bytes": 2175482
     },
     "cctv.geojson": {
       "sha256": "f36d909299c83422b24019f2f702e4cfcd5bff644934c2c2c20ee38fc91b33a6",
@@ -53,19 +53,19 @@
       "bytes": 479338
     },
     "poi.geojson": {
-      "sha256": "b021f28899f0a8cc50ffa2bb5615a89038f67327cffc0e68f20a5502a38929d7",
-      "bytes": 524608
+      "sha256": "1d099ac177ff64e5c4b7296fa432ac632f0040352ef5acb0f1643cd9ac95568c",
+      "bytes": 525100
     },
     "route_vehicle.json": {
       "sha256": "3b7b40dcc46a3afd31e4b8362159c59fdc0a5bb9323f6436f2a351c858a7ae78",
       "bytes": 83104
     },
     "segments.geojson": {
-      "sha256": "2a038ad89c150b2664c03463059d8d717f5323cd4f77f24a2045cc7dae1b94ad",
+      "sha256": "7928b8b7d50137938bfd5c53d8086db71a2ca4db5cfa516f38a8194faae09272",
       "bytes": 903981
     },
     "segments.schema.json": {
-      "sha256": "6b117a3fcbed6ca1394732d3a97b055b93af2e7fc07712b9767397367b92029d",
+      "sha256": "f65cdc76813fc9bf320b13722d1e78a031c6481b8b556cf6a43403684d45995c",
       "bytes": 4842
     },
     "stations.geojson": {
@@ -81,7 +81,7 @@
       "bytes": 350
     },
     "view.json": {
-      "sha256": "7a6533accf644d6a49353d82e314c014da2178a0f4291304d02a70494fc11762",
+      "sha256": "4c3911d98a46c87903e6e9d58092618181b974d67bc3e193a3406ed60008b58b",
       "bytes": 582
     }
   },
@@ -120,5 +120,5 @@
     }
   },
   "tiles_digest": "52fbcae161f7edea",
-  "total_mb": 29.28
+  "total_mb": 29.29
 }
