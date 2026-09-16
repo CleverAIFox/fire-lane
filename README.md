@@ -216,7 +216,10 @@ uv run python tools/acquire.py             landing → raw 획득 게이트
 uv run python tools/scan_data.py           데이터 레이크 구조 점검
 uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간 전이 대조
 uv run python tools/golden.py              리팩 전후 산출물 동일 증명
+bash tools/merge_batch.sh [--release]       배치 PR 머지 → 파트 동기화 (적용 스크립트가 초록일 때만)
 ```
+
+강제자  `tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme`
 
 ### 대조 도구 — 아무것도 안 바꾼다
 
@@ -229,11 +232,16 @@ uv run python tools/route_probe.py      소방차 통행 비용으로 경로 —
 uv run python tools/clearance_probe.py  최대내접원 방식 (2026-08-22 기각)
 uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
 uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치는 규모
+uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구간 — 실측 우선순위
+uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
+uv run python tools/matchcheck.py       Mapbox Map Matching 커버리지 (MAPBOX_TOKEN 필요)
 ```
 
 읽고 표를 내거나 페이지를 만들 뿐이라 `golden` 지문에 영향이 없다.
 **측정하고 대조한 뒤에 판정을 바꾼다** — `n=7` 로 방법 하나를 기각했다가
 근거를 다시 쓴 것이 그 교훈이다(DECISIONS).
+
+강제자  `tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme`
 
 ---
 

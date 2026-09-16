@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-16T19:52:52+09:00",
- "commit": "be06b3e",
+ "sealed_at": "2026-09-16T21:33:45+09:00",
+ "commit": "29c896f",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "59f0cf41602f7f18",
-  "docs/DECISIONS.md": "63730cbdbebf97e3",
-  "docs/PLAN.md": "ad223d4c3220ca1e",
-  "README.md": "5f40252530a400d1"
+  "docs/MASTER.md": "755e218b1c5d3e1c",
+  "docs/DECISIONS.md": "7abb9d607183396f",
+  "docs/PLAN.md": "2351276625c12eb4",
+  "README.md": "f079b0af3fbe76cb"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -217,7 +217,7 @@
   ]
  },
  "code": {
-  "sha256": "bfd8c6b107487d9c",
+  "sha256": "ffcd1e8e4fddf431",
   "files": 60
  },
  "sections": {
@@ -768,7 +768,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER-092": {
-   "h": "504ea0a1e47b7f6e",
+   "h": "4516c6e5749f9c62",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -3293,6 +3293,30 @@
    "doc": "docs/DECISIONS.md",
    "title": "167. 문서 정리 — 도달 가능 687 은 688 이었다 · 전량 생략 서술을 두 겹으로"
   },
+  "DECISIONS-364": {
+   "h": "e29d4aa0546a279e",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "168. 배치 E1 — 연속지적도는 쪼개지 않고 읽는 시점에 거른다"
+  },
+  "DECISIONS-365": {
+   "h": "1daea1bc15ef5a34",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "168-1. OOM 의 자리는 파일 크기가 아니라 읽는 순서였다"
+  },
+  "DECISIONS-366": {
+   "h": "875350a02d72e9f4",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "168-2. `.cx` 카나리아가 처음엔 죽어 있었다"
+  },
+  "DECISIONS-367": {
+   "h": "996824ac687fec49",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "168-3. README 에 없는 도구 넷 — 규약의 반쪽에 강제자가 없었다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3312,7 +3336,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "82b3c92ba4d3e9e7",
+   "h": "5550463f041bdf2c",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -3636,7 +3660,7 @@
    "title": "8-6. 대장 · 매니페스트 격차 🟡"
   },
   "PLAN-058": {
-   "h": "0125aa42f70d33d7",
+   "h": "0b0d1231780513c3",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "8-7. 저장소 위생 🟡"
@@ -3648,7 +3672,7 @@
    "title": "9. 외부 의존"
   },
   "PLAN-060": {
-   "h": "31c1e6c5d40cb330",
+   "h": "6e2b6b15e82d6c17",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "9-1. 소방서 정식 인터뷰 ⏳"
@@ -3744,14 +3768,14 @@
    "title": "파이프라인"
   },
   "README-008": {
-   "h": "def59ac2ba907949",
-   "state": "blank",
+   "h": "8ad17c2685b48aeb",
+   "state": "wired",
    "doc": "README.md",
    "title": "도구"
   },
   "README-009": {
-   "h": "1b158d572a692cc8",
-   "state": "blank",
+   "h": "17b3a85c1f366c86",
+   "state": "wired",
    "doc": "README.md",
    "title": "대조 도구 — 아무것도 안 바꾼다"
   },
@@ -3816,14 +3840,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 321,
+ "denominator": 319,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 0.67ms"
+   "tail": "Checked 44 packages in 0.83ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -3838,7 +3862,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "593 passed, 48 skipped in 91.14s (0:01:31)"
+   "tail": "598 passed, 48 skipped in 77.54s (0:01:17)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3853,12 +3877,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "225 passed, 49 skipped in 23.36s"
+   "tail": "225 passed, 49 skipped in 18.47s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1764개 추적"
+   "tail": "커밋 정책 OK · 1765개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -3938,7 +3962,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
+   "tail": "지도 확인:  uv run python tools/serve.py"
   },
   "verify/golden 판정 불변 (1,101구간)": {
    "rc": 0,
@@ -3973,7 +3997,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 599절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 603절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -3998,12 +4022,12 @@
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 없음 — 행 58개가 1..58 로 연속이다"
+   "tail": "✓ 없음 — 행 57개가 1..57 로 연속이다"
   },
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "593 passed, 48 skipped in 88.54s (0:01:28)"
+   "tail": "598 passed, 48 skipped in 89.41s (0:01:29)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4023,7 +4047,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 364개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 368개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
