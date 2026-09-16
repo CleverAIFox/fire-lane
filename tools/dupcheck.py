@@ -61,18 +61,43 @@ class _Blank(ast.NodeTransformer):
         self.generic_visit(node)
         return node
 
+    # ★ 2026-09-15. 본문의 타입 주석을 지운다. `v: float = 0` 과 `v = 0` 이
+    #   다른 지문을 내서 사본을 놓쳤다 — 주석은 **같은 계산의 다른 표기**다.
+    # ★ PLAN 에 적힌 예(`human(n: int)` 대 `human(n: float)`)는 실측하면
+    #   재현되지 않는다. 시그니처는 애초에 지문에 안 들어가고, 주석의
+    #   `int`·`float` 은 `visit_Name` 이 이미 `_` 로 지운다. 진짜 구멍은
+    #   **주석이 붙은 판과 안 붙은 판**이 갈리는 것이었다(노드 수가 달라
+    #   `--min` 문턱 판정까지 흔든다). 틀린 사유는 침묵보다 나쁘므로
+    #   고쳐 적는다.
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> ast.stmt | None:
+        self.generic_visit(node)
+        if node.value is None:
+            return None            # `x: int` 선언뿐. 계산이 없다
+        return ast.copy_location(
+            ast.Assign(targets=[node.target], value=node.value,
+                       type_comment=None), node)
+
 
 def _fingerprint(fn: ast.FunctionDef) -> tuple[str, int] | None:
     body = [x for x in fn.body
             if not (isinstance(x, ast.Expr) and isinstance(x.value, ast.Constant))]
     if not body:
         return None
-    size = sum(1 for _ in ast.walk(ast.Module(body=body, type_ignores=[])))
     try:
         norm = [_Blank().visit(ast.parse(ast.unparse(x)).body[0]) for x in body]
-        text = ast.unparse(ast.Module(body=norm, type_ignores=[]))
+        # ★ `visit_AnnAssign` 이 값 없는 선언을 지워 None 이 섞인다.
+        norm = [x for x in norm if x is not None]
+        if not norm:
+            return None
+        mod = ast.Module(body=norm, type_ignores=[])
+        text = ast.unparse(mod)
     except (SyntaxError, ValueError, RecursionError):
         return None
+    # ★ 2026-09-15. 크기도 **정규화 뒤**에 센다. 종전에는 원본을 세서
+    #   같은 지문인데 크기가 달랐다(주석 유/무로 17 대 15). 크기는
+    #   `--min` 문턱을 정하므로, 같은 것이 문턱에서 갈리면 한 쪽만
+    #   잡힌다. 지문과 크기는 같은 것을 봐야 한다.
+    size = sum(1 for _ in ast.walk(mod))
     return hashlib.md5(text.encode()).hexdigest(), size
 
 

@@ -509,6 +509,30 @@ def _log_head(log: Path) -> str | None:
     return None
 
 
+# ★ 파이프라인이 돌 때마다 갱신되는 생성물. **신선도 판정에서 뺀다.**
+#   2026-09-14 에 `web/data/_manifest.json` 하나 때문에 `seal` 이 세 번
+#   거부했고 그때마다 20분짜리를 다시 돌렸다. 커밋하면 HEAD 가 바뀌어
+#   또 거부다 — 빠져나갈 데가 없는 고리였다.
+# ★ 이것들은 **커밋 시점이 따로**다. 판정의 입력이 아니라 산출이고,
+#   같은 입력이면 같은 값이 다시 나온다(그 재현성 자체를 `golden` 이
+#   검사한다). 로그가 낡았다는 신호가 될 수 없다.
+# ★ 반대로 `src`·`tools`·`docs` 는 그대로 센다. 그쪽이 바뀌면 로그는
+#   정말로 다른 저장소 얘기다.
+GENERATED = ("web/data/", "data/processed/", "data/dms/")
+
+
+def tree_is_dirty() -> bool:
+    """생성물을 뺀 작업나무가 더러운가."""
+    out = _run(["git", "status", "--porcelain"], 60)[1]
+    for line in out.split("\n"):
+        if not line.strip():
+            continue
+        rel = line[3:].split(" -> ")[-1].strip().strip('"')
+        if not rel.startswith(GENERATED):
+            return True
+    return False
+
+
 def _log_is_fresh(log: Path) -> list[str]:
     """로그가 **지금 나무보다 나중인가.** 아니면 그 로그는 다른 저장소 얘기다."""
     # ★ 2026-09-14. 커밋으로 먼저 본다. mtime 은 **내용이 안 바뀌어도**
@@ -518,7 +542,7 @@ def _log_is_fresh(log: Path) -> list[str]:
     head = _log_head(log)
     if head is not None:
         now = _run(["git", "rev-parse", "--short", "HEAD"], 30)[1]
-        dirty = bool(_run(["git", "status", "--porcelain"], 60)[1])
+        dirty = tree_is_dirty()
         want = now + ("+미커밋" if dirty else "")
         return [] if head == want else [f"로그 {head} \u2194 지금 {want}"]
     # 옛 로그다. HEAD 줄이 없으면 mtime 으로 떨어진다 — 더 엄한 쪽이다.
@@ -595,15 +619,22 @@ def _red_ages(red: list[str]) -> dict[str, int]:
     return {k: int(prev.get(k, 0)) + 1 for k in red}
 
 
-def _closed_declarations(declared: dict[str, str], red: list[str]) -> list[str]:
+def _closed_declarations(declared: dict[str, str], red: list[str],
+                         unproven: list[str] | None = None) -> list[str]:
     """선언됐는데 **지금 초록인** 이름.
+
+    ★ 2026-09-15. `unproven` 이 생겼다. 종전에는 *빨갛지 않으면 닫혔다*
+      였는데, `생략` 은 빨갛지도 초록도 아니다. `--fast` 로 돌리면
+      `파이프라인 전량` 이 `생략` 이라 빨갛지 않고, **안 닫혔는데 닫혔다고
+      판정한다.** 2026-09-14 에 실제로 선언 둘을 지우게 만들었다.
+      `생략` 은 통과가 아니다.
 
     ★ 사유를 적는 순간 그 항목은 검사에서 빠지고, 빠진 것은 낡는다.
       `EXEMPT` 여섯이 그렇게 낡아 있었다 — 다섯은 이미 `verify.sh` 가
       부르는 도구인데 면제 목록에 남아 배선을 끊어도 우는 곳이 없었다.
       같은 병을 `RED.txt` 가 물려받지 않게 한다.
     """
-    return sorted(set(declared) - set(red))
+    return sorted(set(declared) - set(red) - set(unproven or []))
 
 def cmd_seal(data: dict, quick: bool, allow: list[str],
              log: Path | None = None) -> int:
@@ -654,7 +685,10 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
     #   그 이름이 **진짜로 다시 빨개져도 조용히 통과시킨다.**
     # ★ `_red_ages` 는 지금 빨간 것만 세므로 죽은 선언은 영원히 1회째다.
     #   6회 거부 장치가 정작 낡은 선언을 못 잡았다.
-    closed = _closed_declarations(declared, red)
+    # ★ `OK` 도 `실패` 도 아닌 것 — `생략` · 미실행. 증명되지 않았다.
+    unproven = sorted(k for k, v in enf.items()
+                      if v["state"] not in ("OK", "실패"))
+    closed = _closed_declarations(declared, red, unproven)
     if closed:
         print(f"\n✗ 봉인하지 않는다. 닫힌 선언이 {len(closed)}건 남아 있다.")
         for k in closed:
@@ -810,6 +844,9 @@ def selftest() -> int:
     # 닫힌 선언을 잡는가 — 선언 둘 중 하나만 아직 빨갛다면 나머지는 닫힌 것
     if _closed_declarations({"a": "사유", "b": "사유"}, ["a"]) != ["b"]:
         bad.append("닫힌 선언을 못 잡았다")
+    # ★ 생략은 닫힘이 아니다. 이 줄이 없으면 `unproven` 이 죽어도 조용하다.
+    if _closed_declarations({"a": "사유"}, [], ["a"]) != []:
+        bad.append("생략된 선언을 닫힘으로 읽는다 — unproven 이 죽었다")
     if _closed_declarations({"a": "사유"}, ["a"]) != []:
         bad.append("아직 빨간 선언을 닫혔다고 했다")
     # 코드펜스 안은 칸이 아니다
