@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-16T19:30:33+09:00",
- "commit": "473927b",
+ "sealed_at": "2026-09-16T19:52:52+09:00",
+ "commit": "be06b3e",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "8c014211d85665e7",
-  "docs/DECISIONS.md": "65d386e723ec134e",
+  "docs/MASTER.md": "59f0cf41602f7f18",
+  "docs/DECISIONS.md": "63730cbdbebf97e3",
   "docs/PLAN.md": "ad223d4c3220ca1e",
-  "README.md": "1b00870995b91985"
+  "README.md": "5f40252530a400d1"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -330,8 +330,8 @@
    "title": "3-8. 출동은 소방서가 아니라 119안전센터에서 나간다"
   },
   "MASTER-019": {
-   "h": "06c057e56deb86b6",
-   "state": "blank",
+   "h": "43ba63deb8ff49b7",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-9. \"못 간다\"는 세 가지 값이 있다"
   },
@@ -768,7 +768,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER-092": {
-   "h": "361a145c08e9efcd",
+   "h": "504ea0a1e47b7f6e",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -3287,6 +3287,12 @@
    "doc": "docs/DECISIONS.md",
    "title": "166-7. 정정 — `web/js` 소유 서술 · `fleet.json` 출처 잘림"
   },
+  "DECISIONS-363": {
+   "h": "58cd13862d1c7b42",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "167. 문서 정리 — 도달 가능 687 은 688 이었다 · 전량 생략 서술을 두 겹으로"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3726,7 +3732,7 @@
    "title": "숫자의 정본은 문서가 아니다"
   },
   "README-006": {
-   "h": "d181d98c1a14d769",
+   "h": "e742c1cd8553d922",
    "state": "wired",
    "doc": "README.md",
    "title": "실행"
@@ -3762,8 +3768,8 @@
    "title": "경로가 둘인 이유"
   },
   "README-012": {
-   "h": "e7294aef2181eb04",
-   "state": "blank",
+   "h": "6e8e28cd68263772",
+   "state": "none",
    "doc": "README.md",
    "title": "도달 가능성은 개별 판정과 다르다"
   },
@@ -3786,14 +3792,14 @@
    "title": "구조"
   },
   "README-016": {
-   "h": "5813530d30560912",
-   "state": "blank",
+   "h": "2787bd8bb31972fc",
+   "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
   },
   "README-017": {
    "h": "00668e371e265428",
-   "state": "blank",
+   "state": "inherit",
    "doc": "README.md",
    "title": "구간 수는 고정값이 아니다"
   },
@@ -3810,14 +3816,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 325,
+ "denominator": 321,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 0.72ms"
+   "tail": "Checked 44 packages in 0.67ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -3832,7 +3838,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "593 passed, 48 skipped in 81.87s (0:01:21)"
+   "tail": "593 passed, 48 skipped in 91.14s (0:01:31)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3847,7 +3853,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "225 passed, 49 skipped in 19.01s"
+   "tail": "225 passed, 49 skipped in 23.36s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -3932,7 +3938,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "지도 확인:  uv run python tools/serve.py"
+   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
   },
   "verify/golden 판정 불변 (1,101구간)": {
    "rc": 0,
@@ -3967,7 +3973,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 598절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 599절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -3997,7 +4003,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "593 passed, 48 skipped in 88.17s (0:01:28)"
+   "tail": "593 passed, 48 skipped in 88.54s (0:01:28)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4017,7 +4023,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 363개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 364개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
