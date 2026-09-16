@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-16T10:57:27+09:00",
- "commit": "087d445",
+ "sealed_at": "2026-09-16T11:30:29+09:00",
+ "commit": "3615800",
  "tool": "7a56c426602945c9",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "b92d6e1f60de3339",
-  "docs/DECISIONS.md": "76d309f24d1277a5",
-  "docs/PLAN.md": "d808fcd0ebd2961f",
+  "docs/MASTER.md": "c366f916f4257359",
+  "docs/DECISIONS.md": "07a3bf3b02551072",
+  "docs/PLAN.md": "0583cdc338607a84",
   "README.md": "7fac4ce7933f8959"
  },
  "raw": {
@@ -632,14 +632,14 @@
    "title": "12-1a. 예외와 회수"
   },
   "MASTER-070": {
-   "h": "00724a1cb5795617",
-   "state": "blank",
+   "h": "43b942008cf115e3",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-1c. 지금 살아 있는 예외"
   },
   "MASTER-071": {
-   "h": "0236d411cd258811",
-   "state": "blank",
+   "h": "09bcd150259f7a1f",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-1a-2. 역할 번호와 조회 함정"
   },
@@ -3091,6 +3091,66 @@
    "doc": "docs/DECISIONS.md",
    "title": "162-10. 발견 — `PLAN #N` 을 PLAN 밖에서 인용하면 재배번에 썩는다"
   },
+  "DECISIONS-331": {
+   "h": "f43855566262d134",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "163. 배치 C — 룰셋·소유 행 여섯을 한 뿌리로 닫았다"
+  },
+  "DECISIONS-332": {
+   "h": "92c131489b48292a",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "163-1. 무엇을 보존하고 무엇을 실물에 맞추나"
+  },
+  "DECISIONS-333": {
+   "h": "faeb516774781c34",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "163-2. 룰셋 한시 완화 원복 — 이미 끝났고 다른 예외로 대체됐다"
+  },
+  "DECISIONS-334": {
+   "h": "15bdf22f281eea93",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "163-3. `part/**` 계층을 유지한다"
+  },
+  "DECISIONS-335": {
+   "h": "1eb6f0fda6405b48",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "163-4. CODEOWNERS 이탈자 — 실측 0건"
+  },
+  "DECISIONS-336": {
+   "h": "b4ce3e37be07e2f7",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "163-5. `web/js/` 담당 공백 — 1인 저장소에 공백이 없다"
+  },
+  "DECISIONS-337": {
+   "h": "18d6997da352ffc5",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "163-6. `ruleset_check` 주석 — 없는 워크플로를 지웠다"
+  },
+  "DECISIONS-338": {
+   "h": "0664f2284ec9fe0a",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "163-7. 승인 수 · Code Owners 대조 — 강제자를 만들었다"
+  },
+  "DECISIONS-339": {
+   "h": "193cc72f45928ed4",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "163-8. `MASTER §12-1a-2` 의 자기모순을 걷었다"
+  },
+  "DECISIONS-340": {
+   "h": "bbf46c4402baafae",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "163-9. 발견 — 스쿼시 머지가 봉인 커밋을 고아로 만든다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3110,7 +3170,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "5cda22a3fa1f9510",
+   "h": "ec46b0f654e8fa70",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -3434,7 +3494,7 @@
    "title": "8-6. 대장 · 매니페스트 격차 🟡"
   },
   "PLAN-058": {
-   "h": "6c30d9a3d3d1f652",
+   "h": "0125aa42f70d33d7",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "8-7. 저장소 위생 🟡"
@@ -3614,14 +3674,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 330,
+ "denominator": 328,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 0.46ms"
+   "tail": "Checked 44 packages in 0.71ms"
   },
   "verify/패키지 import 29종": {
    "rc": 0,
@@ -3636,7 +3696,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "551 passed, 47 skipped in 72.65s (0:01:12)"
+   "tail": "553 passed, 47 skipped in 70.21s (0:01:10)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3651,7 +3711,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "223 passed, 48 skipped in 18.57s"
+   "tail": "223 passed, 48 skipped in 18.93s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -3771,7 +3831,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 566절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 576절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -3796,12 +3856,12 @@
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 없음 — 행 64개가 1..64 로 연속이다"
+   "tail": "✓ 없음 — 행 58개가 1..58 로 연속이다"
   },
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "551 passed, 47 skipped in 88.26s (0:01:28)"
+   "tail": "553 passed, 47 skipped in 86.67s (0:01:26)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -3821,7 +3881,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 331개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 341개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,

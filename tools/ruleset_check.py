@@ -132,7 +132,8 @@ REQUIRED_RULES = {"deletion", "non_fast_forward", "pull_request",
 REPO_SETTINGS = {
     # 켜면 **머지된 head 브랜치를 전부** 지운다. head 를 가리지 않는다 —
     # `part → dev` 는 head 가 `part/gis` 이고 `main → dev` 는 `main` 이다.
-    # feat 정리는 .github/workflows/branch_cleanup.yml 이 대신한다.
+    # feat 은 손으로 지운다(MASTER §12-1). 정리 워크플로는 2026-09-02 에
+    # 만들었다가 같은 날 걷었다(DECISIONS §101-4).
     "delete_branch_on_merge": False,
     # 보호 브랜치는 rebase 로 되돌리지 않는다(§12-2). merge · squash 만.
     "allow_rebase_merge": False,
