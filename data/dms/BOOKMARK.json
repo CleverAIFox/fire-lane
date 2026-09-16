@@ -1,13 +1,31 @@
 {
   "done": [
+    "DECISIONS-320",
+    "DECISIONS-331",
+    "DECISIONS-341",
+    "DECISIONS-346",
+    "DECISIONS-355",
+    "MASTER-019",
+    "MASTER-028",
+    "MASTER-050",
+    "MASTER-058",
+    "MASTER-070",
+    "MASTER-071",
+    "MASTER-082",
     "MASTER-092",
     "MASTER-145",
     "PLAN-004",
     "PLAN-058",
     "PLAN-060",
+    "PLAN-065",
     "PLAN-068",
     "README-003",
     "README-006",
-    "README-007"
+    "README-007",
+    "README-012",
+    "README-013",
+    "README-014",
+    "README-015",
+    "README-016"
   ]
 }

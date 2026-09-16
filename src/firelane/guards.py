@@ -144,19 +144,27 @@ def lineage_check(processed: Path, critical=CRITICAL, required_files=REQUIRED_FI
 
 
 # ── 2. 낡은 산출물 격리 ────────────────────────────────────────
-def quarantine_stale(out: Path, key: str, tag: str | None = None) -> list[str]:
+def quarantine_stale(out: Path, key: str, tag: str | None = None,
+                     keys: tuple[str, ...] | list[str] = ()) -> list[str]:
     """key 의 기존 산출물을 <이름>.stale_YYYYMMDD 로 개명한다.
 
     삭제가 아니라 개명이다 — 진단할 때 옛 파일이 증거가 된다(2026-08-18 실제로).
     하류가 읽으려 하면 FileNotFoundError 로 즉시 죽는다. 조용히 못 집는다.
+
+    ★ 2026-09-16. `keys` 에 **다른 소스 이름**을 넘긴다. 글롭 `{key}_*` 가
+      `ngii_road` 실패에 `ngii_road_center`(소비자 11곳)의 정상 산출물까지
+      격리했다. 이름이 더 긴 다른 소스의 것이면 건드리지 않는다(DECISIONS §165).
     """
     out = Path(out)
     tag = tag or datetime.now(UTC).astimezone().date().strftime("%Y%m%d")
     pats = (f"{key}_5186.gpkg", f"{key}.geojson",
             f"{key}_*_5186.gpkg", f"{key}_*.geojson")
+    longer = [k for k in keys if k != key and k.startswith(key + "_")]
     staled: list[str] = []
     for pat in pats:
         for p in sorted(out.glob(pat)):
+            if any(p.name.startswith((k + ".", k + "_")) for k in longer):
+                continue
             dst = p.with_name(p.name + f".stale_{tag}")
             dst.unlink(missing_ok=True)
             p.rename(dst)

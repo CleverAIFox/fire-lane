@@ -134,13 +134,13 @@ printf '%suv    %s  %s\n\n' "$D" "$Z" "$(uv --version 2>/dev/null || echo '없�
 step "의존성 동기화 (uv sync --dev)" uv sync --dev
 
 # ── 1. 패키지가 실제로 import 되는가 ─────────────────────────
-step "패키지 import 29종" uv run python -c '
+step "패키지 import" uv run python -c '
 import importlib, sys
 mods = ["paths","manifest","quiet_gdal","krgis.crs","seg.params","seg.geom","seg.width",
         "seg.roadname","seg.basisno","seg.graph","seg.report","segkey","guards",
         "lineage","ngi","ngii1k","probe","contract","inventory","datalog",
         "normalize_raw","sample_design","ingest","segments","streetlight",
-        "terrain","ortho","publish_web","pipeline"]
+        "terrain","ortho","publish_web","pipeline","shardseal"]
 bad = []
 for m in mods:
     try: importlib.import_module("firelane." + m)
@@ -288,7 +288,9 @@ elif [ -z "${FIRE_LANE_DATA:-}${FIRE_LANE_RAW:-}" ] && [ ! -d data/raw/gjcity ];
 else
     # ★ --no-test. 계약 테스트는 위 pytest 가 이미 돌렸다. 파이프라인이
     #   끝에서 또 부르면 한 번의 verify 에 test_contract 가 세 번 돈다.
-    # ★ PLAN #68. **raw 가 봉인과 같으면 판정도 같다.** 전량 4분30초를
+    # ★ **raw 와 코드가 봉인과 같으면 판정도 같다.** 전량 4분30초를
+    #   근거 있게 생략한다. raw 만 보던 때는 코드만 바꾼 배치가 옛 산출물로
+    #   초록을 냈다(DECISIONS §164). 종전 서술 —
     #   근거 있게 생략한다. 지금 `--fast` 는 근거 없이 전부/전무로
     #   건너뛰고 그 로그로 봉인하면 반쪽 증표다 — 이쪽은 입력이 같다는
     #   증거가 있다.
@@ -303,7 +305,7 @@ else
     #   끄는 것과 같다.
     step "파이프라인 전량" bash -c '
         if uv run python tools/dms.py rawdiff; then
-            echo "★ raw 가 봉인과 같아 전량을 생략했다 (PLAN #68)."
+            echo "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
         else
             uv run fire-lane --no-test --split
         fi'

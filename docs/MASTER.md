@@ -337,7 +337,7 @@ CCTV 거리 중앙값       39.3 m
 | 도달 불가 | 414 | 구간은 지나갈 수 있어도 안전센터에서 거기까지 길이 끊긴다 | 막힌 엣지를 뺀 Dijkstra |
 
 ```
-도달 가능   687 / 1,101  (62%)   안전센터에서 막힌 길 없이 갈 수 있다
+도달 가능   688 / 1,101  (62%)   안전센터에서 막힌 길 없이 갈 수 있다 · 도달 불가 413 은 지도 점선
 도달 불가   414          (38%)
 경로에 쓰인 구간  587            route_vehicle.csv
 ```
@@ -357,6 +357,8 @@ golden 재잠금이 필요하다(PLAN §1 #27).
 ★ 막힌 엣지는 **그래프에서 뺀 뒤** Dijkstra 를 돌린다. 큰 비용을 주고 남겨두면
 다른 길이 없을 때 그 엣지를 쓴다 — "막힌 길로라도 도달"은 답이 아니다.
 `reachable` 은 **양 끝 노드가 모두 도달 가능할 때만** 참이다.
+
+강제자 없음 — 사유: 도달 가능 수 대조는 다음 코드 배치에서 docnum_check EXPECT 에 넣는다(DECISIONS §167)
 
 ### 3-10. 경로가 둘인 이유
 
@@ -559,6 +561,26 @@ web/data/          UI 입력 · git 포함 (지형·정사영상 타일 포함)
   ↓ web/index.html   MapLibre GL JS 5 + deck.gl 9 (interleaved) + V-World
 GitHub Pages       gis · main 푸시 시 자동 배포
 ```
+
+**계층별 책임** — 데이터를 **만드는 것** · **맞는지 보는 것** · **다시 만들어도
+같은지 증명하는 것**은 다른 일이다. 같은 `ingest` 가 두 층에 나타나도 겹침이 아니다.
+
+| 층 | 무엇이 | 쓰는가 | 증명하는 것 |
+|---|---|---|---|
+| 획득 | `tools/pull_data.py` (`intake` · `acquire`) | landing → raw | 파일이 대장 선언대로 들어왔다 |
+| 계약 | `python -m firelane.contract` | 안 쓴다 | raw 실물이 대장 선언과 맞다. `ingest` 앞에 선다 |
+| 형식 | `python -m firelane.prep` | raw → norm | `--check` — norm 이 **지금의** raw 에서 나왔다 |
+| 레이크 | `tools/lakecheck.py` | 안 쓴다 | 레이크 선언 ↔ 실물 (L1~L6) |
+| **생산** | `ingest` → `segments` → `publish_web` | processed · web/data | — **검사가 아니다** |
+| **재현** | `verify.sh` 의 `파이프라인 전량` + `golden 판정 불변` | processed 를 다시 만든다 | 같은 입력 · 같은 코드면 같은 판정 |
+| 봉인 | `tools/dms.py seal` · `rawdiff` | `data/dms/SEAL.json` | raw 가 봉인과 같다 → 전량 생략 근거 |
+
+★ **`verify.sh` 가 `ingest` 를 다시 돌리는 것은 검사를 두 번 하는 것이 아니다.**
+생산을 한 번 더 해서 `golden` 과 대조하는 것이 곧 재현성 증명이다. 획득 · 계약 ·
+형식 · 레이크 넷은 **입력이 선언과 맞는가**를 보고, 재현은 **출력이 입력의 함수인가**를
+본다. 비용 문제는 겹침이 아니라 **주기**이고 `rawdiff` 가 가른다(DECISIONS §161).
+
+강제자  `tools/verify.sh` — 계층별 책임 표의 재현 층을 이 스크립트가 실행한다
 
 ### 5-1. 왜 나눴나
 
@@ -954,16 +976,22 @@ CCTV 배치가 선행돼야 한다.
 GSD 유효범위 밖까지 포함하는 넓은 상태이고, 지금 산출의 `unknown` 은
 CCTV 사각 하나뿐이다. 좁은 쪽을 넓은 이름으로 부르면 현재 산출을 과장한다.
 
-| 산출 `verdict` | 지도 라벨 | 기획서 |
-|---|---|---|
-| `clear` | 통행 가능 | GREEN |
-| `needs_cv` | 판정 보류 | YELLOW · 확인 필요 |
-| `blocked` | 통행 불가 | RED |
-| `unknown` | 영상판정 불가 | GRAY · 미측정 **(기획서 쪽이 더 넓다)** |
+| 산출 `verdict` | 지도 라벨 | 기획서 | 개요서 v1.6 |
+|---|---|---|---|
+| `clear` | 통행 가능 | GREEN | PASS |
+| `needs_cv` | 판정 보류 | YELLOW · 확인 필요 | CAUTION |
+| `blocked` | 통행 불가 | RED | BLOCK |
+| `unknown` | 영상판정 불가 | GRAY · 미측정 **(기획서 쪽이 더 넓다)** | 미측정 |
+
+개요서 v1.6(2026-08-19 외부 제출)은 **3색 + 미측정**으로 적는다. 대응이 일대일이라
+어긋남이 아니라 표기 차이다. 저장소가 정본이고 대외 문서가 다음 판에서 이 표를 따른다.
+개요서의 "내부 5단계" 는 산출 어휘에 없으므로 인용하지 않는다.
 
 `needs_cv` 는 폭 3.0~7.0m 이면서 CCTV 25m 안인 구간이다. 같은 폭 대역이라도
 CCTV 밖이면 `unknown`(`no_cctv_band` 152)으로 내려간다(§2-1). 기획서의
 "needs_cv + CCTV 있음" 서술은 이것과 같은 모델이다.
+
+강제자  `tests/test_contract.py::test_verdict_matches_rules_for_every_segment`
 
 ### 10-3. 연속 구간 (`run_length_m`)
 
@@ -1066,16 +1094,18 @@ CORS 로 막힌다. 설치할 것은 없다. MapLibre 와 deck.gl 은 CDN 에서
 | `web/style.css` | **@marscoolcat 단독** | 색·간격·타이포·애니메이션·레이아웃 |
 | `web/index.html` | 공동 | 뼈대 마크업. 거의 안 바뀐다 |
 | `web/config.js` | **공동** | 판정 색상·마커 스펙·카메라·출동모드·미니맵 |
-| `web/js/` | **공백** | 로직·레이어 29개 모듈. 이탈로 소유자 없음(§8 · `PLAN #79`) |
+| `web/js/` | `@CleverAIFox` | 로직·레이어 30개 모듈. 1인 저장소라 공백이 없다(DECISIONS §163-5) |
 | `web/js/icons/` · `ui/` | 공동 | 캔버스 그림 · 범례·검색·테마·토글 |
 | `web/data/` | 생성물 | `publish_web.py` 산출. 손으로 고치지 않는다 |
 
 **UI 작업은 `style.css` 와 `config.js` 두 파일이면 된다.** `web/js/layers/` 를
 건드려야 하는 상황은 로직 문제이므로 GIS 담당에게 넘긴다.
 
-`app.js` 는 없다. 1,260줄이던 그 파일은 `web/js/` 29개 모듈로 갈렸다.
+`app.js` 는 없다. 1,260줄이던 그 파일은 `web/js/` 모듈들로 갈렸다(지금 30개 모듈).
 수의 정본은 `node tools/js_graph_check.mjs` 출력이다.
 모듈 구조는 `web/README.md` 가 정본이다.
+
+강제자  `tests/test_guards.py::test_docs_point_at_the_real_package` — 파일 구조 표가 실제 패키지 경로를 가리키는지 본다
 
 ### 11-3. `config.js` — UI 담당이 조정하는 값
 
@@ -1439,6 +1469,18 @@ git push origin --delete feat/<이름>
   낮은 채로 남는다. 예외는 지우면 끝난다. **위 표(§12-1)를 안 고치는
   이유가 그것이다** — 이 저장소는 팀 운영 방식을 기록으로 남긴다.
 
+★ **`part/**` 계층도 같은 이유로 유지한다.** 1인이면 `feat → part → dev` 가
+  PR 을 한 번 더 여는 비용이지만, 룰셋 · 브로드캐스트 · `§12-8c` · 협업 화면이
+  전부 4계층을 전제로 돈다. 계층을 걷으면 그 넷을 함께 고쳐야 하고, 팀에
+  돌려주는 사본이 팀 구조와 달라진다. 1인 작업은 `part/infra` 하나로 흐른다.
+
+★ **`CODEOWNERS` 는 보존 대상이 아니다.** 룰셋 표는 방침이라 기록으로 남기지만
+  소유자 핸들은 실물이다 — 개인 저장소에서 팀 핸들 `@woongtopia/*` 는 존재하지
+  않아 GitHub 이 조용히 무시한다. 그래서 전부 `@CleverAIFox` 이며 `# !strict`
+  태그는 그대로다(강도는 소유자가 아니라 태그가 정한다).
+
+강제자  `tools/ruleset_check.py` — bypass 회수 조건(collaborators)과 ADMINS 를 실물과 대조한다
+
 ### 12-1a-2. 역할 번호와 조회 함정
 
 ★ **`actor_id 5` 는 사람 수가 아니라 역할 번호다.** 화면 안내가 그것을
@@ -1465,9 +1507,8 @@ git push origin --delete feat/<이름>
 
 bypass 는 개인이 아니라 역할에 준다. **admin 이 늘면 우회 가능자도 는다.**
 `ruleset_check` 의 `ADMINS` 가 이 명단이며 실물과 다르면 운다. 이탈자
-`AIMasterFox` 는 2026-09-03 에 bypass 회수와 함께 뺐다. **남은 넷은 admin 을
-유지한다** — 1인 파트가 둘이라 릴리즈 매니저 하나로 줄이면 나머지가 자기
-파트 설정을 못 만진다. 줄이려면 `ADMINS` 를 먼저 고치고 그다음이 실물이다.
+`AIMasterFox` 는 2026-09-03 에 bypass 회수와 함께 뺐다. 늘리려면 `ADMINS` 를
+먼저 고치고 그다음이 실물이다.
 
 ★ `gh api .../rulesets` **목록 조회는 `bypass_actors` 를 빈 배열로 준다.**
 개별 조회 `.../rulesets/{id}` 가 실물이다. 2026-09-01 에 목록 조회를 믿고
@@ -1476,6 +1517,8 @@ bypass 는 개인이 아니라 역할에 준다. **admin 이 늘면 우회 가�
 ★ **승인이 0인 이유.** 자기 PR 은 자기가 승인할 수 없는데(§12-3) GIS·infra 는
 1인 파트다. 승인 1을 걸면 영구 차단된다. 실제로 막는 것은 승인이 아니라
 `contract-shared` 다. **게이트는 `main` 하나로 모은다.**
+
+강제자  `tools/ruleset_check.py` — 승인 수 · Code Owners · ADMINS 를 실물과 대조한다
 
 ### 12-1b. 브랜치 이름과 보호
 
@@ -1748,10 +1791,20 @@ GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 
     3  main → dev   흡수 PR (merge commit) — 릴리즈 매니저
     4  dev → part   각 파트 통합 담당이 자기 브랜치로 PR (§12-8c)
 
-★ **3·4단계는 직푸시가 아니라 PR 이다.** `dev` · `part/**` 는 셋 다
-`pull_request` 필수다(§12-1). `git push origin dev` 로 되던 것은
-`bypass_actors` 때문이었고 **2026-09-03 회수 후에는 막힌다.** 승인은
-둘 다 0이라 실질 비용은 CI 대기뿐이다.
+★ **1인 운용(§12-1c) 동안 3·4단계는 fast-forward 직푸시다.** 흡수와
+파트 동기화는 **내용이 같은 커밋 이동**이라 PR 을 열면 CI 대기만 는다.
+`bash tools/merge_batch.sh --release` 가 1~4 를 순서대로 밟는다 — CI 초록
+확인 · merge commit · 스쿼시 흔적 흡수 · 태그 형식 검사 · 파트별 ff.
+ff 가 안 되는 파트는 dev 를 합쳐 보고 **내용이 dev 와 같을 때만** merge
+commit 으로 올린다. 파트 고유 내용이 있으면 손대지 않는다.
+
+★ 협업자가 둘이 되어 bypass 가 회수되면 **3·4단계는 PR 로 돌아간다.**
+`dev` · `part/**` 는 `pull_request` 필수이고(§12-1) 승인은 0이라 비용은 CI
+대기뿐이다. 2026-09-03 ~ 09-12 가 그 기간이었다.
+
+★ **스쿼시로 머지하지 않는다.** `EXPECT` 가 dev · main 을 merge 만 허용한다.
+PR #23 을 스쿼시로 넣어 main 이 dev 조상에서 빠졌고, 그 뒤 릴리즈마다
+`git merge origin/main` 이 먼저 필요해졌다.
 
 ★ **4단계는 릴리즈 매니저가 대신 하지 않는다.** 파트 브랜치는 그 파트
 통합 담당의 것이고(§12-8c · CODEOWNERS), 남이 올리면 그 파트가 자기
@@ -1775,6 +1828,8 @@ gh pr create --base part/<파트> --head dev --fill && gh pr merge --merge
 
 ★ 릴리즈 직전에 `uv run python tools/ruleset_check.py` 를 돌린다. 룰셋 실물이
 §12-1 과 어긋나면 여기서만 잡힌다.
+
+강제자  `tools/merge_batch.sh` — 1~4단계를 순서대로 밟고 CI 초록 · merge commit · 태그 형식을 검사한다
 
 ### 12-8c. 파트 통합 담당
 
@@ -1939,6 +1994,13 @@ golden 지문 · PLAN 번호·참조 · 커버리지 래칫을 밟는다.
   가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — 5분21초가 44초다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
   끄는 것과 같다.
+
+★ **2026-09-16 두 겹이 됐다.** ① 봉인이 파이프라인 **코드** 지문도 적는다 —
+  raw 만 보면 판정 코드를 바꾼 배치가 옛 산출물로 초록을 낸다(`DECISIONS §164`).
+  ② 전량이 돌 때 ingest 가 소스마다 봉인지(raw · cfg · code · out)를 대조해
+  **찢어진 샤드만** 다시 만든다(`§165`). 이 8GB 기계에서 `ngii_road` 는 다시
+  빌드하면 거의 반드시 OOM 이라, 샤드 봉인이 곧 전량을 돌 수 있게 하는 조건이다.
+  전량은 이제 2분40초 안팎이다.
 
 ★ **커버리지는 래칫이다.** 2026-09-15 실측 14%(14,201 stmts · 12,219 miss).
   `--cov-fail-under=14` 로 걸려 있고 **올린 뒤에는 안 내린다.** 80% 를

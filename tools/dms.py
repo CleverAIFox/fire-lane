@@ -67,6 +67,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from firelane.hashing import sha256  # ★ 파일 해시는 한 곳에서만 잰다(firelane/hashing.py)
+
 ROOT = Path(__file__).resolve().parent.parent
 STATE = ROOT / "data" / "dms"
 DOCS = ("docs/MASTER.md", "docs/DECISIONS.md", "docs/PLAN.md", "README.md")
@@ -733,6 +735,8 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
         #   이것을 대조해 파이프라인 전량(4분30초)을 **근거 있게** 생략한다.
         #   못 재면 None 이고, None 이면 다음 대조가 생략하지 않는다.
         "raw": raw_print(),
+        # ★ §164. 코드가 같다는 증거 없이 raw 만 같다고 생략하면 안 된다.
+        "code": code_print(),
         "sections": now,
         "denominator": blank,
         "dead_refs": len(verify(data)),
@@ -910,8 +914,37 @@ def raw_print() -> dict[str, list[str]] | None:
     return out or None
 
 
+# ★ 2026-09-16. 판정은 **raw 와 코드의 함수**다. raw 만 대조하면 코드를
+#   바꾼 배치(판정 범위 · 중심선 보정)가 전량 생략으로 옛 산출물을 남기고,
+#   golden 은 옛 산출물을 옛 지문과 맞춰 초록을 낸다(DECISIONS §164).
+#   파이프라인 산출에 닿는 추적 경로를 전부 넣는다 — 모르면 넣는다.
+CODE_PATHS = ("src", "sources.yaml", "pyproject.toml", "uv.lock", "data/field")
+
+
+def code_print(root: Path = ROOT) -> dict | None:
+    """파이프라인 코드의 지문. `{"sha256"(16자), "files"}`. 못 재면 None.
+
+    ★ **추적 파일 목록은 git 에서, 내용은 디스크에서** 읽는다. 커밋 전에
+      고친 것도 잡히고, 추적 안 된 찌꺼기(`__pycache__`)는 안 섞인다.
+      지워진 추적 파일은 `<gone>` 으로 섞어 삭제도 차이로 센다.
+    """
+    try:
+        r = subprocess.run(["git", "ls-files", "-z", "--", *CODE_PATHS],
+                           cwd=root, capture_output=True, timeout=60, check=False)
+    except Exception:                                       # noqa: BLE001
+        return None
+    if r.returncode:
+        return None
+    files = sorted(f for f in r.stdout.decode("utf-8").split("\0") if f)
+    if not files:
+        return None
+    lines = [f"{rel}\0{sha256(root / rel) if (root / rel).is_file() else '<gone>'}"
+             for rel in files]
+    return {"sha256": _sha("\n".join(lines)), "files": len(files)}
+
+
 def cmd_rawdiff() -> int:
-    """raw 가 봉인 지점과 같은가. **같으면 0, 다르면 1.**
+    """raw **와 파이프라인 코드**가 봉인 지점과 같은가. **같으면 0, 다르면 1.**
 
     `verify.sh` 가 이 결과로 파이프라인 전량을 생략할지 정한다.
 
@@ -924,7 +957,22 @@ def cmd_rawdiff() -> int:
     if not p.exists():
         print("봉인이 없다 — 전량을 돈다.")
         return 1
-    old = json.loads(p.read_text(encoding="utf-8")).get("raw")
+    seal = json.loads(p.read_text(encoding="utf-8"))
+    # ★ 코드부터 본다. raw 지문은 수 분이 걸리고 코드 지문은 1초다.
+    oc = seal.get("code")
+    if not oc:
+        print("봉인에 코드 지문이 없다(옛 봉인) — 전량을 돈다.")
+        return 1
+    nc = code_print()
+    if nc is None:
+        print("코드 지문을 못 쟀다 — 전량을 돈다.")
+        return 1
+    if nc["sha256"] != oc.get("sha256"):
+        print(f"파이프라인 코드가 봉인과 다르다 — 전량을 돈다 "
+              f"(파일 {oc.get('files')} → {nc['files']})")
+        print(f"    git diff --stat {seal.get('commit', 'HEAD')} -- {' '.join(CODE_PATHS)}")
+        return 1
+    old = seal.get("raw")
     if not old:
         print("봉인에 raw 지문이 없다(옛 봉인) — 전량을 돈다.")
         return 1
@@ -936,7 +984,7 @@ def cmd_rawdiff() -> int:
     new = sorted(set(now) - set(old))
     moved = sorted(k for k in now if k in old and now[k] != old[k])
     if not (gone or new or moved):
-        print(f"raw 가 봉인과 같다 — {len(now)}종 전부 일치.")
+        print(f"raw 가 봉인과 같다 — {len(now)}종 전부 일치 · 코드 {nc['files']}파일 일치.")
         return 0
     print(f"raw 가 다르다 — 신설 {len(new)} · 변경 {len(moved)} · 삭제 {len(gone)}")
     for k in (new + moved + gone)[:12]:

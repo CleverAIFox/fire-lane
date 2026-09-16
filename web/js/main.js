@@ -22,7 +22,8 @@ import { createMap } from "./map.js";
 
 import { addMask, addBoundary, addBuildings } from "./layers/mask.js";
 import { addHydrantPulse } from "./layers/hydrants.js";
-import { addSegments } from "./layers/segments.js";
+import { addSegments, addUnreachable } from "./layers/segments.js";
+import { joinReach } from "./reach.js";
 import { addCoverage } from "./layers/coverage.js";
 import { addMarkers, bindMarkerPopups } from "./layers/markers.js";
 import { addSigns, placeSigns } from "./layers/signs.js";
@@ -48,6 +49,9 @@ S.DATA.poiRaw = D.poi.features;
 S.DATA.bldRaw = D.buildings.features;
 S.DATA.segRaw = D.segments.features;
 S.SEG = D.segments;
+/* 차량 경로 도달성을 구간 속성에 붙인다. 빗나간 조인은 경고만 한다(null 로 둔다). */
+S.reach = joinReach(D.segments.features, D.route);
+if (S.reach.missing) console.warn(`route_vehicle 조인 빗나감 ${S.reach.missing}/${S.reach.total}`);
 
 map.on("load", () => {
   addMask(D.mask, D.maskSoft);
@@ -56,6 +60,7 @@ map.on("load", () => {
   addBuildings(D.buildings);
 
   addSegments(D.segments);          // ← addCoverage 의 기준 레이어
+  addUnreachable();                 // 도달 불가 점선 — seg-l 바로 위
   addCoverage();
 
   addMarkers();

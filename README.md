@@ -133,8 +133,9 @@ bash tools/verify.sh --fast   # 급할 때. ★ `부분 실행` 에서 일부러
 ```
 
 ★ `--fast` 로 찍은 로그로는 **봉인할 수 없다.** 건너뛴 것은 통과가 아니다.
-근거 있는 생략은 `dms.py rawdiff` 가 한다 — raw 가 봉인과 같으면 파이프라인
-전량을 안 돈다(5분21초 → 44초). 모르면 안 건너뛴다.
+근거 있는 생략은 두 겹이다. `dms.py rawdiff` 가 raw **와 파이프라인 코드**가 봉인과
+같으면 전량을 안 돈다(44초). 돌 때는 ingest 가 소스마다 봉인지를 대조해 **찢어진
+샤드만** 다시 만든다(DECISIONS §164 · §165). 모르면 안 건너뛴다.
 
 푸시 전에는 이것 하나면 된다.
 
@@ -268,7 +269,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 
 ```
 차량 비용 통행 불가   416 / 1,101   폭 · 내륜차 · 회전반경까지 넣으면 못 지나간다
-도달 가능            687 (62%)     안전센터에서 막힌 길 없이 갈 수 있다
+도달 가능            688 (62%)     안전센터에서 막힌 길 없이 갈 수 있다
 도달 불가            414 (38%)
 ```
 
@@ -278,62 +279,31 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 ★ 416 은 지도의 빨강(`verdict` 159)과 **다른 값이다.** 산출 경로가 다르고
 판정에도 반영되지 않는다. 셋의 구분은 `MASTER §3-9` 가 든다.
 
+강제자 없음 — 사유: 도달 불가 조인은 tests/test_reach_overlay.py 가 보고 수 대조는 다음 코드 배치다(DECISIONS §167)
+
 ---
 
 ## 데이터 계층
 
-```
-landing      SSD/landing/     다운로드 원본. 규칙 없음. ★ 백업 제외
-raw          SSD/raw/         제공기관 12폴더. 절대 수정 안 함
-norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료
-interim      탐색·대조 산출물. 대장에 없고 지워도 된다
-processed    저장소 안. 4개만 커밋하고 나머지는 재생성
-field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급
-_quarantine  대장에 없는 파일. 삭제하지 않고 격리
-web/data     표출용. 커밋한다. 40MB 상한
-data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
-```
+정본은 **`MASTER §18`** 이다. 계층 선언은 `sources.yaml` 의 `layers` 블록,
+경로 해석은 `src/firelane/paths.py`, 계층별 책임(획득 · 계약 · 생산 · 재현)은
+`MASTER §5-3a` 가 든다. 여기에는 입구만 적는다.
 
-제공기관 폴더 — `juso` `its` `ngii` `vworld` `safety` `gjcity` `sbiz` `eais` `nsdi` `nfa`.
-정본은 `sources.yaml` 의 `layers.raw.providers` 이고 `firelane.providers` 가 읽는다.
-**같은 수치지형도라도 원천이 다르면 폴더가 다르다.**
-
-계층 선언의 정본은 `sources.yaml` 의 `layers` 블록이고 경로 해석은
-`src/firelane/paths.py` 다. 둘이 어긋나면 `datalog fsck` 가 잡는다.
+강제자 없음 — 사유: 정본은 MASTER §18 이고 이 절은 참조만 둔다
 
 ### 게이트
 
 ```bash
-uv run python -m firelane.contract        대장 선언 ↔ raw 실물. ingest 앞에 선다
-uv run python -m firelane.datalog check   대장 정합성
-uv run python -m firelane.datalog fsck    계층 선언 ↔ 실물
-```
-
-획득은 여덟 단계인데 **한때 명령이 넷이었다.** 그중 `--prune-landing` 은 `--verify`
-없이도 돈다 — 편입이 성공했다는 확인 없이 원본을 지운다. 그것이 소실이다.
-
-```bash
 uv run python tools/pull_data.py            관측만
-uv run python tools/pull_data.py --yes       이관 → 편입 → 검증 → 사본삭제
-                                             → 격리 → 판정 → norm 이관 → 정합
+uv run python tools/pull_data.py --yes       반입 · 편입 · norm
 uv run python tools/pull_data.py --yes --all 위 + 파이프라인 + golden
 ```
 
-★ **삭제는 검증에 매달려 있다.** `③ verify` 가 0 이 아니면 `④` 는 실행되지
-않고 landing 원본이 그대로 남는다. 순서를 주석이 아니라 자료구조로 들고 있고
-`tests/test_intake_rules.py` 의 `test_prune_needs_verify` 외 다섯이 그것을 강제한다 —
-게이트를 뚫는 · None 을 0 으로 읽는 · 통과 경로를 막는 세 방향 전부 본다.
+★ 이 절이 계층 표 · 게이트 · 제공기관 폴더를 따로 들고 있었고, 제공기관을
+**12폴더라 적고 이름은 열 개만** 나열하고 있었다(`mois` · `gjbg` 누락).
+사본은 이렇게 낡는다(DECISIONS §162-4).
 
-단계별로 손으로 치고 싶으면 `intake.py` · `acquire.py` 를 직접 쓴다.
-pull_data 는 그 둘을 부를 뿐 판정을 다시 쓰지 않는다.
-
-`contract.py` 가 보는 것 — 인코딩 · 컬럼 소실 · 건수 · zip 안 레이어 ·
-**스코프 안 유효 건수(`scope_min`)**. 마지막 항목이 핵심이다. 소스 교체 때
-소화전이 파싱은 되고 스코프에서 전멸해 `OK 0건` 으로 통과한 적이 있다.
-조용한 0건이 제일 나쁘다.
-
-**`raw` 를 저장소에 두지 않는다.** 심링크도 쓰지 않는다 — 심링크를 git 이
-추적했다가 원본 수 GB 가 두 번 소실된 적이 있다.
+강제자 없음 — 사유: 입구 명령이다. 게이트 강제자는 MASTER §18-11 이 든다
 
 ---
 
@@ -440,9 +410,11 @@ web/
   index.html              뼈대                      공동
   style.css               색·간격·타이포             @marscoolcat
   config.js               색상표·임계값·마커·카메라   공동
-  js/                     로직·레이어 29개 모듈      공백 (PLAN #79)
+  js/                     로직·레이어 30개 모듈      @CleverAIFox
   data/                   생성물. 손으로 고치지 않는다
 ```
+
+강제자 없음 — 사유: 구조 블록의 실재는 test_readme_structure_lists_real_files 가 본다
 
 ---
 
@@ -451,7 +423,8 @@ web/
 ```
 세그먼트     1,101   (동명동 416 + 119안전센터 접근 회랑)
 판정        통행 가능 397 · 판정 보류 191 · 통행 불가 159 · 영상판정 불가 354
-도달 가능    687 (62%)   119안전센터에서 막힌 길 없이 갈 수 있는 구간
+도달 가능    688 (62%)   119안전센터에서 막힌 길 없이 갈 수 있는 구간
+도달 불가    413         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       48,579.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
 대장        `datasets` 65종 · `retired` 16종
@@ -475,6 +448,8 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 224/588 
 
 **폭 값은 아직 미검증이다**(`width_verified: false`, 전건). 레이저 실측 후 바뀐다.
 값은 바뀌어도 필드와 `verdict` 어휘는 안 바뀐다. 계약 테스트가 그것을 보장한다.
+
+강제자 없음 — 사유: 수치는 docnum_check 가 segments · 판정 수를 대조하고 도달 가능 수는 다음 코드 배치다
 
 ### 구간 수는 고정값이 아니다
 

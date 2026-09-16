@@ -6,6 +6,7 @@
 import { CONFIG } from "../config-access.js";
 import { S } from "../state.js";
 import { verdictMatch } from "../verdict.js";
+import { UNREACH_FILTER } from "../reach.js";
 
 /* 세그먼트 색상 표현식. MapLibre 네이티브 line 으로 그린다.
    ★ deck.gl interleaved 레이어는 map.setTerrain() 을 켜면 지형 아래로 묻힌다.
@@ -52,4 +53,15 @@ export function addSegments(seg){
   S.map.addLayer({id:"seg-l",type:"line",source:"seg",
     layout:{"line-cap":"round","line-join":"round"},
     paint:{"line-color":segColor(),"line-opacity":segOpacity(),"line-width":segWidth()}});
+}
+
+/* 도달 불가 오버레이 — 판정 색 위에 점선.
+   ★ 2026-09-16. 색이 아니라 선 무늬라 판정 4종 범례와 안 섞인다. 거점에서 차량
+     경로로 닿는 길이 없는 구간이다(route_vehicle.json `reachable === 0`).
+     판정이 clear 여도 닿지 못하면 쓸 수 없다 — 개별 판정보다 큰 사실이다. */
+export function addUnreachable(){
+  S.map.addLayer({id:"seg-unreach",type:"line",source:"seg",filter:UNREACH_FILTER,
+    layout:{"line-cap":"butt","line-join":"round"},
+    paint:{"line-color":"#111","line-opacity":0.85,"line-dasharray":[1,1.4],
+      "line-width":["interpolate",["exponential",2],["zoom"],12,1.2,20,4]}});
 }

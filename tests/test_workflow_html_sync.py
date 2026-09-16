@@ -97,6 +97,88 @@ def test_rules_table_agrees_with_ruleset_check():
         "\n\n  정본은 tools/ruleset_check.py 의 EXPECT 다.")
 
 
+
+def _rules_table(master: str) -> dict[str, dict]:
+    """MASTER §12-1 룰셋 표를 {이름: {approvals, codeowners}} 로.
+
+    ★ 헤더 `| 룰셋 | 대상 | 승인 | Code Owners |` 를 찾아 **열 이름으로**
+      자리를 잡는다. 열 순서가 바뀌어도 값이 엉뚱한 칸에서 읽히지 않는다.
+      `—` 는 꺼짐 · 해당 없음이다. 이름이 `—` 인 행(`feat/**`)은 룰셋이 아니다.
+    """
+    out: dict[str, dict] = {}
+    cols: list[str] | None = None
+    for line in master.splitlines():
+        if not line.startswith("|"):
+            if cols is not None and out:
+                break
+            continue
+        cells = [c.strip().strip("`") for c in line.strip().strip("|").split("|")]
+        if cols is None:
+            if cells[:1] == ["룰셋"] and "승인" in cells and "Code Owners" in cells:
+                cols = cells
+            continue
+        if set(cells[0]) <= set("-: "):
+            continue
+        row = dict(zip(cols, cells, strict=True))   # 칸 수가 헤더와 다르면 표가 깨진 것이다
+        name = row.get("룰셋", "")
+        if not name or name == "—":
+            continue
+        ap = row.get("승인", "")
+        co = row.get("Code Owners", "")
+        out[name] = {"approvals": int(ap) if ap.isdigit() else None,
+                     "codeowners": co not in ("—", "", "끔", "off")}
+    return out
+
+
+def test_rules_table_approvals_and_codeowners_match_expect():
+    """승인 수 · Code Owners 가 `EXPECT` 와 MASTER §12-1 표에서 같은가.
+
+    ★ 2026-09-16. 위 검사는 이름 · 대상 · 머지 방식 **문자열이 있는가**만
+      봤다. 승인 수와 Code Owners 는 비교 대상이 아니라 갈려도 초록이었다.
+      실제로 갈려 있었다 — 2026-09-03 감사에서 사본 셋이 `release` 를
+      \"승인 1 + Code Owners\" 로 적었고 `EXPECT` 는 `codeowners: False` 였다
+      (DECISIONS §108 결정 뒤 사본만 안 따라왔다). 이제 필드 단위로 맞춘다.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "rsc", ROOT / "tools/ruleset_check.py")
+    rsc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rsc)
+
+    table = _rules_table((ROOT / "docs/MASTER.md").read_text(encoding="utf-8"))
+    assert table, "MASTER §12-1 룰셋 표를 못 읽었다 — 헤더가 바뀌었는가"
+    bad = []
+    for name, want in rsc.EXPECT.items():
+        got = table.get(name)
+        if got is None:
+            bad.append(f"  {name}: MASTER 표에 행이 없다")
+            continue
+        if got["approvals"] != want["approvals"]:
+            bad.append(f"  {name}: 승인 MASTER {got['approvals']} != EXPECT {want['approvals']}")
+        if got["codeowners"] != want["codeowners"]:
+            bad.append(f"  {name}: Code Owners MASTER {got['codeowners']} "
+                       f"!= EXPECT {want['codeowners']}")
+    assert not bad, ("룰셋 승인 · Code Owners 가 갈린다:\n" + "\n".join(bad)
+                     + "\n\n  정본은 tools/ruleset_check.py 의 EXPECT 다.")
+
+
+def test_rules_table_probe_is_alive():
+    """카나리아 — 표 파서가 실제로 값을 읽는가. **양성 대조다.**
+
+    ★ 파서가 죽으면 표가 `{}` 가 되고, 위 검사는 \"행이 없다\" 로 울거나
+      헤더 문구 하나에 조용히 무너진다. 합성 표로 읽기 · 어긋남 검출을
+      둘 다 확인한다(DECISIONS §159).
+    """
+    probe = ("앞 문단\n\n"
+             "| 룰셋 | 대상 | 승인 | Code Owners | 필수 검사 | 머지 방식 |\n"
+             "|---|---|---|---|---|---|\n"
+             "| `release` | `refs/heads/main` | 1 | ✓ | shared | Merge |\n"
+             "| `trunk` | `refs/heads/dev` | 0 | — | shared | Merge |\n"
+             "| — | `feat/**` | — | — | — | — |\n\n뒤 문단\n")
+    got = _rules_table(probe)
+    assert got == {"release": {"approvals": 1, "codeowners": True},
+                   "trunk": {"approvals": 0, "codeowners": False}}, got
+
+
 def test_generated_has_components():
     """도식이 `<pre>` 로 흘러나오지 않는가.
 

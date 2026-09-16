@@ -90,7 +90,7 @@ STEPS = [
          # ★ 다만 **하류가 이름으로 읽는 것**은 명시한다. 글롭만 두면
          #   test_every_read_is_produced_by_an_earlier_step 이 하류의
          #   reads 를 못 잇는다 — 선언의 목적이 그 연결이다.
-         writes=(P / "_manifest.json", P / "*_5186.gpkg",
+         writes=(P / "_manifest.json", P / "*_5186.gpkg", P / "building.geojson",
                  P / "boundary_emd.geojson", P / "fire_station.geojson",
                  P / "hydrant_point.geojson", P / "cctv.geojson",
                  P / "poi_store.geojson", P / "road_intrvl.geojson")),
@@ -122,8 +122,17 @@ STEPS = [
          #   덧쓴다. reads 로 적어두면 하류 무효화 경고가 안 뜬다.
          # ★ view.json 은 publish 가 만드는데 여기서 덧쓴다 — 후진 의존이다.
          #   `if vj.exists()` 로 첫 실행을 넘긴다. test_guards.BACKWARD 가 든다.
+         # ★ 2026-09-16. `terrain.LAYERS` 의 ingest 산출물 넷에도 z 를 덧쓴다.
+         #   선언이 segments 하나뿐이었다 — 모듈이 f"{key}_5186.gpkg" 로 쓰니
+         #   리터럴을 훑는 대조가 못 봤다. 샤드 봉인지가 매 실행 찢어져서 알았다
+         #   (DECISIONS §165-6). 강제자 test_shardseal::test_terrain_mutations_are_declared
          mutates=(P / "segments.geojson", P / "_manifest.json",
-                  WEB / "view.json")),
+                  WEB / "view.json",
+                  P / "segments_5186.gpkg",
+                  P / "building.geojson", P / "building_5186.gpkg",
+                  P / "cctv.geojson", P / "cctv_5186.gpkg",
+                  P / "hydrant_point.geojson", P / "hydrant_point_5186.gpkg",
+                  P / "fire_station.geojson", P / "fire_station_5186.gpkg")),
     Step("ortho", "ortho", "항공정사영상 → 배경 타일",
          WEB / "ortho",
          # ★ scope.geojson 은 publish 산출이다. **후진 의존이며 지난 실행의
@@ -464,6 +473,13 @@ def main():
         r = subprocess.run([sys.executable, "-m", f"firelane.{s.module}", *_extra],
                            cwd=ROOT,
                            env={**os.environ, "FIRE_LANE_STAGE": s.name})
+        if not r.returncode and s.name == "terrain":
+            # ★ 2026-09-16. terrain 이 ingest 산출물에 z 를 덧썼으니 샤드 봉인지의
+            #   `out` 칸만 새 실물로 고친다. raw · cfg · code 는 ingest 시점 값을 둔다 —
+            #   그래야 `--from` 으로 일부만 돌려도 옛 산출물이 거짓 봉인되지 않는다.
+            #   안 하면 다음 실행에서 네 샤드가 찢어지고, 다시 빌드되고, 또 덧써진다.
+            r = subprocess.run([sys.executable, "-m", "firelane.ingest", "--reseal-out"],
+                               cwd=ROOT, env={**os.environ, "FIRE_LANE_STAGE": "terrain"})
         if r.returncode:
             print(c(f"\n★ {name} 실패. 여기서 멈춘다.", "31"))
             if s.module == "ingest":

@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-08-25T00:56:37+00:00"
   },
-  "generated_at": "2026-09-15T09:45:24.141658+09:00",
+  "generated_at": "2026-09-16T19:20:39.730487+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -254,7 +254,15 @@
       ],
       "outputs": [
         "node_link_changelog.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "574f2d294fa6ff10",
+        "cfg": "0c8544bb8a68567c",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "node_link_changelog.csv": "56e7966570ac1746"
+        }
+      }
     },
     {
       "key": "road_link",
@@ -295,7 +303,16 @@
       "outputs": [
         "road_link.geojson",
         "road_link_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "f8ee91a7a5116a9f",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "road_link.geojson": "4a73c0e457ce46ca",
+          "road_link_5186.gpkg": "29ba394b23226423"
+        }
+      }
     },
     {
       "key": "road_rw",
@@ -321,7 +338,16 @@
       "outputs": [
         "road_rw.geojson",
         "road_rw_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "8260bcd0abef6dde",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "road_rw.geojson": "83e5103532146531",
+          "road_rw_5186.gpkg": "104e092093b8fe44"
+        }
+      }
     },
     {
       "key": "road_intrvl",
@@ -350,7 +376,16 @@
       "outputs": [
         "road_intrvl.geojson",
         "road_intrvl_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "baba4bfe0ac7be7a",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "road_intrvl.geojson": "1f030babf6abe153",
+          "road_intrvl_5186.gpkg": "8dab52a875308b1f"
+        }
+      }
     },
     {
       "key": "spotaddr_geom",
@@ -1883,7 +1918,24 @@
         "ngii1k_walk",
         "ngii1k_xsec",
         "ngii1k_light"
-      ]
+      ],
+      "seal": {
+        "raw": "7b970e12ea3f77df,1db699d03bc77128",
+        "cfg": "84b3f740f8ec5a4c",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "ngii1k.geojson": "199131418de418fe",
+          "ngii1k_5186.gpkg": "26dc88b02dceb50b",
+          "ngii1k_center.geojson": "2e15a70a06228eb3",
+          "ngii1k_center_5186.gpkg": "4d49cf308956eb79",
+          "ngii1k_walk.geojson": "10295eebfa0afd96",
+          "ngii1k_walk_5186.gpkg": "d85f168476364878",
+          "ngii1k_xsec.geojson": "0e4229a21ff0e228",
+          "ngii1k_xsec_5186.gpkg": "43ea9052c42ab555",
+          "ngii1k_light.geojson": "81b1f3d5e412cf5c",
+          "ngii1k_light_5186.gpkg": "1adfe5865c0e574e"
+        }
+      }
     },
     {
       "key": "streetlight",
@@ -1910,7 +1962,16 @@
       "outputs": [
         "streetlight.geojson",
         "streetlight_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "96ada85a38ef85c9",
+        "cfg": "4c8c707303c11314",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "streetlight.geojson": "119bb623d7e7e464",
+          "streetlight_5186.gpkg": "d3af08bd018ab42a"
+        }
+      }
     },
     {
       "key": "ngii_road",
@@ -1943,7 +2004,16 @@
       "outputs": [
         "ngii_road.geojson",
         "ngii_road_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "cd4f56a0fcba89d9,085ad532f61ea654",
+        "cfg": "1d51a21c2a7be0ad",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "ngii_road.geojson": "25ccee65b4f0396e",
+          "ngii_road_5186.gpkg": "463ea4df984fae85"
+        }
+      }
     },
     {
       "key": "node_link",
@@ -1985,7 +2055,16 @@
       "outputs": [
         "node_link.geojson",
         "node_link_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "5bbf5a01d677b6dc",
+        "cfg": "c6dc159be549f556",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "node_link.geojson": "d4453f032982a048",
+          "node_link_5186.gpkg": "b88fd8bb0e969822"
+        }
+      }
     },
     {
       "key": "node_point",
@@ -2014,7 +2093,16 @@
       "outputs": [
         "node_point.geojson",
         "node_point_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "5bbf5a01d677b6dc",
+        "cfg": "ed8f23daa33ae25b",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "node_point.geojson": "ff2816ee25f590d5",
+          "node_point_5186.gpkg": "7477d04fe44dde3b"
+        }
+      }
     },
     {
       "key": "turn_restriction",
@@ -2038,7 +2126,15 @@
       ],
       "outputs": [
         "turn_restriction.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "5bbf5a01d677b6dc",
+        "cfg": "72b3397948fcc61e",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "turn_restriction.csv": "4101841d894123e1"
+        }
+      }
     },
     {
       "key": "cctv",
@@ -2070,7 +2166,16 @@
       "outputs": [
         "cctv.geojson",
         "cctv_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "8351c71117758767",
+        "cfg": "c4d51b06ff1bd4a7",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "cctv.geojson": "2f681f338710f997",
+          "cctv_5186.gpkg": "36ac80339d91d38f"
+        }
+      }
     },
     {
       "key": "fire_station",
@@ -2100,7 +2205,16 @@
       "outputs": [
         "fire_station.geojson",
         "fire_station_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "8f3fca285b8f14d6",
+        "cfg": "a7b67ffa7e5b06d8",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "fire_station.geojson": "5c863428f2bf5612",
+          "fire_station_5186.gpkg": "ab662df0f53e6a3c"
+        }
+      }
     },
     {
       "key": "poi_store",
@@ -2160,7 +2274,16 @@
       "outputs": [
         "poi_store.geojson",
         "poi_store_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "57aa361544108ff4",
+        "cfg": "baad5194f6faf9b3",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "poi_store.geojson": "da2984b0784a16ef",
+          "poi_store_5186.gpkg": "284673d89230a0a4"
+        }
+      }
     },
     {
       "key": "boundary_emd",
@@ -2184,7 +2307,16 @@
       "outputs": [
         "boundary_emd.geojson",
         "boundary_emd_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "d391a46a28dc4b0b",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "boundary_emd.geojson": "54f928b063314270",
+          "boundary_emd_5186.gpkg": "9404e084ede899e1"
+        }
+      }
     },
     {
       "key": "building",
@@ -2236,7 +2368,16 @@
       "outputs": [
         "building.geojson",
         "building_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "7629800cd84f347f",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "building.geojson": "8fac3135d6d94a76",
+          "building_5186.gpkg": "b5cdbad4ca319cf9"
+        }
+      }
     },
     {
       "key": "building_entrance",
@@ -2263,7 +2404,16 @@
       "outputs": [
         "building_entrance.geojson",
         "building_entrance_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "9008071a383c27c4",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "building_entrance.geojson": "956e92eb8c9658d5",
+          "building_entrance_5186.gpkg": "edb46d91ff0bef3a"
+        }
+      }
     },
     {
       "key": "hydrant_point",
@@ -2303,7 +2453,16 @@
       "outputs": [
         "hydrant_point.geojson",
         "hydrant_point_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "ef46ab01d76a5c0e",
+        "cfg": "49957853b657145f",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "hydrant_point.geojson": "bde315dbdea91b97",
+          "hydrant_point_5186.gpkg": "97f95763502d6ac7"
+        }
+      }
     },
     {
       "key": "fire_access",
@@ -2326,7 +2485,15 @@
       ],
       "outputs": [
         "fire_access.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "15fb8022f1b2f9ee",
+        "cfg": "4208d1ff7bba63c4",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "fire_access.csv": "25c12d9afba5854f"
+        }
+      }
     },
     {
       "key": "dem_public",
@@ -2389,7 +2556,15 @@
       ],
       "outputs": [
         "hydrant_summary.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "4f516236bfdc457b",
+        "cfg": "242b12b6842952ce",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "hydrant_summary.csv": "be97577638a804b1"
+        }
+      }
     },
     {
       "key": "ngii_road_center",
@@ -2434,7 +2609,16 @@
       "outputs": [
         "ngii_road_center.geojson",
         "ngii_road_center_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "cd4f56a0fcba89d9,085ad532f61ea654",
+        "cfg": "e56a48b500b4e742",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "ngii_road_center.geojson": "6e811b7664cdee27",
+          "ngii_road_center_5186.gpkg": "30fe74d0ea2d9cb1"
+        }
+      }
     },
     {
       "key": "bin_trash",
@@ -2462,7 +2646,16 @@
       "outputs": [
         "bin_trash.geojson",
         "bin_trash_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "ea65b6f8c4bc7179",
+        "cfg": "d0575ac09b7b93e5",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "bin_trash.geojson": "468abbf53432a563",
+          "bin_trash_5186.gpkg": "490f41682f3bc3da"
+        }
+      }
     },
     {
       "key": "bin_cloth",
@@ -2490,7 +2683,16 @@
       "outputs": [
         "bin_cloth.geojson",
         "bin_cloth_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "e8c6aa4f557b5fc3",
+        "cfg": "4c1dd35548e434cb",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "bin_cloth.geojson": "bb3d895a99b8410e",
+          "bin_cloth_5186.gpkg": "5b8eae35066b9c51"
+        }
+      }
     },
     {
       "key": "station_jurisdiction",
@@ -2512,7 +2714,15 @@
       ],
       "outputs": [
         "station_jurisdiction.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "67654b6e6bc4fb1e",
+        "cfg": "a6550d0cde97aa89",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "station_jurisdiction.csv": "b1eec06e437474e1"
+        }
+      }
     },
     {
       "key": "parking_lot",
@@ -2540,7 +2750,15 @@
       ],
       "outputs": [
         "parking_lot.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "0f38436f5d4ce8b1",
+        "cfg": "3a8d0426b8839e99",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "parking_lot.csv": "dbc009458abc9d0d"
+        }
+      }
     },
     {
       "key": "enforce_cam",
@@ -2564,7 +2782,15 @@
       ],
       "outputs": [
         "enforce_cam.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "79dac019117d57e3",
+        "cfg": "66b214d6a8f933a5",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "enforce_cam.csv": "f0b41866f035d9dd"
+        }
+      }
     },
     {
       "key": "school_zone",
@@ -2585,7 +2811,15 @@
       ],
       "outputs": [
         "school_zone.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "cb565f28d1b2fd1f",
+        "cfg": "4e910c159f070d25",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "school_zone.csv": "660de16b352b8c06"
+        }
+      }
     },
     {
       "key": "parking_zone",
@@ -2607,7 +2841,15 @@
       ],
       "outputs": [
         "parking_zone.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "fc114cb3aadfd3b7",
+        "cfg": "585a6520ea4a824c",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "parking_zone.csv": "87457c67c300dc11"
+        }
+      }
     },
     {
       "key": "jijeok",
@@ -2653,7 +2895,15 @@
       ],
       "outputs": [
         "gjfire_fleet_dongbu.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "dac553bb5e289ae8",
+        "cfg": "159e215204614487",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "gjfire_fleet_dongbu.csv": "8b67a44c8e7ec6f0"
+        }
+      }
     },
     {
       "key": "gjfire_district_dongbu",
@@ -2676,7 +2926,15 @@
       ],
       "outputs": [
         "gjfire_district_dongbu.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "eb6ffedeb0301d5b",
+        "cfg": "f3663ad7f786cf99",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "gjfire_district_dongbu.csv": "d1bb848237c0fa6f"
+        }
+      }
     },
     {
       "key": "nfa_dispatch_119",
@@ -2728,7 +2986,15 @@
       ],
       "outputs": [
         "nfa_dispatch_119.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "740dedf4e0c6f6de",
+        "cfg": "f68208c341dd1184",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "nfa_dispatch_119.csv": "740dedf4e0c6f6de"
+        }
+      }
     },
     {
       "key": "nfa_rescue",
@@ -2796,7 +3062,15 @@
       ],
       "outputs": [
         "nfa_rescue.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "66cd210b56f6fb13",
+        "cfg": "a48dc583a0dba2cc",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "nfa_rescue.csv": "66cd210b56f6fb13"
+        }
+      }
     },
     {
       "key": "nfa_fire_incident",
@@ -2873,7 +3147,15 @@
       ],
       "outputs": [
         "nfa_fire_incident.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "c1f98a86160ef4f7",
+        "cfg": "a7b862e0e2e6b984",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "nfa_fire_incident.csv": "c1f98a86160ef4f7"
+        }
+      }
     },
     {
       "key": "nfa_vehicle_spec_2024",
@@ -2941,7 +3223,15 @@
       ],
       "outputs": [
         "nfa_target_building.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "d85ec9f5b7fbdca3",
+        "cfg": "048ed234e7a4145e",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "nfa_target_building.csv": "d85ec9f5b7fbdca3"
+        }
+      }
     },
     {
       "key": "nfa_spec_chem_gj",
@@ -3105,7 +3395,15 @@
       ],
       "outputs": [
         "bldg_ledger_dm.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "82d938c21281441c",
+        "cfg": "d8d8d2960defc081",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "bldg_ledger_dm.csv": "7cf98f45416607eb"
+        }
+      }
     },
     {
       "key": "child_zone_std",
@@ -3140,7 +3438,16 @@
       "outputs": [
         "child_zone_std.geojson",
         "child_zone_std_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "5a9a8d10bf3d17e0",
+        "cfg": "51aba467e2ebfb34",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "child_zone_std.geojson": "f96d451f8e1fafe7",
+          "child_zone_std_5186.gpkg": "ed2a1c41b3250ac3"
+        }
+      }
     },
     {
       "key": "senior_zone_std",
@@ -3180,7 +3487,16 @@
       "outputs": [
         "senior_zone_std.geojson",
         "senior_zone_std_5186.gpkg"
-      ]
+      ],
+      "seal": {
+        "raw": "c10e7ccbaa7c1e98",
+        "cfg": "6d5657b83f45837f",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "senior_zone_std.geojson": "21d82148b6330799",
+          "senior_zone_std_5186.gpkg": "cdd1374b24b8be74"
+        }
+      }
     },
     {
       "key": "speedbump",
@@ -3224,7 +3540,15 @@
       ],
       "outputs": [
         "speedbump.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "5ce87804c5054a09",
+        "cfg": "c7e8a5aed07ff311",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "speedbump.csv": "d984a8b1f00392fe"
+        }
+      }
     },
     {
       "key": "admin_cctv",
@@ -3259,7 +3583,15 @@
       ],
       "outputs": [
         "admin_cctv.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "d6be41274b0f8632",
+        "cfg": "647f6a09e327a217",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "admin_cctv.csv": "d89684f4f2acd3ce"
+        }
+      }
     },
     {
       "key": "speed_cam",
@@ -3288,7 +3620,15 @@
       ],
       "outputs": [
         "speed_cam.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "c4680175becb0bdd",
+        "cfg": "52b5f908313b3960",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "speed_cam.csv": "30d996fc31af0e72"
+        }
+      }
     },
     {
       "key": "juso_building_db",
@@ -3336,7 +3676,15 @@
       ],
       "outputs": [
         "juso_building_db.csv"
-      ]
+      ],
+      "seal": {
+        "raw": "3d6dc01f6cb1bf8a",
+        "cfg": "1958e3ba98682bba",
+        "code": "6fcd9638a9112ea5",
+        "out": {
+          "juso_building_db.csv": "bc238a98e7446a50"
+        }
+      }
     }
   ]
 }
