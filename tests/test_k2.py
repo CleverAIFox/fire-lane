@@ -173,3 +173,16 @@ def test_no_tool_creates_seal_tags():
                     hits.append(f"{f.relative_to(ROOT)}:{i}")
     assert not hits, f"봉인 태그를 만든다 — {hits}"
     assert pat.search('git tag "seal/2026-09-17-l2d"'), "프로브가 죽었다 — 옛 스크립트의 형태를 못 잡는다"
+
+
+def test_verify_skips_are_real_skips():
+    """§180-9 — verify 의 `note`(생략)는 **실제로 못 돈 것**만. 보고용 한 줄을 생략 칸에 두지 않는다."""
+    import re
+    src = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
+    names = re.findall(r'^\s*note\s+"([^"]+)"', src, re.M)
+    assert names, "프로브가 죽었다 — note 호출을 못 찾는다"
+    assert "흡수 대상" not in names, "보고용 release_brief 줄이 생략 칸으로 돌아왔다"
+    allowed = {"JS 부팅 스모크", "내비 타입 검사", "파이프라인 전량 + golden"}
+    assert set(names) <= allowed, f"생략 사유가 새로 생겼다 — 못 도는 조건인지 보고 여기 적는다: {sorted(set(names) - allowed)}"
+    brief = (ROOT / "tools/merge_batch.sh").read_text(encoding="utf-8")
+    assert "tools/release_brief.py --base main --md" in brief, "release_brief 가 릴리즈 흐름에서도 빠졌다 — 표가 사라진다"

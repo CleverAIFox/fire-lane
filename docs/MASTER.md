@@ -112,7 +112,7 @@ uv run python tools/docnum_check.py
 착수      2026-08-03
 기간      4개월
 대상      동명동 416구간 + 접근 회랑
-지도      https://woongtopia.github.io/fire-lane/
+지도      https://cleveraifox.github.io/fire-lane/
 ```
 
 강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다

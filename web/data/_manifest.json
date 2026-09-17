@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-17T19:43:52+09:00",
+  "generated_at": "2026-09-17T21:49:00+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
@@ -11,8 +11,8 @@
       "bytes": 5047
     },
     "_manifest.json": {
-      "sha256": "6ee1ed9025c321aab5682e58759277005061ddc13feec72afd2819b723b9d392",
-      "bytes": 99604
+      "sha256": "a1905dd8961157e9ef59ff7a1c53a033a15547f99803ec88e2146e6db1c95362",
+      "bytes": 100153
     }
   },
   "files": {
@@ -21,12 +21,16 @@
       "bytes": 12116
     },
     "buildings.geojson": {
-      "sha256": "87536ec97e1ea76b5bdb4ba8e37b93431b55642d03108d727a0260b9f2cab6e5",
-      "bytes": 2177722
+      "sha256": "8f57a1c9d52406cbaad2bfa53c36e713657fa85e04803440c794fd91a041a6d9",
+      "bytes": 4953207
     },
     "cctv.geojson": {
       "sha256": "83ea8f3d10f7ebdee8439db3c61d4d46da6207ecaeceb19a6720e33e610e48df",
       "bytes": 39189
+    },
+    "dest.geojson": {
+      "sha256": "68780c20415864348c404e78653313ecc647ced7e0ca84aef5ed88b50820f879",
+      "bytes": 969202
     },
     "fleet.json": {
       "sha256": "d0c07ca3ae70e5ffcff74dd62dfd15a3a6fd41f29a12b873aab426b49581c63e",
@@ -120,5 +124,5 @@
     }
   },
   "tiles_digest": "ca2ce50bd36477e1",
-  "total_mb": 29.69
+  "total_mb": 33.43
 }
