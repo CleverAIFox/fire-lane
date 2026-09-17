@@ -307,7 +307,23 @@
   "safety/safety_hydrant_type_jngj_20251231.csv": {
    "sha256": "e3eb7b4178fdbadf8234aff793fc3b077c7bf4eec1f48a25fdee6d5f6f60c005",
    "bytes": 259
+  },
+  "gjcity/gjcity_statbook_jngj-donggu_20241231.pdf": {
+   "sha256": "a70c7354fb672643ddb929ccfec0ac1d68dcecf7ad758b73b4c76e3b782c31ef",
+   "bytes": 244169606
+  },
+  "juso/juso_civiloffice_kr_20240124.zip": {
+   "sha256": "259f0234fa7e26d442b7d34e765a551d90787406f0c91633b2f4ef96287d59ee",
+   "bytes": 1985466
+  },
+  "juso/juso_navibuild_jngj-dongmyeong_20260831.txt": {
+   "sha256": "a11acfcd46a77498a14c3e0e7e19bc4237aa300bce8784c189645f4f29734a68",
+   "bytes": 557206
+  },
+  "juso/juso_navijibun_jngj-dongmyeong_20260831.txt": {
+   "sha256": "2ec3b3efd7dfe043b77731306760538264356555b87efd019defe73a55519aaf",
+   "bytes": 224623
   }
  },
- "at": "2026-09-17T18:50:41+09:00"
+ "at": "2026-09-17T19:39:47+09:00"
 }
