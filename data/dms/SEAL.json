@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-09-17T19:51:26+09:00",
- "commit": "d499116",
+ "sealed_at": "2026-09-17T20:24:39+09:00",
+ "commit": "afd0edf",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
@@ -4280,7 +4280,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "658 passed in 73.30s (0:01:13)"
+   "tail": "658 passed in 74.91s (0:01:14)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4295,7 +4295,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "237 passed, 1 skipped in 8.56s"
+   "tail": "237 passed, 1 skipped in 8.80s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -4380,7 +4380,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "지도 확인:  uv run python tools/serve.py"
+   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -4450,7 +4450,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "658 passed in 98.39s (0:01:38)"
+   "tail": "658 passed in 97.14s (0:01:37)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
