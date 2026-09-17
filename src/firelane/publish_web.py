@@ -6,7 +6,7 @@ publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내�
 IN    processed/*.geojson · processed/segments.schema.json ·
       processed/route_vehicle.csv · processed/corridor_5186.gpkg ·
       processed/building_5186.gpkg · processed/ngii1k_light_5186.gpkg
-OUT   web/data/  — 아래 열여섯. ★ 중괄호 축약을 쓰지 않는다. 선언은
+OUT   web/data/  — 아래 열일곱. ★ 중괄호 축약을 쓰지 않는다. 선언은
       기계가 대조하는 것이고(tests/test_declaration_reality.py) 축약하면
       그 대조가 이름을 못 찾는다.
         segments.geojson      boundary.geojson
@@ -14,7 +14,8 @@ OUT   web/data/  — 아래 열여섯. ★ 중괄호 축약을 쓰지 않는다.
         hydrants.geojson      stations.geojson     cctv.geojson
         poi.geojson           streetlights.geojson lightpoles.geojson
         segments.schema.json  vehicle_spec.json    route_vehicle.json
-        _manifest.json
+        navi_graph.json       _manifest.json
+      ★ navi_graph.json 은 publish_navi.main() 을 여기서 불러 낸다(2026-09-16 · DECISIONS §170-5)
       ★ web/data/view.json 은 terrain·ortho 가 넣어둔 타일 범위를 읽어
         보존하고 다시 쓴다 — writes 가 아니라 **mutates** 다
       ★ markers.geojson 은 **내지 않는다.** 286줄이 남은 것을 지운다 —
@@ -395,6 +396,13 @@ def main():
         print("  ! route_vehicle.csv 없음 — 2차 경로를 안 낸다")
 
     print(f"  스탬프 {_BUILD} → view.json (index.html 은 배포 시 주입)")
+
+    # ★ 2026-09-16. 내비 그래프를 여기서 같이 낸다(DECISIONS §170-5). 종전에는 `publish_navi` 를
+    #   부르는 곳이 없었다 — 파이프라인에도 verify 에도 없고 손 명령으로만 적혀 있었다. 판정이
+    #   1,101 → 1,281 로 바뀐 전량 뒤에도 navi_graph.json 이 엣지 1,101 그대로였고, 내비는 옛
+    #   구간으로 경로를 짰다. 매니페스트보다 **먼저** 불러야 계보에 새 그래프가 잡힌다.
+    from firelane import publish_navi as _navi
+    _navi.main()
 
     _wm = webmanifest.write()
     print(f"  web/data 계보 → {_wm['total_mb']}MB · 타일 {_wm['tiles_digest']}")

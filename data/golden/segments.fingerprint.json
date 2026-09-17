@@ -1,26 +1,512 @@
 {
  "L1": {
-  "n": 1101,
+  "n": 1281,
   "verdict": {
-   "blocked": 159,
-   "clear": 397,
-   "needs_cv": 191,
-   "unknown": 354
+   "blocked": 191,
+   "clear": 465,
+   "needs_cv": 226,
+   "unknown": 399
   },
   "unknown_reason": {
-   "no_cctv_band": 152,
-   "no_cctv_narrow": 62,
-   "no_cctv_single": 12,
-   "no_cctv_thin": 128
+   "no_cctv_band": 183,
+   "no_cctv_narrow": 61,
+   "no_cctv_single": 13,
+   "no_cctv_thin": 142
   },
   "width_src": {
    "ngii": 1,
-   "ngii1k": 1014,
-   "silpok": 84
+   "ngii1k": 1166,
+   "silpok": 112
   },
-  "length_total_m": 48579.7
+  "length_total_m": 58308.7
  },
  "L2": {
+  "DM-191931-284253-LPTE": {
+   "verdict": "clear",
+   "width_min_m": 12.63,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 46.4,
+   "route_usage": 0
+  },
+  "DM-191937-284226-LPTE": {
+   "verdict": "blocked",
+   "width_min_m": 1.12,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 33.9,
+   "route_usage": 0
+  },
+  "DM-191948-284089-LMYC": {
+   "verdict": "unknown",
+   "width_min_m": 6.12,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 84.1,
+   "route_usage": 0
+  },
+  "DM-191962-284198-LPTE": {
+   "verdict": "unknown",
+   "width_min_m": 1.42,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 44.5,
+   "route_usage": 0
+  },
+  "DM-191963-284226-LPTE": {
+   "verdict": "clear",
+   "width_min_m": 11.97,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 36.9,
+   "route_usage": 0
+  },
+  "DM-191973-284063-LMYC": {
+   "verdict": "unknown",
+   "width_min_m": 1.5,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 93.6,
+   "route_usage": 0
+  },
+  "DM-191993-284106-LMYC": {
+   "verdict": "unknown",
+   "width_min_m": 6.89,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 40.4,
+   "route_usage": 0
+  },
+  "DM-192003-284145-LMYC": {
+   "verdict": "needs_cv",
+   "width_min_m": 5.96,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 73.3,
+   "route_usage": 0
+  },
+  "DM-192003-284192-LPTE": {
+   "verdict": "clear",
+   "width_min_m": 12.38,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 66.9,
+   "route_usage": 0
+  },
+  "DM-192009-284093-LMYC": {
+   "verdict": "unknown",
+   "width_min_m": 12.18,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_single",
+   "length_m": 1.2,
+   "route_usage": 0
+  },
+  "DM-192014-284036-4X0Z": {
+   "verdict": "blocked",
+   "width_min_m": 1.73,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 84.7,
+   "route_usage": 0
+  },
+  "DM-192019-284086-4X0Z": {
+   "verdict": "clear",
+   "width_min_m": 7.67,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 22.5,
+   "route_usage": 0
+  },
+  "DM-192035-284073-4X0Z": {
+   "verdict": "clear",
+   "width_min_m": 7.31,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 18.6,
+   "route_usage": 0
+  },
+  "DM-192041-284161-LPTE": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.99,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 32.3,
+   "route_usage": 0
+  },
+  "DM-192042-284090-4X0Z": {
+   "verdict": "blocked",
+   "width_min_m": 1.4,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 37.1,
+   "route_usage": 0
+  },
+  "DM-192046-284189-W4QT": {
+   "verdict": "clear",
+   "width_min_m": 11.5,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 50.5,
+   "route_usage": 0
+  },
+  "DM-192062-284144-LPTE": {
+   "verdict": "clear",
+   "width_min_m": 7.98,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 21.6,
+   "route_usage": 0
+  },
+  "DM-192066-284162-LPTE": {
+   "verdict": "blocked",
+   "width_min_m": 0.86,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 32.6,
+   "route_usage": 0
+  },
+  "DM-192068-283974-YE20": {
+   "verdict": "clear",
+   "width_min_m": 14.99,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 55.7,
+   "route_usage": 0
+  },
+  "DM-192071-284090-4X0Z": {
+   "verdict": "blocked",
+   "width_min_m": 0.56,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 72.8,
+   "route_usage": 0
+  },
+  "DM-192072-284215-W4QT": {
+   "verdict": "clear",
+   "width_min_m": 10.37,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 23.7,
+   "route_usage": 0
+  },
+  "DM-192074-284041-4X0Z": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.63,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 83.2,
+   "route_usage": 0
+  },
+  "DM-192074-284328-W4QT": {
+   "verdict": "clear",
+   "width_min_m": 28.54,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 148.7,
+   "route_usage": 0
+  },
+  "DM-192074-284459-9Z2R": {
+   "verdict": "unknown",
+   "width_min_m": 3.35,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 44.9,
+   "route_usage": 0
+  },
+  "DM-192078-284396-9Z2R": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.95,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 98.7,
+   "route_usage": 0
+  },
+  "DM-192079-284183-Y0V6": {
+   "verdict": "blocked",
+   "width_min_m": 1.62,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 57.5,
+   "route_usage": 0
+  },
+  "DM-192080-284147-Y0V6": {
+   "verdict": "needs_cv",
+   "width_min_m": 4.59,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 27.6,
+   "route_usage": 0
+  },
+  "DM-192083-284127-LPTE": {
+   "verdict": "clear",
+   "width_min_m": 7.59,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 32.8,
+   "route_usage": 0
+  },
+  "DM-192091-284234-W4QT": {
+   "verdict": "clear",
+   "width_min_m": 10.94,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 28.9,
+   "route_usage": 0
+  },
+  "DM-192096-284003-YE20": {
+   "verdict": "clear",
+   "width_min_m": 15.02,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 24.9,
+   "route_usage": 0
+  },
+  "DM-192097-284200-Y0V6": {
+   "verdict": "blocked",
+   "width_min_m": 2.38,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 57.5,
+   "route_usage": 0
+  },
+  "DM-192100-283976-YE20": {
+   "verdict": "needs_cv",
+   "width_min_m": 1.2,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 43.2,
+   "route_usage": 0
+  },
+  "DM-192100-284166-Y0V6": {
+   "verdict": "needs_cv",
+   "width_min_m": 5.0,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 26.7,
+   "route_usage": 0
+  },
+  "DM-192101-284501-JFYG": {
+   "verdict": "clear",
+   "width_min_m": 25.43,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 73.2,
+   "route_usage": 0
+  },
+  "DM-192103-284459-9Z2R": {
+   "verdict": "blocked",
+   "width_min_m": 2.01,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 23.6,
+   "route_usage": 0
+  },
+  "DM-192109-284233-W4QT": {
+   "verdict": "blocked",
+   "width_min_m": 1.5,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 27.4,
+   "route_usage": 0
+  },
+  "DM-192111-284444-9Z2R": {
+   "verdict": "unknown",
+   "width_min_m": 3.42,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 36.3,
+   "route_usage": 0
+  },
+  "DM-192116-284100-LPTE": {
+   "verdict": "unknown",
+   "width_min_m": 6.57,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 52.9,
+   "route_usage": 0
+  },
+  "DM-192118-284263-W4QT": {
+   "verdict": "clear",
+   "width_min_m": 10.59,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 50.5,
+   "route_usage": 0
+  },
+  "DM-192119-284363-BQT2": {
+   "verdict": "needs_cv",
+   "width_min_m": 1.5,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 20.9,
+   "route_usage": 0
+  },
+  "DM-192123-284186-Y0V6": {
+   "verdict": "unknown",
+   "width_min_m": 5.46,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 34.9,
+   "route_usage": 0
+  },
+  "DM-192125-284071-LPTE": {
+   "verdict": "blocked",
+   "width_min_m": 1.7,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 33.7,
+   "route_usage": 0
+  },
+  "DM-192127-284380-BQT2": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.82,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 33.8,
+   "route_usage": 0
+  },
+  "DM-192128-284417-BQT2": {
+   "verdict": "clear",
+   "width_min_m": 7.0,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 41.3,
+   "route_usage": 0
+  },
+  "DM-192129-284459-BQT2": {
+   "verdict": "unknown",
+   "width_min_m": 6.97,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 41.9,
+   "route_usage": 0
+  },
+  "DM-192131-284040-YE20": {
+   "verdict": "clear",
+   "width_min_m": 15.06,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 76.7,
+   "route_usage": 0
+  },
+  "DM-192139-284207-Y0V6": {
+   "verdict": "blocked",
+   "width_min_m": 1.64,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 30.7,
+   "route_usage": 0
+  },
+  "DM-192145-284345-BQT2": {
+   "verdict": "clear",
+   "width_min_m": 7.31,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 48.9,
+   "route_usage": 0
+  },
+  "DM-192146-284075-LPTE": {
+   "verdict": "unknown",
+   "width_min_m": 6.3,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 24.3,
+   "route_usage": 0
+  },
+  "DM-192146-284307-5ICV": {
+   "verdict": "clear",
+   "width_min_m": 7.67,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 56.1,
+   "route_usage": 0
+  },
+  "DM-192147-284222-Y0V6": {
+   "verdict": "blocked",
+   "width_min_m": 1.11,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 16.5,
+   "route_usage": 0
+  },
+  "DM-192159-284263-W4QT": {
+   "verdict": "clear",
+   "width_min_m": 24.45,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 63.8,
+   "route_usage": 0
+  },
+  "DM-192164-284393-BQT2": {
+   "verdict": "needs_cv",
+   "width_min_m": 4.93,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 96.3,
+   "route_usage": 0
+  },
+  "DM-192164-284455-JFYG": {
+   "verdict": "clear",
+   "width_min_m": 24.19,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 83.9,
+   "route_usage": 0
+  },
   "DM-192171-284212-Y0V6": {
    "verdict": "unknown",
    "width_min_m": 6.16,
@@ -28,6 +514,51 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 73.3,
+   "route_usage": 0
+  },
+  "DM-192171-284226-Y0V6": {
+   "verdict": "blocked",
+   "width_min_m": 0.69,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 44.3,
+   "route_usage": 0
+  },
+  "DM-192175-284052-HBVY": {
+   "verdict": "unknown",
+   "width_min_m": 6.8,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 49.6,
+   "route_usage": 0
+  },
+  "DM-192180-284348-5ICV": {
+   "verdict": "clear",
+   "width_min_m": 7.42,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 48.5,
+   "route_usage": 0
+  },
+  "DM-192186-283990-HBVY": {
+   "verdict": "unknown",
+   "width_min_m": 2.3,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 89.1,
+   "route_usage": 0
+  },
+  "DM-192193-284107-YE20": {
+   "verdict": "clear",
+   "width_min_m": 14.56,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 105.2,
    "route_usage": 0
   },
   "DM-192193-284237-W4QT": {
@@ -39,6 +570,24 @@
    "length_m": 22.9,
    "route_usage": 0
   },
+  "DM-192207-284050-HBVY": {
+   "verdict": "needs_cv",
+   "width_min_m": 1.46,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 43.6,
+   "route_usage": 0
+  },
+  "DM-192209-284025-HBVY": {
+   "verdict": "unknown",
+   "width_min_m": 6.72,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 37.6,
+   "route_usage": 0
+  },
   "DM-192213-284293-5ICV": {
    "verdict": "needs_cv",
    "width_min_m": 6.89,
@@ -48,6 +597,60 @@
    "length_m": 123.3,
    "route_usage": 0
   },
+  "DM-192213-284384-5ICV": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.98,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 49.6,
+   "route_usage": 0
+  },
+  "DM-192213-284415-JFYG": {
+   "verdict": "clear",
+   "width_min_m": 24.33,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 42.0,
+   "route_usage": 0
+  },
+  "DM-192214-284076-HBVY": {
+   "verdict": "needs_cv",
+   "width_min_m": 1.34,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 25.0,
+   "route_usage": 0
+  },
+  "DM-192223-284064-HBVY": {
+   "verdict": "needs_cv",
+   "width_min_m": 1.77,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 8.2,
+   "route_usage": 0
+  },
+  "DM-192226-283911-LMYC": {
+   "verdict": "unknown",
+   "width_min_m": 5.44,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 155.2,
+   "route_usage": 0
+  },
+  "DM-192233-284067-HBVY": {
+   "verdict": "blocked",
+   "width_min_m": 0.68,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 15.9,
+   "route_usage": 0
+  },
   "DM-192234-284206-W4QT": {
    "verdict": "clear",
    "width_min_m": 26.53,
@@ -55,6 +658,15 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 78.1,
+   "route_usage": 0
+  },
+  "DM-192237-284056-HBVY": {
+   "verdict": "needs_cv",
+   "width_min_m": 0.94,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 25.2,
    "route_usage": 0
   },
   "DM-192244-284326-5ICV": {
@@ -73,6 +685,33 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 54.0,
+   "route_usage": 0
+  },
+  "DM-192252-283989-HBVY": {
+   "verdict": "clear",
+   "width_min_m": 7.36,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 73.4,
+   "route_usage": 0
+  },
+  "DM-192259-284111-ZLSO": {
+   "verdict": "clear",
+   "width_min_m": 8.02,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 92.4,
+   "route_usage": 0
+  },
+  "DM-192268-284061-ZLSO": {
+   "verdict": "unknown",
+   "width_min_m": 6.06,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 51.8,
    "route_usage": 0
   },
   "DM-192277-284271-CYSW": {
@@ -111,6 +750,42 @@
    "length_m": 55.8,
    "route_usage": 282
   },
+  "DM-192290-283976-HBVY": {
+   "verdict": "clear",
+   "width_min_m": 7.65,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 27.4,
+   "route_usage": 0
+  },
+  "DM-192291-283996-HBVY": {
+   "verdict": "unknown",
+   "width_min_m": 0.96,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 28.3,
+   "route_usage": 0
+  },
+  "DM-192294-284049-ZLSO": {
+   "verdict": "unknown",
+   "width_min_m": 3.06,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 38.7,
+   "route_usage": 0
+  },
+  "DM-192295-284069-ZLSO": {
+   "verdict": "clear",
+   "width_min_m": 7.98,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 18.3,
+   "route_usage": 0
+  },
   "DM-192310-284306-CYSW": {
    "verdict": "unknown",
    "width_min_m": 4.83,
@@ -127,6 +802,24 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 114.9,
+   "route_usage": 0
+  },
+  "DM-192318-284004-HBVY": {
+   "verdict": "clear",
+   "width_min_m": 7.73,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 51.8,
+   "route_usage": 0
+  },
+  "DM-192319-284042-ZLSO": {
+   "verdict": "clear",
+   "width_min_m": 8.12,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 53.0,
    "route_usage": 0
   },
   "DM-192327-284208-4W2N": {
@@ -147,6 +840,15 @@
    "length_m": 98.9,
    "route_usage": 0
   },
+  "DM-192340-283917-HBVY": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.63,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 154.6,
+   "route_usage": 0
+  },
   "DM-192350-284311-JFYG": {
    "verdict": "clear",
    "width_min_m": 12.56,
@@ -155,6 +857,15 @@
    "unknown_reason": null,
    "length_m": 51.7,
    "route_usage": 53
+  },
+  "DM-192354-284002-ZLSO": {
+   "verdict": "clear",
+   "width_min_m": 8.21,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 52.4,
+   "route_usage": 0
   },
   "DM-192367-284053-ZLSO": {
    "verdict": "clear",
@@ -263,6 +974,15 @@
    "unknown_reason": null,
    "length_m": 35.6,
    "route_usage": 235
+  },
+  "DM-192405-283944-ZLSO": {
+   "verdict": "clear",
+   "width_min_m": 8.06,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 102.8,
+   "route_usage": 0
   },
   "DM-192405-284332-YE20": {
    "verdict": "clear",
@@ -408,6 +1128,24 @@
    "length_m": 26.9,
    "route_usage": 235
   },
+  "DM-192446-284360-YE20": {
+   "verdict": "blocked",
+   "width_min_m": 1.5,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 19.6,
+   "route_usage": 0
+  },
+  "DM-192451-284380-YE20": {
+   "verdict": "clear",
+   "width_min_m": 16.93,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 36.5,
+   "route_usage": 0
+  },
   "DM-192452-284300-D6CG": {
    "verdict": "unknown",
    "width_min_m": 5.26,
@@ -453,6 +1191,15 @@
    "length_m": 25.3,
    "route_usage": 0
   },
+  "DM-192459-284353-YE20": {
+   "verdict": "blocked",
+   "width_min_m": 1.2,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 14.6,
+   "route_usage": 0
+  },
   "DM-192461-284037-W4QT": {
    "verdict": "clear",
    "width_min_m": 25.0,
@@ -471,6 +1218,15 @@
    "length_m": 42.3,
    "route_usage": 53
   },
+  "DM-192461-284371-PF48": {
+   "verdict": "blocked",
+   "width_min_m": 1.91,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 36.1,
+   "route_usage": 0
+  },
   "DM-192462-284150-GM2I": {
    "verdict": "unknown",
    "width_min_m": 4.78,
@@ -487,6 +1243,15 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 66.7,
+   "route_usage": 0
+  },
+  "DM-192468-284389-PF48": {
+   "verdict": "clear",
+   "width_min_m": 9.81,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 12.2,
    "route_usage": 0
   },
   "DM-192469-283966-X9DQ": {
@@ -525,6 +1290,24 @@
    "length_m": 58.1,
    "route_usage": 0
   },
+  "DM-192482-284339-D6CG": {
+   "verdict": "blocked",
+   "width_min_m": 1.11,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 14.0,
+   "route_usage": 0
+  },
+  "DM-192482-284412-YE20": {
+   "verdict": "clear",
+   "width_min_m": 17.09,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 52.4,
+   "route_usage": 0
+  },
   "DM-192483-284212-GM2I": {
    "verdict": "unknown",
    "width_min_m": 5.8,
@@ -541,6 +1324,15 @@
    "width_src": "silpok",
    "unknown_reason": "no_cctv_band",
    "length_m": 50.8,
+   "route_usage": 0
+  },
+  "DM-192487-284371-PF48": {
+   "verdict": "clear",
+   "width_min_m": 8.79,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 40.6,
    "route_usage": 0
   },
   "DM-192491-284099-BH1S": {
@@ -569,6 +1361,15 @@
    "unknown_reason": null,
    "length_m": 48.5,
    "route_usage": 53
+  },
+  "DM-192496-284345-D6CG": {
+   "verdict": "unknown",
+   "width_min_m": 5.44,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 28.2,
+   "route_usage": 0
   },
   "DM-192499-284279-JFYG": {
    "verdict": "blocked",
@@ -633,6 +1434,15 @@
    "length_m": 79.1,
    "route_usage": 0
   },
+  "DM-192515-284345-PF48": {
+   "verdict": "unknown",
+   "width_min_m": 6.48,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 34.7,
+   "route_usage": 0
+  },
   "DM-192521-284215-JTSZ": {
    "verdict": "clear",
    "width_min_m": 7.48,
@@ -680,7 +1490,7 @@
   },
   "DM-192530-284308-PF48": {
    "verdict": "blocked",
-   "width_min_m": 1.19,
+   "width_min_m": 1.24,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -703,6 +1513,15 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 14.4,
+   "route_usage": 0
+  },
+  "DM-192536-284393-D6CG": {
+   "verdict": "unknown",
+   "width_min_m": 3.71,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 101.3,
    "route_usage": 0
   },
   "DM-192538-284183-JFYG": {
@@ -5232,13 +6051,13 @@
    "length_m": 66.1,
    "route_usage": 0
   },
-  "DM-193380-283283-VXVD": {
+  "DM-193379-283282-VXVD": {
    "verdict": "unknown",
    "width_min_m": 3.38,
    "width_max_m": 5.96,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
-   "length_m": 19.0,
+   "length_m": 18.8,
    "route_usage": 2
   },
   "DM-193381-283215-G89H": {
@@ -5421,15 +6240,6 @@
    "length_m": 55.9,
    "route_usage": 107
   },
-  "DM-193407-283274-VXVD": {
-   "verdict": "blocked",
-   "width_min_m": 1.8,
-   "width_max_m": 2.67,
-   "width_src": "ngii1k",
-   "unknown_reason": null,
-   "length_m": 52.3,
-   "route_usage": 2
-  },
   "DM-193407-283634-JFYG": {
    "verdict": "clear",
    "width_min_m": 13.03,
@@ -5456,6 +6266,15 @@
    "unknown_reason": "no_cctv_band",
    "length_m": 88.7,
    "route_usage": 0
+  },
+  "DM-193411-283270-VXVD": {
+   "verdict": "unknown",
+   "width_min_m": 1.8,
+   "width_max_m": 4.42,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_narrow",
+   "length_m": 63.1,
+   "route_usage": 2
   },
   "DM-193412-283509-U9HZ": {
    "verdict": "unknown",
@@ -5535,7 +6354,7 @@
    "width_max_m": 3.48,
    "width_src": "ngii1k",
    "unknown_reason": null,
-   "length_m": 110.8,
+   "length_m": 110.9,
    "route_usage": 2
   },
   "DM-193423-283649-JFYG": {
@@ -5601,24 +6420,6 @@
    "length_m": 44.5,
    "route_usage": 2
   },
-  "DM-193433-283273-VXVD": {
-   "verdict": "unknown",
-   "width_min_m": 1.4,
-   "width_max_m": 8.02,
-   "width_src": "silpok",
-   "unknown_reason": "no_cctv_narrow",
-   "length_m": 17.5,
-   "route_usage": 0
-  },
-  "DM-193433-283294-VXVD": {
-   "verdict": "unknown",
-   "width_min_m": 2.0,
-   "width_max_m": 14.42,
-   "width_src": "silpok",
-   "unknown_reason": "no_cctv_narrow",
-   "length_m": 31.8,
-   "route_usage": 2
-  },
   "DM-193433-283698-367J": {
    "verdict": "needs_cv",
    "width_min_m": 4.85,
@@ -5646,6 +6447,15 @@
    "length_m": 57.3,
    "route_usage": 2
   },
+  "DM-193434-283283-VXVD": {
+   "verdict": "clear",
+   "width_min_m": 7.39,
+   "width_max_m": 16.22,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 15.4,
+   "route_usage": 2
+  },
   "DM-193434-283634-JFYG": {
    "verdict": "clear",
    "width_min_m": 12.88,
@@ -5664,6 +6474,15 @@
    "length_m": 16.7,
    "route_usage": 70
   },
+  "DM-193435-283271-VXVD": {
+   "verdict": "clear",
+   "width_min_m": 29.91,
+   "width_max_m": 29.91,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 13.3,
+   "route_usage": 0
+  },
   "DM-193436-283225-G89H": {
    "verdict": "blocked",
    "width_min_m": 2.56,
@@ -5672,6 +6491,15 @@
    "unknown_reason": null,
    "length_m": 34.4,
    "route_usage": 0
+  },
+  "DM-193441-283297-VXVD": {
+   "verdict": "clear",
+   "width_min_m": 7.05,
+   "width_max_m": 28.15,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 17.2,
+   "route_usage": 2
   },
   "DM-193441-284128-MCQE": {
    "verdict": "blocked",
@@ -5691,13 +6519,13 @@
    "length_m": 30.3,
    "route_usage": 120
   },
-  "DM-193447-283283-VXVD": {
-   "verdict": "unknown",
-   "width_min_m": 1.5,
-   "width_max_m": 3.12,
-   "width_src": "silpok",
-   "unknown_reason": "no_cctv_narrow",
-   "length_m": 37.2,
+  "DM-193445-283184-G89H": {
+   "verdict": "blocked",
+   "width_min_m": 0.93,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 95.3,
    "route_usage": 0
   },
   "DM-193448-283886-C95Z": {
@@ -5707,6 +6535,15 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 70.1,
+   "route_usage": 0
+  },
+  "DM-193450-283281-VXVD": {
+   "verdict": "unknown",
+   "width_min_m": 1.5,
+   "width_max_m": 3.12,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_narrow",
+   "length_m": 30.6,
    "route_usage": 0
   },
   "DM-193450-283394-9EAB": {
@@ -5906,6 +6743,15 @@
    "unknown_reason": "no_cctv_band",
    "length_m": 64.5,
    "route_usage": 2
+  },
+  "DM-193485-283215-EB39": {
+   "verdict": "unknown",
+   "width_min_m": 5.68,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 19.0,
+   "route_usage": 0
   },
   "DM-193485-283872-6Z8Q": {
    "verdict": "blocked",
@@ -9192,6 +10038,15 @@
    "length_m": 74.5,
    "route_usage": 0
   },
+  "DM-194155-283809-FTDK": {
+   "verdict": "clear",
+   "width_min_m": 9.01,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 17.6,
+   "route_usage": 0
+  },
   "DM-194156-283879-FTDK": {
    "verdict": "clear",
    "width_min_m": 8.52,
@@ -9199,6 +10054,15 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 18.7,
+   "route_usage": 0
+  },
+  "DM-194157-283844-FTDK": {
+   "verdict": "clear",
+   "width_min_m": 7.86,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 52.0,
    "route_usage": 0
   },
   "DM-194158-283664-HJS3": {
@@ -9209,6 +10073,15 @@
    "unknown_reason": null,
    "length_m": 21.7,
    "route_usage": 265
+  },
+  "DM-194163-283800-FTDK": {
+   "verdict": "blocked",
+   "width_min_m": 2.28,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 15.5,
+   "route_usage": 0
   },
   "DM-194166-283576-1AOQ": {
    "verdict": "unknown",
@@ -9336,6 +10209,15 @@
    "length_m": 89.5,
    "route_usage": 0
   },
+  "DM-194201-283524-A8GE": {
+   "verdict": "needs_cv",
+   "width_min_m": 5.16,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 56.6,
+   "route_usage": 0
+  },
   "DM-194202-283976-1AOQ": {
    "verdict": "clear",
    "width_min_m": 15.14,
@@ -9356,9 +10238,9 @@
   },
   "DM-194204-283555-1AOQ": {
    "verdict": "blocked",
-   "width_min_m": 1.0,
+   "width_min_m": 1.21,
    "width_max_m": null,
-   "width_src": "silpok",
+   "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 90.0,
    "route_usage": 0
@@ -9426,6 +10308,15 @@
    "length_m": 17.1,
    "route_usage": 0
   },
+  "DM-194230-283588-1AOQ": {
+   "verdict": "unknown",
+   "width_min_m": 5.39,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 41.8,
+   "route_usage": 0
+  },
   "DM-194231-283865-22RU": {
    "verdict": "clear",
    "width_min_m": 7.91,
@@ -9433,6 +10324,15 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 43.1,
+   "route_usage": 0
+  },
+  "DM-194235-283503-A8GE": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.7,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 25.6,
    "route_usage": 0
   },
   "DM-194236-283658-HJS3": {
@@ -9462,6 +10362,33 @@
    "length_m": 31.6,
    "route_usage": 70
   },
+  "DM-194244-283493-1AOQ": {
+   "verdict": "clear",
+   "width_min_m": 15.68,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 34.1,
+   "route_usage": 0
+  },
+  "DM-194246-283514-1AOQ": {
+   "verdict": "clear",
+   "width_min_m": 15.61,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 8.3,
+   "route_usage": 0
+  },
+  "DM-194247-283535-1AOQ": {
+   "verdict": "clear",
+   "width_min_m": 14.62,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 32.9,
+   "route_usage": 0
+  },
   "DM-194248-283719-AZHT": {
    "verdict": "unknown",
    "width_min_m": 6.96,
@@ -9479,6 +10406,24 @@
    "unknown_reason": null,
    "length_m": 21.7,
    "route_usage": 70
+  },
+  "DM-194249-283477-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 42.27,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 13.3,
+   "route_usage": 0
+  },
+  "DM-194250-283569-1AOQ": {
+   "verdict": "clear",
+   "width_min_m": 14.61,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 34.7,
+   "route_usage": 0
   },
   "DM-194252-283604-1AOQ": {
    "verdict": "clear",
@@ -9534,6 +10479,24 @@
    "length_m": 94.9,
    "route_usage": 70
   },
+  "DM-194265-283584-1AOQ": {
+   "verdict": "unknown",
+   "width_min_m": 3.96,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 28.6,
+   "route_usage": 0
+  },
+  "DM-194268-283531-X6GR": {
+   "verdict": "unknown",
+   "width_min_m": 5.0,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 49.9,
+   "route_usage": 0
+  },
   "DM-194272-283897-0OQO": {
    "verdict": "needs_cv",
    "width_min_m": 5.23,
@@ -9586,6 +10549,33 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 98.0,
+   "route_usage": 0
+  },
+  "DM-194278-283461-6ZG7": {
+   "verdict": "blocked",
+   "width_min_m": 0.85,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 57.4,
+   "route_usage": 0
+  },
+  "DM-194283-283484-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 10.0,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 55.6,
+   "route_usage": 0
+  },
+  "DM-194284-283558-X6GR": {
+   "verdict": "blocked",
+   "width_min_m": 1.62,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 36.2,
    "route_usage": 0
   },
   "DM-194288-283613-1AOQ": {
@@ -9642,6 +10632,15 @@
    "length_m": 8.6,
    "route_usage": 0
   },
+  "DM-194305-283545-X6GR": {
+   "verdict": "unknown",
+   "width_min_m": 5.0,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 30.2,
+   "route_usage": 0
+  },
   "DM-194305-283667-SAGS": {
    "verdict": "needs_cv",
    "width_min_m": 2.29,
@@ -9650,6 +10649,15 @@
    "unknown_reason": null,
    "length_m": 25.2,
    "route_usage": 265
+  },
+  "DM-194312-283569-X6GR": {
+   "verdict": "blocked",
+   "width_min_m": 1.3,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 40.6,
+   "route_usage": 0
   },
   "DM-194312-283703-A0DR": {
    "verdict": "unknown",
@@ -9669,6 +10677,15 @@
    "length_m": 53.8,
    "route_usage": 0
   },
+  "DM-194318-283468-6ZG7": {
+   "verdict": "blocked",
+   "width_min_m": 0.67,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 45.6,
+   "route_usage": 0
+  },
   "DM-194318-283680-6CJO": {
    "verdict": "needs_cv",
    "width_min_m": 5.26,
@@ -9677,6 +10694,15 @@
    "unknown_reason": null,
    "length_m": 30.3,
    "route_usage": 265
+  },
+  "DM-194322-283492-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 10.27,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 23.7,
+   "route_usage": 0
   },
   "DM-194329-283661-SAGS": {
    "verdict": "needs_cv",
@@ -9703,6 +10729,15 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 22.2,
+   "route_usage": 0
+  },
+  "DM-194336-283557-X6GR": {
+   "verdict": "clear",
+   "width_min_m": 53.29,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 36.3,
    "route_usage": 0
   },
   "DM-194338-283589-6CJO": {
@@ -9739,6 +10774,15 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 12.6,
+   "route_usage": 0
+  },
+  "DM-194347-283496-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 11.2,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 27.7,
    "route_usage": 0
   },
   "DM-194349-283660-SAGS": {
@@ -9795,6 +10839,24 @@
    "length_m": 24.5,
    "route_usage": 0
   },
+  "DM-194359-283571-X6GR": {
+   "verdict": "clear",
+   "width_min_m": 58.19,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 19.9,
+   "route_usage": 0
+  },
+  "DM-194362-283514-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 35.89,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 75.2,
+   "route_usage": 0
+  },
   "DM-194362-283706-6CJO": {
    "verdict": "needs_cv",
    "width_min_m": 4.32,
@@ -9811,6 +10873,24 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 18.0,
+   "route_usage": 0
+  },
+  "DM-194365-283436-E99H": {
+   "verdict": "needs_cv",
+   "width_min_m": 4.63,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 27.5,
+   "route_usage": 0
+  },
+  "DM-194367-283472-YVTL": {
+   "verdict": "needs_cv",
+   "width_min_m": 4.99,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 54.8,
    "route_usage": 0
   },
   "DM-194371-283611-X6GR": {
@@ -9840,6 +10920,33 @@
    "length_m": 26.1,
    "route_usage": 0
   },
+  "DM-194374-283577-X6GR": {
+   "verdict": "needs_cv",
+   "width_min_m": 4.78,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 11.5,
+   "route_usage": 0
+  },
+  "DM-194377-283564-6ZG7": {
+   "verdict": "needs_cv",
+   "width_min_m": 2.0,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 79.3,
+   "route_usage": 0
+  },
+  "DM-194379-283447-E99H": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.51,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 8.8,
+   "route_usage": 0
+  },
   "DM-194381-283712-6CJO": {
    "verdict": "needs_cv",
    "width_min_m": 5.17,
@@ -9849,6 +10956,15 @@
    "length_m": 28.2,
    "route_usage": 335
   },
+  "DM-194382-283552-X6GR": {
+   "verdict": "needs_cv",
+   "width_min_m": 2.0,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 53.7,
+   "route_usage": 0
+  },
   "DM-194385-283667-SAGS": {
    "verdict": "unknown",
    "width_min_m": 1.92,
@@ -9856,6 +10972,24 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 18.4,
+   "route_usage": 0
+  },
+  "DM-194390-283582-X6GR": {
+   "verdict": "clear",
+   "width_min_m": 8.07,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 21.6,
+   "route_usage": 0
+  },
+  "DM-194398-283406-YVTL": {
+   "verdict": "needs_cv",
+   "width_min_m": 5.54,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 95.2,
    "route_usage": 0
   },
   "DM-194398-283699-6CJO": {
@@ -9876,6 +11010,24 @@
    "length_m": 39.5,
    "route_usage": 0
   },
+  "DM-194406-283581-X6GR": {
+   "verdict": "clear",
+   "width_min_m": 12.13,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 11.9,
+   "route_usage": 0
+  },
+  "DM-194411-283610-X6GR": {
+   "verdict": "blocked",
+   "width_min_m": 1.29,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 13.7,
+   "route_usage": 0
+  },
   "DM-194411-283712-6CJO": {
    "verdict": "unknown",
    "width_min_m": 1.87,
@@ -9883,6 +11035,60 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 33.3,
+   "route_usage": 0
+  },
+  "DM-194412-283453-E99H": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.08,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 59.5,
+   "route_usage": 0
+  },
+  "DM-194413-283589-6ZG7": {
+   "verdict": "needs_cv",
+   "width_min_m": 1.88,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 34.6,
+   "route_usage": 0
+  },
+  "DM-194415-283512-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 10.85,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 111.4,
+   "route_usage": 0
+  },
+  "DM-194415-283593-X6GR": {
+   "verdict": "blocked",
+   "width_min_m": 1.88,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 27.9,
+   "route_usage": 0
+  },
+  "DM-194421-283431-E99H": {
+   "verdict": "needs_cv",
+   "width_min_m": 2.16,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 86.0,
+   "route_usage": 0
+  },
+  "DM-194424-283580-X6GR": {
+   "verdict": "clear",
+   "width_min_m": 7.32,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 19.3,
    "route_usage": 0
   },
   "DM-194426-283684-SAGS": {
@@ -9903,6 +11109,42 @@
    "length_m": 26.5,
    "route_usage": 0
   },
+  "DM-194434-283546-X6GR": {
+   "verdict": "needs_cv",
+   "width_min_m": 5.86,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 88.2,
+   "route_usage": 0
+  },
+  "DM-194437-283591-X6GR": {
+   "verdict": "needs_cv",
+   "width_min_m": 2.97,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 20.9,
+   "route_usage": 0
+  },
+  "DM-194438-283535-6ZG7": {
+   "verdict": "unknown",
+   "width_min_m": 3.5,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 92.5,
+   "route_usage": 0
+  },
+  "DM-194439-283574-X6GR": {
+   "verdict": "blocked",
+   "width_min_m": 1.13,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 21.8,
+   "route_usage": 0
+  },
   "DM-194441-283710-6CJO": {
    "verdict": "unknown",
    "width_min_m": 1.54,
@@ -9910,6 +11152,15 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 38.0,
+   "route_usage": 0
+  },
+  "DM-194445-283613-X6GR": {
+   "verdict": "needs_cv",
+   "width_min_m": 2.05,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 25.9,
    "route_usage": 0
   },
   "DM-194445-283654-SAGS": {
@@ -9921,6 +11172,42 @@
    "length_m": 41.4,
    "route_usage": 0
   },
+  "DM-194449-283594-X6GR": {
+   "verdict": "needs_cv",
+   "width_min_m": 2.3,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 19.3,
+   "route_usage": 0
+  },
+  "DM-194452-283493-6ZG7": {
+   "verdict": "unknown",
+   "width_min_m": 2.92,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 71.8,
+   "route_usage": 0
+  },
+  "DM-194454-283631-X6GR": {
+   "verdict": "unknown",
+   "width_min_m": 1.57,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 14.4,
+   "route_usage": 0
+  },
+  "DM-194457-283621-X6GR": {
+   "verdict": "blocked",
+   "width_min_m": 0.7,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 15.2,
+   "route_usage": 0
+  },
   "DM-194457-283737-A0DR": {
    "verdict": "unknown",
    "width_min_m": 2.62,
@@ -9929,7 +11216,340 @@
    "unknown_reason": "no_cctv_thin",
    "length_m": 58.9,
    "route_usage": 0
+  },
+  "DM-194459-283463-E99H": {
+   "verdict": "unknown",
+   "width_min_m": 5.51,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 36.7,
+   "route_usage": 0
+  },
+  "DM-194463-283644-X6GR": {
+   "verdict": "unknown",
+   "width_min_m": 1.17,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 17.8,
+   "route_usage": 0
+  },
+  "DM-194464-283633-X6GR": {
+   "verdict": "blocked",
+   "width_min_m": 0.87,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 14.1,
+   "route_usage": 0
+  },
+  "DM-194465-283572-X6GR": {
+   "verdict": "unknown",
+   "width_min_m": 1.48,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 37.1,
+   "route_usage": 0
+  },
+  "DM-194470-283673-SAGS": {
+   "verdict": "blocked",
+   "width_min_m": 0.91,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 64.4,
+   "route_usage": 0
+  },
+  "DM-194471-283600-X6GR": {
+   "verdict": "blocked",
+   "width_min_m": 1.28,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 39.7,
+   "route_usage": 0
+  },
+  "DM-194471-283652-SAGS": {
+   "verdict": "unknown",
+   "width_min_m": 4.82,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 10.3,
+   "route_usage": 0
+  },
+  "DM-194475-283506-6ZG7": {
+   "verdict": "unknown",
+   "width_min_m": 2.03,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 38.3,
+   "route_usage": 0
+  },
+  "DM-194476-283473-E99H": {
+   "verdict": "blocked",
+   "width_min_m": 1.45,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 12.5,
+   "route_usage": 0
+  },
+  "DM-194481-283560-X6GR": {
+   "verdict": "needs_cv",
+   "width_min_m": 6.68,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 15.1,
+   "route_usage": 0
+  },
+  "DM-194483-283528-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 11.56,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 28.9,
+   "route_usage": 0
+  },
+  "DM-194484-283570-X6GR": {
+   "verdict": "needs_cv",
+   "width_min_m": 1.79,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 15.3,
+   "route_usage": 0
+  },
+  "DM-194486-283651-SAGS": {
+   "verdict": "unknown",
+   "width_min_m": 4.53,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 20.0,
+   "route_usage": 0
+  },
+  "DM-194487-284060-YQOK": {
+   "verdict": "clear",
+   "width_min_m": 16.87,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 993.0,
+   "route_usage": 0
+  },
+  "DM-194491-283470-E99H": {
+   "verdict": "unknown",
+   "width_min_m": 5.2,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 29.8,
+   "route_usage": 0
+  },
+  "DM-194497-283620-X6GR": {
+   "verdict": "clear",
+   "width_min_m": 8.17,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 111.9,
+   "route_usage": 0
+  },
+  "DM-194498-283566-X6GR": {
+   "verdict": "clear",
+   "width_min_m": 7.09,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 22.2,
+   "route_usage": 0
+  },
+  "DM-194504-283377-7WVF": {
+   "verdict": "needs_cv",
+   "width_min_m": 4.95,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 187.3,
+   "route_usage": 0
+  },
+  "DM-194505-283501-7WVF": {
+   "verdict": "clear",
+   "width_min_m": 7.42,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 61.7,
+   "route_usage": 0
+  },
+  "DM-194515-283539-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 13.5,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 38.6,
+   "route_usage": 0
+  },
+  "DM-194521-283568-X6GR": {
+   "verdict": "clear",
+   "width_min_m": 11.77,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": null,
+   "length_m": 22.5,
+   "route_usage": 0
+  },
+  "DM-194528-283278-YQOK": {
+   "verdict": "unknown",
+   "width_min_m": 5.02,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 539.0,
+   "route_usage": 0
+  },
+  "DM-194532-283556-YQOK": {
+   "verdict": "clear",
+   "width_min_m": 26.0,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 18.9,
+   "route_usage": 0
+  },
+  "DM-194564-283519-539Z": {
+   "verdict": "clear",
+   "width_min_m": 22.78,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 89.6,
+   "route_usage": 0
+  },
+  "DM-194564-283577-X6GR": {
+   "verdict": "unknown",
+   "width_min_m": 6.81,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 71.8,
+   "route_usage": 0
+  },
+  "DM-194567-283540-7PJC": {
+   "verdict": "unknown",
+   "width_min_m": 2.95,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 46.8,
+   "route_usage": 0
+  },
+  "DM-194579-283500-7PJC": {
+   "verdict": "unknown",
+   "width_min_m": 2.7,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 58.6,
+   "route_usage": 0
+  },
+  "DM-194580-283573-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 12.03,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 108.4,
+   "route_usage": 0
+  },
+  "DM-194586-283609-X6GR": {
+   "verdict": "blocked",
+   "width_min_m": 1.59,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 19.8,
+   "route_usage": 0
+  },
+  "DM-194604-283538-7PJC": {
+   "verdict": "unknown",
+   "width_min_m": 3.16,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 43.9,
+   "route_usage": 0
+  },
+  "DM-194610-283608-X6GR": {
+   "verdict": "clear",
+   "width_min_m": 7.35,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 40.9,
+   "route_usage": 0
+  },
+  "DM-194650-283535-7PJC": {
+   "verdict": "unknown",
+   "width_min_m": 2.5,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 60.5,
+   "route_usage": 0
+  },
+  "DM-194657-283564-7PJC": {
+   "verdict": "unknown",
+   "width_min_m": 2.25,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 76.3,
+   "route_usage": 0
+  },
+  "DM-194662-283619-6ZG7": {
+   "verdict": "clear",
+   "width_min_m": 11.91,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 79.2,
+   "route_usage": 0
+  },
+  "DM-194673-283664-6ZG7": {
+   "verdict": "unknown",
+   "width_min_m": 3.67,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 29.0,
+   "route_usage": 0
+  },
+  "DM-194692-283653-6ZG7": {
+   "verdict": "unknown",
+   "width_min_m": 5.11,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 31.5,
+   "route_usage": 0
+  },
+  "DM-194701-283684-6ZG7": {
+   "verdict": "unknown",
+   "width_min_m": 1.3,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 47.0,
+   "route_usage": 0
   }
  },
- "L3": "42c2633e228af53418722a6c0d9f8fe6d01e2cf05a466e9d0e550f2c71081463"
+ "L3": "d1306b624e13db3e773fe9075bb6a8bc8c4fdcde3a35873945be6d129672e3d4"
 }

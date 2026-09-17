@@ -3,7 +3,7 @@
 segments.py — 도로구간을 노딩해 통과판정 세그먼트 그래프를 만든다.
 
 
-IN    processed/{boundary_emd,road_link,road_rw,ngii_road,ngii1k,
+IN    processed/{boundary_emd,road_link,road_rw,ngii_road,ngii1k,ngii1k_center,
               ngii1k_xsec,building,building_entrance,cctv,streetlight}_5186.gpkg
       processed/_manifest.json          ★ 계보 검사. 없으면 시작하지 않는다
       processed/seg_uid_map.csv         직전 실행 키. 유지율 산출용
@@ -52,6 +52,7 @@ from firelane.paths import PROCESSED
 from firelane.seg import graph as seg_graph
 from firelane.seg import report as seg_report
 from firelane.seg.basisno import BasisIntervalIndex
+from firelane.seg.centerline_correction import apply_approved_centerline_corrections
 from firelane.seg.geom import _dirv, _join, _seal, verdict
 from firelane.seg.params import (
     _DBG,
@@ -59,17 +60,16 @@ from firelane.seg.params import (
     DEBUG_SEG,
     DEBUG_XY,
     EMD_CD,
-    KEEP_BUFFER,
     MIN_SEG_LEN,
     NFA_RUN_M,
     NO_MERGE,
     PARK,
     SNAP_TOL,
-    STATION_RADIUS,
     TRUCK,
     XSEC_EXCL,
 )
 from firelane.seg.roadname import RoadNameIndex
+from firelane.seg.scope import display_scope, judgment_scope
 from firelane.seg.width import WidthEngine
 from firelane.segkey import attach_seg_uid, save_uid_map, uid_retention
 
@@ -345,7 +345,7 @@ def _write_samples(g) -> None:
           f"구간 {len(uid_of):,} → {dst.name}")
 
 
-def _write_scope(poly) -> None:
+def _write_scope(poly, corridors, stations) -> None:
     """표출 스코프를 `processed/scope_5186.gpkg` 로 낸다.
 
     ★ 2026-09-04. 종전에는 `publish_web.main()` 이 계산했고 결과를
@@ -368,18 +368,10 @@ def _write_scope(poly) -> None:
     IN    processed/corridor_5186.gpkg · processed/fire_station.geojson
     OUT   processed/scope_5186.gpkg
     """
-    corr = None
-    cp = PROCESSED / "corridor_5186.gpkg"
-    if cp.exists():
-        corr = gpd.read_file(cp).to_crs(5186).union_all().buffer(70)
-
-    sta = gpd.read_file(PROCESSED / "fire_station.geojson").to_crs(5186)
-    sta_buf = sta.geometry.union_all().buffer(STATION_RADIUS)
-
-    scope = poly.buffer(60)
-    if corr is not None:
-        scope = scope.union(corr)
-    scope = scope.union(sta_buf)
+    # ★ 2026-09-16. 판정과 **같은 실행의** 회랑 · 안전센터를 받는다(DECISIONS §170). 종전에는
+    #   지난 실행이 남긴 corridor_5186.gpkg 를 다시 읽었다 — 회랑이 바뀌면 한 실행 늦게 따라왔다.
+    #   규칙은 seg/scope.py 한 곳이다. 판정 범위를 전부 덮고 동 경계 여백 60m 를 유지한다.
+    scope = display_scope(poly, corridors, stations)
 
     dst = PROCESSED / "scope_5186.gpkg"
     gpd.GeoDataFrame(geometry=[scope], crs=5186).to_file(
@@ -392,6 +384,19 @@ def main():
     poly = shapely.make_valid(emd.loc[emd.EMD_CD == EMD_CD, "geometry"].iloc[0])
     _lineage_check()
     road = load("road_link")
+    # ★ 2026-09-16. 사람이 승인한 중심선 위치 보정(DECISIONS §170 · 웅토피아 DECISIONS §127).
+    #   원본 행과 NGII 1:1,000 중심선 조각을 지문으로 고정한 승인 건만 **메모리에서** 바꾼다.
+    #   지문이 안 맞으면 추측하지 않고 실패한다. processed road_link 는 안 바뀐다.
+    ngii_center = load("ngii1k_center")
+    road, centerline_reports = apply_approved_centerline_corrections(road, ngii_center)
+    for report in centerline_reports:
+        trims = " · ".join(
+            f"RDS {rds} -{length:.3f}m" for rds, length in report.trimmed_branches_m
+        )
+        print(
+            f"  중심선 보정 {report.correction_id}: RDS {report.target_rds_man_no} "
+            f"{report.source_length_m:.3f}→{report.corrected_length_m:.3f}m · {trims}"
+        )
     rw   = load("road_rw")
     # 가로등. 지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
     # 마커 표현은 streetlight.py 가 담당한다(group-by + count, 반경 50m 원).
@@ -427,20 +432,28 @@ def main():
     cctv = gpd.read_file(OUT/"cctv_5186.gpkg").to_crs(CRS_M)
     cctv_u = unary_union(list(cctv.geometry))
 
-    keep = poly.buffer(KEEP_BUFFER)
-    if corr:
-        keep = keep.union(unary_union([c["geometry"] for c in corr]).buffer(70))
+    # ★ 2026-09-16. 판정 범위 = 동명동 50m + 회랑 70m + 대인·지산안전센터 300m (DECISIONS §170).
+    #   종전에는 안전센터 300m 가 **표출에만** 있어 지도에는 보이는데 판정에서 빠지는 도로가 있었다.
+    corridors = [c["geometry"] for c in corr]
+    stations = gpd.read_file(PROCESSED / "fire_station.geojson").to_crs(CRS_M)
+    keep = judgment_scope(poly, corridors, stations.geometry)
 
     # 결정 63 — 폭 주 소스 = 수치지도 도로경계면(NF_A_A01000), 폴백 = 실폭도로.
     # 두 소스는 경쟁이 아니라 상보 관계다. 수치지도는 넓은 길을 정확히 그리지만
     # 보행자 통로급 최협소 골목을 도로면으로 아예 그리지 않는다(표본 100 중 커버 70).
     # 나머지를 실폭도로가 메운다.
-    _clip = keep.buffer(20)      # 세그먼트 스코프(동명동+회랑)와 일치시킨다
+    _clip = keep.buffer(20)      # 동명동·회랑·안전센터 판정 범위의 폭 자료를 담는다
 
     ngii1k_u = (_seal(ngii1k[ngii1k.intersects(_clip)].geometry)
                 if ngii1k is not None and len(ngii1k) else None)
     ngii_u = _seal(ngii[ngii.intersects(_clip)].geometry)
     rw_u   = _seal(rw[rw.intersects(_clip)].geometry)
+    # ★ 2026-09-16. 건물 담~담 폭은 **동 경계 80m 에서만** 잰다. 판정 범위로 넓히지 않는다(DECISIONS §170-3).
+    #   웅토피아 §125 는 판정 범위 + WMAX_CAP 으로 넓혀 결손을 496 → 55 로 줄였다. 우리 데이터로
+    #   측량 도로폭(ngii1k_center)과 대조하니 판정이 바뀐 기존 64구간 중 36구간이 **노면 · 대장폭 ·
+    #   측량폭이 전부 3m 미만인데 blocked 에서 빠졌다** — 법선이 먼 건물까지 뻗어 벽 사이를 3.3~25m 로
+    #   잡았고, verdict() 는 wmax ≥ 3 이면 blocked 로 가지 않는다. 미탐 쪽으로의 이동이다(§3-3).
+    #   넓히려면 wmax 를 측량폭 · 노면과 대조해 벌어진 값을 버리는 가드가 먼저다(PLAN).
     bld_u = unary_union([shapely.make_valid(g) for g in bld[bld.intersects(poly.buffer(80))].geometry])
     deg = Counter()
     for a, b in G.edges():
@@ -475,12 +488,10 @@ def main():
 
 
 
-    # 표출 범위 = 동명동 + 접근 회랑. 회랑도 판정 색상을 가져야
-    # "안전센터에서 오는 길이 어떤 상태인가"가 보인다.
-
-    # 폭 소스(rw_u / bld_u)는 poly.buffer(80) 으로 클립돼 있다.
-    # 그 밖의 회랑 구간은 "폭을 못 잰 것"이 아니라 "잴 대상이 아닌 것"이다.
-    # 둘을 같은 이름으로 부르면 화면이 "골목의 44%를 모른다"로 오독된다.
+    # 노면 폭 소스(ngii1k · ngii · 실폭)는 판정 범위(동명동 · 회랑 · 안전센터 300m)에서 잰다.
+    # ★ 건물 담~담(bld_u)만 동 경계 80m 로 클립돼 있다(§170-3). 그 밖 구간의 width_max_m 결손은
+    #   "폭을 못 잰 것" 이 아니라 "벽 사이를 재지 않는 것" 이다. 둘을 같은 이름으로 부르면
+    #   화면이 "골목의 절반을 모른다" 로 오독된다.
     # 도로명. 노딩하면 원본 속성이 끊기므로 중점 최근접으로 되붙인다.
     # seg_id(DM00001)만 보이면 사람이 어느 골목인지 알 수 없다.
     _rnx = RoadNameIndex.from_gdf(road)
@@ -872,7 +883,7 @@ def main():
     _write_samples(g)
     _write_route(g)
     seg_report.write_outputs(g)
-    _write_scope(poly)
+    _write_scope(poly, corridors, stations.geometry)
 
 
 if __name__ == "__main__":
