@@ -7092,3 +7092,93 @@ PLAN 「경로 비용 판정 반영」 을 닫는다. `reachable` 은 verdict �
     1:1,000 측량 중심선으로」 이다
 
 강제자 없음 — 사유: 목록이다
+
+## 171. E2 — 빚 목록에서 분류된 거주를 걷고, 봉인이 산출물을 따라가게 했다
+
+> 2026-09-17 · 오창준
+
+판정 불변 배치다. golden 이 움직이면 적용 스크립트가 멈춘다. PLAN 행 다섯을 닫았다 —
+「참조 0곳인 소스 22종」 · 「소방서 대조 봉인 사본이 낡았다」 · 「봉인 베이스라인이 전량 복사다」 ·
+「계층 간 스키마 드리프트」 · 「`landing` 잔류 5건 삭제」.
+
+강제자 없음 — 사유: 하위 절 171-1~171-6 이 각자 강제자 칸을 든다
+
+### 171-1. 미배선 소스는 수가 아니라 용도로 잰다
+
+PLAN 행은 스스로 *"정리 완료. 수는 남는다"* 고 적었다. 대조하니 코드 참조 0곳 · `raw_only` 아닌
+22종 **전부**가 `feeds: 미투입 — <용도>` 를 이미 들고 있었다. 갚을 것이 없는 행이 빚 목록에 살았고,
+강제자(`test_plan_unreferenced_sources_count_is_current`)가 *PLAN 에 그 행이 있어야 한다* 고 단언해
+**행을 지우지 못하게 붙들었다.** 조사 도구 아홉을 `EXEMPT` 에 사유와 함께 등재한 것(§162)과 같은
+형태로 바꿨다 — 수가 늘어도 안 울고, **용도 없이 늘면** 운다.
+
+★ 역방향(용도를 `미투입` 이라 적었는데 코드가 읽는 것)은 넣지 않았다. `fire_access` 는
+`seg/report.py` 가 소방서 대조에 읽지만 판정 입력은 아니다 — `feeds` 의 `미투입` 은 판정 · 산출
+입력이 아니라는 뜻이고 코드 참조 여부와 축이 다르다.
+
+강제자  `tests/test_declaration_sync.py::test_unwired_sources_declare_purpose` · 카나리아 `::test_unwired_probe_is_alive`
+
+### 171-2. 봉인의 소방서 대조는 봉인 시점 산출물의 사본이다
+
+`seg/report.py` 가 2026-08-18 부터 `processed/nfa_compare.json` 을 매 실행 쓰는데 `tools/baseline.py` 는
+여전히 2026-08-13 자 손제작 표(`NFA_COMPARE`)를 박아 두고 매 봉인에 복사했다. 세 벌이 같은 표라
+실행 간 대조가 성립하지 않았다. `freeze` 가 산출물을 복사하고 없으면 봉인하지 않는다. `diff` 는 도로명으로
+맞춰 편차 · 세그 수 전이를 찍는다(`nfa_delta` · 파일을 안 읽는 순수 함수).
+
+기존 세 벌은 고치지 않는다 — 셋 중 `20260814-ngii-ngi20` 은 재생성 불가다(MASTER §13). 새 봉인의
+`known_limits` 에서 *"ngii1k 는 ingest 에서 FAIL"* 을 뺐다. 2026-08-14 판의 사정이지 이후 봉인의 사실이 아니다.
+
+강제자  `tests/test_reproducibility.py::test_baseline_copies_nfa_compare_not_a_handmade_table` · `::test_baseline_nfa_delta_matches_by_road`
+
+### 171-3. 봉인은 전량 복사를 유지한다 — 태그 + 지문 대체는 기각
+
+    ① golden 지문은 달라졌다만 말한다. baseline diff 의 전이표는 피처가 있어야 나온다
+    ② 태그로 재생성하려면 그 시점 raw 가 살아 있어야 한다 — 2026-08-15 전량 재취득이 한 번 깼고,
+       다음 배치(뼈대 재구축)가 seg_uid 를 전면 교체한다. 그 직전 봉인이 옛 키의 유일한 피처 기록이다
+    ③ 비용이 작다 — 한 벌 약 1.1MB
+    ④ PLAN 행이 든 "schema 다섯 벌 해시가 전부 다르다" 는 봉인 셋 + 계층 둘을 섞어 센 것이다.
+       봉인끼리는 시점이 달라 다른 것이 정상이고, 드리프트는 같은 시점 계층 사이에서 잰다(171-4)
+
+뒤집는 조건 — 봉인 벌 수가 늘어 저장소 용량이 문제가 될 때. 그때도 지우는 쪽이 아니라 저장소 밖
+보관으로 옮긴다.
+
+강제자 없음 — 사유: 유지 판정이다. 복사 동작은 171-2 강제자가 든다
+
+### 171-4. 계층 간 필드 차이를 선언과 대조한다
+
+`pipeline.verify_schema` 는 계층마다 *스키마 == 자기 산출물* 만 봤다. processed 와 web 을 서로 대조하는
+곳이 없어 processed 에 필드가 생기고 publish 가 조용히 떨어뜨려도 초록이었다. 선언은 이미 있었다 —
+web 스키마의 `dropped_from_processed`(2026-08-23 · publish_web). 대조를 붙였다.
+
+    processed 전용 == dropped_from_processed    지금 cov_ngii · cov_ngii1k · cov_silpok · merge_why · merged_n
+    web 전용 ⊆ {seg_no, z} · seg_no 필수
+    공유 필드의 서술 동일
+
+흔들기로 확인했다 — `dropped_from_processed` 에서 하나를 빼면 운다.
+
+강제자  `tests/test_contract.py::test_schema_layers_differ_only_by_declaration`
+
+### 171-5. landing — 지우는 도구는 이미 있었고, 우는 검사가 처분 어휘를 좁게 읽었다
+
+PLAN 행은 *"판단을 끝냈는데 파일만 안 지웠다"* 였고 처분 수를 2026-08-30 판(ingested 1 · retired 3 ·
+ledgered 2)으로 들고 있었다. 지금 `landing_disposition` 은 항목이 늘었고 삭제는 `tools/sweep.py` 가
+근거(레이크 sha · retired) 있는 것만 한다. 남은 결함은 `doctor` 였다 — `retired` · `ingested` 만 처분으로
+세서 `held` · `foreign` 을 매번 "미편입" 으로 울었다. `sweep.held_names` 는 *보류도 처분이다* 로 읽는데
+두 도구가 같은 어휘를 다르게 읽었다. `doctor.DECIDED` 로 맞췄다. `ledgered` 는 넣지 않는다 — acquire 가 남았다.
+
+실측 (레이크 기계 · 적용 스크립트가 채운다)
+
+    sweep 전 landing   7건 — 보류 7 · 지워도 되는 것 0
+    sweep 후 landing   7건 — 보류 7 · 지워도 되는 것 0
+
+강제자 없음 — 사유: `doctor` 는 레이크를 읽는 진단이라 CI 에서 돌지 않는다. 적용 스크립트가 sweep 후
+landing 에 지워도 되는 것 0건을 확인한 뒤에만 이 행을 닫는다
+
+### 171-6. 잔재 셋
+
+    MASTER §3-12   소화전 좌표 524 → 528 (§169-2 입력 범위 확장). 구별 내역도 재측정 —
+                   동구 445 · 북구 42 · 남구 36 · 서구 5. 스코프 안 153 · 동명동 41 불변
+    verify.sh      단계명 "golden 판정 불변 (1,101구간)" 에서 수를 뺐다 — 구간 수는 golden 이 든다
+    sample_design  data/field/sample_segments.csv 의 seg_id 칸을 뺐다. 순번이라 흡수-1 에서 988행이
+                   밀렸다(§169-2). 현장 시트는 seg_uid 로 잇는다. obs_points.csv 는 원래 seg_uid 만 쓴다
+
+강제자 없음 — 사유: 문서 · 산출 칸 정정이다
