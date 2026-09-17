@@ -3303,7 +3303,7 @@ outputs:
     produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_center_5186.gpkg
     inputs: [ngii1k]
-    consumers: [src/firelane/segments.py]
+    consumers: [src/firelane/segments.py, tools/skeleton_compare.py]
     what: |
       도로중심선 A0020000. 측량 성과 도로폭·일방통행·차로수 속성 보유.
       우리 기하 계산과 독립이라 대조 검증에 쓴다(절대편차 중앙 0.32m, n=909).
@@ -3381,7 +3381,7 @@ outputs:
     produced_by: src/firelane/seg/graph.py
     path: data/processed/corridor_5186.gpkg
     inputs: [ngii1k, boundary_emd]
-    consumers: [src/firelane/segments.py, src/firelane/publish_web.py]
+    consumers: [src/firelane/segments.py, src/firelane/publish_web.py, tools/skeleton_compare.py]
     what: 동명동 + 접근 회랑 폴리곤. 스코프 판정의 공간 기준
     verified: false
   nfa_compare:

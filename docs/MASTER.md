@@ -1356,8 +1356,9 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 된다
 | 파일 | 건수 | 내용 |
 |---|---:|---|
 | `segments.geojson` | 1,281 | 판정 본체 |
-| `buildings.geojson` | 5,713 | `h` = 층수 × 3.3. 동명동 안은 2,085동 |
-| `poi.geojson` | 2,077 | 상가정보 |
+| `buildings.geojson` | 12,736 | `h` = 층수 × 3.3. **지도 이동 범위**(view.maxBounds)로 자른다(DECISIONS §181-2) |
+| `poi.geojson` | 2,106 | 상가정보 · 지도 라벨. 표출 범위 안 · 지상 1층 |
+| `dest.geojson` | 1,836 | 내비 목적지 검색 색인 — 상가 519 · 주소/건물 1,315 · 관공서/학교 2. **동명동 경계 안만**(DECISIONS §183-1) |
 | `boundary` · `mask` · `mask_soft` | 각 1 | 행정경계 · 덮개 |
 | `view.json` | — | 중심·경계·줌 한계 |
 | `terrain/{z}/{x}/{y}.png` | 22 | Terrain-RGB |
