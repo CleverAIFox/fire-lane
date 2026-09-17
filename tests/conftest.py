@@ -21,7 +21,7 @@ def pytest_runtest_makereport(item, call):
     lr = rep.longrepr
     reason = lr[2] if isinstance(lr, tuple) and len(lr) == 3 else str(lr)
     why = sp.judge(reason, lake_attached=sp.lake_attached(), today=datetime.now(ZoneInfo("Asia/Seoul")).date(),
-                   plan_titles=set(sp.plan_titles()))
+                   plan_titles=set(sp.plan_titles()), outputs_present=sp.outputs_present())
     if why:
         rep.outcome = "failed"
         rep.longrepr = f"skip 정책 위반(tests/skip_policy.py) — {why}\n  skip 사유: {reason}"

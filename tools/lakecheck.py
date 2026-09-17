@@ -9,7 +9,7 @@ lakecheck.py — 데이터 레이크의 **선언과 실물**을 대조한다.
 프로브 여섯. 전부 **세는 것**으로 끝난다.
 
   L1  제공기관 state ↔ 실물   reserved 인데 파일이 있나 · active 인데 0건인가
-  L2  격리 잔재               _quarantine 이 raw 정본과 중복인가
+  L2  격리 잔재               폐지된 _quarantine 이 되살아났는가 · 남은 것이 raw 정본과 중복인가
   L3  landing 우회 ★          입구를 안 거친 원본이 밖에 있나
   L4  ext 어휘 밖             처리 코드가 없는 확장자가 들어왔나
   L5  norm ↔ raw 계보         norm 이 raw 어느 것의 파생인가
@@ -123,8 +123,15 @@ def l2(D: Path, y: dict) -> None:
     """
     q = D / "_quarantine"
     if not q.is_dir():
-        hit("L2", "★ _quarantine 폴더가 없다 — 이 프로브가 못 잰다")
+        # ★ 2026-09-17 (DECISIONS §173-2 · §176). 격리 층을 폐지하고 retired 로 흡수했다.
+        #   없는 것이 정상이다. 종전에는 "못 잰다" 로 울었는데, 이제 울 것은 **되살아난 것**이다.
+        print("     _quarantine 폐지(§173-2) — 없음")
         return
+    live = [p for p in q.rglob("*") if p.is_file()]
+    if live:
+        hit("L2", f"★ 폐지된 _quarantine 에 파일 {len(live)}건 — 되살아났다",
+            f"예 {live[0].relative_to(q)}",
+            "대장 retired 에 이름 · sha 로 적고 retired/ 로 옮긴다. acquire --quarantine 을 쓰지 않는다")
     raw = {p.name: p for p in (D / "raw").rglob("*") if p.is_file()}
     # 대장이 격리를 정당화하는 근거 — retired 의 stem · file · files
     ok: set[str] = set()

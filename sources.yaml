@@ -2892,6 +2892,8 @@ retired:
     stem:      eais_bldg_ledger
     files:
       - eais/eais_bldg_ledger_jngj-donggu_20260817.csv
+    sha256:
+      eais/eais_bldg_ledger_jngj-donggu_20260817.csv: b502e2c0071a400e46ea23eb1e7436d4eae57537783ea0db34787176de579e4a
     what:      건축물대장 표제부. 높이·주용도·주차대수·사용승인일
     reason:    높이·주차대수만 있고 건물 형상은 building 이 이미 낸다. 11.3MB 소비자 0곳
     at:        2026-08-31
@@ -2910,6 +2912,9 @@ retired:
     files:
       - gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv
       - gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv
+    sha256:
+      gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv: cf64a54d8dbe19c27621cec50d9b95319b9e7b9873422c5312a848cbece850e1
+      gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv: 4cb4c4e95353af782b4fdf8cf9726603ca0fff2b1b12fbbc631f3939e49fbf78
     what:      동구 불법주정차 단속 2판 (2022-01~2023-10 85,380건 + 2024년). 이어붙여 쓴다
     reason:    단속 이력이지 현재 장애물이 아니다. 같은 목적을 enforce_cam·parking_zone 이 더 정확히 덮는다. 8.1MB 를 매 실행 읽을 이유가 없다
     at:        2026-08-31
@@ -2919,6 +2924,8 @@ retired:
     stem: safety_hydrant_point
     files:
       - safety/safety_hydrant_point_kr_20240207_truncated.csv
+    sha256:
+      safety/safety_hydrant_point_kr_20240207_truncated.csv: 85a56e0ae97002b0fe8ea4eb3c9eadbf72ddb601b2f961d5f640662882a92437
     ext: [csv]
     provider: safety
     source_hint: 공공데이터포털 CSV 내려받기 (상한 50,000행)
@@ -2987,6 +2994,8 @@ retired:
     source_hint: 소방청 소방장비 기술기준(KFS) 고시 첨부
     files:
       - safety/safety_kfs_paint_marking_kr_20241224.pdf
+    sha256:
+      safety/safety_kfs_paint_marking_kr_20241224.pdf: 54d2f9fdae6d7ee1b33d68b62bc796a7cb9eefe1049cf0f9b53b4174cc7ca91b
     at: 2026-08-27
     successor: null
     reason: |
@@ -3002,6 +3011,8 @@ retired:
     stem: safety_firestation
     files:
       - safety/safety_firestation_kr_20250701.csv
+    sha256:
+      safety/safety_firestation_kr_20250701.csv: ec7c27eef9a1a7547ae6da629199de2f4d46c6377931a8b1e242f3e76fb8087c
     ext: [csv]
     provider: safety
     source_hint: 공공데이터포털 소방청 표준데이터
@@ -3017,6 +3028,8 @@ retired:
     stem: safety_hydrant_point
     files:
       - safety/safety_hydrant_point_jngj_20250917.csv
+    sha256:
+      safety/safety_hydrant_point_jngj_20250917.csv: 07424bbf506efd0b8205e8718e53e8776315aa315c48a539abccf99adf8683cd
     ext: [csv]
     provider: safety
     source_hint: 전남광주통합특별시 소방본부
@@ -3027,9 +3040,184 @@ retired:
       좌표 정밀도가 낮다. 동명동 소화전은 전국판으로 11개가 잡히며
       그것이 현재 지도에 올라간 값이다.
       2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
+  ngii_basemap_gj_202608:
+    what: 국토지리정보원 기본도 도엽 zip 넷 (gj037 · gj038 · gj047 · gj048, 2026-08-06~07)
+    at: 2026-09-17
+    successor: ngii_road
+    reason: |
+      2026-08-13 스냅숏에만 남은 유일본이다. 활성 ngii_road 는 동구 판(gj9708 · gj9712)이다.
+      두 판의 관계와 레이크에서 빠진 경위는 기록이 없다 — 유일본이라 보존한다(DECISIONS §173-1).
+    files:
+      - ngii/ngii_basemap_gj037_20260806.zip
+      - ngii/ngii_basemap_gj038_20260807.zip
+      - ngii/ngii_basemap_gj047_20260807.zip
+      - ngii/ngii_basemap_gj048_20260806.zip
+    sha256:
+      ngii/ngii_basemap_gj037_20260806.zip: c8f8622216cdad56c32babbea214765f402c7b5edc8d6c24b8c17fb3d42ac918
+      ngii/ngii_basemap_gj038_20260807.zip: 8e16f9c7d049df5577dd7b5140cce8d20361de3ac65a3f0458a3a5762f9e46eb
+      ngii/ngii_basemap_gj047_20260807.zip: 86053a35948c9825c8f379d859c10cddc6627bbd26256d0504e23aabb3b21b11
+      ngii/ngii_basemap_gj048_20260806.zip: e1ec794c09eeeda46a2cbd49bdafd2f42fbe207b68e4271b864e90a83b8f9ce7
+
+  fire_stat_kr_20241231:
+    what: 소방청 화재 통계 전국 (2024-12-31)
+    at: 2026-09-17
+    successor: null
+    reason: |
+      2026-08-13 스냅숏에만 남은 유일본이다. 레이크에서 빠진 경위는 기록이 없다.
+      활성 소스가 읽은 적 없다 — 유일본이라 보존한다(DECISIONS §173-1).
+    files:
+      - safety/safety_fire_stat_kr_20241231.csv
+    sha256:
+      safety/safety_fire_stat_kr_20241231.csv: 4211c65fa236717dd330cd2bdd3072fc5a7ea86db056cd321063cf92ad48e2ea
+
+  hydrant_point_kr_20260811:
+    what: 전국 소방용수시설 표준데이터 (2026-08-11 판)
+    at: 2026-09-17
+    successor: hydrant_point
+    reason: |
+      2026-08-13 스냅숏에만 남은 판이다. 활성 hydrant_point 는 jngj_20240207 판이다.
+      같은 stem 의 다른 판이라 이름으로만 주인이 된다 — 유일본이라 보존한다(DECISIONS §173-1).
+    files:
+      - safety/safety_hydrant_point_kr_20260811.csv
+    sha256:
+      safety/safety_hydrant_point_kr_20260811.csv: 4ba2cfe9ae12cabcd85e8d15ed0e4e01a2aebac4b0a4f3b262c721540a843212
+
+  hydrant_summary_jngj_20251231:
+    what: 전남광주 소방용수시설 집계 (2025-12-31 판)
+    at: 2026-09-17
+    successor: hydrant_summary
+    reason: |
+      2026-08-13 스냅숏에만 남은 판이다. 활성 hydrant_summary 는 jngj-donggu_20250731 판이다.
+      유일본이라 보존한다(DECISIONS §173-1).
+    files:
+      - safety/safety_hydrant_summary_jngj_20251231.csv
+    sha256:
+      safety/safety_hydrant_summary_jngj_20251231.csv: e3eb7b4178fdbadf8234aff793fc3b077c7bf4eec1f48a25fdee6d5f6f60c005
+
+  parking_lot_20260811:
+    what: 광주 주차장 — 법인 · 동구 두 판 (2026-08-11)
+    at: 2026-09-17
+    successor: parking_lot
+    reason: |
+      2026-08-13 스냅숏에만 남은 유일본이다. 활성 parking_lot 과의 관계는 기록이 없다.
+      유일본이라 보존한다(DECISIONS §173-1).
+    files:
+      - gjcity/gjcity_parking_corp_20260811.csv
+      - gjcity/gjcity_parking_dongu_20260811.csv
+    sha256:
+      gjcity/gjcity_parking_corp_20260811.csv: 606f05ff25e7d59bb951900dc1e3d608a935deaf3289e80bb427a7739bd7d5e8
+      gjcity/gjcity_parking_dongu_20260811.csv: 2d3ffbc50ad074ac4e771b2ca6d688593c640d8355c632e17b897f811da7b262
+
   ngii1k_ngii_platform:
     what: 국토정보플랫폼 수치지형도 1:1,000 (NGI/NDA + 일부 SHP)
     at: 2026-08-17
+    restored: 2026-09-17 — 2026-08-13 스냅숏의 유일본을 retired 로 보존(DECISIONS §173-5 · §176)
+    files:
+      - ngii/ngii_map1k_gj356160900_20201231.nda
+      - ngii/ngii_map1k_gj356160900_20201231.ngi
+      - ngii/ngii_map1k_gj356160900_20201231.xml
+      - ngii/ngii_map1k_gj356160993_20201231.nda
+      - ngii/ngii_map1k_gj356160993_20201231.ngi
+      - ngii/ngii_map1k_gj356160993_20201231.xml
+      - ngii/ngii_map1k_gj356160994_20201231.nda
+      - ngii/ngii_map1k_gj356160994_20201231.ngi
+      - ngii/ngii_map1k_gj356160994_20201231.xml
+      - ngii/ngii_map1k_gj356160995_20201231.nda
+      - ngii/ngii_map1k_gj356160995_20201231.ngi
+      - ngii/ngii_map1k_gj356160995_20201231.xml
+      - ngii/ngii_map1k_gj356160996_20201231.nda
+      - ngii/ngii_map1k_gj356160996_20201231.ngi
+      - ngii/ngii_map1k_gj356160996_20201231.xml
+      - ngii/ngii_map1k_gj356160997_20201231.nda
+      - ngii/ngii_map1k_gj356160997_20201231.ngi
+      - ngii/ngii_map1k_gj356160997_20201231.xml
+      - ngii/ngii_map1k_gj356160999_20201231.nda
+      - ngii/ngii_map1k_gj356160999_20201231.ngi
+      - ngii/ngii_map1k_gj356160999_20201231.xml
+      - ngii/ngii_map1k_gj356161403_20201231.nda
+      - ngii/ngii_map1k_gj356161403_20201231.ngi
+      - ngii/ngii_map1k_gj356161403_20201231.xml
+      - ngii/ngii_map1k_gj356161404_20201231.nda
+      - ngii/ngii_map1k_gj356161404_20201231.ngi
+      - ngii/ngii_map1k_gj356161404_20201231.xml
+      - ngii/ngii_map1k_gj356161405_20201231.nda
+      - ngii/ngii_map1k_gj356161405_20201231.ngi
+      - ngii/ngii_map1k_gj356161405_20201231.xml
+      - ngii/ngii_map1k_gj356161406_20221231.xml
+      - ngii/ngii_map1k_gj356161406_20221231.zip
+      - ngii/ngii_map1k_gj356161407_20221231.xml
+      - ngii/ngii_map1k_gj356161407_20221231.zip
+      - ngii/ngii_map1k_gj356161409_20221231.xml
+      - ngii/ngii_map1k_gj356161409_20221231.zip
+      - ngii/ngii_map1k_gj356161410_20221231.xml
+      - ngii/ngii_map1k_gj356161410_20221231.zip
+      - ngii/ngii_map1k_gj356161416_20221231.xml
+      - ngii/ngii_map1k_gj356161416_20221231.zip
+      - ngii/ngii_map1k_gj356161417_20221231.xml
+      - ngii/ngii_map1k_gj356161417_20221231.zip
+      - ngii/ngii_map1k_gj356161426_20221231.xml
+      - ngii/ngii_map1k_gj356161426_20221231.zip
+      - ngii/ngii_map1k_gj356161427_20221231.xml
+      - ngii/ngii_map1k_gj356161427_20221231.zip
+      - ngii/ngii_map1k_gj356161552_20191231.nda
+      - ngii/ngii_map1k_gj356161552_20191231.ngi
+      - ngii/ngii_map1k_gj356161552_20191231.xml
+      - ngii/ngii_map1k_gj356161562_20191231.nda
+      - ngii/ngii_map1k_gj356161562_20191231.ngi
+      - ngii/ngii_map1k_gj356161562_20191231.xml
+    sha256:
+      ngii/ngii_map1k_gj356160900_20201231.nda: a233673916ef61b97fab7abf9619a89a6b3a96553900ba69b4e5c99664d2de7b
+      ngii/ngii_map1k_gj356160900_20201231.ngi: ef0f600766b68dffda6d1226a481ea3bb015e4036959043074b3e9cdfa912a4f
+      ngii/ngii_map1k_gj356160900_20201231.xml: 5149edca72afdfb8cfad19d8f8e1951fc70dc29d6746a1bceab7c515530cbebb
+      ngii/ngii_map1k_gj356160993_20201231.nda: 4eb4e1886e5f934392ee09dac98df33686d7bde8b88523f360c9f5c25d6d696a
+      ngii/ngii_map1k_gj356160993_20201231.ngi: 2e74dbd57c71abee616f1923ee44446dcde1ef6411c00abc6a2e3b027c90129f
+      ngii/ngii_map1k_gj356160993_20201231.xml: a13bfcdfd6d274ec79177460a7319e92f72cf62fb4517ab19791a7907e40de64
+      ngii/ngii_map1k_gj356160994_20201231.nda: 9ed36eb4c3b56c88abdf4f3d5e649e3ebd65fdf6c8ad2f89c37a0d90e6c2a7d8
+      ngii/ngii_map1k_gj356160994_20201231.ngi: 1a816404df869deeb1a65c4df110b5c6b9679ec18a425bb55e7a3b38d6173763
+      ngii/ngii_map1k_gj356160994_20201231.xml: ef21e1a4b523cce0c9c35e8fdd139c5d5da70549b5ae0916f1b7dc319803e4a1
+      ngii/ngii_map1k_gj356160995_20201231.nda: 7f60f376bcf00827274f6126f00fe33000eb8fa653b971266f0464c2a1d0b429
+      ngii/ngii_map1k_gj356160995_20201231.ngi: 6f67f5ec3b5257038284f006e41f63afabef1dfed4255051d2977c15fc72f049
+      ngii/ngii_map1k_gj356160995_20201231.xml: 516381b433155825a6f0e0e06da9d4bf996fad329dc17c78472cf533e9bba84c
+      ngii/ngii_map1k_gj356160996_20201231.nda: 9530b6e8687a6f9949451977908de19f6ee898cd84c3c4dee09d0861d7f89b00
+      ngii/ngii_map1k_gj356160996_20201231.ngi: b4507f0df8301ccfebc902c9b0c0d47b5cc9638e6a83c2f005b9f3d0c8017a3f
+      ngii/ngii_map1k_gj356160996_20201231.xml: a4246822c539d5b42e5b6dddfe1b560174fcb9dc390f44fb58699f4e697712df
+      ngii/ngii_map1k_gj356160997_20201231.nda: 74d5688f4c9701bdb9e18f034102eea2fe2b25694161dc79188b21a2b95b1eec
+      ngii/ngii_map1k_gj356160997_20201231.ngi: 8fb12dcafc75d8f763d18be388c2e865bd45e75ad7d20f46132da58f617e6a44
+      ngii/ngii_map1k_gj356160997_20201231.xml: 4ee65e86ea4f708a30e603bfde9fb954901de99c170b21ad034a6877b202f30e
+      ngii/ngii_map1k_gj356160999_20201231.nda: f7c841282cb7c7f208928de7ec71bf630749eed20b48a94409b634bf005fda68
+      ngii/ngii_map1k_gj356160999_20201231.ngi: 0e1cdf2fc40604a5ccd0ab034efea5c8884974b874fa5b24df4e19690f036422
+      ngii/ngii_map1k_gj356160999_20201231.xml: ba70e0874ea00e1d3e89167f8513cb00d9f185e24a4d964bace33d351fde66d0
+      ngii/ngii_map1k_gj356161403_20201231.nda: 4efbda85b43dfccc1b063985e8ab5ae13ec06ef4972dfac0da34e66ad5d6b4cb
+      ngii/ngii_map1k_gj356161403_20201231.ngi: 3a4665f94fccd7d55bb689fa5a5a493de7024b15fc4d74110a5f3329546d5ea7
+      ngii/ngii_map1k_gj356161403_20201231.xml: 30a0c20c35d8e1715d7f9bbb34203ca32c57f71f0783a4b6dd3db5a0574fc2d4
+      ngii/ngii_map1k_gj356161404_20201231.nda: eb18512db991844cb04e9095b33624f86ad0234c0d60a2154d4ab5c441bb9788
+      ngii/ngii_map1k_gj356161404_20201231.ngi: b20aca9e025527a596740d149a4d88823d49fef31b21dcaf3458792b5f2d7e97
+      ngii/ngii_map1k_gj356161404_20201231.xml: 23187c71dffcc90c1a6fe665efe5f25d83825706682ea4729f7f749c6dfeb339
+      ngii/ngii_map1k_gj356161405_20201231.nda: 5b49cdba02b3b7ed6c0b6da8a7b562ca15a8e89374321db8c81009ae815c8fd8
+      ngii/ngii_map1k_gj356161405_20201231.ngi: 1dc95d9a3b76dbe212478ec73e0f3228d69774af0304540d7e8188f7abe1573b
+      ngii/ngii_map1k_gj356161405_20201231.xml: 62388347f3eaceb7bacee82ac0029aa76971b0febeb9e0056858fc696d0910dd
+      ngii/ngii_map1k_gj356161406_20221231.xml: 69164a6cf92df38fe6bd94829f5672b2889ef1a172231c2cafb65cc5db2f8b15
+      ngii/ngii_map1k_gj356161406_20221231.zip: 77dc72e07daf926f87b2d69c54f541447734d7c6984db0dc5d0372909f7f7b15
+      ngii/ngii_map1k_gj356161407_20221231.xml: 70113b0d818fc9063905af13a16e1ade413a992b7104d1f80a41c2cdd654201f
+      ngii/ngii_map1k_gj356161407_20221231.zip: a2741fe2b1aa0064a56bdcf1e530d68635b3ad051ed3cd4fc05a16cde14ccca4
+      ngii/ngii_map1k_gj356161409_20221231.xml: 8087f0eb56248d627d29e2ab7e7f864d1b479bb4b2317582eaf862a576083316
+      ngii/ngii_map1k_gj356161409_20221231.zip: c20720a5c4ec6199a28eb006e4c1a5c9f9661cc71efbce7f007f320727bb5170
+      ngii/ngii_map1k_gj356161410_20221231.xml: 92cff3ac3218199c9898b19b2449147e2e617978ca3007f1b12092a4e3b4b7f7
+      ngii/ngii_map1k_gj356161410_20221231.zip: ddcfadf18da9b273c3b25835c14507f93c8a2f1d8f511f6c37238b6b4be53959
+      ngii/ngii_map1k_gj356161416_20221231.xml: ba4a9a7e92b4c8da96033aeb70c4e1107d582a9b7b84fd679a1e761fa278df3d
+      ngii/ngii_map1k_gj356161416_20221231.zip: 542b603cf0e62990f862df137c1d44abb5717d9522dc30fdca3fdaf10ca1fd51
+      ngii/ngii_map1k_gj356161417_20221231.xml: 18e972678e8d0b89a5a2c109320304004acac7b752b145b3c6486c47c4d2735c
+      ngii/ngii_map1k_gj356161417_20221231.zip: 0f9bd925b65837c4a8a36889f870883a578f382d3ea6155e9bc9070256b277e2
+      ngii/ngii_map1k_gj356161426_20221231.xml: 45feecbe8899774eb0b9c74d7296cc11d3ac59bc06c964ad9d1f11b4116f8165
+      ngii/ngii_map1k_gj356161426_20221231.zip: 5e5cc7c529b47f8e3f01881f64d2e2c44454ab4bef3d7007fed6ab8f59db8d48
+      ngii/ngii_map1k_gj356161427_20221231.xml: 2b3c5d30114a1d6f59c8e8bd7e673d14cb9936f80cae3c5f67a63472c6a6db0d
+      ngii/ngii_map1k_gj356161427_20221231.zip: ecdcc680936e05edb9acde1905dd50537b62ffba84098cb9769aefa1d4e98219
+      ngii/ngii_map1k_gj356161552_20191231.nda: a926b34d90dccad29cf2723a5d9fc1fad7b4b366989732ca4b67f20b612c7627
+      ngii/ngii_map1k_gj356161552_20191231.ngi: bd844cd14028e2a673faf436c84ef12e18c7ccfd742a06cbeb8cb0a08d75d956
+      ngii/ngii_map1k_gj356161552_20191231.xml: ba640a34ffa6f38e227fdc6d61437f0dfc4b834bef7f237fe51d3a79d16b3b38
+      ngii/ngii_map1k_gj356161562_20191231.nda: e6261b2333f9b82d8ceea6b72f3294ace9ebd12c9d7065090f6e3fc8208fd26c
+      ngii/ngii_map1k_gj356161562_20191231.ngi: c9863f766176feaa2be4265a29306bec63cbd330637b2a12bb26a0d2c1f01780
+      ngii/ngii_map1k_gj356161562_20191231.xml: a5206f4ac9b8f2df054047c60b765746d00092d81fdd6212815b6c36065993d1
     successor: ngii1k (vworld)
     reason: |
       V-WORLD 판으로 교체. vintage 2020/2022 → 2026-03, 도엽 20 → 74,
@@ -3040,6 +3228,33 @@ retired:
   ngii1k_meta_xlsx:
     what: 국토정보플랫폼 수치지도에 딸려오던 xlsx 12개
     at: 2026-08-17
+    restored: 2026-09-17 — 2026-08-13 스냅숏의 유일본을 retired 로 보존(DECISIONS §173-5 · §176)
+    files:
+      - ngii/ngii_map1k_gj356160900_20201231.xlsx
+      - ngii/ngii_map1k_gj356160993_20201231.xlsx
+      - ngii/ngii_map1k_gj356160994_20201231.xlsx
+      - ngii/ngii_map1k_gj356160995_20201231.xlsx
+      - ngii/ngii_map1k_gj356160996_20201231.xlsx
+      - ngii/ngii_map1k_gj356160997_20201231.xlsx
+      - ngii/ngii_map1k_gj356160999_20201231.xlsx
+      - ngii/ngii_map1k_gj356161403_20201231.xlsx
+      - ngii/ngii_map1k_gj356161404_20201231.xlsx
+      - ngii/ngii_map1k_gj356161405_20201231.xlsx
+      - ngii/ngii_map1k_gj356161552_20191231.xlsx
+      - ngii/ngii_map1k_gj356161562_20191231.xlsx
+    sha256:
+      ngii/ngii_map1k_gj356160900_20201231.xlsx: 60505f70f0deeff2b81f1c29a5251aae119b3f828d6335ae6c6eb559ce59023d
+      ngii/ngii_map1k_gj356160993_20201231.xlsx: ac54fa827207a4f6147b65a681af48efe99bcdc0facc0d46f16d038f17ad8021
+      ngii/ngii_map1k_gj356160994_20201231.xlsx: b5f2ac3dd65c9f33f7444102a450f4814b26f85bb416702c0c15d8455b8c2f4b
+      ngii/ngii_map1k_gj356160995_20201231.xlsx: 1167c124e2552c7d9de4fecb83d0ca8df181a98d13d1e08dc88b70768c599bfb
+      ngii/ngii_map1k_gj356160996_20201231.xlsx: ccf6a733a237d60533f2cf957c085d2ae5848224d0a55b1640be7ccf277e7634
+      ngii/ngii_map1k_gj356160997_20201231.xlsx: bddd6adce8037f453f9e5e2a5caef6529d53d3710c292e98d95d14a4ba50a6c6
+      ngii/ngii_map1k_gj356160999_20201231.xlsx: 0e8ab377e0642b809aa15814369353dd8e8b77f1856c4870353a67ac7e858cf9
+      ngii/ngii_map1k_gj356161403_20201231.xlsx: 14750a14c9dadd08c976f17bad2de122dc2d6b6eeb1f56b516a554fd283ad7ee
+      ngii/ngii_map1k_gj356161404_20201231.xlsx: 6dec6207ffc3dab3f82af6afcbc34df5efc137d343e55a26321672b760ffd5a8
+      ngii/ngii_map1k_gj356161405_20201231.xlsx: 4b9b04e77ce714369289a670540f7c7863002c84b27b7479dcda3e371193dfc4
+      ngii/ngii_map1k_gj356161552_20191231.xlsx: 1e69b35c441063e86b6a97dcb6f3e9dd49496613d8ec72007c4a3c8fd9849c2d
+      ngii/ngii_map1k_gj356161562_20191231.xlsx: 6bc90eaf92e7b4c92cad8f0a65abce7f373f7ab8b33df9e0cfc5d8d048d46dc5
     reason: |
       ISO 19115 메타데이터 작성 서식. 도엽 본체가 아니다.
       12개가 전부 440KB 로 내용이 거의 같고 파이프라인이 읽은 적 없다.

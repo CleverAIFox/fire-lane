@@ -32,6 +32,10 @@ def test_judge_classifies_reasons():
 
 def test_judge_rejects_what_hides():
     assert _j("환경skip(레이크) — 레이크 미마운트", lake=True), "레이크 기계의 레이크 skip 은 실패다"
+    assert sp.judge("환경skip(산출물) — 파이프라인 미실행", lake_attached=True, today=TODAY,
+                    plan_titles=TITLES, outputs_present=True), "산출물이 있는 레이크 기계의 산출물 skip 은 실패다"
+    assert not sp.judge("환경skip(산출물) — 파이프라인 미실행", lake_attached=True, today=TODAY,
+                        plan_titles=TITLES, outputs_present=False), "clone 직후 레이크 기계는 허용"
     assert _j("랜덤 미사용"), "해당없음은 skip 이 아니다"
     assert _j("got empty parameter set ['x'], function f at t.py:1"), "빈 parametrize 도 해당없음이다"
     assert _j("환경skip — 태그 없음"), "환경skip 은 무엇이 없는지 태그를 단다"

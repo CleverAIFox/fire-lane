@@ -5,6 +5,7 @@ lake.py — 레이크 해석기. **대장 + 디스크 → 파일마다 주인 ·
     uv run python -m firelane.lake scan            층 × 상태 표 (읽기만)
     uv run python -m firelane.lake scan --json F   행 전부를 F 에
     uv run python -m firelane.lake gate            이동 · 삭제 전 관문. 막히면 종료코드 1
+    uv run python -m firelane.lake plan F --out D  계획표를 레이크에서 다시 재고 mv · rm 명령을 D 에 쓴다
 
 ── 왜 생겼나 ──────────────────────────────────────────────────
 2026-09-17 (DECISIONS §172-5 · §173-4 · §174). 파일의 주인을 다섯 곳이 제각각
@@ -25,9 +26,13 @@ lake.py — 레이크 해석기. **대장 + 디스크 → 파일마다 주인 ·
     기록      층을 설명하는 사람 문서(QUARANTINE.md)
 
 ── 관문 ───────────────────────────────────────────────────────
-`gate()` 는 두주인 · 주인없음 · 선언밖 이 하나라도 있거나, 대장의 폐기 항목이
+`gate()` 는 두주인 · 주인없음 · 선언밖 · 폐지층 이 하나라도 있거나, 대장의 폐기 항목이
 글롭으로 파일을 가리키면 **이동 · 삭제를 거부한다.** 알리는 검사가 아니라
-먼저 막는 관문이다(§173-4 ①).
+먼저 막는 관문이다(§173-4 ①). 계획표가 처분하는 경로는 `planned` 로 넘겨 뺀다 —
+그것을 치우려는 계획이 그것 때문에 막히면 안 된다.
+
+★ 2026-09-17 (§176). 폐지층이 막는 쪽으로 옮겼다. `_quarantine` 을 비운 뒤 누가
+  다시 쓰면(acquire `--quarantine` 은 아직 그 자리에 쓴다 — PLAN #56) verify 가 운다.
 
 ★ 층 목록 `LAYERS` 는 §173-2 목표 구조다. 대장 `layers` 에 retired 가 들어가는
   것은 레이크를 세운 뒤다(PLAN 「대장 · SSD 디렉토리 구조와 해석기 하나」) —
@@ -54,7 +59,7 @@ LAYERS = ("landing", "raw", "norm", "retired", "interim")   # §173-2
 ABOLISHED = ("_quarantine",)                                # §173-2 — retired 로 흡수
 RECORD_NAMES = ("QUARANTINE.md",)
 STATES = ("정상", "자리틀림", "주인없음", "두주인", "결손", "선언밖", "폐지층", "기록")
-BLOCKING = ("두주인", "주인없음", "선언밖")
+BLOCKING = ("두주인", "주인없음", "선언밖", "폐지층")
 
 
 @dataclass(frozen=True)
@@ -234,13 +239,235 @@ def resolve(y: dict, root: Path, prep: dict | None = None) -> list[Row]:
     return rows
 
 
-def gate(y: dict, rows: list[Row]) -> list[str]:
-    """이동 · 삭제를 막는 사유. 빈 리스트여야 움직인다."""
+def gate(y: dict, rows: list[Row], planned: tuple[str, ...] = ()) -> list[str]:
+    """이동 · 삭제를 막는 사유. 빈 리스트여야 움직인다. `planned` 는 계획이 처분하는 경로 접두."""
     why = [f"{r.state}  {r.rel}  {' · '.join(r.owners) or r.note}"
-           for r in rows if r.state in BLOCKING]
+           for r in rows if r.state in BLOCKING
+           and not any(r.rel == p or r.rel.startswith(p.rstrip("/") + "/") for p in planned)]
     why += [f"폐기 글롭  retired:{k} — 파일 이름으로 적어라(§173-2)"
             for k in claims(y).retired_globbed]
     return why
+
+
+# ── 계획표 검증 → 명령 ────────────────────────────────────────────
+# ★ 2026-09-17 (§176). 계획표(보조 스크립트가 낸 판정)를 **믿지 않는다.** 레이크 기계에서
+#   조건을 다시 재고, 전부 맞을 때만 mv · rm 명령을 파일로 쓴다. 명령은 사람이 친다(§10 적용 원형).
+#   조건은 **지금 상태**로 잰다 — 이동 전이면 원천에서, 이동 뒤면 목적지에서 찾는다.
+#   그래서 이동 앞뒤로 두 번 돌려도 같은 답이 나온다.
+PLAN_ACTIONS = ("보존", "삭제·사본", "삭제·압축재생", "삭제·스냅숏", "삭제·재생성")
+
+
+@dataclass
+class PlanResult:
+    fails: list[str] = field(default_factory=list)
+    moves: list[tuple[str, str]] = field(default_factory=list)     # (원천 절대, 목적지 절대)
+    deletes: list[str] = field(default_factory=list)               # 파일 절대
+    delete_dirs: list[str] = field(default_factory=list)           # 비면 지울 폴더 절대
+    counts: Counter = field(default_factory=Counter)
+
+
+def _sha(p: Path) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    with p.open("rb") as f:
+        while b := f.read(4 << 20):
+            h.update(b)
+    return h.hexdigest()
+
+
+def read_plan(tsv: Path) -> list[dict]:
+    import csv
+    with tsv.open(encoding="utf-8", newline="") as f:
+        rows = list(csv.DictReader(f, delimiter="\t"))
+    bad = sorted({r["action"] for r in rows} - set(PLAN_ACTIONS))
+    if bad:
+        raise ValueError(f"계획표에 모르는 action: {bad}")
+    return rows
+
+
+def retired_dst(row: dict) -> str:
+    """보존 목적지 — 보조 스크립트가 제안한 `data/archive/…` 를 `retired` 로 읽는다(§173-1)."""
+    d = row["dst_or_reason"]
+    for old in ("data/archive/", "data/retired/"):
+        if d.startswith(old):
+            return "retired/" + d[len(old):]
+    raise ValueError(f"보존 목적지가 data/archive · data/retired 아래가 아니다: {d}")
+
+
+def verify_plan(rows: list[dict], top: Path, legacy: str = "raw-legacy",
+                repo_tiles: Path | None = None, ledger_retired: dict[str, str] | None = None) -> PlanResult:
+    """`top` = 레이크 상위(`FIRE_LANE_DATA` 의 부모). `ledger_retired` = 대장이 든 폐기 파일 → sha."""
+    import tarfile
+    import zipfile
+    res = PlanResult()
+    data, leg = top / "data", top / legacy
+    fail = res.fails.append
+
+    # 보존 — 원천 또는 목적지에 같은 sha 로 있어야 한다. 대장이 그 이름 · sha 를 들어야 한다
+    where: dict[str, Path] = {}
+    for r in (x for x in rows if x["action"] == "보존"):
+        src, dst = leg / r["src"], data / retired_dst(r)
+        sub = retired_dst(r).split("/", 1)[1]
+        if ledger_retired is not None and ledger_retired.get(sub) != r["sha256"]:
+            fail(f"보존  {r['src']}: 대장 retired 에 `{sub}` 가 sha 와 함께 없다")
+        if src.exists() and dst.exists():
+            fail(f"보존  {r['src']}: 원천과 목적지에 둘 다 있다 — 반쯤 옮겨졌다. 사람이 본다")
+            continue
+        cur = src if src.exists() else dst if dst.exists() else None
+        if cur is None:
+            fail(f"보존  {r['src']}: 원천에도 목적지에도 없다")
+            continue
+        if _sha(cur) != r["sha256"]:
+            fail(f"보존  {r['src']}: sha 가 계획표와 다르다 ({cur})")
+            continue
+        where[r["src"]] = cur
+        res.counts["보존"] += 1
+        if cur == src:
+            res.moves.append((str(src), str(dst)))
+
+    # 사본 — 레이크 data 안에 같은 sha 가 **실재**해야 지운다. 크기가 같은 것만 잰다
+    copies = [x for x in rows if x["action"] == "삭제·사본"]
+    sizes = {int(x["bytes"]) for x in copies}
+    index: dict[str, str] = {}
+    for p in data.rglob("*"):
+        if p.is_file() and not p.is_symlink() and p.stat().st_size in sizes:
+            index.setdefault(_sha(p), str(p))
+    for r in copies:
+        src = leg / r["src"]
+        if not src.exists():
+            res.counts["삭제·사본(이미 없음)"] += 1
+            continue
+        if _sha(src) != r["sha256"]:
+            fail(f"사본  {r['src']}: sha 가 계획표와 다르다")
+        elif r["sha256"] not in index:
+            fail(f"사본  {r['src']}: 레이크에 같은 sha 가 없다 — 유일본일 수 있다. 지우지 않는다")
+        else:
+            res.deletes.append(str(src))
+            res.counts["삭제·사본"] += 1
+
+    # 압축재생 — 보존 zip 멤버에 같은 sha 가 있어야 한다
+    members: dict[str, set[str]] = {}
+    for r in (x for x in rows if x["action"] == "삭제·압축재생"):
+        src = leg / r["src"]
+        if not src.exists():
+            res.counts["삭제·압축재생(이미 없음)"] += 1
+            continue
+        z = r["dst_or_reason"].split(" 안에", 1)[0].strip()
+        if z not in where:
+            fail(f"압축재생  {r['src']}: 근거 zip `{z}` 이 보존 목록에 없거나 확인되지 않았다")
+            continue
+        if z not in members:
+            with zipfile.ZipFile(where[z]) as zf:
+                import hashlib
+                members[z] = set()
+                for i in zf.infolist():
+                    if i.is_dir():
+                        continue
+                    h = hashlib.sha256()
+                    with zf.open(i) as fh:
+                        while b := fh.read(4 << 20):
+                            h.update(b)
+                    members[z].add(h.hexdigest())
+        if _sha(src) not in members[z]:
+            fail(f"압축재생  {r['src']}: `{z}` 안에 같은 내용이 없다")
+        else:
+            res.deletes.append(str(src))
+            res.counts["삭제·압축재생"] += 1
+
+    # 스냅숏 — 멤버 전부가 원천(또는 옮긴 목적지)과 같아야 한다
+    for r in (x for x in rows if x["action"] == "삭제·스냅숏"):
+        arc = top / r["src"]
+        if not arc.exists():
+            res.counts["삭제·스냅숏(이미 없음)"] += 1
+            continue
+        plan_by_src = {x["src"]: x for x in rows}
+        n = 0
+        with tarfile.open(arc, "r:*") as t:
+            import hashlib
+            for m in t:
+                if not m.isfile():
+                    continue
+                rel = m.name.split("/", 1)[1] if "/" in m.name else m.name
+                pr = plan_by_src.get(rel)
+                if pr is None:
+                    fail(f"스냅숏  멤버 `{m.name}` 가 계획표에 없다 — 유일본일 수 있다")
+                    continue
+                f = t.extractfile(m)
+                h = hashlib.sha256()
+                while f and (b := f.read(4 << 20)):   # ★ 1.3GB 멤버가 있다. 통째로 읽으면 8GB 기계가 죽는다
+                    h.update(b)
+                got = h.hexdigest() if f else ""
+                if got != pr["sha256"]:
+                    fail(f"스냅숏  멤버 `{m.name}` 가 계획표 sha 와 다르다")
+                n += 1
+        if n and not any(x.startswith("스냅숏") for x in res.fails):
+            res.deletes.append(str(arc))
+            res.counts["삭제·스냅숏 멤버"] += n
+
+    # 재생성 — 레이크 타일 키가 전부 저장소에 있어야 한다(내용은 재인코딩이라 sha 가 다르다 · §173-5)
+    for r in (x for x in rows if x["action"] == "삭제·재생성"):
+        d = top / r["src"]
+        if not d.exists():
+            res.counts["삭제·재생성(이미 없음)"] += 1
+            continue
+        if repo_tiles is None or not repo_tiles.is_dir():
+            fail(f"재생성  {r['src']}: 대조할 저장소 타일 폴더가 없다")
+            continue
+        files = [p for p in d.rglob("*") if p.is_file()]
+        # data/tiles/ortho/15/x/y.jpg ↔ web/data/ortho/15/x/y.jpg
+        miss = [p for p in files if not (repo_tiles / p.relative_to(d / "ortho")).exists()] \
+            if (d / "ortho").is_dir() else files
+        if miss:
+            fail(f"재생성  {r['src']}: 저장소에 없는 타일 {len(miss)} — 예 {miss[0]}")
+        else:
+            res.deletes += [str(p) for p in files]
+            res.delete_dirs.append(str(d))
+            res.counts["삭제·재생성 파일"] += len(files)
+
+    if (leg.is_dir()):
+        res.delete_dirs.append(str(leg))
+    return res
+
+
+def write_commands(res: PlanResult, out: Path, top: Path) -> tuple[Path, Path]:
+    """mv 는 덮어쓰지 않고(-n), rm 은 파일 하나씩 · 폴더는 빈 것만. `rm -rf` 는 쓰지 않는다."""
+    import shlex
+    out.mkdir(parents=True, exist_ok=True)
+    head = ("#!/usr/bin/env bash\n# firelane.lake plan 이 생성 — 손으로 고치지 않는다\n"
+            "set -euo pipefail\n")
+    q = top / "data" / "_quarantine"
+    mv = [head, "# ① 레이크 밖 유일본 → retired\n"]
+    for s_, d_ in res.moves:
+        mv.append(f"mkdir -p {shlex.quote(str(Path(d_).parent))} && mv -n {shlex.quote(s_)} {shlex.quote(d_)}"
+                  f" && test -e {shlex.quote(d_)}\n")
+    if q.is_dir():
+        mv.append("# ② 폐지층 _quarantine → retired (기록 QUARANTINE.md 포함)\n")
+        for p in sorted(q.rglob("*")):
+            if p.is_file():
+                d_ = top / "data" / "retired" / p.relative_to(q)
+                mv.append(f"mkdir -p {shlex.quote(str(d_.parent))} && mv -n {shlex.quote(str(p))} "
+                          f"{shlex.quote(str(d_))} && test -e {shlex.quote(str(d_))}\n")
+        mv.append(f"find {shlex.quote(str(q))} -depth -type d -empty -delete\n")
+    mv.append("echo \"이동 끝 — 적용 스크립트를 다시 돌려라\"\n")
+    rm = [head, "# ★ 삭제 블록. 이동이 끝나고 적용 스크립트가 다시 잰 뒤에만 친다\n"]
+    rm += [f"rm -- {shlex.quote(p)}\n" for p in res.deletes]
+    rm += [f"find {shlex.quote(d)} -depth -type d -empty -delete\n" for d in res.delete_dirs]
+    rm += [f"test ! -e {shlex.quote(d)} || {{ echo \"✗ {d} 에 계획 밖 파일이 남았다\"; exit 1; }}\n"
+           for d in res.delete_dirs]
+    rm.append("echo \"삭제 끝 — 적용 스크립트를 다시 돌려라\"\n")
+    pm, pr = out / "l2_moves.sh", out / "l2_deletes.sh"
+    pm.write_text("".join(mv), encoding="utf-8")
+    pr.write_text("".join(rm), encoding="utf-8")
+    return pm, pr
+
+
+def ledger_retired_sha(y: dict) -> dict[str, str]:
+    out = {}
+    for e in (y.get("retired") or {}).values():
+        sha = (e or {}).get("sha256") or {}
+        if isinstance(sha, dict):
+            out.update({str(k): str(v) for k, v in sha.items()})
+    return out
 
 
 def table(rows: list[Row]) -> str:
@@ -260,18 +487,38 @@ def _load_prep() -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="firelane.lake")
-    ap.add_argument("cmd", choices=["scan", "gate"])
+    ap.add_argument("cmd", choices=["scan", "gate", "plan"])
+    ap.add_argument("plan_tsv", nargs="?", type=Path)
     ap.add_argument("--json", type=Path)
+    ap.add_argument("--out", type=Path, help="plan — 명령 파일을 쓸 폴더(레이크 밖)")
+    ap.add_argument("--planned", action="append", default=[],
+                    help="gate — 계획이 처분하는 경로 접두(레이크 루트 상대)")
     a = ap.parse_args(argv)
     paths.require_lake(need=("raw",))
     y = ledger.load()
+    if a.cmd == "plan":
+        if not a.plan_tsv or not a.out:
+            ap.error("plan 은 계획표와 --out 이 필요하다")
+        top = paths.DATA.parent
+        res = verify_plan(read_plan(a.plan_tsv), top, repo_tiles=paths.ROOT / "web" / "data" / "ortho",
+                          ledger_retired=ledger_retired_sha(y))
+        for k, v in sorted(res.counts.items()):
+            print(f"  {k:24} {v}")
+        for f in res.fails[:40]:
+            print("  ✗", f)
+        if res.fails:
+            print(f"\n계획표 조건 실패 {len(res.fails)} — 명령을 쓰지 않는다")
+            return 1
+        pm, pr = write_commands(res, a.out, top)
+        print(f"\n이동 {len(res.moves)} → {pm}\n삭제 {len(res.deletes)} → {pr}")
+        return 0
     rows = resolve(y, paths.DATA, _load_prep())
     print(table(rows))
     if a.json:
         a.json.write_text(json.dumps([asdict(r) for r in rows], ensure_ascii=False, indent=1) + "\n",
                           encoding="utf-8")
         print(f"\n행 {len(rows)} → {a.json}")
-    blocked = gate(y, rows)
+    blocked = gate(y, rows, tuple(a.planned))
     if a.cmd == "gate":
         for b in blocked[:40]:
             print("  ✗", b)
