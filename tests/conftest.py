@@ -5,7 +5,8 @@
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pytest
 import skip_policy as sp
@@ -19,7 +20,7 @@ def pytest_runtest_makereport(item, call):
         return
     lr = rep.longrepr
     reason = lr[2] if isinstance(lr, tuple) and len(lr) == 3 else str(lr)
-    why = sp.judge(reason, lake_attached=sp.lake_attached(), today=date.today(),
+    why = sp.judge(reason, lake_attached=sp.lake_attached(), today=datetime.now(ZoneInfo("Asia/Seoul")).date(),
                    plan_titles=set(sp.plan_titles()))
     if why:
         rep.outcome = "failed"
