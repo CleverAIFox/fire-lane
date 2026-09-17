@@ -1083,6 +1083,7 @@ datasets:
     #   `raw_only` 로 적어 후자까지 선언해 버렸다. 소비자가 없는 것과
     #   형식이 정규화 불가인 것을 구분한다.
     kind: csv_table
+    encoding: cp949
     updated: '2026-08-12'
     used_for: |
       ★ 2026-08-23 등재. normalize_raw 가 `내역서.csv` 를 raw 로 옮기는
@@ -2124,6 +2125,7 @@ datasets:
     #   거짓이었다. gjfire_district_dongbu · node_link_changelog 와 같은 형태로
     #   셋 다 "소비자가 없다" 를 "정규화 안 한다" 로 적어버린 것이다.
     kind: csv_table
+    encoding: utf-8-sig
     updated: '2026-05-14'
     used_for: |
       부서 8 × 차종 20 행렬. 세로합 34 가 원문 「계」 행과 일치한다.
@@ -2160,6 +2162,7 @@ datasets:
     #   실제로는 읽어서 CP949 → UTF-8 로 옮기고 있었다. **선언이 거짓이었다.**
     #   note 가 "편입 시 UTF-8 로 옮긴다" 고 적은 것이 사실이고 kind 만 틀렸다.
     kind: csv_table
+    encoding: utf-8-sig
     updated: '2025-07-31'
     used_for: |
       지산119안전센터 = 밤실로30번길 16 (4.99㎢) · 동명동 등 4개 법정동 ·
@@ -2745,51 +2748,6 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['무인교통단속카메라관리번호', '시군구명', '도로노선번호', '도로노선명', '도로노선방향', '위도', '경도', '설치장소', '단속구분', '제한속도', '보호구역구분', '설치년도']
       encoding_seen: 'utf-8-sig'
-  juso_building_db:
-    inner_contains: build_jeonnamgwangju
-    select:     {col: 0, prefix: '1221010800'}
-    stem:       juso_building_db
-    ext:        [zip]
-    scope:      jngj
-    updated:    "2026-07-31"
-    authority:  행정안전부 도로명주소
-    kind:       text_table
-    encoding:   cp949
-    what:       도로명주소 건물DB. 전남광주 1,327,372행 → 동구 20,458 → 동명동 2,078
-    feeds:      미투입 — 목적지 검색(건물명)
-    feeds_why: |
-      poi.geojson 은 상가 2,077 뿐이라 **학교·병원·관공서가 통째로 없다.**
-      전남여자고등학교가 검색에 안 잡히는 이유다. 이 파일에 건물명이 있다.
-    note: |
-      ★ **좌표가 없다.** 주소 DB 라 건물명·도로명·건물번호만 있다.
-        지도에 찍으려면 juso 내비게이션용DB(건물중심점·출입구 좌표)가
-        필요하다 — 승인 대기.
-      ★ `|` 구분 · CRLF 개행 · cp949.
-      ★ `updated` 근거 — 이 zip 에는 기준일 문서가 없다(가이드 PDF 뿐).
-        형제 자료 `202608_주소DB_전체분.zip` 에
-        `[자료건수]주소DB(2026년 08월 31일 기준).txt` 가 동봉돼 있어
-        **제공처가 월말을 기준일로 쓴다**는 것이 확인된다. 그래서
-        202607 → 2026-07-31 로 적는다. zip 내부 타임스탬프 2026-08-04 는
-        제작일이지 기준일이 아니다(ledger.py:20 "다운로드일이 아니다").
-        ★ 추정이 섞인 유일한 칸이다. 제공처 확인이 되면 고쳐라.
-      ★ **전국 전체분을 raw 에 넣지 마라.** build_jeonnamgwangju.txt 가
-        205MB 다. 동명동 2,078건만 잘라낸다 — enforcement(8.1MB)가
-        용량으로 retired 됐다.
-      ★ **법정동코드로 자른다. 동 이름으로 자르지 마라.**
-        `c[3] == '동명동'` 으로 거르면 2,701 이 나오고 그중 623 이
-        **목포시 동명동**이다. 전남+광주 통합 파일이라 같은 파일에 있다.
-        행정동명까지 합치면 5,683 이 된다 — 종전 이 칸의 5,718 이
-        그 경로에서 나온 수다.
-            법정동코드 [0] == '1221010800'  →  2,078   ★ 이것이 정답
-        scope.py 가 "코드는 선언에 둔다" 고 적은 이유가 이것이다.
-    contract:
-      encoding: cp949
-      delimiter: "|"
-    schema:
-      files: [build_jeonnamgwangju.txt, jibun_jeonnamgwangju.txt]
-      primary: build_jeonnamgwangju.txt
-      encoding_seen: cp949
-
   parking_enforce:
     stem: gjcity_parking_enforce
     ext: [csv]
@@ -2814,6 +2772,9 @@ datasets:
       2026-08-31 에 retired 로 내렸다가 2026-09-17 복귀했다(DECISIONS §177-1).
     note: |
       ★ 두 판의 컬럼이 다르다(6열 · 5열). 이어붙이기 전에 컬럼 대응을 정한다.
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['위반일자', '위반시간', '위반장소명', '과태료', '비고', '데이터기준일자']
+      encoding_seen: 'cp949'
   hydrant_type:
     stem: safety_hydrant_type
     ext: [csv]
@@ -2831,6 +2792,9 @@ datasets:
       미투입 — 소방용수 분모(몇 개인가)의 근거다. 좌표가 없어 판정에 안 들어간다.
       2026-08-13 스냅숏에만 있던 판을 2026-09-17 복귀했다(DECISIONS §178-1). 옛 파일명은
       safety_hydrant_summary_jngj_20251231 — 활성 hydrant_summary 와 stem 이 겹쳐 개명했다.
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['연번', '구분', '지상식소화전', '일반지하식소화전', '저수조', '급수탑', '데이터기준일자']
+      encoding_seen: 'cp949'
   parking_std:
     stem: gjcity_parking_std
     ext: [csv]
@@ -2851,6 +2815,9 @@ datasets:
     note: |
       ★ updated 는 파일명 날짜(제공일)다. 내용의 데이터기준일자는 2026-04 다.
       ★ 경로 괄호는 표준데이터 형식으로 판단했다. 좌표 없는 행이 98 있다.
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['주차장관리번호', '주차장명', '주차장구분', '주차장유형', '소재지도로명주소', '소재지지번주소', '주차구획수', '급지구분', '부제시행구분', '운영요일', '평일운영시작시각', '평일운영종료시각', '토요일운영시작시각', '토요일운영종료시각', '공휴일운영시작시각', '공휴일운영종료시각', '요금정보', '주차기본시간', '주차기본요금', '추가단위시간', '추가단위요금', '1일주차권요금적용시간', '1일주차권요금', '월정기권요금', '결제방법', '특기사항', '관리기관명', '전화번호', '위도', '경도', '장애인전용주차구역보유여부', '데이터기준일자']
+      encoding_seen: 'utf-8-sig'
   navi_build:
     stem: juso_navibuild
     ext: [txt]
@@ -2879,6 +2846,11 @@ datasets:
       ★ 동명동으로 자른 이유 — 출동지는 동명동 스코프다. 회랑(안전센터 → 출동지) 때문에 판정 스코프를
         동명동 + 주변으로 넓혔을 뿐 목적지는 동명동이다(DECISIONS §179-2).
       ★ updated 는 월말 기준일 관례(juso_building_db note)를 따랐다.
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['c00', 'c01', 'c02', 'c03', 'c04', 'c05', 'c06', 'c07', 'c08', 'c09', 'c10', 'c11', 'c12', 'c13', 'c14', 'c15', 'c16', 'c17', 'c18', 'c19', 'c20', 'c21', 'c22', 'c23', 'c24', 'c25', 'c26', 'c27', 'c28', 'c29', 'c30', 'c31', 'c32']
+      encoding_seen: 'cp949'
+      source: 'juso_navibuild_jngj-dongmyeong_20260831.txt'
+      headerless: true
   navi_jibun:
     stem: juso_navijibun
     ext: [txt]
@@ -2900,6 +2872,11 @@ datasets:
       2026-09-17 투입(§181) — 지번 주소로 목적지를 찾게 한다. navi_build 와 건물관리번호로 잇는다.
     note: |
       ★ match_jibun_jeonnamgwangju.txt 에서 navi_build 와 같은 규칙(첫 열 == 1221010800)으로 잘랐다.
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['c00', 'c01', 'c02', 'c03', 'c04', 'c05', 'c06', 'c07', 'c08', 'c09', 'c10', 'c11', 'c12', 'c13', 'c14', 'c15', 'c16', 'c17', 'c18', 'c19']
+      encoding_seen: 'cp949'
+      source: 'juso_navijibun_jngj-dongmyeong_20260831.txt'
+      headerless: true
   civil_office:
     stem: juso_civiloffice
     ext: [zip]
@@ -2922,6 +2899,12 @@ datasets:
     note: |
       ★ .cpg 가 없어 DBF 를 cp949 로 읽어야 한다(안 주면 필드명이 깨진다).
       ★ zip 내부 파일명이 CP437 로 깨져 있다. 2024-01 판이라 시군구코드가 옛 코드다(동구 29110 · 새 12210).
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['민원행정기관_202401']
+      layer_glob: '*.shp'
+      layer_used: '민원행정기관_202401.shp'
+      columns: ['유형', '상세분류', '시군구코드', '도로명코드', '도로명주소', '기관명', '위치X', '위치Y', '전화번호']
+      features: 26142
   donggu_statbook:
     stem: gjcity_statbook
     ext: [pdf]
@@ -3035,6 +3018,20 @@ basemap:
 # ── 폐기 기록 ────────────────────────────────────────────
 # 지운 것도 남긴다. 없으면 3개월 뒤에 또 받고 또 조사한다. MASTER §18-3c
 retired:
+  juso_building_db:
+    stem:      juso_building_db
+    files:
+      - juso/juso_building_db_jngj_20260731.zip
+    sha256:
+      juso/juso_building_db_jngj_20260731.zip: 3d6dc01f6cb1bf8a95cff3c5d956dd2d5a87b37647ffb80f621848e5ab4efad9
+    what:      도로명주소 건물DB 전남광주 전체분(2026-07 판) — 동명동 2,078행을 잘라 쓰던 원본. 좌표 없음
+    reason: |
+      내비게이션용DB `navi_build` 가 같은 동명동 2,078행을 출입구 · 중심점 좌표까지 들고 반입됐다(DECISIONS §179 · §181).
+      소비자 0곳 — 붙들던 사유 "좌표가 없다 — 내비게이션용DB 승인 대기" 가 풀렸다(사용자 2026-09-17).
+      ★ 전남광주 전역 건물 주소 테이블은 이 zip 이 유일본이다 — 내비게이션용DB 전국 7z 는 §179 에서 동명동만 잘라 넣고 지웠다.
+        지우지 않고 보관한다(§173-1). 동명동 밖 주소가 필요해지면 여기서 자른다.
+    at:        2026-09-17
+    successor: navi_build
   building_ledger:
     stem:      eais_bldg_ledger
     files:

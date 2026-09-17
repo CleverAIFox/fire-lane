@@ -40,7 +40,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
+import shapely
 import yaml
 from pyproj import Transformer
 from shapely import make_valid
@@ -95,7 +97,10 @@ def bbox_in(crs: str):
 
 def save(gdf: gpd.GeoDataFrame, key: str) -> dict:
     OUT.mkdir(parents=True, exist_ok=True)
-    gdf = gdf[~gdf.geometry.is_empty & gdf.geometry.notna()].copy()
+    # ★ 2026-09-17 (§182-6). `GeoSeries.notna()` 는 geopandas 가 빈 도형 의미를 바꾸면서 매 실행 경고를 낸다.
+    #   뜻은 "없거나 비었으면 뺀다" 하나다 — shapely 로 직접 묻는다. 매번 뜨는 경고는 진짜 경고를 죽인다.
+    _g = np.asarray(gdf.geometry.values, dtype=object)
+    gdf = gdf[~(shapely.is_missing(_g) | shapely.is_empty(_g))].copy()
     # ★ 2026-08-18. 쓰기 전에 파일을 지운다.
     #   GPKG 는 컨테이너다. to_file(layer=key) 는 그 **레이어**를 덮어쓸 뿐
     #   파일 안의 다른 레이어는 건드리지 않는다. layer= 를 안 쓰던 시절의
@@ -278,7 +283,12 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         if h.suffix.lower() in SIDECAR:
             continue
         _stems.setdefault(h.name.rsplit(".", 1)[0], []).append(h.name)
+    # ★ 2026-09-17 (§182-5). 대장이 `primary` 로 이미 못박았으면 판단이 끝난 것이다(kfs · mas 3건이
+    #   `primary: hwp` 인데 매 실행 경고했다). 파일 이름이든 확장자든 그중 하나를 가리키면 조용히 한다.
+    _pri = str(e.get("primary") or "").lower().lstrip(".")
     for _st, _fs in _stems.items():
+        if len(_fs) > 1 and _pri and any(f.lower() == _pri or f.lower().endswith("." + _pri) for f in _fs):
+            continue
         if len(_fs) > 1:
             print(f"  ★ {key}: 확장자만 다른 동명 파일 {len(_fs)}개 — "
                   f"{', '.join(sorted(_fs))}")

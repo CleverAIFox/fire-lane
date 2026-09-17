@@ -228,6 +228,9 @@ step "기획서 대조"     uv run python tools/docx_check.py
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
 # ★ 2026-09-17 (DECISIONS §180-9). `흡수 대상`(release_brief 한 줄)을 뺐다. 검사가 아니라 보고였고 매 실행 "생략" 으로
 #   찍혀 생략 칸을 채웠다 — 진짜 생략(npm 없음 · --fast)이 그 옆에 묻힌다. 표는 릴리즈 PR 본문에서 쓰인다(merge_batch --release).
+# ★ 2026-09-17 (DECISIONS §182-2 · G-14). 대장 필드 검사를 아무도 안 불렀다. `python -m firelane.ledger` 는
+#   FAIL 9 로 종료코드 1 을 내고 있었는데 verify · 테스트 · CI 어디에도 없어서 초록이었다.
+step "대장 필드 검사"   uv run python -m firelane.ledger
 # ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
 step "선언 ↔ 실물"     uv run python tools/refcheck.py
 # ★ 전수 스캔. `--repo` 는 데이터 레이크 없이 저장소 트리만 본다 —

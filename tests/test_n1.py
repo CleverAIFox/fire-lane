@@ -181,3 +181,12 @@ def test_contract_counts_navi_as_consumer():
     got = m.navi_reads()
     assert "dest.geojson" in got, "내비가 읽는 dest.geojson 을 못 본다 — 발행 기계에서 계약이 선다"
     assert {"navi_graph.json", "poi.geojson"} <= got, "프로브가 죽었다"
+
+
+def test_destinations_are_clipped_to_dongmyeong_only():
+    """§183-1 — 목적지는 동명동 경계(emd4)로 자른다. 건물 · 라벨은 지도 이동 범위(move)로 넓다."""
+    pub = (ROOT / "src/firelane/publish_web.py").read_text(encoding="utf-8")
+    call = pub[pub.index("_dest.build_index("):]
+    call = call[:call.index("\n    dest.to_file")]
+    assert call.rstrip().endswith("emd4)"), "목적지가 동명동이 아닌 범위로 잘린다"
+    assert "b.intersects(move)" in pub, "건물은 지도 이동 범위 그대로여야 한다"

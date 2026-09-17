@@ -106,8 +106,6 @@ SAMPLES = {
         ("gjcity", "gjcity_admin_cctv_jngj-donggu_20200814.csv"),
     "GJBG_LSI_006_TRAFFIC_CCTV_TB_2025.csv":
         ("gjbg", "gjbg_traffic_cam_jngj_20251231.csv"),
-    "202607_건물DB_전체분.zip":
-        ("juso", "juso_building_db_jngj_20260731.zip"),
 }
 
 
