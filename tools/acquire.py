@@ -63,7 +63,13 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from firelane import paths as _paths
 from firelane.paths import LANDING, QUARANTINE, RAW, ROOT
+
+# ★ 2026-09-17 (DECISIONS §173-2 · §180). 폐기 파일의 주인 층. paths 에 계층으로 올리는 것은 대장 layers 와
+#   함께 한다(PLAN 「대장 · SSD 디렉토리 구조와 해석기 하나」) — 그 전까지 레이크 루트(`FIRE_LANE_DATA`) 아래에 둔다.
+#   `RAW.parent` 로 적지 않는다 — 계층 밖 쓰기 검사가 그 형태를 막는다(2026-08-24 SSD 루트 오염).
+RETIRED = (_paths.DATA / "retired") if _paths.DATA else (ROOT / "data" / "retired")
 
 KST = timezone(timedelta(hours=9))
 
@@ -204,57 +210,14 @@ def _derive_files(e: dict) -> list[str]:
 def retired_names() -> dict[str, str]:
     """폐기 등재된 파일 이름 → 사유 첫 줄.
 
-    ★ 격리 대상을 둘로 가른다. `retired` 에 근거가 있으면 **판단이 끝난
-      것**이라 내리기만 하면 되고, 없으면 사람이 정해야 한다.
-      둘을 한 무더기로 보여주면 매번 같은 조사를 다시 한다.
-
-    ★ `successor` 에서 파일명을 뽑으려 했다가 되돌렸다. successor 는
-      **대체한 쪽**, 즉 지금 쓰는 활성 파일이다. 그것을 폐기 목록에 넣으면
-      살아 있는 raw 파일을 "내려도 된다" 로 표시한다 — 정반대다.
-      폐기된 파일은 `file:` 로 명시한다. 추측하지 않는다.
+    ★ 2026-09-17 (DECISIONS §180). 해석을 `firelane.lake.retired_reasons` 로 옮겼다. 종전 판은 대장
+      retired 블록을 직접 읽고, stem 글롭을 RAW 에 풀고, "활성이 이긴다" 땜질(§172-5)을 따로 들었다.
+      지금 폐기 항목은 전부 파일 이름으로 적혀 있고(글롭 0 — `test_lake`) 해석기는 이름 주장이
+      글롭 주장을 이긴다(§174-2). 두 규칙이 두 곳에 살면 다시 갈린다.
     """
-    out = {}
-    for k, v in (_yaml().get("retired") or {}).items():
-        v = v or {}
-        why = (v.get("reason") or v.get("what") or k).strip().splitlines()[0]
-        # ★ 2026-08-31. 종전엔 `file:` 만 읽었다. 08-27 에 같은 배포물의
-        #   다른 포맷을 담으려고 `files:` 를 도입했는데 이쪽을 안 고쳤다.
-        #   그래서 mas_optional 의 pdf 와 kfs_paint_marking 전체가
-        #   폐기 등재돼 있는데도 **매 스캔마다 "판단 필요" 로 떴다.**
-        #   사유는 적혀 있었고 도구가 그것을 안 읽은 것이다.
-        #
-        #   조회기의 정본은 firelane.ledger.globs 하나다. 따로 구현하지 않는다.
-        from firelane import ledger as _led
-        # ★ 2026-08-31. `globs()` 가 stem 기반이 되면서 **패턴**을 낸다
-        #   (`**/eais_bldg_ledger_*`). 그것의 `.name` 을 그대로 키로 쓰면
-        #   실제 파일명과 영원히 안 맞는다 — 옛 `file:` 은 리터럴이라
-        #   먹었을 뿐이다. 패턴은 RAW 에 풀어서 실물 이름을 얻는다.
-        for f in _led.globs(v):
-            s = str(f)
-            if any(c in s for c in "*?["):
-                for q in RAW.glob(s):
-                    out[q.name] = why
-            else:
-                out[Path(s).name] = why
-    # ★ 2026-09-17 (DECISIONS §172-5). **활성 대장이 주장하는 파일은 폐기일 수 없다.**
-    #   폐기 항목이 `stem` 만 적으면 글롭이 `**/safety_firestation_*` 가 되고, 같은 stem 의
-    #   **활성** 파일(`fire_station` · `hydrant_point`)까지 잡는다. `--stage` 가 그것을
-    #   "폐기본이 다시 올라왔다" 로 읽어 살아 있는 raw 둘을 _quarantine 으로 내렸고,
-    #   `--verify` 가 대장에서 지웠다(V1 반입, 2026-09-17). 이름으로 둘이 겹치면
-    #   **활성이 이긴다** — 틀려도 파일이 raw 에 남는 쪽이다.
-    active: set[str] = set()
-    for pats in dataset_globs().values():
-        for s in pats:
-            if any(c in s for c in "*?["):
-                active.update(q.name for q in RAW.glob(s))
-            else:
-                active.add(Path(s).name)
-    clash = sorted(n for n in out if n in active)
-    for n in clash:
-        print(col(f"  ★ 폐기 글롭이 활성 파일을 잡는다 — {n} 는 폐기로 보지 않는다. "
-                  "retired 항목을 좁혀라(scope · 날짜)", "y"))
-        out.pop(n)
-    return out
+    from firelane import lake
+    from firelane import ledger as _led
+    return lake.retired_reasons(_led.load())
 
 
 def raw_files() -> list[Path]:
@@ -311,16 +274,16 @@ def cmd_judge() -> int:
             for q, w in decided:
                 print(f"      {human(q.stat().st_size):>10}  {q.relative_to(RAW)}")
                 print(f"                  {col(w[:64], 'd')}")
-            print(col("      --quarantine --yes  로 _quarantine 으로 내린다.", "d"))
+            print(col("      retired/ 로 옮긴다 — 레이크 관문이 자리틀림으로 센다(DECISIONS §180).", "d"))
         if undecided:
             n = sum(q.stat().st_size for q in undecided)
             print(f"  {col('★ 판단 필요', 'y')}  {len(undecided)}건 · {human(n)} — 대장에도 retired 에도 없다")
             for q in undecided:
                 print(f"      {human(q.stat().st_size):>10}  {q.relative_to(RAW)}")
-            print(col("      §18-12 세 판정 중 하나를 골라라 —", "d"))
+            print(col("      ★ 대장에 적기 전에는 반입을 멈춘다 — 격리 층은 폐지됐다(DECISIONS §173-2).", "d"))
             print(col("        쓴다      → sources.yaml datasets 에 등재 (feeds 필수)", "d"))
-            print(col("        안 쓴다   → retired 에 사유를 적고 _quarantine", "d"))
-            print(col("        모르겠다  → 일단 _quarantine. 지우지는 마라", "d"))
+            print(col("        안 쓴다   → retired 에 이름 · sha 로 적고 retired/ 로 옮긴다", "d"))
+            print(col("        모르겠다  → raw 에 두지 말고 landing 으로 되돌린 뒤 landing_disposition 에 held · 사유", "d"))
     if not missing and not orphan:
         print(f"  {col('대장과 실물이 일치한다', 'g')}")
     return 1 if (missing or orphan) else 0
@@ -372,14 +335,15 @@ def cmd_verify() -> int:
     for r in led:
         if (RAW / r).exists():
             continue
-        (moved if (QUARANTINE / r).exists() else gone).append(r)
+        # ★ 2026-09-17 (§180). 격리 층은 폐지됐다. 옛 격리분이 남은 기계도 있어 둘 다 본다
+        (moved if (RETIRED / r).exists() or (QUARANTINE / r).exists() else gone).append(r)
 
     print(col("── sha 대조", "c"))
     print(f"  검사 {len(files)}개")
     for rel, why, detail in bad:
         print(f"  {col(why, 'r')}  {rel}\n      {col(detail, 'd')}")
     for rel in moved:
-        print(f"  {col('격리됨', 'c')}  {rel}   (대장에서 뺀다)")
+        print(f"  {col('retired 로 옮겨짐', 'c')}  {rel}   (대장에서 뺀다)")
     for rel in gone:
         print(f"  {col('사라짐', 'r')}  {rel}")
     for rel in new:
@@ -434,17 +398,22 @@ def cmd_stage(dry: bool) -> int:
     #   규칙만 알고 **대장을 안 읽는다** — 그것이 옳다(규칙 정본은 하나여야
     #   하고, 이름 규칙과 대장은 다른 층이다). 그러니 판정하는 쪽이 막는다.
     #
-    #   지우지 않는다. `_quarantine` 으로 되돌린다 — 판단이 안 끝난 것이지
-    #   버릴 것이 아니다(§18-12).
+    #   지우지 않는다. 폐기의 주인 층으로 되돌린다.
+    #   ★ 2026-09-17 (DECISIONS §180). 되돌리는 자리가 `_quarantine` → `retired/` 다. 격리 층은
+    #     폐지됐고(§173-2), 폐기 파일의 주인은 대장 retired 가 이름으로 든다. 같은 이름이 이미
+    #     retired/ 에 있으면 옮기지 않고 raw 에 남긴 채 울린다 — 덮어쓰지 않는다.
     ret = retired_names()
     undone = [q for q in raw_files() if q.name in ret]
     if undone:
         print(col("\n★ 폐기 등재된 파일이 landing 에서 다시 올라왔다", "y"))
         for q in undone:
-            dst = QUARANTINE / q.relative_to(RAW)
+            dst = RETIRED / q.relative_to(RAW)
+            if dst.exists():
+                print(f"  {col('★ 멈춤', 'r')}  {q.relative_to(RAW)} — retired/ 에 같은 이름이 이미 있다. 사람이 본다")
+                continue
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(q), str(dst))
-            print(f"  {col('되돌림', 'y')}  {q.relative_to(RAW)}  →  _quarantine")
+            print(f"  {col('되돌림', 'y')}  {q.relative_to(RAW)}  →  retired/")
             print(f"          {col(ret[q.name][:62], 'd')}")
         print(col("  landing 원본이 남아 있는 한 --stage 는 이것을 계속 올린다.", "d"))
         print(col("  판단이 끝났으면 landing 원본도 정리하라(--prune-landing 은", "d"))
@@ -554,82 +523,20 @@ def cmd_prune_landing(dry: bool) -> int:
 
 
 # ── 격리 ───────────────────────────────────────────────────────
-def cmd_quarantine(dry: bool, force: bool = False) -> int:
-    """★ **"대장 밖" 과 "폐기 대상" 은 다르다.**
+def cmd_quarantine(dry: bool, force: bool = False) -> int:  # noqa: ARG001 — 인자는 옛 호출을 받기 위해 남긴다
+    """★ 폐지됐다 — 거부한다(DECISIONS §173-2 · §180).
 
-    종전에는 대장이 안 잡는 파일을 전부 격리 대상으로 봤다. 그런데
-    대장은 계속 불완전하다 — 새 판이 들어오거나, 양판(`.hwp`/`.pdf`)이
-    생기거나, `ext` 가 반쪽만 기록되면 살아 있는 파일이 대장 밖이 된다.
+    종전에는 대장이 안 잡는 raw 파일을 `_quarantine` 으로 내렸다. 격리는 판단을 미루는 자리였고,
+    미룬 판단이 쌓여 스캔이 근거를 못 찾았다(§173-6). 2026-09-17 L2 가 격리분을 retired 로 흡수하고
+    폴더를 지웠다. 되살리면 레이크 관문이 `폐지층` 으로 운다.
 
-    2026-08-27 에 두 번 났다 —
-      · 08-25 에 근거로 인용한 PDF 두 건
-      · 불법주정차 두 판 (vintage 가 연도만이라 파생이 어긋남)
-
-    그리고 이것이 **순환**이다. `ledger_stem` 이 실물을 읽어 대장을
-    고치고, 그 대장으로 격리가 실물을 판정한다. 한쪽이 불완전하면
-    다른 쪽이 실물을 지우려 든다.
-
-    ★ 끊는 법 — 자동 판정과 파괴적 행위를 가른다.
-
-        retired 에 근거가 있다   판단이 끝났다. 내려도 안전하다
-        대장에 없다              대장이 **아직 모르는** 것이다.
-                                 보고만 하고 내리지 않는다
-
-      후자를 내리려면 `--force` 를 준다. 그 전에 대장에 적는 것이
-      정상 경로다.
+    대장 밖 파일은 **격리하지 않고 반입을 멈춘다** — 대장에 먼저 적는다.
     """
-    _, _, orphan = judge()
-    if not orphan:
-        print(col("격리할 것이 없다.", "g"))
-        return 0
-    known = retired_names()
-    ready = [p for p in orphan if p.name in known]
-    unsure = [p for p in orphan if p.name not in known]
-
-    if unsure:
-        print(col(f"\n★ 대장에 없다 {len(unsure)}건 — 내리지 않는다", "y"))
-        for p in unsure:
-            print(f"  {p.relative_to(RAW)}")
-        print(col("  폐기가 아니라 **대장이 아직 모르는** 것이다.", "d"))
-        print(col("  datasets 나 retired 에 적어라. 그래도 내리려면 --force", "d"))
-    if force and unsure:
-        print(col("  --force 다. 대장에 없는 것도 내린다.", "y"))
-        ready += unsure
-    if not ready:
-        return 0
-    orphan = ready
-    print(col("\n── 격리 (삭제하지 않는다)", "c"))
-    for p in orphan:
-        dst = QUARANTINE / p.relative_to(RAW)
-        print(f"  {col('격리', 'y')}  {p.relative_to(RAW)}  →  {dst.relative_to(QUARANTINE.parent)}")
-        if not dry:
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(p), str(dst))
-    if dry:
-        print("\n  실제로 옮기려면:  --quarantine --yes")
-        return 0
-
-    # ★ 2026-08-31. **옮겼으면 대장을 고치는 것까지가 한 동작이다.**
-    #   종전에는 `shutil.move` 만 하고 끝냈다. 그래서 `_acquire.json` 에
-    #   격리분이 남아 `doctor` 가 "대장 48 · 실물 45 · 대장만 3" 으로 울었고,
-    #   비워진 `raw/eais/` 가 "근거 없는 빈 폴더" 로 떴다. 고치는 절차는
-    #   있었지만(`--verify`) **사람이 기억해야 했고, 그날 아무도 안 했다.**
-    #
-    #   ★ §18-14 가 경고한 순환과는 방향이 다르다. 그것은 "대장을 읽어
-    #     실물을 지우는" 것이고, 이것은 "실물을 옮겼으니 대장에 반영하는"
-    #     것이다. 파괴는 이미 끝났고 여기서는 기록만 따라간다.
-    for d in sorted((q for q in RAW.rglob("*") if q.is_dir()),
-                    key=lambda q: -len(q.parts)):
-        try:
-            if not any(d.iterdir()):
-                d.rmdir()
-                print(col(f"  빈 폴더 제거  {d.relative_to(RAW)}", "d"))
-        except OSError:
-            pass
-
-    print(col(f"\n  {len(orphan)}건 격리 — 대장을 재동기한다", "d"))
-    cmd_verify()
-    return 0
+    print(col("✗ --quarantine 은 폐지됐다(DECISIONS §173-2).", "r"))
+    print(col("  대장 밖 파일은 격리하지 않고 반입을 멈춘다 —", "d"))
+    print(col("    쓴다     → datasets 에 등재", "d"))
+    print(col("    안 쓴다  → retired 에 이름 · sha 로 적고 retired/ 로 옮긴다", "d"))
+    return 2
 
 
 def main() -> int:

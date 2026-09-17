@@ -114,8 +114,7 @@ def test_schema_verdict_rule_matches_code(rel: str):
       다시 돌려 스키마를 재생성한다. 손으로 JSON 을 고치지 않는다.
     """
     path = ROOT / rel
-    if not path.exists():
-        pytest.skip(f"{rel} 없음")
+    assert path.exists(), f"{rel} 가 없다 — 커밋된 스키마다"
     got = json.loads(path.read_text(encoding="utf-8")).get("verdict_rule")
     assert got == _verdict_rule(), (
         f"{rel} 의 verdict_rule 이 seg/geom.py 와 다르다\n"
@@ -126,8 +125,7 @@ def test_schema_verdict_rule_matches_code(rel: str):
 def test_schema_params_match_params_module(rel: str):
     """스키마 `params` 블록도 `seg/params.py` 가 정본이다."""
     path = ROOT / rel
-    if not path.exists():
-        pytest.skip(f"{rel} 없음")
+    assert path.exists(), f"{rel} 가 없다 — 커밋된 스키마다"
     p = _params()
     got = json.loads(path.read_text(encoding="utf-8")).get("params", {})
     for key, name in (("truck_width_m", "TRUCK"), ("park_occupancy_m", "PARK"),

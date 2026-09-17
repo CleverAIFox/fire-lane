@@ -165,7 +165,7 @@ def test_declared_paths_point_into_a_declared_layer():
 
 
 @pytest.mark.skipif(not PROCESSED.is_dir() or not actual_files(),
-                    reason="파이프라인 미실행 — data/processed 가 비었다")
+                    reason="환경skip(산출물) — data/processed 가 비었다")
 def test_no_undeclared_output():
     """processed 에 있는데 대장에 없는 파일이 없다.
 
@@ -184,13 +184,18 @@ def test_no_undeclared_output():
 
 
 @pytest.mark.skipif(not PROCESSED.is_dir() or not actual_files(),
-                    reason="파이프라인 미실행 — data/processed 가 비었다")
+                    reason="환경skip(산출물) — data/processed 가 비었다")
 def test_declared_output_exists_after_run():
     """대장이 선언한 산출물이 실제로 나온다.
 
     ★ 한 번이라도 돌린 기계에서만 본다. 선언만 있고 안 나오는 산출물은
       소비자가 있으면 조용히 깨진다.
     """
+    import skip_policy
+    if not skip_policy.is_git_repo():
+        # ★ 2026-09-17 (§175). git 이 없으면 `_gitignored` 가 전부 False 라 무시 경로가 전부
+        #   "안 나왔다" 로 잡혀 엉뚱한 메시지로 실패했다(zip 트리). 못 보는 것을 실패로도 통과로도 안 센다
+        pytest.skip("환경skip(도구) — git 저장소가 아니다. 무시 경로를 가릴 수 없다")
     missing = [f"{k}  ({p})" for p, k in declared_paths().items()
                if not (ROOT / p).exists() and not _gitignored(p)]
     assert not missing, (
@@ -253,7 +258,7 @@ def test_check_does_not_write():
 
     man = ROOT / "data/processed/_manifest.json"
     if not man.exists():
-        pytest.skip("파이프라인 미실행")
+        pytest.skip("환경skip(산출물) — 파이프라인 미실행")
     before = hashlib.sha256(man.read_bytes()).hexdigest()
     r = subprocess.run([sys.executable, "-m", "firelane.ingest", "--check"],
                        cwd=ROOT, capture_output=True, text=True,
@@ -275,7 +280,7 @@ def test_manifest_keeps_lineage():
     """
     man = ROOT / "data/processed/_manifest.json"
     if not man.exists():
-        pytest.skip("파이프라인 미실행")
+        pytest.skip("환경skip(산출물) — 파이프라인 미실행")
     import json
     d = json.loads(man.read_text(encoding="utf-8")).get("datasets") or []
     rows = d if isinstance(d, list) else list(d.values())

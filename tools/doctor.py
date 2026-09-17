@@ -281,7 +281,11 @@ def integrity_report() -> None:
 
     # quarantine 사유
     qc, qs, qtop = _scan(QUARANTINE)
-    if qc > 0:
+    if qc == -1:
+        print(f"{OK} 격리 층 폐지(DECISIONS §173-2) — 없음")
+    elif qc > 0:
+        # ★ 2026-09-17 (§176). 폐지된 층에 파일이 있다 — 되살아났다
+        _todo.append("_quarantine 이 되살아났다 — 대장 retired 에 이름 · sha 로 적고 retired/ 로 옮긴다")
         has = (QUARANTINE / "QUARANTINE.md").exists() or \
               (QUARANTINE / "README.md").exists()
         m = OK if has else WARN

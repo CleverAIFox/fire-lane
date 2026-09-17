@@ -79,7 +79,7 @@ for st in (sys.stdout, sys.stderr):
 # ★ main() 안에 두면 테스트가 베낀다. 실제로 두 벌이 생겼고 한 벌은
 #   `json` 이 빠진 채 굳었다(2026-09-11 B3 에서 발견).
 #   hwp·pdf·ngi·nda 가 없어 왕복 멱등이 거짓이었던 이력도 같은 병이다.
-PASSTHROUGH_EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+PASSTHROUGH_EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson|txt"   # txt — 내비게이션용DB 절단본(DECISIONS §179-4)
 
 
 def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
@@ -567,9 +567,25 @@ def main():
                  if not any(f.name == o for o, _, _ in done)
                  and not any(f.name == o for o, _ in skip)]
     if unmatched:
-        print(f"\n  규칙에 없는 파일 {len(unmatched)}건 (건너뜀)")
-        for u in unmatched[:12]:
-            print(f"    {u}")
+        # ★ 2026-09-17 (DECISIONS §180). 종전에는 landing 보류분까지 "규칙에 없는 파일" 로 냈다 —
+        #   처분 목록(`landing_disposition`)을 안 읽어서, 사유가 적힌 파일과 정체 모를 파일이 한 줄에 섞였다.
+        #   해석은 `firelane.lake.disposition` 한 곳이다.
+        import fnmatch
+
+        from firelane import lake
+        disp = lake.disposition(_led.load())
+        known = {u: next(((pat, act, why) for pat, act, why in disp if fnmatch.fnmatchcase(u, pat)), None)
+                 for u in unmatched}
+        held = [(u, d) for u, d in known.items() if d]
+        stray = [u for u, d in known.items() if not d]
+        if held:
+            print(f"\n  처분이 적힌 파일 {len(held)}건 (건너뜀 — landing_disposition)")
+            for u, (_, act, why) in held[:12]:
+                print(f"    {act or '?':9} {u}\n              {why[:70]}")
+        if stray:
+            print(f"\n  ★ 규칙에도 처분 목록에도 없는 파일 {len(stray)}건 (건너뜀)")
+            for u in stray[:12]:
+                print(f"    {u}")
 
     if a.in_place:
         print("\n제자리 정리 완료. 파일명·확장자가 규칙에 맞다.")

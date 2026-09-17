@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-09-16T14:59:16+00:00"
   },
-  "generated_at": "2026-09-17T13:38:46.555811+09:00",
+  "generated_at": "2026-09-17T19:42:10.968176+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -41,198 +41,198 @@
   },
   "datasets": [
     {
-      "features": "",
-      "geom": [],
       "key": "gjcity_road_facility",
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "gjcity_road_facility_jngj_20220914.hwp",
-      "source_crs": "",
       "source_files": [
         "**/gjcity_road_facility_*"
       ],
       "source_sha256": "c0810ad6ed35388fe6c881dc2005ddaad5a77821216ab2eb105c1c3c895f77bc",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "gjcity_road_facility_jngj_20220914.hwp",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "juso_bldg_geom",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "juso_bldg_geom_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
+      "outputs": []
+    },
+    {
+      "key": "juso_bldg_geom",
       "source_files": [
         "**/juso_bldg_geom_*"
       ],
       "source_sha256": "03808c2a5d858785589e864cc85a275d87656fe07fc6f5875304e4b3924a92cd",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "juso_bldg_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "juso_bldggrp_geom",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "juso_bldggrp_geom_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
+      "outputs": []
+    },
+    {
+      "key": "juso_bldggrp_geom",
       "source_files": [
         "**/juso_bldggrp_geom_*"
       ],
       "source_sha256": "4867537948920da1a014db26bb614c9190bf1623362ec16f7e4f6deec2f305ed",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "juso_bldggrp_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "juso_etc_geom",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "juso_etc_geom_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
+      "outputs": []
+    },
+    {
+      "key": "juso_etc_geom",
       "source_files": [
         "**/juso_etc_geom_*"
       ],
       "source_sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "juso_etc_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "kfs_pumptruck",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_kfs_pumptruck_kr_20251224.hwpx",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "kfs_pumptruck",
       "source_files": [
         "**/safety_kfs_pumptruck_*"
       ],
       "source_sha256": "0908c1232cd2102ec4f8e081043a4f83141680504e82c428b4237fd18a4d8d42",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "safety_kfs_pumptruck_kr_20251224.hwpx",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "kfs_watertank",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_kfs_watertank_kr_20251224.hwpx",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "kfs_watertank",
       "source_files": [
         "**/safety_kfs_watertank_*"
       ],
       "source_sha256": "8b0c7fa291f5217efb7d5064f9134e1e7c9785c12b0f80309b39313a6f1f1ccd",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "safety_kfs_watertank_kr_20251224.hwpx",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "kfs_chemical",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_kfs_chemical_kr_20251224.hwpx",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "kfs_chemical",
       "source_files": [
         "**/safety_kfs_chemical_*"
       ],
       "source_sha256": "9688a70902502279b7a406aacb914585d4a1dcb3019b52e5335b007b4d877b73",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "safety_kfs_chemical_kr_20251224.hwpx",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "kfs_ladder_articulated",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_kfs_ladder_articulated_kr_20251224.hwpx",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "kfs_ladder_articulated",
       "source_files": [
         "**/safety_kfs_ladder_articulated_*"
       ],
       "source_sha256": "a2cab9811eadacec60c2d945c2f03151db3329f83db5c674219d36e197ee7129",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "safety_kfs_ladder_articulated_kr_20251224.hwpx",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "kfs_rescue",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_kfs_rescue_kr_20251224.hwpx",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "kfs_rescue",
       "source_files": [
         "**/safety_kfs_rescue_*"
       ],
       "source_sha256": "ce1ab827276df7439c50cfef6d44153313c71ef7f34527a856da2a76d18134cd",
-      "status": "SKIP"
-    },
-    {
-      "ambiguous": [
-        "safety_kfs_ambulance_special_kr_20251224.hwp",
-        "safety_kfs_ambulance_special_kr_20251224.pdf"
-      ],
+      "resolved": "safety_kfs_rescue_kr_20251224.hwpx",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "kfs_ambulance_special",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_kfs_ambulance_special_kr_20251224.hwp",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "kfs_ambulance_special",
       "source_files": [
         "**/safety_kfs_ambulance_special_*"
       ],
       "source_sha256": "a8b309c908d13b2d4760bba08a9845063d1a1622147efab7b72edc132cc73e81",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "safety_kfs_ambulance_special_kr_20251224.hwp",
+      "ambiguous": [
+        "safety_kfs_ambulance_special_kr_20251224.hwp",
+        "safety_kfs_ambulance_special_kr_20251224.pdf"
+      ],
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "kfs_ladder_small",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_kfs_ladder_small_kr_20251224.pdf",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "kfs_ladder_small",
       "source_files": [
         "**/safety_kfs_ladder_small_*"
       ],
       "source_sha256": "5c5ab15422d304dcfe51bec3bc63272bde1fd723dc49cfc64f0f417ccb50924a",
-      "status": "SKIP"
-    },
-    {
-      "ambiguous": [
-        "safety_mas_optional_spec_kr_20241111.hwp",
-        "safety_mas_optional_spec_kr_20241111.pdf"
-      ],
+      "resolved": "safety_kfs_ladder_small_kr_20251224.pdf",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "mas_optional_spec",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_mas_optional_spec_kr_20241111.hwp",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "mas_optional_spec",
       "source_files": [
         "**/safety_mas_optional_spec_*"
       ],
       "source_sha256": "975e4a08fb4e02fdc376e92fc588eb7f22d4cd194b1f875c70d705641f712425",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "safety_mas_optional_spec_kr_20241111.hwp",
       "ambiguous": [
-        "safety_mas_vehicle_spec_kr_20241111.hwp",
-        "safety_mas_vehicle_spec_kr_20241111.pdf"
+        "safety_mas_optional_spec_kr_20241111.hwp",
+        "safety_mas_optional_spec_kr_20241111.pdf"
       ],
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "mas_vehicle_spec",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_mas_vehicle_spec_kr_20241111.hwp",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "mas_vehicle_spec",
       "source_files": [
         "**/safety_mas_vehicle_spec_*"
       ],
       "source_sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
-      "status": "SKIP"
+      "resolved": "safety_mas_vehicle_spec_kr_20241111.hwp",
+      "ambiguous": [
+        "safety_mas_vehicle_spec_kr_20241111.hwp",
+        "safety_mas_vehicle_spec_kr_20241111.pdf"
+      ],
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
     },
     {
       "columns": [
@@ -388,32 +388,32 @@
       }
     },
     {
-      "features": "",
-      "geom": [],
       "key": "spotaddr_geom",
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "juso_spotaddr_geom_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
       "source_files": [
         "**/juso_spotaddr_geom_*"
       ],
       "source_sha256": "67d19479c563ae4b7629b1a1c5c5ed9efd0e064ff87d3bda8422553a7896e6f3",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "juso_spotaddr_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "spotaddr_ref",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "juso_spotaddr_ref_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
+      "outputs": []
+    },
+    {
+      "key": "spotaddr_ref",
       "source_files": [
         "**/juso_spotaddr_ref_*"
       ],
       "source_sha256": "8822bdb54aa2b8a711854f525772d947f2aaf75aa6c7f29fe1194bb94f3b4c5d",
-      "status": "SKIP"
+      "resolved": "juso_spotaddr_ref_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
     },
     {
       "ambiguous": [
@@ -2496,20 +2496,26 @@
       }
     },
     {
-      "features": "",
-      "geom": [],
       "key": "dem_public",
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "ngii_dem_jngj-donggu_20251117_35616.zip",
-      "source_crs": "EPSG:5179",
       "source_files": [
         "**/ngii_dem_*"
       ],
       "source_sha256": "56656fc18efb05ad78653d1b09ea18e6c9879eaa2e5940d33a2cce677b4ef128",
-      "status": "SKIP"
+      "resolved": "ngii_dem_jngj-donggu_20251117_35616.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
     },
     {
+      "key": "ortho",
+      "source_files": [
+        "**/ngii_ortho_*"
+      ],
+      "source_sha256": "afe2cbb4bcd151538b77617bf9ac1022639a61e79525227f09b0aaca0ed2bf8b",
+      "resolved": "ngii_ortho_jngj-donggu_20251231_gj037.tif",
       "ambiguous": [
         "ngii_ortho_jngj-donggu_20251231_gj037.tif",
         "ngii_ortho_jngj-donggu_20251231_gj037.xml",
@@ -2520,20 +2526,24 @@
         "ngii_ortho_jngj-donggu_20251231_gj048.tif",
         "ngii_ortho_jngj-donggu_20251231_gj048.xml"
       ],
+      "source_crs": "EPSG:5186",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "ortho",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "ngii_ortho_jngj-donggu_20251231_gj037.tif",
-      "source_crs": "EPSG:5186",
-      "source_files": [
-        "**/ngii_ortho_*"
-      ],
-      "source_sha256": "afe2cbb4bcd151538b77617bf9ac1022639a61e79525227f09b0aaca0ed2bf8b",
-      "status": "SKIP"
+      "outputs": []
     },
     {
+      "key": "hydrant_summary",
+      "source_files": [
+        "**/safety_hydrant_summary_*"
+      ],
+      "source_sha256": "4f516236bfdc457bab9d3bbfb78bbeadf3d723edecd7ce0922d1bd1d3515617f",
+      "resolved": "safety_hydrant_summary_jngj-donggu_20250731.csv",
+      "source_crs": "none",
+      "status": "OK",
+      "features": 5,
+      "geom": [],
       "columns": [
         "구분",
         "계",
@@ -2544,22 +2554,12 @@
         "소방차진입불가지역",
         "데이터기준일자"
       ],
-      "features": 5,
-      "geom": [],
-      "key": "hydrant_summary",
       "outputs": [
         "hydrant_summary.csv"
       ],
-      "resolved": "safety_hydrant_summary_jngj-donggu_20250731.csv",
-      "source_crs": "none",
-      "source_files": [
-        "**/safety_hydrant_summary_*"
-      ],
-      "source_sha256": "4f516236bfdc457bab9d3bbfb78bbeadf3d723edecd7ce0922d1bd1d3515617f",
-      "status": "OK",
       "seal": {
         "raw": "4f516236bfdc457b",
-        "cfg": "49710f49a6674a82",
+        "cfg": "bc177870e4c59934",
         "code": "4d49785406f2fdde",
         "out": {
           "hydrant_summary.csv": "be97577638a804b1"
@@ -2937,24 +2937,24 @@
       }
     },
     {
+      "key": "gjfire_vehicle_card",
+      "source_files": [
+        "**/safety_vehiclecard_*"
+      ],
+      "source_sha256": "3c2995c12daf86c29ebeb5835b84dd3f5a490ce71d3498c11b73a4890709ccbd",
+      "resolved": "safety_vehiclecard_jngj-donggu_20260904_daein11.pdf",
       "ambiguous": [
         "safety_vehiclecard_jngj-donggu_20260904_daein11.pdf",
         "safety_vehiclecard_jngj-donggu_20260904_daein5.pdf",
         "safety_vehiclecard_jngj-donggu_20260904_daein6.pdf",
         "safety_vehiclecard_jngj-donggu_20260904_jisan2.pdf"
       ],
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "gjfire_vehicle_card",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "safety_vehiclecard_jngj-donggu_20260904_daein11.pdf",
-      "source_crs": "",
-      "source_files": [
-        "**/safety_vehiclecard_*"
-      ],
-      "source_sha256": "3c2995c12daf86c29ebeb5835b84dd3f5a490ce71d3498c11b73a4890709ccbd",
-      "status": "SKIP"
+      "outputs": []
     },
     {
       "columns": [
@@ -3178,32 +3178,32 @@
       }
     },
     {
-      "features": "",
-      "geom": [],
       "key": "nfa_vehicle_spec_2024",
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "nfa_vehicle_spec_kr_20240304.pdf",
-      "source_crs": "",
       "source_files": [
         "**/nfa_vehicle_spec_*"
       ],
       "source_sha256": "3c5d91db980d0b896e8f2cfd2b2c51a385e580d40f7b355f6b5b6835509ba623",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "nfa_vehicle_spec_kr_20240304.pdf",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "nfa_mas_spec_2025",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "nfa_mas_spec_kr_20260610.hwp",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "nfa_mas_spec_2025",
       "source_files": [
         "**/nfa_mas_spec_*"
       ],
       "source_sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
-      "status": "SKIP"
+      "resolved": "nfa_mas_spec_kr_20260610.hwp",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
     },
     {
       "columns": [
@@ -3254,74 +3254,74 @@
       }
     },
     {
-      "features": "",
-      "geom": [],
       "key": "nfa_spec_chem_gj",
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "nfa_spec_chem_gj_jngj_20260101.hwp",
-      "source_crs": "",
       "source_files": [
         "**/nfa_spec_chem_gj_*"
       ],
       "source_sha256": "6f228f5abb327b0d9e2416119af4658db08dbe5549f16583fb57e71be2063a35",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "nfa_spec_chem_gj_jngj_20260101.hwp",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "nfa_spec_pump_jn",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "nfa_spec_pump_jn_kr_20260101.hwp",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "nfa_spec_pump_jn",
       "source_files": [
         "**/nfa_spec_pump_jn_*"
       ],
       "source_sha256": "9ed65818b458d88df47b3e2d7614445ae65baed7dbebf9d86b8910c67265ad06",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "nfa_spec_pump_jn_kr_20260101.hwp",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "nfa_spec_tanker_cn",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "nfa_spec_tanker_cn_kr_20260101.pdf",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "nfa_spec_tanker_cn",
       "source_files": [
         "**/nfa_spec_tanker_cn_*"
       ],
       "source_sha256": "9653d2700a31f841770d0f83ec2d81afe9927d068adc6eebec5909192c72b537",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "nfa_spec_tanker_cn_kr_20260101.pdf",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "nfa_spec_rescue_jn",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "nfa_spec_rescue_jn_kr_20260101.hwpx",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "nfa_spec_rescue_jn",
       "source_files": [
         "**/nfa_spec_rescue_jn_*"
       ],
       "source_sha256": "8e14e2c2672162ac323e50c4b8aec90299f03a2e79be266790549cfd75e21c07",
-      "status": "SKIP"
-    },
-    {
+      "resolved": "nfa_spec_rescue_jn_kr_20260101.hwpx",
+      "source_crs": "",
+      "status": "SKIP",
       "features": "",
       "geom": [],
-      "key": "nfa_spec_ladder_jn",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "nfa_spec_ladder_jn_kr_20260101.hwp",
-      "source_crs": "",
+      "outputs": []
+    },
+    {
+      "key": "nfa_spec_ladder_jn",
       "source_files": [
         "**/nfa_spec_ladder_jn_*"
       ],
       "source_sha256": "268c025482249f392516078495fabf9065465a25741bff308256054ecbb79bab",
-      "status": "SKIP"
+      "resolved": "nfa_spec_ladder_jn_kr_20260101.hwp",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
     },
     {
       "columns": [
@@ -3705,6 +3705,260 @@
           "juso_building_db.csv": "bc238a98e7446a50"
         }
       }
+    },
+    {
+      "key": "parking_enforce",
+      "source_files": [
+        "gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv",
+        "gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv"
+      ],
+      "source_sha256": "cf64a54d8dbe19c2,4cb4c4e95353af78",
+      "resolved": "gjcity_parking_enforce_jngj-donggu_20240108.csv + gjcity_parking_enforce_jngj-donggu_20250226.csv",
+      "source_crs": "",
+      "note": "optional_cols 결손 보정: gjcity_parking_enforce_jngj-donggu_20250226.csv:비고",
+      "status": "OK",
+      "features": 141556,
+      "geom": [],
+      "columns": [
+        "위반일자",
+        "위반시간",
+        "위반장소명",
+        "과태료",
+        "비고",
+        "데이터기준일자",
+        "_src"
+      ],
+      "outputs": [
+        "parking_enforce.csv"
+      ],
+      "seal": {
+        "raw": "cf64a54d8dbe19c2,4cb4c4e95353af78",
+        "cfg": "7c3626006c5c7a31",
+        "code": "4d49785406f2fdde",
+        "out": {
+          "parking_enforce.csv": "3e8a90267ca281d1"
+        }
+      }
+    },
+    {
+      "key": "hydrant_type",
+      "source_files": [
+        "safety/safety_hydrant_type_jngj_20251231.csv"
+      ],
+      "source_sha256": "e3eb7b4178fdbadf8234aff793fc3b077c7bf4eec1f48a25fdee6d5f6f60c005",
+      "resolved": "safety_hydrant_type_jngj_20251231.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 5,
+      "geom": [],
+      "columns": [
+        "연번",
+        "구분",
+        "지상식소화전",
+        "일반지하식소화전",
+        "저수조",
+        "급수탑",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "hydrant_type.csv"
+      ],
+      "seal": {
+        "raw": "e3eb7b4178fdbadf",
+        "cfg": "d479966b81f724b2",
+        "code": "4d49785406f2fdde",
+        "out": {
+          "hydrant_type.csv": "ec966b1c3c0fb374"
+        }
+      }
+    },
+    {
+      "key": "parking_std",
+      "source_files": [
+        "gjcity/gjcity_parking_std_jngj-donggu_20260811.csv"
+      ],
+      "source_sha256": "2d3ffbc50ad074ac4e771b2ca6d688593c640d8355c632e17b897f811da7b262",
+      "resolved": "gjcity_parking_std_jngj-donggu_20260811.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 297,
+      "geom": [],
+      "columns": [
+        "주차장관리번호",
+        "주차장명",
+        "주차장구분",
+        "주차장유형",
+        "소재지도로명주소",
+        "소재지지번주소",
+        "주차구획수",
+        "급지구분",
+        "부제시행구분",
+        "운영요일",
+        "평일운영시작시각",
+        "평일운영종료시각",
+        "토요일운영시작시각",
+        "토요일운영종료시각",
+        "공휴일운영시작시각",
+        "공휴일운영종료시각",
+        "요금정보",
+        "주차기본시간",
+        "주차기본요금",
+        "추가단위시간",
+        "추가단위요금",
+        "1일주차권요금적용시간",
+        "1일주차권요금",
+        "월정기권요금",
+        "결제방법",
+        "특기사항",
+        "관리기관명",
+        "전화번호",
+        "위도",
+        "경도",
+        "장애인전용주차구역보유여부",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "parking_std.csv"
+      ],
+      "seal": {
+        "raw": "2d3ffbc50ad074ac",
+        "cfg": "f466b2d3cefd06d3",
+        "code": "4d49785406f2fdde",
+        "out": {
+          "parking_std.csv": "67ed7b482465c0e1"
+        }
+      }
+    },
+    {
+      "key": "navi_build",
+      "source_files": [
+        "juso/juso_navibuild_jngj-dongmyeong_20260831.txt"
+      ],
+      "source_sha256": "a11acfcd46a77498a14c3e0e7e19bc4237aa300bce8784c189645f4f29734a68",
+      "resolved": "juso_navibuild_jngj-dongmyeong_20260831.txt",
+      "source_crs": "EPSG:5179",
+      "status": "OK",
+      "features": 2078,
+      "geom": [],
+      "columns": [
+        "c00",
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05",
+        "c06",
+        "c07",
+        "c08",
+        "c09",
+        "c10",
+        "c11",
+        "c12",
+        "c13",
+        "c14",
+        "c15",
+        "c16",
+        "c17",
+        "c18",
+        "c19",
+        "c20",
+        "c21",
+        "c22",
+        "c23",
+        "c24",
+        "c25",
+        "c26",
+        "c27",
+        "c28",
+        "c29",
+        "c30",
+        "c31",
+        "c32"
+      ],
+      "outputs": [
+        "navi_build.csv"
+      ],
+      "seal": {
+        "raw": "a11acfcd46a77498",
+        "cfg": "7c8f28d422ddbd43",
+        "code": "4d49785406f2fdde",
+        "out": {
+          "navi_build.csv": "89dbc5cdca885142"
+        }
+      }
+    },
+    {
+      "key": "navi_jibun",
+      "source_files": [
+        "juso/juso_navijibun_jngj-dongmyeong_20260831.txt"
+      ],
+      "source_sha256": "2ec3b3efd7dfe043b77731306760538264356555b87efd019defe73a55519aaf",
+      "resolved": "juso_navijibun_jngj-dongmyeong_20260831.txt",
+      "source_crs": "",
+      "status": "OK",
+      "features": 1460,
+      "geom": [],
+      "columns": [
+        "c00",
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05",
+        "c06",
+        "c07",
+        "c08",
+        "c09",
+        "c10",
+        "c11",
+        "c12",
+        "c13",
+        "c14",
+        "c15",
+        "c16",
+        "c17",
+        "c18",
+        "c19"
+      ],
+      "outputs": [
+        "navi_jibun.csv"
+      ],
+      "seal": {
+        "raw": "2ec3b3efd7dfe043",
+        "cfg": "e613e5d561a1b218",
+        "code": "4d49785406f2fdde",
+        "out": {
+          "navi_jibun.csv": "df67da38db535373"
+        }
+      }
+    },
+    {
+      "key": "civil_office",
+      "source_files": [
+        "juso/juso_civiloffice_kr_20240124.zip"
+      ],
+      "source_sha256": "259f0234fa7e26d442b7d34e765a551d90787406f0c91633b2f4ef96287d59ee",
+      "resolved": "juso_civiloffice_kr_20240124.zip",
+      "source_crs": "EPSG:5179",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
+    },
+    {
+      "key": "donggu_statbook",
+      "source_files": [
+        "gjcity/gjcity_statbook_jngj-donggu_20241231.pdf"
+      ],
+      "source_sha256": "a70c7354fb672643ddb929ccfec0ac1d68dcecf7ad758b73b4c76e3b782c31ef",
+      "resolved": "gjcity_statbook_jngj-donggu_20241231.pdf",
+      "source_crs": "",
+      "status": "SKIP",
+      "features": "",
+      "geom": [],
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": []
     }
   ]
 }

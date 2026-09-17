@@ -1844,7 +1844,8 @@ datasets:
     updated: '2025-07-31'
     scope: jngj-donggu
     authority: 동부소방서
-    what: 소방용수시설 관할서별 집계. 동부소방서 지상식 418 + 지하식 171 = 589
+    what: 소방용수시설 지역별 집계 — 주거 · 상가 · 고지대 · 시장 화재예방강화지구 · 소방차진입불가지역(동부소방서 · 2025-07-31)
+    what_fix: 2026-09-17 — what 이 유형별 집계(지상 · 지하 · 저수조 · 급수탑)를 서술하고 있었다. 그 판은 hydrant_type 이다. note 의 숫자는 재취득 전 서술이다(DECISIONS §178-2)
     crs_native: none
     kind: csv_table
     encoding: cp949
@@ -2790,6 +2791,156 @@ datasets:
       primary: build_jeonnamgwangju.txt
       encoding_seen: cp949
 
+  parking_enforce:
+    stem: gjcity_parking_enforce
+    ext: [csv]
+    kind: csv_table_multi
+    layer: raw
+    scope: jngj-donggu
+    updated: '2025-02-26'
+    encoding: cp949
+    contract:
+      encoding: cp949
+      optional_cols: [비고]
+    vintages: ['2024-01-08', '2025-02-26']
+    authority: 전남광주통합특별시 동구 (공공데이터포털)
+    files:
+      - gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv
+      - gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv
+    what: |
+      동구 불법주정차 단속이력 두 판 — 2022-01~2024-01 85,380행 · 2024-01~2025-02 56,176행.
+      동명동 12,518 · 3,228행. 이어붙여 쓴다
+    feeds: 미투입 — 교통량 축(시간대별 주정차 빈도 → 간선 가중치)
+    feeds_why: |
+      미투입 — PLAN 「교통량 축을 무엇으로 채우나」 의 소스다(시간대별 주정차 빈도 → 간선 가중치).
+      2026-08-31 에 retired 로 내렸다가 2026-09-17 복귀했다(DECISIONS §177-1).
+    note: |
+      ★ 두 판의 컬럼이 다르다(6열 · 5열). 이어붙이기 전에 컬럼 대응을 정한다.
+  hydrant_type:
+    stem: safety_hydrant_type
+    ext: [csv]
+    kind: csv_table
+    encoding: cp949
+    layer: raw
+    scope: jngj
+    updated: '2025-12-31'
+    authority: 전남광주통합특별시 소방본부 (받은 경로 미기록)
+    files:
+      - safety/safety_hydrant_type_jngj_20251231.csv
+    what: |
+      소방용수시설 유형별 집계 — 지상식소화전 · 일반지하식소화전 · 저수조 · 급수탑. 관할서 5행
+    feeds: 미투입 — 소방용수 분모(몇 개인가)의 근거
+    feeds_why: |
+      미투입 — 소방용수 분모(몇 개인가)의 근거다. 좌표가 없어 판정에 안 들어간다.
+      2026-08-13 스냅숏에만 있던 판을 2026-09-17 복귀했다(DECISIONS §178-1). 옛 파일명은
+      safety_hydrant_summary_jngj_20251231 — 활성 hydrant_summary 와 stem 이 겹쳐 개명했다.
+  parking_std:
+    stem: gjcity_parking_std
+    ext: [csv]
+    kind: csv_table
+    encoding: utf-8-sig
+    layer: raw
+    scope: jngj-donggu
+    updated: '2026-08-11'
+    authority: 전남광주통합특별시 동구 (공공데이터포털)
+    files:
+      - gjcity/gjcity_parking_std_jngj-donggu_20260811.csv
+    what: |
+      주차장 표준데이터 동구분 — 297행 · 32열(구획수 · 운영시간 · 요금 · 장애인구역) · 좌표 199건
+      (동명동 bbox 안 190). 데이터기준일자 2026-04
+    feeds: 미투입 — 교통량 축 · 주차 점유 가중(좌표 · 구획수)
+    feeds_why: |
+      미투입 — 활성 parking_lot(138행 · 11열 · 좌표 없음)의 상위집합이다. 좌표가 있어 교통량 축 ·
+      주차 점유 가중에 붙일 수 있다. 2026-09-17 복귀했다(DECISIONS §178-1). 옛 파일명 gjcity_parking_dongu_20260811.
+    note: |
+      ★ updated 는 파일명 날짜(제공일)다. 내용의 데이터기준일자는 2026-04 다.
+      ★ 경로 괄호는 표준데이터 형식으로 판단했다. 좌표 없는 행이 98 있다.
+  navi_build:
+    stem: juso_navibuild
+    ext: [txt]
+    kind: text_table
+    contract:
+      encoding: cp949
+      delimiter: "|"
+    layer: raw
+    scope: jngj-dongmyeong
+    updated: '2026-08-31'
+    authority: 행정안전부 도로명주소 (도로명주소 개발자센터 제공신청)
+    encoding: cp949
+    crs_native: 5179
+    files:
+      - juso/juso_navibuild_jngj-dongmyeong_20260831.txt
+    what: |
+      내비게이션용DB 건물 — 법정동코드 1221010800(동명동) 2078행 · `|` 구분 33열.
+      도로명 · 건물번호 · 건물관리번호 · 건물명 · 용도 · 건물중심점 X/Y · 출입구 X/Y (EPSG:5179)
+    feeds: 미투입 — 목적지 검색 좌표 · 출입구(PLAN 목적지 검색)
+    feeds_why: |
+      미투입 — 목적지 검색 좌표 원천(PLAN 「목적지 검색 — 주소 · 건물명 · 관공서」). juso_building_db 가
+      "좌표가 없다 — 내비게이션용DB 승인 대기" 로 기다리던 판이다. 단속이력 주소의 지오코딩에도 쓴다.
+    note: |
+      ★ 202608 전체분 7z(4.06GB 해동)에서 match_build_jeonnamgwangju.txt 만 스트림으로 읽어 첫 열(법정동코드)
+        == 1221010800 행만 남겼다. 동 이름으로 자르지 않는다 — 목포 동명동이 섞인다(juso_building_db note).
+      ★ 동명동으로 자른 이유 — 출동지는 동명동 스코프다. 회랑(안전센터 → 출동지) 때문에 판정 스코프를
+        동명동 + 주변으로 넓혔을 뿐 목적지는 동명동이다(DECISIONS §179-2).
+      ★ updated 는 월말 기준일 관례(juso_building_db note)를 따랐다.
+  navi_jibun:
+    stem: juso_navijibun
+    ext: [txt]
+    kind: text_table
+    contract:
+      encoding: cp949
+      delimiter: "|"
+    layer: raw
+    scope: jngj-dongmyeong
+    updated: '2026-08-31'
+    authority: 행정안전부 도로명주소 (도로명주소 개발자센터 제공신청)
+    encoding: cp949
+    files:
+      - juso/juso_navijibun_jngj-dongmyeong_20260831.txt
+    what: |
+      내비게이션용DB 지번 매칭 — 동명동 1460행 · `|` 구분 20열. 지번 → 건물관리번호 · 도로명코드
+    feeds: 미투입 — 지번 주소 목적지 검색
+    feeds_why: |
+      미투입 — 지번 주소로 목적지를 찾게 한다. navi_build 와 건물관리번호로 잇는다.
+    note: |
+      ★ match_jibun_jeonnamgwangju.txt 에서 navi_build 와 같은 규칙(첫 열 == 1221010800)으로 잘랐다.
+  civil_office:
+    stem: juso_civiloffice
+    ext: [zip]
+    kind: raw_only
+    layer: raw
+    scope: kr
+    updated: '2024-01-24'
+    authority: 행정안전부 도로명주소 (민원행정기관 전자지도 제공)
+    encoding: cp949
+    crs_native: 5179
+    files:
+      - juso/juso_civiloffice_kr_20240124.zip
+    what: |
+      민원행정기관 전자지도 — 전국 26,142점 · 동명동 bbox 안 64. 유형 · 상세분류 · 시군구코드 · 도로명코드 ·
+      도로명주소 · 기관명 · 위치X/Y · 전화번호. 학교 · 관공서
+    feeds: []
+    feeds_why: |
+      미투입 — 목적지 검색의 관공서 · 학교 POI. poi.geojson 이 상가 2,077 뿐이라 법원 · 구청 · 학교가 없다.
+    note: |
+      ★ .cpg 가 없어 DBF 를 cp949 로 읽어야 한다(안 주면 필드명이 깨진다).
+      ★ zip 내부 파일명이 CP437 로 깨져 있다. 2024-01 판이라 시군구코드가 옛 코드다(동구 29110 · 새 12210).
+  donggu_statbook:
+    stem: gjcity_statbook
+    ext: [pdf]
+    kind: raw_only
+    layer: raw
+    scope: jngj-donggu
+    updated: '2024-12-31'
+    authority: 전남광주통합특별시 동구청 (누리집 통계연보)
+    files:
+      - gjcity/gjcity_statbook_jngj-donggu_20241231.pdf
+    what: |
+      제35회 동구통계연보(2024 기준) — 408쪽. 인구 · 세대 · 시설 · 교통 통계
+    feeds: []
+    feeds_why: |
+      미투입 — CCTV 가 없는 구간의 경로 가중치를 추정할 재료(PLAN 「CCTV 없는 구간의 경로 가중치」).
+      ★ 동 단위 통계라 구간 단위 가중치로는 거칠다 — 동명동 안에서는 상수다. 스케일 · 사전분포 재료로 쓴다.
 raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
@@ -2890,6 +3041,10 @@ basemap:
 retired:
   building_ledger:
     stem:      eais_bldg_ledger
+    files:
+      - eais/eais_bldg_ledger_jngj-donggu_20260817.csv
+    sha256:
+      eais/eais_bldg_ledger_jngj-donggu_20260817.csv: b502e2c0071a400e46ea23eb1e7436d4eae57537783ea0db34787176de579e4a
     what:      건축물대장 표제부. 높이·주용도·주차대수·사용승인일
     reason:    높이·주차대수만 있고 건물 형상은 building 이 이미 낸다. 11.3MB 소비자 0곳
     at:        2026-08-31
@@ -2903,155 +3058,140 @@ retired:
     #   (β 점유위험도 #62) 동명동으로 좁힌 판이 복귀했다. 폐기 기록을
     #   지우면 "왜 한 번 뺐다가 다시 넣었나" 가 사라진다.
     successor: bldg_ledger_dm
-  enforcement:
-    stem:      gjcity_parking_enforce
-    what:      동구 불법주정차 단속 2판 (2022-01~2023-10 85,380건 + 2024년). 이어붙여 쓴다
-    reason:    단속 이력이지 현재 장애물이 아니다. 같은 목적을 enforce_cam·parking_zone 이 더 정확히 덮는다. 8.1MB 를 매 실행 읽을 이유가 없다
-    at:        2026-08-31
-    successor: enforce_cam
-  hydrant_point_kr_20240207_truncated:
-    what: 전국 소방용수시설 표준데이터 — 50,000행 절단본 (2024-02-07)
-    stem: safety_hydrant_point
-    ext: [csv]
-    provider: safety
-    source_hint: 공공데이터포털 CSV 내려받기 (상한 50,000행)
-    at: '2026-09-10'
-    successor: hydrant_point (safety_hydrant_point_jngj_20240207.csv)
+  ngii_basemap_gj_202608:
+    what: 국토지리정보원 기본도 도엽 zip 넷 (gj037 · gj038 · gj047 · gj048, 2026-08-06~07)
+    at: 2026-09-17
+    successor: ngii_road
     reason: |
-      포털 CSV 내려받기 상한 50,000 에 걸려 잘린 판이다. 재취득한 전량과
-      비교하면 종전 197건이 새 파일에 **전부 포함**된다(겹침 197 · 기존에만 0)
-      — 커버리지가 다른 것이 아니라 잘린 것이고 새 파일이 상위집합이다.
-      ★ 지우지 않는다. 이것이 "딱 떨어지는 행수는 자연수가 아니라 상한이다.
-        50,000 · 10,000 · 1,000 을 보면 의심해야 한다" 의 유일한 물증이다.
-        종전 contract.rows 가 50000 이라 상한을 정상으로 인정하고 있었다.
-      ★ 2026-09-10 lakecheck L2 가 "격리 사유가 대장에 없다" 로 잡아냈다.
-
-  road_facility_pdf_2022:
-    what: 도로시설물 현황 378개소 — PDF 판 (hwp 에서 저장)
-    origin_name: 1663144302440.pdf
-    at: '2026-09-10'
-    successor: gjcity_road_facility (hwp 판)
-    reason: |
-      2026-09-06 에 hwp 를 열어 한컴에서 PDF 로 저장한 것이다
-      (Creator: Hwp 2020 · CreationDate D:20260906184943). 배포 원본이
-      아니라 우리가 만든 사본이므로 hwp 만 남긴다.
-
-  its_api_guide_hwp:
-    what: 교통소통정보 API 제공 안내 (한글)
-    origin_name: 교통소통정보 API 제공.hwp
-    at: '2026-09-10'
-    successor: null
-    reason: |
-      API 사용 안내 문서다. 데이터가 아니다. its 계열은 이미
-      nodelink·changelog 로 반입돼 있고 이 문서에는 좌표도 제원도 없다.
-
-  its_road_section_pdf:
-    what: 교통소통정보 도로구간정보 설명서
-    origin_name: 교통소통정보_도로구간정보_설명.pdf
-    at: '2026-09-10'
-    successor: null
-    reason: |
-      컬럼 설명서다. 데이터가 아니다. 실제 스키마는 반입 후
-      inventory 가 contract 로 기록한다 — 문서를 대장에 둘 이유가 없다.
-
-  juso_bldg_alter_2608:
-    what: 도로명주소 건물 도형 일변동분 (AlterD 31일치)
-    origin_name: 도로명주소 건물 도형.zip
-    at: '2026-09-10'
-    successor: juso_bldg_geom (전체분)
-    reason: |
-      AlterD.JUSURB.2026080X.ZIP 31개가 든 일변동분이다. 전체분
-      (juso_bldg_geom · 2026-08-01)이 있으면 불필요하다. 변동 이력이
-      필요해지면 그때 다시 받는다 — 제공처가 한 달치를 상시 배포한다.
-
-  juso_bldggrp_alter_2608:
-    what: 건물군 내 상세주소 동 도형 일변동분 (AlterD 31일치)
-    origin_name: 건물군 내 상세주소 동 도형.zip
-    at: '2026-09-10'
-    successor: juso_bldggrp_geom (전체분)
-    reason: |
-      위와 같다. 전체분(juso_bldggrp_geom)이 있으면 불필요하다.
-
-  kfs_paint_marking_20241224:
-    what: 소방차 도장 및 표지 (KFS-1-0006-2024-01)
-    stem: safety_kfs_paint_marking
-    ext: [pdf]
-    provider: safety
-    source_hint: 소방청 소방장비 기술기준(KFS) 고시 첨부
+      2026-08-13 스냅숏에만 남은 유일본이다. 활성 ngii_road 는 동구 판(gj9708 · gj9712)이다.
+      두 판의 관계와 레이크에서 빠진 경위는 기록이 없다 — 유일본이라 보존한다(DECISIONS §173-1).
     files:
-      - safety/safety_kfs_paint_marking_kr_20241224.pdf
-    at: 2026-08-27
-    successor: null
-    reason: |
-      진입 판정과 무관하다. 차량 외관 도색·표지 규격이며 치수·중량·
-      회전반경이 없다. 다른 KFS 규격서(펌프차·물탱크차 등)는 제원표가
-      있어 vehicle 프로파일의 근거가 되지만 이것은 아니다.
-      ★ 지우기만 하면 3개월 뒤 또 받고 또 열어본다. 그래서 등재한다
-      (PLAN #47 · mas_optional 과 같은 이유).
-      파일명은 정규명 기준이다. landing 원본은
-      "6. 소방차 도장 및 표지(KFS-1-0006-2024-01).pdf".
-  firestation_kr_20250701:
-    what: 소방청 시도 소방서 현황 (2025-07-01 판)
-    stem: safety_firestation
-    ext: [csv]
-    provider: safety
-    source_hint: 공공데이터포털 소방청 표준데이터
-    at: 2026-08-23
-    successor: fire_station (safety_firestation_kr_20240901.csv)
-    reason: |
-      좌표가 없다. 주소 문자열뿐이라 지오코딩을 한 번 더 거쳐야 하는데,
-      활성판(20240901)은 XY 좌표를 직접 갖는다. 더 최신인데 쓸 수 없는 것이라
-      "최신이 항상 낫다" 가 성립하지 않는 사례다.
-      2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
-  hydrant_point_jngj_20250917:
-    what: 전남광주통합특별시 소방 용수시설 현황 (2025-09-17)
-    stem: safety_hydrant_point
-    ext: [csv]
-    provider: safety
-    source_hint: 전남광주통합특별시 소방본부
-    at: 2026-08-23
-    successor: hydrant_point (safety_hydrant_point_jngj_20240207.csv)
-    reason: |
-      전국 표준데이터(kr_20240207)와 겹치는 범위인데 스키마가 다르고
-      좌표 정밀도가 낮다. 동명동 소화전은 전국판으로 11개가 잡히며
-      그것이 현재 지도에 올라간 값이다.
-      2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
+      - ngii/ngii_basemap_gj037_20260806.zip
+      - ngii/ngii_basemap_gj038_20260807.zip
+      - ngii/ngii_basemap_gj047_20260807.zip
+      - ngii/ngii_basemap_gj048_20260806.zip
+    sha256:
+      ngii/ngii_basemap_gj037_20260806.zip: c8f8622216cdad56c32babbea214765f402c7b5edc8d6c24b8c17fb3d42ac918
+      ngii/ngii_basemap_gj038_20260807.zip: 8e16f9c7d049df5577dd7b5140cce8d20361de3ac65a3f0458a3a5762f9e46eb
+      ngii/ngii_basemap_gj047_20260807.zip: 86053a35948c9825c8f379d859c10cddc6627bbd26256d0504e23aabb3b21b11
+      ngii/ngii_basemap_gj048_20260806.zip: e1ec794c09eeeda46a2cbd49bdafd2f42fbe207b68e4271b864e90a83b8f9ce7
+
   ngii1k_ngii_platform:
     what: 국토정보플랫폼 수치지형도 1:1,000 (NGI/NDA + 일부 SHP)
     at: 2026-08-17
+    restored: 2026-09-17 — 2026-08-13 스냅숏의 유일본을 retired 로 보존(DECISIONS §173-5 · §176)
+    files:
+      - ngii/ngii_map1k_gj356160900_20201231.nda
+      - ngii/ngii_map1k_gj356160900_20201231.ngi
+      - ngii/ngii_map1k_gj356160900_20201231.xml
+      - ngii/ngii_map1k_gj356160993_20201231.nda
+      - ngii/ngii_map1k_gj356160993_20201231.ngi
+      - ngii/ngii_map1k_gj356160993_20201231.xml
+      - ngii/ngii_map1k_gj356160994_20201231.nda
+      - ngii/ngii_map1k_gj356160994_20201231.ngi
+      - ngii/ngii_map1k_gj356160994_20201231.xml
+      - ngii/ngii_map1k_gj356160995_20201231.nda
+      - ngii/ngii_map1k_gj356160995_20201231.ngi
+      - ngii/ngii_map1k_gj356160995_20201231.xml
+      - ngii/ngii_map1k_gj356160996_20201231.nda
+      - ngii/ngii_map1k_gj356160996_20201231.ngi
+      - ngii/ngii_map1k_gj356160996_20201231.xml
+      - ngii/ngii_map1k_gj356160997_20201231.nda
+      - ngii/ngii_map1k_gj356160997_20201231.ngi
+      - ngii/ngii_map1k_gj356160997_20201231.xml
+      - ngii/ngii_map1k_gj356160999_20201231.nda
+      - ngii/ngii_map1k_gj356160999_20201231.ngi
+      - ngii/ngii_map1k_gj356160999_20201231.xml
+      - ngii/ngii_map1k_gj356161403_20201231.nda
+      - ngii/ngii_map1k_gj356161403_20201231.ngi
+      - ngii/ngii_map1k_gj356161403_20201231.xml
+      - ngii/ngii_map1k_gj356161404_20201231.nda
+      - ngii/ngii_map1k_gj356161404_20201231.ngi
+      - ngii/ngii_map1k_gj356161404_20201231.xml
+      - ngii/ngii_map1k_gj356161405_20201231.nda
+      - ngii/ngii_map1k_gj356161405_20201231.ngi
+      - ngii/ngii_map1k_gj356161405_20201231.xml
+      - ngii/ngii_map1k_gj356161406_20221231.xml
+      - ngii/ngii_map1k_gj356161406_20221231.zip
+      - ngii/ngii_map1k_gj356161407_20221231.xml
+      - ngii/ngii_map1k_gj356161407_20221231.zip
+      - ngii/ngii_map1k_gj356161409_20221231.xml
+      - ngii/ngii_map1k_gj356161409_20221231.zip
+      - ngii/ngii_map1k_gj356161410_20221231.xml
+      - ngii/ngii_map1k_gj356161410_20221231.zip
+      - ngii/ngii_map1k_gj356161416_20221231.xml
+      - ngii/ngii_map1k_gj356161416_20221231.zip
+      - ngii/ngii_map1k_gj356161417_20221231.xml
+      - ngii/ngii_map1k_gj356161417_20221231.zip
+      - ngii/ngii_map1k_gj356161426_20221231.xml
+      - ngii/ngii_map1k_gj356161426_20221231.zip
+      - ngii/ngii_map1k_gj356161427_20221231.xml
+      - ngii/ngii_map1k_gj356161427_20221231.zip
+      - ngii/ngii_map1k_gj356161552_20191231.nda
+      - ngii/ngii_map1k_gj356161552_20191231.ngi
+      - ngii/ngii_map1k_gj356161552_20191231.xml
+      - ngii/ngii_map1k_gj356161562_20191231.nda
+      - ngii/ngii_map1k_gj356161562_20191231.ngi
+      - ngii/ngii_map1k_gj356161562_20191231.xml
+    sha256:
+      ngii/ngii_map1k_gj356160900_20201231.nda: a233673916ef61b97fab7abf9619a89a6b3a96553900ba69b4e5c99664d2de7b
+      ngii/ngii_map1k_gj356160900_20201231.ngi: ef0f600766b68dffda6d1226a481ea3bb015e4036959043074b3e9cdfa912a4f
+      ngii/ngii_map1k_gj356160900_20201231.xml: 5149edca72afdfb8cfad19d8f8e1951fc70dc29d6746a1bceab7c515530cbebb
+      ngii/ngii_map1k_gj356160993_20201231.nda: 4eb4e1886e5f934392ee09dac98df33686d7bde8b88523f360c9f5c25d6d696a
+      ngii/ngii_map1k_gj356160993_20201231.ngi: 2e74dbd57c71abee616f1923ee44446dcde1ef6411c00abc6a2e3b027c90129f
+      ngii/ngii_map1k_gj356160993_20201231.xml: a13bfcdfd6d274ec79177460a7319e92f72cf62fb4517ab19791a7907e40de64
+      ngii/ngii_map1k_gj356160994_20201231.nda: 9ed36eb4c3b56c88abdf4f3d5e649e3ebd65fdf6c8ad2f89c37a0d90e6c2a7d8
+      ngii/ngii_map1k_gj356160994_20201231.ngi: 1a816404df869deeb1a65c4df110b5c6b9679ec18a425bb55e7a3b38d6173763
+      ngii/ngii_map1k_gj356160994_20201231.xml: ef21e1a4b523cce0c9c35e8fdd139c5d5da70549b5ae0916f1b7dc319803e4a1
+      ngii/ngii_map1k_gj356160995_20201231.nda: 7f60f376bcf00827274f6126f00fe33000eb8fa653b971266f0464c2a1d0b429
+      ngii/ngii_map1k_gj356160995_20201231.ngi: 6f67f5ec3b5257038284f006e41f63afabef1dfed4255051d2977c15fc72f049
+      ngii/ngii_map1k_gj356160995_20201231.xml: 516381b433155825a6f0e0e06da9d4bf996fad329dc17c78472cf533e9bba84c
+      ngii/ngii_map1k_gj356160996_20201231.nda: 9530b6e8687a6f9949451977908de19f6ee898cd84c3c4dee09d0861d7f89b00
+      ngii/ngii_map1k_gj356160996_20201231.ngi: b4507f0df8301ccfebc902c9b0c0d47b5cc9638e6a83c2f005b9f3d0c8017a3f
+      ngii/ngii_map1k_gj356160996_20201231.xml: a4246822c539d5b42e5b6dddfe1b560174fcb9dc390f44fb58699f4e697712df
+      ngii/ngii_map1k_gj356160997_20201231.nda: 74d5688f4c9701bdb9e18f034102eea2fe2b25694161dc79188b21a2b95b1eec
+      ngii/ngii_map1k_gj356160997_20201231.ngi: 8fb12dcafc75d8f763d18be388c2e865bd45e75ad7d20f46132da58f617e6a44
+      ngii/ngii_map1k_gj356160997_20201231.xml: 4ee65e86ea4f708a30e603bfde9fb954901de99c170b21ad034a6877b202f30e
+      ngii/ngii_map1k_gj356160999_20201231.nda: f7c841282cb7c7f208928de7ec71bf630749eed20b48a94409b634bf005fda68
+      ngii/ngii_map1k_gj356160999_20201231.ngi: 0e1cdf2fc40604a5ccd0ab034efea5c8884974b874fa5b24df4e19690f036422
+      ngii/ngii_map1k_gj356160999_20201231.xml: ba70e0874ea00e1d3e89167f8513cb00d9f185e24a4d964bace33d351fde66d0
+      ngii/ngii_map1k_gj356161403_20201231.nda: 4efbda85b43dfccc1b063985e8ab5ae13ec06ef4972dfac0da34e66ad5d6b4cb
+      ngii/ngii_map1k_gj356161403_20201231.ngi: 3a4665f94fccd7d55bb689fa5a5a493de7024b15fc4d74110a5f3329546d5ea7
+      ngii/ngii_map1k_gj356161403_20201231.xml: 30a0c20c35d8e1715d7f9bbb34203ca32c57f71f0783a4b6dd3db5a0574fc2d4
+      ngii/ngii_map1k_gj356161404_20201231.nda: eb18512db991844cb04e9095b33624f86ad0234c0d60a2154d4ab5c441bb9788
+      ngii/ngii_map1k_gj356161404_20201231.ngi: b20aca9e025527a596740d149a4d88823d49fef31b21dcaf3458792b5f2d7e97
+      ngii/ngii_map1k_gj356161404_20201231.xml: 23187c71dffcc90c1a6fe665efe5f25d83825706682ea4729f7f749c6dfeb339
+      ngii/ngii_map1k_gj356161405_20201231.nda: 5b49cdba02b3b7ed6c0b6da8a7b562ca15a8e89374321db8c81009ae815c8fd8
+      ngii/ngii_map1k_gj356161405_20201231.ngi: 1dc95d9a3b76dbe212478ec73e0f3228d69774af0304540d7e8188f7abe1573b
+      ngii/ngii_map1k_gj356161405_20201231.xml: 62388347f3eaceb7bacee82ac0029aa76971b0febeb9e0056858fc696d0910dd
+      ngii/ngii_map1k_gj356161406_20221231.xml: 69164a6cf92df38fe6bd94829f5672b2889ef1a172231c2cafb65cc5db2f8b15
+      ngii/ngii_map1k_gj356161406_20221231.zip: 77dc72e07daf926f87b2d69c54f541447734d7c6984db0dc5d0372909f7f7b15
+      ngii/ngii_map1k_gj356161407_20221231.xml: 70113b0d818fc9063905af13a16e1ade413a992b7104d1f80a41c2cdd654201f
+      ngii/ngii_map1k_gj356161407_20221231.zip: a2741fe2b1aa0064a56bdcf1e530d68635b3ad051ed3cd4fc05a16cde14ccca4
+      ngii/ngii_map1k_gj356161409_20221231.xml: 8087f0eb56248d627d29e2ab7e7f864d1b479bb4b2317582eaf862a576083316
+      ngii/ngii_map1k_gj356161409_20221231.zip: c20720a5c4ec6199a28eb006e4c1a5c9f9661cc71efbce7f007f320727bb5170
+      ngii/ngii_map1k_gj356161410_20221231.xml: 92cff3ac3218199c9898b19b2449147e2e617978ca3007f1b12092a4e3b4b7f7
+      ngii/ngii_map1k_gj356161410_20221231.zip: ddcfadf18da9b273c3b25835c14507f93c8a2f1d8f511f6c37238b6b4be53959
+      ngii/ngii_map1k_gj356161416_20221231.xml: ba4a9a7e92b4c8da96033aeb70c4e1107d582a9b7b84fd679a1e761fa278df3d
+      ngii/ngii_map1k_gj356161416_20221231.zip: 542b603cf0e62990f862df137c1d44abb5717d9522dc30fdca3fdaf10ca1fd51
+      ngii/ngii_map1k_gj356161417_20221231.xml: 18e972678e8d0b89a5a2c109320304004acac7b752b145b3c6486c47c4d2735c
+      ngii/ngii_map1k_gj356161417_20221231.zip: 0f9bd925b65837c4a8a36889f870883a578f382d3ea6155e9bc9070256b277e2
+      ngii/ngii_map1k_gj356161426_20221231.xml: 45feecbe8899774eb0b9c74d7296cc11d3ac59bc06c964ad9d1f11b4116f8165
+      ngii/ngii_map1k_gj356161426_20221231.zip: 5e5cc7c529b47f8e3f01881f64d2e2c44454ab4bef3d7007fed6ab8f59db8d48
+      ngii/ngii_map1k_gj356161427_20221231.xml: 2b3c5d30114a1d6f59c8e8bd7e673d14cb9936f80cae3c5f67a63472c6a6db0d
+      ngii/ngii_map1k_gj356161427_20221231.zip: ecdcc680936e05edb9acde1905dd50537b62ffba84098cb9769aefa1d4e98219
+      ngii/ngii_map1k_gj356161552_20191231.nda: a926b34d90dccad29cf2723a5d9fc1fad7b4b366989732ca4b67f20b612c7627
+      ngii/ngii_map1k_gj356161552_20191231.ngi: bd844cd14028e2a673faf436c84ef12e18c7ccfd742a06cbeb8cb0a08d75d956
+      ngii/ngii_map1k_gj356161552_20191231.xml: ba640a34ffa6f38e227fdc6d61437f0dfc4b834bef7f237fe51d3a79d16b3b38
+      ngii/ngii_map1k_gj356161562_20191231.nda: e6261b2333f9b82d8ceea6b72f3294ace9ebd12c9d7065090f6e3fc8208fd26c
+      ngii/ngii_map1k_gj356161562_20191231.ngi: c9863f766176feaa2be4265a29306bec63cbd330637b2a12bb26a0d2c1f01780
+      ngii/ngii_map1k_gj356161562_20191231.xml: a5206f4ac9b8f2df054047c60b765746d00092d81fdd6212815b6c36065993d1
     successor: ngii1k (vworld)
     reason: |
       V-WORLD 판으로 교체. vintage 2020/2022 → 2026-03, 도엽 20 → 74,
       NGI/NDA 텍스트 → 전부 SHP(GDAL 직독), 도로명 빈값 → 채워짐,
       자동차전용 속성 추가. 좌표계는 둘 다 5186 으로 동일.
       전용 파서 src/firelane/ngi.py 가 불필요해진다.
-
-  ngii1k_meta_xlsx:
-    what: 국토정보플랫폼 수치지도에 딸려오던 xlsx 12개
-    at: 2026-08-17
-    reason: |
-      ISO 19115 메타데이터 작성 서식. 도엽 본체가 아니다.
-      12개가 전부 440KB 로 내용이 거의 같고 파이프라인이 읽은 적 없다.
-
-  cctv_spatialmarket:
-    what: 공간데이터마켓 CCTV 설치정보
-    at: 2026-08-16
-    reason: |
-      "전남"이 전라남도였다. 18,685건 중 광주 1건 · 동명동 0건.
-      좌표계 명시·설치목적 속성이 매력적이나 스코프 불일치.
-      광주 판이 올라오면 재검토.
-
-  precise_road_map:
-    what: 정밀도로지도 (국토정보플랫폼)
-    at: 2026-08-14
-    reason: 광주는 광산구·북구 시범운행지구만이고 동구는 0km.
-
-  dem_25cm_expectation:
-    what: '"공개DEM 25cm" 라는 기대'
-    at: 2026-08-17
-    reason: |
-      실제 격자는 90m (261×316, EPSG:5179). 25cm 는 정사영상 해상도다.
-      구간 경사 산출 불가. 경사 배제 결론(MASTER §13) 유효.
 
 # ===== AUTO: inventory — inventory.py 가 쓴다. 손으로 고치지 말 것 =====
 inventory:
@@ -3293,6 +3433,14 @@ landing_disposition:
   decided: '2026-08-30'
   by: 오창준
   items:
+    - file: '교통소통정보 API 제공.hwp'
+      key: null
+      action: retired
+      why: 'ITS API 사용 안내 문서다. 데이터가 아니다. 상폐(DECISIONS §177-2)'
+    - file: '1663144302440.pdf'
+      key: null
+      action: retired
+      why: '도로시설물 현황 PDF — hwp 를 우리가 PDF 로 저장한 사본이다. 상폐(DECISIONS §177-2)'
     # ── 2026-09-10 추가 ────────────────────────────────────────
     - file: d0*-*.zip
       key: null
@@ -3356,40 +3504,46 @@ landing_disposition:
       why: AlterD 일변동분 31개. 전체분(건물군내동도형)이 있으면 불필요하다.
     - file: 202607_사물주소_전체분.zip
       key: null
-      action: held
+      action: retired
       why: >-
         전국분이다. 동구 판(사물주소도형_전체분)이 이미 있어 우선순위가
         낮다. 전국 비교가 필요해지면 그때 자른다.
+      decided_2026_09_17: '2026-09-17 상폐 — 동구 판 spotaddr_geom 이 raw 에 있다(DECISIONS §179)'
     - file: 202608_내비게이션용DB_전체분.7z
-      key: null
-      action: held
+      key: navi_build
+      action: ingested
       why: >-
         ★ 2026-09-10 승인. match_build_*.txt 시도별 전량이라 풀면 수 GB다.
         juso_building_db 선례대로 match_build_jeonnamgwangju.txt 만 뽑아
         법정동 1221010800 으로 자른다. 자른 결과가 csv 로 들어가면
         `.7z` 가 ext 어휘 밖인 문제도 같이 없어진다 — 어휘를 넓히지 않는다.
+      decided_2026_09_17: '2026-09-17 — 전남광주 build · jibun 을 동명동으로 잘라 반입하고 7z 는 지웠다(DECISIONS §179)'
     - file: 202608_상세주소DB_전체분.zip
       key: null
       action: held
       why: 승인 계열. 상세주소는 원룸 구분을 안 주므로 우선순위가 낮다.
     - file: 202607_상세주소 표시_전체분.zip
       key: null
-      action: held
+      action: retired
       why: 승인 계열. 위와 같다.
+      decided_2026_09_17: '2026-09-17 상폐 — 층 · 호 표시 테이블 · 좌표 없음(DECISIONS §179)'
     - file: 202608_주소DB_전체분.zip
       key: null
-      action: held
+      action: retired
       why: 좌표가 없다. 내비게이션용DB 와 짝이어야 지도에 찍힌다.
+      decided_2026_09_17: '2026-09-17 상폐 — 내비게이션용DB 가 같은 주소 · 지번 · 부가정보에 좌표까지 든다(DECISIONS §179)'
     - file: 민원행정기관전자지도_240124.zip
-      key: null
-      action: held
+      key: civil_office
+      action: ingested
       why: >-
         SHP 세트. 내부 한글 파일명이 CP437 로 깨져 있다(CP949 로 되돌려
         매칭). 정체 확인 전까지 보류한다.
+      decided_2026_09_17: '2026-09-17 — 관공서 · 학교 POI 로 반입했다(DECISIONS §179)'
     - file: 제35회+동구통계연보(2024기준).pdf
-      key: null
-      action: held
+      key: donggu_statbook
+      action: ingested
       why: 244MB 참조용. 인구·시설 통계이며 진입 판정에 직접 쓰지 않는다.
+      decided_2026_09_17: '2026-09-17 — CCTV 없는 구간 가중치 추정 재료로 반입했다(DECISIONS §179)'
     - file: 1663144302440.hwp
       key: gjcity_road_facility
       action: ledgered

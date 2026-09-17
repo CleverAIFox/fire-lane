@@ -207,9 +207,9 @@ def test_missing_list_is_actually_missing():
 
     try:
         if not paths.RAW.exists():
-            pytest.skip("레이크 미마운트")
+            pytest.skip("환경skip(레이크) — 레이크 미마운트")
     except OSError:
-        pytest.skip("레이크 미마운트")
+        pytest.skip("환경skip(레이크) — 레이크 미마운트")
 
     found = []
     for pat in nr.MISSING:

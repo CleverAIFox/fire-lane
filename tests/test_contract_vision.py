@@ -65,8 +65,7 @@ def test_field_set_matches_master():
     부분집합 검사로는 안 된다. 코드에만 있는 필드는 문서에 없는 계약이고,
     문서에만 있는 필드는 CV 파트가 보내도 버려진다. R7 과 같은 이유다.
     """
-    if not MASTER.exists():
-        pytest.skip("MASTER.md 없음")
+    assert MASTER.exists(), "docs/MASTER.md 가 없다"
     txt = MASTER.read_text(encoding="utf-8")
     m = re.search(r"### 19-1\..*?```json\n(.*?)```", txt, re.S)
     assert m, "MASTER §19-1 의 json 코드블록을 못 찾았다"

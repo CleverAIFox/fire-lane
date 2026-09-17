@@ -1042,8 +1042,9 @@ def test_acquire_stage_and_quarantine_do_not_fight():
                            capture_output=True, text=True, cwd=ROOT, env=env)
         left = sorted(p.name for p in (base / "raw").rglob("*") if p.is_file()
                       and not p.name.startswith("_"))
-        quarantined = sorted(p.name for p in (base / "_quarantine").rglob("*")
-                             if p.is_file()) if (base / "_quarantine").is_dir() else []
+        # ★ 2026-09-17 (§180). 되돌리는 자리가 _quarantine → retired/ 다(격리 층 폐지)
+        quarantined = sorted(p.name for p in (base / "retired").rglob("*")
+                             if p.is_file()) if (base / "retired").is_dir() else []
         shutil.rmtree(base / "raw", ignore_errors=True)
 
     names = {Path(x).name for x in ret}
@@ -1051,7 +1052,7 @@ def test_acquire_stage_and_quarantine_do_not_fight():
         f"폐기 등재된 파일이 raw 에 남았다: {sorted(set(left) & names)}\n"
         f"{r.stdout[-600:]}")
     assert names <= set(quarantined), (
-        f"되돌려지지 않았다. _quarantine: {quarantined}\n{r.stdout[-600:]}")
+        f"되돌려지지 않았다. retired/: {quarantined}\n{r.stdout[-600:]}")
 
 
 def test_acquire_ledger_ends_with_newline():
@@ -1079,8 +1080,8 @@ def test_verify_tells_quarantine_from_loss():
       역사는 `sources.yaml` 의 `retired` 가 맡는다.
     """
     src = (ROOT / "tools/acquire.py").read_text(encoding="utf-8")
-    assert "QUARANTINE / r" in src, \
-        "verify 가 _quarantine 을 안 본다 — 격리를 소실로 오판한다"
+    assert "RETIRED / r" in src, \
+        "verify 가 retired/ 를 안 본다 — 폐기 이동을 소실로 오판한다(§180)"
     assert "moved" in src and "gone" in src, \
         "verify 가 격리와 소실을 한 목록으로 다룬다"
 
@@ -1140,7 +1141,7 @@ def test_golden_refuses_stale_artifacts():
     seg = ROOT / "data/processed/segments.geojson"
     fp = ROOT / "data/golden/.code_fingerprint"
     if not seg.exists():
-        pytest.skip("산출물이 없다")
+        pytest.skip("환경skip(산출물) — 파이프라인 산출물이 없다")
 
     # ★ 2026-08-23. 처음엔 `os.utime` 으로 mtime 을 조작해 검증했다.
     #   지금은 **판정 로직의 내용 해시**를 보므로 mtime 은 무관하다.
@@ -1494,7 +1495,7 @@ def test_golden_staleness_ignores_comments():
     fp = ROOT / "data/golden/.code_fingerprint"
     seg = ROOT / "data/processed/segments.geojson"
     if not seg.exists():
-        pytest.skip("산출물이 없다")
+        pytest.skip("환경skip(산출물) — 파이프라인 산출물이 없다")
 
     def stale() -> str:
         # ★ `sys.path.insert` 를 문자열로 쓰면 `test_sys_path_해킹이_없다`
@@ -1979,7 +1980,7 @@ def test_golden_lock_releases_the_gate():
       없다. **로컬이 CI 보다 더 보는 것은 정상이다**(verify.sh 머리말).
     """
     if not (ROOT / "data/processed/segments.geojson").exists():
-        pytest.skip("산출물이 없다 — 파이프라인이 도는 기계에서만 검사한다")
+        pytest.skip("환경skip(산출물) — 파이프라인이 도는 기계에서만 검사한다")
     r = subprocess.run([sys.executable, str(ROOT / "tools/golden.py"), "selftest"],
                        capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, f"golden 게이트 자기검사 실패\n{r.stdout}{r.stderr}"
@@ -2384,9 +2385,12 @@ def test_retired_glob_never_claims_an_active_file(tmp_path, monkeypatch):
             active.append(f.name)
     assert active, "활성 파일 이름을 못 만들었다 — 대장 fire_station · hydrant_point 확인"
     # 폐기본도 하나 둔다 — 활성과 이름이 다르면 여전히 폐기로 읽혀야 한다(카나리아)
-    (tmp_path / "safety" / "safety_firestation_kr_20250701.csv").write_text("x", encoding="utf-8")
+    # ★ 2026-09-17 (§177 · §178). 카나리아를 옮겼다 — 소방서 2025 · 소화전 2025 판이 차례로 상폐돼 대장에 없다.
+    #   남은 폐기 파일 중 활성 글롭이 안 잡는 것(건축물대장 동구 판)을 쓴다
+    (tmp_path / "eais").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "eais" / "eais_bldg_ledger_jngj-donggu_20260817.csv").write_text("x", encoding="utf-8")
     monkeypatch.setattr(acq, "RAW", tmp_path)
     ret = acq.retired_names()
     hit = [n for n in active if n in ret]
     assert not hit, f"활성 파일을 폐기로 읽는다 — {hit}"
-    assert "safety_firestation_kr_20250701.csv" in ret, "폐기 판정 자체가 죽었다"
+    assert "eais_bldg_ledger_jngj-donggu_20260817.csv" in ret, "폐기 판정 자체가 죽었다"

@@ -623,7 +623,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 66종
+data/processed/    대장 73종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -729,7 +729,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
-대장은 `sources.yaml` 하나다. `datasets` 66종 · `retired` 16종.
+대장은 `sources.yaml` 하나다. `datasets` 73종 · `retired` 3종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 강제자 — `tools/docnum_check.py` (대장 datasets · retired 종수)
@@ -743,7 +743,8 @@ norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. �
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
 field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급. 저장소 안
-_quarantine  대장에 없는 파일. 삭제하지 않고 격리
+retired      SSD · 은퇴본(=아카이브). 대장 retired 가 파일 이름 · sha 로 주인이다
+_quarantine  ★ 폐지(2026-09-17). 안의 것은 retired 로 옮겼다. 되살아나면 `레이크 관문` 이 운다
 web/data     표출용. 커밋한다
 data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
 ```
@@ -2079,7 +2080,7 @@ python -m firelane.contract                     대장 선언 ↔ raw 실물 대
 ### 14-4. 검사
 
 ```bash
-bash tools/verify.sh          # 41단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 42단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 파이프라인 전량 생략
 ```
 
@@ -2111,6 +2112,22 @@ golden 지문 · PLAN 번호·참조 · 커버리지 래칫을 밟는다.
   목표로 잡지 않는다 — 못 지키는 문턱은 끄게 되고, 끈 문턱은 없는 것과 같다.
   `pytest` 단계와 따로 도는 이유는 커버리지를 켜면 75초가 127초가 되기
   때문이다.
+
+**skip 은 사유가 분류 안에 있을 때만 skip 이다.** `tests/conftest.py` 가 모든 skip 에
+`tests/skip_policy.py` 를 걸고, 분류 밖이면 실패로 바꾼다.
+
+| 사유 머리 | 뜻 | 레이크 기계 |
+|---|---|---|
+| `환경skip(레이크) — …` | 레이크가 없다(CI) | **실패** |
+| `환경skip(산출물) — …` | 파이프라인 산출물이 없다(clone 직후 · CI) | 허용 |
+| `환경skip(도구) — …` · importorskip | git · node · 선택 의존성이 없다 | 허용 |
+| `유예skip — 「PLAN 행 제목」 · YYYY-MM-DD — …` | 그 행이 PLAN §1 에 있고 21일 안 | 허용 |
+| 그 밖 | 해당없음은 skip 이 아니다 — 대상을 수집 단계에서 거르거나 통과 | **실패** |
+
+커밋된 파일(스키마 · 기획서 · 생성물 · PR 템플릿)이 없으면 skip 하지 않고 실패한다.
+레이크 기계의 skip 은 0 에 가까워야 정상이다(2026-09-17 샌드박스 기준 skip 4 — 전부 환경).
+
+강제자 — `tests/test_skip_policy.py::test_hook_turns_unclassified_skip_into_failure` · `::test_judge_rejects_what_hides`
 
 ```bash
 uv run fire-lane                       # 평소. 2분45초
@@ -2456,7 +2473,7 @@ uv run python -m firelane.datalog fsck
 | `interim` | 탐색·대조 산출물. 대장에 없고 지워도 된다 |
 | `processed` | 파이프라인 정본. 손으로 만들지 않는다 |
 | `field` | 실측 원자료. 사람이 만드는 유일한 데이터 |
-| `quarantine` | 대장에 없는 파일. 판단 보류지 폐기가 아니다 |
+| `quarantine` | ★ 폐지(2026-09-17). 선언만 남았다 — retired 로 흡수했다(DECISIONS §176 · §180) |
 | `web` | 표출용. UI 담당이 raw 없이 작업해야 한다 |
 | `golden` | 판정 불변 증명. 재생성 불가라 저장소 안에 둔다 |
 | `baseline` | 봉인 스냅샷. 실행 간 판정 전이를 대조한다 |
@@ -2465,6 +2482,8 @@ uv run python -m firelane.datalog fsck
 그것이 곧 **"이 계층이 왜 거기 있나"** 의 답이다.
 
 **계층이 없으면 파일은 아무 데나 떨어진다.** 규율이 아니라 구조의 문제다.
+
+강제자 — `tests/test_layers.py::test_master_layer_table_matches_paths`
 
 ### 18-1a. 그라운드 룰
 
@@ -2625,7 +2644,7 @@ outputs:
 
 근거는 DECISIONS §173-3. 2026-09-17 기준 `authority` 칸이 있는 소스 21종 중 규칙에 맞는 것은 3종이다.
 
-강제자 없음 — 사유: 대장 강제자를 래칫으로 다는 것이 PLAN 「대장 · SSD 디렉토리 구조와 해석기 하나」 의 일이다
+강제자 — `tests/test_lake.py::test_authority_names_institution_and_route` (래칫 — 위반 수가 상한과 같아야 한다)
 
 ★ `juso` 전자지도는 도로명주소법 시행령 제46조 **심사 승인** 데이터다 —
 승인 당사자의 사용과 제3자 재배포는 다르다. 퍼블릭 버킷·공개 저장소에
@@ -2662,7 +2681,7 @@ CRS 변경               ★ 중단. 무조건
 ### 18-3c. retired — 폐기 기록
 
 **지운 것도 대장에 남긴다.** 없으면 3개월 뒤에 또 받고 또 조사한다.
-현재 `retired` 16종이 있다.
+현재 `retired` 3종이 있다(NGI 원본 20도엽 · 기본도 옛 판 · 건축물대장 동구 판). 전부 파일이 있는 보관본이다 — 파일 없는 기각 기록은 대장에 두지 않고 `landing_disposition` 과 DECISIONS 가 든다.
 
 ```yaml
 retired:
@@ -2675,6 +2694,17 @@ retired:
 
 ★ **결손은 폐기가 아니다.** 못 받은 소스는 `datasets` 에 남기고 "원본 없음"으로
 표시한다. 지우면 잊는다.
+
+폐기 항목이 파일을 가리킬 때는 **파일 이름**(`files`)으로 적는다. 글롭은 같은 stem 의
+활성 파일을 잡는다. 파일의 주인은 `firelane.lake` 가 판정하고, 주장이 겹치면 이름으로 적은
+쪽이 글롭을 이긴다. 한 원본(zip)을 `layer` 가 다른 datasets 여럿이 쓰는 것은 공유다.
+
+```bash
+uv run python -m firelane.lake scan      층 × 상태 표 (읽기만)
+uv run python -m firelane.lake gate      이동 · 삭제 전 관문. 막히면 종료코드 1
+```
+
+강제자 — `tests/test_lake.py::test_retired_entries_name_files_not_globs` · `::test_named_retired_beats_active_glob`
 
 ---
 
@@ -2941,7 +2971,7 @@ git_dirty 상태로 만든 산출물을 발표에 사용
 landing (외장 SSD)                     규칙 없음. 개명과 판단의 대기실
         ↓  tools/acquire.py --stage --yes    대장 매칭 + sha 기록
 data/raw/<제공기관>/                    매칭됨. 원본 파일명 유지
-data/_quarantine/                      매칭 안 됨. 삭제하지 않고 격리
+data/retired/<제공기관>/                폐기 등재 파일이 올라오면 되돌리는 자리. 대장 밖 파일은 반입을 멈춘다
         ↓  firelane.prep --apply             인코딩 · 개행 · 정규명만
 data/norm/                             값은 안 바꾼다
         ↓  contract.py — 계약 대조(§18-3b)
@@ -2977,7 +3007,7 @@ acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
 ```
 대장에 있음 + 파일 있음   →  raw 편입
 대장에 있음 + 파일 없음   →  ★ 결손 경고
-대장에 없음 + 파일 있음   →  _quarantine. 사람이 대장 추가 또는 retired 등재
+대장에 없음 + 파일 있음   →  반입을 멈춘다. 사람이 datasets 등재 또는 retired 에 이름 · sha 로 등재
 ```
 
 ★ **두 번째가 제일 중요하다.** 외장 백업이 중단됐는데 아무도 몰랐고, raw 7개
@@ -2987,6 +3017,8 @@ acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
 적재 판정은 크기가 아니라 **내용(sha256)** 으로 한다. 313MB 정사영상이 전송
 중 잘려도 크기 비교로는 통과한다. §18-8 이 백업에 대해 적은 문장이 획득에도
 그대로 적용된다.
+
+강제자 — `tests/test_k2.py::test_acquire_refuses_quarantine` (대장 밖은 반입을 멈춘다)
 
 ### 원칙 다섯
 
@@ -3043,8 +3075,8 @@ paths.require_lake()     레이크가 붙었나. 종료코드 2
                            WSL 은 마운트가 없어도 /mnt/d 를 만든다
 intake --stage           대장 미매칭 차단. 우회는 --force
                          ★ 단서 셋 — 문서번호 · 취득 규칙 · 없음
-acquire --quarantine     retired 근거가 있는 것만 내린다
-                         ★ "대장 밖" 과 "폐기 대상" 은 다르다
+acquire --quarantine     폐지 — 종료코드 2 로 거부한다(DECISIONS §180)
+                         ★ 대장 밖 파일은 격리하지 않고 반입을 멈춘다
 ```
 
 ── 관문의 정확도가 요건이다 ──────────────────────────────────
@@ -3063,6 +3095,8 @@ acquire --quarantine     retired 근거가 있는 것만 내린다
 **잘못된 경보는 진짜 경보를 못 믿게 만든다.**
 
 ---
+
+강제자 — `tests/test_k2.py::test_acquire_refuses_quarantine` · `tools/verify.sh` 단계 `레이크 관문`
 
 ### 18-14. 자동 갱신과 파괴를 붙이지 않는다
 

@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-17T14:47:34+09:00",
- "commit": "643a510",
- "tool": "ade8c494f4e25d28",
+ "sealed_at": "2026-09-17T20:41:01+09:00",
+ "commit": "081cc71",
+ "tool": "4e5793923f7cb248",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "29c13f27015c870e",
-  "docs/DECISIONS.md": "e9d5db2fe100c009",
-  "docs/PLAN.md": "1867c918d52a65a6",
-  "README.md": "1a4da37f2c84f26d"
+  "docs/MASTER.md": "e4f7fc41b36ab6ec",
+  "docs/DECISIONS.md": "2ea272ec1a099506",
+  "docs/PLAN.md": "694161e61c2c24d9",
+  "README.md": "06654db9556efc64"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -220,11 +220,33 @@
   ],
   "juso_building_db": [
    "3d6dc01f6cb1bf8a"
+  ],
+  "parking_enforce": [
+   "cf64a54d8dbe19c2",
+   "4cb4c4e95353af78"
+  ],
+  "hydrant_type": [
+   "e3eb7b4178fdbadf"
+  ],
+  "parking_std": [
+   "2d3ffbc50ad074ac"
+  ],
+  "navi_build": [
+   "a11acfcd46a77498"
+  ],
+  "navi_jibun": [
+   "2ec3b3efd7dfe043"
+  ],
+  "civil_office": [
+   "259f0234fa7e26d4"
+  ],
+  "donggu_statbook": [
+   "a70c7354fb672643"
   ]
  },
  "code": {
-  "sha256": "81601699795e5cd9",
-  "files": 63
+  "sha256": "631efb0e2277820f",
+  "files": 64
  },
  "sections": {
   "MASTER-001": {
@@ -390,7 +412,7 @@
    "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
   },
   "MASTER-028": {
-   "h": "5c06826bff585445",
+   "h": "3027ad6b6187ca41",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5. 시스템 구성"
@@ -420,13 +442,13 @@
    "title": "6. 데이터 현황"
   },
   "MASTER-033": {
-   "h": "001fc8431107e39b",
+   "h": "e2ffab41572339fb",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-1. 확보"
   },
   "MASTER-034": {
-   "h": "2163294163bf50eb",
+   "h": "c36ec2c09108982a",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-2. 데이터 보관"
@@ -774,7 +796,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER-092": {
-   "h": "924a7656e80154fc",
+   "h": "a86f3312d73ba9c8",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -870,8 +892,8 @@
    "title": "18-1. 계층"
   },
   "MASTER-108": {
-   "h": "cd94402d0a2b22b5",
-   "state": "blank",
+   "h": "9b757926b6548548",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "계층이 여덟인 이유"
   },
@@ -912,8 +934,8 @@
    "title": "18-3. 대장 — `sources.yaml` 하나"
   },
   "MASTER-115": {
-   "h": "3bb9223fd1adc65e",
-   "state": "none",
+   "h": "35902771edc40424",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3a. 필드의 의무"
   },
@@ -924,8 +946,8 @@
    "title": "18-3b. 계약 — 사람을 언제 부르는가"
   },
   "MASTER-117": {
-   "h": "23890614940ef1b1",
-   "state": "blank",
+   "h": "f330499a9c7b2396",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3c. retired — 폐기 기록"
   },
@@ -978,14 +1000,14 @@
    "title": "18-10. 금지 목록"
   },
   "MASTER-126": {
-   "h": "f0db137cf9e647d9",
+   "h": "53b468134b3f28a3",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "18-11. 획득 · 업서트 게이트"
   },
   "MASTER-127": {
-   "h": "25eccffa4c5d2721",
-   "state": "blank",
+   "h": "2190c2e398d4d704",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "세 판정"
   },
@@ -1008,8 +1030,8 @@
    "title": "18-12. 대장 메타 항목"
   },
   "MASTER-131": {
-   "h": "c9411beafe4ecf94",
-   "state": "blank",
+   "h": "27523fe997da25a4",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-13. 관문 — 판정과 게이트를 잇는다"
   },
@@ -3408,7 +3430,7 @@
    "title": "171. E2 — 빚 목록에서 분류된 거주를 걷고, 봉인이 산출물을 따라가게 했다"
   },
   "DECISIONS-382": {
-   "h": "2d9f137fd0c705ec",
+   "h": "b4c4ba8e3c8b5002",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "171-1. 미배선 소스는 수가 아니라 용도로 잰다"
@@ -3533,6 +3555,240 @@
    "doc": "docs/DECISIONS.md",
    "title": "173-8. 내비용 추가 데이터는 판정 정확도를 올리지 않는다"
   },
+  "DECISIONS-403": {
+   "h": "b2ba86d698acd29d",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "174. L1 — 파일의 주인을 해석기 하나가 판정하고, 대장 강제자를 래칫으로 달았다"
+  },
+  "DECISIONS-404": {
+   "h": "982ec3b23edec383",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "174-1. `firelane.lake` — 주인 · 층 · 상태를 한 곳에서 낸다"
+  },
+  "DECISIONS-405": {
+   "h": "6a143b064fdae0ab",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "174-2. 모의 레이크가 규칙 둘을 더 요구했다 — 이름이 글롭을 이기고, 한 원본의 다른 레이어는 공유다"
+  },
+  "DECISIONS-406": {
+   "h": "08000505a9e06881",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "174-3. 폐기 글롭 다섯을 파일 이름으로 바꿨다"
+  },
+  "DECISIONS-407": {
+   "h": "ad602be4a500ca71",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "174-4. 래칫 셋 — 대장 로드 · 주인 블록 · authority"
+  },
+  "DECISIONS-408": {
+   "h": "74abcc3781a62822",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "175. K1 — 건너뛴 것은 통과가 아니다: skip 을 넷으로 가르고 분류 밖은 실패로 바꿨다"
+  },
+  "DECISIONS-409": {
+   "h": "b47ba9a8c4bf0ec5",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "175-1. skip 51 은 전부 \"대상이 아님\" 이었다 — 대상만 모아 한 번에 본다"
+  },
+  "DECISIONS-410": {
+   "h": "68ae68d8cfb68ea8",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "175-2. 분류 — 환경(레이크 · 산출물 · 도구) · 유예 · 그 밖은 실패"
+  },
+  "DECISIONS-411": {
+   "h": "06fa3c3477d3e700",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "175-3. git 없는 트리에서 엉뚱하게 실패하던 둘"
+  },
+  "DECISIONS-412": {
+   "h": "71cd3cb41b5a4d95",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "176. L2 — 레이크 밖 유일본 73 을 retired 로 보존하고, 격리 층을 폐지하고, 사본을 지웠다"
+  },
+  "DECISIONS-413": {
+   "h": "51a78bb4b631ba15",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "176-1. 계획표를 믿지 않고 레이크에서 다시 잰다 — `firelane.lake plan`"
+  },
+  "DECISIONS-414": {
+   "h": "0669775e50fd9ed7",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "176-2. 대장 retired — 유일본 73 을 기존 둘과 새 다섯에 파일 단위로"
+  },
+  "DECISIONS-415": {
+   "h": "d11350900f08aede",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "176-3. 격리 층을 폐지했다 — 되살아나면 관문이 운다"
+  },
+  "DECISIONS-416": {
+   "h": "3c27df1d83970b42",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "176-4. 레이크 기계의 산출물 skip 도 실패로 센다"
+  },
+  "DECISIONS-417": {
+   "h": "f08212813f8f80d1",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "177. L2b — 은퇴 21종을 가렸다: 단속이력은 복귀, 셋은 상폐, 파일 없는 기록 여덟은 대장에서 뺐다"
+  },
+  "DECISIONS-418": {
+   "h": "2e8e26a07471f398",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "177-1. 판정"
+  },
+  "DECISIONS-419": {
+   "h": "b13aec3eb2bb6554",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "177-2. 파일 없는 기각 기록 여덟은 대장에서 뺐다"
+  },
+  "DECISIONS-420": {
+   "h": "d13008855ae52145",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "177-3. 5m DEM 은 신청하지 않는다"
+  },
+  "DECISIONS-421": {
+   "h": "4e5d2a2c37e49896",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "177-4. 섀시 제원은 인터뷰로, 회전반경은 나라장터 원문으로"
+  },
+  "DECISIONS-422": {
+   "h": "07fd7f5eaec85a7c",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "178. L2c — 보관 7묶음을 가렸다: 소화전 유형별 집계 · 주차장 표준데이터 복귀, 다섯 상폐"
+  },
+  "DECISIONS-423": {
+   "h": "7def5c1f5c693d2e",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "178-1. 판정"
+  },
+  "DECISIONS-424": {
+   "h": "cad69636ade278bf",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "178-2. `hydrant_summary` 의 설명이 다른 파일을 서술하고 있었다"
+  },
+  "DECISIONS-425": {
+   "h": "a316c482262d08f2",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "178-3. 정정 — 회전반경 원문을 넣어도 검증 플래그는 안 켜진다"
+  },
+  "DECISIONS-426": {
+   "h": "1b730766f6d44f70",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "178-4. 단속이력의 받은 경로 — 공공데이터포털"
+  },
+  "DECISIONS-427": {
+   "h": "219c368dcdbacc9a",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "179. L2d — landing 7건을 처음 열었다: 목적지 검색 재료 둘을 반입하고, 셋은 상폐했다"
+  },
+  "DECISIONS-428": {
+   "h": "f1aba2d671782594",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-1. 판정"
+  },
+  "DECISIONS-429": {
+   "h": "dac0abeccb0fd152",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-2. 동명동으로 자른다 — 출동지 스코프"
+  },
+  "DECISIONS-430": {
+   "h": "760e7b3524479fc0",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-3. 통계연보는 들인다 — CCTV 없는 구간 가중치를 추정해야 하므로"
+  },
+  "DECISIONS-431": {
+   "h": "1dc5e404d1445b64",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-4. 정정 — 텍스트 표는 raw_only 가 될 수 없다"
+  },
+  "DECISIONS-432": {
+   "h": "8d816632a80e213d",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-5. 판이 여럿인 것이 정상인 소스는 판을 선언한다 — vintage_check"
+  },
+  "DECISIONS-433": {
+   "h": "0e7a452203455069",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "180. K2 · G — 판정은 있었는데 틀리던 도구 넷과, 경고만 하던 merge_batch 를 고쳤다"
+  },
+  "DECISIONS-434": {
+   "h": "2832f15a209caae0",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-1. acquire — 폐기 판정은 해석기가 내고, 격리는 거부한다"
+  },
+  "DECISIONS-435": {
+   "h": "e30a1d6882391b4b",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-2. normalize_raw — 처분이 적힌 파일과 정체 모를 파일을 가른다"
+  },
+  "DECISIONS-436": {
+   "h": "d87f2d1a2d236685",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-3. dms — 괄호가 붙은 산문은 칸이 아니다 · 두 \"죽은 참조\" 의 이름을 가른다"
+  },
+  "DECISIONS-437": {
+   "h": "7cc6aeb019826cce",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-4. plan_renumber — 자기 번호 표가 있는 절의 `#N` 은 §1 참조가 아니다"
+  },
+  "DECISIONS-438": {
+   "h": "edad91d8b987d012",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-5. merge_batch — 빠뜨린 단계는 멈춘다"
+  },
+  "DECISIONS-439": {
+   "h": "fc791be1e2444684",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-6. 대화형 확인은 읽기 직전에 터미널 입력 버퍼를 비운다 (G-17)"
+  },
+  "DECISIONS-440": {
+   "h": "40addba0c0843142",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-7. 봉인은 커밋본이어야 한다 — 적용 스크립트는 패치가 건드린 파일을 전부 커밋한다"
+  },
+  "DECISIONS-441": {
+   "h": "de38d8bb87d0bb82",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-8. 봉인 태그를 걷는다 — 태그는 릴리즈에만 쓴다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3552,7 +3808,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "f07b524270f05322",
+   "h": "a2cc6477e464a34c",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -3672,8 +3928,8 @@
    "title": "4-4. TMAP · 카카오 — 병합이 아니라 병렬 비교 📄"
   },
   "PLAN-024": {
-   "h": "e60ecf43b8cb3dcf",
-   "state": "blank",
+   "h": "eaff298cb3342f07",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "4-5. 미결정 🟡"
   },
@@ -3888,7 +4144,7 @@
    "title": "9. 외부 의존"
   },
   "PLAN-060": {
-   "h": "16b77db678ab267b",
+   "h": "f1321c435c169cbd",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "9-1. 소방서 정식 인터뷰 ⏳"
@@ -3936,7 +4192,7 @@
    "title": "11. 담당 공백"
   },
   "PLAN-068": {
-   "h": "1575a603f35a65b1",
+   "h": "11a399962d9e888c",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "12. 기획서 갱신 대상"
@@ -3972,7 +4228,7 @@
    "title": "숫자의 정본은 문서가 아니다"
   },
   "README-006": {
-   "h": "e742c1cd8553d922",
+   "h": "b2fabebd33538d33",
    "state": "wired",
    "doc": "README.md",
    "title": "실행"
@@ -4032,7 +4288,7 @@
    "title": "구조"
   },
   "README-016": {
-   "h": "c6e16ccf335a7995",
+   "h": "98079849b978ff16",
    "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
@@ -4056,14 +4312,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 287,
- "dead_refs": 1,
+ "denominator": 282,
+ "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.49ms"
+   "tail": "Checked 45 packages in 0.47ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4078,7 +4334,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "632 passed, 51 skipped in 81.27s (0:01:21)"
+   "tail": "667 passed in 82.17s (0:01:22)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4093,12 +4349,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "234 passed, 52 skipped in 18.74s"
+   "tail": "237 passed, 1 skipped in 8.96s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1773개 추적"
+   "tail": "커밋 정책 OK · 1780개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -4178,7 +4434,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
+   "tail": "지도 확인:  uv run python tools/serve.py"
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -4205,6 +4461,11 @@
    "state": "OK",
    "tail": "`--sweep` 으로 지울 목록을 확정한다"
   },
+  "verify/레이크 관문": {
+   "rc": 0,
+   "state": "OK",
+   "tail": "관문 열림 (0)"
+  },
   "verify/검사가 죽었는가": {
    "rc": 0,
    "state": "OK",
@@ -4213,7 +4474,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 638절이 아니다."
+   "tail": "전수로 보고 다시 `seal` 을 찍어라."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4228,22 +4489,22 @@
   "verify/norm 계보 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "정상 32 · 낡음 0 · 손상 0"
+   "tail": "정상 36 · 낡음 0 · 손상 0"
   },
   "verify/대장 별칭 이관 유지": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 폐기 별칭 0건 — 102개 항목에서 이관이 유지된다"
+   "tail": "✓ 폐기 별칭 0건 — 96개 항목에서 이관이 유지된다"
   },
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 없음 — 행 59개가 1..59 로 연속이다"
+   "tail": "✓ 없음 — 행 60개가 1..60 로 연속이다"
   },
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "632 passed, 51 skipped in 102.40s (0:01:42)"
+   "tail": "667 passed in 100.04s (0:01:40)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4263,12 +4524,12 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 403개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 442개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
    "state": "생략",
-   "tail": "단계 41"
+   "tail": "단계 42"
   },
   "probe/deadcheck": {
    "rc": 0,

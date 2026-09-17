@@ -145,7 +145,7 @@ def test_pilmun_289_real_data_preserves_approved_topology():
         "boundary": processed / "boundary_emd_5186.gpkg",
     }
     if not all(path.exists() for path in paths.values()):
-        pytest.skip("processed GIS 입력이 없는 CI에서는 런타임 가드가 같은 계약을 검사한다")
+        pytest.skip("환경skip(산출물) — processed GIS 입력이 없다. CI 에서는 런타임 가드가 같은 계약을 검사한다")
 
     road = gpd.read_file(paths["road"]).to_crs(5186)
     centers = gpd.read_file(paths["center"]).to_crs(5186)

@@ -390,7 +390,55 @@
    "dst_encoding": "utf-8",
    "dst_newline": "lf",
    "at": "2026-09-17T12:46:53+09:00"
+  },
+  "safety/safety_hydrant_type_jngj_20251231.csv": {
+   "key": "hydrant_type",
+   "src_sha256": "e3eb7b4178fdbadf8234aff793fc3b077c7bf4eec1f48a25fdee6d5f6f60c005",
+   "dst_sha256": "878c9f07b98ac5d38be83c111350671ce74314ce6482461684a03bcdae8fdca1",
+   "src_encoding": "cp949",
+   "src_newline": "crlf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "hangul_ratio": 0.2759,
+   "notes": [],
+   "at": "2026-09-17T19:05:59+09:00"
+  },
+  "gjcity/gjcity_parking_std_jngj-donggu_20260811.csv": {
+   "key": "parking_std",
+   "src_sha256": "2d3ffbc50ad074ac4e771b2ca6d688593c640d8355c632e17b897f811da7b262",
+   "dst_sha256": "2d014d5ffa12958013545729adf18eee5782490513f6413a1ba230113c8008f0",
+   "src_encoding": "utf-8-sig",
+   "src_newline": "crlf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "hangul_ratio": 0.267,
+   "notes": [],
+   "at": "2026-09-17T19:06:00+09:00"
+  },
+  "juso/juso_navibuild_jngj-dongmyeong_20260831.txt": {
+   "key": "navi_build",
+   "src_sha256": "a11acfcd46a77498a14c3e0e7e19bc4237aa300bce8784c189645f4f29734a68",
+   "dst_sha256": "ced30c74f48f8008a436920b5118c88c1cf58de0bcccc83bd8b0781b2aaf52c5",
+   "src_encoding": "cp949",
+   "src_newline": "crlf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "hangul_ratio": 0.104,
+   "notes": [],
+   "at": "2026-09-17T19:39:54+09:00"
+  },
+  "juso/juso_navijibun_jngj-dongmyeong_20260831.txt": {
+   "key": "navi_jibun",
+   "src_sha256": "2ec3b3efd7dfe043b77731306760538264356555b87efd019defe73a55519aaf",
+   "dst_sha256": "f573ed2b6ffbb05db5777367f1669242614e4c5ba704ca29ac7c85c74d23dfdb",
+   "src_encoding": "cp949",
+   "src_newline": "crlf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "hangul_ratio": 0.1001,
+   "notes": [],
+   "at": "2026-09-17T19:39:54+09:00"
   }
  },
- "at": "2026-09-17T13:52:18+09:00"
+ "at": "2026-09-17T20:14:56+09:00"
 }

@@ -7107,7 +7107,7 @@ PLAN 「경로 비용 판정 반영」 을 닫는다. `reachable` 은 verdict �
 
 PLAN 행은 스스로 *"정리 완료. 수는 남는다"* 고 적었다. 대조하니 코드 참조 0곳 · `raw_only` 아닌
 22종 **전부**가 `feeds: 미투입 — <용도>` 를 이미 들고 있었다. 갚을 것이 없는 행이 빚 목록에 살았고,
-강제자(`test_plan_unreferenced_sources_count_is_current`)가 *PLAN 에 그 행이 있어야 한다* 고 단언해
+검사 `test_plan_unreferenced_sources_count_is_current` 가 *PLAN 에 그 행이 있어야 한다* 고 단언해
 **행을 지우지 못하게 붙들었다.** 조사 도구 아홉을 `EXEMPT` 에 사유와 함께 등재한 것(§162)과 같은
 형태로 바꿨다 — 수가 늘어도 안 울고, **용도 없이 늘면** 운다.
 
@@ -7443,3 +7443,503 @@ R 의 근거를 고쳐 적는다. 현행 뼈대의 11% 가 NGII 도로면 밖이
 그래서 R 을 미뤘어야 할 데이터는 없다. 전부 `seg_uid` 로 붙으므로 R 뒤가 맞다.
 
 강제자 없음 — 사유: 판단 기록이다. 활용 여부는 PLAN 「raw_only 주소 계열 4종 활용 여부」 가 든다
+
+## 174. L1 — 파일의 주인을 해석기 하나가 판정하고, 대장 강제자를 래칫으로 달았다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 174-1~174-4 가 각자 강제자 칸을 든다
+
+§173-4 의 네 기준을 코드로 옮긴 첫 배치다. 레이크 실물은 옮기지 않았다(L2 의 일). 판정은 불변이다.
+
+### 174-1. `firelane.lake` — 주인 · 층 · 상태를 한 곳에서 낸다
+
+대장(`datasets` · `retired` · `landing_disposition`)과 `_prep.json` 과 디스크를 받아 파일마다 상태를
+낸다 — 정상 · 자리틀림 · 주인없음 · 두주인 · 결손 · 선언밖 · 폐지층 · 기록. 패턴 해석은
+`ledger.globs` 를 그대로 쓴다. 해석기가 두 벌이 되면 이 배치의 이유가 사라진다.
+
+`gate()` 는 두주인 · 주인없음 · 선언밖 이 하나라도 있거나 폐기 항목이 글롭이면 이동 · 삭제를 거부한다.
+알리기만 하는 검사가 아니라 **먼저 막는 자리**다(§173-4 ①). L2 의 적용 스크립트가 이것을 부른다.
+
+sha 는 해석기에서 재지 않는다. 3.7GB 를 해석마다 읽을 이유가 없다. 사본 판정은 계획 단계가 레이크
+기계에서 한 번 잰다(§173-5).
+
+강제자  `tests/test_lake.py::test_layers_outside_the_declaration_block_the_gate`
+
+### 174-2. 모의 레이크가 규칙 둘을 더 요구했다 — 이름이 글롭을 이기고, 한 원본의 다른 레이어는 공유다
+
+실물 이름(대장 sha 기록 · `_prep.json` · 격리 7 · landing 7)으로 모의 레이크를 세워 첫 판을 돌렸다.
+
+    ① 격리된 폐기본 3건이 두주인   활성 `fire_station` · `hydrant_point` 가 stem 글롭으로, 폐기가 이름으로 주장
+    ② raw 4건이 두주인             전자지도 zip 하나를 datasets 여섯이, 표준노드링크 zip 하나를 셋이 쓴다
+
+①은 §172-5 를 뒤집어 놓은 형태다. 그날은 폐기 글롭이 활성을 잡았고, 여기서는 활성 글롭이 폐기를
+잡았다. **이름으로 적은 주장이 글롭 주장보다 구체적**이므로 이긴다고 정했다. 같은 구체성에서 둘 이상이면
+그때가 두주인이다.
+
+②는 사고가 아니라 설계다. 각자 `layer` 가 다르다. 레이어를 적었고 서로 다르면 공유(정상)로 보고, 레이어가
+없거나 같으면 두주인으로 본다. 둘을 못 가렸으면 관문이 영영 열리지 않았다.
+
+두 규칙을 넣은 뒤 모의 레이크 결과 — raw 73 · norm 32 · landing 7 정상, 격리 8 폐지층(전부 은퇴 사유 있음),
+관문을 막는 것은 `tiles` 하나(선언밖). lake_scan S8 이 "근거 없음" 으로 낸 7건이 여기서는 전부 주인이 있다.
+
+기각 — 활성이 늘 이긴다(acquire v1.3 의 땜질). 격리된 폐기본을 활성 주인으로 읽어 raw 로 되돌리라고 한다.
+
+강제자  `tests/test_lake.py::test_named_retired_beats_active_glob` · `::test_one_archive_many_layers_is_sharing_not_two_owners` · 카나리아 `::test_stem_glob_retired_on_active_file_blocks_the_gate` · `::test_quarantine_lookup_is_not_raw_only`
+
+### 174-3. 폐기 글롭 다섯을 파일 이름으로 바꿨다
+
+`building_ledger` · `enforcement` · `hydrant_point_kr_20240207_truncated` · `firestation_kr_20250701` ·
+`hydrant_point_jngj_20250917` 이 stem 만 적어 글롭으로 파일을 가리켰다. 격리 폴더의 실물 이름으로 `files`
+를 달았다(enforcement 는 2024-01-08 · 2025-02-26 두 판). `stem` 은 남긴다 — `provider_of` 가 쓰고,
+`files` 가 있으면 `globs` 는 stem 을 안 본다.
+
+sha 는 달지 않았다. 샌드박스에 격리 파일이 없다. 이름 · sha 둘 다 있어야 파일 단위 주인이므로 sha 없는
+7 을 래칫 상한으로 두고 L2 가 레이크에서 재서 채운다.
+
+강제자  `tests/test_lake.py::test_retired_entries_name_files_not_globs`(상한 0) · `::test_retired_files_carry_sha`(상한 7)
+
+### 174-4. 래칫 셋 — 대장 로드 · 주인 블록 · authority
+
+    대장 직접 로드         40   ledger · lake 밖에서 sources.yaml 을 yaml 로 읽는 파일(src · tools · tests)
+    주인 블록 직접 해석    13   retired · landing_disposition 을 직접 읽는 파일
+    authority 규칙 위반    63   칸 없음 45 · 경로 괄호 없음 18(MASTER §18-3a)
+
+핸드오프는 해석 사본을 20곳으로 셌다. 정의가 없는 수라 재현되지 않는다. 판별식을 코드로 적고 그 값을 상한으로
+박았다 — 재현되지 않는 숫자는 분모가 아니다(`tools/dms.py` 와 같은 원칙). 상한은 **줄면 운다** — 내린 값을
+박지 않으면 다시 늘어도 안 운다.
+
+판별식이 실제로 잡는지는 합성 입력으로 흔든다. 새 검사를 짜는 중 기존 가드(`test_generators_end_json_with_newline`)가
+해석기의 JSON 출력 개행 누락을 잡았다 — 강제자가 있던 칸이 몇 분 만에 잡는다는 §173-4 의 증거가 하나 더 늘었다.
+
+G-9 도 닫았다. §171-1 본문의 한 줄이 줄머리에서 `강제자(` 로 시작해 `dms` 가 산문을 강제자 칸으로 읽었고,
+그 칸이 지운 테스트를 가리켜 봉인마다 "죽은 참조 1" 이 찍혔다. 어순을 바꿨다. 파서 쪽 카나리아는 K 가 단다.
+
+강제자  `tests/test_lake.py::test_ledger_is_loaded_through_one_door` · `::test_file_owners_are_resolved_in_one_place` · `::test_authority_names_institution_and_route` · 카나리아 `::test_ratchet_probes_are_alive`
+
+## 175. K1 — 건너뛴 것은 통과가 아니다: skip 을 넷으로 가르고 분류 밖은 실패로 바꿨다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 175-1~175-3 이 각자 강제자 칸을 든다
+
+§173-6 의 분류를 코드로 옮겼다. 판정 · 산출물은 불변이다.
+
+### 175-1. skip 51 은 전부 "대상이 아님" 이었다 — 대상만 모아 한 번에 본다
+
+`test_r4_random_has_seed` 가 `src/firelane` 파일마다 parametrize 하고 랜덤을 안 쓰는 파일을
+`skip("랜덤 미사용")` 했다. 레이크 기계 skip 51 이 전부 이것이었고, L1 이 모듈 하나를 넣자 52 가 됐는데
+아무도 몰랐다 — 늘어난 한 개가 진짜 skip 이었어도 똑같이 묻혔다.
+
+랜덤을 쓰는 파일만 모아 한 테스트로 본다. 대상이 0 이면 판별식이 죽었는지 가려야 하므로 카나리아를 붙였다.
+
+강제자  `tests/test_reproducibility.py::test_r4_random_has_seed` · 카나리아 `::test_r4_probe_is_alive`
+
+### 175-2. 분류 — 환경(레이크 · 산출물 · 도구) · 유예 · 그 밖은 실패
+
+    환경skip(레이크)   레이크가 없는 기계. **레이크가 붙은 기계에서 나면 실패**
+    환경skip(산출물)   파이프라인 산출물이 없는 기계
+    환경skip(도구)     git · node · 선택 의존성. importorskip 도 여기
+    유예skip           「PLAN 행 제목」 · 날짜. 행이 §1 에 있고 21일 안
+    그 밖              실패
+
+`tests/conftest.py` 훅이 skip 보고마다 사유를 판정한다. 알리는 검사로 두면 51 과 같은 방식으로 묻힌다 —
+그래서 실패로 바꾼다(§173-4 ①). 유예의 나이는 봉인 횟수가 아니라 날짜로 쟀다. 봉인 이력을 테스트가 읽으면
+테스트가 `data/dms` 에 묶인다.
+
+기존 skip 서른두 곳을 전수로 갈랐다.
+
+    커밋된 파일이 없으면 skip   → 실패    MASTER · 기획서 · 스키마 둘 · seg_uid_map · web 산출물 · workflow.html ·
+                                          src/contracts · PR 템플릿. 없으면 사고인데 skip 이 초록으로 덮었다
+    남은 행 0 이면 skip         → 통과    PLAN §12 대조 — 대조할 것이 없는 것이다. 파서 사망은 기존 카나리아가 가린다
+    레이크 · 산출물 · 도구       → 태그
+
+기각 — 커밋된 파일 부재를 `환경skip(산출물)` 로 두는 안. clone 하면 반드시 있는 파일이라 없는 환경이 정의되지 않는다.
+
+강제자  `tests/test_skip_policy.py::test_judge_classifies_reasons` · `::test_judge_rejects_what_hides` · `::test_plan_titles_are_read` · 카나리아 `::test_hook_turns_unclassified_skip_into_failure`
+
+### 175-3. git 없는 트리에서 엉뚱하게 실패하던 둘
+
+zip 트리(샌드박스)에서 `test_declared_output_exists_after_run` 은 `git check-ignore` 가 실패해 무시 경로를 전부
+"안 나왔다" 로, `test_strict_scope_is_not_empty` 는 추적 목록이 비어 "`# !strict` 태그가 지워졌다" 로 실패했다.
+둘 다 **못 보는 상황을 다른 사고로 보고했다**(§173-6 의 오판 부류). git 저장소가 아니면 `환경skip(도구)` 로 가른다.
+
+결과 — 샌드박스(git 있음 · 레이크 없음) skip 56 → 4, 넷 다 환경이다. 레이크를 흉내 낸 실행에서는 레이크 skip 셋이
+skip 되지 않고 실제로 돈다.
+
+강제자  `tests/test_ledger_outputs.py::test_declared_output_exists_after_run` · `tests/test_ownership.py::test_strict_scope_is_not_empty`
+
+## 176. L2 — 레이크 밖 유일본 73 을 retired 로 보존하고, 격리 층을 폐지하고, 사본을 지웠다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 176-1~176-4 가 각자 강제자 칸을 든다
+
+§173-1 · §173-2 · §173-5 를 레이크 실물에 적용한 배치다. 판정은 불변이다. 레이크를 옮기고 지우는 명령은
+도구가 파일로 쓰고 사람이 쳤다(§10 적용 원형).
+
+### 176-1. 계획표를 믿지 않고 레이크에서 다시 잰다 — `firelane.lake plan`
+
+보조 스크립트의 계획표(`plan.tsv`)는 판정이다. 판정을 그대로 적용하면 §173-5 에서 잡은 한 건(대장 sha 로
+확인되지 않는 사본)이 유일본일 때 사라진다. 그래서 도구가 조건 다섯을 **지금 상태로** 다시 잰다.
+
+    보존        원천 또는 목적지에 계획표 sha 로 있다 · 대장 retired 가 그 이름 · sha 를 든다 · 반쯤 옮겨진 것은 멈춘다
+    사본        레이크 data 안에 같은 sha 가 실재한다(크기가 같은 것만 해시)
+    압축재생    근거 zip(보존 목록 안)의 멤버에 같은 sha 가 있다
+    스냅숏      tar 멤버 전부가 계획표에 있고 sha 가 같다 — 계획 밖 멤버가 하나라도 있으면 유일본일 수 있다
+    재생성      레이크 타일 키가 전부 저장소 ortho 에 있다(재인코딩이라 sha 는 다르다)
+
+하나라도 어긋나면 명령을 쓰지 않는다. 명령은 `mv -n` 과 파일 하나씩 `rm --`, 빈 폴더만 지우는 `find -empty`
+뿐이다 — `rm -rf` 는 쓰지 않는다. 계획 밖 파일이 남으면 폴더가 안 지워지고 명령이 실패로 끝난다.
+이동 앞뒤로 두 번 재도 같은 답이 나온다(보존은 목적지에서, 스냅숏 멤버는 계획표 sha 로 찾는다).
+1.3GB 짜리 멤버가 있어 해시는 스트림으로 잰다 — 8GB 기계다.
+
+강제자  `tests/test_lake.py::test_plan_is_remeasured_and_writes_safe_commands` · `::test_plan_is_idempotent_across_the_move` · 카나리아 `::test_plan_refuses_when_a_condition_breaks`
+
+### 176-2. 대장 retired — 유일본 73 을 기존 둘과 새 다섯에 파일 단위로
+
+    ngii1k_ngii_platform       52   2019 · 2020 NGI/NDA/xml 36 + 2022 SHP zip · xml 16 (기존 항목 — "NGI/NDA + 일부 SHP")
+    ngii1k_meta_xlsx           12   ISO 메타데이터 xlsx (기존 항목 — "xlsx 12개")
+    ngii_basemap_gj_202608      4   기본도 도엽 zip (신규)
+    fire_stat_kr_20241231       1   (신규)
+    hydrant_point_kr_20260811   1   (신규 — 활성과 같은 stem 의 다른 판)
+    hydrant_summary_jngj_20251231 1 (신규)
+    parking_lot_20260811        2   (신규)
+
+기존 두 항목은 `what` 이 정확히 그 파일들을 서술하고 있었다 — 폐기 기록은 남았는데 파일은 레이크 밖 스냅숏에만
+있었던 것이다. 신규 다섯은 레이크에서 빠진 경위가 기록에 없다. **없다고 적었다.** 추측으로 사유를 메우지 않는다.
+
+격리 7 의 sha 는 레이크 기계에서 재서 채웠다. `sha 없는 폐기 파일` 래칫 7 → 0.
+
+강제자  `tests/test_lake.py::test_retired_files_carry_sha`(상한 0) · `tools/docnum_check.py`(retired 16 → 21종)
+
+### 176-3. 격리 층을 폐지했다 — 되살아나면 관문이 운다
+
+`_quarantine` 8(은퇴 사유가 있는 7 + `QUARANTINE.md`)을 `retired/` 로 옮기고 폴더를 지웠다. 해석기의 `폐지층` 을
+관문을 막는 상태로 올렸다. `acquire --quarantine` 은 아직 그 자리에 쓴다(PLAN #56 해석 사본 배선) — 쓰면
+verify 의 `레이크 관문` 단계가 운다. 먼저 막고 나중에 고친다.
+
+`lakecheck` L2 는 종전에 폴더가 없으면 "못 잰다" 로 울었다. 폐지 뒤에는 없는 것이 정상이고, 파일이 **다시 생긴 것**을
+운다. `doctor` 도 같다.
+
+강제자  `tools/verify.sh` 단계 `레이크 관문` · `tests/test_lake.py::test_quarantine_lookup_is_not_raw_only`
+
+### 176-4. 레이크 기계의 산출물 skip 도 실패로 센다
+
+§175 는 레이크 기계의 레이크 skip 만 실패로 봤다. 산출물 skip 은 clone 직후를 위해 남겼는데, 파이프라인이 한 번이라도
+돈 기계(커밋 안 하는 gpkg 가 있는 기계)에서 산출물 skip 이 나면 조건식이 틀렸거나 산출물 이름이 바뀐 것이다.
+skip 은 임시다 — 레이크 기계에서 남는 skip 은 `유예skip`(PLAN 행 · 21일) 뿐이어야 한다.
+
+강제자  `tests/test_skip_policy.py::test_judge_rejects_what_hides`
+
+## 177. L2b — 은퇴 21종을 가렸다: 단속이력은 복귀, 셋은 상폐, 파일 없는 기록 여덟은 대장에서 뺐다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 177-1~177-4 가 각자 강제자 칸을 든다
+
+L2 가 `retired` 를 21종으로 만들었다. 절반은 파일이 있는 보관본이고 절반은 파일 없는 기각 메모였다 —
+"폐기" 라는 한 이름 아래 둘이 섞여 21 이라는 수가 됐다. 데이터 관리 체계를 먼저 돌려놓고 **쓸모를 안 따진**
+소스가 많았다는 것이 원인이다(EDA 부록 — 활성 중 feeds 미투입 · 비었거나 raw_only 49). EDA(2026-09-17 16:03)로
+쟀고 사용자가 판정했다. 판정은 불변이다.
+
+### 177-1. 판정
+
+    복귀   enforcement → datasets `parking_enforce`(raw_only)   85,380 + 56,176행 · 동명동 12,518 + 3,228 · 2022-01~2025-02
+    보관   building_ledger                                        동구 전체 25,681행 · 77열(활성은 동명동 판)
+    상폐   kfs_paint_marking_20241224                             PDF 71쪽 · 제원 키워드 0 — 도색 규격
+           hydrant_point_kr_20240207_truncated                     50,000행 절단본 · 활성이 상위집합
+           firestation_kr_20250701                                 242행 · 좌표 없음 · 활성 1,216행이 좌표를 든다
+
+복귀는 대장이 스스로 모순이던 자리다. 2026-08-31 에 "단속 이력이지 현재 장애물이 아니다" 로 내렸는데 PLAN
+「교통량 축을 무엇으로 채우나」 가 같은 두 판을 소스로 적고 있었다. 대장과 PLAN 이 서로를 대조하지 않았다.
+받은 경로는 기록에 없다 — `authority` 괄호에 "받은 경로 미기록" 으로 적었다. 추측으로 메우지 않는다.
+
+상폐는 레이크와 대장 둘 다에서 지웠다. 딱 떨어지는 행수(50,000 · 10,000 · 1,000)는 상한이라는 교훈은 절단본이
+유일한 물증이었는데, 숫자가 이 절과 `hydrant_point` note 에 남으므로 파일은 필요 없다.
+
+소화전 두 판(2026-08-11 · 2025-09-17)과 레이크 밖 7묶음은 EDA v2 를 보고 가른다(PLAN 「레이크 밖 보관 7묶음 쓸모 판정 · 소화전 분모」).
+
+강제자  `tools/docnum_check.py` · `tests/test_lake.py::test_retired_files_carry_sha`
+
+### 177-2. 파일 없는 기각 기록 여덟은 대장에서 뺐다
+
+도로시설물 PDF(우리가 만든 사본) · ITS API 안내 hwp · ITS 구간 설명서 · 주소 일변동분 둘 · 공간데이터마켓 CCTV ·
+정밀도로지도 · "DEM 25cm" 기대. 파일도 저장소 참조도 0 이었다. 대장의 항목은 레이크 파일의 주인이어야 하는데
+이 여덟은 아무 파일의 주인도 아니었다.
+
+"3개월 뒤 또 받는다" 는 막아야 한다. 원본 이름으로 다시 오는 것 중 셋은 `landing_disposition` 이 이미 들고 있었고
+빠진 둘(도로시설물 PDF · ITS API 안내 hwp)을 사유와 함께 넣었다 — 받으면 L3 가 사유를 보여준다.
+원본 이름이 없는 셋은 받을 수 없거나 범위 밖이었다는 기록이라 이 절이 든다.
+
+    공간데이터마켓 CCTV   "전남" 이 전라남도였다. 18,685건 중 광주 1 · 동명동 0
+    정밀도로지도          광주는 광산구 · 북구 시범운행지구뿐. 동구 0km
+    "공개DEM 25cm"        실제 격자 90m(261×316 · EPSG:5179). 25cm 는 정사영상 해상도다
+
+`retired` 는 이제 **파일이 있는 보관본만** 뜻한다 — 9종 전부 이름 · sha 를 든다.
+
+강제자  `tests/test_guards.py::test_landing_disposition_needs_why` · `tests/test_lake.py::test_retired_entries_name_files_not_globs`
+
+### 177-3. 5m DEM 은 신청하지 않는다
+
+PLAN 행 「5m DEM 신청」 을 지웠다. 경사는 판정 축(폭 · 위치)이 아니고(§173-8) 경사 배제 결론이 MASTER 에 있다.
+공개 DEM 으로 충분하다고 사용자가 판단했다. 경사가 판정 축으로 들어오는 날 다시 연다.
+
+행을 지우며 PLAN 을 재배번하다 `plan_renumber` 가 §12 표 번호(`#6 · #11 · #12`)를 §1 참조로 읽어 멈췄다.
+그대로 당겼으면 두 참조가 조용히 다른 행을 가리켰다. 그 산문에서 `#` 를 뗐다 — 도구 쪽 수정은 G 묶음이다.
+
+강제자 없음 — 사유: 하지 않기로 한 판단의 기록이다
+
+### 177-4. 섀시 제원은 인터뷰로, 회전반경은 나라장터 원문으로
+
+섀시 제원표(파비스 · 구쎈 축거)는 전에 공개 경로로 찾다가 못 구했다 — D-30 인터뷰로 받는다.
+
+회전반경 7,300~11,889mm 는 출처가 나라장터 구매 공고의 규격서다. 값은 `profiles.json` 에 사람이 옮겼고 **원문이
+raw 에 없다.** 원문이 없으니 값을 대조할 수 없고, 대조할 수 없으니 `turn_radius_verified` 를 못 켠다. `can_turn()` 은
+플래그가 false 면 늘 True 를 돌려준다 — 회전 판정은 지금 꺼져 있다. 값이 없어서가 아니라 **근거 파일이 체계 밖에
+있어서** 못 쓰고 있다. 공고 규격서 원문을 반입하면 켤 근거가 선다(PLAN 「회전반경 출처를 `raw` 로」).
+
+강제자 없음 — 사유: 경로 판단의 기록이다. 플래그는 `src/firelane/seg/vehicle.py` 의 `can_turn` 이 지킨다
+
+## 178. L2c — 보관 7묶음을 가렸다: 소화전 유형별 집계 · 주차장 표준데이터 복귀, 다섯 상폐
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 178-1~178-4 가 각자 강제자 칸을 든다
+
+EDA v2(2026-09-17 16:12 — 레이크 밖 유일본 73 포함 · 좌표 진단)로 쟀고 사용자가 판정했다. 판정은 불변이다.
+`retired` 9 → 3 · `datasets` 67 → 69.
+
+### 178-1. 판정
+
+    복귀   hydrant_summary_jngj_20251231 → hydrant_type     5행 · 지상식 · 일반지하식 · 저수조 · 급수탑 · 기준 2025-12
+           parking_dongu_20260811 → parking_std               297행 · 32열 · 좌표 199(동명동 bbox 190) · 기준 2026-04
+    보관   ngii1k_ngii_platform(52) · ngii_basemap_gj_202608(4) · building_ledger
+    상폐   hydrant_point_kr_20260811      정확히 50,000행 · 기준 2024-02 — 포털 CSV 상한에 잘린 판이 하나 더 있었다
+           hydrant_point_jngj_20250917    위경도 34.0~37.9 · 125.2~127.8 — 전남 전역분이고 광주 0건.
+                                          "동명동" 14건은 목포 동명동이다. 좌표 뒤바뀜이 아니었다
+           fire_stat_kr_20241231          전국 37,614행 · 좌표 없음. 활성 nfa_fire_incident 가 60열(출동 · 도착 시각 · 거리)
+           ngii1k_meta_xlsx(12)           ISO 메타데이터 서식. 12개가 모두 440KB 로 같다
+           parking_corp_20260811          광주 법인 3행
+
+복귀 둘은 **활성보다 나은 판이 레이크 밖에 있던** 자리다. 주차장은 활성(138행 · 11열 · 좌표 없음)의 상위집합이고, 유형별
+집계는 활성 대장의 `what` 이 원래 서술하던 파일이다(178-2). 둘 다 활성 소스와 stem 이 겹쳐 개명했다 —
+`safety_hydrant_type` · `gjcity_parking_std`. 이름이 같으면 활성 글롭이 두 판을 함께 잡는다(§172-5 의 형태).
+
+보관 셋 중 NGI 와 기본도는 봉인 `20260814-ngii-ngi20` 을 다시 만들 수 있는지 판단할 재료다. 재생성되면 MASTER §13 을
+정정하고, 안 되면 그때 상폐한다(PLAN 「대장 · SSD 디렉토리 구조와 해석기 하나」 ④).
+
+강제자  `tools/docnum_check.py` · `tests/test_lake.py::test_retired_files_carry_sha` · `tests/test_guards.py::test_retired_glob_never_claims_an_active_file`
+
+### 178-2. `hydrant_summary` 의 설명이 다른 파일을 서술하고 있었다
+
+대장 `what` 은 "지상식 418 + 지하식 171 = 589" 였는데 활성 파일(20250731)의 컬럼은 `구분 · 계 · 주거지역 · 상가지역 · 고지대 ·
+시장_화재예방강화지구 · 소방차진입불가지역` — 지역별 집계였다. 지상식 · 지하식 컬럼은 레이크 밖 스냅숏의 20251231 판에 있었다.
+`schema`(도구가 쓴 칸)는 실물 컬럼을 맞게 들고 있었고 사람이 쓴 `what` 만 틀렸다. 사람이 쓴 칸과 도구가 쓴 칸을 대조하는
+검사가 없다 — G 묶음 후보다.
+
+`what` 을 지역별 집계로 고치고 `what_fix` 에 경위를 적었다. note 의 "31개 · 공개율 5%" 는 2026-08-29 재취득 **전** 숫자라
+그대로 두되 `what_fix` 가 그 사실을 말한다.
+
+같은 날 사용자가 공공데이터포털 API(15054942 「동부소방서 관내 지역별 소화전 현황」)를 활용신청했다. 스웨거로 확인하니
+2019 ~ 2025 판 일곱이고 20250731 판은 활성 파일과 컬럼이 같다 — **이미 가진 판이다.** 새로 얻는 것은 과거 집계 여섯뿐이고
+좌표가 없어 판정에도 좌표 문제에도 기여하지 않아 받지 않는다.
+
+소화전의 현재 사실 — 좌표가 있는 쓸 만한 판은 활성 `hydrant_point`(표준데이터 · `updated` 2024-02-07 · 광주 5,002) 하나다.
+보관 두 판은 절단본과 전남분이라 대체가 안 된다. 판정 축에는 안 들어간다(`feeds` publish_web · terrain).
+
+강제자 없음 — 사유: 사람이 쓴 칸 ↔ 도구가 쓴 칸 대조 검사가 없다. G 묶음이 단다
+
+### 178-3. 정정 — 회전반경 원문을 넣어도 검증 플래그는 안 켜진다
+
+§177-4 는 "공고 규격서 원문을 반입하면 `turn_radius_verified` 를 켤 근거가 선다" 고 적었다. **틀렸다.** MASTER §3-13 이
+이미 "`profiles.json` 은 규격이 아니므로 검증값이 아니다" 로 적고 있고, 2026-09-03 지자체 제작 규격서 다섯의 전수 확인에서
+축거 · 최소회전반경은 0건이었다. 공고의 값은 현행 예시다. 켜는 근거는 D-30 실측이고, 원문 반입은 출처를 대장 안으로
+들이는 일일 뿐이다. 사용자가 원본을 찾으러 가기 직전에 기록을 대조해 멈췄다.
+
+강제자 없음 — 사유: 서술 정정이다. 플래그는 `src/firelane/seg/vehicle.py` 의 `can_turn` 이 지킨다
+
+### 178-4. 단속이력의 받은 경로 — 공공데이터포털
+
+§177-1 이 "받은 경로 미기록" 으로 적은 `parking_enforce` 는 공공데이터포털에서 받았다(사용자 확인). `authority` 괄호를 고쳤다.
+
+강제자  `tests/test_lake.py::test_authority_names_institution_and_route`
+
+## 179. L2d — landing 7건을 처음 열었다: 목적지 검색 재료 둘을 반입하고, 셋은 상폐했다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 179-1~179-3 이 각자 강제자 칸을 든다
+
+landing 보류 7건(956MB · 3주)은 사유만 적혀 있고 안을 연 적이 없었다. EDA(2026-09-17 16:56)로 처음 열었고
+사용자가 판정했다. 판정은 불변이다.
+
+### 179-1. 판정
+
+    반입   내비게이션용DB(7z 334MB · 해동 4.06GB) → navi_build · navi_jibun   동명동으로 잘랐다 · 7z 는 지웠다
+           민원행정기관전자지도(2MB) → civil_office                         전국 26,142점 · 동명동 bbox 64 · 학교 · 관공서
+           동구통계연보 2024(244MB · 408쪽) → donggu_statbook                CCTV 없는 구간 가중치 추정 재료
+    보류   상세주소DB(28MB)                                                  아파트 동 단위 목적지 — 목적지 검색 뒤
+    상폐   주소DB(181MB)          내비게이션용DB 가 같은 주소 · 지번 · 부가정보에 좌표까지 든다
+           상세주소 표시(156MB)   층 · 호 표시 테이블 · 좌표 없음
+           사물주소 전국분(10MB)  동구 판 spotaddr_geom 이 raw 에 있다
+
+내비게이션용DB 는 활성 `juso_building_db` 의 note 가 "좌표가 없다 — 내비게이션용DB 승인 대기" 로 **기다리던 판**이었다.
+2026-09-10 에 승인이 떨어져 landing 에 들어왔는데 반입이 3주 멈춰 있었다. 민원행정기관 SHP 는 zip 안 파일명이 CP437 로
+깨져 "정체 확인 전" 으로 보류됐을 뿐이다. 둘이 목적지 검색이 부실한 이유(상가 2,077 뿐)를 정확히 푸는 재료다.
+
+강제자  `tools/docnum_check.py`(datasets 73) · `tests/test_guards.py::test_landing_disposition_needs_why` · `tools/lakecheck.py` L3
+
+### 179-2. 동명동으로 자른다 — 출동지 스코프
+
+동구 전체(약 2만 건)로 자르자는 안이 있었다. 기각했다. 출동지는 동명동이다. 판정 스코프를 동명동 + 주변으로 넓힌 것은
+회랑(안전센터 → 출동지) 때문이지 목적지 때문이 아니다. 자르는 기준은 첫 열 법정동코드 `1221010800` 이다 — 동 이름으로
+자르면 목포 동명동이 섞인다(juso_building_db note). EDA 의 "동명동 추정 5,719" 는 이름 · 행정동을 함께 센 느슨한 수였다.
+
+잘라 넣는 것은 "받은 그대로" 의 예외다. 전국 전량을 raw 에 두지 않는다는 선례(juso_building_db)를 따랐고, 자르는 규칙과
+원본 이름을 대장 note 와 `landing_disposition` 에 남겼다. 원본은 매월 다시 받을 수 있다.
+
+강제자 없음 — 사유: 스코프 판단이다. 자른 행수는 대장 what 에 적혔고 적용 스크립트가 0 행이면 멈춘다
+
+### 179-3. 통계연보는 들인다 — CCTV 없는 구간 가중치를 추정해야 하므로
+
+CV 는 CCTV 가 있는 구간에서만 실시간 통과폭을 낸다. 없는 구간은 경로 가중치를 추정해야 하는데 방식이 아직 정해지지 않았다
+(가상 환경 논의 중). 통계연보의 인구 · 세대 · 자동차 · 주차 통계가 그 재료 중 하나다. 다만 동 단위라 동명동 안에서는 상수다 —
+구간 단위 재료(단속이력 지오코딩 · 주차장 좌표 · 상가 밀도 · 건축물대장)의 스케일 · 사전분포로 쓴다.
+PLAN 에 행을 세웠다(「CCTV 없는 구간의 경로 가중치 — 추정」).
+
+L2c 의 PLAN 편집 둘(보관 7묶음 행 삭제 · #56 ④ 보강)이 **적용되지 않았다.** 행 번호로 찾았는데 5m DEM 행을 지우며 재배번돼
+번호가 하나씩 당겨졌고, 찾기 실패가 조용히 넘어갔다. 이번에 제목으로 찾고 못 찾으면 멈추게 해서 다시 적용했다.
+
+강제자 없음 — 사유: 판단 기록이다. PLAN 편집 누락은 적용 스크립트가 제목 찾기 실패로 멈추는 것으로 막았다
+
+### 179-4. 정정 — 텍스트 표는 raw_only 가 될 수 없다
+
+L2b · L2c 가 단속이력 · 소화전 유형별 집계 · 주차장 표준데이터를 `kind: raw_only` 로 등재했고, L2b 적용이 레이크 기계의
+pytest 에서 멈췄다 — `test_raw_only_is_true_to_the_lake`. 단속이력은 2026-08 에 활성이던 시절 prep 이 만든 norm 판이 레이크에
+남아 있었다. **prep 은 kind 와 무관하게 텍스트 raw 를 전부 norm 으로 옮긴다.** 그래서 텍스트 표를 raw_only 로 적는 순간
+선언이 거짓이 된다. 테스트의 문장이 이미 규칙을 적고 있었다 — "raw_only 는 형식이 정규화 불가일 때만 쓴다. 소비자가 없는
+것은 feeds 가 든다". 샌드박스에는 norm 이 없어 이 검사가 조용히 통과했다.
+
+    parking_enforce   csv_table_multi   2024-01-08 판에만 `비고` — contract.optional_cols 로 선언
+    hydrant_type      csv_table
+    parking_std       csv_table
+    navi_build        text_table        헤더 없는 `|` 구분 · cp949 — juso_building_db 와 같은 kind
+    navi_jibun        text_table
+
+feeds 는 빈 목록이 아니라 `미투입 — <용도>` 로 적었다(§171-1 규칙 — 코드 참조 0곳인 소스). 내비게이션용DB 절단본이
+`.txt` 라 raw 이름 규칙의 통과 확장자에 `txt` 를 더했다 — 없으면 재취득 때 landing 에 갇힌다.
+civil_office(zip 안 SHP) · donggu_statbook(PDF) 은 텍스트가 아니라 raw_only 가 맞다.
+
+강제자  `tests/test_declaration_reality.py::test_raw_only_is_true_to_the_lake` · `tests/test_declaration_sync.py::test_unwired_sources_declare_purpose` · `tests/test_place_idempotent.py::test_every_required_file_is_reachable_by_rules`
+
+### 179-5. 판이 여럿인 것이 정상인 소스는 판을 선언한다 — vintage_check
+
+단속이력을 `csv_table_multi` 로 복귀하자 L2b verify 가 `vintage 정합` 에서 울었다 — 파일명 20240108 ↔ 대장 `updated` 20250226(V1),
+같은 stem 에 판 둘(V2). 이 검사는 its_nodelink 258MB 두 벌을 잡으려고 생겼고 "같은 stem 에 판이 둘이면 두 벌" 로만 봤다.
+기간별로 나뉘어 오는 표가 정상인 경우를 몰랐다.
+
+대장에 `vintages: ['2024-01-08', '2025-02-26']` 로 **판을 선언**하게 하고, vintage_check 가 선언된 판은 V1 · V2 로 안 세게 했다.
+선언 밖 판이 오면 여전히 운다. 선언이 없으면 종전 규칙 그대로다. `updated` 는 최신 판(2025-02-26)으로 둔다.
+
+같은 verify 에서 `커밋된 web/data 가 최신인가` 도 울었다 — raw 가 바뀌어 파이프라인이 `web/data/_manifest.json` 을 갱신했는데
+커밋본이 옛 판이었다. 적용 스크립트가 verify 전에 파이프라인을 한 번 돌려 생성 매니페스트를 커밋하게 했다(G-3).
+
+강제자  `tests/test_vintage_multi.py::test_declared_editions_are_not_defects` · `::test_undeclared_edition_still_cries` · 카나리아 `tools/vintage_check.py --selftest`
+## 180. K2 · G — 판정은 있었는데 틀리던 도구 넷과, 경고만 하던 merge_batch 를 고쳤다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 180-1~180-5 가 각자 강제자 칸을 든다
+
+K1(§175)이 skip 을 가렸다면 이 배치는 **판정을 내리긴 하는데 틀리던** 자리를 고쳤다. 레이크 실물은 안 건드린다. 판정은 불변이다.
+
+### 180-1. acquire — 폐기 판정은 해석기가 내고, 격리는 거부한다
+
+`acquire.retired_names` 가 대장 retired 블록을 직접 읽고, stem 글롭을 RAW 에 풀고, "활성이 늘 이긴다" 땜질(§172-5)을 따로
+들고 있었다. 지금 폐기 항목은 전부 파일 이름이고(글롭 0 — §174-3) 해석기는 이름 주장이 글롭 주장을 이긴다(§174-2).
+두 규칙이 두 곳에 살면 다시 갈린다 — `firelane.lake.retired_reasons` 를 부르게 했다. `주인 블록 직접 해석` 래칫 13 → 12.
+
+`--quarantine` 은 종료코드 2 로 거부한다. 격리 층은 L2 가 폐지했고(§176) 대장 밖 파일은 **격리하지 않고 반입을 멈춘다**(§173-2).
+`--stage` 가 폐기 등재 파일을 되돌리는 자리는 `_quarantine` → `retired/` 다. 같은 이름이 이미 있으면 옮기지 않고 멈춘다 — 덮어쓰지 않는다.
+`--verify` 는 raw 에서 사라진 기록을 retired/ 와 옛 격리 폴더 둘 다에서 찾는다.
+
+작업 중 계층 밖 쓰기 검사가 `RAW.parent / "retired"` 를 잡았다 — 2026-08-24 에 SSD 루트를 오염시킨 형태다. `FIRE_LANE_DATA` 아래로 고쳤다.
+
+강제자  `tests/test_k2.py::test_acquire_refuses_quarantine` · `::test_disposition_and_retired_reasons_come_from_the_resolver` · `tests/test_guards.py::test_retired_glob_never_claims_an_active_file` · `tests/test_layers.py::test_no_tool_writes_outside_declared_layers`
+
+### 180-2. normalize_raw — 처분이 적힌 파일과 정체 모를 파일을 가른다
+
+landing 을 훑을 때 규칙에 안 걸리는 파일을 전부 "규칙에 없는 파일" 로 냈다. 보류 사유가 적힌 7건(§179)과 정말 모르는 파일이
+한 목록에 섞였다. `firelane.lake.disposition` 으로 처분 목록을 읽어 **처분이 적힌 파일**(action · 사유 첫 줄)과
+**규칙에도 처분 목록에도 없는 파일** 둘로 나눠 낸다.
+
+강제자  `tests/test_k2.py::test_disposition_and_retired_reasons_come_from_the_resolver`
+
+### 180-3. dms — 괄호가 붙은 산문은 칸이 아니다 · 두 "죽은 참조" 의 이름을 가른다
+
+§174-4 가 산문의 어순을 바꿔 증상만 껐다. 파서가 `강제자(` 를 칸으로 읽는 것은 그대로였다. 줄머리 규칙에 `(` 를 한글 조사와 같은
+자리로 넣었다. 봉인 요약의 "죽은 참조" 는 "죽은 강제자 참조" 로 바꿨다 — refcheck 의 경로 참조와 이름이 같아 두 숫자가 어긋나 보였다(G-9).
+
+강제자  `tests/test_k2.py::test_dms_field_ignores_prose_with_parenthesis`
+
+### 180-4. plan_renumber — 자기 번호 표가 있는 절의 `#N` 은 §1 참조가 아니다
+
+§177-3 에서 §12 산문의 `(#6 · #11 · #12)` 를 §1 행 참조로 읽어 재배번을 멈췄다. 멈춘 것은 옳았지만 이유가 틀렸다 — 멈추지 않았다면
+두 참조가 조용히 다른 행을 가리켰다. 자기 번호 표(`| # |`)를 가진 §1 밖 절 안에서는 `§1 #N` 으로 소속을 적은 것만 §1 참조로 본다.
+합성 문서로 흔드는 카나리아를 `_canary()` 에 넣었다(G-13).
+
+강제자  `tests/test_k2.py::test_plan_renumber_ignores_foreign_table_numbers` · `tools/plan_renumber.py` `_canary`
+
+### 180-5. merge_batch — 빠뜨린 단계는 멈춘다
+
+    G-2    feat → part/infra PR 이 열려 있으면 멈춘다(squash 를 빠뜨린 것)
+    G-10   열린 part/infra → dev PR 이 없는데 part/infra 가 dev 보다 앞서 있으면 멈춘다 — 배치 D 가 part 에만 머물렀다
+    G-11   릴리즈 본문의 "산출물이 바뀌는가" 를 golden · web/data(매니페스트 제외)만 보고 체크한다 — 대장 65 → 66 을 산출물 변화로 체크했다
+    G-12   태그 입력에서 인쇄 가능한 ASCII 만 남긴다 — 한글 입력기 상태의 깨진 바이트가 형식 검사에 걸렸다
+
+G-3(raw 가 바뀐 배치의 `data/processed/_manifest.json` 을 봉인 커밋에 넣기)은 적용 스크립트 쪽에서 L2b.2 부터 들어갔다.
+남긴 것은 PLAN 「검사 위생 — 카나리아 의무 · 사람이 쓴 칸 대조」 가 든다 — 카나리아 의무 래칫은 판별식 정의가 먼저이고,
+정의 없이 세면 재현되지 않는 분모다(§174-4 와 같은 원칙).
+
+강제자  `tests/test_k2.py::test_merge_batch_stops_instead_of_warning` — gh 와 원격이 필요해 흐름은 못 돌린다. 멈춤 줄이 지워지면 운다
+
+### 180-6. 대화형 확인은 읽기 직전에 터미널 입력 버퍼를 비운다 (G-17)
+
+L2d 레이크 명령 확인에서 사용자가 y 를 쳤는데 "중단" 이 났다. 바로 앞 출력에 `^[]11;rgb:0c0c/0c0c/0c0c^[\^[[30;1R` 가 찍혀
+있었다 — `gh pr checks --watch` 가 터미널에 배경색을 묻고(OSC 11) 커서 위치를 물었고, 터미널의 응답 바이트가 입력 버퍼에 남았다.
+다음 `read` 가 사람의 y 보다 그 바이트를 먼저 읽었다. 가상 터미널로 재현했다 — 옛 판은 응답 + y 에서 NO, 고친 판은 YES.
+
+우회(명령 파일을 손으로 치기)는 다음 확인 창에서 같은 일이 난다. `merge_batch` 의 `ask` 와 태그 입력, 저장소 밖 `run_chain` 의
+확인을 같은 규칙으로 고쳤다 — 입력이 터미널이면 **읽기 직전에 버퍼를 비우고** 터미널에서 읽는다. 파이프로 답을 넘기면
+(`run_final` 의 릴리즈 질문) stdin 을 그대로 읽는다. 답은 글자만 남겨 판정한다 — 비운 뒤 도착한 응답 조각이 섞여도 y 한 글자로 본다.
+
+강제자  `tests/test_k2.py::test_merge_batch_ask_survives_terminal_replies` — 가상 터미널에 응답 바이트를 넣고 흔든다 · `::test_merge_batch_ask_reads_piped_answers`
+
+### 180-7. 봉인은 커밋본이어야 한다 — 적용 스크립트는 패치가 건드린 파일을 전부 커밋한다
+
+L2d 의 CI `contract-shared` 가 `test_every_required_file_is_reachable_by_rules` 로 빨강이었다. 레이크 기계의 verify 는 41 단계
+초록이었고 봉인 `seal/2026-09-17-l2d` 도 찍혔다. 패치가 `src/firelane/normalize_raw.py`(통과 확장자에 txt)를 바꿨는데 적용
+스크립트의 `git add` 가 `README · docs · sources.yaml · _acquire · _prep` 로 **손으로 적은 목록**이라 그 파일이 빠졌다.
+verify 는 작업 트리를 보고, CI 는 커밋본을 본다. verify 헤더의 `+미커밋` 은 보고만 했다 — 봉인이 거짓이었다.
+
+두 곳을 고쳤다. `dms seal` 은 커밋 안 된 추적 파일이 있으면 거부한다(봉인 자신 · 봉인 커밋에 함께 넣는 생성 매니페스트만 예외).
+적용 스크립트는 커밋 목록을 손으로 적지 않고 **패치의 파일 목록**(`git apply --numstat`)에서 뽑고, 커밋 뒤 · verify 전에 추적 파일이
+더러우면 멈춘다. 태그 뒤에 커밋이 생기면 봉인이 옛 커밋을 가리키므로 태그를 지우고 다시 봉인한다.
+
+강제자  `tests/test_k2.py::test_seal_refuses_uncommitted_tracked_files` — 실제 git 저장소로 흔든다
+
+### 180-8. 봉인 태그를 걷는다 — 태그는 릴리즈에만 쓴다
+
+§163-9 가 봉인 커밋마다 `seal/<날짜>-<배치>` 태그를 달게 했다. 스쿼시 머지가 `feat` 의 봉인 커밋을 고아로 만들어 gc 뒤
+`git show` 로 못 되짚는다는 이유였다. 그 뒤로 배치마다 태그가 쌓였다(2026-09-17 하루에만 여덟). 사용자가 잡았다 — **태그는
+릴리즈(vX.Y)에만 쓰기로 했다.**
+
+도달성은 쓰이지 않았다. `dms delta` 는 해시가 아니라 문서 지문으로 대조하고(§163-9 자신이 적었다) 봉인 기록은 `data/dms/SEAL.json`
+의 `commit` 이 든다. 스쿼시가 내용을 `part/infra` 로 옮기므로 봉인이 증명한 트리는 거기 남는다. 태그 없이 잃는 것은 **feat 브랜치의
+커밋 해시를 git 으로 되짚는 일** 하나다.
+
+적용 스크립트는 태그를 달지 않는다. 이어 돌기는 로그 폴더의 봉인 커밋 기록으로 판단한다 — 봉인 뒤로 `data/dms` 밖이 안 바뀌었으면
+다시 검증하지 않는다(G-18). §180-7 의 "태그를 지우고 다시 봉인한다" 는 이 절로 대체한다. 원격 · 로컬의 `seal/*` 태그는 지웠다.
+
+강제자  `tests/test_k2.py::test_no_tool_creates_seal_tags` — 저장소의 도구가 `seal/` 태그를 만들면 운다
