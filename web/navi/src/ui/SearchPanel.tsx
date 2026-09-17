@@ -38,7 +38,7 @@ export function SearchPanel(p: Props) {
     <div style={sheet}>
       <div style={bar}>
         <input autoFocus value={q} onChange={(e) => setQ(e.target.value)}
-               placeholder="상가 · 업종 · 주소" style={input} />
+               placeholder="건물 · 기관 · 상가 · 주소 · 지번" style={input} />
         <button onClick={() => { setQ(""); p.onClose(); }} style={x}>✕</button>
       </div>
 
