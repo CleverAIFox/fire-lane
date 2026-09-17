@@ -2890,6 +2890,8 @@ basemap:
 retired:
   building_ledger:
     stem:      eais_bldg_ledger
+    files:
+      - eais/eais_bldg_ledger_jngj-donggu_20260817.csv
     what:      건축물대장 표제부. 높이·주용도·주차대수·사용승인일
     reason:    높이·주차대수만 있고 건물 형상은 building 이 이미 낸다. 11.3MB 소비자 0곳
     at:        2026-08-31
@@ -2905,6 +2907,9 @@ retired:
     successor: bldg_ledger_dm
   enforcement:
     stem:      gjcity_parking_enforce
+    files:
+      - gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv
+      - gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv
     what:      동구 불법주정차 단속 2판 (2022-01~2023-10 85,380건 + 2024년). 이어붙여 쓴다
     reason:    단속 이력이지 현재 장애물이 아니다. 같은 목적을 enforce_cam·parking_zone 이 더 정확히 덮는다. 8.1MB 를 매 실행 읽을 이유가 없다
     at:        2026-08-31
@@ -2912,6 +2917,8 @@ retired:
   hydrant_point_kr_20240207_truncated:
     what: 전국 소방용수시설 표준데이터 — 50,000행 절단본 (2024-02-07)
     stem: safety_hydrant_point
+    files:
+      - safety/safety_hydrant_point_kr_20240207_truncated.csv
     ext: [csv]
     provider: safety
     source_hint: 공공데이터포털 CSV 내려받기 (상한 50,000행)
@@ -2993,6 +3000,8 @@ retired:
   firestation_kr_20250701:
     what: 소방청 시도 소방서 현황 (2025-07-01 판)
     stem: safety_firestation
+    files:
+      - safety/safety_firestation_kr_20250701.csv
     ext: [csv]
     provider: safety
     source_hint: 공공데이터포털 소방청 표준데이터
@@ -3006,6 +3015,8 @@ retired:
   hydrant_point_jngj_20250917:
     what: 전남광주통합특별시 소방 용수시설 현황 (2025-09-17)
     stem: safety_hydrant_point
+    files:
+      - safety/safety_hydrant_point_jngj_20250917.csv
     ext: [csv]
     provider: safety
     source_hint: 전남광주통합특별시 소방본부
