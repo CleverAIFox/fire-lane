@@ -1707,6 +1707,10 @@ datasets:
 
         API 로 다시 받았다 — tn_pubr_public_ffus_wtrcns_api · ctprvnNm=광주광역시.
         광주 5,002 · 동구 651. hydrant_summary 집계(654)와 3건 차로 맞는다.
+        취득 기록(2026-09-17 `_meta/…meta.json` 에서 옮기고 파일은 지웠다 — 읽는 코드 0곳):
+          https://api.data.go.kr/openapi/tn_pubr_public_ffus_wtrcns_api ·
+          type=json · ctprvnNm=광주광역시 · fetched 5,002 = totalCount 5,002(잘림 없음) ·
+          2026-08-30T00:56:35+09:00 · fetch_api 일회성 도구(저장소에 없음)
         종전 197건은 새 파일에 **전부 포함**된다(겹침 197 · 기존에만 0).
 
       ★ 종전 note 의 "588 중 31" 은 폐기한다. 두 축이 섞인 숫자였다 —  <!--stale-ok-->
@@ -2178,8 +2182,8 @@ datasets:
     stem: safety_vehiclecard
     ext: [pdf]
     scope: jngj-donggu
-    authority: 전남광주통합특별시 동부소방서 (우지혜 경유)
-    updated: '2026-09-04'   # ★ 카드 출력일. OZ Report Viewer 가 PDF 생성일로 박는다
+    authority: 전남광주통합특별시 동부소방서 (정보공개청구)
+    updated: '2026-09-04'
     parts: [jisan2, daein5, daein6, daein11]
     what: 소방자동차 관리카드 [별지 제48호서식] 1쪽 — 차량 1대당 PDF 1개. 보유 34대 중 수령분
     kind: raw_only
