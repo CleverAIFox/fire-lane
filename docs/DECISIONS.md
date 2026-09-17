@@ -7107,7 +7107,7 @@ PLAN 「경로 비용 판정 반영」 을 닫는다. `reachable` 은 verdict �
 
 PLAN 행은 스스로 *"정리 완료. 수는 남는다"* 고 적었다. 대조하니 코드 참조 0곳 · `raw_only` 아닌
 22종 **전부**가 `feeds: 미투입 — <용도>` 를 이미 들고 있었다. 갚을 것이 없는 행이 빚 목록에 살았고,
-강제자(`test_plan_unreferenced_sources_count_is_current`)가 *PLAN 에 그 행이 있어야 한다* 고 단언해
+검사 `test_plan_unreferenced_sources_count_is_current` 가 *PLAN 에 그 행이 있어야 한다* 고 단언해
 **행을 지우지 못하게 붙들었다.** 조사 도구 아홉을 `EXEMPT` 에 사유와 함께 등재한 것(§162)과 같은
 형태로 바꿨다 — 수가 늘어도 안 울고, **용도 없이 늘면** 운다.
 
@@ -7443,3 +7443,76 @@ R 의 근거를 고쳐 적는다. 현행 뼈대의 11% 가 NGII 도로면 밖이
 그래서 R 을 미뤘어야 할 데이터는 없다. 전부 `seg_uid` 로 붙으므로 R 뒤가 맞다.
 
 강제자 없음 — 사유: 판단 기록이다. 활용 여부는 PLAN 「raw_only 주소 계열 4종 활용 여부」 가 든다
+
+## 174. L1 — 파일의 주인을 해석기 하나가 판정하고, 대장 강제자를 래칫으로 달았다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 174-1~174-4 가 각자 강제자 칸을 든다
+
+§173-4 의 네 기준을 코드로 옮긴 첫 배치다. 레이크 실물은 옮기지 않았다(L2 의 일). 판정은 불변이다.
+
+### 174-1. `firelane.lake` — 주인 · 층 · 상태를 한 곳에서 낸다
+
+대장(`datasets` · `retired` · `landing_disposition`)과 `_prep.json` 과 디스크를 받아 파일마다 상태를
+낸다 — 정상 · 자리틀림 · 주인없음 · 두주인 · 결손 · 선언밖 · 폐지층 · 기록. 패턴 해석은
+`ledger.globs` 를 그대로 쓴다. 해석기가 두 벌이 되면 이 배치의 이유가 사라진다.
+
+`gate()` 는 두주인 · 주인없음 · 선언밖 이 하나라도 있거나 폐기 항목이 글롭이면 이동 · 삭제를 거부한다.
+알리기만 하는 검사가 아니라 **먼저 막는 자리**다(§173-4 ①). L2 의 적용 스크립트가 이것을 부른다.
+
+sha 는 해석기에서 재지 않는다. 3.7GB 를 해석마다 읽을 이유가 없다. 사본 판정은 계획 단계가 레이크
+기계에서 한 번 잰다(§173-5).
+
+강제자  `tests/test_lake.py::test_layers_outside_the_declaration_block_the_gate`
+
+### 174-2. 모의 레이크가 규칙 둘을 더 요구했다 — 이름이 글롭을 이기고, 한 원본의 다른 레이어는 공유다
+
+실물 이름(대장 sha 기록 · `_prep.json` · 격리 7 · landing 7)으로 모의 레이크를 세워 첫 판을 돌렸다.
+
+    ① 격리된 폐기본 3건이 두주인   활성 `fire_station` · `hydrant_point` 가 stem 글롭으로, 폐기가 이름으로 주장
+    ② raw 4건이 두주인             전자지도 zip 하나를 datasets 여섯이, 표준노드링크 zip 하나를 셋이 쓴다
+
+①은 §172-5 를 뒤집어 놓은 형태다. 그날은 폐기 글롭이 활성을 잡았고, 여기서는 활성 글롭이 폐기를
+잡았다. **이름으로 적은 주장이 글롭 주장보다 구체적**이므로 이긴다고 정했다. 같은 구체성에서 둘 이상이면
+그때가 두주인이다.
+
+②는 사고가 아니라 설계다. 각자 `layer` 가 다르다. 레이어를 적었고 서로 다르면 공유(정상)로 보고, 레이어가
+없거나 같으면 두주인으로 본다. 둘을 못 가렸으면 관문이 영영 열리지 않았다.
+
+두 규칙을 넣은 뒤 모의 레이크 결과 — raw 73 · norm 32 · landing 7 정상, 격리 8 폐지층(전부 은퇴 사유 있음),
+관문을 막는 것은 `tiles` 하나(선언밖). lake_scan S8 이 "근거 없음" 으로 낸 7건이 여기서는 전부 주인이 있다.
+
+기각 — 활성이 늘 이긴다(acquire v1.3 의 땜질). 격리된 폐기본을 활성 주인으로 읽어 raw 로 되돌리라고 한다.
+
+강제자  `tests/test_lake.py::test_named_retired_beats_active_glob` · `::test_one_archive_many_layers_is_sharing_not_two_owners` · 카나리아 `::test_stem_glob_retired_on_active_file_blocks_the_gate` · `::test_quarantine_lookup_is_not_raw_only`
+
+### 174-3. 폐기 글롭 다섯을 파일 이름으로 바꿨다
+
+`building_ledger` · `enforcement` · `hydrant_point_kr_20240207_truncated` · `firestation_kr_20250701` ·
+`hydrant_point_jngj_20250917` 이 stem 만 적어 글롭으로 파일을 가리켰다. 격리 폴더의 실물 이름으로 `files`
+를 달았다(enforcement 는 2024-01-08 · 2025-02-26 두 판). `stem` 은 남긴다 — `provider_of` 가 쓰고,
+`files` 가 있으면 `globs` 는 stem 을 안 본다.
+
+sha 는 달지 않았다. 샌드박스에 격리 파일이 없다. 이름 · sha 둘 다 있어야 파일 단위 주인이므로 sha 없는
+7 을 래칫 상한으로 두고 L2 가 레이크에서 재서 채운다.
+
+강제자  `tests/test_lake.py::test_retired_entries_name_files_not_globs`(상한 0) · `::test_retired_files_carry_sha`(상한 7)
+
+### 174-4. 래칫 셋 — 대장 로드 · 주인 블록 · authority
+
+    대장 직접 로드         40   ledger · lake 밖에서 sources.yaml 을 yaml 로 읽는 파일(src · tools · tests)
+    주인 블록 직접 해석    13   retired · landing_disposition 을 직접 읽는 파일
+    authority 규칙 위반    63   칸 없음 45 · 경로 괄호 없음 18(MASTER §18-3a)
+
+핸드오프는 해석 사본을 20곳으로 셌다. 정의가 없는 수라 재현되지 않는다. 판별식을 코드로 적고 그 값을 상한으로
+박았다 — 재현되지 않는 숫자는 분모가 아니다(`tools/dms.py` 와 같은 원칙). 상한은 **줄면 운다** — 내린 값을
+박지 않으면 다시 늘어도 안 운다.
+
+판별식이 실제로 잡는지는 합성 입력으로 흔든다. 새 검사를 짜는 중 기존 가드(`test_generators_end_json_with_newline`)가
+해석기의 JSON 출력 개행 누락을 잡았다 — 강제자가 있던 칸이 몇 분 만에 잡는다는 §173-4 의 증거가 하나 더 늘었다.
+
+G-9 도 닫았다. §171-1 본문의 한 줄이 줄머리에서 `강제자(` 로 시작해 `dms` 가 산문을 강제자 칸으로 읽었고,
+그 칸이 지운 테스트를 가리켜 봉인마다 "죽은 참조 1" 이 찍혔다. 어순을 바꿨다. 파서 쪽 카나리아는 K 가 단다.
+
+강제자  `tests/test_lake.py::test_ledger_is_loaded_through_one_door` · `::test_file_owners_are_resolved_in_one_place` · `::test_authority_names_institution_and_route` · 카나리아 `::test_ratchet_probes_are_alive`
