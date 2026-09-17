@@ -5,14 +5,16 @@ publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내�
 
 IN    processed/*.geojson · processed/segments.schema.json ·
       processed/route_vehicle.csv · processed/corridor_5186.gpkg ·
-      processed/building_5186.gpkg · processed/ngii1k_light_5186.gpkg
-OUT   web/data/  — 아래 열일곱. ★ 중괄호 축약을 쓰지 않는다. 선언은
+      processed/building_5186.gpkg · processed/ngii1k_light_5186.gpkg ·
+      processed/navi_build.csv · processed/navi_jibun.csv · processed/civil_office.geojson
+OUT   web/data/  — 아래 열여덟. ★ 중괄호 축약을 쓰지 않는다. 선언은
       기계가 대조하는 것이고(tests/test_declaration_reality.py) 축약하면
       그 대조가 이름을 못 찾는다.
         segments.geojson      boundary.geojson
         mask.geojson          mask_soft.geojson    buildings.geojson
         hydrants.geojson      stations.geojson     cctv.geojson
         poi.geojson           streetlights.geojson lightpoles.geojson
+        dest.geojson
         segments.schema.json  vehicle_spec.json    route_vehicle.json
         navi_graph.json       _manifest.json
       ★ navi_graph.json 은 publish_navi.main() 을 여기서 불러 낸다(2026-09-16 · DECISIONS §170-5)
@@ -42,6 +44,9 @@ EMD_CD = "12210108"
 #   판정 임계(CCTV_RANGE 25.0)의 정본은 seg/params.py 다. 같은 숫자를
 #   세 곳에 두면 반드시 한 곳만 고치고 잊는다.
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
+# ★ 건물 발행 예산(§181-2). 스코프 판 2.18MB · web/data 32MB / 상한 40MB 에서 잡았다.
+BLDG_MB = 6.0
+BLDG_TOL = (0.3, 0.6, 1.0)          # m · EPSG:5186
 
 def main():
     W.mkdir(parents=True, exist_ok=True)
@@ -111,6 +116,10 @@ def main():
     _prev = json.loads(_vj.read_text(encoding="utf-8")) if _vj.exists() else {}
     minx, miny, maxx, maxy = gpd.GeoSeries([scope4], crs=4326).total_bounds
     m = 0.002
+    # ★ 2026-09-17 (DECISIONS §181-2). 지도가 움직일 수 있는 범위. 건물 · 목적지를 여기로 자른다 —
+    #   판정 스코프로 자르면 광주지방법원처럼 지도 안에 있는 건물이 안 그려지고 검색에도 없다.
+    move4 = box(round(minx-m, 4), round(miny-m, 4), round(maxx+m, 4), round(maxy+m, 4))
+    move = gpd.GeoSeries([move4], crs=4326).to_crs(5186).iloc[0]
     (W/"view.json").write_text(json.dumps({
         "center": [round((minx+maxx)/2, 6), round((miny+maxy)/2, 6)],
         "bounds": [[round(minx, 4), round(miny, 4)], [round(maxx, 4), round(maxy, 4)]],
@@ -130,12 +139,26 @@ def main():
 
     # 건물은 스코프 전체를 덮는다. 동명동만 자르면 안전센터 주변이
     # 길만 남아 3D 가 안 선다. (2,518동 → 5,713동)
+    # ★ 2026-09-17 (§181-2). 스코프가 아니라 **지도 이동 범위**(view.maxBounds)로 자른다.
     b = gpd.read_file(P/"building_5186.gpkg")
-    b = b[b.intersects(scope)].copy()
+    b = b[b.intersects(move)].copy()
     b["flo"] = b.GRO_FLO_CO.fillna(1).astype(float).clip(lower=1)   # 0층 291동 → 1층
     b["h"] = (b.flo*3.3).round(1)
     cols = ["BUL_MAN_NO","BULD_NM","flo","h"] + (["z"] if "z" in b.columns else [])
-    b[cols+["geometry"]].to_crs(4326).to_file(W/"buildings.geojson", **PREC)
+    b = b[cols+["geometry"]]
+    b.to_crs(4326).to_file(W/"buildings.geojson", **PREC)
+    # ★ 예산을 넘을 때만 단순화한다(§181-2). 늘 깎으면 스코프 안 건물 모양까지 바뀐다.
+    #   공차는 고정 단계라 같은 입력에 같은 산출물이다.
+    for tol in BLDG_TOL:
+        if (W/"buildings.geojson").stat().st_size <= BLDG_MB * 1024 * 1024:
+            break
+        b.assign(geometry=b.geometry.simplify(tol, preserve_topology=True)) \
+         .to_crs(4326).to_file(W/"buildings.geojson", **PREC)
+        print(f"  건물 단순화 {tol}m")
+    _mb = (W/"buildings.geojson").stat().st_size / 1024 / 1024
+    if _mb > BLDG_MB:
+        raise SystemExit(f"buildings.geojson {_mb:.1f}MB — 예산 {BLDG_MB}MB 를 단순화로도 못 맞췄다")
+    print(f"  건물 {len(b):,}동 (지도 이동 범위) · {_mb:.2f}MB")
 
     # ── 마커 3종 ────────────────────────────────────────────────
     # 전부 스코프로 자른다. 자르지 않으면 마스크가 덮은 어두운 영역 위에
@@ -281,6 +304,30 @@ def main():
         columns={"상호명": "name", "상권업종중분류명": "sub", "도로명주소": "addr"}
     ).to_file(W/"poi.geojson", **PREC)
     print(f"  상가 POI {len(poi)}개 (지상 1층 · {poi.cat.nunique()}개 업종)")
+
+    # ── 목적지 색인 ─────────────────────────────────────────
+    # ★ 2026-09-17 (DECISIONS §181 · PLAN 「목적지 검색 — 주소 · 건물명 · 관공서」).
+    #   poi.geojson 은 지도 라벨이다(스코프 · 1층). 검색은 dest.geojson 을 읽는다 —
+    #   상가 + 주소/건물(내비게이션용DB) + 관공서/학교(민원행정기관).
+    # ★ 2026-09-17 (DECISIONS §183-1 · 사용자). 목적지는 **동명동 경계 안만**이다. 화재 발생 후보지 스코프가
+    #   동명동이다. N1.1 은 지도 이동 범위로 잘라 동구청 · 동부소방서가 목적지로 떴다. 지도(건물 · 라벨)는
+    #   지금처럼 안전센터 · 회랑까지 넓게 둔다 — 넓은 것은 표출이고 목적지는 판정 스코프다.
+    # ★ 입력이 없으면 죽는다. 빠진 채 발행하면 검색에서 법원이 또 조용히 사라진다.
+    from firelane import destinations as _dest
+    for _need in (P/"navi_build.csv", P/"navi_jibun.csv", P/"civil_office.geojson"):
+        if not _need.exists():
+            raise FileNotFoundError(f"{_need.name} 없음 — ingest 를 먼저(목적지 색인 원천)")
+    _store = poi[["상호명", "cat", "상권업종중분류명", "도로명주소", "geometry"]].rename(
+        columns={"상호명": "name", "상권업종중분류명": "sub", "도로명주소": "addr"})
+    _rd = dict(dtype=str, keep_default_na=False, encoding="utf-8-sig")
+    dest, _st = _dest.build_index(
+        _store, pd.read_csv(P/"navi_build.csv", **_rd), pd.read_csv(P/"navi_jibun.csv", **_rd),
+        gpd.read_file(P/"civil_office.geojson"), emd4)
+    dest.to_file(W/"dest.geojson", **PREC)
+    _nv = _st["navi"]
+    print(f"  목적지 {_st['total']:,} — 상가 {_st['store']:,} · 주소/건물 {_st['build']:,} · 관공서/학교 {_st['civil']:,}")
+    print(f"    내비DB {_nv['rows']:,}행 — 출입구 {_nv['entrance']:,} · 중심점 {_nv['center']:,} · "
+          f"좌표 없음(뺌) {_nv['no_coord']:,} · 같은 주소(뺌) {_nv['same_addr']:,}")
 
     # ── 시설 마커 ──────────────────────────────────────────────
     # 형상·색·크기는 표현이다. web/config.js 의 markers[] 가 정본이고

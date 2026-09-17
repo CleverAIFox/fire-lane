@@ -93,7 +93,9 @@ STEPS = [
          writes=(P / "_manifest.json", P / "*_5186.gpkg", P / "building.geojson",
                  P / "boundary_emd.geojson", P / "fire_station.geojson",
                  P / "hydrant_point.geojson", P / "cctv.geojson",
-                 P / "poi_store.geojson", P / "road_intrvl.geojson")),
+                 P / "poi_store.geojson", P / "road_intrvl.geojson",
+                 # ★ 2026-09-17 (§181). 목적지 색인 원천 — publish 가 이름으로 읽는다
+                 P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson")),
     Step("segments", "segments", "노딩 → 폭 → 판정",
          P / "segments.geojson",
          reads=(P / "ngii1k_5186.gpkg", P / "ngii1k_center_5186.gpkg",
@@ -149,7 +151,8 @@ STEPS = [
                 P / "fire_station.geojson", P / "hydrant_point.geojson",
                 P / "cctv.geojson", P / "poi_store.geojson",
                 P / "corridor_5186.gpkg", P / "building_5186.gpkg",
-                P / "ngii1k_light_5186.gpkg", P / "route_vehicle.csv", P / "scope_5186.gpkg"),
+                P / "ngii1k_light_5186.gpkg", P / "route_vehicle.csv", P / "scope_5186.gpkg",
+                P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson"),
          # ★ web/data/_manifest.json 은 publish 가 마지막에 쓰는 계보다.
          #   종전에는 tools/web_manifest.py 를 사람이 따로 돌려야 했고
          #   아무도 안 돌렸다(2026-08-22 CI 가 처음 잡음).
@@ -161,7 +164,7 @@ STEPS = [
                  WEB / "cctv.geojson", WEB / "poi.geojson",
                  WEB / "streetlights.geojson", WEB / "lightpoles.geojson",
                  WEB / "vehicle_spec.json", WEB / "route_vehicle.json",
-                 WEB / "navi_graph.json"),
+                 WEB / "navi_graph.json", WEB / "dest.geojson"),
          # ★ view.json 은 terrain·ortho 가 구운 범위를 넣어둔 것을 읽어
          #   보존하고 다시 쓴다. writes 가 아니라 mutates 다.
          mutates=(WEB / "view.json",)),

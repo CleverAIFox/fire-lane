@@ -7943,3 +7943,261 @@ verify 는 작업 트리를 보고, CI 는 커밋본을 본다. verify 헤더의
 다시 검증하지 않는다(G-18). §180-7 의 "태그를 지우고 다시 봉인한다" 는 이 절로 대체한다. 원격 · 로컬의 `seal/*` 태그는 지웠다.
 
 강제자  `tests/test_k2.py::test_no_tool_creates_seal_tags` — 저장소의 도구가 `seal/` 태그를 만들면 운다
+
+### 180-9. verify 에서 `흡수 대상` 을 뺐다 — 생략 칸은 실제로 못 돈 것만
+
+verify 요약의 "생략 1" 이 매번 `흡수 대상` 이었다. `release_brief.py` 의 마지막 한 줄("움직인 것 N개")을 `note` 로 찍는 자리라
+검사가 아니라 보고였다(§109). 한 줄 숫자로는 리뷰어가 무엇이 움직였는지 알 수 없고, 그 표는 릴리즈 PR 본문(`merge_batch --release`)이
+이미 쓴다. 대신 생략 칸이 늘 1 이라 **진짜 생략**(npm 없음 · `--fast` · raw 없음)이 나와도 눈에 안 띈다 — 봉인 요약의 강제자 목록에도
+`verify/흡수 대상` 이 매번 끼었다.
+
+강제자  `tests/test_k2.py::test_verify_skips_are_real_skips` — note 는 못 도는 조건 셋만 · release_brief 는 릴리즈 흐름에 남아 있다
+
+## 181. N1.1 — 목적지 색인을 세 원천으로, 건물을 지도 이동 범위로, zip 해제를 소스별로
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 181-1~181-5 가 각자 강제자 칸을 든다
+
+내비 검색이 `poi.geojson` 상가 2,077 만 봐서 법원 · 구청 · 학교 · 아파트 · 주소가 안 나왔다(PLAN 「목적지 검색 — 주소 · 건물명 · 관공서」).
+판정 1,281 은 건드리지 않는다 — `segments` 를 읽는 코드는 바뀌지 않았고 golden 이 강제자다. `juso_building_db` 상폐는 레이크 이동과
+sha 가 사용자 기계에서만 나오므로 N1.2 로 뗐다.
+
+### 181-1. 색인 `dest.geojson` — 상가 · 내비게이션용DB · 민원행정기관
+
+`firelane.destinations` 가 셋을 `poi.geojson` 과 같은 칸(name · cat · sub · addr)에 `alt`(지번) · `src`(원천)를 더해 합친다.
+`poi.geojson` 은 지도 라벨로 남고, 앱의 검색만 `dest.geojson` 을 읽는다.
+
+열 번호는 가이드 붙임 1 · 2 로 확정했다 — 건물 c10 건물관리번호 · c11 시군구용건물명 · c12 용도 · c17 공동주택구분 · c19 상세건물명 ·
+c23·c24 중심점 · c25·c26 출입구(EPSG:5179), 지번 c03 읍면동 · c05 산 · c06·c07 본번·부번 · c18 건물관리번호.
+
+- 좌표는 출입구 → 중심점 → 둘 다 없으면 **뺀다**. 비공개 · 공개제한 건물은 좌표가 빈 값이다. 뺀 수를 발행 로그에 찍는다.
+- 이름 없는 건물은 도로명주소가 이름이다(cat `주소`). 주소로 찾게 하는 칸이다.
+- 한 도로명주소에 건물이 여럿이다(본건물 · 부속). 표본 19행 중 5행이 겹쳤다. 이름 · 주소가 같으면 지번이 붙은 본건물 하나만 남기고 수를 센다.
+- 검색은 전수 정렬로 바꿨다. 종전의 `limit * 8` 조기 종료는 색인이 상가 먼저라 넓은 질의에서 관공서를 후보에 넣기도 전에 잘랐다.
+  같은 점수면 관공서 → 건물 → 상가 순이다. 공백은 무시한다.
+- 도착점은 그대로 `snap`(도로 위 점)이다.
+
+강제자  `tests/test_n1.py::test_column_numbers_match_guide` · `::test_coordinate_fallback_and_exclusion_are_counted` · `::test_same_address_keeps_one_main_building_with_jibun` · `::test_index_merges_three_sources_inside_map_bounds` · `::test_publish_and_navi_are_wired_to_dest`
+
+### 181-2. 건물과 목적지는 판정 스코프가 아니라 `view.maxBounds` 로 자른다
+
+스코프로 자르면 지도 안에 보이는 광주지방법원이 건물로도 검색으로도 없다. 지도가 움직일 수 있는 범위가 곧 사용자가 볼 수 있는 범위다.
+`web/data` 32MB / 상한 40MB 라 건물에 예산 6MB 를 두고 **넘을 때만** 0.3 → 0.6 → 1.0m 로 단순화한다. 늘 깎으면 스코프 안 건물 모양까지
+바뀐다. 셋으로도 못 맞추면 발행이 죽는다.
+
+강제자  `tests/test_n1.py::test_publish_and_navi_are_wired_to_dest`
+
+### 181-3. `civil_office` 는 raw_only 에서 shp_zip 으로 — 발행은 processed 만 읽는다
+
+raw_only 로 두면 publish 가 raw zip 을 직접 열어야 한다. 발행 단계가 레이크를 읽으면 계보(매니페스트)에 안 잡힌다.
+zip 안 한글 파일명이 CP437 로 깨져 이름으로 못 가리키므로 `layer: '*.shp'` 글롭을 쓰고, ingest · 계약 검사 둘 다
+**정확히 하나**만 맞아야 통과한다. `next()` 로 첫 것을 집으면 둘째 shp 가 생겨도 조용히 하나만 읽는다.
+`ledger_feeds` 는 글롭 레이어를 소비자 별칭으로 쓰지 않는다 — `*.shp` 를 적은 파일 전부가 소비자로 셌다.
+
+강제자  `tests/test_n1.py::test_unzip_is_isolated_per_zip` · `::test_ledger_layer_is_never_a_lake_layer`
+
+### 181-4. zip 은 그 zip 만의 빈 폴더에 푼다 (G-22)
+
+ingest 가 모든 소스를 `.work` 한 곳에 풀고 `tmp.rglob(layer)` 로 찾았다. 앞 소스가 푼 같은 이름의 shp · dbf 가 남아 있으면 엉뚱한 판을
+조용히 읽는다. 글롭 레이어는 앞 소스의 shp 전부와 겹친다. `ingest.unzip_own` 이 `.work/_zip/<zip 이름>` 을 비우고 푼다.
+
+강제자  `tests/test_n1.py::test_unzip_is_isolated_per_zip` · `::test_ingest_has_no_shared_extract`
+
+### 181-5. 대장 `layer` 칸에 레이크 층 이름을 적지 않는다 (G-21)
+
+L2d(§179)가 넣은 8개 항목에 `layer: raw` 가 있었다. `layer` 는 zip 안 레이어 이름 칸이다(`contract.py` 가 zip 목록과 대조한다).
+raw_only · csv 라 검사가 안 돌아 드러나지 않았고, civil_office 를 shp_zip 으로 바꾸는 순간 `raw 없음` 으로 운다.
+층은 파일 경로가 말한다. 8건을 걷었다.
+
+강제자  `tests/test_n1.py::test_ledger_layer_is_never_a_lake_layer`
+
+### 181-6. 배포 주소는 `cleveraifox.github.io` 다 — 옛 조직 주소를 안내하지 않는다
+
+README · MASTER · `.env.example` 이 `woongtopia.github.io/fire-lane/` 를 지도 · 내비 주소로 안내했다. 저장소는 `woongtopia` 조직에서
+`CleverAIFox` 개인으로 이관됐고(§147), 브이월드 키의 등록 도메인은 2026-09-12 에 `cleveraifox.github.io` 로 바뀌었다(`web/config.js`).
+옛 주소는 이관 전 배포가 남아 있을 뿐이라 **새 판정이 안 올라간다** — 거기를 보면 낡은 지도를 본다.
+
+§147 의 "`@woongtopia` 흔적은 일부러 남긴다" 는 그대로다. 고친 것은 **사람을 보내는 주소** 셋뿐이고, 팀 핸들 · 이관 기록 ·
+머지 번호 같은 옛 조직 표기는 사실이므로 둔다. `web/config.js` 주석은 이관 전 등록 도메인을 기록으로 적은 것이라 허용한다.
+
+README 셋(루트 · `src/firelane` · `web`)의 전수 대조는 PLAN 「README 가 루트인데 GIS 전용이다」 로 미룬다.
+
+강제자  `tests/test_n1.py::test_no_doc_sends_people_to_old_pages_domain`
+
+### 181-7. 내비도 `web/data` 소비자다 — 고아 검사가 지도만 봤다
+
+`test_contract::test_web_data_has_no_unintended_orphan` 은 `web/js` · `config.js` · 파이썬 읽기만 소비자로 셌다. 내비(`web/navi/src`)만 읽는
+`dest.geojson` 이 발행되자 **고아**로 불려 파이프라인 계약 단계가 섰다(2026-09-17 사용자 기계 첫 발행). 샌드박스 `web/data` 에는 그 파일이
+없어서 검사가 볼 것이 없었고 초록이었다 — 실물이 생긴 기계에서만 우는 형태다. `navi_reads()` 가 내비 TS 의 파일 이름 리터럴(주석 제외)을
+소비자로 더한다. 실물 없이도 우는 강제자를 따로 둔다.
+
+강제자  `tests/test_n1.py::test_contract_counts_navi_as_consumer` · `tests/test_contract.py::test_web_data_has_no_unintended_orphan`
+
+## 182. K3 · G — 대장 검사를 아무도 안 불렀고, 옛 실행으로 머지했다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 182-1~182-8 이 각자 강제자 칸을 든다
+
+N1.1 을 사용자 기계에서 돌리며 드러난 도구 결함을 모았다(G-14 · G-15 · G-16 · G-23 과 매 실행 경고 둘). 판정은 불변이다.
+표출 범위 틈(182-7)만 화면이 바뀐다.
+
+### 182-1. `ledger_schema` — 헤더 없는 표는 오류가 아니고, 글롭 레이어는 zip 이름과 대조한다 (G-14)
+
+헤더 없는 text_table 을 `error` 로 돌려줘 `run()` 이 기록을 건너뛰었다 — navi_build · navi_jibun 은 영영 schema 를 못 얻었다.
+`headerless: true` 로 칸에 적는다. 글롭 레이어(`*.shp`)는 `/vsizip` 경로에 그대로 넣어 못 열었고 CP437 로 깨진 레이어 이름만
+기록됐다(N1.1 판 3 이 그것을 대장에 썼다). zip 목록과 대조해 정확히 하나를 고르고, .cpg 없는 DBF 는 대장 `encoding` 을 넘겨
+필드명이 깨지지 않게 하고, UTF-8 플래그 없는 zip 의 CP949 이름은 사람이 읽는 한글로 기록한다(`╣╬┐°…` 방지). `--missing` 은 schema 가 없는 항목만 채운다 — 전량 `--apply` 는 드리프트까지 덮어쓴다.
+모의 레이크(제공처처럼 CP949 바이트를 플래그 없이 넣은 zip)에서 결손 6종이 전부 채워지고 대장 FAIL 이 0 이 됐다.
+
+강제자  `tests/test_k3.py::test_g14_zip_names_are_recorded_readable` · `tools/verify.sh` 「대장 필드 검사」(182-2)
+
+### 182-2. 대장 필드 검사를 verify 에 건다 (G-14)
+
+`python -m firelane.ledger` 는 FAIL 9 로 종료코드 1 을 내고 있었는데 verify · 테스트 · CI 어디에도 없어서 초록이었다.
+FAIL 은 셋 — 텍스트 소스 3종의 encoding 선언 누락(값은 추측하지 않고 `schema.encoding_seen` 을 옮겼다) · schema 결손 6종(182-1 로 채운다).
+zip 안 여러 텍스트 표는 `files` 가 스키마의 몸이라 WARN 에서 인정한다. verify 단계 수는 42 → 43 이다.
+
+강제자  `tools/verify.sh` 「대장 필드 검사」
+
+### 182-3. jq `.[0]` 에는 `// empty` (G-16)
+
+`--jq '.[0].number'` 는 목록이 비면 `null` 을 글자로 낸다. `[ -z ]` 가 못 걸러 `PR #null` 로 흘렀다(chain.2).
+`--jq` 6곳 전수 — `.[0]` 을 쓰는 넷 중 `merge_batch` 릴리즈 PR 재조회 하나에 없었다. 비면 멈춘다.
+
+강제자  `tests/test_k3.py::test_g16_jq_first_element_has_empty_fallback`
+
+### 182-4. pyogrio `fields` 에 `or` 를 걸지 않는다 (G-15)
+
+EDA v2 가 `read_info()["fields"] or []` 로 받아 기본도 전량이 죽었다 — numpy 배열이라 `or` 에서 진리값이 모호하다.
+저장소 전수(AST) 결과 `inventory.py` 두 곳이 같은 형태였다. `_field_list` 가 None 만 빈 것으로 본다.
+
+강제자  `tests/test_k3.py::test_g15_pyogrio_fields_never_meet_or` · `::test_g15_inventory_field_list_accepts_numpy`
+
+### 182-5. `primary` 가 적힌 동명 파일은 경고하지 않는다
+
+kfs · mas 3건이 hwp · pdf 를 함께 두고 대장에 `primary` 로 이미 못박았는데 ingest 가 매 실행 "확장자만 다른 동명 파일" 을 찍었다.
+매번 뜨는 경고는 진짜 경고를 죽인다. `primary` 가 그중 하나를 가리키면 조용히 한다.
+
+강제자 없음 — 사유: 출력 문구 변경이다. 판정은 `firelane.ledger` 의 primary 강제가 든다
+
+### 182-6. `GeoSeries.notna()` 경고를 없앤다
+
+geopandas 가 빈 도형 의미를 바꾸며 매 실행 경고했다. 뜻은 "없거나 비었으면 뺀다" 하나라 shapely `is_missing | is_empty` 로 직접 묻는다.
+
+강제자 없음 — 사유: 같은 행을 빼는 표현만 바꿨다. 산출물 계보(`golden 판정 불변` · `web/data 계보`)가 행 수 변화를 잡는다
+
+### 182-7. 표출 범위의 틈 · 구멍을 닫는다 — 마스크가 건물 · 정사영상을 까맣게 덮었다
+
+사용자 화면에서 광주지방법원 앞 블록과 산수동 쪽 띠가 까맣게 나왔다. 표출 범위 = 동 여백 60m ∪ 회랑 70m ∪ 안전센터 300m 의
+합집합이라 레이스 모양이고, 손가락 사이 틈과 둘러싸인 구멍 4개(합 0.037km²)가 `mask.geojson`(불투명도 .9)으로 덮였다.
+`display_scope` 가 닫힘(150m)으로 폭 300m 미만 틈을 메우고 안쪽 구멍을 없앤다. 실측 — 면적 1.691 → 1.750km², 구멍 4 → 0,
+범위 변화 0.2m. 판정 범위(`judgment_scope`)는 그대로라 1,281 불변이다. 떨어진 조각은 잇지 않는다.
+
+강제자  `tests/test_station_scope.py::test_display_scope_has_no_notches_or_holes` · `::test_display_scope_covers_judgment_scope`
+
+### 182-8. CI 대기는 PR 머리 커밋의 새 실행을 본다 (G-23)
+
+`wait_checks` 는 "체크가 하나라도 있으면" 기다림을 끝냈다. 본문을 고친 직후에는 옛 실행 결과가 이미 있어 새 실행이 등록되기 전에
+판정했다 — #59 가 본문 검사 실패인 채 스쿼시됐다(코드 검사는 push 쪽이 초록이었다). 머리 커밋의 check-run 을 읽고,
+`since` 가 주어지면 그 뒤에 시작된 실행이 생길 때까지 기다린다.
+
+강제자  `tests/test_k3.py::test_g23_wait_checks_reads_head_commit_runs`
+
+## 183. N1.2 — 목적지는 동명동만, 건물DB 는 보관한다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 183-1~183-2 가 각자 강제자 칸을 든다
+
+### 183-1. 내비 목적지는 동명동 경계 안만 — 지도는 넓게 둔다
+
+사용자 판정. 화재 발생 후보지 스코프가 동명동이다. N1.1 은 목적지를 지도 이동 범위로 잘라 동구청 · 동부소방서가 목적지로 떴다.
+목적지 색인만 동명동 경계로 자른다. 건물 · 라벨 · 판정 범위(회랑 · 안전센터 300m)는 지금처럼 넓다 — 넓은 것은 표출이고
+목적지는 판정 스코프다. 광주지방법원이 검색에 없는 것은 이 결정대로다(지산동 · 민원행정기관에 법원 유형 없음).
+
+강제자  `tests/test_n1.py::test_destinations_are_clipped_to_dongmyeong_only`
+
+### 183-2. `juso_building_db` 를 retired 로 보관한다
+
+사용자 판정. `navi_build` 가 같은 동명동 2,078행을 좌표까지 든다. 소비자 0곳. 원본 zip 은 레이크 `raw/juso/` → `retired/juso/` 로
+옮기고 sha 를 대장 retired 에 적는다 — 전남광주 전역 건물 주소 테이블의 유일본이라 지우지 않는다(§173-1). normalize_raw 규칙과
+테스트 표본을 내렸다. datasets 73 → 72 · retired 3 → 4 · authority 래칫 63 → 62.
+
+강제자  `tools/docnum_check.py`(datasets 72 · retired 4) · `tests/test_lake.py::test_authority_names_institution_and_route` · `tests/test_normalize_rules.py::test_rules_do_not_reimport_retired_files`
+
+## 184. R1 — 판정 뼈대 후보를 옆에 세우고 현행 구간과 대조한다 (판정 불변)
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 184-1~184-3 이 각자 강제자 칸을 든다
+
+PLAN 「판정 뼈대를 NGII 1:1,000 측량 중심선으로 다시 세운다」 의 첫 배치다. 뼈대를 **바꾸지 않고** 후보를 세워 표를 낸다.
+사람이 표를 보고 R3(뼈대 교체 · golden 재잠금)를 판정한다. `segments.py` 는 새 모듈을 import 하지 않는다.
+
+### 184-1. 착수 전 실측 — 뼈대마다 자기 계열 건물과만 맞는다
+
+2026-09-17 읽기 전용 실측(`r_eda` · `r_eda2`, 저장소 밖). 판정 범위 1.688km².
+
+    건물 원천 × 선         road_link    NGII 중심선    현행 판정구간
+    도로명주소 건물 >1m     3선 30m      18선 122m      2 · 19m
+    NGII 1:1,000 건물 >1m  19선 134m     0선 0m         17 · 118m
+
+§173-7 의 의심("도로명주소 건물로 재면 road_link 에 유리하다")이 맞았다. 폭은 NGII 도로경계에서 재므로 **뼈대만 다른 측량 위에 있다.**
+관통 17 중 다수는 NGII 도로폭도 1.1~1.4m 인 통로라 판정은 맞고 선만 건물까지 그려진 것이다. 고칠 대상은 NGII 선이 10m 이상 떨어져
+있고 폭이 크게 다른 구간이다 — 동계천로 needs_cv(현재 0.97m ↔ 10.1m 옆 NGII 도로폭 13.9m) 형태. CV 무대의 위치 오류다.
+
+NGII 건물 레이어는 활성 raw V-WORLD 묶음 74도엽 중 72도엽에 이미 있다(`N1A_B0010000`). retired 2022 판은 판정 범위 21.9% 만 덮어
+복귀하지 않는다. NGII 중심선 15m 안에 짝이 없는 road_link 점 2,433 은 2순환로 648 · 필문대로 166 · 중앙로 165 — NGII 가 간선을
+쌍선 · 경계로만 그린 곳이라 **하이브리드**(NGII + road_link 폴백)가 맞다. 폭 6m 이상 NGII 전용 2,107m 중 평행 쌍선 후보 1,337m(63%) ·
+분리대 「유」 333m. 판정구간 위 점의 어긋남 중앙 0.59m · p90 9.30m.
+
+강제자 없음 — 사유: 측정 기록이다. 수치는 R1 도구(184-3)가 사용자 기계에서 다시 낸다
+
+### 184-2. 하이브리드 뼈대 — `firelane.skeleton` (순수 함수)
+
+NGII 중심선 + NGII 가 5m 안에 없는 road_link 조각(2m 미만 부스러기 제외) + 막다른 끝에서 2m 안의 다른 선까지 접속선 → 노딩 →
+차수 2 사슬 병합. 병합으로 사라진 속성은 엣지 가운데 점에서 0.5m 안의 NGII 선에서 붙이고 출처(ngii · fallback · connector)를 적는다.
+상수는 2026-09-17 사전 측정(저장소 밖 · 로그만 남음)의 확정값이다 — 피복 D=5(8 은 옆 골목을 잡는다) · 틈 2m(5 는 건물관통 2).
+구간 매칭은 5m 간격 표본점이 8m · 25° 안의 엣지로 60% 이상 모이면 성립한다(도로명 엄격 매칭 ±8m 과 같은 반경).
+
+강제자  `tests/test_r1.py::test_degree2_chain_merges_into_one_edge` · `::test_connector_only_within_gap_and_not_when_touching` · `::test_fallback_keeps_only_parts_ngii_does_not_cover` · `::test_match_accepts_offset_parallel_rejects_far_or_crossing` · `::test_parallel_pairs_flags_dual_carriageway_only_when_wide` · `::test_build_tags_sources_and_compare_flags_suspects` · `::test_far_offset_is_flagged_before_width_gap`
+
+### 184-3. 대조 도구 — `tools/skeleton_compare.py` 가 위치 의심표를 낸다
+
+현행 1,281 구간마다 매칭 엣지 · 이동 거리 · 두 건물 원천 관통 · NGII 측량 도로폭 대 현재 width_min_m · 쌍선 여부를 적고 사유 넷을
+붙인다 — 멀리(매칭 엣지까지 거리 중앙 3m 초과) · 건물관통(현행만 1m 초과) · 폭불일치(2m 이상) · 짝없음 · 쌍선. `data/desk/r1/`(재생성물 · gitignore)에 쓴다.
+폭불일치는 혼자서는 약하다 — width_min_m 은 구간 안 최소 통과폭이고 NGII 도로폭은 대표 폭이라 좁아지는 골목마다 벌어진다.
+그래서 위치 증거(멀리 8 · 건물관통 4)를 폭(2)보다 무겁게 매긴 `priority` 순으로 사람이 본다. 동계천로 needs_cv(0.97m ↔ 10.1m 옆 13.9m)가 맨 앞 형태다.
+NGII 건물은 raw V-WORLD 묶음(바깥 zip → 도엽 zip)에서 `.work/r1` 에만 풀어 읽는다 — 새 반입이 없다.
+판정 · segments · web/data · golden 을 건드리지 않는다. 사람이 판단하려고 부르는 조사 도구라 verify 에 걸지 않는다.
+
+강제자  `tests/test_r1.py::test_tool_reads_nested_vworld_building_layer` · `tests/test_tools_are_wired.py`(EXEMPT 사유) · golden 판정 불변
+
+### 184-4. 대조표를 실제 데이터로 돌렸다 — 5~15m 옆 66 구간, needs_cv · unknown 32 → R2 · R3 로 간다
+
+2026-09-17 사용자 기계(읽기 전용 미리보기 · `/tmp`). 하이브리드 엣지 1,860 · 84.6km(ngii 1,543 · fallback 313 · connector 4).
+매칭 86.9% · 이동 중앙 0.41m · p90 1.42m. 현행 선의 NGII 건물 관통 24 → 매칭 엣지 4.
+
+**R1 판 1 의 「멀리」 · 「짝없음」 은 위치 증거로 쓸 수 없다.** 하이브리드는 NGII 가 5m 안에 없는 곳을 road_link 조각으로 메우는데,
+현행 구간이 바로 그 road_link 위에 있다 — NGII 에서 멀리 떨어진 구간일수록 발밑에 fallback 이 깔려 거리가 0 이 된다.
+「멀리」 14 는 과소 집계였고, 짝없음 168 중 155 는 선이 1.5m 안에서 겹치는데 방향만 어긋난 교차부 소음이었다.
+
+NGII 선(src == ngii)만 기준으로 1,281 구간 전부를 다시 쟀다.
+
+    NGII 선까지 거리 중앙   blocked  clear  needs_cv  unknown   합
+    A ≤1.5m                   151     352      206       332   1,041
+    B 1.5~5m                   11      84        7        28     130
+    C 5~15m                    21      13       11        21      66   ← NGII 선이 옆에 있는데 안 겹친다
+    D >15m                      8      16        2        18      44   ← NGII 가 선을 안 그린 간선
+
+C 의 needs_cv · unknown · blocked 53 중 38 은 **같은 도로명** NGII 선이 옆에 있다 — 같은 길을 다른 자리에서 재고 있다.
+동계천로 needs_cv(0.97m ↔ 10.1m 옆 NGII 도로폭 13.9m) · 지호로100번길 needs_cv(187m · 10.6m 옆) · 금남로 unknown(94m · 13.7m 옆)이 그 형태다.
+판단 기준(C 중 needs_cv · unknown 20 이상이면 교체, 미만이면 구간 보정)에서 **32** 다 — CV 가 보러 갈 구간이 틀린 자리에 서 있다.
+R 을 닫지 않는다. R1 판 2 에서 「멀리」를 NGII 선 기준 · 반폭(max(3m, 도로폭/2)) · 짧은 구간 방향 완화로 고치고 R2 · R3 로 간다.
+
+대장 `outputs.ngii1k_center` · `outputs.corridor` 의 consumers 에 대조 도구를 더했다 — 판 1 이 대장을 패치에서 뺀 채 실려
+`test_ledger_consumers_are_complete` 가 사용자 기계 verify 에서 울었다.
+
+강제자 없음 — 사유: 측정 기록이다. 판 2 가 이 분류를 도구에 넣고 테스트로 묶는다 · consumers 는 `tests/test_declaration_reality.py::test_ledger_consumers_are_complete`

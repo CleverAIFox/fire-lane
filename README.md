@@ -11,8 +11,8 @@
 골목 1,281구간의 실제 통행 가능 폭을 산출해 소방차가 지나갈 수 있는지 판정하고,
 **판정할 수 없는 이유까지** 지도에 표시한다.
 
-**지도** https://woongtopia.github.io/fire-lane/
-**내비** https://woongtopia.github.io/fire-lane/navi/
+**지도** https://cleveraifox.github.io/fire-lane/
+**내비** https://cleveraifox.github.io/fire-lane/navi/
 
 ---
 
@@ -231,6 +231,7 @@ uv run python tools/lanes_probe.py      표준노드링크 차로수로 폭 하�
 uv run python tools/route_probe.py      소방차 통행 비용으로 경로 — 거리만 대 차량
 uv run python tools/clearance_probe.py  최대내접원 방식 (2026-08-22 기각)
 uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
+uv run python tools/skeleton_compare.py NGII 1:1,000 뼈대 후보 대 현행 구간 — 위치 의심표 (R1)
 uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치는 규모
 uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구간 — 실측 우선순위
 uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
@@ -393,6 +394,7 @@ tools/
   serve.py                캐시 없는 개발 서버
   wmax_audit.py           width_max_m 결손이 판정에 미치는 규모
   desk_check.py           정사영상 위에 구간·폭 렌더
+  skeleton_compare.py     NGII 뼈대 후보 대 현행 구간 대조 (R1)
   docpatch.py             문서 절 단위 멱등 교체 · 표 행 추가
   js_graph_check.mjs      ES 모듈 의존 그래프 · 순환 참조
   web_boot_check.mjs      UI 부팅 경로 점검
@@ -435,7 +437,7 @@ web/
 도달 불가    447         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       58,308.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 73종 · `retired` 3종
+대장        `datasets` 72종 · `retired` 4종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 스냅 · A* · 턴바이턴. edge_cost 는 파이썬과 전량 대조
 KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 (42%)
@@ -495,12 +497,14 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 가는 길은 여기 하나다(DECISIONS §99).
 
 ```
-지도        woongtopia.github.io/fire-lane/
-협업 방침    woongtopia.github.io/fire-lane/workflow.html   MASTER §12 생성물
-플레이북     woongtopia.github.io/fire-lane/playbook.html   상황별 안내서
-기획서       woongtopia.github.io/fire-lane/proposal.html   docs/proposal.docx 를 그대로 그린다
-내비        woongtopia.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
+지도        cleveraifox.github.io/fire-lane/
+협업 방침    cleveraifox.github.io/fire-lane/workflow.html   MASTER §12 생성물
+플레이북     cleveraifox.github.io/fire-lane/playbook.html   상황별 안내서
+기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.docx 를 그대로 그린다
+내비        cleveraifox.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
 ```
+
+강제자  `tests/test_n1.py::test_no_doc_sends_people_to_old_pages_domain` — 옛 조직 주소(이관 전 배포)로 보내지 않는다(DECISIONS §181-6)
 
 ## 문서는 어디에
 

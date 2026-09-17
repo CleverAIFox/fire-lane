@@ -119,7 +119,10 @@ def consumers() -> dict[str, list[str]]:
             names.add(stem.split("*")[0].rstrip("_"))   # 글롭 접두
             names.add(stem.rsplit(".", 1)[0])
         for lay in ([e["layer"]] if e.get("layer") else []):
-            names.add(str(lay))
+            # ★ 2026-09-17 (§181-3). 글롭 레이어(`*.shp`)는 이름이 아니다 — 별칭으로 넣으면
+            #   `*.shp` 를 적은 모든 파일이 소비자가 된다(civil_office 가 inventory · ngii1k 로 셌다).
+            if not any(ch in str(lay) for ch in "*?["):
+                names.add(str(lay))
         alias[k] = {n for n in names if len(n) >= 4}
 
     # 산출물 이름 → 그것을 만든 입력 키

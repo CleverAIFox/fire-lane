@@ -8,7 +8,8 @@ OUT   data/processed/<key>_5186.gpkg + <key>.geojson  (20종) — 예: building.
       data/processed/_manifest.json
       ★ 하류가 이름으로 읽는 것 — boundary_emd.geojson · fire_station.geojson ·
         hydrant_point.geojson · cctv.geojson · poi_store.geojson ·
-        road_intrvl.geojson. `pipeline.Step` 이 그 여섯을 명시한다
+        road_intrvl.geojson · navi_build.csv · navi_jibun.csv · civil_office.geojson.
+        `pipeline.Step` 이 그 아홉을 명시한다(마지막 셋 2026-09-17 · 목적지 색인 §181)
       data/processed/_manifest.json                    실행 기록 · 계보 정본
 PARAM sources.yaml 의 datasets.<key>.contract 블록
 
@@ -39,7 +40,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
+import shapely
 import yaml
 from pyproj import Transformer
 from shapely import make_valid
@@ -94,7 +97,10 @@ def bbox_in(crs: str):
 
 def save(gdf: gpd.GeoDataFrame, key: str) -> dict:
     OUT.mkdir(parents=True, exist_ok=True)
-    gdf = gdf[~gdf.geometry.is_empty & gdf.geometry.notna()].copy()
+    # ★ 2026-09-17 (§182-6). `GeoSeries.notna()` 는 geopandas 가 빈 도형 의미를 바꾸면서 매 실행 경고를 낸다.
+    #   뜻은 "없거나 비었으면 뺀다" 하나다 — shapely 로 직접 묻는다. 매번 뜨는 경고는 진짜 경고를 죽인다.
+    _g = np.asarray(gdf.geometry.values, dtype=object)
+    gdf = gdf[~(shapely.is_missing(_g) | shapely.is_empty(_g))].copy()
     # ★ 2026-08-18. 쓰기 전에 파일을 지운다.
     #   GPKG 는 컨테이너다. to_file(layer=key) 는 그 **레이어**를 덮어쓸 뿐
     #   파일 안의 다른 레이어는 건드리지 않는다. layer= 를 안 쓰던 시절의
@@ -142,10 +148,32 @@ def save(gdf: gpd.GeoDataFrame, key: str) -> dict:
 
 
 # ── 소스별 로더 ───────────────────────────────────────────────
-def load_shp_in_zip(zp: Path, inner: str, crs: str, enc: str, tmp: Path):
+def unzip_own(zp: Path, tmp: Path) -> Path:
+    """zip 을 **그 zip 만의 빈 폴더**에 푼다. 돌려준 폴더 안에서만 찾는다.
+
+    ★ 2026-09-17 (DECISIONS §181-4 · G-22). 종전에는 모든 소스가 `.work` 한 곳에
+      풀고 `tmp.rglob(layer)` 로 찾았다. 앞 소스가 푼 같은 이름의 shp · dbf 가 남아
+      있으면 **엉뚱한 판을 조용히 읽는다** — `next()` 가 첫 것을 집기 때문이다.
+      글롭 레이어(`*.shp`)는 앞 소스의 shp 전부와 겹친다.
+    """
+    d = tmp / "_zip" / zp.stem
+    shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True)
     with zipfile.ZipFile(zp) as z:
-        z.extractall(tmp)
-    p = next(tmp.rglob(inner))
+        z.extractall(d)
+    return d
+
+
+def load_shp_in_zip(zp: Path, inner: str, crs: str, enc: str, tmp: Path):
+    tmp = unzip_own(zp, tmp)
+    # ★ 2026-09-17 (DECISIONS §181-3). `layer` 가 글롭이면 **정확히 하나**여야 한다.
+    #   민원행정기관 전자지도는 zip 안 한글 파일명이 CP437 로 깨져 이름으로 못 가리킨다.
+    #   `next()` 로 첫 것을 집으면 둘째 shp 가 생겨도 조용히 하나만 읽는다.
+    hits = sorted(tmp.rglob(inner))
+    if len(hits) != 1:
+        raise ValueError(f"{zp.name} 안 {inner} 가 {len(hits)}개다 — 하나여야 한다: "
+                         f"{[h.name for h in hits][:6]}")
+    p = hits[0]
     g = gpd.read_file(p, bbox=bbox_in(crs), encoding=enc)
     return g.set_crs(crs, allow_override=True)
 
@@ -255,7 +283,12 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         if h.suffix.lower() in SIDECAR:
             continue
         _stems.setdefault(h.name.rsplit(".", 1)[0], []).append(h.name)
+    # ★ 2026-09-17 (§182-5). 대장이 `primary` 로 이미 못박았으면 판단이 끝난 것이다(kfs · mas 3건이
+    #   `primary: hwp` 인데 매 실행 경고했다). 파일 이름이든 확장자든 그중 하나를 가리키면 조용히 한다.
+    _pri = str(e.get("primary") or "").lower().lstrip(".")
     for _st, _fs in _stems.items():
+        if len(_fs) > 1 and _pri and any(f.lower() == _pri or f.lower().endswith("." + _pri) for f in _fs):
+            continue
         if len(_fs) > 1:
             print(f"  ★ {key}: 확장자만 다른 동명 파일 {len(_fs)}개 — "
                   f"{', '.join(sorted(_fs))}")
@@ -437,9 +470,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
                              crs=CRS_W)
 
     elif kind == "dbf_in_zip":               # 회전제한 — 지오메트리 없음
-        with zipfile.ZipFile(src) as z:
-            z.extractall(tmp)
-        p = next(tmp.rglob(e["layer"]))
+        p = next(unzip_own(src, tmp).rglob(e["layer"]))      # §181-4 — 그 zip 폴더 안에서만
         t = gpd.read_file(p).drop(columns="geometry", errors="ignore")
         # 동명동 노드로 한정 (node_point가 먼저 만들어져 있어야 함)
         np_path = OUT / "node_point_5186.gpkg"

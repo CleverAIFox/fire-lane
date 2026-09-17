@@ -113,6 +113,17 @@ def _coords(g):
 WEBDIR = ROOT / "web"
 
 
+def navi_reads() -> set[str]:
+    """web/navi/src 가 이름으로 읽는 web/data 파일. 주석은 뺀다 — 주석에 이름만 적어도 소비자가 되면 고아를 숨긴다."""
+    import re
+    out: set[str] = set()
+    for p in sorted((WEBDIR / "navi" / "src").rglob("*.ts*")):
+        src = re.sub(r"/\*.*?\*/", "", p.read_text(encoding="utf-8"), flags=re.DOTALL)
+        src = re.sub(r"^\s*//.*$", "", src, flags=re.MULTILINE)
+        out |= set(re.findall(r'"([\w_]+\.(?:geojson|json))"', src))
+    return out
+
+
 def _read(name):
     return (WEBDIR / name).read_text(encoding="utf-8")
 
@@ -537,6 +548,11 @@ def test_web_data_has_no_unintended_orphan():
                       for p in (ROOT / "src/firelane").rglob("*.py"))
     read |= set(re.findall(r'read_file\(\s*(?:WEB|W)\s*/\s*"([\w_.]+)"', pysrc))
     read |= set(re.findall(r'(?:WEB|W)\s*/\s*"([\w_.]+)"\s*\)\.read_text', pysrc))
+
+    # ★ 2026-09-17 (DECISIONS §181-7). 내비(web/navi/src · TS)도 소비자다. 이 검사는 지도(web/js)만
+    #   보다가 내비만 읽는 `dest.geojson` 을 고아로 불러 파이프라인 계약 단계를 세웠다. 샌드박스
+    #   web/data 에는 그 파일이 없어서 초록이었다 — 발행한 기계에서만 울었다.
+    read |= navi_reads()
 
     published = {p.name for p in (WEB).glob("*.geojson")}
     orphan = sorted(published - read - INTENDED)

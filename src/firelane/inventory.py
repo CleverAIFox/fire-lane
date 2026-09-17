@@ -76,6 +76,11 @@ def _code_text() -> str:
     return "\n".join(buf)
 
 
+def _field_list(v) -> list[str]:
+    """필드 목록을 리스트로. None 만 빈 것으로 본다 — numpy 배열 · 튜플도 그대로 편다(§182-4)."""
+    return [] if v is None else [str(x) for x in v]
+
+
 def _mark_unused(fields: list[str], code: str) -> list[str]:
     """코드 어디서도 문자열로 등장하지 않는 속성명."""
     return [f for f in fields if f and f not in ("ID",) and f'"{f}"' not in code
@@ -305,11 +310,14 @@ def collect(only: str | None = None) -> dict:
 
         # 코드에서 참조되지 않는 속성 표시
         allf: list[str] = []
+        # ★ 2026-09-17 (DECISIONS §182-4 · G-15). `fields or []` 를 쓰지 않는다. pyogrio `read_info()` 의
+        #   fields 는 numpy 배열이라 `or` 에서 진리값이 모호해 죽는다(EDA v2 가 기본도를 전멸시킨 형태).
+        #   지금 원천은 리스트지만 탐침이 pyogrio 로 바뀌는 순간 여기서 죽는다 — 없음만 따로 본다.
         for lay in (got.get("layers") or {}).values():
-            allf += lay.get("fields", []) or []
+            allf += _field_list(lay.get("fields"))
         for f in (got.get("files") or []):
             if isinstance(f, dict):
-                allf += f.get("fields", []) or []
+                allf += _field_list(f.get("fields"))
         unused = _mark_unused(sorted(set(allf)), code)
 
         got["kind"] = kind

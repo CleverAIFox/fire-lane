@@ -69,11 +69,11 @@ export default function App() {
   });
 
   // ── 목적지 검색 ───────────────────────────────────────────────
-  const pois = useMemo(() => (n.data ? preparePois(n.data.poi) : []), [n.data]);
+  const pois = useMemo(() => (n.data ? preparePois(n.data.dest) : []), [n.data]);
   const query = useCallback((q: string) => searchPois(pois, q), [pois]);
 
-  // ★ POI 좌표를 그대로 목적지로 쓰지 않는다. 상가→도로 거리가 p90
-  //   70.9m 라 엉뚱한 골목에 붙는다. 반드시 도로에 스냅한다.
+  // ★ 색인 좌표를 그대로 목적지로 쓰지 않는다. 상가→도로 거리가 p90
+  //   70.9m 라 엉뚱한 골목에 붙는다. 건물은 출입구 좌표지만 역시 스냅한다.
   //   목적지의 49% 가 회색 구간에 접하므로 **고르기 전에** 보여준다.
   const verdictOf = useCallback((h: PoiHit) => {
     const r = n.snapAt(h.point[0], h.point[1]);

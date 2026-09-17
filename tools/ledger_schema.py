@@ -10,6 +10,7 @@ FL_DATA_MIGRATION — git 밖 실물과 원자적으로 움직인다
     uv run python tools/ledger_schema.py            계획만
     uv run python tools/ledger_schema.py --apply     대장에 기록
     uv run python tools/ledger_schema.py --check     대장과 실물이 어긋났나
+    uv run python tools/ledger_schema.py --apply --missing   schema 가 없는 항목만 기록
 
 ── schema 와 contract 는 다르다 ───────────────────────────────
     schema     **실물이 이렇게 생겼다**. 기술(descriptive). 자동 생성
@@ -43,6 +44,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import fnmatch
 import io
 import re
 import sys
@@ -162,10 +164,13 @@ def probe(key: str, e: dict) -> dict | None:
                 head, out_src = src.read_bytes()[:1 << 16], src.name
             text, used = _decode(head, declared)
             first = next((L for L in text.splitlines() if L.strip()), "")
+            # ★ 2026-09-17 (DECISIONS §182-1 · G-14). 종전에는 `error` 로 돌려줬다. run() 은 error 가
+            #   있으면 **기록하지 않고 넘어가서** text_table 은 영영 schema 를 못 얻었고,
+            #   `firelane.ledger` 는 그것을 `필수 필드 없음: schema` 로 FAIL 했다(navi_build · navi_jibun).
+            #   헤더가 없는 것은 오류가 아니라 이 kind 의 성질이다 — 칸으로 적는다.
             return {"columns": [f"c{i:02d}" for i in
                                 range(len(first.split(delim)))][:MAX_COLS],
-                    "encoding_seen": used, "source": out_src,
-                    "error": "헤더 없음 — 컬럼명은 contract 에 사람이 적는다"}
+                    "encoding_seen": used, "source": out_src, "headerless": True}
 
         if kind in CSV_KINDS:
             if src.suffix.lower() == ".zip":
@@ -183,18 +188,32 @@ def probe(key: str, e: dict) -> dict | None:
 
         if kind in SHP_KINDS:
             with zipfile.ZipFile(src) as z:
-                names = z.namelist()
-            layers = sorted({Path(n).stem for n in names
+                infos = z.infolist()
+            names = [i.filename for i in infos]
+            # ★ 2026-09-17 (§182-1). UTF-8 플래그 없는 zip 의 한글 이름은 파이썬이 CP437 로 읽어 `╣╬┐°…` 가 된다
+            #   (civil_office). 읽을 때는 그 이름 그대로 써야 열리고, **기록할 때는 사람이 읽는 이름**으로 되돌린다.
+            shown = {i.filename: _zip_display(i) for i in infos}
+            layers = sorted({Path(shown[n]).stem for n in names
                              if n.lower().endswith((".shp", ".dbf"))})
             out = {"layers": layers[:MAX_COLS]}
             if len(layers) > MAX_COLS:
                 out["layers_total"] = len(layers)
             lay = e.get("layer")
+            # ★ 2026-09-17 (§182-1). 글롭 레이어(`*.shp` — civil_office, §181-3)는 zip 이름과 맞춰
+            #   **정확히 하나**를 고른다. 글롭을 그대로 /vsizip 경로에 넣으면 못 연다.
+            if lay and any(ch in lay for ch in "*?["):
+                got = [n for n in names if fnmatch.fnmatch(Path(n).name, lay)]
+                if len(got) != 1:
+                    out["columns_error"] = f"{lay} 가 {len(got)}개다 — 하나여야 한다"
+                    return out
+                out["layer_glob"], lay = lay, got[0]
             if lay:
-                out["layer_used"] = lay
+                out["layer_used"] = shown.get(lay, lay)
                 try:
                     import pyogrio
-                    info = pyogrio.read_info(f"/vsizip/{src}/{lay}")
+                    # ★ 2026-09-17 (§182-1). .cpg 없는 cp949 DBF(civil_office)는 인코딩을 안 주면 필드명이
+                    #   `À¯Çü` 로 깨진다(모의 레이크 재현). 대장 encoding 을 넘긴다 — ingest 와 같은 규칙.
+                    info = pyogrio.read_info(f"/vsizip/{src}/{lay}", encoding=e.get("encoding"))
                     out["columns"] = list(info["fields"])[:MAX_COLS]
                     out["features"] = int(info["features"])
                 except Exception as ex:            # noqa: BLE001
@@ -205,6 +224,17 @@ def probe(key: str, e: dict) -> dict | None:
     return None
 
 
+def _zip_display(info: zipfile.ZipInfo) -> str:
+    """zip 항목 이름을 사람이 읽는 형태로. UTF-8 플래그(0x800)가 없고 CP437 → CP949 로 되돌려지면 그 이름."""
+    n = info.filename
+    if info.flag_bits & 0x800:
+        return n
+    try:
+        return n.encode("cp437").decode("cp949")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return n
+
+
 def _q(v) -> str:
     """YAML 안전 스칼라. 작은따옴표로 감싸고 내부 따옴표는 두 번 쓴다."""
     return "'" + str(v).replace("'", "''") + "'"
@@ -213,8 +243,8 @@ def _q(v) -> str:
 def _fmt(sch: dict) -> str:
     """YAML 블록. 손으로 고치지 말라는 표시를 단다."""
     lines = ["    schema:                       # AUTO — ledger_schema.py 가 쓴다"]
-    for k in ("layers", "layer_used", "columns", "features",
-              "encoding_seen", "source", "error", "columns_error",
+    for k in ("layers", "layer_glob", "layer_used", "columns", "features",
+              "encoding_seen", "source", "headerless", "error", "columns_error",
               "layers_total"):
         if k not in sch:
             continue
@@ -225,6 +255,8 @@ def _fmt(sch: dict) -> str:
         if isinstance(v, list):
             inner = ", ".join(_q(x) for x in v)
             lines.append(f"      {k}: [{inner}]")
+        elif isinstance(v, bool):
+            lines.append(f"      {k}: {'true' if v else 'false'}")
         elif isinstance(v, int):
             lines.append(f"      {k}: {v}")
         else:
@@ -243,13 +275,17 @@ def _drop_schema(body: str) -> str:
                   count=1, flags=re.MULTILINE)
 
 
-def run(*, apply: bool, check: bool) -> int:
+def run(*, apply: bool, check: bool, missing: bool = False) -> int:
     s = YAML.read_text(encoding="utf-8")
     d = yaml.safe_load(s) or {}
     ds = d.get("datasets") or {}
     ok = err = skip = drift = 0
 
     for key, e in ds.items():
+        # ★ §182-1. `--missing` — schema 가 이미 있는 항목은 읽지도 쓰지도 않는다.
+        #   전량 --apply 는 드리프트가 난 항목까지 조용히 덮어쓴다. 빈 칸만 채울 때 쓴다.
+        if missing and e.get("schema"):
+            continue
         sch = probe(key, e)
         if sch is None:
             skip += 1
@@ -301,8 +337,10 @@ def main() -> int:
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--check", action="store_true",
                     help="대장과 실물이 어긋났나. CI 가 아니라 사람이 돌린다")
+    ap.add_argument("--missing", action="store_true",
+                    help="schema 가 없는 항목만 (§182-1)")
     a = ap.parse_args()
-    return run(apply=a.apply, check=a.check)
+    return run(apply=a.apply, check=a.check, missing=a.missing)
 
 
 if __name__ == "__main__":
