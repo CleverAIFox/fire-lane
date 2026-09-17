@@ -60,18 +60,28 @@ RANDOM_USE = re.compile(r"\b(random\.|np\.random|numpy\.random|\.sample\(|shuffl
 SEED_SET = re.compile(r"\bSEED\b|seed\s*\(|random_state\s*=")
 
 
-@pytest.mark.parametrize("path", sorted(ETL.rglob("*.py")), ids=lambda p: p.name)
-def test_r4_random_has_seed(path):
+def test_r4_random_has_seed():
     """
     ★ R4. 랜덤이 들어가면 시드를 파일 상단에 고정한다.
 
     시드 없는 표본 설계는 표본 설계가 아니다. 실측 대상이 실행마다 바뀌면
     "이 구간을 왜 쟀나"에 답할 수 없다.
+
+    ★ 2026-09-17 (DECISIONS §175). 종전에는 파일마다 parametrize 하고 랜덤을 안 쓰는
+      파일을 `skip("랜덤 미사용")` 했다. 레이크 기계 skip 51 이 전부 이것이었다 —
+      **검사 대상이 아닌 것은 skip 이 아니다.** 대상만 모아 한 번에 본다.
     """
-    src = path.read_text(encoding="utf-8")
-    if not RANDOM_USE.search(src):
-        pytest.skip("랜덤 미사용")
-    assert SEED_SET.search(src), f"{path.name}: 랜덤을 쓰는데 시드 고정이 없다"
+    users = [p for p in sorted(ETL.rglob("*.py"))
+             if RANDOM_USE.search(p.read_text(encoding="utf-8"))]
+    bad = [p.name for p in users if not SEED_SET.search(p.read_text(encoding="utf-8"))]
+    assert not bad, f"랜덤을 쓰는데 시드 고정이 없다: {bad}"
+
+
+def test_r4_probe_is_alive():
+    """카나리아 — 판별식이 랜덤 사용과 시드를 실제로 가린다. 대상 0 이 파서 사망인지 가린다."""
+    assert RANDOM_USE.search("idx = np.random.choice(n)") and not RANDOM_USE.search("x = 1")
+    assert SEED_SET.search("rng = np.random.default_rng(SEED)")
+    assert not SEED_SET.search("idx = np.random.choice(n)")
 
 
 # ── R5 ─────────────────────────────────────────────────────────

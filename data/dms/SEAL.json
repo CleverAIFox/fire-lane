@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-17T15:31:44+09:00",
- "commit": "556769e",
+ "sealed_at": "2026-09-17T16:17:19+09:00",
+ "commit": "d83aa94",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "983912b119bdaa7b",
-  "docs/DECISIONS.md": "c5ce525369175cb3",
-  "docs/PLAN.md": "8a6d1754540aa44f",
+  "docs/MASTER.md": "448612b853274774",
+  "docs/DECISIONS.md": "d2d2bbdf9f2dfcc9",
+  "docs/PLAN.md": "3f4e304b55e09dc0",
   "README.md": "1a4da37f2c84f26d"
  },
  "raw": {
@@ -774,7 +774,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER-092": {
-   "h": "924a7656e80154fc",
+   "h": "c1e7f8a1debca17f",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -3563,6 +3563,30 @@
    "doc": "docs/DECISIONS.md",
    "title": "174-4. 래칫 셋 — 대장 로드 · 주인 블록 · authority"
   },
+  "DECISIONS-408": {
+   "h": "74abcc3781a62822",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "175. K1 — 건너뛴 것은 통과가 아니다: skip 을 넷으로 가르고 분류 밖은 실패로 바꿨다"
+  },
+  "DECISIONS-409": {
+   "h": "b47ba9a8c4bf0ec5",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "175-1. skip 51 은 전부 \"대상이 아님\" 이었다 — 대상만 모아 한 번에 본다"
+  },
+  "DECISIONS-410": {
+   "h": "68ae68d8cfb68ea8",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "175-2. 분류 — 환경(레이크 · 산출물 · 도구) · 유예 · 그 밖은 실패"
+  },
+  "DECISIONS-411": {
+   "h": "06fa3c3477d3e700",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "175-3. git 없는 트리에서 엉뚱하게 실패하던 둘"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3582,7 +3606,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "032ce06591354562",
+   "h": "808d11951b0eaa13",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -4093,7 +4117,7 @@
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.47ms"
+   "tail": "Checked 45 packages in 0.44ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4108,7 +4132,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "647 passed, 52 skipped in 88.50s (0:01:28)"
+   "tail": "652 passed in 85.36s (0:01:25)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4123,12 +4147,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "236 passed, 53 skipped in 20.00s"
+   "tail": "237 passed, 1 skipped in 17.85s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1775개 추적"
+   "tail": "커밋 정책 OK · 1778개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -4208,7 +4232,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "지도 확인:  uv run python tools/serve.py"
+   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -4243,7 +4267,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 643절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 647절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4273,7 +4297,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "647 passed, 52 skipped in 109.79s (0:01:49)"
+   "tail": "652 passed in 107.91s (0:01:47)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4293,7 +4317,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 408개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 412개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
