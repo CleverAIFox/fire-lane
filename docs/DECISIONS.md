@@ -8126,3 +8126,78 @@ geopandas 가 빈 도형 의미를 바꾸며 매 실행 경고했다. 뜻은 "�
 테스트 표본을 내렸다. datasets 73 → 72 · retired 3 → 4 · authority 래칫 63 → 62.
 
 강제자  `tools/docnum_check.py`(datasets 72 · retired 4) · `tests/test_lake.py::test_authority_names_institution_and_route` · `tests/test_normalize_rules.py::test_rules_do_not_reimport_retired_files`
+
+## 184. R1 — 판정 뼈대 후보를 옆에 세우고 현행 구간과 대조한다 (판정 불변)
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 184-1~184-3 이 각자 강제자 칸을 든다
+
+PLAN 「판정 뼈대를 NGII 1:1,000 측량 중심선으로 다시 세운다」 의 첫 배치다. 뼈대를 **바꾸지 않고** 후보를 세워 표를 낸다.
+사람이 표를 보고 R3(뼈대 교체 · golden 재잠금)를 판정한다. `segments.py` 는 새 모듈을 import 하지 않는다.
+
+### 184-1. 착수 전 실측 — 뼈대마다 자기 계열 건물과만 맞는다
+
+2026-09-17 읽기 전용 실측(`r_eda` · `r_eda2`, 저장소 밖). 판정 범위 1.688km².
+
+    건물 원천 × 선         road_link    NGII 중심선    현행 판정구간
+    도로명주소 건물 >1m     3선 30m      18선 122m      2 · 19m
+    NGII 1:1,000 건물 >1m  19선 134m     0선 0m         17 · 118m
+
+§173-7 의 의심("도로명주소 건물로 재면 road_link 에 유리하다")이 맞았다. 폭은 NGII 도로경계에서 재므로 **뼈대만 다른 측량 위에 있다.**
+관통 17 중 다수는 NGII 도로폭도 1.1~1.4m 인 통로라 판정은 맞고 선만 건물까지 그려진 것이다. 고칠 대상은 NGII 선이 10m 이상 떨어져
+있고 폭이 크게 다른 구간이다 — 동계천로 needs_cv(현재 0.97m ↔ 10.1m 옆 NGII 도로폭 13.9m) 형태. CV 무대의 위치 오류다.
+
+NGII 건물 레이어는 활성 raw V-WORLD 묶음 74도엽 중 72도엽에 이미 있다(`N1A_B0010000`). retired 2022 판은 판정 범위 21.9% 만 덮어
+복귀하지 않는다. NGII 중심선 15m 안에 짝이 없는 road_link 점 2,433 은 2순환로 648 · 필문대로 166 · 중앙로 165 — NGII 가 간선을
+쌍선 · 경계로만 그린 곳이라 **하이브리드**(NGII + road_link 폴백)가 맞다. 폭 6m 이상 NGII 전용 2,107m 중 평행 쌍선 후보 1,337m(63%) ·
+분리대 「유」 333m. 판정구간 위 점의 어긋남 중앙 0.59m · p90 9.30m.
+
+강제자 없음 — 사유: 측정 기록이다. 수치는 R1 도구(184-3)가 사용자 기계에서 다시 낸다
+
+### 184-2. 하이브리드 뼈대 — `firelane.skeleton` (순수 함수)
+
+NGII 중심선 + NGII 가 5m 안에 없는 road_link 조각(2m 미만 부스러기 제외) + 막다른 끝에서 2m 안의 다른 선까지 접속선 → 노딩 →
+차수 2 사슬 병합. 병합으로 사라진 속성은 엣지 가운데 점에서 0.5m 안의 NGII 선에서 붙이고 출처(ngii · fallback · connector)를 적는다.
+상수는 2026-09-17 사전 측정(저장소 밖 · 로그만 남음)의 확정값이다 — 피복 D=5(8 은 옆 골목을 잡는다) · 틈 2m(5 는 건물관통 2).
+구간 매칭은 5m 간격 표본점이 8m · 25° 안의 엣지로 60% 이상 모이면 성립한다(도로명 엄격 매칭 ±8m 과 같은 반경).
+
+강제자  `tests/test_r1.py::test_degree2_chain_merges_into_one_edge` · `::test_connector_only_within_gap_and_not_when_touching` · `::test_fallback_keeps_only_parts_ngii_does_not_cover` · `::test_match_accepts_offset_parallel_rejects_far_or_crossing` · `::test_parallel_pairs_flags_dual_carriageway_only_when_wide` · `::test_build_tags_sources_and_compare_flags_suspects` · `::test_far_offset_is_flagged_before_width_gap`
+
+### 184-3. 대조 도구 — `tools/skeleton_compare.py` 가 위치 의심표를 낸다
+
+현행 1,281 구간마다 매칭 엣지 · 이동 거리 · 두 건물 원천 관통 · NGII 측량 도로폭 대 현재 width_min_m · 쌍선 여부를 적고 사유 넷을
+붙인다 — 멀리(매칭 엣지까지 거리 중앙 3m 초과) · 건물관통(현행만 1m 초과) · 폭불일치(2m 이상) · 짝없음 · 쌍선. `data/desk/r1/`(재생성물 · gitignore)에 쓴다.
+폭불일치는 혼자서는 약하다 — width_min_m 은 구간 안 최소 통과폭이고 NGII 도로폭은 대표 폭이라 좁아지는 골목마다 벌어진다.
+그래서 위치 증거(멀리 8 · 건물관통 4)를 폭(2)보다 무겁게 매긴 `priority` 순으로 사람이 본다. 동계천로 needs_cv(0.97m ↔ 10.1m 옆 13.9m)가 맨 앞 형태다.
+NGII 건물은 raw V-WORLD 묶음(바깥 zip → 도엽 zip)에서 `.work/r1` 에만 풀어 읽는다 — 새 반입이 없다.
+판정 · segments · web/data · golden 을 건드리지 않는다. 사람이 판단하려고 부르는 조사 도구라 verify 에 걸지 않는다.
+
+강제자  `tests/test_r1.py::test_tool_reads_nested_vworld_building_layer` · `tests/test_tools_are_wired.py`(EXEMPT 사유) · golden 판정 불변
+
+### 184-4. 대조표를 실제 데이터로 돌렸다 — 5~15m 옆 66 구간, needs_cv · unknown 32 → R2 · R3 로 간다
+
+2026-09-17 사용자 기계(읽기 전용 미리보기 · `/tmp`). 하이브리드 엣지 1,860 · 84.6km(ngii 1,543 · fallback 313 · connector 4).
+매칭 86.9% · 이동 중앙 0.41m · p90 1.42m. 현행 선의 NGII 건물 관통 24 → 매칭 엣지 4.
+
+**R1 판 1 의 「멀리」 · 「짝없음」 은 위치 증거로 쓸 수 없다.** 하이브리드는 NGII 가 5m 안에 없는 곳을 road_link 조각으로 메우는데,
+현행 구간이 바로 그 road_link 위에 있다 — NGII 에서 멀리 떨어진 구간일수록 발밑에 fallback 이 깔려 거리가 0 이 된다.
+「멀리」 14 는 과소 집계였고, 짝없음 168 중 155 는 선이 1.5m 안에서 겹치는데 방향만 어긋난 교차부 소음이었다.
+
+NGII 선(src == ngii)만 기준으로 1,281 구간 전부를 다시 쟀다.
+
+    NGII 선까지 거리 중앙   blocked  clear  needs_cv  unknown   합
+    A ≤1.5m                   151     352      206       332   1,041
+    B 1.5~5m                   11      84        7        28     130
+    C 5~15m                    21      13       11        21      66   ← NGII 선이 옆에 있는데 안 겹친다
+    D >15m                      8      16        2        18      44   ← NGII 가 선을 안 그린 간선
+
+C 의 needs_cv · unknown · blocked 53 중 38 은 **같은 도로명** NGII 선이 옆에 있다 — 같은 길을 다른 자리에서 재고 있다.
+동계천로 needs_cv(0.97m ↔ 10.1m 옆 NGII 도로폭 13.9m) · 지호로100번길 needs_cv(187m · 10.6m 옆) · 금남로 unknown(94m · 13.7m 옆)이 그 형태다.
+판단 기준(C 중 needs_cv · unknown 20 이상이면 교체, 미만이면 구간 보정)에서 **32** 다 — CV 가 보러 갈 구간이 틀린 자리에 서 있다.
+R 을 닫지 않는다. R1 판 2 에서 「멀리」를 NGII 선 기준 · 반폭(max(3m, 도로폭/2)) · 짧은 구간 방향 완화로 고치고 R2 · R3 로 간다.
+
+대장 `outputs.ngii1k_center` · `outputs.corridor` 의 consumers 에 대조 도구를 더했다 — 판 1 이 대장을 패치에서 뺀 채 실려
+`test_ledger_consumers_are_complete` 가 사용자 기계 verify 에서 울었다.
+
+강제자 없음 — 사유: 측정 기록이다. 판 2 가 이 분류를 도구에 넣고 테스트로 묶는다 · consumers 는 `tests/test_declaration_reality.py::test_ledger_consumers_are_complete`
