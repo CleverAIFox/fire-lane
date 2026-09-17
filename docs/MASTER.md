@@ -729,7 +729,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
-대장은 `sources.yaml` 하나다. `datasets` 66종 · `retired` 16종.
+대장은 `sources.yaml` 하나다. `datasets` 66종 · `retired` 21종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 강제자 — `tools/docnum_check.py` (대장 datasets · retired 종수)
@@ -743,7 +743,8 @@ norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. �
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
 field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급. 저장소 안
-_quarantine  대장에 없는 파일. 삭제하지 않고 격리
+retired      SSD · 은퇴본(=아카이브). 대장 retired 가 파일 이름 · sha 로 주인이다
+_quarantine  ★ 폐지(2026-09-17). 안의 것은 retired 로 옮겼다. 되살아나면 `레이크 관문` 이 운다
 web/data     표출용. 커밋한다
 data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
 ```
@@ -2079,7 +2080,7 @@ python -m firelane.contract                     대장 선언 ↔ raw 실물 대
 ### 14-4. 검사
 
 ```bash
-bash tools/verify.sh          # 41단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 42단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 파이프라인 전량 생략
 ```
 
@@ -2678,7 +2679,7 @@ CRS 변경               ★ 중단. 무조건
 ### 18-3c. retired — 폐기 기록
 
 **지운 것도 대장에 남긴다.** 없으면 3개월 뒤에 또 받고 또 조사한다.
-현재 `retired` 16종이 있다.
+현재 `retired` 21종이 있다.
 
 ```yaml
 retired:

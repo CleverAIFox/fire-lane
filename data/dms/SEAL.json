@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-17T16:17:19+09:00",
- "commit": "d83aa94",
+ "sealed_at": "2026-09-17T17:00:11+09:00",
+ "commit": "18c10ee",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "448612b853274774",
-  "docs/DECISIONS.md": "d2d2bbdf9f2dfcc9",
-  "docs/PLAN.md": "3f4e304b55e09dc0",
-  "README.md": "1a4da37f2c84f26d"
+  "docs/MASTER.md": "58204b724e5c9c2f",
+  "docs/DECISIONS.md": "3ef48c9f7c3bb3ca",
+  "docs/PLAN.md": "c2ce07d550ed0f6f",
+  "README.md": "ca70e7b204208889"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -223,7 +223,7 @@
   ]
  },
  "code": {
-  "sha256": "b18f67772d5657f4",
+  "sha256": "ac9d3ea12f66eb53",
   "files": 64
  },
  "sections": {
@@ -420,13 +420,13 @@
    "title": "6. 데이터 현황"
   },
   "MASTER-033": {
-   "h": "001fc8431107e39b",
+   "h": "434cd1a457204d2f",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-1. 확보"
   },
   "MASTER-034": {
-   "h": "2163294163bf50eb",
+   "h": "c36ec2c09108982a",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-2. 데이터 보관"
@@ -774,7 +774,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER-092": {
-   "h": "c1e7f8a1debca17f",
+   "h": "a86f3312d73ba9c8",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -924,7 +924,7 @@
    "title": "18-3b. 계약 — 사람을 언제 부르는가"
   },
   "MASTER-117": {
-   "h": "3bfc363ef81302ab",
+   "h": "6fd92d41cfe8bbbf",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3c. retired — 폐기 기록"
@@ -3587,6 +3587,36 @@
    "doc": "docs/DECISIONS.md",
    "title": "175-3. git 없는 트리에서 엉뚱하게 실패하던 둘"
   },
+  "DECISIONS-412": {
+   "h": "71cd3cb41b5a4d95",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "176. L2 — 레이크 밖 유일본 73 을 retired 로 보존하고, 격리 층을 폐지하고, 사본을 지웠다"
+  },
+  "DECISIONS-413": {
+   "h": "51a78bb4b631ba15",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "176-1. 계획표를 믿지 않고 레이크에서 다시 잰다 — `firelane.lake plan`"
+  },
+  "DECISIONS-414": {
+   "h": "0669775e50fd9ed7",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "176-2. 대장 retired — 유일본 73 을 기존 둘과 새 다섯에 파일 단위로"
+  },
+  "DECISIONS-415": {
+   "h": "d11350900f08aede",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "176-3. 격리 층을 폐지했다 — 되살아나면 관문이 운다"
+  },
+  "DECISIONS-416": {
+   "h": "3c27df1d83970b42",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "176-4. 레이크 기계의 산출물 skip 도 실패로 센다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3606,7 +3636,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "808d11951b0eaa13",
+   "h": "2662b4430a592d90",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -4026,7 +4056,7 @@
    "title": "숫자의 정본은 문서가 아니다"
   },
   "README-006": {
-   "h": "e742c1cd8553d922",
+   "h": "b2fabebd33538d33",
    "state": "wired",
    "doc": "README.md",
    "title": "실행"
@@ -4086,7 +4116,7 @@
    "title": "구조"
   },
   "README-016": {
-   "h": "c6e16ccf335a7995",
+   "h": "413ea82502795bbc",
    "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
@@ -4117,7 +4147,7 @@
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.44ms"
+   "tail": "Checked 45 packages in 0.40ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4132,7 +4162,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "652 passed in 85.36s (0:01:25)"
+   "tail": "655 passed in 72.35s (0:01:12)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4147,7 +4177,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "237 passed, 1 skipped in 17.85s"
+   "tail": "237 passed, 1 skipped in 8.97s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -4187,7 +4217,7 @@
   "verify/흡수 대상": {
    "rc": 1,
    "state": "생략",
-   "tail": "움직인 것 0개"
+   "tail": "움직인 것 1개"
   },
   "verify/선언 ↔ 실물": {
    "rc": 0,
@@ -4232,7 +4262,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
+   "tail": "지도 확인:  uv run python tools/serve.py"
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -4259,6 +4289,11 @@
    "state": "OK",
    "tail": "`--sweep` 으로 지울 목록을 확정한다"
   },
+  "verify/레이크 관문": {
+   "rc": 0,
+   "state": "OK",
+   "tail": "관문 열림 (0)"
+  },
   "verify/검사가 죽었는가": {
    "rc": 0,
    "state": "OK",
@@ -4267,7 +4302,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 647절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 652절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4287,7 +4322,7 @@
   "verify/대장 별칭 이관 유지": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 폐기 별칭 0건 — 102개 항목에서 이관이 유지된다"
+   "tail": "✓ 폐기 별칭 0건 — 107개 항목에서 이관이 유지된다"
   },
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
@@ -4297,7 +4332,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "652 passed in 107.91s (0:01:47)"
+   "tail": "655 passed in 96.63s (0:01:36)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4317,12 +4352,12 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 412개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 417개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
    "state": "생략",
-   "tail": "단계 41"
+   "tail": "단계 42"
   },
   "probe/deadcheck": {
    "rc": 0,

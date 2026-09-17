@@ -5,7 +5,7 @@
   새 모듈 하나(firelane.lake)를 넣자 51 → 52 가 됐고 아무도 안 봤다.
 
     환경skip(레이크) — …   레이크가 없는 기계(CI). **레이크가 붙은 기계에서는 실패로 센다**
-    환경skip(산출물) — …   파이프라인 산출물이 없는 기계(clone 직후 · CI)
+    환경skip(산출물) — …   파이프라인 산출물이 없는 기계(clone 직후 · CI). 레이크 기계에 산출물이 있으면 실패
     환경skip(도구) — …     git · node · 선택 의존성이 없는 환경. importorskip 은 여기로 친다
     유예skip — 「PLAN 행 제목」 · YYYY-MM-DD — …   그 행이 PLAN §1 에 있고 21일 안일 때만
     그 밖                   실패. 해당없음은 skip 이 아니다 — 수집 단계에서 거르거나 통과시킨다
@@ -26,7 +26,8 @@ IMPORT = re.compile(r"^could not import ")
 MAX_DEFER_DAYS = 21
 
 
-def judge(reason: str, *, lake_attached: bool, today: date, plan_titles: set[str]) -> str | None:
+def judge(reason: str, *, lake_attached: bool, today: date, plan_titles: set[str],
+          outputs_present: bool = False) -> str | None:
     """위반이면 사유 문장, 아니면 None."""
     reason = reason.strip().removeprefix("Skipped: ")
     if IMPORT.match(reason):
@@ -34,6 +35,9 @@ def judge(reason: str, *, lake_attached: bool, today: date, plan_titles: set[str
     if m := ENV.match(reason):
         if m.group(1) == "레이크" and lake_attached:
             return "레이크가 붙은 기계에서 레이크 skip 이 났다 — 여기서는 돌아야 한다. 조건식을 보라"
+        if m.group(1) == "산출물" and lake_attached and outputs_present:
+            return ("레이크 기계에 파이프라인 산출물이 있는데 산출물 skip 이 났다 — 조건식이 틀렸거나 "
+                    "산출물 이름이 바뀌었다")
         return None
     if m := DEFER.match(reason):
         if m.group("title") not in plan_titles:
@@ -56,6 +60,13 @@ def lake_attached() -> bool:
         return bool(d and (d / "raw").is_dir() and any((d / "raw").iterdir()))
     except OSError:
         return False
+
+
+@lru_cache(maxsize=1)
+def outputs_present() -> bool:
+    """파이프라인이 한 번이라도 돈 기계인가 — 커밋 안 하는 gpkg 가 있으면 돈 것이다."""
+    d = ROOT / "data" / "processed"
+    return d.is_dir() and any(d.glob("*.gpkg"))
 
 
 @lru_cache(maxsize=1)

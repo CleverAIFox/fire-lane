@@ -7568,3 +7568,66 @@ zip 트리(샌드박스)에서 `test_declared_output_exists_after_run` 은 `git 
 skip 되지 않고 실제로 돈다.
 
 강제자  `tests/test_ledger_outputs.py::test_declared_output_exists_after_run` · `tests/test_ownership.py::test_strict_scope_is_not_empty`
+
+## 176. L2 — 레이크 밖 유일본 73 을 retired 로 보존하고, 격리 층을 폐지하고, 사본을 지웠다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 176-1~176-4 가 각자 강제자 칸을 든다
+
+§173-1 · §173-2 · §173-5 를 레이크 실물에 적용한 배치다. 판정은 불변이다. 레이크를 옮기고 지우는 명령은
+도구가 파일로 쓰고 사람이 쳤다(§10 적용 원형).
+
+### 176-1. 계획표를 믿지 않고 레이크에서 다시 잰다 — `firelane.lake plan`
+
+보조 스크립트의 계획표(`plan.tsv`)는 판정이다. 판정을 그대로 적용하면 §173-5 에서 잡은 한 건(대장 sha 로
+확인되지 않는 사본)이 유일본일 때 사라진다. 그래서 도구가 조건 다섯을 **지금 상태로** 다시 잰다.
+
+    보존        원천 또는 목적지에 계획표 sha 로 있다 · 대장 retired 가 그 이름 · sha 를 든다 · 반쯤 옮겨진 것은 멈춘다
+    사본        레이크 data 안에 같은 sha 가 실재한다(크기가 같은 것만 해시)
+    압축재생    근거 zip(보존 목록 안)의 멤버에 같은 sha 가 있다
+    스냅숏      tar 멤버 전부가 계획표에 있고 sha 가 같다 — 계획 밖 멤버가 하나라도 있으면 유일본일 수 있다
+    재생성      레이크 타일 키가 전부 저장소 ortho 에 있다(재인코딩이라 sha 는 다르다)
+
+하나라도 어긋나면 명령을 쓰지 않는다. 명령은 `mv -n` 과 파일 하나씩 `rm --`, 빈 폴더만 지우는 `find -empty`
+뿐이다 — `rm -rf` 는 쓰지 않는다. 계획 밖 파일이 남으면 폴더가 안 지워지고 명령이 실패로 끝난다.
+이동 앞뒤로 두 번 재도 같은 답이 나온다(보존은 목적지에서, 스냅숏 멤버는 계획표 sha 로 찾는다).
+1.3GB 짜리 멤버가 있어 해시는 스트림으로 잰다 — 8GB 기계다.
+
+강제자  `tests/test_lake.py::test_plan_is_remeasured_and_writes_safe_commands` · `::test_plan_is_idempotent_across_the_move` · 카나리아 `::test_plan_refuses_when_a_condition_breaks`
+
+### 176-2. 대장 retired — 유일본 73 을 기존 둘과 새 다섯에 파일 단위로
+
+    ngii1k_ngii_platform       52   2019 · 2020 NGI/NDA/xml 36 + 2022 SHP zip · xml 16 (기존 항목 — "NGI/NDA + 일부 SHP")
+    ngii1k_meta_xlsx           12   ISO 메타데이터 xlsx (기존 항목 — "xlsx 12개")
+    ngii_basemap_gj_202608      4   기본도 도엽 zip (신규)
+    fire_stat_kr_20241231       1   (신규)
+    hydrant_point_kr_20260811   1   (신규 — 활성과 같은 stem 의 다른 판)
+    hydrant_summary_jngj_20251231 1 (신규)
+    parking_lot_20260811        2   (신규)
+
+기존 두 항목은 `what` 이 정확히 그 파일들을 서술하고 있었다 — 폐기 기록은 남았는데 파일은 레이크 밖 스냅숏에만
+있었던 것이다. 신규 다섯은 레이크에서 빠진 경위가 기록에 없다. **없다고 적었다.** 추측으로 사유를 메우지 않는다.
+
+격리 7 의 sha 는 레이크 기계에서 재서 채웠다. `sha 없는 폐기 파일` 래칫 7 → 0.
+
+강제자  `tests/test_lake.py::test_retired_files_carry_sha`(상한 0) · `tools/docnum_check.py`(retired 16 → 21종)
+
+### 176-3. 격리 층을 폐지했다 — 되살아나면 관문이 운다
+
+`_quarantine` 8(은퇴 사유가 있는 7 + `QUARANTINE.md`)을 `retired/` 로 옮기고 폴더를 지웠다. 해석기의 `폐지층` 을
+관문을 막는 상태로 올렸다. `acquire --quarantine` 은 아직 그 자리에 쓴다(PLAN #56 해석 사본 배선) — 쓰면
+verify 의 `레이크 관문` 단계가 운다. 먼저 막고 나중에 고친다.
+
+`lakecheck` L2 는 종전에 폴더가 없으면 "못 잰다" 로 울었다. 폐지 뒤에는 없는 것이 정상이고, 파일이 **다시 생긴 것**을
+운다. `doctor` 도 같다.
+
+강제자  `tools/verify.sh` 단계 `레이크 관문` · `tests/test_lake.py::test_quarantine_lookup_is_not_raw_only`
+
+### 176-4. 레이크 기계의 산출물 skip 도 실패로 센다
+
+§175 는 레이크 기계의 레이크 skip 만 실패로 봤다. 산출물 skip 은 clone 직후를 위해 남겼는데, 파이프라인이 한 번이라도
+돈 기계(커밋 안 하는 gpkg 가 있는 기계)에서 산출물 skip 이 나면 조건식이 틀렸거나 산출물 이름이 바뀐 것이다.
+skip 은 임시다 — 레이크 기계에서 남는 skip 은 `유예skip`(PLAN 행 · 21일) 뿐이어야 한다.
+
+강제자  `tests/test_skip_policy.py::test_judge_rejects_what_hides`
