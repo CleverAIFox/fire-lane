@@ -226,9 +226,8 @@ step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 step "기획서 대조"     uv run python tools/docx_check.py
 # ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
-# ★ 막는 검사가 아니라 **보여주는** 것이다. 승인이 형식이 되지 않게
-#   리뷰어에게 무엇이 움직였는지 준다(DECISIONS §109).
-note "흡수 대상" "$(uv run python tools/release_brief.py 2>&1 | tail -1)"
+# ★ 2026-09-17 (DECISIONS §180-9). `흡수 대상`(release_brief 한 줄)을 뺐다. 검사가 아니라 보고였고 매 실행 "생략" 으로
+#   찍혀 생략 칸을 채웠다 — 진짜 생략(npm 없음 · --fast)이 그 옆에 묻힌다. 표는 릴리즈 PR 본문에서 쓰인다(merge_batch --release).
 # ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
 step "선언 ↔ 실물"     uv run python tools/refcheck.py
 # ★ 전수 스캔. `--repo` 는 데이터 레이크 없이 저장소 트리만 본다 —

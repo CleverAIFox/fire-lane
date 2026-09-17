@@ -7943,3 +7943,12 @@ verify 는 작업 트리를 보고, CI 는 커밋본을 본다. verify 헤더의
 다시 검증하지 않는다(G-18). §180-7 의 "태그를 지우고 다시 봉인한다" 는 이 절로 대체한다. 원격 · 로컬의 `seal/*` 태그는 지웠다.
 
 강제자  `tests/test_k2.py::test_no_tool_creates_seal_tags` — 저장소의 도구가 `seal/` 태그를 만들면 운다
+
+### 180-9. verify 에서 `흡수 대상` 을 뺐다 — 생략 칸은 실제로 못 돈 것만
+
+verify 요약의 "생략 1" 이 매번 `흡수 대상` 이었다. `release_brief.py` 의 마지막 한 줄("움직인 것 N개")을 `note` 로 찍는 자리라
+검사가 아니라 보고였다(§109). 한 줄 숫자로는 리뷰어가 무엇이 움직였는지 알 수 없고, 그 표는 릴리즈 PR 본문(`merge_batch --release`)이
+이미 쓴다. 대신 생략 칸이 늘 1 이라 **진짜 생략**(npm 없음 · `--fast` · raw 없음)이 나와도 눈에 안 띈다 — 봉인 요약의 강제자 목록에도
+`verify/흡수 대상` 이 매번 끼었다.
+
+강제자  `tests/test_k2.py::test_verify_skips_are_real_skips` — note 는 못 도는 조건 셋만 · release_brief 는 릴리즈 흐름에 남아 있다
