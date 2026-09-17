@@ -52,6 +52,7 @@ EXEMPT = {
     "clearance_probe": "최대내접원 방식 대조. 2026-08-22 기각(DECISIONS §32)",
     "corner_probe": "코너 기하 조사",
     "desk_check": "정사영상 위에 구간·폭 렌더. 책상 대조",
+    "skeleton_compare": "R1 뼈대 후보 대조표. 사람이 R3 를 판정하려고 부른다(DECISIONS §184)",
     "jijeok_probe": "연속지적도로 폭 대조",
     "jijeok_review": "갈리는 구간을 정사영상 위에서 사람이 판정",
     "lanes_probe": "표준노드링크 차로수로 폭 하한 대조",
