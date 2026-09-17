@@ -79,7 +79,7 @@ for st in (sys.stdout, sys.stderr):
 # ★ main() 안에 두면 테스트가 베낀다. 실제로 두 벌이 생겼고 한 벌은
 #   `json` 이 빠진 채 굳었다(2026-09-11 B3 에서 발견).
 #   hwp·pdf·ngi·nda 가 없어 왕복 멱등이 거짓이었던 이력도 같은 병이다.
-PASSTHROUGH_EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson"
+PASSTHROUGH_EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson|txt"   # txt — 내비게이션용DB 절단본(DECISIONS §179-4)
 
 
 def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:

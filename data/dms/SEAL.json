@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-17T19:18:45+09:00",
- "commit": "1d03715",
+ "sealed_at": "2026-09-17T20:24:39+09:00",
+ "commit": "afd0edf",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "46dc700f5f3f2f2b",
-  "docs/DECISIONS.md": "796a8cdaeeddfe80",
-  "docs/PLAN.md": "33c4dbcfc1f1170e",
-  "README.md": "e5617fcfd8851e53"
+  "docs/MASTER.md": "0844a3af7929869e",
+  "docs/DECISIONS.md": "6cd6189e6e8420cc",
+  "docs/PLAN.md": "050afc06027bfff4",
+  "README.md": "06654db9556efc64"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -230,10 +230,22 @@
   ],
   "parking_std": [
    "2d3ffbc50ad074ac"
+  ],
+  "navi_build": [
+   "a11acfcd46a77498"
+  ],
+  "navi_jibun": [
+   "2ec3b3efd7dfe043"
+  ],
+  "civil_office": [
+   "259f0234fa7e26d4"
+  ],
+  "donggu_statbook": [
+   "a70c7354fb672643"
   ]
  },
  "code": {
-  "sha256": "63a95ac10c91134d",
+  "sha256": "f5d39bf1648b74bb",
   "files": 64
  },
  "sections": {
@@ -400,7 +412,7 @@
    "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
   },
   "MASTER-028": {
-   "h": "1c709a55ed17e4a4",
+   "h": "3027ad6b6187ca41",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5. 시스템 구성"
@@ -430,7 +442,7 @@
    "title": "6. 데이터 현황"
   },
   "MASTER-033": {
-   "h": "ccb8843865163f37",
+   "h": "e2ffab41572339fb",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-1. 확보"
@@ -3687,6 +3699,42 @@
    "doc": "docs/DECISIONS.md",
    "title": "178-4. 단속이력의 받은 경로 — 공공데이터포털"
   },
+  "DECISIONS-427": {
+   "h": "219c368dcdbacc9a",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "179. L2d — landing 7건을 처음 열었다: 목적지 검색 재료 둘을 반입하고, 셋은 상폐했다"
+  },
+  "DECISIONS-428": {
+   "h": "f1aba2d671782594",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-1. 판정"
+  },
+  "DECISIONS-429": {
+   "h": "dac0abeccb0fd152",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-2. 동명동으로 자른다 — 출동지 스코프"
+  },
+  "DECISIONS-430": {
+   "h": "760e7b3524479fc0",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-3. 통계연보는 들인다 — CCTV 없는 구간 가중치를 추정해야 하므로"
+  },
+  "DECISIONS-431": {
+   "h": "1dc5e404d1445b64",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-4. 정정 — 텍스트 표는 raw_only 가 될 수 없다"
+  },
+  "DECISIONS-432": {
+   "h": "c25c55f90db969e8",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "179-5. 판이 여럿인 것이 정상인 소스는 판을 선언한다 — vintage_check"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3706,7 +3754,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "c4e9e545f4eea83a",
+   "h": "0a5241046478a923",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -4186,7 +4234,7 @@
    "title": "구조"
   },
   "README-016": {
-   "h": "0bf79949e0243144",
+   "h": "98079849b978ff16",
    "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
@@ -4217,7 +4265,7 @@
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.53ms"
+   "tail": "Checked 45 packages in 1ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4232,7 +4280,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "658 passed in 73.76s (0:01:13)"
+   "tail": "658 passed in 74.91s (0:01:14)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4247,7 +4295,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "237 passed, 1 skipped in 10.59s"
+   "tail": "237 passed, 1 skipped in 8.80s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -4287,7 +4335,7 @@
   "verify/흡수 대상": {
    "rc": 1,
    "state": "생략",
-   "tail": "움직인 것 2개"
+   "tail": "움직인 것 1개"
   },
   "verify/선언 ↔ 실물": {
    "rc": 0,
@@ -4332,7 +4380,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "지도 확인:  uv run python tools/serve.py"
+   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -4372,7 +4420,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 662절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 668절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4387,22 +4435,22 @@
   "verify/norm 계보 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "정상 34 · 낡음 0 · 손상 0"
+   "tail": "정상 36 · 낡음 0 · 손상 0"
   },
   "verify/대장 별칭 이관 유지": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 폐기 별칭 0건 — 92개 항목에서 이관이 유지된다"
+   "tail": "✓ 폐기 별칭 0건 — 96개 항목에서 이관이 유지된다"
   },
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 없음 — 행 59개가 1..59 로 연속이다"
+   "tail": "✓ 없음 — 행 60개가 1..60 로 연속이다"
   },
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "658 passed in 97.46s (0:01:37)"
+   "tail": "658 passed in 97.14s (0:01:37)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4422,7 +4470,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 427개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 433개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,

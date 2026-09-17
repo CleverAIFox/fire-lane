@@ -414,7 +414,31 @@
    "hangul_ratio": 0.267,
    "notes": [],
    "at": "2026-09-17T19:06:00+09:00"
+  },
+  "juso/juso_navibuild_jngj-dongmyeong_20260831.txt": {
+   "key": "navi_build",
+   "src_sha256": "a11acfcd46a77498a14c3e0e7e19bc4237aa300bce8784c189645f4f29734a68",
+   "dst_sha256": "ced30c74f48f8008a436920b5118c88c1cf58de0bcccc83bd8b0781b2aaf52c5",
+   "src_encoding": "cp949",
+   "src_newline": "crlf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "hangul_ratio": 0.104,
+   "notes": [],
+   "at": "2026-09-17T19:39:54+09:00"
+  },
+  "juso/juso_navijibun_jngj-dongmyeong_20260831.txt": {
+   "key": "navi_jibun",
+   "src_sha256": "2ec3b3efd7dfe043b77731306760538264356555b87efd019defe73a55519aaf",
+   "dst_sha256": "f573ed2b6ffbb05db5777367f1669242614e4c5ba704ca29ac7c85c74d23dfdb",
+   "src_encoding": "cp949",
+   "src_newline": "crlf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "hangul_ratio": 0.1001,
+   "notes": [],
+   "at": "2026-09-17T19:39:54+09:00"
   }
  },
- "at": "2026-09-17T19:06:00+09:00"
+ "at": "2026-09-17T20:14:56+09:00"
 }
