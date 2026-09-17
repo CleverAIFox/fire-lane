@@ -2625,7 +2625,7 @@ outputs:
 
 근거는 DECISIONS §173-3. 2026-09-17 기준 `authority` 칸이 있는 소스 21종 중 규칙에 맞는 것은 3종이다.
 
-강제자 없음 — 사유: 대장 강제자를 래칫으로 다는 것이 PLAN 「대장 · SSD 디렉토리 구조와 해석기 하나」 의 일이다
+강제자 — `tests/test_lake.py::test_authority_names_institution_and_route` (래칫 — 위반 수가 상한과 같아야 한다)
 
 ★ `juso` 전자지도는 도로명주소법 시행령 제46조 **심사 승인** 데이터다 —
 승인 당사자의 사용과 제3자 재배포는 다르다. 퍼블릭 버킷·공개 저장소에
@@ -2675,6 +2675,17 @@ retired:
 
 ★ **결손은 폐기가 아니다.** 못 받은 소스는 `datasets` 에 남기고 "원본 없음"으로
 표시한다. 지우면 잊는다.
+
+폐기 항목이 파일을 가리킬 때는 **파일 이름**(`files`)으로 적는다. 글롭은 같은 stem 의
+활성 파일을 잡는다. 파일의 주인은 `firelane.lake` 가 판정하고, 주장이 겹치면 이름으로 적은
+쪽이 글롭을 이긴다. 한 원본(zip)을 `layer` 가 다른 datasets 여럿이 쓰는 것은 공유다.
+
+```bash
+uv run python -m firelane.lake scan      층 × 상태 표 (읽기만)
+uv run python -m firelane.lake gate      이동 · 삭제 전 관문. 막히면 종료코드 1
+```
+
+강제자 — `tests/test_lake.py::test_retired_entries_name_files_not_globs` · `::test_named_retired_beats_active_glob`
 
 ---
 
