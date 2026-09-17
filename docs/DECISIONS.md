@@ -7764,3 +7764,85 @@ EDA v2(2026-09-17 16:12 — 레이크 밖 유일본 73 포함 · 좌표 진단)�
 §177-1 이 "받은 경로 미기록" 으로 적은 `parking_enforce` 는 공공데이터포털에서 받았다(사용자 확인). `authority` 괄호를 고쳤다.
 
 강제자  `tests/test_lake.py::test_authority_names_institution_and_route`
+
+## 179. L2d — landing 7건을 처음 열었다: 목적지 검색 재료 둘을 반입하고, 셋은 상폐했다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 179-1~179-3 이 각자 강제자 칸을 든다
+
+landing 보류 7건(956MB · 3주)은 사유만 적혀 있고 안을 연 적이 없었다. EDA(2026-09-17 16:56)로 처음 열었고
+사용자가 판정했다. 판정은 불변이다.
+
+### 179-1. 판정
+
+    반입   내비게이션용DB(7z 334MB · 해동 4.06GB) → navi_build · navi_jibun   동명동으로 잘랐다 · 7z 는 지웠다
+           민원행정기관전자지도(2MB) → civil_office                         전국 26,142점 · 동명동 bbox 64 · 학교 · 관공서
+           동구통계연보 2024(244MB · 408쪽) → donggu_statbook                CCTV 없는 구간 가중치 추정 재료
+    보류   상세주소DB(28MB)                                                  아파트 동 단위 목적지 — 목적지 검색 뒤
+    상폐   주소DB(181MB)          내비게이션용DB 가 같은 주소 · 지번 · 부가정보에 좌표까지 든다
+           상세주소 표시(156MB)   층 · 호 표시 테이블 · 좌표 없음
+           사물주소 전국분(10MB)  동구 판 spotaddr_geom 이 raw 에 있다
+
+내비게이션용DB 는 활성 `juso_building_db` 의 note 가 "좌표가 없다 — 내비게이션용DB 승인 대기" 로 **기다리던 판**이었다.
+2026-09-10 에 승인이 떨어져 landing 에 들어왔는데 반입이 3주 멈춰 있었다. 민원행정기관 SHP 는 zip 안 파일명이 CP437 로
+깨져 "정체 확인 전" 으로 보류됐을 뿐이다. 둘이 목적지 검색이 부실한 이유(상가 2,077 뿐)를 정확히 푸는 재료다.
+
+강제자  `tools/docnum_check.py`(datasets 73) · `tests/test_guards.py::test_landing_disposition_needs_why` · `tools/lakecheck.py` L3
+
+### 179-2. 동명동으로 자른다 — 출동지 스코프
+
+동구 전체(약 2만 건)로 자르자는 안이 있었다. 기각했다. 출동지는 동명동이다. 판정 스코프를 동명동 + 주변으로 넓힌 것은
+회랑(안전센터 → 출동지) 때문이지 목적지 때문이 아니다. 자르는 기준은 첫 열 법정동코드 `1221010800` 이다 — 동 이름으로
+자르면 목포 동명동이 섞인다(juso_building_db note). EDA 의 "동명동 추정 5,719" 는 이름 · 행정동을 함께 센 느슨한 수였다.
+
+잘라 넣는 것은 "받은 그대로" 의 예외다. 전국 전량을 raw 에 두지 않는다는 선례(juso_building_db)를 따랐고, 자르는 규칙과
+원본 이름을 대장 note 와 `landing_disposition` 에 남겼다. 원본은 매월 다시 받을 수 있다.
+
+강제자 없음 — 사유: 스코프 판단이다. 자른 행수는 대장 what 에 적혔고 적용 스크립트가 0 행이면 멈춘다
+
+### 179-3. 통계연보는 들인다 — CCTV 없는 구간 가중치를 추정해야 하므로
+
+CV 는 CCTV 가 있는 구간에서만 실시간 통과폭을 낸다. 없는 구간은 경로 가중치를 추정해야 하는데 방식이 아직 정해지지 않았다
+(가상 환경 논의 중). 통계연보의 인구 · 세대 · 자동차 · 주차 통계가 그 재료 중 하나다. 다만 동 단위라 동명동 안에서는 상수다 —
+구간 단위 재료(단속이력 지오코딩 · 주차장 좌표 · 상가 밀도 · 건축물대장)의 스케일 · 사전분포로 쓴다.
+PLAN 에 행을 세웠다(「CCTV 없는 구간의 경로 가중치 — 추정」).
+
+L2c 의 PLAN 편집 둘(보관 7묶음 행 삭제 · #56 ④ 보강)이 **적용되지 않았다.** 행 번호로 찾았는데 5m DEM 행을 지우며 재배번돼
+번호가 하나씩 당겨졌고, 찾기 실패가 조용히 넘어갔다. 이번에 제목으로 찾고 못 찾으면 멈추게 해서 다시 적용했다.
+
+강제자 없음 — 사유: 판단 기록이다. PLAN 편집 누락은 적용 스크립트가 제목 찾기 실패로 멈추는 것으로 막았다
+
+### 179-4. 정정 — 텍스트 표는 raw_only 가 될 수 없다
+
+L2b · L2c 가 단속이력 · 소화전 유형별 집계 · 주차장 표준데이터를 `kind: raw_only` 로 등재했고, L2b 적용이 레이크 기계의
+pytest 에서 멈췄다 — `test_raw_only_is_true_to_the_lake`. 단속이력은 2026-08 에 활성이던 시절 prep 이 만든 norm 판이 레이크에
+남아 있었다. **prep 은 kind 와 무관하게 텍스트 raw 를 전부 norm 으로 옮긴다.** 그래서 텍스트 표를 raw_only 로 적는 순간
+선언이 거짓이 된다. 테스트의 문장이 이미 규칙을 적고 있었다 — "raw_only 는 형식이 정규화 불가일 때만 쓴다. 소비자가 없는
+것은 feeds 가 든다". 샌드박스에는 norm 이 없어 이 검사가 조용히 통과했다.
+
+    parking_enforce   csv_table_multi   2024-01-08 판에만 `비고` — contract.optional_cols 로 선언
+    hydrant_type      csv_table
+    parking_std       csv_table
+    navi_build        text_table        헤더 없는 `|` 구분 · cp949 — juso_building_db 와 같은 kind
+    navi_jibun        text_table
+
+feeds 는 빈 목록이 아니라 `미투입 — <용도>` 로 적었다(§171-1 규칙 — 코드 참조 0곳인 소스). 내비게이션용DB 절단본이
+`.txt` 라 raw 이름 규칙의 통과 확장자에 `txt` 를 더했다 — 없으면 재취득 때 landing 에 갇힌다.
+civil_office(zip 안 SHP) · donggu_statbook(PDF) 은 텍스트가 아니라 raw_only 가 맞다.
+
+강제자  `tests/test_declaration_reality.py::test_raw_only_is_true_to_the_lake` · `tests/test_declaration_sync.py::test_unwired_sources_declare_purpose` · `tests/test_place_idempotent.py::test_every_required_file_is_reachable_by_rules`
+
+### 179-5. 판이 여럿인 것이 정상인 소스는 판을 선언한다 — vintage_check
+
+단속이력을 `csv_table_multi` 로 복귀하자 L2b verify 가 `vintage 정합` 에서 울었다 — 파일명 20240108 ↔ 대장 `updated` 20250226(V1),
+같은 stem 에 판 둘(V2). 이 검사는 its_nodelink 258MB 두 벌을 잡으려고 생겼고 "같은 stem 에 판이 둘이면 두 벌" 로만 봤다.
+기간별로 나뉘어 오는 표가 정상인 경우를 몰랐다.
+
+대장에 `vintages: ['2024-01-08', '2025-02-26']` 로 **판을 선언**하게 하고, vintage_check 가 선언된 판은 V1 · V2 로 안 세게 했다.
+선언 밖 판이 오면 여전히 운다. 선언이 없으면 종전 규칙 그대로다. `updated` 는 최신 판(2025-02-26)으로 둔다.
+
+같은 verify 에서 `커밋된 web/data 가 최신인가` 도 울었다 — raw 가 바뀌어 파이프라인이 `web/data/_manifest.json` 을 갱신했는데
+커밋본이 옛 판이었다. 적용 스크립트가 verify 전에 파이프라인을 한 번 돌려 생성 매니페스트를 커밋하게 했다(G-3).
+
+강제자  `tests/test_vintage_multi.py::test_declared_editions_are_not_defects` · `::test_undeclared_edition_still_cries` · 카나리아 `tools/vintage_check.py --selftest`
