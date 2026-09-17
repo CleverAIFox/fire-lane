@@ -4,8 +4,8 @@
     "raster": "dem_scope.tif",
     "grid_m": 11.25,
     "upsample": 8,
-    "base_elev_m": 34.3,
-    "relief_m": 86.6,
+    "base_elev_m": 34.1,
+    "relief_m": 144.4,
     "note_relief": "대상 영역 기준. 패딩 포함 창 전체는 더 넓다",
     "applied_to": [
       "segments",
@@ -17,22 +17,22 @@
     "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
     "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
     "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-08-25T00:56:27+00:00"
+    "generated_at": "2026-09-16T14:58:57+00:00"
   },
   "ortho": {
     "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
     "gsd_m": 0.25,
     "src_crs": "EPSG:5186",
     "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
-    "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.6MB)",
+    "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.8MB)",
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-08-25T00:56:37+00:00"
+    "generated_at": "2026-09-16T14:59:16+00:00"
   },
-  "generated_at": "2026-09-16T19:20:39.730487+09:00",
+  "generated_at": "2026-09-16T22:12:06.752596+09:00",
   "bbox_4326": [
     126.907,
     35.14,
-    126.94,
+    126.943,
     35.162
   ],
   "standard_crs": {
@@ -41,210 +41,200 @@
   },
   "datasets": [
     {
+      "features": "",
+      "geom": [],
       "key": "gjcity_road_facility",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "gjcity_road_facility_jngj_20220914.hwp",
+      "source_crs": "",
       "source_files": [
         "**/gjcity_road_facility_*"
       ],
       "source_sha256": "c0810ad6ed35388fe6c881dc2005ddaad5a77821216ab2eb105c1c3c895f77bc",
-      "resolved": "gjcity_road_facility_jngj_20220914.hwp",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "juso_bldg_geom",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "juso_bldg_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
       "source_files": [
         "**/juso_bldg_geom_*"
       ],
       "source_sha256": "03808c2a5d858785589e864cc85a275d87656fe07fc6f5875304e4b3924a92cd",
-      "resolved": "juso_bldg_geom_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "juso_bldggrp_geom",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "juso_bldggrp_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
       "source_files": [
         "**/juso_bldggrp_geom_*"
       ],
       "source_sha256": "4867537948920da1a014db26bb614c9190bf1623362ec16f7e4f6deec2f305ed",
-      "resolved": "juso_bldggrp_geom_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "juso_etc_geom",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "juso_etc_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
       "source_files": [
         "**/juso_etc_geom_*"
       ],
       "source_sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
-      "resolved": "juso_etc_geom_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "kfs_pumptruck",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "safety_kfs_pumptruck_kr_20251224.hwpx",
+      "source_crs": "",
       "source_files": [
         "**/safety_kfs_pumptruck_*"
       ],
       "source_sha256": "0908c1232cd2102ec4f8e081043a4f83141680504e82c428b4237fd18a4d8d42",
-      "resolved": "safety_kfs_pumptruck_kr_20251224.hwpx",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "kfs_watertank",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "safety_kfs_watertank_kr_20251224.hwpx",
+      "source_crs": "",
       "source_files": [
         "**/safety_kfs_watertank_*"
       ],
       "source_sha256": "8b0c7fa291f5217efb7d5064f9134e1e7c9785c12b0f80309b39313a6f1f1ccd",
-      "resolved": "safety_kfs_watertank_kr_20251224.hwpx",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "kfs_chemical",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "safety_kfs_chemical_kr_20251224.hwpx",
+      "source_crs": "",
       "source_files": [
         "**/safety_kfs_chemical_*"
       ],
       "source_sha256": "9688a70902502279b7a406aacb914585d4a1dcb3019b52e5335b007b4d877b73",
-      "resolved": "safety_kfs_chemical_kr_20251224.hwpx",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "kfs_ladder_articulated",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "safety_kfs_ladder_articulated_kr_20251224.hwpx",
+      "source_crs": "",
       "source_files": [
         "**/safety_kfs_ladder_articulated_*"
       ],
       "source_sha256": "a2cab9811eadacec60c2d945c2f03151db3329f83db5c674219d36e197ee7129",
-      "resolved": "safety_kfs_ladder_articulated_kr_20251224.hwpx",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "kfs_rescue",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "safety_kfs_rescue_kr_20251224.hwpx",
+      "source_crs": "",
       "source_files": [
         "**/safety_kfs_rescue_*"
       ],
       "source_sha256": "ce1ab827276df7439c50cfef6d44153313c71ef7f34527a856da2a76d18134cd",
-      "resolved": "safety_kfs_rescue_kr_20251224.hwpx",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
-      "key": "kfs_ambulance_special",
-      "source_files": [
-        "**/safety_kfs_ambulance_special_*"
-      ],
-      "source_sha256": "a8b309c908d13b2d4760bba08a9845063d1a1622147efab7b72edc132cc73e81",
-      "resolved": "safety_kfs_ambulance_special_kr_20251224.hwp",
       "ambiguous": [
         "safety_kfs_ambulance_special_kr_20251224.hwp",
         "safety_kfs_ambulance_special_kr_20251224.pdf"
       ],
-      "source_crs": "",
-      "status": "SKIP",
       "features": "",
       "geom": [],
+      "key": "kfs_ambulance_special",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "outputs": [],
+      "resolved": "safety_kfs_ambulance_special_kr_20251224.hwp",
+      "source_crs": "",
+      "source_files": [
+        "**/safety_kfs_ambulance_special_*"
+      ],
+      "source_sha256": "a8b309c908d13b2d4760bba08a9845063d1a1622147efab7b72edc132cc73e81",
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "kfs_ladder_small",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "safety_kfs_ladder_small_kr_20251224.pdf",
+      "source_crs": "",
       "source_files": [
         "**/safety_kfs_ladder_small_*"
       ],
       "source_sha256": "5c5ab15422d304dcfe51bec3bc63272bde1fd723dc49cfc64f0f417ccb50924a",
-      "resolved": "safety_kfs_ladder_small_kr_20251224.pdf",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
-      "key": "mas_optional_spec",
-      "source_files": [
-        "**/safety_mas_optional_spec_*"
-      ],
-      "source_sha256": "975e4a08fb4e02fdc376e92fc588eb7f22d4cd194b1f875c70d705641f712425",
-      "resolved": "safety_mas_optional_spec_kr_20241111.hwp",
       "ambiguous": [
         "safety_mas_optional_spec_kr_20241111.hwp",
         "safety_mas_optional_spec_kr_20241111.pdf"
       ],
-      "source_crs": "",
-      "status": "SKIP",
       "features": "",
       "geom": [],
+      "key": "mas_optional_spec",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "outputs": [],
+      "resolved": "safety_mas_optional_spec_kr_20241111.hwp",
+      "source_crs": "",
+      "source_files": [
+        "**/safety_mas_optional_spec_*"
+      ],
+      "source_sha256": "975e4a08fb4e02fdc376e92fc588eb7f22d4cd194b1f875c70d705641f712425",
+      "status": "SKIP"
     },
     {
-      "key": "mas_vehicle_spec",
-      "source_files": [
-        "**/safety_mas_vehicle_spec_*"
-      ],
-      "source_sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
-      "resolved": "safety_mas_vehicle_spec_kr_20241111.hwp",
       "ambiguous": [
         "safety_mas_vehicle_spec_kr_20241111.hwp",
         "safety_mas_vehicle_spec_kr_20241111.pdf"
       ],
-      "source_crs": "",
-      "status": "SKIP",
       "features": "",
       "geom": [],
+      "key": "mas_vehicle_spec",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "outputs": [],
+      "resolved": "safety_mas_vehicle_spec_kr_20241111.hwp",
+      "source_crs": "",
+      "source_files": [
+        "**/safety_mas_vehicle_spec_*"
+      ],
+      "source_sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
+      "status": "SKIP"
     },
     {
-      "key": "node_link_changelog",
-      "source_files": [
-        "**/its_nodelink_changelog_*"
-      ],
-      "source_sha256": "574f2d294fa6ff1008c653af1436a4373f8b1a32ad7c198d02789d2abf3207fb",
-      "resolved": "its_nodelink_changelog_kr_20260812.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 35,
-      "geom": [],
       "columns": [
         "구분",
         "노선명",
@@ -252,32 +242,29 @@
         "링크(건)",
         "링크연장(km)"
       ],
+      "features": 35,
+      "geom": [],
+      "key": "node_link_changelog",
       "outputs": [
         "node_link_changelog.csv"
       ],
+      "resolved": "its_nodelink_changelog_kr_20260812.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/its_nodelink_changelog_*"
+      ],
+      "source_sha256": "574f2d294fa6ff1008c653af1436a4373f8b1a32ad7c198d02789d2abf3207fb",
+      "status": "OK",
       "seal": {
         "raw": "574f2d294fa6ff10",
-        "cfg": "0c8544bb8a68567c",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "3fdd9c7694515db6",
+        "code": "fdbb670b00a3818d",
         "out": {
           "node_link_changelog.csv": "56e7966570ac1746"
         }
       }
     },
     {
-      "key": "road_link",
-      "source_files": [
-        "**/juso_elctrnmap_*"
-      ],
-      "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
-      "resolved": "juso_elctrnmap_jngj_20260711.zip",
-      "source_crs": "EPSG:5179",
-      "status": "OK",
-      "features": 1508,
-      "geom": [
-        "LineString"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "ALWNC_DE",
         "ALWNC_RESN",
@@ -300,69 +287,69 @@
         "SIG_CD",
         "WDR_RD_CD"
       ],
+      "features": 1528,
+      "geom": [
+        "LineString"
+      ],
+      "invalid_fixed": 0,
+      "key": "road_link",
       "outputs": [
         "road_link.geojson",
         "road_link_5186.gpkg"
       ],
-      "seal": {
-        "raw": "895df207b4159c56",
-        "cfg": "f8ee91a7a5116a9f",
-        "code": "6fcd9638a9112ea5",
-        "out": {
-          "road_link.geojson": "4a73c0e457ce46ca",
-          "road_link_5186.gpkg": "29ba394b23226423"
-        }
-      }
-    },
-    {
-      "key": "road_rw",
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
+      "source_crs": "EPSG:5179",
       "source_files": [
         "**/juso_elctrnmap_*"
       ],
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
-      "resolved": "juso_elctrnmap_jngj_20260711.zip",
-      "source_crs": "EPSG:5179",
       "status": "OK",
-      "features": 1957,
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "78a575576a768cb3",
+        "code": "fdbb670b00a3818d",
+        "out": {
+          "road_link.geojson": "8ef5164940246583",
+          "road_link_5186.gpkg": "99e206c5fabef578"
+        }
+      }
+    },
+    {
+      "columns": [
+        "OPERT_DE",
+        "RW_SN",
+        "SIG_CD"
+      ],
+      "features": 1966,
       "geom": [
         "GeometryCollection",
         "MultiPolygon",
         "Polygon"
       ],
       "invalid_fixed": 10,
-      "columns": [
-        "OPERT_DE",
-        "RW_SN",
-        "SIG_CD"
-      ],
+      "key": "road_rw",
       "outputs": [
         "road_rw.geojson",
         "road_rw_5186.gpkg"
       ],
-      "seal": {
-        "raw": "895df207b4159c56",
-        "cfg": "8260bcd0abef6dde",
-        "code": "6fcd9638a9112ea5",
-        "out": {
-          "road_rw.geojson": "83e5103532146531",
-          "road_rw_5186.gpkg": "104e092093b8fe44"
-        }
-      }
-    },
-    {
-      "key": "road_intrvl",
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
+      "source_crs": "EPSG:5179",
       "source_files": [
         "**/juso_elctrnmap_*"
       ],
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
-      "resolved": "juso_elctrnmap_jngj_20260711.zip",
-      "source_crs": "EPSG:5179",
       "status": "OK",
-      "features": 10334,
-      "geom": [
-        "LineString"
-      ],
-      "invalid_fixed": 0,
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "862a084e491f401f",
+        "code": "fdbb670b00a3818d",
+        "out": {
+          "road_rw.geojson": "93ae498019f06f26",
+          "road_rw_5186.gpkg": "4da9723a4b6fc403"
+        }
+      }
+    },
+    {
       "columns": [
         "BSI_INT_SN",
         "EVE_BSI_MN",
@@ -373,60 +360,69 @@
         "RDS_MAN_NO",
         "SIG_CD"
       ],
+      "features": 10544,
+      "geom": [
+        "LineString"
+      ],
+      "invalid_fixed": 0,
+      "key": "road_intrvl",
       "outputs": [
         "road_intrvl.geojson",
         "road_intrvl_5186.gpkg"
       ],
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
+      "source_crs": "EPSG:5179",
+      "source_files": [
+        "**/juso_elctrnmap_*"
+      ],
+      "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+      "status": "OK",
       "seal": {
         "raw": "895df207b4159c56",
-        "cfg": "baba4bfe0ac7be7a",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "85b61665fff36aab",
+        "code": "fdbb670b00a3818d",
         "out": {
-          "road_intrvl.geojson": "1f030babf6abe153",
-          "road_intrvl_5186.gpkg": "8dab52a875308b1f"
+          "road_intrvl.geojson": "6e73719641f0617f",
+          "road_intrvl_5186.gpkg": "3c17e95283ce3fe7"
         }
       }
     },
     {
+      "features": "",
+      "geom": [],
       "key": "spotaddr_geom",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "juso_spotaddr_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
       "source_files": [
         "**/juso_spotaddr_geom_*"
       ],
       "source_sha256": "67d19479c563ae4b7629b1a1c5c5ed9efd0e064ff87d3bda8422553a7896e6f3",
-      "resolved": "juso_spotaddr_geom_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "spotaddr_ref",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "juso_spotaddr_ref_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
       "source_files": [
         "**/juso_spotaddr_ref_*"
       ],
       "source_sha256": "8822bdb54aa2b8a711854f525772d947f2aaf75aa6c7f29fe1194bb94f3b4c5d",
-      "resolved": "juso_spotaddr_ref_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
-      "key": "ngii1k",
-      "source_files": [
-        "vworld/vworld_map1k*_jngj-donggu_20260307.zip"
-      ],
-      "source_sha256": "7b970e12ea3f77dfa0948ab9d9dbb28703872feed76fec5e621a5a61ddc6b893",
-      "resolved": "vworld_map1k_jngj-donggu_20260307.zip",
       "ambiguous": [
         "vworld_map1k_jngj-donggu_20260307.zip",
         "vworld_map1k_ngi_jngj-donggu_20260307.zip"
       ],
-      "source_crs": "EPSG:5186",
+      "columns": [
+        "src"
+      ],
       "empty_sheets": [
         "356161091",
         "356161092",
@@ -448,1458 +444,20 @@
         "356162002",
         "356162051"
       ],
-      "sheets": {
-        "356160900": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 22,
-          "A0020000": 36,
-          "A0033320": 3,
-          "A0080000": 5,
-          "C0220000": 3
-        },
-        "356160964": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 486,
-          "A0020000": 885,
-          "A0033320": 88,
-          "A0080000": 160,
-          "C0220000": 119
-        },
-        "356160973": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 321,
-          "A0020000": 498,
-          "A0033320": 96,
-          "A0080000": 89,
-          "C0220000": 141
-        },
-        "356160974": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 437,
-          "A0020000": 777,
-          "A0033320": 90,
-          "A0080000": 143,
-          "C0220000": 171
-        },
-        "356160975": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 454,
-          "A0020000": 477,
-          "A0033320": 92,
-          "A0080000": 94,
-          "C0220000": 265
-        },
-        "356160976": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 395,
-          "A0020000": 446,
-          "A0033320": 89,
-          "A0080000": 84,
-          "C0220000": 213
-        },
-        "356160977": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 518,
-          "A0020000": 738,
-          "A0033320": 101,
-          "A0080000": 135,
-          "C0220000": 151
-        },
-        "356160978": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 345,
-          "A0020000": 146,
-          "A0033320": 89,
-          "A0080000": 22,
-          "C0220000": 244
-        },
-        "356160983": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 258,
-          "A0020000": 426,
-          "A0033320": 84,
-          "A0080000": 84,
-          "C0220000": 123
-        },
-        "356160984": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 313,
-          "A0020000": 567,
-          "A0033320": 42,
-          "A0080000": 105,
-          "C0220000": 98
-        },
-        "356160985": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 381,
-          "A0020000": 301,
-          "A0033320": 112,
-          "A0080000": 56,
-          "C0220000": 186
-        },
-        "356160986": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 583,
-          "A0020000": 742,
-          "A0033320": 73,
-          "A0080000": 143,
-          "C0220000": 210
-        },
-        "356160987": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 514,
-          "A0020000": 771,
-          "A0033320": 77,
-          "A0080000": 146,
-          "C0220000": 216
-        },
-        "356160988": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 301,
-          "A0020000": 342,
-          "A0033320": 63,
-          "A0080000": 62,
-          "C0220000": 155
-        },
-        "356160989": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 66,
-          "A0020000": 143,
-          "A0033320": 8,
-          "A0080000": 20,
-          "C0220000": 48
-        },
-        "356160990": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 6,
-          "A0020000": 28,
-          "A0033320": 0,
-          "A0080000": 1,
-          "C0220000": 7
-        },
-        "356160992": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 241,
-          "A0020000": 276,
-          "A0033320": 58,
-          "A0080000": 49,
-          "C0220000": 197
-        },
-        "356160993": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 291,
-          "A0020000": 467,
-          "A0033320": 97,
-          "A0080000": 84,
-          "C0220000": 275
-        },
-        "356160994": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 258,
-          "A0020000": 447,
-          "A0033320": 107,
-          "A0080000": 73,
-          "C0220000": 191
-        },
-        "356160995": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 546,
-          "A0020000": 959,
-          "A0033320": 98,
-          "A0080000": 167,
-          "C0220000": 201
-        },
-        "356160996": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 521,
-          "A0020000": 688,
-          "A0033320": 119,
-          "A0080000": 120,
-          "C0220000": 285
-        },
-        "356160997": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 509,
-          "A0020000": 836,
-          "A0033320": 103,
-          "A0080000": 152,
-          "C0220000": 151
-        },
-        "356160998": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 238,
-          "A0020000": 346,
-          "A0033320": 26,
-          "A0080000": 61,
-          "C0220000": 105
-        },
-        "356160999": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 50,
-          "A0020000": 81,
-          "A0033320": 18,
-          "A0080000": 9,
-          "C0220000": 68
-        },
-        "356161091": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161092": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161400": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 24,
-          "A0020000": 61,
-          "A0033320": 0,
-          "A0080000": 7,
-          "C0220000": 0
-        },
-        "356161402": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 471,
-          "A0020000": 692,
-          "A0033320": 34,
-          "A0080000": 134,
-          "C0220000": 182
-        },
-        "356161403": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 224,
-          "A0020000": 340,
-          "A0033320": 73,
-          "A0080000": 57,
-          "C0220000": 238
-        },
-        "356161404": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 319,
-          "A0020000": 389,
-          "A0033320": 75,
-          "A0080000": 68,
-          "C0220000": 331
-        },
-        "356161405": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 276,
-          "A0020000": 326,
-          "A0033320": 78,
-          "A0080000": 57,
-          "C0220000": 336
-        },
-        "356161406": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 468,
-          "A0020000": 692,
-          "A0033320": 50,
-          "A0080000": 133,
-          "C0220000": 162
-        },
-        "356161407": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 399,
-          "A0020000": 513,
-          "A0033320": 37,
-          "A0080000": 97,
-          "C0220000": 67
-        },
-        "356161408": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 397,
-          "A0020000": 602,
-          "A0033320": 29,
-          "A0080000": 110,
-          "C0220000": 115
-        },
-        "356161409": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 188,
-          "A0020000": 248,
-          "A0033320": 25,
-          "A0080000": 43,
-          "C0220000": 82
-        },
-        "356161410": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 48,
-          "A0020000": 41,
-          "A0033320": 6,
-          "A0080000": 8,
-          "C0220000": 21
-        },
-        "356161413": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 319,
-          "A0020000": 378,
-          "A0033320": 45,
-          "A0080000": 69,
-          "C0220000": 206
-        },
-        "356161414": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 345,
-          "A0020000": 593,
-          "A0033320": 61,
-          "A0080000": 113,
-          "C0220000": 216
-        },
-        "356161415": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 404,
-          "A0020000": 439,
-          "A0033320": 65,
-          "A0080000": 80,
-          "C0220000": 231
-        },
-        "356161416": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 273,
-          "A0020000": 93,
-          "A0033320": 56,
-          "A0080000": 16,
-          "C0220000": 211
-        },
-        "356161417": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 181,
-          "A0020000": 23,
-          "A0033320": 51,
-          "A0080000": 4,
-          "C0220000": 173
-        },
-        "356161418": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 33,
-          "A0020000": 45,
-          "A0033320": 6,
-          "A0080000": 5,
-          "C0220000": 11
-        },
-        "356161419": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 5,
-          "A0020000": 12,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161420": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 3,
-          "A0020000": 6,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 3
-        },
-        "356161424": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 503,
-          "A0020000": 468,
-          "A0033320": 110,
-          "A0080000": 89,
-          "C0220000": 292
-        },
-        "356161425": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 311,
-          "A0020000": 206,
-          "A0033320": 69,
-          "A0080000": 35,
-          "C0220000": 274
-        },
-        "356161426": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 288,
-          "A0020000": 211,
-          "A0033320": 52,
-          "A0080000": 36,
-          "C0220000": 213
-        },
-        "356161427": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 139,
-          "A0020000": 54,
-          "A0033320": 38,
-          "A0080000": 6,
-          "C0220000": 171
-        },
-        "356161428": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 62,
-          "A0020000": 101,
-          "A0033320": 4,
-          "A0080000": 9,
-          "C0220000": 53
-        },
-        "356161429": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 63,
-          "A0020000": 77,
-          "A0033320": 8,
-          "A0080000": 8,
-          "C0220000": 26
-        },
-        "356161430": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 7,
-          "A0020000": 17,
-          "A0033320": 0,
-          "A0080000": 2,
-          "C0220000": 0
-        },
-        "356161435": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 414,
-          "A0020000": 586,
-          "A0033320": 54,
-          "A0080000": 108,
-          "C0220000": 134
-        },
-        "356161436": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 256,
-          "A0020000": 197,
-          "A0033320": 77,
-          "A0080000": 40,
-          "C0220000": 223
-        },
-        "356161437": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 451,
-          "A0020000": 537,
-          "A0033320": 47,
-          "A0080000": 98,
-          "C0220000": 168
-        },
-        "356161438": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 301,
-          "A0020000": 288,
-          "A0033320": 49,
-          "A0080000": 53,
-          "C0220000": 168
-        },
-        "356161439": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 397,
-          "A0020000": 213,
-          "A0033320": 33,
-          "A0080000": 41,
-          "C0220000": 192
-        },
-        "356161440": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 180,
-          "A0020000": 113,
-          "A0033320": 32,
-          "A0080000": 17,
-          "C0220000": 122
-        },
-        "356161446": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 324,
-          "A0020000": 401,
-          "A0033320": 59,
-          "A0080000": 75,
-          "C0220000": 141
-        },
-        "356161447": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 513,
-          "A0020000": 575,
-          "A0033320": 75,
-          "A0080000": 111,
-          "C0220000": 185
-        },
-        "356161448": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 187,
-          "A0020000": 227,
-          "A0033320": 28,
-          "A0080000": 34,
-          "C0220000": 97
-        },
-        "356161449": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 10,
-          "A0020000": 17,
-          "A0033320": 0,
-          "A0080000": 1,
-          "C0220000": 0
-        },
-        "356161455": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 175,
-          "A0020000": 67,
-          "A0033320": 10,
-          "A0080000": 8,
-          "C0220000": 138
-        },
-        "356161456": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 59,
-          "A0020000": 16,
-          "A0033320": 2,
-          "A0080000": 1,
-          "C0220000": 14
-        },
-        "356161457": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 391,
-          "A0020000": 472,
-          "A0033320": 84,
-          "A0080000": 92,
-          "C0220000": 186
-        },
-        "356161458": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 257,
-          "A0020000": 331,
-          "A0033320": 14,
-          "A0080000": 57,
-          "C0220000": 92
-        },
-        "356161459": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 35,
-          "A0020000": 42,
-          "A0033320": 0,
-          "A0080000": 4,
-          "C0220000": 12
-        },
-        "356161463": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 98,
-          "A0020000": 26,
-          "A0033320": 20,
-          "A0080000": 3,
-          "C0220000": 55
-        },
-        "356161464": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 79,
-          "A0020000": 58,
-          "A0033320": 12,
-          "A0080000": 9,
-          "C0220000": 120
-        },
-        "356161465": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 201,
-          "A0020000": 98,
-          "A0033320": 37,
-          "A0080000": 15,
-          "C0220000": 175
-        },
-        "356161466": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 143,
-          "A0020000": 83,
-          "A0033320": 19,
-          "A0080000": 13,
-          "C0220000": 154
-        },
-        "356161467": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 202,
-          "A0020000": 202,
-          "A0033320": 40,
-          "A0080000": 39,
-          "C0220000": 217
-        },
-        "356161468": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 37,
-          "A0020000": 31,
-          "A0033320": 6,
-          "A0080000": 4,
-          "C0220000": 29
-        },
-        "356161469": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 22,
-          "A0020000": 23,
-          "A0033320": 0,
-          "A0080000": 4,
-          "C0220000": 2
-        },
-        "356161470": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 37,
-          "A0020000": 59,
-          "A0033320": 0,
-          "A0080000": 10,
-          "C0220000": 0
-        },
-        "356161473": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 25,
-          "A0020000": 44,
-          "A0033320": 2,
-          "A0080000": 4,
-          "C0220000": 44
-        },
-        "356161474": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 28,
-          "A0020000": 42,
-          "A0033320": 0,
-          "A0080000": 8,
-          "C0220000": 25
-        },
-        "356161475": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 34,
-          "A0020000": 59,
-          "A0033320": 0,
-          "A0080000": 11,
-          "C0220000": 0
-        },
-        "356161476": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161477": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 63,
-          "A0020000": 67,
-          "A0033320": 3,
-          "A0080000": 12,
-          "C0220000": 48
-        },
-        "356161478": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 39,
-          "A0020000": 33,
-          "A0033320": 4,
-          "A0080000": 6,
-          "C0220000": 112
-        },
-        "356161483": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 5,
-          "A0020000": 12,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 7
-        },
-        "356161487": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 97,
-          "A0020000": 138,
-          "A0033320": 7,
-          "A0080000": 23,
-          "C0220000": 57
-        },
-        "356161488": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 71,
-          "A0020000": 53,
-          "A0033320": 17,
-          "A0080000": 8,
-          "C0220000": 98
-        },
-        "356161493": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 10,
-          "A0020000": 23,
-          "A0033320": 0,
-          "A0080000": 2,
-          "C0220000": 1
-        },
-        "356161497": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 7,
-          "A0020000": 15,
-          "A0033320": 0,
-          "A0080000": 1,
-          "C0220000": 2
-        },
-        "356161498": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 124,
-          "A0020000": 96,
-          "A0033320": 33,
-          "A0080000": 16,
-          "C0220000": 102
-        },
-        "356161501": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 16,
-          "A0020000": 9,
-          "A0033320": 0,
-          "A0080000": 1,
-          "C0220000": 2
-        },
-        "356161502": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 10,
-          "A0020000": 20,
-          "A0033320": 0,
-          "A0080000": 3,
-          "C0220000": 0
-        },
-        "356161503": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 19,
-          "A0020000": 41,
-          "A0033320": 0,
-          "A0080000": 4,
-          "C0220000": 0
-        },
-        "356161504": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 2,
-          "A0020000": 7,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161505": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 1,
-          "A0020000": 1,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161511": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 6,
-          "A0020000": 11,
-          "A0033320": 0,
-          "A0080000": 1,
-          "C0220000": 1
-        },
-        "356161512": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 2,
-          "A0020000": 5,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161513": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161514": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161515": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161521": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 41,
-          "A0020000": 71,
-          "A0033320": 0,
-          "A0080000": 14,
-          "C0220000": 6
-        },
-        "356161522": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 1,
-          "A0020000": 2,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161523": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161524": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161525": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 1,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161526": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 4,
-          "A0020000": 13,
-          "A0033320": 0,
-          "A0080000": 1,
-          "C0220000": 0
-        },
-        "356161527": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 4,
-          "A0020000": 11,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161531": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 71,
-          "A0020000": 66,
-          "A0033320": 19,
-          "A0080000": 11,
-          "C0220000": 62
-        },
-        "356161532": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 72,
-          "A0020000": 87,
-          "A0033320": 8,
-          "A0080000": 13,
-          "C0220000": 31
-        },
-        "356161533": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 39,
-          "A0020000": 19,
-          "A0033320": 1,
-          "A0080000": 2,
-          "C0220000": 18
-        },
-        "356161534": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 1,
-          "A0020000": 10,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161535": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 4,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161536": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161537": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161538": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 1,
-          "A0020000": 3,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161541": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 43,
-          "A0020000": 78,
-          "A0033320": 1,
-          "A0080000": 13,
-          "C0220000": 2
-        },
-        "356161542": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 15,
-          "A0020000": 35,
-          "A0033320": 1,
-          "A0080000": 4,
-          "C0220000": 0
-        },
-        "356161551": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161552": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 50,
-          "A0020000": 101,
-          "A0033320": 1,
-          "A0080000": 14,
-          "C0220000": 5
-        },
-        "356161559": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 7,
-          "A0020000": 21,
-          "A0033320": 0,
-          "A0080000": 2,
-          "C0220000": 0
-        },
-        "356161560": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 15,
-          "A0020000": 42,
-          "A0033320": 0,
-          "A0080000": 5,
-          "C0220000": 0
-        },
-        "356161561": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 2,
-          "A0020000": 3,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161562": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 16,
-          "A0020000": 34,
-          "A0033320": 0,
-          "A0080000": 5,
-          "C0220000": 2
-        },
-        "356161571": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 25,
-          "A0020000": 73,
-          "A0033320": 0,
-          "A0080000": 8,
-          "C0220000": 0
-        },
-        "356161572": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 7,
-          "A0020000": 15,
-          "A0033320": 0,
-          "A0080000": 2,
-          "C0220000": 0
-        },
-        "356161581": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 1,
-          "A0020000": 1,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161582": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 1,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161591": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 3,
-          "A0020000": 16,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161592": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 1,
-          "A0020000": 7,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161593": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 18,
-          "A0020000": 33,
-          "A0033320": 0,
-          "A0080000": 5,
-          "C0220000": 4
-        },
-        "356161594": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161907": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 12,
-          "A0020000": 23,
-          "A0033320": 0,
-          "A0080000": 3,
-          "C0220000": 1
-        },
-        "356161908": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 106,
-          "A0020000": 75,
-          "A0033320": 32,
-          "A0080000": 12,
-          "C0220000": 77
-        },
-        "356161909": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 28,
-          "A0020000": 44,
-          "A0033320": 5,
-          "A0080000": 7,
-          "C0220000": 19
-        },
-        "356161910": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 2,
-          "A0020000": 12,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161916": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 58,
-          "A0020000": 100,
-          "A0033320": 0,
-          "A0080000": 18,
-          "C0220000": 1
-        },
-        "356161917": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 7,
-          "A0020000": 10,
-          "A0033320": 0,
-          "A0080000": 1,
-          "C0220000": 0
-        },
-        "356161918": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 118,
-          "A0020000": 138,
-          "A0033320": 12,
-          "A0080000": 24,
-          "C0220000": 59
-        },
-        "356161919": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 151,
-          "A0020000": 134,
-          "A0033320": 37,
-          "A0080000": 21,
-          "C0220000": 117
-        },
-        "356161920": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 24,
-          "A0020000": 39,
-          "A0033320": 2,
-          "A0080000": 5,
-          "C0220000": 3
-        },
-        "356161926": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 16,
-          "A0020000": 24,
-          "A0033320": 0,
-          "A0080000": 4,
-          "C0220000": 0
-        },
-        "356161927": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 70,
-          "A0020000": 129,
-          "A0033320": 1,
-          "A0080000": 20,
-          "C0220000": 3
-        },
-        "356161928": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 62,
-          "A0020000": 68,
-          "A0033320": 1,
-          "A0080000": 9,
-          "C0220000": 1
-        },
-        "356161929": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 82,
-          "A0020000": 71,
-          "A0033320": 13,
-          "A0080000": 10,
-          "C0220000": 39
-        },
-        "356161930": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 98,
-          "A0020000": 134,
-          "A0033320": 14,
-          "A0080000": 24,
-          "C0220000": 75
-        },
-        "356161940": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 0,
-          "A0020000": 9,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356161950": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 19,
-          "A0020000": 60,
-          "A0033320": 0,
-          "A0080000": 6,
-          "C0220000": 0
-        },
-        "356161960": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 1,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356162001": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 6,
-          "A0020000": 23,
-          "A0033320": 0,
-          "A0080000": 1,
-          "C0220000": 0
-        },
-        "356162002": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 0,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356162003": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 39,
-          "A0020000": 99,
-          "A0033320": 2,
-          "A0080000": 12,
-          "C0220000": 11
-        },
-        "356162004": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 19,
-          "A0020000": 48,
-          "A0033320": 0,
-          "A0080000": 6,
-          "C0220000": 0
-        },
-        "356162005": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 13,
-          "A0020000": 32,
-          "A0033320": 0,
-          "A0080000": 4,
-          "C0220000": 0
-        },
-        "356162006": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 5,
-          "A0020000": 11,
-          "A0033320": 0,
-          "A0080000": 1,
-          "C0220000": 0
-        },
-        "356162011": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 33,
-          "A0020000": 51,
-          "A0033320": 14,
-          "A0080000": 9,
-          "C0220000": 28
-        },
-        "356162012": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 59,
-          "A0020000": 48,
-          "A0033320": 12,
-          "A0080000": 7,
-          "C0220000": 93
-        },
-        "356162013": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 84,
-          "A0020000": 118,
-          "A0033320": 4,
-          "A0080000": 21,
-          "C0220000": 64
-        },
-        "356162014": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 24,
-          "A0020000": 50,
-          "A0033320": 0,
-          "A0080000": 7,
-          "C0220000": 0
-        },
-        "356162021": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 75,
-          "A0020000": 56,
-          "A0033320": 20,
-          "A0080000": 10,
-          "C0220000": 84
-        },
-        "356162022": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 15,
-          "A0020000": 20,
-          "A0033320": 0,
-          "A0080000": 3,
-          "C0220000": 21
-        },
-        "356162023": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 1,
-          "A0020000": 3,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        },
-        "356162031": {
-          "year": 0,
-          "kind": "SHP",
-          "A0010000": 40,
-          "A0020000": 71,
-          "A0033320": 0,
-          "A0080000": 10,
-          "C0220000": 35
-        },
-        "356162041": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 8,
-          "A0020000": 19,
-          "A0033320": 0,
-          "A0080000": 2,
-          "C0220000": 18
-        },
-        "356162051": {
-          "year": 0,
-          "kind": "NGI",
-          "A0010000": 0,
-          "A0020000": 8,
-          "A0033320": 0,
-          "A0080000": 0,
-          "C0220000": 0
-        }
-      },
       "features": 14336,
       "geom": [
         "MultiPolygon",
         "Polygon"
       ],
       "invalid_fixed": 0,
-      "columns": [
-        "src"
+      "key": "ngii1k",
+      "layers": [
+        "ngii1k",
+        "ngii1k_center",
+        "ngii1k_walk",
+        "ngii1k_xsec",
+        "ngii1k_light"
       ],
-      "status": "OK",
       "outputs": [
         "ngii1k.geojson",
         "ngii1k_5186.gpkg",
@@ -1912,17 +470,1459 @@
         "ngii1k_light.geojson",
         "ngii1k_light_5186.gpkg"
       ],
-      "layers": [
-        "ngii1k",
-        "ngii1k_center",
-        "ngii1k_walk",
-        "ngii1k_xsec",
-        "ngii1k_light"
+      "resolved": "vworld_map1k_jngj-donggu_20260307.zip",
+      "sheets": {
+        "356160900": {
+          "A0010000": 22,
+          "A0020000": 36,
+          "A0033320": 3,
+          "A0080000": 5,
+          "C0220000": 3,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160964": {
+          "A0010000": 486,
+          "A0020000": 885,
+          "A0033320": 88,
+          "A0080000": 160,
+          "C0220000": 119,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160973": {
+          "A0010000": 321,
+          "A0020000": 498,
+          "A0033320": 96,
+          "A0080000": 89,
+          "C0220000": 141,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160974": {
+          "A0010000": 437,
+          "A0020000": 777,
+          "A0033320": 90,
+          "A0080000": 143,
+          "C0220000": 171,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160975": {
+          "A0010000": 454,
+          "A0020000": 477,
+          "A0033320": 92,
+          "A0080000": 94,
+          "C0220000": 265,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160976": {
+          "A0010000": 395,
+          "A0020000": 446,
+          "A0033320": 89,
+          "A0080000": 84,
+          "C0220000": 213,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160977": {
+          "A0010000": 518,
+          "A0020000": 738,
+          "A0033320": 101,
+          "A0080000": 135,
+          "C0220000": 151,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160978": {
+          "A0010000": 345,
+          "A0020000": 146,
+          "A0033320": 89,
+          "A0080000": 22,
+          "C0220000": 244,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160983": {
+          "A0010000": 258,
+          "A0020000": 426,
+          "A0033320": 84,
+          "A0080000": 84,
+          "C0220000": 123,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160984": {
+          "A0010000": 313,
+          "A0020000": 567,
+          "A0033320": 42,
+          "A0080000": 105,
+          "C0220000": 98,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160985": {
+          "A0010000": 381,
+          "A0020000": 301,
+          "A0033320": 112,
+          "A0080000": 56,
+          "C0220000": 186,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160986": {
+          "A0010000": 583,
+          "A0020000": 742,
+          "A0033320": 73,
+          "A0080000": 143,
+          "C0220000": 210,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160987": {
+          "A0010000": 514,
+          "A0020000": 771,
+          "A0033320": 77,
+          "A0080000": 146,
+          "C0220000": 216,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160988": {
+          "A0010000": 301,
+          "A0020000": 342,
+          "A0033320": 63,
+          "A0080000": 62,
+          "C0220000": 155,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160989": {
+          "A0010000": 66,
+          "A0020000": 143,
+          "A0033320": 8,
+          "A0080000": 20,
+          "C0220000": 48,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160990": {
+          "A0010000": 6,
+          "A0020000": 28,
+          "A0033320": 0,
+          "A0080000": 1,
+          "C0220000": 7,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160992": {
+          "A0010000": 241,
+          "A0020000": 276,
+          "A0033320": 58,
+          "A0080000": 49,
+          "C0220000": 197,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160993": {
+          "A0010000": 291,
+          "A0020000": 467,
+          "A0033320": 97,
+          "A0080000": 84,
+          "C0220000": 275,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160994": {
+          "A0010000": 258,
+          "A0020000": 447,
+          "A0033320": 107,
+          "A0080000": 73,
+          "C0220000": 191,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160995": {
+          "A0010000": 546,
+          "A0020000": 959,
+          "A0033320": 98,
+          "A0080000": 167,
+          "C0220000": 201,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160996": {
+          "A0010000": 521,
+          "A0020000": 688,
+          "A0033320": 119,
+          "A0080000": 120,
+          "C0220000": 285,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160997": {
+          "A0010000": 509,
+          "A0020000": 836,
+          "A0033320": 103,
+          "A0080000": 152,
+          "C0220000": 151,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160998": {
+          "A0010000": 238,
+          "A0020000": 346,
+          "A0033320": 26,
+          "A0080000": 61,
+          "C0220000": 105,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356160999": {
+          "A0010000": 50,
+          "A0020000": 81,
+          "A0033320": 18,
+          "A0080000": 9,
+          "C0220000": 68,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161091": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161092": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161400": {
+          "A0010000": 24,
+          "A0020000": 61,
+          "A0033320": 0,
+          "A0080000": 7,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161402": {
+          "A0010000": 471,
+          "A0020000": 692,
+          "A0033320": 34,
+          "A0080000": 134,
+          "C0220000": 182,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161403": {
+          "A0010000": 224,
+          "A0020000": 340,
+          "A0033320": 73,
+          "A0080000": 57,
+          "C0220000": 238,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161404": {
+          "A0010000": 319,
+          "A0020000": 389,
+          "A0033320": 75,
+          "A0080000": 68,
+          "C0220000": 331,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161405": {
+          "A0010000": 276,
+          "A0020000": 326,
+          "A0033320": 78,
+          "A0080000": 57,
+          "C0220000": 336,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161406": {
+          "A0010000": 468,
+          "A0020000": 692,
+          "A0033320": 50,
+          "A0080000": 133,
+          "C0220000": 162,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161407": {
+          "A0010000": 399,
+          "A0020000": 513,
+          "A0033320": 37,
+          "A0080000": 97,
+          "C0220000": 67,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161408": {
+          "A0010000": 397,
+          "A0020000": 602,
+          "A0033320": 29,
+          "A0080000": 110,
+          "C0220000": 115,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161409": {
+          "A0010000": 188,
+          "A0020000": 248,
+          "A0033320": 25,
+          "A0080000": 43,
+          "C0220000": 82,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161410": {
+          "A0010000": 48,
+          "A0020000": 41,
+          "A0033320": 6,
+          "A0080000": 8,
+          "C0220000": 21,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161413": {
+          "A0010000": 319,
+          "A0020000": 378,
+          "A0033320": 45,
+          "A0080000": 69,
+          "C0220000": 206,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161414": {
+          "A0010000": 345,
+          "A0020000": 593,
+          "A0033320": 61,
+          "A0080000": 113,
+          "C0220000": 216,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161415": {
+          "A0010000": 404,
+          "A0020000": 439,
+          "A0033320": 65,
+          "A0080000": 80,
+          "C0220000": 231,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161416": {
+          "A0010000": 273,
+          "A0020000": 93,
+          "A0033320": 56,
+          "A0080000": 16,
+          "C0220000": 211,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161417": {
+          "A0010000": 181,
+          "A0020000": 23,
+          "A0033320": 51,
+          "A0080000": 4,
+          "C0220000": 173,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161418": {
+          "A0010000": 33,
+          "A0020000": 45,
+          "A0033320": 6,
+          "A0080000": 5,
+          "C0220000": 11,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161419": {
+          "A0010000": 5,
+          "A0020000": 12,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161420": {
+          "A0010000": 3,
+          "A0020000": 6,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 3,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161424": {
+          "A0010000": 503,
+          "A0020000": 468,
+          "A0033320": 110,
+          "A0080000": 89,
+          "C0220000": 292,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161425": {
+          "A0010000": 311,
+          "A0020000": 206,
+          "A0033320": 69,
+          "A0080000": 35,
+          "C0220000": 274,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161426": {
+          "A0010000": 288,
+          "A0020000": 211,
+          "A0033320": 52,
+          "A0080000": 36,
+          "C0220000": 213,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161427": {
+          "A0010000": 139,
+          "A0020000": 54,
+          "A0033320": 38,
+          "A0080000": 6,
+          "C0220000": 171,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161428": {
+          "A0010000": 62,
+          "A0020000": 101,
+          "A0033320": 4,
+          "A0080000": 9,
+          "C0220000": 53,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161429": {
+          "A0010000": 63,
+          "A0020000": 77,
+          "A0033320": 8,
+          "A0080000": 8,
+          "C0220000": 26,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161430": {
+          "A0010000": 7,
+          "A0020000": 17,
+          "A0033320": 0,
+          "A0080000": 2,
+          "C0220000": 0,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161435": {
+          "A0010000": 414,
+          "A0020000": 586,
+          "A0033320": 54,
+          "A0080000": 108,
+          "C0220000": 134,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161436": {
+          "A0010000": 256,
+          "A0020000": 197,
+          "A0033320": 77,
+          "A0080000": 40,
+          "C0220000": 223,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161437": {
+          "A0010000": 451,
+          "A0020000": 537,
+          "A0033320": 47,
+          "A0080000": 98,
+          "C0220000": 168,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161438": {
+          "A0010000": 301,
+          "A0020000": 288,
+          "A0033320": 49,
+          "A0080000": 53,
+          "C0220000": 168,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161439": {
+          "A0010000": 397,
+          "A0020000": 213,
+          "A0033320": 33,
+          "A0080000": 41,
+          "C0220000": 192,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161440": {
+          "A0010000": 180,
+          "A0020000": 113,
+          "A0033320": 32,
+          "A0080000": 17,
+          "C0220000": 122,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161446": {
+          "A0010000": 324,
+          "A0020000": 401,
+          "A0033320": 59,
+          "A0080000": 75,
+          "C0220000": 141,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161447": {
+          "A0010000": 513,
+          "A0020000": 575,
+          "A0033320": 75,
+          "A0080000": 111,
+          "C0220000": 185,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161448": {
+          "A0010000": 187,
+          "A0020000": 227,
+          "A0033320": 28,
+          "A0080000": 34,
+          "C0220000": 97,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161449": {
+          "A0010000": 10,
+          "A0020000": 17,
+          "A0033320": 0,
+          "A0080000": 1,
+          "C0220000": 0,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161455": {
+          "A0010000": 175,
+          "A0020000": 67,
+          "A0033320": 10,
+          "A0080000": 8,
+          "C0220000": 138,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161456": {
+          "A0010000": 59,
+          "A0020000": 16,
+          "A0033320": 2,
+          "A0080000": 1,
+          "C0220000": 14,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161457": {
+          "A0010000": 391,
+          "A0020000": 472,
+          "A0033320": 84,
+          "A0080000": 92,
+          "C0220000": 186,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161458": {
+          "A0010000": 257,
+          "A0020000": 331,
+          "A0033320": 14,
+          "A0080000": 57,
+          "C0220000": 92,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161459": {
+          "A0010000": 35,
+          "A0020000": 42,
+          "A0033320": 0,
+          "A0080000": 4,
+          "C0220000": 12,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161463": {
+          "A0010000": 98,
+          "A0020000": 26,
+          "A0033320": 20,
+          "A0080000": 3,
+          "C0220000": 55,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161464": {
+          "A0010000": 79,
+          "A0020000": 58,
+          "A0033320": 12,
+          "A0080000": 9,
+          "C0220000": 120,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161465": {
+          "A0010000": 201,
+          "A0020000": 98,
+          "A0033320": 37,
+          "A0080000": 15,
+          "C0220000": 175,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161466": {
+          "A0010000": 143,
+          "A0020000": 83,
+          "A0033320": 19,
+          "A0080000": 13,
+          "C0220000": 154,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161467": {
+          "A0010000": 202,
+          "A0020000": 202,
+          "A0033320": 40,
+          "A0080000": 39,
+          "C0220000": 217,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161468": {
+          "A0010000": 37,
+          "A0020000": 31,
+          "A0033320": 6,
+          "A0080000": 4,
+          "C0220000": 29,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161469": {
+          "A0010000": 22,
+          "A0020000": 23,
+          "A0033320": 0,
+          "A0080000": 4,
+          "C0220000": 2,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161470": {
+          "A0010000": 37,
+          "A0020000": 59,
+          "A0033320": 0,
+          "A0080000": 10,
+          "C0220000": 0,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161473": {
+          "A0010000": 25,
+          "A0020000": 44,
+          "A0033320": 2,
+          "A0080000": 4,
+          "C0220000": 44,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161474": {
+          "A0010000": 28,
+          "A0020000": 42,
+          "A0033320": 0,
+          "A0080000": 8,
+          "C0220000": 25,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161475": {
+          "A0010000": 34,
+          "A0020000": 59,
+          "A0033320": 0,
+          "A0080000": 11,
+          "C0220000": 0,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161476": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161477": {
+          "A0010000": 63,
+          "A0020000": 67,
+          "A0033320": 3,
+          "A0080000": 12,
+          "C0220000": 48,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161478": {
+          "A0010000": 39,
+          "A0020000": 33,
+          "A0033320": 4,
+          "A0080000": 6,
+          "C0220000": 112,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161483": {
+          "A0010000": 5,
+          "A0020000": 12,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 7,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161487": {
+          "A0010000": 97,
+          "A0020000": 138,
+          "A0033320": 7,
+          "A0080000": 23,
+          "C0220000": 57,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161488": {
+          "A0010000": 71,
+          "A0020000": 53,
+          "A0033320": 17,
+          "A0080000": 8,
+          "C0220000": 98,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161493": {
+          "A0010000": 10,
+          "A0020000": 23,
+          "A0033320": 0,
+          "A0080000": 2,
+          "C0220000": 1,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161497": {
+          "A0010000": 7,
+          "A0020000": 15,
+          "A0033320": 0,
+          "A0080000": 1,
+          "C0220000": 2,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161498": {
+          "A0010000": 124,
+          "A0020000": 96,
+          "A0033320": 33,
+          "A0080000": 16,
+          "C0220000": 102,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161501": {
+          "A0010000": 16,
+          "A0020000": 9,
+          "A0033320": 0,
+          "A0080000": 1,
+          "C0220000": 2,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161502": {
+          "A0010000": 10,
+          "A0020000": 20,
+          "A0033320": 0,
+          "A0080000": 3,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161503": {
+          "A0010000": 19,
+          "A0020000": 41,
+          "A0033320": 0,
+          "A0080000": 4,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161504": {
+          "A0010000": 2,
+          "A0020000": 7,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161505": {
+          "A0010000": 1,
+          "A0020000": 1,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161511": {
+          "A0010000": 6,
+          "A0020000": 11,
+          "A0033320": 0,
+          "A0080000": 1,
+          "C0220000": 1,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161512": {
+          "A0010000": 2,
+          "A0020000": 5,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161513": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161514": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161515": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161521": {
+          "A0010000": 41,
+          "A0020000": 71,
+          "A0033320": 0,
+          "A0080000": 14,
+          "C0220000": 6,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161522": {
+          "A0010000": 1,
+          "A0020000": 2,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161523": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161524": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161525": {
+          "A0010000": 0,
+          "A0020000": 1,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161526": {
+          "A0010000": 4,
+          "A0020000": 13,
+          "A0033320": 0,
+          "A0080000": 1,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161527": {
+          "A0010000": 4,
+          "A0020000": 11,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161531": {
+          "A0010000": 71,
+          "A0020000": 66,
+          "A0033320": 19,
+          "A0080000": 11,
+          "C0220000": 62,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161532": {
+          "A0010000": 72,
+          "A0020000": 87,
+          "A0033320": 8,
+          "A0080000": 13,
+          "C0220000": 31,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161533": {
+          "A0010000": 39,
+          "A0020000": 19,
+          "A0033320": 1,
+          "A0080000": 2,
+          "C0220000": 18,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161534": {
+          "A0010000": 1,
+          "A0020000": 10,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161535": {
+          "A0010000": 0,
+          "A0020000": 4,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161536": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161537": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161538": {
+          "A0010000": 1,
+          "A0020000": 3,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161541": {
+          "A0010000": 43,
+          "A0020000": 78,
+          "A0033320": 1,
+          "A0080000": 13,
+          "C0220000": 2,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161542": {
+          "A0010000": 15,
+          "A0020000": 35,
+          "A0033320": 1,
+          "A0080000": 4,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161551": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161552": {
+          "A0010000": 50,
+          "A0020000": 101,
+          "A0033320": 1,
+          "A0080000": 14,
+          "C0220000": 5,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161559": {
+          "A0010000": 7,
+          "A0020000": 21,
+          "A0033320": 0,
+          "A0080000": 2,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161560": {
+          "A0010000": 15,
+          "A0020000": 42,
+          "A0033320": 0,
+          "A0080000": 5,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161561": {
+          "A0010000": 2,
+          "A0020000": 3,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161562": {
+          "A0010000": 16,
+          "A0020000": 34,
+          "A0033320": 0,
+          "A0080000": 5,
+          "C0220000": 2,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161571": {
+          "A0010000": 25,
+          "A0020000": 73,
+          "A0033320": 0,
+          "A0080000": 8,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161572": {
+          "A0010000": 7,
+          "A0020000": 15,
+          "A0033320": 0,
+          "A0080000": 2,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161581": {
+          "A0010000": 1,
+          "A0020000": 1,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161582": {
+          "A0010000": 0,
+          "A0020000": 1,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161591": {
+          "A0010000": 3,
+          "A0020000": 16,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161592": {
+          "A0010000": 1,
+          "A0020000": 7,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161593": {
+          "A0010000": 18,
+          "A0020000": 33,
+          "A0033320": 0,
+          "A0080000": 5,
+          "C0220000": 4,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161594": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161907": {
+          "A0010000": 12,
+          "A0020000": 23,
+          "A0033320": 0,
+          "A0080000": 3,
+          "C0220000": 1,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161908": {
+          "A0010000": 106,
+          "A0020000": 75,
+          "A0033320": 32,
+          "A0080000": 12,
+          "C0220000": 77,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161909": {
+          "A0010000": 28,
+          "A0020000": 44,
+          "A0033320": 5,
+          "A0080000": 7,
+          "C0220000": 19,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161910": {
+          "A0010000": 2,
+          "A0020000": 12,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161916": {
+          "A0010000": 58,
+          "A0020000": 100,
+          "A0033320": 0,
+          "A0080000": 18,
+          "C0220000": 1,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161917": {
+          "A0010000": 7,
+          "A0020000": 10,
+          "A0033320": 0,
+          "A0080000": 1,
+          "C0220000": 0,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161918": {
+          "A0010000": 118,
+          "A0020000": 138,
+          "A0033320": 12,
+          "A0080000": 24,
+          "C0220000": 59,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161919": {
+          "A0010000": 151,
+          "A0020000": 134,
+          "A0033320": 37,
+          "A0080000": 21,
+          "C0220000": 117,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161920": {
+          "A0010000": 24,
+          "A0020000": 39,
+          "A0033320": 2,
+          "A0080000": 5,
+          "C0220000": 3,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161926": {
+          "A0010000": 16,
+          "A0020000": 24,
+          "A0033320": 0,
+          "A0080000": 4,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161927": {
+          "A0010000": 70,
+          "A0020000": 129,
+          "A0033320": 1,
+          "A0080000": 20,
+          "C0220000": 3,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161928": {
+          "A0010000": 62,
+          "A0020000": 68,
+          "A0033320": 1,
+          "A0080000": 9,
+          "C0220000": 1,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161929": {
+          "A0010000": 82,
+          "A0020000": 71,
+          "A0033320": 13,
+          "A0080000": 10,
+          "C0220000": 39,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161930": {
+          "A0010000": 98,
+          "A0020000": 134,
+          "A0033320": 14,
+          "A0080000": 24,
+          "C0220000": 75,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161940": {
+          "A0010000": 0,
+          "A0020000": 9,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356161950": {
+          "A0010000": 19,
+          "A0020000": 60,
+          "A0033320": 0,
+          "A0080000": 6,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356161960": {
+          "A0010000": 0,
+          "A0020000": 1,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356162001": {
+          "A0010000": 6,
+          "A0020000": 23,
+          "A0033320": 0,
+          "A0080000": 1,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356162002": {
+          "A0010000": 0,
+          "A0020000": 0,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356162003": {
+          "A0010000": 39,
+          "A0020000": 99,
+          "A0033320": 2,
+          "A0080000": 12,
+          "C0220000": 11,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356162004": {
+          "A0010000": 19,
+          "A0020000": 48,
+          "A0033320": 0,
+          "A0080000": 6,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356162005": {
+          "A0010000": 13,
+          "A0020000": 32,
+          "A0033320": 0,
+          "A0080000": 4,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356162006": {
+          "A0010000": 5,
+          "A0020000": 11,
+          "A0033320": 0,
+          "A0080000": 1,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356162011": {
+          "A0010000": 33,
+          "A0020000": 51,
+          "A0033320": 14,
+          "A0080000": 9,
+          "C0220000": 28,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356162012": {
+          "A0010000": 59,
+          "A0020000": 48,
+          "A0033320": 12,
+          "A0080000": 7,
+          "C0220000": 93,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356162013": {
+          "A0010000": 84,
+          "A0020000": 118,
+          "A0033320": 4,
+          "A0080000": 21,
+          "C0220000": 64,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356162014": {
+          "A0010000": 24,
+          "A0020000": 50,
+          "A0033320": 0,
+          "A0080000": 7,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356162021": {
+          "A0010000": 75,
+          "A0020000": 56,
+          "A0033320": 20,
+          "A0080000": 10,
+          "C0220000": 84,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356162022": {
+          "A0010000": 15,
+          "A0020000": 20,
+          "A0033320": 0,
+          "A0080000": 3,
+          "C0220000": 21,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356162023": {
+          "A0010000": 1,
+          "A0020000": 3,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356162031": {
+          "A0010000": 40,
+          "A0020000": 71,
+          "A0033320": 0,
+          "A0080000": 10,
+          "C0220000": 35,
+          "kind": "SHP",
+          "year": 0
+        },
+        "356162041": {
+          "A0010000": 8,
+          "A0020000": 19,
+          "A0033320": 0,
+          "A0080000": 2,
+          "C0220000": 18,
+          "kind": "NGI",
+          "year": 0
+        },
+        "356162051": {
+          "A0010000": 0,
+          "A0020000": 8,
+          "A0033320": 0,
+          "A0080000": 0,
+          "C0220000": 0,
+          "kind": "NGI",
+          "year": 0
+        }
+      },
+      "source_crs": "EPSG:5186",
+      "source_files": [
+        "vworld/vworld_map1k*_jngj-donggu_20260307.zip"
       ],
+      "source_sha256": "7b970e12ea3f77dfa0948ab9d9dbb28703872feed76fec5e621a5a61ddc6b893",
+      "status": "OK",
       "seal": {
         "raw": "7b970e12ea3f77df,1db699d03bc77128",
-        "cfg": "84b3f740f8ec5a4c",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "f0d9da4d98c262dc",
+        "code": "fdbb670b00a3818d",
         "out": {
           "ngii1k.geojson": "199131418de418fe",
           "ngii1k_5186.gpkg": "26dc88b02dceb50b",
@@ -1938,19 +1938,6 @@
       }
     },
     {
-      "key": "streetlight",
-      "source_files": [
-        "**/gjcity_streetlight_*"
-      ],
-      "source_sha256": "96ada85a38ef85c96d3fc83c20349bfd60032e49b53334bce9b571af0d9079cc",
-      "resolved": "gjcity_streetlight_jngj-donggu_20240415.csv",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 1786,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "관리번호",
         "소재지도로명주소",
@@ -1959,56 +1946,69 @@
         "경도",
         "데이터기준일자"
       ],
+      "features": 1848,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "key": "streetlight",
       "outputs": [
         "streetlight.geojson",
         "streetlight_5186.gpkg"
       ],
+      "resolved": "gjcity_streetlight_jngj-donggu_20240415.csv",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/gjcity_streetlight_*"
+      ],
+      "source_sha256": "96ada85a38ef85c96d3fc83c20349bfd60032e49b53334bce9b571af0d9079cc",
+      "status": "OK",
       "seal": {
         "raw": "96ada85a38ef85c9",
-        "cfg": "4c8c707303c11314",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "c8c8841a5c4302be",
+        "code": "fdbb670b00a3818d",
         "out": {
-          "streetlight.geojson": "119bb623d7e7e464",
-          "streetlight_5186.gpkg": "d3af08bd018ab42a"
+          "streetlight.geojson": "c46c30d5a0522669",
+          "streetlight_5186.gpkg": "48bce9c8dc1fd473"
         }
       }
     },
     {
-      "key": "ngii_road",
-      "source_files": [
-        "**/ngii_basemap_*"
-      ],
-      "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
-      "resolved": "ngii_basemap_jngj-donggu_20260812_gj9708.zip",
       "ambiguous": [
         "ngii_basemap_jngj-donggu_20260812_gj9708.zip",
         "ngii_basemap_jngj-donggu_20260812_gj9712.zip"
       ],
-      "source_crs": "EPSG:5179",
-      "parts_read": [
-        "N3A_A0010000.shp",
-        "N3A_A0010000.shp"
-      ],
-      "status": "OK",
-      "features": 216,
-      "geom": [
-        "Polygon"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "gid",
         "fmta",
         "scls",
         "ufid"
       ],
+      "features": 216,
+      "geom": [
+        "Polygon"
+      ],
+      "invalid_fixed": 0,
+      "key": "ngii_road",
       "outputs": [
         "ngii_road.geojson",
         "ngii_road_5186.gpkg"
       ],
+      "parts_read": [
+        "N3A_A0010000.shp",
+        "N3A_A0010000.shp"
+      ],
+      "resolved": "ngii_basemap_jngj-donggu_20260812_gj9708.zip",
+      "source_crs": "EPSG:5179",
+      "source_files": [
+        "**/ngii_basemap_*"
+      ],
+      "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
+      "status": "OK",
       "seal": {
         "raw": "cd4f56a0fcba89d9,085ad532f61ea654",
-        "cfg": "1d51a21c2a7be0ad",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "3c8b59490e564d91",
+        "code": "fdbb670b00a3818d",
         "out": {
           "ngii_road.geojson": "25ccee65b4f0396e",
           "ngii_road_5186.gpkg": "463ea4df984fae85"
@@ -2016,19 +2016,6 @@
       }
     },
     {
-      "key": "node_link",
-      "source_files": [
-        "its/its_nodelink_kr_20260812.zip"
-      ],
-      "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
-      "resolved": "its_nodelink_kr_20260812.zip",
-      "source_crs": "EPSG:5186",
-      "status": "OK",
-      "features": 1366,
-      "geom": [
-        "LineString"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "LINK_ID",
         "F_NODE",
@@ -2052,34 +2039,34 @@
         "HIST_TYPE",
         "HISTREMARK"
       ],
+      "features": 1395,
+      "geom": [
+        "LineString"
+      ],
+      "invalid_fixed": 0,
+      "key": "node_link",
       "outputs": [
         "node_link.geojson",
         "node_link_5186.gpkg"
       ],
-      "seal": {
-        "raw": "5bbf5a01d677b6dc",
-        "cfg": "c6dc159be549f556",
-        "code": "6fcd9638a9112ea5",
-        "out": {
-          "node_link.geojson": "d4453f032982a048",
-          "node_link_5186.gpkg": "b88fd8bb0e969822"
-        }
-      }
-    },
-    {
-      "key": "node_point",
+      "resolved": "its_nodelink_kr_20260812.zip",
+      "source_crs": "EPSG:5186",
       "source_files": [
         "its/its_nodelink_kr_20260812.zip"
       ],
       "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
-      "resolved": "its_nodelink_kr_20260812.zip",
-      "source_crs": "EPSG:5186",
       "status": "OK",
-      "features": 968,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
+      "seal": {
+        "raw": "5bbf5a01d677b6dc",
+        "cfg": "a12b2d5b520437bf",
+        "code": "fdbb670b00a3818d",
+        "out": {
+          "node_link.geojson": "b6c7d8da4beae185",
+          "node_link_5186.gpkg": "28fe38e99a7e2447"
+        }
+      }
+    },
+    {
       "columns": [
         "NODE_ID",
         "NODE_TYPE",
@@ -2090,31 +2077,34 @@
         "HIST_TYPE",
         "HISTREMARK"
       ],
+      "features": 992,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "key": "node_point",
       "outputs": [
         "node_point.geojson",
         "node_point_5186.gpkg"
       ],
-      "seal": {
-        "raw": "5bbf5a01d677b6dc",
-        "cfg": "ed8f23daa33ae25b",
-        "code": "6fcd9638a9112ea5",
-        "out": {
-          "node_point.geojson": "ff2816ee25f590d5",
-          "node_point_5186.gpkg": "7477d04fe44dde3b"
-        }
-      }
-    },
-    {
-      "key": "turn_restriction",
+      "resolved": "its_nodelink_kr_20260812.zip",
+      "source_crs": "EPSG:5186",
       "source_files": [
         "its/its_nodelink_kr_20260812.zip"
       ],
       "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
-      "resolved": "its_nodelink_kr_20260812.zip",
-      "source_crs": "none",
       "status": "OK",
-      "features": 87,
-      "geom": [],
+      "seal": {
+        "raw": "5bbf5a01d677b6dc",
+        "cfg": "86c89e096ca9ce6d",
+        "code": "fdbb670b00a3818d",
+        "out": {
+          "node_point.geojson": "8bb472f57ae6e1e4",
+          "node_point_5186.gpkg": "eb3c547b17d14446"
+        }
+      }
+    },
+    {
       "columns": [
         "NODE_ID",
         "TURN_ID",
@@ -2124,32 +2114,29 @@
         "TURN_OPER",
         "REMARK"
       ],
+      "features": 87,
+      "geom": [],
+      "key": "turn_restriction",
       "outputs": [
         "turn_restriction.csv"
       ],
+      "resolved": "its_nodelink_kr_20260812.zip",
+      "source_crs": "none",
+      "source_files": [
+        "its/its_nodelink_kr_20260812.zip"
+      ],
+      "source_sha256": "5bbf5a01d677b6dcb941cc5954fcc256d6ded60d96f95336a23fc2b53b39d4e4",
+      "status": "OK",
       "seal": {
         "raw": "5bbf5a01d677b6dc",
-        "cfg": "72b3397948fcc61e",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "0053840205f43a14",
+        "code": "fdbb670b00a3818d",
         "out": {
           "turn_restriction.csv": "4101841d894123e1"
         }
       }
     },
     {
-      "key": "cctv",
-      "source_files": [
-        "**/safety_cctv_*"
-      ],
-      "source_sha256": "8351c711177587674ad402e7677abc013e102da91919bede68dc831094be4808",
-      "resolved": "safety_cctv_jngj_20260630.csv",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 678,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "관리기관명",
         "소재지지번주소",
@@ -2163,34 +2150,34 @@
         "경도",
         "데이터기준일자"
       ],
-      "outputs": [
-        "cctv.geojson",
-        "cctv_5186.gpkg"
-      ],
-      "seal": {
-        "raw": "8351c71117758767",
-        "cfg": "c4d51b06ff1bd4a7",
-        "code": "6fcd9638a9112ea5",
-        "out": {
-          "cctv.geojson": "2f681f338710f997",
-          "cctv_5186.gpkg": "36ac80339d91d38f"
-        }
-      }
-    },
-    {
-      "key": "fire_station",
-      "source_files": [
-        "**/safety_firestation_*"
-      ],
-      "source_sha256": "8f3fca285b8f14d63992d41c9da15eef3018960241be5338b27d8b350d425e10",
-      "resolved": "safety_firestation_kr_20240901.csv",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 3,
+      "features": 679,
       "geom": [
         "Point"
       ],
       "invalid_fixed": 0,
+      "key": "cctv",
+      "outputs": [
+        "cctv.geojson",
+        "cctv_5186.gpkg"
+      ],
+      "resolved": "safety_cctv_jngj_20260630.csv",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/safety_cctv_*"
+      ],
+      "source_sha256": "8351c711177587674ad402e7677abc013e102da91919bede68dc831094be4808",
+      "status": "OK",
+      "seal": {
+        "raw": "8351c71117758767",
+        "cfg": "d2cc0f346d118eee",
+        "code": "fdbb670b00a3818d",
+        "out": {
+          "cctv.geojson": "6ea91a790193ed41",
+          "cctv_5186.gpkg": "8b4f6730f5d30231"
+        }
+      }
+    },
+    {
       "columns": [
         "번호",
         "소방서 및 안전센터명",
@@ -2202,34 +2189,34 @@
         "유형",
         "등록일"
       ],
-      "outputs": [
-        "fire_station.geojson",
-        "fire_station_5186.gpkg"
-      ],
-      "seal": {
-        "raw": "8f3fca285b8f14d6",
-        "cfg": "a7b67ffa7e5b06d8",
-        "code": "6fcd9638a9112ea5",
-        "out": {
-          "fire_station.geojson": "5c863428f2bf5612",
-          "fire_station_5186.gpkg": "ab662df0f53e6a3c"
-        }
-      }
-    },
-    {
-      "key": "poi_store",
-      "source_files": [
-        "**/sbiz_store_*"
-      ],
-      "source_sha256": "57aa361544108ff4fc73334f87d2ced61e41fe8638dd70bcd842930f865d2386",
-      "resolved": "sbiz_store_kr_20260630.zip",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 8599,
+      "features": 3,
       "geom": [
         "Point"
       ],
       "invalid_fixed": 0,
+      "key": "fire_station",
+      "outputs": [
+        "fire_station.geojson",
+        "fire_station_5186.gpkg"
+      ],
+      "resolved": "safety_firestation_kr_20240901.csv",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/safety_firestation_*"
+      ],
+      "source_sha256": "8f3fca285b8f14d63992d41c9da15eef3018960241be5338b27d8b350d425e10",
+      "status": "OK",
+      "seal": {
+        "raw": "8f3fca285b8f14d6",
+        "cfg": "e74e620c540ecff7",
+        "code": "fdbb670b00a3818d",
+        "out": {
+          "fire_station.geojson": "89aa704bb93fbe54",
+          "fire_station_5186.gpkg": "054bcd39ce382c28"
+        }
+      }
+    },
+    {
       "columns": [
         "상가업소번호",
         "상호명",
@@ -2271,47 +2258,60 @@
         "경도",
         "위도"
       ],
+      "features": 8628,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "key": "poi_store",
       "outputs": [
         "poi_store.geojson",
         "poi_store_5186.gpkg"
       ],
+      "resolved": "sbiz_store_kr_20260630.zip",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/sbiz_store_*"
+      ],
+      "source_sha256": "57aa361544108ff4fc73334f87d2ced61e41fe8638dd70bcd842930f865d2386",
+      "status": "OK",
       "seal": {
         "raw": "57aa361544108ff4",
-        "cfg": "baad5194f6faf9b3",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "2a7eef5a1e5fbb82",
+        "code": "fdbb670b00a3818d",
         "out": {
-          "poi_store.geojson": "da2984b0784a16ef",
-          "poi_store_5186.gpkg": "284673d89230a0a4"
+          "poi_store.geojson": "000450a960eda7b3",
+          "poi_store_5186.gpkg": "527039c602a31f6e"
         }
       }
     },
     {
-      "key": "boundary_emd",
-      "source_files": [
-        "**/juso_elctrnmap_*"
-      ],
-      "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
-      "resolved": "juso_elctrnmap_jngj_20260711.zip",
-      "source_crs": "EPSG:5179",
-      "status": "OK",
-      "features": 27,
-      "geom": [
-        "Polygon"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "EMD_CD",
         "EMD_ENG_NM",
         "EMD_KOR_NM"
       ],
+      "features": 27,
+      "geom": [
+        "Polygon"
+      ],
+      "invalid_fixed": 0,
+      "key": "boundary_emd",
       "outputs": [
         "boundary_emd.geojson",
         "boundary_emd_5186.gpkg"
       ],
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
+      "source_crs": "EPSG:5179",
+      "source_files": [
+        "**/juso_elctrnmap_*"
+      ],
+      "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+      "status": "OK",
       "seal": {
         "raw": "895df207b4159c56",
-        "cfg": "d391a46a28dc4b0b",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "27af45e63bffac73",
+        "code": "fdbb670b00a3818d",
         "out": {
           "boundary_emd.geojson": "54f928b063314270",
           "boundary_emd_5186.gpkg": "9404e084ede899e1"
@@ -2319,20 +2319,6 @@
       }
     },
     {
-      "key": "building",
-      "source_files": [
-        "**/juso_elctrnmap_*"
-      ],
-      "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
-      "resolved": "juso_elctrnmap_jngj_20260711.zip",
-      "source_crs": "EPSG:5179",
-      "status": "OK",
-      "features": 14479,
-      "geom": [
-        "MultiPolygon",
-        "Polygon"
-      ],
-      "invalid_fixed": 5,
       "columns": [
         "BDTYP_CD",
         "BD_MGT_SN",
@@ -2365,34 +2351,35 @@
         "SIG_CD",
         "UND_FLO_CO"
       ],
+      "features": 14618,
+      "geom": [
+        "MultiPolygon",
+        "Polygon"
+      ],
+      "invalid_fixed": 5,
+      "key": "building",
       "outputs": [
         "building.geojson",
         "building_5186.gpkg"
       ],
-      "seal": {
-        "raw": "895df207b4159c56",
-        "cfg": "7629800cd84f347f",
-        "code": "6fcd9638a9112ea5",
-        "out": {
-          "building.geojson": "8fac3135d6d94a76",
-          "building_5186.gpkg": "b5cdbad4ca319cf9"
-        }
-      }
-    },
-    {
-      "key": "building_entrance",
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
+      "source_crs": "EPSG:5179",
       "source_files": [
         "**/juso_elctrnmap_*"
       ],
       "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
-      "resolved": "juso_elctrnmap_jngj_20260711.zip",
-      "source_crs": "EPSG:5179",
       "status": "OK",
-      "features": 11284,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "48b31306996c01e5",
+        "code": "fdbb670b00a3818d",
+        "out": {
+          "building.geojson": "001f8a1bc7ae8274",
+          "building_5186.gpkg": "6183f4891416a013"
+        }
+      }
+    },
+    {
       "columns": [
         "BUL_MAN_NO",
         "ENTRC_SE",
@@ -2401,34 +2388,34 @@
         "OPERT_DE",
         "SIG_CD"
       ],
-      "outputs": [
-        "building_entrance.geojson",
-        "building_entrance_5186.gpkg"
-      ],
-      "seal": {
-        "raw": "895df207b4159c56",
-        "cfg": "9008071a383c27c4",
-        "code": "6fcd9638a9112ea5",
-        "out": {
-          "building_entrance.geojson": "956e92eb8c9658d5",
-          "building_entrance_5186.gpkg": "edb46d91ff0bef3a"
-        }
-      }
-    },
-    {
-      "key": "hydrant_point",
-      "source_files": [
-        "**/safety_hydrant_point_*"
-      ],
-      "source_sha256": "ef46ab01d76a5c0ece02a40662f14f0f41cbc5359bf0bb5237d3446b629a61f4",
-      "resolved": "safety_hydrant_point_jngj_20240207.csv",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 524,
+      "features": 11386,
       "geom": [
         "Point"
       ],
       "invalid_fixed": 0,
+      "key": "building_entrance",
+      "outputs": [
+        "building_entrance.geojson",
+        "building_entrance_5186.gpkg"
+      ],
+      "resolved": "juso_elctrnmap_jngj_20260711.zip",
+      "source_crs": "EPSG:5179",
+      "source_files": [
+        "**/juso_elctrnmap_*"
+      ],
+      "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
+      "status": "OK",
+      "seal": {
+        "raw": "895df207b4159c56",
+        "cfg": "594b3c0bf5a855cd",
+        "code": "fdbb670b00a3818d",
+        "out": {
+          "building_entrance.geojson": "6b7058c745be136f",
+          "building_entrance_5186.gpkg": "99982b33a14b4b0d"
+        }
+      }
+    },
+    {
       "columns": [
         "fcltyNo",
         "fcltySeCode",
@@ -2450,31 +2437,34 @@
         "insttCode",
         "insttNm"
       ],
+      "features": 528,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "key": "hydrant_point",
       "outputs": [
         "hydrant_point.geojson",
         "hydrant_point_5186.gpkg"
       ],
+      "resolved": "safety_hydrant_point_jngj_20240207.csv",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/safety_hydrant_point_*"
+      ],
+      "source_sha256": "ef46ab01d76a5c0ece02a40662f14f0f41cbc5359bf0bb5237d3446b629a61f4",
+      "status": "OK",
       "seal": {
         "raw": "ef46ab01d76a5c0e",
-        "cfg": "49957853b657145f",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "822f137964675171",
+        "code": "fdbb670b00a3818d",
         "out": {
-          "hydrant_point.geojson": "bde315dbdea91b97",
-          "hydrant_point_5186.gpkg": "97f95763502d6ac7"
+          "hydrant_point.geojson": "32b73d212fba06b5",
+          "hydrant_point_5186.gpkg": "7a0ddcf447bba439"
         }
       }
     },
     {
-      "key": "fire_access",
-      "source_files": [
-        "**/safety_fire_access_*"
-      ],
-      "source_sha256": "15fb8022f1b2f9ee2a6ecd84c2c6fbcd86b976753cf69f41c4a72942ea0b4f5b",
-      "resolved": "safety_fire_access_jngj-donggu_20250731.csv",
-      "source_crs": "none",
-      "status": "OK",
-      "features": 20,
-      "geom": [],
       "columns": [
         "연번",
         "지역명",
@@ -2483,39 +2473,43 @@
         "세대수",
         "데이터기준일자"
       ],
+      "features": 20,
+      "geom": [],
+      "key": "fire_access",
       "outputs": [
         "fire_access.csv"
       ],
+      "resolved": "safety_fire_access_jngj-donggu_20250731.csv",
+      "source_crs": "none",
+      "source_files": [
+        "**/safety_fire_access_*"
+      ],
+      "source_sha256": "15fb8022f1b2f9ee2a6ecd84c2c6fbcd86b976753cf69f41c4a72942ea0b4f5b",
+      "status": "OK",
       "seal": {
         "raw": "15fb8022f1b2f9ee",
-        "cfg": "4208d1ff7bba63c4",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "0c058b213489b773",
+        "code": "fdbb670b00a3818d",
         "out": {
           "fire_access.csv": "25c12d9afba5854f"
         }
       }
     },
     {
+      "features": "",
+      "geom": [],
       "key": "dem_public",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "ngii_dem_jngj-donggu_20251117_35616.zip",
+      "source_crs": "EPSG:5179",
       "source_files": [
         "**/ngii_dem_*"
       ],
       "source_sha256": "56656fc18efb05ad78653d1b09ea18e6c9879eaa2e5940d33a2cce677b4ef128",
-      "resolved": "ngii_dem_jngj-donggu_20251117_35616.zip",
-      "source_crs": "EPSG:5179",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
-      "key": "ortho",
-      "source_files": [
-        "**/ngii_ortho_*"
-      ],
-      "source_sha256": "afe2cbb4bcd151538b77617bf9ac1022639a61e79525227f09b0aaca0ed2bf8b",
-      "resolved": "ngii_ortho_jngj-donggu_20251231_gj037.tif",
       "ambiguous": [
         "ngii_ortho_jngj-donggu_20251231_gj037.tif",
         "ngii_ortho_jngj-donggu_20251231_gj037.xml",
@@ -2526,24 +2520,20 @@
         "ngii_ortho_jngj-donggu_20251231_gj048.tif",
         "ngii_ortho_jngj-donggu_20251231_gj048.xml"
       ],
-      "source_crs": "EPSG:5186",
-      "status": "SKIP",
       "features": "",
       "geom": [],
+      "key": "ortho",
       "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "outputs": [],
+      "resolved": "ngii_ortho_jngj-donggu_20251231_gj037.tif",
+      "source_crs": "EPSG:5186",
+      "source_files": [
+        "**/ngii_ortho_*"
+      ],
+      "source_sha256": "afe2cbb4bcd151538b77617bf9ac1022639a61e79525227f09b0aaca0ed2bf8b",
+      "status": "SKIP"
     },
     {
-      "key": "hydrant_summary",
-      "source_files": [
-        "**/safety_hydrant_summary_*"
-      ],
-      "source_sha256": "4f516236bfdc457bab9d3bbfb78bbeadf3d723edecd7ce0922d1bd1d3515617f",
-      "resolved": "safety_hydrant_summary_jngj-donggu_20250731.csv",
-      "source_crs": "none",
-      "status": "OK",
-      "features": 5,
-      "geom": [],
       "columns": [
         "구분",
         "계",
@@ -2554,40 +2544,33 @@
         "소방차진입불가지역",
         "데이터기준일자"
       ],
+      "features": 5,
+      "geom": [],
+      "key": "hydrant_summary",
       "outputs": [
         "hydrant_summary.csv"
       ],
+      "resolved": "safety_hydrant_summary_jngj-donggu_20250731.csv",
+      "source_crs": "none",
+      "source_files": [
+        "**/safety_hydrant_summary_*"
+      ],
+      "source_sha256": "4f516236bfdc457bab9d3bbfb78bbeadf3d723edecd7ce0922d1bd1d3515617f",
+      "status": "OK",
       "seal": {
         "raw": "4f516236bfdc457b",
-        "cfg": "242b12b6842952ce",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "e98b7a59104c9e4a",
+        "code": "fdbb670b00a3818d",
         "out": {
           "hydrant_summary.csv": "be97577638a804b1"
         }
       }
     },
     {
-      "key": "ngii_road_center",
-      "source_files": [
-        "**/ngii_basemap_*"
-      ],
-      "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
-      "resolved": "ngii_basemap_jngj-donggu_20260812_gj9708.zip",
       "ambiguous": [
         "ngii_basemap_jngj-donggu_20260812_gj9708.zip",
         "ngii_basemap_jngj-donggu_20260812_gj9712.zip"
       ],
-      "source_crs": "EPSG:5179",
-      "parts_read": [
-        "N3L_A0020000.shp",
-        "N3L_A0020000.shp"
-      ],
-      "status": "OK",
-      "features": 487,
-      "geom": [
-        "LineString"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "gid",
         "dvyn",
@@ -2606,14 +2589,31 @@
         "stpt",
         "ufid"
       ],
+      "features": 487,
+      "geom": [
+        "LineString"
+      ],
+      "invalid_fixed": 0,
+      "key": "ngii_road_center",
       "outputs": [
         "ngii_road_center.geojson",
         "ngii_road_center_5186.gpkg"
       ],
+      "parts_read": [
+        "N3L_A0020000.shp",
+        "N3L_A0020000.shp"
+      ],
+      "resolved": "ngii_basemap_jngj-donggu_20260812_gj9708.zip",
+      "source_crs": "EPSG:5179",
+      "source_files": [
+        "**/ngii_basemap_*"
+      ],
+      "source_sha256": "cd4f56a0fcba89d9,085ad532f61ea654",
+      "status": "OK",
       "seal": {
         "raw": "cd4f56a0fcba89d9,085ad532f61ea654",
-        "cfg": "e56a48b500b4e742",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "b4f08ccc0946bed5",
+        "code": "fdbb670b00a3818d",
         "out": {
           "ngii_road_center.geojson": "6e811b7664cdee27",
           "ngii_road_center_5186.gpkg": "30fe74d0ea2d9cb1"
@@ -2621,19 +2621,6 @@
       }
     },
     {
-      "key": "bin_trash",
-      "source_files": [
-        "**/gjcity_bin_trash_*"
-      ],
-      "source_sha256": "ea65b6f8c4bc7179427dc1502a3426bca2a50789fafbb05bb45800222c640e6c",
-      "resolved": "gjcity_bin_trash_jngj-donggu_20241130.csv",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 31,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "연번",
         "위치",
@@ -2643,14 +2630,27 @@
         "경도",
         "데이터기준일자"
       ],
+      "features": 31,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "key": "bin_trash",
       "outputs": [
         "bin_trash.geojson",
         "bin_trash_5186.gpkg"
       ],
+      "resolved": "gjcity_bin_trash_jngj-donggu_20241130.csv",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/gjcity_bin_trash_*"
+      ],
+      "source_sha256": "ea65b6f8c4bc7179427dc1502a3426bca2a50789fafbb05bb45800222c640e6c",
+      "status": "OK",
       "seal": {
         "raw": "ea65b6f8c4bc7179",
-        "cfg": "d0575ac09b7b93e5",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "49b9b03cda34e51c",
+        "code": "fdbb670b00a3818d",
         "out": {
           "bin_trash.geojson": "468abbf53432a563",
           "bin_trash_5186.gpkg": "490f41682f3bc3da"
@@ -2658,19 +2658,6 @@
       }
     },
     {
-      "key": "bin_cloth",
-      "source_files": [
-        "**/gjcity_bin_cloth_*"
-      ],
-      "source_sha256": "e8c6aa4f557b5fc367c7bdd1ff529179808401221cc15e94fb60df1f242385e0",
-      "resolved": "gjcity_bin_cloth_jngj-donggu_20250214.csv",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 52,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "연번",
         "자치구",
@@ -2680,31 +2667,34 @@
         "경도",
         "데이터기준일자"
       ],
+      "features": 53,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "key": "bin_cloth",
       "outputs": [
         "bin_cloth.geojson",
         "bin_cloth_5186.gpkg"
       ],
+      "resolved": "gjcity_bin_cloth_jngj-donggu_20250214.csv",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/gjcity_bin_cloth_*"
+      ],
+      "source_sha256": "e8c6aa4f557b5fc367c7bdd1ff529179808401221cc15e94fb60df1f242385e0",
+      "status": "OK",
       "seal": {
         "raw": "e8c6aa4f557b5fc3",
-        "cfg": "4c1dd35548e434cb",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "4a286f8941ace6bf",
+        "code": "fdbb670b00a3818d",
         "out": {
-          "bin_cloth.geojson": "bb3d895a99b8410e",
-          "bin_cloth_5186.gpkg": "5b8eae35066b9c51"
+          "bin_cloth.geojson": "af98b057a57fc18d",
+          "bin_cloth_5186.gpkg": "ed1f9db06d5cad74"
         }
       }
     },
     {
-      "key": "station_jurisdiction",
-      "source_files": [
-        "**/safety_station_jrsdc_*"
-      ],
-      "source_sha256": "67654b6e6bc4fb1e3c59241140f77d6b9712d59cba59929a3f11587bfc7e2a65",
-      "resolved": "safety_station_jrsdc_jngj_20260429.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 27,
-      "geom": [],
       "columns": [
         "소방서",
         "안전센터",
@@ -2712,29 +2702,29 @@
         "관할구역",
         "데이터기준일"
       ],
+      "features": 27,
+      "geom": [],
+      "key": "station_jurisdiction",
       "outputs": [
         "station_jurisdiction.csv"
       ],
+      "resolved": "safety_station_jrsdc_jngj_20260429.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/safety_station_jrsdc_*"
+      ],
+      "source_sha256": "67654b6e6bc4fb1e3c59241140f77d6b9712d59cba59929a3f11587bfc7e2a65",
+      "status": "OK",
       "seal": {
         "raw": "67654b6e6bc4fb1e",
-        "cfg": "a6550d0cde97aa89",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "2051486f7131602a",
+        "code": "fdbb670b00a3818d",
         "out": {
           "station_jurisdiction.csv": "b1eec06e437474e1"
         }
       }
     },
     {
-      "key": "parking_lot",
-      "source_files": [
-        "**/gjcity_parking_lot_*"
-      ],
-      "source_sha256": "0f38436f5d4ce8b16cd67829cd12983cb5955d3ee5f4f868746e9a6af7ed3921",
-      "resolved": "gjcity_parking_lot_jngj-donggu_20260828.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 138,
-      "geom": [],
       "columns": [
         "구분",
         "종류",
@@ -2748,29 +2738,29 @@
         "주차요금",
         "비고"
       ],
+      "features": 138,
+      "geom": [],
+      "key": "parking_lot",
       "outputs": [
         "parking_lot.csv"
       ],
+      "resolved": "gjcity_parking_lot_jngj-donggu_20260828.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/gjcity_parking_lot_*"
+      ],
+      "source_sha256": "0f38436f5d4ce8b16cd67829cd12983cb5955d3ee5f4f868746e9a6af7ed3921",
+      "status": "OK",
       "seal": {
         "raw": "0f38436f5d4ce8b1",
-        "cfg": "3a8d0426b8839e99",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "a9b0124698fae348",
+        "code": "fdbb670b00a3818d",
         "out": {
           "parking_lot.csv": "dbc009458abc9d0d"
         }
       }
     },
     {
-      "key": "enforce_cam",
-      "source_files": [
-        "**/gjcity_enforce_cam_*"
-      ],
-      "source_sha256": "79dac019117d57e34f12f3f95f7b43ff84e2b039e4d45d76ecc93f12fad64df0",
-      "resolved": "gjcity_enforce_cam_jngj-donggu_20260828.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 65,
-      "geom": [],
       "columns": [
         "번호",
         "대상명칭",
@@ -2780,58 +2770,58 @@
         "점심시간",
         "개별적용사항"
       ],
+      "features": 65,
+      "geom": [],
+      "key": "enforce_cam",
       "outputs": [
         "enforce_cam.csv"
       ],
+      "resolved": "gjcity_enforce_cam_jngj-donggu_20260828.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/gjcity_enforce_cam_*"
+      ],
+      "source_sha256": "79dac019117d57e34f12f3f95f7b43ff84e2b039e4d45d76ecc93f12fad64df0",
+      "status": "OK",
       "seal": {
         "raw": "79dac019117d57e3",
-        "cfg": "66b214d6a8f933a5",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "9ab711d04489e637",
+        "code": "fdbb670b00a3818d",
         "out": {
           "enforce_cam.csv": "f0b41866f035d9dd"
         }
       }
     },
     {
-      "key": "school_zone",
-      "source_files": [
-        "**/gjcity_school_zone_*"
-      ],
-      "source_sha256": "cb565f28d1b2fd1ff58be40a1d0352b9e9162df2822ce157f02f5b7effb491f1",
-      "resolved": "gjcity_school_zone_jngj-donggu_20260828.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 32,
-      "geom": [],
       "columns": [
         "연번",
         "학교명",
         "시설유형",
         "주소"
       ],
+      "features": 32,
+      "geom": [],
+      "key": "school_zone",
       "outputs": [
         "school_zone.csv"
       ],
+      "resolved": "gjcity_school_zone_jngj-donggu_20260828.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/gjcity_school_zone_*"
+      ],
+      "source_sha256": "cb565f28d1b2fd1ff58be40a1d0352b9e9162df2822ce157f02f5b7effb491f1",
+      "status": "OK",
       "seal": {
         "raw": "cb565f28d1b2fd1f",
-        "cfg": "4e910c159f070d25",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "b5e95883e3cd8751",
+        "code": "fdbb670b00a3818d",
         "out": {
           "school_zone.csv": "660de16b352b8c06"
         }
       }
     },
     {
-      "key": "parking_zone",
-      "source_files": [
-        "**/gjcity_parking_zone_*"
-      ],
-      "source_sha256": "fc114cb3aadfd3b7642dd7d368b29d21f3d785a6b1adfae5ca52b074010d6867",
-      "resolved": "gjcity_parking_zone_jngj-donggu_20260828.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 22,
-      "geom": [],
       "columns": [
         "구분",
         "도로명",
@@ -2839,13 +2829,23 @@
         "연장_m",
         "내용"
       ],
+      "features": 22,
+      "geom": [],
+      "key": "parking_zone",
       "outputs": [
         "parking_zone.csv"
       ],
+      "resolved": "gjcity_parking_zone_jngj-donggu_20260828.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/gjcity_parking_zone_*"
+      ],
+      "source_sha256": "fc114cb3aadfd3b7642dd7d368b29d21f3d785a6b1adfae5ca52b074010d6867",
+      "status": "OK",
       "seal": {
         "raw": "fc114cb3aadfd3b7",
-        "cfg": "585a6520ea4a824c",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "516eb4ecf60f175c",
+        "code": "fdbb670b00a3818d",
         "out": {
           "parking_zone.csv": "87457c67c300dc11"
         }
@@ -2860,16 +2860,6 @@
       "note": "on_demand — --only 로 지목할 때만 읽는다"
     },
     {
-      "key": "gjfire_fleet_dongbu",
-      "source_files": [
-        "**/safety_fleet_*"
-      ],
-      "source_sha256": "dac553bb5e289ae8a594ce464800eda97f7f8a850c100a6b504dbc527917e581",
-      "resolved": "safety_fleet_jngj-donggu_20260514.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 8,
-      "geom": [],
       "columns": [
         "부서",
         "계",
@@ -2893,29 +2883,29 @@
         "장비운반차",
         "진단차"
       ],
+      "features": 8,
+      "geom": [],
+      "key": "gjfire_fleet_dongbu",
       "outputs": [
         "gjfire_fleet_dongbu.csv"
       ],
+      "resolved": "safety_fleet_jngj-donggu_20260514.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/safety_fleet_*"
+      ],
+      "source_sha256": "dac553bb5e289ae8a594ce464800eda97f7f8a850c100a6b504dbc527917e581",
+      "status": "OK",
       "seal": {
         "raw": "dac553bb5e289ae8",
-        "cfg": "159e215204614487",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "9dfaa199cab4ccd2",
+        "code": "fdbb670b00a3818d",
         "out": {
           "gjfire_fleet_dongbu.csv": "8b67a44c8e7ec6f0"
         }
       }
     },
     {
-      "key": "gjfire_district_dongbu",
-      "source_files": [
-        "**/safety_district_*"
-      ],
-      "source_sha256": "eb6ffedeb0301d5b9c5d3a0dcbc4d668877cad67711334449b08b34c57e07c38",
-      "resolved": "safety_district_jngj-donggu_20250731.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 3,
-      "geom": [],
       "columns": [
         "구 분",
         "위 치",
@@ -2924,29 +2914,29 @@
         "1인당담당인구",
         "데이터기준일자"
       ],
+      "features": 3,
+      "geom": [],
+      "key": "gjfire_district_dongbu",
       "outputs": [
         "gjfire_district_dongbu.csv"
       ],
+      "resolved": "safety_district_jngj-donggu_20250731.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/safety_district_*"
+      ],
+      "source_sha256": "eb6ffedeb0301d5b9c5d3a0dcbc4d668877cad67711334449b08b34c57e07c38",
+      "status": "OK",
       "seal": {
         "raw": "eb6ffedeb0301d5b",
-        "cfg": "f3663ad7f786cf99",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "9e0d1ae1554babcd",
+        "code": "fdbb670b00a3818d",
         "out": {
           "gjfire_district_dongbu.csv": "d1bb848237c0fa6f"
         }
       }
     },
     {
-      "key": "nfa_dispatch_119",
-      "source_files": [
-        "**/nfa_dispatch_119_*"
-      ],
-      "source_sha256": "740dedf4e0c6f6de0424971e59391c04f6e58d9f37747fa6d822352471950371",
-      "resolved": "nfa_dispatch_119_jngj-dongmyeong_20260903.csv",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 183,
-      "geom": [],
       "columns": [
         "DCLR_RCPT_NO",
         "DCLR_DT",
@@ -2984,29 +2974,29 @@
         "LOT",
         "LAT"
       ],
+      "features": 183,
+      "geom": [],
+      "key": "nfa_dispatch_119",
       "outputs": [
         "nfa_dispatch_119.csv"
       ],
+      "resolved": "nfa_dispatch_119_jngj-dongmyeong_20260903.csv",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/nfa_dispatch_119_*"
+      ],
+      "source_sha256": "740dedf4e0c6f6de0424971e59391c04f6e58d9f37747fa6d822352471950371",
+      "status": "OK",
       "seal": {
         "raw": "740dedf4e0c6f6de",
-        "cfg": "f68208c341dd1184",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "5b7f9f37836b80e8",
+        "code": "fdbb670b00a3818d",
         "out": {
           "nfa_dispatch_119.csv": "740dedf4e0c6f6de"
         }
       }
     },
     {
-      "key": "nfa_rescue",
-      "source_files": [
-        "**/nfa_rescue_*"
-      ],
-      "source_sha256": "66cd210b56f6fb13f4dbd7f26b560e2059936e34f4a06a38a9b3ce820d7363f5",
-      "resolved": "nfa_rescue_jngj-dongmyeong_20260903.csv",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 212,
-      "geom": [],
       "columns": [
         "CLMTY_RSCU_RPTP_NO",
         "ACDNT_CS_NM",
@@ -3060,29 +3050,29 @@
         "FRSTN_NM",
         "CNTR_NM"
       ],
+      "features": 212,
+      "geom": [],
+      "key": "nfa_rescue",
       "outputs": [
         "nfa_rescue.csv"
       ],
+      "resolved": "nfa_rescue_jngj-dongmyeong_20260903.csv",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/nfa_rescue_*"
+      ],
+      "source_sha256": "66cd210b56f6fb13f4dbd7f26b560e2059936e34f4a06a38a9b3ce820d7363f5",
+      "status": "OK",
       "seal": {
         "raw": "66cd210b56f6fb13",
-        "cfg": "a48dc583a0dba2cc",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "119d2f2e1cd17674",
+        "code": "fdbb670b00a3818d",
         "out": {
           "nfa_rescue.csv": "66cd210b56f6fb13"
         }
       }
     },
     {
-      "key": "nfa_fire_incident",
-      "source_files": [
-        "**/nfa_fire_incident_*"
-      ],
-      "source_sha256": "c1f98a86160ef4f7d545d609ac953e33a288ad4d8113e25b45f0371e95f2f621",
-      "resolved": "nfa_fire_incident_jngj-donggu_20260903.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 367,
-      "geom": [],
       "columns": [
         "WRINV_NO",
         "FIRE_TYPE_NM",
@@ -3145,57 +3135,57 @@
         "WNDRCT_BRNG",
         "HR_UNIT_HUM"
       ],
+      "features": 367,
+      "geom": [],
+      "key": "nfa_fire_incident",
       "outputs": [
         "nfa_fire_incident.csv"
       ],
+      "resolved": "nfa_fire_incident_jngj-donggu_20260903.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/nfa_fire_incident_*"
+      ],
+      "source_sha256": "c1f98a86160ef4f7d545d609ac953e33a288ad4d8113e25b45f0371e95f2f621",
+      "status": "OK",
       "seal": {
         "raw": "c1f98a86160ef4f7",
-        "cfg": "a7b862e0e2e6b984",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "0b84ff2cf2fe5f5b",
+        "code": "fdbb670b00a3818d",
         "out": {
           "nfa_fire_incident.csv": "c1f98a86160ef4f7"
         }
       }
     },
     {
+      "features": "",
+      "geom": [],
       "key": "nfa_vehicle_spec_2024",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "nfa_vehicle_spec_kr_20240304.pdf",
+      "source_crs": "",
       "source_files": [
         "**/nfa_vehicle_spec_*"
       ],
       "source_sha256": "3c5d91db980d0b896e8f2cfd2b2c51a385e580d40f7b355f6b5b6835509ba623",
-      "resolved": "nfa_vehicle_spec_kr_20240304.pdf",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "nfa_mas_spec_2025",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "nfa_mas_spec_kr_20260610.hwp",
+      "source_crs": "",
       "source_files": [
         "**/nfa_mas_spec_*"
       ],
       "source_sha256": "9ec7d8d516e631a4c597c8495f8d14050b5b2040ff9ddeb8fac9d38cca8ab5a5",
-      "resolved": "nfa_mas_spec_kr_20260610.hwp",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
-      "key": "nfa_target_building",
-      "source_files": [
-        "**/nfa_target_building_*"
-      ],
-      "source_sha256": "d85ec9f5b7fbdca363c3fb2a569aee5cca8d139169f54f00aee1b8f11f934394",
-      "resolved": "nfa_target_building_jngj-dongmyeong_20260903.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 23,
-      "geom": [],
       "columns": [
         "BDST_SN",
         "FRSTN_NM",
@@ -3221,99 +3211,99 @@
         "USE_YN",
         "FRFGH_MFBIZ_YN"
       ],
+      "features": 23,
+      "geom": [],
+      "key": "nfa_target_building",
       "outputs": [
         "nfa_target_building.csv"
       ],
+      "resolved": "nfa_target_building_jngj-dongmyeong_20260903.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/nfa_target_building_*"
+      ],
+      "source_sha256": "d85ec9f5b7fbdca363c3fb2a569aee5cca8d139169f54f00aee1b8f11f934394",
+      "status": "OK",
       "seal": {
         "raw": "d85ec9f5b7fbdca3",
-        "cfg": "048ed234e7a4145e",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "d7f2c2c7420cab3d",
+        "code": "fdbb670b00a3818d",
         "out": {
           "nfa_target_building.csv": "d85ec9f5b7fbdca3"
         }
       }
     },
     {
+      "features": "",
+      "geom": [],
       "key": "nfa_spec_chem_gj",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "nfa_spec_chem_gj_jngj_20260101.hwp",
+      "source_crs": "",
       "source_files": [
         "**/nfa_spec_chem_gj_*"
       ],
       "source_sha256": "6f228f5abb327b0d9e2416119af4658db08dbe5549f16583fb57e71be2063a35",
-      "resolved": "nfa_spec_chem_gj_jngj_20260101.hwp",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "nfa_spec_pump_jn",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "nfa_spec_pump_jn_kr_20260101.hwp",
+      "source_crs": "",
       "source_files": [
         "**/nfa_spec_pump_jn_*"
       ],
       "source_sha256": "9ed65818b458d88df47b3e2d7614445ae65baed7dbebf9d86b8910c67265ad06",
-      "resolved": "nfa_spec_pump_jn_kr_20260101.hwp",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "nfa_spec_tanker_cn",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "nfa_spec_tanker_cn_kr_20260101.pdf",
+      "source_crs": "",
       "source_files": [
         "**/nfa_spec_tanker_cn_*"
       ],
       "source_sha256": "9653d2700a31f841770d0f83ec2d81afe9927d068adc6eebec5909192c72b537",
-      "resolved": "nfa_spec_tanker_cn_kr_20260101.pdf",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "nfa_spec_rescue_jn",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "nfa_spec_rescue_jn_kr_20260101.hwpx",
+      "source_crs": "",
       "source_files": [
         "**/nfa_spec_rescue_jn_*"
       ],
       "source_sha256": "8e14e2c2672162ac323e50c4b8aec90299f03a2e79be266790549cfd75e21c07",
-      "resolved": "nfa_spec_rescue_jn_kr_20260101.hwpx",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
+      "features": "",
+      "geom": [],
       "key": "nfa_spec_ladder_jn",
+      "note": "raw_only — 별도 스크립트가 직접 읽는다",
+      "outputs": [],
+      "resolved": "nfa_spec_ladder_jn_kr_20260101.hwp",
+      "source_crs": "",
       "source_files": [
         "**/nfa_spec_ladder_jn_*"
       ],
       "source_sha256": "268c025482249f392516078495fabf9065465a25741bff308256054ecbb79bab",
-      "resolved": "nfa_spec_ladder_jn_kr_20260101.hwp",
-      "source_crs": "",
-      "status": "SKIP",
-      "features": "",
-      "geom": [],
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": []
+      "status": "SKIP"
     },
     {
-      "key": "bldg_ledger_dm",
-      "source_files": [
-        "**/eais_bldgledger_dm_*"
-      ],
-      "source_sha256": "82d938c21281441c166e4e8dcef539a983f603b6195d949281f3d5f05f93bd63",
-      "resolved": "eais_bldgledger_dm_jngj-dongmyeong_20260906.json",
-      "source_crs": "",
-      "status": "OK",
-      "features": 1989,
-      "geom": [],
       "columns": [
         "PLOT_PSTN",
         "SGG_CD",
@@ -3393,32 +3383,29 @@
         "RSERTHQK_DSGN_APPLY_YN",
         "RSERTHQK_ABLTY"
       ],
+      "features": 1989,
+      "geom": [],
+      "key": "bldg_ledger_dm",
       "outputs": [
         "bldg_ledger_dm.csv"
       ],
+      "resolved": "eais_bldgledger_dm_jngj-dongmyeong_20260906.json",
+      "source_crs": "",
+      "source_files": [
+        "**/eais_bldgledger_dm_*"
+      ],
+      "source_sha256": "82d938c21281441c166e4e8dcef539a983f603b6195d949281f3d5f05f93bd63",
+      "status": "OK",
       "seal": {
         "raw": "82d938c21281441c",
-        "cfg": "d8d8d2960defc081",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "3c88f4ae0ff8f63c",
+        "code": "fdbb670b00a3818d",
         "out": {
           "bldg_ledger_dm.csv": "7cf98f45416607eb"
         }
       }
     },
     {
-      "key": "child_zone_std",
-      "source_files": [
-        "**/mois_child_zone_std_*"
-      ],
-      "source_sha256": "5a9a8d10bf3d17e099f7745c3c6cf9370aba76b483751deb6b4c2acd1ff31f79",
-      "resolved": "mois_child_zone_std_kr_20260728.json",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 18,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "시설종류",
         "대상시설명",
@@ -3435,14 +3422,27 @@
         "제공기관코드",
         "제공기관명"
       ],
+      "features": 18,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "key": "child_zone_std",
       "outputs": [
         "child_zone_std.geojson",
         "child_zone_std_5186.gpkg"
       ],
+      "resolved": "mois_child_zone_std_kr_20260728.json",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/mois_child_zone_std_*"
+      ],
+      "source_sha256": "5a9a8d10bf3d17e099f7745c3c6cf9370aba76b483751deb6b4c2acd1ff31f79",
+      "status": "OK",
       "seal": {
         "raw": "5a9a8d10bf3d17e0",
-        "cfg": "51aba467e2ebfb34",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "0673d0fecd65e461",
+        "code": "fdbb670b00a3818d",
         "out": {
           "child_zone_std.geojson": "f96d451f8e1fafe7",
           "child_zone_std_5186.gpkg": "ed2a1c41b3250ac3"
@@ -3450,19 +3450,6 @@
       }
     },
     {
-      "key": "senior_zone_std",
-      "source_files": [
-        "**/mois_senior_zone_std_*"
-      ],
-      "source_sha256": "c10e7ccbaa7c1e98daf2e98a48d1057ed0cb04a786d6737f84385463b52ad017",
-      "resolved": "mois_senior_zone_std_kr_20260619.json",
-      "source_crs": "EPSG:4326",
-      "status": "OK",
-      "features": 14,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
       "columns": [
         "장소유형코드",
         "대상시설명",
@@ -3484,14 +3471,27 @@
         "제공기관코드",
         "제공기관명"
       ],
+      "features": 14,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
+      "key": "senior_zone_std",
       "outputs": [
         "senior_zone_std.geojson",
         "senior_zone_std_5186.gpkg"
       ],
+      "resolved": "mois_senior_zone_std_kr_20260619.json",
+      "source_crs": "EPSG:4326",
+      "source_files": [
+        "**/mois_senior_zone_std_*"
+      ],
+      "source_sha256": "c10e7ccbaa7c1e98daf2e98a48d1057ed0cb04a786d6737f84385463b52ad017",
+      "status": "OK",
       "seal": {
         "raw": "c10e7ccbaa7c1e98",
-        "cfg": "6d5657b83f45837f",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "ccd8eff7e4913807",
+        "code": "fdbb670b00a3818d",
         "out": {
           "senior_zone_std.geojson": "21d82148b6330799",
           "senior_zone_std_5186.gpkg": "cdd1374b24b8be74"
@@ -3499,16 +3499,6 @@
       }
     },
     {
-      "key": "speedbump",
-      "source_files": [
-        "**/gjcity_speedbump_*"
-      ],
-      "source_sha256": "5ce87804c5054a09a5b9336f5c40acce127669c4497e9667be0c2cd963ab7f7c",
-      "resolved": "gjcity_speedbump_jngj-donggu_20230405.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 342,
-      "geom": [],
       "columns": [
         "개방자치단체코드",
         "관리번호",
@@ -3538,29 +3528,29 @@
         "데이터갱신시점",
         "최종수정시점"
       ],
+      "features": 342,
+      "geom": [],
+      "key": "speedbump",
       "outputs": [
         "speedbump.csv"
       ],
+      "resolved": "gjcity_speedbump_jngj-donggu_20230405.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/gjcity_speedbump_*"
+      ],
+      "source_sha256": "5ce87804c5054a09a5b9336f5c40acce127669c4497e9667be0c2cd963ab7f7c",
+      "status": "OK",
       "seal": {
         "raw": "5ce87804c5054a09",
-        "cfg": "c7e8a5aed07ff311",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "b596c65109f2fdbe",
+        "code": "fdbb670b00a3818d",
         "out": {
           "speedbump.csv": "d984a8b1f00392fe"
         }
       }
     },
     {
-      "key": "admin_cctv",
-      "source_files": [
-        "**/gjcity_admin_cctv_*"
-      ],
-      "source_sha256": "d6be41274b0f8632219bc8458271adff6e9e7ad2bf1c67a736e5aad150551608",
-      "resolved": "gjcity_admin_cctv_jngj-donggu_20200814.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 81,
-      "geom": [],
       "columns": [
         "개방자치단체코드",
         "관리번호",
@@ -3581,29 +3571,29 @@
         "데이터갱신시점",
         "최종수정시점"
       ],
+      "features": 81,
+      "geom": [],
+      "key": "admin_cctv",
       "outputs": [
         "admin_cctv.csv"
       ],
+      "resolved": "gjcity_admin_cctv_jngj-donggu_20200814.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/gjcity_admin_cctv_*"
+      ],
+      "source_sha256": "d6be41274b0f8632219bc8458271adff6e9e7ad2bf1c67a736e5aad150551608",
+      "status": "OK",
       "seal": {
         "raw": "d6be41274b0f8632",
-        "cfg": "647f6a09e327a217",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "41c090aeceeb6a60",
+        "code": "fdbb670b00a3818d",
         "out": {
           "admin_cctv.csv": "d89684f4f2acd3ce"
         }
       }
     },
     {
-      "key": "speed_cam",
-      "source_files": [
-        "**/gjbg_traffic_cam_*"
-      ],
-      "source_sha256": "c4680175becb0bdd4d946849001f542d681ec2b46ad9fd849637b8e58c57a35d",
-      "resolved": "gjbg_traffic_cam_jngj_20251231.csv",
-      "source_crs": "",
-      "status": "OK",
-      "features": 510,
-      "geom": [],
       "columns": [
         "무인교통단속카메라관리번호",
         "시군구명",
@@ -3618,29 +3608,29 @@
         "보호구역구분",
         "설치년도"
       ],
+      "features": 510,
+      "geom": [],
+      "key": "speed_cam",
       "outputs": [
         "speed_cam.csv"
       ],
+      "resolved": "gjbg_traffic_cam_jngj_20251231.csv",
+      "source_crs": "",
+      "source_files": [
+        "**/gjbg_traffic_cam_*"
+      ],
+      "source_sha256": "c4680175becb0bdd4d946849001f542d681ec2b46ad9fd849637b8e58c57a35d",
+      "status": "OK",
       "seal": {
         "raw": "c4680175becb0bdd",
-        "cfg": "52b5f908313b3960",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "674b98a9cb1e2cab",
+        "code": "fdbb670b00a3818d",
         "out": {
           "speed_cam.csv": "30d996fc31af0e72"
         }
       }
     },
     {
-      "key": "juso_building_db",
-      "source_files": [
-        "**/juso_building_db_*"
-      ],
-      "source_sha256": "3d6dc01f6cb1bf8a95cff3c5d956dd2d5a87b37647ffb80f621848e5ab4efad9",
-      "resolved": "juso_building_db_jngj_20260731.zip",
-      "source_crs": "",
-      "status": "OK",
-      "features": 2078,
-      "geom": [],
       "columns": [
         "c00",
         "c01",
@@ -3674,13 +3664,23 @@
         "c29",
         "c30"
       ],
+      "features": 2078,
+      "geom": [],
+      "key": "juso_building_db",
       "outputs": [
         "juso_building_db.csv"
       ],
+      "resolved": "juso_building_db_jngj_20260731.zip",
+      "source_crs": "",
+      "source_files": [
+        "**/juso_building_db_*"
+      ],
+      "source_sha256": "3d6dc01f6cb1bf8a95cff3c5d956dd2d5a87b37647ffb80f621848e5ab4efad9",
+      "status": "OK",
       "seal": {
         "raw": "3d6dc01f6cb1bf8a",
-        "cfg": "1958e3ba98682bba",
-        "code": "6fcd9638a9112ea5",
+        "cfg": "4771ffc7d7159c5f",
+        "code": "fdbb670b00a3818d",
         "out": {
           "juso_building_db.csv": "bc238a98e7446a50"
         }

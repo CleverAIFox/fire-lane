@@ -607,3 +607,34 @@ def test_segment_fields_are_internally_consistent(seg):
             "width_verified 가 참이다 — D-25 실측 전이다", p)
 
     assert not bad, (f"필드 간 모순 {len(bad)}건\n  " + "\n  ".join(bad[:15]))
+
+
+def test_schema_layers_differ_only_by_declaration():
+    """`processed` 와 `web` 스키마의 필드 집합 차이가 **선언과 정확히 같은가.**
+
+    ★ 2026-09-17 (DECISIONS §171-4). `pipeline.verify_schema` 는 계층마다
+      *스키마 == 자기 산출물* 만 본다. 두 계층을 서로 대조하는 곳이 없었다
+      (PLAN `계층 간 스키마 드리프트`). 그래서 processed 에 필드가 생기고
+      publish 가 조용히 떨어뜨려도, web 에만 필드가 생겨도 초록이었다.
+
+      선언은 둘이다 —
+        processed → web 에서 뺀 것   web 스키마의 `dropped_from_processed`
+        web 에만 있는 것             `seg_no`(publish 가 만든다) · `z`(지형 덧쓰기)
+      공유 필드의 서술도 같아야 한다. publish 는 서술을 복사한다.
+    """
+    P = ROOT / "data" / "processed" / "segments.schema.json"
+    if not P.exists():
+        pytest.skip("processed 스키마 없음")
+    p = json.loads(P.read_text(encoding="utf-8"))
+    w = json.loads((WEB / "segments.schema.json").read_text(encoding="utf-8"))
+    pf, wf = set(p["fields"]), set(w["fields"])
+    dropped = set(w.get("dropped_from_processed") or [])
+    assert pf - wf == dropped, (
+        f"processed 전용 필드가 선언과 다르다 — 실제 {sorted(pf - wf)} · "
+        f"선언 {sorted(dropped)}")
+    web_only = wf - pf
+    assert web_only <= {"seg_no", "z"} and "seg_no" in web_only, (
+        f"web 전용 필드가 선언 밖이다 — {sorted(web_only)}")
+    drift = sorted(k for k in pf & wf
+                   if k != "seg_no" and p["fields"][k] != w["fields"][k])
+    assert not drift, f"같은 필드의 서술이 계층마다 다르다 — {drift}"

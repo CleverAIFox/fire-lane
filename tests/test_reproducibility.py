@@ -542,3 +542,41 @@ def test_no_one_off_in_repo():
         "일회성 스크립트가 저장소에 있다.\n" + "\n".join(bad)
         + "\n\n  `~/oneoff/<저장소>/` 에서 돌리고 커밋하지 않는다.\n"
         "  무엇을 왜 바꿨는지는 DECISIONS 가 정본이다 — 두 벌로 두지 않는다.")
+
+
+# ── 봉인 베이스라인 — 소방서 대조 (2026-09-17 · DECISIONS §171-2) ──────
+def _baseline_tool():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "baseline_tool", ROOT / "tools" / "baseline.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_baseline_copies_nfa_compare_not_a_handmade_table():
+    """`freeze` 가 봉인 시점 `processed/nfa_compare.json` 을 복사하는가.
+
+    ★ 종전에는 2026-08-13 자 손제작 표(`NFA_COMPARE`)를 박아 두고 매 봉인에
+      그것을 썼다. 세 벌이 전부 같은 표라 **실행 간 대조가 성립하지 않았다**
+      (PLAN `소방서 대조 봉인 사본이 낡았다`). 표가 다시 박히면 운다.
+    """
+    src = (ROOT / "tools" / "baseline.py").read_text(encoding="utf-8")
+    assert "NFA_COMPARE" not in src, "손제작 소방서 대조표가 baseline.py 에 돌아왔다"
+    assert "shutil.copy2(PROC / NFA" in src, "freeze 가 산출물 nfa_compare 를 복사하지 않는다"
+
+
+def test_baseline_nfa_delta_matches_by_road():
+    """카나리아 겸 단위 — 도로명으로 맞추고, 한쪽에만 있는 도로를 드러낸다."""
+    m = _baseline_tool()
+    old = {"abs_dev_sum_m": 1.5, "rows": [
+        {"road": "가로1번길", "dev_m": -0.5, "n_seg": 3},
+        {"road": "나로2번길", "dev_m": 1.0, "n_seg": 2}]}
+    new = {"abs_dev_sum_m": 0.7, "rows": [
+        {"road": "가로1번길", "dev_m": 0.2, "n_seg": 4},
+        {"road": "다로3번길", "dev_m": 0.5, "n_seg": 1}]}
+    d = m.nfa_delta(old, new)
+    assert (d["abs_old"], d["abs_new"]) == (1.5, 0.7)
+    assert d["only_old"] == ["나로2번길"] and d["only_new"] == ["다로3번길"]
+    row = {r["road"]: r for r in d["rows"]}["가로1번길"]
+    assert (row["old_dev_m"], row["new_dev_m"], row["new_n"]) == (-0.5, 0.2, 4)

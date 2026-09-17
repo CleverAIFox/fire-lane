@@ -130,3 +130,29 @@ def test_exempt_entries_carry_a_reason():
     """사유가 비면 면제가 아니라 방치다."""
     blank = sorted(n for n, why in EXEMPT.items() if not (why or "").strip())
     assert not blank, f"사유 없는 EXEMPT — {', '.join(blank)}"
+
+
+# ★ 2026-09-16. README 는 *"재현적이면 `tools/` 에 두고 verify.sh 에 배선하고 README 에
+#   적는다"* 고 적는다. 위 검사는 배선 반쪽만 봤다. 적는 반쪽에 강제자가 없어서
+#   `bridge_audit` · `its_linkmap` · `matchcheck` · `merge_batch.sh` 넷이 README 에 없었다 —
+#   머지 진입점까지 찾을 곳이 없었다(DECISIONS §168).
+README_EXEMPT: dict[str, str] = {}
+
+
+def test_every_tool_is_named_in_readme():
+    """`tools/` 의 도구가 README 에 이름으로 적혀 있는가. 배선과 별개의 반쪽이다."""
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    miss = sorted(p.name for p in (ROOT / "tools").iterdir()
+                  if p.is_file() and p.suffix in (".py", ".sh", ".mjs")
+                  and p.name not in README_EXEMPT and p.name not in text)
+    assert not miss, (
+        "README 에 없는 도구가 있다 — " + ", ".join(miss)
+        + "\n\n  README `## 도구` 또는 `### 대조 도구` 에 한 줄로 적어라.\n"
+          "  일회성이면 저장소 밖(`~/oneoff/`)으로 옮겨라 — README 규약이 둘 중 하나다.")
+
+
+def test_readme_exempt_entries_are_real_and_reasoned():
+    have = {p.name for p in (ROOT / "tools").iterdir() if p.is_file()}
+    ghost = sorted(n for n in README_EXEMPT if n not in have)
+    blank = sorted(n for n, why in README_EXEMPT.items() if not why.strip())
+    assert not ghost and not blank, f"없는 도구 {ghost} · 사유 없음 {blank}"

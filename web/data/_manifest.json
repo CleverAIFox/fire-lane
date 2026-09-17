@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-09-16T19:20:51+09:00",
+  "generated_at": "2026-09-17T09:24:18+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
-      "sha256": "a51d51c43d1dfec49d45af71b43dff2c4bd90dd15e2c6b806eb250a49bf483a8",
-      "bytes": 1073981
+      "sha256": "2d1a1555a8c1e106accd3b2abac4916e3152c4eb03e5179adccafea37eb3fdef",
+      "bytes": 1250059
     },
     "segments.schema.json": {
-      "sha256": "02364f2402e84ac54b1fdbce7e47e9a282b968f919aedcadf058601db9374f7c",
+      "sha256": "efc21bc9c512db70a29f635314e84ca16d1c25ce115dc9656f3df109126af864",
       "bytes": 5047
     },
     "_manifest.json": {
-      "sha256": "fd3b64dd6595a84c202035f8cbaa96c6f6bc4fe79c64348fb6ff56ed91a9cac7",
-      "bytes": 92293
+      "sha256": "1e62c15083d6380399c4826f7449c2d1e259268d06ba649813f795c5355fbcbc",
+      "bytes": 92295
     }
   },
   "files": {
@@ -21,11 +21,11 @@
       "bytes": 12116
     },
     "buildings.geojson": {
-      "sha256": "c887134f116f095070c924a882ce1881c16ee47d70cb06ea44f678e5d53bb3e4",
-      "bytes": 2167415
+      "sha256": "87536ec97e1ea76b5bdb4ba8e37b93431b55642d03108d727a0260b9f2cab6e5",
+      "bytes": 2177722
     },
     "cctv.geojson": {
-      "sha256": "f36d909299c83422b24019f2f702e4cfcd5bff644934c2c2c20ee38fc91b33a6",
+      "sha256": "83ea8f3d10f7ebdee8439db3c61d4d46da6207ecaeceb19a6720e33e610e48df",
       "bytes": 39189
     },
     "fleet.json": {
@@ -33,7 +33,7 @@
       "bytes": 4920
     },
     "hydrants.geojson": {
-      "sha256": "c7f1b2cec072e8e4cc927dd553235a50770fe471d46efa466d9055dd984ae2fa",
+      "sha256": "01d0a99e44750aeefe4fb72e98b394ec07e682fd6513d6564490933a161235b1",
       "bytes": 76964
     },
     "lightpoles.geojson": {
@@ -41,35 +41,35 @@
       "bytes": 167268
     },
     "mask.geojson": {
-      "sha256": "c9a3b5bca3e6fe56c54de613f58dca12dbc00f7da75f44c0a47efcc75ccfdc3d",
-      "bytes": 35476
+      "sha256": "91e58a1a607c8439d4972335fd70831b63ea5d9daafb3b3de6c11bf46be7c383",
+      "bytes": 35290
     },
     "mask_soft.geojson": {
-      "sha256": "74e9805e3c0c38bcab24fcd4548e7d77581516480a214f1e30b4851a56ce27ca",
-      "bytes": 47111
+      "sha256": "9c99058f733eb727f55cc26030f23b292edf19feaad1fcf10c4102b9d4547ba2",
+      "bytes": 46922
     },
     "navi_graph.json": {
-      "sha256": "63a34a4f74a7514ea1d7d40a72819a62f66096adad19cc333bf413343fdff5ce",
-      "bytes": 479338
+      "sha256": "7784b31b482ca3dcef75267bdb6aabb5ac85d4a9f690251cb4c16b79054ece22",
+      "bytes": 557809
     },
     "poi.geojson": {
-      "sha256": "b021f28899f0a8cc50ffa2bb5615a89038f67327cffc0e68f20a5502a38929d7",
-      "bytes": 524608
+      "sha256": "1d099ac177ff64e5c4b7296fa432ac632f0040352ef5acb0f1643cd9ac95568c",
+      "bytes": 525100
     },
     "route_vehicle.json": {
-      "sha256": "3b7b40dcc46a3afd31e4b8362159c59fdc0a5bb9323f6436f2a351c858a7ae78",
-      "bytes": 83104
+      "sha256": "8cd60f91021499b3453eea819492a41bdf853d4e8caeb4dbd17a32a7d9be8653",
+      "bytes": 96652
     },
     "segments.geojson": {
-      "sha256": "2a038ad89c150b2664c03463059d8d717f5323cd4f77f24a2045cc7dae1b94ad",
-      "bytes": 903981
+      "sha256": "9a6b92997e785d4de68d31385f994a54dcd3b64153e1047d70fc76403d335290",
+      "bytes": 1051958
     },
     "segments.schema.json": {
-      "sha256": "6b117a3fcbed6ca1394732d3a97b055b93af2e7fc07712b9767397367b92029d",
+      "sha256": "58e3d5edc080fa8e6197d156b49772e4447770fab56b408eac2cece4b05a6396",
       "bytes": 4842
     },
     "stations.geojson": {
-      "sha256": "9200490834e8747b3766894383f0a6878cf4fdb950e96819cb9a059e90f2fcbb",
+      "sha256": "fcae4cdae12a84abea5335ccbe66d293733b24b24b4edcb228447c21cf0d4781",
       "bytes": 1127
     },
     "streetlights.geojson": {
@@ -81,44 +81,44 @@
       "bytes": 350
     },
     "view.json": {
-      "sha256": "7a6533accf644d6a49353d82e314c014da2178a0f4291304d02a70494fc11762",
+      "sha256": "a968336157fa5c96292d95bbaa44955e321d4b4e927776dabec138578d8670b3",
       "bytes": 582
     }
   },
   "tiles": {
     "12": {
       "count": 2,
-      "bytes": 5938
+      "bytes": 8654
     },
     "13": {
       "count": 2,
-      "bytes": 12920
+      "bytes": 20067
     },
     "14": {
       "count": 6,
-      "bytes": 25998
+      "bytes": 39156
     },
     "15": {
       "count": 24,
-      "bytes": 189121
+      "bytes": 205227
     },
     "16": {
       "count": 28,
-      "bytes": 540743
+      "bytes": 541620
     },
     "17": {
       "count": 72,
-      "bytes": 1824463
+      "bytes": 1832924
     },
     "18": {
       "count": 276,
-      "bytes": 5782010
+      "bytes": 5812129
     },
     "19": {
       "count": 1035,
-      "bytes": 16338109
+      "bytes": 16416515
     }
   },
-  "tiles_digest": "52fbcae161f7edea",
-  "total_mb": 29.28
+  "tiles_digest": "ca2ce50bd36477e1",
+  "total_mb": 29.69
 }
