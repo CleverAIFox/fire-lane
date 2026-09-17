@@ -4,8 +4,8 @@
     "raster": "dem_scope.tif",
     "grid_m": 11.25,
     "upsample": 8,
-    "base_elev_m": 34.3,
-    "relief_m": 86.6,
+    "base_elev_m": 34.1,
+    "relief_m": 144.4,
     "note_relief": "대상 영역 기준. 패딩 포함 창 전체는 더 넓다",
     "applied_to": [
       "segments",
@@ -17,16 +17,16 @@
     "tiles": "web/data/terrain/{z}/{x}/{y}.png (22장, z12~15)",
     "encoding": "mapbox Terrain-RGB: -10000 + (R*65536+G*256+B)*0.1",
     "purpose": "표현용. 90m 격자는 구간별 경사 산출 불가. 판정에 사용하지 않는다.",
-    "generated_at": "2026-08-25T00:56:27+00:00"
+    "generated_at": "2026-09-16T14:58:57+00:00"
   },
   "ortho": {
     "source": "국토지리정보원 항공정사영상 2025 (도엽 35616037/038/047/048)",
     "gsd_m": 0.25,
     "src_crs": "EPSG:5186",
     "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
-    "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.6MB)",
+    "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.8MB)",
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-08-25T00:56:37+00:00"
+    "generated_at": "2026-09-16T14:59:16+00:00"
   },
   "generated_at": "2026-09-16T22:12:06.752596+09:00",
   "bbox_4326": [
@@ -2172,8 +2172,8 @@
         "cfg": "d2cc0f346d118eee",
         "code": "fdbb670b00a3818d",
         "out": {
-          "cctv.geojson": "2b0fb81b891e023f",
-          "cctv_5186.gpkg": "aa9c69e13793c333"
+          "cctv.geojson": "6ea91a790193ed41",
+          "cctv_5186.gpkg": "8b4f6730f5d30231"
         }
       }
     },
@@ -2211,8 +2211,8 @@
         "cfg": "e74e620c540ecff7",
         "code": "fdbb670b00a3818d",
         "out": {
-          "fire_station.geojson": "5c863428f2bf5612",
-          "fire_station_5186.gpkg": "ab662df0f53e6a3c"
+          "fire_station.geojson": "89aa704bb93fbe54",
+          "fire_station_5186.gpkg": "054bcd39ce382c28"
         }
       }
     },
@@ -2374,8 +2374,8 @@
         "cfg": "48b31306996c01e5",
         "code": "fdbb670b00a3818d",
         "out": {
-          "building.geojson": "c857dbe2ed65491d",
-          "building_5186.gpkg": "546a9f68cf4a5e84"
+          "building.geojson": "001f8a1bc7ae8274",
+          "building_5186.gpkg": "6183f4891416a013"
         }
       }
     },
@@ -2459,8 +2459,8 @@
         "cfg": "822f137964675171",
         "code": "fdbb670b00a3818d",
         "out": {
-          "hydrant_point.geojson": "a5b3e6a0c6a2c237",
-          "hydrant_point_5186.gpkg": "990bfd9b18d528de"
+          "hydrant_point.geojson": "32b73d212fba06b5",
+          "hydrant_point_5186.gpkg": "7a0ddcf447bba439"
         }
       }
     },

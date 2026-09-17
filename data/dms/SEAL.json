@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-16T22:38:19+09:00",
- "commit": "37867e4",
+ "sealed_at": "2026-09-17T10:00:51+09:00",
+ "commit": "95452f4",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "02b19cbd36981687",
-  "docs/DECISIONS.md": "03fc4ce51f22026b",
-  "docs/PLAN.md": "2351276625c12eb4",
-  "README.md": "f079b0af3fbe76cb"
+  "docs/MASTER.md": "a52ff9ccd0338da9",
+  "docs/DECISIONS.md": "3c670bf4d0d35045",
+  "docs/PLAN.md": "6682a07d82ec21ab",
+  "README.md": "8ce036d844f2235b"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -217,8 +217,8 @@
   ]
  },
  "code": {
-  "sha256": "a08c362122518a35",
-  "files": 60
+  "sha256": "fcf187a895cf2245",
+  "files": 62
  },
  "sections": {
   "MASTER-001": {
@@ -246,32 +246,32 @@
    "title": "0-3. 강조와 숫자"
   },
   "MASTER-005": {
-   "h": "81aede0410138cc4",
-   "state": "blank",
+   "h": "ab2e505a8480c8e6",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "1. 무엇을 만들었나"
   },
   "MASTER-006": {
-   "h": "d7f8aa83a9bf1ff7",
-   "state": "blank",
+   "h": "b8f880e027f77344",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "2. 현재 판정"
   },
   "MASTER-007": {
-   "h": "e2acec1b8692884f",
-   "state": "blank",
+   "h": "7448f433957a1610",
+   "state": "none",
    "doc": "docs/MASTER.md",
-   "title": "2-1. `unknown` 354 의 사유"
+   "title": "2-1. `unknown` 399 의 사유"
   },
   "MASTER-008": {
    "h": "d3f351a54aa08001",
-   "state": "blank",
+   "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "2-2. 판정 기준의 출처"
   },
   "MASTER-009": {
-   "h": "f4eb0fcbea7c3c5e",
-   "state": "blank",
+   "h": "d5cb9d1d8ea886b5",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "2-3. 이 숫자가 바뀌지 않는다는 근거"
   },
@@ -282,8 +282,8 @@
    "title": "3. 판정의 근거"
   },
   "MASTER-011": {
-   "h": "085ce092799e2f72",
-   "state": "blank",
+   "h": "f9d7a4e6807c2c35",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-1. 구간 수는 고정값이 아니다"
   },
@@ -300,8 +300,8 @@
    "title": "3-3. `ROAD_BT` 는 폭 값으로 쓰지 않는다"
   },
   "MASTER-014": {
-   "h": "3628f102a3a1768a",
-   "state": "blank",
+   "h": "bad30c1ae4a3be23",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-4. 폭은 하나로 못 정한다"
   },
@@ -318,8 +318,8 @@
    "title": "3-6. 교차로 안에서는 그 도로의 폭을 잴 수 없다"
   },
   "MASTER-017": {
-   "h": "e9df949f56d1c444",
-   "state": "blank",
+   "h": "9107bbf2422f9472",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-7. 골목의 65%는 영상판정이 불가능하다"
   },
@@ -330,7 +330,7 @@
    "title": "3-8. 출동은 소방서가 아니라 119안전센터에서 나간다"
   },
   "MASTER-019": {
-   "h": "43ba63deb8ff49b7",
+   "h": "1e6a787bf1a28d69",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-9. \"못 간다\"는 세 가지 값이 있다"
@@ -474,20 +474,20 @@
    "title": "8. 역할"
   },
   "MASTER-043": {
-   "h": "6ca0123dbd53034c",
-   "state": "blank",
+   "h": "7b80c053bcc9efbb",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "9. 이 프로젝트의 성격"
   },
   "MASTER-044": {
    "h": "debb7ef1b006457a",
-   "state": "blank",
+   "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "9-1. 현장 진술이 흔든 전제 넷"
   },
   "MASTER-045": {
    "h": "e8d7be3abe194f28",
-   "state": "blank",
+   "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "9-2. 누가 보는가 — 페르소나 둘"
   },
@@ -516,14 +516,14 @@
    "title": "10-1a. 이 저장소가 쓰는 말"
   },
   "MASTER-050": {
-   "h": "d9ae5d7a220815be",
+   "h": "2adad40facccd99b",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "10-2. 판정 4종"
   },
   "MASTER-051": {
-   "h": "7d74264b61977202",
-   "state": "blank",
+   "h": "1d7caf2c04c9dab0",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "10-3. 연속 구간 (`run_length_m`)"
   },
@@ -534,8 +534,8 @@
    "title": "10-4. 폭이 왜 두 개인가"
   },
   "MASTER-053": {
-   "h": "88007613b920635a",
-   "state": "blank",
+   "h": "317ab104efc7f827",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "10-5. 소방 동선 (`route_usage`)"
   },
@@ -582,8 +582,8 @@
    "title": "11-4. 값은 바뀌고 구조는 안 바뀐다"
   },
   "MASTER-061": {
-   "h": "cc89458cad0c38d6",
-   "state": "blank",
+   "h": "b9dc66c1d9fd15ce",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "데이터 필드"
   },
@@ -594,8 +594,8 @@
    "title": "11-5. 마커 데이터 파일"
   },
   "MASTER-063": {
-   "h": "d6e2c7479441992f",
-   "state": "blank",
+   "h": "d490fb3bc1ab41af",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "11-6. 다른 데이터 파일"
   },
@@ -606,8 +606,8 @@
    "title": "11-7. 막히면"
   },
   "MASTER-065": {
-   "h": "e18b6758f97d97ee",
-   "state": "blank",
+   "h": "a206a2d6b49915eb",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "11-8. 지금 손대도 되는 것"
   },
@@ -810,14 +810,14 @@
    "title": "15. 대외 산출물"
   },
   "MASTER-099": {
-   "h": "673a4676218bf3df",
-   "state": "blank",
+   "h": "c0962e9b4c123573",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "15-1. 말할 수 있는 것"
   },
   "MASTER-100": {
-   "h": "24eef024ed1309fe",
-   "state": "blank",
+   "h": "de1423f4147199ed",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "15-2. ★ 말하지 않는 것"
   },
@@ -834,8 +834,8 @@
    "title": "16. 결정 대장"
   },
   "MASTER-103": {
-   "h": "277044026eb9566c",
-   "state": "blank",
+   "h": "d610547f7a8570a1",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "16-1. `CCTV_RANGE` 는 거리 상수가 아니라 촬영 기하의 함수다"
   },
@@ -1086,7 +1086,7 @@
    "title": "20-4. 왜 Dijkstra 인가"
   },
   "MASTER-145": {
-   "h": "5155fafe6b4f828b",
+   "h": "75eb776f1b685d24",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "20-5. 앱은 무엇을 받는가 — 엔드포인트"
@@ -3347,6 +3347,54 @@
    "doc": "docs/DECISIONS.md",
    "title": "169-4. 정정 — §168 의 날짜와 구분자"
   },
+  "DECISIONS-373": {
+   "h": "1c348704b3d15521",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "170. 흡수-2 — 판정 범위 · 중심선 보정은 가져오고 건물 폭 확대는 측량에 져서 뺐다"
+  },
+  "DECISIONS-374": {
+   "h": "54969e79dc681849",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "170-1. 판정 범위에 안전센터 반경 300m 를 넣었다"
+  },
+  "DECISIONS-375": {
+   "h": "658a5354d9621572",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "170-2. 필문대로289번길 중심선 보정 — 지문이 기계에 묶여 있었다"
+  },
+  "DECISIONS-376": {
+   "h": "4acde2549487ccd2",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "170-3. 건물 담~담 폭 범위 확대는 가져오지 않았다 — 같은 잣대에서 측량에 졌다"
+  },
+  "DECISIONS-377": {
+   "h": "b24635137ef07ccc",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "170-4. 판정 정확도는 엄격 매칭으로만 잰다 — 조잡한 매칭의 결론 둘을 철회한다"
+  },
+  "DECISIONS-378": {
+   "h": "20169860c28f56cd",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "170-5. 드러난 결함 셋"
+  },
+  "DECISIONS-379": {
+   "h": "bfc277009b109dbe",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "170-6. 도달 여부는 판정에 합치지 않고 `route_vehicle` 한 곳에 둔다"
+  },
+  "DECISIONS-380": {
+   "h": "97352819cd5dd58b",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "170-7. 가져온 것과 안 가져온 것"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3366,7 +3414,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "5550463f041bdf2c",
+   "h": "46d99bc72742d8b3",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -3378,7 +3426,7 @@
    "title": "1-23. 영상판정 유효거리 실측 설계"
   },
   "PLAN-006": {
-   "h": "21b7f29cad6d125f",
+   "h": "88714420307d7cf9",
    "state": "inherit",
    "doc": "docs/PLAN.md",
    "title": "1-24. 촬영 계획이 높이에서 갈린다"
@@ -3570,8 +3618,8 @@
    "title": "6-1. 실측 프로토콜 📄"
   },
   "PLAN-038": {
-   "h": "46833b54d300b63f",
-   "state": "blank",
+   "h": "7f358e7ce25e5476",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "6-2. 관측점을 GIS 1급 개체로 📄"
   },
@@ -3606,8 +3654,8 @@
    "title": "6-7. 오차를 줄이는 순서 📄"
   },
   "PLAN-044": {
-   "h": "ccefdaa9fe90ea42",
-   "state": "blank",
+   "h": "6f61b1a881297c82",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "6-8. 네이버 지도 준-실측 가능성 🟡"
   },
@@ -3624,8 +3672,8 @@
    "title": "7-1. 시나리오는 손으로 고르지 않는다 — 그래프에서 역산 📄"
   },
   "PLAN-047": {
-   "h": "47e4095f6a90eac1",
-   "state": "blank",
+   "h": "67c684f45b7294e0",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "7-2. 평가지표 — 설계 완료, 산출 미착수 🟡"
   },
@@ -3690,7 +3738,7 @@
    "title": "8-6. 대장 · 매니페스트 격차 🟡"
   },
   "PLAN-058": {
-   "h": "0b0d1231780513c3",
+   "h": "7cd88c6c1ae2706a",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "8-7. 저장소 위생 🟡"
@@ -3714,8 +3762,8 @@
    "title": "9-2. 협조 공문 ⏳"
   },
   "PLAN-062": {
-   "h": "7d623680cfc12110",
-   "state": "blank",
+   "h": "908d7457d3f9b327",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "9-3. 주간 멘토링 — 축을 바꿔가며 묻는다"
   },
@@ -3726,8 +3774,8 @@
    "title": "10. 우선순위"
   },
   "PLAN-064": {
-   "h": "9cad2b48845ea2aa",
-   "state": "blank",
+   "h": "f7e6d81f0e1cd70b",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "10-1. 지금 막혀 있는 것"
   },
@@ -3822,7 +3870,7 @@
    "title": "경로가 둘인 이유"
   },
   "README-012": {
-   "h": "6e8e28cd68263772",
+   "h": "bca5a5f595033988",
    "state": "none",
    "doc": "README.md",
    "title": "도달 가능성은 개별 판정과 다르다"
@@ -3846,13 +3894,13 @@
    "title": "구조"
   },
   "README-016": {
-   "h": "2787bd8bb31972fc",
+   "h": "1ab42a229b525d8a",
    "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
   },
   "README-017": {
-   "h": "00668e371e265428",
+   "h": "d4eca10a1810cdbc",
    "state": "inherit",
    "doc": "README.md",
    "title": "구간 수는 고정값이 아니다"
@@ -3870,14 +3918,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 319,
+ "denominator": 295,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 0.91ms"
+   "tail": "Checked 44 packages in 0.51ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -3892,7 +3940,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "602 passed, 48 skipped in 93.02s (0:01:33)"
+   "tail": "622 passed, 50 skipped in 79.49s (0:01:19)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3907,12 +3955,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "225 passed, 49 skipped in 20.75s"
+   "tail": "229 passed, 51 skipped in 17.31s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1766개 추적"
+   "tail": "커밋 정책 OK · 1771개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -3927,7 +3975,7 @@
   "verify/문서 숫자 대조": {
    "rc": 0,
    "state": "OK",
-   "tail": "문서·EXPECT 일치. segments 1101 · clear 397 · needs_cv 191 · blocked 159 · unknown 354"
+   "tail": "문서·EXPECT 일치. segments 1281 · clear 465 · needs_cv 226 · blocked 191 · unknown 399"
   },
   "verify/문서 ↔ 문서": {
    "rc": 0,
@@ -3937,7 +3985,7 @@
   "verify/기획서 대조": {
    "rc": 0,
    "state": "OK",
-   "tail": "기획서 OK — 산출물과 일치 (구간 1,101)"
+   "tail": "기획서 OK — 산출물과 일치 (구간 1,281)"
   },
   "verify/그림 ↔ 정본": {
    "rc": 0,
@@ -3947,7 +3995,7 @@
   "verify/흡수 대상": {
    "rc": 1,
    "state": "생략",
-   "tail": "움직인 것 2개"
+   "tail": "움직인 것 10개"
   },
   "verify/선언 ↔ 실물": {
    "rc": 0,
@@ -3962,7 +4010,7 @@
   "verify/web/data 계보": {
    "rc": 0,
    "state": "OK",
-   "tail": "web/data 계보 OK · 29.29MB · 타일 52fbcae161f7edea"
+   "tail": "web/data 계보 OK · 29.69MB · 타일 ca2ce50bd36477e1"
   },
   "verify/로컬 찌꺼기": {
    "rc": 0,
@@ -4027,7 +4075,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 608절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 616절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4052,12 +4100,12 @@
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 없음 — 행 57개가 1..57 로 연속이다"
+   "tail": "✓ 없음 — 행 60개가 1..60 로 연속이다"
   },
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "602 passed, 48 skipped in 97.33s (0:01:37)"
+   "tail": "622 passed, 50 skipped in 96.73s (0:01:36)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4077,7 +4125,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 373개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 381개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,

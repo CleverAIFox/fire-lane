@@ -96,7 +96,8 @@ STEPS = [
                  P / "poi_store.geojson", P / "road_intrvl.geojson")),
     Step("segments", "segments", "노딩 → 폭 → 판정",
          P / "segments.geojson",
-         reads=(P / "ngii1k_5186.gpkg", P / "ngii1k_xsec_5186.gpkg",
+         reads=(P / "ngii1k_5186.gpkg", P / "ngii1k_center_5186.gpkg",
+                P / "ngii1k_xsec_5186.gpkg",
                 P / "road_link_5186.gpkg", P / "road_rw_5186.gpkg",
                 P / "node_link_5186.gpkg", P / "cctv_5186.gpkg",
                 P / "streetlight_5186.gpkg", P / "road_intrvl.geojson",
@@ -159,7 +160,8 @@ STEPS = [
                  WEB / "hydrants.geojson", WEB / "stations.geojson",
                  WEB / "cctv.geojson", WEB / "poi.geojson",
                  WEB / "streetlights.geojson", WEB / "lightpoles.geojson",
-                 WEB / "vehicle_spec.json", WEB / "route_vehicle.json"),
+                 WEB / "vehicle_spec.json", WEB / "route_vehicle.json",
+                 WEB / "navi_graph.json"),
          # ★ view.json 은 terrain·ortho 가 구운 범위를 넣어둔 것을 읽어
          #   보존하고 다시 쓴다. writes 가 아니라 mutates 다.
          mutates=(WEB / "view.json",)),
