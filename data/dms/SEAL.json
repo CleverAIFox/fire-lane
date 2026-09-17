@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-17T14:47:34+09:00",
- "commit": "643a510",
+ "sealed_at": "2026-09-17T15:31:44+09:00",
+ "commit": "556769e",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "29c13f27015c870e",
-  "docs/DECISIONS.md": "e9d5db2fe100c009",
-  "docs/PLAN.md": "1867c918d52a65a6",
+  "docs/MASTER.md": "983912b119bdaa7b",
+  "docs/DECISIONS.md": "c5ce525369175cb3",
+  "docs/PLAN.md": "8a6d1754540aa44f",
   "README.md": "1a4da37f2c84f26d"
  },
  "raw": {
@@ -223,8 +223,8 @@
   ]
  },
  "code": {
-  "sha256": "81601699795e5cd9",
-  "files": 63
+  "sha256": "b18f67772d5657f4",
+  "files": 64
  },
  "sections": {
   "MASTER-001": {
@@ -912,8 +912,8 @@
    "title": "18-3. 대장 — `sources.yaml` 하나"
   },
   "MASTER-115": {
-   "h": "3bb9223fd1adc65e",
-   "state": "none",
+   "h": "35902771edc40424",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3a. 필드의 의무"
   },
@@ -924,8 +924,8 @@
    "title": "18-3b. 계약 — 사람을 언제 부르는가"
   },
   "MASTER-117": {
-   "h": "23890614940ef1b1",
-   "state": "blank",
+   "h": "3bfc363ef81302ab",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3c. retired — 폐기 기록"
   },
@@ -3408,7 +3408,7 @@
    "title": "171. E2 — 빚 목록에서 분류된 거주를 걷고, 봉인이 산출물을 따라가게 했다"
   },
   "DECISIONS-382": {
-   "h": "2d9f137fd0c705ec",
+   "h": "b4c4ba8e3c8b5002",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "171-1. 미배선 소스는 수가 아니라 용도로 잰다"
@@ -3533,6 +3533,36 @@
    "doc": "docs/DECISIONS.md",
    "title": "173-8. 내비용 추가 데이터는 판정 정확도를 올리지 않는다"
   },
+  "DECISIONS-403": {
+   "h": "b2ba86d698acd29d",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "174. L1 — 파일의 주인을 해석기 하나가 판정하고, 대장 강제자를 래칫으로 달았다"
+  },
+  "DECISIONS-404": {
+   "h": "982ec3b23edec383",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "174-1. `firelane.lake` — 주인 · 층 · 상태를 한 곳에서 낸다"
+  },
+  "DECISIONS-405": {
+   "h": "6a143b064fdae0ab",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "174-2. 모의 레이크가 규칙 둘을 더 요구했다 — 이름이 글롭을 이기고, 한 원본의 다른 레이어는 공유다"
+  },
+  "DECISIONS-406": {
+   "h": "08000505a9e06881",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "174-3. 폐기 글롭 다섯을 파일 이름으로 바꿨다"
+  },
+  "DECISIONS-407": {
+   "h": "ad602be4a500ca71",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "174-4. 래칫 셋 — 대장 로드 · 주인 블록 · authority"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3552,7 +3582,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "f07b524270f05322",
+   "h": "032ce06591354562",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -4056,14 +4086,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 287,
- "dead_refs": 1,
+ "denominator": 286,
+ "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.49ms"
+   "tail": "Checked 45 packages in 0.47ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4078,7 +4108,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "632 passed, 51 skipped in 81.27s (0:01:21)"
+   "tail": "647 passed, 52 skipped in 88.50s (0:01:28)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4093,12 +4123,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "234 passed, 52 skipped in 18.74s"
+   "tail": "236 passed, 53 skipped in 20.00s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1773개 추적"
+   "tail": "커밋 정책 OK · 1775개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -4178,7 +4208,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
+   "tail": "지도 확인:  uv run python tools/serve.py"
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -4213,7 +4243,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 638절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 643절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4243,7 +4273,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "632 passed, 51 skipped in 102.40s (0:01:42)"
+   "tail": "647 passed, 52 skipped in 109.79s (0:01:49)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4263,7 +4293,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 403개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 408개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
