@@ -8024,3 +8024,12 @@ README · MASTER · `.env.example` 이 `woongtopia.github.io/fire-lane/` 를 지
 README 셋(루트 · `src/firelane` · `web`)의 전수 대조는 PLAN 「README 가 루트인데 GIS 전용이다」 로 미룬다.
 
 강제자  `tests/test_n1.py::test_no_doc_sends_people_to_old_pages_domain`
+
+### 181-7. 내비도 `web/data` 소비자다 — 고아 검사가 지도만 봤다
+
+`test_contract::test_web_data_has_no_unintended_orphan` 은 `web/js` · `config.js` · 파이썬 읽기만 소비자로 셌다. 내비(`web/navi/src`)만 읽는
+`dest.geojson` 이 발행되자 **고아**로 불려 파이프라인 계약 단계가 섰다(2026-09-17 사용자 기계 첫 발행). 샌드박스 `web/data` 에는 그 파일이
+없어서 검사가 볼 것이 없었고 초록이었다 — 실물이 생긴 기계에서만 우는 형태다. `navi_reads()` 가 내비 TS 의 파일 이름 리터럴(주석 제외)을
+소비자로 더한다. 실물 없이도 우는 강제자를 따로 둔다.
+
+강제자  `tests/test_n1.py::test_contract_counts_navi_as_consumer` · `tests/test_contract.py::test_web_data_has_no_unintended_orphan`

@@ -170,3 +170,14 @@ def test_no_doc_sends_people_to_old_pages_domain():
             continue
     assert not hits, f"옛 배포 주소를 안내한다 — {hits}"
     assert "cleveraifox.github.io/fire-lane/navi/" in (ROOT / "README.md").read_text(encoding="utf-8")
+
+
+def test_contract_counts_navi_as_consumer():
+    """§181-7 — 계약 테스트의 고아 검사가 내비를 소비자로 센다. 실물 web/data 없이도 여기서 운다."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("contract_t", ROOT / "tests" / "test_contract.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    got = m.navi_reads()
+    assert "dest.geojson" in got, "내비가 읽는 dest.geojson 을 못 본다 — 발행 기계에서 계약이 선다"
+    assert {"navi_graph.json", "poi.geojson"} <= got, "프로브가 죽었다"
