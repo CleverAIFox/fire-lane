@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-17T18:34:34+09:00",
- "commit": "89e0cff",
+ "sealed_at": "2026-09-17T19:18:45+09:00",
+ "commit": "1d03715",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "3386545e84b4846f",
-  "docs/DECISIONS.md": "a13a1c4b1cae855d",
-  "docs/PLAN.md": "36e0272ec0a84168",
-  "README.md": "f1349416b9acca71"
+  "docs/MASTER.md": "46dc700f5f3f2f2b",
+  "docs/DECISIONS.md": "796a8cdaeeddfe80",
+  "docs/PLAN.md": "33c4dbcfc1f1170e",
+  "README.md": "e5617fcfd8851e53"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -224,10 +224,16 @@
   "parking_enforce": [
    "cf64a54d8dbe19c2",
    "4cb4c4e95353af78"
+  ],
+  "hydrant_type": [
+   "e3eb7b4178fdbadf"
+  ],
+  "parking_std": [
+   "2d3ffbc50ad074ac"
   ]
  },
  "code": {
-  "sha256": "e64af8da08f74478",
+  "sha256": "63a95ac10c91134d",
   "files": 64
  },
  "sections": {
@@ -394,7 +400,7 @@
    "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
   },
   "MASTER-028": {
-   "h": "9a4316369ef42520",
+   "h": "1c709a55ed17e4a4",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5. 시스템 구성"
@@ -424,7 +430,7 @@
    "title": "6. 데이터 현황"
   },
   "MASTER-033": {
-   "h": "eb9be88d96bddf9d",
+   "h": "ccb8843865163f37",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-1. 확보"
@@ -928,7 +934,7 @@
    "title": "18-3b. 계약 — 사람을 언제 부르는가"
   },
   "MASTER-117": {
-   "h": "9ccca38601bca9bf",
+   "h": "f330499a9c7b2396",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3c. retired — 폐기 기록"
@@ -3651,6 +3657,36 @@
    "doc": "docs/DECISIONS.md",
    "title": "177-4. 섀시 제원은 인터뷰로, 회전반경은 나라장터 원문으로"
   },
+  "DECISIONS-422": {
+   "h": "07fd7f5eaec85a7c",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "178. L2c — 보관 7묶음을 가렸다: 소화전 유형별 집계 · 주차장 표준데이터 복귀, 다섯 상폐"
+  },
+  "DECISIONS-423": {
+   "h": "7def5c1f5c693d2e",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "178-1. 판정"
+  },
+  "DECISIONS-424": {
+   "h": "cad69636ade278bf",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "178-2. `hydrant_summary` 의 설명이 다른 파일을 서술하고 있었다"
+  },
+  "DECISIONS-425": {
+   "h": "a316c482262d08f2",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "178-3. 정정 — 회전반경 원문을 넣어도 검증 플래그는 안 켜진다"
+  },
+  "DECISIONS-426": {
+   "h": "1b730766f6d44f70",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "178-4. 단속이력의 받은 경로 — 공공데이터포털"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3670,7 +3706,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "804342bce2014983",
+   "h": "c4e9e545f4eea83a",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -4150,7 +4186,7 @@
    "title": "구조"
   },
   "README-016": {
-   "h": "ada2ecdc9295fa63",
+   "h": "0bf79949e0243144",
    "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
@@ -4181,7 +4217,7 @@
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.40ms"
+   "tail": "Checked 45 packages in 0.53ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4196,7 +4232,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "658 passed in 70.25s (0:01:10)"
+   "tail": "658 passed in 73.76s (0:01:13)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4211,7 +4247,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "237 passed, 1 skipped in 8.48s"
+   "tail": "237 passed, 1 skipped in 10.59s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -4336,7 +4372,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 657절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 662절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4351,12 +4387,12 @@
   "verify/norm 계보 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "정상 32 · 낡음 0 · 손상 0"
+   "tail": "정상 34 · 낡음 0 · 손상 0"
   },
   "verify/대장 별칭 이관 유지": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 폐기 별칭 0건 — 96개 항목에서 이관이 유지된다"
+   "tail": "✓ 폐기 별칭 0건 — 92개 항목에서 이관이 유지된다"
   },
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
@@ -4366,7 +4402,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "658 passed in 98.55s (0:01:38)"
+   "tail": "658 passed in 97.46s (0:01:37)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4386,7 +4422,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 422개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 427개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
