@@ -350,8 +350,15 @@ def test_raw_only_is_true_to_the_lake():
         if e.get("kind") != "raw_only":
             continue
         st = e.get("stem")
-        if st and any(n.startswith(f"{st}_") for n in have):
-            bad.append(f"  {k:26s} stem={st}  norm 에 실물이 있다")
+        # ★ 2026-09-17 (DECISIONS §172-3). `norm_convert` 를 선언한 raw_only 는 norm 에 **변환본만**
+        #   있을 수 있다 — ingest 는 안 읽고 prep 이 서식을 표로 옮긴다. 선언이 있으니 거짓이 아니다.
+        #   다만 변환본 확장자(.csv) 밖의 파일이 norm 에 있으면 여전히 거짓이다.
+        conv = e.get("norm_convert")
+        hit = [n for n in have if st and n.startswith(f"{st}_")]
+        if conv:
+            hit = [n for n in hit if not n.endswith(".csv")]
+        if hit:
+            bad.append(f"  {k:26s} stem={st}  norm 에 실물이 있다 {hit[:3]}")
     assert not bad, (
         "raw_only 인데 norm 에 실물이 있다 — 선언이 거짓이다.\n"
         + "\n".join(bad)

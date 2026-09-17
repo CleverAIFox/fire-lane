@@ -70,6 +70,11 @@ def test_rules_contain_no_uppercase():
 
 # 제공기관이 실제로 주는 이름. 규칙을 고칠 때 여기부터 늘린다.
 SAMPLES = {
+    # ★ 2026-09-17. 관리카드 — 센터명은 규칙이 영문 part 로 옮긴다
+    "관리카드_대인11호_.pdf":
+        ("safety", "safety_vehiclecard_jngj-donggu_20260904_daein11.pdf"),
+    "관리카드_지산2호_.pdf":
+        ("safety", "safety_vehiclecard_jngj-donggu_20260904_jisan2.pdf"),
     "소방펌프차(KFS-1-0073-2025-00).hwp":
         ("safety", "safety_kfs_pumptruck_20251224.hwp"),
     "소형사다리차(KFS-1-0030-2025-01).hwp":

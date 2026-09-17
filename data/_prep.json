@@ -342,7 +342,55 @@
    "hangul_ratio": 0.326,
    "notes": [],
    "at": "2026-09-14T18:57:44+09:00"
+  },
+  "safety/safety_vehiclecard_jngj-donggu_20260904_daein11.pdf": {
+   "key": "gjfire_vehicle_card",
+   "dst": "safety/safety_vehiclecard_jngj-donggu_20260904_daein11.csv",
+   "src_sha256": "3c2995c12daf86c29ebeb5835b84dd3f5a490ce71d3498c11b73a4890709ccbd",
+   "dst_sha256": "7178e53f940b40607b2146da34e5c5013a43d5279492cb70991713d652d69b0b",
+   "converter": "vehiclecard",
+   "converter_version": "2026-09-17.1",
+   "src_encoding": "pdf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "at": "2026-09-17T12:46:53+09:00"
+  },
+  "safety/safety_vehiclecard_jngj-donggu_20260904_daein5.pdf": {
+   "key": "gjfire_vehicle_card",
+   "dst": "safety/safety_vehiclecard_jngj-donggu_20260904_daein5.csv",
+   "src_sha256": "03955fa70371718504198a0aae8630e77f54a9e23f30be252415886802da7502",
+   "dst_sha256": "3703b6925125d64168e1dfdbdc46157a4dd28290d0a992e57179bb3b562319c6",
+   "converter": "vehiclecard",
+   "converter_version": "2026-09-17.1",
+   "src_encoding": "pdf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "at": "2026-09-17T12:46:53+09:00"
+  },
+  "safety/safety_vehiclecard_jngj-donggu_20260904_daein6.pdf": {
+   "key": "gjfire_vehicle_card",
+   "dst": "safety/safety_vehiclecard_jngj-donggu_20260904_daein6.csv",
+   "src_sha256": "36aa7d65a75d4bfb3faa77e7ac51844bcce35f1e5e51bd2f7dde8956250787fd",
+   "dst_sha256": "716db0684cfaba2cd014251be745d198ce019c29f74c3a044a04121a975cc614",
+   "converter": "vehiclecard",
+   "converter_version": "2026-09-17.1",
+   "src_encoding": "pdf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "at": "2026-09-17T12:46:53+09:00"
+  },
+  "safety/safety_vehiclecard_jngj-donggu_20260904_jisan2.pdf": {
+   "key": "gjfire_vehicle_card",
+   "dst": "safety/safety_vehiclecard_jngj-donggu_20260904_jisan2.csv",
+   "src_sha256": "6ed8289e209c5ef164e522c2a6978d693befc8b525b9e1d8727e6bc1a82f918a",
+   "dst_sha256": "3703b6925125d64168e1dfdbdc46157a4dd28290d0a992e57179bb3b562319c6",
+   "converter": "vehiclecard",
+   "converter_version": "2026-09-17.1",
+   "src_encoding": "pdf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "at": "2026-09-17T12:46:53+09:00"
   }
  },
- "at": "2026-09-14T18:57:44+09:00"
+ "at": "2026-09-17T13:52:18+09:00"
 }

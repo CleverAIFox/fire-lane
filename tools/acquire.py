@@ -236,6 +236,24 @@ def retired_names() -> dict[str, str]:
                     out[q.name] = why
             else:
                 out[Path(s).name] = why
+    # ★ 2026-09-17 (DECISIONS §172-5). **활성 대장이 주장하는 파일은 폐기일 수 없다.**
+    #   폐기 항목이 `stem` 만 적으면 글롭이 `**/safety_firestation_*` 가 되고, 같은 stem 의
+    #   **활성** 파일(`fire_station` · `hydrant_point`)까지 잡는다. `--stage` 가 그것을
+    #   "폐기본이 다시 올라왔다" 로 읽어 살아 있는 raw 둘을 _quarantine 으로 내렸고,
+    #   `--verify` 가 대장에서 지웠다(V1 반입, 2026-09-17). 이름으로 둘이 겹치면
+    #   **활성이 이긴다** — 틀려도 파일이 raw 에 남는 쪽이다.
+    active: set[str] = set()
+    for pats in dataset_globs().values():
+        for s in pats:
+            if any(c in s for c in "*?["):
+                active.update(q.name for q in RAW.glob(s))
+            else:
+                active.add(Path(s).name)
+    clash = sorted(n for n in out if n in active)
+    for n in clash:
+        print(col(f"  ★ 폐기 글롭이 활성 파일을 잡는다 — {n} 는 폐기로 보지 않는다. "
+                  "retired 항목을 좁혀라(scope · 날짜)", "y"))
+        out.pop(n)
     return out
 
 

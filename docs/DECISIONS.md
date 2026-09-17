@@ -7182,3 +7182,85 @@ landing 에 지워도 되는 것 0건을 확인한 뒤에만 이 행을 닫는�
                    밀렸다(§169-2). 현장 시트는 seg_uid 로 잇는다. obs_points.csv 는 원래 seg_uid 만 쓴다
 
 강제자 없음 — 사유: 문서 · 산출 칸 정정이다
+
+## 172. 관리카드는 34대를 기다리지 않고 받는 대로 넣는다 — 원본은 받은 이름으로 보존하고 SSD 에서 표로 옮긴다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 172-1~172-5 가 각자 강제자 칸을 든다
+
+### 172-1. 순서를 뒤집었다 — 체계를 먼저 돌린다
+
+종전 계획은 *"관리카드는 34대 전부 수령 뒤에 한다"* 였다(HANDOFF_20260917b §7). 뒤집는다. 반입
+파이프라인(intake → landing → acquire → raw → prep → norm)을 만든 이유가 **대장만 적으면 나머지가
+도는 것**인데, 34대를 모아 한 번에 넣으면 체계가 도는지를 마지막 날에 처음 안다. 받은 4개로 지금
+돌리고, 나머지는 받을 때마다 대장 `parts` 에 한 줄씩 적는다.
+
+    대장     gjfire_vehicle_card · stem safety_vehiclecard · parts [jisan2, daein5, daein6, daein11]
+             kind raw_only(ingest 는 안 읽는다) · norm_convert vehiclecard(prep 이 표로 옮긴다)
+    raw      관리카드_<지산|대인><N>호_.pdf → safety/safety_vehiclecard_jngj-donggu_20260904_<part>.pdf
+    norm     같은 이름의 .csv — 한 행 21칸, 값은 글자 그대로
+    날짜     카드 출력일(PDF 생성일 2026-09-04). 파일명에 없어 규칙에 박았다 — 재출력본이 오면 함께 올린다
+
+강제자  `tests/test_normalize_rules.py::test_provider_filenames_are_matched` — 원본명 → 정규명 표본
+
+### 172-2. 받은 이름과 내용이 달랐다 — 원본은 보존하고 어긋남을 선언한다
+
+첫 넷 중 `관리카드_대인5호_.pdf` 가 **지산2호 카드**였다 — 등록번호 998더7338 · 소속 지산119안전센터.
+sha 는 지산2호 파일과 달랐다(PDFium 재저장본, 나머지 셋은 OZ Report Viewer). intake 는 이름으로 대장을
+찾고 acquire 는 sha 로 중복을 보므로 **이름과 내용을 대조하는 곳이 체계 안에 없었다.** 사람이 PDF 를
+열어서 잡았다.
+
+처리 — 받은 이름 그대로 `daein5` 로 raw 에 보존하고 대장 `mismatch.daein5` 에 사유를 적었다. 이름을 내용에
+맞춰 `jisan2` 쪽으로 옮기면 **무엇을 받았는지가 사라진다.** 대인 5호(998더7382) 카드는 재요청했다.
+제대로 된 판이 오면 선언을 지운다 — 어긋남이 없어졌는데 선언이 남으면 검사가 운다.
+
+    ① 이름의 센터 = 카드 소속        선언 없이 어긋나면 운다
+    ② 등록번호가 카드끼리 안 겹친다   선언된 어긋남이 설명하는 겹침만 허용
+    ③ 선언했는데 이제 맞다 · 선언한 카드가 없다   운다
+
+강제자  `tests/test_vehicle_card.py::test_received_vehicle_cards_match_their_names` · 카나리아 `::test_vehicle_card_probe_is_alive`
+
+### 172-3. prep 에 서식 변환기를 붙였다 — 값은 글자 그대로
+
+`firelane.vehiclecard` 가 카드 1쪽의 글자 조각 **좌표**를 읽어 머리글 칸에 붙인다. 줄 단위로 뽑으면
+`구입 가격` 네 칸(보조금 · 교부세 · 지방비 · 기증 등) 중 어느 칸인지가 사라진다 — 지산2호는 교부세,
+대인11호는 지방비다. `7,770` 은 `7,770` 으로 옮긴다(쉼표 · 단위는 ingest 의 일). 예외 하나 —
+pypdf 가 영숫자 글리프 사이에 끼운 공백(`SM C-B4A 1S3D175L3`)은 원문에 없어 뺀다. 양옆이 ASCII
+영숫자·하이픈일 때만이다. poppler(`pdftotext`)는 Adobe-Korea1 언어팩이 없어 한글을 전부 잃었다 —
+그래서 `pypdf`(BSD)를 필수 의존성에 올렸다.
+
+`prep` 은 대장 `norm_convert` 를 보고 변환기 표(`prep.CONVERTERS`)에서 고른다. `_prep.json` 이 변환기 판
+(`converter_version`)을 남기고, 판이 바뀌면 다시 만든다.
+
+선언 둘을 함께 고쳤다. 둘 다 **대장이 받는 것을 코드가 몰랐던** 형태다 —
+    `test_raw_only_is_true_to_the_lake`   raw_only 면 norm 이 없어야 한다 → norm_convert 선언분의 .csv 는 허용
+    `layers.norm.naming` · `passthrough_rules`   날짜 뒤 `_<part>` 를 몰랐다 — 하이픈 · json 에 이은 세 번째
+
+강제자  `tests/test_vehicle_card.py::test_vehiclecard_parser_on_recorded_chunks` · `tests/test_normalize_rules.py::test_normalized_names_round_trip`
+
+### 172-4. 카드가 닫지 못하는 것
+
+카드 1쪽에 **축거 · 최소회전반경이 없다.** PLAN 「차량 제원 확정」은 카드로 안 닫힌다. 지산2호의 차체가
+파비스인지는 카드 문자로 확정되지 않는다(차명이 특장사명) — 제원 7칸과 특장사가 대인6호(파비스)와
+같다는 **추정**이라 `wheelbase_verified` 를 바꾸지 않는다.
+
+강제자 없음 — 사유: 확정하지 않은 것의 기록이다
+
+### 172-5. 체계를 돌리자마자 살아 있는 raw 둘이 격리됐다 — 폐기 글롭이 활성 파일을 잡았다
+
+V1 첫 실행에서 `acquire --stage` 가 `safety_firestation_kr_20240901.csv`(`fire_station`) ·
+`safety_hydrant_point_jngj_20240207.csv`(`hydrant_point`) · 그 취득 기록 `_meta/…meta.json` 을
+**"폐기본이 다시 올라왔다"** 로 읽어 `_quarantine` 으로 내렸고, `--verify` 가 대장(`_acquire.json`)에서
+지웠다. 판정 단계가 결손 2종으로 멈춰 파이프라인까지는 안 갔다.
+
+원인 — 폐기 항목 `firestation_kr_20250701` · `hydrant_point_jngj_20250917` · `hydrant_point_kr_20240207_truncated`
+가 `stem` 만 적는다. 2026-08-31 에 `file` → `stem` 으로 뒤집으며(`ledger.globs`) 글롭이
+`**/safety_firestation_*` 가 됐고, **같은 stem 의 활성 파일**까지 잡았다. 그 뒤로 `--stage --yes` 가 한 번도
+안 돌아 드러나지 않았다. 34대를 기다렸다면 그날 터졌다 — 172-1 의 판단이 맞았다는 첫 근거다.
+
+수정 — `acquire.retired_names` 에서 **활성 대장이 주장하는 이름을 뺀다.** 겹치면 활성이 이긴다. 틀려도 파일이
+raw 에 남는 방향이다. 겹침은 경고로 찍어 폐기 항목을 좁히게 한다(scope · 날짜 — 후속).
+실물 복구는 `_quarantine/safety/` 에서 `raw/safety/` 로 되돌리고 `--verify` 로 재기록한다.
+
+강제자  `tests/test_guards.py::test_retired_glob_never_claims_an_active_file` — 실제 대장으로 재현. 수정 전 코드에서 두 파일 이름으로 실패함을 확인했다

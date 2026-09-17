@@ -104,14 +104,6 @@
    "sha256": "67a583bb97e8d027761dea9fd492012699ea8345f4bf7939f729754494dbdf9e",
    "bytes": 2027
   },
-  "safety/safety_firestation_kr_20240901.csv": {
-   "sha256": "b65a8bb8e2197f8999384c259c9154247f2d537a10604f9e24d19b1244bb89b7",
-   "bytes": 169090
-  },
-  "safety/safety_hydrant_point_jngj_20240207.csv": {
-   "sha256": "bffc507dc053be38883800daec15f8c4bff0daea231e1bddcb403a2e482b4861",
-   "bytes": 1401550
-  },
   "safety/safety_hydrant_summary_jngj-donggu_20250731.csv": {
    "sha256": "6a5b2690bd9cc2ecc13369da2e58f3418e1b1bea8f8a173e57be3695cf340586",
    "bytes": 278
@@ -275,7 +267,31 @@
   "gjcity/gjcity_road_facility_jngj_20220914.hwp": {
    "sha256": "c0810ad6ed35388fe6c881dc2005ddaad5a77821216ab2eb105c1c3c895f77bc",
    "bytes": 102400
+  },
+  "safety/safety_vehiclecard_jngj-donggu_20260904_daein11.pdf": {
+   "sha256": "3c2995c12daf86c29ebeb5835b84dd3f5a490ce71d3498c11b73a4890709ccbd",
+   "bytes": 227842
+  },
+  "safety/safety_vehiclecard_jngj-donggu_20260904_daein5.pdf": {
+   "sha256": "03955fa70371718504198a0aae8630e77f54a9e23f30be252415886802da7502",
+   "bytes": 203298
+  },
+  "safety/safety_vehiclecard_jngj-donggu_20260904_daein6.pdf": {
+   "sha256": "36aa7d65a75d4bfb3faa77e7ac51844bcce35f1e5e51bd2f7dde8956250787fd",
+   "bytes": 300321
+  },
+  "safety/safety_vehiclecard_jngj-donggu_20260904_jisan2.pdf": {
+   "sha256": "6ed8289e209c5ef164e522c2a6978d693befc8b525b9e1d8727e6bc1a82f918a",
+   "bytes": 203445
+  },
+  "safety/safety_firestation_kr_20240901.csv": {
+   "sha256": "b65a8bb8e2197f8999384c259c9154247f2d537a10604f9e24d19b1244bb89b7",
+   "bytes": 169090
+  },
+  "safety/safety_hydrant_point_jngj_20240207.csv": {
+   "sha256": "bffc507dc053be38883800daec15f8c4bff0daea231e1bddcb403a2e482b4861",
+   "bytes": 1401550
   }
  },
- "at": "2026-09-10T13:06:18+09:00"
+ "at": "2026-09-17T12:45:45+09:00"
 }

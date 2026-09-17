@@ -532,6 +532,24 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 1차 근사 `L²/(2R)` 를 쓰지 않는다. R=8 · L=4 에서 근사 1.000 대 정확 1.072 로
 7cm 차이가 나고, 그것이 3.0m 임계 근처에서 판정을 가른다.
 
+★ **실차값 — 관리카드(2026-09-17 수령 4개 · `gjfire_vehicle_card`).** 규격 상한과 다른 축이다.
+원본 PDF 는 raw 에 받은 이름으로 보존하고, `prep` 이 norm 에 한 행 CSV 로 옮긴다(값은 글자 그대로).
+`대인5호` 이름으로 온 파일은 지산2호 카드라 대장 `mismatch` 에 선언했다(DECISIONS §172-2).
+
+```
+차량        차종          길이×너비×높이(mm)    규격 상한 대비
+지산 2호    중형 펌프차   7,770 × 2,410 × 2,920   전장 −23cm · 전폭 −9cm · 전고 −28cm
+대인 6호    중형 펌프차   7,770 × 2,410 × 2,920   같다
+대인 11호   굴절 27m      8,670 × 2,480 × 3,795   소형사다리 규격(8.5×2.5×3.8) 전장 +17cm
+```
+
+판정은 여전히 규격 상한(전폭 2.5m)으로 한다 — 34대 중 3대이고 범주 최대는 범주 전량을
+알 때만 최대다(`vehicle_spec` 축거 서술과 같은 원리). 카드 1쪽에는 **축거 · 회전반경이 없다.**
+대인 11호 전장이 소형사다리 규격 상한을 넘는 것은 규격 분류가 다르기 때문일 수 있다(27m 급 굴절) —
+사다리차는 판정 기준 차량이 아니라 판정에 영향이 없다.
+
+강제자 — `tests/test_vehicle_card.py::test_received_vehicle_cards_match_their_names` (카드 이름 ↔ 소속 · 등록번호)
+
 ---
 
 ## 4. 외부 대조 — 소방서 지정 구간
@@ -605,7 +623,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 65종
+data/processed/    대장 66종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -711,8 +729,10 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격.
 
-대장은 `sources.yaml` 하나다. `datasets` 65종 · `retired` 16종.
+대장은 `sources.yaml` 하나다. `datasets` 66종 · `retired` 16종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
+
+강제자 — `tools/docnum_check.py` (대장 datasets · retired 종수)
 
 ### 6-2. 데이터 보관
 
