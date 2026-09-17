@@ -24,13 +24,35 @@
 # ★ PR 번호는 짐작하지 않는다. gh pr list 로 찾고 화면에 보여준 뒤 묻는다.
 set -euo pipefail
 
-VERSION=2026-09-16.2   # ★ 어느 판이 돌았는지 첫 줄에서 보인다
+VERSION=2026-09-17.1   # ★ 어느 판이 돌았는지 첫 줄에서 보인다
 
 say() { printf '\n\033[36m── %s\033[0m\n' "$*"; }
 die() { printf '\n\033[31m✗ %b\033[0m\n' "$*"; exit 1; }
 ok()  { printf '\033[32m✓ %s\033[0m\n' "$*"; }
 warn(){ printf '\033[33m! %b\033[0m\n' "$*"; }
-ask() { read -r -p "$1 [y/N] " yn; [ "$yn" = "y" ]; }
+# >>> tty — 대화형 입력. tests/test_k2.py 가 이 구간을 떼어 가상 터미널로 흔든다
+# ★ 2026-09-17 (DECISIONS §180-6 · G-17). `gh ... --watch` 가 터미널에 배경색을 묻는다(OSC 11). 응답 바이트
+#   (`^[]11;rgb:…^[\^[[30;1R`)가 입력 버퍼에 남아, 다음 `read` 가 사람의 y 대신 그것을 읽고 "멈춤" 했다(run_chain L2d).
+#   입력이 터미널이면 **읽기 직전에 버퍼를 비우고** 터미널에서 읽는다. 파이프로 답을 넘기면(run_final) 그대로 stdin 을 읽는다.
+#   답은 글자만 남겨 판정한다 — 비운 뒤에 도착한 응답 조각이 섞여도 y 한 글자로 본다.
+flush_tty() {
+    [ -t 0 ] || return 0
+    local junk
+    while IFS= read -r -s -t 0.05 -n 4096 junk </dev/tty 2>/dev/null; do :; done
+    return 0
+}
+read_answer() {   # read_answer <프롬프트> — 답을 표준출력으로
+    local a
+    if [ -t 0 ]; then flush_tty; IFS= read -r -p "$1" a </dev/tty || a=""
+    else IFS= read -r a || a=""; fi
+    printf '%s' "$a"
+}
+ask() {
+    local yn
+    yn=$(read_answer "$1 [y/N] " | LC_ALL=C tr -cd 'A-Za-z')
+    [ "$yn" = "y" ] || [ "$yn" = "Y" ]
+}
+# <<< tty
 
 printf '\033[2mmerge_batch %s\033[0m\n' "$VERSION"
 
@@ -93,9 +115,20 @@ sync_parts() {    # dev 를 파트로 fast-forward
 # ══ A. part/infra → dev ═══════════════════════════════════════
 say "A. part/infra → dev PR"
 git fetch -q origin
+# ★ 2026-09-17 (DECISIONS §180 · G-2). feat → part/infra PR 이 열려 있으면 squash 를 빠뜨린 것이다. 그대로 가면
+#   part/infra 에 그 배치가 없는 채로 dev 에 올리고 "끝" 을 찍는다. 경고가 아니라 멈춘다.
+openfeat=$(gh pr list -R "$REPO" --base part/infra --state open --json number,headRefName --jq '.[] | "#\(.number) \(.headRefName)"')
+if [ -n "$openfeat" ]; then
+    die "part/infra 로 가는 PR 이 아직 열려 있다 — squash 머지부터:\n$openfeat"
+fi
 pr=$(gh pr list -R "$REPO" --base dev --head part/infra --state open --json number --jq '.[0].number // empty')
 if [ -z "$pr" ]; then
-    warn "열린 part/infra → dev PR 이 없다. 이미 머지됐으면 동기화만 한다"
+    # ★ 2026-09-17 (DECISIONS §180 · G-10). 종전에는 경고만 하고 넘어갔다. part/infra 가 dev 보다
+    #   앞서 있는데 PR 이 없으면 **PR 을 빠뜨린 것**이다 — 동기화도 건너뛰어 배치 D 가 part 에만 머물렀다.
+    if ! git merge-base --is-ancestor origin/part/infra origin/dev; then
+        die "part/infra 가 dev 보다 앞서 있는데 열린 part/infra → dev PR 이 없다 — PR 을 빠뜨렸다\n  gh pr create -R $REPO --base dev --head part/infra --title ... --body-file ..."
+    fi
+    ok "열린 part/infra → dev PR 없음 · part/infra 가 dev 에 들어 있다 — 동기화만 한다"
 else
     gh pr view "$pr" -R "$REPO" --json number,title,commits,additions,deletions \
       --jq '"#\(.number)  \(.title)\n  커밋 \(.commits|length) · +\(.additions) −\(.deletions)"'
@@ -164,7 +197,9 @@ put("<!-- 한두 줄. 커밋 메시지 접두사와 맞춘다: gis / cv / api / 
     "\ndocs: 릴리즈 — dev 를 main 으로. 흡수하는 커밋:\n\n```\n" + (log or "(없음)") + "\n```\n\n" + brief + "\n")
 put("  예)  src/firelane/seg/width.py:212  — 횡단선 간격을 0.5 → 0.25 로\n-->\n",
     "\ndata/golden/segments.fingerprint.json — 판정 4수치가 움직였는가. 위 release_brief 표의 `판정` 줄\n")
-out = changed("data/golden", "data/processed", "web/data")
+# ★ 2026-09-17 (G-11). 종전에는 data/processed 까지 봐서 대장 · 매니페스트만 바뀐 릴리즈(datasets 65 → 66)도
+#   "바뀐다" 로 체크했다. 산출물 변경 = 판정 지문(golden) 또는 발행물(web/data, 매니페스트 제외)이다
+out = changed("data/golden", "web/data", ":(exclude)web/data/_manifest.json")
 t = t.replace("- [ ] 바뀐다" if out else "- [ ] 안 바뀐다", "- [x] 바뀐다" if out else "- [x] 안 바뀐다", 1)
 con = changed("src/contracts", "tests/test_contract.py", "web/config.js")
 t = t.replace("- [ ] `src/contracts/`" if con else "- [ ] 안 건드린다",
@@ -192,7 +227,9 @@ git diff --quiet origin/main origin/dev || die "머지 뒤 main 과 dev 내용�
 ok "main $(git rev-parse --short origin/main) · dev 와 내용 같음"
 
 # B-3. 태그 — 사람이 정한다(§12-8b)
-read -r -p "릴리즈 태그 (예 v0.3 · 비우면 안 붙인다): " tag
+tag=$(read_answer "릴리즈 태그 (예 v0.3 · 비우면 안 붙인다): ")
+# ★ 2026-09-17 (G-12). 한글 입력기 상태에서 치면 앞에 깨진 바이트가 붙어 형식 검사에 걸렸다 — 인쇄 가능한 ASCII 만 남긴다
+tag=$(printf '%s' "$tag" | LC_ALL=C tr -cd 'A-Za-z0-9.-')
 if [ -n "$tag" ] && ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+(-[a-z0-9]+)?$ ]]; then
     warn "태그 \"$tag\" 는 형식(v0.3 · v0.1-team5)이 아니다 — 안 붙인다. 손으로: git tag vX.Y origin/main"; tag=""
 fi

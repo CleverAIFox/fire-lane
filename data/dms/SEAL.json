@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-17T20:24:39+09:00",
- "commit": "afd0edf",
- "tool": "ade8c494f4e25d28",
+ "sealed_at": "2026-09-17T20:41:01+09:00",
+ "commit": "081cc71",
+ "tool": "4e5793923f7cb248",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "0844a3af7929869e",
-  "docs/DECISIONS.md": "6cd6189e6e8420cc",
-  "docs/PLAN.md": "050afc06027bfff4",
+  "docs/MASTER.md": "e4f7fc41b36ab6ec",
+  "docs/DECISIONS.md": "2ea272ec1a099506",
+  "docs/PLAN.md": "694161e61c2c24d9",
   "README.md": "06654db9556efc64"
  },
  "raw": {
@@ -245,7 +245,7 @@
   ]
  },
  "code": {
-  "sha256": "f5d39bf1648b74bb",
+  "sha256": "631efb0e2277820f",
   "files": 64
  },
  "sections": {
@@ -892,8 +892,8 @@
    "title": "18-1. 계층"
   },
   "MASTER-108": {
-   "h": "cd94402d0a2b22b5",
-   "state": "blank",
+   "h": "9b757926b6548548",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "계층이 여덟인 이유"
   },
@@ -1000,14 +1000,14 @@
    "title": "18-10. 금지 목록"
   },
   "MASTER-126": {
-   "h": "f0db137cf9e647d9",
+   "h": "53b468134b3f28a3",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "18-11. 획득 · 업서트 게이트"
   },
   "MASTER-127": {
-   "h": "25eccffa4c5d2721",
-   "state": "blank",
+   "h": "2190c2e398d4d704",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "세 판정"
   },
@@ -1030,8 +1030,8 @@
    "title": "18-12. 대장 메타 항목"
   },
   "MASTER-131": {
-   "h": "c9411beafe4ecf94",
-   "state": "blank",
+   "h": "27523fe997da25a4",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-13. 관문 — 판정과 게이트를 잇는다"
   },
@@ -3730,10 +3730,64 @@
    "title": "179-4. 정정 — 텍스트 표는 raw_only 가 될 수 없다"
   },
   "DECISIONS-432": {
-   "h": "c25c55f90db969e8",
+   "h": "8d816632a80e213d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "179-5. 판이 여럿인 것이 정상인 소스는 판을 선언한다 — vintage_check"
+  },
+  "DECISIONS-433": {
+   "h": "0e7a452203455069",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "180. K2 · G — 판정은 있었는데 틀리던 도구 넷과, 경고만 하던 merge_batch 를 고쳤다"
+  },
+  "DECISIONS-434": {
+   "h": "2832f15a209caae0",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-1. acquire — 폐기 판정은 해석기가 내고, 격리는 거부한다"
+  },
+  "DECISIONS-435": {
+   "h": "e30a1d6882391b4b",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-2. normalize_raw — 처분이 적힌 파일과 정체 모를 파일을 가른다"
+  },
+  "DECISIONS-436": {
+   "h": "d87f2d1a2d236685",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-3. dms — 괄호가 붙은 산문은 칸이 아니다 · 두 \"죽은 참조\" 의 이름을 가른다"
+  },
+  "DECISIONS-437": {
+   "h": "7cc6aeb019826cce",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-4. plan_renumber — 자기 번호 표가 있는 절의 `#N` 은 §1 참조가 아니다"
+  },
+  "DECISIONS-438": {
+   "h": "edad91d8b987d012",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-5. merge_batch — 빠뜨린 단계는 멈춘다"
+  },
+  "DECISIONS-439": {
+   "h": "fc791be1e2444684",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-6. 대화형 확인은 읽기 직전에 터미널 입력 버퍼를 비운다 (G-17)"
+  },
+  "DECISIONS-440": {
+   "h": "40addba0c0843142",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-7. 봉인은 커밋본이어야 한다 — 적용 스크립트는 패치가 건드린 파일을 전부 커밋한다"
+  },
+  "DECISIONS-441": {
+   "h": "de38d8bb87d0bb82",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "180-8. 봉인 태그를 걷는다 — 태그는 릴리즈에만 쓴다"
   },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
@@ -3754,7 +3808,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "0a5241046478a923",
+   "h": "a2cc6477e464a34c",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -4258,14 +4312,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 285,
+ "denominator": 282,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 1ms"
+   "tail": "Checked 45 packages in 0.47ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4280,7 +4334,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "658 passed in 74.91s (0:01:14)"
+   "tail": "667 passed in 82.17s (0:01:22)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4295,12 +4349,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "237 passed, 1 skipped in 8.80s"
+   "tail": "237 passed, 1 skipped in 8.96s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1779개 추적"
+   "tail": "커밋 정책 OK · 1780개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -4335,7 +4389,7 @@
   "verify/흡수 대상": {
    "rc": 1,
    "state": "생략",
-   "tail": "움직인 것 1개"
+   "tail": "움직인 것 0개"
   },
   "verify/선언 ↔ 실물": {
    "rc": 0,
@@ -4380,7 +4434,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
+   "tail": "지도 확인:  uv run python tools/serve.py"
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -4420,7 +4474,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 668절이 아니다."
+   "tail": "전수로 보고 다시 `seal` 을 찍어라."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4450,7 +4504,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "658 passed in 97.14s (0:01:37)"
+   "tail": "667 passed in 100.04s (0:01:40)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4470,7 +4524,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 433개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 442개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
