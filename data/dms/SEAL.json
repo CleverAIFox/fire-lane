@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-17T10:00:51+09:00",
- "commit": "95452f4",
+ "sealed_at": "2026-09-17T11:13:50+09:00",
+ "commit": "6564c59",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "a52ff9ccd0338da9",
-  "docs/DECISIONS.md": "3c670bf4d0d35045",
-  "docs/PLAN.md": "6682a07d82ec21ab",
+  "docs/MASTER.md": "b15a2765ea6318fa",
+  "docs/DECISIONS.md": "a867c739672296ec",
+  "docs/PLAN.md": "e8af2928a4683863",
   "README.md": "8ce036d844f2235b"
  },
  "raw": {
@@ -217,7 +217,7 @@
   ]
  },
  "code": {
-  "sha256": "fcf187a895cf2245",
+  "sha256": "be8914950cedee47",
   "files": 62
  },
  "sections": {
@@ -348,8 +348,8 @@
    "title": "3-11. 런타임 프루닝은 폭이 아니라 경로로 한다"
   },
   "MASTER-022": {
-   "h": "6f76f43a2c566bb6",
-   "state": "blank",
+   "h": "c926b2caa583417f",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-12. 소화전 좌표는 확보됐다. 분모가 여전히 다르다"
   },
@@ -378,10 +378,10 @@
    "title": "4-2. 대조의 한계"
   },
   "MASTER-027": {
-   "h": "a386a70e8f8cff04",
-   "state": "blank",
+   "h": "f4239e8ccbff5419",
+   "state": "wired",
    "doc": "docs/MASTER.md",
-   "title": "4-3. ★ 이 표는 파일로 남지만 봉인 사본이 낡았다"
+   "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
   },
   "MASTER-028": {
    "h": "386ecbc8eb5255e3",
@@ -444,8 +444,8 @@
    "title": "6-5. 쓸 수 없는 것 — 확인 완료"
   },
   "MASTER-038": {
-   "h": "a6f95f3bd4623328",
-   "state": "blank",
+   "h": "d57e813e295e14b0",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "6-6. 미확보"
   },
@@ -738,8 +738,8 @@
    "title": "12-11. 한글 파일명"
   },
   "MASTER-087": {
-   "h": "27d7be371b69f778",
-   "state": "blank",
+   "h": "95d92a0fd62c05d0",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "13. 봉인 베이스라인"
   },
@@ -870,7 +870,7 @@
    "title": "계층이 여덟인 이유"
   },
   "MASTER-109": {
-   "h": "bc4db9b12822a2a0",
+   "h": "fe61b393c4633bce",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-1a. 그라운드 룰"
@@ -930,8 +930,8 @@
    "title": "18-4. 매니페스트 — 사람이 안 쓰고 파이프라인이 쓴다"
   },
   "MASTER-119": {
-   "h": "d55c0278d663e0c0",
-   "state": "blank",
+   "h": "fda5fadb27bbc4e7",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "18-5. 재현성 규약"
   },
@@ -972,8 +972,8 @@
    "title": "18-10. 금지 목록"
   },
   "MASTER-126": {
-   "h": "567180974f539f92",
-   "state": "blank",
+   "h": "f0db137cf9e647d9",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "18-11. 획득 · 업서트 게이트"
   },
@@ -3395,6 +3395,48 @@
    "doc": "docs/DECISIONS.md",
    "title": "170-7. 가져온 것과 안 가져온 것"
   },
+  "DECISIONS-381": {
+   "h": "8c7c5b5dc2a3a2a3",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "171. E2 — 빚 목록에서 분류된 거주를 걷고, 봉인이 산출물을 따라가게 했다"
+  },
+  "DECISIONS-382": {
+   "h": "2d9f137fd0c705ec",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "171-1. 미배선 소스는 수가 아니라 용도로 잰다"
+  },
+  "DECISIONS-383": {
+   "h": "4f2752d5cb812b7c",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "171-2. 봉인의 소방서 대조는 봉인 시점 산출물의 사본이다"
+  },
+  "DECISIONS-384": {
+   "h": "04b484938534bdfb",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "171-3. 봉인은 전량 복사를 유지한다 — 태그 + 지문 대체는 기각"
+  },
+  "DECISIONS-385": {
+   "h": "26ae9752d92b172b",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "171-4. 계층 간 필드 차이를 선언과 대조한다"
+  },
+  "DECISIONS-386": {
+   "h": "f4baba47ccad5ce0",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "171-5. landing — 지우는 도구는 이미 있었고, 우는 검사가 처분 어휘를 좁게 읽었다"
+  },
+  "DECISIONS-387": {
+   "h": "1ba559b7d4b5c5ec",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "171-6. 잔재 셋"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3414,7 +3456,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "46d99bc72742d8b3",
+   "h": "ef0c1c08f083aefe",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -3738,7 +3780,7 @@
    "title": "8-6. 대장 · 매니페스트 격차 🟡"
   },
   "PLAN-058": {
-   "h": "7cd88c6c1ae2706a",
+   "h": "ef7c15d736f2640d",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "8-7. 저장소 위생 🟡"
@@ -3750,7 +3792,7 @@
    "title": "9. 외부 의존"
   },
   "PLAN-060": {
-   "h": "6e2b6b15e82d6c17",
+   "h": "16b77db678ab267b",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "9-1. 소방서 정식 인터뷰 ⏳"
@@ -3918,14 +3960,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 295,
- "dead_refs": 0,
+ "denominator": 289,
+ "dead_refs": 1,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 0.51ms"
+   "tail": "Checked 44 packages in 0.48ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -3940,7 +3982,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "622 passed, 50 skipped in 79.49s (0:01:19)"
+   "tail": "626 passed, 50 skipped in 87.51s (0:01:27)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3955,7 +3997,7 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "229 passed, 51 skipped in 17.31s"
+   "tail": "231 passed, 51 skipped in 20.04s"
   },
   "verify/커밋 정책": {
    "rc": 0,
@@ -3995,7 +4037,7 @@
   "verify/흡수 대상": {
    "rc": 1,
    "state": "생략",
-   "tail": "움직인 것 10개"
+   "tail": "움직인 것 0개"
   },
   "verify/선언 ↔ 실물": {
    "rc": 0,
@@ -4042,7 +4084,7 @@
    "state": "OK",
    "tail": "지도 확인:  uv run python tools/serve.py"
   },
-  "verify/golden 판정 불변 (1,101구간)": {
+  "verify/golden 판정 불변": {
    "rc": 0,
    "state": "OK",
    "tail": "리팩 전후 동일. 다음 덩어리로 넘어가도 된다."
@@ -4075,7 +4117,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 616절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 623절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4100,12 +4142,12 @@
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 없음 — 행 60개가 1..60 로 연속이다"
+   "tail": "✓ 없음 — 행 55개가 1..55 로 연속이다"
   },
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "622 passed, 50 skipped in 96.73s (0:01:36)"
+   "tail": "626 passed, 50 skipped in 99.92s (0:01:39)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4125,7 +4167,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 381개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 388개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,

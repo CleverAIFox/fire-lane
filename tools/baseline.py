@@ -26,10 +26,11 @@ NGI 20도엽(2020·2022) → V-WORLD SHP 74도엽(2026-03)으로 교체됐다.
     nfa_compare.json       ★ 소방서 지정 구간 대조
     meta.json              집계 · EXPECT · sha256 · 주의사항
 
-★ `nfa_compare.json` 은 손으로 옮겨 적은 것이다.
-  `segments.py` 의 대조 블록이 `print` 만 하고 파일로 남기지 않기 때문이다
-  (segments.py:962). 유일한 외부 대조 수단이 터미널 출력으로만 존재했다.
-  파서 교체 후 이것을 파일로 내도록 고쳐야 한다.
+★ `nfa_compare.json` 은 **봉인 시점 산출물의 사본**이다(2026-09-17 · DECISIONS §171-2).
+  `seg/report.py` 가 매 실행 `processed/nfa_compare.json` 을 쓴다(2026-08-18~).
+  종전에는 여기 박힌 2026-08-13 자 손제작 표를 복사했다 — 세 벌 봉인이 전부
+  같은 옛 표를 들고 있어 **실행 간 대조가 성립하지 않았다.** 그 세 벌은
+  구 원본 소실로 재생성 불가라 그대로 둔다(지우지 않는다).
 
 ── diff 가 하는 일 ────────────────────────────────────────────
 seg_uid 로 먼저 맞추고, 안 맞는 것은 중점 최근접(기본 15m)으로 다시 맞춘다.
@@ -58,28 +59,33 @@ KST = timezone(timedelta(hours=9))
 FILES = ["segments.geojson", "segments.schema.json",
          "_manifest.json", "seg_uid_map.csv"]
 
-# MASTER §4 대조 결과 (2026-08-13, 도로명 매칭 7구간).
-# segments.py 가 파일로 남기지 않아 문서에서 옮겨 적었다.
-NFA_COMPARE = {
-    "as_of": "2026-08-13",
-    "source": "docs/MASTER.md §4 — segments.py 는 print 만 한다(962행)",
-    "ref": "동부소방서 소방통로확보대상 지역 현황 2025-07-31 (20구간 7,120m)",
-    "match_by": "도로명. 소방서 자료에 좌표가 없다",
-    "compare": "구간 대표폭이므로 중앙값과 비교. 최솟값이면 -3~-7m 로 벌어진다",
-    "caveat": ("검증이 아니라 적합(fit)이다. 12.6 → 7.24m 로 줄이는 과정에서 "
-               "이 표를 게이트로 썼다. 게이트로 쓴 자료는 외부 검증 수단이 아니다."),
-    "abs_dev_sum_m": 7.24,
-    "abs_dev_sum_m_before": 12.6,
-    "rows": [
-        {"road": "필문대로289번길", "nfa_m": 8, "ours_median_m": 7.79, "dev_m": -0.21, "n_seg": 30},
-        {"road": "필문대로205번길", "nfa_m": 8, "ours_median_m": 7.65, "dev_m": -0.35, "n_seg": 40},
-        {"road": "동명로20번길",   "nfa_m": 5, "ours_median_m": 5.00, "dev_m":  0.00, "n_seg": 36},
-        {"road": "밤실로4번길",    "nfa_m": 5, "ours_median_m": 6.00, "dev_m":  1.00, "n_seg":  3},
-        {"road": "제봉로184번길",  "nfa_m": 5, "ours_median_m": 6.18, "dev_m":  1.18, "n_seg": 19},
-        {"road": "중앙로272번길",  "nfa_m": 5, "ours_median_m": 3.50, "dev_m": -1.50, "n_seg":  4},
-        {"road": "동계로9번길",    "nfa_m": 6, "ours_median_m": 8.97, "dev_m":  2.97, "n_seg": 18},
-    ],
-}
+NFA = "nfa_compare.json"
+
+
+def nfa_delta(old: dict, new: dict) -> dict:
+    """소방서 대조 두 판을 도로명으로 맞춘다. 파일을 안 읽는다 — 테스트가 부른다.
+
+    ★ 도로명이 키인 이유 — 소방서 자료에 좌표가 없다(`match_by`).
+    """
+    o = {r["road"]: r for r in old.get("rows") or []}
+    n = {r["road"]: r for r in new.get("rows") or []}
+    rows = []
+    for road in sorted(o.keys() | n.keys()):
+        a, b = o.get(road), n.get(road)
+        rows.append({
+            "road": road,
+            "old_dev_m": a and a.get("dev_m"),
+            "new_dev_m": b and b.get("dev_m"),
+            "old_n": a and a.get("n_seg"),
+            "new_n": b and b.get("n_seg"),
+        })
+    return {
+        "abs_old": old.get("abs_dev_sum_m"),
+        "abs_new": new.get("abs_dev_sum_m"),
+        "only_old": sorted(o.keys() - n.keys()),
+        "only_new": sorted(n.keys() - o.keys()),
+        "rows": rows,
+    }
 
 
 from firelane.hashing import sha256 as _h_sha256
@@ -139,7 +145,7 @@ def cmd_freeze(args) -> int:
     if dst.exists() and not args.force:
         print(f"! 이미 있다: {dst}   덮어쓰려면 --force")
         return 1
-    missing = [f for f in FILES if not (PROC / f).exists()]
+    missing = [f for f in FILES + [NFA] if not (PROC / f).exists()]
     if missing:
         print(f"! 없다: {missing}   pipeline 을 먼저 돌려라")
         return 1
@@ -150,9 +156,10 @@ def cmd_freeze(args) -> int:
         shutil.copy2(PROC / f, dst / f)
         digests[f] = sha(dst / f)
 
-    (dst / "nfa_compare.json").write_text(
-        json.dumps(NFA_COMPARE, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    digests["nfa_compare.json"] = sha(dst / "nfa_compare.json")
+    # ★ 봉인 시점 산출물을 복사한다. 손으로 옮겨 적지 않는다(§171-2).
+    shutil.copy2(PROC / NFA, dst / NFA)
+    digests[NFA] = sha(dst / NFA)
+    nfa = json.loads((dst / NFA).read_text(encoding="utf-8"))
 
     rows = load(dst / "segments.geojson")
     src = (ROOT / "src/firelane/pipeline.py").read_text(encoding="utf-8")
@@ -171,7 +178,6 @@ def cmd_freeze(args) -> int:
         "known_limits": [
             "width_verified 전건 false. 레이저 실측 전이다",
             "nfa_compare 는 검증이 아니라 적합(fit)이다",
-            "ngii1k 는 ingest 에서 FAIL 이었고 gpkg 는 손으로 돌려 만든 것이다",
         ],
     }
     (dst / "meta.json").write_text(
@@ -190,7 +196,7 @@ def cmd_freeze(args) -> int:
         f"""blocked {t['verdict']['blocked']} · unknown {t['verdict']['unknown']}
 총연장     {t['length_total_m']:,}m
 동명동     {t['in_emd']}
-소방서대조  절대편차 합 {NFA_COMPARE['abs_dev_sum_m']}m (7구간, 적합값)
+소방서대조  절대편차 합 {nfa.get('abs_dev_sum_m')}m ({len(nfa.get('rows') or [])}도로명, 적합값)
 ```
 
 ## 대조
@@ -301,10 +307,20 @@ def cmd_diff(args) -> int:
               f"중앙 {d[n//2]:+.2f}m · 평균 {sum(d)/n:+.2f}m · "
               f"|Δ|>1m {sum(1 for x in d if abs(x) > 1)}")
 
-    print("\n★ 소방서 7구간 대조는 자동 비교 대상이 아니다.")
-    print("  segments.py 가 파일로 남기지 않는다(962행). 파일 출력부터 붙여라.")
-    print(f"  구 절대편차 합 {NFA_COMPARE['abs_dev_sum_m']}m — "
-          f"{(BASE/args.tag/'nfa_compare.json').relative_to(ROOT)}")
+    # 소방서 대조 — 봉인판 대 현재판
+    op, np_ = BASE / args.tag / NFA, PROC / NFA
+    if not (op.exists() and np_.exists()):
+        print(f"\n  ! 소방서 대조 생략 — 없다: {[str(x) for x in (op, np_) if not x.exists()]}")
+        return 0
+    old_n = json.loads(op.read_text(encoding="utf-8"))
+    dl = nfa_delta(old_n, json.loads(np_.read_text(encoding="utf-8")))
+    print(f"\n  소방서 대조  절대편차 합 {dl['abs_old']}m → {dl['abs_new']}m")
+    for r in dl["rows"]:
+        f = lambda v: "   —  " if v is None else f"{v:+6.2f}"  # noqa: E731
+        print(f"    {r['road']:14s} {f(r['old_dev_m'])} → {f(r['new_dev_m'])}   "
+              f"세그 {r['old_n'] or 0:3d} → {r['new_n'] or 0:3d}")
+    if old_n.get("as_of", "") <= "2026-08-13":
+        print("  ★ 봉인판이 2026-08-13 손제작 표다 — 재생성 불가 판이라 그대로 둔다(§171-2)")
     return 0
 
 

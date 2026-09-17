@@ -445,8 +445,8 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 ```
 동부소방서 관할 소화전        지상식 418 + 지하식 171 = 589   (hydrant_summary 집계표)
 소방용수시설 총계             589 + 저수조 32 + 급수탑 1 + 비상소화장치 32 = 654
-표준데이터 좌표(hydrant_point)                          524
-  그중 동구                                             441
+표준데이터 좌표(hydrant_point)                          528
+  그중 동구                                             445
   북구 42 · 남구 36 · 서구 5 — 동부소방서 관할 밖
 스코프 안(동명동 + 접근 회랑)                            153
 동명동 안                                                 41
@@ -454,9 +454,12 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 
 ★ **2026-08-31 재측정.** 종전에는 *"공개된 것 광주 동구 31개 · 그중 동명동
 1개"* 로 적고 그 희소성을 논거로 삼았다. **소스가 교체되며 값이 바뀌었는데
-문서만 남았다** — 동구 441 · 동명동 41 이다. 발표에서 "1개뿐" 을 쓰지 않는다.
+문서만 남았다** — 동구 445 · 동명동 41 이다. 발표에서 "1개뿐" 을 쓰지 않는다.
 
-★ 분모가 아직 안 맞는다. 관할 589 대 표준데이터 동구 441 이고,
+★ 2026-09-17 재측정. 입력 범위 동쪽 경계를 126.943 으로 넓혀(DECISIONS §169-2)
+좌표가 524 → 528 이 됐다. 스코프 안 153 · 동명동 41 은 그대로다.
+
+★ 분모가 아직 안 맞는다. 관할 589 대 표준데이터 동구 445 이고,
 `fcltySeCode` 는 1:318 · 2:150 · 4:35 · 6:18 · 3:2 · 5:1 로 갈리는데
 **지상/지하 구분과의 대응이 확인되지 않았다.** 코드값 의미를 확인하기
 전에는 지상 418 / 지하 171 과 대조하지 않는다. D-30 인터뷰 항목이다.
@@ -464,6 +467,8 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 ★ **"소화전"과 "소방용수시설"을 구분해 말한다.** 분모의 출처는
 `hydrant_summary`(동부소방서 관내 지역별 소화전 현황)이며, 발표에 쓸 때 함께
 인용한다. **공개 데이터에는 분모가 없다.** 데이터 공백 자체가 결과다.
+
+강제자 없음 — 사유: 실측 기록이다. 2026-09-17 수는 E2 적용 스크립트가 레이크 산출물에서 쟀다(DECISIONS §171-6)
 
 ### 3-13. 차량 제원
 
@@ -571,7 +576,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ★ 도로대장은 검증축이 아니다. 독립 대조는 `ngii1k_center` 의 측량 성과
 도로폭이 맡고(n=909 · 절대편차 중앙 0.32m), 정본은 D-25 실측이다.
 
-### 4-3. ★ 이 표는 파일로 남지만 봉인 사본이 낡았다
+### 4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다
 
 `segments` 단계가 매 실행 `data/processed/nfa_compare.json` 을 쓴다. 현재 값은
 절대편차 합 8.99m · 7구간이며 위 표와 같다. `tools/docnum_check.py` 가 실행할
@@ -581,11 +586,17 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 막고 예외 넷(`segments.schema.json` · `_manifest.json` 등)에 들어 있지 않다.
 그래서 저장소만 받은 사람에게는 이 값이 없다.
 
-★ **`data/baseline/*/nfa_compare.json` 세 벌은 전부 2026-08-13 자 판이다**
-(절대편차 합 7.24m · `as_of` 도 그 날짜). <!--stale-ok--> 봉인 시점의 파이프라인
-산출이 아니라 그때 손으로 만든 파일이 계속 복사돼 왔다. 따라서
-`tools/baseline.py diff` 가 이 지표를 실행 간 자동 비교하지 못한다.
+★ 2026-09-17 부터 `tools/baseline.py freeze` 가 **봉인 시점의
+`processed/nfa_compare.json` 을 복사한다.** 산출물이 없으면 봉인하지 않는다.
+`diff` 는 봉인판과 현재판을 도로명으로 맞춰 편차 전이를 띄운다(DECISIONS §171-2).
+
+종전에는 `baseline.py` 에 박힌 2026-08-13 자 손제작 표를 매 봉인에 썼다.
+기존 세 벌(절대편차 합 7.24m)은 그 판이다. <!--stale-ok--> 셋 중
+`20260814-ngii-ngi20` 은 구 원본 소실로 재생성 불가라 **고쳐 쓰지 않고 둔다** —
+`diff` 가 그 판을 대조하면 손제작 판이라고 함께 찍는다.
 **봉인이 산출물을 따라가지 못하면 봉인은 대조 수단이 아니다.**
+
+강제자 — `tests/test_reproducibility.py::test_baseline_copies_nfa_compare_not_a_handmade_table`
 
 ---
 
@@ -805,9 +816,11 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 | 데이터 | 용도 | 경로 |
 |---|---|---|
 | 5m DEM | 경사 보정 + 3D 지형 | 국토정보플랫폼 신청 |
-| 소화전 **비공개분** 좌표 | 소방용수 접근성 | D-30 인터뷰. 관할 589 중 표준데이터 좌표는 동구 441 이고 스코프 안 153 이다(§3-12). 여기서 미확보인 것은 그 차이분이다 |
+| 소화전 **비공개분** 좌표 | 소방용수 접근성 | D-30 인터뷰. 관할 589 중 표준데이터 좌표는 동구 445 이고 스코프 안 153 이다(§3-12). 여기서 미확보인 것은 그 차이분이다 |
 | 소방통로 구간 좌표 | 정밀 대조 | D-30 인터뷰 |
 | 폭 실측 10~20지점 | 소스 판정 | D-25 레이저 거리계 |
+
+강제자 없음 — 사유: 미확보 목록이다. 소화전 수는 §3-12 를 따른다
 
 ---
 
@@ -1981,6 +1994,16 @@ uv run python tools/baseline.py diff 20260824-pre-nreg
 ★ **봉인은 백업이 아니다.** 백업은 소실 대비이고 봉인은 **전이 대조용**이다.
 "판정이 왜 달라졌는가"에 답하지 못하는 산출물 변경은 받아들이지 않는다.
 
+★ **봉인은 `segments.geojson` 을 통째로 담는다.** 2026-09-17 에 태그 + golden
+지문으로 대체할 수 있는지 판정했고 **기각했다**(DECISIONS §171-3). 지문은
+*달라졌다* 만 말한다. 전이표(어느 구간이 무엇에서 무엇으로)는 피처가 있어야
+나오고, 태그로 다시 만들려면 그 시점의 raw 가 살아 있어야 한다 — 2026-08-15
+전량 재취득과 뼈대 재구축이 그 전제를 깬다. 한 벌 약 1.1MB 다.
+봉인들의 `segments.schema.json` 해시가 서로 다른 것은 **시점이 달라서**이고
+드리프트가 아니다. 드리프트는 같은 시점의 계층 사이에서 잰다(§18-5 R7).
+
+강제자 — `tests/test_reproducibility.py::test_baseline_nfa_delta_matches_by_road`
+
 ---
 
 ## 14. 실행
@@ -2441,6 +2464,12 @@ uv run python -m firelane.datalog fsck
 모든 항목은 `feeds`(어느 산출물의 입력인가)를 갖는다. 채울 수 없으면
 `kind: raw_only` + `feeds: 미투입 — <언제 쓸지>` 로 명시한다.
 **문제는 데이터를 모은 데서 안 나오고 안 치운 데서 나온다.**
+
+★ 코드가 안 읽는 소스(`raw_only` 제외)도 같다 — `feeds: 미투입 — <용도>` 를
+적고 산다. **그 수를 문서에 적지 않는다.** 2026-09-17 까지 `PLAN §1` 이
+*참조 0곳인 소스 N종* 을 빚으로 들고 강제자가 수를 대조했는데, 22종 전부가
+이미 용도와 함께 분류돼 있었다(DECISIONS §171-1). 분류된 거주는 빚이 아니다.
+강제자 — `tests/test_declaration_sync.py::test_unwired_sources_declare_purpose`
 강제자 — `tests/test_guards.py::test_every_dataset_says_where_it_is_used`
 
 ---
@@ -2655,7 +2684,7 @@ retired:
 | R4 시드 고정 | `test_reproducibility.py::test_r4_random_has_seed` |
 | R5 캐시 키에 입력 sha | `test_reproducibility.py::test_r5_no_bare_existence_cache` |
 | R6 조용한 실패 금지 | `guards.py` · `contract.py` |
-| R7 스키마 동시 갱신 | `test_contract.py::test_schema_matches_data` |
+| R7 스키마 동시 갱신 | `test_contract.py::test_schema_matches_data` · 계층 간 필드 차이는 `test_contract.py::test_schema_layers_differ_only_by_declaration` (processed 전용 = web 의 `dropped_from_processed`, web 전용 = `seg_no` · `z`) |
 | R8 일회성은 돌리고 지운다 | `test_guards.py::test_no_dated_scripts_in_tools` |
 | R9 소스는 직접 고쳐 커밋 | `test_guards.py::test_no_source_patching_scripts` |
 | R10 공간 커버리지 | `guards.py` (segments 에 배선됨) |
@@ -2763,6 +2792,8 @@ processed 전용 필드가 웹 필드처럼 서술되는 것을 못 잡는다.
 **R19. 문체와 절 번호도 검사 대상이다**
 어미만 기계 치환하면 활용이 깨진다. 같은 번호가 두 곳을 가리키면 인용이
 성립하지 않는다. 두 가지 다 사람 눈으로는 오래 안 보인다.
+
+강제자 없음 — 사유: 규칙별 강제자는 위 표가 든다
 
 ---
 
@@ -2886,6 +2917,15 @@ data/norm/                             값은 안 바꾼다
 data/processed/
 ```
 
+★ **landing 에 판단이 끝난 파일을 남기지 않는다.** 처분은
+`sources.yaml` `landing_disposition` 에 적고, 지우는 것은 `tools/sweep.py` 다 —
+레이크(raw · norm)에 sha 가 있거나 `retired` 인 것만 지운다. `held` · `foreign` 은
+**보류도 처분**이라 남기되 `doctor` 가 대기로 세지 않는다. `ledgered` 는
+acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
+
+    uv run python tools/sweep.py                 판정만
+    uv run python tools/sweep.py --sweep --yes   근거 있는 것만 지운다
+
 ★ **입구는 `tools/pull_data.py` 하나다.** 여덟 단계를 순서대로 돌리고 한
 단계라도 실패하면 멈춘다. 사람이 순서를 외우면 반드시 빠뜨린다 —
 2026-09-01 에 `acquire` 를 인자 없이 돌려 관측만 하고 편입이 된 줄 알았다
@@ -2898,6 +2938,8 @@ data/processed/
 ★ `raw → norm` 은 **`prep.py`** 다. 종전에 이 절은 `normalize_raw.py` 라고
 적었는데 그것은 **Downloads → raw** 이고 `acquire` 가 대체한 옛 경로다.
 체인에 넣으면 편입이 두 번 돌고 크기만 보는 판정이 되살아난다.
+
+강제자 없음 — 사유: 레이크를 읽는 도구라 CI 가 못 돈다. landing 처분 어휘는 `doctor.DECIDED` 와 `sweep.held_names` 두 곳이다(DECISIONS §171-5)
 
 ### 세 판정
 

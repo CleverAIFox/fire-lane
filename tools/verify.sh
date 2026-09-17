@@ -309,7 +309,7 @@ else
         else
             uv run fire-lane --no-test --split
         fi'
-    step "golden 판정 불변 (1,101구간)" uv run python tools/golden.py check
+    step "golden 판정 불변" uv run python tools/golden.py check
     # ★ 게이트가 울고 또 풀리는가. check 가 통과하는 것만으로는
     #   해제 경로가 있는지 알 수 없다(DECISIONS §69).
     step "golden 게이트 해제 경로" uv run python tools/golden.py selftest

@@ -50,6 +50,9 @@ import yaml
 # 대장 조회기는 하나다(firelane.ledger.globs).
 from firelane import ledger as _led
 
+# landing 처분 중 "대기 중" 이 아닌 것. `ledgered` 는 acquire 가 남았다.
+DECIDED = ("retired", "ingested", "held", "foreign")
+
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
 ACQ = ROOT / "data" / "_acquire.json"
@@ -163,8 +166,12 @@ def pipeline_report() -> None:
         _disp = {str(i.get("file")): str(i.get("action"))
                  for i in ((_dy.get("landing_disposition") or {})
                            .get("items") or [])}
-        decided = [p for p in stuck if _disp.get(p.name) in
-                   ("retired", "ingested")]
+        # ★ 2026-09-17 (DECISIONS §171-5). `held` · `foreign` 도 처분이다 —
+        #   `sweep.held_names` 가 "보류도 처분이다" 로 이미 그렇게 읽는다.
+        #   여기만 retired · ingested 둘로 좁혀 판단이 끝난 보류분을 매번
+        #   "미편입" 으로 울었다(DECISIONS §73 이 경계한 형태).
+        #   `ledgered` 는 넣지 않는다 — 대장에 올렸고 acquire 가 할 일이 남았다.
+        decided = [p for p in stuck if _disp.get(p.name) in DECIDED]
         todo_l = [p for p in stuck if p not in decided]
         m = WARN if todo_l else OK
         print(f"{m} landing → raw        미편입 {len(todo_l)}건 "
