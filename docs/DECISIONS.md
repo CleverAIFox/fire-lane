@@ -7846,3 +7846,100 @@ civil_office(zip 안 SHP) · donggu_statbook(PDF) 은 텍스트가 아니라 raw
 커밋본이 옛 판이었다. 적용 스크립트가 verify 전에 파이프라인을 한 번 돌려 생성 매니페스트를 커밋하게 했다(G-3).
 
 강제자  `tests/test_vintage_multi.py::test_declared_editions_are_not_defects` · `::test_undeclared_edition_still_cries` · 카나리아 `tools/vintage_check.py --selftest`
+## 180. K2 · G — 판정은 있었는데 틀리던 도구 넷과, 경고만 하던 merge_batch 를 고쳤다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 180-1~180-5 가 각자 강제자 칸을 든다
+
+K1(§175)이 skip 을 가렸다면 이 배치는 **판정을 내리긴 하는데 틀리던** 자리를 고쳤다. 레이크 실물은 안 건드린다. 판정은 불변이다.
+
+### 180-1. acquire — 폐기 판정은 해석기가 내고, 격리는 거부한다
+
+`acquire.retired_names` 가 대장 retired 블록을 직접 읽고, stem 글롭을 RAW 에 풀고, "활성이 늘 이긴다" 땜질(§172-5)을 따로
+들고 있었다. 지금 폐기 항목은 전부 파일 이름이고(글롭 0 — §174-3) 해석기는 이름 주장이 글롭 주장을 이긴다(§174-2).
+두 규칙이 두 곳에 살면 다시 갈린다 — `firelane.lake.retired_reasons` 를 부르게 했다. `주인 블록 직접 해석` 래칫 13 → 12.
+
+`--quarantine` 은 종료코드 2 로 거부한다. 격리 층은 L2 가 폐지했고(§176) 대장 밖 파일은 **격리하지 않고 반입을 멈춘다**(§173-2).
+`--stage` 가 폐기 등재 파일을 되돌리는 자리는 `_quarantine` → `retired/` 다. 같은 이름이 이미 있으면 옮기지 않고 멈춘다 — 덮어쓰지 않는다.
+`--verify` 는 raw 에서 사라진 기록을 retired/ 와 옛 격리 폴더 둘 다에서 찾는다.
+
+작업 중 계층 밖 쓰기 검사가 `RAW.parent / "retired"` 를 잡았다 — 2026-08-24 에 SSD 루트를 오염시킨 형태다. `FIRE_LANE_DATA` 아래로 고쳤다.
+
+강제자  `tests/test_k2.py::test_acquire_refuses_quarantine` · `::test_disposition_and_retired_reasons_come_from_the_resolver` · `tests/test_guards.py::test_retired_glob_never_claims_an_active_file` · `tests/test_layers.py::test_no_tool_writes_outside_declared_layers`
+
+### 180-2. normalize_raw — 처분이 적힌 파일과 정체 모를 파일을 가른다
+
+landing 을 훑을 때 규칙에 안 걸리는 파일을 전부 "규칙에 없는 파일" 로 냈다. 보류 사유가 적힌 7건(§179)과 정말 모르는 파일이
+한 목록에 섞였다. `firelane.lake.disposition` 으로 처분 목록을 읽어 **처분이 적힌 파일**(action · 사유 첫 줄)과
+**규칙에도 처분 목록에도 없는 파일** 둘로 나눠 낸다.
+
+강제자  `tests/test_k2.py::test_disposition_and_retired_reasons_come_from_the_resolver`
+
+### 180-3. dms — 괄호가 붙은 산문은 칸이 아니다 · 두 "죽은 참조" 의 이름을 가른다
+
+§174-4 가 산문의 어순을 바꿔 증상만 껐다. 파서가 `강제자(` 를 칸으로 읽는 것은 그대로였다. 줄머리 규칙에 `(` 를 한글 조사와 같은
+자리로 넣었다. 봉인 요약의 "죽은 참조" 는 "죽은 강제자 참조" 로 바꿨다 — refcheck 의 경로 참조와 이름이 같아 두 숫자가 어긋나 보였다(G-9).
+
+강제자  `tests/test_k2.py::test_dms_field_ignores_prose_with_parenthesis`
+
+### 180-4. plan_renumber — 자기 번호 표가 있는 절의 `#N` 은 §1 참조가 아니다
+
+§177-3 에서 §12 산문의 `(#6 · #11 · #12)` 를 §1 행 참조로 읽어 재배번을 멈췄다. 멈춘 것은 옳았지만 이유가 틀렸다 — 멈추지 않았다면
+두 참조가 조용히 다른 행을 가리켰다. 자기 번호 표(`| # |`)를 가진 §1 밖 절 안에서는 `§1 #N` 으로 소속을 적은 것만 §1 참조로 본다.
+합성 문서로 흔드는 카나리아를 `_canary()` 에 넣었다(G-13).
+
+강제자  `tests/test_k2.py::test_plan_renumber_ignores_foreign_table_numbers` · `tools/plan_renumber.py` `_canary`
+
+### 180-5. merge_batch — 빠뜨린 단계는 멈춘다
+
+    G-2    feat → part/infra PR 이 열려 있으면 멈춘다(squash 를 빠뜨린 것)
+    G-10   열린 part/infra → dev PR 이 없는데 part/infra 가 dev 보다 앞서 있으면 멈춘다 — 배치 D 가 part 에만 머물렀다
+    G-11   릴리즈 본문의 "산출물이 바뀌는가" 를 golden · web/data(매니페스트 제외)만 보고 체크한다 — 대장 65 → 66 을 산출물 변화로 체크했다
+    G-12   태그 입력에서 인쇄 가능한 ASCII 만 남긴다 — 한글 입력기 상태의 깨진 바이트가 형식 검사에 걸렸다
+
+G-3(raw 가 바뀐 배치의 `data/processed/_manifest.json` 을 봉인 커밋에 넣기)은 적용 스크립트 쪽에서 L2b.2 부터 들어갔다.
+남긴 것은 PLAN 「검사 위생 — 카나리아 의무 · 사람이 쓴 칸 대조」 가 든다 — 카나리아 의무 래칫은 판별식 정의가 먼저이고,
+정의 없이 세면 재현되지 않는 분모다(§174-4 와 같은 원칙).
+
+강제자  `tests/test_k2.py::test_merge_batch_stops_instead_of_warning` — gh 와 원격이 필요해 흐름은 못 돌린다. 멈춤 줄이 지워지면 운다
+
+### 180-6. 대화형 확인은 읽기 직전에 터미널 입력 버퍼를 비운다 (G-17)
+
+L2d 레이크 명령 확인에서 사용자가 y 를 쳤는데 "중단" 이 났다. 바로 앞 출력에 `^[]11;rgb:0c0c/0c0c/0c0c^[\^[[30;1R` 가 찍혀
+있었다 — `gh pr checks --watch` 가 터미널에 배경색을 묻고(OSC 11) 커서 위치를 물었고, 터미널의 응답 바이트가 입력 버퍼에 남았다.
+다음 `read` 가 사람의 y 보다 그 바이트를 먼저 읽었다. 가상 터미널로 재현했다 — 옛 판은 응답 + y 에서 NO, 고친 판은 YES.
+
+우회(명령 파일을 손으로 치기)는 다음 확인 창에서 같은 일이 난다. `merge_batch` 의 `ask` 와 태그 입력, 저장소 밖 `run_chain` 의
+확인을 같은 규칙으로 고쳤다 — 입력이 터미널이면 **읽기 직전에 버퍼를 비우고** 터미널에서 읽는다. 파이프로 답을 넘기면
+(`run_final` 의 릴리즈 질문) stdin 을 그대로 읽는다. 답은 글자만 남겨 판정한다 — 비운 뒤 도착한 응답 조각이 섞여도 y 한 글자로 본다.
+
+강제자  `tests/test_k2.py::test_merge_batch_ask_survives_terminal_replies` — 가상 터미널에 응답 바이트를 넣고 흔든다 · `::test_merge_batch_ask_reads_piped_answers`
+
+### 180-7. 봉인은 커밋본이어야 한다 — 적용 스크립트는 패치가 건드린 파일을 전부 커밋한다
+
+L2d 의 CI `contract-shared` 가 `test_every_required_file_is_reachable_by_rules` 로 빨강이었다. 레이크 기계의 verify 는 41 단계
+초록이었고 봉인 `seal/2026-09-17-l2d` 도 찍혔다. 패치가 `src/firelane/normalize_raw.py`(통과 확장자에 txt)를 바꿨는데 적용
+스크립트의 `git add` 가 `README · docs · sources.yaml · _acquire · _prep` 로 **손으로 적은 목록**이라 그 파일이 빠졌다.
+verify 는 작업 트리를 보고, CI 는 커밋본을 본다. verify 헤더의 `+미커밋` 은 보고만 했다 — 봉인이 거짓이었다.
+
+두 곳을 고쳤다. `dms seal` 은 커밋 안 된 추적 파일이 있으면 거부한다(봉인 자신 · 봉인 커밋에 함께 넣는 생성 매니페스트만 예외).
+적용 스크립트는 커밋 목록을 손으로 적지 않고 **패치의 파일 목록**(`git apply --numstat`)에서 뽑고, 커밋 뒤 · verify 전에 추적 파일이
+더러우면 멈춘다. 태그 뒤에 커밋이 생기면 봉인이 옛 커밋을 가리키므로 태그를 지우고 다시 봉인한다.
+
+강제자  `tests/test_k2.py::test_seal_refuses_uncommitted_tracked_files` — 실제 git 저장소로 흔든다
+
+### 180-8. 봉인 태그를 걷는다 — 태그는 릴리즈에만 쓴다
+
+§163-9 가 봉인 커밋마다 `seal/<날짜>-<배치>` 태그를 달게 했다. 스쿼시 머지가 `feat` 의 봉인 커밋을 고아로 만들어 gc 뒤
+`git show` 로 못 되짚는다는 이유였다. 그 뒤로 배치마다 태그가 쌓였다(2026-09-17 하루에만 여덟). 사용자가 잡았다 — **태그는
+릴리즈(vX.Y)에만 쓰기로 했다.**
+
+도달성은 쓰이지 않았다. `dms delta` 는 해시가 아니라 문서 지문으로 대조하고(§163-9 자신이 적었다) 봉인 기록은 `data/dms/SEAL.json`
+의 `commit` 이 든다. 스쿼시가 내용을 `part/infra` 로 옮기므로 봉인이 증명한 트리는 거기 남는다. 태그 없이 잃는 것은 **feat 브랜치의
+커밋 해시를 git 으로 되짚는 일** 하나다.
+
+적용 스크립트는 태그를 달지 않는다. 이어 돌기는 로그 폴더의 봉인 커밋 기록으로 판단한다 — 봉인 뒤로 `data/dms` 밖이 안 바뀌었으면
+다시 검증하지 않는다(G-18). §180-7 의 "태그를 지우고 다시 봉인한다" 는 이 절로 대체한다. 원격 · 로컬의 `seal/*` 태그는 지웠다.
+
+강제자  `tests/test_k2.py::test_no_tool_creates_seal_tags` — 저장소의 도구가 `seal/` 태그를 만들면 운다

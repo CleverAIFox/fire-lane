@@ -103,6 +103,31 @@ def claims(y: dict) -> Claims:
     return c
 
 
+def retired_reasons(y: dict) -> dict[str, str]:
+    """폐기 파일 이름 → 사유 첫 줄. **이름으로 적은 것만** — 글롭 폐기는 0 이어야 한다(§174-3).
+
+    ★ 2026-09-17 (§180). `acquire.retired_names` 가 대장 retired 블록을 직접 읽고 글롭을 RAW 에 풀고
+      "활성이 이긴다" 땜질까지 따로 들고 있었다. 해석은 여기 한 곳이다.
+    """
+    out: dict[str, str] = {}
+    for k, e in (y.get("retired") or {}).items():
+        e = e or {}
+        why = str(e.get("reason") or e.get("what") or k).strip().splitlines()[0]
+        for f in ledger.globs(e):
+            if not _is_glob(f):
+                out[Path(f).name] = why
+    return out
+
+
+def disposition(y: dict) -> list[tuple[str, str, str]]:
+    """landing 처분 — (이름 · 글롭, action, 사유 첫 줄). 사유 없는 항목은 처분이 아니다."""
+    out = []
+    for it in ((y.get("landing_disposition") or {}).get("items") or []):
+        if isinstance(it, dict) and it.get("file") and str(it.get("why") or "").strip():
+            out.append((str(it["file"]), str(it.get("action") or ""), str(it["why"]).strip().splitlines()[0]))
+    return out
+
+
 def _match(sub_rel: str, pats: list[str]) -> bool:
     """층 안 상대경로가 raw 상대 패턴에 맞는가. `**/` 는 0단 이상."""
     for p in pats:

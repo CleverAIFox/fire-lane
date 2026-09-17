@@ -567,9 +567,25 @@ def main():
                  if not any(f.name == o for o, _, _ in done)
                  and not any(f.name == o for o, _ in skip)]
     if unmatched:
-        print(f"\n  규칙에 없는 파일 {len(unmatched)}건 (건너뜀)")
-        for u in unmatched[:12]:
-            print(f"    {u}")
+        # ★ 2026-09-17 (DECISIONS §180). 종전에는 landing 보류분까지 "규칙에 없는 파일" 로 냈다 —
+        #   처분 목록(`landing_disposition`)을 안 읽어서, 사유가 적힌 파일과 정체 모를 파일이 한 줄에 섞였다.
+        #   해석은 `firelane.lake.disposition` 한 곳이다.
+        import fnmatch
+
+        from firelane import lake
+        disp = lake.disposition(_led.load())
+        known = {u: next(((pat, act, why) for pat, act, why in disp if fnmatch.fnmatchcase(u, pat)), None)
+                 for u in unmatched}
+        held = [(u, d) for u, d in known.items() if d]
+        stray = [u for u, d in known.items() if not d]
+        if held:
+            print(f"\n  처분이 적힌 파일 {len(held)}건 (건너뜀 — landing_disposition)")
+            for u, (_, act, why) in held[:12]:
+                print(f"    {act or '?':9} {u}\n              {why[:70]}")
+        if stray:
+            print(f"\n  ★ 규칙에도 처분 목록에도 없는 파일 {len(stray)}건 (건너뜀)")
+            for u in stray[:12]:
+                print(f"    {u}")
 
     if a.in_place:
         print("\n제자리 정리 완료. 파일명·확장자가 규칙에 맞다.")

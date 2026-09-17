@@ -2473,7 +2473,7 @@ uv run python -m firelane.datalog fsck
 | `interim` | 탐색·대조 산출물. 대장에 없고 지워도 된다 |
 | `processed` | 파이프라인 정본. 손으로 만들지 않는다 |
 | `field` | 실측 원자료. 사람이 만드는 유일한 데이터 |
-| `quarantine` | 대장에 없는 파일. 판단 보류지 폐기가 아니다 |
+| `quarantine` | ★ 폐지(2026-09-17). 선언만 남았다 — retired 로 흡수했다(DECISIONS §176 · §180) |
 | `web` | 표출용. UI 담당이 raw 없이 작업해야 한다 |
 | `golden` | 판정 불변 증명. 재생성 불가라 저장소 안에 둔다 |
 | `baseline` | 봉인 스냅샷. 실행 간 판정 전이를 대조한다 |
@@ -2482,6 +2482,8 @@ uv run python -m firelane.datalog fsck
 그것이 곧 **"이 계층이 왜 거기 있나"** 의 답이다.
 
 **계층이 없으면 파일은 아무 데나 떨어진다.** 규율이 아니라 구조의 문제다.
+
+강제자 — `tests/test_layers.py::test_master_layer_table_matches_paths`
 
 ### 18-1a. 그라운드 룰
 
@@ -2969,7 +2971,7 @@ git_dirty 상태로 만든 산출물을 발표에 사용
 landing (외장 SSD)                     규칙 없음. 개명과 판단의 대기실
         ↓  tools/acquire.py --stage --yes    대장 매칭 + sha 기록
 data/raw/<제공기관>/                    매칭됨. 원본 파일명 유지
-data/_quarantine/                      매칭 안 됨. 삭제하지 않고 격리
+data/retired/<제공기관>/                폐기 등재 파일이 올라오면 되돌리는 자리. 대장 밖 파일은 반입을 멈춘다
         ↓  firelane.prep --apply             인코딩 · 개행 · 정규명만
 data/norm/                             값은 안 바꾼다
         ↓  contract.py — 계약 대조(§18-3b)
@@ -3005,7 +3007,7 @@ acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
 ```
 대장에 있음 + 파일 있음   →  raw 편입
 대장에 있음 + 파일 없음   →  ★ 결손 경고
-대장에 없음 + 파일 있음   →  _quarantine. 사람이 대장 추가 또는 retired 등재
+대장에 없음 + 파일 있음   →  반입을 멈춘다. 사람이 datasets 등재 또는 retired 에 이름 · sha 로 등재
 ```
 
 ★ **두 번째가 제일 중요하다.** 외장 백업이 중단됐는데 아무도 몰랐고, raw 7개
@@ -3015,6 +3017,8 @@ acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
 적재 판정은 크기가 아니라 **내용(sha256)** 으로 한다. 313MB 정사영상이 전송
 중 잘려도 크기 비교로는 통과한다. §18-8 이 백업에 대해 적은 문장이 획득에도
 그대로 적용된다.
+
+강제자 — `tests/test_k2.py::test_acquire_refuses_quarantine` (대장 밖은 반입을 멈춘다)
 
 ### 원칙 다섯
 
@@ -3071,8 +3075,8 @@ paths.require_lake()     레이크가 붙었나. 종료코드 2
                            WSL 은 마운트가 없어도 /mnt/d 를 만든다
 intake --stage           대장 미매칭 차단. 우회는 --force
                          ★ 단서 셋 — 문서번호 · 취득 규칙 · 없음
-acquire --quarantine     retired 근거가 있는 것만 내린다
-                         ★ "대장 밖" 과 "폐기 대상" 은 다르다
+acquire --quarantine     폐지 — 종료코드 2 로 거부한다(DECISIONS §180)
+                         ★ 대장 밖 파일은 격리하지 않고 반입을 멈춘다
 ```
 
 ── 관문의 정확도가 요건이다 ──────────────────────────────────
@@ -3091,6 +3095,8 @@ acquire --quarantine     retired 근거가 있는 것만 내린다
 **잘못된 경보는 진짜 경보를 못 믿게 만든다.**
 
 ---
+
+강제자 — `tests/test_k2.py::test_acquire_refuses_quarantine` · `tools/verify.sh` 단계 `레이크 관문`
 
 ### 18-14. 자동 갱신과 파괴를 붙이지 않는다
 
