@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-17T11:13:50+09:00",
- "commit": "6564c59",
+ "sealed_at": "2026-09-17T14:47:34+09:00",
+ "commit": "643a510",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "b15a2765ea6318fa",
-  "docs/DECISIONS.md": "a867c739672296ec",
-  "docs/PLAN.md": "e8af2928a4683863",
-  "README.md": "8ce036d844f2235b"
+  "docs/MASTER.md": "29c13f27015c870e",
+  "docs/DECISIONS.md": "e9d5db2fe100c009",
+  "docs/PLAN.md": "1867c918d52a65a6",
+  "README.md": "1a4da37f2c84f26d"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -161,6 +161,12 @@
   "gjfire_district_dongbu": [
    "eb6ffedeb0301d5b"
   ],
+  "gjfire_vehicle_card": [
+   "3c2995c12daf86c2",
+   "03955fa703717185",
+   "36aa7d65a75d4bfb",
+   "6ed8289e209c5ef1"
+  ],
   "nfa_dispatch_119": [
    "740dedf4e0c6f6de"
   ],
@@ -217,8 +223,8 @@
   ]
  },
  "code": {
-  "sha256": "be8914950cedee47",
-  "files": 62
+  "sha256": "81601699795e5cd9",
+  "files": 63
  },
  "sections": {
   "MASTER-001": {
@@ -354,7 +360,7 @@
    "title": "3-12. 소화전 좌표는 확보됐다. 분모가 여전히 다르다"
   },
   "MASTER-023": {
-   "h": "38dd4ed887b41cd9",
+   "h": "bfebdda7a14b9726",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "3-13. 차량 제원"
@@ -384,7 +390,7 @@
    "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
   },
   "MASTER-028": {
-   "h": "386ecbc8eb5255e3",
+   "h": "5c06826bff585445",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5. 시스템 구성"
@@ -414,8 +420,8 @@
    "title": "6. 데이터 현황"
   },
   "MASTER-033": {
-   "h": "b6226837b5ca96fc",
-   "state": "blank",
+   "h": "001fc8431107e39b",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-1. 확보"
   },
@@ -738,7 +744,7 @@
    "title": "12-11. 한글 파일명"
   },
   "MASTER-087": {
-   "h": "95d92a0fd62c05d0",
+   "h": "823458814d87af51",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "13. 봉인 베이스라인"
@@ -906,8 +912,8 @@
    "title": "18-3. 대장 — `sources.yaml` 하나"
   },
   "MASTER-115": {
-   "h": "dcb834cf5ef9f0a6",
-   "state": "blank",
+   "h": "3bb9223fd1adc65e",
+   "state": "none",
    "doc": "docs/MASTER.md",
    "title": "18-3a. 필드의 의무"
   },
@@ -3437,6 +3443,96 @@
    "doc": "docs/DECISIONS.md",
    "title": "171-6. 잔재 셋"
   },
+  "DECISIONS-388": {
+   "h": "f0255e2d1bb2fb21",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "172. 관리카드는 34대를 기다리지 않고 받는 대로 넣는다 — 원본은 받은 이름으로 보존하고 SSD 에서 표로 옮긴다"
+  },
+  "DECISIONS-389": {
+   "h": "a41a4ce3ec8497e7",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "172-1. 순서를 뒤집었다 — 체계를 먼저 돌린다"
+  },
+  "DECISIONS-390": {
+   "h": "edff853cd8f52d21",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "172-2. 받은 이름과 내용이 달랐다 — 원본은 보존하고 어긋남을 선언한다"
+  },
+  "DECISIONS-391": {
+   "h": "1bd311f11acdd417",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "172-3. prep 에 서식 변환기를 붙였다 — 값은 글자 그대로"
+  },
+  "DECISIONS-392": {
+   "h": "df888a2b759a7d85",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "172-4. 카드가 닫지 못하는 것"
+  },
+  "DECISIONS-393": {
+   "h": "d2ae45c896bd4a35",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "172-5. 체계를 돌리자마자 살아 있는 raw 둘이 격리됐다 — 폐기 글롭이 활성 파일을 잡았다"
+  },
+  "DECISIONS-394": {
+   "h": "448ae069515bab2c",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "173. 레이크를 파일 단위 주인으로 다시 세우기로 했다 — 유일본만 남기고, 해석하는 곳을 하나로 모은다"
+  },
+  "DECISIONS-395": {
+   "h": "2871d24bd0a25fad",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "173-1. 유일본은 지우지 않고 사본은 전부 지운다 — 은퇴가 곧 아카이브다"
+  },
+  "DECISIONS-396": {
+   "h": "3f642f8a0db9ae44",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "173-2. 목표 디렉토리 — 층마다 주인이 파일 단위로 하나다"
+  },
+  "DECISIONS-397": {
+   "h": "d8f289783967261a",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "173-3. 대장 칸 규칙 — `updated` 는 제공일, `authority` 는 기관과 경로"
+  },
+  "DECISIONS-398": {
+   "h": "7ad8e2b2d7690226",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "173-4. 강제자 방침 — 먼저 막고, 해석은 한 곳에서, 카나리아와 래칫"
+  },
+  "DECISIONS-399": {
+   "h": "9c36e6b352b3f77e",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "173-5. 대장 밖 세 덩어리의 정체 — 유일본 73, 나머지는 사본"
+  },
+  "DECISIONS-400": {
+   "h": "f5861585ce6c0553",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "173-6. 스킵은 네 가지로 가르고, 판정 메시지의 근거는 한 곳에서 낸다"
+  },
+  "DECISIONS-401": {
+   "h": "7edc6dacd2556f96",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "173-7. R 을 두 번 쟀다 — 근거는 \"NGII 가 더 정확하다\" 가 아니라 \"폭과 뼈대를 같은 측량에서\""
+  },
+  "DECISIONS-402": {
+   "h": "ed6d4e047a9b9e1a",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "173-8. 내비용 추가 데이터는 판정 정확도를 올리지 않는다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3456,7 +3552,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "ef0c1c08f083aefe",
+   "h": "f07b524270f05322",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -3936,7 +4032,7 @@
    "title": "구조"
   },
   "README-016": {
-   "h": "1ab42a229b525d8a",
+   "h": "c6e16ccf335a7995",
    "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
@@ -3960,14 +4056,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 289,
+ "denominator": 287,
  "dead_refs": 1,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 44 packages in 0.48ms"
+   "tail": "Checked 45 packages in 0.49ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -3982,7 +4078,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "626 passed, 50 skipped in 87.51s (0:01:27)"
+   "tail": "632 passed, 51 skipped in 81.27s (0:01:21)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -3997,12 +4093,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "231 passed, 51 skipped in 20.04s"
+   "tail": "234 passed, 52 skipped in 18.74s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1771개 추적"
+   "tail": "커밋 정책 OK · 1773개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -4082,7 +4178,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "지도 확인:  uv run python tools/serve.py"
+   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -4107,7 +4203,7 @@
   "verify/레이크 정리 대상": {
    "rc": 0,
    "state": "OK",
-   "tail": "없다"
+   "tail": "`--sweep` 으로 지울 목록을 확정한다"
   },
   "verify/검사가 죽었는가": {
    "rc": 0,
@@ -4117,7 +4213,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 623절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 638절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4132,22 +4228,22 @@
   "verify/norm 계보 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "정상 28 · 낡음 0 · 손상 0"
+   "tail": "정상 32 · 낡음 0 · 손상 0"
   },
   "verify/대장 별칭 이관 유지": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 폐기 별칭 0건 — 101개 항목에서 이관이 유지된다"
+   "tail": "✓ 폐기 별칭 0건 — 102개 항목에서 이관이 유지된다"
   },
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 없음 — 행 55개가 1..55 로 연속이다"
+   "tail": "✓ 없음 — 행 59개가 1..59 로 연속이다"
   },
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "626 passed, 50 skipped in 99.92s (0:01:39)"
+   "tail": "632 passed, 51 skipped in 102.40s (0:01:42)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4167,7 +4263,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 388개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 403개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,

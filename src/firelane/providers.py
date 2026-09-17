@@ -105,7 +105,8 @@ def pattern_file() -> str:
       본다. 두 규칙이 provider 목록을 **따로 갖지 않게** 여기서 합친다 —
       목록을 손으로 적으면 다섯 번째 사본이 된다.
     """
-    return pattern() + r"\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}\."
+    # ★ 2026-09-17. 날짜 뒤 `_<part>` 를 받는다 — 대장 `parts` 가 만드는 이름이다(DECISIONS §172-3).
+    return pattern() + r"\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}(?:_[a-z0-9-]+)?\."
 
 
 def naming_matches_registry() -> tuple[bool, str]:

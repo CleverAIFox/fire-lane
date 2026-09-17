@@ -97,10 +97,14 @@ def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
       "별칭 안에 언더스코어를 쓰지 않는다" 고 못 박는다 — 언더스코어가 필드
       구분자라서다. 하이픈은 처음부터 허용이었고 이 정규식만 몰랐다.
       **대장이 정본인데 코드가 더 좁았다.**
+
+    ★ 2026-09-17. 날짜 뒤 `_<part>` 도 받는다. 대장 `parts` 와 `acquire._derive_files` 는
+      `<stem>_<scope>_<날짜>_<part>` 를 만들고 `naming.check` 도 통과시키는데 이 정규식만
+      날짜로 끝나야 했다 — 같은 형태의 세 번째다(하이픈 · json). 관리카드가 처음 걸렸다.
     """
     org_list = providers.all() if orgs is None else orgs
     return list(RULES) + [
-        (rf"^{o}_[a-z0-9_-]+_\d{{8}}\.({PASSTHROUGH_EXT})$", o, None)
+        (rf"^{o}_[a-z0-9_-]+_\d{{8}}(?:_[a-z0-9-]+)?\.({PASSTHROUGH_EXT})$", o, None)
         for o in sorted(org_list)
     ]
 
@@ -126,6 +130,14 @@ RULES: list[tuple[str, str, str]] = [
     # 좌표 없는 "시도 소방서 현황"(20250701)은 규칙을 두지 않는다. landing 에 남긴다.
     (r"전국소방서.?좌표현황",
      "safety", "safety_firestation_kr_20240901.csv"),
+    # ── 2026-09-17 소방자동차 관리카드 ─────────────────────────
+    #   ★ 날짜는 카드 출력일이다(PDF 생성일 2026-09-04). 파일명에 없어서 박는다.
+    #     재출력본이 오면 이 날짜와 대장 `updated` 를 함께 올린다.
+    #   ★ 센터명은 규칙이 영문 part 로 옮긴다. 기계 음역을 하지 않는다(intake ③).
+    (r"^관리카드_지산(\d+)호_?\.pdf$",
+     "safety", "safety_vehiclecard_jngj-donggu_20260904_jisan{0}.pdf"),
+    (r"^관리카드_대인(\d+)호_?\.pdf$",
+     "safety", "safety_vehiclecard_jngj-donggu_20260904_daein{0}.pdf"),
     # ── 2026-09-06 확보분 일곱 ───────────────────────────────
     #   ★ 정규명의 8자리가 대장 `updated` 의 정본이다(ledger_fields.py:25).
     #     "8자리를 못 얻으면 채우지 않는다. 추측하지 않는다."
