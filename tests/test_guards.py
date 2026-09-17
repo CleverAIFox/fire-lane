@@ -2384,9 +2384,10 @@ def test_retired_glob_never_claims_an_active_file(tmp_path, monkeypatch):
             active.append(f.name)
     assert active, "활성 파일 이름을 못 만들었다 — 대장 fire_station · hydrant_point 확인"
     # 폐기본도 하나 둔다 — 활성과 이름이 다르면 여전히 폐기로 읽혀야 한다(카나리아)
-    (tmp_path / "safety" / "safety_firestation_kr_20250701.csv").write_text("x", encoding="utf-8")
+    # ★ 2026-09-17 (§177). 카나리아를 소방서 2025판에서 소화전 2025판으로 옮겼다 — 소방서 판은 상폐돼 대장에 없다
+    (tmp_path / "safety" / "safety_hydrant_point_jngj_20250917.csv").write_text("x", encoding="utf-8")
     monkeypatch.setattr(acq, "RAW", tmp_path)
     ret = acq.retired_names()
     hit = [n for n in active if n in ret]
     assert not hit, f"활성 파일을 폐기로 읽는다 — {hit}"
-    assert "safety_firestation_kr_20250701.csv" in ret, "폐기 판정 자체가 죽었다"
+    assert "safety_hydrant_point_jngj_20250917.csv" in ret, "폐기 판정 자체가 죽었다"

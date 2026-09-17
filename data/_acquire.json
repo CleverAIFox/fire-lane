@@ -291,7 +291,15 @@
   "safety/safety_hydrant_point_jngj_20240207.csv": {
    "sha256": "bffc507dc053be38883800daec15f8c4bff0daea231e1bddcb403a2e482b4861",
    "bytes": 1401550
+  },
+  "gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv": {
+   "sha256": "cf64a54d8dbe19c27621cec50d9b95319b9e7b9873422c5312a848cbece850e1",
+   "bytes": 5009386
+  },
+  "gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv": {
+   "sha256": "4cb4c4e95353af782b4fdf8cf9726603ca0fff2b1b12fbbc631f3939e49fbf78",
+   "bytes": 3046281
   }
  },
- "at": "2026-09-17T12:45:45+09:00"
+ "at": "2026-09-17T17:39:35+09:00"
 }

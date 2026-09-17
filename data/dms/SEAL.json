@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-17T17:00:11+09:00",
- "commit": "18c10ee",
+ "sealed_at": "2026-09-17T18:34:34+09:00",
+ "commit": "89e0cff",
  "tool": "ade8c494f4e25d28",
  "scope": "verify.sh 로그",
  "docs": {
-  "docs/MASTER.md": "58204b724e5c9c2f",
-  "docs/DECISIONS.md": "3ef48c9f7c3bb3ca",
-  "docs/PLAN.md": "c2ce07d550ed0f6f",
-  "README.md": "ca70e7b204208889"
+  "docs/MASTER.md": "3386545e84b4846f",
+  "docs/DECISIONS.md": "a13a1c4b1cae855d",
+  "docs/PLAN.md": "36e0272ec0a84168",
+  "README.md": "f1349416b9acca71"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -220,10 +220,14 @@
   ],
   "juso_building_db": [
    "3d6dc01f6cb1bf8a"
+  ],
+  "parking_enforce": [
+   "cf64a54d8dbe19c2",
+   "4cb4c4e95353af78"
   ]
  },
  "code": {
-  "sha256": "ac9d3ea12f66eb53",
+  "sha256": "e64af8da08f74478",
   "files": 64
  },
  "sections": {
@@ -390,7 +394,7 @@
    "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
   },
   "MASTER-028": {
-   "h": "5c06826bff585445",
+   "h": "9a4316369ef42520",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5. 시스템 구성"
@@ -420,7 +424,7 @@
    "title": "6. 데이터 현황"
   },
   "MASTER-033": {
-   "h": "434cd1a457204d2f",
+   "h": "eb9be88d96bddf9d",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-1. 확보"
@@ -924,7 +928,7 @@
    "title": "18-3b. 계약 — 사람을 언제 부르는가"
   },
   "MASTER-117": {
-   "h": "6fd92d41cfe8bbbf",
+   "h": "9ccca38601bca9bf",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3c. retired — 폐기 기록"
@@ -3617,6 +3621,36 @@
    "doc": "docs/DECISIONS.md",
    "title": "176-4. 레이크 기계의 산출물 skip 도 실패로 센다"
   },
+  "DECISIONS-417": {
+   "h": "f08212813f8f80d1",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "177. L2b — 은퇴 21종을 가렸다: 단속이력은 복귀, 셋은 상폐, 파일 없는 기록 여덟은 대장에서 뺐다"
+  },
+  "DECISIONS-418": {
+   "h": "2e8e26a07471f398",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "177-1. 판정"
+  },
+  "DECISIONS-419": {
+   "h": "b13aec3eb2bb6554",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "177-2. 파일 없는 기각 기록 여덟은 대장에서 뺐다"
+  },
+  "DECISIONS-420": {
+   "h": "d13008855ae52145",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "177-3. 5m DEM 은 신청하지 않는다"
+  },
+  "DECISIONS-421": {
+   "h": "4e5d2a2c37e49896",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "177-4. 섀시 제원은 인터뷰로, 회전반경은 나라장터 원문으로"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -3636,7 +3670,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "2662b4430a592d90",
+   "h": "804342bce2014983",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -3756,8 +3790,8 @@
    "title": "4-4. TMAP · 카카오 — 병합이 아니라 병렬 비교 📄"
   },
   "PLAN-024": {
-   "h": "e60ecf43b8cb3dcf",
-   "state": "blank",
+   "h": "eaff298cb3342f07",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "4-5. 미결정 🟡"
   },
@@ -3972,7 +4006,7 @@
    "title": "9. 외부 의존"
   },
   "PLAN-060": {
-   "h": "16b77db678ab267b",
+   "h": "f1321c435c169cbd",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "9-1. 소방서 정식 인터뷰 ⏳"
@@ -4020,7 +4054,7 @@
    "title": "11. 담당 공백"
   },
   "PLAN-068": {
-   "h": "1575a603f35a65b1",
+   "h": "11a399962d9e888c",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "12. 기획서 갱신 대상"
@@ -4116,7 +4150,7 @@
    "title": "구조"
   },
   "README-016": {
-   "h": "413ea82502795bbc",
+   "h": "ada2ecdc9295fa63",
    "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
@@ -4140,7 +4174,7 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 286,
+ "denominator": 285,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
@@ -4162,7 +4196,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "655 passed in 72.35s (0:01:12)"
+   "tail": "658 passed in 70.25s (0:01:10)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4177,12 +4211,12 @@
   "verify/CI 환경 재현": {
    "rc": 0,
    "state": "OK",
-   "tail": "237 passed, 1 skipped in 8.97s"
+   "tail": "237 passed, 1 skipped in 8.48s"
   },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1778개 추적"
+   "tail": "커밋 정책 OK · 1779개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -4217,7 +4251,7 @@
   "verify/흡수 대상": {
    "rc": 1,
    "state": "생략",
-   "tail": "움직인 것 1개"
+   "tail": "움직인 것 2개"
   },
   "verify/선언 ↔ 실물": {
    "rc": 0,
@@ -4302,7 +4336,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 652절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 657절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4322,7 +4356,7 @@
   "verify/대장 별칭 이관 유지": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 폐기 별칭 0건 — 107개 항목에서 이관이 유지된다"
+   "tail": "✓ 폐기 별칭 0건 — 96개 항목에서 이관이 유지된다"
   },
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
@@ -4332,7 +4366,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "655 passed in 96.63s (0:01:36)"
+   "tail": "658 passed in 98.55s (0:01:38)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4352,7 +4386,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 417개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 422개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
