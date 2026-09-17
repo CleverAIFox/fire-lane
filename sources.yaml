@@ -1844,7 +1844,8 @@ datasets:
     updated: '2025-07-31'
     scope: jngj-donggu
     authority: 동부소방서
-    what: 소방용수시설 관할서별 집계. 동부소방서 지상식 418 + 지하식 171 = 589
+    what: 소방용수시설 지역별 집계 — 주거 · 상가 · 고지대 · 시장 화재예방강화지구 · 소방차진입불가지역(동부소방서 · 2025-07-31)
+    what_fix: 2026-09-17 — what 이 유형별 집계(지상 · 지하 · 저수조 · 급수탑)를 서술하고 있었다. 그 판은 hydrant_type 이다. note 의 숫자는 재취득 전 서술이다(DECISIONS §178-2)
     crs_native: none
     kind: csv_table
     encoding: cp949
@@ -2802,7 +2803,7 @@ datasets:
       encoding: cp949
       optional_cols: [비고]
     vintages: ['2024-01-08', '2025-02-26']
-    authority: 전남광주통합특별시 동구 (받은 경로 미기록)
+    authority: 전남광주통합특별시 동구 (공공데이터포털)
     files:
       - gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv
       - gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv
@@ -2814,8 +2815,46 @@ datasets:
       미투입 — PLAN 「교통량 축을 무엇으로 채우나」 의 소스다(시간대별 주정차 빈도 → 간선 가중치).
       2026-08-31 에 retired 로 내렸다가 2026-09-17 복귀했다(DECISIONS §177-1).
     note: |
-      ★ 받은 경로가 기록에 없다. 찾으면 authority 괄호를 고친다.
       ★ 두 판의 컬럼이 다르다(6열 · 5열). 이어붙이기 전에 컬럼 대응을 정한다.
+  hydrant_type:
+    stem: safety_hydrant_type
+    ext: [csv]
+    kind: csv_table
+    encoding: cp949
+    layer: raw
+    scope: jngj
+    updated: '2025-12-31'
+    authority: 전남광주통합특별시 소방본부 (받은 경로 미기록)
+    files:
+      - safety/safety_hydrant_type_jngj_20251231.csv
+    what: |
+      소방용수시설 유형별 집계 — 지상식소화전 · 일반지하식소화전 · 저수조 · 급수탑. 관할서 5행
+    feeds: 미투입 — 소방용수 분모(몇 개인가)의 근거
+    feeds_why: |
+      미투입 — 소방용수 분모(몇 개인가)의 근거다. 좌표가 없어 판정에 안 들어간다.
+      2026-08-13 스냅숏에만 있던 판을 2026-09-17 복귀했다(DECISIONS §178-1). 옛 파일명은
+      safety_hydrant_summary_jngj_20251231 — 활성 hydrant_summary 와 stem 이 겹쳐 개명했다.
+  parking_std:
+    stem: gjcity_parking_std
+    ext: [csv]
+    kind: csv_table
+    encoding: utf-8-sig
+    layer: raw
+    scope: jngj-donggu
+    updated: '2026-08-11'
+    authority: 전남광주통합특별시 동구 (공공데이터포털)
+    files:
+      - gjcity/gjcity_parking_std_jngj-donggu_20260811.csv
+    what: |
+      주차장 표준데이터 동구분 — 297행 · 32열(구획수 · 운영시간 · 요금 · 장애인구역) · 좌표 199건
+      (동명동 bbox 안 190). 데이터기준일자 2026-04
+    feeds: 미투입 — 교통량 축 · 주차 점유 가중(좌표 · 구획수)
+    feeds_why: |
+      미투입 — 활성 parking_lot(138행 · 11열 · 좌표 없음)의 상위집합이다. 좌표가 있어 교통량 축 ·
+      주차 점유 가중에 붙일 수 있다. 2026-09-17 복귀했다(DECISIONS §178-1). 옛 파일명 gjcity_parking_dongu_20260811.
+    note: |
+      ★ updated 는 파일명 날짜(제공일)다. 내용의 데이터기준일자는 2026-04 다.
+      ★ 경로 괄호는 표준데이터 형식으로 판단했다. 좌표 없는 행이 98 있다.
 raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
@@ -2933,23 +2972,6 @@ retired:
     #   (β 점유위험도 #62) 동명동으로 좁힌 판이 복귀했다. 폐기 기록을
     #   지우면 "왜 한 번 뺐다가 다시 넣었나" 가 사라진다.
     successor: bldg_ledger_dm
-  hydrant_point_jngj_20250917:
-    what: 전남광주통합특별시 소방 용수시설 현황 (2025-09-17)
-    stem: safety_hydrant_point
-    files:
-      - safety/safety_hydrant_point_jngj_20250917.csv
-    sha256:
-      safety/safety_hydrant_point_jngj_20250917.csv: 07424bbf506efd0b8205e8718e53e8776315aa315c48a539abccf99adf8683cd
-    ext: [csv]
-    provider: safety
-    source_hint: 전남광주통합특별시 소방본부
-    at: 2026-08-23
-    successor: hydrant_point (safety_hydrant_point_jngj_20240207.csv)
-    reason: |
-      전국 표준데이터(kr_20240207)와 겹치는 범위인데 스키마가 다르고
-      좌표 정밀도가 낮다. 동명동 소화전은 전국판으로 11개가 잡히며
-      그것이 현재 지도에 올라간 값이다.
-      2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
   ngii_basemap_gj_202608:
     what: 국토지리정보원 기본도 도엽 zip 넷 (gj037 · gj038 · gj047 · gj048, 2026-08-06~07)
     at: 2026-09-17
@@ -2967,56 +2989,6 @@ retired:
       ngii/ngii_basemap_gj038_20260807.zip: 8e16f9c7d049df5577dd7b5140cce8d20361de3ac65a3f0458a3a5762f9e46eb
       ngii/ngii_basemap_gj047_20260807.zip: 86053a35948c9825c8f379d859c10cddc6627bbd26256d0504e23aabb3b21b11
       ngii/ngii_basemap_gj048_20260806.zip: e1ec794c09eeeda46a2cbd49bdafd2f42fbe207b68e4271b864e90a83b8f9ce7
-
-  fire_stat_kr_20241231:
-    what: 소방청 화재 통계 전국 (2024-12-31)
-    at: 2026-09-17
-    successor: null
-    reason: |
-      2026-08-13 스냅숏에만 남은 유일본이다. 레이크에서 빠진 경위는 기록이 없다.
-      활성 소스가 읽은 적 없다 — 유일본이라 보존한다(DECISIONS §173-1).
-    files:
-      - safety/safety_fire_stat_kr_20241231.csv
-    sha256:
-      safety/safety_fire_stat_kr_20241231.csv: 4211c65fa236717dd330cd2bdd3072fc5a7ea86db056cd321063cf92ad48e2ea
-
-  hydrant_point_kr_20260811:
-    what: 전국 소방용수시설 표준데이터 (2026-08-11 판)
-    at: 2026-09-17
-    successor: hydrant_point
-    reason: |
-      2026-08-13 스냅숏에만 남은 판이다. 활성 hydrant_point 는 jngj_20240207 판이다.
-      같은 stem 의 다른 판이라 이름으로만 주인이 된다 — 유일본이라 보존한다(DECISIONS §173-1).
-    files:
-      - safety/safety_hydrant_point_kr_20260811.csv
-    sha256:
-      safety/safety_hydrant_point_kr_20260811.csv: 4ba2cfe9ae12cabcd85e8d15ed0e4e01a2aebac4b0a4f3b262c721540a843212
-
-  hydrant_summary_jngj_20251231:
-    what: 전남광주 소방용수시설 집계 (2025-12-31 판)
-    at: 2026-09-17
-    successor: hydrant_summary
-    reason: |
-      2026-08-13 스냅숏에만 남은 판이다. 활성 hydrant_summary 는 jngj-donggu_20250731 판이다.
-      유일본이라 보존한다(DECISIONS §173-1).
-    files:
-      - safety/safety_hydrant_summary_jngj_20251231.csv
-    sha256:
-      safety/safety_hydrant_summary_jngj_20251231.csv: e3eb7b4178fdbadf8234aff793fc3b077c7bf4eec1f48a25fdee6d5f6f60c005
-
-  parking_lot_20260811:
-    what: 광주 주차장 — 법인 · 동구 두 판 (2026-08-11)
-    at: 2026-09-17
-    successor: parking_lot
-    reason: |
-      2026-08-13 스냅숏에만 남은 유일본이다. 활성 parking_lot 과의 관계는 기록이 없다.
-      유일본이라 보존한다(DECISIONS §173-1).
-    files:
-      - gjcity/gjcity_parking_corp_20260811.csv
-      - gjcity/gjcity_parking_dongu_20260811.csv
-    sha256:
-      gjcity/gjcity_parking_corp_20260811.csv: 606f05ff25e7d59bb951900dc1e3d608a935deaf3289e80bb427a7739bd7d5e8
-      gjcity/gjcity_parking_dongu_20260811.csv: 2d3ffbc50ad074ac4e771b2ca6d688593c640d8355c632e17b897f811da7b262
 
   ngii1k_ngii_platform:
     what: 국토정보플랫폼 수치지형도 1:1,000 (NGI/NDA + 일부 SHP)
@@ -3134,40 +3106,6 @@ retired:
       NGI/NDA 텍스트 → 전부 SHP(GDAL 직독), 도로명 빈값 → 채워짐,
       자동차전용 속성 추가. 좌표계는 둘 다 5186 으로 동일.
       전용 파서 src/firelane/ngi.py 가 불필요해진다.
-
-  ngii1k_meta_xlsx:
-    what: 국토정보플랫폼 수치지도에 딸려오던 xlsx 12개
-    at: 2026-08-17
-    restored: 2026-09-17 — 2026-08-13 스냅숏의 유일본을 retired 로 보존(DECISIONS §173-5 · §176)
-    files:
-      - ngii/ngii_map1k_gj356160900_20201231.xlsx
-      - ngii/ngii_map1k_gj356160993_20201231.xlsx
-      - ngii/ngii_map1k_gj356160994_20201231.xlsx
-      - ngii/ngii_map1k_gj356160995_20201231.xlsx
-      - ngii/ngii_map1k_gj356160996_20201231.xlsx
-      - ngii/ngii_map1k_gj356160997_20201231.xlsx
-      - ngii/ngii_map1k_gj356160999_20201231.xlsx
-      - ngii/ngii_map1k_gj356161403_20201231.xlsx
-      - ngii/ngii_map1k_gj356161404_20201231.xlsx
-      - ngii/ngii_map1k_gj356161405_20201231.xlsx
-      - ngii/ngii_map1k_gj356161552_20191231.xlsx
-      - ngii/ngii_map1k_gj356161562_20191231.xlsx
-    sha256:
-      ngii/ngii_map1k_gj356160900_20201231.xlsx: 60505f70f0deeff2b81f1c29a5251aae119b3f828d6335ae6c6eb559ce59023d
-      ngii/ngii_map1k_gj356160993_20201231.xlsx: ac54fa827207a4f6147b65a681af48efe99bcdc0facc0d46f16d038f17ad8021
-      ngii/ngii_map1k_gj356160994_20201231.xlsx: b5f2ac3dd65c9f33f7444102a450f4814b26f85bb416702c0c15d8455b8c2f4b
-      ngii/ngii_map1k_gj356160995_20201231.xlsx: 1167c124e2552c7d9de4fecb83d0ca8df181a98d13d1e08dc88b70768c599bfb
-      ngii/ngii_map1k_gj356160996_20201231.xlsx: ccf6a733a237d60533f2cf957c085d2ae5848224d0a55b1640be7ccf277e7634
-      ngii/ngii_map1k_gj356160997_20201231.xlsx: bddd6adce8037f453f9e5e2a5caef6529d53d3710c292e98d95d14a4ba50a6c6
-      ngii/ngii_map1k_gj356160999_20201231.xlsx: 0e8ab377e0642b809aa15814369353dd8e8b77f1856c4870353a67ac7e858cf9
-      ngii/ngii_map1k_gj356161403_20201231.xlsx: 14750a14c9dadd08c976f17bad2de122dc2d6b6eeb1f56b516a554fd283ad7ee
-      ngii/ngii_map1k_gj356161404_20201231.xlsx: 6dec6207ffc3dab3f82af6afcbc34df5efc137d343e55a26321672b760ffd5a8
-      ngii/ngii_map1k_gj356161405_20201231.xlsx: 4b9b04e77ce714369289a670540f7c7863002c84b27b7479dcda3e371193dfc4
-      ngii/ngii_map1k_gj356161552_20191231.xlsx: 1e69b35c441063e86b6a97dcb6f3e9dd49496613d8ec72007c4a3c8fd9849c2d
-      ngii/ngii_map1k_gj356161562_20191231.xlsx: 6bc90eaf92e7b4c92cad8f0a65abce7f373f7ab8b33df9e0cfc5d8d048d46dc5
-    reason: |
-      ISO 19115 메타데이터 작성 서식. 도엽 본체가 아니다.
-      12개가 전부 440KB 로 내용이 거의 같고 파이프라인이 읽은 적 없다.
 
 # ===== AUTO: inventory — inventory.py 가 쓴다. 손으로 고치지 말 것 =====
 inventory:

@@ -299,7 +299,15 @@
   "gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv": {
    "sha256": "4cb4c4e95353af782b4fdf8cf9726603ca0fff2b1b12fbbc631f3939e49fbf78",
    "bytes": 3046281
+  },
+  "gjcity/gjcity_parking_std_jngj-donggu_20260811.csv": {
+   "sha256": "2d3ffbc50ad074ac4e771b2ca6d688593c640d8355c632e17b897f811da7b262",
+   "bytes": 84019
+  },
+  "safety/safety_hydrant_type_jngj_20251231.csv": {
+   "sha256": "e3eb7b4178fdbadf8234aff793fc3b077c7bf4eec1f48a25fdee6d5f6f60c005",
+   "bytes": 259
   }
  },
- "at": "2026-09-17T17:39:35+09:00"
+ "at": "2026-09-17T18:50:41+09:00"
 }

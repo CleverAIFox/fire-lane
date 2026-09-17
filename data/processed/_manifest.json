@@ -28,7 +28,7 @@
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
     "generated_at": "2026-09-16T14:59:16+00:00"
   },
-  "generated_at": "2026-09-17T18:25:15.212241+09:00",
+  "generated_at": "2026-09-17T18:52:49.954363+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -2534,6 +2534,16 @@
       "outputs": []
     },
     {
+      "key": "hydrant_summary",
+      "source_files": [
+        "**/safety_hydrant_summary_*"
+      ],
+      "source_sha256": "4f516236bfdc457bab9d3bbfb78bbeadf3d723edecd7ce0922d1bd1d3515617f",
+      "resolved": "safety_hydrant_summary_jngj-donggu_20250731.csv",
+      "source_crs": "none",
+      "status": "OK",
+      "features": 5,
+      "geom": [],
       "columns": [
         "구분",
         "계",
@@ -2544,22 +2554,12 @@
         "소방차진입불가지역",
         "데이터기준일자"
       ],
-      "features": 5,
-      "geom": [],
-      "key": "hydrant_summary",
       "outputs": [
         "hydrant_summary.csv"
       ],
-      "resolved": "safety_hydrant_summary_jngj-donggu_20250731.csv",
-      "source_crs": "none",
-      "source_files": [
-        "**/safety_hydrant_summary_*"
-      ],
-      "source_sha256": "4f516236bfdc457bab9d3bbfb78bbeadf3d723edecd7ce0922d1bd1d3515617f",
-      "status": "OK",
       "seal": {
         "raw": "4f516236bfdc457b",
-        "cfg": "49710f49a6674a82",
+        "cfg": "bc177870e4c59934",
         "code": "4d49785406f2fdde",
         "out": {
           "hydrant_summary.csv": "be97577638a804b1"
@@ -3733,10 +3733,99 @@
       ],
       "seal": {
         "raw": "cf64a54d8dbe19c2,4cb4c4e95353af78",
-        "cfg": "3c52699074446811",
+        "cfg": "7c3626006c5c7a31",
         "code": "4d49785406f2fdde",
         "out": {
           "parking_enforce.csv": "3e8a90267ca281d1"
+        }
+      }
+    },
+    {
+      "key": "hydrant_type",
+      "source_files": [
+        "safety/safety_hydrant_type_jngj_20251231.csv"
+      ],
+      "source_sha256": "e3eb7b4178fdbadf8234aff793fc3b077c7bf4eec1f48a25fdee6d5f6f60c005",
+      "resolved": "safety_hydrant_type_jngj_20251231.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 5,
+      "geom": [],
+      "columns": [
+        "연번",
+        "구분",
+        "지상식소화전",
+        "일반지하식소화전",
+        "저수조",
+        "급수탑",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "hydrant_type.csv"
+      ],
+      "seal": {
+        "raw": "e3eb7b4178fdbadf",
+        "cfg": "d479966b81f724b2",
+        "code": "4d49785406f2fdde",
+        "out": {
+          "hydrant_type.csv": "ec966b1c3c0fb374"
+        }
+      }
+    },
+    {
+      "key": "parking_std",
+      "source_files": [
+        "gjcity/gjcity_parking_std_jngj-donggu_20260811.csv"
+      ],
+      "source_sha256": "2d3ffbc50ad074ac4e771b2ca6d688593c640d8355c632e17b897f811da7b262",
+      "resolved": "gjcity_parking_std_jngj-donggu_20260811.csv",
+      "source_crs": "",
+      "status": "OK",
+      "features": 297,
+      "geom": [],
+      "columns": [
+        "주차장관리번호",
+        "주차장명",
+        "주차장구분",
+        "주차장유형",
+        "소재지도로명주소",
+        "소재지지번주소",
+        "주차구획수",
+        "급지구분",
+        "부제시행구분",
+        "운영요일",
+        "평일운영시작시각",
+        "평일운영종료시각",
+        "토요일운영시작시각",
+        "토요일운영종료시각",
+        "공휴일운영시작시각",
+        "공휴일운영종료시각",
+        "요금정보",
+        "주차기본시간",
+        "주차기본요금",
+        "추가단위시간",
+        "추가단위요금",
+        "1일주차권요금적용시간",
+        "1일주차권요금",
+        "월정기권요금",
+        "결제방법",
+        "특기사항",
+        "관리기관명",
+        "전화번호",
+        "위도",
+        "경도",
+        "장애인전용주차구역보유여부",
+        "데이터기준일자"
+      ],
+      "outputs": [
+        "parking_std.csv"
+      ],
+      "seal": {
+        "raw": "2d3ffbc50ad074ac",
+        "cfg": "f466b2d3cefd06d3",
+        "code": "4d49785406f2fdde",
+        "out": {
+          "parking_std.csv": "67ed7b482465c0e1"
         }
       }
     }
