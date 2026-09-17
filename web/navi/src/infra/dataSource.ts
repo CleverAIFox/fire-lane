@@ -32,16 +32,17 @@ export interface Bundle {
   graph: NaviGraph;
   spec: VehicleSpec;
   view: View;
-  poi: GeoJSON.FeatureCollection;
+  /** 목적지 검색 색인(§181). 지도 라벨 `poi.geojson` 은 layers.ts 가 URL 로 읽는다 */
+  dest: GeoJSON.FeatureCollection;
   routeVehicle: RouteVehicle;
 }
 
 export async function loadAll(): Promise<Bundle> {
-  const [graph, spec, view, poi, routeVehicle] = await Promise.all([
+  const [graph, spec, view, dest, routeVehicle] = await Promise.all([
     j<NaviGraph>("navi_graph.json"),
     j<VehicleSpec>("vehicle_spec.json"),
     j<View>("view.json"),
-    j<GeoJSON.FeatureCollection>("poi.geojson"),
+    j<GeoJSON.FeatureCollection>("dest.geojson"),
     j<RouteVehicle>("route_vehicle.json"),
   ]);
 
@@ -53,7 +54,7 @@ export async function loadAll(): Promise<Bundle> {
       "navi_graph.json 에 style 이 없다. 발행을 다시 해라:\n" +
       "  uv run python -m firelane.publish_navi");
   }
-  return { graph, spec, view, poi, routeVehicle };
+  return { graph, spec, view, dest, routeVehicle };
 }
 
 /**

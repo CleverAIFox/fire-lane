@@ -45,6 +45,7 @@ sources.yaml 의 각 데이터셋에 contract 블록을 둔다. 전부 선택 �
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import sys
 import zipfile
 from pathlib import Path
@@ -141,6 +142,11 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
             names = [Path(n).name for n in zip_names(p)]
             if not names:
                 r.add(FAIL, f"{p.name} zip 을 열 수 없다")
+            # ★ 2026-09-17 (§181-3). 글롭이면 맞는 것이 정확히 하나여야 한다 — ingest 와 같은 규칙.
+            elif any(ch in layer for ch in "*?["):
+                got = [n for n in names if fnmatch.fnmatch(n, layer)]
+                if len(got) != 1:
+                    r.add(FAIL, f"{p.name} 안 {layer} 가 {len(got)}개다 — 하나여야 한다 {got[:6]}")
             elif layer not in names:
                 near = [n for n in names if n.lower().endswith(".shp")][:6]
                 r.add(FAIL, f"{p.name} 안에 {layer} 없음. shp 목록 {near}")

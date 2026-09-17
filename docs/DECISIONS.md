@@ -7952,3 +7952,75 @@ verify 요약의 "생략 1" 이 매번 `흡수 대상` 이었다. `release_brief
 `verify/흡수 대상` 이 매번 끼었다.
 
 강제자  `tests/test_k2.py::test_verify_skips_are_real_skips` — note 는 못 도는 조건 셋만 · release_brief 는 릴리즈 흐름에 남아 있다
+
+## 181. N1.1 — 목적지 색인을 세 원천으로, 건물을 지도 이동 범위로, zip 해제를 소스별로
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 181-1~181-5 가 각자 강제자 칸을 든다
+
+내비 검색이 `poi.geojson` 상가 2,077 만 봐서 법원 · 구청 · 학교 · 아파트 · 주소가 안 나왔다(PLAN 「목적지 검색 — 주소 · 건물명 · 관공서」).
+판정 1,281 은 건드리지 않는다 — `segments` 를 읽는 코드는 바뀌지 않았고 golden 이 강제자다. `juso_building_db` 상폐는 레이크 이동과
+sha 가 사용자 기계에서만 나오므로 N1.2 로 뗐다.
+
+### 181-1. 색인 `dest.geojson` — 상가 · 내비게이션용DB · 민원행정기관
+
+`firelane.destinations` 가 셋을 `poi.geojson` 과 같은 칸(name · cat · sub · addr)에 `alt`(지번) · `src`(원천)를 더해 합친다.
+`poi.geojson` 은 지도 라벨로 남고, 앱의 검색만 `dest.geojson` 을 읽는다.
+
+열 번호는 가이드 붙임 1 · 2 로 확정했다 — 건물 c10 건물관리번호 · c11 시군구용건물명 · c12 용도 · c17 공동주택구분 · c19 상세건물명 ·
+c23·c24 중심점 · c25·c26 출입구(EPSG:5179), 지번 c03 읍면동 · c05 산 · c06·c07 본번·부번 · c18 건물관리번호.
+
+- 좌표는 출입구 → 중심점 → 둘 다 없으면 **뺀다**. 비공개 · 공개제한 건물은 좌표가 빈 값이다. 뺀 수를 발행 로그에 찍는다.
+- 이름 없는 건물은 도로명주소가 이름이다(cat `주소`). 주소로 찾게 하는 칸이다.
+- 한 도로명주소에 건물이 여럿이다(본건물 · 부속). 표본 19행 중 5행이 겹쳤다. 이름 · 주소가 같으면 지번이 붙은 본건물 하나만 남기고 수를 센다.
+- 검색은 전수 정렬로 바꿨다. 종전의 `limit * 8` 조기 종료는 색인이 상가 먼저라 넓은 질의에서 관공서를 후보에 넣기도 전에 잘랐다.
+  같은 점수면 관공서 → 건물 → 상가 순이다. 공백은 무시한다.
+- 도착점은 그대로 `snap`(도로 위 점)이다.
+
+강제자  `tests/test_n1.py::test_column_numbers_match_guide` · `::test_coordinate_fallback_and_exclusion_are_counted` · `::test_same_address_keeps_one_main_building_with_jibun` · `::test_index_merges_three_sources_inside_map_bounds` · `::test_publish_and_navi_are_wired_to_dest`
+
+### 181-2. 건물과 목적지는 판정 스코프가 아니라 `view.maxBounds` 로 자른다
+
+스코프로 자르면 지도 안에 보이는 광주지방법원이 건물로도 검색으로도 없다. 지도가 움직일 수 있는 범위가 곧 사용자가 볼 수 있는 범위다.
+`web/data` 32MB / 상한 40MB 라 건물에 예산 6MB 를 두고 **넘을 때만** 0.3 → 0.6 → 1.0m 로 단순화한다. 늘 깎으면 스코프 안 건물 모양까지
+바뀐다. 셋으로도 못 맞추면 발행이 죽는다.
+
+강제자  `tests/test_n1.py::test_publish_and_navi_are_wired_to_dest`
+
+### 181-3. `civil_office` 는 raw_only 에서 shp_zip 으로 — 발행은 processed 만 읽는다
+
+raw_only 로 두면 publish 가 raw zip 을 직접 열어야 한다. 발행 단계가 레이크를 읽으면 계보(매니페스트)에 안 잡힌다.
+zip 안 한글 파일명이 CP437 로 깨져 이름으로 못 가리키므로 `layer: '*.shp'` 글롭을 쓰고, ingest · 계약 검사 둘 다
+**정확히 하나**만 맞아야 통과한다. `next()` 로 첫 것을 집으면 둘째 shp 가 생겨도 조용히 하나만 읽는다.
+`ledger_feeds` 는 글롭 레이어를 소비자 별칭으로 쓰지 않는다 — `*.shp` 를 적은 파일 전부가 소비자로 셌다.
+
+강제자  `tests/test_n1.py::test_unzip_is_isolated_per_zip` · `::test_ledger_layer_is_never_a_lake_layer`
+
+### 181-4. zip 은 그 zip 만의 빈 폴더에 푼다 (G-22)
+
+ingest 가 모든 소스를 `.work` 한 곳에 풀고 `tmp.rglob(layer)` 로 찾았다. 앞 소스가 푼 같은 이름의 shp · dbf 가 남아 있으면 엉뚱한 판을
+조용히 읽는다. 글롭 레이어는 앞 소스의 shp 전부와 겹친다. `ingest.unzip_own` 이 `.work/_zip/<zip 이름>` 을 비우고 푼다.
+
+강제자  `tests/test_n1.py::test_unzip_is_isolated_per_zip` · `::test_ingest_has_no_shared_extract`
+
+### 181-5. 대장 `layer` 칸에 레이크 층 이름을 적지 않는다 (G-21)
+
+L2d(§179)가 넣은 8개 항목에 `layer: raw` 가 있었다. `layer` 는 zip 안 레이어 이름 칸이다(`contract.py` 가 zip 목록과 대조한다).
+raw_only · csv 라 검사가 안 돌아 드러나지 않았고, civil_office 를 shp_zip 으로 바꾸는 순간 `raw 없음` 으로 운다.
+층은 파일 경로가 말한다. 8건을 걷었다.
+
+강제자  `tests/test_n1.py::test_ledger_layer_is_never_a_lake_layer`
+
+### 181-6. 배포 주소는 `cleveraifox.github.io` 다 — 옛 조직 주소를 안내하지 않는다
+
+README · MASTER · `.env.example` 이 `woongtopia.github.io/fire-lane/` 를 지도 · 내비 주소로 안내했다. 저장소는 `woongtopia` 조직에서
+`CleverAIFox` 개인으로 이관됐고(§147), 브이월드 키의 등록 도메인은 2026-09-12 에 `cleveraifox.github.io` 로 바뀌었다(`web/config.js`).
+옛 주소는 이관 전 배포가 남아 있을 뿐이라 **새 판정이 안 올라간다** — 거기를 보면 낡은 지도를 본다.
+
+§147 의 "`@woongtopia` 흔적은 일부러 남긴다" 는 그대로다. 고친 것은 **사람을 보내는 주소** 셋뿐이고, 팀 핸들 · 이관 기록 ·
+머지 번호 같은 옛 조직 표기는 사실이므로 둔다. `web/config.js` 주석은 이관 전 등록 도메인을 기록으로 적은 것이라 허용한다.
+
+README 셋(루트 · `src/firelane` · `web`)의 전수 대조는 PLAN 「README 가 루트인데 GIS 전용이다」 로 미룬다.
+
+강제자  `tests/test_n1.py::test_no_doc_sends_people_to_old_pages_domain`

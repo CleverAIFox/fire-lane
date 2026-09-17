@@ -773,7 +773,6 @@ datasets:
     stem: gjcity_road_facility
     ext: [hwp]
     kind: raw_only
-    layer: raw
     scope: jngj
     updated: '2022-09-14'
     origin_name: 1663144302440.hwp
@@ -2795,7 +2794,6 @@ datasets:
     stem: gjcity_parking_enforce
     ext: [csv]
     kind: csv_table_multi
-    layer: raw
     scope: jngj-donggu
     updated: '2025-02-26'
     encoding: cp949
@@ -2821,7 +2819,6 @@ datasets:
     ext: [csv]
     kind: csv_table
     encoding: cp949
-    layer: raw
     scope: jngj
     updated: '2025-12-31'
     authority: 전남광주통합특별시 소방본부 (받은 경로 미기록)
@@ -2839,7 +2836,6 @@ datasets:
     ext: [csv]
     kind: csv_table
     encoding: utf-8-sig
-    layer: raw
     scope: jngj-donggu
     updated: '2026-08-11'
     authority: 전남광주통합특별시 동구 (공공데이터포털)
@@ -2862,7 +2858,6 @@ datasets:
     contract:
       encoding: cp949
       delimiter: "|"
-    layer: raw
     scope: jngj-dongmyeong
     updated: '2026-08-31'
     authority: 행정안전부 도로명주소 (도로명주소 개발자센터 제공신청)
@@ -2873,9 +2868,10 @@ datasets:
     what: |
       내비게이션용DB 건물 — 법정동코드 1221010800(동명동) 2078행 · `|` 구분 33열.
       도로명 · 건물번호 · 건물관리번호 · 건물명 · 용도 · 건물중심점 X/Y · 출입구 X/Y (EPSG:5179)
-    feeds: 미투입 — 목적지 검색 좌표 · 출입구(PLAN 목적지 검색)
-    feeds_why: |
-      미투입 — 목적지 검색 좌표 원천(PLAN 「목적지 검색 — 주소 · 건물명 · 관공서」). juso_building_db 가
+    feeds:
+      - src/firelane/publish_web.py
+    feeds_note: |
+      2026-09-17 투입(§181) — 목적지 검색 좌표 원천(PLAN 「목적지 검색 — 주소 · 건물명 · 관공서」). juso_building_db 가
       "좌표가 없다 — 내비게이션용DB 승인 대기" 로 기다리던 판이다. 단속이력 주소의 지오코딩에도 쓴다.
     note: |
       ★ 202608 전체분 7z(4.06GB 해동)에서 match_build_jeonnamgwangju.txt 만 스트림으로 읽어 첫 열(법정동코드)
@@ -2890,7 +2886,6 @@ datasets:
     contract:
       encoding: cp949
       delimiter: "|"
-    layer: raw
     scope: jngj-dongmyeong
     updated: '2026-08-31'
     authority: 행정안전부 도로명주소 (도로명주소 개발자센터 제공신청)
@@ -2899,16 +2894,17 @@ datasets:
       - juso/juso_navijibun_jngj-dongmyeong_20260831.txt
     what: |
       내비게이션용DB 지번 매칭 — 동명동 1460행 · `|` 구분 20열. 지번 → 건물관리번호 · 도로명코드
-    feeds: 미투입 — 지번 주소 목적지 검색
-    feeds_why: |
-      미투입 — 지번 주소로 목적지를 찾게 한다. navi_build 와 건물관리번호로 잇는다.
+    feeds:
+      - src/firelane/publish_web.py
+    feeds_note: |
+      2026-09-17 투입(§181) — 지번 주소로 목적지를 찾게 한다. navi_build 와 건물관리번호로 잇는다.
     note: |
       ★ match_jibun_jeonnamgwangju.txt 에서 navi_build 와 같은 규칙(첫 열 == 1221010800)으로 잘랐다.
   civil_office:
     stem: juso_civiloffice
     ext: [zip]
-    kind: raw_only
-    layer: raw
+    kind: shp_zip
+    layer: '*.shp'
     scope: kr
     updated: '2024-01-24'
     authority: 행정안전부 도로명주소 (민원행정기관 전자지도 제공)
@@ -2919,9 +2915,10 @@ datasets:
     what: |
       민원행정기관 전자지도 — 전국 26,142점 · 동명동 bbox 안 64. 유형 · 상세분류 · 시군구코드 · 도로명코드 ·
       도로명주소 · 기관명 · 위치X/Y · 전화번호. 학교 · 관공서
-    feeds: []
-    feeds_why: |
-      미투입 — 목적지 검색의 관공서 · 학교 POI. poi.geojson 이 상가 2,077 뿐이라 법원 · 구청 · 학교가 없다.
+    feeds:
+      - src/firelane/publish_web.py
+    feeds_note: |
+      2026-09-17 투입(§181) — 목적지 검색의 관공서 · 학교 POI. poi.geojson 이 상가 2,077 뿐이라 법원 · 구청 · 학교가 없다.
     note: |
       ★ .cpg 가 없어 DBF 를 cp949 로 읽어야 한다(안 주면 필드명이 깨진다).
       ★ zip 내부 파일명이 CP437 로 깨져 있다. 2024-01 판이라 시군구코드가 옛 코드다(동구 29110 · 새 12210).
@@ -2929,7 +2926,6 @@ datasets:
     stem: gjcity_statbook
     ext: [pdf]
     kind: raw_only
-    layer: raw
     scope: jngj-donggu
     updated: '2024-12-31'
     authority: 전남광주통합특별시 동구청 (누리집 통계연보)
