@@ -623,7 +623,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
   ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
-data/processed/    대장 67종
+data/processed/    대장 69종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
@@ -729,7 +729,7 @@ src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 소방통로확보대상 · 상가정보 · 단속이력 · 가로등 · 공개DEM · 항공정사영상 ·
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
-대장은 `sources.yaml` 하나다. `datasets` 67종 · `retired` 9종.
+대장은 `sources.yaml` 하나다. `datasets` 69종 · `retired` 3종.
 ★ 이 세 숫자는 `tools/docnum_check.py` 가 대장에서 세어 대조한다 — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `norm` 이관은 14종이다.
 
 강제자 — `tools/docnum_check.py` (대장 datasets · retired 종수)
@@ -2679,7 +2679,7 @@ CRS 변경               ★ 중단. 무조건
 ### 18-3c. retired — 폐기 기록
 
 **지운 것도 대장에 남긴다.** 없으면 3개월 뒤에 또 받고 또 조사한다.
-현재 `retired` 9종이 있다. 전부 파일이 있는 보관본이다 — 파일 없는 기각 기록은 대장에 두지 않고 `landing_disposition` 과 DECISIONS 가 든다.
+현재 `retired` 3종이 있다(NGI 원본 20도엽 · 기본도 옛 판 · 건축물대장 동구 판). 전부 파일이 있는 보관본이다 — 파일 없는 기각 기록은 대장에 두지 않고 `landing_disposition` 과 DECISIONS 가 든다.
 
 ```yaml
 retired:
