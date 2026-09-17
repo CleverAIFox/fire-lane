@@ -149,8 +149,7 @@ def test_contracts_surface_is_signed():
     import json
 
     d = ROOT / "src/contracts"
-    if not d.exists():
-        pytest.skip("src/contracts 가 없다")
+    assert d.exists(), "src/contracts 가 없다 — 파트 간 계약이 사라졌다"
 
     import contracts as C
 
@@ -186,6 +185,10 @@ def test_strict_scope_is_not_empty():
     CODEOWNERS 를 잘못 고쳐 단독 소유가 0건이 되면 `contract-strict`
     job 이 **아무것도 검사하지 않고 초록불**이 된다.
     """
+    import skip_policy
+    if not skip_policy.is_git_repo():
+        # ★ 2026-09-17 (§175). 추적 목록이 없으면 0건이 나와 "태그가 지워졌다" 로 오판했다
+        pytest.skip("환경skip(도구) — git 저장소가 아니다. 추적 경로를 셀 수 없다")
     from owned_paths import strict_paths
     n = len(strict_paths())
     assert n > 0, (

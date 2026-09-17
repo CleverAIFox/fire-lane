@@ -1140,7 +1140,7 @@ def test_golden_refuses_stale_artifacts():
     seg = ROOT / "data/processed/segments.geojson"
     fp = ROOT / "data/golden/.code_fingerprint"
     if not seg.exists():
-        pytest.skip("산출물이 없다")
+        pytest.skip("환경skip(산출물) — 파이프라인 산출물이 없다")
 
     # ★ 2026-08-23. 처음엔 `os.utime` 으로 mtime 을 조작해 검증했다.
     #   지금은 **판정 로직의 내용 해시**를 보므로 mtime 은 무관하다.
@@ -1494,7 +1494,7 @@ def test_golden_staleness_ignores_comments():
     fp = ROOT / "data/golden/.code_fingerprint"
     seg = ROOT / "data/processed/segments.geojson"
     if not seg.exists():
-        pytest.skip("산출물이 없다")
+        pytest.skip("환경skip(산출물) — 파이프라인 산출물이 없다")
 
     def stale() -> str:
         # ★ `sys.path.insert` 를 문자열로 쓰면 `test_sys_path_해킹이_없다`
@@ -1979,7 +1979,7 @@ def test_golden_lock_releases_the_gate():
       없다. **로컬이 CI 보다 더 보는 것은 정상이다**(verify.sh 머리말).
     """
     if not (ROOT / "data/processed/segments.geojson").exists():
-        pytest.skip("산출물이 없다 — 파이프라인이 도는 기계에서만 검사한다")
+        pytest.skip("환경skip(산출물) — 파이프라인이 도는 기계에서만 검사한다")
     r = subprocess.run([sys.executable, str(ROOT / "tools/golden.py"), "selftest"],
                        capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, f"golden 게이트 자기검사 실패\n{r.stdout}{r.stderr}"

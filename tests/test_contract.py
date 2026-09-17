@@ -278,11 +278,10 @@ def test_seg_uid_retention():
     """
     import csv
     p = ROOT / "data" / "processed" / "seg_uid_map.csv"
-    if not p.exists():
-        pytest.skip("최초 실행 — 비교 대상 없음")
+    # ★ 2026-09-17 (§175). seg_uid_map.csv 는 커밋된 파일이다. 없거나 비면 skip 이 아니라 사고다
+    assert p.exists(), f"{p.relative_to(ROOT)} 가 없다 — 커밋된 비교 기준이 사라졌다"
     prev = {r["seg_uid"] for r in csv.DictReader(p.open(encoding="utf-8"))}
-    if not prev:
-        pytest.skip("이력 없음")
+    assert prev, f"{p.relative_to(ROOT)} 가 비었다 — 유지율 기준이 없다"
     cur = {f["properties"]["seg_uid"]
            for f in json.loads((WEB / "segments.geojson").read_text(encoding="utf-8"))["features"]}
     ret = len(prev & cur) / len(prev)
@@ -369,8 +368,7 @@ def test_verdict_matches_rules_for_every_segment():
     from firelane.seg.params import PARK, TRUCK
 
     seg = ROOT / "web" / "data" / "segments.geojson"
-    if not seg.exists():
-        pytest.skip("web/data/segments.geojson 없음 — publish 를 먼저 돌려라")
+    assert seg.exists(), "web/data/segments.geojson 가 없다 — 커밋된 산출물이다. publish 를 돌려라"
 
     num = lambda v: float(v) if v not in (None, "") else None
     feats = json.loads(seg.read_text(encoding="utf-8"))["features"]
@@ -623,8 +621,7 @@ def test_schema_layers_differ_only_by_declaration():
       공유 필드의 서술도 같아야 한다. publish 는 서술을 복사한다.
     """
     P = ROOT / "data" / "processed" / "segments.schema.json"
-    if not P.exists():
-        pytest.skip("processed 스키마 없음")
+    assert P.exists(), "data/processed/segments.schema.json 가 없다 — 커밋된 스키마다"
     p = json.loads(P.read_text(encoding="utf-8"))
     w = json.loads((WEB / "segments.schema.json").read_text(encoding="utf-8"))
     pf, wf = set(p["fields"]), set(w["fields"])

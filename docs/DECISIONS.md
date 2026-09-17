@@ -7516,3 +7516,55 @@ G-9 도 닫았다. §171-1 본문의 한 줄이 줄머리에서 `강제자(` 로
 그 칸이 지운 테스트를 가리켜 봉인마다 "죽은 참조 1" 이 찍혔다. 어순을 바꿨다. 파서 쪽 카나리아는 K 가 단다.
 
 강제자  `tests/test_lake.py::test_ledger_is_loaded_through_one_door` · `::test_file_owners_are_resolved_in_one_place` · `::test_authority_names_institution_and_route` · 카나리아 `::test_ratchet_probes_are_alive`
+
+## 175. K1 — 건너뛴 것은 통과가 아니다: skip 을 넷으로 가르고 분류 밖은 실패로 바꿨다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 175-1~175-3 이 각자 강제자 칸을 든다
+
+§173-6 의 분류를 코드로 옮겼다. 판정 · 산출물은 불변이다.
+
+### 175-1. skip 51 은 전부 "대상이 아님" 이었다 — 대상만 모아 한 번에 본다
+
+`test_r4_random_has_seed` 가 `src/firelane` 파일마다 parametrize 하고 랜덤을 안 쓰는 파일을
+`skip("랜덤 미사용")` 했다. 레이크 기계 skip 51 이 전부 이것이었고, L1 이 모듈 하나를 넣자 52 가 됐는데
+아무도 몰랐다 — 늘어난 한 개가 진짜 skip 이었어도 똑같이 묻혔다.
+
+랜덤을 쓰는 파일만 모아 한 테스트로 본다. 대상이 0 이면 판별식이 죽었는지 가려야 하므로 카나리아를 붙였다.
+
+강제자  `tests/test_reproducibility.py::test_r4_random_has_seed` · 카나리아 `::test_r4_probe_is_alive`
+
+### 175-2. 분류 — 환경(레이크 · 산출물 · 도구) · 유예 · 그 밖은 실패
+
+    환경skip(레이크)   레이크가 없는 기계. **레이크가 붙은 기계에서 나면 실패**
+    환경skip(산출물)   파이프라인 산출물이 없는 기계
+    환경skip(도구)     git · node · 선택 의존성. importorskip 도 여기
+    유예skip           「PLAN 행 제목」 · 날짜. 행이 §1 에 있고 21일 안
+    그 밖              실패
+
+`tests/conftest.py` 훅이 skip 보고마다 사유를 판정한다. 알리는 검사로 두면 51 과 같은 방식으로 묻힌다 —
+그래서 실패로 바꾼다(§173-4 ①). 유예의 나이는 봉인 횟수가 아니라 날짜로 쟀다. 봉인 이력을 테스트가 읽으면
+테스트가 `data/dms` 에 묶인다.
+
+기존 skip 서른두 곳을 전수로 갈랐다.
+
+    커밋된 파일이 없으면 skip   → 실패    MASTER · 기획서 · 스키마 둘 · seg_uid_map · web 산출물 · workflow.html ·
+                                          src/contracts · PR 템플릿. 없으면 사고인데 skip 이 초록으로 덮었다
+    남은 행 0 이면 skip         → 통과    PLAN §12 대조 — 대조할 것이 없는 것이다. 파서 사망은 기존 카나리아가 가린다
+    레이크 · 산출물 · 도구       → 태그
+
+기각 — 커밋된 파일 부재를 `환경skip(산출물)` 로 두는 안. clone 하면 반드시 있는 파일이라 없는 환경이 정의되지 않는다.
+
+강제자  `tests/test_skip_policy.py::test_judge_classifies_reasons` · `::test_judge_rejects_what_hides` · `::test_plan_titles_are_read` · 카나리아 `::test_hook_turns_unclassified_skip_into_failure`
+
+### 175-3. git 없는 트리에서 엉뚱하게 실패하던 둘
+
+zip 트리(샌드박스)에서 `test_declared_output_exists_after_run` 은 `git check-ignore` 가 실패해 무시 경로를 전부
+"안 나왔다" 로, `test_strict_scope_is_not_empty` 는 추적 목록이 비어 "`# !strict` 태그가 지워졌다" 로 실패했다.
+둘 다 **못 보는 상황을 다른 사고로 보고했다**(§173-6 의 오판 부류). git 저장소가 아니면 `환경skip(도구)` 로 가른다.
+
+결과 — 샌드박스(git 있음 · 레이크 없음) skip 56 → 4, 넷 다 환경이다. 레이크를 흉내 낸 실행에서는 레이크 skip 셋이
+skip 되지 않고 실제로 돈다.
+
+강제자  `tests/test_ledger_outputs.py::test_declared_output_exists_after_run` · `tests/test_ownership.py::test_strict_scope_is_not_empty`

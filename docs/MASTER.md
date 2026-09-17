@@ -2112,6 +2112,22 @@ golden 지문 · PLAN 번호·참조 · 커버리지 래칫을 밟는다.
   `pytest` 단계와 따로 도는 이유는 커버리지를 켜면 75초가 127초가 되기
   때문이다.
 
+**skip 은 사유가 분류 안에 있을 때만 skip 이다.** `tests/conftest.py` 가 모든 skip 에
+`tests/skip_policy.py` 를 걸고, 분류 밖이면 실패로 바꾼다.
+
+| 사유 머리 | 뜻 | 레이크 기계 |
+|---|---|---|
+| `환경skip(레이크) — …` | 레이크가 없다(CI) | **실패** |
+| `환경skip(산출물) — …` | 파이프라인 산출물이 없다(clone 직후 · CI) | 허용 |
+| `환경skip(도구) — …` · importorskip | git · node · 선택 의존성이 없다 | 허용 |
+| `유예skip — 「PLAN 행 제목」 · YYYY-MM-DD — …` | 그 행이 PLAN §1 에 있고 21일 안 | 허용 |
+| 그 밖 | 해당없음은 skip 이 아니다 — 대상을 수집 단계에서 거르거나 통과 | **실패** |
+
+커밋된 파일(스키마 · 기획서 · 생성물 · PR 템플릿)이 없으면 skip 하지 않고 실패한다.
+레이크 기계의 skip 은 0 에 가까워야 정상이다(2026-09-17 샌드박스 기준 skip 4 — 전부 환경).
+
+강제자 — `tests/test_skip_policy.py::test_hook_turns_unclassified_skip_into_failure` · `::test_judge_rejects_what_hides`
+
 ```bash
 uv run fire-lane                       # 평소. 2분45초
 uv run fire-lane --no-test --split     # ingest 를 소스별 자식 프로세스로
