@@ -1,9 +1,9 @@
 {
- "all": "10adff0190735805",
+ "all": "e0e6a6ae3a329e37",
  "files": {
   "src/firelane/seg/geom.py": "b0d9bce1e0ac",
   "src/firelane/seg/graph.py": "bbdea7e047d4",
-  "src/firelane/seg/params.py": "b026f906645e",
+  "src/firelane/seg/params.py": "b21580c70faa",
   "src/firelane/seg/report.py": "3504c3111c7b",
   "src/firelane/seg/width.py": "b01609020622",
   "src/firelane/segments.py": "8dc810adbac5"
