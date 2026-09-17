@@ -2359,3 +2359,34 @@ def test_unconsumed_sources_are_on_demand():
         "판정이 안 읽는데 전량에서 도는 소스가 있다.\n" + "\n".join(bad)
         + "\n\n  `on_demand: true` 를 달아라. 필요할 때\n"
         "  `uv run python -m firelane.ingest --only <키>` 로 만든다.")
+
+
+def test_retired_glob_never_claims_an_active_file(tmp_path, monkeypatch):
+    """폐기 글롭이 **활성 대장의 파일**을 폐기로 읽지 않는가.
+
+    ★ 2026-09-17 (DECISIONS §172-5). 폐기 항목 `firestation_kr_20250701` ·
+      `hydrant_point_jngj_20250917` 이 `stem` 만 적어 글롭이 `**/safety_firestation_*` ·
+      `**/safety_hydrant_point_*` 였다. 활성 `fire_station`(kr_20240901) ·
+      `hydrant_point`(jngj_20240207)의 raw 파일까지 잡혀 `acquire --stage` 가 **살아 있는
+      raw 둘을 _quarantine 으로 내렸다.** 실제 대장으로 재현한다.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("acq_guard", ROOT / "tools" / "acquire.py")
+    acq = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(acq)
+    active = []
+    for k in ("fire_station", "hydrant_point"):
+        for rel in acq.dataset_globs()[k]:
+            f = tmp_path / rel
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text("x", encoding="utf-8")
+            active.append(f.name)
+    assert active, "활성 파일 이름을 못 만들었다 — 대장 fire_station · hydrant_point 확인"
+    # 폐기본도 하나 둔다 — 활성과 이름이 다르면 여전히 폐기로 읽혀야 한다(카나리아)
+    (tmp_path / "safety" / "safety_firestation_kr_20250701.csv").write_text("x", encoding="utf-8")
+    monkeypatch.setattr(acq, "RAW", tmp_path)
+    ret = acq.retired_names()
+    hit = [n for n in active if n in ret]
+    assert not hit, f"활성 파일을 폐기로 읽는다 — {hit}"
+    assert "safety_firestation_kr_20250701.csv" in ret, "폐기 판정 자체가 죽었다"

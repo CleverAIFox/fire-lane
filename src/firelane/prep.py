@@ -35,6 +35,11 @@ raw 가 바뀌면 다시 만들고, norm 이 손상되면 다시 만든다.
 전량 전환 없이 한 건씩 이동할 수 있고, 매 건 `golden.py check` 로
 산출물 불변을 확인한다.
 
+★ 2026-09-17. **서식 PDF → CSV 변환기**가 하나 붙었다(DECISIONS §172). 대장 항목이
+  `norm_convert: <이름>` 을 적으면 raw PDF 를 그 변환기로 읽어 norm 에 **같은 이름의
+  `.csv`** 를 쓴다. 경계는 같다 — 서식의 칸을 표의 칸으로 옮길 뿐 값은 글자 그대로다
+  (`7,770` 은 `7,770`). 지금 변환기는 `vehiclecard`(소방자동차 관리카드) 하나다.
+
 IN    $FIRE_LANE_DATA/raw · sources.yaml
 OUT   $FIRE_LANE_DATA/norm · data/_prep.json (커밋한다)
 PARAM 없음
@@ -59,6 +64,21 @@ STATE = ROOT / "data" / "_prep.json"
 # 정본은 firelane/encoding.py. 이름이 쓰임을 말한다 — 여기 것은 '전처리 대상'이고
 # encoding.TEXT_EXT(자료 형식)와 값이 다르다. 같은 이름을 쓰던 것이 잘못이었다.
 TEXT_EXT = TEXT_EXT_PREP
+
+# 서식 변환기. 대장 `norm_convert` 값 → (받는 확장자, 모듈 경로). 이 표 밖의 값은 실패한다.
+CONVERTERS = {"vehiclecard": (".pdf", "firelane.vehiclecard")}
+
+
+def _converter(e: dict) -> str | None:
+    name = (e or {}).get("norm_convert")
+    if name and name not in CONVERTERS:
+        raise ValueError(f"대장 norm_convert `{name}` 은 변환기 표에 없다 — {sorted(CONVERTERS)}")
+    return name
+
+
+def dst_rel(rel: str, e: dict) -> str:
+    """norm 쪽 상대경로. 변환기가 있으면 확장자만 `.csv` 로 바뀐다."""
+    return str(Path(rel).with_suffix(".csv")) if _converter(e) else rel
 
 
 from firelane.hashing import sha256 as _h_sha256
@@ -113,14 +133,16 @@ def _targets() -> list[tuple[str, str, dict]]:
     """
     out = []
     for key, e in (_sources().get("datasets") or {}).items():
+        conv = _converter(e)
+        exts = {CONVERTERS[conv][0]} if conv else TEXT_EXT
         files = _led.globs(e)
         for pat in files:
             if any(c in pat for c in "*?["):
                 for p in sorted(RAW.glob(pat)):
-                    if (p.suffix.lower() in TEXT_EXT
+                    if (p.suffix.lower() in exts
                             and not _led.is_acquisition_meta(p)):
                         out.append((key, str(p.relative_to(RAW)), e))
-            elif (Path(pat).suffix.lower() in TEXT_EXT
+            elif (Path(pat).suffix.lower() in exts
                     and not _led.is_acquisition_meta(pat)):
                 out.append((key, pat, e))
     return out
@@ -136,11 +158,30 @@ def run(*, apply: bool) -> int:
             miss += 1
             continue
         ssha = sha256(src)
-        dst = NORM / rel
+        drel = dst_rel(rel, e)
+        dst = NORM / drel
         rec = st["files"].get(rel)
+        conv_ver = None
+        if _converter(e):
+            import importlib
+            conv_ver = importlib.import_module(CONVERTERS[_converter(e)][1]).VERSION
         if (rec and rec["src_sha256"] == ssha and dst.exists()
-                and sha256(dst) == rec["dst_sha256"]):
+                and sha256(dst) == rec["dst_sha256"]
+                and rec.get("converter_version") == conv_ver):   # ★ 변환 규칙이 바뀌면 다시 만든다
             skip += 1
+            continue
+
+        conv = _converter(e)
+        if conv:
+            tag = "변환" if apply else "변환 예정"
+            print(f"  {tag}  {rel}  → {drel}   ({conv})")
+            if apply:
+                import importlib
+                meta = importlib.import_module(CONVERTERS[conv][1]).convert(src, dst)
+                st["files"][rel] = {"key": key, "dst": drel, "src_sha256": ssha,
+                                    "dst_sha256": sha256(dst), **meta,
+                                    "at": datetime.now(KST).isoformat(timespec="seconds")}
+            done += 1
             continue
 
         declared = e.get("encoding")
@@ -194,7 +235,7 @@ def check(cap: int | None = None) -> int:
         print(f"  미등록  {rel}   대상인데 _prep.json 에 없다 — --apply 를 돌려라")
     broken += len(unseen)
     for rel, rec in st["files"].items():
-        src, dst = RAW / rel, NORM / rel
+        src, dst = RAW / rel, NORM / rec.get("dst", rel)
         if not dst.exists():
             print(f"  누락  {rel}")
             broken += 1
@@ -243,8 +284,8 @@ def prune(apply: bool = False) -> int:
         print("  ★ 0건이 아니라 실패다. 못 잰 것과 없는 것은 다르다.")
         return 1
     st = _load_state()
-    gone = [rel for rel in st["files"]
-            if not (RAW / rel).exists() and not (NORM / rel).exists()]
+    gone = [rel for rel, rec in st["files"].items()
+            if not (RAW / rel).exists() and not (NORM / rec.get("dst", rel)).exists()]
     for rel in gone:
         print(f"  제거  {rel}   raw·norm 둘 다 없다")
     if not gone:
