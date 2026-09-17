@@ -178,7 +178,9 @@ def main() -> None:
     obs = pd.DataFrame(rows)
 
     FIELD.mkdir(parents=True, exist_ok=True)
-    scols = ["seg_uid", "track", "seg_id", "road_name", "width_src", "band",
+    # ★ 2026-09-17. `seg_id` 를 뺐다 — 실행 내 순번이라 노딩·범위가 바뀌면
+    #   밀린다(흡수-1 에서 988행 밀림 · DECISIONS §169-2). 현장 시트는 `seg_uid` 로 잇는다.
+    scols = ["seg_uid", "track", "road_name", "width_src", "band",
              "width_min_m", "width_max_m", "disagree", "verdict", "usage", "length_m"]
     sel[[c for c in scols if c in sel.columns]].to_csv(
         FIELD / "sample_segments.csv", index=False, encoding="utf-8-sig")

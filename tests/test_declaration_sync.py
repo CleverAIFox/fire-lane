@@ -320,10 +320,34 @@ def _code_only(src: str) -> str:
                 node.body = b[1:] or [ast.Pass()]
     return ast.unparse(tree)          # ast 는 주석을 갖지 않는다
 
-def test_plan_unreferenced_sources_count_is_current():
-    """`§1` 이 참조 0곳인 소스를 항목으로 든다. 그 수가 실제와 같아야 한다.
+def _unwired(ledger: dict, code: str) -> list[str]:
+    """코드 참조 0곳 · `raw_only` 아님. 배선할 코드가 있을 수 있는 소스."""
+    return sorted(k for k, e in (ledger.get("datasets") or {}).items()
+                  if k not in code and (e or {}).get("kind") != "raw_only")
 
-    소스를 코드에 붙이고 PLAN 을 안 고치면 항목이 낡는다.
+
+_PURPOSE = re.compile(r"^미투입 — \S")
+
+
+def _undeclared(ledger: dict, keys: list[str]) -> list[str]:
+    """`feeds: 미투입 — <용도>` 를 안 적은 미배선 소스."""
+    ds = ledger.get("datasets") or {}
+    return [k for k in keys
+            if not _PURPOSE.match(str((ds.get(k) or {}).get("feeds") or ""))]
+
+
+def test_unwired_sources_declare_purpose():
+    """코드가 안 읽는 소스는 대장에 **용도를 적고 산다.** 수를 문서에 적지 않는다.
+
+    ★ 2026-09-17 (DECISIONS §171-1). 종전 강제자는 `PLAN §1` 의
+      `참조 0곳인 소스 N종` 과 실제 수를 대조했다. 그런데 그 행은 스스로
+      *"정리 완료. 수는 남는다"* 고 적었다 — 22종 전부가 이미
+      `feeds: 미투입 — <용도>` 로 분류돼 있었다. **갚을 빚이 없는 행이
+      빚 목록에 살았고**, 강제자가 그 행을 지우지 못하게 붙들었다.
+      `EXEMPT` 가 조사 도구 아홉을 사유와 함께 등재한 것과 같은 형태로
+      바꾼다(DECISIONS §162) — 분류된 거주는 빚이 아니다.
+
+    ★ 수가 늘어도 안 운다. **용도 없이 늘면** 운다. 그것이 낡음이다.
     """
     yaml = pytest.importorskip("yaml")
     ledger = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
@@ -331,19 +355,22 @@ def test_plan_unreferenced_sources_count_is_current():
         _code_only(p.read_text(encoding="utf-8", errors="ignore"))
         for p in list((ROOT / "src").rglob("*.py")) + list((ROOT / "tools").glob("*.py"))
     )
-    # ★ 2026-08-31. `raw_only` 를 뺀다. 사람이 열어보는 근거 문서(hwp·pdf·
-    #   원본 tif)라 **배선할 코드가 애초에 없다.** 종전에는 14종 전부를
-    #   후보로 두고 "이름이 코드 어딘가에 나오는가" 로만 걸렀는데, 그러면
-    #   normalize_raw 의 파일명 문자열에 우연히 박힌 12종은 빠지고
-    #   안 박힌 2종만 "미배선" 으로 뜬다 — 기준이 우연이었다.
-    #   실제로 mas_optional_spec 을 등재하자마자 이 검사가 울었고,
-    #   그것은 배선 누락이 아니라 근거 문서를 새로 적었다는 뜻이었다.
-    _ds = ledger.get("datasets", {})
-    zero = sorted(k for k, e in _ds.items()
-                  if k not in code and (e or {}).get("kind") != "raw_only")
+    bad = _undeclared(ledger, _unwired(ledger, code))
+    assert not bad, (
+        "코드 참조 0곳인데 대장에 `feeds: 미투입 — <용도>` 가 없다 — "
+        + ", ".join(bad)
+        + "\n  배선하거나, 안 쓰는 이유(용도)를 대장에 적는다")
 
-    plan = PLAN.read_text(encoding="utf-8")
-    m = re.search(r"참조 0곳인 소스 (\d+)종", plan)
-    assert m, "PLAN §1 에 `참조 0곳인 소스 N종` 항목이 없다"
-    assert int(m.group(1)) == len(zero), (
-        f"PLAN 은 {m.group(1)}종, 실제는 {len(zero)}종이다: {zero}")
+
+def test_unwired_probe_is_alive():
+    """카나리아 — 판별식이 죽으면 위 검사는 영원히 초록이다."""
+    ledger = {"datasets": {
+        "zz_probe_wired": {"kind": "csv_table"},
+        "zz_probe_raw":   {"kind": "raw_only"},
+        "zz_probe_ok":    {"kind": "csv_table", "feeds": "미투입 — 대조축"},
+        "zz_probe_bare":  {"kind": "csv_table", "feeds": "미투입"},
+        "zz_probe_none":  {"kind": "csv_table"},
+    }}
+    keys = _unwired(ledger, 'load("zz_probe_wired")')
+    assert keys == ["zz_probe_bare", "zz_probe_none", "zz_probe_ok"]
+    assert _undeclared(ledger, keys) == ["zz_probe_bare", "zz_probe_none"]
