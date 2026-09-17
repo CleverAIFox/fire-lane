@@ -212,8 +212,9 @@ def check_entry(key: str, e: dict) -> list[Issue]:
     # ── 스키마 ────────────────────────────────────────────────
     schema = e.get("schema")
     if isinstance(schema, dict):
-        if not (schema.get("columns") or schema.get("layers")):
-            out.append(Issue(WARN, key, "schema 에 columns 도 layers 도 없다"))
+        # ★ 2026-09-17 (§182-2). zip 안 여러 텍스트 표(juso_building_db)는 `files` 가 스키마의 몸이다.
+        if not (schema.get("columns") or schema.get("layers") or schema.get("files")):
+            out.append(Issue(WARN, key, "schema 에 columns 도 layers 도 files 도 없다"))
     elif schema is not None:
         out.append(Issue(FAIL, key, "schema 는 매핑이어야 한다"))
 

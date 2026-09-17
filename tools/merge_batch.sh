@@ -67,16 +67,25 @@ command -v gh >/dev/null || die "gh 가 없다"
 gh auth status -h github.com >/dev/null 2>&1 || die "gh 인증이 없다 — gh auth login"
 [ -z "$(git status --porcelain --untracked-files=no)" ] || die "추적 파일에 변경이 있다"
 
-wait_checks() {   # wait_checks <PR번호>
-    local n=$1
+wait_checks() {   # wait_checks <PR번호> [since ISO8601]
+    local n=$1 since=${2:-} sha cnt
     say "CI 대기 — PR #$n"
-    # 체크가 등록되기 전에 부르면 '없음' 으로 끝난다. 잠깐 기다린다
-    for _ in 1 2 3 4 5 6; do
-        gh pr checks "$n" -R "$REPO" >/dev/null 2>&1 && break; sleep 10
+    # ★ 2026-09-17 (DECISIONS §182-8 · G-23). "체크가 하나라도 있으면" 기다림을 끝냈다. 본문을 고친 직후(edited)에는
+    #   **옛 실행**의 결과가 이미 있어서, 새 실행이 등록되기 전에 옛 실패 · 옛 초록으로 판정했다(#59 가 본문 검사
+    #   실패인 채 스쿼시됐다). PR 머리 커밋의 check-run 을 보고, since 가 주어지면 그 뒤에 **시작된** 실행이
+    #   생길 때까지 기다린다.
+    sha=$(gh pr view "$n" -R "$REPO" --json headRefOid --jq '.headRefOid // empty')
+    [ -n "$sha" ] || die "PR #$n 의 머리 커밋을 못 읽었다"
+    for _ in $(seq 1 30); do
+        cnt=$(gh api "repos/$REPO/commits/$sha/check-runs" \
+              --jq "[.check_runs[] | select(\"$since\" == \"\" or .started_at >= \"$since\")] | length" 2>/dev/null || echo 0)
+        [ "${cnt:-0}" -gt 0 ] && break
+        sleep 10
     done
+    [ "${cnt:-0}" -gt 0 ] || die "PR #$n 머리 ${sha:0:7} 에 ${since:+$since 이후 }시작된 검사가 5분 동안 없다"
     gh pr checks "$n" -R "$REPO" --watch --fail-fast \
       || die "PR #$n CI 가 실패했다. 메시지를 끝까지 읽어라:\n  gh pr checks $n -R $REPO"
-    ok "PR #$n CI 초록"
+    ok "PR #$n CI 초록 · 머리 ${sha:0:7}"
 }
 
 sync_parts() {    # dev 를 파트로 fast-forward
@@ -214,7 +223,10 @@ rel=$(gh pr list -R "$REPO" --base main --head dev --state open --json number --
 if [ -z "$rel" ]; then
     ask "위 본문으로 dev → main PR 을 연다. 진행?" || { echo 멈춤; exit 0; }
     gh pr create -R "$REPO" --base main --head dev --title "릴리즈 — $(date +%F)" --body-file "$BODY"
-    rel=$(gh pr list -R "$REPO" --base main --head dev --state open --json number --jq '.[0].number')
+    # ★ 2026-09-17 (DECISIONS §182-3 · G-16). `// empty` 가 없으면 PR 이 안 보일 때 jq 가 `null` 을 **글자로** 낸다.
+    #   `[ -z ]` 가 못 걸러 `wait_checks null` · `gh pr merge null` 로 흘렀다(chain.2 의 `PR #null`).
+    rel=$(gh pr list -R "$REPO" --base main --head dev --state open --json number --jq '.[0].number // empty')
+    [ -n "$rel" ] || die "릴리즈 PR 을 열었는데 목록에 없다 — 화면에서 확인하라"
 else
     warn "이미 열린 릴리즈 PR #$rel 을 쓴다"
 fi

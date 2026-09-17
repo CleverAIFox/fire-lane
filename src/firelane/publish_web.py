@@ -308,7 +308,10 @@ def main():
     # ── 목적지 색인 ─────────────────────────────────────────
     # ★ 2026-09-17 (DECISIONS §181 · PLAN 「목적지 검색 — 주소 · 건물명 · 관공서」).
     #   poi.geojson 은 지도 라벨이다(스코프 · 1층). 검색은 dest.geojson 을 읽는다 —
-    #   상가 + 주소/건물(내비게이션용DB) + 관공서/학교(민원행정기관), 지도 이동 범위 안.
+    #   상가 + 주소/건물(내비게이션용DB) + 관공서/학교(민원행정기관).
+    # ★ 2026-09-17 (DECISIONS §183-1 · 사용자). 목적지는 **동명동 경계 안만**이다. 화재 발생 후보지 스코프가
+    #   동명동이다. N1.1 은 지도 이동 범위로 잘라 동구청 · 동부소방서가 목적지로 떴다. 지도(건물 · 라벨)는
+    #   지금처럼 안전센터 · 회랑까지 넓게 둔다 — 넓은 것은 표출이고 목적지는 판정 스코프다.
     # ★ 입력이 없으면 죽는다. 빠진 채 발행하면 검색에서 법원이 또 조용히 사라진다.
     from firelane import destinations as _dest
     for _need in (P/"navi_build.csv", P/"navi_jibun.csv", P/"civil_office.geojson"):
@@ -319,7 +322,7 @@ def main():
     _rd = dict(dtype=str, keep_default_na=False, encoding="utf-8-sig")
     dest, _st = _dest.build_index(
         _store, pd.read_csv(P/"navi_build.csv", **_rd), pd.read_csv(P/"navi_jibun.csv", **_rd),
-        gpd.read_file(P/"civil_office.geojson"), move4)
+        gpd.read_file(P/"civil_office.geojson"), emd4)
     dest.to_file(W/"dest.geojson", **PREC)
     _nv = _st["navi"]
     print(f"  목적지 {_st['total']:,} — 상가 {_st['store']:,} · 주소/건물 {_st['build']:,} · 관공서/학교 {_st['civil']:,}")

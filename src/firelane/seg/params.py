@@ -41,6 +41,8 @@ EMD_CD        = "12210108"   # 동명동
 STATION_RADIUS = 300         # 안전센터 주변 판정·표출 반경(m). 판정 범위에 든다(DECISIONS §170)
 CORRIDOR_BUFFER = 70.0       # 접근회랑 주변 판정·표출 범위(m). 종전 segments.py 에 70 이 두 번 박혀 있었다
 DISPLAY_BUFFER = 60.0        # 동 경계 주변 지도 여백(m). 판정 범위를 덮는다
+DISPLAY_CLOSE = 150.0        # 표출 범위 닫힘 반경(m). 폭 300m 미만의 틈 · 안쪽 구멍을 메운다(DECISIONS §182-7)
+                             #   판정 범위(judgment_scope)에는 안 쓴다 — 마스크 · 표출 필터만 넓어진다
 GRAPH_BUFFER  = 1500.0       # 안전센터(대인 1.0km / 지산 1.2km)까지 포함
 KEEP_BUFFER   = 50.0         # 산출물에 남길 범위
 SNAP_TOL      = 0.5          # 끝점 투영 반경. T자 접합 해소
