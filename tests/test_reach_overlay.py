@@ -48,7 +48,7 @@ def test_overlay_has_something_to_draw():
     assert 0 < n < len(route), f"도달 불가 {n}/{len(route)} — 0 이면 오버레이가 죽은 것이다"
 
 
-@pytest.mark.skipif(shutil.which("node") is None, reason="node 없음")
+@pytest.mark.skipif(shutil.which("node") is None, reason="환경skip(도구) — node 없음")
 def test_join_leaves_unmatched_as_null_not_zero(tmp_path):
     """빗나간 조인을 0 으로 채우면 '도달 불가' 거짓 점선이 그려진다."""
     probe = tmp_path / "probe.mjs"

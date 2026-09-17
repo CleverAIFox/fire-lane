@@ -44,8 +44,7 @@ POINT = "src/firelane/ledger.py:248 — globs 를 stem 우선으로"
 
 
 def _template() -> str:
-    if not TPL.exists():
-        pytest.skip("PR 템플릿이 없다")
+    assert TPL.exists(), ".github/pull_request_template.md 가 없다"
     return TPL.read_text(encoding="utf-8")
 
 

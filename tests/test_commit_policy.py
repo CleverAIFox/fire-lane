@@ -68,7 +68,7 @@ def test_추적_중인_파일이_정책을_지킨다():
     #   정책은 이제 1 을 반환한다. 테스트는 못 보는 상황을 통과로 위장하지
     #   않고 명시적으로 건너뛴다.
     if not (ROOT / ".git").exists():
-        pytest.skip("git 저장소가 아니다 — 추적 목록을 볼 수 없다")
+        pytest.skip("환경skip(도구) — git 저장소가 아니다. 추적 목록을 볼 수 없다")
     r = subprocess.run([sys.executable, str(ROOT / "tools" / "commit_policy.py"),
                         "--tracked"], capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, f"추적 파일이 정책을 위반한다\n{r.stdout}"

@@ -105,7 +105,7 @@ def test_received_vehicle_cards_match_their_names():
     """대장 parts 의 카드가 raw 에 있고, norm 에 옮겨졌고, 이름과 내용이 같은가."""
     from firelane import paths
     if not paths.DATA or not (Path(paths.DATA) / "raw").is_dir():
-        pytest.skip("레이크 없음 — 실물 대조는 레이크 기계에서 돈다")
+        pytest.skip("환경skip(레이크) — 실물 대조는 레이크 기계에서 돈다")
     e = _entry()
     vt = str(e["updated"]).replace("-", "")
     prov = e["stem"].split("_", 1)[0]

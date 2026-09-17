@@ -239,7 +239,7 @@ def _lake_attached() -> bool:
     return bool(d and (d / "raw").is_dir() and any((d / "raw").iterdir()))
 
 
-@pytest.mark.skipif(not _lake_attached(), reason="환경skip — 레이크가 없다(CI)")
+@pytest.mark.skipif(not _lake_attached(), reason="환경skip(레이크) — 레이크가 없다(CI)")
 def test_real_lake_has_no_two_owners():
     """실물 레이크에서 두주인 0 · 폐기 글롭 0. 나머지 상태(폐지층 · 선언밖)는 L2 가 비운다."""
     import json

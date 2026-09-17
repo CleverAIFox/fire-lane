@@ -32,8 +32,6 @@ import re
 import zipfile
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = ROOT / "docs/PLAN.md"
 DOCX = ROOT / "docs/proposal.docx"
@@ -76,11 +74,10 @@ def test_plan12_targets_exist_in_docx():
       이것은 "표가 가리키는 것이 문서에 있는가" 를 본다. 둘 다 있어야
       표와 문서가 같이 낡지 않는다.
     """
-    if not DOCX.exists():
-        pytest.skip("기획서가 없다")
+    assert DOCX.exists(), "docs/proposal.docx 가 없다 — 커밋된 기획서다"
     rows = _open_rows()
     if not rows:
-        pytest.skip("§12 에 남은 행이 없다")
+        return   # ★ 남은 행 0 은 대조할 것이 없는 것이다 — skip 이 아니다. 파서 사망은 카나리아가 가린다
 
     txt = _docx_text()
     bad = []

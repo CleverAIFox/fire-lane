@@ -24,8 +24,6 @@ import importlib.util
 import re
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 GEN = ROOT / "web/workflow.html"
 
@@ -44,8 +42,7 @@ def test_generated_matches_master():
     다르면 둘 중 하나다 — MASTER §12 를 고치고 재생성을 안 했거나,
     생성물을 손으로 고쳤거나. 어느 쪽이든 정본은 MASTER 다.
     """
-    if not GEN.exists():
-        pytest.skip("아직 생성 전이다")
+    assert GEN.exists(), "web/workflow.html 가 없다 — 커밋된 생성물이다. render_workflow 를 돌려라"
     m = _mod()
     # ★ 2026-09-02. 종전에는 `render(classify(section12(...)))` 로
     #   **내부를 직접 조립**했다. 파이프라인이 바뀌면 이 줄도 같이 고쳐야
@@ -185,8 +182,7 @@ def test_generated_has_components():
     ★ ASCII 를 그대로 넣으면 md 원문과 똑같아 보인다. 그것은 뷰어이지
       렌더가 아니다. 트리·방향·룰셋 카드가 컴포넌트로 나와야 한다.
     """
-    if not GEN.exists():
-        pytest.skip("아직 생성 전이다")
+    assert GEN.exists(), "web/workflow.html 가 없다 — 커밋된 생성물이다. render_workflow 를 돌려라"
     doc = GEN.read_text(encoding="utf-8")
     # ★ 2026-09-02. 종전에는 `tree` · `flow` · `cards` · 각주 넷을 찾았다.
     #   그것은 f-string 렌더가 §12 전체를 그리던 시절의 컴포넌트다. 지금은
