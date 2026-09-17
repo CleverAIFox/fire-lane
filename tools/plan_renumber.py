@@ -66,6 +66,28 @@ REF = re.compile(
 #   그래서 아래 `_canary()` 가 생겼다.
 
 
+def _foreign(text: str) -> list[tuple[int, int]]:
+    """자기 번호 표(`| # |`)를 가진 §1 밖 절의 범위.
+
+    ★ 2026-09-17 (DECISIONS §180 · G-13). §12 산문의 `(#6 · #11 · #12)` 는 §12 표의 번호였다. 이 도구가
+      그것을 §1 행 참조로 읽어 재배번을 멈췄고, 멈추지 않았다면 두 참조가 조용히 다른 행을 가리켰다.
+      그런 절 안에서는 **`§1 #N` 으로 소속을 적은 것만** §1 참조로 본다.
+    """
+    heads = [(m.start(), m.group(1)) for m in re.finditer(r"^## (\d+)\. ", text, re.M)]
+    out = []
+    for k, (pos, num) in enumerate(heads):
+        end = heads[k + 1][0] if k + 1 < len(heads) else len(text)
+        if num != "1" and re.search(r"^\| # \|", text[pos:end], re.M):
+            out.append((pos, end))
+    return out
+
+
+def _is_plan_ref(text: str, m: re.Match, spans: list[tuple[int, int]]) -> bool:
+    if not any(a <= m.start() < b for a, b in spans):
+        return True
+    return text[max(0, m.start() - 3):m.start()] == "§1 "
+
+
 def _canary() -> None:
     """정규식이 살아 있는가. **양성 대조다.**
 
@@ -82,6 +104,11 @@ def _canary() -> None:
                  "  **죽은 참조보다 나쁘다. 조용히 틀린다.**")
     if ROW.findall("| 7 | 제목 |") != [("| ", "7", " |")]:
         sys.exit("★ ROW 정규식이 죽었다 — 표 행을 못 찾는다.")
+    doc = "## 1. 남은 일\n\n| # | 항목 |\n| 6 | a |\n\n## 12. 기획서\n\n| # | 서술 |\n| 6 | b |\n본문 #6 · §1 #6\n"
+    sp = _foreign(doc)
+    got = [m.group(1) for m in REF.finditer(doc) if _is_plan_ref(doc, m, sp)]
+    if got != ["6"]:
+        sys.exit(f"★ 남의 표 번호를 가리는 프로브가 죽었다 — {got}(기대 ['6'] · `§1 #6` 하나).")
 
 
 def _span(text: str) -> tuple[int, int]:
@@ -128,7 +155,8 @@ def main() -> int:
         print(f"    … {len(moved) - 8}행 더")
 
     # ── 지워진 것을 가리키는 참조 ────────────────────────────
-    dead = sorted({int(m.group(1)) for m in REF.finditer(text)} - set(nums))
+    spans = _foreign(text)
+    dead = sorted({int(m.group(1)) for m in REF.finditer(text) if _is_plan_ref(text, m, spans)} - set(nums))
     if dead:
         print(f"\n★ 지워진 항목을 가리키는 참조 {len(dead)}건 — **안 고친다.**")
         print(f"    {', '.join('#' + str(d) for d in dead)}")
@@ -151,13 +179,17 @@ def main() -> int:
     def stage1_row(m: re.Match) -> str:
         return f"{m.group(1)}\x00{old2new[int(m.group(2))]}\x00{m.group(3)}"
 
-    def stage1_ref(m: re.Match) -> str:
-        o = int(m.group(1))
-        return f"#\x00{old2new[o]}\x00" if o in old2new else m.group(0)
-
     s, e = _span(text)
     out = text[:s] + ROW.sub(stage1_row, text[s:e]) + text[e:]
-    out = REF.sub(stage1_ref, out)          # 참조는 문서 전체에서 따라간다
+    spans = _foreign(out)                   # ROW 치환은 §1 안에서만 길이를 바꾸지 않는다 — 범위를 다시 잰다
+
+    def stage1_ref(m: re.Match) -> str:
+        o = int(m.group(1))
+        if not _is_plan_ref(out, m, spans):
+            return m.group(0)
+        return f"#\x00{old2new[o]}\x00" if o in old2new else m.group(0)
+
+    out = REF.sub(stage1_ref, out)          # 참조는 문서 전체에서 따라간다 — 남의 표 번호는 뺀다
     out = out.replace("\x00", "")
 
     after = _rows(out)

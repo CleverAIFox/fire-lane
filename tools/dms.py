@@ -74,7 +74,10 @@ STATE = ROOT / "data" / "dms"
 DOCS = ("docs/MASTER.md", "docs/DECISIONS.md", "docs/PLAN.md", "README.md")
 
 # 줄머리 칸. 뒤에 한글 조사가 붙으면 산문이다 — `강제자가 없었다`
-FIELD = re.compile(r"^\s{0,6}(?:[-*>]\s*)?\*{0,2}강제자\*{0,2}(?![가-힣])")
+# ★ 2026-09-17 (DECISIONS §174-4 · §180). 뒤에 `(` 가 붙어도 산문이다 — `강제자(`test_x`)가 단언해` 는
+#   괄호 속 이름을 설명하는 문장이지 칸이 아니다. 이 줄이 칸으로 읽혀 지운 테스트를 가리키는 "죽은 참조 1" 이
+#   봉인마다 찍혔다(§171-1).
+FIELD = re.compile(r"^\s{0,6}(?:[-*>]\s*)?\*{0,2}강제자\*{0,2}(?![가-힣(])")
 HEAD = re.compile(r"^(#{2,3}) (.+)$")
 FENCE = re.compile(r"^\s*(```|~~~)")
 
@@ -638,6 +641,30 @@ def _closed_declarations(declared: dict[str, str], red: list[str],
     """
     return sorted(set(declared) - set(red) - set(unproven or []))
 
+# 봉인할 때 커밋 안 돼도 되는 추적 파일 — 봉인 자신과, 봉인 커밋에 함께 넣는 생성 매니페스트
+SEAL_MAY_BE_DIRTY = ("data/dms/", "data/processed/_manifest.json")
+
+
+def uncommitted(root: Path = ROOT) -> list[str]:
+    """커밋 안 된 **추적** 파일. 봉인은 커밋본의 기준선이어야 한다.
+
+    ★ 2026-09-17 (DECISIONS §180-7). L2d 적용 스크립트가 패치의 `src/firelane/normalize_raw.py` 를 커밋에서
+      빠뜨렸다. 레이크 기계의 verify 는 작업 트리를 보고 41 단계 초록, 봉인도 찍혔다(헤더에 `+미커밋`).
+      CI 는 커밋본을 보고 `test_every_required_file_is_reachable_by_rules` 로 빨강. 봉인이 거짓이었다.
+    """
+    import subprocess
+    r = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"],
+                       cwd=root, capture_output=True, text=True, check=False)
+    out = []
+    for ln in r.stdout.splitlines():
+        rel = ln[3:].strip().strip('"')
+        if " -> " in rel:
+            rel = rel.split(" -> ", 1)[1]
+        if not any(rel == d or rel.startswith(d) for d in SEAL_MAY_BE_DIRTY):
+            out.append(rel)
+    return out
+
+
 def cmd_seal(data: dict, quick: bool, allow: list[str],
              log: Path | None = None) -> int:
     """★ 분모가 0 이 아니어도 봉인한다. 봉인은 *완료* 가 아니라 *기준선*이다.
@@ -655,6 +682,13 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
                 print(f"    {f}")
             print("  ★ 다시 돌려라 —  bash tools/verify.sh 2>&1 | tee /tmp/verify.log")
             return 1
+    dirty = uncommitted()
+    if dirty:
+        print(f"✗ 커밋 안 된 추적 파일이 {len(dirty)}개다 — 봉인은 커밋본의 기준선이다. CI 는 커밋본만 본다.")
+        for f in dirty[:8]:
+            print(f"    {f}")
+        print("  ★ 커밋하고 verify 부터 다시 돌려라(§180-7)")
+        return 1
     enf = run_enforcers(quick, log)
     red = sorted(k for k, v in enf.items() if v["state"] == "실패")
     for k in sorted(enf):
@@ -750,7 +784,8 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
     (STATE / SEAL).write_text(json.dumps(rec, ensure_ascii=False, indent=1) + "\n",
                               encoding="utf-8")
     print(f"\n봉인 {rec['sealed_at']}  {rec['commit']}  [{rec['scope']}]")
-    print(f"  절 {len(now)} · 분모 {blank} · 죽은 참조 {rec['dead_refs']} "
+    # ★ 2026-09-17 (§180). "죽은 참조" 는 refcheck 의 경로 참조와 이름이 같아 두 숫자가 어긋나 보였다
+    print(f"  절 {len(now)} · 분모 {blank} · 죽은 강제자 참조 {rec['dead_refs']} "
           f"· 사본군 {dup}")
     print(f"  강제자 {len(enf)} 통과"
           + (f"  아는 빨강 {len(red)} — {', '.join(red)}" if red else ""))

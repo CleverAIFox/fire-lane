@@ -1042,8 +1042,9 @@ def test_acquire_stage_and_quarantine_do_not_fight():
                            capture_output=True, text=True, cwd=ROOT, env=env)
         left = sorted(p.name for p in (base / "raw").rglob("*") if p.is_file()
                       and not p.name.startswith("_"))
-        quarantined = sorted(p.name for p in (base / "_quarantine").rglob("*")
-                             if p.is_file()) if (base / "_quarantine").is_dir() else []
+        # ★ 2026-09-17 (§180). 되돌리는 자리가 _quarantine → retired/ 다(격리 층 폐지)
+        quarantined = sorted(p.name for p in (base / "retired").rglob("*")
+                             if p.is_file()) if (base / "retired").is_dir() else []
         shutil.rmtree(base / "raw", ignore_errors=True)
 
     names = {Path(x).name for x in ret}
@@ -1051,7 +1052,7 @@ def test_acquire_stage_and_quarantine_do_not_fight():
         f"폐기 등재된 파일이 raw 에 남았다: {sorted(set(left) & names)}\n"
         f"{r.stdout[-600:]}")
     assert names <= set(quarantined), (
-        f"되돌려지지 않았다. _quarantine: {quarantined}\n{r.stdout[-600:]}")
+        f"되돌려지지 않았다. retired/: {quarantined}\n{r.stdout[-600:]}")
 
 
 def test_acquire_ledger_ends_with_newline():
@@ -1079,8 +1080,8 @@ def test_verify_tells_quarantine_from_loss():
       역사는 `sources.yaml` 의 `retired` 가 맡는다.
     """
     src = (ROOT / "tools/acquire.py").read_text(encoding="utf-8")
-    assert "QUARANTINE / r" in src, \
-        "verify 가 _quarantine 을 안 본다 — 격리를 소실로 오판한다"
+    assert "RETIRED / r" in src, \
+        "verify 가 retired/ 를 안 본다 — 폐기 이동을 소실로 오판한다(§180)"
     assert "moved" in src and "gone" in src, \
         "verify 가 격리와 소실을 한 목록으로 다룬다"
 
