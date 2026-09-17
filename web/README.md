@@ -2,6 +2,10 @@
 
 MapLibre GL JS 5 + deck.gl 9 (interleaved) + V-World.
 
+★ 이 문서는 **지도**(`web/index.html` · `web/js`)다. **내비**(`web/navi`)는 React + TypeScript + Vite · maplibre-gl **6** 이고
+빌드 산출물이 배포의 `/navi/` 로 간다(`.github/actions/build-navi`). 내비는 `web/data` 를 그대로 읽는다 — 목적지 검색은
+`dest.geojson`, 경로는 `navi_graph.json`. 배포 주소 `cleveraifox.github.io/fire-lane/` · `/navi/`.
+
 ## 실행
 
 ```bash
