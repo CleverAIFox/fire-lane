@@ -2801,6 +2801,7 @@ datasets:
     contract:
       encoding: cp949
       optional_cols: [비고]
+    vintages: ['2024-01-08', '2025-02-26']
     authority: 전남광주통합특별시 동구 (받은 경로 미기록)
     files:
       - gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv

@@ -28,6 +28,9 @@ vintage_check.py — 파일명의 날짜가 **자료 기준일인가, 내려받�
 ── 무엇을 보나 ────────────────────────────────────────────────
     V1  파일명 vintage ≠ 대장 updated      어느 쪽이 틀렸는지는 사람이 정한다
     V2  같은 stem 에 vintage 가 둘 이상     두 벌이다. 용량을 같이 낸다
+        ★ 2026-09-17 (DECISIONS §179-5). 판이 여럿인 것이 정상인 소스(기간별로 나뉘어 오는 표 —
+          `csv_table_multi`)는 대장 `vintages` 에 판을 **선언**한다. 선언된 판은 V1 · V2 로 안 센다.
+          선언 밖 판이 오면 여전히 운다. 선언이 없으면 종전과 같다
     V3  대장에 없는 stem                   참고. 결함으로 안 센다(lakecheck 소관)
 
 ★ V1 을 자동으로 고치지 않는다. 파일명이 맞고 대장이 낡았을 수도 있다.
@@ -53,6 +56,7 @@ from firelane import naming as nm
 from firelane import paths  # noqa: F401  ★ import 만으로 .env 를 환경에 얹는다
 
 ROOT = Path(__file__).resolve().parent.parent
+DECL: dict[str, frozenset[str]] = {}     # stem → 대장이 선언한 판(`vintages`)
 DASH = re.compile(r"[^0-9]")
 
 
@@ -65,6 +69,22 @@ def _sources() -> dict:
     return _led.load_sources()
 
 
+def _declared(e: dict) -> frozenset[str]:
+    return frozenset(_norm(v) for v in (e.get("vintages") or []))
+
+
+def judge(seen: set[str], want: str, declared: frozenset[str]) -> tuple[list[str], bool]:
+    """(V1 로 셀 판들, V2 인가). **순수 함수** — selftest 와 테스트가 흔든다."""
+    def ok(got: str) -> bool:
+        if declared:
+            return any(got[:min(len(got), len(d)) or 1] == d[:min(len(got), len(d)) or 1] for d in declared)
+        k = min(len(got), len(want)) or 1
+        return not want or got[:k] == want[:k]
+    v1 = [g for g in sorted(seen) if not ok(g)]
+    v2 = len(seen) > 1 and (not declared or bool(v1))
+    return v1, v2
+
+
 def _ledger_index() -> dict[str, tuple[str, str]]:
     """`provider_dataset` → (대장 키들, updated). 대장이 자료 기준일의 정본이다.
 
@@ -74,12 +94,15 @@ def _ledger_index() -> dict[str, tuple[str, str]]:
     """
     keys: dict[str, list[str]] = defaultdict(list)
     upd: dict[str, str] = {}
+    DECL.clear()
     for key, e in (_sources().get("datasets") or {}).items():
         stem = e.get("stem")
         if not stem:
             continue
         keys[str(stem)].append(key)
         upd.setdefault(str(stem), _norm(e.get("updated")))
+        if _declared(e):
+            DECL[str(stem)] = DECL.get(str(stem), frozenset()) | _declared(e)
     return {s: (" · ".join(sorted(ks)), upd[s]) for s, ks in keys.items()}
 
 
@@ -113,16 +136,16 @@ def scan(raw: Path) -> list[dict]:
     out = []
     for stem, seen in sorted(bucket.items()):
         key, want = idx[stem]
-        for got, files in sorted(seen.items()):
-            # ★ 길이가 다르면 앞자리로 견준다 — `202608` 과 `20260812` 는
-            #   어긋난 것이 아니라 정밀도가 다른 것이다.
-            k = min(len(got), len(want)) or 1
-            if want and got[:k] != want[:k]:
-                out.append({"kind": "V1", "key": key, "stem": stem,
-                            "vintage": got, "updated": want,
-                            "files": [str(f.relative_to(raw)) for f in files],
-                            "mb": mb(files)})
-        if len(seen) > 1:
+        # ★ 길이가 다르면 앞자리로 견준다 — `202608` 과 `20260812` 는
+        #   어긋난 것이 아니라 정밀도가 다른 것이다.
+        bad, two = judge(set(seen), want, DECL.get(stem, frozenset()))
+        for got in bad:
+            files = seen[got]
+            out.append({"kind": "V1", "key": key, "stem": stem,
+                        "vintage": got, "updated": want if stem not in DECL else " · ".join(sorted(DECL[stem])),
+                        "files": [str(f.relative_to(raw)) for f in files],
+                        "mb": mb(files)})
+        if two:
             out.append({"kind": "V2", "key": key, "stem": stem,
                         "vintages": sorted(seen),
                         "mb": {v: mb(fs) for v, fs in sorted(seen.items())}})
@@ -148,6 +171,14 @@ def selftest() -> int:
     got, want = "202608", "20260812"
     if got[:min(len(got), len(want))] != want[:min(len(got), len(want))]:
         bad.append("정밀도가 다른 날짜를 어긋난 것으로 센다")
+    # 선언된 다판 — 선언 안은 초록, 선언 밖 판은 V1 · V2
+    d = frozenset({"20240108", "20250226"})
+    if judge({"20240108", "20250226"}, "20250226", d) != ([], False):
+        bad.append("선언된 두 판을 결함으로 센다")
+    if judge({"20240108", "20250226", "20260101"}, "20250226", d) != (["20260101"], True):
+        bad.append("선언 밖 판을 못 잡는다")
+    if judge({"20240108", "20250226"}, "20250226", frozenset()) != (["20240108"], True):
+        bad.append("선언이 없을 때 종전 규칙이 죽었다")
     for line in bad:
         print(f"  {line}")
     print("selftest " + ("빨강" if bad else "초록"))
