@@ -8033,3 +8033,96 @@ README 셋(루트 · `src/firelane` · `web`)의 전수 대조는 PLAN 「README
 소비자로 더한다. 실물 없이도 우는 강제자를 따로 둔다.
 
 강제자  `tests/test_n1.py::test_contract_counts_navi_as_consumer` · `tests/test_contract.py::test_web_data_has_no_unintended_orphan`
+
+## 182. K3 · G — 대장 검사를 아무도 안 불렀고, 옛 실행으로 머지했다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 182-1~182-8 이 각자 강제자 칸을 든다
+
+N1.1 을 사용자 기계에서 돌리며 드러난 도구 결함을 모았다(G-14 · G-15 · G-16 · G-23 과 매 실행 경고 둘). 판정은 불변이다.
+표출 범위 틈(182-7)만 화면이 바뀐다.
+
+### 182-1. `ledger_schema` — 헤더 없는 표는 오류가 아니고, 글롭 레이어는 zip 이름과 대조한다 (G-14)
+
+헤더 없는 text_table 을 `error` 로 돌려줘 `run()` 이 기록을 건너뛰었다 — navi_build · navi_jibun 은 영영 schema 를 못 얻었다.
+`headerless: true` 로 칸에 적는다. 글롭 레이어(`*.shp`)는 `/vsizip` 경로에 그대로 넣어 못 열었고 CP437 로 깨진 레이어 이름만
+기록됐다(N1.1 판 3 이 그것을 대장에 썼다). zip 목록과 대조해 정확히 하나를 고르고, .cpg 없는 DBF 는 대장 `encoding` 을 넘겨
+필드명이 깨지지 않게 하고, UTF-8 플래그 없는 zip 의 CP949 이름은 사람이 읽는 한글로 기록한다(`╣╬┐°…` 방지). `--missing` 은 schema 가 없는 항목만 채운다 — 전량 `--apply` 는 드리프트까지 덮어쓴다.
+모의 레이크(제공처처럼 CP949 바이트를 플래그 없이 넣은 zip)에서 결손 6종이 전부 채워지고 대장 FAIL 이 0 이 됐다.
+
+강제자  `tests/test_k3.py::test_g14_zip_names_are_recorded_readable` · `tools/verify.sh` 「대장 필드 검사」(182-2)
+
+### 182-2. 대장 필드 검사를 verify 에 건다 (G-14)
+
+`python -m firelane.ledger` 는 FAIL 9 로 종료코드 1 을 내고 있었는데 verify · 테스트 · CI 어디에도 없어서 초록이었다.
+FAIL 은 셋 — 텍스트 소스 3종의 encoding 선언 누락(값은 추측하지 않고 `schema.encoding_seen` 을 옮겼다) · schema 결손 6종(182-1 로 채운다).
+zip 안 여러 텍스트 표는 `files` 가 스키마의 몸이라 WARN 에서 인정한다. verify 단계 수는 42 → 43 이다.
+
+강제자  `tools/verify.sh` 「대장 필드 검사」
+
+### 182-3. jq `.[0]` 에는 `// empty` (G-16)
+
+`--jq '.[0].number'` 는 목록이 비면 `null` 을 글자로 낸다. `[ -z ]` 가 못 걸러 `PR #null` 로 흘렀다(chain.2).
+`--jq` 6곳 전수 — `.[0]` 을 쓰는 넷 중 `merge_batch` 릴리즈 PR 재조회 하나에 없었다. 비면 멈춘다.
+
+강제자  `tests/test_k3.py::test_g16_jq_first_element_has_empty_fallback`
+
+### 182-4. pyogrio `fields` 에 `or` 를 걸지 않는다 (G-15)
+
+EDA v2 가 `read_info()["fields"] or []` 로 받아 기본도 전량이 죽었다 — numpy 배열이라 `or` 에서 진리값이 모호하다.
+저장소 전수(AST) 결과 `inventory.py` 두 곳이 같은 형태였다. `_field_list` 가 None 만 빈 것으로 본다.
+
+강제자  `tests/test_k3.py::test_g15_pyogrio_fields_never_meet_or` · `::test_g15_inventory_field_list_accepts_numpy`
+
+### 182-5. `primary` 가 적힌 동명 파일은 경고하지 않는다
+
+kfs · mas 3건이 hwp · pdf 를 함께 두고 대장에 `primary` 로 이미 못박았는데 ingest 가 매 실행 "확장자만 다른 동명 파일" 을 찍었다.
+매번 뜨는 경고는 진짜 경고를 죽인다. `primary` 가 그중 하나를 가리키면 조용히 한다.
+
+강제자 없음 — 사유: 출력 문구 변경이다. 판정은 `firelane.ledger` 의 primary 강제가 든다
+
+### 182-6. `GeoSeries.notna()` 경고를 없앤다
+
+geopandas 가 빈 도형 의미를 바꾸며 매 실행 경고했다. 뜻은 "없거나 비었으면 뺀다" 하나라 shapely `is_missing | is_empty` 로 직접 묻는다.
+
+강제자 없음 — 사유: 같은 행을 빼는 표현만 바꿨다. 산출물 계보(`golden 판정 불변` · `web/data 계보`)가 행 수 변화를 잡는다
+
+### 182-7. 표출 범위의 틈 · 구멍을 닫는다 — 마스크가 건물 · 정사영상을 까맣게 덮었다
+
+사용자 화면에서 광주지방법원 앞 블록과 산수동 쪽 띠가 까맣게 나왔다. 표출 범위 = 동 여백 60m ∪ 회랑 70m ∪ 안전센터 300m 의
+합집합이라 레이스 모양이고, 손가락 사이 틈과 둘러싸인 구멍 4개(합 0.037km²)가 `mask.geojson`(불투명도 .9)으로 덮였다.
+`display_scope` 가 닫힘(150m)으로 폭 300m 미만 틈을 메우고 안쪽 구멍을 없앤다. 실측 — 면적 1.691 → 1.750km², 구멍 4 → 0,
+범위 변화 0.2m. 판정 범위(`judgment_scope`)는 그대로라 1,281 불변이다. 떨어진 조각은 잇지 않는다.
+
+강제자  `tests/test_station_scope.py::test_display_scope_has_no_notches_or_holes` · `::test_display_scope_covers_judgment_scope`
+
+### 182-8. CI 대기는 PR 머리 커밋의 새 실행을 본다 (G-23)
+
+`wait_checks` 는 "체크가 하나라도 있으면" 기다림을 끝냈다. 본문을 고친 직후에는 옛 실행 결과가 이미 있어 새 실행이 등록되기 전에
+판정했다 — #59 가 본문 검사 실패인 채 스쿼시됐다(코드 검사는 push 쪽이 초록이었다). 머리 커밋의 check-run 을 읽고,
+`since` 가 주어지면 그 뒤에 시작된 실행이 생길 때까지 기다린다.
+
+강제자  `tests/test_k3.py::test_g23_wait_checks_reads_head_commit_runs`
+
+## 183. N1.2 — 목적지는 동명동만, 건물DB 는 보관한다
+
+> 2026-09-17 · 오창준
+
+강제자 없음 — 사유: 하위 절 183-1~183-2 가 각자 강제자 칸을 든다
+
+### 183-1. 내비 목적지는 동명동 경계 안만 — 지도는 넓게 둔다
+
+사용자 판정. 화재 발생 후보지 스코프가 동명동이다. N1.1 은 목적지를 지도 이동 범위로 잘라 동구청 · 동부소방서가 목적지로 떴다.
+목적지 색인만 동명동 경계로 자른다. 건물 · 라벨 · 판정 범위(회랑 · 안전센터 300m)는 지금처럼 넓다 — 넓은 것은 표출이고
+목적지는 판정 스코프다. 광주지방법원이 검색에 없는 것은 이 결정대로다(지산동 · 민원행정기관에 법원 유형 없음).
+
+강제자  `tests/test_n1.py::test_destinations_are_clipped_to_dongmyeong_only`
+
+### 183-2. `juso_building_db` 를 retired 로 보관한다
+
+사용자 판정. `navi_build` 가 같은 동명동 2,078행을 좌표까지 든다. 소비자 0곳. 원본 zip 은 레이크 `raw/juso/` → `retired/juso/` 로
+옮기고 sha 를 대장 retired 에 적는다 — 전남광주 전역 건물 주소 테이블의 유일본이라 지우지 않는다(§173-1). normalize_raw 규칙과
+테스트 표본을 내렸다. datasets 73 → 72 · retired 3 → 4 · authority 래칫 63 → 62.
+
+강제자  `tools/docnum_check.py`(datasets 72 · retired 4) · `tests/test_lake.py::test_authority_names_institution_and_route` · `tests/test_normalize_rules.py::test_rules_do_not_reimport_retired_files`

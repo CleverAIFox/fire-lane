@@ -36,7 +36,9 @@ def test_existing_boundary_and_corridor_remain_in_scope(scope_inputs):
 def test_display_scope_covers_judgment_scope(scope_inputs):
     keep = judgment_scope(*scope_inputs)
     display = display_scope(*scope_inputs)
-    assert display.covers(keep)
+    # ★ 2026-09-17 (§182-7). 닫힘 · 외곽선 재구성으로 경계 좌표가 부동소수 수준에서 달라져 `covers` 가
+    #   경계 위 점 하나로 거짓이 된다. 뜻은 "판정 범위가 표출 범위 밖으로 삐져나오지 않는다" — 면적으로 본다.
+    assert keep.difference(display).area < 1e-6
     assert display.covers(Point(-59, 50))
     assert not keep.covers(Point(-59, 50))
 
@@ -71,3 +73,19 @@ def test_ingest_bounds_cover_station_circles_and_width_context():
     for name, coords in STATIONS.items():
         needed = transform(to_metric, Point(coords)).buffer(STATION_RADIUS + WMAX_CAP)
         assert box(*bounds).covers(transform(to_wgs, needed)), name
+
+
+def test_display_scope_has_no_notches_or_holes():
+    """§182-7 — 표출 범위에 안쪽 구멍 · 좁은 틈이 없다. 판정 범위는 그대로다."""
+    boundary = box(0, 0, 400, 400)
+    ring = [LineString([(400, 200), (1000, 200), (1000, 800), (200, 800), (200, 400)])]   # 동을 감아 도는 회랑
+    station = [Point(1000, 200)]
+    keep = judgment_scope(boundary, ring, station)
+    display = display_scope(boundary, ring, station)
+    assert keep.difference(display).area < 1e-6
+    parts = display.geoms if hasattr(display, "geoms") else [display]
+    assert all(len(p.interiors) == 0 for p in parts), "안쪽 구멍이 마스크 섬으로 남는다"
+    assert display.covers(Point(600, 500)), "회랑이 둘러싼 블록이 까맣게 덮인다"
+    assert not keep.covers(Point(600, 500)), "프로브 — 판정 범위는 넓히지 않는다"
+    far = display_scope(boundary, [], [Point(5000, 5000)])
+    assert not far.covers(Point(2500, 2500)), "닫힘이 떨어진 조각 사이를 잇는다 — 반경이 과하다"

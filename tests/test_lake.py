@@ -24,7 +24,7 @@ MAX_RETIRED_GLOB = 0          # 폐기 항목이 글롭으로 파일을 가리�
 MAX_RETIRED_NO_SHA = 0        # 이름으로는 적었는데 sha 가 없는 폐기 파일 — L2 가 레이크에서 재서 채웠다(§176)
 MAX_LEDGER_LOADERS = 40       # ledger · lake 밖에서 sources.yaml 을 직접 yaml 로 읽는 파일
 MAX_OWNER_BLOCK_READERS = 12  # ledger · lake 밖에서 retired · landing_disposition 블록을 직접 읽는 파일 — K2 가 acquire 를 옮겼다(§180)
-MAX_AUTHORITY_BAD = 63        # authority 칸 규칙(MASTER §18-3a) 위반 datasets
+MAX_AUTHORITY_BAD = 62        # authority 칸 규칙(MASTER §18-3a) 위반 datasets · 2026-09-17 juso_building_db retired 로 63 → 62(§183-2)
 
 
 def _ratchet(name: str, got: int, cap: int, detail: list[str]) -> None:
