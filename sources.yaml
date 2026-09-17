@@ -2790,6 +2790,31 @@ datasets:
       primary: build_jeonnamgwangju.txt
       encoding_seen: cp949
 
+  parking_enforce:
+    stem: gjcity_parking_enforce
+    ext: [csv]
+    kind: csv_table_multi
+    layer: raw
+    scope: jngj-donggu
+    updated: '2025-02-26'
+    encoding: cp949
+    contract:
+      encoding: cp949
+      optional_cols: [비고]
+    authority: 전남광주통합특별시 동구 (받은 경로 미기록)
+    files:
+      - gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv
+      - gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv
+    what: |
+      동구 불법주정차 단속이력 두 판 — 2022-01~2024-01 85,380행 · 2024-01~2025-02 56,176행.
+      동명동 12,518 · 3,228행. 이어붙여 쓴다
+    feeds: 미투입 — 교통량 축(시간대별 주정차 빈도 → 간선 가중치)
+    feeds_why: |
+      미투입 — PLAN 「교통량 축을 무엇으로 채우나」 의 소스다(시간대별 주정차 빈도 → 간선 가중치).
+      2026-08-31 에 retired 로 내렸다가 2026-09-17 복귀했다(DECISIONS §177-1).
+    note: |
+      ★ 받은 경로가 기록에 없다. 찾으면 authority 괄호를 고친다.
+      ★ 두 판의 컬럼이 다르다(6열 · 5열). 이어붙이기 전에 컬럼 대응을 정한다.
 raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm
@@ -2907,122 +2932,6 @@ retired:
     #   (β 점유위험도 #62) 동명동으로 좁힌 판이 복귀했다. 폐기 기록을
     #   지우면 "왜 한 번 뺐다가 다시 넣었나" 가 사라진다.
     successor: bldg_ledger_dm
-  enforcement:
-    stem:      gjcity_parking_enforce
-    files:
-      - gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv
-      - gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv
-    sha256:
-      gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv: cf64a54d8dbe19c27621cec50d9b95319b9e7b9873422c5312a848cbece850e1
-      gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv: 4cb4c4e95353af782b4fdf8cf9726603ca0fff2b1b12fbbc631f3939e49fbf78
-    what:      동구 불법주정차 단속 2판 (2022-01~2023-10 85,380건 + 2024년). 이어붙여 쓴다
-    reason:    단속 이력이지 현재 장애물이 아니다. 같은 목적을 enforce_cam·parking_zone 이 더 정확히 덮는다. 8.1MB 를 매 실행 읽을 이유가 없다
-    at:        2026-08-31
-    successor: enforce_cam
-  hydrant_point_kr_20240207_truncated:
-    what: 전국 소방용수시설 표준데이터 — 50,000행 절단본 (2024-02-07)
-    stem: safety_hydrant_point
-    files:
-      - safety/safety_hydrant_point_kr_20240207_truncated.csv
-    sha256:
-      safety/safety_hydrant_point_kr_20240207_truncated.csv: 85a56e0ae97002b0fe8ea4eb3c9eadbf72ddb601b2f961d5f640662882a92437
-    ext: [csv]
-    provider: safety
-    source_hint: 공공데이터포털 CSV 내려받기 (상한 50,000행)
-    at: '2026-09-10'
-    successor: hydrant_point (safety_hydrant_point_jngj_20240207.csv)
-    reason: |
-      포털 CSV 내려받기 상한 50,000 에 걸려 잘린 판이다. 재취득한 전량과
-      비교하면 종전 197건이 새 파일에 **전부 포함**된다(겹침 197 · 기존에만 0)
-      — 커버리지가 다른 것이 아니라 잘린 것이고 새 파일이 상위집합이다.
-      ★ 지우지 않는다. 이것이 "딱 떨어지는 행수는 자연수가 아니라 상한이다.
-        50,000 · 10,000 · 1,000 을 보면 의심해야 한다" 의 유일한 물증이다.
-        종전 contract.rows 가 50000 이라 상한을 정상으로 인정하고 있었다.
-      ★ 2026-09-10 lakecheck L2 가 "격리 사유가 대장에 없다" 로 잡아냈다.
-
-  road_facility_pdf_2022:
-    what: 도로시설물 현황 378개소 — PDF 판 (hwp 에서 저장)
-    origin_name: 1663144302440.pdf
-    at: '2026-09-10'
-    successor: gjcity_road_facility (hwp 판)
-    reason: |
-      2026-09-06 에 hwp 를 열어 한컴에서 PDF 로 저장한 것이다
-      (Creator: Hwp 2020 · CreationDate D:20260906184943). 배포 원본이
-      아니라 우리가 만든 사본이므로 hwp 만 남긴다.
-
-  its_api_guide_hwp:
-    what: 교통소통정보 API 제공 안내 (한글)
-    origin_name: 교통소통정보 API 제공.hwp
-    at: '2026-09-10'
-    successor: null
-    reason: |
-      API 사용 안내 문서다. 데이터가 아니다. its 계열은 이미
-      nodelink·changelog 로 반입돼 있고 이 문서에는 좌표도 제원도 없다.
-
-  its_road_section_pdf:
-    what: 교통소통정보 도로구간정보 설명서
-    origin_name: 교통소통정보_도로구간정보_설명.pdf
-    at: '2026-09-10'
-    successor: null
-    reason: |
-      컬럼 설명서다. 데이터가 아니다. 실제 스키마는 반입 후
-      inventory 가 contract 로 기록한다 — 문서를 대장에 둘 이유가 없다.
-
-  juso_bldg_alter_2608:
-    what: 도로명주소 건물 도형 일변동분 (AlterD 31일치)
-    origin_name: 도로명주소 건물 도형.zip
-    at: '2026-09-10'
-    successor: juso_bldg_geom (전체분)
-    reason: |
-      AlterD.JUSURB.2026080X.ZIP 31개가 든 일변동분이다. 전체분
-      (juso_bldg_geom · 2026-08-01)이 있으면 불필요하다. 변동 이력이
-      필요해지면 그때 다시 받는다 — 제공처가 한 달치를 상시 배포한다.
-
-  juso_bldggrp_alter_2608:
-    what: 건물군 내 상세주소 동 도형 일변동분 (AlterD 31일치)
-    origin_name: 건물군 내 상세주소 동 도형.zip
-    at: '2026-09-10'
-    successor: juso_bldggrp_geom (전체분)
-    reason: |
-      위와 같다. 전체분(juso_bldggrp_geom)이 있으면 불필요하다.
-
-  kfs_paint_marking_20241224:
-    what: 소방차 도장 및 표지 (KFS-1-0006-2024-01)
-    stem: safety_kfs_paint_marking
-    ext: [pdf]
-    provider: safety
-    source_hint: 소방청 소방장비 기술기준(KFS) 고시 첨부
-    files:
-      - safety/safety_kfs_paint_marking_kr_20241224.pdf
-    sha256:
-      safety/safety_kfs_paint_marking_kr_20241224.pdf: 54d2f9fdae6d7ee1b33d68b62bc796a7cb9eefe1049cf0f9b53b4174cc7ca91b
-    at: 2026-08-27
-    successor: null
-    reason: |
-      진입 판정과 무관하다. 차량 외관 도색·표지 규격이며 치수·중량·
-      회전반경이 없다. 다른 KFS 규격서(펌프차·물탱크차 등)는 제원표가
-      있어 vehicle 프로파일의 근거가 되지만 이것은 아니다.
-      ★ 지우기만 하면 3개월 뒤 또 받고 또 열어본다. 그래서 등재한다
-      (PLAN #47 · mas_optional 과 같은 이유).
-      파일명은 정규명 기준이다. landing 원본은
-      "6. 소방차 도장 및 표지(KFS-1-0006-2024-01).pdf".
-  firestation_kr_20250701:
-    what: 소방청 시도 소방서 현황 (2025-07-01 판)
-    stem: safety_firestation
-    files:
-      - safety/safety_firestation_kr_20250701.csv
-    sha256:
-      safety/safety_firestation_kr_20250701.csv: ec7c27eef9a1a7547ae6da629199de2f4d46c6377931a8b1e242f3e76fb8087c
-    ext: [csv]
-    provider: safety
-    source_hint: 공공데이터포털 소방청 표준데이터
-    at: 2026-08-23
-    successor: fire_station (safety_firestation_kr_20240901.csv)
-    reason: |
-      좌표가 없다. 주소 문자열뿐이라 지오코딩을 한 번 더 거쳐야 하는데,
-      활성판(20240901)은 XY 좌표를 직접 갖는다. 더 최신인데 쓸 수 없는 것이라
-      "최신이 항상 낫다" 가 성립하지 않는 사례다.
-      2026-08-23 획득 게이트가 대장에 없는 raw 파일로 잡아냈다.
   hydrant_point_jngj_20250917:
     what: 전남광주통합특별시 소방 용수시설 현황 (2025-09-17)
     stem: safety_hydrant_point
@@ -3258,26 +3167,6 @@ retired:
     reason: |
       ISO 19115 메타데이터 작성 서식. 도엽 본체가 아니다.
       12개가 전부 440KB 로 내용이 거의 같고 파이프라인이 읽은 적 없다.
-
-  cctv_spatialmarket:
-    what: 공간데이터마켓 CCTV 설치정보
-    at: 2026-08-16
-    reason: |
-      "전남"이 전라남도였다. 18,685건 중 광주 1건 · 동명동 0건.
-      좌표계 명시·설치목적 속성이 매력적이나 스코프 불일치.
-      광주 판이 올라오면 재검토.
-
-  precise_road_map:
-    what: 정밀도로지도 (국토정보플랫폼)
-    at: 2026-08-14
-    reason: 광주는 광산구·북구 시범운행지구만이고 동구는 0km.
-
-  dem_25cm_expectation:
-    what: '"공개DEM 25cm" 라는 기대'
-    at: 2026-08-17
-    reason: |
-      실제 격자는 90m (261×316, EPSG:5179). 25cm 는 정사영상 해상도다.
-      구간 경사 산출 불가. 경사 배제 결론(MASTER §13) 유효.
 
 # ===== AUTO: inventory — inventory.py 가 쓴다. 손으로 고치지 말 것 =====
 inventory:
@@ -3519,6 +3408,14 @@ landing_disposition:
   decided: '2026-08-30'
   by: 오창준
   items:
+    - file: '교통소통정보 API 제공.hwp'
+      key: null
+      action: retired
+      why: 'ITS API 사용 안내 문서다. 데이터가 아니다. 상폐(DECISIONS §177-2)'
+    - file: '1663144302440.pdf'
+      key: null
+      action: retired
+      why: '도로시설물 현황 PDF — hwp 를 우리가 PDF 로 저장한 사본이다. 상폐(DECISIONS §177-2)'
     # ── 2026-09-10 추가 ────────────────────────────────────────
     - file: d0*-*.zip
       key: null
