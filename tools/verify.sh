@@ -340,6 +340,10 @@ step "레이크 선언↔실물" uv run python tools/lakecheck.py
 #   "정리는 사람이 한다" 를 도구가 대신하되 삭제는 명시적으로.
 step "레이크 정리 대상" uv run python tools/sweep.py
 
+# ★ 2026-09-17 (DECISIONS §176). 레이크 해석기의 관문 — 두주인 · 주인없음 · 선언밖 · 폐지층 0.
+#   봉인 조건이다. lakecheck 가 축별로 보고, 이것은 파일마다 주인이 하나인지를 본다.
+step "레이크 관문" uv run python -m firelane.lake gate
+
 # ★ 검사가 죽었는지를 검사한다. 프로브 다섯이 정적으로 센다 —
 #   빈 그물 · 손목록 · 조용한 통과 · 죽은 게이트 · 좁은 범위.
 #   --selftest 는 프로브가 살아 있는지 먼저 본다(양성 대조).

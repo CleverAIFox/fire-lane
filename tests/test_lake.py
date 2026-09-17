@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # ── 래칫 상한 — 2026-09-17 실측. 줄였으면 여기를 내린다 ─────────────
 MAX_RETIRED_GLOB = 0          # 폐기 항목이 글롭으로 파일을 가리키는 수
-MAX_RETIRED_NO_SHA = 7        # 이름으로는 적었는데 sha 가 없는 폐기 파일 — L2 가 레이크에서 잰다
+MAX_RETIRED_NO_SHA = 0        # 이름으로는 적었는데 sha 가 없는 폐기 파일 — L2 가 레이크에서 재서 채웠다(§176)
 MAX_LEDGER_LOADERS = 40       # ledger · lake 밖에서 sources.yaml 을 직접 yaml 로 읽는 파일
 MAX_OWNER_BLOCK_READERS = 13  # ledger · lake 밖에서 retired · landing_disposition 블록을 직접 읽는 파일
 MAX_AUTHORITY_BAD = 63        # authority 칸 규칙(MASTER §18-3a) 위반 datasets
@@ -172,7 +172,7 @@ def test_named_retired_beats_active_glob(tmp_path):
     assert by["raw/safety/safety_firestation_kr_20240901.csv"].owners == ("datasets:fire_station",)
     assert by["_quarantine/safety/safety_firestation_kr_20250701.csv"].owners == ("retired:old",)
     assert by["retired/safety/safety_firestation_kr_20250701.csv"].state == "정상"
-    assert lake.gate(y, lake.resolve(y, root)) == []
+    assert lake.gate(y, lake.resolve(y, root), planned=("_quarantine/",)) == []
 
 
 def test_quarantine_lookup_is_not_raw_only(tmp_path):
@@ -183,6 +183,7 @@ def test_quarantine_lookup_is_not_raw_only(tmp_path):
     by = _by(lake.resolve(y, root))
     r = by["_quarantine/gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv"]
     assert (r.state, r.owners) == ("폐지층", ("retired:enforcement",)), r
+    assert lake.gate(y, lake.resolve(y, root)), "폐지층이 남아 있으면 관문이 닫힌다(§176)"
     assert "사유 없음" in by["_quarantine/eais/unknown.csv"].note
     assert by["_quarantine/QUARANTINE.md"].state == "폐지층"
 
@@ -218,7 +219,8 @@ def test_layers_outside_the_declaration_block_the_gate(tmp_path):
     assert by["landing/nowhy-1.zip"].state == "주인없음", "사유 없는 처분은 처분이 아니다"
     assert by["interim/t.gpkg"].state == "정상"
     why = lake.gate(y, lake.resolve(y, root))
-    assert len(why) == 4, why   # stray.csv · tiles · 루트 파일 · 사유 없는 landing
+    assert len(why) == 5, why   # stray.csv · tiles · 루트 파일 · 사유 없는 landing · _meta(폐지층)
+    assert len(lake.gate(y, lake.resolve(y, root), planned=("tiles/", "raw/_meta"))) == 3, "계획이 처분하는 경로는 막지 않는다"
 
 
 def test_norm_owner_follows_converter_dst_and_named_absence(tmp_path):
@@ -241,7 +243,7 @@ def _lake_attached() -> bool:
 
 @pytest.mark.skipif(not _lake_attached(), reason="환경skip(레이크) — 레이크가 없다(CI)")
 def test_real_lake_has_no_two_owners():
-    """실물 레이크에서 두주인 0 · 폐기 글롭 0. 나머지 상태(폐지층 · 선언밖)는 L2 가 비운다."""
+    """실물 레이크에서 두주인 0 · 폐기 글롭 0. 관문 전체(폐지층 · 선언밖 포함)는 verify 의 `레이크 관문` 단계가 본다."""
     import json
     y = ledger.load()
     prep_p = ROOT / "data" / "_prep.json"
@@ -250,3 +252,94 @@ def test_real_lake_has_no_two_owners():
     two = [f"{r.rel}  {' · '.join(r.owners)}" for r in rows if r.state == "두주인"]
     assert not two, "두주인 — 대장이 같은 파일을 둘로 주장한다\n" + "\n".join(two)
     assert not retired_globbed(y)
+
+
+# ── 계획표 재측정(§176) — 모의 레이크 상위 ──────────────────────────
+def _plan_top(tmp: Path):
+    import csv
+    import hashlib
+    import tarfile
+    import zipfile
+    top = tmp / "top"
+    leg = top / "raw-legacy"
+    files = {"ngii_1k/a_2022.zip": None, "ngii_1k/_unz_a/L.dbf": b"layer", "safety/uniq.csv": b"uniq",
+             "safety/copy.csv": b"copy"}
+    (leg / "ngii_1k").mkdir(parents=True)
+    with zipfile.ZipFile(leg / "ngii_1k/a_2022.zip", "w") as z:
+        z.writestr("L.dbf", b"layer")
+    for rel, b in files.items():
+        if b is not None:
+            (leg / rel).parent.mkdir(parents=True, exist_ok=True)
+            (leg / rel).write_bytes(b)
+    _lake(top / "data", ["raw/safety/x.csv"])
+    (top / "data/raw/safety/x.csv").write_bytes(b"copy")
+    _lake(top / "data", ["tiles/ortho/15/1/2.jpg", "_quarantine/safety/old.csv", "_quarantine/QUARANTINE.md"])
+    repo = tmp / "repo_ortho"
+    _lake(repo, ["15/1/2.jpg"])
+    with tarfile.open(top / "snap.tar.gz", "w:gz") as t:
+        for rel in files:
+            t.add(leg / rel, arcname=f"fire-lane-raw/{rel}")
+    sha = {rel: hashlib.sha256((leg / rel).read_bytes()).hexdigest() for rel in files}
+    rows = [
+        {"action": "보존", "src": "ngii_1k/a_2022.zip", "dst_or_reason": "data/archive/ngii/a_2022.zip",
+         "bytes": "1", "sha256": sha["ngii_1k/a_2022.zip"]},
+        {"action": "보존", "src": "safety/uniq.csv", "dst_or_reason": "data/archive/safety/uniq.csv",
+         "bytes": "4", "sha256": sha["safety/uniq.csv"]},
+        {"action": "삭제·사본", "src": "safety/copy.csv", "dst_or_reason": "레이크에 같은 내용",
+         "bytes": "4", "sha256": sha["safety/copy.csv"]},
+        {"action": "삭제·압축재생", "src": "ngii_1k/_unz_a/L.dbf",
+         "dst_or_reason": "ngii_1k/a_2022.zip 안에 같은 내용", "bytes": "5", "sha256": sha["ngii_1k/_unz_a/L.dbf"]},
+        {"action": "삭제·스냅숏", "src": "snap.tar.gz", "dst_or_reason": "멤버 전부", "bytes": "0", "sha256": "-"},
+        {"action": "삭제·재생성", "src": "data/tiles", "dst_or_reason": "저장소가 정본", "bytes": "0", "sha256": "-"},
+    ]
+    p = tmp / "plan.tsv"
+    with p.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, list(rows[0]), delimiter="\t")
+        w.writeheader()
+        w.writerows(rows)
+    led = {"ngii/a_2022.zip": sha["ngii_1k/a_2022.zip"], "safety/uniq.csv": sha["safety/uniq.csv"]}
+    return top, repo, p, led
+
+
+def test_plan_is_remeasured_and_writes_safe_commands(tmp_path):
+    """다섯 조건이 맞으면 명령을 쓴다 — mv -n · 파일 단위 rm · 빈 폴더만 삭제. `rm -rf` 없음."""
+    top, repo, p, led = _plan_top(tmp_path)
+    res = lake.verify_plan(lake.read_plan(p), top, legacy="raw-legacy", repo_tiles=repo, ledger_retired=led)
+    assert not res.fails, res.fails
+    assert len(res.moves) == 2 and res.counts["삭제·스냅숏 멤버"] == 4
+    mv, rm = lake.write_commands(res, tmp_path / "out", top)
+    mtxt, rtxt = mv.read_text(encoding="utf-8"), rm.read_text(encoding="utf-8")
+    assert "mv -n" in mtxt and "retired/ngii/a_2022.zip" in mtxt and "retired/QUARANTINE.md" in mtxt
+    assert "rm -rf" not in rtxt and rtxt.count("rm -- ") == len(res.deletes)
+
+
+def test_plan_refuses_when_a_condition_breaks(tmp_path):
+    """카나리아 — 조건마다 하나씩 깨면 명령을 안 쓴다."""
+    top, repo, p, led = _plan_top(tmp_path)
+    rows = lake.read_plan(p)
+    (top / "data/raw/safety/x.csv").write_bytes(b"changed")            # 사본의 짝이 사라졌다
+    (top / "raw-legacy/ngii_1k/_unz_a/L.dbf").write_bytes(b"other")    # 압축재생 내용이 다르다
+    (repo / "15/1/2.jpg").unlink()                                      # 저장소에 타일 키가 없다
+    bad_led = {**led, "safety/uniq.csv": "0" * 64}                      # 대장 sha 가 다르다
+    import tarfile  # 스냅숏에 계획 밖 멤버가 있다
+    extra = tmp_path / "extra.csv"
+    extra.write_bytes(b"only in snapshot")
+    with tarfile.open(top / "snap.tar.gz", "w:gz") as t:
+        t.add(extra, arcname="fire-lane-raw/safety/extra.csv")
+    res = lake.verify_plan(rows, top, legacy="raw-legacy", repo_tiles=repo, ledger_retired=bad_led)
+    txt = "\n".join(res.fails)
+    for want in ("사본", "압축재생", "재생성", "대장 retired", "스냅숏"):
+        assert want in txt, f"`{want}` 조건이 안 울었다:\n{txt}"
+
+
+def test_plan_is_idempotent_across_the_move(tmp_path):
+    """이동 뒤에 다시 재도 같은 답 — 보존은 목적지에서 찾고, 스냅숏 멤버도 옮긴 곳과 대조한다."""
+    import shutil
+    top, repo, p, led = _plan_top(tmp_path)
+    rows = lake.read_plan(p)
+    res = lake.verify_plan(rows, top, legacy="raw-legacy", repo_tiles=repo, ledger_retired=led)
+    for s_, d_ in res.moves:
+        Path(d_).parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(s_, d_)
+    again = lake.verify_plan(rows, top, legacy="raw-legacy", repo_tiles=repo, ledger_retired=led)
+    assert not again.fails and not again.moves and again.counts["보존"] == 2, again.fails
