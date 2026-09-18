@@ -33,7 +33,21 @@ on:
 # ★ 2026-09-18 (W1). 본문을 `_deploy.yml` 로 옮겼다. 넷이 job 을 바이트 동일하게
 #   들고 있었고 `VWORLD_KEY` 만 pages 에 있었다 — 그래서 셋 중 하나가 나중에
 #   돌면 배경지도가 죽은 사이트가 초록으로 배포됐다. 본문이 하나면 불가능해진다.
-#   permissions · concurrency · 시크릿은 `_deploy.yml` 이 선언한다.
+#   concurrency · 시크릿은 `_deploy.yml` 이 선언한다. **permissions 는 못 한다.**
+#
+# ★ 2026-09-19. GitHub 은 재사용 워크플로에 **호출자보다 큰 권한을 주지 않는다.**
+#   `_deploy.yml` 이 `pages: write` · `id-token: write` 를 선언해도 호출자가 안 주면
+#   워크플로 **파일 자체가 무효**가 된다 —
+#     Invalid workflow file: ... is requesting 'pages: write, id-token: write',
+#     but is only allowed 'pages: none, id-token: none'
+#   권한은 위임이 안 되므로 네 호출자가 같은 블록을 든다. **W1 이 없앤 중복과 다르다 —
+#   이것은 GitHub 이 강제한 중복이다.** 줄이려면 저장소 기본 권한을 올려야 하는데
+#   그건 전 워크플로에 쓰기를 주는 것이라 더 나쁘다(DECISIONS §196).
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   deploy:
     uses: ./.github/workflows/_deploy.yml
