@@ -8,12 +8,20 @@
 #
 # ★ 파이프라인 전량은 이 안에서 안 돈다. `data/raw` 2.5GB 가 저장소 밖
 #   외장 매체이고 컨테이너에 마운트되지 않는다. 여기서 되는 것은
-#   문서 검사 · 테스트 · 린트 · JS · 화면이다. 파이프라인은 레이크가
-#   붙은 기계에서 돈다(MASTER §12-7).
+#   문서 검사 · 테스트 · 린트다. 파이프라인은 레이크가 붙은 기계에서
+#   돈다(MASTER §12-7).
+#
+# ★ 2026-09-18 정정. 종전 이 자리에 `JS · 화면` 이 적혀 있었다. **이미지에
+#   node 가 없다**(Dockerfile — python:3.11-slim · features 선언도 없다).
+#   `verify.sh` 의 JS 넷과 내비 타입 검사는 이 안에서 못 돈다. 되는 것만 적는다.
 set -euo pipefail
 
-curl -LsSf https://astral.sh/uv/install.sh | sh
-export PATH="$HOME/.local/bin:$PATH"
+# ★ 2026-09-18. 이미지(Dockerfile)가 `/bin/uv` 를 이미 넣는다. 그런데도 매번 받아서
+#   설치하고 있었다 — 컨테이너에 네트워크가 없으면 여기서 죽는다. 없을 때만 받는다.
+if ! command -v uv >/dev/null 2>&1; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
+fi
 uv sync
 
 # 커밋 시점 방어. 이걸 안 걸면 산출물·비밀값이 그냥 들어간다(MASTER §12-11).

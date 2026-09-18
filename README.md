@@ -232,6 +232,7 @@ uv run python tools/route_probe.py      소방차 통행 비용으로 경로 —
 uv run python tools/clearance_probe.py  최대내접원 방식 (2026-08-22 기각)
 uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
 uv run python tools/skeleton_compare.py NGII 1:1,000 뼈대 후보 대 현행 구간 — 위치 의심표 (R1)
+uv run python tools/transition.py      옛 구간 → 새 구간 전이표 — 1:N · N:1 · 소멸 · 신설 (R2)
 uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치는 규모
 uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구간 — 실측 우선순위
 uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
@@ -325,15 +326,26 @@ src/contracts/            ★ 파트 간 유일한 접점. 세 파트가 이것�
 src/firelane/
   paths.py                경로 정본. FIRE_LANE_DATA 환경변수
   layers.py               계층 선언과 경로를 이름으로 묶는다
+  ledger.py               대장 항목 스키마의 정본. 산문을 필드로 읽는다
+  kinds.py                `kind` 분류의 정본. 여섯 곳에 흩어져 있던 것을 모았다
+  scope.py                공간 범위의 통제 어휘. 선언이 정본이다
+  naming.py               raw 파일명 문법의 정본. 파서가 곧 규칙이다
+  providers.py            raw 1단 폴더(제공기관)의 정본
+  encoding.py             인코딩 판별과 정규화. 디코드 성공은 정답이 아니다
+  lake.py                 레이크 해석기. 대장 + 디스크 → 파일마다 한 줄
   normalize_raw.py        landing → raw 명명규칙 배치
+  prep.py                 raw → norm. 형식만 통일한다. 값은 안 바꾼다
   contract.py             ★ 대장 ↔ 실물 계약 게이트
   pipeline.py             단일 진입점. Step 선언(reads/writes/mutates)
   lineage.py              ★ 계보. 단계별 입출력 지문 대조
   ingest.py               raw → processed
+  shardseal.py            ingest 샤드(소스 하나)의 봉인지. 넷이 같을 때만 재사용
   ngii1k.py               수치지형도 도엽 → 레이어별 gpkg
   ngi.py                  NGI/NDA 리더
   guards.py               방어 정본. 낡은 산출물 격리 · 공간 커버리지
   segments.py             조립부. 계산은 seg/ 가 한다
+  skeleton.py             ★ 판정 뼈대 후보(NGII 1:1,000 중심선 하이브리드). 순수 함수 (R1 · DECISIONS §184)
+  transition.py           ★ 옛 구간 → 새 구간 전이표. 1:N · N:1 · 소멸 · 신설 (R2 · §187)
   seg/
     params.py             임계값 정본. web/config.js 는 표시용 사본
     graph.py              노딩 · 최대성분 · 접근 회랑
@@ -343,10 +355,16 @@ src/firelane/
     basisno.py            기초구간 → seg_label
     vehicle.py            차량 제원 · 엣지 비용
     report.py             소방서 대조 · 진단 · 산출물 기록
+    scope.py              판정 범위 · 표출 범위 (judgment_scope · display_scope)
+    centerline_correction.py  사람이 승인한 중심선 위치 보정. 지문이 안 맞으면 실패한다
   streetlight.py          가로등 지점 단위 집계
   terrain.py              공개DEM → Terrain-RGB 타일
   ortho.py                항공정사영상 → 배경 타일
   publish_web.py          → web/data
+  publish_navi.py         내비가 먹을 그래프 하나 (navi_graph.json)
+  publish_fleet.py        관내 보유 차종 · 제원 → 내비
+  destinations.py         내비 목적지 검색 색인. 상가 · 주소/건물 · 관공서
+  vehiclecard.py          소방자동차 관리카드 판독
   webmanifest.py          web/data 계보. publish 가 직접 쓴다
   datalog.py              대장 정합성 · 계보 · 영향분석 · 백업 검증
   inventory.py            원본 레이어·속성 인벤토리 → sources.yaml
@@ -395,6 +413,7 @@ tools/
   wmax_audit.py           width_max_m 결손이 판정에 미치는 규모
   desk_check.py           정사영상 위에 구간·폭 렌더
   skeleton_compare.py     NGII 뼈대 후보 대 현행 구간 대조 (R1)
+  transition.py           옛 구간 → 새 구간 전이표 (R2 · R3 전후)
   docpatch.py             문서 절 단위 멱등 교체 · 표 행 추가
   js_graph_check.mjs      ES 모듈 의존 그래프 · 순환 참조
   web_boot_check.mjs      UI 부팅 경로 점검

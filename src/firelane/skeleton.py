@@ -4,6 +4,7 @@ skeleton.py — 판정 뼈대 후보(NGII 1:1,000 중심선 하이브리드)와 
 IN    호출자가 준 GeoDataFrame — NGII 중심선 · road_link · 판정 범위 도형 (전부 EPSG:5186)
 OUT   없음 (반환값만). 파일은 `tools/skeleton_compare.py` 가 쓴다
 PARAM COVER_D 5m · GAP 2m · MATCH_R 8m · MATCH_ANGLE 25° · MATCH_SHARE 0.6 (DECISIONS §173-7 · §184)
+      NGII_N 9점 · 거리 분류 1.5 / 5 / 15m · FAR_M 3m (R1 판 2)
 
 ★ 2026-09-17 (DECISIONS §184 · PLAN 「판정 뼈대를 NGII 1:1,000 측량 중심선으로 다시 세운다」).
   R1 은 **판정을 안 바꾼다.** 뼈대 후보를 옆에 세워 현행 1,281 구간이 어디로 가는지 표로 낸다.
@@ -11,6 +12,16 @@ PARAM COVER_D 5m · GAP 2m · MATCH_R 8m · MATCH_ANGLE 25° · MATCH_SHARE 0.6 
 
   하이브리드 = NGII 중심선 + (NGII 가 COVER_D 안에 없는 road_link 조각) + (막다른 끝에서 GAP 안의 접속선)
   → 노딩 → 차수 2 사슬 병합. 2026-09-17 사전 측정(저장소 밖 · 로그만 남음)의 확정값을 상수로 옮겼다.
+
+★ 판 2 (2026-09-18). 판 1 의 「멀리」 · 「짝없음」 은 위치 증거로 못 썼다(§184-4).
+  ① 멀리 — 매칭 엣지 거리(offset_m)를 썼다. 현행 구간은 road_link 위에 서고, NGII 가 5m 안에 없는 곳은
+     하이브리드가 **바로 그 road_link 조각(fallback)** 으로 메운다. 그래서 NGII 에서 5~15m 옆에 선 구간이
+     자기 자신과 매칭돼 거리 0 이 나왔다 — 측정이 구조적으로 0 을 냈다.
+     → 거리는 src == ngii 엣지만 잰다(`ngii_distance`). 매칭 엣지는 폭 · 이름 · 쌍선 대조에만 쓴다.
+  ② 짝없음 — 가장 많이 모인 엣지 하나의 비율(share)을 썼다. 뼈대는 교차점에서 끊기므로 교차점을
+     지나는 구간은 두 엣지로 표가 갈려 60% 를 못 넘는다. 2026-09-18 재측정 — 짝없음 168 중
+     160 이 표본점 60% 이상이 **어느** 엣지엔가 붙어 있었다(20m 미만은 32 뿐 — 길이 조건으로는 못 거른다).
+     → 짝없음 = 어느 엣지에도 안 붙은 표본점이 40% 넘을 때(`cover`). share 는 칸으로 남긴다.
 """
 from __future__ import annotations
 
@@ -30,7 +41,10 @@ MATCH_R = 8.0          # 구간 표본점 → 뼈대 엣지 허용 거리(m) —
 MATCH_ANGLE = 25.0     # 방향 차 허용(도)
 MATCH_SHARE = 0.6      # 표본점 중 한 엣지로 모인 비율이 이 이상이면 매칭
 STEP = 5.0             # 구간 표본 간격(m)
-FAR_M = 3.0            # 매칭 엣지까지 거리 중앙이 이보다 크면 위치 의심(r_eda2 — 판정구간 위 p90 9.3m · 중앙 0.59m)
+FAR_M = 3.0            # NGII 선 거리 중앙이 max(이 값, NGII 도로폭/2) 보다 크면 위치 의심(판 2 — 차로 안 차이를 뺀다)
+NGII_N = 9             # NGII 선 거리 표본점 수 — 구간 양끝 포함 등간격. 2026-09-17 미리보기(ngii_distance.csv)와 같은 정의
+CLASS_EDGES = ((1.5, "A"), (5.0, "B"), (15.0, "C"))   # NGII 선 거리 중앙 상한(이하) → 분류. 넘으면 D
+CLASS_LABEL = {"A": "A ≤1.5m 겹침", "B": "B 1.5~5m", "C": "C 5~15m NGII 옆", "D": "D >15m NGII 없음"}
 PAIR_WMIN, PAIR_DMIN, PAIR_DMAX, PAIR_ANGLE = 6.0, 3.0, 25.0, 15.0
 
 
@@ -145,33 +159,119 @@ def build(ngii: gpd.GeoDataFrame, road_link: gpd.GeoDataFrame, keep,
     return g
 
 
-def parallel_pairs(edges: gpd.GeoDataFrame, wmin: float = PAIR_WMIN) -> list[bool]:
-    """폭 wmin 이상 엣지 중 3~25m 옆에 거의 평행한 다른 엣지가 있는가 — 분리대 쌍선 후보(간선 이중 판정)."""
-    geoms = list(edges.geometry)
-    tree = shapely.STRtree(geoms)
-    w = pd.to_numeric(edges.get("도로폭"), errors="coerce") if "도로폭" in edges else pd.Series([np.nan] * len(geoms))
-    out = []
-    for i, e in enumerate(geoms):
-        if not (w.iloc[i] >= wmin):
-            out.append(False)
-            continue
-        mid = e.interpolate(0.5, normalized=True)
-        b0, hit = bearing(e, e.length / 2), False
-        for j in tree.query(mid.buffer(PAIR_DMAX)):
-            if j == i:
-                continue
-            o = geoms[j]
-            dist = o.distance(mid)
-            if PAIR_DMIN <= dist <= PAIR_DMAX and angle_diff(bearing(o, o.project(mid)), b0) < PAIR_ANGLE:
-                hit = True
-                break
-        out.append(hit)
+NAME_BAND = 12.0       # 뼈대 엣지 → road_link 이름 채우기 반경(m). NGII 도로명이 빈 곳만 쓴다.
+                       # roadname.BAND(0.5m)로는 못 채운다 — 뼈대가 5~15m 옆에 서는 것이 R3 의 전제다.
+
+
+def as_road(edges: gpd.GeoDataFrame, road_link: gpd.GeoDataFrame,
+            band: float = NAME_BAND) -> gpd.GeoDataFrame:
+    """뼈대 엣지를 `road_link` 모양(RN · RDS_DPN_SE · ROAD_BT)으로 입힌다 — R3 배선용(DECISIONS §188).
+
+    `seg.graph.build_graph` 는 기하만 쓰지만 `seg.roadname.RoadNameIndex` 는 이 세 칸을 읽는다.
+
+    ★ 이름은 **`road_link`(도로명주소)가 정본**이다. 그것이 법정 도로명이고, 소방서 지정 구간 대조도
+      그 이름으로 맞춘다. NGII 도로명은 측량 도면의 표기라 보조로만 쓴다 — 없을 때만 채운다.
+      ★ 2026-09-18 (DECISIONS §189-1). R3a 1회차는 반대로 NGII 를 정본으로 뒀다. 그러자 **그 도로명에
+        속한 구간 수가 반토막 났다** — 제봉로184번길 19→0 · 필문대로289번길 31→14 · 동계로9번길 17→7.
+        표본이 줄어 중앙값이 튀었고 소방서 절대편차가 8.31m → 16.79m 로 벌어졌다. 폭이 나빠진 것이
+        아니라 **이름이 갈린 것**이다. §173-7 의 근거는 「폭 원천과 뼈대를 같은 측량으로」 다 — 이름은 폭이 아니다.
+      `roadname.BAND` 는 0.5m 라 뼈대가 5~15m 옆에 서면 한 건도 못 채운다. 그 거리가
+      R3 의 전제이므로(§184-4) 여기서는 `band` 를 넓게 쓰고, 겹침이 가장 긴 선의 값을 가져온다.
+    ★ `ROAD_BT` 는 NGII 도로폭을 쓴다. 폭 원천과 뼈대를 같은 측량으로 맞추는 것이 R 의 근거다(§173-7).
+    ★ `RDS_DPN_SE`(0 주도로 · 1 부속)는 NGII 에 없다. 채운 `road_link` 행의 값을 따르고, 못 채우면 "0" 이다.
+    """
+    def _txt(v):
+        """빈 값을 **None 하나로** 접는다. NaN 을 그대로 흘리면 하류가 `or` 로 못 거른다(§188-5)."""
+        if v is None or (not isinstance(v, str) and pd.isna(v)):
+            return None
+        s = str(v).strip()
+        return s or None
+
+    have = {c: (c in road_link.columns) for c in ("RN", "RDS_DPN_SE", "ROAD_BT")}
+    rl = road_link[road_link.geometry.notna()].reset_index(drop=True)
+    tree = shapely.STRtree(list(rl.geometry)) if len(rl) else None
+
+    def _fill(g):
+        if tree is None:
+            return None, None, None
+        b = g.buffer(band)
+        best, blen = None, 0.0
+        for k in tree.query(b):
+            ov = rl.geometry.iloc[int(k)].intersection(b)
+            if not ov.is_empty and ov.length > blen:
+                best, blen = int(k), ov.length
+        if best is None:
+            return None, None, None
+        r = rl.iloc[best]
+        bt = pd.to_numeric(r["ROAD_BT"], errors="coerce") if have["ROAD_BT"] else None
+        return (_txt(r["RN"]) if have["RN"] else None,
+                _txt(r["RDS_DPN_SE"]) if have["RDS_DPN_SE"] else None,
+                None if bt is None or pd.isna(bt) else float(bt))
+
+    names, dpns, bts = [], [], []
+    w = pd.to_numeric(edges.get("도로폭"), errors="coerce") if "도로폭" in edges else pd.Series([np.nan] * len(edges))
+    for i, g in enumerate(edges.geometry):
+        ngii_nm = _txt(edges["도로명"].iloc[i]) if "도로명" in edges.columns else None
+        fn, fd, fb = _fill(g)
+        names.append(fn or ngii_nm)          # road_link 가 정본 · NGII 는 보조
+        dpns.append(fd or "0")
+        bts.append(float(w.iloc[i]) if not pd.isna(w.iloc[i]) else fb)
+    out = edges.copy()
+    out["RN"] = names
+    out["RDS_DPN_SE"] = dpns
+    out["ROAD_BT"] = bts
     return out
 
 
-def match(seg: LineString, edges: list[LineString], tree: shapely.STRtree,
-          r: float = MATCH_R, ang: float = MATCH_ANGLE) -> tuple[int | None, float, float | None]:
-    """구간 하나 → (엣지 번호, 모인 비율, 모인 점의 거리 중앙). 방향이 어긋난 점은 세지 않는다."""
+def twin_partner(edges: gpd.GeoDataFrame, wmin: float = PAIR_WMIN) -> list[int | None]:
+    """엣지마다 쌍선 짝의 번호. 없으면 None. 가장 가까운 짝 하나를 고른다.
+
+    조건 — 폭 wmin 이상 · 3~25m 옆 · 방향 차 15° 미만 · **도로명이 같다**.
+
+    ★ 2026-09-18 (DECISIONS §189-2). 이름 조건을 더했다. 종전에는 거리 · 방향만 봐서 **478 중 108(5.0km)이
+      다른 도로명 짝**이었다 — 금남로 ↔ 금남로169번길 처럼 나란한 **다른 골목**이다. 그것을 쌍선으로 세면
+      「쌍선」 사유가 부풀고, 한쪽을 지우면 멀쩡한 길이 사라진다.
+      `PAIR_DMAX` 는 25m 그대로 둔다 — 같은 이름 짝의 거리가 중앙 13.1m · 최대 24.8m 라 좁히면 진짜 쌍선을 놓친다.
+      **좁혀야 할 것은 거리가 아니라 조건이었다.**
+    """
+    geoms = list(edges.geometry)
+    tree = shapely.STRtree(geoms)
+    w = pd.to_numeric(edges.get("도로폭"), errors="coerce") if "도로폭" in edges else pd.Series([np.nan] * len(geoms))
+    nm = edges["도로명"] if "도로명" in edges.columns else pd.Series([None] * len(geoms))
+    out: list[int | None] = []
+    for i, e in enumerate(geoms):
+        best, bd = None, None
+        if w.iloc[i] >= wmin:
+            mid = e.interpolate(0.5, normalized=True)
+            b0 = bearing(e, e.length / 2)
+            for j in tree.query(mid.buffer(PAIR_DMAX)):
+                j = int(j)
+                if j == i or not _same_name(nm.iloc[i], nm.iloc[j]):
+                    continue
+                o = geoms[j]
+                dist = o.distance(mid)
+                if PAIR_DMIN <= dist <= PAIR_DMAX and angle_diff(bearing(o, o.project(mid)), b0) < PAIR_ANGLE \
+                        and (bd is None or dist < bd):
+                    best, bd = j, dist
+        out.append(best)
+    return out
+
+
+def _same_name(a, b) -> bool:
+    """둘 다 이름이 있고 같은가. 무명끼리는 같다고 보지 않는다 — 무명 엣지가 서로 짝이 되면 안 된다."""
+    if a is None or b is None or (not isinstance(a, str) and pd.isna(a)) or (not isinstance(b, str) and pd.isna(b)):
+        return False
+    return str(a).strip() != "" and str(a).strip() == str(b).strip()
+
+
+def parallel_pairs(edges: gpd.GeoDataFrame, wmin: float = PAIR_WMIN) -> list[bool]:
+    """폭 wmin 이상 엣지 중 같은 도로명의 평행 쌍선이 3~25m 옆에 있는가 — 간선 이중 판정 후보."""
+    return [p is not None for p in twin_partner(edges, wmin)]
+
+
+def _votes(seg: LineString, edges: list[LineString], tree: shapely.STRtree,
+           r: float = MATCH_R, ang: float = MATCH_ANGLE) -> tuple[dict[int, list[float]], int]:
+    """표본점마다 r 안 · 방향 ang 안의 가장 가까운 엣지에 한 표. (엣지 → 거리 목록, 표본점 수)."""
     n = max(3, int(seg.length // STEP) + 1)
     votes: dict[int, list[float]] = {}
     for t in np.linspace(0, seg.length, n):
@@ -185,16 +285,65 @@ def match(seg: LineString, edges: list[LineString], tree: shapely.STRtree,
                 best, bd = j, dd
         if best is not None:
             votes.setdefault(int(best), []).append(bd)
+    return votes, n
+
+
+def match(seg: LineString, edges: list[LineString], tree: shapely.STRtree,
+          r: float = MATCH_R, ang: float = MATCH_ANGLE) -> tuple[int | None, float, float | None]:
+    """구간 하나 → (엣지 번호, 모인 비율, 모인 점의 거리 중앙). 방향이 어긋난 점은 세지 않는다."""
+    votes, n = _votes(seg, edges, tree, r, ang)
     if not votes:
         return None, 0.0, None
     j, ds = max(votes.items(), key=lambda kv: len(kv[1]))
     return j, round(len(ds) / n, 3), round(float(np.median(ds)), 2)
 
 
+def coverage(seg: LineString, edges: list[LineString], tree: shapely.STRtree) -> float:
+    """표본점 중 **어느** 엣지엔가 붙은 비율. 교차점에서 두 엣지로 갈린 구간도 1.0 이다(판 2 ②)."""
+    votes, n = _votes(seg, edges, tree)
+    return round(sum(len(v) for v in votes.values()) / n, 3)
+
+
+def ngii_distance(seg: LineString, ngii_union, ngii: gpd.GeoDataFrame, ngii_tree: shapely.STRtree | None) -> dict:
+    """NGII 측량 중심선(src == ngii)까지의 거리 — 위치 증거. fallback 은 현행 선과 같은 원천이라 뺀다(판 2 ①).
+
+    표본은 양끝 포함 NGII_N 점 · 방향 조건 없음. 폭 · 이름은 구간 가운데 점에서 가장 가까운 NGII 엣지의 것.
+    """
+    if ngii_union is None or ngii_tree is None or len(ngii) == 0:
+        return {"ngii_med": None, "ngii_max": None, "ngii_w": None, "ngii_name": None}
+    pts = shapely.line_interpolate_point(seg, np.linspace(0.0, 1.0, NGII_N), normalized=True)
+    d = shapely.distance(ngii_union, pts)
+    j = int(ngii_tree.nearest(pts[NGII_N // 2]))
+    w = ngii["도로폭"].iloc[j] if "도로폭" in ngii.columns else None
+    name = ngii["도로명"].iloc[j] if "도로명" in ngii.columns else None
+    return {"ngii_med": float(np.median(d)), "ngii_max": float(d.max()),
+            "ngii_w": None if w is None or pd.isna(w) else float(w),
+            "ngii_name": None if name is None or pd.isna(name) or str(name).strip() == "" else str(name)}
+
+
+def dist_class(med) -> str | None:
+    """NGII 선 거리 중앙 → A ≤1.5 · B ≤5 · C ≤15 · D. 거리가 없으면 None."""
+    if med is None or pd.isna(med):
+        return None
+    for hi, k in CLASS_EDGES:
+        if float(med) <= hi:
+            return k
+    return "D"
+
+
+def far_limit(ngii_w) -> float:
+    """「멀리」 문턱 — 넓은 간선은 차로 안에서도 중심선과 몇 m 벌어진다. 도로폭 절반 아래는 위치 차이로 안 친다."""
+    if ngii_w is None or pd.isna(ngii_w):
+        return FAR_M
+    return max(FAR_M, float(ngii_w) / 2.0)
+
+
 def suspect(row: dict) -> str:
     """위치 의심 사유. 빈 문자열이면 의심 없음. 판정을 바꾸지 않는다 — 사람이 볼 목록을 고른다."""
     why = []
-    if row.get("share", 0) < MATCH_SHARE:
+    # ★ 판 2 ② — share(한 엣지)가 아니라 cover(어느 엣지든). cover 칸이 없는 옛 행은 share 로 본다.
+    cov = row.get("cover", row.get("share", 0))
+    if (cov if cov is not None and not pd.isna(cov) else 0) < MATCH_SHARE:
         why.append("짝없음")
     ew, wm = row.get("edge_width"), row.get("width_min_m")
     if ew is not None and wm is not None and not (pd.isna(ew) or pd.isna(wm)) and abs(float(ew) - float(wm)) >= 2.0:
@@ -202,8 +351,13 @@ def suspect(row: dict) -> str:
     # ★ 폭불일치만으로는 약하다 — width_min_m 은 구간 안 **최소** 통과폭이고 NGII 도로폭은 대표 폭이라
     #   좁아지는 골목마다 2m 넘게 벌어진다. 매칭 엣지가 3m 넘게 떨어져 있으면 "엉뚱한 자리에서 쟀다" 쪽 증거라 따로 단다.
     #   2026-09-17 r_eda2 — 동계천로 needs_cv 0.97m 가 10.1m 옆 NGII 도로폭 13.9m 였다.
-    off = row.get("offset_m")
-    if off is not None and not pd.isna(off) and float(off) > FAR_M:
+    # ★ 판 2 ① — 매칭 엣지 거리(offset_m)가 아니라 NGII 선 거리(ngii_med). D(>15m)는 멀리가 아니다 —
+    #   그 자리에 측량 중심선이 없다는 뜻이지 옆에 섰다는 증거가 아니다. 「측량밖」 으로 따로 단다.
+    med = row.get("ngii_med")
+    k = dist_class(med)
+    if k == "D":
+        why.append("측량밖")
+    elif k is not None and float(med) > far_limit(row.get("ngii_w")):
         why.append("멀리")
     if (row.get("bldg_ngii_m") or 0) > 1.0 and (row.get("edge_bldg_ngii_m") or 0) <= 0.5:
         why.append("건물관통")
@@ -214,7 +368,7 @@ def suspect(row: dict) -> str:
 
 def priority(suspect_text: str) -> int:
     """사람이 볼 순서. 위치 증거(멀리 · 건물관통)가 폭 차이보다 앞선다. 0 은 의심 없음."""
-    w = {"멀리": 8, "건물관통": 4, "폭불일치": 2, "짝없음": 1, "쌍선": 1}
+    w = {"멀리": 8, "건물관통": 4, "폭불일치": 2, "짝없음": 1, "쌍선": 1, "측량밖": 1}
     return sum(v for k, v in w.items() if k in (suspect_text or "").split("·"))
 
 
@@ -223,18 +377,27 @@ def compare(segments: gpd.GeoDataFrame, edges: gpd.GeoDataFrame,
     """현행 구간마다 매칭 엣지 · 이동 거리 · 두 건물 원천 관통 · 폭 대조 · 의심 사유."""
     eg = list(edges.geometry)
     tree = shapely.STRtree(eg)
+    ng = edges[edges["src"] == "ngii"].reset_index(drop=True) if "src" in edges.columns else edges.iloc[0:0]
+    ng_union = shapely.union_all(list(ng.geometry)) if len(ng) else None
+    ng_tree = shapely.STRtree(list(ng.geometry)) if len(ng) else None
     nb = unary_union(list(ngii_bldg.geometry.buffer(0))) if ngii_bldg is not None and len(ngii_bldg) else None
     jb = unary_union(list(juso_bldg.geometry.buffer(0))) if juso_bldg is not None and len(juso_bldg) else None
     rows = []
     for _, s in segments.iterrows():
         g = s.geometry
-        j, share, off = match(g, eg, tree)
+        votes, n = _votes(g, eg, tree)
+        if votes:
+            jj, ds = max(votes.items(), key=lambda kv: len(kv[1]))
+            j, share, off = jj, round(len(ds) / n, 3), round(float(np.median(ds)), 2)
+        else:
+            j, share, off = None, 0.0, None
+        cov = round(sum(len(v) for v in votes.values()) / n, 3)
         e = edges.iloc[j] if j is not None else None
         row = {
             "seg_uid": s.get("seg_uid"), "seg_id": s.get("seg_id"), "road_name": s.get("road_name"),
             "verdict": s.get("verdict"), "width_min_m": s.get("width_min_m"), "width_src": s.get("width_src"),
             "length_m": s.get("length_m"),
-            "edge_id": e["edge_id"] if e is not None else None, "share": share, "offset_m": off,
+            "edge_id": e["edge_id"] if e is not None else None, "share": share, "cover": cov, "offset_m": off,
             "edge_src": e["src"] if e is not None else None,
             "edge_width": e["도로폭"] if e is not None else None,
             "edge_name": e["도로명"] if e is not None else None,
@@ -243,6 +406,11 @@ def compare(segments: gpd.GeoDataFrame, edges: gpd.GeoDataFrame,
             "bldg_juso_m": round(g.intersection(jb).length, 1) if jb is not None else None,
             "edge_bldg_ngii_m": round(e.geometry.intersection(nb).length, 1) if (e is not None and nb is not None) else None,
         }
+        row.update(ngii_distance(g, ng_union, ng, ng_tree))
+        row["dist_class"] = dist_class(row["ngii_med"])
+        rn = s.get("road_name")
+        row["same_name"] = bool(row["ngii_name"] is not None and rn is not None and not pd.isna(rn)
+                                and str(rn) == row["ngii_name"])
         row["suspect"] = suspect(row)
         row["priority"] = priority(row["suspect"])
         rows.append(row)

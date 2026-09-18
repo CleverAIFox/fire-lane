@@ -177,6 +177,13 @@ jobs:
       - name: JS 모듈 그래프 검사
         run: node tools/js_graph_check.mjs
 
+      - name: 내비 노드 — 배포 액션과 같은 판으로
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: web/navi/.nvmrc
+          cache: npm
+          cache-dependency-path: web/navi/package-lock.json
+
       - name: ★ 내비 타입 검사 (web/navi)
         # ★ 2026-09-15 신설. 위의 JS 셋은 전부 `web/*.js` 클래식 스크립트만
         #   본다 — `find web -maxdepth 1` 이라 `web/navi` 는 한 번도 안 열린다.
@@ -193,6 +200,10 @@ jobs:
         #   액션이 계속 맡는다(정본을 둘로 만들지 않는다 — R3).
         #
         # ★ `npm ci` 다. `install` 은 잠금을 갱신할 수 있다.
+        #
+        # ★ 2026-09-18 (DECISIONS §186-2). 바로 위에서 노드를 `.nvmrc` 로 맞춘다.
+        #   이 잡의 머리 `setup-node` 는 22 이고 배포 액션은 20 이었다 —
+        #   **게이트가 빌드와 다른 런타임에서 돌았다.** 위 셋(web/*.js)은 22 그대로 둔다.
         run: |
           cd web/navi
           npm ci --no-audit --no-fund
