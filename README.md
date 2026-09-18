@@ -61,6 +61,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
 uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
 uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
+uv run python tools/gate_parity.py --max 18  # 로컬 관문 ↔ CI 차집합 (래칫)
 uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증분)
 uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
 uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 (--apply 로 당긴다)

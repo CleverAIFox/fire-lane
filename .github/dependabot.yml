@@ -1,0 +1,72 @@
+# dependabot.yml — 의존성 판 올리기를 **손에서 뺀다.**
+#
+# ★ 왜 생겼나 (2026-09-18 · W1)
+#   버전 상한이 없는 코어 의존성이 여덟이다 — pandas · numpy · networkx ·
+#   PyYAML · rasterio · pillow · ruamel-yaml · python-docx. 그중 `numpy>=1.26`
+#   이 가장 위험하다: numpy 2.x ABI 전환이 rasterio · pyogrio · opencv 의
+#   컴파일 확장과 충돌하는 축이고, 여기가 유일하게 상한 없는 ABI 의존이다.
+#   `uv.lock` 이 재현성을 지키므로 **지금 당장** 위험한 것은 아니다. 문제는
+#   올릴 때다 — 손으로 올리면 언제 무엇이 왜 올라갔는지가 아무 데도 안 남는다.
+#
+# ★ 이 저장소 철학과 같은 방향이다. 의존성으로 할 수 있는 것은 의존성으로 한다.
+#   판 올리기는 GitHub 이 공짜로 해 주는 일이고, 손으로 하면 `sources.yaml`
+#   대장처럼 또 하나의 손대장이 생긴다.
+#
+# ★ PR 로만 온다. 자동 머지는 켜지 않는다 — `contract` 가 초록이어야 하고,
+#   `uv sync --frozen` 이라 lock 갱신은 사람이 본다. 판정 산출물이 움직이면
+#   그것은 측정 배치이고 Dependabot 이 결정할 일이 아니다.
+version: 2
+
+updates:
+  # ── 파이썬 (uv.lock) ────────────────────────────────────────
+  # ★ uv 생태계는 `package-ecosystem: uv` 다. pyproject + uv.lock 을 같이 본다.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps"
+    groups:
+      # ★ ABI 로 묶인 것은 **같이** 올린다. 따로 올리면 numpy 만 2.x 가 되어
+      #   rasterio 휠과 어긋나는 그 사고가 난다.
+      geo-abi:
+        patterns: ["numpy", "pandas", "rasterio", "pyogrio", "geopandas", "shapely", "pyproj"]
+      dev-tools:
+        patterns: ["ruff", "pytest*", "pre-commit"]
+
+  # ── 내비 (web/navi/package-lock.json) ───────────────────────
+  # ★ maplibre-gl 5→6 · vite 5→6 이 PR 초록으로 main 에 들어가 TS1192 로 죽은
+  #   사고가 있었다(contract.yml §186-2). 그 판 올리기가 PR 로 오면
+  #   `내비 타입 검사` 게이트를 먼저 통과해야 한다.
+  - package-ecosystem: npm
+    directory: /web/navi
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps(navi)"
+
+  # ── GitHub Actions ─────────────────────────────────────────
+  # ★ `setup-uv@v3` 처럼 메이저만 박힌 것들. 액션이 조용히 바뀌면 CI 가
+  #   어제와 다른 것을 검사한다.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci"
+
+  # ── Docker (Dockerfile 의 python · uv 판) ───────────────────
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "build"

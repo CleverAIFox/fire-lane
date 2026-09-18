@@ -1,53 +1,50 @@
 #!/usr/bin/env bash
-# .githooks/pre-commit — 커밋 시점 방어
+# .githooks/pre-commit — 커밋 시점 방어. **규칙의 정본은 `.pre-commit-config.yaml` 이다.**
 #
-# CI 는 push 후에 돈다. 그때 잡히면 이미 히스토리에 박힌다.
-# 여기서 먼저 자른다.
-#
-# 활성화:  git config core.hooksPath .githooks
+# 활성화:  전역 훅(`~/.githooks/pre-commit`)이 이 파일을 **후보 경로로 찾아 부른다.**
+#          `git rev-parse --show-toplevel` 아래 `.githooks/pre-commit` 이 **실행 가능**하면
+#          그것을 돌린다. 그래서 로컬 `core.hooksPath` 를 박지 않아도 돈다 —
+#          박으면 전역이 죽고 자격증명 검사가 사라진다(`dms.py::hook/local-hooksPath`).
 # 우회:    git commit --no-verify   (이유를 커밋 메시지에 남길 것)
+#
+# ── 2026-09-18 (W1b) 이 파일이 다시 쓰인 이유 ───────────────────
+# W1 이 이 파일을 **지웠다.** 근거는 "로컬 `core.hooksPath` 가 있어야 돌는데
+# `dms` 가 그것을 실패로 치니 구조적으로 못 도는 코드다" 였고, 그 근거가 **틀렸다.**
+# 전역 훅이 후보 경로로 이미 부르고 있었다(`bash -x` 추적으로 확인).
+# 배치 0 커밋에서 떴던 `커밋 정책 OK` · `인코딩 OK` 가 바로 이 파일이었다.
+#
+# 그리고 W1 이 대신 넣은 전역 훅 스니펫은 전역 훅의 `exit 0` **뒤에** 붙어
+# 도달 불가였다. 그런데 `global-chain.sh --check` 는 **문자열이 있는지만** 봐서
+# 통과했다 — 「있는가」를 묻고 「도는가」를 안 물었다. 1족을 닫겠다면서
+# 1족 인스턴스를 새로 만든 것이다.
+#
+# 그래서 이 파일은 **남고**, 내용만 위임으로 바뀐다. 원본의 실제 버그 둘은
+# 위임으로 사라진다 —
+#   ① `PY="python3"` fallback 이 `tools/encoding_check.py` 의 `from firelane…`
+#      import 로 항상 죽었다(uv 없는 기계에서 모든 커밋 차단)
+#   ② `node --check` 에 `command -v node` 가드가 없어 node 없는 기계에서 죽었다
+#      (바로 위 `ruff` 에는 가드가 있었다 — 같은 파일 안에서 방어가 갈렸다)
+# 규칙을 여기 적지 않으므로 이 파일은 더 이상 갈릴 자리가 없다.
 set -uo pipefail
 
-fail=0
-run() {
-    local label="$1"; shift
-    if ! "$@"; then
-        printf '\033[31m✗ %s\033[0m\n' "$label"
-        fail=1
-    fi
-}
+# ★ 도달 탐침. `global_chain.sh --check` 가 이 변수를 켜고 전역 훅을 돌려
+#   이 줄이 나오는지 본다 — **실행으로** 도달을 확인한다. 문자열 검사로는
+#   위 ★ 의 사고(죽은 스니펫이 통과)를 못 잡는다.
+if [ -n "${FIRE_LANE_HOOK_PROBE:-}" ]; then
+    echo "[fire-lane] pre-commit 체인 진입"
+    exit 0
+fi
 
+# ★ `exec` 다. 종료코드를 그대로 전역 훅에 넘긴다.
+if command -v pre-commit >/dev/null 2>&1; then
+    exec pre-commit run --hook-stage pre-commit
+fi
 if command -v uv >/dev/null 2>&1; then
-    PY="uv run python"
-else
-    PY="python3"
+    exec uv run pre-commit run --hook-stage pre-commit
 fi
 
-run "커밋 정책"   $PY tools/commit_policy.py
-run "인코딩·개행" $PY tools/encoding_check.py
-
-# 스테이지된 파이썬만 본다. 전량 린트는 CI 가 한다.
-mapfile -t pys < <(git diff --cached --name-only --diff-filter=ACM | grep '\.py$' || true)
-if [ "${#pys[@]}" -gt 0 ]; then
-    run "파이썬 문법" $PY -m py_compile "${pys[@]}"
-    # ★ 2026-08-24 추가. 종전 주석은 "전체 린트는 CI 가 한다" 였고, 그 틈으로
-    #   F401 이 나갔다 — jijeok_review 의 _side() 를 INTERIM 으로 바꾸면서
-    #   RAW 가 미사용이 됐는데 import 를 안 뺐다. pytest 는 ruff 를 안 돌리니
-    #   로컬은 283 초록이었고 CI 가 잡았다. 스테이지분만 보면 0초다.
-    if command -v uv >/dev/null 2>&1; then
-        run "ruff" uv run ruff check "${pys[@]}"
-    fi
-fi
-
-# 스테이지된 JS 문법
-mapfile -t jss < <(git diff --cached --name-only --diff-filter=ACM | grep '^web/.*\.js$' || true)
-for f in "${jss[@]:-}"; do
-    [ -n "$f" ] && run "JS 문법 $f" node --check "$f"
-done
-
-if [ "$fail" -ne 0 ]; then
-    printf '\n커밋을 중단한다. 고치고 다시 커밋해라.\n'
-    printf '정말 필요하면  git commit --no-verify  (이유를 메시지에 남길 것)\n'
-    exit 1
-fi
-exit 0
+# ★ 조용히 통과하지 않는다. 방어가 빠진 것을 사람이 알아야 한다.
+printf '\033[31m✗ pre-commit 을 못 찾았다 — 커밋 시점 방어가 빠진다\033[0m\n' >&2
+printf '  uv sync   또는   pip install pre-commit\n' >&2
+printf '  정말 지금 넘겨야 하면  git commit --no-verify  (이유를 메시지에 남길 것)\n' >&2
+exit 1

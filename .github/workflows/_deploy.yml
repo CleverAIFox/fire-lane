@@ -1,0 +1,111 @@
+# _deploy.yml — Pages 배포의 **정본**. 네 워크플로가 이것을 부른다.
+#
+# ★ 왜 생겼나 (2026-09-18 · W1)
+#   `pages` · `docs` · `navi` · `proposal` 넷이 job 본문을 **바이트 동일**하게
+#   들고 있었다(334줄). 다른 것은 넷뿐 — 이름 · paths · environment.url 접미사 ·
+#   그리고 **VWORLD_KEY 가 pages.yml 에만 있었다.**
+#
+#   `stage_pages.py` 는 키가 없으면 경고만 찍고 빈 `web/key.js` 를 쓰고 rc=0 을
+#   낸다. 넷 다 `web/` 전체를 업로드하므로, 나머지 셋 중 하나가 나중에 돌면
+#   **배경지도가 죽은 사이트가 배포되고 워크플로는 초록**이었다.
+#   `docs.yml` 머리말이 "어느 쪽이 나중에 돌아도 결과가 완전하다" 고 적었는데
+#   이 축에서 거짓이었다 — 09-05 내비 누락과 같은 형태다.
+#
+#   본문이 하나가 되면 그 사고가 **구조적으로 불가능**해진다. 정본이 넷이면
+#   반드시 어긋난다(MASTER §18-3).
+#
+# ★ `secrets: inherit` 를 쓴다. 호출부마다 시크릿을 손으로 나열하면 그것이
+#   다시 넷이 되고, 이번에 잡은 버그가 그대로 재발한다.
+#
+# ★ Actions 사이드바에 항목 하나가 는다(§101-4 가 경계한 그 화면). 대신
+#   중복 본문 4벌이 사라진다. `_` 접두사로 배포 넷과 시각적으로 가른다.
+#   이 파일은 `workflow_call` 전용이라 사람이 직접 돌릴 수 없다.
+name: _배포 (재사용)
+
+on:
+  workflow_call:
+    inputs:
+      url-suffix:
+        description: "environment.url 에 붙일 접미사 (지도='' · workflow.html · navi/ · proposal.html)"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# ★ 넷이 같은 group 을 쓴다. Pages 사이트 하나를 동시에 덮어쓰지 않는다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ★ 2026-09-18 (W2). 배포가 검사를 지나게 한다.
+  #   종전 실참 — 배포 4종에 `needs:` 도 `workflow_run:` 도 **0건**이었고
+  #   contract 와 **발대로** 돌았다. `workflow_dispatch` 는 검사 0건으로
+  #   임의 배포였다. 룰셋이 PR 에는 contract 를 걸지만 그것은
+  #   **플랫폼이 배포를 막은 것이 아니다** — 1인 `--admin` bypass ·
+  #   수동 실행이 그 밖에 있었다.
+  # ★ 검사를 복사하지 않는다. `contract.yml` 을 그대로 부른다 —
+  #   PR 이 통과한 것과 **같은** 검사여야 게이트가 물지한다.
+  # ★ 값: 배포마다 contract 가 한 번 더 돌아 ~2분 느려진다.
+  #   릴리즈당 몇 번이니 받을 값이다.
+  gate:
+    uses: ./.github/workflows/contract.yml
+    secrets: inherit
+
+  deploy:
+    needs: gate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}${{ inputs.url-suffix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.12.13"          # ★ 핀. 종전에는 셋 다 "그날의 최신" 이었다
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - run: uv sync --frozen --all-extras
+
+      - name: MASTER §12 → web/workflow.html
+        # ★ 넷 다 web/ 전체를 올리므로 여기서 생성하지 않으면 낡은 협업 방침이
+        #   배포된다. 생성과 배포를 가르지 않는다(2026-08-31).
+        run: uv run python tools/render_workflow.py
+
+      - name: 캐시 무효화 스탬프 주입
+        # ★ 저장소는 ?v=BUILD 로 두고 여기서 찍는다. 값은 view.json 의 build 로,
+        #   publish_web.py 가 쓰고 js/data.js 가 읽는 그 값이다. 정본이 하나다.
+        # ★ `grep -c` 를 남긴다. sed 가 아무것도 못 바꿔도 rc=0 이라, 치환이
+        #   실제로 일어났는지는 세어봐야 안다. 종전에는 pages 에만 있었다.
+        run: |
+          B=$(sed -n 's/.*"build": *"\([0-9a-f]*\)".*/\1/p' web/data/view.json)
+          test -n "$B" || { echo "view.json 에 build 가 없다"; exit 1; }
+          echo "스탬프 $B"
+          sed -i "s/?v=BUILD/?v=$B/g" web/index.html
+          grep -c "?v=$B" web/index.html
+
+      - uses: ./.github/actions/build-navi
+        with:
+          mapbox-token: ${{ secrets.MAPBOX_TOKEN }}
+
+      - name: 배포 준비 (docs/proposal.docx → web/ · web/key.js 생성)
+        # ★ web/key.js 는 생성물이다. V-World 키를 저장소에 안 둔다.
+        #   로컬은 .env, 여기는 Secrets — stage_pages.py 한 곳이 읽는다.
+        # ★ 2026-09-18. 종전에는 이 env 가 pages.yml 에만 있었다.
+        run: uv run python tools/stage_pages.py
+        env:
+          VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4

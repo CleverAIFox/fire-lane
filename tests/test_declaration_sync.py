@@ -62,7 +62,11 @@ def _verdict_rule() -> list[str]:
 # 1. 자동화가 부르는 도구가 README 에 있는가
 # ─────────────────────────────────────────────────────────────
 
+# ★ 2026-09-18 (W1). `_deploy.yml` 을 더했다. 배포 본문을 거기로 옮기면서
+#   `pages.yml` 에는 `tools/` 호출이 하나도 안 남았다 — 빼면 `render_workflow.py` ·
+#   `stage_pages.py` 가 이 검사의 그물 밖으로 나간다. 부르는 자리를 따라간다.
 CALLERS = (".github/workflows/contract.yml", ".github/workflows/pages.yml",
+           ".github/workflows/_deploy.yml",
            "tools/verify.sh", "tools/ship.py")
 
 

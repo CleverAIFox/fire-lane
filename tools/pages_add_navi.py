@@ -83,14 +83,26 @@ NODE_STEP = """      - uses: actions/setup-node@v4
 # ★ 원래 앵커가 한국어 주석(`내비 빌드 (web/navi → …)`)이었다. 주석을
 #   다듬는 순간 검사가 죽는다. **동작**을 앵커로 잡는다.
 def check() -> int:
-    f = ROOT / ".github" / "workflows" / "pages.yml"
+    # ★ 2026-09-18 (W1). 앵커를 `pages.yml` → `_deploy.yml` 로 옮겼다.
+    #   배포 넷이 job 본문을 바이트 동일하게 들고 있던 것을 재사용 워크플로
+    #   하나로 합쳤다. **동작은 그대로다** — 배포가 내비를 빌드하는가.
+    #   본문이 어디 있든 그것을 묻는 것이 이 검사의 뜻이다(위 머리말).
+    WF = ROOT / ".github" / "workflows"
+    f = WF / "_deploy.yml"
     if not f.exists():
-        print("\u2717 pages.yml 이 없다")
+        print("\u2717 _deploy.yml 이 없다 — 배포 본문의 정본이 사라졌다")
         return 1
     if "./.github/actions/build-navi" not in f.read_text(encoding="utf-8"):
-        print("\u2717 pages.yml 에 build-navi 액션이 없다 — 배포에서 내비가 빠진다")
+        print("\u2717 _deploy.yml 에 build-navi 액션이 없다 — 배포에서 내비가 빠진다")
         return 1
-    print("\u2713 pages.yml 이 build-navi 액션을 부른다")
+    # ★ 넷이 실제로 그 본문을 부르는가. 하나라도 안 부르면 그 경로는
+    #   내비 없이 web/ 를 통째로 올려 나머지가 올린 내비를 지운다(pages.yml 머리말).
+    miss = [w for w in ("pages", "docs", "navi", "proposal")
+            if "_deploy.yml" not in (WF / f"{w}.yml").read_text(encoding="utf-8")]
+    if miss:
+        print(f"\u2717 배포 워크플로가 _deploy.yml 을 안 부른다: {', '.join(miss)}")
+        return 1
+    print("\u2713 _deploy.yml 이 build-navi 를 부르고 배포 넷이 그것을 부른다")
     return 0
 
 
