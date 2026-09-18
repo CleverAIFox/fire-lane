@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-18T13:05:36+09:00",
- "commit": "10397fc",
+ "sealed_at": "2026-09-18T20:13:35+09:00",
+ "commit": "49e34f6",
  "tool": "4e5793923f7cb248",
- "scope": "verify.sh 로그",
+ "scope": "verify.sh 전 단계",
  "docs": {
-  "docs/MASTER.md": "97f87d6fe226026e",
-  "docs/DECISIONS.md": "f807c7e25b4ccb17",
-  "docs/PLAN.md": "56a026ce3aed8fe3",
-  "README.md": "4dc598fd94d6006e"
+  "docs/MASTER.md": "a6bb4fcd8be37176",
+  "docs/DECISIONS.md": "a19839aaae756511",
+  "docs/PLAN.md": "31f8cdf4e9ce9775",
+  "README.md": "54967af2997ec1c4"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -242,7 +242,7 @@
   ]
  },
  "code": {
-  "sha256": "1fa680904146fad8",
+  "sha256": "431d6f0f106fcde7",
   "files": 67
  },
  "sections": {
@@ -4116,6 +4116,54 @@
    "doc": "docs/DECISIONS.md",
    "title": "189-6. 시험은 `--only segments` 로 완주하지 못한다 — 사후 관문 둘이 막는다"
   },
+  "DECISIONS-496": {
+   "h": "ace10ca925efbb05",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "189-7. `dms` 절 ID 는 위치다 — MASTER 에 절을 끼우면 뒤가 전부 「변경」이 된다"
+  },
+  "DECISIONS-497": {
+   "h": "f03887aed3687d85",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "190. 계획을 저장소 안으로 — PLAN §13 결함 대장 (판정 불변)"
+  },
+  "DECISIONS-498": {
+   "h": "d24b156a932f014d",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "190-1. §1 의 정본 선언이 거짓이었다"
+  },
+  "DECISIONS-499": {
+   "h": "3ea4d5d227196319",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "190-2. 닫힌 것은 인스턴스 27건이고 족은 하나다"
+  },
+  "DECISIONS-500": {
+   "h": "92118ac56b07817c",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "190-3. 상세주소DB — 「아파트 101동」 전제를 EDA 로 기각한다"
+  },
+  "DECISIONS-501": {
+   "h": "af8be1a3a5118196",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "190-4. 은퇴 기준이 「좌표 없음」을 「쓸모 없음」으로 읽고 있었다"
+  },
+  "DECISIONS-502": {
+   "h": "ac5ab4c23681483b",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "190-5. §13 이 죽은 참조 하나를 깨웠다"
+  },
+  "DECISIONS-503": {
+   "h": "e8a7b8a68034ee03",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "190-6. 정정 — 「통째로 덮는다」는 틀렸다. 겹치는 구역에서 쟀다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -4135,7 +4183,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "5f8ffa0aa08309e1",
+   "h": "67a31e025fba2e75",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일"
@@ -4231,8 +4279,8 @@
    "title": "4. 그래프 · 경로탐색"
   },
   "PLAN-020": {
-   "h": "4c69a0e27ae51e29",
-   "state": "blank",
+   "h": "cb5e6176c845cebf",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "4-1. 가중치 설계 📄"
   },
@@ -4405,8 +4453,8 @@
    "title": "7-3. 관측 신선도 🔴"
   },
   "PLAN-049": {
-   "h": "5dd7a949024cc60d",
-   "state": "blank",
+   "h": "86fd3fe9c5e5a4d7",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "7-4. CCTV 사각 구간 대책 📄"
   },
@@ -4453,8 +4501,8 @@
    "title": "8-5. `web/data` 생성물 커밋 🟡"
   },
   "PLAN-057": {
-   "h": "7cb68fe24c593a4d",
-   "state": "blank",
+   "h": "ed670f374d916af8",
+   "state": "none",
    "doc": "docs/PLAN.md",
    "title": "8-6. 대장 · 매니페스트 격차 🟡"
   },
@@ -4519,38 +4567,74 @@
    "title": "11. 담당 공백"
   },
   "PLAN-068": {
-   "h": "11a399962d9e888c",
+   "h": "ba012f4758aec997",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "12. 기획서 갱신 대상"
   },
+  "PLAN-069": {
+   "h": "00e9749a3208f6dc",
+   "state": "none",
+   "doc": "docs/PLAN.md",
+   "title": "13. 결함 대장 — 판정을 안 움직이는 일"
+  },
+  "PLAN-070": {
+   "h": "fe63e0b9c4c1b0a7",
+   "state": "none",
+   "doc": "docs/PLAN.md",
+   "title": "13-1. 이 절이 생긴 이유"
+  },
+  "PLAN-071": {
+   "h": "a98d7518feea54fc",
+   "state": "none",
+   "doc": "docs/PLAN.md",
+   "title": "13-2. 족 — 여섯 갈래"
+  },
+  "PLAN-072": {
+   "h": "19165e636e4adeb9",
+   "state": "none",
+   "doc": "docs/PLAN.md",
+   "title": "13-3. 남은 결함 17건"
+  },
+  "PLAN-073": {
+   "h": "7eb7be3c5ca452cd",
+   "state": "wired",
+   "doc": "docs/PLAN.md",
+   "title": "13-4. 클래스 가드 — 이 절이 닫히는 조건"
+  },
+  "PLAN-074": {
+   "h": "1f4ca4ede9077bd3",
+   "state": "none",
+   "doc": "docs/PLAN.md",
+   "title": "13-5. 규약"
+  },
   "README-001": {
-   "h": "ced21da3b57dcf5b",
-   "state": "blank",
+   "h": "093694f02f7c962a",
+   "state": "wired",
    "doc": "README.md",
    "title": "문서는 넷이다"
   },
   "README-002": {
    "h": "7b7219fa3a8b9a89",
-   "state": "blank",
+   "state": "inherit",
    "doc": "README.md",
    "title": "일회성 도구는 저장소에 두지 않는다"
   },
   "README-003": {
-   "h": "97b762cfd361f968",
+   "h": "4d796d734930d26d",
    "state": "none",
    "doc": "README.md",
    "title": "문서에도 검사가 붙어 있다"
   },
   "README-004": {
    "h": "c8e98e86aa85102c",
-   "state": "blank",
+   "state": "inherit",
    "doc": "README.md",
    "title": "`D-XX` 는 날짜가 아니다"
   },
   "README-005": {
    "h": "12fe54bd714870cf",
-   "state": "blank",
+   "state": "inherit",
    "doc": "README.md",
    "title": "숫자의 정본은 문서가 아니다"
   },
@@ -4639,14 +4723,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 281,
+ "denominator": 274,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
-  "verify/의존성 동기화 (uv sync --dev)": {
+  "verify/의존성 동기화 (uv sync --frozen --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.52ms"
+   "tail": "Checked 45 packages in 0.47ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4661,7 +4745,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "731 passed in 80.28s (0:01:20)"
+   "tail": "732 passed in 84.37s (0:01:24)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4673,20 +4757,30 @@
    "state": "OK",
    "tail": "All checks passed!"
   },
-  "verify/CI 환경 재현": {
-   "rc": 0,
-   "state": "OK",
-   "tail": "243 passed, 1 skipped in 9.06s"
-  },
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1803개 추적"
+   "tail": "커밋 정책 OK · 1808개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
    "state": "OK",
    "tail": "인코딩 OK — 손으로 쓰는 파일은 전부 UTF-8 · LF · 개행 있음 (생성물 17건은 대상 아님)"
+  },
+  "verify/pre-commit 전수": {
+   "rc": 0,
+   "state": "OK",
+   "tail": "JS 문법 (web/*.js).......................................................Passed"
+  },
+  "verify/훅 전역 연결": {
+   "rc": 0,
+   "state": "OK",
+   "tail": "✓ 전역 훅이 이 저장소의 .githooks/pre-commit 을 **실제로 부른다**  (/home/fox/.githooks/pre-commit)"
+  },
+  "verify/관문 동등 (래칫 18)": {
+   "rc": 0,
+   "state": "OK",
+   "tail": "✓ 로컬 전용 18 = 래칫 18"
   },
   "verify/환경변수 선언↔실물": {
    "rc": 0,
@@ -4761,7 +4855,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "지도 확인:  uv run python tools/serve.py"
+   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -4799,9 +4893,9 @@
    "tail": "selftest 통과 — 프로브 다섯 전부 살아 있다"
   },
   "verify/강제자 소급 증분": {
-   "rc": 1,
-   "state": "실패",
-   "tail": "변경  README.md  README-015  [none] 구조 / 변경  README.md  README-016  [none] 지금 상태 / 변경  README.md  README-018  [wired] 나는 어느 파트인가"
+   "rc": 0,
+   "state": "OK",
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 746절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4826,12 +4920,12 @@
   "verify/PLAN 번호·참조 정합": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ 없음 — 행 60개가 1..60 로 연속이다"
+   "tail": "✓ 없음 — 행 61개가 1..61 로 연속이다"
   },
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "731 passed in 106.88s (0:01:46)"
+   "tail": "732 passed in 113.38s (0:01:53)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4841,7 +4935,7 @@
   "verify/배포에 내비 빌드": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ pages.yml 이 build-navi 액션을 부른다"
+   "tail": "✓ _deploy.yml 이 build-navi 를 부르고 배포 넷이 그것을 부른다"
   },
   "verify/루트 잔재·유령 면제": {
    "rc": 0,
@@ -4851,12 +4945,12 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 496개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 504개, 중복 없음"
   },
   "verify.sh(집계)": {
-   "rc": 1,
+   "rc": 0,
    "state": "생략",
-   "tail": "단계 42"
+   "tail": "단계 44"
   },
   "probe/deadcheck": {
    "rc": 0,
@@ -4889,13 +4983,7 @@
    "tail": "/home/fox/.githooks"
   }
  },
- "declared_red": [
-  "verify/강제자 소급 증분"
- ],
- "red_ages": {
-  "verify/강제자 소급 증분": 1
- },
- "red_reasons": {
-  "verify/강제자 소급 증분": "(인자로 넘김)"
- }
+ "declared_red": [],
+ "red_ages": {},
+ "red_reasons": {}
 }
