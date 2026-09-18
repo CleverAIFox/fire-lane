@@ -493,14 +493,34 @@ def cmd_fsck() -> None:
         print("  ★    FIRE_LANE_DATA 미설정")
     else:
         print("  OK   FIRE_LANE_DATA 설정됨")
-    hp = subprocess.run(["git", "config", "core.hooksPath"],
-                        cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    if hp != ".githooks":
-        warn.append("core.hooksPath 미설정 — .githooks 가 텍스트 파일이다. "
-                    "git config core.hooksPath .githooks")
-        print(f"  ★    core.hooksPath = {hp or '(없음)'}")
+    # ★ 2026-09-18 (W1b). 종전에는 `core.hooksPath == ".githooks"` 를 요구했고,
+    #   그것은 `dms.py::hook/local-hooksPath`(로컬이 설정돼 있으면 실패)와 정확히
+    #   반대였다 — 어느 기계든 한쪽은 항상 울었다(2족 기존 인스턴스).
+    #   구조는 이렇다: **전역 훅이 주인이고, 후보 경로에서 저장소 훅을 찾아 부른다.**
+    #   그러니 볼 것은 셋이다 — 전역이 있는가 · 로컬이 안 덮는가 ·
+    #   저장소 훅이 실행 가능한가(전역이 `[ -x ]` 로 고른다).
+    # ★ 도달 자체는 여기서 안 잰다. 그것은 실행이 필요하고
+    #   `.githooks/global-chain.sh --check` 가 탐침으로 한다 — `doctor` 는 관측이다.
+    def _cfg(scope: str) -> str:
+        return subprocess.run(["git", "config", scope, "core.hooksPath"],
+                              cwd=ROOT, capture_output=True, text=True).stdout.strip()
+
+    g, loc = _cfg("--global"), _cfg("--local")
+    hook = ROOT / ".githooks" / "pre-commit"
+    if not g:
+        warn.append("전역 core.hooksPath 미설정 — 자격증명 검사가 어느 저장소에도 안 돈다. "
+                    "git config --global core.hooksPath ~/.githooks")
+        print("  ★    전역 core.hooksPath 없음")
+    elif loc:
+        warn.append(f"로컬 core.hooksPath({loc}) 가 전역을 이긴다 — 자격증명 검사가 사라진다. "
+                    "git config --local --unset core.hooksPath")
+        print(f"  ★    로컬 core.hooksPath = {loc} (전역을 덮는다)")
+    elif not (hook.exists() and hook.stat().st_mode & 0o111):
+        warn.append(".githooks/pre-commit 이 없거나 실행 불가 — 전역 훅이 후보로 안 집는다. "
+                    "chmod +x .githooks/pre-commit")
+        print("  ★    .githooks/pre-commit 실행 불가")
     else:
-        print("  OK   core.hooksPath = .githooks")
+        print(f"  OK   전역 훅 {g} · 저장소 훅 실행 가능 (도달은 global-chain.sh --check)")
 
     print()
     for w in warn:

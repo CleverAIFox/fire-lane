@@ -26,19 +26,25 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 
 | 문서 | 시제 | 담는 것 |
 |---|---|---|
-| [`docs/PLAN.md`](docs/PLAN.md) | 미래 | 남은 일 · 미결정 · 담당 공백 |
+| [`docs/PLAN.md`](docs/PLAN.md) | 미래 | 남은 일 · 미결정 · 담당 공백 · 결함 대장 |
 | [`docs/MASTER.md`](docs/MASTER.md) | 현재 | 판정 · 데이터 · 용어 · UI 계약 · 운영 |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 과거 | 왜 그렇게 됐나 (append-only) |
 | `docs/proposal.docx` | — | 대외 제출용. 시제 규칙 밖 |
 
 **한 항목은 한 문서에만 산다.** 두 곳에 있으면 한쪽만 고치는 날이 온다.
-남은 일의 정본은 `PLAN §1` 하나다.
+남은 일의 정본은 **수용 조건**으로 갈린다 — 판정을 움직이는 일은 `PLAN §1`,
+안 움직이는 일(배선·정본화·문서 결함)은 `PLAN §13` 이다. 2026-09-18 감사에서
+남은 일 42건이 **어느 쪽에도 없었고**, 그때까지 이 줄은 거짓이었다(DECISIONS §190-1).
 
 **다섯 번째는 만들지 않는다.** 과거·현재·미래 세 시제가 다 찼다.
 새 문서를 만들고 싶으면 그것은 셋 중 하나의 절이다.
 `tests/test_reproducibility.py::test_no_fifth_doc` 이 저장소 전체를 보고 막는다.
 
 `sources.yaml` 은 데이터 정본이다. 기계가 읽으므로 손으로 고칠 때 주의할 것.
+
+강제자  `tests/test_reproducibility.py::test_doc_axis_tables_are_consistent` · `::test_no_fifth_doc`
+        ★ 축 표의 정본은 MASTER 머리다. 이 표와 PLAN 머리는 사본이고 셋이 갈리면 운다.
+          2026-09-18 까지 이 절은 검사 이름을 **산문으로만** 들었다 — `dms` 는 줄머리 칸만 센다.
 
 
 ### 일회성 도구는 저장소에 두지 않는다
@@ -61,6 +67,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
 uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
 uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
+uv run python tools/gate_parity.py --max 18  # 로컬 관문 ↔ CI 차집합 (래칫)
 uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증분)
 uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
 uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 (--apply 로 당긴다)

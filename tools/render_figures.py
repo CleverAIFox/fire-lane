@@ -261,7 +261,15 @@ def fig_branch() -> str:
 
 def fig_deploy() -> str:
     """배포. `MASTER §12-8` · `workflows/*.yml` · `docker-compose.yml` 이 정본."""
-    wf = sorted(p.stem for p in (ROOT / ".github/workflows").glob("*.yml"))
+    # ★ 2026-09-18 (W1a). `_` 젝둠사를 배제한다. `_deploy.yml` 은
+    #   `workflow_call` 전용 재사용 워크플로이및 "main 푸시" 가 아니다.
+    #   거러내지 않으면 알파벳순 서동으로 `pages` 가 `wf[:4]` 밖에서
+    #   **조용히 빠진다** — 그림은 여전하 그러지고 아무도 모른다.
+    # ★ 곱가지: `wf[:4]` 자실이 7개 중 4개만 보여주면서 자른 표시를
+    #   안 한다(1족). 그것을 고치면 SVG 내용이 바뀜다 — 배선 배치에
+    #   생성물 변경을 섞지 않는다. 그림 배치에서 닫는다.
+    wf = sorted(p.stem for p in (ROOT / ".github/workflows").glob("*.yml")
+                if not p.stem.startswith("_"))
     svcs = re.findall(r"^  (\w+):", (ROOT / "docker-compose.yml")
                       .read_text(encoding="utf-8"), re.M)
 
