@@ -369,12 +369,23 @@ else
     #   web_manifest 는 **있는 것의 해시**를 뜰 뿐이고 golden 은
     #   segments.geojson 만 본다. 2026-09-02 에 route_vehicle.json 이
     #   08-31 산출인 채로 전 게이트를 통과했다(PLAN #70 · DECISIONS §39).
+    # ★ 2026-09-19. 범위가 `data/processed/segments.geojson` **한 파일**이었다.
+    #   같은 디렉터리의 `_manifest.json`(계보 정본)과 **`seg_uid_map.csv`**
+    #   (구간 uid 사상표)는 추적되는 생성물인데 **아무도 안 봤다.** 그날
+    #   매니페스트가 걸린 것은 그 해시가 web/data/_manifest.json 안에 박혀
+    #   있어서 **간접적으로, 우연히** 드러난 것이다. `dms.py` 의
+    #   `SEAL_MAY_BE_DIRTY` 는 그 파일을 이미 알고 있었다 — 같은 사실이
+    #   저장소에 있는데 이 자리가 손으로 다시 적으며 틀렸다(DECISIONS §192).
+    #   디렉터리로 넓힌다. 추적되는 것은 넷이고 전부 결정적이다
+    #   (`_manifest.json` 은 `write_stable` 이 시각만 바뀌면 안 쓴다).
+    #   ★ 단계 이름은 안 고쳤다 — DECISIONS §179 와 PLAN #49 가 이 이름을
+    #     인용한다. 이름·인용을 함께 옮기는 것은 PLAN §13 W3-13 이 받는다.
     step "커밋된 web/data 가 최신인가" bash -c '
-        if git diff --quiet -- web/data data/processed/segments.geojson; then
+        if git diff --quiet -- web/data data/processed; then
             echo "생산자 재실행과 커밋본이 같다"
         else
             echo "★ 낡았다 — 파이프라인 산출이 커밋본과 다르다:"
-            git diff --name-only -- web/data data/processed/segments.geojson
+            git diff --name-only -- web/data data/processed
             echo "  생성물이므로 그대로 커밋하면 된다. 다만 무엇이 왜"
             echo "  움직였는지 먼저 본다 — golden 이 불변이면 값이 아니라"
             echo "  커밋본이 뒤처진 것이다(PLAN #70)."
