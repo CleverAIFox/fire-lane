@@ -8253,3 +8253,36 @@ CI 가 golden 을 안 돌려 안 드러났을 뿐, 파이썬을 올리거나 기
 그래서 이 배치에 싣지 않는다. 파이썬 버전을 올리기 전에 옛 봉인 증명 뒤 재봉인하는 같은 모양(185-2)으로 따로 닫는다.
 
 강제자 없음 — 사유: 미결 결함 기록이다. 닫는 배치가 강제자를 든다
+
+## 186. I1 — 데브컨테이너 준비 스크립트를 실제로 부르고, 내비 노드 판을 하나로 (판정 불변)
+
+> 2026-09-18 · 오창준
+
+강제자 없음 — 사유: 하위 절 186-1 · 186-2 가 각자 강제자 칸을 든다
+
+R1 판 2 · G-24 를 싣기 전에 인프라를 훑다 둘을 찾았다. 둘 다 **있는데 아무도 안 부르거나, 정본이 둘**인 이 저장소의 반복 형태다.
+판정 · 산출물 · 지문은 안 건드린다.
+
+### 186-1. `.devcontainer/setup.sh` 를 `postCreateCommand` 가 부른다
+
+`postCreateCommand` 가 `uv sync` 한 줄이라 `setup.sh` 는 **한 번도 안 돌았다.** 저장소 어디에서도 이 파일을 참조하지 않는다.
+그래서 그 안의 `core.quotepath false` · `core.precomposeunicode true` 가 안 걸렸고, 데브컨테이너에서 한글 파일명이 팔진수로 나온다.
+"2026-09-02 하루에 기계 차이로 세 번 걸렸다" 를 이유로 만든 파일인데 배선이 빠져 있었다.
+
+같이 고친 둘 — ① 이미지가 `/bin/uv` 를 넣는데도 매번 `curl | sh` 로 uv 를 다시 받았다. 네트워크가 없으면 거기서 죽는다.
+없을 때만 받는다. ② 안내 문구가 데브컨테이너에서 되는 것에 `JS · 화면` 을 적었다. **이미지에 node 가 없다**(`python:3.11-slim` ·
+`features` 선언 없음) — `verify.sh` 의 JS 넷과 내비 타입 검사는 이 안에서 못 돈다. 되는 것만 적는다.
+
+강제자  `tests/test_ci_env.py::test_devcontainer_actually_runs_its_setup_script`
+
+### 186-2. 내비 노드 판의 정본은 `web/navi/.nvmrc` 하나
+
+`contract` 의 내비 타입 검사는 node 22, 배포 액션 `build-navi` 는 node 20 이었다 — **게이트와 빌드가 다른 런타임에서 돌았다.**
+그 게이트는 maplibre 5→6 · vite 5→6 이 PR 초록 · 0 vulnerabilities 로 통과해 main 에서 `TS1192` 로 죽은 사고 때문에 생긴 것이다
+(`contract.yml`). 게이트가 통과시킨 판과 배포가 빌드하는 판이 다르면 **같은 형태가 또 난다.**
+
+`web/navi/.nvmrc`(20) 를 두고 양쪽이 `node-version-file` 로 읽는다. `web/*.js` 클래식 스크립트 셋은 22 그대로다 — 그쪽은 내비와
+무관하고, 한 판으로 억지로 묶으면 바꿀 이유가 생겼을 때 둘이 같이 끌려간다. 배포 셋(`pages` · `navi` · `proposal`)은 `build-navi` 에
+위임하므로 자기 자리에 판을 안 적는다.
+
+강제자  `tests/test_ci_env.py::test_navi_node_version_has_one_source_of_truth`
