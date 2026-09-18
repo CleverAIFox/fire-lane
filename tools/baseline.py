@@ -5,6 +5,7 @@ baseline.py — 판정 산출물을 봉인하고, 나중 실행과 대조한다.
     uv run python tools/baseline.py freeze <태그> [--note "..."]
     uv run python tools/baseline.py list
     uv run python tools/baseline.py diff <태그>
+    uv run python tools/baseline.py diff <태그> --transition   경계가 갈린 경우까지
 
 ── 왜 필요한가 ────────────────────────────────────────────────
 MASTER §18-1 은 `processed` 를 보관하지 않는다. raw + 코드 + 대장이 있으면
@@ -33,6 +34,10 @@ NGI 20도엽(2020·2022) → V-WORLD SHP 74도엽(2026-03)으로 교체됐다.
   구 원본 소실로 재생성 불가라 그대로 둔다(지우지 않는다).
 
 ── diff 가 하는 일 ────────────────────────────────────────────
+★ 이 diff 는 **1:1 매칭**이다. 뼈대를 갈면(R3) 구간이 다른 자리에서 잘려 1:N · N:1 이 생기고,
+  그때 중점 최근접은 한쪽을 임의로 버린다 — **판정이 움직인 것과 경계가 움직인 것을 구별 못 한다.**
+  `--transition` 이 `firelane.transition` 으로 그 경우까지 센다(DECISIONS §187).
+
 seg_uid 로 먼저 맞추고, 안 맞는 것은 중점 최근접(기본 15m)으로 다시 맞춘다.
 seg_uid 는 중점 좌표 + 도로명 해시라 소스가 바뀌면 흔들린다.
 특히 V-WORLD 는 A0020000 도로명이 채워져 있어(구 NGII 는 전부 빈 문자열)
@@ -307,6 +312,11 @@ def cmd_diff(args) -> int:
               f"중앙 {d[n//2]:+.2f}m · 평균 {sum(d)/n:+.2f}m · "
               f"|Δ|>1m {sum(1 for x in d if abs(x) > 1)}")
 
+    # ★ 소방서 블록보다 **먼저** 부른다. 그 블록은 파일이 없으면 early return 하고,
+    #   2026-09-18 첫 배선에서 전이표가 그 뒤에 있어 **조용히 생략됐다**(초록불인데 안 돈 그 형태).
+    if args.transition:
+        _transition(old_p, new_p)
+
     # 소방서 대조 — 봉인판 대 현재판
     op, np_ = BASE / args.tag / NFA, PROC / NFA
     if not (op.exists() and np_.exists()):
@@ -324,6 +334,23 @@ def cmd_diff(args) -> int:
     return 0
 
 
+def _transition(old_p: Path, new_p: Path) -> None:
+    """경계가 갈린 경우까지 — 1:N · N:1 · 소멸 · 신설. 판정 전이는 **길이 m 가중**이다(§187)."""
+    import geopandas as gpd
+
+    from firelane import transition as X
+
+    o, n = gpd.read_file(old_p).to_crs(5186), gpd.read_file(new_p).to_crs(5186)
+    t = X.build(o, n)
+    s = X.summarize(t, len(o), len(n))
+    print("\n  전이표 — 경계가 갈린 경우까지")
+    print("    대응  " + " · ".join(f"{k} {v}" for k, v in s["cardinality"].items())
+          + f"  ·  신설 {s['added']}")
+    print(f"    길이 옛 {s['len_old_m']:,.0f}m · 대응 {s['len_matched_m']:,.0f}m · 중점 폴백 {s['fallback_mid']}")
+    print("\n  판정 전이 (길이 m 가중)")
+    print("\n".join("    " + x for x in X.verdict_flow(t).to_string().splitlines()))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -333,6 +360,8 @@ def main() -> int:
     ls = sub.add_parser("list"); ls.set_defaults(fn=cmd_list)
     d = sub.add_parser("diff"); d.add_argument("tag")
     d.add_argument("--tol", type=float, default=15.0)
+    d.add_argument("--transition", action="store_true",
+                   help="경계가 갈린 경우까지 본다 — 1:N · N:1 · 소멸 · 신설 (R3 전후. DECISIONS §187)")
     d.set_defaults(fn=cmd_diff)
     a = ap.parse_args()
     return a.fn(a)

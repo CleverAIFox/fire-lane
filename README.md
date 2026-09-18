@@ -232,6 +232,7 @@ uv run python tools/route_probe.py      소방차 통행 비용으로 경로 —
 uv run python tools/clearance_probe.py  최대내접원 방식 (2026-08-22 기각)
 uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
 uv run python tools/skeleton_compare.py NGII 1:1,000 뼈대 후보 대 현행 구간 — 위치 의심표 (R1)
+uv run python tools/transition.py      옛 구간 → 새 구간 전이표 — 1:N · N:1 · 소멸 · 신설 (R2)
 uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치는 규모
 uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구간 — 실측 우선순위
 uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
@@ -395,6 +396,7 @@ tools/
   wmax_audit.py           width_max_m 결손이 판정에 미치는 규모
   desk_check.py           정사영상 위에 구간·폭 렌더
   skeleton_compare.py     NGII 뼈대 후보 대 현행 구간 대조 (R1)
+  transition.py           옛 구간 → 새 구간 전이표 (R2 · R3 전후)
   docpatch.py             문서 절 단위 멱등 교체 · 표 행 추가
   js_graph_check.mjs      ES 모듈 의존 그래프 · 순환 참조
   web_boot_check.mjs      UI 부팅 경로 점검
