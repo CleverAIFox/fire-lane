@@ -8219,3 +8219,37 @@ R 을 닫지 않는다. R1 판 2 에서 「멀리」를 NGII 선 기준 · 반�
   cover 로 세면 짝없음 8. share 칸은 매칭 엣지 선택에 그대로 쓴다.
 
 강제자  `tests/test_r1.py::test_canary_segment_on_fallback_is_classed_c_and_far`(판 1 이 못 잡은 형태 — fallback 위 구간이 C · 멀리) · `::test_split_at_node_is_not_unpaired` · `::test_far_threshold_grows_with_ngii_width` · `::test_dist_class_edges_are_inclusive_upper` · `::test_ngii_distance_uses_nine_points_including_ends` · `::test_far_offset_is_flagged_before_width_gap` · golden 판정 불변
+
+## 185. G-24 — golden 코드 지문을 파이썬 버전과 떼어 낸다 (판정 불변)
+
+> 2026-09-18 · 오창준
+
+강제자 없음 — 사유: 하위 절 185-1~185-3 이 각자 강제자 칸을 든다
+
+샌드박스(3.12)에서 dev `696856a` 의 `golden.py check` 가 판정 지문 파일 여섯을 전부 「변경」 이라 했다. 코드는 같았다.
+`_logic_fingerprint` 가 docstring 을 걷은 AST 를 `ast.dump` 로 해시했고, 그 출력이 버전마다 다르다 — 같은 원문이
+3.11 `8f634b2747ace964` · 3.12 `7d0bc9433a5c8098` · 3.13 `e0e6a6ae3a329e37`(잠긴 값). CI workflow 는 전부 3.11 이다.
+CI 가 golden 을 안 돌려 안 드러났을 뿐, 파이썬을 올리거나 기계를 옮기면 판정이 안 바뀌어도 게이트가 운다. `ast.unparse` 도 3.12 에서 갈렸다.
+
+### 185-1. 지문은 토큰열로 — `golden.logic_text`
+
+주석 · NL · docstring 을 뺀 토큰열(종류 + 글자)을 해시한다. 3.12 의 f-string 분해 토큰(PEP 701)은 원문 조각 하나로 되붙인다.
+주석 · docstring · 빈 줄 · 줄바꿈 위치를 안 보는 것은 옛 방식과 같다. 괄호 · 따옴표 모양은 본다(보수 쪽). `.code_fingerprint` 에
+`method: tokens-v1` 칸을 둔다. 칸 없는 잠금은 옛 방식이라 `_staleness` 가 「옛 방식」 으로 운다.
+
+강제자  `tests/test_golden_fp.py::test_logic_text_is_pinned_across_python_versions`(고정 해시 — CI 3.11 · 사용자 3.13 이 같이 통과해야 한다) · `::test_comments_docstrings_blank_lines_and_wrapping_do_not_move_it` · `::test_logic_changes_move_it` · `::test_lock_writes_method_and_old_method_is_reported`
+
+### 185-2. 옮기기는 증명 뒤에만 — `golden.py rehash`
+
+지금 코드의 옛 방식 지문이 잠긴 값과 **같을 때만** 새 지문을 쓴다. 옛 방식이 버전을 타므로 잠근 파이썬에서만 증명된다 —
+샌드박스 3.12 는 거부했고 3.13 은 `e0e6a6ae3a329e37 → 842f638c52edef08` 로 옮겼다. 옮긴 뒤 3.11 · 3.12 · 3.13 의 `check` 가 모두 통과했다.
+`segments.fingerprint.json`(판정 사진)은 안 건드린다. 파이프라인 재실행 · lock 이 필요 없다.
+
+강제자  `tests/test_golden_fp.py::test_rehash_moves_only_with_legacy_proof`
+
+### 185-3. 남긴 것 — G-25 `shardseal.code_print` 도 `ast.dump` 를 쓴다
+
+같은 병이다. 고치면 모든 샤드 봉인이 한 번 찢어져 `ngii_road` 가 다시 빌드된다 — 8GB 기계에서 OOM 이 난다(shardseal 머리말).
+그래서 이 배치에 싣지 않는다. 파이썬 버전을 올리기 전에 옛 봉인 증명 뒤 재봉인하는 같은 모양(185-2)으로 따로 닫는다.
+
+강제자 없음 — 사유: 미결 결함 기록이다. 닫는 배치가 강제자를 든다

@@ -147,6 +147,71 @@ def cmd_lock(_args) -> int:
     return 0
 
 
+FP_METHOD = "tokens-v1"
+WATCH = ["src/firelane/segments.py", "src/firelane/seg/width.py",
+         "src/firelane/seg/geom.py", "src/firelane/seg/params.py",
+         "src/firelane/seg/graph.py", "src/firelane/seg/report.py"]
+
+
+def logic_text(src: str) -> str:
+    """판정 로직만 남긴 글. 주석 · docstring · 빈 줄 · 줄 안 공백 · 줄바꿈 위치를 걷는다.
+
+    ★ 2026-09-18 (DECISIONS §185 · G-24). 종전에는 docstring 을 걷은 AST 를 `ast.dump` 로 해시했다.
+      `ast.dump` 출력은 **파이썬 버전마다 다르다**(3.12 가 노드에 type_params 등을 더했다). 같은 코드가
+      3.11 `8f634b27…` · 3.12 `7d0bc943…` · 3.13 `e0e6a6ae…` 로 갈렸다. CI 는 3.11 · 사용자 기계는 3.13 이라
+      파이썬을 올리거나 기계를 옮기는 순간 **판정이 안 바뀌어도 게이트가 운다** — `--allow-stale` 을 습관으로
+      만드는 바로 그 모양이다. `ast.unparse` 도 3.12 에서 갈렸다.
+      토큰열은 3.11 · 3.12 · 3.13 이 같다. 3.12 가 f-string 을 쪼갠 토큰(PEP 701)은 원문 조각 하나로 되붙인다.
+    """
+    import ast
+    import io
+    import tokenize
+
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return src
+    doc = set()
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) \
+                and ast.get_docstring(n) is not None:
+            doc.add((n.body[0].lineno, n.body[0].col_offset))
+    lines = src.splitlines(keepends=True)
+
+    def cut(a: tuple[int, int], b: tuple[int, int]) -> str:
+        (r0, c0), (r1, c1) = a, b
+        if r0 == r1:
+            return lines[r0 - 1][c0:c1]
+        return lines[r0 - 1][c0:] + "".join(lines[r0:r1 - 1]) + lines[r1 - 1][:c1]
+
+    fs, fe = getattr(tokenize, "FSTRING_START", None), getattr(tokenize, "FSTRING_END", None)
+    drop = {tokenize.COMMENT, tokenize.NL, tokenize.ENCODING, tokenize.ENDMARKER}
+    bare = {tokenize.INDENT, tokenize.DEDENT, tokenize.NEWLINE}
+    out: list[str] = []
+    depth, start, in_doc = 0, (0, 0), False
+    for tk in tokenize.generate_tokens(io.StringIO(src).readline):
+        if fs is not None and tk.type == fs:
+            if depth == 0:
+                start = tk.start
+            depth += 1
+            continue
+        if fe is not None and tk.type == fe:
+            depth -= 1
+            if depth == 0:
+                out.append("STRING " + cut(start, tk.end))
+            continue
+        if depth or tk.type in drop:
+            continue
+        if tk.type == tokenize.STRING and tk.start in doc:
+            in_doc = True
+            continue
+        if tk.type == tokenize.NEWLINE and in_doc:
+            in_doc = False
+            continue
+        out.append(tokenize.tok_name[tk.type] + ("" if tk.type in bare else " " + tk.string))
+    return "\n".join(out)
+
+
 def _logic_fingerprint() -> tuple[str, dict[str, str]]:
     """판정에 관여하는 코드의 로직 해시. (전체, 파일별) 을 낸다.
 
@@ -158,40 +223,66 @@ def _logic_fingerprint() -> tuple[str, dict[str, str]]:
       **왜 울었는지 모르는 게이트는 `--allow-stale` 을 습관으로 만든다.**
       거짓 경보가 아니라 진단 불가가 그 게이트를 죽인다.
 
-    ★ 주석 · docstring · 빈 줄을 걷어낸 AST 만 본다. 주석 한 줄을 고쳤다고
+    ★ 주석 · docstring · 빈 줄은 안 본다(`logic_text`). 주석 한 줄을 고쳤다고
       게이트가 울면 사람이 `--allow-stale` 을 쓰기 시작하고, 그 순간
       게이트가 죽는다.
     """
-    import ast
-
-    watch = ["src/firelane/segments.py", "src/firelane/seg/width.py",
-             "src/firelane/seg/geom.py", "src/firelane/seg/params.py",
-             "src/firelane/seg/graph.py", "src/firelane/seg/report.py"]
-
-    def _logic(src: str) -> str:
-        try:
-            tree = ast.parse(src)
-        except SyntaxError:
-            return src
-        for n in ast.walk(tree):
-            if isinstance(n, (ast.Module, ast.ClassDef,
-                              ast.FunctionDef, ast.AsyncFunctionDef)):
-                d = ast.get_docstring(n)
-                if d is not None and n.body:
-                    n.body = n.body[1:] or [ast.Pass()]
-        return ast.dump(tree)
-
     per = {}
     h = hashlib.sha256()
-    for rel in sorted(watch):
+    for rel in sorted(WATCH):
         q = ROOT / rel
         if q.exists():
-            logic = _logic(q.read_text(encoding="utf-8")).encode()
+            logic = logic_text(q.read_text(encoding="utf-8")).encode()
             per[rel] = hashlib.sha256(logic).hexdigest()[:12]
             h.update(rel.encode())
             h.update(logic)
     return h.hexdigest()[:16], per
 
+
+def _legacy_ast_fingerprint() -> str:
+    """G-24 이전 방식(docstring 을 걷은 AST 의 `ast.dump`). `rehash` 가 옛 잠금을 증명할 때만 쓴다."""
+    import ast
+
+    h = hashlib.sha256()
+    for rel in sorted(WATCH):
+        q = ROOT / rel
+        if not q.exists():
+            continue
+        src = q.read_text(encoding="utf-8")
+        try:
+            tree = ast.parse(src)
+            for n in ast.walk(tree):
+                if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                    if ast.get_docstring(n) is not None and n.body:
+                        n.body = n.body[1:] or [ast.Pass()]
+            logic = ast.dump(tree)
+        except SyntaxError:
+            logic = src
+        h.update(rel.encode())
+        h.update(logic.encode())
+    return h.hexdigest()[:16]
+
+
+def cmd_rehash(_args) -> int:
+    """옛 방식(ast.dump)으로 잠긴 코드 지문을 새 방식(토큰열)으로 옮긴다. 판정 · 산출물 지문은 안 건드린다.
+
+    ★ 증명 없이 옮기지 않는다 — 지금 코드의 옛 방식 지문이 잠긴 값과 **같을 때만** 쓴다. 옛 방식은 버전을
+      타므로, 잠근 기계(잠근 파이썬)에서 돌려야 같다. 다르면 코드가 바뀌었거나 파이썬이 다른 것이고, 둘 다 쓰지 않는다.
+    """
+    raw = CODE_FP.read_text(encoding="utf-8") if CODE_FP.exists() else ""
+    old_all, _ = _read_fp(raw)
+    if _read_method(raw) == FP_METHOD:
+        print(f"이미 {FP_METHOD} 방식이다 — 옮길 것 없음")
+        return 0
+    legacy = _legacy_ast_fingerprint()
+    if not old_all or legacy != old_all:
+        print(f"★ 옛 방식 지문이 잠긴 값과 다르다 ({old_all or '없음'} ↔ 지금 {legacy}, 파이썬 {sys.version.split()[0]})")
+        print("  판정 코드가 바뀌었거나 잠근 파이썬과 다르다. 옮기지 않는다 — 잠근 기계에서 돌리거나 파이프라인 뒤 lock")
+        return 1
+    now, per = _logic_fingerprint()
+    CODE_FP.write_text(_dump_fp(now, per), encoding="utf-8")
+    print(f"옮겼다 — ast.dump {old_all} → {FP_METHOD} {now} (판정 코드 불변 증명: 옛 방식 지문 일치)")
+    return 0
 
 # ★ 2026-08-31. `SEG.parent`(= data/processed) 에 있었다. 그 계층은
 #   `regenerable: true` 라 gitignore 이고, 그래서 **지문이 저장소에 안
@@ -220,8 +311,16 @@ def _read_fp(raw: str) -> tuple[str, dict[str, str]]:
     return raw, {}          # 옛 형식 — 파일별 기록이 없다
 
 
+def _read_method(raw: str) -> str:
+    """잠금의 지문 방식. 칸이 없으면 옛 `ast.dump` 방식이다(G-24 이전)."""
+    raw = raw.strip()
+    if raw.startswith("{"):
+        return json.loads(raw).get("method", "ast-dump")
+    return "ast-dump"
+
+
 def _dump_fp(all_: str, per: dict[str, str]) -> str:
-    return json.dumps({"all": all_, "files": per},
+    return json.dumps({"all": all_, "method": FP_METHOD, "files": per},
                       ensure_ascii=False, indent=1) + "\n"
 
 
@@ -245,6 +344,9 @@ def _staleness() -> list[str]:
     now, per = _logic_fingerprint()
     raw = CODE_FP.read_text(encoding="utf-8").strip() if CODE_FP.exists() else ""
     old_all, old_per = _read_fp(raw)
+    if old_all and _read_method(raw) != FP_METHOD:
+        return [f"잠긴 코드 지문이 옛 방식({_read_method(raw)})이다 — 파이썬 버전을 타서 대조할 수 없다(G-24)",
+                "    판정 코드를 안 바꿨다면: python tools/golden.py rehash   (옛 방식 일치를 증명한 뒤에만 옮긴다)"]
     if old_all == now:
         return []
     if not old_all:
@@ -423,6 +525,7 @@ def main() -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("lock").set_defaults(fn=cmd_lock)
     sub.add_parser("selftest").set_defaults(fn=cmd_selftest)
+    sub.add_parser("rehash", help="옛 ast.dump 지문을 토큰열 지문으로 옮긴다(증명 뒤에만)").set_defaults(fn=cmd_rehash)
     c = sub.add_parser("check")
     c.add_argument("--allow-stale", action="store_true",
                    help="산출물이 코드보다 낡아도 대조한다 (증명이 아님을 알고 쓸 것)")
