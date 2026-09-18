@@ -46,6 +46,7 @@ from shapely.strtree import STRtree
 
 from firelane import segkey as _segkey
 from firelane.paths import PROCESSED
+from firelane.paths import flag as _flag
 
 # ── 파라미터 · 순수 함수 ──────────────────────────────────────
 # ★ 정본은 seg/ 다. 여기서 다시 정의하지 않는다(R3).
@@ -397,6 +398,23 @@ def main():
             f"  중심선 보정 {report.correction_id}: RDS {report.target_rds_man_no} "
             f"{report.source_length_m:.3f}→{report.corrected_length_m:.3f}m · {trims}"
         )
+    # ★ 2026-09-18 (DECISIONS §188 · R3a). 뼈대 시험 교체 스위치. **기본은 꺼짐이라 판정이 안 바뀐다.**
+    #   켜면 road_link 대신 NGII 1:1,000 중심선 하이브리드(firelane.skeleton)를 그래프 뼈대로 쓴다.
+    #   R3b 가 이 스위치를 걷고 기본을 바꾼다 — 그때 판정이 움직이고 golden 을 다시 잠근다.
+    #   `.env` 에 적지 않는다. 셸에서 한 번 export 하고 마는 **스위치**다(env_check.SWITCHES).
+    #   ★ `os.environ` 을 직접 안 읽는다 — `paths` 밖에서 읽으면 `env_check` 가 운다(단일 독자 규칙).
+    #     `paths.flag` 는 `"1"` 만 켜짐으로 본다. `FIRE_LANE_SKELETON=1` 로 켠다.
+    if _flag("FIRE_LANE_SKELETON"):
+        from firelane import skeleton as _sk
+        from firelane.seg.params import GRAPH_BUFFER as _GB
+        _keep = poly.buffer(_GB)          # build_graph 가 쓰는 범위와 같다 — 두 곳이 어긋나지 않게
+        _edges = _sk.build(ngii_center, road, _keep)
+        road = _sk.as_road(_edges, road)
+        _by = _edges.groupby("src").size().to_dict()
+        print(f"  ★ 뼈대 시험 교체(FIRE_LANE_SKELETON) — 엣지 {len(_edges):,} · "
+              + " · ".join(f"{k} {v}" for k, v in sorted(_by.items()))
+              + f" · 이름 {int(road['RN'].notna().sum()):,}/{len(road):,}")
+
     rw   = load("road_rw")
     # 가로등. 지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
     # 마커 표현은 streetlight.py 가 담당한다(group-by + count, 반경 50m 원).

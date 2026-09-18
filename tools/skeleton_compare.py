@@ -11,10 +11,11 @@ tools/skeleton_compare.py — 판정 뼈대 후보(NGII 1:1,000 하이브리드)
 ── 무엇을 보나 ─────────────────────────────────────────────────
 현행 구간은 도로명주소 `road_link` 위에 서고 폭은 NGII 도로경계에서 잰다. 2026-09-17 실측에서
 NGII 1:1,000 건물을 관통하는 선이 현행 17 · NGII 중심선 0 이었다 — 뼈대만 다른 측량 위에 있다.
-구간마다 하이브리드 엣지에 매칭하고 네 가지 사유를 붙인다.
+구간마다 하이브리드 엣지에 매칭하고, 따로 NGII 측량 중심선(src == ngii)까지 거리를 재서 사유를 붙인다.
 
-    멀리      매칭 엣지까지 거리 중앙이 3m 를 넘는다 — 엉뚱한 자리에서 폭을 쟀다는 쪽의 증거
-    짝없음    표본점 60% 이상이 한 엣지로 모이지 않는다(8m · 25°)
+    멀리      NGII 선 거리 중앙이 max(3m, NGII 도로폭/2) 를 넘고 15m 이하 — 엉뚱한 자리에서 폭을 쟀다는 쪽의 증거
+    측량밖    NGII 선 거리 중앙이 15m 를 넘는다 — 그 자리에 측량 중심선이 없다(간선 쌍선 · 경계만 그린 곳)
+    짝없음    표본점 60% 이상이 **어느** 엣지에도 안 붙는다(8m · 25°). 교차점에서 두 엣지로 갈린 것은 아니다
     폭불일치  매칭 엣지의 NGII 측량 도로폭과 현재 width_min_m 이 2m 이상 다르다
     건물관통  현행 선이 NGII 건물을 1m 넘게 지나는데 매칭 엣지는 안 지난다
     쌍선      매칭 엣지가 폭 6m 이상 평행 쌍선이다(간선 이중 판정 후보)
@@ -23,7 +24,10 @@ IN    data/processed/road_link_5186.gpkg · ngii1k_center_5186.gpkg · segments_
       building_5186.gpkg · corridor_5186.gpkg · boundary_emd.geojson · fire_station.geojson ·
       $FIRE_LANE_DATA/raw — V-WORLD 1:1,000 묶음의 B0010000(건물) 레이어
 OUT   data/desk/r1/compare.csv · data/desk/r1/skeleton_5186.gpkg · data/desk/r1/summary.json
-PARAM firelane.skeleton 의 상수(COVER_D · GAP · MATCH_*)
+PARAM firelane.skeleton 의 상수(COVER_D · GAP · MATCH_* · NGII_N · CLASS_EDGES · FAR_M)
+
+★ 판 2 (2026-09-18). 거리 분류 A ≤1.5 · B ~5 · C ~15 · D 를 칸(dist_class)으로 낸다. §184 판단 기준
+  「C 중 needs_cv · unknown ≥ 20 이면 교체」 를 이 도구가 직접 센다 — 미리보기 스크립트의 분류를 코드로 옮겼다.
 """
 from __future__ import annotations
 
@@ -46,6 +50,7 @@ P = ROOT / "data" / "processed"
 OUT = ROOT / "data" / "desk" / "r1"
 WORK = ROOT / ".work" / "r1"
 EMD_CD = "12210108"
+CRIT_REPLACE = 20      # §184 — C(5~15m) 중 needs_cv · unknown 이 이 이상이면 뼈대 교체, 미만이면 구간 보정
 
 
 def ngii_buildings(keep) -> gpd.GeoDataFrame:
@@ -112,18 +117,28 @@ def main() -> int:
     print(f"건물 관통 >1m — 현행: NGII 건물 {int((t.bldg_ngii_m > 1).sum())} · 도로명주소 건물 {int((t.bldg_juso_m > 1).sum())} · "
           f"매칭 엣지: NGII 건물 {int((t.edge_bldg_ngii_m > 1).sum())}")
 
-    reasons = ["멀리", "건물관통", "폭불일치", "짝없음", "쌍선"]
+    reasons = ["멀리", "측량밖", "건물관통", "폭불일치", "짝없음", "쌍선"]
     tab = pd.DataFrame({r: t[t.suspect.str.contains(r)].groupby("verdict").size() for r in reasons}).fillna(0).astype(int)
     tab.loc["합"] = tab.sum()
     print("\n의심 사유 × 현행 판정 (한 구간이 여러 사유를 가질 수 있다)\n" + tab.to_string())
     any_s = t.suspect.ne("")
     print(f"의심 구간 {int(any_s.sum())} / {len(t)} — 판정별 " + json.dumps(t[any_s].groupby("verdict").size().to_dict(), ensure_ascii=False))
 
+    cls = pd.crosstab(t.dist_class.map(S.CLASS_LABEL), t.verdict, margins=True, margins_name="합")
+    print("\nNGII 측량 중심선 거리 분류 × 현행 판정 (거리 중앙 · 9점)\n" + cls.to_string())
+    c = t[t.dist_class == "C"]
+    crit = int(c.verdict.isin(["needs_cv", "unknown"]).sum())
+    nonclear = c[c.verdict != "clear"]
+    print(f"\n§184 기준 — C 중 needs_cv · unknown {crit} (기준 {CRIT_REPLACE}) → "
+          + ("교체(R2 · R3)" if crit >= CRIT_REPLACE else "구간 보정"))
+    print(f"  C {len(c)} · 그중 clear 아닌 {len(nonclear)} — 같은 도로명 {int(nonclear.same_name.sum())}")
+    print(f"  짝없음 판 1 기준(한 엣지 share) {int((t.share < S.MATCH_SHARE).sum())} → 판 2(cover) {int((t.cover < S.MATCH_SHARE).sum())}")
+
     t["_w"] = (pd.to_numeric(t.edge_width, errors="coerce") - pd.to_numeric(t.width_min_m, errors="coerce")).abs()
     # ★ 위치 증거(멀리 · 건물관통)가 앞 — 폭 차이는 좁아지는 골목마다 나서 혼자서는 약하다(skeleton.priority)
     top = t[any_s].sort_values(["priority", "_w", "bldg_ngii_m"], ascending=False).head(a.top)
-    cols = ["seg_uid", "road_name", "verdict", "width_min_m", "edge_width", "offset_m", "share", "bldg_ngii_m", "edge_src",
-            "priority", "suspect"]
+    cols = ["seg_uid", "road_name", "verdict", "width_min_m", "ngii_w", "ngii_med", "dist_class", "same_name", "cover",
+            "bldg_ngii_m", "edge_src", "priority", "suspect"]
     print(f"\n의심 상위 {a.top}\n" + top[cols].to_string(index=False))
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -134,8 +149,11 @@ def main() -> int:
         "edges_by_src": {k: int(v) for k, v in by["size"].items()},
         "suspect": int(any_s.sum()), "suspect_by_reason": {r: int(t.suspect.str.contains(r).sum()) for r in reasons},
         "suspect_by_verdict": {k: int(v) for k, v in t[any_s].groupby("verdict").size().items()},
+        "dist_class": {k: int(v) for k, v in t.dist_class.value_counts().sort_index().items()},
+        "criterion_C_needs_cv_unknown": crit, "criterion_threshold": CRIT_REPLACE,
         "params": {"COVER_D": S.COVER_D, "GAP": S.GAP, "MATCH_R": S.MATCH_R,
-                   "MATCH_ANGLE": S.MATCH_ANGLE, "MATCH_SHARE": S.MATCH_SHARE},
+                   "MATCH_ANGLE": S.MATCH_ANGLE, "MATCH_SHARE": S.MATCH_SHARE,
+                   "NGII_N": S.NGII_N, "CLASS_EDGES": [hi for hi, _ in S.CLASS_EDGES], "FAR_M": S.FAR_M},
     }
     (OUT / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"\n→ {OUT.relative_to(ROOT)}/compare.csv · skeleton_5186.gpkg · summary.json")
