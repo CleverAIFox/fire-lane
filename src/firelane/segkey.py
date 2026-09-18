@@ -68,7 +68,15 @@ def _road_hash(road_name: str | None) -> str:
       30개 넘게 달린다. 그래서 좌표가 주 키이고 도로명은 충돌 방지용 보조다.
     ★ None 을 빈 문자열로 접지 않고 별도 토큰을 준다. 도로명이 없는 구간과
       도로명이 "" 인 구간이 같은 키를 받으면 안 된다.
+
+    ★ 2026-09-18 (DECISIONS §188-5). **`NaN` 은 truthy 다** — `or` 가 안 걸리고 `.strip()` 에서
+      `AttributeError: 'float' object has no attribute 'strip'` 로 죽는다. 도로명주소 뼈대에서는
+      `RoadNameIndex` 가 못 맞추면 `None` 을 주므로 한 번도 안 터졌다. R3a 탐침에서 NGII 뼈대로
+      돌리자 무명 엣지 886/6,812 가 생기며 **파이프라인 맨 끝 `attach_seg_uid` 에서 터졌다.**
+      문자열이 아니면 전부 무명으로 본다 — 문자열 입력의 결과는 종전과 **완전히 같다**(seg_uid 불변).
     """
+    if not isinstance(road_name, str):
+        road_name = None
     src = (road_name or "\x00NONAME").strip()
     h = hashlib.blake2s(src.encode("utf-8"), digest_size=4).digest()
     return _b36(int.from_bytes(h, "big"), HASH_LEN)

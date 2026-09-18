@@ -1,5 +1,5 @@
 {
- "all": "842f638c52edef08",
+ "all": "b229d1673a2ac2d3",
  "method": "tokens-v1",
  "files": {
   "src/firelane/seg/geom.py": "60fa92ed4dc2",
@@ -7,6 +7,6 @@
   "src/firelane/seg/params.py": "4641201d1351",
   "src/firelane/seg/report.py": "781c50030621",
   "src/firelane/seg/width.py": "f0c2e633bd34",
-  "src/firelane/segments.py": "c272418867e6"
+  "src/firelane/segments.py": "9d9739dc3852"
  }
 }

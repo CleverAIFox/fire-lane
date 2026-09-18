@@ -43,7 +43,9 @@ SETTINGS = {"FIRE_LANE_DATA", "FIRE_LANE_INBOX",
             "FIRE_LANE_STAGE", "FIRE_LANE_BACKUP"}
 # 스위치 — 일회성 디버그. 셸 export 로 쓴다. 예시에 적으면 잡음이다
 SWITCHES = {"FIRE_LANE_DEBUG_SEG", "FIRE_LANE_DEBUG_XY", "FIRE_LANE_MIX_SRC",
-            "FIRE_LANE_NO_MERGE", "FIRE_LANE_OLD_SNAP"}
+            "FIRE_LANE_NO_MERGE", "FIRE_LANE_OLD_SNAP",
+            # ★ 2026-09-18 (§188-1). R3a 뼈대 시험 교체. R3c 가 기본을 바꾸면 여기서 뺀다.
+            "FIRE_LANE_SKELETON"}
 # 폐기  — 설정돼 있으면 시끄럽게. 예시에 있으면 안 된다
 RETIRED = {"FIRE_LANE_RAW"}
 
