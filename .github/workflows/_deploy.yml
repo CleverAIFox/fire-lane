@@ -25,7 +25,7 @@
 #   워크플로는 `.github/workflows/` 밖에 못 둔다(GitHub 규칙). 지우면 배포
 #   4종에 같은 본문이 4벌 복사되어 W1 이 닫은 2족이 되살아난다.
 #   이름으로 배포들 옆에 세우고 왜 0 runs 인지를 이름에 적는다.
-name: 배포 — 공용 본문 (직접 실행 안 함)
+name: Deploy — shared body (0 runs by design)
 
 on:
   workflow_call:
