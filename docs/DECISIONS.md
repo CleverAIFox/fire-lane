@@ -9314,3 +9314,35 @@ Actions 사이드바에서 배포 넷(한글)과 **글자 체계로 갈리고**,
 밖에 못 두므로 숨길 수도 없다(§101-4 가 경계한 화면이 이 화면이다).
 
 강제자 없음 — 사유: 표시 이름이다. 파일의 존재와 호출 관계는 `verify.sh` 42단계가 든다
+
+### 196-4. 사슬은 세 칸이었다 — 두 칸만 고치면 한 칸 아래에서 다시 난다
+
+v0.19 를 내고 배포를 다시 보니 **같은 오류가 한 칸 아래에서 났다.**
+
+    Invalid workflow file: .github/workflows/navi.yml#L60
+    Error calling workflow '.../contract.yml@64b3bff'.
+    The workflow is requesting 'pull-requests: write', but is only allowed 'pull-requests: none'.
+
+앞 절에서 본 사슬은 두 칸이었다 — `navi.yml → _deploy.yml`.
+**실제 사슬은 셋이다** —
+
+    배포 넷  →  _deploy.yml  →  contract.yml
+
+`_deploy.yml` 이 배포 전에 `contract.yml` 을 재사용 워크플로로 부르고,
+`contract.yml` 은 브리핑 코멘트를 달려고 `pull-requests: write` 를 요구한다.
+**권한은 사슬의 모든 칸이 들어야 맨 아래가 선다.** 한 칸이라도 비면 그 지점에서
+파일이 무효가 되고, 오류 메시지는 **맨 위 파일의 줄 번호**를 가리키므로
+(`navi.yml#L60` 인데 60 은 `_deploy.yml` 의 줄이다) 어디가 진짜인지 읽기 어렵다.
+
+다섯 곳(`docs` · `navi` · `pages` · `proposal` · `_deploy`)에 `pull-requests: write`
+를 얹었다.
+
+★ **두 칸만 보고 세 칸을 못 봤다.** 첫 오류가 `pages: write` · `id-token: write`
+  만 말했기 때문이다 — GitHub 은 **처음 걸린 칸 하나만** 알려주고 나머지는 그것을
+  고친 뒤에야 보여준다. 이런 형태에서는 고친 뒤 **반드시 다시 돌려 봐야 한다.**
+  "고쳤으니 될 것이다" 가 안 통하는 자리다.
+
+★ 이것이 PLAN §13 W3-15 를 더 강하게 만든다 — 배포 넷은 PR 에서 안 돌기 때문에
+  **매번 릴리즈를 한 번 태워야만** 다음 칸이 보인다. 한 칸에 릴리즈 하나다.
+
+강제자 없음 — 사유: 사슬의 깊이를 세는 검사가 없다. PLAN §13 W3-15 가 그 축을 든다
