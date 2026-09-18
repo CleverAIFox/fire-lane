@@ -1,0 +1,67 @@
+# Dockerfile 의 강제자.
+#
+# ★ 2026-09-19. 이 파일이 생긴 이유 — **`Dockerfile` 을 짓는 것이 아무것도
+#   없었다.** CI 어느 워크플로도 안 짓고(실측: `.github/workflows` 전수에
+#   `docker` 문자열 0건), 개발 기계에 docker 가 깔려 있지도 않다. 저장소에
+#   있고 아무도 안 돌리는 파일이라 **지금 이미 깨져 있어도 알 수 없다** —
+#   1족(무음 통과)이다. 실제로 2026-08-21 에 `CMD` 가 없는 모듈을 가리켜
+#   "빌드는 되고 실행하면 ModuleNotFoundError" 상태로 있었고, 그것을 잡은
+#   것은 게이트가 아니라 사람의 눈이었다(Dockerfile 머리말).
+#
+# ★ **모든 PR 에 걸지 않는다.** GDAL apt 설치 + uv sync 로 몇 분이 든다.
+#   이미지를 실제로 바꾸는 파일이 움직일 때만 돈다 — 그것이 `paths` 다.
+#   검사가 시끄러우면 사람이 우회하고, 우회가 습관이 되면 강제자 전체가
+#   무력해진다(MASTER §17 · tools/pr_body_check.py 머리말).
+#
+# ★ **이 검사는 로컬에 없다.** docker 가 개발 기계에 없어서 `verify.sh` 에
+#   배선할 자리가 없다. `gate_parity` 는 「verify 에 있고 CI 에 없는 것」을
+#   세므로 이 방향(CI 전용)은 래칫에 안 걸린다 — 그리고 그것이 맞다.
+#   레이크처럼 **환경이 없어서 못 도는 검사**의 반대 경우다.
+name: image
+
+on:
+  push:
+    branches: [main, dev, 'part/**', 'feat/**']
+    paths:
+      - Dockerfile
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/image.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/image.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: image-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  etl:
+    name: ETL 이미지 빌드
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: 빌드
+        run: docker build -t fire-lane-etl:ci .
+
+      - name: 안에서 import 가 서는가
+        # ★ 기본 CMD(`fire-lane --check`)를 돌리지 않는다. 이미지는 src ·
+        #   tools · sources.yaml 만 담고 **`data/` 를 담지 않으므로**
+        #   `--check` 는 레이크를 못 찾는다. 그것은 고장이 아니라 전제다.
+        #   여기서 묻는 것은 하나다 — **이 이미지 안에서 패키지가 서는가.**
+        #   레이크를 요구하는 검사는 이 자리에 오지 않는다.
+        run: |
+          docker run --rm fire-lane-etl:ci \
+            uv run python -c "import firelane, sys; print('firelane OK ·', sys.version)"
+
+      - name: 무엇이 들어갔나
+        if: always()
+        run: docker image ls fire-lane-etl:ci
