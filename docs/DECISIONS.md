@@ -8131,7 +8131,7 @@ geopandas 가 빈 도형 의미를 바꾸며 매 실행 경고했다. 뜻은 "�
 
 > 2026-09-17 · 오창준
 
-강제자 없음 — 사유: 하위 절 184-1~184-3 이 각자 강제자 칸을 든다
+강제자 없음 — 사유: 하위 절 184-1~184-5 가 각자 강제자 칸을 든다
 
 PLAN 「판정 뼈대를 NGII 1:1,000 측량 중심선으로 다시 세운다」 의 첫 배치다. 뼈대를 **바꾸지 않고** 후보를 세워 표를 낸다.
 사람이 표를 보고 R3(뼈대 교체 · golden 재잠금)를 판정한다. `segments.py` 는 새 모듈을 import 하지 않는다.
@@ -8201,3 +8201,21 @@ R 을 닫지 않는다. R1 판 2 에서 「멀리」를 NGII 선 기준 · 반�
 `test_ledger_consumers_are_complete` 가 사용자 기계 verify 에서 울었다.
 
 강제자 없음 — 사유: 측정 기록이다. 판 2 가 이 분류를 도구에 넣고 테스트로 묶는다 · consumers 는 `tests/test_declaration_reality.py::test_ledger_consumers_are_complete`
+
+### 184-5. R1 판 2 — 위치 증거를 NGII 선에서만 재고, 짝없음은 교차점 갈림을 빼고 센다 (판정 불변)
+
+2026-09-18. 판 1 의 두 사유를 184-4 실측에 맞춰 고쳤다. 판정 · segments · web/data · golden 지문 파일은 안 건드린다.
+
+① **거리는 NGII 선만.** `skeleton.ngii_distance` 가 구간 양끝 포함 9점에서 src == ngii 엣지 합집합까지 거리를 재 중앙 · 최대를 내고,
+  가운데 점에서 가장 가까운 NGII 엣지의 도로폭 · 도로명을 붙인다. 이 정의는 2026-09-17 미리보기 `ngii_distance.csv` 와 같다 —
+  미리보기 산출 뼈대(`skeleton_5186.gpkg`)와 현행 구간으로 샌드박스에서 1,281행 전부 거리 중앙 · 최대 · 폭 · 이름 · 분류 · 같은 이름이 일치했다.
+② **분류 칸.** `dist_class` A ≤1.5 · B ≤5 · C ≤15 · D. 도구가 §184 기준(C 중 needs_cv · unknown, 기준 20)을 직접 세어 출력한다 — 32.
+③ **멀리 = NGII 선 거리 중앙 > max(3m, NGII 도로폭/2) 이고 15m 이하.** 15m 를 넘으면(D) 멀리가 아니라 「측량밖」 이다 — 그 자리에
+  측량 중심선이 없다는 뜻이지 옆에 섰다는 증거가 아니다. 가중 1. 같은 재료로 멀리 77(C 63 · B 14) · 측량밖 44.
+④ **같은 도로명 칸** `same_name`(road_name ↔ NGII 도로명).
+⑤ **짝없음 = 표본점 60% 이상이 어느 엣지에도 안 붙는다(`cover`).** 184-4 의 「짧은 구간 방향 완화」 는 실측으로 기각했다 —
+  판 1 짝없음 168 중 20m 미만은 32 뿐이고, 짧은 구간 방향 허용을 25° → 45° 로 넓혀도 168 → 163 이었다.
+  168 중 160 은 표본점 60% 이상이 8m · 25° 안의 엣지에 붙어 있었는데 **교차점에서 끊긴 두 엣지로 표가 갈려** 한 엣지 share 가 못 넘었다.
+  cover 로 세면 짝없음 8. share 칸은 매칭 엣지 선택에 그대로 쓴다.
+
+강제자  `tests/test_r1.py::test_canary_segment_on_fallback_is_classed_c_and_far`(판 1 이 못 잡은 형태 — fallback 위 구간이 C · 멀리) · `::test_split_at_node_is_not_unpaired` · `::test_far_threshold_grows_with_ngii_width` · `::test_dist_class_edges_are_inclusive_upper` · `::test_ngii_distance_uses_nine_points_including_ends` · `::test_far_offset_is_flagged_before_width_gap` · golden 판정 불변
