@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-18T20:43:27+09:00",
- "commit": "cc6ef5e",
+ "sealed_at": "2026-09-18T21:31:03+09:00",
+ "commit": "6b9e34d",
  "tool": "4e5793923f7cb248",
  "scope": "verify.sh 전 단계",
  "docs": {
   "docs/MASTER.md": "a6bb4fcd8be37176",
-  "docs/DECISIONS.md": "a19839aaae756511",
-  "docs/PLAN.md": "31f8cdf4e9ce9775",
+  "docs/DECISIONS.md": "412b07c58e63e1fd",
+  "docs/PLAN.md": "ca088decc0c1721c",
   "README.md": "54967af2997ec1c4"
  },
  "raw": {
@@ -4159,10 +4159,34 @@
    "title": "190-5. §13 이 죽은 참조 하나를 깨웠다"
   },
   "DECISIONS-503": {
-   "h": "e8a7b8a68034ee03",
+   "h": "fb0f78ff2ad54d8f",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "190-6. 정정 — 「통째로 덮는다」는 틀렸다. 겹치는 구역에서 쟀다"
+  },
+  "DECISIONS-504": {
+   "h": "25f4e51dd34889ae",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "191. 배치 0 이 브랜치에서 떨어졌다 — 그리고 아무도 안 울었다 (판정 불변)"
+  },
+  "DECISIONS-505": {
+   "h": "e1b17b9a7943bb26",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "191-1. 강제 갱신이 배치 하나를 지웠고 검사 51개가 전부 초록이었다"
+  },
+  "DECISIONS-506": {
+   "h": "55e510e630ecc776",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "191-2. 봉인 순서가 절차가 아니라 기억이다"
+  },
+  "DECISIONS-507": {
+   "h": "6b96d8df0e64cdc6",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "191-3. 「도구 지문」은 `dms.py` 한 파일이다"
   },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
@@ -4579,7 +4603,7 @@
    "title": "13. 결함 대장 — 판정을 안 움직이는 일"
   },
   "PLAN-070": {
-   "h": "fe63e0b9c4c1b0a7",
+   "h": "fd212d682550c004",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "13-1. 이 절이 생긴 이유"
@@ -4591,13 +4615,13 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN-072": {
-   "h": "19165e636e4adeb9",
+   "h": "51ee313e3a86fea3",
    "state": "none",
    "doc": "docs/PLAN.md",
-   "title": "13-3. 남은 결함 17건"
+   "title": "13-3. 남은 결함 19건"
   },
   "PLAN-073": {
-   "h": "7eb7be3c5ca452cd",
+   "h": "6fca596268221f1d",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-4. 클래스 가드 — 이 절이 닫히는 조건"
@@ -4730,7 +4754,7 @@
   "verify/의존성 동기화 (uv sync --frozen --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.41ms"
+   "tail": "Checked 45 packages in 1ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4745,7 +4769,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 88.35s (0:01:28)"
+   "tail": "732 passed in 89.71s (0:01:29)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4895,7 +4919,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 746절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 750절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -4925,7 +4949,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 117.92s (0:01:57)"
+   "tail": "732 passed in 113.25s (0:01:53)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -4945,7 +4969,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 504개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 508개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
