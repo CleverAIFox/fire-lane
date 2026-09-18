@@ -8286,3 +8286,54 @@ R1 판 2 · G-24 를 싣기 전에 인프라를 훑다 둘을 찾았다. 둘 다
 위임하므로 자기 자리에 판을 안 적는다.
 
 강제자  `tests/test_ci_env.py::test_navi_node_version_has_one_source_of_truth`
+
+## 187. R2 — 전이표와 교체 직전 봉인 (판정 불변)
+
+> 2026-09-18 · 오창준
+
+강제자 없음 — 사유: 하위 절 187-1 ~ 187-3 이 각자 강제자 칸을 든다
+
+R3 는 뼈대를 간다. 그러면 **구간이 다른 자리에서 잘린다** — 판정이 움직인 것과 경계가 움직인 것을
+같은 표에서 구별할 수 없게 된다. 그 틀을 먼저 만든다. 판정 · 산출물 · golden 지문은 안 건드린다.
+
+### 187-1. 교체 직전 봉인 — `baseline.py freeze 20260918-pre-r3`
+
+현행 뼈대(도로명주소 `road_link`)로 낸 마지막 산출물을 봉인한다. `seg_uid` 는 중점 좌표 + 도로명 해시라
+뼈대가 갈리면 **전량이 새 키가 된다** — 옛 키의 피처 기록은 이 봉인 하나뿐이 된다(§171-3).
+실측(`field`)이 옛 `seg_uid` 로 붙어 있으므로, 이것이 없으면 R3 뒤 실측값이 미아가 된다.
+
+### 187-2. 전이표 — `firelane.transition` (순수) · `tools/transition.py`
+
+`baseline.py diff` 는 **1:1** 이다. seg_uid 로 맞추고 안 맞으면 중점 최근접 15m 로 하나만 고른다.
+한 구간이 둘로 쪼개지면 중점이 어느 쪽에도 안 맞고, 둘이 하나로 합쳐지면 한쪽이 임의로 버려진다.
+
+전이표는 한 엣지만 고르지 않는다. 옛 구간의 표본점이 흩어진 대로 전부 남기고 비율(share)을 적어
+1:1 · 1:N · N:1 · N:N · 소멸 · 신설을 센다. **판정 전이는 구간 수가 아니라 길이(m)로 센다** —
+1:N 을 구간 수로 세면 옛 구간 하나가 여러 번 세어져 합이 안 맞는다.
+
+★ 표본은 **칸 가운데**다. 양끝을 찍으면 안 된다 — 끝점은 이웃 구간과 공유하는 노드라 거리가 0 이고
+  이어지는 구간은 방향도 같아서, 끝 표본이 이웃에게 한 표씩 간다. 2026-09-18 첫 판을 **같은 산출물끼리**
+  돌렸더니 1,281 중 **348 이 1:1 이 아니었다.** 짧은 구간일수록 한 표의 비중이 커서 MIN_SHARE 로도 못 거른다.
+  칸 가운데로 고친 뒤 1,281 전부 1:1 · 소멸 0 · 신설 0 · 대응 길이 58,309m(= 총연장)가 됐다.
+  `tools/transition.py --self` 가 이 항등을 매번 다시 잰다 — **전이표가 항등을 못 내면 R3 전후 비교에 쓸 수 없다.**
+
+강제자  `tests/test_r2.py::test_identity_is_all_one_to_one` · `::test_shared_node_does_not_leak_a_vote_to_the_neighbour` · `::test_split_is_one_to_n_and_conserves_length` · `::test_merge_is_n_to_one_and_disappearance_is_counted` · `::test_new_segment_with_no_old_counterpart_is_added` · `::test_midpoint_fallback_only_when_direction_match_fails` · `::test_transition_is_not_wired_into_judgment_code` · `tests/test_tools_are_wired.py`(EXEMPT 사유)
+
+### 187-3. `baseline.py diff --transition` 이 같은 모듈을 쓴다
+
+정본을 둘로 만들지 않는다. diff 는 1:1 표를 그대로 내고, `--transition` 이 붙으면 경계가 갈린 경우까지 덧붙인다.
+
+★ 첫 배선에서 호출을 소방서 대조 **뒤**에 뒀다. 그 블록은 `nfa_compare.json` 이 없으면 early return 하고,
+  그래서 **전이표가 조용히 생략됐다** — 초록불인데 안 돈 그 형태다. 소방서 블록 앞으로 옮겼다.
+
+### 187-4. R3 예보 — 옛 구간의 36% 가 경계를 바꾼다
+
+`tools/transition.py --to-skeleton` 으로 현행 1,281 구간을 R1 하이브리드 엣지 1,860 에 대조했다.
+
+    1:1 823 · 1:N 227 · N:1 170 · N:N 60 · 소멸 1 · 신설 415
+    대응 길이 56,170 / 58,309m (96.3%)
+
+옛 구간의 **64% 만 1:1** 이고 나머지는 경계가 갈린다. 신설 415 는 판정 범위 안에서 현행 구간이 없던
+NGII 선 · 폴백 조각이다. R3 뒤 `seg_uid` 는 전량 새 키가 되므로 실측 재부착은 이 전이표로 한다.
+
+강제자 없음 — 사유: 측정 기록이다. 수치는 `tools/transition.py --to-skeleton` 이 다시 낸다
