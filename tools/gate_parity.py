@@ -3,7 +3,7 @@
 gate_parity.py — **로컬 관문과 CI 가 같은 것을 보는가.** 3족의 클래스 가드다.
 
     uv run python tools/gate_parity.py              표 + 래칫 판정
-    uv run python tools/gate_parity.py --max 18     로컬 전용이 18 을 넘으면 실패
+    uv run python tools/gate_parity.py --max 19     로컬 전용이 19 와 다르면 실패
     uv run python tools/gate_parity.py --list       토큰만 (스크립트용)
     uv run python tools/gate_parity.py --selftest   ★ 프로브가 살아 있나
 
@@ -20,6 +20,10 @@ gate_parity.py — **로컬 관문과 CI 가 같은 것을 보는가.** 3족의 
   있는가" 를 하나씩 묻지 않는다. "선언되지 않은 차집합이 있는가" 를 묻는다.
   그래서 새 검사를 로컬에만 붙이는 순간 여기서 걸린다 — 강제자를 하나 더
   만들지 않아도 족이 닫힌다.
+
+★ **래칫에 면제 칸이 없다 — 이것이 알려진 결함이다**(PLAN §13 W3-10). 로컬 전용
+  수만 세므로 **레이크를 요구해 CI 에서 못 도는 검사**까지 옮기라고 압박한다.
+  2026-09-18 에 실제로 `refcheck.py` 를 CI 에 넣었다가 되돌렸다(DECISIONS §191-4).
 
 ★ **래칫이다.** 25개를 오늘 다 옮길 수는 없다(레이크가 필요한 것 · 기계 설정을
   보는 것이 섞여 있다). 그래서 `dupcheck --max 1` · `vintage_check --max 0` ·

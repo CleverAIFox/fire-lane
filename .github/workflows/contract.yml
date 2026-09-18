@@ -199,8 +199,11 @@ jobs:
         run: uv run python tools/env_check.py
       - name: 문서 ↔ 문서
         run: uv run python tools/doc_fsck.py
-      - name: 선언 ↔ 실물 (대장 참조)
-        run: uv run python tools/refcheck.py
+      # ★ 2026-09-18 되돌렸다. W2 가 3족(관문이 갈림)을 닫겠다고 `refcheck.py` 를
+      #   여기 넣었는데 **이 검사는 레이크가 있어야 돈다** — `⑧ layers 선언 →
+      #   디렉터리` 가 `data/raw` 를 required 로 요구한다. CI 에는 레이크가 없으므로
+      #   구조적으로 영원히 빨강이다(PR #75 에서 실측 · DECISIONS §191-4).
+      #   레이크 없는 모드가 생기기 전까지 로컬 전용이다 — PLAN §13 W3-10.
       - name: 트리 전수 대조 (저장소만)
         run: uv run python tools/treecheck.py --repo
       - name: web/data 계보

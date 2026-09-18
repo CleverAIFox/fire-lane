@@ -252,7 +252,12 @@ step "훅 전역 연결"    bash .githooks/global-chain.sh --check
 # ★ 2026-09-18 (W2). 3족의 클래스 가드. 로컬에만 있는 검사기를 센다.
 #   CI 도 같은 명령을 돈다 — 규칙을 두 곳에 적는 것이 아니라 같은 도구가
 #   같은 나무를 읽으므로 정본은 코드 하나다.
-step "관문 동등 (래칫 18)"  uv run python tools/gate_parity.py --max 18
+# ★ 2026-09-18. 18 → 19 로 **올렸다.** `refcheck.py` 를 CI 에서 뺐기 때문이다 —
+#   레이크를 요구하는 검사라 CI 에서 못 돈다(DECISIONS §191-4). 래칫을 올릴 때는
+#   사유를 적는다는 것이 이 도구의 규약이고, 이것이 그 사유다.
+# ★ 래칫이 「로컬 전용 수」만 세는 것이 이 사고의 원인이다 — 옮길 수 없는 검사까지
+#   옮기라고 압박한다. 면제 칸은 PLAN §13 W3-10 이 받는다.
+step "관문 동등 (래칫 19)"  uv run python tools/gate_parity.py --max 19
 step "환경변수 선언↔실물" uv run python tools/env_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
