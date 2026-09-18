@@ -49,10 +49,50 @@ def test_정상_파일은_통과한다(path):
 
 
 def test_훅이_저장소에_있다():
-    """`.git/hooks` 는 클론에 안 따라온다. `.githooks/` 여야 한다."""
+    """커밋 방어가 **클론에 따라오는가.** `.git/hooks` 는 안 따라온다.
+
+    ★ 2026-09-18 (W1b). W1 이 이 테스트를 바꾸고 `.githooks/pre-commit` 을 지웠다.
+      근거는 "로컬 `core.hooksPath` 가 있어야 돌고 `dms` 가 그것을 실패로 치니
+      구조적으로 못 도는 코드다" 였는데 **틀렸다.** 전역 훅이 후보 경로
+      (`<repo>/.githooks/pre-commit`)를 뒤져 실행 가능한 것을 부른다 —
+      `bash -x ~/.githooks/pre-commit` 추적으로 확인했다.
+      **원래 이 테스트가 맞았다.** 되돌리고, 놓쳤던 것을 더한다.
+
+    셋을 본다 —
+      ① 훅 파일이 있고 실행 가능한가   전역 훅이 `[ -x ]` 로 후보를 고른다
+      ② 규칙의 정본이 있는가           `.pre-commit-config.yaml`
+      ③ 훅이 그 정본에 **위임하는가**   규칙을 훅에 직접 적으면 정본이 둘이 된다
+    """
     h = ROOT / ".githooks" / "pre-commit"
-    assert h.exists(), ".githooks/pre-commit 이 없다"
-    assert h.stat().st_mode & 0o111, "실행 권한이 없다"
+    assert h.exists(), ".githooks/pre-commit 이 없다 — 전역 훅이 부를 것이 없다"
+    assert h.stat().st_mode & 0o111, "실행 권한이 없다 — 전역 훅이 후보로 안 집는다"
+
+    cfg = ROOT / ".pre-commit-config.yaml"
+    assert cfg.exists(), ".pre-commit-config.yaml 이 없다 — 커밋 방어 규칙의 정본이 없다"
+
+    body = h.read_text(encoding="utf-8")
+    assert "pre-commit run" in body, (
+        ".githooks/pre-commit 이 pre-commit 에 위임하지 않는다.\n"
+        "  규칙을 훅에 직접 적으면 .pre-commit-config.yaml 과 정본이 둘이 된다(2족).")
+
+
+def test_훅_도달이_방법이_사람의_말이_아니다():
+    """훅 도달을 **실행으로** 재는 수단이 있는가.
+
+    ★ 2026-09-18 (W1b). W1 의 `global-chain.sh --check` 는 전역 훅에 마커
+      **문자열**이 있는지만 봤다. 그 스니펫은 전역 훅의 `exit 0` 뒤에 붙어
+      한 번도 안 불렸는데 검사는 통과했고 verify 도 초록이었다.
+      「있는가」가 아니라 「도는가」를 물어야 한다 — 이 저장소가 열두 군데에
+      자백해놓은 그 병이고, 그것을 닫겠다는 배치가 그것을 새로 만들었다.
+    """
+    chain = ROOT / ".githooks" / "global-chain.sh"
+    assert chain.exists(), ".githooks/global-chain.sh 가 없다 — 도달을 잴 수단이 없다"
+    src = chain.read_text(encoding="utf-8")
+    assert "FIRE_LANE_HOOK_PROBE" in src, (
+        "global-chain.sh 가 탐침 변수를 안 쓴다 — 실행으로 재지 않는다는 뜻이다")
+    hook = (ROOT / ".githooks" / "pre-commit").read_text(encoding="utf-8")
+    assert "FIRE_LANE_HOOK_PROBE" in hook, (
+        ".githooks/pre-commit 이 탐침에 응답하지 않는다 — 체인이 끊겨도 초록이 된다")
 
 
 def test_CI_가_정책을_돌린다():

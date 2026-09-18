@@ -150,7 +150,13 @@ printf '%suv    %s  %s\n\n' "$D" "$Z" "$(uv --version 2>/dev/null || echo '없�
 # ── 0. 잠금파일 갱신 ─────────────────────────────────────────
 # ★ pyproject 에 [build-system] 이 생겼고 의존성 9개가 extras 로 내려갔다.
 #   uv.lock 이 그 전에 만들어진 것이라 다시 풀어야 한다.
-step "의존성 동기화 (uv sync --dev)" uv sync --dev
+# ★ 2026-09-18 (W2). `--frozen` 을 더했다. 종전에는 이 단계가 `uv.lock` 을
+#   **갱신할 수 있었다** — 검증 도구가 검증 대상을 변형하는 유일한 자리였고,
+#   Dockerfile · 워크플로 전부가 `--frozen` 인데 여기만 아니었다.
+#   그것이 "로컬은 초록 · CI 는 빨강" 을 만드는 구조다(5b 와 같은 축).
+# ★ extras 는 여전히 안 깐다(CI 는 `--all-extras`). torch 를 로컬에 받게 하는 것이
+#   비싸서 남긴 **선언된 차이**이고, gate_parity 가 그 차집합을 센다.
+step "의존성 동기화 (uv sync --frozen --dev)" uv sync --frozen --dev
 
 # ── 1. 패키지가 실제로 import 되는가 ─────────────────────────
 step "패키지 import" uv run python -c '
@@ -217,23 +223,41 @@ step "엄격 린트 (CI 와 같은 인자)" bash -c '
 #   이것 하나면 된다" 고 하는데, verify.sh 초록불이어도 CI 는 빨간불이 될 수
 #   있었다 — 커밋 정책 · 인코딩 · web/data 계보 · 문서 숫자 · 용량 상한.
 #   로컬 검증이 CI 의 부분집합이면 "내 기계에서는 됐는데" 가 나온다.
-# ★ 2026-08-23. CI 는 `pip install pytest shapely numpy ruff pyyaml` +
-#   `--no-deps` 로만 깐다. 로컬은 `uv sync` 로 전부 깔려 있어
-#   **로컬 초록불 · CI 빨간불**이 난다. 실제로 `import yaml` 을 쓰는
-#   테스트 둘이 그렇게 죽었다.
-#   CI 가 없는 패키지를 가려서 그 환경을 흉내낸다. 30초면 된다.
-step "CI 환경 재현"     bash -c '
-    B=$(mktemp -d)
-    # CI 가 안 까는 것들. contract.yml 의 pip install 목록에 없는 것.
-    for m in pandas geopandas pyogrio pyproj rasterio PIL ruamel; do
-        printf "raise ModuleNotFoundError(\"No module named %s\")\n" "$m" > "$B/$m.py"
-    done
-    PYTHONPATH="$B" uv run python -m pytest \
-        tests/test_guards.py tests/test_static.py \
-        tests/test_reproducibility.py tests/test_layering.py -q'
+# ★ 2026-09-18 (W2) 삭제 — 「CI 환경 재현」. **존재하지 않는 CI 를 검사했다.**
+#   전제는 "CI 가 `pip install pytest shapely numpy ruff pyyaml` + `--no-deps`
+#   로만 깐다" 였고, 그래서 pandas · geopandas · pyogrio · pyproj · rasterio ·
+#   PIL · ruamel 일곱을 일부러 가리고 돌렸다. 실측 —
+#     · CI 는 `uv sync --frozen --all-extras` 를 쓴다. `pip install` 은 워크플로에
+#       0건이고 `tests/test_ci_env.py` 가 그것을 금지한다
+#     · 가려진 일곱은 전부 `pyproject.toml` 의 **코어 의존성**이라 CI 에 다 있다
+#   통과해도 CI 정합을 보증하지 않고 실패하면 오탐이다. 허구를 지키는 검사는
+#   없는 것보다 나쁘다 — 검사가 있다는 사실이 정합을 검증한 것처럼 보이게 한다.
+#   정합을 **실제로** 묻는 것은 `gate_parity.py` 다(아래 「관문 동등」).
 
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
+# ★ 2026-09-18 (W1). 로컬 훅과 CI 가 이 한 파일을 읽는다 — 정본이 하나다.
+#   `.ruff-strict.toml` 과 같은 모양이고, 그것이 5a 의 교훈이다.
+# ★ 위 `인코딩·개행` 을 안 지운다. 표준 훅은 BOM · CRLF 만 도맡았고
+#   나머지 둘(비UTF-8 · 끝개행)은 대입물이 없다. `end-of-file-fixer` 는 더
+#   엄걱해서 추적 파일 15개를 고치고, 그중 `web/workflow.html` 은 생성기와
+#   무한 왔부에 들어간다(.pre-commit-config.yaml 의 ★★).
+step "pre-commit 전수"  uv run pre-commit run --all-files
+# ★ 2026-09-18 (W1). 전역 훅이 이 저장소를 이어서 부르는가.
+#   `.pre-commit-config.yaml` 이 있어도 전역 훅이 그것을 안 부르면
+#   **커밋 시점 방어가 0 이다** — 종전 `.githooks/pre-commit` 이 정확하게
+#   그 상태여서 구조적으로 못 도는 코드였다.
+#   미설정이면 한 명령으로 끝난다 — `bash .githooks/global-chain.sh --install`
+step "훅 전역 연결"    bash .githooks/global-chain.sh --check
+# ★ 2026-09-18 (W2). 3족의 클래스 가드. 로컬에만 있는 검사기를 센다.
+#   CI 도 같은 명령을 돈다 — 규칙을 두 곳에 적는 것이 아니라 같은 도구가
+#   같은 나무를 읽으므로 정본은 코드 하나다.
+# ★ 2026-09-18. 18 → 19 로 **올렸다.** `refcheck.py` 를 CI 에서 뺐기 때문이다 —
+#   레이크를 요구하는 검사라 CI 에서 못 돈다(DECISIONS §191-4). 래칫을 올릴 때는
+#   사유를 적는다는 것이 이 도구의 규약이고, 이것이 그 사유다.
+# ★ 래칫이 「로컬 전용 수」만 세는 것이 이 사고의 원인이다 — 옮길 수 없는 검사까지
+#   옮기라고 압박한다. 면제 칸은 PLAN §13 W3-10 이 받는다.
+step "관문 동등 (래칫 19)"  uv run python tools/gate_parity.py --max 19
 step "환경변수 선언↔실물" uv run python tools/env_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
