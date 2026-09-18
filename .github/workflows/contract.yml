@@ -170,7 +170,18 @@ jobs:
         #   룰셋에 이름을 추가해야 하고, 그 이름이 존재하기 전까지
         #   모든 PR 이 "Waiting for status to be reported" 로 영구 대기한다.
         #   2026-08-27 에 실제로 그 데드락을 겪었다. 스텝으로 붙인다.
-        if: github.event_name == 'pull_request'
+        # ★ 2026-09-18. **이 검사는 「사람이 쓴 PR」을 전제한다.** 그 전제가
+        #   선언돼 있지 않아서 W1 이 들인 dependabot 의 PR 열 건이 전부
+        #   영구 빨강이 됐다(#79~#88). 봇은 템플릿을 못 채운다 — 「리뷰어가
+        #   볼 곳」도 체크박스도 봇이 쓸 수 있는 것이 아니다.
+        #   `doc_fsck ⑥` 과 같은 형태다(DECISIONS §191-5) — 환경이 갖추지
+        #   못한 전제를 요구하는 검사를 그 환경에 걸었다. 전제를 선언한다.
+        # ★ 봇 PR 이 무검사로 통과하는 것이 아니다. 같은 job 의 나머지
+        #   전부(린트·테스트·계약·문서)는 그대로 돈다. **사람이 쓴 본문**만
+        #   묻지 않는다.
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.user.login != 'dependabot[bot]'
         run: uv run python tools/pr_body_check.py
 
       - name: 커밋 정책

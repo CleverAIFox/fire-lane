@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-18T22:59:36+09:00",
- "commit": "47799c7",
+ "sealed_at": "2026-09-18T23:32:04+09:00",
+ "commit": "549be58",
  "tool": "4e5793923f7cb248",
  "scope": "verify.sh 전 단계",
  "docs": {
   "docs/MASTER.md": "a6bb4fcd8be37176",
   "docs/DECISIONS.md": "c335a9beaa1dbab5",
-  "docs/PLAN.md": "9943e6ed8ef76f35",
+  "docs/PLAN.md": "4f80d9d4d63329b8",
   "README.md": "54967af2997ec1c4"
  },
  "raw": {
@@ -4615,7 +4615,7 @@
    "title": "13. 결함 대장 — 판정을 안 움직이는 일"
   },
   "PLAN-070": {
-   "h": "85189685cdfc3e80",
+   "h": "8174d368e7853722",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "13-1. 이 절이 생긴 이유"
@@ -4627,10 +4627,10 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN-072": {
-   "h": "d7f4794e9ba11939",
+   "h": "64da7708ff53e433",
    "state": "none",
    "doc": "docs/PLAN.md",
-   "title": "13-3. 남은 결함 21건"
+   "title": "13-3. 남은 결함 22건"
   },
   "PLAN-073": {
    "h": "6fca596268221f1d",
@@ -4781,7 +4781,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 78.46s (0:01:18)"
+   "tail": "732 passed in 81.87s (0:01:21)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4961,7 +4961,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 104.49s (0:01:44)"
+   "tail": "732 passed in 110.48s (0:01:50)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
