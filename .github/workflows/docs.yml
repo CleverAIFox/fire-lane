@@ -43,10 +43,17 @@ on:
 #   권한은 위임이 안 되므로 네 호출자가 같은 블록을 든다. **W1 이 없앤 중복과 다르다 —
 #   이것은 GitHub 이 강제한 중복이다.** 줄이려면 저장소 기본 권한을 올려야 하는데
 #   그건 전 워크플로에 쓰기를 주는 것이라 더 나쁘다(DECISIONS §196).
+# ★ 2026-09-19 (2차). 사슬이 **세 칸**이었다 —
+#     배포 넷 → `_deploy.yml` → `contract.yml`
+#   `_deploy.yml` 이 배포 전에 `contract.yml` 을 재사용 워크플로로 부르고
+#   `contract.yml` 은 브리핑 코멘트용 `pull-requests: write` 를 요구한다.
+#   권한은 **사슬의 모든 칸이 들어야** 맨 아래가 선다. 두 칸만 고쳤더니
+#   같은 오류가 한 칸 아래에서 다시 났다(DECISIONS §196-4).
 permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: write
 
 jobs:
   deploy:

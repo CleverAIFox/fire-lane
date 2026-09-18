@@ -1,11 +1,11 @@
 {
- "sealed_at": "2026-09-19T03:07:51+09:00",
- "commit": "e9ec763",
+ "sealed_at": "2026-09-19T03:51:23+09:00",
+ "commit": "ca32f59",
  "tool": "4e5793923f7cb248",
  "scope": "verify.sh 전 단계",
  "docs": {
   "docs/MASTER.md": "a6bb4fcd8be37176",
-  "docs/DECISIONS.md": "b17ee73f75518cab",
+  "docs/DECISIONS.md": "05de33ccd6445eae",
   "docs/PLAN.md": "6d7f9444899c3615",
   "README.md": "54967af2997ec1c4"
  },
@@ -4320,6 +4320,12 @@
    "doc": "docs/DECISIONS.md",
    "title": "196-3. 사이드바 이름을 영문으로 바꿨다"
   },
+  "DECISIONS-530": {
+   "h": "a24b1c00acc6abee",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "196-4. 사슬은 세 칸이었다 — 두 칸만 고치면 한 칸 아래에서 다시 난다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -4886,7 +4892,7 @@
   "verify/의존성 동기화 (uv sync --frozen --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.44ms"
+   "tail": "Checked 45 packages in 0.43ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4901,7 +4907,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 83.89s (0:01:23)"
+   "tail": "732 passed in 81.67s (0:01:21)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -5051,7 +5057,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 772절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 773절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -5081,7 +5087,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 108.45s (0:01:48)"
+   "tail": "732 passed in 108.21s (0:01:48)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -5101,7 +5107,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 530개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 531개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
