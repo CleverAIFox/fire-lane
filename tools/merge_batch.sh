@@ -208,7 +208,16 @@ put("  예)  src/firelane/seg/width.py:212  — 횡단선 간격을 0.5 → 0.25
     "\ndata/golden/segments.fingerprint.json — 판정 4수치가 움직였는가. 위 release_brief 표의 `판정` 줄\n")
 # ★ 2026-09-17 (G-11). 종전에는 data/processed 까지 봐서 대장 · 매니페스트만 바뀐 릴리즈(datasets 65 → 66)도
 #   "바뀐다" 로 체크했다. 산출물 변경 = 판정 지문(golden) 또는 발행물(web/data, 매니페스트 제외)이다
-out = changed("data/golden", "web/data", ":(exclude)web/data/_manifest.json")
+# ★ 2026-09-18. `data/golden` 을 디렉터리째 보던 것을 판정 지문 파일 하나로 좁혔다.
+#   PR #73 실물에서 release_brief 는 「넷 다 불변이다」를 계산해놓고 체크박스는
+#   「바뀐다」에 찍혔다. 원인은 G-24 가 `data/golden/.code_fingerprint` 를
+#   ast-dump → tokens-v1 로 옮긴 것이다 — 판정 4수치는 한 칸도 안 움직였는데
+#   같은 디렉터리의 다른 파일이 바뀌어 체크박스가 뒤집혔다.
+#   바로 위 put() 이 이 체크박스 옆에 「판정 4수치가 움직였는가. 위 release_brief
+#   표의 `판정` 줄」을 적어 넣는다 — 물음은 4수치이고 측정은 디렉터리였다.
+#   원칙 ② 그 형태다: 잘못된 것을 정확히 지킨다.
+out = changed("data/golden/segments.fingerprint.json",
+              "web/data", ":(exclude)web/data/_manifest.json")
 t = t.replace("- [ ] 바뀐다" if out else "- [ ] 안 바뀐다", "- [x] 바뀐다" if out else "- [x] 안 바뀐다", 1)
 con = changed("src/contracts", "tests/test_contract.py", "web/config.js")
 t = t.replace("- [ ] `src/contracts/`" if con else "- [ ] 안 건드린다",
