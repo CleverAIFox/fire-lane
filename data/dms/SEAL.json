@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-19T01:54:58+09:00",
- "commit": "923df10",
+ "sealed_at": "2026-09-19T02:33:15+09:00",
+ "commit": "e32759e",
  "tool": "4e5793923f7cb248",
  "scope": "verify.sh 전 단계",
  "docs": {
   "docs/MASTER.md": "a6bb4fcd8be37176",
-  "docs/DECISIONS.md": "62c0b8118539729a",
-  "docs/PLAN.md": "2966ffafaf5d9294",
+  "docs/DECISIONS.md": "304eee5c6de526b7",
+  "docs/PLAN.md": "36781a01650692f9",
   "README.md": "54967af2997ec1c4"
  },
  "raw": {
@@ -4249,10 +4249,34 @@
    "title": "193-2. #84 는 승급이 아니라 번들러 교체다 — 닫는다"
   },
   "DECISIONS-518": {
-   "h": "8bda3ed130aac9d8",
+   "h": "caa50661e6407dde",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "193-3. #81 은 열어둔다 — 그리고 그것이 결정이다"
+  },
+  "DECISIONS-519": {
+   "h": "d779351103db33f1",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "194. 막힌 것은 #81 이 아니라 강제자가 없는 것이었다 (판정 불변)"
+  },
+  "DECISIONS-520": {
+   "h": "d63cc037eac52da0",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "194-1. 실질 위험을 재니 이미 없었다"
+  },
+  "DECISIONS-521": {
+   "h": "2e48238130ea12dd",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "194-2. 그런데 이미지 층은 3.11 에서도 검증되지 않고 있었다"
+  },
+  "DECISIONS-522": {
+   "h": "bdb89729dedea9c6",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "194-3. 강제자를 세우면 #81 이 스스로 증명한다"
   },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
@@ -4681,10 +4705,10 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN-072": {
-   "h": "53c167a988636d8c",
+   "h": "c133b117372e777b",
    "state": "none",
    "doc": "docs/PLAN.md",
-   "title": "13-3. 남은 결함 27건"
+   "title": "13-3. 남은 결함 28건"
   },
   "PLAN-073": {
    "h": "6fca596268221f1d",
@@ -4820,7 +4844,7 @@
   "verify/의존성 동기화 (uv sync --frozen --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.42ms"
+   "tail": "Checked 45 packages in 0.53ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4835,7 +4859,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 79.07s (0:01:19)"
+   "tail": "732 passed in 81.29s (0:01:21)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4850,7 +4874,7 @@
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1808개 추적"
+   "tail": "커밋 정책 OK · 1809개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -4985,7 +5009,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 761절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 765절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -5015,7 +5039,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 108.86s (0:01:48)"
+   "tail": "732 passed in 104.67s (0:01:44)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -5035,7 +5059,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 519개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 523개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
