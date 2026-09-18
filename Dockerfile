@@ -26,7 +26,7 @@
 #   뿐이다. 지금 셋으로 쪼개 두는 것이 곧 ECS 준비다 — 한 덩어리로
 #   만들어두면 그때 쪼개는 것이 진짜 이중 작업이 된다.
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential gdal-bin libgdal-dev \
