@@ -50,8 +50,9 @@ def test_match_accepts_offset_parallel_rejects_far_or_crossing():
 
 
 def test_parallel_pairs_flags_dual_carriageway_only_when_wide():
+    # ★ 2026-09-18 (§189-2). 이름 조건이 붙었다 — 같은 도로명끼리만 쌍선이다.
     e = gdf([LineString([(0, 0), (100, 0)]), LineString([(0, 10), (100, 10)]), LineString([(0, 60), (100, 60)])],
-            도로폭=[8.0, 8.0, 8.0])
+            도로폭=[8.0, 8.0, 8.0], 도로명=["가길", "가길", "가길"])
     assert S.parallel_pairs(e) == [True, True, False]
     e["도로폭"] = [4.0, 4.0, 4.0]
     assert S.parallel_pairs(e) == [False, False, False]

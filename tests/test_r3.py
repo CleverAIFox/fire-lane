@@ -62,11 +62,13 @@ def test_switch_is_read_through_paths_not_os_environ():
     assert "_flag(\"FIRE_LANE_SKELETON\")" in src, "paths.flag 로 안 읽는다"
 
 
-def test_as_road_prefers_ngii_name_and_width():
+def test_as_road_takes_width_from_ngii_but_name_from_road_link():
+    """정본이 칸마다 다르다 — 폭은 NGII 측량, 이름은 도로명주소(§189-1)."""
     e = gdf([LineString([(0, 0), (100, 0)])], 도로명=["가길"], 도로폭=[6.5])
     rl = gdf([LineString([(0, 8), (100, 8)])], RN=["나길"], RDS_DPN_SE=["1"], ROAD_BT=[3.0])
     r = S.as_road(e, rl).iloc[0]
-    assert r["RN"] == "가길", "NGII 도로명이 정본인데 road_link 이름으로 덮였다"
+    assert r["RN"] == "나길", "법정 도로명(road_link)이 NGII 표기에 밀렸다"
+    assert r["RDS_DPN_SE"] == "1", "RDS_DPN_SE 는 road_link 것을 따른다"
     assert r["ROAD_BT"] == 6.5, "ROAD_BT 는 NGII 측량 도로폭이어야 한다(폭 원천과 뼈대를 같은 측량으로)"
 
 
@@ -131,3 +133,33 @@ def test_as_road_never_emits_nan_into_name_or_width():
     assert r["RDS_DPN_SE"] == "0", "RDS_DPN_SE 가 문자열 '0' 이 아니다"
     blank = gdf([LineString([(0, 0), (100, 0)])], 도로명=["   "], 도로폭=[3.0])
     assert S.as_road(blank, gdf([])).iloc[0]["RN"] is None, "공백 이름을 이름으로 쳤다"
+
+
+def test_road_link_name_wins_over_ngii_name():
+    """★ 2026-09-18 (§189-1). 법정 도로명은 `road_link` 다. NGII 도로명은 측량 도면 표기라 보조다.
+
+    R3a 1회차는 반대로 뒀고, 그 결과 도로명에 속한 구간 수가 반토막 나며(제봉로184번길 19→0)
+    소방서 절대편차가 8.31m → 16.79m 로 벌어졌다. 폭이 아니라 이름이 갈린 것이다.
+    """
+    e = gdf([LineString([(0, 0), (100, 0)])], 도로명=["측량표기길"], 도로폭=[6.5])
+    rl = gdf([LineString([(0, 5), (100, 5)])], RN=["법정도로명길"], RDS_DPN_SE=["0"], ROAD_BT=[5.0])
+    r = S.as_road(e, rl).iloc[0]
+    assert r["RN"] == "법정도로명길", "NGII 표기가 법정 도로명을 이겼다"
+    assert r["ROAD_BT"] == 6.5, "ROAD_BT 는 NGII 측량 도로폭이어야 한다 — 이름과 폭의 정본은 다르다"
+    # road_link 가 닿지 않으면 NGII 가 받는다
+    assert S.as_road(e, gdf([])).iloc[0]["RN"] == "측량표기길"
+
+
+def test_twin_needs_the_same_road_name():
+    """478 중 108 이 금남로 ↔ 금남로169번길 형태의 **다른 골목**이었다. 이름이 다르면 쌍선이 아니다."""
+    same = gdf([LineString([(0, 0), (100, 0)]), LineString([(0, 10), (100, 10)])],
+               도로폭=[8.0, 8.0], 도로명=["가길", "가길"], 분리대유무=["무", "무"])
+    assert S.twin_partner(same) == [1, 0]
+    diff = same.copy()
+    diff["도로명"] = ["가길", "가길169번길"]
+    assert S.twin_partner(diff) == [None, None], "다른 도로명을 쌍선으로 셌다"
+    blank = same.copy()
+    blank["도로명"] = [None, None]
+    assert S.twin_partner(blank) == [None, None], "무명끼리 짝을 지었다"
+
+
