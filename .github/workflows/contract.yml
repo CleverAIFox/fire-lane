@@ -179,9 +179,14 @@ jobs:
         # ★ 봇 PR 이 무검사로 통과하는 것이 아니다. 같은 job 의 나머지
         #   전부(린트·테스트·계약·문서)는 그대로 돈다. **사람이 쓴 본문**만
         #   묻지 않는다.
+        # ★ 2026-09-18 정정. 처음엔 `user.login != 'dependabot[bot]'` 로 썼는데
+        #   **안 먹었다** — PR #79 가 `base=c024d33`(수정 포함)인데 그대로 돌았다.
+        #   이름 문자열로 봇을 가리는 것은 표기에 의존하고(`app/dependabot` ·
+        #   `dependabot[bot]` 둘이 돈다) `renovate` 가 오면 또 난다.
+        #   **종류로 본다.** GitHub 이 봇 계정에 `type: Bot` 을 준다.
         if: >-
           github.event_name == 'pull_request' &&
-          github.event.pull_request.user.login != 'dependabot[bot]'
+          github.event.pull_request.user.type != 'Bot'
         run: uv run python tools/pr_body_check.py
 
       - name: 커밋 정책
