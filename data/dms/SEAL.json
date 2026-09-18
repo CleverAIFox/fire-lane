@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-09-18T23:32:04+09:00",
- "commit": "549be58",
+ "sealed_at": "2026-09-19T00:01:59+09:00",
+ "commit": "c94ab37",
  "tool": "4e5793923f7cb248",
  "scope": "verify.sh 전 단계",
  "docs": {
@@ -4766,7 +4766,7 @@
   "verify/의존성 동기화 (uv sync --frozen --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.41ms"
+   "tail": "Checked 45 packages in 0.40ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4781,7 +4781,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 81.87s (0:01:21)"
+   "tail": "732 passed in 80.35s (0:01:20)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4961,7 +4961,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 110.48s (0:01:50)"
+   "tail": "732 passed in 113.99s (0:01:53)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
