@@ -169,7 +169,12 @@ def as_road(edges: gpd.GeoDataFrame, road_link: gpd.GeoDataFrame,
 
     `seg.graph.build_graph` 는 기하만 쓰지만 `seg.roadname.RoadNameIndex` 는 이 세 칸을 읽는다.
 
-    ★ 이름은 **NGII 도로명이 정본**이다. 비어 있을 때만 `road_link` 에서 채운다 —
+    ★ 이름은 **`road_link`(도로명주소)가 정본**이다. 그것이 법정 도로명이고, 소방서 지정 구간 대조도
+      그 이름으로 맞춘다. NGII 도로명은 측량 도면의 표기라 보조로만 쓴다 — 없을 때만 채운다.
+      ★ 2026-09-18 (DECISIONS §189-1). R3a 1회차는 반대로 NGII 를 정본으로 뒀다. 그러자 **그 도로명에
+        속한 구간 수가 반토막 났다** — 제봉로184번길 19→0 · 필문대로289번길 31→14 · 동계로9번길 17→7.
+        표본이 줄어 중앙값이 튀었고 소방서 절대편차가 8.31m → 16.79m 로 벌어졌다. 폭이 나빠진 것이
+        아니라 **이름이 갈린 것**이다. §173-7 의 근거는 「폭 원천과 뼈대를 같은 측량으로」 다 — 이름은 폭이 아니다.
       `roadname.BAND` 는 0.5m 라 뼈대가 5~15m 옆에 서면 한 건도 못 채운다. 그 거리가
       R3 의 전제이므로(§184-4) 여기서는 `band` 를 넓게 쓰고, 겹침이 가장 긴 선의 값을 가져온다.
     ★ `ROAD_BT` 는 NGII 도로폭을 쓴다. 폭 원천과 뼈대를 같은 측량으로 맞추는 것이 R 의 근거다(§173-7).
@@ -206,9 +211,9 @@ def as_road(edges: gpd.GeoDataFrame, road_link: gpd.GeoDataFrame,
     names, dpns, bts = [], [], []
     w = pd.to_numeric(edges.get("도로폭"), errors="coerce") if "도로폭" in edges else pd.Series([np.nan] * len(edges))
     for i, g in enumerate(edges.geometry):
-        nm = _txt(edges["도로명"].iloc[i]) if "도로명" in edges.columns else None
-        fn, fd, fb = (None, None, None) if nm is not None and not pd.isna(w.iloc[i]) else _fill(g)
-        names.append(nm if nm is not None else fn)
+        ngii_nm = _txt(edges["도로명"].iloc[i]) if "도로명" in edges.columns else None
+        fn, fd, fb = _fill(g)
+        names.append(fn or ngii_nm)          # road_link 가 정본 · NGII 는 보조
         dpns.append(fd or "0")
         bts.append(float(w.iloc[i]) if not pd.isna(w.iloc[i]) else fb)
     out = edges.copy()
@@ -218,28 +223,50 @@ def as_road(edges: gpd.GeoDataFrame, road_link: gpd.GeoDataFrame,
     return out
 
 
-def parallel_pairs(edges: gpd.GeoDataFrame, wmin: float = PAIR_WMIN) -> list[bool]:
-    """폭 wmin 이상 엣지 중 3~25m 옆에 거의 평행한 다른 엣지가 있는가 — 분리대 쌍선 후보(간선 이중 판정)."""
+def twin_partner(edges: gpd.GeoDataFrame, wmin: float = PAIR_WMIN) -> list[int | None]:
+    """엣지마다 쌍선 짝의 번호. 없으면 None. 가장 가까운 짝 하나를 고른다.
+
+    조건 — 폭 wmin 이상 · 3~25m 옆 · 방향 차 15° 미만 · **도로명이 같다**.
+
+    ★ 2026-09-18 (DECISIONS §189-2). 이름 조건을 더했다. 종전에는 거리 · 방향만 봐서 **478 중 108(5.0km)이
+      다른 도로명 짝**이었다 — 금남로 ↔ 금남로169번길 처럼 나란한 **다른 골목**이다. 그것을 쌍선으로 세면
+      「쌍선」 사유가 부풀고, 한쪽을 지우면 멀쩡한 길이 사라진다.
+      `PAIR_DMAX` 는 25m 그대로 둔다 — 같은 이름 짝의 거리가 중앙 13.1m · 최대 24.8m 라 좁히면 진짜 쌍선을 놓친다.
+      **좁혀야 할 것은 거리가 아니라 조건이었다.**
+    """
     geoms = list(edges.geometry)
     tree = shapely.STRtree(geoms)
     w = pd.to_numeric(edges.get("도로폭"), errors="coerce") if "도로폭" in edges else pd.Series([np.nan] * len(geoms))
-    out = []
+    nm = edges["도로명"] if "도로명" in edges.columns else pd.Series([None] * len(geoms))
+    out: list[int | None] = []
     for i, e in enumerate(geoms):
-        if not (w.iloc[i] >= wmin):
-            out.append(False)
-            continue
-        mid = e.interpolate(0.5, normalized=True)
-        b0, hit = bearing(e, e.length / 2), False
-        for j in tree.query(mid.buffer(PAIR_DMAX)):
-            if j == i:
-                continue
-            o = geoms[j]
-            dist = o.distance(mid)
-            if PAIR_DMIN <= dist <= PAIR_DMAX and angle_diff(bearing(o, o.project(mid)), b0) < PAIR_ANGLE:
-                hit = True
-                break
-        out.append(hit)
+        best, bd = None, None
+        if w.iloc[i] >= wmin:
+            mid = e.interpolate(0.5, normalized=True)
+            b0 = bearing(e, e.length / 2)
+            for j in tree.query(mid.buffer(PAIR_DMAX)):
+                j = int(j)
+                if j == i or not _same_name(nm.iloc[i], nm.iloc[j]):
+                    continue
+                o = geoms[j]
+                dist = o.distance(mid)
+                if PAIR_DMIN <= dist <= PAIR_DMAX and angle_diff(bearing(o, o.project(mid)), b0) < PAIR_ANGLE \
+                        and (bd is None or dist < bd):
+                    best, bd = j, dist
+        out.append(best)
     return out
+
+
+def _same_name(a, b) -> bool:
+    """둘 다 이름이 있고 같은가. 무명끼리는 같다고 보지 않는다 — 무명 엣지가 서로 짝이 되면 안 된다."""
+    if a is None or b is None or (not isinstance(a, str) and pd.isna(a)) or (not isinstance(b, str) and pd.isna(b)):
+        return False
+    return str(a).strip() != "" and str(a).strip() == str(b).strip()
+
+
+def parallel_pairs(edges: gpd.GeoDataFrame, wmin: float = PAIR_WMIN) -> list[bool]:
+    """폭 wmin 이상 엣지 중 같은 도로명의 평행 쌍선이 3~25m 옆에 있는가 — 간선 이중 판정 후보."""
+    return [p is not None for p in twin_partner(edges, wmin)]
 
 
 def _votes(seg: LineString, edges: list[LineString], tree: shapely.STRtree,
