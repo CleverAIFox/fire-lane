@@ -8944,3 +8944,99 @@ if git rev-parse --is-shallow-repository == "true":
   PLAN §13 W3-10 에 함께 적었다.
 
 강제자  `tools/doc_fsck.py`  ★ ⑥ 이 이제 자기 전제를 선언한다. 다른 검사로 일반화하는 일은 PLAN §13 W3-10 이 받는다
+
+---
+
+## 192. 감시 범위를 손으로 적으면 옆 파일이 빠진다 (판정 불변)
+
+> 2026-09-19 · 오창준
+
+강제자 없음 — 사유: 하위 절 192-1 ~ 192-4 가 각자 강제자 칸을 든다
+
+봇 PR 여섯(#79 #80 #83 #86 #87 #88)을 dev 에 넣고 verify 를 한 번 돌렸다.
+27단계 `golden 판정 불변` 은 통과했다 — `ultralytics 8.4.115 → 8.4.153` 이
+판정을 움직이지 않았다. 대신 29단계 `커밋된 web/data 가 최신인가` 가 울었고,
+그것을 따라가다 **범위 자체의 결함**을 봤다.
+
+### 192-1. 움직인 것은 계보 둘이다
+
+    data/processed/_manifest.json   terrain·ortho·ingest 계보
+    web/data/_manifest.json         source._manifest.json.sha256 + generated_at
+
+`uv sync --frozen --dev` 가 pre-commit · pydantic · pydantic-core · ruff 넷을
+갈았고 파이프라인 캐시가 그것으로 깨져 terrain·ortho 까지 다시 돌았다.
+26단계가 6분26초, 전체 12분08초로 그날 다른 실행의 두 배다.
+
+`webmanifest.write_stable` 이 "시각을 뺀 내용이 같으면 쓰지 않는다" 를
+지키므로 **시각만 바뀐 것이 아니라 내용이 바뀐 것**이다. 판정은 안 움직였고
+계보만 움직였다 — 계보가 제 일을 한 것이다.
+
+강제자  `tools/verify.sh` 29단계 · `tools/golden.py check`
+
+### 192-2. 범위가 한 파일이었다 — 그리고 옆에 둘이 더 있었다
+
+29단계는 이렇게 물었다.
+
+    git diff --quiet -- web/data data/processed/segments.geojson
+
+`data/processed` 에서 추적되는 것은 **넷**이다.
+
+    _manifest.json          계보 정본        ← 안 봤다
+    seg_uid_map.csv         구간 uid 사상표  ← 안 봤다
+    segments.geojson        판정 산출물      ← 봤다
+    segments.schema.json    스키마           ← 안 봤다
+
+★ **더 무서운 것은 `seg_uid_map.csv` 다.** 매니페스트는 계보지만 이것은
+  구간 식별자의 사상표다. 조용히 낡으면 하류 조인이 어긋나고, 그때는
+  값이 틀린 것이 아니라 **누가 누구인지가 틀린 것**이다.
+
+그날 매니페스트가 걸린 것은 29단계가 그것을 봐서가 아니다. 그 해시가
+`web/data/_manifest.json` 의 `source` 칸에 박혀 있어서 **간접적으로,
+우연히** 드러났다. 그 박음이 없으면 셋 다 조용히 통과한다 — 1족이다.
+
+강제자  `tools/verify.sh` 29단계 — 이 절이 그 범위를 `data/processed` 디렉터리로 넓혔다
+
+### 192-3. 같은 사실이 이미 저장소에 있었다
+
+`tools/dms.py:645` —
+
+    SEAL_MAY_BE_DIRTY = ("data/dms/", "data/processed/_manifest.json")
+
+**`dms` 는 그 파일이 매 실행 갱신되는 생성물이라는 것을 알고 있었다.**
+29단계만 몰랐다. 없던 지식을 새로 얻어야 하는 문제가 아니었다 — 있는
+지식을 다른 자리가 손으로 다시 적으면서 한 칸 빠뜨린 것이다. 2족의 가장
+깨끗한 형태다.
+
+세어보니 생성물 경로를 손으로 든 자리가 **아홉**이다 — `encoding_check.py:44`
+(4개) · `dms.py:526`(3개) · `dms.py:645`(2개) · `verify.sh` 29단계 ·
+`commit_policy.py:63,67` · `tidy.py:88` · `tests/test_web_ownership.py:44` ·
+`tests/test_ledger_outputs.py:324`.
+
+강제자 없음 — 사유: 실측 기록이다. 아홉 자리의 정본화와 그것을 강제하는 가드는 PLAN §13 W3-13 이 든다
+
+### 192-4. 합치지 않는다 — 역할로 가른다
+
+셋의 목록이 서로 다른 것은 **버그가 아니다.** 각자 다른 질문을 한다.
+
+| 자리 | 묻는 것 | 목록 |
+|---|---|---|
+| `encoding_check` | 손으로 쓰는 파일인가 | processed · golden · baseline · web/data |
+| `dms.GENERATED` | 봉인 신선도에 세는가 | web/data · processed · dms |
+| 29단계 | 재실행과 커밋본이 같은가 | web/data · processed |
+
+평평한 튜플 하나로 합치면 **행동이 바뀐다.** `data/golden/` 을 봉인
+신선도에 넣으면 `golden lock` 마다 봉인이 거부되고, `data/dms/` 를
+29단계에 넣으면 봉인 커밋마다 빨강이다. 정본은 **역할을 든 등록부**여야
+하고 호출부는 자기 역할만 뽑아 써야 한다.
+
+★ **오늘 한 것은 넓히기 하나다.** 29단계 범위를 `data/processed/segments.geojson`
+  에서 `data/processed` 디렉터리로 바꿨다. 추적되는 넷이 전부 결정적이라
+  (`_manifest.json` 은 `write_stable` 이 막는다) 영구 빨강이 되지 않는다.
+  **등록부와 그것을 강제하는 가드는 PLAN §13 W3-13 이 받는다** — 아홉 자리를
+  한밤중에 한 배치로 옮기지 않는다.
+
+★ 단계 이름은 안 고쳤다. 「커밋된 web/data 가 최신인가」가 이제
+  `data/processed` 도 보는데, 이 이름을 DECISIONS §179 와 PLAN #49 가
+  인용한다. 이름과 인용은 함께 움직여야 하고 그것도 W3-13 이다.
+
+강제자  `tools/verify.sh` 29단계 (범위 확대) · 등록부 가드는 미착수 — W3-13
