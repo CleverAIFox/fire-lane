@@ -8337,3 +8337,121 @@ R3 는 뼈대를 간다. 그러면 **구간이 다른 자리에서 잘린다** �
 NGII 선 · 폴백 조각이다. R3 뒤 `seg_uid` 는 전량 새 키가 되므로 실측 재부착은 이 전이표로 한다.
 
 강제자 없음 — 사유: 측정 기록이다. 수치는 `tools/transition.py --to-skeleton` 이 다시 낸다
+
+## 188. R3a — 뼈대 시험 교체 스위치로 판정 이동을 **먼저 잰다** (판정 불변)
+
+> 2026-09-18 · 오창준
+
+강제자 없음 — 사유: 하위 절 188-1 ~ 188-3 이 각자 강제자 칸을 든다
+
+R3 는 판정을 움직인다. 그런데 **무엇이 얼마나 움직이는지 모르는 채로 움직이면 되돌릴 근거가 없다.**
+그래서 R3 를 둘로 쪼갠다 — R3a 는 뼈대를 갈아 끼울 자리를 만들고 **꺼 둔 채** 커밋한다(판정 불변).
+측정은 스위치를 켜서 한 번 돌리고 표만 남긴다. R3b 가 스위치를 걷고 기본을 바꾼다(판정이 움직인다).
+
+### 188-1. 스위치 — `FIRE_LANE_SKELETON`
+
+`segments.py` 가 `road_link` 대신 `skeleton.build(...)` 를 그래프 뼈대로 쓴다. **기본은 꺼짐이다.**
+켜면 뼈대 범위는 `poly.buffer(GRAPH_BUFFER)` — `build_graph` 가 쓰는 범위와 같게 둔다(두 곳이 어긋나면 엣지가 잘린다).
+
+`.env` 에 적지 않는다. 셸에서 한 번 export 하고 마는 **스위치**다(`FIRE_LANE_NO_MERGE` 계열).
+import 는 분기 안에 둔다 — 꼭대기로 올리면 스위치와 무관하게 돌고, 그 순간 R3a 가 판정 불변이 아니게 된다.
+
+★ 2026-09-18 verify 1회차. 등재를 빠뜨려 `환경변수 선언↔실물` 이 **둘로** 울었다 — ① `.env.example` 에 없는 유령
+  ② `paths` 밖에서 `os.environ` 을 읽는 단일 독자 위반. 스위치는 `.env.example` 에 **적으면 안 되고**(분류 위반)
+  `env_check.SWITCHES` 에 등재해야 한다. 읽기는 `paths.flag`(값 `"1"` 만 켜짐)로 한다.
+  R3c 가 기본을 바꿀 때 `SWITCHES` 에서 뺀다.
+
+★ `segments.py` 는 판정 지문 파일이라 코드가 바뀌면 golden 이 운다. **의도된 울음이 아니다** — 판정은 안 바뀐다.
+  산출물 사진(L1 집계 · L2 구간별 · L3 기하)이 전부 같음을 확인한 뒤 코드 지문만 재잠금한다(2026-09-18 확인: 셋 다 동일).
+
+강제자  `tests/test_r3.py::test_switch_is_off_by_default_and_import_stays_inside_it` · `::test_switch_is_registered_as_a_shell_switch_not_a_setting` · `::test_switch_is_read_through_paths_not_os_environ`
+
+### 188-2. `skeleton.as_road` — 엣지에 `RN · RDS_DPN_SE · ROAD_BT` 를 입힌다
+
+`seg.graph.build_graph` 는 기하만 쓰지만 `seg.roadname.RoadNameIndex` 는 이 세 칸을 읽는다.
+
+    RN           NGII 도로명이 정본. 빈 곳만 road_link 에서 채운다
+    ROAD_BT      NGII 측량 도로폭 — 폭 원천과 뼈대를 같은 측량으로 맞추는 것이 R 의 근거다(§173-7)
+    RDS_DPN_SE   NGII 에 없다. 채운 road_link 행의 값, 못 채우면 "0"(주도로)
+
+★ 채우기 반경은 12m 다. `roadname.BAND` 는 0.5m 이고, **뼈대가 5~15m 옆에 서는 것이 R3 의 전제다**(§184-4) —
+  그 창으로는 한 건도 못 채운다. 2026-09-18 실측: 1,860 엣지 중 NGII 이름만으로 채워지는 것 1,328 · 나머지 532 는 이 경로가 채운다.
+
+강제자  `tests/test_r3.py::test_as_road_prefers_ngii_name_and_width` · `::test_as_road_fills_blank_ngii_name_from_road_link_beyond_roadname_band` · `::test_as_road_defaults_dpn_to_main_road_when_unknown` · `::test_as_road_keeps_every_edge_and_geometry`
+
+### 188-3. 측정 — 봉인 ↔ 시험 산출물을 `tools/transition.py` 로
+
+스위치를 켜고 파이프라인을 한 번 돌린 뒤 `tools/transition.py 20260918-pre-r3 --csv` 를 부른다.
+옛 봉인(도로명주소 뼈대) ↔ 지금 산출물(NGII 뼈대)의 1:1 · 1:N · N:1 · 소멸 · 신설과 **길이 가중 판정 전이표**가 나온다.
+표를 `data/desk/r3/`(재생성물)에 남기고, 파이프라인을 스위치 없이 다시 돌려 산출물을 봉인과 같은 상태로 되돌린다.
+
+★ 되돌린 뒤 `data/processed/segments.geojson` 의 sha256 이 봉인과 **같아야** 한다. 다르면 스위치가 꺼진 경로에
+  영향을 준 것이고, 그때는 R3a 가 판정 불변이 아니다.
+
+### 188-4. R3b 로 미룬 것
+
+① 쌍선 — 같은 도로명 짝 370(9.9km) 을 한 줄로 합칠지 방향별로 둘지. **분리대 「유」는 뼈대 전체에서 14 엣지 · 0.93km 뿐이고
+쌍선 478 중에서는 6 이다**(2026-09-18 실측). 같은 이름 짝은 NGII 도로폭이 중앙 0.0m 차이로 같은 값을 공유한다 — 같은 길을 두 줄로 그린 것이다.
+188-3 의 판정 전이표를 보고 정한다. ② `parallel_pairs` 의 `PAIR_DMAX` 25m — 478 중 108(5.0km) 이 **다른 도로명** 짝이다
+(금남로 ↔ 금남로169번길 형태). 창을 좁히고 「같은 도로명」 조건을 붙이는 것을 쌍선 결정과 같은 배치에서 한다.
+③ 보정 모듈 `seg/centerline_correction.py` 걷기 — 승인 건은 `필문대로289번길` 하나뿐이고 NGII 선으로 대체되는지 전이표에서 확인한다.
+
+강제자 없음 — 사유: 미결 안건 기록이다. R3b 가 강제자를 든다
+
+### 188-5. 탐침이 잡은 것 — `_road_hash` 가 `NaN` 을 못 거른다
+
+2026-09-18. 본 배치 전에 `tools/r3probe` 로 **저장소를 안 건드리고**(/tmp 사본 · `--only segments`) 먼저 돌렸다.
+배선은 파이프라인 **맨 끝까지** 갔고 `attach_seg_uid` 에서 죽었다.
+
+    AttributeError: 'float' object has no attribute 'strip'   segkey.py:72  _road_hash
+
+`src = (road_name or "\x00NONAME").strip()` — **`NaN` 은 truthy 라 `or` 가 안 걸린다.** 도로명주소 뼈대에서는
+`RoadNameIndex` 가 못 맞추면 `None` 을 주므로 한 번도 안 터졌다. NGII 뼈대는 무명 엣지가 886/6,812 생긴다.
+**게이트가 없어서가 아니라 그 입력이 올 일이 없어서 안 터진 것이다** — R3 가 그 입력을 만든다.
+
+고침 둘. ① `_road_hash` 는 문자열이 아니면 무명으로 본다. 문자열 · `None` 입력의 결과는 **완전히 같다**
+(2026-09-18 옛 판과 직접 대조 — seg_uid 불변). ② `skeleton.as_road` 는 빈 값을 `None` 하나로 접는다 —
+`NaN` 을 흘리면 하류가 `or` 로 못 거른다. `ROAD_BT` 도 같다.
+
+★ `segkey.py` 는 golden 이 보는 판정 지문 파일이 **아니다**(watch 여섯에 없다). 코드 지문도 안 움직인다.
+
+강제자  `tests/test_r3.py::test_road_hash_treats_nan_as_no_name_and_keeps_string_results_identical` · `::test_as_road_never_emits_nan_into_name_or_width`
+
+### 188-6. 탐침 1회차 관측 — 뼈대를 갈면 그래프가 이렇게 달라진다
+
+판정까지 못 갔으므로 **판정 전이표는 아직 없다.** 그래프 단계까지의 수치만 적는다(NGII 뼈대 · `--only segments`).
+
+    하이브리드 엣지      6,812 (ngii 6,318 · fallback 492 · connector 2) — 범위가 `poly.buffer(GRAPH_BUFFER)` 라
+                         R1 대조표의 1,860(판정 범위 1.688km²)보다 넓다. `build_graph` 가 쓰는 범위와 맞춘 것이다
+    이름                 5,926 / 6,812 — 886 무명(13%)
+    노드 접합            엣지 6,992 → 6,786 (자기루프 165 · 병렬 41)
+    최대 성분            컴포넌트 456 → 1 · 엣지 6,786 → 6,145 — **641(9.4%) 이 본선에서 끊겨 버려진다**
+    산출범위 단위        1,605 (현행 1,281)
+    폭 미산출            33 → 병합 후 1
+
+★ **병렬 엣지 41 중 길이비 1.5 초과가 7 건이다** — `build_graph` 는 같은 노드쌍에 두 형상이 오면 긴 쪽을 버린다.
+  충장로는 22.7m 를 남기고 **97.7m 를 버렸다**(4.31배). 이것이 쌍선 문제가 그래프 단계에서 나타난 모습이다.
+  현행 뼈대에서는 이 경고가 이 규모로 나지 않는다. 188-4 ①과 같은 자리에서 정한다.
+
+강제자 없음 — 사유: 측정 기록이다. 수치는 탐침이 다시 낸다
+
+### 188-7. 시험은 `--only segments` 로 돈다 — `--from` 은 되돌릴 수 없다
+
+2026-09-18 R3a 1회차. 시험을 `--from segments` 로 돌렸더니 **원복이 계보 검사에 막혔다.**
+
+    ★ 계보 대조 실패 — segments 을 돌리지 않는다
+      data/processed/fire_station.geojson   ingest 89aa704b… ↔ 디스크 ec005931…
+      data/processed/_manifest.json         ingest ce8d0344… ↔ 디스크 8d5f9d59…
+
+`--from segments` 는 terrain · ortho · publish 까지 간다. **terrain 이 `fire_station` · `building` · `cctv` ·
+`hydrant_point` 에 z 를 넣어 다시 쓴다** — ingest 소유 파일이다. 그래서 다음 `--from segments` 는 계보가 어긋났다고
+거부한다. 되돌리려면 `uv run fire-lane` 전량(= ingest 재실행)이 필요하다. publish 까지 갔으므로 **커밋된 `web/data` 도
+시험 산출물로 덮인다** — 판정 불변 배치가 추적 파일을 바꾼 것이다.
+
+시험에 필요한 것은 `segments.geojson` 하나뿐이다(전이표가 그것만 읽는다). `--only segments` 로 돈다 —
+`data/processed` 안에서 끝나고 `web/data` 와 ingest 소유 파일을 안 건드린다. 원복도 같은 명령이다.
+
+★ 되돌릴 수 없는 측정은 측정이 아니다. **시험 전에 무엇이 쓰이는지 먼저 본다** — §184-4 의
+  「측정이 구조적으로 0 을 낼 수 있는지 먼저 본다」 와 같은 자리의 실수다.
+
+강제자 없음 — 사유: 스크립트 운용 기록이다. 코드는 안 바뀐다

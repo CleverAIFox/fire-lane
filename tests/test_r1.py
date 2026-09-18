@@ -178,9 +178,14 @@ def test_ngii_distance_uses_nine_points_including_ends():
 
 
 def test_r1_does_not_touch_judgment_fingerprint_files():
-    """R1 은 판정 불변 — golden 이 지문을 보는 판정 코드가 새 모듈을 import 하면 R3 전에 판정이 움직일 수 있다."""
+    """폭 · 판정 규칙 쪽은 뼈대를 모른다.
+
+    ★ 2026-09-18 (§188 · R3a). `segments.py` 를 목록에서 뺐다 — 거기가 **뼈대를 갈아 끼우는 자리**이고
+      R3a 가 스위치로 배선했다. 스위치가 기본 꺼짐인지는 `tests/test_r3.py` 가 따로 든다.
+      나머지 셋은 그대로다: 폭 엔진 · 보고 · 상수가 뼈대 모듈을 알면 지문이 뼈대 변경에 딸려 흔들린다.
+    """
     from pathlib import Path
     root = Path(__file__).resolve().parents[1]
-    for rel in ("src/firelane/segments.py", "src/firelane/seg/width.py", "src/firelane/seg/report.py", "src/firelane/seg/params.py"):
+    for rel in ("src/firelane/seg/width.py", "src/firelane/seg/report.py", "src/firelane/seg/params.py"):
         src = (root / rel).read_text(encoding="utf-8")
         assert "skeleton" not in src, f"{rel} 가 skeleton 을 참조한다 — R3 전에는 배선하지 않는다(§184)"

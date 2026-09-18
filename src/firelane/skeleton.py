@@ -159,6 +159,65 @@ def build(ngii: gpd.GeoDataFrame, road_link: gpd.GeoDataFrame, keep,
     return g
 
 
+NAME_BAND = 12.0       # 뼈대 엣지 → road_link 이름 채우기 반경(m). NGII 도로명이 빈 곳만 쓴다.
+                       # roadname.BAND(0.5m)로는 못 채운다 — 뼈대가 5~15m 옆에 서는 것이 R3 의 전제다.
+
+
+def as_road(edges: gpd.GeoDataFrame, road_link: gpd.GeoDataFrame,
+            band: float = NAME_BAND) -> gpd.GeoDataFrame:
+    """뼈대 엣지를 `road_link` 모양(RN · RDS_DPN_SE · ROAD_BT)으로 입힌다 — R3 배선용(DECISIONS §188).
+
+    `seg.graph.build_graph` 는 기하만 쓰지만 `seg.roadname.RoadNameIndex` 는 이 세 칸을 읽는다.
+
+    ★ 이름은 **NGII 도로명이 정본**이다. 비어 있을 때만 `road_link` 에서 채운다 —
+      `roadname.BAND` 는 0.5m 라 뼈대가 5~15m 옆에 서면 한 건도 못 채운다. 그 거리가
+      R3 의 전제이므로(§184-4) 여기서는 `band` 를 넓게 쓰고, 겹침이 가장 긴 선의 값을 가져온다.
+    ★ `ROAD_BT` 는 NGII 도로폭을 쓴다. 폭 원천과 뼈대를 같은 측량으로 맞추는 것이 R 의 근거다(§173-7).
+    ★ `RDS_DPN_SE`(0 주도로 · 1 부속)는 NGII 에 없다. 채운 `road_link` 행의 값을 따르고, 못 채우면 "0" 이다.
+    """
+    def _txt(v):
+        """빈 값을 **None 하나로** 접는다. NaN 을 그대로 흘리면 하류가 `or` 로 못 거른다(§188-5)."""
+        if v is None or (not isinstance(v, str) and pd.isna(v)):
+            return None
+        s = str(v).strip()
+        return s or None
+
+    have = {c: (c in road_link.columns) for c in ("RN", "RDS_DPN_SE", "ROAD_BT")}
+    rl = road_link[road_link.geometry.notna()].reset_index(drop=True)
+    tree = shapely.STRtree(list(rl.geometry)) if len(rl) else None
+
+    def _fill(g):
+        if tree is None:
+            return None, None, None
+        b = g.buffer(band)
+        best, blen = None, 0.0
+        for k in tree.query(b):
+            ov = rl.geometry.iloc[int(k)].intersection(b)
+            if not ov.is_empty and ov.length > blen:
+                best, blen = int(k), ov.length
+        if best is None:
+            return None, None, None
+        r = rl.iloc[best]
+        bt = pd.to_numeric(r["ROAD_BT"], errors="coerce") if have["ROAD_BT"] else None
+        return (_txt(r["RN"]) if have["RN"] else None,
+                _txt(r["RDS_DPN_SE"]) if have["RDS_DPN_SE"] else None,
+                None if bt is None or pd.isna(bt) else float(bt))
+
+    names, dpns, bts = [], [], []
+    w = pd.to_numeric(edges.get("도로폭"), errors="coerce") if "도로폭" in edges else pd.Series([np.nan] * len(edges))
+    for i, g in enumerate(edges.geometry):
+        nm = _txt(edges["도로명"].iloc[i]) if "도로명" in edges.columns else None
+        fn, fd, fb = (None, None, None) if nm is not None and not pd.isna(w.iloc[i]) else _fill(g)
+        names.append(nm if nm is not None else fn)
+        dpns.append(fd or "0")
+        bts.append(float(w.iloc[i]) if not pd.isna(w.iloc[i]) else fb)
+    out = edges.copy()
+    out["RN"] = names
+    out["RDS_DPN_SE"] = dpns
+    out["ROAD_BT"] = bts
+    return out
+
+
 def parallel_pairs(edges: gpd.GeoDataFrame, wmin: float = PAIR_WMIN) -> list[bool]:
     """폭 wmin 이상 엣지 중 3~25m 옆에 거의 평행한 다른 엣지가 있는가 — 분리대 쌍선 후보(간선 이중 판정)."""
     geoms = list(edges.geometry)
