@@ -62,7 +62,11 @@ def _verdict_rule() -> list[str]:
 # 1. 자동화가 부르는 도구가 README 에 있는가
 # ─────────────────────────────────────────────────────────────
 
+# ★ 2026-09-18 (W1). `_deploy.yml` 을 더했다. 배포 본문을 거기로 옮기면서
+#   `pages.yml` 에는 `tools/` 호출이 하나도 안 남았다 — 빼면 `render_workflow.py` ·
+#   `stage_pages.py` 가 이 검사의 그물 밖으로 나간다. 부르는 자리를 따라간다.
 CALLERS = (".github/workflows/contract.yml", ".github/workflows/pages.yml",
+           ".github/workflows/_deploy.yml",
            "tools/verify.sh", "tools/ship.py")
 
 
@@ -243,7 +247,14 @@ def test_plan_section_refs_resolve():
     """`§N` · `§N-M` 참조가 이 문서 안에 실재해야 한다.
 
     다른 문서를 가리킬 때는 `MASTER §16-1` 처럼 소속을 앞에 적는다.
-    2026-08-26 에 `§13-9` 가 실체 없이 남아 있었고 실제로는 `§8-1` 이었다.
+    2026-08-26 에 있지도 않은 하위 절 번호(당시 `13-9` 표기)가 실체 없이
+    남아 있었고 실제로는 `§8-1` 이었다.
+
+    ★ 2026-09-18. 위에서 `§` 를 뗐다. PLAN §13 이 신설되며 `### 13-M.` 이
+      1 부터 연속 다섯이 되자 §13 이 `test_docref` 의 번호 체계 대상이
+      됐고, 그 순간 이 줄의 `13-9` 표기가 **죽은 참조로 드러났다.** 없던
+      결함이 생긴 것이 아니라 가려져 있던 것이 보이게 된 것이다 —
+      그 검사가 목록을 손으로 관리하지 않는 이유가 이것이다.
     """
     text = PLAN.read_text(encoding="utf-8")
     h2 = set(re.findall(r"^## (\d+)\.", text, re.M))

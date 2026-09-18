@@ -30,52 +30,14 @@ on:
       - '.github/actions/build-navi/action.yml'
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
+# ★ 2026-09-18 (W1). 본문을 `_deploy.yml` 로 옮겼다. 넷이 job 을 바이트 동일하게
+#   들고 있었고 `VWORLD_KEY` 만 pages 에 있었다 — 그래서 셋 중 하나가 나중에
+#   돌면 배경지도가 죽은 사이트가 초록으로 배포됐다. 본문이 하나면 불가능해진다.
+#   permissions · concurrency · 시크릿은 `_deploy.yml` 이 선언한다.
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}proposal.html
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - run: uv sync --frozen --all-extras
-      - name: MASTER §12 → web/workflow.html
-        run: uv run python tools/render_workflow.py
-      - name: 캐시 무효화 스탬프 주입
-        # ★ 2026-09-03 신설. 이 워크플로만 이 스텝이 없었다. 그래서
-        #   기획서만 고쳐 push 하면 `?v=BUILD` 리터럴이 박힌 채 배포되고,
-        #   상수라서 style.css·config.js·main.js 가 **영구 캐시된다.**
-        #   스탬프를 만든 목적이 정확히 그것을 막는 것이었다.
-        run: |
-          B=$(sed -n 's/.*"build": *"\([0-9a-f]*\)".*/\1/p' web/data/view.json)
-          test -n "$B" || { echo "view.json 에 build 가 없다"; exit 1; }
-          sed -i "s/?v=BUILD/?v=$B/g" web/index.html
-
-      - uses: ./.github/actions/build-navi
-        with:
-          mapbox-token: ${{ secrets.MAPBOX_TOKEN }}
-
-      - name: 배포 준비 (docs/proposal.docx → web/)
-        run: uv run python tools/stage_pages.py
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: web
-      - id: deployment
-        uses: actions/deploy-pages@v4
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      url-suffix: "proposal.html"
+    # ★ 손으로 나열하지 않는다. 나열하면 그것이 다시 넷이 되고 같은 버그가 난다.
+    secrets: inherit

@@ -112,8 +112,27 @@ step() {                      # step "이름" "명령..."
     echo
 }
 
+# ── 생략 두 종 ───────────────────────────────────────────────
+# ★ 2026-09-18. `note` 하나로는 이 파일 머리(22~25행)가 스스로 적은 사고를
+#   막지 못한다 — "생략은 실패로 안 세므로 verify.sh 는 '전부 통과했다' 고
+#   말한다". 실측으로 그대로였다: raw 없는 기계에서 8단계가 `생략` 으로
+#   빠지고 최종 판정은 `fail>0` 만 보므로 초록이 뜬다.
+#
+#   생략에는 두 종류가 있고 둘을 같은 칸에 두면 안 된다.
+#
+#     note        다른 관문이 덮는다 — CI 가 같은 검사를 돈다(JS 넷).
+#                 여기서 빠져도 증거는 다른 데서 나온다. skip 이 맞다.
+#     note_hard   덮는 관문이 **없다.** 빠지면 이 실행은 아무것도 증명하지
+#                 못한다. 그러면 생략이 아니라 실패다.
+#
+# ★ 판정 기준은 "중요한가" 가 아니라 **"다른 데서 같은 검사가 도는가"** 다.
+#   중요도는 사람마다 다르고 덮개 여부는 실측된다(§가드 3).
 note() { NAMES+=("$1"); RESULTS+=("생략"); NOTES+=("$2"); SECS+=(0); skip=$((skip+1))
          printf '%s── %s%s\n%s   생략%s  %s\n\n' "$C" "$1" "$Z" "$Y" "$Z" "$2"; }
+
+note_hard() { NAMES+=("$1"); RESULTS+=("실패"); NOTES+=("생략 — $2"); SECS+=(0); fail=$((fail+1))
+              printf '%s── %s%s\n%s   실패%s  생략 — %s\n' "$C" "$1" "$Z" "$R" "$Z" "$2"
+              printf '%s     이 단계를 덮는 관문이 없다. 생략하면 이 실행은 판정을 증명하지 않는다.%s\n\n' "$D" "$Z"; }
 
 echo
 printf '%s저장소%s  %s\n' "$D" "$Z" "$ROOT"
@@ -131,7 +150,13 @@ printf '%suv    %s  %s\n\n' "$D" "$Z" "$(uv --version 2>/dev/null || echo '없�
 # ── 0. 잠금파일 갱신 ─────────────────────────────────────────
 # ★ pyproject 에 [build-system] 이 생겼고 의존성 9개가 extras 로 내려갔다.
 #   uv.lock 이 그 전에 만들어진 것이라 다시 풀어야 한다.
-step "의존성 동기화 (uv sync --dev)" uv sync --dev
+# ★ 2026-09-18 (W2). `--frozen` 을 더했다. 종전에는 이 단계가 `uv.lock` 을
+#   **갱신할 수 있었다** — 검증 도구가 검증 대상을 변형하는 유일한 자리였고,
+#   Dockerfile · 워크플로 전부가 `--frozen` 인데 여기만 아니었다.
+#   그것이 "로컬은 초록 · CI 는 빨강" 을 만드는 구조다(5b 와 같은 축).
+# ★ extras 는 여전히 안 깐다(CI 는 `--all-extras`). torch 를 로컬에 받게 하는 것이
+#   비싸서 남긴 **선언된 차이**이고, gate_parity 가 그 차집합을 센다.
+step "의존성 동기화 (uv sync --frozen --dev)" uv sync --frozen --dev
 
 # ── 1. 패키지가 실제로 import 되는가 ─────────────────────────
 step "패키지 import" uv run python -c '
@@ -198,23 +223,41 @@ step "엄격 린트 (CI 와 같은 인자)" bash -c '
 #   이것 하나면 된다" 고 하는데, verify.sh 초록불이어도 CI 는 빨간불이 될 수
 #   있었다 — 커밋 정책 · 인코딩 · web/data 계보 · 문서 숫자 · 용량 상한.
 #   로컬 검증이 CI 의 부분집합이면 "내 기계에서는 됐는데" 가 나온다.
-# ★ 2026-08-23. CI 는 `pip install pytest shapely numpy ruff pyyaml` +
-#   `--no-deps` 로만 깐다. 로컬은 `uv sync` 로 전부 깔려 있어
-#   **로컬 초록불 · CI 빨간불**이 난다. 실제로 `import yaml` 을 쓰는
-#   테스트 둘이 그렇게 죽었다.
-#   CI 가 없는 패키지를 가려서 그 환경을 흉내낸다. 30초면 된다.
-step "CI 환경 재현"     bash -c '
-    B=$(mktemp -d)
-    # CI 가 안 까는 것들. contract.yml 의 pip install 목록에 없는 것.
-    for m in pandas geopandas pyogrio pyproj rasterio PIL ruamel; do
-        printf "raise ModuleNotFoundError(\"No module named %s\")\n" "$m" > "$B/$m.py"
-    done
-    PYTHONPATH="$B" uv run python -m pytest \
-        tests/test_guards.py tests/test_static.py \
-        tests/test_reproducibility.py tests/test_layering.py -q'
+# ★ 2026-09-18 (W2) 삭제 — 「CI 환경 재현」. **존재하지 않는 CI 를 검사했다.**
+#   전제는 "CI 가 `pip install pytest shapely numpy ruff pyyaml` + `--no-deps`
+#   로만 깐다" 였고, 그래서 pandas · geopandas · pyogrio · pyproj · rasterio ·
+#   PIL · ruamel 일곱을 일부러 가리고 돌렸다. 실측 —
+#     · CI 는 `uv sync --frozen --all-extras` 를 쓴다. `pip install` 은 워크플로에
+#       0건이고 `tests/test_ci_env.py` 가 그것을 금지한다
+#     · 가려진 일곱은 전부 `pyproject.toml` 의 **코어 의존성**이라 CI 에 다 있다
+#   통과해도 CI 정합을 보증하지 않고 실패하면 오탐이다. 허구를 지키는 검사는
+#   없는 것보다 나쁘다 — 검사가 있다는 사실이 정합을 검증한 것처럼 보이게 한다.
+#   정합을 **실제로** 묻는 것은 `gate_parity.py` 다(아래 「관문 동등」).
 
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
+# ★ 2026-09-18 (W1). 로컬 훅과 CI 가 이 한 파일을 읽는다 — 정본이 하나다.
+#   `.ruff-strict.toml` 과 같은 모양이고, 그것이 5a 의 교훈이다.
+# ★ 위 `인코딩·개행` 을 안 지운다. 표준 훅은 BOM · CRLF 만 도맡았고
+#   나머지 둘(비UTF-8 · 끝개행)은 대입물이 없다. `end-of-file-fixer` 는 더
+#   엄걱해서 추적 파일 15개를 고치고, 그중 `web/workflow.html` 은 생성기와
+#   무한 왔부에 들어간다(.pre-commit-config.yaml 의 ★★).
+step "pre-commit 전수"  uv run pre-commit run --all-files
+# ★ 2026-09-18 (W1). 전역 훅이 이 저장소를 이어서 부르는가.
+#   `.pre-commit-config.yaml` 이 있어도 전역 훅이 그것을 안 부르면
+#   **커밋 시점 방어가 0 이다** — 종전 `.githooks/pre-commit` 이 정확하게
+#   그 상태여서 구조적으로 못 도는 코드였다.
+#   미설정이면 한 명령으로 끝난다 — `bash .githooks/global-chain.sh --install`
+step "훅 전역 연결"    bash .githooks/global-chain.sh --check
+# ★ 2026-09-18 (W2). 3족의 클래스 가드. 로컬에만 있는 검사기를 센다.
+#   CI 도 같은 명령을 돈다 — 규칙을 두 곳에 적는 것이 아니라 같은 도구가
+#   같은 나무를 읽으므로 정본은 코드 하나다.
+# ★ 2026-09-18. 18 → 19 로 **올렸다.** `refcheck.py` 를 CI 에서 뺐기 때문이다 —
+#   레이크를 요구하는 검사라 CI 에서 못 돈다(DECISIONS §191-4). 래칫을 올릴 때는
+#   사유를 적는다는 것이 이 도구의 규약이고, 이것이 그 사유다.
+# ★ 래칫이 「로컬 전용 수」만 세는 것이 이 사고의 원인이다 — 옮길 수 없는 검사까지
+#   옮기라고 압박한다. 면제 칸은 PLAN §13 W3-10 이 받는다.
+step "관문 동등 (래칫 19)"  uv run python tools/gate_parity.py --max 19
 step "환경변수 선언↔실물" uv run python tools/env_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
@@ -284,9 +327,16 @@ fi
 # ── 8. 파이프라인 전량 + 판정 불변 ───────────────────────────
 # ★ 여기가 진짜 검증이다. 위의 전부가 통과해도 판정이 바뀌면 실패다.
 if [ "$FAST" = "1" ]; then
+    # ★ `--fast` 는 `note` 로 둔다. 아래 `부분 실행` 단계가 `--fast` 를 이미
+    #   **실패로** 잡으므로(405~418행) 여기서 또 올리면 같은 사실을 두 번 센다.
     note "파이프라인 전량 + golden" "--fast 로 생략. 반드시 따로 돌릴 것"
 elif [ -z "${FIRE_LANE_DATA:-}${FIRE_LANE_RAW:-}" ] && [ ! -d data/raw/gjcity ]; then
-    note "파이프라인 전량 + golden" "raw 가 없다. FIRE_LANE_DATA 설정 후 다시"
+    # ★ 2026-09-18. 여기가 `note` 였다. 그래서 레이크 없는 기계에서
+    #   **이 저장소의 유일한 판정 검증이 빠진 채 「전부 통과했다」가 찍혔다.**
+    #   `--only` · `--fast` 는 `부분 실행` 이 잡는데 raw 부재는 아무도 안 잡았다.
+    #   CI 도 이 단계를 안 돈다(실측: verify 42단계 중 CI 10단계) — 덮개가 없다.
+    note_hard "파이프라인 전량 + golden" \
+              "raw 가 없다. FIRE_LANE_DATA 를 설정하고 다시 돌려라 (paths.require_lake)"
 else
     # ★ --no-test. 계약 테스트는 위 pytest 가 이미 돌렸다. 파이프라인이
     #   끝에서 또 부르면 한 번의 verify 에 test_contract 가 세 번 돈다.
@@ -513,7 +563,17 @@ if [ "$fail" -gt 0 ]; then
     exit 1
 fi
 
-printf '%s자동 검증은 전부 통과했다.%s\n\n' "$G" "$Z"
+# ★ 2026-09-18. 종전에는 `skip` 을 안 보고 무조건 「전부 통과했다」를 찍었다.
+#   `note_hard` 가 덮개 없는 생략을 실패로 올리므로 여기 오는 생략은 전부
+#   "다른 관문이 덮는다" 는 것이지만, **그래도 이 실행이 전수는 아니다.**
+#   문구가 전수를 주장하면 사람은 그렇게 읽고, `dms.py seal` 이 그 로그로
+#   봉인하면 반쪽 증표가 된다. 전수 주장은 생략 0 일 때만 한다.
+if [ "$skip" -gt 0 ]; then
+    printf '%s실패는 없다. 다만 생략 %d 건이 있어 이 실행은 전수가 아니다.%s\n' "$Y" "$skip" "$Z"
+    printf '  %s위 「생략·건너뜀」 목록을 보고, 덮는 관문(CI 등)이 실제로 돌았는지 확인할 것.%s\n\n' "$D" "$Z"
+else
+    printf '%s자동 검증은 전부 통과했다.%s\n\n' "$G" "$Z"
+fi
 printf '  %s아직 사람이 봐야 하는 것 하나:%s\n' "$Y" "$Z"
 printf '    uv run python tools/serve.py\n'
 printf '    %sWebGL 렌더링은 스크립트가 못 본다. 지도가 실제로 그려지는지,%s\n' "$D" "$Z"

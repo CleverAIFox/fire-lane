@@ -1,5 +1,5 @@
 {
-  "name": "woongtopia-dev",
+  "name": "fire-lane-dev",
   "build": {
     "context": "..",
     "dockerfile": "../Dockerfile"
@@ -28,7 +28,15 @@
       }
     }
   },
-  "forwardPorts": [8000],
+  "forwardPorts": [
+    8000,
+    8080
+  ],
   "postCreateCommand": "bash .devcontainer/setup.sh",
-  "remoteUser": "root"
+  "remoteUser": "root",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  }
 }

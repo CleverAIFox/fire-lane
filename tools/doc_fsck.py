@@ -408,12 +408,29 @@ def check_docx_revised() -> list[str]:
 
     ★ 파일 mtime 이 아니라 **git 이 아는 마지막 수정 커밋일**과 비교한다.
       mtime 은 clone 하면 전부 오늘이 된다.
+
+    ★ 2026-09-18. **얕은 저장소에서는 재지 않는다.** `actions/checkout@v4` 는
+      `fetch-depth: 1` 이라 커밋이 하나뿐이고, 그러면 `git log -1 -- <파일>` 이
+      모든 파일에 대해 **HEAD 의 날짜**를 돌려준다. 실제 마지막 수정일이 아니다.
+      W2 가 이 검사를 CI 에 넣었다가 그대로 빨개졌다(DECISIONS §191-5).
+      이 절의 나머지 일곱(①~⑤·⑦·⑧)은 히스토리가 필요 없어 CI 에서 그대로 돈다 —
+      **검사 하나가 자기 전제를 선언하면 나머지를 같이 뺄 필요가 없다.**
     """
     import subprocess
     docs = list(ROOT.glob("docs/*.docx"))
     if not docs:
         return []
     f = docs[0]
+    # ★ 전제 선언. 못 재는 것을 못 잰다고 말한다 — 조용히 통과하지도, 거짓으로
+    #   빨개지지도 않는다.
+    try:
+        sh = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
+                            cwd=ROOT, capture_output=True, text=True, timeout=10)
+        if sh.stdout.strip() == "true":
+            print("   (건너뜀 — 얕은 저장소라 마지막 수정 커밋일을 못 잰다)")
+            return []
+    except Exception:                                     # noqa: BLE001
+        pass
     try:
         r = subprocess.run(
             ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(f)],

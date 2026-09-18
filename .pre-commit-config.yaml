@@ -1,0 +1,120 @@
+# .pre-commit-config.yaml — 커밋 시점 방어의 **정본**
+#
+# ★ 왜 생겼나 (2026-09-18 · W1)
+#   `pre-commit` 은 2026-09-15 부터 `pyproject.toml` 에 **두 곳**(:89 · :180)에
+#   선언돼 있었는데 저장소 전체에서 `pre-commit install` · `pre-commit run`
+#   언급이 **0건**이었다. 값은 이미 지불하고 회수를 안 한 상태였고, 그 사이
+#   `tools/encoding_check.py` 149줄을 손으로 유지했다. 그 손코드에서 버그 둘이 나왔다 —
+#   `PY="python3"` fallback 이 `firelane` import 로 항상 죽고,
+#   `node --check` 에 `command -v node` 가드가 없어 node 없는 기계에서 항상 죽었다.
+#   **표준 훅은 그 둘을 구조적으로 못 만든다** — 프로젝트 import 가 필요 없고
+#   런타임을 스스로 조달한다.
+#
+# ★ 이 파일이 정본인 이유 — 소비자가 둘이다.
+#     로컬   전역 훅(~/.githooks/pre-commit)이 `pre-commit run` 으로 부른다
+#     CI     contract.yml 의 `pre-commit` 잡이 같은 파일을 읽는다
+#   `.ruff-strict.toml` 이 이미 이 모양의 모범이다(verify.sh 5a · contract.yml).
+#   인자나 규칙을 어느 쪽에도 **복사하지 않는다.**
+#
+# ★ `pre-commit install` 을 쓰지 않는다. `core.hooksPath` 가 설정돼 있으면
+#   pre-commit 이 설치를 거부한다("Cowardly refusing to install hooks with
+#   `core.hooksPath` set" — 2026-09-18 실측). 그런데 `dms.py` 의
+#   `hook/global-hooksPath` 는 전역 훅이 **없으면** 실패로 친다 — 전역 훅이
+#   fire-lane 밖 저장소의 자격증명 방어를 맡기 때문이다.
+#   둘 다 지키는 길은 하나뿐이다: 전역 훅이 이 설정을 이어서 부른다.
+#   설치법은 `.githooks/global-chain.sh` 머리말에 있다.
+#
+# ★ GENERATED 는 절대 건드리지 않는다. `_manifest.json` ·
+#   `segments.fingerprint.json` 은 **바이트 sha256** 으로 계보를 대조한다.
+#   개행 하나만 붙어도 sha 가 바뀌어 lineage 가 교착에 빠진다(2026-08-21 실측).
+#   아래 `exclude` 의 정본은 `tools/encoding_check.py` 의 `GENERATED` 다.
+
+exclude: |
+  (?x)^(
+      data/processed/ |
+      data/golden/    |
+      data/baseline/  |
+      web/data/       |
+      web/navi/node_modules/
+  )
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # encoding_check.py 의 검사 **둘**을 가져온다. 넷 전부가 아니다 — 아래 ★
+      - id: fix-byte-order-marker          # BOM        (실측 차이 0건)
+      - id: mixed-line-ending              # CRLF       (실측 차이 0건)
+        args: [--fix=lf]
+        # ★ 윈도우가 직접 읽는 파일은 CRLF 를 유지한다.
+        #   정본은 encoding_check.py 의 CRLF_OK = {.wslconfig .bat .cmd .ps1}
+        exclude: '(^|/)\.wslconfig$|\.(bat|cmd|ps1)$'
+      - id: check-added-large-files        # commit_policy 의 MAX_FILE_MB = 5.0
+        args: [--maxkb=5000]
+      - id: detect-private-key             # 전역 훅의 자격증명 검사를 저장소 층에서도
+      # ★ 2026-09-18 (W1b). 옛 `.githooks/pre-commit` 이 스테이지된 .py 에
+      #   `py_compile` 을 돌렸다. 위임하면서 그 덮개를 잃지 않도록 옮긴다.
+      - id: check-ast
+
+      # ★★ `end-of-file-fixer` 를 **일부러 넣지 않았다.** 2026-09-18 실측 —
+      #   1ffe1fc 나무에 돌렸더니 추적 파일 **15개**를 고쳤다. 두 도구가 다른
+      #   것을 묻기 때문이다:
+      #       encoding_check   "개행이 있는가"        b.endswith(b"\n")
+      #       end-of-file-fixer "개행이 정확히 하나인가"
+      #   15개는 전부 끝 개행이 2개(`tests/test_r3.py` 는 3개)라 현행 검사는
+      #   통과하고 표준 훅은 고친다. 채택하면 셋이 깨진다 —
+      #     ① `web/workflow.html` · `web/playbook.html` 은 `render_workflow.py`
+      #        **생성물**이고 `test_workflow_html_sync.py:52` 가 생성기 출력과
+      #        **문자열 완전 일치**를 요구한다. 훅이 깎으면 테스트가 깨지고,
+      #        배포가 다시 생성하면 훅이 또 깎는다 — 무한 왕복이다.
+      #     ② `docs/DECISIONS.md` 가 바뀌면 dms SEAL 의 docs 해시가 바뀐다.
+      #        배선 배치에 재봉인이 딸려온다.
+      #     ③ 배선 배치에 내용 변경 15건이 섞인다. 수용 조건이 불변인데
+      #        나무를 정규화하는 것은 이 배치의 일이 아니다.
+      #   여분 개행 정리는 **생성기까지 같이 고치는 별도 배치**로 한다.
+
+  - repo: local
+    hooks:
+      # ★ 저장소 고유 규칙. 표준 훅에 대응물이 없다 —
+      #   web/data 40MB 합계 상한 · processed 산출물 · .stale_* 격리 ·
+      #   루트 일회성 스크립트 · 계보 기록. 각 규칙이 **왜** 를 같이 출력한다.
+      - id: commit-policy
+        name: 커밋 정책 (저장소 고유)
+        entry: uv run python tools/commit_policy.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      # ★ 2026-09-18 실측 결과 **이 도구는 남는다.** 넷 중 둘만 표준 훅으로
+      #   옮겨졌다.
+      #       BOM      → fix-byte-order-marker   실측 차이 0건 · 이관 완료
+      #       CRLF     → mixed-line-ending       실측 차이 0건 · 이관 완료
+      #       비UTF-8  → 표준 훅에 대응물이 없다 · 여기 남는다
+      #       개행없음 → end-of-file-fixer 와 불일치(위 ★★) · 여기 남는다
+      #   149줄이 통째로 사라지지는 않았다. 지우기 전에 대조했고, 안 같았다 —
+      #   그 대조가 `web/workflow.html` 무한 왕복을 막았다.
+      - id: encoding-check
+        name: 인코딩·개행 (비UTF-8 · 끝개행 — 표준 훅에 없는 축)
+        entry: uv run python tools/encoding_check.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: ruff
+        name: ruff (공용 최소 룰셋)
+        entry: uv run ruff check --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      # ★ 2026-09-18 (W1b). 옛 훅이 스테이지된 `web/*.js` 를 `node --check` 했다.
+      #   그 훅에는 `command -v node` 가드가 없어 node 없는 기계에서 **항상 죽었다**
+      #   (바로 위 ruff 에는 가드가 있었다 — 같은 파일 안에서 방어가 갈렸다).
+      # ★ 가드를 다시 넣지 않는다. node 가 없으면 **시끄럽게 실패**하는 것이 맞다 —
+      #   조용히 통과하면 1족이 된다. devcontainer 는 W1 에서 node 를 받았고
+      #   CI 도 node 를 세운다. 없는 기계가 예외 상황이다.
+      - id: js-syntax
+        name: JS 문법 (web/*.js)
+        entry: node --check
+        language: system
+        files: '^web/[^/]+\.js$'

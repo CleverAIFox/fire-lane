@@ -240,10 +240,6 @@
    "sha256": "5ce87804c5054a09a5b9336f5c40acce127669c4497e9667be0c2cd963ab7f7c",
    "bytes": 98250
   },
-  "juso/juso_building_db_jngj_20260731.zip": {
-   "sha256": "3d6dc01f6cb1bf8a95cff3c5d956dd2d5a87b37647ffb80f621848e5ab4efad9",
-   "bytes": 149246529
-  },
   "mois/mois_child_zone_std_kr_20260728.json": {
    "sha256": "5a9a8d10bf3d17e099f7745c3c6cf9370aba76b483751deb6b4c2acd1ff31f79",
    "bytes": 7901542
@@ -325,5 +321,5 @@
    "bytes": 224623
   }
  },
- "at": "2026-09-17T19:39:47+09:00"
+ "at": "2026-09-18T18:23:41+09:00"
 }
