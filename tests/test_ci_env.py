@@ -100,9 +100,68 @@ def test_navi_node_version_has_one_source_of_truth():
             seg = body[max(0, m.start() - 400):m.start() + 400]
             if "web/navi" in seg:
                 bad.append(f"  {p.name}: 내비 근처에 node-version: {m.group(1)} 을 손으로 적었다")
+    # ★ 2026-09-19 (W3-18). **범위를 devcontainer 까지 넓힌다.**
+    #   종전 이 검사는 워크플로와 `build-navi` 만 봤다. 그래서
+    #   `devcontainer.json` 이 node feature 판을 `"20"` 으로 **손으로 적는
+    #   것**이 범위 밖이었고, 그 축의 강제자는 0건이었다 — 이름은
+    #   「노드 판의 정본이 하나인가」인데 실제 범위가 그보다 좁았다
+    #   (W3-8 · W4-8 · W3-16 · W4-9 와 같은 족).
+    # ★ devcontainer feature 는 파일을 못 읽는다(`.nvmrc` 를 가리킬 수단이
+    #   없다). **합칠 수 없으면 같은지를 강제한다** — 합칠 수 없는 사본을
+    #   방치하는 것과 검사하는 것은 다르다.
+    want = nvmrc.read_text(encoding="utf-8").strip()
+    dc = ROOT / ".devcontainer/devcontainer.json"
+    if dc.exists():
+        import json
+
+        feats = json.loads(dc.read_text(encoding="utf-8")).get("features") or {}
+        for key, cfg in feats.items():
+            if "/node" not in key or not isinstance(cfg, dict):
+                continue
+            got = str(cfg.get("version", "")).strip()
+            if got and got != want:
+                bad.append(
+                    f"  devcontainer.json: node feature 가 {got!r} 인데 "
+                    f"web/navi/.nvmrc 는 {want!r} 다")
+
     assert not bad, (
         "내비 노드 판의 정본이 둘 이상이다.\n" + "\n".join(bad)
         + "\n  게이트와 빌드가 다른 판에서 돌면 초록불이 배포를 보증하지 않는다.")
+
+
+def test_devcontainer_sync_matches_verify() -> None:
+    """devcontainer 가 세우는 환경이 `verify.sh` 가 검증하는 환경과 같은가.
+
+    ★ 2026-09-19 (W3-18). `setup.sh` 가 맨몸 `uv sync` 를 돌고 있었다 —
+      **환경을 세우는 도구가 `uv.lock` 을 갱신할 수 있는 자리**다.
+      W2 가 `verify.sh` 의 「의존성 동기화」 단계에 `--frozen` 을 더한 이유가
+      (「검증 도구가 검증 대상을 변형하는 유일한 자리」) 여기 그대로 남아
+      있었다. Dockerfile · 워크플로는 전부 `--frozen` 인데 여기만 아니었다.
+    ★ `--all-extras` 의 차이는 **선언된 차이**라 안 본다 — CI 만 붙이고
+      로컬은 torch 를 안 받는다. 여기서 보는 것은 `--frozen` 하나다.
+    """
+    setup = ROOT / ".devcontainer/setup.sh"
+    verify = ROOT / "tools/verify.sh"
+    if not setup.exists():
+        return
+
+    def _syncs(path: Path) -> list[str]:
+        out = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            code = line.split("#", 1)[0]
+            if "uv sync" in code:
+                out.append(code.strip())
+        return out
+
+    assert any("--frozen" in s for s in _syncs(verify)), (
+        "verify.sh 가 `uv sync --frozen` 을 안 쓴다 — 이 검사의 전제가 사라졌다")
+
+    bad = [s for s in _syncs(setup) if "--frozen" not in s]
+    assert not bad, (
+        "devcontainer 가 잠금을 갱신할 수 있는 `uv sync` 를 돈다.\n"
+        + "".join(f"  .devcontainer/setup.sh: {s}\n" for s in bad)
+        + "  환경을 세우는 도구가 정본(`uv.lock`)을 변형하면\n"
+        + "  「내 컨테이너에서는 됐는데」가 난다. `--frozen` 을 붙여라.")
 
 
 def test_devcontainer_actually_runs_its_setup_script():
