@@ -129,6 +129,54 @@ def test_navi_node_version_has_one_source_of_truth():
         + "\n  게이트와 빌드가 다른 판에서 돌면 초록불이 배포를 보증하지 않는다.")
 
 
+def test_python_version_has_one_source_of_truth() -> None:
+    """게이트 · 배포 · 이미지가 같은 파이썬에서 도는가 (W3-17).
+
+    ★ 2026-09-19. `Dockerfile` 이 W8-2 로 `3.14-slim` 이 됐는데 워크플로 셋은
+      `"3.11"` 을 손으로 적은 채였다. `pyproject` 의 `requires-python >=3.11`
+      이 둘 다 허용하므로 **아무것도 안 울었다.**
+      개발자가 쓰는 런타임(devcontainer = Dockerfile)과 게이트가 도는 런타임이
+      달랐다 — 내비 노드 22 vs 20 과 **같은 형태**다(§186-2). 그때의 교훈이
+      「게이트가 통과시킨 판과 배포가 빌드하는 판이 애초에 다르면 같은 사고가
+      또 난다」였고, 파이썬 축에서 그대로 반복됐다.
+    ★ 정본은 `.python-version` 하나다. `uv` 와 `actions/setup-python` 이 **둘 다**
+      이 파일을 읽으므로 합칠 수 있었다 — 합칠 수 있으면 합친다.
+      `Dockerfile` 만 파일을 못 읽으므로 거기는 **같은지를 강제한다.**
+    ★ `pyproject` 의 `requires-python` 은 **안 좁혔다.** 좁히면 `uv.lock` 이
+      재해결을 요구해 `--frozen` 이 전부 깨진다. 그것은 잠금 갱신을 포함하는
+      별도 배치다 — 이 배치의 수용 조건(판정 불변)과 섞지 않는다(§13-5 규칙 2).
+    """
+    pv = ROOT / ".python-version"
+    assert pv.exists(), (
+        ".python-version 이 없다 — 파이썬 판의 정본이 사라졌다.\n"
+        "  없으면 워크플로마다 판을 손으로 적게 되고, 그것이 W3-17 이다.")
+    want = pv.read_text(encoding="utf-8").strip()
+    assert re.fullmatch(r"\d+\.\d+(\.\d+)?", want), (
+        f".python-version 이 {want!r} 다 — `3.14` 형태로 적는다")
+
+    bad = []
+    for p in WF:
+        body = "\n".join(l for l in p.read_text(encoding="utf-8").splitlines()
+                         if not l.lstrip().startswith("#"))
+        for m in re.finditer(r"python-version:\s*[\"']?([\d.]+)", body):
+            bad.append(f"  {p.name}: `python-version: {m.group(1)}` 을 손으로 적었다")
+
+    # ★ Dockerfile 은 빌드 시점에 파일을 못 읽는다. 합칠 수 없으면 같은지를 본다.
+    dockerfile = ROOT / "Dockerfile"
+    if dockerfile.exists():
+        m = re.search(r"^FROM\s+python:([\d.]+)", dockerfile.read_text(encoding="utf-8"), re.M)
+        if m and not (m.group(1) == want or m.group(1).startswith(want + ".")):
+            bad.append(f"  Dockerfile: `FROM python:{m.group(1)}` 인데 "
+                       f".python-version 은 {want} 다")
+
+    assert not bad, (
+        "파이썬 판의 정본이 둘 이상이다.\n" + "\n".join(bad)
+        + f"\n  정본은 `.python-version`({want}) 하나다.\n"
+        + "  워크플로는 `python-version-file: .python-version` 으로 읽는다.\n"
+        + "  배포되는 런타임과 게이트가 도는 런타임이 다르면\n"
+        + "  초록불이 아무것도 보증하지 않는다(W3-17 · §186-2 와 같은 형태).")
+
+
 def test_devcontainer_sync_matches_verify() -> None:
     """devcontainer 가 세우는 환경이 `verify.sh` 가 검증하는 환경과 같은가.
 
