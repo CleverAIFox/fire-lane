@@ -27,7 +27,15 @@ if ! command -v uv >/dev/null 2>&1; then
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
 fi
-uv sync
+# ★ 2026-09-19 (W3-18). `--frozen --dev` 를 더했다. 종전에는 맨몸 `uv sync` 라
+#   **이 자리가 `uv.lock` 을 갱신할 수 있었다** — 환경을 세우는 도구가 정본을
+#   변형하는 자리다. W2 가 `verify.sh` 의 「의존성 동기화」 단계에 `--frozen` 을
+#   더한 이유가 그대로 여기 남아 있었다(「검증 도구가 검증 대상을 변형하는
+#   유일한 자리」). Dockerfile · 워크플로는 전부 `--frozen` 인데 여기만 아니었다.
+# ★ `--all-extras` 는 **안 붙인다.** CI 는 붙이지만 그것은 선언된 차이다 —
+#   torch 를 로컬에 받게 하는 것이 비싸서 `verify.sh` 도 `--dev` 만 쓴다.
+#   여기를 `verify.sh` 와 같게 둬야 devcontainer 에서 돌린 verify 가 의미를 갖는다.
+uv sync --frozen --dev
 
 # 한글 파일명 표시. 커밋 방어가 아니다 — 아래가 커밋 방어다.
 git config core.quotepath false

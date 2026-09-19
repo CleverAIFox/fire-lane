@@ -5,6 +5,23 @@
 #   bash tools/verify.sh --fast     파이프라인 전량(4분) 생략
 #   bash tools/verify.sh --table    통과한 것까지 전부 표로
 #   bash tools/verify.sh --only=pytest   ★ 이름이 맞는 단계만. 부분 실행이다
+#   bash tools/verify.sh --since=origin/dev  ★ 바뀐 경로가 닿는 단계만. 부분 실행이다
+#   bash tools/verify.sh --scope-list    단계별 영향 범위 선언을 표로 (안 돈다)
+#
+# ★ `--since` 의 규율 넷 (W7-2 · PLAN §13)
+#
+#   1. **미선언은 항상 돈다.** 범위를 안 적은 단계는 `--since` 에서도 전부
+#      돈다. 안전한 기본값이 아니라 **유일하게 안전한 기본값**이다 —
+#      손으로 적은 목록은 반드시 빠지고(deadcheck ②), 빠진 것이 조용히
+#      건너뛰어지면 그것이 1족이다.
+#   2. **건너뛴 것은 통과가 아니다.** 범위 밖이라 안 돈 단계는 `건너뜀` 으로
+#      찍히고 아래 `부분 실행` 안전장치가 **이 실행 전체를 실패로 만든다.**
+#      그래서 `--since` 로 돈 로그로는 `dms.py seal` 이 봉인할 수 없다.
+#   3. **수용 조건이 아니다.** `--since` 는 고치는 중에 빨리 되먹임을 받는
+#      도구다. 머지 전 수용은 전수 verify + CI 다(§13-5 규약 6).
+#   4. **범위는 그 단계 옆에 적는다.** 별도 등록부로 빼면 단계 이름이 두
+#      곳에 살고, 그것이 곧 2족이다. `scope` 는 **바로 다음 `step` 하나**
+#      에만 걸린다.
 #
 # ★ `--only` 로 돈 결과는 전수가 아니다. 건너뛴 것은 통과가 아니므로
 #   마지막에 `부분 실행` 단계를 일부러 실패시킨다 — 그래야 `dms.py seal`
@@ -44,15 +61,136 @@ pass=0; fail=0; skip=0
 #   **둘 다 세졌다.** 41 로 찍히고 실제로는 38 이 돌아 "[38/41] 통과 38"
 #   이 됐다 — 보는 사람은 셋이 빠졌다고 읽는다. 갈래는 하나만 돈다.
 #   이름으로 유일화한다.
-TOTAL=$(grep -oE '^[[:space:]]*step "[^"]*"' "$0" | sed 's/.*step //' | sort -u | wc -l)
 IDX=0; T_ALL=$(date +%s)
-ONLY=""; TABLE=0
+ONLY=""; TABLE=0; SINCE=""; SCOPELIST=0
 for arg in "$@"; do
     case "$arg" in
-        --only=*) ONLY="${arg#--only=}" ;;
-        --table)  TABLE=1 ;;
+        --only=*)  ONLY="${arg#--only=}" ;;
+        --since=*) SINCE="${arg#--since=}" ;;
+        --scope-list) SCOPELIST=1 ;;
+        --table)   TABLE=1 ;;
     esac
 done
+
+# ── 영향 범위 (W7-2) ────────────────────────────────────────
+# ★ 바뀐 경로를 **한 번만** 센다. 커밋된 차이와 아직 안 커밋한 것을 둘 다
+#   본다 — 고치는 중에 쓰는 도구이므로 작업 트리가 진실이다.
+# ★ 기준을 못 찾으면 **아무것도 건너뛰지 않는다.** 모를 때 건너뛰는 것은
+#   검사를 끄는 것과 같다(「파이프라인 전량」의 rawdiff 와 같은 규율).
+CHANGED=""
+if [ -n "$SINCE" ]; then
+    if ! git rev-parse --verify --quiet "$SINCE" >/dev/null 2>&1; then
+        printf '%s✗ --since=%s 를 못 찾았다. 건너뛰지 않고 전수로 돈다.%s\n\n' "$R" "$SINCE" "$Z"
+        SINCE=""
+    else
+        CHANGED=$(
+            { git diff --name-only "$SINCE"...HEAD 2>/dev/null || true
+              git status --porcelain 2>/dev/null | sed 's/^...//' | sed 's/.* -> //'
+            } | sort -u)
+        printf '%s바뀐 경로%s  %s개 (기준 %s)\n' "$D" "$Z" \
+               "$(printf '%s' "$CHANGED" | grep -c . || true)" "$SINCE"
+    fi
+fi
+
+SCOPE=""
+# scope "패턴 ..." — **바로 다음 `step` 하나**에만 걸린다.
+scope() { SCOPE="$*"; }
+
+# ── --scope-list — 선언을 **정적으로** 읽는다 ────────────────
+# ★ 이 모드는 **아무것도 실행하지 않는다.** 처음엔 `step` 안에서 표를
+#   찍게 했는데, 그러면 `if command -v npm` 갈래의 `npm install` ·
+#   `npm ci` 가 **표를 보려고 돌린 것만으로 실행됐다.** 읽기 전용이라고
+#   적어놓고 남의 기계에 패키지를 까는 것은 조용한 부작용이다.
+#   `TOTAL` 이 자기 소스를 세는 것과 같은 방식으로 파일에서 읽는다.
+# ★ 선언이 **어느 단계에도 안 붙은 채 떠 있으면** 그것을 말한다.
+#   붙지 않은 선언은 아무 일도 안 하면서 「범위를 적었다」고 믿게 만든다.
+if [ "$SCOPELIST" = "1" ]; then
+    printf '\n%s단계별 영향 범위 선언%s\n\n' "$C" "$Z"
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$0" <<'PY'
+import re, sys, unicodedata
+
+def w(s): return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in s)
+
+src = open(sys.argv[1], encoding="utf-8").read().splitlines()
+rows, dangling, pend, seen = [], [], None, set()
+for i, line in enumerate(src, 1):
+    s = line.strip()
+    if s.startswith("#") or not s:
+        continue
+    m = re.match(r'scope "([^"]*)"', s)
+    if m:
+        if pend:
+            dangling.append((pend[1], pend[0]))
+        pend = (m.group(1), i)
+        continue
+    m = re.match(r'step "([^"]*)"', s)
+    if m:
+        name = m.group(1)
+        if name not in seen:
+            seen.add(name)
+            rows.append((name, pend[0] if pend else ""))
+        pend = None
+        continue
+    if pend and not s.startswith(("fi", "else", "elif", "then", "}")):
+        dangling.append((pend[1], pend[0]))
+        pend = None
+if pend:
+    dangling.append((pend[1], pend[0]))
+
+width = max((w(n) for n, _ in rows), default=0)
+declared = sum(1 for _, sc in rows if sc)
+for name, sc in rows:
+    pad = " " * (width - w(name) + 2)
+    print(f"  {name}{pad}" + (sc if sc else "\033[90m★ 미선언 — 항상 돈다\033[0m"))
+print()
+print(f"  선언 {declared} · 미선언 {len(rows) - declared} · 단계 {len(rows)}")
+if dangling:
+    print()
+    print("\033[31m  ✗ 어느 단계에도 안 붙은 선언\033[0m")
+    for ln, sc in dangling:
+        print(f"      {sys.argv[1]}:{ln}  scope \"{sc}\"")
+    print("      붙지 않은 선언은 아무 일도 안 하면서 범위를 적었다고 믿게 만든다.")
+    sys.exit(1)
+PY
+        _rc=$?
+    else
+        grep -nE '^[[:space:]]*(scope|step) "' "$0" | sed 's/^/  /'
+        _rc=0
+    fi
+    printf '\n  %s미선언은 --since 에서도 항상 돈다. 그것이 안전한 기본값이다.%s\n\n' "$D" "$Z"
+    exit $_rc
+fi
+
+_touches() {                  # _touches "패턴 ..."  바뀐 것이 하나라도 닿는가
+    local f pat rc=1
+    # ★ 2026-09-19 실측 버그. 종전에는 `_touches $_scope` 로 **안 따옴표로**
+    #   넘겼다. 그러면 셸이 `web/navi/*` 를 **실제 파일 목록으로 펼쳐서**
+    #   패턴이 패턴으로 도착하지 않는다 — `web/navi/*` 가 직계 자식만
+    #   펼쳐지므로 `web/navi/src/App.tsx` 를 **못 잡았다.**
+    #   즉 내비를 고쳤는데 내비 타입 검사가 조용히 건너뛰어진다. 1족이다.
+    # ★ `set -f` 로 globbing 을 끄고 IFS 분리만 쓴다. `case` 의 패턴 자리는
+    #   경로 확장을 안 하므로 거기서는 따옴표를 안 쓰는 것이 맞다.
+    # ★ `case` 의 `*` 는 `/` 도 먹는다. 그래서 `src/*` 가 `src/a/b.py` 를 잡는다.
+    set -f
+    for f in $CHANGED; do
+        for pat in $1; do
+            case "$f" in $pat) rc=0; break 2 ;; esac
+        done
+    done
+    set +f
+    return $rc
+}
+TOTAL=$(grep -oE '^[[:space:]]*step "[^"]*"' "$0" | sed 's/.*step //' | sort -u | wc -l)
+# ★ 2026-09-19. 같은 사고가 **다른 원인으로 재발했다.** 위 2026-09-15 항은
+#   이름 중복을 고쳤는데, 이번에는 `부분 실행` 이 분모에만 있고 실행에는
+#   없었다 — `--only` · `--fast` 에서만 도는 안전장치라 전수 실행에서는
+#   한 번도 안 돈다. 그래서 전수로 돌려도 끝까지 **[44/45]** 가 찍혔고,
+#   보는 사람은 하나가 빠졌다고 읽는다.
+# ★ 분모는 **이 실행에서 실제로 돌 수 있는 것**이어야 한다. 조건부 단계를
+#   손목록으로 빼지 않고, 그 단계를 켜는 조건과 같은 조건으로 뺀다 —
+#   조건이 한 곳에 있으므로 갈리지 않는다.
+if [ -z "$ONLY" ] && [ "$FAST" != "1" ] && [ -z "$SINCE" ]; then TOTAL=$((TOTAL - 1)); fi
 
 hms() {                       # 초 → "51초" · "2분41초"
     if [ "$1" -lt 60 ]; then printf '%d초' "$1"
@@ -61,10 +199,17 @@ hms() {                       # 초 → "51초" · "2분41초"
 
 step() {                      # step "이름" "명령..."
     local name="$1"; shift
+    local _scope="$SCOPE"; SCOPE=""     # ★ 선언은 이 한 단계에만 걸린다
     IDX=$((IDX+1))
     # ★ --only 로 뺀 것은 `건너뜀` 이다. **통과가 아니다.**
     if [ -n "$ONLY" ] && ! printf '%s' "$name" | grep -qE "$ONLY"; then
         NAMES+=("$name"); RESULTS+=("건너뜀"); NOTES+=("--only 로 뺐다"); SECS+=(0)
+        skip=$((skip+1)); return
+    fi
+    # ★ --since 로 뺀 것도 `건너뜀` 이다. 미선언(`_scope` 가 빈 값)은 안 뺀다.
+    if [ -n "$SINCE" ] && [ -n "$_scope" ] && ! _touches "$_scope"; then
+        NAMES+=("$name"); RESULTS+=("건너뜀"); SECS+=(0)
+        NOTES+=("--since 범위 밖 ($_scope)")
         skip=$((skip+1)); return
     fi
     # ★ `── 이름` 형식은 건드리지 않는다. dms.py 의 봉인 파서가 이 줄로
@@ -180,7 +325,18 @@ step "진입점 · cwd 독립성" bash -c \
   'cd /tmp && uv run --project "'"$ROOT"'" fire-lane --check >/dev/null && echo "cwd 독립 확인"'
 
 # ── 3. 파이썬 테스트 ─────────────────────────────────────────
-step "pytest" uv run pytest tests/ -q
+# ★ 2026-09-19 (W7-1). `--cov` 를 **여기서** 켠다. 종전에는 이 단계가 맨몸으로
+#   돌고 36단계 뒤 「커버리지 래칫」이 **같은 732개를 다시** 돌았다 —
+#   실측 1분21초 + 1분46초 = 3분07초로 verify 8분05초의 **38%** 였다.
+#   커버리지는 테스트 실행의 **부산물**이지 별도의 실행이 아니다. 여기서
+#   한 번 재고 래칫 단계는 그 데이터를 **읽기만** 한다(1초 미만).
+# ★ 두 단계를 하나로 **합치지 않는다.** 합치면 「테스트가 깨졌다」와
+#   「커버리지가 문턱 아래다」가 같은 빨강 한 줄로 찍혀 사람이 오진한다.
+#   실행은 하나, 판정은 둘이다. 단계 수가 유지되므로 문서가 든 단계 번호도
+#   안 밀린다.
+# ★ `--cov-report=` 는 보고를 끄고 데이터만 남긴다. 화면에 표를 두 번
+#   찍지 않기 위해서다 — 표는 래칫 단계가 한 번 낸다.
+step "pytest" uv run pytest tests/ -q --cov=src --cov=tools --cov-report=
 
 # ── 4. (삭제) 계층 규칙 ──────────────────────────────────────
 # ★ 2026-09-03. `pytest tests/ -q` 가 이미 test_layering 을 돌린다.
@@ -247,7 +403,14 @@ step "pre-commit 전수"  uv run pre-commit run --all-files
 #   `.pre-commit-config.yaml` 이 있어도 전역 훅이 그것을 안 부르면
 #   **커밋 시점 방어가 0 이다** — 종전 `.githooks/pre-commit` 이 정확하게
 #   그 상태여서 구조적으로 못 도는 코드였다.
-#   미설정이면 한 명령으로 끝난다 — `bash .githooks/global-chain.sh --install`
+#   ★ 2026-09-19 정정. 종전 이 줄은 「미설정이면 한 명령으로 끝난다 —
+#     `global-chain.sh --install`」이라고 적었다. **그 모드는 없다.**
+#     `global-chain.sh:41` 은 `--check` 와 `--uninstall` 둘뿐이고 `:80` 의
+#     `--check|*)` 가 catch-all 이라 `--install` 은 **오류 없이 --check 로
+#     떨어진다.** 안내가 거짓인데 아무것도 안 울었다 — 도구가 모르는 인자를
+#     조용히 삼키면 틀린 안내가 영원히 산다.
+#     전역 훅은 저장소 밖 파일이라 이 저장소가 설치할 수 없다. 실제 절차는
+#     `global-chain.sh --check` 가 미설정일 때 직접 찍는다(`:44-51`).
 step "훅 전역 연결"    bash .githooks/global-chain.sh --check
 # ★ 2026-09-18 (W2). 3족의 클래스 가드. 로컬에만 있는 검사기를 센다.
 #   CI 도 같은 명령을 돈다 — 규칙을 두 곳에 적는 것이 아니라 같은 도구가
@@ -266,8 +429,10 @@ step "문서 숫자 대조"   uv run python tools/docnum_check.py
 step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 # ★ 2026-09-02 배선. 오늘 캡션 절까지 붙여놓고 **어디서도 안 부르고
 #   있었다.** 사람이 손으로 칠 때만 도는 도구는 이탈 후 아무도 안 부른다.
+scope "docs/* tools/*"
 step "기획서 대조"     uv run python tools/docx_check.py
 # ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
+scope "docs/* tools/* src/* data/*"
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
 # ★ 2026-09-17 (DECISIONS §180-9). `흡수 대상`(release_brief 한 줄)을 뺐다. 검사가 아니라 보고였고 매 실행 "생략" 으로
 #   찍혀 생략 칸을 채웠다 — 진짜 생략(npm 없음 · --fast)이 그 옆에 묻힌다. 표는 릴리즈 PR 본문에서 쓰인다(merge_batch --release).
@@ -279,8 +444,10 @@ step "선언 ↔ 실물"     uv run python tools/refcheck.py
 # ★ 전수 스캔. `--repo` 는 데이터 레이크 없이 저장소 트리만 본다 —
 #   항목에서 출발하는 검사는 **항목이 없는 것을 영원히 못 본다.**
 step "트리 전수 대조"   uv run python tools/treecheck.py --repo
+scope "web/* data/*"
 step "web/data 계보"    uv run python tools/web_manifest.py --check
 step "로컬 찌꺼기"      uv run python tools/tidy.py
+scope "web/data/* tools/*"
 step "web/data 용량"    bash -c '
     SIZE=$(du -sm web/data | cut -f1)
     LIM=$(grep -oP "MAX_WEBDATA_MB\s*=\s*\K\d+" tools/commit_policy.py)
@@ -288,14 +455,17 @@ step "web/data 용량"    bash -c '
     [ "$SIZE" -lt "$LIM" ]'
 
 # ── 6. JS 모듈 그래프 ────────────────────────────────────────
+scope "web/* tools/*.mjs"
 step "JS 문법·순환·import" node tools/js_graph_check.mjs
 
 # ── 7. JS 부팅 (jsdom 필요) ──────────────────────────────────
 if [ -d node_modules/jsdom ]; then
+    scope "web/* tools/*.mjs"
     step "JS 부팅 스모크" node tools/web_boot_check.mjs
 elif command -v npm >/dev/null 2>&1; then
     printf '%s── JS 부팅 스모크%s\n%s   jsdom 설치 중...%s\n' "$C" "$Z" "$D" "$Z"
     if npm install --no-save jsdom >/dev/null 2>&1; then
+        scope "web/* tools/*.mjs"
         step "JS 부팅 스모크" node tools/web_boot_check.mjs
     else
         note "JS 부팅 스모크" "jsdom 설치 실패 — npm install --no-save jsdom"
@@ -312,10 +482,12 @@ fi
 # ★ 타입만 본다. `vite build` 는 토큰이 필요하고, 이번 사고는 타입에서
 #   잡혔다. 토큰 없는 빌드는 배포 액션이 맡는다.
 if [ -d web/navi/node_modules ]; then
+    scope "web/navi/*"
     step "내비 타입 검사" bash -c 'cd web/navi && npm run -s typecheck'
 elif command -v npm >/dev/null 2>&1; then
     printf '%s── 내비 타입 검사%s\n%s   npm ci 중...%s\n' "$C" "$Z" "$D" "$Z"
     if (cd web/navi && npm ci --no-audit --no-fund >/dev/null 2>&1); then
+        scope "web/navi/*"
         step "내비 타입 검사" bash -c 'cd web/navi && npm run -s typecheck'
     else
         note "내비 타입 검사" "npm ci 실패 — cd web/navi && npm ci"
@@ -417,7 +589,11 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --selftest
 #   기준선이 없으면 전수가 곧 분모라고 스스로 말한다.
 step "강제자 소급 증분" uv run python tools/dms.py delta
 
-# ★ 문턱 40 에서 시작한다. 25 로 내리면 10군이다. 검사를 무르게 만드는
+# ★ 2026-09-19 정정 — 실측 **5군**이다(`--min 25` · 함수 13). 종전 이 줄은
+#   「25 로 내리면 10군」이라고 적었는데 그 값은 낡았다. `SEAL.json` 의
+#   `dup_groups: 5` 가 이미 옳은 값을 들고 있었다 — 같은 사실이 저장소에
+#   있는데 주석이 손으로 다시 적으며 틀렸다(DECISIONS §192 와 같은 형태).
+# ★ 문턱 40 에서 시작한다. 검사를 무르게 만드는
 #   것이 아니라 **지금 값에서 시작해 내리는 것**이 일이다(env_check 선례).
 step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
 
@@ -448,17 +624,56 @@ step "대장 별칭 이관 유지" uv run python tools/ledger_fields.py --check
 # ★ 이 도구의 REF 정규식이 `\\d` 로 적혀 있어 **만든 날부터 참조를 0건
 #   찾았다.** 죽은 참조 안전장치도 참조 치환도 둘 다 안 돌았다. 고치고
 #   나니 그 자리에서 죽은 참조 셋이 나왔다(DECISIONS §159).
+scope "docs/* tools/*"
 step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
-# ★ 2026-09-15 신설. 커버리지 래칫. 위 `pytest` 단계와 따로 도는 이유는
-#   커버리지를 켜면 75초가 127초가 되기 때문이다 — 매번 두 배를 내지
-#   않고 문턱만 여기서 본다.
-# ★ 숫자를 올릴 때 이 줄의 `--cov-fail-under` 를 같이 올린다. 안 올리면
-#   되돌아간다(`dupcheck --max` 와 같은 규율).
-step "커버리지 래칫 14%" uv run pytest tests/ -q \
-    --cov=src --cov=tools --cov-report= --cov-fail-under=14
+# ★ 2026-09-15 신설. 커버리지 래칫.
+# ★ 2026-09-19 (W7-1). **테스트를 다시 돌리지 않는다.** 종전 이 줄은
+#   `pytest tests/ -q --cov ...` 로 4단계와 같은 732개를 통째로 재실행했다.
+#   지금은 4단계가 `--cov` 로 남긴 `.coverage` 를 읽기만 한다.
+# ★ **이 검사는 자기 전제를 스스로 선언한다**(§3-2 규약). 전제는 「4단계가
+#   돌아 `.coverage` 를 남겼다」이고, 그 전제가 안 서면 **조용히 통과하지
+#   않는다.** 커버리지는 실행의 부산물이라 단독으로는 못 잰다 —
+#   여기서 `note` 로 빠지면 `seal` 이 그것을 닫힘으로 읽는다(PLAN #70).
+#
+# ★ 2026-09-19 실측 — **래칫이 14 인데 실물이 24% 였다.** 9/15 에 14 로 걸고
+#   나흘 동안 아무도 몰랐다. 왜 몰랐나 — `--fail-under` 는 **미달만** 보고
+#   초과를 **말하지 않는다.** `dupcheck --max` 는 미달일 때 「조여라」를
+#   찍는데 이쪽은 안 찍었다. 그래서 같은 어휘를 쓰면서 행동이 달랐다
+#   (PLAN §13 W4-9 가 예고한 그 족의 네 번째 인스턴스이고, 이것이 그 실측
+#   증거다). 아래에서 초과를 **소리내어 말하게** 했다.
+#
+# ★ 숫자는 `COV_MIN` **한 곳**에만 산다. 단계 이름에서도 뺐다 — 종전 이름이
+#   「커버리지 래칫 14%」라 숫자의 집이 하나 더 있었고, 이름은 검사 대상이
+#   아니라 조용히 낡는다. `tests/test_verify_citations.py` 가 집이 하나인지와
+#   문서가 그 값을 따르는지를 본다.
+# ★ 23 은 실측 24% 아래 한 칸이다. 화면의 `24%` 는 반올림이라 실제가 23.5
+#   일 수 있다 — 딱 붙이면 다음 실행이 오차로 빨개진다. 실측을 올릴 때
+#   이 값도 같이 올린다. **올린 뒤에는 안 내린다.**
+COV_MIN=23
+step "커버리지 래칫" bash -c '
+    if [ ! -f .coverage ]; then
+        echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."
+        echo "  커버리지는 테스트 실행의 부산물이라 단독으로 잴 수 없다."
+        exit 1
+    fi
+    MIN='"$COV_MIN"'
+    uv run coverage report --fail-under="$MIN" | tail -1
+    rc=${PIPESTATUS[0]}
+    [ "$rc" -eq 0 ] || exit "$rc"
+    PCT=$(uv run coverage report --format=total 2>/dev/null || echo "")
+    case "$PCT" in
+        ""|*[!0-9]*) exit 0 ;;          # 못 재면 아무 말도 안 한다
+    esac
+    if [ "$PCT" -gt "$MIN" ]; then
+        echo "★ 실측 ${PCT}% 가 래칫 ${MIN}% 보다 높다 — COV_MIN 을 ${PCT} 로 조여라. 안 조이면 되돌아간다."
+    fi'
+scope "web/* .github/* tools/*"
 step "내비 소스 목록"      uv run python tools/install_navi.py --check
+scope "web/* .github/* tools/*"
 step "배포에 내비 빌드"    uv run python tools/pages_add_navi.py --check
+scope "web/* tools/* .github/*"
 step "루트 잔재·유령 면제" uv run python tools/navi_setup.py --check
+scope "docs/*"
 step "문서 제목 무결"      uv run python tools/docpatch.py check \
      docs/MASTER.md docs/PLAN.md docs/DECISIONS.md
 
@@ -471,12 +686,16 @@ echo
 # ★ 2026-09-15. `--fast` 도 여기 걸린다. 종전에는 `--only` 만 봤는데
 #   `--fast` 는 `파이프라인 전량` 을 통째로 생략하면서도 전수처럼
 #   통과했다 — 건너뛴 것은 통과가 아니다. 같은 자리에 같은 규율이다.
-if [ -n "$ONLY" ] || [ "$FAST" = "1" ]; then
+if [ -n "$ONLY" ] || [ "$FAST" = "1" ] || [ -n "$SINCE" ]; then
     # ★ 이 단계 자신이 --only 에 걸려 건너뛰면 안전장치가 무력해진다.
     #   면제를 만들 때 자기 자신을 면제하는 것과 같은 형태다.
+    # ★ 2026-09-19 (W7-2). `--since` 도 여기 건다. 범위 기반 실행은 **빠른
+    #   되먹임 도구지 수용이 아니다.** 여기서 안 울면 `dms.py seal` 이
+    #   반쪽 실행을 전수로 착각하고 봉인한다 — `--fast` 때와 같은 자리다.
     _only_keep="$ONLY"; ONLY=""
-    step "부분 실행" bash -c 'echo "--only 또는 --fast 로 돌았다. 전수가 아니다."; exit 1'
-    ONLY="$_only_keep"
+    _sc_keep="$SCOPE"; SCOPE=""
+    step "부분 실행" bash -c 'echo "--only · --fast · --since 중 하나로 돌았다. 전수가 아니다."; exit 1'
+    ONLY="$_only_keep"; SCOPE="$_sc_keep"
 fi
 
 
