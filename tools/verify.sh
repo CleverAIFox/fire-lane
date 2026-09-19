@@ -630,19 +630,43 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 # ★ 2026-09-19 (W7-1). **테스트를 다시 돌리지 않는다.** 종전 이 줄은
 #   `pytest tests/ -q --cov ...` 로 4단계와 같은 732개를 통째로 재실행했다.
 #   지금은 4단계가 `--cov` 로 남긴 `.coverage` 를 읽기만 한다.
-# ★ 숫자를 올릴 때 이 줄의 `--fail-under` 를 같이 올린다. 안 올리면
-#   되돌아간다(`dupcheck --max` 와 같은 규율).
 # ★ **이 검사는 자기 전제를 스스로 선언한다**(§3-2 규약). 전제는 「4단계가
 #   돌아 `.coverage` 를 남겼다」이고, 그 전제가 안 서면 **조용히 통과하지
 #   않는다.** 커버리지는 실행의 부산물이라 단독으로는 못 잰다 —
 #   여기서 `note` 로 빠지면 `seal` 이 그것을 닫힘으로 읽는다(PLAN #70).
-step "커버리지 래칫 14%" bash -c '
+#
+# ★ 2026-09-19 실측 — **래칫이 14 인데 실물이 24% 였다.** 9/15 에 14 로 걸고
+#   나흘 동안 아무도 몰랐다. 왜 몰랐나 — `--fail-under` 는 **미달만** 보고
+#   초과를 **말하지 않는다.** `dupcheck --max` 는 미달일 때 「조여라」를
+#   찍는데 이쪽은 안 찍었다. 그래서 같은 어휘를 쓰면서 행동이 달랐다
+#   (PLAN §13 W4-9 가 예고한 그 족의 네 번째 인스턴스이고, 이것이 그 실측
+#   증거다). 아래에서 초과를 **소리내어 말하게** 했다.
+#
+# ★ 숫자는 `COV_MIN` **한 곳**에만 산다. 단계 이름에서도 뺐다 — 종전 이름이
+#   「커버리지 래칫 14%」라 숫자의 집이 하나 더 있었고, 이름은 검사 대상이
+#   아니라 조용히 낡는다. `tests/test_verify_citations.py` 가 집이 하나인지와
+#   문서가 그 값을 따르는지를 본다.
+# ★ 23 은 실측 24% 아래 한 칸이다. 화면의 `24%` 는 반올림이라 실제가 23.5
+#   일 수 있다 — 딱 붙이면 다음 실행이 오차로 빨개진다. 실측을 올릴 때
+#   이 값도 같이 올린다. **올린 뒤에는 안 내린다.**
+COV_MIN=23
+step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."
         echo "  커버리지는 테스트 실행의 부산물이라 단독으로 잴 수 없다."
         exit 1
     fi
-    uv run coverage report --fail-under=14'
+    MIN='"$COV_MIN"'
+    uv run coverage report --fail-under="$MIN" | tail -1
+    rc=${PIPESTATUS[0]}
+    [ "$rc" -eq 0 ] || exit "$rc"
+    PCT=$(uv run coverage report --format=total 2>/dev/null || echo "")
+    case "$PCT" in
+        ""|*[!0-9]*) exit 0 ;;          # 못 재면 아무 말도 안 한다
+    esac
+    if [ "$PCT" -gt "$MIN" ]; then
+        echo "★ 실측 ${PCT}% 가 래칫 ${MIN}% 보다 높다 — COV_MIN 을 ${PCT} 로 조여라. 안 조이면 되돌아간다."
+    fi'
 scope "web/* .github/* tools/*"
 step "내비 소스 목록"      uv run python tools/install_navi.py --check
 scope "web/* .github/* tools/*"

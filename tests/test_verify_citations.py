@@ -47,7 +47,10 @@ TOTAL_FORM = re.compile(r"(\d+)\s*단계\s*전부")
 
 # 래칫 숫자가 실행형으로 사는 곳
 EXEC_GLOBS = ("tools/*.sh", "tools/*.py", ".github/workflows/*.yml")
-FAIL_UNDER = re.compile(r"fail[-_]under[=\s]+(\d+)")
+# ★ 정본은 **선언 한 줄**이다. 값을 명령줄에 직접 적지 않는다.
+COV_HOME = re.compile(r"^COV_MIN=(\d+)\s*$", re.M)
+# ★ 명령줄에 박힌 **리터럴**. 하나라도 있으면 집이 둘이다.
+COV_LITERAL = re.compile(r"fail[-_]under[=\s]+(\d+)")
 
 
 def _strip_comments(text: str) -> str:
@@ -164,27 +167,55 @@ def test_coverage_ratchet_has_one_home() -> None:
 
     ★ `PLAN §13 W3-11` 의 커버리지 쪽이다. 실행형이 둘이면 한쪽만 고쳐
       「로컬 초록 · CI 빨강」이 난다 — 2026-09-18 에 실제로 났다.
+    ★ 2026-09-19 **범위를 넓혔다.** 종전 이 시험은 `--fail-under=<숫자>`
+      리터럴만 셌다. 그래서 **단계 이름**(「커버리지 래칫 14%」)과
+      `pyproject` 주석에 같은 숫자가 또 살아 있는 것을 못 봤다 —
+      이 시험 자신이 「범위가 이름보다 좁은」 그 족이었다(W3-8 · W4-8 ·
+      W3-16 · W4-9 와 같은 형태). 지금은 **선언 한 줄(`COV_MIN=`)만
+      허용하고 명령줄 리터럴을 금지한다.**
     """
     homes: list[tuple[str, int]] = []
+    literals: list[str] = []
     for pat in EXEC_GLOBS:
         for p in sorted(ROOT.glob(pat)):
-            for m in FAIL_UNDER.finditer(_strip_comments(p.read_text(encoding="utf-8"))):
-                homes.append((str(p.relative_to(ROOT)), int(m.group(1))))
+            body = _strip_comments(p.read_text(encoding="utf-8"))
+            rel = str(p.relative_to(ROOT))
+            for m in COV_HOME.finditer(body):
+                homes.append((rel, int(m.group(1))))
+            for m in COV_LITERAL.finditer(body):
+                literals.append(f"  {rel}  {m.group(0)}")
+
+    assert not literals, (
+        "커버리지 문턱을 명령줄에 **리터럴로** 적었다.\n"
+        + "\n".join(literals)
+        + "\n  정본은 `COV_MIN=<숫자>` 선언 한 줄이다. 명령줄은 그것을 읽는다.\n"
+        + "  리터럴을 허용하면 집이 둘이 되고, 한쪽만 올라간다(PLAN §13 W3-11).")
 
     assert len(homes) == 1, (
-        "커버리지 래칫의 실행형 집이 하나가 아니다.\n"
-        + "".join(f"  {where}  --fail-under={n}\n" for where, n in homes)
-        + "  숫자가 두 곳에 살면 한쪽만 올라가고, 그것이 곧\n"
-        + "  「로컬 초록 · CI 빨강」이다(PLAN §13 W3-11).")
+        "커버리지 래칫의 정본 선언(`COV_MIN=`)이 하나가 아니다.\n"
+        + "".join(f"  {where}  COV_MIN={n}\n" for where, n in homes)
+        + "  없으면 문턱이 사라진 것이고, 둘이면 한쪽만 올라간다.")
 
     where, n = homes[0]
+
+    # ★ 단계 이름에 숫자를 되돌려 박는 것도 막는다. 이름은 검사 대상이
+    #   아니라 **조용히 낡는다** — 실제로 9/15 에 14 로 박아두고 실물이
+    #   24% 가 되도록 나흘간 아무도 몰랐다.
+    named = re.findall(r'step "커버리지 래칫[^"]*?(\d+)[^"]*"',
+                       VERIFY.read_text(encoding="utf-8"))
+    assert not named, (
+        f"단계 이름에 래칫 숫자({named[0]})를 적었다.\n"
+        "  이름은 아무도 검사하지 않으므로 조용히 낡는다.\n"
+        f"  숫자는 {where} 의 `COV_MIN` 한 곳에만 둔다.")
     bad = []
     for doc in LIVE_DOCS:
         text = doc.read_text(encoding="utf-8")
-        for m in re.finditer(r"fail[-_]under[=\s]+(\d+)|커버리지 래칫\s*(\d+)\s*%", text):
+        for m in re.finditer(
+                r"COV_MIN\s*=\s*(\d+)|fail[-_]under[=\s]+(\d+)|커버리지 래칫\s*(\d+)\s*%",
+                text):
             if _exempt(text, m.start()):
                 continue                       # 날짜 붙은 실측 기록이라 선언했다
-            said = int(m.group(1) or m.group(2))
+            said = int(m.group(1) or m.group(2) or m.group(3))
             if said != n:
                 line = text[: m.start()].count("\n") + 1
                 bad.append(f"  {doc.relative_to(ROOT)}:{line}  "
