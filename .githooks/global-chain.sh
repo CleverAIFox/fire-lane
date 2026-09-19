@@ -40,6 +40,24 @@ hookdir() {
 
 MODE="${1:---check}"
 
+# ★ 2026-09-20 (W3-19). **인자 검증이 환경 검사보다 먼저다.**
+#   종전에는 아래 `case` 가 `--check|*)` 라 **모르는 인자를 조용히 삼켰다.**
+#   `verify.sh` 가 「`global-chain.sh --install`」이라는 **없는 모드**를
+#   안내하고 있었고, 따라 친 사람은 `--check` 가 돌아 초록을 보고 「됐다」고
+#   읽었다 — 조용한 통과(1족)다.
+# ★ 여기서 먼저 보는 이유 — 아래 `hookdir()` 은 전역 `core.hooksPath` 가
+#   없으면 exit 2 로 죽는다. 그 뒤에 인자를 보면 **훅이 없는 기계에서
+#   「모르는 인자」와 「훅 미설정」이 같은 코드로 겹쳐** 무엇을 잡았는지
+#   구분이 안 된다. 인자는 환경과 무관하게 틀린 것이다.
+case "$MODE" in
+  --check|--uninstall) ;;
+  *)
+      echo "✗ 모르는 인자: $MODE" >&2
+      echo >&2
+      sed -n '3,6p' "$0" >&2
+      exit 2 ;;
+esac
+
 if ! D=$(hookdir); then
     cat >&2 <<'MSG'
 ✗ 전역 core.hooksPath 가 설정돼 있지 않다 — 커밋 시점 방어가 어느 저장소에도 안 돈다.
@@ -77,7 +95,14 @@ case "$MODE" in
       echo "    확인:  bash .githooks/global-chain.sh --check"
       ;;
 
-  --check|*)
+  # ★ 2026-09-20 (W3-19). 종전에는 여기가 `--check|*)` 였다 — **catch-all 이라
+  #   모르는 인자를 조용히 삼켰다.** `verify.sh` 가 「미설정이면 한 명령으로
+  #   끝난다 — `global-chain.sh --install`」이라는 **없는 모드를 안내**하고
+  #   있었는데, 그것을 따라 친 사람은 `--check` 가 돌아 초록을 보고 「됐다」고
+  #   읽는다. 조용한 통과(1족)다.
+  # ★ 모르는 인자는 **쓰는 법을 찍고 실패한다.** 인자 없이 부르는 것만
+  #   `--check` 로 친다 — 그것은 머리말이 적은 의도된 기본값이다.
+  --check|"")
       if [ ! -x "$H" ]; then
           echo "✗ 전역 훅이 없거나 실행 불가: $H"
           exit 1
@@ -104,5 +129,12 @@ case "$MODE" in
       echo "    ② 전역 훅이 후보 경로를 안 뒤진다 — 전역 훅 자체를 고쳐야 한다"
       echo "       bash -x '$H' 2>&1 | tail -25   로 추적해라"
       exit 1
+      ;;
+
+  *)
+      echo "✗ 모르는 인자: $MODE" >&2
+      echo >&2
+      sed -n "3,6p" "$0" >&2
+      exit 2
       ;;
 esac

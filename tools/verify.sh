@@ -407,8 +407,11 @@ step "pre-commit 전수"  uv run pre-commit run --all-files
 #     `global-chain.sh --install`」이라고 적었다. **그 모드는 없다.**
 #     `global-chain.sh:41` 은 `--check` 와 `--uninstall` 둘뿐이고 `:80` 의
 #     `--check|*)` 가 catch-all 이라 `--install` 은 **오류 없이 --check 로
-#     떨어진다.** 안내가 거짓인데 아무것도 안 울었다 — 도구가 모르는 인자를
+#     떨어졌다.** 안내가 거짓인데 아무것도 안 울었다 — 도구가 모르는 인자를
 #     조용히 삼키면 틀린 안내가 영원히 산다.
+#     ★ 2026-09-20 (W3-19) 닫았다 — 이제 모르는 인자는 쓰는 법을 찍고
+#       **exit 2** 다. 인자 검증이 환경 검사보다 먼저라 훅이 없는 기계에서도
+#       「모르는 인자」와 「훅 미설정」이 안 겹친다.
 #     전역 훅은 저장소 밖 파일이라 이 저장소가 설치할 수 없다. 실제 절차는
 #     `global-chain.sh --check` 가 미설정일 때 직접 찍는다(`:44-51`).
 # ci-exempt: .githooks/global-chain.sh 전역 훅(~/.githooks)은 기계 설정이다. CI 러너에는 없다
