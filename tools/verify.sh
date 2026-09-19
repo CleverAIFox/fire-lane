@@ -44,7 +44,6 @@ pass=0; fail=0; skip=0
 #   **둘 다 세졌다.** 41 로 찍히고 실제로는 38 이 돌아 "[38/41] 통과 38"
 #   이 됐다 — 보는 사람은 셋이 빠졌다고 읽는다. 갈래는 하나만 돈다.
 #   이름으로 유일화한다.
-TOTAL=$(grep -oE '^[[:space:]]*step "[^"]*"' "$0" | sed 's/.*step //' | sort -u | wc -l)
 IDX=0; T_ALL=$(date +%s)
 ONLY=""; TABLE=0
 for arg in "$@"; do
@@ -53,6 +52,16 @@ for arg in "$@"; do
         --table)  TABLE=1 ;;
     esac
 done
+TOTAL=$(grep -oE '^[[:space:]]*step "[^"]*"' "$0" | sed 's/.*step //' | sort -u | wc -l)
+# ★ 2026-09-19. 같은 사고가 **다른 원인으로 재발했다.** 위 2026-09-15 항은
+#   이름 중복을 고쳤는데, 이번에는 `부분 실행` 이 분모에만 있고 실행에는
+#   없었다 — `--only` · `--fast` 에서만 도는 안전장치라 전수 실행에서는
+#   한 번도 안 돈다. 그래서 전수로 돌려도 끝까지 **[44/45]** 가 찍혔고,
+#   보는 사람은 하나가 빠졌다고 읽는다.
+# ★ 분모는 **이 실행에서 실제로 돌 수 있는 것**이어야 한다. 조건부 단계를
+#   손목록으로 빼지 않고, 그 단계를 켜는 조건과 같은 조건으로 뺀다 —
+#   조건이 한 곳에 있으므로 갈리지 않는다.
+if [ -z "$ONLY" ] && [ "$FAST" != "1" ]; then TOTAL=$((TOTAL - 1)); fi
 
 hms() {                       # 초 → "51초" · "2분41초"
     if [ "$1" -lt 60 ]; then printf '%d초' "$1"
@@ -180,7 +189,18 @@ step "진입점 · cwd 독립성" bash -c \
   'cd /tmp && uv run --project "'"$ROOT"'" fire-lane --check >/dev/null && echo "cwd 독립 확인"'
 
 # ── 3. 파이썬 테스트 ─────────────────────────────────────────
-step "pytest" uv run pytest tests/ -q
+# ★ 2026-09-19 (W7-1). `--cov` 를 **여기서** 켠다. 종전에는 이 단계가 맨몸으로
+#   돌고 36단계 뒤 「커버리지 래칫」이 **같은 732개를 다시** 돌았다 —
+#   실측 1분21초 + 1분46초 = 3분07초로 verify 8분05초의 **38%** 였다.
+#   커버리지는 테스트 실행의 **부산물**이지 별도의 실행이 아니다. 여기서
+#   한 번 재고 래칫 단계는 그 데이터를 **읽기만** 한다(1초 미만).
+# ★ 두 단계를 하나로 **합치지 않는다.** 합치면 「테스트가 깨졌다」와
+#   「커버리지가 문턱 아래다」가 같은 빨강 한 줄로 찍혀 사람이 오진한다.
+#   실행은 하나, 판정은 둘이다. 단계 수가 유지되므로 문서가 든 단계 번호도
+#   안 밀린다.
+# ★ `--cov-report=` 는 보고를 끄고 데이터만 남긴다. 화면에 표를 두 번
+#   찍지 않기 위해서다 — 표는 래칫 단계가 한 번 낸다.
+step "pytest" uv run pytest tests/ -q --cov=src --cov=tools --cov-report=
 
 # ── 4. (삭제) 계층 규칙 ──────────────────────────────────────
 # ★ 2026-09-03. `pytest tests/ -q` 가 이미 test_layering 을 돌린다.
@@ -247,7 +267,14 @@ step "pre-commit 전수"  uv run pre-commit run --all-files
 #   `.pre-commit-config.yaml` 이 있어도 전역 훅이 그것을 안 부르면
 #   **커밋 시점 방어가 0 이다** — 종전 `.githooks/pre-commit` 이 정확하게
 #   그 상태여서 구조적으로 못 도는 코드였다.
-#   미설정이면 한 명령으로 끝난다 — `bash .githooks/global-chain.sh --install`
+#   ★ 2026-09-19 정정. 종전 이 줄은 「미설정이면 한 명령으로 끝난다 —
+#     `global-chain.sh --install`」이라고 적었다. **그 모드는 없다.**
+#     `global-chain.sh:41` 은 `--check` 와 `--uninstall` 둘뿐이고 `:80` 의
+#     `--check|*)` 가 catch-all 이라 `--install` 은 **오류 없이 --check 로
+#     떨어진다.** 안내가 거짓인데 아무것도 안 울었다 — 도구가 모르는 인자를
+#     조용히 삼키면 틀린 안내가 영원히 산다.
+#     전역 훅은 저장소 밖 파일이라 이 저장소가 설치할 수 없다. 실제 절차는
+#     `global-chain.sh --check` 가 미설정일 때 직접 찍는다(`:44-51`).
 step "훅 전역 연결"    bash .githooks/global-chain.sh --check
 # ★ 2026-09-18 (W2). 3족의 클래스 가드. 로컬에만 있는 검사기를 센다.
 #   CI 도 같은 명령을 돈다 — 규칙을 두 곳에 적는 것이 아니라 같은 도구가
@@ -417,7 +444,11 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --selftest
 #   기준선이 없으면 전수가 곧 분모라고 스스로 말한다.
 step "강제자 소급 증분" uv run python tools/dms.py delta
 
-# ★ 문턱 40 에서 시작한다. 25 로 내리면 10군이다. 검사를 무르게 만드는
+# ★ 2026-09-19 정정 — 실측 **5군**이다(`--min 25` · 함수 13). 종전 이 줄은
+#   「25 로 내리면 10군」이라고 적었는데 그 값은 낡았다. `SEAL.json` 의
+#   `dup_groups: 5` 가 이미 옳은 값을 들고 있었다 — 같은 사실이 저장소에
+#   있는데 주석이 손으로 다시 적으며 틀렸다(DECISIONS §192 와 같은 형태).
+# ★ 문턱 40 에서 시작한다. 검사를 무르게 만드는
 #   것이 아니라 **지금 값에서 시작해 내리는 것**이 일이다(env_check 선례).
 step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
 
@@ -449,13 +480,23 @@ step "대장 별칭 이관 유지" uv run python tools/ledger_fields.py --check
 #   찾았다.** 죽은 참조 안전장치도 참조 치환도 둘 다 안 돌았다. 고치고
 #   나니 그 자리에서 죽은 참조 셋이 나왔다(DECISIONS §159).
 step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
-# ★ 2026-09-15 신설. 커버리지 래칫. 위 `pytest` 단계와 따로 도는 이유는
-#   커버리지를 켜면 75초가 127초가 되기 때문이다 — 매번 두 배를 내지
-#   않고 문턱만 여기서 본다.
-# ★ 숫자를 올릴 때 이 줄의 `--cov-fail-under` 를 같이 올린다. 안 올리면
+# ★ 2026-09-15 신설. 커버리지 래칫.
+# ★ 2026-09-19 (W7-1). **테스트를 다시 돌리지 않는다.** 종전 이 줄은
+#   `pytest tests/ -q --cov ...` 로 4단계와 같은 732개를 통째로 재실행했다.
+#   지금은 4단계가 `--cov` 로 남긴 `.coverage` 를 읽기만 한다.
+# ★ 숫자를 올릴 때 이 줄의 `--fail-under` 를 같이 올린다. 안 올리면
 #   되돌아간다(`dupcheck --max` 와 같은 규율).
-step "커버리지 래칫 14%" uv run pytest tests/ -q \
-    --cov=src --cov=tools --cov-report= --cov-fail-under=14
+# ★ **이 검사는 자기 전제를 스스로 선언한다**(§3-2 규약). 전제는 「4단계가
+#   돌아 `.coverage` 를 남겼다」이고, 그 전제가 안 서면 **조용히 통과하지
+#   않는다.** 커버리지는 실행의 부산물이라 단독으로는 못 잰다 —
+#   여기서 `note` 로 빠지면 `seal` 이 그것을 닫힘으로 읽는다(PLAN #70).
+step "커버리지 래칫 14%" bash -c '
+    if [ ! -f .coverage ]; then
+        echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."
+        echo "  커버리지는 테스트 실행의 부산물이라 단독으로 잴 수 없다."
+        exit 1
+    fi
+    uv run coverage report --fail-under=14'
 step "내비 소스 목록"      uv run python tools/install_navi.py --check
 step "배포에 내비 빌드"    uv run python tools/pages_add_navi.py --check
 step "루트 잔재·유령 면제" uv run python tools/navi_setup.py --check
