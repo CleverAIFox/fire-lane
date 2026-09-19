@@ -239,11 +239,14 @@ jobs:
       - name: ★ 관문 동등 — 로컬과 CI 가 같은 것을 보는가
         # ★ 3족의 클래스 가드다. 새 검사를 로컬에만 붙이면 여기서 걸린다.
         #   래칫이라 수는 줄기만 한다 — 줄었으면 숫자를 내리라고 요구한다.
-        # ★ 2026-09-18. 18 → 19. `refcheck.py` 를 CI 에서 뺐다(DECISIONS §191-4).
-        #   ★ **이 숫자가 두 곳에 산다** — 여기와 `tools/verify.sh`. 2026-09-18 에
-        #     verify.sh 만 고쳐서 로컬은 초록인데 CI 가 빨개졌다. 2족이고,
-        #     래칫을 올릴 때마다 반복된다. 정본 하나로 묶는 일은 PLAN §13 W3-11.
-        run: uv run python tools/gate_parity.py --max 19
+        # ★ 2026-09-20 (W3-11). **숫자를 여기 안 적는다.** 종전에는 `--max 19` 가
+        #   여기와 `tools/verify.sh` 둘에 손으로 적혀 있었고, 2026-09-18 에
+        #   verify.sh 만 고쳐서 **로컬 초록 · CI 빨강**이 났다. 이제 기본값이
+        #   `gate_parity.py` 의 `RATCHET` 이고 부르는 쪽은 인자를 안 적는다.
+        # ★ 2026-09-20 (W3-10). 면제 칸이 생겼다 — 레이크·기계 설정을 요구해
+        #   CI 에서 원리적으로 못 도는 검사는 `verify.sh` 의 `# ci-exempt:` 가
+        #   사유와 함께 선언한다. 래칫은 **미선언만** 센다. **미선언이 실패다.**
+        run: uv run python tools/gate_parity.py
 
       - name: 파이썬 린트 (공용 최소 룰셋)
         # pyproject 의 [tool.ruff.lint] 그대로. 엄격판은 strict job 이 돈다.
