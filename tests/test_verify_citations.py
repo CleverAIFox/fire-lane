@@ -281,3 +281,35 @@ def test_ci_exemptions_are_declared_with_reasons() -> None:
     assert "선언된 면제" in r.stdout, (
         "면제 선언을 0개 읽었다 — `# ci-exempt:` 파서가 죽었을 수 있다.\n"
         + r.stdout[-800:])
+
+
+def test_discrete_ratchets_fail_when_slack() -> None:
+    """이산 래칫이 **미달에서도 실패**하는가 (W4-9).
+
+    ★ 2026-09-19 에 커버리지 래칫이 14 인데 실물이 24% 인 것을 **나흘간
+      아무도 몰랐다.** 게이트는 그동안 계속 초록이었다 — 초록은 「문턱을
+      지켰다」는 뜻이지 「문턱이 아직 의미 있다」는 뜻이 아니다.
+      **느슨해진 래칫은 초록으로 위장한다.**
+    ★ 여기서 실제로 돌리는 것은 `dupcheck` **하나**다. 나머지 셋 중
+      `vintage_check` · `firelane.prep` 는 레이크를 요구해 이 자리에서도
+      CI 에서도 못 돈다(`verify.sh` 의 `# ci-exempt:` 가 그 사유를 든다),
+      `gate_parity` 는 처음부터 양방향이라 위 시험들이 이미 덮는다.
+      **범위가 좁고 그것을 여기 선언한다** — 좁은 것 자체보다 선언 안 된
+      것이 나쁘다(W3-8 · W4-8 과 같은 족).
+    """
+    dup = ROOT / "tools" / "dupcheck.py"
+    base = [sys.executable, str(dup), "--min", "40"]
+
+    tight = subprocess.run([*base, "--max", "1"], capture_output=True,
+                           text=True, cwd=ROOT, timeout=300)
+    assert tight.returncode == 0, (
+        "`dupcheck --min 40 --max 1` 이 빨갛다 — 사본군이 움직였다.\n"
+        + tight.stdout[-800:])
+
+    slack = subprocess.run([*base, "--max", "9"], capture_output=True,
+                           text=True, cwd=ROOT, timeout=300)
+    assert slack.returncode != 0, (
+        "이산 래칫이 **미달에서 통과했다.**\n"
+        f"  `dupcheck --max 9` 가 rc={slack.returncode} 로 끝났다.\n"
+        "  느슨한 상한은 되돌아갈 자리를 남기고, 그것이 초록으로 위장한다.\n"
+        "  미달이면 실패해야 한다(W4-9).\n" + slack.stdout[-500:])
