@@ -1784,10 +1784,14 @@ fix:  버그
 
 | 워크플로 | 시점 | 하는 일 |
 |---|---|---|
-| `contract` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
-| `지도 배포` (`pages.yml`) | `main` 의 `web/**` 변경 | 내비 빌드 후 `web/` **전체** 배포 |
-| `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` 변경 | 재생성 후 `web/` **전체** 배포 |
-| `기획서 배포` (`proposal.yml`) | `main` 의 `docs/proposal.docx` · `web/proposal.html` · `stage_pages.py` 변경 | `stage_pages` 후 `web/` **전체** 배포 |
+| `contract.yml` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
+| `secret-scan.yml` | **전 브랜치** push · PR | 자격증명이 올라가는 것을 막는다. 브랜치 목록이 없는 유일한 검사다 |
+| `image.yml` | `Dockerfile` · `pyproject.toml` · `uv.lock` · 자기 자신 변경 | ETL 이미지를 짓고 그 안에서 import 를 세운다. **CI 전용**(로컬에 docker 가 없다) |
+| `지도 배포` (`pages.yml`) | `main` 의 `web/**` — 단 `!web/navi/**` — 또는 `build-navi/action.yml` | ↓ |
+| `내비 배포` (`navi.yml`) | `main` 의 `web/navi/**` · `build-navi/action.yml` · 자기 자신 | ↓ |
+| `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` · `build-navi/action.yml` | ↓ |
+| `기획서 배포` (`proposal.yml`) | `main` 의 `docs/proposal.docx` · `web/proposal.html` · `stage_pages.py` · `build-navi/action.yml` | ↓ |
+| `_deploy.yml` | **자기 시점이 없다.** 위 넷이 `workflow_call` 로 부른다 | 넷의 공용 본문 — 내비 빌드 · 스탬프 주입 · `web/` **전체** 배포 |
 
 ★ **워크플로 이름은 촉발 조건이지 배포 대상이 아니다.** 둘 다 사이트
 전체를 올린다. Pages 는 저장소당 사이트가 하나라, 한쪽이 부분만 올리면
@@ -1809,14 +1813,40 @@ fix:  버그
 ★ 배포 게이트는 `main` 단독이다. `dev` 는 트렁크이고 `main` 은 배포
 스냅샷이다 — 이 비대칭이 `dev` 를 판 이유다. 사람이 검증을 건너뛰어도
 공개된 것은 안 바뀐다.
-강제자 — `tests/test_guards.py` 의 트리거 대조
+★ **배포 넷은 한 Pages 사이트를 공유한다.** `concurrency: group: pages` 하나에
+같이 들어가고 넷 다 `web/` **전체**를 올린다. 따름 셋 — **① 취소는 실패가
+아니다.** 같은 푸시로 넷이 큐에 들어가면 하나만 돌고 대기 중인 나머지는 취소된다
+(`Canceling since a higher priority waiting request for pages exists`). 살아남은
+하나가 전부를 배포하므로 손실이 없고, 색이 회색(⊘)이지 빨강(✗)이 아니다.
+**② `_deploy.yml` 의 `0 workflow runs` 도 고장이 아니다** — 재사용 워크플로는
+호출자의 run 안에서 돈다. `workflow_call` 전용 파일은 `.github/workflows/` 밖에
+못 두므로 숨길 수도 없어 이름에 그 사실을 적었다(§101-4 가 경계한 화면이다).
+**③ 넷 다 `workflow_dispatch` 를 든다** — 머지 전에 가지를 골라 태워볼 수 있다.
+2026-09-19 에 권한 오류를 두 번 연달아 **릴리즈로** 발견했는데 이것을 쓰면
+릴리즈 없이 봤다. **없던 것이 아니라 쓰지 않은 것이다.** 다만 dispatch 는 진짜로
+배포하므로 정적 검사가 먼저고 dispatch 는 보조다.
+
+★ **권한은 사슬의 모든 칸이 들어야 한다.** 배포 넷 → `_deploy.yml` →
+`contract.yml` 로 세 칸이고, 한 칸이라도 `pages: write` · `id-token: write` ·
+`pull-requests: write` 를 빠뜨리면 **파일 자체가 무효**가 된다. 재사용
+워크플로는 호출자보다 큰 권한을 못 가진다 — 위임 경로가 없어서 넷이 같은
+블록을 든다. **W1 이 없앤 중복과 달리 이것은 GitHub 이 강제한 중복이다.**
+
+강제자 — `tests/test_workflow_guards.py`
+  ① 이 표가 `.github/workflows/*.yml` 전수와 같은 집합인가
+  ② 호출자의 `permissions` 가 피호출자의 것을 덮는가
+★ **종전에 여기 적혀 있던 `tests/test_guards.py` 의 트리거 대조는 이름보다
+좁았다.** 그것은 `contract.yml` 과 `pages.yml` 의 **브랜치 목록만** 본다.
+그래서 워크플로가 넷 느는 동안(`navi` · `secret-scan` · `image` · `_deploy`)
+이 표가 낡아도 아무도 안 울었다. `W3-8`(golden `WATCH`) · `W4-8`(도구 지문)과
+같은 족이다 — **범위가 이름보다 좁고 그것이 선언돼 있지 않다.**
 
 CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소에 없기 때문이다.
 파이프라인은 매체를 가진 기계에서만 돈다(§14-7).
 
 ### 12-7a. 내비 빌드
 
-★ **`지도 배포` 가 내비를 빌드한다**(2026-09-06). `web/navi/dist` 는
+★ **배포가 내비를 빌드한다**(2026-09-06). ★ 2026-09-19 정정 — 종전엔 `지도 배포` 가 직접 빌드했으나 W1 이 본문을 `_deploy.yml` 로 옮겼다. 지금은 `_deploy.yml` 이 `build-navi` 를 부르고 배포 **넷**이 그것을 부른다(`verify.sh` 42단계가 그 호출 관계를 본다). `web/navi/dist` 는
 `.gitignore` 라 저장소에 없고 CI 가 만든다 — `web/data` 를 커밋하는 것과
 반대 원칙인데 이유가 다르다. `web/data` 는 재생성에 raw 2.5GB 가 필요하고
 `dist` 는 `npm ci` 하나면 된다.
@@ -1838,6 +1868,8 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소�
 ★ Mapbox 토큰은 `secrets.MAPBOX_TOKEN` 이다. **없어도 배포된다** —
   `config.ts` 의 `MATCHING_ENABLED` 가 false 로 떨어지고 음성 안내가 전부
   자체 문구로 나간다. 소유자가 바뀌면 Secret 하나만 갈아끼운다.
+
+강제자  `tools/verify.sh` 42단계 「배포에 내비 빌드」 — `_deploy.yml` 이 `build-navi` 를 부르고 배포 넷이 그것을 부르는가
 
 ### 12-8. 배포
 
