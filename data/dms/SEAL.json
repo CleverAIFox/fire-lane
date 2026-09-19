@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-19T03:51:23+09:00",
- "commit": "ca32f59",
+ "sealed_at": "2026-09-19T21:35:40+09:00",
+ "commit": "4933d12",
  "tool": "4e5793923f7cb248",
  "scope": "verify.sh 전 단계",
  "docs": {
-  "docs/MASTER.md": "a6bb4fcd8be37176",
-  "docs/DECISIONS.md": "05de33ccd6445eae",
-  "docs/PLAN.md": "6d7f9444899c3615",
+  "docs/MASTER.md": "06f619423d3468da",
+  "docs/DECISIONS.md": "4626cfb70de5f314",
+  "docs/PLAN.md": "edb4759c6fc456fd",
   "README.md": "54967af2997ec1c4"
  },
  "raw": {
@@ -242,7 +242,7 @@
   ]
  },
  "code": {
-  "sha256": "291d4d80f7180bfa",
+  "sha256": "ec2761abf401352b",
   "files": 67
  },
  "sections": {
@@ -715,14 +715,14 @@
    "title": "12-6. 커밋 메시지"
   },
   "MASTER-079": {
-   "h": "b77d2a273ba5d74f",
+   "h": "caf4153457145a8c",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-7. 자동으로 도는 것"
   },
   "MASTER-080": {
-   "h": "fc299f100a01e217",
-   "state": "blank",
+   "h": "8c26db1d43de3c84",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-7a. 내비 빌드"
   },
@@ -4321,10 +4321,52 @@
    "title": "196-3. 사이드바 이름을 영문으로 바꿨다"
   },
   "DECISIONS-530": {
-   "h": "a24b1c00acc6abee",
+   "h": "3dda335934292152",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "196-4. 사슬은 세 칸이었다 — 두 칸만 고치면 한 칸 아래에서 다시 난다"
+  },
+  "DECISIONS-531": {
+   "h": "60cb0f7956fa798d",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "197. 범위가 이름보다 좁은 강제자 — 세 번째 인스턴스, 그리고 클래스 가드 (판정 불변)"
+  },
+  "DECISIONS-532": {
+   "h": "3cf5ce3da903092c",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "197-1. 강제자가 있었다 — 그런데 이름보다 좁았다"
+  },
+  "DECISIONS-533": {
+   "h": "d3f1d328696e9b85",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "197-2. 등재만 하지 않고 가드를 짰다"
+  },
+  "DECISIONS-534": {
+   "h": "db1f8f95e9c8618b",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "197-3. `workflow_dispatch` 는 이미 있었다"
+  },
+  "DECISIONS-535": {
+   "h": "3b4fbed71ff8a660",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "198. 대장을 안 읽고 피하려 했다 — 같은 실수를 하루에 두 번 (판정 불변)"
+  },
+  "DECISIONS-536": {
+   "h": "71aaf3c188116924",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "198-1. 기계는 이미 있었고, 이 형태까지 예상돼 있었다"
+  },
+  "DECISIONS-537": {
+   "h": "340be4dc1579e96d",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "198-2. 같은 실수가 하루에 두 번이다"
   },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
@@ -4753,10 +4795,10 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN-072": {
-   "h": "1ea5ac4da04e9905",
+   "h": "af17648de23900fe",
    "state": "none",
    "doc": "docs/PLAN.md",
-   "title": "13-3. 남은 결함 29건"
+   "title": "13-3. 남은 결함 30건"
   },
   "PLAN-073": {
    "h": "6fca596268221f1d",
@@ -4885,14 +4927,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 274,
+ "denominator": 273,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "verify/의존성 동기화 (uv sync --frozen --dev)": {
    "rc": 0,
    "state": "OK",
-   "tail": "Checked 45 packages in 0.43ms"
+   "tail": "Checked 45 packages in 0.40ms"
   },
   "verify/패키지 import": {
    "rc": 0,
@@ -4907,7 +4949,7 @@
   "verify/pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 81.67s (0:01:21)"
+   "tail": "742 passed in 85.52s (0:01:25)"
   },
   "verify/ruff": {
    "rc": 0,
@@ -4922,7 +4964,7 @@
   "verify/커밋 정책": {
    "rc": 0,
    "state": "OK",
-   "tail": "커밋 정책 OK · 1809개 추적"
+   "tail": "커밋 정책 OK · 1810개 추적"
   },
   "verify/인코딩·개행": {
    "rc": 0,
@@ -5017,7 +5059,7 @@
   "verify/파이프라인 전량": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
+   "tail": "지도 확인:  uv run python tools/serve.py"
   },
   "verify/golden 판정 불변": {
    "rc": 0,
@@ -5057,7 +5099,7 @@
   "verify/강제자 소급 증분": {
    "rc": 0,
    "state": "OK",
-   "tail": "★ 이번에 사람이 볼 것 0절. 전수 773절이 아니다."
+   "tail": "★ 이번에 사람이 볼 것 0절. 전수 780절이 아니다."
   },
   "verify/사본군": {
    "rc": 0,
@@ -5087,7 +5129,7 @@
   "verify/커버리지 래칫 14%": {
    "rc": 0,
    "state": "OK",
-   "tail": "732 passed in 108.21s (0:01:48)"
+   "tail": "742 passed in 117.78s (0:01:57)"
   },
   "verify/내비 소스 목록": {
    "rc": 0,
@@ -5107,7 +5149,7 @@
   "verify/문서 제목 무결": {
    "rc": 0,
    "state": "OK",
-   "tail": "✓ docs/DECISIONS.md — 제목 531개, 중복 없음"
+   "tail": "✓ docs/DECISIONS.md — 제목 538개, 중복 없음"
   },
   "verify.sh(집계)": {
    "rc": 0,
