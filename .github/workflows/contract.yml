@@ -187,13 +187,15 @@ jobs:
         #   전부(린트·테스트·계약·문서)는 그대로 돈다. **사람이 쓴 본문**만
         #   묻지 않는다.
         # ★ 2026-09-18 정정. 처음엔 `user.login != 'dependabot[bot]'` 로 썼는데
-        #   **안 먹었다** — PR #79 가 `base=c024d33`(수정 포함)인데 그대로 돌았다.
-        #   이름 문자열로 봇을 가리는 것은 표기에 의존하고(`app/dependabot` ·
-        #   `dependabot[bot]` 둘이 돈다) `renovate` 가 오면 또 난다.
-        #   **종류로 본다.** GitHub 이 봇 계정에 `type: Bot` 을 준다.
-        if: >-
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.user.type != 'Bot'
+        #   **안 먹었다** — 표기가 `app/dependabot` · `dependabot[bot]` 둘로 돌고
+        #   `renovate` 가 오면 또 난다. **종류로 본다** — GitHub 이 봇 계정에
+        #   `type: Bot` 을 준다. 그 판단은 이제 `pr_body_check.py` 안에 있다.
+        # ★ 2026-09-20 (W3-12). **봇 조건을 여기서 뺐다.** 전제는 검사가 든다.
+        #   경계는 이것이다 — 워크플로는 **언제** 돌지를 정하고(`pull_request`
+        #   일 때만), 검사는 **자기 전제가 서는지**를 정한다(본문을 사람이
+        #   썼는가). 전제를 워크플로가 대신 들면 정본이 둘이고, 검사를 다른
+        #   자리에서 부를 때 전제가 안 따라온다.
+        if: github.event_name == 'pull_request'
         run: uv run python tools/pr_body_check.py
 
       - name: 커밋 정책
