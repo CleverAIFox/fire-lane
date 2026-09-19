@@ -71,7 +71,14 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          # ★ 2026-09-19 (W3-17). 판을 **여기 적지 않는다.** 정본은
+          #   `.python-version` 하나이고 `uv` 도 같은 파일을 읽는다.
+          #   종전에는 `"3.11"` 이 여기·`:314`·`_deploy.yml` 셋에 손으로
+          #   적혀 있었고, `Dockerfile` 은 W8-2 로 **3.14** 가 됐다.
+          #   **배포되는 런타임과 게이트가 도는 런타임이 달랐다** —
+          #   내비 노드 22 vs 20 과 같은 형태의 파이썬 판이다(§186-2).
+          #   `tests/test_ci_env.py` 가 판이 한 곳에서 오는지 강제한다.
+          python-version-file: .python-version
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -311,7 +318,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          # ★ 정본은 `.python-version` 하나다 (W3-17).
+          python-version-file: .python-version
       - uses: astral-sh/setup-uv@v3
         with:
           version: "0.12.13"

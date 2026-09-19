@@ -78,7 +78,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          # ★ 정본은 `.python-version` 하나다 (W3-17). 배포가 게이트와 다른
+          #   런타임에서 돌면 초록불이 배포를 보증하지 않는다.
+          python-version-file: .python-version
       - uses: astral-sh/setup-uv@v3
         with:
           version: "0.12.13"          # ★ 핀. 종전에는 셋 다 "그날의 최신" 이었다
