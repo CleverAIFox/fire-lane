@@ -394,6 +394,8 @@ tools/
   encoding_check.py       인코딩 · 개행
   env_check.py            환경변수 선언(.env.example) ↔ 실물 · 단일 독자
   web_manifest.py         web/data 계보 검사
+  freshcheck.py           ★ 커밋된 생성물이 **왜** 낡았는지를 자리로 말한다
+                          (시각 · 코드/설정/원본 봉인 · 파생 · 산출값)
   owned_paths.py          ★ CODEOWNERS 를 소유권·검사강도의 정본으로 읽는다
   pr_body_check.py        PR 본문이 템플릿을 실제로 채웠는가
   docx_check.py           기획서 ↔ 산출물 숫자·폐기 용어 대조
