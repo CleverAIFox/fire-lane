@@ -690,9 +690,14 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   「커버리지 래칫 14%」라 숫자의 집이 하나 더 있었고, 이름은 검사 대상이
 #   아니라 조용히 낡는다. `tests/test_verify_citations.py` 가 집이 하나인지와
 #   문서가 그 값을 따르는지를 본다.
-# ★ 23 은 실측 24% 아래 한 칸이다. 화면의 `24%` 는 반올림이라 실제가 23.5
-#   일 수 있다 — 딱 붙이면 다음 실행이 오차로 빨개진다. 실측을 올릴 때
-#   이 값도 같이 올린다. **올린 뒤에는 안 내린다.**
+# ★ 2026-09-20 정정. 종전 이 자리는 「23 은 실측 24% 아래 한 칸」이라 적었고
+#   아래 메시지는 「COV_MIN 을 24 로 조여라」라고 말했다. **메시지가 틀렸다** —
+#   `coverage report --format=total` 은 **반올림**이라 실측 23.75% 가 `24` 로
+#   보인다. 그 말을 듣고 24 로 조이면 `--fail-under=24` 가 23.75 를 떨어뜨려
+#   **다음 실행이 빨개진다.** 주석은 반올림을 알고 있었는데 메시지가 몰랐다 —
+#   아는 것이 강제되는 자리에 없으면 없는 것과 같다(MASTER §17).
+#   이제 `--precision=2` 로 받아 **내림**한 값만 권한다. 실측 23.75 → 권고 23.
+# ★ 올린 뒤에는 안 내린다.
 COV_MIN=23
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
@@ -704,12 +709,16 @@ step "커버리지 래칫" bash -c '
     uv run coverage report --fail-under="$MIN" | tail -1
     rc=${PIPESTATUS[0]}
     [ "$rc" -eq 0 ] || exit "$rc"
-    PCT=$(uv run coverage report --format=total 2>/dev/null || echo "")
-    case "$PCT" in
+    # ★ 반올림한 값으로 권하지 않는다. --precision=2 로 받아 **내림**한다.
+    PCT=$(uv run coverage report --format=total --precision=2 2>/dev/null || echo "")
+    FLOOR=${PCT%%.*}
+    case "$FLOOR" in
         ""|*[!0-9]*) exit 0 ;;          # 못 재면 아무 말도 안 한다
     esac
-    if [ "$PCT" -gt "$MIN" ]; then
-        echo "★ 실측 ${PCT}% 가 래칫 ${MIN}% 보다 높다 — COV_MIN 을 ${PCT} 로 조여라. 안 조이면 되돌아간다."
+    if [ "$FLOOR" -gt "$MIN" ]; then
+        echo "★ 실측 ${PCT}% · 래칫 ${MIN}% — COV_MIN 을 ${FLOOR} 로 조여라. 안 조이면 되돌아간다."
+    else
+        echo "실측 ${PCT}% · 래칫 ${MIN}% — 내림하면 같다. 조일 것이 없다."
     fi'
 scope "web/* .github/* tools/*"
 step "내비 소스 목록"      uv run python tools/install_navi.py --check
