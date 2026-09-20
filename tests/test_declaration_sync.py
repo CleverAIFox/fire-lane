@@ -383,3 +383,42 @@ def test_unwired_probe_is_alive():
     keys = _unwired(ledger, 'load("zz_probe_wired")')
     assert keys == ["zz_probe_bare", "zz_probe_none", "zz_probe_ok"]
     assert _undeclared(ledger, keys) == ["zz_probe_bare", "zz_probe_none"]
+
+
+def test_sources_plan_row_refs_resolve():
+    """`sources.yaml` 이 드는 PLAN 행 번호가 **실재하는가** (W3-9).
+
+    ── 왜 생겼나 ───────────────────────────────────────────────
+    `plan_renumber.py` 는 PLAN **안만** 당긴다. 그래서 §1 에서 행 하나를
+    지우면 `sources.yaml` 의 인용이 조용히 어긋난다. 2026-09-19 실측 —
+    `bldg_ledger_dm` 이 드는 `#62` 는 **없는 행**이었고(β 점유위험도는
+    `#60` 이다), 아무도 몰랐다.
+
+    ★ **더 나쁜 것은 그 다음이다.** 그 상태에서 §1 에 62번 행을 새로 달면
+      죽은 인용 셋이 **조용히 새 행을 가리킨다.** 틀린 참조가 맞는 참조인
+      척하는 것 — 없는 참조보다 나쁘다.
+
+    ★ 형식을 강제하지 않는다. 지금 `sources.yaml` 은 `PLAN #26` 과 맨
+      `#2` 를 섞어 쓰고 둘 다 정상이다(13곳이 맨 형태다). **표기를 바꾸라고
+      요구하면 이 검사를 넣는 값보다 고치는 값이 커진다.** 해석되는지만 본다.
+    """
+    src = (ROOT / "sources.yaml").read_text(encoding="utf-8")
+    plan = (ROOT / "docs" / "PLAN.md").read_text(encoding="utf-8")
+    rows = {int(m.group(1)) for m in re.finditer(r"^\| (\d+) \|", plan, re.M)}
+    assert rows, "PLAN §1 에서 번호 행을 0개 찾았다 — 이 검사가 빈 그물이 됐다"
+
+    bad = []
+    for m in re.finditer(r"(?<![\w-])#(\d+)\b", src):
+        n = int(m.group(1))
+        if n in rows:
+            continue
+        line = src[: m.start()].count("\n") + 1
+        text = src.splitlines()[line - 1].strip()
+        bad.append(f"  sources.yaml:{line}  #{n} — PLAN §1 에 없다\n      {text[:76]}")
+
+    assert not bad, (
+        "대장이 **없는 PLAN 행**을 인용한다.\n" + "\n".join(bad)
+        + f"\n  PLAN §1 은 지금 1..{max(rows)} 다.\n"
+        + "  `plan_renumber.py` 는 PLAN 안만 당기므로 행을 지우면 여기가 어긋난다.\n"
+        + "  고칠 때 **그 번호가 무엇을 가리켰는지**부터 찾아라 — 새 행이\n"
+        + "  그 자리에 오면 틀린 참조가 맞는 참조인 척한다(W3-9).")

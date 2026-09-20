@@ -407,20 +407,26 @@ step "pre-commit 전수"  uv run pre-commit run --all-files
 #     `global-chain.sh --install`」이라고 적었다. **그 모드는 없다.**
 #     `global-chain.sh:41` 은 `--check` 와 `--uninstall` 둘뿐이고 `:80` 의
 #     `--check|*)` 가 catch-all 이라 `--install` 은 **오류 없이 --check 로
-#     떨어진다.** 안내가 거짓인데 아무것도 안 울었다 — 도구가 모르는 인자를
+#     떨어졌다.** 안내가 거짓인데 아무것도 안 울었다 — 도구가 모르는 인자를
 #     조용히 삼키면 틀린 안내가 영원히 산다.
+#     ★ 2026-09-20 (W3-19) 닫았다 — 이제 모르는 인자는 쓰는 법을 찍고
+#       **exit 2** 다. 인자 검증이 환경 검사보다 먼저라 훅이 없는 기계에서도
+#       「모르는 인자」와 「훅 미설정」이 안 겹친다.
 #     전역 훅은 저장소 밖 파일이라 이 저장소가 설치할 수 없다. 실제 절차는
 #     `global-chain.sh --check` 가 미설정일 때 직접 찍는다(`:44-51`).
+# ci-exempt: .githooks/global-chain.sh 전역 훅(~/.githooks)은 기계 설정이다. CI 러너에는 없다
 step "훅 전역 연결"    bash .githooks/global-chain.sh --check
 # ★ 2026-09-18 (W2). 3족의 클래스 가드. 로컬에만 있는 검사기를 센다.
 #   CI 도 같은 명령을 돈다 — 규칙을 두 곳에 적는 것이 아니라 같은 도구가
 #   같은 나무를 읽으므로 정본은 코드 하나다.
-# ★ 2026-09-18. 18 → 19 로 **올렸다.** `refcheck.py` 를 CI 에서 뺐기 때문이다 —
-#   레이크를 요구하는 검사라 CI 에서 못 돈다(DECISIONS §191-4). 래칫을 올릴 때는
-#   사유를 적는다는 것이 이 도구의 규약이고, 이것이 그 사유다.
-# ★ 래칫이 「로컬 전용 수」만 세는 것이 이 사고의 원인이다 — 옮길 수 없는 검사까지
-#   옮기라고 압박한다. 면제 칸은 PLAN §13 W3-10 이 받는다.
-step "관문 동등 (래칫 19)"  uv run python tools/gate_parity.py --max 19
+# ★ 2026-09-20 (W3-10 · W3-11). **면제 칸이 생겼고 숫자가 한 곳으로 갔다.**
+#   종전에는 ① 래칫이 「로컬 전용 수」만 세서 레이크를 요구해 CI 에서 원리적으로
+#   못 도는 검사까지 옮기라고 압박했고(2026-09-18 에 `refcheck` 를 넣었다 되돌렸다),
+#   ② `--max 19` 가 여기와 `contract.yml` 둘에 손으로 적혀 있어 한쪽만 고쳐
+#   **로컬 초록 · CI 빨강**이 났다.
+#   이제 면제는 위 `# ci-exempt:` 선언 여덟이 들고, 숫자는 `gate_parity.py` 의
+#   `RATCHET` 한 곳에만 산다. **부르는 쪽은 인자를 안 적는다.**
+step "관문 동등"  uv run python tools/gate_parity.py
 step "환경변수 선언↔실물" uv run python tools/env_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
@@ -440,12 +446,14 @@ step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
 #   FAIL 9 로 종료코드 1 을 내고 있었는데 verify · 테스트 · CI 어디에도 없어서 초록이었다.
 step "대장 필드 검사"   uv run python -m firelane.ledger
 # ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
+# ci-exempt: tools/refcheck.py 대장 file/files 를 raw 실물과 대조한다. CI 에 레이크가 없다(DECISIONS §191-4)
 step "선언 ↔ 실물"     uv run python tools/refcheck.py
 # ★ 전수 스캔. `--repo` 는 데이터 레이크 없이 저장소 트리만 본다 —
 #   항목에서 출발하는 검사는 **항목이 없는 것을 영원히 못 본다.**
 step "트리 전수 대조"   uv run python tools/treecheck.py --repo
 scope "web/* data/*"
 step "web/data 계보"    uv run python tools/web_manifest.py --check
+# ci-exempt: tools/tidy.py 로컬 작업 트리의 찌꺼기를 센다. CI 는 매번 새 트리라 물음이 성립하지 않는다
 step "로컬 찌꺼기"      uv run python tools/tidy.py
 scope "web/data/* tools/*"
 step "web/data 용량"    bash -c '
@@ -569,14 +577,17 @@ fi
 # ★ 선언과 실물이 갈리는 것을 fsck 가 다 보지 못했다 — 제공기관 state ·
 #   격리 잔재 · landing 우회 · ext 어휘 · norm 계보 다섯 축이 밖에 있었다.
 #   lakecheck 이 그 축을 든다. FIRE_LANE_INBOX 를 기본 스캔 대상으로 쓴다.
+# ci-exempt: tools/lakecheck.py 레이크(2.5GB 외장)를 직접 훑는다. CI 에 없다
 step "레이크 선언↔실물" uv run python tools/lakecheck.py
 
 # ★ 스캔만 한다. 지우려면 --sweep --yes 를 사람이 친다.
 #   "정리는 사람이 한다" 를 도구가 대신하되 삭제는 명시적으로.
+# ci-exempt: tools/sweep.py 레이크와 INBOX 를 훑는다. 둘 다 CI 에 없다
 step "레이크 정리 대상" uv run python tools/sweep.py
 
 # ★ 2026-09-17 (DECISIONS §176). 레이크 해석기의 관문 — 두주인 · 주인없음 · 선언밖 · 폐지층 0.
 #   봉인 조건이다. lakecheck 가 축별로 보고, 이것은 파일마다 주인이 하나인지를 본다.
+# ci-exempt: firelane.lake 레이크 해석기의 관문이다. 레이크가 없으면 물음이 성립하지 않는다
 step "레이크 관문" uv run python -m firelane.lake gate
 
 # ★ 검사가 죽었는지를 검사한다. 프로브 다섯이 정적으로 센다 —
@@ -603,6 +614,7 @@ step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
 #   `its_nodelink` 258MB 두 벌이었다.
 # ★ 대장 글롭으로 보면 안 보인다. `files:` 가 한 벌을 못박아놔서 두 번째
 #   벌은 대장 밖이다. 이 도구는 **레이크를 직접 훑는다.**
+# ci-exempt: tools/vintage_check.py 레이크를 직접 훑어 파일명 날짜를 본다. 대장 글롭으로는 안 보인다
 step "vintage 정합" uv run python tools/vintage_check.py --max 0
 
 # ★ norm 이 지금의 raw 에서 나온 것인가. **재현성 게이트다.**
@@ -610,6 +622,7 @@ step "vintage 정합" uv run python tools/vintage_check.py --max 0
 #   곳이 없었다. `--check` 를 고쳐 미등록까지 세게 만들어놓고 배선을
 #   안 했다. **세는 것과 거는 것은 다른 일이다.**
 # ★ 상한 래칫이다. 0 을 요구하면 영영 빨갛고, 빨간 게이트는 안 읽힌다.
+# ci-exempt: firelane.prep RAW 와 NORM 을 대조하는 재현성 게이트다. 둘 다 CI 에 없다
 step "norm 계보 재현" uv run python -m firelane.prep --check --max 0
 
 
@@ -635,6 +648,17 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   않는다.** 커버리지는 실행의 부산물이라 단독으로는 못 잰다 —
 #   여기서 `note` 로 빠지면 `seal` 이 그것을 닫힘으로 읽는다(PLAN #70).
 #
+# ★ 2026-09-20 (W4-9). **래칫에는 두 종류가 있고 행동이 달라야 한다.**
+#
+#     이산  gate_parity(검사기 수) · dupcheck(사본군) · vintage(건수)
+#           · firelane.prep(낡음+손상).  세는 것이 **선언된 개수**라
+#           같음이 의미를 갖는다 → **양방향 실패.** 미달이면 조여라.
+#     연속  커버리지(%).  실측이 어느 테스트가 도는가에 따라 움직이는
+#           **부동소수**라 같음을 요구하면 오차로 빨개진다 → 미달은
+#           실패, 초과는 **소리내어 경고**.
+#
+#   셋을 억지로 같게 만들지 않는다 — 다른 것을 같게 만들면 그 검사가
+#   무뎌진다. 대신 **어느 쪽인지 선언한다.** 이 단계는 연속 쪽이다.
 # ★ 2026-09-19 실측 — **래칫이 14 인데 실물이 24% 였다.** 9/15 에 14 로 걸고
 #   나흘 동안 아무도 몰랐다. 왜 몰랐나 — `--fail-under` 는 **미달만** 보고
 #   초과를 **말하지 않는다.** `dupcheck --max` 는 미달일 때 「조여라」를

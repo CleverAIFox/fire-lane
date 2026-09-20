@@ -127,7 +127,31 @@ def main() -> int:
             print("PR 컨텍스트가 아니다 — 건너뛴다")
             return 0
         with open(ev, encoding="utf-8") as f:
-            body = (json.load(f).get("pull_request") or {}).get("body") or ""
+            pr = json.load(f).get("pull_request") or {}
+
+        # ★ 2026-09-20 (W3-12). **이 검사는 자기 전제를 스스로 든다.**
+        #   전제는 「본문을 사람이 썼다」이다 — 봇은 PR 템플릿을 못 채운다.
+        #   「리뷰어가 볼 곳」도 체크박스도 봇이 쓸 수 있는 것이 아니다.
+        #   2026-09-18 에 그 전제가 선언돼 있지 않아 W1 이 들인 dependabot 의
+        #   PR 열 건(#79~#88)이 **전부 영구 빨강**이 됐다.
+        # ★ 즉시 조치는 `contract.yml` 의 `if:` 였다. 그것은 **워크플로가 검사의
+        #   전제를 대신 든 것**이라 정본이 둘이다 — 검사를 다른 자리에서 부르면
+        #   전제가 안 따라온다. 전제는 검사와 함께 다녀야 한다
+        #   (`doc_fsck ⑥` 이 얕은 저장소에서 스스로 건너뛰는 것과 같은 답).
+        # ★ **이름이 아니라 종류로 본다.** 2026-09-18 에 `user.login !=
+        #   'dependabot[bot]'` 로 썼다가 안 먹었다 — 표기가 `app/dependabot` ·
+        #   `dependabot[bot]` 둘로 돌고 `renovate` 가 오면 또 난다.
+        #   GitHub 이 봇 계정에 주는 `user.type == "Bot"` 이 표기를 안 탄다.
+        # ★ **조용히 건너뛰지 않는다.** 건너뛴 이유를 출력으로 말한다 —
+        #   로그에 안 남으면 「검사가 돌았다」와 구분이 안 된다.
+        user = pr.get("user") or {}
+        if user.get("type") == "Bot":
+            print(f"작성자가 봇이다 ({user.get('login', '?')}) — 건너뛴다.")
+            print("  이 검사의 전제는 「본문을 사람이 썼다」이고 봇은 템플릿을 못 채운다.")
+            print("  같은 job 의 나머지(린트·테스트·계약·문서)는 그대로 돈다.")
+            return 0
+
+        body = pr.get("body") or ""
 
     bad = check(body)
     if not bad:
