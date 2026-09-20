@@ -187,13 +187,15 @@ jobs:
         #   전부(린트·테스트·계약·문서)는 그대로 돈다. **사람이 쓴 본문**만
         #   묻지 않는다.
         # ★ 2026-09-18 정정. 처음엔 `user.login != 'dependabot[bot]'` 로 썼는데
-        #   **안 먹었다** — PR #79 가 `base=c024d33`(수정 포함)인데 그대로 돌았다.
-        #   이름 문자열로 봇을 가리는 것은 표기에 의존하고(`app/dependabot` ·
-        #   `dependabot[bot]` 둘이 돈다) `renovate` 가 오면 또 난다.
-        #   **종류로 본다.** GitHub 이 봇 계정에 `type: Bot` 을 준다.
-        if: >-
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.user.type != 'Bot'
+        #   **안 먹었다** — 표기가 `app/dependabot` · `dependabot[bot]` 둘로 돌고
+        #   `renovate` 가 오면 또 난다. **종류로 본다** — GitHub 이 봇 계정에
+        #   `type: Bot` 을 준다. 그 판단은 이제 `pr_body_check.py` 안에 있다.
+        # ★ 2026-09-20 (W3-12). **봇 조건을 여기서 뺐다.** 전제는 검사가 든다.
+        #   경계는 이것이다 — 워크플로는 **언제** 돌지를 정하고(`pull_request`
+        #   일 때만), 검사는 **자기 전제가 서는지**를 정한다(본문을 사람이
+        #   썼는가). 전제를 워크플로가 대신 들면 정본이 둘이고, 검사를 다른
+        #   자리에서 부를 때 전제가 안 따라온다.
+        if: github.event_name == 'pull_request'
         run: uv run python tools/pr_body_check.py
 
       - name: 커밋 정책
@@ -239,11 +241,14 @@ jobs:
       - name: ★ 관문 동등 — 로컬과 CI 가 같은 것을 보는가
         # ★ 3족의 클래스 가드다. 새 검사를 로컬에만 붙이면 여기서 걸린다.
         #   래칫이라 수는 줄기만 한다 — 줄었으면 숫자를 내리라고 요구한다.
-        # ★ 2026-09-18. 18 → 19. `refcheck.py` 를 CI 에서 뺐다(DECISIONS §191-4).
-        #   ★ **이 숫자가 두 곳에 산다** — 여기와 `tools/verify.sh`. 2026-09-18 에
-        #     verify.sh 만 고쳐서 로컬은 초록인데 CI 가 빨개졌다. 2족이고,
-        #     래칫을 올릴 때마다 반복된다. 정본 하나로 묶는 일은 PLAN §13 W3-11.
-        run: uv run python tools/gate_parity.py --max 19
+        # ★ 2026-09-20 (W3-11). **숫자를 여기 안 적는다.** 종전에는 `--max 19` 가
+        #   여기와 `tools/verify.sh` 둘에 손으로 적혀 있었고, 2026-09-18 에
+        #   verify.sh 만 고쳐서 **로컬 초록 · CI 빨강**이 났다. 이제 기본값이
+        #   `gate_parity.py` 의 `RATCHET` 이고 부르는 쪽은 인자를 안 적는다.
+        # ★ 2026-09-20 (W3-10). 면제 칸이 생겼다 — 레이크·기계 설정을 요구해
+        #   CI 에서 원리적으로 못 도는 검사는 `verify.sh` 의 `# ci-exempt:` 가
+        #   사유와 함께 선언한다. 래칫은 **미선언만** 센다. **미선언이 실패다.**
+        run: uv run python tools/gate_parity.py
 
       - name: 파이썬 린트 (공용 최소 룰셋)
         # pyproject 의 [tool.ruff.lint] 그대로. 엄격판은 strict job 이 돈다.

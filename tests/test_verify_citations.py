@@ -30,6 +30,8 @@
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -225,3 +227,89 @@ def test_coverage_ratchet_has_one_home() -> None:
         "문서가 적은 커버리지 래칫이 실행형과 다르다.\n"
         + "\n".join(bad)
         + f"\n  정본은 {where} 하나다. 올릴 때 문서도 같이 움직인다.")
+
+
+def test_gate_parity_ratchet_has_one_home() -> None:
+    """`gate_parity` 래칫이 **한 곳**에 사는가 (W3-11).
+
+    ★ 2026-09-18 에 `refcheck` 를 CI 에서 빼며 래칫을 19 로 올렸는데
+      `verify.sh` 만 고쳤다. `contract.yml` 은 18 인 채였고 **로컬 초록 ·
+      CI 빨강**이 났다. 숫자가 두 곳에 살면 한쪽만 올라간다.
+    ★ 지금 집은 `gate_parity.py` 의 `RATCHET` 하나이고 부르는 쪽은 인자를
+      안 적는다. 커버리지 래칫(`COV_MIN`)과 같은 구조다.
+    """
+    gp = ROOT / "tools" / "gate_parity.py"
+    homes = re.findall(r"^RATCHET\s*=\s*(\d+)\s*$", gp.read_text(encoding="utf-8"), re.M)
+    assert len(homes) == 1, (
+        f"`gate_parity.py` 의 `RATCHET` 선언이 {len(homes)}개다.\n"
+        "  없으면 문턱이 사라진 것이고, 둘이면 한쪽만 올라간다.")
+
+    # ★ 부르는 쪽이 숫자를 적으면 그 순간 집이 둘이 된다.
+    bad = []
+    for pat in ("tools/*.sh", ".github/workflows/*.yml"):
+        for p in sorted(ROOT.glob(pat)):
+            body = _strip_comments(p.read_text(encoding="utf-8"))
+            for m in re.finditer(r"gate_parity\.py[^\n|&;]*?--max\s+(\d+)", body):
+                bad.append(f"  {p.relative_to(ROOT)}  {m.group(0).strip()}")
+    assert not bad, (
+        "`gate_parity` 래칫을 부르는 쪽에 숫자로 적었다.\n" + "\n".join(bad)
+        + f"\n  정본은 `tools/gate_parity.py` 의 `RATCHET`({homes[0]}) 하나다.\n"
+        + "  인자 없이 부르면 그 값을 쓴다. 적으면 한쪽만 올라간다(W3-11).")
+
+    # ★ 단계 이름에 숫자를 되돌려 박는 것도 막는다 — 이름은 아무도 검사하지
+    #   않으므로 조용히 낡는다(커버리지 래칫이 그렇게 나흘간 낡았다).
+    named = re.findall(r'step "관문 동등[^"]*?(\d+)[^"]*"',
+                       VERIFY.read_text(encoding="utf-8"))
+    assert not named, (
+        f"「관문 동등」 단계 이름에 래칫 숫자({named[0]})를 적었다.\n"
+        "  이름은 검사 대상이 아니라 조용히 낡는다.")
+
+
+def test_ci_exemptions_are_declared_with_reasons() -> None:
+    """면제가 **사유와 함께** 선언돼 있는가 (W3-10).
+
+    ★ 판정을 여기서 다시 구현하지 않는다 — `gate_parity.py` 가 정본이고
+      이 시험은 그것을 부를 뿐이다. 파싱 규칙을 두 곳에 적으면 2족이 된다.
+    ★ `gate_parity` 는 죽은 면제(없는 검사기 · CI 가 이미 도는 것 · 사유가
+      너무 짧은 것)에서 rc=1 을 낸다. 여기서는 그 rc 와 출력만 본다.
+    """
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "gate_parity.py")],
+                       capture_output=True, text=True, cwd=ROOT, timeout=120)
+    assert r.returncode == 0, (
+        "`gate_parity` 가 빨갛다 — 미선언 차집합이 래칫과 다르거나 죽은 면제가 있다.\n"
+        + r.stdout[-1800:])
+    assert "선언된 면제" in r.stdout, (
+        "면제 선언을 0개 읽었다 — `# ci-exempt:` 파서가 죽었을 수 있다.\n"
+        + r.stdout[-800:])
+
+
+def test_discrete_ratchets_fail_when_slack() -> None:
+    """이산 래칫이 **미달에서도 실패**하는가 (W4-9).
+
+    ★ 2026-09-19 에 커버리지 래칫이 14 인데 실물이 24% 인 것을 **나흘간
+      아무도 몰랐다.** 게이트는 그동안 계속 초록이었다 — 초록은 「문턱을
+      지켰다」는 뜻이지 「문턱이 아직 의미 있다」는 뜻이 아니다.
+      **느슨해진 래칫은 초록으로 위장한다.**
+    ★ 여기서 실제로 돌리는 것은 `dupcheck` **하나**다. 나머지 셋 중
+      `vintage_check` · `firelane.prep` 는 레이크를 요구해 이 자리에서도
+      CI 에서도 못 돈다(`verify.sh` 의 `# ci-exempt:` 가 그 사유를 든다),
+      `gate_parity` 는 처음부터 양방향이라 위 시험들이 이미 덮는다.
+      **범위가 좁고 그것을 여기 선언한다** — 좁은 것 자체보다 선언 안 된
+      것이 나쁘다(W3-8 · W4-8 과 같은 족).
+    """
+    dup = ROOT / "tools" / "dupcheck.py"
+    base = [sys.executable, str(dup), "--min", "40"]
+
+    tight = subprocess.run([*base, "--max", "1"], capture_output=True,
+                           text=True, cwd=ROOT, timeout=300)
+    assert tight.returncode == 0, (
+        "`dupcheck --min 40 --max 1` 이 빨갛다 — 사본군이 움직였다.\n"
+        + tight.stdout[-800:])
+
+    slack = subprocess.run([*base, "--max", "9"], capture_output=True,
+                           text=True, cwd=ROOT, timeout=300)
+    assert slack.returncode != 0, (
+        "이산 래칫이 **미달에서 통과했다.**\n"
+        f"  `dupcheck --max 9` 가 rc={slack.returncode} 로 끝났다.\n"
+        "  느슨한 상한은 되돌아갈 자리를 남기고, 그것이 초록으로 위장한다.\n"
+        "  미달이면 실패해야 한다(W4-9).\n" + slack.stdout[-500:])

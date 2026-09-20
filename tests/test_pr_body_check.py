@@ -125,3 +125,57 @@ def test_no_path_fails():
 
 def test_empty_body_fails():
     assert P.check("")
+
+
+def test_check_carries_its_own_premise():
+    """검사가 **자기 전제를 스스로 드는가** (W3-12).
+
+    ── 왜 생겼나 ───────────────────────────────────────────────
+    2026-09-18. 이 검사의 전제는 「본문을 사람이 썼다」인데 그것이 **선언돼
+    있지 않았다.** W1 이 dependabot 을 들이자 봇 PR 열 건(#79~#88)이 **전부
+    영구 빨강**이 됐다 — 봇은 PR 템플릿을 못 채운다.
+
+    즉시 조치는 `contract.yml` 의 `if:` 였다. 그것은 **워크플로가 검사의
+    전제를 대신 든 것**이라 정본이 둘이다 — 이 검사를 다른 자리에서 부르면
+    전제가 안 따라온다.
+
+    ★ 경계는 이것이다 — 워크플로는 **언제** 돌지를 정하고, 검사는 **자기
+      전제가 서는지**를 정한다. `doc_fsck ⑥` 이 얕은 저장소에서 스스로
+      건너뛰는 것과 같은 답이다(§3-2 규약).
+    ★ **이름이 아니라 종류로 본다.** `dependabot[bot]` · `app/dependabot`
+      두 표기가 돌고 `renovate` 도 온다. `user.type == "Bot"` 은 표기를 안 탄다.
+    ★ **조용히 건너뛰지 않는다.** 건너뛴 이유를 출력으로 말해야 로그에서
+      「검사가 돌았다」와 구분된다.
+    """
+    import json
+    import os
+    import subprocess
+    import sys
+    import tempfile
+
+    def run(pr: dict) -> tuple[int, str]:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False,
+                                         encoding="utf-8") as f:
+            json.dump({"pull_request": pr}, f)
+            path = f.name
+        try:
+            r = subprocess.run(
+                [sys.executable, str(ROOT / "tools" / "pr_body_check.py")],
+                capture_output=True, text=True, cwd=ROOT, timeout=60,
+                env={**os.environ, "GITHUB_EVENT_PATH": path,
+                     "PYTHONPATH": f"{ROOT / 'src'}{os.pathsep}{ROOT / 'tools'}"})
+        finally:
+            Path(path).unlink()
+        return r.returncode, r.stdout + r.stderr
+
+    for login in ("dependabot[bot]", "renovate[bot]", "app/dependabot"):
+        rc, out = run({"user": {"type": "Bot", "login": login}, "body": ""})
+        assert rc == 0, (
+            f"봇({login})의 빈 본문에서 빨갛다 — 전제가 안 선 곳에서 검사가 돈다.\n{out}")
+        assert "봇" in out, (
+            f"봇({login})을 건너뛰면서 **이유를 안 말한다.**\n"
+            "  조용한 건너뜀은 로그에서 「검사가 돌았다」와 구분이 안 된다.\n" + out)
+
+    rc, out = run({"user": {"type": "User", "login": "fox"}, "body": ""})
+    assert rc != 0, (
+        "**사람**의 빈 본문이 통과했다 — 전제를 넓게 잡아 검사를 껐다.\n" + out)
