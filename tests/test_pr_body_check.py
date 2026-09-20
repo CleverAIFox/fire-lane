@@ -165,7 +165,7 @@ def test_check_carries_its_own_premise():
                 env={**os.environ, "GITHUB_EVENT_PATH": path,
                      "PYTHONPATH": f"{ROOT / 'src'}{os.pathsep}{ROOT / 'tools'}"})
         finally:
-            os.unlink(path)
+            Path(path).unlink()
         return r.returncode, r.stdout + r.stderr
 
     for login in ("dependabot[bot]", "renovate[bot]", "app/dependabot"):
