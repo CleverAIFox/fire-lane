@@ -96,6 +96,16 @@ SCOPE=""
 # scope "패턴 ..." — **바로 다음 `step` 하나**에만 걸린다.
 scope() { SCOPE="$*"; }
 
+# ★ 2026-09-20 (W7-3). 「파이프라인 산출에 닿을 수 있는 것 전부」. 이 한 줄을
+#   여러 단계가 공유한다 — **집이 하나여야** 한쪽만 넓히는 사고가 안 난다
+#   (W3-11 과 같은 자리).
+# ★ **좁게 적지 않았다.** 고친 것을 안 보고 초록이 뜨는 쪽이 훨씬 나쁘므로
+#   과하게 넓힌다. 이 범위가 안 걸리는 배치는 사실상 문서·시험·CI·프런트
+#   JS 만 만진 배치뿐이다. 그때 7분30초가 돌아온다.
+# ★ `--since` 는 **수용이 아니다**(부분 실행 안전장치가 항상 빨갛게 끝낸다).
+#   그러니 이 선언이 틀려도 머지가 통과하지는 않는다 — 되먹임만 빨라진다.
+CODE_SCOPE="src/* tools/* data/* web/data/* sources.yaml pyproject.toml uv.lock .python-version"
+
 # ── --scope-list — 선언을 **정적으로** 읽는다 ────────────────
 # ★ 이 모드는 **아무것도 실행하지 않는다.** 처음엔 `step` 안에서 표를
 #   찍게 했는데, 그러면 `if command -v npm` 갈래의 `npm install` ·
@@ -535,15 +545,18 @@ else
     # ★ 모르면 안 건너뛴다. 봉인이 없거나 지문을 못 재면 `rawdiff` 가
     #   1 을 내고 전량이 돈다. 의심스러울 때 생략하는 것은 검사를
     #   끄는 것과 같다.
+    scope "$CODE_SCOPE"
     step "파이프라인 전량" bash -c '
         if uv run python tools/dms.py rawdiff; then
             echo "★ raw 와 파이프라인 코드가 봉인과 같아 전량을 생략했다 (DECISIONS §164)."
         else
             uv run fire-lane --no-test --split
         fi'
+    scope "$CODE_SCOPE"
     step "golden 판정 불변" uv run python tools/golden.py check
     # ★ 게이트가 울고 또 풀리는가. check 가 통과하는 것만으로는
     #   해제 경로가 있는지 알 수 없다(DECISIONS §69).
+    scope "$CODE_SCOPE"
     step "golden 게이트 해제 경로" uv run python tools/golden.py selftest
     # ★ 생산자를 돌린 직후에만 알 수 있다. 커밋된 web/data 가 낡아도
     #   web_manifest 는 **있는 것의 해시**를 뜰 뿐이고 golden 은
@@ -560,17 +573,20 @@ else
     #   (`_manifest.json` 은 `write_stable` 이 시각만 바뀌면 안 쓴다).
     #   ★ 단계 이름은 안 고쳤다 — DECISIONS §179 와 PLAN #49 가 이 이름을
     #     인용한다. 이름·인용을 함께 옮기는 것은 PLAN §13 W3-13 이 받는다.
-    step "커밋된 web/data 가 최신인가" bash -c '
-        if git diff --quiet -- web/data data/processed; then
-            echo "생산자 재실행과 커밋본이 같다"
-        else
-            echo "★ 낡았다 — 파이프라인 산출이 커밋본과 다르다:"
-            git diff --name-only -- web/data data/processed
-            echo "  생성물이므로 그대로 커밋하면 된다. 다만 무엇이 왜"
-            echo "  움직였는지 먼저 본다 — golden 이 불변이면 값이 아니라"
-            echo "  커밋본이 뒤처진 것이다(PLAN #70)."
-            exit 1
-        fi'
+    #   ★ 2026-09-20 (W4-10). 종전에는 여기서 `git diff --quiet` 한 줄이
+    #     돌았고 **파일 이름까지만** 말했다. 그날 두 매니페스트가 48줄씩
+    #     움직였는데 그중 45자리가 `datasets.*.seal.code` 였다 — 그 배치가
+    #     `src/firelane/prep.py` 를 고쳤으니 **움직이는 것이 옳다.** 그런데
+    #     화면에서는 판정값이 드리프트한 경우와 구분이 안 됐고, 안내문은
+    #     「생성물이므로 그대로 커밋하면 된다」라 사람에게 도장 찍는 법을
+    #     가르쳤다. 2026-09-19 의 재커밋에는 봉인 `cfg` 가 실제로 바뀐 것이
+    #     섞여 있었고 48줄 사이에 묻혔다.
+    #   ★ **경계는 안 바꿨다.** 시각만 움직인 경우는 `manifest.write_stable`
+    #     이 이미 안 쓴다(그것을 「구조적 빨강」으로 잘못 읽은 등재를
+    #     정정했다 — DECISIONS §200). 바뀐 것은 빨강일 때 사람이 보는 것이다.
+    # ci-exempt: tools/freshcheck.py 파이프라인 재실행 산출과 커밋본을 견준다. CI 는 파이프라인을 안 돈다
+    scope "$CODE_SCOPE"
+    step "커밋된 web/data 가 최신인가" uv run python tools/freshcheck.py
 fi
 
 # ── 데이터 레이크 정합 ──────────────────────────────────────────
@@ -578,16 +594,19 @@ fi
 #   격리 잔재 · landing 우회 · ext 어휘 · norm 계보 다섯 축이 밖에 있었다.
 #   lakecheck 이 그 축을 든다. FIRE_LANE_INBOX 를 기본 스캔 대상으로 쓴다.
 # ci-exempt: tools/lakecheck.py 레이크(2.5GB 외장)를 직접 훑는다. CI 에 없다
+scope "$CODE_SCOPE"
 step "레이크 선언↔실물" uv run python tools/lakecheck.py
 
 # ★ 스캔만 한다. 지우려면 --sweep --yes 를 사람이 친다.
 #   "정리는 사람이 한다" 를 도구가 대신하되 삭제는 명시적으로.
 # ci-exempt: tools/sweep.py 레이크와 INBOX 를 훑는다. 둘 다 CI 에 없다
+scope "$CODE_SCOPE"
 step "레이크 정리 대상" uv run python tools/sweep.py
 
 # ★ 2026-09-17 (DECISIONS §176). 레이크 해석기의 관문 — 두주인 · 주인없음 · 선언밖 · 폐지층 0.
 #   봉인 조건이다. lakecheck 가 축별로 보고, 이것은 파일마다 주인이 하나인지를 본다.
 # ci-exempt: firelane.lake 레이크 해석기의 관문이다. 레이크가 없으면 물음이 성립하지 않는다
+scope "$CODE_SCOPE"
 step "레이크 관문" uv run python -m firelane.lake gate
 
 # ★ 검사가 죽었는지를 검사한다. 프로브 다섯이 정적으로 센다 —
@@ -623,6 +642,7 @@ step "vintage 정합" uv run python tools/vintage_check.py --max 0
 #   안 했다. **세는 것과 거는 것은 다른 일이다.**
 # ★ 상한 래칫이다. 0 을 요구하면 영영 빨갛고, 빨간 게이트는 안 읽힌다.
 # ci-exempt: firelane.prep RAW 와 NORM 을 대조하는 재현성 게이트다. 둘 다 CI 에 없다
+scope "$CODE_SCOPE"
 step "norm 계보 재현" uv run python -m firelane.prep --check --max 0
 
 
@@ -670,9 +690,14 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   「커버리지 래칫 14%」라 숫자의 집이 하나 더 있었고, 이름은 검사 대상이
 #   아니라 조용히 낡는다. `tests/test_verify_citations.py` 가 집이 하나인지와
 #   문서가 그 값을 따르는지를 본다.
-# ★ 23 은 실측 24% 아래 한 칸이다. 화면의 `24%` 는 반올림이라 실제가 23.5
-#   일 수 있다 — 딱 붙이면 다음 실행이 오차로 빨개진다. 실측을 올릴 때
-#   이 값도 같이 올린다. **올린 뒤에는 안 내린다.**
+# ★ 2026-09-20 정정. 종전 이 자리는 「23 은 실측 24% 아래 한 칸」이라 적었고
+#   아래 메시지는 「COV_MIN 을 24 로 조여라」라고 말했다. **메시지가 틀렸다** —
+#   `coverage report --format=total` 은 **반올림**이라 실측 23.75% 가 `24` 로
+#   보인다. 그 말을 듣고 24 로 조이면 `--fail-under=24` 가 23.75 를 떨어뜨려
+#   **다음 실행이 빨개진다.** 주석은 반올림을 알고 있었는데 메시지가 몰랐다 —
+#   아는 것이 강제되는 자리에 없으면 없는 것과 같다(MASTER §17).
+#   이제 `--precision=2` 로 받아 **내림**한 값만 권한다. 실측 23.75 → 권고 23.
+# ★ 올린 뒤에는 안 내린다.
 COV_MIN=23
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
@@ -684,12 +709,16 @@ step "커버리지 래칫" bash -c '
     uv run coverage report --fail-under="$MIN" | tail -1
     rc=${PIPESTATUS[0]}
     [ "$rc" -eq 0 ] || exit "$rc"
-    PCT=$(uv run coverage report --format=total 2>/dev/null || echo "")
-    case "$PCT" in
+    # ★ 반올림한 값으로 권하지 않는다. --precision=2 로 받아 **내림**한다.
+    PCT=$(uv run coverage report --format=total --precision=2 2>/dev/null || echo "")
+    FLOOR=${PCT%%.*}
+    case "$FLOOR" in
         ""|*[!0-9]*) exit 0 ;;          # 못 재면 아무 말도 안 한다
     esac
-    if [ "$PCT" -gt "$MIN" ]; then
-        echo "★ 실측 ${PCT}% 가 래칫 ${MIN}% 보다 높다 — COV_MIN 을 ${PCT} 로 조여라. 안 조이면 되돌아간다."
+    if [ "$FLOOR" -gt "$MIN" ]; then
+        echo "★ 실측 ${PCT}% · 래칫 ${MIN}% — COV_MIN 을 ${FLOOR} 로 조여라. 안 조이면 되돌아간다."
+    else
+        echo "실측 ${PCT}% · 래칫 ${MIN}% — 내림하면 같다. 조일 것이 없다."
     fi'
 scope "web/* .github/* tools/*"
 step "내비 소스 목록"      uv run python tools/install_navi.py --check
