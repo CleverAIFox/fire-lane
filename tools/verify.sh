@@ -560,17 +560,19 @@ else
     #   (`_manifest.json` 은 `write_stable` 이 시각만 바뀌면 안 쓴다).
     #   ★ 단계 이름은 안 고쳤다 — DECISIONS §179 와 PLAN #49 가 이 이름을
     #     인용한다. 이름·인용을 함께 옮기는 것은 PLAN §13 W3-13 이 받는다.
-    step "커밋된 web/data 가 최신인가" bash -c '
-        if git diff --quiet -- web/data data/processed; then
-            echo "생산자 재실행과 커밋본이 같다"
-        else
-            echo "★ 낡았다 — 파이프라인 산출이 커밋본과 다르다:"
-            git diff --name-only -- web/data data/processed
-            echo "  생성물이므로 그대로 커밋하면 된다. 다만 무엇이 왜"
-            echo "  움직였는지 먼저 본다 — golden 이 불변이면 값이 아니라"
-            echo "  커밋본이 뒤처진 것이다(PLAN #70)."
-            exit 1
-        fi'
+    #   ★ 2026-09-20 (W4-10). 종전에는 여기서 `git diff --quiet` 한 줄이
+    #     돌았고 **파일 이름까지만** 말했다. 그날 두 매니페스트가 48줄씩
+    #     움직였는데 그중 45자리가 `datasets.*.seal.code` 였다 — 그 배치가
+    #     `src/firelane/prep.py` 를 고쳤으니 **움직이는 것이 옳다.** 그런데
+    #     화면에서는 판정값이 드리프트한 경우와 구분이 안 됐고, 안내문은
+    #     「생성물이므로 그대로 커밋하면 된다」라 사람에게 도장 찍는 법을
+    #     가르쳤다. 2026-09-19 의 재커밋에는 봉인 `cfg` 가 실제로 바뀐 것이
+    #     섞여 있었고 48줄 사이에 묻혔다.
+    #   ★ **경계는 안 바꿨다.** 시각만 움직인 경우는 `manifest.write_stable`
+    #     이 이미 안 쓴다(그것을 「구조적 빨강」으로 잘못 읽은 등재를
+    #     정정했다 — DECISIONS §200). 바뀐 것은 빨강일 때 사람이 보는 것이다.
+    # ci-exempt: tools/freshcheck.py 파이프라인 재실행 산출과 커밋본을 견준다. CI 는 파이프라인을 안 돈다
+    step "커밋된 web/data 가 최신인가" uv run python tools/freshcheck.py
 fi
 
 # ── 데이터 레이크 정합 ──────────────────────────────────────────
