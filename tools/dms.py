@@ -420,8 +420,33 @@ def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
+# ★ 2026-09-20 (W4-8 · DECISIONS §202). **이름이 약속한 범위가 실제보다 넓었다.**
+#   `_tool_print()` 는 `dms.py` **한 파일**만 해시했는데, 이 값이 뜻하는 것은
+#   「판정 규칙이 바뀌었는가 — 바뀌었으면 옛 통과는 증표가 아니다」다.
+#   그 판정을 실제로 내리는 것은 `dms.py` 혼자가 아니라 **그것이 돌리는 것들**이다:
+#   `verify.sh` 전 단계 · 프로브 넷 · `dupcheck`. 2026-09-18 에 `verify.sh` 가
+#   +58 −9 로 바뀌었는데 지문이 `4e5793923f7cb248` 에서 한 글자도 안 움직였다 —
+#   **분모가 바뀌었는데 봉인은 여전히 유효하다고 말했다.**
+#
+# ★ 손 목록을 만들지 않는다(그러면 W3-8 과 같은 병이다). `dms.py` 본문에서
+#   `tools/…` 경로 리터럴을 **뽑아서** 센다 — 부르는 자리가 곧 범위다.
+#   새 도구를 부르기 시작하면 그 순간 지문이 움직인다.
+TOOLREF = re.compile(r"\btools/([A-Za-z_][\w]*\.(?:py|sh|mjs))\b")
+
+
+def _tool_scope() -> list[Path]:
+    """`dms` 의 판정 분모를 이루는 파일. 자기 자신 + 자기가 부르는 `tools/…`."""
+    me = Path(__file__)
+    names = sorted(set(TOOLREF.findall(me.read_text(encoding="utf-8"))))
+    out = [me]
+    out += [q for n in names if (q := ROOT / "tools" / n).is_file() and q != me]
+    return sorted(set(out))
+
+
 def _tool_print() -> str:
-    return _sha(Path(__file__).read_text(encoding="utf-8"))
+    return _sha("\n".join(f"{p.relative_to(ROOT).as_posix()}\0"
+                          f"{_sha(p.read_text(encoding='utf-8'))}"
+                          for p in _tool_scope()))
 
 
 def _state_now(data: dict) -> dict:
