@@ -9767,3 +9767,85 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
   못 읽어 합칠 수 없었던 그 자리).
 
 강제자  `tests/test_freshcheck.py::test_nondet_matches_manifest_writer`
+
+---
+
+## 201. 도구가 몇 개 죽었나를 물었더니 검사가 죽어 있었다 (판정 불변)
+
+> 2026-09-20 · 오창준
+
+「`tools/` 69개 중 한 번 쓰고 버릴 것이 몇 개인가」를 세어 보기로 했다.
+도구마다 **누가 부르는가**를 실측했다.
+
+    자동으로 돈다 (verify · CI · 훅 · ship · Docker)     35
+    코드 · 시험 · 다른 도구가 부른다                      15
+    아무 실행 자리도 없다 — 사람이 손으로만               19   4,867줄 (24%)
+
+★ 그리고 **그 19 중 18은 이미 사유와 함께 선언돼 있었다.**
+  `tests/test_tools_are_wired.py` 의 `EXEMPT` 가 그 자리다. 물음의 답은
+  이미 저장소 안에 있었다 — DECISIONS §198 · §200 과 같은 형태로, 세지
+  않고 물은 쪽이 틀렸다.
+
+**남은 하나가 검사의 구멍이었고, 파보니 넷이었다.**
+
+강제자 없음 — 사유: 하위 절 201-1 ~ 201-3 이 각자 강제자 칸을 든다
+
+### 201-1. 범위가 이름보다 좁다 — 여섯 번째 인스턴스
+
+`test_every_tool_is_called_somewhere` 가 `(ROOT / "tools").glob("*.py")` 를
+돈다. 이름은 **every tool** 인데 범위는 `.py` 뿐이다.
+
+    범위 밖   janitor.sh · merge_batch.sh · verify.sh
+              js_graph_check.mjs · web_boot_check.mjs
+
+넷은 실제로 불린다. **`janitor.sh` 는 아무도 안 불렀고**, 검사 밖이라
+아무도 안 울었다. 2026-09-13 에 만들어진 뒤 일주일 동안 그랬다.
+
+★ 같은 족의 여섯 번째다 — `golden WATCH`(W3-8) · `dms` 도구 지문(W4-8) ·
+  `§12-7` 트리거 대조(W3-16) · 노드 판 정본(W3-18) · `§197-1`.
+  **범위가 이름보다 좁고 그 좁음이 선언돼 있지 않다.**
+
+강제자  `tests/test_tools_are_wired.py::test_every_tool_is_called_somewhere` (범위 `.py`·`.sh`·`.mjs`)
+
+### 201-2. 면제가 죽었는지 아무도 안 봤다
+
+면제 **31 중 12** 가 이미 어딘가에서 불리고 있었다.
+
+    acquire · doctor · jijeok_probe · jijeok_review · ledger_feeds
+    pull_data · route_probe · ruleset_check · scan_data · serve · width_fn
+
+★ **면제는 사각지대다.** 면제된 도구는 배선을 끊어도 아무도 안 운다.
+  낡은 면제는 그 사각지대를 **이유 없이** 넓힌다.
+
+★ 더 무거운 것은 이것이 **두 번째**라는 점이다. 같은 파일 주석에 이렇게
+  적혀 있다 —
+
+  > 2026-09-13. 여섯을 뺐다 — `verify.sh` 가 `step` 으로 **실제로 부르는데**
+  > 면제 목록에 남아 있었다. … 면제가 사각지대다.
+
+  그때 **사람이 손으로 여섯을 뺐고 강제자를 안 세웠다.** 일주일 만에
+  열둘로 늘었다. **손으로 고친 것은 되돌아온다** — 오늘 아침 `gate_parity`
+  에 죽은 면제 검출을 붙인 것과 같은 답을 여기에도 붙인다(W3-10).
+
+강제자  `tests/test_tools_are_wired.py::test_exemptions_are_not_dead`
+
+### 201-3. 헐거운 판정 둘 — 주석과 이름 충돌
+
+검사가 호출자 파일들을 **통째로 이어 붙여 grep** 했다.
+
+★ 그래서 「`tools/x.py` 를 참고할 것」 같은 **주석도 배선으로** 보였다.
+  이제 주석 줄을 빼고 줄 단위로 본다.
+
+★ 그리고 `from firelane import transition` 이 `tools/transition.py` 의
+  호출로 세어졌다. **둘은 다른 파일이다** — `src/firelane/transition.py`
+  가 따로 있다. 이름이 겹치는 도구는 `import` 형태를 인정하지 않고
+  `tools/…` 경로 형태만 센다. 겹치는 이름은 지금 이 하나다.
+
+★ 두 구멍 다 **거짓 초록**을 만든다. 없는 배선을 있다고 말하는 쪽이라,
+  검사가 없는 것보다 나쁘다.
+
+면제 **31 → 21.** 도구 수는 그대로 69다 — 이 배치는 **아무 도구도 안
+지운다.** 19개를 어떻게 할지는 사람이 하나씩 판단할 일이고, 이 배치가
+한 것은 **판단할 근거를 검사가 들게 한 것**뿐이다.
+
+강제자  `tests/test_tools_are_wired.py::test_every_tool_is_called_somewhere` (주석 제외 · 이름 충돌 구분)
