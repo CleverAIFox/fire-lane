@@ -233,6 +233,10 @@ jobs:
         run: uv run python tools/treecheck.py --repo
       - name: web/data 계보
         run: uv run python tools/web_manifest.py --check
+      # ★ 출동 대상지(동명동) 밖으로 스코프가 얼마나 벗어났는가 — PLAN §1 #62.
+      #   커밋된 segments.geojson 속성만 읽어 레이크가 필요 없다. 래칫이다.
+      - name: 스코프 벗어남 (래칫)
+        run: uv run python tools/scopecheck.py
       - name: 그림 ↔ 정본
         run: uv run python tools/render_figures.py --check
       - name: ★ 검사가 죽었는가 (메타 가드)
