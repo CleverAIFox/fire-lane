@@ -16,8 +16,20 @@ deadcheck.py — **검사가 죽었는가**를 검사한다.
 
 OUT  REDLIST.json  ·  종료코드 = 빨간불 건수(0 이면 초록)
 
+    맨몸        프로브를 돌고 전건을 찍는다. 종료코드 = 건수 (사람이 읽는 판)
+    --selftest  **양성 대조만.** 프로브가 한 건이라도 내는가
+    --ratchet   ★ **관문.** 프로브별 수가 `CEILING` 과 같은가 (양방향)
+
 ★ 이 도구 자신도 ①에 걸린다. `--selftest` 가 그것을 확인한다 —
   프로브가 한 건도 못 내면 프로브가 죽은 것이지 저장소가 깨끗한 것이 아니다.
+
+★ **2026-09-20 — `--selftest` 를 관문으로 쓰면 안 된다**(DECISIONS §202).
+  그것이 묻는 것은 「프로브가 살아 있는가」지 「저장소가 깨끗한가」가 아니다.
+  그런데 `verify.sh` 도 CI 도 `--selftest` 만 돌았고, 단계 이름은
+  「검사가 죽었는가」였다 — **이름이 약속한 범위가 실제보다 넓고 그것이
+  선언돼 있지 않았다.** 그 상태로 148건이 조용히 쌓였다.
+  더 나쁜 것은 방향이다 — `--selftest` 는 **결함이 많을수록 더 확실히 통과한다.**
+  관문은 `--ratchet` 이다. `--selftest` 는 그 안에서 양성 대조로만 쓴다.
 """
 from __future__ import annotations
 
@@ -142,21 +154,71 @@ def probe_empty_net() -> None:
 # ── ② 손목록 ────────────────────────────────────────────────────
 # 대문자 상수에 담긴 리터럴 목록. 그 목록이 유도 가능한 원본보다 좁으면
 # 원본이 늘어도 검사가 안 따라간다.
-SOURCES = {
-    "tools": lambda: len(list((ROOT / "tools").glob("*.py"))),
-    "layers": lambda: _yaml_len("layers"),
-    "scopes": lambda: _yaml_len("scopes"),
-    "datasets": lambda: _yaml_len("datasets"),
-    "outputs": lambda: _yaml_len("outputs"),
+#
+# ★ 2026-09-20 (DECISIONS §202). **이 프로브는 옳은 답을 틀린 이유로 냈다.**
+#   종전 판별은 「원본 이름이 파일 본문 아무 데나 나오는가」(`key in src(p).lower()`)
+#   였다. `tools/` 밑 파일은 거의 전부 머리말에 자기 경로(`tools/x.py`)를 적으므로
+#   **`"tools"` 가 항상 참**이고, 분모는 `tools/*.py` 64종이 됐다. 그래서
+#   `DOCS 가 4개 리터럴인데 tools 는 64종이다` 같은, **비교 자체가 성립하지 않는**
+#   짝짓기가 59건 쌓였다. 그중 하나가 `golden.py:151 WATCH` 였다 — 맞는 결함인데
+#   **맞는 이유로 잡힌 것이 아니다.**
+#
+#   신호가 59건 중 1건이면 사람은 목록을 안 읽는다. 실제로 아무도 안 읽었다
+#   (`verify.sh` 도 CI 도 `--selftest` 만 돌았다 — 아래 `main()` 의 ★ 참조).
+#   **틀린 이유로 옳은 것은 다음 번에 틀린다.**
+#
+#   지금 판별은 **부분집합**이다 — 리터럴 *전부* 가 그 원본의 실제 원소일 때만
+#   짝짓는다. 그러면 분모가 의미를 갖고, 59건이 실재 3건으로 떨어진다.
+# ★ 원본을 못 재면 **건너뛰지 않고 빨간불을 낸다.** 재는 쪽이 죽으면 프로브도
+#   죽는데, 조용히 통과하면 그것이 곧 ① 빈 그물이다 — 이 도구가 세는 바로 그 병.
+def _members() -> dict[str, tuple[set[str], int]]:
+    """원본 이름 → (원소로 인정하는 표기 집합, 실제 종수).
+
+    좁은 것을 먼저 둔다. `판정코드` ⊂ `src` 라 순서가 뒤집히면 `WATCH` 가
+    `src` 58종에 붙어 **분모가 다시 헐거워진다.**
+    """
+    import yaml
+    out: dict[str, tuple[set[str], int]] = {}
+
+    def spell(rels: list[str]) -> set[str]:
+        return {x for r in rels for x in (r, Path(r).name, Path(r).stem)}
+
+    # 판정 코드의 닫힘은 여기 하나다 — golden 도 같은 것을 부른다
+    from firelane.shardseal import code_closure
+    jud = [p.relative_to(ROOT).as_posix() for p in code_closure("firelane.segments")]
+    out["판정코드"] = (spell(jud), len(jud))
+
+    y = yaml.safe_load(src(ROOT / "sources.yaml"))
+    for k in ("layers", "scopes", "datasets", "outputs"):
+        keys = set((y.get(k) or {}).keys())
+        out[k] = (keys, len(keys))
+
+    tl = [p.relative_to(ROOT).as_posix() for p in (ROOT / "tools").glob("*.py")]
+    out["tools"] = (spell(tl), len(tl))
+    sl = [p.relative_to(ROOT).as_posix() for p in (ROOT / "src").rglob("*.py")]
+    out["src"] = (spell(sl), len(sl))
+    return out
+
+
+# ★ 면제 — **좁은 것이 의도인 자리.** 사유를 적는다. 적는 순간 세어지고,
+#   `tests/test_deadcheck_probes.py::test_exemptions_are_not_dead` 가
+#   「면제했는데 실은 안 걸리는 것」을 지운다(`test_tools_are_wired` 와 같은 답 —
+#   2026-09-20 에 31개 면제 중 12개가 죽어 있었다).
+EXEMPT_HANDLIST = {
+    "STAGE_SCRIPTS": "파이프라인 **단계**로 도는 것만. `seg/` 는 부품이지 단계가 아니다 — 머리말이 그 경계를 적는다",
+    "SELF": "대장 기계 자신. 자기를 소비자로 세면 모든 대장 항목이 영원히 소비자를 갖는다",
+    "_LEGACY_WATCH": "**동결된 옛 범위.** `golden.py rescope` 가 「옛 잠금이 이 범위로 재서 같은가」를 "
+                     "증명할 때만 쓴다. 늘어나면 안 되는 목록이라 유도하면 증명이 깨진다",
 }
 
 
-def _yaml_len(k: str) -> int:
-    import yaml
-    return len(yaml.safe_load(src(ROOT / "sources.yaml")).get(k) or {})
-
-
 def probe_handlist() -> None:
+    try:
+        mem = _members()
+    except Exception as e:
+        hit("② 손목록", ROOT / "tools" / "deadcheck.py", 0,
+            f"원본을 못 쟀다 — {type(e).__name__}: {e}. **분모가 없으면 이 프로브는 빈 그물이다**")
+        return
     for p in sorted((ROOT / "tests").rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py")):
         t = tree(p)
         if t is None:
@@ -170,18 +232,15 @@ def probe_handlist() -> None:
             val = node.value
             if not isinstance(val, (ast.List, ast.Tuple, ast.Set)):
                 continue
-            items = [e for e in val.elts if isinstance(e, ast.Constant) and isinstance(e.value, str)]
-            if len(items) < 3:
+            items = [e.value for e in val.elts
+                     if isinstance(e, ast.Constant) and isinstance(e.value, str)]
+            if len(items) < 3 or tgt.id in EXEMPT_HANDLIST:
                 continue
             n = len(items)
-            for key, fn in SOURCES.items():
-                try:
-                    tot = fn()
-                except Exception:
-                    continue
-                if key in src(p).lower() and n < tot:
+            for key, (elems, tot) in mem.items():
+                if n < tot and all(i in elems for i in items):
                     hit("② 손목록", p, node.lineno,
-                        f"{tgt.id} 가 {n}개 리터럴인데 {key} 는 {tot}종이다 "
+                        f"{tgt.id} 가 {key} 의 부분집합이다 ({n}/{tot}) "
                         f"— 원본에서 유도하지 않으면 늘어도 안 따라간다", f"{n}/{tot}")
                     break
 
@@ -296,8 +355,26 @@ PROBES = [
 ]
 
 
+# ★ 래칫 — **오늘의 수**다. 목표가 아니라 천장이다(`COV_MIN` · `dupcheck --max` 와 같은 틀).
+#   양방향이다 — 늘면 ✗, **줄어도 ✗** 다. 줄었는데 안 조이면 다음에 그만큼 다시 늘어도
+#   아무도 안 운다(W4-9 가 이산 래칫 넷에서 닫은 바로 그 구멍).
+#
+# ★ ②만 0 이다. 나머지 셋(①③⑤)의 수는 **아직 분류되지 않았다** — 진짜 결함인지
+#   프로브의 오검인지 한 건씩 본 적이 없다. 그래서 여기 적힌 41·15·33 은
+#   「이만큼이 괜찮다」가 아니라 **「이만큼이 미분류로 남아 있다」**는 뜻이다.
+#   분류를 마친 프로브만 0 으로 내려온다. PLAN §13 W10-1 이 그 일을 든다.
+CEILING = {
+    "① 빈 그물": 41,
+    "② 손목록": 0,
+    "③ 조용한 통과": 15,
+    "④ 죽은 게이트": 0,
+    "⑤ 좁은 범위": 33,
+}
+
+
 def main() -> int:
     selftest = "--selftest" in sys.argv
+    ratchet = "--ratchet" in sys.argv
     per: dict[str, int] = {}
     for name, fn in PROBES:
         before = len(HITS)
@@ -335,10 +412,12 @@ def main() -> int:
         pat = re.compile(r"\[\s*-[fdes]\s+([^\]\s]+)\s*\]")
         return bool(pat.search((d / "x.yml").read_text(encoding="utf-8")))
 
-    if selftest:
+    if selftest or ratchet:
         if not _probe4_alive():
-            print("\n★ selftest 실패 — ④ 프로브의 정규식이 죽었다")
+            print("\n★ 양성 대조 실패 — ④ 프로브의 정규식이 죽었다")
             return 1
+
+    if selftest:
         # ★ ④ 는 0건이 정상일 수 있다(F-211 해소). 위에서
         #   살아 있음을 확인했으므로 목록에서 뺀다.
         dead = [k for k, v in per.items()
@@ -347,6 +426,34 @@ def main() -> int:
             print(f"\n★ selftest 실패 — 아무것도 못 낸 프로브: {dead}")
             return 1
         print("\nselftest 통과 — 프로브 다섯 전부 살아 있다")
+        return 0
+
+    # ★ 2026-09-20 (DECISIONS §202). **여기가 이 도구의 관문이다.**
+    #   종전에는 관문이 `--selftest` 뿐이었다. 그것이 묻는 것은 「프로브가
+    #   한 건이라도 내는가」이고, 그래서 **결함이 쌓일수록 더 확실히 초록**이었다.
+    #   148건이 REDLIST.json 에 앉아 있는 동안 `verify.sh` 도 CI 도 초록이었다.
+    #   그중 하나가 `golden.py:151 WATCH` — 대장에 W3-8 로 따로 등재돼
+    #   **사람이 다시 발견한 것**이다. 도구는 진작에 찾아놨고 아무도 안 읽었다.
+    if ratchet:
+        bad = []
+        for name, ceil in CEILING.items():
+            got = per.get(name, 0)
+            if got > ceil:
+                bad.append(f"  ✗ {name}  {ceil} → {got}  (+{got - ceil}) — 새 결함이 들어왔다")
+            elif got < ceil:
+                bad.append(f"  ✗ {name}  {ceil} → {got}  ({got - ceil}) — 닫았으면 "
+                           f"`CEILING` 을 {got} 으로 조여라. 안 조이면 다시 늘어도 안 운다")
+        unknown = sorted(set(per) - set(CEILING))
+        if unknown:
+            bad.append(f"  ✗ 래칫에 없는 프로브: {unknown} — 프로브를 늘렸으면 천장도 적는다")
+        if bad:
+            print("\n★ 래칫 — 프로브별 수가 선언과 다르다\n")
+            print("\n".join(bad))
+            print("\n  정본: tools/deadcheck.py 의 CEILING. 한 곳이다.")
+            print("  무엇이 늘었는지는 REDLIST.json 을 diff 해서 본다.")
+            return 1
+        print("\n래칫 통과 — " + " · ".join(f"{k} {v}" for k, v in per.items()))
+        print("  ★ ①③⑤ 의 수는 **미분류**다. 「괜찮다」가 아니라 「아직 안 봤다」다(PLAN §13 W10-1).")
         return 0
     return min(len(HITS), 250)
 
