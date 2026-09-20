@@ -400,6 +400,12 @@ step "엄격 린트 (CI 와 같은 인자)" bash -c '
 #   없는 것보다 나쁘다 — 검사가 있다는 사실이 정합을 검증한 것처럼 보이게 한다.
 #   정합을 **실제로** 묻는 것은 `gate_parity.py` 다(아래 「관문 동등」).
 
+# ★ 2026-09-20 (W3-15). 워크플로는 **머지되기 전에는 문법조차 안 본다** —
+#   배포 넷은 push+paths 로만 돌아 PR 에서 안 보이고, `_deploy.yml` 이 하루
+#   동안 깨진 채로 main 까지 갔다(DECISIONS §196). actionlint 는 YAML 파싱
+#   너머의 것을 본다 — 표현식 · 액션 참조 · 셸 인젝션.
+#   커밋된 잠금으로 깔리므로 CI 에서도 같은 판이 돈다(면제 아님).
+step "워크플로 린트"    uv run actionlint
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
 # ★ 2026-09-18 (W1). 로컬 훅과 CI 가 이 한 파일을 읽는다 — 정본이 하나다.

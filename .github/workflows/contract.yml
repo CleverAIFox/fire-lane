@@ -241,6 +241,9 @@ jobs:
       #   레이크 없는 모드가 생기기 전까지 로컬 전용이다 — PLAN §13 W3-10.
       - name: 트리 전수 대조 (저장소만)
         run: uv run python tools/treecheck.py --repo
+      # ★ 워크플로 문법·표현식·셸 인젝션 — PLAN §13 W3-15.
+      - name: 워크플로 린트 (actionlint)
+        run: uv run actionlint
       - name: web/data 계보
         run: uv run python tools/web_manifest.py --check
       # ★ 출동 대상지(동명동) 밖으로 스코프가 얼마나 벗어났는가 — PLAN §1 #62.
@@ -381,6 +384,13 @@ jobs:
           #   DTZ011 은 어제 계약에서 막은 시간대 누락 버그가 코드에도 있던 것이다.
           # ★ 인자의 정본은 .ruff-strict.toml 다. 여기 적지 않는다 —
           #   적으면 tools/verify.sh 와 갈린다(2026-09-02).
+          # ★ 2026-09-20 (W3-15). `$FILES` 는 **일부러 안 감싼다** — 줄바꿈으로
+          #   나뉜 176개 경로가 각각의 인자가 되어야 한다. 감싸면 한 덩어리
+          #   문자열 하나가 되어 ruff 가 「그런 파일 없다」로 죽는다.
+          #   저장소 경로에 공백이 없다는 전제이고 `owned_paths.py` 가 그것을
+          #   보장한다. shellcheck 의 조언이 이 자리에서는 틀렸으므로 끈다 —
+          #   **끄는 이유를 적는 것이 끄지 않는 것보다 낫다.**
+          # shellcheck disable=SC2086
           uv run ruff check $FILES --config .ruff-strict.toml
 
       - name: 문서 규약 · 재현성
