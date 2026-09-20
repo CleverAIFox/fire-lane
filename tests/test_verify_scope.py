@@ -34,10 +34,28 @@ VERIFY = ROOT / "tools" / "verify.sh"
 SCOPE_LINE = re.compile(r'^\s*scope "([^"]*)"', re.M)
 
 
+VAR_LINE = re.compile(r'^([A-Z_]+)="([^"]*)"', re.M)
+
+
 def _patterns() -> set[str]:
+    """선언에 쓰인 패턴 전부. **변수는 펼친다.**
+
+    ★ 2026-09-20. 종전에는 리터럴만 읽었고, `scope "$CODE_SCOPE"` 가
+      들어오자 `$CODE_SCOPE` 라는 **경로가 없다**고 울었다. 검사가 자기
+      대상의 문법 절반을 몰랐던 것이다 — 그대로 두면 변수를 쓰는 선언은
+      영영 못 쓰거나, 이 시험을 끄게 된다.
+    """
+    src = VERIFY.read_text(encoding="utf-8")
+    env = {m.group(1): m.group(2) for m in VAR_LINE.finditer(src)}
     out: set[str] = set()
-    for m in SCOPE_LINE.finditer(VERIFY.read_text(encoding="utf-8")):
-        out.update(m.group(1).split())
+    for m in SCOPE_LINE.finditer(src):
+        for tok in m.group(1).split():
+            if tok.startswith("$"):
+                name = tok[1:].strip("{}")
+                assert name in env, f"scope 가 모르는 변수를 쓴다 — {tok}"
+                out.update(env[name].split())
+            else:
+                out.add(tok)
     return out
 
 
@@ -125,3 +143,46 @@ def test_since_forces_partial_run_safety_net() -> None:
         f"  지금: {m.group(0).strip()}\n"
         "  건너뛴 것은 통과가 아니다 — 범위 기반 실행은 수용이 아니라\n"
         "  고치는 중에 쓰는 되먹임 도구다(§13-5 규약 6).")
+
+
+# ★ 2026-09-20 (W7-3). 선언을 12 → 20 으로 올리면서 **여덟이 같은 범위**를
+#   쓰게 됐다. 손으로 여덟 번 적으면 한쪽만 넓히는 사고가 나고, 그때
+#   좁은 쪽 단계는 **고친 것을 안 보고 초록**이 된다 — W3-11 과 같은 자리다.
+PIPE_STEPS = (
+    "파이프라인 전량", "golden 판정 불변", "golden 게이트 해제 경로",
+    "커밋된 web/data 가 최신인가", "레이크 선언↔실물", "레이크 정리 대상",
+    "레이크 관문", "norm 계보 재현",
+)
+
+
+def test_pipeline_family_shares_one_scope_home() -> None:
+    """파이프라인에 기대는 단계들이 **같은 변수**를 쓰는가."""
+    src = VERIFY.read_text(encoding="utf-8")
+    assert "CODE_SCOPE=" in src, "`CODE_SCOPE` 정본이 없다"
+    assert src.count("CODE_SCOPE=") == 1, "`CODE_SCOPE` 의 집이 둘 이상이다"
+    bad = []
+    for name in PIPE_STEPS:
+        m = re.search(rf'^(.*)\n\s*step "{re.escape(name)}"', src, re.M)
+        if not m or 'scope "$CODE_SCOPE"' not in m.group(1):
+            bad.append(f"  {name} — 바로 위 줄이 `scope \"$CODE_SCOPE\"` 가 아니다")
+    assert not bad, (
+        "파이프라인 계열 단계가 공용 범위를 안 쓴다.\n" + "\n".join(bad)
+        + "\n\n  손으로 여덟 번 적으면 한쪽만 넓히게 되고, 좁은 쪽은\n"
+          "  고친 것을 안 보고 초록이 뜬다(PLAN §13 W3-11 과 같은 족).")
+
+
+def test_code_scope_covers_everything_that_moves_output() -> None:
+    """공용 범위가 **산출에 닿는 층을 다 덮는가.**
+
+    ★ 이 시험은 「좁아지는 것」만 잡는다. 넓은 것은 결함이 아니다 —
+      과하게 도는 쪽은 느릴 뿐이고, 좁은 쪽은 **거짓 초록**이다.
+    """
+    src = VERIFY.read_text(encoding="utf-8")
+    m = re.search(r'^CODE_SCOPE="([^"]*)"', src, re.M)
+    assert m, "`CODE_SCOPE` 선언을 못 읽었다"
+    pats = set(m.group(1).split())
+    # 봉인 `code` 가 `uv.lock` 까지 세고(shardseal.code_print), `cfg` 는 대장을 센다.
+    for need in ("src/*", "tools/*", "data/*", "sources.yaml", "uv.lock"):
+        assert need in pats, (
+            f"`{need}` 가 CODE_SCOPE 에 없다 — 그 층을 고친 배치가 파이프라인을\n"
+            "  안 돌고 초록이 뜬다. 봉인 code 는 uv.lock 까지, cfg 는 대장까지 센다.")
