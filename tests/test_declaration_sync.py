@@ -422,3 +422,56 @@ def test_sources_plan_row_refs_resolve():
         + "  `plan_renumber.py` 는 PLAN 안만 당기므로 행을 지우면 여기가 어긋난다.\n"
         + "  고칠 때 **그 번호가 무엇을 가리켰는지**부터 찾아라 — 새 행이\n"
         + "  그 자리에 오면 틀린 참조가 맞는 참조인 척한다(W3-9).")
+
+
+# ── §13 결함 대장 — 세는 일을 사람에게 맡기지 않는다 ─────────────
+def _ledger_rows() -> list[str]:
+    """§13-3 표의 W-ID 목록. 순서대로."""
+    plan = (ROOT / "docs" / "PLAN.md").read_text(encoding="utf-8")
+    m = re.search(r"^### 13-3\..*?$(.*?)(?=^###\s)", plan, re.M | re.S)
+    assert m, "PLAN §13-3 절을 못 찾았다 — 이 검사가 빈 그물이 됐다"
+    return re.findall(r"^\|\s*(W\d+-\d+)\s*\|", m.group(1), re.M)
+
+
+def test_defect_ledger_counts_agree_everywhere():
+    """§13 의 「남은 건수」가 **세 곳에서 같은가**.
+
+    ★ 2026-09-20 (PLAN §13 W5-1 · 가드 1의 첫 물음). 이 절은 **같은 사고를
+      두 번 당했다.**
+
+        2026-09-19  §13-1 문단 「22행」 · §13-3 제목 「30건」 · 실제 표 30행
+                    — 세 숫자가 전부 달랐고, 그중 셋은 🟢 로 닫힌 채 남아 있었다
+        2026-09-20  §13-1 문단 「30행」 · 제목 「28건」 · 실제 28행
+                    — **정정한 다음 날 다시 갈렸다**
+
+      2026-09-19 의 정정문이 직접 이렇게 적었다 — 「세는 일을 사람에게
+      맡기지 않으려면 행 수를 세는 강제자가 필요하다. 그것은 가드 1 이
+      받는다.」 가드를 안 세웠고, 그래서 하루 만에 다시 났다.
+      **선언이 있고 강제자가 없으면 반드시 갈린다** — 이 절이 세는 1족 그 자체다.
+
+    ★ 범위를 선언한다. 이 검사는 **수 셋이 같은가**만 본다.
+      가드 1 의 나머지 물음(「닫혔다고 적힌 배치의 증표가 트리에 있는가」)은
+      증표 등록부가 있어야 성립하고 그것은 아직 없다 — W5-1 이 열려 있는
+      이유다. **「섰다」로 적지 않는다**(§13-4 가 가드 2 에 적용한 그 규율).
+    """
+    plan = (ROOT / "docs" / "PLAN.md").read_text(encoding="utf-8")
+    rows = _ledger_rows()
+    assert rows, "§13-3 에서 행을 0개 찾았다"
+
+    t = re.search(r"^### 13-3\. 남은 결함 (\d+)건", plan, re.M)
+    assert t, "§13-3 제목이 「남은 결함 N건」 꼴이 아니다 — 세는 자리가 사라졌다"
+    p = re.search(r"남은 것이 아래 \*\*(\d+)행\*\*이다", plan)
+    assert p, "§13-1 이 「남은 것이 아래 **N행**이다」를 안 적는다"
+
+    title, para, real = int(t.group(1)), int(p.group(1)), len(rows)
+    assert title == para == real, (
+        f"§13 의 건수가 갈렸다 — 제목 {title}건 · §13-1 문단 {para}행 · 실제 표 {real}행\n"
+        "  정본은 **표**다. 행을 지웠으면 두 숫자를 같이 고친다.\n"
+        "  (2026-09-19 에 22/30/30 으로 갈렸고, 정정한 다음 날 30/28/28 로 또 갈렸다)")
+
+
+def test_defect_ledger_ids_are_unique():
+    """같은 W-ID 가 두 행에 있으면 어느 쪽이 정본인지 알 수 없다."""
+    rows = _ledger_rows()
+    dup = sorted({r for r in rows if rows.count(r) > 1})
+    assert not dup, f"§13-3 에 중복 ID: {dup}"

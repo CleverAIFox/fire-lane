@@ -252,8 +252,10 @@ jobs:
         run: uv run python tools/scopecheck.py
       - name: 그림 ↔ 정본
         run: uv run python tools/render_figures.py --check
-      - name: ★ 검사가 죽었는가 (메타 가드)
-        run: uv run python tools/deadcheck.py --selftest
+      # ★ 2026-09-20. `--selftest` 였다 — 결함이 많을수록 더 확실히 통과하는
+      #   관문이었다(DECISIONS §202). `--ratchet` 이 프로브별 수를 든다.
+      - name: ★ 검사가 죽었는가 (메타 가드 · 래칫)
+        run: uv run python tools/deadcheck.py --ratchet
 
       - name: ★ 관문 동등 — 로컬과 CI 가 같은 것을 보는가
         # ★ 3족의 클래스 가드다. 새 검사를 로컬에만 붙이면 여기서 걸린다.

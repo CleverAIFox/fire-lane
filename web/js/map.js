@@ -27,8 +27,11 @@ export function createMap(VIEW){
       sources:{
         base:{type:"raster",tiles:USE_VWORLD?[vw("Base")]:CARTO("dark"),tileSize:256,maxzoom:19,bounds:TB,
           attribution:USE_VWORLD?"공간정보 오픈플랫폼(브이월드)":"© OpenStreetMap · CARTO"},
-        sat :{type:"raster",tiles:[vw("Satellite")],tileSize:256,maxzoom:19,bounds:TB,
-          attribution:"공간정보 오픈플랫폼(브이월드)"},
+        /* ★ 2026-09-20 (W9-3). V-World 위성 소스·레이어를 지웠다. 만들어만 놓고
+           **켜는 코드가 web/ 전체에 0곳**이었다 — 토글도 없고 참조도 없었다.
+           죽은 채로 두면 다음 사람이 "위성 있네" 라고 읽는다. 쓸 것이면
+           토글을 달고 그때 되살린다(git 이 기억한다). 대체재는 아래 ortho 다 —
+           25cm 라 V-World 위성보다 훨씬 선명하고 이미 토글이 붙어 있다. */
         /* 항공정사영상 25cm. ortho.py 가 구운 배경 타일이다.
            원본 TIF 에 좌표가 없어 도엽 격자로 역산해 붙였다.
            V-World 위성보다 훨씬 선명하다. 판정에는 쓰지 않는다. */
@@ -51,7 +54,6 @@ export function createMap(VIEW){
            타일 위를 덮어야 한다. 다크에서는 opacity 0 이라 없는 것과 같다. */
         {id:"base-tint",type:"background",
          paint:{"background-color":CONFIG.lightTint.color,"background-opacity":0}},
-        {id:"sat", type:"raster",source:"sat", layout:{visibility:"none"},paint:{"raster-opacity":.9}},
         {id:"ortho",type:"raster",source:"ortho",layout:{visibility:"none"},
           paint:{"raster-opacity":.95,"raster-fade-duration":200}}
       ]}

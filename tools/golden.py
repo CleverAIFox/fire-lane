@@ -148,9 +148,40 @@ def cmd_lock(_args) -> int:
 
 
 FP_METHOD = "tokens-v1"
-WATCH = ["src/firelane/segments.py", "src/firelane/seg/width.py",
-         "src/firelane/seg/geom.py", "src/firelane/seg/params.py",
-         "src/firelane/seg/graph.py", "src/firelane/seg/report.py"]
+
+# ★ 2026-09-20 (W3-8 · DECISIONS §202). **손 목록을 지웠다.**
+#   여섯 개를 손으로 적고 있었고, `firelane.segments` 의 실제 import 닫힘은
+#   **21개**다. 즉 **15개 파일 3,385줄이 판정 지문 밖**이었다 —
+#   `guards.py` · `skeleton.py` · `seg/vehicle.py` · `seg/centerline_correction.py` ·
+#   `segkey.py` 처럼 판정을 바로 움직이는 것들이 들어 있다.
+#   그것들을 고치고 파이프라인을 안 돌려도 게이트가 조용했다.
+#
+# ★ 범위를 정하는 것은 **import 다, 사람이 아니다.** 같은 답을 `shardseal.py` 가
+#   이미 쓰고 있다(ingest 샤드 봉인). 그래서 새로 짜지 않고 `code_closure` 를 부른다 —
+#   정본이 하나다. 이 파일이 닫힘 계산을 다시 구현하면 그것이 2족이다.
+#
+# ★ `uv.lock` 이 들어간다. geopandas·shapely 판이 바뀌면 판정이 바뀔 수 있다.
+#   **새 비용이 아니다** — 잠금이 움직이면 `shardseal` 이 이미 45 샤드를 찢어
+#   파이프라인 전량이 돌고 있다(§200). 여기는 그 뒤에 재잠금 한 번이 붙을 뿐이다.
+#
+# ★ 지문 방식은 `tokens-v1` 그대로다(G-24). 파일 **목록**만 유도로 바뀐다 —
+#   `ast.dump` 로 되돌리면 파이썬 판마다 지문이 갈린다.
+_LEGACY_WATCH = ["src/firelane/segments.py", "src/firelane/seg/width.py",
+                 "src/firelane/seg/geom.py", "src/firelane/seg/params.py",
+                 "src/firelane/seg/graph.py", "src/firelane/seg/report.py"]
+"""G-24 이전(ast.dump) 잠금을 `rehash` 가 증명할 때만 쓰는 **동결된 옛 범위**.
+살아 있는 범위는 `judgment_files()` 다 — 이것을 늘리지 마라."""
+
+LOCK = ROOT / "uv.lock"
+
+
+def judgment_files() -> list[str]:
+    """판정에 관여하는 파일. `firelane.segments` 의 import 닫힘 + `uv.lock`."""
+    from firelane.shardseal import code_closure
+    out = sorted(p.relative_to(ROOT).as_posix() for p in code_closure("firelane.segments"))
+    if LOCK.is_file():
+        out.append("uv.lock")
+    return out
 
 
 def logic_text(src: str) -> str:
@@ -212,7 +243,7 @@ def logic_text(src: str) -> str:
     return "\n".join(out)
 
 
-def _logic_fingerprint() -> tuple[str, dict[str, str]]:
+def _logic_fingerprint(files: list[str] | None = None) -> tuple[str, dict[str, str]]:
     """판정에 관여하는 코드의 로직 해시. (전체, 파일별) 을 낸다.
 
     ★ 2026-08-31. 종전에는 전체 해시 하나만 냈다. 그래서 게이트가 울어도
@@ -229,13 +260,21 @@ def _logic_fingerprint() -> tuple[str, dict[str, str]]:
     """
     per = {}
     h = hashlib.sha256()
-    for rel in sorted(WATCH):
+    for rel in (judgment_files() if files is None else sorted(files)):
         q = ROOT / rel
-        if q.exists():
-            logic = logic_text(q.read_text(encoding="utf-8")).encode()
-            per[rel] = hashlib.sha256(logic).hexdigest()[:12]
+        if not q.exists():
+            continue
+        if rel == "uv.lock":
+            # ★ 잠금은 로직이 아니다 — 바이트로 잰다. `logic_text` 는 파이썬 전용이다.
+            digest = hashlib.sha256(q.read_bytes()).hexdigest()[:16]
+            per[rel] = digest
             h.update(rel.encode())
-            h.update(logic)
+            h.update(digest.encode())
+            continue
+        logic = logic_text(q.read_text(encoding="utf-8")).encode()
+        per[rel] = hashlib.sha256(logic).hexdigest()[:12]
+        h.update(rel.encode())
+        h.update(logic)
     return h.hexdigest()[:16], per
 
 
@@ -244,7 +283,7 @@ def _legacy_ast_fingerprint() -> str:
     import ast
 
     h = hashlib.sha256()
-    for rel in sorted(WATCH):
+    for rel in sorted(_LEGACY_WATCH):
         q = ROOT / rel
         if not q.exists():
             continue
@@ -282,6 +321,40 @@ def cmd_rehash(_args) -> int:
     now, per = _logic_fingerprint()
     CODE_FP.write_text(_dump_fp(now, per), encoding="utf-8")
     print(f"옮겼다 — ast.dump {old_all} → {FP_METHOD} {now} (판정 코드 불변 증명: 옛 방식 지문 일치)")
+    return 0
+
+
+def cmd_rescope(_args) -> int:
+    """손 목록(여섯)으로 잠긴 코드 지문을 **import 닫힘**(21+잠금)으로 옮긴다. 산출물은 안 건드린다.
+
+    ★ 2026-09-20 (W3-8). `lock` 을 쓰면 안 된다 — `lock` 은
+      `segments.fingerprint.json` 까지 다시 쓰고, 그러려면 파이프라인이
+      돌아야 한다. 여기서 바뀌는 것은 **무엇을 보는가**뿐이고 판정 산출물은
+      한 바이트도 안 움직인다. 범위만 옮기는 문은 따로 있어야 한다.
+
+    ★ `rehash` 와 같은 규율 — **증명 없이 옮기지 않는다.** 지금 코드를
+      **옛 범위**로 재서 잠긴 값과 같을 때만 쓴다. 다르면 판정 코드가
+      실제로 바뀐 것이고, 그때는 파이프라인을 돌리고 `lock` 이다.
+    """
+    raw = CODE_FP.read_text(encoding="utf-8") if CODE_FP.exists() else ""
+    old_all, old_per = _read_fp(raw)
+    if _read_method(raw) != FP_METHOD:
+        print(f"★ 잠금이 {FP_METHOD} 방식이 아니다 — `rehash` 를 먼저 돌려라")
+        return 1
+    if set(old_per) == set(judgment_files()):
+        print(f"이미 닫힘 범위다 — 파일 {len(old_per)}개. 옮길 것 없음")
+        return 0
+    proof, _ = _logic_fingerprint(_LEGACY_WATCH)
+    if not old_all or proof != old_all:
+        print(f"★ 옛 범위로 잰 지문이 잠긴 값과 다르다 ({old_all or '없음'} ↔ 지금 {proof})")
+        print("  판정 코드가 실제로 바뀌었다. 범위만 옮기는 문이 아니다 —")
+        print("  파이프라인을 돌리고 `golden.py lock` 으로 잠가라.")
+        return 1
+    now, per = _logic_fingerprint()
+    CODE_FP.write_text(_dump_fp(now, per), encoding="utf-8")
+    print(f"범위를 옮겼다 — 손목록 {len(old_per)}개 → 닫힘 {len(per)}개")
+    print(f"  지문 {old_all} → {now}  (판정 코드 불변 증명: 옛 범위 지문 일치)")
+    print("  ★ 산출물은 안 건드렸다. `segments.fingerprint.json` 그대로다.")
     return 0
 
 # ★ 2026-08-31. `SEG.parent`(= data/processed) 에 있었다. 그 계층은
@@ -526,6 +599,7 @@ def main() -> int:
     sub.add_parser("lock").set_defaults(fn=cmd_lock)
     sub.add_parser("selftest").set_defaults(fn=cmd_selftest)
     sub.add_parser("rehash", help="옛 ast.dump 지문을 토큰열 지문으로 옮긴다(증명 뒤에만)").set_defaults(fn=cmd_rehash)
+    sub.add_parser("rescope", help="손목록 범위를 import 닫힘으로 옮긴다(증명 뒤에만 · 산출물 불변)").set_defaults(fn=cmd_rescope)
     c = sub.add_parser("check")
     c.add_argument("--allow-stale", action="store_true",
                    help="산출물이 코드보다 낡아도 대조한다 (증명이 아님을 알고 쓸 것)")
