@@ -112,3 +112,29 @@ def test_추적_중인_파일이_정책을_지킨다():
     r = subprocess.run([sys.executable, str(ROOT / "tools" / "commit_policy.py"),
                         "--tracked"], capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, f"추적 파일이 정책을 위반한다\n{r.stdout}"
+
+
+def test_global_chain_rejects_unknown_args():
+    """`global-chain.sh` 가 **모르는 인자를 조용히 삼키지 않는가** (W3-19).
+
+    ★ 2026-09-19 실측. `case` 의 `--check|*)` 가 catch-all 이라 `--install`
+      이 오류 없이 `--check` 로 떨어졌다. 그 사이 `verify.sh` 는 「미설정이면
+      한 명령으로 끝난다 — `global-chain.sh --install`」이라는 **없는 모드를
+      안내**하고 있었고, 따라 친 사람은 초록을 보고 「됐다」고 읽었다.
+      **틀린 안내가 영원히 사는 자리** — 조용한 통과(1족)다.
+    ★ 인자 검증이 `hookdir()` 보다 **먼저**여야 이 시험이 성립한다. 뒤에
+      두면 전역 훅이 없는 기계(CI)에서 「모르는 인자」와 「훅 미설정」이
+      둘 다 exit 2 라 무엇을 잡았는지 구분이 안 된다.
+    """
+    import subprocess
+
+    sh = ROOT / ".githooks" / "global-chain.sh"
+    r = subprocess.run(["bash", str(sh), "--install"],
+                       capture_output=True, text=True, cwd=ROOT, timeout=60)
+    assert r.returncode != 0, (
+        "`global-chain.sh --install` 이 통과했다 — 없는 모드인데 조용히 삼킨다.\n"
+        "  모르는 인자는 쓰는 법을 찍고 실패해야 한다(W3-19).")
+    assert "모르는 인자" in (r.stderr + r.stdout), (
+        "실패는 했는데 **왜** 실패했는지 안 말한다.\n"
+        "  전역 훅 미설정과 모르는 인자가 같은 코드로 겹치면 구분이 안 된다.\n"
+        f"  지금 출력: {(r.stderr + r.stdout)[:300]}")

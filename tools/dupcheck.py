@@ -184,9 +184,16 @@ def main() -> int:
     if len(gs) > a.max:
         print(f"\n✗ 사본군이 상한 {a.max} 을 넘었다 ({len(gs)}). 늘었다.")
         return min(len(gs) - a.max, 255)
+    # ★ 2026-09-20 (W4-9). **미달도 실패다.** 종전에는 「조여라」를
+    #   찍고 `return 0` 했다. 초록은 「문턱을 지켰다」는 뜻이지 「문턱이
+    #   아직 의미 있다」는 뜻이 아니다 — **느슨해진 래칫은 초록으로
+    #   위장한다.** 2026-09-19 에 커버리지 래칫이 14 인데 실물이 24%
+    #   인 것을 나흘간 아무도 몰랐고, 그것이 이 행의 실물이었다.
+    #   `gate_parity` 는 처음부터 양방향이었다. 넷을 그쪽에 맞춘다.
     if len(gs) < a.max:
-        print(f"\n★ 상한 {a.max} 보다 {a.max - len(gs)} 적다. "
+        print(f"\n✗ 상한 {a.max} 보다 {a.max - len(gs)} 적다 ({len(gs)}). "
               f"`--max {len(gs)}` 로 조여라 — 안 조이면 되돌아간다.")
+        return 1
     return 0
 
 
