@@ -2,7 +2,7 @@
 name = "fire-lane"
 version = "0.1.0"
 description = "소방차 진입곤란 구간 자동 판정 및 우회 경로 탐색 (인공지능사관학교 7기 파이널)"
-requires-python = ">=3.11"
+requires-python = ">=3.14"   # ★ .python-version 이 정본이다(W3-17). 선언이 실제보다 넓으면 읽는 사람이 속는다
 
 # 전체 프로젝트 의존성. 팀원은 이 파일 하나만 보면 된다.
 # 스택이 바뀌면 여기만 고치고 devcontainer를 리빌드하면 전원에게 전파된다.
@@ -71,7 +71,7 @@ vision = [
 #   GIS·인프라 담당은 vision 이 필요 없다.
 #
 #       GPU 있는 기기   uv sync --all-extras
-#       GPU 없는 기기   uv sync --extra api --extra dev
+#       GPU 없는 기기   uv sync --extra api --dev
 #
 #   CPU 전용 토치를 쓰려면 아래 주석을 풀어라. 휠이 200MB 대로 떨어진다.
 #
@@ -83,11 +83,11 @@ vision = [
 #       [tool.uv.sources]
 #       torch = [{ index = "pytorch-cpu" }]
 #       torchvision = [{ index = "pytorch-cpu" }]
-dev = [
-    "ruff>=0.6",
-    "pytest>=8.3",
-    "pre-commit>=3.8",
-]
+# ★ 2026-09-20 (W3-1). 여기 있던 `dev` extras 를 지웠다. `[dependency-groups]`
+#   의 dev 와 **이름이 같고 내용이 달랐다** — pytest 가 한쪽은 >=8.3, 다른
+#   쪽은 >=9.1.1 이었고 pytest-cov · olefile 은 이쪽에 없었다.
+#   `uv sync --extra dev` 를 친 사람만 **조용히 약한 환경**을 받았다.
+#   dev 도구의 집은 `[dependency-groups] dev` 하나다.
 
 # ★ 단일 진입점. `python src/etl/pipeline.py` 는 cwd 에 따라 깨졌다.
 [project.scripts]
@@ -185,6 +185,16 @@ dev = [
     #   **지금 값에서 시작해 내린다.** 목표를 크게 잡으면 못 지키고,
     #   못 지키는 문턱은 끄게 된다.
     "pytest-cov>=5.0",
+    # ★ 2026-09-20 (W3-15). GitHub Actions 문법·표현식 린터. 순수 파이썬
+    #   래퍼가 actionlint 바이너리를 들고 온다 — 별도 설치 단계가 없고
+    #   `uv.lock` 이 판을 고정한다. 2026-09-20 에 시험 삼아 돌린 첫 실행이
+    #   `contract.yml` 의 셸 인젝션을 잡았다.
+    "actionlint-py>=1.7",
+    # ★ 2026-09-20. actionlint 는 shellcheck 가 PATH 에 있으면 `run:` 블록을
+    #   더 깊이 본다 — **없으면 조용히 덜 본다.** 그래서 shellcheck 없는
+    #   기계는 초록이고 CI(ubuntu-latest, 기본 설치)는 빨갰다. 실제로
+    #   2026-09-20 에 그렇게 갈렸다. 잠금에 박아 두 기계가 같은 판을 돌린다.
+    "shellcheck-py>=0.10",
     "ruff>=0.6",
     "pre-commit>=3.8",
     "olefile>=0.47",
