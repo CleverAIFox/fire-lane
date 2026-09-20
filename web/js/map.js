@@ -37,8 +37,15 @@ export function createMap(VIEW){
            V-World 위성보다 훨씬 선명하다. 판정에는 쓰지 않는다. */
         /* bounds 는 실제로 구운 타일 범위다(view.json). 없으면 브라우저가
            범위 밖 타일을 요청해 404 가 뜬다. */
+        /* ★ 2026-09-20 (W9-2 · DECISIONS §205) maxzoom 18 → 19.
+           ortho.py 는 TILE_Z=(15..19) 로 굽는데 여기가 18 이었다. MapLibre 는
+           소스 maxzoom 위로 타일을 **요청하지 않으므로** z19 1,035장 16.4MB 가
+           커밋·배포되면서 소비자가 0명이었다 — web/data 33.0MB 의 49.7% 다.
+           25cm 원본이 실제로 보이는 줌이 z19 라, 지우는 대신 읽는다.
+           tests/test_tile_zoom_agreement.py 가 셋(ortho.py · 여기 · desk_check.py)을
+           대조한다 — 값을 고치는 것은 인스턴스고 그 검사가 족이다. */
         ortho:{type:"raster",tiles:["./data/ortho/{z}/{x}/{y}.jpg"],
-          tileSize:256, minzoom:15, maxzoom:18, bounds:VIEW.orthoBounds || TB,
+          tileSize:256, minzoom:15, maxzoom:19, bounds:VIEW.orthoBounds || TB,
           attribution:"항공정사영상 국토지리정보원"},
         /* 지형. terrain.py 가 구운 Terrain-RGB 타일이다.
            이 소스를 setTerrain 에 물려야 지면이 실제로 휜다.

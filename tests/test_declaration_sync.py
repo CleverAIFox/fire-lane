@@ -178,26 +178,47 @@ def _plan_rows() -> list[int]:
             if (m := re.match(r"\| (\d+) \|", x))]
 
 
-def test_plan_row_numbers_are_contiguous_and_sorted():
-    """`§1` 표의 번호는 본문이 서로를 가리키는 데 쓰인다(24행이 "23번").
+def test_plan_row_numbers_are_unique_and_sorted():
+    """`§1` 표의 번호는 **영구 식별자**다. 유일하고 오름차순이면 된다.
 
-    결번이 생기면 지운 것인지 아직 안 쓴 것인지 갈리지 않고, 순서가
-    어긋나면 표를 눈으로 훑을 수 없다.
+    ★ 2026-09-20 (DECISIONS §205). 종전 이름은
+      `test_plan_row_numbers_are_contiguous_and_sorted` 였고 **결번을 빨간불로
+      셌다.** 그래서 행을 지울 때마다 `plan_renumber.py --apply` 로 뒤를 당겨야 했다.
+
+      그 도구는 `docs/PLAN.md` **하나만** 연다. 그런데 §1 행을 가리키는 인용은
+      밖에 **83곳** 있다 — `DECISIONS` 70 · `MASTER` 7 · `sources.yaml` 6.
+      즉 당길 때마다 그 83곳이 **조용히 다른 행을 가리켰다.**
+      `plan_renumber.py` 안의 주석이 그 사고를 이미 적고 있었다(`§1 #16`).
+      방어가 있었지만 **PLAN 안의 참조만** 봤다.
+
+      DECISIONS 70곳은 append-only 역사라 고칠 수 없다. 그러면 답은 하나다 ——
+      **당기지 않는다.** 결번을 허용하고 번호를 영구 식별자로 만든다.
+
+    ★ 그리고 이것이 **§1 이 줄어들 수 있게 만든다.** 지금까지 닫힌 행이
+      목록에 그대로 앉아 있던 이유가 「지우면 뒤가 당겨진다」였다.
     """
     nums = _plan_rows()
     assert nums, "PLAN §1 에서 표 행을 찾지 못했다"
     assert nums == sorted(nums), f"번호가 오름차순이 아니다: {nums}"
-    gaps = sorted(set(range(1, max(nums) + 1)) - set(nums))
-    assert not gaps, (
-        f"결번: {gaps}. **뒤 번호를 당긴다.**\n"
-        "  uv run python tools/plan_renumber.py --apply\n\n"
-        "  ★ 2026-09-13 이전 안내는 '당기지 말고 슬롯을 채운다' 였다.\n"
-        "    슬롯을 남기던 시절의 규약이고, 지금은 닫힌 항목의 행을\n"
-        "    지운다(PLAN §0-2). 번호는 영구 식별자가 아니라 현재\n"
-        "    목록의 순번이다 — 영구 식별자는 DECISIONS §N 이 맡는다.\n"
-        "  ★ 검사가 옛 규약을 말하면 다음 사람이 그것을 따른다.")
     dup = sorted({n for n in nums if nums.count(n) > 1})
-    assert not dup, f"중복 번호: {dup}"
+    assert not dup, (
+        f"중복 번호: {dup}.\n"
+        "  같은 번호가 두 행에 있으면 밖의 인용이 어느 쪽인지 모른다.\n"
+        "  ★ 번호는 **다시 쓰지 않는다** — 지운 번호는 비워 둔다(§0-2).")
+
+
+def test_plan_renumber_cannot_shift_numbers_any_more():
+    """재배번 경로가 되살아나지 않았는가.
+
+    ★ 손으로 되돌리기 쉬운 자리다 — 결번을 보면 「당겨야지」가 먼저 떠오른다.
+      그 순간 밖의 83곳이 조용히 어긋난다. **없앴다는 사실을 검사가 든다.**
+    """
+    src = (ROOT / "tools" / "plan_renumber.py").read_text(encoding="utf-8")
+    assert "폐지됐다" in src, "`--apply` 폐지 안내가 사라졌다"
+    assert "old2new" not in src, (
+        "`plan_renumber.py` 에 재배번 치환이 되살아났다.\n"
+        "  §1 번호를 당기면 `DECISIONS`(70) · `MASTER`(7) · `sources.yaml`(6) 의\n"
+        "  인용 83곳이 조용히 다른 행을 가리킨다. 그중 70곳은 고칠 수 없는 역사다.")
 
 
 def test_master_and_decisions_bare_refs_resolve():
@@ -489,6 +510,9 @@ def test_defect_ledger_ids_are_unique():
 LEDGER_NOT_A_PATH = {
     "MASTER/12-8": "W3-5 가 **제안하는 ID 표기**다. 위치 기반 `MASTER-082` 를 "
                    "제목 경로로 바꾸자는 것이고, 파일 경로가 아니다",
+    "refs/pull/108/head": "W11-1 이 드는 **git ref** 다. 작업 트리의 파일이 아니라 "
+                          "`git for-each-ref` 로만 보이는 원격 참조이고, 그 행의 요지가 "
+                          "**바로 거기에만 있다**는 것이다 — 실재하면 오히려 결함이 아니다",
 }
 
 # 경로처럼 보이는 백틱 토큰 — 슬래시가 하나 이상 있어야 한다
@@ -578,3 +602,27 @@ def test_every_ledger_exemption_states_a_reason():
     """사유 없는 면제는 그냥 구멍이다."""
     for name, why in LEDGER_NOT_A_PATH.items():
         assert why and len(why) > 15, f"`{name}` 면제에 사유가 없다"
+
+
+def test_plan_section1_count_agrees():
+    """`§1` 제목의 수와 실제 행 수가 같은가.
+
+    ★ 2026-09-20 (DECISIONS §205). §13 은 하루 전에 같은 것을 세웠고
+      **세우자마자 갈린 것이 걸렸다**(문단 30 · 제목 28 · 표 28). §1 은 62행을
+      굴리면서 수를 **어디에도 안 적었다** — 「얼마나 남았나」를 물으면 매번
+      손으로 세야 했다. 손으로 세는 것은 갈린다. 세어 본 적이 없으니
+      갈릴 기회조차 없었을 뿐이다.
+
+    ★ 이 수가 **줄어들 수 있게 된 것**이 같은 배치의 일이다 — 종전에는 행을
+      지우면 뒤 번호가 당겨지고 밖의 인용 83곳이 어긋나서 **지울 수가 없었다.**
+      결번을 허용하면서 그 잠금이 풀렸다.
+    """
+    plan = (ROOT / "docs" / "PLAN.md").read_text(encoding="utf-8")
+    m = re.search(r"^## 1\. 남은 일 — (\d+)행\s*$", plan, re.M)
+    assert m, (
+        "§1 제목이 「남은 일 — N행」 꼴이 아니다 — 세는 자리가 사라졌다.\n"
+        "  행을 지우거나 더하면 제목의 수도 같이 고친다.")
+    declared, real = int(m.group(1)), len(_plan_rows())
+    assert declared == real, (
+        f"§1 의 수가 갈렸다 — 제목 {declared}행 · 실제 표 {real}행\n"
+        "  정본은 **표**다. 제목을 고쳐라.")
