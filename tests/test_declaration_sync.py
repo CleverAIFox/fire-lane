@@ -425,12 +425,17 @@ def test_sources_plan_row_refs_resolve():
 
 
 # ── §13 결함 대장 — 세는 일을 사람에게 맡기지 않는다 ─────────────
-def _ledger_rows() -> list[str]:
-    """§13-3 표의 W-ID 목록. 순서대로."""
+def _ledger_section() -> str:
+    """§13-3 절 본문. 못 찾으면 곧 빈 그물이므로 여기서 죽는다."""
     plan = (ROOT / "docs" / "PLAN.md").read_text(encoding="utf-8")
     m = re.search(r"^### 13-3\..*?$(.*?)(?=^###\s)", plan, re.M | re.S)
     assert m, "PLAN §13-3 절을 못 찾았다 — 이 검사가 빈 그물이 됐다"
-    return re.findall(r"^\|\s*(W\d+-\d+)\s*\|", m.group(1), re.M)
+    return m.group(1)
+
+
+def _ledger_rows() -> list[str]:
+    """§13-3 표의 W-ID 목록. 순서대로."""
+    return re.findall(r"^\|\s*(W\d+-\d+)\s*\|", _ledger_section(), re.M)
 
 
 def test_defect_ledger_counts_agree_everywhere():
@@ -475,3 +480,101 @@ def test_defect_ledger_ids_are_unique():
     rows = _ledger_rows()
     dup = sorted({r for r in rows if rows.count(r) > 1})
     assert not dup, f"§13-3 에 중복 ID: {dup}"
+
+
+# ── §13 행이 **실재하는 것**을 가리키는가 ────────────────────────
+# ★ 대장에 담긴 경로 표기 중 **파일이 아닌 것.** 사유를 적는다.
+#   비어 있어도 된다 — 아래 `test_ledger_exemptions_are_not_dead` 가
+#   「면제했는데 실은 안 걸리는 것」을 지운다.
+LEDGER_NOT_A_PATH = {
+    "MASTER/12-8": "W3-5 가 **제안하는 ID 표기**다. 위치 기반 `MASTER-082` 를 "
+                   "제목 경로로 바꾸자는 것이고, 파일 경로가 아니다",
+}
+
+# 경로처럼 보이는 백틱 토큰 — 슬래시가 하나 이상 있어야 한다
+_LEDGER_PATH = re.compile(r"`([\w.-]+(?:/[\w.@-]+)+/?)`")
+
+
+def _ledger_citations() -> list[tuple[str, str]]:
+    """(W-ID, 경로 표기) 목록. 글롭은 뺀다 — 0건인지 아닌지는 refcheck 소관이다."""
+    out = []
+    for line in _ledger_section().splitlines():
+        m = re.match(r"^\|\s*(W\d+-\d+)\s*\|(.*)$", line)
+        if not m:
+            continue
+        for p in sorted(set(_LEDGER_PATH.findall(m.group(2)))):
+            if any(c in p for c in "*?"):
+                continue
+            out.append((m.group(1), p))
+    return out
+
+
+def _resolves(rel: str) -> bool:
+    """실재하는가. 정확 경로거나, 추적 파일의 **꼬리**거나."""
+    if (ROOT / rel.rstrip("/")).exists():
+        return True
+    tail = "/" + rel.rstrip("/")
+    return any(str(q.relative_to(ROOT)).endswith(tail)
+               for q in ROOT.rglob("*" + Path(rel).name) if q.is_file())
+
+
+def test_every_ledger_row_points_at_something_real():
+    """§13-3 의 행이 드는 경로가 실재하는가.
+
+    ★ 2026-09-20 (DECISIONS §203). 가드 1 이 「닫혔다고 적힌 것이 정말
+      닫혔나」를 묻는다면, 이것은 **거울상**이다 — 「열려 있다고 적힌 것이
+      정말 열려 있나」. 둘 다 없으면 대장은 양쪽으로 샌다.
+
+    ★ 세우고 재니 **25행 중 셋이 유령이었다.**
+
+        W4-1  `outputs/diagrams/` 2개 — 생성 코드가 없다
+        W3-7  폰트 스택 둘 — `outputs/diagrams` vs `docs/figures`
+
+      `outputs/diagrams/` 는 **git 역사상 한 번도 없었다.** `outputs/` 자체는
+      html 두 장짜리였고 2026-08-09(`bf86828`)에 사라졌다. 즉 2026-09-18 감사가
+      **없는 디렉터리에 대한 결함 둘**을 등재했고, 그 뒤 이틀간 아무도 몰랐다.
+      (셋째 W4-3 은 경로가 아니라 **이미 닫힌 것**이 남은 경우다 — 그쪽은
+      기계가 못 잡는다. 사람이 `baseline.py` 머리말을 읽어야 알 수 있었다.)
+
+    ★ `refcheck ⑦` 이 왜 못 잡았나 — 그 정규식이
+      `` `(src|tools|tests|docs|web|data)/…\\.\\w{1,6}` `` 다. **확장자를 요구하므로
+      디렉터리 참조는 애초에 후보가 안 된다.** 접두 목록도 손목록이고,
+      `outputs` 는 거기 없다. 범위가 이름(「선언이 가리키는 모든 것」)보다
+      좁고 그것이 선언돼 있지 않았다 — 이 저장소가 세는 그 족이다.
+      여기서는 **확장자를 요구하지 않고 디렉터리도 본다.**
+
+    ★ 범위는 §13-3 하나다. DECISIONS 는 **역사**라 죽은 경로를 인용하는 것이
+      정상이고, 거기까지 넓히면 16건이 뜨는데 대부분 옳다(측정했다).
+      대장의 행만이 **지금에 대한 주장**이다.
+    """
+    bad = []
+    for wid, rel in _ledger_citations():
+        if rel in LEDGER_NOT_A_PATH or _resolves(rel):
+            continue
+        bad.append(f"  {wid}  `{rel}` — 없다")
+    assert not bad, (
+        "§13-3 의 행이 **없는 것**을 가리킨다.\n" + "\n".join(bad) + "\n\n"
+        "  전제가 사라졌으면 행을 지운다(§13-5 규약 4). 결함이 닫힌 것이 아니라\n"
+        "  **애초에 없던 것**일 수도 있다 — 어느 쪽인지 git 으로 먼저 확인해라:\n"
+        "    git log --all --diff-filter=D --name-only -- '<경로>'\n"
+        "  경로가 아니라 표기(ID 꼴 등)이면 `LEDGER_NOT_A_PATH` 에 사유와 함께 적는다.")
+
+
+def test_ledger_exemptions_are_not_dead():
+    """면제했는데 실은 안 걸리는 것이 있는가.
+
+    ★ 죽은 면제는 「이건 봐줬다」는 거짓 기록이고, 다음 사람이 그 목록을
+      믿고 안 본다. 2026-09-20 에 `test_tools_are_wired` 에서 31개 중 12개가,
+      `deadcheck` 에서도 같은 형태가 나왔다. 세 번째다 — 면제에는 늘 이것을 붙인다.
+    """
+    cited = {rel for _, rel in _ledger_citations()}
+    dead = sorted(k for k in LEDGER_NOT_A_PATH if k not in cited or _resolves(k))
+    assert not dead, (
+        f"면제가 죽었다 — {dead}\n"
+        "  대장이 더는 인용하지 않거나, 인용하는데 실재한다. 지워라.")
+
+
+def test_every_ledger_exemption_states_a_reason():
+    """사유 없는 면제는 그냥 구멍이다."""
+    for name, why in LEDGER_NOT_A_PATH.items():
+        assert why and len(why) > 15, f"`{name}` 면제에 사유가 없다"

@@ -169,7 +169,11 @@ def fig_cctv() -> str:
             '<text x="360" y="120" font-size="12" fill="#0f172a">'
             '이 안에 든 구간만 영상으로 판정한다.</text>',
             '<text x="360" y="142" font-size="12" fill="#64748b">'
-            '밖은 `unknown` — 모른다고 적지 통과로 보지 않는다.</text>',
+            # ★ 2026-09-20 (W4-6). `unknown` 이라고 적었고 **백틱이 그대로 그려졌다.**
+            #   SVG `<text>` 는 마크다운을 모른다 — 여기서 백틱은 코드 표기가 아니라
+            #   그냥 글자다. 그림에 쓰는 문자열은 마크다운이 아니라는 것이
+            #   `tests/test_figure_text.py` 로 강제된다.
+            '밖은 unknown — 모른다고 적지 통과로 보지 않는다.</text>',
             '<text x="360" y="164" font-size="12" fill="#64748b">'
             '거리에 따라 픽셀당 실거리가 커져 오차가 늘어난다.</text>']
     return _svg("".join(body), h=290)

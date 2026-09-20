@@ -998,9 +998,17 @@ def code_print(root: Path = ROOT) -> dict | None:
     files = sorted(f for f in r.stdout.decode("utf-8").split("\0") if f)
     if not files:
         return None
-    lines = [f"{rel}\0{sha256(root / rel) if (root / rel).is_file() else '<gone>'}"
-             for rel in files]
-    return {"sha256": _sha("\n".join(lines)), "files": len(files)}
+    per = {rel: (sha256(root / rel) if (root / rel).is_file() else "<gone>")
+           for rel in files}
+    lines = [f"{rel}\0{d}" for rel, d in per.items()]
+    # ★ 2026-09-20 (W4-4 · DECISIONS §203). 종전에는 `"files": len(files)` 였다.
+    #   파일별 지문을 **계산해놓고 세어서 버렸다.** 그래서 코드가 달라졌을 때
+    #   `rawdiff` 가 할 수 있는 말이 「파일 N → M」뿐이었고, 바로 아래 `raw` 블록은
+    #   같은 자리에서 신설·변경·삭제를 키별로 말한다 — **같은 함수 안에서 한쪽만
+    #   말을 못 했다.** 무엇이 바뀌었는지 못 말하는 봉인은 봉인이 아니다.
+    #   `golden._logic_fingerprint` 의 `per` 와 같은 꼴로 남긴다.
+    # ★ 수는 `len(files)` 로 언제든 다시 나온다. 지문은 그 시점에만 잴 수 있다.
+    return {"sha256": _sha("\n".join(lines)), "files": per}
 
 
 def cmd_rawdiff() -> int:
@@ -1028,8 +1036,26 @@ def cmd_rawdiff() -> int:
         print("코드 지문을 못 쟀다 — 전량을 돈다.")
         return 1
     if nc["sha256"] != oc.get("sha256"):
-        print(f"파이프라인 코드가 봉인과 다르다 — 전량을 돈다 "
-              f"(파일 {oc.get('files')} → {nc['files']})")
+        # ★ 2026-09-20 (W4-4). 종전에는 「파일 N → M」만 찍었다. 수가 같으면
+        #   (고치기만 하면 언제나 같다) 아무 정보도 없는 줄이었다.
+        #   아래 `raw` 블록이 이미 키별로 말하고 있었다 — 같은 말을 여기서도 한다.
+        ofs, nfs = oc.get("files"), nc["files"]
+        if isinstance(ofs, dict):
+            gone = sorted(set(ofs) - set(nfs))
+            new = sorted(set(nfs) - set(ofs))
+            moved = sorted(k for k in nfs if k in ofs and nfs[k] != ofs[k])
+            print(f"파이프라인 코드가 봉인과 다르다 — 전량을 돈다 "
+                  f"(신설 {len(new)} · 변경 {len(moved)} · 삭제 {len(gone)})")
+            for k in (new + moved + gone)[:12]:
+                tag = "신설" if k in new else ("변경" if k in moved else "삭제")
+                print(f"    {tag}  {k}")
+            rest = len(new) + len(moved) + len(gone) - 12
+            if rest > 0:
+                print(f"    … 그리고 {rest}개 더")
+        else:
+            # 옛 봉인은 `files` 가 개수다. 셀 수만 있고 이름은 없다.
+            print(f"파이프라인 코드가 봉인과 다르다 — 전량을 돈다 "
+                  f"(옛 봉인이라 파일별 지문이 없다 · 파일 {ofs} → {len(nfs)})")
         print(f"    git diff --stat {seal.get('commit', 'HEAD')} -- {' '.join(CODE_PATHS)}")
         return 1
     old = seal.get("raw")
@@ -1044,7 +1070,7 @@ def cmd_rawdiff() -> int:
     new = sorted(set(now) - set(old))
     moved = sorted(k for k in now if k in old and now[k] != old[k])
     if not (gone or new or moved):
-        print(f"raw 가 봉인과 같다 — {len(now)}종 전부 일치 · 코드 {nc['files']}파일 일치.")
+        print(f"raw 가 봉인과 같다 — {len(now)}종 전부 일치 · 코드 {len(nc['files'])}파일 일치.")
         return 0
     print(f"raw 가 다르다 — 신설 {len(new)} · 변경 {len(moved)} · 삭제 {len(gone)}")
     for k in (new + moved + gone)[:12]:
