@@ -313,3 +313,33 @@ def test_discrete_ratchets_fail_when_slack() -> None:
         f"  `dupcheck --max 9` 가 rc={slack.returncode} 로 끝났다.\n"
         "  느슨한 상한은 되돌아갈 자리를 남기고, 그것이 초록으로 위장한다.\n"
         "  미달이면 실패해야 한다(W4-9).\n" + slack.stdout[-500:])
+
+
+def test_coverage_advice_floors_instead_of_rounding() -> None:
+    """래칫을 「조여라」고 권할 때 **반올림한 값을 권하지 않는가.**
+
+    ★ 2026-09-20 실물. 메시지가 `coverage report --format=total` 을 그대로
+      읽어 「COV_MIN 을 24 로 조여라」라고 말했다. 그런데 그 값은 **반올림**
+      이고 실측은 **23.75%** 였다. 시키는 대로 조이면 `--fail-under=24` 가
+      23.75 를 떨어뜨려 **다음 실행부터 빨갛다.**
+
+    ★ 바로 위 주석은 「화면의 24% 는 반올림이라 실제가 23.5 일 수 있다」를
+      이미 알고 있었다. **아는 것이 강제되는 자리에 없으면 없는 것과 같다**
+      (MASTER §17). 그래서 주석이 아니라 여기가 든다.
+    """
+    src = VERIFY.read_text(encoding="utf-8")
+    m = re.search(r'step "커버리지 래칫".*?\n(?=scope |step |\n#)', src, re.S)
+    assert m, "커버리지 래칫 단계를 못 읽었다"
+    body = m.group(0)
+
+    assert "--precision" in body, (
+        "래칫 권고가 `--precision` 없이 `--format=total` 을 읽는다.\n"
+        "  그 값은 반올림이라 실측 23.75% 가 24 로 보이고,\n"
+        "  그대로 조이면 `--fail-under` 가 다음 실행을 떨어뜨린다.")
+    assert "%%.*" in body, (
+        "소수를 **내림**하는 자리가 없다.\n"
+        "  `FLOOR=${PCT%%.*}` 처럼 정수부만 취해야 권고가 안전하다.")
+    # ★ 되돌림 — 내림한 값이 아니라 원래 값을 권하면 안 된다.
+    assert 'COV_MIN 을 ${FLOOR}' in body, (
+        "권고가 내림값(`$FLOOR`)이 아닌 것을 가리킨다.\n"
+        "  반올림된 `$PCT` 를 권하면 2026-09-20 의 사고가 그대로 돌아온다.")
