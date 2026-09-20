@@ -20,9 +20,19 @@ export const segColor = () => {
   /* 유도의 정본은 verdict.js 다. 미니맵도 같은 것을 쓴다(B3 2026-09-11). */
   return verdictMatch();
 };
-export const segOpacity = () => S.dispatchMode
+/* 발행 구간의 세 층. 대상지 → 회랑 → 참고 순으로 옅어진다.
+   ★ 색이 아니라 진하기다. 색은 판정 4종의 것이고 범례 밖 색을 지도에만
+     두는 것이 제일 나쁘다. 진하기는 범례를 안 늘린다.
+   ★ 정본은 `in_emd` 와 `route_usage` 두 속성이고 둘 다 이미 발행된다 —
+     새 속성을 만들지 않는다. PLAN §1 #62 · tools/scopecheck.py 와 같은 기준. */
+export const scopeTier = () => ["case",
+  ["coalesce",["get","in_emd"], false], 1,
+  [">",["coalesce",["get","route_usage"], 0], 0], CONFIG.scope.corridorAlpha,
+  CONFIG.scope.asideAlpha];
+
+export const segOpacity = () => ["*", scopeTier(), S.dispatchMode
   ? ["case",["==",["get","verdict"],"clear"], 1, CONFIG.dispatch.dimAlpha/255]
-  : 0.92;
+  : 0.92];
 
 /* 선 굵기 = 실제 도로 폭(m).
    MapLibre line-width 는 픽셀이므로 줌별 미터당 픽셀로 환산한다.
