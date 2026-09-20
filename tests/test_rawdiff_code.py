@@ -43,9 +43,14 @@ def dms(tmp_path, monkeypatch):
     return m
 
 
+# ★ 2026-09-20 (W4-4). `code.files` 가 **개수에서 파일별 지문으로** 바뀌었다.
+#   개수만으로는 「무엇이 바뀌었나」를 못 말한다 — 고치기만 하면 수는 늘 같다.
+FILES = {"src/firelane/segments.py": "aaa", "sources.yaml": "bbb"}
+
+
 def _seal(m, tmp_path, **rec):
     base = {"commit": "abc1234", "raw": {"gjcity_road": ["aaa"]},
-            "code": {"sha256": "c0de", "files": 3}}
+            "code": {"sha256": "c0de", "files": dict(FILES)}}
     base.update(rec)
     (tmp_path / m.SEAL).write_text(json.dumps(base), encoding="utf-8")
 
@@ -53,14 +58,16 @@ def _seal(m, tmp_path, **rec):
 def test_same_raw_and_code_skips(dms, tmp_path, monkeypatch):
     """둘 다 같으면 0 — 생략이 살아 있다. **이것이 없으면 아래 셋은 무의미하다.**"""
     _seal(dms, tmp_path)
-    monkeypatch.setattr(dms, "code_print", lambda: {"sha256": "c0de", "files": 3})
+    monkeypatch.setattr(dms, "code_print", lambda: {"sha256": "c0de", "files": dict(FILES)})
     assert dms.cmd_rawdiff() == 0
 
 
 def test_code_change_alone_forces_full_run(dms, tmp_path, monkeypatch, capsys):
     """★ 핵심. raw 는 같고 코드만 다르면 1 이어야 한다."""
     _seal(dms, tmp_path)
-    monkeypatch.setattr(dms, "code_print", lambda: {"sha256": "beef", "files": 3})
+    monkeypatch.setattr(dms, "code_print",
+                        lambda: {"sha256": "beef",
+                                 "files": {**FILES, "src/firelane/segments.py": "NEW"}})
     assert dms.cmd_rawdiff() == 1
     out = capsys.readouterr().out
     assert "코드가 봉인과 다르다" in out
@@ -70,7 +77,7 @@ def test_code_change_alone_forces_full_run(dms, tmp_path, monkeypatch, capsys):
 def test_old_seal_without_code_forces_full_run(dms, tmp_path, monkeypatch):
     """코드 지문이 없는 옛 봉인은 모르는 것이다 — 모르면 안 건너뛴다."""
     _seal(dms, tmp_path, code=None)
-    monkeypatch.setattr(dms, "code_print", lambda: {"sha256": "c0de", "files": 3})
+    monkeypatch.setattr(dms, "code_print", lambda: {"sha256": "c0de", "files": dict(FILES)})
     assert dms.cmd_rawdiff() == 1
 
 
@@ -94,7 +101,8 @@ def test_code_print_moves_with_content_not_with_junk(tmp_path):
     subprocess.run([*git, "-C", str(tmp_path), "commit", "-qm", "0"], check=True)
 
     a = m.code_print(tmp_path)
-    assert a and a["files"] == 2, a          # web/ 은 파이프라인 코드가 아니다
+    assert a and len(a["files"]) == 2, a     # web/ 은 파이프라인 코드가 아니다
+    assert set(a["files"]) == {"sources.yaml", "src/firelane/seg/scope.py"}, a
 
     (tmp_path / "src/firelane/seg/__pycache__").mkdir()
     (tmp_path / "src/firelane/seg/__pycache__/scope.pyc").write_bytes(b"junk")
@@ -114,3 +122,41 @@ def test_seal_records_code_print():
     """봉인이 코드 지문을 **적는가.** 안 적으면 다음 rawdiff 가 영원히 전량을 돈다."""
     src = (ROOT / "tools/dms.py").read_text(encoding="utf-8")
     assert '"code": code_print()' in src
+
+
+def test_code_diff_names_the_file_that_moved(dms, tmp_path, monkeypatch, capsys):
+    """**무엇이 바뀌었는지 말하는가** (W4-4 · DECISIONS §203).
+
+    ★ 종전 출력은 「파일 3 → 3」이었다. 고치기만 하면 수는 언제나 같으므로
+      **정보가 0인 줄**이었고, 사람은 `git diff --stat` 을 손으로 쳐서
+      범위 전체를 다시 훑어야 했다. 바로 아래 `raw` 블록은 같은 상황에서
+      키별로 신설·변경·삭제를 말한다 — **같은 함수 안에서 한쪽만 말을 못 했다.**
+      무엇이 바뀌었는지 못 말하는 봉인은 봉인이 아니다.
+    """
+    _seal(dms, tmp_path)
+    monkeypatch.setattr(dms, "code_print", lambda: {
+        "sha256": "beef",
+        "files": {"src/firelane/segments.py": "CHANGED",   # 변경
+                  "tools/verify.sh": "ccc"}})              # 신설 (sources.yaml 삭제)
+    assert dms.cmd_rawdiff() == 1
+    out = capsys.readouterr().out
+    assert "변경  src/firelane/segments.py" in out, out
+    assert "신설  tools/verify.sh" in out, out
+    assert "삭제  sources.yaml" in out, out
+    assert "신설 1 · 변경 1 · 삭제 1" in out, out
+
+
+def test_old_seal_with_counted_files_still_reads(dms, tmp_path, monkeypatch, capsys):
+    """옛 봉인(`files` 가 개수)을 만나도 죽지 않는가.
+
+    ★ `SEAL.json` 은 커밋돼 있다. 모양을 바꾼 날, 아직 안 다시 찍은 봉인이
+      트리에 남아 있다 — 그것을 읽다 터지면 **생략 판정 대신 예외**가 나고,
+      `verify.sh` 의 「파이프라인 전량」 단계가 통째로 빨개진다.
+      모르면 안 건너뛰는 것이 규율이지, 모르면 죽는 것이 규율이 아니다.
+    """
+    _seal(dms, tmp_path, code={"sha256": "c0de", "files": 3})
+    monkeypatch.setattr(dms, "code_print", lambda: {"sha256": "beef", "files": dict(FILES)})
+    assert dms.cmd_rawdiff() == 1
+    out = capsys.readouterr().out
+    assert "옛 봉인이라 파일별 지문이 없다" in out, out
+    assert "파일 3 → 2" in out, out
