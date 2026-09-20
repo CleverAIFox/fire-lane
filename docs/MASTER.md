@@ -2157,7 +2157,7 @@ python -m firelane.contract                     대장 선언 ↔ raw 실물 대
 ### 14-4. 검사
 
 ```bash
-bash tools/verify.sh          # 44단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 46단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 파이프라인 전량 생략
 ```
 

@@ -400,6 +400,12 @@ step "엄격 린트 (CI 와 같은 인자)" bash -c '
 #   없는 것보다 나쁘다 — 검사가 있다는 사실이 정합을 검증한 것처럼 보이게 한다.
 #   정합을 **실제로** 묻는 것은 `gate_parity.py` 다(아래 「관문 동등」).
 
+# ★ 2026-09-20 (W3-15). 워크플로는 **머지되기 전에는 문법조차 안 본다** —
+#   배포 넷은 push+paths 로만 돌아 PR 에서 안 보이고, `_deploy.yml` 이 하루
+#   동안 깨진 채로 main 까지 갔다(DECISIONS §196). actionlint 는 YAML 파싱
+#   너머의 것을 본다 — 표현식 · 액션 참조 · 셸 인젝션.
+#   커밋된 잠금으로 깔리므로 CI 에서도 같은 판이 돈다(면제 아님).
+step "워크플로 린트"    uv run actionlint
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
 # ★ 2026-09-18 (W1). 로컬 훅과 CI 가 이 한 파일을 읽는다 — 정본이 하나다.
@@ -463,6 +469,13 @@ step "선언 ↔ 실물"     uv run python tools/refcheck.py
 step "트리 전수 대조"   uv run python tools/treecheck.py --repo
 scope "web/* data/*"
 step "web/data 계보"    uv run python tools/web_manifest.py --check
+# ★ 2026-09-20 (PLAN §1 #62). 출동 대상지는 동명동 하나다. 이 단계가 생기기
+#   전까지 「스코프가 얼마나 벗어났나」를 **세는 검사가 하나도 없었다** —
+#   `tests/test_station_scope.py` 는 「안전센터를 덮는가」만 보고 넓을수록
+#   통과한다. 방향이 반대인 검사만 있었다.
+#   커밋된 발행물의 속성만 읽으므로 CI 에서도 돈다(면제 아님).
+scope "web/data/* tools/*"
+step "스코프 벗어남"    uv run python tools/scopecheck.py
 # ci-exempt: tools/tidy.py 로컬 작업 트리의 찌꺼기를 센다. CI 는 매번 새 트리라 물음이 성립하지 않는다
 step "로컬 찌꺼기"      uv run python tools/tidy.py
 scope "web/data/* tools/*"

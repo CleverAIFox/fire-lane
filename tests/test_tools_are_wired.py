@@ -54,64 +54,96 @@ EXEMPT = {
     "desk_check": "정사영상 위에 구간·폭 렌더. 책상 대조",
     "skeleton_compare": "R1 뼈대 후보 대조표. 사람이 R3 를 판정하려고 부른다(DECISIONS §184)",
     "transition": "R2 전이표. R3 전후로 사람이 부른다 — `baseline.py diff --transition` 이 같은 모듈을 쓴다(DECISIONS §187)",
-    "jijeok_probe": "연속지적도로 폭 대조",
-    "jijeok_review": "갈리는 구간을 정사영상 위에서 사람이 판정",
     "lanes_probe": "표준노드링크 차로수로 폭 하한 대조",
-    "route_probe": "거리만 대 차량 비용 경로 비교",
-    "width_fn": "폭을 함수 w(s) 로 — min 대 통과폭",
     "wmax_audit": "width_max_m 결손이 판정에 미치는 규모",
     # ── 일회성 이관. 돌리고 나면 no-op 이다(R8).
-    "ledger_feeds": "feeds 산문 → 소비자 리스트. 이관 완료",
     "ledger_stem": "대장 stem 이관. 완료",
     "ledger_schema": "실물에서 스키마 추출. --check 는 사람이 부른다",
     "migrate_names": "raw 개명 백필",
     # ── 사람이 부르는 것. 자동으로 돌면 안 되는 이유가 있다.
-    "pull_data": "데이터 반입. raw 를 건드린다",
     "intake": "Downloads → landing 게이트",
-    "acquire": "landing → raw 획득 게이트",
-    "doctor": "전 계층 진단. 데이터 레이크가 있어야 한다",
-    "ruleset_check": "관리자 토큰이 필요해 CI 에 못 붙인다(MASTER §12-1)",
     "docx_fix": "기획서를 실제로 고친다. 사람이 확인하고 친다",
     "baseline": "봉인. 사람이 시점을 정한다",
-    "scan_data": "데이터 레이크 구조 점검. raw 필요",
-    "serve": "개발 서버",
     "triage": "대장 밖 파일을 내용으로 판정. Downloads·landing 을 본다",
+    # ── 2026-09-20. 검사 범위를 `.sh` · `.mjs` 까지 넓히며 드러났다.
+    "janitor": "청소 도구 셋(tidy · sweep · lakecheck)의 **입구 하나**다.\n             셋은 verify.sh 가 각각 부르므로 입구를 또 걸면 세 번 돈다.\n             읽기만 하고 사람이 한 표로 보려고 부른다(README)",
 }
 
 CALLERS = ("tools/verify.sh", "tools/ship.py")
 
+# ★ 2026-09-20. 이 검사가 **네 자리에서 헐거웠다.** 실측으로 하나씩 확인했다.
+#   ① 범위가 `tools/*.py` 뿐이었다 — `.sh` · `.mjs` 다섯이 검사 밖이었고
+#      그중 `janitor.sh` 는 **아무도 안 불렀다.** 이름은 `every_tool` 이다.
+#      W3-8 · W4-8 · W3-16 · W3-18 · §197-1 과 같은 족의 여섯 번째다.
+#   ② **죽은 면제를 안 봤다** — 면제 31 중 **12** 가 실제로는 불리고 있었다.
+#      2026-09-13 에 같은 이유로 여섯을 뺐다는 주석이 위에 있는데, 그때
+#      강제자를 안 세워 다시 열둘로 늘었다. 손으로 고친 것은 되돌아온다.
+#   ③ **주석 속 이름을 호출로 셌다.** 파일 전체를 이어 붙여 grep 했으므로
+#      「`tools/x.py` 를 참고하라」는 주석도 배선으로 보였다.
+#   ④ **이름 충돌을 못 봤다** — `from firelane import transition` 이
+#      `tools/transition.py` 의 호출로 세어졌다. 둘은 다른 파일이다.
+TOOL_SUFFIX = (".py", ".sh", ".mjs")
+_COMMENT = ("#", "//", "*", "<!--")
 
-def _haystack() -> str:
-    out = []
-    for rel in CALLERS:
-        p = ROOT / rel
-        if p.exists():
-            out.append(p.read_text(encoding="utf-8"))
+
+def _tools() -> list[Path]:
+    return sorted(p for p in (ROOT / "tools").iterdir()
+                  if p.is_file() and p.suffix in TOOL_SUFFIX)
+
+
+def _ambiguous() -> set[str]:
+    """`src/firelane/` 에 같은 이름이 있는 도구. `import x` 로는 구분이 안 된다."""
+    src = {p.stem for p in (ROOT / "src").rglob("*.py")} if (ROOT / "src").exists() else set()
+    return {p.stem for p in _tools() if p.suffix == ".py"} & src
+
+
+def _scan() -> list[tuple[str, int, str]]:
+    """호출자가 될 수 있는 파일들의 **주석 아닌 줄**만 모은다."""
+    files = [ROOT / r for r in CALLERS]
     for d in (".github/workflows", "tests"):
         base = ROOT / d
-        if not base.exists():
+        if base.exists():
+            files += [p for p in base.rglob("*")
+                      if p.is_file() and p.suffix in (".yml", ".yaml", ".py")]
+    out = []
+    for p in files:
+        if not p.is_file():
             continue
-        for p in base.rglob("*"):
-            if p.suffix in (".yml", ".yaml", ".py") and p.is_file():
-                out.append(p.read_text(encoding="utf-8", errors="ignore"))
-    return "\n".join(out)
+        for i, line in enumerate(p.read_text(encoding="utf-8", errors="ignore").splitlines(), 1):
+            s = line.strip()
+            if not s or s.startswith(_COMMENT):
+                continue
+            out.append((str(p.relative_to(ROOT)), i, s))
+    return out
+
+
+def call_sites(name: str, lines: list[tuple[str, int, str]] | None = None) -> list[str]:
+    """도구 하나를 **실제로 부르는** 자리들. 없으면 빈 목록."""
+    lines = _scan() if lines is None else lines
+    stem = name.rsplit(".", 1)[0]
+    path_rx = re.compile(rf"tools/{re.escape(name)}(?![\w.])")
+    # ★ `import <stem>` 은 `src/firelane/` 에 같은 이름이 없을 때만 인정한다.
+    imp_rx = (None if stem in _ambiguous()
+              else re.compile(rf"(?:^|;)\s*(?:from|import)\s+{re.escape(stem)}\b"))
+    hits = []
+    for f, i, s in lines:
+        if f.endswith(name):
+            continue
+        if path_rx.search(s) or (imp_rx and imp_rx.search(s)):
+            hits.append(f"{f}:{i}")
+    return hits
 
 
 def test_every_tool_is_called_somewhere():
-    """도구가 어딘가에서 **실행되는가.** 목록에만 있는 것은 배선이 아니다."""
-    hay = _haystack()
-    bad = []
-    for p in sorted((ROOT / "tools").glob("*.py")):
-        name = p.stem
-        if name in EXEMPT:
-            continue
-        # `tools/name.py` 또는 `import name` 형태로 실제 호출되는가
-        if re.search(rf"tools/{re.escape(name)}\.py", hay):
-            continue
-        if re.search(rf"\b(?:from|import)\s+{re.escape(name)}\b", hay):
-            continue
-        bad.append(f"  tools/{name}.py 를 아무 데서도 안 부른다")
+    """도구가 어딘가에서 **실행되는가.** 목록에만 있는 것은 배선이 아니다.
 
+    ★ 범위는 `.py` 뿐이 아니다. `.sh` · `.mjs` 도 도구다.
+    """
+    lines = _scan()
+    bad = [f"  tools/{p.name} 를 아무 데서도 안 부른다"
+           for p in _tools()
+           if p.stem not in EXEMPT and p.name not in EXEMPT
+           and not call_sites(p.name, lines)]
     assert not bad, (
         "만들어놓고 안 부르는 도구가 있다.\n" + "\n".join(bad)
         + "\n\n  verify.sh 에 걸거나, 자동 실행하면 안 되는 이유를\n"
@@ -119,9 +151,35 @@ def test_every_tool_is_called_somewhere():
           "  그러면 이 검사가 항상 통과하는 검사가 된다(DECISIONS §69).")
 
 
+def test_exemptions_are_not_dead():
+    """면제가 **아직 필요한가.** 실제로 불리는데 면제에 남아 있으면 거짓이다.
+
+    ★ 2026-09-20 실측 — 면제 31 중 **12** 가 이미 불리고 있었다. 면제된
+      도구는 배선을 끊어도 아무도 안 운다. 즉 **면제 자체가 사각지대**이고,
+      낡은 면제는 그 사각지대를 이유 없이 넓힌다.
+    ★ 2026-09-13 에 사람이 여섯을 손으로 뺐다. 강제자를 안 세웠고 일곱 달도
+      아니고 **일주일 만에 열둘로 늘었다.** 손으로 고친 것은 되돌아온다.
+    """
+    lines = _scan()
+    dead = []
+    for n in sorted(EXEMPT):
+        for cand in (f"{n}.py", f"{n}.sh", f"{n}.mjs", n):
+            if (ROOT / "tools" / cand).is_file():
+                hits = call_sites(cand, lines)
+                if hits:
+                    dead.append(f"  {n:<18} {', '.join(hits[:3])}")
+                break
+    assert not dead, (
+        f"실제로 불리는데 면제 목록에 남아 있다. {len(dead)}건\n" + "\n".join(dead)
+        + "\n\n  면제는 **사각지대**다 — 면제된 도구는 배선이 끊겨도 안 운다.\n"
+          "  불리게 됐으면 EXEMPT 에서 빼라. 그래야 그 배선을 누가 끊으면 운다.")
+
+
 def test_exempt_entries_are_real():
     """EXEMPT 가 없는 도구를 들면 목록이 낡은 것이다. 양방향이다."""
-    have = {p.stem for p in (ROOT / "tools").glob("*.py")}
+    # ★ 2026-09-20. 여기도 `.py` 뿐이었다. 면제 범위와 유령 검사 범위가
+    #   갈리면 `.sh` 면제가 항상 유령으로 뜨거나 영영 안 걸린다.
+    have = {p.stem for p in _tools()}
     ghost = sorted(n for n in EXEMPT if n not in have)
     assert not ghost, (
         f"EXEMPT 가 없는 도구를 든다 — {', '.join(ghost)}\n"

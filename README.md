@@ -67,7 +67,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
 uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
 uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
-uv run python tools/gate_parity.py --max 18  # 로컬 관문 ↔ CI 차집합 (래칫)
+uv run python tools/gate_parity.py     # 로컬 관문 ↔ CI 차집합 (래칫 · 정본은 도구 안)
 uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증분)
 uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
 uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 (--apply 로 당긴다)
@@ -135,7 +135,7 @@ editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
 
 ```bash
-bash tools/verify.sh          # 44단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 46단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 급할 때. ★ `부분 실행` 에서 일부러 빨갛게 죽는다
 ```
 
@@ -394,6 +394,8 @@ tools/
   encoding_check.py       인코딩 · 개행
   env_check.py            환경변수 선언(.env.example) ↔ 실물 · 단일 독자
   web_manifest.py         web/data 계보 검사
+  scopecheck.py           ★ 발행 스코프가 출동 대상지(동명동) 밖으로
+                          얼마나 벗어났는가. 래칫 — 지금 값에서 내린다
   freshcheck.py           ★ 커밋된 생성물이 **왜** 낡았는지를 자리로 말한다
                           (시각 · 코드/설정/원본 봉인 · 파생 · 산출값)
   owned_paths.py          ★ CODEOWNERS 를 소유권·검사강도의 정본으로 읽는다
