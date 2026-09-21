@@ -72,19 +72,76 @@ def test_seal_runs_on_part_infra_not_on_the_feat_branch():
         "`part/infra` 로 옮긴 뒤 봉인 전에 또 가지를 옮긴다 — 어디서 찍히는지 모른다")
 
 
-def test_seal_is_committed_and_pushed():
-    """찍기만 하고 커밋을 안 하면 아무 일도 안 일어난 것과 같다."""
+def _a0_block() -> str:
+    """A-0 블록 — 봉인 호출부터 dev PR 을 찾는 줄까지, **주석을 뺀 코드만.**"""
     s = _src()
     i = s.index("uv run python tools/dms.py seal")
-    win = s[i:i + 900]
+    end = s.index('pr=$(gh pr list -R "$REPO" --base dev', i)
+    return "\n".join(ln for ln in s[i:end].splitlines()
+                     if not ln.lstrip().startswith("#"))
+
+
+def test_seal_is_committed_and_goes_through_a_pr():
+    """찍은 봉인이 **커밋되고 PR 로** part/infra 에 들어가는가.
+
+    ★ 찍기만 하고 커밋을 안 하면 아무 일도 안 일어난 것과 같다(§207).
+    ★ 2026-09-21 (DECISIONS §209). 처음에는 `git push origin part/infra` 로 밀었고
+      **룰셋 bypass** 로 들어갔다 — 「Changes must be made through a pull request」.
+      검사를 한 번도 안 받은 커밋이 part/infra 에 앉았고, 그것이 secret-scan 에
+      걸렸다. PR 로 들어갔으면 **앉기 전에** 걸렸다.
+    """
+    code = _a0_block()
     for need, why in (
         ("git add data/dms/SEAL.json", "봉인 파일을 스테이징하지 않는다"),
         ("git commit", "봉인을 커밋하지 않는다 — 다음 fetch 에 사라진다"),
-        ("git push", "봉인을 원격에 안 민다 — dev PR 이 그것을 못 싣는다"),
+        ("gh pr create", "봉인을 PR 로 올리지 않는다"),
+        ("--base part/infra", "봉인 PR 의 base 가 part/infra 가 아니다"),
+        ("--squash", "봉인 PR 을 스쿼시로 넣지 않는다 — part 룰셋은 squash 만 받는다"),
     ):
-        assert need in win, (
-            f"봉인 뒤에 `{need}` 가 없다 — {why}.\n"
-            "  봉인은 **커밋본의 기준선**이다. 작업 트리에만 있으면 기준선이 아니다.")
+        assert need in code, f"A-0 에 `{need}` 가 없다 — {why}."
+
+
+def test_seal_never_pushes_straight_to_part_infra():
+    """A-0 이 `part/infra` 에 **직접 밀지 않는가.** 그것이 룰셋 bypass 다.
+
+    ★ 사용자 규칙이다 — `part/*` 직커밋은 bypass 이고 작업은 `feat/**` 에서만 한다.
+      봉인 가지(`feat/seal-<머리>`)를 밀고 PR 로 들인다.
+    """
+    code = _a0_block()
+    bad = [ln.strip() for ln in code.splitlines()
+           if re.search(r"git push\b.*\bpart/infra\b", ln)]
+    assert not bad, (
+        "A-0 이 part/infra 에 직접 민다 — 룰셋 bypass 다(DECISIONS §209).\n"
+        + "\n".join(f"  {b}" for b in bad))
+    assert re.search(r'git push\b.*"\$sb"', code), "봉인 가지를 미는 줄이 없다"
+    assert 'sb="feat/seal-' in code, "봉인 가지가 `feat/**` 이 아니다 — 룰셋이 그 이름만 연다"
+
+
+def test_seal_pr_ci_wait_cannot_kill_the_release():
+    """봉인 PR 의 CI 대기가 **서브셸**에서 도는가.
+
+    ★ `wait_checks` 는 실패하면 `die` 한다. 그대로 부르면 봉인 PR 하나가 빨개질 때
+      릴리즈 전체가 죽는다 — 봉인은 기준선이지 관문이 아니다(§207-2).
+    """
+    code = _a0_block()
+    assert re.search(r'if \( wait_checks "\$spr" \); then', code), (
+        "봉인 PR 의 `wait_checks` 가 서브셸 `( … )` 안에서 불리지 않는다.\n"
+        "  그 안의 `die` 가 릴리즈 스크립트 전체를 끝낸다.")
+
+
+def test_red_seal_pr_is_closed_not_left_open():
+    """봉인 PR 이 빨가면 **닫고 가지를 지우는가.**
+
+    ★ 열어둔 채 넘어가면 다음 `fl.sh` 가 「part/infra 로 열린 다른 PR」로 1단계에서
+      거부한다. v0.28 뒤에 `RED.txt` 가 다음 배치를 막은 것과 같은 모양이다 —
+      자동 절차가 남긴 것이 다음 절차를 막는다(§208-6).
+    """
+    code = _a0_block()
+    i = code.index('if ( wait_checks "$spr" ); then')
+    red = code[i:].split("else", 1)[1].split("fi", 1)[0]
+    assert "gh pr close" in red and "--delete-branch" in red, (
+        "봉인 PR 이 빨갈 때 PR 을 닫고 가지를 지우지 않는다 — 다음 배치가 막힌다")
+    assert "git switch -q part/infra" in red, "빨간 봉인 뒤 part/infra 로 돌아오지 않는다"
 
 
 def test_seal_happens_before_the_dev_merge():
@@ -123,7 +180,9 @@ def test_seal_failure_does_not_block_the_release():
     code = "\n".join(ln for ln in s[i:end].splitlines()
                      if not ln.lstrip().startswith("#"))
     assert "warn" in code, "봉인 실패를 말하지 않는다 — 조용히 넘어가면 없는 것과 같다"
-    fail_branch = code.split("else", 1)[-1]
+    # ★ 2026-09-21 (§209). 봉인 PR 이 생기며 A-0 안에 `else` 가 셋이 됐다(CI 빨강 · 이미 최신 · 봉인 실패).
+    #   **봉인 실패 가지는 마지막 `else`** 다 — 첫 `else` 로 자르면 CI 빨강 가지를 본다.
+    fail_branch = code.rsplit("else", 1)[-1]
     assert "die" not in fail_branch, (
         "봉인 실패가 `die` 로 릴리즈를 막는다.\n"
         "  봉인은 기준선이지 관문이 아니다 — 막으면 사람이 이 단계를 지운다.")
@@ -150,7 +209,7 @@ def test_failed_seal_leaves_no_dirty_tracked_file():
     end = s.index('pr=$(gh pr list -R "$REPO" --base dev', i)
     code = "\n".join(ln for ln in s[i:end].splitlines()
                      if not ln.lstrip().startswith("#"))
-    fail_branch = code.split("else", 1)[-1]
+    fail_branch = code.rsplit("else", 1)[-1]
     assert "RED.txt" in fail_branch, (
         "봉인 실패 가지가 `data/dms/RED.txt` 를 되돌리지 않는다.\n"
         "  `cmd_seal` 이 거기 빈 사유 줄을 써놓고 거부하므로, 그대로 두면\n"
@@ -158,7 +217,7 @@ def test_failed_seal_leaves_no_dirty_tracked_file():
     ok = ("git checkout" in fail_branch or "git restore" in fail_branch)
     assert ok, "RED.txt 를 **되돌리는** 명령이 아니다 — 언급만으로는 안 지워진다"
     # 성공 가지는 건드리면 안 된다 — 사람이 적어둔 사유가 거기 산다
-    ok_branch = code.split("else", 1)[0]
+    ok_branch = code.rsplit("else", 1)[0]
     assert "RED.txt" not in ok_branch, (
         "봉인이 **성공한** 가지에서 RED.txt 를 건드린다.\n"
         "  거기서는 사람이 적어둔 사유가 살아 있어야 한다 — 지우면 그것이 거짓 기록이다.")
