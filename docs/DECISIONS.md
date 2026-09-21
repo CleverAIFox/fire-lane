@@ -9867,6 +9867,8 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
 
 **148건이 REDLIST.json 에 앉아 있었고 아무도 읽지 않았다.**
 
+강제자  `tests/test_deadcheck_probes.py` (관문이 `--ratchet` 인가 · 짝짓기가 부분집합인가 · 면제가 죽지 않았는가 · 분모 정본이 하나인가)
+
 ### 202-1. 관문의 방향이 뒤집혀 있었다
 
 부르는 자리는 셋이고 **전부 같은 인자**였다.
@@ -9939,8 +9941,6 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
 ★ ①③⑤ 의 숫자는 **「이만큼이 괜찮다」가 아니라 「이만큼이 미분류다」**다.
   한 건도 본 적이 없다. 그 사실을 `--ratchet` 의 출력이 매번 말하게 했다 ——
   적지 않으면 다음 사람이 89를 청결로 읽는다. 남은 분류는 PLAN §13 W10-1 이 든다.
-
-강제자  `tests/test_deadcheck_probes.py` (관문이 `--ratchet` 인가 · 짝짓기가 부분집합인가 · 면제가 죽지 않았는가 · 분모 정본이 하나인가)
 
 ### 202-5. 같은 족의 인스턴스 셋을 같이 닫았다
 
@@ -10064,6 +10064,8 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
 
 W4 몸통(5족 — 생성물인데 생성기가 없다)을 한 배치로 닫으려고 일곱 행의
 전제를 하나씩 쟀다. **셋이 유령이었다.**
+
+강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `tests/test_figure_text.py` · `tests/test_rawdiff_code.py::test_code_diff_names_the_file_that_moved`
 
 ### 203-1. 없는 디렉터리에 대한 결함 둘
 
@@ -10192,8 +10194,6 @@ SVG `<text>` 는 마크다운을 모른다. 코드 표기 의도가 그냥 글�
   §13-1 은 이 절이 생긴 이유를 「선언이 거짓이었다」로 적는데, **그 절을
   만든 목록 자신이 검증되지 않은 선언이었다.**
 
-강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `tests/test_figure_text.py` · `tests/test_rawdiff_code.py::test_code_diff_names_the_file_that_moved`
-
 ## 204. 대장 20행을 전수로 쟀다 — 열여섯이 틀렸다 (판정 불변)
 
 > 2026-09-20 · 오창준
@@ -10208,6 +10208,8 @@ SVG `<text>` 는 마크다운을 모른다. 코드 표기 의도가 그냥 글�
     신규 등재 1   W11-1
 
 **20행 중 17행이 어떤 식으로든 틀렸다.**
+
+강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `::test_defect_ledger_counts_agree_everywhere`
 
 ### 204-1. 제일 무거운 것 — 봉인이 없는 커밋을 가리킨다
 
@@ -10327,8 +10329,6 @@ EPSG:5186 으로 재니 **1.7500km²**, 동명동 **0.4292km²**, 비율 **4.077
   적는데, **그 거짓을 고치려고 만든 목록이 다시 거짓이었다.**
   차이가 있다면 이번엔 **그것을 세는 검사가 있다는 것**이다(§203).
 
-강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `::test_defect_ledger_counts_agree_everywhere`
-
 ## 205. 목록이 줄어들 수 없는 구조였다 (판정 불변)
 
 > 2026-09-20 · 오창준
@@ -10336,6 +10336,8 @@ EPSG:5186 으로 재니 **1.7500km²**, 동명동 **0.4292km²**, 비율 **4.077
 「W 가 자꾸 느는 기분이다. 다 끌어모아 다시 번호를 매겨봐라」는 물음에서 <!--voice-ok-->
 시작했다. 재번호를 하려고 파급을 쟀더니 **하면 안 되는 이유**가 나왔고,
 그것이 곧 **왜 목록이 안 줄어드는가**의 답이었다.
+
+강제자  `tests/test_declaration_sync.py::test_plan_row_numbers_are_unique_and_sorted` · `::test_plan_renumber_cannot_shift_numbers_any_more` · `::test_plan_section1_count_agrees` · `tests/test_tile_zoom_agreement.py`
 
 ### 205-1. §1 은 행을 지울 수가 없었다
 
@@ -10459,8 +10461,6 @@ UI 작업 범위가 동명동을 넘지 않는다는 걸 **화면 자체가 말�
   목록이었고, 그래서 두꺼워지기만 했다. §0-2 가 「개발이 끝나면 이 문서는
   비어야 한다」고 적는데 **비울 수 없는 구조**였다.
 
-강제자  `tests/test_declaration_sync.py::test_plan_row_numbers_are_unique_and_sorted` · `::test_plan_renumber_cannot_shift_numbers_any_more` · `::test_plan_section1_count_agrees` · `tests/test_tile_zoom_agreement.py`
-
 ## 206. 로컬은 초록 CI 는 빨강 — 검사가 `.git` 을 훑고 있었다 (판정 불변)
 
 > 2026-09-21 · 오창준
@@ -10472,6 +10472,8 @@ PR #132 이 CI 에서만 빨갰다. 로컬은 837 통과 · 전수 46/46 초록�
 
 §203 이 세운 「대장의 행이 실재하는 것을 가리키는가」가 CI 에서만 울었다.
 **둘 다 같은 코드고 같은 트리인데 판정이 달랐다.**
+
+강제자  `tests/test_declaration_sync.py::test_ledger_exemptions_are_not_dead` (면제가 죽으면 운다)
 
 ### 206-1. 원인 — 훑는 자리가 물음보다 넓었다
 
@@ -10513,8 +10515,6 @@ ref 가 `packed-refs` 하나로 묶이고 그 파일이 없다 —— **거기�
 나머지 절반이 `.git` 을 안 보게 한 것이다 —— 그것이 없으면 다음에 또
 엉뚱한 것이 `.git` 에 걸려 조용히 통과한다.
 
-강제자  `tests/test_declaration_sync.py::test_ledger_exemptions_are_not_dead` (면제가 죽으면 운다)
-
 ## 207. 봉인이 스쿼시로 사라지는 커밋을 가리켰다 (판정 불변)
 
 > 2026-09-21 · 오창준
@@ -10533,6 +10533,8 @@ ref 가 `packed-refs` 하나로 묶이고 그 파일이 없다 —— **거기�
 봉인은 「이 지점까지 정합하다」고 말하는 **기준선**이다. 그 지점이 저장소
 역사에 없으면 기준선이 아니라 **없는 곳을 가리키는 숫자**다. 신선한 클론에는
 `refs/pull/*` 이 안 따라오므로 거기서는 `git cat-file -t 2130b14` 조차 죽는다.
+
+강제자  `tests/test_seal_survives_squash.py` (다섯) · `tools/merge_batch.sh` A-0
 
 ### 207-1. 원인은 「깜빡했다」가 아니다 —— 구조가 그렇게 만든다
 
@@ -10600,8 +10602,6 @@ dev PR 을 열기 **전에**, `part/infra` 위에서 찍는다 ——
 ★ 검사가 **맞게 빨개지는데 틀리게 말하면** 사람은 말을 따른다.
   자리가 옳다고 문구까지 옳은 것이 아니다.
 
-강제자  `tests/test_seal_survives_squash.py` (다섯) · `tools/merge_batch.sh` A-0
-
 ## 208. 프로브가 제 일을 다 했기 때문에 봉인이 막혔다 (판정 불변)
 
 > 2026-09-21 · 오창준
@@ -10615,6 +10615,10 @@ v0.28 릴리즈에서 §207 이 세운 A-0 이 제자리에서 돌았고 —— 
 
 ★ **`warn` 으로 둔 설계가 여기서 값을 했다**(§207-2). `die` 였으면 v0.28 이
   저 줄에서 통째로 섰다. 기준선이 못 섰다고 릴리즈를 막지 않는다.
+
+강제자  `tests/test_deadcheck_probes.py` —— `test_every_probe_has_a_positive_control` ·
+`test_the_positive_control_is_green` · `test_the_control_catches_a_dead_probe`(다섯) ·
+`test_selftest_does_not_read_the_real_tree_any_more` · `test_dms_still_asks_liveness_not_the_ratchet`
 
 ### 208-1. 빨간 이유가 「② 가 깨끗해서」였다
 
@@ -10683,10 +10687,6 @@ v0.28 릴리즈에서 §207 이 세운 A-0 이 제자리에서 돌았고 —— 
 ★ 이것이 없으면 「대조 통과」는 아무 뜻이 없다. 이 저장소가 반복해 당한
   형태가 「검사가 있는데 안 운다」이고, **대조도 검사다.**
 
-강제자  `tests/test_deadcheck_probes.py` —— `test_every_probe_has_a_positive_control` ·
-`test_the_positive_control_is_green` · `test_the_control_catches_a_dead_probe`(다섯) ·
-`test_selftest_does_not_read_the_real_tree_any_more` · `test_dms_still_asks_liveness_not_the_ratchet`
-
 ### 208-6. 실패한 봉인이 다음 릴리즈를 막았다
 
 v0.28 뒤에 `fl.sh` 가 1단계에서 거부했다 ——
@@ -10706,3 +10706,152 @@ v0.28 뒤에 `fl.sh` 가 1단계에서 거부했다 ——
 실패 가지에서 되돌린다. **성공 가지에서는 안 건드린다** — 거기서는 사람이
 적어둔 사유가 살아 있어야 하고, 지우면 그것이 거짓 기록이다.
 `test_failed_seal_leaves_no_dirty_tracked_file` 이 양쪽을 다 든다.
+
+## 209. 봉인은 찍혔다 — 그리고 관문을 우회한 자리에서 관문이 잡을 것이 났다 (판정 불변)
+
+> 2026-09-21 · 오창준
+
+v0.29 방송에서 A-0 이 **처음으로 봉인을 찍었다.** §208 이 막힌 길을 연 값이다 ——
+
+    봉인 2026-09-21T11:18:55+09:00  ad1c679  [pytest+프로브]
+      절 843 · 분모 312 · 죽은 강제자 참조 0 · 사본군 5
+
+그리고 바로 다음 줄들 ——
+
+    remote: Bypassed rule violations for refs/heads/part/infra:
+    remote: - Changes must be made through a pull request.
+    remote: - Required status check "contract-shared" is expected.
+    ✓ 봉인 갱신 · part/infra e0f9069
+    …
+    X  secret-scan/secret-scan (push)
+    ✗ PR #139 CI 가 실패했다.
+
+강제자  `tests/test_gitleaks_allowlist.py`(여섯) · `tests/test_seal_survives_squash.py`
+—— `test_seal_is_committed_and_goes_through_a_pr` · `test_seal_never_pushes_straight_to_part_infra` ·
+`test_seal_pr_ci_wait_cannot_kill_the_release` · `test_red_seal_pr_is_closed_not_left_open`
+
+★ 강제자 칸을 **여기(`##` 본문)** 에 둔다. `dms` 는 `###` 가 부모 `##` 의 칸을
+  물려받게 하는데, 칸을 맨 끝에 두면 그것은 **마지막 `###` 의 본문**이 되어
+  `##` 와 앞의 `###` 다섯이 전부 `blank` 로 남는다. 처음 짰을 때 그렇게 해서
+  `강제자 소급 증분` 이 6절로 빨개졌다 —— 봉인이 처음 살아 있는 채로 돈 날이다.
+
+### 209-1. 무엇이 걸렸나 —— 거짓 경보
+
+로컬 gitleaks 8.28 로 재현했다 ——
+
+    RuleID:  generic-api-key      File: data/dms/SEAL.json:304
+    Finding: "src/firelane/segkey.py": "fb1d88a1…"
+
+파일 이름 `segkey` 의 `key` 뒤 16진을 API 키로 읽었다. 봉인이 **파일별 지문**을
+담게 된 뒤(§202) 처음 찍힌 봉인이라 처음 났다. 비밀이 아니다.
+
+`.gitleaks.toml` 에 예외를 더했다. **경로와 줄 모양이 둘 다** 맞아야 푼다 ——
+
+    condition   AND
+    paths       ^data/dms/SEAL\.json$
+    regexTarget line
+    regexes     ^\s*"[\w./@-]+": "(?:[0-9a-f]{16}|[0-9a-f]{64})",?\s*$
+
+실물 gitleaks 로 양쪽을 쟀다 —— 봉인 안의 지문 줄은 풀리고, **같은 줄을 봉인
+밖에 두면 걸리고**, 봉인 안의 `ghp_` 토큰은 걸린다.
+
+### 209-2. 그러나 요지는 거짓 경보가 아니다
+
+봉인 커밋은 **`git push origin part/infra` 로 직접** 들어갔다. §207 이 짠 그대로다.
+룰셋이 막아야 할 것을 admin bypass 가 통과시켰고, **검사를 한 번도 안 받은
+커밋이 part/infra 에 앉았다.** 그 커밋을 secret-scan 이 dev PR 에서 처음 봤다.
+
+★ PR 로 들어갔으면 **part/infra 에 앉기 전에** 걸렸다. 관문을 우회한 자리에서
+  관문이 잡을 것이 났다. 이번에는 거짓 경보였지만 다음에는 아닐 수 있다.
+
+★ 그리고 이것은 사용자가 처음부터 적어둔 규칙이다 —— `part/*` 직커밋은 bypass
+  이고 작업은 `feat/**` 에서만 한다. §207 이 그것을 어겼다. **이 저장소의
+  릴리즈 절차가 이 저장소의 규칙을 어겼다.**
+
+### 209-3. 고침 —— 봉인도 PR 로 들어간다
+
+    A-0  part/infra 머리 H 에서 dms seal --quick
+         → feat/seal-H 가지 · SEAL.json 커밋 · 푸시
+         → gh pr create --base part/infra
+         → ( wait_checks )  초록이면 --squash --delete-branch
+                            빨가면 PR 을 닫고 가지를 지운다 · 릴리즈는 계속
+
+★ **스쿼시해도 된다 —— §207 이 피하려던 것과 모양이 다르다.** 그때 사라진 것은
+  봉인이 가리키는 커밋 **자신**이었다(feat 가지 위에서 찍었으니까). 여기서
+  봉인이 가리키는 것은 **이미 part/infra 에 있는 H** 이고, 봉인 PR 은 H 위에
+  한 칸을 더할 뿐이다. 스쿼시는 그 한 칸만 갈아엎는다. H 는 그대로 main 까지 간다.
+
+★ `wait_checks` 는 실패하면 `die` 하므로 **서브셸**에서 부른다. 봉인 PR 하나가
+  빨갛다고 릴리즈가 죽으면 §207-2 를 어긴다.
+
+★ 빨간 봉인 PR 은 **닫는다.** 열어두면 다음 `fl.sh` 가 「part/infra 로 열린 다른
+  PR」로 1단계에서 거부한다 —— §208-6 에서 `RED.txt` 가 다음 배치를 막은 것과
+  같은 모양이다. 자동 절차가 남긴 것이 다음 절차를 막는다.
+
+### 209-4. 예외를 짜다 찾은 것 —— 이미 있던 예외가 죽어 있었다
+
+`generic-api-key` 에 2026-09-10 부터 예외가 하나 있었다 ——
+
+    regexes = ['''key: [a-z][a-z0-9_]{8,}''']       (regexTarget 없음)
+
+gitleaks 는 regexTarget 을 안 적으면 **비밀값 자체**에 정규식을 댄다. 비밀값에는
+`key: ` 가 없으므로 **한 번도 맞은 적이 없다.** 이력 전수 스캔에서 그 설명이
+이름까지 들어 푼다고 적은 `tools/batches/` 의 `b2_close` · `b2_final` 두 파일(지금은
+지워졌다)이 그대로 걸렸다. CI 가 초록이었던 것은 두 파일이 이미 지워져 **push 범위에 안 들어왔기
+때문**이다 —— 틀린 이유로 초록이었다.
+
+`regexTarget = "match"` 를 적었다. 이력 전수 8건 → 4건.
+
+★ 예외가 **있다고 적혀 있는데** 아무것도 안 풀었다. `test_tools_are_wired` 가
+  면제 31개 중 12개가 죽은 것을 찾은 날(§198)과 같은 모양이다.
+
+### 209-5. 그리고 워크플로 머리말이 거짓이었다
+
+`secret-scan.yml` 이 「push 후 · 모든 기여자 · **이력 전체**」라고 적었다.
+gitleaks-action 은 push 면 `before..after`, PR 이면 그 PR 의 커밋만 본다.
+`fetch-depth: 0` 은 범위를 계산하려고 받는 것이지 전부를 훑는 것이 아니다.
+범위가 이름보다 좁고 그것이 선언돼 있지 않았다 —— 이 저장소가 세는 그 족이다.
+
+이력 전수를 로컬에서 쟀다. 남은 4건은 **값 하나가 네 자리에** 있는 것이다 ——
+V-World 키(`web/config.js` · `web/index.html` · `sources.yaml` ·
+`sources.yaml.bak_20260817`, 2026-08-09~08-17). 값은 해시 앞 8자로만 대조했다.
+§146 이 감수한 그것이고, **그 밖에는 없다.**
+
+★ 워크플로를 이력 전체로 넓히면 그 넷 때문에 영원히 빨갛다(규약 6 위반).
+  그래서 **범위를 넓히지 않고 선언을 좁혔다.** 머리말을 사실대로 고치고
+  로컬 전수 명령과 오늘의 실측을 적었다.
+
+### 209-6. 조상 가드는 아직이다
+
+「봉인 커밋이 조상인가」를 세울 수 있는 봉인이 이제 생겼다(`ad1c679`).
+그러나 CI 클론이 **얕다**(`fetch-depth` 기본 1) —— pytest 로 세우면 CI 에서
+`merge-base` 가 조상을 못 찾는다. 빨갛거나, 건너뛰면 조용한 통과다.
+어느 자리(verify 로컬 단계 · CI 의 깊은 클론 · A-0 자신)에 세울지가 남은
+물음이고, W11-1 이 그것을 든다.
+
+### 209-7. 봉인이 살아나자 첫 배치에서 분모 +39 가 드러났다
+
+이 배치의 전수 verify 가 `강제자 소급 증분` 에서 처음으로 빨개졌다 ——
+
+    신설 7 · 변경 1 · 삭제 0
+      신설  DECISIONS-601  [blank] 209. 봉인은 찍혔다 …
+      신설  DECISIONS-602  [blank] 209-1. …                 (209-5 까지 다섯)
+      신설  DECISIONS-607  [wired] 209-6. 조상 가드는 아직이다
+    ★ 이번에 사람이 볼 것 6절.
+
+`dms` 는 `###` 가 부모 `##` 의 강제자 칸을 **물려받게** 한다. 그런데 칸을 절의
+**맨 끝**에 적으면 그 줄은 마지막 `###` 의 본문이 된다. 그러면 `##` 와 앞의
+`###` 들이 전부 `blank` 로 남는다.
+
+★ 이 모양은 **§202 부터 §208 까지 일곱 절이 전부** 그랬다. 세니 blank 가 39였다.
+  봉인 분모가 2026-09-19 의 273 에서 이번 봉인 312 로 는 것이 **정확히 그 39** 다.
+  칸을 `##` 본문으로 옮기자 분모가 **273 으로 돌아왔다.**
+
+★ 왜 이제야 울었나 —— §204 가 W11-1 에 적어둔 그대로다. 봉인이 없는 커밋을
+  가리키는 동안 `dms delta` 는 「전수 재검사다」만 찍고 **rc=0** 을 냈다.
+  이틀 동안 일곱 절이 그 문으로 조용히 지나갔다. A-0 이 봉인을 새로 찍자
+  **바로 다음 배치에서** 증분 검사가 살아났고, 첫 먹이가 이 절이었다.
+  **봉인이 기준선 노릇을 하기 시작했다는 증거가 이 빨강이다.**
+
+★ §202~§208 은 **칸의 자리만** 옮겼다. 본문 글자는 한 자도 안 바꿨다.
+  이력을 고친 것이 아니라 이력에 붙은 **분류 표지**를 제자리에 놓은 것이다.
