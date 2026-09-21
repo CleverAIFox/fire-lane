@@ -599,11 +599,26 @@ def test_every_ledger_row_points_at_something_real():
       정상이고, 거기까지 넓히면 16건이 뜨는데 대부분 옳다(측정했다).
       대장의 행만이 **지금에 대한 주장**이다.
     """
-    bad = []
+    bad, untracked = [], []
     for wid, rel in _ledger_citations():
         if rel in LEDGER_NOT_A_PATH or _resolves(rel):
             continue
-        bad.append(f"  {wid}  `{rel}` — 없다")
+        # ★ 2026-09-21. **작업 트리에는 있는데 git 에 없는** 경우를 갈라 말한다.
+        #   이 배치에서 새 파일을 만들고 그것을 대장에 적으면 `git add` 전까지
+        #   여기가 빨간데, 위의 「행을 지워라」는 **정확히 틀린 처방**이다.
+        #   (§206 이후 이 검사는 작업 트리가 아니라 `git ls-files` 를 본다.
+        #   그 자리는 옳다 — 커밋되지 않은 것은 CI 에 없으니까. 다만 **왜
+        #   빨간지를 말해야** 다음 사람이 파일을 지우지 않는다.)
+        if (ROOT / rel).exists():
+            untracked.append(f"  {wid}  `{rel}` — 파일은 있는데 git 에 없다")
+        else:
+            bad.append(f"  {wid}  `{rel}` — 없다")
+    assert not untracked, (
+        "§13-3 의 행이 **아직 git 에 올라가지 않은 것**을 가리킨다.\n"
+        + "\n".join(untracked) + "\n\n"
+        "  파일은 작업 트리에 있다. 지우지 마라 — `git add` 하면 된다.\n"
+        "  이 검사가 작업 트리가 아니라 `git ls-files` 를 보는 이유는\n"
+        "  **CI 에는 커밋된 것만 있기 때문**이다(DECISIONS §206).")
     assert not bad, (
         "§13-3 의 행이 **없는 것**을 가리킨다.\n" + "\n".join(bad) + "\n\n"
         "  전제가 사라졌으면 행을 지운다(§13-5 규약 4). 결함이 닫힌 것이 아니라\n"
