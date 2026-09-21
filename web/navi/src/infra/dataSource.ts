@@ -35,15 +35,21 @@ export interface Bundle {
   /** 목적지 검색 색인(§181). 지도 라벨 `poi.geojson` 은 layers.ts 가 URL 로 읽는다 */
   dest: GeoJSON.FeatureCollection;
   routeVehicle: RouteVehicle;
+  /**
+   * 안전센터 · 소방서. 출동 기점(와이어프레임 00 의 출발지).
+   * ★ 지도 레이어도 같은 파일을 URL 로 읽는다(layers.ts). 좌표를 코드에 박지 않는다.
+   */
+  stations: GeoJSON.FeatureCollection | null;
 }
 
 export async function loadAll(): Promise<Bundle> {
-  const [graph, spec, view, dest, routeVehicle] = await Promise.all([
+  const [graph, spec, view, dest, routeVehicle, stations] = await Promise.all([
     j<NaviGraph>("navi_graph.json"),
     j<VehicleSpec>("vehicle_spec.json"),
     j<View>("view.json"),
     j<GeoJSON.FeatureCollection>("dest.geojson"),
     j<RouteVehicle>("route_vehicle.json"),
+    optional<GeoJSON.FeatureCollection>("stations.geojson"),
   ]);
 
   // ★ style 이 없으면 죽는다. 기본색을 두면 config.js 를 아무도 안 고치고
@@ -54,7 +60,7 @@ export async function loadAll(): Promise<Bundle> {
       "navi_graph.json 에 style 이 없다. 발행을 다시 해라:\n" +
       "  uv run python -m firelane.publish_navi");
   }
-  return { graph, spec, view, dest, routeVehicle };
+  return { graph, spec, view, dest, routeVehicle, stations };
 }
 
 /**
