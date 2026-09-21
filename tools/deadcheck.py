@@ -332,11 +332,21 @@ def probe_narrow_scope() -> None:
     RG = re.compile(r'["\'](src|tools|tests)(?:/|["\'])'
                     r'|ROOT\s*/\s*["\'](src|tools|tests)["\']')
     WALK = re.compile(r"\.(?:rglob|glob|iterdir|walk)\(|listdir\(")
+    # ★ 2026-09-20 (DECISIONS §205). 종전에는 파일 **전체**에서 `RG` 와 `WALK` 를
+    #   따로 찾아 합쳤다. 그래서 `ROOT / "src" / "x.py"` 처럼 **파일 하나**를 가리키는
+    #   상수와, 전혀 다른 폴더를 도는 `iterdir()` 이 한 파일에 있으면 「src 만 훑는다」로
+    #   읽혔다. ②가 앓던 것과 같은 병이다 — 짝짓기가 헐거우면 분모가 의미를 잃는다.
+    #   훑는 자리와 폴더 이름은 **같은 줄에 있다**(`sorted((ROOT / "tests").rglob(...))`).
+    #   줄 단위로 짝지으면 거짓 경보가 사라지고 진짜만 남는다.
     for p in sorted((ROOT / "tests").rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py")):
         s = src(p)
         if not WALK.search(s):
             continue
-        seen = {m.group(1) or m.group(2) for m in RG.finditer(s)}
+        seen = set()
+        for line in s.splitlines():
+            if not WALK.search(line):
+                continue
+            seen |= {m.group(1) or m.group(2) for m in RG.finditer(line)}
         seen = {x for x in seen if x} & set(universe)
         if seen and seen != set(universe):
             miss = sorted(set(universe) - seen)
@@ -368,7 +378,11 @@ CEILING = {
     "② 손목록": 0,
     "③ 조용한 통과": 15,
     "④ 죽은 게이트": 0,
-    "⑤ 좁은 범위": 33,
+    # ★ 2026-09-20 33 → 15 (DECISIONS §205). ⑤ 의 짝짓기를 **줄 단위**로 조였다.
+    #   종전에는 파일 전체에서 폴더 이름과 훑기 호출을 따로 찾아 합쳤고, 그래서
+    #   `ROOT / "src" / "x.py"`(파일 하나)와 전혀 다른 폴더를 도는 `iterdir()` 이
+    #   한 파일에 있으면 「src 만 훑는다」로 읽혔다. 거짓 경보 18건이 빠졌다.
+    "⑤ 좁은 범위": 15,
 }
 
 
