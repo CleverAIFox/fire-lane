@@ -127,3 +127,38 @@ def test_seal_failure_does_not_block_the_release():
     assert "die" not in fail_branch, (
         "봉인 실패가 `die` 로 릴리즈를 막는다.\n"
         "  봉인은 기준선이지 관문이 아니다 — 막으면 사람이 이 단계를 지운다.")
+
+
+def test_failed_seal_leaves_no_dirty_tracked_file():
+    """봉인이 실패했을 때 **작업 트리를 더럽힌 채 두지 않는가.**
+
+    ★ 2026-09-21 (DECISIONS §208-6). v0.28 뒤에 실제로 났다. `cmd_seal` 은
+      사유 없는 빨강을 만나면 `data/dms/RED.txt` 에 빈 사유 줄을 **써놓고**
+      거부한다. 사람이 손으로 찍을 때는 「여기 사유를 적어라」는 자리표라
+      값이 있는데, **릴리즈 스크립트 안에서는 아무도 안 채운다.**
+      추적 파일이 더러운 채 남아 다음 `fl.sh` 가 1단계에서 거부당했다 ——
+
+          ✗ 추적 파일에 변경이 있다.
+              M data/dms/RED.txt
+
+    ★ **자동 절차가 남긴 자리표는 선언이 아니라 찌꺼기다.** 실패 가지에서
+      되돌린다. 성공 가지에서 되돌리면 안 된다 — 거기서는 사람이 적어둔
+      사유가 살아 있어야 한다.
+    """
+    s = _src()
+    i = s.index("uv run python tools/dms.py seal")
+    end = s.index('pr=$(gh pr list -R "$REPO" --base dev', i)
+    code = "\n".join(ln for ln in s[i:end].splitlines()
+                     if not ln.lstrip().startswith("#"))
+    fail_branch = code.split("else", 1)[-1]
+    assert "RED.txt" in fail_branch, (
+        "봉인 실패 가지가 `data/dms/RED.txt` 를 되돌리지 않는다.\n"
+        "  `cmd_seal` 이 거기 빈 사유 줄을 써놓고 거부하므로, 그대로 두면\n"
+        "  다음 릴리즈가 「추적 파일에 변경이 있다」로 1단계에서 막힌다.")
+    ok = ("git checkout" in fail_branch or "git restore" in fail_branch)
+    assert ok, "RED.txt 를 **되돌리는** 명령이 아니다 — 언급만으로는 안 지워진다"
+    # 성공 가지는 건드리면 안 된다 — 사람이 적어둔 사유가 거기 산다
+    ok_branch = code.split("else", 1)[0]
+    assert "RED.txt" not in ok_branch, (
+        "봉인이 **성공한** 가지에서 RED.txt 를 건드린다.\n"
+        "  거기서는 사람이 적어둔 사유가 살아 있어야 한다 — 지우면 그것이 거짓 기록이다.")
