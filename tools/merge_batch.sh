@@ -139,8 +139,9 @@ fi
 #
 #   불변이 `봉인 == HEAD^` 인데 **그 `HEAD^` 가 스쿼시로 반드시 사라진다.**
 #   다시 찍어도 다음 배치에 또 난다 — 구조가 그렇게 만든다. 그래서 찍는 자리를 옮긴다.
-#   여기서 찍으면 그 커밋은 `part/infra` → (merge commit) → `dev` → `main` 을
-#   타고 가므로 **영원히 main 의 조상**이다. 스쿼시를 한 번도 안 탄다.
+#   여기서 찍으면 **봉인이 가리키는 커밋**(part/infra 머리)은 `part/infra` →
+#   (merge commit) → `dev` → `main` 을 타고 가므로 **영원히 main 의 조상**이다.
+#   (봉인 파일을 싣는 커밋은 아래 §209 대로 PR 스쿼시를 탄다 — 그것은 사라져도 된다.)
 #
 # ★ `--quick`(pytest + 프로브)을 쓴다. 전수 verify 는 **같은 트리**에서 방금 돌았다
 #   (fl.sh 5단계). 스쿼시는 트리를 안 바꾸고 커밋만 합치므로 다시 7분을 돌릴 이유가 없다.
@@ -148,18 +149,57 @@ fi
 #   `_log_is_fresh` 가 「그 로그는 옛 상태다」로 막기 때문이다.
 #
 # ★ 봉인이 안 바뀌면 커밋도 안 한다. 매 배치 빈 커밋이 쌓이면 그것이 곧 소음이다.
-# ★ PR 을 **연 뒤에 밀어도 된다** — GitHub PR 은 브랜치 머리를 따라가므로 이 커밋이
-#   자동으로 PR 에 들어가고, 아래 `wait_checks` 가 봉인이 실린 머리에서 CI 를 기다린다.
-say "A-0. 봉인 — 스쿼시 뒤 part/infra 에서"
+#
+# ★ 2026-09-21 (DECISIONS §209). **봉인 커밋은 PR 로 들어간다. `part/infra` 에 직접 밀지 않는다.**
+#   처음(§207)에는 `git push origin part/infra` 로 밀었다. 룰셋 bypass 로 들어갔다 ——
+#       remote: Bypassed rule violations for refs/heads/part/infra:
+#       remote: - Changes must be made through a pull request.
+#       remote: - Required status check "contract-shared" is expected.
+#   **검사를 한 번도 안 받은 커밋이 part/infra 에 앉았고**, 그 커밋이 secret-scan 에
+#   걸렸다(`"src/firelane/segkey.py": "<sha256>"` 를 generic-api-key 로 읽었다).
+#   거짓 경보였지만 요지는 그것이 아니다 — **PR 로 들어갔으면 part/infra 에 앉기 전에 걸렸다.**
+#   관문을 우회한 자리에서 관문이 잡을 것이 났다.
+#
+# ★ 스쿼시해도 된다 — §207 이 피하려던 것과 **모양이 다르다.** 그때 사라진 것은
+#   봉인이 가리키는 커밋 **자신**이었다(feat 가지 위에서 찍었으니까). 여기서 봉인이
+#   가리키는 것은 **이미 part/infra 에 있는 머리 H** 이고, 봉인 PR 은 H 위에 한 칸을
+#   더할 뿐이다. 스쿼시는 그 한 칸만 갈아엎고 H 는 건드리지 않는다.
+#
+# ★ 봉인 PR 의 CI 가 빨가면 **릴리즈는 계속한다**(§207-2 — 봉인은 기준선이지 관문이 아니다).
+#   다만 이번에는 빨간 봉인이 part/infra 에 **안 들어간다** — PR 을 닫고 가지를 지운다.
+#   `wait_checks` 는 실패하면 `die` 하므로 **서브셸**에서 부른다.
+say "A-0. 봉인 — 스쿼시 뒤 part/infra 에서 (PR 로)"
 git switch -q part/infra 2>/dev/null || git switch -q -c part/infra origin/part/infra
 git merge -q --ff-only origin/part/infra || die "로컬 part/infra 가 원격과 갈렸다 — git reset --hard origin/part/infra"
 if uv run python tools/dms.py seal --quick; then
     if [ -n "$(git status --porcelain -- data/dms/SEAL.json)" ]; then
+        head=$(git rev-parse --short HEAD)
+        sb="feat/seal-$head"
+        git switch -q -c "$sb"
         git add data/dms/SEAL.json
-        git commit -q -m "seal: $(git rev-parse --short HEAD) 기준선 (판정 불변)"
-        git push -q origin part/infra || die "봉인 커밋을 part/infra 에 못 밀었다"
-        git fetch -q origin
-        ok "봉인 갱신 · part/infra $(git rev-parse --short origin/part/infra)"
+        git commit -q -m "seal: $head 기준선 (판정 불변)"
+        git push -q -u origin "$sb" || die "봉인 가지 $sb 를 못 밀었다"
+        gh pr create -R "$REPO" --base part/infra --head "$sb" \
+            --title "seal: $head 기준선 (판정 불변)" \
+            --body "A-0 이 스쿼시 뒤 part/infra 머리 \`$head\` 에서 찍은 봉인이다. 봉인이 가리키는 커밋은 이미 part/infra 에 있으므로 이 PR 을 스쿼시해도 사라지지 않는다(DECISIONS §209)." \
+            >/dev/null || die "봉인 PR 을 못 열었다"
+        spr=$(gh pr list -R "$REPO" --head "$sb" --state open --json number --jq '.[0].number // empty')
+        [ -n "$spr" ] || die "봉인 PR 번호를 못 읽었다"
+        if ( wait_checks "$spr" ); then
+            gh pr merge "$spr" -R "$REPO" --squash --delete-branch >/dev/null \
+                || die "봉인 PR #$spr 을 스쿼시하지 못했다"
+            git switch -q part/infra
+            git fetch -q origin
+            git merge -q --ff-only origin/part/infra || die "봉인 스쿼시 뒤 part/infra 를 못 당겼다"
+            git branch -q -D "$sb" 2>/dev/null || true
+            ok "봉인 갱신 · PR #$spr · part/infra $(git rev-parse --short origin/part/infra)"
+        else
+            gh pr close "$spr" -R "$REPO" --delete-branch >/dev/null 2>&1 || true
+            git switch -q part/infra
+            git branch -q -D "$sb" 2>/dev/null || true
+            warn "봉인 PR #$spr 의 CI 가 빨갰다 — 봉인은 part/infra 에 안 들어갔다. 릴리즈는 계속한다.
+  PR 을 닫고 가지를 지웠다. 왜 빨갰는지:  gh pr checks $spr -R $REPO"
+        fi
     else
         ok "봉인이 이미 최신이다 — 커밋할 것 없음"
     fi
@@ -167,10 +207,19 @@ else
     # ★ 멈추지 않는다. 봉인은 기준선이지 관문이 아니다 — 여기서 die 하면
     #   빨간 강제자 하나 때문에 릴리즈 전체가 막히고, 그러면 사람이 이 단계를
     #   지우게 된다. 못 찍었다는 사실을 **말하고** 넘어간다.
+    #
+    # ★ 2026-09-21 (DECISIONS §208-6). **실패한 봉인이 남긴 것을 되돌린다.**
+    #   `cmd_seal` 은 사유 없는 빨강을 만나면 `data/dms/RED.txt` 에 빈 사유
+    #   줄(`이름 | `)을 **써놓고** 거부한다. 사람이 터미널에서 손으로 찍을 때는
+    #   그 줄이 사유를 적을 자리표라 값이 있다. 그러나 **릴리즈 스크립트 안에서는
+    #   아무도 그것을 안 채우고**, 추적 파일이 더러워진 채 남아 **다음 `fl.sh` 가
+    #   1단계에서 거부당한다** — v0.28 뒤에 실제로 그랬다.
+    #   자동 절차가 남긴 자리표는 선언이 아니라 찌꺼기다.
+    git checkout -q -- data/dms/RED.txt 2>/dev/null || true
     warn "봉인을 못 찍었다 — 릴리즈는 계속한다. 사유를 위에서 읽고 따로 처리해라.
+  ★ RED.txt 는 되돌렸다(자동 절차가 남긴 빈 사유 줄은 선언이 아니다).
   수동:  uv run python tools/dms.py seal --quick --red <아는빨강>"
 fi
-
 pr=$(gh pr list -R "$REPO" --base dev --head part/infra --state open --json number --jq '.[0].number // empty')
 if [ -z "$pr" ]; then
     # ★ 2026-09-17 (DECISIONS §180 · G-10). 종전에는 경고만 하고 넘어갔다. part/infra 가 dev 보다
