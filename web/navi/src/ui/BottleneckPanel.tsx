@@ -73,8 +73,8 @@ export function BottleneckPanel(d: Props) {
       </div>
 
       <Section title="장애물 · 위험 요소">
-        <Line k="실시간 주정차" v="미반영" note="CCTV 영상 판정 전" />
-        <Line k="회전 · 높이" v="미반영" note="회전반경 미검증" />
+        <Line k="주차 차량" v="미반영" note="CCTV 영상 판정 전" />
+        <Line k="회전 · 높이" v="미반영" note="회전반경은 참고값 · 판정 안 함" />
       </Section>
 
       <Section title="판정 근거">

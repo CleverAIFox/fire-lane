@@ -15,6 +15,13 @@
 # ★ PR 로만 온다. 자동 머지는 켜지 않는다 — `contract` 가 초록이어야 하고,
 #   `uv sync --frozen` 이라 lock 갱신은 사람이 본다. 판정 산출물이 움직이면
 #   그것은 측정 배치이고 Dependabot 이 결정할 일이 아니다.
+#
+# ★ 2026-09-22 (DECISIONS §212-3). 주 1회 · 개별 PR 로 받았더니 월요일마다 봇 PR
+#   아홉이 main 을 향해 열리고 아무도 안 머지한 채 쌓였다. 봇 PR 은 feat → part →
+#   dev → main 흐름 밖이라 **그대로 머지할 수 있는 길이 애초에 없다** — 신호일
+#   뿐이다. 신호로 쓰려면 적어야 읽힌다: 월 1회 · 생태계마다 한 PR 로 묶는다.
+#   올릴 때는 그 PR 을 닫고 같은 내용을 feat 배치로 다시 낸다.
+#   보안 업데이트는 이 파일과 별개로 온다(저장소 설정) — 줄지 않는다.
 version: 2
 
 updates:
@@ -23,8 +30,7 @@ updates:
   - package-ecosystem: uv
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     open-pull-requests-limit: 3
     commit-message:
       prefix: "deps"
@@ -35,6 +41,9 @@ updates:
         patterns: ["numpy", "pandas", "rasterio", "pyogrio", "geopandas", "shapely", "pyproj"]
       dev-tools:
         patterns: ["ruff", "pytest*", "pre-commit"]
+      # ★ 나머지를 하나로. 없으면 ultralytics 처럼 따로 하나씩 연다
+      rest:
+        patterns: ["*"]
 
   # ── 내비 (web/navi/package-lock.json) ───────────────────────
   # ★ maplibre-gl 5→6 · vite 5→6 이 PR 초록으로 main 에 들어가 TS1192 로 죽은
@@ -43,11 +52,13 @@ updates:
   - package-ecosystem: npm
     directory: /web/navi
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     open-pull-requests-limit: 3
     commit-message:
       prefix: "deps(navi)"
+    groups:
+      navi-all:
+        patterns: ["*"]
 
   # ── GitHub Actions ─────────────────────────────────────────
   # ★ `setup-uv@v3` 처럼 메이저만 박힌 것들. 액션이 조용히 바뀌면 CI 가
@@ -55,18 +66,19 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     open-pull-requests-limit: 3
     commit-message:
       prefix: "ci"
+    groups:
+      actions-all:
+        patterns: ["*"]
 
   # ── Docker (Dockerfile 의 python · uv 판) ───────────────────
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     open-pull-requests-limit: 2
     commit-message:
       prefix: "build"

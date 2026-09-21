@@ -3,6 +3,7 @@
 publish_fleet.py — 관내 보유 차종과 제원을 내비가 먹을 형태로 낸다.
 
 IN    sources.yaml (vehicle_spec · vehicle_profiles.items) · web/config.js (CONFIG.fleet)
+      web/assets/vehicles/profiles.json (turningRadius — 제원표 참고값)
 OUT   web/data/fleet.json
 PARAM 없음
 
@@ -25,13 +26,31 @@ PARAM 없음
     전폭          판정에 쓴다        KFS-1-0073 §3.3 확인
     여유          판정에 쓴다        추정 (D-30)
     최소회전반경   **참고만**         turn_radius_verified: false
+                                     제원표에 값이 있는 차만 숫자로 낸다
+                                     (`turn_radius_ref_m`, 2026-09-22 §212)
     전장          판정하지 않는다     인터뷰의 "물탱크차는 못 들어간다" 가
                                      사실 폭이 아니라 전장 문제인데
                                      지금 판정은 폭만 본다
     전고          판정하지 않는다     상공 장애물 데이터가 없다
 
-★ `grade` 와 `turnUnknown` 은 `config.js` 가 이미 든다. 화면은 그것을
-  그대로 쓰고 숫자를 확정처럼 띄우지 않는다.
+★ `grade` 와 `turnUnknown` 은 `config.js` 가 이미 든다.
+
+── ★ 회전반경 숫자 — 무엇을 내고 무엇을 안 내는가 (§212) ────────
+2026-09-22 결정: **숫자가 있는 제원만 숫자로 띄운다.** 판정에는 여전히
+안 쓴다. 숫자가 나가는 조건은 둘 다 참일 때뿐이다 —
+
+    1. 그 차의 `profile` 이 `profiles.json` 에 있고 `turningRadius` 가 null 이 아니다
+    2. `config.js` 가 그 차에 `turnUnknown` 을 걸지 않았다
+
+2 가 사다리차 둘을 거른다. 제원표 값이 있지만 차대 축이 달라(2축 대표값 ↔
+3축 실차, 길이 구분 ↔ 관절 구분) **그 차의 값이 아니다**(§84-3). 값이
+있다고 내면 그것이 §86-5 의 사고다. 1 이 구급 · 구조 · 조연을 거른다 —
+제원표에 칸이 비어 있다.
+
+★ 키 이름이 `turn_radius_ref_m` 인 이유 — `vehicle_spec.turn_radius_m`(법정 상한
+  12m)은 `turn_radius_verified` 가 켜지면 **판정**에 들어가는 값이다. 같은 이름을
+  쓰면 누군가 `{...spec, ...vehicle}` 한 줄로 참고값을 판정에 흘린다. 거른 차는 `turn_radius_ref_m: null` 이고 화면은 등급을
+낸다. **없는 숫자를 기본값으로 채우지 않는다.**
 """
 from __future__ import annotations
 
@@ -43,6 +62,21 @@ import yaml
 from firelane.paths import ROOT
 
 W = ROOT / "web" / "data"
+PROFILES = ROOT / "web" / "assets" / "vehicles" / "profiles.json"
+
+
+def _turn_radii() -> dict[str, float]:
+    """`profiles.json` 의 profile id → 최소회전반경(m). 값이 없는 차종은 뺀다.
+
+    ★ 파일이 없으면 죽는다. 조용히 빈 표로 가면 화면의 숫자가 전부
+      등급으로 떨어지고, 그것이 「제원이 없다」인지 「못 읽었다」인지
+      아무도 못 가른다.
+    """
+    d = json.loads(PROFILES.read_text(encoding="utf-8"))
+    if d.get("units") != "mm":
+        raise SystemExit(f"★ profiles.json 단위가 mm 가 아니다: {d.get('units')!r}")
+    return {p["id"]: round(p["turningRadius"] / 1000, 1)
+            for p in d.get("profiles", []) if p.get("turningRadius")}
 
 # CONFIG.fleet 한 항목을 통째로 잡는다. 중첩 중괄호가 없어 이 정도로 충분하다.
 _ENTRY = re.compile(r"\{\s*id\s*:\s*\"([^\"]+)\"(.*?)\}\s*,", re.S)
@@ -87,12 +121,15 @@ def main() -> None:
 
     profiles = (src.get("vehicle_profiles") or {}).get("items") or {}
     fleet = _fleet_from_config()
+    radii = _turn_radii()
     clearance = float(spec["clearance_m"])
 
     rows = []
     for f in fleet:
         p = profiles.get(str(f.get("profile", "")), {})
         width = float(p.get("width_m", spec["width_m"]))
+        unknown = bool(f.get("turnUnknown", False))
+        radius = None if unknown else radii.get(str(f.get("profile", "")))
         rows.append({
             "id": f["id"],
             "label": f.get("label") or p.get("label") or f["id"],
@@ -102,9 +139,11 @@ def main() -> None:
             "width_m": width,
             "clearance_m": clearance,
             "required_width_m": round(width + clearance, 2),
-            # ── 참고값. 화면이 숫자 대신 등급을 띄운다 ──────────
+            # ── 참고값. 판정에 안 쓴다 ─────────────────────────
             "turn_grade": f.get("grade"),          # 여유 · 주의 · 미판정
-            "turn_unknown": bool(f.get("turnUnknown", False)),
+            "turn_unknown": unknown,
+            # 제원표 값(m). 그 차의 값이라고 말할 수 없으면 null (§212)
+            "turn_radius_ref_m": radius,
             "turn_radius_verified": bool(spec.get("turn_radius_verified", False)),
             # ── 판정하지 않는 값 ────────────────────────────────
             "length_m": p.get("length_m"),
@@ -118,7 +157,8 @@ def main() -> None:
     out = {
         "default": default,
         "note": (
-            "전폭과 여유만 판정에 쓴다. 회전반경은 미검증이라 등급으로만 낸다. "
+            "전폭과 여유만 판정에 쓴다. 회전반경은 제원표에 그 차의 값이 있을 때만 "
+            "참고로 숫자를 내고(미검증 · 판정 미반영), 없으면 등급으로 낸다. "
             "전장·전고는 판정하지 않는다 — 전장은 폭만 보는 현재 판정의 한계이고, "
             "전고는 상공 장애물 데이터가 없다."),
         "source": str(spec.get("source", ""))[:300],
@@ -133,7 +173,7 @@ def main() -> None:
     for r in rows:
         print(f"    {r['label']:18s} {r['station'] or '':14s} "
               f"폭 {r['width_m']}m · 필요 {r['required_width_m']}m · "
-              f"회전 {r['turn_grade'] or '—'}")
+              f"회전 {r['turn_radius_ref_m'] or r['turn_grade'] or '—'}")
 
 
 if __name__ == "__main__":
