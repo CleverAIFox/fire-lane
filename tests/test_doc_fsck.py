@@ -199,7 +199,7 @@ def test_plan_status_vocabulary_is_closed():
       목록에 없다. `✅` 든 `⬛` 든 어휘 밖이므로 여기서 걸린다.
 
     닫는 법 — 결과는 MASTER 로, 이유는 DECISIONS 로 옮기고 **행을 지운다.**
-    그 뒤 `uv run python tools/plan_renumber.py --apply` 로 번호를 당긴다.
+    번호는 안 당긴다 — 결번이 정상이다(§0-2 · DECISIONS §205).
     """
     text = _plan()
     bad = _offenders(text)
@@ -209,7 +209,7 @@ def test_plan_status_vocabulary_is_closed():
         + "\n\n  선언된 표식: " + " · ".join(sorted(_legend(text)))
         + "\n\n  ★ 닫힘 표식은 없다. 완료면 **행을 지운다**(§0-2).\n"
           "    결과는 MASTER 로, 이유는 DECISIONS 로 옮긴다.\n"
-          "    그 뒤 uv run python tools/plan_renumber.py --apply\n"
+          "    번호는 안 당긴다 — 결번이 정상이다(DECISIONS §205)\n"
           "  ★ 손으로 옮긴다. 옮기는 배치는 저장소에 안 남긴다.")
 
 

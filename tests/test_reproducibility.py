@@ -144,7 +144,7 @@ def test_open_work_lives_only_in_plan():
     assert not re.search(r"^##+\s*\d*\.?\s*남은 일\s*$", m, re.M), (
         "MASTER 에 '남은 일' 절이 있다 — 정본은 PLAN §1 이다.\n"
         "  MASTER 는 현재 무엇이 어떤 값인지만 적는다.")
-    assert re.search(r"^#{1,2}\s*1\.\s*남은 일\s*$", plan, re.M), (
+    assert re.search(r"^#{1,2}\s*1\.\s*남은 일(\s*—\s*\d+행)?\s*$", plan, re.M), (
         "PLAN §1 남은 일이 사라졌다 — 남은 일의 정본이 없어졌다")
 
 
