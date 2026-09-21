@@ -22,8 +22,10 @@ from __future__ import annotations
 
 import ast
 import fnmatch
+import functools
 import json
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -510,6 +512,8 @@ def test_defect_ledger_ids_are_unique():
 LEDGER_NOT_A_PATH = {
     "MASTER/12-8": "W3-5 가 **제안하는 ID 표기**다. 위치 기반 `MASTER-082` 를 "
                    "제목 경로로 바꾸자는 것이고, 파일 경로가 아니다",
+    "part/infra": "W11-1 이 드는 **브랜치 이름**이다. 작업 트리의 경로가 아니다 — "
+                  "그 행의 요지가 「스쿼시가 여기로 들어오면서 커밋이 사라진다」는 것이다",
     "refs/pull/108/head": "W11-1 이 드는 **git ref** 다. 작업 트리의 파일이 아니라 "
                           "`git for-each-ref` 로만 보이는 원격 참조이고, 그 행의 요지가 "
                           "**바로 거기에만 있다**는 것이다 — 실재하면 오히려 결함이 아니다",
@@ -533,13 +537,37 @@ def _ledger_citations() -> list[tuple[str, str]]:
     return out
 
 
+@functools.lru_cache(maxsize=1)
+def _tracked() -> tuple[str, ...]:
+    """git 이 추적하는 파일 전부. **대장이 가리킬 수 있는 것의 전부**이기도 하다.
+
+    ★ 2026-09-21 (DECISIONS §206). 종전에는 `ROOT.rglob()` 으로 훑었다.
+      그것은 **`.git/` 안까지 본다.** 그래서 `part/infra`(브랜치 이름)가
+      `.git/refs/heads/part/infra` 에 걸려 **로컬에서는 통과했다.**
+      CI 는 새로 clone 해 ref 가 `packed-refs` 하나로 묶이므로 그 파일이 없고,
+      **거기서만 빨개졌다.** 로컬 837 초록 · CI 빨강 — 제일 나쁜 모양이다.
+      `git ls-files` 는 `.git` 을 구조적으로 안 담는다. 훑는 자리를 좁히는 것이
+      아니라 **물음에 맞는 자리로 옮기는 것**이다.
+    """
+    r = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                       capture_output=True, text=True, check=False)
+    assert r.returncode == 0, "git ls-files 가 실패했다 — 이 검사가 빈 그물이 된다"
+    out = tuple(f for f in r.stdout.split("\0") if f)
+    assert out, "추적 파일이 0개다 — git 저장소가 아니거나 프로브가 죽었다"
+    return out
+
+
 def _resolves(rel: str) -> bool:
-    """실재하는가. 정확 경로거나, 추적 파일의 **꼬리**거나."""
-    if (ROOT / rel.rstrip("/")).exists():
-        return True
-    tail = "/" + rel.rstrip("/")
-    return any(str(q.relative_to(ROOT)).endswith(tail)
-               for q in ROOT.rglob("*" + Path(rel).name) if q.is_file())
+    """실재하는가. **추적 파일**의 정확 경로거나 그 꼬리거나.
+
+    ★ 작업 트리가 아니라 `git ls-files` 를 본다 — 위 `_tracked()` 의 ★ 참조.
+      디렉터리 인용은 그 밑에 추적 파일이 하나라도 있으면 실재로 본다.
+    """
+    rel = rel.rstrip("/")
+    tail, pre = "/" + rel, rel + "/"
+    return any(f == rel or f.startswith(pre) or f.endswith(tail)
+               or f"/{pre}" in f
+               for f in _tracked())
 
 
 def test_every_ledger_row_points_at_something_real():

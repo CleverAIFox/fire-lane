@@ -10460,3 +10460,57 @@ UI 작업 범위가 동명동을 넘지 않는다는 걸 **화면 자체가 말�
   비어야 한다」고 적는데 **비울 수 없는 구조**였다.
 
 강제자  `tests/test_declaration_sync.py::test_plan_row_numbers_are_unique_and_sorted` · `::test_plan_renumber_cannot_shift_numbers_any_more` · `::test_plan_section1_count_agrees` · `tests/test_tile_zoom_agreement.py`
+
+## 206. 로컬은 초록 CI 는 빨강 — 검사가 `.git` 을 훑고 있었다 (판정 불변)
+
+> 2026-09-21 · 오창준
+
+PR #132 이 CI 에서만 빨갰다. 로컬은 837 통과 · 전수 46/46 초록이었다.
+
+    FAILED test_every_ledger_row_points_at_something_real
+        W11-1  `part/infra` — 없다
+
+§203 이 세운 「대장의 행이 실재하는 것을 가리키는가」가 CI 에서만 울었다.
+**둘 다 같은 코드고 같은 트리인데 판정이 달랐다.**
+
+### 206-1. 원인 — 훑는 자리가 물음보다 넓었다
+
+`_resolves()` 가 이랬다 ——
+
+    return any(str(q.relative_to(ROOT)).endswith(tail)
+               for q in ROOT.rglob("*" + Path(rel).name) if q.is_file())
+
+`ROOT.rglob` 은 **`.git/` 안까지 본다.** 실측 ——
+
+    .git/refs/heads/part/infra
+    .git/refs/remotes/origin/part/infra
+    .git/logs/refs/heads/part/infra                    … 여섯 개
+
+`part/infra` 는 **브랜치 이름**이지 경로가 아니다. 그런데 로컬에는 그 이름의
+**느슨한 ref 파일**이 있어서 「실재한다」로 읽혔다. CI 는 새로 clone 하므로
+ref 가 `packed-refs` 하나로 묶이고 그 파일이 없다 —— **거기서만 빨개졌다.**
+
+★ **틀린 이유로 통과했다.** §202 가 `deadcheck ②` 에 대해 적은 그 문장이
+  하루 만에 내 코드에서 재현됐다 —— 「맞는 결함인데 맞는 이유로 잡힌 것이
+  아니다. 틀린 이유로 옳은 것은 다음 번에 틀린다.」
+
+★ 그리고 이것은 **제일 나쁜 모양**이다. 로컬 초록 · CI 빨강은 §13-5 규약 6 이
+  「수용 조건은 둘」이라고 적은 바로 그 이유다. 로컬만 보고 넘겼으면 이 검사는
+  **영원히 `.git` 을 근거로 통과**했을 것이고, 대장이 없는 경로를 가리켜도 조용했다.
+
+### 206-2. 고침 — 자리를 좁힌 것이 아니라 옮겼다
+
+`.git` 을 제외하는 것으로 고치지 않았다. **물음에 맞는 자리로 옮겼다** ——
+`git ls-files`. 대장이 가리킬 수 있는 것은 **추적 파일**이고, 그것이 전부다.
+`.git` 내부는 구조적으로 안 담긴다. 지금 1,823개.
+
+    _tracked()   git ls-files -z · 0개면 빨간불(빈 그물)
+    _resolves()  정확 경로 · 디렉터리 접두 · 꼬리 매칭
+
+역방향으로 확인했다 —— 면제를 전부 빼고 재면 셋이 걸린다
+(`MASTER/12-8` · `part/infra` · `refs/pull/108/head`). **셋 다 살아 있는
+면제**이고, `part/infra` 를 면제에 넣은 것이 이번 고침의 절반이다.
+나머지 절반이 `.git` 을 안 보게 한 것이다 —— 그것이 없으면 다음에 또
+엉뚱한 것이 `.git` 에 걸려 조용히 통과한다.
+
+강제자  `tests/test_declaration_sync.py::test_ledger_exemptions_are_not_dead` (면제가 죽으면 운다)
