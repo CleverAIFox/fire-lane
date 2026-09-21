@@ -47,7 +47,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SEG = ROOT / "web/data/segments.geojson"
 ORTHO = ROOT / "web/data/ortho"
 OUT = ROOT / "data/desk"
-Z = 18          # ortho.py TILE_Z 의 최대값
+Z = 19          # ortho.py TILE_Z 의 최대값  ★ 2026-09-20 18 → 19 정정(W9-2)
 TILE = 256
 PAD_M = 30.0    # 구간 바깥으로 확보할 여백
 
