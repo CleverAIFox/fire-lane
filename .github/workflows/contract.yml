@@ -82,7 +82,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.13"
           enable-cache: true
@@ -344,7 +344,7 @@ jobs:
         with:
           # ★ 정본은 `.python-version` 하나다 (W3-17).
           python-version-file: .python-version
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.13"
           enable-cache: true
