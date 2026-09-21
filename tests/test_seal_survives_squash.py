@@ -23,12 +23,11 @@ PR #108 을 **스쿼시**로 머지하고 브랜치를 지웠기 때문이다. �
   `part/infra` → (merge commit) → `dev` → `main` 을 타고 가므로 **영원히 main 의
   조상**이다. 스쿼시를 한 번도 안 탄다.
 
-★ **아직 못 세우는 가드가 하나 있다** — 「봉인 커밋이 `main` 의 조상인가」.
-  지금 봉인은 옛 절차로 찍힌 것이라 그 물음에 **빨강**이고, 빨간 가드를 배치에
-  넣으면 §13-5 규약 6(로컬·CI 둘 다 초록)을 어긴다. 게다가 `dms seal` 은 verify
-  초록을 요구하므로 가드가 빨가면 **영영 못 찍는다**(자기참조).
-  **한 번 릴리즈가 돌아 좋은 봉인이 생긴 뒤에 그 가드가 선다** — W11-1 이
-  그때까지 열려 있는 이유다. 여기서는 **기구가 제자리에 있는지**만 든다.
+★ **조상 가드는 2026-09-21 에 섰다**(DECISIONS §210). 처음엔 못 세웠다 — 그때
+  봉인은 옛 절차로 찍힌 `2130b14` 라 빨간 채로 들어가 규약 6 을 어기고, `dms seal` 이
+  verify 초록을 요구하니 자기참조로 영영 못 찍는 고리였다. v0.29 가 `ad1c679` 를
+  main 까지 싣자 고리가 풀렸고 `tools/dms.py ancestry` 가 verify 단계로 들어갔다
+  (`tests/test_dms_ancestry.py`). 여기서는 여전히 **기구가 제자리에 있는지**를 든다.
 """
 from __future__ import annotations
 
@@ -221,3 +220,40 @@ def test_failed_seal_leaves_no_dirty_tracked_file():
     assert "RED.txt" not in ok_branch, (
         "봉인이 **성공한** 가지에서 RED.txt 를 건드린다.\n"
         "  거기서는 사람이 적어둔 사유가 살아 있어야 한다 — 지우면 그것이 거짓 기록이다.")
+
+
+def test_seal_pr_body_template_passes_the_gate():
+    """봉인 PR 본문 템플릿이 CI 의 `pr_body_check` 를 넘는가.
+
+    ★ 2026-09-21 (DECISIONS §210). 처음엔 본문을 한 줄로 썼다. CI 의
+      `pr_body_check.py` 가 「리뷰어가 볼 곳」과 체크박스를 요구하므로 봉인 PR
+      #141 이 25초 만에 빨개졌고 봉인은 part/infra 에 못 들어갔다.
+      **자동 절차가 여는 PR 도 같은 관문을 지난다.** 템플릿과 관문을 여기서 묶는다.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_pbc", ROOT / "tools" / "pr_body_check.py")
+    pbc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pbc)
+    tpl = (ROOT / ".github" / "seal_pr_template.md").read_text(encoding="utf-8")
+    assert "{HEAD}" in tpl, "템플릿에 `{HEAD}` 자리가 없다 — A-0 의 sed 가 채울 곳이 없다"
+    bad = pbc.check(tpl.replace("{HEAD}", "a7babdb"))
+    assert not bad, "봉인 PR 템플릿이 pr_body_check 를 못 넘는다 —\n  " + "\n  ".join(bad)
+    # 음성 대조 — 그날의 한 줄 본문은 관문에 걸려야 한다. 안 걸리면 이 검사가 빈 그물이다
+    assert pbc.check("A-0 이 찍은 봉인이다."), "한 줄 본문이 관문을 넘는다 — pr_body_check 가 죽었다"
+
+
+def test_a0_checks_the_body_before_making_anything():
+    """A-0 이 본문을 **가지를 만들기 전에** 관문에 넣어 보는가.
+
+    ★ 순서가 뒤집히면 본문이 나쁠 때 가지와 PR 이 이미 원격에 남는다 —
+      자동 절차가 남긴 것이 다음 배치를 막는 모양(§208-6)이 또 난다.
+    """
+    code = _a0_block()
+    chk = code.find("pr_body_check.py --body-file")
+    mk = code.find('git switch -q -c "$sb"')
+    assert chk >= 0, "A-0 이 봉인 PR 본문을 로컬 관문에 안 넣어 본다"
+    assert mk >= 0 and chk < mk, "본문 검사가 가지를 만든 **뒤**다 — 실패하면 가지가 남는다"
+    assert '--body-file "$body"' in code, "봉인 PR 이 템플릿 본문 파일로 열리지 않는다"
+    assert not re.search(r'gh pr create[^\n]*\n?[^\n]*--body "', code), (
+        "봉인 PR 본문을 한 줄로 박는다 — 그것이 PR #141 을 빨갛게 만들었다")
