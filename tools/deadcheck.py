@@ -17,11 +17,15 @@ deadcheck.py — **검사가 죽었는가**를 검사한다.
 OUT  REDLIST.json  ·  종료코드 = 빨간불 건수(0 이면 초록)
 
     맨몸        프로브를 돌고 전건을 찍는다. 종료코드 = 건수 (사람이 읽는 판)
-    --selftest  **양성 대조만.** 프로브가 한 건이라도 내는가
+    --selftest  **양성 대조만.** 프로브가 **합성 트리에 심은 결함**을 내는가
     --ratchet   ★ **관문.** 프로브별 수가 `CEILING` 과 같은가 (양방향)
 
-★ 이 도구 자신도 ①에 걸린다. `--selftest` 가 그것을 확인한다 —
-  프로브가 한 건도 못 내면 프로브가 죽은 것이지 저장소가 깨끗한 것이 아니다.
+★ **생사는 합성 트리에서 묻는다**(2026-09-21 · DECISIONS §208). 종전에는
+  「실제 저장소에서 0건이면 죽은 것」으로 읽었는데, 그러면 프로브가 제 일을
+  다 해서 0건이 된 날 관문이 빨개진다 — 실제로 `② 손목록` 이 59건 → 0건이 된
+  바로 그날 봉인이 막혔다. `CONTROLS` 가 프로브마다 일부러 결함을 심은
+  트리를 짓고, 거기서 울어야 살아 있는 것이다. 그러면 **실제 트리의 0건은
+  청결**이고, 실제 트리의 수를 보는 것은 `--ratchet` 의 일이다.
 
 ★ **2026-09-20 — `--selftest` 를 관문으로 쓰면 안 된다**(DECISIONS §202).
   그것이 묻는 것은 「프로브가 살아 있는가」지 「저장소가 깨끗한가」가 아니다.
@@ -45,9 +49,16 @@ HITS: list[dict] = []
 
 
 def hit(probe: str, path: Path, line: int, what: str, count: str = "") -> None:
+    # ★ 2026-09-21. 프로브는 **합성 트리**에서도 돈다(아래 「양성 대조」).
+    #   그 경로는 `ROOT` 밖이라 `relative_to` 가 죽는다 — 여기서 죽으면
+    #   양성 대조 자체가 못 돈다.
+    try:
+        f = str(path.relative_to(ROOT))
+    except ValueError:
+        f = str(path)
     HITS.append({
         "probe": probe,
-        "file": str(path.relative_to(ROOT)),
+        "file": f,
         "line": line,
         "what": what,
         "count": count,
@@ -68,9 +79,9 @@ def tree(p: Path) -> ast.Module | None:
 # ── ① 빈 그물 ───────────────────────────────────────────────────
 # 검사가 `.get("X")` 로 후보를 모으는데 대장에 X 키가 0건이면
 # 그 검사는 구조적으로 빌 수 있다 — 영원히 통과한다.
-def probe_empty_net() -> None:
+def probe_empty_net(root: Path = ROOT) -> None:
     import yaml
-    led = yaml.safe_load(src(ROOT / "sources.yaml"))
+    led = yaml.safe_load(src(root / "sources.yaml"))
     blocks = {"datasets": led.get("datasets") or {},
               "retired": led.get("retired") or {},
               "outputs": led.get("outputs") or {}}
@@ -103,8 +114,8 @@ def probe_empty_net() -> None:
         return out
 
     seen: set[tuple[str, str, str, str]] = set()
-    for p in sorted((ROOT / "tests").rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py")) \
-            + sorted((ROOT / "src").rglob("*.py")):
+    for p in sorted((root / "tests").rglob("*.py")) + sorted((root / "tools").rglob("*.py")) \
+            + sorted((root / "src").rglob("*.py")):
         s = src(p)
         if "sources.yaml" not in s and "ledger" not in s.lower():
             continue
@@ -171,11 +182,16 @@ def probe_empty_net() -> None:
 #   짝짓는다. 그러면 분모가 의미를 갖고, 59건이 실재 3건으로 떨어진다.
 # ★ 원본을 못 재면 **건너뛰지 않고 빨간불을 낸다.** 재는 쪽이 죽으면 프로브도
 #   죽는데, 조용히 통과하면 그것이 곧 ① 빈 그물이다 — 이 도구가 세는 바로 그 병.
-def _members() -> dict[str, tuple[set[str], int]]:
+def _members(root: Path = ROOT) -> dict[str, tuple[set[str], int]]:
     """원본 이름 → (원소로 인정하는 표기 집합, 실제 종수).
 
     좁은 것을 먼저 둔다. `판정코드` ⊂ `src` 라 순서가 뒤집히면 `WATCH` 가
     `src` 58종에 붙어 **분모가 다시 헐거워진다.**
+
+    ★ `root` 가 저장소가 아니면(양성 대조의 합성 트리) `판정코드` 는 안 넣는다 —
+      그것은 설치된 `firelane` 패키지의 import 닫힘이라 합성할 수가 없다.
+      **조용히 빼는 것이 아니라 여기 적는다.** 합성 트리가 거는 것은 ②의
+      **짝짓기 규칙**(부분집합이면 운다)이지 판정코드 분모가 아니다.
     """
     import yaml
     out: dict[str, tuple[set[str], int]] = {}
@@ -183,19 +199,20 @@ def _members() -> dict[str, tuple[set[str], int]]:
     def spell(rels: list[str]) -> set[str]:
         return {x for r in rels for x in (r, Path(r).name, Path(r).stem)}
 
-    # 판정 코드의 닫힘은 여기 하나다 — golden 도 같은 것을 부른다
-    from firelane.shardseal import code_closure
-    jud = [p.relative_to(ROOT).as_posix() for p in code_closure("firelane.segments")]
-    out["판정코드"] = (spell(jud), len(jud))
+    if root == ROOT:
+        # 판정 코드의 닫힘은 여기 하나다 — golden 도 같은 것을 부른다
+        from firelane.shardseal import code_closure
+        jud = [p.relative_to(ROOT).as_posix() for p in code_closure("firelane.segments")]
+        out["판정코드"] = (spell(jud), len(jud))
 
-    y = yaml.safe_load(src(ROOT / "sources.yaml"))
+    y = yaml.safe_load(src(root / "sources.yaml"))
     for k in ("layers", "scopes", "datasets", "outputs"):
         keys = set((y.get(k) or {}).keys())
         out[k] = (keys, len(keys))
 
-    tl = [p.relative_to(ROOT).as_posix() for p in (ROOT / "tools").glob("*.py")]
+    tl = [p.relative_to(root).as_posix() for p in (root / "tools").glob("*.py")]
     out["tools"] = (spell(tl), len(tl))
-    sl = [p.relative_to(ROOT).as_posix() for p in (ROOT / "src").rglob("*.py")]
+    sl = [p.relative_to(root).as_posix() for p in (root / "src").rglob("*.py")]
     out["src"] = (spell(sl), len(sl))
     return out
 
@@ -212,14 +229,14 @@ EXEMPT_HANDLIST = {
 }
 
 
-def probe_handlist() -> None:
+def probe_handlist(root: Path = ROOT) -> None:
     try:
-        mem = _members()
+        mem = _members(root)
     except Exception as e:
         hit("② 손목록", ROOT / "tools" / "deadcheck.py", 0,
             f"원본을 못 쟀다 — {type(e).__name__}: {e}. **분모가 없으면 이 프로브는 빈 그물이다**")
         return
-    for p in sorted((ROOT / "tests").rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py")):
+    for p in sorted((root / "tests").rglob("*.py")) + sorted((root / "tools").rglob("*.py")):
         t = tree(p)
         if t is None:
             continue
@@ -247,8 +264,8 @@ def probe_handlist() -> None:
 
 # ── ③ 조용한 통과 ───────────────────────────────────────────────
 # 실패해야 할 자리에서 조용히 빠져나가는 형태 셋.
-def probe_silent_pass() -> None:
-    for p in sorted((ROOT / "tests").rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py")):
+def probe_silent_pass(root: Path = ROOT) -> None:
+    for p in sorted((root / "tests").rglob("*.py")) + sorted((root / "tools").rglob("*.py")):
         t = tree(p)
         if t is None:
             continue
@@ -281,17 +298,17 @@ def probe_silent_pass() -> None:
 # ── ④ 죽은 게이트 ───────────────────────────────────────────────
 # CI 스텝이 `[ -f <경로> ]` 를 조건으로 걸었는데 그 경로가 추적 대상이
 # 아니면, 그 스텝은 CI 에서 한 번도 안 돈다.
-def probe_dead_gate() -> None:
+def probe_dead_gate(root: Path = ROOT) -> None:
     try:
         tracked = set(subprocess.run(
-            ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
+            ["git", "ls-files"], cwd=root, capture_output=True, text=True, check=True
         ).stdout.split())
     except Exception as e:
         hit("④ 죽은 게이트", ROOT / "tools" / "deadcheck.py", 0,
             f"git ls-files 가 실패해 추적 여부를 못 가린다 — {e}")
         tracked = set()
     COND = re.compile(r"\[\s*-[fdes]\s+([^\]\s]+)\s*\]")
-    for p in sorted((ROOT / ".github").rglob("*.yml")):
+    for p in sorted((root / ".github").rglob("*.yml")):
         s = src(p)
         for m in COND.finditer(s):
             path = m.group(1).strip('"\'')
@@ -309,10 +326,10 @@ def probe_dead_gate() -> None:
 
 # ── ⑤ 좁은 범위 ─────────────────────────────────────────────────
 # 검사가 훑는 경로가 실제 파일 집합보다 좁은가.
-def probe_narrow_scope() -> None:
+def probe_narrow_scope(root: Path = ROOT) -> None:
     try:
         tracked = subprocess.run(
-            ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
+            ["git", "ls-files"], cwd=root, capture_output=True, text=True, check=True
         ).stdout.split()
     except Exception as e:
         # ★ 여기서 return 하면 이 프로브가 프로브 ③ 의 병에 걸린다 —
@@ -338,7 +355,7 @@ def probe_narrow_scope() -> None:
     #   읽혔다. ②가 앓던 것과 같은 병이다 — 짝짓기가 헐거우면 분모가 의미를 잃는다.
     #   훑는 자리와 폴더 이름은 **같은 줄에 있다**(`sorted((ROOT / "tests").rglob(...))`).
     #   줄 단위로 짝지으면 거짓 경보가 사라지고 진짜만 남는다.
-    for p in sorted((ROOT / "tests").rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py")):
+    for p in sorted((root / "tests").rglob("*.py")) + sorted((root / "tools").rglob("*.py")):
         s = src(p)
         if not WALK.search(s):
             continue
@@ -365,6 +382,159 @@ PROBES = [
 ]
 
 
+# ── 양성 대조 ───────────────────────────────────────────────────
+# **프로브가 살아 있는가**를 묻는 자리. 프로브마다 「일부러 결함을 심은
+# 합성 트리」를 만들고, 거기서 그 프로브가 우는지 본다.
+#
+# ★ 2026-09-21 (DECISIONS §208). 종전 `--selftest` 는 **실제 저장소에서
+#   0건이면 프로브가 죽었다**고 읽었다. 그래서 `② 손목록` 을 전수 분류해
+#   59건 → 0건으로 만든 바로 그날, `dms.py` 의 봉인 강제자가 빨개졌다 ——
+#
+#       ✗ probe/deadcheck   ★ selftest 실패 — 아무것도 못 낸 프로브: ['② 손목록']
+#
+#   **프로브가 제 일을 다 했기 때문에 봉인이 안 찍혔다.** 검사가 자기 성공을
+#   실패로 읽은 것이고, DECISIONS §73 이 ④ 에 대해 적어둔 바로 그 문장이다 ——
+#   「검사가 자기 성공을 실패로 읽으면 사람이 검사를 끈다」.
+#
+# ★ 그때 고친 방식이 `not k.startswith('④')` 라는 **한 글자 면제**였다.
+#   0건이 청결일 수 있다는 것은 **프로브의 성질**인데 그것을 ④ 하나에만
+#   적었다 — 범위가 이름보다 좁고 그것이 선언돼 있지 않은 그 족이다.
+#   ①③⑤ 도 W10-1 의 전수 분류를 마치면 차례로 0 이 된다. 즉 **분류가
+#   진행될수록 관문이 더 막히는** 구조였다.
+#
+# ★ 답은 면제를 늘리는 것이 아니라 **물음을 옮기는 것**이다. 생사는
+#   합성 트리에서 묻고, 실제 트리의 0건은 그 다음에야 **청결**로 읽힌다.
+#   실제 트리의 수를 보는 관문은 `--ratchet` 이고 그쪽은 양방향이다.
+# ★ ① 의 합성 본문은 **상수로 조립한다.** 그대로 적으면 `deadcheck.py` **자신**이
+#   ① 에 걸린다 — 실제로 처음 짰을 때 실제 트리 41 → 42 가 됐다.
+#   프로브는 글자를 읽지 뜻을 읽지 않으므로 당연하고, **그 당연함이 좋은 합성
+#   결함의 조건**이다(심은 것이 진짜와 구별되지 않는다). 다만 그 한 건이
+#   실제 트리의 래칫을 올리면 그것은 결함이 아니라 잡음이다.
+_FX_BLK = "outputs"
+_FX_KEY = "feeds"
+
+
+def _fx_empty_net(d: Path) -> None:
+    """① — `outputs` 를 적재하면서 거기 0건인 키로 읽는 검사."""
+    (d / "tools").mkdir(parents=True)
+    (d / "sources.yaml").write_text(
+        f"datasets:\n  a: {{{_FX_KEY}: [x]}}\n  b: {{{_FX_KEY}: [y]}}\n"
+        f"{_FX_BLK}:\n  o1: {{path: p}}\n  o2: {{path: q}}\n",
+        encoding="utf-8")
+    (d / "tools" / "t.py").write_text(
+        "# sources.yaml 을 읽는다\n"
+        "def check_outputs(led):\n"
+        f"    for v in led[{_FX_BLK!r}].values():\n"
+        f"        assert v.get({_FX_KEY!r})\n", encoding="utf-8")
+
+
+def _fx_handlist(d: Path) -> None:
+    """② — `layers` 5종의 **부분집합**을 상수로 박은 검사."""
+    (d / "tools").mkdir(parents=True)
+    (d / "sources.yaml").write_text(
+        "layers:\n" + "".join(f"  l{i}: {{}}\n" for i in range(5)), encoding="utf-8")
+    (d / "tools" / "t.py").write_text(
+        'WATCHED = ["l0", "l1", "l2"]\n', encoding="utf-8")
+
+
+def _fx_silent_pass(d: Path) -> None:
+    """③ — 의존성이 없으면 조용히 빠져나가는 검사."""
+    (d / "tools").mkdir(parents=True)
+    (d / "sources.yaml").write_text("datasets: {}\n", encoding="utf-8")
+    (d / "tools" / "t.py").write_text(
+        "def check_thing():\n"
+        "    try:\n"
+        "        import nonexistent_pkg\n"
+        "    except ImportError:\n"
+        "        return\n"
+        "    assert nonexistent_pkg\n", encoding="utf-8")
+
+
+def _git_init(d: Path, add: bool = False) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=d, check=True,
+                   capture_output=True, text=True)
+    if add:
+        subprocess.run(["git", "add", "-A"], cwd=d, check=True,
+                       capture_output=True, text=True)
+
+
+def _fx_dead_gate(d: Path) -> None:
+    """④ — 추적되지 않는 경로를 조건으로 건 CI 스텝."""
+    (d / ".github" / "workflows").mkdir(parents=True)
+    (d / ".github" / "workflows" / "w.yml").write_text(
+        "steps:\n"
+        "  - run: if [ -f no/such/file.txt ]; then uv run python tools/x.py; fi\n",
+        encoding="utf-8")
+    _git_init(d)          # 추적 파일 0개 — 조건 경로는 당연히 대상 밖이다
+
+
+def _fx_narrow_scope(d: Path) -> None:
+    """⑤ — `tests` 만 훑는 검사. `src`·`tools` 가 대상 밖이다."""
+    for sub in ("src", "tools", "tests"):
+        (d / sub).mkdir(parents=True)
+        (d / sub / "a.py").write_text("x = 1\n", encoding="utf-8")
+    (d / "tests" / "a.py").write_text(
+        'from pathlib import Path\n'
+        'ROOT = Path(".")\n'
+        'def test_all():\n'
+        '    for p in sorted((ROOT / "tests").rglob("*.py")):\n'
+        '        assert p\n', encoding="utf-8")
+    _git_init(d, add=True)
+
+
+# 프로브 이름 → (합성 트리를 짓는 함수, **무엇을 거는가**)
+CONTROLS: dict[str, tuple] = {
+    "① 빈 그물": (_fx_empty_net, "적재한 블록에 0건인 키로 읽는 검사"),
+    "② 손목록": (_fx_handlist, "원본의 부분집합을 상수로 박은 목록"),
+    "③ 조용한 통과": (_fx_silent_pass, "ImportError 를 잡고 return 하는 검사"),
+    "④ 죽은 게이트": (_fx_dead_gate, "추적 안 되는 경로를 건 CI 스텝"),
+    "⑤ 좁은 범위": (_fx_narrow_scope, "tests 만 훑어 src·tools 가 밖인 검사"),
+}
+
+
+def run_probe(fn, root: Path) -> list[dict]:
+    """프로브 하나를 **격리해서** 돌리고 그 건만 돌려준다.
+
+    ★ `HITS` 는 모듈 전역이다. 합성 트리의 건이 실제 집계에 섞이면
+      래칫이 그만큼 어긋난다 — 갈아끼웠다가 되돌린다.
+    """
+    global HITS
+    saved, HITS = HITS, []
+    try:
+        fn(root)
+        got = HITS
+    finally:
+        HITS = saved
+    return got
+
+
+def positive_control() -> list[str]:
+    """프로브를 제 합성 트리에서 돌린다. **안 우는 프로브의 이름**을 낸다.
+
+    ★ 대조가 없는 프로브도 「죽은 것」으로 센다. 프로브를 늘리고 대조를
+      안 적으면 그것이 곧 이 도구가 세는 무음 통과다.
+    """
+    import tempfile
+    dead: list[str] = []
+    for name, fn in PROBES:
+        ctl = CONTROLS.get(name)
+        if ctl is None:
+            dead.append(f"{name} — 양성 대조가 없다")
+            continue
+        build, _what = ctl
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            try:
+                build(d)
+                got = run_probe(fn, d)
+            except Exception as e:
+                dead.append(f"{name} — 대조가 예외로 죽었다: {type(e).__name__}: {e}")
+                continue
+        if not any(h["probe"] == name for h in got):
+            dead.append(f"{name} — 심은 결함을 못 냈다({_what})")
+    return dead
+
+
 # ★ 래칫 — **오늘의 수**다. 목표가 아니라 천장이다(`COV_MIN` · `dupcheck --max` 와 같은 틀).
 #   양방향이다 — 늘면 ✗, **줄어도 ✗** 다. 줄었는데 안 조이면 다음에 그만큼 다시 늘어도
 #   아무도 안 운다(W4-9 가 이산 래칫 넷에서 닫은 바로 그 구멍).
@@ -389,6 +559,11 @@ CEILING = {
 def main() -> int:
     selftest = "--selftest" in sys.argv
     ratchet = "--ratchet" in sys.argv
+
+    # ★ 생사는 **합성 트리**에서 먼저 묻는다. 그 답이 있어야 아래의 0건을
+    #   「청결」로 읽을 수 있다 — 순서가 뒤바뀌면 이 도구가 세는 병에 걸린다.
+    alive = positive_control()
+
     per: dict[str, int] = {}
     for name, fn in PROBES:
         before = len(HITS)
@@ -399,9 +574,15 @@ def main() -> int:
                 f"프로브가 예외로 죽었다 — {type(e).__name__}: {e}")
         per[name] = len(HITS) - before
 
+    sick = {d.split(" —")[0] for d in alive}
     print(f"deadcheck — 빨간불 {len(HITS)}건\n")
     for name, n in per.items():
-        flag = "   ★ 0건 — 프로브가 죽었는지 확인하라" if n == 0 else ""
+        if name in sick:
+            flag = "   ★ 양성 대조 실패 — 이 수는 믿을 수 없다"
+        elif n == 0:
+            flag = "   (대조 통과 — 0건은 청결이다)"
+        else:
+            flag = ""
         print(f"  {name:14s} {n:4d}건{flag}")
 
     print("\n── 파일별 상위")
@@ -413,33 +594,24 @@ def main() -> int:
               open(ROOT / "REDLIST.json", "w"), ensure_ascii=False, indent=1)
     print(f"\nREDLIST.json 기록 — {len(HITS)}건")
 
-    # ★ 양성 대조. 0건이 **청결**인지 **프로브 죽음**인지 가르는 유일한
-    #   방법이다. ④ 가 0건을 냈을 때 실제로는 F-211 이 해소된 것이었는데
-    #   selftest 는 그것을 프로브 죽음으로 보고했다 — 검사가 자기 성공을
-    #   실패로 읽으면 사람이 검사를 끈다(DECISIONS §73).
-    def _probe4_alive() -> bool:
-        import tempfile
-        d = Path(tempfile.mkdtemp())
-        (d / "x.yml").write_text(
-            'steps:\n  - run: if [ -f no/such/file.txt ]; then :; fi\n',
-            encoding="utf-8")
-        pat = re.compile(r"\[\s*-[fdes]\s+([^\]\s]+)\s*\]")
-        return bool(pat.search((d / "x.yml").read_text(encoding="utf-8")))
-
-    if selftest or ratchet:
-        if not _probe4_alive():
-            print("\n★ 양성 대조 실패 — ④ 프로브의 정규식이 죽었다")
-            return 1
+    # ★ 양성 대조가 빨가면 **아래의 어떤 수도 못 믿는다.** 관문이든 아니든
+    #   여기서 죽는다 — 래칫이 「0건」을 통과시키는 근거가 이 대조뿐이다.
+    if (selftest or ratchet) and alive:
+        print("\n★ 양성 대조 실패 — 심은 결함을 못 낸 프로브가 있다\n")
+        for d in alive:
+            print(f"  ✗ {d}")
+        print("\n  합성 트리는 `CONTROLS` 가 짓는다. 프로브를 고쳤으면 대조도 같이 고쳐라 —")
+        print("  **대조가 통과하지 못하는 프로브의 0건은 청결이 아니다.**")
+        return 1
 
     if selftest:
-        # ★ ④ 는 0건이 정상일 수 있다(F-211 해소). 위에서
-        #   살아 있음을 확인했으므로 목록에서 뺀다.
-        dead = [k for k, v in per.items()
-                if v == 0 and not k.startswith('④')]
-        if dead:
-            print(f"\n★ selftest 실패 — 아무것도 못 낸 프로브: {dead}")
-            return 1
-        print("\nselftest 통과 — 프로브 다섯 전부 살아 있다")
+        # ★ 2026-09-21 (DECISIONS §208). 여기서 **실제 트리의 0건을 보지 않는다.**
+        #   종전에는 봤고, 그래서 ② 를 전수 분류해 0건으로 만든 날 이 관문이
+        #   빨개졌다 — 프로브가 제 일을 다 했기 때문에 빨개진 것이다.
+        #   생사의 근거는 위 `positive_control()` 하나다.
+        print("\nselftest 통과 — 프로브 "
+              f"{len(PROBES)} 전부 제 합성 트리에서 울었다")
+        print("  ★ 실제 트리의 건수는 여기서 안 본다 — 그것은 `--ratchet` 의 물음이다.")
         return 0
 
     # ★ 2026-09-20 (DECISIONS §202). **여기가 이 도구의 관문이다.**
