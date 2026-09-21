@@ -172,16 +172,28 @@ say "A-0. 봉인 — 스쿼시 뒤 part/infra 에서 (PR 로)"
 git switch -q part/infra 2>/dev/null || git switch -q -c part/infra origin/part/infra
 git merge -q --ff-only origin/part/infra || die "로컬 part/infra 가 원격과 갈렸다 — git reset --hard origin/part/infra"
 if uv run python tools/dms.py seal --quick; then
-    if [ -n "$(git status --porcelain -- data/dms/SEAL.json)" ]; then
-        head=$(git rev-parse --short HEAD)
+    # ★ 2026-09-21 (DECISIONS §210). 본문을 **템플릿으로** 쓰고, 가지를 만들기 **전에**
+    #   로컬에서 관문에 넣어 본다. 처음엔 한 줄로 썼고 CI 의 `pr_body_check.py` 가 25초 만에
+    #   빨갰다(PR #141) — 자동 절차가 여는 PR 도 사람이 여는 PR 과 같은 관문을 지난다.
+    #   본문이 관문을 못 넘으면 **아무것도 안 만들고** 말하고 넘어간다(§207-2 · §208-6 —
+    #   자동 절차가 남긴 가지·PR·더러운 파일이 다음 배치를 막는다).
+    head=$(git rev-parse --short HEAD)
+    body=$(mktemp)
+    sed "s/{HEAD}/$head/g" .github/seal_pr_template.md > "$body"
+    if [ -z "$(git status --porcelain -- data/dms/SEAL.json)" ]; then
+        ok "봉인이 이미 최신이다 — 커밋할 것 없음"
+    elif ! uv run python tools/pr_body_check.py --body-file "$body" >/dev/null; then
+        git checkout -q -- data/dms/SEAL.json
+        warn "봉인 PR 본문이 관문(pr_body_check)을 못 넘는다 — 봉인을 되돌리고 넘어간다.
+  .github/seal_pr_template.md 를 고쳐라. 릴리즈는 계속한다."
+    else
         sb="feat/seal-$head"
         git switch -q -c "$sb"
         git add data/dms/SEAL.json
         git commit -q -m "seal: $head 기준선 (판정 불변)"
         git push -q -u origin "$sb" || die "봉인 가지 $sb 를 못 밀었다"
         gh pr create -R "$REPO" --base part/infra --head "$sb" \
-            --title "seal: $head 기준선 (판정 불변)" \
-            --body "A-0 이 스쿼시 뒤 part/infra 머리 \`$head\` 에서 찍은 봉인이다. 봉인이 가리키는 커밋은 이미 part/infra 에 있으므로 이 PR 을 스쿼시해도 사라지지 않는다(DECISIONS §209)." \
+            --title "seal: $head 기준선 (판정 불변)" --body-file "$body" \
             >/dev/null || die "봉인 PR 을 못 열었다"
         spr=$(gh pr list -R "$REPO" --head "$sb" --state open --json number --jq '.[0].number // empty')
         [ -n "$spr" ] || die "봉인 PR 번호를 못 읽었다"
@@ -200,9 +212,8 @@ if uv run python tools/dms.py seal --quick; then
             warn "봉인 PR #$spr 의 CI 가 빨갰다 — 봉인은 part/infra 에 안 들어갔다. 릴리즈는 계속한다.
   PR 을 닫고 가지를 지웠다. 왜 빨갰는지:  gh pr checks $spr -R $REPO"
         fi
-    else
-        ok "봉인이 이미 최신이다 — 커밋할 것 없음"
     fi
+    rm -f "$body"
 else
     # ★ 멈추지 않는다. 봉인은 기준선이지 관문이 아니다 — 여기서 die 하면
     #   빨간 강제자 하나 때문에 릴리즈 전체가 막히고, 그러면 사람이 이 단계를
