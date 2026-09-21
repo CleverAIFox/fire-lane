@@ -1,12 +1,12 @@
 {
- "sealed_at": "2026-09-21T18:52:13+09:00",
- "commit": "115de3d",
+ "sealed_at": "2026-09-22T08:27:50+09:00",
+ "commit": "fc00255",
  "tool": "3e0a89af131835c1",
  "scope": "pytest+프로브",
  "docs": {
   "docs/MASTER.md": "0a3a461c395c1479",
-  "docs/DECISIONS.md": "cc90960150906527",
-  "docs/PLAN.md": "dd958a221ca50a48",
+  "docs/DECISIONS.md": "9e81032c3e64658e",
+  "docs/PLAN.md": "275a61c0e85a6c63",
   "README.md": "72a01d097072fb67"
  },
  "raw": {
@@ -4892,6 +4892,48 @@
    "doc": "docs/DECISIONS.md",
    "title": "210-4. 덤"
   },
+  "DECISIONS-614": {
+   "h": "1537f2e3f5b765e5",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "211. 와이어프레임 09-21 반영 — 28장을 표 한 장과 패널 여섯으로 (판정 불변)"
+  },
+  "DECISIONS-615": {
+   "h": "26cab170130ae3c6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "211-1. 18장은 화면이 아니라 상태다"
+  },
+  "DECISIONS-616": {
+   "h": "452afbd9227c0d3e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "211-2. 흐름이 바뀌었다 —— 출발지는 안전센터다"
+  },
+  "DECISIONS-617": {
+   "h": "7bc08c0de77dd4be",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "211-3. 02 가 빈 화면이었다 —— 제품 정의가 코드에 없었다"
+  },
+  "DECISIONS-618": {
+   "h": "45400ad77632c33c",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "211-4. 없는 데이터는 채우지 않았다"
+  },
+  "DECISIONS-619": {
+   "h": "1c2721e8796b22ee",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "211-5. 16 → 17 은 흉내가 아니다"
+  },
+  "DECISIONS-620": {
+   "h": "c37a046a0d6bb990",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "211-6. 검수 —— 여기서 크로미움으로 찍었다"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -4911,7 +4953,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN-004": {
-   "h": "586b775d665c2854",
+   "h": "778abc92dbe7cad8",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일 — 60행"
@@ -5458,7 +5500,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "869 passed in 97.22s (0:01:37)"
+   "tail": "873 passed in 101.78s (0:01:41)"
   },
   "probe/deadcheck": {
    "rc": 0,
