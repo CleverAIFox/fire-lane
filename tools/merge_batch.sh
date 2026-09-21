@@ -130,6 +130,47 @@ openfeat=$(gh pr list -R "$REPO" --base part/infra --state open --json number,he
 if [ -n "$openfeat" ]; then
     die "part/infra 로 가는 PR 이 아직 열려 있다 — squash 머지부터:\n$openfeat"
 fi
+# ══ A-0. 봉인 — **스쿼시 뒤 `part/infra` 에서 찍는다** ══════════
+# ★ 2026-09-21 (PLAN §13 W11-1 · DECISIONS §207). 종전에는 사람이 feat 가지에서
+#   `dms seal` 을 찍었다. 그 가지는 **스쿼시로 머지되고 지워진다.** 봉인이 적은
+#   커밋 해시는 그 순간 어느 브랜치에도 없는 것이 되고, `git clone` 만 한 사람에겐
+#   **존재하지 않는 커밋**이 된다. 2026-09-20 실측 — 봉인이 `2130b14` 를 가리켰고
+#   그것은 `refs/pull/108/head` 에만 살아 있었다(`main` 조상 아님).
+#
+#   불변이 `봉인 == HEAD^` 인데 **그 `HEAD^` 가 스쿼시로 반드시 사라진다.**
+#   다시 찍어도 다음 배치에 또 난다 — 구조가 그렇게 만든다. 그래서 찍는 자리를 옮긴다.
+#   여기서 찍으면 그 커밋은 `part/infra` → (merge commit) → `dev` → `main` 을
+#   타고 가므로 **영원히 main 의 조상**이다. 스쿼시를 한 번도 안 탄다.
+#
+# ★ `--quick`(pytest + 프로브)을 쓴다. 전수 verify 는 **같은 트리**에서 방금 돌았다
+#   (fl.sh 5단계). 스쿼시는 트리를 안 바꾸고 커밋만 합치므로 다시 7분을 돌릴 이유가 없다.
+#   `--log` 를 못 쓰는 이유는 가지를 옮기면서 파일 mtime 이 전부 바뀌어
+#   `_log_is_fresh` 가 「그 로그는 옛 상태다」로 막기 때문이다.
+#
+# ★ 봉인이 안 바뀌면 커밋도 안 한다. 매 배치 빈 커밋이 쌓이면 그것이 곧 소음이다.
+# ★ PR 을 **연 뒤에 밀어도 된다** — GitHub PR 은 브랜치 머리를 따라가므로 이 커밋이
+#   자동으로 PR 에 들어가고, 아래 `wait_checks` 가 봉인이 실린 머리에서 CI 를 기다린다.
+say "A-0. 봉인 — 스쿼시 뒤 part/infra 에서"
+git switch -q part/infra 2>/dev/null || git switch -q -c part/infra origin/part/infra
+git merge -q --ff-only origin/part/infra || die "로컬 part/infra 가 원격과 갈렸다 — git reset --hard origin/part/infra"
+if uv run python tools/dms.py seal --quick; then
+    if [ -n "$(git status --porcelain -- data/dms/SEAL.json)" ]; then
+        git add data/dms/SEAL.json
+        git commit -q -m "seal: $(git rev-parse --short HEAD) 기준선 (판정 불변)"
+        git push -q origin part/infra || die "봉인 커밋을 part/infra 에 못 밀었다"
+        git fetch -q origin
+        ok "봉인 갱신 · part/infra $(git rev-parse --short origin/part/infra)"
+    else
+        ok "봉인이 이미 최신이다 — 커밋할 것 없음"
+    fi
+else
+    # ★ 멈추지 않는다. 봉인은 기준선이지 관문이 아니다 — 여기서 die 하면
+    #   빨간 강제자 하나 때문에 릴리즈 전체가 막히고, 그러면 사람이 이 단계를
+    #   지우게 된다. 못 찍었다는 사실을 **말하고** 넘어간다.
+    warn "봉인을 못 찍었다 — 릴리즈는 계속한다. 사유를 위에서 읽고 따로 처리해라.
+  수동:  uv run python tools/dms.py seal --quick --red <아는빨강>"
+fi
+
 pr=$(gh pr list -R "$REPO" --base dev --head part/infra --state open --json number --jq '.[0].number // empty')
 if [ -z "$pr" ]; then
     # ★ 2026-09-17 (DECISIONS §180 · G-10). 종전에는 경고만 하고 넘어갔다. part/infra 가 dev 보다
