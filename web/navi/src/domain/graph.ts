@@ -25,14 +25,24 @@ export type CostMode = "safe" | "fastest";
 export function buildAdjacency(
   graph: NaviGraph, spec: VehicleSpec, lenient = false,
   mode: CostMode = "safe", tuning: TuningKnobs = TUNING,
+  excluded?: ReadonlySet<string>,
 ): Adjacency {
   const adj: Adjacency = new Map();
   for (const e of graph.edges) {
     if (e.a === e.b) continue;
+    // ★ 2026-09-21 (와이어프레임 16·17). 현장에서 「통행 불가」로 신고한
+    //   구간은 **그래프에서 뺀다.** 비용을 올리는 것이 아니다 — 올리면 다른
+    //   길이 더 비쌀 때 그 구간으로 다시 안내한다. 사람이 막혔다고 말한
+    //   길을 계산이 되살리면 안 된다.
+    if (excluded?.has(e.seg_uid)) continue;
     const penalized = edgeCost(
       spec, e.length_m, e.width_min_m, e.verdict, null, lenient, tuning);
     if (!Number.isFinite(penalized)) continue;
-    const cost = mode === "fastest" ? (e.length_m ?? penalized) : penalized;
+    // ★ 안전 경로는 폭을 아는 확인 필요 구간을 피한다(`TuningKnobs.avoidUncertain`).
+    //   연결성 우선(lenient)에서는 안 피한다 — 그 모드는 닿는 것이 먼저다.
+    const avoid = mode === "safe" && !lenient && e.width_min_m != null
+      && (e.verdict === "needs_cv" || e.verdict === "unknown") ? tuning.avoidUncertain : 1;
+    const cost = mode === "fastest" ? (e.length_m ?? penalized) : penalized * avoid;
     for (const [from, to] of [[e.a, e.b], [e.b, e.a]] as const) {
       let list = adj.get(from);
       if (!list) adj.set(from, (list = []));

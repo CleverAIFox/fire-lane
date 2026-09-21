@@ -22,7 +22,40 @@ import type { Maneuver } from "../domain/turn";
 import type {
   RoutePlan, SnapResult, VehicleSpec, VerdictStyle,
 } from "../domain/types";
-import type { HudData } from "../ui/Hud";
+import type { TurnKind } from "../domain/turn";
+
+/**
+ * 주행 화면이 쓰는 파생값.
+ * ★ 2026-09-21. 이 타입은 `ui/Hud.tsx` 에 살았다. 09-21 와이어프레임으로
+ *   화면이 `TopBar` · `RemainPill` · `BottleneckPanel` 셋으로 갈리면서
+ *   **값의 주인**인 이 파일로 옮겼다 — 화면이 바뀔 때마다 타입이 따라 이사하면
+ *   계산 쪽이 화면을 import 하는 역방향이 생긴다.
+ */
+export interface HudData {
+  vehicleKind: string;
+  safeMode: boolean;
+  offRoute: boolean;
+  turnKind: TurnKind | null;
+  turnText: string | null;
+  nextLabel: string | null;
+  nextDistM: number | null;
+  remainM: number;
+  remainSec: number;
+  etaText: string;
+  currentLabel?: string;
+  currentVerdictLabel?: string;
+  currentVerdictColor?: string;
+  currentWidthM: number | null;
+  sdkCovered: boolean;
+  uncertainCount: number;
+  uncertainM: number;
+  minWidthM: number | null;
+  requiredM: number;
+  marginM: number | null;
+  slowerSec: number | null;
+  fastMinWidthM: number | null;
+  fastLengthM: number | null;
+}
 
 export interface HudInput {
   spec: VehicleSpec;

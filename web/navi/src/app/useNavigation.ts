@@ -26,7 +26,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SCOPE_M, SNAP_INTERVAL_MS } from "../config";
 import { bearing, distM, type LngLat } from "../domain/geo";
 import {
-  buildAdjacency, findRoute, nearestNode, routeUids, type Adjacency,
+  buildAdjacency, findRoute, nearestNode, progressAlongRoute, routeUids,
+  type Adjacency,
 } from "../domain/graph";
 import {
   createTracker, prepare, snap as snapOnce, type Tracker,
@@ -69,6 +70,15 @@ export function useNavigation(spec: VehicleSpec | null) {
   const [offRoute, setOffRoute] = useState(false);
   const [lenient, setLenient] = useState(false);
   const [simSpeed, setSimSpeed] = useState(0);
+  /** 이탈을 감지하고 새 경로를 내는 중 (와이어프레임 06) */
+  const [rerouting, setRerouting] = useState(false);
+  /** 차량 폭 조건으로 닿는 경로가 없다 (와이어프레임 13) */
+  const [noRoute, setNoRoute] = useState(false);
+  /**
+   * 현장에서 통행 불가로 신고한 구간 (와이어프레임 16·17).
+   * ★ 그래프에서 **뺀다** — `buildAdjacency` 의 `excluded` 참조.
+   */
+  const [blocked, setBlocked] = useState<ReadonlySet<string>>(() => new Set());
 
   const live = useRef<LiveFix>({ lon: 0, lat: 0, brg: 0, on: false });
   const tracker = useRef<Tracker | null>(null);
@@ -108,12 +118,15 @@ export function useNavigation(spec: VehicleSpec | null) {
   }, []);
 
   const adj: Adjacency | null = useMemo(
-    () => (data && active ? buildAdjacency(data.graph, active, lenient) : null),
-    [data, active, lenient]);
+    () => (data && active
+      ? buildAdjacency(data.graph, active, lenient, "safe", undefined, blocked)
+      : null),
+    [data, active, lenient, blocked]);
   const adjFast: Adjacency | null = useMemo(
     () => (data && active
-      ? buildAdjacency(data.graph, active, lenient, "fastest") : null),
-    [data, active, lenient]);
+      ? buildAdjacency(data.graph, active, lenient, "fastest", undefined, blocked)
+      : null),
+    [data, active, lenient, blocked]);
 
   const onFix = useCallback((f: Fix) => {
     let brg = live.current.brg;
@@ -141,14 +154,23 @@ export function useNavigation(spec: VehicleSpec | null) {
     setCurrent(r);
   }, []);
 
+  // ★ 2026-09-21. 배속을 바꾸면 시뮬레이션이 **처음부터 다시** 돌았다 —
+  //   소스를 새로 만들면서 진행 거리를 버렸기 때문이다. 같은 경로면 멈춘
+  //   자리에서 이어 간다. 경로가 바뀌면(우회·재탐색) 새 경로는 현위치에서
+  //   시작하므로 0 이 맞다.
+  const simAt = useRef<{ plan: RoutePlan | null; along: number }>({ plan: null, along: 0 });
   useEffect(() => {
-    if (phase === "loading") return;
-    if (simSpeed > 0 && plan && phase === "guiding") {
+    // ★ 2026-09-21. 주행 전(00 · 01 · 02)에는 위치를 안 받는다. 출발지가
+    //   안전센터라 현위치가 쓰이지 않고, 받으면 「위치 없음」 알림만 뜬다.
+    if (phase !== "guiding") return;
+    if (simSpeed > 0 && plan) {
       // 속도는 구간에서 읽는다. simSpeed 는 **재생 배속**이다.
       const src = createSimulationSource(plan, simSpeed, () => {
         setSimSpeed(0); setPhase("arrived");
       });
-      return src.start(onFix);
+      if (simAt.current.plan === plan) src.seek(simAt.current.along);
+      const stop = src.start(onFix);
+      return () => { simAt.current = { plan, along: src.alongM }; stop(); };
     }
     return createGpsSource().start(onFix, setNotice);
   }, [phase, simSpeed, plan, onFix]);
@@ -160,20 +182,47 @@ export function useNavigation(spec: VehicleSpec | null) {
     return r && r.dist_m <= SCOPE_M ? r : null;
   }, []);
 
-  const route = useCallback((from: SnapResult, to: SnapResult) => {
-    if (!data || !adj) return false;
-    const a = nearestNode(data.graph, adj, from.point);
-    const b = nearestNode(data.graph, adj, to.point);
-    const r = findRoute(data.graph, adj, a, b);
-    if (!r) { setNotice("경로가 없다. '연결성 우선'으로 바꿔봐라"); return false; }
+  const route = useCallback((
+    from: SnapResult, to: SnapResult, keepGuiding = false,
+    adjOverride?: { safe: Adjacency; fast: Adjacency },
+  ) => {
+    const A = adjOverride?.safe ?? adj;
+    const F = adjOverride?.fast ?? adjFast;
+    if (!data || !A) return false;
+    const a = nearestNode(data.graph, A, from.point);
+    const b = nearestNode(data.graph, A, to.point);
+    const r = findRoute(data.graph, A, a, b);
+    if (!r) {
+      // ★ 문구를 「연결성 우선으로 바꿔봐라」 에서 상태로 옮겼다. 폭 조건을
+      //   푸는 것은 사람이 정할 일이지 화면이 권할 일이 아니다(와이어프레임 13).
+      setNoRoute(true);
+      return false;
+    }
+    setNoRoute(false);
     tracker.current?.setRoute(routeUids(r));
     setPlan(r);
-    setFastPlan(adjFast ? findRoute(data.graph, adjFast, a, b) : null);
+    setFastPlan(F ? findRoute(data.graph, F, a, b) : null);
     setOffRoute(false); setNotice(null);
     // ★ 여기서 멈춘다. 사용자가 "안내 시작" 을 눌러야 guiding 이 된다.
-    setPhase("preview");
+    //   주행 중 재탐색·우회는 멈추지 않는다.
+    if (!keepGuiding) setPhase("preview");
     return true;
   }, [data, adj, adjFast]);
+
+  // ── 이탈 → 재탐색 (와이어프레임 06) ──────────────────────────
+  // ★ 이탈을 알리기만 하고 끝내지 않는다. 짧게 「재탐색 중」 을 보인 뒤
+  //   현위치에서 목적지로 다시 낸다. 곧바로 바꾸면 한 번 삐끗한 스냅에
+  //   경로가 흔들린다 — 이탈이 1.5초 이어질 때만 바꾼다.
+  const REROUTE_MS = 1500;
+  useEffect(() => {
+    if (phase !== "guiding" || !offRoute || !dest || !current) return;
+    setRerouting(true);
+    const t = setTimeout(() => {
+      route(current, dest, true);
+      setRerouting(false);
+    }, REROUTE_MS);
+    return () => { clearTimeout(t); setRerouting(false); };
+  }, [phase, offRoute]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * 지도 클릭 · 검색 선택.
@@ -200,6 +249,66 @@ export function useNavigation(spec: VehicleSpec | null) {
     route(origin, s);
   }, [snapAt, origin, phase, route]);
 
+  /**
+   * 출발지를 둔다 — 안전센터 좌표(와이어프레임 00).
+   * ★ 출동은 안전센터에서 나간다. 현위치(GPS)는 주행 중 위치에 쓴다.
+   */
+  const setOriginAt = useCallback((lon: number, lat: number): boolean => {
+    const s = snapAt(lon, lat);
+    if (!s) { setNotice("출발지가 스코프 밖이다 — 도로에서 60m 안이어야 한다"); return false; }
+    setOrigin(s); setCurrent(s); curUid.current = s.seg_uid;
+    lastPos.current = null;
+    live.current = { lon: s.point[0], lat: s.point[1], brg: s.bearing, on: true };
+    setPlan(null); setFastPlan(null); setNoRoute(false);
+    tracker.current?.setRoute(null);
+    setPhase((p) => (p === "loading" ? p : "picked"));
+    return true;
+  }, [snapAt]);
+
+  /** 도착지(사건 위치)를 둔다. **경로는 아직 안 낸다** — 차량을 먼저 고른다. */
+  const setDestAt = useCallback((lon: number, lat: number): boolean => {
+    const s = snapAt(lon, lat);
+    if (!s) { setNotice("사건 위치가 스코프 밖이다 — 동명동과 접근회랑 안이어야 한다"); return false; }
+    setDest(s); setPlan(null); setFastPlan(null); setNoRoute(false);
+    setNotice(null);
+    return true;
+  }, [snapAt]);
+
+  /** 출발·도착을 맞바꾼다(와이어프레임 00 「출발·도착 바꾸기」). */
+  const swap = useCallback(() => {
+    if (!origin || !dest) return;
+    const o = origin;
+    setOrigin(dest); setDest(o); setCurrent(dest);
+    live.current = { lon: dest.point[0], lat: dest.point[1], brg: dest.bearing, on: true };
+    setPlan(null); setFastPlan(null);
+  }, [origin, dest]);
+
+  /** 두 경로(안전·빠른)를 낸다. 차량을 고른 뒤 부른다(와이어프레임 01 → 02). */
+  const computeRoutes = useCallback((): boolean => {
+    if (!origin || !dest) {
+      setNotice("출발지와 사건 위치를 먼저 정해라");
+      return false;
+    }
+    return route(origin, dest);
+  }, [origin, dest, route]);
+
+  /**
+   * 통행 불가 신고 → 우회 (와이어프레임 16 → 17).
+   * ★ 그 구간을 그래프에서 빼고 **현위치에서** 다시 낸다. 새 인접리스트를
+   *   여기서 바로 구워 넘긴다 — `blocked` 상태가 반영된 `adj` 는 다음
+   *   렌더에야 생기므로 기다리면 옛 그래프로 한 번 더 막힌 길을 낸다.
+   */
+  const blockEdge = useCallback((uid: string): boolean => {
+    if (!data || !active || !dest) return false;
+    const next = new Set(blocked); next.add(uid);
+    setBlocked(next);
+    const safe = buildAdjacency(data.graph, active, lenient, "safe", undefined, next);
+    const fast = buildAdjacency(data.graph, active, lenient, "fastest", undefined, next);
+    const from = current ?? origin;
+    if (!from) return false;
+    return route(from, dest, phase === "guiding", { safe, fast });
+  }, [data, active, dest, blocked, lenient, current, origin, phase, route]);
+
   /** 차종·모드가 바뀌었을 때 같은 목적지로 다시 낸다. */
   const recompute = useCallback(() => {
     if (origin && dest) route(origin, dest);
@@ -222,16 +331,27 @@ export function useNavigation(spec: VehicleSpec | null) {
   const reset = useCallback(() => {
     setPlan(null); setFastPlan(null); setOrigin(null); setDest(null);
     setCurrent(null); setSimSpeed(0); setOffRoute(false); setNotice(null);
+    setNoRoute(false); setRerouting(false); setBlocked(new Set());
+    simAt.current = { plan: null, along: 0 };
     lastPos.current = null; curUid.current = null;
     live.current.on = false;
     tracker.current?.reset();
     setPhase("idle");
   }, []);
 
+  /** 경로 끝까지 남은 거리(m). 최종 접근(05) 판단에 쓴다 */
+  const remainM = useMemo(() => {
+    if (!plan) return null;
+    const d = progressAlongRoute(plan, current);
+    return Math.max(0, plan.lengthM - (d ?? 0));
+  }, [plan, current]);
+
   return {
     phase, fatal, notice, data, live,
     current, origin, dest, plan, fastPlan, offRoute,
     lenient, setLenient, simSpeed, setSimSpeed,
+    rerouting, noRoute, blocked, remainM,
     pick, snapAt, recompute, choose, start, reset,
+    setOriginAt, setDestAt, swap, computeRoutes, blockEdge,
   };
 }
