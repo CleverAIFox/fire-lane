@@ -30,6 +30,47 @@ export const C = {
   darkInk: "#e8ecf4",
   mapBg: "#0b0e14",
   link: "#2563eb",
+
+  // ── 2026-09-21 와이어프레임 (지혜님) ─────────────────────────
+  // ★ 상단바는 한 벌이다. 상태마다 바뀌는 것은 배지 색 넷뿐이다
+  //   (`domain/status.ts::Tone`).
+  topBar: "#1552d8",
+  topBarSub: "rgba(255,255,255,.82)",
+  toneGreen: "#22d35e",
+  toneYellow: "#fcd535",
+  toneCyan: "#2fd4f0",
+  toneWhite: "#ffffff",
+  toneInk: "#0b1b3a",
+  timeBox: "#0b1220",
+  timeGreen: "#38e08a",
+  /** 경로 — 기본 파랑, 비교용 주황, CCTV 미검증 보라 */
+  route: "#2563eb",
+  routeAlt: "#f97316",
+  routeUnverified: "#7c3aed",
+  routeBottleneck: "#ef4444",
+  routePending: "#22d3ee",
+  incident: "#ef2d2d",
+  station: "#2563eb",
+  /** 좌측 패널 */
+  sheetBg: "#ffffff",
+  sheetLine: "rgba(15,23,42,.12)",
+  cta: "#1e7cf2",
+  ctaInk: "#ffffff",
+  softBlue: "#eef4ff",
+} as const;
+
+/**
+ * 지도 주간 테마. 와이어프레임 09-21 이 **밝은 낮 도시**다.
+ * ★ 판정색은 여기 없다 — 판정 음영은 `layers.ts` 가 정본 색에서 파생한다.
+ */
+export const MAP = {
+  bg: [226, 231, 237] as [number, number, number],
+  road: "#ffffff",
+  roadCase: "#b9c2cd",
+  bldgLow: "#e3e7ec",
+  bldgHigh: "#c9d0d8",
+  label: "#374151",
+  labelHalo: "#ffffff",
 } as const;
 
 export const S = {
@@ -39,6 +80,8 @@ export const S = {
   radiusSm: 10,
   /** 상단 안내 바 높이. 지도 카메라 padding 이 이 값을 쓴다 */
   guideBarH: 96,
+  /** 좌측 패널 폭(00 · 01 · 02). 지도 카메라가 이만큼 비켜 선다 */
+  sheetW: 460,
 } as const;
 
 export const F = {

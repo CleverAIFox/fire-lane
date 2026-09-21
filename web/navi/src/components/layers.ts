@@ -5,21 +5,29 @@
  * `NaviMap.tsx` 가 지도 생성 · 카메라 루프 · 데이터 갱신을 이미 지고 있다.
  * 레이어는 **무엇을 어떻게 그리나** 하나만 답하므로 따로 산다.
  *
- * ── ★ 판정색을 여기서 만들지 않는다 ────────────────────────────
- * 2026-09-06. 배경 도로선의 어두운 색(`#2f5f47` 등)을 **여기에 박았다.**
- * 판정색은 `navi_graph.json.style` 로 상속받아 놓고 정작 배경선은 사본을
- * 만든 것이다 — 상속 관계가 한 군데 샜다.
+ * ── ★ 2026-09-21 · 주간 테마 · 경로 어휘 (지혜님 와이어프레임 09-21) ──
+ * 와이어프레임이 **밝은 낮 도시**다. 배경·건물·도로를 `tokens.ts::MAP` 으로
+ * 옮겼다. 그리고 경로를 판정 4색으로 칠하던 것을 **파랑 한 줄 + 겹칠 곳만
+ * 겹쳐 그리기**로 바꿨다 —
  *
- * 이제 `style` 을 받아 **런타임에 어둡게 만든다.** `config.js` 에
- * `darkColor` 를 새로 추가하지 않는 이유는, 정본에 필드를 늘리면 지도와
- * 내비 양쪽이 그것을 채워야 하고 한쪽만 채우면 다시 갈리기 때문이다.
- * 색을 **파생**하면 정본은 하나로 남는다.
+ *     clear      파랑 (기본)
+ *     needs_cv   빨강·노랑 줄무늬 — 병목 (04)
+ *     unknown    보라 — CCTV 로 검증되지 않는 골목 (07)
+ *     신고 구간   진한 빨강 — 통행 불가 (16)
+ *
+ *   판정의 **뜻**은 그대로이고 **색 어휘**만 지혜님 것이다. `blocked` 는
+ *   경로에 안 올라온다(A* 가 막는다).
+ *
+ * ── ★ 판정색을 여기서 만들지 않는다 ────────────────────────────
+ * 배경 도로의 판정 음영(레이어 단추로 켠다)은 여전히 `style` 에서 **파생**한다.
+ * `config.js` 에 새 색을 늘리지 않는다 — 정본은 하나로 남는다.
  *
  * ★ 마커는 전부 `web/data` 의 발행물을 그대로 읽는다. 좌표를 코드에
  *   박지 않는다 — 안전센터 3곳도 `stations.geojson` 이 든다.
  */
 import type { StyleSpecification, LayerSpecification } from "maplibre-gl";
 import type { VerdictStyle } from "../domain/types";
+import { C, MAP } from "../ui/tokens";
 
 const FONT = ["Open Sans Regular"];
 export const GLYPHS = "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf";
@@ -27,20 +35,15 @@ export const GLYPHS = "https://demotiles.maplibre.org/font/{fontstack}/{range}.p
 /** 어느 줌부터 켜는가. 다 켜면 골목에서 글자가 겹쳐 아무것도 못 읽는다. */
 const Z = { road: 16, bldg: 16, hydrant: 16.5, cctv: 16.5, poi: 17.5 } as const;
 
-/** 지도 배경. 판정색을 이 위로 섞어 어둡게 만든다. */
-const MAP_BG: [number, number, number] = [11, 14, 20];
-
 /**
  * 판정색을 배경 쪽으로 당겨 **배경선용 음영**을 만든다.
- *
  * ★ 새 색을 정의하는 것이 아니라 정본 색에서 파생하는 것이다.
- *   `config.js` 가 바뀌면 이것도 자동으로 따라온다.
  */
-function shade(css: string, keep = 0.32): string {
+function shade(css: string, keep = 0.55): string {
   const m = css.match(/(\d+)\D+(\d+)\D+(\d+)/);
   if (!m) return css;
   const rgb = [Number(m[1]), Number(m[2]), Number(m[3])];
-  const out = rgb.map((v, i) => Math.round(v * keep + MAP_BG[i] * (1 - keep)));
+  const out = rgb.map((v, i) => Math.round(v * keep + MAP.bg[i] * (1 - keep)));
   return `rgb(${out[0]},${out[1]},${out[2]})`;
 }
 
@@ -56,32 +59,35 @@ export function sources(dataUrl: string): StyleSpecification["sources"] {
 }
 
 /**
- * 배경 — 건물과 도로.
- *
+ * 배경 — 도로와 건물.
  * @param style `navi_graph.json.style`. 판정 4색의 정본이 여기로 흘러온다.
  */
-export function baseLayers(
-  style: Record<string, VerdictStyle>,
-): LayerSpecification[] {
-  // 판정색에서 파생한 음영. 없으면 회색으로 떨어진다.
-  const dark = (k: string) => shade(style[k]?.color ?? "rgb(90,98,114)");
+export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecification[] {
+  const tint = (k: string) => shade(style[k]?.color ?? "rgb(120,128,140)");
+  const w = (a: number, b: number) =>
+    ["interpolate", ["linear"], ["zoom"], 15, a, 19, b] as unknown as number;
 
   return [
     { id: "bg", type: "background",
-      paint: { "background-color": `rgb(${MAP_BG.join(",")})` } },
+      paint: { "background-color": `rgb(${MAP.bg.join(",")})` } },
 
-    // 도로 — 전 구간을 판정 음영으로. 경로가 없어도 어디가 좁은 골목인지
-    // 보인다. 이것이 이 앱의 배경 지도다.
-    { id: "seg-base", type: "line", source: "segments",
-      layout: { "line-cap": "round" },
+    // 도로 — 테두리 + 흰 면. 와이어프레임의 낮 도로다.
+    { id: "seg-case", type: "line", source: "segments",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-width": w(3.5, 16), "line-color": MAP.roadCase } },
+    { id: "seg-road", type: "line", source: "segments",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-width": w(2.2, 13), "line-color": MAP.road } },
+
+    // 판정 음영 — 레이어 단추로 켠다. 경로가 없어도 어디가 좁은 골목인지 보인다.
+    { id: "seg-tint", type: "line", source: "segments",
+      layout: { "line-cap": "round", visibility: "none" },
       paint: {
-        "line-width": ["interpolate", ["linear"], ["zoom"], 15, 2, 19, 8],
+        "line-width": w(2, 9),
         "line-color": ["match", ["get", "verdict"],
-          "clear", dark("clear"),
-          "needs_cv", dark("needs_cv"),
-          "blocked", dark("blocked"),
-          dark("unknown")],
-        "line-opacity": .9,
+          "clear", tint("clear"), "needs_cv", tint("needs_cv"),
+          "blocked", tint("blocked"), tint("unknown")],
+        "line-opacity": .85,
       } },
 
     // 건물 — z(지반고) 위에 h(높이)만큼.
@@ -89,76 +95,142 @@ export function baseLayers(
     { id: "bldg", type: "fill-extrusion", source: "buildings",
       paint: {
         "fill-extrusion-color": ["interpolate", ["linear"], ["get", "flo"],
-          1, "#1a202b", 5, "#232b39", 15, "#2d3646"],
+          1, MAP.bldgLow, 12, MAP.bldgHigh],
         "fill-extrusion-height": ["+", ["get", "z"], ["get", "h"]],
         "fill-extrusion-base": ["get", "z"],
-        "fill-extrusion-opacity": .95,
+        "fill-extrusion-opacity": .96,
         "fill-extrusion-vertical-gradient": true,
       } },
   ];
 }
 
-/** 경로. 판정별로 분절해 그리는 것이 이 앱의 존재 이유다. */
-export function routeLayers(): LayerSpecification[] {
+const RW = (a: number, b: number) =>
+  ["interpolate", ["linear"], ["zoom"], 15, a, 19, b] as unknown as number;
+
+/**
+ * 비교용 둘째 경로(02). 주 경로 **밑에** 깐다.
+ * ★ 와이어프레임 02 가 빠른 경로를 주황으로 그렸다.
+ */
+export function altRouteLayers(): LayerSpecification[] {
   return [
-    { id: "route-halo", type: "line", source: "route",
+    { id: "alt-case", type: "line", source: "route-alt",
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-width": ["interpolate", ["linear"], ["zoom"], 15, 12, 19, 30],
-        "line-color": ["get", "color"], "line-opacity": .2, "line-blur": 7,
-      } },
-    { id: "route-line", type: "line", source: "route",
+      paint: { "line-width": RW(9, 24), "line-color": "#ffffff", "line-opacity": .95 } },
+    { id: "alt-line", type: "line", source: "route-alt",
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-width": ["interpolate", ["linear"], ["zoom"], 15, 6, 19, 16],
-        "line-color": ["get", "color"], "line-opacity": .95,
-      } },
+      paint: { "line-width": RW(5, 15), "line-color": C.routeAlt } },
   ];
 }
 
 /**
- * 지형지물 마커.
+ * 주 경로. 파랑 한 줄 위에 **겹칠 곳만** 겹친다.
+ *
+ * ★ `look` 이 `pending` 이면 점선 하늘색 — 새 경로가 서기 전(06 · 12 · 13 · 14).
+ *   옛 경로를 실선으로 두면 그 길로 가라는 말이 된다.
+ */
+export function routeLayers(): LayerSpecification[] {
+  const isLook = (v: string) => ["==", ["get", "look"], v] as unknown as boolean;
+  return [
+    { id: "route-case", type: "line", source: "route",
+      filter: ["!", isLook("pending")] as never,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-width": RW(11, 30), "line-color": "#ffffff",
+               "line-opacity": ["case", isLook("faded"), .45, .95] as never } },
+    { id: "route-line", type: "line", source: "route",
+      filter: ["!", isLook("pending")] as never,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-width": RW(7, 21), "line-color": C.route,
+               "line-opacity": ["case", isLook("faded"), .45, 1] as never } },
+
+    // 07 — CCTV 로 검증되지 않는 골목
+    { id: "route-unverified", type: "line", source: "route",
+      filter: ["all", ["==", ["get", "verdict"], "unknown"], ["!", isLook("pending")]] as never,
+      layout: { "line-cap": "butt", "line-join": "round" },
+      paint: { "line-width": RW(7, 21), "line-color": C.routeUnverified } },
+    { id: "route-unverified-dash", type: "line", source: "route",
+      filter: ["all", ["==", ["get", "verdict"], "unknown"], ["!", isLook("pending")]] as never,
+      layout: { "line-cap": "butt" },
+      paint: { "line-width": RW(1.5, 4), "line-color": "#ffffff",
+               "line-dasharray": [2, 3] } },
+
+    // 04 — 병목. 노랑 바탕에 빨강 줄무늬
+    { id: "route-bottleneck", type: "line", source: "route",
+      filter: ["all", ["==", ["get", "verdict"], "needs_cv"], ["!", isLook("pending")]] as never,
+      layout: { "line-cap": "butt" },
+      paint: { "line-width": RW(7, 21), "line-color": C.toneYellow } },
+    { id: "route-bottleneck-stripe", type: "line", source: "route",
+      filter: ["all", ["==", ["get", "verdict"], "needs_cv"], ["!", isLook("pending")]] as never,
+      layout: { "line-cap": "butt" },
+      paint: { "line-width": RW(7, 21), "line-color": C.routeBottleneck,
+               "line-dasharray": [0.6, 0.6] } },
+
+    // 16 — 현장에서 통행 불가로 신고한 구간
+    { id: "route-blocked", type: "line", source: "blocked",
+      layout: { "line-cap": "round" },
+      paint: { "line-width": RW(7, 21), "line-color": "#991b1b",
+               "line-dasharray": [1, 0.8] } },
+
+    // 06 · 12 · 13 · 14 — 경로가 서지 않았다
+    { id: "route-pending", type: "line", source: "route",
+      filter: isLook("pending") as never,
+      layout: { "line-cap": "round" },
+      paint: { "line-width": RW(4, 10), "line-color": C.routePending,
+               "line-dasharray": [0.1, 1.8] } },
+
+    // 진행 방향 갈매기표. 아이콘은 NaviMap 이 캔버스로 굽는다(글꼴 없이 돈다).
+    { id: "route-chevron", type: "symbol", source: "route",
+      filter: ["!", isLook("pending")] as never,
+      layout: {
+        "symbol-placement": "line", "symbol-spacing": 70,
+        "icon-image": "chev", "icon-size": ["interpolate", ["linear"], ["zoom"], 15, .35, 19, .8] as never,
+        "icon-rotation-alignment": "map", "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      } },
+
+    // 05 — 최종 접근 지점에서 사건 위치까지 (차량이 못 들어가는 구간)
+    { id: "final-leg", type: "line", source: "final-leg",
+      layout: { "line-cap": "round" },
+      paint: { "line-width": RW(3, 7), "line-color": C.incident,
+               "line-dasharray": [1.2, 1.2] } },
+  ];
+}
+
+/**
+ * 지형지물 마커 · 라벨.
  *
  * ★ 소화전과 CCTV 는 **출동 판단에 직접 쓰인다.** 소화전은 도착 후 급수
  *   지점이고, CCTV 는 그 구간의 판정이 영상으로 검증될 수 있는지를
  *   말한다(`unknown` 354 는 전부 CCTV 25m 밖이다).
  */
 export function markerLayers(): LayerSpecification[] {
+  const halo = { "text-halo-color": MAP.labelHalo, "text-halo-width": 1.8 };
   return [
     { id: "hydrant", type: "circle", source: "hydrants", minzoom: Z.hydrant,
       paint: {
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 3, 19, 6],
-        "circle-color": "#4ad1ff",
-        "circle-stroke-width": 1.5, "circle-stroke-color": "#0b0e14",
-        "circle-opacity": .9,
+        "circle-color": "#ef4444",
+        "circle-stroke-width": 1.5, "circle-stroke-color": "#ffffff",
       } },
     { id: "cctv", type: "circle", source: "cctv", minzoom: Z.cctv,
       paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 3.5, 19, 7],
-        "circle-color": "#ffd54a",
-        "circle-stroke-width": 1.5, "circle-stroke-color": "#0b0e14",
-        "circle-opacity": .9,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 4, 19, 9],
+        "circle-color": "#facc15",
+        "circle-stroke-width": 2, "circle-stroke-color": "#111827",
       } },
-
     { id: "lbl-road", type: "symbol", source: "segments", minzoom: Z.road,
       layout: {
         "symbol-placement": "line", "text-field": ["get", "road_name"],
         "text-font": FONT, "text-size": 11, "text-max-angle": 40,
-        "symbol-spacing": 240, "text-pitch-alignment": "viewport",
+        "symbol-spacing": 260, "text-pitch-alignment": "viewport",
       },
-      paint: { "text-color": "#9fb0c8", "text-halo-color": "#0b0e14",
-               "text-halo-width": 1.6 } },
-
+      paint: { "text-color": "#475569", ...halo } },
     { id: "lbl-bldg", type: "symbol", source: "buildings", minzoom: Z.bldg,
       filter: ["has", "BULD_NM"],
       layout: {
         "text-field": ["get", "BULD_NM"], "text-font": FONT, "text-size": 12,
         "text-allow-overlap": false, "text-pitch-alignment": "viewport",
       },
-      paint: { "text-color": "#dfe7f2", "text-halo-color": "#0b0e14",
-               "text-halo-width": 1.8 } },
-
-    // 상가는 17.5 부터. 더 일찍 켜면 골목에서 글자가 겹쳐 못 읽는다.
+      paint: { "text-color": MAP.label, ...halo } },
     { id: "lbl-poi", type: "symbol", source: "poi", minzoom: Z.poi,
       layout: {
         "text-field": ["get", "name"], "text-font": FONT, "text-size": 10,
@@ -166,65 +238,41 @@ export function markerLayers(): LayerSpecification[] {
         "text-allow-overlap": false, "text-optional": true,
         "text-pitch-alignment": "viewport",
       },
-      paint: { "text-color": "#8b9ab0", "text-halo-color": "#0b0e14",
-               "text-halo-width": 1.4 } },
+      paint: { "text-color": "#64748b", ...halo } },
   ];
 }
 
 /**
  * 안전센터 3곳. **출동 기점이라 항상 보인다.**
- *
- * ★ `kind` 로 안전센터(center)와 소방서(station)를 가른다. 출동은
- *   소방서가 아니라 안전센터에서 나간다(`seg/params.py::STATIONS`).
+ * ★ `kind` 로 안전센터(center)와 소방서(station)를 가른다.
  */
 export function stationLayers(): LayerSpecification[] {
   return [
-    { id: "station-glow", type: "circle", source: "stations",
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 12, 19, 30],
-        "circle-color": "#ff4d3d", "circle-opacity": .18, "circle-blur": .7,
-      } },
     { id: "station-dot", type: "circle", source: "stations",
       paint: {
-        "circle-radius": ["case", ["==", ["get", "kind"], "center"], 8, 6],
-        "circle-color": ["case", ["==", ["get", "kind"], "center"],
-          "#ff4d3d", "#c2410c"],
+        "circle-radius": ["case", ["==", ["get", "kind"], "center"], 7, 5],
+        "circle-color": ["case", ["==", ["get", "kind"], "center"], C.station, "#64748b"],
         "circle-stroke-width": 2.5, "circle-stroke-color": "#ffffff",
       } },
     { id: "lbl-station", type: "symbol", source: "stations",
       layout: {
-        // 발행 필드명이 한글 한 칸이다. 정본은 stations.geojson 이므로
-        // 여기서 이름을 바꾸지 않는다.
+        // 발행 필드명이 한글 한 칸이다. 정본은 stations.geojson 이므로 이름을 안 바꾼다.
         "text-field": ["get", "소방서 및 안전센터명"],
         "text-font": FONT, "text-size": 12, "text-offset": [0, 1.3],
         "text-anchor": "top", "text-allow-overlap": true,
         "text-pitch-alignment": "viewport",
       },
-      paint: { "text-color": "#ffd6d1", "text-halo-color": "#0b0e14",
-               "text-halo-width": 2 } },
+      paint: { "text-color": "#1e3a8a", "text-halo-color": "#fff", "text-halo-width": 2 } },
   ];
 }
 
-/** 목적지 · 출발지 핀. 앱이 GeoJSON 을 채운다. */
-export function pinLayers(): LayerSpecification[] {
-  return [
-    { id: "pin-halo", type: "circle", source: "pins",
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 14, 10, 19, 24],
-        "circle-color": ["get", "color"], "circle-opacity": .22, "circle-blur": .6,
-      } },
-    { id: "pin-dot", type: "circle", source: "pins",
-      paint: {
-        "circle-radius": 9, "circle-color": ["get", "color"],
-        "circle-stroke-width": 3, "circle-stroke-color": "#ffffff",
-      } },
-    { id: "pin-label", type: "symbol", source: "pins",
-      layout: {
-        "text-field": ["get", "label"], "text-font": FONT, "text-size": 12,
-        "text-offset": [0, 1.4], "text-anchor": "top",
-        "text-allow-overlap": true, "text-pitch-alignment": "viewport",
-      },
-      paint: { "text-color": "#ffffff", "text-halo-color": "#0b0e14",
-               "text-halo-width": 2 } },
-  ];
+/** 캔버스로 굽는 갈매기표. 글꼴 서버 없이 돈다(시연장 와이파이를 믿지 않는다). */
+export function chevronImage(): ImageData {
+  const n = 48;
+  const cv = document.createElement("canvas");
+  cv.width = n; cv.height = n;
+  const g = cv.getContext("2d")!;
+  g.strokeStyle = "#ffffff"; g.lineWidth = 8; g.lineCap = "round"; g.lineJoin = "round";
+  g.beginPath(); g.moveTo(14, 12); g.lineTo(32, 24); g.lineTo(14, 36); g.stroke();
+  return g.getImageData(0, 0, n, n);
 }

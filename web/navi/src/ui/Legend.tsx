@@ -9,7 +9,7 @@
  *   색만 뽑아오는 것이 더 부서지기 쉽다. **한쪽을 고치면 다른 쪽도
  *   고쳐라** — 이 주석이 그 강제자다.
  */
-import { C, F } from "./tokens";
+import { C, F, S } from "./tokens";
 import type { VerdictStyle } from "../domain/types";
 
 interface Props {
@@ -18,36 +18,38 @@ interface Props {
   onToggle: () => void;
 }
 
-/** components/layers.ts 의 색과 같아야 한다. */
+/** components/layers.ts 의 색과 같아야 한다. (2026-09-21 주간 테마로 바꿈) */
 const FEATURES = [
-  { color: "#ff4d3d", label: "119안전센터" },
-  { color: "#ffd54a", label: "CCTV" },
-  { color: "#4ad1ff", label: "소화전" },
+  { color: C.station, label: "119안전센터" },
+  { color: "#facc15", label: "CCTV" },
+  { color: "#ef4444", label: "소화전" },
+];
+
+/** 경로 어휘 — layers.ts::routeLayers 와 같아야 한다 */
+const ROUTE = [
+  { color: C.route, label: "안내 경로" },
+  { color: C.routeUnverified, label: "CCTV 미검증 골목" },
+  { color: C.routeBottleneck, label: "병목 · 확인 필요" },
+  { color: C.routeAlt, label: "빠른 경로 (비교)" },
 ];
 
 const ORDER = ["clear", "needs_cv", "unknown", "blocked"];
 
-export function Legend({ style, open, onToggle }: Props) {
+export function Legend({ style, open }: Props) {
+  if (!open) return null;
   return (
-    <div style={{ position: "absolute", zIndex: 4, right: 14, bottom: 76 }}>
-      <button onClick={onToggle} style={btn}>
-        {open ? "범례 ✕" : "범례"}
-      </button>
-      {open && (
-        <div style={panel}>
-          <div style={head}>구간 판정</div>
-          {ORDER.filter((k) => style[k]).map((k) => (
-            <Row key={k} color={style[k].color} label={style[k].label} />
-          ))}
-          <div style={{ ...head, marginTop: 10 }}>지형지물</div>
-          {FEATURES.map((f) => (
-            <Row key={f.label} color={f.color} label={f.label} />
-          ))}
-          {/* ★ 이 한 줄을 지우지 마라. 지도가 보여주는 색이 확정 판정처럼
-              읽히는 것을 막는 유일한 장치다. */}
-          <div style={note}>도면 기반 1차 판정 · 폭 미검증</div>
-        </div>
-      )}
+    <div style={{ ...panel, position: "absolute", zIndex: 5, left: 86, top: S.guideBarH + 90 }}>
+      <div style={head}>경로</div>
+      {ROUTE.map((f) => <Row key={f.label} color={f.color} label={f.label} />)}
+      <div style={{ ...head, marginTop: 10 }}>구간 판정 (도로 음영)</div>
+      {ORDER.filter((k) => style[k]).map((k) => (
+        <Row key={k} color={style[k].color} label={style[k].label} />
+      ))}
+      <div style={{ ...head, marginTop: 10 }}>지형지물</div>
+      {FEATURES.map((f) => <Row key={f.label} color={f.color} label={f.label} />)}
+      {/* ★ 이 한 줄을 지우지 마라. 지도가 보여주는 색이 확정 판정처럼
+          읽히는 것을 막는 유일한 장치다. */}
+      <div style={note}>도면 기반 1차 판정 · 폭 미검증</div>
     </div>
   );
 }
@@ -63,13 +65,8 @@ function Row({ color, label }: { color: string; label: string }) {
   );
 }
 
-const btn: React.CSSProperties = {
-  background: C.dark, border: "1px solid rgba(255,255,255,.14)",
-  borderRadius: 10, color: C.darkInk, padding: "7px 12px",
-  fontSize: F.small, cursor: "pointer", fontFamily: F.family,
-};
 const panel: React.CSSProperties = {
-  position: "absolute", right: 0, bottom: 38, minWidth: 150,
+  minWidth: 170,
   background: C.dark, color: C.darkInk,
   border: "1px solid rgba(255,255,255,.1)", borderRadius: 12,
   padding: "12px 14px", backdropFilter: "blur(12px)",

@@ -1,19 +1,26 @@
 /**
- * ui/BottleneckPanel.tsx — 병목 구간 상세. (와이어프레임 3)
+ * ui/BottleneckPanel.tsx — 병목 구간 상세.  (와이어프레임 04 · 04.5 · 2026-09-21)
+ *
+ *   열림 (04)   우측 시트. 유효폭 · 요구폭 · 폭 여유 · 길이 · 판정 근거 · 단추 둘
+ *   접힘 (04.5) 우측 가장자리 주황 ⚠ 탭. 누르면 연다
  *
  * ★ "측정 신뢰도" 는 `width_cov` 다 — 그 구간에서 폭 표본이 실제로 덮은
  *   비율이며, 우리가 만든 값이 아니라 파이프라인이 낸 값이다.
  *
- * ★ `n_sample` 이 1 이면 표본 하나로 낸 폭이다. `verdict()` 가 그 경우
- *   통과 확정을 보류한다 — 화면도 그것을 드러내야 한다.
+ * ★ 와이어프레임은 「장애물 · 위험 요소 — 주차 차량 45m · 급회전 전방」 을
+ *   띄운다. **그 데이터가 없다.** 실시간 주정차는 CCTV 영상 판정(CV)이
+ *   서야 나오고, 회전은 판정하지 않는다(`turn_radius_verified: false`).
+ *   없는 것을 있는 것처럼 채우지 않고 「미반영」 으로 적는다.
  *
- * ★ 하단 세 줄은 **지우지 마라.** 판정이 무엇을 보고 무엇을 안 보는지
- *   화면에 남기는 유일한 장치다(DECISIONS §86-5 가 겪은 자리).
+ * ★ 하단 두 줄은 **지우지 마라.** 판정이 무엇을 보고 무엇을 안 보는지
+ *   화면에 남기는 유일한 장치다(DECISIONS §86-5 가 겪은 자리). 09-05 판에서
+ *   주행 화면 우측 패널에 있던 것이 여기로 옮겨 왔다.
  */
 import type { CSSProperties, ReactNode } from "react";
 import { C, F, S } from "./tokens";
 
 export interface BottleneckData {
+  segUid: string;
   segLabel: string;
   aheadM: number | null;
   widthM: number | null;
@@ -27,118 +34,136 @@ export interface BottleneckData {
   verdictColor: string;
   /** 가장 가까운 CCTV 까지 거리(m). 25m 넘으면 영상판정이 성립 안 한다 */
   cctvDistM: number | null;
-  onClose: () => void;
-  onReroute?: () => void;
 }
 
-export function BottleneckPanel(d: BottleneckData) {
+interface Props extends BottleneckData {
+  open: boolean;
+  onToggle: () => void;
+  onShare: () => void;
+  onReport: () => void;
+}
+
+export function BottleneckPanel(d: Props) {
+  if (!d.open) {
+    return (
+      <button onClick={d.onToggle} style={tab} aria-label="병목 구간 상세 열기" data-wf="04.5">
+        <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 3 L22 20 H2 Z" fill="#fff" /><path d="M12 9v5M12 16.5v.5" stroke={C.warn} strokeWidth="2.4" strokeLinecap="round" /></svg>
+      </button>
+    );
+  }
   const margin = d.widthM != null ? d.widthM - d.requiredM : null;
+  const cctvOk = d.cctvDistM != null && d.cctvDistM <= 25;
   return (
-    <div style={panel}>
-      <div style={{ display: "flex", justifyContent: "space-between",
-                    alignItems: "center" }}>
-        <div style={{ fontSize: F.mid, fontWeight: 800 }}>병목 구간 상세</div>
-        <button onClick={d.onClose} style={x} aria-label="닫기">✕</button>
+    <div style={panel} data-wf="04">
+      <button onClick={d.onToggle} style={collapse} aria-label="접기">›</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 20, fontWeight: 800 }}>병목 구간 상세</div>
+        <button onClick={d.onToggle} style={x} aria-label="닫기">✕</button>
       </div>
-
-      <div style={{ display: "inline-block", marginTop: 10, borderRadius: 999,
-                    background: "rgba(245,158,11,.16)", color: C.warnInk,
-                    padding: "4px 12px", fontSize: F.small, fontWeight: 700 }}>
-        현장 확인 필요
+      <span style={chip}>현장 확인 필요</span>
+      <div style={{ fontSize: 13, color: C.panelSub, marginTop: 8 }}>
+        {d.segLabel}{d.aheadM != null ? ` · 전방 ${Math.round(d.aheadM)}m` : ""}
       </div>
-
-      <div style={{ marginTop: 8, fontSize: F.base, color: C.panelSub }}>
-        {d.segLabel}
-        {d.aheadM != null && ` · 전방 ${Math.round(d.aheadM)}m`}
-      </div>
-      <div style={{ fontSize: F.base, fontWeight: 800, marginTop: 2,
-                    color: d.verdictColor }}>{d.verdictLabel}</div>
 
       <div style={grid}>
-        <Cell k="유효 도로 폭"
-              v={d.widthM != null ? `${d.widthM.toFixed(2)}m` : "—"} />
-        <Cell k="차량 요구 폭" v={`${d.requiredM.toFixed(1)}m`} />
-        <Cell k="계산상 여유"
-              v={margin != null ? `${margin.toFixed(2)}m` : "—"}
-              warn={margin != null && margin < 0.5} />
-        <Cell k="구간 길이"
-              v={d.lengthM != null ? `${Math.round(d.lengthM)}m` : "—"} />
+        <Tile k="유효 도로폭" v={d.widthM != null ? `${d.widthM.toFixed(1)}m` : "—"} />
+        <Tile k="차량 요구폭" v={`${d.requiredM.toFixed(1)}m`} />
+        <Tile k="계산상 폭 여유" v={margin != null ? `${margin.toFixed(1)}m` : "—"} accent />
+        <Tile k="구간 길이" v={d.lengthM != null ? `${Math.round(d.lengthM)}m` : "—"} />
       </div>
 
-      <div style={head}>판정 근거</div>
-      <Row k="측정 신뢰도"
-           v={d.coverage != null ? `${Math.round(d.coverage * 100)}%` : "—"}
-           warn={d.coverage != null && d.coverage < 0.5} />
-      <Row k="폭 표본 수"
-           v={d.samples != null ? `${d.samples}개` : "—"}
-           warn={d.samples === 1} />
-      <Row k="영상판정"
-           v={d.cctvDistM == null ? "—"
-              : d.cctvDistM <= 25 ? `가능 (CCTV ${Math.round(d.cctvDistM)}m)`
-              : `불가 (CCTV ${Math.round(d.cctvDistM)}m)`}
-           warn={d.cctvDistM != null && d.cctvDistM > 25} />
-      <Row k="도면 기반 1차 판정" v="✓" />
+      <Section title="장애물 · 위험 요소">
+        <Line k="실시간 주정차" v="미반영" note="CCTV 영상 판정 전" />
+        <Line k="회전 · 높이" v="미반영" note="회전반경 미검증" />
+      </Section>
 
-      {/* ★ 이 세 줄이 판정의 경계다. 지우지 마라. */}
-      <div style={note}>
-        실시간 주정차 미반영<br />
-        회전 및 높이 통과 여부는 판정하지 않습니다<br />
-        폭은 도면 기반 미검증 값입니다
+      <Section title="판정 근거">
+        <Line k="측정 신뢰도" v={d.coverage != null ? `${Math.round(d.coverage * 100)}%` : "—"} blue />
+        <Line k="폭 표본" v={d.samples != null ? `${d.samples}개` : "—"}
+              note={d.samples === 1 ? "표본 하나 — 통과 확정 보류" : undefined} />
+        <Line k="가까운 CCTV" v={d.cctvDistM != null ? `${Math.round(d.cctvDistM)}m` : "—"}
+              note={cctvOk ? "영상 판정 가능 거리" : "25m 밖 — 영상 판정 불가"} />
+        <Line k="판정" v={d.verdictLabel} color={d.verdictColor} />
+      </Section>
+
+      <div style={honest}>
+        실시간 주정차 · 공사 · 이동 장애물은 반영되지 않았습니다.<br />
+        폭은 도면 기반 미검증 값이며, 회전 및 높이 통과 여부는 판정하지 않습니다.
       </div>
 
-      {d.onReroute && (
-        <button onClick={d.onReroute} style={btn}>우회 경로 찾기</button>
-      )}
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <button onClick={d.onShare} style={ghost}>관제에 공유</button>
+        <button onClick={d.onReport} style={cta}>통행 불가 신고 »</button>
+      </div>
     </div>
   );
 }
 
-function Cell({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
+function Tile({ k, v, accent }: { k: string; v: string; accent?: boolean }) {
   return (
-    <div style={{ padding: "10px 12px", background: C.panel }}>
-      <div style={{ fontSize: F.tiny, color: C.panelSub }}>{k}</div>
-      <div style={{ fontSize: F.big, fontWeight: 800,
-                    color: warn ? C.danger : C.panelInk }}>{v}</div>
+    <div style={tile}>
+      <div style={{ fontSize: 11, color: C.panelSub }}>{k}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4, color: accent ? C.cta : C.panelInk }}>{v}</div>
     </div>
   );
 }
-function Row({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between",
-                  fontSize: F.base, padding: "3px 0" }}>
-      <span style={{ color: C.panelSub }}>{k}</span>
-      <span style={{ fontWeight: 700, color: warn ? C.danger : C.panelInk }}>{v}</span>
+    <div style={{ marginTop: 14 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>{title}</div>
+      <div style={{ background: "#f8fafc", borderRadius: 10, padding: "4px 10px" }}>{children}</div>
+    </div>
+  );
+}
+function Line({ k, v, note, blue, color }: {
+  k: string; v: string; note?: string; blue?: boolean; color?: string;
+}) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline",
+                  padding: "6px 0", borderBottom: `1px solid ${C.sheetLine}`, fontSize: 13 }}>
+      <span>
+        {k}
+        {note && <span style={{ display: "block", fontSize: 10, color: C.panelSub }}>{note}</span>}
+      </span>
+      <b style={{ color: color ?? (blue ? C.cta : C.panelInk) }}>{v}</b>
     </div>
   );
 }
 
 const panel: CSSProperties = {
-  position: "absolute", zIndex: 5, top: S.guideBarH + 14, right: 14, width: 320,
-  background: C.panel, color: C.panelInk,
-  border: `1px solid ${C.panelLine}`, borderRadius: S.radius,
-  padding: `${S.pad - 2}px ${S.pad}px`,
-  boxShadow: "0 10px 34px rgba(0,0,0,.4)",
+  position: "absolute", zIndex: 5, top: S.guideBarH, right: 0, bottom: 0, width: 360,
+  background: "#fff", color: C.panelInk, padding: "16px 18px", boxSizing: "border-box",
+  overflowY: "auto", boxShadow: "-6px 0 20px rgba(0,0,0,.2)", fontFamily: F.family,
+};
+const collapse: CSSProperties = {
+  position: "fixed", right: 360, top: S.guideBarH + 120, width: 34, height: 58,
+  border: "none", borderRadius: "10px 0 0 10px", background: C.cta, color: "#fff",
+  fontSize: 26, fontWeight: 800, cursor: "pointer",
+};
+const tab: CSSProperties = {
+  position: "absolute", zIndex: 5, right: 0, top: S.guideBarH + 150, width: 44, height: 64,
+  border: "none", borderRadius: "12px 0 0 12px", background: C.warn, cursor: "pointer",
+  display: "grid", placeItems: "center", boxShadow: "-3px 3px 10px rgba(0,0,0,.25)",
+};
+const chip: CSSProperties = {
+  display: "inline-block", marginTop: 10, borderRadius: 999, background: "#ffedd5",
+  color: C.warnInk, padding: "4px 12px", fontSize: 12, fontWeight: 800,
 };
 const grid: CSSProperties = {
-  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1, margin: "12px 0 14px",
-  background: C.panelLine, border: `1px solid ${C.panelLine}`,
-  borderRadius: S.radiusSm, overflow: "hidden",
+  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12,
 };
-const head: CSSProperties = {
-  fontSize: F.small, fontWeight: 700, color: C.panelSub, marginBottom: 4,
-};
-const note: CSSProperties = {
-  marginTop: 12, paddingTop: 10, borderTop: `1px solid ${C.panelLine}`,
-  fontSize: F.small, color: C.panelSub, lineHeight: 1.6,
-};
-const btn: CSSProperties = {
-  marginTop: 12, width: "100%", background: C.link, color: "#fff",
-  border: "none", borderRadius: S.radiusSm, padding: "11px 0",
-  fontSize: F.base, fontWeight: 700, cursor: "pointer", fontFamily: F.family,
+const tile: CSSProperties = { background: "#f8fafc", borderRadius: 10, padding: "10px 12px" };
+const honest: CSSProperties = {
+  marginTop: 12, fontSize: 11, color: C.panelSub, lineHeight: 1.5,
 };
 const x: CSSProperties = {
-  background: "none", border: "none", color: C.panelSub,
-  fontSize: 18, cursor: "pointer", padding: 0, lineHeight: 1,
+  background: "none", border: "none", fontSize: 20, cursor: "pointer", color: C.panelSub,
 };
-
-export type { ReactNode };
+const ghost: CSSProperties = {
+  flex: 1, border: `1.5px solid ${C.cta}`, background: "#fff", color: C.cta, borderRadius: 10,
+  padding: "12px 0", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: F.family,
+};
+const cta: CSSProperties = {
+  flex: 1.3, border: "none", background: C.cta, color: "#fff", borderRadius: 10,
+  padding: "12px 0", fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: F.family,
+};
