@@ -27,6 +27,12 @@ test_deadcheck_probes.py — **검사가 죽었는가를 검사하는 도구**�
     3. ② 의 짝짓기가 **부분집합**인가 — 「이름이 본문에 나오는가」로 되돌아가면 운다
     4. 면제가 죽어 있지 않은가 (면제했는데 실은 안 걸리는 것)
     5. ② 의 `판정코드` 분모가 `golden.judgment_files()` 와 같은 정본인가
+    6. **양성 대조** — 프로브마다 합성 트리가 있는가 · 거기서 우는가 ·
+       그리고 **대조 자신이 빈 그물이 아닌가**(프로브를 죽이면 집어내는가)
+
+★ 2026-09-21 추가(DECISIONS §208). 5 까지는 「프로브가 옳게 세는가」를 물었다.
+  6 은 **「살아 있는가를 어디서 묻는가」**를 든다 — 그것을 실제 저장소의
+  0건으로 물으면, 프로브가 제 일을 다 해 0건이 되는 날 관문이 빨개진다.
 """
 from __future__ import annotations
 
@@ -166,3 +172,100 @@ def test_judgment_source_has_one_home():
         "② 의 판정코드 분모와 golden 의 판정 범위가 다르다 —\n"
         f"  ② 에만 {sorted(mine - theirs)[:5]} · golden 에만 {sorted(theirs - mine)[:5]}\n"
         "  둘 다 `firelane.shardseal.code_closure('firelane.segments')` 를 불러라.")
+
+
+# ── 6 · 양성 대조 ───────────────────────────────────────────────
+# 2026-09-21 (DECISIONS §208). 「프로브가 살아 있는가」를 **실제 저장소의
+# 0건**으로 답하던 것을 **합성 트리**로 옮겼다. 왜냐면 ② 를 전수 분류해
+# 59건 → 0건으로 만든 바로 그날, `dms.py` 의 봉인 강제자가 이렇게 울었다 ——
+#
+#     ✗ probe/deadcheck   ★ selftest 실패 — 아무것도 못 낸 프로브: ['② 손목록']
+#
+# **프로브가 제 일을 다 했기 때문에 봉인이 안 찍혔다.** DECISIONS §73 이
+# ④ 에 대해 적어둔 문장이 그대로 재현됐다 — 「검사가 자기 성공을 실패로
+# 읽으면 사람이 검사를 끈다」. 그때 고친 방식이 `not k.startswith('④')`
+# 라는 한 글자 면제였고, ①③⑤ 도 분류를 마치면 차례로 같은 일이 난다.
+def test_every_probe_has_a_positive_control():
+    """프로브마다 대조가 있는가. **대조 없는 프로브의 0건은 읽을 수 없다.**"""
+    names = {n for n, _ in dc.PROBES}
+    assert set(dc.CONTROLS) == names, (
+        f"프로브와 양성 대조가 갈렸다 — 대조에만 {sorted(set(dc.CONTROLS) - names)} · "
+        f"프로브에만 {sorted(names - set(dc.CONTROLS))}\n"
+        "  프로브를 늘렸으면 **일부러 결함을 심은 합성 트리**도 같이 짓는다.")
+
+
+def test_the_positive_control_is_green():
+    """지금 다섯이 전부 제 합성 트리에서 우는가."""
+    dead = dc.positive_control()
+    assert not dead, "양성 대조 실패 —\n  " + "\n  ".join(dead)
+
+
+@pytest.mark.parametrize("target", [n for n, _ in dc.PROBES])
+def test_the_control_catches_a_dead_probe(target):
+    """**대조 자신이 빈 그물이 아닌가.**
+
+    ★ 프로브를 하나씩 무력화하고, 대조가 **그 이름을 집어내는지** 본다.
+      이것이 없으면 「대조 통과」는 아무 뜻이 없다 — 이 저장소가 반복해
+      당한 형태가 바로 「검사가 있는데 안 운다」이고, 대조도 검사다.
+    """
+    def neutered(root=None):
+        return None
+
+    live = list(dc.PROBES)
+    dc.PROBES[:] = [(n, neutered if n == target else f) for n, f in live]
+    try:
+        dead = dc.positive_control()
+    finally:
+        dc.PROBES[:] = live
+    assert any(d.startswith(target) for d in dead), (
+        f"`{target}` 를 죽였는데 양성 대조가 조용하다 — 대조가 빈 그물이다.\n"
+        f"  대조가 낸 것: {dead}")
+
+
+def test_selftest_does_not_read_the_real_tree_any_more():
+    """`--selftest` 가 **실제 트리의 건수**를 다시 보게 되면 운다.
+
+    ★ 이것이 정확히 2026-09-21 에 봉인을 막은 코드다 ——
+          dead = [k for k, v in per.items() if v == 0 and not k.startswith('④')]
+      실제 트리의 0건을 프로브의 죽음으로 읽는다. 되돌아오면 **분류를
+      끝낼수록 관문이 더 막힌다.** 생사의 근거는 `positive_control()` 하나다.
+    """
+    import ast
+    tree = ast.parse((ROOT / "tools" / "deadcheck.py").read_text(encoding="utf-8"))
+    fn = next((n for n in ast.walk(tree)
+               if isinstance(n, ast.FunctionDef) and n.name == "main"), None)
+    assert fn is not None, "`deadcheck.py` 에 `main()` 이 없다 — 이 검사가 빈 그물이 됐다"
+    branches = [n for n in ast.walk(fn)
+                if isinstance(n, ast.If) and isinstance(n.test, ast.Name)
+                and n.test.id == "selftest"]
+    assert branches, (
+        "`main()` 에 `if selftest:` 가지가 없다 — `--selftest` 가 사라졌거나\n"
+        "  모양이 바뀌었다. 이 검사도 같이 옮겨라.")
+    for br in branches:
+        used = {n.id for n in ast.walk(br) if isinstance(n, ast.Name)}
+        assert "per" not in used, (
+            "`--selftest` 가 다시 `per`(실제 트리의 프로브별 건수)를 읽는다.\n"
+            "  그러면 프로브가 제 일을 다 해 0건이 되는 날 관문이 빨개진다 —\n"
+            "  2026-09-21 에 그것이 봉인을 막았다(DECISIONS §208).\n"
+            "  생사는 `positive_control()` 이 합성 트리에서 답한다.")
+
+
+def test_dms_still_asks_liveness_not_the_ratchet():
+    """`dms.py` 의 `PROBES` 는 **`--selftest`** 로 남는가.
+
+    ★ 같은 인자가 한 자리에서는 옳고 다른 자리에서는 틀리다. `verify.sh` 와
+      `contract.yml` 에서 `--selftest` 는 **방향이 뒤집힌 관문**이라 틀렸다
+      (위 검사 1). 그러나 `dms.py` 가 묻는 것은 「프로브가 살아 있나」이고
+      `env_check`·`dupcheck` 셀프테스트와 한 줄로 묶여 있다 — 거기서는 옳다.
+      무엇을 묻는 자리인지가 인자를 정한다. 그래서 이 비대칭을 **못으로 박는다.**
+    """
+    src = (ROOT / "tools" / "dms.py").read_text(encoding="utf-8")
+    m = re.search(r'PROBES\s*=\s*\[(.*?)\]\s*\n', src, re.S)
+    assert m, "`dms.py` 에 `PROBES` 가 없다 — 이 검사가 빈 그물이 됐다"
+    blk = m.group(1)
+    assert "deadcheck.py" in blk, "`dms.py` 의 `PROBES` 가 deadcheck 를 안 부른다"
+    line = next(ln for ln in blk.splitlines() if "deadcheck.py" in ln)
+    assert "--selftest" in line, (
+        "`dms.py` 의 `PROBES` 가 `--selftest` 가 아니다.\n"
+        "  거기는 **생사를 묻는 자리**다. 래칫을 부르면 봉인이 저장소 청결도에\n"
+        "  묶이고, 그러면 미분류 41건 때문에 영영 못 찍는다.")
