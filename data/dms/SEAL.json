@@ -1,11 +1,11 @@
 {
- "sealed_at": "2026-09-22T08:27:50+09:00",
- "commit": "fc00255",
+ "sealed_at": "2026-09-22T09:10:20+09:00",
+ "commit": "195a7e4",
  "tool": "3e0a89af131835c1",
  "scope": "pytest+프로브",
  "docs": {
   "docs/MASTER.md": "0a3a461c395c1479",
-  "docs/DECISIONS.md": "9e81032c3e64658e",
+  "docs/DECISIONS.md": "7ff26e136d4b6995",
   "docs/PLAN.md": "275a61c0e85a6c63",
   "README.md": "72a01d097072fb67"
  },
@@ -242,7 +242,7 @@
   ]
  },
  "code": {
-  "sha256": "183bb3755ab7c089",
+  "sha256": "8b84ac9da9f34d45",
   "files": {
    "data/field/fieldsheet.md": "3fce0c05fba34da06d06a1945abfb756bffc10d1ae834bb9c520791c666cb73c",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
@@ -284,9 +284,9 @@
    "src/firelane/prep.py": "30179b09b2eb1043f8d914cfdd16167872b0364193686c3e68a5c6068428d98a",
    "src/firelane/probe.py": "52544d4fede864ef123276fc79423ffd6987eb97795a7a40c1a4e74741734aec",
    "src/firelane/providers.py": "56d4289ef55b65a705d487d2ab216a51014c2133107b949521b35a9f5ff3d290",
-   "src/firelane/publish_fleet.py": "0280bb76bdae20769c79648d49354df349bf83607731a683bfeaab08e308f3f0",
+   "src/firelane/publish_fleet.py": "a1a48a23e01fcda115ae2c1864e1583b42f74ea032819536e0599e63edac7c93",
    "src/firelane/publish_navi.py": "72c0c198e202e9d220cfac092d8dc5aedc033a2beb90789dd3c2351c2aac7b9f",
-   "src/firelane/publish_web.py": "f8570c81516f67d4a3e87e76e9634c08892bf86acd3b9184d3e9e57067df7bef",
+   "src/firelane/publish_web.py": "a44eaad79c115a4b9734d51938e15bef8a30e8a5c7fdb16fddb785f008f35640",
    "src/firelane/quiet_gdal.py": "6ca08fdd7aae83ec4c1f7e8da6671b848462d72dcd74074908730885dfc75eec",
    "src/firelane/sample_design.py": "489059ca819d8cc40e1d12f2116ca98614b9fbcf0d1b67bc8139b93f77586ed4",
    "src/firelane/scope.py": "81451ac9f7380aecde569634f810ae7cd64eb3db4acf02e7ee4fb651891fef4d",
@@ -4934,6 +4934,42 @@
    "doc": "docs/DECISIONS.md",
    "title": "211-6. 검수 —— 여기서 크로미움으로 찍었다"
   },
+  "DECISIONS-621": {
+   "h": "70e99b6e9f2f2a62",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "212. 회전반경은 그 차의 값일 때만 숫자로 — 그리고 봇 PR 을 신호로 줄였다 (판정 불변)"
+  },
+  "DECISIONS-622": {
+   "h": "e3f79c94485366a7",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "212-1. 숫자가 나가는 조건"
+  },
+  "DECISIONS-623": {
+   "h": "51d742f05149f1a5",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "212-2. 이름을 갈랐다 —— `turn_radius_ref_m`"
+  },
+  "DECISIONS-624": {
+   "h": "73b43b020ec89127",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "212-3. fleet.json 에 부르는 곳이 없었다 —— §170-5 의 두 번째 인스턴스"
+  },
+  "DECISIONS-625": {
+   "h": "1173528eea3b7cc4",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "212-4. 주차 차량은 미반영으로 확정"
+  },
+  "DECISIONS-626": {
+   "h": "a7c99fc001ffa413",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "212-5. 적어 두는 틈 —— 구급차 전폭"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -5500,7 +5536,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "873 passed in 101.78s (0:01:41)"
+   "tail": "878 passed in 93.34s (0:01:33)"
   },
   "probe/deadcheck": {
    "rc": 0,
