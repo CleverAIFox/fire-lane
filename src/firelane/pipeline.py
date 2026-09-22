@@ -95,7 +95,12 @@ STEPS = [
                  P / "hydrant_point.geojson", P / "cctv.geojson",
                  P / "poi_store.geojson", P / "road_intrvl.geojson",
                  # ★ 2026-09-17 (§181). 목적지 색인 원천 — publish 가 이름으로 읽는다
-                 P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson")),
+                 P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson",
+                 # ★ 2026-09-22 (§215-1). 회전제한 표 — publish_navi 가 이름으로 읽는다
+                 P / "turn_restriction.csv",
+                 # ★ 2026-09-22 (§216-3). publish_context · publish_navi 가 이름으로 읽는다
+                 P / "speedbump.csv", P / "speed_cam.csv", P / "nfa_dispatch_119.csv",
+                 P / "nfa_rescue.csv", P / "nfa_fire_incident.csv", P / "parking_enforce.csv")),
     Step("segments", "segments", "노딩 → 폭 → 판정",
          P / "segments.geojson",
          reads=(P / "ngii1k_5186.gpkg", P / "ngii1k_center_5186.gpkg",
@@ -152,7 +157,15 @@ STEPS = [
                 P / "cctv.geojson", P / "poi_store.geojson",
                 P / "corridor_5186.gpkg", P / "building_5186.gpkg",
                 P / "ngii1k_light_5186.gpkg", P / "route_vehicle.csv", P / "scope_5186.gpkg",
-                P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson"),
+                P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson",
+                # ★ 2026-09-22 (§215-1). 내비 그래프의 통행 규칙 — 일방통행 · 회전 금지
+                P / "ngii1k_center_5186.gpkg", P / "node_link_5186.gpkg",
+                P / "node_point_5186.gpkg", P / "turn_restriction.csv",
+                # ★ 2026-09-22 (§216-3). 주변 사정 · 출동 이력 · 주정차 단속(도로 단위)
+                P / "speedbump.csv", P / "speed_cam.csv",
+                P / "child_zone_std_5186.gpkg", P / "senior_zone_std_5186.gpkg",
+                P / "nfa_dispatch_119.csv", P / "nfa_rescue.csv", P / "nfa_fire_incident.csv",
+                P / "parking_enforce.csv"),
          # ★ web/data/_manifest.json 은 publish 가 마지막에 쓰는 계보다.
          #   종전에는 tools/web_manifest.py 를 사람이 따로 돌려야 했고
          #   아무도 안 돌렸다(2026-08-22 CI 가 처음 잡음).
@@ -164,7 +177,8 @@ STEPS = [
                  WEB / "cctv.geojson", WEB / "poi.geojson",
                  WEB / "streetlights.geojson", WEB / "lightpoles.geojson",
                  WEB / "vehicle_spec.json", WEB / "route_vehicle.json",
-                 WEB / "navi_graph.json", WEB / "dest.geojson"),
+                 WEB / "navi_graph.json", WEB / "dest.geojson",
+                 WEB / "context.geojson", WEB / "history.geojson"),
          # ★ view.json 은 terrain·ortho 가 구운 범위를 넣어둔 것을 읽어
          #   보존하고 다시 쓴다. writes 가 아니라 mutates 다.
          mutates=(WEB / "view.json",)),

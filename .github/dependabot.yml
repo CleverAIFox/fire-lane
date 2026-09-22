@@ -22,6 +22,11 @@
 #   뿐이다. 신호로 쓰려면 적어야 읽힌다: 월 1회 · 생태계마다 한 PR 로 묶는다.
 #   올릴 때는 그 PR 을 닫고 같은 내용을 feat 배치로 다시 낸다.
 #   보안 업데이트는 이 파일과 별개로 온다(저장소 설정) — 줄지 않는다.
+#
+# ★ 2026-09-22 (DECISIONS §215-3). v0.33 뒤에 봇 PR 다섯이 또 쌓였고, 그중 navi-all(#173)은
+#   다섯 패키지를 한꺼번에 올렸다. 메이저 판 올리기는 **정기 신호로 받지 않는다** — React ·
+#   MapLibre · Vite 메이저는 코드를 고쳐야 하는 일이고, 봇 PR 로는 그 일을 못 한다(TS1192 사고).
+#   메이저는 사람이 배치로 계획해서 올린다. 보안 업데이트는 이 무시와 무관하게 온다.
 version: 2
 
 updates:
@@ -32,6 +37,10 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
+    ignore:
+      # ★ 메이저는 배치로 계획한다(§215-3). 보안 업데이트는 이 규칙과 무관하게 온다
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "deps"
     groups:
@@ -54,6 +63,10 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
+    ignore:
+      # ★ 메이저는 배치로 계획한다(§215-3). 보안 업데이트는 이 규칙과 무관하게 온다
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "deps(navi)"
     groups:
@@ -68,6 +81,7 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
+    # ★ 액션은 메이저도 받는다 — 러너 노드 판 폐기로 강제되는 경우가 많고 코드 수정이 거의 없다
     commit-message:
       prefix: "ci"
     groups:

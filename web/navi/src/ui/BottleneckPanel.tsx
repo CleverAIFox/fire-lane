@@ -38,6 +38,10 @@ export interface BottleneckData {
   verdictColor: string;
   /** 가장 가까운 CCTV 까지 거리(m). 25m 넘으면 영상판정이 성립 안 한다 */
   cctvDistM: number | null;
+  /** 회색이면 왜 회색인가(§215-2). 아니면 null */
+  grayReason: string | null;
+  /** 그 도로명의 불법주정차 단속 건수(§216-3). 도로 단위 · 위험의 대리값 */
+  park: number | null;
 }
 
 interface Props extends BottleneckData {
@@ -78,6 +82,8 @@ export function BottleneckPanel(d: Props) {
 
       <Section title="장애물 · 위험 요소">
         <Line k="주차 차량" v="미반영" note="CCTV 영상 판정 전" />
+        <Line k="불법주정차 단속 이력" v={d.park ? `${d.park.toLocaleString()}건` : "없음"}
+              note="이 도로명 전체 · 2022-01~2025-02 — 지금 주차가 아니다" />
         <Line k="회전 · 높이" v="미반영" note="회전반경은 참고값 · 판정 안 함" />
       </Section>
 
@@ -88,6 +94,11 @@ export function BottleneckPanel(d: Props) {
         <Line k="가까운 CCTV" v={d.cctvDistM != null ? `${Math.round(d.cctvDistM)}m` : "—"}
               note={cctvOk ? "영상 판정 가능 거리" : "25m 밖 — 영상 판정 불가"} />
         <Line k="판정" v={d.verdictLabel} color={d.verdictColor} />
+        {d.grayReason && (
+          <div style={{ fontSize: 11, color: C.panelInk, padding: "6px 0", lineHeight: 1.5 }}>
+            <b>회색 사유</b> — {d.grayReason}
+          </div>
+        )}
       </Section>
 
       <div style={honest}>

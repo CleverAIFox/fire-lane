@@ -30,6 +30,10 @@ export interface RouteOption {
   /** 상대 경로 대비 시간차(초). 양수면 느리다 */
   deltaSec: number;
   note: string;
+  /** 통행 규칙 요약(`domain/rules.ts ruleSummary`). 없으면 null */
+  rules: string | null;
+  /** 경로 주변 사정 요약(§216-3) — 과속방지턱 · 단속카메라 · 보호구역 시설. 없으면 null */
+  around: string | null;
 }
 
 interface Props {
@@ -66,7 +70,8 @@ export function RouteCompare(p: Props) {
       )}
 
       <div style={{ fontSize: 11, color: C.panelSub, marginTop: 12, lineHeight: 1.5 }}>
-        폭 기준 판정 · 회전 및 높이 미반영 · 실시간 주정차 미반영
+        폭 기준 판정 · 회전 및 높이 미반영 · 실시간 주정차 미반영 ·
+        일방통행은 방향을 대부분 몰라 양쪽 다 불리하게 계산
       </div>
     </Sheet>
   );
@@ -99,6 +104,8 @@ function Card({ o, k, on, onPick, accent, chip, title }: {
         <Row k="최소 유효폭" v={o.minWidthM != null ? `${o.minWidthM.toFixed(1)}m` : "—"} />
         <Row k="계산상 폭 여유" v={margin != null ? `${margin.toFixed(1)}m` : "—"}
              warn={margin != null && margin < 0.5} />
+        <Row k="통행 규칙" v={o.rules ?? "없음"} warn={!!o.rules} />
+        {o.around && <Row k="경로 주변" v={o.around} />}
         <div style={{ ...note, background: k === "safe" ? "#f0fdf4" : "#fffbeb" }}>{o.note}</div>
       </div>
     </button>

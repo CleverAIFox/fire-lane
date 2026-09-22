@@ -46,7 +46,7 @@ import type { LiveFix } from "../app/useNavigation";
 import { C, S } from "../ui/tokens";
 import {
   GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers,
-  stationLayers, chevronImage, cctvIcon, hydrantIcon, pillImage, pillOptions,
+  stationLayers, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -117,7 +117,7 @@ export function NaviMap(props: Props) {
   const pending = useRef<((m: maplibregl.Map) => void)[]>([]);
   const click = useRef(p.onMapClick); click.current = p.onMapClick;
   const pan = useRef(p.onUserPan); pan.current = p.onUserPan;
-  const cam = useRef({ lon: 0, lat: 0, brg: 0, init: false });
+  const cam = useRef({ lon: 0, lat: 0, brg: 0, init: false, plon: 0, plat: 0, pbrg: 0, pzb: NaN });
   const follow = useRef(false);
   const zoomBias = useRef(0);
 
@@ -132,6 +132,11 @@ export function NaviMap(props: Props) {
       minZoom: p.view.minZoom ?? 13, maxZoom: p.view.maxZoom ?? 20,
       maxBounds: p.view.maxBounds,
       attributionControl: { compact: true },
+      // ★ 2026-09-22 (§216-2) 사용자 보고 「내비가 끊긴다」. 계측하면 시간이 JS(React ·
+      //   경로 계산)가 아니라 **GL 그리기**(drawElements · bufferSubData)에 간다. 고해상도
+      //   노트북(DPR 2)은 화소가 4배다 — 1.5 로 묶는다. 글자 페이드도 끈다(매 프레임 다시 그림).
+      pixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+      fadeDuration: 0,
       // ★ 한글은 글꼴 서버(PBF)에 없다 — 로컬 글꼴로 그린다. 와이어프레임 글꼴을 쓴다
       localIdeographFontFamily: "Pretendard, 'Noto Sans KR', sans-serif",
       style: {
@@ -150,12 +155,17 @@ export function NaviMap(props: Props) {
       },
     });
     map.current = m;
+    // 계측용 손잡이 — `?debug=1` 일 때만. 프레임 계측 스크립트가 레이어를 끄고 켜 본다(§216-2)
+    if (new URLSearchParams(location.search).get("debug") === "1") (window as unknown as { __flMap?: unknown }).__flMap = m;
     m.on("error", (e) => console.warn("[map]", e.error?.message ?? e));
 
     m.on("load", () => {
       m.addImage("chev", chevronImage());
       m.addImage("ic-cctv", cctvIcon(), { pixelRatio: 2 });
       m.addImage("ic-hyd", hydrantIcon(), { pixelRatio: 2 });
+      m.addImage("ic-bump", bumpIcon(), { pixelRatio: 2 });
+      m.addImage("ic-cam", camIcon(), { pixelRatio: 2 });
+      m.addImage("ic-zone", zoneIcon(), { pixelRatio: 2 });
       m.addImage("pill", pillImage(), pillOptions);
       for (const id of ["route", "route-alt", "blocked", "final-leg"]) {
         m.addSource(id, { type: "geojson", data: EMPTY });
@@ -190,12 +200,17 @@ export function NaviMap(props: Props) {
       }
       if (!follow.current || !t.on) { cam.current.init = false; return; }
       const c = cam.current;
-      if (!c.init) { c.lon = t.lon; c.lat = t.lat; c.brg = t.brg; c.init = true; }
+      if (!c.init) { c.lon = t.lon; c.lat = t.lat; c.brg = t.brg; c.init = true; c.pzb = NaN; }
       else {
         c.lon += (t.lon - c.lon) * LERP_POS;
         c.lat += (t.lat - c.lat) * LERP_POS;
         c.brg = (c.brg + angleDelta(c.brg, t.brg) * LERP_BRG + 360) % 360;
       }
+      // ★ 제자리면 안 그린다. 서 있는 동안에도 매 프레임 jumpTo 가 지도 전체를 다시 그렸다
+      const moved = Math.abs(c.lon - c.plon) + Math.abs(c.lat - c.plat) > 1e-8
+        || Math.abs(angleDelta(c.pbrg, c.brg)) > 0.02 || c.pzb !== zoomBias.current;
+      if (!moved) return;
+      c.plon = c.lon; c.plat = c.lat; c.pbrg = c.brg; c.pzb = zoomBias.current;
       const h = m.getContainer().clientHeight;
       m.jumpTo({
         center: [c.lon, c.lat], bearing: c.brg, pitch: 60,
@@ -231,7 +246,6 @@ export function NaviMap(props: Props) {
     whenReady((mm) => {
       const op = p.mode === "drive" ? 0.86 : 1;
       mm.setPaintProperty("bldg", "fill-extrusion-opacity", op);
-      mm.setPaintProperty("bldg-roof", "fill-extrusion-opacity", op);
     });
     if (on) {
       m.dragRotate.disable(); m.touchZoomRotate.disableRotation(); m.dragPan.disable();

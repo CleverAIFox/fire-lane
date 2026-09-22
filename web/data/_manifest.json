@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-22T09:42:03+09:00",
+  "generated_at": "2026-09-22T14:24:40+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
@@ -11,7 +11,7 @@
       "bytes": 5047
     },
     "_manifest.json": {
-      "sha256": "dcceac67f31ae1163cbdfdb7d629bc26b84fab0db53996ff6c2ee14196a03fd1",
+      "sha256": "0eb7c7f278b412a8183b4f11b4a53d116719295f836a6f50573332dd0a90597a",
       "bytes": 99046
     }
   },
@@ -28,6 +28,10 @@
       "sha256": "5e7581b7aef530d269a4b2bae76ea23e250d4b73b1327c6fad1c08f0f843061d",
       "bytes": 39571
     },
+    "context.geojson": {
+      "sha256": "f327d821d4f7ee96007b2974204c25d09d1395595c987f1394fa1b8a0e9075f5",
+      "bytes": 28956
+    },
     "dest.geojson": {
       "sha256": "c75723c8e324a0e1808c18d723d342db75900ed57306419dd7a36ca35eb195e2",
       "bytes": 519880
@@ -35,6 +39,10 @@
     "fleet.json": {
       "sha256": "e9a9976c80e781806372d731cbbb9d449a7938ec31852db038d2c8ce9d28df56",
       "bytes": 5313
+    },
+    "history.geojson": {
+      "sha256": "246d24c787e8546935026fc4201258a56f7f979b956d21b87da5cdf785374f05",
+      "bytes": 64215
     },
     "hydrants.geojson": {
       "sha256": "805240d5f4e575df32405c479097943d916966a8b31f17d120c2c4958b8fc7ff",
@@ -53,8 +61,8 @@
       "bytes": 44523
     },
     "navi_graph.json": {
-      "sha256": "7784b31b482ca3dcef75267bdb6aabb5ac85d4a9f690251cb4c16b79054ece22",
-      "bytes": 557809
+      "sha256": "130081610d9c52edc63552c2c08e1b6c9509d39b2248af7d42d429f8820e713f",
+      "bytes": 570763
     },
     "poi.geojson": {
       "sha256": "22021841393291d478f11dc0acaf8604d2c70bb784e7fad205530a602f7d04ec",
@@ -132,5 +140,5 @@
     }
   },
   "tiles_digest": "ca2ce50bd36477e1",
-  "total_mb": 33.88
+  "total_mb": 33.98
 }

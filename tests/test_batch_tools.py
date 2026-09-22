@@ -229,3 +229,102 @@ def test_fl_rebuilds_branch_holding_older_version():
     assert 'git switch -q -C "$BR" "origin/$BASE"' in code
     assert 'git rev-parse -q --verify "origin/$BR"' in code, "원격 가지를 몰래 갈아 끼운다"
     assert "MISSING" in code
+
+
+_FAKE_GH = """#!/usr/bin/env bash
+# 시험용 gh — 상태는 환경변수로 준다
+case "$1 $2" in
+  "auth status") echo "  - Token scopes: 'repo', 'workflow'" ;;
+  "pr list")
+    case "$*" in
+      *"--state open"*"--base part/infra"*|*"--base part/infra"*"--state open"*) echo "${GH_OPEN:-}" ;;
+      *"--state merged"*) echo "${GH_MERGED:-}" ;;
+      *) echo "" ;;
+    esac ;;
+  "pr view") echo "제목" ;;
+  *) echo "gh $*" ;;
+esac
+"""
+
+
+def _resume_world(tmp: Path, main_has_infra: bool):
+    """origin 에 main · dev · part/infra, 저장소에 가짜 방송 · 정리, PATH 에 가짜 gh."""
+    work, inbox = _world(tmp, seed=None)
+    (work / "tools").mkdir(exist_ok=True)
+    (work / "tools" / "merge_batch.sh").write_text("echo MERGE_BATCH \"$@\"\n")
+    (work / "tools" / "branch_tidy.sh").write_text("echo TIDY \"$@\"\n")
+    (work / "tools" / "verify.sh").write_text("exit 0\n")
+    _git(work, "add", "-A")
+    _git(work, "commit", "-q", "-m", "tools")
+    _git(work, "push", "-q", "origin", "HEAD:refs/heads/part/infra", "HEAD:refs/heads/dev")
+    _git(work, "push", "-q", "origin", ("HEAD" if main_has_infra else "HEAD~1") + ":refs/heads/main")
+    _git(work, "fetch", "-q", "origin")
+    _git(work, "switch", "-q", "-c", "part/infra", "origin/part/infra")
+    bin_ = tmp / "bin"
+    bin_.mkdir()
+    (bin_ / "gh").write_text(_FAKE_GH)
+    (bin_ / "gh").chmod(0o755)
+    return work, inbox, bin_
+
+
+def _resume(work: Path, inbox: Path, bin_: Path, **gh) -> subprocess.CompletedProcess:
+    env = {**os.environ, "FIRE_LANE_REPO": str(work), "FIRE_LANE_INBOX": str(inbox),
+           "PATH": f"{bin_}:{os.environ['PATH']}", **gh}
+    return subprocess.run(["bash", str(T / "fl.sh"), "feat/x", "--resume"],
+                          capture_output=True, text=True, env=env, stdin=subprocess.DEVNULL)
+
+
+@pytest.mark.skipif(not shutil.which("git"), reason="환경skip(도구) — git 이 없다")
+def test_fl_resume_after_squash_goes_to_release(tmp_path):
+    """2026-09-22 실제 사고 — 8단계에서 끊겨 남은 명령을 손으로 쳤다. feat PR 이 머지됐으면
+    패치를 찾지 않고 방송 · 정리로 간다."""
+    work, inbox, bin_ = _resume_world(tmp_path, main_has_infra=False)
+    r = _resume(work, inbox, bin_, GH_MERGED="7")
+    out = r.stdout + r.stderr
+    assert r.returncode == 0, out
+    assert "dev PR 부터" in out and "MERGE_BATCH --release" in out and "TIDY --auto" in out, out
+    assert "2. 패치" not in out, "머지된 배치인데 패치를 다시 찾는다"
+
+
+@pytest.mark.skipif(not shutil.which("git"), reason="환경skip(도구) — git 이 없다")
+def test_fl_resume_when_released_only_tidies(tmp_path):
+    work, inbox, bin_ = _resume_world(tmp_path, main_has_infra=True)
+    r = _resume(work, inbox, bin_, GH_MERGED="7")
+    out = r.stdout + r.stderr
+    assert r.returncode == 0, out
+    assert "MERGE_BATCH" not in out, "이미 main 에 들어간 배치를 또 방송한다"
+    assert "TIDY --auto" in out, out
+
+
+@pytest.mark.skipif(not shutil.which("git"), reason="환경skip(도구) — git 이 없다")
+def test_fl_resume_without_pr_refuses(tmp_path):
+    work, inbox, bin_ = _resume_world(tmp_path, main_has_infra=False)
+    r = _resume(work, inbox, bin_)
+    assert r.returncode != 0 and "이을 것이 없다" in r.stdout + r.stderr, r.stdout + r.stderr
+
+
+@pytest.mark.skipif(not shutil.which("unzip"), reason="환경skip(도구) — unzip 이 없다(fl.sh 가 쓴다)")
+def test_fl_resume_archives_leftover_package(tmp_path):
+    """스쿼시 직후 · 포장물을 치우기 전에 끊겼으면 --resume 이 치운다. 남기면 다음 --all 이
+    또 집는다. 제목이 머지된 PR 과 같을 때만 이 배치 것으로 본다(독립 검토 2026-09-22)."""
+    work, inbox, bin_ = _resume_world(tmp_path, main_has_infra=False)
+    (tmp_path / "0001-fix.patch").write_text("From a\nSubject: ours\n")
+    (tmp_path / "PR_TITLE").write_text("제목\n")                 # 가짜 gh 의 pr view 가 「제목」
+    _zip(inbox / "fire-lane-x.zip", tmp_path / "0001-fix.patch", tmp_path / "PR_TITLE")
+    shutil.copy(tmp_path / "0001-fix.patch", inbox / "0001-fix.patch")
+    r = _resume(work, inbox, bin_, GH_MERGED="7")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert not (inbox / "0001-fix.patch").exists() and not (inbox / "fire-lane-x.zip").exists(), (
+        "머지된 배치의 포장물이 INBOX 에 남았다\n" + r.stdout)
+    assert list((inbox / "_applied").glob("*-feat_x/0001-fix.patch")), r.stdout
+
+
+@pytest.mark.skipif(not shutil.which("unzip"), reason="환경skip(도구) — unzip 이 없다(fl.sh 가 쓴다)")
+def test_fl_resume_keeps_other_batch_package(tmp_path):
+    work, inbox, bin_ = _resume_world(tmp_path, main_has_infra=False)
+    (tmp_path / "0001-fix.patch").write_text("From a\nSubject: next\n")
+    (tmp_path / "PR_TITLE").write_text("다음 배치\n")
+    _zip(inbox / "fire-lane-y.zip", tmp_path / "0001-fix.patch", tmp_path / "PR_TITLE")
+    r = _resume(work, inbox, bin_, GH_MERGED="7")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (inbox / "fire-lane-y.zip").exists(), "다음 배치 포장물을 치웠다"

@@ -3405,8 +3405,10 @@ BEV 는 디버그 플래그 뒤에 둔다.
 ```
 web/data/segments.geojson   판정 · 폭 · 도형          지도가 읽는다
 web/data/route_vehicle.json 안전센터 2곳 사전계산      대조에 쓴다
-web/data/navi_graph.json    노드 1,139 · 엣지 1,281   내비가 읽는다  544KB
+web/data/navi_graph.json    노드 1,139 · 엣지 1,281   내비가 읽는다  557KB
 web/data/fleet.json         차종 10종 15대
+web/data/context.geojson    과속방지턱 · 단속카메라 · 보호구역 시설  내비가 읽는다(§216-3)
+web/data/history.geojson    119 신고 · 구조 + 실제 도착 시간          관제가 읽는다(§216-3)
 ```
 
 임의 출발지 경로 탐색은 `edge_cost` 규칙을 JS 로 옮기는 유일한 지점이다.
@@ -3433,8 +3435,15 @@ seg_label · road_name · in_emd                       경로·표시
 width_cov · n_sample · cctv_dist_m · unknown_reason  병목 상세 패널
 road_bt_m                                            속도 추정
 coords · a · b                                       도형 · 접합 노드
+ow                                                   일방통행 1 · -1 · 2(방향 모름) — 없으면 양방향
+turns                                                회전 금지 [들어오는 엣지, 노드, 나가는 엣지, TURN_TYPE]
+park                                                 그 도로명의 불법주정차 단속 건수(도로 단위 · §216-3)
 style                                                판정 4색
 ```
+
+★ `ow` · `turns` 는 **경로에서 빼지 않는다.** 내비가 비용을 올리고 경고한다
+  (`domain/rules.ts` · DECISIONS §215-1). 일방통행 57구간 중 방향 확정은 1곳뿐이다 —
+  1:1000 중심선에 방향 필드가 없다.
 
 ★ `width_cov` 는 화면이 **"측정 신뢰도"** 로 띄운다. `n_sample` 이 1이면
   `verdict()` 가 통과 확정을 보류한다는 사실도 함께 보여준다.

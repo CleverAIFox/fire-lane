@@ -21,25 +21,37 @@
  * ★ 옛 지도(`web/js`)는 이번에 지우지 않았다. 시험 열다섯 · CI 셋 · 배포 · config.js 정규식
  *   파싱이 물려 있다 — 철거는 핀 목록과 함께 다음 배치다(DECISIONS §214-5).
  * ★ 연결은 **같은 브라우저 탭끼리**다(BroadcastChannel). 서버가 아니다.
+ *
+ * ══ 관제실 초안 (2026-09-22 · DECISIONS §216-4) ═══════════════════
+ * 사용자 지적 — 「관제는 출동자 시점이 아니라 **관제 센터에서 보는 느낌**이어야 한다」.
+ * 종전 화면은 내비와 같은 밝은 바탕 · 비스듬한 3D · 왼쪽 긴 패널이라 운전석을 옮겨 놓은
+ * 모양이었다. 상황실 벽 화면의 문법으로 바꾼다 —
+ *     상단 상황판   시계 · 접수 · 출동 중 · 미확인 공유 · **실측 도착 중앙값**(119 이력)
+ *     좌           접수 · 지령(차종 목록 = 요구폭)
+ *     중앙          북쪽 위 **평면** 지도 · 어두운 바탕에 판정 4색 · 범례와 레이어는 지도 위
+ *     우           차량 상태판 · 현장 공유 · 구간 정보 · 출동 이력 요약
+ * ★ 와이어프레임이 아니다. 지혜님이 깊게 파기 전의 **초안**이다 — 구조와 데이터 배선을 먼저
+ *   세우고, 모양은 와이어프레임이 오면 따른다.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OpsMap, type OpsLayers } from "./components/OpsMap";
 import { useFleet } from "./app/useFleet";
-import { loadAll, type Bundle } from "./infra/dataSource";
+import { loadAll, loadHistory, type Bundle } from "./infra/dataSource";
 import { openLink, newId, type Link } from "./infra/opsLink";
 import {
   HB_MS, OPS_EMPTY, asNaviMsg, opsAck, opsReduce, unitStale, type OpsState,
 } from "./domain/opsProtocol";
 import { buildAdjacency, findRoute, nearestNode } from "./domain/graph";
+import { ruleSummary } from "./domain/rules";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
 import { travelSeconds } from "./domain/speed";
 import { requiredWidth } from "./domain/vehicle";
 import { snap as snapOnce, prepare } from "./domain/snap";
 import { distM, type LngLat } from "./domain/geo";
-import type { GraphEdge } from "./domain/types";
-import { C, F, fmtDur } from "./ui/tokens";
-import { VERDICT_MEANING, VERDICT_ORDER } from "./ui/verdictMeaning";
+import type { GraphEdge, HistorySummary } from "./domain/types";
+import { F, fmtDur } from "./ui/tokens";
+import { GRAY_REASON, grayReason, VERDICT_MEANING, VERDICT_ORDER } from "./ui/verdictMeaning";
 import { VehicleArt } from "./ui/VehicleArt";
 import { displayName, vehicleClass } from "./domain/fleetName";
 
@@ -52,7 +64,10 @@ export default function OpsApp() {
   const [incident, setIncident] = useState<Incident | null>(null);
   const [picking, setPicking] = useState(false);
   const [stationId, setStationId] = useState<string>("0");
-  const [layers, setLayers] = useState<OpsLayers>({ ortho: false, reach: true, cctvCov: false, bldg: true });
+  const [layers, setLayers] = useState<OpsLayers>({
+    ortho: false, reach: true, cctvCov: false, bldg: false, history: false, context: false,
+  });
+  const [history, setHistory] = useState<{ summary?: HistorySummary } | null>(null);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
   const [seg, setSeg] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -63,6 +78,7 @@ export default function OpsApp() {
   const opsId = useRef(newId("ops")).current;
 
   useEffect(() => { loadAll().then(setData).catch((e) => setFatal(String(e))); }, []);
+  useEffect(() => { loadHistory().then((h) => setHistory(h as { summary?: HistorySummary } | null)); }, []);
 
   // ── 내비와 잇는다 ─────────────────────────────────────────────
   useEffect(() => {
@@ -73,8 +89,10 @@ export default function OpsApp() {
     link.current = l;
     const hb = () => l.send({ t: "hb", ops: opsId, at: Date.now() });
     hb();
-    const t = setInterval(() => { hb(); setNow(Date.now()); }, HB_MS);
-    return () => { clearInterval(t); l.close(); };
+    const t = setInterval(hb, HB_MS);
+    // ★ 상황판 시계는 1초마다. 끊김 판정(`unitStale`)도 이 시각을 쓴다
+    const c = setInterval(() => setNow(Date.now()), 1000);
+    return () => { clearInterval(t); clearInterval(c); l.close(); };
   }, [opsId]);
 
   const ack = useCallback((shareId: string, unit: string) => {
@@ -149,6 +167,13 @@ export default function OpsApp() {
     for (const e of data?.graph.edges ?? []) c[e.verdict] = (c[e.verdict] ?? 0) + 1;
     return c;
   }, [data]);
+  const grayCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const e of data?.graph.edges ?? []) {
+      if (e.verdict === "unknown") c[e.unknown_reason ?? "width"] = (c[e.unknown_reason ?? "width"] ?? 0) + 1;
+    }
+    return Object.entries(c).sort((a, b) => b[1] - a[1]);
+  }, [data]);
   const edgeByUid = useMemo(() => new Map((data?.graph.edges ?? []).map((e) => [e.seg_uid, e])), [data]);
   const selEdge: GraphEdge | null = seg ? edgeByUid.get(seg) ?? null : null;
 
@@ -166,192 +191,254 @@ export default function OpsApp() {
       + `&station=${encodeURIComponent(station.name)}`
     : null;
 
+  const waiting = ops.feed.filter((f) => !f.ackedAt).length;
+  const live = units.filter((u) => !unitStale(u, now)).length;
+  const hs = history?.summary;
+  const myCenter = station ? hs?.by_center[`${station.name.replace(/119안전센터$/, "")}119안전센터`] : undefined;
+
   return (
     <div style={shell}>
-      <OpsMap view={data.view} style={style} layers={layers} hidden={hidden}
-              reachable={reach} incident={incident?.point ?? null}
-              preview={plan?.plan?.coords ?? null}
-              previewWalk={plan?.plan && incident ? [plan.plan.coords[plan.plan.coords.length - 1], incident.point] : null}
-              units={units} feed={ops.feed} selectedSeg={seg} focus={focus}
-              onPick={onPick} onSeg={(u) => { if (!picking) setSeg(u); }} />
-
-      {/* ══ 좌측 — 접수 · 지령 · 판정 · 레이어 ═══════════════════ */}
-      <aside style={panel}>
-        <div style={head}>
-          <div style={{ fontSize: 20, fontWeight: 800 }}>FireLane 관제</div>
-          <div style={{ fontSize: 12, opacity: .7 }}>전남광주통합특별시 동구 동명동 · 도면 기반 1차 판정</div>
+      {/* ══ 상단 상황판 ══════════════════════════════════════════ */}
+      <header style={top}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+          <b style={{ fontSize: 18, letterSpacing: -.3 }}>FireLane 종합상황실</b>
+          <span style={{ fontSize: 12, color: D.sub, whiteSpace: "nowrap" }}>동부소방서 관할 · 동명동 · 도면 기반 1차 판정</span>
         </div>
-        <div style={{ padding: "12px 16px 18px", overflowY: "auto", flex: 1 }}>
-          <H>사건 접수</H>
-          <div style={{ display: "flex", gap: 6 }}>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="상호 · 주소 · 건물 · 도로명"
-                   style={input} />
-            <button onClick={() => setPicking((x) => !x)}
-                    style={{ ...btnSm, background: picking ? C.cta : "#fff", color: picking ? "#fff" : C.cta }}>
-              {picking ? "지도를 누르세요" : "지도에서"}
-            </button>
-          </div>
-          {hits.length > 0 && (
-            <div style={list}>
-              {hits.map((h, i) => (
-                <button key={`${h.name}-${i}`} style={listItem} onClick={() => {
-                  setIncident({ point: h.point, label: h.name, at: new Date() });
-                  setQ(""); setFocus({ n: Date.now(), at: h.point, zoom: 17 });
-                }}>
-                  <b>{h.name}</b>
-                  <span style={{ display: "block", fontSize: 11, color: C.panelSub }}>{h.addr || h.cat}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          {incident && (
-            <div style={card}>
-              <div style={{ fontSize: 12, color: C.danger, fontWeight: 800 }}>화재 · 접수 {hhmm(incident.at)}</div>
-              <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{incident.label}</div>
-            </div>
-          )}
+        <div style={{ flex: 1 }} />
+        <Tile k="접수" v={incident ? "1건" : "0건"} tone={incident ? "danger" : undefined} />
+        <Tile k="출동 중" v={`${live}대`} tone={live ? "ok" : undefined} />
+        <Tile k="미확인 공유" v={`${waiting}건`} tone={waiting ? "warn" : undefined} />
+        <Tile k={`실측 도착 중앙값${myCenter ? ` · ${station?.name.replace(/119안전센터$/, "")}` : ""}`}
+              v={fmtSec(myCenter?.median_s ?? hs?.resp_median_s ?? null)}
+              sub={myCenter ? `${myCenter.n}건` : hs ? `${hs.resp_n}건` : "이력 없음"} />
+        <div style={clock}>{clockText(now)}</div>
+      </header>
 
-          <H>출동 지령</H>
-          <label style={lab}>출발 센터</label>
-          <select value={station?.id ?? ""} onChange={(e) => setStationId(e.target.value)} style={input}>
-            {stations.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-          <label style={lab}>차량</label>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-            {(fleet.fleet?.vehicles ?? []).map((v) => {
-              const on = v.id === vehicle?.id;
+      <div style={body}>
+        {/* ══ 좌 — 접수 · 지령 ═════════════════════════════════════ */}
+        <aside style={colL}>
+          <Sec title="사건 접수">
+            <div style={{ display: "flex", gap: 6 }}>
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="상호 · 주소 · 건물 · 도로명"
+                     style={input} />
+              <button onClick={() => setPicking((x) => !x)}
+                      style={{ ...btnSm, background: picking ? D.accent : "transparent", color: picking ? "#0b1220" : D.accent }}>
+                {picking ? "지도를 누르세요" : "지도에서"}
+              </button>
+            </div>
+            {hits.length > 0 && (
+              <div style={list}>
+                {hits.map((h, i) => (
+                  <button key={`${h.name}-${i}`} style={listItem} onClick={() => {
+                    setIncident({ point: h.point, label: h.name, at: new Date() });
+                    setQ(""); setFocus({ n: Date.now(), at: h.point, zoom: 17 });
+                  }}>
+                    <b>{h.name}</b>
+                    <span style={{ display: "block", fontSize: 11, color: D.sub }}>{h.addr || h.cat}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {incident ? (
+              <div style={{ ...card, borderColor: D.danger }}>
+                <div style={{ fontSize: 11, color: D.danger, fontWeight: 800, letterSpacing: .4 }}>화재 · 접수 {hhmm(incident.at)}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{incident.label}</div>
+                <button onClick={() => setIncident(null)} style={{ ...linkBtn, marginTop: 4 }}>접수 해제</button>
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: D.sub, marginTop: 8 }}>검색하거나 「지도에서」 로 지점을 찍는다.</div>
+            )}
+          </Sec>
+
+          <Sec title="출동 지령">
+            <label style={lab}>출발 센터</label>
+            <select value={station?.id ?? ""} onChange={(e) => setStationId(e.target.value)} style={input}>
+              {stations.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+            <label style={lab}>차량 — 요구폭</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 250, overflowY: "auto" }}>
+              {(fleet.fleet?.vehicles ?? []).map((v) => {
+                const on = v.id === vehicle?.id;
+                return (
+                  <button key={v.id} onClick={() => fleet.select(v.id)}
+                          style={{ ...vehRow, borderColor: on ? D.accent : D.line, background: on ? "#0c2a3f" : "transparent" }}>
+                    <VehicleArt kind={vehicleClass(v.label, v.id)} w={40} />
+                    <span style={{ flex: 1, textAlign: "left" }}>
+                      <b style={{ fontSize: 13 }}>{displayName(v.label)}</b>
+                      <span style={{ display: "block", fontSize: 10, color: D.sub }}>{(v.station ?? "").replace(/119안전센터|119구조대/, "")}</span>
+                    </span>
+                    <b style={{ fontSize: 12, color: on ? D.accent : D.sub }}>{v.required_width_m.toFixed(1)}m</b>
+                  </button>
+                );
+              })}
+            </div>
+            {incident && plan && (
+              <div style={{ ...card, borderColor: plan.plan ? (plan.alt ? D.warn : D.ok) : D.danger }}>
+                {plan.plan ? (
+                  <>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>
+                      {fmtDur(travelSeconds(plan.plan))} <span style={{ fontSize: 13, color: D.sub }}>· {(plan.plan.lengthM / 1000).toFixed(1)}km · 내비 예측</span>
+                    </div>
+                    {myCenter?.median_s != null && (
+                      <div style={{ fontSize: 11, color: D.sub, marginTop: 2 }}>
+                        같은 센터 실제 출동→도착 중앙값 {fmtSec(myCenter.median_s)} — 내비 속도표는 미검증이다
+                      </div>
+                    )}
+                    <div style={{ fontSize: 12, color: D.sub, marginTop: 4 }}>
+                      확인 필요 {plan.plan.edges.filter((e) => e.verdict === "needs_cv" || e.verdict === "unknown").length}개 ·
+                      최소폭 {Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)).toFixed(1)}m / 요구 {need.toFixed(1)}m
+                    </div>
+                    {ruleSummary(plan.plan.rules) && (
+                      <div style={{ fontSize: 12, color: D.warn, fontWeight: 800, marginTop: 4 }}>
+                        통행 규칙 — {ruleSummary(plan.plan.rules)}
+                      </div>
+                    )}
+                    {plan.alt && (
+                      <div style={{ fontSize: 12, color: D.warn, fontWeight: 800, marginTop: 4 }}>
+                        차량 경로 없음 → 대체 접근 지점 + 도보 약 {Math.round(plan.walkM)}m(직선)
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ fontWeight: 800, color: D.danger }}>
+                    이 차종으로 {MAX_WALK_M}m 안에 닿는 접근 지점이 없다 — 다른 차종 · 센터
+                  </div>
+                )}
+              </div>
+            )}
+            <button disabled={!dispatchUrl || !plan?.plan}
+                    onClick={() => dispatchUrl && window.open(dispatchUrl, "_blank")}
+                    style={{ ...cta, opacity: dispatchUrl && plan?.plan ? 1 : .35 }}>
+              출동 지령 — 내비 열기 »
+            </button>
+            <div style={{ fontSize: 10.5, color: D.sub, marginTop: 6, lineHeight: 1.5 }}>
+              새 탭에 내비가 사건 · 차종 · 센터를 채운 채 열린다. 위치 · 공유가 이 화면으로 온다(같은 브라우저 탭끼리 — 서버 아님).
+            </div>
+          </Sec>
+        </aside>
+
+        {/* ══ 중앙 — 지도(북쪽 위 · 평면) ═══════════════════════════ */}
+        <main style={mapBox}>
+          <OpsMap view={data.view} style={style} layers={layers} hidden={hidden}
+                  reachable={reach} incident={incident?.point ?? null}
+                  preview={plan?.plan?.coords ?? null}
+                  previewWalk={plan?.plan && incident ? [plan.plan.coords[plan.plan.coords.length - 1], incident.point] : null}
+                  units={units} feed={ops.feed} selectedSeg={seg} focus={focus}
+                  onPick={onPick} onSeg={(u) => { if (!picking) setSeg(u); }} />
+          {/* 범례 · 레이어 — 지도 위 왼쪽 아래 */}
+          <div style={legendBox}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, marginBottom: 4 }}>판정 (CV = 영상판정) · 눌러서 숨기기</div>
+            {VERDICT_ORDER.filter((k) => style[k]).map((k) => {
+              const off = hidden.has(k);
               return (
-                <button key={v.id} onClick={() => fleet.select(v.id)}
-                        style={{ ...vehBtn, borderColor: on ? C.cta : C.sheetLine, background: on ? C.softBlue : "#fff" }}>
-                  <VehicleArt kind={vehicleClass(v.label, v.id)} w={52} />
-                  <span style={{ fontSize: 12, fontWeight: 800 }}>{displayName(v.label)}</span>
-                  <span style={{ fontSize: 10, color: C.panelSub }}>{(v.station ?? "").replace(/119안전센터|119구조대/, "")} · 요구 {v.required_width_m.toFixed(1)}m</span>
+                <button key={k} style={{ ...legendRow, opacity: off ? .35 : 1 }} title={VERDICT_MEANING[k]}
+                        onClick={() => setHidden((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; })}>
+                  <i style={{ ...dot, background: style[k].color }} />
+                  <span style={{ flex: 1, textAlign: "left" }}>{style[k].label}</span>
+                  <b>{counts[k] ?? 0}</b>
                 </button>
               );
             })}
-          </div>
-          {incident && plan && (
-            <div style={{ ...card, borderColor: plan.plan ? (plan.alt ? C.warn : C.safe) : C.danger }}>
-              {plan.plan ? (
-                <>
-                  <div style={{ fontWeight: 800, fontSize: 15 }}>
-                    {fmtDur(travelSeconds(plan.plan))} · {(plan.plan.lengthM / 1000).toFixed(1)}km
-                  </div>
-                  <div style={{ fontSize: 12, color: C.panelSub, marginTop: 2 }}>
-                    확인 필요 {plan.plan.edges.filter((e) => e.verdict === "needs_cv" || e.verdict === "unknown").length}개 ·
-                    최소폭 {Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)).toFixed(1)}m / 요구 {need.toFixed(1)}m
-                  </div>
-                  {plan.alt && (
-                    <div style={{ fontSize: 12, color: C.warnInk, fontWeight: 800, marginTop: 4 }}>
-                      사건 지점까지 차량 경로 없음 → 대체 접근 지점, 이후 도보 약 {Math.round(plan.walkM)}m(직선)
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ fontWeight: 800, color: C.danger }}>
-                  이 차종으로 {MAX_WALK_M}m 안에 닿는 접근 지점이 없다 — 다른 차종 · 센터
-                </div>
-              )}
-            </div>
-          )}
-          <button disabled={!dispatchUrl || !plan?.plan}
-                  onClick={() => dispatchUrl && window.open(dispatchUrl, "_blank")}
-                  style={{ ...cta, opacity: dispatchUrl && plan?.plan ? 1 : .45 }}>
-            내비로 출동 지령 »
-          </button>
-          <div style={{ fontSize: 11, color: C.panelSub, marginTop: 6, lineHeight: 1.5 }}>
-            새 탭에 내비가 사건 · 차종 · 센터를 채운 채 열린다. 그 내비의 위치 · 공유가 이 화면으로 온다
-            (같은 브라우저 탭끼리 — 서버 아님).
-          </div>
-
-          <H>판정 (영상판정 = CV)</H>
-          {VERDICT_ORDER.filter((k) => style[k]).map((k) => {
-            const off = hidden.has(k);
-            return (
-              <button key={k} style={{ ...legendRow, opacity: off ? .4 : 1 }}
-                      onClick={() => setHidden((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; })}>
-                <i style={{ ...dot, background: style[k].color }} />
-                <span style={{ flex: 1, textAlign: "left" }}>
-                  <b>{style[k].label}</b>
-                  <span style={{ display: "block", fontSize: 11, color: C.panelSub }}>{VERDICT_MEANING[k]}</span>
-                </span>
-                <b style={{ fontSize: 13 }}>{counts[k] ?? 0}</b>
-              </button>
-            );
-          })}
-          <div style={{ fontSize: 11, color: C.panelSub, marginTop: 4 }}>
-            눌러서 숨기기 · 굵기는 최소 유효폭 비례 · 전 구간 현장 미검증
-          </div>
-
-          <H>레이어</H>
-          {([
-            ["reach", `도달 불가 사선 (${displayName(vehicle?.label ?? "기준 차량")} · ${station?.name ?? ""})`],
-            ["cctvCov", "CCTV 영상판정 반경 25m"],
-            ["ortho", "항공정사영상 25cm"],
-            ["bldg", "건물 3D"],
-          ] as [keyof OpsLayers, string][]).map(([k, t]) => (
-            <label key={k} style={toggleRow}>
-              <input type="checkbox" checked={layers[k]} onChange={() => setLayers((L) => ({ ...L, [k]: !L[k] }))} />
-              {t}
-            </label>
-          ))}
-          <div style={{ fontSize: 11, color: C.panelSub, marginTop: 6 }}>
-            닿는 구간 {reach?.size ?? 0} / {data.graph.edges.length} · 옛 지도는 <a href="../" style={{ color: C.cta }}>여기</a>
-          </div>
-        </div>
-      </aside>
-
-      {/* ══ 우측 — 출동 중 · 공유 ════════════════════════════════ */}
-      <div style={right}>
-        <div style={liveCard}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <b style={{ fontSize: 15 }}>출동 중</b>
-            <span style={{ fontSize: 11, color: C.panelSub }}>
-              {link.current?.available === false ? "이 브라우저는 탭 연결을 못 한다" : `내비 ${units.length}대 연결`}
-            </span>
-          </div>
-          {units.length === 0 && (
-            <div style={{ fontSize: 12, color: C.panelSub, marginTop: 6 }}>
-              연결된 내비가 없다 — 「내비로 출동 지령」 으로 연다.
-            </div>
-          )}
-          {units.map((u) => {
-            const stale = unitStale(u, now);
-            return (
-              <button key={u.unit} style={unitRow}
-                      onClick={() => u.last.pos && setFocus({ n: Date.now(), at: u.last.pos, zoom: 17.2 })}>
-                <span style={{ fontWeight: 800 }}>{u.last.vehicle}</span>
-                <span style={{ fontSize: 12 }}>{u.last.title}</span>
-                <span style={{ fontSize: 11, color: stale ? C.danger : C.panelSub }}>
-                  {stale ? "연결 끊김" : u.last.remainM != null ? `남은 ${(u.last.remainM / 1000).toFixed(1)}km · 도착 ${u.last.etaText ?? "—"}` : "대기"}
-                  {u.last.incident ? ` · ${u.last.incident.label}` : ""}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        {ops.feed.length > 0 && (
-          <div style={{ ...liveCard, marginTop: 10, maxHeight: 320, overflowY: "auto" }}>
-            <b style={{ fontSize: 15 }}>현장 공유</b>
-            {ops.feed.map((f) => (
-              <div key={f.shareId} style={feedRow}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: f.kind === "blocked" ? "#991b1b" : f.kind === "arrival" ? C.cta : C.warnInk }}>
-                    {f.kind === "blocked" ? "통행 불가 신고" : f.kind === "arrival" ? "도착 보고" : "병목 공유"} · {hhmm(new Date(f.at))}
-                  </div>
-                  <div style={{ fontSize: 12 }}>{f.text}</div>
-                </div>
-                {f.ackedAt
-                  ? <span style={{ fontSize: 12, color: C.safeInk, fontWeight: 800 }}>확인 {hhmm(new Date(f.ackedAt))}</span>
-                  : <button style={ackBtn} onClick={() => { ack(f.shareId, f.unit); if (f.point) setFocus({ n: Date.now(), at: f.point, zoom: 17.5 }); }}>확인</button>}
+            {grayCounts.length > 0 && !hidden.has("unknown") && (
+              <div style={{ margin: "0 0 4px 20px", fontSize: 10.5, color: D.sub, lineHeight: 1.55 }}>
+                {grayCounts.map(([k, n]) => (
+                  <div key={k} style={{ display: "flex" }}><span style={{ flex: 1 }}>└ {GRAY_REASON[k]?.short ?? k}</span><b>{n}</b></div>
+                ))}
               </div>
+            )}
+            <div style={{ borderTop: `1px solid ${D.line}`, margin: "6px 0 4px" }} />
+            {([
+              ["reach", `도달 불가 사선 · ${displayName(vehicle?.label ?? "기준 차량")}`],
+              ["history", "출동 이력 · 실제 도착 시간"],
+              ["context", "과속방지턱 · 카메라 · 보호구역"],
+              ["cctvCov", "CCTV 영상판정 반경 25m"],
+              ["ortho", "항공정사영상 25cm"],
+              ["bldg", "3D 건물(비스듬히)"],
+            ] as [keyof OpsLayers, string][]).map(([k, t]) => (
+              <label key={k} style={toggleRow}>
+                <input type="checkbox" checked={layers[k]} onChange={() => setLayers((L) => ({ ...L, [k]: !L[k] }))} />
+                {t}
+              </label>
             ))}
+            {layers.history && (
+              <div style={{ fontSize: 10.5, color: D.sub, marginTop: 4, lineHeight: 1.5 }}>
+                점 색 = 실제 출동→도착 <b style={{ color: D.ok }}>~5분</b> · <b style={{ color: D.warn }}>~8분</b> · <b style={{ color: D.danger }}>8분+</b> (경계는 표시용 가정값)
+              </div>
+            )}
+            <div style={{ fontSize: 10.5, color: D.sub, marginTop: 4 }}>
+              닿는 구간 {reach?.size ?? 0} / {data.graph.edges.length} · 굵기 = 최소 유효폭 · 전 구간 현장 미검증
+            </div>
           </div>
-        )}
-        {selEdge && (
-          <SegCard e={selEdge} style={style} need={need} reachable={reach?.has(selEdge.seg_uid) ?? null}
-                   vehicle={displayName(vehicle?.label ?? "기준 차량")} onClose={() => setSeg(null)} />
-        )}
+        </main>
+
+        {/* ══ 우 — 차량 상태판 · 현장 공유 · 구간 ═══════════════════ */}
+        <aside style={colR}>
+          <Sec title={`차량 상태판 · 연결 ${units.length}`}>
+            {link.current?.available === false && (
+              <div style={{ fontSize: 12, color: D.warn }}>이 브라우저는 탭 연결을 못 한다</div>
+            )}
+            {units.length === 0 && (
+              <div style={{ fontSize: 12, color: D.sub }}>연결된 내비가 없다 — 「출동 지령」 으로 연다.</div>
+            )}
+            {units.map((u) => {
+              const stale = unitStale(u, now);
+              const st = stale ? "끊김" : u.last.remainM != null ? "출동 중" : "대기";
+              const tone = stale ? D.danger : u.last.remainM != null ? D.ok : D.sub;
+              return (
+                <button key={u.unit} style={unitRow}
+                        onClick={() => u.last.pos && setFocus({ n: Date.now(), at: u.last.pos, zoom: 17.2 })}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
+                    <b style={{ flex: 1 }}>{u.last.vehicle}</b>
+                    <span style={{ ...chip, color: tone, borderColor: tone }}>{st}</span>
+                  </span>
+                  <span style={{ fontSize: 12 }}>{u.last.title}</span>
+                  <span style={{ fontSize: 11, color: D.sub }}>
+                    {u.last.remainM != null ? `남은 ${(u.last.remainM / 1000).toFixed(1)}km · 도착 ${u.last.etaText ?? "—"}` : "—"}
+                    {u.last.incident ? ` · ${u.last.incident.label}` : ""}
+                  </span>
+                </button>
+              );
+            })}
+          </Sec>
+          <Sec title={`현장 공유${waiting ? ` · 미확인 ${waiting}` : ""}`}>
+            {ops.feed.length === 0 && <div style={{ fontSize: 12, color: D.sub }}>아직 없다.</div>}
+            <div style={{ maxHeight: 260, overflowY: "auto" }}>
+              {ops.feed.map((f) => (
+                <div key={f.shareId} style={feedRow}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: f.kind === "blocked" ? D.danger : f.kind === "arrival" ? D.accent : D.warn }}>
+                      {f.kind === "blocked" ? "통행 불가 신고" : f.kind === "arrival" ? "도착 보고" : "병목 공유"} · {hhmm(new Date(f.at))}
+                    </div>
+                    <div style={{ fontSize: 12 }}>{f.text}</div>
+                  </div>
+                  {f.ackedAt
+                    ? <span style={{ fontSize: 12, color: D.ok, fontWeight: 800 }}>확인 {hhmm(new Date(f.ackedAt))}</span>
+                    : <button style={ackBtn} onClick={() => { ack(f.shareId, f.unit); if (f.point) setFocus({ n: Date.now(), at: f.point, zoom: 17.5 }); }}>확인</button>}
+                </div>
+              ))}
+            </div>
+          </Sec>
+          {selEdge ? (
+            <SegCard e={selEdge} style={style} need={need} reachable={reach?.has(selEdge.seg_uid) ?? null}
+                     vehicle={displayName(vehicle?.label ?? "기준 차량")} onClose={() => setSeg(null)} />
+          ) : (
+            <Sec title="구간 정보">
+              <div style={{ fontSize: 12, color: D.sub }}>지도에서 도로를 누르면 폭 · 판정 근거 · 회색 사유 · 단속 이력이 뜬다.</div>
+            </Sec>
+          )}
+          {hs && (
+            <Sec title="출동 이력 요약 (실측)">
+              {Object.entries(hs.by_center).filter(([, v]) => v.n >= 5).map(([k, v]) => (
+                <Row key={k} k={`${k.replace(/119안전센터|119구조대/, (m) => (m.includes("구조") ? " 구조대" : ""))} · ${v.n}건`}
+                     v={`${fmtSec(v.median_s)}${v.straight_kmh ? ` · 직선 ${v.straight_kmh}km/h` : ""}`} />
+              ))}
+              <Row k={`동구 화재 · ${hs.fire_donggu.n}건`} v={fmtSec(hs.fire_donggu.median_s)} />
+              <div style={{ fontSize: 10.5, color: D.sub, marginTop: 6, lineHeight: 1.5 }}>
+                출동 지령 → 현장 도착. 직선 km/h 는 센터~지점 직선거리 ÷ 시간(실제 주행 속도의 하한).
+              </div>
+            </Sec>
+          )}
+        </aside>
       </div>
     </div>
   );
@@ -364,25 +451,35 @@ function SegCard({ e, style, need, reachable, vehicle, onClose }: {
   const s = style[e.verdict];
   const margin = e.width_min_m != null ? e.width_min_m - need : null;
   const cctvOk = e.cctv_dist_m != null && e.cctv_dist_m <= 25;
+  const gray = grayReason(e);
   return (
-    <div style={{ ...liveCard, marginTop: 10 }}>
+    <div style={{ ...secBox }}>
       <div style={{ display: "flex", alignItems: "center" }}>
         <b style={{ fontSize: 15, flex: 1 }}>{e.seg_label ?? e.road_name ?? e.seg_uid}</b>
-        <button onClick={onClose} style={{ border: "none", background: "none", fontSize: 18, cursor: "pointer" }}>✕</button>
+        <button onClick={onClose} style={{ border: "none", background: "none", fontSize: 18, cursor: "pointer", color: D.sub }}>✕</button>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
         <i style={{ ...dot, background: s?.color }} />
         <b>{s?.label ?? e.verdict}</b>
-        <span style={{ fontSize: 11, color: C.panelSub }}>{VERDICT_MEANING[e.verdict]}</span>
+        <span style={{ fontSize: 11, color: D.sub }}>{VERDICT_MEANING[e.verdict]}</span>
       </div>
       <Row k="최소 · 최대 유효폭" v={`${e.width_min_m?.toFixed(1) ?? "—"} · ${e.width_max_m?.toFixed(1) ?? "—"}m`} />
       <Row k={`${vehicle} 요구폭 · 여유`} v={`${need.toFixed(1)}m · ${margin != null ? `${margin >= 0 ? "+" : ""}${margin.toFixed(1)}m` : "—"}`}
            warn={margin != null && margin < 0.5} />
       <Row k="측정 신뢰도 · 폭 표본" v={`${e.width_cov != null ? Math.round(e.width_cov * 100) + "%" : "—"} · ${e.n_sample ?? "—"}개`} />
       <Row k="가까운 CCTV" v={e.cctv_dist_m != null ? `${Math.round(e.cctv_dist_m)}m ${cctvOk ? "(영상판정 가능)" : "(25m 밖)"}` : "—"} />
+      {gray && (
+        <div style={{ fontSize: 12, background: "#0f172a", border: `1px solid ${D.line}`, borderRadius: 8, padding: "7px 9px", marginTop: 6, lineHeight: 1.5 }}>
+          <b>회색 사유 — {gray.short}</b><br />{gray.long}
+        </div>
+      )}
+      <Row k="불법주정차 단속(도로명 · 3년)" v={e.park ? `${e.park.toLocaleString()}건` : "없음"} warn={(e.park ?? 0) >= 200} />
+      {e.ow ? (
+        <Row k="일방통행" v={e.ow === 2 ? "방향 미확인" : "방향 확정"} warn={e.ow === 2} />
+      ) : null}
       <Row k="길이" v={e.length_m != null ? `${Math.round(e.length_m)}m` : "—"} />
       <Row k="선택 센터에서" v={reachable == null ? "—" : reachable ? "도달 가능" : "도달 불가"} warn={reachable === false} />
-      <div style={{ fontSize: 11, color: C.panelSub, marginTop: 8, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 11, color: D.sub, marginTop: 8, lineHeight: 1.5 }}>
         폭은 도면 기반 미검증 값이다. 실시간 주정차 · 공사 · 회전 · 높이는 반영하지 않는다.
       </div>
     </div>
@@ -391,15 +488,31 @@ function SegCard({ e, style, need, reachable, vehicle, onClose }: {
 
 function Row({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0",
-                  borderBottom: `1px solid ${C.sheetLine}` }}>
-      <span style={{ color: C.panelSub }}>{k}</span>
-      <b style={{ color: warn ? C.danger : C.panelInk }}>{v}</b>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, padding: "4px 0",
+                  borderBottom: `1px solid ${D.line}` }}>
+      <span style={{ color: D.sub }}>{k}</span>
+      <b style={{ color: warn ? D.danger : D.ink, textAlign: "right" }}>{v}</b>
     </div>
   );
 }
-function H({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 13, fontWeight: 800, margin: "16px 0 8px", color: C.panelInk }}>{children}</div>;
+function Sec({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section style={secBox}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, letterSpacing: .6, marginBottom: 8 }}>{title}</div>
+      {children}
+    </section>
+  );
+}
+function Tile({ k, v, sub, tone }: { k: string; v: string; sub?: string; tone?: "ok" | "warn" | "danger" }) {
+  const c = tone === "ok" ? D.ok : tone === "warn" ? D.warn : tone === "danger" ? D.danger : D.ink;
+  return (
+    <div style={tile}>
+      <div style={{ fontSize: 10.5, color: D.sub, whiteSpace: "nowrap" }}>{k}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, lineHeight: 1.15 }}>
+        {v}{sub && <span style={{ fontSize: 10.5, color: D.sub, fontWeight: 600 }}> {sub}</span>}
+      </div>
+    </div>
+  );
 }
 function Center({ children }: { children: React.ReactNode }) {
   return <div style={{ ...shell, display: "grid", placeItems: "center" }}>{children}</div>;
@@ -407,62 +520,101 @@ function Center({ children }: { children: React.ReactNode }) {
 function hhmm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
+function clockText(t: number): string {
+  const d = new Date(t);
+  return `${hhmm(d)}:${String(d.getSeconds()).padStart(2, "0")}`;
+}
+function fmtSec(s: number | null | undefined): string {
+  if (s == null) return "—";
+  return `${Math.floor(s / 60)}분 ${String(Math.round(s % 60)).padStart(2, "0")}초`;
+}
 function shortStation(raw: string): string {
   const m = raw.match(/광주-(.+)$/);
   return (m ? m[1] : raw).replace(/[-\s]/g, "");
 }
 
-const shell: React.CSSProperties = { position: "fixed", inset: 0, background: "#e8e4da", fontFamily: F.family, color: C.panelInk };
-const panel: React.CSSProperties = {
-  position: "absolute", top: 0, left: 0, bottom: 0, width: 400, background: "#fff", zIndex: 5,
-  display: "flex", flexDirection: "column", boxShadow: "4px 0 18px rgba(0,0,0,.18)",
+// ── 관제실 톤 (§216-4) ─────────────────────────────────────────────
+// ★ 판정 4색은 여기 없다(정본 `style`). 틀 · 글자 · 상태 색만이다.
+const D = {
+  bg: "#0b1220", panel: "#0f172a", card: "#111c2f", line: "#23324a", ink: "#e5e7eb", sub: "#94a3b8",
+  accent: "#38bdf8", ok: "#22c55e", warn: "#f59e0b", danger: "#ef4444",
 };
-const head: React.CSSProperties = { background: "#0b1220", color: "#fff", padding: "14px 16px" };
+const shell: React.CSSProperties = {
+  position: "fixed", inset: 0, background: D.bg, fontFamily: F.family, color: D.ink,
+  display: "flex", flexDirection: "column",
+};
+const top: React.CSSProperties = {
+  height: 58, flex: "0 0 auto", display: "flex", alignItems: "center", gap: 10, padding: "0 14px",
+  borderBottom: `1px solid ${D.line}`, background: "#070d18",
+};
+const tile: React.CSSProperties = {
+  border: `1px solid ${D.line}`, borderRadius: 8, padding: "4px 10px", background: D.panel, minWidth: 74,
+};
+const clock: React.CSSProperties = {
+  fontSize: 22, fontWeight: 800, fontVariantNumeric: "tabular-nums", marginLeft: 6, color: D.accent,
+};
+const body: React.CSSProperties = {
+  flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "340px 1fr 360px",
+};
+const colL: React.CSSProperties = {
+  borderRight: `1px solid ${D.line}`, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 10,
+  background: D.panel,
+};
+const colR: React.CSSProperties = { ...colL, borderRight: "none", borderLeft: `1px solid ${D.line}` };
+const mapBox: React.CSSProperties = { position: "relative", minWidth: 0 };
+const secBox: React.CSSProperties = {
+  background: D.card, border: `1px solid ${D.line}`, borderRadius: 10, padding: "10px 12px",
+};
+const legendBox: React.CSSProperties = {
+  position: "absolute", left: 10, bottom: 10, width: 270, zIndex: 3, background: "rgba(11,18,32,.9)",
+  border: `1px solid ${D.line}`, borderRadius: 10, padding: "8px 10px", fontSize: 12,
+};
 const input: React.CSSProperties = {
-  flex: 1, width: "100%", boxSizing: "border-box", border: `1.5px solid ${C.sheetLine}`, borderRadius: 10,
-  padding: "9px 11px", fontSize: 14, fontFamily: F.family,
+  flex: 1, width: "100%", boxSizing: "border-box", border: `1px solid ${D.line}`, borderRadius: 8,
+  padding: "8px 10px", fontSize: 13, fontFamily: F.family, background: D.panel, color: D.ink,
 };
 const btnSm: React.CSSProperties = {
-  border: `1.5px solid ${C.cta}`, borderRadius: 10, padding: "0 10px", fontWeight: 800, fontSize: 12,
+  border: `1px solid ${D.accent}`, borderRadius: 8, padding: "0 10px", fontWeight: 800, fontSize: 12,
   cursor: "pointer", fontFamily: F.family, whiteSpace: "nowrap",
 };
-const list: React.CSSProperties = { border: `1px solid ${C.sheetLine}`, borderRadius: 10, marginTop: 6, overflow: "hidden" };
+const linkBtn: React.CSSProperties = {
+  border: "none", background: "none", color: D.sub, fontSize: 11, cursor: "pointer", padding: 0,
+  fontFamily: F.family, textDecoration: "underline",
+};
+const list: React.CSSProperties = { border: `1px solid ${D.line}`, borderRadius: 8, marginTop: 6, overflow: "hidden" };
 const listItem: React.CSSProperties = {
-  display: "block", width: "100%", textAlign: "left", border: "none", borderBottom: `1px solid ${C.sheetLine}`,
-  background: "#fff", padding: "8px 10px", cursor: "pointer", fontFamily: F.family, fontSize: 13,
+  display: "block", width: "100%", textAlign: "left", border: "none", borderBottom: `1px solid ${D.line}`,
+  background: D.panel, color: D.ink, padding: "7px 10px", cursor: "pointer", fontFamily: F.family, fontSize: 13,
 };
 const card: React.CSSProperties = {
-  marginTop: 8, border: `2px solid ${C.sheetLine}`, borderRadius: 12, padding: "10px 12px", background: "#fff",
+  marginTop: 8, border: `1.5px solid ${D.line}`, borderRadius: 10, padding: "9px 11px", background: D.panel,
 };
-const lab: React.CSSProperties = { display: "block", fontSize: 11, color: C.panelSub, margin: "8px 0 4px" };
-const vehBtn: React.CSSProperties = {
-  display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, border: "1.5px solid",
-  borderRadius: 10, padding: "6px 8px", cursor: "pointer", fontFamily: F.family, color: C.panelInk,
+const lab: React.CSSProperties = { display: "block", fontSize: 11, color: D.sub, margin: "8px 0 4px" };
+const vehRow: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 8, border: "1px solid", borderRadius: 8, padding: "4px 8px",
+  cursor: "pointer", fontFamily: F.family, color: D.ink,
 };
 const cta: React.CSSProperties = {
-  width: "100%", marginTop: 10, border: "none", borderRadius: 12, padding: "13px 0",
-  background: "linear-gradient(90deg,#1e7cf2,#3aa0ff)", color: "#fff", fontWeight: 800, fontSize: 16,
-  cursor: "pointer", fontFamily: F.family,
+  width: "100%", marginTop: 10, border: "none", borderRadius: 10, padding: "12px 0",
+  background: "linear-gradient(90deg,#dc2626,#ef4444)", color: "#fff", fontWeight: 800, fontSize: 15,
+  cursor: "pointer", fontFamily: F.family, letterSpacing: .3,
 };
 const legendRow: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 10, width: "100%", border: "none", background: "none",
-  padding: "5px 2px", cursor: "pointer", fontFamily: F.family, color: C.panelInk,
+  display: "flex", alignItems: "center", gap: 8, width: "100%", border: "none", background: "none",
+  padding: "3px 0", cursor: "pointer", fontFamily: F.family, color: D.ink, fontSize: 12,
 };
-const dot: React.CSSProperties = { width: 14, height: 14, borderRadius: 7, flex: "0 0 auto", border: "2px solid rgba(0,0,0,.15)" };
-const toggleRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "3px 0" };
-const right: React.CSSProperties = { position: "absolute", top: 14, right: 14, width: 340, zIndex: 5 };
-const liveCard: React.CSSProperties = {
-  background: "#fff", borderRadius: 16, padding: "12px 14px", boxShadow: "0 8px 24px rgba(0,0,0,.2)",
-};
+const dot: React.CSSProperties = { width: 12, height: 12, borderRadius: 6, flex: "0 0 auto", border: "2px solid rgba(255,255,255,.25)" };
+const toggleRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 7, fontSize: 12, padding: "2px 0" };
+const chip: React.CSSProperties = { border: "1px solid", borderRadius: 999, padding: "1px 8px", fontSize: 11, fontWeight: 800 };
 const unitRow: React.CSSProperties = {
-  display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", gap: 2, marginTop: 8,
-  border: `1px solid ${C.sheetLine}`, borderRadius: 10, padding: "8px 10px", background: "#f8fafc",
-  cursor: "pointer", fontFamily: F.family, color: C.panelInk, textAlign: "left",
+  display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", gap: 2, marginTop: 6,
+  border: `1px solid ${D.line}`, borderRadius: 8, padding: "7px 9px", background: D.panel,
+  cursor: "pointer", fontFamily: F.family, color: D.ink, textAlign: "left",
 };
 const feedRow: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: `1px solid ${C.sheetLine}`,
+  display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: `1px solid ${D.line}`,
 };
 const ackBtn: React.CSSProperties = {
-  border: "none", background: C.cta, color: "#fff", borderRadius: 8, padding: "7px 12px",
+  border: "none", background: D.accent, color: "#0b1220", borderRadius: 7, padding: "6px 11px",
   fontWeight: 800, cursor: "pointer", fontFamily: F.family,
 };
