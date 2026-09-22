@@ -37,3 +37,23 @@ def test_publish_calls_publish_navi():
     src = (ROOT / "src" / "firelane" / "publish_web.py").read_text(encoding="utf-8")
     assert "publish_navi" in src and "_navi.main()" in src, (
         "publish_web 이 publish_navi 를 안 부른다 — 파이프라인이 내비 그래프를 다시 안 낸다(§170-5).")
+
+
+def test_navi_graph_carries_traffic_rules():
+    """일방통행 · 회전 금지가 실렸고 모양이 맞는가 (DECISIONS §215-1).
+
+    ★ 2026-09-22. 그래프가 모든 구간을 양방향으로 실어 내비가 역주행 경로를 아무 말 없이
+      냈다. 규칙이 **빠진 채** 다시 발행돼도 부팅 · 타입 · golden 은 초록이다 — 여기서 센다.
+    """
+    g = json.loads((WEB / "navi_graph.json").read_text(encoding="utf-8"))
+    ow = [e.get("ow", 0) for e in g["edges"]]
+    assert set(ow) <= {0, 1, -1, 2}, f"ow 에 모르는 값 {sorted(set(ow) - {0, 1, -1, 2})}"
+    n_ow = sum(1 for x in ow if x)
+    assert n_ow == g["counts"]["oneway"], "counts.oneway 가 실물과 다르다"
+    assert n_ow >= 20, f"일방통행 {n_ow}구간 — 입력(ngii1k_center)을 못 읽었거나 대조가 죽었다"
+    turns = g.get("turns", [])
+    assert turns, "회전 금지 0건 — TURNINFO ↔ 그래프 대응이 죽었다"
+    for i, n, o, t in turns:
+        ei, eo = g["edges"][i], g["edges"][o]
+        assert n in (ei["a"], ei["b"]) and n in (eo["a"], eo["b"]), f"회전 금지 {i},{n},{o} 가 노드에 안 닿는다"
+        assert t in (3, 101, 102, 103), f"금지가 아닌 TURN_TYPE {t} 가 실렸다 — 허용 규칙은 안 싣는다"

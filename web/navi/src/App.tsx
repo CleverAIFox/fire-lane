@@ -50,6 +50,9 @@ import { RouteCompare, type RouteOption } from "./ui/RouteCompare";
 import { BottleneckPanel } from "./ui/BottleneckPanel";
 import { Truck } from "./ui/icons";
 import { C, F, fmtDur } from "./ui/tokens";
+import { ruleSummary } from "./domain/rules";
+import { hazardSummary, routeHazards } from "./domain/context";
+import { grayReason } from "./ui/verdictMeaning";
 
 /** 병목 탭을 띄우는 앞 거리(m). 와이어프레임 04 가 「전방 300m」 다 */
 const BOTTLENECK_AHEAD_M = 400;
@@ -175,17 +178,20 @@ export default function App() {
     if (!a) return null;
     const b = n.fastPlan && !samePlan(a, n.fastPlan) ? n.fastPlan : null;
     return {
-      safe: routeOption(a, need, b, true, n.access),
-      fast: b ? routeOption(b, need, a, false, n.access) : null,
+      safe: routeOption(a, need, b, true, n.access, n.data?.context ?? null),
+      fast: b ? routeOption(b, need, a, false, n.access, n.data?.context ?? null) : null,
     };
-  }, [n.plan, n.fastPlan, need, n.access]);
+  }, [n.plan, n.fastPlan, need, n.access, n.data]);
 
   // ── 주행 ──────────────────────────────────────────────────────
+  // ★ §216-3 경로 위 주변 사정 — 경로가 바뀔 때만 다시 센다
+  const hazards = useMemo(() => (n.plan ? routeHazards(n.plan, n.data?.context ?? null) : []),
+    [n.plan, n.data]);
   const v = useVoice({
     graph: n.data?.graph ?? null, spec,
     plan: guiding ? n.plan : null,
     driven: n.driven, jumpSeq: n.jumpSeq, offRoute: n.offRoute,
-    style, enabled: voice,
+    style, enabled: voice, hazards,
   });
   const hud = useHudData({
     spec, style, plan: n.plan, fastPlan: n.fastPlan,
@@ -225,6 +231,8 @@ export default function App() {
       widthM: e.width_min_m, requiredM: need, lengthM: e.length_m,
       coverage: e.width_cov ?? null, samples: e.n_sample ?? null,
       cctvDistM: e.cctv_dist_m ?? null,
+      grayReason: grayReason(e)?.long ?? null,
+      park: e.park ?? null,
       verdictLabel: style[e.verdict]?.label ?? e.verdict,
       verdictColor: style[e.verdict]?.color ?? C.panelInk,
     };
@@ -500,6 +508,7 @@ export default function App() {
 function routeOption(
   p: RoutePlan, need: number, other: RoutePlan | null, rec: boolean,
   access: { alt: boolean; walkM: number } | null,
+  ctx: GeoJSON.FeatureCollection | null,
 ): RouteOption {
   const isUnc = (e: GraphEdge) => e.verdict === "needs_cv" || e.verdict === "unknown";
   const unc = p.edges.filter(isUnc);
@@ -523,6 +532,8 @@ function routeOption(
     requiredM: need,
     deltaSec,
     note: (rec ? recNote : "도착은 빠르지만 폭 측정 신뢰도가 낮은 구간이 포함됩니다.") + tail,
+    rules: ruleSummary(p.rules),
+    around: hazardSummary(routeHazards(p, ctx)),
   };
 }
 

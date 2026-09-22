@@ -98,6 +98,18 @@ export interface GraphEdge {
    */
   road_bt_m?: number | null;
 
+  /**
+   * 일방통행. 없으면 양방향(DECISIONS §215-1).
+   *   1 a→b 로만 · -1 b→a 로만 · 2 일방통행인데 **방향을 모른다**
+   * 비용과 경고는 `domain/rules.ts` 가 만든다.
+   */
+  ow?: 0 | 1 | -1 | 2;
+  /**
+   * 이 구간 **도로명**의 불법주정차 단속 건수(2022-01~2025-02). 없으면 0(§216-3).
+   * ★ 도로 단위다 — 같은 도로명 구간은 같은 수. 현재 주차가 아니라 위험의 대리값이다.
+   */
+  park?: number;
+
   /** 접합된 노드 인덱스 */
   a: number;
   b: number;
@@ -109,10 +121,23 @@ export interface GraphEdge {
 export interface NaviGraph {
   crs: string;
   node_tol_m: number;
-  counts: { nodes: number; edges: number; self_loops: number };
+  counts: { nodes: number; edges: number; self_loops: number;
+            oneway?: number; oneway_dir_known?: number; turn_bans?: number };
   style: Record<string, VerdictStyle>;
   nodes: LngLat[];
   edges: GraphEdge[];
+  /** 회전 금지 `[들어오는 엣지, 노드, 나가는 엣지, TURN_TYPE]`. 옛 그래프에는 없다 */
+  turns?: [number, number, number, number][];
+}
+
+/** 경로가 어기거나 확인이 필요한 통행 규칙 하나(`domain/rules.ts`). */
+export interface RuleWarning {
+  kind: "wrong_way" | "oneway_unknown" | "turn_ban";
+  /** 경로 시작부터 그 자리까지(m) */
+  atM: number;
+  seg_uid: string;
+  /** 화면 · 음성에 그대로 쓰는 말 */
+  text: string;
 }
 
 /** `web/data/view.json`. 시점·경계의 정본이다. */
@@ -175,6 +200,8 @@ export interface RoutePlan {
   lengthM: number;
   /** 판정별 실거리(m). 불확실성 리본이 읽는다 */
   byVerdict: Record<string, number>;
+  /** 지나는 통행 규칙 — 역주행 · 방향 미확인 일방통행 · 회전 금지(§215-1) */
+  rules: RuleWarning[];
 }
 
 /** 위치 한 점. GPS 든 시뮬레이션이든 이 모양으로 들어온다. */
@@ -190,4 +217,18 @@ export interface Fix {
    * 비어 있으면 받는 쪽이 받은 시각으로 채운다.
    */
   t?: number;
+}
+
+/** `web/data/context.geojson` 한 점 — 경로 주변 사정(§216-3). 판정과 무관하다 */
+export type ContextKind = "speedbump" | "speedcam" | "child_zone" | "senior_zone";
+
+/** `web/data/history.geojson.summary` — 실제 출동 → 현장 도착(초) */
+export interface HistorySummary {
+  points: number;
+  resp_median_s: number | null;
+  resp_p90_s: number | null;
+  resp_n: number;
+  by_center: Record<string, { n: number; median_s: number | null; straight_kmh: number | null }>;
+  fire_donggu: { n: number; median_s: number | null };
+  note: string;
 }

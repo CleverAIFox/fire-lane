@@ -26,7 +26,7 @@ import type { VerdictStyle, View } from "../domain/types";
 import type { FeedItem, Unit } from "../domain/opsProtocol";
 import {
   GLYPHS, sources, baseLayers, markerLayers, stationLayers,
-  cctvIcon, hydrantIcon, pillImage, pillOptions,
+  cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -38,8 +38,23 @@ export interface OpsLayers {
   ortho: boolean;
   reach: boolean;
   cctvCov: boolean;
+  /** 3D 건물(비스듬히). 끄면 평면 건물 — 관제 기본 */
   bldg: boolean;
+  /** 119 신고 · 구조 이력 — 밀도 + 실제 도착 시간 색(§216-3) */
+  history: boolean;
+  /** 과속방지턱 · 단속카메라 · 보호구역 시설(§216-3) */
+  context: boolean;
 }
+
+/**
+ * 관제실 톤 — 어두운 바탕에 판정 4색이 뜬다(§216-4).
+ * ★ 판정색은 안 바꾼다(정본 `style`). 바탕 · 도로면 · 건물 · 글자만 어둡게 한다 —
+ *   밝은 바탕에서는 초록 · 주황이 도로 회색과 붙어 보였다.
+ */
+const DARK = {
+  bg: "#0b1220", sidewalk: "#131c2e", road: "#1f2a3d", roadEdge: "#26334a", segRoad: "#2b384f",
+  bldgFlat: "#172033", bldgEdge: "#2a3650", label: "#cbd5e1", halo: "#0b1220",
+};
 
 interface Props {
   view: View;
@@ -116,6 +131,39 @@ export function OpsMap(props: Props) {
     m.on("load", () => {
       m.addImage("ic-cctv", cctvIcon(), { pixelRatio: 2 });
       m.addImage("ic-hyd", hydrantIcon(), { pixelRatio: 2 });
+      m.addImage("ic-bump", bumpIcon(), { pixelRatio: 2 });
+      m.addImage("ic-cam", camIcon(), { pixelRatio: 2 });
+      m.addImage("ic-zone", zoneIcon(), { pixelRatio: 2 });
+      // ── 관제실 톤 (§216-4) ──
+      m.setPaintProperty("bg", "background-color", DARK.bg);
+      m.setPaintProperty("sidewalk", "fill-color", DARK.sidewalk);
+      m.setPaintProperty("road-area", "fill-color", DARK.road);
+      m.setPaintProperty("road-area", "fill-outline-color", DARK.roadEdge);
+      m.setPaintProperty("seg-road", "line-color", DARK.segRoad);
+      m.setPaintProperty("seg-marking", "line-opacity", 0.25);
+      m.setPaintProperty("bldg-flat", "fill-color", DARK.bldgFlat);
+      m.setPaintProperty("bldg-flat", "fill-outline-color", DARK.bldgEdge);
+      m.setPaintProperty("bldg", "fill-extrusion-color", "#24304a");
+      // ── 출동 이력 (§216-3) — 밀도 + 실제 도착 시간 색 ──
+      m.addSource("history", { type: "geojson", data: D + "history.geojson" });
+      m.addLayer({ id: "hist-heat", type: "heatmap", source: "history", maxzoom: 17,
+        layout: { visibility: "none" },
+        paint: {
+          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 13, 14, 16, 34] as never,
+          "heatmap-intensity": 0.8, "heatmap-opacity": 0.55,
+          "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"],
+            0, "rgba(0,0,0,0)", 0.3, "#7c3aed", 0.6, "#f97316", 1, "#fde047"] as never,
+        } });
+      m.addLayer({ id: "hist-pt", type: "circle", source: "history", minzoom: 14.5,
+        layout: { visibility: "none" },
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 14.5, 3, 18, 7] as never,
+          // 실제 출동 → 현장 도착. 5분 · 8분 경계는 **표시용 가정값**이다(기준 문헌 없음)
+          "circle-color": ["case", ["!", ["has", "resp_s"]], "#64748b",
+            ["<=", ["get", "resp_s"], 300], "#22c55e",
+            ["<=", ["get", "resp_s"], 480], "#f59e0b", "#ef4444"] as never,
+          "circle-stroke-color": "#0b1220", "circle-stroke-width": 1.2,
+        } });
       m.addImage("pill", pillImage(), pillOptions);
       for (const id of ["preview", "preview-walk", "unit-routes"]) m.addSource(id, { type: "geojson", data: EMPTY });
 
@@ -171,6 +219,16 @@ export function OpsMap(props: Props) {
 
       for (const L of markerLayers()) m.addLayer(L);
       for (const L of stationLayers()) m.addLayer(L);
+      // ★ 글자 색은 글자 레이어가 **생긴 뒤에** 입힌다 — 앞에서 입히면 레이어가 없어 조용히 건너뛴다
+      //   (독립 검토 2026-09-22: 어두운 바탕에 밝은 테마 글자가 그대로 남았다)
+      //   건물 · 상호 이름은 **흰 알약** 위에 앉으므로 알약을 어둡게 하고 글자는 밝게 둔다
+      for (const id of ["lbl-road", "lbl-bldg", "lbl-poi", "lbl-station"]) {
+        if (!m.getLayer(id)) continue;
+        m.setPaintProperty(id, "text-color", DARK.label);
+        m.setPaintProperty(id, "text-halo-color", DARK.halo);
+        m.setPaintProperty(id, "text-halo-width", id === "lbl-road" || id === "lbl-station" ? 1.4 : 0);
+        if (id === "lbl-bldg" || id === "lbl-poi") m.setPaintProperty(id, "icon-opacity", 0.18);
+      }
       ready.current = true;
       const q = pending.current; pending.current = [];
       for (const f of q) f(m);
@@ -194,7 +252,10 @@ export function OpsMap(props: Props) {
       vis("ortho", L.ortho);
       vis("cctv-cov", L.cctvCov);
       vis("bldg", L.bldg && !L.ortho);
-      vis("bldg-roof", L.bldg && !L.ortho);
+      vis("bldg-flat", !L.bldg && !L.ortho);
+      vis("hist-heat", L.history);
+      vis("hist-pt", L.history);
+      vis("ctx", L.context);
       vis("road-area", !L.ortho);
       vis("sidewalk", !L.ortho);
       vis("seg-road", !L.ortho);

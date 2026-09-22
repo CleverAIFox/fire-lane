@@ -75,6 +75,8 @@ export function sources(dataUrl: string): StyleSpecification["sources"] {
     stations: { type: "geojson", data: dataUrl + "stations.geojson" },
     cctv: { type: "geojson", data: dataUrl + "cctv.geojson" },
     hydrants: { type: "geojson", data: dataUrl + "hydrants.geojson" },
+    // ★ §216-3. 과속방지턱 · 단속카메라 · 보호구역 시설 — 받아 두고 안 쓰던 데이터
+    context: { type: "geojson", data: dataUrl + "context.geojson" },
   };
 }
 
@@ -116,26 +118,27 @@ export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecificat
         "line-opacity": .85,
       } },
 
-    // 건물 — z(지반고) 위에 h(높이)만큼.
-    // ★ base 를 z 로 두지 않으면 경사지에서 뜨거나 묻힌다. 기복 86.6m.
-    { id: "bldg", type: "fill-extrusion", source: "buildings",
+    // 건물 — 땅(0)에서 h(높이)만큼.
+    // ★ 2026-09-22 (DECISIONS §216-2) 사용자 보고 「줌을 당기니 건물이 공중에 뜬다」.
+    //   종전에는 base 를 z(해발 지반고 5.5~130m · 중앙 16.6m)로 뒀다. 그것은 **지형을 켠**
+    //   옛 지도(web/js · setTerrain)의 규칙이고, 내비 · 관제는 지형을 안 켠다 — 평평한 땅
+    //   위에 건물이 16m 떠 있었다. 지형 없이 z 를 쓰지 않는다.
+    // ★ 지붕 판(`bldg-roof`)을 뺐다. 같은 12,736동을 **한 번 더** 압출하는 레이어였고,
+    //   소프트웨어 렌더에서 프레임 시간의 큰 몫이었다(§216-2 계측). 윗면 명도는
+    //   vertical-gradient 가 낸다.
+    { id: "bldg", type: "fill-extrusion", source: "buildings", minzoom: 14.5,
       paint: {
         "fill-extrusion-color": ["interpolate", ["linear"], ["get", "flo"],
           1, MAP.bldgLow, 12, MAP.bldgHigh],
-        "fill-extrusion-height": ["+", ["get", "z"], ["get", "h"]],
-        "fill-extrusion-base": ["get", "z"],
+        "fill-extrusion-height": ["get", "h"],
+        "fill-extrusion-base": 0,
         "fill-extrusion-opacity": 1,
         "fill-extrusion-vertical-gradient": true,
       } },
-    // 지붕 판 — 윗면을 밝게. 벽과 명도 차가 블록 윤곽을 세운다
-    { id: "bldg-roof", type: "fill-extrusion", source: "buildings",
-      paint: {
-        "fill-extrusion-color": MAP.roof,
-        "fill-extrusion-height": ["+", ["get", "z"], ["get", "h"], 0.6],
-        "fill-extrusion-base": ["+", ["get", "z"], ["get", "h"]],
-        "fill-extrusion-opacity": 1,
-        "fill-extrusion-vertical-gradient": false,
-      } },
+    // 평면 건물 — 관제(위에서 본 평면)용. 압출이 필요 없는 화면에서 압출 대신 켠다
+    { id: "bldg-flat", type: "fill", source: "buildings",
+      layout: { visibility: "none" },
+      paint: { "fill-color": MAP.roof, "fill-outline-color": MAP.bldgHigh } },
   ];
 }
 
@@ -251,6 +254,14 @@ export function markerLayers(): LayerSpecification[] {
         "icon-image": "ic-cctv", "icon-allow-overlap": true, "icon-pitch-alignment": "viewport",
         "icon-size": ["interpolate", ["linear"], ["zoom"], 16.5, .42, 19, .8] as never,
       } },
+    // ★ §216-3 주변 사정. 판정과 무관하다 — 작게, 가까이서만
+    { id: "ctx", type: "symbol", source: "context", minzoom: 16,
+      layout: {
+        "icon-image": ["match", ["get", "kind"],
+          "speedbump", "ic-bump", "speedcam", "ic-cam", "ic-zone"] as never,
+        "icon-allow-overlap": false, "icon-pitch-alignment": "viewport",
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 16, .34, 19, .62] as never,
+      } },
     { id: "lbl-road", type: "symbol", source: "segments", minzoom: Z.road,
       layout: {
         "symbol-placement": "line", "text-field": ["get", "road_name"],
@@ -345,6 +356,38 @@ export function cctvIcon(): ImageData {
   g.restore();
   g.fillRect(28, 56, 6, 16); g.fillRect(20, 68, 22, 6); // 기둥
   g.beginPath(); g.arc(34, 46, 4, 0, Math.PI * 2); g.fillStyle = "#facc15"; g.fill();
+  return g.getImageData(0, 0, n, n);
+}
+
+/** 과속방지턱 — 노란 마름모 안 둔덕(도로교통 안전표지의 모양) */
+export function bumpIcon(): ImageData {
+  const n = 96; const [, g] = canvas(n);
+  g.beginPath(); g.moveTo(48, 6); g.lineTo(90, 48); g.lineTo(48, 90); g.lineTo(6, 48); g.closePath();
+  g.fillStyle = "#facc15"; g.fill(); g.lineWidth = 6; g.strokeStyle = "#111827"; g.stroke();
+  g.beginPath(); g.moveTo(24, 60); g.quadraticCurveTo(48, 26, 72, 60); g.closePath();
+  g.fillStyle = "#111827"; g.fill();
+  return g.getImageData(0, 0, n, n);
+}
+
+/** 단속카메라 — 파란 원 안 카메라 */
+export function camIcon(): ImageData {
+  const n = 96; const [, g] = canvas(n);
+  g.beginPath(); g.arc(48, 48, 42, 0, Math.PI * 2);
+  g.fillStyle = "#2563eb"; g.fill(); g.lineWidth = 6; g.strokeStyle = "#ffffff"; g.stroke();
+  g.fillStyle = "#ffffff"; g.fillRect(24, 36, 40, 26);
+  g.beginPath(); g.moveTo(64, 42); g.lineTo(76, 34); g.lineTo(76, 64); g.lineTo(64, 56); g.fill();
+  g.beginPath(); g.arc(40, 49, 7, 0, Math.PI * 2); g.fillStyle = "#2563eb"; g.fill();
+  return g.getImageData(0, 0, n, n);
+}
+
+/** 보호구역 시설 — 흰 바탕 붉은 테 원(규제표지 모양) 안 사람 */
+export function zoneIcon(): ImageData {
+  const n = 96; const [, g] = canvas(n);
+  g.beginPath(); g.arc(48, 48, 42, 0, Math.PI * 2);
+  g.fillStyle = "#ffffff"; g.fill(); g.lineWidth = 9; g.strokeStyle = "#dc2626"; g.stroke();
+  g.fillStyle = "#111827";
+  g.beginPath(); g.arc(48, 30, 8, 0, Math.PI * 2); g.fill();
+  g.fillRect(42, 40, 12, 22); g.fillRect(38, 62, 8, 14); g.fillRect(50, 62, 8, 14);
   return g.getImageData(0, 0, n, n);
 }
 
