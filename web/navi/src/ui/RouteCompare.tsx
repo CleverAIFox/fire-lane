@@ -62,7 +62,7 @@ export function RouteCompare(p: Props) {
       )}
 
       <div style={{ fontSize: 11, color: C.panelSub, marginTop: 12, lineHeight: 1.5 }}>
-        폭 기준 판정 · 회전 및 높이 미반영 · 실시간 주정차 미반영
+        폭 기준 판정 · 회전 및 높이 미반영 · 주차 차량 미반영
       </div>
     </Sheet>
   );
