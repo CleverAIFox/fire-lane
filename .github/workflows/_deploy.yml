@@ -35,6 +35,11 @@ on:
         type: string
         required: false
         default: ""
+      dry-run:
+        description: "true 면 배포 직전까지만(업로드 · 배포 없음) — PR 시운전(§217-5)"
+        type: boolean
+        required: false
+        default: false
 
 # ★ 2026-09-19 (2차). 사슬이 **세 칸**이었다 —
 #     배포 넷 → `_deploy.yml` → `contract.yml`
@@ -65,10 +70,12 @@ jobs:
   # ★ 값: 배포마다 contract 가 한 번 더 돌아 ~2분 느려진다.
   #   릴리즈당 몇 번이니 받을 값이다.
   gate:
+    if: ${{ !inputs.dry-run }}
     uses: ./.github/workflows/contract.yml
     secrets: inherit
 
   deploy:
+    if: ${{ !inputs.dry-run }}
     needs: gate
     runs-on: ubuntu-latest
     environment:
@@ -88,36 +95,10 @@ jobs:
           cache-dependency-glob: "uv.lock"
       - run: uv sync --frozen --all-extras
 
-      - name: MASTER §12 → web/workflow.html
-        # ★ 넷 다 web/ 전체를 올리므로 여기서 생성하지 않으면 낡은 협업 방침이
-        #   배포된다. 생성과 배포를 가르지 않는다(2026-08-31).
-        run: uv run python tools/render_workflow.py
-
-      - name: 캐시 무효화 스탬프 주입
-        # ★ 저장소는 ?v=BUILD 로 두고 여기서 찍는다. 값은 view.json 의 build 로,
-        #   publish_web.py 가 쓰고 js/data.js 가 읽는 그 값이다. 정본이 하나다.
-        # ★ `grep -c` 를 남긴다. sed 가 아무것도 못 바꿔도 rc=0 이라, 치환이
-        #   실제로 일어났는지는 세어봐야 안다. 종전에는 pages 에만 있었다.
-        run: |
-          B=$(sed -n 's/.*"build": *"\([0-9a-f]*\)".*/\1/p' web/data/view.json)
-          test -n "$B" || { echo "view.json 에 build 가 없다"; exit 1; }
-          echo "스탬프 $B"
-          sed -i "s/?v=BUILD/?v=$B/g" web/index.html
-          grep -c "?v=$B" web/index.html
-
-      - uses: ./.github/actions/build-navi
+      - uses: ./.github/actions/stage-site
         with:
           mapbox-token: ${{ secrets.MAPBOX_TOKEN }}
-
-      - name: 배포 준비 (docs/proposal.docx → web/ · web/key.js 생성)
-        # ★ web/key.js 는 생성물이다. V-World 키를 저장소에 안 둔다.
-        #   로컬은 .env, 여기는 Secrets — stage_pages.py 한 곳이 읽는다.
-        # ★ 2026-09-18. 종전에는 이 env 가 pages.yml 에만 있었다.
-        # ★ 2026-09-22 (§216-5). `--deploy` 가 템플릿(playbook.html) · web/README.md 를 뺀다.
-        #   협업 방침은 workflow.html 하나로 뜬다. 렌더(위 단계)가 템플릿을 다 읽은 뒤라 안전하다.
-        run: uv run python tools/stage_pages.py --deploy
-        env:
-          VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
+          vworld-key: ${{ secrets.VWORLD_KEY }}
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v5
@@ -125,3 +106,36 @@ jobs:
           path: web
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # ★ 2026-09-22 (§217-5 · PLAN W3-15 닫음). PR 시운전 — 배포 **직전까지** 같은 본문을 태운다.
+  #   환경(github-pages)을 안 쓴다 — 보호 규칙이 main 밖을 막고, 시운전은 배포가 아니다.
+  #   시크릿이 없는 PR(봇 · 포크)에서도 돌도록 토큰이 비면 가짜 pk 로 짓는다 — 업로드하지 않는다.
+  dry:
+    if: ${{ inputs.dry-run }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.12.13"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - run: uv sync --frozen --all-extras
+      - uses: ./.github/actions/stage-site
+        with:
+          mapbox-token: ${{ secrets.MAPBOX_TOKEN || 'pk.dry-run-no-secret' }}
+          vworld-key: ${{ secrets.VWORLD_KEY }}
+      - name: 지은 사이트가 배포할 모양인가
+        run: |
+          set -e
+          for f in index.html workflow.html proposal.html navi/index.html key.js data/navi_graph.json; do
+            test -f "web/$f" || { echo "★ web/$f 가 없다 — 배포하면 빠진다"; exit 1; }
+          done
+          for f in playbook.html README.md; do
+            test ! -e "web/$f" || { echo "★ web/$f 가 남았다 — 배포에 안 실을 것이다(§216-5)"; exit 1; }
+          done
+          echo "시운전 OK — $(du -sh web | cut -f1)"
+

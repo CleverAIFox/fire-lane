@@ -126,6 +126,8 @@ export interface NaviGraph {
   style: Record<string, VerdictStyle>;
   nodes: LngLat[];
   edges: GraphEdge[];
+  /** 지형 — 정본은 `web/config.js` terrain(§217-2). 옛 그래프에는 없다 */
+  terrain?: { enabled: boolean; exaggeration: number };
   /** 회전 금지 `[들어오는 엣지, 노드, 나가는 엣지, TURN_TYPE]`. 옛 그래프에는 없다 */
   turns?: [number, number, number, number][];
 }
@@ -149,6 +151,8 @@ export interface View {
   minZoom?: number;
   maxZoom?: number;
   orthoBounds?: [number, number, number, number];
+  /** 지형 타일 범위(terrain.py). 없으면 지형을 안 켠다 */
+  terrainBounds?: [number, number, number, number];
   emdBounds?: [LngLat, LngLat];
 }
 

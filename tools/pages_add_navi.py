@@ -92,8 +92,13 @@ def check() -> int:
     if not f.exists():
         print("\u2717 _deploy.yml 이 없다 — 배포 본문의 정본이 사라졌다")
         return 1
-    if "./.github/actions/build-navi" not in f.read_text(encoding="utf-8"):
-        print("\u2717 _deploy.yml 에 build-navi 액션이 없다 — 배포에서 내비가 빠진다")
+    # ★ 2026-09-22 (§217-5). 본문이 `stage-site` 합성 액션으로 갔다 — 배포와 PR 시운전이 같이 쓴다.
+    #   사슬을 따라간다: _deploy.yml → stage-site → build-navi.
+    site = ROOT / ".github" / "actions" / "stage-site" / "action.yml"
+    body = f.read_text(encoding="utf-8")
+    if "./.github/actions/stage-site" not in body or not site.exists() \
+            or "./.github/actions/build-navi" not in site.read_text(encoding="utf-8"):
+        print("\u2717 _deploy.yml → stage-site → build-navi 사슬이 끊겼다 — 배포에서 내비가 빠진다")
         return 1
     # ★ 넷이 실제로 그 본문을 부르는가. 하나라도 안 부르면 그 경로는
     #   내비 없이 web/ 를 통째로 올려 나머지가 올린 내비를 지운다(pages.yml 머리말).
@@ -102,7 +107,7 @@ def check() -> int:
     if miss:
         print(f"\u2717 배포 워크플로가 _deploy.yml 을 안 부른다: {', '.join(miss)}")
         return 1
-    print("\u2713 _deploy.yml 이 build-navi 를 부르고 배포 넷이 그것을 부른다")
+    print("\u2713 _deploy.yml(→ stage-site)이 build-navi 를 부르고 배포 넷이 그것을 부른다")
     return 0
 
 

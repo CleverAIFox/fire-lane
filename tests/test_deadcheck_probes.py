@@ -29,6 +29,10 @@ test_deadcheck_probes.py — **검사가 죽었는가를 검사하는 도구**�
     5. ② 의 `판정코드` 분모가 `golden.judgment_files()` 와 같은 정본인가
     6. **양성 대조** — 프로브마다 합성 트리가 있는가 · 거기서 우는가 ·
        그리고 **대조 자신이 빈 그물이 아닌가**(프로브를 죽이면 집어내는가)
+    7. **천장이 전부 0 인가** · ①⑤ 의 면제가 죽어 있지 않고 사유가 있는가
+
+★ 2026-09-22 추가(PLAN §13 W10-1 닫힘). ①41 · ③15 · ⑤15 를 전수 분류해 전부
+  0 으로 내렸다. 7 은 그것이 다시 「미분류 천장」으로 돌아가지 않게 박는다.
 
 ★ 2026-09-21 추가(DECISIONS §208). 5 까지는 「프로브가 옳게 세는가」를 물었다.
   6 은 **「살아 있는가를 어디서 묻는가」**를 든다 — 그것을 실제 저장소의
@@ -85,16 +89,19 @@ def test_ratchet_covers_every_probe():
         f"프로브에만 {sorted(names - set(dc.CEILING))}")
 
 
-def test_handlist_ceiling_is_zero():
-    """② 는 래칫이 아니라 **0** 이다.
+def test_every_ceiling_is_zero():
+    """천장이 **전부 0** 인가.
 
-    ★ ①③⑤ 는 아직 한 건씩 본 적이 없어 래칫으로 둔다(「이만큼이 미분류다」).
-      ② 는 2026-09-20 에 59건 → 0건으로 전수 분류를 마쳤다. 분류가 끝난
-      프로브를 래칫으로 두면 **다시 들어와도 천장 안이라 안 운다.**
+    ★ ② 는 2026-09-20 에, ①③⑤ 는 2026-09-22 에 전수 분류를 마쳤다(PLAN §13 W10-1).
+      분류가 끝난 프로브를 0 보다 높은 래칫으로 두면 **다시 들어와도 천장 안이라
+      안 운다** — 그 천장이 곧 「미분류」의 다른 이름이었다. 의도된 좁음은 천장이
+      아니라 `EXEMPT_*` 표에 **사유와 함께** 적는다.
     """
-    assert dc.CEILING["② 손목록"] == 0, (
-        "② 의 천장이 0 이 아니다. 전수 분류가 끝난 프로브는 0 으로 내려온다 — "
-        "래칫에 남겨두면 새 손목록이 천장 안으로 조용히 들어온다.")
+    high = {k: v for k, v in dc.CEILING.items() if v}
+    assert not high, (
+        f"천장이 0 이 아닌 프로브 — {high}.\n"
+        "  새 건은 고치거나(진짜) · 프로브를 조이거나(오검) · 면제 표에 사유를 적는다(의도).\n"
+        "  천장을 올리는 것은 「안 봤다」를 다시 적는 것이다.")
 
 
 # ── 3 · 짝짓기 규칙 ─────────────────────────────────────────────
@@ -155,6 +162,49 @@ def test_every_exemption_states_a_reason():
     """면제마다 사유가 있는가. 사유 없는 면제는 그냥 구멍이다."""
     for name, why in dc.EXEMPT_HANDLIST.items():
         assert why and len(why) > 15, f"`{name}` 면제에 사유가 없다"
+
+
+# ── 7 · ①⑤ 면제 ─────────────────────────────────────────────────
+# 2026-09-22 (W10-1). ②의 면제 검사(위 4)와 같은 답을 ①⑤ 에도 건다.
+def _would_hit(table: dict, probe, key_of) -> set[str]:
+    live = dict(table)
+    table.clear()
+    dc.HITS.clear()
+    try:
+        probe()
+        return {k for h in dc.HITS if (k := key_of(h))}
+    finally:
+        table.update(live)
+        dc.HITS.clear()
+
+
+def _net_key(h):
+    m = re.match(r"(\w+)\(\) 가 (\w+) 항목을 `(\w+)`", h["what"])
+    return m and f"{h['file']}::{m.group(1)}::{m.group(2)}.{m.group(3)}"
+
+
+def _scope_key(h):
+    m = re.match(r"(\S+)\(\) 가 ", h["what"])
+    return m and f"{h['file']}::{m.group(1)}"
+
+
+@pytest.mark.parametrize("table,probe,key_of", [
+    (dc.EXEMPT_EMPTY_NET, dc.probe_empty_net, _net_key),
+    (dc.EXEMPT_SCOPE, dc.probe_narrow_scope, _scope_key),
+], ids=["① 빈 그물", "⑤ 좁은 범위"])
+def test_probe_exemptions_are_not_dead(table, probe, key_of):
+    """면제했는데 **실은 안 걸리는 것**이 있는가 — 죽은 면제는 거짓 기록이다."""
+    would = _would_hit(table, probe, key_of)
+    dead = sorted(set(table) - would)
+    assert not dead, (
+        f"면제가 죽었다 — {dead} 는 면제를 빼도 안 걸린다. 지워라.")
+
+
+@pytest.mark.parametrize("table", [dc.EXEMPT_EMPTY_NET, dc.EXEMPT_SCOPE],
+                         ids=["① 빈 그물", "⑤ 좁은 범위"])
+def test_probe_exemptions_state_a_reason(table):
+    for name, why in table.items():
+        assert why and len(why) > 30, f"`{name}` 면제에 사유가 없다"
 
 
 # ── 5 · 정본 ────────────────────────────────────────────────────
@@ -222,6 +272,29 @@ def test_the_control_catches_a_dead_probe(target):
         f"  대조가 낸 것: {dead}")
 
 
+@pytest.mark.parametrize("probe,build,files", [
+    ("③ 조용한 통과", "_fx_silent_pass", {"t.py", "swallow.py", "truthy.py"}),
+    ("⑤ 좁은 범위", "_fx_narrow_scope", {"only.py", "two.py"}),
+], ids=["③ 형태별", "⑤ 형태별"])
+def test_every_planted_form_is_caught(tmp_path, probe, build, files):
+    """대조에 심은 **형태마다** 우는가.
+
+    ★ 2026-09-22 재검토. 양성 대조는 「한 건이라도 우는가」만 묻는다 — 형태 셋 중
+      하나만 울어도 통과한다. 그래서 ⑤ 가 단일 폴더 훑기를 안 울게 됐을 때, 대조를
+      다중 폴더 형태로 **옮기는 것만으로** 초록이 유지됐다. 형태를 파일 하나씩에
+      심고 파일마다 우는지 본다 —
+        ③ `t.py`       except ImportError: return
+           `swallow.py` 함수 중간 `try: assert … except Exception: pass`
+           `truthy.py`  verify_* 가 예외 자리에서 return True
+        ⑤ `only.py`    tests **하나만** 훑는다 (이 프로브의 원래 표적)
+           `two.py`     src·tests 를 훑고 tools 를 빠뜨린다
+    """
+    getattr(dc, build)(tmp_path)
+    fn = dict(dc.PROBES)[probe]
+    got = {Path(h["file"]).name for h in dc.run_probe(fn, tmp_path)}
+    assert files <= got, f"{probe} 가 못 낸 형태 — {sorted(files - got)} (낸 것: {sorted(got)})"
+
+
 def test_selftest_does_not_read_the_real_tree_any_more():
     """`--selftest` 가 **실제 트리의 건수**를 다시 보게 되면 운다.
 
@@ -268,4 +341,4 @@ def test_dms_still_asks_liveness_not_the_ratchet():
     assert "--selftest" in line, (
         "`dms.py` 의 `PROBES` 가 `--selftest` 가 아니다.\n"
         "  거기는 **생사를 묻는 자리**다. 래칫을 부르면 봉인이 저장소 청결도에\n"
-        "  묶이고, 그러면 미분류 41건 때문에 영영 못 찍는다.")
+        "  묶인다 — 생사와 청결은 다른 물음이다(청결은 verify.sh · CI 의 `--ratchet`).")

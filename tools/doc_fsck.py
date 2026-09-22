@@ -436,15 +436,22 @@ def check_docx_revised() -> list[str]:
             ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(f)],
             cwd=ROOT, capture_output=True, text=True, timeout=10)
         last = r.stdout.strip()
-    except Exception:                                     # noqa: BLE001
-        return []
+    except Exception as e:                                # noqa: BLE001
+        # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전에는 `return []` —
+        #   git 이 죽으면 이 검사가 **초록**이었다. 얕은 저장소처럼 전제를
+        #   선언한 경우가 아니라 **못 잰 것**이므로 못 쟀다고 말한다.
+        return [f"{f.name} 의 마지막 수정 커밋일을 못 쟀다 — git log 실패: "
+                f"{type(e).__name__}: {e}"]
     if not last:
         return []
     try:
         import docx as _dx
         txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
-    except Exception:                                     # noqa: BLE001
-        return []
+    except Exception as e:                                # noqa: BLE001
+        # ★ 2026-09-22 (W10-1 · deadcheck ③). `python-docx` 는 선언된 의존성이다
+        #   (pyproject). 그것이 없거나 기획서가 안 열리면 표지를 못 읽은 것이지
+        #   표지가 맞는 것이 아니다 — 종전 `return []` 은 그 둘을 같게 읽었다.
+        return [f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"]
     shown = re.findall(r"20\d\d\.\s*\d{1,2}\.\s*\d{1,2}", txt)
     if not shown:
         return [f"{f.name} 표지에 날짜가 없다. 작성일과 최종 수정일을 적어라"]

@@ -49,8 +49,9 @@ def test_master_layer_table_matches_paths():
     """문서 표의 계층 이름이 paths.py 에 전부 있는가."""
     txt = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
     sec = txt.split("## 18-1. 계층", 1)
-    if len(sec) < 2:
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전 `if len(sec) < 2: return` — 절 제목이 바뀌면 이 검사가
+    #   **초록으로** 꺼졌다. 절이 없으면 운다.
+    assert len(sec) == 2, "MASTER 에 `18-1. 계층` 절이 없다 — 제목을 바꿨으면 여기도 옮겨라"
     body = sec[1].split("## 18-2", 1)[0]
     named = set(re.findall(r"^\| `(\w+)` \|", body, re.M))
     known = {n.lower() for n in DECLARED}

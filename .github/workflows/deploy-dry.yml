@@ -1,0 +1,33 @@
+# deploy-dry.yml — 배포 본문을 **PR 에서** 한 번 태운다. 업로드 · 배포는 안 한다.
+#
+# ★ 2026-09-22 (DECISIONS §217-5 · PLAN W3-15 닫음). 배포 넷(pages · docs · navi · proposal)은
+#   `push` 로 `main` 에 닿아야 비로소 돌았다. 본문이 깨져도 PR 은 초록이었고 v0.18 에서 넷이
+#   함께 죽었다(§196). 같은 본문(`_deploy.yml` → `stage-site`)을 `dry-run` 으로 부른다 —
+#   정적 린트(actionlint)가 못 보는 것(액션 입력 · 빌드 · 산출물 자리)을 여기서 본다.
+# ★ 권한은 배포 넷과 같게 준다 — 재사용 워크플로는 호출자보다 큰 권한을 못 가진다(§196-4).
+#   시운전 job 자체는 쓰기를 안 한다.
+name: 배포 시운전
+
+on:
+  pull_request:
+    branches: [main, dev, 'part/**']
+    paths:
+      - '.github/**'
+      - 'web/**'
+      - 'docs/MASTER.md'
+      - 'docs/proposal.docx'
+      - 'tools/render_workflow.py'
+      - 'tools/stage_pages.py'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  dry:
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      dry-run: true
+    secrets: inherit

@@ -44,7 +44,7 @@ export function addPoi(poi){
       "circle-color":poiColorExpr(),
       "circle-stroke-color":CONFIG.poi.haloColor,"circle-stroke-width":.6,
       "circle-opacity":.95}});
-  map.addLayer({id:"poi-label",type:"symbol",source:"poi",minzoom:CONFIG.poi.labelFromZoom,
+  map.addLayer({id:"poi-label",type:"symbol",source:"poi",minzoom:CONFIG.layers.poi.labelZoom,
     layout:{"text-field":["get","name"],"text-size":11,
       "text-offset":[0,.9],"text-anchor":"top","text-allow-overlap":false,
       "text-padding":3,"symbol-sort-key":["get","si"]},

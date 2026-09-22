@@ -64,6 +64,11 @@ def _map_ortho_zooms() -> tuple[int, int]:
     #   짰다가 「minzoom/maxzoom 이 없다」로 걸렸다 — 빈 그물 검사가 잡았다.
     body = src[i:i + 320]
     lo = re.search(r"minzoom\s*:\s*(\d+)", body)
+    # ★ 2026-09-22 (PLAN §13 W9-4). minzoom 은 이제 `CONFIG.layers.ortho.zoom` 을
+    #   읽는다 — 패널 토글 문구와 같은 값이다. 그 참조면 config.js 에서 값을 푼다.
+    if not lo and re.search(r"minzoom\s*:\s*CONFIG\.layers\.ortho\.zoom", body):
+        cfg = (ROOT / "web" / "config.js").read_text(encoding="utf-8")
+        lo = re.search(r"^\s*ortho\s*:\s*\{[^}\n]*\bzoom\s*:\s*(\d+)", cfg, re.M)
     hi = re.search(r"maxzoom\s*:\s*(\d+)", body)
     assert lo and hi, f"ortho 소스에 minzoom/maxzoom 이 없다 — {body[:80]}"
     return int(lo.group(1)), int(hi.group(1))

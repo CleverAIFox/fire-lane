@@ -904,6 +904,11 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
   90m 격자로는 잡을 수 없다.
 - 지도의 지형은 공개DEM 90m 를 보간한 **표현용**이다. `exaggeration` 기본값은
   1.0(실제 비율)이며, 올리면 표고가 왜곡되므로 발표에 쓸 때 명시한다.
+  내비 · 관제도 같은 타일을 쓴다(2026-09-22 · DECISIONS §217-2) — 내비는 지면 휨, 관제는 평면에서
+  음영 · 3D 에서 지면 휨. 과장 배수의 정본은 `web/config.js` terrain 블록 하나이고
+  `publish_navi` 가 그래프에 옮긴다. `?terrain=0` 이 끈다.
+- 표출용 건물은 도로면과 겹친 만큼 잘린다(`publish_web` · 겹침 1~50% 만). 원천 축척이 달라
+  생긴 겹침이고 판정은 폭 표본을 따로 재므로 무관하다(DECISIONS §217-3).
 - 정사영상의 미터 단위 정합은 **미검증**이다. TIF 에 경계좌표가 없어 도엽
   bbox(5179→5186) + 사방 균등 pad 를 가정했고 조대 정합만 확인했다.
 
@@ -925,35 +930,24 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 
 ## 8. 역할
 
-| 담당 | 파트 | 영역 |
-|---|---|---|
-| 김재웅 `@diyon13` | infra | PM · 파이프라인 · DB · 릴리즈 매니저 · `src/api/` · `infra/` |
-| 우지혜 `@marscoolcat` | gis | UI · 3D · `web/` 전반 · 소방서 인터뷰 · `part/gis` 통합 |
-| 이가연 `@gayeoniii` | cv | 캘리브레이션 · 호모그래피 · `src/cv/` |
-| 백진욱 `@wlsdnr052475` | cv | 세그멘테이션 · 데이터 소스 검증 |
-| 경계 | CI | `tests/test_contract.py` · `.github/CODEOWNERS` |
+**저장소 소유(리뷰 · 머지 권한)의 정본은 `.github/CODEOWNERS` 한 곳이다.** 이 절은 그것을
+베끼지 않는다 — 2026-09-20 전수 감사(PLAN §13 W3-2 · DECISIONS §204)에서 이 절의 담당표가
+든 개인 핸들 넷이 CODEOWNERS 에 **0회**였고, 표를 설명하던 산문(「`web/js/` 15개 파일을
+`@AIMasterFox` 단독」 · 「`@woongtopia/gis` 팀 줄」)도 둘 다 거짓이었다. 사본은 낡는다.
 
-파트 브랜치와 통합 담당은 §12 · §12-8c 가 든다. 소유권의 정본은
-`.github/CODEOWNERS` 이며, 소유자 없는 경로가 생기면
-`tests/test_ownership.py` · `tests/test_web_ownership.py` 가 잡는다.
+- 지금 CODEOWNERS 는 전 경로를 `@CleverAIFox` 단독으로 든다(2026-09-09 단독 소유 전환).
+  `# !strict` 표시는 보호 규칙이 따로 붙는 경로다
+- 소유자 없는 경로가 생기면 `tests/test_ownership.py` · `tests/test_web_ownership.py` 가 운다
+- 이 절에 `@핸들` 을 다시 적으면 `tests/test_declaration_sync.py::test_master_roles_do_not_copy_codeowners`
+  가 운다 — CODEOWNERS 에 없는 핸들이면 거짓이고, 있는 핸들이면 사본이다
 
-★ **오창준(`@AIMasterFox`)은 2026-09-03 에 이탈했다.** `@woongtopia/gis`
-팀으로 적힌 줄은 팀에서 빼는 것만으로 리뷰가 남은 팀원에게 넘어간다 —
-`sources.yaml` · `src/firelane/` · `data/` · `docs/` · `web/data/` 가 그쪽이다.
+팀 구성(5인 1조 · 기획 · 조사 · 실측 · UI)은 기획서(`docs/proposal.docx` 표0)가 정본이다.
+**팀 구성과 저장소 소유는 다른 축이다** — 기획서의 다인 서술과 CODEOWNERS 의 1인 소유는
+모순이 아니다. 기획서 표0 은 그 구절(「아래 역할은 기획 당시 기준이며, 저장소 코드 소유 · 리뷰는
+2026-09-09 부터 1인 단독」)을 `tools/docx_fix.py` 규칙으로 든다(2026-09-22 · DECISIONS §217-5).
 
-★ **개인 핸들로 적힌 줄은 넘어가지 않는다.** `CODEOWNERS` 는 `web/js/` 아래
-**15개 파일을 `@AIMasterFox` 단독**으로 든다. 이탈자를 소유자로 적은 줄을
-GitHub 은 **조용히 무시하므로** 그 경로는 보호되는 것처럼 보이면서 리뷰
-없이 머지된다. 같은 파일 §5 가 그 이유를 이미 적고 있다 —
-*"개인이 아니라 팀 핸들로 두는 이유는 소유자가 이탈하면 그 줄이 죽기
-때문이다."* `PLAN #79` 가 이 이관을 든다.
-
-★ **`web/js/` 의 GIS 로직 담당이 공백이다.** 판정 렌더링 · 데이터 접근 ·
-레이어가 그쪽이며 이관 전까지 소유자가 없다(`PLAN #80`).
-
-★ **데이터 실물 3.5GB 는 2026-09-02 에 우지혜에게 넘어갔다**(§14-7).
-파이프라인은 이제 **우지혜 로컬에서 돈다.** `FIRE_LANE_DATA` 가 그 기계의
-경로를 가리키며, CI 는 데이터를 만들지 않는다(§12-7).
+파트 브랜치와 통합 담당은 §12 · §12-8c 가 든다. 파이프라인은 `FIRE_LANE_DATA` 가 가리키는
+기계에서 돌고, CI 는 데이터를 만들지 않는다(§12-7 · §14-7).
 
 ---
 
@@ -1421,7 +1415,8 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 된다
 | 빈 화면, 콘솔 CORS | `file://` 로 열었다. 서버로 띄울 것 |
 | 판정 색이 안 보임 | 콘솔 확인. `map.getLayer("seg-l")` 존재 여부 |
 | 미니맵이 안 뜸 | **줌 16 이상**에서만 뜬다. `map.getZoom()` 확인 |
-| 지형이 안 보임 | `map.getTerrain()` 이 `null` 이면 미적용 |
+| 지형이 안 보임 | `map.getTerrain()` 이 `null` 이면 미적용. 내비 · 관제는 `?terrain=0` 이면 끈다 |
+| 관제 판정선 테두리 · 점선이 없음 | 레이어 식이 무효면 MapLibre 가 조용히 건너뛴다 — `npm run test` 의 style 시험이 본다 |
 | 건물이 납작함 | 줌 14.4 미만이다 |
 | 소화전 수가 문서와 다름 | 산출물이 정본이다. §3-12 참조 |
 | 콘솔에 `DOM 없음:` | `index.html` 에서 지운 요소를 `web/js` 가 참조한다 |
@@ -1792,6 +1787,7 @@ fix:  버그
 | `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` · `build-navi/action.yml` | ↓ |
 | `기획서 배포` (`proposal.yml`) | `main` 의 `docs/proposal.docx` · `web/proposal.html` · `stage_pages.py` · `build-navi/action.yml` | ↓ |
 | `_deploy.yml` | **자기 시점이 없다.** 위 넷이 `workflow_call` 로 부른다 | 넷의 공용 본문 — 내비 빌드 · 스탬프 주입 · `web/` **전체** 배포 |
+| `deploy-dry.yml` | main · dev · part/** 로 가는 **PR** (`.github/**` · `web/**` · MASTER · 기획서 · 렌더 · 준비 도구) | 배포 본문(`_deploy.yml` → `stage-site`)을 `dry-run` 으로 태운다 — 업로드 · 배포 없이 산출물 자리까지 본다(DECISIONS §217-5 · 옛 PLAN W3-15) |
 
 ★ **워크플로 이름은 촉발 조건이지 배포 대상이 아니다.** 둘 다 사이트
 전체를 올린다. Pages 는 저장소당 사이트가 하나라, 한쪽이 부분만 올리면

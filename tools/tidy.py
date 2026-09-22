@@ -33,11 +33,13 @@ PARAM 아래 RULES
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import subprocess
 from pathlib import Path
 
 from firelane.console import col, human
+from firelane.generated import for_role
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -82,12 +84,9 @@ RULES: list[tuple[str, list[str], str]] = [
 ]
 
 # ★ 여기 있는 것은 어떤 규칙에 걸려도 안 지운다. 마지막 안전장치다.
-NEVER = ("data/raw", "data/norm", "data/field", "web/data",
-         "data/processed/segments.geojson",
-         "data/processed/segments.schema.json",
-         "data/processed/_manifest.json",
-         "data/processed/seg_uid_map.csv",
-         "data/golden", "data/baseline", ".git",
+#   생성물 몫의 정본은 firelane/generated.py 의 역할 "never-delete" 다(W3-13).
+NEVER = ("data/raw", "data/norm", "data/field",
+         *for_role("never-delete"), ".git",
          # ★ 2026-08-23. `.venv` 를 뺐다. `**/__pycache__` 가 그 안을 훑어
          #   site-packages 캐시 130여 건이 목록에 올라왔다. 셋 다 나쁘다.
          #     · uv 가 관리하는 영역이다. 남의 살림을 건드리는 셈이다
@@ -138,7 +137,7 @@ def scan_git() -> tuple[list[tuple[str, str]], list[str], list[str]]:
     cur = (sh("git", "rev-parse", "--abbrev-ref", "HEAD") or ["?"])[0]
     for ln in sh("git", "branch", "--merged") or []:
         b = ln.replace("*", "").strip()
-        if b and b != cur and b not in ("main", "master", "gis"):
+        if b and b != cur and not KEEP_BRANCH.match(b):
             merged.append(b)
 
     # 3. 원격에서 사라진 추적 참조 (git remote prune 대상)
@@ -147,6 +146,13 @@ def scan_git() -> tuple[list[tuple[str, str]], list[str], list[str]]:
             stale_remote.append(ln.split()[-1])
 
     return gone, merged, stale_remote
+
+
+#: 오래 사는 가지 — 머지됐어도 안 지운다. `branch_tidy.sh` 의 KEEP_RE 와 같은 집합이다.
+#: ★ 2026-09-22 (DECISIONS §217-4 · 독립 검토). `fl.sh` 11단계가 `part/infra` 위에서 이것을
+#:   `--yes` 로 부르게 되자 종전 목록(main · master · gis)으로는 릴리즈 뒤 늘 머지 상태인
+#:   `dev` · `part/gis` · `part/cv` 를 지웠다. 원격에서 되살릴 수 있어도 두 도구가 서로 어긋난다.
+KEEP_BRANCH = re.compile(r"^(main|master|dev|gis|part/.+)$")
 
 
 # ── 실행 ───────────────────────────────────────────────────────

@@ -475,9 +475,17 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     elif kind == "dbf_in_zip":               # 회전제한 — 지오메트리 없음
         p = next(unzip_own(src, tmp).rglob(e["layer"]))      # §181-4 — 그 zip 폴더 안에서만
         t = gpd.read_file(p).drop(columns="geometry", errors="ignore")
-        # 동명동 노드로 한정 (node_point가 먼저 만들어져 있어야 함)
+        # 동명동 노드로 한정 — node_point 산출물을 읽는다.
+        # ★ 2026-09-22 (DECISIONS §217-1 · PLAN §13 W11-1 닫음). 종전에는 산출물이 **없으면
+        #   거르지 않고** 전국 44,125행을 냈다. 대장 순서상 node_point 가 앞이지만 그것이 FAIL 로
+        #   격리(.stale_)되면 조용히 전국분이 나왔다 — 파이프라인 행수 관문(`pipeline` 의 87)이
+        #   늦게 잡을 뿐이었다. 원인 자리에서 멈춘다.
         np_path = OUT / "node_point_5186.gpkg"
-        if np_path.exists() and "NODE_ID" in t.columns:
+        if "NODE_ID" in t.columns:
+            if not np_path.exists():
+                raise FileNotFoundError(
+                    f"{key}: node_point_5186.gpkg 가 없다 — 회전제한을 동명동 노드로 못 거른다. "
+                    "node_point 를 먼저 ingest 한다(대장 순서 · --retry-failed)")
             ids = set(gpd.read_file(np_path)["NODE_ID"])
             t = t[t["NODE_ID"].isin(ids)]
         t.to_csv(

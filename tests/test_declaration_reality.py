@@ -49,6 +49,7 @@ import re
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -311,8 +312,9 @@ def test_field_exempt_has_no_ghosts():
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     field = ROOT / "data" / "field"
-    if not field.exists():
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). `data/field/` 는 추적된다(fieldsheet 등). 종전
+    #   `if not field.exists(): return` 은 폴더가 사라지면 역방향 검사를 초록으로 껐다.
+    assert field.exists(), "data/field/ 가 없다 — 추적 폴더다"
     real = {p.name for p in field.iterdir() if p.is_file()}
     ghost = sorted(n for n in m.FIELD_EXEMPT if n not in real)
     assert not ghost, (
@@ -340,7 +342,10 @@ def test_raw_only_is_true_to_the_lake():
 
     norm = Path(NORM)
     if not norm.exists():
-        return  # 레이크가 없다. CI 다.
+        # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전 `return` — CI 에서 **통과**로 셌다. 판정하지
+        #   않은 것은 skip 이다. 분류된 사유라 레이크가 붙은 기계에서는 skip 정책이
+        #   이것을 실패로 바꾼다(tests/skip_policy.py).
+        pytest.skip("환경skip(레이크) — 레이크 미마운트 · norm 없음")
 
     led = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
     have = {f.name for f in norm.rglob("*") if f.is_file()}

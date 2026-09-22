@@ -7,7 +7,10 @@
 import { S } from "../state.js";
 import { $ } from "../dom.js";
 
-export function renderStats({seg, bld, hyd, cctv, poi}){
+/* ★ 2026-09-22 (PLAN §13 W9-5). 건물·상가·CCTV·영상판정 가능 네 줄을 패널에서
+   내렸다 — 관제사가 그것으로 취할 조치가 없다(tooltip.js 머리말의 기준).
+   갱신 코드도 함께 걷었다. 자리 없는 id 를 채우는 코드는 test_contract 가 잡는다. */
+export function renderStats({seg, hyd}){
   const VIEW = S.VIEW;
   /* ★ 2026-09-20 (PLAN §1 #62). 총수 하나만 찍으면 1,281 중 동명동이
      416 이라는 사실이 안 보인다. 세 층을 그대로 찍는다 — 문장을 늘리지
@@ -20,17 +23,11 @@ export function renderStats({seg, bld, hyd, cctv, poi}){
   $("#s-seg").textContent = tier.join(" · ");
   $("#s-seg").title = `대상지 ${tier[0]} · 회랑 ${tier[1]} · 참고 ${tier[2]}`
     + ` (합 ${seg.features.length})`;
-  $("#s-bld").textContent = bld.features.length.toLocaleString();
   const inEmd = hyd.features.filter(f => {
     const [x, y] = f.geometry.coordinates;
     const [[a, b2], [c, d]] = VIEW.emdBounds;
     return x >= a && x <= c && y >= b2 && y <= d;
   }).length;
   $("#s-hyd").textContent = `${inEmd} / ${hyd.features.length}`;
-  const cams = cctv.features.reduce((a,f)=>a+(f.properties.카메라대수||0),0);
-  $("#s-cctv").textContent = `${cctv.features.length} / ${cams}`;
-  $("#s-poi").textContent = poi.features.length.toLocaleString();
-  const feas = seg.features.filter(f=>f.properties.cv_feasible).length;
-  $("#s-cv").textContent = `${feas} / ${seg.features.length} (${(feas/seg.features.length*100).toFixed(0)}%)`;
   /* 폭 밴드(#band)는 화면에서 내렸다(2026-08-18). 갱신 코드도 함께 제거했다. */
 }

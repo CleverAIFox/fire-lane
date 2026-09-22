@@ -44,8 +44,11 @@ export function createMap(VIEW){
            25cm 원본이 실제로 보이는 줌이 z19 라, 지우는 대신 읽는다.
            tests/test_tile_zoom_agreement.py 가 셋(ortho.py · 여기 · desk_check.py)을
            대조한다 — 값을 고치는 것은 인스턴스고 그 검사가 족이다. */
+        /* ★ 2026-09-22 (W9-4). minzoom 은 CONFIG.layers.ortho.zoom 이다 —
+           패널 토글 「항공영상 (25cm · 줌15+)」이 읽는 **같은 값**이다.
+           여기 숫자를 다시 박으면 토글 문구와 지도가 또 갈라진다. */
         ortho:{type:"raster",tiles:["./data/ortho/{z}/{x}/{y}.jpg"],
-          tileSize:256, minzoom:15, maxzoom:19, bounds:VIEW.orthoBounds || TB,
+          tileSize:256, minzoom:CONFIG.layers.ortho.zoom, maxzoom:19, bounds:VIEW.orthoBounds || TB,
           attribution:"항공정사영상 국토지리정보원"},
         /* 지형. terrain.py 가 구운 Terrain-RGB 타일이다.
            이 소스를 setTerrain 에 물려야 지면이 실제로 휜다.

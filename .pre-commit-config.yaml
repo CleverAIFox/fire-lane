@@ -27,7 +27,8 @@
 # ★ GENERATED 는 절대 건드리지 않는다. `_manifest.json` ·
 #   `segments.fingerprint.json` 은 **바이트 sha256** 으로 계보를 대조한다.
 #   개행 하나만 붙어도 sha 가 바뀌어 lineage 가 교착에 빠진다(2026-08-21 실측).
-#   아래 `exclude` 의 정본은 `tools/encoding_check.py` 의 `GENERATED` 다.
+#   아래 `exclude` 의 정본은 `src/firelane/generated.py` 의 역할 "encoding" 이다
+#   (W3-13). YAML 이라 import 를 못 해서 `tests/test_generated_registry.py` 가 같은지를 든다.
 
 exclude: |
   (?x)^(

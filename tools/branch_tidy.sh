@@ -4,6 +4,13 @@
 #   bash tools/branch_tidy.sh              대화형 — 열린 PR 닫기 · 원격 가지 · 로컬 가지 (단계마다 y/N)
 #   bash tools/branch_tidy.sh --auto       비대화 — fl.sh 가 배치 끝에 부른다
 #   bash tools/branch_tidy.sh --keep feat/x   이 가지(와 그 PR)는 건드리지 않는다
+#   bash tools/branch_tidy.sh --auto --close-bots   ★ fl.sh 기본 — 봇(dependabot) PR 은 닫고 가지도 지운다
+#
+# ★ 2026-09-22 (DECISIONS §217-4) `--close-bots`. 사용자 지적 「PR 도 열린 거 닫고 가지 정리도
+#   해야 할 거 아니냐」. 봇 PR 은 흐름(feat → part → dev → main) 밖이라 **그대로 머지할 길이
+#   없고**(§212-3), 매 배치 끝에 「열린 PR 5」 경고로 남았다. 봇 것만 자동으로 닫는다 —
+#   사람 PR 은 여전히 대화형에서만 닫는다(남의 작업일 수 있다). 메이저 판은 dependabot 이
+#   이미 안 내고(§215-3), 보안 업데이트는 닫혀도 다음 주기에 다시 온다.
 #
 # ★ 지키는 것: main · dev · part/infra · part/gis · part/cv · --keep · 태그 전부.
 #
@@ -20,10 +27,12 @@ set -euo pipefail
 REPO=CleverAIFox/fire-lane
 KEEP_RE='^(main|dev|part/infra|part/gis|part/cv)$'
 AUTO=0
+BOTS=0
 EXTRA=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --auto) AUTO=1; shift ;;
+    --close-bots) BOTS=1; shift ;;
     --keep) EXTRA+=("$2"); shift 2 ;;
     *) echo "모르는 인자: $1" >&2; exit 2 ;;
   esac
@@ -62,16 +71,26 @@ if [ "$HAVE_GH" = 0 ]; then
   echo "   gh 로그인이 없다 — PR 은 못 본다"; WARN=1
 else
   mapfile -t PRS < <(gh pr list -R "$REPO" --state open --limit 200 \
-    --json number,headRefName,baseRefName,title \
-    --jq '.[] | "\(.number)\t\(.headRefName)\t\(.baseRefName)\t\(.title)"')
+    --json number,headRefName,baseRefName,title,author \
+    --jq '.[] | "\(.number)\t\(.headRefName)\t\(.baseRefName)\t\(.author.login)\t\(.title)"')
+  BOTPR=()
   for l in "${PRS[@]:-}"; do
     [ -z "$l" ] && continue
-    IFS=$'\t' read -r n head base title <<<"$l"
+    IFS=$'\t' read -r n head base who title <<<"$l"
     if keep "$head"; then printf '   지킴  #%s  %s → %s\n' "$n" "$head" "$base"; continue; fi
     printf '   열림  #%-4s %-52s → %-6s %s\n' "$n" "$head" "$base" "$title"
     CLOSE+=("$n")
+    case "$who" in *dependabot*) BOTPR+=("$n") ;; esac
   done
-  if [ ${#CLOSE[@]} -eq 0 ]; then echo "   열린 PR 없음"
+  if [ "$AUTO" = 1 ] && [ "$BOTS" = 1 ] && [ ${#BOTPR[@]} -gt 0 ]; then
+    for n in "${BOTPR[@]}"; do
+      gh pr close "$n" -R "$REPO" --delete-branch \
+        --comment "정리 — 봇 PR 은 흐름(feat → part → dev → main) 밖이다. 올릴 때는 feat 배치로 다시 낸다 (DECISIONS §212-3 · §217-4)." \
+        && echo "   ✓ 봇 #$n 닫음" || echo "   ! #$n 닫기 실패 — 계속한다"
+    done
+    mapfile -t CLOSE < <(printf '%s\n' "${CLOSE[@]}" | grep -vxF -f <(printf '%s\n' "${BOTPR[@]}") || true)
+  fi
+  if [ ${#CLOSE[@]} -eq 0 ] || [ -z "${CLOSE[0]:-}" ]; then echo "   열린 PR 없음(사람 것)"
   elif [ "$AUTO" = 1 ]; then
     echo "   ★ --auto 는 PR 을 닫지 않는다. 닫으려면: bash tools/branch_tidy.sh"; WARN=1
   elif ask "위 ${#CLOSE[@]} 개를 닫고 원격 가지도 지운다. 진행?"; then

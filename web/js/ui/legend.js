@@ -34,9 +34,12 @@ export function buildVerdictLegend(seg){
     `<div class="lg" data-v="${k}" title="${v.d}">
        <i class="sw" style="background:rgb(${vColor(k)})"></i>
        <span class="nm">${v.nm}</span><span class="ct">${cnt[k]||0}</span></div>`).join("");
-  /* #warn(도면 기반 1차 분류 단서)과 #crit-msg(판정 보류 폭 차이 문구)는
-     패널에서 내렸다(2026-08-18). 채울 자리가 없어 계산도 함께 걷어냈다.
-     ★ 되살리려면 index.html 에 자리를 만들고 이 블록을 복구할 것. git 이력에 있다. */
+  /* #crit-msg(판정 보류 폭 차이 문구)는 패널에서 내렸다(2026-08-18). 채울 자리가
+     없어 계산도 함께 걷어냈다. 되살리려면 index.html 에 자리를 만들고 이 블록을
+     복구할 것. git 이력에 있다.
+     ★ #warn 은 **패널에 있다**(index.html 의 정적 문구 「도면 기반 1차 분류」).
+       2026-08-18 에 내린 것은 여기서 채우던 동적 문구뿐이다. #warn 자체는
+       verdict.js 머리말이 지우지 말라고 명시한다(PLAN §13 W9-5 에서 존치 확인). */
 
   document.querySelectorAll(".lg").forEach(el=>el.onclick=()=>{
     const k=el.dataset.v;

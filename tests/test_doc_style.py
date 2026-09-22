@@ -214,8 +214,8 @@ def test_doc_enum_vocabulary_matches_golden():
       UI 담당이 그 표를 기준으로 구현하면 매칭이 성립하지 않는다
       (DECISIONS §67 — 마커 아키텍처 리팩).
     """
-    if not GOLDEN.exists():
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 골든은 추적 파일이다. 종전 `return` 은 지워지면 초록이었다.
+    assert GOLDEN.exists(), f"{GOLDEN.relative_to(ROOT)} 가 없다 — 추적 파일이다"
     L1 = json.loads(GOLDEN.read_text(encoding="utf-8"))["L1"]
     master = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
     bad: list[str] = []

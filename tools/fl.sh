@@ -3,7 +3,7 @@
 #
 #   bash "$FIRE_LANE_INBOX/fl.sh" <브랜치> --all     ← 평소. INBOX 의 부트스트랩이 이 파일을 부른다
 #   bash tools/fl.sh <브랜치>              적용 + 전수 verify 까지 (멈춘다)
-#   bash tools/fl.sh <브랜치> --all        위 + PR + CI 대기 + 스쿼시 + dev PR + 릴리즈 + 가지 정리
+#   bash tools/fl.sh <브랜치> --all        위 + PR + CI 대기 + 스쿼시 + dev PR + 릴리즈 + 가지 정리(봇 PR 닫기) + 위생
 #   bash tools/fl.sh <브랜치> --undo       가지를 지우고 원상복구
 #   bash tools/fl.sh <브랜치> --resume     끊긴 자리부터 잇는다 (PR · CI · 스쿼시 · 방송 · 정리)
 #
@@ -33,7 +33,7 @@
 #   붙일 값어치가 있는 기능은 여기가 아니라 그쪽으로 간다. 여기 있는 것은
 #   **순서와 전제 확인**뿐이고, 그것이 이 파일이 존재하는 유일한 이유다.
 set -uo pipefail
-VERSION=2026-09-22.5
+VERSION=2026-09-22.6
 
 # ── 자기 복사 → 재실행 ────────────────────────────────────────
 if [ -z "${FL_RELOCATED:-}" ]; then
@@ -420,4 +420,12 @@ fi                            # ── dev PR · 방송 끝 ──
 step "10. 정리 — tools/branch_tidy.sh --auto"
 git fetch -q --prune origin
 git switch -q "$BASE" 2>/dev/null && git merge -q --ff-only "origin/$BASE" 2>/dev/null
-bash tools/branch_tidy.sh --auto || warn "정리가 경고를 냈다 — 위를 읽어라"
+bash tools/branch_tidy.sh --auto --close-bots || warn "정리가 경고를 냈다 — 위를 읽어라"
+
+# ══ 11. 위생 ══════════════════════════════════════════════════
+# ★ 2026-09-22 (§217-4) 사용자 지시 「wsl 위생 파이프라인도 돌리자」. 청소 도구는 이미 있었다
+#   (janitor = hygiene 기계 · tidy 저장소 · sweep 레이크) — 배치 끝에 **부르는 곳이 없었다.**
+#   저장소 층(tidy)은 자기 근거로 지운다. 기계 · 레이크 층은 보고만 한다 — 지우는 판단은 사람이.
+step "11. 위생 — tools/tidy.py --yes · tools/janitor.sh"
+uv run python tools/tidy.py --yes || warn "tidy 가 경고를 냈다"
+bash tools/janitor.sh || warn "janitor 가 경고를 냈다 — 위 표를 읽어라"

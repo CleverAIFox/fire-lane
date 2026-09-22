@@ -66,7 +66,6 @@ EXEMPT = {
     "baseline": "봉인. 사람이 시점을 정한다",
     "triage": "대장 밖 파일을 내용으로 판정. Downloads·landing 을 본다",
     # ── 2026-09-20. 검사 범위를 `.sh` · `.mjs` 까지 넓히며 드러났다.
-    "janitor": "청소 도구 셋(tidy · sweep · lakecheck)의 **입구 하나**다.\n             셋은 verify.sh 가 각각 부르므로 입구를 또 걸면 세 번 돈다.\n             읽기만 하고 사람이 한 표로 보려고 부른다(README)",
 }
 
 CALLERS = ("tools/verify.sh", "tools/ship.py")

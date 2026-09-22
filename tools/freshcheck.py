@@ -54,6 +54,8 @@ import subprocess
 import sys
 from typing import Any
 
+from firelane.generated import for_role
+
 # 실행마다 반드시 달라지는 필드. 내용이 아니다.
 # ★ `firelane.manifest.STAMP_KEYS` 와 같은 뜻이다. 합치지 않은 이유 —
 #   그쪽은 「쓸까 말까」를 정하고 이쪽은 「왜 바뀌었나」를 말한다. 같은
@@ -235,7 +237,8 @@ def selftest() -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--paths", nargs="*", default=["web/data", "data/processed"])
+    # 기본값의 정본은 firelane/generated.py 의 역할 "fresh" 다(W3-13).
+    ap.add_argument("--paths", nargs="*", default=list(for_role("fresh")))
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     if a.selftest:

@@ -151,6 +151,19 @@ def main():
     b = b[b.intersects(move)].copy()
     b["flo"] = b.GRO_FLO_CO.fillna(1).astype(float).clip(lower=1)   # 0층 291동 → 1층
     b["h"] = (b.flo*3.3).round(1)
+    # ★ 2026-09-22 (DECISIONS §217-3) 사용자 보고 「건물과 길이 겹친다」. 도로명주소 건물 면과
+    #   수치지형도 도로 면이 서로 다른 측량이라 12,736동 중 370동이 발자국의 5% 넘게 도로 위에
+    #   있었다(154동은 20% 넘게). 화면에서는 건물이 차도를 먹었다. **표시용으로** 건물에서 도로 면을
+    #   뺀다. 발자국 절반 넘게 도로 위인 건물은 자르지 않는다 — 복개 구조물이거나 한쪽 자료가
+    #   틀린 것이라, 자르면 건물이 사라진다. 판정 입력(`building_5186.gpkg`)은 그대로다.
+    from firelane import publish_basemap as _bm
+    _road = _bm.union("road_area", move)
+    _ov = b.geometry.intersection(_road).area / b.geometry.area.where(b.geometry.area > 0, 1)
+    _cut = (_ov > 0.01) & (_ov <= 0.5)
+    b.loc[_cut, "geometry"] = b.loc[_cut, "geometry"].difference(_road).buffer(0)
+    # 잘라서 부스러기(2㎡ 미만)만 남은 것만 버린다 — 원래 작은 건물은 건드리지 않는다
+    b = b[~(_cut & (b.geometry.is_empty | (b.geometry.area < 2.0)))].copy()
+    print(f"  건물 · 도로 겹침 {int(_cut.sum())}동 잘라냄 · 절반 넘게 도로 위 {int((_ov > 0.5).sum())}동은 그대로")
     cols = ["BUL_MAN_NO","BULD_NM","flo","h"] + (["z"] if "z" in b.columns else [])
     b = b[cols+["geometry"]]
     b.to_crs(4326).to_file(W/"buildings.geojson", **PREC)
@@ -415,8 +428,8 @@ def main():
     #   먼저 뜨면 지문이 즉시 낡는다.
     # ★ 2026-08-24. index.html 을 더 이상 고치지 않는다.
     #
-    #   이 파일은 CODEOWNERS 상 @marscoolcat @AIMasterFox 공동 소유다.
-    #   그런데 여기서 스탬프를 주입하면 **판정이 바뀔 때마다** 그 파일이
+    #   (당시 이 파일은 CODEOWNERS 상 UI 담당 소유였다 — 지금 정본은 CODEOWNERS.)
+    #   여기서 스탬프를 주입하면 **판정이 바뀔 때마다** 그 파일이
     #   바뀌고, GIS 가 파이프라인만 돌려도 UI 리뷰가 걸린다.
     #   스탬프가 내용 해시라 잡음이 아니라 **의미 있는 작업을 한 그
     #   순간에만** 걸린다. 더 나쁘다.

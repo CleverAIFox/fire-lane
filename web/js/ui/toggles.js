@@ -36,9 +36,46 @@ export function syncCctvSign(){
   S.map.setLayoutProperty(l, "visibility", on ? "visible" : "none");
 }
 
+/* ── 레이어 토글 이름 ─────────────────────────────────────────
+   ★ 2026-09-22 (PLAN §13 W9-4). index.html 의 토글 행은 자리(data-t)만 두고
+     이름은 CONFIG.layers 에서 조립한다. 줌·해상도를 문자열로 박아 두면
+     지도(map.js · poles.js · poi.js)가 읽는 값과 갈라진다 — 실제로 그랬다.
+   예: {label:"항공영상", res:"25cm", zoom:15} → "항공영상 (25cm · 줌15+)"
+       {label:"상가", labelZoom:17}            → "상가 (상호 줌17+)" */
+export function layerLabel(decl){
+  if (!decl) return "";
+  const bits = [
+    decl.res,
+    decl.zoom      != null ? `줌${decl.zoom}+` : null,
+    decl.labelZoom != null ? `상호 줌${decl.labelZoom}+` : null,
+  ].filter(Boolean);
+  return bits.length ? `${decl.label} (${bits.join(" · ")})` : decl.label;
+}
+
+function fillLayerLabels(){
+  const L = CONFIG.layers || {};
+  document.querySelectorAll("#panel .row[data-t]").forEach(r => {
+    const decl = L[r.dataset.t];
+    if (!decl) return;               // 마커 행은 buildToggleRows 가 markers[].label 로 채운다
+    const span = r.querySelector("span");
+    if (span) span.textContent = layerLabel(decl);
+  });
+  /* 이름 없는 행은 빈 스위치로 남는다 — 조용히 넘기지 않는다. */
+  document.querySelectorAll("#panel .row[data-t] > span").forEach(s => {
+    if (!s.textContent.trim())
+      console.warn(`토글 이름 없음: data-t="${s.parentElement.dataset.t}" — CONFIG.layers 에 선언할 것`);
+  });
+}
+
+/* ★ 모듈 평가 시점에 한 번 채운다. main.js 는 데이터를 await 한 뒤에야
+     buildToggleRows 를 부르므로, 데이터나 지도 생성이 실패하면 이름 없는
+     스위치만 남는다 — 문자열이 index.html 에 있던 시절엔 없던 퇴행이다.
+     모듈 스크립트는 defer 로 돌므로 이 시점에 패널 DOM 은 이미 있다. */
+if (typeof document !== "undefined") fillLayerLabels();
+
 export function buildToggleRows(){
   const host = document.getElementById("mk-toggles");
-  if (!host) return;
+  if (!host) { fillLayerLabels(); return; }
   [...CONFIG.markers].reverse().forEach(m => {
     const d = document.createElement("div");
     d.className = "row"; d.dataset.t = m.id;
@@ -55,6 +92,7 @@ export function buildToggleRows(){
       host.appendChild(c);
     }
   });
+  fillLayerLabels();
 }
 
 export function bindToggles(){

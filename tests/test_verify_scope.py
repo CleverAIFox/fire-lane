@@ -186,3 +186,19 @@ def test_code_scope_covers_everything_that_moves_output() -> None:
         assert need in pats, (
             f"`{need}` 가 CODE_SCOPE 에 없다 — 그 층을 고친 배치가 파이프라인을\n"
             "  안 돌고 초록이 뜬다. 봉인 code 는 uv.lock 까지, cfg 는 대장까지 센다.")
+
+
+#: 영향 범위 선언 수의 **바닥**. 올리기만 한다(래칫). 옛 PLAN §13 W7-3 이 대장 행으로 들던 것을
+#: 수로 옮겼다 — 래칫은 결함이 아니라 숫자다(DECISIONS §217-5). 2026-09-22 에 23 → 33.
+SCOPE_FLOOR = 33
+
+
+def test_scope_declarations_ratchet() -> None:
+    """선언이 바닥 밑으로 내려가지 않는가. ★ `pytest` · `커버리지 래칫` 은 안전망이라 늘 미선언이다."""
+    import re
+    r = subprocess.run(["bash", str(VERIFY), "--scope-list"],
+                       capture_output=True, text=True, cwd=ROOT, timeout=120)
+    m = re.search(r"선언 (\d+) · 미선언 (\d+) · 단계 (\d+)", r.stdout)
+    assert m, "--scope-list 가 합계 줄을 안 낸다"
+    n = int(m.group(1))
+    assert n >= SCOPE_FLOOR, f"영향 범위 선언 {n} < 바닥 {SCOPE_FLOOR} — 선언을 지웠거나 단계가 빠졌다"

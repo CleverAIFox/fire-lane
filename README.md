@@ -227,13 +227,15 @@ uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간
 uv run python tools/golden.py              리팩 전후 산출물 동일 증명
 bash tools/merge_batch.sh [--release]       배치 PR 머지 → 파트 동기화 (적용 스크립트가 초록일 때만)
 bash tools/fl.sh <feat/x> [--all|--undo|--resume]  ★ 배치 한 명령 — 적용 · verify · PR · 스쿼시 · 방송 · 정리
-bash tools/branch_tidy.sh [--auto]          열린 PR · 원격/로컬 가지 정리 (--auto 는 되돌릴 수 없는 일을 안 한다)
+bash tools/branch_tidy.sh [--auto] [--close-bots]  열린 PR · 원격/로컬 가지 정리 · 봇 PR 닫기 (fl.sh 10단계가 부른다)
 bash tools/inbox_fl.sh                      INBOX 에 `fl.sh` 로 두는 부트스트랩 — 패치 안 판을 골라 부른다
 ```
 
 ★ 배치는 INBOX 에서 이렇게 돈다: `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
   INBOX 의 `fl.sh` 는 `tools/inbox_fl.sh` 사본이고, 진짜 도구는 **패치 안(없으면
   origin/part/infra)의 `tools/fl.sh`** 다(DECISIONS §214-1).
+★ 배치 끝의 두 단계 — 10 가지 정리(`branch_tidy.sh --auto --close-bots` · 봇 PR 을 사유 댓글과 닫는다) ·
+  11 위생(`tidy.py --yes` · `janitor.sh`). 사람이 기억해서 치던 것이다(DECISIONS §217-4).
 ★ 중간에 끊겼으면 `--resume`. 어디까지 됐는지는 GitHub PR 상태로 가린다 — feat PR 이
   열려 있으면 CI 대기부터, 머지됐으면 dev PR · 방송 · 정리부터(DECISIONS §215-3).
 
@@ -494,7 +496,8 @@ web/
 대장        `datasets` 72종 · `retired` 4종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
-            edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test)
+            edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)
+            vite 8(rolldown) · 지형(Terrain-RGB) 지면 휨 · 모든 레이어를 style-spec 검증기로 본다
 관제        web/navi/?view=ops — 새 GIS. 옛 지도(web/js)는 철거 대기(DECISIONS §214-5)
 KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 (42%)
 ```

@@ -62,7 +62,16 @@ echo
 echo "  ★ 커밋 시점 방어 — 전역 훅이 .githooks/pre-commit 을 후보로 찾아 부른다."
 echo "    설치할 것은 없다. 도달만 확인해라 —"
 echo "      bash .githooks/global-chain.sh --check"
-echo
-echo "  ★ 파이프라인 전량은 데이터 레이크가 붙은 기계에서만 돈다."
-echo "    FIRE_LANE_DATA 가 비어 있으면 verify 가 그 단계를 **실패**로 낸다."
-echo "    (2026-09-18 배치 0 — 덮는 관문이 없는 생략은 통과가 아니다)"
+
+# ── 환경변수 — **비었을 때만** 말한다 ──────────────────────────
+# ★ 2026-09-22 (DECISIONS §217-5 · PLAN W3-18 ③ 닫음). 머리말이 「FIRE_LANE_INBOX 가 한쪽에만
+#   설정됨」을 이 파일의 생성 이유로 드는데, 종전에는 조건 없이 늘 같은 안내를 찍어 **신호가
+#   아니었다.** 값은 기계마다 달라 박을 수 없으므로(`containerEnv` 에 못 넣는다) 읽는 자리
+#   (`paths.env` — 단일 독자)로 물어 **빈 것만** 이름을 댄다.
+MISSING=$(uv run python -c 'from firelane import paths; print(" ".join(k for k in ("FIRE_LANE_DATA", "FIRE_LANE_INBOX") if not paths.env(k)))')
+if [ -n "$MISSING" ]; then
+    echo
+    echo "  ★ 설정 안 됨: $MISSING"
+    echo "    .env 에 적는다 (cp .env.example .env). FIRE_LANE_DATA 가 비면 verify 가"
+    echo "    파이프라인 단계를 **실패**로 낸다(덮는 관문이 없는 생략은 통과가 아니다)."
+fi

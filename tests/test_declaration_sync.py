@@ -68,7 +68,7 @@ def _verdict_rule() -> list[str]:
 #   `pages.yml` 에는 `tools/` 호출이 하나도 안 남았다 — 빼면 `render_workflow.py` ·
 #   `stage_pages.py` 가 이 검사의 그물 밖으로 나간다. 부르는 자리를 따라간다.
 CALLERS = (".github/workflows/contract.yml", ".github/workflows/pages.yml",
-           ".github/workflows/_deploy.yml",
+           ".github/workflows/_deploy.yml", ".github/actions/stage-site/action.yml",
            "tools/verify.sh", "tools/ship.py")
 
 
@@ -509,9 +509,9 @@ def test_defect_ledger_ids_are_unique():
 # ★ 대장에 담긴 경로 표기 중 **파일이 아닌 것.** 사유를 적는다.
 #   비어 있어도 된다 — 아래 `test_ledger_exemptions_are_not_dead` 가
 #   「면제했는데 실은 안 걸리는 것」을 지운다.
-LEDGER_NOT_A_PATH = {
-    "MASTER/12-8": "W3-5 가 **제안하는 ID 표기**다. 위치 기반 `MASTER-082` 를 "
-                   "제목 경로로 바꾸자는 것이고, 파일 경로가 아니다",
+LEDGER_NOT_A_PATH: dict[str, str] = {
+    # 2026-09-22 — `MASTER/12-8`(W3-5 가 제안한 `dms` 절 ID 표기)이 여기 있었다. W3-5 가 닫히며
+    # 그 행이 지워져 더는 인용되지 않는다.
 }
 
 # 경로처럼 보이는 백틱 토큰 — 슬래시가 하나 이상 있어야 한다
@@ -664,3 +664,21 @@ def test_plan_section1_count_agrees():
     assert declared == real, (
         f"§1 의 수가 갈렸다 — 제목 {declared}행 · 실제 표 {real}행\n"
         "  정본은 **표**다. 제목을 고쳐라.")
+
+
+def test_master_roles_do_not_copy_codeowners():
+    """MASTER §8 은 CODEOWNERS 를 베끼지 않는다 (PLAN §13 W3-2 닫힘 · DECISIONS §217-5).
+
+    2026-09-20 감사에서 §8 담당표의 개인 핸들 넷이 CODEOWNERS 에 0회였고 설명 산문 둘도
+    거짓이었다. 소유의 정본은 CODEOWNERS 하나다 — §8 에 `@핸들` 이 다시 나오면 운다.
+    CODEOWNERS 에 없는 핸들이면 거짓이고, 있는 핸들이면 낡을 사본이다.
+    """
+    master = (ROOT / "docs" / "MASTER.md").read_text(encoding="utf-8")
+    s8 = master[master.index("\n## 8. 역할\n"):master.index("\n## 9. ")]
+    body = re.sub(r"`[^`]*`", "", s8)            # 인용(과거 거짓 문구 · 정본 이름)은 뺀다
+    handles = re.findall(r"(?<![\w/])@[A-Za-z0-9][\w-]*(?:/[\w-]+)?", body)
+    assert not handles, f"MASTER §8 이 CODEOWNERS 핸들을 베낀다: {sorted(set(handles))}"
+    owners = set(re.findall(r"@[\w-]+(?:/[\w-]+)?", (ROOT / ".github" / "CODEOWNERS").read_text(encoding="utf-8")))
+    quoted = set(re.findall(r"`(@[A-Za-z0-9][A-Za-z0-9-]*(?:/[A-Za-z0-9-]+)?)`", s8))
+    assert quoted - owners <= {"@AIMasterFox", "@woongtopia/gis"}, \
+        f"§8 이 인용한 핸들 중 CODEOWNERS 에도 없고 과거 인용도 아닌 것: {quoted - owners}"

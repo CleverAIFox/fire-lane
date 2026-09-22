@@ -21,6 +21,14 @@ docx_check.py — 기획서가 산출물과 어긋나지 않는가.
 숫자가 그것과 다르면 **산출물이 옳다**(MASTER §0-3).
 
     구간 수 · 판정 4종 · 총연장 · 폐기된 경로·기술명
+    ⑤ 정방향  `docx_fix` 규칙이 아직 바꿀 것이 있는가 — 있으면 기획서가 산출물보다 낡았다
+    ⑥ 역방향  규칙의 **닻**이 문서에 남았는가 — 찾을 것도 바꾼 결과도 없으면 배선이 떨어졌다
+    ⑦ 참조    기획서가 드는 저장소 경로 · 파일 이름이 실재하는가
+
+★ 2026-09-22 (PLAN §13 W4-2 닫힘 · DECISIONS §217-5) — ⑤⑥⑦ 을 더했다. 종전엔 ①~④ 만 봐서
+  「회색」 문단의 1,101 세대 수치 열한 자리가 **초록으로 통과했다**(구간 수 · 판정 4종만 봤다).
+  고치는 쪽(`docx_fix`)과 잡는 쪽이 따로 놀면 잡는 쪽이 늘 좁다. 그래서 잡는 쪽이 고치는 쪽의
+  규칙을 **그대로 돌려** 본다 — 규칙 목록이 하나다.
 
 ★ 모든 숫자를 보지 않는다. 시장 통계·법령 조항·비용 산정은 산출물과
   무관하며, 그것까지 검사하면 거짓 경보로 사람이 검사를 끈다.
@@ -161,6 +169,41 @@ def audit(p: Path) -> list[str]:
             if name in txt:
                 bad.append(f"  [{where}] 폐기: `{name}` — {why}\n"
                            f"      …{txt.strip()[:70]}…")
+
+    # ── 5 · 6 · 정방향 · 역방향 — 고치는 쪽의 규칙을 그대로 돌린다 ──
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_docx_fix", ROOT / "tools" / "docx_fix.py")
+    fx = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fx)
+    full = "\n".join(txt for _, txt in cells)
+    for rx, rep, why in fx.rules():
+        hits = [(w, x) for w, x in cells if re.search(rx, x)]   # docx_fix 와 같은 플래그(re.M 없음)
+        changed = [(w, x) for w, x in hits if re.sub(rx, rep, x) != x]
+        for w, x in changed[:3]:
+            bad.append(f"  [{w}] 정방향 — `docx_fix` 가 아직 바꾼다({why}). `tools/docx_fix.py --write`\n"
+                       f"      …{x.strip()[:70]}…")
+        plain = re.sub(r"\\g<\d+>", "", rep).replace("&lt;", "<").strip()
+        if not hits and plain and plain not in full:
+            bad.append(f"  역방향 — 닻이 떨어진 규칙: `{rx[:50]}` → 찾을 것도 바꾼 결과도 문서에 없다({why})")
+
+    for anchor, new, why in fx.inserts():
+        if anchor not in full and new not in full:
+            bad.append(f"  역방향 — 닻이 떨어진 삽입: `{anchor[:40]}` 도 넣을 문단도 문서에 없다({why})")
+        elif new not in full:
+            bad.append(f"  정방향 — 넣을 문단이 아직 없다: `{new[:40]}…` `tools/docx_fix.py --write`")
+
+    # ── 7 · 참조 — 기획서가 드는 저장소 경로 · 파일이 실재하는가 ──
+    #   `data/` 아래는 저장소 밖(FIRE_LANE_DATA)이라 뺀다. 파일 이름은 추적 파일의 이름과 대조한다
+    import subprocess
+    tracked = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True).stdout.split()
+    names = {Path(x).name for x in tracked}
+    for m in sorted(set(re.findall(r"(?<![\w/.])((?:src|tools|web|docs|tests|infra|\.github)/[\w./-]+)", full))):
+        q = m.rstrip(".")
+        if tracked and not (ROOT / q).exists():
+            bad.append(f"  참조 — 기획서가 드는 경로가 없다: `{q}`")
+    for m in sorted(set(re.findall(r"\b[\w-]+\.(?:py|js|ts|tsx|yml|yaml)\b", full))):
+        if tracked and m not in names:
+            bad.append(f"  참조 — 기획서가 드는 파일이 저장소에 없다: `{m}`")
 
     return bad
 

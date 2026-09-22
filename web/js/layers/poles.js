@@ -1,13 +1,13 @@
 /* Fire-Lane · 가로등 폴
    ════════════════════════════════════════════════════════════
-   수치지형도 1:1,000 의 가로등 폴(C0220000) 1,143점. 실제 위치다.
+   수치지형도 1:1,000 의 가로등 폴(C0220000) 천여 점(개수는 web/data/lightpoles.geojson). 실제 위치다.
 
    ★ 왜 가로등이 두 개인가.
 
        streetlights    46지점 · 573등    공공데이터포털(광주 동구).
                                          **지번 대표점이라 ±50m 오차.**
                                          등 수 · 관리번호는 이쪽이 정본이다
-       lightpoles   1,143점              수치지형도. **실제 폴 위치.**
+       lightpoles   천여 점               수치지형도. **실제 폴 위치.**
                                          구분만 있고 등 수는 없다
 
      둘은 같은 것의 다른 판이 아니라 **다른 데이터**다. 위치를 보려면
@@ -16,12 +16,12 @@
      말해준다.
 
    ★ 왜 3D 마커가 아닌가.
-     `markers.js` 는 시설을 fill-extrusion 으로 세운다. 1,143개를 그렇게
+     `markers.js` 는 시설을 fill-extrusion 으로 세운다. 천여 개를 그렇게
      하면 무겁고, 무엇보다 소화전 11개 · CCTV 104지점과 **위계가 같아진다.**
      가로등은 배경 정보다. `poi.js` 처럼 점으로 깐다.
 
    ★ 줌 16 아래에서는 그리지 않는다.
-     1,143개가 한 화면에 깔리면 그 자체가 소음이 되어 판정선을 가린다.
+     천여 개가 한 화면에 깔리면 그 자체가 소음이 되어 판정선을 가린다.
      이 지도의 결론은 판정이고 가로등은 맥락이다.
 
    기여 요청: @marscoolcat — 야간 연출의 재료가 여기 있다.
@@ -48,7 +48,7 @@ export function addPoles(poles) {
      circle-blur 가 줌에 따라 크기가 흔들리기 때문이다. */
   map.addLayer({
     id: "pole-glow", type: "circle", source: "poles",
-    minzoom: CONFIG.poles.fromZoom,
+    minzoom: CONFIG.layers.poles.zoom,
     paint: {
       "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 3, 20, 11],
       "circle-color": poleColorExpr(),
@@ -59,7 +59,7 @@ export function addPoles(poles) {
 
   map.addLayer({
     id: "pole-dot", type: "circle", source: "poles",
-    minzoom: CONFIG.poles.fromZoom,
+    minzoom: CONFIG.layers.poles.zoom,
     paint: {
       "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 1.2, 20, 2.8],
       "circle-color": poleColorExpr(),

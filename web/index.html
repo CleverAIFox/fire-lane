@@ -38,7 +38,7 @@
   </div>
 
   <!-- 출동 모드. 갈 수 있는 길만 남기고 나머지를 죽인다. @marscoolcat -->
-  <div class="row dispatch" data-t="dispatch"><span>🚒 출동 모드 — 갈 수 있는 길 강조</span><i class="tg"></i></div>
+  <div class="row dispatch" data-t="dispatch"><span></span><i class="tg"></i></div>
 
   <!-- 기준 차량. 화면설계서 FRLN_DISP_02 의 관제 화면판이다.
        ★ 설계 원칙 5 — 기준 차량을 항상 밝힌다. 기준을 안 밝힌 수치는 뜻을
@@ -52,42 +52,47 @@
   <div id="legend"></div>
 
   <h2>레이어</h2>
-  <div class="row" data-t="buildings"><span>건물 3D</span><i class="tg on"></i></div>
+  <!-- ★ 2026-09-22 (PLAN §13 W9-4). 토글 행은 자리(data-t)만 둔다. 이름·줌·해상도는
+       config.js 의 CONFIG.layers 가 유일한 선언이고 js/ui/toggles.js 가 채운다.
+       여기에 「항공영상 25cm (줌 15↑)」처럼 문구를 다시 적지 말 것 — 지도가 읽는
+       minzoom 과 갈라진다(실제로 그랬다). tests/test_web_labels.py 가 막는다. -->
+  <div class="row" data-t="buildings"><span></span><i class="tg on"></i></div>
   <!-- ★ 2026-08-23. 가로등 폴 1,143점(수치지형도 C0220000).
        마커가 아니라 점 레이어라 mk-toggles 밖에 둔다. -->
-  <div class="row" data-t="poles"><span>가로등 폴 (줌 16↑)</span><i class="tg on"></i></div>
+  <div class="row" data-t="poles"><span></span><i class="tg on"></i></div>
   <!-- 마커 토글은 CONFIG.markers 로 app.js 가 생성한다.
        여기에 손으로 나열하면 마커를 추가할 때마다 두 곳을 고쳐야 한다. -->
   <div id="mk-toggles"></div>
-  <div class="row" data-t="ortho"><span>항공영상 25cm (줌 15↑)</span><i class="tg"></i></div>
-  <div class="row" data-t="poi"><span>상가 (줌 17↑ 상호)</span><i class="tg on"></i></div>
-  <div class="row" data-t="terrain"><span>지형 굴곡</span><i class="tg on"></i></div>
-  <div class="row" data-t="mask"><span>스코프 밖 가리기</span><i class="tg on"></i></div>
-  <div class="row" data-t="theme"><span>라이트 모드</span><i class="tg"></i></div>
+  <div class="row" data-t="ortho"><span></span><i class="tg"></i></div>
+  <div class="row" data-t="poi"><span></span><i class="tg on"></i></div>
+  <div class="row" data-t="terrain"><span></span><i class="tg on"></i></div>
+  <div class="row" data-t="mask"><span></span><i class="tg on"></i></div>
+  <div class="row" data-t="theme"><span></span><i class="tg"></i></div>
 
   <h2>시설</h2>
   <div class="mk fac"><i style="background:#e2221c"></i>119안전센터(소방차) · 소방서(119) · 소화전</div>
   <div class="mk"><i id="lgi-cctv" style="background:#ffd24a"></i>CCTV <span>지주 + 하우징</span></div>
   <div class="mk"><i style="background:#3fb8d8"></i>가로등 <span>지주 + 등기구</span></div>
-  <div class="note" style="padding:2px 7px;margin-top:2px">
-    마커는 실제 형상 비율로 세웠고 크기는 2~3배 과장했습니다.
-    실물 치수(소화전 0.9m)로는 화면에서 보이지 않습니다.
-    CCTV 표지판은 출동 모드에서만 표시됩니다.</div>
+  <!-- ★ 2026-09-22 (PLAN §13 W9-5). 기준은 tooltip.js 머리말 — 관제사가 그것으로
+       취할 조치가 없으면 뺀다. 「형상 비율·2~3배 과장·소화전 0.9m」는 표현 방식의
+       해명이라 뺐다. 남긴 한 줄은 조치가 있다 — 표지판이 안 보이면 출동 모드를 켠다. -->
+  <div class="note" style="padding:2px 7px;margin-top:2px">CCTV 표지판은 출동 모드에서만 보입니다.</div>
 
   <h2>상가 업종</h2>
   <!-- 색표는 CONFIG.poi.color 로 app.js 가 생성한다. 손으로 나열하면 어긋난다. -->
   <div id="poi-legend"></div>
-  <div class="note" style="padding:2px 7px;margin-top:2px">
-    지도에서 길을 짚을 때 쓰는 표시입니다. 판정과는 무관합니다.
-    줌 17 이상에서 상호가 뜹니다.</div>
+  <!-- ★ 2026-09-22 (W9-5). 상가 설명 두 문장을 뺐다. 「길 짚기용·판정 무관」은
+       업종 색이 판정 4색과 겹치지 않게 골라져 있어(config.js poi) 색이 대신 말하고,
+       「줌 17 이상 상호」는 토글 이름(CONFIG.layers.poi)이 같은 값을 이미 든다. -->
 
   <h2>산출</h2>
-  <div class="stat"><span>세그먼트(대상지·회랑·참고)</span><b id="s-seg">–</b></div>
-  <div class="stat"><span>건물</span><b id="s-bld">–</b></div>
-  <div class="stat"><span>소화전(동명동/전체)</span><b id="s-hyd">–</b></div>
-  <div class="stat"><span>상가(지상 1층)</span><b id="s-poi">–</b></div>
-  <div class="stat"><span>CCTV 지점/카메라</span><b id="s-cctv">–</b></div>
-  <div class="stat"><span>영상판정 가능</span><b id="s-cv">–</b></div>
+  <!-- ★ 2026-09-22 (W9-5). 여섯 줄에서 둘로. 건물 수 · 상가 수 · CCTV 지점/카메라 ·
+       영상판정 가능 비율은 산출 규모이지 관제사의 판단 재료가 아니다(뺀 이유는
+       tooltip.js 의 「건물 사이 폭」과 같다). 남긴 둘 —
+         구간 세 층   어디가 대상지인가(§1 #62 · tests/test_scope_tiers.py)
+         소화전       동명동 안 소화전이 몇 개인가 — 급수 계획이 곧 조치다 -->
+  <div class="stat"><span>구간 (대상지·회랑·참고)</span><b id="s-seg">–</b></div>
+  <div class="stat"><span>소화전 (동명동/전체)</span><b id="s-hyd">–</b></div>
 </aside>
 
 <div id="minimap"></div>

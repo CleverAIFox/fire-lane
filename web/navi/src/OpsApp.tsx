@@ -65,7 +65,7 @@ export default function OpsApp() {
   const [picking, setPicking] = useState(false);
   const [stationId, setStationId] = useState<string>("0");
   const [layers, setLayers] = useState<OpsLayers>({
-    ortho: false, reach: true, cctvCov: false, bldg: false, history: false, context: false,
+    ortho: false, reach: true, cctvCov: false, bldg: false, history: false, context: false, terrain: true,
   });
   const [history, setHistory] = useState<{ summary?: HistorySummary } | null>(null);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
@@ -319,7 +319,7 @@ export default function OpsApp() {
 
         {/* ══ 중앙 — 지도(북쪽 위 · 평면) ═══════════════════════════ */}
         <main style={mapBox}>
-          <OpsMap view={data.view} style={style} layers={layers} hidden={hidden}
+          <OpsMap view={data.view} terrain={data.graph.terrain} style={style} layers={layers} hidden={hidden}
                   reachable={reach} incident={incident?.point ?? null}
                   preview={plan?.plan?.coords ?? null}
                   previewWalk={plan?.plan && incident ? [plan.plan.coords[plan.plan.coords.length - 1], incident.point] : null}
@@ -354,6 +354,7 @@ export default function OpsApp() {
               ["cctvCov", "CCTV 영상판정 반경 25m"],
               ["ortho", "항공정사영상 25cm"],
               ["bldg", "3D 건물(비스듬히)"],
+              ["terrain", "지형(음영 · 3D 에서 지면 휨)"],
             ] as [keyof OpsLayers, string][]).map(([k, t]) => (
               <label key={k} style={toggleRow}>
                 <input type="checkbox" checked={layers[k]} onChange={() => setLayers((L) => ({ ...L, [k]: !L[k] }))} />

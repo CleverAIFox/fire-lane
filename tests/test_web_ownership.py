@@ -36,12 +36,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from firelane.generated import for_role
+
 ROOT = Path(__file__).resolve().parent.parent
 
 # CODEOWNERS 가 사람 소유로 선언한 web 파일. 코드가 쓰면 안 된다.
 HUMAN_OWNED = ["web/index.html", "web/style.css", "web/config.js",
                "web/README.md"]
-GENERATED_DIR = "web/data"
+(GENERATED_DIR,) = for_role("web-out")   # 정본은 firelane/generated.py (W3-13)
 
 
 def test_repo_index_html_has_no_baked_stamp():
@@ -66,10 +68,16 @@ def test_pipeline_does_not_write_human_owned_web_files():
     WRITE = re.compile(r"write_text|write_bytes|\.open\(\s*[\"']w|to_file|"
                        r"open\([^)]*[\"']w[\"']")
     bad = []
-    for p in sorted((ROOT / "src").rglob("*.py")):
+    # ★ 2026-09-22 (§217-5 · deadcheck ⑤). src 는 파일명 조각으로, tools 는 **경로**로 본다 —
+    #   tools 는 제 산출 폴더에 `README.md` 를 쓰는 것이 정상이라(`baseline.py`) 조각 대조는 오검이다.
+    #   `web` 이 같은 줄에 있어야 web 파일이다.
+    for root, need_web in ((ROOT / "src", False), (ROOT / "tools", True)):
+      for p in sorted(root.rglob("*.py")):
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
             code = line.split("#", 1)[0]
             if not WRITE.search(code):
+                continue
+            if need_web and "web" not in code:
                 continue
             for f in HUMAN_OWNED:
                 name = f.rsplit("/", 1)[1]
@@ -87,8 +95,8 @@ def test_codeowners_covers_every_web_path():
     소유자 없는 파일은 아무나 고치고 아무도 리뷰하지 않는다.
     """
     co = ROOT / ".github/CODEOWNERS"
-    if not co.exists():
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 추적 파일이다. 종전 `return` 은 지워지면 초록이었다.
+    assert co.exists(), ".github/CODEOWNERS 가 없다 — 추적 파일이다"
     owned = [l.split()[0].strip("/")
              for l in co.read_text(encoding="utf-8").splitlines()
              if l.strip() and not l.lstrip().startswith("#")]
@@ -122,7 +130,8 @@ def test_codeowners_covers_every_web_path():
 def test_generated_web_data_is_not_hand_editable():
     """web/data 산출물에 '손으로 고치지 마라' 가 적혀 있는가."""
     m = ROOT / GENERATED_DIR / "_manifest.json"
-    if not m.exists():
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). `_manifest.json` 은 생성물이지만 **추적된다**(clone 직후에도
+    #   있다). 종전 `return` 은 지워지면 경고 검사를 초록으로 껐다.
+    assert m.exists(), f"{m.relative_to(ROOT)} 가 없다 — 추적되는 생성물이다"
     assert "손으로 고치지 마라" in m.read_text(encoding="utf-8"), \
         "web/data/_manifest.json 에 생성물 경고가 없다"

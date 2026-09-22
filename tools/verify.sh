@@ -357,6 +357,8 @@ step "pytest" uv run pytest tests/ -q --cov=src --cov=tools --cov-report=
 # ★ 2026-08-22 에 155 → 0 으로 정리했다. 이제 참고가 아니라 게이트다.
 #   되돌아가면 여기서 죽는다. 스타일 규칙 6종은 pyproject 에서 껐고
 #   끄는 근거를 각각 적어뒀다.
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "src/* tools/* tests/* pyproject.toml .ruff-strict.toml"
 step "ruff" uv run ruff check src tools tests
 
 # ── 5a. 엄격 린트 — CI 의 contract-strict 와 같은 것 ─────────
@@ -371,6 +373,8 @@ step "ruff" uv run ruff check src tools tests
 #
 # ★ 대상 파일은 CI 와 같은 도구가 낸다(`owned_paths.py --py-only`).
 #   CODEOWNERS 단독 소유 경로만이라, 공동 소유 파일에는 엄격 규칙을 안 건다.
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "src/* tools/* tests/* pyproject.toml .ruff-strict.toml"
 step "엄격 린트 (CI 와 같은 인자)" bash -c '
     # ★ 인자를 여기 적지 않는다. 정본은 .ruff-strict.toml 이고 CI 도 같은
     #   파일을 읽는다. 종전에는 contract.yml 을 grep 으로 긁었는데 주석의
@@ -405,6 +409,8 @@ step "엄격 린트 (CI 와 같은 인자)" bash -c '
 #   동안 깨진 채로 main 까지 갔다(DECISIONS §196). actionlint 는 YAML 파싱
 #   너머의 것을 본다 — 표현식 · 액션 참조 · 셸 인젝션.
 #   커밋된 잠금으로 깔리므로 CI 에서도 같은 판이 돈다(면제 아님).
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope ".github/* pyproject.toml uv.lock"
 step "워크플로 린트"    uv run actionlint
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
@@ -431,6 +437,8 @@ step "pre-commit 전수"  uv run pre-commit run --all-files
 #     전역 훅은 저장소 밖 파일이라 이 저장소가 설치할 수 없다. 실제 절차는
 #     `global-chain.sh --check` 가 미설정일 때 직접 찍는다(`:44-51`).
 # ci-exempt: .githooks/global-chain.sh 전역 훅(~/.githooks)은 기계 설정이다. CI 러너에는 없다
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope ".githooks/*"
 step "훅 전역 연결"    bash .githooks/global-chain.sh --check
 # ★ 2026-09-18 (W2). 3족의 클래스 가드. 로컬에만 있는 검사기를 센다.
 #   CI 도 같은 명령을 돈다 — 규칙을 두 곳에 적는 것이 아니라 같은 도구가
@@ -442,7 +450,11 @@ step "훅 전역 연결"    bash .githooks/global-chain.sh --check
 #   **로컬 초록 · CI 빨강**이 났다.
 #   이제 면제는 위 `# ci-exempt:` 선언 여덟이 들고, 숫자는 `gate_parity.py` 의
 #   `RATCHET` 한 곳에만 산다. **부르는 쪽은 인자를 안 적는다.**
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "tools/* .github/* tests/* .pre-commit-config.yaml"
 step "관문 동등"  uv run python tools/gate_parity.py
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "src/* tools/* .env.example"
 step "환경변수 선언↔실물" uv run python tools/env_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
@@ -451,7 +463,8 @@ step "문서 숫자 대조"   uv run python tools/docnum_check.py
 step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 # ★ 2026-09-02 배선. 오늘 캡션 절까지 붙여놓고 **어디서도 안 부르고
 #   있었다.** 사람이 손으로 칠 때만 도는 도구는 이탈 후 아무도 안 부른다.
-scope "docs/* tools/*"
+# ★ 2026-09-22 — ⑤⑥ 이 golden · 발행 구간 · 대장을 읽는다(W4-2). 범위를 좁게 두면 조용히 건너뛴다
+scope "docs/* tools/* data/* web/* src/* tests/* .github/* sources.yaml"
 step "기획서 대조"     uv run python tools/docx_check.py
 # ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
 scope "docs/* tools/* src/* data/*"
@@ -460,6 +473,8 @@ step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
 #   찍혀 생략 칸을 채웠다 — 진짜 생략(npm 없음 · --fast)이 그 옆에 묻힌다. 표는 릴리즈 PR 본문에서 쓰인다(merge_batch --release).
 # ★ 2026-09-17 (DECISIONS §182-2 · G-14). 대장 필드 검사를 아무도 안 불렀다. `python -m firelane.ledger` 는
 #   FAIL 9 로 종료코드 1 을 내고 있었는데 verify · 테스트 · CI 어디에도 없어서 초록이었다.
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "sources.yaml src/* tools/*"
 step "대장 필드 검사"   uv run python -m firelane.ledger
 # ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
 # ci-exempt: tools/refcheck.py 대장 file/files 를 raw 실물과 대조한다. CI 에 레이크가 없다(DECISIONS §191-4)
@@ -660,6 +675,8 @@ step "봉인 조상" uv run python tools/dms.py ancestry
 #   있는데 주석이 손으로 다시 적으며 틀렸다(DECISIONS §192 와 같은 형태).
 # ★ 문턱 40 에서 시작한다. 검사를 무르게 만드는
 #   것이 아니라 **지금 값에서 시작해 내리는 것**이 일이다(env_check 선례).
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "src/* tools/* tests/*"
 step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
 
 # ★ 파일명의 날짜가 자료 기준일인가 내려받은 날인가. `naming` 규약은
@@ -669,6 +686,8 @@ step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
 # ★ 대장 글롭으로 보면 안 보인다. `files:` 가 한 벌을 못박아놔서 두 번째
 #   벌은 대장 밖이다. 이 도구는 **레이크를 직접 훑는다.**
 # ci-exempt: tools/vintage_check.py 레이크를 직접 훑어 파일명 날짜를 본다. 대장 글롭으로는 안 보인다
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "sources.yaml src/* tools/* data/*"
 step "vintage 정합" uv run python tools/vintage_check.py --max 0
 
 # ★ norm 이 지금의 raw 에서 나온 것인가. **재현성 게이트다.**
@@ -685,6 +704,8 @@ step "norm 계보 재현" uv run python -m firelane.prep --check --max 0
 # ★ 적용 뒤 no-op 이 되는 배치 도구를 EXEMPT 로 재우면, 상태가 되돌아가도
 #   우는 곳이 없어진다. 지우는 대신 `--check` 를 달아 강제자로 승격했다.
 #   넷은 각자 다른 것을 본다 — 공통 껍데기를 씌우지 않았다.
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "sources.yaml src/* tools/* data/*"
 step "대장 별칭 이관 유지" uv run python tools/ledger_fields.py --check
 # ★ 2026-09-15 배선. 종전에는 `test_declaration_sync` 의 실패 메시지 안에
 #   안내문으로만 있었다 — 결번이 생겨야 울고, 그 전에 참조가 썩는 것은
