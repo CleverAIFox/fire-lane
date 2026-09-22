@@ -33,6 +33,7 @@ PARAM 아래 RULES
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -79,9 +80,62 @@ RULES: list[tuple[str, list[str], str]] = [
     ("파이썬 캐시", ["**/__pycache__", ".pytest_cache", ".ruff_cache",
                  "**/*.egg-info"],
      "전부 재생성된다"),
+    ("옛 지도 찌꺼기", ["web/key.js"],
+     "2026-09-22 옛 GIS 지도와 함께 쓸 곳이 사라진 생성물(gitignore). V-World 키는 폐기 대상이다"),
     ("노드 모듈", ["node_modules", "package-lock.json"],
-     "jsdom 스모크용. `npm install --no-save jsdom` 로 다시 받는다"),
+     "옛 지도 jsdom 스모크의 찌꺼기다(2026-09-22 도구째 철거). 저장소 루트에는 노드 의존이 없다 — "
+     "내비는 web/navi/node_modules 를 쓴다"),
 ]
+
+# ── /tmp 규칙 (저장소 밖) ───────────────────────────────────────
+# ★ 2026-09-22 (DECISIONS §218-4 · 토트 `sweep.py` 모범). 이 저장소의 도구가 /tmp 에 남기는 것.
+#   `verify.sh` 는 단계마다 로그를, `fl.sh` 는 패치 작업 폴더를 남긴다. 아무도 안 치워서 WSL
+#   /tmp 가 배치마다 불었다. **돌고 있는 배치의 것은 안 지운다** — `pgrep` 으로 살아 있는지 본다.
+TMP = Path("/tmp")
+TMP_RULES: list[tuple[str, list[str], str]] = [
+    ("verify 로그", ["verify.log", "verify-[0-9][0-9]-*.log"],
+     "`verify.sh` 단계 로그. 다음 실행이 다시 쓴다"),
+    ("배치 작업 폴더", ["fl-patches.*", "fl-*.log", "brief.md", "rulesets.sh"],
+     "`fl.sh` · `release_brief.py` · `ruleset_check.py` 의 임시물. 배치가 끝나면 쓸 일이 없다"),
+]
+LIVE_PAT = r"tools/(fl|verify|merge_batch)\.sh|/tmp/fl-run\."   # fl.sh 는 자기를 /tmp/fl-run.* 로 다시 띄운다
+
+
+def _ancestors() -> set[int]:
+    """이 프로세스의 조상 pid. `fl.sh` 11단계가 이 도구를 부르면 fl.sh 가 조상이다."""
+    out, pid = set(), os.getpid()
+    while pid > 1:
+        out.add(pid)
+        try:
+            pid = int(Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[1])
+        except (OSError, ValueError, IndexError):
+            break
+    return out
+
+
+def batch_running() -> bool:
+    """**다른** 배치가 돌고 있는가. 나를 부른 배치(조상)는 뺀다.
+
+    ★ 독립 검토 2026-09-22 — 조상을 안 빼면 `fl.sh` 11단계가 부르는 순간 fl.sh 자신이 걸려
+      /tmp 정리가 **배치 안에서는 한 번도 안 돈다.**
+    """
+    r = subprocess.run(["pgrep", "-f", LIVE_PAT], capture_output=True, text=True)
+    mine = _ancestors()
+    return any(int(x) not in mine for x in r.stdout.split() if x.isdigit())
+
+
+def scan_tmp() -> list[tuple[str, Path, int, str]]:
+    if batch_running():
+        print(f"  {col('/tmp 은 건너뛴다 — 배치(fl · verify · merge_batch)가 돌고 있다', 'y')}")
+        return []
+    out = []
+    for name, globs, why in TMP_RULES:
+        for g in globs:
+            for p in sorted(TMP.glob(g)):
+                if p.exists() and p.owner() == Path.home().owner():
+                    out.append((name, p, size_of(p), why))
+    return out
+
 
 # ★ 여기 있는 것은 어떤 규칙에 걸려도 안 지운다. 마지막 안전장치다.
 #   생성물 몫의 정본은 firelane/generated.py 의 역할 "never-delete" 다(W3-13).
@@ -140,6 +194,10 @@ def scan_git() -> tuple[list[tuple[str, str]], list[str], list[str]]:
         if b and b != cur and not KEEP_BRANCH.match(b):
             merged.append(b)
 
+    # 2b. 지워진 워크트리의 행정 기록 — `git worktree prune` 이 하는 일을 먼저 본다
+    for ln in sh("git", "worktree", "prune", "--dry-run", "-v") or []:
+        stale_remote.append("worktree: " + ln.strip())
+
     # 3. 원격에서 사라진 추적 참조 (git remote prune 대상)
     for ln in sh("git", "remote", "prune", "--dry-run", "origin") or []:
         if "would prune" in ln:
@@ -195,17 +253,18 @@ def main() -> int:
             print(f"    {col('git remote prune origin', 'd')}")
             if a.yes:
                 sh("git", "remote", "prune", "origin")
+                sh("git", "worktree", "prune")
         print()
 
     if do_fs:
         print(col("── 파일", "c"))
-        items = scan_fs()
+        items = scan_fs() + scan_tmp()
         if not items:
             print(f"  {col('깨끗하다', 'g')}")
         seen: set[str] = set()
         total = 0
         for name, p, sz, why in items:
-            rel = p.relative_to(ROOT).as_posix()
+            rel = p.relative_to(ROOT).as_posix() if p.is_relative_to(ROOT) else str(p)
             if name not in seen:
                 seen.add(name)
                 print(f"  {col(name, 'y')}  {col('— ' + why, 'd')}")

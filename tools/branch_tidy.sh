@@ -64,6 +64,11 @@ merged_by_content() {
   git diff --quiet "$b" origin/main -- "${ch[@]}" 2>/dev/null
 }
 
+# 봇 PR 의 묶음 — dependabot 가지는 `dependabot/<생태계>/<묶음·패키지>-<판>` 이다.
+#   ★ 독립 검토 2026-09-22 — `${head%/*}` 로 자르면 생태계 하나가 전부 한 묶음이 돼 서로 다른
+#   묶음(geo · dev-tools · rest)이 「밀렸다」로 닫혔다. 끝의 판(숫자 · 해시)만 떼어낸다.
+bot_group() { printf '%s' "$1" | sed -E 's/-[0-9a-f]{6,}$//; s/-v?[0-9][0-9.]*$//'; }
+
 # ── 1. 열린 PR ──────────────────────────────────────────────────
 say "1. 열린 PR"
 CLOSE=()
@@ -82,11 +87,39 @@ else
     CLOSE+=("$n")
     case "$who" in *dependabot*) BOTPR+=("$n") ;; esac
   done
+  # ★ 2026-09-22 (DECISIONS §218-4 · 토트 모범). 봇 PR 을 **전부** 닫던 것을 **청소(vacuum)** 로 바꿨다.
+  #   봇 PR 은 알림이다 — 전부 닫으면 막는 목록(워크플로 정적 검사)과 짝인 「알리는 장치」 가
+  #   배치마다 지워진다(setup-node@v4 · setup-uv@v3 가 Node 20 퇴역 목록에 걸린 채 남은 이유).
+  #   닫는 것은 둘뿐이다 —
+  #     ① 흐름 밖으로 온 것(base 가 part/infra 가 아니다 · target-branch 이전 설정의 잔재)
+  #     ② 같은 묶음의 더 새 PR 에 **밀린** 것(head 가 같은 묶음 접두 · 번호가 작다)
+  #   나머지는 남기고 목록을 낸다 — 사람이 의존성 배치로 받는다. 닫기 전에 diff 를 보관한다.
   if [ "$AUTO" = 1 ] && [ "$BOTS" = 1 ] && [ ${#BOTPR[@]} -gt 0 ]; then
-    for n in "${BOTPR[@]}"; do
+    ARCH="${FIRE_LANE_INBOX:-}/_applied"
+    declare -A NEWEST=()
+    for l in "${PRS[@]:-}"; do
+      IFS=$'\t' read -r n head base who title <<<"$l"
+      case "$who" in *dependabot*) ;; *) continue ;; esac
+      grp=$(bot_group "$head")
+      [ -z "${NEWEST[$grp]:-}" ] || [ "$n" -gt "${NEWEST[$grp]}" ] && NEWEST[$grp]=$n
+    done
+    VAC=()
+    for l in "${PRS[@]:-}"; do
+      IFS=$'\t' read -r n head base who title <<<"$l"
+      case "$who" in *dependabot*) ;; *) continue ;; esac
+      why=""
+      # ★ 보안 업데이트는 target-branch 를 무시하고 기본 가지로 온다(dependabot 규칙) — 닫지 않는다
+      case "$title" in *"[security]"*|*[Ss]ecurity*) echo "   봇 보안  #$n  $title  — 닫지 않는다(기본 가지로 오는 것이 정상)"; continue ;; esac
+      [ "$base" != "part/infra" ] && why="흐름 밖(base=$base) — target-branch 는 part/infra 다"
+      g=$(bot_group "$head")
+      [ -z "$why" ] && [ "${NEWEST[$g]}" != "$n" ] && why="같은 묶음의 새 PR #${NEWEST[$g]} 에 밀렸다"
+      if [ -z "$why" ]; then echo "   봇 대기  #$n  $title  — 의존성 배치로 받는다"; continue; fi
+      if [ -n "${FIRE_LANE_INBOX:-}" ] && mkdir -p "$ARCH" 2>/dev/null; then
+        gh pr diff "$n" -R "$REPO" > "$ARCH/deps-$n.patch" 2>/dev/null || true
+      fi
       gh pr close "$n" -R "$REPO" --delete-branch \
-        --comment "정리 — 봇 PR 은 흐름(feat → part → dev → main) 밖이다. 올릴 때는 feat 배치로 다시 낸다 (DECISIONS §212-3 · §217-4)." \
-        && echo "   ✓ 봇 #$n 닫음" || echo "   ! #$n 닫기 실패 — 계속한다"
+        --comment "청소 — $why (DECISIONS §218-4). diff 는 INBOX/_applied/deps-$n.patch 에 보관했다." \
+        && { echo "   ✓ 봇 #$n 닫음 — $why"; VAC+=("$n"); } || echo "   ! #$n 닫기 실패 — 계속한다"
     done
     mapfile -t CLOSE < <(printf '%s\n' "${CLOSE[@]}" | grep -vxF -f <(printf '%s\n' "${BOTPR[@]}") || true)
   fi

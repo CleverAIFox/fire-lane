@@ -23,7 +23,8 @@
  * ★ 순수하다. React·MapLibre·fetch 를 모른다.
  */
 
-import type { GraphEdge, NaviGraph, RoutePlan, RuleWarning } from "./types";
+import type { GraphEdge, NaviGraph, RoutePlan, RuleWarning, VehicleSpec } from "./types";
+import { tightTurn } from "./turning";
 
 export type { RuleWarning };
 
@@ -70,6 +71,7 @@ const WORD: Record<RuleKind, string> = {
   wrong_way: "역주행 구간",
   oneway_unknown: "일방통행 구간(방향 미확인)",
   turn_ban: "회전 금지",
+  tight_turn: "좁은 코너",
 };
 
 /**
@@ -79,9 +81,11 @@ const WORD: Record<RuleKind, string> = {
  *   「일방통행」 을 세 번 말하게 된다.
  */
 export function routeRuleWarnings(
-  graph: NaviGraph, plan: Pick<RoutePlan, "edges" | "forward" | "nodes">,
+  graph: NaviGraph, plan: Pick<RoutePlan, "edges" | "forward" | "nodes">, spec?: VehicleSpec,
 ): RuleWarning[] {
-  const idx = edgeIndex(graph);
+  const index = edgeIndex(graph);
+  // 출발·도착 구간은 자른 사본이라(`GraphEdge.clip`) 객체로는 못 찾는다 — 원본 인덱스를 쓴다
+  const idx = { get: (e: GraphEdge) => index.get(e) ?? e.clip?.src };
   const out: RuleWarning[] = [];
   let acc = 0;
   let prevKind: RuleKind | null = null;
@@ -93,6 +97,12 @@ export function routeRuleWarnings(
       if (t !== undefined) {
         out.push({ kind: "turn_ban", atM: acc, seg_uid: e.seg_uid,
                    text: TURN_BAN_WORD[t] ?? WORD.turn_ban });
+      }
+      // 좁은 코너(§218-2) — 차를 알 때만(제원 완성 차종). 숫자를 같이 말한다
+      const tt = spec ? tightTurn(graph, spec, idx.get(plan.edges[i - 1]) ?? -1, plan.nodes[i], idx.get(e) ?? -1) : null;
+      if (tt) {
+        out.push({ kind: "tight_turn", atM: acc, seg_uid: e.seg_uid,
+                   text: `좁은 코너 — 필요 반경 ${tt.needM.toFixed(1)}m · 코너 ${tt.haveM.toFixed(1)}m` });
       }
     }
     const k: RuleKind | null = isWrongWay(e, fwd) ? "wrong_way" : e.ow === 2 ? "oneway_unknown" : null;
@@ -111,6 +121,7 @@ export function ruleSummary(ws: RuleWarning[]): string | null {
     n("wrong_way") && `역주행 ${n("wrong_way")}곳`,
     n("oneway_unknown") && `일방통행 ${n("oneway_unknown")}곳(방향 미확인)`,
     n("turn_ban") && `회전 금지 ${n("turn_ban")}곳`,
+    n("tight_turn") && `좁은 코너 ${n("tight_turn")}곳`,
   ].filter(Boolean);
   return parts.join(" · ");
 }
@@ -133,6 +144,7 @@ export function rulePhrase(w: RuleWarning): string {
     case "wrong_way": return "잠시 후 역주행 구간입니다. 서행하십시오.";
     case "oneway_unknown": return "잠시 후 일방통행 구간. 방향 미확인, 대향차 주의.";
     case "turn_ban": return `잠시 후 ${w.text} 교차로. 주의하십시오.`;
+    case "tight_turn": return "잠시 후 좁은 코너. 크게 돌거나 전진 후진으로 도십시오.";
   }
 }
 

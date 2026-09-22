@@ -348,8 +348,19 @@ git merge-base --is-ancestor origin/dev origin/main || die "main 이 dev 를 안
 git diff --quiet origin/main origin/dev || die "머지 뒤 main 과 dev 내용이 다르다"
 ok "main $(git rev-parse --short origin/main) · dev 와 내용 같음"
 
-# B-3. 태그 — 사람이 정한다(§12-8b)
-tag=$(read_answer "릴리즈 태그 (예 v0.3 · 비우면 안 붙인다): ")
+# B-3. 태그 · 릴리즈 — 다음 번호를 **계산해서 묻는다**(§12-8b · DECISIONS §218-4 · 하토르 release.yml 모범)
+# ★ 2026-09-22. 종전엔 태그를 손으로 **쳤다** — 한글 입력기 바이트가 붙는 사고(G-12)가 그 자리였고,
+#   GitHub Release 는 한 번도 안 만들어져 「v0.34 에 무엇이 들었나」 를 PR 을 뒤져야 알았다.
+#   지금은 마지막 `v0.N` 의 다음을 내고 y/N 만 받는다. 아니면 종전처럼 직접 친다.
+last=$(git tag -l 'v[0-9]*.[0-9]*' | { grep -E '^v[0-9]+\.[0-9]+$' || true; } | sort -V | tail -1)
+next=""
+if [ -n "$last" ]; then next="${last%.*}.$(( ${last##*.} + 1 ))"; fi
+tag=""
+if [ -n "$next" ] && ask "릴리즈 태그 $next (직전 $last) 를 붙이고 GitHub Release 를 만든다. 진행?"; then
+    tag="$next"
+else
+    tag=$(read_answer "릴리즈 태그를 직접 (예 v0.3 · 비우면 안 붙인다): ")
+fi
 # ★ 2026-09-17 (G-12). 한글 입력기 상태에서 치면 앞에 깨진 바이트가 붙어 형식 검사에 걸렸다 — 인쇄 가능한 ASCII 만 남긴다
 tag=$(printf '%s' "$tag" | LC_ALL=C tr -cd 'A-Za-z0-9.-')
 if [ -n "$tag" ] && ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+(-[a-z0-9]+)?$ ]]; then
@@ -357,6 +368,9 @@ if [ -n "$tag" ] && ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+(-[a-z0-9]+)?$ ]]; then
 fi
 if [ -n "$tag" ]; then
     git tag "$tag" origin/main && git push -q origin "$tag" && ok "태그 $tag"
+    # 릴리즈 노트는 릴리즈 PR 본문 그대로다(release_brief 표 포함) — 한 벌을 두 곳에 두지 않는다
+    gh release create "$tag" -R "$REPO" --title "$tag — $(date +%F)" --notes-file "$BODY" --verify-tag \
+        && ok "GitHub Release $tag" || warn "Release 를 못 만들었다 — 태그는 붙었다. 손으로: gh release create $tag --notes-file <본문>"
 fi
 
 # B-4. 흡수 — main 의 머지 커밋을 dev 로 ff

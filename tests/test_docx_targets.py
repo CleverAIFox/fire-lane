@@ -138,3 +138,13 @@ def test_docx_check_is_bidirectional(tmp_path):
     assert "정방향" in out, "1,101 세대로 되돌렸는데 ⑤ 정방향이 안 운다"
     assert "역방향" in out, "규칙의 닻 문장을 지웠는데 ⑥ 역방향이 안 운다"
     assert "없는파일.py" in out, "없는 경로를 적었는데 ⑦ 참조가 안 운다"
+
+
+def test_long_cell_ratchet_bites(monkeypatch):
+    """W4-7 — 개요표 긴 칸은 양식이라 쪼개지 않고, **자라거나 줄면** 운다 (DECISIONS §218-6)."""
+    chk = _check_mod()
+    assert not chk.audit(DOCX), "지금 기획서가 이미 어긋난다"
+    monkeypatch.setattr(chk, "LONG_MAX_N", chk.LONG_MAX_N - 1)
+    assert any("긴 칸" in x and "초과" in x for x in chk.audit(DOCX)), "칸이 늘었는데 안 운다"
+    monkeypatch.setattr(chk, "LONG_MAX_N", chk.LONG_MAX_N + 2)
+    assert any("줄었다" in x for x in chk.audit(DOCX)), "칸이 줄었는데 상한을 내리라고 안 한다"

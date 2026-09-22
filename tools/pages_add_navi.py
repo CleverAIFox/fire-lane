@@ -69,7 +69,7 @@ BLOCK = """      - name: 내비 빌드 (web/navi → web/navi/dist)
 
 """
 
-NODE_STEP = """      - uses: actions/setup-node@v4
+NODE_STEP = """      - uses: actions/setup-node@v7
         with:
           node-version: "20"
           cache: npm
@@ -138,7 +138,7 @@ def main() -> int:
     add = BLOCK
     if "setup-node" not in txt:
         add = NODE_STEP + BLOCK
-        print("  추가  actions/setup-node@v4")
+        print("  추가  actions/setup-node@v7")
     print("  추가  내비 빌드 스텝")
     print("  위치  '배포 준비' 앞 — 아티팩트 업로드 전이어야 한다")
 

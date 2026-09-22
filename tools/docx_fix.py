@@ -312,10 +312,24 @@ def inserts() -> list[tuple[str, str, str]]:
     ]
 
 
-def fix(p: Path, write: bool) -> int:
+def touch_rules(day: str) -> list[tuple[str, str, str]]:
+    """`--touch YYYY-MM-DD` — 표지 최종 수정일과 수치 기준일을 그날로 옮긴다.
+
+    ★ 2026-09-22 (DECISIONS §218). 날짜는 **규칙이 아니다** — 규칙에 넣으면 다음 날
+      `docx_check` ⑤ 가 「아직 바꿀 것이 있다」로 매일 운다. 사람이(배치가) 기획서를 고친 날
+      명시적으로 찍는다. `doc_fsck` ⑥ 이 「고쳤는데 표지가 그대로인가」를 본다.
+    """
+    y, m, d = day.split("-")
+    return [
+        (r"최종 수정 \d{4}\. \d{2}\. \d{2}\.", f"최종 수정 {y}. {m}. {d}.", "--touch"),
+        (r"모든 수치는 \d{4}-\d{2}-\d{2} 기준으로", f"모든 수치는 {day} 기준으로", "--touch"),
+    ]
+
+
+def fix(p: Path, write: bool, extra: list | None = None) -> int:
     import docx
     d = docx.Document(str(p))
-    R = rules()
+    R = rules() + (extra or [])
     n = 0
 
     def do(par) -> int:
@@ -396,10 +410,13 @@ def fix(p: Path, write: bool) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--touch", metavar="YYYY-MM-DD",
+                    help="표지 최종 수정일 · 수치 기준일을 그날로 (기획서를 고친 배치가 찍는다)")
     a = ap.parse_args()
+    extra = touch_rules(a.touch) if a.touch else None
     total = 0
     for p in sorted((ROOT / "docs").glob("*.docx")):
-        c = fix(p, a.write)
+        c = fix(p, a.write, extra)
         total += c
         print(f"  {p.name}  run {c}개 {'수정' if a.write else '수정 예정'}")
     if not a.write:

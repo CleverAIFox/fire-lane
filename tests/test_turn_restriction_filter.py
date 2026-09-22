@@ -43,7 +43,7 @@ def _run(tmp_path, monkeypatch):
 
 def test_missing_node_point_stops(tmp_path, monkeypatch):
     _, go = _run(tmp_path, monkeypatch)
-    with pytest.raises(FileNotFoundError, match="node_point_5186.gpkg"):
+    with pytest.raises(FileNotFoundError, match=r"node_point_5186\.gpkg"):
         go()
 
 

@@ -85,10 +85,8 @@ PATH_EXEMPT = {
     #   config.js:327 · vehicle.js:187 이 fetch 하고, 없으면 화면이
     #   "제원 미확인" 만 띄운다. PLAN 이 이 항목을 든다.
     "web/assets/vehicles/profiles.json",
-    # 2026-09-13. 생성물이다 — tools/stage_pages.py 가 환경에서 만든다.
-    #   V-World 키가 들어가므로 커밋하지 않는다(.gitignore). clone 직후와
-    #   CI 에는 없는 것이 정상이고, web/proposal.docx 와 같은 부류다.
-    "web/key.js",
+    # ★ 2026-09-22. `web/key.js` 를 뺐다 — 옛 지도와 함께 생성을 멈췄다. 이제 문서가 그 경로를
+    #   적으면 **낡은 서술**이라 울어야 한다.
 }
 
 # 경로 참조를 찾을 때 저장소 안인 것만 본다. data/raw · norm · landing ·
@@ -104,8 +102,9 @@ PATH_RX = re.compile(
 #   으로 적는 것이 정상이고(`tools/docfix_20260817.py` 는 지운 것이 맞다),
 #   후자는 **계획**이라 아직 없는 파일을 가리키는 것이 정상이다. 여기서 보는
 #   것은 "지금 그렇게 동작한다" 고 말하는 문서와 설정뿐이다.
+# ★ 2026-09-22. `web/js/**/*.js` 를 뺐다 — 옛 지도를 걷어냈다.
 SCAN_GLOBS = ("docs/MASTER.md", "sources.yaml", "web/config.js",
-              "web/js/**/*.js", "src/firelane/README.md", "README.md",
+              "src/firelane/README.md", "README.md",
               ".github/CODEOWNERS")
 
 

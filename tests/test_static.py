@@ -144,6 +144,11 @@ def test_tracked_python_compiles():
     import subprocess
     files = subprocess.run(["git", "ls-files", "*.py"], cwd=ROOT,
                            capture_output=True, text=True).stdout.split()
+    # ★ 2026-09-22. 작업 트리에서 지웠고 아직 커밋 전인 파일은 뺀다(`--deleted`). 지운 것을
+    #   읽으려다 FileNotFoundError 로 죽으면 「컴파일되는가」가 아니라 「커밋했는가」를 묻게 된다.
+    gone = set(subprocess.run(["git", "ls-files", "--deleted", "*.py"], cwd=ROOT,
+                              capture_output=True, text=True).stdout.split())
+    files = [f for f in files if f not in gone]
     bad = []
     for f in files:
         src = (ROOT / f).read_text(encoding="utf-8", errors="replace")

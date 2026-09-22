@@ -503,6 +503,12 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 대장 밖이다(PLAN #59). 대장은 `vehicle_profiles.absent` 에서 `elsewhere` 로
 그 파일을 가리킨다 — 없다는 뜻이 아니라 **규격에 없다**는 뜻이다.
 
+★ **제원 완성 차종은 내비가 코너 회전을 점검한다**(2026-09-22 · DECISIONS §218-2). 전장 · 전폭 ·
+전고 · 축거 · 최소회전반경 다섯이 다 있고 편성 대장과 **확정** 대응인 차(`fleet.json` 의
+`spec_complete`)만이다 — 지금 중형 펌프차(지산 · 대인) · 대형 물탱크차 셋. 코너가 쓸 수 있는 중심선
+반지름 `(폭 − 전폭) / (1 − cos(꺾임/2))` 이 필요 반지름(최소회전반경 − 전폭/2)보다 작으면 **막지
+않고** 벌점(400m 우회 상당 · 가정값)과 「좁은 코너」 경고를 낸다. 폭은 벽~벽 최대 폭을 먼저 쓴다.
+
 ★ **`turn_radius_m: 12.0` 은 법정 상한이지 성능값이 아니다**(DECISIONS §81).
 자동차규칙 제9조① 이 "12미터를 초과하여서는 아니된다" 고 정한 제조 규제이며,
 실제 차량은 그보다 작게 돈다. 상한을 임계로 쓰면 R < 12m 인 코너를 전부
@@ -635,8 +641,8 @@ data/processed/    대장 72종
       seg/vehicle.py    차량 제원 · 엣지 비용
       seg/report.py     소방서 대조 · 진단 · 산출물 기록
   ↓ src/firelane/publish_web.py       표출용 경량 사본
-web/data/          UI 입력 · git 포함 (지형·정사영상 타일 포함)
-  ↓ web/index.html   MapLibre GL JS 5 + deck.gl 9 (interleaved) + V-World
+web/data/          화면 입력 · git 포함 (지형·정사영상 타일 포함) — 백엔드와 화면 사이의 계약
+  ↓ web/navi/        React + MapLibre — 내비 · 관제(?view=ops). web/index.html 은 관제로 넘기는 입구
 GitHub Pages       gis · main 푸시 시 자동 배포
 ```
 
@@ -1198,129 +1204,43 @@ CCTV 원본은 설치연도별로 행이 쪼개져 있어 좌표로 묶어 지�
 
 ---
 
-## 11. UI 인수인계
+## 11. 화면 인수인계 — 내비 · 관제
 
-★ 이 절은 **UI 담당이 작업 지시로 그대로 쓴다.** 구조를 바꿀 때 §11 을 같이
-고치는 것을 기본 절차로 한다. 어긋나면 UI 가 없는 필드로 코드를 짜게 된다.
+★ 2026-09-22 (DECISIONS §218-1) — **화면은 하나다.** 옛 GIS 지도(`web/index.html` 패널 ·
+`web/js` 30모듈 · `style.css`)를 걷어냈다. 관제(`web/navi/?view=ops`)가 그 기능(판정 4색 ·
+도달 불가 · CCTV 반경 · 정사영상 · 출동 이력)을 넘겨받았고 `web/index.html` 은 관제로 넘기는
+정적 입구다. **서버는 없다** — 파이프라인이 `web/data/` 에 정적 JSON 을 쓰고 앱이 `../data/` 로
+읽는 것이 백엔드와 화면 사이의 계약 전부다.
 
-### 11-1. 30초 안에 띄우기
+이 절은 화면을 만지는 사람이 작업 지시로 그대로 쓴다. 필드 · 파일이 바뀌면 이 절을 같이 고친다.
+
+### 11-1. 띄우기
 
 ```bash
-git switch part/gis && git pull --ff-only
-uv run python tools/serve.py        # 캐시 없는 개발 서버
-# http://localhost:8000
+cd web/navi && npm ci && npm run dev      # 개발 서버 — web/data 를 원본 자리에서 내준다
+uv run python tools/serve.py              # 배포와 같은 배치(입구 · navi 빌드 · data)로 본다
 ```
 
-**`index.html` 을 더블클릭하면 빈 화면이 뜬다.** `file://` 에서는 `fetch()` 가
-CORS 로 막힌다. 설치할 것은 없다. MapLibre 와 deck.gl 은 CDN 에서 온다.
+`web/navi/dist` 가 없으면 `serve.py` 가 `npm run build` 를 먼저 하라고 말한다.
 
-### 11-2. 파일 구조 — 충돌이 경로로 갈린다
+### 11-2. 파일 구조
 
-| 경로 | 주인 | 내용 |
-|---|---|---|
-| `web/style.css` | **@marscoolcat 단독** | 색·간격·타이포·애니메이션·레이아웃 |
-| `web/index.html` | 공동 | 뼈대 마크업. 거의 안 바뀐다 |
-| `web/config.js` | **공동** | 판정 색상·마커 스펙·카메라·출동모드·미니맵 |
-| `web/js/` | `@CleverAIFox` | 로직·레이어 30개 모듈. 1인 저장소라 공백이 없다(DECISIONS §163-5) |
-| `web/js/icons/` · `ui/` | 공동 | 캔버스 그림 · 범례·검색·테마·토글 |
-| `web/data/` | 생성물 | `publish_web.py` 산출. 손으로 고치지 않는다 |
-
-**UI 작업은 `style.css` 와 `config.js` 두 파일이면 된다.** `web/js/layers/` 를
-건드려야 하는 상황은 로직 문제이므로 GIS 담당에게 넘긴다.
-
-`app.js` 는 없다. 1,260줄이던 그 파일은 `web/js/` 모듈들로 갈렸다(지금 30개 모듈).
-수의 정본은 `node tools/js_graph_check.mjs` 출력이다.
-모듈 구조는 `web/README.md` 가 정본이다.
+| 경로 | 내용 |
+|---|---|
+| `web/navi/src/domain/` | 판정 · 경로 · 통행 규칙 · 속도 — 화면과 무관한 순수 로직. 단위 시험이 여기를 본다 |
+| `web/navi/src/components/` | 지도(`NaviMap` · `OpsMap`) · 레이어 선언(`layers.ts`) |
+| `web/navi/src/` 나머지 | 내비 흐름(`App.tsx`) · 관제(`OpsApp.tsx`) · UI 조각 |
+| `web/navi/test/` | vitest — 실제 발행 그래프를 먹는다. `style.test.ts` 가 모든 레이어를 style-spec 검증기에 통과시킨다 |
+| `web/config.js` | **파이프라인 설정**이다(판정색 · 지형 과장 · 편성). 화면이 직접 읽지 않고 발행이 옮긴다 |
+| `web/data/` | 생성물. 손으로 고치지 않는다 |
 
 강제자  `tests/test_guards.py::test_docs_point_at_the_real_package` — 파일 구조 표가 실제 패키지 경로를 가리키는지 본다
 
-### 11-3. `config.js` — UI 담당이 조정하는 값
+### 11-3. 값은 바뀌고 구조는 안 바뀐다
 
-**마커에 관한 모든 것이 `config.js` 한 곳**에 있다. `web/js/` 는 이 선언을
-읽어 실행만 한다.
-
-```js
-verdict: {
-  blocked : { color:[255, 77, 61], lightColor:[224, 53, 38], label:"통행 불가",  desc:"…" },
-  needs_cv: { color:[255,171, 46], lightColor:[212,124, 10], label:"판정 보류",  desc:"…" },
-  clear   : { color:[ 74,209,143], lightColor:[ 26,150, 96], label:"통행 가능",  desc:"…" },
-  unknown : { color:[ 90, 98,114], lightColor:[110,120,138], label:"영상판정 불가", desc:"…" },
-},
-
-reason  : { no_cctv_band, no_cctv_thin, no_cctv_narrow, no_cctv_single },  // 툴팁 문구
-cctvCov : { colorDark:"#ffd24a", colorLight:"#d69600", opacityDark:0.42, opacityLight:0.30 },
-
-dispatch: { clearWidthScale:1.6, dimAlpha:102, pulseMs:1200 },  // 출동 모드
-minimap : { showFromZoom:16 },
-terrain : { enabled:true, exaggeration:1.0 },
-markers : [ … ],
-```
-
-★ `color` 는 다크 모드용, `lightColor` 는 라이트 모드용이다. 다크용 색은 검은
-배경에 올리려고 밝고 채도 높게 고른 것이라 흰 배경에 그대로 쓰면 대비는
-떨어지고 채도만 남는다.
-
-#### 마커 스펙 — 한 덩어리가 자기 것을 전부 든다
-
-```js
-{ id:"m-light",              // 레이어 식별자. 토글 data-t 와 같은 값
-  label:"가로등",             // 범례·토글에 뜨는 이름. 여기가 정본
-  data:"streetlights",       // web/data/{이름}.geojson 을 자동으로 읽는다
-  kind:"center",             // (선택) 같은 파일에서 properties.kind 로 거를 때
-
-  scale:{ by:"n_lights", mode:"sqrt", k:0.28 },   // (선택) 값에 따라 굵기
-  cover:{ by:"pos_accuracy_m", style:"dashed", color:"#ffd678" },  // (선택) 반경 원
-  sign :{ draw:"cctv", top:13.0 },                // (선택) 간판. draw 는 icons/ 이름
-  popup: p=>`<b>가로등</b> ${p.n_lights}등`,       // (선택) 클릭 팝업. 여기가 정본
-
-  parts:[ {r:0.35, z:0, h:11, c:[120,124,138]}, … ] }   // 3D 형상. z=바닥, h=높이
-```
-
-**마커를 추가하려면 두 곳이면 된다** — 데이터를 `web/data/{이름}.geojson` 으로
-발행하고(GIS 담당), `config.js` 의 `markers` 에 스펙 한 덩어리를 넣는다.
-토글 행·팝업·데이터 로딩은 `web/js/` 가 선언을 읽어 자동으로 만든다.
-
-강제자 — `tests/test_contract.py::test_marker_spec_self_contained` 가 손딕셔너리
-(`MK_SRC` · `POPUP`)나 마커 id 특수분기의 부활을 막는다.
-
-#### 굵기와 원의 뜻
-
-```
-scale mode:"sqrt"   반지름 ∝ √값. 면적이 값에 비례해 보인다
-CCTV  cover 실선    "이 범위를 본다"           radius 25m
-가로등 cover 점선    "폴이 이 안 어딘가에 있다"  by pos_accuracy_m (50m)
-```
-
-★ **등 수를 높이로 표현하지 않는다.** 가로등 41등을 높이로 그리면 "41층짜리
-가로등"이 되어 시설 위계가 무너진다. 원의 의미가 정반대이므로 선 종류로
-구분하고 범례에도 같은 구분을 적는다.
-
-**임계값(3.0 / 7.0 / 25.0)의 정본은 `src/firelane/seg/params.py` 다**(§18-5 R3).
-`config.js` 의 같은 숫자는 화면 설명용 사본이라 바꿔도 판정은 안 바뀐다.
-
-### 11-4. 값은 바뀌고 구조는 안 바뀐다
-
-폭 값은 아직 **미검증** 상태이고(`width_verified: false`) 실측 후 일부 구간의
-`verdict` 가 바뀐다. 그때 UI 를 다시 만들지 않으려면 셋만 지키면 된다.
-
-**1. 숫자가 아니라 `verdict` 문자열로 분기한다**
-
-```js
-if (p.verdict === "blocked") …     // 이렇게
-if (p.width_max_m < 3.0)  …        // 이러면 안 된다
-```
-
-**2. 색 매핑은 `config.js` 한 곳에만 둔다**
-
-**3. `verdict` 는 네 개가 전부다**
-
-| 항목 | 보장 |
-|---|---|
-| 좌표계 | `EPSG:4326` 고정 |
-| 필드명·타입 | 고정 |
-| `verdict` 어휘 | 4종 고정 |
-
-깨지면 CI 에서 머지가 막힌다.
+폭 값은 아직 **미검증**이고(`width_verified: false`) 실측 뒤 일부 구간의 `verdict` 가 바뀐다.
+화면은 숫자가 아니라 `verdict` 문자열로 가른다 · 색은 발행된 `style` 에서 읽는다 ·
+`verdict` 는 넷이 전부다. 좌표계 `EPSG:4326` · 필드명 · 타입은 고정이고 깨지면 CI 가 막는다.
 
 ### 데이터 필드
 
@@ -1336,7 +1256,7 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 된다
 | `seg_no` | 도로명 안에서의 구간 순번. **표기 전용.** 노딩이 바뀌면 밀린다 |
 | `verdict` | 판정 4종 |
 | `width_min_m` | **최소 폭.** 포장 노면만. 선 굵기가 이 값 |
-| `width_max_m` | **최대 폭.** 벽에서 벽까지. 496구간이 결손이며 대로는 결손이 많다 |
+| `width_max_m` | **최대 폭.** 벽에서 벽까지. 절반 가까이 결손이고 대로일수록 많다(값 있는 수는 기획서 표17 에 `docx_fix` 가 센다) |
 | `length_m` | 수평거리. 경사 보정 전 |
 | `run_length_m` | 같은 판정이 이어지는 총 길이 |
 | `nfa_designated` | 소방청 지정 기준(연속 100m) 충족 |
@@ -1376,68 +1296,35 @@ if (p.width_max_m < 3.0)  …        // 이러면 안 된다
 | merged_n | 이 산출단위가 묶은 그래프 엣지 수. 1이면 병합 없음 |
 | merge_why | 병합을 유발한 최초 폭 미산출 사유 |
 
-### 11-5. 마커 데이터 파일
+### 11-4. 앱이 읽는 데이터 파일
 
-| 파일 | 마커 | 건수 | 주요 필드 |
-|---|---|---:|---|
-| `cctv.geojson` | `m-cctv` | 104 | `카메라대수` `카메라화소` `촬영방면` `최초설치` `설치회차` |
-| `hydrants.geojson` | `m-hyd` | 153 | `시설번호` `시설유형코드` `상세위치` `설치연도` `보호틀유무` `관할기관명` `안전센터명` `소재지도로명주소` `소재지지번주소` |
-| `stations.geojson` | `m-fs` `m-sta` | 3 | `소방서 및 안전센터명` `전화번호` `kind` |
-| `streetlights.geojson` | `m-light` | 46 | `n_lights` `pos_accuracy_m` `mgmt_no_sample` `addr` |
-| `lightpoles.geojson` | `m-pole` | 1,143 | `pole_kind` |
-
-★ `n_lights` 가 1이 아니다. 좌표가 지번 대표점이라 한 점에 여러 등이 묶여 있다.
-`pos_accuracy_m`(50)은 "폴이 이 반경 안 어딘가에 있다"는 뜻이다(§6-4).
-
-### 11-6. 다른 데이터 파일
-
-| 파일 | 건수 | 내용 |
+| 파일 | 건수 | 읽는 곳 · 내용 |
 |---|---:|---|
-| `segments.geojson` | 1,281 | 판정 본체 |
-| `buildings.geojson` | 12,736 | `h` = 층수 × 3.3. **지도 이동 범위**(view.maxBounds)로 자른다(DECISIONS §181-2) |
-| `poi.geojson` | 2,106 | 상가정보 · 지도 라벨. 표출 범위 안 · 지상 1층 |
-| `dest.geojson` | 1,836 | 내비 목적지 검색 색인 — 상가 519 · 주소/건물 1,315 · 관공서/학교 2. **동명동 경계 안만**(DECISIONS §183-1) |
-| `boundary` · `mask` · `mask_soft` | 각 1 | 행정경계 · 덮개 |
-| `view.json` | — | 중심·경계·줌 한계 |
-| `terrain/{z}/{x}/{y}.png` | 22 | Terrain-RGB |
-| `ortho/{z}/{x}/{y}.jpg` | 1,423 | 항공정사영상 z17 · z19 |
+| `segments.geojson` | 1,281 | 판정 본체 — 관제 판정선 |
+| `navi_graph.json` | — | 경로 그래프 · 일방통행 · 회전 금지 · 단속 이력 · 지형 설정 — 내비 · 관제 경로 |
+| `buildings.geojson` | 12,663 | `h` = 층수 × 3.3. 도로면과 겹친 만큼 잘랐다(DECISIONS §217-3) |
+| `road_area.geojson` · `sidewalk.geojson` | — | 바탕 면 |
+| `poi.geojson` · `dest.geojson` | — | 지도 라벨 · 목적지 검색 색인(동명동 경계 안만 · DECISIONS §183-1) |
+| `cctv.geojson` · `hydrants.geojson` · `stations.geojson` | — | 시설 표지 |
+| `context.geojson` · `history.geojson` | — | 경로 주변 사정 · 출동 이력(DECISIONS §216-3) |
+| `fleet.json` · `vehicle_spec.json` · `route_vehicle.json` | — | 편성 · 제원 · 차종별 경로 |
+| `view.json` | — | 중심 · 경계 · 줌 한계 · 지형 · 정사영상 범위 |
+| `terrain/{z}/{x}/{y}.png` · `ortho/{z}/{x}/{y}.jpg` | 22 · 1,423 | Terrain-RGB · 항공정사영상 |
 
-`stations.geojson` 은 `kind` 로 `center`(119안전센터 2) / `station`(소방서 1)을
-구분한다. 대인119안전센터와 동부소방서는 **주소가 같으므로**(제봉로 210)
-형상을 다르게 그린다.
+`stations.geojson` 은 `kind` 로 `center`(119안전센터 2) / `station`(소방서 1)을 구분한다.
+대인119안전센터와 동부소방서는 **주소가 같다**(제봉로 210).
 
-강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다
+강제자  `tests/test_contract.py::test_navi_data_files_exist` — 앱이 읽는 파일이 발행물에 있는가
 
-### 11-7. 막히면
+### 11-5. 막히면
 
 | 증상 | 원인 |
 |---|---|
 | 빈 화면, 콘솔 CORS | `file://` 로 열었다. 서버로 띄울 것 |
-| 판정 색이 안 보임 | 콘솔 확인. `map.getLayer("seg-l")` 존재 여부 |
-| 미니맵이 안 뜸 | **줌 16 이상**에서만 뜬다. `map.getZoom()` 확인 |
-| 지형이 안 보임 | `map.getTerrain()` 이 `null` 이면 미적용. 내비 · 관제는 `?terrain=0` 이면 끈다 |
+| 지형이 안 보임 | `map.getTerrain()` 이 `null` 이면 미적용. `?terrain=0` 이면 끈다 |
 | 관제 판정선 테두리 · 점선이 없음 | 레이어 식이 무효면 MapLibre 가 조용히 건너뛴다 — `npm run test` 의 style 시험이 본다 |
-| 건물이 납작함 | 줌 14.4 미만이다 |
+| 레이어가 실제로 올랐는지 | `?debug=1` 이면 `window.__flMap` 으로 지도를 잡는다 |
 | 소화전 수가 문서와 다름 | 산출물이 정본이다. §3-12 참조 |
-| 콘솔에 `DOM 없음:` | `index.html` 에서 지운 요소를 `web/js` 가 참조한다 |
-
-콘솔 오류는 그대로 GIS 담당에게 전달한다.
-
-### 11-8. 지금 손대도 되는 것
-
-값이 안 바뀌는 영역이라 안전하다.
-
-- `style.css` 전반 — 패널 레이아웃, 타이포, 여백
-- `config.js` 의 `dispatch` — 강조 정도, 물결 속도
-- `config.js` 의 `markers` — 마커 형상·색
-- 라이트 모드(`[data-theme="light"]`) 색상 다듬기
-- 판정 기준표(`.crit`) 디자인
-- 모바일 레이아웃 (820px 브레이크포인트)
-
-**아직 손대지 않는 것** — `unknown` 399구간의 표현 방식. 전체의 31% 라 비중이
-크고, 이것을 어떻게 보여줄지는 방법론 결정이므로 GIS 담당이 먼저 정한다.
-
-강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다
 
 ---
 
@@ -1782,7 +1669,7 @@ fix:  버그
 | `contract.yml` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
 | `secret-scan.yml` | **전 브랜치** push · PR | 자격증명이 올라가는 것을 막는다. 브랜치 목록이 없는 유일한 검사다 |
 | `image.yml` | `Dockerfile` · `pyproject.toml` · `uv.lock` · 자기 자신 변경 | ETL 이미지를 짓고 그 안에서 import 를 세운다. **CI 전용**(로컬에 docker 가 없다) |
-| `지도 배포` (`pages.yml`) | `main` 의 `web/**` — 단 `!web/navi/**` — 또는 `build-navi/action.yml` | ↓ |
+| `사이트 배포 (입구 · 데이터)` (`pages.yml`) | `main` 의 `web/**` — 단 `!web/navi/**` — 또는 `build-navi/action.yml` | ↓ |
 | `내비 배포` (`navi.yml`) | `main` 의 `web/navi/**` · `build-navi/action.yml` · 자기 자신 | ↓ |
 | `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` · `build-navi/action.yml` | ↓ |
 | `기획서 배포` (`proposal.yml`) | `main` 의 `docs/proposal.docx` · `web/proposal.html` · `stage_pages.py` · `build-navi/action.yml` | ↓ |
@@ -1842,7 +1729,7 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소�
 
 ### 12-7a. 내비 빌드
 
-★ **배포가 내비를 빌드한다**(2026-09-06). ★ 2026-09-19 정정 — 종전엔 `지도 배포` 가 직접 빌드했으나 W1 이 본문을 `_deploy.yml` 로 옮겼다. 지금은 `_deploy.yml` 이 `build-navi` 를 부르고 배포 **넷**이 그것을 부른다(`verify.sh` 의 「배포에 내비 빌드」 검사가 그 호출 관계를 본다). `web/navi/dist` 는
+★ **배포가 내비를 빌드한다**(2026-09-06). ★ 2026-09-19 정정 — 종전엔 `pages.yml`(당시 이름 「지도 배포」)이 직접 빌드했으나 W1 이 본문을 `_deploy.yml` 로 옮겼다. 지금은 `_deploy.yml` 이 `build-navi` 를 부르고 배포 **넷**이 그것을 부른다(`verify.sh` 의 「배포에 내비 빌드」 검사가 그 호출 관계를 본다). `web/navi/dist` 는
 `.gitignore` 라 저장소에 없고 CI 가 만든다 — `web/data` 를 커밋하는 것과
 반대 원칙인데 이유가 다르다. `web/data` 는 재생성에 raw 2.5GB 가 필요하고
 `dist` 는 `npm ci` 하나면 된다.
@@ -1870,7 +1757,7 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소�
 ### 12-8. 배포
 
 ★ **아직 없다.** 지금 `main` 이 배포하는 것은 정적 사이트 하나뿐이다
-(`지도 배포` · `협업 방침 배포` 둘 다 같은 Pages 사이트를 올린다, §12-7).
+(`사이트 배포` · `협업 방침 배포` 둘 다 같은 Pages 사이트를 올린다, §12-7).
 아래는 **정해 둔 것**이며 실물이 생기면 이 절을 사실로 다시 쓴다.
 
 `dev` 를 판 이유가 여기 있다. `main` 에 배포를 물리는 순간 `main` 은
@@ -2180,8 +2067,8 @@ golden 지문 · PLAN 번호·참조 · 커버리지 래칫을 밟는다.
   빌드하면 거의 반드시 OOM 이라, 샤드 봉인이 곧 전량을 돌 수 있게 하는 조건이다.
   전량은 이제 2분40초 안팎이다.
 
-★ **커버리지는 래칫이다.** 2026-09-21 실측 **25.17%**(종전 2026-09-20 24.28%).
-  `tools/verify.sh` 의 `COV_MIN=25` 로 걸려 있고 **올린 뒤에는 안 내린다.**
+★ **커버리지는 래칫이다.** 2026-09-22 실측 **26.88%**(종전 2026-09-21 25.17%).
+  `tools/verify.sh` 의 `COV_MIN=26` 로 걸려 있고 **올린 뒤에는 안 내린다.**
   80% 를 목표로 잡지 않는다 — 못 지키는 문턱은 끄게 되고, 끈 문턱은 없는 것과 같다.
   2026-09-20 정정 — 종전 이 자리는 「실측 24 에 23 을 거는 것은 화면의
   `24%` 가 반올림이라 실제가 23.5 일 수 있기 때문」이라고 적었다. 서술은
@@ -2260,8 +2147,8 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
 `NEVER` 로 막혀 있고 규칙에 실수로 넣어도 안 지워진다.
 
 ★ **마지막 하나는 사람이 봐야 한다.** WebGL 렌더링은 스크립트가 못 본다.
-지도가 실제로 그려지는지, 판정 색·표지판·미니맵·검색이 눈으로 멀쩡한지는
-`tools/serve.py` 로 직접 확인한다.
+지도가 실제로 그려지는지, 판정 색·표지판·경로·관제 패널이 눈으로 멀쩡한지는
+`tools/serve.py` 로 직접 확인한다(레이어가 올랐는지는 `npm run test` 의 style 시험이 먼저 본다).
 
 강제자  `tools/verify.sh`
 
@@ -2439,7 +2326,7 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 | 80 | 08-14 | 표본 1개 구간에 통과 확정을 주지 않는다 | 적용 |
 | 81 | 08-14 | 교차부 제외는 `A0080000` 실제 폴리곤으로 판정 | 적용 |
 | 82 | 08-14 | `A0020000.도로폭 0.500` 은 차량 통행 불가 통로 코드 | 적용 |
-| 83 | 08-14 | 마커는 `config.js` 스펙이 자기 데이터·팝업·표현을 전부 든다 | 적용 |
+| 83 | 08-14 | 마커는 `config.js` 스펙이 자기 데이터·팝업·표현을 전부 든다 | 폐기 2026-09-22 — 옛 지도와 함께 markers 블록을 걷어냈다(DECISIONS §218-1) |
 | 115 | 09-06 | 안내 문턱은 거리가 아니라 시간이다 (12·6·2.5초) | 적용 |
 | 116 | 09-06 | 스냅은 활성 경로에 할인을 준다. 하드 제한이 아니다 | 적용 |
 | 117 | 09-06 | 하이브리드 경계는 폭 3.0m — 물리가 고른 선이다 | 적용 |
@@ -3378,7 +3265,7 @@ BEV 는 디버그 플래그 뒤에 둔다.
 
 ★ **지도가 지금 보여주는 것은 1차다.** 2차는 `publish_web.py:379` 가
 `web/data/route_vehicle.json` 으로 **이미 발행한다**(2026-08-31). 남은 것은
-발행이 아니라 **소비**다 — `web/js/` 어디에도 그 파일을 읽는 코드가 없다.
+발행이 아니라 **소비**였다 — 지금은 내비가 그 파일을 읽는다(옛 `web/js` 는 끝내 안 읽었고 2026-09-22 걷어냈다).
 
 ★ `tools/route_probe.py` 의 머리말 주석은 `_write_route()` 도입 **이전**에
 쓰였다. "비용 함수가 배선되지 않았다" 는 서술은 낡았다.

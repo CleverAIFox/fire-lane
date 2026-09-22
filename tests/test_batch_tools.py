@@ -345,3 +345,14 @@ def test_tidy_keeps_long_lived_branches_like_branch_tidy():
     for b in keep:
         assert m.KEEP_BRANCH.match(b), f"branch_tidy 가 지키는 {b} 를 tidy 가 지울 수 있다"
     assert not m.KEEP_BRANCH.match("feat/x"), "feat 가지까지 지키면 정리가 안 된다"
+
+
+def test_bot_prs_are_vacuumed_not_wiped():
+    """봇 PR 은 알림이다 — 전부 닫지 않고 밀린 것 · 흐름 밖 것만 청소한다 (DECISIONS §218-4)."""
+    dep = (ROOT / ".github" / "dependabot.yml").read_text(encoding="utf-8")
+    n_eco = dep.count("- package-ecosystem:")
+    assert dep.count("target-branch: part/infra") == n_eco, "봇 PR 이 흐름 밖(main)으로 온다"
+    s = (ROOT / "tools" / "branch_tidy.sh").read_text(encoding="utf-8")
+    assert "밀렸다" in s and "흐름 밖" in s, "청소 기준(밀림 · 흐름 밖)이 없다"
+    assert "gh pr diff" in s, "닫기 전에 diff 를 보관하지 않는다"
+    assert "봇 대기" in s, "남긴 봇 PR 을 알리지 않는다"

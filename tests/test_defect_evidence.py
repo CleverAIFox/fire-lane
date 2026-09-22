@@ -34,11 +34,14 @@ EVIDENCE = {
     "W3-15": "tests/test_publish_context.py::test_deploy_uses_drop_list",
     "W3-18": "tests/test_ci_env.py::test_devcontainer_env_notice_is_conditional",
     "W8-1": "tests/test_defect_evidence.py::test_navi_toolchain_is_vite8_and_vitest",
-    "W9-4": "tests/test_web_labels.py::test_toggle_rows_carry_no_hand_written_names",
-    "W9-5": "tests/test_web_labels.py::test_toggles_js_fills_names_from_config",
+    # ★ 2026-09-22. W9-4 · W9-5 의 증표였던 tests/test_web_labels.py 는 옛 지도와 함께 지웠다.
+    #   토글 행 · toggles.js 가 없어져 재발할 자리가 없다 — 지도가 안 돌아오는 것이 증표다.
+    "W9-4": "tests/test_web_ownership.py::test_old_map_is_retired_and_entry_redirects",
+    "W9-5": "tests/test_web_ownership.py::test_old_map_is_retired_and_entry_redirects",
     "W3-13": "tests/test_generated_registry.py::test_call_site_values_come_from_registry",
     "W10-1": "tests/test_deadcheck_probes.py::test_every_ceiling_is_zero",
     "W5-1": "tests/test_defect_evidence.py::test_evidence_exists_in_tree",
+    "W4-7": "tests/test_docx_targets.py::test_long_cell_ratchet_bites",
 }
 
 

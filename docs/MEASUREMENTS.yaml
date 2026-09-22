@@ -1,0 +1,58 @@
+# docs/MEASUREMENTS.yaml — 측정 대장 (PLAN §13-4 가드 6 · DECISIONS §218-6)
+#
+# 측정은 강제할 수 없다. 대신 미결 측정마다 셋을 **재기 전에** 적는다 —
+#   question   무엇을 묻는가
+#   criterion  무엇이 나오면 어느 쪽으로 판정하는가(사후 합리화를 막는다 · §184-4 의 형태)
+#   sealed_log 실측 기록이 봉인될 자리
+# 그리고 오염 칸 — 적합(보정)에 한 번 쓴 지표는 다시 게이트로 못 쓴다. 여기 적힌 지표를
+# criterion 에 쓰면 `tests/test_measurements.py` 가 운다.
+#
+# ★ PLAN 에 행을 늘리지 않는다. PLAN §1 에 이미 있는 측정 행은 plan_row 로 잇고, 행이 없는
+#   외부 의존(정보공개 청구 등)은 여기에만 둔다.
+
+contaminated:
+  nfa_compare_abs_dev: >-
+    소방서 대조 절대편차 합(8.31m · 7구간). 뼈대 · 폭 규칙 적합에 이미 두 번 썼다(MASTER §4-1).
+    R4 성공 조건으로 되쓰지 않는다.
+
+measurements:
+  - id: d25-field
+    plan_row: 4
+    question: 우리 폭(width_min_m)과 판정이 실측과 맞는가 — 위험 오판(우리 초록 · 실측 3.0m 미만)이 있는가
+    criterion: >-
+      트랙 A·B 에서 위험 오판 0 이면 판정 유지. 1 이상이면 tools/field_compare.py 의 차감 제안을
+      측정 배치로 적용하고 golden 을 재잠근다. 트랙 C(봉인 표본)는 보정 근거로 쓰지 않고 외부 검증에만 쓴다
+    sealed_log: data/field/obs_points.csv
+    metrics: [danger_count, bias_m_by_kind]
+
+  - id: r4-ngii-pieces
+    plan_row: 51
+    question: NGII 1:1,000 중심선이 동명동에서 왜 456 조각인가(끊김 · 분리대 쌍선 · 원천 간 어긋남)
+    criterion: >-
+      조각 수와 제봉로184번길 세그 수로 1차 판정한다. 병합 뒤 조각이 도로명 구간 수의 1.2배 이하이고
+      제봉로184번길이 한 줄이면 뼈대 교체 배치로 간다
+    sealed_log: data/baseline/<봉인>/r4_pieces.json
+    metrics: [piece_count, jebong184_segments]
+
+  - id: parallel-edges
+    plan_row: 51
+    question: 길이비 1.5 를 넘는 병렬 엣지 7건이 실제 두 길인가, 노딩 결함인가
+    criterion: 정사영상 · NGII 도로면으로 7건을 한 건씩 판정한다. 결함이 4건 이상이면 노딩 규칙을 고치는 측정 배치
+    sealed_log: data/baseline/<봉인>/parallel_edges.json
+    metrics: [defect_count]
+
+  - id: n2-detail-address
+    plan_row: 57
+    question: 상세주소 DB 가 원룸·다가구 목적지를 건물 단위보다 더 정확히 잇는가
+    criterion: 무작위 50건에서 동·호 단위 좌표가 건물 대표점보다 출입구에 가까운 비율이 60% 이상이면 목적지 색인에 넣는다
+    sealed_log: data/field/n2_sample.csv
+    metrics: [closer_share]
+
+  - id: oneway-disclosure
+    plan_row: null
+    question: 동명동 일대 일방통행 지정 구간과 방향(공공데이터포털 표준데이터에 광주 동구분 없음)
+    criterion: >-
+      광주경찰청 · 동구청 정보공개 청구(2026-09-22) 회신을 대장에 올리고, navi_graph 의 방향 모름(ow=2)
+      구간이 회신 자료로 확정되는 비율을 센다. 50% 미만이면 현장 표지 확인을 D-25 동선에 얹는다
+    sealed_log: data/raw/(회신 파일 — 대장 등재 시 경로 확정)
+    metrics: [ow_unknown_resolved_share]

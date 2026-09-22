@@ -30,13 +30,20 @@ generated.py — 생성물 경로 등록부. **역할을 든다.** (PLAN §13 W3
   web-out      파이프라인이 쓰는 web 디렉터리 (tests/test_web_ownership.py)
   ledger-skip  대장 outputs 등재 검사에서 뺀다 (tests/test_ledger_outputs.py)
 
+★ 2026-09-22 (DECISIONS §218-6) 가족표 FAMILIES 를 더했다(계급 가드 5).
+  역할은 「어느 검사가 이 경로를 빼는가」를 묻고, 가족은 「누가 만들고 · 무엇이
+  재현을 확인하고 · 누가 읽는가」를 묻는다. 커밋된 생성물마다 셋이 다 있어야
+  한다 — 셋 중 하나가 없는 생성물은 낡아도 아무도 모른다. `GEN_ROOTS` 아래
+  추적 파일은 전부 정확히 한 가족에 든다(tests/test_generated_families.py).
+
 IN    없음
 OUT   없음 (상수)
-PARAM REGISTRY
+PARAM REGISTRY · FAMILIES · GEN_ROOTS
 """
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from dataclasses import dataclass
 
@@ -68,6 +75,89 @@ REGISTRY: tuple[Gen, ...] = (
 )
 
 ROLES: frozenset[str] = frozenset(r for g in REGISTRY for r in g.roles)
+
+
+@dataclass(frozen=True)
+class Family:
+    """커밋된 생성물 한 가족 — (만드는 것, 재현 확인, 읽는 것).
+
+    globs      저장소 상대 패턴. `*` 는 `/` 를 안 넘고 `**` 는 넘는다
+    generator  `firelane.모듈` 또는 `tools/파일` — 이 가족을 쓰는 코드
+    checks     재현·일치를 확인하는 명령. `uv run python <도구> [인자]` 꼴
+    consumers  이 가족을 읽는 파일·디렉터리
+    """
+    name: str
+    globs: tuple[str, ...]
+    generator: str
+    checks: tuple[str, ...]
+    consumers: tuple[str, ...]
+
+
+# ★ 가족표가 보는 루트. 이 아래 추적 파일은 전부 한 가족에 들어야 한다.
+GEN_ROOTS: tuple[str, ...] = (
+    "web/data", "data/processed", "data/dms", "data/golden", "data/baseline",
+    "docs/figures", "web/workflow.html", "docs/proposal.docx",
+)
+
+FAMILIES: tuple[Family, ...] = (
+    Family("web-data", ("web/data/*",),
+           # publish_web 이 publish_navi · publish_fleet · publish_basemap ·
+           # publish_context 를 불러 스물세 파일을 낸다(publish_web 머리말 OUT)
+           "firelane.publish_web",
+           ("uv run python tools/freshcheck.py",
+            "uv run python tools/web_manifest.py --check"),
+           ("web/navi/src", "tools/stage_pages.py")),
+    Family("web-ortho", ("web/data/ortho/**",), "firelane.ortho",
+           ("uv run python tools/web_manifest.py --check",),
+           ("web/navi/src/components/OpsMap.tsx",)),
+    Family("web-terrain", ("web/data/terrain/**",), "firelane.terrain",
+           ("uv run python tools/web_manifest.py --check",),
+           ("web/navi/src/components/layers.ts",)),
+    Family("processed-committed", ("data/processed/*",),
+           # 커밋 예외 넷만 추적된다(sources.yaml committed_exceptions · 역할 committed)
+           "firelane.pipeline",
+           ("uv run python tools/freshcheck.py", "uv run python tools/golden.py check"),
+           ("src/firelane/publish_web.py", "tools/golden.py", "tools/baseline.py")),
+    Family("golden", ("data/golden/*",), "tools/golden.py",
+           ("uv run python tools/golden.py check",),
+           ("tools/render_figures.py", "tools/docx_check.py", "tools/docnum_check.py")),
+    Family("baseline", ("data/baseline/**",),
+           # ★ 봉인 사본이다 — 원본이 교체돼 재생성할 수 없다(baseline.py 머리말).
+           #   재현 검사가 성립하지 않고 `list` 가 meta.json 을 읽어 집계를 보일 뿐이다.
+           "tools/baseline.py",
+           ("uv run python tools/baseline.py list",),
+           ("tools/baseline.py",)),
+    Family("dms-seal", ("data/dms/SEAL.json", "data/dms/RED.txt"), "tools/dms.py",
+           ("uv run python tools/dms.py ancestry", "uv run python tools/dms.py delta"),
+           ("tools/verify.sh",)),
+    Family("dms-bookmark", ("data/dms/BOOKMARK.json",), "tools/dms.py",
+           ("uv run python tools/dms.py delta",),
+           ("tools/dms.py",)),
+    Family("figures", ("docs/figures/*",), "tools/render_figures.py",
+           ("uv run python tools/render_figures.py --check",),
+           # 기획서에 그림을 넣는 것은 사람이다(render_figures 머리말)
+           ("docs/proposal.docx", "tests/test_figure_text.py")),
+    Family("workflow", ("web/workflow.html",), "tools/render_workflow.py",
+           ("uv run python tools/render_workflow.py --check",),
+           ("tools/stage_pages.py",)),
+    Family("proposal-numbers", ("docs/proposal.docx",),
+           # ★ 대외 제출본이라 생성물이 아니다. 판정 숫자만 docx_fix 가 제자리에서 고친다
+           "tools/docx_fix.py",
+           ("uv run python tools/docx_check.py",),
+           ("web/proposal.html", "tools/stage_pages.py")),
+)
+
+
+def _glob_re(pat: str) -> re.Pattern[str]:
+    out = ""
+    for part in re.split(r"(\*\*|\*|\?)", pat):
+        out += {"**": ".*", "*": "[^/]*", "?": "[^/]"}.get(part, re.escape(part))
+    return re.compile(out + r"\Z")
+
+
+def families_of(path: str) -> tuple[Family, ...]:
+    """경로가 드는 가족. 정상이면 정확히 하나다."""
+    return tuple(f for f in FAMILIES if any(_glob_re(g).match(path) for g in f.globs))
 
 
 def entries(role: str) -> tuple[Gen, ...]:

@@ -9,15 +9,15 @@ test_reach_overlay.py — 도달 불가 오버레이가 **실제로 무엇을 �
 ★ 오버레이는 조용히 틀린다. 조인 키가 어긋나면 `reachable` 이 전부 null 이 되고
   점선이 **하나도 안 그려지는데** 부팅은 멀쩡하다. 그래서 키 정합과 "0 이 아닌 수" 를
   둘 다 본다. 빗나간 조인을 0 으로 채우면 반대로 거짓 경고가 그려진다 — 그것도 본다.
+
+★ 2026-09-22. 옛 지도(web/js/reach.js · main.js)를 걷어냈다. 그 조인을 node 로 돌리던 시험과
+  배선 시험은 대상이 사라져 지웠다. 조인은 이제 관제 화면(web/navi)이 하고 그쪽 vitest 가 든다.
+  여기 남는 둘은 **발행물** 쪽 — 키가 일대일인가 · 그릴 것이 있는가 — 이라 소비자와 무관하다.
 """
 from __future__ import annotations
 
 import json
-import shutil
-import subprocess
 from pathlib import Path
-
-import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 W = ROOT / "web"
@@ -46,28 +46,3 @@ def test_overlay_has_something_to_draw():
     _, route = _load()
     n = sum(1 for v in route.values() if v["reachable"] == 0)
     assert 0 < n < len(route), f"도달 불가 {n}/{len(route)} — 0 이면 오버레이가 죽은 것이다"
-
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="환경skip(도구) — node 없음")
-def test_join_leaves_unmatched_as_null_not_zero(tmp_path):
-    """빗나간 조인을 0 으로 채우면 '도달 불가' 거짓 점선이 그려진다."""
-    probe = tmp_path / "probe.mjs"
-    probe.write_text(
-        f'import {{ joinReach }} from "{(W / "js/reach.js").as_uri()}";\n'
-        'const fs = [{properties:{seg_uid:"A"}},{properties:{seg_uid:"B"}},'
-        '{properties:{seg_uid:"C"}},{properties:{seg_uid:"D"}}];\n'
-        'const r = joinReach(fs, {A:{reachable:0}, B:{reachable:1}, D:{reachable:7}});\n'
-        'console.log(JSON.stringify({r, p: fs.map(f => f.properties.reachable)}));\n',
-        encoding="utf-8")
-    out = subprocess.run(["node", str(probe)], capture_output=True, text=True, check=True).stdout
-    got = json.loads(out)
-    assert got["p"] == [0, 1, None, None], got
-    assert got["r"] == {"unreach": 1, "missing": 2, "total": 4}, got
-
-
-def test_overlay_is_wired():
-    main = (W / "js/main.js").read_text(encoding="utf-8")
-    assert "joinReach(D.segments.features, D.route)" in main
-    assert "addUnreachable();" in main
-    boot = (ROOT / "tools/web_boot_check.mjs").read_text(encoding="utf-8")
-    assert '"seg-unreach"' in boot, "부팅 스모크가 오버레이 레이어를 필수로 안 본다"

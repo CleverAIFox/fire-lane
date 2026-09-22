@@ -160,7 +160,10 @@ def test_config_js_thresholds_match_params():
         f"임계값({truck:.1f} / {clear_at:.1f} / {rng:.1f})": "머리말 선언",
         f"{truck:.1f}m 미만": "blocked 설명",
         f"{clear_at:.1f}m 이상": "clear 설명",
-        f"radius:{rng:g}": "CCTV 커버리지 원",
+        # ★ 2026-09-22 (DECISIONS §218-6) `radius:{rng}`(markers[].cover — CCTV 커버리지 원)를
+        #   unknown 설명으로 옮겼다. 그 원을 그리던 옛 지도를 걷어내며 markers 블록을 지웠다 —
+        #   읽는 코드가 없는 사본을 이 시험 하나 때문에 남기지 않는다. 25m 는 설명에 산다.
+        f"유효범위 {rng:g}m 밖": "unknown 설명",
     }
     missing = [f"{s!r} ({why})" for s, why in want.items() if s not in cfg]
     assert not missing, (

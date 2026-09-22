@@ -33,7 +33,7 @@
 #   붙일 값어치가 있는 기능은 여기가 아니라 그쪽으로 간다. 여기 있는 것은
 #   **순서와 전제 확인**뿐이고, 그것이 이 파일이 존재하는 유일한 이유다.
 set -uo pipefail
-VERSION=2026-09-22.6
+VERSION=2026-09-22.7
 
 # ── 자기 복사 → 재실행 ────────────────────────────────────────
 if [ -z "${FL_RELOCATED:-}" ]; then
@@ -264,16 +264,32 @@ step "3. base 대조 (건드리기 전에)"
 HAVE=""
 if git rev-parse -q --verify "$BR" >/dev/null; then
     HAVE=$(git log --format=%H "origin/$BASE..$BR" | while read -r c; do
-               git show "$c" | git patch-id --stable | cut -d' ' -f1; done)
+               git show --binary "$c" | git patch-id --stable | cut -d' ' -f1; done)   # ★ --binary — 패치 파일(format-patch)과 같은 모양이어야 patch-id 가 맞는다(docx 가 든 배치에서 갈렸다)
 fi
 applied() { local id; id=$(git patch-id --stable < "$1" | cut -d' ' -f1)
             [ -n "$id" ] && printf '%s\n' "$HAVE" | grep -qx "$id"; }
 BAD=""; MISSING=0
+# ★ 2026-09-22 (DECISIONS §218 · 실제 사고). 종전 `git apply --check` 는 **지금 작업 트리**에 대 봤다.
+#   옛 판이 얹힌 가지 위에 서 있으면 새 판이 「안 붙는다」 로 멈췄다 — 메시지는 「base 에 대 봤다」
+#   였는데 실제로는 가지에 대 봤다. 이제 origin/BASE 를 **임시 인덱스**에 읽어 거기에 차례로 대 본다
+#   (앞 패치를 얹은 상태에 다음 패치를 대 본다 — 0002 가 0001 에 기대는 것이 정상이다).
+CHK_IDX=$(mktemp); rm -f "$CHK_IDX"
+GIT_INDEX_FILE="$CHK_IDX" git read-tree "origin/$BASE"
 for p in "${PATCHES[@]}"; do
-    if applied "$p"; then printf '     %s — %s 에 이미 있다\n' "$(basename "$p")" "$BR"; continue; fi
+    if applied "$p"; then
+        printf '     %s — %s 에 이미 있다\n' "$(basename "$p")" "$BR"
+        # 뒤 패치가 이것에 기댄다 — 임시 인덱스에는 얹어 둔다
+        GIT_INDEX_FILE="$CHK_IDX" git apply --cached --3way "$p" 2>/dev/null || true
+        continue
+    fi
     MISSING=$((MISSING + 1))
-    git apply --check --3way "$p" 2>/dev/null || BAD="$BAD $(basename "$p")"
+    if GIT_INDEX_FILE="$CHK_IDX" git apply --cached --check --3way "$p" 2>/dev/null; then
+        GIT_INDEX_FILE="$CHK_IDX" git apply --cached --3way "$p" 2>/dev/null || true
+    else
+        BAD="$BAD $(basename "$p")"
+    fi
 done
+rm -f "$CHK_IDX"
 # ★ 2026-09-22 실제 사고. 6단계에서 멈춘 가지가 남은 채로 **고친 판** 패치를 받았다.
 #   patch-id 가 달라 「이미 있다」 에 안 걸렸고, 4단계가 옛 커밋 **위에** 새 판을
 #   얹으려다 파일마다 「already exists」 로 멈췄다. 3단계는 base 에 대 봤으니 통과했다 —
@@ -324,6 +340,12 @@ ok "$(git rev-list --count "origin/$BASE..HEAD") 커밋"
 # ══ 5. 전수 verify ════════════════════════════════════════════
 step "5. 전수 verify"
 if ! bash tools/verify.sh; then
+    # ★ 2026-09-22 (실제 사고). verify 의 파이프라인 전량이 생성물(web/data · processed 매니페스트)을
+    #   다시 쓰고 빨강으로 멈추면 그 변경이 작업 트리에 남아, 다음 실행이 1단계 「추적 파일에 변경」
+    #   으로 막혔다. **생성물만** 되돌린다 — 사람이 고친 파일은 건드리지 않는다(정본은 generated 역할).
+    mapfile -t GEN < <(uv run --no-sync python -m firelane.generated --role fresh 2>/dev/null || true)
+    [ ${#GEN[@]} -gt 0 ] && git checkout -q -- "${GEN[@]}" 2>/dev/null \
+        && warn "verify 가 다시 쓴 생성물을 커밋본으로 되돌렸다: ${GEN[*]}"
     die "전수 verify 가 빨갛다. **메시지를 끝까지 읽어라** — 고치는 법이 그 안에 있다." \
         "  되돌리려면:  $FL_CMD $BR --undo"
 fi

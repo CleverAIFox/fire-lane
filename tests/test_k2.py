@@ -182,7 +182,13 @@ def test_verify_skips_are_real_skips():
     names = re.findall(r'^\s*note\s+"([^"]+)"', src, re.M)
     assert names, "프로브가 죽었다 — note 호출을 못 찾는다"
     assert "흡수 대상" not in names, "보고용 release_brief 줄이 생략 칸으로 돌아왔다"
-    allowed = {"JS 부팅 스모크", "내비 타입 검사", "파이프라인 전량 + golden"}
+    # ★ 2026-09-22 (DECISIONS §218-5). 갈래가 건너뛰는 단계는 **이름마다** 한 행을 남긴다
+    #   (`verify.sh` 의 `evidence_check`). 그래서 묶음 이름 「파이프라인 전량 + golden」이
+    #   단계 이름 넷으로 펴졌고, 내비 갈래도 셋이 됐다. 못 도는 조건은 그대로 둘이다 — npm 부재 · --fast/raw 부재.
+    #   「JS 부팅 스모크」는 옛 지도 철거로 단계째 없어졌다.
+    allowed = {"내비 환경 = CI", "내비 타입 검사", "내비 단위 시험",
+               "파이프라인 전량", "golden 판정 불변", "golden 게이트 해제 경로",
+               "커밋된 web/data 가 최신인가"}
     assert set(names) <= allowed, f"생략 사유가 새로 생겼다 — 못 도는 조건인지 보고 여기 적는다: {sorted(set(names) - allowed)}"
     brief = (ROOT / "tools/merge_batch.sh").read_text(encoding="utf-8")
     assert "tools/release_brief.py --base main --md" in brief, "release_brief 가 릴리즈 흐름에서도 빠졌다 — 표가 사라진다"

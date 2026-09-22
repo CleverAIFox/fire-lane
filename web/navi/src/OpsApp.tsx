@@ -41,7 +41,7 @@ import { openLink, newId, type Link } from "./infra/opsLink";
 import {
   HB_MS, OPS_EMPTY, asNaviMsg, opsAck, opsReduce, unitStale, type OpsState,
 } from "./domain/opsProtocol";
-import { buildAdjacency, findRoute, nearestNode } from "./domain/graph";
+import { buildAdjacency, findRouteBetween, nearestNode, snapToEdge } from "./domain/graph";
 import { ruleSummary } from "./domain/rules";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
@@ -143,17 +143,19 @@ export default function OpsApp() {
                         [data, adj, fromNode]);
   const plan = useMemo(() => {
     if (!data || !adj || fromNode < 0 || !incident) return null;
-    const to = nearestNode(data.graph, adj, onRoad(incident.point));
-    let p = findRoute(data.graph, adj, fromNode, to);
+    // 출발·도착을 구간에 투영한다(DECISIONS §218-3) — 노드에 붙이면 교차점으로 옮겨진다
+    const S = station ? snapToEdge(data.graph, adj, onRoad(station.point)) : null;
+    const T = snapToEdge(data.graph, adj, onRoad(incident.point));
+    let p = S && T ? findRouteBetween(data.graph, adj, S, T) : null;
     let alt = false;
-    if (!p) {
+    if (!p && S) {
       const a = alternateAccess(data.graph, adj, fromNode, incident.point);
-      if (a) { p = findRoute(data.graph, adj, fromNode, a.node); alt = !!p; }
+      if (a) { p = findRouteBetween(data.graph, adj, S, { node: a.node }); alt = !!p; }
     }
     if (!p) return { plan: null, alt: false, walkM: 0 };
     const end = p.coords[p.coords.length - 1];
     return { plan: p, alt, walkM: end ? distM(end, incident.point) : 0 };
-  }, [data, adj, fromNode, incident, onRoad]);
+  }, [data, adj, fromNode, station, incident, onRoad]);
 
   const onPick = useCallback((lon: number, lat: number) => {
     if (!picking || !prepared) return;

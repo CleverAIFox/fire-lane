@@ -176,7 +176,8 @@ def test_ledger_consumers_are_complete():
       `outputs.consumers` 에는 짝이 없어 손으로 유지되고 있었다.
     """
     led = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
-    scan = [p for d in ("src", "tools", "tests", "web/js")
+    # ★ 2026-09-22. `web/js` 를 뺐다 — 옛 지도를 걷어냈다.
+    scan = [p for d in ("src", "tools", "tests")
             for p in (ROOT / d).rglob("*")
             if p.suffix in (".py", ".js") and p.is_file()]
     texts = {p: p.read_text(encoding="utf-8", errors="ignore") for p in scan}
@@ -237,15 +238,10 @@ def _count_providers() -> int:
     return len(led["layers"]["raw"]["providers"])
 
 
-def _count_js_modules() -> int:
-    return len(list((ROOT / "web/js").rglob("*.js")))
-
-
+# ★ 2026-09-22. 「web/js 모듈」 행을 뺐다 — 옛 지도(web/js)를 걷어내 셀 것이 없다.
 COUNTS = (
     ("제공기관 폴더", _count_providers,
      ("README.md", "docs/MASTER.md", "tools/scan_data.py"), "{n}폴더"),
-    ("web/js 모듈", _count_js_modules,
-     ("README.md", "docs/MASTER.md", "web/README.md"), "{n}개 모듈"),
 )
 
 
@@ -275,8 +271,7 @@ def test_document_counts_match_reality():
         "문서의 수가 실물과 다르다.\n" + "\n".join(bad)
         + "\n\n  실물을 세는 명령 —"
           "\n    제공기관  python -c \"import yaml;print(len(yaml.safe_load("
-          "open('sources.yaml'))['layers']['raw']['providers']))\""
-          "\n    JS 모듈   node tools/js_graph_check.mjs")
+          "open('sources.yaml'))['layers']['raw']['providers']))\"")
 
 
 # ── 검증은 양쪽에서 한다 — 방향뿐 아니라 **범위**도 ────────────

@@ -7,7 +7,7 @@ test_tile_zoom_agreement.py — **굽는 줌과 읽는 줌이 같은가.**
 **세 곳**에 손으로 적혀 있고 셋이 갈려 있었다.
 
     src/firelane/ortho.py   TILE_Z = (15, 16, 17, 18, 19)     ← 굽는 쪽
-    web/js/map.js           minzoom:15, maxzoom:18            ← 읽는 쪽
+    web/js/map.js           minzoom:15, maxzoom:18            ← 읽는 쪽 (2026-09-22 철거)
     tools/desk_check.py     Z = 18   # ortho.py TILE_Z 의 최대값   ← 세 번째 사본
 
 MapLibre 는 소스 `maxzoom` 위로 타일을 요청하지 않는다. 그래서 z19 **1,035장
@@ -19,11 +19,13 @@ MapLibre 는 소스 `maxzoom` 위로 타일을 요청하지 않는다. 그래서
   이 세 번째 사본은 등재조차 안 돼 있었다(행은 둘만 들었다).
 
 ★ **이 검사는 셋을 합치지 않는다.** 파이썬 둘과 JS 하나라 합칠 수가 없다 —
-  `tests/test_scope_tiers.py` · `test_map_colour_keys.py` 와 같은 답으로
   **같은지를 강제한다.** 값을 고치는 것은 인스턴스고 이 검사가 족이다.
 
+★ 2026-09-22. 옛 지도(web/js)를 걷어냈다. 읽는 쪽은 이제 관제 화면
+  `web/navi/src/components/OpsMap.tsx` 의 ortho 소스다. 파일만 바뀌고 물음은 같다.
+
 ── 무엇을 보는가 ───────────────────────────────────────────────
-    1. `map.js` 의 ortho 소스 줌 범위가 `TILE_Z` 와 같은가
+    1. `OpsMap.tsx` 의 ortho 소스 줌 범위가 `TILE_Z` 와 같은가
     2. `desk_check.Z` 가 `TILE_Z` 의 최대값과 같은가 (주석이 약속하는 것)
     3. 실제로 구운 타일 폴더가 `TILE_Z` 와 같은가 (발행물이 있을 때만)
 
@@ -39,7 +41,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ORTHO = ROOT / "src" / "firelane" / "ortho.py"
-MAP_JS = ROOT / "web" / "js" / "map.js"
+MAP_JS = ROOT / "web" / "navi" / "src" / "components" / "OpsMap.tsx"
 DESK = ROOT / "tools" / "desk_check.py"
 TILES = ROOT / "web" / "data" / "ortho"
 
@@ -55,20 +57,16 @@ def _tile_z() -> tuple[int, ...]:
 
 
 def _map_ortho_zooms() -> tuple[int, int]:
-    """`map.js` 의 ortho 소스 `minzoom`·`maxzoom`."""
+    """관제 화면 `OpsMap.tsx` 의 ortho 소스 `minzoom`·`maxzoom`."""
     src = MAP_JS.read_text(encoding="utf-8")
-    i = src.find("ortho:{")
-    assert i >= 0, "`map.js` 에 ortho 소스 선언이 없다"
+    m = re.search(r"\bortho\s*:\s*\{", src)
+    assert m, "`OpsMap.tsx` 에 ortho 소스 선언이 없다"
+    i = m.start()
     # ★ `{...}` 를 정규식으로 닫지 않는다. 타일 URL 이 `{z}/{x}/{y}` 라
     #   비탐욕 매칭이 **그 중괄호에서 먼저 닫힌다.** 2026-09-20 에 그렇게
     #   짰다가 「minzoom/maxzoom 이 없다」로 걸렸다 — 빈 그물 검사가 잡았다.
     body = src[i:i + 320]
     lo = re.search(r"minzoom\s*:\s*(\d+)", body)
-    # ★ 2026-09-22 (PLAN §13 W9-4). minzoom 은 이제 `CONFIG.layers.ortho.zoom` 을
-    #   읽는다 — 패널 토글 문구와 같은 값이다. 그 참조면 config.js 에서 값을 푼다.
-    if not lo and re.search(r"minzoom\s*:\s*CONFIG\.layers\.ortho\.zoom", body):
-        cfg = (ROOT / "web" / "config.js").read_text(encoding="utf-8")
-        lo = re.search(r"^\s*ortho\s*:\s*\{[^}\n]*\bzoom\s*:\s*(\d+)", cfg, re.M)
     hi = re.search(r"maxzoom\s*:\s*(\d+)", body)
     assert lo and hi, f"ortho 소스에 minzoom/maxzoom 이 없다 — {body[:80]}"
     return int(lo.group(1)), int(hi.group(1))
@@ -79,7 +77,7 @@ def test_the_probes_are_not_empty_nets():
     z = _tile_z()
     assert len(z) >= 2, f"`TILE_Z` 가 {z} 다 — 너무 짧다. 추출기를 의심하라"
     lo, hi = _map_ortho_zooms()
-    assert 0 < lo <= hi <= 22, f"map.js 줌이 이상하다 — {lo}..{hi}"
+    assert 0 < lo <= hi <= 22, f"OpsMap.tsx 줌이 이상하다 — {lo}..{hi}"
     assert re.search(r"^Z\s*=\s*\d+", DESK.read_text(encoding="utf-8"), re.M), \
         "`desk_check.py` 에서 `Z = ` 를 못 찾았다"
 
@@ -90,7 +88,7 @@ def test_browser_reads_every_zoom_that_is_baked():
     lo, hi = _map_ortho_zooms()
     unread = [x for x in z if x > hi or x < lo]
     assert not unread, (
-        f"`ortho.py` 가 줌 {sorted(z)} 를 굽는데 `map.js` 는 {lo}..{hi} 만 읽는다.\n"
+        f"`ortho.py` 가 줌 {sorted(z)} 를 굽는데 `OpsMap.tsx` 는 {lo}..{hi} 만 읽는다.\n"
         f"  안 읽는 줌: {unread}\n"
         "  MapLibre 는 소스 `maxzoom` 위로 타일을 **요청하지 않는다** —\n"
         "  그 줌의 타일은 커밋되고 배포되지만 아무도 안 받는다.\n"

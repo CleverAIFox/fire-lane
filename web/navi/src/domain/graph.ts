@@ -6,15 +6,37 @@
  * ★ 순수하다. React·MapLibre·fetch 를 모른다.
  */
 
-import { distM, angleDelta, type LngLat } from "./geo";
+import { distM, angleDelta, MX, MY, type LngLat } from "./geo";
 import { edgeCost, requiredWidth, type TuningKnobs, TUNING } from "./vehicle";
 import { directionFactor, edgeIndex, routeRuleWarnings, turnBan, TURN_BAN_M } from "./rules";
+import { tightTurn, TIGHT_TURN_M } from "./turning";
 import type { GraphEdge, NaviGraph, RoutePlan, VehicleSpec } from "./types";
 
 /** `idx` 는 `graph.edges` 인덱스 — 회전 금지가 인덱스로 적혀 있다 */
 interface Adj { to: number; cost: number; edge: GraphEdge; idx: number }
 export type Adjacency = Map<number, Adj[]>;
 export type CostMode = "safe" | "fastest";
+
+/** 인접리스트를 구운 차 — 코너 회전 점검(§218-2)이 전이마다 차를 알아야 한다 */
+const ADJ_SPEC = new WeakMap<Adjacency, VehicleSpec>();
+const TIGHT_CACHE = new WeakMap<Adjacency, Map<string, boolean>>();
+
+/** 이 인접리스트의 차에게 `(들어온, 노드, 나갈)` 전이가 좁은 코너인가. 캐시한다 */
+function isTight(graph: NaviGraph, adj: Adjacency, inIdx: number, node: number, outIdx: number): boolean {
+  const spec = ADJ_SPEC.get(adj);
+  if (!spec?.turn_check_radius_m) return false;
+  let m = TIGHT_CACHE.get(adj);
+  if (!m) TIGHT_CACHE.set(adj, (m = new Map()));
+  const k = `${inIdx}|${node}|${outIdx}`;
+  let v = m.get(k);
+  if (v === undefined) m.set(k, (v = tightTurn(graph, spec, inIdx, node, outIdx) !== null));
+  return v;
+}
+
+/** 인접리스트를 구운 차. 경고를 다시 셀 때 쓴다 */
+export function adjacencySpec(adj: Adjacency): VehicleSpec | undefined {
+  return ADJ_SPEC.get(adj);
+}
 
 /**
  * 그래프를 A* 용 인접리스트로 굽는다. **한 번만 호출한다.**
@@ -30,6 +52,7 @@ export function buildAdjacency(
   excluded?: ReadonlySet<string>,
 ): Adjacency {
   const adj: Adjacency = new Map();
+  ADJ_SPEC.set(adj, spec);
   const index = edgeIndex(graph);
   for (const e of graph.edges) {
     if (e.a === e.b) continue;
@@ -67,6 +90,129 @@ export function nearestNode(graph: NaviGraph, adj: Adjacency, p: LngLat): number
     if (d < bd) { bd = d; best = n; }
   }
   return best;
+}
+
+// ── 구간 위 투영 (DECISIONS §218-3) ──────────────────────────────────────
+//
+// ★ 2026-09-22. 출발·도착을 가장 가까운 **노드**에 붙이면 구간 한가운데 선 사람이
+//   교차점으로 옮겨진다. 웅토피아(DECISIONS §134)가 같은 결함으로 20m 를 1,172m 로
+//   안내했다. 가장 가까운 **통행가능 구간**에 투영하고 부분 구간 비용을 셈에 넣는다.
+
+/** 이보다 짧은 부분 구간(형상 m)은 노드 위에 선 것으로 본다 */
+const NODE_EPS_M = 0.05;
+
+/** 구간 위 투영 결과 */
+export interface EdgeSnap {
+  /** `graph.edges` 인덱스 */
+  idx: number;
+  edge: GraphEdge;
+  /** 투영점 */
+  point: LngLat;
+  /** 형상(a→b) 위 비율 0~1 */
+  t: number;
+  /** 원점 → 투영점 직선거리(m) */
+  distM: number;
+  /** 투영점 → a · → b 부분 길이(m, `length_m` 공간) */
+  toA_M: number;
+  toB_M: number;
+}
+
+const USABLE = new WeakMap<Adjacency, number[]>();
+
+/** 인접리스트에 실린(= nearestNode 가 통행가능으로 보는) 구간 인덱스 */
+function usableEdges(adj: Adjacency): number[] {
+  let u = USABLE.get(adj);
+  if (!u) {
+    const s = new Set<number>();
+    for (const list of adj.values()) for (const x of list) s.add(x.idx);
+    USABLE.set(adj, (u = [...s].sort((p, q) => p - q)));
+  }
+  return u;
+}
+
+function geomLen(coords: LngLat[]): number {
+  let L = 0;
+  for (let i = 1; i < coords.length; i++) L += distM(coords[i - 1], coords[i]);
+  return L;
+}
+
+/** 형상(a→b)의 비율 t0..t1 부분. a→b 순서로 낸다 */
+export function clipCoords(coords: LngLat[], t0: number, t1: number): LngLat[] {
+  const total = geomLen(coords);
+  if (coords.length < 2 || total <= 0) return [coords[0], coords[coords.length - 1]];
+  const d0 = t0 * total, d1 = t1 * total;
+  const at = (d: number): LngLat => {
+    let acc = 0;
+    for (let i = 1; i < coords.length; i++) {
+      const s = distM(coords[i - 1], coords[i]);
+      if (acc + s >= d || i === coords.length - 1) {
+        const f = s > 0 ? Math.max(0, Math.min(1, (d - acc) / s)) : 0;
+        const p = coords[i - 1], q = coords[i];
+        return [p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f];
+      }
+      acc += s;
+    }
+    return coords[coords.length - 1];
+  };
+  const out: LngLat[] = [at(d0)];
+  let acc = 0;
+  for (let i = 1; i < coords.length - 1; i++) {
+    acc += distM(coords[i - 1], coords[i]);
+    if (acc > d0 && acc < d1) out.push(coords[i]);
+  }
+  out.push(at(d1));
+  return out;
+}
+
+/**
+ * 좌표에서 가장 가까운 **통행가능 구간**과 그 위 투영점.
+ * 통행가능 = 인접리스트에 실린 구간(`nearestNode` 와 같은 기준 — 막힘 · 폭 미달 · 신고 제외는 빠진다).
+ */
+export function snapToEdge(graph: NaviGraph, adj: Adjacency, p: LngLat): EdgeSnap | null {
+  const px = p[0] * MX, py = p[1] * MY;
+  let best: { idx: number; d2: number; along: number; total: number; pt: LngLat } | null = null;
+  for (const idx of usableEdges(adj)) {
+    const c = graph.edges[idx].coords;
+    let acc = 0;
+    let total = 0;
+    for (let i = 1; i < c.length; i++) total += distM(c[i - 1], c[i]);
+    for (let i = 1; i < c.length; i++) {
+      const ax = c[i - 1][0] * MX, ay = c[i - 1][1] * MY;
+      const bx = c[i][0] * MX, by = c[i][1] * MY;
+      const dx = bx - ax, dy = by - ay;
+      const L2 = dx * dx + dy * dy;
+      const f = L2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L2)) : 0;
+      const qx = ax + dx * f, qy = ay + dy * f;
+      const d2 = (px - qx) ** 2 + (py - qy) ** 2;
+      if (!best || d2 < best.d2) {
+        best = { idx, d2, along: acc + Math.sqrt(L2) * f, total, pt: [qx / MX, qy / MY] };
+      }
+      acc += Math.sqrt(L2);
+    }
+  }
+  if (!best) return null;
+  const edge = graph.edges[best.idx];
+  const t = best.total > 0 ? Math.max(0, Math.min(1, best.along / best.total)) : 0;
+  const L = edge.length_m ?? best.total;
+  return {
+    idx: best.idx, edge, point: best.pt, t, distM: Math.sqrt(best.d2),
+    toA_M: L * t, toB_M: L * (1 - t),
+  };
+}
+
+/** 인접리스트가 이 구간의 한 방향에 매긴 비용(배수 · 일방통행 포함). 없으면 Infinity */
+function dirCost(adj: Adjacency, e: GraphEdge, idx: number, forward: boolean): number {
+  const [from, to] = forward ? [e.a, e.b] : [e.b, e.a];
+  for (const x of adj.get(from) ?? []) if (x.idx === idx && x.to === to) return x.cost;
+  return Infinity;
+}
+
+/**
+ * 자른 사본의 선형 비율(a→b, 0~1) → 원본 구간 비율. 자르지 않은 구간은 그대로.
+ * 스냅의 `progress` 는 원본 기준이라 둘을 오갈 때 쓴다.
+ */
+export function fullProgress(e: GraphEdge, f01: number): number {
+  return e.clip ? e.clip.t0 + f01 * (e.clip.t1 - e.clip.t0) : f01;
 }
 
 /**
@@ -127,7 +273,9 @@ export function findRoute(
       const nk = key(nx);
       if (done.has(nk)) continue;
       const ban = cur.s.via >= 0 && turnBan(graph, cur.s.via, cur.s.n, idx) !== undefined;
-      const ng = base + cost + (ban ? TURN_BAN_M : 0);
+      // ★ 좁은 코너(§218-2) — 제원 완성 차종만. 막지 않고 벌점(돌아갈 길이 있으면 그리로)
+      const tight = cur.s.via >= 0 && isTight(graph, adj, cur.s.via, cur.s.n, idx);
+      const ng = base + cost + (ban ? TURN_BAN_M : 0) + (tight ? TIGHT_TURN_M : 0);
       if (ng < (g.get(nk) ?? Infinity)) {
         g.set(nk, ng);
         from.set(nk, { prev: cur.s, edge });
@@ -169,12 +317,228 @@ export function findRoute(
   return {
     edges, forward, nodes, coords,
     cost: total, lengthM, byVerdict,
-    rules: routeRuleWarnings(graph, { edges, forward, nodes }),
+    rules: routeRuleWarnings(graph, { edges, forward, nodes }, ADJ_SPEC.get(adj)),
   };
 }
 
 function otherEnd(e: GraphEdge, n: number): number {
   return e.a === n ? e.b : e.a;
+}
+
+/** 경로의 한쪽 끝 — 노드 하나이거나 구간 위 투영점 */
+export type RouteEnd = { node: number } | EdgeSnap;
+
+/**
+ * 좌표 → 좌표 경로. 출발·도착을 **구간에 투영**하고 부분 구간을 값에 넣는다(DECISIONS §218-3).
+ * 통행가능 구간이 없거나 닿지 못하면 null.
+ */
+export function findRouteFromPoints(
+  graph: NaviGraph, adj: Adjacency, from: LngLat, to: LngLat,
+): RoutePlan | null {
+  const s = snapToEdge(graph, adj, from);
+  const g = snapToEdge(graph, adj, to);
+  return s && g ? findRouteBetween(graph, adj, s, g) : null;
+}
+
+/**
+ * `findRoute` 를 구간 위 끝점으로 넓힌 것.
+ *
+ * ── 어떻게 ──────────────────────────────────────────────────────
+ * 출발 구간 E 의 **두 끝점**에서 A* 를 시작한다. 초기 비용 = 그 방향 인접리스트 비용 ×
+ * 부분 비율 — 배수 · 일방통행(`directionFactor`)이 부분 구간에도 그대로 걸린다. 시작 상태의
+ * 「들어온 엣지」 는 E 다 → 되돌아가기 금지 · 회전 금지 · 좁은 코너가 E 에서 나가는 전이에
+ * `findRoute` 와 똑같이 걸린다. 도착 구간 G 는 두 끝점 어느 쪽에서든 들어가 투영점까지의
+ * 부분 비용을 더하는 **가상 종점**으로 둔다(들어갈 때의 회전 규칙 포함). 같은 구간이면
+ * 구간을 따라 곧장 가는 후보를 하나 더 둔다 — 역방향이면 역주행 배수가 붙어, 돌아가는
+ * 길이 더 싸면 그리로 간다.
+ *
+ * ── 결과 ────────────────────────────────────────────────────────
+ * 모양은 `findRoute` 와 같다. 첫 · 끝 엣지는 투영점에서 **자른 사본**(`GraphEdge.clip`)이라
+ * `coords` 가 투영점에서 시작해 투영점에서 끝나고, `length_m` 합(= `lengthM`)에 부분만 들어간다.
+ * 그래서 거리를 `length_m` 합으로 세는 쪽(진행 · 회전 · ETA · 시뮬레이션)이 고칠 것 없이 맞는다.
+ * `nodes[0]` 은 첫 엣지의 (명목상) 시작 노드다 — 투영점 뒤쪽 끝점.
+ */
+export function findRouteBetween(
+  graph: NaviGraph, adj: Adjacency, fromEnd: RouteEnd, toEnd: RouteEnd, heuristic = true,
+): RoutePlan | null {
+  type St = { n: number; via: number };
+  const key = (s: St) => `${s.n}:${s.via}`;
+
+  // ── 시작 상태 ────────────────────────────────────────────────
+  const seeds: { s: St; g: number }[] = [];
+  const S = "idx" in fromEnd ? fromEnd : null;
+  if (S) {
+    const e = S.edge, Lg = geomLen(e.coords);
+    for (const fwd of [true, false]) {
+      const part = fwd ? 1 - S.t : S.t;           // 가는 쪽 끝점까지 비율
+      const n = fwd ? e.b : e.a;
+      if (part * Lg < NODE_EPS_M) { seeds.push({ s: { n, via: -1 }, g: 0 }); continue; }
+      const c = dirCost(adj, e, S.idx, fwd) * part;
+      if (Number.isFinite(c)) seeds.push({ s: { n, via: S.idx }, g: c });
+    }
+  } else if ((fromEnd as { node: number }).node >= 0) {
+    seeds.push({ s: { n: (fromEnd as { node: number }).node, via: -1 }, g: 0 });
+  }
+  if (!seeds.length) return null;
+
+  // ── 가상 종점 ────────────────────────────────────────────────
+  // guard ≥ 0 이면 구간 G 로 들어가는 전이다 — 회전 규칙이 걸린다. -1 이면 노드 도착
+  type Goal = { n: number; extra: number; guard: number; t0: number; t1: number; fwd: boolean };
+  const goals: Goal[] = [];
+  const G = "idx" in toEnd ? toEnd : null;
+  if (G) {
+    const e = G.edge, Lg = geomLen(e.coords);
+    for (const fwd of [true, false]) {
+      const part = fwd ? G.t : 1 - G.t;           // 들어가는 끝점에서 투영점까지 비율
+      const n = fwd ? e.a : e.b;
+      if (part * Lg < NODE_EPS_M) { goals.push({ n, extra: 0, guard: -1, t0: 0, t1: 0, fwd }); continue; }
+      const c = dirCost(adj, e, G.idx, fwd) * part;
+      if (Number.isFinite(c)) {
+        goals.push({ n, extra: c, guard: G.idx, t0: fwd ? 0 : G.t, t1: fwd ? G.t : 1, fwd });
+      }
+    }
+  } else if ((toEnd as { node: number }).node >= 0) {
+    goals.push({ n: (toEnd as { node: number }).node, extra: 0, guard: -1, t0: 0, t1: 0, fwd: true });
+  }
+  if (!goals.length) return null;
+
+  const h = (n: number) => {
+    if (!heuristic) return 0;
+    let m = Infinity;
+    for (const q of goals) m = Math.min(m, distM(graph.nodes[n], graph.nodes[q.n]));
+    return m;
+  };
+
+  // ── 종점 후보: 같은 구간이면 구간을 따라 곧장 ───────────────────
+  let best: { g: number; prev: St | null; goal: number } = { g: Infinity, prev: null, goal: -1 };
+  let direct: { t0: number; t1: number; fwd: boolean } | null = null;
+  if (S && G && S.idx === G.idx) {
+    const fwd = G.t >= S.t;
+    const c = dirCost(adj, S.edge, S.idx, fwd) * Math.abs(G.t - S.t);
+    if (Number.isFinite(c)) {
+      direct = { t0: Math.min(S.t, G.t), t1: Math.max(S.t, G.t), fwd };
+      best = { g: c, prev: null, goal: -1 };
+    }
+  }
+
+  const g = new Map<string, number>();
+  const from = new Map<string, { prev: St; edge: GraphEdge }>();
+  const done = new Set<string>();
+  // term=true 는 가상 종점 항목이다. 꺼내면 끝난다(휴리스틱이 일관적이라 최적이다)
+  const open: { s: St; f: number; term?: boolean }[] = [];
+  for (const { s, g: g0 } of seeds) {
+    if (g0 < (g.get(key(s)) ?? Infinity)) { g.set(key(s), g0); open.push({ s, f: g0 + h(s.n) }); }
+  }
+  if (direct) open.push({ s: { n: -1, via: -1 }, f: best.g, term: true });
+
+  let finished = false;
+  while (open.length) {
+    open.sort((p, q) => p.f - q.f);
+    const cur = open.shift()!;
+    if (cur.term) {
+      if (cur.f <= best.g) { finished = true; break; }
+      continue;
+    }
+    const ck = key(cur.s);
+    if (done.has(ck)) continue;
+    done.add(ck);
+    const base = g.get(ck) ?? Infinity;
+    const back = cur.s.via >= 0 ? otherEnd(graph.edges[cur.s.via], cur.s.n) : -1;
+
+    // 이 노드에서 도착 구간으로 들어가기
+    goals.forEach((q, k) => {
+      if (q.n !== cur.s.n) return;
+      let ng = base + q.extra;
+      if (q.guard >= 0) {
+        if (cur.s.via === q.guard) return;            // 온 구간을 되돌아 들어가기 = 유턴
+        if (cur.s.via >= 0 && turnBan(graph, cur.s.via, cur.s.n, q.guard) !== undefined) ng += TURN_BAN_M;
+        if (cur.s.via >= 0 && isTight(graph, adj, cur.s.via, cur.s.n, q.guard)) ng += TIGHT_TURN_M;
+      }
+      if (ng < best.g) {
+        best = { g: ng, prev: cur.s, goal: k };
+        open.push({ s: cur.s, f: ng, term: true });
+      }
+    });
+
+    for (const { to, cost, edge, idx } of adj.get(cur.s.n) ?? []) {
+      if (to === back) continue;
+      const nx: St = { n: to, via: idx };
+      const nk = key(nx);
+      if (done.has(nk)) continue;
+      const ban = cur.s.via >= 0 && turnBan(graph, cur.s.via, cur.s.n, idx) !== undefined;
+      const tight = cur.s.via >= 0 && isTight(graph, adj, cur.s.via, cur.s.n, idx);
+      const ng = base + cost + (ban ? TURN_BAN_M : 0) + (tight ? TIGHT_TURN_M : 0);
+      if (ng < (g.get(nk) ?? Infinity)) {
+        g.set(nk, ng);
+        from.set(nk, { prev: cur.s, edge });
+        open.push({ s: nx, f: ng + h(to) });
+      }
+    }
+  }
+  if (!finished && !Number.isFinite(best.g)) return null;
+
+  // ── 조각 모으기: (원본 엣지, 인덱스, 진행방향, 자를 비율) ─────────
+  const index = edgeIndex(graph);
+  type Piece = { e: GraphEdge; idx: number; fwd: boolean; clip: [number, number] | null };
+  const pieces: Piece[] = [];
+  if (best.prev === null && direct && S) {
+    pieces.push({ e: S.edge, idx: S.idx, fwd: direct.fwd, clip: [direct.t0, direct.t1] });
+  } else {
+    const mid: Piece[] = [];
+    let st = best.prev!;
+    for (;;) {
+      const step = from.get(key(st));
+      if (!step) break;
+      const idx = index.get(step.edge)!;
+      mid.unshift({ e: step.edge, idx, fwd: step.edge.a === step.prev.n, clip: null });
+      st = step.prev;
+    }
+    // 뿌리가 출발 구간 위 시작 상태면 그 부분을 앞에 붙인다
+    if (S && st.via === S.idx) {
+      const fwd = st.n === S.edge.b;
+      pieces.push({ e: S.edge, idx: S.idx, fwd, clip: fwd ? [S.t, 1] : [0, S.t] });
+    }
+    pieces.push(...mid);
+    const q = goals[best.goal];
+    if (q && q.guard >= 0 && G) pieces.push({ e: G.edge, idx: G.idx, fwd: q.fwd, clip: [q.t0, q.t1] });
+  }
+
+  // ── RoutePlan 조립 ───────────────────────────────────────────
+  const edges: GraphEdge[] = [];
+  const forward: boolean[] = [];
+  const coords: LngLat[] = [];
+  const nodes: number[] = [];
+  const byVerdict: Record<string, number> = {};
+  let lengthM = 0;
+  for (const p of pieces) {
+    let e = p.e;
+    if (p.clip) {
+      const [t0, t1] = p.clip;
+      const L = (e.length_m ?? geomLen(e.coords)) * (t1 - t0);
+      e = { ...e, coords: clipCoords(e.coords, t0, t1), length_m: L, clip: { src: p.idx, t0, t1 } };
+    }
+    if (!nodes.length) nodes.push(p.fwd ? e.a : e.b);
+    edges.push(e);
+    forward.push(p.fwd);
+    nodes.push(p.fwd ? e.b : e.a);
+    const c = p.fwd ? e.coords : [...e.coords].reverse();
+    for (let i = coords.length ? 1 : 0; i < c.length; i++) coords.push(c[i]);
+    const L = e.length_m ?? 0;
+    lengthM += L;
+    byVerdict[e.verdict] = (byVerdict[e.verdict] ?? 0) + L;
+  }
+  if (!edges.length) {
+    // 출발 = 도착(같은 노드 · 같은 점)
+    const at = S?.point ?? G?.point ?? graph.nodes[seeds[0].s.n];
+    coords.push(at);
+    nodes.push(seeds[0].s.n);
+  }
+
+  return {
+    edges, forward, nodes, coords,
+    cost: best.g, lengthM, byVerdict,
+    rules: routeRuleWarnings(graph, { edges, forward, nodes }, ADJ_SPEC.get(adj)),
+  };
 }
 
 /** 경로 구간 집합. 스냅이 경로를 알게 하는 데 쓴다. */
@@ -200,7 +564,11 @@ export function progressAlongRoute(
     const e = plan.edges[i];
     const L = e.length_m ?? 0;
     if (e.seg_uid === current.seg_uid) {
-      const p = plan.forward[i] ? current.progress : 1 - current.progress;
+      // 자른 사본(출발·도착 구간)이면 원본 비율을 사본 비율로 옮긴다
+      const q = e.clip
+        ? (e.clip.t1 > e.clip.t0 ? (current.progress - e.clip.t0) / (e.clip.t1 - e.clip.t0) : 0)
+        : current.progress;
+      const p = plan.forward[i] ? q : 1 - q;
       return acc + L * Math.max(0, Math.min(1, p));
     }
     acc += L;

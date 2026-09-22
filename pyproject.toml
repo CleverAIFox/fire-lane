@@ -115,7 +115,7 @@ line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = ["E", "F", "I", "UP", "B", "W605"]   # W605 — 무효 이스케이프(`"\d"`)가 죽은 정규식이 된 사고(plan_renumber) · 토트 모범 §218-4
 
 # ★ 2026-08-22. CI 에 ruff 를 넣어놓고 한 번도 초록불이 아니었다(155개).
 #   진짜 위험한 것만 남기고 스타일 취향은 끈다. 아래 여섯은 **고치면
@@ -142,6 +142,38 @@ ignore = [
 
     # sys.stdout.reconfigure 처럼 import 전에 와야 하는 런타임 설정 뒤에 온다.
     "E402",   # import 가 파일 최상단이 아님
+]
+
+# ── 의존성 선언 ↔ 실제 import (4족 클래스 가드) ─────────────────
+# ★ 2026-09-22 (DECISIONS §218-5). `test_etl_imports_are_declared` 는 **한 방향**만
+#   본다 — src/firelane 이 import 하는데 필수 의존성에 없는 것. 반대 방향(선언은
+#   있는데 아무도 import 안 함)과 tools/ 는 강제자가 없었다. 2026-08-21 에 API·vision
+#   9종이 import 0회인 채 코어에 앉아 있던 것을 사람이 손으로 찾았다(위 extras 주석).
+#   deptry 가 두 방향을 다 센다.
+# ★ **잠금에 넣지 않는다.** `uv run --no-sync --with deptry==<판>` 으로 그 자리에서만
+#   얹는다 — uv.lock 이 움직이면 샤드 봉인 · golden 지문이 찢어진다(contract.yml 의
+#   pip-audit 와 같은 이유). 판은 verify.sh · contract.yml 두 곳에 적히고
+#   `tests/test_deptry_config.py` 가 둘이 같은지 본다.
+# ★ 대상은 `src tools` 다. tests/ 는 dev 그룹이 덮는 자리라 넣으면 pytest 가 DEP004 로 운다.
+[tool.deptry]
+# ★ 선언과 import 이름이 다른 것만 적는다. extras 는 로컬에 안 깔려(verify 는
+#   `--dev` 만 깐다) deptry 가 이름을 **추측**한다 — 추측이 틀리면 면제가 헛돈다.
+#   `tests/test_deptry_config.py` 가 면제의 생사를 이 표로 잰다.
+package_module_name_map = { "opencv-python" = "cv2", "python-multipart" = ["multipart", "python_multipart"], "ruamel-yaml" = "ruamel", "pillow" = "PIL", "PyYAML" = "yaml", "python-docx" = "docx", "actionlint-py" = "actionlint_py", "shellcheck-py" = "shellcheck_py" }
+
+[tool.deptry.per_rule_ignores]
+# ★ **알려진 예외 — 래칫이다.** 오늘 실측(deptry 0.25.1 · 2026-09-22) 그대로 적었고
+#   더 늘리지 않는다. 새 미사용 선언이 생기면 여기 없으므로 운다. 반대로 아래 것을
+#   누가 import 하기 시작하면 `tests/test_deptry_config.py` 가 「면제를 지워라」로 운다.
+#   의존성 목록을 여기서 고치지 않는 이유 — 고치면 uv.lock 이 움직인다(위 ★).
+DEP002 = [
+    # 실결함. 코어인데 src·tools 어디서도 import 0회 — tests/test_workflow_guards.py 만 쓴다.
+    #   dev 그룹으로 내려야 한다(잠금이 움직이는 일이라 다음 잠금 배치가 받는다).
+    "ruamel-yaml",
+    # 실미사용 · 선언된 자리표. `[api]` extras — src/api/ 가 아직 없다(위 2026-08-21 주석).
+    "fastapi", "uvicorn", "python-multipart",
+    # 실미사용 · 선언된 자리표. `[vision]` extras — CV 파트 코드가 이 저장소에 아직 없다.
+    "opencv-python", "ultralytics", "torch", "torchvision",
 ]
 
 [tool.pytest.ini_options]

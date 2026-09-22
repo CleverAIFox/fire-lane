@@ -23,7 +23,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v7
       with:
         # ★ 2026-09-18 (DECISIONS §186-2). 정본은 `web/navi/.nvmrc` 하나다.
         #   종전에는 여기가 20, `contract` 의 내비 타입 검사가 22 였다 —

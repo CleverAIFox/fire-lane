@@ -73,6 +73,7 @@ uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증�
 uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
 uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 (--apply 로 당긴다)
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
+uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
 # ★ 위 도구가 세는 사본을 합친 자리 —
 #   src/firelane/hashing.py    파일 sha256. 10곳이 한 벌이었다
 #   src/firelane/console.py    col · human · 팔레트. 17곳
@@ -128,7 +129,7 @@ uv run python -m firelane.normalize_raw "$FIRE_LANE_DATA/landing" --dry-run
 uv run python -m firelane.contract
 uv run fire-lane
 
-uv run python tools/serve.py        # 캐시 없는 개발 서버
+uv run python tools/serve.py        # 배포와 같은 배치(입구 · navi 빌드 · data)
 ```
 
 `uv pip install -e .` 은 쓰지 않는다. `[build-system]` 이 있으므로 `uv sync` 가
@@ -175,10 +176,8 @@ bash tools/janitor.sh       # 기계·저장소·레이크 세 층을 한 표로
 는 `NEVER` 로 막혀 있고 규칙에 실수로 넣어도 안 지워진다.
 
 **마지막 하나는 사람이 봐야 한다.** WebGL 렌더링은 스크립트가 못 본다.
-지도가 실제로 그려지는지, 판정 색·표지판·미니맵·검색이 눈으로 멀쩡한지는
-`tools/serve.py` 로 직접 확인한다.
-
-`index.html` 을 더블클릭하면 안 된다. `file://` 에서는 `fetch()` 가 CORS 로 막힌다.
+지도가 실제로 그려지는지, 판정 색·표지판·경로·관제 패널이 눈으로 멀쩡한지는
+`tools/serve.py` 로 직접 확인한다(배포와 같은 배치 — 입구 · navi 빌드 · data).
 
 강제자  `tools/verify.sh`
 
@@ -442,21 +441,19 @@ tools/
   ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
   render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
   stage_pages.py          ★ 배포 준비 한 곳 — docs/proposal.docx → web/
-  render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 대조
+  render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 · 라벨 넘침 · 막대 덮음 대조
   release_brief.py        ★ 이 PR 이 무엇을 흡수하나 — 판정·계보·대장·계약
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
   ledger_feeds.py         feeds 산문 → 소비자 리스트
-  serve.py                캐시 없는 개발 서버
+  serve.py                배포와 같은 배치로 띄운다 (입구 · navi 빌드 · data)
   wmax_audit.py           width_max_m 결손이 판정에 미치는 규모
   desk_check.py           정사영상 위에 구간·폭 렌더
   skeleton_compare.py     NGII 뼈대 후보 대 현행 구간 대조 (R1)
   transition.py           옛 구간 → 새 구간 전이표 (R2 · R3 전후)
   docpatch.py             문서 절 단위 멱등 교체 · 표 행 추가
-  js_graph_check.mjs      ES 모듈 의존 그래프 · 순환 참조
-  web_boot_check.mjs      UI 부팅 경로 점검
      ※ 날짜 붙은 일회성 스크립트는 두지 않는다(MASTER §18-5 R8). CI 가 막는다.
 tests/
-  test_contract.py        GIS ↔ UI 경계
+  test_contract.py        파이프라인 ↔ 화면 경계 (web/data 계약)
   test_guards.py          계보 2층 · 격리 · 커버리지 · 저장소 위생
   test_seg_geom.py        verdict 단위
   test_seg_width.py       WidthEngine 단위
@@ -473,11 +470,10 @@ tests/
   test_ledger_outputs.py  대장 outputs ↔ 실제 산출물
   test_place_idempotent.py 지점 집계 멱등성
 web/
-  index.html              뼈대                      공동
-  style.css               색·간격·타이포             @marscoolcat
-  config.js               색상표·임계값·마커·카메라   공동
-  js/                     로직·레이어 30개 모듈      @CleverAIFox
-  data/                   생성물. 손으로 고치지 않는다
+  index.html              관제(navi/?view=ops)로 넘기는 입구
+  navi/                   내비 · 관제 앱 (React + MapLibre · vite 8 · vitest)
+  config.js               파이프라인 설정 — 판정색 · 지형 과장 · 편성
+  data/                   생성물. 손으로 고치지 않는다 — 백엔드와 화면 사이의 계약
 ```
 
 강제자 없음 — 사유: 구조 블록의 실재는 test_readme_structure_lists_real_files 가 본다
@@ -498,7 +494,7 @@ web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_ma
 내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
             edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)
             vite 8(rolldown) · 지형(Terrain-RGB) 지면 휨 · 모든 레이어를 style-spec 검증기로 본다
-관제        web/navi/?view=ops — 새 GIS. 옛 지도(web/js)는 철거 대기(DECISIONS §214-5)
+관제        web/navi/?view=ops — 유일한 지도 화면. 옛 GIS 지도(web/js)는 2026-09-22 걷어냈다(DECISIONS §218-1)
 KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 (42%)
 ```
 

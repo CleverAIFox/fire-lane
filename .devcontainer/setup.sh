@@ -16,15 +16,18 @@
 #   아니라 `step` 이라 **권장 명령(`verify.sh --fast`)이 컨테이너에서 빨간불로
 #   끝났다.** Dockerfile 을 고치지 않고 `devcontainer.json` 의 `features` 로
 #   받는다 — 손으로 설치 줄을 짜지 않는다.
-#   판은 `web/navi/.nvmrc`(20) 를 따른다. 클래식 JS 검사(`node --check` ·
+#   판은 `web/navi/.nvmrc` 를 따른다(devcontainer.json features · SOURCES_OF_TRUTH.yaml node). 클래식 JS 검사(`node --check` ·
 #   jsdom 스모크)는 판을 안 탄다. CI 의 클래식 22 는 의도된 결정이라 안 건드린다
 #   (contract.yml §186-2 · test_ci_env.test_navi_node_version_has_one_source_of_truth).
 set -euo pipefail
 
 # ★ 2026-09-18. 이미지(Dockerfile)가 `/bin/uv` 를 이미 넣는다. 그런데도 매번 받아서
 #   설치하고 있었다 — 컨테이너에 네트워크가 없으면 여기서 죽는다. 없을 때만 받는다.
+# ★ 2026-09-22 (DECISIONS §218-6) 대체 설치도 판을 박는다. 종전 설치 줄은 판 없는 install.sh 라
+#   그날의 최신을 받아 CI · 이미지(0.12.13 핀)와 다른 uv 가 uv.lock 을 풀 수 있었다.
+#   판의 정본은 Dockerfile 이고 따르는 자리는 docs/SOURCES_OF_TRUTH.yaml 이 든다.
 if ! command -v uv >/dev/null 2>&1; then
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    curl -LsSf https://astral.sh/uv/0.12.13/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
 fi
 # ★ 2026-09-19 (W3-18). `--frozen --dev` 를 더했다. 종전에는 맨몸 `uv sync` 라
