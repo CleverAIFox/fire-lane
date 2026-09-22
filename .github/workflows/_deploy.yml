@@ -113,7 +113,9 @@ jobs:
         # ★ web/key.js 는 생성물이다. V-World 키를 저장소에 안 둔다.
         #   로컬은 .env, 여기는 Secrets — stage_pages.py 한 곳이 읽는다.
         # ★ 2026-09-18. 종전에는 이 env 가 pages.yml 에만 있었다.
-        run: uv run python tools/stage_pages.py
+        # ★ 2026-09-22 (§216-5). `--deploy` 가 템플릿(playbook.html) · web/README.md 를 뺀다.
+        #   협업 방침은 workflow.html 하나로 뜬다. 렌더(위 단계)가 템플릿을 다 읽은 뒤라 안전하다.
+        run: uv run python tools/stage_pages.py --deploy
         env:
           VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
 

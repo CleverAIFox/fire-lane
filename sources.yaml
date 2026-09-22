@@ -1249,6 +1249,7 @@ datasets:
       - src/firelane/ngii1k.py
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
@@ -1374,6 +1375,7 @@ datasets:
       - src/firelane/guards.py
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
@@ -1410,6 +1412,7 @@ datasets:
     feeds:
       - src/firelane/ingest.py
       - src/firelane/normalize_raw.py
+      - src/firelane/publish_navi.py
     feeds_note: '- src/firelane/ingest.py - src/firelane/normalize_raw.py'
     stem: its_nodelink
     ext: [zip]
@@ -1434,6 +1437,7 @@ datasets:
       - src/firelane/guards.py
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
@@ -2225,8 +2229,10 @@ datasets:
   # ★ 인코딩은 전부 utf-8-sig 다. cp949 로 열면 죽는다(2026-09-03 확인).
 
   nfa_dispatch_119:
-    feeds: 미투입 — 경로 비용의 외부 검증축. 산출물이 아니라 대조 대상이다
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/publish_context.py
+      - web/navi/src/OpsApp.tsx
+    feeds_note: '2026-09-22 전 산문 — 미투입 — 경로 비용의 외부 검증축. 산출물이 아니라 대조 대상이다'
     feeds_why: |
       ★ route_vehicle.csv 의 cost 는 한 번도 실물과 대조된 적이 없다.
         폭에는 ngii1k_center 라는 독립 검증축이 있는데(n=909 · 절대편차
@@ -2254,8 +2260,10 @@ datasets:
       columns: ['DCLR_RCPT_NO', 'DCLR_DT', 'DCLR_YMD', 'DCLR_TM', 'DCLR_YR', 'DCLR_MM', 'DCLR_DAY', 'DCLR_HR', 'DCLR_MN', 'DCLR_DOW', 'SEASN_NM', 'QTR_NO', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'CTY_FRMVL_SE_NM', 'EMD_SE_NM', 'RCPT_END_DT', 'RCPT_END_YMD', 'RCPT_END_TM', 'OTR_CTPV_DCLR_YN', 'DCLR_PSTN_LOT', 'DCLR_PSTN_LAT', 'DSPT_DRTV_DT', 'GRNDS_ARVL_DT', 'HSPTL_ARVL_DT', 'CBK_DT', 'SITTN_END_DT', 'FRSTN_NM', 'CNTR_NM', 'CLMTY_CTPV_NM', 'CLMTY_SGG_NM', 'CLMTY_EMD_NM', 'LOT', 'LAT']
       encoding_seen: 'utf-8-sig'
   nfa_rescue:
-    feeds: 미투입 — 구조 출동 검증축. 119 신고접수와 같은 급이다
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/publish_context.py
+      - web/navi/src/OpsApp.tsx
+    feeds_note: '2026-09-22 전 산문 — 미투입 — 구조 출동 검증축. 119 신고접수와 같은 급이다'
     feeds_why: |
       ★ 51열 중 DCLR_PSTN_LOT/LAT(좌표) · EMD_NM · FRSTN_GRNDS_DSTNC
         (소방서→현장 거리) · 출동/도착 시각이 모두 있다.
@@ -2277,8 +2285,10 @@ datasets:
       columns: ['CLMTY_RSCU_RPTP_NO', 'ACDNT_CS_NM', 'PRCS_RSLT_SE_NM', 'DCLR_YMD', 'DCLR_TM', 'DCLR_YR', 'SEASN_NM', 'DCLR_MM', 'DCLR_DAY', 'DCLR_HR', 'DCLR_MN', 'DCLR_DOW', 'DSPT_YMD', 'DSPT_TM', 'DSPT_YR', 'DSPT_MM', 'DSPT_DAY', 'DSPT_HR', 'DSPT_MN', 'GRNDS_ARVL_YMD', 'GRNDS_ARVL_TM', 'GRNDS_ARVL_YR', 'GRNDS_ARVL_MM', 'GRNDS_ARVL_DAY', 'GRNDS_ARVL_HR', 'GRNDS_ARVL_MN', 'RSCU_CMPTN_YMD', 'RSCU_CMPTN_TM', 'RSCU_CMPTN_YR', 'RSCU_CMPTN_MM', 'RSCU_CMPTN_DAY', 'RSCU_CMPTN_HR', 'RSCU_CMPTN_MN', 'CBK_YMD', 'CBK_TM', 'CBK_YR', 'CBK_MM', 'CBK_DAY', 'CBK_HR', 'CBK_MN', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'CTY_FRMVL_SE_NM', 'EMD_SE_NM', 'DCLR_PSTN_LOT', 'DCLR_PSTN_LAT', 'FRSTN_GRNDS_DSTNC', 'ACDNT_PLC_DTL_NM', 'FRSTN_NM', 'CNTR_NM']
       encoding_seen: 'utf-8-sig'
   nfa_fire_incident:
-    feeds: 미투입 — 거리↔소요시간 회귀로 cost 모델을 검증한다
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/publish_context.py
+      - web/navi/src/OpsApp.tsx
+    feeds_note: '2026-09-22 전 산문 — 미투입 — 거리↔소요시간 회귀로 cost 모델을 검증한다'
     feeds_why: |
       ★ 좌표는 없다. 대신 **거리와 시간이 직접 들어 있다** —
         FRSTN_GRNDS_DSTNC · CNTR_GRNDS_DSTNC · LFDAU_GRNDS_DSTNC ·
@@ -2613,7 +2623,10 @@ datasets:
     x_col:      경도
     y_col:      위도
     what:       전국 어린이보호구역 14,652 → 광주 동구 32 → 스코프 8
-    feeds:      미투입 — TBT 안내 · A* 우회 가중치(#2) · **폭 판정 대조축**
+    feeds:
+      - src/firelane/publish_context.py
+      - web/navi/src/domain/context.ts
+    feeds_note: '2026-09-22 전 산문 — 미투입 — TBT 안내 · A* 우회 가중치(#2) · **폭 판정 대조축**'
     feeds_why: |
       ★ `보호구역도로폭` 이 **행정 고시값**이다. 폭 판정의 외부 대조축이
         하나 더 생긴다 — 지금은 ngii1k_center 하나뿐이다.
@@ -2646,7 +2659,10 @@ datasets:
     x_col:      경도
     y_col:      위도
     what:       전국 노인·장애인보호구역 4,120 → 광주 동구 17 → 스코프 10
-    feeds:      미투입 — TBT 안내 · A* 우회 가중치(#2)
+    feeds:
+      - src/firelane/publish_context.py
+      - web/navi/src/domain/context.ts
+    feeds_note: '2026-09-22 전 산문 — 미투입 — TBT 안내 · A* 우회 가중치(#2)'
     feeds_why:  보호구역 제한속도 30km/h. 어린이보호구역과 같은 축이다
     note: |
       ★ `장소유형코드` 가 1(노인) · 2(장애인) 이다. 문자열이 아니다.
@@ -2670,7 +2686,10 @@ datasets:
     kind:       csv_table
     encoding:   cp949
     what:       동구 과속방지턱 342개소 → 스코프 46
-    feeds:      미투입 — TBT 안내
+    feeds:
+      - src/firelane/publish_context.py
+      - web/navi/src/domain/context.ts
+    feeds_note: '2026-09-22 전 산문 — 미투입 — TBT 안내'
     feeds_why: |
       스코프 46개. 전부 소로 · 규격 미달(N) · 원호형 28 · 가상형 18.
       ★ `가상형` 은 도색만 있고 실제 턱이 없다 — 데이터는 남기되 안내
@@ -2727,7 +2746,10 @@ datasets:
     kind:       csv_table
     encoding:   utf-8-sig
     what:       광주 무인교통단속카메라 510 → 동구 49 → 스코프 9
-    feeds:      미투입 — **실측 제한속도** · TBT 안내
+    feeds:
+      - src/firelane/publish_context.py
+      - web/navi/src/domain/context.ts
+    feeds_note: '2026-09-22 전 산문 — 미투입 — **실측 제한속도** · TBT 안내'
     feeds_why: |
       ★ `제한속도` 가 **실측값**이다. domain/speed.ts 의 폭 추정을 덮는다.
         준법로 폭 18.6m → 표 추정 50km/h → **실제 30km/h**(동산초교 스쿨존).
@@ -2766,7 +2788,10 @@ datasets:
     what: |
       동구 불법주정차 단속이력 두 판 — 2022-01~2024-01 85,380행 · 2024-01~2025-02 56,176행.
       동명동 12,518 · 3,228행. 이어붙여 쓴다
-    feeds: 미투입 — 교통량 축(시간대별 주정차 빈도 → 간선 가중치)
+    feeds:
+      - src/firelane/publish_navi.py
+      - web/navi/src/OpsApp.tsx
+    feeds_note: '2026-09-22 전 산문 — 미투입 — 교통량 축(시간대별 주정차 빈도 → 간선 가중치)'
     feeds_why: |
       미투입 — PLAN 「교통량 축을 무엇으로 채우나」 의 소스다(시간대별 주정차 빈도 → 간선 가중치).
       2026-08-31 에 retired 로 내렸다가 2026-09-17 복귀했다(DECISIONS §177-1).

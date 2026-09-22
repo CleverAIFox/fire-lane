@@ -20,6 +20,7 @@ T=$(mktemp -d /tmp/fl-boot.XXXXXX)
 mkdir -p "$T/tools"
 if git -C "$REPO" cat-file -e origin/part/infra:tools/fl.sh 2>/dev/null; then
   git -C "$REPO" show origin/part/infra:tools/fl.sh > "$T/tools/fl.sh"
+  chmod +x "$T/tools/fl.sh"   # ★ 저장소 판은 755 다. 안 맞추면 git apply 가 「type 100644, expected 100755」 로 운다
   SRC="저장소 origin/part/infra"
 else
   SRC=""

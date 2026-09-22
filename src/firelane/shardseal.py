@@ -111,7 +111,30 @@ def code_print(start: str = "firelane.ingest") -> str:
 INGEST_GLOBAL = ("target_area", "bbox_4326", "standard_crs", "scopes", "layers", "raw_only")
 
 
+# ★ 2026-09-22 (DECISIONS §216-1). 자기 항목에서도 **산출에 안 닿는 서술 칸**은 뺀다.
+#   종전에는 항목 전체를 쟀고, `feeds` 에 소비자 한 줄(`publish_navi.py`)을 적은 것만으로
+#   ngii1k · node_link · node_point · turn_restriction 넷이 찢어져 다시 빌드됐다. 그중
+#   turn_restriction 이 실패해 verify 가 빨개졌다 — 전역 칸에서 §166-3 이 막은 사고가
+#   자기 항목 칸에서 그대로 났다. 목록은 **빼는 쪽**으로 둔다: 모르는 칸은 여전히 잰다
+#   (틀리면 한 번 더 빌드할 뿐이고, 반대로 틀리면 낡은 산출물을 재사용한다).
+DOC_KEYS = frozenset({
+    "feeds", "feeds_note", "feeds_why", "used_for", "note", "authority",
+    "what", "what_fix", "read_note",
+    "schema",        # AUTO — ledger_schema.py 가 raw 에서 뽑는다. raw 칸이 이미 잰다
+})
+
+
 def cfg_print(cfg: dict, key: str) -> str:
+    glob = {k: cfg.get(k) for k in INGEST_GLOBAL}
+    own = cfg.get("datasets", {}).get(key)
+    if isinstance(own, dict):
+        own = {k: v for k, v in own.items() if k not in DOC_KEYS}
+    return _short(json.dumps({"global": glob, "own": own}, sort_keys=True,
+                             ensure_ascii=False, default=str))
+
+
+def cfg_print_legacy(cfg: dict, key: str) -> str:
+    """2026-09-22 이전 판 — 자기 항목 전체. 옛 봉인지를 **다시 빌드 없이** 받으려고 남긴다."""
     glob = {k: cfg.get(k) for k in INGEST_GLOBAL}
     own = cfg.get("datasets", {}).get(key)
     return _short(json.dumps({"global": glob, "own": own}, sort_keys=True,
@@ -189,7 +212,11 @@ def check(prev: dict | None, cfg: dict, key: str, hits: list[Path], out_dir: Pat
     if s["code"] != code:
         return False, "ingest 코드가 바뀌었다"
     if s["cfg"] != cfg_print(cfg, key):
-        return False, "sources.yaml 설정이 바뀌었다"
+        # ★ 옛 판 지문이면 받고 **새 판으로 고쳐 적는다**(재빌드 없음). 한 번 지나면 서술 칸을
+        #   고쳐도 안 찢어진다. prev 는 ingest 가 그대로 대장에 되쓰는 레코드다.
+        if s["cfg"] != cfg_print_legacy(cfg, key):
+            return False, "sources.yaml 설정이 바뀌었다"
+        s["cfg"] = cfg_print(cfg, key)
     raw = raw_print(hits)
     if raw is None:
         return False, "raw 를 못 쟀다"

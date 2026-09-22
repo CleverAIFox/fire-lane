@@ -226,7 +226,7 @@ uv run python tools/scan_data.py           데이터 레이크 구조 점검
 uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간 전이 대조
 uv run python tools/golden.py              리팩 전후 산출물 동일 증명
 bash tools/merge_batch.sh [--release]       배치 PR 머지 → 파트 동기화 (적용 스크립트가 초록일 때만)
-bash tools/fl.sh <feat/x> [--all|--undo]    ★ 배치 한 명령 — 적용 · verify · PR · 스쿼시 · 방송 · 정리
+bash tools/fl.sh <feat/x> [--all|--undo|--resume]  ★ 배치 한 명령 — 적용 · verify · PR · 스쿼시 · 방송 · 정리
 bash tools/branch_tidy.sh [--auto]          열린 PR · 원격/로컬 가지 정리 (--auto 는 되돌릴 수 없는 일을 안 한다)
 bash tools/inbox_fl.sh                      INBOX 에 `fl.sh` 로 두는 부트스트랩 — 패치 안 판을 골라 부른다
 ```
@@ -234,6 +234,18 @@ bash tools/inbox_fl.sh                      INBOX 에 `fl.sh` 로 두는 부트�
 ★ 배치는 INBOX 에서 이렇게 돈다: `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
   INBOX 의 `fl.sh` 는 `tools/inbox_fl.sh` 사본이고, 진짜 도구는 **패치 안(없으면
   origin/part/infra)의 `tools/fl.sh`** 다(DECISIONS §214-1).
+★ 중간에 끊겼으면 `--resume`. 어디까지 됐는지는 GitHub PR 상태로 가린다 — feat PR 이
+  열려 있으면 CI 대기부터, 머지됐으면 dev PR · 방송 · 정리부터(DECISIONS §215-3).
+
+★ **도구는 세 갈래다** — 어디에 두느냐가 갈래를 정한다.
+
+    ① 재현 · 자동     verify.sh · CI 가 부른다                         tools/ + 배선
+    ② 재현 · 사람     사람이 판단하려고 부른다. 같은 입력이면 같은 출력    tools/ + README 한 줄 +
+                                                                        (배선 또는 EXEMPT 에 사유)
+    ③ 한 번 쓰고 버림  조사 · 이관 · 디버그 스크립트                     **저장소 밖**
+
+  ③ 을 tools/ 에 넣지 않는다. 넣는 순간 ② 처럼 보이고, 아무도 안 고치는 채로 낡는다.
+  ② 로 올릴 값어치가 생기면 README 줄과 배선(또는 사유)을 같이 단다.
 
 강제자  `tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme`
 
@@ -253,6 +265,7 @@ uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치�
 uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구간 — 실측 우선순위
 uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
 uv run python tools/matchcheck.py       Mapbox Map Matching 커버리지 (MAPBOX_TOKEN 필요)
+uv run python tools/field_compare.py    실측 야장 ↔ 우리 폭 · 판정 — 위험 오판 · 보정 제안 (트랙 C 봉인)
 ```
 
 읽고 표를 내거나 페이지를 만들 뿐이라 `golden` 지문에 영향이 없다.
@@ -380,6 +393,7 @@ src/firelane/
   publish_navi.py         내비가 먹을 그래프 하나 (navi_graph.json)
   publish_fleet.py        관내 보유 차종 · 제원 → 내비
   publish_basemap.py      내비 바탕 면 — 도로면(수치지형도 + 실폭도로) · 보도. 판정과 무관
+  publish_context.py      경로 주변 사정(과속방지턱 · 카메라 · 보호구역) · 119 출동 이력(실제 도착 시간). 판정과 무관
   destinations.py         내비 목적지 검색 색인. 상가 · 주소/건물 · 관공서
   vehiclecard.py          소방자동차 관리카드 판독
   webmanifest.py          web/data 계보. publish 가 직접 쓴다
@@ -528,20 +542,19 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 | 나는 | 브랜치 | 볼 곳 | 문서 |
 |---|---|---|---|
 | GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
-| Vision · CV | `part/cv` | `src/cv/` | (해당 파트가 쓴다) |
-| Infra · API | `part/infra` | `src/api/` `infra/` `Dockerfile.*` | (해당 파트가 쓴다) |
+| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 226구간 · `cctv.geojson` | DECISIONS §213-5(4색 정의) |
+| Infra · API | `part/infra` | 아직 서버 없음 — 배포는 `.github/workflows/_deploy.yml` · 배치는 `tools/fl.sh` | README `## 도구` |
 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
 `web/data/`(40MB 상한)만으로 작업할 수 있다.
 
-배포된 화면 다섯이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른
-이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
-가는 길은 여기 하나다(DECISIONS §99).
+배포된 화면 다섯이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
+가는 길은 여기 하나다(DECISIONS §99). 플레이북(`web/playbook.html`)은 협업 방침을 그리는
+**틀**이라 따로 배포하지 않는다(§216-5).
 
 ```
 지도        cleveraifox.github.io/fire-lane/
 협업 방침    cleveraifox.github.io/fire-lane/workflow.html   MASTER §12 생성물
-플레이북     cleveraifox.github.io/fire-lane/playbook.html   상황별 안내서
 기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.docx 를 그대로 그린다
 내비        cleveraifox.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
 관제        cleveraifox.github.io/fire-lane/navi/?view=ops 사건 접수 · 출동 지령 · 실시간 공유 확인

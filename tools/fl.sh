@@ -5,6 +5,7 @@
 #   bash tools/fl.sh <브랜치>              적용 + 전수 verify 까지 (멈춘다)
 #   bash tools/fl.sh <브랜치> --all        위 + PR + CI 대기 + 스쿼시 + dev PR + 릴리즈 + 가지 정리
 #   bash tools/fl.sh <브랜치> --undo       가지를 지우고 원상복구
+#   bash tools/fl.sh <브랜치> --resume     끊긴 자리부터 잇는다 (PR · CI · 스쿼시 · 방송 · 정리)
 #
 # ★ 2026-09-22 (DECISIONS §214-1). **정본이 저장소로 들어왔다.** 종전에는 이 파일이
 #   INBOX(다운로드 폴더)에만 살았다 — 버전 관리 · 시험 · 리뷰 밖이었고, INBOX 를
@@ -32,7 +33,7 @@
 #   붙일 값어치가 있는 기능은 여기가 아니라 그쪽으로 간다. 여기 있는 것은
 #   **순서와 전제 확인**뿐이고, 그것이 이 파일이 존재하는 유일한 이유다.
 set -uo pipefail
-VERSION=2026-09-22.3
+VERSION=2026-09-22.5
 
 # ── 자기 복사 → 재실행 ────────────────────────────────────────
 if [ -z "${FL_RELOCATED:-}" ]; then
@@ -125,6 +126,17 @@ pick_patches() {                        # pick_patches <INBOX> <WORK> → WORK �
     done
     ZIP="$zip"
 }
+# 소비한 포장물을 INBOX 에서 `_applied/` 로. ★ 남의 패치는 옮기지 않는다 — 우리가 쓴 것과
+# **같은 이름**만 옮긴다. 지우지 않고 옮긴다 — PR 본문 · 패치는 나중에 볼 일이 있다.
+archive_inbox() {
+    local done_ p f
+    done_="$IN/_applied/$(date +%Y%m%d-%H%M)-${BR//\//_}"
+    mkdir -p "$done_"
+    [ -n "${ZIP:-}" ] && mv -f "$ZIP" "$done_/" 2>/dev/null
+    for p in "${PATCHES[@]}"; do [ -e "$IN/$(basename "$p")" ] && mv -f "$IN/$(basename "$p")" "$done_/"; done
+    for f in "$IN"/PR_BODY*.md "$IN"/PR_TITLE*; do [ -e "$f" ] && mv -f "$f" "$done_/"; done
+    ok "소비한 포장물 → ${done_#"$IN"/}"
+}
 if [ "$MODE" = "--pick" ]; then          # 시험 · 점검용 — 무엇을 집는지만 보고 끝낸다
     pick_patches "$IN" "$WORK"
     # shellcheck disable=SC2012
@@ -177,7 +189,58 @@ if [ -n "$OPEN" ] && ! printf '%s' "$OPEN" | grep -q " ${BR#refs/heads/}$"; then
 fi
 ok "$BASE 로 열린 다른 PR 0"
 
+# ── --resume ──────────────────────────────────────────────────
+# ★ 2026-09-22 실제 사고 (§215-3). 8단계(dev PR 개설) 중에 Ctrl-C 가 눌렸다. 패치는 이미
+#   part/infra 에 스쿼시됐고 포장물은 `_applied/` 로 치워져, `--all` 을 다시 치면 2단계에서
+#   「패치를 못 찾았다」 로 멈춘다. 남은 명령을 손으로 쳐야 했다.
+#   어디까지 됐는지는 **GitHub 이 안다** — feat PR 이 열려 있으면 CI 대기부터, 머지됐으면
+#   dev PR 부터 잇는다. 로컬 기억(상태 파일)을 두지 않는다: 기계를 옮기거나 /tmp 가 비면
+#   거짓말을 한다.
+RESUME=""
+if [ "$MODE" = "--resume" ]; then
+    step "이어가기 — 어디까지 됐나"
+    FEAT_OPEN=$(gh pr list -R "$GH_REPO" --head "${BR#refs/heads/}" --base "$BASE" --state open \
+                --json number --jq '.[0].number // empty')
+    FEAT_DONE=$(gh pr list -R "$GH_REPO" --head "${BR#refs/heads/}" --base "$BASE" --state merged \
+                --json number,mergedAt --jq 'sort_by(.mergedAt) | last | .number // empty')
+    if [ -n "$FEAT_OPEN" ]; then
+        RESUME=ci; PR=$FEAT_OPEN
+        ok "PR #$PR 이 열려 있다 — CI 대기부터"
+        pick_patches "$IN" "$WORK"
+        mapfile -t PATCHES < <(ls -1 "$WORK"/*.patch 2>/dev/null | sort)
+    elif [ -n "$FEAT_DONE" ]; then
+        RESUME=dev
+        ok "PR #$FEAT_DONE 이 $BASE 에 머지됐다 — dev PR 부터"
+        # ★ 스쿼시 직후 · 포장물을 치우기 전에 끊겼으면 INBOX 에 이 배치 패치가 남는다. 남기면
+        #   다음 --all 이 또 집는다(2026-09-20 「does not apply」). zip 의 PR_TITLE 이 머지된 PR
+        #   제목과 같을 때만 이 배치 것으로 보고 치운다(독립 검토 2026-09-22).
+        pick_patches "$IN" "$WORK" >/dev/null
+        mapfile -t PATCHES < <(ls -1 "$WORK"/*.patch 2>/dev/null | sort)
+        MTITLE=$(gh pr view "$FEAT_DONE" -R "$GH_REPO" --json title --jq .title 2>/dev/null)
+        if [ "${#PATCHES[@]}" -gt 0 ] && [ -f "$WORK/PR_TITLE" ] \
+           && [ "$(head -1 "$WORK/PR_TITLE")" = "$MTITLE" ]; then
+            archive_inbox
+        fi
+    else
+        die "$BR 로 연 PR 이 없다 — 이을 것이 없다." \
+            "  처음부터:  $FL_CMD $BR --all   (가지에 이미 얹힌 패치는 건너뛴다)"
+    fi
+    # 본문 · 제목은 치운 포장물에서 찾는다. 없으면 INBOX
+    # shellcheck disable=SC2012
+    LASTDONE=$(ls -1dt "$IN"/_applied/*-"${BR//\//_}" 2>/dev/null | head -1)
+    # shellcheck disable=SC2012
+    BODY=$(ls -t "$WORK"/PR_BODY.md "${LASTDONE:-/nonexistent}"/PR_BODY.md "$IN"/PR_BODY.md 2>/dev/null | head -1)
+    TITLE=$(head -1 "$WORK/PR_TITLE" 2>/dev/null || head -1 "${LASTDONE:-/nonexistent}/PR_TITLE" 2>/dev/null \
+            || gh pr view "${FEAT_OPEN:-$FEAT_DONE}" -R "$GH_REPO" --json title --jq .title)
+    [ -n "$BODY" ] && ok "PR_BODY.md  $BODY"
+    if [ "$RESUME" = dev ] && git merge-base --is-ancestor "origin/$BASE" origin/main; then
+        ok "$BASE 가 이미 main 에 들어 있다 — 방송은 끝났다. 정리만 한다"
+        RESUME=tidy
+    fi
+fi
+
 # ══ 2. 패치 찾기 ══════════════════════════════════════════════
+if [ -z "$RESUME" ]; then     # ── 2 ~ 6(PR 개설) 은 처음 돌 때만 ──
 step "2. 패치"
 pick_patches "$IN" "$WORK"
 # shellcheck disable=SC2012  # 우리가 방금 만든 디렉터리다. 이름이 이상할 수 없다
@@ -287,6 +350,9 @@ if [ -z "$PR" ]; then
 fi
 [ -n "$PR" ] || die "PR 을 열었는데 목록에 없다 — 화면에서 확인해라"
 ok "PR #$PR"
+fi                            # ── 처음 돌 때만 끝 ──
+
+if [ -z "$RESUME" ] || [ "$RESUME" = ci ]; then     # ── CI 대기 · 스쿼시 ──
 
 sub "CI 대기"
 gh pr checks "$PR" -R "$GH_REPO" --watch --fail-fast \
@@ -296,7 +362,7 @@ ok "CI 초록"
 # ══ 7. 스쿼시 ═════════════════════════════════════════════════
 step "7. $BR → $BASE 스쿼시"
 if ! ask "PR #$PR 을 $BASE 에 스쿼시 머지하고 브랜치를 지운다. 진행?"; then
-    printf '  멈춤. 나중에:  %s %s --all\n\n' "$FL_CMD" "$BR"; exit 0
+    printf '  멈춤. 나중에:  %s %s --resume\n\n' "$FL_CMD" "$BR"; exit 0
 fi
 gh pr merge "$PR" -R "$GH_REPO" --squash --delete-branch || die "스쿼시 머지 실패"
 git fetch -q --prune origin
@@ -309,13 +375,10 @@ ok "$BASE $(git rev-parse --short "origin/$BASE")"
 # ★ 2026-09-22 (§214-1). 소비한 포장물을 치운다. INBOX 에 옛 패치가 남으면 다음
 #   실행이 그것을 또 집는다(2026-09-20 「does not apply」). 지우지 않고 옮긴다 —
 #   PR 본문 · 패치는 나중에 볼 일이 있다.
-DONE="$IN/_applied/$(date +%Y%m%d-%H%M)-${BR//\//_}"
-mkdir -p "$DONE"
-[ -n "$ZIP" ] && mv -f "$ZIP" "$DONE/" 2>/dev/null
-# ★ 남의 패치는 옮기지 않는다 — 우리가 쓴 것과 **같은 이름**만 옮긴다
-for p in "${PATCHES[@]}"; do [ -e "$IN/$(basename "$p")" ] && mv -f "$IN/$(basename "$p")" "$DONE/"; done
-for f in "$IN"/PR_BODY*.md "$IN"/PR_TITLE*; do [ -e "$f" ] && mv -f "$f" "$DONE/"; done
-ok "소비한 포장물 → ${DONE#"$IN"/}"
+archive_inbox
+fi                            # ── CI 대기 · 스쿼시 끝 ──
+
+if [ "$RESUME" != tidy ]; then                      # ── dev PR · 방송 ──
 
 # ══ 8. part/infra → dev PR ════════════════════════════════════
 step "8. $BASE → dev PR"
@@ -347,7 +410,9 @@ LAST=$(git tag -l 'v0.*' | sort -V | tail -1)
 printf '  ★ 지금 붙은 마지막 태그: %s%s%s  → 다음은 그 +1 이다.\n' "$G" "$LAST" "$Z"
 printf '  ★ 한/영 입력기가 한글이면 앞에 깨진 바이트가 붙는다(G-12) — 영문으로 치고 확인해라.\n'
 # ★ 2026-09-22 (§214-1). `exec` 가 아니다 — 방송 뒤에 정리가 남아 있다.
-bash tools/merge_batch.sh --release || die "방송이 멈췄다 — 위 메시지를 읽어라. 다시: bash tools/merge_batch.sh --release"
+bash tools/merge_batch.sh --release || die "방송이 멈췄다 — 위 메시지를 읽어라." \
+    "  다시:  $FL_CMD $BR --resume"
+fi                            # ── dev PR · 방송 끝 ──
 
 # ══ 10. 정리 ══════════════════════════════════════════════════
 # ★ 2026-09-22 (§214-1). 배치마다 로컬 feat 가지가 쌓였다(원격은 스쿼시가 지운다).

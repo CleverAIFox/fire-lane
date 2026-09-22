@@ -105,3 +105,49 @@ test("관제 말 — 모양이 틀린 메시지는 버리고, 공유는 확인�
   s = opsReduce(s, { t: "bye", unit: "u1" }, 500);
   ok(!s.units.u1, "떠난 차가 남았다");
 });
+
+test("회색 사유 — 발행 그래프의 회색 구간은 전부 사람 말 사유를 갖는다 (§215-2)", async () => {
+  const { GRAY_REASON, grayReason } = await import("../src/ui/verdictMeaning");
+  const gray = graph.edges.filter((e) => e.verdict === "unknown");
+  ok(gray.length > 0, "회색 구간이 0 — 시험 전제가 깨졌다");
+  for (const e of gray) {
+    const r = grayReason(e);
+    ok(r && e.unknown_reason && GRAY_REASON[e.unknown_reason], `${e.seg_uid} 사유 ${e.unknown_reason} 에 문구가 없다`);
+    ok(!/\d\.\dm/.test(r.long), "폭 문턱 숫자를 박았다 — 정본은 seg/params.py");
+  }
+  ok(grayReason({ verdict: "clear", unknown_reason: "no_cctv_band" }) === null, "회색이 아닌데 사유를 냈다");
+});
+
+test("건물은 땅에서 선다 — 지형을 안 켠 지도에서 해발고(z)를 밑면으로 쓰지 않는다 (§216-2)", async () => {
+  const { baseLayers } = await import("../src/components/layers");
+  const ls = baseLayers(graph.style);
+  const ext = ls.filter((l) => l.type === "fill-extrusion");
+  ok(ext.length === 1, `압출 레이어 ${ext.length}개 — 같은 건물을 두 번 압출하면 그리기가 두 배다`);
+  const paint = JSON.stringify((ext[0] as { paint?: unknown }).paint);
+  ok(!paint.includes('"z"'), "건물 압출이 z(해발 지반고)를 쓴다 — 지형이 없으면 건물이 16m 뜬다");
+});
+
+test("경로 주변 사정 — 경로 위 거리 순 · 종류별 문턱 안 · 연속 과속방지턱은 하나로 (§216-3)", async () => {
+  const { routeHazards, hazardSummary, NEAR_M } = await import("../src/domain/context");
+  const { distM: d } = await import("../src/domain/geo");
+  const mk = (kind: string, at: [number, number]) =>
+    ({ type: "Feature", properties: { kind }, geometry: { type: "Point", coordinates: at } }) as GeoJSON.Feature;
+  // 동서 직선 200m 경로
+  const a: [number, number] = [126.925, 35.15], b: [number, number] = [126.9272, 35.15];
+  const plan = { coords: [a, b] };
+  ok(Math.abs(d(a, b) - 200) < 5, "시험 전제 — 경로 길이");
+  const off = (m: number) => m / 110_540;             // 북쪽으로 m
+  const ctx = { type: "FeatureCollection", features: [
+    mk("speedbump", [126.9255, 35.15 + off(5)]),       // 경로 위
+    mk("speedbump", [126.9257, 35.15 + off(3)]),       // 18m 뒤 — 하나로 센다
+    mk("speedbump", [126.9265, 35.15 + off(40)]),      // 40m 밖 — 안 센다
+    mk("speedcam", [126.9268, 35.15 + off(20)]),
+    mk("child_zone", [126.926, 35.15 + off(120)]),
+  ] } as GeoJSON.FeatureCollection;
+  const hs = routeHazards(plan, ctx);
+  ok(hs.map((h) => h.kind).join() === "speedbump,child_zone,speedcam", `순서 ${hs.map((h) => h.kind).join()}`);
+  ok(hs.every((h, i) => i === 0 || hs[i - 1].atM <= h.atM), "경로 위 거리 순이 아니다");
+  ok(NEAR_M.speedbump < NEAR_M.child_zone, "문턱 전제");
+  ok(hazardSummary(hs) === "과속방지턱 1 · 단속카메라 1 · 보호구역 시설 1", `요약 ${hazardSummary(hs)}`);
+  ok(routeHazards(plan, null).length === 0, "주변 사정 파일이 없는데 무언가를 냈다");
+});

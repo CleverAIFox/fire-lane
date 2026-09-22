@@ -8,9 +8,11 @@
 
 import { distM, angleDelta, type LngLat } from "./geo";
 import { edgeCost, requiredWidth, type TuningKnobs, TUNING } from "./vehicle";
+import { directionFactor, edgeIndex, routeRuleWarnings, turnBan, TURN_BAN_M } from "./rules";
 import type { GraphEdge, NaviGraph, RoutePlan, VehicleSpec } from "./types";
 
-interface Adj { to: number; cost: number; edge: GraphEdge }
+/** `idx` 는 `graph.edges` 인덱스 — 회전 금지가 인덱스로 적혀 있다 */
+interface Adj { to: number; cost: number; edge: GraphEdge; idx: number }
 export type Adjacency = Map<number, Adj[]>;
 export type CostMode = "safe" | "fastest";
 
@@ -28,6 +30,7 @@ export function buildAdjacency(
   excluded?: ReadonlySet<string>,
 ): Adjacency {
   const adj: Adjacency = new Map();
+  const index = edgeIndex(graph);
   for (const e of graph.edges) {
     if (e.a === e.b) continue;
     // ★ 2026-09-21 (와이어프레임 16·17). 현장에서 「통행 불가」로 신고한
@@ -43,10 +46,13 @@ export function buildAdjacency(
     const avoid = mode === "safe" && !lenient && e.width_min_m != null
       && (e.verdict === "needs_cv" || e.verdict === "unknown") ? tuning.avoidUncertain : 1;
     const cost = mode === "fastest" ? (e.length_m ?? penalized) : penalized * avoid;
+    const idx = index.get(e)!;
+    // ★ 2026-09-22 (§215-1). 일방통행은 **방향마다** 값이 다르다. 두 모드 다 건다 —
+    //   「빠른 길」 이 역주행이면 빠른 것이 아니라 어기는 것이다. 빼지는 않는다(rules.ts).
     for (const [from, to] of [[e.a, e.b], [e.b, e.a]] as const) {
       let list = adj.get(from);
       if (!list) adj.set(from, (list = []));
-      list.push({ to, cost, edge: e });
+      list.push({ to, cost: cost * directionFactor(e, from === e.a), edge: e, idx });
     }
   }
   return adj;
@@ -88,37 +94,58 @@ export function findRoute(
   const goal = graph.nodes[goalNode];
   const h = (n: number) => (heuristic ? distM(graph.nodes[n], goal) : 0);
 
-  const g = new Map<number, number>([[startNode, 0]]);
-  const from = new Map<number, { node: number; edge: GraphEdge }>();
-  const done = new Set<number>();
-  const open: { n: number; f: number }[] = [{ n: startNode, f: h(startNode) }];
+  // ★ 2026-09-22 (§215-1). 상태는 **(노드, 들어온 엣지)** 다. 회전 금지는 「어느 길로
+  //   와서 어느 길로 나가나」 에 걸리므로 노드만 상태로 두면 표현이 안 된다. 금지가 없는
+  //   그래프에서는 결과가 노드 상태 A* 와 같다(같은 노드에 여러 상태가 생길 뿐 비용은 같다).
+  type St = { n: number; via: number };
+  const key = (s: St) => `${s.n}:${s.via}`;
+  const start: St = { n: startNode, via: -1 };
+  const g = new Map<string, number>([[key(start), 0]]);
+  const from = new Map<string, { prev: St; edge: GraphEdge }>();
+  const done = new Set<string>();
+  const open: { s: St; f: number }[] = [{ s: start, f: h(startNode) }];
+  let end: St | null = null;
 
   while (open.length) {
     open.sort((p, q) => p.f - q.f);
     const cur = open.shift()!;
-    if (cur.n === goalNode) break;
-    if (done.has(cur.n)) continue;
-    done.add(cur.n);
-    for (const { to, cost, edge } of adj.get(cur.n) ?? []) {
-      if (done.has(to)) continue;
-      const ng = (g.get(cur.n) ?? Infinity) + cost;
-      if (ng < (g.get(to) ?? Infinity)) {
-        g.set(to, ng);
-        from.set(to, { node: cur.n, edge });
-        open.push({ n: to, f: ng + h(to) });
+    const ck = key(cur.s);
+    if (done.has(ck)) continue;
+    if (cur.s.n === goalNode) { end = cur.s; break; }
+    done.add(ck);
+    const base = g.get(ck) ?? Infinity;
+    // ★ 되돌아가기 금지. 들어온 엣지의 반대쪽 노드로 곧장 돌아가는 전이는 안 연다.
+    //   상태에 「들어온 엣지」 를 넣는 순간 「옆 구간으로 나갔다가 그대로 돌아오기」 가
+    //   합법이 되고, 그것이 금지 회전 벌점(200m)보다 싸면 라우터가 **골목 한가운데 유턴**으로
+    //   금지를 피했다 — 발행 그래프에서 금지 5건 중 3건(엣지 60 · 46 · 28m)이 그랬고 경고도
+    //   없었다(독립 검토 2026-09-22). 소방차는 골목에서 유턴을 못 한다. 노드 상태 A* 에서는
+    //   되돌아가기가 이득일 수 없었으므로 규칙이 없는 그래프의 결과는 그대로다.
+    const back = cur.s.via >= 0 ? otherEnd(graph.edges[cur.s.via], cur.s.n) : -1;
+    for (const { to, cost, edge, idx } of adj.get(cur.s.n) ?? []) {
+      if (to === back) continue;
+      const nx: St = { n: to, via: idx };
+      const nk = key(nx);
+      if (done.has(nk)) continue;
+      const ban = cur.s.via >= 0 && turnBan(graph, cur.s.via, cur.s.n, idx) !== undefined;
+      const ng = base + cost + (ban ? TURN_BAN_M : 0);
+      if (ng < (g.get(nk) ?? Infinity)) {
+        g.set(nk, ng);
+        from.set(nk, { prev: cur.s, edge });
+        open.push({ s: nx, f: ng + h(to) });
       }
     }
   }
-  if (!g.has(goalNode)) return null;
+  if (!end) return null;
 
   const edges: GraphEdge[] = [];
-  let cur = goalNode;
-  while (cur !== startNode) {
-    const step = from.get(cur);
+  let st = end;
+  while (st.n !== startNode || st.via !== -1) {
+    const step = from.get(key(st));
     if (!step) return null;
     edges.unshift(step.edge);
-    cur = step.node;
+    st = step.prev;
   }
+  const total = g.get(key(end))!;
 
   // 좌표 이어붙이기 + **진행방향 기록**.
   const coords: LngLat[] = [];
@@ -141,8 +168,13 @@ export function findRoute(
 
   return {
     edges, forward, nodes, coords,
-    cost: g.get(goalNode)!, lengthM, byVerdict,
+    cost: total, lengthM, byVerdict,
+    rules: routeRuleWarnings(graph, { edges, forward, nodes }),
   };
+}
+
+function otherEnd(e: GraphEdge, n: number): number {
+  return e.a === n ? e.b : e.a;
 }
 
 /** 경로 구간 집합. 스냅이 경로를 알게 하는 데 쓴다. */
