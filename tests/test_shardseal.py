@@ -88,6 +88,48 @@ def test_other_sources_config_does_not_tear(shard):
     assert ok, why
 
 
+def test_doc_fields_do_not_tear(shard):
+    """★ 2026-09-22 (§216-1) 실제 사고. `feeds` 에 소비자 한 줄을 적자 샤드 넷이 찢어졌고
+    turn_restriction 재빌드가 실패해 verify 가 빨개졌다. 서술 칸은 산출에 안 닿는다."""
+    road = {**CFG["datasets"]["road"], "feeds": ["src/x.py"], "what": "설명", "note": "메모",
+            "schema": {"columns": ["a"]}}
+    cfg = {**CFG, "datasets": {**CFG["datasets"], "road": road}}
+    ok, why = shardseal.check(shard["rec"], cfg, "road", shard["hits"], shard["out"], "code-v1")
+    assert ok, why
+
+
+def test_unknown_field_still_tears(shard):
+    """빼는 목록 밖의 칸은 여전히 잰다 — 모르는 칸을 무시하면 낡은 산출물을 재사용한다."""
+    road = {**CFG["datasets"]["road"], "select": {"col": 0, "prefix": "12"}}
+    cfg = {**CFG, "datasets": {**CFG["datasets"], "road": road}}
+    ok, why = shardseal.check(shard["rec"], cfg, "road", shard["hits"], shard["out"], "code-v1")
+    assert not ok and "설정" in why, why
+
+
+def test_legacy_seal_is_accepted_and_restamped(shard):
+    """옛 판(항목 전체) 지문은 **다시 빌드 없이** 받고 새 판으로 고쳐 적는다."""
+    road = {**CFG["datasets"]["road"], "what": "설명"}
+    cfg = {**CFG, "datasets": {**CFG["datasets"], "road": road}}
+    rec = dict(shard["rec"])
+    rec["seal"] = {**rec["seal"], "cfg": shardseal.cfg_print_legacy(cfg, "road")}
+    assert rec["seal"]["cfg"] != shardseal.cfg_print(cfg, "road"), "전제 — 두 판이 달라야 한다"
+    ok, why = shardseal.check(rec, cfg, "road", shard["hits"], shard["out"], "code-v1")
+    assert ok, why
+    assert rec["seal"]["cfg"] == shardseal.cfg_print(cfg, "road"), "새 판으로 고쳐 적지 않았다"
+
+
+def test_committed_manifest_uses_new_cfg_print():
+    """커밋된 대장의 봉인지가 새 판 지문이다 — 옛 판이면 서술 칸 한 줄에 다시 찢어진다."""
+    import json
+
+    from firelane import ledger
+    cfg = ledger.load_sources()
+    m = json.loads((ROOT / "data" / "processed" / "_manifest.json").read_text(encoding="utf-8"))
+    bad = [d["key"] for d in m["datasets"]
+           if isinstance(d.get("seal"), dict) and d["seal"]["cfg"] != shardseal.cfg_print(cfg, d["key"])]
+    assert not bad, f"봉인지 cfg 가 지금 sources.yaml 과 다르다: {bad}"
+
+
 def test_make_refuses_when_unmeasurable(tmp_path):
     """못 재면 봉인하지 않는다. 빈 봉인지는 다음 대조에서 조용히 통과할 수 있다."""
     assert shardseal.make(CFG, "road", [], tmp_path, ["x.gpkg"], "c") is None

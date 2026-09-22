@@ -40,6 +40,8 @@ import {
   type Incidence, type Maneuver,
 } from "../domain/turn";
 import { lookAhead } from "../domain/graph";
+import { nextRule, rulePhrase } from "../domain/rules";
+import { hazardPhrase, nextHazard, type Hazard } from "../domain/context";
 import { requiredWidth } from "../domain/vehicle";
 import type {
   NaviGraph, RoutePlan, VehicleSpec, VerdictStyle,
@@ -62,6 +64,8 @@ export interface VoiceInput {
   offRoute: boolean;
   style: Record<string, VerdictStyle>;
   enabled: boolean;
+  /** 경로 위 주변 사정(§216-3) — 과속방지턱 · 단속카메라 · 보호구역 시설 */
+  hazards?: readonly Hazard[];
 }
 
 export interface VoiceState {
@@ -77,6 +81,7 @@ export function useVoice(i: VoiceInput): VoiceState {
   const speaker = useMemo(() => createSpeaker(), []);
   const spokenGate = useRef(new Map<number, number>());
   const spokenVerdict = useRef<string | null>(null);
+  const spokenRule = useRef(new Set<string>());
   const wasOff = useRef(false);
 
   // ── 실제 속도를 잰다. 문턱이 이것에 비례한다 ──────────────────
@@ -121,6 +126,7 @@ export function useVoice(i: VoiceInput): VoiceState {
     seenJump.current = i.jumpSeq;
     spokenGate.current.clear();
     spokenVerdict.current = null;
+    spokenRule.current.clear();
     lastRef.current = null;            // 끊긴 동안의 속도는 모른다
     if (!i.enabled || i.offRoute) return;
     speaker.cancel();
@@ -159,10 +165,34 @@ export function useVoice(i: VoiceInput): VoiceState {
       }
     }
 
-    // ── 판정 안내. 회색 구간에만, 진입 **전에** ────────────────
+    // ── 통행 규칙. 역주행 · 방향 모를 일방통행 · 회전 금지 (§215-1) ──
+    // ★ 판정보다 앞이다. 폭은 지나가며 볼 수 있지만 대향차는 들어가 봐야 안다.
     if (!i.plan || driven == null) return;
-    const ahead = lookAhead(
-      i.plan, driven, Math.max(VERDICT_MIN_M, speed * VERDICT_AHEAD_SEC));
+    const reach = Math.max(VERDICT_MIN_M, speed * VERDICT_AHEAD_SEC);
+    const rule = nextRule(i.plan.rules, driven, reach);
+    if (rule) {
+      const k = `${rule.kind}@${rule.atM.toFixed(0)}`;
+      if (!spokenRule.current.has(k)) {
+        spokenRule.current.add(k);
+        speaker.say(rulePhrase(rule), rule.kind === "wrong_way" ? "critical" : undefined);
+        return;
+      }
+    }
+
+    // ── 주변 사정. 규칙 · 회전 다음, 판정 앞 (§216-3) ─────────────
+    // ★ 짧게 한 번. 60m 앞(속도 비례 문턱과 작은 쪽)에서만 — 멀리서 말하면 어느 것인지 모른다
+    const hz = nextHazard(i.hazards ?? [], driven, i.hazards?.length ? Math.min(reach, 60) : 0);
+    if (hz) {
+      const k = `hz-${hz.kind}@${hz.atM.toFixed(0)}`;
+      if (!spokenRule.current.has(k)) {
+        spokenRule.current.add(k);
+        speaker.say(hazardPhrase(hz));
+        return;
+      }
+    }
+
+    // ── 판정 안내. 회색 구간에만, 진입 **전에** ────────────────
+    const ahead = lookAhead(i.plan, driven, reach);
     if (!ahead) return;
     if (ahead.verdict !== "needs_cv" && ahead.verdict !== "unknown") return;
     if (ahead.seg_uid === spokenVerdict.current) return;
@@ -171,8 +201,11 @@ export function useVoice(i: VoiceInput): VoiceState {
     const label = i.style[ahead.verdict]?.label ?? ahead.verdict;
     const w = ahead.width_min_m != null
       ? ` 폭 ${ahead.width_min_m.toFixed(1)}미터.` : "";
-    speaker.say(`잠시 후 ${label} 구간.${w}`);
-  }, [i.enabled, i.offRoute, i.plan, i.style, m, after, distM, driven,
+    // ★ §215-2. 회색은 **왜** 회색인지 한 마디 붙인다. 카메라가 없어서인지가 운전자에게 제일 쓸모 있다
+    const why = ahead.verdict === "unknown" && ahead.unknown_reason?.startsWith("no_cctv")
+      ? " CCTV 없음." : "";
+    speaker.say(`잠시 후 ${label} 구간.${w}${why}`);
+  }, [i.enabled, i.offRoute, i.plan, i.style, i.hazards, m, after, distM, driven,
       speed, speaker]);
 
   return {

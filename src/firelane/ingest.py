@@ -8,8 +8,11 @@ OUT   data/processed/<key>_5186.gpkg + <key>.geojson  (20종) — 예: building.
       data/processed/_manifest.json
       ★ 하류가 이름으로 읽는 것 — boundary_emd.geojson · fire_station.geojson ·
         hydrant_point.geojson · cctv.geojson · poi_store.geojson ·
-        road_intrvl.geojson · navi_build.csv · navi_jibun.csv · civil_office.geojson.
-        `pipeline.Step` 이 그 아홉을 명시한다(마지막 셋 2026-09-17 · 목적지 색인 §181)
+        road_intrvl.geojson · navi_build.csv · navi_jibun.csv · civil_office.geojson ·
+        turn_restriction.csv · speedbump.csv · speed_cam.csv · nfa_dispatch_119.csv ·
+        nfa_rescue.csv · nfa_fire_incident.csv · parking_enforce.csv.
+        `pipeline.Step` 이 그 열여섯을 명시한다(목적지 색인 셋 2026-09-17 §181 ·
+        회전제한 표 2026-09-22 §215-1 · 주변 사정 · 출동 이력 · 단속 여섯 §216-3)
       data/processed/_manifest.json                    실행 기록 · 계보 정본
 PARAM sources.yaml 의 datasets.<key>.contract 블록
 

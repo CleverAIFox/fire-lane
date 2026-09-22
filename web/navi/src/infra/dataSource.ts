@@ -40,16 +40,19 @@ export interface Bundle {
    * ★ 지도 레이어도 같은 파일을 URL 로 읽는다(layers.ts). 좌표를 코드에 박지 않는다.
    */
   stations: GeoJSON.FeatureCollection | null;
+  /** 경로 주변 사정 — 과속방지턱 · 단속카메라 · 보호구역 시설(§216-3). 없어도 돈다 */
+  context: GeoJSON.FeatureCollection | null;
 }
 
 export async function loadAll(): Promise<Bundle> {
-  const [graph, spec, view, dest, routeVehicle, stations] = await Promise.all([
+  const [graph, spec, view, dest, routeVehicle, stations, context] = await Promise.all([
     j<NaviGraph>("navi_graph.json"),
     j<VehicleSpec>("vehicle_spec.json"),
     j<View>("view.json"),
     j<GeoJSON.FeatureCollection>("dest.geojson"),
     j<RouteVehicle>("route_vehicle.json"),
     optional<GeoJSON.FeatureCollection>("stations.geojson"),
+    optional<GeoJSON.FeatureCollection>("context.geojson"),
   ]);
 
   // ★ style 이 없으면 죽는다. 기본색을 두면 config.js 를 아무도 안 고치고
@@ -60,7 +63,7 @@ export async function loadAll(): Promise<Bundle> {
       "navi_graph.json 에 style 이 없다. 발행을 다시 해라:\n" +
       "  uv run python -m firelane.publish_navi");
   }
-  return { graph, spec, view, dest, routeVehicle, stations };
+  return { graph, spec, view, dest, routeVehicle, stations, context };
 }
 
 /**
@@ -82,4 +85,9 @@ export async function loadFleet(): Promise<{
     j<VehicleSpec>("vehicle_spec.json"),
   ]);
   return { fleet, spec };
+}
+
+/** 관제만 읽는다 — 출동 이력(§216-3). 없으면 null(이력 없이 돈다) */
+export async function loadHistory(): Promise<(GeoJSON.FeatureCollection & { summary?: unknown }) | null> {
+  return optional("history.geojson");
 }

@@ -105,7 +105,7 @@ test("되돌아 나오는 경로 — 두 번째 통과를 첫 번째로 착각�
   const loop: RoutePlan = {
     edges: [e, e], forward: [true, false], nodes: [e.a, e.b, e.a],
     coords: [...e.coords, ...back.slice(1)], cost: 0,
-    lengthM: 2 * (e.length_m ?? 0), byVerdict: {},
+    lengthM: 2 * (e.length_m ?? 0), byVerdict: {}, rules: [],
   };
   const g = routeGeom(loop);
   const src = createReplaySource(loop, { sigmaM: 4, shadowEverySec: 0, seed: 9 });
