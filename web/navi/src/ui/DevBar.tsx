@@ -12,7 +12,13 @@
  *   **신호가 없어 여기서만 나온다** — 상단바가 「시연」 표지를 단다.
  *
  * ★ `lenient`(안전/연결성)는 디버그 플래그가 아니라 **제품 기능**이다.
+ *
+ * ★ 2026-09-22 (§213-3) 위치원 토글 · 순간이동. 기본이 「GPS 흉내」 다 —
+ *   1Hz · σ5m · 40초마다 8초 음영. 「경로」 는 정답 점이 경로를 따라 걷는 것이라
+ *   추정이 틀려도 맞아 보인다. 「+200m」 는 GPS 가 음영에서 튀어 돌아온 상황이고,
+ *   옆의 「재동기화 N」 이 추정기가 그것을 알아챘는지를 센다.
  */
+import type { PosMode } from "../app/useNavigation";
 import { C, F } from "./tokens";
 import { STATUS, STATUS_ORDER, type StatusKey } from "../domain/status";
 
@@ -21,6 +27,11 @@ interface Props {
   guiding: boolean;
   simSpeed: number;
   setSimSpeed: (v: number) => void;
+  posMode: PosMode;
+  setPosMode: (v: PosMode) => void;
+  onTeleport?: () => void;
+  jumps: number;
+  lastJumpM: number;
   lenient: boolean;
   setLenient: (v: boolean) => void;
   firstPerson: boolean;
@@ -46,8 +57,9 @@ export function DevBar(p: Props) {
       position: "absolute", zIndex: 7, bottom: 14,
       // 주행 전에는 좌측 패널의 단추를 가리지 않게 오른쪽, 주행 중에는
       // 병목 시트(오른쪽)를 가리지 않게 왼쪽.
-      ...(p.guiding ? { left: 86 } : { right: 14 }),
-      display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", maxWidth: 560,
+      // ★ 2026-09-22. 주행 중에는 가운데 아래 남은 시간 알약을 가렸다 — 알약 왼쪽 반까지만 쓴다
+      ...(p.guiding ? { left: 86, maxWidth: "calc(50vw - 260px)" } : { right: 14, maxWidth: 720 }),
+      display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap",
       background: C.dark, border: "1px solid rgba(255,255,255,.1)",
       borderRadius: 12, padding: "8px 10px",
     }}>
@@ -60,6 +72,14 @@ export function DevBar(p: Props) {
           {[1, 4, 10].map((v) => (
             <B key={v} on={p.simSpeed === v} onClick={() => p.setSimSpeed(v)}>×{v}</B>
           ))}
+          <B on={p.posMode === "gpsSim"}
+             onClick={() => p.setPosMode(p.posMode === "gpsSim" ? "route" : "gpsSim")}>
+            {p.posMode === "gpsSim" ? "GPS 흉내" : "경로 주행"}
+          </B>
+          {p.onTeleport && <B on={false} onClick={p.onTeleport}>+200m</B>}
+          <span style={{ fontSize: F.small, opacity: .7, color: C.darkInk }}>
+            재동기화 {p.jumps}{p.jumps ? ` (${p.lastJumpM > 0 ? "+" : ""}${p.lastJumpM}m)` : ""}
+          </span>
           {p.onBottleneck && <B on={false} onClick={p.onBottleneck}>병목</B>}
           <span style={{ width: 1, height: 20, background: "rgba(255,255,255,.2)" }} />
           <B on={false} onClick={() => step(-1)}>◀</B>

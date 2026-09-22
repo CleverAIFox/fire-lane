@@ -18,23 +18,37 @@ export function StatusCard({ chip, title, lines, foot }: {
       {lines.map((l) => (
         <div key={l} style={{ fontSize: 14, color: C.panelSub, lineHeight: 1.5 }}>{l}</div>
       ))}
-      <div style={spinWrap}><div style={spin} /></div>
-      {foot && <div style={{ textAlign: "center", fontSize: 15, fontWeight: 800, color: C.cta }}>{foot}</div>}
+      <div style={spinWrap}>
+        <div style={spin} />
+        {/* 와이어프레임 06 — 도는 고리 안에 내비 화살표 */}
+        <svg width="30" height="30" viewBox="0 0 24 24" style={{ position: "absolute" }} aria-hidden>
+          <path d="M12 3 L19 20 L12 16 L5 20 Z" fill={C.cta} />
+        </svg>
+      </div>
+      {foot && foot.split(" 잠시만").map((t, i) => (
+        <div key={t} style={{ textAlign: "center", fontSize: i ? 13 : 16, fontWeight: i ? 600 : 800,
+                              color: i ? C.panelSub : C.cta, marginTop: i ? 4 : 0 }}>
+          {i ? `잠시만${t}` : t}
+        </div>
+      ))}
     </div>
   );
 }
 
+// ★ 2026-09-22 (§214-2) 와이어프레임 06 모양 — 떠 있는 카드 · 파란 테두리 · 큰 고리.
 const card: CSSProperties = {
-  position: "absolute", zIndex: 5, right: 0, top: S.guideBarH, width: 300,
-  background: "#fff", borderRadius: "0 0 0 14px", padding: "16px 18px 20px",
-  boxShadow: "-4px 6px 18px rgba(0,0,0,.18)",
+  position: "absolute", zIndex: 5, right: 14, top: S.guideBarH + 14, width: 340,
+  background: "#fff", borderRadius: 20, padding: "20px 22px 24px", border: `3px solid ${C.cta}`,
+  boxShadow: "0 10px 28px rgba(0,0,0,.22)", boxSizing: "border-box",
 };
 const chipS: CSSProperties = {
   display: "inline-block", background: C.cta, color: "#fff", borderRadius: 999,
   padding: "3px 10px", fontSize: 12, fontWeight: 800,
 };
-const spinWrap: CSSProperties = { display: "grid", placeItems: "center", margin: "18px 0 10px" };
+const spinWrap: CSSProperties = {
+  display: "grid", placeItems: "center", margin: "22px 0 14px", position: "relative",
+};
 const spin: CSSProperties = {
-  width: 44, height: 44, borderRadius: 999, border: `4px dotted ${C.cta}`,
-  animation: "flspin 1.6s linear infinite",
+  width: 76, height: 76, borderRadius: 999, border: `6px solid ${C.softBlue}`,
+  borderTopColor: C.cta, borderRightColor: C.cta, animation: "flspin 1.2s linear infinite",
 };

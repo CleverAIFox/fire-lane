@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
@@ -69,8 +69,28 @@ function serveWebData(): Plugin {
   };
 }
 
-export default defineConfig({
+/**
+ * Mapbox 토큰 한 자리.  (DECISIONS §214-6)
+ *
+ * ★ 2026-09-22. 종전에는 `web/navi/.env.local` 의 `VITE_MAPBOX_TOKEN` 만 읽었다.
+ *   VWorld 키는 저장소 루트 `.env` 에 있고 `tools/matchcheck.py` 도 루트 `.env`
+ *   의 `MAPBOX_TOKEN` 을 읽는데, 내비만 다른 파일 · 다른 이름을 봤다 — 토큰이
+ *   두 벌로 갈리고 한쪽만 재발급되는 사고의 모양이다.
+ *   우선순위(먼저 것이 이긴다):
+ *     1. 셸/CI 환경 `VITE_MAPBOX_TOKEN`  — build-navi 액션이 시크릿으로 준다
+ *     2. `web/navi/.env.local` 의 `VITE_MAPBOX_TOKEN`  — 옛 자리. 호환으로 둔다
+ *     3. 저장소 루트 `.env` 의 `MAPBOX_TOKEN`  — **정본**
+ * ★ 값을 로그에 찍지 않는다. 있다/없다만 안다.
+ */
+function mapboxToken(mode: string): string {
+  const navi = loadEnv(mode, __dirname, "VITE_");                 // 1 · 2
+  const root = loadEnv(mode, path.resolve(__dirname, "..", ".."), "");
+  return navi.VITE_MAPBOX_TOKEN || root.VITE_MAPBOX_TOKEN || root.MAPBOX_TOKEN || "";
+}
+
+export default defineConfig(({ mode }) => ({
   base,
   plugins: [react(), serveWebData()],
+  define: { "import.meta.env.VITE_MAPBOX_TOKEN": JSON.stringify(mapboxToken(mode)) },
   build: { outDir: "dist", emptyOutDir: true },
-});
+}));

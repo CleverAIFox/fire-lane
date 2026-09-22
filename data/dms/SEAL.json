@@ -1,255 +1,24 @@
 {
- "sealed_at": "2026-09-22T09:10:20+09:00",
- "commit": "195a7e4",
- "tool": "3e0a89af131835c1",
+ "sealed_at": "2026-09-22T12:47:29+09:00",
+ "commit": "19c5264",
+ "tool": "cb7fb4f11d16327d",
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "0a3a461c395c1479",
-  "docs/DECISIONS.md": "7ff26e136d4b6995",
+  "docs/MASTER.md": "b047ba17adc2d111",
+  "docs/DECISIONS.md": "b813dc432d8ff74f",
   "docs/PLAN.md": "275a61c0e85a6c63",
-  "README.md": "72a01d097072fb67"
+  "README.md": "dfb338c5c343cb48"
  },
- "raw": {
-  "gjcity_road_facility": [
-   "c0810ad6ed35388f"
-  ],
-  "juso_bldg_geom": [
-   "03808c2a5d858785"
-  ],
-  "juso_bldggrp_geom": [
-   "4867537948920da1"
-  ],
-  "juso_etc_geom": [
-   "bf665b6b74e218b2"
-  ],
-  "kfs_pumptruck": [
-   "0908c1232cd2102e"
-  ],
-  "kfs_watertank": [
-   "8b0c7fa291f5217e"
-  ],
-  "kfs_chemical": [
-   "9688a70902502279"
-  ],
-  "kfs_ladder_articulated": [
-   "a2cab9811eadacec"
-  ],
-  "kfs_rescue": [
-   "ce1ab827276df743"
-  ],
-  "kfs_ambulance_special": [
-   "a8b309c908d13b2d",
-   "b4fec99a5e721e39"
-  ],
-  "kfs_ladder_small": [
-   "5c5ab15422d304dc"
-  ],
-  "mas_optional_spec": [
-   "975e4a08fb4e02fd",
-   "90c188fc2bd192df"
-  ],
-  "mas_vehicle_spec": [
-   "9ec7d8d516e631a4",
-   "0a535f5e927a7264"
-  ],
-  "node_link_changelog": [
-   "574f2d294fa6ff10"
-  ],
-  "road_link": [
-   "895df207b4159c56"
-  ],
-  "road_rw": [
-   "895df207b4159c56"
-  ],
-  "road_intrvl": [
-   "895df207b4159c56"
-  ],
-  "spotaddr_geom": [
-   "67d19479c563ae4b"
-  ],
-  "spotaddr_ref": [
-   "8822bdb54aa2b8a7"
-  ],
-  "ngii1k": [
-   "7b970e12ea3f77df",
-   "1db699d03bc77128"
-  ],
-  "streetlight": [
-   "96ada85a38ef85c9"
-  ],
-  "ngii_road": [
-   "cd4f56a0fcba89d9",
-   "085ad532f61ea654"
-  ],
-  "node_link": [
-   "5bbf5a01d677b6dc"
-  ],
-  "node_point": [
-   "5bbf5a01d677b6dc"
-  ],
-  "turn_restriction": [
-   "5bbf5a01d677b6dc"
-  ],
-  "cctv": [
-   "8351c71117758767"
-  ],
-  "fire_station": [
-   "8f3fca285b8f14d6"
-  ],
-  "poi_store": [
-   "57aa361544108ff4"
-  ],
-  "boundary_emd": [
-   "895df207b4159c56"
-  ],
-  "building": [
-   "895df207b4159c56"
-  ],
-  "building_entrance": [
-   "895df207b4159c56"
-  ],
-  "hydrant_point": [
-   "ef46ab01d76a5c0e"
-  ],
-  "fire_access": [
-   "15fb8022f1b2f9ee"
-  ],
-  "dem_public": [
-   "56656fc18efb05ad"
-  ],
-  "ortho": [
-   "afe2cbb4bcd15153",
-   "4663108491cf8062",
-   "d83eec9e4da02b1b",
-   "88fd1a2f4ffae93c",
-   "c0d4850dfdbe197e",
-   "59bd3db595bf636e",
-   "074d2d29a73dcaea",
-   "4d4f370921c4af31"
-  ],
-  "hydrant_summary": [
-   "4f516236bfdc457b"
-  ],
-  "ngii_road_center": [
-   "cd4f56a0fcba89d9",
-   "085ad532f61ea654"
-  ],
-  "bin_trash": [
-   "ea65b6f8c4bc7179"
-  ],
-  "bin_cloth": [
-   "e8c6aa4f557b5fc3"
-  ],
-  "station_jurisdiction": [
-   "67654b6e6bc4fb1e"
-  ],
-  "parking_lot": [
-   "0f38436f5d4ce8b1"
-  ],
-  "enforce_cam": [
-   "79dac019117d57e3"
-  ],
-  "school_zone": [
-   "cb565f28d1b2fd1f"
-  ],
-  "parking_zone": [
-   "fc114cb3aadfd3b7"
-  ],
-  "gjfire_fleet_dongbu": [
-   "dac553bb5e289ae8"
-  ],
-  "gjfire_district_dongbu": [
-   "eb6ffedeb0301d5b"
-  ],
-  "gjfire_vehicle_card": [
-   "3c2995c12daf86c2",
-   "03955fa703717185",
-   "36aa7d65a75d4bfb",
-   "6ed8289e209c5ef1"
-  ],
-  "nfa_dispatch_119": [
-   "740dedf4e0c6f6de"
-  ],
-  "nfa_rescue": [
-   "66cd210b56f6fb13"
-  ],
-  "nfa_fire_incident": [
-   "c1f98a86160ef4f7"
-  ],
-  "nfa_vehicle_spec_2024": [
-   "3c5d91db980d0b89"
-  ],
-  "nfa_mas_spec_2025": [
-   "9ec7d8d516e631a4"
-  ],
-  "nfa_target_building": [
-   "d85ec9f5b7fbdca3"
-  ],
-  "nfa_spec_chem_gj": [
-   "6f228f5abb327b0d"
-  ],
-  "nfa_spec_pump_jn": [
-   "9ed65818b458d88d"
-  ],
-  "nfa_spec_tanker_cn": [
-   "9653d2700a31f841"
-  ],
-  "nfa_spec_rescue_jn": [
-   "8e14e2c2672162ac"
-  ],
-  "nfa_spec_ladder_jn": [
-   "268c025482249f39"
-  ],
-  "bldg_ledger_dm": [
-   "82d938c21281441c"
-  ],
-  "child_zone_std": [
-   "5a9a8d10bf3d17e0"
-  ],
-  "senior_zone_std": [
-   "c10e7ccbaa7c1e98"
-  ],
-  "speedbump": [
-   "5ce87804c5054a09"
-  ],
-  "admin_cctv": [
-   "d6be41274b0f8632"
-  ],
-  "speed_cam": [
-   "c4680175becb0bdd"
-  ],
-  "parking_enforce": [
-   "cf64a54d8dbe19c2",
-   "4cb4c4e95353af78"
-  ],
-  "hydrant_type": [
-   "e3eb7b4178fdbadf"
-  ],
-  "parking_std": [
-   "2d3ffbc50ad074ac"
-  ],
-  "navi_build": [
-   "a11acfcd46a77498"
-  ],
-  "navi_jibun": [
-   "2ec3b3efd7dfe043"
-  ],
-  "civil_office": [
-   "259f0234fa7e26d4"
-  ],
-  "donggu_statbook": [
-   "a70c7354fb672643"
-  ]
- },
+ "raw": null,
  "code": {
-  "sha256": "8b84ac9da9f34d45",
+  "sha256": "d489f47bad60f5ec",
   "files": {
    "data/field/fieldsheet.md": "3fce0c05fba34da06d06a1945abfb756bffc10d1ae834bb9c520791c666cb73c",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "data/field/obs_points.csv": "2c5fe0b969b720a76beca0de01c973f711a7223ec3f9fa46427eba8cc654a37e",
    "data/field/sample_segments.csv": "2582c25e7e284a78e38a6ee72c60604e39803752367c6d11853c5aa1dda025f9",
    "pyproject.toml": "d4e46b2f3a9cf4dd4d0dff134b21fee92bdbad25cedcc939eed68c7ab438a777",
-   "sources.yaml": "97af3a8f76e5934a0e932155e4dbb8aa6d4670bda3ddc8fb6d54f2c1242d8d65",
+   "sources.yaml": "d13f11fcd904155581a63c319599b8b6dbd590262f6339edbf1441c90bed05aa",
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d14f1c58854c21c64348c040cde02795cf99a09ed8bab81849d0f77b7596865b",
@@ -284,9 +53,10 @@
    "src/firelane/prep.py": "30179b09b2eb1043f8d914cfdd16167872b0364193686c3e68a5c6068428d98a",
    "src/firelane/probe.py": "52544d4fede864ef123276fc79423ffd6987eb97795a7a40c1a4e74741734aec",
    "src/firelane/providers.py": "56d4289ef55b65a705d487d2ab216a51014c2133107b949521b35a9f5ff3d290",
+   "src/firelane/publish_basemap.py": "2fa465ed686f493a95e909fb959aca372649d6ef69a46e05ada004b8869906ed",
    "src/firelane/publish_fleet.py": "a1a48a23e01fcda115ae2c1864e1583b42f74ea032819536e0599e63edac7c93",
    "src/firelane/publish_navi.py": "72c0c198e202e9d220cfac092d8dc5aedc033a2beb90789dd3c2351c2aac7b9f",
-   "src/firelane/publish_web.py": "a44eaad79c115a4b9734d51938e15bef8a30e8a5c7fdb16fddb785f008f35640",
+   "src/firelane/publish_web.py": "8af255f3b257317687f93d730efae33b20044b586333eaab9452f0373b9144c4",
    "src/firelane/quiet_gdal.py": "6ca08fdd7aae83ec4c1f7e8da6671b848462d72dcd74074908730885dfc75eec",
    "src/firelane/sample_design.py": "489059ca819d8cc40e1d12f2116ca98614b9fbcf0d1b67bc8139b93f77586ed4",
    "src/firelane/scope.py": "81451ac9f7380aecde569634f810ae7cd64eb3db4acf02e7ee4fb651891fef4d",
@@ -867,7 +637,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER-093": {
-   "h": "6d8c3f626ed976cc",
+   "h": "68dffa88d20d04d0",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -4970,6 +4740,84 @@
    "doc": "docs/DECISIONS.md",
    "title": "212-5. 적어 두는 틈 —— 구급차 전폭"
   },
+  "DECISIONS-627": {
+   "h": "bb504f3e99d2a2ae",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "213. 턴바이턴을 폐루프로 — 그리고 CI 에서만 깨지던 내비를 로컬이 먼저 본다 (판정 불변)"
+  },
+  "DECISIONS-628": {
+   "h": "b44c53cc9a134212",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "213-1. CI 에서만 깨졌다 —— 원인 셋, 막는 자리 셋"
+  },
+  "DECISIONS-629": {
+   "h": "a4da835df5d89519",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "213-2. 위치 추정 —— 구간 스냅에서 경로 선형 투영으로"
+  },
+  "DECISIONS-630": {
+   "h": "23040525b1b9e678",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "213-3. 폐루프를 시험한다 —— GPS 흉내"
+  },
+  "DECISIONS-631": {
+   "h": "92d5bdc41d6338e0",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "213-4. 대비 —— 도로를 선이 아니라 면으로"
+  },
+  "DECISIONS-632": {
+   "h": "b9d64db7023b2573",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "213-5. 판정 4색은 그대로 —— 정의를 받았다"
+  },
+  "DECISIONS-633": {
+   "h": "850e32ed701870d9",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "214. 내비 × 관제(새 GIS) — 와이어프레임 충실도 · 실제 공유 · 대체 접근 지점 · 배치 도구 저장소화 (판정 불변)"
+  },
+  "DECISIONS-634": {
+   "h": "22b164e5f86e740e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "214-1. 배치 도구가 저장소 밖에 살았다"
+  },
+  "DECISIONS-635": {
+   "h": "a1edb4dbc0532aff",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "214-2. 내비 —— 와이어프레임 28장 대조 뒤 고친 것"
+  },
+  "DECISIONS-636": {
+   "h": "5f5f6c16d530f70b",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "214-3. 공유가 진짜가 됐다 —— 관제 화면과 탭끼리 잇는다"
+  },
+  "DECISIONS-637": {
+   "h": "3c4be3ca5c8d0d92",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "214-4. 관제 화면(새 GIS) —— `…/navi/?view=ops`"
+  },
+  "DECISIONS-638": {
+   "h": "a07194358593db29",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "214-5. 옛 지도(web/js)는 이번에 안 지웠다 —— 철거 핀 목록"
+  },
+  "DECISIONS-639": {
+   "h": "1135ec7b51a3b77d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "214-6. 토큰 둘이 한 자리에 있지 않았다 —— Mapbox 를 루트 `.env` 로"
+  },
   "PLAN-001": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -5427,7 +5275,7 @@
    "title": "일회성 도구는 저장소에 두지 않는다"
   },
   "README-003": {
-   "h": "635b07e343e2f441",
+   "h": "43020f651184282a",
    "state": "none",
    "doc": "README.md",
    "title": "문서에도 검사가 붙어 있다"
@@ -5445,7 +5293,7 @@
    "title": "숫자의 정본은 문서가 아니다"
   },
   "README-006": {
-   "h": "842b7ae30da15340",
+   "h": "eb33be5bea125b5d",
    "state": "wired",
    "doc": "README.md",
    "title": "실행"
@@ -5457,7 +5305,7 @@
    "title": "파이프라인"
   },
   "README-008": {
-   "h": "8ad17c2685b48aeb",
+   "h": "853452823b110358",
    "state": "wired",
    "doc": "README.md",
    "title": "도구"
@@ -5499,13 +5347,13 @@
    "title": "게이트"
   },
   "README-015": {
-   "h": "b1adda45793d1b95",
+   "h": "fc51c3d008a6ebe6",
    "state": "none",
    "doc": "README.md",
    "title": "구조"
   },
   "README-016": {
-   "h": "e1a6ab25e92dab4c",
+   "h": "573be32468a31c4a",
    "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
@@ -5517,7 +5365,7 @@
    "title": "구간 수는 고정값이 아니다"
   },
   "README-018": {
-   "h": "041a6cbeac610536",
+   "h": "7e1ae89f7f38cd8e",
    "state": "wired",
    "doc": "README.md",
    "title": "나는 어느 파트인가"
@@ -5536,7 +5384,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "878 passed in 93.34s (0:01:33)"
+   "tail": "894 passed in 136.14s (0:02:16)"
   },
   "probe/deadcheck": {
    "rc": 0,

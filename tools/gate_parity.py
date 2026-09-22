@@ -60,6 +60,7 @@ gate_parity.py — **로컬 관문과 CI 가 같은 것을 보는가.** 3족의 
     .githooks/X.sh                             훅
     pytest · ruff · pre-commit · gitleaks      외부 도구
     navi:typecheck                             web/navi 타입 검사
+    navi:test                                  web/navi 단위 시험
 
 ★ 주석은 걷어낸다. 주석에 적힌 도구 이름은 **호출이 아니다** — 그것을 세면
   `web_manifest.py` 처럼 "CI 가 본다" 고 적어놓기만 한 것이 통과한다.
@@ -104,6 +105,8 @@ EXTERNAL = {
     "pre-commit": r"\bpre-commit\b",
     "gitleaks": r"gitleaks",
     "navi:typecheck": r"npm run\s+(?:-s\s+)?typecheck",
+    # ★ 2026-09-22 (§213-3). 내비 단위 시험. 검사기가 npm 스크립트라 파일로 못 잡는다
+    "navi:test": r"npm run\s+(?:-s\s+)?test\b",
 }
 
 
@@ -268,7 +271,8 @@ def selftest() -> int:
     if not tokens("uv run python tools/nonexistent_probe.py"):
         bad.append("호출을 못 센다 — 추출기가 죽었다")
     for name in EXTERNAL:
-        if not tokens({"navi:typecheck": "npm run typecheck"}.get(name, f"uv run {name}")):
+        if not tokens({"navi:typecheck": "npm run typecheck",
+                       "navi:test": "npm run test"}.get(name, f"uv run {name}")):
             bad.append(f"외부 도구 {name} 패턴이 자기 예상을 못 잡는다")
     # ★ 면제 파서가 죽으면 **전부 미선언으로 세어 래칫이 폭발**하거나, 반대로
     #   아무거나 면제로 읽어 차집합이 조용히 0 이 된다. 둘 다 조용하지 않게

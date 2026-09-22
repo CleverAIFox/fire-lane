@@ -6,8 +6,9 @@ publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내�
 IN    processed/*.geojson · processed/segments.schema.json ·
       processed/route_vehicle.csv · processed/corridor_5186.gpkg ·
       processed/building_5186.gpkg · processed/ngii1k_light_5186.gpkg ·
-      processed/navi_build.csv · processed/navi_jibun.csv · processed/civil_office.geojson
-OUT   web/data/  — 아래 열여덟. ★ 중괄호 축약을 쓰지 않는다. 선언은
+      processed/navi_build.csv · processed/navi_jibun.csv · processed/civil_office.geojson ·
+      processed/ngii1k_5186.gpkg · processed/road_rw_5186.gpkg · processed/ngii1k_walk_5186.gpkg
+OUT   web/data/  — 아래 스물하나. ★ 중괄호 축약을 쓰지 않는다. 선언은
       기계가 대조하는 것이고(tests/test_declaration_reality.py) 축약하면
       그 대조가 이름을 못 찾는다.
         segments.geojson      boundary.geojson
@@ -16,8 +17,11 @@ OUT   web/data/  — 아래 열여덟. ★ 중괄호 축약을 쓰지 않는다.
         poi.geojson           streetlights.geojson lightpoles.geojson
         dest.geojson
         segments.schema.json  vehicle_spec.json    route_vehicle.json
-        navi_graph.json       _manifest.json
+        navi_graph.json       _manifest.json       fleet.json
+        road_area.geojson     sidewalk.geojson
       ★ navi_graph.json 은 publish_navi.main() 을 여기서 불러 낸다(2026-09-16 · DECISIONS §170-5)
+      ★ fleet.json 은 publish_fleet.main() 이(§212-3), road_area · sidewalk 는
+        publish_basemap.main() 이 낸다(§213-4)
       ★ web/data/view.json 은 terrain·ortho 가 넣어둔 타일 범위를 읽어
         보존하고 다시 쓴다 — writes 가 아니라 **mutates** 다
       ★ markers.geojson 은 **내지 않는다.** 286줄이 남은 것을 지운다 —
@@ -454,6 +458,9 @@ def main():
     #   곳이 없어 손으로만 돌았다. 회전반경 숫자가 그 파일로 화면까지 가므로 여기서 같이 낸다.
     from firelane import publish_fleet as _fleet
     _fleet.main()
+    # ★ 2026-09-22 (DECISIONS §213-4). 내비 바탕의 도로면 · 보도. 판정과 무관한 색칠용이다.
+    from firelane import publish_basemap as _base
+    _base.main()
 
     _wm = webmanifest.write()
     print(f"  web/data 계보 → {_wm['total_mb']}MB · 타일 {_wm['tiles_digest']}")

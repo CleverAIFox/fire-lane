@@ -60,7 +60,7 @@ export function TimeBox({ now, incident }: { now: string; incident: string | nul
     <div style={{ background: C.timeBox, border: "1px solid rgba(255,255,255,.14)",
                   borderRadius: 10, padding: "6px 16px", textAlign: "center" }}>
       <div style={{ color: C.timeGreen, fontSize: 18, fontWeight: 800 }}>현재 시간 : {now}</div>
-      {incident && <div style={{ color: "#cfd8e6", fontSize: 12, marginTop: 2 }}><Doc /> 사건 입력 {incident}</div>}
+      {incident && <div style={{ color: "#cfd8e6", fontSize: 12, marginTop: 2 }}><Doc /> 사건 접수 {incident}</div>}
     </div>
   );
 }
