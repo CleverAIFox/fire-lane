@@ -79,10 +79,10 @@ jobs:
           #   내비 노드 22 vs 20 과 같은 형태의 파이썬 판이다(§186-2).
           #   `tests/test_ci_env.py` 가 판이 한 곳에서 오는지 강제한다.
           python-version-file: .python-version
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.13"
           enable-cache: true
@@ -287,7 +287,7 @@ jobs:
         run: node tools/js_graph_check.mjs
 
       - name: 내비 노드 — 배포 액션과 같은 판으로
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: web/navi/.nvmrc
           cache: npm
@@ -357,7 +357,7 @@ jobs:
         with:
           # ★ 정본은 `.python-version` 하나다 (W3-17).
           python-version-file: .python-version
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.13"
           enable-cache: true
