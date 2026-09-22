@@ -450,6 +450,10 @@ def main():
     #   구간으로 경로를 짰다. 매니페스트보다 **먼저** 불러야 계보에 새 그래프가 잡힌다.
     from firelane import publish_navi as _navi
     _navi.main()
+    # ★ 2026-09-22 (DECISIONS §212). `fleet.json` 도 같은 모양이었다 — `publish_fleet` 를 부르는
+    #   곳이 없어 손으로만 돌았다. 회전반경 숫자가 그 파일로 화면까지 가므로 여기서 같이 낸다.
+    from firelane import publish_fleet as _fleet
+    _fleet.main()
 
     _wm = webmanifest.write()
     print(f"  web/data 계보 → {_wm['total_mb']}MB · 타일 {_wm['tiles_digest']}")

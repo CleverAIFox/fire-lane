@@ -1,10 +1,12 @@
 /**
  * ui/VehiclePicker.tsx — 출동 차량 선택.  (와이어프레임 01 · 2026-09-21)
  *
- * ★ **회전반경 숫자를 띄우지 않는다.** 09-21 와이어프레임은 「회전 7.3m」 를
- *   띄우지만, `turn_radius_verified` 가 false 인 동안 등급(여유 · 주의 · 미판정)
- *   만 낸다. 숫자를 띄우면 관제사가 시스템이 회전을 반영한다고 읽는데 반영하지
- *   않는다(DECISIONS §86-5). 지혜님께 드릴 확인 사항이다.
+ * ★ **회전반경은 제원표에 그 차의 값이 있을 때만 숫자로 띄운다**(DECISIONS §212,
+ *   2026-09-22). 숫자는 `fleet.json` 의 `turn_radius_ref_m` 에서만 온다 — 이 파일에
+ *   숫자를 적지 않는다. null 이면 등급(여유 · 주의 · 미판정)을 낸다. 사다리차
+ *   둘은 제원표 값이 있어도 그 차의 값이 아니라 null 이다(§84-3).
+ *   숫자 옆에 「참고」 를 붙이고 하단 고지가 「판정에 반영하지 않는다」 를
+ *   말한다 — 숫자만 두면 관제사가 시스템이 회전을 반영한다고 읽는다(§86-5).
  *
  * ★ 차종 목록은 와이어프레임의 일곱 종이 아니라 **`fleet.json` 의 실제 편성**
  *   이다(지산 · 대인 센터별). 없는 차를 고르게 하면 그 제원이 어디서 왔는지
@@ -17,19 +19,9 @@ import { C, F } from "./tokens";
 import { Cta, Sheet } from "./Sheet";
 import { Truck } from "./icons";
 
-export interface FleetVehicle {
-  id: string;
-  label: string;
-  station?: string | null;
-  count: number;
-  width_m: number;
-  required_width_m: number;
-  turn_grade?: string | null;
-  turn_unknown: boolean;
-  length_m?: number | null;
-  match?: string | null;
-  note?: string | null;
-}
+// ★ 사본을 두지 않는다. 종전 로컬 사본은 `turn_radius_verified` 가 빠진 채 갈라져 있었다.
+export type { FleetVehicle } from "../domain/types";
+import type { FleetVehicle } from "../domain/types";
 
 interface Props {
   vehicles: FleetVehicle[];
@@ -69,7 +61,9 @@ export function VehiclePicker(p: Props) {
               </span>
               <span style={{ fontSize: 11, color: C.panelSub, textAlign: "right", lineHeight: 1.5 }}>
                 폭 {v.width_m.toFixed(1)}m · 요구 {v.required_width_m.toFixed(1)}m<br />
-                회전 {v.turn_grade ?? "미판정"}
+                {v.turn_radius_ref_m != null
+                  ? <>회전 {v.turn_radius_ref_m.toFixed(1)}m <span style={ref}>참고</span></>
+                  : <>회전 {v.turn_grade ?? "미판정"}</>}
               </span>
             </button>
           );
@@ -77,8 +71,8 @@ export function VehiclePicker(p: Props) {
       </div>
 
       <div style={note}>
-        현재 경로 판정에는 전폭만 반영됩니다. 회전 반경은 미검증이라 등급으로만
-        표시합니다.
+        현재 경로 판정에는 전폭만 반영됩니다. 회전 반경은 제원표 참고값(미검증)으로
+        판정에 반영하지 않으며, 제원표에 해당 차량 값이 없으면 등급으로 표시합니다.
       </div>
     </Sheet>
   );
@@ -95,6 +89,10 @@ const radio: CSSProperties = {
 const radioDot: CSSProperties = { width: 8, height: 8, borderRadius: 999, background: C.cta };
 const truck: CSSProperties = {
   width: 44, height: 30, borderRadius: 8, background: "#fef2f2", display: "grid", placeItems: "center",
+};
+const ref: CSSProperties = {
+  fontSize: 10, color: C.panelSub, border: `1px solid ${C.sheetLine}`, borderRadius: 4,
+  padding: "0 3px", marginLeft: 2,
 };
 const note: CSSProperties = {
   marginTop: 14, background: "#f8fafc", borderRadius: 10, padding: "10px 12px",

@@ -37,13 +37,16 @@ export interface FleetVehicle {
   width_m: number;
   clearance_m: number;
   required_width_m: number;
-  /**
-   * 회전 등급. **숫자가 아니다** — `turn_radius_verified` 가 false 인
-   * 동안 화면이 숫자를 확정처럼 띄우지 않게 하려는 것이다.
-   */
+  /** 회전 등급 (여유 · 주의 · 미판정). `turn_radius_ref_m` 이 null 일 때 화면이 띄운다 */
   turn_grade?: string | null;
   turn_unknown: boolean;
   turn_radius_verified: boolean;
+  /**
+   * 제원표 최소회전반경(m) — **참고값, 판정에 안 쓴다**(DECISIONS §212).
+   * 그 차의 값이라고 말할 수 없으면 null 이다(제원표 공란 · `turn_unknown`).
+   * ★ `VehicleSpec.turn_radius_m`(판정용)과 이름을 일부러 달리 둔다.
+   */
+  turn_radius_ref_m?: number | null;
   /** 판정하지 않는 값. 표시용으로만 흐른다 */
   length_m?: number | null;
   height_m?: number | null;
