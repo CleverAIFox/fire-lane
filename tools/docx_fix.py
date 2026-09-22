@@ -11,7 +11,7 @@ docx_fix.py — 기획서의 낡은 숫자·용어를 산출물 기준으로 고
   코드**를 스크립트로 고치는 것이다. docx 는 git diff 가 안 되는 바이너리라
   사람이 diff 로 검토할 수 없고, 그래서 도구가 필요한 반대 경우다.
 
-IN    docs/*.docx · data/golden/segments.fingerprint.json
+IN    docs/*.docx · data/golden/segments.fingerprint.json · web/data/segments.geojson
 OUT   docs/*.docx (제자리 수정)
 PARAM --write 없이는 아무것도 쓰지 않는다
 """
@@ -27,6 +27,34 @@ ROOT = Path(__file__).resolve().parent.parent
 from firelane import paths as _p
 
 GOLDEN = _p.GOLDEN / "segments.fingerprint.json"
+SEGS = ROOT / "web" / "data" / "segments.geojson"
+
+
+def derived() -> dict:
+    """golden 에 없는 기획서 수치를 **발행 구간**에서 센다 (PLAN §13 W4-2 닫힘 · DECISIONS §217-5).
+
+    ★ 2026-09-22. 기획서 「회색」 문단(CCTV 커버 · 최단거리 · 회색 연장 · 통행량 몫 · 사유 넷)과
+      표17 의 `width_max_m` 값 개수가 1,101 세대로 남아 있었다. 종전 규칙은 이 값들을
+      **문자열로 박아** 넣었다(「605/1,101 만 값이 있다」) — 도구가 스스로 낡은 수를 썼다.
+      지금은 정규식이 **숫자 자리를 아무 수로** 잡고, 치환값은 여기서 센다. 재실행하면 따라온다.
+      `web/data/segments.geojson` 은 결정적 발행물이라(「커밋된 web/data 가 최신인가」) 재현된다.
+    """
+    import statistics
+    f = [x["properties"] for x in json.loads(SEGS.read_text(encoding="utf-8"))["features"]]
+    d = [p["cctv_dist_m"] for p in f if p.get("cctv_dist_m") is not None]
+    L = sum(p["length_m"] for p in f)
+    u = [p for p in f if p["verdict"] == "unknown"]
+    ru = sum(p.get("route_usage") or 0 for p in f) or 1
+    cov = sum(bool(p.get("cv_feasible")) for p in f)
+    return {
+        "n": len(f), "cov": cov, "cov_pct": 100 * cov / len(f),
+        "nocov_pct": round(100 - 100 * cov / len(f)),
+        "d_med": statistics.median(d), "d_max": round(max(d)),
+        "gray": len(u), "gray_m": round(sum(p["length_m"] for p in u)),
+        "gray_pct": round(100 * sum(p["length_m"] for p in u) / L),
+        "gray_route_pct": round(100 * sum(p.get("route_usage") or 0 for p in u) / ru),
+        "wmax": sum(p.get("width_max_m") is not None for p in f),
+    }
 
 
 def rules() -> list[tuple[str, str, str]]:
@@ -34,6 +62,8 @@ def rules() -> list[tuple[str, str, str]]:
     g = json.loads(GOLDEN.read_text(encoding="utf-8"))["L1"]
     v = g["verdict"]
     n = g["n"]
+    s = derived()
+    ur = g.get("unknown_reason", {})
     out = [
         # ★ 2026-09-02. 종전 규칙이 `구간` 만 봤는데 기획서는 같은 것을
         #   `산출단위` 로 적는다. **존재하지 않는 형태를 찾고 있었다** —
@@ -100,7 +130,9 @@ def rules() -> list[tuple[str, str, str]]:
         # ★ 표 셀은 `<w:t>` 하나에 담긴다. 앞 셀(필드명)까지 이어 잡으려 하면
         #   xml 에서 안 맞는다 — 평문으로만 이어 보이는 것이다.
         (r"중심선\s*샘플\s*폭의\s*중앙값\s*\(표시용\)",
-         "건물 폴리곤 기준 벽~벽 최대 폭. 605/1,101 만 값이 있다", "MASTER §3-4"),
+         f"건물 폴리곤 기준 벽~벽 최대 폭. {s['wmax']:,}/{n:,} 만 값이 있다", "MASTER §3-4"),
+        (r"벽~벽 최대 폭\. [\d,]+/[\d,]+ 만 값이 있다",
+         f"벽~벽 최대 폭. {s['wmax']:,}/{n:,} 만 값이 있다", "W4-2 발행 구간"),
         (r"교차로\s*5m\s*제외\s*후\s*하위\s*5%\s*분위수\s*\(판정용\)",
          "도로경계 기준 최소 폭. 확실히 비어 있는 폭", "MASTER §3-4"),
         # 필드명 셀 자체
@@ -129,7 +161,6 @@ def rules() -> list[tuple[str, str, str]]:
         (r"FIXED_PASS", "clear", "MASTER §2-2"),
         (r"FIXED_BLOCK", "blocked", "MASTER §2-2"),
         (r"CANDIDATE", "needs_cv", "MASTER §2-2"),
-        (r"tiertextFIXED_PASS\s*\|\s*CANDIDAT", "verdicttextclear | needs_cv", "MASTER §2-2"),
         # "12.0m 상한은 팀 자체 추정치" — 임계 자체가 없어졌다.
         (r"12\.0m\s*상한\s*임계값은\s*팀\s*자체\s*추정치이며\s*발표\s*시\s*그\s*사실을\s*명시한다",
          "통과 하한 3.0m 는 소방청 「2025 화재현장 골든타임 확보 종합대책」의 "
@@ -152,24 +183,17 @@ def rules() -> list[tuple[str, str, str]]:
         (r"하한\s*2\.0m는\s*소방청\s*진입불가\s*기준과\s*일치하므로\s*외부\s*방어가\s*가능하다",
          "blocked 하한 3.0m 는 소방청 진입불가 기준(폭 2m 이하)에 차량 전폭 2.5m + "
          "미러·조향 여유 0.5m 를 더한 값이라 외부 방어가 가능하다", "MASTER §2-2"),
-        (r"needs_cv그\s*사이영상\s*판정\s*대상",
-         "needs_cv최소 폭 3.0 ~ 7.0 m영상 판정 대상", "MASTER §2-2"),
         # 폭 산출 절차 — 분위수는 폐기됐다
         (r"수치지도\s*트랜섹트\s*하위\s*5%\s*분위수를\s*판정\s*입력으로\s*사용",
          "수치지도 트랜섹트 도로경계 기준 최소 폭을 판정 입력으로 사용", "MASTER §3-4"),
         (r"폭\s*측정에는\s*최댓값이\s*아니라\s*하위\s*5%\s*분위수를\s*사용하는데",
          "폭은 최소(도로경계)와 최대(벽~벽) 둘을 함께 내는데", "MASTER §3-4"),
-        (r"교차로\s*반경\s*5m\s*샘플\s*제외\s*후\s*하위\s*5%\s*분위수\s*산출",
-         "교차로 반경 5m 샘플 제외 후 최소·최대 폭 산출", "MASTER §3-4"),
         (r"교차로\s*제외\s*분위수\s*산출", "교차로 제외 최소·최대 폭 산출", "MASTER §3-4"),
-        (r"교차로\s*제외\s*분위수노드", "교차로 제외 폭 산출노드", "MASTER §3-4"),
         (r"최댓값이\s*아니라\s*하위\s*분위수를\s*쓰는\s*이유는\s*소방차가\s*구간의\s*평균\s*폭이\s*"
          r"아니라\s*가장\s*좁은\s*병목을\s*통과하지\s*못하기\s*때문이다",
          "판정에 최소 폭을 쓰는 이유는 소방차가 구간의 평균 폭이 아니라 "
          "가장 좁은 병목을 통과하지 못하기 때문이다", "MASTER §3-4"),
         # tier → verdict (실물 필드명)
-        (r"tiertextclear\s*\|\s*needs_cv\s*\|\s*blocked",
-         "verdicttextclear | needs_cv | blocked | unknown", "실물 필드"),
         (r"width_src,\s*tier,\s*cctv_coverage", "width_src, verdict, cctv_coverage", "실물 필드"),
         (r"폭\s*소스,\s*tier,\s*현재\s*상태", "폭 소스, verdict, 현재 상태", "실물 필드"),
         (r"폭,\s*폭\s*소스,\s*tier,\s*CCTV", "폭, 폭 소스, verdict, CCTV", "실물 필드"),
@@ -180,6 +204,9 @@ def rules() -> list[tuple[str, str, str]]:
         (r"tier\s*재분류\s*및\s*4색\s*분포\s*확정", "verdict 재분류 및 4색 분포 확정", "실물 필드"),
     ]
 
+    # ★ 2026-09-22 — 닻이 떨어진 규칙 일곱을 지웠다(`docx_check` ⑥ 이 처음 돌며 잡았다).
+    #   xml 셀 경계를 넘어 이어 잡으려던 것(`tiertext…` · `needs_cv그 사이…`)과 중복 둘이다.
+    #   찾을 것도 없고 바꾼 결과도 문서에 없다 — 켜 두면 「규칙이 있으니 덮인다」로 읽힌다.
     # ── 3차 (셀 경계를 넘지 않는다) ──
     # ★ 2차에서 넷이 또 안 잡혔다. `needs_cv그 사이…` 처럼 **앞 셀까지 이어**
     #   잡으려 했기 때문이다. 평문에서는 이어 보이지만 xml 에서는 각각
@@ -189,9 +216,6 @@ def rules() -> list[tuple[str, str, str]]:
         (r"^그 사이$", "최소 폭 3.0 ~ 7.0 m", "MASTER §2-2"),
         (r"^&lt; 2\.0 m$", "최대 폭 &lt; 3.0 m", "MASTER §2-2"),
         (r"^Tier$", "판정", "실물 필드 — tier 어휘는 없다"),
-        (r"교차로 제외 분위수노드", "교차로 제외 폭 산출노드", "MASTER §3-4"),
-        (r"tiertextclear \| needs_cv \| blocked",
-         "verdicttextclear | needs_cv | blocked | unknown", "실물 필드"),
     ]
 
     # ── 소방용수 (PLAN §12-7 · MASTER §3-12) ──
@@ -236,13 +260,76 @@ def rules() -> list[tuple[str, str, str]]:
          "축거·회전반경 확보 시 내륜차를 재산출한다.", "MASTER §3-13"),
     ]
 
+    # ── 회색 문단 (W4-2) — 숫자 자리는 아무 수로 잡고 golden · 발행 구간에서 채운다 ──
+    out += [
+        (r"골목의 \d+%에는 적용할 수 없다", f"골목의 {s['nocov_pct']}%에는 적용할 수 없다", "W4-2 발행 구간"),
+        (r"CCTV 유효범위 25m 안에 드는 구간이 [\d,]+ / [\d,]+\([\d.]+%\)",
+         f"CCTV 유효범위 25m 안에 드는 구간이 {s['cov']:,} / {n:,}({s['cov_pct']:.1f}%)", "W4-2 발행 구간"),
+        (r"CCTV 최단거리 중앙값은 [\d.]+m, 최대 [\d,]+m",
+         f"CCTV 최단거리 중앙값은 {s['d_med']:.1f}m, 최대 {s['d_max']:,}m", "W4-2 발행 구간"),
+        (r"영상판정 불가는 [\d,]+구간 · [\d,]+m 이며 전체 연장의 \d+%",
+         f"영상판정 불가는 {v['unknown']:,}구간 · {s['gray_m']:,}m 이며 전체 연장의 {s['gray_pct']}%",
+         "W4-2 golden · 발행 구간"),
+        (r"담당하는 소방 통행량은 \d+%", f"담당하는 소방 통행량은 {s['gray_route_pct']}%", "W4-2 발행 구간"),
+        (r"GRAY [\d,]+구간의 사유", f"GRAY {v['unknown']:,}구간의 사유", "W4-2 golden"),
+    ]
+    # ── 팀 구성 대 저장소 소유 (W3-3 · MASTER §8) ──
+    # ★ 2026-09-22. 기획서는 5인 역할 분담을, CODEOWNERS 는 2026-09-09 부터 1인 소유를 적는다.
+    #   둘은 다른 축(팀 구성 · 리뷰 권한)인데 기획서만 읽으면 지금도 다섯이 저장소를 나눠 쥔 줄 안다.
+    #   역할 표는 **기획 당시 기준**임을 밝히고 소유의 현재를 한 구절로 붙인다.
+    out += [
+        (r"\(5인 1조\)",
+         "(5인 1조 · 아래 역할은 기획 당시 기준이며, 저장소 코드 소유 · 리뷰는 2026-09-09 부터 1인 단독)",
+         "W3-3 · MASTER §8"),
+        # 통행 규칙 · 주변 사정 — 구현이 기획보다 앞섰다 (DECISIONS §215-1 · §216-3)
+        (r"^• 2\.5 경로상 소화전·CCTV·회전 제약 경유 정보 표출$",
+         "• 2.5 경로상 소화전·CCTV·회전 금지·일방통행·과속방지턱·단속카메라·보호구역 정보 표출 — "
+         "규칙을 어기는 경로는 빼지 않고 불리하게 계산해 경고한다", "DECISIONS §215-1 · §216-3"),
+    ]
+    for k in ("no_cctv_band", "no_cctv_thin", "no_cctv_narrow", "no_cctv_single"):
+        if k in ur:
+            out.append((rf"{k} \d+\(", f"{k} {ur[k]}(", "W4-2 golden"))
     return out
 
 
-def fix(p: Path, write: bool) -> int:
+def inserts() -> list[tuple[str, str, str]]:
+    """(닻 문단 원문, 그 **뒤에** 넣을 문단, 사유). 닻과 같은 서식으로 복제해 넣는다.
+
+    ★ 2026-09-22 (DECISIONS §217-5). 치환 규칙은 **있는 문장**만 고친다. 구현이 기획보다 앞선
+      기능(턴바이턴 내비 · 통행 규칙 · 지형 · 출동 이력 · 관제 화면)은 문장이 없어 규칙이 못 닿았다.
+      멱등이다 — 닻 바로 뒤가 이미 그 문단이면 안 넣는다. `docx_check` ⑥ 이 닻 · 결과를 대조한다.
+    """
+    return [
+        ("• 1.3 관측 커버리지 레이어 (GRAY 구간 중 실제로 관측한 범위)",
+         "• 1.4 지형 음영 · 3D 지면(Terrain-RGB) 및 출동 이력 레이어 (실제 출동 지령 → 현장 도착 시간)",
+         "구현 2026-09-22 (DECISIONS §216-3 · §217-2)"),
+        ("• 1.4 지형 음영 · 3D 지면(Terrain-RGB) 및 출동 이력 레이어 (실제 출동 지령 → 현장 도착 시간)",
+         "• 1.5 관제 화면 — 장애물을 가정해 우회 경로를 즉시 재산출하고 출동 대의 경로를 함께 본다",
+         "MVP 2026-09-17 멘토링 (DECISIONS §213)"),
+        ("• 4.2 확인 완료 구간과 미확인 구간의 구분 표시 (유효 측정 범위 기준)",
+         "• 4.3 턴바이턴 음성 안내 · 경로 이탈 재탐색 · 일방통행 역주행 · 회전 금지 경고 (웹 앱, 설치 없음)",
+         "구현 2026-09-22 (DECISIONS §213 · §215-1)"),
+    ]
+
+
+def touch_rules(day: str) -> list[tuple[str, str, str]]:
+    """`--touch YYYY-MM-DD` — 표지 최종 수정일과 수치 기준일을 그날로 옮긴다.
+
+    ★ 2026-09-22 (DECISIONS §218). 날짜는 **규칙이 아니다** — 규칙에 넣으면 다음 날
+      `docx_check` ⑤ 가 「아직 바꿀 것이 있다」로 매일 운다. 사람이(배치가) 기획서를 고친 날
+      명시적으로 찍는다. `doc_fsck` ⑥ 이 「고쳤는데 표지가 그대로인가」를 본다.
+    """
+    y, m, d = day.split("-")
+    return [
+        (r"최종 수정 \d{4}\. \d{2}\. \d{2}\.", f"최종 수정 {y}. {m}. {d}.", "--touch"),
+        (r"모든 수치는 \d{4}-\d{2}-\d{2} 기준으로", f"모든 수치는 {day} 기준으로", "--touch"),
+    ]
+
+
+def fix(p: Path, write: bool, extra: list | None = None) -> int:
     import docx
     d = docx.Document(str(p))
-    R = rules()
+    R = rules() + (extra or [])
     n = 0
 
     def do(par) -> int:
@@ -277,13 +364,43 @@ def fix(p: Path, write: bool) -> int:
             c += 1
         return c
 
+    import copy
+
+    def ins(pars) -> int:
+        c = 0
+        for anchor, new, _ in inserts():
+            for i, par in enumerate(pars):
+                if par.text != anchor:
+                    continue
+                if i + 1 < len(pars) and pars[i + 1].text == new:
+                    continue
+                el = copy.deepcopy(par._p)
+                par._p.addnext(el)
+                from docx.text.paragraph import Paragraph
+                q = Paragraph(el, par._parent)
+                q.runs[0].text = new
+                for r in q.runs[1:]:
+                    r.text = ""
+                c += 1
+        return c
+
     for par in d.paragraphs:
         n += do(par)
+    n += ins(d.paragraphs)
+    seen = set()
     for t in d.tables:
         for r in t.rows:
             for cell in r.cells:
+                # ★ 병합 셀은 행마다 같은 `_tc` 로 되풀이된다. id() 로 세면 proxy 가 버려진 뒤
+                #   번호가 재사용돼 **다른 셀을 건너뛴다** — 원소 자체를 쥔다
+                if cell._tc in seen:
+                    continue
+                seen.add(cell._tc)
                 for par in cell.paragraphs:
                     n += do(par)
+                # 넣은 뒤 다시 읽는다 — 1.4 뒤에 1.5 가 이어 붙는다
+                while (k := ins(cell.paragraphs)):
+                    n += k
 
     if write and n:
         d.save(str(p))
@@ -293,10 +410,13 @@ def fix(p: Path, write: bool) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--touch", metavar="YYYY-MM-DD",
+                    help="표지 최종 수정일 · 수치 기준일을 그날로 (기획서를 고친 배치가 찍는다)")
     a = ap.parse_args()
+    extra = touch_rules(a.touch) if a.touch else None
     total = 0
     for p in sorted((ROOT / "docs").glob("*.docx")):
-        c = fix(p, a.write)
+        c = fix(p, a.write, extra)
         total += c
         print(f"  {p.name}  run {c}개 {'수정' if a.write else '수정 예정'}")
     if not a.write:

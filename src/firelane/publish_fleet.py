@@ -78,6 +78,25 @@ def _turn_radii() -> dict[str, float]:
     return {p["id"]: round(p["turningRadius"] / 1000, 1)
             for p in d.get("profiles", []) if p.get("turningRadius")}
 
+
+#: 「제원 완성」 — 코너 회전 점검에 쓸 수 있는 조건. 전장 · 전폭 · 전고 · 축거 · 최소회전반경이
+#: 전부 제원표에 있고, 편성 대장의 차가 그 제원표 차종과 **확정** 대응일 때만이다.
+SPEC_KEYS = ("length", "width", "height", "wheelbase", "turningRadius")
+
+
+def _complete_profiles() -> dict[str, dict]:
+    """profile id → {wheelbase_m, turn_radius_m} — 제원 다섯이 다 있는 차종만.
+
+    ★ 2026-09-22 (DECISIONS §218-2). 사용자 결정 — 「회전반경은 제원이 다 확보돼야 쓴다.
+      다 확보된 범주는 지원한다」. 지금 그런 범주는 중형 펌프차 · 대형 물탱크차 둘이다.
+      미검증(그 동네 그 차를 잰 값이 아니라 제작규격 대표값)이라 **막지 않고** 경로 비용과
+      경고에만 쓴다 — 통행 규칙과 같은 정책(§215-1).
+    """
+    d = json.loads(PROFILES.read_text(encoding="utf-8"))
+    return {p["id"]: {"wheelbase_m": round(p["wheelbase"] / 1000, 2),
+                      "turn_radius_m": round(p["turningRadius"] / 1000, 1)}
+            for p in d.get("profiles", []) if all(p.get(k) for k in SPEC_KEYS)}
+
 # CONFIG.fleet 한 항목을 통째로 잡는다. 중첩 중괄호가 없어 이 정도로 충분하다.
 _ENTRY = re.compile(r"\{\s*id\s*:\s*\"([^\"]+)\"(.*?)\}\s*,", re.S)
 _KV_S = re.compile(r"(\w+)\s*:\s*\"([^\"]*)\"")
@@ -122,6 +141,7 @@ def main() -> None:
     profiles = (src.get("vehicle_profiles") or {}).get("items") or {}
     fleet = _fleet_from_config()
     radii = _turn_radii()
+    complete = _complete_profiles()
     clearance = float(spec["clearance_m"])
 
     rows = []
@@ -130,6 +150,7 @@ def main() -> None:
         width = float(p.get("width_m", spec["width_m"]))
         unknown = bool(f.get("turnUnknown", False))
         radius = None if unknown else radii.get(str(f.get("profile", "")))
+        full = None if unknown or f.get("match") != "확정" else complete.get(str(f.get("profile", "")))
         rows.append({
             "id": f["id"],
             "label": f.get("label") or p.get("label") or f["id"],
@@ -145,6 +166,10 @@ def main() -> None:
             # 제원표 값(m). 그 차의 값이라고 말할 수 없으면 null (§212)
             "turn_radius_ref_m": radius,
             "turn_radius_verified": bool(spec.get("turn_radius_verified", False)),
+            # ── 코너 회전 점검(§218-2) — 제원 완성 범주만. 막지 않고 비용 · 경고 ─────
+            "spec_complete": full is not None,
+            "turn_check_radius_m": full["turn_radius_m"] if full else None,
+            "wheelbase_m": full["wheelbase_m"] if full else None,
             # ── 판정하지 않는 값 ────────────────────────────────
             "length_m": p.get("length_m"),
             "height_m": p.get("height_m"),
@@ -159,6 +184,8 @@ def main() -> None:
         "note": (
             "전폭과 여유만 판정에 쓴다. 회전반경은 제원표에 그 차의 값이 있을 때만 "
             "참고로 숫자를 내고(미검증 · 판정 미반영), 없으면 등급으로 낸다. "
+            "제원 다섯(전장·전폭·전고·축거·회전반경)이 다 있고 대응이 확정인 차종만 "
+            "경로가 코너 회전을 점검한다 — 막지 않고 비용과 경고로(spec_complete). "
             "전장·전고는 판정하지 않는다 — 전장은 폭만 보는 현재 판정의 한계이고, "
             "전고는 상공 장애물 데이터가 없다."),
         "source": str(spec.get("source", ""))[:300],

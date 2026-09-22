@@ -61,12 +61,18 @@ on:
   # ★ PR 전용 스텝들은 `if: github.event_name == 'pull_request'` 로 받으므로
   #   `workflow_call` 로 들어오면 자동으로 건너낌다. 보토가 아니다.
   workflow_call:
+  # ★ 2026-09-22 (DECISIONS §218-4 · 토트 drift.yml 모범). 드리프트는 커밋이 아니라 **시간**이 만든다 —
+  #   러너 이미지 · 액션 퇴역 · 끌어내린 휠 · 새 취약점. 커밋이 없는 주에도 main 을 한 번 돈다.
+  #   PR 전용 스텝은 `if: github.event_name == 'pull_request'` 라 여기서 건너뛴다.
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
 
 jobs:
   # ── 전원 공통. 여기가 최소선이다 ─────────────────────────────
   contract-shared:
     name: contract-shared
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -79,10 +85,10 @@ jobs:
           #   내비 노드 22 vs 20 과 같은 형태의 파이썬 판이다(§186-2).
           #   `tests/test_ci_env.py` 가 판이 한 곳에서 오는지 강제한다.
           python-version-file: .python-version
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.13"
           enable-cache: true
@@ -257,6 +263,45 @@ jobs:
       - name: ★ 검사가 죽었는가 (메타 가드 · 래칫)
         run: uv run python tools/deadcheck.py --ratchet
 
+      # ── 2026-09-22 (DECISIONS §218-5). 관문 동등 미선언 11 → 0 ──────────
+      # ★ W2 와 같은 기준 — **레이크 없이 도는가.** 열 모두 커밋된 파일(대장 · 문서 ·
+      #   커밋된 data/processed · web/navi · 워크플로)만 읽는다. 레이크 없는 기계에서
+      #   추적 파일만 복사한 트리로 하나씩 돌려 확인했다. `tools/dms.py` 하나는 git 역사가
+      #   필요해(얕은 클론) `verify.sh` 의 `# ci-exempt:` 로 선언했다.
+      # ★ 인자는 verify.sh 와 **글자까지 같다** — `tests/test_gate_parity_args.py` 가 대조한다.
+      #   인자가 갈리면 같은 검사기를 다른 문턱으로 도는 것이고, 그것은 관문 동등이 아니다.
+      - name: 대장 필드 검사
+        run: uv run python -m firelane.ledger
+      - name: 대장 별칭 이관 유지
+        run: uv run python tools/ledger_fields.py --check
+      - name: 기획서 대조
+        run: uv run python tools/docx_check.py
+      # ★ 로컬에서는 파이프라인 재실행 **뒤에** 돌아 「새 산출 = golden」을 묻는다. 여기서는
+      #   커밋된 data/processed 를 대조하므로 「커밋된 산출 = golden」이다 — 물음이 좁고 그것을
+      #   여기 선언한다. 커밋본이 golden 과 갈린 채 머지되는 길은 이것으로 닫힌다.
+      - name: golden 판정 불변 (커밋본)
+        run: uv run python tools/golden.py check
+      - name: golden 게이트 해제 경로
+        run: uv run python tools/golden.py selftest
+      - name: 사본군 (래칫)
+        run: uv run python tools/dupcheck.py --min 40 --max 1
+      - name: 파일 길이 래칫 (양방향)
+        run: uv run python tools/sizecheck.py
+      - name: PLAN 번호·참조 정합
+        run: uv run python tools/plan_renumber.py
+      - name: 문서 제목 무결
+        run: uv run python tools/docpatch.py check docs/MASTER.md docs/PLAN.md docs/DECISIONS.md
+      - name: 내비 소스 목록
+        run: uv run python tools/install_navi.py --check
+      - name: 배포에 내비 빌드
+        run: uv run python tools/pages_add_navi.py --check
+      - name: 루트 잔재·유령 면제
+        run: uv run python tools/navi_setup.py --check
+      - name: 의존성 선언↔import (deptry)
+        # ★ 잠금에 안 넣는다 — `--with` 로 이 자리에서만 얹는다(아래 pip-audit 와 같은 이유).
+        #   설정 · 알려진 예외는 pyproject.toml `[tool.deptry]` 한 곳이다. 판은 verify.sh 와 같다.
+        run: uv run --no-sync --with deptry==0.25.1 deptry src tools
+
       - name: ★ 관문 동등 — 로컬과 CI 가 같은 것을 보는가
         # ★ 3족의 클래스 가드다. 새 검사를 로컬에만 붙이면 여기서 걸린다.
         #   래칫이라 수는 줄기만 한다 — 줄었으면 숫자를 내리라고 요구한다.
@@ -273,28 +318,23 @@ jobs:
         # pyproject 의 [tool.ruff.lint] 그대로. 엄격판은 strict job 이 돈다.
         run: uv run ruff check src tools tests
 
+      # ★ 2026-09-22. 옛 GIS 지도(web/js)를 걷어냈다. 「JS 부팅 스모크」 · 「JS 모듈 그래프 검사」와
+      #   그 도구 둘(web_boot_check.mjs · js_graph_check.mjs)을 함께 지웠다. 남는 web/*.js 는
+      #   `web/config.js` 하나다 — 파이프라인이 정규식으로 읽는 설정이라 문법이 깨지면 사람이 헷갈린다.
       - name: JS 문법 검사 (클래식 스크립트)
         run: |
           find web -maxdepth 1 -name '*.js' -print0 \
             | xargs -0 -r -n1 -I{} sh -c 'node --check "{}" && echo "OK  {}"'
 
-      - name: JS 부팅 스모크
-        run: |
-          npm install --no-save jsdom
-          node tools/web_boot_check.mjs
-
-      - name: JS 모듈 그래프 검사
-        run: node tools/js_graph_check.mjs
-
       - name: 내비 노드 — 배포 액션과 같은 판으로
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: web/navi/.nvmrc
           cache: npm
           cache-dependency-path: web/navi/package-lock.json
 
       - name: ★ 내비 타입 검사 (web/navi)
-        # ★ 2026-09-15 신설. 위의 JS 셋은 전부 `web/*.js` 클래식 스크립트만
+        # ★ 2026-09-15 신설. 위의 JS 검사는 `web/*.js` 클래식 스크립트만
         #   본다 — `find web -maxdepth 1` 이라 `web/navi` 는 한 번도 안 열린다.
         #   내비를 컴파일하는 곳은 `.github/actions/build-navi` 하나뿐이고
         #   그건 **push:main 에서만** 돈다. 그래서 maplibre-gl 5→6 ·
@@ -312,7 +352,7 @@ jobs:
         #
         # ★ 2026-09-18 (DECISIONS §186-2). 바로 위에서 노드를 `.nvmrc` 로 맞춘다.
         #   이 잡의 머리 `setup-node` 는 22 이고 배포 액션은 20 이었다 —
-        #   **게이트가 빌드와 다른 런타임에서 돌았다.** 위 셋(web/*.js)은 22 그대로 둔다.
+        #   **게이트가 빌드와 다른 런타임에서 돌았다.** 위 문법 검사(web/*.js)는 22 그대로 둔다.
         #
         # ★ 2026-09-22 (DECISIONS §213-1). 노드 판 · engines 대조를 먼저 한다.
         #   .nvmrc 가 20 인 동안 잠금 안에 `node >= 22` 패키지가 있었고 EBADENGINE
@@ -330,6 +370,17 @@ jobs:
         run: |
           cd web/navi
           npm run test
+
+      - name: 의존성 취약점 — 알림(막지 않는다)
+        # ★ 2026-09-22 (§218-4 · 하토르 모범). `|| true` 가 아니라 `continue-on-error` 다 —
+        #   `|| true` 는 취약점이 있어도 초록이라 알림조차 아니었다. 이것은 노란 표시로 남는다.
+        #   잠금에 도구를 더하지 않는다(uvx) — uv.lock 이 움직이면 샤드 봉인 · golden 지문이 찢어진다.
+        continue-on-error: true
+        run: |
+          uv export --frozen --all-extras --no-hashes --no-emit-project --format requirements-txt > "$RUNNER_TEMP/req.txt"
+          # --strict 는 안 쓴다 — torch +cpu 휠이 PyPI 밖이라 「감사 불가」로 죽는다(건너뜀으로 표에 남는다)
+          uvx pip-audit --no-deps --disable-pip -r "$RUNNER_TEMP/req.txt"
+          cd web/navi && npm audit --omit=dev --audit-level=high
 
       - name: web/data 용량 검사
         run: |
@@ -350,14 +401,14 @@ jobs:
   # ── 단독 소유 경로만. 강도를 유지하는 자리 ───────────────────
   contract-strict:
     name: contract-strict
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           # ★ 정본은 `.python-version` 하나다 (W3-17).
           python-version-file: .python-version
-      - uses: astral-sh/setup-uv@v3
+      - uses: astral-sh/setup-uv@v7
         with:
           version: "0.12.13"
           enable-cache: true

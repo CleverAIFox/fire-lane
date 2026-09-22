@@ -65,8 +65,12 @@ def test_stage_pages_deploy_refuses_outside_ci():
 
 
 def test_deploy_uses_drop_list():
-    y = (ROOT / ".github/workflows/_deploy.yml").read_text(encoding="utf-8")
+    y = (ROOT / ".github/actions/stage-site/action.yml").read_text(encoding="utf-8")
     assert "stage_pages.py --deploy" in y, "배포가 템플릿을 안 뺀다 — playbook.html 이 또 배포된다"
+    d = (ROOT / ".github/workflows/_deploy.yml").read_text(encoding="utf-8")
+    assert d.count("./.github/actions/stage-site") == 2, "배포와 시운전이 같은 본문을 안 쓴다(§217-5)"
+    dry = (ROOT / ".github/workflows/deploy-dry.yml").read_text(encoding="utf-8")
+    assert "pull_request" in dry and "dry-run: true" in dry, "PR 시운전이 없다 — 배포 본문이 main 전에 안 돈다(W3-15)"
 
 
 def test_parking_place_text_is_split_by_token():

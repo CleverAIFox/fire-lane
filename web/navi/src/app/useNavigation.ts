@@ -32,8 +32,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SCOPE_M, SNAP_INTERVAL_MS } from "../config";
 import { bearing, distM, type LngLat } from "../domain/geo";
 import {
-  buildAdjacency, findRoute, nearestNode, progressAlongRoute, routeUids,
-  type Adjacency,
+  buildAdjacency, findRouteBetween, fullProgress, progressAlongRoute, routeUids, snapToEdge,
+  type Adjacency, type RouteEnd,
 } from "../domain/graph";
 import {
   createTracker, prepare, snap as snapOnce, type Tracker,
@@ -214,7 +214,8 @@ export function useNavigation(spec: VehicleSpec | null) {
           curUid.current = e.seg_uid;
           setCurrent({
             seg_uid: e.seg_uid, verdict: e.verdict, width_min_m: e.width_min_m,
-            seg_label: e.seg_label, progress: pl.forward[res.edge] ? f01 : 1 - f01,
+            // 출발·도착 구간은 자른 사본이다 — 스냅 규약(원본 구간 비율)으로 옮긴다
+            seg_label: e.seg_label, progress: fullProgress(e, pl.forward[res.edge] ? f01 : 1 - f01),
             dist_m: Math.round(res.lateralM * 100) / 100, bearing: res.bearing,
             bearingKnown: true, point: res.point, confident: true, onRoute: true,
           });
@@ -329,16 +330,22 @@ export function useNavigation(spec: VehicleSpec | null) {
     const A = adjOverride?.safe ?? adj;
     const F = adjOverride?.fast ?? adjFast;
     if (!data || !A) return false;
-    const a = nearestNode(data.graph, A, from.point);
-    let b = nearestNode(data.graph, A, to.point);
-    let r = findRoute(data.graph, A, a, b);
+    // ★ 2026-09-22 (DECISIONS §218-3). 출발·도착을 가장 가까운 **노드**가 아니라 **구간**에
+    //   투영한다. 노드에 붙이면 구간 한가운데 선 차를 교차점으로 옮겨 경로를 짰다.
+    const S = snapToEdge(data.graph, A, from.point);
+    let goal: RouteEnd | null = snapToEdge(data.graph, A, to.point);
+    let r = S && goal ? findRouteBetween(data.graph, A, S, goal) : null;
     let alt = false;
-    if (!r) {
+    if (!r && S) {
       // ★ 2026-09-22 (§214-2). 사건 지점까지 못 가면 **닿는 가장 가까운 곳**에 댄다.
       //   종전에는 13(경로 없음)을 띄우고 끝났다 — 다른 접근 지점을 사람에게 넘겼다.
-      const acc = alternateAccess(data.graph, A, a, to.point);
-      if (acc && acc.node !== a) {
-        b = acc.node; r = findRoute(data.graph, A, a, b); alt = !!r;
+      //   출발 구간의 두 끝점은 같은 성분이라 어느 쪽에서 세어도 닿는 곳이 같다.
+      const acc = alternateAccess(data.graph, A, S.edge.a, to.point);
+      if (acc) {
+        goal = { node: acc.node };
+        r = findRouteBetween(data.graph, A, S, goal);
+        if (r && !r.edges.length) r = null;       // 제자리가 대체 지점이면 경로가 아니다
+        alt = !!r;
       }
     }
     if (!r) {
@@ -353,7 +360,9 @@ export function useNavigation(spec: VehicleSpec | null) {
     setAccess({ alt, walkM: end ? distM(end, to.point) : 0 });
     tracker.current?.setRoute(routeUids(r));
     setPlan(r);
-    setFastPlan(F ? findRoute(data.graph, F, a, b) : null);
+    const FS = F ? snapToEdge(data.graph, F, from.point) : null;
+    const FG = F ? (alt ? goal : snapToEdge(data.graph, F, to.point)) : null;
+    setFastPlan(F && FS && FG ? findRouteBetween(data.graph, F, FS, FG) : null);
     setOffRoute(false); setNotice(null);
     // ★ 여기서 멈춘다. 사용자가 "안내 시작" 을 눌러야 guiding 이 된다.
     //   주행 중 재탐색·우회는 멈추지 않는다.
@@ -476,9 +485,10 @@ export function useNavigation(spec: VehicleSpec | null) {
       for (const { e } of byWidth.slice(0, 12)) {
         const A = buildAdjacency(data.graph, active, lenient, "safe", undefined, new Set([...blocked, e.seg_uid]));
         if (!from) break;
-        const a = nearestNode(data.graph, A, from.point);
-        const b = nearestNode(data.graph, A, dest.point);
-        if (findRoute(data.graph, A, a, b) || alternateAccess(data.graph, A, a, dest.point)) return e;
+        const S = snapToEdge(data.graph, A, from.point);
+        const T = snapToEdge(data.graph, A, dest.point);
+        if (S && T && (findRouteBetween(data.graph, A, S, T)
+          || alternateAccess(data.graph, A, S.edge.a, dest.point))) return e;
       }
     }
     return (byWidth[0] ?? { e: pl.edges[0] }).e;

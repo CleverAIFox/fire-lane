@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-22T14:45:32+09:00",
- "commit": "1cb43d4",
- "tool": "cb7fb4f11d16327d",
+ "sealed_at": "2026-09-22T20:34:30+09:00",
+ "commit": "328c631",
+ "tool": "8be73d758b86a805",
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "57e528c3c9b79229",
-  "docs/DECISIONS.md": "7e3b8bf42bfed249",
-  "docs/PLAN.md": "0c74ec50f3962b0c",
-  "README.md": "4045566e8f7873f8"
+  "docs/MASTER.md": "d47f8c3e46d40b28",
+  "docs/DECISIONS.md": "23f266e317791410",
+  "docs/PLAN.md": "a56c814ad0508da1",
+  "README.md": "ded9cc2327f93ff4"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -242,14 +242,14 @@
   ]
  },
  "code": {
-  "sha256": "a225b62e1d4b264d",
+  "sha256": "b26cc403de574a65",
   "files": {
    "data/field/fieldsheet.md": "3fce0c05fba34da06d06a1945abfb756bffc10d1ae834bb9c520791c666cb73c",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "data/field/obs_points.csv": "2c5fe0b969b720a76beca0de01c973f711a7223ec3f9fa46427eba8cc654a37e",
    "data/field/sample_segments.csv": "2582c25e7e284a78e38a6ee72c60604e39803752367c6d11853c5aa1dda025f9",
-   "pyproject.toml": "d4e46b2f3a9cf4dd4d0dff134b21fee92bdbad25cedcc939eed68c7ab438a777",
-   "sources.yaml": "9db17b98a86562450ecf1b074a787db3e50e973068759c4158cb61b9d6b85b50",
+   "pyproject.toml": "1be04d8a9993a2f90fd5705eecb2da75c96865c387572448e06504bf1d88593a",
+   "sources.yaml": "d204e67c9672204ea8cdd077d245c70893b84dc7627692d3367e13ece6c7a23f",
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d14f1c58854c21c64348c040cde02795cf99a09ed8bab81849d0f77b7596865b",
@@ -257,12 +257,13 @@
    "src/firelane/__init__.py": "0bd7b7a56b6a73f056247deff02bd4ed15d198551ad8a053cf57eb439fd8ef03",
    "src/firelane/console.py": "5cd87db3b9a951e1de622681cc7fc8a673311dacffe9bb6c1cb0a14b1abe0972",
    "src/firelane/contract.py": "6efc7a9c49246ab0edde76b1a2e18f7eeab6a2b5de8381cfd9f71dded2eb410f",
-   "src/firelane/datalog.py": "a848e8c5f91f11811d9f9f87d1f5dddc73c8764e2a0ad8d8603a54aeeaddc44e",
+   "src/firelane/datalog.py": "0aba0e8b193c4f44df7b682adbe039e9a4089620be2c64263b927af69a729bf3",
    "src/firelane/destinations.py": "917b7457b2ebba71c8ac9962aab45517a50ed92953a3d78b1649809c7a1e26b6",
    "src/firelane/encoding.py": "c2b6eef43d7023e88934b8d76ef0767380540af3802b5e93ffa3797dc9d95ebe",
+   "src/firelane/generated.py": "77ba1f6e8d8bbbc928191b5c60e2dfe3baa828ffd5351a7ee03702b2190aacb8",
    "src/firelane/guards.py": "be1ae4d7133a00f21a7d868126dda7585bcd990bffba39b5247493b800cfc1cf",
    "src/firelane/hashing.py": "cba3052b673d71c98022bc745a03493b0e743bb7db6d48eb057fba0782d7249c",
-   "src/firelane/ingest.py": "2418c7525b339d41202fbd27ed60f94b40b64e03acdeeff03e6d708fcfb484b5",
+   "src/firelane/ingest.py": "8bbf2b398259f0253cdaa9eb0d9668291676451b2689967659c39aebdc79b8c2",
    "src/firelane/intake_rules.py": "4549ade9c9036da5900aba73955c97578058770a88f3f75fa7c5e1b31360019d",
    "src/firelane/inventory.py": "4ddbab3742a44aaad257304af4aa943bf122b9bc8b2c252bd85431fec554d232",
    "src/firelane/kinds.py": "a62a75ccbc1e4e18fa68c1ce24a81d3966ccf9f0aeda0daedaf961902c7158f6",
@@ -280,15 +281,15 @@
    "src/firelane/normalize_raw.py": "0e1d7eb804888df7227e53adea3e7eb7b3f800acc467a7279fdeb19ab6605de6",
    "src/firelane/ortho.py": "742ce80c1266ff305e1500661d3ec0ad5ec158ab227a1d0b3bda4cc1f9db2aa9",
    "src/firelane/paths.py": "499ea4cfe4cfd1d68093dc25013c11ebfecdb3107560038e60ee4c41f69ff63c",
-   "src/firelane/pipeline.py": "d16ef9db8da45db360103912ab40b4d185a7562c14716826fc527fa7123a05d7",
+   "src/firelane/pipeline.py": "c282277727b09647b751255615fa30f21291dce90f46d7e663687aebf6adfb5b",
    "src/firelane/prep.py": "30179b09b2eb1043f8d914cfdd16167872b0364193686c3e68a5c6068428d98a",
    "src/firelane/probe.py": "52544d4fede864ef123276fc79423ffd6987eb97795a7a40c1a4e74741734aec",
    "src/firelane/providers.py": "56d4289ef55b65a705d487d2ab216a51014c2133107b949521b35a9f5ff3d290",
-   "src/firelane/publish_basemap.py": "2fa465ed686f493a95e909fb959aca372649d6ef69a46e05ada004b8869906ed",
+   "src/firelane/publish_basemap.py": "ed1c976041c8eabd78eb1d281a56c8d8de6c1460e8c7524a090d205b88000dd6",
    "src/firelane/publish_context.py": "d659c60915a4dca0b02d2a208337a91973305347a83193063667eb21fd76794e",
-   "src/firelane/publish_fleet.py": "a1a48a23e01fcda115ae2c1864e1583b42f74ea032819536e0599e63edac7c93",
-   "src/firelane/publish_navi.py": "1214f79640bad8e05f8644a0cbb408739e4cd92957ae50bcbe4e7fdb771a21ad",
-   "src/firelane/publish_web.py": "14b858620d5a072117a8f6c2cfc9f4ec1fcce5190c8e44d2b95c02fafaa06a77",
+   "src/firelane/publish_fleet.py": "7a5ab93351263d7cd4c4060330fe05eecaa38293823ff015b0d9ffcf6a853753",
+   "src/firelane/publish_navi.py": "8f5cd7eb304a94b2365cebd2d885e20bccbb47b3481944fb1f84c44d2ee52a6b",
+   "src/firelane/publish_web.py": "a53b76c5562f52d70417254ed99dae6362ef8ec9852910b1a1770e5dce045aae",
    "src/firelane/quiet_gdal.py": "6ca08fdd7aae83ec4c1f7e8da6671b848462d72dcd74074908730885dfc75eec",
    "src/firelane/sample_design.py": "489059ca819d8cc40e1d12f2116ca98614b9fbcf0d1b67bc8139b93f77586ed4",
    "src/firelane/scope.py": "81451ac9f7380aecde569634f810ae7cd64eb3db4acf02e7ee4fb651891fef4d",
@@ -316,5373 +317,5445 @@
   }
  },
  "sections": {
-  "MASTER-001": {
+  "MASTER/0": {
    "h": "527eada60e6942c1",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "0. 서술 규약"
   },
-  "MASTER-002": {
+  "MASTER/0-1": {
    "h": "ffe2135b8e843885",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "0-1. 문체"
   },
-  "MASTER-003": {
+  "MASTER/0-2": {
    "h": "05445a098abb3f38",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "0-2. 절 구조"
   },
-  "MASTER-004": {
+  "MASTER/0-3": {
    "h": "fd0f7075dd737843",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "0-3. 강조와 숫자"
   },
-  "MASTER-005": {
+  "MASTER/1": {
    "h": "7638eccb05ad8672",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "1. 무엇을 만들었나"
   },
-  "MASTER-006": {
+  "MASTER/2": {
    "h": "b8f880e027f77344",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "2. 현재 판정"
   },
-  "MASTER-007": {
+  "MASTER/2-1": {
    "h": "7448f433957a1610",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "2-1. `unknown` 399 의 사유"
   },
-  "MASTER-008": {
+  "MASTER/2-2": {
    "h": "d3f351a54aa08001",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "2-2. 판정 기준의 출처"
   },
-  "MASTER-009": {
+  "MASTER/2-3": {
    "h": "d5cb9d1d8ea886b5",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "2-3. 이 숫자가 바뀌지 않는다는 근거"
   },
-  "MASTER-010": {
+  "MASTER/3": {
    "h": "ee7ebfa8bb14d640",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "3. 판정의 근거"
   },
-  "MASTER-011": {
+  "MASTER/3-1": {
    "h": "f9d7a4e6807c2c35",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-1. 구간 수는 고정값이 아니다"
   },
-  "MASTER-012": {
+  "MASTER/3-2": {
    "h": "c9f71ac1d30e6219",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "3-2. 도로명주소는 위상이 보장되지 않는다"
   },
-  "MASTER-013": {
+  "MASTER/3-3": {
    "h": "88e334799cf4acdf",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "3-3. `ROAD_BT` 는 폭 값으로 쓰지 않는다"
   },
-  "MASTER-014": {
+  "MASTER/3-4": {
    "h": "bad30c1ae4a3be23",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-4. 폭은 하나로 못 정한다"
   },
-  "MASTER-015": {
+  "MASTER/3-5": {
    "h": "3c8b9d44819041d4",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "3-5. 구간 폭은 단일 소스의 표본만으로 낸다"
   },
-  "MASTER-016": {
+  "MASTER/3-6": {
    "h": "5776efe2242fd211",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "3-6. 교차로 안에서는 그 도로의 폭을 잴 수 없다"
   },
-  "MASTER-017": {
+  "MASTER/3-7": {
    "h": "9107bbf2422f9472",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-7. 골목의 65%는 영상판정이 불가능하다"
   },
-  "MASTER-018": {
+  "MASTER/3-8": {
    "h": "b8d1300bfa5b1f28",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "3-8. 출동은 소방서가 아니라 119안전센터에서 나간다"
   },
-  "MASTER-019": {
+  "MASTER/3-9": {
    "h": "1e6a787bf1a28d69",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-9. \"못 간다\"는 세 가지 값이 있다"
   },
-  "MASTER-020": {
+  "MASTER/3-10": {
    "h": "887ca35c03e1360f",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "3-10. 경로가 둘인 이유"
   },
-  "MASTER-021": {
+  "MASTER/3-11": {
    "h": "6885a0061a7fdf82",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "3-11. 런타임 프루닝은 폭이 아니라 경로로 한다"
   },
-  "MASTER-022": {
+  "MASTER/3-12": {
    "h": "c926b2caa583417f",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "3-12. 소화전 좌표는 확보됐다. 분모가 여전히 다르다"
   },
-  "MASTER-023": {
-   "h": "bfebdda7a14b9726",
+  "MASTER/3-13": {
+   "h": "11c65a563af78a0d",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "3-13. 차량 제원"
   },
-  "MASTER-024": {
+  "MASTER/4": {
    "h": "62d654092f1a27c6",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "4. 외부 대조 — 소방서 지정 구간"
   },
-  "MASTER-025": {
+  "MASTER/4-1": {
    "h": "5596bb5b59597951",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "4-1. ★ 이 대조는 검증이 아니라 적합이다"
   },
-  "MASTER-026": {
+  "MASTER/4-2": {
    "h": "80604b1d146d5829",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "4-2. 대조의 한계"
   },
-  "MASTER-027": {
+  "MASTER/4-3": {
    "h": "f4239e8ccbff5419",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
   },
-  "MASTER-028": {
-   "h": "7c1776c553da917f",
+  "MASTER/5": {
+   "h": "a6b3c56ac86fb61f",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5. 시스템 구성"
   },
-  "MASTER-029": {
+  "MASTER/5-1": {
    "h": "f2b6f1c465f2aa8c",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "5-1. 왜 나눴나"
   },
-  "MASTER-030": {
+  "MASTER/5-2": {
    "h": "b99994436d503966",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "5-2. 계약"
   },
-  "MASTER-031": {
+  "MASTER/5-3": {
    "h": "2f8246ffcd2f13e7",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "5-3. 보조 모듈"
   },
-  "MASTER-032": {
+  "MASTER/5-4": {
    "h": "0648c18c093b9e35",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "5-4. 판정 뼈대는 아직 `road_link` 위에 있다 — 교체는 **보류**다"
   },
-  "MASTER-033": {
+  "MASTER/6": {
    "h": "865898f4d4d14db3",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "6. 데이터 현황"
   },
-  "MASTER-034": {
+  "MASTER/6-1": {
    "h": "0ba8164f4921d55e",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-1. 확보"
   },
-  "MASTER-035": {
+  "MASTER/6-2": {
    "h": "c36ec2c09108982a",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-2. 데이터 보관"
   },
-  "MASTER-036": {
+  "MASTER/6-3": {
    "h": "2c724776754c4cdd",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "6-3. 폭 주 소스 — 1:1,000 수치지형도"
   },
-  "MASTER-037": {
+  "MASTER/6-4": {
    "h": "61727ede8be0e1c1",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "6-4. 가로등 — 두 데이터가 서로를 대체하지 않는다"
   },
-  "MASTER-038": {
+  "MASTER/6-5": {
    "h": "8d63b5cdd0ed3669",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "6-5. 쓸 수 없는 것 — 확인 완료"
   },
-  "MASTER-039": {
+  "MASTER/6-6": {
    "h": "d57e813e295e14b0",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "6-6. 미확보"
   },
-  "MASTER-040": {
+  "MASTER/7": {
    "h": "6299f1fe6046ce56",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "7. 현재 산출물의 한계"
   },
-  "MASTER-041": {
-   "h": "2fe3e43b5deaabce",
+  "MASTER/7-1": {
+   "h": "b7c5b9ddb6bd6b3e",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "7-1. 알려진 근사"
   },
-  "MASTER-042": {
+  "MASTER/7-2": {
    "h": "53f979d964a83011",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "7-2. 아직 검증되지 않은 것"
   },
-  "MASTER-043": {
-   "h": "360607080ac2ebcc",
+  "MASTER/8": {
+   "h": "ca60b887fcf14983",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "8. 역할"
   },
-  "MASTER-044": {
+  "MASTER/9": {
    "h": "7b80c053bcc9efbb",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "9. 이 프로젝트의 성격"
   },
-  "MASTER-045": {
+  "MASTER/9-1": {
    "h": "debb7ef1b006457a",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "9-1. 현장 진술이 흔든 전제 넷"
   },
-  "MASTER-046": {
+  "MASTER/9-2": {
    "h": "e8d7be3abe194f28",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "9-2. 누가 보는가 — 페르소나 둘"
   },
-  "MASTER-047": {
+  "MASTER/10": {
    "h": "dbcf9268cfdb91dc",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "10. 용어"
   },
-  "MASTER-048": {
+  "MASTER/10-0": {
    "h": "80923b2e5119adba",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "10-0. `D-XX` 는 날짜가 아니다"
   },
-  "MASTER-049": {
+  "MASTER/10-1": {
    "h": "59c3984e003844d6",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "10-1. 지금 어디까지 왔나"
   },
-  "MASTER-050": {
+  "MASTER/10-1a": {
    "h": "b2df725932299bde",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "10-1a. 이 저장소가 쓰는 말"
   },
-  "MASTER-051": {
+  "MASTER/10-2": {
    "h": "2adad40facccd99b",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "10-2. 판정 4종"
   },
-  "MASTER-052": {
+  "MASTER/10-3": {
    "h": "1d7caf2c04c9dab0",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "10-3. 연속 구간 (`run_length_m`)"
   },
-  "MASTER-053": {
+  "MASTER/10-4": {
    "h": "49b835bae739c2d9",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "10-4. 폭이 왜 두 개인가"
   },
-  "MASTER-054": {
+  "MASTER/10-5": {
    "h": "317ab104efc7f827",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "10-5. 소방 동선 (`route_usage`)"
   },
-  "MASTER-055": {
+  "MASTER/10-6": {
    "h": "aa25cbeb3ee4cc8a",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "10-6. 세그먼트 · 노딩 · 스코프"
   },
-  "MASTER-056": {
+  "MASTER/10-7": {
    "h": "d55a1116d37d8f9a",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "10-7. 시설 마커"
   },
-  "MASTER-057": {
-   "h": "82879d2e41ddf158",
+  "MASTER/11": {
+   "h": "beb34d1f8495065f",
    "state": "blank",
    "doc": "docs/MASTER.md",
-   "title": "11. UI 인수인계"
+   "title": "11. 화면 인수인계 — 내비 · 관제"
   },
-  "MASTER-058": {
-   "h": "5ca0abbdb6b850bf",
+  "MASTER/11-1": {
+   "h": "3ee1944d6ef2fcf6",
    "state": "blank",
    "doc": "docs/MASTER.md",
-   "title": "11-1. 30초 안에 띄우기"
+   "title": "11-1. 띄우기"
   },
-  "MASTER-059": {
-   "h": "3299b693686c6b3a",
+  "MASTER/11-2": {
+   "h": "b99b44f55a23c1cb",
    "state": "wired",
    "doc": "docs/MASTER.md",
-   "title": "11-2. 파일 구조 — 충돌이 경로로 갈린다"
+   "title": "11-2. 파일 구조"
   },
-  "MASTER-060": {
-   "h": "c0bc6e7cf57b37a3",
-   "state": "wired",
-   "doc": "docs/MASTER.md",
-   "title": "11-3. `config.js` — UI 담당이 조정하는 값"
-  },
-  "MASTER-061": {
-   "h": "2116bafbcb9fcbfa",
+  "MASTER/11-3": {
+   "h": "8bc7be703bc31925",
    "state": "blank",
    "doc": "docs/MASTER.md",
-   "title": "11-4. 값은 바뀌고 구조는 안 바뀐다"
+   "title": "11-3. 값은 바뀌고 구조는 안 바뀐다"
   },
-  "MASTER-062": {
-   "h": "b9dc66c1d9fd15ce",
+  "MASTER/11/데이터_필드": {
+   "h": "98f1cb16a0eb3a5f",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "데이터 필드"
   },
-  "MASTER-063": {
-   "h": "55bf926216b75cc6",
+  "MASTER/11-4": {
+   "h": "c9cf11940867a1bb",
+   "state": "wired",
+   "doc": "docs/MASTER.md",
+   "title": "11-4. 앱이 읽는 데이터 파일"
+  },
+  "MASTER/11-5": {
+   "h": "fd894240d93d077b",
    "state": "blank",
    "doc": "docs/MASTER.md",
-   "title": "11-5. 마커 데이터 파일"
+   "title": "11-5. 막히면"
   },
-  "MASTER-064": {
-   "h": "389f9b060e09e4f6",
-   "state": "none",
-   "doc": "docs/MASTER.md",
-   "title": "11-6. 다른 데이터 파일"
-  },
-  "MASTER-065": {
-   "h": "de56640b982755da",
-   "state": "blank",
-   "doc": "docs/MASTER.md",
-   "title": "11-7. 막히면"
-  },
-  "MASTER-066": {
-   "h": "a206a2d6b49915eb",
-   "state": "none",
-   "doc": "docs/MASTER.md",
-   "title": "11-8. 지금 손대도 되는 것"
-  },
-  "MASTER-067": {
+  "MASTER/12": {
    "h": "046e1ef1e5ebfc52",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12. 협업"
   },
-  "MASTER-068": {
+  "MASTER/12-0": {
    "h": "7292e9232bdacee7",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-0. 상황별 색인"
   },
-  "MASTER-069": {
+  "MASTER/12-1": {
    "h": "da05e344b4ec73f0",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-1. 룰셋"
   },
-  "MASTER-070": {
+  "MASTER/12-1a": {
    "h": "90b5b68fb1b923d2",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-1a. 예외와 회수"
   },
-  "MASTER-071": {
+  "MASTER/12-1c": {
    "h": "43b942008cf115e3",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-1c. 지금 살아 있는 예외"
   },
-  "MASTER-072": {
+  "MASTER/12-1a-2": {
    "h": "09bcd150259f7a1f",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-1a-2. 역할 번호와 조회 함정"
   },
-  "MASTER-073": {
+  "MASTER/12-1b": {
    "h": "e746732dd134c1a9",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-1b. 브랜치 이름과 보호"
   },
-  "MASTER-074": {
+  "MASTER/12-2": {
    "h": "fd9bb648474472a1",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-2. 머지 방식"
   },
-  "MASTER-075": {
+  "MASTER/12-3": {
    "h": "816f6d99257bb838",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-3. 소유권"
   },
-  "MASTER-076": {
+  "MASTER/12-4": {
    "h": "05cec290f257982c",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-4. 충돌"
   },
-  "MASTER-077": {
+  "MASTER/12-5": {
    "h": "5dd410af48859670",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-5. 하루 흐름"
   },
-  "MASTER-078": {
+  "MASTER/12-6": {
    "h": "295cee8ea9ba2514",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-6. 커밋 메시지"
   },
-  "MASTER-079": {
-   "h": "caf4153457145a8c",
+  "MASTER/12-7": {
+   "h": "c9a73e4f7599a462",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-7. 자동으로 도는 것"
   },
-  "MASTER-080": {
-   "h": "9354f56418ba728e",
+  "MASTER/12-7a": {
+   "h": "0b77e819556bf16f",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-7a. 내비 빌드"
   },
-  "MASTER-081": {
-   "h": "30911a47cc97688c",
+  "MASTER/12-8": {
+   "h": "ad3daafdab18a513",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-8. 배포"
   },
-  "MASTER-082": {
+  "MASTER/12-8a": {
    "h": "e99c5de5a5ed6797",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-8a. 매체 저장 — 밑그림"
   },
-  "MASTER-083": {
+  "MASTER/12-8b": {
    "h": "5433f419ffd7d4d4",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-8b. 릴리즈 절차"
   },
-  "MASTER-084": {
+  "MASTER/12-8c": {
    "h": "19a7a704a1edea9c",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-8c. 파트 통합 담당"
   },
-  "MASTER-085": {
+  "MASTER/12-9": {
    "h": "67013811320b2dfd",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-9. 락이 3중인 이유"
   },
-  "MASTER-086": {
+  "MASTER/12-10": {
    "h": "40e3f4b6d94802d5",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-10. 데이터를 저장소에 넣는 기준"
   },
-  "MASTER-087": {
+  "MASTER/12-11": {
    "h": "5cea9e50d0ab1d4c",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-11. 한글 파일명"
   },
-  "MASTER-088": {
+  "MASTER/13": {
    "h": "823458814d87af51",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "13. 봉인 베이스라인"
   },
-  "MASTER-089": {
+  "MASTER/14": {
    "h": "404c01e9980b950c",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14. 실행"
   },
-  "MASTER-090": {
+  "MASTER/14-1": {
    "h": "f791cd3976acbc6c",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-1. 받자마자 한 번"
   },
-  "MASTER-091": {
+  "MASTER/14-2": {
    "h": "ebf216ba506d653e",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-2. 파이프라인은 한 명령이다"
   },
-  "MASTER-092": {
+  "MASTER/14-3": {
    "h": "104584ddbd059aa4",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-3. 원본을 새로 받으면"
   },
-  "MASTER-093": {
-   "h": "68dffa88d20d04d0",
+  "MASTER/14-4": {
+   "h": "a405c9972e533744",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
   },
-  "MASTER-094": {
+  "MASTER/14-4a": {
    "h": "3610f08a0a0a108a",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-4a. 사람이 부르는 나머지 도구"
   },
-  "MASTER-095": {
+  "MASTER/14-4b": {
    "h": "b2fb8c75ece6357b",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다"
   },
-  "MASTER-096": {
+  "MASTER/14-5": {
    "h": "74aa4b3ef130b2cd",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-5. 대조 도구 — 아무것도 안 바꾼다"
   },
-  "MASTER-097": {
+  "MASTER/14-6": {
    "h": "9457b36983b93bdd",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-6. 진단 스위치"
   },
-  "MASTER-098": {
+  "MASTER/14-7": {
    "h": "4f87038413c01c27",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-7. 데이터 실물은 저장소에 없다"
   },
-  "MASTER-099": {
+  "MASTER/15": {
    "h": "8147676e658890cb",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "15. 대외 산출물"
   },
-  "MASTER-100": {
+  "MASTER/15-1": {
    "h": "c0962e9b4c123573",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "15-1. 말할 수 있는 것"
   },
-  "MASTER-101": {
+  "MASTER/15-2": {
    "h": "de1423f4147199ed",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "15-2. ★ 말하지 않는 것"
   },
-  "MASTER-102": {
+  "MASTER/15-3": {
    "h": "ef2824b4a161701f",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "15-3. 수치 표기 원칙"
   },
-  "MASTER-103": {
-   "h": "b04b6aef974fe1e4",
+  "MASTER/16": {
+   "h": "3997afa603b9aad1",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "16. 결정 대장"
   },
-  "MASTER-104": {
+  "MASTER/16-1": {
    "h": "d610547f7a8570a1",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "16-1. `CCTV_RANGE` 는 거리 상수가 아니라 촬영 기하의 함수다"
   },
-  "MASTER-105": {
+  "MASTER/16-2": {
    "h": "837951b9a1e9b6c2",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "16-2. 근거 없는 상수"
   },
-  "MASTER-106": {
+  "MASTER/17": {
    "h": "9c779e17859b1591",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
   },
-  "MASTER-107": {
+  "MASTER/18": {
    "h": "4e8c251dca0c9dda",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18. 데이터 관리"
   },
-  "MASTER-108": {
+  "MASTER/18-1": {
    "h": "9a769b53d3f86e46",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-1. 계층"
   },
-  "MASTER-109": {
+  "MASTER/18/계층이_여덟인_이유": {
    "h": "9b757926b6548548",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "계층이 여덟인 이유"
   },
-  "MASTER-110": {
+  "MASTER/18-1a": {
    "h": "fe61b393c4633bce",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-1a. 그라운드 룰"
   },
-  "MASTER-111": {
+  "MASTER/18-2": {
    "h": "01d1b3e15d27073f",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-2. 파일명 규칙"
   },
-  "MASTER-112": {
+  "MASTER/18-2a": {
    "h": "30110c642b78ed63",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-2a. raw"
   },
-  "MASTER-113": {
+  "MASTER/18-2b": {
    "h": "d0c8bf214290ad65",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-2b. norm 이후 — 여기서 규칙을 강제한다"
   },
-  "MASTER-114": {
+  "MASTER/18-2c": {
    "h": "d869b49cd840cb73",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-2c. 확장자 정규화"
   },
-  "MASTER-115": {
+  "MASTER/18-3": {
    "h": "5b3f296095f123fc",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-3. 대장 — `sources.yaml` 하나"
   },
-  "MASTER-116": {
+  "MASTER/18-3a": {
    "h": "35902771edc40424",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3a. 필드의 의무"
   },
-  "MASTER-117": {
+  "MASTER/18-3b": {
    "h": "1262f254dff6893f",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-3b. 계약 — 사람을 언제 부르는가"
   },
-  "MASTER-118": {
+  "MASTER/18-3c": {
    "h": "d15a003f671d5e21",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3c. retired — 폐기 기록"
   },
-  "MASTER-119": {
+  "MASTER/18-4": {
    "h": "ab36ef7ecc0148fc",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-4. 매니페스트 — 사람이 안 쓰고 파이프라인이 쓴다"
   },
-  "MASTER-120": {
+  "MASTER/18-5": {
    "h": "fda5fadb27bbc4e7",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "18-5. 재현성 규약"
   },
-  "MASTER-121": {
+  "MASTER/18-6": {
    "h": "a09bd09349835af8",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-6. 메타데이터를 어디에 붙이나"
   },
-  "MASTER-122": {
+  "MASTER/18-7": {
    "h": "972353876ed6a5ca",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-7. 의존 그래프"
   },
-  "MASTER-123": {
+  "MASTER/18-8": {
    "h": "83b6141458693bbe",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-8. 백업"
   },
-  "MASTER-124": {
+  "MASTER/18/백업과_기기_간_이동은_다르다": {
    "h": "bf2692e8a7969433",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "백업과 기기 간 이동은 다르다"
   },
-  "MASTER-125": {
+  "MASTER/18-9": {
    "h": "4528bac9ea212e07",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-9. DB 확장"
   },
-  "MASTER-126": {
+  "MASTER/18-10": {
    "h": "eccd0bfca4990de1",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-10. 금지 목록"
   },
-  "MASTER-127": {
+  "MASTER/18-11": {
    "h": "53b468134b3f28a3",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "18-11. 획득 · 업서트 게이트"
   },
-  "MASTER-128": {
+  "MASTER/18/세_판정": {
    "h": "2190c2e398d4d704",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "세 판정"
   },
-  "MASTER-129": {
+  "MASTER/18/원칙_다섯": {
    "h": "974c4e104bc7de23",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "원칙 다섯"
   },
-  "MASTER-130": {
+  "MASTER/18/CRS_검증_3단계": {
    "h": "a937b0e440df81f5",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "CRS 검증 3단계"
   },
-  "MASTER-131": {
+  "MASTER/18-12": {
    "h": "11eb39c6977df0c6",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-12. 대장 메타 항목"
   },
-  "MASTER-132": {
+  "MASTER/18-13": {
    "h": "27523fe997da25a4",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-13. 관문 — 판정과 게이트를 잇는다"
   },
-  "MASTER-133": {
+  "MASTER/18-14": {
    "h": "52e9f44c7f1cff62",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "18-14. 자동 갱신과 파괴를 붙이지 않는다"
   },
-  "MASTER-134": {
+  "MASTER/19": {
    "h": "ddde078502749db1",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "19. 영상판정 인터페이스"
   },
-  "MASTER-135": {
+  "MASTER/19-1": {
    "h": "d2816bf506d591b6",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "19-1. 반환 형식"
   },
-  "MASTER-136": {
+  "MASTER/19-2": {
    "h": "5bb12ed0533a43bd",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "19-2. GIS 가 주는 것"
   },
-  "MASTER-137": {
+  "MASTER/19-3": {
    "h": "050d4f5372e07391",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "19-3. 오차를 계통오차로 몬다"
   },
-  "MASTER-138": {
+  "MASTER/19-4": {
    "h": "d5f9b44f7d854a5a",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "19-4. 성능"
   },
-  "MASTER-139": {
+  "MASTER/19-5": {
    "h": "5a557de62a19d74d",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "19-5. 폭 계산의 함정"
   },
-  "MASTER-140": {
+  "MASTER/19-6": {
    "h": "29b08ca7093a6c3c",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "19-6. 캘리브레이션 현황"
   },
-  "MASTER-141": {
+  "MASTER/20": {
    "h": "5d47d53c79fc828d",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "20. 경로"
   },
-  "MASTER-142": {
+  "MASTER/20-1": {
    "h": "1ba0fdeaa9e87a3f",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "20-1. 지금 무엇으로 푸는가"
   },
-  "MASTER-143": {
+  "MASTER/20-2": {
    "h": "52566487fa3a441c",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "20-2. 두 번 돈다"
   },
-  "MASTER-144": {
-   "h": "f4340fe5cdedf281",
+  "MASTER/20-3": {
+   "h": "7cf01bc539e9751c",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "20-3. `route_usage` 를 출동 경로로 읽으면 안 된다"
   },
-  "MASTER-145": {
+  "MASTER/20-4": {
    "h": "995280fb0bd7bb08",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "20-4. 왜 Dijkstra 인가"
   },
-  "MASTER-146": {
+  "MASTER/20-5": {
    "h": "9799a5792beed725",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "20-5. 앱은 무엇을 받는가 — 엔드포인트"
   },
-  "MASTER-147": {
+  "MASTER/21": {
    "h": "61fa1dfa1f5835be",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "21. 감사 축 · 봉인"
   },
-  "MASTER-148": {
+  "MASTER/21-1": {
    "h": "820fceae61ec32fd",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "21-1. 축 — 분모가 재현되는 것만 센다"
   },
-  "MASTER-149": {
+  "MASTER/21-2": {
    "h": "c561efa774b897ee",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "21-2. 봉인 — 여기까지는 정합이 보장된다"
   },
-  "MASTER-150": {
+  "MASTER/21-3": {
    "h": "a16989e4ee7ba5d0",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "21-3. `RED.txt` — 선언은 유예지 면제가 아니다"
   },
-  "DECISIONS-001": {
+  "DECISIONS/서술_규약": {
    "h": "f0e29662704cf33d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "서술 규약"
   },
-  "DECISIONS-002": {
+  "DECISIONS/0": {
    "h": "3edc1ddff099eb6c",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "0. 이 파일이 생긴 이유"
   },
-  "DECISIONS-003": {
+  "DECISIONS/1": {
    "h": "b56a7c302fa624f8",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "1. `tools/ledger_20260817.py` (삭제됨)"
   },
-  "DECISIONS-004": {
+  "DECISIONS/2": {
    "h": "d64dd45639bcc062",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "2. `tools/rules_20260817.py` (삭제됨)"
   },
-  "DECISIONS-005": {
+  "DECISIONS/3": {
    "h": "c2f40db97d39da7a",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "3. `tools/fix3_20260817.py` (삭제됨)"
   },
-  "DECISIONS-006": {
+  "DECISIONS/4": {
    "h": "48793db567867769",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "4. `tools/docfix_20260817.py` (삭제됨)"
   },
-  "DECISIONS-007": {
+  "DECISIONS/5": {
    "h": "8a9e8b3eaf962883",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "5. `tools/docfix2_20260817.py` (삭제됨)"
   },
-  "DECISIONS-008": {
+  "DECISIONS/6": {
    "h": "542f0edca853fc21",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "6. `tools/docfix3_20260817.py` (삭제됨)"
   },
-  "DECISIONS-009": {
+  "DECISIONS/7": {
    "h": "8eb4152acee790dc",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "7. `tools/nfa_out_20260818.py` (삭제됨)"
   },
-  "DECISIONS-010": {
+  "DECISIONS/8": {
    "h": "cfc47e83e5d35b96",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "8. `tools/stale_guard_20260818.py` (삭제됨)"
   },
-  "DECISIONS-011": {
+  "DECISIONS/9": {
    "h": "78ebef27d8bb9e00",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "9. `tools/docfix3_20260818.py` (삭제됨)"
   },
-  "DECISIONS-012": {
+  "DECISIONS/10": {
    "h": "d7ad2eb63e1525fc",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "10. MASTER §7 에서 해소된 항목"
   },
-  "DECISIONS-013": {
+  "DECISIONS/11": {
    "h": "caf97b218241fca0",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "11. `docnum_check` 가 옛 숫자 45곳을 놓친 이유"
   },
-  "DECISIONS-014": {
+  "DECISIONS/12": {
    "h": "4c17be7c8dc109c1",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "12. `width_max_m` 결손이 판정을 관대한 쪽으로 기울인다"
   },
-  "DECISIONS-015": {
+  "DECISIONS/13": {
    "h": "3b88fc18eddb4efc",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "13. 팝업이 `seg_id` 를 머리글로 쓰고 있었다"
   },
-  "DECISIONS-016": {
+  "DECISIONS/14": {
    "h": "2663a1df81d75703",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "14. 평가지표 설계를 `docs/EVAL.md` 로 냈다가 되돌렸다"
   },
-  "DECISIONS-017": {
+  "DECISIONS/15": {
    "h": "337ca14f4cee6b16",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "15. `blocked` 를 두 근거 합치로 확정한다 (63 → 159)"
   },
-  "DECISIONS-018": {
+  "DECISIONS/16": {
    "h": "a6de4cc3d73b493a",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "16. gpkg 에 옛 레이어가 남아 하류가 옛 데이터를 읽었다"
   },
-  "DECISIONS-019": {
+  "DECISIONS/17": {
    "h": "48e2b5985fd04511",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "17. 정사영상을 검증 소스로 세지 않고 있었다"
   },
-  "DECISIONS-020": {
+  "DECISIONS/18": {
    "h": "eb7a6b1577dcb6d7",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "18. 문서 셋의 형식을 규약으로 세웠다"
   },
-  "DECISIONS-021": {
+  "DECISIONS/19": {
    "h": "6d5113dcad04793c",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "19. 기초번호는 raw 안에 정본이 있었다"
   },
-  "DECISIONS-022": {
+  "DECISIONS/19/폐기한_접근": {
    "h": "6058d977f45a0fef",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "폐기한 접근"
   },
-  "DECISIONS-023": {
+  "DECISIONS/19/채택한_방식": {
    "h": "f99e785296ef1a47",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "채택한 방식"
   },
-  "DECISIONS-024": {
+  "DECISIONS/20": {
    "h": "223b9d5821f4d26c",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "20. `turn_restriction` 이 조용히 507배로 오염된다"
   },
-  "DECISIONS-025": {
+  "DECISIONS/21": {
    "h": "a5d39572c9599965",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "21. 정사영상 cp949 오류 — 사이드카 XML"
   },
-  "DECISIONS-026": {
+  "DECISIONS/22": {
    "h": "5283f26ca4272a39",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "22. 계보 검사의 구조적 오탐 두 가지"
   },
-  "DECISIONS-027": {
+  "DECISIONS/22/1": {
    "h": "f6be929c66fcf952",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "1. `_manifest.json` 을 바이트 전체로 비교했다"
   },
-  "DECISIONS-028": {
+  "DECISIONS/22/2": {
    "h": "abcc49a8abbaf51f",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "2. `mutates` 를 자가 대조했다"
   },
-  "DECISIONS-029": {
+  "DECISIONS/22/3": {
    "h": "b0479e8802379a13",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "3. 탈출구를 명시한다"
   },
-  "DECISIONS-030": {
+  "DECISIONS/23": {
    "h": "b678bb4f919e7253",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "23. 단계 스크립트를 직접 호출하면 계보가 어긋난다"
   },
-  "DECISIONS-031": {
+  "DECISIONS/24": {
    "h": "1452765047a15f71",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "24. 인코딩에는 강제자가 없었다"
   },
-  "DECISIONS-032": {
+  "DECISIONS/25": {
    "h": "13875f25640e1f0c",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "25. 스크립트 더미를 패키지로 — `sys.path` 17군데가 원인이었다"
   },
-  "DECISIONS-033": {
+  "DECISIONS/26": {
    "h": "305c83991119e8f4",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "26. 계층에 강제자가 없었다"
   },
-  "DECISIONS-034": {
+  "DECISIONS/27": {
    "h": "7cf896a523ca9068",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "27. `app.js` 1,260줄을 27개 모듈로"
   },
-  "DECISIONS-035": {
+  "DECISIONS/28": {
    "h": "5b46484cfadc1d42",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "28. ★ `node --check` 는 ES 모듈 문법 오류를 잡지 못한다"
   },
-  "DECISIONS-036": {
+  "DECISIONS/29": {
    "h": "3f9b7fb5ab11f1fc",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "29. ★ `window.CONFIG` 는 undefined 다"
   },
-  "DECISIONS-037": {
+  "DECISIONS/30": {
    "h": "440fa4a1d362e5e8",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "30. 실패가 조용히 통과하던 자리 넷"
   },
-  "DECISIONS-038": {
+  "DECISIONS/30/ingest_가_데이터셋_FAIL_에도_종료코드_0": {
    "h": "5b28dfa67687c93f",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "`ingest` 가 데이터셋 FAIL 에도 종료코드 0"
   },
-  "DECISIONS-039": {
+  "DECISIONS/30/ingest_--only_가_대장을_통째로_덮어썼다": {
    "h": "1cba9d2b7a34dde3",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "`ingest --only` 가 대장을 통째로 덮어썼다"
   },
-  "DECISIONS-040": {
+  "DECISIONS/30/save_에_make_valid_가_없었다": {
    "h": "b6278dfde86d2f16",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "`save()` 에 `make_valid` 가 없었다"
   },
-  "DECISIONS-041": {
+  "DECISIONS/30/zip_이_길이가_다르면_조용히_자른다": {
    "h": "52d45bb1433d504b",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "`zip()` 이 길이가 다르면 조용히 자른다"
   },
-  "DECISIONS-042": {
+  "DECISIONS/31": {
    "h": "96db56d92b67c5b2",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "31. 계보 교착 세 번째 — ② 통과가 ③ 을 면제하지 않았다"
   },
-  "DECISIONS-043": {
+  "DECISIONS/32": {
    "h": "a81849ae884b206b",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "32. clearance(최대내접원) 방식을 검토하고 기각했다"
   },
-  "DECISIONS-044": {
+  "DECISIONS/32/2026-08-23_추가_기각_근거를_다시_본다": {
    "h": "badaaca894140c88",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "★ 2026-08-23 추가 — 기각 근거를 다시 본다"
   },
-  "DECISIONS-045": {
+  "DECISIONS/33": {
    "h": "593e3fbd5298de91",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "33. 연속지적도를 세 번째 계보로 확보했다"
   },
-  "DECISIONS-046": {
+  "DECISIONS/34": {
    "h": "703b18b114b842d2",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "34. `unknown` 352구간의 사유가 하나뿐이었다"
   },
-  "DECISIONS-047": {
+  "DECISIONS/35": {
    "h": "3557d47e82932619",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "35. 구간별 판정을 아무도 검증한 적이 없었다"
   },
-  "DECISIONS-048": {
+  "DECISIONS/36": {
    "h": "0ca4c8b6c3be6f15",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "36. 툴팁이 개발자 화면이었다"
   },
-  "DECISIONS-049": {
+  "DECISIONS/37": {
    "h": "06f9a74a04f29ac0",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "37. 캐시 — 개발 서버와 배포 스탬프 두 층"
   },
-  "DECISIONS-050": {
+  "DECISIONS/38": {
    "h": "7c0093aa11930a80",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "38. ★ CI 가 `main` 에서만 돌고 있었다"
   },
-  "DECISIONS-051": {
+  "DECISIONS/39": {
    "h": "621896d735f20bfb",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "39. `web/data` 계보를 생산자가 쓰지 않았다"
   },
-  "DECISIONS-052": {
+  "DECISIONS/40": {
    "h": "fe19c3ca45daa114",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "40. ruff 155 → 0"
   },
-  "DECISIONS-053": {
+  "DECISIONS/41": {
    "h": "3f3009879fbc0143",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "41. `w_ngi=0.5` 거리뷰 대조 51개를 폐기했다"
   },
-  "DECISIONS-054": {
+  "DECISIONS/42": {
    "h": "ead7123b88414d95",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "42. 네이버 지도를 준-실측으로 쓸 수 있는지 재본다"
   },
-  "DECISIONS-055": {
+  "DECISIONS/43": {
    "h": "12e6ede0692bdb06",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "43. 영상판정 인터페이스를 못박았다"
   },
-  "DECISIONS-056": {
+  "DECISIONS/44": {
    "h": "b9d6faa7496ee38f",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "44. 이 세션에서 반복된 실수"
   },
-  "DECISIONS-057": {
+  "DECISIONS/45": {
    "h": "4218005ab64657ad",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "45. `paths.FIELD` 가 문서 셋을 다 어기고 있었다"
   },
-  "DECISIONS-058": {
+  "DECISIONS/46": {
    "h": "43a27606f1621382",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "46. 경로 비용을 차량 기준으로 바꾼다"
   },
-  "DECISIONS-059": {
+  "DECISIONS/47": {
    "h": "4ecaa76b080366e0",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "47. 도달 가능성은 개별 판정과 다르다"
   },
-  "DECISIONS-060": {
+  "DECISIONS/48": {
    "h": "ae6631c4bca72ba0",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "48. 노드 접합 규칙이 두 곳에서 달랐다"
   },
-  "DECISIONS-061": {
+  "DECISIONS/49": {
    "h": "53be7b024e0dea9f",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "49. 차량 제원을 공식 규격에서 가져왔다"
   },
-  "DECISIONS-062": {
+  "DECISIONS/50": {
    "h": "387f2c4ff1754231",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "50. 내륜차는 근사식을 쓰지 않는다"
   },
-  "DECISIONS-063": {
+  "DECISIONS/51": {
    "h": "e8b8b8544f9b1970",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "51. `feeds` 를 채우니 참조 0곳이 넷 드러났다"
   },
-  "DECISIONS-064": {
+  "DECISIONS/52": {
    "h": "a41074ccc38ce597",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "52. 폭 표본을 버리지 않는다"
   },
-  "DECISIONS-065": {
+  "DECISIONS/53": {
    "h": "ed688cc56fd26556",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "53. 연속지적도를 세 번째 계보로 확보했다"
   },
-  "DECISIONS-066": {
+  "DECISIONS/54": {
    "h": "6431debe483ad024",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "54. `road_bt_m` 을 대조 심판으로 쓰려다 기각했다"
   },
-  "DECISIONS-067": {
+  "DECISIONS/55": {
    "h": "be0f018c1002098a",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "55. `tools/ship.py` — 내보내기 전 단일 진입점"
   },
-  "DECISIONS-068": {
+  "DECISIONS/56": {
    "h": "ceb2802e92e0ea2b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "56. `golden` 의 낡음 검사를 내용 해시로 바꿨다"
   },
-  "DECISIONS-069": {
+  "DECISIONS/57": {
    "h": "46bb617345c3f36b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "57. CI 가 로컬보다 좁은 환경이라는 것을 아무도 보지 않았다"
   },
-  "DECISIONS-070": {
+  "DECISIONS/58": {
    "h": "75d939b9ff3624f3",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "58. `ingest` 실패가 비결정적이고 한 덩어리였다"
   },
-  "DECISIONS-071": {
+  "DECISIONS/59": {
    "h": "dbd94fc06e3855eb",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "59. 가로등 폴 1,143점이 발행만 되고 있었다"
   },
-  "DECISIONS-072": {
+  "DECISIONS/60": {
    "h": "1326c20c30a0ec51",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "60. `verdict` 가 시도표본을 받고 있었다"
   },
-  "DECISIONS-073": {
+  "DECISIONS/61": {
    "h": "5a1bc253cbbb39b5",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "61. 계층이 산문과 상수 두 곳에 흩어져 있었다"
   },
-  "DECISIONS-074": {
+  "DECISIONS/62": {
    "h": "0529282ff3259bcb",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "62. 캐시 스탬프가 사람 소유 파일을 오염시켰다"
   },
-  "DECISIONS-075": {
+  "DECISIONS/63": {
    "h": "668322d13c1911ea",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "63. `LANES` 매칭률 24% 의 원인을 셋으로 갈랐다"
   },
-  "DECISIONS-076": {
+  "DECISIONS/64": {
    "h": "9b3cbefbd6dafe17",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "64. MASTER 의 데이터 이력을 여기로 옮겼다"
   },
-  "DECISIONS-077": {
+  "DECISIONS/65": {
    "h": "235996f528e095f4",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "65. 패치 zip 적용 절차를 폐기했다"
   },
-  "DECISIONS-078": {
+  "DECISIONS/66": {
    "h": "235e762e1665f91c",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "66. 결정 63~83 의 사유를 여기로 모았다"
   },
-  "DECISIONS-079": {
+  "DECISIONS/66/71": {
    "h": "f0f15f19722c56fd",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "71 → 72. `seg_id` 를 강등하고 `seg_uid` 를 만들었다"
   },
-  "DECISIONS-080": {
+  "DECISIONS/66/73": {
    "h": "e9a86b5299b994c6",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "73. 방위각은 왜 구간 단위가 아닌가"
   },
-  "DECISIONS-081": {
+  "DECISIONS/66/79": {
    "h": "3dddeec0d54d1751",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "79. 왜 커버율로 '고르지' 않는가"
   },
-  "DECISIONS-082": {
+  "DECISIONS/66/80": {
    "h": "07367e2396033aa2",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "80. 표본 1개에 통과 확정을 주지 않는 이유"
   },
-  "DECISIONS-083": {
+  "DECISIONS/66/81": {
    "h": "bc10a9e54cdb0736",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "81. 고정 반경이 왜 틀렸나"
   },
-  "DECISIONS-084": {
+  "DECISIONS/66/82": {
    "h": "1a8feb3ae385e2d5",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "82. `도로폭 0.500` 을 결측 처리하면 안 되는 이유"
   },
-  "DECISIONS-085": {
+  "DECISIONS/66/83": {
    "h": "c8eaec0e3e4c8973",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "83. 선언과 결선이 갈려 있었다"
   },
-  "DECISIONS-086": {
+  "DECISIONS/66/63": {
    "h": "c1e5bf83ddc3c3fe",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "63. 개정 사유"
   },
-  "DECISIONS-087": {
+  "DECISIONS/66/70": {
    "h": "0ecab03ccb5b7ed2",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "70. 명목폭 금지의 예외"
   },
-  "DECISIONS-088": {
+  "DECISIONS/67": {
    "h": "42fe69fbae9bdd8d",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "67. PLAN 의 해소된 항목을 여기로 옮겼다"
   },
-  "DECISIONS-089": {
+  "DECISIONS/67/재현성_파이프라인": {
    "h": "1b942dce5c7028c4",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "재현성 · 파이프라인"
   },
-  "DECISIONS-090": {
+  "DECISIONS/67/구조_위생": {
    "h": "181ab42284fbb57d",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "구조 · 위생"
   },
-  "DECISIONS-091": {
+  "DECISIONS/67/판정_데이터": {
    "h": "ad17a550808d3e88",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "판정 · 데이터"
   },
-  "DECISIONS-092": {
+  "DECISIONS/67/기각": {
    "h": "b04222798b2b354f",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "기각"
   },
-  "DECISIONS-093": {
+  "DECISIONS/68": {
    "h": "29ec671e4b5985c4",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "68. 문서 4축을 책임과 시제로 다시 갈랐다"
   },
-  "DECISIONS-094": {
+  "DECISIONS/68/무엇이_틀려_있었나": {
    "h": "766eeaa04d3da1b6",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "무엇이 틀려 있었나"
   },
-  "DECISIONS-095": {
+  "DECISIONS/68/왜_검사가_못_잡았나": {
    "h": "d2e495699517ca78",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "왜 검사가 못 잡았나"
   },
-  "DECISIONS-096": {
+  "DECISIONS/68/어떻게_갈랐나": {
    "h": "034bc7c0d44e7ede",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "어떻게 갈랐나"
   },
-  "DECISIONS-097": {
+  "DECISIONS/69": {
    "h": "5fe86e1eea42d548",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "69. 낡음 게이트가 스스로 해제될 길이 없었다"
   },
-  "DECISIONS-098": {
+  "DECISIONS/70": {
    "h": "d879392d27c581ce",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "70. 커밋되는 파일이 매 실행 바뀌고 있었다"
   },
-  "DECISIONS-099": {
+  "DECISIONS/71": {
    "h": "3385bb95e3723771",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "71. 검사는 두 판을 보고 산출은 한 판이었다"
   },
-  "DECISIONS-100": {
+  "DECISIONS/72": {
    "h": "27bb9a446f7d14f9",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "72. 외부 회신을 전건으로 두고 있었다"
   },
-  "DECISIONS-101": {
+  "DECISIONS/73": {
    "h": "c8b9e19cd851c84a",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "73. 같은 계산이 세 곳에 다르게 있었다"
   },
-  "DECISIONS-102": {
+  "DECISIONS/74": {
    "h": "844082c344e8f994",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "74. 다섯 사람이 되자 소유권 없는 경로가 62건이었다"
   },
-  "DECISIONS-103": {
+  "DECISIONS/75": {
    "h": "5fe632bbbdc90a4a",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "75. 같은 자리에서 여섯 번 넘어졌다"
   },
-  "DECISIONS-104": {
+  "DECISIONS/76": {
    "h": "3be89e7974b3e47a",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "76. 엄격 검사가 아무것도 잡지 않으면서 초록불이었다"
   },
-  "DECISIONS-105": {
+  "DECISIONS/77": {
    "h": "05b74b716b2ef58c",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "77. 선언만 채우고 이관했다고 적었다"
   },
-  "DECISIONS-106": {
+  "DECISIONS/78": {
    "h": "bff5e87abfe81beb",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "78. 낡음은 둘뿐이다 — 하드코딩이거나 참조가 낡거나"
   },
-  "DECISIONS-107": {
+  "DECISIONS/78-1": {
    "h": "278164407eebcd37",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "78-1. 두 형태"
   },
-  "DECISIONS-108": {
+  "DECISIONS/78-2": {
    "h": "e9bfab2584e375ef",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "78-2. 선언을 보고 대책을 정하지 않는다"
   },
-  "DECISIONS-109": {
+  "DECISIONS/78-3": {
    "h": "5f13415a40857c12",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "78-3. 한 달에 여덟 번 구조를 바꿨다"
   },
-  "DECISIONS-110": {
+  "DECISIONS/78-4": {
    "h": "b6b42eba6fdb7841",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "78-4. 그날 세운 규칙"
   },
-  "DECISIONS-111": {
+  "DECISIONS/79": {
    "h": "0f72699141d1d681",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "79. 예외는 문서 밖에서 자란다"
   },
-  "DECISIONS-112": {
+  "DECISIONS/79-1": {
    "h": "4099d6cebe818928",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "79-1. bypass actor 를 아무도 몰랐다"
   },
-  "DECISIONS-113": {
+  "DECISIONS/79-2": {
    "h": "581fbab9a66c5ed5",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "79-2. 그래서 실물을 코드가 읽게 했다"
   },
-  "DECISIONS-114": {
+  "DECISIONS/79-3": {
    "h": "74c0e83358eff08c",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "79-3. 승인을 0으로 내렸다"
   },
-  "DECISIONS-115": {
+  "DECISIONS/79-4": {
    "h": "64e5588295248776",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "79-4. 고를 여지를 없앴다"
   },
-  "DECISIONS-116": {
+  "DECISIONS/79-5": {
    "h": "e27b2047e0a1d5dd",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "79-5. 켰다고 믿지 않는다"
   },
-  "DECISIONS-117": {
+  "DECISIONS/80": {
    "h": "1cf5be070b545d74",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "80. release/trunk/part bypass 한시 부여"
   },
-  "DECISIONS-118": {
+  "DECISIONS/81": {
    "h": "c09cafb989718631",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "81. 법정 상한을 성능값 자리에 썼다"
   },
-  "DECISIONS-119": {
+  "DECISIONS/82": {
    "h": "050dce0271b226dc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "82. 회전 판정은 전 구간에 적용하지 않는다"
   },
-  "DECISIONS-120": {
+  "DECISIONS/83": {
    "h": "9c6640719e7d026f",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "83. 팀 문서 축을 저장소 축으로 번역했다"
   },
-  "DECISIONS-121": {
+  "DECISIONS/83-1": {
    "h": "f03d1628fb652c1a",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "83-1. 같은 숫자가 다른 것을 가리킨다"
   },
-  "DECISIONS-122": {
+  "DECISIONS/83-2": {
    "h": "1747851699b85fdb",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "83-2. 회의록 원문을 저장소에 넣지 않는다"
   },
-  "DECISIONS-123": {
+  "DECISIONS/83-3": {
    "h": "ea8a3bcf15adca09",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "83-3. 결정 대응 — `M-01` ~ `M-90`"
   },
-  "DECISIONS-124": {
+  "DECISIONS/83-4": {
    "h": "61a4dc093b8cea82",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "83-4. 폐기한 여덟 — 특히 `M-89`"
   },
-  "DECISIONS-125": {
+  "DECISIONS/83-5": {
    "h": "35bc9d178935966e",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "83-5. 미결 대응 — `P-01` ~ `P-60`"
   },
-  "DECISIONS-126": {
+  "DECISIONS/83-6": {
    "h": "5f971c7329948acc",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "83-6. 진행일지에서 온 사실 넷"
   },
-  "DECISIONS-127": {
+  "DECISIONS/83-7": {
    "h": "c7dc9783badc659d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "83-7. 이 표가 낡지 않게 하는 법"
   },
-  "DECISIONS-128": {
+  "DECISIONS/84": {
    "h": "b8d9a0aec5e03550",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "84. 전국 대표 제원으로 동명동 차량 목록을 짰다"
   },
-  "DECISIONS-129": {
+  "DECISIONS/84-1": {
    "h": "99faae4b6c0d643d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "84-1. 없는 차의 회전반경으로 골목을 판단할 뻔했다"
   },
-  "DECISIONS-130": {
+  "DECISIONS/84-2": {
    "h": "37f0e8bb5c8343eb",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "84-2. 대응이 확정인지 추정인지를 화면에 밝힌다"
   },
-  "DECISIONS-131": {
+  "DECISIONS/84-3": {
    "h": "2797931d7b8143f2",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "84-3. 사다리차 회전반경은 아예 안 띄운다"
   },
-  "DECISIONS-132": {
+  "DECISIONS/84-4": {
    "h": "62dc2865448d7579",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "84-4. 아우트리거는 진입과 다른 축이다 — 미해결"
   },
-  "DECISIONS-133": {
+  "DECISIONS/84-5": {
    "h": "a3c37c4cc6cbf33d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "84-5. 확보 경로"
   },
-  "DECISIONS-134": {
+  "DECISIONS/84-6": {
    "h": "c449c683e769ab6a",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "84-6. 출처와 라이선스"
   },
-  "DECISIONS-135": {
+  "DECISIONS/84-7": {
    "h": "14252a18fd94b77e",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "84-7. 기각 — 회전 민감도를 근거로 12.0 을 쓰려 했다"
   },
-  "DECISIONS-136": {
+  "DECISIONS/85": {
    "h": "7c1d6b7d7b36a03e",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "85. 동명동은 지산 관할인데 특수차는 대인에만 있다"
   },
-  "DECISIONS-137": {
+  "DECISIONS/85-1": {
    "h": "aa02073444d0ee0d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "85-1. 선착/후발로 가르지 않는다"
   },
-  "DECISIONS-138": {
+  "DECISIONS/85-2": {
    "h": "b33161e907139c21",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "85-2. 펌프차와 구급차가 두 묶음에 나온다"
   },
-  "DECISIONS-139": {
+  "DECISIONS/85-3": {
    "h": "91b10cade825cd45",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "85-3. 대인 목록을 빼지 않는 이유"
   },
-  "DECISIONS-140": {
+  "DECISIONS/86": {
    "h": "459711957ad28429",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "86. 회전 판정의 적용 범위를 닫았다"
   },
-  "DECISIONS-141": {
+  "DECISIONS/86-1": {
    "h": "95893e7cd8918127",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "86-1. 임계값이 결론을 바꾸지 않는다"
   },
-  "DECISIONS-142": {
+  "DECISIONS/86-2": {
    "h": "80a9ec8612b0053a",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "86-2. 걸리는 것은 대로가 아니라 3~7m 대역이다"
   },
-  "DECISIONS-143": {
+  "DECISIONS/86-3": {
    "h": "d6ee6a7bfdb92f22",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "86-3. 정한 것"
   },
-  "DECISIONS-144": {
+  "DECISIONS/86-4": {
    "h": "e2c5a62da9089210",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "86-4. ★ 미검증 값의 방향이 두 함수에서 반대다"
   },
-  "DECISIONS-145": {
+  "DECISIONS/86-5": {
    "h": "60df7506819d0695",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "86-5. ★ 미검증 플래그가 화면까지 흐르지 않았다"
   },
-  "DECISIONS-146": {
+  "DECISIONS/86-6": {
    "h": "71419394348c1ead",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "86-6. ★ 회전은 동적 계층이 아니다"
   },
-  "DECISIONS-147": {
+  "DECISIONS/86-7": {
    "h": "5983a772b3c1fff7",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "86-7. 같이 정리한 낡은 주석 셋"
   },
-  "DECISIONS-148": {
+  "DECISIONS/87": {
    "h": "57699045d64ea04d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "87. 문서끼리 어긋난 곳을 검사가 보게 했다"
   },
-  "DECISIONS-149": {
+  "DECISIONS/87-1": {
    "h": "ce8cae1269a056a9",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "87-1. 넷"
   },
-  "DECISIONS-150": {
+  "DECISIONS/87-2": {
    "h": "8c0742da001d18d2",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "87-2. 고친 것"
   },
-  "DECISIONS-151": {
+  "DECISIONS/87-3": {
    "h": "4b458d5d203c469d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "87-3. ★ 강제자가 한 방향뿐이었다"
   },
-  "DECISIONS-152": {
+  "DECISIONS/87-4": {
    "h": "bcb7331e2c16abfb",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "87-4. 안 하는 것"
   },
-  "DECISIONS-153": {
+  "DECISIONS/87-5": {
    "h": "b953e9973e31b047",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "87-5. 같이 정리한 것 둘"
   },
-  "DECISIONS-154": {
+  "DECISIONS/88": {
    "h": "8676f4aa28aa4466",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "88. 입구를 하나로 하고 문서 사이에 검사를 걸었다"
   },
-  "DECISIONS-155": {
+  "DECISIONS/88-1": {
    "h": "f6816ccb37c411df",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "88-1. 파이프라인의 머리 다섯이 도구로만 있었다"
   },
-  "DECISIONS-156": {
+  "DECISIONS/88-2": {
    "h": "b94b54f741c6ac45",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "88-2. landing 은 역할 중복이 아니다"
   },
-  "DECISIONS-157": {
+  "DECISIONS/88-3": {
    "h": "e3248c70438f3d2e",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "88-3. 강제자가 전부 한 방향이었다"
   },
-  "DECISIONS-158": {
+  "DECISIONS/88-4": {
    "h": "155fb0eb16617f3d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "88-4. ★ 양쪽성 도킹 — 렌더러도 한 방향이었다"
   },
-  "DECISIONS-159": {
+  "DECISIONS/88-5": {
    "h": "99147e05e9d93dbd",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "88-5. ★ 한시가 한시로 끝나려면 시계가 있어야 한다"
   },
-  "DECISIONS-160": {
+  "DECISIONS/88-6": {
    "h": "a55f4955258fdcf3",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "88-6. 교통량은 자리를 비워두지 않는다"
   },
-  "DECISIONS-161": {
+  "DECISIONS/89": {
    "h": "26318a63861acce8",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "89. 같은 사고를 세 번 겪고서야 구조를 고쳤다"
   },
-  "DECISIONS-162": {
+  "DECISIONS/89-1": {
    "h": "b595e27980fa5b30",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "89-1. 무엇이 실제로 물었나"
   },
-  "DECISIONS-163": {
+  "DECISIONS/89-2": {
    "h": "085663afcc3df097",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "89-2. 인자를 데이터로 뺐다"
   },
-  "DECISIONS-164": {
+  "DECISIONS/89-3": {
    "h": "c72d0a58f7ba2117",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "89-3. 합치지 않은 이유"
   },
-  "DECISIONS-165": {
+  "DECISIONS/89-4": {
    "h": "e94b8c644fc1ffc8",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "89-4. 손으로 채우면 다음에 또 갈린다"
   },
-  "DECISIONS-166": {
+  "DECISIONS/90": {
    "h": "9a0ac9c5a3b1610c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "90. 릴리즈 절차가 사람 손을 전제하고 있었다"
   },
-  "DECISIONS-167": {
+  "DECISIONS/91": {
    "h": "0922d463df7966e7",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "91. `absent` 가 스코프 없이 쓰이고 있었다"
   },
-  "DECISIONS-168": {
+  "DECISIONS/91-1": {
    "h": "58b63621215f98b2",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "91-1. ★ 이름이 우연히 엇갈려 통과하고 있었다"
   },
-  "DECISIONS-169": {
+  "DECISIONS/91-2": {
    "h": "85543e87f9e4d180",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "91-2. 기각 — 검사에 예외 목록을 둔다"
   },
-  "DECISIONS-170": {
+  "DECISIONS/91-3": {
    "h": "aaff806de7311120",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "91-3. 곁가지 — 주석이 없는 의존을 주장했다"
   },
-  "DECISIONS-171": {
+  "DECISIONS/92": {
    "h": "4a2a7b37c1e65324",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "92. 어휘가 갈리면 검사가 비껴간다 — 세 번째"
   },
-  "DECISIONS-172": {
+  "DECISIONS/92-1": {
    "h": "17f3c7d3de82318e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "92-1. 규칙이 아니라 목록으로 못박는다"
   },
-  "DECISIONS-173": {
+  "DECISIONS/93": {
    "h": "393d6408028377f9",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "93. 배포 아키텍처가 두 문서에서 달랐다 — EC2 로 맞췄다"
   },
-  "DECISIONS-174": {
+  "DECISIONS/93-1": {
    "h": "2c26ff946d36020c",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "93-1. 왜 기획서 쪽인가"
   },
-  "DECISIONS-175": {
+  "DECISIONS/93-2": {
    "h": "e6bb2624d30a59f7",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "93-2. ★ 결정적인 이유는 유지 주체다"
   },
-  "DECISIONS-176": {
+  "DECISIONS/93-3": {
    "h": "a199a82a709e678e",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "93-3. 그대로 두는 것 셋"
   },
-  "DECISIONS-177": {
+  "DECISIONS/93-4": {
    "h": "8b63fbc13677c214",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "93-4. 되돌릴 조건"
   },
-  "DECISIONS-178": {
+  "DECISIONS/93-5": {
    "h": "db40069655176b37",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "93-5. 남은 확인"
   },
-  "DECISIONS-179": {
+  "DECISIONS/94": {
    "h": "936b0b822f8cab45",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "94. 도킹이 두 방향뿐이었다 — 세 번째를 붙였다"
   },
-  "DECISIONS-180": {
+  "DECISIONS/94-1": {
    "h": "f72fdf970bd778cc",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "94-1. 파싱이 서식을 스키마로 쓰고 있었다"
   },
-  "DECISIONS-181": {
+  "DECISIONS/94-2": {
    "h": "a8b94b6b2049ef2e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "94-2. 태그가 아니라 색인이다"
   },
-  "DECISIONS-182": {
+  "DECISIONS/95": {
    "h": "ea2b0ac0a7f8923f",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "95. 존재 대조는 오답을 못 센다"
   },
-  "DECISIONS-183": {
+  "DECISIONS/95-1": {
    "h": "ea4ce6df8db05737",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "95-1. README 가 대상에서 빠져 있었다"
   },
-  "DECISIONS-184": {
+  "DECISIONS/95-2": {
    "h": "1c61ed939a6de0bc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "95-2. 세는 방법이 여럿인 값은 문서에 적지 않는다"
   },
-  "DECISIONS-185": {
+  "DECISIONS/96": {
    "h": "fb4ff0fff8d75262",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "96. 도구를 만들고 걸지 않았다"
   },
-  "DECISIONS-186": {
+  "DECISIONS/96-1": {
    "h": "eb78606a818b3fdb",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "96-1. 만드는 것과 거는 것은 다른 일이다"
   },
-  "DECISIONS-187": {
+  "DECISIONS/96-2": {
    "h": "daea569c15d2b16d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "96-2. EXEMPT 는 비우는 것이 목표가 아니다"
   },
-  "DECISIONS-188": {
+  "DECISIONS/97": {
    "h": "1dace519d239ba4e",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "97. 검사를 걸자 셋이 한꺼번에 울었다"
   },
-  "DECISIONS-189": {
+  "DECISIONS/97-1": {
    "h": "7416de0fa4bb982d",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "97-1. 폐기 기록을 죽은 참조로 세면 회고를 못 쓴다"
   },
-  "DECISIONS-190": {
+  "DECISIONS/97-2": {
    "h": "70c8fcf8753e5598",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "97-2. 대장이 쓰는 방식과 다르게 대조했다"
   },
-  "DECISIONS-191": {
+  "DECISIONS/97-3": {
    "h": "78e9173c4da5a045",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "97-3. 만든 도구가 하루 만에 낡았다"
   },
-  "DECISIONS-192": {
+  "DECISIONS/98": {
    "h": "b923bdd09dc99db2",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "98. 하드코딩한 raw 경로를 없앴다"
   },
-  "DECISIONS-193": {
+  "DECISIONS/98-1": {
    "h": "19a68ed027251045",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "98-1. 이 자리에서 두 번 죽었다"
   },
-  "DECISIONS-194": {
+  "DECISIONS/98-2": {
    "h": "f398a912a4ffff3e",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "98-2. 대장이 찾고 코드는 결과만 받는다"
   },
-  "DECISIONS-195": {
+  "DECISIONS/98-3": {
    "h": "b9182cca17128a57",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "98-3. 검사가 오탐을 낸 것이 아니었다"
   },
-  "DECISIONS-196": {
+  "DECISIONS/99": {
    "h": "db71982def1edb7c",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "99. 화면 사이 이동 메뉴를 만들었다가 같은 날 걷었다"
   },
-  "DECISIONS-197": {
+  "DECISIONS/99-1": {
    "h": "41fbc165ca48a302",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "99-1. 배포 준비를 한 곳으로"
   },
-  "DECISIONS-198": {
+  "DECISIONS/99-2": {
    "h": "a0f3294a746aa1f6",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "99-2. 워크플로가 가르는 것은 트리거지 산출물이 아니다"
   },
-  "DECISIONS-199": {
+  "DECISIONS/99-3": {
    "h": "705ef810d17c688f",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "99-3. 변환을 두지 않는다"
   },
-  "DECISIONS-200": {
+  "DECISIONS/100": {
    "h": "9d138be192d14b8b",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "100. 렌더러가 색인을 읽는다 — 서식이 스키마이던 것을 끝냈다"
   },
-  "DECISIONS-201": {
+  "DECISIONS/100-1": {
    "h": "017662c276668da4",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "100-1. 무엇이 바뀌었나"
   },
-  "DECISIONS-202": {
+  "DECISIONS/100-2": {
    "h": "c0edc51a83d6dacb",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "100-2. 범위가 §12 밖으로 나갔다"
   },
-  "DECISIONS-203": {
+  "DECISIONS/100-3": {
    "h": "77bac70e44b4362a",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "100-3. 순서를 뒤집었다"
   },
-  "DECISIONS-204": {
+  "DECISIONS/101": {
    "h": "f44d0aba389b8173",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "101. 영구 브랜치가 두 번 사라졌고 아무도 울지 않았다"
   },
-  "DECISIONS-205": {
+  "DECISIONS/101-1": {
    "h": "a9c0e5c05d198129",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "101-1. 그 설정은 head 를 가리지 않는다"
   },
-  "DECISIONS-206": {
+  "DECISIONS/101-2": {
    "h": "d7dd0458119a29bd",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "101-2. 룰셋의 `deletion` 이 있었는데 못 막았다"
   },
-  "DECISIONS-207": {
+  "DECISIONS/101-3": {
    "h": "74e61a37f831afee",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "101-3. 무엇이 없었나"
   },
-  "DECISIONS-208": {
+  "DECISIONS/101-4": {
    "h": "dabdd93868edc4a6",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "101-4. `feat` 정리 워크플로는 같은 날 걷었다"
   },
-  "DECISIONS-209": {
+  "DECISIONS/102": {
    "h": "45450894faecf18e",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "102. 경로 알고리즘과 내비게이션의 담당을 비웠다"
   },
-  "DECISIONS-210": {
+  "DECISIONS/102-1": {
    "h": "1527542e563f5137",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "102-1. 지우지 않는다"
   },
-  "DECISIONS-211": {
+  "DECISIONS/102-2": {
    "h": "06daf1d73673bf8c",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "102-2. 남은 것과 안 남은 것"
   },
-  "DECISIONS-212": {
+  "DECISIONS/102-3": {
    "h": "0df9afb32fb12975",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "102-3. D-30 은 여전히 남는다"
   },
-  "DECISIONS-213": {
+  "DECISIONS/103": {
    "h": "6ad3fc9c5d0cd239",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "103. 지켜진 적 없는 규칙을 고쳤다"
   },
-  "DECISIONS-214": {
+  "DECISIONS/103-1": {
    "h": "c7684c2b0045bce4",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "103-1. 지키지 못할 규칙은 다른 규칙까지 깎는다"
   },
-  "DECISIONS-215": {
+  "DECISIONS/103-2": {
    "h": "ac10e90202024cac",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "103-2. 4칸 들여쓰기는 일반 블록이다"
   },
-  "DECISIONS-216": {
+  "DECISIONS/103-3": {
    "h": "8089e0897739d58b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "103-3. bare `§N` 강제자가 PLAN 에만 있었다"
   },
-  "DECISIONS-217": {
+  "DECISIONS/104": {
    "h": "8050789f4d3c46a8",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "104. \"없다\" 와 \"죽었다\" 를 코드가 안 갈랐다"
   },
-  "DECISIONS-218": {
+  "DECISIONS/104-1": {
    "h": "4eab014175ac65f2",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "104-1. 왜 지금 고치나"
   },
-  "DECISIONS-219": {
+  "DECISIONS/104-2": {
    "h": "8f5fd19915ad0cc0",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "104-2. 팀원은 이 오류를 안 겪는다"
   },
-  "DECISIONS-220": {
+  "DECISIONS/105": {
    "h": "eb53596a7ec32a06",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "105. 템플릿이 있는데 안 쓰고 있었다"
   },
-  "DECISIONS-221": {
+  "DECISIONS/105-1": {
    "h": "08f48ea81a91e453",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "105-1. 그래서 화면이 비었다"
   },
-  "DECISIONS-222": {
+  "DECISIONS/105-2": {
    "h": "4da525da2ec2c326",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "105-2. 도킹이 세 방향인데 주입이 없었다"
   },
-  "DECISIONS-223": {
+  "DECISIONS/105-3": {
    "h": "9c579e6d13df019a",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "105-3. 껍데기와 내용을 슬롯으로 가른다"
   },
-  "DECISIONS-224": {
+  "DECISIONS/106": {
    "h": "1cbd95355182fde0",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "106. 주입은 붙였는데 사본을 안 지웠다"
   },
-  "DECISIONS-225": {
+  "DECISIONS/106-1": {
    "h": "8aaf06352c4a90af",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "106-1. 지우기만 하면 껍데기를 잃는다"
   },
-  "DECISIONS-226": {
+  "DECISIONS/106-2": {
    "h": "a0513110a1651694",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "106-2. 템플릿이 형태를 선언한다"
   },
-  "DECISIONS-227": {
+  "DECISIONS/107": {
    "h": "e4108a1f10e18eeb",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "107. 표는 껍데기를 잃었다 — 검사로 닫았다"
   },
-  "DECISIONS-228": {
+  "DECISIONS/107-1": {
    "h": "86b3a6e60f1cddcd",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "107-1. `as_rows()` — 행만 낸다"
   },
-  "DECISIONS-229": {
+  "DECISIONS/107-2": {
    "h": "cadfdf4b2e0c027c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "107-2. ★ 껍데기 검사 — 루프를 닫는 자리"
   },
-  "DECISIONS-230": {
+  "DECISIONS/108": {
    "h": "ec5c091f738107e9",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "108. 소유와 승인은 다른 자리다 · 그림에 강제자를 붙였다"
   },
-  "DECISIONS-231": {
+  "DECISIONS/108-1": {
    "h": "6be8c9882eefdcb2",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "108-1. 포괄 소유자를 잘못 넣었다"
   },
-  "DECISIONS-232": {
+  "DECISIONS/108-2": {
    "h": "3ce6f641ff96388e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "108-2. 그림에 강제자가 캡션뿐이었다"
   },
-  "DECISIONS-233": {
+  "DECISIONS/109": {
    "h": "567b1e2d0aef65d7",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "109. 승인이 형식인 이유 — 리뷰어가 볼 것이 없었다"
   },
-  "DECISIONS-234": {
+  "DECISIONS/109-1": {
    "h": "b456fc4d6c3f08d8",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "109-1. 넷만 본다"
   },
-  "DECISIONS-235": {
+  "DECISIONS/109-2": {
    "h": "7dc65102e7665d26",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "109-2. 막는 것이 아니라 보여주는 것이다"
   },
-  "DECISIONS-236": {
+  "DECISIONS/109-3": {
    "h": "6ea4826e2c7b5a1c",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "109-3. `PLAN #72`(CI 에이전트)의 범위가 좁혀졌다"
   },
-  "DECISIONS-237": {
+  "DECISIONS/110": {
    "h": "17ec1d0f024178b9",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "110. 구조 그림에 강제자를 붙였다 · 브리핑을 CI 가 단다"
   },
-  "DECISIONS-238": {
+  "DECISIONS/110-1": {
    "h": "1fc3a29e481536db",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "110-1. 값 그림과 구조 그림은 다르다"
   },
-  "DECISIONS-239": {
+  "DECISIONS/110-2": {
    "h": "9b26ccd8788bc9bc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "110-2. 브리핑을 사람이 붙이지 않는다"
   },
-  "DECISIONS-240": {
+  "DECISIONS/111": {
    "h": "a8c9688b0a02c3f6",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "111. 넘쳐도 그려진다 — 그래서 아무도 모른다"
   },
-  "DECISIONS-241": {
+  "DECISIONS/111-1": {
    "h": "ef2904fa8f312e94",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "111-1. 좌표가 코드에 있는 한 이 검사가 그 자리를 대신한다"
   },
-  "DECISIONS-242": {
+  "DECISIONS/111-2": {
    "h": "8c9d3f91a5f05183",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "111-2. 레이아웃 엔진으로 갈 조건을 미리 적는다"
   },
-  "DECISIONS-243": {
+  "DECISIONS/112": {
    "h": "33620a1b2bd44b31",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "112. 선두차량 보조 뷰의 입력 계약을 고정했다"
   },
-  "DECISIONS-244": {
+  "DECISIONS/112-1": {
    "h": "00558b489770aefc",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "112-1. 계약"
   },
-  "DECISIONS-245": {
+  "DECISIONS/112-2": {
    "h": "7b84293efb77107c",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "112-2. 정본 분리"
   },
-  "DECISIONS-246": {
+  "DECISIONS/112-3": {
    "h": "8868b31b8bb87d0f",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "112-3. 범위 — 턴바이턴은 만들지 않는다"
   },
-  "DECISIONS-247": {
+  "DECISIONS/112-4": {
    "h": "c9f480758285ecf7",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "112-4. 화면 소양 — 운전 중 3초 판단"
   },
-  "DECISIONS-248": {
+  "DECISIONS/112-5": {
    "h": "4f8dbf2e1dbeaf6d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "112-5. 남은 것"
   },
-  "DECISIONS-249": {
+  "DECISIONS/113": {
    "h": "3b5e97eb80f007df",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "113. 범주 최대는 그 범주 전량을 알 때만 최대다"
   },
-  "DECISIONS-250": {
+  "DECISIONS/113-1": {
    "h": "60073044edae6fea",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "113-1. 그날 저지른 것"
   },
-  "DECISIONS-251": {
+  "DECISIONS/113-2": {
    "h": "b54cce887d29bb39",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "113-2. 판정 단위"
   },
-  "DECISIONS-252": {
+  "DECISIONS/113-3": {
    "h": "796b3cf7e923a31b",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "113-3. 축거는 어디에 있나"
   },
-  "DECISIONS-253": {
+  "DECISIONS/113-4": {
    "h": "c5fad93b2fcf6782",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "113-4. 스키마가 아직 못 받는다"
   },
-  "DECISIONS-254": {
+  "DECISIONS/114": {
    "h": "6ea9804d325d54eb",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "114. 검증은 방향뿐 아니라 범위도 양쪽이어야 한다"
   },
-  "DECISIONS-255": {
+  "DECISIONS/114-1": {
    "h": "a518bf1cc9c49e50",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "114-1. 방향"
   },
-  "DECISIONS-256": {
+  "DECISIONS/114-2": {
    "h": "ff949bb0acf9d258",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "114-2. 범위"
   },
-  "DECISIONS-257": {
+  "DECISIONS/114-3": {
    "h": "ea94aff3c69d93de",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "114-3. 형식"
   },
-  "DECISIONS-258": {
+  "DECISIONS/114-4": {
    "h": "cae60e42ebc23eda",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "114-4. 두 벌이 결함을 가린다"
   },
-  "DECISIONS-259": {
+  "DECISIONS/114-5": {
    "h": "adb258c1cd22930c",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "114-5. 사후 검사는 늦다"
   },
-  "DECISIONS-260": {
+  "DECISIONS/114-6": {
    "h": "b4ed6ef122d3cb6a",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "114-6. 환경 — 로컬에서만 통과하는 검사"
   },
-  "DECISIONS-261": {
+  "DECISIONS/114-7": {
    "h": "a8125bbaa6015db5",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "114-7. 규칙"
   },
-  "DECISIONS-262": {
+  "DECISIONS/115": {
    "h": "22bad57a2b6d5193",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "115. 내비를 붙였다 — 경로는 클라이언트에서 돈다"
   },
-  "DECISIONS-263": {
+  "DECISIONS/115-1": {
    "h": "0f92d216f7494aa6",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "115-1. 왜 서버에서 돌리지 않나"
   },
-  "DECISIONS-264": {
+  "DECISIONS/115-2": {
    "h": "fa60a813f56ea93c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "115-2. 발행은 새 파일로만 한다"
   },
-  "DECISIONS-265": {
+  "DECISIONS/116": {
    "h": "5ef78bd2c63a418f",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "116. 시간을 줄이는 앱이 아니다"
   },
-  "DECISIONS-266": {
+  "DECISIONS/116-1": {
    "h": "ecf56b7e2836b21c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "116-1. 숫자를 문서에 손으로 적지 않는다"
   },
-  "DECISIONS-267": {
+  "DECISIONS/117": {
    "h": "930547cd87d10437",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "117. 회전은 각도가 아니라 분기다"
   },
-  "DECISIONS-268": {
+  "DECISIONS/117-1": {
    "h": "8158edf1cad1fe5a",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "117-1. 도로명은 기준이 아니다"
   },
-  "DECISIONS-269": {
+  "DECISIONS/117-2": {
    "h": "8a744e4a09af112c",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "117-2. 회전각은 데이터가 아니라 계산이다"
   },
-  "DECISIONS-270": {
+  "DECISIONS/118": {
    "h": "1b4144cb3ccefdab",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "118. 안내 문턱은 거리가 아니라 시간이다"
   },
-  "DECISIONS-271": {
+  "DECISIONS/118-1": {
    "h": "119641bfce69360a",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "118-1. 회전 간격 21% 가 30m 미만이다"
   },
-  "DECISIONS-272": {
+  "DECISIONS/118-2": {
    "h": "c9fd3faab50ccbd8",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "118-2. 회색 안내는 진입 전에 한다"
   },
-  "DECISIONS-273": {
+  "DECISIONS/119": {
    "h": "17b89966f72f8e49",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "119. 스냅은 경로를 알아야 한다"
   },
-  "DECISIONS-274": {
+  "DECISIONS/119-1": {
    "h": "d13dc1958c214c80",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "119-1. 진행방향은 형상 방향이 아니다"
   },
-  "DECISIONS-275": {
+  "DECISIONS/120": {
    "h": "f0cc601b941708ba",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "120. 상용 도로망은 폭을 모른다"
   },
-  "DECISIONS-276": {
+  "DECISIONS/120-1": {
    "h": "c7524931774db56d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "120-1. 폭 1.19m 골목을 신뢰도 0.97 로 안다"
   },
-  "DECISIONS-277": {
+  "DECISIONS/121": {
    "h": "710ac9e430ccaa24",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "121. 계층을 갈랐다 — domain 은 아무것도 모른다"
   },
-  "DECISIONS-278": {
+  "DECISIONS/121-1": {
    "h": "6125408558f5e39d",
    "state": "blank",
    "doc": "docs/DECISIONS.md",
    "title": "121-1. 순환은 setState 로 되먹일 때 생긴다"
   },
-  "DECISIONS-279": {
+  "DECISIONS/121-2": {
    "h": "5f77f94665098a62",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "121-2. 판정색은 파생한다"
   },
-  "DECISIONS-280": {
+  "DECISIONS/122": {
    "h": "3cf7eec1ca203733",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "122. 팀 GIS 재계산(2026-09-09)은 이 저장소에 반영하지 않는다"
   },
-  "DECISIONS-281": {
+  "DECISIONS/123": {
    "h": "4e056476d98f893e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "123. norm` 계층 이관"
   },
-  "DECISIONS-282": {
+  "DECISIONS/124": {
    "h": "ef10327ced6a68f9",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "124. web/data` 타일 1,445장이 추적된다"
   },
-  "DECISIONS-283": {
+  "DECISIONS/125": {
    "h": "1649758135c0b528",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "125. sources.yaml` AUTO 블록 재생성 확인"
   },
-  "DECISIONS-284": {
+  "DECISIONS/126": {
    "h": "405a52d7da244fee",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "126. 계층 밖 경로 조립 잔존"
   },
-  "DECISIONS-285": {
+  "DECISIONS/127": {
    "h": "a84f1fea912b82d7",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "127. 임포트 시점 디스크 접근"
   },
-  "DECISIONS-286": {
+  "DECISIONS/128": {
    "h": "2e2932f29123aff8",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "128. 대장 `outputs` 미등재 0건"
   },
-  "DECISIONS-287": {
+  "DECISIONS/129": {
    "h": "7b89cf7efa44ed84",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "129. .code_fingerprint` 가 커밋되지 않는다"
   },
-  "DECISIONS-288": {
+  "DECISIONS/130": {
    "h": "752e43c4cc4fcf6b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "130. prep.source_path()` 가 죽은 코드다"
   },
-  "DECISIONS-289": {
+  "DECISIONS/131": {
    "h": "f7786eae3b417421",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "131. feeds` 산문"
   },
-  "DECISIONS-290": {
+  "DECISIONS/132": {
    "h": "0cf27b7250e1b59e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "132. license: TODO` · KFS-1-0006 미판단"
   },
-  "DECISIONS-291": {
+  "DECISIONS/133": {
    "h": "7b874752ee19f78c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "133. 소화전 속성이 지도에 안 나온다"
   },
-  "DECISIONS-292": {
+  "DECISIONS/134": {
    "h": "c4f89e4dad3269c9",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "134. parts` 가 두 뜻이다"
   },
-  "DECISIONS-293": {
+  "DECISIONS/135": {
    "h": "50598b1e00f46d7f",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "135. 그림 생성 파이"
   },
-  "DECISIONS-294": {
+  "DECISIONS/136": {
    "h": "05d4c449a538c383",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "136. **폭 필드의 뜻이 다르다**"
   },
-  "DECISIONS-295": {
+  "DECISIONS/137": {
    "h": "6084b83a0e94e0bc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "137. 영상판정 커버리지"
   },
-  "DECISIONS-296": {
+  "DECISIONS/138": {
    "h": "8337c145cf91c770",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "138. 소방서 대조를 \"검증\"으로"
   },
-  "DECISIONS-297": {
+  "DECISIONS/139": {
    "h": "90575f5eeadb95f5",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "139. 역할 분담"
   },
-  "DECISIONS-298": {
+  "DECISIONS/140": {
    "h": "ccc0abe6293237f6",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "140. 소화전 \"동명동 1개\""
   },
-  "DECISIONS-299": {
+  "DECISIONS/141": {
    "h": "aa626782a11d135b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "141. CCTV 27지점 / 86대"
   },
-  "DECISIONS-300": {
+  "DECISIONS/142": {
    "h": "799fc234cb39b1f0",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "142. 화면 설계 절이 제목만 있었다"
   },
-  "DECISIONS-301": {
+  "DECISIONS/143": {
    "h": "6dad1013e5e1a9a2",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "143. 검증 일정이 기획서에 없었다"
   },
-  "DECISIONS-302": {
+  "DECISIONS/144": {
    "h": "aed0e9cf32fe2bb3",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "144. B3 — \"지문 불변\" 오분류 셋을 B4 로 넘긴다"
   },
-  "DECISIONS-303": {
+  "DECISIONS/145": {
    "h": "bb739fbb29b1d841",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "145. 환경 설정을 `.env` 로 모은다 — 셸이 이긴다"
   },
-  "DECISIONS-304": {
+  "DECISIONS/146": {
    "h": "5a4f164c0d97a7e6",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "146. V-World 키는 숨길 수 없다 — 옮기는 목적이 다르다"
   },
-  "DECISIONS-305": {
+  "DECISIONS/147": {
    "h": "8f7cf185a2ae300b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "147. 미러 이관이 GitHub 층을 통째로 떨어뜨렸다"
   },
-  "DECISIONS-306": {
+  "DECISIONS/148": {
    "h": "670ef58f34dd4e5c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "148. PLAN 은 빚 목록이다 — 슬롯을 남기지 않는다"
   },
-  "DECISIONS-307": {
+  "DECISIONS/149": {
    "h": "107ea552199fb279",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "149. 강제자 ↔ 규약 정합 — 어떤 도구도 안 세는 축"
   },
-  "DECISIONS-308": {
+  "DECISIONS/150": {
    "h": "059bb1ea83890b99",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "150. 청소 도구를 묶되 합치지 않는다"
   },
-  "DECISIONS-309": {
+  "DECISIONS/151": {
    "h": "f3d249fffdf1111a",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "151. 감사 분모를 232 에서 축 열하나로 갈아탔다"
   },
-  "DECISIONS-310": {
+  "DECISIONS/152": {
    "h": "b3814529a973861b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "152. 봉인과 증분 — 전수를 매번 안 돈다"
   },
-  "DECISIONS-311": {
+  "DECISIONS/153": {
    "h": "25fbf1cc3a8cd360",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "153. 사본 판정 — 합친 것과 합치지 않기로 한 것"
   },
-  "DECISIONS-312": {
+  "DECISIONS/154": {
    "h": "5013b67caa14de7b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "154. `on_demand` — 판정이 안 읽는 소스는 전량에서 뺀다"
   },
-  "DECISIONS-313": {
+  "DECISIONS/155": {
    "h": "a76cd12259b1f606",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "155. 오진 넷 — 증상이 맞아떨어진다고 원인이 아니다"
   },
-  "DECISIONS-314": {
+  "DECISIONS/156": {
    "h": "5f776135e05b9635",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "156. GPS → 구간 스냅 함수"
   },
-  "DECISIONS-315": {
+  "DECISIONS/157": {
    "h": "2fd54b0ce8e9fb3a",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "157. React 내비 뼈대"
   },
-  "DECISIONS-316": {
+  "DECISIONS/158": {
    "h": "0b176d9a121cbae6",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "158. 문서 4축에 내비를 반영"
   },
-  "DECISIONS-317": {
+  "DECISIONS/159": {
    "h": "5e28f16b0d3dccda",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "159. 닫힘 표식을 만들지 않는다"
   },
-  "DECISIONS-318": {
+  "DECISIONS/160": {
    "h": "e66d5f152ab6eace",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "160. `ingest` 를 소스별 자식 프로세스로"
   },
-  "DECISIONS-319": {
+  "DECISIONS/161": {
    "h": "7a3d6bdee00eda6e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "161. `SEAL` 에 raw 지문"
   },
-  "DECISIONS-320": {
+  "DECISIONS/162": {
    "h": "222b109433436955",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "162. 배치 B — 문서·규약 행 열을 판정했다"
   },
-  "DECISIONS-321": {
+  "DECISIONS/162-1": {
    "h": "fbfdf5c437abd340",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "162-1. 조사 스크립트 아홉을 `tools/` 에 둔다"
   },
-  "DECISIONS-322": {
+  "DECISIONS/162-2": {
    "h": "d70cd0d4cc2c4f5e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "162-2. `DECISIONS §1~§9` 를 다른 내용으로 채우지 않는다"
   },
-  "DECISIONS-323": {
+  "DECISIONS/162-3": {
    "h": "f7edc91b90b5e80a",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "162-3. 죽은 경로 참조 — 행이 자기 경고를 끄고 있었다"
   },
-  "DECISIONS-324": {
+  "DECISIONS/162-4": {
    "h": "1364bf616be8537c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "162-4. 데이터 관리 서술을 `MASTER §18` 하나로"
   },
-  "DECISIONS-325": {
+  "DECISIONS/162-5": {
    "h": "79bdc168f3eb7e0d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "162-5. 회의록 대응표를 동결한다"
   },
-  "DECISIONS-326": {
+  "DECISIONS/162-6": {
    "h": "c3bc9d68d6d27db4",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "162-6. 개요서 v1.6 — 대응표로 닫고 MVP 기한을 계획에 넣었다"
   },
-  "DECISIONS-327": {
+  "DECISIONS/162-7": {
    "h": "26a874fe5abcf52c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "162-7. 여정지도 복원을 `⏳` 로 재분류했다"
   },
-  "DECISIONS-328": {
+  "DECISIONS/162-8": {
    "h": "1ad0eca5fbdae456",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "162-8. README 재편을 룰셋·소유 배치 뒤로 민다"
   },
-  "DECISIONS-329": {
+  "DECISIONS/162-9": {
    "h": "107e7b423c919530",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "162-9. 검증과 데이터 관리 — 겹침이 아니라 층이다"
   },
-  "DECISIONS-330": {
+  "DECISIONS/162-10": {
    "h": "2069b7b5e66beeb3",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "162-10. 발견 — `PLAN #N` 을 PLAN 밖에서 인용하면 재배번에 썩는다"
   },
-  "DECISIONS-331": {
+  "DECISIONS/163": {
    "h": "f43855566262d134",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "163. 배치 C — 룰셋·소유 행 여섯을 한 뿌리로 닫았다"
   },
-  "DECISIONS-332": {
+  "DECISIONS/163-1": {
    "h": "92c131489b48292a",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "163-1. 무엇을 보존하고 무엇을 실물에 맞추나"
   },
-  "DECISIONS-333": {
+  "DECISIONS/163-2": {
    "h": "faeb516774781c34",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "163-2. 룰셋 한시 완화 원복 — 이미 끝났고 다른 예외로 대체됐다"
   },
-  "DECISIONS-334": {
+  "DECISIONS/163-3": {
    "h": "15bdf22f281eea93",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "163-3. `part/**` 계층을 유지한다"
   },
-  "DECISIONS-335": {
+  "DECISIONS/163-4": {
    "h": "1eb6f0fda6405b48",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "163-4. CODEOWNERS 이탈자 — 실측 0건"
   },
-  "DECISIONS-336": {
+  "DECISIONS/163-5": {
    "h": "b4ce3e37be07e2f7",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "163-5. `web/js/` 담당 공백 — 1인 저장소에 공백이 없다"
   },
-  "DECISIONS-337": {
+  "DECISIONS/163-6": {
    "h": "18d6997da352ffc5",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "163-6. `ruleset_check` 주석 — 없는 워크플로를 지웠다"
   },
-  "DECISIONS-338": {
+  "DECISIONS/163-7": {
    "h": "0664f2284ec9fe0a",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "163-7. 승인 수 · Code Owners 대조 — 강제자를 만들었다"
   },
-  "DECISIONS-339": {
+  "DECISIONS/163-8": {
    "h": "193cc72f45928ed4",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "163-8. `MASTER §12-1a-2` 의 자기모순을 걷었다"
   },
-  "DECISIONS-340": {
+  "DECISIONS/163-9": {
    "h": "bbf46c4402baafae",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "163-9. 발견 — 스쿼시 머지가 봉인 커밋을 고아로 만든다"
   },
-  "DECISIONS-341": {
+  "DECISIONS/164": {
    "h": "16a1debbc66439ec",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "164. 전량 생략이 코드 변경을 못 봤다 — 배치 D1"
   },
-  "DECISIONS-342": {
+  "DECISIONS/164-1": {
    "h": "a8d3e89032fa6d8d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "164-1. `rawdiff` 에 파이프라인 코드 지문을 넣었다"
   },
-  "DECISIONS-343": {
+  "DECISIONS/164-2": {
    "h": "3b96cceb5de67acd",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "164-2. 머지 스크립트를 저장소에 들였다"
   },
-  "DECISIONS-344": {
+  "DECISIONS/164-3": {
    "h": "18069687f551d975",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "164-3. 옛 판 스크립트가 조용히 돌았다"
   },
-  "DECISIONS-345": {
+  "DECISIONS/164-4": {
    "h": "ca817a96f87aaae1",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "164-4. `part/cv` 는 머지 커밋만으로 갈라져 있었다"
   },
-  "DECISIONS-346": {
+  "DECISIONS/165": {
    "h": "5d208058e373d1ca",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "165. ingest 샤드 봉인 — 정해놓고 반만 들어간 것을 채웠다"
   },
-  "DECISIONS-347": {
+  "DECISIONS/165-1": {
    "h": "648e2471efa6a0c1",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "165-1. 정한 것과 들어간 것"
   },
-  "DECISIONS-348": {
+  "DECISIONS/165-2": {
    "h": "f2f283923f1ea9a0",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "165-2. 봉인 단위를 소스 하나로 내렸다"
   },
-  "DECISIONS-349": {
+  "DECISIONS/165-3": {
    "h": "476603e78c72c51d",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "165-3. 기존 산출물에 봉인지를 붙이는 `--stamp`"
   },
-  "DECISIONS-350": {
+  "DECISIONS/165-4": {
    "h": "865310da3208824e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "165-4. FAIL 격리가 옆 소스를 같이 격리했다"
   },
-  "DECISIONS-351": {
+  "DECISIONS/165-5": {
    "h": "b3d8dba29d9bea51",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "165-5. verify 의 import 단계 이름에서 숫자를 뺐다"
   },
-  "DECISIONS-352": {
+  "DECISIONS/165-6": {
    "h": "d45512b3e907f95b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "165-6. terrain 이 ingest 산출물을 덧쓰고 있었다 — 선언 누락"
   },
-  "DECISIONS-353": {
+  "DECISIONS/165-7": {
    "h": "ec55c53320446dcc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "165-7. 코드 지문을 바이트가 아니라 로직으로 잰다"
   },
-  "DECISIONS-354": {
+  "DECISIONS/165-8": {
    "h": "ce43bf3e1f01a273",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "165-8. gpkg 는 바이트가 아니라 내용으로 잰다 · 봉인 로직은 코드 지문에서 뺀다"
   },
-  "DECISIONS-355": {
+  "DECISIONS/166": {
    "h": "56d381bf27076498",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "166. 배치 D2 — 도달 불가를 지도에 올리고 웅토피아 경로 수정을 대조했다"
   },
-  "DECISIONS-356": {
+  "DECISIONS/166-1": {
    "h": "d8833451e1fb97b4",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "166-1. 도달 불가 오버레이"
   },
-  "DECISIONS-357": {
+  "DECISIONS/166-2": {
    "h": "f9a71bdda38fc0cd",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "166-2. 계약 예외 — `reach.js` 는 `seg_uid` 를 조인에만 쓴다"
   },
-  "DECISIONS-358": {
+  "DECISIONS/166-3": {
    "h": "b077d818d14b46d1",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "166-3. 샤드 봉인지 cfg 칸을 ingest 가 읽는 전역으로 좁혔다"
   },
-  "DECISIONS-359": {
+  "DECISIONS/166-4": {
    "h": "4b1532cc31cf8c45",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "166-4. 웅토피아 §134 대조 — 결함 둘 중 하나가 내 내비에 있다"
   },
-  "DECISIONS-360": {
+  "DECISIONS/166-5": {
    "h": "0b90fa1061ca9ad0",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "166-5. MVP 날짜를 옮겼다"
   },
-  "DECISIONS-361": {
+  "DECISIONS/166-6": {
    "h": "612e2666048285f8",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "166-6. 정정 — `part/cv` 는 merge commit 으로는 영원히 ff 가 안 된다"
   },
-  "DECISIONS-362": {
+  "DECISIONS/166-7": {
    "h": "7ebb359e5b2ce5b3",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "166-7. 정정 — `web/js` 소유 서술 · `fleet.json` 출처 잘림"
   },
-  "DECISIONS-363": {
+  "DECISIONS/167": {
    "h": "58cd13862d1c7b42",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "167. 문서 정리 — 도달 가능 687 은 688 이었다 · 전량 생략 서술을 두 겹으로"
   },
-  "DECISIONS-364": {
+  "DECISIONS/168": {
    "h": "e29d4aa0546a279e",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "168. 배치 E1 — 연속지적도는 쪼개지 않고 읽는 시점에 거른다"
   },
-  "DECISIONS-365": {
+  "DECISIONS/168-1": {
    "h": "1daea1bc15ef5a34",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "168-1. OOM 의 자리는 파일 크기가 아니라 읽는 순서였다"
   },
-  "DECISIONS-366": {
+  "DECISIONS/168-2": {
    "h": "875350a02d72e9f4",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "168-2. `.cx` 카나리아가 처음엔 죽어 있었다"
   },
-  "DECISIONS-367": {
+  "DECISIONS/168-3": {
    "h": "996824ac687fec49",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "168-3. README 에 없는 도구 넷 — 규약의 반쪽에 강제자가 없었다"
   },
-  "DECISIONS-368": {
+  "DECISIONS/169": {
    "h": "9c4d0a6f885be144",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "169. 흡수-1 — 추출 범위를 대장 한 곳으로 모으고 동쪽을 넓혔다"
   },
-  "DECISIONS-369": {
+  "DECISIONS/169-1": {
    "h": "8dc434e2e1f18acc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "169-1. BBOX 가 두 벌이었다"
   },
-  "DECISIONS-370": {
+  "DECISIONS/169-2": {
    "h": "c0ae0860df9f0ec4",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "169-2. 동쪽 126.940 → 126.943 — 지산안전센터 300m 원이 잘리고 있었다"
   },
-  "DECISIONS-371": {
+  "DECISIONS/169-3": {
    "h": "c27f284df0b8aada",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "169-3. 흡수 배치의 전제가 셋 틀렸다 — 핸드오프 서술 정정"
   },
-  "DECISIONS-372": {
+  "DECISIONS/169-4": {
    "h": "2bf970651e2839ba",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "169-4. 정정 — §168 의 날짜와 구분자"
   },
-  "DECISIONS-373": {
+  "DECISIONS/170": {
    "h": "1c348704b3d15521",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "170. 흡수-2 — 판정 범위 · 중심선 보정은 가져오고 건물 폭 확대는 측량에 져서 뺐다"
   },
-  "DECISIONS-374": {
+  "DECISIONS/170-1": {
    "h": "54969e79dc681849",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "170-1. 판정 범위에 안전센터 반경 300m 를 넣었다"
   },
-  "DECISIONS-375": {
+  "DECISIONS/170-2": {
    "h": "658a5354d9621572",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "170-2. 필문대로289번길 중심선 보정 — 지문이 기계에 묶여 있었다"
   },
-  "DECISIONS-376": {
+  "DECISIONS/170-3": {
    "h": "4acde2549487ccd2",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "170-3. 건물 담~담 폭 범위 확대는 가져오지 않았다 — 같은 잣대에서 측량에 졌다"
   },
-  "DECISIONS-377": {
+  "DECISIONS/170-4": {
    "h": "b24635137ef07ccc",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "170-4. 판정 정확도는 엄격 매칭으로만 잰다 — 조잡한 매칭의 결론 둘을 철회한다"
   },
-  "DECISIONS-378": {
+  "DECISIONS/170-5": {
    "h": "20169860c28f56cd",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "170-5. 드러난 결함 셋"
   },
-  "DECISIONS-379": {
+  "DECISIONS/170-6": {
    "h": "bfc277009b109dbe",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "170-6. 도달 여부는 판정에 합치지 않고 `route_vehicle` 한 곳에 둔다"
   },
-  "DECISIONS-380": {
+  "DECISIONS/170-7": {
    "h": "97352819cd5dd58b",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "170-7. 가져온 것과 안 가져온 것"
   },
-  "DECISIONS-381": {
+  "DECISIONS/171": {
    "h": "8c7c5b5dc2a3a2a3",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "171. E2 — 빚 목록에서 분류된 거주를 걷고, 봉인이 산출물을 따라가게 했다"
   },
-  "DECISIONS-382": {
+  "DECISIONS/171-1": {
    "h": "b4c4ba8e3c8b5002",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "171-1. 미배선 소스는 수가 아니라 용도로 잰다"
   },
-  "DECISIONS-383": {
+  "DECISIONS/171-2": {
    "h": "4f2752d5cb812b7c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "171-2. 봉인의 소방서 대조는 봉인 시점 산출물의 사본이다"
   },
-  "DECISIONS-384": {
+  "DECISIONS/171-3": {
    "h": "04b484938534bdfb",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "171-3. 봉인은 전량 복사를 유지한다 — 태그 + 지문 대체는 기각"
   },
-  "DECISIONS-385": {
+  "DECISIONS/171-4": {
    "h": "26ae9752d92b172b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "171-4. 계층 간 필드 차이를 선언과 대조한다"
   },
-  "DECISIONS-386": {
+  "DECISIONS/171-5": {
    "h": "f4baba47ccad5ce0",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "171-5. landing — 지우는 도구는 이미 있었고, 우는 검사가 처분 어휘를 좁게 읽었다"
   },
-  "DECISIONS-387": {
+  "DECISIONS/171-6": {
    "h": "1ba559b7d4b5c5ec",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "171-6. 잔재 셋"
   },
-  "DECISIONS-388": {
+  "DECISIONS/172": {
    "h": "f0255e2d1bb2fb21",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "172. 관리카드는 34대를 기다리지 않고 받는 대로 넣는다 — 원본은 받은 이름으로 보존하고 SSD 에서 표로 옮긴다"
   },
-  "DECISIONS-389": {
+  "DECISIONS/172-1": {
    "h": "a41a4ce3ec8497e7",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "172-1. 순서를 뒤집었다 — 체계를 먼저 돌린다"
   },
-  "DECISIONS-390": {
+  "DECISIONS/172-2": {
    "h": "edff853cd8f52d21",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "172-2. 받은 이름과 내용이 달랐다 — 원본은 보존하고 어긋남을 선언한다"
   },
-  "DECISIONS-391": {
+  "DECISIONS/172-3": {
    "h": "1bd311f11acdd417",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "172-3. prep 에 서식 변환기를 붙였다 — 값은 글자 그대로"
   },
-  "DECISIONS-392": {
+  "DECISIONS/172-4": {
    "h": "df888a2b759a7d85",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "172-4. 카드가 닫지 못하는 것"
   },
-  "DECISIONS-393": {
+  "DECISIONS/172-5": {
    "h": "d2ae45c896bd4a35",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "172-5. 체계를 돌리자마자 살아 있는 raw 둘이 격리됐다 — 폐기 글롭이 활성 파일을 잡았다"
   },
-  "DECISIONS-394": {
+  "DECISIONS/173": {
    "h": "448ae069515bab2c",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "173. 레이크를 파일 단위 주인으로 다시 세우기로 했다 — 유일본만 남기고, 해석하는 곳을 하나로 모은다"
   },
-  "DECISIONS-395": {
+  "DECISIONS/173-1": {
    "h": "2871d24bd0a25fad",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "173-1. 유일본은 지우지 않고 사본은 전부 지운다 — 은퇴가 곧 아카이브다"
   },
-  "DECISIONS-396": {
+  "DECISIONS/173-2": {
    "h": "3f642f8a0db9ae44",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "173-2. 목표 디렉토리 — 층마다 주인이 파일 단위로 하나다"
   },
-  "DECISIONS-397": {
+  "DECISIONS/173-3": {
    "h": "d8f289783967261a",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "173-3. 대장 칸 규칙 — `updated` 는 제공일, `authority` 는 기관과 경로"
   },
-  "DECISIONS-398": {
+  "DECISIONS/173-4": {
    "h": "7ad8e2b2d7690226",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "173-4. 강제자 방침 — 먼저 막고, 해석은 한 곳에서, 카나리아와 래칫"
   },
-  "DECISIONS-399": {
+  "DECISIONS/173-5": {
    "h": "9c36e6b352b3f77e",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "173-5. 대장 밖 세 덩어리의 정체 — 유일본 73, 나머지는 사본"
   },
-  "DECISIONS-400": {
+  "DECISIONS/173-6": {
    "h": "f5861585ce6c0553",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "173-6. 스킵은 네 가지로 가르고, 판정 메시지의 근거는 한 곳에서 낸다"
   },
-  "DECISIONS-401": {
+  "DECISIONS/173-7": {
    "h": "7edc6dacd2556f96",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "173-7. R 을 두 번 쟀다 — 근거는 \"NGII 가 더 정확하다\" 가 아니라 \"폭과 뼈대를 같은 측량에서\""
   },
-  "DECISIONS-402": {
+  "DECISIONS/173-8": {
    "h": "ed6d4e047a9b9e1a",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "173-8. 내비용 추가 데이터는 판정 정확도를 올리지 않는다"
   },
-  "DECISIONS-403": {
+  "DECISIONS/174": {
    "h": "b2ba86d698acd29d",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "174. L1 — 파일의 주인을 해석기 하나가 판정하고, 대장 강제자를 래칫으로 달았다"
   },
-  "DECISIONS-404": {
+  "DECISIONS/174-1": {
    "h": "982ec3b23edec383",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "174-1. `firelane.lake` — 주인 · 층 · 상태를 한 곳에서 낸다"
   },
-  "DECISIONS-405": {
+  "DECISIONS/174-2": {
    "h": "6a143b064fdae0ab",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "174-2. 모의 레이크가 규칙 둘을 더 요구했다 — 이름이 글롭을 이기고, 한 원본의 다른 레이어는 공유다"
   },
-  "DECISIONS-406": {
+  "DECISIONS/174-3": {
    "h": "08000505a9e06881",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "174-3. 폐기 글롭 다섯을 파일 이름으로 바꿨다"
   },
-  "DECISIONS-407": {
+  "DECISIONS/174-4": {
    "h": "ad602be4a500ca71",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "174-4. 래칫 셋 — 대장 로드 · 주인 블록 · authority"
   },
-  "DECISIONS-408": {
+  "DECISIONS/175": {
    "h": "74abcc3781a62822",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "175. K1 — 건너뛴 것은 통과가 아니다: skip 을 넷으로 가르고 분류 밖은 실패로 바꿨다"
   },
-  "DECISIONS-409": {
+  "DECISIONS/175-1": {
    "h": "b47ba9a8c4bf0ec5",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "175-1. skip 51 은 전부 \"대상이 아님\" 이었다 — 대상만 모아 한 번에 본다"
   },
-  "DECISIONS-410": {
+  "DECISIONS/175-2": {
    "h": "68ae68d8cfb68ea8",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "175-2. 분류 — 환경(레이크 · 산출물 · 도구) · 유예 · 그 밖은 실패"
   },
-  "DECISIONS-411": {
+  "DECISIONS/175-3": {
    "h": "06fa3c3477d3e700",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "175-3. git 없는 트리에서 엉뚱하게 실패하던 둘"
   },
-  "DECISIONS-412": {
+  "DECISIONS/176": {
    "h": "71cd3cb41b5a4d95",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "176. L2 — 레이크 밖 유일본 73 을 retired 로 보존하고, 격리 층을 폐지하고, 사본을 지웠다"
   },
-  "DECISIONS-413": {
+  "DECISIONS/176-1": {
    "h": "51a78bb4b631ba15",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "176-1. 계획표를 믿지 않고 레이크에서 다시 잰다 — `firelane.lake plan`"
   },
-  "DECISIONS-414": {
+  "DECISIONS/176-2": {
    "h": "0669775e50fd9ed7",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "176-2. 대장 retired — 유일본 73 을 기존 둘과 새 다섯에 파일 단위로"
   },
-  "DECISIONS-415": {
+  "DECISIONS/176-3": {
    "h": "d11350900f08aede",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "176-3. 격리 층을 폐지했다 — 되살아나면 관문이 운다"
   },
-  "DECISIONS-416": {
+  "DECISIONS/176-4": {
    "h": "3c27df1d83970b42",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "176-4. 레이크 기계의 산출물 skip 도 실패로 센다"
   },
-  "DECISIONS-417": {
+  "DECISIONS/177": {
    "h": "f08212813f8f80d1",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "177. L2b — 은퇴 21종을 가렸다: 단속이력은 복귀, 셋은 상폐, 파일 없는 기록 여덟은 대장에서 뺐다"
   },
-  "DECISIONS-418": {
+  "DECISIONS/177-1": {
    "h": "2e8e26a07471f398",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "177-1. 판정"
   },
-  "DECISIONS-419": {
+  "DECISIONS/177-2": {
    "h": "b13aec3eb2bb6554",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "177-2. 파일 없는 기각 기록 여덟은 대장에서 뺐다"
   },
-  "DECISIONS-420": {
+  "DECISIONS/177-3": {
    "h": "d13008855ae52145",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "177-3. 5m DEM 은 신청하지 않는다"
   },
-  "DECISIONS-421": {
+  "DECISIONS/177-4": {
    "h": "4e5d2a2c37e49896",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "177-4. 섀시 제원은 인터뷰로, 회전반경은 나라장터 원문으로"
   },
-  "DECISIONS-422": {
+  "DECISIONS/178": {
    "h": "07fd7f5eaec85a7c",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "178. L2c — 보관 7묶음을 가렸다: 소화전 유형별 집계 · 주차장 표준데이터 복귀, 다섯 상폐"
   },
-  "DECISIONS-423": {
+  "DECISIONS/178-1": {
    "h": "7def5c1f5c693d2e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "178-1. 판정"
   },
-  "DECISIONS-424": {
+  "DECISIONS/178-2": {
    "h": "cad69636ade278bf",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "178-2. `hydrant_summary` 의 설명이 다른 파일을 서술하고 있었다"
   },
-  "DECISIONS-425": {
+  "DECISIONS/178-3": {
    "h": "a316c482262d08f2",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "178-3. 정정 — 회전반경 원문을 넣어도 검증 플래그는 안 켜진다"
   },
-  "DECISIONS-426": {
+  "DECISIONS/178-4": {
    "h": "1b730766f6d44f70",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "178-4. 단속이력의 받은 경로 — 공공데이터포털"
   },
-  "DECISIONS-427": {
+  "DECISIONS/179": {
    "h": "219c368dcdbacc9a",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "179. L2d — landing 7건을 처음 열었다: 목적지 검색 재료 둘을 반입하고, 셋은 상폐했다"
   },
-  "DECISIONS-428": {
+  "DECISIONS/179-1": {
    "h": "f1aba2d671782594",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "179-1. 판정"
   },
-  "DECISIONS-429": {
+  "DECISIONS/179-2": {
    "h": "dac0abeccb0fd152",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "179-2. 동명동으로 자른다 — 출동지 스코프"
   },
-  "DECISIONS-430": {
+  "DECISIONS/179-3": {
    "h": "760e7b3524479fc0",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "179-3. 통계연보는 들인다 — CCTV 없는 구간 가중치를 추정해야 하므로"
   },
-  "DECISIONS-431": {
+  "DECISIONS/179-4": {
    "h": "1dc5e404d1445b64",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "179-4. 정정 — 텍스트 표는 raw_only 가 될 수 없다"
   },
-  "DECISIONS-432": {
+  "DECISIONS/179-5": {
    "h": "8d816632a80e213d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "179-5. 판이 여럿인 것이 정상인 소스는 판을 선언한다 — vintage_check"
   },
-  "DECISIONS-433": {
+  "DECISIONS/180": {
    "h": "0e7a452203455069",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "180. K2 · G — 판정은 있었는데 틀리던 도구 넷과, 경고만 하던 merge_batch 를 고쳤다"
   },
-  "DECISIONS-434": {
+  "DECISIONS/180-1": {
    "h": "2832f15a209caae0",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "180-1. acquire — 폐기 판정은 해석기가 내고, 격리는 거부한다"
   },
-  "DECISIONS-435": {
+  "DECISIONS/180-2": {
    "h": "e30a1d6882391b4b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "180-2. normalize_raw — 처분이 적힌 파일과 정체 모를 파일을 가른다"
   },
-  "DECISIONS-436": {
+  "DECISIONS/180-3": {
    "h": "d87f2d1a2d236685",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "180-3. dms — 괄호가 붙은 산문은 칸이 아니다 · 두 \"죽은 참조\" 의 이름을 가른다"
   },
-  "DECISIONS-437": {
+  "DECISIONS/180-4": {
    "h": "7cc6aeb019826cce",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "180-4. plan_renumber — 자기 번호 표가 있는 절의 `#N` 은 §1 참조가 아니다"
   },
-  "DECISIONS-438": {
+  "DECISIONS/180-5": {
    "h": "edad91d8b987d012",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "180-5. merge_batch — 빠뜨린 단계는 멈춘다"
   },
-  "DECISIONS-439": {
+  "DECISIONS/180-6": {
    "h": "fc791be1e2444684",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "180-6. 대화형 확인은 읽기 직전에 터미널 입력 버퍼를 비운다 (G-17)"
   },
-  "DECISIONS-440": {
+  "DECISIONS/180-7": {
    "h": "40addba0c0843142",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "180-7. 봉인은 커밋본이어야 한다 — 적용 스크립트는 패치가 건드린 파일을 전부 커밋한다"
   },
-  "DECISIONS-441": {
+  "DECISIONS/180-8": {
    "h": "de38d8bb87d0bb82",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "180-8. 봉인 태그를 걷는다 — 태그는 릴리즈에만 쓴다"
   },
-  "DECISIONS-442": {
+  "DECISIONS/180-9": {
    "h": "b326ba72eaafe671",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "180-9. verify 에서 `흡수 대상` 을 뺐다 — 생략 칸은 실제로 못 돈 것만"
   },
-  "DECISIONS-443": {
+  "DECISIONS/181": {
    "h": "682539653de5a86f",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "181. N1.1 — 목적지 색인을 세 원천으로, 건물을 지도 이동 범위로, zip 해제를 소스별로"
   },
-  "DECISIONS-444": {
+  "DECISIONS/181-1": {
    "h": "57f59fff39825915",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "181-1. 색인 `dest.geojson` — 상가 · 내비게이션용DB · 민원행정기관"
   },
-  "DECISIONS-445": {
+  "DECISIONS/181-2": {
    "h": "1c0c5859d06c9426",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "181-2. 건물과 목적지는 판정 스코프가 아니라 `view.maxBounds` 로 자른다"
   },
-  "DECISIONS-446": {
+  "DECISIONS/181-3": {
    "h": "156f8ea5e0b80478",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "181-3. `civil_office` 는 raw_only 에서 shp_zip 으로 — 발행은 processed 만 읽는다"
   },
-  "DECISIONS-447": {
+  "DECISIONS/181-4": {
    "h": "81ea3bf702f2d3a1",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "181-4. zip 은 그 zip 만의 빈 폴더에 푼다 (G-22)"
   },
-  "DECISIONS-448": {
+  "DECISIONS/181-5": {
    "h": "e9b3e13e4cb83b48",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "181-5. 대장 `layer` 칸에 레이크 층 이름을 적지 않는다 (G-21)"
   },
-  "DECISIONS-449": {
+  "DECISIONS/181-6": {
    "h": "8939d3ddbeed4632",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "181-6. 배포 주소는 `cleveraifox.github.io` 다 — 옛 조직 주소를 안내하지 않는다"
   },
-  "DECISIONS-450": {
+  "DECISIONS/181-7": {
    "h": "6cdb29d629387b41",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "181-7. 내비도 `web/data` 소비자다 — 고아 검사가 지도만 봤다"
   },
-  "DECISIONS-451": {
+  "DECISIONS/182": {
    "h": "d2213ca073213ba5",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "182. K3 · G — 대장 검사를 아무도 안 불렀고, 옛 실행으로 머지했다"
   },
-  "DECISIONS-452": {
+  "DECISIONS/182-1": {
    "h": "c9b2d6a00624267c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "182-1. `ledger_schema` — 헤더 없는 표는 오류가 아니고, 글롭 레이어는 zip 이름과 대조한다 (G-14)"
   },
-  "DECISIONS-453": {
+  "DECISIONS/182-2": {
    "h": "56afcd1fb3abd8f8",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "182-2. 대장 필드 검사를 verify 에 건다 (G-14)"
   },
-  "DECISIONS-454": {
+  "DECISIONS/182-3": {
    "h": "d6c5512c66b90126",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "182-3. jq `.[0]` 에는 `// empty` (G-16)"
   },
-  "DECISIONS-455": {
+  "DECISIONS/182-4": {
    "h": "cbc6d9479cce0eac",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "182-4. pyogrio `fields` 에 `or` 를 걸지 않는다 (G-15)"
   },
-  "DECISIONS-456": {
+  "DECISIONS/182-5": {
    "h": "7b0ee912ebc3ba71",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "182-5. `primary` 가 적힌 동명 파일은 경고하지 않는다"
   },
-  "DECISIONS-457": {
+  "DECISIONS/182-6": {
    "h": "9bd4e4d9adc161ed",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "182-6. `GeoSeries.notna()` 경고를 없앤다"
   },
-  "DECISIONS-458": {
+  "DECISIONS/182-7": {
    "h": "bc591755f6cfa074",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "182-7. 표출 범위의 틈 · 구멍을 닫는다 — 마스크가 건물 · 정사영상을 까맣게 덮었다"
   },
-  "DECISIONS-459": {
+  "DECISIONS/182-8": {
    "h": "d35199ee925e632b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "182-8. CI 대기는 PR 머리 커밋의 새 실행을 본다 (G-23)"
   },
-  "DECISIONS-460": {
+  "DECISIONS/183": {
    "h": "8303c8b7f3668ae4",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "183. N1.2 — 목적지는 동명동만, 건물DB 는 보관한다"
   },
-  "DECISIONS-461": {
+  "DECISIONS/183-1": {
    "h": "9b3777fbc3b002b8",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "183-1. 내비 목적지는 동명동 경계 안만 — 지도는 넓게 둔다"
   },
-  "DECISIONS-462": {
+  "DECISIONS/183-2": {
    "h": "a5814f8dda46c1de",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "183-2. `juso_building_db` 를 retired 로 보관한다"
   },
-  "DECISIONS-463": {
+  "DECISIONS/184": {
    "h": "2dc6f31a0de6fc67",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "184. R1 — 판정 뼈대 후보를 옆에 세우고 현행 구간과 대조한다 (판정 불변)"
   },
-  "DECISIONS-464": {
+  "DECISIONS/184-1": {
    "h": "ad506d2a0364f5bd",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "184-1. 착수 전 실측 — 뼈대마다 자기 계열 건물과만 맞는다"
   },
-  "DECISIONS-465": {
+  "DECISIONS/184-2": {
    "h": "6c84f704c96da29d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "184-2. 하이브리드 뼈대 — `firelane.skeleton` (순수 함수)"
   },
-  "DECISIONS-466": {
+  "DECISIONS/184-3": {
    "h": "ccf654a447eafad1",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "184-3. 대조 도구 — `tools/skeleton_compare.py` 가 위치 의심표를 낸다"
   },
-  "DECISIONS-467": {
+  "DECISIONS/184-4": {
    "h": "9769a17a02958d3c",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "184-4. 대조표를 실제 데이터로 돌렸다 — 5~15m 옆 66 구간, needs_cv · unknown 32 → R2 · R3"
   },
-  "DECISIONS-468": {
+  "DECISIONS/184-5": {
    "h": "8f9c0b9d07b6eebf",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "184-5. R1 판 2 — 위치 증거를 NGII 선에서만 재고, 짝없음은 교차점 갈림을 빼고 센다 (판정 불변)"
   },
-  "DECISIONS-469": {
+  "DECISIONS/185": {
    "h": "8c01b459e004128b",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "185. G-24 — golden 코드 지문을 파이썬 버전과 떼어 낸다 (판정 불변)"
   },
-  "DECISIONS-470": {
+  "DECISIONS/185-1": {
    "h": "bc9119f2d6d2a7b0",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "185-1. 지문은 토큰열로 — `golden.logic_text`"
   },
-  "DECISIONS-471": {
+  "DECISIONS/185-2": {
    "h": "804562bbb5f52573",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "185-2. 옮기기는 증명 뒤에만 — `golden.py rehash`"
   },
-  "DECISIONS-472": {
+  "DECISIONS/185-3": {
    "h": "f9c85fa13b606937",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "185-3. 남긴 것 — G-25 `shardseal.code_print` 도 `ast.dump` 를 쓴다"
   },
-  "DECISIONS-473": {
+  "DECISIONS/186": {
    "h": "0451db59d306277d",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "186. I1 — 데브컨테이너 준비 스크립트를 실제로 부르고, 내비 노드 판을 하나로 (판정 불변)"
   },
-  "DECISIONS-474": {
+  "DECISIONS/186-1": {
    "h": "69594baf3d03d851",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "186-1. `.devcontainer/setup.sh` 를 `postCreateCommand` 가 부른다"
   },
-  "DECISIONS-475": {
+  "DECISIONS/186-2": {
    "h": "fee732cb74ac9a00",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "186-2. 내비 노드 판의 정본은 `web/navi/.nvmrc` 하나"
   },
-  "DECISIONS-476": {
+  "DECISIONS/187": {
    "h": "b76faf7062c7df95",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "187. R2 — 전이표와 교체 직전 봉인 (판정 불변)"
   },
-  "DECISIONS-477": {
+  "DECISIONS/187-1": {
    "h": "a00e34ed1fb8d152",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "187-1. 교체 직전 봉인 — `baseline.py freeze 20260918-pre-r3`"
   },
-  "DECISIONS-478": {
+  "DECISIONS/187-2": {
    "h": "bd0ea3f8facdfb42",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "187-2. 전이표 — `firelane.transition` (순수) · `tools/transition.py`"
   },
-  "DECISIONS-479": {
+  "DECISIONS/187-3": {
    "h": "03b996d6b0405d7a",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "187-3. `baseline.py diff --transition` 이 같은 모듈을 쓴다"
   },
-  "DECISIONS-480": {
+  "DECISIONS/187-4": {
    "h": "f73a0a170bc77f5b",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "187-4. R3 예보 — 옛 구간의 36% 가 경계를 바꾼다"
   },
-  "DECISIONS-481": {
+  "DECISIONS/188": {
    "h": "f0ee7a0a3a51abfc",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "188. R3a — 뼈대 시험 교체 스위치로 판정 이동을 **먼저 잰다** (판정 불변)"
   },
-  "DECISIONS-482": {
+  "DECISIONS/188-1": {
    "h": "914cf70c73a04286",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "188-1. 스위치 — `FIRE_LANE_SKELETON`"
   },
-  "DECISIONS-483": {
+  "DECISIONS/188-2": {
    "h": "37ae1ade07a4f050",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "188-2. `skeleton.as_road` — 엣지에 `RN · RDS_DPN_SE · ROAD_BT` 를 입힌다"
   },
-  "DECISIONS-484": {
+  "DECISIONS/188-3": {
    "h": "4f1106810213b80b",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "188-3. 측정 — 봉인 ↔ 시험 산출물을 `tools/transition.py` 로"
   },
-  "DECISIONS-485": {
+  "DECISIONS/188-4": {
    "h": "c1c0355ecf09e077",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "188-4. R3b 로 미룬 것"
   },
-  "DECISIONS-486": {
+  "DECISIONS/188-5": {
    "h": "d7dfe4612a5db905",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "188-5. 탐침이 잡은 것 — `_road_hash` 가 `NaN` 을 못 거른다"
   },
-  "DECISIONS-487": {
+  "DECISIONS/188-6": {
    "h": "6641a3500425ecc1",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "188-6. 탐침 1회차 관측 — 뼈대를 갈면 그래프가 이렇게 달라진다"
   },
-  "DECISIONS-488": {
+  "DECISIONS/188-7": {
    "h": "25da382cef032088",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "188-7. 시험은 `--only segments` 로 돈다 — `--from` 은 되돌릴 수 없다"
   },
-  "DECISIONS-489": {
+  "DECISIONS/189": {
    "h": "62a37e2ed25ecc63",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "189. R3b — 이름은 도로명주소로 되돌린다. 쌍선 제거는 **기각한다** (판정 불변 · 재측정)"
   },
-  "DECISIONS-490": {
+  "DECISIONS/189-1": {
    "h": "c7e7c0f24b7158e5",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "189-1. 이름의 정본은 `road_link` 다 — 우선순위는 뒤집었으나 **판정은 안 움직였다**"
   },
-  "DECISIONS-491": {
+  "DECISIONS/189-2": {
    "h": "512e94668f548901",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "189-2. 쌍선 짝은 **같은 도로명만** 본다 — `PAIR_DMAX` 는 안 좁힌다"
   },
-  "DECISIONS-492": {
+  "DECISIONS/189-3": {
    "h": "96fb9f5a1b15a59f",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "189-3. ★ 쌍선 한 줄 제거(`drop_twin`)를 기각한다 — 그래프가 끊긴다"
   },
-  "DECISIONS-493": {
+  "DECISIONS/189-4": {
    "h": "367cc76a11e82758",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "189-4. 원복은 **전량**이다 — `--only segments` 로는 봉인과 sha 가 안 맞는다"
   },
-  "DECISIONS-494": {
+  "DECISIONS/189-5": {
    "h": "871b4ea85b9a6911",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "189-5. R3c 를 하지 않는다 — 뼈대가 456 조각이다"
   },
-  "DECISIONS-495": {
+  "DECISIONS/189-6": {
    "h": "3be18b58c9a5993c",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "189-6. 시험은 `--only segments` 로 완주하지 못한다 — 사후 관문 둘이 막는다"
   },
-  "DECISIONS-496": {
+  "DECISIONS/189-7": {
    "h": "ace10ca925efbb05",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "189-7. `dms` 절 ID 는 위치다 — MASTER 에 절을 끼우면 뒤가 전부 「변경」이 된다"
   },
-  "DECISIONS-497": {
+  "DECISIONS/190": {
    "h": "f03887aed3687d85",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "190. 계획을 저장소 안으로 — PLAN §13 결함 대장 (판정 불변)"
   },
-  "DECISIONS-498": {
+  "DECISIONS/190-1": {
    "h": "d24b156a932f014d",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "190-1. §1 의 정본 선언이 거짓이었다"
   },
-  "DECISIONS-499": {
+  "DECISIONS/190-2": {
    "h": "3ea4d5d227196319",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "190-2. 닫힌 것은 인스턴스 27건이고 족은 하나다"
   },
-  "DECISIONS-500": {
+  "DECISIONS/190-3": {
    "h": "92118ac56b07817c",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "190-3. 상세주소DB — 「아파트 101동」 전제를 EDA 로 기각한다"
   },
-  "DECISIONS-501": {
+  "DECISIONS/190-4": {
    "h": "af8be1a3a5118196",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "190-4. 은퇴 기준이 「좌표 없음」을 「쓸모 없음」으로 읽고 있었다"
   },
-  "DECISIONS-502": {
+  "DECISIONS/190-5": {
    "h": "ac5ab4c23681483b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "190-5. §13 이 죽은 참조 하나를 깨웠다"
   },
-  "DECISIONS-503": {
+  "DECISIONS/190-6": {
    "h": "fb0f78ff2ad54d8f",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "190-6. 정정 — 「통째로 덮는다」는 틀렸다. 겹치는 구역에서 쟀다"
   },
-  "DECISIONS-504": {
+  "DECISIONS/191": {
    "h": "25f4e51dd34889ae",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "191. 배치 0 이 브랜치에서 떨어졌다 — 그리고 아무도 안 울었다 (판정 불변)"
   },
-  "DECISIONS-505": {
+  "DECISIONS/191-1": {
    "h": "e1b17b9a7943bb26",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "191-1. 강제 갱신이 배치 하나를 지웠고 검사 51개가 전부 초록이었다"
   },
-  "DECISIONS-506": {
+  "DECISIONS/191-2": {
    "h": "55e510e630ecc776",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "191-2. 봉인 순서가 절차가 아니라 기억이다"
   },
-  "DECISIONS-507": {
+  "DECISIONS/191-3": {
    "h": "6b96d8df0e64cdc6",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "191-3. 「도구 지문」은 `dms.py` 한 파일이다"
   },
-  "DECISIONS-508": {
+  "DECISIONS/191-4": {
    "h": "d8ae1996ef291ac0",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "191-4. 래칫이 옮길 수 없는 검사까지 옮기라고 압박했다"
   },
-  "DECISIONS-509": {
+  "DECISIONS/191-5": {
    "h": "0d282ae80203eecc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "191-5. 같은 사고가 한 시간 만에 두 번째 — 이번엔 검사가 전제를 선언한다"
   },
-  "DECISIONS-510": {
+  "DECISIONS/192": {
    "h": "295c6db656f4fa5f",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "192. 감시 범위를 손으로 적으면 옆 파일이 빠진다 (판정 불변)"
   },
-  "DECISIONS-511": {
+  "DECISIONS/192-1": {
    "h": "03117a68aaf45055",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "192-1. 움직인 것은 계보 둘이다"
   },
-  "DECISIONS-512": {
+  "DECISIONS/192-2": {
    "h": "21bbcb4857ab1643",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "192-2. 범위가 한 파일이었다 — 그리고 옆에 둘이 더 있었다"
   },
-  "DECISIONS-513": {
+  "DECISIONS/192-3": {
    "h": "e029513562f0e580",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "192-3. 같은 사실이 이미 저장소에 있었다"
   },
-  "DECISIONS-514": {
+  "DECISIONS/192-4": {
    "h": "76ee4a7c32e98d7d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "192-4. 합치지 않는다 — 역할로 가른다"
   },
-  "DECISIONS-515": {
+  "DECISIONS/193": {
    "h": "8405143602e2c457",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "193. 봇이 짝을 반만 올렸다 — 하나는 풀고 하나는 닫는다 (판정 불변)"
   },
-  "DECISIONS-516": {
+  "DECISIONS/193-1": {
    "h": "4b6527d044e29520",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "193-1. #82 는 짝 깨짐이다 — 짝을 맞추면 풀린다"
   },
-  "DECISIONS-517": {
+  "DECISIONS/193-2": {
    "h": "c64c240ace95bf8b",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "193-2. #84 는 승급이 아니라 번들러 교체다 — 닫는다"
   },
-  "DECISIONS-518": {
+  "DECISIONS/193-3": {
    "h": "caa50661e6407dde",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "193-3. #81 은 열어둔다 — 그리고 그것이 결정이다"
   },
-  "DECISIONS-519": {
+  "DECISIONS/194": {
    "h": "d779351103db33f1",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "194. 막힌 것은 #81 이 아니라 강제자가 없는 것이었다 (판정 불변)"
   },
-  "DECISIONS-520": {
+  "DECISIONS/194-1": {
    "h": "d63cc037eac52da0",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "194-1. 실질 위험을 재니 이미 없었다"
   },
-  "DECISIONS-521": {
+  "DECISIONS/194-2": {
    "h": "2e48238130ea12dd",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "194-2. 그런데 이미지 층은 3.11 에서도 검증되지 않고 있었다"
   },
-  "DECISIONS-522": {
+  "DECISIONS/194-3": {
    "h": "f0874c21383d23d1",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "194-3. 강제자를 세우면 #81 이 스스로 증명한다"
   },
-  "DECISIONS-523": {
+  "DECISIONS/195": {
    "h": "67d1ad02d10e3d00",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "195. 게이트를 세운 값 — 봇 PR 열하나가 하루 안에 끝났다 (판정 불변)"
   },
-  "DECISIONS-524": {
+  "DECISIONS/195-1": {
    "h": "500bc06436ae9782",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "195-1. 봇 PR 열하나의 최종 처분"
   },
-  "DECISIONS-525": {
+  "DECISIONS/195-2": {
    "h": "0cf9db882ae5e133",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "195-2. 하루의 교훈 하나로 압축하면"
   },
-  "DECISIONS-526": {
+  "DECISIONS/196": {
    "h": "c2af7b9e8b2734ee",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "196. 권한은 위임이 안 된다 — 배포 넷이 하루 동안 죽어 있었다 (판정 불변)"
   },
-  "DECISIONS-527": {
+  "DECISIONS/196-1": {
    "h": "d59eb7ef0719b945",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "196-1. 재사용 워크플로는 호출자보다 큰 권한을 못 가진다"
   },
-  "DECISIONS-528": {
+  "DECISIONS/196-2": {
    "h": "bb6fc4bbe7fcd4ec",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "196-2. 왜 하루 동안 아무도 몰랐나 — 같은 뿌리, 다섯 번째"
   },
-  "DECISIONS-529": {
+  "DECISIONS/196-3": {
    "h": "f898faaafbfbbda4",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "196-3. 사이드바 이름을 영문으로 바꿨다"
   },
-  "DECISIONS-530": {
+  "DECISIONS/196-4": {
    "h": "3dda335934292152",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "196-4. 사슬은 세 칸이었다 — 두 칸만 고치면 한 칸 아래에서 다시 난다"
   },
-  "DECISIONS-531": {
+  "DECISIONS/197": {
    "h": "60cb0f7956fa798d",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "197. 범위가 이름보다 좁은 강제자 — 세 번째 인스턴스, 그리고 클래스 가드 (판정 불변)"
   },
-  "DECISIONS-532": {
+  "DECISIONS/197-1": {
    "h": "3cf5ce3da903092c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "197-1. 강제자가 있었다 — 그런데 이름보다 좁았다"
   },
-  "DECISIONS-533": {
+  "DECISIONS/197-2": {
    "h": "d3f1d328696e9b85",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "197-2. 등재만 하지 않고 가드를 짰다"
   },
-  "DECISIONS-534": {
+  "DECISIONS/197-3": {
    "h": "db1f8f95e9c8618b",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "197-3. `workflow_dispatch` 는 이미 있었다"
   },
-  "DECISIONS-535": {
+  "DECISIONS/198": {
    "h": "3b4fbed71ff8a660",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "198. 대장을 안 읽고 피하려 했다 — 같은 실수를 하루에 두 번 (판정 불변)"
   },
-  "DECISIONS-536": {
+  "DECISIONS/198-1": {
    "h": "71aaf3c188116924",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "198-1. 기계는 이미 있었고, 이 형태까지 예상돼 있었다"
   },
-  "DECISIONS-537": {
+  "DECISIONS/198-2": {
    "h": "9049484cf7954469",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "198-2. 같은 실수가 하루에 두 번이다"
   },
-  "DECISIONS-538": {
+  "DECISIONS/199": {
    "h": "906ad6728491d6f3",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "199. 초록이 「검사했다」를 뜻하지 않던 자리 여섯 (판정 불변)"
   },
-  "DECISIONS-539": {
+  "DECISIONS/199-1": {
    "h": "b7a71c02c178cc98",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "199-1. 느슨해진 래칫은 초록으로 위장한다"
   },
-  "DECISIONS-540": {
+  "DECISIONS/199-2": {
    "h": "a33f0bfa8661250b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "199-2. 면제가 선언되지 않으면 방치와 구분이 안 된다"
   },
-  "DECISIONS-541": {
+  "DECISIONS/199-3": {
    "h": "8d6a2419672dda87",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "199-3. 래칫 상수는 집이 하나여야 한다"
   },
-  "DECISIONS-542": {
+  "DECISIONS/199-4": {
    "h": "74062fa061197a40",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "199-4. 전제는 검사와 함께 다녀야 한다"
   },
-  "DECISIONS-543": {
+  "DECISIONS/199-5": {
    "h": "ff7d14f6abfa42eb",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "199-5. 모르는 인자를 삼키면 오타가 정상 실행이 된다"
   },
-  "DECISIONS-544": {
+  "DECISIONS/199-6": {
    "h": "f1c87b5a8079bcbc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "199-6. 죽은 인용은 새 행이 생기는 순간 거짓 인용이 된다"
   },
-  "DECISIONS-545": {
+  "DECISIONS/199-7": {
    "h": "2834f0be98895703",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "199-7. 안 닫은 것을 적는다"
   },
-  "DECISIONS-546": {
+  "DECISIONS/200": {
    "h": "9b7ad4c37e2a0ed8",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "200. 등재한 결함이 틀렸다 — 저장소가 이미 답을 들고 있었다 (판정 불변)"
   },
-  "DECISIONS-547": {
+  "DECISIONS/200-1": {
    "h": "78731144c7ea7959",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "200-1. 답은 이미 저장소 안에 있었다"
   },
-  "DECISIONS-548": {
+  "DECISIONS/200-2": {
    "h": "9d8d490ffa88bfb2",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "200-2. 그런데 진짜 결함은 옆에 있었다"
   },
-  "DECISIONS-549": {
+  "DECISIONS/200-3": {
    "h": "7b963f7e55032875",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "200-3. 분류하는 검사는 분류를 틀리면 덮는다"
   },
-  "DECISIONS-550": {
+  "DECISIONS/201": {
    "h": "a119847dc3e2121d",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "201. 도구가 몇 개 죽었나를 물었더니 검사가 죽어 있었다 (판정 불변)"
   },
-  "DECISIONS-551": {
+  "DECISIONS/201-1": {
    "h": "e1a0d6fe79e87887",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "201-1. 범위가 이름보다 좁다 — 여섯 번째 인스턴스"
   },
-  "DECISIONS-552": {
+  "DECISIONS/201-2": {
    "h": "ae51cf93801b1459",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "201-2. 면제가 죽었는지 아무도 안 봤다"
   },
-  "DECISIONS-553": {
+  "DECISIONS/201-3": {
    "h": "d3c8de772ef5943b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "201-3. 헐거운 판정 둘 — 주석과 이름 충돌"
   },
-  "DECISIONS-554": {
+  "DECISIONS/202": {
    "h": "eb4bc74376250548",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "202. 「검사가 죽었는가」를 묻는 검사가 죽어 있었다 (판정 불변)"
   },
-  "DECISIONS-555": {
+  "DECISIONS/202-1": {
    "h": "8a177f6d3c2680d6",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "202-1. 관문의 방향이 뒤집혀 있었다"
   },
-  "DECISIONS-556": {
+  "DECISIONS/202-2": {
    "h": "608aac1d11637dbf",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "202-2. 148건 안에 W3-8 이 이미 있었다"
   },
-  "DECISIONS-557": {
+  "DECISIONS/202-3": {
    "h": "1aa90ae1c19c1ca3",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "202-3. 그런데 도구는 **옳은 답을 틀린 이유로** 냈다"
   },
-  "DECISIONS-558": {
+  "DECISIONS/202-4": {
    "h": "e40154e0b6431410",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "202-4. 관문을 `--ratchet` 으로"
   },
-  "DECISIONS-559": {
+  "DECISIONS/202-5": {
    "h": "77d55a10d03f60f9",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "202-5. 같은 족의 인스턴스 셋을 같이 닫았다"
   },
-  "DECISIONS-560": {
+  "DECISIONS/202-6": {
    "h": "c6fc7db2a492c224",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "202-6. 지도에서 죽어 있던 둘"
   },
-  "DECISIONS-561": {
+  "DECISIONS/202-7": {
    "h": "e91cf0e38713c859",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "202-7. 그리고 대장 자신이 또 갈렸다"
   },
-  "DECISIONS-562": {
+  "DECISIONS/202-8": {
    "h": "f72955b42a211232",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "202-8. 대장"
   },
-  "DECISIONS-563": {
+  "DECISIONS/203": {
    "h": "e2bfd271423c0b2d",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "203. 대장 25행 중 셋이 실재하지 않았다 (판정 불변)"
   },
-  "DECISIONS-564": {
+  "DECISIONS/203-1": {
    "h": "044f4ea989fcbb98",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "203-1. 없는 디렉터리에 대한 결함 둘"
   },
-  "DECISIONS-565": {
+  "DECISIONS/203-2": {
    "h": "c1e93cba0910faa7",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "203-2. 이미 닫힌 것 하나"
   },
-  "DECISIONS-566": {
+  "DECISIONS/203-3": {
    "h": "02962190320e2efb",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "203-3. 가드 — 거울상"
   },
-  "DECISIONS-567": {
+  "DECISIONS/203-4": {
    "h": "0af09bc6124d52ca",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "203-4. 진짜였던 둘"
   },
-  "DECISIONS-568": {
+  "DECISIONS/203-5": {
    "h": "8d42be1c19d3f7c3",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "203-5. 래칫이 시킨 대로 조였다"
   },
-  "DECISIONS-569": {
+  "DECISIONS/203-6": {
    "h": "c54b327c4fc5f50f",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "203-6. 대장"
   },
-  "DECISIONS-570": {
+  "DECISIONS/204": {
    "h": "fc74a97dba1ad3ae",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "204. 대장 20행을 전수로 쟀다 — 열여섯이 틀렸다 (판정 불변)"
   },
-  "DECISIONS-571": {
+  "DECISIONS/204-1": {
    "h": "4e5fe871c27702a8",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "204-1. 제일 무거운 것 — 봉인이 없는 커밋을 가리킨다"
   },
-  "DECISIONS-572": {
+  "DECISIONS/204-2": {
    "h": "9d2c932062fd4145",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "204-2. 유령 둘"
   },
-  "DECISIONS-573": {
+  "DECISIONS/204-3": {
    "h": "0c768fc6777a1c94",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "204-3. 대장이 저 자신이 지적하는 병을 앓는다"
   },
-  "DECISIONS-574": {
+  "DECISIONS/204-4": {
    "h": "cb72eea2ad56eab6",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "204-4. 수를 잘못 센 것들"
   },
-  "DECISIONS-575": {
+  "DECISIONS/204-5": {
    "h": "5f68e1bdde9b7f43",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "204-5. 전제 포인터가 없는 곳을 가리킨다"
   },
-  "DECISIONS-576": {
+  "DECISIONS/204-6": {
    "h": "ed81a0cf3657c6a4",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "204-6. 좋은 소식도 있다"
   },
-  "DECISIONS-577": {
+  "DECISIONS/204-7": {
    "h": "82d597a13fb34e8f",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "204-7. 대장"
   },
-  "DECISIONS-578": {
+  "DECISIONS/205": {
    "h": "7b59335336270f86",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "205. 목록이 줄어들 수 없는 구조였다 (판정 불변)"
   },
-  "DECISIONS-579": {
+  "DECISIONS/205-1": {
    "h": "8c91863bac0737fd",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "205-1. §1 은 행을 지울 수가 없었다"
   },
-  "DECISIONS-580": {
+  "DECISIONS/205-2": {
    "h": "8473c1aabac4bce9",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "205-2. 그래서 규약을 뒤집었다 —— 결번을 허용한다"
   },
-  "DECISIONS-581": {
+  "DECISIONS/205-3": {
    "h": "f046a87b15584fc7",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "205-3. 그리고 §1 이 처음으로 줄었다"
   },
-  "DECISIONS-582": {
+  "DECISIONS/205-4": {
    "h": "bfc84e0cf01f8613",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "205-4. §1 도 수를 선언한다"
   },
-  "DECISIONS-583": {
+  "DECISIONS/205-5": {
    "h": "db4f76cec3c272a8",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "205-5. 줌이 셋으로 갈려 있었다 (W9-2 닫음)"
   },
-  "DECISIONS-584": {
+  "DECISIONS/205-6": {
    "h": "4906c55ba11b07eb",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "205-6. 마스크 주석이 거짓이었다 (W9-5 절반)"
   },
-  "DECISIONS-585": {
+  "DECISIONS/205-7": {
    "h": "3d19b2341adce32c",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "205-7. 대장"
   },
-  "DECISIONS-586": {
+  "DECISIONS/206": {
    "h": "3e7cf0e945eb573c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "206. 로컬은 초록 CI 는 빨강 — 검사가 `.git` 을 훑고 있었다 (판정 불변)"
   },
-  "DECISIONS-587": {
+  "DECISIONS/206-1": {
    "h": "d7ef0475342a20ad",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "206-1. 원인 — 훑는 자리가 물음보다 넓었다"
   },
-  "DECISIONS-588": {
+  "DECISIONS/206-2": {
    "h": "e5bd1f5a212384dd",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "206-2. 고침 — 자리를 좁힌 것이 아니라 옮겼다"
   },
-  "DECISIONS-589": {
+  "DECISIONS/207": {
    "h": "ad2ab6c505e1084e",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "207. 봉인이 스쿼시로 사라지는 커밋을 가리켰다 (판정 불변)"
   },
-  "DECISIONS-590": {
+  "DECISIONS/207-1": {
    "h": "ba7305ae9383176a",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "207-1. 원인은 「깜빡했다」가 아니다 —— 구조가 그렇게 만든다"
   },
-  "DECISIONS-591": {
+  "DECISIONS/207-2": {
    "h": "d1c41e92fad7f4a8",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "207-2. 고침 —— 값이 아니라 **찍는 자리**를 옮겼다"
   },
-  "DECISIONS-592": {
+  "DECISIONS/207-3": {
    "h": "73030d46fc699fc6",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "207-3. 아직 못 세우는 가드 하나 (W11-1 이 열려 있는 이유)"
   },
-  "DECISIONS-593": {
+  "DECISIONS/207-4": {
    "h": "92caaf8a7309d365",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "207-4. 부산물 —— 「없다」와 「아직 git 에 없다」는 다른 말이다"
   },
-  "DECISIONS-594": {
+  "DECISIONS/208": {
    "h": "1ca4b93d8137a234",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "208. 프로브가 제 일을 다 했기 때문에 봉인이 막혔다 (판정 불변)"
   },
-  "DECISIONS-595": {
+  "DECISIONS/208-1": {
    "h": "cc7bb0a84db29c0e",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "208-1. 빨간 이유가 「② 가 깨끗해서」였다"
   },
-  "DECISIONS-596": {
+  "DECISIONS/208-2": {
    "h": "1f4f33aa0a4cc48d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "208-2. 한 글자 면제가 이미 증거였다"
   },
-  "DECISIONS-597": {
+  "DECISIONS/208-3": {
    "h": "8cebacf43a8255e0",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "208-3. 고침 —— 면제를 늘리지 않고 물음을 옮겼다"
   },
-  "DECISIONS-598": {
+  "DECISIONS/208-4": {
    "h": "b6e6287d987fe3e9",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "208-4. 합성 결함이 진짜와 구별되지 않는다 —— 그것이 조건이고 값이다"
   },
-  "DECISIONS-599": {
+  "DECISIONS/208-5": {
    "h": "e01dc76c043d0f20",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "208-5. 대조 자신은 누가 보는가"
   },
-  "DECISIONS-600": {
+  "DECISIONS/208-6": {
    "h": "2b3e1deb495b72b8",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "208-6. 실패한 봉인이 다음 릴리즈를 막았다"
   },
-  "DECISIONS-601": {
+  "DECISIONS/209": {
    "h": "74cba069a4a426a7",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "209. 봉인은 찍혔다 — 그리고 관문을 우회한 자리에서 관문이 잡을 것이 났다 (판정 불변)"
   },
-  "DECISIONS-602": {
+  "DECISIONS/209-1": {
    "h": "dc462b1ede4eabf9",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "209-1. 무엇이 걸렸나 —— 거짓 경보"
   },
-  "DECISIONS-603": {
+  "DECISIONS/209-2": {
    "h": "7fcd831f5ef272cf",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "209-2. 그러나 요지는 거짓 경보가 아니다"
   },
-  "DECISIONS-604": {
+  "DECISIONS/209-3": {
    "h": "61f201d73d4fe799",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "209-3. 고침 —— 봉인도 PR 로 들어간다"
   },
-  "DECISIONS-605": {
+  "DECISIONS/209-4": {
    "h": "03aec49d3f9b58f1",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "209-4. 예외를 짜다 찾은 것 —— 이미 있던 예외가 죽어 있었다"
   },
-  "DECISIONS-606": {
+  "DECISIONS/209-5": {
    "h": "c77a22725d38069d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "209-5. 그리고 워크플로 머리말이 거짓이었다"
   },
-  "DECISIONS-607": {
+  "DECISIONS/209-6": {
    "h": "9d0598614a265381",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "209-6. 조상 가드는 아직이다"
   },
-  "DECISIONS-608": {
+  "DECISIONS/209-7": {
    "h": "a866027a1918c7f0",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "209-7. 봉인이 살아나자 첫 배치에서 분모 +39 가 드러났다"
   },
-  "DECISIONS-609": {
+  "DECISIONS/210": {
    "h": "30af6dab757185eb",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "210. 조상 가드가 섰다 — 그리고 봉인 PR 이 사람과 같은 관문에 걸렸다 (판정 불변)"
   },
-  "DECISIONS-610": {
+  "DECISIONS/210-1": {
    "h": "562706a784e4e539",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "210-1. 봉인 PR 이 25초 만에 빨갰다 —— 본문 한 줄"
   },
-  "DECISIONS-611": {
+  "DECISIONS/210-2": {
    "h": "909ae79b9bd6df12",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "210-2. 조상 가드 —— 자리를 정했다"
   },
-  "DECISIONS-612": {
+  "DECISIONS/210-3": {
    "h": "aeef08ed642881f9",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "210-3. W11-1 을 지웠다"
   },
-  "DECISIONS-613": {
+  "DECISIONS/210-4": {
    "h": "2d4ebab7bda8bfd2",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "210-4. 덤"
   },
-  "DECISIONS-614": {
+  "DECISIONS/211": {
    "h": "1537f2e3f5b765e5",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "211. 와이어프레임 09-21 반영 — 28장을 표 한 장과 패널 여섯으로 (판정 불변)"
   },
-  "DECISIONS-615": {
+  "DECISIONS/211-1": {
    "h": "26cab170130ae3c6",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "211-1. 18장은 화면이 아니라 상태다"
   },
-  "DECISIONS-616": {
+  "DECISIONS/211-2": {
    "h": "452afbd9227c0d3e",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "211-2. 흐름이 바뀌었다 —— 출발지는 안전센터다"
   },
-  "DECISIONS-617": {
+  "DECISIONS/211-3": {
    "h": "7bc08c0de77dd4be",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "211-3. 02 가 빈 화면이었다 —— 제품 정의가 코드에 없었다"
   },
-  "DECISIONS-618": {
+  "DECISIONS/211-4": {
    "h": "45400ad77632c33c",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "211-4. 없는 데이터는 채우지 않았다"
   },
-  "DECISIONS-619": {
+  "DECISIONS/211-5": {
    "h": "1c2721e8796b22ee",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "211-5. 16 → 17 은 흉내가 아니다"
   },
-  "DECISIONS-620": {
+  "DECISIONS/211-6": {
    "h": "c37a046a0d6bb990",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "211-6. 검수 —— 여기서 크로미움으로 찍었다"
   },
-  "DECISIONS-621": {
+  "DECISIONS/212": {
    "h": "70e99b6e9f2f2a62",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "212. 회전반경은 그 차의 값일 때만 숫자로 — 그리고 봇 PR 을 신호로 줄였다 (판정 불변)"
   },
-  "DECISIONS-622": {
+  "DECISIONS/212-1": {
    "h": "e3f79c94485366a7",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "212-1. 숫자가 나가는 조건"
   },
-  "DECISIONS-623": {
+  "DECISIONS/212-2": {
    "h": "51d742f05149f1a5",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "212-2. 이름을 갈랐다 —— `turn_radius_ref_m`"
   },
-  "DECISIONS-624": {
+  "DECISIONS/212-3": {
    "h": "73b43b020ec89127",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "212-3. fleet.json 에 부르는 곳이 없었다 —— §170-5 의 두 번째 인스턴스"
   },
-  "DECISIONS-625": {
+  "DECISIONS/212-4": {
    "h": "1173528eea3b7cc4",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "212-4. 주차 차량은 미반영으로 확정"
   },
-  "DECISIONS-626": {
+  "DECISIONS/212-5": {
    "h": "a7c99fc001ffa413",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "212-5. 적어 두는 틈 —— 구급차 전폭"
   },
-  "DECISIONS-627": {
+  "DECISIONS/213": {
    "h": "bb504f3e99d2a2ae",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "213. 턴바이턴을 폐루프로 — 그리고 CI 에서만 깨지던 내비를 로컬이 먼저 본다 (판정 불변)"
   },
-  "DECISIONS-628": {
+  "DECISIONS/213-1": {
    "h": "b44c53cc9a134212",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "213-1. CI 에서만 깨졌다 —— 원인 셋, 막는 자리 셋"
   },
-  "DECISIONS-629": {
+  "DECISIONS/213-2": {
    "h": "a4da835df5d89519",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "213-2. 위치 추정 —— 구간 스냅에서 경로 선형 투영으로"
   },
-  "DECISIONS-630": {
+  "DECISIONS/213-3": {
    "h": "23040525b1b9e678",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "213-3. 폐루프를 시험한다 —— GPS 흉내"
   },
-  "DECISIONS-631": {
+  "DECISIONS/213-4": {
    "h": "92d5bdc41d6338e0",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "213-4. 대비 —— 도로를 선이 아니라 면으로"
   },
-  "DECISIONS-632": {
+  "DECISIONS/213-5": {
    "h": "b9d64db7023b2573",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "213-5. 판정 4색은 그대로 —— 정의를 받았다"
   },
-  "DECISIONS-633": {
+  "DECISIONS/214": {
    "h": "850e32ed701870d9",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "214. 내비 × 관제(새 GIS) — 와이어프레임 충실도 · 실제 공유 · 대체 접근 지점 · 배치 도구 저장소화 (판정 불변)"
   },
-  "DECISIONS-634": {
+  "DECISIONS/214-1": {
    "h": "22b164e5f86e740e",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "214-1. 배치 도구가 저장소 밖에 살았다"
   },
-  "DECISIONS-635": {
+  "DECISIONS/214-2": {
    "h": "a1edb4dbc0532aff",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "214-2. 내비 —— 와이어프레임 28장 대조 뒤 고친 것"
   },
-  "DECISIONS-636": {
+  "DECISIONS/214-3": {
    "h": "5f5f6c16d530f70b",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "214-3. 공유가 진짜가 됐다 —— 관제 화면과 탭끼리 잇는다"
   },
-  "DECISIONS-637": {
+  "DECISIONS/214-4": {
    "h": "3c4be3ca5c8d0d92",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "214-4. 관제 화면(새 GIS) —— `…/navi/?view=ops`"
   },
-  "DECISIONS-638": {
+  "DECISIONS/214-5": {
    "h": "a07194358593db29",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "214-5. 옛 지도(web/js)는 이번에 안 지웠다 —— 철거 핀 목록"
   },
-  "DECISIONS-639": {
+  "DECISIONS/214-6": {
    "h": "1135ec7b51a3b77d",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "214-6. 토큰 둘이 한 자리에 있지 않았다 —— Mapbox 를 루트 `.env` 로"
   },
-  "DECISIONS-640": {
+  "DECISIONS/215": {
    "h": "59499f382d4ba210",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "215. 경로가 일방통행 · 회전 금지를 본다 — 회색에 사유가 붙고, 배치가 끊겨도 잇는다 (판정 불변)"
   },
-  "DECISIONS-641": {
+  "DECISIONS/215-1": {
    "h": "7fbf4f89a7f456fb",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "215-1. 일방통행 · 회전 금지 —— 빼지 않고 불리하게, 그리고 말한다"
   },
-  "DECISIONS-642": {
+  "DECISIONS/215-2": {
    "h": "407097dee18aea50",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "215-2. 회색에 사유가 붙었다"
   },
-  "DECISIONS-643": {
+  "DECISIONS/215-3": {
    "h": "bd1fd594fa32ddf7",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "215-3. 배치가 끊겨도 잇는다 —— `fl.sh --resume`"
   },
-  "DECISIONS-644": {
+  "DECISIONS/215-4": {
    "h": "b1b7f5d3b363ae13",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "215-4. 실측 대조 도구 —— `tools/field_compare.py`"
   },
-  "DECISIONS-645": {
+  "DECISIONS/216": {
    "h": "f38e73cf2bbbbbac",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "216. 서술 칸이 봉인을 찢지 않는다 — 건물이 땅에 서고, 안 쓰던 데이터가 화면에 오르고, 관제가 상황실이 된다 (판정 불변"
   },
-  "DECISIONS-646": {
+  "DECISIONS/216-1": {
    "h": "0625614c36bec54b",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "216-1. verify 가 빨개진 이유 —— `feeds` 한 줄이 샤드 넷을 찢었다"
   },
-  "DECISIONS-647": {
+  "DECISIONS/216-2": {
    "h": "ad3c26c02d985f05",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "216-2. 건물이 떴다 —— 지형 없는 지도에서 해발고를 밑면으로 썼다"
   },
-  "DECISIONS-648": {
+  "DECISIONS/216-3": {
    "h": "7caa80e890e459c1",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "216-3. 안 쓰던 데이터를 화면에 올렸다"
   },
-  "DECISIONS-649": {
+  "DECISIONS/216-4": {
    "h": "827498c5724bccbc",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "216-4. 관제 화면을 상황실로 —— 초안"
   },
-  "DECISIONS-650": {
+  "DECISIONS/216-5": {
    "h": "540781b82e5c7661",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "216-5. 배포에 안 실을 것 · 자리표시"
   },
-  "PLAN-001": {
+  "DECISIONS/217": {
+   "h": "a11a083acf851e42",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "217. 미룬 것을 지금 고친다 — 지형이 살아나고, 건물이 길에서 비키고, 결함 대장이 18행에서 3행으로 (판정 불변)"
+  },
+  "DECISIONS/217-1": {
+   "h": "d4840867bac560d6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "217-1. W11-1 —— 회전제한은 원인 자리에서 멈춘다"
+  },
+  "DECISIONS/217-2": {
+   "h": "fab9e0f740df8241",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "217-2. 지형 —— 있던 Terrain-RGB 를 내비 · 관제가 쓴다"
+  },
+  "DECISIONS/217-3": {
+   "h": "530c7598b13cbbd6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "217-3. 건물이 길 위에 있었다 —— 그리고 관제 판정선 셋이 한 번도 안 그려졌다"
+  },
+  "DECISIONS/217-4": {
+   "h": "cbd99f90ad2abcd6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "217-4. PR · 브랜치 · 위생이 배치의 한 단계다"
+  },
+  "DECISIONS/217-5": {
+   "h": "464f81f58f880457",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "217-5. 1+1 —— 의존성에 맡기고, 정본을 하나로, 증표를 트리에"
+  },
+  "DECISIONS/218": {
+   "h": "6777c34357409217",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "218. 화면은 하나 — 옛 GIS 지도를 걷어내고, 회전반경을 쓰고, 가드 여섯 중 다섯을 세웠다 (판정 불변)"
+  },
+  "DECISIONS/218-1": {
+   "h": "daf4ed2d51b654b4",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "218-1. 옛 GIS 지도를 걷어냈다 —— 백엔드는 정적 JSON 이다"
+  },
+  "DECISIONS/218-2": {
+   "h": "85bebe552dba33b3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "218-2. 회전반경 —— 제원 완성 차종만, 막지 않고"
+  },
+  "DECISIONS/218-3": {
+   "h": "d4607f0e62401f6d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "218-3. 출발 · 도착을 구간에 투영한다 —— 그리고 건물 겹침을 끝까지 셌다"
+  },
+  "DECISIONS/218-4": {
+   "h": "cd9bb9544428a116",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "218-4. 하토르 · 토트에서 가져온 것"
+  },
+  "DECISIONS/218-5": {
+   "h": "851b02e14df9096c",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "218-5. 가드 —— 의존성 · 관문 · 증표 · 길이"
+  },
+  "DECISIONS/218-6": {
+   "h": "9d730bbb68344fa3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "218-6. 가드 2 · 5 · 6 과 문서 쪽"
+  },
+  "DECISIONS/218-7": {
+   "h": "13c400b99993d857",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "218-7. fl.sh —— 3단계가 대 보는 자리 · verify 가 남긴 생성물"
+  },
+  "DECISIONS/219": {
+   "h": "74587f9e97c18a95",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "219. 09-22 멘토링 — 10/1 멘토링 데이는 기획서 · 시연으로, 여유폭을 색과 수로 (판정 불변)"
+  },
+  "PLAN/0": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "0. 서술 규약 · 상태 표기"
   },
-  "PLAN-002": {
+  "PLAN/0-1": {
    "h": "c93bf15ef0915440",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "0-1. 서술 규약"
   },
-  "PLAN-003": {
+  "PLAN/0-2": {
    "h": "20f548329fae375a",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "0-2. 상태 표기"
   },
-  "PLAN-004": {
-   "h": "778abc92dbe7cad8",
+  "PLAN/1": {
+   "h": "e165d675776d6999",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "1. 남은 일 — 60행"
+   "title": "1. 남은 일 — 56행"
   },
-  "PLAN-005": {
+  "PLAN/1-23": {
    "h": "45f802835c7c288a",
    "state": "inherit",
    "doc": "docs/PLAN.md",
    "title": "1-23. 영상판정 유효거리 실측 설계"
   },
-  "PLAN-006": {
+  "PLAN/1-24": {
    "h": "88714420307d7cf9",
    "state": "inherit",
    "doc": "docs/PLAN.md",
    "title": "1-24. 촬영 계획이 높이에서 갈린다"
   },
-  "PLAN-007": {
+  "PLAN/1-25": {
    "h": "735392e57321a6cb",
    "state": "inherit",
    "doc": "docs/PLAN.md",
    "title": "1-25. ⚠ A* 를 인터뷰에 걸지 않는다"
   },
-  "PLAN-008": {
+  "PLAN/1-26": {
    "h": "00561049212ada4a",
    "state": "inherit",
    "doc": "docs/PLAN.md",
    "title": "1-26. 도로대장 정보공개가 부존재로 돌아왔다"
   },
-  "PLAN-009": {
+  "PLAN/2": {
    "h": "f6bedb3d1206c6cf",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "2. 아키텍처 · 모듈 경계"
   },
-  "PLAN-010": {
+  "PLAN/2-1": {
    "h": "88b3089ce24d2de3",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "2-1. GIS ↔ 비전 — 접점은 정확히 두 개 📄"
   },
-  "PLAN-011": {
+  "PLAN/2-2": {
    "h": "cde719cbb33e4430",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "2-2. 정적 계층 대 동적 계층 📄"
   },
-  "PLAN-012": {
+  "PLAN/2-3": {
    "h": "69b4fb211e56a6ae",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "2-3. 서빙 원칙 📄"
   },
-  "PLAN-013": {
+  "PLAN/3": {
    "h": "e97243802729cf81",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "3. 폭 산출 · 판정"
   },
-  "PLAN-014": {
+  "PLAN/3-1": {
    "h": "6731839a17f13aa4",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "3-1. 남은 것 🟡"
   },
-  "PLAN-015": {
+  "PLAN/3-2": {
    "h": "6f55b6542092bb57",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "3-2. 계산 방식 교차검증 — 미구현 🟡"
   },
-  "PLAN-016": {
+  "PLAN/3-3": {
    "h": "212719218a84feb2",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "3-3. 판정 오류의 비대칭 📄"
   },
-  "PLAN-017": {
+  "PLAN/3-4": {
    "h": "76c6cbbfb5129bf8",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "3-4. 인도 포함 문제 📄"
   },
-  "PLAN-018": {
+  "PLAN/3-5": {
    "h": "0054841a9c3c266d",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "3-5. 근거 없는 상수에 근거 붙이기 🔴"
   },
-  "PLAN-019": {
+  "PLAN/4": {
    "h": "a30f6f436b6820ac",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "4. 그래프 · 경로탐색"
   },
-  "PLAN-020": {
+  "PLAN/4-1": {
    "h": "cb5e6176c845cebf",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "4-1. 가중치 설계 📄"
   },
-  "PLAN-021": {
+  "PLAN/4-2": {
    "h": "9e4f139645bd7321",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "4-2. A* 대 다익스트라 📄"
   },
-  "PLAN-022": {
+  "PLAN/4-3": {
    "h": "67f0d31b5ad566bf",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "4-3. 체크포인트를 엣지 속성으로 📄"
   },
-  "PLAN-023": {
+  "PLAN/4-4": {
    "h": "72cc1cba7e2e34fd",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "4-4. TMAP · 카카오 — 병합이 아니라 병렬 비교 📄"
   },
-  "PLAN-024": {
+  "PLAN/4-5": {
    "h": "eaff298cb3342f07",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "4-5. 미결정 🟡"
   },
-  "PLAN-025": {
+  "PLAN/4-6": {
    "h": "c60a6713b36b2858",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "4-6. 일방통행 · 회전제한 투입 📄"
   },
-  "PLAN-026": {
+  "PLAN/4-7": {
    "h": "e14fcc5e348569a2",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "4-7. 간선 본선 + 측도 병합 🔴"
   },
-  "PLAN-027": {
+  "PLAN/4-8": {
    "h": "e3b48bbb88c3375f",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "4-8. 네비게이션 앱 📄"
   },
-  "PLAN-028": {
+  "PLAN/5": {
    "h": "ea78e5c053260ba3",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "5. 비전 파트"
   },
-  "PLAN-029": {
+  "PLAN/5-1": {
    "h": "788f29cae43a49d1",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "5-1. 캘리브레이션 ≠ 호모그래피 📄"
   },
-  "PLAN-030": {
+  "PLAN/5-2": {
    "h": "96c9ee89052e866d",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "5-2. 대응점을 지면에 고정한다 📄"
   },
-  "PLAN-031": {
+  "PLAN/5-3": {
    "h": "1dcfe4ec1dcd5926",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "5-3. 오차 구조 📄"
   },
-  "PLAN-032": {
+  "PLAN/5-4": {
    "h": "d551edca0cb2f17c",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "5-4. 촬영 체크리스트 📄"
   },
-  "PLAN-033": {
+  "PLAN/5-5": {
    "h": "120cc3d232d5afc3",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "5-5. 유효폭 계산 📄"
   },
-  "PLAN-034": {
+  "PLAN/5-6": {
    "h": "a25727ceaf1d2cdc",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "5-6. DL 투입 지점 🟡"
   },
-  "PLAN-035": {
+  "PLAN/5-7": {
    "h": "97340137f9367977",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "5-7. 상습주차 추정 모델 📄"
   },
-  "PLAN-036": {
+  "PLAN/6": {
    "h": "9d9f585c4bc1309a",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "6. 실측"
   },
-  "PLAN-037": {
+  "PLAN/6-1": {
    "h": "cf0508758e15fc42",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "6-1. 실측 프로토콜 📄"
   },
-  "PLAN-038": {
+  "PLAN/6-2": {
    "h": "7f358e7ce25e5476",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "6-2. 관측점을 GIS 1급 개체로 📄"
   },
-  "PLAN-039": {
+  "PLAN/6-3": {
    "h": "a57759a2040ae22b",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "6-3. 실측 보조 앱 📄"
   },
-  "PLAN-040": {
+  "PLAN/6-4": {
    "h": "44d895e783d9cdc0",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "6-4. 호모그래피 기준점 실측 — ArUco 보드 🟡"
   },
-  "PLAN-041": {
+  "PLAN/6-5": {
    "h": "6e2b0901878920cf",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "6-5. 안전 — 타협 대상 아님"
   },
-  "PLAN-042": {
+  "PLAN/6-6": {
    "h": "eb0aebb6c87d82db",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "6-6. 실측 표본 트랙 — 섞지 않는다 🔴"
   },
-  "PLAN-043": {
+  "PLAN/6-7": {
    "h": "932070793e6017fc",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "6-7. 오차를 줄이는 순서 📄"
   },
-  "PLAN-044": {
+  "PLAN/6-8": {
    "h": "6f61b1a881297c82",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "6-8. 네이버 지도 준-실측 가능성 🟡"
   },
-  "PLAN-045": {
+  "PLAN/7": {
    "h": "232392b5d9723636",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "7. 시나리오 · 평가"
   },
-  "PLAN-046": {
+  "PLAN/7-1": {
    "h": "da5060b9d1ecdb51",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "7-1. 시나리오는 손으로 고르지 않는다 — 그래프에서 역산 📄"
   },
-  "PLAN-047": {
+  "PLAN/7-2": {
    "h": "67c684f45b7294e0",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "7-2. 평가지표 — 설계 완료, 산출 미착수 🟡"
   },
-  "PLAN-048": {
+  "PLAN/7-3": {
    "h": "1daf158da976dc30",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "7-3. 관측 신선도 🔴"
   },
-  "PLAN-049": {
+  "PLAN/7-4": {
    "h": "86fd3fe9c5e5a4d7",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "7-4. CCTV 사각 구간 대책 📄"
   },
-  "PLAN-050": {
+  "PLAN/7-5": {
    "h": "2fa0cf0fb5754b57",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "7-5. 소화전 📄"
   },
-  "PLAN-051": {
+  "PLAN/8": {
    "h": "8987ab4084522d6a",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "8. 데이터 관리 · 인프라"
   },
-  "PLAN-052": {
+  "PLAN/8-1": {
    "h": "09efcaf9d86906ab",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "8-1. processed 계층 포맷 전환 📄"
   },
-  "PLAN-053": {
+  "PLAN/8-2": {
    "h": "b46665079e39dd6b",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "8-2. 클라우드 적재 📄"
   },
-  "PLAN-054": {
+  "PLAN/8-3": {
    "h": "0c589c93a470543b",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "8-3. 정밀 DEM — 보류 🟡"
   },
-  "PLAN-055": {
+  "PLAN/8-4": {
    "h": "229a78423d0d6002",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "8-4. publish 선언화 🟡"
   },
-  "PLAN-056": {
+  "PLAN/8-5": {
    "h": "61db20133e166621",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "8-5. `web/data` 생성물 커밋 🟡"
   },
-  "PLAN-057": {
+  "PLAN/8-6": {
    "h": "ed670f374d916af8",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "8-6. 대장 · 매니페스트 격차 🟡"
   },
-  "PLAN-058": {
-   "h": "ef7c15d736f2640d",
+  "PLAN/8-7": {
+   "h": "3e30e6b8b9228d28",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "8-7. 저장소 위생 🟡"
   },
-  "PLAN-059": {
+  "PLAN/9": {
    "h": "2dafab87867e0859",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "9. 외부 의존"
   },
-  "PLAN-060": {
+  "PLAN/9-1": {
    "h": "f1321c435c169cbd",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "9-1. 소방서 정식 인터뷰 ⏳"
   },
-  "PLAN-061": {
+  "PLAN/9-2": {
    "h": "e85b2d5d0310e817",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "9-2. 협조 공문 ⏳"
   },
-  "PLAN-062": {
+  "PLAN/9-3": {
    "h": "908d7457d3f9b327",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "9-3. 주간 멘토링 — 축을 바꿔가며 묻는다"
   },
-  "PLAN-063": {
+  "PLAN/10": {
    "h": "e012575fe9cad2b6",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "10. 우선순위"
   },
-  "PLAN-064": {
+  "PLAN/10-1": {
    "h": "f7e6d81f0e1cd70b",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "10-1. 지금 막혀 있는 것"
   },
-  "PLAN-065": {
+  "PLAN/10-2": {
    "h": "1ac2bc3a944c2c26",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "10-2. 순서"
   },
-  "PLAN-066": {
+  "PLAN/10-3": {
    "h": "6f7d4fb62979ae4e",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "10-3. 병렬로 돌릴 수 있는 것"
   },
-  "PLAN-067": {
+  "PLAN/11": {
    "h": "269e382cbc504428",
    "state": "blank",
    "doc": "docs/PLAN.md",
    "title": "11. 담당 공백"
   },
-  "PLAN-068": {
+  "PLAN/12": {
    "h": "ba012f4758aec997",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "12. 기획서 갱신 대상"
   },
-  "PLAN-069": {
-   "h": "00e9749a3208f6dc",
+  "PLAN/13": {
+   "h": "a0130cc69a357040",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "13. 결함 대장 — 판정을 안 움직이는 일"
   },
-  "PLAN-070": {
-   "h": "cee9a8388249d9bb",
-   "state": "none",
+  "PLAN/13-1": {
+   "h": "045ea2a954c9c9c2",
+   "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-1. 이 절이 생긴 이유"
   },
-  "PLAN-071": {
+  "PLAN/13-2": {
    "h": "a98d7518feea54fc",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "13-2. 족 — 여섯 갈래"
   },
-  "PLAN-072": {
-   "h": "8f4836057ac20848",
+  "PLAN/13-3": {
+   "h": "7a52161ab6d93844",
    "state": "none",
    "doc": "docs/PLAN.md",
-   "title": "13-3. 남은 결함 18건"
+   "title": "13-3. 남은 결함 2건"
   },
-  "PLAN-073": {
-   "h": "4a705bc69205d913",
+  "PLAN/13-4": {
+   "h": "034e551ac7955015",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-4. 클래스 가드 — 이 절이 닫히는 조건"
   },
-  "PLAN-074": {
-   "h": "75e6dc2512353e1b",
-   "state": "none",
+  "PLAN/13-5": {
+   "h": "9ee6ae6304757080",
+   "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-5. 규약"
   },
-  "README-001": {
+  "README/문서는_넷이다": {
    "h": "093694f02f7c962a",
    "state": "wired",
    "doc": "README.md",
    "title": "문서는 넷이다"
   },
-  "README-002": {
+  "README/문서는_넷이다/일회성_도구는_저장소에_두지_않는다": {
    "h": "7b7219fa3a8b9a89",
    "state": "inherit",
    "doc": "README.md",
    "title": "일회성 도구는 저장소에 두지 않는다"
   },
-  "README-003": {
-   "h": "43020f651184282a",
+  "README/문서는_넷이다/문서에도_검사가_붙어_있다": {
+   "h": "9264f1a62f82dd0d",
    "state": "none",
    "doc": "README.md",
    "title": "문서에도 검사가 붙어 있다"
   },
-  "README-004": {
+  "README/문서는_넷이다/D-XX_는_날짜가_아니다": {
    "h": "c8e98e86aa85102c",
    "state": "inherit",
    "doc": "README.md",
    "title": "`D-XX` 는 날짜가 아니다"
   },
-  "README-005": {
+  "README/문서는_넷이다/숫자의_정본은_문서가_아니다": {
    "h": "12fe54bd714870cf",
    "state": "inherit",
    "doc": "README.md",
    "title": "숫자의 정본은 문서가 아니다"
   },
-  "README-006": {
-   "h": "eb33be5bea125b5d",
+  "README/실행": {
+   "h": "7482536741bbffce",
    "state": "wired",
    "doc": "README.md",
    "title": "실행"
   },
-  "README-007": {
+  "README/실행/파이프라인": {
    "h": "8920f038b1bce78b",
    "state": "wired",
    "doc": "README.md",
    "title": "파이프라인"
   },
-  "README-008": {
-   "h": "30d32e9fef0143ab",
+  "README/도구": {
+   "h": "3e2ef52f9cfca903",
    "state": "wired",
    "doc": "README.md",
    "title": "도구"
   },
-  "README-009": {
+  "README/도구/대조_도구_아무것도_안_바꾼다": {
    "h": "2d4a40eacf70b58a",
    "state": "wired",
    "doc": "README.md",
    "title": "대조 도구 — 아무것도 안 바꾼다"
   },
-  "README-010": {
+  "README/판정의_뼈대": {
    "h": "76beb50c4589111b",
    "state": "blank",
    "doc": "README.md",
    "title": "판정의 뼈대"
   },
-  "README-011": {
+  "README/판정의_뼈대/경로가_둘인_이유": {
    "h": "2359dcb405c7999f",
    "state": "blank",
    "doc": "README.md",
    "title": "경로가 둘인 이유"
   },
-  "README-012": {
+  "README/판정의_뼈대/도달_가능성은_개별_판정과_다르다": {
    "h": "bca5a5f595033988",
    "state": "none",
    "doc": "README.md",
    "title": "도달 가능성은 개별 판정과 다르다"
   },
-  "README-013": {
+  "README/데이터_계층": {
    "h": "f74318b8a9dd74c8",
    "state": "none",
    "doc": "README.md",
    "title": "데이터 계층"
   },
-  "README-014": {
+  "README/데이터_계층/게이트": {
    "h": "0cab77442891491b",
    "state": "none",
    "doc": "README.md",
    "title": "게이트"
   },
-  "README-015": {
-   "h": "9e8d78a5132c1194",
+  "README/구조": {
+   "h": "5aac94584a2823c2",
    "state": "none",
    "doc": "README.md",
    "title": "구조"
   },
-  "README-016": {
-   "h": "573be32468a31c4a",
+  "README/지금_상태": {
+   "h": "cb7134431d26cfa9",
    "state": "none",
    "doc": "README.md",
    "title": "지금 상태"
   },
-  "README-017": {
+  "README/지금_상태/구간_수는_고정값이_아니다": {
    "h": "d4eca10a1810cdbc",
    "state": "inherit",
    "doc": "README.md",
    "title": "구간 수는 고정값이 아니다"
   },
-  "README-018": {
+  "README/나는_어느_파트인가": {
    "h": "8c9d62a76d997d4f",
    "state": "wired",
    "doc": "README.md",
    "title": "나는 어느 파트인가"
   },
-  "README-019": {
+  "README/문서는_어디에": {
    "h": "85e2820a2cf736db",
    "state": "blank",
    "doc": "README.md",
    "title": "문서는 어디에"
   }
  },
- "denominator": 273,
- "dead_refs": 0,
+ "denominator": 272,
+ "dead_refs": 3,
  "dup_groups": 5,
  "enforcers": {
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "916 passed in 97.99s (0:01:37)"
+   "tail": "1153 passed in 145.79s (0:02:25)"
   },
   "probe/deadcheck": {
    "rc": 0,

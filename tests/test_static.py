@@ -92,10 +92,13 @@ def undefined_names(path: Path) -> list[str]:
     return sorted(bad)
 
 
-PY_FILES = sorted(p for p in SRC.rglob("*.py") if "__pycache__" not in str(p))
+# ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ⑤). 종전에는 `src/` 만 봤다. 실패 경로의 NameError 는
+#   도구·검사에서도 똑같이 늦게 터진다 — 넓혀서 새 건 0 이었다.
+PY_FILES = sorted(p for d in (SRC, ROOT / "tools", ROOT / "tests")
+                  for p in d.rglob("*.py") if "__pycache__" not in str(p))
 
 
-@pytest.mark.parametrize("path", PY_FILES, ids=lambda p: str(p.relative_to(SRC)))
+@pytest.mark.parametrize("path", PY_FILES, ids=lambda p: str(p.relative_to(ROOT)))
 def test_no_undefined_names(path):
     """
     실패 경로에만 있는 NameError 를 잡는다.
@@ -141,6 +144,11 @@ def test_tracked_python_compiles():
     import subprocess
     files = subprocess.run(["git", "ls-files", "*.py"], cwd=ROOT,
                            capture_output=True, text=True).stdout.split()
+    # ★ 2026-09-22. 작업 트리에서 지웠고 아직 커밋 전인 파일은 뺀다(`--deleted`). 지운 것을
+    #   읽으려다 FileNotFoundError 로 죽으면 「컴파일되는가」가 아니라 「커밋했는가」를 묻게 된다.
+    gone = set(subprocess.run(["git", "ls-files", "--deleted", "*.py"], cwd=ROOT,
+                              capture_output=True, text=True).stdout.split())
+    files = [f for f in files if f not in gone]
     bad = []
     for f in files:
         src = (ROOT / f).read_text(encoding="utf-8", errors="replace")

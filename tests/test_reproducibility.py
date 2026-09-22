@@ -71,7 +71,9 @@ def test_r4_random_has_seed():
       파일을 `skip("랜덤 미사용")` 했다. 레이크 기계 skip 51 이 전부 이것이었다 —
       **검사 대상이 아닌 것은 skip 이 아니다.** 대상만 모아 한 번에 본다.
     """
-    users = [p for p in sorted(ETL.rglob("*.py"))
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ⑤). 종전에는 `src/firelane` 만 봤다. 표본을 뽑는 탐색 도구
+    #   (`tools/matchcheck.py`)도 랜덤을 쓴다 — 재현 규약은 산출을 내는 코드 전부다.
+    users = [p for p in sorted(ETL.rglob("*.py")) + sorted((ROOT / "tools").rglob("*.py"))
              if RANDOM_USE.search(p.read_text(encoding="utf-8"))]
     bad = [p.name for p in users if not SEED_SET.search(p.read_text(encoding="utf-8"))]
     assert not bad, f"랜덤을 쓰는데 시드 고정이 없다: {bad}"
@@ -550,7 +552,9 @@ def test_no_one_off_in_repo():
     if (ROOT / "tools" / "batches").exists():
         bad.append("  tools/batches/ 가 있다 — 저장소 밖으로 옮겨라")
     pat = re.compile(r"^b\d+[_.]")
-    for p in sorted((ROOT / "tools").rglob("*")):
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ⑤). 이름은 「저장소에」인데 `tools/` 만 봤다. 배치 스크립트가
+    #   `src/`·`tests/` 에 떨어져도 이 검사는 초록이었다. 코드 폴더 셋을 다 본다.
+    for p in [x for d in ("src", "tools", "tests") for x in sorted((ROOT / d).rglob("*"))]:
         if p.is_file() and pat.match(p.name):
             bad.append(f"  {p.relative_to(ROOT)} — 배치 번호가 붙어 있다")
     assert not bad, (

@@ -67,6 +67,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from firelane.generated import prefixes  # ★ 생성물 경로의 정본(W3-13)
 from firelane.hashing import sha256  # ★ 파일 해시는 한 곳에서만 잰다(firelane/hashing.py)
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -112,9 +113,38 @@ def sections(rel: str) -> list[dict]:
             out.append(cur)
         elif cur is not None:
             cur["body"].append((i, line))
-    for n, s in enumerate(out, 1):
-        s["id"] = f"{Path(rel).stem}-{n:03d}"
+    _assign_ids(Path(rel).stem, out)
     return out
+
+
+# ★ 절 ID 는 **제목 경로**다 — `MASTER/12-8` · `DECISIONS/63/1` · `README/실행`.
+#   2026-09-22 (PLAN §13 W3-5 닫힘 · DECISIONS §217-5). 종전엔 문서 안 **순번**
+#   (`MASTER-082`)이라 중간에 절 하나를 끼우면 뒤 70절이 전부 「변경」으로 떴다.
+#   번호가 있으면 번호, 없으면 제목을 잘라 쓴다. `###` 는 번호가 부모 번호로 시작하지
+#   않으면 부모 아래에 둔다(DECISIONS 의 `### 1.` 이 수십 번 되풀이된다).
+#   겹치면 `~2` 를 붙인다 — 지금 네 문서에서 0건이고 `tests/test_dms.py` 가 본다.
+SEC_NUM = re.compile(r"^§?\s*(\d+[0-9A-Za-z-]*?)\.?(?:\s|$)")
+
+
+def _slug(title: str) -> str:
+    t = re.sub(r"[`*★()\[\]「」'\",·:—./]", " ", title)
+    return "_".join(t.split())[:40]
+
+
+def _assign_ids(stem: str, secs: list[dict]) -> None:
+    parent: str | None = None
+    seen: dict[str, int] = {}
+    for s in secs:
+        m = SEC_NUM.match(s["title"])
+        own = m.group(1) if m else _slug(s["title"])
+        if s["depth"] == 2 or parent is None:
+            key = own
+            if s["depth"] == 2:
+                parent = own
+        else:
+            key = own if (m and own.startswith(parent + "-")) else f"{parent}/{own}"
+        seen[key] = seen.get(key, 0) + 1
+        s["id"] = f"{stem}/{key}" + (f"~{seen[key]}" if seen[key] > 1 else "")
 
 
 def classify(sec: dict) -> tuple[str, str, int]:
@@ -333,7 +363,7 @@ def cmd_propose(data: dict, size: int, out_path: Path,
 
 
 PICK = re.compile(r"^고름\s*=\s*(\S+)\s*(.*)$")
-SEC_HEAD = re.compile(r"^\[([\w-]+)\] (\S+?):(\d+)")
+SEC_HEAD = re.compile(r"^\[([^\]\s]+)\] (\S+?):(\d+)")
 
 
 def cmd_fill(path: Path, apply: bool) -> int:
@@ -548,7 +578,8 @@ def _log_head(log: Path) -> str | None:
 #   검사한다). 로그가 낡았다는 신호가 될 수 없다.
 # ★ 반대로 `src`·`tools`·`docs` 는 그대로 센다. 그쪽이 바뀌면 로그는
 #   정말로 다른 저장소 얘기다.
-GENERATED = ("web/data/", "data/processed/", "data/dms/")
+# ★ 목록의 정본은 firelane/generated.py 의 역할 "seal" 이다(W3-13).
+GENERATED = prefixes("seal")
 
 
 def tree_is_dirty() -> bool:
@@ -667,7 +698,8 @@ def _closed_declarations(declared: dict[str, str], red: list[str],
     return sorted(set(declared) - set(red) - set(unproven or []))
 
 # 봉인할 때 커밋 안 돼도 되는 추적 파일 — 봉인 자신과, 봉인 커밋에 함께 넣는 생성 매니페스트
-SEAL_MAY_BE_DIRTY = ("data/dms/", "data/processed/_manifest.json")
+# 정본은 firelane/generated.py 의 역할 "seal-dirty" 다(W3-13).
+SEAL_MAY_BE_DIRTY = prefixes("seal-dirty")
 
 
 def uncommitted(root: Path = ROOT) -> list[str]:

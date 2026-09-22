@@ -170,12 +170,9 @@ STEPS = [
          #   종전에는 tools/web_manifest.py 를 사람이 따로 돌려야 했고
          #   아무도 안 돌렸다(2026-08-22 CI 가 처음 잡음).
          writes=(WEB / "segments.geojson", WEB / "segments.schema.json",
-                 WEB / "_manifest.json", WEB / "boundary.geojson",
-                 WEB / "mask.geojson",
-                 WEB / "mask_soft.geojson", WEB / "buildings.geojson",
+                 WEB / "_manifest.json", WEB / "buildings.geojson",
                  WEB / "hydrants.geojson", WEB / "stations.geojson",
                  WEB / "cctv.geojson", WEB / "poi.geojson",
-                 WEB / "streetlights.geojson", WEB / "lightpoles.geojson",
                  WEB / "vehicle_spec.json", WEB / "route_vehicle.json",
                  WEB / "navi_graph.json", WEB / "dest.geojson",
                  WEB / "context.geojson", WEB / "history.geojson"),

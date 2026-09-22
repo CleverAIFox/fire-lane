@@ -65,8 +65,15 @@ function shade(css: string, keep = 0.55): string {
   return `rgb(${out[0]},${out[1]},${out[2]})`;
 }
 
-export function sources(dataUrl: string): StyleSpecification["sources"] {
+export function sources(dataUrl: string, terrainBounds?: [number, number, number, number]): StyleSpecification["sources"] {
   return {
+    // ★ 2026-09-22 (§217-2) 지형. terrain.py 가 구운 Terrain-RGB(공개DEM 90m · 표현용).
+    //   옛 지도(web/js/map.js)와 같은 소스 · 같은 규칙이다 — `setTerrain` 이 지면을 휘게 하고
+    //   건물 · 선 · 마커는 **그 위에 앉는다.** 건물에 z 를 더하지 않는다(평면에서 뜬다 · §216-2).
+    ...(terrainBounds ? {
+      dem: { type: "raster-dem" as const, tiles: [dataUrl + "terrain/{z}/{x}/{y}.png"],
+             tileSize: 256, minzoom: 12, maxzoom: 15, encoding: "mapbox" as const, bounds: terrainBounds },
+    } : {}),
     buildings: { type: "geojson", data: dataUrl + "buildings.geojson" },
     road_area: { type: "geojson", data: dataUrl + "road_area.geojson" },
     sidewalk: { type: "geojson", data: dataUrl + "sidewalk.geojson" },
@@ -118,7 +125,7 @@ export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecificat
         "line-opacity": .85,
       } },
 
-    // 건물 — 땅(0)에서 h(높이)만큼.
+    // 건물 — 지면에서 h(높이)만큼. 지형을 켜면 MapLibre 가 지면 높이에 올려 놓는다.
     // ★ 2026-09-22 (DECISIONS §216-2) 사용자 보고 「줌을 당기니 건물이 공중에 뜬다」.
     //   종전에는 base 를 z(해발 지반고 5.5~130m · 중앙 16.6m)로 뒀다. 그것은 **지형을 켠**
     //   옛 지도(web/js · setTerrain)의 규칙이고, 내비 · 관제는 지형을 안 켠다 — 평평한 땅
@@ -242,6 +249,100 @@ export function routeLayers(style: Record<string, VerdictStyle> = {}): LayerSpec
  *   지점이고, CCTV 는 그 구간의 판정이 영상으로 검증될 수 있는지를
  *   말한다(`unknown` 354 는 전부 CCTV 25m 밖이다).
  */
+/**
+ * 관제 판정선 — 굵기 = 최소 유효폭 비례(2~12m 로 자른다 · 광장 · 교차로가 얼룩이 되지 않게).
+ *
+ * ★ 2026-09-22 (DECISIONS §217-3) — 종전 `["+", W, 2]` 는 **무효 식**이었다. `["zoom"]` 은
+ *   `interpolate` · `step` 의 **맨 바깥**에만 올 수 있는데, 줌 보간 W 를 `+` 로 감쌌다.
+ *   MapLibre 는 그 레이어를 **조용히 안 올린다**(콘솔 경고 하나) — 테두리 · 도달 불가 점선 ·
+ *   선택 강조 셋이 v0.33 부터 한 번도 안 그려졌다. 타입 검사도 빌드도 초록이었다.
+ *   지금은 더하기를 보간 **안쪽**(멈춤점마다)에 넣고, `test/style.test.ts` 가 모든 레이어를
+ *   style-spec 검증기에 통과시킨다.
+ */
+export function opsSegLayers(col: (k: string) => string): LayerSpecification[] {
+  const wm = ["min", 12, ["max", 2, ["coalesce", ["get", "width_min_m"], 3]]];
+  const W = (add = 0) => ["interpolate", ["linear"], ["zoom"],
+    14, ["+", add, ["*", 0.25, wm]], 18, ["+", add, ["*", 1.5, wm]]] as never;
+  return [
+    { id: "ops-verdict-case", type: "line", source: "segments",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-width": W(2), "line-color": "#1f2937", "line-opacity": .55 } },
+    { id: "ops-verdict", type: "line", source: "segments",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-width": W(),
+        "line-color": ["match", ["get", "verdict"],
+          "clear", col("clear"), "needs_cv", col("needs_cv"),
+          "blocked", col("blocked"), col("unknown")] as never,
+      } },
+    { id: "ops-unreach", type: "line", source: "segments",
+      layout: { "line-cap": "butt", visibility: "none" },
+      paint: { "line-width": W(1), "line-color": "#111827",
+               "line-opacity": .75, "line-dasharray": [0.6, 0.6] } },
+    { id: "ops-selected", type: "line", source: "segments",
+      filter: ["==", ["get", "seg_uid"], ""] as never,
+      paint: { "line-width": W(7), "line-color": "#1d4ed8", "line-opacity": .55 } },
+  ];
+}
+
+/** 관제 지형 음영 (§217-2) — 위에서 본 평면에서도 등성이 · 골이 보인다 */
+export function hillshadeLayer(): LayerSpecification {
+  return { id: "hillshade", type: "hillshade", source: "dem",
+    paint: { "hillshade-shadow-color": "#000000", "hillshade-highlight-color": "#3b4d6b",
+             "hillshade-accent-color": "#0b1220", "hillshade-exaggeration": 0.45 } };
+}
+
+/** 관제 출동 이력 (§216-3) — 밀도 + 실제 도착 시간 색 */
+export function opsHistoryLayers(): LayerSpecification[] {
+  return [
+    { id: "hist-heat", type: "heatmap", source: "history", maxzoom: 17,
+      layout: { visibility: "none" },
+      paint: {
+        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 13, 14, 16, 34] as never,
+        "heatmap-intensity": 0.8, "heatmap-opacity": 0.55,
+        "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"],
+          0, "rgba(0,0,0,0)", 0.3, "#7c3aed", 0.6, "#f97316", 1, "#fde047"] as never,
+      } },
+    { id: "hist-pt", type: "circle", source: "history", minzoom: 14.5,
+      layout: { visibility: "none" },
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 14.5, 3, 18, 7] as never,
+        // 실제 출동 → 현장 도착. 5분 · 8분 경계는 **표시용 가정값**이다(기준 문헌 없음)
+        "circle-color": ["case", ["!", ["has", "resp_s"]], "#64748b",
+          ["<=", ["get", "resp_s"], 300], "#22c55e",
+          ["<=", ["get", "resp_s"], 480], "#f59e0b", "#ef4444"] as never,
+        "circle-stroke-color": "#0b1220", "circle-stroke-width": 1.2,
+      } },
+  ];
+}
+
+/** 관제 덧그림 — CCTV 유효 반경(줌 14 · 20 에서의 픽셀 반지름) · 출동 미리보기 · 출동 대 경로 */
+export function opsOverlayLayers(r14: number, r20: number): LayerSpecification[] {
+  return [
+    { id: "cctv-cov", type: "circle", source: "cctv",
+      layout: { visibility: "none" },
+      paint: {
+        "circle-radius": ["interpolate", ["exponential", 2], ["zoom"],
+          14, r14, 20, r20] as never,
+        "circle-color": "#facc15", "circle-opacity": .14,
+        "circle-stroke-color": "#ca8a04", "circle-stroke-width": 1, "circle-stroke-opacity": .6,
+        "circle-pitch-alignment": "map",
+      } },
+    { id: "preview-walk", type: "line", source: "preview-walk",
+      paint: { "line-width": 4, "line-color": "#ef2d2d", "line-dasharray": [1.2, 1.2] } },
+    { id: "preview-case", type: "line", source: "preview",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-width": 11, "line-color": "#ffffff" } },
+    { id: "preview", type: "line", source: "preview",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-width": 6, "line-color": "#2563eb" } },
+    { id: "unit-routes", type: "line", source: "unit-routes",
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-width": 5, "line-color": "#7c3aed", "line-opacity": .9,
+               "line-dasharray": [2, 1] } },
+  ];
+}
+
 export function markerLayers(): LayerSpecification[] {
   return [
     { id: "hydrant", type: "symbol", source: "hydrants", minzoom: Z.hydrant,
@@ -422,3 +523,14 @@ export const pillOptions = {
   pixelRatio: 2, stretchX: [[22, 42]] as [number, number][], stretchY: [[20, 24]] as [number, number][],
   content: [14, 8, 50, 36] as [number, number, number, number],
 };
+
+/**
+ * 지형을 켠다. `graph.terrain`(정본 config.js)과 지형 타일 범위가 둘 다 있을 때만.
+ * ★ 실패해도 지도는 산다 — 평면으로 남기고 경고만 찍는다(옛 지도와 같은 태도).
+ */
+export function applyTerrain(m: { setTerrain: (t: { source: string; exaggeration: number } | null) => unknown },
+                             terrain: { enabled: boolean; exaggeration: number } | undefined, on = true): boolean {
+  if (!terrain?.enabled || !on) { try { m.setTerrain(null); } catch { /* 없음 */ } return false; }
+  try { m.setTerrain({ source: "dem", exaggeration: terrain.exaggeration }); return true; }
+  catch (e) { console.warn("지형 적용 실패 — 평면으로 표시한다", e); return false; }
+}

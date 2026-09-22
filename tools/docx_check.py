@@ -21,6 +21,15 @@ docx_check.py — 기획서가 산출물과 어긋나지 않는가.
 숫자가 그것과 다르면 **산출물이 옳다**(MASTER §0-3).
 
     구간 수 · 판정 4종 · 총연장 · 폐기된 경로·기술명
+    ⑤ 정방향  `docx_fix` 규칙이 아직 바꿀 것이 있는가 — 있으면 기획서가 산출물보다 낡았다
+    ⑥ 역방향  규칙의 **닻**이 문서에 남았는가 — 찾을 것도 바꾼 결과도 없으면 배선이 떨어졌다
+    ⑦ 참조    기획서가 드는 저장소 경로 · 파일 이름이 실재하는가
+    ⑧ 긴 칸   표 칸이 250자를 넘는 수 · 최장 길이가 래칫 위로 자라지 않는가
+
+★ 2026-09-22 (PLAN §13 W4-2 닫힘 · DECISIONS §217-5) — ⑤⑥⑦ 을 더했다. 종전엔 ①~④ 만 봐서
+  「회색」 문단의 1,101 세대 수치 열한 자리가 **초록으로 통과했다**(구간 수 · 판정 4종만 봤다).
+  고치는 쪽(`docx_fix`)과 잡는 쪽이 따로 놀면 잡는 쪽이 늘 좁다. 그래서 잡는 쪽이 고치는 쪽의
+  규칙을 **그대로 돌려** 본다 — 규칙 목록이 하나다.
 
 ★ 모든 숫자를 보지 않는다. 시장 통계·법령 조항·비용 산정은 산출물과
   무관하며, 그것까지 검사하면 거짓 경보로 사람이 검사를 끈다.
@@ -45,7 +54,7 @@ GOLDEN = _p.GOLDEN / "segments.fingerprint.json"
 # 폐기된 이름. 문서에 남아 있으면 독자가 그대로 따라 한다.
 RETIRED = {
     "src/etl": "패키지가 src/firelane 으로 바뀌었다(2026-08-21)",
-    "app.js": "web/js/ 27개 모듈로 쪼갰다(DECISIONS §27)",
+    "app.js": "web/js/ 모듈로 쪼갰다가(DECISIONS §27) 2026-09-22 에 옛 지도째 걷어냈다 — 관제 화면(web/navi ?view=ops)이 넘겨받았다",
     "requirements-etl": "삭제됐다. uv.lock 이 정본이다(2026-08-23)",
     "PostGIS": "미채택. segments.geojson 996KB 규모라 쓸 자리가 아니다",
     "apply.py": "패치 zip 절차를 폐기했다(DECISIONS §65)",
@@ -162,7 +171,70 @@ def audit(p: Path) -> list[str]:
                 bad.append(f"  [{where}] 폐기: `{name}` — {why}\n"
                            f"      …{txt.strip()[:70]}…")
 
+    # ── 5 · 6 · 정방향 · 역방향 — 고치는 쪽의 규칙을 그대로 돌린다 ──
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_docx_fix", ROOT / "tools" / "docx_fix.py")
+    fx = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fx)
+    full = "\n".join(txt for _, txt in cells)
+    for rx, rep, why in fx.rules():
+        hits = [(w, x) for w, x in cells if re.search(rx, x)]   # docx_fix 와 같은 플래그(re.M 없음)
+        changed = [(w, x) for w, x in hits if re.sub(rx, rep, x) != x]
+        for w, x in changed[:3]:
+            bad.append(f"  [{w}] 정방향 — `docx_fix` 가 아직 바꾼다({why}). `tools/docx_fix.py --write`\n"
+                       f"      …{x.strip()[:70]}…")
+        plain = re.sub(r"\\g<\d+>", "", rep).replace("&lt;", "<").strip()
+        if not hits and plain and plain not in full:
+            bad.append(f"  역방향 — 닻이 떨어진 규칙: `{rx[:50]}` → 찾을 것도 바꾼 결과도 문서에 없다({why})")
+
+    for anchor, new, why in fx.inserts():
+        if anchor not in full and new not in full:
+            bad.append(f"  역방향 — 닻이 떨어진 삽입: `{anchor[:40]}` 도 넣을 문단도 문서에 없다({why})")
+        elif new not in full:
+            bad.append(f"  정방향 — 넣을 문단이 아직 없다: `{new[:40]}…` `tools/docx_fix.py --write`")
+
+    # ── 7 · 참조 — 기획서가 드는 저장소 경로 · 파일이 실재하는가 ──
+    #   `data/` 아래는 저장소 밖(FIRE_LANE_DATA)이라 뺀다. 파일 이름은 추적 파일의 이름과 대조한다
+    import subprocess
+    tracked = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True).stdout.split()
+    names = {Path(x).name for x in tracked}
+    for m in sorted(set(re.findall(r"(?<![\w/.])((?:src|tools|web|docs|tests|infra|\.github)/[\w./-]+)", full))):
+        q = m.rstrip(".")
+        if tracked and not (ROOT / q).exists():
+            bad.append(f"  참조 — 기획서가 드는 경로가 없다: `{q}`")
+    for m in sorted(set(re.findall(r"\b[\w-]+\.(?:py|js|ts|tsx|yml|yaml)\b", full))):
+        if tracked and m not in names:
+            bad.append(f"  참조 — 기획서가 드는 파일이 저장소에 없다: `{m}`")
+
+    # ── 8 · 긴 칸 래칫 (W4-7 닫힘 · DECISIONS §218-6) ──
+    #   표0(개요표)의 여섯 칸이 250자를 넘는다. 그 표는 **제출 양식의 개요표**라 칸 안에 문단이
+    #   드는 것이 양식이다 — 쪼개면 양식이 깨진다. 그래서 분해하지 않고 **자라지 않게** 묶는다.
+    #   줄면 상한을 내린다(양방향 래칫 · sizecheck 와 같은 규율).
+    import docx as _docx
+    _d = _docx.Document(str(p))
+    _seen: set = set()
+    _lens = []
+    for _t in _d.tables:
+        for _r in _t.rows:
+            for _c in _r.cells:
+                if _c._tc in _seen:
+                    continue
+                _seen.add(_c._tc)
+                _lens.append(len(_c.text))
+    _long = [n for n in _lens if n > LONG_CELL]
+    if len(_long) > LONG_MAX_N or max(_lens, default=0) > LONG_MAX_LEN:
+        bad.append(f"  긴 칸 — {LONG_CELL}자 초과 {len(_long)}칸 · 최장 {max(_lens, default=0)}자 "
+                   f"(상한 {LONG_MAX_N}칸 · {LONG_MAX_LEN}자). 표를 문단 저장소로 키우지 않는다")
+    elif len(_long) < LONG_MAX_N or max(_lens, default=0) < LONG_MAX_LEN - 50:
+        bad.append(f"  긴 칸 — 줄었다({len(_long)}칸 · 최장 {max(_lens, default=0)}자). "
+                   "tools/docx_check.py 의 LONG_MAX_N · LONG_MAX_LEN 을 내린다")
     return bad
+
+
+#: 긴 칸 래칫 — 2026-09-22 실측 6칸 · 최장 1,343자(표0). 최장은 위로 37자 여유를 둔다(문구 한 줄 손질)
+LONG_CELL = 250
+LONG_MAX_N = 6
+LONG_MAX_LEN = 1380
 
 
 def main() -> int:

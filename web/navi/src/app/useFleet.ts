@@ -71,6 +71,8 @@ export function useFleet() {
       width_m: current.width_m,
       clearance_m: current.clearance_m,
       length_m: current.length_m ?? base.length_m,
+      // 코너 점검은 제원 완성 차종만(§218-2). 나머지는 null — 점검하지 않는다
+      turn_check_radius_m: current.spec_complete ? current.turn_check_radius_m ?? null : null,
     };
   }, [base, current]);
 
