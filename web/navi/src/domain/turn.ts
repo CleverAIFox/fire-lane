@@ -217,6 +217,31 @@ export function mergePhrase(
   return `${head}${WORD[m.kind]} 후 ${WORD[after.kind]}`;
 }
 
+/** 안내 문턱(초 전). 상용 관례를 시간으로 옮긴 것이다 — 먼저 알림 · 준비 · 실행 */
+export const GATES_SEC = [12, 6, 2.5];
+/** 각 문턱의 거리 하한(m). 정지 상태에서 문턱이 0 이 되는 것을 막는다. */
+export const GATES_MIN_M = [80, 40, 15];
+/** 먼저 알림의 거리 상한(m). 골목에서 너무 일찍 말하면 헷갈린다. */
+export const FIRST_MAX_M = 250;
+
+/**
+ * 회전까지 `distM` 이 **가장 안쪽** 몇 번째 문턱 안인가. 문턱 밖이면 -1.
+ *
+ * ★ 2026-09-22 (DECISIONS §213-2). 종전 `useVoice` 는 `findIndex(g => d <= g)` 로
+ *   골랐다. 문턱이 바깥(큰 값)부터 놓여 있어 **언제나 0(먼저 알림)** 이 걸렸고,
+ *   한 번 말한 뒤로는 `gate > prev` 가 거짓이라 「준비」 · 「실행」 안내가 **한 번도
+ *   안 나갔다.** 폐루프 시험을 짜다 드러났다.
+ */
+export function gateIndex(distM: number, speedMps: number): number {
+  let hit = -1;
+  GATES_SEC.forEach((sec, k) => {
+    let g = Math.max(GATES_MIN_M[k], speedMps * sec);
+    if (k === 0) g = Math.min(FIRST_MAX_M, g);
+    if (distM <= g) hit = k;
+  });
+  return hit;
+}
+
 /** 상용 관례로 거리를 반올림한다. "187미터 앞" 은 사람이 못 쓴다. */
 export function round(m: number): string {
   if (m >= 1000) return `${(m / 1000).toFixed(1)}킬로미터`;

@@ -43,6 +43,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXEMPT = {
     "widen": "넓혔을 때를 **재는** 도구다. 지금 상태에서 항상 수십 건을 내므로\n             배선하면 매번 뜨는 경고가 되고, 그러면 아무도 안 읽는다",
     "codepatch": "배치 스크립트가 import 하는 **라이브러리**다. 실행 대상이 아니다",
+    "inbox_fl": "INBOX 에 `fl.sh` 로 **복사해 두는** 부트스트랩이다. 저장소 안에서 부르는 곳이\n             없는 것이 설계다 — 사람이 INBOX 에서 부른다. 동작은 test_batch_tools 가 든다(§214-1)",
 
     "kpi": "진입 실패율 산출. 발표에서 인용할 숫자라 사람이 조건과 함께 부른다",
     "its_linkmap": "ITS 소통정보 링크 ↔ seg_uid 대조표. 외부 API 규격 확인용이라 CI 에 못 건다",

@@ -12,12 +12,16 @@
  *   이다(지산 · 대인 센터별). 없는 차를 고르게 하면 그 제원이 어디서 왔는지
  *   아무도 모른다.
  *
+ * ★ 2026-09-22 (§214-2). 이름을 와이어프레임처럼 크기 먼저(「중형 펌프차」), 차종 옆모습
+ *   그림을 단다(`VehicleArt` — 우리가 그린 단순 도형). 편성 정본의 이름은 안 고친다.
+ *
  * ★ 하단 고지 — 「현재 경로 판정에는 전폭만 반영됩니다」 — 를 지우지 마라.
  */
 import type { CSSProperties } from "react";
 import { C, F } from "./tokens";
 import { Cta, Sheet } from "./Sheet";
-import { Truck } from "./icons";
+import { VehicleArt } from "./VehicleArt";
+import { displayName, vehicleClass } from "../domain/fleetName";
 
 // ★ 사본을 두지 않는다. 종전 로컬 사본은 `turn_radius_verified` 가 빠진 채 갈라져 있었다.
 export type { FleetVehicle } from "../domain/types";
@@ -50,9 +54,9 @@ export function VehiclePicker(p: Props) {
               <span style={{ ...radio, borderColor: on ? C.cta : "#cbd5e1" }}>
                 {on && <span style={radioDot} />}
               </span>
-              <span style={truck}><Truck size={20} color="#dc2626" /></span>
+              <span style={truck}><VehicleArt kind={vehicleClass(v.label, v.id)} /></span>
               <span style={{ flex: 1, textAlign: "left" }}>
-                <span style={{ fontSize: 15, fontWeight: 800 }}>{v.label}</span>
+                <span style={{ fontSize: 16, fontWeight: 800 }}>{displayName(v.label)}</span>
                 {v.station && (
                   <span style={{ display: "block", fontSize: 11, color: C.panelSub }}>
                     {v.station.replace(/^동부소방서_?/, "")}
@@ -88,7 +92,7 @@ const radio: CSSProperties = {
 };
 const radioDot: CSSProperties = { width: 8, height: 8, borderRadius: 999, background: C.cta };
 const truck: CSSProperties = {
-  width: 44, height: 30, borderRadius: 8, background: "#fef2f2", display: "grid", placeItems: "center",
+  width: 88, height: 42, borderRadius: 8, background: "#f8fafc", display: "grid", placeItems: "center",
 };
 const ref: CSSProperties = {
   fontSize: 10, color: C.panelSub, border: `1px solid ${C.sheetLine}`, borderRadius: 4,

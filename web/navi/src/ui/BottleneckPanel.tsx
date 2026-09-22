@@ -12,6 +12,10 @@
  *   서야 나오고, 회전은 판정하지 않는다(`turn_radius_verified: false`).
  *   없는 것을 있는 것처럼 채우지 않고 「미반영」 으로 적는다.
  *
+ * ★ 2026-09-22 (§214-2) 와이어프레임 모양으로 — 오른쪽에 **떠 있는 둥근 카드**(가장자리
+ *   시트가 아니다), 카드 왼쪽 가장자리에 파란 **반원 접기 탭**, 「현장 확인 필요」 는 꽉 찬
+ *   주황. 접힘(04.5)은 흰 바탕 · 주황 테두리 · 주황 삼각형 탭을 오른쪽 가장자리 **가운데**에.
+ *
  * ★ 하단 두 줄은 **지우지 마라.** 판정이 무엇을 보고 무엇을 안 보는지
  *   화면에 남기는 유일한 장치다(DECISIONS §86-5 가 겪은 자리). 09-05 판에서
  *   주행 화면 우측 패널에 있던 것이 여기로 옮겨 왔다.
@@ -47,7 +51,7 @@ export function BottleneckPanel(d: Props) {
   if (!d.open) {
     return (
       <button onClick={d.onToggle} style={tab} aria-label="병목 구간 상세 열기" data-wf="04.5">
-        <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 3 L22 20 H2 Z" fill="#fff" /><path d="M12 9v5M12 16.5v.5" stroke={C.warn} strokeWidth="2.4" strokeLinecap="round" /></svg>
+        <svg width="30" height="30" viewBox="0 0 24 24"><path d="M12 3 L22 20 H2 Z" fill={C.warn} /><path d="M12 9v5M12 16.5v.5" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" /></svg>
       </button>
     );
   }
@@ -130,24 +134,28 @@ function Line({ k, v, note, blue, color }: {
   );
 }
 
+const PANEL_W = 380;
 const panel: CSSProperties = {
-  position: "absolute", zIndex: 5, top: S.guideBarH, right: 0, bottom: 0, width: 360,
-  background: "#fff", color: C.panelInk, padding: "16px 18px", boxSizing: "border-box",
-  overflowY: "auto", boxShadow: "-6px 0 20px rgba(0,0,0,.2)", fontFamily: F.family,
+  position: "absolute", zIndex: 5, top: S.guideBarH + 14, right: 14, bottom: 60, width: PANEL_W,
+  background: "#fff", color: C.panelInk, padding: "18px 20px", boxSizing: "border-box",
+  overflowY: "auto", borderRadius: 20, boxShadow: "0 10px 30px rgba(0,0,0,.28)",
+  fontFamily: F.family,
 };
 const collapse: CSSProperties = {
-  position: "fixed", right: 360, top: S.guideBarH + 120, width: 34, height: 58,
-  border: "none", borderRadius: "10px 0 0 10px", background: C.cta, color: "#fff",
-  fontSize: 26, fontWeight: 800, cursor: "pointer",
+  position: "fixed", right: 14 + PANEL_W - 2, top: `calc(50% + ${S.guideBarH / 2 - 36}px)`,
+  width: 40, height: 76, border: "none", borderRadius: "76px 0 0 76px", background: C.cta,
+  color: "#fff", fontSize: 28, fontWeight: 800, cursor: "pointer", paddingLeft: 8,
+  boxShadow: "-3px 3px 10px rgba(0,0,0,.2)",
 };
 const tab: CSSProperties = {
-  position: "absolute", zIndex: 5, right: 0, top: S.guideBarH + 150, width: 44, height: 64,
-  border: "none", borderRadius: "12px 0 0 12px", background: C.warn, cursor: "pointer",
-  display: "grid", placeItems: "center", boxShadow: "-3px 3px 10px rgba(0,0,0,.25)",
+  position: "absolute", zIndex: 5, right: 0, top: `calc(50% + ${S.guideBarH / 2 - 38}px)`,
+  width: 52, height: 76, border: `3px solid ${C.warn}`, borderRight: "none",
+  borderRadius: "16px 0 0 16px", background: "#fff", cursor: "pointer",
+  display: "grid", placeItems: "center", boxShadow: "-3px 3px 12px rgba(0,0,0,.25)",
 };
 const chip: CSSProperties = {
-  display: "inline-block", marginTop: 10, borderRadius: 999, background: "#ffedd5",
-  color: C.warnInk, padding: "4px 12px", fontSize: 12, fontWeight: 800,
+  display: "inline-block", marginTop: 10, borderRadius: 999, background: C.warn,
+  color: "#fff", padding: "5px 14px", fontSize: 13, fontWeight: 800,
 };
 const grid: CSSProperties = {
   display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12,

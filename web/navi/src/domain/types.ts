@@ -183,5 +183,11 @@ export interface Fix {
   lat: number;
   /** 진행 방위각(도). 모르면 null — 받는 쪽이 이동량으로 만든다 */
   heading: number | null;
-  source: "gps" | "simulation" | "manual";
+  /** replay = GPS 흉내(1Hz · 잡음 · 음영). 실주행과 같은 코드를 지난다(§213-3) */
+  source: "gps" | "simulation" | "manual" | "replay";
+  /**
+   * 측위 시각(ms, `performance.now()` 시계). 위치 추정이 속도 × 경과로 예측한다.
+   * 비어 있으면 받는 쪽이 받은 시각으로 채운다.
+   */
+  t?: number;
 }

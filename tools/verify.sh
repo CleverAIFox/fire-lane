@@ -512,17 +512,22 @@ fi
 #   **여기가 비어 있어서 로컬이 CI 의 부분집합도 아니었다**(5b 와 같은 사고).
 # ★ 타입만 본다. `vite build` 는 토큰이 필요하고, 이번 사고는 타입에서
 #   잡혔다. 토큰 없는 빌드는 배포 액션이 맡는다.
-if [ -d web/navi/node_modules ]; then
+# ★ 2026-09-22 (DECISIONS §213-1). CI 가 `Cannot find namespace 'GeoJSON'` 으로
+#   죽었는데 여기는 초록이었다. 여기는 **있던 node_modules** 로 검사했고 CI 는
+#   잠금대로 새로 깐다 — 설치물이 잠금과 어긋나도 몰랐다. 노드 판도 달랐다
+#   (CI 20 · 로컬 22). 그래서 타입 검사 **앞에** 환경부터 CI 와 맞춘다:
+#   잠금 지문이 바뀌었으면 npm ci, 로컬 노드 = .nvmrc, 잠금 engines 전부 만족.
+#   종전의 「node_modules 가 있으면 그대로 · 없으면 npm ci」 두 갈래는 그 첫
+#   갈래가 구멍이었다.
+if command -v npm >/dev/null 2>&1; then
+    scope "web/navi/*"
+    step "내비 환경 = CI" uv run python tools/navi_env.py
     scope "web/navi/*"
     step "내비 타입 검사" bash -c 'cd web/navi && npm run -s typecheck'
-elif command -v npm >/dev/null 2>&1; then
-    printf '%s── 내비 타입 검사%s\n%s   npm ci 중...%s\n' "$C" "$Z" "$D" "$Z"
-    if (cd web/navi && npm ci --no-audit --no-fund >/dev/null 2>&1); then
-        scope "web/navi/*"
-        step "내비 타입 검사" bash -c 'cd web/navi && npm run -s typecheck'
-    else
-        note "내비 타입 검사" "npm ci 실패 — cd web/navi && npm ci"
-    fi
+    # ★ 2026-09-22 (§213-3). 위치 추정 · 턴바이턴은 화면으로 검수가 안 된다 —
+    #   시뮬레이션이 경로 자체를 따라 걸어서 폐루프가 한 번도 안 돌았다.
+    scope "web/navi/*"
+    step "내비 단위 시험" bash -c 'cd web/navi && npm run -s test'
 else
     note "내비 타입 검사" "npm 이 없다"
 fi

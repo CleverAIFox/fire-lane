@@ -23,28 +23,28 @@
  * 회색 구간에 들어가 놓고 "주행 중" 이라고 하면 늦다. `lookAhead` 가
  * 앞 구간을 미리 읽는다. 이것도 속도에 비례한다.
  *
- * ★ 우선순위 — 이탈 > 회전 > 판정.
+ * ── ★ 순간이동하면 끊고 다시 말한다 (2026-09-22 · DECISIONS §213-2) ──────
+ * GPS 가 음영에서 끊겼다가 수백 m 앞에서 다시 잡히면, 그 사이 말했어야 할 회전은
+ * 이미 지나갔고 말하던 문장은 **엉뚱한 자리의 안내**다. 위치 추정기가 `jumpSeq` 를
+ * 올리면 — 말하던 것을 끊고, 문턱 기록을 비우고, **새 자리의 다음 회전을 바로**
+ * 말한다. 문턱(12·6·2.5초)을 기다리지 않는다. 상용 내비가 터널을 나오며 하는 일이다.
+ *
+ * ★ 우선순위 — 이탈 > 재동기화 > 회전 > 판정.
  * ★ 이 훅은 `RoutePlan` 만 받고 **그것이 어떻게 만들어졌는지 모른다.**
  *   경로 알고리즘이 바뀌어도 여기는 안 바뀐다.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createSpeaker } from "../infra/speech";
 import {
-  buildIncidence, extractManeuvers, nextManeuver, mergePhrase,
+  buildIncidence, extractManeuvers, nextManeuver, mergePhrase, gateIndex,
   type Incidence, type Maneuver,
 } from "../domain/turn";
-import { progressAlongRoute, lookAhead } from "../domain/graph";
+import { lookAhead } from "../domain/graph";
 import { requiredWidth } from "../domain/vehicle";
 import type {
-  NaviGraph, RoutePlan, SnapResult, VehicleSpec, VerdictStyle,
+  NaviGraph, RoutePlan, VehicleSpec, VerdictStyle,
 } from "../domain/types";
 
-/** 안내 문턱(초 전). 상용 관례를 시간으로 옮긴 것이다. */
-const GATES_SEC = [12, 6, 2.5];
-/** 각 문턱의 거리 하한(m). 정지 상태에서 문턱이 0 이 되는 것을 막는다. */
-const GATES_MIN_M = [80, 40, 15];
-/** 먼저 알림의 거리 상한(m). 골목에서 너무 일찍 말하면 헷갈린다. */
-const FIRST_MAX_M = 250;
 /** 이보다 가까운 다음 회전은 묶어서 한 번에 말한다. */
 const MERGE_M = 45;
 /** 판정 안내를 이만큼 앞에서 미리 낸다(초). */
@@ -55,7 +55,10 @@ export interface VoiceInput {
   graph: NaviGraph | null;
   spec: VehicleSpec | null;
   plan: RoutePlan | null;
-  current: SnapResult | null;
+  /** 경로 시작부터 온 거리(m). 위치 추정기(`domain/progress`)가 낸다 */
+  driven: number | null;
+  /** 재동기화 횟수. 바뀌면 끊고 새 자리 안내를 낸다 */
+  jumpSeq: number;
   offRoute: boolean;
   style: Record<string, VerdictStyle>;
   enabled: boolean;
@@ -88,7 +91,7 @@ export function useVoice(i: VoiceInput): VoiceState {
     return extractManeuvers(i.plan, inc, requiredWidth(i.spec));
   }, [i.plan, inc, i.spec]);
 
-  const driven = i.plan ? progressAlongRoute(i.plan, i.current) : null;
+  const driven = i.plan ? i.driven : null;
 
   useEffect(() => {
     if (driven == null) { lastRef.current = null; return; }
@@ -107,14 +110,25 @@ export function useVoice(i: VoiceInput): VoiceState {
   const { m, distM, after } = nextManeuver(maneuvers, driven, MERGE_M);
   const banner = m ? mergePhrase(m, after, distM) : null;
 
-  useEffect(() => { speaker.setEnabled(i.enabled); }, [i.enabled, speaker]);
+  const gateOf = (d: number) => gateIndex(d, speed);
 
+  // ── 재동기화 — 순간이동한 자리에서 바로 말한다 ─────────────
+  // ★ 이 효과가 아래 본 효과보다 **먼저** 선언돼야 한다. 같은 렌더에서 문턱 기록을
+  //   먼저 채워야 본 효과가 같은 말을 한 번 더 하지 않는다.
+  const seenJump = useRef(0);
   useEffect(() => {
+    if (i.jumpSeq === seenJump.current) return;
+    seenJump.current = i.jumpSeq;
     spokenGate.current.clear();
     spokenVerdict.current = null;
-    lastRef.current = null;
+    lastRef.current = null;            // 끊긴 동안의 속도는 모른다
+    if (!i.enabled || i.offRoute) return;
     speaker.cancel();
-  }, [i.plan, speaker]);
+    if (m && distM != null) {
+      spokenGate.current.set(m.atM, Math.max(0, gateOf(distM)));
+      speaker.say(mergePhrase(m, after, distM), "critical");
+    }
+  }, [i.jumpSeq]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!i.enabled) return;
@@ -131,11 +145,10 @@ export function useVoice(i: VoiceInput): VoiceState {
 
     // ── 회전 안내. 문턱이 속도에 비례한다 ──────────────────────
     if (m && distM != null) {
-      const gates = GATES_SEC.map((sec, k) => {
-        const d = Math.max(GATES_MIN_M[k], speed * sec);
-        return k === 0 ? Math.min(FIRST_MAX_M, d) : d;
-      });
-      const gate = gates.findIndex((g) => distM <= g);
+      // ★ 가장 안쪽 문턱을 고른다. 종전 `findIndex` 는 **바깥 문턱부터** 맞춰
+      //   「실행(2.5초 전)」 자리에서도 「먼저 알림」 으로 셌다 — 한 번 말한 뒤로는
+      //   `gate > prev` 가 거짓이라 실행 안내가 안 나갔다.
+      const gate = gateOf(distM);
       if (gate >= 0) {
         const prev = spokenGate.current.get(m.atM);
         if (prev == null || gate > prev) {

@@ -47,7 +47,8 @@ export const C = {
   route: "#2563eb",
   routeAlt: "#f97316",
   routeUnverified: "#7c3aed",
-  routeBottleneck: "#ef4444",
+  /** 범례용. 경로 위 병목 색은 정본(`style.needs_cv`)에서 온다 — layers.ts */
+  routeBottleneck: "#ffab2e",
   routePending: "#22d3ee",
   incident: "#ef2d2d",
   station: "#2563eb",
@@ -63,14 +64,35 @@ export const C = {
  * 지도 주간 테마. 와이어프레임 09-21 이 **밝은 낮 도시**다.
  * ★ 판정색은 여기 없다 — 판정 음영은 `layers.ts` 가 정본 색에서 파생한다.
  */
+/**
+ * 바탕 지도 색. `components/layers.ts` 가 읽는다.
+ *
+ * ★ 2026-09-22 (DECISIONS §213-4) 대비를 올렸다. 종전 판은 흰 도로 선 · 밝은 회색
+ *   건물 · 밝은 회청 바탕이라 **명도 차가 거의 없었다**(바탕 226 · 도로 255 · 건물 227).
+ *   와이어프레임 09-21 의 순서로 바꾼다 —
+ *
+ *       바탕(블록)    밝은 모래색     L≈90
+ *       보도          한 단 어둡게     L≈83
+ *       도로면        짙은 아스팔트    L≈50     ← 경로 파랑이 여기 위에서 뜬다
+ *       건물 벽       중간 회색        L≈72~66
+ *       건물 지붕     밝은 회백        L≈94     ← 위에서 보면 블록 윤곽이 선다
+ */
 export const MAP = {
-  bg: [226, 231, 237] as [number, number, number],
-  road: "#ffffff",
-  roadCase: "#b9c2cd",
-  bldgLow: "#e3e7ec",
-  bldgHigh: "#c9d0d8",
-  label: "#374151",
+  bg: [232, 228, 218] as [number, number, number],
+  sidewalk: "#d6d0c3",
+  asphalt: "#6f7680",
+  asphaltEdge: "#5b616a",
+  marking: "#f4f1e8",
+  /** 옛 이름 — 판정 음영 파생(`shade`)과 범례가 아직 읽는다 */
+  road: "#6f7680",
+  roadCase: "#5b616a",
+  bldgLow: "#aab0b9",
+  bldgHigh: "#8f96a1",
+  roof: "#e2e5e9",
+  label: "#1f2937",
   labelHalo: "#ffffff",
+  roadLabel: "#ffffff",
+  roadLabelHalo: "#3f454d",
 } as const;
 
 export const S = {
@@ -78,8 +100,12 @@ export const S = {
   pad: 16,
   radius: 16,
   radiusSm: 10,
-  /** 상단 안내 바 높이. 지도 카메라 padding 이 이 값을 쓴다 */
-  guideBarH: 96,
+  /**
+   * 상단 안내 바 높이. 지도 카메라 padding 이 이 값을 쓴다.
+   * ★ 2026-09-22 (§214-2) 96 → 124. 와이어프레임은 화면 높이의 15%(992 에서 153)다.
+   *   주행 중 한눈에 읽어야 하는 유일한 글자라 크게 둔다 — 지도를 덜 가리는 선에서.
+   */
+  guideBarH: 124,
   /** 좌측 패널 폭(00 · 01 · 02). 지도 카메라가 이만큼 비켜 선다 */
   sheetW: 460,
 } as const;

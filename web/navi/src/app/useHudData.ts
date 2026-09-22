@@ -7,15 +7,15 @@
  * ★ 회전 안내는 `useVoice` 가 이미 계산한 것을 받는다. 같은 문구를 두
  *   곳에서 만들면 화면과 음성이 갈린다 — **둘은 같은 문구를 쓴다.**
  *
- * ★ 주행 거리를 상태로 두지 않는다. `progressAlongRoute` 가 스냅에서
- *   파생하고, 그것이 `plan.forward` 를 봐서 역방향을 뒤집는다.
+ * ★ 주행 거리는 위치 추정기(`domain/progress`)가 낸 것을 받는다(2026-09-22 · §213-2).
+ *   종전에는 여기서 스냅의 seg_uid 로 다시 파생했다 — 음성 · 화면 · 남은 거리가
+ *   각자 파생하면 셋이 갈린다. 값의 주인은 `useNavigation` 하나다.
  *
  * ★ 소요 시간을 **고정 속도로 나누지 않는다.** 구간 폭에서 속도를 내고
  *   남은 구간만 합산한다 — 큰길 50 · 골목 20km/h(`domain/speed.ts`).
  *   고정 속도로 냈을 때 골목 경로의 도착 시각이 크게 틀렸다(2026-09-06).
  */
 import { useMemo } from "react";
-import { progressAlongRoute } from "../domain/graph";
 import { remainingSeconds, travelSeconds } from "../domain/speed";
 import { requiredWidth } from "../domain/vehicle";
 import type { Maneuver } from "../domain/turn";
@@ -63,6 +63,8 @@ export interface HudInput {
   plan: RoutePlan | null;
   fastPlan: RoutePlan | null;
   current: SnapResult | null;
+  /** 경로 시작부터 온 거리(m). 위치 추정기가 낸다(§213-2). 안내 전이면 null */
+  driven: number | null;
   lenient: boolean;
   offRoute: boolean;
   /** useVoice 가 낸 다음 회전. 화면과 음성이 같은 것을 본다 */
@@ -77,7 +79,7 @@ export function buildHudData(i: HudInput): HudData | null {
   const { plan, spec, style } = i;
   const need = requiredWidth(spec);
 
-  const driven = progressAlongRoute(plan, i.current);
+  const driven = i.driven;
   const remainM = Math.max(0, plan.lengthM - (driven ?? 0));
   const remainSec = remainingSeconds(plan, driven ?? 0);
   const eta = new Date((i.now ?? Date.now()) + remainSec * 1000);
@@ -125,7 +127,7 @@ export function buildHudData(i: HudInput): HudData | null {
 
 export function useHudData(i: HudInput): HudData | null {
   return useMemo(() => buildHudData(i), [
-    i.plan, i.fastPlan, i.current, i.lenient, i.offRoute,
+    i.plan, i.fastPlan, i.current, i.driven, i.lenient, i.offRoute,
     i.spec, i.style, i.maneuver, i.maneuverDistM, i.maneuverText,
   ]);
 }

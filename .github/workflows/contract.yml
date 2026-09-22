@@ -313,10 +313,23 @@ jobs:
         # ★ 2026-09-18 (DECISIONS §186-2). 바로 위에서 노드를 `.nvmrc` 로 맞춘다.
         #   이 잡의 머리 `setup-node` 는 22 이고 배포 액션은 20 이었다 —
         #   **게이트가 빌드와 다른 런타임에서 돌았다.** 위 셋(web/*.js)은 22 그대로 둔다.
+        #
+        # ★ 2026-09-22 (DECISIONS §213-1). 노드 판 · engines 대조를 먼저 한다.
+        #   .nvmrc 가 20 인 동안 잠금 안에 `node >= 22` 패키지가 있었고 EBADENGINE
+        #   이 **경고**로만 떴다. 경고를 실패로 올린다. 로컬 verify 가 같은 도구를 부른다.
         run: |
+          uv run python tools/navi_env.py --no-sync
           cd web/navi
           npm ci --no-audit --no-fund
           npm run typecheck
+
+      - name: ★ 내비 단위 시험 (위치 추정 · 턴바이턴)
+        # ★ 2026-09-22 (§213-3). 화면 검수로는 폐루프가 안 보인다 — 시뮬레이션은
+        #   경로를 따라 걷는 점이라 추정기가 틀려도 맞아 보인다. 1Hz · 잡음 · 음영
+        #   끊김 · 순간이동 · 되돌아오는 경로를 실제 navi_graph 위에서 돈다.
+        run: |
+          cd web/navi
+          npm run test
 
       - name: web/data 용량 검사
         run: |

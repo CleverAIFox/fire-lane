@@ -13,6 +13,7 @@
 
 **지도** https://cleveraifox.github.io/fire-lane/
 **내비** https://cleveraifox.github.io/fire-lane/navi/
+**관제** https://cleveraifox.github.io/fire-lane/navi/?view=ops — 사건 접수 · 출동 지령 · 판정 지도 · 출동 중 차 · 현장 공유 확인 (내비와 같은 브라우저 탭끼리 연결)
 
 ---
 
@@ -84,6 +85,7 @@ uv run python tools/codepatch.py        # 파이썬 소스 멱등 편집기 (배
 
 # 배치가 세운 상태가 유지되는가 — verify.sh 가 부른다
 uv run python tools/install_navi.py --check    # web/navi/src 목록
+uv run python tools/navi_env.py                # 내비 환경 = CI (잠금 → npm ci · 노드 판 · engines)
 uv run python tools/pages_add_navi.py --check  # 배포에 내비 빌드
 uv run python tools/navi_setup.py --check      # 루트 잔재 · 유령 면제
 uv run python tools/ledger_fields.py --check   # 폐기 별칭 부활
@@ -135,7 +137,7 @@ editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
 
 ```bash
-bash tools/verify.sh          # 47단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 49단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 급할 때. ★ `부분 실행` 에서 일부러 빨갛게 죽는다
 ```
 
@@ -224,7 +226,14 @@ uv run python tools/scan_data.py           데이터 레이크 구조 점검
 uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간 전이 대조
 uv run python tools/golden.py              리팩 전후 산출물 동일 증명
 bash tools/merge_batch.sh [--release]       배치 PR 머지 → 파트 동기화 (적용 스크립트가 초록일 때만)
+bash tools/fl.sh <feat/x> [--all|--undo]    ★ 배치 한 명령 — 적용 · verify · PR · 스쿼시 · 방송 · 정리
+bash tools/branch_tidy.sh [--auto]          열린 PR · 원격/로컬 가지 정리 (--auto 는 되돌릴 수 없는 일을 안 한다)
+bash tools/inbox_fl.sh                      INBOX 에 `fl.sh` 로 두는 부트스트랩 — 패치 안 판을 골라 부른다
 ```
+
+★ 배치는 INBOX 에서 이렇게 돈다: `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
+  INBOX 의 `fl.sh` 는 `tools/inbox_fl.sh` 사본이고, 진짜 도구는 **패치 안(없으면
+  origin/part/infra)의 `tools/fl.sh`** 다(DECISIONS §214-1).
 
 강제자  `tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme`
 
@@ -370,6 +379,7 @@ src/firelane/
   publish_web.py          → web/data
   publish_navi.py         내비가 먹을 그래프 하나 (navi_graph.json)
   publish_fleet.py        관내 보유 차종 · 제원 → 내비
+  publish_basemap.py      내비 바탕 면 — 도로면(수치지형도 + 실폭도로) · 보도. 판정과 무관
   destinations.py         내비 목적지 검색 색인. 상가 · 주소/건물 · 관공서
   vehiclecard.py          소방자동차 관리카드 판독
   webmanifest.py          web/data 계보. publish 가 직접 쓴다
@@ -469,7 +479,9 @@ web/
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
 대장        `datasets` 72종 · `retired` 4종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
-내비        web/navi/ — GPS 스냅 · A* · 턴바이턴. edge_cost 는 파이썬과 전량 대조
+내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
+            edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test)
+관제        web/navi/?view=ops — 새 GIS. 옛 지도(web/js)는 철거 대기(DECISIONS §214-5)
 KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 (42%)
 ```
 
@@ -532,6 +544,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 플레이북     cleveraifox.github.io/fire-lane/playbook.html   상황별 안내서
 기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.docx 를 그대로 그린다
 내비        cleveraifox.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
+관제        cleveraifox.github.io/fire-lane/navi/?view=ops 사건 접수 · 출동 지령 · 실시간 공유 확인
 ```
 
 강제자  `tests/test_n1.py::test_no_doc_sends_people_to_old_pages_domain` — 옛 조직 주소(이관 전 배포)로 보내지 않는다(DECISIONS §181-6)
