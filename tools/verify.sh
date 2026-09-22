@@ -809,7 +809,7 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   23.75% → **24.28%** 가 됐고, 그 실행의 권고가 「COV_MIN 을 24 로 조여라」였다.
 #   내림값이라 안전하다. 래칫은 조이라고 말한 다음 배치에서 조인다 — 미루면
 #   권고 줄이 매번 뜨고, 매번 뜨는 줄은 곧 안 읽히는 줄이 된다.
-COV_MIN=26
+COV_MIN=27
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."
