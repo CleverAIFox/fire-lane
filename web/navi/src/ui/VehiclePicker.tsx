@@ -66,7 +66,7 @@ export function VehiclePicker(p: Props) {
               <span style={{ fontSize: 11, color: C.panelSub, textAlign: "right", lineHeight: 1.5 }}>
                 폭 {v.width_m.toFixed(1)}m · 요구 {v.required_width_m.toFixed(1)}m<br />
                 {v.turn_radius_ref_m != null
-                  ? <>회전 {v.turn_radius_ref_m.toFixed(1)}m <span style={ref}>참고</span></>
+                  ? <>회전 {v.turn_radius_ref_m.toFixed(1)}m <span style={ref}>{v.spec_complete ? "코너 점검" : "참고"}</span></>
                   : <>회전 {v.turn_grade ?? "미판정"}</>}
               </span>
             </button>

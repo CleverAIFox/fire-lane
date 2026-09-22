@@ -29,8 +29,9 @@ render_workflow.py — MASTER §12 를 협업 방침 화면으로 렌더한다.
 앞 탭일수록 그림, 뒤 탭일수록 글이다. 처음 오는 사람은 그림만 보고,
 더 알고 싶은 사람이 뒤로 간다.
 
-★ 탭은 CSS 라디오다. JS 를 쓰지 않는다 — `js_graph_check` 가 `web/` 만
-  보므로 여기 스크립트가 들어가면 검사 밖에서 자란다.
+★ 탭은 CSS 라디오다. JS 를 쓰지 않는다 — 이 페이지의 스크립트를 보는 검사가 없으므로
+  (옛 `js_graph_check` 는 `web/js` 만 봤고 2026-09-22 에 지도와 함께 지웠다)
+  여기 스크립트가 들어가면 검사 밖에서 자란다.
 
 IN    docs/MASTER.md §12
 OUT   web/workflow.html  (생성물이지만 커밋한다 — .gitignore 주석 참조)

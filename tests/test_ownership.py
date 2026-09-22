@@ -79,8 +79,9 @@ def test_catch_all_comes_first():
       파일이 문법상 멀쩡하고 검사도 통과하므로 아무도 모른다.
     """
     pats = [p for p, _, _ in rules()]
-    if "*" not in pats:
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전 `if "*" not in pats: return`. 기본값이 없으면
+    #   `test_codeowners_has_a_catch_all` 이 운다 — 여기서 조용히 빠질 이유가 없다.
+    assert "*" in pats, "CODEOWNERS 에 기본값 `*` 이 없다(test_codeowners_has_a_catch_all)"
     assert pats.index("*") == 0, (
         f"기본값 `*` 이 {pats.index('*') + 1}번째 규칙이다.\n"
         "  CODEOWNERS 는 마지막 매치가 이기므로 `*` 은 반드시 맨 앞이어야\n"
@@ -107,8 +108,8 @@ def test_owner_handles_look_real():
       리뷰 없이 통과하는데 CODEOWNERS 에는 적혀 있어서 보호되는
       것처럼 보인다. 검사가 죽은 채 뜨는 초록불이다.
     """
-    if not CODEOWNERS.exists():
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 추적 파일이다. 종전 `return` 은 지워지면 초록이었다.
+    assert CODEOWNERS.exists(), ".github/CODEOWNERS 가 없다 — 추적 파일이다"
     txt = CODEOWNERS.read_text(encoding="utf-8")
     body = "\n".join(l for l in txt.splitlines()
                      if not l.lstrip().startswith("#"))

@@ -16,6 +16,7 @@ golden 지문이 걸려 있다. **새 파일로 내면 기존 열여섯은 한 �
 
 ── 무엇이 들어가는가 ─────────────────────────────────────────────
   style  {verdict: {color, lightColor, label, desc}}   web/config.js 에서 추출
+  terrain {enabled, exaggeration}                     web/config.js 에서 추출(§217-2)
   nodes  [[lon, lat], ...]                             접합된 교차점
   edges  [{seg_uid, a, b, verdict, width_min_m, coords, ow?, ...}]
   turns  [[들어오는 엣지, 노드, 나가는 엣지, TURN_TYPE], ...]   회전 금지
@@ -136,6 +137,21 @@ def _verdict_style() -> dict:
             f"  필요한 것 {sorted(need)}\n"
             f"  config.js 의 verdict 블록 서식이 바뀌었을 수 있다.")
     return out
+
+
+_TERRAIN_RE = re.compile(r"terrain\s*:\s*\{[^}]*?enabled\s*:\s*(true|false)[^}]*?exaggeration\s*:\s*([\d.]+)", re.S)
+
+
+def _terrain() -> dict:
+    """`web/config.js` 의 terrain 블록 — 지형 과장 배수의 정본은 그 파일 하나다(§217-2).
+
+    ★ 못 읽으면 죽는다. 기본값을 두면 옛 지도와 내비의 지형 배수가 조용히 갈린다.
+    """
+    txt = (ROOT / "web" / "config.js").read_text(encoding="utf-8")
+    m = _TERRAIN_RE.search(txt)
+    if not m:
+        raise SystemExit("★ web/config.js 에서 terrain.enabled · exaggeration 을 못 읽었다")
+    return {"enabled": m.group(1) == "true", "exaggeration": float(m.group(2))}
 
 
 def _node_key(x: float, y: float, tol: float) -> tuple[int, int]:
@@ -439,6 +455,7 @@ def main() -> None:
                    "oneway": ow_stat["oneway"], "oneway_dir_known": ow_stat["dir_known"],
                    "turn_bans": len(turns)},
         "style": style,
+        "terrain": _terrain(),
         "nodes": nodes,
         "edges": edges,
         "turns": [list(t) for t in turns],

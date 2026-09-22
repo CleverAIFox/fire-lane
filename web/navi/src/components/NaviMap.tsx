@@ -46,7 +46,7 @@ import type { LiveFix } from "../app/useNavigation";
 import { C, S } from "../ui/tokens";
 import {
   GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers,
-  stationLayers, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
+  stationLayers, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -70,6 +70,8 @@ export interface MapNote {
 
 interface Props {
   view: View;
+  /** 지형 — `navi_graph.json.terrain`(정본 config.js). 없으면 평면(§217-2) */
+  terrain?: { enabled: boolean; exaggeration: number };
   live: React.MutableRefObject<LiveFix>;
   plan: RoutePlan | null;
   /** 02 경로 비교에서만 — 주 경로 밑에 주황으로 */
@@ -150,7 +152,7 @@ export function NaviMap(props: Props) {
         //   같은 밝기라 건물이 덩어리로 뭉친다. 방위 210° · 고도 30° 에서 남서면이 밝고
         //   북동면이 어둡다.
         light: { anchor: "viewport", color: "#ffffff", intensity: 0.45, position: [1.3, 210, 30] },
-        sources: sources(D),
+        sources: sources(D, p.view.terrainBounds),
         layers: baseLayers(styleRef.current),
       },
     });
@@ -175,6 +177,10 @@ export function NaviMap(props: Props) {
       for (const L of routeLayers(styleRef.current)) m.addLayer(L);
       for (const L of markerLayers()) m.addLayer(L);
       for (const L of stationLayers()) m.addLayer(L);
+      // ★ 2026-09-22 (§217-2) 지형을 켠다. `?terrain=0` 이면 평면(느린 기계 · 비교용)
+      if (p.view.terrainBounds) {
+        applyTerrain(m, p.terrain, new URLSearchParams(location.search).get("terrain") !== "0");
+      }
       ready.current = true;
       const q = pending.current; pending.current = [];
       for (const f of q) f(m);

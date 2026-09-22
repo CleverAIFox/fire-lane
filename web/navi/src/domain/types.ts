@@ -25,6 +25,12 @@ export interface VehicleSpec {
   clearance_m: number;
   wheelbase_verified?: boolean;
   turn_radius_verified?: boolean;
+  /**
+   * 코너 회전 점검에 쓰는 최소회전반경(m) — **제원 완성 차종만** 값이 있다(`fleet.json`
+   * `turn_check_radius_m` · DECISIONS §218-2). 막지 않고 비용 · 경고에만 쓴다(`domain/turning.ts`).
+   * ★ `turn_radius_m`(검증 시 막는 값)과 섞지 않는다.
+   */
+  turn_check_radius_m?: number | null;
 }
 
 /** `web/data/fleet.json` 의 차량 한 대. 차종 선택 화면이 읽는다. */
@@ -47,6 +53,10 @@ export interface FleetVehicle {
    * ★ `VehicleSpec.turn_radius_m`(판정용)과 이름을 일부러 달리 둔다.
    */
   turn_radius_ref_m?: number | null;
+  /** 제원 다섯이 다 있고 대응이 확정 — 코너 회전을 점검한다(§218-2) */
+  spec_complete?: boolean;
+  turn_check_radius_m?: number | null;
+  wheelbase_m?: number | null;
   /** 판정하지 않는 값. 표시용으로만 흐른다 */
   length_m?: number | null;
   height_m?: number | null;
@@ -110,6 +120,14 @@ export interface GraphEdge {
    */
   park?: number;
 
+  /**
+   * **경로 안에서만** 붙는다 — 출발·도착 구간을 투영점에서 자른 사본이다(DECISIONS §218-3).
+   * `src` 는 원본 `graph.edges` 인덱스, `t0..t1` 은 원본 형상(a→b) 위 비율이다.
+   * 자른 사본의 `coords` · `length_m` 은 자른 부분만이고 `a` · `b` · `seg_uid` 는 원본 그대로다.
+   * 발행물(`navi_graph.json`)에는 없다.
+   */
+  clip?: { src: number; t0: number; t1: number };
+
   /** 접합된 노드 인덱스 */
   a: number;
   b: number;
@@ -126,13 +144,15 @@ export interface NaviGraph {
   style: Record<string, VerdictStyle>;
   nodes: LngLat[];
   edges: GraphEdge[];
+  /** 지형 — 정본은 `web/config.js` terrain(§217-2). 옛 그래프에는 없다 */
+  terrain?: { enabled: boolean; exaggeration: number };
   /** 회전 금지 `[들어오는 엣지, 노드, 나가는 엣지, TURN_TYPE]`. 옛 그래프에는 없다 */
   turns?: [number, number, number, number][];
 }
 
 /** 경로가 어기거나 확인이 필요한 통행 규칙 하나(`domain/rules.ts`). */
 export interface RuleWarning {
-  kind: "wrong_way" | "oneway_unknown" | "turn_ban";
+  kind: "wrong_way" | "oneway_unknown" | "turn_ban" | "tight_turn";
   /** 경로 시작부터 그 자리까지(m) */
   atM: number;
   seg_uid: string;
@@ -149,6 +169,8 @@ export interface View {
   minZoom?: number;
   maxZoom?: number;
   orthoBounds?: [number, number, number, number];
+  /** 지형 타일 범위(terrain.py). 없으면 지형을 안 켠다 */
+  terrainBounds?: [number, number, number, number];
   emdBounds?: [LngLat, LngLat];
 }
 

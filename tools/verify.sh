@@ -289,6 +289,29 @@ note_hard() { NAMES+=("$1"); RESULTS+=("실패"); NOTES+=("생략 — $2"); SECS
               printf '%s── %s%s\n%s   실패%s  생략 — %s\n' "$C" "$1" "$Z" "$R" "$Z" "$2"
               printf '%s     이 단계를 덮는 관문이 없다. 생략하면 이 실행은 판정을 증명하지 않는다.%s\n\n' "$D" "$Z"; }
 
+# ── 증거 수 = 선언 수 (1족 클래스 가드) ──────────────────────
+# ★ 2026-09-22 (DECISIONS §218-5). `TOTAL` 은 분모로 **화면에만** 쓰였다. 실제로
+#   몇 행이 기록됐는지와 대조하는 자리가 없어서, 갈래 하나가 행을 안 남기면
+#   「[38/41] 통과 38」처럼 **빠진 것이 초록 사이에 묻혔다**(위 2026-09-15 · 09-19 항).
+#   종전 실측으로 셋이 그랬다 — npm 없는 갈래는 셋 중 하나만, `--fast` · raw 부재
+#   갈래는 넷 중 이름도 다른 한 행만 남겼다.
+# ★ 행의 종류(OK · 실패 · 생략 · 건너뜀)는 안 가린다. 묻는 것은 「선언된 단계마다
+#   **무엇이든** 증거가 한 행 있는가」 하나다. 건너뛴 것이 통과가 아닌 것은 위
+#   `부분 실행` 이 따로 든다.
+# ★ `step` 으로 부르지 않는다 — 부르면 자기가 분모에 들어가 제 자신을 센다.
+#   `tests/test_verify_evidence.py` 가 이 함수를 그대로 떼어 합성 실행으로 시험한다.
+evidence_check() {
+    local rows=${#NAMES[@]}
+    if [ "$rows" -ne "$TOTAL" ]; then
+        NAMES+=("증거 수 = 선언 수"); RESULTS+=("실패"); SECS+=(0)
+        NOTES+=("기록 ${rows}행 ≠ 선언 ${TOTAL}단계 — 행을 안 남긴 갈래가 있다")
+        fail=$((fail+1))
+        printf '%s── 증거 수 = 선언 수%s\n%s   실패%s  기록 %d행 ≠ 선언 %d단계\n' \
+               "$C" "$Z" "$R" "$Z" "$rows" "$TOTAL"
+        printf '%s     건너뛰는 갈래(note · note_hard)도 **단계 이름마다** 한 행을 남겨야 한다.%s\n\n' "$D" "$Z"
+    fi
+}
+
 echo
 printf '%s저장소%s  %s\n' "$D" "$Z" "$ROOT"
 # ★ 2026-09-14. HEAD 를 찍는다. `dms.py seal --log` 가 이 줄을 읽어
@@ -357,6 +380,8 @@ step "pytest" uv run pytest tests/ -q --cov=src --cov=tools --cov-report=
 # ★ 2026-08-22 에 155 → 0 으로 정리했다. 이제 참고가 아니라 게이트다.
 #   되돌아가면 여기서 죽는다. 스타일 규칙 6종은 pyproject 에서 껐고
 #   끄는 근거를 각각 적어뒀다.
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "src/* tools/* tests/* pyproject.toml .ruff-strict.toml"
 step "ruff" uv run ruff check src tools tests
 
 # ── 5a. 엄격 린트 — CI 의 contract-strict 와 같은 것 ─────────
@@ -371,6 +396,8 @@ step "ruff" uv run ruff check src tools tests
 #
 # ★ 대상 파일은 CI 와 같은 도구가 낸다(`owned_paths.py --py-only`).
 #   CODEOWNERS 단독 소유 경로만이라, 공동 소유 파일에는 엄격 규칙을 안 건다.
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "src/* tools/* tests/* pyproject.toml .ruff-strict.toml"
 step "엄격 린트 (CI 와 같은 인자)" bash -c '
     # ★ 인자를 여기 적지 않는다. 정본은 .ruff-strict.toml 이고 CI 도 같은
     #   파일을 읽는다. 종전에는 contract.yml 을 grep 으로 긁었는데 주석의
@@ -382,6 +409,17 @@ step "엄격 린트 (CI 와 같은 인자)" bash -c '
     echo "대상 $(echo "$FILES" | wc -l)개 · 인자 .ruff-strict.toml"
     uv run ruff check $FILES --config .ruff-strict.toml
 '
+
+# ── 5c. 의존성 선언 ↔ import (4족 클래스 가드) ──────────────
+# ★ 2026-09-22 (DECISIONS §218-5). 선언은 있는데 아무도 import 안 하는 것 · import 는
+#   하는데 선언이 없는 것 · 전이 의존성에 기대는 것을 **두 방향으로** 센다. 종전 강제자
+#   (`test_etl_imports_are_declared`)는 src/firelane 의 누락 한 방향만 봤다.
+# ★ 잠금에 안 넣는다 — `--with` 로 이 자리에서만 얹고 `--no-sync` 로 환경을 안 건드린다.
+#   uv.lock 이 움직이면 샤드 봉인 · golden 지문이 찢어진다. 설정 · 알려진 예외는
+#   pyproject.toml 의 `[tool.deptry]` 한 곳이다. 판은 contract.yml 과 같아야 한다
+#   (`tests/test_deptry_config.py`).
+scope "pyproject.toml src/* tools/*"
+step "의존성 선언↔import (deptry)" uv run --no-sync --with deptry==0.25.1 deptry src tools
 
 
 # ── 5b. 저장소 위생 — CI 와 같은 것을 본다 ───────────────────
@@ -405,6 +443,8 @@ step "엄격 린트 (CI 와 같은 인자)" bash -c '
 #   동안 깨진 채로 main 까지 갔다(DECISIONS §196). actionlint 는 YAML 파싱
 #   너머의 것을 본다 — 표현식 · 액션 참조 · 셸 인젝션.
 #   커밋된 잠금으로 깔리므로 CI 에서도 같은 판이 돈다(면제 아님).
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope ".github/* pyproject.toml uv.lock"
 step "워크플로 린트"    uv run actionlint
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
 step "인코딩·개행"      uv run python tools/encoding_check.py
@@ -431,6 +471,8 @@ step "pre-commit 전수"  uv run pre-commit run --all-files
 #     전역 훅은 저장소 밖 파일이라 이 저장소가 설치할 수 없다. 실제 절차는
 #     `global-chain.sh --check` 가 미설정일 때 직접 찍는다(`:44-51`).
 # ci-exempt: .githooks/global-chain.sh 전역 훅(~/.githooks)은 기계 설정이다. CI 러너에는 없다
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope ".githooks/*"
 step "훅 전역 연결"    bash .githooks/global-chain.sh --check
 # ★ 2026-09-18 (W2). 3족의 클래스 가드. 로컬에만 있는 검사기를 센다.
 #   CI 도 같은 명령을 돈다 — 규칙을 두 곳에 적는 것이 아니라 같은 도구가
@@ -440,9 +482,15 @@ step "훅 전역 연결"    bash .githooks/global-chain.sh --check
 #   못 도는 검사까지 옮기라고 압박했고(2026-09-18 에 `refcheck` 를 넣었다 되돌렸다),
 #   ② `--max 19` 가 여기와 `contract.yml` 둘에 손으로 적혀 있어 한쪽만 고쳐
 #   **로컬 초록 · CI 빨강**이 났다.
-#   이제 면제는 위 `# ci-exempt:` 선언 여덟이 들고, 숫자는 `gate_parity.py` 의
+#   ★ 2026-09-22 (DECISIONS §218-5). 미선언 11 중 열을 CI 로 옮기고 dms.py 하나를 면제로
+#     선언해 래칫이 11 → 0 이 됐다. 면제 선언은 열이다.
+#   이제 면제는 `# ci-exempt:` 선언들이 들고, 숫자는 `gate_parity.py` 의
 #   `RATCHET` 한 곳에만 산다. **부르는 쪽은 인자를 안 적는다.**
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "tools/* .github/* tests/* .pre-commit-config.yaml"
 step "관문 동등"  uv run python tools/gate_parity.py
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "src/* tools/* .env.example"
 step "환경변수 선언↔실물" uv run python tools/env_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
@@ -451,7 +499,8 @@ step "문서 숫자 대조"   uv run python tools/docnum_check.py
 step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 # ★ 2026-09-02 배선. 오늘 캡션 절까지 붙여놓고 **어디서도 안 부르고
 #   있었다.** 사람이 손으로 칠 때만 도는 도구는 이탈 후 아무도 안 부른다.
-scope "docs/* tools/*"
+# ★ 2026-09-22 — ⑤⑥ 이 golden · 발행 구간 · 대장을 읽는다(W4-2). 범위를 좁게 두면 조용히 건너뛴다
+scope "docs/* tools/* data/* web/* src/* tests/* .github/* sources.yaml"
 step "기획서 대조"     uv run python tools/docx_check.py
 # ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
 scope "docs/* tools/* src/* data/*"
@@ -460,6 +509,8 @@ step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
 #   찍혀 생략 칸을 채웠다 — 진짜 생략(npm 없음 · --fast)이 그 옆에 묻힌다. 표는 릴리즈 PR 본문에서 쓰인다(merge_batch --release).
 # ★ 2026-09-17 (DECISIONS §182-2 · G-14). 대장 필드 검사를 아무도 안 불렀다. `python -m firelane.ledger` 는
 #   FAIL 9 로 종료코드 1 을 내고 있었는데 verify · 테스트 · CI 어디에도 없어서 초록이었다.
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "sources.yaml src/* tools/*"
 step "대장 필드 검사"   uv run python -m firelane.ledger
 # ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
 # ci-exempt: tools/refcheck.py 대장 file/files 를 raw 실물과 대조한다. CI 에 레이크가 없다(DECISIONS §191-4)
@@ -485,29 +536,16 @@ step "web/data 용량"    bash -c '
     echo "web/data ${SIZE}MB / 상한 ${LIM}MB"
     [ "$SIZE" -lt "$LIM" ]'
 
-# ── 6. JS 모듈 그래프 ────────────────────────────────────────
-scope "web/* tools/*.mjs"
-step "JS 문법·순환·import" node tools/js_graph_check.mjs
-
-# ── 7. JS 부팅 (jsdom 필요) ──────────────────────────────────
-if [ -d node_modules/jsdom ]; then
-    scope "web/* tools/*.mjs"
-    step "JS 부팅 스모크" node tools/web_boot_check.mjs
-elif command -v npm >/dev/null 2>&1; then
-    printf '%s── JS 부팅 스모크%s\n%s   jsdom 설치 중...%s\n' "$C" "$Z" "$D" "$Z"
-    if npm install --no-save jsdom >/dev/null 2>&1; then
-        scope "web/* tools/*.mjs"
-        step "JS 부팅 스모크" node tools/web_boot_check.mjs
-    else
-        note "JS 부팅 스모크" "jsdom 설치 실패 — npm install --no-save jsdom"
-    fi
-else
-    note "JS 부팅 스모크" "npm 이 없다"
-fi
+# ── 6·7. (철거) JS 모듈 그래프 · JS 부팅 ─────────────────────
+# ★ 2026-09-22. 옛 GIS 지도(web/js 30모듈 · index.html 패널)를 걷어냈다 — 관제 화면
+#   (web/navi ?view=ops)이 넘겨받았다. 「JS 문법·순환·import」(js_graph_check.mjs) ·
+#   「JS 부팅 스모크」(web_boot_check.mjs · jsdom)는 그 지도만 봤으므로 도구째 지웠다.
+#   영향 범위 선언 둘이 함께 빠져 tests/test_verify_scope.py 의 SCOPE_FLOOR 를 내렸다.
+#   화면 검사는 아래 7b(내비 타입 · 단위 시험)가 든다.
 
 # ── 7b. 내비 타입 검사 (web/navi) ────────────────────────────
-# ★ 2026-09-15 신설. 6·7 은 `web/*.js` 클래식 스크립트만 본다. 내비는
-#   React/TS 라 그 셋에 안 걸리고, 컴파일하는 곳은 배포 액션 하나뿐이다.
+# ★ 2026-09-15 신설. (철거된) 6·7 은 `web/js` 옛 지도만 봤다. 내비는
+#   React/TS 라 그 셋에 안 걸렸고, 컴파일하는 곳은 배포 액션 하나뿐이었다.
 #   그래서 maplibre-gl 6 이 로컬 39단계 전부 초록인 채로 main 까지 갔다.
 #   **여기가 비어 있어서 로컬이 CI 의 부분집합도 아니었다**(5b 와 같은 사고).
 # ★ 타입만 본다. `vite build` 는 토큰이 필요하고, 이번 사고는 타입에서
@@ -529,7 +567,11 @@ if command -v npm >/dev/null 2>&1; then
     scope "web/navi/*"
     step "내비 단위 시험" bash -c 'cd web/navi && npm run -s test'
 else
+    # ★ 2026-09-22 (DECISIONS §218-5). 종전에는 셋 중 「내비 타입 검사」 한 행만 남겼다.
+    #   갈래가 건너뛰는 단계는 **이름마다** 한 행이다 — 아래 `evidence_check` 가 센다.
+    note "내비 환경 = CI" "npm 이 없다"
     note "내비 타입 검사" "npm 이 없다"
+    note "내비 단위 시험" "npm 이 없다"
 fi
 
 # ── 8. 파이프라인 전량 + 판정 불변 ───────────────────────────
@@ -537,14 +579,28 @@ fi
 if [ "$FAST" = "1" ]; then
     # ★ `--fast` 는 `note` 로 둔다. 아래 `부분 실행` 단계가 `--fast` 를 이미
     #   **실패로** 잡으므로(405~418행) 여기서 또 올리면 같은 사실을 두 번 센다.
-    note "파이프라인 전량 + golden" "--fast 로 생략. 반드시 따로 돌릴 것"
+    # ★ 2026-09-22 (DECISIONS §218-5). 종전에는 「파이프라인 전량 + golden」 **한 행**이었다 —
+    #   아래 갈래의 단계 넷 중 어느 이름과도 안 맞아 분모와 기록이 셋 어긋났다.
+    #   건너뛰는 단계마다 제 이름으로 한 행이다(`evidence_check`).
+    #   이름을 루프 변수로 감추지 않는다 — 시험이 리터럴로 읽어 단계 이름과 대조한다.
+    _why="--fast 로 생략. 반드시 따로 돌릴 것"
+    note "파이프라인 전량" "$_why"
+    note "golden 판정 불변" "$_why"
+    note "golden 게이트 해제 경로" "$_why"
+    note "커밋된 web/data 가 최신인가" "$_why"
 elif [ -z "${FIRE_LANE_DATA:-}${FIRE_LANE_RAW:-}" ] && [ ! -d data/raw/gjcity ]; then
     # ★ 2026-09-18. 여기가 `note` 였다. 그래서 레이크 없는 기계에서
     #   **이 저장소의 유일한 판정 검증이 빠진 채 「전부 통과했다」가 찍혔다.**
     #   `--only` · `--fast` 는 `부분 실행` 이 잡는데 raw 부재는 아무도 안 잡았다.
     #   CI 도 이 단계를 안 돈다(실측: verify 42단계 중 CI 10단계) — 덮개가 없다.
-    note_hard "파이프라인 전량 + golden" \
-              "raw 가 없다. FIRE_LANE_DATA 를 설정하고 다시 돌려라 (paths.require_lake)"
+    # ★ 2026-09-22 (DECISIONS §218-5). 한 행이던 것을 단계 이름마다 한 행으로 편다.
+    #   덮개 여부로 가른다(위 「생략 두 종」) — golden 둘은 이제 CI 가 **커밋본으로**
+    #   돈다(contract.yml 「golden 판정 불변」). 파이프라인과 freshcheck 는 덮개가 없다.
+    _why="raw 가 없다. FIRE_LANE_DATA 를 설정하고 다시 돌려라 (paths.require_lake)"
+    note_hard "파이프라인 전량" "$_why"
+    note "golden 판정 불변" "파이프라인이 안 돌아 새 산출이 없다. 커밋본 대조는 CI 가 돈다"
+    note "golden 게이트 해제 경로" "파이프라인이 안 돌았다. 같은 selftest 를 CI 가 돈다"
+    note_hard "커밋된 web/data 가 최신인가" "$_why"
 else
     # ★ --no-test. 계약 테스트는 위 pytest 가 이미 돌렸다. 파이프라인이
     #   끝에서 또 부르면 한 번의 verify 에 test_contract 가 세 번 돈다.
@@ -589,8 +645,8 @@ else
     #   저장소에 있는데 이 자리가 손으로 다시 적으며 틀렸다(DECISIONS §192).
     #   디렉터리로 넓힌다. 추적되는 것은 넷이고 전부 결정적이다
     #   (`_manifest.json` 은 `write_stable` 이 시각만 바뀌면 안 쓴다).
-    #   ★ 단계 이름은 안 고쳤다 — DECISIONS §179 와 PLAN #49 가 이 이름을
-    #     인용한다. 이름·인용을 함께 옮기는 것은 PLAN §13 W3-13 이 받는다.
+    #   ★ 단계 이름은 안 고쳤다 — DECISIONS §179 가 이 이름을
+    #     인용한다. W3-13(2026-09-22 닫힘)은 목록만 등록부로 옮겼고 이름은 그대로 둔다.
     #   ★ 2026-09-20 (W4-10). 종전에는 여기서 `git diff --quiet` 한 줄이
     #     돌았고 **파일 이름까지만** 말했다. 그날 두 매니페스트가 48줄씩
     #     움직였는데 그중 45자리가 `datasets.*.seal.code` 였다 — 그 배치가
@@ -643,6 +699,9 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --ratchet
 # ── 소급 · 사본 (B5 ⓪ · 원칙 ⑥) ────────────────────────────────
 # ★ `delta` 는 봉인 뒤 바뀐 절만 센다. 전수는 `seal` 이 한 번 돈다.
 #   기준선이 없으면 전수가 곧 분모라고 스스로 말한다.
+# ★ 2026-09-22 (DECISIONS §218-5). 관문 동등의 미선언 11 을 정리하며 dms.py 는 면제로 선언했다.
+#   `delta` 는 봉인 커밋과의 차이를, `ancestry` 는 봉인 커밋이 조상인가를 **git 역사로** 잰다.
+# ci-exempt: tools/dms.py 봉인 커밋과의 증분·조상을 git 역사로 잰다. CI 클론은 얕다(fetch-depth 1)
 step "강제자 소급 증분" uv run python tools/dms.py delta
 # ★ 2026-09-21 (PLAN §13 W11-1 · DECISIONS §210). **봉인이 가리키는 커밋이 이 트리의 조상인가.**
 #   `delta` 는 봉인 **뒤**를 센다. 그런데 봉인이 없는 커밋을 가리키면 `delta` 는
@@ -652,6 +711,7 @@ step "강제자 소급 증분" uv run python tools/dms.py delta
 #   **`delta` 의 전제를 이 단계가 든다** — 전제가 무너지면 여기서 운다.
 # ★ 로컬 전용이다. CI 클론은 얕아(`fetch-depth: 1`) 조상을 잴 역사가 없다.
 #   `tools/dms.py` 는 이미 미선언 로컬 전용 목록에 있으므로 관문 동등 래칫은 안 움직인다.
+#   ★ 2026-09-22 (DECISIONS §218-5). 이제 미선언이 아니라 위 `# ci-exempt:` 가 사유와 함께 든다.
 step "봉인 조상" uv run python tools/dms.py ancestry
 
 # ★ 2026-09-19 정정 — 실측 **5군**이다(`--min 25` · 함수 13). 종전 이 줄은
@@ -660,7 +720,15 @@ step "봉인 조상" uv run python tools/dms.py ancestry
 #   있는데 주석이 손으로 다시 적으며 틀렸다(DECISIONS §192 와 같은 형태).
 # ★ 문턱 40 에서 시작한다. 검사를 무르게 만드는
 #   것이 아니라 **지금 값에서 시작해 내리는 것**이 일이다(env_check 선례).
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "src/* tools/* tests/*"
 step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
+
+# ★ 2026-09-22 (DECISIONS §218-5 · 하토르 check_file_size.py 모범). 파일 길이 **양방향** 래칫.
+#   상한(코드 600 · 시험 700)을 넘는 것은 `EXCEPTIONS` 에 오늘 줄 수로 박혀 있고, 늘면
+#   실패 · 줄면 「예외를 내려라」로 실패 · 없어지면 「예외를 지워라」로 실패다.
+scope "src/* tools/* tests/*"
+step "파일 길이 래칫" uv run python tools/sizecheck.py
 
 # ★ 파일명의 날짜가 자료 기준일인가 내려받은 날인가. `naming` 규약은
 #   "다운로드일이 아니다" 라고 적었는데 `_plausible_date` 는 형식만 본다 —
@@ -669,6 +737,8 @@ step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
 # ★ 대장 글롭으로 보면 안 보인다. `files:` 가 한 벌을 못박아놔서 두 번째
 #   벌은 대장 밖이다. 이 도구는 **레이크를 직접 훑는다.**
 # ci-exempt: tools/vintage_check.py 레이크를 직접 훑어 파일명 날짜를 본다. 대장 글롭으로는 안 보인다
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "sources.yaml src/* tools/* data/*"
 step "vintage 정합" uv run python tools/vintage_check.py --max 0
 
 # ★ norm 이 지금의 raw 에서 나온 것인가. **재현성 게이트다.**
@@ -685,6 +755,8 @@ step "norm 계보 재현" uv run python -m firelane.prep --check --max 0
 # ★ 적용 뒤 no-op 이 되는 배치 도구를 EXEMPT 로 재우면, 상태가 되돌아가도
 #   우는 곳이 없어진다. 지우는 대신 `--check` 를 달아 강제자로 승격했다.
 #   넷은 각자 다른 것을 본다 — 공통 껍데기를 씌우지 않았다.
+# ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
+scope "sources.yaml src/* tools/* data/*"
 step "대장 별칭 이관 유지" uv run python tools/ledger_fields.py --check
 # ★ 2026-09-15 배선. 종전에는 `test_declaration_sync` 의 실패 메시지 안에
 #   안내문으로만 있었다 — 결번이 생겨야 울고, 그 전에 참조가 썩는 것은
@@ -737,7 +809,7 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   23.75% → **24.28%** 가 됐고, 그 실행의 권고가 「COV_MIN 을 24 로 조여라」였다.
 #   내림값이라 안전하다. 래칫은 조이라고 말한 다음 배치에서 조인다 — 미루면
 #   권고 줄이 매번 뜨고, 매번 뜨는 줄은 곧 안 읽히는 줄이 된다.
-COV_MIN=25
+COV_MIN=27
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."
@@ -789,6 +861,8 @@ if [ -n "$ONLY" ] || [ "$FAST" = "1" ] || [ -n "$SINCE" ]; then
     step "부분 실행" bash -c 'echo "--only · --fast · --since 중 하나로 돌았다. 전수가 아니다."; exit 1'
     ONLY="$_only_keep"; SCOPE="$_sc_keep"
 fi
+# ★ 2026-09-22 (DECISIONS §218-5). `부분 실행` 뒤에 둔다 — 그것도 분모에 든 단계다.
+evidence_check
 
 
 printf '%s══════════════════════════════════════════════%s\n' "$D" "$Z"

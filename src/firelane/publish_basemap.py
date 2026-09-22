@@ -67,7 +67,8 @@ def _round(obj):
     return obj
 
 
-def build(name: str, frame) -> dict:
+def union(name: str, frame):
+    """`SOURCES[name]` 를 틀 안에서 합친 면(5186 · 단순화 전). 건물 발행도 이것을 쓴다(§217-3)."""
     parts = []
     for f in SOURCES[name]:
         path = P / f
@@ -76,7 +77,11 @@ def build(name: str, frame) -> dict:
         g = gpd.read_file(path)
         g = g[g.intersects(frame)]
         parts.extend(g.geometry.make_valid().intersection(frame))
-    u = gpd.GeoSeries(parts, crs=5186).union_all().simplify(SIMPLIFY_M)
+    return gpd.GeoSeries(parts, crs=5186).union_all()
+
+
+def build(name: str, frame) -> dict:
+    u = union(name, frame).simplify(SIMPLIFY_M)
     polys = gpd.GeoSeries([u], crs=5186).explode(index_parts=False)
     polys = polys[polys.geom_type == "Polygon"]
     polys = polys[polys.area >= 1.0]                 # 1㎡ 미만 부스러기는 버린다

@@ -748,8 +748,8 @@ def test_local_verify_covers_ci():
     assert "CI 환경 재현" in vs, \
         "verify.sh 가 CI 의 좁은 환경을 재현하지 않는다 — 로컬 초록불이 보증이 아니다"
 
-    tools = ("commit_policy", "encoding_check", "docnum_check",
-             "web_manifest", "js_graph_check", "web_boot_check")
+    # ★ 2026-09-22. `js_graph_check` · `web_boot_check` 를 뺐다 — 옛 지도와 함께 지웠다.
+    tools = ("commit_policy", "encoding_check", "docnum_check", "web_manifest")
     missing = [t for t in tools if t in ci and t not in vs]
     assert not missing, (
         f"CI 가 돌리는데 verify.sh 가 안 돌리는 검사: {missing}\n"

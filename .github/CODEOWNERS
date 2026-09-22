@@ -94,22 +94,11 @@
 
 # ── 5. 표출 ─────────────────────────────────────────────────────
 # 파일을 계층으로 나눠 충돌을 구조적으로 막는다(DECISIONS §27).
-/web/style.css           @CleverAIFox
+# ★ 2026-09-22. 옛 GIS 지도(web/js · style.css)를 걷어냈다. index.html 은 관제로 넘기는 입구다.
+#   config.js 는 이제 **파이프라인 설정**이다(publish_navi · publish_fleet 가 정규식으로 읽는다).
 /web/index.html          @CleverAIFox
 /web/README.md           @CleverAIFox
 /web/config.js           @CleverAIFox           # !strict
-/web/js/main.js          @CleverAIFox           # !strict
-/web/js/data.js          @CleverAIFox           # !strict
-/web/js/state.js         @CleverAIFox           # !strict
-/web/js/map.js           @CleverAIFox           # !strict
-/web/js/basemap.js       @CleverAIFox           # !strict
-/web/js/verdict.js       @CleverAIFox           # !strict
-/web/js/reach.js         @CleverAIFox           # !strict   2026-09-16 도달 불가 조인 (DECISIONS §166)
-/web/js/config-access.js @CleverAIFox           # !strict
-/web/js/dom.js           @CleverAIFox
-/web/js/layers/          @CleverAIFox           # !strict
-/web/js/icons/           @CleverAIFox
-/web/js/ui/              @CleverAIFox
 /web/assets/             @CleverAIFox
 # ★ profiles.json 은 DECISIONS §84 가 드는 **치수 정본**이다. 스타일
 #   자산이 아니라 데이터라 GIS 팀이 함께 든다. 개인이 아니라 팀 핸들로

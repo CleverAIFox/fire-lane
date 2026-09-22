@@ -190,8 +190,9 @@ def test_devcontainer_sync_matches_verify() -> None:
     """
     setup = ROOT / ".devcontainer/setup.sh"
     verify = ROOT / "tools/verify.sh"
-    if not setup.exists():
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전 `if not setup.exists(): return` — 추적 파일이다.
+    #   지워지면 이 검사가 **초록으로** 사라졌다. 없으면 운다.
+    assert setup.exists(), ".devcontainer/setup.sh 가 없다 — 추적 파일이다"
 
     def _syncs(path: Path) -> list[str]:
         out = []
@@ -231,3 +232,14 @@ def test_devcontainer_actually_runs_its_setup_script():
         f"postCreateCommand 가 setup.sh 를 안 부른다 — 지금: {cmd!r}\n"
         "  setup.sh 는 있는데 아무도 안 부르면 그 안의 방어가 전부 없는 것과 같다")
     assert "uv sync" not in cmd, "setup.sh 가 이미 uv sync 를 한다 — postCreateCommand 에서 또 하지 않는다"
+
+
+def test_devcontainer_env_notice_is_conditional():
+    """PLAN W3-18 ③ (DECISIONS §217-5). 환경변수 안내가 **비었을 때만** 나온다.
+
+    ★ 종전에는 조건 없이 늘 찍혀 신호가 아니었다. 값은 기계마다 달라 박을 수 없으니
+      단일 독자(`paths.env`)로 묻고 빈 것만 말한다.
+    """
+    s = (ROOT / ".devcontainer/setup.sh").read_text(encoding="utf-8")
+    assert "paths.env(k)" in s and 'if [ -n "$MISSING" ]' in s, "환경변수 안내가 조건 없이 찍힌다"
+    assert "FIRE_LANE_INBOX" in s, "머리말이 드는 INBOX 를 안 본다"

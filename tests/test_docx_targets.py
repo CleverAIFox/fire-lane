@@ -75,9 +75,14 @@ def test_plan12_targets_exist_in_docx():
       표와 문서가 같이 낡지 않는다.
     """
     assert DOCX.exists(), "docs/proposal.docx 가 없다 — 커밋된 기획서다"
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전에는 `if not rows: return` 이었고 주석이 「파서 사망은
+    #   카나리아가 가린다」고 적었다. **그 카나리아가 없었다** — `_open_rows()` 는
+    #   §12 제목을 못 찾으면 `[]` 를 돌려주고, 그러면 이 검사가 초록이었다.
+    #   남은 행 0 은 여전히 통과다(아래 루프가 빈다). 다만 **닻은 있어야 한다.**
+    assert "## 12. 기획서 갱신 대상" in PLAN.read_text(encoding="utf-8"), (
+        "PLAN §12 제목(`## 12. 기획서 갱신 대상`)이 없다 — `_open_rows()` 가 빈 목록을 "
+        "내고 이 검사가 조용히 통과한다. 제목을 바꿨으면 여기도 같이 옮겨라")
     rows = _open_rows()
-    if not rows:
-        return   # ★ 남은 행 0 은 대조할 것이 없는 것이다 — skip 이 아니다. 파서 사망은 카나리아가 가린다
 
     txt = _docx_text()
     bad = []
@@ -94,3 +99,52 @@ def test_plan12_targets_exist_in_docx():
         "PLAN §12 가 문서에 없는 것을 고치라고 적는다:\n" + "\n".join(bad) +
         "\n\n  고칠 대상이 없으면 그 행을 ⬛ '해당 없음' 으로 내려라.\n"
         "  08-31 에 다섯 건 중 셋이 이 상태였다 — 표가 문서보다 먼저 낡았다.")
+
+
+def _check_mod():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_docx_check", ROOT / "tools" / "docx_check.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_docx_check_is_bidirectional(tmp_path):
+    """`docx_check` ⑤ 정방향 · ⑥ 역방향 · ⑦ 참조가 **실제로 운다** (PLAN §13 W4-2 · DECISIONS §217-5).
+
+    기획서 사본의 회색 문단을 1,101 세대로 되돌리면 ⑤ 가, 규칙의 닻 문장을 지우면 ⑥ 이,
+    없는 경로를 적으면 ⑦ 이 울어야 한다. 셋 다 안 울면 검사가 빈 그물이다.
+    """
+    import docx
+    chk = _check_mod()
+    assert not chk.audit(DOCX), "지금 기획서가 이미 어긋난다 — docx_fix --write"
+    d = docx.Document(str(DOCX))
+    hit = anchor = False
+    for p in d.paragraphs:
+        if "CCTV 유효범위 25m 안에 드는 구간이" in p.text and not hit:
+            p.runs[0].text = re.sub(r"구간이 [\d,]+ / [\d,]+\([\d.]+%\)", "구간이 380 / 1,101(34.5%)", p.text)
+            for r in p.runs[1:]:
+                r.text = ""
+            hit = True
+        elif "담당하는 소방 통행량은" in p.text and not anchor:
+            for r in p.runs:
+                r.text = ""
+            p.runs[0].text = "지워진 문단 src/firelane/없는파일.py"
+            anchor = True
+    assert hit and anchor, "시험이 고칠 문단을 못 찾았다 — 기획서 문구가 바뀌었다"
+    bad_p = tmp_path / "proposal.docx"
+    d.save(str(bad_p))
+    out = "\n".join(chk.audit(bad_p))
+    assert "정방향" in out, "1,101 세대로 되돌렸는데 ⑤ 정방향이 안 운다"
+    assert "역방향" in out, "규칙의 닻 문장을 지웠는데 ⑥ 역방향이 안 운다"
+    assert "없는파일.py" in out, "없는 경로를 적었는데 ⑦ 참조가 안 운다"
+
+
+def test_long_cell_ratchet_bites(monkeypatch):
+    """W4-7 — 개요표 긴 칸은 양식이라 쪼개지 않고, **자라거나 줄면** 운다 (DECISIONS §218-6)."""
+    chk = _check_mod()
+    assert not chk.audit(DOCX), "지금 기획서가 이미 어긋난다"
+    monkeypatch.setattr(chk, "LONG_MAX_N", chk.LONG_MAX_N - 1)
+    assert any("긴 칸" in x and "초과" in x for x in chk.audit(DOCX)), "칸이 늘었는데 안 운다"
+    monkeypatch.setattr(chk, "LONG_MAX_N", chk.LONG_MAX_N + 2)
+    assert any("줄었다" in x for x in chk.audit(DOCX)), "칸이 줄었는데 상한을 내리라고 안 한다"

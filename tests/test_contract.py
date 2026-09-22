@@ -1,7 +1,7 @@
 """
 test_contract.py — GIS ↔ UI 계약 검증
 
-UI(web/index.html)가 의존해도 되는 것만 여기서 고정한다.
+UI(web/navi — 내비 · 관제 ?view=ops)가 의존해도 되는 것만 여기서 고정한다.
 값은 실측 후 바뀐다. 구조는 안 바뀐다. 그 경계가 이 파일이다.
 
 깨지면: GIS 쪽이 UI를 말없이 부순 것이다. 머지하기 전에 UI 담당과 합의할 것.
@@ -35,7 +35,7 @@ def seg():
 
 
 def test_files_exist():
-    for n in ["segments", "buildings", "boundary", "hydrants", "stations"]:
+    for n in ["segments", "buildings", "hydrants", "stations"]:
         assert (WEB / f"{n}.geojson").exists(), f"web/data/{n}.geojson 없음 → publish_web.py 실행"
 
 
@@ -105,10 +105,10 @@ def _coords(g):
 
 
 # ── 웹 정적 검증 ──────────────────────────────────────────────
-# ★ 미니맵이 하루 종일 안 뜬 원인이 여기 걸렸을 문제였다.
-#   index.html 에서 지운 요소(#s-use)를 app.js 가 계속 참조했고,
-#   거기서 예외가 나 그 뒤 코드(폭 밴드·미니맵)가 통째로 안 돌았다.
-#   화면 일부가 비는 건 눈에 보이지만 "절반이 안 뜨는" 건 원인 찾기가 어렵다.
+# ★ 2026-09-22. 옛 GIS 지도(web/index.html · web/js 30모듈 · style.css)를 걷어냈다.
+#   관제 화면(web/navi ?view=ops)이 넘겨받았다. 지도 DOM id · 토글 · 마커 팝업 · 툴팁 CSS
+#   를 보던 검사 여덟은 대상이 사라져 함께 지웠다. 화면 쪽 계약은 이제 내비의 vitest 가 든다.
+#   여기 남는 것은 **파일 이름 계약**뿐이다 — 내비가 읽는 web/data 파일이 실재하는가.
 
 WEBDIR = ROOT / "web"
 
@@ -128,95 +128,17 @@ def _read(name):
     return (WEBDIR / name).read_text(encoding="utf-8")
 
 
-def _js():
-    """web/js/** 전체를 이어붙인 것.
+def test_navi_data_files_exist():
+    """내비가 이름으로 읽는 web/data 파일이 실제로 있어야 한다.
 
-    ★ 2026-08-21. 종전에는 `_read("app.js")` 였다. app.js 1,260줄을
-      web/js/ 27개 모듈로 쪼갰으므로 파일 하나를 읽으면 아무것도 못 잡는다.
-      **여기를 안 고치면 테스트가 조용히 통과한다** — 검사 대상이 사라진
-      것이지 문제가 없어진 게 아니다. glob 으로 바꿔 모듈이 더 늘어도
-      전부 잡히게 한다(contract.yml 의 JS 검사가 glob 인 것과 같은 이유).
+    ★ 옛 지도 시절에는 `web/js/data.js` 의 BASE_KEYS 를 봤다. 소비자가 내비 하나가 됐으므로
+      `navi_reads()` 가 근거다. 반대 방향(발행됐는데 아무도 안 읽는가)은
+      `test_web_data_has_no_unintended_orphan` 이 본다.
     """
-    return "\n".join(p.read_text(encoding="utf-8")
-                      for p in sorted((WEBDIR / "js").rglob("*.js")))
-
-
-def test_web_dom_refs_exist():
-    """app.js 가 참조하는 DOM id 가 index.html 에 전부 있어야 한다."""
-    import re
-    html, js = _read("index.html"), _js()
-    ids = set(re.findall(r'id="([^"]+)"', html))
-    used = (set(re.findall(r'\$\("#([^"]+)"\)', js))
-            | set(re.findall(r'getElementById\("([^"]+)"\)', js)))
-    missing = used - ids
-    assert not missing, f"index.html 에 없는 id 를 web/js 가 참조한다: {sorted(missing)}"
-
-
-def test_web_toggle_targets_handled():
-    """패널 토글(data-t)이 web/js 에서 처리되어야 한다."""
-    import re
-    html, js = _read("index.html"), _js()
-    for t in set(re.findall(r'data-t="([^"]+)"', html)):
-        key = "m-" if t.startswith("m-") else t
-        assert f'"{t}"' in js or f'"{key}"' in js, f"토글 '{t}' 가 web/js 에서 처리되지 않는다"
-
-
-def test_web_assets_linked():
-    """index.html 이 분리된 파일들을 참조해야 한다."""
-    html = _read("index.html")
-    for a in ("style.css", "config.js", "js/main.js"):
-        assert a in html, f"index.html 이 {a} 를 참조하지 않는다"
-    assert "<style>" not in html, "index.html 에 인라인 <style> 이 있다. style.css 로 옮길 것"
-    assert 'type="module"' in html, (
-        "js/main.js 는 ES 모듈이다. type=\"module\" 없이 부르면 import 에서 죽는다")
-
-
-def test_web_data_files_referenced():
-    """app.js 가 읽는 web/data 파일이 실제로 있어야 한다.
-
-    ★ 정규식으로 fetch 배열을 긁던 방식은 폐기했다. 표현이 조금만 바뀌어도
-      엉뚱한 배열을 잡는다(2026-08-14 에 "a" 를 파일명으로 오인).
-      이제 근거는 두 곳이다 — data.js 의 BASE_KEYS 와 config.js 의 marker.data.
-    """
-    import re
-    js = _read("js/data.js")
-    cfg = _read("config.js")
-
-    m = re.search(r'BASE_KEYS\s*=\s*\[([^\]]*)\]', js)
-    assert m, "web/js/data.js 에 BASE_KEYS = [...] 선언이 없다"
-    names = set(re.findall(r'"([\w_]+)"', m.group(1)))
-
-    # 마커 데이터는 config.js 의 spec.data 가 정본이다.
-    names |= set(re.findall(r'\bdata\s*:\s*"([\w_]+)"', cfg))
-
-    # 키 != 파일명인 것들(hyd → hydrants). data.js 의 FILENAME 이 정본이다.
-    m2 = re.search(r'FILENAME\s*=\s*\{([^}]*)\}', js)
-    alias = dict(re.findall(r'(\w+)\s*:\s*"([\w_]+)"', m2.group(1))) if m2 else {}
-
-    assert names, "읽을 데이터 파일 목록이 비었다"
-    for n in sorted(names):
-        f = alias.get(n, n)
-        assert (WEBDIR / "data" / f"{f}.geojson").exists(), \
-            f"web/data/{f}.geojson 없음 (선언: {n})"
-
-
-def test_marker_spec_self_contained():
-    """마커 스펙이 자기 데이터·팝업을 들고 있어야 한다.
-
-    ★ 2026-08-14 리팩의 계약이다. 가로등 마커 하나를 추가하는 데 6곳을
-      고쳐야 했던 것이 계기였다. web/js 에 손딕셔너리가 되살아나면 여기서 걸린다.
-    """
-    import re
-    js = _js()
-    cfg = _read("config.js")
-    assert "MK_SRC = {" not in js, "MK_SRC 손딕셔너리가 되살아났다. spec.data 를 쓸 것"
-    assert "const POPUP={" not in js, "POPUP 손딕셔너리가 되살아났다. spec.popup 을 쓸 것"
-    assert 'spec.id === "m-' not in js, "마커 id 특수분기가 생겼다. 선언으로 뺄 것"
-    ids = re.findall(r'\bid\s*:\s*"(m-[\w-]+)"', cfg)
-    assert len(ids) >= 5, f"마커 스펙이 부족하다: {ids}"
-    for i in ids:
-        assert f'"{i}"' not in _read("index.html"), \
-            f"index.html 에 {i} 토글이 손으로 박혀 있다. ui/toggles.js 가 생성한다"
+    names = navi_reads()
+    assert len(names) >= 5, f"내비가 읽는 파일을 못 찾았다 — 추출기를 의심하라: {sorted(names)}"
+    miss = sorted(n for n in names if not (WEBDIR / "data" / n).exists())
+    assert not miss, f"내비가 읽는데 web/data 에 없다: {miss}"
 
 
 # ── ETL 스크립트 계약 ────────────────────────────────────────
@@ -288,65 +210,36 @@ def test_seg_uid_retention():
     검증: NODE_TOL/SNAP_TOL 0.5 -> 0.6 에서 99.4% (2026-08-14)
     """
     import csv
-    p = ROOT / "data" / "processed" / "seg_uid_map.csv"
+    import io
+    import subprocess
+
     # ★ 2026-09-17 (§175). seg_uid_map.csv 는 커밋된 파일이다. 없거나 비면 skip 이 아니라 사고다
-    assert p.exists(), f"{p.relative_to(ROOT)} 가 없다 — 커밋된 비교 기준이 사라졌다"
-    prev = {r["seg_uid"] for r in csv.DictReader(p.open(encoding="utf-8"))}
-    assert prev, f"{p.relative_to(ROOT)} 가 비었다 — 유지율 기준이 없다"
-    cur = {f["properties"]["seg_uid"]
-           for f in json.loads((WEB / "segments.geojson").read_text(encoding="utf-8"))["features"]}
-    ret = len(prev & cur) / len(prev)
-    assert ret >= 0.90, f"seg_uid 유지율 {ret:.1%} — 키 규칙 재검토"
+    # ★ 2026-09-22 (DECISIONS §218-5). 기준을 **작업 트리가 아니라 커밋본**(`HEAD`)에서 읽는다.
+    #   종전에는 작업 트리의 `data/processed/seg_uid_map.csv` 를 읽었는데 —
+    #     · 전수 실행에서는 `segments.py` 가 이 시험 **전에** 그 파일을 이번 실행 키로 덮어써
+    #       「이번 실행 대 이번 실행」을 쟀다. 항상 100% 라 아무것도 안 봤다.
+    #     · 부분 실행(segments 만 · 발행 없이)에서는 새 키 표와 **옛 발행물**을 견줘 거짓 빨강이 났다.
+    #   「직전 실행」의 정본은 마지막으로 커밋된 표다. segments.py 는 안 고친다 — 그쪽은
+    #   덮어쓰기 전에 자기 유지율을 따로 찍는다(`uid_retention`).
+    rel = "data/processed/seg_uid_map.csv"
+    r = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=ROOT,
+                       capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert r.returncode == 0, (
+        f"`git show HEAD:{rel}` 를 못 읽었다 — 커밋된 비교 기준이 없다.\n"
+        f"  {r.stderr.strip()[:300]}\n"
+        "  git 밖에서 돌렸거나 그 파일이 커밋에서 빠졌다. skip 하지 않는다 — 기준 없는 유지율은 판정이 아니다.")
+    prev = {row["seg_uid"] for row in csv.DictReader(io.StringIO(r.stdout))}
+    assert prev, f"HEAD 의 {rel} 가 비었다 — 유지율 기준이 없다"
 
-
-def test_web_uses_stable_segment_key():
-    """표출은 seg_label 을 쓴다. seg_no / seg_uid 를 화면에 쓰지 않는다.
-
-    ★ 2026-08-22. seg_label(도로명주소 기초번호)을 만들어 산출물에 넣어놓고
-      툴팁은 계속 seg_no 를 쓰고 있었다. 아무 검사도 그것을 보지 않았다.
-      계약 테스트가 "DOM id 가 존재하는가" 는 봤지만 "어떤 컬럼을 쓰는가" 는
-      안 봤기 때문이다.
-
-        seg_no    정렬 순번. 노딩이 바뀌면 통째로 밀린다
-        seg_uid   내부 키. 향후 DB 기본키. 관제사에게 의미 없다
-        seg_label "동명로25번길 9-14". 기하 유도라 안정적이고
-                  119 가 무전에서 쓰는 표기와 같다(§5-1)
-    """
-    import re
-    # ★ 2026-09-16. `reach.js` 는 seg_uid 를 **조인 키로만** 쓴다(route_vehicle.json 이
-    #   seg_uid 로 색인된다). 화면에 띄우지 않는다는 것을 아래에서 따로 본다.
-    #   웅토피아 저장소가 같은 자리(경로 결선)에서 같은 예외를 뒀다(DECISIONS §166).
-    JOIN_ONLY = {"reach.js"}
-    js = "\n".join(p.read_text(encoding="utf-8")
-                   for p in sorted((WEBDIR / "js").rglob("*.js")) if p.name not in JOIN_ONLY)
-    for name in JOIN_ONLY:
-        src = re.sub(r"/\*.*?\*/", "", (WEBDIR / "js" / name).read_text(encoding="utf-8"),
-                     flags=re.S)
-        assert not re.search(r"innerHTML|textContent|insertAdjacent|console\.log|`", src), (
-            f"{name} 는 조인 전용으로 예외를 받았는데 화면·문자열 출력을 한다")
-    # ★ 주석은 뺀다. 이 규칙을 왜 만들었는지 설명하려면 주석에 그 이름을
-    #   써야 하는데, 그것까지 잡으면 자기 문서를 자기가 막는다.
-    code = re.sub(r"/\*.*?\*/", "", js, flags=re.S)
-    code = re.sub(r"^\s*//.*$", "", code, flags=re.M)
-
-    assert "seg_label" in code, "표출이 seg_label 을 쓰지 않는다"
-    for bad, why in (("seg_no", "정렬 순번이라 노딩에 흔들린다"),
-                     ("seg_uid", "내부 키다. 화면에 띄우지 마라")):
-        assert bad not in code, (
-            f"web/js 가 {bad} 를 쓴다 — {why}. seg_label 이 정본이다")
-
-
-def test_web_css_has_no_dead_tip_rules():
-    """툴팁에서 쓰지 않는 #tip 규칙이 style.css 에 남아 있으면 안 된다.
-
-    화면에는 영향이 없지만, 다음 사람이 그 클래스가 살아 있다고 오해한다.
-    """
-    import re
-    css, js = _read("style.css"), _js()
-    dead = [c for c in re.findall(r'#tip \.([\w-]+)', css)
-            if f'class="{c}"' not in js and f"class='{c}'" not in js
-            and f'class="{c} ' not in js]
-    assert not dead, f"style.css 의 죽은 #tip 규칙: {sorted(set(dead))}"
+    # 지금의 산출 — 발행물(web)과 파이프라인 산출(processed) 둘 다 본다. 어느 쪽만 다시 만든
+    # 부분 실행이어도 **다시 만든 쪽**이 커밋된 키를 지키는지가 잡힌다.
+    for cur_path in (WEB / "segments.geojson", ROOT / "data" / "processed" / "segments.geojson"):
+        assert cur_path.exists(), f"{cur_path.relative_to(ROOT)} 가 없다"
+        cur = {f["properties"]["seg_uid"]
+               for f in json.loads(cur_path.read_text(encoding="utf-8"))["features"]}
+        ret = len(prev & cur) / len(prev)
+        assert ret >= 0.90, (f"seg_uid 유지율 {ret:.1%} ({cur_path.relative_to(ROOT)} 대 HEAD 의 {rel})"
+                             " — 키 규칙 재검토")
 
 
 def test_verdict_matches_rules_for_every_segment():
@@ -429,38 +322,6 @@ def test_verdict_matches_rules_for_every_segment():
         + "\n  ".join(bad[:15]))
 
 
-def test_marker_popup_declaration_is_used():
-    """`config.js` 의 `spec.popup` 이 화면에서 실제로 호출돼야 한다.
-
-    ★ 2026-08-23. `layers/markers.js` 가 팝업을 직접 만들면서
-      `p.name` · `p.sub` · `p.addr` 을 읽고 있었다. **그 세 이름은 어느
-      마커 데이터에도 없다** — cctv 는 `카메라대수`, hydrants 는 `시설번호`,
-      stations 는 `소방서 및 안전센터명` 이다. 그래서 3D 마커를 누르면
-      제목이 전부 `undefined` 로 떴다.
-
-      app.js 를 web/js 로 쪼갤 때 POPUP 수집을 안 옮기면서 생겼고,
-      `test_marker_spec_self_contained` 는 손딕셔너리가 **없는지**만 보고
-      선언이 **쓰이는지**는 안 봐서 초록불이었다.
-      결정 83 의 계약은 "선언이 자기 것을 전부 든다" 이고, 그 계약은
-      선언을 실제로 부를 때만 성립한다.
-    """
-    import re
-    mk = _read("js/layers/markers.js")
-    assert "spec.popup" in mk, (
-        "layers/markers.js 가 CONFIG.markers 의 spec.popup 을 호출하지 않는다.\n"
-        "  팝업 HTML 을 코드에서 직접 만들면 데이터 속성명과 조용히 어긋난다.")
-    # ★ poi.js 는 p.name / p.addr 을 정당하게 쓴다(상가 데이터에 그 속성이 있다).
-    #   검사는 마커 팝업 파일로만 좁힌다.
-    # ★ 주석은 뺀다. 이 규칙을 왜 만들었는지 설명하려면 그 이름을 써야 하는데,
-    #   그것까지 잡으면 자기 문서를 자기가 막는다(08-22 에 두 번 겪었다).
-    code = re.sub(r"/\*.*?\*/", "", mk, flags=re.S)
-    code = re.sub(r"^\s*//.*$", "", code, flags=re.M)
-    for dead in ("p.name}", "p.sub", "p.addr"):
-        assert dead not in code, (
-            f"마커 팝업이 `{dead}` 를 읽는다 — 마커 데이터에 없는 속성이다. "
-            "spec.popup 을 쓸 것")
-
-
 def test_unknown_reason_vocabulary_is_declared_in_three_places():
     """`unknown_reason` 어휘가 산출·스키마·화면 셋에서 같아야 한다.
 
@@ -507,7 +368,7 @@ def test_unknown_reason_vocabulary_is_declared_in_three_places():
 def test_web_data_has_no_unintended_orphan():
     """발행되는데 아무도 안 읽는 레이어가 있는가.
 
-    ★ `test_web_data_files_referenced` 는 **한 방향**만 본다 —
+    ★ `test_navi_data_files_exist`(옛 `test_web_data_files_referenced`)는 **한 방향**만 본다 —
       "선언된 것이 실재하는가". 반대 방향(발행됐는데 소비자가 없는가)은
       아무도 안 봤고, `lightpoles.geojson` 163KB 가 그 상태였다(2026-08-23).
 
@@ -522,40 +383,35 @@ def test_web_data_has_no_unintended_orphan():
     import re
 
     # 예정 작업이라 데이터를 먼저 발행해 둔 것. 배선하면 여기서 뺀다.
-    # ★ 2026-08-23. `lightpoles.geojson` 을 뺐다 — 배선했다.
-    #   `web/js/layers/poles.js` 가 읽고 `pole-dot` · `pole-glow` 로 그린다.
-    #   화이트리스트가 비는 것이 정상 상태다. 여기에 뭔가 있으면
-    #   "발행은 하는데 아무도 안 쓴다" 는 뜻이고, 그건 web/data 40MB
-    #   상한을 갉아먹는다.
-    INTENDED: set[str] = set()
-
-    js = _read("js/data.js")
-    cfg = _read("config.js")
-    alljs = _js()
-
-    m = re.search(r"BASE_KEYS\s*=\s*\[([^\]]*)\]", js)
-    names = set(re.findall(r'"([\w_]+)"', m.group(1)))
-    names |= set(re.findall(r'\bdata\s*:\s*"([\w_]+)"', cfg))
-    names |= set(re.findall(r'load\("([\w_]+)"\)', alljs))
-    m2 = re.search(r"FILENAME\s*=\s*\{([^}]*)\}", js)
-    alias = dict(re.findall(r'(\w+)\s*:\s*"([\w_]+)"', m2.group(1))) if m2 else {}
-    read = {alias.get(n, n) + ".geojson" for n in names}
+    # ★ 2026-08-23. `lightpoles.geojson` 을 뺐다 — 배선했다(옛 지도 poles.js).
+    # ★ 2026-09-22. 옛 지도(web/js)를 걷어내자 그 지도만 읽던 다섯이 소비자를 잃었다.
+    #   이번 배치는 **발행을 안 건드린다**(publish_web.py 는 판정 지문 옆이라 따로 한다).
+    #   그래서 지우는 대신 여기 적는다 — 적는 행위가 곧 철거 대기 목록이다.
+    #   관제 화면이 배선하거나 publish_web.py 가 발행을 멈추면 한 줄씩 뺀다.
+    INTENDED: dict[str, str] = {
+        # 2026-09-22 — 옛 지도만 읽던 다섯(boundary · mask · mask_soft · lightpoles · streetlights)을
+        # 같은 날 발행에서 뺐다(DECISIONS §218-1). 지금 의도된 미배선은 없다.
+    }
 
     # 파이프라인이 **읽는** 것도 소비자다(ortho 가 scope.geojson 을 읽는다).
     # 쓰기(to_file)는 소비가 아니다 — 그것을 소비로 세면 모든 발행물이
     # 자기 자신 덕에 통과한다.
     pysrc = "\n".join(p.read_text(encoding="utf-8")
                       for p in (ROOT / "src/firelane").rglob("*.py"))
-    read |= set(re.findall(r'read_file\(\s*(?:WEB|W)\s*/\s*"([\w_.]+)"', pysrc))
+    read = set(re.findall(r'read_file\(\s*(?:WEB|W)\s*/\s*"([\w_.]+)"', pysrc))
     read |= set(re.findall(r'(?:WEB|W)\s*/\s*"([\w_.]+)"\s*\)\.read_text', pysrc))
 
     # ★ 2026-09-17 (DECISIONS §181-7). 내비(web/navi/src · TS)도 소비자다. 이 검사는 지도(web/js)만
     #   보다가 내비만 읽는 `dest.geojson` 을 고아로 불러 파이프라인 계약 단계를 세웠다. 샌드박스
     #   web/data 에는 그 파일이 없어서 초록이었다 — 발행한 기계에서만 울었다.
+    # ★ 2026-09-22. 옛 지도를 걷어내 이제 화면 소비자는 내비(관제 포함) 하나다.
     read |= navi_reads()
 
     published = {p.name for p in (WEB).glob("*.geojson")}
-    orphan = sorted(published - read - INTENDED)
+    # ★ 면제가 낡으면 사각지대다. 소비자가 생겼거나 발행이 멈췄으면 줄을 지워라.
+    stale = sorted(n for n in INTENDED if n in read or n not in published)
+    assert not stale, f"INTENDED 가 낡았다 — 이미 읽히거나 발행되지 않는다: {stale}"
+    orphan = sorted(published - read - set(INTENDED))
     assert not orphan, (
         f"발행되는데 아무도 안 읽는 레이어: {orphan}\n"
         "  배선하거나, publish_web.py 에서 발행을 멈추거나,\n"

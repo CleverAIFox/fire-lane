@@ -1,109 +1,40 @@
-# web — 동명동 진입판정 지도
+# web — 배포되는 사이트
 
-MapLibre GL JS 5 + deck.gl 9 (interleaved) + V-World.
+★ 2026-09-22. 옛 GIS 지도(`index.html` 의 패널 · `js/` 30모듈 · `style.css`)를 걷어냈다.
+관제 화면(내비 앱의 `?view=ops`)이 그 기능 — 검색 · 출동 모드 · 기준 차량 · 판정 범례 ·
+도달 불가 · 구간 툴팁 · CCTV 반경 · 정사영상 — 을 넘겨받았다.
 
-★ 이 문서는 **지도**(`web/index.html` · `web/js`)다. **내비**(`web/navi`)는 React + TypeScript + Vite · maplibre-gl **6** 이고
-빌드 산출물이 배포의 `/navi/` 로 간다(`.github/actions/build-navi`). 내비는 `web/data` 를 그대로 읽는다 — 목적지 검색은
-`dest.geojson`, 경로는 `navi_graph.json`. 배포 주소 `cleveraifox.github.io/fire-lane/` · `/navi/`.
+**서버는 없다.** 파이썬 파이프라인이 `web/data/` 에 정적 JSON 을 쓰고, 앱이 `../data/` 로
+그것을 읽는다. 그 파일들이 곧 둘 사이의 계약이다(`tests/test_contract.py`).
+
+## 무엇이 있나
+
+| 경로 | 내용 |
+|---|---|
+| `index.html` | 사이트 입구. `navi/?view=ops`(관제)로 넘긴다. 외부 자원 없음 · 상대 주소 |
+| `navi/` | 내비 · 관제 앱(React + TypeScript + Vite · maplibre-gl 6). 배포에서는 빌드본이 이 자리에 앉는다(`.github/actions/build-navi`) |
+| `data/` | 생성물. 파이프라인(`publish_*.py`) 산출. 손으로 고치지 말 것 |
+| `config.js` | **파이프라인 설정**이다. `publish_navi.py` 가 판정색 · 지형을, `publish_fleet.py` 가 편성을 정규식으로 읽는다. 화면은 이 파일을 직접 안 싣는다 |
+| `assets/vehicles/profiles.json` | 차종 치수 정본. `publish_fleet.py` 가 회전반경을 읽는다 |
+| `proposal.html` | 기획서 뷰어. `proposal.docx` 는 배포 직전 `tools/stage_pages.py` 가 `docs/` 에서 옮긴다 |
+| `workflow.html` | 협업 방침. `tools/render_workflow.py` 가 `playbook.html`(틀)로 만든다 |
+| `playbook.html` | 위의 틀. 배포에는 안 싣는다 |
+
+소유(리뷰)의 정본은 `.github/CODEOWNERS` 다.
 
 ## 실행
 
 ```bash
-uv run python tools/serve.py        # 캐시 없는 개발 서버
-# http://localhost:8000
+cd web/navi && npm run dev          # 개발 — vite 가 ../data 도 같이 준다
+# 또는 배포 모양 그대로:
+cd web/navi && npm run build && cd ../.. && uv run python tools/serve.py
 ```
 
-`index.html` 을 더블클릭하면 안 된다. `file://` 에서는 `fetch()` 가 CORS 로 막힌다.
-
-## 파일 구조
-
-한 파일에 다 넣으면 두 사람이 같은 줄을 고쳐 충돌한다. 계층으로 나눴다.
-
-| 파일 | 주인 | 내용 |
-|---|---|---|
-| `index.html` | 공동 | 뼈대. 패널 마크업. 거의 안 바뀐다 |
-| `style.css` | **@marscoolcat** | 색·간격·타이포·레이아웃 |
-| `config.js` | **공동** | 색상표·임계값·마커 형상·카메라 |
-| `js/main.js` | **공백** | 부트스트랩. 초기화 순서만 |
-| `js/data.js` | **공백** | ★ 데이터 접근 단일 지점 |
-| `js/layers/` | **공백** | 레이어·판정 렌더링 |
-| `js/icons/` | 공동 | 표지판 캔버스 그림 |
-| `js/ui/` | 공동 | 범례·검색·테마·토글·미니맵 |
-| `data/` | 생성물 | `publish_web.py` 산출. 손으로 고치지 말 것 |
-
-★ **`공백` 은 소유자가 이탈해 비었다는 뜻이다.** `CODEOWNERS` 에는 아직
-`@AIMasterFox` 로 적혀 있고 GitHub 은 그 줄을 조용히 무시한다 — 리뷰가 걸리는
-것처럼 보이지만 안 걸린다(`MASTER §8` · `PLAN #79`).
-
-**UI 작업은 `style.css` 와 `config.js` 만 만지면 된다.** `js/layers/` 를 건드릴 일이
-생기면 그건 로직 문제이므로 GIS 담당에게 알릴 것.
-
-## 출동 모드 · 미니맵
-
-`@marscoolcat` 기여(faf9774). 파일 분리 과정에서 새 구조로 옮겼다.
-
-| 기능 | 위치 |
-|---|---|
-| 출동 모드 토글 · FAB 버튼 | `index.html` + `style.css` + `js/ui/toggles.js` |
-| 미니맵 (줌 16↑ 표시, 뷰박스·현위치 동기화) | `js/ui/minimap.js` + `style.css` |
-| 소화전 물결 (출동 모드에서만) | `js/layers/hydrants.js` |
-| 출동 시 통과 구간 강조 · 나머지 흐림 | `js/layers/segments.js` + `config.js` |
-
-조정값은 `config.js` 의 `dispatch` 와 `minimap` 에 있다.
-
-```js
-dispatch: { clearWidthScale: 1.6, dimAlpha: 102, pulseMs: 1200 }
-minimap : { showFromZoom: 16 }
-```
-
-소화전 물결은 지면에 링이 퍼지고 그 위에 3D 기둥이 서는 구조다.
-원본은 2D 원 마커 위에 그렸는데, 마커가 3D 로 바뀌면서 링만 지면에 남겼다.
+`file://` 로 열면 안 된다. `fetch()` 가 CORS 로 막힌다.
 
 ## 값을 바꿀 때
 
 판정 임계값(3.0 / 7.0 / 25.0)의 **정본은 `src/firelane/seg/params.py`** 다.
-`config.js` 의 같은 숫자는 화면 설명용 사본이라 바꿔도 판정은 안 바뀐다.
-파이프라인을 먼저 고치고 `config.js` 를 맞출 것.
-
-## V-World 배경
-
-`config.js` 의 `vworld.enabled` 를 `true` 로 바꾼다. 그 전에 V-World 에
-서비스 URL(`http://localhost:8000`) 을 등록해야 한다. `&domain=` 이 등록 문자열과
-정확히 같아야 타일이 나온다.
-
-## 지형
-
-`config.js` 의 `terrain.exaggeration` 으로 기복을 조절한다. 1.0 이 실제 비율이다.
-
-**공개DEM 90m 를 8배 보간한 표현용 값이다.** 판정에는 쓰지 않는다.
-90m 격자는 골목 20개를 한 픽셀로 덮으므로 구간별 경사 산출이 불가능하다.
-
-
-## 모듈 구조 (2026-08-21)
-
-`app.js` 1,260줄을 `web/js/` 모듈들로 쪼갰다(지금 30개 모듈). 원문 로직은 그대로다.
-
-```
-js/
-  main.js            부트스트랩. 순서만 정한다. 로직을 여기 쓰지 마라
-  data.js            ★ 데이터 접근 단일 지점. SOURCE() 한 줄이 정적↔API 전환
-  config-access.js   전역 CONFIG 를 만지는 유일한 곳
-  state.js           공유 가변 상태. import 없음(그래프 뿌리)
-  map.js  basemap.js  verdict.js  dom.js
-  icons/   size · truck · ops119 · hydrant · cctv
-  layers/  segments · mask · hydrants · markers · coverage · signs · poi
-  ui/      tooltip · search · legend · stats · minimap · theme · toggles
-```
-
-검사 3종이 CI 에서 돈다:
-
-| 도구 | 잡는 것 |
-|---|---|
-| `tools/js_graph_check.mjs` | ESM 문법 · 미해결 import · 순환 의존 |
-| `tools/web_boot_check.mjs` | 실제 부팅. 모듈 최상단 부수효과 등 |
-| `tests/test_contract.py` | DOM id · 토글 · 데이터 파일 대조 |
-
-★ `node --check` 는 ES 모듈 문법 오류를 **못 잡는다**. `.js` 를 CommonJS 로
-읽다 `export` 에서 실패하면 조용히 넘어간다(실측: `export const a=1;
-const b={{{;` → 종료코드 0). 그래서 `js_graph_check` 가 `--input-type=module`
-로 다시 본다. `node --check` 만 믿으면 검사가 죽은 채 초록불이 뜬다.
+`config.js` 의 같은 숫자는 사본이고 `tests/test_declaration_sync.py` 가 같은지를 본다.
+판정색을 바꾸려면 `config.js` 의 `verdict` 를 고치고 파이프라인을 다시 돌린다 —
+`navi_graph.json.style` 로 실려 앱에 닿는다.
