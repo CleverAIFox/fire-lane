@@ -1299,8 +1299,7 @@ datasets:
       - src/firelane/segments.py
       - src/firelane/streetlight.py
       - web/config.js
-      - web/js/data.js
-    feeds_note: '- src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/segments.py - src/firelane/streetlight.py - web/config.js - web/js/data.js'
+    feeds_note: '- src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/segments.py - src/firelane/streetlight.py - web/config.js'
     stem: gjcity_streetlight
     ext: [csv]
     scope: jngj-donggu
@@ -1628,9 +1627,7 @@ datasets:
       - tools/clearance_probe.py
       - tools/corner_probe.py
       - tools/width_fn.py
-      - web/js/data.js
-      - web/js/ui/toggles.js
-    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py - web/js/data.js - web/js/ui/toggles.js'
+    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     scope: jngj
@@ -1813,9 +1810,7 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_web.py
       - tools/jijeok_review.py
-      - web/js/map.js
-      - web/js/ui/toggles.js
-    feeds_note: '- src/firelane/ortho.py - src/firelane/pipeline.py - src/firelane/publish_web.py - tools/jijeok_review.py - web/js/map.js - web/js/ui/toggles.js'
+    feeds_note: '- src/firelane/ortho.py - src/firelane/pipeline.py - src/firelane/publish_web.py - tools/jijeok_review.py'
     stem: ngii_ortho
     ext: [tif, xml]
     primary: tif
@@ -3295,7 +3290,6 @@ outputs:
     inputs: [ngii1k, ngii_road, road_rw, road_link, building, building_entrance, boundary_emd, cctv, fire_station, node_link, turn_restriction]
     stable_key: seg_uid
     consumers:
-    - web/js/data.js
     - src/firelane/publish_web.py
     - src/firelane/sample_design.py
     - tests/test_contract.py

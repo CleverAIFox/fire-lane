@@ -18,9 +18,13 @@ stage_pages.py — 배포 직전에 web/ 을 완성한다.
   올리는데(`pages` · `협업 방침` · `기획서`) 준비가 세 벌이면 하나만
   고치는 날이 온다. 이 파일이 그 한 벌이다.
 
+★ 2026-09-22. `web/key.js`(V-World 키) 생성을 뺐다. 그 키를 쓰던 것은 옛 GIS 지도
+  하나였고 지도를 걷어냈다(관제 화면이 넘겨받았다). 내비 · 관제는 V-World 를 안 부른다 —
+  배경은 커밋된 `web/data/ortho` 타일과 Mapbox(빌드 시 `MAPBOX_TOKEN`)다.
+
 IN    docs/proposal.docx
 OUT   web/proposal.docx  (생성물. .gitignore)
-PARAM --check
+PARAM --check · --deploy
 """
 from __future__ import annotations
 
@@ -43,34 +47,6 @@ STAGED = [("docs/proposal.docx", "web/proposal.docx")]
 #   ★ 로컬에서는 지우지 않는다 — `--deploy` 와 `GITHUB_ACTIONS=true` 둘 다일 때만.
 #     렌더러가 템플릿을 읽어야 하므로 저장소에서 파일을 빼면 안 된다.
 DEPLOY_DROP = ["web/playbook.html", "web/README.md"]
-
-
-def _write_key_js() -> None:
-    """`web/key.js` 를 환경에서 만든다. **생성물이고 커밋하지 않는다.**
-
-    ★ 2026-09-12 (B5). 종전에는 `web/config.js` 에 키가 평문으로 커밋돼
-      있었다. 공개 저장소라 이력에 그대로 남는다 — 지금 지워도 옛 커밋에
-      남으므로 **재발급이 유일한 복구다.** 이 함수는 앞으로를 막는다.
-
-    ★ 로컬은 `.env`(paths._load_dotenv 가 환경에 얹는다), CI 는
-      GitHub Secrets 가 같은 이름으로 넣는다. **경로가 하나다.**
-
-    ★ 값이 없으면 빈 문자열을 쓰되 화면에 적는다. 조용히 빈 지도를 주면
-      "왜 배경이 안 뜨지" 로 한 시간을 쓴다(원칙 ⑥ — 모르면 모른다고 적는다).
-    """
-    key = paths.secret("VWORLD_KEY")
-    if not key:
-        print("  ★ VWORLD_KEY 가 없다 — 배경지도 없이 나간다.\n"
-              "    로컬:  .env 에 VWORLD_KEY=... 를 적는다\n"
-              "    배포:  GitHub Secrets 에 VWORLD_KEY 를 넣는다")
-    out = ROOT / "web/key.js"
-    out.write_text(
-        "/* 생성물. 커밋하지 않는다 — tools/stage_pages.py 가 만든다.\n"
-        "   ★ 이 키는 브라우저가 쓴다. 숨길 수 없다. 여기 두는 목적은\n"
-        "     git 이력에 안 쌓이게 하고 재발급을 값싸게 만드는 것이다.\n"
-        "     실효 방어는 V-World 도메인 잠금 하나다(만료 2027-02-04). */\n"
-        f'window.__VWORLD_KEY__ = "{key}";\n', encoding="utf-8")
-    print(f"  web/key.js   {'생성' if key else '빈 값으로 생성'}")
 
 
 def _drop_for_deploy() -> None:
@@ -108,7 +84,6 @@ def main() -> int:
         shutil.copy2(src, dst)
         print(f"  {src_rel} → {dst_rel}  ({dst.stat().st_size // 1024}KB)")
     if not bad:
-        _write_key_js()
         print("배포 준비 OK" if check else "배포 준비 완료")
     return 1 if bad else 0
 

@@ -5,18 +5,17 @@ publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내�
 
 IN    processed/*.geojson · processed/segments.schema.json ·
       processed/route_vehicle.csv · processed/corridor_5186.gpkg ·
-      processed/building_5186.gpkg · processed/ngii1k_light_5186.gpkg ·
+      processed/building_5186.gpkg ·
       processed/navi_build.csv · processed/navi_jibun.csv · processed/civil_office.geojson ·
       processed/ngii1k_5186.gpkg · processed/road_rw_5186.gpkg · processed/ngii1k_walk_5186.gpkg
       processed/speedbump.csv · speed_cam.csv · child_zone_std_5186.gpkg · senior_zone_std_5186.gpkg ·
       processed/nfa_dispatch_119.csv · nfa_rescue.csv · nfa_fire_incident.csv · parking_enforce.csv
-OUT   web/data/  — 아래 스물셋. ★ 중괄호 축약을 쓰지 않는다. 선언은
+OUT   web/data/  — 아래 열일곱. ★ 중괄호 축약을 쓰지 않는다. 선언은
       기계가 대조하는 것이고(tests/test_declaration_reality.py) 축약하면
       그 대조가 이름을 못 찾는다.
-        segments.geojson      boundary.geojson
-        mask.geojson          mask_soft.geojson    buildings.geojson
+        segments.geojson      buildings.geojson
         hydrants.geojson      stations.geojson     cctv.geojson
-        poi.geojson           streetlights.geojson lightpoles.geojson
+        poi.geojson
         dest.geojson
         segments.schema.json  vehicle_spec.json    route_vehicle.json
         navi_graph.json       _manifest.json       fleet.json
@@ -52,7 +51,10 @@ EMD_CD = "12210108"
 #   세 곳에 두면 반드시 한 곳만 고치고 잊는다.
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
 # ★ 건물 발행 예산(§181-2). 스코프 판 2.18MB · web/data 32MB / 상한 40MB 에서 잡았다.
-BLDG_MB = 6.0
+# ★ 2026-09-22 (§218-3) — 6.0 **MiB** 였는데 커밋 정책(`tools/commit_policy.py` MAX_FILE_MB)은 5.0 **MB**
+#   (10진)라 둘 사이(5.0MB~6.0MiB)에 떨어진 발행물이 파이프라인은 통과하고 커밋에서 막혔다.
+#   단위를 정책에 맞추고 여유 0.1 을 둔다.
+BLDG_MB = 4.9
 BLDG_TOL = (0.3, 0.6, 1.0)          # m · EPSG:5186
 
 def main():
@@ -78,7 +80,13 @@ def main():
 
     emd = gpd.read_file(P/"boundary_emd.geojson")
     emd = emd[emd.EMD_CD == EMD_CD]
-    emd.to_file(W/"boundary.geojson", **PREC)
+    # ★ 2026-09-22 (DECISIONS §218-1) — boundary · mask · mask_soft · streetlights · lightpoles 를
+    #   **더 내지 않는다.** 읽던 것은 옛 지도(web/js)뿐이었고 그 지도를 걷어냈다. 관제는 동 경계 ·
+    #   덮개를 안 그리고, 가로등은 판정(`light_count`)에만 쓴다. 남은 파일은 지운다 — 안 지우면
+    #   아무도 안 읽는 276KB 가 계속 배포된다(`test_web_data_has_no_unintended_orphan` 이 본다).
+    for _gone in ("boundary.geojson", "mask.geojson", "mask_soft.geojson",
+                  "streetlights.geojson", "lightpoles.geojson"):
+        (W / _gone).unlink(missing_ok=True)
 
     # ★ 2026-09-04. 계산을 `segments._write_scope()` 로 옮겼다.
     #   `ortho` 가 이 결과를 읽는데 STEPS 순서가 … → ortho → publish 라
@@ -93,16 +101,10 @@ def main():
     scope = gpd.read_file(P/"scope_5186.gpkg").to_crs(5186).geometry.iloc[0]
     (W/"scope.geojson").unlink(missing_ok=True)
 
-    # 3단 마스크
-    #   tier1 동명동      = 원본 밝기
-    #   tier2 접근 회랑   = 살짝 어둡게 (경로는 보이되 주역이 아니다)
-    #   tier3 그 밖       = 덮는다
+    # 표출 범위(시설 · 상가를 자르는 틀)와 동명동 경계 — 4326
     from shapely.geometry import box
-    world = box(-180, -85, 180, 85)
     emd4 = emd.to_crs(4326).geometry.iloc[0]
     scope4 = gpd.GeoSeries([scope], crs=5186).to_crs(4326).iloc[0]
-    gpd.GeoDataFrame(geometry=[world.difference(scope4)], crs=4326).to_file(W/"mask.geojson", **PREC)
-    gpd.GeoDataFrame(geometry=[scope4.difference(emd4)], crs=4326).to_file(W/"mask_soft.geojson", **PREC)
 
     # ── 캐시 무효화 스탬프 ──────────────────────────────────────
     # ★ 2026-08-22. 툴팁을 고치고 몇 번을 새로고침해도 옛 화면이 떴다.
@@ -151,18 +153,41 @@ def main():
     b = b[b.intersects(move)].copy()
     b["flo"] = b.GRO_FLO_CO.fillna(1).astype(float).clip(lower=1)   # 0층 291동 → 1층
     b["h"] = (b.flo*3.3).round(1)
+    # ★ 2026-09-22 (DECISIONS §217-3) 사용자 보고 「건물과 길이 겹친다」. 도로명주소 건물 면과
+    #   수치지형도 도로 면이 서로 다른 측량이라 12,736동 중 370동이 발자국의 5% 넘게 도로 위에
+    #   있었다(154동은 20% 넘게). 화면에서는 건물이 차도를 먹었다. **표시용으로** 건물에서 도로 면을
+    #   뺀다. 발자국 절반 넘게 도로 위인 건물은 자르지 않는다 — 복개 구조물이거나 한쪽 자료가
+    #   틀린 것이라, 자르면 건물이 사라진다. 판정 입력(`building_5186.gpkg`)은 그대로다.
+    from firelane import publish_basemap as _bm
+    _road = _bm.union("road_area", move)
+    # ★ 2026-09-22 (§218) — 발행된 도로면은 `SIMPLIFY_M` 만큼 단순화돼 경계가 그만큼 움직인다.
+    #   원본 도로면 · 1% 문턱으로 빼면 화면에서 1~5% 겹침이 161동 남았다(`test_building_road_overlap`).
+    #   그 여유만큼 넓힌 도로면으로 재고 빼며, 문턱은 0.2% 로 낮춘다(스치는 것도 깎는다).
+    #   「절반 넘게 도로 위라 안 자름」 판단은 **원본** 도로면으로 한다 — 넓힌 면으로 하면 그 몫이
+    #   부풀어 안 잘리는 건물이 83 → 113동으로 늘었다.
+    _road_cut = _road.buffer(_bm.SIMPLIFY_M)
+    _area = b.geometry.area.where(b.geometry.area > 0, 1)
+    _ov = b.geometry.intersection(_road).area / _area
+    _cut = (b.geometry.intersection(_road_cut).area / _area > 0.002) & (_ov <= 0.5)
+    # 빼기가 도로면의 꼭짓점을 건물에 옮겨 붙인다(파일이 5% 불었다) — 깎인 건물만 0.2m 로 편다.
+    #   발행 도로면 단순화(0.4m)보다 작아 겹침을 되살리지 않는다(`test_building_road_overlap`).
+    b.loc[_cut, "geometry"] = (b.loc[_cut, "geometry"].difference(_road_cut).buffer(0)
+                               .simplify(0.2, preserve_topology=True))
+    # 잘라서 부스러기(2㎡ 미만)만 남은 것만 버린다 — 원래 작은 건물은 건드리지 않는다
+    b = b[~(_cut & (b.geometry.is_empty | (b.geometry.area < 2.0)))].copy()
+    print(f"  건물 · 도로 겹침 {int(_cut.sum())}동 잘라냄 · 절반 넘게 도로 위 {int((_ov > 0.5).sum())}동은 그대로")
     cols = ["BUL_MAN_NO","BULD_NM","flo","h"] + (["z"] if "z" in b.columns else [])
     b = b[cols+["geometry"]]
     b.to_crs(4326).to_file(W/"buildings.geojson", **PREC)
     # ★ 예산을 넘을 때만 단순화한다(§181-2). 늘 깎으면 스코프 안 건물 모양까지 바뀐다.
     #   공차는 고정 단계라 같은 입력에 같은 산출물이다.
     for tol in BLDG_TOL:
-        if (W/"buildings.geojson").stat().st_size <= BLDG_MB * 1024 * 1024:
+        if (W/"buildings.geojson").stat().st_size <= BLDG_MB * 1_000_000:
             break
         b.assign(geometry=b.geometry.simplify(tol, preserve_topology=True)) \
          .to_crs(4326).to_file(W/"buildings.geojson", **PREC)
         print(f"  건물 단순화 {tol}m")
-    _mb = (W/"buildings.geojson").stat().st_size / 1024 / 1024
+    _mb = (W/"buildings.geojson").stat().st_size / 1_000_000
     if _mb > BLDG_MB:
         raise SystemExit(f"buildings.geojson {_mb:.1f}MB — 예산 {BLDG_MB}MB 를 단순화로도 못 맞췄다")
     print(f"  건물 {len(b):,}동 (지도 이동 범위) · {_mb:.2f}MB")
@@ -185,7 +210,7 @@ def main():
     #   것**을 조용히 통과시킨 것이다 — 경고는 매 실행 찍혔지만
     #   0종을 실패로 보는 곳이 없었다.
     #
-    #   표시명 ← 원본명 으로 못박는다. MASTER §11-5 가 표시명을 적는다.
+    #   표시명 ← 원본명 으로 못박는다. 관제 시설 카드가 이 표시명을 쓴다(MASTER §11-4).
     want = {"시설번호": "fcltyNo", "시설유형코드": "fcltySeCode",
             "소재지도로명주소": "rdnmadr", "소재지지번주소": "lnmadr",
             "상세위치": "descLc", "설치연도": "installationYear",
@@ -258,44 +283,6 @@ def main():
     cg = gpd.GeoDataFrame(agg, crs=4326)
     cg.to_file(W/"cctv.geojson", **PREC)
 
-    # ── 가로등 ──────────────────────────────────────────────
-    # 좌표가 지번 대표점이라 실제 폴 위치가 아니다. pos_accuracy_m(50)을
-    # 그대로 실어 보내 UI 가 반경 50m 원을 그리게 한다.
-    # ★ distinct 금지. streetlight.py 가 group-by + count 로 등 수를 보존했다.
-    lp = P / "streetlight_point.geojson"
-    if lp.exists():
-        lt = gpd.read_file(lp)
-        lt = lt[lt.within(scope4)].copy()
-        _lc = [c for c in ("n_lights","mgmt_no_sample","addr","pos_accuracy_m","verified")
-               if c in lt.columns]
-        lt[_lc + ["geometry"]].to_file(W / "streetlights.geojson", **PREC)
-        print(f"  가로등 {len(lt)}지점 · {int(lt.n_lights.sum())}등 (스코프 내)")
-
-    # ── 가로등 폴 (수치지형도 C0220000) ─────────────────────
-    # 측량 성과라 실제 폴 위치다. 지번 대표점(gjcity)과 중앙 74.1m 어긋난다.
-    # ±50m 원 안에 든 것이 30% 뿐이었다 — 원 표기가 진실을 담지 못했다.
-    # 위치는 이쪽이 정본이고, 등 수·관리번호는 gjcity 가 정본이다.
-    lpp = P / "ngii1k_light_5186.gpkg"
-    if lpp.exists():
-        lg = gpd.read_file(lpp, layer="ngii1k_light").to_crs(4326)
-        lg = lg[lg.within(scope4)].copy()
-        lg = lg.rename(columns={"구분": "pole_kind"})
-        # ★ 2026-08-23 배선 완료. `web/js/layers/poles.js` 가 읽는다.
-        #   그 전까지는 발행만 되고 아무도 안 읽었다 — 브라우저가 요청조차
-        #   하지 않는 163KB 였다.
-        #
-        #   ★ 46지점(streetlights)과 다른 데이터다. 지우지 마라.
-        #       streetlights   46지점 · 573등   지번 대표점(±50m). 등 수가 정본
-        #       lightpoles  1,143점          실제 폴 위치. 등 수 없음
-        #     위치를 보려면 이쪽, 등 수를 보려면 저쪽이다.
-        #
-        #   `test_web_data_has_no_unintended_orphan` 의 화이트리스트가 이제
-        #   비어 있다. 발행하고 안 읽는 레이어가 생기면 그 검사가 잡는다.
-        lg[["pole_kind", "geometry"]].to_file(W / "lightpoles.geojson", **PREC)
-        print(f"  가로등 폴 {len(lg)}점 (스코프 내) "
-              + " · ".join(f"{k} {v}" for k, v in lg.pole_kind.value_counts().items()))
-    else:
-        print("  ! ngii1k_light_5186.gpkg 없음 — ngii1k.py 먼저")
 
 
     # ── 상가 POI ────────────────────────────────────────────
@@ -415,8 +402,8 @@ def main():
     #   먼저 뜨면 지문이 즉시 낡는다.
     # ★ 2026-08-24. index.html 을 더 이상 고치지 않는다.
     #
-    #   이 파일은 CODEOWNERS 상 @marscoolcat @AIMasterFox 공동 소유다.
-    #   그런데 여기서 스탬프를 주입하면 **판정이 바뀔 때마다** 그 파일이
+    #   (당시 이 파일은 CODEOWNERS 상 UI 담당 소유였다 — 지금 정본은 CODEOWNERS.)
+    #   여기서 스탬프를 주입하면 **판정이 바뀔 때마다** 그 파일이
     #   바뀌고, GIS 가 파이프라인만 돌려도 UI 리뷰가 걸린다.
     #   스탬프가 내용 해시라 잡음이 아니라 **의미 있는 작업을 한 그
     #   순간에만** 걸린다. 더 나쁘다.

@@ -182,13 +182,16 @@ def test_fl_runs_tidy_after_release_and_clears_inbox():
     code = "\n".join(l for l in s.splitlines() if not l.lstrip().startswith("#"))
     assert "exec bash tools/merge_batch.sh" not in code, "방송을 exec 하면 정리가 안 돈다"
     assert "bash tools/merge_batch.sh --release" in code
-    assert "bash tools/branch_tidy.sh --auto" in code, "배치 끝에 가지 정리가 없다"
+    assert "bash tools/branch_tidy.sh --auto --close-bots" in code, "배치 끝에 가지 정리 · 봇 PR 닫기가 없다(§217-4)"
+    assert "tools/tidy.py --yes" in code and "tools/janitor.sh" in code, "배치 끝에 위생이 없다(§217-4)"
     assert "_applied" in code, "소비한 포장물을 INBOX 에서 안 치운다 — 다음 실행이 옛 패치를 또 집는다"
     assert "FL_RELOCATED" in code, "자기 복사 없이 가지를 바꾸면 도는 중에 다른 판을 읽는다"
 
 
 def test_tidy_auto_never_closes_or_deletes_remote():
+    """--auto 는 사람 PR 을 안 닫는다. 봇 PR 은 --close-bots 가 있을 때만(§217-4)."""
     s = (T / "branch_tidy.sh").read_text(encoding="utf-8")
+    assert '[ "$BOTS" = 1 ]' in s and "*dependabot*" in s, "봇 PR 을 작성자로 가르지 않는다"
     # ask() 가 --auto 에서 거짓을 내므로 PR 닫기 · 원격 삭제는 대화형에서만 닿는다
     assert '[ "$AUTO" = 1 ] && return 1' in s, "--auto 의 ask 가 거짓을 내지 않는다"
     assert "merged_by_content" in s
@@ -328,3 +331,28 @@ def test_fl_resume_keeps_other_batch_package(tmp_path):
     r = _resume(work, inbox, bin_, GH_MERGED="7")
     assert r.returncode == 0, r.stdout + r.stderr
     assert (inbox / "fire-lane-y.zip").exists(), "다음 배치 포장물을 치웠다"
+
+
+def test_tidy_keeps_long_lived_branches_like_branch_tidy():
+    """`fl.sh` 11단계의 `tidy.py --yes` 가 `branch_tidy.sh` 가 지키는 가지를 지우지 않는다 (§217-4)."""
+    import importlib.util
+    import re as _re
+    spec = importlib.util.spec_from_file_location("_tidy", ROOT / "tools" / "tidy.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    sh = (ROOT / "tools" / "branch_tidy.sh").read_text(encoding="utf-8")
+    keep = _re.search(r"KEEP_RE='\^\(([^)]*)\)\$'", sh).group(1).split("|")
+    for b in keep:
+        assert m.KEEP_BRANCH.match(b), f"branch_tidy 가 지키는 {b} 를 tidy 가 지울 수 있다"
+    assert not m.KEEP_BRANCH.match("feat/x"), "feat 가지까지 지키면 정리가 안 된다"
+
+
+def test_bot_prs_are_vacuumed_not_wiped():
+    """봇 PR 은 알림이다 — 전부 닫지 않고 밀린 것 · 흐름 밖 것만 청소한다 (DECISIONS §218-4)."""
+    dep = (ROOT / ".github" / "dependabot.yml").read_text(encoding="utf-8")
+    n_eco = dep.count("- package-ecosystem:")
+    assert dep.count("target-branch: part/infra") == n_eco, "봇 PR 이 흐름 밖(main)으로 온다"
+    s = (ROOT / "tools" / "branch_tidy.sh").read_text(encoding="utf-8")
+    assert "밀렸다" in s and "흐름 밖" in s, "청소 기준(밀림 · 흐름 밖)이 없다"
+    assert "gh pr diff" in s, "닫기 전에 diff 를 보관하지 않는다"
+    assert "봇 대기" in s, "남긴 봇 PR 을 알리지 않는다"

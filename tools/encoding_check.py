@@ -30,6 +30,7 @@ from pathlib import Path
 # 검사 대상 확장자. 정본은 firelane/encoding.py 의 TEXT_EXT_SOURCE 다.
 # ★ 자료 형식이 아니라 **저장소 소스**다. encoding.TEXT_EXT 와 다른 것이 정상이다.
 from firelane.encoding import TEXT_EXT_SOURCE as TEXT_EXT
+from firelane.generated import prefixes
 
 # 예외 — 윈도우가 직접 읽는 파일은 CRLF 를 유지한다.
 CRLF_OK = {".wslconfig", ".bat", ".cmd", ".ps1"}
@@ -41,7 +42,8 @@ SKIP_DIR = {".git", ".venv", "node_modules", "__pycache__",
 #   _manifest.json 과 segments.fingerprint.json 은 **바이트 sha256** 으로
 #   계보를 대조한다. 개행 하나만 붙여도 sha 가 바뀌어 lineage 가 교착에
 #   빠진다(2026-08-21 실제로 겪음). 고치려면 생성하는 코드를 고쳐야 한다.
-GENERATED = ("data/processed/", "data/golden/", "data/baseline/", "web/data/")
+#   목록의 정본은 firelane/generated.py 의 역할 "encoding" 이다(W3-13).
+GENERATED = prefixes("encoding")
 
 
 def tracked() -> list[Path]:

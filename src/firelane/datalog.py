@@ -174,9 +174,13 @@ def cmd_graph() -> None:
     out = src.get("outputs", {}) or {}
 
     L = ["```mermaid", "graph LR"]
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ①). 종전에는 `verified` 로 ✓/? 를,
+    #   `vintage` 로 날짜를 찍었다. datasets 72종 중 **어느 것도** 두 키를 안 가진다
+    #   (`verified` 는 outputs 의 키다). 그래서 모든 노드가 늘 `?` 였고 날짜는 빈칸이었다
+    #   — 표시가 있는데 안 변하는 자리다. 실재하는 `updated`(72/72, REQUIRED)를 찍고
+    #   거짓 `?` 는 뺀다.
     for k, v in ds.items():
-        ver = "✓" if v.get("verified") else "?"
-        L.append(f'  {k}["{k}<br/>{v.get("vintage","")} {ver}"]')
+        L.append(f'  {k}["{k}<br/>{v.get("updated", "")}"]')
     for k, v in out.items():
         L.append(f'  {k}(["{k}"])')
         for i in v.get("inputs", []):

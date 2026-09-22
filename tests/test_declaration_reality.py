@@ -49,6 +49,7 @@ import re
 import sys
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -175,7 +176,8 @@ def test_ledger_consumers_are_complete():
       `outputs.consumers` 에는 짝이 없어 손으로 유지되고 있었다.
     """
     led = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
-    scan = [p for d in ("src", "tools", "tests", "web/js")
+    # ★ 2026-09-22. `web/js` 를 뺐다 — 옛 지도를 걷어냈다.
+    scan = [p for d in ("src", "tools", "tests")
             for p in (ROOT / d).rglob("*")
             if p.suffix in (".py", ".js") and p.is_file()]
     texts = {p: p.read_text(encoding="utf-8", errors="ignore") for p in scan}
@@ -236,15 +238,10 @@ def _count_providers() -> int:
     return len(led["layers"]["raw"]["providers"])
 
 
-def _count_js_modules() -> int:
-    return len(list((ROOT / "web/js").rglob("*.js")))
-
-
+# ★ 2026-09-22. 「web/js 모듈」 행을 뺐다 — 옛 지도(web/js)를 걷어내 셀 것이 없다.
 COUNTS = (
     ("제공기관 폴더", _count_providers,
      ("README.md", "docs/MASTER.md", "tools/scan_data.py"), "{n}폴더"),
-    ("web/js 모듈", _count_js_modules,
-     ("README.md", "docs/MASTER.md", "web/README.md"), "{n}개 모듈"),
 )
 
 
@@ -274,8 +271,7 @@ def test_document_counts_match_reality():
         "문서의 수가 실물과 다르다.\n" + "\n".join(bad)
         + "\n\n  실물을 세는 명령 —"
           "\n    제공기관  python -c \"import yaml;print(len(yaml.safe_load("
-          "open('sources.yaml'))['layers']['raw']['providers']))\""
-          "\n    JS 모듈   node tools/js_graph_check.mjs")
+          "open('sources.yaml'))['layers']['raw']['providers']))\"")
 
 
 # ── 검증은 양쪽에서 한다 — 방향뿐 아니라 **범위**도 ────────────
@@ -311,8 +307,9 @@ def test_field_exempt_has_no_ghosts():
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     field = ROOT / "data" / "field"
-    if not field.exists():
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). `data/field/` 는 추적된다(fieldsheet 등). 종전
+    #   `if not field.exists(): return` 은 폴더가 사라지면 역방향 검사를 초록으로 껐다.
+    assert field.exists(), "data/field/ 가 없다 — 추적 폴더다"
     real = {p.name for p in field.iterdir() if p.is_file()}
     ghost = sorted(n for n in m.FIELD_EXEMPT if n not in real)
     assert not ghost, (
@@ -340,7 +337,10 @@ def test_raw_only_is_true_to_the_lake():
 
     norm = Path(NORM)
     if not norm.exists():
-        return  # 레이크가 없다. CI 다.
+        # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전 `return` — CI 에서 **통과**로 셌다. 판정하지
+        #   않은 것은 skip 이다. 분류된 사유라 레이크가 붙은 기계에서는 skip 정책이
+        #   이것을 실패로 바꾼다(tests/skip_policy.py).
+        pytest.skip("환경skip(레이크) — 레이크 미마운트 · norm 없음")
 
     led = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
     have = {f.name for f in norm.rglob("*") if f.is_file()}

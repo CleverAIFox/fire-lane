@@ -57,6 +57,15 @@ else
     ROWS+=("기계|hygiene|${D}없음${Z}|~/.local/bin/hygiene.sh 를 설치하면 돈다")
 fi
 
+# ── 캐시 (보고만) ── 2026-09-22 (§218-4 · 토트 scan.sh 모범). 지우는 규칙은 재고 나서 쓴다 —
+#   uv 캐시는 여러 저장소가 같이 쓰므로 여기서 비우지 않는다. 크기만 한 줄로 낸다.
+UVC=$(uv cache dir 2>/dev/null || true)
+if [ -n "$UVC" ] && [ -d "$UVC" ]; then
+    ROWS+=("기계|uv 캐시|$(du -sh "$UVC" 2>/dev/null | cut -f1)|비우려면 uv cache prune (공유 캐시 — 사람이 판단)")
+fi
+NPMC="$HOME/.npm"
+[ -d "$NPMC" ] && ROWS+=("기계|npm 캐시|$(du -sh "$NPMC" 2>/dev/null | cut -f1)|비우려면 npm cache clean --force")
+
 # ── 저장소 ───────────────────────────────────────────────────────
 run 저장소 tidy '[0-9]+(?=건)' $PY tools/tidy.py
 

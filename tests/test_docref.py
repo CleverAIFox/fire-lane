@@ -94,8 +94,9 @@ def test_section_references_resolve():
             # ★ `### 18-1a` 는 `§18-1` 로도 인용된다. 알파벳 접미를 벗긴
             #   형태도 유효한 참조로 인정한다.
             have.add(re.sub(r"[a-z]$", "", n))
-    if not have:
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전 `if not have: return` — 절 파서가 죽으면 **모든 참조가
+    #   검사 없이 통과**했다. 정본 문서에는 절이 반드시 있다.
+    assert have, f"정본 문서 {[c.name for c in CANON]} 에서 절을 하나도 못 읽었다 — 절 파서가 죽었다"
 
     # ★ **하위 절 제목이 실제로 연속 체계를 이루는 상위 절만** 본다.
     #

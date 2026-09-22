@@ -41,7 +41,8 @@ gate_parity.py — **로컬 관문과 CI 가 같은 것을 보는가.** 3족의 
   거짓말이 된다. 면제 토큰이 실제로 로컬 전용이 아니면 실패한다 —
   「거짓말하는 강제자는 없는 강제자보다 나쁘다」.
 
-★ **래칫이다.** 미선언 11개를 오늘 다 옮길 수는 없다. `dupcheck --max` ·
+★ **래칫이다.** 미선언 11개를 오늘 다 옮길 수는 없다(2026-09-20 서술 — 2026-09-22
+  (DECISIONS §218-5)에 열을 CI 로 옮기고 하나를 면제로 선언해 0 이 됐다). `dupcheck --max` ·
   `vintage_check --max` · 커버리지 래칫(`verify.sh` 의 `COV_MIN`)과 같은 방식을
   쓴다 — **수는 줄기만 한다.** 다음 배치가 그 숫자를 또 내린다.
 
@@ -91,7 +92,11 @@ ACT = ROOT / ".github" / "actions"
 
 # ★ 미선언 로컬 전용 검사의 상한. **이 파일이 유일한 집이다** — `verify.sh` 도
 #   `contract.yml` 도 인자 없이 부른다(W3-11). 내릴 때 여기만 고친다.
-RATCHET = 11
+# ★ 2026-09-22 (DECISIONS §218-5). 11 → 0. 미선언 11 중 레이크 없이 도는 열(ledger · docpatch ·
+#   docx_check · dupcheck · golden · install_navi · ledger_fields · navi_setup · pages_add_navi ·
+#   plan_renumber)을 contract.yml 로 옮기고, git 역사가 필요한 dms.py 하나를 `# ci-exempt:` 로
+#   선언했다. 0 이므로 새 검사를 로컬에만 붙이는 순간 여기서 운다.
+RATCHET = 0
 
 # `# ci-exempt: <검사기> <사유...>` — 사유는 다섯 글자 이상이어야 한다.
 #   짧은 사유는 사유가 아니다. "필요" 두 글자로 면제받는 길을 막는다.
@@ -107,6 +112,8 @@ EXTERNAL = {
     "navi:typecheck": r"npm run\s+(?:-s\s+)?typecheck",
     # ★ 2026-09-22 (§213-3). 내비 단위 시험. 검사기가 npm 스크립트라 파일로 못 잡는다
     "navi:test": r"npm run\s+(?:-s\s+)?test\b",
+    # ★ 2026-09-22 (DECISIONS §218-5). 의존성 선언 ↔ import. 잠금 밖 `--with` 로 얹는 외부 도구다
+    "deptry": r"\bdeptry\b",
 }
 
 

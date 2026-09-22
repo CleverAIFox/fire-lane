@@ -357,7 +357,7 @@ export default function App() {
   return (
     <div style={shell}>
       <style>{"@keyframes flspin{to{transform:rotate(360deg)}}" + SMOKE_CSS}</style>
-      <NaviMap view={n.data.view} live={n.live}
+      <NaviMap view={n.data.view} terrain={n.data.graph.terrain} live={n.live}
                plan={n.plan} altPlan={s.screen === "compare" ? (compare?.fast ? otherPlan(n, choice) : null) : null}
                style={style} look={st.route && !s.planning ? st.route : "solid"}
                blockedEdges={blockedEdges} marks={marks} finalLeg={finalLeg}

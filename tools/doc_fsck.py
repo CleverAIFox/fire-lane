@@ -85,10 +85,8 @@ PATH_EXEMPT = {
     #   config.js:327 · vehicle.js:187 이 fetch 하고, 없으면 화면이
     #   "제원 미확인" 만 띄운다. PLAN 이 이 항목을 든다.
     "web/assets/vehicles/profiles.json",
-    # 2026-09-13. 생성물이다 — tools/stage_pages.py 가 환경에서 만든다.
-    #   V-World 키가 들어가므로 커밋하지 않는다(.gitignore). clone 직후와
-    #   CI 에는 없는 것이 정상이고, web/proposal.docx 와 같은 부류다.
-    "web/key.js",
+    # ★ 2026-09-22. `web/key.js` 를 뺐다 — 옛 지도와 함께 생성을 멈췄다. 이제 문서가 그 경로를
+    #   적으면 **낡은 서술**이라 울어야 한다.
 }
 
 # 경로 참조를 찾을 때 저장소 안인 것만 본다. data/raw · norm · landing ·
@@ -104,8 +102,9 @@ PATH_RX = re.compile(
 #   으로 적는 것이 정상이고(`tools/docfix_20260817.py` 는 지운 것이 맞다),
 #   후자는 **계획**이라 아직 없는 파일을 가리키는 것이 정상이다. 여기서 보는
 #   것은 "지금 그렇게 동작한다" 고 말하는 문서와 설정뿐이다.
+# ★ 2026-09-22. `web/js/**/*.js` 를 뺐다 — 옛 지도를 걷어냈다.
 SCAN_GLOBS = ("docs/MASTER.md", "sources.yaml", "web/config.js",
-              "web/js/**/*.js", "src/firelane/README.md", "README.md",
+              "src/firelane/README.md", "README.md",
               ".github/CODEOWNERS")
 
 
@@ -436,15 +435,22 @@ def check_docx_revised() -> list[str]:
             ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(f)],
             cwd=ROOT, capture_output=True, text=True, timeout=10)
         last = r.stdout.strip()
-    except Exception:                                     # noqa: BLE001
-        return []
+    except Exception as e:                                # noqa: BLE001
+        # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전에는 `return []` —
+        #   git 이 죽으면 이 검사가 **초록**이었다. 얕은 저장소처럼 전제를
+        #   선언한 경우가 아니라 **못 잰 것**이므로 못 쟀다고 말한다.
+        return [f"{f.name} 의 마지막 수정 커밋일을 못 쟀다 — git log 실패: "
+                f"{type(e).__name__}: {e}"]
     if not last:
         return []
     try:
         import docx as _dx
         txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
-    except Exception:                                     # noqa: BLE001
-        return []
+    except Exception as e:                                # noqa: BLE001
+        # ★ 2026-09-22 (W10-1 · deadcheck ③). `python-docx` 는 선언된 의존성이다
+        #   (pyproject). 그것이 없거나 기획서가 안 열리면 표지를 못 읽은 것이지
+        #   표지가 맞는 것이 아니다 — 종전 `return []` 은 그 둘을 같게 읽었다.
+        return [f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"]
     shown = re.findall(r"20\d\d\.\s*\d{1,2}\.\s*\d{1,2}", txt)
     if not shown:
         return [f"{f.name} 표지에 날짜가 없다. 작성일과 최종 수정일을 적어라"]

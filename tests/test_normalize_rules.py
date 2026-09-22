@@ -165,11 +165,16 @@ def test_rules_do_not_reimport_retired_files():
     """
     import yaml
     cfg = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
-    retired = {Path(str(v["file"])).name
-               for v in (cfg.get("retired") or {}).values()
-               if isinstance(v, dict) and v.get("file")}
-    if not retired:
-        return
+    # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③) — **이 검사는 죽어 있었다.** 종전에는 `v["file"]`(단수)만
+    #   읽었는데 retired 4종은 전부 `files`(복수)를 쓴다(단수는 2026-08-30 에 대장에서
+    #   지웠다 — `ledger.globs` 머리말). 그래서 `retired` 가 늘 빈 집합이었고 바로 아래
+    #   `if not retired: return` 으로 **매번 초록**이었다. 두 표기를 다 읽고, 빈 그물이면 운다.
+    retired = {Path(str(f)).name
+               for v in (cfg.get("retired") or {}).values() if isinstance(v, dict)
+               for f in ([v["file"]] if v.get("file") else []) + list(v.get("files") or [])}
+    assert retired, (
+        "retired 가 파일을 하나도 지목하지 않는다 — 이 검사가 빈 그물이 됐다.\n"
+        "  대장 표기가 `file`/`files` 밖으로 바뀌었으면 여기도 옮겨라")
     # ★ 접두어로 비교하면 활성판까지 걸린다. `safety_firestation_kr_20240901`
     #   (현역)과 `..._20250701`(폐기)은 접두어가 같다. 템플릿을 정규식으로
     #   바꿔 **그 규칙이 실제로 그 이름을 낼 수 있는가**만 본다.

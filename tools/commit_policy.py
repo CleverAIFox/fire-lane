@@ -21,6 +21,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from firelane.generated import for_role
+
 # ── 한계값 ────────────────────────────────────────────────────
 MAX_FILE_MB = 5.0          # 단일 파일. 이보다 크면 재생성 가능한지 따진다
 MAX_WEBDATA_MB = 40        # contract.yml 과 같은 값
@@ -62,11 +64,8 @@ def r_processed(p: str) -> bool:
     """재생성 가능(285초)한 산출물. 예외 4개만 UI 입력이라 커밋한다."""
     if not p.startswith("data/processed/"):
         return False
-    keep = {"data/processed/segments.geojson",
-            "data/processed/segments.schema.json",
-            "data/processed/_manifest.json",
-            "data/processed/seg_uid_map.csv"}
-    return p not in keep
+    # 예외의 정본은 firelane/generated.py 의 역할 "committed" 다(W3-13).
+    return p not in set(for_role("committed"))
 
 
 def r_root_script(p: str) -> bool:

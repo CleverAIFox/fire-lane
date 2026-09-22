@@ -25,7 +25,7 @@ import type { LngLat } from "../domain/geo";
 import type { VerdictStyle, View } from "../domain/types";
 import type { FeedItem, Unit } from "../domain/opsProtocol";
 import {
-  GLYPHS, sources, baseLayers, markerLayers, stationLayers,
+  GLYPHS, sources, baseLayers, opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer, applyTerrain, markerLayers, stationLayers,
   cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
 
@@ -44,6 +44,8 @@ export interface OpsLayers {
   history: boolean;
   /** 과속방지턱 · 단속카메라 · 보호구역 시설(§216-3) */
   context: boolean;
+  /** 지형 — 음영(평면) + 3D 에서 지면 휨(§217-2) */
+  terrain: boolean;
 }
 
 /**
@@ -58,6 +60,8 @@ const DARK = {
 
 interface Props {
   view: View;
+  /** 지형 — `navi_graph.json.terrain`(정본 config.js) */
+  terrain?: { enabled: boolean; exaggeration: number };
   style: Record<string, VerdictStyle>;
   layers: OpsLayers;
   hidden: ReadonlySet<string>;
@@ -115,7 +119,7 @@ export function OpsMap(props: Props) {
       style: {
         version: 8, glyphs: GLYPHS,
         sources: {
-          ...sources(D),
+          ...sources(D, v.terrainBounds),
           ortho: {
             type: "raster", tiles: [D + "ortho/{z}/{x}/{y}.jpg"], tileSize: 256,
             minzoom: 15, maxzoom: 19,
@@ -126,6 +130,8 @@ export function OpsMap(props: Props) {
       },
     });
     map.current = m;
+    // 계측용 손잡이 — `?debug=1` 일 때만(내비와 같다). 레이어가 실제로 올랐는지 헤드리스가 본다(§217-3)
+    if (new URLSearchParams(location.search).get("debug") === "1") (window as unknown as { __flMap?: unknown }).__flMap = m;
     m.on("error", (e) => console.warn("[ops map]", e.error?.message ?? e));
 
     m.on("load", () => {
@@ -144,26 +150,13 @@ export function OpsMap(props: Props) {
       m.setPaintProperty("bldg-flat", "fill-color", DARK.bldgFlat);
       m.setPaintProperty("bldg-flat", "fill-outline-color", DARK.bldgEdge);
       m.setPaintProperty("bldg", "fill-extrusion-color", "#24304a");
+      // ── 지형 음영 (§217-2) — 위에서 본 평면에서도 등성이 · 골이 보인다 ──
+      if (m.getSource("dem")) {
+        m.addLayer(hillshadeLayer(), "sidewalk");
+      }
       // ── 출동 이력 (§216-3) — 밀도 + 실제 도착 시간 색 ──
       m.addSource("history", { type: "geojson", data: D + "history.geojson" });
-      m.addLayer({ id: "hist-heat", type: "heatmap", source: "history", maxzoom: 17,
-        layout: { visibility: "none" },
-        paint: {
-          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 13, 14, 16, 34] as never,
-          "heatmap-intensity": 0.8, "heatmap-opacity": 0.55,
-          "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"],
-            0, "rgba(0,0,0,0)", 0.3, "#7c3aed", 0.6, "#f97316", 1, "#fde047"] as never,
-        } });
-      m.addLayer({ id: "hist-pt", type: "circle", source: "history", minzoom: 14.5,
-        layout: { visibility: "none" },
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 14.5, 3, 18, 7] as never,
-          // 실제 출동 → 현장 도착. 5분 · 8분 경계는 **표시용 가정값**이다(기준 문헌 없음)
-          "circle-color": ["case", ["!", ["has", "resp_s"]], "#64748b",
-            ["<=", ["get", "resp_s"], 300], "#22c55e",
-            ["<=", ["get", "resp_s"], 480], "#f59e0b", "#ef4444"] as never,
-          "circle-stroke-color": "#0b1220", "circle-stroke-width": 1.2,
-        } });
+      for (const L of opsHistoryLayers()) m.addLayer(L);
       m.addImage("pill", pillImage(), pillOptions);
       for (const id of ["preview", "preview-walk", "unit-routes"]) m.addSource(id, { type: "geojson", data: EMPTY });
 
@@ -171,51 +164,9 @@ export function OpsMap(props: Props) {
       m.addLayer({ id: "ortho", type: "raster", source: "ortho",
                    layout: { visibility: "none" }, paint: { "raster-opacity": 1 } }, "seg-road");
 
-      // 굵기 = 최소 유효폭 비례. 2~12m 로 자른다 — 광장 · 교차로(수십 m)가 얼룩이 되지 않게
-      const wm = ["min", 12, ["max", 2, ["coalesce", ["get", "width_min_m"], 3]]];
-      const W = ["interpolate", ["linear"], ["zoom"],
-        14, ["*", 0.25, wm], 18, ["*", 1.5, wm]] as never;
-      m.addLayer({ id: "ops-verdict-case", type: "line", source: "segments",
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-width": ["+", W, 2] as never, "line-color": "#1f2937", "line-opacity": .55 } });
-      m.addLayer({ id: "ops-verdict", type: "line", source: "segments",
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-width": W,
-          "line-color": ["match", ["get", "verdict"],
-            "clear", col("clear"), "needs_cv", col("needs_cv"),
-            "blocked", col("blocked"), col("unknown")] as never,
-        } });
-      m.addLayer({ id: "ops-unreach", type: "line", source: "segments",
-        layout: { "line-cap": "butt", visibility: "none" },
-        paint: { "line-width": ["+", W, 1] as never, "line-color": "#111827",
-                 "line-opacity": .75, "line-dasharray": [0.6, 0.6] } });
-      m.addLayer({ id: "ops-selected", type: "line", source: "segments",
-        filter: ["==", ["get", "seg_uid"], ""] as never,
-        paint: { "line-width": ["+", W, 7] as never, "line-color": "#1d4ed8", "line-opacity": .55 } });
+      for (const L of opsSegLayers(col)) m.addLayer(L);
 
-      m.addLayer({ id: "cctv-cov", type: "circle", source: "cctv",
-        layout: { visibility: "none" },
-        paint: {
-          "circle-radius": ["interpolate", ["exponential", 2], ["zoom"],
-            14, CCTV_RANGE_M / mpp(14), 20, CCTV_RANGE_M / mpp(20)] as never,
-          "circle-color": "#facc15", "circle-opacity": .14,
-          "circle-stroke-color": "#ca8a04", "circle-stroke-width": 1, "circle-stroke-opacity": .6,
-          "circle-pitch-alignment": "map",
-        } });
-
-      m.addLayer({ id: "preview-walk", type: "line", source: "preview-walk",
-        paint: { "line-width": 4, "line-color": "#ef2d2d", "line-dasharray": [1.2, 1.2] } });
-      m.addLayer({ id: "preview-case", type: "line", source: "preview",
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-width": 11, "line-color": "#ffffff" } });
-      m.addLayer({ id: "preview", type: "line", source: "preview",
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-width": 6, "line-color": "#2563eb" } });
-      m.addLayer({ id: "unit-routes", type: "line", source: "unit-routes",
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-width": 5, "line-color": "#7c3aed", "line-opacity": .9,
-                 "line-dasharray": [2, 1] } });
+      for (const L of opsOverlayLayers(CCTV_RANGE_M / mpp(14), CCTV_RANGE_M / mpp(20))) m.addLayer(L);
 
       for (const L of markerLayers()) m.addLayer(L);
       for (const L of stationLayers()) m.addLayer(L);
@@ -256,6 +207,9 @@ export function OpsMap(props: Props) {
       vis("hist-heat", L.history);
       vis("hist-pt", L.history);
       vis("ctx", L.context);
+      if (m.getLayer("hillshade")) vis("hillshade", L.terrain && !L.ortho);
+      // 3D(비스듬히)일 때만 지면을 휜다 — 위에서 본 평면은 음영으로 충분하고 그리기가 가볍다
+      if (m.getSource("dem")) applyTerrain(m, P.current.terrain, L.terrain && L.bldg);
       vis("road-area", !L.ortho);
       vis("sidewalk", !L.ortho);
       vis("seg-road", !L.ortho);

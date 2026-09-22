@@ -29,11 +29,15 @@
 #   메이저는 사람이 배치로 계획해서 올린다. 보안 업데이트는 이 무시와 무관하게 온다.
 version: 2
 
+# ★ 2026-09-22 (DECISIONS §218-4). 봇 PR 은 part/infra 로 온다 — 흐름(feat → part → dev → main) 안에서
+#   contract CI 를 받고, `branch_tidy.sh --close-bots` 는 밀린 것 · 흐름 밖 것만 청소한다(토트 모범).
+
 updates:
   # ── 파이썬 (uv.lock) ────────────────────────────────────────
   # ★ uv 생태계는 `package-ecosystem: uv` 다. pyproject + uv.lock 을 같이 본다.
   - package-ecosystem: uv
     directory: /
+    target-branch: part/infra
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
@@ -60,6 +64,7 @@ updates:
   #   `내비 타입 검사` 게이트를 먼저 통과해야 한다.
   - package-ecosystem: npm
     directory: /web/navi
+    target-branch: part/infra
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
@@ -74,10 +79,11 @@ updates:
         patterns: ["*"]
 
   # ── GitHub Actions ─────────────────────────────────────────
-  # ★ `setup-uv@v3` 처럼 메이저만 박힌 것들. 액션이 조용히 바뀌면 CI 가
+  # ★ `setup-uv@v7` 처럼 메이저만 박힌 것들. 액션이 조용히 바뀌면 CI 가
   #   어제와 다른 것을 검사한다.
   - package-ecosystem: github-actions
     directory: /
+    target-branch: part/infra
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
@@ -91,6 +97,7 @@ updates:
   # ── Docker (Dockerfile 의 python · uv 판) ───────────────────
   - package-ecosystem: docker
     directory: /
+    target-branch: part/infra
     schedule:
       interval: monthly
     open-pull-requests-limit: 2

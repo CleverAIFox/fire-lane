@@ -22,6 +22,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from firelane.generated import prefixes
+
 ROOT = Path(__file__).resolve().parents[1]
 PROCESSED = ROOT / "data" / "processed"
 
@@ -321,7 +323,7 @@ def test_step_writes_are_declared_in_the_ledger():
             rel = str(w.relative_to(ROOT)) if w.is_absolute() else str(w)
             if "*" in rel or not Path(rel).suffix:
                 continue
-            if rel.startswith("web/data/") or rel.endswith("_manifest.json"):
+            if rel.startswith(prefixes("ledger-skip")) or rel.endswith("_manifest.json"):
                 continue
             if rel not in known:
                 bad.append(f"  Step({s.name!r}) 가 {rel} 을 내는데 대장에 없다")

@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
@@ -6,6 +7,10 @@ import path from "node:path";
 // 저장소 이름이 fire-lane 이 아니면 VITE_BASE 로 넘긴다.
 //   VITE_BASE=/fire-lane-dev/navi/ npm run build
 const base = process.env.VITE_BASE ?? "/fire-lane/navi/";
+
+// ★ vite 8 (W8-1). `__dirname` 은 vite 가 설정을 CJS 로 묶던 시절의 주입값이다 — vite 8 은
+//   `configLoader: 'native'` 로 갈 것이라 경고하고 `import.meta.dirname` 을 권한다(Node ≥20.11).
+const HERE = import.meta.dirname;
 
 /**
  * 개발 서버가 상위 `web/data` 를 내주게 한다.
@@ -27,7 +32,7 @@ const base = process.env.VITE_BASE ?? "/fire-lane/navi/";
  *   그것을 버그로 착각하고 하루를 태운다.
  */
 function serveWebData(): Plugin {
-  const DATA = path.resolve(__dirname, "..", "data");
+  const DATA = path.resolve(HERE, "..", "data");
   const prefix = base.replace(/navi\/$/, "data/");   // /fire-lane/data/
 
   const MIME: Record<string, string> = {
@@ -83,8 +88,8 @@ function serveWebData(): Plugin {
  * ★ 값을 로그에 찍지 않는다. 있다/없다만 안다.
  */
 function mapboxToken(mode: string): string {
-  const navi = loadEnv(mode, __dirname, "VITE_");                 // 1 · 2
-  const root = loadEnv(mode, path.resolve(__dirname, "..", ".."), "");
+  const navi = loadEnv(mode, HERE, "VITE_");                 // 1 · 2
+  const root = loadEnv(mode, path.resolve(HERE, "..", ".."), "");
   return navi.VITE_MAPBOX_TOKEN || root.VITE_MAPBOX_TOKEN || root.MAPBOX_TOKEN || "";
 }
 
@@ -93,4 +98,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [react(), serveWebData()],
   define: { "import.meta.env.VITE_MAPBOX_TOKEN": JSON.stringify(mapboxToken(mode)) },
   build: { outDir: "dist", emptyOutDir: true },
+  // 단위 시험 — vitest 가 이 설정(번들러 · 변환)을 그대로 먹는다 (DECISIONS §217-5)
+  test: { include: ["test/**/*.test.ts"], environment: "node", testTimeout: 60_000 },
 }));

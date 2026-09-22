@@ -16,15 +16,18 @@
 #   아니라 `step` 이라 **권장 명령(`verify.sh --fast`)이 컨테이너에서 빨간불로
 #   끝났다.** Dockerfile 을 고치지 않고 `devcontainer.json` 의 `features` 로
 #   받는다 — 손으로 설치 줄을 짜지 않는다.
-#   판은 `web/navi/.nvmrc`(20) 를 따른다. 클래식 JS 검사(`node --check` ·
+#   판은 `web/navi/.nvmrc` 를 따른다(devcontainer.json features · SOURCES_OF_TRUTH.yaml node). 클래식 JS 검사(`node --check` ·
 #   jsdom 스모크)는 판을 안 탄다. CI 의 클래식 22 는 의도된 결정이라 안 건드린다
 #   (contract.yml §186-2 · test_ci_env.test_navi_node_version_has_one_source_of_truth).
 set -euo pipefail
 
 # ★ 2026-09-18. 이미지(Dockerfile)가 `/bin/uv` 를 이미 넣는다. 그런데도 매번 받아서
 #   설치하고 있었다 — 컨테이너에 네트워크가 없으면 여기서 죽는다. 없을 때만 받는다.
+# ★ 2026-09-22 (DECISIONS §218-6) 대체 설치도 판을 박는다. 종전 설치 줄은 판 없는 install.sh 라
+#   그날의 최신을 받아 CI · 이미지(0.12.13 핀)와 다른 uv 가 uv.lock 을 풀 수 있었다.
+#   판의 정본은 Dockerfile 이고 따르는 자리는 docs/SOURCES_OF_TRUTH.yaml 이 든다.
 if ! command -v uv >/dev/null 2>&1; then
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    curl -LsSf https://astral.sh/uv/0.12.13/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
 fi
 # ★ 2026-09-19 (W3-18). `--frozen --dev` 를 더했다. 종전에는 맨몸 `uv sync` 라
@@ -62,7 +65,16 @@ echo
 echo "  ★ 커밋 시점 방어 — 전역 훅이 .githooks/pre-commit 을 후보로 찾아 부른다."
 echo "    설치할 것은 없다. 도달만 확인해라 —"
 echo "      bash .githooks/global-chain.sh --check"
-echo
-echo "  ★ 파이프라인 전량은 데이터 레이크가 붙은 기계에서만 돈다."
-echo "    FIRE_LANE_DATA 가 비어 있으면 verify 가 그 단계를 **실패**로 낸다."
-echo "    (2026-09-18 배치 0 — 덮는 관문이 없는 생략은 통과가 아니다)"
+
+# ── 환경변수 — **비었을 때만** 말한다 ──────────────────────────
+# ★ 2026-09-22 (DECISIONS §217-5 · PLAN W3-18 ③ 닫음). 머리말이 「FIRE_LANE_INBOX 가 한쪽에만
+#   설정됨」을 이 파일의 생성 이유로 드는데, 종전에는 조건 없이 늘 같은 안내를 찍어 **신호가
+#   아니었다.** 값은 기계마다 달라 박을 수 없으므로(`containerEnv` 에 못 넣는다) 읽는 자리
+#   (`paths.env` — 단일 독자)로 물어 **빈 것만** 이름을 댄다.
+MISSING=$(uv run python -c 'from firelane import paths; print(" ".join(k for k in ("FIRE_LANE_DATA", "FIRE_LANE_INBOX") if not paths.env(k)))')
+if [ -n "$MISSING" ]; then
+    echo
+    echo "  ★ 설정 안 됨: $MISSING"
+    echo "    .env 에 적는다 (cp .env.example .env). FIRE_LANE_DATA 가 비면 verify 가"
+    echo "    파이프라인 단계를 **실패**로 낸다(덮는 관문이 없는 생략은 통과가 아니다)."
+fi
