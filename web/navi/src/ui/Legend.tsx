@@ -11,6 +11,7 @@
  */
 import { C, F, S } from "./tokens";
 import type { VerdictStyle } from "../domain/types";
+import { VERDICT_MEANING, VERDICT_ORDER } from "./verdictMeaning";
 
 interface Props {
   style: Record<string, VerdictStyle>;
@@ -33,17 +34,19 @@ const ROUTE = [
   { color: C.routeAlt, label: "빠른 경로 (비교)" },
 ];
 
-const ORDER = ["clear", "needs_cv", "unknown", "blocked"];
 
 export function Legend({ style, open }: Props) {
   if (!open) return null;
   return (
     <div style={{ ...panel, position: "absolute", zIndex: 5, left: 86, top: S.guideBarH + 90 }}>
       <div style={head}>경로</div>
-      {ROUTE.map((f) => <Row key={f.label} color={f.color} label={f.label} />)}
+      {ROUTE.map((f) => (
+        <Row key={f.label} label={f.label}
+             color={f.label.startsWith("병목") ? (style.needs_cv?.color ?? f.color) : f.color} />
+      ))}
       <div style={{ ...head, marginTop: 10 }}>구간 판정 (도로 음영)</div>
-      {ORDER.filter((k) => style[k]).map((k) => (
-        <Row key={k} color={style[k].color} label={style[k].label} />
+      {VERDICT_ORDER.filter((k) => style[k]).map((k) => (
+        <Row key={k} color={style[k].color} label={style[k].label} sub={VERDICT_MEANING[k]} />
       ))}
       <div style={{ ...head, marginTop: 10 }}>지형지물</div>
       {FEATURES.map((f) => <Row key={f.label} color={f.color} label={f.label} />)}
@@ -54,13 +57,16 @@ export function Legend({ style, open }: Props) {
   );
 }
 
-function Row({ color, label }: { color: string; label: string }) {
+function Row({ color, label, sub }: { color: string; label: string; sub?: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8,
+    <div style={{ display: "flex", alignItems: sub ? "flex-start" : "center", gap: 8,
                   fontSize: F.small, padding: "2px 0" }}>
-      <i style={{ width: 10, height: 10, borderRadius: 5, background: color,
-                  border: "1px solid rgba(255,255,255,.25)" }} />
-      {label}
+      <i style={{ width: 10, height: 10, borderRadius: 5, background: color, marginTop: sub ? 3 : 0,
+                  border: "1px solid rgba(255,255,255,.25)", flex: "0 0 auto" }} />
+      <span>
+        {label}
+        {sub && <span style={{ display: "block", fontSize: F.tiny, opacity: .6 }}>{sub}</span>}
+      </span>
     </div>
   );
 }

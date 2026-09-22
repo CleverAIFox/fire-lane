@@ -46,7 +46,7 @@ import type { LiveFix } from "../app/useNavigation";
 import { C, S } from "../ui/tokens";
 import {
   GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers,
-  stationLayers, chevronImage,
+  stationLayers, chevronImage, cctvIcon, hydrantIcon, pillImage, pillOptions,
 } from "./layers";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -56,6 +56,16 @@ export interface MapMarks {
   incident?: LngLat | null;
   /** 최종 접근 지점(P) — 차량 경로의 끝 */
   approach?: LngLat | null;
+  /** P 아래 알약 문구. 대체 접근 지점이면 그렇게 말한다 */
+  approachLabel?: string | null;
+}
+
+/** 지도 위 알약 표지 — 02 의 「공통 구간」 · 「확인 필요 NNm」 */
+export interface MapNote {
+  id: string;
+  at: LngLat;
+  kind: "common" | "check";
+  text: string;
 }
 
 interface Props {
@@ -76,8 +86,10 @@ interface Props {
   firstPerson: boolean;
   /** 배경 도로 판정 음영 */
   tint: boolean;
-  /** 조작 명령. `n` 이 바뀔 때만 한 번 실행한다 */
-  cmd: { n: number; kind: "in" | "out" | "north" } | null;
+  /** 조작 명령. `n` 이 바뀔 때만 한 번 실행한다. focus 는 그 점으로 카메라를 옮긴다 */
+  cmd: { n: number; kind: "in" | "out" | "north" | "focus"; at?: LngLat } | null;
+  /** 지도 위 알약 표지 */
+  notes?: MapNote[];
   onMapClick?: (lon: number, lat: number) => void;
   onUserPan?: () => void;
 }
@@ -99,6 +111,7 @@ export function NaviMap(props: Props) {
   const map = useRef<maplibregl.Map | null>(null);
   const car = useRef<maplibregl.Marker | null>(null);
   const marks = useRef<Record<string, maplibregl.Marker | null>>({});
+  const noteMk = useRef<Record<string, maplibregl.Marker>>({});
   const ready = useRef(false);
   /** 지도가 뜨기 전에 들어온 갱신. `load` 에서 한 번에 비운다 */
   const pending = useRef<((m: maplibregl.Map) => void)[]>([]);
@@ -119,8 +132,19 @@ export function NaviMap(props: Props) {
       minZoom: p.view.minZoom ?? 13, maxZoom: p.view.maxZoom ?? 20,
       maxBounds: p.view.maxBounds,
       attributionControl: { compact: true },
+      // ★ 한글은 글꼴 서버(PBF)에 없다 — 로컬 글꼴로 그린다. 와이어프레임 글꼴을 쓴다
+      localIdeographFontFamily: "Pretendard, 'Noto Sans KR', sans-serif",
       style: {
         version: 8, glyphs: GLYPHS,
+        // ★ 2026-09-22 (§214-2). 1인칭(피치 60°)에서 지평선 위가 바탕색 벽이었다 — 하늘을 준다
+        sky: {
+          "sky-color": "#a9cdf0", "horizon-color": "#e6eef6", "fog-color": "#eef1f4",
+          "sky-horizon-blend": 0.55, "horizon-fog-blend": 0.7, "fog-ground-blend": 0.85,
+        },
+        // ★ 2026-09-22 (§213-4) 빛을 비스듬히 준다. 기본(정수리 · 0.5)은 벽 네 면이
+        //   같은 밝기라 건물이 덩어리로 뭉친다. 방위 210° · 고도 30° 에서 남서면이 밝고
+        //   북동면이 어둡다.
+        light: { anchor: "viewport", color: "#ffffff", intensity: 0.45, position: [1.3, 210, 30] },
         sources: sources(D),
         layers: baseLayers(styleRef.current),
       },
@@ -130,12 +154,15 @@ export function NaviMap(props: Props) {
 
     m.on("load", () => {
       m.addImage("chev", chevronImage());
+      m.addImage("ic-cctv", cctvIcon(), { pixelRatio: 2 });
+      m.addImage("ic-hyd", hydrantIcon(), { pixelRatio: 2 });
+      m.addImage("pill", pillImage(), pillOptions);
       for (const id of ["route", "route-alt", "blocked", "final-leg"]) {
         m.addSource(id, { type: "geojson", data: EMPTY });
       }
       // 순서가 곧 겹침 순서다 — 비교 경로 → 주 경로 → 마커 → 안전센터.
       for (const L of altRouteLayers()) m.addLayer(L);
-      for (const L of routeLayers()) m.addLayer(L);
+      for (const L of routeLayers(styleRef.current)) m.addLayer(L);
       for (const L of markerLayers()) m.addLayer(L);
       for (const L of stationLayers()) m.addLayer(L);
       ready.current = true;
@@ -146,8 +173,11 @@ export function NaviMap(props: Props) {
     m.on("click", (e) => click.current?.(e.lngLat.lng, e.lngLat.lat));
     m.on("dragstart", () => { if (follow.current) pan.current?.(); });
 
-    car.current = new maplibregl.Marker({ element: truckEl(), rotationAlignment: "map" })
-      .setLngLat(home);
+    // ★ 2026-09-22 (§214-2). 위에서 본 소방차를 **지도에 눕힌다**(pitchAlignment: map).
+    //   피치 60° 에서 원근이 걸려 와이어프레임처럼 뒤에서 내려다본 차가 된다.
+    car.current = new maplibregl.Marker({
+      element: truckEl(), rotationAlignment: "map", pitchAlignment: "map",
+    }).setLngLat(home);
 
     // ── 카메라 루프 ──────────────────────────────────────────────
     let raf = 0;
@@ -170,8 +200,10 @@ export function NaviMap(props: Props) {
       m.jumpTo({
         center: [c.lon, c.lat], bearing: c.brg, pitch: 60,
         zoom: DRIVE_ZOOM + zoomBias.current,
-        // ★ 상단은 안내 바가 덮는다. 그만큼 더 밀지 않으면 차가 가린다.
-        padding: { top: S.guideBarH + h * 0.34, bottom: 0, left: 0, right: 0 },
+        // ★ 2026-09-22 (§214-2). 차를 화면 **아래 3/4** 에 둔다(와이어프레임 03). 위 패딩이
+        //   p 면 중심은 p + (h−p)/2 에 선다 — p = h/2 면 3/4 지점. 종전(0.34h + 바)은
+        //   차가 가운데 가까이 떠서 앞 길이 반밖에 안 보였다.
+        padding: { top: Math.max(S.guideBarH + 40, h * 0.5), bottom: 0, left: 0, right: 0 },
       });
     };
     raf = requestAnimationFrame(loop);
@@ -195,6 +227,12 @@ export function NaviMap(props: Props) {
     const on = p.mode === "drive" && p.firstPerson;
     follow.current = on;
     if (!m) return;
+    // ★ 2026-09-22 (§214-2). 1인칭에서 앞 건물이 경로를 가렸다 — 주행 중에만 살짝 비친다
+    whenReady((mm) => {
+      const op = p.mode === "drive" ? 0.86 : 1;
+      mm.setPaintProperty("bldg", "fill-extrusion-opacity", op);
+      mm.setPaintProperty("bldg-roof", "fill-extrusion-opacity", op);
+    });
     if (on) {
       m.dragRotate.disable(); m.touchZoomRotate.disableRotation(); m.dragPan.disable();
       cam.current.init = false;
@@ -209,6 +247,11 @@ export function NaviMap(props: Props) {
     const m = map.current;
     if (!m || !p.cmd) return;
     if (p.cmd.kind === "north") { m.easeTo({ bearing: 0, duration: 400 }); return; }
+    if (p.cmd.kind === "focus") {
+      if (p.cmd.at) m.easeTo({ center: p.cmd.at, zoom: 17.6, pitch: 55, duration: 700,
+                               padding: { top: S.guideBarH, bottom: 0, left: 0, right: 480 } });
+      return;
+    }
     const d = p.cmd.kind === "in" ? 0.6 : -0.6;
     if (follow.current) zoomBias.current = Math.max(-3, Math.min(1.6, zoomBias.current + d));
     else m.easeTo({ zoom: m.getZoom() + d, duration: 250 });
@@ -252,9 +295,29 @@ export function NaviMap(props: Props) {
       };
       put("origin", P.current.marks.origin, () => pinEl("출발", C.station), "bottom");
       put("incident", P.current.marks.incident, incidentEl, "bottom");
-      put("approach", P.current.marks.approach, pEl, "center");
+      // P 는 문구가 바뀔 수 있어 매번 새로 만든다(대체 접근 지점 ↔ 최종 접근 지점)
+      marks.current.approach?.remove(); marks.current.approach = null;
+      const ap = P.current.marks.approach;
+      if (ap) {
+        marks.current.approach = new maplibregl.Marker({
+          element: pEl(P.current.marks.approachLabel ?? "최종 차량 접근 지점"), anchor: "top",
+          offset: [0, -22],
+        }).setLngLat(ap).addTo(m);
+      }
     });
-  }, [p.marks.origin, p.marks.incident, p.marks.approach]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.marks.origin, p.marks.incident, p.marks.approach, p.marks.approachLabel]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 알약 표지 (02 — 공통 구간 · 확인 필요) ─────────────────────
+  useEffect(() => {
+    whenReady((m) => {
+      for (const mk of Object.values(noteMk.current)) mk.remove();
+      noteMk.current = {};
+      for (const n of P.current.notes ?? []) {
+        noteMk.current[n.id] = new maplibregl.Marker({ element: noteEl(n), anchor: "bottom" })
+          .setLngLat(n.at).addTo(m);
+      }
+    });
+  }, [p.notes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── plan 모드 카메라 — 출발·도착·경로를 한눈에 ──────────────────
   useEffect(() => {
@@ -298,15 +361,27 @@ function routeFc(plan: RoutePlan | null, look: RouteLook): GeoJSON.FeatureCollec
   };
 }
 
+/**
+ * 위에서 본 소방차. 지도에 눕혀(pitchAlignment: map) 원근을 받는다.
+ * ★ 우리가 그린 것이다 — 실제 차종 · 상표를 본뜨지 않았다.
+ */
 function truckEl(): HTMLElement {
   const el = document.createElement("div");
   el.innerHTML =
-    `<svg width="30" height="52" viewBox="0 0 30 52">
-       <rect x="3" y="3" width="24" height="46" rx="5" fill="#dc2626" stroke="#fff" stroke-width="2"/>
-       <rect x="6" y="5" width="18" height="9" rx="2" fill="#1f2937"/>
-       <path d="M9 18 V44 M21 18 V44 M9 22 H21 M9 28 H21 M9 34 H21 M9 40 H21" stroke="#e5e7eb" stroke-width="1.6"/>
+    `<svg width="54" height="118" viewBox="0 0 54 118">
+       <ellipse cx="27" cy="62" rx="25" ry="56" fill="rgba(0,0,0,.28)"/>
+       <rect x="5" y="6" width="44" height="106" rx="9" fill="#d91c1c" stroke="#fff" stroke-width="2.5"/>
+       <rect x="8" y="8" width="38" height="24" rx="7" fill="#b91515"/>
+       <rect x="11" y="10" width="32" height="11" rx="4" fill="#0f172a"/>
+       <rect x="12" y="24" width="12" height="4" rx="2" fill="#3b82f6"/>
+       <rect x="30" y="24" width="12" height="4" rx="2" fill="#ef4444"/>
+       <rect x="9" y="36" width="36" height="72" rx="4" fill="#e11d1d"/>
+       <path d="M17 40 V104 M37 40 V104" stroke="#e5e7eb" stroke-width="3"/>
+       <path d="M17 46 H37 M17 54 H37 M17 62 H37 M17 70 H37 M17 78 H37 M17 86 H37 M17 94 H37 M17 102 H37"
+             stroke="#cbd5e1" stroke-width="2"/>
+       <rect x="7" y="104" width="40" height="6" rx="3" fill="#fbbf24"/>
      </svg>`;
-  el.style.cssText = "filter:drop-shadow(0 3px 5px rgba(0,0,0,.45))";
+  el.style.cssText = "filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))";
   return el;
 }
 function pinEl(label: string, color: string): HTMLElement {
@@ -319,24 +394,49 @@ function pinEl(label: string, color: string): HTMLElement {
   el.style.cssText = "filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))";
   return el;
 }
+/** 사건 지점 — 불 핀 위로 연기가 오른다(와이어프레임 05 · 15 · 23) */
 function incidentEl(): HTMLElement {
   const el = document.createElement("div");
+  el.style.cssText = "position:relative;filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))";
   el.innerHTML =
-    `<svg width="50" height="62" viewBox="0 0 50 62">
+    `<div class="fl-smoke"><i></i><i></i><i></i></div>
+     <svg width="54" height="66" viewBox="0 0 50 62" style="position:relative">
        <path d="M25 60 C25 60 4 36 4 23 A21 21 0 0 1 46 23 C46 36 25 60 25 60 Z" fill="#ef2d2d" stroke="#fff" stroke-width="3"/>
        <path d="M25 11 C28 17 33 19 33 26 A8 8 0 0 1 17 26 C17 22 20 20 21 16 C22 20 24 21 25 11 Z" fill="#fff"/>
      </svg>`;
-  el.style.cssText = "filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))";
   return el;
 }
-function pEl(): HTMLElement {
+/** 최종 차량 접근 지점 — 파란 P 와 그 아래 흰 알약 */
+function pEl(label: string): HTMLElement {
   const el = document.createElement("div");
+  el.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none";
   el.innerHTML =
-    `<svg width="44" height="44" viewBox="0 0 44 44">
+    `<svg width="46" height="46" viewBox="0 0 44 44" style="filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))">
        <circle cx="22" cy="22" r="19" fill="#1d4ed8" stroke="#fff" stroke-width="3"/>
        <text x="22" y="29" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" font-family="Pretendard,sans-serif">P</text>
-     </svg>`;
-  el.style.cssText = "filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))";
+     </svg>
+     <div style="background:#fff;color:#0f172a;border-radius:999px;padding:5px 12px;font:800 13px Pretendard,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)"></div>`;
+  (el.lastElementChild as HTMLElement).textContent = label;
+  return el;
+}
+/** 02 표지. 공통 구간은 흰 알약, 확인 필요는 주황 글자의 흰 카드 */
+function noteEl(n: MapNote): HTMLElement {
+  const el = document.createElement("div");
+  const card = n.kind === "check";
+  el.style.cssText = `background:#fff;border-radius:${card ? 12 : 999}px;padding:${card ? "8px 14px" : "6px 14px"};`
+    + "box-shadow:0 3px 10px rgba(0,0,0,.25);font-family:Pretendard,sans-serif;text-align:center;"
+    + "white-space:nowrap;pointer-events:none";
+  const [a, b] = n.text.split("\n");
+  const top = document.createElement("div");
+  top.textContent = a;
+  top.style.cssText = `font-weight:800;font-size:${card ? 14 : 13}px;color:${card ? "#d97706" : "#0f172a"}`;
+  el.appendChild(top);
+  if (b) {
+    const bot = document.createElement("div");
+    bot.textContent = b;
+    bot.style.cssText = "font-weight:800;font-size:16px;color:#0f172a;margin-top:2px";
+    el.appendChild(bot);
+  }
   return el;
 }
 

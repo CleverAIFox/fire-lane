@@ -6,7 +6,8 @@
  *   병목 시트(04)와 재탐색 카드(06)가 같은 자리를 써서 겹쳤다(검수 스크린샷).
  *   가운데는 주행 화면에서 아무도 안 쓰는 자리다. 지혜님 확인 사항.
  *
- * ★ `simulated` 이면 「시연」 표지를 단다. 관제 서버가 아직 없다.
+ * ★ `simulated` 이면 「시연」 표지를 단다 — 관제 화면이 안 열려 있어 흉내 냈다.
+ *   관제 탭이 열려 있으면 진짜로 보내고 표지 대신 「관제 연결」 을 단다(§214-3).
  */
 import type { CSSProperties } from "react";
 import { C, S } from "./tokens";
@@ -29,7 +30,9 @@ export function ShareChip({ info, onRetry }: { info: ShareInfo; onRetry: () => v
       {info.state === "failed" && (
         <button onClick={onRetry} style={retry}>다시 보내기</button>
       )}
-      {info.simulated && <span style={sim} title="관제 서버가 아직 없다 — 전송을 흉내 낸다">시연</span>}
+      {info.simulated
+        ? <span style={sim} title="관제 화면이 열려 있지 않다 — 전송을 흉내 낸다">시연</span>
+        : <span style={{ ...sim, color: "#9ff0c1" }} title="같은 브라우저의 관제 화면과 연결됐다">관제 연결</span>}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 /**
  * ui/TopBar.tsx — 통일 상단바.  (와이어프레임 2026-09-21 · 03~23)
  *
- *   [회전·제목·부제] [마이크] [모드 배지] [현재 시간 · 예상 도착 · 사건 입력] [헤드셋]
+ *   [회전·제목·부제] [마이크] [모드 배지] [현재 시간 · 예상 도착 · 사건 접수] [헤드셋]
  *
  * ★ **이 파일은 상태를 모른다.** `domain/status.ts` 의 표 한 줄(`StatusSpec`)과
  *   회전 안내 · 시각을 받아 그리기만 한다. 18장의 화면이 이 컴포넌트 하나다.
@@ -71,15 +71,16 @@ export function TopBar(p: TopBarProps) {
         {s.icon === "P"
           ? <div style={pBadge}>P</div>
           : p.turnKind && !s.title
-            ? <TurnArrow kind={p.turnKind} size={56} />
+            ? <TurnArrow kind={p.turnKind} size={72} />
             : <div style={{ width: 8 }} />}
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.1,
+          <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1.1, letterSpacing: -0.5,
                         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {title}
           </div>
           {sub && (
-            <div style={{ fontSize: 18, color: C.topBarSub, marginTop: 4, whiteSpace: "nowrap" }}>
+            <div style={{ fontSize: 23, color: C.topBarSub, marginTop: 6, whiteSpace: "nowrap",
+                          overflow: "hidden", textOverflow: "ellipsis" }}>
               {sub}
             </div>
           )}
@@ -94,7 +95,7 @@ export function TopBar(p: TopBarProps) {
 
       {/* ── 모드 배지 ────────────────────────────────────── */}
       <div style={{ ...badge, background: TONE_BG[s.tone] }}>
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {tagIsButton ? (
             <button onClick={p.onSwitchRoute} style={{ ...tag, background: tagBg, cursor: "pointer" }}>
               ➤ {s.tag}
@@ -112,8 +113,8 @@ export function TopBar(p: TopBarProps) {
             <span style={{ color: C.warn }}>⚠</span> {s.caution}
           </div>
         ) : (
-          <div style={{ fontSize: 21, fontWeight: 800, color: C.toneInk, marginTop: 4,
-                        textAlign: "center" }}>
+          <div style={{ fontSize: 27, fontWeight: 800, color: C.toneInk, marginTop: 6,
+                        textAlign: "center", letterSpacing: -0.3 }}>
             {s.label}
           </div>
         )}
@@ -121,21 +122,21 @@ export function TopBar(p: TopBarProps) {
 
       {/* ── 시각 ─────────────────────────────────────────── */}
       <div style={timeBox}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: C.timeGreen, lineHeight: 1.1 }}>
+        <div style={{ fontSize: 28, fontWeight: 800, color: C.timeGreen, lineHeight: 1.1 }}>
           현재 시간 {p.nowText}
         </div>
-        <div style={{ display: "flex", gap: 14, marginTop: 6, fontSize: 13, color: "#cfd8e6",
+        <div style={{ display: "flex", gap: 14, marginTop: 8, fontSize: 15, color: "#cfd8e6",
                       whiteSpace: "nowrap" }}>
           {s.eta !== "none" && (
             <span>
               {s.eta === "arrivedAt" ? "도착 시간 " : "예상 도착 "}
-              <b style={{ fontSize: 17, color: "#fff" }}>{eta}</b>
+              <b style={{ fontSize: 22, color: "#fff" }}>{eta}</b>
             </span>
           )}
           {s.eta === "none" && s.blankRemain && !s.icon && (
             <span>예상 도착 <b style={{ fontSize: 17, color: "#fff" }}>—</b></span>
           )}
-          {p.incidentText && <span><Doc /> 사건 입력 {p.incidentText}</span>}
+          {p.incidentText && <span><Doc /> 사건 접수 {p.incidentText}</span>}
         </div>
       </div>
 
@@ -174,34 +175,34 @@ const bar: CSSProperties = {
   boxShadow: "0 4px 18px rgba(0,0,0,.25)",
 };
 const roundBtn: CSSProperties = {
-  width: 52, height: 52, borderRadius: 999, border: "none", background: "#fff",
+  width: 64, height: 64, borderRadius: 999, border: "none", background: "#fff",
   display: "grid", placeItems: "center", cursor: "pointer", flex: "0 0 auto",
   boxShadow: "0 2px 8px rgba(0,0,0,.18)",
 };
 const badge: CSSProperties = {
-  flex: "0 0 auto", minWidth: 250, borderRadius: 14, padding: "8px 12px",
+  flex: "0 0 auto", minWidth: 330, borderRadius: 16, padding: "10px 16px",
   boxShadow: "0 3px 12px rgba(0,0,0,.2)",
 };
 const tag: CSSProperties = {
-  border: "none", borderRadius: 7, padding: "3px 8px", fontSize: 12, fontWeight: 800,
+  border: "none", borderRadius: 8, padding: "5px 10px", fontSize: 14, fontWeight: 800,
   color: C.toneInk, fontFamily: F.family, whiteSpace: "nowrap",
 };
 const tagPlain: CSSProperties = {
   fontWeight: 800, color: C.toneInk, whiteSpace: "nowrap",
 };
 const chip: CSSProperties = {
-  background: C.toneInk, color: "#fff", borderRadius: 7, padding: "3px 8px",
-  fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
+  background: C.toneInk, color: "#fff", borderRadius: 8, padding: "5px 10px",
+  fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", marginLeft: "auto",
 };
 const injected: CSSProperties = {
   background: "rgba(11,27,58,.75)", color: "#ffd166", borderRadius: 6,
   padding: "2px 6px", fontSize: 11, fontWeight: 800,
 };
 const timeBox: CSSProperties = {
-  flex: "0 0 auto", background: C.timeBox, borderRadius: 12, padding: "9px 16px",
-  minWidth: 240,
+  flex: "0 0 auto", background: C.timeBox, borderRadius: 14, padding: "12px 20px",
+  minWidth: 300,
 };
 const pBadge: CSSProperties = {
-  width: 56, height: 56, borderRadius: 999, border: "3px solid #fff",
-  display: "grid", placeItems: "center", fontSize: 30, fontWeight: 800,
+  width: 68, height: 68, borderRadius: 999, border: "3px solid #fff",
+  display: "grid", placeItems: "center", fontSize: 36, fontWeight: 800,
 };

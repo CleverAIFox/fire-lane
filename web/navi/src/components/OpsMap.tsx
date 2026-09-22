@@ -1,0 +1,327 @@
+/**
+ * components/OpsMap.tsx — 관제 화면의 지도.  (DECISIONS §214-4)
+ *
+ * 내비 지도(`NaviMap`)와 **같은 바탕**(도로면 · 보도 · 건물 · 아이콘 — `layers.ts`)을 쓰고,
+ * 그 위에 관제가 보는 것을 얹는다 —
+ *
+ *     판정 4색            구간 색. 정본(`style`) 그대로 — 음영이 아니라 원색. 폭에 비례해 굵다
+ *     도달 불가 겹침       고른 센터 · 차종 기준으로 닿지 않는 구간을 회색 사선으로
+ *     CCTV 25m 반경       영상판정이 성립하는 범위(`seg/params.py` CCTV_RANGE 와 같은 수)
+ *     정사영상 25cm        로컬 타일(`web/data/ortho`). 키가 필요 없다
+ *     출동 미리보기        센터 → 사건 지점 경로(파랑) · 대체 접근 지점이면 도보 점선
+ *     출동 중인 차         내비 탭이 보내는 위치 · 경로 · 상태(`opsProtocol`)
+ *     공유된 지점          병목 · 통행 불가 · 도착 보고
+ *
+ * ★ 판정색을 여기서 만들지 않는다. `style` 은 `navi_graph.json.style` 이고 그 정본은
+ *   `web/config.js` 다.
+ * ★ 25m 는 **표시용 사본**이다 — 정본은 `seg/params.py` 의 CCTV_RANGE 다. 레거시 지도
+ *   (`web/config.js` markers[].cover.radius)도 같은 수를 따로 들고 있다.
+ */
+import { useEffect, useRef } from "react";
+import * as maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+import type { LngLat } from "../domain/geo";
+import type { VerdictStyle, View } from "../domain/types";
+import type { FeedItem, Unit } from "../domain/opsProtocol";
+import {
+  GLYPHS, sources, baseLayers, markerLayers, stationLayers,
+  cctvIcon, hydrantIcon, pillImage, pillOptions,
+} from "./layers";
+
+maplibregl.setWorkerUrl(workerUrl);
+
+/** CCTV 영상판정 유효 반경(m). 정본은 seg/params.py CCTV_RANGE — 표시용 사본 */
+const CCTV_RANGE_M = 25;
+
+export interface OpsLayers {
+  ortho: boolean;
+  reach: boolean;
+  cctvCov: boolean;
+  bldg: boolean;
+}
+
+interface Props {
+  view: View;
+  style: Record<string, VerdictStyle>;
+  layers: OpsLayers;
+  hidden: ReadonlySet<string>;
+  /** 닿는 구간. null 이면 겹침 없음 */
+  reachable: ReadonlySet<string> | null;
+  incident: LngLat | null;
+  preview: LngLat[] | null;
+  previewWalk: LngLat[] | null;
+  units: Unit[];
+  feed: FeedItem[];
+  selectedSeg: string | null;
+  focus: { n: number; at: LngLat; zoom?: number } | null;
+  onPick: (lon: number, lat: number) => void;
+  onSeg: (uid: string | null) => void;
+}
+
+const EMPTY = { type: "FeatureCollection", features: [] } as GeoJSON.FeatureCollection;
+const line = (c: LngLat[] | null): GeoJSON.FeatureCollection => (c && c.length > 1 ? {
+  type: "FeatureCollection",
+  features: [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: c } }],
+} : EMPTY);
+
+/** 위도 35.15° 에서 줌 z 의 m/px */
+const mpp = (z: number) => (156543.03 * Math.cos((35.15 * Math.PI) / 180)) / 2 ** z;
+
+export function OpsMap(props: Props) {
+  const P = useRef(props);
+  P.current = props;
+  const box = useRef<HTMLDivElement>(null);
+  const map = useRef<maplibregl.Map | null>(null);
+  const ready = useRef(false);
+  const pending = useRef<((m: maplibregl.Map) => void)[]>([]);
+  const unitMk = useRef<Record<string, maplibregl.Marker>>({});
+  const feedMk = useRef<Record<string, maplibregl.Marker>>({});
+  const incMk = useRef<maplibregl.Marker | null>(null);
+
+  const whenReady = (f: (m: maplibregl.Map) => void) => {
+    const m = map.current;
+    if (!m) return;
+    if (ready.current) f(m); else pending.current.push(f);
+  };
+
+  useEffect(() => {
+    if (!box.current || map.current) return;
+    const D = new URL("../data/", document.baseURI).href;
+    const v = P.current.view;
+    const st = P.current.style;
+    const col = (k: string) => st[k]?.color ?? "rgb(120,128,140)";
+    const m = new maplibregl.Map({
+      container: box.current,
+      center: v.center ?? [126.9266, 35.1512], zoom: 15.4, pitch: 0,
+      minZoom: v.minZoom ?? 13, maxZoom: v.maxZoom ?? 20, maxBounds: v.maxBounds,
+      attributionControl: { compact: true },
+      localIdeographFontFamily: "Pretendard, 'Noto Sans KR', sans-serif",
+      style: {
+        version: 8, glyphs: GLYPHS,
+        sources: {
+          ...sources(D),
+          ortho: {
+            type: "raster", tiles: [D + "ortho/{z}/{x}/{y}.jpg"], tileSize: 256,
+            minzoom: 15, maxzoom: 19,
+            ...(v.orthoBounds ? { bounds: v.orthoBounds } : {}),
+          },
+        },
+        layers: baseLayers(st),
+      },
+    });
+    map.current = m;
+    m.on("error", (e) => console.warn("[ops map]", e.error?.message ?? e));
+
+    m.on("load", () => {
+      m.addImage("ic-cctv", cctvIcon(), { pixelRatio: 2 });
+      m.addImage("ic-hyd", hydrantIcon(), { pixelRatio: 2 });
+      m.addImage("pill", pillImage(), pillOptions);
+      for (const id of ["preview", "preview-walk", "unit-routes"]) m.addSource(id, { type: "geojson", data: EMPTY });
+
+      // 정사영상은 바탕 **위** · 판정 **밑**. 켜면 도로면 · 건물이 사진으로 바뀐다
+      m.addLayer({ id: "ortho", type: "raster", source: "ortho",
+                   layout: { visibility: "none" }, paint: { "raster-opacity": 1 } }, "seg-road");
+
+      // 굵기 = 최소 유효폭 비례. 2~12m 로 자른다 — 광장 · 교차로(수십 m)가 얼룩이 되지 않게
+      const wm = ["min", 12, ["max", 2, ["coalesce", ["get", "width_min_m"], 3]]];
+      const W = ["interpolate", ["linear"], ["zoom"],
+        14, ["*", 0.25, wm], 18, ["*", 1.5, wm]] as never;
+      m.addLayer({ id: "ops-verdict-case", type: "line", source: "segments",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-width": ["+", W, 2] as never, "line-color": "#1f2937", "line-opacity": .55 } });
+      m.addLayer({ id: "ops-verdict", type: "line", source: "segments",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-width": W,
+          "line-color": ["match", ["get", "verdict"],
+            "clear", col("clear"), "needs_cv", col("needs_cv"),
+            "blocked", col("blocked"), col("unknown")] as never,
+        } });
+      m.addLayer({ id: "ops-unreach", type: "line", source: "segments",
+        layout: { "line-cap": "butt", visibility: "none" },
+        paint: { "line-width": ["+", W, 1] as never, "line-color": "#111827",
+                 "line-opacity": .75, "line-dasharray": [0.6, 0.6] } });
+      m.addLayer({ id: "ops-selected", type: "line", source: "segments",
+        filter: ["==", ["get", "seg_uid"], ""] as never,
+        paint: { "line-width": ["+", W, 7] as never, "line-color": "#1d4ed8", "line-opacity": .55 } });
+
+      m.addLayer({ id: "cctv-cov", type: "circle", source: "cctv",
+        layout: { visibility: "none" },
+        paint: {
+          "circle-radius": ["interpolate", ["exponential", 2], ["zoom"],
+            14, CCTV_RANGE_M / mpp(14), 20, CCTV_RANGE_M / mpp(20)] as never,
+          "circle-color": "#facc15", "circle-opacity": .14,
+          "circle-stroke-color": "#ca8a04", "circle-stroke-width": 1, "circle-stroke-opacity": .6,
+          "circle-pitch-alignment": "map",
+        } });
+
+      m.addLayer({ id: "preview-walk", type: "line", source: "preview-walk",
+        paint: { "line-width": 4, "line-color": "#ef2d2d", "line-dasharray": [1.2, 1.2] } });
+      m.addLayer({ id: "preview-case", type: "line", source: "preview",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-width": 11, "line-color": "#ffffff" } });
+      m.addLayer({ id: "preview", type: "line", source: "preview",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-width": 6, "line-color": "#2563eb" } });
+      m.addLayer({ id: "unit-routes", type: "line", source: "unit-routes",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-width": 5, "line-color": "#7c3aed", "line-opacity": .9,
+                 "line-dasharray": [2, 1] } });
+
+      for (const L of markerLayers()) m.addLayer(L);
+      for (const L of stationLayers()) m.addLayer(L);
+      ready.current = true;
+      const q = pending.current; pending.current = [];
+      for (const f of q) f(m);
+    });
+
+    m.on("click", (e) => {
+      const hit = m.queryRenderedFeatures(e.point, { layers: ["ops-verdict"] })[0];
+      P.current.onPick(e.lngLat.lng, e.lngLat.lat);
+      P.current.onSeg(hit ? String(hit.properties?.seg_uid ?? "") || null : null);
+    });
+    m.on("mouseenter", "ops-verdict", () => { m.getCanvas().style.cursor = "pointer"; });
+    m.on("mouseleave", "ops-verdict", () => { m.getCanvas().style.cursor = ""; });
+    return () => { m.remove(); map.current = null; ready.current = false; };
+  }, []);
+
+  // ── 레이어 토글 ───────────────────────────────────────────────
+  useEffect(() => {
+    whenReady((m) => {
+      const L = P.current.layers;
+      const vis = (id: string, on: boolean) => m.setLayoutProperty(id, "visibility", on ? "visible" : "none");
+      vis("ortho", L.ortho);
+      vis("cctv-cov", L.cctvCov);
+      vis("bldg", L.bldg && !L.ortho);
+      vis("bldg-roof", L.bldg && !L.ortho);
+      vis("road-area", !L.ortho);
+      vis("sidewalk", !L.ortho);
+      vis("seg-road", !L.ortho);
+      vis("ops-unreach", L.reach && !!P.current.reachable);
+      m.easeTo({ pitch: L.bldg && !L.ortho ? 45 : 0, duration: 400 });
+    });
+  }, [props.layers]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 판정 거르기 · 도달 불가 · 선택 ─────────────────────────────
+  useEffect(() => {
+    whenReady((m) => {
+      const hid = [...P.current.hidden];
+      m.setFilter("ops-verdict", hid.length ? ["!", ["in", ["get", "verdict"], ["literal", hid]]] as never : null);
+      m.setFilter("ops-verdict-case", hid.length ? ["!", ["in", ["get", "verdict"], ["literal", hid]]] as never : null);
+      const r = P.current.reachable;
+      m.setFilter("ops-unreach", r ? ["!", ["in", ["get", "seg_uid"], ["literal", [...r]]]] as never : null);
+      m.setLayoutProperty("ops-unreach", "visibility", P.current.layers.reach && r ? "visible" : "none");
+      m.setFilter("ops-selected", ["==", ["get", "seg_uid"], P.current.selectedSeg ?? ""] as never);
+    });
+  }, [props.hidden, props.reachable, props.selectedSeg, props.layers.reach]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 출동 미리보기 ─────────────────────────────────────────────
+  useEffect(() => {
+    whenReady((m) => {
+      (m.getSource("preview") as maplibregl.GeoJSONSource).setData(line(P.current.preview));
+      (m.getSource("preview-walk") as maplibregl.GeoJSONSource).setData(line(P.current.previewWalk));
+    });
+  }, [props.preview, props.previewWalk]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 사건 지점 ─────────────────────────────────────────────────
+  useEffect(() => {
+    whenReady((m) => {
+      incMk.current?.remove(); incMk.current = null;
+      const at = P.current.incident;
+      if (at) incMk.current = new maplibregl.Marker({ element: firePin(), anchor: "bottom" }).setLngLat(at).addTo(m);
+    });
+  }, [props.incident]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 출동 중인 차 ──────────────────────────────────────────────
+  useEffect(() => {
+    whenReady((m) => {
+      const seen = new Set<string>();
+      const routes: GeoJSON.Feature[] = [];
+      for (const u of P.current.units) {
+        seen.add(u.unit);
+        if (u.route && u.route.length > 1) {
+          routes.push({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: u.route } });
+        }
+        const pos = u.last.pos;
+        if (!pos) continue;
+        let mk = unitMk.current[u.unit];
+        if (!mk) {
+          mk = new maplibregl.Marker({ element: unitEl(), anchor: "center", rotationAlignment: "map" })
+            .setLngLat(pos).addTo(m);
+          unitMk.current[u.unit] = mk;
+        }
+        mk.setLngLat(pos).setRotation(u.last.brg);
+        const lab = mk.getElement().querySelector("span");
+        if (lab) lab.textContent = u.last.vehicle;
+      }
+      for (const [k, mk] of Object.entries(unitMk.current)) {
+        if (!seen.has(k)) { mk.remove(); delete unitMk.current[k]; }
+      }
+      (m.getSource("unit-routes") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection", features: routes });
+    });
+  }, [props.units]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 공유된 지점 ───────────────────────────────────────────────
+  useEffect(() => {
+    whenReady((m) => {
+      const seen = new Set<string>();
+      for (const f of P.current.feed) {
+        if (!f.point) continue;
+        seen.add(f.shareId);
+        const old = feedMk.current[f.shareId];
+        const want = `${f.kind}-${f.ackedAt ? "a" : "w"}`;
+        if (old && old.getElement().dataset.k === want) continue;
+        old?.remove();
+        const el = feedEl(f);
+        el.dataset.k = want;
+        feedMk.current[f.shareId] = new maplibregl.Marker({ element: el, anchor: "bottom" }).setLngLat(f.point).addTo(m);
+      }
+      for (const [k, mk] of Object.entries(feedMk.current)) {
+        if (!seen.has(k)) { mk.remove(); delete feedMk.current[k]; }
+      }
+    });
+  }, [props.feed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 초점 ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const f = P.current.focus;
+    if (!f) return;
+    whenReady((m) => m.easeTo({ center: f.at, zoom: f.zoom ?? 17, duration: 600 }));
+  }, [props.focus?.n]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return <div ref={box} style={{ position: "absolute", inset: 0 }} />;
+}
+
+function firePin(): HTMLElement {
+  const el = document.createElement("div");
+  el.style.cssText = "filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))";
+  el.innerHTML =
+    `<svg width="42" height="52" viewBox="0 0 50 62">
+       <path d="M25 60 C25 60 4 36 4 23 A21 21 0 0 1 46 23 C46 36 25 60 25 60 Z" fill="#ef2d2d" stroke="#fff" stroke-width="3"/>
+       <path d="M25 11 C28 17 33 19 33 26 A8 8 0 0 1 17 26 C17 22 20 20 21 16 C22 20 24 21 25 11 Z" fill="#fff"/>
+     </svg>`;
+  return el;
+}
+function unitEl(): HTMLElement {
+  const el = document.createElement("div");
+  el.style.cssText = "display:flex;flex-direction:column;align-items:center;pointer-events:none";
+  el.innerHTML =
+    `<svg width="26" height="44" viewBox="0 0 26 44" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.45))">
+       <rect x="2" y="2" width="22" height="40" rx="5" fill="#dc2626" stroke="#fff" stroke-width="2"/>
+       <rect x="5" y="4" width="16" height="8" rx="2" fill="#0f172a"/>
+       <path d="M8 16 V38 M18 16 V38" stroke="#e5e7eb" stroke-width="1.6"/>
+     </svg>
+     <span style="margin-top:2px;background:#0f172a;color:#fff;border-radius:6px;padding:2px 6px;font:700 11px Pretendard,sans-serif;white-space:nowrap"></span>`;
+  return el;
+}
+function feedEl(f: FeedItem): HTMLElement {
+  const el = document.createElement("div");
+  const c = f.kind === "blocked" ? "#991b1b" : f.kind === "arrival" ? "#1d4ed8" : "#d97706";
+  const t = f.kind === "blocked" ? "통행 불가" : f.kind === "arrival" ? "도착" : "병목";
+  el.style.cssText = `background:${f.ackedAt ? "#fff" : c};color:${f.ackedAt ? c : "#fff"};border:2px solid ${c};`
+    + "border-radius:999px;padding:3px 10px;font:800 12px Pretendard,sans-serif;white-space:nowrap;"
+    + "box-shadow:0 2px 8px rgba(0,0,0,.3);pointer-events:none";
+  el.textContent = `${t}${f.ackedAt ? " ✓" : ""}`;
+  return el;
+}

@@ -9,6 +9,10 @@
  *   갈리는지 모른다 — 와이어프레임 02 가 그 뜻으로 두 줄을 겹쳐 그렸다.
  *
  * ★ 하단 고지를 지우지 마라. 두 경로 모두 실시간 장애물을 안 본다.
+ *
+ * ★ 2026-09-22 (§214-2) 카드를 와이어프레임 모양으로 — 꽉 찬 색 **머리띠**(추천 초록 ·
+ *   빠른 노랑)와 머리띠 색의 시간 글자. 안내 문구는 **실제 수로** 쓴다: 추천이 확인 구간을
+ *   다 피하면 「우회합니다」, 덜 지나면 「N개 적습니다」, 같으면 같다고.
  */
 import type { CSSProperties } from "react";
 import { C, F, fmtDur } from "./tokens";
@@ -62,7 +66,7 @@ export function RouteCompare(p: Props) {
       )}
 
       <div style={{ fontSize: 11, color: C.panelSub, marginTop: 12, lineHeight: 1.5 }}>
-        폭 기준 판정 · 회전 및 높이 미반영 · 주차 차량 미반영
+        폭 기준 판정 · 회전 및 높이 미반영 · 실시간 주정차 미반영
       </div>
     </Sheet>
   );
@@ -73,27 +77,30 @@ function Card({ o, k, on, onPick, accent, chip, title }: {
   accent: string; chip: string; title: string;
 }) {
   const margin = o.minWidthM != null ? o.minWidthM - o.requiredM : null;
+  const ink = k === "safe" ? C.safeInk : "#c2570c";
   return (
     <button onClick={() => onPick(k)}
             style={{ ...card, borderColor: on ? accent : C.sheetLine,
-                     boxShadow: on ? `0 0 0 3px ${accent}55` : "none" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ ...radio, borderColor: on ? C.panelInk : "#cbd5e1" }}>
+                     boxShadow: on ? `0 0 0 3px ${accent}66` : "0 1px 3px rgba(0,0,0,.06)" }}>
+      <div style={{ ...band, background: on ? accent : `${accent}55` }}>
+        <span style={{ ...radio, borderColor: C.panelInk, background: "#fff" }}>
           {on && <span style={radioDot} />}
         </span>
-        <b style={{ fontSize: 16 }}>{title}</b>
+        <b style={{ fontSize: 17 }}>{title}</b>
         <span style={{ flex: 1 }} />
-        <span style={{ ...chipS, background: accent }}>{chip}</span>
+        <span style={chipS}>{chip}</span>
       </div>
-      <div style={{ fontSize: 21, fontWeight: 800, color: C.cta, margin: "10px 0 6px" }}>
-        {fmtDur(o.sec)} · {(o.lengthM / 1000).toFixed(1)}km
+      <div style={{ padding: "10px 14px 12px" }}>
+        <div style={{ fontSize: 23, fontWeight: 800, color: ink, margin: "2px 0 8px" }}>
+          {fmtDur(o.sec)} · {(o.lengthM / 1000).toFixed(1)}km
+        </div>
+        <Row k="폭 기준 확인 구간"
+             v={o.uncertainCount ? `${o.uncertainCount}개 · ${Math.round(o.uncertainM)}m` : "0개"} />
+        <Row k="최소 유효폭" v={o.minWidthM != null ? `${o.minWidthM.toFixed(1)}m` : "—"} />
+        <Row k="계산상 폭 여유" v={margin != null ? `${margin.toFixed(1)}m` : "—"}
+             warn={margin != null && margin < 0.5} />
+        <div style={{ ...note, background: k === "safe" ? "#f0fdf4" : "#fffbeb" }}>{o.note}</div>
       </div>
-      <Row k="폭 기준 확인 구간"
-           v={o.uncertainCount ? `${o.uncertainCount}개 · ${Math.round(o.uncertainM)}m` : "0개"} />
-      <Row k="최소 유효폭" v={o.minWidthM != null ? `${o.minWidthM.toFixed(1)}m` : "—"} />
-      <Row k="계산상 폭 여유" v={margin != null ? `${margin.toFixed(1)}m` : "—"}
-           warn={margin != null && margin < 0.5} />
-      <div style={{ ...note, background: k === "safe" ? "#f0fdf4" : "#fffbeb" }}>{o.note}</div>
     </button>
   );
 }
@@ -109,15 +116,19 @@ function Row({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
 
 const card: CSSProperties = {
   display: "block", width: "100%", textAlign: "left", marginTop: 14, border: "2px solid",
-  borderRadius: 14, padding: "14px 14px 12px", background: "#fff", cursor: "pointer",
+  borderRadius: 16, padding: 0, background: "#fff", cursor: "pointer", overflow: "hidden",
   fontFamily: F.family, color: C.panelInk,
+};
+const band: CSSProperties = {
+  display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", color: C.toneInk,
 };
 const radio: CSSProperties = {
   width: 18, height: 18, borderRadius: 999, border: "2px solid", display: "grid", placeItems: "center",
 };
 const radioDot: CSSProperties = { width: 8, height: 8, borderRadius: 999, background: C.panelInk };
 const chipS: CSSProperties = {
-  borderRadius: 7, padding: "3px 8px", fontSize: 11, fontWeight: 800, color: C.toneInk,
+  borderRadius: 8, padding: "3px 9px", fontSize: 12, fontWeight: 800, color: C.toneInk,
+  background: "#fff",
 };
 const note: CSSProperties = {
   marginTop: 8, borderRadius: 8, padding: "8px 10px", fontSize: 12, color: "#334155", lineHeight: 1.5,

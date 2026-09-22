@@ -35,6 +35,8 @@ export type StatusKey =
   | "noData"        // 14   도로 데이터 부족
   | "blocked"       // 16   전방 통행 불가
   | "detour"        // 17 · 17A  우회 경로 적용
+  | "detourAccess"  // 17   우회 불가 → 대체 접근 지점 (§214-2)
+  | "noDetour"      // 13   통행 불가 신고 뒤 닿는 곳이 없다 (§214-2)
   | "arrived"       // 15   접근 지점 도착
   | "reported";     // 23   도착 보고 공유
 
@@ -65,6 +67,11 @@ export interface StatusSpec {
   route: RouteLook;
   /** 남은 시간·거리 알약을 비우나 */
   blankRemain?: boolean;
+  /**
+   * 알약을 **아예 안 띄우나.** 05 · 15 · 23 은 와이어프레임에 알약이 없다 —
+   * 차량 안내가 끝났거나 끝나 가는 자리다(2026-09-22 검수).
+   */
+  noRemain?: boolean;
   /** 신호가 없어 시연 막대가 넣는 상태 */
   injected?: boolean;
   /** 경고 한 줄 — 07 의 「주정차 여부 미확인 · 감속 주행」 */
@@ -78,7 +85,7 @@ export const STATUS: Record<StatusKey, StatusSpec> = {
     label: "빠른 경로 안내중", eta: "value", route: "solid" },
   approach: { wf: ["05"], tone: "green", tag: "폭 기준 추천", label: "목적지 도착",
     title: "최종 접근 지점", sub: "차량 진입 가능 구간 종료", icon: "P",
-    eta: "value", route: "solid" },
+    eta: "none", route: "solid", noRemain: true },
   reroute: { wf: ["06"], tone: "cyan", tag: "경로 이탈", label: "새 경로 확인 중",
     title: "경로 재탐색 중", sub: "새 경로 확정 후 안내 재개",
     eta: "computing", route: "pending", blankRemain: true },
@@ -100,6 +107,11 @@ export const STATUS: Record<StatusKey, StatusSpec> = {
   noRoute: { wf: ["13"], tone: "cyan", tag: "폭 조건 불충족", label: "다른 접근 지점 필요",
     title: "차량 경로 없음", sub: "{vehicle} · 요구 폭 {need}m",
     eta: "none", route: "pending", blankRemain: true },
+  // ★ 2026-09-22 (§214-2). 신고 뒤에 경로가 없으면 **폭 문제가 아니다.** 종전에는 13 의
+  //   「{차종} · 요구 폭 3.0m」 가 떠서 폭 때문인 것처럼 읽혔다. 원인을 말한다.
+  noDetour: { wf: ["13"], tone: "cyan", tag: "통행 불가 · 우회 없음", label: "다른 접근 지점 필요",
+    title: "우회 경로 없음", sub: "{road} 통행 불가 · 300m 안 접근 지점 없음",
+    eta: "none", route: "pending", blankRemain: true },
   noData: { wf: ["14"], tone: "cyan", tag: "미측정 구간", label: "현장 확인 필요",
     title: "경로 판정 보류", sub: "도로 폭 정보 부족",
     eta: "none", route: "pending", blankRemain: true },
@@ -108,19 +120,24 @@ export const STATUS: Record<StatusKey, StatusSpec> = {
     eta: "none", route: "solid", blankRemain: true },
   detour: { wf: ["17", "17A"], tone: "cyan", tag: "통행 불가 구간 제외",
     label: "우회 경로 적용 완료", eta: "value", route: "solid" },
+  // ★ 2026-09-22 (§214-2). 우회가 **없을** 때. 종전에는 13(경로 없음)으로 떨어졌다.
+  //   닿는 가장 가까운 곳에 대고 걸어 들어간다 — 도보는 **직선** 거리다.
+  detourAccess: { wf: ["17"], tone: "cyan", tag: "우회 불가 · 접근 지점 변경",
+    label: "대체 접근 지점 안내", title: "대체 접근 지점으로 안내",
+    sub: "{road} 통행 불가 · 도보 약 {walk}m(직선)", eta: "value", route: "solid" },
   arrived: { wf: ["15"], tone: "cyan", tag: "도착 완료", label: "차량 안내 종료",
     title: "접근 지점 도착", sub: "차량 안내 종료 · 현장 접근 준비", icon: "P",
-    eta: "none", route: "solid", blankRemain: true },
+    eta: "none", route: "solid", blankRemain: true, noRemain: true },
   reported: { wf: ["23"], tone: "cyan", tag: "도착 완료", label: "차량 안내 종료",
     title: "접근 지점 도착", sub: "차량 안내 종료", icon: "P",
-    eta: "arrivedAt", route: "solid", blankRemain: true },
+    eta: "arrivedAt", route: "solid", blankRemain: true, noRemain: true },
 };
 
 /** 시연 막대가 넘기는 순서. 와이어프레임 번호순이다. */
 export const STATUS_ORDER: StatusKey[] = [
   "safe", "fast", "approach", "reroute", "noCctv", "gpsWeak", "offline",
   "restored", "dataDelayed", "serviceError", "noRoute", "noData", "arrived",
-  "blocked", "detour", "reported",
+  "blocked", "detour", "detourAccess", "noDetour", "reported",
 ];
 
 /** 상태를 정하는 신호. 전부 `useNavigation` 과 앱이 이미 가진 값이다. */
@@ -133,6 +150,10 @@ export interface StatusSignals {
   blockedPending: boolean;
   /** 우회를 적용한 뒤 몇 초 동안 */
   detourFresh: boolean;
+  /** 경로 끝이 사건 지점이 아니라 대체 접근 지점이다(§214-2) */
+  accessAlt?: boolean;
+  /** 통행 불가로 신고한 구간이 하나라도 있다 */
+  blockedAny?: boolean;
   /** 도착 보고가 관제에 닿았다 */
   arrivalAcked: boolean;
   /** 경로 끝까지 남은 거리(m) */
@@ -159,10 +180,10 @@ export const APPROACH_M = 120;
 export function deriveStatus(s: StatusSignals): StatusKey {
   if (s.injected) return s.injected;
   if (s.phase === "arrived") return s.arrivalAcked ? "reported" : "arrived";
-  if (s.noRoute) return "noRoute";
+  if (s.noRoute) return s.blockedAny ? "noDetour" : "noRoute";
   if (s.blockedPending) return "blocked";
   if (s.rerouting) return "reroute";
-  if (s.detourFresh) return "detour";
+  if (s.detourFresh) return s.accessAlt ? "detourAccess" : "detour";
   if (s.remainM != null && s.remainM <= APPROACH_M) return "approach";
   if (s.onUnverified) return "noCctv";
   return s.choice === "fast" ? "fast" : "safe";
