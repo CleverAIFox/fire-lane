@@ -19,16 +19,18 @@
  *   한 줄을 `TopBar` 가 그린다. 18장이 그 한 줄로 갈린다.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { NaviMap, type MapMarks } from "./components/NaviMap";
+import { NaviMap, type MapMarks, type MapNote } from "./components/NaviMap";
 import { useNavigation } from "./app/useNavigation";
 import { useVoice } from "./app/useVoice";
 import { useHudData } from "./app/useHudData";
 import { useScreens } from "./app/useScreens";
 import { useFleet } from "./app/useFleet";
 import { useShare } from "./app/useShare";
+import { useOpsUplink, type UnitSnapshot } from "./app/useOpsUplink";
+import { compareMarks } from "./domain/compare";
+import { cumulative, pointAlong } from "./domain/geo";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
 import { requiredWidth } from "./domain/vehicle";
-import { progressAlongRoute } from "./domain/graph";
 import { travelSeconds } from "./domain/speed";
 import { STATUS, deriveStatus, type StatusKey } from "./domain/status";
 import type { LngLat } from "./domain/geo";
@@ -47,7 +49,7 @@ import { VehiclePicker } from "./ui/VehiclePicker";
 import { RouteCompare, type RouteOption } from "./ui/RouteCompare";
 import { BottleneckPanel } from "./ui/BottleneckPanel";
 import { Truck } from "./ui/icons";
-import { C, F } from "./ui/tokens";
+import { C, F, fmtDur } from "./ui/tokens";
 
 /** 병목 탭을 띄우는 앞 거리(m). 와이어프레임 04 가 「전방 300m」 다 */
 const BOTTLENECK_AHEAD_M = 400;
@@ -62,14 +64,17 @@ export default function App() {
   const s = useScreens("dispatch");
   const fleet = useFleet();
   const n = useNavigation(fleet.spec);
-  const share = useShare();
   const now = useNow();
+  // ★ 2026-09-22 (§214-3). 관제 화면(`?view=ops`)과 잇는다. 상태 스냅숏은 아래에서 채운다
+  const [snap, setSnap] = useState<UnitSnapshot | null>(null);
+  const up = useOpsUplink(snap);
+  const share = useShare(up);
 
   const [choice, setChoice] = useState<"safe" | "fast">("safe");
   const [voice, setVoice] = useState(true);
   const [firstPerson, setFirstPerson] = useState(true);
   const [tint, setTint] = useState(false);
-  const [cmd, setCmd] = useState<{ n: number; kind: "in" | "out" | "north" } | null>(null);
+  const [cmd, setCmd] = useState<{ n: number; kind: "in" | "out" | "north" | "focus"; at?: LngLat } | null>(null);
   const [injected, setInjected] = useState<StatusKey | null>(null);
   const [armed, setArmed] = useState<"origin" | "dest" | null>(null);
   const [stationId, setStationId] = useState<string | null>(null);
@@ -123,6 +128,19 @@ export default function App() {
     }
   }, [n.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── 관제의 출동 지령 — 차종 · 센터도 URL 로 온다 (§214-3) ─────────
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    const v = q.get("vehicle");
+    if (v && fleet.fleet?.vehicles.some((x) => x.id === v)) fleet.select(v);
+  }, [fleet.fleet]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const st = new URLSearchParams(location.search).get("station");
+    if (!st || !stations.length) return;
+    const hit = stations.find((x) => x.name === st || x.name.includes(st));
+    if (hit) { setStationId(hit.id); n.setOriginAt(hit.point[0], hit.point[1]); }
+  }, [stations.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const pois = useMemo(() => (n.data ? preparePois(n.data.dest) : []), [n.data]);
   const query = useCallback((q: string) => searchPois(pois, q), [pois]);
   const verdictOf = useCallback((h: PoiHit) => {
@@ -157,21 +175,22 @@ export default function App() {
     if (!a) return null;
     const b = n.fastPlan && !samePlan(a, n.fastPlan) ? n.fastPlan : null;
     return {
-      safe: routeOption(a, need, b, true),
-      fast: b ? routeOption(b, need, a, false) : null,
+      safe: routeOption(a, need, b, true, n.access),
+      fast: b ? routeOption(b, need, a, false, n.access) : null,
     };
-  }, [n.plan, n.fastPlan, need]);
+  }, [n.plan, n.fastPlan, need, n.access]);
 
   // ── 주행 ──────────────────────────────────────────────────────
   const v = useVoice({
     graph: n.data?.graph ?? null, spec,
     plan: guiding ? n.plan : null,
-    current: n.current, offRoute: n.offRoute,
+    driven: n.driven, jumpSeq: n.jumpSeq, offRoute: n.offRoute,
     style, enabled: voice,
   });
   const hud = useHudData({
     spec, style, plan: n.plan, fastPlan: n.fastPlan,
-    current: n.current, lenient: n.lenient, offRoute: n.offRoute,
+    current: n.current, driven: guiding || arrived ? n.driven : null,
+    lenient: n.lenient, offRoute: n.offRoute,
     maneuver: v.maneuver, maneuverDistM: v.distM, maneuverText: v.banner,
   });
 
@@ -179,7 +198,7 @@ export default function App() {
   const bottleneckEdge: GraphEdge | null = useMemo(() => {
     if (!n.plan) return null;
     if (bnForced) return n.plan.edges.find((e) => e.seg_uid === bnForced) ?? null;
-    const driven = progressAlongRoute(n.plan, n.current) ?? 0;
+    const driven = n.driven ?? 0;
     let acc = 0;
     for (const e of n.plan.edges) {
       const L = e.length_m ?? 0;
@@ -191,12 +210,12 @@ export default function App() {
       if (acc - driven > BOTTLENECK_AHEAD_M) break;
     }
     return null;
-  }, [n.plan, n.current, need, bnForced]);
+  }, [n.plan, n.driven, need, bnForced]);
 
   const bottleneck = useMemo(() => {
     const e = bottleneckEdge;
     if (!e || !n.plan) return null;
-    const driven = progressAlongRoute(n.plan, n.current) ?? 0;
+    const driven = n.driven ?? 0;
     let acc = 0;
     for (const x of n.plan.edges) { if (x.seg_uid === e.seg_uid) break; acc += x.length_m ?? 0; }
     return {
@@ -209,7 +228,25 @@ export default function App() {
       verdictLabel: style[e.verdict]?.label ?? e.verdict,
       verdictColor: style[e.verdict]?.color ?? C.panelInk,
     };
-  }, [bottleneckEdge, n.plan, n.current, need, style]);
+  }, [bottleneckEdge, n.plan, n.driven, need, style]);
+
+  /** 병목 구간의 가운데 — 관제 공유 좌표 · 카메라 초점 */
+  const bottleneckAt: LngLat | null = useMemo(() => {
+    const e = bottleneckEdge;
+    if (!e || e.coords.length < 2) return null;
+    const cum = cumulative(e.coords);
+    return pointAlong(e.coords, cum, cum[cum.length - 1] / 2).point;
+  }, [bottleneckEdge]);
+
+  // ★ 2026-09-22 (§214-2). 병목 상세를 열면 카메라가 그 구간으로 간다(와이어프레임 04 —
+  //   병목이 화면 가운데). 1인칭을 풀어야 카메라 루프가 덮어쓰지 않는다. 닫으면 돌아온다.
+  useEffect(() => {
+    if (!guiding) return;
+    if (bnOpen && bottleneckAt) {
+      setFirstPerson(false);
+      setCmd((c) => ({ n: (c?.n ?? 0) + 1, kind: "focus", at: bottleneckAt }));
+    } else if (!bnOpen) setFirstPerson(true);
+  }, [bnOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 우회 표시는 몇 초 뒤 내린다
   useEffect(() => {
@@ -223,7 +260,9 @@ export default function App() {
     if (!arrived) { setArrivedAt(null); return; }
     setArrivedAt(hhmm(new Date()));
     setBnOpen(false);
-    const t = setTimeout(() => share.share("arrival"), 1500);
+    const t = setTimeout(() => share.share("arrival",
+      `${incident?.label ?? "사건 지점"} 접근 지점 도착 · ${vehicleKind}`,
+      n.plan?.coords[n.plan.coords.length - 1] ?? null), 1500);
     return () => clearTimeout(t);
   }, [arrived]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -232,19 +271,20 @@ export default function App() {
     const uid = bottleneck.segUid;
     setBlockedPending(true);
     setBnOpen(false);
-    share.share("blocked");
+    share.share("blocked", `${bottleneck.segLabel} 통행 불가 신고 · ${vehicleKind}`, bottleneckAt);
     setTimeout(() => {
       const ok = n.blockEdge(uid);
       setBlockedPending(false);
       setBnForced(null);
       if (ok) setDetourAt(Date.now());
     }, BLOCKED_SHOW_MS);
-  }, [bottleneck, n, share]);
+  }, [bottleneck, n, share, bottleneckAt, vehicleKind]);
 
   const statusKey = deriveStatus({
     phase: guiding ? "guiding" : arrived ? "arrived" : "other",
     choice, rerouting: n.rerouting, noRoute: n.noRoute && (guiding || arrived),
-    blockedPending, detourFresh: detourAt != null,
+    blockedPending, detourFresh: detourAt != null, accessAlt: !!n.access?.alt,
+    blockedAny: n.blocked.size > 0,
     arrivalAcked: share.info.kind === "arrival" && share.info.state === "acked",
     remainM: n.remainM,
     onUnverified: n.current?.verdict === "unknown" && !!n.current.onRoute,
@@ -261,8 +301,33 @@ export default function App() {
     origin: s.planning ? (n.origin?.point ?? station?.point ?? null) : null,
     incident: incident?.point ?? null,
     approach: !s.planning ? endPoint : null,
+    approachLabel: n.access?.alt ? "대체 접근 지점" : "최종 차량 접근 지점",
   };
+  // 02 — 공통 구간 · 확인 필요 표지
+  const notes: MapNote[] = useMemo(() => {
+    if (s.screen !== "compare" || !n.plan || !n.fastPlan || samePlan(n.plan, n.fastPlan)) return [];
+    const base = choice === "safe" ? n.plan : n.fastPlan;
+    const other = choice === "safe" ? n.fastPlan : n.plan;
+    const m = compareMarks(base, other);
+    const out: MapNote[] = [];
+    if (m.commonAt) out.push({ id: "common", at: m.commonAt, kind: "common", text: "공통 구간" });
+    if (m.checkAt) out.push({ id: "check", at: m.checkAt, kind: "check", text: `확인 필요\n${m.checkM}m` });
+    return out;
+  }, [s.screen, n.plan, n.fastPlan, choice]);
   const finalLeg = !s.planning && endPoint && incident ? [endPoint, incident.point] : null;
+
+  // ── 관제로 보낼 상태 (§214-3). 경로 참조는 경로가 바뀔 때만 바뀐다 ──
+  const snapTitle = guiding || arrived ? (st.title ?? hud?.turnText ?? st.label) : "출동 준비";
+  useEffect(() => {
+    setSnap({
+      vehicle: vehicleKind, station: station?.name ?? null,
+      incident: incident ? { point: incident.point, label: incident.label } : null,
+      pos: n.current?.point ?? n.origin?.point ?? null, brg: n.live.current.brg,
+      status: guiding || arrived ? statusKey : "planning", title: snapTitle,
+      remainM: n.remainM, etaText: hud?.etaText ?? null, route: n.plan?.coords ?? null,
+    });
+  }, [vehicleKind, station?.name, incident, n.current, n.origin, statusKey, snapTitle,
+      n.remainM, hud?.etaText, n.plan, guiding, arrived]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ★ 알림은 6초 뒤 내린다. 「위치 없음」 처럼 한 번 알면 되는 것이 주행 내내
   //   남아 남은 시간 알약 위를 가렸다(검수 스크린샷).
@@ -283,13 +348,13 @@ export default function App() {
 
   return (
     <div style={shell}>
-      <style>{"@keyframes flspin{to{transform:rotate(360deg)}}"}</style>
+      <style>{"@keyframes flspin{to{transform:rotate(360deg)}}" + SMOKE_CSS}</style>
       <NaviMap view={n.data.view} live={n.live}
                plan={n.plan} altPlan={s.screen === "compare" ? (compare?.fast ? otherPlan(n, choice) : null) : null}
                style={style} look={st.route && !s.planning ? st.route : "solid"}
                blockedEdges={blockedEdges} marks={marks} finalLeg={finalLeg}
                mode={s.planning ? "plan" : "drive"} firstPerson={firstPerson}
-               tint={tint} cmd={cmd}
+               tint={tint} cmd={cmd} notes={notes}
                onMapClick={onMapClick}
                onUserPan={() => setFirstPerson(false)} />
 
@@ -357,6 +422,7 @@ export default function App() {
                     vehicle: vehicleKind, need: need.toFixed(1),
                     road: bottleneck?.segLabel ?? hud.currentLabel ?? "전방 구간",
                     len: String(Math.round(bottleneck?.lengthM ?? 45)),
+                    walk: String(Math.round(n.access?.walkM ?? 0)),
                   }}
                   vehicleKind={vehicleKind}
                   turnKind={hud.turnKind} nextDistM={hud.nextDistM} roadName={hud.nextLabel}
@@ -374,7 +440,7 @@ export default function App() {
                        onZoomOut={() => setCmd((c) => ({ n: (c?.n ?? 0) + 1, kind: "out" }))}
                        onLayers={() => setTint((x) => !x)} layersOn={tint} />
           <Legend style={style} open={tint} onToggle={() => setTint(!tint)} />
-          <RemainPill sec={hud.remainSec} m={hud.remainM} blank={!!st.blankRemain} />
+          {!st.noRemain && <RemainPill sec={hud.remainSec} m={hud.remainM} blank={!!st.blankRemain} />}
           {statusKey === "reroute" && (
             <StatusCard chip="경로 이탈 감지" title="새 경로를 찾는 중"
                         lines={["현재 위치를 기준으로", "자동 재탐색합니다."]}
@@ -385,7 +451,13 @@ export default function App() {
           {bottleneck && st.route !== "pending" && !st.icon && statusKey !== "blocked" && (
             <BottleneckPanel {...bottleneck} open={bnOpen}
                              onToggle={() => setBnOpen((x) => !x)}
-                             onShare={() => share.share("bottleneck")}
+                             onShare={() => {
+                               // 와이어프레임 18 — 공유하면 카드를 닫고 주행을 이어 간다
+                               share.share("bottleneck",
+                                 `${bottleneck.segLabel} 병목 · 폭 ${bottleneck.widthM?.toFixed(1) ?? "—"}m / 요구 ${need.toFixed(1)}m`,
+                                 bottleneckAt);
+                               setBnOpen(false);
+                             }}
                              onReport={reportBlocked} />
           )}
           <ShareChip info={share.info} onRetry={() => share.share(share.info.kind ?? "bottleneck")} />
@@ -399,16 +471,20 @@ export default function App() {
 
       {dev && (
         <DevBar
-          hint={s.planning ? `화면 ${s.screen}` : `상태 ${st.wf.join("·")}`}
+          hint={`${s.planning ? `화면 ${s.screen}` : `상태 ${st.wf.join("·")}`} · 관제 ${up.present ? "●" : "○"}`}
           guiding={!s.planning}
           simSpeed={n.simSpeed} setSimSpeed={n.setSimSpeed}
+          posMode={n.posMode} setPosMode={n.setPosMode}
+          onTeleport={guiding && n.simSpeed > 0 ? () => n.teleport(200) : undefined}
+          jumps={n.jumpSeq} lastJumpM={n.lastJumpM}
           lenient={n.lenient} setLenient={n.setLenient}
           firstPerson={firstPerson} setFirstPerson={setFirstPerson}
           onBottleneck={guiding && n.plan ? () => {
-            // 경로에서 제일 좁은 구간을 연다. 그것이 곧 병목이다.
-            const worst = n.plan!.edges.reduce((a, b) =>
-              (b.width_min_m ?? 99) < (a.width_min_m ?? 99) ? b : a);
-            setBnForced(worst.seg_uid); setBnOpen(true);
+            // ★ 2026-09-22 (§214-2). 「제일 좁은 구간」 을 열었더니 그것이 **센터의 유일한
+            //   출구**(다리 구간)라 신고하면 늘 우회 없음으로 끝났다 — 16 → 17 을 못 본다.
+            //   앞쪽에서 좁은 순으로, **막아도 닿는 곳이 남는** 구간을 연다.
+            const pick = n.pickDetourable(n.plan!);
+            setBnForced(pick.seg_uid); setBnOpen(true);
           } : undefined}
           onReset={reset}
           injected={injected} setInjected={setInjected}
@@ -421,20 +497,32 @@ export default function App() {
 
 // ── 도움 ────────────────────────────────────────────────────────
 
-function routeOption(p: RoutePlan, need: number, other: RoutePlan | null, rec: boolean): RouteOption {
-  const unc = p.edges.filter((e) => e.verdict === "needs_cv" || e.verdict === "unknown");
+function routeOption(
+  p: RoutePlan, need: number, other: RoutePlan | null, rec: boolean,
+  access: { alt: boolean; walkM: number } | null,
+): RouteOption {
+  const isUnc = (e: GraphEdge) => e.verdict === "needs_cv" || e.verdict === "unknown";
+  const unc = p.edges.filter(isUnc);
   const w = p.edges.map((e) => e.width_min_m).filter((x): x is number => x != null);
   const sec = travelSeconds(p);
+  const deltaSec = other ? sec - travelSeconds(other) : 0;
+  const otherUnc = other ? other.edges.filter(isUnc).length : unc.length;
+  // ★ 2026-09-22 (§214-2). 문구를 **실제 수로** 쓴다. 종전 「확인 필요 구간 11개를
+  //   지납니다」 는 비교 상대를 안 말해서 추천 이유가 안 보였다.
+  const slower = deltaSec > 1 ? `${fmtDur(deltaSec)} 느리지만 ` : "";
+  const recNote = !unc.length ? `${slower}확인 필요 구간을 우회합니다.`
+    : unc.length < otherUnc ? `${slower}확인 필요 구간이 ${otherUnc - unc.length}개 적습니다.`
+    : `확인 필요 구간 ${unc.length}개를 지납니다 — 피할 수 있는 경로가 없습니다.`;
+  const tail = access?.alt
+    ? ` 차량은 사건 지점 약 ${Math.round(access.walkM)}m(직선) 앞 대체 접근 지점까지 갑니다.` : "";
   return {
     title: rec ? "폭 기준 추천" : "빠른 경로", recommended: rec, sec, lengthM: p.lengthM,
     uncertainCount: unc.length,
     uncertainM: unc.reduce((a, e) => a + (e.length_m ?? 0), 0),
     minWidthM: w.length ? Math.min(...w) : null,
     requiredM: need,
-    deltaSec: other ? sec - travelSeconds(other) : 0,
-    note: rec
-      ? (unc.length ? `확인 필요 구간 ${unc.length}개를 지납니다.` : "확인 필요 구간을 우회합니다.")
-      : "도착은 빠르지만 폭 측정 신뢰도가 낮은 구간이 포함됩니다.",
+    deltaSec,
+    note: (rec ? recNote : "도착은 빠르지만 폭 측정 신뢰도가 낮은 구간이 포함됩니다.") + tail,
   };
 }
 
@@ -481,6 +569,17 @@ function useNow(): Date {
   }, []);
   return t;
 }
+
+/** 사건 지점 연기 — 와이어프레임 05 · 15 · 23. 순수 CSS 라 지도 위 DOM 마커에 붙는다 */
+const SMOKE_CSS = `
+.fl-smoke{position:absolute;left:50%;top:-6px;width:0;height:0;pointer-events:none}
+.fl-smoke i{position:absolute;left:-14px;top:-10px;width:28px;height:28px;border-radius:50%;
+  background:radial-gradient(circle,rgba(90,90,96,.55),rgba(120,120,128,0) 70%);
+  animation:flsmoke 3.2s linear infinite}
+.fl-smoke i:nth-child(2){animation-delay:1.05s}
+.fl-smoke i:nth-child(3){animation-delay:2.1s}
+@keyframes flsmoke{0%{transform:translate(0,0) scale(.5);opacity:0}
+  15%{opacity:.9}100%{transform:translate(10px,-70px) scale(2.2);opacity:0}}`;
 
 const EMPTY_SPEC: VehicleSpec = {
   width_m: 0, wheelbase_m: null, turn_radius_m: null, clearance_m: 0,

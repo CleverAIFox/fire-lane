@@ -18,6 +18,24 @@
  *   판정의 **뜻**은 그대로이고 **색 어휘**만 지혜님 것이다. `blocked` 는
  *   경로에 안 올라온다(A* 가 막는다).
  *
+ * ── ★ 2026-09-22 · 바탕을 **면**으로 (DECISIONS §213-4) ─────────────
+ * 도로를 판정 구간 중심선으로만 그리니 흰 선 위에 흰 건물이라 대비가 없었다.
+ * 수치지형도 도로경계 면 + 실폭도로 면(`road_area.geojson`)을 짙은 아스팔트로,
+ * 보도(`sidewalk.geojson`)를 한 단 밝게 깐다. 면이 없는 최협소 골목은 구간 선을
+ * 같은 아스팔트색으로 그어 메운다. 폭 7m 이상 구간에만 중앙 점선을 둔다 —
+ * 와이어프레임의 차선이고, **판정이 아니라 장식**이다(폭 판정은 여전히 선이 든다).
+ *
+ * 건물은 벽(중간 회색) 위에 0.6m 지붕 판(밝은 회백)을 한 겹 더 올린다.
+ * fill-extrusion 은 윗면 색을 따로 못 주므로 얇은 판을 얹는 것이 유일한 방법이다.
+ *
+ * ── ★ 2026-09-22 · 와이어프레임 충실도 (DECISIONS §214-2) ─────────────
+ *   · CCTV · 소화전을 6px 점 → **원형 아이콘 배지**(캔버스로 굽는다 — 글꼴 서버 없이)
+ *   · 건물 · 상호 이름을 글자+후광 → **흰 알약**. 적게 — 층수 순으로 겹치면 버린다
+ *   · 경로를 굵게, 갈매기표를 크게
+ *   · 병목(판정 보류)을 노랑·빨강 → **정본 주황 · 흰 줄무늬**. 판정 보류는 CV 를 돌리면
+ *     초록이나 빨강으로 **바뀌는** 유일한 색이고(사용자 정의), 빨강은 「CV 없이 통행 불가」
+ *     다. 경로 위에 빨강이 섞이면 「못 지나간다」 로 읽힌다 — 빨강은 신고 구간 전용이다
+ *
  * ── ★ 판정색을 여기서 만들지 않는다 ────────────────────────────
  * 배경 도로의 판정 음영(레이어 단추로 켠다)은 여전히 `style` 에서 **파생**한다.
  * `config.js` 에 새 색을 늘리지 않는다 — 정본은 하나로 남는다.
@@ -50,6 +68,8 @@ function shade(css: string, keep = 0.55): string {
 export function sources(dataUrl: string): StyleSpecification["sources"] {
   return {
     buildings: { type: "geojson", data: dataUrl + "buildings.geojson" },
+    road_area: { type: "geojson", data: dataUrl + "road_area.geojson" },
+    sidewalk: { type: "geojson", data: dataUrl + "sidewalk.geojson" },
     segments: { type: "geojson", data: dataUrl + "segments.geojson" },
     poi: { type: "geojson", data: dataUrl + "poi.geojson" },
     stations: { type: "geojson", data: dataUrl + "stations.geojson" },
@@ -71,13 +91,19 @@ export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecificat
     { id: "bg", type: "background",
       paint: { "background-color": `rgb(${MAP.bg.join(",")})` } },
 
-    // 도로 — 테두리 + 흰 면. 와이어프레임의 낮 도로다.
-    { id: "seg-case", type: "line", source: "segments",
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-width": w(3.5, 16), "line-color": MAP.roadCase } },
+    // 보도 → 도로면 → (면이 없는 골목) 구간 선 → 중앙 점선
+    { id: "sidewalk", type: "fill", source: "sidewalk",
+      paint: { "fill-color": MAP.sidewalk } },
+    { id: "road-area", type: "fill", source: "road_area",
+      paint: { "fill-color": MAP.asphalt, "fill-outline-color": MAP.asphaltEdge } },
     { id: "seg-road", type: "line", source: "segments",
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-width": w(2.2, 13), "line-color": MAP.road } },
+      paint: { "line-width": w(2.2, 12), "line-color": MAP.asphalt } },
+    { id: "seg-marking", type: "line", source: "segments", minzoom: 16,
+      filter: [">=", ["coalesce", ["get", "width_min_m"], 0], 7] as never,
+      layout: { "line-cap": "butt" },
+      paint: { "line-width": w(0.6, 2), "line-color": MAP.marking,
+               "line-opacity": .85, "line-dasharray": [4, 4] } },
 
     // 판정 음영 — 레이어 단추로 켠다. 경로가 없어도 어디가 좁은 골목인지 보인다.
     { id: "seg-tint", type: "line", source: "segments",
@@ -98,14 +124,23 @@ export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecificat
           1, MAP.bldgLow, 12, MAP.bldgHigh],
         "fill-extrusion-height": ["+", ["get", "z"], ["get", "h"]],
         "fill-extrusion-base": ["get", "z"],
-        "fill-extrusion-opacity": .96,
+        "fill-extrusion-opacity": 1,
         "fill-extrusion-vertical-gradient": true,
+      } },
+    // 지붕 판 — 윗면을 밝게. 벽과 명도 차가 블록 윤곽을 세운다
+    { id: "bldg-roof", type: "fill-extrusion", source: "buildings",
+      paint: {
+        "fill-extrusion-color": MAP.roof,
+        "fill-extrusion-height": ["+", ["get", "z"], ["get", "h"], 0.6],
+        "fill-extrusion-base": ["+", ["get", "z"], ["get", "h"]],
+        "fill-extrusion-opacity": 1,
+        "fill-extrusion-vertical-gradient": false,
       } },
   ];
 }
 
 const RW = (a: number, b: number) =>
-  ["interpolate", ["linear"], ["zoom"], 15, a, 19, b] as unknown as number;
+  ["interpolate", ["linear"], ["zoom"], 15, a * 1.25, 19, b * 1.3] as unknown as number;
 
 /**
  * 비교용 둘째 경로(02). 주 경로 **밑에** 깐다.
@@ -128,7 +163,9 @@ export function altRouteLayers(): LayerSpecification[] {
  * ★ `look` 이 `pending` 이면 점선 하늘색 — 새 경로가 서기 전(06 · 12 · 13 · 14).
  *   옛 경로를 실선으로 두면 그 길로 가라는 말이 된다.
  */
-export function routeLayers(): LayerSpecification[] {
+export function routeLayers(style: Record<string, VerdictStyle> = {}): LayerSpecification[] {
+  // 판정 보류의 정본 주황. 정본이 없으면(시험 · 데이터 전) 토큰의 경고색
+  const amber = style.needs_cv?.color ?? C.warn;
   const isLook = (v: string) => ["==", ["get", "look"], v] as unknown as boolean;
   return [
     { id: "route-case", type: "line", source: "route",
@@ -153,16 +190,16 @@ export function routeLayers(): LayerSpecification[] {
       paint: { "line-width": RW(1.5, 4), "line-color": "#ffffff",
                "line-dasharray": [2, 3] } },
 
-    // 04 — 병목. 노랑 바탕에 빨강 줄무늬
+    // 04 — 병목(판정 보류). 정본 주황 바탕에 흰 줄무늬
     { id: "route-bottleneck", type: "line", source: "route",
       filter: ["all", ["==", ["get", "verdict"], "needs_cv"], ["!", isLook("pending")]] as never,
       layout: { "line-cap": "butt" },
-      paint: { "line-width": RW(7, 21), "line-color": C.toneYellow } },
+      paint: { "line-width": RW(7, 21), "line-color": amber } },
     { id: "route-bottleneck-stripe", type: "line", source: "route",
       filter: ["all", ["==", ["get", "verdict"], "needs_cv"], ["!", isLook("pending")]] as never,
       layout: { "line-cap": "butt" },
-      paint: { "line-width": RW(7, 21), "line-color": C.routeBottleneck,
-               "line-dasharray": [0.6, 0.6] } },
+      paint: { "line-width": RW(7, 21), "line-color": "#ffffff", "line-opacity": .85,
+               "line-dasharray": [0.5, 0.7] } },
 
     // 16 — 현장에서 통행 불가로 신고한 구간
     { id: "route-blocked", type: "line", source: "blocked",
@@ -181,8 +218,8 @@ export function routeLayers(): LayerSpecification[] {
     { id: "route-chevron", type: "symbol", source: "route",
       filter: ["!", isLook("pending")] as never,
       layout: {
-        "symbol-placement": "line", "symbol-spacing": 70,
-        "icon-image": "chev", "icon-size": ["interpolate", ["linear"], ["zoom"], 15, .35, 19, .8] as never,
+        "symbol-placement": "line", "symbol-spacing": 90,
+        "icon-image": "chev", "icon-size": ["interpolate", ["linear"], ["zoom"], 15, .45, 19, 1.15] as never,
         "icon-rotation-alignment": "map", "icon-allow-overlap": true,
         "icon-ignore-placement": true,
       } },
@@ -190,8 +227,8 @@ export function routeLayers(): LayerSpecification[] {
     // 05 — 최종 접근 지점에서 사건 위치까지 (차량이 못 들어가는 구간)
     { id: "final-leg", type: "line", source: "final-leg",
       layout: { "line-cap": "round" },
-      paint: { "line-width": RW(3, 7), "line-color": C.incident,
-               "line-dasharray": [1.2, 1.2] } },
+      paint: { "line-width": RW(4, 9), "line-color": C.incident,
+               "line-dasharray": [1.1, 1.1] } },
   ];
 }
 
@@ -203,19 +240,16 @@ export function routeLayers(): LayerSpecification[] {
  *   말한다(`unknown` 354 는 전부 CCTV 25m 밖이다).
  */
 export function markerLayers(): LayerSpecification[] {
-  const halo = { "text-halo-color": MAP.labelHalo, "text-halo-width": 1.8 };
   return [
-    { id: "hydrant", type: "circle", source: "hydrants", minzoom: Z.hydrant,
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 3, 19, 6],
-        "circle-color": "#ef4444",
-        "circle-stroke-width": 1.5, "circle-stroke-color": "#ffffff",
+    { id: "hydrant", type: "symbol", source: "hydrants", minzoom: Z.hydrant,
+      layout: {
+        "icon-image": "ic-hyd", "icon-allow-overlap": true, "icon-pitch-alignment": "viewport",
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 16.5, .42, 19, .8] as never,
       } },
-    { id: "cctv", type: "circle", source: "cctv", minzoom: Z.cctv,
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 16, 4, 19, 9],
-        "circle-color": "#facc15",
-        "circle-stroke-width": 2, "circle-stroke-color": "#111827",
+    { id: "cctv", type: "symbol", source: "cctv", minzoom: Z.cctv,
+      layout: {
+        "icon-image": "ic-cctv", "icon-allow-overlap": true, "icon-pitch-alignment": "viewport",
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 16.5, .42, 19, .8] as never,
       } },
     { id: "lbl-road", type: "symbol", source: "segments", minzoom: Z.road,
       layout: {
@@ -223,22 +257,34 @@ export function markerLayers(): LayerSpecification[] {
         "text-font": FONT, "text-size": 11, "text-max-angle": 40,
         "symbol-spacing": 260, "text-pitch-alignment": "viewport",
       },
-      paint: { "text-color": "#475569", ...halo } },
-    { id: "lbl-bldg", type: "symbol", source: "buildings", minzoom: Z.bldg,
-      filter: ["has", "BULD_NM"],
+      paint: { "text-color": MAP.roadLabel, "text-halo-color": MAP.roadLabelHalo,
+               "text-halo-width": 1.6 } },
+    // 이름 알약 — 와이어프레임의 흰 배지. **적게.** 층수 높은 것부터, 겹치면 버린다
+    { id: "lbl-bldg", type: "symbol", source: "buildings", minzoom: Z.bldg + 0.6,
+      // ★ 2026-09-22 검수 — 이름 칸이 **빈 문자열**인 건물이 `has` 를 통과해 글자 없는 흰
+      //   알약이 화면을 덮었다. 길이로 거른다. 4층 미만은 뺀다(와이어프레임도 몇 개뿐이다)
+      filter: ["all", [">", ["length", ["coalesce", ["get", "BULD_NM"], ""]], 1],
+               [">=", ["coalesce", ["get", "flo"], 0], 4]] as never,
       layout: {
-        "text-field": ["get", "BULD_NM"], "text-font": FONT, "text-size": 12,
-        "text-allow-overlap": false, "text-pitch-alignment": "viewport",
+        "text-field": ["get", "BULD_NM"], "text-font": FONT, "text-size": 12.5,
+        "icon-image": "pill", "icon-text-fit": "both", "icon-text-fit-padding": [4, 9, 4, 9],
+        "symbol-sort-key": ["-", 0, ["coalesce", ["get", "flo"], 0]] as never,
+        "text-allow-overlap": false, "icon-allow-overlap": false,
+        "text-pitch-alignment": "viewport", "icon-pitch-alignment": "viewport",
+        "text-padding": 28,
       },
-      paint: { "text-color": MAP.label, ...halo } },
-    { id: "lbl-poi", type: "symbol", source: "poi", minzoom: Z.poi,
+      paint: { "text-color": MAP.label } },
+    { id: "lbl-poi", type: "symbol", source: "poi", minzoom: Z.poi + 0.8,
+      filter: [">", ["length", ["coalesce", ["get", "name"], ""]], 1] as never,
       layout: {
-        "text-field": ["get", "name"], "text-font": FONT, "text-size": 10,
-        "text-offset": [0, .7], "text-anchor": "top",
-        "text-allow-overlap": false, "text-optional": true,
-        "text-pitch-alignment": "viewport",
+        "text-field": ["get", "name"], "text-font": FONT, "text-size": 11,
+        "icon-image": "pill", "icon-text-fit": "both", "icon-text-fit-padding": [3, 7, 3, 7],
+        "text-offset": [0, .9], "text-anchor": "top",
+        "text-allow-overlap": false, "icon-allow-overlap": false, "text-optional": false,
+        "text-pitch-alignment": "viewport", "icon-pitch-alignment": "viewport",
+        "text-padding": 24,
       },
-      paint: { "text-color": "#64748b", ...halo } },
+      paint: { "text-color": "#334155" } },
   ];
 }
 
@@ -268,11 +314,68 @@ export function stationLayers(): LayerSpecification[] {
 
 /** 캔버스로 굽는 갈매기표. 글꼴 서버 없이 돈다(시연장 와이파이를 믿지 않는다). */
 export function chevronImage(): ImageData {
-  const n = 48;
+  const n = 64;
   const cv = document.createElement("canvas");
   cv.width = n; cv.height = n;
   const g = cv.getContext("2d")!;
-  g.strokeStyle = "#ffffff"; g.lineWidth = 8; g.lineCap = "round"; g.lineJoin = "round";
-  g.beginPath(); g.moveTo(14, 12); g.lineTo(32, 24); g.lineTo(14, 36); g.stroke();
+  g.strokeStyle = "#ffffff"; g.lineWidth = 10; g.lineCap = "round"; g.lineJoin = "round";
+  g.beginPath(); g.moveTo(18, 14); g.lineTo(42, 32); g.lineTo(18, 50); g.stroke();
   return g.getImageData(0, 0, n, n);
 }
+
+/**
+ * 지도 아이콘을 캔버스로 굽는다. **글꼴 · 스프라이트 서버 없이** 돈다(시연장 와이파이를 믿지 않는다).
+ * 2배 해상도로 그리고 `pixelRatio: 2` 로 넣는다.
+ */
+function canvas(n: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
+  const cv = document.createElement("canvas");
+  cv.width = n; cv.height = n;
+  return [cv, cv.getContext("2d")!];
+}
+
+/** 와이어프레임의 노란 CCTV 배지 */
+export function cctvIcon(): ImageData {
+  const n = 96; const [, g] = canvas(n);
+  g.beginPath(); g.arc(48, 48, 42, 0, Math.PI * 2);
+  g.fillStyle = "#facc15"; g.fill(); g.lineWidth = 6; g.strokeStyle = "#111827"; g.stroke();
+  g.fillStyle = "#111827";
+  g.save(); g.translate(48, 46); g.rotate(-0.35);
+  g.fillRect(-24, -10, 36, 20);                       // 몸통
+  g.beginPath(); g.moveTo(12, -6); g.lineTo(26, -12); g.lineTo(26, 12); g.lineTo(12, 6); g.fill();
+  g.restore();
+  g.fillRect(28, 56, 6, 16); g.fillRect(20, 68, 22, 6); // 기둥
+  g.beginPath(); g.arc(34, 46, 4, 0, Math.PI * 2); g.fillStyle = "#facc15"; g.fill();
+  return g.getImageData(0, 0, n, n);
+}
+
+/** 와이어프레임의 붉은 소화전 배지 */
+export function hydrantIcon(): ImageData {
+  const n = 96; const [, g] = canvas(n);
+  g.beginPath(); g.arc(48, 48, 42, 0, Math.PI * 2);
+  g.fillStyle = "#ef2d2d"; g.fill(); g.lineWidth = 6; g.strokeStyle = "#ffffff"; g.stroke();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.arc(48, 34, 11, Math.PI, 0); g.fill();   // 머리
+  g.fillRect(37, 33, 22, 30);                               // 몸통
+  g.fillRect(27, 42, 42, 9);                                // 양쪽 토출구
+  g.fillRect(33, 63, 30, 7);                                // 받침
+  g.beginPath(); g.arc(48, 47, 4.5, 0, Math.PI * 2); g.fillStyle = "#ef2d2d"; g.fill();
+  return g.getImageData(0, 0, n, n);
+}
+
+/** 이름 알약 — 늘어나는 흰 둥근 사각형(9-slice). `addImage(…, pillOptions)` 로 넣는다 */
+export function pillImage(): ImageData {
+  const w = 64, h = 44, r = 20;
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const g = cv.getContext("2d")!;
+  g.shadowColor = "rgba(15,23,42,.28)"; g.shadowBlur = 5; g.shadowOffsetY = 2;
+  g.beginPath();
+  g.moveTo(r + 2, 3); g.lineTo(w - r - 2, 3); g.arc(w - r - 2, h / 2, r - 1, -Math.PI / 2, Math.PI / 2);
+  g.lineTo(r + 2, h - 3); g.arc(r + 2, h / 2, r - 1, Math.PI / 2, -Math.PI / 2); g.closePath();
+  g.fillStyle = "#ffffff"; g.fill();
+  return g.getImageData(0, 0, w, h);
+}
+export const pillOptions = {
+  pixelRatio: 2, stretchX: [[22, 42]] as [number, number][], stretchY: [[20, 24]] as [number, number][],
+  content: [14, 8, 50, 36] as [number, number, number, number],
+};

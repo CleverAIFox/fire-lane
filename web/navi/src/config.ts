@@ -3,8 +3,10 @@
  *
  * ★ **토큰을 저장소에 넣지 마라.** 빌드 시 주입한다.
  *
- *     web/navi/.env.local        VITE_MAPBOX_TOKEN=pk....   (.gitignore)
- *     pages.yml                  ${{ secrets.MAPBOX_TOKEN }}
+ *     저장소 루트 .env           MAPBOX_TOKEN=pk....        (.gitignore · 정본)
+ *     web/navi/.env.local        VITE_MAPBOX_TOKEN=pk....   (옛 자리 · 호환)
+ *     배포                       ${{ secrets.MAPBOX_TOKEN }}
+ *   고르는 순서는 vite.config.ts `mapboxToken()` 이 든다.
  *
  *   2026-09-05 에 Map Matching 대조로 1,301 회를 썼다. 무료 한도가 월
  *   10만이라 여유는 있으나, 개발 중 리로드마다 매칭하면 하루 수천 건이

@@ -72,7 +72,7 @@ export function DispatchPanel(p: Props) {
             <div style={{ fontSize: 12, color: C.danger, fontWeight: 800 }}>사건 접수 위치</div>
             <div style={{ fontSize: 17, fontWeight: 800, marginTop: 2 }}>{p.incidentLabel}</div>
             <div style={{ fontSize: 12, color: C.panelSub, marginTop: 2 }}>
-              화재 출동{p.incidentAt ? ` · 사건 입력 ${p.incidentAt}` : ""}
+              화재 출동{p.incidentAt ? ` · 사건 접수 ${p.incidentAt}` : ""}
               {p.incidentSub ? ` · ${p.incidentSub}` : ""}
             </div>
           </div>
