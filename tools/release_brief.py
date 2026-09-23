@@ -19,6 +19,7 @@ contract-shared"* 라고 적는데, 그러면 승인은 왜 두는가 —
     계보   web/data/_manifest.json                 타일 지문이 바뀌었나
     대장   sources.yaml                            소스가 늘거나 줄었나
     계약   web/data/segments.schema.json           스키마가 바뀌었나
+           ★ 이 축의 `발행바이트sha` 는 **값이 아니라 바이트**다 — 표기만 바뀌어도 움직인다(§222-3)
 
 ★ 값 차이는 **결정론적으로** 뽑는다. "이 변경이 무엇을 뜻하는가" 는 여기서
   말하지 않는다 — 그것은 사람이 PR 본문에 적는다.
@@ -82,10 +83,20 @@ def _facts(rel: str, raw: str | None) -> dict[str, object]:
         return {"타일지문": j.get("tiles_digest"), "타일장수": n,
                 "MB": j.get("total_mb"), "파일": len(j.get("files") or [])}
     if "schema" in rel:
+        # ★ 2026-09-23 (DECISIONS §222-3). `sha256` 이었다. 이름이 **계약**인 축에 앉아
+        #   「스키마가 바뀌었나」를 묻는 척하면서 실은 **발행 geojson 의 바이트 다이제스트**를
+        #   봤다. 2026-09-23 릴리즈에서 의존성 일곱(numpy·pandas·pyproj)이 부동소수 표기만
+        #   바꿨는데 이 줄이 「1개가 움직였다」로 떴고, 바로 아래 체크박스는 「안 바뀐다」였다 —
+        #   같은 표가 서로 다른 말을 했다. 묻는 것을 이름에 적는다.
         return {"crs": j.get("crs"), "필드수": j.get("count"),
-                "sha256": (j.get("sha256") or "")[:12],
+                "발행바이트sha": (j.get("sha256") or "")[:12],
                 "폭검증": j.get("width_verified")}
     return {}
+
+
+def _bytes_only(moved: list) -> bool:
+    """움직인 것이 발행 바이트 sha 하나뿐인가 — 값이 아니라 표기가 바뀐 모양."""
+    return len(moved) == 1 and moved[0][1] == "발행바이트sha"
 
 
 def main() -> int:
@@ -116,6 +127,10 @@ def main() -> int:
         if moved:
             print(f"★ **{len(moved)}개가 움직였다.** 판정이 바뀌었으면 "
                   "`golden` 재잠금과 전후 값을 본문에 적는다(§12-8b).")
+            if _bytes_only(moved):
+                print("\n★ **움직인 것이 `발행바이트sha` 뿐이다 — 판정 값은 그대로다.** "
+                      "직렬화 표기(의존성 판 · 부동소수)가 바뀌면 바이트는 움직이고 값은 안 움직인다. "
+                      "「산출물이 바뀌는가」 체크박스는 **판정** 축으로 답한다(§222-3).")
         else:
             print("★ 넷 다 불변이다. 문서·도구만 바뀐 PR 이다.")
         return 0

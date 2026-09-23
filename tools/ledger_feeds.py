@@ -64,6 +64,29 @@ SCAN = [("src", "*.py"), ("tools", "*.py"), ("web", "*.js")]
 SELF = {"ledger_feeds.py", "ledger_fields.py", "ledger_schema.py",
         "migrate_names.py", "refcheck.py", "intake.py"}
 
+#: 훑지 않는 디렉터리 — **생성물이다.**
+#: ★ 2026-09-23 (DECISIONS §222-8). 종전에는 `web/**/*.js` 를 통째로 훑어
+#:   `web/navi/dist/assets/index-<해시>.js` 를 **소비자로 등재했다.** 번들에는
+#:   `src` 의 키 문자열이 컴파일돼 들어 있으니 형식상 「참조」가 맞다. 그런데
+#:   그 파일명은 **내용 해시**라 의존성 하나만 올려도 이름이 바뀐다 — 대장이
+#:   가리키는 경로가 사라지고 `doc_fsck ②` 가 운다. 실제로 maplibre 를
+#:   6.9.1 → 6.11.0 으로 올린 배치가 그것으로 빨개졌다.
+#: ★ 소비자는 **소스**다. 빌드 산출물을 소비자로 세면 (1) 이름이 안 고정이고
+#:   (2) 같은 참조를 두 벌 세며 (3) 빌드 전에는 아예 없다.
+SKIP_DIRS = ("dist", "node_modules", "__pycache__", "data", ".work")
+
+
+def _is_machine_list(old: str) -> bool:
+    """이 `feeds` 값이 **앞 실행이 쓴 리스트**인가 — 사람 산문이 아닌가.
+
+    리스트는 `- <경로>` 항목만으로 이뤄진다. 산문은 `★` · 한글 · 설명이 섞인다.
+    """
+    # ★ 경로에 `-` 가 들어 있다(`index-EtqbR_zm.js`). 낱낱의 `-` 로 가르면 안 된다 —
+    #   **줄머리의 `- `** 로만 가른다.
+    items = [x.strip() for x in re.split(r"(?:^|\s)-\s+", old) if x.strip()]
+    return bool(items) and all(
+        re.fullmatch(r"[\w./-]+\.(py|js|ts|tsx|sh|mjs)", x) for x in items)
+
 
 def _code_only(src: str) -> str:
     """주석·docstring 을 뺀 코드. 문자열 리터럴은 남긴다."""
@@ -142,6 +165,8 @@ def consumers() -> dict[str, list[str]]:
         for p in sorted(base.rglob(pat)):
             if p.name in SELF:
                 continue       # 대장 도구는 전 키를 훑는다. 소비자가 아니다
+            if set(p.relative_to(ROOT).parts) & set(SKIP_DIRS):
+                continue       # 생성물은 소비자가 아니다 (§222-8)
             txt = p.read_text(encoding="utf-8", errors="ignore")
             code = _code_only(txt) if p.suffix == ".py" else _js_code_only(txt)
             rel = str(p.relative_to(ROOT))
@@ -212,9 +237,14 @@ def run(*, apply: bool) -> int:
         c = cons[k]
         add = "    feeds:" + ("\n" + "\n".join(f"      - {x}" for x in c)
                               if c else " []") + "\n"
-        if old:
+        if old and not _is_machine_list(old):
             # ★ 산문을 버리지 않는다. "★ 참조 0곳" · "노딩 입력" 같은
             #   판단은 자동으로 못 얻는다.
+            # ★ 2026-09-23 (DECISIONS §222-8). **이미 리스트인 것은 산문이 아니다.**
+            #   두 번째 `--apply` 에서 앞 실행이 쓴 리스트를 「산문」으로 보고 그대로
+            #   `feeds_note` 에 밀어 넣었고, 그 안에 옛 경로(빌드 해시 파일명)가 화석으로
+            #   남아 `doc_fsck ②` 가 없는 파일을 가리킨다고 울었다. 기계가 쓴 것을
+            #   사람 판단으로 보존하면 그때부터 그 칸은 **낡기만 한다.**
             q = old.replace("'", "''")
             add += f"    feeds_note: '{q}'\n"
         s = s[:st] + add + nb + s[en:]

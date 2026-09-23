@@ -418,3 +418,75 @@ def test_bot_prs_do_not_block_a_batch():
     j = blk.index("BOT")
     tail = blk[j:]
     assert "warn " in tail and 'die "$BASE 로 가는 **봇' not in tail, "봇 PR 에서 죽는다"
+
+
+# ── 봇 PR 이 배치를 막지 않는가 — **족으로** 본다 ──────────────────
+#: 훑기인데 작성자를 안 봐도 되는 자리. 사유를 적는다 — 적는 순간 세어진다.
+SWEEP_EXEMPT = {
+    ("tools/branch_tidy.sh", "--json number --jq length"):
+        "수만 센다 — 끝 표에 「열린 PR N」을 찍을 뿐 아무것도 막지 않는다",
+}
+
+
+def _gh_pr_list_sweeps() -> list[tuple[str, int, str]]:
+    """배치 도구에서 `gh pr list` 호출을 **줄 이음까지 붙여** 뽑는다.
+
+    `--head` 가 있으면 우리 가지 하나를 지목한 것이라 훑기가 아니다.
+    """
+    out = []
+    for rel in ("tools/fl.sh", "tools/merge_batch.sh", "tools/branch_tidy.sh"):
+        lines = (ROOT / rel).read_text(encoding="utf-8").splitlines()
+        i = 0
+        while i < len(lines):
+            if "gh pr list" in lines[i] and not lines[i].lstrip().startswith("#"):
+                call, n = lines[i], i
+                while call.rstrip().endswith("\\") and n + 1 < len(lines):
+                    n += 1
+                    call = call.rstrip()[:-1] + " " + lines[n].strip()
+                if "--head" not in call:
+                    out.append((rel, i + 1, call))
+                i = n
+            i += 1
+    return out
+
+
+def test_pr_sweeps_read_the_author():
+    """열린 PR 을 **훑는** 자리는 전부 작성자를 읽는다 (DECISIONS §221-2 · §222-1).
+
+    ★ 이것이 족 가드다. 2026-09-23 에 `fl.sh` 1단계의 같은 결함을 고치면서
+      `merge_batch.sh` A단계의 **두 번째 인스턴스를 놓쳤고**, 같은 날 방송이
+      dependabot PR 넷으로 멈췄다. 인스턴스를 하나씩 잡으면 반드시 다음 것이 남는다.
+      작성자를 안 읽는 훑기는 봇 PR 과 사람 PR 을 가를 수 없고, 가를 수 없으면
+      `branch_tidy --close-bots` 가 **일부러 남기는** 봇 PR(§218-4)이 배치를 영영 막는다.
+    """
+    bad = []
+    for rel, line, call in _gh_pr_list_sweeps():
+        if "author" in call:
+            continue
+        if any(rel == r and frag in call for (r, frag) in SWEEP_EXEMPT):
+            continue
+        bad.append(f"  {rel}:{line}  {call.strip()[:110]}")
+    assert not bad, (
+        "열린 PR 을 훑으면서 작성자를 안 읽는다 — 봇과 사람을 못 가른다:\n" + "\n".join(bad)
+        + "\n\n  `--json …,author` 를 더하고 봇은 목록만 내라(§218-4).\n"
+        "  막지 않는 훑기면 SWEEP_EXEMPT 에 사유와 함께 적어라.")
+
+
+def test_sweep_exempt_entries_are_alive():
+    """면제가 유령이 되지 않게 — 적어둔 자리가 실재하는가."""
+    calls = [(r, c) for r, _, c in _gh_pr_list_sweeps()]
+    dead = [f"{r}  {frag}" for (r, frag) in SWEEP_EXEMPT
+            if not any(rr == r and frag in cc for rr, cc in calls)]
+    assert not dead, f"SWEEP_EXEMPT 가 없는 자리를 든다: {dead}"
+
+
+def test_release_brief_names_the_byte_axis_honestly():
+    """「계약」 축의 sha 는 **바이트**다 — 값을 묻는 척하지 않는다 (DECISIONS §222-3).
+
+    2026-09-23 릴리즈에서 의존성 일곱이 부동소수 표기만 바꿨는데 이 축이
+    「1개가 움직였다」로 떴고, 같은 표 아래 체크박스는 「안 바뀐다」였다.
+    """
+    rb = (ROOT / "tools" / "release_brief.py").read_text(encoding="utf-8")
+    assert '"발행바이트sha"' in rb, "축 이름이 무엇을 보는지 안 말한다"
+    assert '"sha256": (j.get' not in rb, "옛 이름이 남아 있다"
+    assert "_bytes_only" in rb, "바이트만 움직인 경우를 따로 안 말한다"

@@ -71,7 +71,7 @@ uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로�
 uv run python tools/gate_parity.py     # 로컬 관문 ↔ CI 차집합 (래칫 · 정본은 도구 안)
 uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증분)
 uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
-uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 (--apply 로 당긴다)
+uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 · 결번 대장 (★ --apply 는 폐지 — 번호는 영구 식별자다)
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
 # ★ 위 도구가 세는 사본을 합친 자리 —
@@ -138,7 +138,7 @@ editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
 
 ```bash
-bash tools/verify.sh          # 50단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 51단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 급할 때. ★ `부분 실행` 에서 일부러 빨갛게 죽는다
 ```
 
