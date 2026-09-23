@@ -70,8 +70,11 @@ def test_merge_batch_stops_instead_of_warning():
     assert "--base part/infra --state open" in src and "squash 머지부터" in src, "열린 feat PR 을 멈추지 않는다(G-2)"
     assert "merge-base --is-ancestor origin/part/infra origin/dev" in src, "PR 없이 앞선 part/infra 를 멈추지 않는다(G-10)"
     assert "tr -cd 'A-Za-z0-9.-'" in src, "태그 입력의 깨진 바이트를 거르지 않는다(G-12)"
-    assert ':(exclude)web/data/_manifest.json' in src and '"data/processed"' not in src.split("out = changed(", 1)[1].split("\n", 1)[0], \
-        "대장 · 매니페스트 변화를 산출물 변화로 체크한다(G-11)"
+    # ★ 2026-09-23 (DECISIONS §220-4). 체크박스의 물음은 「판정이 움직였나」다 — 이제 판정 지문
+    #   **한 파일**만 본다. 종전에는 web/data 까지 봐서 표출 파일 다섯을 멈춘 v0.35 가 「바뀐다」에 찍혔다.
+    _line = src.split("out = changed(", 1)[1].split("\n", 1)[0]
+    assert "segments.fingerprint.json" in _line and "web/data" not in _line and "data/processed" not in _line, \
+        f"판정 아닌 변화를 산출물 변화로 체크한다(G-11 · §220-4): {_line}"
 
 
 def _tty_block() -> str:

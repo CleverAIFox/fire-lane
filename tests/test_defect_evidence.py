@@ -42,6 +42,7 @@ EVIDENCE = {
     "W10-1": "tests/test_deadcheck_probes.py::test_every_ceiling_is_zero",
     "W5-1": "tests/test_defect_evidence.py::test_evidence_exists_in_tree",
     "W4-7": "tests/test_docx_targets.py::test_long_cell_ratchet_bites",
+    "W3-6": "tests/test_golden_fp.py::test_display_only_constants_are_outside_the_judgment_closure",
 }
 
 

@@ -1,5 +1,6 @@
 /**
- * domain/compare.ts — 경로 비교(02) 지도 위 표지.  (와이어프레임 02 · DECISIONS §214-2)
+ * domain/compare.ts — 경로 비교(02) — 지도 위 표지 · **두 경로가 같은가** · 비교 수치.
+ *                     (와이어프레임 02 · DECISIONS §214-2 · §220)
  *
  * 와이어프레임 02 는 두 경로 위에 표지 둘을 띄운다 —
  *
@@ -15,6 +16,70 @@ import { cumulative, pointAlong } from "./geo";
 import type { GraphEdge, RoutePlan } from "./types";
 
 const UNCERTAIN = new Set(["needs_cv", "unknown"]);
+
+/**
+ * 두 경로가 **같은 구간을 같은 순서로** 지나는가.
+ *
+ * ★ 2026-09-23 (DECISIONS §220). 종전엔 `App.tsx` 안에 있었고, 같으면 둘째 카드를
+ *   숨기고 「비교할 둘째 경로가 없다」 한 줄을 냈다. 멘토링(§219)이 그 자리를 짚었다 —
+ *   **같으면 같다고 말해야 한다**(「안전하면서 빠른 추천 경로」). 화면이 그 말을 하려면
+ *   먼저 이 술어가 화면 밖에 있어야 한다. 시험이 여기를 문다.
+ * ★ 좌표가 아니라 `seg_uid` 로 비교한다. 출발·도착 구간은 투영점에서 잘린 사본이라
+ *   (`GraphEdge.clip` · §218-3) 좌표는 같은 경로에서도 부동소수로 갈릴 수 있다.
+ */
+export function sameRoute(a: RoutePlan, b: RoutePlan): boolean {
+  return a.edges.length === b.edges.length
+    && a.edges.every((e, i) => e.seg_uid === b.edges[i].seg_uid);
+}
+
+/** 두 경로가 같을 때 쓰는 이름(멘토링 §219). 화면과 시험이 **같은 문자열**을 본다 */
+export const SAME_ROUTE_TITLE = "안전하면서 빠른 추천 경로";
+
+/**
+ * 비교 화면이 어느 모양이어야 하는가.
+ *
+ *   same    같은 구간 순서 → 카드 **하나**를 「안전하면서 빠른 추천 경로」 로
+ *   two     다르다 → 둘 다 두고 다른 곳을 수로 보인다
+ *   single  빠른 경로가 아예 안 섰다 → 추천 하나 + 그 사실을 말한다
+ *
+ * ★ `same` 과 `single` 을 가르는 것이 이 함수의 요지다. 종전 화면은 둘을 같은 한 줄로
+ *   처리해 「비교할 둘째 경로가 없다」 로 읽혔다 — **없는 것과 같은 것은 다른 말이다.**
+ */
+export type CompareKind = "same" | "two" | "single";
+
+export function compareKind(safe: RoutePlan | null, fast: RoutePlan | null): CompareKind {
+  if (!safe || !fast) return "single";
+  return sameRoute(safe, fast) ? "same" : "two";
+}
+
+/** 경로 하나를 비교 가능한 수로 줄인 것. 카드가 줄마다 그대로 찍는다 */
+export interface RouteStats {
+  lengthM: number;
+  /** 지나는 **통행 불가** 구간 수. 지금은 A* 가 막아 0 이지만 세어서 보인다 —
+   *  0 이라는 사실 자체가 관제사가 보려는 것이고, 목적지 직전 예외(§219)가 들어오면
+   *  이 줄이 그대로 0 이 아니게 된다 */
+  blockedCount: number;
+  /** 통행 규칙 경고 수(역주행 · 방향 미확인 일방통행 · 회전 금지 · 급회전) */
+  ruleCount: number;
+  /** 폭 기준 확인 필요(판정 보류 · 영상판정 불가) 구간 수와 실거리 */
+  uncertainCount: number;
+  uncertainM: number;
+  /** 경로에서 가장 좁은 최소 유효폭. 폭을 아는 구간이 없으면 null */
+  minWidthM: number | null;
+}
+
+export function routeStats(p: RoutePlan): RouteStats {
+  const unc = p.edges.filter((e) => UNCERTAIN.has(e.verdict));
+  const w = p.edges.map((e) => e.width_min_m).filter((x): x is number => x != null);
+  return {
+    lengthM: p.lengthM,
+    blockedCount: p.edges.filter((e) => e.verdict === "blocked").length,
+    ruleCount: p.rules.length,
+    uncertainCount: unc.length,
+    uncertainM: unc.reduce((a, e) => a + (e.length_m ?? 0), 0),
+    minWidthM: w.length ? Math.min(...w) : null,
+  };
+}
 
 function edgeCoords(p: RoutePlan, i: number): LngLat[] {
   const c = p.edges[i].coords;

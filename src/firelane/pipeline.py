@@ -116,7 +116,17 @@ STEPS = [
          writes=(P / "segments.geojson", P / "segments_5186.gpkg",
                  P / "segments.schema.json", P / "corridor_5186.gpkg",
                  P / "nfa_compare.json", P / "seg_uid_map.csv",
-                 P / "route_vehicle.csv", P / "scope_5186.gpkg")),
+                 P / "route_vehicle.csv")),
+    # ★ 2026-09-23 (PLAN §13 W3-6). `segments._write_scope()` 를 자기 단계로 내렸다.
+    #   표출 상수(DISPLAY_BUFFER · DISPLAY_CLOSE)가 `seg/params.py` 에 있으면 판정 지문
+    #   (= `firelane.segments` import 닫힘) 안이라, **지도 여백만 고쳐도 판정 게이트가
+    #   울고 재잠금이 따라왔다.** 순서는 그대로 순방향이다 —
+    #   segments(회랑을 낸다) → scope → ortho · publish(스코프를 읽는다).
+    Step("scope", "display_scope", "표출 범위 → scope_5186.gpkg",
+         P / "scope_5186.gpkg",
+         reads=(P / "boundary_emd_5186.gpkg", P / "corridor_5186.gpkg",
+                P / "fire_station.geojson"),
+         writes=(P / "scope_5186.gpkg",)),
     Step("streetlight", "streetlight", "가로등 → 지점 집계",
          P / "streetlight_point.geojson",
          reads=(P / "streetlight_5186.gpkg",),

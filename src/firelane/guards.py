@@ -40,7 +40,43 @@ from pathlib import Path
 from firelane import paths
 
 # 폭·골격·판정에 실제로 읽히는 핵심 입력.
-CRITICAL = ("ngii1k", "road_link", "road_rw", "node_link", "cctv")
+#
+# ★ 2026-09-23 (PLAN §13 W3-6 · `deadcheck ②` 를 src 로 넓히면서). **다섯에서 열셋으로 넓혔다.**
+#   종전 다섯은 손으로 고른 것이었고, 대장(`sources.yaml`)이 아는 사실보다 좁았다 —
+#   `feeds` 가 판정 코드(= `firelane.segments` 의 import 닫힘)에 닿는 datasets 는 **13종**이다.
+#   좁은 손목록의 결과는 조용하다: 빠진 여덟 중 하나가 FAIL 해도 key 층 검사가 통과하고,
+#   `segments` 는 옛 실행이 남긴 gpkg 를 집어 **판정이 소리 없이 갈린다** — 2026-08-17/18 에
+#   `ngii1k` 로 이틀 연속 겪은 그 사고가, 이름만 바뀐 채 여덟 자리에 남아 있었다.
+#
+# ★ 목록을 여기 **박아 두는** 이유. `feeds` 는 `shardseal.DOC_KEYS` 가 「산출에 안 닿는 서술 칸」
+#   으로 분류한 필드다(DECISIONS §216-1). 그것을 import 시점에 읽어 게이트를 만들면, 대장의
+#   서술 한 줄이 판정 관문을 조용히 넓히거나 **좁힌다**. 좁아지는 쪽이 위험하다 — 거짓 초록이다.
+#   그래서 값은 코드에 두고, 대장과 어긋나면 우는 강제자를 따로 둔다:
+#     `tests/test_guards.py::test_critical_covers_every_dataset_feeding_judgment_code`
+#   (그 검사가 13종을 대장에서 유도해 이 줄과 대조한다. 늘면 운다.)
+#
+# ★ 파일 층(`REQUIRED_FILES`)은 그대로다. key 층은 「이 소스의 마지막 ingest 가 OK 인가」,
+#   파일 층은 「segments 가 여는 실물이 이번 실행 산출인가」 — 다른 질문이고 둘 다 필요하다.
+CRITICAL = (
+    # ── 폭 (결정 63 · 주 소스 → 폴백 순서) ────────────────────
+    "ngii1k",             # 1:1,000 도로경계면. 폭 주 소스 · xsec(교차부 제외) · center(측량 중심선)가 이 key 의 산출이다
+    "ngii_road",          # 1:5,000 도로경계면. ngii1k 결손 구간의 폭 폴백 (segments.load("ngii_road"))
+    "road_rw",            # 실폭도로. 수치지도가 안 그리는 보행자 통로급 골목을 메운다(표본 100 중 커버 70)
+    # ── 골격 · 노딩 ──────────────────────────────────────────
+    "road_link",          # 도로명주소 도로구간. 판정 구간 그래프의 뼈대 자체
+    "node_link",          # 도로구간 노드. 대장이 `outputs.route_vehicle.inputs` 로 든다 · 종전 다섯에 이미 있었다
+    "road_intrvl",        # 도로구간 구간번호. 기초번호 색인(seg/basisno.py)과 도로명 정본(seg/report.py)
+    # ── 판정 재료 ────────────────────────────────────────────
+    "building",           # 건물. 담~담 폭(wmax)의 재료
+    "building_entrance",  # 건물 출입구. 접근 회랑의 도착점 — 회랑이 비면 판정 범위가 좁아진다
+    "boundary_emd",       # 법정동 경계. 판정 범위(KEEP_BUFFER 50m)의 원점이고 EMD_CD 로 한 행을 고른다
+    "fire_station",       # 119안전센터. 판정 범위의 300m 원 · 회랑의 출발점 (DECISIONS §170)
+    "cctv",               # CCTV. needs_cv 판정의 성립 여부(CCTV_RANGE 25m)를 가른다
+    "streetlight",        # 가로등. light_count 가 0 으로 떨어지면 조용히 어두운 구간이 된다(2026-08-14)
+    # ── 산출 동반 ────────────────────────────────────────────
+    "turn_restriction",   # 회전제한. 대장이 `outputs.route_vehicle.inputs` 로 든다 — segments 가 내는 표다.
+                          #   2026-08-21 에 87행이어야 할 것이 전국 44,125행(507배)으로 들어오고도 status 는 OK 였다
+)
 
 # 계보상 통과로 보는 상태. SKIP 은 "이번 실행에서 건드리지 않음"이다.
 PASS_STATUS = ("OK", "SKIP")

@@ -342,7 +342,7 @@ import importlib, sys
 mods = ["paths","manifest","quiet_gdal","krgis.crs","seg.params","seg.geom","seg.width",
         "seg.roadname","seg.basisno","seg.graph","seg.report","segkey","guards",
         "lineage","ngi","ngii1k","probe","contract","inventory","datalog",
-        "normalize_raw","sample_design","ingest","segments","streetlight",
+        "normalize_raw","sample_design","ingest","segments","display_scope","streetlight",
         "terrain","ortho","publish_web","pipeline","shardseal"]
 bad = []
 for m in mods:
@@ -505,6 +505,10 @@ step "기획서 대조"     uv run python tools/docx_check.py
 # ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
 scope "docs/* tools/* src/* data/*"
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
+# ★ 2026-09-23 (DECISIONS §221-1). 그림이 저장소에서만 새것이 되는 길을 닫는다 —
+#   기획서가 든 그림도 정본과 같은가. 변환기 없이 도는 검사다(SVG 지문 대조).
+scope "docs/* tools/*"
+step "기획서 그림 ↔ 정본" uv run python tools/docx_figs.py --check
 # ★ 2026-09-17 (DECISIONS §180-9). `흡수 대상`(release_brief 한 줄)을 뺐다. 검사가 아니라 보고였고 매 실행 "생략" 으로
 #   찍혀 생략 칸을 채웠다 — 진짜 생략(npm 없음 · --fast)이 그 옆에 묻힌다. 표는 릴리즈 PR 본문에서 쓰인다(merge_batch --release).
 # ★ 2026-09-17 (DECISIONS §182-2 · G-14). 대장 필드 검사를 아무도 안 불렀다. `python -m firelane.ledger` 는

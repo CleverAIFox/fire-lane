@@ -72,6 +72,11 @@ REGISTRY: tuple[Gen, ...] = (
     _g("data/processed/_manifest.json", "file",
        "committed", "never-delete", "seal-dirty"),
     _g("data/processed/seg_uid_map.csv", "file", "committed", "never-delete"),
+    # ★ 2026-09-23 (PLAN §1 #44 닫힘). `data/processed/_manifest.json` 만 「봉인 때 더러워도
+    #   된다」 로 두고 **짝인 `web/data/_manifest.json` 을 빠뜨렸다.** 파이프라인은 둘을 같이
+    #   쓰고 커밋 시점도 같다 — 하나만 면제하면 봉인이 매번 나머지 하나로 거부한다.
+    #   2026-09-22 에 실제로 배치 도구 1단계가 이 파일로 멈췄다.
+    _g("web/data/_manifest.json", "file", "never-delete", "seal-dirty"),
 )
 
 ROLES: frozenset[str] = frozenset(r for g in REGISTRY for r in g.roles)

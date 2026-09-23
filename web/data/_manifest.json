@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-09-22T18:21:54+09:00",
+  "generated_at": "2026-09-23T10:23:31+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
-      "sha256": "2d1a1555a8c1e106accd3b2abac4916e3152c4eb03e5179adccafea37eb3fdef",
-      "bytes": 1250059
+      "sha256": "02938d98684fdfd4778807c0d672f270cc658b46da23d987c565d35cfc92cebd",
+      "bytes": 1250064
     },
     "segments.schema.json": {
-      "sha256": "efc21bc9c512db70a29f635314e84ca16d1c25ce115dc9656f3df109126af864",
+      "sha256": "6395bc151f9796f5bfa8ca11ddf43b463f039e241a451df2a606ff734f84e5d9",
       "bytes": 5047
     },
     "_manifest.json": {
-      "sha256": "58a41380449fb698347f070707d76e5d26a3fd4b7c9129b04b3b53e21b3c7f82",
+      "sha256": "81ab40923eea47b28ad45080ea25b6e329d87504cc59673ca94fd5301ba884ce",
       "bytes": 99046
     }
   },
@@ -53,8 +53,8 @@
       "bytes": 532114
     },
     "road_area.geojson": {
-      "sha256": "1259129cd79f454205a634edde744cb2490738f276efc5df960692095378672e",
-      "bytes": 795084
+      "sha256": "e8ec7b4af5053d039d6f1daec2b2b5647f82d9d9aa647d308c2cff52e9cc0ada",
+      "bytes": 795090
     },
     "route_vehicle.json": {
       "sha256": "8cd60f91021499b3453eea819492a41bdf853d4e8caeb4dbd17a32a7d9be8653",
@@ -65,12 +65,12 @@
       "bytes": 1051958
     },
     "segments.schema.json": {
-      "sha256": "58e3d5edc080fa8e6197d156b49772e4447770fab56b408eac2cece4b05a6396",
+      "sha256": "7ebd002ac0a2527360765c86b578ac778cfa99097b1062bbc08e071356775646",
       "bytes": 4842
     },
     "sidewalk.geojson": {
-      "sha256": "426edaf5f5b8ed15977e9945254d249243d2aad0af250e1b068b7af96f7301ae",
-      "bytes": 86444
+      "sha256": "6d6519d0984fc485d4f7ad24e32a496d219eb54d9c9230fa81aff531f591f008",
+      "bytes": 86441
     },
     "stations.geojson": {
       "sha256": "fcae4cdae12a84abea5335ccbe66d293733b24b24b4edcb228447c21cf0d4781",
