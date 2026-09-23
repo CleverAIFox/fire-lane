@@ -155,7 +155,7 @@ def _gh(path: str):
 def _secret_gaps() -> list[str]:
     """워크플로가 부르는 `secrets.X` 중 **등록 안 된 것**을 돌려준다.
 
-    ★ 2026-09-12 (B5). `pages.yml` 에 Secret 참조를 넣고 등록을 안 하면
+    ★ 2026-09-12 (B5). 배포 워크플로에 Secret 참조를 넣고 등록을 안 하면
       빈 문자열이 조용히 들어간다. 워크플로는 초록불이고 배포본만 깨진다.
       VWORLD_KEY 를 배선하면서 실제로 그 상태를 한 번 만들었다.
 
@@ -181,7 +181,7 @@ def _secret_gaps() -> list[str]:
     if not want:
         # ★ 0건이 청결인지 죽음인지 가른다(HANDOFF 원칙 ④).
         return ["워크플로가 부르는 Secret 이 0건이다 — 프로브를 의심하라"
-                "\n      ★ pages.yml 은 최소 MAPBOX_TOKEN 을 부른다"]
+                "\n      ★ deploy.yml 은 최소 MAPBOX_TOKEN 을 부른다"]
 
     try:
         have = {s["name"] for s in _gh(f"repos/{REPO}/actions/secrets")["secrets"]}

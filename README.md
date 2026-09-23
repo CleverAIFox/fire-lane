@@ -544,7 +544,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 |---|---|---|---|
 | GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
 | Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 226구간 · `cctv.geojson` | DECISIONS §213-5(4색 정의) |
-| Infra · API | `part/infra` | 아직 서버 없음 — 배포는 `.github/workflows/_deploy.yml` · 배치는 `tools/fl.sh` | README `## 도구` |
+| Infra · API | `part/infra` | 아직 서버 없음 — 배포는 `.github/workflows/deploy.yml` · 배치는 `tools/fl.sh` | README `## 도구` |
 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
 `web/data/`(40MB 상한)만으로 작업할 수 있다.

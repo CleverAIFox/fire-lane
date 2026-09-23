@@ -439,8 +439,8 @@ step "의존성 선언↔import (deptry)" uv run --no-sync --with deptry==0.25.1
 #   정합을 **실제로** 묻는 것은 `gate_parity.py` 다(아래 「관문 동등」).
 
 # ★ 2026-09-20 (W3-15). 워크플로는 **머지되기 전에는 문법조차 안 본다** —
-#   배포 넷은 push+paths 로만 돌아 PR 에서 안 보이고, `_deploy.yml` 이 하루
-#   동안 깨진 채로 main 까지 갔다(DECISIONS §196). actionlint 는 YAML 파싱
+#   당시 배포 넷은 push+paths 로만 돌아 PR 에서 안 보였고 공용 본문이 하루 동안 깨진 채 main 까지 갔다(§196).
+#   지금은 `deploy.yml` 이 PR 에서도 그 본문을 태운다(DECISIONS §224). 그래도 남긴다 — actionlint 는 YAML 파싱
 #   너머의 것을 본다 — 표현식 · 액션 참조 · 셸 인젝션.
 #   커밋된 잠금으로 깔리므로 CI 에서도 같은 판이 돈다(면제 아님).
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게

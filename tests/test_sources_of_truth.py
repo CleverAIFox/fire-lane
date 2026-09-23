@@ -63,7 +63,7 @@ SPEC: dict[str, dict] = {
         "owner": {"file": "Dockerfile", "regex": r"ghcr\.io/astral-sh/uv:([\w.]+)"},
         "consumers": [
             {"file": ".github/workflows/contract.yml", "has": 'version: "{v}"'},
-            {"file": ".github/workflows/_deploy.yml", "has": 'version: "{v}"'},
+            {"file": ".github/workflows/deploy.yml", "has": 'version: "{v}"'},
             {"file": ".devcontainer/setup.sh", "has": "astral.sh/uv/{v}/install.sh"},
         ],
         "scan": [".github/**/*", "Dockerfile*", ".devcontainer/*"],
@@ -97,7 +97,7 @@ SPEC: dict[str, dict] = {
             {"file": "pyproject.toml", "has": 'requires-python = ">={v}"'},
             {"file": ".github/workflows/contract.yml",
              "ref": "python-version-file: .python-version"},
-            {"file": ".github/workflows/_deploy.yml",
+            {"file": ".github/workflows/deploy.yml",
              "ref": "python-version-file: .python-version"},
         ],
         "scan": [".github/**/*", "Dockerfile*"],

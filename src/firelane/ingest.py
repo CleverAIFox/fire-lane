@@ -817,6 +817,9 @@ def main():
                     help="샤드 봉인을 무시하고 전부 다시 빌드한다")
     ap.add_argument("--reseal-out", action="store_true",
                     help="하류가 덧쓴 산출물로 샤드 봉인지의 out 칸만 고친다 (파이프라인이 terrain 뒤에 부른다)")
+    # ★ 2026-09-23 (DECISIONS §224-2a). 사유는 `shardseal.reseal_code` 머리말.
+    ap.add_argument("--reseal-code", action="store_true",
+                    help="raw · 산출물이 봉인과 같은 샤드의 code 칸만 지금 코드 지문으로 고친다")
     ap.add_argument("--stamp", action="store_true",
                     help="빌드 없이, 지금 산출물에 샤드 봉인지를 붙인다 (사람이 판단해서 부른다)")
     a = ap.parse_args()
@@ -851,16 +854,10 @@ def main():
             _prev = {}
 
     if a.reseal_out:
-        if not _man0.exists():
-            return 0
-        _doc = manifest.read(_man0)
-        _fixed, _missing = shardseal.reseal_out(_doc.get("datasets", []), OUT)
-        wrote = manifest.write_stable(_man0, _doc)
-        print(f"샤드 봉인지 out 갱신 {len(_fixed)}종"
-              + (f" ({', '.join(_fixed)})" if _fixed else "")
-              + (f" · 산출물 없음 {len(_missing)}종: {', '.join(_missing)}" if _missing else "")
-              + ("" if wrote else " · 대장 불변"))
-        return 0
+        return shardseal.reseal_out_cli(_man0, OUT, manifest)
+
+    if a.reseal_code:
+        return shardseal.reseal_code_cli(_man0, cfg, OUT, _code, paths_for, manifest)
 
     if a.stamp:
         # 빌드하지 않는다. 지금 디스크의 산출물이 지금 코드 · raw 로 만든 것이라는
@@ -1102,4 +1099,7 @@ if __name__ == "__main__":
     from firelane.guards import warn_direct_call
 
     warn_direct_call(__name__)
-    main()
+    # ★ 메모리로 죽은 것을 메모리로 죽었다고 말한다(guards.run_stage · §224-3).
+    from firelane.guards import run_stage
+
+    run_stage(main)
