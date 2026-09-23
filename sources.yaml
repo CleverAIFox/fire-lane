@@ -773,6 +773,9 @@ layers:
 datasets:
   # ── 2026-09-10 도로시설물 (제공처 미상) ──────────────────────
   gjcity_road_facility:
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '[]'
     stem: gjcity_road_facility
     ext: [hwp]
     kind: raw_only
@@ -782,7 +785,6 @@ datasets:
     what: |
       도로시설물 현황 378개소 — 교량 207 · 고가교 14 · 복개도로 2 ·
       천변구조물 4 · 지하차도 15 · 터널/공동구 17 · 옹벽 111 · 절토사면 7
-    feeds: []
     feeds_why: |
       ★ 미투입이다. `kind: raw_only` 이라 ingest 가 SKIP 한다. 표를
         파싱하지 않고 사람이 읽은 값을 여기 적는다 — nfa_spec_* 7종과
@@ -808,6 +810,9 @@ datasets:
   #   사실이 없다. jngj-donggu 로 필터한 종전 자료들이 새 경계와 다른
   #   범위를 담고 있을 수 있고, BD_MGT_SN 이 그 대조 키다.
   juso_bldg_geom:
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '[]'
     stem: juso_bldg_geom
     ext: [zip]
     kind: raw_only
@@ -830,7 +835,6 @@ datasets:
     what: |
       도로명주소 건물 도형 전체분 — 건물 15,518 · 출입구 17,069 ·
       접속선 15,518 (TL_SGCO_RNADR_MST · TL_SPBD_ENTRC · TL_SPOT_CNTC)
-    feeds: []
     feeds_why: |
       ★ 아직 배선하지 않았다. TL_SPOT_CNTC 의 접속선을 어떻게 쓸지는
         판정 규칙 변경이므로 B4(재잠금)에서 정한다. 지금은 반입만 한다.
@@ -840,6 +844,9 @@ datasets:
         출동 종점을 "도로 위 최근접점" 이 아니라 실제 출입구로 잡을 수 있다.
 
   juso_bldggrp_geom:
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '[]'
     stem: juso_bldggrp_geom
     ext: [zip]
     kind: raw_only
@@ -859,11 +866,13 @@ datasets:
     updated: '2026-08-01'
     crs_native: EPSG:5179
     what: 건물군 내 동 도형 8,221 · 동 출입구 939
-    feeds: []
     feeds_why: 아직 배선하지 않았다. 아파트 단지 내부 진입 판정에 쓸 후보다.
 
 
   juso_etc_geom:
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '[]'
     stem: juso_etc_geom
     ext: [zip]
     kind: raw_only
@@ -887,7 +896,6 @@ datasets:
     what: |
       기타자료 — 터널 10 · 고가 4 · 교량 36 · 공원 34 · 하천 27 ·
       지하철역 6 · 지하철출입구 26
-    feeds: []
     feeds_why: |
       ★ 아직 배선하지 않았다. 그러나 이 자산은 **선언 하나를 반증한다** —
         sources.yaml 이 "동명동에 터널·고가 하부는 없다" 를 근거 없이
@@ -895,8 +903,9 @@ datasets:
         제2순환로)가 실재한다. 동명동 안인지는 좌표로 확인해야 하고,
         어느 쪽이든 그 문장은 고쳐야 한다. B4 에서 다룬다.
   kfs_pumptruck:
-    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
     stem: safety_kfs_pumptruck
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표가 폭 판정 기준이다. 코드가 키로 참조하지 않는다
@@ -915,8 +924,9 @@ datasets:
 
       ★ 축거 · 최소회전반경은 이 규격에 없다.
   kfs_watertank:
-    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
     stem: safety_kfs_watertank
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -937,8 +947,9 @@ datasets:
         때가 있다" 고 했는데, **폭이 같은데 못 들어간다는 것은 코너를
         못 돈다는 뜻이다.** 우리 판정은 폭만 본다.
   kfs_chemical:
-    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
     stem: safety_kfs_chemical
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -954,8 +965,9 @@ datasets:
           대형      9.0 이하 2.5 이하 3.4 이하
           고성능   12.0 이하 2.5 이하 3.8 이하
   kfs_ladder_articulated:
-    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
     stem: safety_kfs_ladder_articulated
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -974,8 +986,9 @@ datasets:
       ★ 축거 자체는 없다. 전장과 축수로 범위만 좁혀진다. 그리고 이것은
         굴절차 값이라 펌프차에 그대로 못 쓴다. D-30 은 여전히 필요하다.
   kfs_rescue:
-    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
     stem: safety_kfs_rescue
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -990,8 +1003,9 @@ datasets:
           대형   8,500 이하 2,500 이하 3,500 이하
           중형   7,800 이하 2,500 이하 3,200 이하
   kfs_ambulance_special:
-    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
     stem: safety_kfs_ambulance_special
     ext: [hwp, pdf]
     primary: hwp
@@ -1016,8 +1030,9 @@ datasets:
 
       ★ 부칙 "3.3.1 개정사항은 2027-04-02 부터 시행" — 2027-04 이후 재취득.
   kfs_ladder_small:
-    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
     stem: safety_kfs_ladder_small
     ext: [pdf]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -1029,8 +1044,8 @@ datasets:
       §3.3 작업높이 15m 이상 25m 미만 · 전장 8.5 이하 · 전폭 2.5 이하 · 전고 3.8 이하.
       동명동 골목에 실제로 들어가는 차종이 펌프차가 아닐 수 있어 같이 받았다.
   mas_optional_spec:
-    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
     stem: safety_mas_optional_spec
     ext: [hwp, pdf]
     primary: hwp
@@ -1049,8 +1064,9 @@ datasets:
         같고 본편 84쪽 · 옵션편 3쪽이라 같은 배포물임을 확인했다
         (2026-08-31). mas_vehicle_spec 과 같은 값이 맞다.
   mas_vehicle_spec:
-    feeds: 미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
     stem: safety_mas_vehicle_spec
     ext: [hwp, pdf]
     primary: hwp
@@ -1074,8 +1090,9 @@ datasets:
       ★ 굴절차 · 사다리차 · 구급차는 MAS 본편에 없다(4차종뿐).
       ★ 축거 · 최소회전반경은 여기에도 없다(2026-08-25 재확인, 212쪽 0건).
   node_link_changelog:
-    feeds: 미투입 — 표준노드링크 판 대조. #1 그래프 투입 시 사용
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 표준노드링크 판 대조. #1 그래프 투입 시 사용'
     stem: its_nodelink_changelog
     ext: [csv]
     feeds_why: 참조용 — 표준노드링크 변경이력. 판정에 안 쓴다
@@ -1109,15 +1126,23 @@ datasets:
       - src/firelane/guards.py
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
+      - src/firelane/seg/centerline_correction.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
+      - tools/scopecheck.py
+      - tools/skeleton_compare.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     scope: jngj
@@ -1147,16 +1172,23 @@ datasets:
       - src/firelane/guards.py
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_basemap.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
+      - tools/scopecheck.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     scope: jngj
@@ -1180,9 +1212,10 @@ datasets:
       columns_error: 'DataSourceError: ''/vsizip//mnt/f/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data/raw/juso/jus'
   road_intrvl:
     feeds:
+      - src/firelane/guards.py
       - src/firelane/normalize_raw.py
+      - src/firelane/pipeline.py
       - src/firelane/segments.py
-    feeds_note: '- src/firelane/normalize_raw.py - src/firelane/segments.py'
     stem: juso_elctrnmap
     ext: [zip]
     scope: jngj
@@ -1209,7 +1242,6 @@ datasets:
   spotaddr_geom:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '- src/firelane/normalize_raw.py'
     stem: juso_spotaddr_geom
     ext: [zip]
     scope: jngj
@@ -1231,7 +1263,6 @@ datasets:
   spotaddr_ref:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '- src/firelane/normalize_raw.py'
     stem: juso_spotaddr_ref
     ext: [zip]
     scope: jngj
@@ -1246,26 +1277,35 @@ datasets:
 
   ngii1k:
     feeds:
+      - src/firelane/display_scope.py
       - src/firelane/guards.py
       - src/firelane/ingest.py
-      - src/firelane/inventory.py
+      - src/firelane/kinds.py
       - src/firelane/ngii1k.py
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_basemap.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
+      - src/firelane/seg/centerline_correction.py
+      - src/firelane/seg/graph.py
       - src/firelane/seg/report.py
       - src/firelane/seg/width.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
       - tools/jijeok_probe.py
-      - tools/ledger_stem.py
+      - tools/kpi.py
+      - tools/scopecheck.py
+      - tools/skeleton_compare.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/ingest.py - src/firelane/inventory.py - src/firelane/ngii1k.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/seg/width.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/jijeok_probe.py - tools/ledger_stem.py - tools/width_fn.py'
     stems: [vworld_map1k, vworld_map1k_ngi]
     ext: [zip]
     scope: jngj-donggu        # 종전 '광주 동구 74도엽' — 산문이었다
@@ -1296,13 +1336,12 @@ datasets:
       layers: []
   streetlight:
     feeds:
+      - src/firelane/guards.py
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
       - src/firelane/publish_web.py
       - src/firelane/segments.py
       - src/firelane/streetlight.py
-      - web/config.js
-    feeds_note: '- src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/segments.py - src/firelane/streetlight.py - web/config.js'
     stem: gjcity_streetlight
     ext: [csv]
     scope: jngj-donggu
@@ -1331,17 +1370,24 @@ datasets:
   ngii_road:
     feeds:
       - src/firelane/guards.py
+      - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
+      - tools/scopecheck.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py'
     stem: ngii_basemap
     ext: [zip]
     parts: [gj9708, gj9712]
@@ -1381,12 +1427,18 @@ datasets:
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
+      - src/firelane/segments.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
       - tools/lanes_probe.py
+      - tools/scopecheck.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/lanes_probe.py - tools/width_fn.py'
     stem: its_nodelink
     ext: [zip]
     files:
@@ -1414,8 +1466,8 @@ datasets:
     feeds:
       - src/firelane/ingest.py
       - src/firelane/normalize_raw.py
+      - src/firelane/pipeline.py
       - src/firelane/publish_navi.py
-    feeds_note: '- src/firelane/ingest.py - src/firelane/normalize_raw.py'
     stem: its_nodelink
     ext: [zip]
     files:
@@ -1443,11 +1495,17 @@ datasets:
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
+      - src/firelane/segments.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
+      - tools/scopecheck.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: its_nodelink
     ext: [zip]
     files:
@@ -1468,7 +1526,9 @@ datasets:
   cctv:
     feeds:
       - src/firelane/guards.py
+      - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
@@ -1476,12 +1536,18 @@ datasets:
       - src/firelane/terrain.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/corner_probe.py
       - tools/desk_check.py
       - tools/docnum_check.py
+      - tools/docx_figs.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
+      - tools/render_figures.py
+      - tools/scopecheck.py
+      - tools/transition.py
       - tools/width_fn.py
-      - web/config.js
-    feeds_note: '- src/firelane/guards.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/desk_check.py - tools/docnum_check.py - tools/width_fn.py - web/config.js'
     stem: safety_cctv
     ext: [csv]
     scope: jngj
@@ -1509,20 +1575,30 @@ datasets:
       encoding_seen: 'cp949'
   fire_station:
     feeds:
-      # ★ 2026-09-23 (PLAN §13 W3-6). 표출 범위 단계가 생겼다 — 안전센터 300m 원을 직접 읽는다
       - src/firelane/display_scope.py
       - src/firelane/guards.py
       - src/firelane/normalize_raw.py
+      - src/firelane/ortho.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_context.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
+      - src/firelane/segments.py
       - src/firelane/terrain.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
+      - tools/scopecheck.py
+      - tools/skeleton_compare.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
+    feeds_note: '# ★ 2026-09-23 (PLAN §13 W3-6). 표출 범위 단계가 생겼다 — 안전센터 300m 원을 직접 읽는다 - src/firelane/display_scope.py - src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: safety_firestation
     ext: [csv]
     scope: kr
@@ -1555,8 +1631,9 @@ datasets:
       encoding_seen: 'cp949'
   poi_store:
     feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/pipeline.py
       - src/firelane/publish_web.py
-    feeds_note: '- src/firelane/publish_web.py'
     stem: sbiz_store
     ext: [zip]
     encoding: utf-8
@@ -1581,20 +1658,29 @@ datasets:
   # -- 행정경계·건물 (도로명주소 전자지도, 2026-08-11 승인) --
   boundary_emd:
     feeds:
-      # ★ 2026-09-23 (PLAN §13 W3-6). 표출 범위 단계가 생겼다 — 동 경계를 직접 읽는다
       - src/firelane/display_scope.py
       - src/firelane/guards.py
       - src/firelane/normalize_raw.py
+      - src/firelane/ortho.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
+      - src/firelane/seg/graph.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
+      - tools/scopecheck.py
+      - tools/skeleton_compare.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
+    feeds_note: '# ★ 2026-09-23 (PLAN §13 W3-6). 표출 범위 단계가 생겼다 — 동 경계를 직접 읽는다 - src/firelane/display_scope.py - src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     scope: jngj
@@ -1624,6 +1710,7 @@ datasets:
       - src/firelane/guards.py
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
@@ -1631,10 +1718,16 @@ datasets:
       - src/firelane/terrain.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
+      - tools/scopecheck.py
+      - tools/skeleton_compare.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/clearance_probe.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     scope: jngj
@@ -1662,15 +1755,21 @@ datasets:
       - src/firelane/guards.py
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
       - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
       - tools/baseline.py
+      - tools/bridge_audit.py
       - tools/corner_probe.py
+      - tools/docx_fix.py
+      - tools/its_linkmap.py
+      - tools/kpi.py
+      - tools/scopecheck.py
+      - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '- src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     scope: jngj
@@ -1693,9 +1792,10 @@ datasets:
       columns_error: 'DataSourceError: ''/vsizip//mnt/f/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data/raw/juso/jus'
   hydrant_point:
     feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/pipeline.py
       - src/firelane/publish_web.py
       - src/firelane/terrain.py
-    feeds_note: '- src/firelane/publish_web.py - src/firelane/terrain.py'
     stem: safety_hydrant_point
     ext: [csv]
     scope: jngj
@@ -1749,8 +1849,13 @@ datasets:
       columns: ['fcltyNo', 'fcltySeCode', 'ctprvnNm', 'signguNm', 'signguCode', 'rdnmadr', 'lnmadr', 'latitude', 'longitude', 'descLc', 'safeCnterNm', 'prtcYn', 'installationYear', 'waterPressr', 'institutionNm', 'institutionPhoneNumber', 'referenceDate', 'insttCode', 'insttNm']
       encoding_seen: 'utf-8'
   fire_access:
-    feeds: 미투입 — 소방통로 지정구간. D-30 인터뷰 대조 항목
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/guards.py
+      - src/firelane/normalize_raw.py
+      - src/firelane/pipeline.py
+      - src/firelane/seg/report.py
+      - tools/baseline.py
+    feeds_note: '미투입 — 소방통로 지정구간. D-30 인터뷰 대조 항목'
     stem: safety_fire_access
     ext: [csv]
     feeds_why: 미투입 — 소방활동 곤란구역. 진입 판정과 직결인데 배선 안 됨
@@ -1778,8 +1883,8 @@ datasets:
       encoding_seen: 'cp949'
   dem_public:
     feeds:
+      - src/firelane/normalize_raw.py
       - src/firelane/terrain.py
-    feeds_note: '- src/firelane/terrain.py'
     stem: ngii_dem
     ext: [zip]
     parts: [35616]
@@ -1813,11 +1918,12 @@ datasets:
 
   ortho:
     feeds:
+      - src/firelane/lake.py
+      - src/firelane/normalize_raw.py
       - src/firelane/ortho.py
       - src/firelane/pipeline.py
       - src/firelane/publish_web.py
       - tools/jijeok_review.py
-    feeds_note: '- src/firelane/ortho.py - src/firelane/pipeline.py - src/firelane/publish_web.py - tools/jijeok_review.py'
     stem: ngii_ortho
     ext: [tif, xml]
     primary: tif
@@ -1842,8 +1948,9 @@ datasets:
 
   # ── 좌표 없는 표 (참조용) ────────────────────────────────
   hydrant_summary:
-    feeds: 미투입 — 소방용수 분모 근거(MASTER §3-12). 표준데이터 441 대 관할 589
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 소방용수 분모 근거(MASTER §3-12). 표준데이터 441 대 관할 589'
     stem: safety_hydrant_summary
     ext: [csv]
     feeds_why: 대조용 — 관할 654 를 API 실측 651 과 맞추는 데 썼다. 판정에 안 들어간다
@@ -1877,8 +1984,9 @@ datasets:
       rows: 5
       rows_tolerance: 0.4
   ngii_road_center:
-    feeds: 미투입 — 본선·측도 분리(#3-1 road_side). 도로대장 부존재의 대안 경로
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 본선·측도 분리(#3-1 road_side). 도로대장 부존재의 대안 경로'
     stem: ngii_basemap
     ext: [zip]
     parts: [gj9708, gj9712]
@@ -1900,8 +2008,9 @@ datasets:
       columns: ['gid', 'dvyn', 'edpt', 'fmta', 'name', 'onsd', 'pvqt', 'rddv', 'rdln', 'rdnm', 'rdnu', 'rest', 'rvwd', 'scls', 'stpt', 'ufid']
       features: 487
   bin_trash:
-    feeds: 미투입 — 고정 장애물 후보(#2). 폭 차감 대상
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 고정 장애물 후보(#2). 폭 차감 대상'
     stem: gjcity_bin_trash
     ext: [csv]
     feeds_why: 미투입 — 노상 적치물 후보
@@ -1924,8 +2033,9 @@ datasets:
       columns: ['연번', '위치', '개수', '비고', '위도', '경도', '데이터기준일자']
       encoding_seen: 'cp949'
   bin_cloth:
-    feeds: 미투입 — 고정 장애물 후보(#2). 폭 차감 대상
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 고정 장애물 후보(#2). 폭 차감 대상'
     stem: gjcity_bin_cloth
     ext: [csv]
     feeds_why: 미투입 — 노상 적치물 후보
@@ -1948,8 +2058,8 @@ datasets:
       columns: ['연번', '자치구', '설치지역(동명)', '설치위치(장소)', '위도', '경도', '데이터기준일자']
       encoding_seen: 'cp949'
   station_jurisdiction:
-    feeds: 미투입 — 관할 경계 근거(MASTER §3-12). 동부소방서 범위 확정용
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — 관할 경계 근거(MASTER §3-12). 동부소방서 범위 확정용'
     stem: safety_station_jrsdc
     ext: [csv]
     feeds_why: 미배선 — 지산119 관할 판정. 지오코딩 후 세그먼트 피처
@@ -1977,8 +2087,8 @@ datasets:
       columns: ['소방서', '안전센터', '소재지도로명주소', '관할구역', '데이터기준일']
       encoding_seen: 'cp949'
   parking_lot:
-    feeds: 미투입 — A* 비용함수 입력(#2). 노외 103 · 노상 35
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — A* 비용함수 입력(#2). 노외 103 · 노상 35'
     stem: gjcity_parking_lot
     ext: [csv]
     feeds_why: 미배선 — 합법 주차 공급(역상관 피처). 지오코딩 필요
@@ -2003,8 +2113,8 @@ datasets:
       columns: ['구분', '종류', '연번', '주차장명', '주소', '면적_㎡', '면수', '행정동', '관리주체', '주차요금', '비고']
       encoding_seen: 'utf-8'
   enforce_cam:
-    feeds: 미투입 — A* 비용함수 입력(#2). 무인카메라 57지점
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — A* 비용함수 입력(#2). 무인카메라 57지점'
     stem: gjcity_enforce_cam
     ext: [csv]
     feeds_why: 미배선 — 단속 압력 + 운영시간. 지오코딩 필요
@@ -2027,8 +2137,8 @@ datasets:
       columns: ['번호', '대상명칭', '주소', '평일_운영시간', '주말공휴일_운영시간', '점심시간', '개별적용사항']
       encoding_seen: 'utf-8'
   school_zone:
-    feeds: 미투입 — A* 비용함수 입력(#2). 보호구역 32곳
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — A* 비용함수 입력(#2). 보호구역 32곳'
     stem: gjcity_school_zone
     ext: [csv]
     feeds_why: 미배선 — 통행 제약. 지오코딩 필요
@@ -2049,8 +2159,8 @@ datasets:
       columns: ['연번', '학교명', '시설유형', '주소']
       encoding_seen: 'utf-8'
   parking_zone:
-    feeds: 미투입 — A* 비용함수 입력(#2). 규제 구간
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — A* 비용함수 입력(#2). 규제 구간'
     stem: gjcity_parking_zone
     ext: [csv]
     feeds_why: 미배선 — ★ 유효폭이 날짜마다 바뀐다. 지오코딩 필요
@@ -2075,7 +2185,6 @@ datasets:
     feeds:
       - tools/jijeok_probe.py
       - tools/jijeok_review.py
-    feeds_note: '- tools/jijeok_probe.py - tools/jijeok_review.py'
     on_demand: true             # ★ 전량에서 건너뛴다. `--only jijeok` 으로 만든다
     stem: nsdi_jijeok
     ext: [zip]
@@ -2117,8 +2226,8 @@ datasets:
       columns: ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']
       features: 1000000
   gjfire_fleet_dongbu:
-    feeds: 미투입 — web/config.js 의 CONFIG.fleet 목록 근거. 코드가 키로 참조하지 않는다
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — web/config.js 의 CONFIG.fleet 목록 근거. 코드가 키로 참조하지 않는다'
     feeds_why: 근거 자료 — 어느 차종이 몇 대 있는가. 치수는 kfs_* 7종이 낸다
     stem: safety_fleet
     ext: [csv]
@@ -2156,8 +2265,8 @@ datasets:
       columns: ['부서', '계', '펌프차(중형)', '물탱크차(대형)', '화학차', '조연차', '직진형사다리차(53m)', '굴절형사다리차(27m)', '지휘차', '구조차', '구조버스', '구급차', '생활안전차', '소방안전교육차', '순찰차', '행정차', '화물차', '화재조사차', '트레일러', '장비운반차', '진단차']
       encoding_seen: 'utf-8-sig'
   gjfire_district_dongbu:
-    feeds: 미투입 — CONFIG.fleetGroups 묶음 근거
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — CONFIG.fleetGroups 묶음 근거'
     feeds_why: 근거 자료 — 동명동이 어느 안전센터 관할인가
     stem: safety_district
     ext: [csv]
@@ -2180,8 +2289,9 @@ datasets:
       columns: ['구 분', '위 치', '관 할 구 역', '인구', '1인당담당인구', '데이터기준일자']
       encoding_seen: 'utf-8-sig'
   gjfire_vehicle_card:
-    feeds: 미투입 — 차량 제원 실측 대조축. vehicle_spec 전장·전폭·전고의 실차값
-    feeds_note: '[]'
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — 차량 제원 실측 대조축. vehicle_spec 전장·전폭·전고의 실차값'
     feeds_why: |
       ★ vehicle_spec 은 KFS 규격 상한(8.0 × 2.5 × 3.2m)이다. 이것은 **보유 실차**의
         관리카드라 판정 차량이 실제로 얼마인지 말한다. 규격값과 실차값은 다른 축이다.
@@ -2232,9 +2342,8 @@ datasets:
 
   nfa_dispatch_119:
     feeds:
+      - src/firelane/pipeline.py
       - src/firelane/publish_context.py
-      - web/navi/src/OpsApp.tsx
-    feeds_note: '2026-09-22 전 산문 — 미투입 — 경로 비용의 외부 검증축. 산출물이 아니라 대조 대상이다'
     feeds_why: |
       ★ route_vehicle.csv 의 cost 는 한 번도 실물과 대조된 적이 없다.
         폭에는 ngii1k_center 라는 독립 검증축이 있는데(n=909 · 절대편차
@@ -2263,9 +2372,8 @@ datasets:
       encoding_seen: 'utf-8-sig'
   nfa_rescue:
     feeds:
+      - src/firelane/pipeline.py
       - src/firelane/publish_context.py
-      - web/navi/src/OpsApp.tsx
-    feeds_note: '2026-09-22 전 산문 — 미투입 — 구조 출동 검증축. 119 신고접수와 같은 급이다'
     feeds_why: |
       ★ 51열 중 DCLR_PSTN_LOT/LAT(좌표) · EMD_NM · FRSTN_GRNDS_DSTNC
         (소방서→현장 거리) · 출동/도착 시각이 모두 있다.
@@ -2288,9 +2396,8 @@ datasets:
       encoding_seen: 'utf-8-sig'
   nfa_fire_incident:
     feeds:
+      - src/firelane/pipeline.py
       - src/firelane/publish_context.py
-      - web/navi/src/OpsApp.tsx
-    feeds_note: '2026-09-22 전 산문 — 미투입 — 거리↔소요시간 회귀로 cost 모델을 검증한다'
     feeds_why: |
       ★ 좌표는 없다. 대신 **거리와 시간이 직접 들어 있다** —
         FRSTN_GRNDS_DSTNC · CNTR_GRNDS_DSTNC · LFDAU_GRNDS_DSTNC ·
@@ -2338,8 +2445,8 @@ datasets:
       columns: ['WRINV_NO', 'FIRE_TYPE_NM', 'BLDG_SRTFRM_NM', 'BLDG_STRCTR_NM', 'BLDG_SRTRF_NM', 'BLDG_RSCU_DNGCT', 'GRND_NOFL', 'UDGD_NOFL', 'BLDG_GFA', 'BTTM_AREA', 'BLDG_STTS_NM', 'SPFPTG_NM', 'SMTPR_LCLSF_NM', 'SMTPR_SCLSF_NM', 'DTH_CNT', 'INJPSN_CNT', 'HNL_DAM_CNT', 'PRPT_DAM_AMT', 'DOW_NM', 'FRSTN_NM', 'CNTR_NM', 'RCPT_DT', 'DSPT_DT', 'GRNDS_ARVL_DT', 'BGNN_POTFR_DT', 'PRFECT_POTFR_DT', 'CBK_DT', 'DSPT_REQ_HR', 'FIRE_SUPESN_HR', 'CTPV_NM', 'SGG_NM', 'FRSTN_GRNDS_DSTNC', 'CNTR_GRNDS_DSTNC', 'LFDAU_GRNDS_DSTNC', 'IGTN_HTSRC_NM', 'IGTN_HTSRC_SCLSF_NM', 'IGTN_DMNT_LCLSF_NM', 'IGTN_DMNT_SCLSF_NM', 'FRST_IGOBJ_LCLSF_NM', 'FRST_IGOBJ_SCLSF_NM', 'IGTN_ISTR_LCLSF_NM', 'IGTN_ISTR_SCLSF_NM', 'CMBS_EXPOBJ_LCLSF_NM', 'CMBS_EXPOBJ_SCLSF_NM', 'FCLT_PLC_LCLSF_NM', 'FCLT_PLC_MCLSF_NM', 'FCLT_PLC_SCLSF_NM', 'IGTN_FLR_NM', 'SO_AREA', 'FIRE_INSRNC_OBLG_TRGT_YN', 'ARSON_MNG_TRGT_YN', 'MUB_YN', 'VHCL_PLC_NM', 'VHCL_IGTN_PSTN_NM', 'FND_FIRE_SE_NM', 'FND_IGTN_PSTN_NM', 'HR_UNIT_ARTMP', 'HR_UNIT_WSPD_INFO', 'WNDRCT_BRNG', 'HR_UNIT_HUM']
       encoding_seen: 'utf-8-sig'
   nfa_vehicle_spec_2024:
-    feeds: 미투입 — vehicle_spec 의 상한 대비 실차 대표값 대조축
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — vehicle_spec 의 상한 대비 실차 대표값 대조축'
     feeds_why: |
       ★ 지금 vehicle_spec 의 2.5 / 8.0 / 3.2 는 제작규격의 **상한**("이하")이다.
         이 자료는 실차 대표값이라 중형펌프차 7.54 / 2.31 / 2.97 을 준다.
@@ -2377,8 +2484,8 @@ datasets:
           값 자체는 profiles.json 이 7,300~11,889mm 를 든다(미검증)
 
   nfa_mas_spec_2025:
-    feeds: 미투입 — vehicle_spec 상한의 근거 원문
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — vehicle_spec 상한의 근거 원문'
     feeds_why: |
       ★ 이 대장이 "KFS-1-0073 §3.3" 으로 인용해 온 상한의 실물이다.
         대형펌프차 8,500 / 2,500 / 3,400 · 중형 8,000 / 2,500 —
@@ -2423,8 +2530,8 @@ datasets:
   #   그래도 두는 이유는 **치수 상한**과 **차종별 등급**이 여기에만 있어서다.
 
   nfa_target_building:
-    feeds: 미투입 — 건물 용도·규모 가중. buildings 와 주소로 잇는다
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — 건물 용도·규모 가중. buildings 와 주소로 잇는다'
     feeds_why: |
       ★ 좌표가 없다. ADDR 문자열과 EMD_NM 뿐이고 BDST_SN 은 소방대상물
         일련번호이지 건축물대장 PK 가 아니다 — 키 조인이 안 된다.
@@ -2457,8 +2564,8 @@ datasets:
       columns: ['BDST_SN', 'FRSTN_NM', 'CNTR_NM', 'TRGTOBJ_NM', 'REG_YMD', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'ADDR', 'BLDG_NM', 'FIRE_INSRNC_JOIN_YMD', 'FIRE_INSRNC_MTRY_YMD', 'FIRE_INSRNC_CO_NM', 'USE_APRV_YMD', 'PBNST_YN', 'CLTPTY_YN', 'ARSON_MNG_TRGT_YN', 'ISF_CHCK_TRGT_YN', 'ISF_CHCK_TRGT_TYPE_NM', 'LGZ_FIRE_WKTRGT_YN', 'FRFGH_FCLT_CPCST_CMCRT_YMD', 'USE_YN', 'FRFGH_MFBIZ_YN']
       encoding_seen: 'utf-8-sig'
   nfa_spec_chem_gj:
-    feeds: 미투입 — 화학차 치수 상한. CONFIG.fleet 의 chem 이 "추정" 이다
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — 화학차 치수 상한. CONFIG.fleet 의 chem 이 "추정" 이다'
     feeds_why: |
       ★ **우리 관할이 발주한 규격서다.** 대인119안전센터 화학차 1대가
         `match: 추정`(대장에 대형·고성능 구분이 없어 대형으로 잡음)인데,
@@ -2481,8 +2588,8 @@ datasets:
         고성능 쪽 상한이고, 어느 쪽인지는 D-30 에서 확인한다.
 
   nfa_spec_pump_jn:
-    feeds: 미투입 — 중형펌프차 치수 상한. 기준 차량과 같은 차종이다
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — 중형펌프차 치수 상한. 기준 차량과 같은 차종이다'
     feeds_why: |
       ★ `CONFIG.fleetDefault` 가 중형펌프차이고 전 판정이 그 차 기준이다.
         지자체가 실제로 발주할 때 어떤 상한을 거는지가 여기 있다.
@@ -2500,8 +2607,8 @@ datasets:
       ★ 축거 0건. `차대` 9건은 절차 문구다.
 
   nfa_spec_tanker_cn:
-    feeds: 미투입 — 물탱크차 등급 정본. 초대형의 유일한 근거다
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — 물탱크차 등급 정본. 초대형의 유일한 근거다'
     feeds_why: |
       ★ **물탱크차가 셋이 아니라 넷이라는 것을 이 문서만 든다.**
         초대형 20,000ℓ 이상 · 전장 13,000 / 대형 12,000ℓ · 10,000 /
@@ -2530,8 +2637,8 @@ datasets:
         차량제원 표는 전국이 같다(목적 조항이 글자까지 동일하다).
 
   nfa_spec_rescue_jn:
-    feeds: 미투입 — 구조공작차 치수. profiles.json 축거가 null 이다
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — 구조공작차 치수. profiles.json 축거가 null 이다'
     feeds_why: |
       ★ `profiles.json` 의 `rescue_5t` 는 `wheelbase`·`turningRadius` 가
         둘 다 null 이고 `dimensionType: maximum procurement envelope` 다.
@@ -2550,8 +2657,8 @@ datasets:
       ★ 축거 0건.
 
   nfa_spec_ladder_jn:
-    feeds: 미투입 — 굴절사다리차 치수. ladder_under_33m 축거가 근거 밖이다
-    feeds_note: '[]'
+    feeds: []
+    feeds_note: '미투입 — 굴절사다리차 치수. ladder_under_33m 축거가 근거 밖이다'
     feeds_why: |
       ★ `profiles.json` 의 `ladder_under_33m.wheelbase = 4,925` 는 대인 11호
         차대(타타대우 구쎈)의 어느 사양에도 없는 값이다 — 구쎈 고하중 4x2 는
@@ -2571,6 +2678,9 @@ datasets:
       ★ 축거 0건. `차대` 10건은 정의문이다.
 
   bldg_ledger_dm:
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — β 점유위험도(#60) · 원룸 판별 · 건물높이 대조축'
     stem:       eais_bldgledger_dm
     ext:        [json]
     scope:      jngj-dongmyeong
@@ -2587,7 +2697,6 @@ datasets:
         84% 가 이 표를 읽는다. 소비자가 생겼다.
       ★ 같은 자료가 아니다. 폐기분은 전국 11.3MB 였고 이것은 동명동
         1,989동으로 좁힌 판이다. stem 도 `_dm` 이 붙는다.
-    feeds:      미투입 — β 점유위험도(#60) · 원룸 판별 · 건물높이 대조축
     feeds_why: |
       ★ **이 파일 하나가 세 문제를 푼다.**
         ① 원룸 판별 — 단독주택 932동 중 다가구(가구3+) 170 · 2가구 184.
@@ -2614,6 +2723,10 @@ datasets:
       encoding_seen: 'utf-8'
       layers_total: 77
   child_zone_std:
+    feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/pipeline.py
+      - src/firelane/publish_context.py
     crs_native: EPSG:4326
     stem:       mois_child_zone_std
     ext:        [json]
@@ -2625,10 +2738,6 @@ datasets:
     x_col:      경도
     y_col:      위도
     what:       전국 어린이보호구역 14,652 → 광주 동구 32 → 스코프 8
-    feeds:
-      - src/firelane/publish_context.py
-      - web/navi/src/domain/context.ts
-    feeds_note: '2026-09-22 전 산문 — 미투입 — TBT 안내 · A* 우회 가중치(#2) · **폭 판정 대조축**'
     feeds_why: |
       ★ `보호구역도로폭` 이 **행정 고시값**이다. 폭 판정의 외부 대조축이
         하나 더 생긴다 — 지금은 ngii1k_center 하나뿐이다.
@@ -2650,6 +2759,10 @@ datasets:
       features: 14652
       encoding_seen: 'utf-8'
   senior_zone_std:
+    feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/pipeline.py
+      - src/firelane/publish_context.py
     crs_native: EPSG:4326
     stem:       mois_senior_zone_std
     ext:        [json]
@@ -2661,10 +2774,6 @@ datasets:
     x_col:      경도
     y_col:      위도
     what:       전국 노인·장애인보호구역 4,120 → 광주 동구 17 → 스코프 10
-    feeds:
-      - src/firelane/publish_context.py
-      - web/navi/src/domain/context.ts
-    feeds_note: '2026-09-22 전 산문 — 미투입 — TBT 안내 · A* 우회 가중치(#2)'
     feeds_why:  보호구역 제한속도 30km/h. 어린이보호구역과 같은 축이다
     note: |
       ★ `장소유형코드` 가 1(노인) · 2(장애인) 이다. 문자열이 아니다.
@@ -2680,6 +2789,10 @@ datasets:
       features: 4120
       encoding_seen: 'utf-8'
   speedbump:
+    feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/pipeline.py
+      - src/firelane/publish_context.py
     stem:       gjcity_speedbump
     ext:        [csv]
     scope:      jngj-donggu
@@ -2688,10 +2801,6 @@ datasets:
     kind:       csv_table
     encoding:   cp949
     what:       동구 과속방지턱 342개소 → 스코프 46
-    feeds:
-      - src/firelane/publish_context.py
-      - web/navi/src/domain/context.ts
-    feeds_note: '2026-09-22 전 산문 — 미투입 — TBT 안내'
     feeds_why: |
       스코프 46개. 전부 소로 · 규격 미달(N) · 원호형 28 · 가상형 18.
       ★ `가상형` 은 도색만 있고 실제 턱이 없다 — 데이터는 남기되 안내
@@ -2712,6 +2821,9 @@ datasets:
       columns: ['개방자치단체코드', '관리번호', '과속방지턱관리번호', '도로명', '시도명', '시군구명', '소재지도로명주소', '소재지지번주소', '설치장소', '과속방지턱재료', '과속방지턱형태구분', '과속방지턱높이', '과속방지턱폭', '과속방지턱연장', '도로유형구분', '규격여부', 'WGS84위도', 'WGS84경도', '보차분리여부', '연속형여부', '과속방지턱설치연도', '관리기관명', '관리기관전화번호', '데이터기준일자', '데이터갱신구분', '데이터갱신시점', '최종수정시점']
       encoding_seen: 'cp949'
   admin_cctv:
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '미투입 — bin_trash 대조축'
     stem:       gjcity_admin_cctv
     ext:        [csv]
     scope:      jngj-donggu
@@ -2720,7 +2832,6 @@ datasets:
     kind:       csv_table
     encoding:   cp949
     what:       동구 행정 CCTV 81대 (쓰레기단속·생활방범·다목적) → 스코프 33
-    feeds:      미투입 — bin_trash 대조축
     feeds_why: |
       ★ **영상판정에 못 쓴다.** 목적이 노면이 아니다 — 스코프 33건 중
         쓰레기단속이 26건이고 화각이 배출지를 향한다.
@@ -2740,6 +2851,10 @@ datasets:
       columns: ['개방자치단체코드', '관리번호', '관리기관명', '소재지도로명주소', '소재지지번주소', '설치목적구분', '카메라대수', '카메라화소수', '촬영방면정보', '보관일수', '설치연월', '관리기관전화번호', 'WGS84위도', 'WGS84경도', '데이터기준일자', '데이터갱신구분', '데이터갱신시점', '최종수정시점']
       encoding_seen: 'cp949'
   speed_cam:
+    feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/pipeline.py
+      - src/firelane/publish_context.py
     stem:       gjbg_traffic_cam
     ext:        [csv]
     scope:      jngj
@@ -2748,10 +2863,6 @@ datasets:
     kind:       csv_table
     encoding:   utf-8-sig
     what:       광주 무인교통단속카메라 510 → 동구 49 → 스코프 9
-    feeds:
-      - src/firelane/publish_context.py
-      - web/navi/src/domain/context.ts
-    feeds_note: '2026-09-22 전 산문 — 미투입 — **실측 제한속도** · TBT 안내'
     feeds_why: |
       ★ `제한속도` 가 **실측값**이다. domain/speed.ts 의 폭 추정을 덮는다.
         준법로 폭 18.6m → 표 추정 50km/h → **실제 30km/h**(동산초교 스쿨존).
@@ -2773,6 +2884,9 @@ datasets:
       columns: ['무인교통단속카메라관리번호', '시군구명', '도로노선번호', '도로노선명', '도로노선방향', '위도', '경도', '설치장소', '단속구분', '제한속도', '보호구역구분', '설치년도']
       encoding_seen: 'utf-8-sig'
   parking_enforce:
+    feeds:
+      - src/firelane/pipeline.py
+      - src/firelane/publish_navi.py
     stem: gjcity_parking_enforce
     ext: [csv]
     kind: csv_table_multi
@@ -2790,10 +2904,6 @@ datasets:
     what: |
       동구 불법주정차 단속이력 두 판 — 2022-01~2024-01 85,380행 · 2024-01~2025-02 56,176행.
       동명동 12,518 · 3,228행. 이어붙여 쓴다
-    feeds:
-      - src/firelane/publish_navi.py
-      - web/navi/src/OpsApp.tsx
-    feeds_note: '2026-09-22 전 산문 — 미투입 — 교통량 축(시간대별 주정차 빈도 → 간선 가중치)'
     feeds_why: |
       미투입 — PLAN 「교통량 축을 무엇으로 채우나」 의 소스다(시간대별 주정차 빈도 → 간선 가중치).
       2026-08-31 에 retired 로 내렸다가 2026-09-17 복귀했다(DECISIONS §177-1).
@@ -2803,6 +2913,8 @@ datasets:
       columns: ['위반일자', '위반시간', '위반장소명', '과태료', '비고', '데이터기준일자']
       encoding_seen: 'cp949'
   hydrant_type:
+    feeds: []
+    feeds_note: '미투입 — 소방용수 분모(몇 개인가)의 근거'
     stem: safety_hydrant_type
     ext: [csv]
     kind: csv_table
@@ -2814,7 +2926,6 @@ datasets:
       - safety/safety_hydrant_type_jngj_20251231.csv
     what: |
       소방용수시설 유형별 집계 — 지상식소화전 · 일반지하식소화전 · 저수조 · 급수탑. 관할서 5행
-    feeds: 미투입 — 소방용수 분모(몇 개인가)의 근거
     feeds_why: |
       미투입 — 소방용수 분모(몇 개인가)의 근거다. 좌표가 없어 판정에 안 들어간다.
       2026-08-13 스냅숏에만 있던 판을 2026-09-17 복귀했다(DECISIONS §178-1). 옛 파일명은
@@ -2823,6 +2934,8 @@ datasets:
       columns: ['연번', '구분', '지상식소화전', '일반지하식소화전', '저수조', '급수탑', '데이터기준일자']
       encoding_seen: 'cp949'
   parking_std:
+    feeds: []
+    feeds_note: '미투입 — 교통량 축 · 주차 점유 가중(좌표 · 구획수)'
     stem: gjcity_parking_std
     ext: [csv]
     kind: csv_table
@@ -2835,7 +2948,6 @@ datasets:
     what: |
       주차장 표준데이터 동구분 — 297행 · 32열(구획수 · 운영시간 · 요금 · 장애인구역) · 좌표 199건
       (동명동 bbox 안 190). 데이터기준일자 2026-04
-    feeds: 미투입 — 교통량 축 · 주차 점유 가중(좌표 · 구획수)
     feeds_why: |
       미투입 — 활성 parking_lot(138행 · 11열 · 좌표 없음)의 상위집합이다. 좌표가 있어 교통량 축 ·
       주차 점유 가중에 붙일 수 있다. 2026-09-17 복귀했다(DECISIONS §178-1). 옛 파일명 gjcity_parking_dongu_20260811.
@@ -2846,6 +2958,9 @@ datasets:
       columns: ['주차장관리번호', '주차장명', '주차장구분', '주차장유형', '소재지도로명주소', '소재지지번주소', '주차구획수', '급지구분', '부제시행구분', '운영요일', '평일운영시작시각', '평일운영종료시각', '토요일운영시작시각', '토요일운영종료시각', '공휴일운영시작시각', '공휴일운영종료시각', '요금정보', '주차기본시간', '주차기본요금', '추가단위시간', '추가단위요금', '1일주차권요금적용시간', '1일주차권요금', '월정기권요금', '결제방법', '특기사항', '관리기관명', '전화번호', '위도', '경도', '장애인전용주차구역보유여부', '데이터기준일자']
       encoding_seen: 'utf-8-sig'
   navi_build:
+    feeds:
+      - src/firelane/pipeline.py
+      - src/firelane/publish_web.py
     stem: juso_navibuild
     ext: [txt]
     kind: text_table
@@ -2862,11 +2977,6 @@ datasets:
     what: |
       내비게이션용DB 건물 — 법정동코드 1221010800(동명동) 2078행 · `|` 구분 33열.
       도로명 · 건물번호 · 건물관리번호 · 건물명 · 용도 · 건물중심점 X/Y · 출입구 X/Y (EPSG:5179)
-    feeds:
-      - src/firelane/publish_web.py
-    feeds_note: |
-      2026-09-17 투입(§181) — 목적지 검색 좌표 원천(PLAN 「목적지 검색 — 주소 · 건물명 · 관공서」). juso_building_db 가
-      "좌표가 없다 — 내비게이션용DB 승인 대기" 로 기다리던 판이다. 단속이력 주소의 지오코딩에도 쓴다.
     note: |
       ★ 202608 전체분 7z(4.06GB 해동)에서 match_build_jeonnamgwangju.txt 만 스트림으로 읽어 첫 열(법정동코드)
         == 1221010800 행만 남겼다. 동 이름으로 자르지 않는다 — 목포 동명동이 섞인다(juso_building_db note).
@@ -2879,6 +2989,9 @@ datasets:
       source: 'juso_navibuild_jngj-dongmyeong_20260831.txt'
       headerless: true
   navi_jibun:
+    feeds:
+      - src/firelane/pipeline.py
+      - src/firelane/publish_web.py
     stem: juso_navijibun
     ext: [txt]
     kind: text_table
@@ -2893,10 +3006,6 @@ datasets:
       - juso/juso_navijibun_jngj-dongmyeong_20260831.txt
     what: |
       내비게이션용DB 지번 매칭 — 동명동 1460행 · `|` 구분 20열. 지번 → 건물관리번호 · 도로명코드
-    feeds:
-      - src/firelane/publish_web.py
-    feeds_note: |
-      2026-09-17 투입(§181) — 지번 주소로 목적지를 찾게 한다. navi_build 와 건물관리번호로 잇는다.
     note: |
       ★ match_jibun_jeonnamgwangju.txt 에서 navi_build 와 같은 규칙(첫 열 == 1221010800)으로 잘랐다.
     schema:                       # AUTO — ledger_schema.py 가 쓴다
@@ -2905,6 +3014,9 @@ datasets:
       source: 'juso_navijibun_jngj-dongmyeong_20260831.txt'
       headerless: true
   civil_office:
+    feeds:
+      - src/firelane/pipeline.py
+      - src/firelane/publish_web.py
     stem: juso_civiloffice
     ext: [zip]
     kind: shp_zip
@@ -2919,10 +3031,6 @@ datasets:
     what: |
       민원행정기관 전자지도 — 전국 26,142점 · 동명동 bbox 안 64. 유형 · 상세분류 · 시군구코드 · 도로명코드 ·
       도로명주소 · 기관명 · 위치X/Y · 전화번호. 학교 · 관공서
-    feeds:
-      - src/firelane/publish_web.py
-    feeds_note: |
-      2026-09-17 투입(§181) — 목적지 검색의 관공서 · 학교 POI. poi.geojson 이 상가 2,077 뿐이라 법원 · 구청 · 학교가 없다.
     note: |
       ★ .cpg 가 없어 DBF 를 cp949 로 읽어야 한다(안 주면 필드명이 깨진다).
       ★ zip 내부 파일명이 CP437 로 깨져 있다. 2024-01 판이라 시군구코드가 옛 코드다(동구 29110 · 새 12210).
@@ -2933,6 +3041,8 @@ datasets:
       columns: ['유형', '상세분류', '시군구코드', '도로명코드', '도로명주소', '기관명', '위치X', '위치Y', '전화번호']
       features: 26142
   donggu_statbook:
+    feeds: []
+    feeds_note: '[]'
     stem: gjcity_statbook
     ext: [pdf]
     kind: raw_only
@@ -2943,7 +3053,6 @@ datasets:
       - gjcity/gjcity_statbook_jngj-donggu_20241231.pdf
     what: |
       제35회 동구통계연보(2024 기준) — 408쪽. 인구 · 세대 · 시설 · 교통 통계
-    feeds: []
     feeds_why: |
       미투입 — CCTV 가 없는 구간의 경로 가중치를 추정할 재료(PLAN 「CCTV 없는 구간의 경로 가중치」).
       ★ 동 단위 통계라 구간 단위 가중치로는 거칠다 — 동명동 안에서는 상수다. 스케일 · 사전분포 재료로 쓴다.
