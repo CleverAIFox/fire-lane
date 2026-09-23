@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-23T11:19:38+09:00",
- "commit": "7ff4dcd",
- "tool": "c80a711ed1f8c8f1",
+ "sealed_at": "2026-09-23T14:27:02+09:00",
+ "commit": "1329de0",
+ "tool": "da25603ec7503feb",
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "10e8ee99a16e9d89",
-  "docs/DECISIONS.md": "ee0d4b81b0444da9",
-  "docs/PLAN.md": "c2ffbc99b58a4b4d",
-  "README.md": "5daa26cfa4768c01"
+  "docs/MASTER.md": "de431aa297fcb804",
+  "docs/DECISIONS.md": "aa81e05c44de1ebd",
+  "docs/PLAN.md": "bea0d001f5d96369",
+  "README.md": "b150f44d890b1416"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -242,14 +242,14 @@
   ]
  },
  "code": {
-  "sha256": "4c8b85b006ec3e41",
+  "sha256": "f75f30dc28d986b8",
   "files": {
    "data/field/fieldsheet.md": "3fce0c05fba34da06d06a1945abfb756bffc10d1ae834bb9c520791c666cb73c",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "data/field/obs_points.csv": "2c5fe0b969b720a76beca0de01c973f711a7223ec3f9fa46427eba8cc654a37e",
    "data/field/sample_segments.csv": "2582c25e7e284a78e38a6ee72c60604e39803752367c6d11853c5aa1dda025f9",
    "pyproject.toml": "1be04d8a9993a2f90fd5705eecb2da75c96865c387572448e06504bf1d88593a",
-   "sources.yaml": "af07ccda3be8f0c78a5fb8f70a89731db13426b16a6623c445b0f405216661a8",
+   "sources.yaml": "5658217c44253595cd347b088dfc2bdf0a048b6b5eeb8da1e78221c04f25c0c6",
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d14f1c58854c21c64348c040cde02795cf99a09ed8bab81849d0f77b7596865b",
@@ -262,7 +262,7 @@
    "src/firelane/display_scope.py": "eaa7dfc8af14edda4b9b04b2aaa22bc76a5bc7fa6a1cdb3f56070b45cd9823ab",
    "src/firelane/encoding.py": "c2b6eef43d7023e88934b8d76ef0767380540af3802b5e93ffa3797dc9d95ebe",
    "src/firelane/generated.py": "acdbb6cacdb878d48546727da101416a1c86c12823f91e10d707394777f9a7fe",
-   "src/firelane/guards.py": "1813193092b12be25de907c6f5f70bf7bdfb9798ab68151632f7ba3f1422a380",
+   "src/firelane/guards.py": "545ae7c8787862d6a5a0f40f7d50380e7a8c6e798ade4097e2c89146af4072c0",
    "src/firelane/hashing.py": "cba3052b673d71c98022bc745a03493b0e743bb7db6d48eb057fba0782d7249c",
    "src/firelane/ingest.py": "8bbf2b398259f0253cdaa9eb0d9668291676451b2689967659c39aebdc79b8c2",
    "src/firelane/intake_rules.py": "4549ade9c9036da5900aba73955c97578058770a88f3f75fa7c5e1b31360019d",
@@ -314,7 +314,7 @@
    "src/firelane/transition.py": "36db27bf5fd3f1d3851ac28de06a72bbd74ad19c9824d3edf0270d86807d78cb",
    "src/firelane/vehiclecard.py": "65481769102ccdcb6a7d0f40769bbcc9aae55e5b29b2d3e8d659c89f900c9f5f",
    "src/firelane/webmanifest.py": "6d769b7864376a9d8ae02867c9ab955e0bf2a9545c759543e520d6367ac8f542",
-   "uv.lock": "d73af4236428e69ba0c65208c657de60e1f240a26f8b5ad651c25479c4db26c1"
+   "uv.lock": "3f0e489346f3e4193f5700b09de4fefbe48804d4b59cf1b0ff1f2a6e78e553c1"
   }
  },
  "sections": {
@@ -859,7 +859,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER/14-4": {
-   "h": "c6b0b70b4cfe8108",
+   "h": "462c28723f263c6a",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -943,7 +943,7 @@
    "title": "17. 작업 원칙"
   },
   "MASTER/17-1": {
-   "h": "97b8534ec7e1eaca",
+   "h": "abdec0f5c42f2d86",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "17-1. 정본은 하나 — 사실 · 정본 파일 · 따르는 곳 · 강제자"
@@ -3343,14 +3343,14 @@
    "title": "166. 배치 D2 — 도달 불가를 지도에 올리고 웅토피아 경로 수정을 대조했다"
   },
   "DECISIONS/166-1": {
-   "h": "d8833451e1fb97b4",
+   "h": "13fc88596bbfe1fa",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "166-1. 도달 불가 오버레이"
   },
   "DECISIONS/166-2": {
-   "h": "f9a71bdda38fc0cd",
-   "state": "wired",
+   "h": "72fd5bbcf1b82316",
+   "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "166-2. 계약 예외 — `reach.js` 는 `seg_uid` 를 조인에만 쓴다"
   },
@@ -4579,7 +4579,7 @@
    "title": "202-7. 그리고 대장 자신이 또 갈렸다"
   },
   "DECISIONS/202-8": {
-   "h": "f72955b42a211232",
+   "h": "8af47bccaf4e87a9",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "202-8. 대장"
@@ -5268,6 +5268,60 @@
    "doc": "docs/DECISIONS.md",
    "title": "221-3. 닫은 두 행 — 이미 고쳐져 있었다"
   },
+  "DECISIONS/222": {
+   "h": "4cf8b77125b4a073",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "222. 족으로 잡는다 — 봇 PR · 죽은 강제자 · 정본 단일화 (재잠금 1회)"
+  },
+  "DECISIONS/222-1": {
+   "h": "c1f3529993ec2947",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "222-1. 봇 PR 이 배치를 막던 자리가 둘이었다"
+  },
+  "DECISIONS/222-2": {
+   "h": "c271d26539808412",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "222-2. 파일을 지우면 그 파일을 강제자로 든 절이 남는다"
+  },
+  "DECISIONS/222-3": {
+   "h": "a1186769962ffd95",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "222-3. 「계약」 축이 바이트를 보면서 값을 묻는 척했다"
+  },
+  "DECISIONS/222-4": {
+   "h": "bde4f27b816906e3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "222-4. 결번을 허용했는데 재사용을 막는 것이 없었다"
+  },
+  "DECISIONS/222-5": {
+   "h": "e534beb8daebe565",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "222-5. 가드 2 를 닫았다 — 오탐을 먼저 없애고 켰다"
+  },
+  "DECISIONS/222-6": {
+   "h": "79e6e5f998aad78e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "222-6. `feeds` 를 리스트로 바꾸자 관문이 한 칸 좁은 것이 드러났다"
+  },
+  "DECISIONS/222-7": {
+   "h": "c1dafc4c3d6039c3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "222-7. 이미 고쳐졌는데 행만 남아 있던 것 넷"
+  },
+  "DECISIONS/222-8": {
+   "h": "3e81e78b95572a50",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "222-8. `feeds` 를 채우는 도구가 **빌드 산출물**을 소비자로 셌다"
+  },
   "PLAN/0": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -5287,10 +5341,10 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN/1": {
-   "h": "410ee498f3f64bd4",
+   "h": "21b1f9fb2d062422",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "1. 남은 일 — 54행"
+   "title": "1. 남은 일 — 52행"
   },
   "PLAN/1-23": {
    "h": "45f802835c7c288a",
@@ -5707,7 +5761,7 @@
    "title": "13-3. 남은 결함 1건"
   },
   "PLAN/13-4": {
-   "h": "c9ab2cfa032a461f",
+   "h": "4d2a9bfa28646c97",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-4. 클래스 가드 — 이 절이 닫히는 조건"
@@ -5731,7 +5785,7 @@
    "title": "일회성 도구는 저장소에 두지 않는다"
   },
   "README/문서는_넷이다/문서에도_검사가_붙어_있다": {
-   "h": "9264f1a62f82dd0d",
+   "h": "ce5ebb7db84ededb",
    "state": "none",
    "doc": "README.md",
    "title": "문서에도 검사가 붙어 있다"
@@ -5749,7 +5803,7 @@
    "title": "숫자의 정본은 문서가 아니다"
   },
   "README/실행": {
-   "h": "1f2b136e9e51e469",
+   "h": "74b7306eed7c84a7",
    "state": "wired",
    "doc": "README.md",
    "title": "실행"
@@ -5834,13 +5888,13 @@
   }
  },
  "denominator": 274,
- "dead_refs": 3,
+ "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "1180 passed in 278.93s (0:04:38)"
+   "tail": "1185 passed in 173.31s (0:02:53)"
   },
   "probe/deadcheck": {
    "rc": 0,
