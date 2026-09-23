@@ -33,6 +33,7 @@ PARAM 도엽 격자 역산 상수(EPSG:5186 TM 중부원점)
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import shutil
@@ -115,12 +116,67 @@ def _ortho_tifs() -> list[str]:
     return sorted(set(out))
 
 
+def _tiles_print(tdir: Path) -> str | None:
+    """구워진 타일의 지문. 없으면 None — **모르면 안 건너뛴다.**"""
+    from firelane.hashing import sha256
+    if not tdir.is_dir():
+        return None
+    files = sorted(tdir.rglob("*.jpg"))
+    if not files:
+        return None
+    h = hashlib.sha256()
+    for f in files:
+        h.update(f.relative_to(tdir).as_posix().encode())
+        h.update(sha256(f)[:16].encode())
+    return f"{len(files)}:{h.hexdigest()[:16]}"
+
+
+def _seal_now(tifs: list[str], scope_gpkg: Path) -> dict:
+    """이 실행의 봉인지 넉 장 — raw · scope · code · out.
+
+    ★ 2026-09-23 (DECISIONS §223-1). ingest 샤드가 쓰는 것과 **같은 방식**이다
+      (`firelane.shardseal`). 다른 것은 단위뿐 — 거기는 소스 하나, 여기는 이 단계 전체다.
+    """
+    from firelane import shardseal
+    from firelane.hashing import sha256
+    return {
+        "raw": ":".join(sha256(Path(t))[:16] for t in tifs),
+        "scope": shardseal.gpkg_print(scope_gpkg),
+        "code": shardseal.code_print("firelane.ortho"),
+    }
+
+
 def main():
     # ★ 글롭도 개명을 탄다. 대장이 정본이므로 거기서 읽는다.
     tifs = _ortho_tifs()
     if not tifs:
         print("[SKIP] 정사영상 TIF 없음. sources.yaml 의 ortho 참조")
         return
+
+    # ── 봉인지 — 넷이 전부 같을 때만 재사용한다 ──────────────
+    # ★ 2026-09-23 (DECISIONS §223-1). 종전에는 **매번** `rmtree` 하고 1,423장을
+    #   처음부터 구웠다. 원본 TIF 넉 장(1.25GB)과 스코프가 그대로여도 그랬다.
+    #   실측 편차가 34초 ~ 28분(50배)이고, 그 28분이 재잠금 배치마다 붙었다.
+    #   ingest 샤드(§164 · §165)와 **같은 규율**을 이 단계에 내린다.
+    # ★ `out` 을 같이 본다 — 봉인지가 같아도 타일이 지워졌으면 다시 굽는다.
+    #   대장은 멀쩡한데 파일이 없는 것을 재사용하면 배경이 통째로 비고 성공으로 보인다.
+    scope_gpkg = PROCESSED / "scope_5186.gpkg"
+    tdir = WEB / "ortho"
+    seal = _seal_now(tifs, scope_gpkg)
+    mf0 = OUT / "_manifest.json"
+    prev = {}
+    if mf0.exists():
+        prev = (json.loads(mf0.read_text(encoding="utf-8")).get("ortho") or {}).get("seal") or {}
+    out_now = _tiles_print(tdir)
+    if prev and out_now and all(prev.get(k) == v for k, v in seal.items()) \
+            and prev.get("out") == out_now:
+        n = int(out_now.split(":")[0])
+        print(f"[SKIP] 봉인지 그대로 — 타일 {n:,}장 재사용 (raw · scope · code · out 넷 다 같다)")
+        return
+    if prev:
+        torn = [k for k, v in seal.items() if prev.get(k) != v]
+        torn += ["out"] if prev.get("out") != out_now else []
+        print(f"  봉인지 찢어짐 — {' · '.join(torn) or '기록 없음'}")
 
     # ★ 2026-09-04. 종전에는 WEB/"scope.geojson" 을 읽었다. publish 산출이고
     #   STEPS 에서 ortho 보다 뒤라 지난 실행 산출물을 읽고 있었다.
@@ -200,7 +256,6 @@ def main():
 
     R = 6378137.0
     ORIGIN = math.pi * R
-    tdir = WEB / "ortho"
     if tdir.exists():
         shutil.rmtree(tdir)
 
@@ -259,6 +314,8 @@ def main():
         "tiles": f"web/data/ortho/{{z}}/{{x}}/{{y}}.jpg ({count}장, z{TILE_Z[0]}~{TILE_Z[-1]}, {size:.1f}MB)",
         "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        # ★ 다음 실행이 이것과 견준다. `out` 은 방금 구운 타일의 지문이다.
+        "seal": {**seal, "out": _tiles_print(tdir)},
     }
     from firelane import manifest
     manifest.write_stable(mf, m)   # 내용이 같으면 쓰지 않는다
