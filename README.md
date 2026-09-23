@@ -295,6 +295,8 @@ PARK  = 2.0     주차 1대 노면 점유
 ★ **축거와 최소회전반경은 공식 규격에 없다.** 내륜차 계산에 그 둘이 필요하므로
 지금 값은 추정이며 `wheelbase_verified: false` 가 그 표시다.
 
+강제자  `tests/test_sources_of_truth.py`(`TRUCK`·`PARK` 의 정본이 `seg/params.py` 하나인가 — README 의 값은 사본이다) · `tests/test_seg_geom.py::test_verdict_table` · `tools/docnum_check.py`(README 숫자 대조)
+
 ### 경로가 둘인 이유
 
 ```
@@ -305,6 +307,8 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 `access_corridor()` 는 폭 산출보다 먼저 돌기 때문에 거리만 쓸 수 있다.
 ★ 그래서 **`route_usage` 는 통행 가능성을 뜻하지 않는다** — 0 초과인 579구간
 중 통과 불가가 41, 폭 3.0m 미만이 168이다.
+
+강제자  `tests/test_guards.py::test_route_usage_is_not_a_passability_claim`. 정본은 `MASTER §3-10` 이고 이 절은 그 사본이다 — 값이 갈리면 `tools/docnum_check.py` 가 운다
 
 ### 도달 가능성은 개별 판정과 다르다
 
@@ -568,3 +572,5 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 
 머리의 [문서는 넷이다](#문서는-넷이다) 표가 정본이다.
 어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
+
+강제자  `tools/doc_fsck.py`(문서 ↔ 문서 · 이 절이 스스로 그렇게 적는다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)
