@@ -304,6 +304,32 @@ def notation(data: dict) -> list[str]:
             if r["state"] == "none" and not r["field"].startswith(CANON_NONE)]
 
 
+INHERIT_SAID = re.compile(r"물려받|하위 (절|둘|셋|넷|다섯|여섯|일곱|여덟|[0-9]+)")
+
+
+def inherit_split(data: dict) -> tuple[list[str], list[str]]:
+    """`inherit` 을 둘로 가른다 — 부모가 **덮는다고 적은 것** / 아무 말 없는 것.
+
+    ★ 2026-09-24 (DECISIONS §230). `inherit` 은 「부모 칸이 하위 논점까지
+      덮는다」는 **가정**이고 그 가정은 검증된 적이 없다. 실제로 `MASTER §12` 에
+      칸을 적자 자식 열하나가 한 번에 분모에서 빠졌는데, 그 칸은 §12-8a(매체
+      저장)나 §12-11(한글 파일명)을 안 덮었다.
+      분모(blank)가 0 이 된 지금, **남은 의심은 전부 여기 있다.**
+      세는 자리를 만들어 두면 다음 배치가 줄일 수 있다.
+    """
+    field = {r["id"]: r.get("field", "") for r in data["rows"]}
+    said, mute = [], []
+    for r in data["rows"]:
+        if r["state"] != "inherit":
+            continue
+        # `DOC/12-8a` → `DOC/12` · `DOC/22/3` → `DOC/22` · `DOC/18/원칙_다섯` → `DOC/18`
+        doc, _, tail = r["id"].partition("/")
+        parent = f"{doc}/{tail.split('/')[0].split('-')[0]}"
+        f = field.get(parent, "")
+        (said if INHERIT_SAID.search(f) else mute).append(r["id"])
+    return said, mute
+
+
 def summary(data: dict) -> None:
     from collections import Counter
     per: dict[str, Counter] = {}
@@ -320,6 +346,10 @@ def summary(data: dict) -> None:
     print(f"{'합계':20} {sum(tot.values()):5} {tot['wired']:6} "
           f"{tot['none']:6} {tot['inherit']:8} {tot['blank']:6}")
     print(f"\n★ 분모(blank) = {tot['blank']}")
+    said, mute = inherit_split(data)
+    print(f"★ 물림(inherit) = {len(said) + len(mute)}"
+          f"   부모가 **덮는다고 적은 것** {len(said)}"
+          f" · 아무 말 없는 것 {len(mute)}")
 
 
 # ══ 후보 추천 — 사람은 고르기만 한다 ═════════════════════════
@@ -979,10 +1009,18 @@ def selftest() -> int:
     data = scan()
     if not data["rows"]:
         bad.append("절을 하나도 못 셌다")
-    if not any(r["state"] == "blank" for r in data["rows"]):
-        bad.append("blank 가 0 이다 — 칸 판정이 너무 무르다")
+    # ★ 2026-09-24 (DECISIONS §230). 종전에는 「실제 트리에 blank 가 하나도
+    #   없으면 칸 판정이 무르다」로 봤다. **그 0 이 목표 상태**인데 목표에
+    #   닿는 날 관문이 빨개지는 검사이고, 그러면 사람이 검사를 끈다.
+    #   `deadcheck` 가 2026-09-21 에, `test_defect_ledger_counts_agree_everywhere`
+    #   가 2026-09-24 에 같은 것을 배웠다. **생사는 합성 입력이 증명한다.**
+    empty = {"line": 0, "body": [(1, "칸이 없는 절이다"), (2, "두 줄이다")]}
+    if classify(empty)[0] != "blank":
+        bad.append("칸 없는 절을 blank 로 안 센다 — 판정이 무르다")
     if not any(r["state"] == "wired" for r in data["rows"]):
         bad.append("wired 가 0 이다 — 칸 판정이 너무 세다")
+    if not data["rows"] or len(data["rows"]) < 500:
+        bad.append(f"절을 {len(data['rows'])}개밖에 못 셌다 — 수집기가 죽었다")
     # 산문을 칸으로 세면 안 된다
     fake = {"line": 0, "body": [(1, "인코딩만 **강제자가 없었다.** 그래서")]}
     if classify(fake)[0] != "blank":
