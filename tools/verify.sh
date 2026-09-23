@@ -506,6 +506,9 @@ step "기획서 대조"     uv run python tools/docx_check.py
 #   날(정상)에도 판정기가 사는지 알아야 한다 — 「0건이 청결인가 죽음인가」(§230).
 scope "tools/*"
 step "배치 판정기 자기검사" uv run python tools/svg_fit.py
+# ★ 2026-09-24 (W12-1). 좌표 상수 세 사본을 한 곳으로 올렸다. 근사가 뜻하는
+#   크기를 내는지 스스로 확인한다 — 상수를 잘못 고치면 여기서 운다.
+step "국소 평면 근사"     uv run python tools/localgeo.py
 # ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
 scope "docs/* tools/* src/* data/*"
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check

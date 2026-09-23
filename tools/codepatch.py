@@ -217,23 +217,6 @@ class Patch:
         return True
 
 
-def add_shell_step(path: str | Path, marker: str, block: str, *, apply: bool) -> bool:
-    """셸 스크립트에 스텝 블록을 넣는다. 마커가 있으면 건너뛴다(멱등)."""
-    p = Path(path) if Path(path).is_absolute() else ROOT / path
-    s = p.read_text(encoding="utf-8")
-    rel = p.relative_to(ROOT)
-    if marker in s:
-        print(f"  = {rel}  `{marker}` 이미 있다")
-        return True
-    # 마지막 요약 출력 앞에 넣는다
-    m = re.search(r"^printf .*통과", s, re.M)
-    at = m.start() if m else len(s)
-    out = s[:at] + block.rstrip("\n") + "\n\n" + s[at:]
-    mark = "→" if apply else "·"
-    print(f"  {mark} {rel}  스텝 {block.count('step ')}개 추가")
-    if apply:
-        p.write_text(out, encoding="utf-8")
-    return True
 
 
 def main() -> int:

@@ -174,6 +174,24 @@ SPEC: dict[str, dict] = {
         "code_only": True,
         "near": r"CCTV_RANGE|cctv|유효\s*범위|유효\s*측정",
     },
+    "local_lat0": {
+        "what": "국소 평면 근사의 기준 위도(동명동 중심). 조사 도구 셋이 거리를 잰다",
+        # ★ 2026-09-24 (PLAN §13 W12-1 · DECISIONS §239). 세 도구가 글자까지 같게
+        #   박고 있었다. `seg/params.py` 로 안 올린 이유는 그 파일이 **판정 지문**
+        #   안이라 상수 하나에 재잠금이 따라오기 때문이다 — 이 값은 판정에 안 든다.
+        "owner": {"file": "tools/localgeo.py", "regex": r"^LAT0 = ([\d.]+)"},
+        # ★ consumers 가 비어 있다 — 셋은 값을 **적지 않고 import 한다.** 사본이
+        #   없으니 대조할 자리도 없다. 여기에 경로를 적으면 그 줄이
+        #   `test_tools_are_wired` 에 **호출로** 세어져(경로 리터럴) 면제 셋이
+        #   거짓으로 죽는다. 선언표가 배선표로 읽히는 자리다.
+        #   지키는 것은 아래 `exclusive` 다 — `tools/*.py` 어디에도 값이 또
+        #   나오면 운다.
+        "consumers": [],
+        "scan": ["tools/*.py"],
+        "exclusive": True,
+        "code_only": True,
+        "near": r"LAT0|위도|lat",
+    },
     "code_owner": {
         "what": "저장소 단독 소유자(CODEOWNERS 기본 규칙 · 2026-09-09 개인 계정 이관)",
         "owner": {"file": ".github/CODEOWNERS", "regex": r"^\*\s+@(\S+)"},

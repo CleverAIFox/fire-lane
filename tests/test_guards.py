@@ -1412,7 +1412,11 @@ def test_ci_installs_what_the_tests_import():
                 #   목록을 손으로 유지하지 않는다 — 파일 존재로 판정한다.
                 if top in std or top == "firelane" or top == "pytest":
                     continue
-                if (ROOT / "tools" / f"{top}.py").exists():
+                # ★ 2026-09-24 (PLAN §13 W12-5). `tests/` 의 공용 모듈도 같다 —
+                #   `skip_policy` · `docparse` 는 pytest 가 rootdir 로 잡는다.
+                #   `tools/` 만 보던 탓에 `docparse` 가 **pip 대상**으로 세어졌다.
+                if ((ROOT / "tools" / f"{top}.py").exists()
+                        or (ROOT / "tests" / f"{top}.py").exists()):
                     continue
                 need.setdefault(DIST.get(top, top).lower(), set()).add(name)
 

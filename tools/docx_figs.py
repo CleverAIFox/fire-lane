@@ -105,7 +105,6 @@ CONVERTERS = (
 )
 APT = "sudo apt-get install -y librsvg2-bin"
 
-EMU_PER_PX = 9525  # 1px(96dpi) = 9525 EMU
 NS_A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
 NS_R = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 NS_WP = "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}"

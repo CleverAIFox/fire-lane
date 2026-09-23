@@ -84,7 +84,6 @@ EXEMPT = ("src/firelane/paths.py", "src/firelane/quiet_gdal.py", "tests/",
 ENV_RE = re.compile(r"""os\.environ(?:\.get)?[\[(]\s*["']([A-Z_]+)["']|"""
                     r"""getenv\(\s*["']([A-Z_]+)["']|"""
                     r"""paths\.(?:env|flag|secret)\(\s*["']([A-Z_]+)["']""")
-READ_RE = re.compile(r"os\.environ|os\.getenv")
 
 # ★ 셸의 참조. `$FIRE_LANE_X` · `${FIRE_LANE_X}` · `FIRE_LANE_X=` 세 꼴 전부.
 #   대입도 쓰임으로 센다 — `fl.sh` 는 `.env` 를 읽어 쓰므로 대입이 곧 계약이다.

@@ -35,6 +35,8 @@ import json
 import re
 from pathlib import Path
 
+import docparse
+
 ROOT = Path(__file__).resolve().parent.parent
 # ★ 2026-09-02. 종전에는 루트 README 만 봤다. **README 는 하나가 아니다** —
 #   `src/firelane/README.md` 는 루트가 GIS 정본으로 지목하는 문서인데
@@ -55,18 +57,11 @@ def _lines(p: Path) -> list[tuple[int, str]]:
     ★ 들여쓴 블록을 제외하는 이유. DECISIONS 는 폐기한 문장을 증거로
       인용한다. 인용을 위반으로 세면 회고를 쓸 수 없게 되고, 그러면
       사람이 검사를 끈다.
+
+    ★ 2026-09-24 (PLAN §13 W12-5). 펜스 처리는 `tests/docparse.py` 가 든다 —
+      같은 규칙이 시험 셋에 각자 살아 있었고 그중 하나는 펜스를 안 뺐다.
     """
-    out, fence = [], False
-    for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
-        if line.lstrip().startswith("```"):
-            fence = not fence
-            continue
-        if fence or ALLOW in line:
-            continue
-        if line.startswith("    ") and line.strip():
-            continue
-        out.append((i, line))
-    return out
+    return docparse.prose_lines(p, skip_indented=True, allow=ALLOW)
 
 
 # ★ 2026-08-24. `|` 를 더한다. 표 행의 셀 끝(`… 씁니다 |`)이 종결 위치인데
@@ -288,14 +283,8 @@ _FIELD = re.compile(r"^\s{0,6}(?:[-*>]\s*)?\*{0,2}강제자\*{0,2}(?![가-힣])"
 
 def _has_enforcer_field(body) -> bool:
     """절 본문에 강제자 **칸**이 있는가. 산문 언급은 칸이 아니다."""
-    fence = False
-    for line in body:
-        if line.lstrip().startswith(("```", "~~~")):
-            fence = not fence
-            continue
-        if not fence and _FIELD.match(line):
-            return True
-    return False
+    # ★ 2026-09-24 (PLAN §13 W12-5). 펜스 처리의 집은 `tests/docparse.py` 다.
+    return any(_FIELD.match(line) for line in docparse.outside_fences(body))
 
 
 def test_recent_decisions_name_their_enforcer():
