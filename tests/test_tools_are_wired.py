@@ -126,7 +126,12 @@ def call_sites(name: str, lines: list[tuple[str, int, str]] | None = None) -> li
               else re.compile(rf"(?:^|;)\s*(?:from|import)\s+{re.escape(stem)}\b"))
     hits = []
     for f, i, s in lines:
-        if f.endswith(name):
+        # ★ 2026-09-24 (DECISIONS §231). 종전에는 `f.endswith(name)` 이었다.
+        #   그러면 `tests/test_proposal_pdf.py` 가 `proposal_pdf.py` 로 끝나므로
+        #   **그 도구의 시험이 호출자에서 통째로 빠졌다.** 도구가 제 시험
+        #   하나로만 배선돼 있으면 「아무 데서도 안 부른다」가 나온다.
+        #   빼야 하는 것은 **도구 자신**이지 이름이 그것으로 끝나는 파일이 아니다.
+        if f == f"tools/{name}":
             continue
         if path_rx.search(s) or (imp_rx and imp_rx.search(s)):
             hits.append(f"{f}:{i}")

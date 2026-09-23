@@ -90,10 +90,10 @@ MIN_FILES = 3
 GAP_EXEMPT: dict[tuple[str, str, str], str] = {}
 
 # ── ① 래칫. 오늘 값. **내려가는 쪽으로만.**
-NO_DECL = 153
+NO_DECL = 152
 
 # ── ③ 래칫. 오늘 값. **올라가는 쪽으로만.**
-SELFTEST_MIN = 14
+SELFTEST_MIN = 15
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)
 WALK_FN = {"glob", "rglob", "iterdir", "walk"}

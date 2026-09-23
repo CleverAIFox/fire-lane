@@ -2392,6 +2392,12 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 `tools/docx_figs.py` 의 `PLACE` 가 「어느 생성 그림이 기획서 몇 번 그림인가」의 정본이고,
 기획서에 자리가 없는 그림은 사유를 적어 `internal` 로 선언한다.
 
+★ **배포 화면은 PDF 다**(2026-09-24 · DECISIONS §231). `tools/proposal_pdf.py` 가
+`docs/proposal.docx` 를 구워 `web/proposal.pdf` 를 내고, 쪽수 · 본문 한글 줄 수 ·
+판정 수치 · 그림 수 넷을 대조해야 배포된다. 종전에는 브라우저가 `.docx` 를 직접
+그렸는데 **글꼴 치환과 그림 배치가 기계마다 달라 제출본과 화면이 갈렸다.**
+PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
+
 강제자  `tools/docx_check.py`(기획서 ↔ 산출 대조) · `tools/docx_figs.py --check`(그림 ↔ 정본 · `PLACE` 가 「어느 생성 그림이 기획서 몇 번인가」의 정본) · `tests/test_docx_targets.py`(양방향 · 손으로 넣으라는 안내가 남아 있지 않은가)
 
 ### 15-1. 말할 수 있는 것

@@ -75,6 +75,7 @@ uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 · 결번 
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
 uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
+uv run python tools/proposal_pdf.py     # 기획서 → web/proposal.pdf · 쪽수·본문·수치·그림 대조
 # ★ 위 도구가 세는 사본을 합친 자리 —
 #   src/firelane/hashing.py    파일 sha256. 10곳이 한 벌이었다
 #   src/firelane/console.py    col · human · 팔레트. 17곳

@@ -22,9 +22,19 @@ stage_pages.py — 배포 직전에 web/ 을 완성한다.
   하나였고 지도를 걷어냈다(관제 화면이 넘겨받았다). 내비 · 관제는 V-World 를 안 부른다 —
   배경은 커밋된 `web/data/ortho` 타일과 Mapbox(빌드 시 `MAPBOX_TOKEN`)다.
 
+★ 2026-09-24 (DECISIONS §231). 기획서 **PDF** 도 여기서 굽는다. 뷰어가
+  `.docx` 를 브라우저에서 그리던 것을 PDF 로 바꿨다 — 글꼴과 그림이 무너졌고,
+  PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
+  굽는 판정은 `tools/proposal_pdf.py` 가 든다(쪽수 · 본문 · 판정 수치 · 그림).
+
 IN    docs/proposal.docx
-OUT   web/proposal.docx  (생성물. .gitignore)
+OUT   web/proposal.docx · web/proposal.pdf  (둘 다 생성물. .gitignore)
 PARAM --check · --deploy
+밖    **PDF 를 여기서 판정하지 않는다.** 이 파일이 하는 것은 「굽기를 부른다」
+      까지이고, 성한지는 `tools/proposal_pdf.py --check` 가 CI 에서 본다.
+      로컬에 변환기가 없으면 **경고하고 넘어간다** — `serve.py` 로 화면을
+      보려는 사람을 libreoffice 설치 앞에서 막지 않는다. 뷰어는 PDF 가 없으면
+      내려받기 안내로 바뀐다.
 """
 from __future__ import annotations
 
@@ -83,9 +93,34 @@ def main() -> int:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
         print(f"  {src_rel} → {dst_rel}  ({dst.stat().st_size // 1024}KB)")
+    bad += _pdf(check)
     if not bad:
         print("배포 준비 OK" if check else "배포 준비 완료")
     return 1 if bad else 0
+
+
+def _pdf(check: bool) -> int:
+    """기획서 PDF. **CI 에서는 필수, 로컬에서는 최선.**
+
+    ★ 판정은 `proposal_pdf` 가 든다 — 여기서 다시 세면 정본이 둘이 된다(§18-3).
+    """
+    import proposal_pdf        # ★ 같은 tools/ 안. 경로 조작을 하지 않는다
+
+    ci = paths.env("GITHUB_ACTIONS") == "true"
+    if not check:
+        if err := proposal_pdf.bake():
+            for e in err:
+                print(("★ 기획서 PDF — " if ci else "! 기획서 PDF 를 못 구웠다 — ") + e)
+            if ci:
+                return 1
+            print("  로컬이라 넘어간다. 뷰어는 내려받기 안내로 바뀐다.")
+            return 0
+    if bad := proposal_pdf.check():
+        for b in bad:
+            print(("★ " if ci else "! ") + b)
+        return 1 if ci else 0
+    print(f"  web/proposal.pdf  {proposal_pdf.pages(proposal_pdf.OUT)}쪽")
+    return 0
 
 
 if __name__ == "__main__":

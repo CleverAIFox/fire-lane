@@ -6,46 +6,47 @@
 <title>Fire-Lane · 기획서</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <style>
-  html,body{background:#0e1116;color:#e6ebf2;margin:0;
-    font:15px/1.7 Pretendard,system-ui,sans-serif}
-  .hd{padding:18px 24px;border-bottom:1px solid #232a35}
+  html,body{height:100%;background:#0e1116;color:#e6ebf2;margin:0;
+    font:15px/1.7 Pretendard,system-ui,sans-serif;display:flex;flex-direction:column}
+  .hd{padding:18px 24px;border-bottom:1px solid #232a35;flex:0 0 auto}
   .hd h1{margin:0;font-size:17px}
   .hd .sub{color:#8b97a8;font-size:12px;margin-top:4px}
   .hd a{color:#e8562f}
-  /* ★ 문서 본문은 흰 종이로 둔다. 워드에서 보던 것과 같아야
-     제출본과 화면이 갈리지 않는다. */
-  #doc{background:#fff;color:#111;margin:18px auto;padding:0 0 40px;
-    max-width:900px;border-radius:6px;overflow:auto}
-  #wait{padding:40px 24px;color:#8b97a8;text-align:center}
+  /* ★ 뷰어는 화면을 꽉 채운다. 기획서는 63쪽이라 스크롤이 본체다. */
+  #pdf{flex:1 1 auto;width:100%;border:0;background:#fff;min-height:0}
+  #fallback{padding:40px 24px;color:#8b97a8;text-align:center;display:none}
 </style>
 </head>
 <body>
 <div class="hd">
   <h1>Fire-Lane · 기획서</h1>
   <div class="sub">
-    정본은 <b>docs/proposal.docx</b> — 이 화면은 그 파일을 브라우저가 그대로 그린 것이다.
-    변환하지 않으므로 제출본과 내용이 갈리지 않는다.
-    <a href="./proposal.docx" download>원본 내려받기</a>
+    정본은 <b>docs/proposal.docx</b> — 이 화면은 그 파일을 배포 직전에 구운 PDF 다.
+    쪽수 · 본문 글자 · 판정 수치 · 그림 수를 <b>tools/proposal_pdf.py</b> 가 대조해야 배포된다.
+    <a href="./proposal.pdf" download>PDF 내려받기</a> ·
+    <a href="./proposal.docx" download>원본(docx) 내려받기</a>
   </div>
 </div>
-<div id="wait">기획서를 여는 중… (2MB)</div>
-<div id="doc"></div>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.3.5/dist/docx-preview.min.js"></script>
+<!-- ★ 2026-09-24 (DECISIONS §231). 종전에는 `docx-preview` 로 브라우저에서
+     .docx 를 그렸다. 「변환 단계를 두지 않는다」가 근거였는데, 브라우저
+     렌더러가 글꼴을 치환하고 그림 배치를 제 방식대로 해서 **제출본과 화면이
+     이미 갈려 있었다.** PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
+     「구우면서 깨졌나」는 `proposal_pdf.py` 가 네 축으로 센다. -->
+<iframe id="pdf" src="./proposal.pdf#view=FitH&amp;toolbar=1"
+        title="Fire-Lane 기획서"></iframe>
+<div id="fallback">
+  이 브라우저가 PDF 를 못 연다.
+  <a href="./proposal.pdf" download>내려받아서</a> 보거나
+  <a href="./proposal.docx" download>원본(docx)</a>을 워드로 열어라.
+</div>
 <script>
-  // ★ 변환 단계를 두지 않는다. PDF 로 굽으면 "굽는 과정에서 깨졌나" 를
-  //   의심할 자리가 하나 생기고, 그 의심을 확인할 방법이 없다.
-  //   여기서는 제출본 그 파일을 그대로 받아 그린다.
-  fetch("./proposal.docx")
-    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
-    .then(function (b) {
-      return docx.renderAsync(b, document.getElementById("doc"), null,
-        { className: "docx", inWrapper: true, breakPages: true });
-    })
-    .then(function () { document.getElementById("wait").remove(); })
-    .catch(function (e) {
-      document.getElementById("wait").textContent =
-        "기획서를 못 열었다 (" + e.message + "). 원본을 내려받아 워드로 봐라.";
+  // ★ 파일이 없거나 브라우저가 PDF 를 못 열면 안내로 바꾼다.
+  //   iframe 은 404 에도 onerror 가 안 뜨므로 먼저 물어본다.
+  fetch("./proposal.pdf", { method: "HEAD" })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); })
+    .catch(function () {
+      document.getElementById("pdf").style.display = "none";
+      document.getElementById("fallback").style.display = "block";
     });
 </script>
 </body>
