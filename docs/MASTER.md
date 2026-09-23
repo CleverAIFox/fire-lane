@@ -2057,7 +2057,7 @@ python -m firelane.contract                     대장 선언 ↔ raw 실물 대
 ### 14-4. 검사
 
 ```bash
-bash tools/verify.sh          # 50단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 51단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 파이프라인 전량 생략
 ```
 
@@ -2457,11 +2457,16 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 | `python` | `.python-version` | `Dockerfile` 베이스 이미지 · `pyproject.toml` requires-python · CI 둘이 파일을 읽는다 | `tests/test_sources_of_truth.py` |
 | `pytest` | `pyproject.toml` | `uv.lock` 의 잠긴 판(하한 이상) | `tests/test_sources_of_truth.py` |
 | `coverage_floor` | `tools/verify.sh` | 같은 파일의 명령줄이 변수를 읽는다 · `tests/test_verify_citations.py` | `tests/test_sources_of_truth.py` |
-| `truck_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `truck_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · `tests/test_declaration_sync.py` · 문구 넷(`seg/geom.py` · `seg/report.py` · `seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `park_m` | `src/firelane/seg/params.py` | `tools/render_figures.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
-| `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
-| `code_owner` | `.github/CODEOWNERS` | `tools/navi_setup.py` 기본값 · `tools/ruleset_check.py` 관리자 · 기본 저장소 | `tests/test_sources_of_truth.py` |
+| `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · 문구 둘(`seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `code_owner` | `.github/CODEOWNERS` | `tools/navi_setup.py` 기본값 · `tools/ruleset_check.py` 관리자 · 기본 저장소 · 배치 도구 셋의 `REPO=` | `tests/test_sources_of_truth.py` |
 | `font_stack` | `tools/render_figures.py` | `web/navi/src/ui/tokens.ts` · `web/proposal.html` | `tests/test_sources_of_truth.py` |
+
+★ **2026-09-23 — 열 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5). 종전에는 `uv` ·
+`python` 둘만 저장소를 훑었고 나머지 여덟은 **선언된 자리만** 봤다. 훑기를 켜려면 오탐 둘을
+먼저 없애야 했다 — 주석 속 값(`code_only` 가 걷는다)과 맨숫자(`near` 로 문맥 낱말과 같은
+줄일 때만 센다). 켜자마자 나온 사본이 위 표의 새 칸들이다.
 
 ★ **기계가 읽는 판은 `tests/test_sources_of_truth.py` 의 `SPEC` 이다.** 정규식 ·
 비교 · 훑기 범위처럼 사람이 안 읽는 것은 강제자와 같은 파일에 산다. 이 표와

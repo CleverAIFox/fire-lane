@@ -365,10 +365,24 @@ _PURPOSE = re.compile(r"^미투입 — \S")
 
 
 def _undeclared(ledger: dict, keys: list[str]) -> list[str]:
-    """`feeds: 미투입 — <용도>` 를 안 적은 미배선 소스."""
+    """`미투입 — <용도>` 를 안 적은 미배선 소스.
+
+    ★ 2026-09-23 (DECISIONS §222-6). `feeds` 가 **산문에서 리스트로** 바뀌었다
+      (`tools/ledger_feeds.py --apply`). 산문은 옆 칸 `feeds_note` 로 옮겼고,
+      그러면 `feeds` 만 보던 이 판별식은 **열여섯 건을 「용도 없음」으로 읽는다** —
+      분류가 사라진 것이 아니라 **읽는 자리가 옮겨진 것**이다. 둘 다 본다:
+      리스트로 바뀐 뒤에는 `feeds_note`, 아직 산문인 것은 `feeds`.
+    """
     ds = ledger.get("datasets") or {}
-    return [k for k in keys
-            if not _PURPOSE.match(str((ds.get(k) or {}).get("feeds") or ""))]
+    out = []
+    for k in keys:
+        e = ds.get(k) or {}
+        said = [str(e.get("feeds_note") or "")]
+        if isinstance(e.get("feeds"), str):
+            said.append(e["feeds"])
+        if not any(_PURPOSE.match(x) for x in said):
+            out.append(k)
+    return out
 
 
 def test_unwired_sources_declare_purpose():
@@ -403,11 +417,13 @@ def test_unwired_probe_is_alive():
         "zz_probe_wired": {"kind": "csv_table"},
         "zz_probe_raw":   {"kind": "raw_only"},
         "zz_probe_ok":    {"kind": "csv_table", "feeds": "미투입 — 대조축"},
+        "zz_probe_note":  {"kind": "csv_table", "feeds": ["a.py"],
+                           "feeds_note": "미투입 — 리스트로 바뀐 뒤의 자리"},
         "zz_probe_bare":  {"kind": "csv_table", "feeds": "미투입"},
         "zz_probe_none":  {"kind": "csv_table"},
     }}
     keys = _unwired(ledger, 'load("zz_probe_wired")')
-    assert keys == ["zz_probe_bare", "zz_probe_none", "zz_probe_ok"]
+    assert keys == ["zz_probe_bare", "zz_probe_none", "zz_probe_note", "zz_probe_ok"]
     assert _undeclared(ledger, keys) == ["zz_probe_bare", "zz_probe_none"]
 
 
@@ -685,3 +701,41 @@ def test_master_roles_do_not_copy_codeowners():
     quoted = set(re.findall(r"`(@[A-Za-z0-9][A-Za-z0-9-]*(?:/[A-Za-z0-9-]+)?)`", s8))
     assert quoted - owners <= {"@AIMasterFox", "@woongtopia/gis"}, \
         f"§8 이 인용한 핸들 중 CODEOWNERS 에도 없고 과거 인용도 아닌 것: {quoted - owners}"
+
+
+def test_plan_retired_numbers_are_declared():
+    """PLAN §1 의 결번이 머리에 선언돼 있고 실물과 같은가 (DECISIONS §222-4).
+
+    ★ 번호는 영구 식별자다(§205). 밖에서 §1 을 가리키는 인용이 83곳이고 그중 70곳이
+      append-only 인 DECISIONS 라, 비운 번호를 다시 쓰면 그 인용들이 **조용히 다른 행**을
+      가리킨다. §205 는 결번을 허용했지만 **재사용을 막는 것은 없었다** — 중복도 아니고
+      오름차순도 안 깨지므로 어떤 검사도 안 울었다. 선언과 실물을 대조해 그 길을 닫는다.
+    """
+    import subprocess
+    r = subprocess.run(["uv", "run", "--no-sync", "python", "tools/plan_renumber.py"],
+                       cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, "plan_renumber 가 운다:\n" + r.stdout + r.stderr
+    assert "결번" in r.stdout, "결번을 세지 않는다 — 대장이 빈 그물이다"
+
+
+def test_ledger_feeds_does_not_count_build_output():
+    """대장 `feeds` 는 **소스**만 든다 — 빌드 산출물은 소비자가 아니다 (DECISIONS §222-8).
+
+    ★ 2026-09-23 실제 사고. `ledger_feeds` 가 `web/**/*.js` 를 통째로 훑어
+      `web/navi/dist/assets/index-<해시>.js` 를 소비자로 등재했다. 번들에는 키 문자열이
+      컴파일돼 들어 있으니 형식상 「참조」가 맞다. 그런데 그 이름은 **내용 해시**라
+      의존성 하나만 올려도 바뀌고, 대장이 없는 파일을 가리키게 된다 —
+      maplibre 6.9.1 → 6.11.0 배치가 그것으로 빨개졌다.
+    ★ 되돌아오는 길 둘을 다 막는다 — 도구가 안 훑는가, 대장에 화석이 없는가.
+    """
+    yaml = pytest.importorskip("yaml")
+    src = (ROOT / "tools" / "ledger_feeds.py").read_text(encoding="utf-8")
+    assert "SKIP_DIRS" in src and '"dist"' in src, "생성물 디렉터리를 안 거른다"
+    text = (ROOT / "sources.yaml").read_text(encoding="utf-8")
+    assert "dist/assets" not in text, "대장이 빌드 산출물을 가리킨다 — 해시가 바뀌면 죽는다"
+    led = yaml.safe_load(text)
+    fossil = [k for k, e in (led.get("datasets") or {}).items()
+              if str((e or {}).get("feeds_note") or "").lstrip().startswith("- ")]
+    assert not fossil, (
+        f"`feeds_note` 가 **기계가 쓴 리스트**를 산문으로 들고 있다: {fossil}\n"
+        "  사람 판단만 그 칸에 산다. 기계 출력을 보존하면 그 칸은 낡기만 한다")
