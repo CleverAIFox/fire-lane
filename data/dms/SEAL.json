@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-09-23T23:24:33+09:00",
- "commit": "6b3ba18",
+ "sealed_at": "2026-09-23T23:33:54+09:00",
+ "commit": "1971447",
  "tool": "77998f2933361a7b",
  "scope": "pytest+프로브",
  "docs": {
@@ -5997,7 +5997,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "1210 passed in 147.07s (0:02:27)"
+   "tail": "1210 passed in 139.85s (0:02:19)"
   },
   "probe/deadcheck": {
    "rc": 0,
