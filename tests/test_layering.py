@@ -19,6 +19,12 @@ test_layering.py — 계층 방향을 import 로 강제한다.
 
 `seg/report.py` 가 domain 이 아닌 이유: 하는 일이 산출물 쓰기다. 이름이
 `seg/` 아래 있을 뿐 어댑터다. 옮기는 것은 별건이고, 지금은 예외로 명시한다.
+
+IN    src/firelane/**.py · tests/**.py · tools/**.py
+OUT   없음 (검사)
+밖    **`tools/*.sh` 여섯은 안 본다.** 계층은 `import` 방향으로만 정의돼 있고
+      셸에는 import 가 없다. 셸이 파이썬 단계를 **호출**하는 것은 배선이지
+      계층 위반이 아니며, 그 배선은 `test_tools_are_wired` 소관이다.
 """
 from __future__ import annotations
 

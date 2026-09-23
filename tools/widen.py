@@ -98,8 +98,11 @@ def w2() -> tuple[int, list[str]]:
     bad: list[str] = []
     # ★ node_modules 를 훑다 디렉터리에서 죽었다(gl-matrix/types.d.ts).
     #   저장소가 관리하는 소스만 본다 — 남의 패키지는 대상이 아니다.
-    _web = [p for p in list((ROOT / "web").rglob("*.js"))
-            + list((ROOT / "web").rglob("*.ts"))
+    # ★ 2026-09-24 (DECISIONS §226-1 · `scopedecl` 이 잡았다). `.tsx` 21개와
+    #   `.html` 5개가 이 축 밖이었다. 내비 화면은 대부분 `.tsx` 라
+    #   **정본 상수를 다시 정의해도 안 걸리는 자리가 21개** 있었다.
+    _web = [p for p in sum(((list((ROOT / "web").rglob(f"*{s}"))
+                             for s in (".js", ".ts", ".tsx", ".html"))), [])
             if p.is_file() and "node_modules" not in p.parts
             and "dist" not in p.parts]
     targets = pys("src", "tools", "tests") + sorted(_web)

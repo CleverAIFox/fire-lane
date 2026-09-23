@@ -14,6 +14,9 @@ docx_fix.py — 기획서의 낡은 숫자·용어를 산출물 기준으로 고
 IN    docs/*.docx · data/golden/segments.fingerprint.json · web/data/segments.geojson
 OUT   docs/*.docx (제자리 수정)
 PARAM --write 없이는 아무것도 쓰지 않는다
+밖    **`docs/*.md` 는 안 고친다.** 정본 셋(MASTER · PLAN · DECISIONS)의 숫자는
+      `docnum_check.py` 가 대조하고 사람이 고친다 — `.md` 는 diff 가 되므로
+      도구가 손댈 이유가 없고, 손대면 R9(문자열 치환 패처 금지)를 어긴다.
 """
 from __future__ import annotations
 

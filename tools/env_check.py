@@ -25,8 +25,17 @@ env_check.py — 환경변수 선언 ↔ 실물. **양방향이다.**
   `FIRE_LANE_*` 만 보면 `GDAL_*` 같은 것이 또 열두 곳에 흩어지고,
   그때 두 번째 검사를 만들게 된다. 면제는 적히고 세지므로 낡지 않는다.
 
-IN    .env.example · src/**.py · tools/**.py
+★ **2026-09-24. 셸이 검사 밖이었다**(DECISIONS §226-1 · `tools/scopedecl.py` 가 잡았다).
+  이 파일 머리가 「오늘 FIRE_LANE_INBOX 가 그랬다」고 적고 있는데, 정작 그 변수를
+  쓰는 자리는 `tools/fl.sh` · `tools/inbox_fl.sh` **셸 둘**이고 이 검사는 `.py` 만
+  훑었다. 즉 **자기가 사례로 든 그 변수를 못 보는 상태**로 열흘을 돌았다.
+  「범위가 이름보다 좁고 그것이 선언돼 있지 않다」 족의 일곱 번째다(PLAN §13).
+
+IN    .env.example · src/**.py · tools/**.py · tools/*.sh
 OUT   없음 (검사)
+밖    **셸의 단일 독자 규율은 안 본다.** `readers()` 는 파이썬 AST 라 `.sh` 를
+      못 읽는다 — 셸에서는 키가 쓰이는가만 보고 `paths.py` 경유 여부는 안 본다.
+      셸에 `paths.py` 같은 접근자를 둘 방법이 없기 때문이다.
 """
 from __future__ import annotations
 
@@ -40,7 +49,9 @@ EXAMPLE = ROOT / ".env.example"
 # ── 분류 ──────────────────────────────────────────────────────
 # 설정  — `.env.example` 에 반드시 있어야 한다
 SETTINGS = {"FIRE_LANE_DATA", "FIRE_LANE_INBOX",
-            "FIRE_LANE_STAGE", "FIRE_LANE_BACKUP"}
+            "FIRE_LANE_STAGE", "FIRE_LANE_BACKUP",
+            # ★ 2026-09-24. 셸에만 사는 변수. `.py` 만 훑던 시절엔 안 보였다.
+            "FIRE_LANE_REPO"}
 # 스위치 — 일회성 디버그. 셸 export 로 쓴다. 예시에 적으면 잡음이다
 SWITCHES = {"FIRE_LANE_DEBUG_SEG", "FIRE_LANE_DEBUG_XY", "FIRE_LANE_MIX_SRC",
             "FIRE_LANE_NO_MERGE", "FIRE_LANE_OLD_SNAP",
@@ -75,9 +86,19 @@ ENV_RE = re.compile(r"""os\.environ(?:\.get)?[\[(]\s*["']([A-Z_]+)["']|"""
                     r"""paths\.(?:env|flag|secret)\(\s*["']([A-Z_]+)["']""")
 READ_RE = re.compile(r"os\.environ|os\.getenv")
 
+# ★ 셸의 참조. `$FIRE_LANE_X` · `${FIRE_LANE_X}` · `FIRE_LANE_X=` 세 꼴 전부.
+#   대입도 쓰임으로 센다 — `fl.sh` 는 `.env` 를 읽어 쓰므로 대입이 곧 계약이다.
+SH_RE = re.compile(r"\$\{?(FIRE_LANE_[A-Z0-9_]+)\}?|^\s*(?:export\s+)?"
+                   r"(FIRE_LANE_[A-Z0-9_]+)=", re.M)
+
 
 def _py() -> list[Path]:
     return sorted([*(ROOT / "src").rglob("*.py"), *(ROOT / "tools").rglob("*.py")])
+
+
+def _sh() -> list[Path]:
+    """셸도 환경변수의 소비자다. 2026-09-24 이전에는 이 목록이 없었다."""
+    return sorted((ROOT / "tools").glob("*.sh"))
 
 
 def used_keys() -> dict[str, list[str]]:
@@ -86,6 +107,11 @@ def used_keys() -> dict[str, list[str]]:
         for m in ENV_RE.finditer(p.read_text(encoding="utf-8", errors="replace")):
             k = m.group(1) or m.group(2) or m.group(3)
             if k and k.startswith("FIRE_LANE"):
+                out.setdefault(k, []).append(str(p.relative_to(ROOT)))
+    for p in _sh():
+        for m in SH_RE.finditer(p.read_text(encoding="utf-8", errors="replace")):
+            k = m.group(1) or m.group(2)
+            if k:
                 out.setdefault(k, []).append(str(p.relative_to(ROOT)))
     return out
 

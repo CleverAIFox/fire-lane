@@ -574,6 +574,15 @@ EXEMPT_SCOPE = {
     "tools/widen.py::w4":
         "「tools 전량이 어디선가 불리는가」 — 우주가 tools/ 다. 건초더미(`hay`)는 src·tests·tools "
         "전부다(같은 함수 안 `pys(...)`)",
+    # ── 2026-09-24 (DECISIONS §226). ⑤ 는 **폴더** 축, `scopedecl` ② 는 **접미사** 축이다.
+    #    둘은 같은 족의 다른 축이고 서로를 대신하지 못한다 — 겹치는 것이 아니라 직교한다.
+    "tools/env_check.py::_sh":
+        "`.sh` 의 우주가 `tools/` 다 — `src/` 와 `tests/` 에는 셸 스크립트가 0개다. "
+        "이 함수는 **셸에 사는 환경변수**를 세려고 2026-09-24 에 생겼다",
+    "tools/scopedecl.py::enforcers":
+        "강제자의 우주가 `tools/`(도구) + `tests/test_*.py`(검사) 둘이다. 두 줄로 나눠 "
+        "모으므로 줄마다 보면 한쪽만 훑는 것으로 보인다 — 합쳐서 보면 `src/` 만 빠지고 "
+        "**`src/` 는 강제자가 아니라 강제 대상**이다(`dms.py::_units` 와 같은 사유)",
     "src/firelane/inventory.py::_code_text":
         "속성이 **쓰이는가**는 판정(src)과 화면(web/*.js)이 읽는가다. 탐색 도구가 컬럼을 "
         "읽는 것을 사용으로 세면 모든 컬럼이 영원히 쓰인다(test_declaration_sync 와 같은 이유)",

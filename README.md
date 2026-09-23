@@ -74,6 +74,7 @@ uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 �
 uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 · 결번 대장 (★ --apply 는 폐지 — 번호는 영구 식별자다)
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
+uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
 # ★ 위 도구가 세는 사본을 합친 자리 —
 #   src/firelane/hashing.py    파일 sha256. 10곳이 한 벌이었다
 #   src/firelane/console.py    col · human · 팔레트. 17곳
@@ -138,7 +139,7 @@ editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
 
 ```bash
-bash tools/verify.sh          # 51단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 52단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 급할 때. ★ `부분 실행` 에서 일부러 빨갛게 죽는다
 ```
 

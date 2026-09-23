@@ -37,6 +37,8 @@ docx_check.py — 기획서가 산출물과 어긋나지 않는가.
 IN    docs/*.docx · data/golden/segments.fingerprint.json
 OUT   없음 (검사). --json 이면 stdout
 PARAM RETIRED · 허용 오차 없음(정수 대조)
+밖    **`docs/*.md` 는 안 본다.** 정본 셋의 숫자는 `docnum_check.py` 소관이고
+      이 도구는 기획서(`.docx`) 하나만 든다 — 둘이 겹치면 정본이 둘이 된다(§18-3).
 """
 from __future__ import annotations
 

@@ -266,6 +266,10 @@ jobs:
       #   관문이었다(DECISIONS §202). `--ratchet` 이 프로브별 수를 든다.
       - name: ★ 검사가 죽었는가 (메타 가드 · 래칫)
         run: uv run python tools/deadcheck.py --ratchet
+      # ★ 2026-09-24 (DECISIONS §226). 「범위가 이름보다 좁고 선언돼 있지 않다」
+      #   족의 일곱 번째를 막는다. 추적 파일만 읽으므로 레이크 없이 돈다.
+      - name: ★ 강제자 범위 선언 (메타 가드)
+        run: uv run python tools/scopedecl.py
 
       # ── 2026-09-22 (DECISIONS §218-5). 관문 동등 미선언 11 → 0 ──────────
       # ★ W2 와 같은 기준 — **레이크 없이 도는가.** 열 모두 커밋된 파일(대장 · 문서 ·

@@ -17,6 +17,9 @@ test_layers.py — MASTER §18-1 계층 선언과 코드를 대조한다.
 IN    src/firelane/paths.py · docs/MASTER.md · tools/*.py
 OUT   없음 (검사)
 PARAM 없음
+밖    **`tools/*.sh` 여섯은 안 본다.** 이 검사가 잡는 것은 「계층 상수를 안 쓰고
+      경로를 손으로 조립한 파이썬」이다. 셸은 저장소 상대 경로로만 움직이고
+      `paths.py` 를 import 할 수 없다 — 셸의 경로 조립은 `test_batch_tools` 가 든다.
 """
 from __future__ import annotations
 
