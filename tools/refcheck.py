@@ -45,6 +45,7 @@ import argparse
 import fnmatch
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -70,6 +71,16 @@ def _acq() -> dict:
         return {}
     return json.loads(LEDGER.read_text(encoding="utf-8"))["files"]
 
+
+
+def _ignored(rel: str) -> bool:
+    """`.gitignore` 가 무시하는 경로인가. **git 에게 묻는다.**"""
+    try:
+        r = subprocess.run(["git", "check-ignore", "-q", rel],
+                           cwd=ROOT, capture_output=True, timeout=20)
+        return r.returncode == 0
+    except Exception:
+        return False
 
 def check() -> list[tuple[str, str, str]]:
     d = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
@@ -130,13 +141,29 @@ def check() -> list[tuple[str, str, str]]:
         #   회고를 쓸 수 없게 되고, 그러면 사람이 검사를 끈다 —
         #   `stale-ok` · `voice-ok` 와 같은 자리다(DECISIONS §97).
         #   같은 줄이나 같은 절 제목에 폐기 표시가 있으면 넘긴다.
+        # ★ 2026-09-24 (PLAN §1 #23 닫힘 · DECISIONS §233). 낱말 셋을 더했다 —
+        #   `종전` · `당시` · `옛`. 문서가 **그때 그랬다**고 적은 줄을 죽은 참조로
+        #   세면, 사람은 검사를 끄거나 **문장을 검사에 맞춰 비튼다.** 둘 다 나쁘다.
         _gone = {ln for ln in _txt.splitlines()
                  if any(k in ln for k in
-                        ("삭제", "폐기", "지웠다", "되돌렸다", "없앴다"))}
+                        ("삭제", "폐기", "지웠다", "되돌렸다", "없앴다",
+                         "종전", "당시", "옛 "))}
         for m in sorted(set(DOC_PATH.findall(_txt))):
             if (ROOT / m).exists():
                 continue
             if any(m in ln for ln in _gone):
+                continue
+            # ★ **기계마다 있는 파일은 죽은 참조가 아니다.** `.env.local` 처럼
+            #   gitignore 된 경로는 「이 기계에 없다」일 뿐이고, 문서가 그것을
+            #   설정 경로로 적는 것은 옳다. git 에게 직접 묻는다 — 규칙을
+            #   여기 베껴 적으면 `.gitignore` 와 정본이 둘이 된다(§18-3).
+            if _ignored(m):
+                continue
+            # ★ **예시 이름은 참조가 아니다.** `tools/x.py 를 참고할 것` 은
+            #   규약을 설명하는 자리표다. `tools/dms.py::EXAMPLE_NAMES` 와
+            #   같은 이유이고 같은 어휘를 쓴다 — 두 곳이 갈리면 안 되므로
+            #   어휘는 짧게 두고 늘리지 않는다.
+            if Path(m).stem in ("x", "xxx", "yyy", "zzz", "foo", "bar", "baz"):
                 continue
             out.append((WARN, doc.name, f"{m} — 없다"))
 

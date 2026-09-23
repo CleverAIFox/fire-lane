@@ -579,6 +579,10 @@ EXEMPT_SCOPE = {
     "tools/env_check.py::_sh":
         "`.sh` 의 우주가 `tools/` 다 — `src/` 와 `tests/` 에는 셸 스크립트가 0개다. "
         "이 함수는 **셸에 사는 환경변수**를 세려고 2026-09-24 에 생겼다",
+    "tests/test_refcheck_paths.py::test_example_names_are_only_placeholders":
+        "예시 이름 목록이 **도구 이름**을 삼키는지 보는 대조표다. 그 목록의 우주가 "
+        "`tools/` 이고(`refcheck` 가 `tools/x.py` 꼴만 예시로 든다), `src`·`tests` 는 "
+        "그 목록의 비교 대상이 아니다",
     "tools/scopedecl.py::enforcers":
         "강제자의 우주가 `tools/`(도구) + `tests/test_*.py`(검사) 둘이다. 두 줄로 나눠 "
         "모으므로 줄마다 보면 한쪽만 훑는 것으로 보인다 — 합쳐서 보면 `src/` 만 빠지고 "

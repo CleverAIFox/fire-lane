@@ -55,6 +55,13 @@ __pycache__/
 
 # ── 로컬 환경 ──────────────────────────────────────────────
 .env
+# ★ 2026-09-24 (DECISIONS §233). `.env` 만으로는 `.env.local` 이 안 막힌다.
+#   `web/navi/.env.local` 은 `VITE_MAPBOX_TOKEN` 이 사는 자리이고(§216-5 가
+#   그 경로를 문서로 적는다), 막히는 층이 `commit_policy` **하나**였다.
+#   훅은 `--no-verify` 로 건너뛸 수 있다 — 락이 3중인 이유(MASTER §12-9)가
+#   이것이고, 제일 싼 층이 여기다.
+.env.local
+.env.*.local
 
 # 일회성 적용 스크립트. 저장소에 남기지 않는다.
 apply.sh
