@@ -127,6 +127,26 @@ def test_plan12_targets_exist_in_docx():
         "  08-31 에 다섯 건 중 셋이 이 상태였다 — 표가 문서보다 먼저 낡았다.")
 
 
+def test_the_quoted_target_judge_bites():
+    """★ 2026-09-24 (DECISIONS §239). `test_plan12_targets_exist_in_docx` 의
+    판정 루프도 **0회 돈다**(§12 표가 비었다). 닻(제목 확인)은 2026-09-22 에
+    박혔지만 **판정기 대조는 같은 파일의 형제만 받았다** —
+    `test_stale_number_probe_is_not_an_empty_net` 은 있고 이쪽은 없었다.
+
+    한 파일 안에서 처방이 갈린 자리라 여기서 맞춘다.
+    """
+    doc = "산출단위 1,281구간 · 동명동 경계"
+    def judge(body: str) -> bool:
+        quoted = [q for q in re.findall(r"`([^`]+)`", body)
+                  if not SKIP.match(q) and len(q) >= 3]
+        return bool(quoted) and all(q not in doc for q in quoted)
+
+    assert judge("`동명동 경계선` 을 고친다"), "문서에 없는 지목을 못 잡는다 — 그물이 비었다"
+    assert not judge("`산출단위` 표기를 고친다"), "문서에 있는 지목을 잡는다 — 거짓 빨강"
+    assert not judge("`docx_fix` 로 고친다"), "도구 이름을 지목으로 센다 — SKIP 이 죽었다"
+    assert not judge("백틱 없는 행"), "지목이 없는 행을 잡는다"
+
+
 def test_plan12_numbers_are_still_in_the_docx():
     """★ 2026-09-24 (PLAN §12 #21 · DECISIONS §237). 표가 든 **수**도 본다.
 

@@ -198,7 +198,17 @@ def audit(p: Path) -> list[str]:
     # ── 7 · 참조 — 기획서가 드는 저장소 경로 · 파일이 실재하는가 ──
     #   `data/` 아래는 저장소 밖(FIRE_LANE_DATA)이라 뺀다. 파일 이름은 추적 파일의 이름과 대조한다
     import subprocess
-    tracked = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True).stdout.split()
+    # ★ 2026-09-24 (DECISIONS §239). `CompletedProcess` 를 안 받아 **종료코드를 볼
+    #   방법이 없었다.** 아래 판정 둘이 `if tracked and …` 라, git 이 없거나
+    #   저장소 밖에서 돌면 `tracked` 가 비어 두 갈래가 **0건으로 초록**이 됐다.
+    #   이 도구는 verify · CI 양쪽에 걸린 관문이다 — 빈 그물이 초록으로 위장한다.
+    _g = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True)
+    if _g.returncode != 0 or not _g.stdout.split():
+        bad.append("  참조 — `git ls-files` 가 실패했다(또는 추적 파일 0건). "
+                   "⑦ 이 아무것도 못 본다 — 0건은 청결이 아니다: "
+                   f"rc={_g.returncode} {_g.stderr.strip()[:120]}")
+        return bad
+    tracked = _g.stdout.split()
     names = {Path(x).name for x in tracked}
     for m in sorted(set(re.findall(r"(?<![\w/.])((?:src|tools|web|docs|tests|infra|\.github)/[\w./-]+)", full))):
         q = m.rstrip(".")

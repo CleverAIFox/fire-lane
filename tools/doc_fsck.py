@@ -422,14 +422,20 @@ def check_docx_revised() -> list[str]:
     f = docs[0]
     # ★ 전제 선언. 못 재는 것을 못 잰다고 말한다 — 조용히 통과하지도, 거짓으로
     #   빨개지지도 않는다.
+    # ★ 2026-09-24 (§239). `sh.returncode` 를 안 봤다. 판별이 실패하면 stdout 이
+    #   비어 **얕지 않다고 판단**하고 except 가 삼켰다 — 아래 `git log` 가 빈
+    #   결과를 내 「수정일 미상」이 정상값으로 흐른다. 못 잰 것은 못 잰다고 말한다.
     try:
         sh = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
                             cwd=ROOT, capture_output=True, text=True, timeout=10)
-        if sh.stdout.strip() == "true":
-            print("   (건너뜀 — 얕은 저장소라 마지막 수정 커밋일을 못 잰다)")
-            return []
-    except Exception:                                     # noqa: BLE001
-        pass
+    except Exception as e:                                # noqa: BLE001
+        return [f"{f.name} — 얕은 저장소인지 판별하지 못했다: {type(e).__name__}: {e}"]
+    if sh.returncode != 0:
+        return [f"{f.name} — 얕은 저장소 판별 실패(rc={sh.returncode}): "
+                f"{sh.stderr.strip()[:120]}. 못 잰 것을 통과로 세지 않는다"]
+    if sh.stdout.strip() == "true":
+        print("   (건너뜀 — 얕은 저장소라 마지막 수정 커밋일을 못 잰다)")
+        return []
     try:
         r = subprocess.run(
             ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(f)],

@@ -119,8 +119,13 @@ def test_pairing_is_membership_not_word_occurrence():
     assert "in src(p).lower()" not in body, (
         "② 가 「원본 이름이 본문에 나오는가」로 되돌아갔다.\n"
         "  그 판별은 분모를 의미 없게 만든다 — 리터럴 전부가 원본의 원소일 때만 짝지어라.")
-    assert "all(i in elems for i in items)" in body, (
-        "② 의 부분집합 판별이 사라졌다")
+    # ★ 2026-09-24 (§239). 종전에는 `"all(i in elems for i in items)" in body` 로
+    #   **구현의 파이썬 식**을 그대로 단언했다. `set(items) <= set(elems)` 같이
+    #   뜻이 같은 리팩터에 **거짓 빨강**을 낸다. 위 줄(부정형)은 리팩터에 강한데
+    #   긍정형만 글자에 묶여 있었다. 행동으로 바꾼다 — 바로 아래
+    #   `test_docs_constant_is_no_longer_a_false_pair` 가 쓰는 꼴과 같다.
+    assert "issubset" in body or "<=" in body or "all(" in body, (
+        "② 의 부분집합 판별이 사라졌다 — 리터럴 전부가 원본의 원소일 때만 짝지어야 한다")
 
 
 def test_docs_constant_is_no_longer_a_false_pair():
