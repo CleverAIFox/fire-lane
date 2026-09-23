@@ -562,7 +562,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 ```
 지도        cleveraifox.github.io/fire-lane/
 협업 방침    cleveraifox.github.io/fire-lane/workflow.html   MASTER §12 생성물
-기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.docx 를 그대로 그린다
+기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.docx 를 구운 PDF. 굽고 나서 넷을 대조한다(§231)
 내비        cleveraifox.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
 관제        cleveraifox.github.io/fire-lane/navi/?view=ops 사건 접수 · 출동 지령 · 실시간 공유 확인
 ```
