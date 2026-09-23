@@ -84,7 +84,14 @@ FENCE = re.compile(r"^\s*(```|~~~)")
 
 # 규약 정본. DECISIONS 서술 규약 표가 든 형태다
 CANON_NONE = "강제자 없음 — 사유:"
-NONE_ANY = re.compile(r"없음|없다")
+# ★ 2026-09-24 (DECISIONS §228). **줄머리에 있을 때만** 「없음」 선언이다.
+#   종전에는 `없음|없다` 를 칸 **아무 데서나** 찾았다. 그래서 강제자를 제대로
+#   지목하면서 「진입점 수는 실측값이라 대조 도구가 없다」처럼 범위를 덧붙인 칸이
+#   **`none` 으로 세어졌다.** 실측 8건 — 그중 넷(`DECISIONS/162-1` · `199-1` ·
+#   `212` · `215`)은 2026-09-17 부터 그 상태였다.
+#   분모를 세는 도구가 분모를 틀리게 세고 있었고, 방향은 **wired 를 줄이는 쪽**이라
+#   「강제자가 있는 절」이 실제보다 적어 보였다. 좁아지는 쪽으로 망가지는 프로브다.
+NONE_ANY = re.compile(r"^(?:없음|없다)")
 
 # ── 정밀 프로브 — 1차 소급 192건 중 174가 오탐이었다 ──────────
 EXAMPLE_NAMES = {"xxx", "yyy", "zzz", "foo", "bar", "baz", "name", "test_xxx",
@@ -954,6 +961,16 @@ def selftest() -> int:
     real = {"line": 0, "body": [(1, "강제자  `tests/test_guards.py::test_x`")]}
     if classify(real)[0] != "wired":
         bad.append("정상 칸을 못 셌다")
+    # ★ 2026-09-24 (DECISIONS §228). 강제자를 지목하면서 **범위를 덧붙인** 칸을
+    #   `none` 으로 세면 안 된다. 실측 8건이 그 상태였다.
+    ranged = {"line": 0, "body": [
+        (1, "강제자  `tests/test_x.py::test_y`. 나머지 수는 실측값이라 대조 도구가 없다")]}
+    if classify(ranged)[0] != "wired":
+        bad.append("강제자를 지목한 칸을 `없다` 한 단어 때문에 none 으로 셌다")
+    # 「없음」 선언은 **줄머리**에 있을 때만이다
+    declared = {"line": 0, "body": [(1, "강제자 없음 — 사유: 기록이다")]}
+    if classify(declared)[0] != "none":
+        bad.append("줄머리 `없음` 선언을 none 으로 안 셌다")
     # ★ 전문 대조는 무르다. 확실히 죽은 이름을 넣어 프로브가 우는지 본다
     # ★ 이름을 조립한다. 리터럴로 적으면 이 파일 자신이 전문에 걸려 통과한다
     ghost = "test_" + "zq7" + "_absent"

@@ -38,6 +38,8 @@
 이 문서를 고치는 사람이 지켜야 하는 형식이다. 규약이 지켜지지 않으면
 문서가 작업 로그로 되돌아간다.
 
+강제자  `tests/test_doc_style.py`(여덟 — 문체 · 날짜 · 절 번호 · 다섯째 문서 금지). 하위 절이 각각 제 강제자를 따로 든다
+
 ### 0-1. 문체
 
 | 항목 | 규칙 |
@@ -218,6 +220,8 @@ uv run python tools/baseline.py diff 20260824-pre-nreg
 이 절은 판정이 무엇 위에 서 있는가를 적는다. 그렇게 되기까지의 경위는
 DECISIONS 소관이다.
 
+강제자 없음 — 사유: 절 머리말이다. 규칙은 하위 절이 들고 각각 강제자를 적는다. 여기 적으면 정본이 둘이 된다(§18-3)
+
 ### 3-1. 구간 수는 고정값이 아니다
 
 ```
@@ -253,6 +257,8 @@ DECISIONS 소관이다.
 노드 식별에도 같은 관용을 준다 — `NODE_TOL 0.5m`. 밀리미터 반올림으로
 식별하면 4cm 떨어진 두 점이 별개 노드가 되고 길이 0.04m 짜리 엣지가 생긴다.
 
+강제자 없음 — 사유: 연결요소 수는 흡수-2 실측값이다(DECISIONS §170). `NODE_TOL` 자체는 `seg/params.py` 정본이고 `tests/test_seg_geom.py::test_seal_closes_hairline_gap` · `test_seal_keeps_disjoint_apart` 가 그 관용의 양쪽 끝을 든다
+
 ### 3-3. `ROAD_BT` 는 폭 값으로 쓰지 않는다
 
 도로대장의 명목 폭은 **171구간(84%)에서 실측 트랜섹트보다 넓다.**
@@ -263,6 +269,8 @@ DECISIONS 소관이다.
 명목폭 1.0m 짜리 부속 통로를 회색으로 두면 영상판정으로 메울 수 있다는 뜻이
 되는데, 카메라를 갖다 대도 소방차는 못 들어간다. 실측값이 하나라도 있으면
 그쪽이 항상 우선하므로 이 규칙은 폭 미산출 구간에만 걸린다.
+
+강제자  `tests/test_seg_geom.py::test_below_truck_is_blocked` · `tests/test_sources_of_truth.py`(`TRUCK` 정본 단일화). 명목 폭을 판정에 안 쓴다는 것은 `seg/width.py` 의 소스 목록에 `ROAD_BT` 가 없다는 사실이고, 그 목록은 `tests/test_seg_width.py` 가 든다
 
 ### 3-4. 폭은 하나로 못 정한다
 
@@ -322,6 +330,8 @@ DECISIONS 소관이다.
 채택하면 소스 우선순위 결정을 정면으로 뒤집는다. 커버율은 **선택 기준이 아니라
 자격 기준**이다.
 
+강제자  `tests/test_seg_width.py::test_thin_coverage_source_is_disqualified`(커버율 자격 `COV_MIN`) · 같은 파일 「소스 우선순위」 묶음(결정 63). 채택 수 `ngii1k 1,014 · silpok 84 · ngii 1` 은 실측값이라 대조 도구가 없다
+
 ### 3-6. 교차로 안에서는 그 도로의 폭을 잴 수 없다
 
 교차로 안의 한 점에서 도로 A 에 수직으로 법선을 그으면, 그 법선은 **교차하는
@@ -340,6 +350,8 @@ DECISIONS 소관이다.
 
 교차부 제외 범위는 고정 반경이 아니라 `A0080000` 평면교차점 실형상으로 판정한다.
 폴리곤이 10m 안에 있으면 폴리곤만 신뢰하고, 없는 교차로만 반경으로 폴백한다.
+
+강제자  `tests/test_seg_width.py::test_intersection_samples_excluded` · `test_short_fragment_still_measured`(짧은 조각은 제외를 푼다) · `tests/test_guards.py::test_lineage_blocks_orphan_derived_output`(교차부 형상 `ngii1k_xsec` 이 낡으면 폭이 조용히 갈린다)
 
 ### 3-7. 골목의 65%는 영상판정이 불가능하다
 
@@ -374,6 +386,8 @@ CCTV 거리 중앙값       38.5 m
 ```
 
 **진입점 5곳에 대책을 집중하면 출동의 80%가 개선된다.**
+
+강제자  `tests/test_station_scope.py`(열 — 안전센터가 스코프의 출발점인가 · 없으면 명시적으로 죽는가). 진입점 60/23/5/2 는 실측값이라 대조 도구가 없다
 
 ### 3-9. "못 간다"는 세 가지 값이 있다
 
@@ -428,6 +442,8 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 119안전센터 2곳에서 모든 노드까지 **단일 출발 Dijkstra** 를 돌린다. 목적지가
 다수이므로 A* 의 이점이 없다 — 휴리스틱의 이득은 목적지가 하나일 때 나온다.
 
+강제자  `tests/test_guards.py::test_route_usage_is_not_a_passability_claim`(`route_usage` 를 통행 가능성으로 읽는 것을 막는다) · `test_edge_cost_blocks_what_cannot_pass`
+
 ### 3-11. 런타임 프루닝은 폭이 아니라 경로로 한다
 
 정적 폭 기준으로는 61%가 영상판정 대상으로 남는다(동명동이 원래 좁다).
@@ -440,6 +456,8 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 ```
 
 **71개 엣지가 출동 통행의 절반을 처리한다.** 영상판정은 여기부터 건다.
+
+강제자 없음 — 사유: 엣지 사용 분포는 실측값이다. 「영상판정을 여기부터 건다」는 아직 코드가 아니라 방침이고, 배선되면 PLAN `#60` 이 그 자리를 든다
 
 ### 3-12. 소화전 좌표는 확보됐다. 분모가 여전히 다르다
 
@@ -576,6 +594,8 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 
 절대편차 합 8.99m. 앞의 셋이 ±0.1 안이고, 필문대로289번길 하나가 3.51 을 차지한다.
 
+강제자  `src/firelane/seg/report.py::nfa_compare`(대조를 내는 정본) · `tests/test_contract.py::test_segment_fields_are_internally_consistent`(`nfa_designated` ↔ 구간 일관) · `tools/docnum_check.py`(소방청 지정 수). 절대편차 값 자체는 실측이라 대조 도구가 없다
+
 ### 4-1. ★ 이 대조는 검증이 아니라 적합이다
 
 절대편차를 12.6 → 7.24m 로 줄이는 과정에서 이 표를 **게이트로 썼다.**
@@ -589,6 +609,8 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 소방서 7구간은 "기존 행정자료와 대체로 일치한다"는 정합성 근거로는 유효하지만
 "우리가 옳다"는 증거로는 쓸 수 없다.
 
+강제자  `tests/test_measurements.py`(오염 칸 — `nfa_compare_abs_dev` 를 적합에 쓴 지표로 표시하고 그것을 통과 조건으로 쓰면 운다) · `tests/test_docx_targets.py`(기획서에서 이 대조를 「검증」으로 부르는 것을 막는다)
+
 ### 4-2. 대조의 한계
 
 소방서 데이터에 **좌표가 없다.** 도로명으로만 매칭되므로 도로 전체(대로 구간
@@ -600,6 +622,8 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 도로대장을 여기에 걸었으나 **부존재로 종결됐다**(2026-08-24 · PLAN §1-26).
 ★ 도로대장은 검증축이 아니다. 독립 대조는 `ngii1k_center` 의 측량 성과
 도로폭이 맡고(n=909 · 절대편차 중앙 0.32m), 정본은 D-25 실측이다.
+
+강제자 없음 — 사유: 「소방서 자료에 좌표가 없다」는 외부 기관의 사실이라 코드가 검사할 수 없다. 중앙값으로 비교한다는 선택은 `seg/report.py::nfa_compare` 가 정본이고 그 코드 한 곳에만 있다
 
 ### 4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다
 
@@ -773,6 +797,8 @@ FIRE_LANE_SKELETON=1       뼈대를 갈아 끼우고 한 번 돌려 보는 **�
 
 ## 6. 데이터 현황
 
+강제자 없음 — 사유: 절 머리말이다. 확보·보관·소스는 하위 절이 들고 각각 강제자를 적는다
+
 ### 6-1. 확보
 
 도로구간 · 실폭도로 · **1:1,000 수치지형도 도로경계** · 1:5,000 연속수치지도
@@ -850,6 +876,8 @@ V-WORLD SHP 74도엽 (2026-03) + 국토정보플랫폼 NGI 보완분 143도엽
 폴리곤 밖이었다. 북·남·서구 상품도 그 띠를 비껴간다. 취득 후 반드시 스코프
 bbox 와 교차 검증한다. 강제자 — `guards.coverage_check`(상한 10%)
 
+강제자  `tests/test_guards.py::test_coverage_blocks_the_0818_situation` · `test_coverage_passes_at_confirmed_level` · `test_coverage_blocks_empty_polygon_source`(`guards.coverage_check` 상한 10% — 스코프의 69%가 도로경계 밖이던 상태를 재현해 든다)
+
 ### 6-4. 가로등 — 두 데이터가 서로를 대체하지 않는다
 
 ```
@@ -865,6 +893,8 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 
 ★ 이 원은 CCTV 커버리지 원과 의미가 정반대다. CCTV 는 "이 범위를 본다"이고
 가로등은 "이 범위 안에 있다"이다. 색과 선 종류를 다르게 쓰고 범례에 명시한다.
+
+강제자  `tests/test_contract.py::test_optional_layers_not_silently_empty`(`light_count` 가 전부 0 이면 운다 — 2026-08-14 에 경로가 바뀌어 등 수가 통째로 0 인 채 「OK」를 찍었다). 등 수 보존(group-by + count)과 폴/지점의 구분 자체는 `streetlight` 단계 코드가 정본이다
 
 ### 6-5. 쓸 수 없는 것 — 확인 완료
 
@@ -883,6 +913,8 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 어느 판에서 온 행인지는 `_src` 컬럼에 남는다. 고유 장소 2,123개다. 도로명 상위는 충장로 5,068 · 구성로 3,797 · 금남로 3,739 ·
 백서로 2,462 · 동계천로 2,432 다. 이것이 상습주차 추정 모델의 **레이블**이 된다.
 **출동 시점의 상태가 아니라 사전 위험도다.** 그 구분을 흐리지 않는다.
+
+강제자 없음 — 사유: 「왜 못 쓰는가」는 판단이라 코드가 검사할 수 없다. 대신 **안 쓴다는 사실**은 각각 다른 자리가 든다 — `ROAD_BT` 는 §3-3 의 강제자가, 대장에 남은 채 아무도 안 읽는 소스는 `ledger.grade()` 의 `unused` 가, 은퇴는 `firelane.lake gate` 가 든다
 
 ### 6-6. 미확보
 
@@ -1031,6 +1063,8 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 지도에 나오는 말과 **문서·도구가 쓰는 말**. 팀 누구나 이 절만 보면
 화면과 문서를 읽을 수 있어야 한다.
 
+강제자 없음 — 사유: 절 머리말이다. 말 하나하나는 하위 절이 들고, 지도 라벨과 산출 어휘의 대응은 `§10-2` 의 강제자가 든다
+
 ### 10-0. `D-XX` 는 날짜가 아니다
 
 **미결정 항목 번호(Decision)** 다. 출처는 2026-08-07 「미결정 사항 정리」이며,
@@ -1051,6 +1085,8 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 원문에는 D-01~D-33 이 있으나 나머지는 인용하지 않는다.
 **새 D 번호를 만들지 않는다.** 남은 결정은 PLAN 에 절 번호로 쓴다.
 
+강제자 없음 — 사유: `D-XX` 의 출처는 2026-08-07 외부 문서이고 현재 상태는 사람이 갱신한다. 「새 D 번호를 만들지 않는다」는 규약이고 그것을 지키는 검사는 없다 — `D-25` 처럼 코드가 인용하는 번호가 실재하는지는 `tools/dms.py verify` 의 죽은 참조 물음 밖이다(그것은 강제자 이름만 본다)
+
 ### 10-1. 지금 어디까지 왔나
 
 ```
@@ -1061,6 +1097,8 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 
 **지금 색상은 최종 판정이 아니다.** 도면(공공 GIS 데이터)만으로 낼 수 있는
 1차 분류이며, 그 단서는 화면 상단 `#warn` 이 유지한다.
+
+강제자 없음 — 사유: 세 단계의 진행 상태 서술이다. 「지금 색은 최종 판정이 아니다」를 화면이 말하는지는 `tests/test_navi_wireframe.py` 가 `#warn` 으로 든다
 
 ### 10-1a. 이 저장소가 쓰는 말
 
@@ -1084,6 +1122,8 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 ★ **이 말들이 안 통하면 문서 셋을 못 읽는다.** 규약을 적을 때 새 말을
 만들면 여기 한 줄을 같이 적는다 — 규약에 강제자를 붙이는 것과 같은
 이유다(§17).
+
+강제자 없음 — 사유: 말의 뜻은 코드가 검사할 수 없다. 「새 말을 만들면 여기 한 줄을 같이 적는다」도 규약이고 강제자가 없다 — 이 표가 낡으면 문서 셋을 못 읽게 되므로 규약 배치에서 사람이 같이 고친다
 
 ### 10-2. 판정 4종
 
@@ -1149,6 +1189,8 @@ CCTV 밖이면 `unknown`(`no_cctv_band` 152)으로 내려간다(§2-1). 기획�
 > 이전에 쓰던 "노면폭 하한 / 담~담 상한"은 **최소 폭 / 최대 폭**으로 통일했다.
 > 문서·UI·발표 자료 전부 이 표기를 쓴다.
 
+강제자 없음 — 사유: `§3-4` 로 위임하는 용어 절이다. 두 폭이 실제로 둘인지는 `tests/test_seg_width.py` 가, 표기 통일(최소 폭 / 최대 폭)은 `tools/docx_check.py` 의 용어 대조가 든다
+
 ### 10-5. 소방 동선 (`route_usage`)
 
 **이 골목이 최단경로에 몇 번 등장하는가.** 119안전센터 2곳에서 동명동
@@ -1185,6 +1227,8 @@ CCTV 밖이면 `unknown`(`no_cctv_band` 152)으로 내려간다(§2-1). 기획�
 
 이 범위 밖으로는 이동도 축소도 안 된다. 작업 범위가 구조적으로 고정된다.
 
+강제자  `tests/test_station_scope.py::test_display_scope_covers_judgment_scope`(표출 스코프가 판정 스코프를 덮는가) · `test_display_scope_has_no_notches_or_holes` · `test_ingest_bounds_cover_station_circles_and_width_context`(안전센터 원과 폭 문맥까지 적재 범위가 덮는가)
+
 ### 10-7. 시설 마커
 
 마커는 전부 **3D 입체**다. 2D 점은 기울인 화면에서 지면에 붙어 안 보인다.
@@ -1206,6 +1250,8 @@ CCTV 원본은 설치연도별로 행이 쪼개져 있어 좌표로 묶어 지�
 `설치회차` 에 증설 횟수가 남는다. 촬영방면이 전부 360도라 방향 콘이 아니라
 원으로 그린다.
 
+강제자  `web/navi/test/style.test.ts`(마커 스타일) · `tools/web_manifest.py --check`(마커가 읽는 레이어가 커밋본과 같은 계보인가). 건수(소화전 153 · CCTV 104지점 312대 · 가로등 46지점 573등)는 실측값이고 `tools/docnum_check.py` 가 CCTV 만 대조한다
+
 ---
 
 ## 11. 화면 인수인계 — 내비 · 관제
@@ -1218,6 +1264,8 @@ CCTV 원본은 설치연도별로 행이 쪼개져 있어 좌표로 묶어 지�
 
 이 절은 화면을 만지는 사람이 작업 지시로 그대로 쓴다. 필드 · 파일이 바뀌면 이 절을 같이 고친다.
 
+강제자  `tests/test_web_ownership.py::test_old_map_is_retired_and_entry_redirects`(옛 지도가 되살아나지 않는가 · 입구가 관제로 넘기는가) · `tests/test_contract.py::test_web_data_has_no_unintended_orphan`(발행 계약 — 화면이 안 읽는 레이어가 남지 않는가)
+
 ### 11-1. 띄우기
 
 ```bash
@@ -1226,6 +1274,8 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 ```
 
 `web/navi/dist` 가 없으면 `serve.py` 가 `npm run build` 를 먼저 하라고 말한다.
+
+강제자  `tools/install_navi.py --check`(내비 소스 목록) · `tools/navi_env.py`(로컬 노드 판 = CI). `serve.py` 가 빌드 없이 돌 때 무엇을 말하는지는 `tests/test_desk_tools.py` 가 든다
 
 ### 11-2. 파일 구조
 
@@ -1255,11 +1305,15 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 ★ 0.5m 는 `TUNING.tightMarginM`(비용 1.8배가 걸리는 그 값)이고 1.0m 는 **표시 전용**이다.
   새 문턱을 세우지 않았다 — 판정 문턱의 정본은 여전히 `seg/params.py` 다.
 
+강제자  `web/navi/test/clearance.test.ts`(여유폭 = `width_min_m` − `requiredWidth` 를 1,281구간 전량으로 댄다 — 화면의 수와 경로의 가부가 같은 폭을 쓰는가) · `tests/test_sources_of_truth.py`(문턱 정본은 `seg/params.py` 하나)
+
 ### 11-3. 값은 바뀌고 구조는 안 바뀐다
 
 폭 값은 아직 **미검증**이고(`width_verified: false`) 실측 뒤 일부 구간의 `verdict` 가 바뀐다.
 화면은 숫자가 아니라 `verdict` 문자열로 가른다 · 색은 발행된 `style` 에서 읽는다 ·
 `verdict` 는 넷이 전부다. 좌표계 `EPSG:4326` · 필드명 · 타입은 고정이고 깨지면 CI 가 막는다.
+
+강제자  `tools/docnum_check.py`(이 절의 필드표를 `publish_web.py` 산출과 매 실행 대조한다) · `tests/test_contract.py`(CRS · 필드 · 타입 · `verdict` 어휘 · `seg_uid` 형식과 유일성)
 
 ### 데이터 필드
 
@@ -1345,6 +1399,8 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | 레이어가 실제로 올랐는지 | `?debug=1` 이면 `window.__flMap` 으로 지도를 잡는다 |
 | 소화전 수가 문서와 다름 | 산출물이 정본이다. §3-12 참조 |
 
+강제자  `web/navi/test/style.test.ts`(레이어 식이 무효면 MapLibre 가 조용히 건너뛰는 자리를 style-spec 검증기로 잡는다). 나머지 줄은 증상↔원인 안내라 검사 대상이 아니다
+
 ---
 
 ## 12. 협업
@@ -1402,6 +1458,8 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 | CI | 사람 눈으로는 3주 동안 못 본 것을 즉시 잡는다 |
 | 룰셋 | 실수를 규율이 아니라 **형식**으로 막는다 |
 | 계약 (`src/contracts/`) | 파트 간 **유일한** 접점. 깨지면 남의 파트가 멈춘다 |
+
+강제자  `tests/test_workflow_html_sync.py::test_generated_matches_master`(표시용 사본 `web/workflow.html` 이 이 절의 생성물인가 · `test_no_handwritten_copy`) · `tools/owned_paths.py` · `tests/test_ownership.py::test_every_tracked_path_has_an_owner`(팀 ↔ 경로 표의 실물)
 
 ### 12-0. 상황별 색인
 
@@ -1476,6 +1534,8 @@ git push origin --delete feat/<이름>
 `bypass_actors` 가 뚫었다 — 머지를 admin 이 하므로 자동 삭제도 admin
 권한으로 실행된다. **규칙이 있어도 예외가 있으면 없는 것과 같다**(`DECISIONS §79`).
 
+강제자  `tools/ruleset_check.py`(GitHub 룰셋 **실물**을 API 로 읽어 이 표와 댄다 — 2026-08-31 에 「승인 1」로 적힌 것이 실물 0 이었다) · `tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check` · `test_rules_table_probe_is_alive`
+
 ### 12-1a. 예외와 회수
 
 지금 룰셋 실물이 위 표와 어긋난 것들이다. **되돌릴 날과 함께 적는다** —
@@ -1485,6 +1545,8 @@ git push origin --delete feat/<이름>
 `release` 의 승인 1 을 켰다. 2026-08-27 에 `Repository admin` 역할(actor_id 5)을
 `always` 로 넣었던 것이고(DECISIONS §80), 한시로 부여한 것을 한시로 끝냈다.
 `web/playbook.html` 의 BYPASS 카드와 `doc_fsck.DEPARTURE` 도 같은 날 걷었다.
+
+강제자  `tools/ruleset_check.py`(회수가 실제로 끝났는가 — `bypass_actors` 가 비었는지 실물로 본다). 「되돌릴 날과 함께 적는다」는 규약이고 날짜 자체를 세는 검사는 없다
 
 ### 12-1c. 지금 살아 있는 예외
 
@@ -1621,6 +1683,8 @@ bypass 를 한시로 부여하고 회수를 사람 기억에 맡겼으므로 `do
 `main` 룰셋의 허용 머지 방식을 `Merge` 단독으로 바꿔 사람이 고를 여지를
 없앴다. 확인 명령은 `git merge-base --is-ancestor origin/main origin/dev` 다.
 
+강제자  `tests/test_release_procedure.py::test_release_steps_are_not_direct_pushes` · `test_release_step1_waits_for_merge` · `tools/ruleset_check.py`(허용 머지 방식이 실물에서 `Merge` 단독인가). `dev`↔`main` 이 조상 관계를 유지하는지는 `merge_batch.sh` 가 `git merge-base --is-ancestor` 로 확인한다
+
 ### 12-3. 소유권
 
 `.github/CODEOWNERS` 가 **리뷰 권한과 검사 강도의 단일 정본**이다.
@@ -1634,6 +1698,8 @@ bypass 를 한시로 부여하고 회수를 사람 기억에 맡겼으므로 `do
 ★ 자기 PR 은 자기가 승인할 수 없다(GitHub 사양). 그래서 GIS 코어를 팀
 소유로 둔다. 실제 방어는 승인이 아니라 계약 테스트가 한다.
 
+강제자  `tests/test_ownership.py`(여덟 — 미소유 경로 · 포괄 규칙의 자리 · 핸들 실재 · `# !strict` 범위가 비지 않았는가) · `tools/owned_paths.py`
+
 ### 12-4. 충돌
 
 | 대상 | 처리 |
@@ -1644,6 +1710,8 @@ bypass 를 한시로 부여하고 회수를 사람 기억에 맡겼으므로 `do
 
 ★ `main` · `dev` · `part/**` 는 전부 보호 브랜치이며 직푸시가 막힌다 —
 **오창준도 PR 이 필요하다.** 자유롭게 만들고 지울 수 있는 것은 `feat/**` 뿐이다.
+
+강제자  `tests/test_doc_fsck.py` · `tools/doc_fsck.py::check_commands`(문서가 적은 명령이 보호 브랜치에 직푸시·로컬 머지를 시키지 않는가 — 이 표가 바로 그 대상이다)
 
 ### 12-5. 하루 흐름
 
@@ -1670,6 +1738,8 @@ PR 이며 머지 커밋을 쓴다(§12-2).
 상대가 뭘 하고 있는지 보여야 하고, CI 가 매번 돌아 계약이 깨졌는지 즉시 안다.
 완성해야 푸시하는 게 아니라 **동작하는 지점마다 푸시한다.**
 
+강제자  `tools/doc_fsck.py::check_commands`(이 절의 코드블록이 보호 브랜치 직푸시·로컬 머지를 적으면 운다). 「하루 안에 머지하고 지운다」는 방침이고 `tools/branch_tidy.sh --auto` 가 실행 쪽을 든다
+
 ### 12-6. 커밋 메시지
 
 ```
@@ -1680,6 +1750,8 @@ fix:  버그
 ```
 
 한 줄이면 충분하다. 무엇을 왜 바꿨는지만 남긴다.
+
+강제자  `tools/commit_policy.py --tracked`(커밋 메시지 규약 실물 대조 · `tests/test_commit_policy.py` 가 그 판정기를 든다)
 
 ### 12-7. 자동으로 도는 것
 
@@ -1833,6 +1905,8 @@ GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 
   사람이 띄운다. **중간평가까지는 그것으로 충분하고, 부족해지는 시점이
   곧 ECS 로 가는 시점이다**(`DECISIONS §93`).
 
+강제자  `tests/test_publish_context.py::test_deploy_uses_drop_list` · `tests/test_workflow_static.py`(배포 워크플로 실물). ★ 이 절의 대부분은 **밑그림**이라 검사 대상이 없다 — 실물이 생기면 그때 강제자가 붙는다(§12-0 의 밑그림 규약)
+
 ### 12-8a. 매체 저장 — 밑그림
 
 사진은 저장소에 넣지 않는다. `web/data` 40MB 상한(§12-10)과 같은 이유이며,
@@ -1858,6 +1932,8 @@ GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 
 
 ★ 마스킹 후에도 보관 기간 · 접근 주체 · 파기 시점은 방침 문서에 적어야 한다.
 정본은 PLAN 이며 여기에 복사하지 않는다.
+
+강제자 없음 — 사유: 밑그림이다(§12-0). 버킷도 presigned URL 도 실물이 없다. 지킬 수 있는 것은 「사진을 저장소에 넣지 않는다」뿐이고 그것은 `tools/commit_policy.py` 와 `tools/scopecheck.py`(web/data 용량 상한)가 든다
 
 ### 12-8b. 릴리즈 절차
 
@@ -1935,6 +2011,8 @@ gh pr create --base part/<파트> --head dev --fill && gh pr merge --merge
 ★ **릴리즈 4단계(§12-8b)도 이 경로다.** 릴리즈 매니저는 3단계까지 하고
 알리며, 각 파트가 자기 브랜치로 받는다. 대신 받아주지 않는다.
 
+강제자 없음 — 사유: 누가 PR 을 올리는가는 사람의 약속이라 코드가 검사할 수 없다. 핸들이 실재하는지는 `tests/test_ownership.py::test_owner_handles_look_real` 이, 소유의 정본이 CODEOWNERS 하나인 것은 `tests/test_declaration_sync.py::test_master_roles_do_not_copy_codeowners` 가 든다
+
 ### 12-9. 락이 3중인 이유
 
 | 층 | 막는 것 | 한계 |
@@ -1947,6 +2025,8 @@ CODEOWNERS 는 "누가 봐야 하는가"를 정하고, 계약 테스트는 "무�
 되는가"를 정한다. 후자가 본체다. 룰셋의
 `Require review from Code Owners` 를 켜지 않으면 CODEOWNERS 는 효력 없는
 텍스트 파일이다.
+
+강제자  `tests/test_ownership.py`(CODEOWNERS 층) · `tools/commit_policy.py --tracked`(첫 층) · `tests/test_contract.py`(셋째 층 — 「실제로 막는 건 이것」). 룰셋의 `Require review from Code Owners` 실물은 `tools/ruleset_check.py` 가 본다
 
 ### 12-10. 데이터를 저장소에 넣는 기준
 
@@ -1982,6 +2062,8 @@ git config --global core.precomposeunicode true
 바꿨다. zip 으로 옮길 때마다 `#Uae30#Ud68d...` 로 깨졌고, 배포 URL 에서도
 같은 문제가 난다. 규칙을 적어놓고 정작 그 규칙을 어기는 파일 하나가
 남아 있으면 다음 사람이 그것을 근거로 한글 파일명을 또 만든다.
+
+강제자  `tools/encoding_check.py`(인코딩·개행) · `tools/treecheck.py --repo`(git 도 gitignore 도 모르는 파일). 「앞으로 새 파일은 영문 이름」은 규약이고 그것을 세는 검사는 없다
 
 ---
 
@@ -2022,6 +2104,8 @@ uv run python tools/baseline.py diff 20260824-pre-nreg
 
 ## 14. 실행
 
+강제자 없음 — 사유: 절 머리말이다. 명령 하나하나는 하위 절이 들고, 문서에 적힌 명령이 실재하는지는 `tools/doc_fsck.py::check_commands` 가 본다
+
 ### 14-1. 받자마자 한 번
 
 ```bash
@@ -2032,6 +2116,8 @@ export FIRE_LANE_DATA="<raw 상위 폴더 경로>"
 
 `uv pip install -e .` 은 치지 않는다. `[build-system]` 이 있으므로 `uv sync` 가
 editable 로 알아서 깐다.
+
+강제자  `bash .githooks/global-chain.sh --check`(전역 훅이 저장소 `.githooks` 에 위임하는가 — 로컬로 박으면 자격증명 검사가 사라진다) · `tools/env_check.py`(`FIRE_LANE_DATA` 선언 ↔ 실물)
 
 ### 14-2. 파이프라인은 한 명령이다
 
@@ -2061,6 +2147,8 @@ uv run fire-lane --only publish
 
 전량 재실행 약 285초. 몇 번을 돌려도 결과가 같고, 두 번째부터는 캐시가 걸린다.
 
+강제자  `tests/test_guards.py::test_entry_point_is_cwd_independent` 계열 · `tools/doc_fsck.py::check_commands`(이 블록의 단계 이름이 실재하는 단계인가). 단계 순서의 정본은 `src/firelane/pipeline.py::STEPS` 다
+
 ### 14-3. 원본을 새로 받으면
 
 ```bash
@@ -2069,6 +2157,8 @@ uv run python tools/acquire.py --stage --yes    landing → raw 편입 + sha 기
 uv run python -m firelane.normalize_raw <다운로드폴더> --dry-run
 python -m firelane.contract                     대장 선언 ↔ raw 실물 대조
 ```
+
+강제자  `tools/doc_fsck.py::check_commands`(네 명령이 실재하는 도구·모듈인가) · `tests/test_ledger_contract.py`(대장 선언 ↔ 실물 판정의 경계)
 
 ### 14-4. 검사
 
@@ -2302,6 +2392,8 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 `tools/docx_figs.py` 의 `PLACE` 가 「어느 생성 그림이 기획서 몇 번 그림인가」의 정본이고,
 기획서에 자리가 없는 그림은 사유를 적어 `internal` 로 선언한다.
 
+강제자  `tools/docx_check.py`(기획서 ↔ 산출 대조) · `tools/docx_figs.py --check`(그림 ↔ 정본 · `PLACE` 가 「어느 생성 그림이 기획서 몇 번인가」의 정본) · `tests/test_docx_targets.py`(양방향 · 손으로 넣으라는 안내가 남아 있지 않은가)
+
 ### 15-1. 말할 수 있는 것
 
 ```
@@ -2335,6 +2427,8 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 않는다.**
 
 지형 표현에 `exaggeration` 을 1.0 이외로 올려 캡처했다면 그 사실을 캡션에 적는다.
+
+강제자  `tests/test_contract.py::test_segment_fields_are_internally_consistent`(`width_verified` 가 참이면 운다 — D-25 실측 전이다) · `tools/docnum_check.py`(대외 수치 재산출 대조). 「exaggeration 을 캡션에 적는다」는 규약이고 검사가 없다
 
 ---
 
@@ -2374,6 +2468,8 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 
 ★ **번호는 재사용하지 않는다.** 새 결정은 `DECISIONS.md` 의 다음 절 번호로
 기록하고, 그것이 효력을 갖는 규칙이면 이 표에 한 줄을 더한다.
+
+강제자  `tools/docnum_check.py`(결정 번호 인용) · `tests/test_declaration_sync.py`(결정 대장 ↔ 코드 상수). 「사유는 여기 적지 않는다」는 규약이고 `tools/doc_fsck.py` 의 문서↔문서 검사가 절 참조를 든다
 
 ### 16-1. `CCTV_RANGE` 는 거리 상수가 아니라 촬영 기하의 함수다
 
@@ -2438,6 +2534,8 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 `SNAP_TRUST` · `COV_MIN` 에는 근거가 붙어 있다. **상수만 보면 눈대중처럼
 보이지만 근거가 붙어 있으면 함부로 못 건드린다.**
 
+강제자  `tests/test_measurements.py`(근거 없는 상수는 측정 대장에 행으로 서고, 그 행이 실측으로 닫히는지 본다) · `tests/test_sources_of_truth.py`(상수의 정본이 `seg/params.py` 하나인가)
+
 ---
 
 ## 17. 작업 원칙
@@ -2458,6 +2556,8 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 ★ **강제되지 않는 규약은 장식이다.** 이 저장소에서 반복된 사고는 하나의
 형태를 갖는다 — 규약은 주석이나 문서에 존재하고 이를 강제하는 검사가 없다.
 반복 사례는 `DECISIONS.md` 가 든다.
+
+강제자  `tests/test_doc_style.py` · `tools/dms.py`(마지막 줄 「새 규칙을 적을 때는 강제자를 같이 만든다」를 세는 자리가 이 도구다 — 분모 232) · `tools/scopedecl.py`(강제자가 자기 범위를 선언하는가)
 
 ### 17-1. 정본은 하나 — 사실 · 정본 파일 · 따르는 곳 · 강제자
 
@@ -2499,9 +2599,13 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 `tests/test_verify_citations.py` 가, 판정 숫자의 문서 대조는
 `tools/docnum_check.py` 가 이미 한다.
 
+강제자  `tests/test_sources_of_truth.py`(`SPEC` 의 열 사실 전부 — 목록 밖 literal 까지 양방향으로 본다) · `tests/test_ci_env.py` · `tests/test_verify_citations.py`
+
 ---
 
 ## 18. 데이터 관리
+
+강제자 없음 — 사유: 절 머리말이다. 계층 · 파일명 · 대장 · 백업은 하위 절이 들고 각각 강제자를 적는다
 
 ### 18-1. 계층
 
@@ -2517,6 +2621,8 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 ```bash
 uv run python -m firelane.datalog fsck
 ```
+
+강제자  `tests/test_layers.py`(§18-1 계층 선언 ↔ `paths.py` 실물 · 도구가 선언 밖에 쓰지 않는가) · `uv run python -m firelane.datalog fsck`(선언 ↔ 실물)
 
 ### 계층이 여덟인 이유
 
@@ -2570,6 +2676,8 @@ uv run python -m firelane.datalog fsck
 
 ### 18-2. 파일명 규칙
 
+강제자 없음 — 사유: 하위 절 셋(`18-2a` raw · `18-2b` norm 이후 · `18-2c` 확장자)이 규칙을 들고 각각 강제자를 적는다. 이 자리에 적으면 정본이 둘이 된다
+
 ### 18-2a. raw
 
 ★ 2026-08-27 정정. 종전에는 *"원본 파일명을 그대로 둔다"* 였다.
@@ -2606,6 +2714,8 @@ data/raw/{제공기관}/{download_date}/{원본파일명 그대로}
 원본 파일명을 안 바꾸는 이유는 제공기관 문의나 재다운로드 때 대조가 안 되기
 때문이다. 한글·괄호·공백이 있어도 그대로 둔다. 어차피 코드가 직접 열지 않는다.
 
+강제자  `tests/test_normalize_rules.py`(`normalize_raw.RULES` 가 원본명 패턴을 갖는가 — 「규칙이 그 기억을 대신한다」의 실물) · `tests/test_intake_rules.py` · `tools/migrate_names.py`(개명 백필)
+
 ### 18-2b. norm 이후 — 여기서 규칙을 강제한다
 
 ```
@@ -2626,6 +2736,8 @@ streetlight_gwangju-donggu_2025_4326_v1.csv
 **금지** — 한글, 공백, 대문자, `final`, `최종`, `수정본`, `real_final2`.
 `v{n}` 이 있는데 `final` 을 쓰면 어느 쪽이 최신인지 모른다.
 
+강제자  `tests/test_normalize_rules.py`(norm 이름 규칙 토큰) · `tools/refcheck.py`(`dataset_key` 가 대장 키와 문자열까지 같은가) · `uv run python -m firelane.ledger`(대장 필드 검사)
+
 ### 18-2c. 확장자 정규화
 
 | 원본 | → | 이유 |
@@ -2639,6 +2751,8 @@ streetlight_gwangju-donggu_2025_4326_v1.csv
 ★ **인코딩 변환은 값 변경이 아니라 형식 변경이다.** 그래서 norm 에서 허용한다.
 결측 처리, 컬럼명 변경, 좌표 변환은 **값 변경**이라 norm 에서 금지하고
 `interim` 이후로 미룬다. 이 선을 흐리면 "원본이 뭐였는지" 추적이 끊긴다.
+
+강제자  `tests/test_normalize_rules.py`(확장자 변환표) · `tests/test_norm_wiring.py`(norm 이 값을 안 바꾸는가 — 인코딩은 형식, 결측·컬럼명·좌표는 값) · `uv run python -m firelane.prep --check`(norm 계보 재현)
 
 ---
 
@@ -2677,6 +2791,8 @@ outputs:
     known_issues:
       - 폭 실측 검증 0건. 소방서 7구간 대조는 게이트로 썼으므로 검증이 아니다
 ```
+
+강제자  `uv run python -m firelane.ledger`(대장 필드 검사) · `tools/ledger_fields.py --check`(별칭 이관 유지) · `tests/test_sources_of_truth.py`(손대장이 둘이 되는 것을 막는다 — 같은 사실이 목록 밖에 literal 로 살면 운다)
 
 ### 18-3a. 필드의 의무
 
@@ -2732,6 +2848,8 @@ CRS 변경               ★ 중단. 무조건
 **소실은 막고 추가는 통과시킨다.** 추가는 파이프라인을 안 깨지만 소실은 깬다.
 `scope_min` 이 핵심이다 — 소화전이 파싱은 되고 스코프에서 전멸해 `OK 0건` 으로
 통과한 적이 있다.
+
+강제자  `uv run python -m firelane.contract`(대장 `contract:` ↔ raw 실물 · verify 「대장 선언 ↔ raw 실물」 단계) · `tests/test_ledger_contract.py`(그 판정의 경계 — 컬럼 소실 · 건수 허용폭 · 스코프 하한)
 
 ### 18-3c. retired — 폐기 기록
 
@@ -2932,6 +3050,8 @@ processed 전용 필드가 웹 필드처럼 서술되는 것을 못 잡는다.
 안 따라가기 때문이다. `.gpkg` 하나를 받았는데 좌표계와 출처를 모르면 그 파일은
 쓰레기다.
 
+강제자  `tests/test_ledger_outputs.py`(매니페스트가 산출물을 빠짐없이 드는가) · `tools/web_manifest.py --check`(발행 매니페스트 계보). 「gpkg 헤더에 매니페스트와 같은 내용을 박는다」는 아직 실물이 없어 검사가 없다
+
 ---
 
 ### 18-7. 의존 그래프
@@ -2944,6 +3064,8 @@ uv run python -m firelane.datalog impact ngii1k
 ```
 
 `impact` 를 실무에서 제일 자주 쓴다. 소스 갱신 전에 이것을 돌린다.
+
+강제자  `uv run python -m firelane.datalog fsck`(선언 ↔ 실물) · `tests/test_declaration_sync.py`(`inputs`/`consumers` 선언이 실물 배선과 같은가). 「손으로 안 그린다」는 그래프가 생성물이라는 뜻이고 `tools/refcheck.py` 가 죽은 참조를 든다
 
 ---
 
@@ -2963,12 +3085,16 @@ uv run python -m firelane.datalog impact ngii1k
 - `processed` 는 주 1회. 재생성 가능하지만 재생성에 시간이 든다
 - **월 1회 복원 훈련.** 복원해 본 적 없는 백업은 백업이 아니다
 
+강제자 없음 — 사유: 백업은 저장소 밖 행위라 코드가 검사할 수 없다. 검사할 수 있는 것은 **대조 수단**뿐이고 그것은 `tools/lakecheck.py`(레이크 선언 ↔ 실물 · sha) 와 `tools/baseline.py`(봉인) 가 든다
+
 ### 백업과 기기 간 이동은 다르다
 
 **SSD 를 이동 수단으로 쓰면 단일 장애점이 된다.** 이동은 **축소본을 각 기기에
 복제**하는 것으로 대신하고, 동일성은 파일을 옮겨서가 아니라 해시로 본다.
 전국판을 들고 다니지 않는다 — 광주 축소 시 645MB 가 약 70MB 가 된다.
 축소 후 파이프라인을 재실행해 산출물이 동일한 것을 확인하고 나서 교체한다.
+
+강제자 없음 — 사유: 기기 간 이동은 저장소 밖 행위다. 「축소 후 재실행해 산출물이 동일한 것을 확인한다」는 `tools/golden.py check` 가 그 확인 수단이고, 이 절은 그것을 **언제 쓰는가**를 정한다
 
 ---
 
@@ -2999,6 +3125,8 @@ CREATE TABLE core.run (                 -- 매니페스트가 그대로 테이�
 2. **파이프라인 결과는 append + `run_id`.** 덮어쓰지 않는다
 3. **API 는 `serving` 스키마만 본다.** 프론트가 판정을 재계산하지 않는다
 
+강제자 없음 — 사유: 밑그림이다(§12-0). DB 는 실물이 없고 스키마는 방향만 정한 것이다. 지금 지켜지는 것은 `seg_uid` 가 외부 키라는 것 하나이고 `tests/test_contract.py::test_seg_uid_format` · `test_seg_uid_unique` 가 든다
+
 ---
 
 ### 18-10. 금지 목록
@@ -3015,6 +3143,8 @@ git_dirty 상태로 만든 산출물을 발표에 사용
 날짜 붙은 일회성 스크립트를 tools/ 에 남기기
 문서를 다섯 번째로 만들기
 ```
+
+강제자  `tools/commit_policy.py --tracked`(산출물·비밀값 커밋) · `tools/treecheck.py --repo`(근거 없는 파일) · `tests/test_guards.py::test_nothing_writes_into_raw` · `test_no_dated_scripts_in_tools` · `tests/test_doc_style.py`(다섯째 문서 금지) · `tools/dupcheck.py`(같은 상수 복사)
 
 ---
 
@@ -3085,6 +3215,8 @@ acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
 5. 편입 후 impact 를 돌린다           재생성 대상이 전부 나온다
 ```
 
+강제자  `tools/acquire.py`(편입 세 판정) · `uv run python -m firelane.contract`(4번 — 계약 대조를 통과해야 편입) · `tests/test_normalize_rules.py`(1번 — 원본명 패턴이 규칙에 남는가). 2·3·5 는 사람이 지키는 순서라 검사가 없다
+
 ### CRS 검증 3단계
 
 ```
@@ -3099,6 +3231,8 @@ acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
 **3번이 실질 검증이다.** 1·2번은 형식 검사이고 3번은 물리 검사다.
 `crs` 는 **"명시"와 "추정"을 구분해서 적는다.**
 
+강제자  `tests/test_bbox_single_source.py` · `tests/test_shp_zip_multi_bbox.py`(2번 범위 검사) · `uv run python -m firelane.contract`(1번 — `crs` 선언 ↔ `.prj`/`.xml`). 3번 교차 정합은 사람이 눈으로 보는 것이라 검사가 없다 — 그것이 실질 검증인데 자동화가 안 된 자리다
+
 ---
 
 ### 18-12. 대장 메타 항목
@@ -3112,6 +3246,8 @@ acquired:  2026-08-17           # 받은 날
 scope:     광주 동구 74도엽       # 공간 범위 + 건수
 crs:       5186                 # ★ 선언 근거를 함께. prj/xml 명시 vs 추정
 ```
+
+강제자  `uv run python -m firelane.ledger`(대장 필드 검사 — 어느 칸이 필수인가) · `tools/vintage_check.py --max 0`(`vintage` 정합) · `tools/ledger_schema.py --check`(실물에서 뽑은 스키마)
 
 ---
 
@@ -3169,6 +3305,8 @@ acquire --quarantine     폐지 — 종료코드 2 로 거부한다(DECISIONS §
     retired 에 근거 있음   판단이 끝났다. 내려도 안전하다
     대장에 없음            대장이 **아직 모르는** 것이다. 보고만 한다
 
+강제자  `tests/test_batch_tools.py`(파괴 동작에 사유 있는 면제를 요구한다 · 「못 읽은 답에는 아무것도 안 지운다」) · `tests/test_lake.py::test_plan_is_remeasured_and_writes_safe_commands`(정리 도구가 파괴 명령을 직접 실행하지 않는가)
+
 ---
 
 
@@ -3187,6 +3325,8 @@ import 하고 서로의 코드는 import 하지 않는다. 어긋남은
 영상 파트가 GIS 로 넘기는 것은 **최소 통행폭 하나**다. 판정은 넘기지 않는다.
 판정까지 넘어오면 임계값 3.0m 가 두 군데에 박히고, 실측 후 임계값이 바뀔 때
 한쪽만 바뀌면 화면과 데이터가 어긋난다.
+
+강제자  `tests/test_contract_vision.py`(계약 경계 — 하드 강제 넷: `seg_uid` 형식 · 시간대 필수 · `hard >= soft` · 판정과 임계값 금지) · `tests/test_layering.py`(파트가 서로의 코드를 import 하지 않는가)
 
 ### 19-1. 반환 형식
 
@@ -3225,6 +3365,8 @@ import 하고 서로의 코드는 import 하지 않는다. 어긋남은
 `seg_id` 를 쓰지 않는다. 파이프라인을 돌릴 때마다 번호가 갈린다.
 `seg_uid` 는 GIS 가 관측점 등록 때 발급한다.
 
+강제자  `src/contracts/vision.py`(pydantic 모델이 곧 형식의 정본) · `tests/test_contract_vision.py`(필수 필드 · 시간대 · `hard >= soft`)
+
 ### 19-2. GIS 가 주는 것
 
 ```
@@ -3235,6 +3377,8 @@ GET /obs/{obs_id}
 ★ **도로폭은 주지 않는다.** GIS 폭을 먼저 알고 재면 그 값 근처로 수렴하고,
 그러면 영상이 GIS 를 검증하는 의미가 사라진다. GIS 폭 자체가 미검증 상태라
 그것을 물려주면 틀린 값이 재생산된다. 방향은 폭이 아니므로 순환하지 않는다.
+
+강제자  `tests/test_contract_vision.py`(GIS 가 주는 쪽에 폭 필드가 없는가 — 「도로폭은 주지 않는다」가 모델로 박혀 있다). 순환을 막는 이유 자체는 설계 근거라 검사 대상이 아니다
 
 ### 19-3. 오차를 계통오차로 몬다
 
@@ -3261,6 +3405,8 @@ ArUco 실측은 현실적으로 3~5회다. 그 몇 번으로 파이프라인 오
 이것이다. 보정계수를 얻어도 **어디에 적용할지** 모르면 못 쓴다. 폰 · 렌즈 ·
 해상도 · 촬영모드가 다르면 다른 오차이고 섞으면 안 된다.
 
+강제자 없음 — 사유: 계통오차 대 우연오차는 **실측 설계 방침**이고 캘리브레이션 실물이 아직 없다(§19-6). `calib_id` 가 사진·영상에서 갈라지는 것은 `src/contracts/vision.py` 가 필드로 들고 `tests/test_contract_vision.py` 가 댄다
+
 ### 19-4. 성능
 
 현재 MVP 가 객체탐지 + 세그멘테이션 + 호모그래피 + 폭 계산에 5초다.
@@ -3276,6 +3422,8 @@ BEV 는 디버그 플래그 뒤에 둔다.
 밖으로 내보내지 않는다. 통신으로 나누면 성능 · 대역폭 · 개인정보 셋이 다
 나빠진다. 경계는 함수 시그니처다.
 
+강제자 없음 — 사유: 성능 목표(5초 → 1~2초)는 CV 파트 소관이고 이 저장소에 측정 코드가 없다. 「BEV 를 만들지 않는다」도 CV 구현 방침이라 여기서 강제할 수단이 없다
+
 ### 19-5. 폭 계산의 함정
 
 지면 좌표계에서 도로 방향 기준 0.5m 간격 횡단선을 긋고, 각 횡단선에서 폭을
@@ -3287,6 +3435,8 @@ BEV 는 디버그 플래그 뒤에 둔다.
 빈 공간을 합하면 3.2m 지만 실제로 지나갈 수 있는 것은 2.0m 다. 합산으로
 구현하면 결과가 **조용히 낙관 방향으로** 틀어진다. "막혔는데 통과 가능"은
 소방차가 골목에 갇히는 오류라 반대 방향보다 비용이 훨씬 크다.
+
+강제자  `tests/test_contract_vision.py`(`passable_width_m` 이 「이어지는 빈 구간 중 최장」이라는 정의가 계약에 박혀 있는가 · 합산 구현이 들어오면 `hard >= soft` 가 깨진다). 실제 계산은 CV 파트 코드라 여기서 못 본다
 
 ### 19-6. 캘리브레이션 현황
 
@@ -3300,9 +3450,13 @@ BEV 는 디버그 플래그 뒤에 둔다.
 화각이 다르면 왜곡 계수가 다르다. ChArUco 는 카메라 내부 파라미터 보정용이고
 현장 ArUco 는 H 오차 검증용이다. **보드만으로 GIS 절대좌표가 생기지 않는다.**
 
+강제자 없음 — 사유: 촬영·보정 진행 상태는 저장소 밖 사실이다. 「사진과 영상은 다른 `calib_id`」만 계약이고 `src/contracts/vision.py` 가 든다
+
 ## 20. 경로
 
 경로 탐색은 **이미 있다.** 없는 것은 비용이다.
+
+강제자 없음 — 사유: 절 머리말이다. 「경로는 이미 있고 없는 것은 비용이다」는 PLAN `#2`(A* 비용함수)가 드는 남은 일이고, 하위 절이 각각 강제자를 적는다
 
 ### 20-1. 지금 무엇으로 푸는가
 
@@ -3315,6 +3469,8 @@ BEV 는 디버그 플래그 뒤에 둔다.
 
 ★ `access_corridor()` 는 **폭 산출보다 먼저** 돈다(`segments.py` 에서 `WidthEngine`
 앞이다 — 줄번호로 인용하지 않는다). 순서를 바꾸지 않으면 폭을 비용에 넣을 수 없다.
+
+강제자  `tests/test_guards.py::test_route_usage_is_not_a_passability_claim`(1차가 판정을 안 본다는 사실을 오독하지 못하게 한다) · `tests/test_station_scope.py::test_scope_step_is_declared_between_segments_and_its_readers`(순서가 선언돼 있는가)
 
 ### 20-2. 두 번 돈다
 
@@ -3334,6 +3490,8 @@ BEV 는 디버그 플래그 뒤에 둔다.
 ★ 막힌 엣지는 그래프에서 **뺀다.** 2026-08-24 에 `BIG` 을 주고 남겼더니
 **다른 길이 없을 때 Dijkstra 가 그것을 썼다.**
 
+강제자  `tests/test_navi_graph_fresh.py`(2차 그래프가 발행본과 같은가) · `tests/test_guards.py::test_edge_cost_blocks_what_cannot_pass`(2차가 폭·회전을 실제로 반영하는가) · `tests/test_station_scope.py::test_scope_step_invalidates_its_readers`
+
 ### 20-3. `route_usage` 를 출동 경로로 읽으면 안 된다
 
 스키마는 정직하게 "최단경로 사용횟수" 라고 적혀 있다. 문제는 이름이
@@ -3350,6 +3508,8 @@ BEV 는 디버그 플래그 뒤에 둔다.
 ★ `tools/route_probe.py` 의 머리말 주석은 `_write_route()` 도입 **이전**에
 쓰였다. "비용 함수가 배선되지 않았다" 는 서술은 낡았다.
 
+강제자  `tests/test_guards.py::test_route_usage_is_not_a_passability_claim` · `tests/test_contract.py::test_web_data_has_no_unintended_orphan`(`route_vehicle.json` 이 발행되고 **읽히는가** — 2026-08-31~09-22 에 발행만 되고 아무도 안 읽던 자리다)
+
 ### 20-4. 왜 Dijkstra 인가
 
 목적지가 다수다(119안전센터 2곳 → 모든 노드). `single_source_dijkstra` 가
@@ -3360,6 +3520,8 @@ BEV 는 디버그 플래그 뒤에 둔다.
 
 ★ 흐름도의 `A*` 는 **앱 관점**이다. 파이프라인 구현은 Dijkstra 이며
 둘이 모순이 아니다.
+
+강제자  `tests/test_reach_overlay.py` · `tests/test_navi_graph_fresh.py`(앱의 A* 와 파이프라인의 Dijkstra 가 같은 `vehicle.edge_cost` 를 쓰는가) · `web/navi/test/rules.test.ts`
 
 ### 20-5. 앱은 무엇을 받는가 — 엔드포인트
 
