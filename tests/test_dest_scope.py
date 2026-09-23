@@ -111,3 +111,47 @@ def test_the_gap_is_scope_not_loss(emd):
         f"지도 상가 중 동명동 밖이 {len(out)}건뿐이다 — 표출 스코프가 좁아졌거나 "
         "경계 판정이 죽었다. 어느 쪽이든 위 두 시험이 빈 그물이 된다")
     assert len(poi) - len(out) > 100, "동명동 안 상가가 너무 적다 — 원천이 비었다"
+
+
+def test_civil_offices_are_scoped_not_lost(emd):
+    """관공서가 **2건뿐**인 것이 범위 때문인가, 조인이 흘린 것인가.
+
+    ★ 2026-09-24 실측 — `civil_office` 64건 중 **동명동 안이 정확히 2**다
+      (동명동행정복지센터 · 광주서석초등학교). 색인의 2건과 같다.
+      「64 중 2뿐」은 관측이고 「흘렸다」는 판정이며, 판정에는 범위가 필요하다 —
+      §235 가 상가에서 배운 것을 여기에도 건다.
+    """
+    from shapely.geometry import Point
+    co = _load(ROOT / "data" / "processed" / "civil_office.geojson")
+    inside = [f for f in co["features"]
+              if emd.covers(Point(f["geometry"]["coordinates"][:2]))]
+    indexed = [f for f in _load(DEST)["features"]
+               if (f["properties"].get("src") or "") == "civil"]
+    assert len(indexed) == len(inside), (
+        f"관공서 색인 {len(indexed)} ≠ 동명동 안 {len(inside)} — 조인이 흘렸거나 넘쳤다")
+    assert inside, "동명동 안 관공서가 0건이다 — 경계 판정이나 원천이 죽었다"
+
+
+def test_apartment_buildings_are_not_collapsed_into_one():
+    """같은 도로명주소로 묶으면서 **아파트 동을 뭉개지 않았는가.**
+
+    ★ 2026-09-24 실측 — `조대명품타운 104동` · `105동` 이 각각 산다. 같은
+      도로명주소가 둘 이상인 주소는 4개(8행)이고 전부 서로 다른 건물이다.
+      **아파트 동이 뭉개지면 출동 지령이 엉뚱한 동으로 간다.**
+
+    ★ 이름만으로 유일성을 보면 안 된다 — `주건축물제1동` 은 건축물대장의
+      **일반 라벨**이라 다른 주소의 다른 건물이 같은 이름을 갖는다. 실제로
+      둘 있다. 유일한 것은 `(이름, 주소)` 짝이다.
+    """
+    import re
+    b = [f for f in _load(DEST)["features"]
+         if (f["properties"].get("src") or "") == "build"]
+    key = [(f["properties"].get("name"), f["properties"].get("addr")) for f in b]
+    dup = sorted({k for k in key if key.count(k) > 1})
+    assert not dup, f"같은 (이름, 주소) 가 두 번 들어갔다 — 뭉갠 흔적이다: {dup[:5]}"
+
+    named = sorted({f["properties"]["name"] for f in b
+                    if re.search(r"\S+\s\d+동$", f["properties"].get("name") or "")})
+    assert len(named) >= 2, (
+        f"이름 붙은 `N동` 건물이 {len(named)}개뿐이다: {named} — "
+        "뭉갰거나 원천이 바뀌었다. 동명동에는 아파트가 셋뿐이라 수가 작다")
