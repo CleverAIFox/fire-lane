@@ -81,6 +81,10 @@ FIGURES = _render_figures().FIGURES
 PLACE: dict[str, dict] = {
     "cctv": {"fig": 22, "caption": "유효 측정 범위"},
     "deploy": {"fig": 24, "caption": "배포 아키텍처"},
+    # ★ 2026-09-24 (PLAN §12 #15). 캡션은 2026-09-01 에 「평면교차점 실형상 제외」로
+    #   고쳤는데 **그림은 반경 5m 원 하나만 그린 채**였다. 캡션을 보는 검사는
+    #   그림을 못 본다 — 그것이 이 도구가 생긴 이유고, 이 줄이 그 자리를 덮는다.
+    "xsec": {"fig": 13, "caption": "법선 트랜섹트 샘플링과 평면교차점 실형상 제외"},
     "verdict": {"internal": "기획서에 대응 그림이 없다 — 판정 4종 수는 본문 숫자로 들어가고 "
                             "tools/docnum_check.py 가 golden 과 대조한다"},
     "unknown": {"internal": "기획서에 대응 그림이 없다 — 사유 분해는 본문 표가 든다"},

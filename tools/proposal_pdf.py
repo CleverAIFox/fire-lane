@@ -116,7 +116,7 @@ def body(pdf: Path) -> str:
 
 def wanted_numbers() -> dict[str, int]:
     """판정 수치의 정본. **`docx_check` 와 같은 자리에서 읽는다.**"""
-    import docx_check          # ★ 같은 tools/ 안. 경로 조작을 하지 않는다
+    import docx_check  # ★ 같은 tools/ 안. 경로 조작을 하지 않는다
     return {k: v for k, v in docx_check._canon().items()
             if isinstance(v, int) and v > 0}
 

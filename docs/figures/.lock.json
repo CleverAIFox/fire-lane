@@ -5,10 +5,12 @@
     "deploy": "4a2035d7f9326b0c",
     "threshold": "3b74745a9acfd68d",
     "unknown": "d4d01f9b0922482b",
-    "verdict": "41429bc11ff55b64"
+    "verdict": "41429bc11ff55b64",
+    "xsec": "a3e9bf03cb68bcec"
   },
   "placed": {
     "cctv": "5d8d114a1dc9f057",
-    "deploy": "4a2035d7f9326b0c"
+    "deploy": "4a2035d7f9326b0c",
+    "xsec": "a3e9bf03cb68bcec"
   }
 }

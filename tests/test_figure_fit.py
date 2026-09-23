@@ -69,6 +69,40 @@ def test_fitting_labels_pass():
     assert rf._fits(body, 720, 100) == []
 
 
+def test_circle_outside_the_viewbox_is_caught():
+    """★ 2026-09-24 (PLAN §12 #15). 원은 **검사 밖**이었다.
+
+    2026-09-23 에 `fig_cctv` 의 원 그림을 복도로 바꾼 사유가 그것이었다 —
+    그림을 바꿔서 눈먼 자리를 피해 간 것이고 자리는 남았다. 원을 쓰는
+    그림이 생기는 김에 메웠다.
+    """
+    bad = rf._fits('<circle cx="700" cy="50" r="60" fill="none"/>', 720, 120)
+    assert bad and "도형" in bad[0] and "밖이다" in bad[0], bad
+
+
+def test_label_running_onto_a_circle_is_caught():
+    """원 옆 라벨이 원을 덮는가. 사각형과 같은 규칙이다."""
+    body = ('<circle cx="400" cy="60" r="40"/>'
+            '<text x="300" y="60" font-size="12">원 위로 번지는 긴 라벨입니다</text>')
+    bad = rf._fits(body, 720, 120)
+    assert bad and "덮는다" in bad[0], bad
+
+
+def test_circle_far_from_the_label_passes():
+    """빈 그물이 아닌가 — 안 닿으면 안 울어야 한다."""
+    body = ('<circle cx="600" cy="60" r="30"/>'
+            '<text x="12" y="60" font-size="12">멀리 있는 라벨</text>')
+    assert rf._fits(body, 720, 120) == []
+
+
+def test_boxes_sees_both_rect_and_circle():
+    """`_boxes()` 가 둘을 같은 자리에 넣는가 — 원은 외접 사각형이다."""
+    got = rf._boxes('<rect x="10" y="20" width="30" height="40"/>'
+                    '<circle cx="100" cy="100" r="25"/>')
+    assert (10.0, 20.0, 30.0, 40.0) in got
+    assert (75.0, 75.0, 50.0, 50.0) in got
+
+
 def test_width_estimate_rules():
     """한글 1.0em · 라틴 0.6em · 엔티티는 풀어서 센다."""
     left, right, _, shown = rf.text_extent('x="0" font-size="10"', "가A&amp;")

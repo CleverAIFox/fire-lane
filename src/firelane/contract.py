@@ -238,7 +238,9 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
     # ── CSV 컬럼 · 건수 · 스코프 ──────────────────────────
     need = c.get("required_cols") or []
     want_rows = c.get("rows")
-    tol = float(c.get("rows_tolerance", 0.30))
+    # ★ 2026-09-24. `tol` 을 여기서 또 읽던 줄을 지웠다 — W6-1 에서 건수 판정이
+    #   `frame_schema()` 안으로 들어가면서 **쓰이지 않는 사본**이 됐다.
+    #   같은 값이 두 곳에 있으면 한쪽만 고쳐도 아무도 모른다(2족).
     smin = c.get("scope_min")
 
     if csvs and (need or want_rows is not None or smin is not None):

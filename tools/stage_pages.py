@@ -104,7 +104,7 @@ def _pdf(check: bool) -> int:
 
     ★ 판정은 `proposal_pdf` 가 든다 — 여기서 다시 세면 정본이 둘이 된다(§18-3).
     """
-    import proposal_pdf        # ★ 같은 tools/ 안. 경로 조작을 하지 않는다
+    import proposal_pdf  # ★ 같은 tools/ 안. 경로 조작을 하지 않는다
 
     ci = paths.env("GITHUB_ACTIONS") == "true"
     if not check:

@@ -13,6 +13,9 @@ render_figures.py — 정본에서 그림을 만든다.
 24장 중 **넷은 값이 정본에 있다.** 그리면 되는 것이지 사람이 다시 그릴
 이유가 없다 — `web/workflow.html` 이 `MASTER §12` 에서 나오는 것과 같다.
 
+★ 2026-09-24 (DECISIONS §236). 그 [그림 13] 을 여기서 그린다(`fig_xsec`).
+  머리말이 석 주 동안 **자기가 못 고치는 예시로 그 그림을 들고 있었다.**
+
 ★ 2026-09-23 (DECISIONS §221-1). 종전에는 여기에 「`.docx` 안 이미지를 코드가
   교체하지는 않는다 — 알리기만 하고 넣는 것은 사람이 한다」 고 적혀 있었다.
   그 결정을 뒤집었다. 이 파일은 **SVG 를 만들고 어긋남을 알리고**,
@@ -65,6 +68,26 @@ def _params() -> dict:
 _TEXT = re.compile(r"<text\b([^>]*)>(.*?)</text>", re.S)
 _RECT = re.compile(r'<rect x="([\d.]+)" y="([\d.]+)" '
                    r'width="([\d.]+)" height="([\d.]+)"')
+#: 원. **외접 사각형으로 본다** — 아래 `_boxes()` 가 사각형과 같은 자리에 넣는다.
+_CIRCLE = re.compile(r'<circle cx="(-?[\d.]+)" cy="(-?[\d.]+)" r="([\d.]+)"')
+
+
+def _boxes(body: str) -> list[tuple[float, float, float, float]]:
+    """배치 검사가 보는 도형들의 `(x, y, w, h)`.
+
+    ★ 2026-09-24 (PLAN §12 #15). 종전에는 `<rect>` 만 봤다. `fig_cctv` 가
+      2026-09-23 에 원 그림을 복도로 바꾼 사유가 바로 **「`_fits()` 는 원을
+      안 본다」** 였다 — 그림을 고쳐서 검사의 눈먼 자리를 피해 간 것이고,
+      눈먼 자리는 그대로 남았다. 원을 쓰는 그림이 하나 생기는 김에 메운다.
+
+      원은 **외접 사각형**으로 본다. 라벨이 원의 둥근 모서리 옆으로 조금
+      비어져 나가는 것까지 우는 쪽이다 — 보수적으로 틀린다.
+    """
+    out = [tuple(float(g) for g in m.groups()) for m in _RECT.finditer(body)]
+    for m in _CIRCLE.finditer(body):
+        cx, cy, r = (float(g) for g in m.groups())
+        out.append((cx - r, cy - r, 2 * r, 2 * r))
+    return out
 
 
 def _attr(attrs: str, name: str, default: str | None = None) -> str | None:
@@ -112,14 +135,16 @@ def _fits(body: str, w: int, h: int) -> list[str]:
       이제 라벨 폭을 어림해(한글 1.0em · 라틴·숫자 0.6em × font-size, text-anchor
       반영) viewBox 를 넘는지, 기준점이 든 가장 작은 박스를 가로로 넘는지 본다.
       어림은 보수적이다(공백도 0.6em) — 넘치면 줄이거나 줄을 나누거나 박스를 넓힌다.
+
+    ★ 2026-09-24 `<circle>` 도 본다(`_boxes()`). 그 전까지는 원이 검사 밖이었고,
+      2026-09-23 에 `fig_cctv` 의 원 그림을 복도로 바꾼 사유가 바로 그것이었다.
     """
     bad = []
     rects = []
-    for m in _RECT.finditer(body):
-        x, y, bw, bh = (float(g) for g in m.groups())
+    for x, y, bw, bh in _boxes(body):
         rects.append((x, y, bw, bh))
         if x < 0 or y < 0 or x + bw > w or y + bh > h:
-            bad.append(f"박스 ({x:g},{y:g} {bw:g}x{bh:g}) 가 {w}x{h} 밖이다")
+            bad.append(f"도형 ({x:g},{y:g} {bw:g}x{bh:g}) 가 {w}x{h} 밖이다")
     for m in _TEXT.finditer(body):
         left, right, y, shown = text_extent(m.group(1), m.group(2))
         tag = f"글자 {shown[:24]!r} ({left:.0f}~{right:.0f}, y={y:g})"
@@ -404,6 +429,107 @@ def fig_deploy() -> str:
     return _svg("".join(body), h=325)
 
 
+def fig_xsec() -> str:
+    """도로폭 산출 — 법선 트랜섹트와 평면교차점 실형상 제외. 기획서 [그림 13].
+
+    ★ 2026-09-24 (PLAN §12 #15). 기획서 [그림 13] 은 **반경 5m 원 하나만**
+      그린다. 캡션은 2026-09-01 에 「평면교차점 실형상 제외」로 고쳐졌는데
+      그림은 안 고쳐졌다 — 캡션과 그림이 서로 다른 모델을 말하는 채로
+      석 주를 서 있었다. 캡션만 보는 검사(`docx_check`)로는 못 잡는다.
+
+      실제 규칙은 `seg/width.py` 가 든다 — **평면교차점 폴리곤이 가까이
+      있으면 폴리곤만 믿고**(`distance < XSEC_EXCL * 2`), 폴리곤이 아예
+      없는 교차로에서만 노드 반경으로 폴백한다. 원은 **폴백**이지 규칙이
+      아니다. 그림이 폴백만 그리면 읽는 사람은 규칙을 원으로 안다.
+
+    ★ 원이 왜 폴백인가를 그림 자체가 말한다 — 위아래 두 줄이 **같은 길 ·
+      같은 표본**인데 버려지는 표본 수가 다르다. 원은 작은 교차부를
+      과하게 도려내고, 큰 교차부에서는 오염을 남긴다.
+
+    ★ 교차부 모양은 **모식**이다. 실형상은 교차부마다 다르고 그 정본은
+      `ngii1k_xsec_5186.gpkg`(A0080000)다 — 값이 아니라 **규칙**을 그린다.
+      값 그림과 구조 그림을 가르는 것은 `fig_branch` 와 같다.
+    """
+    p = _params()
+    # ★ **기본값을 안 둔다.** 다른 그림들은 `p.get(키, 사본)` 으로 적는데
+    #   그 사본이 정본과 갈리면 그림이 조용히 옛 값을 그린다 — 이 그림이
+    #   바로 그 병으로 났다. 없으면 우는 쪽이 낫다.
+    if "XSEC_EXCL" not in p:
+        raise SystemExit("★ params.py 에서 XSEC_EXCL 을 못 읽었다 — "
+                         "이름이 바뀌었거나 표기가 바뀌었다. 그림을 지어내지 않는다.")
+    r_m = p["XSEC_EXCL"]
+    px_m = 8.0                  # 1m = 8px. 그림 안에서만 쓰는 축척이다
+    r = r_m * px_m
+    half = 3.0 * px_m                # 노면 반폭 3m — 모식값
+    x0, x1, cx = 44.0, 684.0, 410.0
+    poly_half = 26.0                 # 실형상 가로 반폭(모식) — 원보다 작다
+
+    def road(cy: float) -> str:
+        """가로 노면 + 세로 노면. 사각형이 아니라 실제로 십자 도형이다."""
+        return (f'<path d="M{x0} {cy - half} H{x1} V{cy + half} H{x0} Z" '
+                f'fill="#f1f5f9" stroke="#cbd5e1"/>'
+                f'<path d="M{cx - half} {cy - 40} H{cx + half} V{cy + 40} '
+                f'H{cx - half} Z" fill="#f1f5f9" stroke="#cbd5e1"/>')
+
+    def ticks(cy: float, drop) -> tuple[str, int, int]:
+        """법선 트랜섹트. 버린 것은 회색 점선, 잰 것은 초록 실선."""
+        out, n, k = [], 0, 0
+        t = x0 + 14
+        while t <= x1 - 14:
+            n += 1
+            bad = drop(t)
+            k += bad
+            style = ('stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3 3"'
+                     if bad else f'stroke="{COLOR["clear"]}" stroke-width="2"')
+            out.append(f'<line x1="{t:.0f}" y1="{cy - half - 6:.0f}" '
+                       f'x2="{t:.0f}" y2="{cy + half + 6:.0f}" {style}/>')
+            t += 2.0 * px_m          # 표본 간격 2m
+        return "".join(out), n, k
+
+    a_cy, b_cy = 118.0, 232.0
+    a_body, a_n, a_k = ticks(a_cy, lambda t: abs(t - cx) < r)
+    b_body, b_n, b_k = ticks(b_cy, lambda t: abs(t - cx) < poly_half)
+
+    # 실형상 모식 — 네 갈래가 만나는 자리라 사각형이 아니다
+    ph, pw = 30.0, poly_half
+    shape = (f'<path d="M{cx - pw} {b_cy - ph} L{cx + pw - 6} {b_cy - ph + 4} '
+             f'L{cx + pw} {b_cy + 2} L{cx + pw - 8} {b_cy + ph} '
+             f'L{cx - pw + 4} {b_cy + ph - 3} L{cx - pw - 2} {b_cy - 4} Z" '
+             f'fill="#fed7aa" fill-opacity="0.8" stroke="{COLOR["needs_cv"]}" '
+             f'stroke-width="2"/>')
+
+    # ★ 그림 → 글자 순서로 쌓는다. 종전 배치에서 세로 노면이 줄머리 라벨을
+    #   덮었다 — SVG 는 뒤에 온 것이 위에 그려지고, `_fits()` 는 `<path>` 를
+    #   안 본다(도형은 `<rect>` · `<circle>` 만 본다).
+    art = [
+        road(a_cy), a_body,
+        f'<circle cx="{cx:.0f}" cy="{a_cy:.0f}" r="{r:.0f}" fill="none" '
+        f'stroke="{COLOR["blocked"]}" stroke-width="2" stroke-dasharray="6 4"/>',
+        road(b_cy), shape, b_body,
+    ]
+    txt = [
+        '<text x="12" y="28" font-size="15" font-weight="700" fill="#0f172a">'
+        '도로폭 산출 — 법선 트랜섹트와 평면교차점 실형상 제외</text>',
+        '<text x="12" y="48" font-size="11" fill="#64748b">'
+        '정본 src/firelane/seg/params.py · XSEC_EXCL — 규칙은 seg/width.py</text>',
+        f'<text x="{x0:.0f}" y="68" font-size="12" fill="#475569">'
+        f'폴백 — 평면교차점 실형상이 없는 교차로에서만. 노드에서 {r_m:g}m</text>',
+        f'<text x="676" y="{a_cy - 34:.0f}" font-size="12" fill="#0f172a" '
+        f'text-anchor="end">표본 {a_n} · 버림 {a_k}</text>',
+        f'<text x="{x0:.0f}" y="182" font-size="12" fill="#475569">'
+        '실형상 — 평면교차점 폴리곤 안의 표본만 버린다. 이쪽이 규칙이다</text>',
+        f'<text x="676" y="{b_cy - 34:.0f}" font-size="12" fill="#0f172a" '
+        f'text-anchor="end">표본 {b_n} · 버림 {b_k}</text>',
+        '<text x="12" y="300" font-size="11" fill="#64748b">'
+        '세로선 하나가 법선 트랜섹트 한 번이다 — 초록은 잰 것, 회색 점선은 '
+        '버린 것이다.</text>',
+        f'<text x="12" y="318" font-size="11" fill="{COLOR["blocked"]}">'
+        f'※ 원은 규칙이 아니라 폴백이다. 반경 {r_m:g}m 는 작은 교차부를 '
+        '과하게 도려내고 큰 교차부에는 오염을 남긴다.</text>',
+    ]
+    return _svg("".join(art + txt), h=336)
+
+
 FIGURES = {
     "verdict": fig_verdict,
     "threshold": fig_threshold,
@@ -413,6 +539,9 @@ FIGURES = {
     #   그 종류였다(DECISIONS §110).
     "branch": fig_branch,
     "deploy": fig_deploy,
+    # ★ 2026-09-24 (PLAN §12 #15). 캡션은 고쳐졌는데 그림이 옛 모델을 그리던
+    #   자리다. 값이 아니라 **규칙**을 그린다.
+    "xsec": fig_xsec,
 }
 
 
