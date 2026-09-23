@@ -170,6 +170,31 @@ def main() -> int:
 
     gaps = sorted(set(range(1, max(nums) + 1)) - set(nums))
 
+    # ── 결번 대장 — **번호 재사용을 막는다** (2026-09-23 · DECISIONS §222-4) ──
+    # ★ §205 가 「결번을 허용한다」로 규약을 뒤집었지만, **재사용을 막는 것은 없었다.**
+    #   결번이 난 자리에 새 행이 들어오면 이 도구는 아무 말도 안 한다 — 중복도 아니고
+    #   오름차순도 깨지지 않기 때문이다. 그런데 밖의 인용 83곳은 그 순간 **다른 행**을
+    #   가리키게 된다. 그래서 비운 번호를 PLAN §1 머리에 **선언**하고 여기서 대조한다.
+    #   재사용하면 선언된 결번 하나가 실물에서 사라지므로 운다.
+    m = re.search(r"^결번 — (.+)$", text, re.M)
+    if not m:
+        print("★ PLAN §1 머리에 `결번 — …` 줄이 없다 — 번호 재사용을 막을 근거가 사라진다")
+        return 1
+    said = sorted(int(x) for x in re.findall(r"#(\d+)", m.group(1)))
+    if said != gaps:
+        back = sorted(set(said) - set(gaps))
+        lost = sorted(set(gaps) - set(said))
+        print("★ 결번 대장이 실물과 다르다\n")
+        if back:
+            shown = ", ".join(f"#{n}" for n in back)
+            print(f"  ✗ **재사용됐다**: {shown}")
+            print("    그 번호를 가리키는 밖의 인용이 조용히 다른 행을 가리킨다.")
+            print("    새 행은 **맨 끝 번호 + 1** 을 쓴다. 비운 자리를 채우지 않는다.")
+        if lost:
+            shown = ", ".join(f"#{n}" for n in lost)
+            print(f"  ✗ 선언에 없는 결번: {shown} — 머리 줄에 더해라")
+        return 1
+
     # ── 밖에서 §1 을 가리키는 인용 ───────────────────────────
     # ★ 죽은 인용은 **빨간불이 아니다.** 가리키던 행이 닫혀서 지워진 것이고
     #   그것이 정상 경로다. 세어서 말하기만 한다 — 고치라고 하면 역사를 고치게 된다.

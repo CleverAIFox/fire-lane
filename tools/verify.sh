@@ -705,7 +705,18 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --ratchet
 #   기준선이 없으면 전수가 곧 분모라고 스스로 말한다.
 # ★ 2026-09-22 (DECISIONS §218-5). 관문 동등의 미선언 11 을 정리하며 dms.py 는 면제로 선언했다.
 #   `delta` 는 봉인 커밋과의 차이를, `ancestry` 는 봉인 커밋이 조상인가를 **git 역사로** 잰다.
-# ci-exempt: tools/dms.py 봉인 커밋과의 증분·조상을 git 역사로 잰다. CI 클론은 얕다(fetch-depth 1)
+# ★ 2026-09-23 (DECISIONS §222-2). **문서가 없는 검사를 강제자로 드는가.** 파일을 지울 때
+#   그 파일을 강제자로 적은 절을 같이 안 고치면, 절은 「이 검사가 지킨다」고 계속 말한다 —
+#   1족(무음 통과)의 문서판이다. 2026-09-22 옛 지도 철거가 실제로 셋을 만들었고
+#   `dms verify` 는 그것을 보는데 **verify.sh 도 CI 도 안 불렀다.** 봉인 출력 한 줄에만 있었다.
+#   ★ **CI 에는 안 건다.** `gate_parity` 의 면제는 **검사기 단위**라(도구 이름 하나),
+#   `dms.py` 를 CI 에 한 번이라도 올리면 아래 `delta` 의 면제 선언이 「CI 가 이미 돈다」로
+#   거짓이 되고, 그러면 **git 역사가 필요한 `delta` 가 차집합에서 조용히 사라진다.**
+#   선언이 이름보다 넓어지는 바로 그 병이라 넓히지 않는다. 배치는 PR 전에 반드시
+#   `verify.sh` 를 돌리므로(fl.sh 5단계) 이 자리로 충분하다.
+scope "docs/* tests/* tools/* src/*"
+# ci-exempt: tools/dms.py `verify` 는 문서↔트리라 CI 로 갈 수 있으나, 같은 도구의 `delta` 가 봉인 커밋과의 증분·조상을 git 역사로 잰다. CI 클론은 얕다(fetch-depth 1) — 면제가 검사기 단위라 둘을 같이 남긴다
+step "죽은 강제자 참조" uv run python tools/dms.py verify
 step "강제자 소급 증분" uv run python tools/dms.py delta
 # ★ 2026-09-21 (PLAN §13 W11-1 · DECISIONS §210). **봉인이 가리키는 커밋이 이 트리의 조상인가.**
 #   `delta` 는 봉인 **뒤**를 센다. 그런데 봉인이 없는 커밋을 가리키면 `delta` 는

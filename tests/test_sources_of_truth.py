@@ -85,6 +85,9 @@ SPEC: dict[str, dict] = {
              "ref": "node-version-file: web/navi/.nvmrc"},
             {"file": ".devcontainer/devcontainer.json", "has": '"version": "{v}"'},
         ],
+        "scan": [".github/**/*", ".devcontainer/*", "web/navi/package.json"],
+        "pins": [{"find": "node-version:", "regex": r'node-version:\s*"?(\d+)'}],
+        "code_only": True,
     },
     "python": {
         "what": "파이썬 판 (W3-17)",
@@ -110,6 +113,9 @@ SPEC: dict[str, dict] = {
             {"file": "uv.lock", "regex": r'name = "pytest"\nversion = "([\d.]+)"',
              "cmp": ">="},
         ],
+        "scan": [".github/**/*", "pyproject.toml", ".pre-commit-config.yaml"],
+        "pins": [{"find": "pytest>=", "regex": r"pytest>=([\d.]+)"}],
+        "code_only": True,
     },
     "coverage_floor": {
         "what": "커버리지 래칫 문턱 — 명령줄은 숫자를 안 적고 변수를 읽는다(W3-11)",
@@ -118,6 +124,9 @@ SPEC: dict[str, dict] = {
             {"file": "tools/verify.sh", "ref": '"$COV_MIN"'},
             {"file": "tests/test_verify_citations.py", "ref": "COV_MIN="},
         ],
+        "scan": [".github/**/*", "tools/*.sh", "pyproject.toml"],
+        "pins": [{"find": "--cov-fail-under=", "regex": r"--cov-fail-under=(\d+)"}],
+        "code_only": True,
     },
     "truck_m": {
         "what": "통과 하한(m) — 판정 임계",
@@ -126,7 +135,17 @@ SPEC: dict[str, dict] = {
             {"file": "web/config.js", "has": "폭 {v}m 미만"},
             {"file": "tools/render_figures.py", "ref": '"TRUCK"'},
             {"file": "tests/test_declaration_sync.py", "ref": 'p["TRUCK"]'},
+            # ★ 2026-09-23 (DECISIONS §222-5). `scan` 이 찾아낸 자리들. 전부 **문구**지만
+            #   TRUCK 이 움직이면 그 문구가 거짓말이 된다 — 그래서 사본이 맞다. 등재한다.
+            {"file": "src/firelane/seg/geom.py", "has": "wmax < {v} -> blocked"},
+            {"file": "src/firelane/seg/report.py", "has": "통과 하한 {v}m"},
+            {"file": "src/firelane/seg/vehicle.py", "has": "TRUCK = {v}"},
+            {"file": "src/firelane/segments.py", "has": "TRUCK={v}"},
         ],
+        "scan": ["src/firelane/**/*.py", "web/navi/src/**/*.ts", "web/*.js"],
+        "exclusive": True,
+        "code_only": True,
+        "near": r"TRUCK|truck|통과\s*하한|필요\s*폭|requiredWidth|전폭",
     },
     "park_m": {
         "what": "주차 1대 노면점유(m) — 여유선 = TRUCK + 2×PARK",
@@ -135,6 +154,10 @@ SPEC: dict[str, dict] = {
             {"file": "tools/render_figures.py", "ref": '"PARK"'},
             {"file": "tests/test_declaration_sync.py", "ref": 'p["PARK"]'},
         ],
+        "scan": ["web/navi/src/domain/*.ts", "web/*.js"],
+        "exclusive": True,
+        "code_only": True,
+        "near": r"PARK|park|주차|여유선",
     },
     "cctv_range_m": {
         "what": "CCTV 유효 측정 반경(m)",
@@ -143,7 +166,13 @@ SPEC: dict[str, dict] = {
         "consumers": [
             {"file": "web/config.js", "has": "유효범위 {v:g}m 밖"},
             {"file": "tools/render_figures.py", "ref": '"CCTV_RANGE"'},
+            {"file": "src/firelane/seg/vehicle.py", "has": "CCTV_RANGE = {v}"},
+            {"file": "src/firelane/segments.py", "has": "CCTV_RANGE={v}"},
         ],
+        "scan": ["src/firelane/**/*.py", "web/navi/src/**/*.ts", "web/*.js"],
+        "exclusive": True,
+        "code_only": True,
+        "near": r"CCTV_RANGE|cctv|유효\s*범위|유효\s*측정",
     },
     "code_owner": {
         "what": "저장소 단독 소유자(CODEOWNERS 기본 규칙 · 2026-09-09 개인 계정 이관)",
@@ -152,7 +181,16 @@ SPEC: dict[str, dict] = {
             {"file": "tools/navi_setup.py", "has": 'default="@{v}"'},
             {"file": "tools/ruleset_check.py", "has": 'ADMINS = ["{v}"]'},
             {"file": "tools/ruleset_check.py", "has": 'FALLBACK_REPO = "{v}/fire-lane"'},
+            # ★ 2026-09-23. `scan` 을 붙이자마자 나온 **진짜 사본 셋**이다(DECISIONS §222-5).
+            #   배치 도구가 `REPO=CleverAIFox/fire-lane` 을 각자 박고 있었고 아무도 안 봤다.
+            #   소유자가 바뀌면 셋이 조용히 남의 저장소를 가리킨다 — 2족 그대로다.
+            {"file": "tools/fl.sh", "has": "{v}/fire-lane"},
+            {"file": "tools/merge_batch.sh", "has": "{v}/fire-lane"},
+            {"file": "tools/branch_tidy.sh", "has": "{v}/fire-lane"},
         ],
+        "scan": [".github/**/*", "tools/*.py", "tools/*.sh"],
+        "exclusive": True,
+        "code_only": True,
     },
     "font_stack": {
         "what": "그림 · 화면 글꼴 스택",
@@ -161,6 +199,10 @@ SPEC: dict[str, dict] = {
             {"file": "web/navi/src/ui/tokens.ts", "has": 'family: "{v}"'},
             {"file": "web/proposal.html", "has": "{v}"},
         ],
+        "scan": ["web/navi/src/**/*.ts", "web/navi/src/**/*.tsx", "web/*.html",
+                 "web/*.js", "tools/*.py"],
+        "exclusive": True,
+        "code_only": True,
     },
 }
 
@@ -189,6 +231,44 @@ def owner_value(fact: dict) -> str:
     assert len(hits) == 1, (f"정본 {o['file']} 에서 {o['regex']!r} 가 {len(hits)}번 걸린다 — "
                             "집이 하나가 아니거나 서식이 바뀌었다")
     return hits[0]
+
+
+#: 확장자 → (줄 주석 토큰, 블록 주석 쌍). 스캔에서 주석을 걷는 데 쓴다.
+_COMMENT = {
+    ".py": ("#", None), ".sh": ("#", None), ".yml": ("#", None), ".yaml": ("#", None),
+    ".toml": ("#", None), ".cfg": ("#", None), ".nvmrc": ("#", None),
+    ".ts": ("//", ("/*", "*/")), ".tsx": ("//", ("/*", "*/")),
+    ".js": ("//", ("/*", "*/")), ".mjs": ("//", ("/*", "*/")),
+    ".json": (None, None), ".md": (None, None),
+}
+
+
+def strip_comments(txt: str, suffix: str) -> str:
+    """주석을 지운 코드만 남긴다.
+
+    ★ 2026-09-23 (DECISIONS §222-5). 이것이 없어서 값 사실 여섯에 `scan` 을 못 붙였다.
+      `web/navi/src/domain/vehicle.ts` 는 「3.0 / 0.5 / 1.8 / 2.5 를 여기서 재선언하지
+      않는다」고 **주석으로** 적는다 — 옳은 코드인데 `exclusive` 가 그것을 사본으로 읽는다.
+      잘못된 경보는 진짜 경보를 죽인다(MASTER §18-13). 그래서 스캔은 **코드만** 본다.
+    ★ 완벽한 파서가 아니다 — 문자열 안의 `#` · `//` 도 지운다. 그 방향의 오차는
+      **안전하다**(덜 보고 덜 운다). 반대 방향(주석을 코드로 보는 것)만 위험하다.
+    """
+    line_tok, block = _COMMENT.get(suffix, ("#", None))
+    if block:
+        out, i = [], 0
+        while True:
+            a = txt.find(block[0], i)
+            if a < 0:
+                out.append(txt[i:]); break
+            b = txt.find(block[1], a + 2)
+            out.append(txt[i:a])
+            if b < 0:
+                break
+            i = b + 2
+        txt = "".join(out)
+    if not line_tok:
+        return txt
+    return "\n".join(ln.split(line_tok)[0] for ln in txt.splitlines())
 
 
 def _scan_files(fact: dict) -> list[Path]:
@@ -230,6 +310,8 @@ def scan_errors(fact: dict, v: str) -> list[str]:
             txt = p.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
+        if fact.get("code_only"):
+            txt = strip_comments(txt, p.suffix)
         for pin in fact.get("pins", []):
             for m in re.finditer(re.escape(pin["find"]), txt):
                 got = re.compile(pin["regex"]).match(txt, m.start())
@@ -239,8 +321,20 @@ def scan_errors(fact: dict, v: str) -> list[str]:
                                f"— 정본은 {v}")
                 elif rel not in listed:
                     bad.append(f"{rel}:{line} 에 값이 있는데 목록(consumers)에 없다")
-        if fact.get("exclusive") and rel not in listed and v in txt:
-            bad.append(f"{rel} 에 {v} 가 literal 로 있는데 목록에 없다")
+        if fact.get("exclusive") and rel not in listed:
+            # ★ 2026-09-23 (DECISIONS §222-5). `near` 가 없으면 **맨숫자**를 사본으로 읽는다.
+            #   `3.0` 은 버퍼 거리 · 허용오차 · 배율로 저장소 곳곳에 있고, 그것을 「통과 하한의
+            #   사본」이라고 부르면 열 곳이 거짓으로 운다 — 그러면 사람이 이 검사를 끈다.
+            #   문맥 낱말과 **같은 줄**에 있을 때만 이 사실의 사본으로 센다.
+            near = fact.get("near")
+            for i, ln in enumerate(txt.splitlines(), 1):
+                if v not in ln:
+                    continue
+                if near and not re.search(near, ln):
+                    continue
+                bad.append(f"{rel}:{i} 에 {v} 가 literal 로 있는데 목록에 없다"
+                           + (f" (문맥 {near!r})" if near else ""))
+                break
     return bad
 
 
@@ -323,7 +417,7 @@ def test_unpinned_installer_and_stray_literal_are_caught(tmp_path, monkeypatch):
     joined = "\n".join(errs)
     assert "setup.sh 에" in joined and "ci.yml 에" in joined, joined
     assert "안 적었다" in joined, joined
-    assert "other.yml 에 9.9.9" in joined, joined
+    assert "other.yml:1 에 9.9.9" in joined, joined
 
 
 def test_master_table_reader_bites(tmp_path, monkeypatch):

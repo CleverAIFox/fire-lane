@@ -126,10 +126,22 @@ say "A. part/infra → dev PR"
 git fetch -q origin
 # ★ 2026-09-17 (DECISIONS §180 · G-2). feat → part/infra PR 이 열려 있으면 squash 를 빠뜨린 것이다. 그대로 가면
 #   part/infra 에 그 배치가 없는 채로 dev 에 올리고 "끝" 을 찍는다. 경고가 아니라 멈춘다.
-openfeat=$(gh pr list -R "$REPO" --base part/infra --state open --json number,headRefName --jq '.[] | "#\(.number) \(.headRefName)"')
+# ★ 2026-09-23 (DECISIONS §221-2). 작성자를 본다. `fl.sh` 1단계에서 같은 결함을 고치면서
+#   **여기 두 번째 인스턴스를 놓쳤고**, 같은 날 방송이 dependabot PR 넷으로 멈췄다.
+#   봇 PR 은 「알림」으로 일부러 남긴다(§218-4) — 그것이 방송을 막으면 규칙 둘이 서로를 막는다.
+#   사람 PR 만 멈춘다. 그것이 열려 있다는 것은 squash 를 빠뜨렸다는 뜻이고,
+#   그대로 가면 part/infra 에 그 배치가 없는 채로 dev 에 올리고 "끝" 을 찍는다(§180 · G-2).
+openfeat=""; openbot=""
+while IFS=$'\t' read -r n head who; do
+    [ -z "$n" ] && continue
+    case "$who" in *[Dd]ependabot*|*[Bb]ot) openbot="$openbot#$n $head"$'\n' ;;
+                   *) openfeat="$openfeat#$n $head ($who)"$'\n' ;; esac
+done <<<"$(gh pr list -R "$REPO" --base part/infra --state open --json number,headRefName,author \
+           --jq '.[] | "\(.number)\t\(.headRefName)\t\(.author.login)"')"
 if [ -n "$openfeat" ]; then
-    die "part/infra 로 가는 PR 이 아직 열려 있다 — squash 머지부터:\n$openfeat"
+    die "part/infra 로 가는 **사람** PR 이 아직 열려 있다 — squash 머지부터:\n$openfeat"
 fi
+[ -n "$openbot" ] && say "   봇 PR $(printf '%s' "$openbot" | grep -c .) 개 — 막지 않는다(§218-4 청소가 맡는다)"
 # ══ A-0. 봉인 — **스쿼시 뒤 `part/infra` 에서 찍는다** ══════════
 # ★ 2026-09-21 (PLAN §13 W11-1 · DECISIONS §207). 종전에는 사람이 feat 가지에서
 #   `dms seal` 을 찍었다. 그 가지는 **스쿼시로 머지되고 지워진다.** 봉인이 적은
