@@ -61,6 +61,7 @@ OUT   data/dms/DMS.json · data/dms/BOOKMARK.json
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import subprocess
@@ -226,6 +227,41 @@ def _corpus() -> tuple[str, set[str]]:
     return "\n".join(buf), files
 
 
+def _missing_member(head: str, member: str) -> str:
+    """`파일::이름` 에서 그 이름이 파일에 없으면 사유를, 있으면 빈 문자열."""
+    # ★ 첨자는 떼고 본다 — `EXPECT["part"]` 가 지목하는 것은 `EXPECT` 다.
+    member = re.sub(r"\[.*$", "", member.strip().rstrip("()").strip("`")).strip()
+    if not member or NOT_A_NAME.search(member):
+        return ""
+    cands = [p for p in (ROOT / "x").parent.rglob(Path(head).name)
+             if p.is_file() and not any(s in p.parts for s in SKIP_DIR)]
+    exact = [p for p in cands if p.as_posix().endswith(head)]
+    for p in (exact or cands):
+        if member in _members(p):
+            return ""
+    if not (exact or cands):
+        return ""                                   # 파일을 못 찾으면 ⑥ 이 본다
+    return f"`{member}` 가 {head} 에 없다"
+
+
+def _members(path: Path) -> set[str]:
+    """그 파일이 **선언한 이름들.** `.py` 는 AST, 나머지는 문자열로 본다."""
+    txt = path.read_text(encoding="utf-8", errors="ignore")
+    if path.suffix != ".py":
+        return set(re.findall(r"[A-Za-z_][A-Za-z0-9_]{2,}", txt))
+    try:
+        tree = ast.parse(txt)
+    except SyntaxError:
+        return set(re.findall(r"[A-Za-z_][A-Za-z0-9_]{2,}", txt))
+    out: set[str] = set()
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            out.add(n.name)
+        elif isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store):
+            out.add(n.id)          # `EXEMPT = {...}` 같은 모듈 상수도 칸이 지목한다
+    return out
+
+
 def verify(data: dict, corpus: tuple[str, set[str]] | None = None) -> list[str]:
     """칸이 지목한 이름이 실재하는가. **오탐 다섯을 먼저 뺀다.**"""
     text, files = corpus or _corpus()
@@ -246,6 +282,13 @@ def verify(data: dict, corpus: tuple[str, set[str]] | None = None) -> list[str]:
             if DATED_SCRIPT.search(tok):        # ④ 과거 서술 — 일회성 패처
                 continue
             if {leaf, stem, head} & files:      # ⑤ 파일 참조
+                # ★ 2026-09-24 (DECISIONS §229). **`::` 뒤를 안 봤다.**
+                #   파일만 있으면 통과시켰으므로 `tests/test_guards.py::없는함수`
+                #   가 초록이었다. 칸이 지목하는 것은 파일이 아니라 **검사**인데
+                #   검사가 실재하는지는 한 번도 안 본 것이다 —
+                #   「선언이 이름보다 넓다」 족(PLAN §13 · §226)의 문서판이다.
+                if "::" in tok and (bad := _missing_member(head, tok.split("::", 1)[1])):
+                    dead.append(f"  {r['doc']}:{r['at']}  {r['id']}  {raw}  ← {bad}")
                 continue
             parts = [p for p in re.split(r"[:/]+", tok) if p]   # ⑥ 전문 대조
             if all(p in text or Path(p).stem in text for p in parts):
@@ -979,6 +1022,18 @@ def selftest() -> int:
                         "field": f"강제자  `tests/{ghost}.py::{ghost}`"}]}
     if not verify(canary):
         bad.append("합성 죽은 참조를 못 잡았다 — 프로브가 죽었다")
+    # ★ 2026-09-24 (DECISIONS §229). **실재하는 파일 + 없는 함수**가 제일 위험하다.
+    #   파일만 보던 시절에는 26건이 초록으로 앉아 있었고 그중 22건이
+    #   `test_plan_has_no_closed_items` 하나였다 — 이 도구 머리말이 「§123~143
+    #   스물한 절이 없는 검사를 강제자로 들고 있었다」고 적은 바로 그것이다.
+    #   **적어만 두고 잡지는 못했다.**
+    live = {"rows": [{"state": "wired", "doc": "x", "at": 0, "id": "MEMBER",
+                      "title": "member", "field":
+                      f"강제자  `tests/test_guards.py::{ghost}`"}]}
+    if not verify(live):
+        bad.append("실재하는 파일 안의 **없는 함수**를 못 잡았다")
+    if _missing_member("tests/test_guards.py", "test_no_dated_scripts_in_tools"):
+        bad.append("실재하는 함수를 없다고 한다 — 오탐")
     for line in bad:
         print(f"  {line}")
     print("selftest " + ("빨강" if bad else "초록"))

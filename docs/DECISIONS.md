@@ -35,6 +35,8 @@ MASTER 는 **지금 어떤가**를 적는다. 이 파일은 **왜 그렇게 됐�
 앞으로 일회성 작업은 돌리고 지운다. 남길 값이 있으면 여기에 적는다.
 `tests/test_guards.py::test_no_dated_scripts_in_tools` 가 이 규칙을 강제한다.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `test_no_source_patching_scripts`(두 검사가 겹쳐 덮는다 — 삭제된 9개로 역검증했다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)
+
 ---
 
 ## 1. `tools/ledger_20260817.py` (삭제됨)
@@ -93,6 +95,8 @@ raw 에는 있는데 대장에 없어 매 스캔 격리 대상으로 떴다.
 
 ortho .tif 만 잡아 메타데이터 .xml 4건이 격리로 떴다. 패턴 확장.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools`(이 파일이 돌아오면 운다) · `uv run python -m firelane.ledger`(대장이 정본이라는 결론의 현재 지킴이)
+
 ---
 
 ## 2. `tools/rules_20260817.py` (삭제됨)
@@ -116,6 +120,8 @@ rules_20260817.py — 새 소스 3종의 배치 규칙과 필수 목록을 등�
 파일을 덮어쓰지 않고 앵커를 확인한 뒤 삽입·치환만 한다.
 앵커가 없으면 아무것도 쓰지 않는다. 재실행해도 안전하다.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tests/test_intake_rules.py`(소스 3종이 잘못 잡히는 것 — 편입 규칙이 지금 그 자리를 든다)
+
 ---
 
 ## 3. `tools/fix3_20260817.py` (삭제됨)
@@ -136,6 +142,8 @@ fix3_20260817.py — 남은 배선 3건.
    ★ 결손은 폐기가 아니다(MASTER 18-3). 속성이 없거나 0건이어도
    빈 레이어로 발행하고 멈추지 않는다. 대신 조용히 넘어가지도 않는다.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `uv run python -m firelane.ledger`(대장 주석과 값이 어긋나는 것 — 지금은 대장 필드 검사가 든다)
+
 ---
 
 ## 4. `tools/docfix_20260817.py` (삭제됨)
@@ -151,6 +159,8 @@ docfix_20260817.py — MASTER 를 2026-08-17 산출과 맞추고 빠진 절을 �
 §2 판정 숫자 1093 / 383·216·65·429. CCTV 유효범위 재계산
 §10-0 D-XX 대응표. 46회 인용되는데 정의가 저장소 밖에 있었다
 §11 데이터 필드 절의 구간 수
+
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tools/docnum_check.py`(MASTER 숫자를 산출에 맞추는 일 — 지금은 도구가 매 실행 댄다)
 
 ---
 
@@ -170,6 +180,8 @@ docnum_check.py 는 판정 숫자만 본다. 아래는 서술이라 도구가 �
 §16 근거 없는 상수 5 → 4. XSEC_EXCL 이 실형상으로 해소됐다
 CCTV_RANGE 가 가르는 구간 수도 396 → 429
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tools/docnum_check.py`. ★ 「서술이라 도구가 못 잡는다」던 자리가 지금은 `tools/doc_fsck.py`(문서↔문서)와 `tools/dms.py`(강제자 칸)로 좁아졌다
+
 ---
 
 ## 6. `tools/docfix3_20260817.py` (삭제됨)
@@ -184,6 +196,8 @@ sources.yaml 이 크게 바뀌었다. 그래서 파일을 통째로 덮어쓰지
 앵커가 없으면 아무것도 쓰지 않고 멈춘다. 그때는 사람이 손으로 넣는다.
 
 이미 들어가 있으면 건너뛴다(재실행 안전).
+
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tools/baseline.py`(봉인 등재 — 지금은 도구가 한다)
 
 ---
 
@@ -206,6 +220,8 @@ nfa_out_20260818.py — 소방서 지정 구간 대조를 파일로 남긴다.
 무엇을 바꾸나
 print 를 지우지 않는다. 사람이 보는 출력은 그대로 두고 파일을 추가한다.
 산출물은 data/processed/nfa_compare.json 이며 baseline 봉인 형식과 같다.
+
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `src/firelane/seg/report.py::nfa_compare`(「두 번 소실됐다」던 외부 대조가 지금은 파이프라인 안에서 매 실행 산출된다)
 
 ---
 
@@ -236,6 +252,8 @@ data/processed 에 그대로 남고, segments 는 파일이 있으면 읽는다.
        OK 가 아니면 어떤 파일이 있든 정지한다. 개명이 실패했거나 사람이 손으로
        파일을 만들어 둔 경우까지 잡는 이중 안전이다.
 
+강제자  `tests/test_guards.py::test_lineage_blocks_orphan_derived_output` · `test_lineage_ok_when_all_outputs_declared`(FAIL 난 단계의 옛 산출물이 하류에 먹히는 것 — 지금은 `guards.lineage_check` 가 든다)
+
 ---
 
 ## 9. `tools/docfix3_20260818.py` (삭제됨)
@@ -257,6 +275,8 @@ NGI 보완분을 넣자 silpok 84 로 돌아왔다 — 베이스라인과 같은
 이 두 번의 정정 자체가 기록으로 남을 값이 있다. 소스를 갈아엎은 뒤
 숫자가 나왔다고 바로 문서에 박으면, 중간 상태를 확정값으로 적게 된다.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tools/docnum_check.py`(「어제 쓴 서술을 뒤집는다」가 반복되지 않게 숫자는 도구가 낸다)
+
 ---
 
 ## 10. MASTER §7 에서 해소된 항목
@@ -274,6 +294,8 @@ ngii1k 5개 레이어(도로경계·중심선·보도·평면교차점·가로�
 ★ 끝난 일이 '남은 일'에 남아 있으면 다음 사람이 이미 있는 것을 또 만든다.
 08-18 오후까지 목록에 남아 있었고, `docnum_check` 는 판정 숫자만 보므로
 이런 어긋남을 못 잡았다.
+
+강제자 없음 — 사유: 해소 기록이다. `ngii1k` 가 `STEPS` 에 들어 있다는 사실은 `src/firelane/pipeline.py::STEPS` 가 정본이고 `tests/test_reproducibility.py` 가 든다
 
 ---
 
@@ -300,6 +322,8 @@ ngii1k 5개 레이어(도로경계·중심선·보도·평면교차점·가로�
 필드표 대조도 붙였다. MASTER §11 이 `n_sample` 등 7개를 웹 필드로 적어놨는데
 `publish_web.py` 는 내보내지 않는다. UI 담당이 그 표를 보고 코드를 짜면
 `undefined` 가 나온다. 반대로 `width_verified` 등 3개는 산출물에만 있었다.
+
+강제자  `tools/docnum_check.py`(지금은 「맞는 숫자가 있는가」가 아니라 **옛 숫자가 남아 있는가**를 본다) · `tests/test_declaration_sync.py`
 
 ---
 
@@ -337,6 +361,8 @@ MASTER §11 은 그것을 "큰 도로는 건물이 40m 밖이라"로 설명했�
 판정과 평가지표 양쪽에 동시에 나타나고 있다.
 그때까지 `blocked` 63 은 확정 개수가 아니라 **하한**이다.
 
+강제자  `tests/test_seg_geom.py::test_wmax_missing_is_not_failure` · `tests/test_seg_width.py`(`WMAX_CAP`) · `tools/wmax_audit.py`(결손 규모를 재는 자리)
+
 ---
 
 ## 13. 팝업이 `seg_id` 를 머리글로 쓰고 있었다
@@ -356,6 +382,8 @@ MASTER §11 은 `seg_id` 를 **외부 참조 금지**로 못 박아 놓고, 화�
 `run_length_m` 행은 지웠다. 소방청 기준(연속 100m)의 중간 변수인데 결론인 척
 표에 앉아 있어서 안 읽혔다. 948개 카드에 `—` 만 채우고 있었다. `nfa_designated`
 가 참인 153개에만 배지로 띄우고, 거기에 실제 연속 길이를 적는다.
+
+강제자  `tests/test_contract.py::test_seg_uid_format` · `test_seg_uid_unique`(외부 참조 키가 `seg_uid` 하나라는 것) · `web/navi/test/style.test.ts`
 
 ---
 
@@ -377,6 +405,8 @@ MASTER 에 적어둔 규칙이었으면 사람이 읽어야 작동했을 것이�
 `test_guards.py` 머리말이 말한 그대로다.
 
 내용은 PLAN §8-2 로 들어갔다. 절 번호만 한 단계 내렸고 본문은 그대로다.
+
+강제자  `tests/test_doc_style.py`(다섯 번째 문서 금지 — 그날 이 검사가 잡았고 지금도 같은 자리에 있다)
 
 ---
 
@@ -428,6 +458,8 @@ width_min_m |Δ|>1m 0건 · seg_uid 유지율 100.0%
 이상이거나 없는 결손 64건이 남는다. 실측이나 건물 형상 보완(PLAN #8)이
 있어야 판정된다. 발표 자료에서 159 를 확정으로 쓰지 말 것.
 
+강제자  `tests/test_seg_geom.py::test_below_truck_is_blocked` · `test_single_sample_still_gets_blocked` · `test_blocked_wins_over_clear` · `tests/test_contract.py::test_verdict_matches_rules_for_every_segment`
+
 ---
 
 ## 16. gpkg 에 옛 레이어가 남아 하류가 옛 데이터를 읽었다
@@ -468,6 +500,8 @@ gpkg 는 매 실행 바뀐다.
 ③ pipeline 이 단계 실행 전 verify / 후 record. 단계는 계보를 모른다
 ④ stale_guard 의 개명 방식은 삭제한다. 증상 대응이 원인 대응으로 대체된다
 
+강제자  `tests/test_guards.py::test_lineage_blocks_orphan_derived_output`(gpkg 안 옛 레이어가 남아 하류가 옛 데이터를 읽던 자리) · `tests/test_reproducibility.py`
+
 ---
 
 ## 17. 정사영상을 검증 소스로 세지 않고 있었다
@@ -501,6 +535,8 @@ gpkg 는 매 실행 바뀐다.
 ★ 원본 TIF 에 geotransform 이 없어 도엽 번호로 위치를 유추하고 있다.
 `.xml` 사이드카에 투영원점 중부 · GRS80 · TM(= EPSG:5186)이 들어 있으므로
 유추를 선언으로 바꿀 수 있다. `desk_check` 신뢰도가 여기 달려 있다.
+
+강제자  `tools/render_figures.py --check`(정사영상 바탕 그림이 정본에서 나오는가) · `tests/test_ortho_seal.py`(정사영상 봉인지) · `tools/desk_check.py`(그날 만든 도구 · 지금도 사람이 부른다)
 
 ---
 
@@ -572,6 +608,8 @@ MASTER 3,222줄을 한 번에 갈면 `docnum_check` 앵커와 `test_reproducibil
 
 '서/중/동' 같은 임의 어휘는 대안이 아니다. 우리가 만든 말이라 현장에서
 통하지 않는다.
+
+강제자  `tests/test_r1.py` · `tests/test_contract.py::test_seg_uid_format`(`seg_no` 가 표기 전용이고 외부 키는 `seg_uid` 라는 것) · `src/firelane/seg/basisno.py`(기초번호 정본). 하위 둘(폐기한 접근 · 채택한 방식)이 이 칸을 물려받는다
 
 ### 폐기한 접근
 
@@ -651,6 +689,8 @@ EVE_BSI_MN   짝수측 본번        BSI_INT_SN   기초구간 일련번호
 현재 `pipeline.EXPECT` 는 `segments` 산출물만 검사하고 `ingest` 건수는 보지
 않는다. PLAN #16.
 
+강제자  `tests/test_turn_restriction_filter.py`(전국 44,125 오염 · `node_point` 없이 조용히 0건이 되는 것 · `status` 가 OK 인 채 오염되는 것)
+
 ---
 
 ## 21. 정사영상 cp949 오류 — 사이드카 XML
@@ -692,6 +732,8 @@ GDAL 은 래스터를 열 때 사이드카를 탐색하기 위해 디렉터리�
 (메모리 부족)를 이 트레이스백 사이에서 찾느라 시간을 소모했다. **잡음은
 실제 오류를 가린다.**
 
+강제자  `src/firelane/quiet_gdal.py`(GDAL 콜백 소음을 한 자리에서 끈다) · `tests/test_ortho_seal.py`. 사이드카 XML 자체는 raw 의 실물이라 `tools/lakecheck.py` 가 목록으로 든다
+
 ---
 
 ## 22. 계보 검사의 구조적 오탐 두 가지
@@ -701,6 +743,8 @@ GDAL 은 래스터를 열 때 사이드카를 탐색하기 위해 디렉터리�
 이 검사는 2026-08-18 사고를 막기 위해 도입했고 실제로 여러 차례 제 역할을
 했다. 그러나 오탐이 잦으면 실제 경보를 무시하게 된다. 그것이 반대편 위험이다.
 2026-08-21 하루에 `_lineage.json` 을 여섯 차례 삭제했다.
+
+강제자  `tests/test_guards.py`(계보 세 층 — 키 · 파일 · 자가) · `tests/test_lineage_branches.py`. 하위 셋(바이트 비교 · `mutates` 자가대조 · 탈출구)이 이 칸을 물려받는다
 
 ### 1. `_manifest.json` 을 바이트 전체로 비교했다
 
@@ -761,6 +805,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 **필요한 조치:** 단계 스크립트가 `__main__` 으로 호출될 때 경고하거나, 계보
 기록까지 수행하도록 통일한다. PLAN #17.
 
+강제자  `src/firelane/guards.py::warn_direct_call`(단계 모듈 일곱이 직접 호출을 경고한다) · `tools/doc_fsck.py::check_commands`(문서가 단계 직접 호출을 적으면 운다)
+
 ---
 
 ## 24. 인코딩에는 강제자가 없었다
@@ -796,6 +842,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 
 <!-- 묶음 구분: 2026-08-22 ~ 23 — 절 제목으로 쓰지 않는다 (PLAN §0-1) -->
 
+강제자  `tools/encoding_check.py`(verify 「인코딩·개행」 단계) · `.gitattributes`. ★ 이 절이 「강제자가 없었다」는 제목으로 남아 있는 것 자체가 기록이고, 지금은 있다
+
 ## 25. 스크립트 더미를 패키지로 — `sys.path` 17군데가 원인이었다
 
 > 2026-08-22 ~ 23
@@ -823,6 +871,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 
 검증: import 28/28 · pytest 208 · 판정 불변 1,101 · `/tmp` 에서 동작
 
+강제자  `tests/test_layering.py::test_sys_path_해킹이_없다`(경로 조작이 되살아나면 운다) · `pyproject.toml` 의 `pythonpath` 선언이 그 자리를 대신한다
+
 ## 26. 계층에 강제자가 없었다
 
 > 2026-08-22 ~ 23
@@ -843,6 +893,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 
 `access_corridor` 는 `out_dir` 를 인자로 받게 바꿨다. 쓸 곳은 호출자가
 정한다.
+
+강제자  `tests/test_layering.py`(계층 방향을 import 로 강제 · 넷을 본다) · `tests/test_layers.py`(선언 ↔ 실물)
 
 ## 27. `app.js` 1,260줄을 27개 모듈로
 
@@ -867,6 +919,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 "쓰이나 보다" 하고 유지한다.
 
 검증: 레이어 · 소스 · DOM id 52/52 · 이벤트 13/13 · 누락 0 · 추가 0
+
+강제자 없음 — 사유: 기록이다. 그 27개 모듈(`web/js`)은 2026-09-22 에 통째로 걷혔다(§218-1). 되살아나지 않는 것은 `tests/test_web_ownership.py::test_old_map_is_retired_and_entry_redirects` 가 든다
 
 ## 28. ★ `node --check` 는 ES 모듈 문법 오류를 잡지 못한다
 
@@ -893,6 +947,8 @@ Node 가 `.js` 를 CommonJS 로 읽다 `export` 에서 실패하면 조용히 �
 `signs.js` 에 있는데 `icons/*` 가 참조). **둘 다 문법 검사도 그래프 검사도
 통과한다.**
 
+강제자 없음 — 사유: 기록이다. 그 검사가 붙어 있던 `web/js` 는 2026-09-22 에 걷혔고 지금 화면은 `web/navi`(vite + vitest)다. 문법 오류는 `npm run -s typecheck` 가 잡는다
+
 ## 29. ★ `window.CONFIG` 는 undefined 다
 
 > 2026-08-22 ~ 23
@@ -910,9 +966,13 @@ Node 가 `.js` 를 CommonJS 로 읽다 `export` 에서 실패하면 조용히 �
 `js/config-access.js` 가 `typeof` 로 확인한다. ES 모듈의 스코프 체인은
 전역 선언적 환경까지 닿으므로 이름으로 참조하면 보인다.
 
+강제자 없음 — 사유: 기록이다. `window.CONFIG` 를 읽던 옛 지도는 걷혔다. `web/config.js` 는 지금 **파이프라인 설정**이고 화면이 직접 안 읽는다(MASTER §11-2) — `tests/test_declaration_sync.py::test_config_js_thresholds_match_params` 가 그 값이 정본과 같은지 든다
+
 ## 30. 실패가 조용히 통과하던 자리 넷
 
 > 2026-08-22 ~ 23
+
+강제자  `tests/test_guards.py`(조용한 통과 네 자리) · `tools/deadcheck.py` ③(실패해야 할 자리에서 `return`/`pass`/`continue` 하는가 · 천장 0). 하위 넷이 이 칸을 물려받는다
 
 ### `ingest` 가 데이터셋 FAIL 에도 종료코드 0
 
@@ -984,6 +1044,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
     --from segments(입력 그대로)       통과
     --only 인데 입력 몰래 바뀜          차단 ★
 
+강제자  `tests/test_lineage_branches.py`(②가 통과해도 ③이 막던 자리) · `tests/test_guards.py`(계보 세 층의 관계)
+
 ## 32. clearance(최대내접원) 방식을 검토하고 기각했다
 
 > 2026-08-22 ~ 23
@@ -1018,6 +1080,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
 0.056). 파이프라인이 커버율로 이미 지목한 실측 우선순위와 일치한다.
 
 재현: `tools/clearance_probe.py`
+
+강제자  `tests/test_tools_are_wired.py::EXEMPT`(`clearance_probe` 가 「2026-08-22 기각」 사유와 함께 면제로 남아 있다 — 기각을 기록으로 남기는 자리) · `tools/clearance_probe.py`. 하위 절이 이 칸을 물려받는다
 
 ### ★ 2026-08-23 추가 — 기각 근거를 다시 본다
 
@@ -5480,7 +5544,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #16` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5493,7 +5557,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #31` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5506,7 +5570,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #38` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5519,7 +5583,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #39` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5532,7 +5596,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #40` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5545,7 +5609,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #41` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5558,7 +5622,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #43` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5571,7 +5635,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #44` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5584,7 +5648,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #47` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5597,7 +5661,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #48` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5610,7 +5674,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #49` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5623,7 +5687,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #52` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5636,7 +5700,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #71` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5649,7 +5713,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #4` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5662,7 +5726,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #5` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5675,7 +5739,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #6` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5688,7 +5752,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #8` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5701,7 +5765,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #11` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5714,7 +5778,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #12` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5727,7 +5791,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #17` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5740,7 +5804,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #18` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5882,7 +5946,7 @@ gitignore)로 뺐다. `tools/stage_pages.py` 가 환경에서 읽어 만들고,
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — ⬛ 가 하나라도 있으면 운다.
         `tools/plan_renumber.py` — 결번을 1..N 으로 당긴다.
 
@@ -8386,7 +8450,7 @@ import 는 분기 안에 둔다 — 꼭대기로 올리면 스위치와 무관�
 ★ 채우기 반경은 12m 다. `roadname.BAND` 는 0.5m 이고, **뼈대가 5~15m 옆에 서는 것이 R3 의 전제다**(§184-4) —
   그 창으로는 한 건도 못 채운다. 2026-09-18 실측: 1,860 엣지 중 NGII 이름만으로 채워지는 것 1,328 · 나머지 532 는 이 경로가 채운다.
 
-강제자  `tests/test_r3.py::test_as_road_prefers_ngii_name_and_width` · `::test_as_road_fills_blank_ngii_name_from_road_link_beyond_roadname_band` · `::test_as_road_defaults_dpn_to_main_road_when_unknown` · `::test_as_road_keeps_every_edge_and_geometry`
+강제자  `tests/test_r3.py::test_as_road_takes_width_from_ngii_but_name_from_road_link` · `::test_as_road_fills_blank_ngii_name_from_road_link_beyond_roadname_band` · `::test_as_road_defaults_dpn_to_main_road_when_unknown` · `::test_as_road_keeps_every_edge_and_geometry`
 
 ### 188-3. 측정 — 봉인 ↔ 시험 산출물을 `tools/transition.py` 로
 

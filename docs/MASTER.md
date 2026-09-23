@@ -2147,7 +2147,7 @@ uv run fire-lane --only publish
 
 전량 재실행 약 285초. 몇 번을 돌려도 결과가 같고, 두 번째부터는 캐시가 걸린다.
 
-강제자  `tests/test_guards.py::test_entry_point_is_cwd_independent` 계열 · `tools/doc_fsck.py::check_commands`(이 블록의 단계 이름이 실재하는 단계인가). 단계 순서의 정본은 `src/firelane/pipeline.py::STEPS` 다
+강제자  `tools/verify.sh` 의 「진입점 · cwd 독립성」 단계 · `tests/test_reproducibility.py::test_web_manifest_is_cwd_independent` · `tools/doc_fsck.py::check_commands`(이 블록의 단계 이름이 실재하는 단계인가). 단계 순서의 정본은 `src/firelane/pipeline.py::STEPS` 다
 
 ### 14-3. 원본을 새로 받으면
 
