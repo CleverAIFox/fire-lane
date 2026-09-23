@@ -1,16 +1,16 @@
-"""판정·표출 범위의 공통 공간 규칙. 입력 좌표계는 미터 단위 EPSG:5186."""
+"""판정 범위의 공간 규칙. 입력 좌표계는 미터 단위 EPSG:5186.
+
+★ 2026-09-23 (PLAN §13 W3-6). `display_scope` 와 `DISPLAY_*` 를
+  `firelane/display_scope.py` 로 옮겼다. 이 파일은 `firelane.segments` 의
+  import 닫힘 = **판정 지문** 안이고, 표출 상수가 거기 있으면 지도 여백만
+  고쳐도 판정 게이트가 운다. 여기 남는 것은 판정 범위뿐이다.
+  표출은 `display_scope` 가 이 함수를 불러 **덮는다** — 정본은 한 곳이다.
+"""
 from __future__ import annotations
 
-from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import unary_union
 
-from firelane.seg.params import (
-    CORRIDOR_BUFFER,
-    DISPLAY_BUFFER,
-    DISPLAY_CLOSE,
-    KEEP_BUFFER,
-    STATION_RADIUS,
-)
+from firelane.seg.params import CORRIDOR_BUFFER, KEEP_BUFFER, STATION_RADIUS
 
 
 def judgment_scope(boundary_geometry, corridor_geometries, station_geometries):
@@ -24,22 +24,3 @@ def judgment_scope(boundary_geometry, corridor_geometries, station_geometries):
     if corridors:
         parts.append(unary_union(corridors).buffer(CORRIDOR_BUFFER))
     return unary_union(parts)
-
-
-def display_scope(boundary_geometry, corridor_geometries, station_geometries):
-    """판정 범위를 모두 덮고, 동 경계 주변의 기존 표출 여백 60m도 유지한다.
-
-    ★ 2026-09-17 (DECISIONS §182-7). 회랑 버퍼 · 안전센터 원 · 동 여백을 합치면 레이스 모양이 된다.
-      손가락 사이 틈(바깥)과 둘러싸인 구멍(안쪽)이 마스크(불투명도 .9)로 까맣게 덮여 **그 안의 건물 · 정사영상이
-      안 보였다**(광주지방법원 앞 블록 · 산수동 쪽 띠). 판정과 무관한 표출 결함이다.
-      닫힘(바깥으로 r 만큼 부풀렸다 되돌림)으로 폭 2r 미만 틈을 메우고, 남은 안쪽 구멍은 외곽선만 남겨 없앤다.
-      범위(bounds)는 거의 안 바뀐다(실측 0.2m) — view.json · 정사영상 캔버스가 그대로다.
-    """
-    raw = judgment_scope(boundary_geometry, corridor_geometries, station_geometries).union(
-        boundary_geometry.buffer(DISPLAY_BUFFER)
-    )
-    closed = raw.buffer(DISPLAY_CLOSE).buffer(-DISPLAY_CLOSE).union(raw)
-    parts = closed.geoms if hasattr(closed, "geoms") else [closed]
-    solid = unary_union([Polygon(p.exterior) for p in parts] + [raw])   # raw 를 다시 합쳐 판정 범위를 정확히 덮는다
-    return solid if solid.geom_type == "Polygon" else MultiPolygon(
-        [Polygon(p.exterior) for p in solid.geoms])

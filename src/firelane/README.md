@@ -20,7 +20,7 @@ uv run fire-lane --only publish
 `guards.warn_direct_call()` 이 그때 경고한다 — 막지는 않는다. 디버깅에는
 필요하고, 정상 경로를 막으면 사람이 우회를 습관으로 만든다(MASTER §18-13).
 
-    ingest → segments → streetlight → terrain → ortho → publish
+    ingest → segments → scope → streetlight → terrain → ortho → publish
 
 상세는 `MASTER §14-2`. 게이트와 계층은 `MASTER §18` 이 정본이다.
 

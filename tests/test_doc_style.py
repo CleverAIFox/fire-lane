@@ -332,3 +332,56 @@ def test_recent_decisions_name_their_enforcer():
         "    강제자  tests/test_xxx.py::test_yyy\n"
         "    또는\n"
         "    강제자 없음 — 사유: …")
+
+
+# ── docs/ 에 사는 것 (2026-09-23) ──────────────────────────────
+DOCS_DIR = ROOT / "docs"
+# 문서는 넷이다. 루트 `README.md` 가 다섯째이고 그것은 이 폴더 밖에 산다.
+ALLOWED_DOCS = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.docx"}
+# 그림은 문서가 아니라 `render_figures` 의 생성물이다.
+FIGURES_DIR = "figures"
+ALLOWED_FIGURES = {".lock.json"}                 # 그 밖에는 `*.svg` 만
+
+
+def test_docs_dir_holds_only_the_allowed_documents():
+    """`docs/` 에는 허용된 문서만 산다 — 2026-09-23 소유자 규칙.
+
+    이 저장소의 문서는 **넷**이다 — `MASTER.md`(지금 무엇이 어떤 값인가) ·
+    `PLAN.md`(남은 일) · `DECISIONS.md`(왜 그렇게 했나) · `proposal.docx`
+    (제출물). 루트 `README.md` 가 다섯째이고 그것은 이 폴더 밖에 산다.
+
+    2026-09-22 에 규율 둘이 문서로 나갔다 — `SOURCES_OF_TRUTH.yaml`(가드 2)과
+    `MEASUREMENTS.yaml`(가드 6). 규율이 늘 때마다 문서가 늘면 「어디를 봐야
+    하는가」가 사람마다 달라지고, 그때부터 넷 중 **어느 것도 정본이 아니게
+    된다.** 2026-09-23 에 둘을 지우고 내용을 MASTER §17-1(정본 표) ·
+    PLAN §1-27(측정 대장)로 접었다(DECISIONS §218-6).
+
+    ★ 새 규율은 **기존 절 안에** 적는다. 기계가 읽는 판(정규식 · 훑기 범위)이
+      필요하면 그것은 문서가 아니라 강제자 옆(`tests/`)에 둔다 — 사람이 읽지
+      않는 것을 문서라고 부르는 순간 문서가 는다.
+
+    ★ 이 검사는 **양방향**이다. 늘어난 것만 보면 문서가 지워진 것을 놓친다.
+    """
+    extra, missing = [], sorted(ALLOWED_DOCS)
+    for p in sorted(DOCS_DIR.rglob("*")):
+        rel = p.relative_to(DOCS_DIR).as_posix()
+        if p.is_dir():
+            if rel != FIGURES_DIR:
+                extra.append(f"docs/{rel}/  — 허용된 폴더는 `figures` 하나다")
+            continue
+        if p.parent == DOCS_DIR:
+            if p.name in ALLOWED_DOCS:
+                missing.remove(p.name)
+            else:
+                extra.append(f"docs/{rel}  — 허용된 문서 넷이 아니다")
+        elif p.parent.name == FIGURES_DIR:
+            if p.suffix != ".svg" and p.name not in ALLOWED_FIGURES:
+                extra.append(f"docs/{rel}  — figures 는 `*.svg` 와 "
+                             f"{sorted(ALLOWED_FIGURES)} 만 담는다")
+    assert not extra and not missing, (
+        "`docs/` 가 허용된 문서 넷을 벗어났다 (2026-09-23 소유자 규칙).\n"
+        + "".join(f"  + {x}\n" for x in extra)
+        + "".join(f"  - docs/{x} 가 없다 — 문서 넷 중 하나가 사라졌다\n" for x in missing)
+        + "\n  새 규칙 · 새 대장은 MASTER · PLAN · DECISIONS 의 **기존 절 안에** 적는다.\n"
+          "  기계가 읽는 판이 필요하면 그것은 문서가 아니라 강제자 옆(`tests/`)에 둔다.\n"
+          "  전례 — SOURCES_OF_TRUTH.yaml → MASTER §17-1 · MEASUREMENTS.yaml → PLAN §1-27.")

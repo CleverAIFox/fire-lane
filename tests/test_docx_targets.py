@@ -148,3 +148,46 @@ def test_long_cell_ratchet_bites(monkeypatch):
     assert any("긴 칸" in x and "초과" in x for x in chk.audit(DOCX)), "칸이 늘었는데 안 운다"
     monkeypatch.setattr(chk, "LONG_MAX_N", chk.LONG_MAX_N + 2)
     assert any("줄었다" in x for x in chk.audit(DOCX)), "칸이 줄었는데 상한을 내리라고 안 한다"
+
+
+def _figs_mod():
+    """`tools/docx_figs.py` 를 파일에서 연다 — 도구는 패키지가 아니다."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_docx_figs", ROOT / "tools" / "docx_figs.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_every_generated_figure_declares_where_it_goes():
+    """생성 그림은 **전부** 기획서 자리를 선언한다 — 「나중에 넣는다」 가 남는 길을 막는다 (§221-1)."""
+    f = _figs_mod()
+    missing = sorted(set(f.FIGURES) - set(f.PLACE))
+    assert not missing, f"tools/docx_figs.py 의 PLACE 에 선언이 없다: {missing}"
+    ghost = sorted(set(f.PLACE) - set(f.FIGURES))
+    assert not ghost, f"PLACE 가 없는 그림을 든다: {ghost}"
+    for name, spec in f.PLACE.items():
+        assert ("fig" in spec) ^ ("internal" in spec), f"{name}: fig 아니면 internal 하나만"
+        if "internal" in spec:
+            assert len(spec["internal"]) >= 20, f"{name}: 사유가 너무 짧다 — 왜 기획서에 없는가"
+
+
+def test_placed_figures_match_the_proposal():
+    """기획서가 든 그림이 정본과 같다 — 다르면 `--sync` 를 안 돌린 것이다 (§221-1)."""
+    f = _figs_mod()
+    assert f.check() == 0, "기획서 그림이 정본과 어긋난다 — uv run python tools/docx_figs.py --sync"
+
+
+def test_check_does_not_need_a_converter(monkeypatch):
+    """`--check` 는 SVG→PNG 변환기 없이 돈다 — CI 러너에 변환기가 없다 (§221-1)."""
+    f = _figs_mod()
+    monkeypatch.setattr(f.shutil, "which", lambda _exe: None)
+    assert f.check() == 0, "변환기가 없다고 검사가 죽는다 — 그러면 CI 가 이 검사를 못 단다"
+
+
+def test_manual_insertion_instruction_is_gone():
+    """「사람이 넣는다」 가 도구에 남아 있으면 안 된다 — 도구가 넣는다 (§221-1)."""
+    src = (ROOT / "tools" / "render_figures.py").read_text(encoding="utf-8")
+    out = [ln for ln in src.splitlines()
+           if "사람이 넣는다" in ln and not ln.lstrip().startswith("#")]
+    assert not out, f"안내가 아직 손 작업을 시킨다: {out}"

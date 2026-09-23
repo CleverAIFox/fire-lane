@@ -138,7 +138,7 @@ editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
 
 ```bash
-bash tools/verify.sh          # 49단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 50단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 급할 때. ★ `부분 실행` 에서 일부러 빨갛게 죽는다
 ```
 
@@ -184,7 +184,7 @@ bash tools/janitor.sh       # 기계·저장소·레이크 세 층을 한 표로
 ### 파이프라인
 
 ```
-ingest → segments → streetlight → terrain → ortho → publish → 계약 테스트 → 지문 대조
+ingest → segments → scope → streetlight → terrain → ortho → publish → 계약 테스트 → 지문 대조
 ```
 
 ```bash
@@ -377,7 +377,7 @@ src/firelane/
   skeleton.py             ★ 판정 뼈대 후보(NGII 1:1,000 중심선 하이브리드). 순수 함수 (R1 · DECISIONS §184)
   transition.py           ★ 옛 구간 → 새 구간 전이표. 1:N · N:1 · 소멸 · 신설 (R2 · §187)
   seg/
-    params.py             임계값 정본. web/config.js 는 표시용 사본
+    params.py             판정 임계값 정본. 표출 상수는 display_scope.py 가 든다(DECISIONS §220)
     graph.py              노딩 · 최대성분 · 접근 회랑
     width.py              폭 산출 (WidthEngine)
     geom.py               verdict · _seal · _join · _dirv (폐포 없는 순수 함수)
@@ -385,8 +385,9 @@ src/firelane/
     basisno.py            기초구간 → seg_label
     vehicle.py            차량 제원 · 엣지 비용
     report.py             소방서 대조 · 진단 · 산출물 기록
-    scope.py              판정 범위 · 표출 범위 (judgment_scope · display_scope)
+    scope.py              판정 범위 (judgment_scope) — 표출 범위는 판정 지문 밖이다
     centerline_correction.py  사람이 승인한 중심선 위치 보정. 지문이 안 맞으면 실패한다
+  display_scope.py        ★ 표출 범위 단계 (display_scope · DISPLAY_BUFFER/CLOSE) — 판정 지문 밖 · scope_5186.gpkg
   streetlight.py          가로등 지점 단위 집계
   terrain.py              공개DEM → Terrain-RGB 타일
   ortho.py                항공정사영상 → 배경 타일
@@ -442,6 +443,7 @@ tools/
   render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
   stage_pages.py          ★ 배포 준비 한 곳 — docs/proposal.docx → web/
   render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 · 라벨 넘침 · 막대 덮음 대조
+  docx_figs.py            ★ 그 그림을 기획서 안에 넣는다 — --sync 가 교체 · --check 는 변환기 없이 대조
   release_brief.py        ★ 이 PR 이 무엇을 흡수하나 — 판정·계보·대장·계약
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
   ledger_feeds.py         feeds 산문 → 소비자 리스트
