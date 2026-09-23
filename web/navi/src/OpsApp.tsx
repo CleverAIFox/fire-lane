@@ -387,6 +387,16 @@ export default function OpsApp() {
                     </button>
                   );
                 })}
+                {/* ★ 2026-09-24 (DECISIONS §232). **이 색이 무엇을 말하지 않는가**를 적는다.
+                    판정은 도면에서 잰 **정적 폭 조건**이고 지금 그 골목에 차가 서
+                    있는지는 안 본다 — 초록을 「지금 갈 수 있다」로 읽으면 관제가
+                    화면을 잘못 믿는다. 회색 399가 그 사실을 이미 말하고 있는데
+                    **초록·주황·빨강에는 그 말이 없었다.** */}
+                <div style={{ marginTop: 5, paddingTop: 5, borderTop: `1px solid ${D.line}`,
+                              fontSize: 10.5, color: D.sub, lineHeight: 1.5 }}>
+                  이 색은 <b>도면에서 잰 정적 폭 조건</b>이다. 지금 주차 상태는 안 본다 —
+                  현장 확인은 영상판정(주황)과 CCTV 가 닿는 범위까지다.
+                </div>
                 {grayCounts.length > 0 && !hidden.has("unknown") && (
                   <div style={{ margin: "0 0 4px 20px", fontSize: 10.5, color: D.sub, lineHeight: 1.55 }}>
                     {grayCounts.map(([k, n]) => (

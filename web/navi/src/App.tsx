@@ -370,7 +370,7 @@ export default function App() {
                style={style} look={st.route && !s.planning ? st.route : "solid"}
                blockedEdges={blockedEdges} marks={marks} finalLeg={finalLeg}
                mode={s.planning ? "plan" : "drive"} firstPerson={firstPerson}
-               tint={tint} cmd={cmd} notes={notes}
+               tint={tint} cmd={cmd} notes={notes} spec={spec}
                onMapClick={onMapClick}
                onUserPan={() => setFirstPerson(false)} />
 

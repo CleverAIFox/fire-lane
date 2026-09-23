@@ -18,7 +18,12 @@ export type Verdict = "clear" | "needs_cv" | "unknown" | "blocked";
 export interface VehicleSpec {
   kind?: string;
   width_m: number;
-  length_m?: number;
+  length_m?: number | null;
+  /**
+   * 전고(m) — **판정에 안 쓴다.** 상공 장애물 데이터가 없다(`fleet.json` note).
+   * 자차를 실측 크기 상자로 놓는 데만 쓰고, 없으면 상자를 안 놓는다(§232).
+   */
+  height_m?: number | null;
   /** 미검증이면 null 로 발행된다. publish_web.py 가 그렇게 막는다 */
   wheelbase_m: number | null;
   turn_radius_m: number | null;

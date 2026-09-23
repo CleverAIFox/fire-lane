@@ -71,6 +71,10 @@ export function useFleet() {
       width_m: current.width_m,
       clearance_m: current.clearance_m,
       length_m: current.length_m ?? base.length_m,
+      // ★ 2026-09-24 (§232) 전고. 판정에 안 쓰고 **자차 상자**에만 쓴다.
+      //   없는 차는 null 로 남겨 상자를 안 놓는다 — 기본값을 주면 없는
+      //   숫자를 그림으로 주장하게 된다.
+      height_m: current.height_m ?? null,
       // 코너 점검은 제원 완성 차종만(§218-2). 나머지는 null — 점검하지 않는다
       turn_check_radius_m: current.spec_complete ? current.turn_check_radius_m ?? null : null,
     };
