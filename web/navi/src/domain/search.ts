@@ -9,7 +9,12 @@
  * ★ 목적지를 색인 좌표로 쓰지 않는다. 건물은 출입구 좌표지만 그래도 차도 위가 아니다.
  *   호출부가 반드시 `snap` 을 거쳐 **도로 위 점**으로 바꾼다 — 내비는 차도만 다닌다.
  *
- * ★ 한글 초성 검색을 넣지 않았다. 수천 건 규모에서 부분일치로 충분하다.
+ * ★ 2026-09-23 (DECISIONS §224-5). 한글 초성 검색을 넣었다. 종전 머리말은
+ *   「수천 건 규모에서 부분일치로 충분하다」 였는데, 그것은 **찾는 쪽 사정**이지
+ *   치는 쪽 사정이 아니다. 관제요원은 신고자 말을 받아치면서 지도를 본다 —
+ *   `ㄷㅁㄷㅎㅈㅂㅈㅅ` 가 `동명동행정복지센터` 로 가야 한다.
+ *   **질의가 전부 초성일 때만** 초성으로 찾는다. 섞이면 지금처럼 부분일치다 —
+ *   안 그러면 `ㄱ` 한 자가 1,836건을 다 물어온다.
  */
 import type { LngLat } from "./geo";
 
@@ -24,6 +29,8 @@ export interface Poi {
   alt: string;
   src: PoiSrc;
   point: LngLat;
+  /** 이름의 초성 — `동명동행정복지센터` → `ㄷㅁㄷㅎㅈㅂㅈㅅㅌ`. 색인 시 한 번만 만든다 */
+  cho: string;
 }
 
 export interface PoiHit extends Poi {
@@ -46,6 +53,7 @@ export function preparePois(fc: GeoJSON.FeatureCollection): Poi[] {
       name: p.name, cat: p.cat ?? "", sub: p.sub ?? "", addr: p.addr ?? "",
       alt: p.alt ?? "", src,
       point: f.geometry.coordinates as LngLat,
+      cho: choOf(p.name),
     });
   }
   return out;
@@ -53,6 +61,34 @@ export function preparePois(fc: GeoJSON.FeatureCollection): Poi[] {
 
 /** 공백을 무시한다 — `필문대로230` 과 `필문대로 230` 이 같은 질의다 */
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+
+/** 현대 한글 음절의 초성 19자. 유니코드 순서 그대로여야 한다 — 순서가 곧 색인이다. */
+const CHO = "\u3131\u3132\u3134\u3137\u3138\u3139\u3141\u3142\u3143\u3145\u3146\u3147\u3148\u3149\u314a\u314b\u314c\u314d\u314e";
+
+/**
+ * 문자열의 초성. 한글 음절만 바꾸고 나머지(숫자 · 영문 · 기호)는 그대로 둔다 —
+ * `GS25` 가 `GS25` 로 남아야 `ㅍㅇㅁㄹGS25` 같은 질의도 걸린다.
+ */
+export function choOf(s: string): string {
+  let out = "";
+  for (const ch of s) {
+    const c = ch.codePointAt(0) ?? 0;
+    out += (c >= 0xac00 && c <= 0xd7a3) ? CHO[Math.floor((c - 0xac00) / 588)] : ch;
+  }
+  return out;
+}
+
+/**
+ * 질의가 **전부** 초성인가. 한 자라도 완성 음절이 섞이면 false.
+ *
+ * ★ 이 문이 좁아야 한다. 넓히면 `ㄱ` 한 자가 색인 전체를 물어오고, 그러면
+ *   부분일치 결과가 초성 결과에 묻힌다 — 잘 되던 것이 나빠진다.
+ */
+export function isChoQuery(s: string): boolean {
+  if (!s) return false;
+  for (const ch of s) if (!CHO.includes(ch)) return false;
+  return true;
+}
 
 /**
  * 부분일치 검색.
@@ -69,11 +105,18 @@ const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "");
 export function searchPois(pois: Poi[], q: string, limit = 20): PoiHit[] {
   const s = norm(q.trim());
   if (s.length < 1) return [];
+  // ★ 질의가 전부 초성이면 **초성으로만** 찾는다. 섞어 찾지 않는다 —
+  //   `ㄱ` 이 이름 · 유형 · 주소를 동시에 훑으면 결과가 무의미해진다.
+  const cho = isChoQuery(s);
   const hits: PoiHit[] = [];
   for (const p of pois) {
     const n = norm(p.name);
     let score = -1;
-    if (n.startsWith(s)) score = 0;
+    if (cho) {
+      const c = norm(p.cho);
+      if (c.startsWith(s)) score = 0;
+      else if (c.includes(s)) score = 1;
+    } else if (n.startsWith(s)) score = 0;
     else if (n.includes(s)) score = 1;
     else if (norm(`${p.cat}${p.sub}`).includes(s)) score = 2;
     else if (norm(p.addr).includes(s) || norm(p.alt).includes(s)) score = 3;

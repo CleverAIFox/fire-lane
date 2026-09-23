@@ -2,13 +2,13 @@
   "figures": {
     "branch": "3a4efe9dcdce4c4a",
     "cctv": "5d8d114a1dc9f057",
-    "deploy": "6bc1c77e9a51ad71",
+    "deploy": "4a2035d7f9326b0c",
     "threshold": "3b74745a9acfd68d",
     "unknown": "d4d01f9b0922482b",
     "verdict": "41429bc11ff55b64"
   },
   "placed": {
     "cctv": "5d8d114a1dc9f057",
-    "deploy": "6bc1c77e9a51ad71"
+    "deploy": "4a2035d7f9326b0c"
   }
 }

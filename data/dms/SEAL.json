@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-23T14:27:02+09:00",
- "commit": "1329de0",
- "tool": "da25603ec7503feb",
+ "sealed_at": "2026-09-23T22:46:54+09:00",
+ "commit": "07ffd17",
+ "tool": "77998f2933361a7b",
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "de431aa297fcb804",
-  "docs/DECISIONS.md": "aa81e05c44de1ebd",
-  "docs/PLAN.md": "bea0d001f5d96369",
-  "README.md": "b150f44d890b1416"
+  "docs/MASTER.md": "ba34b40d9957250c",
+  "docs/DECISIONS.md": "abe9e1ae62afe76b",
+  "docs/PLAN.md": "eb33beeafc220ef7",
+  "README.md": "c1aa656fb35d1acb"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -242,7 +242,7 @@
   ]
  },
  "code": {
-  "sha256": "f75f30dc28d986b8",
+  "sha256": "a5213dffe3cbc956",
   "files": {
    "data/field/fieldsheet.md": "3fce0c05fba34da06d06a1945abfb756bffc10d1ae834bb9c520791c666cb73c",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
@@ -264,7 +264,7 @@
    "src/firelane/generated.py": "acdbb6cacdb878d48546727da101416a1c86c12823f91e10d707394777f9a7fe",
    "src/firelane/guards.py": "545ae7c8787862d6a5a0f40f7d50380e7a8c6e798ade4097e2c89146af4072c0",
    "src/firelane/hashing.py": "cba3052b673d71c98022bc745a03493b0e743bb7db6d48eb057fba0782d7249c",
-   "src/firelane/ingest.py": "8bbf2b398259f0253cdaa9eb0d9668291676451b2689967659c39aebdc79b8c2",
+   "src/firelane/ingest.py": "d1f9d8e55dd9ba40b03c2e6f82867ead10bff71729cb6c04816bc06fd658898a",
    "src/firelane/intake_rules.py": "4549ade9c9036da5900aba73955c97578058770a88f3f75fa7c5e1b31360019d",
    "src/firelane/inventory.py": "4ddbab3742a44aaad257304af4aa943bf122b9bc8b2c252bd85431fec554d232",
    "src/firelane/kinds.py": "a62a75ccbc1e4e18fa68c1ce24a81d3966ccf9f0aeda0daedaf961902c7158f6",
@@ -280,9 +280,9 @@
    "src/firelane/ngi.py": "bec79029236cc6042b205781787c30b7551f31f175e794c09ee40ba709583e0a",
    "src/firelane/ngii1k.py": "7ef17aaa9fc751820db74d92cd77987009aa6a51b33e329efb0d52b0c60744ef",
    "src/firelane/normalize_raw.py": "0e1d7eb804888df7227e53adea3e7eb7b3f800acc467a7279fdeb19ab6605de6",
-   "src/firelane/ortho.py": "742ce80c1266ff305e1500661d3ec0ad5ec158ab227a1d0b3bda4cc1f9db2aa9",
+   "src/firelane/ortho.py": "31feb0b579164a6825d1538ee140e16f6cb7670787b21031ef19ad3c12971cf2",
    "src/firelane/paths.py": "499ea4cfe4cfd1d68093dc25013c11ebfecdb3107560038e60ee4c41f69ff63c",
-   "src/firelane/pipeline.py": "263b52eb0374fa7e38547726c1648deabdfd2da459b5463f09b013f9851ba081",
+   "src/firelane/pipeline.py": "f79fe42caf4bdfd100ff2e3db9ff3d4d9a96771dd5b943cab36a664981a17ed9",
    "src/firelane/prep.py": "30179b09b2eb1043f8d914cfdd16167872b0364193686c3e68a5c6068428d98a",
    "src/firelane/probe.py": "52544d4fede864ef123276fc79423ffd6987eb97795a7a40c1a4e74741734aec",
    "src/firelane/providers.py": "56d4289ef55b65a705d487d2ab216a51014c2133107b949521b35a9f5ff3d290",
@@ -307,8 +307,9 @@
    "src/firelane/seg/width.py": "9244467fc04a22346d9a2be3599ee803c806d105f58fbff55a9bec259db914db",
    "src/firelane/segkey.py": "fb1d88a159abfc5bd8c7f1108cf78c42835c0d28057f188e3c79b8ef8f602a4b",
    "src/firelane/segments.py": "76be7bb4ff9b6945aa97166b5a320fa34f6d1b6dadcc3582003553f6cdc08ef7",
-   "src/firelane/shardseal.py": "9d8a7cb61b4cf844909486279b9dee94242c58bf813154417336a6f041126407",
+   "src/firelane/shardseal.py": "b94f745f5380c664cdbd572484c6236853963f012f79610d33b905a94ba1afb9",
    "src/firelane/skeleton.py": "36ab78145348825d45d0ec464a13297f966bb3caec2c8180199c8cf1c2c40e09",
+   "src/firelane/stagerun.py": "59a31d961cdc1e4143cab724dc0285d289b44cbe4564d31d928cbe319a7372cd",
    "src/firelane/streetlight.py": "37a0b215294e8f8d8538645164f3ab54d546e2c00da2e4644b94e23d25474c8f",
    "src/firelane/terrain.py": "65b21268f7db7b6cdd4ed9449445b7455eab9bab1e239740c8d405234b3ac650",
    "src/firelane/transition.py": "36db27bf5fd3f1d3851ac28de06a72bbd74ad19c9824d3edf0270d86807d78cb",
@@ -571,8 +572,8 @@
    "title": "7-2. 아직 검증되지 않은 것"
   },
   "MASTER/8": {
-   "h": "ca60b887fcf14983",
-   "state": "blank",
+   "h": "adee19c098960762",
+   "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "8. 역할"
   },
@@ -709,7 +710,7 @@
    "title": "12. 협업"
   },
   "MASTER/12-0": {
-   "h": "7292e9232bdacee7",
+   "h": "0b64143618977054",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-0. 상황별 색인"
@@ -775,19 +776,25 @@
    "title": "12-6. 커밋 메시지"
   },
   "MASTER/12-7": {
-   "h": "c9a73e4f7599a462",
+   "h": "0047a31c4c8ac3c0",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-7. 자동으로 도는 것"
   },
+  "MASTER/12-7b": {
+   "h": "8e084815f2d762b0",
+   "state": "wired",
+   "doc": "docs/MASTER.md",
+   "title": "12-7b. 배포가 여섯에서 하나가 된 이유 (2026-09-23)"
+  },
   "MASTER/12-7a": {
-   "h": "0b77e819556bf16f",
+   "h": "073565017cae6cc9",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-7a. 내비 빌드"
   },
   "MASTER/12-8": {
-   "h": "ad3daafdab18a513",
+   "h": "3659ebb694c707dc",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "12-8. 배포"
@@ -859,7 +866,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER/14-4": {
-   "h": "462c28723f263c6a",
+   "h": "5b63baeef04ed8dc",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -5322,6 +5329,102 @@
    "doc": "docs/DECISIONS.md",
    "title": "222-8. `feeds` 를 채우는 도구가 **빌드 산출물**을 소비자로 셌다"
   },
+  "DECISIONS/223": {
+   "h": "5d19351bfd54d675",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "223. ortho 봉인지 · 커버리지 28 · 회차 한 절 (판정 불변)"
+  },
+  "DECISIONS/223-1": {
+   "h": "6b71c1a31893d00f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "223-1. ortho 가 매 실행 1,423장을 처음부터 구웠다"
+  },
+  "DECISIONS/223-2": {
+   "h": "0cdba3458ce0f757",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "223-2. 커버리지 래칫 27 → 28"
+  },
+  "DECISIONS/223-3": {
+   "h": "5d387d831f3dd803",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "223-3. 「좌표 변환이 틀려도 아무도 모른다」 — PLAN §1 #12"
+  },
+  "DECISIONS/223-4": {
+   "h": "3f310ba2617a80b4",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "223-4. 회차를 돌렸는데 한 절만 찼다 — 후보 정밀도가 낮다"
+  },
+  "DECISIONS/223-5": {
+   "h": "db9d2447e822343c",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "223-5. 커밋할 것을 찌꺼기로 되돌리고 있었다"
+  },
+  "DECISIONS/224": {
+   "h": "addc82460721136d",
+   "state": "blank",
+   "doc": "docs/DECISIONS.md",
+   "title": "224. 배포 여섯 → 하나 · 봉인 판정이 원천을 다시 읽던 것 · 거짓 안내 (판정 불변)"
+  },
+  "DECISIONS/224-1": {
+   "h": "1d16c45cee6097e0",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "224-1. 배포 이름이 「배포 대상」처럼 읽혔다 — 실제로는 촉발 조건이었다"
+  },
+  "DECISIONS/224-2": {
+   "h": "7b822473086c6ab1",
+   "state": "blank",
+   "doc": "docs/DECISIONS.md",
+   "title": "224-2. 샤드 봉인지가 **빌드만** 아끼고 **판정**은 안 아꼈다"
+  },
+  "DECISIONS/224-2a": {
+   "h": "e4ef635d221a0e93",
+   "state": "blank",
+   "doc": "docs/DECISIONS.md",
+   "title": "224-2a. 그리고 **ingest 를 고칠 수 없는 구조**였다 — `--reseal-code`"
+  },
+  "DECISIONS/224-3": {
+   "h": "1f04f6dbfb098cb9",
+   "state": "blank",
+   "doc": "docs/DECISIONS.md",
+   "title": "224-3. 안내가 **조건을 안 보고** 찍혔다 — 사람이 그 말을 따라 헛돌았다"
+  },
+  "DECISIONS/224-3a": {
+   "h": "7971e56546259c0d",
+   "state": "blank",
+   "doc": "docs/DECISIONS.md",
+   "title": "224-3a. 그 안내문을 `guards.py` 에 뒀다가 **golden 을 찢었다**"
+  },
+  "DECISIONS/224-4": {
+   "h": "94579dcaabc06d76",
+   "state": "blank",
+   "doc": "docs/DECISIONS.md",
+   "title": "224-4. 관제 범례가 없는 기능을 글로 약속했다"
+  },
+  "DECISIONS/224-5": {
+   "h": "38ac7b39f7b9e914",
+   "state": "blank",
+   "doc": "docs/DECISIONS.md",
+   "title": "224-5. 초성 검색 — 「수천 건이면 부분일치로 충분하다」가 누구 사정이었나"
+  },
+  "DECISIONS/224-6": {
+   "h": "672f3313dd2b567e",
+   "state": "blank",
+   "doc": "docs/DECISIONS.md",
+   "title": "224-6. 실측 — 지도에 있는 점포 1,587개가 검색 색인에 없다"
+  },
+  "DECISIONS/224-7": {
+   "h": "eda1aff0e45ecd25",
+   "state": "blank",
+   "doc": "docs/DECISIONS.md",
+   "title": "224-7. 이 배치가 PLAN 을 못 줄였다 — 그렇게 적는다"
+  },
   "PLAN/0": {
    "h": "1e514a0dd00b05cd",
    "state": "blank",
@@ -5341,10 +5444,10 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN/1": {
-   "h": "21b1f9fb2d062422",
+   "h": "54232e02de6ce8cd",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "1. 남은 일 — 52행"
+   "title": "1. 남은 일 — 51행"
   },
   "PLAN/1-23": {
    "h": "45f802835c7c288a",
@@ -5875,7 +5978,7 @@
    "title": "구간 수는 고정값이 아니다"
   },
   "README/나는_어느_파트인가": {
-   "h": "8c9d62a76d997d4f",
+   "h": "403e1019ed7176b3",
    "state": "wired",
    "doc": "README.md",
    "title": "나는 어느 파트인가"
@@ -5887,14 +5990,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 274,
+ "denominator": 282,
  "dead_refs": 0,
  "dup_groups": 5,
  "enforcers": {
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "1185 passed in 173.31s (0:02:53)"
+   "tail": "1210 passed in 150.65s (0:02:30)"
   },
   "probe/deadcheck": {
    "rc": 0,
