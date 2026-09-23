@@ -1099,7 +1099,7 @@ if __name__ == "__main__":
     from firelane.guards import warn_direct_call
 
     warn_direct_call(__name__)
-    # ★ 메모리로 죽은 것을 메모리로 죽었다고 말한다(guards.run_stage · §224-3).
-    from firelane.guards import run_stage
+    # ★ 메모리로 죽은 것을 메모리로 죽었다고 말한다(stagerun.py 머리말 · §224-3a).
+    from firelane.stagerun import run_stage
 
     run_stage(main)

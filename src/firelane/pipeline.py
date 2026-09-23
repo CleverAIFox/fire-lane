@@ -24,8 +24,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from firelane import lineage
-from firelane.guards import ENOMEM_RC as INGEST_ENOMEM_RC
 from firelane.paths import GOLDEN, PROCESSED, RAW, ROOT, WEB
+from firelane.stagerun import ENOMEM_RC as INGEST_ENOMEM_RC
 
 for st in (sys.stdout, sys.stderr):
     try:

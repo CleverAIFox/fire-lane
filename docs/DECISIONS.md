@@ -12208,13 +12208,50 @@ ingest 가 OOM 으로 죽었는데 파이프라인이 이렇게 찍었다 —
 
 | 자리 | 고침 |
 |---|---|
-| `ingest` | `MemoryError` · `OSError(ENOMEM)` 을 잡아 **메모리 처방**을 찍고 `guards.ENOMEM_RC`(12)로 나간다. `/proc/meminfo` 가 있으면 숫자도 보여준다 |
+| `ingest` | `MemoryError` · `OSError(ENOMEM)` 을 잡아 **메모리 처방**을 찍고 `stagerun.ENOMEM_RC`(12)로 나간다. `/proc/meminfo` 가 있으면 숫자도 보여준다 |
 | `pipeline` | 종료코드 12 · 137(OS OOM killer)이면 `--retry-failed` 대신 `wsl --shutdown` · `.wslconfig` · `--split` · `--reseal-code` 를 찍는다 |
 
 ★ **출력을 파싱하지 않는다.** 문구를 다듬는 순간 검사가 죽는다 —
 `pages_add_navi` 의 앵커가 한국어 주석이었던 것과 같은 자리다. 종료코드로 가른다.
-★ 값의 정본은 `guards.ENOMEM_RC` **하나**다. `ingest` 가 내고 `pipeline` 이 읽는다.
+★ 값의 정본은 `stagerun.ENOMEM_RC` **하나**다. `ingest` 가 내고 `pipeline` 이 읽는다.
 양쪽에 숫자를 박으면 그것이 곧 갈린다(MASTER §18-3).
+
+### 224-3a. 그 안내문을 `guards.py` 에 뒀다가 **golden 을 찢었다**
+
+처음 판은 `ENOMEM_RC` 와 그 껍데기를 `guards.py` 에 뒀다. 전수 verify 가 이렇게
+답했다 —
+
+    [31/51] golden 판정 불변      실패
+            ★ 변경  src/firelane/guards.py
+    [33/51] 커밋된 web/data 가 최신인가   실패
+
+`guards` 는 `firelane.segments` 의 **import 닫힘 안**이고 그 닫힘이 곧 판정
+지문이다. 판정 바이트는 한 글자도 안 움직였는데 지문만 움직였다. 파이프라인은
+9분 37초를 다 돌아 초록이었고([30/51]), 산출물 대조에도 `산출값` 은 **0자리**였다
+(`봉인신설` 1 · `코드봉인` 45 · `파생` 2).
+
+화면이 「재잠금한다」를 권했고 그 길이 제일 쉬웠다. **안 했다.**
+
+재잠금은 「판정 기준선을 다시 찍는다」는 뜻이다. OOM 안내문 한 줄 때문에 그것을
+찍으면, 다음에도 찍고 그 다음에도 찍는다. 그러면 판정 게이트는 **울기만 하고
+아무것도 막지 않는 것**이 된다. 이 절이 §224-2 에서 규탄한 병과 정확히 같다 —
+봉인 안에 봉인과 무관한 것을 넣으면 봉인이 매번 찢어지고, 찢어지는 봉인은 곧
+무시된다. **그 병을 고치는 배치가 그 병을 저질렀다.**
+
+고침은 재잠금이 아니라 **코드를 옮기는 것**이다. `src/firelane/stagerun.py` 를
+새로 판다 — `segments` 가 안 읽는 자리다. 옮기고 나서 판정 닫힘 22개 파일을
+직전 커밋과 전수 대조했다: **바뀐 것 0.**
+
+★ 교훈은 「`guards.py` 를 조심한다」가 아니다. 그것은 인스턴스다. **판정이 읽는
+코드에 판정과 무관한 것을 넣지 않는다** — 그 경계는 `code_closure` 가 정하고,
+어느 파일이 그 안인지는 사람의 기억이 아니라 다음 한 줄이 답한다:
+
+    uv run python -c "from firelane.shardseal import code_closure; \
+      print([p.name for p in code_closure('firelane.segments')])"
+
+★ `ingest` 쪽 봉인은 그대로 찢어진다(`stagerun` 이 그쪽 닫힘에는 든다). 그것은
+맞다 — ingest 가 실제로 그 코드를 돌리기 때문이다. 그쪽은 §224-2a 의
+`--reseal-code` 가 받는다. **두 봉인의 답이 다른 것이 정상이다.**
 
 ### 224-4. 관제 범례가 없는 기능을 글로 약속했다
 
