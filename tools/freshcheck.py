@@ -66,8 +66,13 @@ NONDET = frozenset({"generated_at"})
 DERIVED_BLOCKS = frozenset({"source"})
 DERIVED_KEYS = frozenset({"sha256", "bytes"})
 
-# 봉인 칸의 이름 → 사람이 읽을 분류. `shardseal.make()` 가 내는 네 칸이다.
-SEAL_KIND = {"code": "코드봉인", "cfg": "설정봉인", "raw": "원본봉인", "out": "산출봉인"}
+# 봉인 칸의 이름 → 사람이 읽을 분류. `shardseal.make()` 가 내는 네 칸 + ortho 의 `scope`.
+# ★ 2026-09-23 (DECISIONS §223-5). `scope` 가 빠져 있어서 `ortho.seal.scope` 가
+#   **산출값**으로 분류됐다. 산출값은 「판정이 움직였을 수 있다 — 멈춰라」를 뜻하는데
+#   봉인지는 판정이 아니라 **재사용 여부**를 정한다. 거짓 경보이고, 거짓 경보는
+#   진짜 경보를 죽인다(MASTER §18-13).
+SEAL_KIND = {"code": "코드봉인", "cfg": "설정봉인", "raw": "원본봉인",
+             "out": "산출봉인", "scope": "범위봉인"}
 
 
 def canon(obj: Any) -> Any:
@@ -110,6 +115,11 @@ def kind_of(spot: tuple[str, ...], changed_names: frozenset[str]) -> str:
     """
     if len(spot) >= 2 and spot[-2] == "seal" and spot[-1] in SEAL_KIND:
         return SEAL_KIND[spot[-1]]
+    # ★ 2026-09-23. 봉인 블록이 **통째로** 생기거나 사라지면 자리가 `….seal` 하나로 온다
+    #   (한쪽에 그 키가 없으면 안으로 안 들어간다). 그때도 봉인이다 — 새 봉인지를 들인
+    #   배치가 「판정이 움직였을 수 있다」로 뜨면 사람이 그 경보를 안 믿게 된다.
+    if spot and spot[-1] == "seal":
+        return "봉인신설"
     if (len(spot) == 3 and spot[0] in DERIVED_BLOCKS and spot[2] in DERIVED_KEYS
             and spot[1] in changed_names):
         return "파생"

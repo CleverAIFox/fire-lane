@@ -439,8 +439,8 @@ step "의존성 선언↔import (deptry)" uv run --no-sync --with deptry==0.25.1
 #   정합을 **실제로** 묻는 것은 `gate_parity.py` 다(아래 「관문 동등」).
 
 # ★ 2026-09-20 (W3-15). 워크플로는 **머지되기 전에는 문법조차 안 본다** —
-#   배포 넷은 push+paths 로만 돌아 PR 에서 안 보이고, `_deploy.yml` 이 하루
-#   동안 깨진 채로 main 까지 갔다(DECISIONS §196). actionlint 는 YAML 파싱
+#   당시 배포 넷은 push+paths 로만 돌아 PR 에서 안 보였고 공용 본문이 하루 동안 깨진 채 main 까지 갔다(§196).
+#   지금은 `deploy.yml` 이 PR 에서도 그 본문을 태운다(DECISIONS §224). 그래도 남긴다 — actionlint 는 YAML 파싱
 #   너머의 것을 본다 — 표현식 · 액션 참조 · 셸 인젝션.
 #   커밋된 잠금으로 깔리므로 CI 에서도 같은 판이 돈다(면제 아님).
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
@@ -824,7 +824,10 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   23.75% → **24.28%** 가 됐고, 그 실행의 권고가 「COV_MIN 을 24 로 조여라」였다.
 #   내림값이라 안전하다. 래칫은 조이라고 말한 다음 배치에서 조인다 — 미루면
 #   권고 줄이 매번 뜨고, 매번 뜨는 줄은 곧 안 읽히는 줄이 된다.
-COV_MIN=27
+# ★ 2026-09-23 (DECISIONS §223-2). 27 → 28. 두 배치 연속 「실측 28.1x% · 28 로 조여라」가
+#   떴고, 그것을 안 조이면 **매번 뜨는 권고**가 되어 곧 안 읽히는 줄이 된다.
+#   이번 배치가 `desk_check` · `wmax_audit` 시험 열일곱을 더해 실측을 올렸다(PLAN §1 #12).
+COV_MIN=28
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."

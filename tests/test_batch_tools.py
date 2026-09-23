@@ -490,3 +490,21 @@ def test_release_brief_names_the_byte_axis_honestly():
     assert '"발행바이트sha"' in rb, "축 이름이 무엇을 보는지 안 말한다"
     assert '"sha256": (j.get' not in rb, "옛 이름이 남아 있다"
     assert "_bytes_only" in rb, "바이트만 움직인 경우를 따로 안 말한다"
+
+
+def test_verify_failure_keeps_a_legitimate_generated_change():
+    """생성물이 움직였고 **판정이 불변**이면 되돌리지 않는다 (DECISIONS §223-5).
+
+    ★ 종전에는 verify 가 빨개지면 생성물을 무조건 커밋본으로 되돌렸다. 배치가
+      생성물을 정당하게 바꾸면(봉인지 신설 · 발행 형식 변경) 그 결과가 버려지고,
+      다음 실행이 파이프라인 7분을 다시 돌려 같은 것을 만들고 또 되돌린다.
+      **커밋 대상을 찌꺼기로 취급한 것**이다.
+    ★ 경계는 둘 다 만족해야 한다 — 더러운 것이 생성물뿐이고, `golden.py check` 가 초록.
+    """
+    fl = (ROOT / "tools" / "fl.sh").read_text(encoding="utf-8")
+    i = fl.index('step "5. 전수 verify"')
+    blk = fl[i:fl.index('step "6.', i)]
+    assert "tools/golden.py check" in blk, "판정을 안 보고 되돌린다"
+    assert blk.index("tools/golden.py check") < blk.index('git checkout -q -- "${GEN[@]}"'), \
+        "되돌린 **뒤에** 판정을 본다 — 그러면 이미 버린 것이다"
+    assert "커밋한 뒤 다시 돌려라" in blk, "무엇을 하라는지 안 적는다"

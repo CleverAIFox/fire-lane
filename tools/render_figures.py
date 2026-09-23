@@ -353,19 +353,16 @@ def fig_branch() -> str:
 
 def fig_deploy() -> str:
     """배포. `MASTER §12-8` · `workflows/*.yml` · `docker-compose.yml` 이 정본."""
-    # ★ 2026-09-18 (W1a). `_` 젝둠사를 배제한다. `_deploy.yml` 은
-    #   `workflow_call` 전용 재사용 워크플로이및 "main 푸시" 가 아니다.
-    #   거러내지 않으면 알파벳순 서동으로 `pages` 가 `wf[:4]` 밖에서
-    #   **조용히 빠진다** — 그림은 여전하 그러지고 아무도 모른다.
-    # ★ 곱가지: `wf[:4]` 자실이 7개 중 4개만 보여주면서 자른 표시를
-    #   안 한다(1족). 그것을 고치면 SVG 내용이 바뀜다 — 배선 배치에
-    #   생성물 변경을 섞지 않는다. 그림 배치에서 닫는다.
-    # ★ 2026-09-22 (DECISIONS §218) — `wf[:4]` 자르기를 없앴다. 알파벳순 앞 넷이 contract ·
-    #   deploy-dry 가 되어 **배포가 아닌 것**이 「main 푸시」 칸에 그려졌다. 이제 `_deploy.yml` 을
-    #   부르고 push 로 도는 것만 센다 — 정본이 그 호출이다. 칸이 넘치면 줄 수만큼 늘린다.
+    # ★ 2026-09-22 (DECISIONS §218) — `wf[:4]` 자르기를 없앴다. 알파벳순 앞 넷이
+    #   contract · deploy-dry 가 되어 **배포가 아닌 것**이 「main 푸시」 칸에 그려졌다.
+    # ★ 2026-09-23 (DECISIONS §224) — 배포 여섯을 하나로 합쳤다. 재사용 본문
+    #   (`_deploy.yml`)이 없어졌으므로 그 이름으로 고를 수 없다. **사이트를 짓는
+    #   것**(`stage-site`)이면서 push 로 도는 것을 센다 — 정본이 그 호출이다.
+    #   종전의 `_` 접두사 걸러내기도 같이 없앴다. 거를 대상이 사라졌다.
+    #   칸이 넘치면 줄 수만큼 늘린다.
     wf = sorted(p.stem for p in (ROOT / ".github/workflows").glob("*.yml")
-                if not p.stem.startswith("_")
-                and "_deploy.yml" in (txt := p.read_text(encoding="utf-8")) and "push:" in txt)
+                if "./.github/actions/stage-site" in (txt := p.read_text(encoding="utf-8"))
+                and "push:" in txt)
     svcs = re.findall(r"^  (\w+):", (ROOT / "docker-compose.yml")
                       .read_text(encoding="utf-8"), re.M)
 

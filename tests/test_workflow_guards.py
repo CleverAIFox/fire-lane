@@ -175,3 +175,77 @@ def test_untrusted_context_is_never_interpolated_into_run() -> None:
           "        HEAD_REF: ${{ github.head_ref }}\n"
           "      run: |\n"
           "        git fetch origin \"+$HEAD_REF\"")
+
+
+# ★ 2026-09-23 (DECISIONS §224). 배포 여섯 → 하나.
+#   **인스턴스가 아니라 계급을 본다.** 지금 하나인 것을 세는 게 아니라
+#   「다시 갈라지는 것」을 막는다. W1 이 본문 4벌을 봉합했지만 *워크플로가
+#   넷인 것* 자체는 그대로였고, 그래서 이름이 배포 대상을 말하는 것처럼 읽혀
+#   「데이터 배포를 왜 하느냐」 는 물음이 나왔다.
+_STAGE = "./.github/actions/stage-site"
+
+
+def _site_builders() -> list[Path]:
+    """`web/` 을 지어 올리는 워크플로. 이름이 아니라 **동작**으로 고른다."""
+    return [p for p in sorted(WF.glob("*.yml"))
+            if _STAGE in p.read_text(encoding="utf-8")]
+
+
+def test_one_workflow_builds_the_site() -> None:
+    """사이트를 짓는 워크플로가 **하나**인가.
+
+    ★ Pages 는 저장소당 사이트 하나다. 둘이면 둘 다 `web/` 을 통째로 올리고
+      나중에 도는 쪽이 앞의 것을 덮는다. 그 구조에서 본문이 갈리면 반드시
+      어긋난다 — `VWORLD_KEY` 가 `pages.yml` 에만 있어서 **배경지도가 죽은
+      사이트가 초록으로 배포되던** 그 버그다(§216-5 · W1).
+    ★ 촉발 조건을 가르고 싶으면 `paths` 를 쓴다. 워크플로를 가르지 마라.
+    """
+    got = _site_builders()
+    assert len(got) == 1, (
+        f"사이트를 짓는 워크플로가 {len(got)}개다: "
+        + ", ".join(p.name for p in got)
+        + "\n  Pages 는 저장소당 사이트 하나이고, 배포 워크플로도 하나여야 한다.\n"
+          "  「무엇이 바뀌면 다시 올리는가」는 `paths` 한 블록으로 가른다.\n"
+          "  (DECISIONS §224)")
+
+
+def test_deploy_and_dry_run_share_one_body() -> None:
+    """배포와 시운전이 **같은 파일 · 같은 본문**인가.
+
+    ★ 시운전이 보증하는 것은 「PR 에서 통과한 것이 main 에서도 통과한다」 뿐이다.
+      본문이 갈리는 순간 그 보증이 사라지는데, 갈렸다는 것은 아무도 못 본다 —
+      둘 다 초록이기 때문이다(§217-5 가 닫은 v0.18 사고와 같은 모양).
+    ★ 그리고 **시운전은 배포가 아니다.** 별도 워크플로로 두면 배포 목록에
+      배포가 아닌 것이 서고, 목록이 거짓이 된다.
+    """
+    f = _site_builders()[0]
+    src = f.read_text(encoding="utf-8")
+    doc = YAML(typ="safe").load(src) or {}
+    on = doc.get(True) or doc.get("on") or {}          # YAML 1.1 에서 `on:` 은 True 다
+
+    assert "push" in on and "pull_request" in on, (
+        f"{f.name} 이 push · pull_request 를 둘 다 안 든다.\n"
+        "  push 는 배포, pull_request 는 시운전이다. 하나가 빠지면\n"
+        "  배포가 안 돌거나(데이터가 낡는다) 시운전이 안 돈다(main 에서 처음 깨진다).")
+
+    n = src.count(_STAGE)
+    assert n == 2, (
+        f"{f.name} 이 `{_STAGE}` 를 {n}번 부른다 (배포 1 · 시운전 1 = 2 여야 한다).\n"
+        "  배포와 시운전이 같은 본문을 태워야 시운전이 뜻이 있다(§217-5).")
+
+    # ★ 시운전이 **올리지 않는가.** 올리면 PR 이 사이트를 덮는다.
+    jobs = doc.get("jobs") or {}
+    up = [n for n, j in jobs.items()
+          if isinstance(j, dict)
+          and any("upload-pages-artifact" in str(s.get("uses", ""))
+                  or "deploy-pages" in str(s.get("uses", ""))
+                  for s in (j.get("steps") or []) if isinstance(s, dict))]
+    # ★ 0건이 청결인지 죽음인지 가른다(HANDOFF 원칙 ④). 올리는 job 을 못 찾으면
+    #   이 아래 루프가 **빈 채로 통과**한다 — 검사가 죽은 것이다.
+    assert up, (f"{f.name} 에 Pages 로 올리는 job 이 없다 — 배포가 아무것도 안 올린다,"
+                " 또는 이 검사가 `uses:` 모양을 못 읽는다")
+    for name in up:
+        cond = str(jobs[name].get("if", ""))
+        assert "pull_request" in cond, (
+            f"{f.name} 의 `{name}` 이 Pages 에 올리는데 PR 을 가르는 `if` 가 없다.\n"
+            "  PR 시운전이 진짜로 배포하면 리뷰 중인 가지가 사이트를 덮는다.")

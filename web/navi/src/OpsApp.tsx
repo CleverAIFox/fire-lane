@@ -76,6 +76,11 @@ export default function OpsApp() {
   // ★ 2026-09-23 (DECISIONS §220). 구간 색의 기준. **판정 4색이 기본이다** — 여유폭은
   //   고른 차로 그 자리에서 빼는 수라 파이프라인 판정을 덮어쓰지 않는다.
   const [colorMode, setColorMode] = useState<"verdict" | "clearance">("verdict");
+  // ★ 2026-09-23 (DECISIONS §224-4). 범례가 지도 왼쪽 아래를 270px 폭으로 항상 가린다.
+  //   좁은 골목을 보려면 접을 수 있어야 한다. 종전에는 머리글이 「눌러서 숨기기」
+  //   라고 적혀 있었는데 그것은 **줄 하나의 색을 숨기는 것**이지 범례를 접는 것이
+  //   아니었다 — 글이 없는 기능을 약속했다.
+  const [legendOpen, setLegendOpen] = useState(true);
   const [hiddenBands, setHiddenBands] = useState<ReadonlySet<string>>(() => new Set());
   const [seg, setSeg] = useState<string | null>(null);
   const [q, setQ] = useState("");
@@ -347,6 +352,14 @@ export default function OpsApp() {
                   onPick={onPick} onSeg={(u) => { if (!picking) setSeg(u); }} />
           {/* 범례 · 레이어 — 지도 위 왼쪽 아래 */}
           <div style={legendBox}>
+            {/* ★ 범례 접기. 지도를 가리는 것이 범례이므로 지도를 보려면 접혀야 한다. */}
+            <button onClick={() => setLegendOpen((v) => !v)} style={legendHead}
+                    aria-expanded={legendOpen}
+                    title={legendOpen ? "범례를 접는다 (지도가 넓어진다)" : "범례를 편다"}>
+              <span style={{ flex: 1, textAlign: "left" }}>범례 · 레이어</span>
+              <span aria-hidden>{legendOpen ? "▾" : "▸"}</span>
+            </button>
+            {legendOpen && <>
             {/* ══ 구간 색 기준 — 판정 4색(기본) ↔ 여유폭 (§220) ══════════
                 ★ 어느 모드인지가 **범례 자체**로 보여야 한다. 단추를 누르면 아래 줄이
                   통째로 바뀌고 머리글이 지금 칠해지는 것이 무엇인지 말한다. */}
@@ -362,7 +375,7 @@ export default function OpsApp() {
             </div>
             {colorMode === "verdict" ? (
               <>
-                <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, marginBottom: 4 }}>판정 (CV = 영상판정) · 눌러서 숨기기</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, marginBottom: 4 }}>판정 (CV = 영상판정) · <span style={{ fontWeight: 600 }}>줄을 누르면 그 색만 지도에서 뺀다</span></div>
                 {VERDICT_ORDER.filter((k) => style[k]).map((k) => {
                   const off = hidden.has(k);
                   return (
@@ -385,7 +398,8 @@ export default function OpsApp() {
             ) : (
               <>
                 <div style={{ fontSize: 11, fontWeight: 800, color: D.accent, marginBottom: 1 }}>
-                  여유폭 · {displayName(vehicle?.label ?? "기준 차량")} · 눌러서 숨기기
+                  여유폭 · {displayName(vehicle?.label ?? "기준 차량")}
+                  <span style={{ fontWeight: 600, color: D.sub }}> · 줄을 누르면 그 색만 지도에서 뺀다</span>
                 </div>
                 <div style={{ fontSize: 10.5, color: D.sub, marginBottom: 4 }}>
                   {CLEARANCE_FORMULA} = {need.toFixed(1)}m
@@ -429,6 +443,7 @@ export default function OpsApp() {
             <div style={{ fontSize: 10.5, color: D.sub, marginTop: 4 }}>
               닿는 구간 {reach?.size ?? 0} / {data.graph.edges.length} · 굵기 = 최소 유효폭 · 전 구간 현장 미검증
             </div>
+            </>}
           </div>
         </main>
 
@@ -656,6 +671,13 @@ const whyBox: React.CSSProperties = {
 const legendBox: React.CSSProperties = {
   position: "absolute", left: 10, bottom: 10, width: 270, zIndex: 3, background: "rgba(11,18,32,.9)",
   border: `1px solid ${D.line}`, borderRadius: 10, padding: "8px 10px", fontSize: 12,
+};
+// ★ 접기 손잡이. 접었을 때도 **무엇이 접혀 있는지** 보여야 한다 —
+//   빈 막대만 남으면 다음 사람이 그것을 지우려고 한다.
+const legendHead: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 6, width: "100%", padding: 0, marginBottom: 6,
+  background: "transparent", border: "none", color: D.sub, cursor: "pointer",
+  fontFamily: F.family, fontSize: 11, fontWeight: 800,
 };
 const input: React.CSSProperties = {
   flex: 1, width: "100%", boxSizing: "border-box", border: `1px solid ${D.line}`, borderRadius: 8,
