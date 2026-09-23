@@ -261,6 +261,70 @@ def l5(D: Path, y: dict) -> None:
             "raw 를 반입하거나 norm 에서 뺀다")
 
 
+# ── L7  대장이 모르는 큰 원본 ───────────────────────────────────
+#: 이 크기를 넘으면 「받아두고 안 쓰는 원본」으로 본다. 작은 부스러기까지 세면
+#: 시끄러워지고, 시끄러운 검사는 사람이 우회한다(MASTER §17).
+L7_MIN_MB = 20
+
+
+def l7(D: Path, y: dict) -> None:
+    """레이크에 **20MB+ 로 앉아 있는데 대장이 이름으로도 모르는** 원본.
+
+    ★ 2026-09-24 (DECISIONS §225-6). 이 프로브가 없어서 일곱을 몰랐다 —
+      ITS 표준노드링크 257MB(일방통행 · 회전제한 · 통행제한 폭/높이의 정본),
+      NGII 1:1,000 수치지형도 280MB×2(측량 건물 레이어), 소상공인 상가 336MB,
+      동구 통계연보 233MB, 상세주소DB 전체분 27MB, V-World 도엽 20MB.
+      **전부 「확보해야 한다」고 적어놓고 이미 디스크에 있던 것들이다.**
+
+    ★ `lakecheck` 의 L3 가 이 자리였어야 했는데 그것은 「landing 우회」만 본다 —
+      **범위가 이름보다 좁고 그것이 선언돼 있지 않았다**(PLAN §13 W3-8 과 같은 족).
+      L3 는 「레이크 밖에 있는 원본」을, L7 은 「레이크 안에 있는데 대장 밖인 것」을
+      본다. 둘은 반대 방향이다.
+
+    ★ 이름 대조다. 파일명이 대장 키와 달라도 걸린다 — **결함 판정이 아니라
+      확인 목록**이고, 그래서 `fix` 가 「등재하거나 stem 을 맞춰라」다.
+    """
+    ds = y.get("datasets") or {}
+    if not ds:
+        hit("L7", "★ 대장 datasets 를 못 읽었다 — 프로브를 의심하라")
+        return
+    # ★ 2026-09-24. **`stem` 이 정본이다.** 대장 키가 곧 파일명이 아니다 —
+    #   `node_link` 의 파일은 `its_nodelink_kr_*.zip` 이다. 키만 보면 등재된 것을
+    #   「대장 밖」으로 센다(내가 만든 첫 판이 실제로 그랬고, 그 거짓 목록 위에
+    #   결론을 쌓았다). 그리고 **`startswith` 다** — 부분일치면 stem `its` 가
+    #   `its_*` 전부를 삼켜 진짜 누락을 가린다.
+    known = {str((v or {}).get("stem", "")).lower() for v in ds.values() if isinstance(v, dict)}
+    known |= {k.lower() for k, v in ds.items()
+              if not (isinstance(v, dict) and v.get("stem"))}
+    # 은퇴도 선언이다 — 「모른다」가 아니라 「사유와 함께 안 쓴다」다
+    for k, v in (y.get("retired") or {}).items():
+        known.add(str((v or {}).get("stem") or k).lower() if isinstance(v, dict) else k.lower())
+    known.discard("")
+    lim = L7_MIN_MB << 20
+    big = 0
+    for zone in ("raw", "landing", "interim"):
+        d = D / zone
+        if not d.is_dir():
+            continue
+        for f in sorted(d.rglob("*")):
+            try:
+                if not f.is_file() or f.stat().st_size < lim:
+                    continue
+            except OSError:
+                continue
+            big += 1
+            stem = f.stem.lower()
+            if any(stem.startswith(k) for k in known):
+                continue
+            hit("L7", f"{zone}/{f.name}: 대장이 모른다 ({f.stat().st_size >> 20}MB)",
+                f"상위 폴더 {f.parent.name}",
+                "sources.yaml 에 등재하거나, 이미 등재돼 있으면 stem 을 파일명에 맞춰라")
+    print(f"     {L7_MIN_MB}MB+ 원본 {big}건 · 대장 키 {len(known)}")
+    if big == 0:
+        hit("L7", f"★ {L7_MIN_MB}MB 넘는 원본이 0건이다 — 프로브를 의심하라",
+            "raw 2.5GB 가 있는 기계라면 0 일 수 없다")
+
+
 # ── L6  명명 규칙 ↔ 실물 구조 ───────────────────────────────────
 def l6(D: Path, y: dict) -> None:
     """규칙이 **실제 디렉터리 구조**를 아는가.
@@ -321,7 +385,8 @@ def main() -> int:
     scan = [Path(x) for x in a.scan]
     for tag, fn in (("L1  제공기관 state", l1), ("L2  격리 잔재", l2),
                     ("L3  landing 우회", l3), ("L4  ext 어휘", l4),
-                    ("L5  norm 계보", l5), ("L6  명명 규칙", l6)):
+                    ("L5  norm 계보", l5), ("L6  명명 규칙", l6),
+                    ("L7  대장 밖 큰 원본", l7)):
         before = len(HITS)
         print(f"  {tag}")
         try:
