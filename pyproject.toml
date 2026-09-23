@@ -43,6 +43,11 @@ dependencies = [
     # ★ 2026-09-17. `firelane.vehiclecard` 가 관리카드 PDF 를 norm CSV 로 옮긴다(prep).
     #   poppler 는 Adobe-Korea1 언어팩이 없어 한글을 전부 잃었다. BSD 라이선스.
     "pypdf>=5,<7",
+    # ★ 2026-09-24 (PLAN §13 W6-1 닫힘 · DECISIONS §227). 대장 `contract:` 의
+    #   **데이터프레임 부분**(필수 컬럼 · 건수 허용폭 · 스코프 하한)을 손으로 짜던
+    #   것을 표준으로 옮긴다. 파일·zip·인코딩은 pandera 의 일이 아니라 그대로 둔다
+    #   — `contract.py` 머리말의 `밖` 칸이 그 경계를 적는다.
+    "pandera>=0.33,<1",
 ]
 
 # ★ 2026-08-21. 종전 dependencies 에 fastapi·uvicorn·python-multipart·

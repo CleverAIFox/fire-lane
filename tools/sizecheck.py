@@ -60,11 +60,11 @@ EXCEPTIONS: dict[str, int] = {
     # ★ 2026-09-23 (DECISIONS §222-6). 718. **쪼개지 않는다** — 이 파일은 「선언과 실물이
     #   같은가」 한 물음의 사례 목록이고, 선언이 늘면 같이 는다. 둘로 가르면 새 선언을
     #   어느 파일에 적어야 하는지가 또 하나의 기억거리가 되고, 그때 한쪽만 고치는 날이 온다.
-    "tests/test_declaration_sync.py": 741,
+    "tests/test_declaration_sync.py": 752,
     # 코드 (상한 600)
     "tools/dms.py": 1250,
     "src/firelane/ingest.py": 1105,
-    "tools/deadcheck.py": 1031,
+    "tools/deadcheck.py": 1040,
     # ★ 2026-09-23. 976 → 980 → 991. 「기획서 그림 ↔ 정본」(§221-1)과 「죽은 강제자
     #   참조」(§222-2)가 들어갔다. verify.sh 는 검사의 목록이라 검사가 늘면 늘어난다 —
     #   쪼개면 「어느 파일에 있나」 가 또 하나의 기억거리가 된다(§18-3).

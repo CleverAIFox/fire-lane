@@ -41,6 +41,34 @@ sources.yaml 의 각 데이터셋에 contract 블록을 둔다. 전부 선택 �
       layer_must_exist: true    zip 안에 layer 가 실제로 있는가
 
 ★ 이 도구는 raw 를 읽기만 한다. 아무것도 쓰지 않는다.
+
+── 판정기는 Pandera 다 (2026-09-24 · PLAN §13 W6-1 닫힘 · DECISIONS §227) ──
+`required_cols` · `rows`(±허용폭) · `scope_min` 셋의 **판정**은
+`pandera.DataFrameSchema` 가 한다. 종전에는 셋 다 손으로 `if` 를 짰다.
+
+    손으로 짜면 무엇이 문제인가 — 이 저장소의 4족(직접 구현)이다.
+    표준이 이미 가진 것을 다시 짜면 **그 재구현만의 버그**를 혼자 갖고,
+    그 버그를 잡는 검사는 아무도 안 만든다. 실제로 손판은 `rows` 경계를
+    `lo <= n <= hi` 닫힌 구간으로 쓰면서 그것을 어디에도 안 적었다.
+
+    스키마로 적으면 **선언이 곧 판정**이다. 사람이 읽는 규칙과 기계가
+    도는 규칙이 같은 객체이고, 그것이 이 절이 노리는 전부다.
+
+★ 경계는 **한 글자도 안 바꿨다.** 닫힌 구간 · 허용폭 기본 0.30 ·
+  컬럼 추가는 경고 · 스코프 하한은 미만일 때만 실패 — 전부 종전 그대로다.
+  `tests/test_contract.py` 가 전후를 같은 입력으로 대조한다.
+
+IN    sources.yaml · raw/**
+OUT   없음 (검사). 종료코드 = 실패 수
+밖    **Pandera 가 안 보는 것 셋을 이 파일이 손으로 본다** —
+      ① 파일 인코딩(`encoding`) — 데이터프레임이 되기 **전**의 성질이라
+         스키마에 못 적는다. `decode_ok()` 가 전량 디코딩으로 본다.
+      ② zip 안 레이어 존재(`layer_must_exist`) — 파일시스템 물음이다.
+      ③ 컬럼 **추가**(경고) — Pandera 의 `strict` 는 추가를 실패로만 다룰 수
+         있고 경고가 없다. 추가는 실패가 아니므로 `strict=False` 로 두고
+         여기서 센다.
+      그리고 CSV·TXT 가 아닌 원본(shp·gpkg·tif)의 **내용**은 안 본다 —
+      존재와 레이어만 본다. 기하 검증은 `firelane.guards` 소관이다.
 """
 from __future__ import annotations
 
@@ -91,6 +119,62 @@ def decode_ok(path: Path, enc: str) -> bool:
 def read_csv(path: Path, enc: str):
     import pandas as pd
     return pd.read_csv(path, encoding=enc, dtype=str, low_memory=False)
+
+
+def frame_schema(c: dict, scope_n: int | None = None):
+    """대장 `contract:` 블록 → `pandera.DataFrameSchema`.
+
+    ★ 컬럼은 전부 `str`·nullable 이다. `read_csv(dtype=str)` 로 읽으므로
+      타입 판정은 이 층의 일이 아니다 — 여기가 보는 것은 **있는가**다.
+    ★ `scope_n` 은 이미 센 값이다. 세는 일은 좌표 컬럼·bbox 를 알아야 해서
+      스키마 밖이고, **판정**만 스키마가 든다. 세기와 판정을 갈라 두면
+      「몇 건이었나」를 메시지에 담으면서도 통과·실패는 한 곳에서 난다.
+    """
+    import pandera.pandas as pa
+
+    cols = {name: pa.Column(str, nullable=True, required=True, coerce=False)
+            for name in (c.get("required_cols") or [])}
+    checks = []
+
+    want = c.get("rows")
+    if want is not None:
+        want = int(want)
+        tol = float(c.get("rows_tolerance", 0.30))
+        lo, hi = want * (1 - tol), want * (1 + tol)
+        checks.append(pa.Check(
+            lambda d, lo=lo, hi=hi: lo <= len(d) <= hi,
+            name="rows",
+            error=f"건수 선언 {want:,} ±{tol:.0%} 밖 ({lo:,.0f}~{hi:,.0f})"))
+
+    smin = c.get("scope_min")
+    if smin is not None and scope_n is not None:
+        smin = int(smin)
+        checks.append(pa.Check(
+            lambda _d, n=scope_n, m=smin: n >= m,
+            name="scope_min",
+            error=f"스코프 안 {scope_n}건 — 하한 {smin}. 파싱은 됐으나 대상 지역이 없다"))
+
+    return pa.DataFrameSchema(cols, checks=checks, strict=False, coerce=False)
+
+
+def schema_failures(schema, d) -> list[str]:
+    """스키마를 태우고 **사람이 읽는 줄**로 돌려준다. 통과면 빈 목록."""
+    import pandera.pandas as pa
+
+    try:
+        schema.validate(d, lazy=True)
+        return []
+    except pa.errors.SchemaErrors as e:
+        out, miss = [], []
+        for rec in e.failure_cases.to_dict("records"):
+            chk, case = rec.get("check"), rec.get("failure_case")
+            if chk == "column_in_dataframe":
+                miss.append(str(case))
+            else:
+                out.append(str(rec.get("check") or case))
+        if miss:
+            out.insert(0, f"컬럼 소실 {miss}")
+        return out
 
 
 def zip_names(path: Path) -> list[str]:
@@ -166,19 +250,15 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
             r.add(FAIL, f"CSV 읽기 실패: {type(ex).__name__}: {ex}")
             return r
 
-        miss = [c2 for c2 in need if c2 not in d.columns]
-        if miss:
-            r.add(FAIL, f"컬럼 소실 {miss}")
+        # ── 컬럼 **추가**는 경고다. Pandera 의 strict 는 실패만 낼 수 있어
+        #    여기서 센다(머리말 `밖` ③).
         extra = [c2 for c2 in d.columns if need and c2 not in need]
         if extra and need:
             r.add(WARN, f"컬럼 추가 {extra[:8]}{'…' if len(extra) > 8 else ''}")
 
-        if want_rows is not None:
-            lo, hi = want_rows * (1 - tol), want_rows * (1 + tol)
-            if not (lo <= len(d) <= hi):
-                r.add(FAIL, f"건수 {len(d):,} — 선언 {want_rows:,} ±{tol:.0%} 밖")
-
-        # ★ 스코프 안 유효 건수. hydrant_point 0건이 여기서 걸린다.
+        # ── 스코프 안 유효 건수를 **센다.** 판정은 스키마가 한다.
+        #    hydrant_point 0건이 여기서 걸린다.
+        scope_n = None
         if smin is not None and bbox:
             xc, yc = e.get("x_col"), e.get("y_col")
             if not (xc and yc):
@@ -192,12 +272,15 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
                 if nbad:
                     r.add(WARN, f"좌표 파싱 실패 {nbad}건")
                 x0, y0, x1, y1 = bbox
-                n = int(((x >= x0) & (x <= x1) & (y >= y0) & (y <= y1)).sum())
-                if n < smin:
-                    r.add(FAIL, f"스코프 안 {n}건 — 하한 {smin}. "
-                                "파싱은 됐으나 대상 지역이 없다")
-                else:
-                    r.add(OK, f"스코프 안 {n}건")
+                scope_n = int(((x >= x0) & (x <= x1) & (y >= y0) & (y <= y1)).sum())
+
+        # ── 판정 — 컬럼 소실 · 건수 · 스코프 하한 (Pandera)
+        for line in schema_failures(frame_schema(c, scope_n), d):
+            r.add(FAIL, line)
+        if scope_n is not None and smin is not None and scope_n >= int(smin):
+            r.add(OK, f"스코프 안 {scope_n}건")
+        if want_rows is not None:
+            r.add(OK, f"건수 {len(d):,}")
     return r
 
 
