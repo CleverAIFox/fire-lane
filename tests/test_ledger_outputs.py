@@ -42,6 +42,10 @@ PROCESSED = ROOT / "data" / "processed"
 META = {
     "_manifest.json",       # 재현 증적. git_sha · 타이밍
     "_lineage.json",        # datalog 계보
+    # ★ 2026-09-23 (DECISIONS §224-2). raw 지문 기억표 — `(크기, mtime_ns)` → sha256[:16].
+    #   **산출물이 아니다.** 하류가 안 읽고, 지워도 판정이 같으며(느려질 뿐),
+    #   기계마다 다르다(mtime). 파이프라인이 자기 실행을 기록하는 것이라 META 가 맞다.
+    ".rawprint.json",
 }
 
 # 중간 산출물 접미사. 대장 대상이 아니다.

@@ -57,10 +57,17 @@ def test_seal_kinds_match_shardseal():
       과하게 우는 쪽이라 안전하지만, 반대로 표에만 있고 실물에 없는 이름이
       남으면 죽은 분류가 된다. 양방향으로 본다.
     """
-    src = inspect.getsource(__import__("firelane.shardseal", fromlist=["x"]).make)
+    # ★ 2026-09-23 (DECISIONS §223-5). 봉인지를 내는 자리가 **둘**이 됐다 —
+    #   `shardseal.make()`(ingest 샤드)와 `firelane.ortho._seal_now()`(ortho 단계).
+    #   한 곳만 보면 다른 쪽 칸(`scope`)이 「죽은 분류」로 잡힌다. 양쪽을 본다.
+    makers = [
+        inspect.getsource(__import__("firelane.shardseal", fromlist=["x"]).make),
+        inspect.getsource(__import__("firelane.ortho", fromlist=["x"])._seal_now),
+    ]
+    src = "\n".join(makers)
     for k in F.SEAL_KIND:
         assert f'"{k}"' in src, (
-            f"`{k}` 가 SEAL_KIND 에 있는데 shardseal.make() 에는 없다 — 죽은 분류다")
+            f"`{k}` 가 SEAL_KIND 에 있는데 봉인지를 내는 자리 어디에도 없다 — 죽은 분류다")
 
 
 @pytest.mark.parametrize("spot,expected", [

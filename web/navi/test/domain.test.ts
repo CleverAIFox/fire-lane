@@ -10,6 +10,7 @@ import {
   asNaviMsg, asOpsMsg, opsAck, opsReduce, OPS_EMPTY, shareState, opsPresent, HB_TTL_MS,
 } from "../src/domain/opsProtocol";
 import { distM } from "../src/domain/geo";
+import { choOf, isChoQuery, searchPois, type Poi } from "../src/domain/search";
 
 const { graph, spec } = FL;
 const safe = buildAdjacency(graph, spec, false, "safe");
@@ -150,4 +151,43 @@ test("경로 주변 사정 — 경로 위 거리 순 · 종류별 문턱 안 · 
   ok(NEAR_M.speedbump < NEAR_M.child_zone, "문턱 전제");
   ok(hazardSummary(hs) === "과속방지턱 1 · 단속카메라 1 · 보호구역 시설 1", `요약 ${hazardSummary(hs)}`);
   ok(routeHazards(plan, null).length === 0, "주변 사정 파일이 없는데 무언가를 냈다");
+});
+
+// ── 초성 검색 (DECISIONS §224-5) ─────────────────────────────
+// ★ 관제요원은 신고자 말을 받아치면서 지도를 본다. `ㄷㅁㄷㅎㅈㅂㅈㅅㅌ` 가
+//   `동명동행정복지센터` 로 가야 한다. **인스턴스가 아니라 경계를 본다** —
+//   넓히면 `ㄱ` 한 자가 색인 전체를 물어와 잘 되던 검색이 나빠진다.
+test("초성으로 찾는다 — 전부 초성일 때만", () => {
+  const mk = (name: string, over: Partial<Poi> = {}): Poi => ({
+    name, cat: "", sub: "", addr: "", alt: "", src: "store",
+    point: [0, 0], cho: choOf(name), ...over,
+  });
+  const pois: Poi[] = [
+    mk("동명동행정복지센터", { src: "civil", cat: "읍면동" }),
+    mk("광주서석초등학교", { src: "civil", cat: "초등학교" }),
+    mk("그레이스 원룸", { src: "build", sub: "주택" }),
+    mk("동명동 김밥천국"),
+  ];
+
+  ok(choOf("동명동행정복지센터") === "ㄷㅁㄷㅎㅈㅂㅈㅅㅌ", `초성 ${choOf("동명동행정복지센터")}`);
+  ok(choOf("GS25 편의점") === "GS25 ㅍㅇㅈ", "한글 아닌 글자는 그대로 둬야 한다");
+
+  ok(isChoQuery("ㄷㅁㄷ"), "전부 초성인데 아니라고 한다");
+  ok(!isChoQuery("동ㅁㄷ"), "완성 음절이 섞였는데 초성 질의로 본다");
+  ok(!isChoQuery("gs25"), "영문은 초성 질의가 아니다");
+
+  const a = searchPois(pois, "ㄷㅁㄷㅎㅈ");
+  ok(a.length === 1 && a[0].name === "동명동행정복지센터", `초성 검색 실패: ${a.map((h) => h.name).join(",")}`);
+
+  // 공백이 섞인 이름도 — norm 이 공백을 지운다
+  ok(searchPois(pois, "ㄱㄹㅇㅅㅇㄹ")[0]?.name === "그레이스 원룸", "공백 든 이름을 초성으로 못 찾는다");
+
+  // ★ 경계 — 완성 음절 질의는 종전 그대로 동작해야 한다(회귀 방지)
+  const b = searchPois(pois, "동명동");
+  ok(b.length === 2, `완성 음절 검색이 달라졌다: ${b.length}`);
+  ok(b[0].src === "civil", "같은 점수면 관공서가 앞서야 한다");
+
+  // ★ 초성 질의가 **이름 말고 다른 칸**을 훑지 않는가. `ㅇㅁㄷ`(읍면동)은
+  //   유형 칸에만 있으므로 아무것도 안 나와야 한다 — 문이 넓어지면 여기가 운다.
+  ok(searchPois(pois, "ㅇㅁㄷ").length === 0, "초성 질의가 이름 밖을 훑는다");
 });

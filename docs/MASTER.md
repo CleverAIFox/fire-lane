@@ -957,6 +957,8 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 파트 브랜치와 통합 담당은 §12 · §12-8c 가 든다. 파이프라인은 `FIRE_LANE_DATA` 가 가리키는
 기계에서 돌고, CI 는 데이터를 만들지 않는다(§12-7 · §14-7).
 
+강제자  `tests/test_declaration_sync.py::test_master_roles_do_not_copy_codeowners`
+
 ---
 
 ## 9. 이 프로젝트의 성격
@@ -1412,7 +1414,7 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 | `2` 작업 끝 | §12-6 · §12-8c |
 | `3` 데이터 반입 | §18-11 |
 | `4` 충돌 | §12-4 |
-| `5` CI 빨간불 | §12-7 · §12-7a |
+| `5` CI 빨간불 | §12-7 · §12-7a · §12-7b |
 | `6` 롤백 · 릴리즈 | §12-2 · §12-8b |
 | `구조` 브랜치 · 권한 | §12-1 · §12-1b · §12-3 · §12-9 · §12-10 |
 | `예외` 지금 어긋난 것 | §12-1c · §12-1a |
@@ -1686,16 +1688,8 @@ fix:  버그
 | `contract.yml` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
 | `secret-scan.yml` | **전 브랜치** push · PR | 자격증명이 올라가는 것을 막는다. 브랜치 목록이 없는 유일한 검사다 |
 | `image.yml` | `Dockerfile` · `pyproject.toml` · `uv.lock` · 자기 자신 변경 | ETL 이미지를 짓고 그 안에서 import 를 세운다. **CI 전용**(로컬에 docker 가 없다) |
-| `사이트 배포 (입구 · 데이터)` (`pages.yml`) | `main` 의 `web/**` — 단 `!web/navi/**` — 또는 `build-navi/action.yml` | ↓ |
-| `내비 배포` (`navi.yml`) | `main` 의 `web/navi/**` · `build-navi/action.yml` · 자기 자신 | ↓ |
-| `협업 방침 배포` (`docs.yml`) | `main` 의 `docs/MASTER.md` · `render_workflow.py` · `build-navi/action.yml` | ↓ |
-| `기획서 배포` (`proposal.yml`) | `main` 의 `docs/proposal.docx` · `web/proposal.html` · `stage_pages.py` · `build-navi/action.yml` | ↓ |
-| `_deploy.yml` | **자기 시점이 없다.** 위 넷이 `workflow_call` 로 부른다 | 넷의 공용 본문 — 내비 빌드 · 스탬프 주입 · `web/` **전체** 배포 |
-| `deploy-dry.yml` | main · dev · part/** 로 가는 **PR** (`.github/**` · `web/**` · MASTER · 기획서 · 렌더 · 준비 도구) | 배포 본문(`_deploy.yml` → `stage-site`)을 `dry-run` 으로 태운다 — 업로드 · 배포 없이 산출물 자리까지 본다(DECISIONS §217-5 · 옛 PLAN W3-15) |
-
-★ **워크플로 이름은 촉발 조건이지 배포 대상이 아니다.** 둘 다 사이트
-전체를 올린다. Pages 는 저장소당 사이트가 하나라, 한쪽이 부분만 올리면
-다른 쪽 파일이 사이트에서 사라진다. 08-31 에 그 사고가 났다.
+| `배포` (`deploy.yml`) — **push** | `main` 의 `web/**` · `docs/MASTER.md` · `docs/proposal.docx` · `render_workflow.py` · `stage_pages.py` · `build-navi`/`stage-site` 액션 · 자기 자신 | `contract` 게이트를 지난 뒤 `stage-site` 로 짓고 `web/` **전체**를 Pages 에 올린다 |
+| `배포` (`deploy.yml`) — **pull_request** | main · dev · part/** 로 가는 PR (`.github/**` · `web/**` · MASTER · 기획서 · 렌더 · 준비 도구) | **시운전.** 같은 본문을 태우되 업로드 · 배포를 안 한다 — 배포가 깨진 것을 main 전에 본다(DECISIONS §217-5 · 옛 PLAN W3-15) |
 
 ★ **`협업 방침 배포` 는 생성물을 커밋하지 않는다.** 종전에는 봇이
 `web/workflow.html` 을 `main` 에 밀었고, 그러려면 룰셋에 구멍이 필요했다.
@@ -1713,30 +1707,30 @@ fix:  버그
 ★ 배포 게이트는 `main` 단독이다. `dev` 는 트렁크이고 `main` 은 배포
 스냅샷이다 — 이 비대칭이 `dev` 를 판 이유다. 사람이 검증을 건너뛰어도
 공개된 것은 안 바뀐다.
-★ **배포 넷은 한 Pages 사이트를 공유한다.** `concurrency: group: pages` 하나에
-같이 들어가고 넷 다 `web/` **전체**를 올린다. 따름 셋 — **① 취소는 실패가
-아니다.** 같은 푸시로 넷이 큐에 들어가면 하나만 돌고 대기 중인 나머지는 취소된다
-(`Canceling since a higher priority waiting request for pages exists`). 살아남은
-하나가 전부를 배포하므로 손실이 없고, 색이 회색(⊘)이지 빨강(✗)이 아니다.
-**② `_deploy.yml` 의 `0 workflow runs` 도 고장이 아니다** — 재사용 워크플로는
-호출자의 run 안에서 돈다. `workflow_call` 전용 파일은 `.github/workflows/` 밖에
-못 두므로 숨길 수도 없어 이름에 그 사실을 적었다(§101-4 가 경계한 화면이다).
-**③ 넷 다 `workflow_dispatch` 를 든다** — 머지 전에 가지를 골라 태워볼 수 있다.
-2026-09-19 에 권한 오류를 두 번 연달아 **릴리즈로** 발견했는데 이것을 쓰면
-릴리즈 없이 봤다. **없던 것이 아니라 쓰지 않은 것이다.** 다만 dispatch 는 진짜로
-배포하므로 정적 검사가 먼저고 dispatch 는 보조다.
+★ **한 Pages 사이트에 한 워크플로.** `concurrency: group: pages` 하나에 들어가고
+`web/` **전체**를 올린다. 따름 둘 — **① 취소는 실패가 아니다.** `workflow_dispatch`
+와 push 가 겹치면 하나만 돌고 대기 중인 쪽은 취소된다(`Canceling since a higher
+priority waiting request for pages exists`). 살아남은 하나가 전부를 배포하므로
+손실이 없고, 색이 회색(⊘)이지 빨강(✗)이 아니다. **② `workflow_dispatch` 를 든다**
+— 머지 전에 가지를 골라 태워볼 수 있다. 2026-09-19 에 권한 오류를 두 번 연달아
+**릴리즈로** 발견했는데 이것을 쓰면 릴리즈 없이 봤다. **없던 것이 아니라 쓰지
+않은 것이다.** 다만 dispatch 는 진짜로 배포하므로 정적 검사가 먼저고 dispatch 는
+보조다.
+★ **2026-09-23 이전의 ③ 은 사라졌다** — 공용 본문 워크플로의 `0 workflow runs` 가
+사이드바에 상주하던 것(§101-4 가 경계한 화면)은 재사용 워크플로를 없애면서
+같이 없어졌다. 본문이 하나면 뺄 중복이 없다.
 
-★ **권한은 사슬의 모든 칸이 들어야 한다.** 배포 넷 → `_deploy.yml` →
-`contract.yml` 로 세 칸이고, 한 칸이라도 `pages: write` · `id-token: write` ·
-`pull-requests: write` 를 빠뜨리면 **파일 자체가 무효**가 된다. 재사용
-워크플로는 호출자보다 큰 권한을 못 가진다 — 위임 경로가 없어서 넷이 같은
-블록을 든다. **W1 이 없앤 중복과 달리 이것은 GitHub 이 강제한 중복이다.**
+★ **권한은 사슬의 모든 칸이 들어야 한다.** `deploy.yml` → `contract.yml` 로 두 칸이고,
+한 칸이라도 `pages: write` · `id-token: write` · `pull-requests: write` 를 빠뜨리면
+**파일 자체가 무효**가 된다. 재사용 워크플로는 호출자보다 큰 권한을 못 가진다 —
+위임 경로가 없다. **W1 이 없앤 중복과 달리 이것은 GitHub 이 강제한 중복이다.**
+2026-09-23 에 사슬이 셋에서 **둘**로 줄었다.
 
 강제자 — `tests/test_workflow_guards.py`
   ① 이 표가 `.github/workflows/*.yml` 전수와 같은 집합인가
   ② 호출자의 `permissions` 가 피호출자의 것을 덮는가
 ★ **종전에 여기 적혀 있던 `tests/test_guards.py` 의 트리거 대조는 이름보다
-좁았다.** 그것은 `contract.yml` 과 `pages.yml` 의 **브랜치 목록만** 본다.
+좁았다.** 그것은 `contract.yml` 과 배포 워크플로의 **브랜치 목록만** 본다.
 그래서 워크플로가 넷 느는 동안(`navi` · `secret-scan` · `image` · `_deploy`)
 이 표가 낡아도 아무도 안 울었다. `W3-8`(golden `WATCH`) · `W4-8`(도구 지문)과
 같은 족이다 — **범위가 이름보다 좁고 그것이 선언돼 있지 않다.**
@@ -1744,9 +1738,31 @@ fix:  버그
 CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소에 없기 때문이다.
 파이프라인은 매체를 가진 기계에서만 돈다(§14-7).
 
+### 12-7b. 배포가 여섯에서 하나가 된 이유 (2026-09-23)
+
+★ **2026-09-23 (DECISIONS §224) — 배포가 여섯에서 하나가 됐다.** 종전에는
+`사이트 배포 (입구 · 데이터)` · `내비 배포` · `협업 방침 배포` · `기획서 배포` ·
+`배포 시운전` · `Deploy — shared body` 여섯이 섰다. **여섯이 같은 사이트 한 벌을
+올렸다** — Pages 는 저장소당 사이트가 하나라 어느 것이 돌든 `web/` 을 통째로
+올린다(08-31 부분 배포 사고의 해소책이 그것이었다). 그러므로 이름들이 가리킨
+것은 **배포 대상이 아니라 촉발 조건**이었는데, 화면에는 「무엇을 배포하는가」
+처럼 보였다. 실제로 「데이터 배포를 왜 해야 하느냐」 는 물음이 나왔다 —
+**이름이 거짓을 말하면 사람이 구조를 오해한다.** 그리고 촉발 조건은 `paths`
+한 블록이면 된다. 워크플로를 가를 이유가 아니었다.
+
+★ **`web/data` 는 `paths` 에서 빠지면 안 된다.** 서버가 없다. 파이프라인이 정적
+JSON 을 `web/data` 에 쓰고 내비 · 관제가 `../data/` 로 읽으므로 **데이터를
+갱신하는 길은 재배포 하나뿐이다.** 빼면 코드만 새것이고 화면은 옛 판정을 든다.
+
+★ **시운전은 배포가 아니다.** 그래서 워크플로를 따로 두지 않고 같은 파일의
+`pull_request` 갈래로 둔다. 배포가 아닌 것이 배포 목록에 서면 목록이 거짓이
+되고, 본문이 갈리면 「PR 에서 통과한 것」과 「main 에서 도는 것」이 달라진다.
+
+강제자  `tests/test_workflow_guards.py` 의 `test_one_workflow_builds_the_site` · `test_deploy_and_dry_run_share_one_body` — 사이트를 짓는 워크플로가 하나이고, 배포와 시운전이 같은 본문을 태우며, 시운전이 Pages 에 올리지 않는가. 이름이 아니라 `stage-site` 호출로 찾으므로 파일을 옮겨도 검사가 죽지 않는다
+
 ### 12-7a. 내비 빌드
 
-★ **배포가 내비를 빌드한다**(2026-09-06). ★ 2026-09-19 정정 — 종전엔 `pages.yml`(당시 이름 「지도 배포」)이 직접 빌드했으나 W1 이 본문을 `_deploy.yml` 로 옮겼다. 지금은 `_deploy.yml` 이 `build-navi` 를 부르고 배포 **넷**이 그것을 부른다(`verify.sh` 의 「배포에 내비 빌드」 검사가 그 호출 관계를 본다). `web/navi/dist` 는
+★ **배포가 내비를 빌드한다**(2026-09-06). ★ 2026-09-19 정정 — 종전엔 `pages.yml`(당시 이름 「지도 배포」)이 직접 빌드했으나 W1 이 본문을 `_deploy.yml` 로 옮겼다. ★ 2026-09-23 정정(DECISIONS §224) — 배포가 하나가 됐다. 지금은 `deploy.yml` 이 `stage-site` 를, 그것이 `build-navi` 를 부른다(`verify.sh` 의 「배포에 내비 빌드」 검사가 그 사슬과 **배포 워크플로가 하나인가**를 본다). `web/navi/dist` 는
 `.gitignore` 라 저장소에 없고 CI 가 만든다 — `web/data` 를 커밋하는 것과
 반대 원칙인데 이유가 다르다. `web/data` 는 재생성에 raw 2.5GB 가 필요하고
 `dist` 는 `npm ci` 하나면 된다.
@@ -1769,12 +1785,12 @@ CI 가 데이터를 다시 만들지는 **않는다.** `data/raw` 가 저장소�
   `config.ts` 의 `MATCHING_ENABLED` 가 false 로 떨어지고 음성 안내가 전부
   자체 문구로 나간다. 소유자가 바뀌면 Secret 하나만 갈아끼운다.
 
-강제자  `tools/verify.sh` 의 「배포에 내비 빌드」 단계 — `_deploy.yml` 이 `build-navi` 를 부르고 배포 넷이 그것을 부르는가  ★ 2026-09-19 정정 — 종전엔 「42단계」로 **위치**를 들었다. 앞에 단계 하나만 끼우면 이 칸이 조용히 다른 검사를 가리킨다(PLAN §13 W3-5 와 같은 족). `tests/test_verify_citations.py` 가 위치 인용을 막는다
+강제자  `tools/verify.sh` 의 「배포에 내비 빌드」 단계 — 사이트를 짓는 워크플로가 **하나**이고 그것이 `stage-site` → `build-navi` 로 가며 배포 · 시운전 둘 다 같은 본문을 태우는가  ★ 2026-09-19 정정 — 종전엔 「42단계」로 **위치**를 들었다. 앞에 단계 하나만 끼우면 이 칸이 조용히 다른 검사를 가리킨다(PLAN §13 W3-5 와 같은 족). `tests/test_verify_citations.py` 가 위치 인용을 막는다
 
 ### 12-8. 배포
 
 ★ **아직 없다.** 지금 `main` 이 배포하는 것은 정적 사이트 하나뿐이다
-(`사이트 배포` · `협업 방침 배포` 둘 다 같은 Pages 사이트를 올린다, §12-7).
+(배포는 `web/` 을 통째로 올리는 워크플로 하나다, §12-7).
 아래는 **정해 둔 것**이며 실물이 생기면 이 절을 사실로 다시 쓴다.
 
 `dev` 를 판 이유가 여기 있다. `main` 에 배포를 물리는 순간 `main` 은
@@ -2085,7 +2101,7 @@ golden 지문 · PLAN 번호·참조 · 커버리지 래칫을 밟는다.
   전량은 이제 2분40초 안팎이다.
 
 ★ **커버리지는 래칫이다.** 2026-09-22 실측 **27.47%**(사용자 WSL 전수 · 종전 26.88%).
-  `tools/verify.sh` 의 `COV_MIN=27` 로 걸려 있고 **올린 뒤에는 안 내린다.**
+  `tools/verify.sh` 의 `COV_MIN=28` 로 걸려 있고 **올린 뒤에는 안 내린다.**
   80% 를 목표로 잡지 않는다 — 못 지키는 문턱은 끄게 되고, 끈 문턱은 없는 것과 같다.
   2026-09-20 정정 — 종전 이 자리는 「실측 24 에 23 을 거는 것은 화면의
   `24%` 가 반올림이라 실제가 23.5 일 수 있기 때문」이라고 적었다. 서술은

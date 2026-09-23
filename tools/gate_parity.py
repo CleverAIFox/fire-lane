@@ -172,15 +172,13 @@ def deploy_gaps() -> list[str]:
         if p.name.startswith("_"):
             continue
         body = _nocomment(p.read_text(encoding="utf-8"))
-        if "deploy-pages" not in body and "_deploy.yml" not in body:
+        # ★ 2026-09-23 (§224). 배포 여섯을 하나로 합쳤다 — 재사용 본문(`_deploy.yml`)이
+        #   없어졌으므로 "본문을 부르니까 봐준다" 는 예외도 없앴다. 배포하는 파일이
+        #   **자기 안에** 게이트를 들어야 한다.
+        if "deploy-pages" not in body:
             continue                                  # 배포 워크플로가 아니다
-        if "needs:" not in body and "_deploy.yml" not in body:
-            bad.append(f"{p.name}: 배포인데 needs: 가 없다 — 검사와 병렬로 돈다")
-    dep = WF / "_deploy.yml"
-    if dep.exists():
-        body = _nocomment(dep.read_text(encoding="utf-8"))
         if "needs:" not in body:
-            bad.append("_deploy.yml: 배포 본문에 needs: 가 없다 — 게이트를 안 지난다")
+            bad.append(f"{p.name}: 배포인데 needs: 가 없다 — 검사와 병렬로 돈다")
     return bad
 
 

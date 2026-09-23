@@ -141,10 +141,78 @@ def cfg_print_legacy(cfg: dict, key: str) -> str:
                              ensure_ascii=False, default=str))
 
 
+# ── raw 지문 기억표 ────────────────────────────────────────────
+# ★ 2026-09-23 (DECISIONS §224-2). **봉인지가 빌드만 아끼고 판정은 안 아꼈다.**
+#   `check()` 는 봉인이 맞든 틀리든 `raw_print(hits)` 를 부르고, 그것이 그 소스의
+#   원천 파일을 **통째로 다시 읽어** 해시했다. `[SEALED] 다시 빌드하지 않는다` 를
+#   찍기 위해 raw 2.5GB 를 읽은 것이다. 2026-09-23 에 8GB WSL 이 거기서
+#   `Errno 12` 로 죽었다 — 봉인은 일치했는데 죽었다.
+#
+#   봉인지의 값어치는 **「판정이 빌드보다 싸다」** 에 있다. 판정 비용이 원천
+#   크기에 비례하면 그 값어치가 없다. 같은 병을 ①(--split)으로 한 번,
+#   ②(샤드 봉인)로 한 번 막았는데 **판정 경로만 남아 있었다.**
+#
+# ★ 열쇠는 `(크기, mtime_ns)` 다. `data/raw` 는 **불변**이 이 저장소의 원칙 1
+#   이고(ingest.py 머리말) 어떤 코드도 거기에 쓰지 않는다. 그러므로 크기와
+#   수정 시각이 같으면 내용이 같다 — 사람이 일부러 바이트를 바꾸면서 둘 다
+#   맞추지 않는 한. 그 경우까지 잡는 것은 `tools/acquire.py` 의 원천 대장
+#   (raw 전수 sha256)이 맡는다. **여기는 봉인 판정이지 위변조 감사가 아니다.**
+#
+# ★ 하나라도 어긋나면 **그 파일만** 다시 읽는다. 캐시 전체를 버리지 않는다.
+# ★ 캐시가 없거나 깨졌으면 그냥 전부 읽는다 — 판정은 같고 느릴 뿐이다.
+#   **캐시는 답을 바꾸지 않는다.** 답을 바꾸면 그것은 캐시가 아니라 우회다.
+_RAWCACHE: dict[str, list] | None = None
+
+
+def _rawcache_file() -> Path:
+    from firelane.paths import PROCESSED
+
+    return PROCESSED / ".rawprint.json"
+
+
+def _rawcache() -> dict[str, list]:
+    global _RAWCACHE
+    if _RAWCACHE is None:
+        try:
+            got = json.loads(_rawcache_file().read_text(encoding="utf-8"))
+            _RAWCACHE = got if isinstance(got, dict) else {}
+        except (OSError, ValueError):
+            _RAWCACHE = {}
+    return _RAWCACHE
+
+
+def _rawcache_save() -> None:
+    if _RAWCACHE is None:
+        return
+    f = _rawcache_file()
+    try:
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(json.dumps(_RAWCACHE, sort_keys=True) + "\n", encoding="utf-8")
+    except OSError:
+        pass                    # 못 써도 판정은 옳다. 다음 실행이 느릴 뿐이다
+
+
+def raw_one(p: Path) -> str:
+    """파일 하나의 raw 지문(16자). `(크기, mtime_ns)` 가 같으면 안 읽는다."""
+    st = p.stat()
+    key = str(p.resolve())
+    hit = _rawcache().get(key)
+    if (isinstance(hit, list) and len(hit) == 3
+            and hit[0] == st.st_size and hit[1] == st.st_mtime_ns):
+        return str(hit[2])
+    got = sha256(p)[:16]
+    _rawcache()[key] = [st.st_size, st.st_mtime_ns, got]
+    return got
+
+
 def raw_print(hits: list[Path]) -> str | None:
     if not hits or not all(Path(h).is_file() for h in hits):
         return None
-    return ",".join(sha256(h)[:16] for h in sorted(hits))
+    before = dict(_rawcache())
+    out = ",".join(raw_one(Path(h)) for h in sorted(hits))
+    if _rawcache() != before:
+        _rawcache_save()
+    return out
 
 
 def gpkg_print(p: Path) -> str:
@@ -250,6 +318,90 @@ def reseal_out(records: list[dict], out_dir: Path) -> tuple[list[str], list[str]
             s["out"] = now
             fixed.append(r["key"])
     return fixed, missing
+
+
+def reseal_code(records: list[dict], cfg: dict, out_dir: Path, code: str,
+                paths_for) -> tuple[list[str], list[str]]:
+    """`code` 칸**만** 지금 코드 지문으로 고친다. (고친 key, 못 고친 key).
+
+    ── 왜 있나 (2026-09-23 · DECISIONS §224-2) ──────────────────────
+    `code` 는 ingest 가 import 하는 firelane 모듈 전부의 로직 지문이다. 이미
+    두 겹으로 좁혀 놨다 — 주석 · docstring 을 뺀 AST 로 재고(`logic_print`),
+    봉인 로직 자신은 아예 뺀다(`NOT_PRODUCERS`, §165-8). 그런데도 **ingest 본체나
+    `guards` 를 한 줄 고치면 65종이 전부 찢어진다.** 산출물을 한 바이트도 바꾸지
+    않는 변경(안내 문구 · 종료코드 · 새 플래그)이어도 그렇다.
+
+    이 8GB 기계에서 전량 재빌드는 `ngii_road` 에서 거의 반드시 죽는다(§165).
+    즉 **ingest 를 고칠 수 없는 구조**였다. 도구를 못 고치면 결함도 못 고친다.
+    좁히는 길(로직 지문 · 제외 목록)은 이미 다 썼으므로, 남은 길은 **사람이
+    판단해서 받아주는 문**이다 — `cfg` 칸의 `cfg_print_legacy`, `out` 칸의
+    `reseal_out` 과 같은 자리.
+
+    ★ 공짜로 열어주지 않는다. 여기서 고치는 것은 **raw 와 out 이 둘 다 봉인과
+      같은** 레코드뿐이다. 그 둘이 같다는 것은 「같은 입력으로 만든 같은
+      산출물이 지금 디스크에 있다」 는 뜻이고, 그러면 코드가 무엇을 하든
+      **이번 판정에 쓰인 결과는 그 산출물**이다.
+    ★ 그래도 **판단은 사람이 한다.** 코드 변경이 산출물을 바꿀 수 있는
+      것이었다면 out 이 이미 달라졌거나, 다음 전량에서 달라진다. 이 함수는
+      「지금 디스크의 산출물이 봉인과 같다」 만 말한다 — `--stamp` 와 같은 급이다.
+    ★ 옛 지문 → 새 지문을 **화면에 찍는다**(호출부). 대장 레코드에 칸을 더하지
+      않는다 — 봉인지는 네 칸이고, 다섯 번째 칸은 다음 사람이 그것도 봉인의
+      일부라고 읽는다. 무엇을 받아줬는지는 DECISIONS 가 든다.
+    """
+    fixed, skipped = [], []
+    for r in records:
+        s = r.get("seal") if isinstance(r, dict) else None
+        if r.get("status") != "OK" or not isinstance(s, dict) \
+                or not all(k in s for k in ("raw", "cfg", "code", "out")):
+            continue
+        key = r["key"]
+        if s["code"] == code:
+            continue                                   # 이미 같다
+        try:
+            hits = paths_for(key, cfg["datasets"][key])
+        except Exception:                              # noqa: BLE001
+            skipped.append(key); continue
+        if raw_print(hits) != s["raw"] or out_print(out_dir, list(s["out"])) != s["out"]:
+            skipped.append(key); continue              # 입력이나 산출물이 달라졌다 — 다시 빌드해야 한다
+        s["code"] = code
+        fixed.append(key)
+    return fixed, skipped
+
+
+def reseal_out_cli(man_path: Path, out_dir: Path, manifest) -> int:
+    """`ingest --reseal-out` 의 본문. 파이프라인이 terrain 뒤에 부른다."""
+    if not man_path.exists():
+        return 0
+    doc = manifest.read(man_path)
+    fixed, missing = reseal_out(doc.get("datasets", []), out_dir)
+    wrote = manifest.write_stable(man_path, doc)
+    print(f"샤드 봉인지 out 갱신 {len(fixed)}종"
+          + (f" ({', '.join(fixed)})" if fixed else "")
+          + (f" · 산출물 없음 {len(missing)}종: {', '.join(missing)}" if missing else "")
+          + ("" if wrote else " · 대장 불변"))
+    return 0
+
+
+def reseal_code_cli(man_path: Path, cfg: dict, out_dir: Path, code: str,
+                    paths_for, manifest) -> int:
+    """`ingest --reseal-code` 의 본문. 대장을 읽고 고치고 적고 화면에 남긴다.
+
+    ★ ingest 본체가 아니라 여기 산다. 봉인지를 아는 것은 이 모듈이고,
+      ingest 는 그것을 부를 뿐이다 — 봉인 규칙이 두 파일에 흩어지지 않는다.
+    """
+    if not man_path.exists():
+        print("★ _manifest.json 이 없다. 고칠 봉인지가 없다.")
+        return 0
+    doc = manifest.read(man_path)
+    fixed, skipped = reseal_code(doc.get("datasets", []), cfg, out_dir, code, paths_for)
+    wrote = manifest.write_stable(man_path, doc)
+    print(f"샤드 봉인지 code 갱신 {len(fixed)}종 → {code}"
+          + (f"\n  고침  {', '.join(fixed)}" if fixed else "")
+          + (f"\n  거절  {len(skipped)}종 — raw 나 산출물이 봉인과 다르다: "
+             f"{', '.join(skipped)}" if skipped else "")
+          + ("" if wrote else "\n  대장 불변"))
+    if skipped:
+        print("  ★ 거절된 것은 **다시 빌드해야 한다.** 봉인은 그래서 있다.")
 
 
 def _short(text: str) -> str:

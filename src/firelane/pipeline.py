@@ -25,6 +25,7 @@ from pathlib import Path
 
 from firelane import lineage
 from firelane.paths import GOLDEN, PROCESSED, RAW, ROOT, WEB
+from firelane.stagerun import ENOMEM_RC as INGEST_ENOMEM_RC
 
 for st in (sys.stdout, sys.stderr):
     try:
@@ -508,7 +509,23 @@ def main():
                                cwd=ROOT, env={**os.environ, "FIRE_LANE_STAGE": "terrain"})
         if r.returncode:
             print(c(f"\n★ {name} 실패. 여기서 멈춘다.", "31"))
-            if s.module == "ingest":
+            # ★ 2026-09-23 (DECISIONS §224-3). **안내를 조건 없이 찍지 않는다.**
+            #   종전에는 ingest 가 어떻게 죽었든 `--retry-failed` 를 찍었다.
+            #   2026-09-23 에 OOM 으로 죽었는데 그 명령이 "실패한 소스가 없다"
+            #   를 내놓았다 — 안내가 거짓이었고 사람이 그 말을 따라 헛돌았다.
+            #   이 저장소가 가장 싫어하는 1족이다(MASTER §17).
+            # ★ 종료코드로 가른다. 출력을 파싱하면 문구를 다듬는 순간 죽는다.
+            if s.module == "ingest" and r.returncode in (INGEST_ENOMEM_RC, 137):
+                print(c("  ★ 메모리로 죽었다 — 소스가 실패한 것이 아니다."
+                        " `--retry-failed` 는 할 일이 없다고 답한다.", "31"))
+                print(c("    wsl --shutdown          (Windows PowerShell) VM 메모리 반납", "36"))
+                print(c("    ~/.wslconfig            [wsl2] memory=12GB", "36"))
+                print(c("    uv run fire-lane --from ingest --split"
+                        "   소스마다 자식 프로세스 (메모리 반납)", "36"))
+                print(c("  ★ 봉인이 코드 때문에만 찢어졌고 산출물이 그대로라면"
+                        " 다시 빌드할 필요가 없다:", "33"))
+                print(c("    uv run python -m firelane.ingest --reseal-code", "36"))
+            elif s.module == "ingest":
                 # ★ 19종 중 몇 종만 실패했을 것이다. 200초를 다시 태우지 마라.
                 print(c("  실패한 소스만:  uv run python -m firelane.ingest "
                         "--retry-failed", "36"))

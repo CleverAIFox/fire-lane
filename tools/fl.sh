@@ -416,6 +416,23 @@ if ! bash tools/verify.sh; then
     #   다시 쓰고 빨강으로 멈추면 그 변경이 작업 트리에 남아, 다음 실행이 1단계 「추적 파일에 변경」
     #   으로 막혔다. **생성물만** 되돌린다 — 사람이 고친 파일은 건드리지 않는다(정본은 generated 역할).
     mapfile -t GEN < <(uv run --no-sync python -m firelane.generated --role fresh 2>/dev/null || true)
+    # ★ 2026-09-23 (DECISIONS §223-5). **되돌리기 전에 한 번 묻는다 — 이것이 커밋할 것인가.**
+    #   배치가 생성물을 정당하게 바꾸면(봉인지 신설 · 발행 형식 변경) verify 는
+    #   「커밋된 web/data 가 최신인가」로 빨개지고, 종전에는 그 결과를 **되돌려 버렸다.**
+    #   그러면 다음 실행이 파이프라인 7분을 다시 돌려 같은 것을 만들고 또 되돌린다.
+    #   판정이 불변이고 더러운 것이 생성물뿐이면 그것은 **커밋 대상**이지 찌꺼기가 아니다.
+    DIRTY=$(git status --porcelain --untracked-files=no -- "${GEN[@]}" 2>/dev/null | wc -l)
+    OTHER=$(git status --porcelain --untracked-files=no | wc -l)
+    if [ "$DIRTY" -gt 0 ] && [ "$DIRTY" -eq "$OTHER" ] \
+       && uv run --no-sync python tools/golden.py check >/dev/null 2>&1; then
+        warn "생성물이 움직였고 **판정은 불변이다** — 되돌리지 않는다. 커밋할 것이다:"
+        git status --short -- "${GEN[@]}" | sed 's/^/      /'
+        die "커밋한 뒤 다시 돌려라:" \
+            "    git add ${GEN[*]}" \
+            "    git commit -m 'seal: 생성물 갱신 (판정 불변)'" \
+            "    $FL_CMD $BR --all" \
+            "  ★ verify 의 다른 단계도 빨갰으면 그것부터 읽어라 — 위 표가 전부가 아니다."
+    fi
     [ ${#GEN[@]} -gt 0 ] && git checkout -q -- "${GEN[@]}" 2>/dev/null \
         && warn "verify 가 다시 쓴 생성물을 커밋본으로 되돌렸다: ${GEN[*]}"
     die "전수 verify 가 빨갛다. **메시지를 끝까지 읽어라** — 고치는 법이 그 안에 있다." \

@@ -572,13 +572,13 @@ def test_ci_watches_the_working_branch():
       `[main]` 단독으로 되돌아가 있었다(2026-08-23 발견).
 
       README · MASTER · CODEOWNERS 는 `gis` 를 정본 브랜치로 적고
-      pages.yml 은 `[main, gis]` 를 배포한다. contract 만 main 을 보면
+      배포 워크플로는 `[main, gis]` 를 배포한다. contract 만 main 을 보면
       **PR 이 검사 없이 머지된다** — 검사가 죽었는데 초록불이 뜨는,
       이 저장소가 계속 겪은 바로 그 모양이다.
     """
     import re
     ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
-    pages = (ROOT / ".github/workflows/pages.yml").read_text(encoding="utf-8")
+    pages = (ROOT / ".github/workflows/deploy.yml").read_text(encoding="utf-8")  # 배포 하나(§224)
 
     def lists(txt):
         """`branches: [...]` 선언을 **하나씩** 낸다.
@@ -600,7 +600,7 @@ def test_ci_watches_the_working_branch():
             f"배포는 {sorted(pg_b)} 에서 도는데 contract.yml 의 트리거 "
             f"{i + 1}번은 {sorted(b)} 만 본다.\n"
             f"  검사를 비껴가는 브랜치: {sorted(missing)}\n"
-            "  pages.yml 이 배포하는 브랜치는 push · pull_request 양쪽에서 봐야 한다.")
+            "  deploy.yml 이 배포·시운전하는 브랜치는 push · pull_request 양쪽에서 봐야 한다.")
 
 
 def test_docs_point_at_the_real_package():
