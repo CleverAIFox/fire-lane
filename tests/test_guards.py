@@ -125,6 +125,42 @@ def test_lineage_ignores_outputs_of_failed_key(tmp_path):
         lineage_check(d)
 
 
+def test_critical_covers_every_dataset_feeding_judgment_code():
+    """`CRITICAL` 이 **대장에서 유도한 집합**과 같은가. 양방향이다.
+
+    ★ 2026-09-23 (PLAN §13 W3-6 · deadcheck ②). 목록이 다섯이었고 대장은 열셋을 알고 있었다 —
+      손목록이 원본보다 좁으면 원본이 늘어도 안 따라가고, 그 결과는 조용하다: 빠진 소스가
+      FAIL 해도 key 층이 통과하고 `segments` 가 옛 gpkg 를 집는다(08-17/18 의 1093 · 1091).
+
+    ★ 유도값을 그대로 쓰지 않고 **대조만** 하는 이유는 `guards.CRITICAL` 의 주석에 있다 —
+      `feeds` 는 `shardseal.DOC_KEYS` 가 「산출에 안 닿는 서술 칸」으로 분류한 필드이고,
+      그것을 관문의 정본으로 삼으면 대장 한 줄이 판정 관문을 조용히 **좁힐** 수 있다.
+      값은 코드에 두고, 어긋나면 여기가 운다.
+    """
+    yaml = pytest.importorskip("yaml")
+    from firelane.shardseal import code_closure
+
+    jud = {p.relative_to(ROOT).as_posix() for p in code_closure("firelane.segments")}
+    led = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    want = {k for k, e in (led.get("datasets") or {}).items()
+            if any(f in jud for f in ((e or {}).get("feeds") or []) if isinstance(f, str))}
+    got = set(CRITICAL)
+    assert got == want, (
+        f"`guards.CRITICAL` 이 대장과 다르다.\n"
+        f"  대장에만 있다(판정 코드가 읽는데 관문 밖이다): {sorted(want - got)}\n"
+        f"  코드에만 있다(feeds 가 판정 코드에 안 닿는다): {sorted(got - want)}\n"
+        "  대장을 고쳤으면 `guards.CRITICAL` 에 **사유를 적어** 넣어라. 좁은 관문은 거짓 초록이다.")
+
+
+def test_critical_probe_is_alive():
+    """카나리아 — 유도가 빈 집합이면 위 검사는 「둘 다 비었다」로 조용히 통과한다."""
+    yaml = pytest.importorskip("yaml")
+    led = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    assert len(CRITICAL) >= 13, "관문이 다시 좁아졌다(2026-09-23 기준 13종)"
+    assert len(set(CRITICAL)) == len(CRITICAL), "CRITICAL 에 중복이 있다"
+    assert set(CRITICAL) <= set(led.get("datasets") or {}), "대장에 없는 key 가 관문에 있다"
+
+
 # ── 2. 낡은 산출물 격리 ─────────────────────────────────────────
 def test_quarantine_renames_not_deletes(tmp_path):
     """삭제가 아니라 개명이다. 옛 파일은 진단의 증거다(08-18 실제로 봤다)."""
@@ -1831,7 +1867,7 @@ def test_route_usage_is_not_a_passability_claim():
     """`route_usage` 가 통행 가능성을 주장하지 않는가.
 
     ★ 2026-08-24 실측. `access_corridor()` 는 **폭 산출보다 먼저** 돈다
-      (`segments.py` 194줄 vs 435줄). 그래서 `weight="length"` 밖에 못 쓴다.
+      (`segments.py` 에서 `access_corridor()` 가 `WidthEngine` 보다 앞선다). 그래서 `weight="length"` 밖에 못 쓴다.
 
           route_usage > 0        579구간
             그중 blocked          41   ★ 폭 0.41m 를 70회 지나간다

@@ -1,7 +1,7 @@
 /**
  * ui/BottleneckPanel.tsx — 병목 구간 상세.  (와이어프레임 04 · 04.5 · 2026-09-21)
  *
- *   열림 (04)   우측 시트. 유효폭 · 요구폭 · 폭 여유 · 길이 · 판정 근거 · 단추 둘
+ *   열림 (04)   우측 시트. 유효폭 · 요구폭 · **여유폭** · 길이 · 사유 · 판정 근거 · 단추 둘
  *   접힘 (04.5) 우측 가장자리 주황 ⚠ 탭. 누르면 연다
  *
  * ★ "측정 신뢰도" 는 `width_cov` 다 — 그 구간에서 폭 표본이 실제로 덮은
@@ -16,12 +16,19 @@
  *   시트가 아니다), 카드 왼쪽 가장자리에 파란 **반원 접기 탭**, 「현장 확인 필요」 는 꽉 찬
  *   주황. 접힘(04.5)은 흰 바탕 · 주황 테두리 · 주황 삼각형 탭을 오른쪽 가장자리 **가운데**에.
  *
+ * ★ 2026-09-23 (§220) 멘토링(§219) 둘 — 「여유폭을 색과 수로」 와 「빨간 도로는 색만이
+ *   아니라 사유를 적는다」. 여유폭 칸이 `ui/clearanceMeaning` 의 4단 색을 입고, 그 밑에
+ *   사유 한 줄(무엇이 얼마나 모자란가 · 지금 무엇을 하나)이 붙는다. 사유는 빨강 전용이
+ *   아니라 판정마다 있고, **취할 조치가 없으면 통째로 빠진다**(`segmentReason` 이 null).
+ *
  * ★ 하단 두 줄은 **지우지 마라.** 판정이 무엇을 보고 무엇을 안 보는지
  *   화면에 남기는 유일한 장치다(DECISIONS §86-5 가 겪은 자리). 09-05 판에서
  *   주행 화면 우측 패널에 있던 것이 여기로 옮겨 왔다.
  */
 import type { CSSProperties, ReactNode } from "react";
 import { C, F, S } from "./tokens";
+import { CLEARANCE_SCALE, type SegmentReason } from "./clearanceMeaning";
+import { clearanceBand, fmtClearance } from "../domain/clearance";
 
 export interface BottleneckData {
   segUid: string;
@@ -40,6 +47,11 @@ export interface BottleneckData {
   cctvDistM: number | null;
   /** 회색이면 왜 회색인가(§215-2). 아니면 null */
   grayReason: string | null;
+  /**
+   * 왜 그 색인가 · 지금 무엇을 하나(§220). 초록이고 여유가 넉넉하면 null —
+   * 취할 조치가 없으면 그 칸을 통째로 뺀다.
+   */
+  reason: SegmentReason | null;
   /** 그 도로명의 불법주정차 단속 건수(§216-3). 도로 단위 · 위험의 대리값 */
   park: number | null;
 }
@@ -59,7 +71,10 @@ export function BottleneckPanel(d: Props) {
       </button>
     );
   }
+  // ★ 2026-09-23 (§220) 여유폭 = 유효폭 − 요구폭. 수와 **같은 4단 색**을 함께 낸다 —
+  //   멘토링(§219)이 「색과 수로」 라고 한 자리다. 판정은 안 바뀐다.
   const margin = d.widthM != null ? d.widthM - d.requiredM : null;
+  const band = CLEARANCE_SCALE[clearanceBand(margin)];
   const cctvOk = d.cctvDistM != null && d.cctvDistM <= 25;
   return (
     <div style={panel} data-wf="04">
@@ -74,11 +89,19 @@ export function BottleneckPanel(d: Props) {
       </div>
 
       <div style={grid}>
-        <Tile k="유효 도로폭" v={d.widthM != null ? `${d.widthM.toFixed(1)}m` : "—"} />
-        <Tile k="차량 요구폭" v={`${d.requiredM.toFixed(1)}m`} />
-        <Tile k="계산상 폭 여유" v={margin != null ? `${margin.toFixed(1)}m` : "—"} accent />
+        <Tile k="최소 유효폭" v={d.widthM != null ? `${d.widthM.toFixed(1)}m` : "—"} />
+        <Tile k="요구폭 (전폭 + 여유)" v={`${d.requiredM.toFixed(1)}m`} />
+        <Tile k="여유폭 = 유효폭 − 요구폭" v={fmtClearance(margin)} sub={band.short} color={band.color} />
         <Tile k="구간 길이" v={d.lengthM != null ? `${Math.round(d.lengthM)}m` : "—"} />
       </div>
+
+      {d.reason && (
+        <div style={{ ...why, borderColor: band.color }}>
+          <b style={{ color: band.color }}>{d.reason.head}</b>
+          <div style={{ marginTop: 2 }}>{d.reason.detail}</div>
+          {d.reason.action && <div style={{ color: C.panelSub, marginTop: 2 }}>→ {d.reason.action}</div>}
+        </div>
+      )}
 
       <Section title="장애물 · 위험 요소">
         <Line k="주차 차량" v="미반영" note="CCTV 영상 판정 전" />
@@ -114,11 +137,13 @@ export function BottleneckPanel(d: Props) {
   );
 }
 
-function Tile({ k, v, accent }: { k: string; v: string; accent?: boolean }) {
+function Tile({ k, v, sub, color }: { k: string; v: string; sub?: string; color?: string }) {
   return (
     <div style={tile}>
       <div style={{ fontSize: 11, color: C.panelSub }}>{k}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4, color: accent ? C.cta : C.panelInk }}>{v}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4, color: color ?? C.panelInk }}>
+        {v}{sub && <span style={{ fontSize: 11, fontWeight: 700, color: C.panelSub }}> {sub}</span>}
+      </div>
     </div>
   );
 }
@@ -172,6 +197,10 @@ const grid: CSSProperties = {
   display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12,
 };
 const tile: CSSProperties = { background: "#f8fafc", borderRadius: 10, padding: "10px 12px" };
+const why: CSSProperties = {
+  marginTop: 10, border: "1.5px solid", borderRadius: 10, padding: "9px 11px",
+  fontSize: 12, lineHeight: 1.5, background: "#f8fafc",
+};
 const honest: CSSProperties = {
   marginTop: 12, fontSize: 11, color: C.panelSub, lineHeight: 1.5,
 };

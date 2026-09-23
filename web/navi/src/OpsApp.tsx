@@ -47,11 +47,15 @@ import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
 import { travelSeconds } from "./domain/speed";
 import { requiredWidth } from "./domain/vehicle";
+import {
+  CLEARANCE_BAND_ORDER, clearanceCounts, edgeClearance, fmtClearance,
+} from "./domain/clearance";
 import { snap as snapOnce, prepare } from "./domain/snap";
 import { distM, type LngLat } from "./domain/geo";
-import type { GraphEdge, HistorySummary } from "./domain/types";
+import type { GraphEdge, HistorySummary, VehicleSpec } from "./domain/types";
 import { F, fmtDur } from "./ui/tokens";
 import { GRAY_REASON, grayReason, VERDICT_MEANING, VERDICT_ORDER } from "./ui/verdictMeaning";
+import { CLEARANCE_FORMULA, CLEARANCE_SCALE, segmentReason } from "./ui/clearanceMeaning";
 import { VehicleArt } from "./ui/VehicleArt";
 import { displayName, vehicleClass } from "./domain/fleetName";
 
@@ -69,6 +73,10 @@ export default function OpsApp() {
   });
   const [history, setHistory] = useState<{ summary?: HistorySummary } | null>(null);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
+  // ★ 2026-09-23 (DECISIONS §220). 구간 색의 기준. **판정 4색이 기본이다** — 여유폭은
+  //   고른 차로 그 자리에서 빼는 수라 파이프라인 판정을 덮어쓰지 않는다.
+  const [colorMode, setColorMode] = useState<"verdict" | "clearance">("verdict");
+  const [hiddenBands, setHiddenBands] = useState<ReadonlySet<string>>(() => new Set());
   const [seg, setSeg] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [ops, setOps] = useState<OpsState>(OPS_EMPTY);
@@ -176,6 +184,11 @@ export default function OpsApp() {
     }
     return Object.entries(c).sort((a, b) => b[1] - a[1]);
   }, [data]);
+  /** 여유폭 구간별 개수 — 고른 차가 바뀌면 다시 센다(§220) */
+  const bandCounts = useMemo(
+    () => (data && spec ? clearanceCounts(data.graph.edges, spec)
+                        : { neg: 0, tight: 0, mid: 0, wide: 0, unknown: 0 }),
+    [data, spec]);
   const edgeByUid = useMemo(() => new Map((data?.graph.edges ?? []).map((e) => [e.seg_uid, e])), [data]);
   const selEdge: GraphEdge | null = seg ? edgeByUid.get(seg) ?? null : null;
 
@@ -286,9 +299,13 @@ export default function OpsApp() {
                         같은 센터 실제 출동→도착 중앙값 {fmtSec(myCenter.median_s)} — 내비 속도표는 미검증이다
                       </div>
                     )}
+                    {/* ★ §220 — 경로의 **가장 좁은 곳의 여유폭**. 관제가 지령 전에 보는 수다 */}
                     <div style={{ fontSize: 12, color: D.sub, marginTop: 4 }}>
                       확인 필요 {plan.plan.edges.filter((e) => e.verdict === "needs_cv" || e.verdict === "unknown").length}개 ·
-                      최소폭 {Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)).toFixed(1)}m / 요구 {need.toFixed(1)}m
+                      최소폭 {Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)).toFixed(1)}m / 요구 {need.toFixed(1)}m ·
+                      여유폭 <b style={{ color: D.ink }}>
+                        {fmtClearance(Math.min(...plan.plan.edges.map((e) => e.width_min_m ?? 99)) - need)}
+                      </b>
                     </div>
                     {ruleSummary(plan.plan.rules) && (
                       <div style={{ fontSize: 12, color: D.warn, fontWeight: 800, marginTop: 4 }}>
@@ -322,6 +339,7 @@ export default function OpsApp() {
         {/* ══ 중앙 — 지도(북쪽 위 · 평면) ═══════════════════════════ */}
         <main style={mapBox}>
           <OpsMap view={data.view} terrain={data.graph.terrain} style={style} layers={layers} hidden={hidden}
+                  colorMode={colorMode} requiredM={need} hiddenBands={hiddenBands}
                   reachable={reach} incident={incident?.point ?? null}
                   preview={plan?.plan?.coords ?? null}
                   previewWalk={plan?.plan && incident ? [plan.plan.coords[plan.plan.coords.length - 1], incident.point] : null}
@@ -329,24 +347,64 @@ export default function OpsApp() {
                   onPick={onPick} onSeg={(u) => { if (!picking) setSeg(u); }} />
           {/* 범례 · 레이어 — 지도 위 왼쪽 아래 */}
           <div style={legendBox}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, marginBottom: 4 }}>판정 (CV = 영상판정) · 눌러서 숨기기</div>
-            {VERDICT_ORDER.filter((k) => style[k]).map((k) => {
-              const off = hidden.has(k);
-              return (
-                <button key={k} style={{ ...legendRow, opacity: off ? .35 : 1 }} title={VERDICT_MEANING[k]}
-                        onClick={() => setHidden((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; })}>
-                  <i style={{ ...dot, background: style[k].color }} />
-                  <span style={{ flex: 1, textAlign: "left" }}>{style[k].label}</span>
-                  <b>{counts[k] ?? 0}</b>
+            {/* ══ 구간 색 기준 — 판정 4색(기본) ↔ 여유폭 (§220) ══════════
+                ★ 어느 모드인지가 **범례 자체**로 보여야 한다. 단추를 누르면 아래 줄이
+                  통째로 바뀌고 머리글이 지금 칠해지는 것이 무엇인지 말한다. */}
+            <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+              {([["verdict", "판정 4색"], ["clearance", "여유폭"]] as const).map(([k, t]) => (
+                <button key={k} onClick={() => setColorMode(k)}
+                        style={{ ...modeBtn, background: colorMode === k ? D.accent : "transparent",
+                                 color: colorMode === k ? "#0b1220" : D.sub,
+                                 borderColor: colorMode === k ? D.accent : D.line }}>
+                  {t}
                 </button>
-              );
-            })}
-            {grayCounts.length > 0 && !hidden.has("unknown") && (
-              <div style={{ margin: "0 0 4px 20px", fontSize: 10.5, color: D.sub, lineHeight: 1.55 }}>
-                {grayCounts.map(([k, n]) => (
-                  <div key={k} style={{ display: "flex" }}><span style={{ flex: 1 }}>└ {GRAY_REASON[k]?.short ?? k}</span><b>{n}</b></div>
-                ))}
-              </div>
+              ))}
+            </div>
+            {colorMode === "verdict" ? (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, marginBottom: 4 }}>판정 (CV = 영상판정) · 눌러서 숨기기</div>
+                {VERDICT_ORDER.filter((k) => style[k]).map((k) => {
+                  const off = hidden.has(k);
+                  return (
+                    <button key={k} style={{ ...legendRow, opacity: off ? .35 : 1 }} title={VERDICT_MEANING[k]}
+                            onClick={() => setHidden((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; })}>
+                      <i style={{ ...dot, background: style[k].color }} />
+                      <span style={{ flex: 1, textAlign: "left" }}>{style[k].label}</span>
+                      <b>{counts[k] ?? 0}</b>
+                    </button>
+                  );
+                })}
+                {grayCounts.length > 0 && !hidden.has("unknown") && (
+                  <div style={{ margin: "0 0 4px 20px", fontSize: 10.5, color: D.sub, lineHeight: 1.55 }}>
+                    {grayCounts.map(([k, n]) => (
+                      <div key={k} style={{ display: "flex" }}><span style={{ flex: 1 }}>└ {GRAY_REASON[k]?.short ?? k}</span><b>{n}</b></div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 800, color: D.accent, marginBottom: 1 }}>
+                  여유폭 · {displayName(vehicle?.label ?? "기준 차량")} · 눌러서 숨기기
+                </div>
+                <div style={{ fontSize: 10.5, color: D.sub, marginBottom: 4 }}>
+                  {CLEARANCE_FORMULA} = {need.toFixed(1)}m
+                </div>
+                {CLEARANCE_BAND_ORDER.map((k) => {
+                  const off = hiddenBands.has(k);
+                  return (
+                    <button key={k} style={{ ...legendRow, opacity: off ? .35 : 1 }} title={CLEARANCE_SCALE[k].label}
+                            onClick={() => setHiddenBands((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; })}>
+                      <i style={{ ...dot, background: CLEARANCE_SCALE[k].color }} />
+                      <span style={{ flex: 1, textAlign: "left" }}>{CLEARANCE_SCALE[k].label}</span>
+                      <b>{bandCounts[k]}</b>
+                    </button>
+                  );
+                })}
+                <div style={{ fontSize: 10.5, color: D.sub, marginTop: 2, lineHeight: 1.5 }}>
+                  판정은 안 바뀐다 — 같은 구간을 고른 차의 폭으로 다시 칠한 것뿐이다.
+                </div>
+              </>
             )}
             <div style={{ borderTop: `1px solid ${D.line}`, margin: "6px 0 4px" }} />
             {([
@@ -421,12 +479,12 @@ export default function OpsApp() {
               ))}
             </div>
           </Sec>
-          {selEdge ? (
-            <SegCard e={selEdge} style={style} need={need} reachable={reach?.has(selEdge.seg_uid) ?? null}
+          {selEdge && spec ? (
+            <SegCard e={selEdge} style={style} spec={spec} reachable={reach?.has(selEdge.seg_uid) ?? null}
                      vehicle={displayName(vehicle?.label ?? "기준 차량")} onClose={() => setSeg(null)} />
           ) : (
             <Sec title="구간 정보">
-              <div style={{ fontSize: 12, color: D.sub }}>지도에서 도로를 누르면 폭 · 판정 근거 · 회색 사유 · 단속 이력이 뜬다.</div>
+              <div style={{ fontSize: 12, color: D.sub }}>지도에서 도로를 누르면 여유폭 · 사유 · 판정 근거 · 단속 이력이 뜬다.</div>
             </Sec>
           )}
           {hs && (
@@ -447,12 +505,21 @@ export default function OpsApp() {
   );
 }
 
-function SegCard({ e, style, need, reachable, vehicle, onClose }: {
-  e: GraphEdge; style: Bundle["graph"]["style"]; need: number; reachable: boolean | null;
+/**
+ * 구간 카드.
+ *
+ * ★ 2026-09-23 (DECISIONS §220). 두 가지가 들어왔다 — **여유폭을 수로**(색과 같은 4단
+ *   색을 글자에 입힌다) 와 **사유 한 줄**. 사유는 빨강만이 아니라 판정마다 낸다.
+ *   초록이고 여유가 넉넉하면 `segmentReason` 이 null 을 내고 그 칸이 통째로 빠진다 —
+ *   관제사가 그것으로 취할 조치가 없으면 화면에서도 뺀다.
+ */
+function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
+  e: GraphEdge; style: Bundle["graph"]["style"]; spec: VehicleSpec; reachable: boolean | null;
   vehicle: string; onClose: () => void;
 }) {
   const s = style[e.verdict];
-  const margin = e.width_min_m != null ? e.width_min_m - need : null;
+  const c = edgeClearance(e, spec);
+  const why = segmentReason(e, spec);
   const cctvOk = e.cctv_dist_m != null && e.cctv_dist_m <= 25;
   const gray = grayReason(e);
   return (
@@ -466,9 +533,23 @@ function SegCard({ e, style, need, reachable, vehicle, onClose }: {
         <b>{s?.label ?? e.verdict}</b>
         <span style={{ fontSize: 11, color: D.sub }}>{VERDICT_MEANING[e.verdict]}</span>
       </div>
+      {why && (
+        <div style={{ ...whyBox, borderColor: CLEARANCE_SCALE[c.band].color }}>
+          <b style={{ color: CLEARANCE_SCALE[c.band].color }}>{why.head}</b>
+          <div style={{ color: D.ink, marginTop: 2 }}>{why.detail}</div>
+          {why.action && <div style={{ color: D.sub, marginTop: 2 }}>→ {why.action}</div>}
+        </div>
+      )}
       <Row k="최소 · 최대 유효폭" v={`${e.width_min_m?.toFixed(1) ?? "—"} · ${e.width_max_m?.toFixed(1) ?? "—"}m`} />
-      <Row k={`${vehicle} 요구폭 · 여유`} v={`${need.toFixed(1)}m · ${margin != null ? `${margin >= 0 ? "+" : ""}${margin.toFixed(1)}m` : "—"}`}
-           warn={margin != null && margin < 0.5} />
+      <Row k={`${vehicle} 요구폭 (전폭 + 여유)`} v={`${c.requiredM.toFixed(1)}m`} />
+      {/* ★ 멘토링 §219 — 「여유폭을 색과 수로」. 이 한 줄이 그 수다 */}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, padding: "4px 0",
+                    borderBottom: `1px solid ${D.line}` }}>
+        <span style={{ color: D.sub }}>여유폭 = 최소 유효폭 − 요구폭</span>
+        <b style={{ color: CLEARANCE_SCALE[c.band].color, textAlign: "right" }}>
+          {fmtClearance(c.m)} <span style={{ fontWeight: 600, color: D.sub }}>{CLEARANCE_SCALE[c.band].short}</span>
+        </b>
+      </div>
       <Row k="측정 신뢰도 · 폭 표본" v={`${e.width_cov != null ? Math.round(e.width_cov * 100) + "%" : "—"} · ${e.n_sample ?? "—"}개`} />
       <Row k="가까운 CCTV" v={e.cctv_dist_m != null ? `${Math.round(e.cctv_dist_m)}m ${cctvOk ? "(영상판정 가능)" : "(25m 밖)"}` : "—"} />
       {gray && (
@@ -568,6 +649,10 @@ const mapBox: React.CSSProperties = { position: "relative", minWidth: 0 };
 const secBox: React.CSSProperties = {
   background: D.card, border: `1px solid ${D.line}`, borderRadius: 10, padding: "10px 12px",
 };
+const whyBox: React.CSSProperties = {
+  fontSize: 11.5, background: "#0f172a", border: "1.5px solid", borderRadius: 8,
+  padding: "7px 9px", margin: "8px 0 2px", lineHeight: 1.5,
+};
 const legendBox: React.CSSProperties = {
   position: "absolute", left: 10, bottom: 10, width: 270, zIndex: 3, background: "rgba(11,18,32,.9)",
   border: `1px solid ${D.line}`, borderRadius: 10, padding: "8px 10px", fontSize: 12,
@@ -601,6 +686,10 @@ const cta: React.CSSProperties = {
   width: "100%", marginTop: 10, border: "none", borderRadius: 10, padding: "12px 0",
   background: "linear-gradient(90deg,#dc2626,#ef4444)", color: "#fff", fontWeight: 800, fontSize: 15,
   cursor: "pointer", fontFamily: F.family, letterSpacing: .3,
+};
+const modeBtn: React.CSSProperties = {
+  flex: 1, border: "1px solid", borderRadius: 7, padding: "4px 0", fontSize: 11.5, fontWeight: 800,
+  cursor: "pointer", fontFamily: F.family,
 };
 const legendRow: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 8, width: "100%", border: "none", background: "none",

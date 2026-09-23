@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-test_sources_of_truth.py — `docs/SOURCES_OF_TRUTH.yaml` 이 든 사실마다 정본과 따르는 자리가 같은가.
+test_sources_of_truth.py — 사실마다 정본과 따르는 자리가 같은가 (계급 가드 2).
 
 ── 왜 생겼나 ───────────────────────────────────────────────────
 2026-09-22 (DECISIONS §218-6 · 계급 가드 2). uv 판이 CI 둘 · Dockerfile 에 0.12.13 으로
@@ -8,12 +8,40 @@ test_sources_of_truth.py — `docs/SOURCES_OF_TRUTH.yaml` 이 든 사실마다 �
 `render_figures` 는 TRUCK 은 정본에서 읽으면서 여유선 7.0 은 글자로 박았다. 같은 값이
 여러 파일에 사는 것을 막을 수 없는 자리(YAML · Dockerfile · 셸)는 **목록으로 적고 맞춘다.**
 
+── 목록이 어디 사나 (2026-09-23) ───────────────────────────────
+★ 종전에는 `docs/SOURCES_OF_TRUTH.yaml` 이 목록이었다. **저장소의 문서는 넷이다**
+  (MASTER · PLAN · DECISIONS · 기획서). 문서를 하나 더 만드는 것으로 규율을 세우면
+  규율이 늘 때마다 문서가 는다. 그래서 목록을 **둘로 갈라** 각자의 집에 뒀다 —
+
+    기계가 읽는 판   `SPEC` — 이 파일 안. 강제자와 같은 파일에 사는 것이 맞다
+    사람이 읽는 판   MASTER §17-1 표 — 사실 · 정본 파일 · 따르는 곳 · 강제자
+
+  둘이 갈리면 `test_master_table_and_spec_agree` 가 **양방향**으로 운다.
+
+── SPEC 모양 ───────────────────────────────────────────────────
+  owner      {file, regex}   정본. regex 의 첫 그룹이 값이다. **정확히 한 번** 걸려야 한다
+  consumers  [{file, has} | {file, ref} | {file, regex, cmp}]
+               has    이 문자열이 있어야 한다. `{v}` 가 값으로 바뀐다(`{v:g}` 는 수로 서식)
+               ref    정본을 읽는다는 증거 문자열(값 대신 정본 경로·이름을 적는 자리)
+               regex  첫 그룹을 값과 cmp(`==` · `>=` 판 비교)로 견준다
+             ★ 공백은 무시하고 견준다(`Pretendard, system-ui` ≡ `Pretendard,system-ui`)
+  scan       [글롭]  아래 둘을 볼 범위. 없으면 안 본다
+  pins       [{find, regex}]  scan 안에서 `find` 가 나오는 자리마다 regex 가 그 자리에서
+             걸리고 첫 그룹이 값이어야 한다 · 그 파일은 owner/consumers 에 있어야 한다
+  exclusive  true 면 scan 안에서 값 literal 이 owner/consumers 밖에 나오면 실패
+
   ① owner regex 가 정확히 한 번 걸린다(집이 하나다)
   ② consumer 마다 값(has) · 정본 참조(ref) · 비교(regex+cmp) 가 맞다
   ③ scan 범위 안에서 pins 자리는 전부 값과 같고, 그 파일은 목록에 있다
   ④ exclusive 면 값 literal 이 목록 밖 파일에 없다
+  ⑤ SPEC ↔ MASTER §17-1 표가 양방향으로 같다
 
-IN    docs/SOURCES_OF_TRUTH.yaml · 그것이 가리키는 파일
+★ 값을 바꿀 때는 owner 를 고치고 시험이 가리키는 consumers 를 따라 고친다. 새 자리를
+  만들면 SPEC consumers 와 MASTER 표에 같이 더한다 — 안 더하면 exclusive/pins 가 운다.
+★ 문서(docs/*.md)는 SPEC 에 안 든다. 커버리지 래칫의 문서 대조는 test_verify_citations 가,
+  판정 숫자의 문서 대조는 docnum_check 가 이미 한다.
+
+IN    SPEC(이 파일) · docs/MASTER.md §17-1 · 그것이 가리키는 파일
 OUT   없음 (검사)
 PARAM 없음
 """
@@ -23,11 +51,118 @@ import re
 from pathlib import Path
 
 import pytest
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-SOT = ROOT / "docs" / "SOURCES_OF_TRUTH.yaml"
-FACTS: dict = yaml.safe_load(SOT.read_text(encoding="utf-8"))["facts"]
+MASTER = ROOT / "docs" / "MASTER.md"
+
+# ── 기계가 읽는 판 ─────────────────────────────────────────────
+# ★ 사람이 읽는 판은 MASTER §17-1 이다. 여기 사실을 더하면 그 표에도 더한다.
+SPEC: dict[str, dict] = {
+    "uv": {
+        "what": "uv 판 — CI · 배포 · 이미지 · devcontainer 가 같은 uv 로 uv.lock 을 푼다",
+        "owner": {"file": "Dockerfile", "regex": r"ghcr\.io/astral-sh/uv:([\w.]+)"},
+        "consumers": [
+            {"file": ".github/workflows/contract.yml", "has": 'version: "{v}"'},
+            {"file": ".github/workflows/_deploy.yml", "has": 'version: "{v}"'},
+            {"file": ".devcontainer/setup.sh", "has": "astral.sh/uv/{v}/install.sh"},
+        ],
+        "scan": [".github/**/*", "Dockerfile*", ".devcontainer/*"],
+        "pins": [
+            {"find": "astral-sh/setup-uv@",
+             "regex": r'astral-sh/setup-uv@\S+\s*\n\s*with:\s*\n\s*version:\s*"([^"]*)"'},
+            {"find": "astral-sh/uv:", "regex": r"astral-sh/uv:([\w.]+)"},
+            {"find": "astral.sh/uv/", "regex": r"astral\.sh/uv/([\d.]+)/install\.sh"},
+        ],
+        "exclusive": True,
+    },
+    "node": {
+        "what": "내비 빌드 · 타입 검사 노드 판 (DECISIONS §186-2 · test_ci_env)",
+        "owner": {"file": "web/navi/.nvmrc", "regex": r"^(\d+)\s*$"},
+        "consumers": [
+            {"file": ".github/actions/build-navi/action.yml",
+             "ref": "node-version-file: web/navi/.nvmrc"},
+            {"file": ".github/workflows/contract.yml",
+             "ref": "node-version-file: web/navi/.nvmrc"},
+            {"file": ".devcontainer/devcontainer.json", "has": '"version": "{v}"'},
+        ],
+    },
+    "python": {
+        "what": "파이썬 판 (W3-17)",
+        "owner": {"file": ".python-version", "regex": r"^([\d.]+)\s*$"},
+        "consumers": [
+            {"file": "Dockerfile", "has": "FROM python:{v}-slim"},
+            {"file": "pyproject.toml", "has": 'requires-python = ">={v}"'},
+            {"file": ".github/workflows/contract.yml",
+             "ref": "python-version-file: .python-version"},
+            {"file": ".github/workflows/_deploy.yml",
+             "ref": "python-version-file: .python-version"},
+        ],
+        "scan": [".github/**/*", "Dockerfile*"],
+        "pins": [
+            {"find": "python-version:", "regex": r'python-version:\s*"?([\d.]+)'},
+            {"find": "FROM python:", "regex": r"FROM python:([\d.]+)"},
+        ],
+    },
+    "pytest": {
+        "what": "pytest 하한 — dev 그룹 한 곳(W3-1). 잠금이 하한 아래로 내려가면 안 된다",
+        "owner": {"file": "pyproject.toml", "regex": r'"pytest>=([\d.]+)"'},
+        "consumers": [
+            {"file": "uv.lock", "regex": r'name = "pytest"\nversion = "([\d.]+)"',
+             "cmp": ">="},
+        ],
+    },
+    "coverage_floor": {
+        "what": "커버리지 래칫 문턱 — 명령줄은 숫자를 안 적고 변수를 읽는다(W3-11)",
+        "owner": {"file": "tools/verify.sh", "regex": r"^COV_MIN=(\d+)\s*$"},
+        "consumers": [
+            {"file": "tools/verify.sh", "ref": '"$COV_MIN"'},
+            {"file": "tests/test_verify_citations.py", "ref": "COV_MIN="},
+        ],
+    },
+    "truck_m": {
+        "what": "통과 하한(m) — 판정 임계",
+        "owner": {"file": "src/firelane/seg/params.py", "regex": r"^TRUCK\s*=\s*([\d.]+)"},
+        "consumers": [
+            {"file": "web/config.js", "has": "폭 {v}m 미만"},
+            {"file": "tools/render_figures.py", "ref": '"TRUCK"'},
+            {"file": "tests/test_declaration_sync.py", "ref": 'p["TRUCK"]'},
+        ],
+    },
+    "park_m": {
+        "what": "주차 1대 노면점유(m) — 여유선 = TRUCK + 2×PARK",
+        "owner": {"file": "src/firelane/seg/params.py", "regex": r"^PARK\s*=\s*([\d.]+)"},
+        "consumers": [
+            {"file": "tools/render_figures.py", "ref": '"PARK"'},
+            {"file": "tests/test_declaration_sync.py", "ref": 'p["PARK"]'},
+        ],
+    },
+    "cctv_range_m": {
+        "what": "CCTV 유효 측정 반경(m)",
+        "owner": {"file": "src/firelane/seg/params.py",
+                  "regex": r"^CCTV_RANGE\s*=\s*([\d.]+)"},
+        "consumers": [
+            {"file": "web/config.js", "has": "유효범위 {v:g}m 밖"},
+            {"file": "tools/render_figures.py", "ref": '"CCTV_RANGE"'},
+        ],
+    },
+    "code_owner": {
+        "what": "저장소 단독 소유자(CODEOWNERS 기본 규칙 · 2026-09-09 개인 계정 이관)",
+        "owner": {"file": ".github/CODEOWNERS", "regex": r"^\*\s+@(\S+)"},
+        "consumers": [
+            {"file": "tools/navi_setup.py", "has": 'default="@{v}"'},
+            {"file": "tools/ruleset_check.py", "has": 'ADMINS = ["{v}"]'},
+            {"file": "tools/ruleset_check.py", "has": 'FALLBACK_REPO = "{v}/fire-lane"'},
+        ],
+    },
+    "font_stack": {
+        "what": "그림 · 화면 글꼴 스택",
+        "owner": {"file": "tools/render_figures.py", "regex": r'^FONT = "([^"]+)"'},
+        "consumers": [
+            {"file": "web/navi/src/ui/tokens.ts", "has": 'family: "{v}"'},
+            {"file": "web/proposal.html", "has": "{v}"},
+        ],
+    },
+}
 
 
 class _V(str):
@@ -109,22 +244,63 @@ def scan_errors(fact: dict, v: str) -> list[str]:
     return bad
 
 
-@pytest.mark.parametrize("name", sorted(FACTS))
+@pytest.mark.parametrize("name", sorted(SPEC))
 def test_fact_consumers_follow_owner(name: str):
-    fact = FACTS[name]
+    fact = SPEC[name]
     v = owner_value(fact)
     bad = consumer_errors(fact, v) + scan_errors(fact, v)
     assert not bad, (f"사실 {name!r} (정본 {fact['owner']['file']} = {v}) 이 갈렸다:\n  "
                      + "\n  ".join(bad)
                      + "\n  정본을 고쳤으면 따르는 자리를 같이 고치고, 새 자리면 "
-                       "docs/SOURCES_OF_TRUTH.yaml consumers 에 더한다.")
+                       "이 파일의 SPEC consumers 에 더한다.")
 
 
-def test_the_file_covers_the_declared_facts():
+def test_the_spec_covers_the_declared_facts():
     """빈 그물 금지 — 맡은 사실이 목록에서 빠지면 검사도 조용히 빠진다."""
     need = {"uv", "node", "python", "pytest", "coverage_floor",
             "truck_m", "park_m", "cctv_range_m", "code_owner", "font_stack"}
-    assert need <= set(FACTS), f"빠진 사실: {sorted(need - set(FACTS))}"
+    assert need <= set(SPEC), f"빠진 사실: {sorted(need - set(SPEC))}"
+
+
+# ── SPEC ↔ MASTER §17-1 (2026-09-23) ──────────────────────────
+# 표 한 행 = `| `사실` | `정본 파일` | 따르는 곳 | 강제자 |`
+MASTER_ROW = re.compile(r"^\|\s*`([\w]+)`\s*\|\s*`([^`]+)`\s*\|")
+
+
+def master_table() -> dict[str, str]:
+    """MASTER §17-1 의 사실 → 정본 파일. 표를 못 읽으면 빈 dict 가 아니라 실패다."""
+    txt = MASTER.read_text(encoding="utf-8")
+    m = re.search(r"^### 17-1\.[^\n]*\n(.*?)(?=^#{2,3} )", txt, re.M | re.S)
+    assert m, ("docs/MASTER.md 에 `### 17-1.` 절이 없다 — 사람이 읽는 정본 표가 사라졌다.\n"
+               "  절을 되살리거나 이 시험이 보는 자리를 같이 옮긴다.")
+    rows = {}
+    for line in m.group(1).splitlines():
+        if hit := MASTER_ROW.match(line):
+            rows[hit.group(1)] = hit.group(2)
+    assert rows, ("MASTER §17-1 표에서 행을 하나도 못 읽었다 — 서식이 바뀌었거나 표가 비었다.\n"
+                  "  행은 `| `사실` | `정본 파일` | 따르는 곳 | 강제자 |` 꼴이다.")
+    return rows
+
+
+def test_master_table_and_spec_agree():
+    """사람이 읽는 표(MASTER §17-1)와 기계가 읽는 판(SPEC)이 **양방향**으로 같은가.
+
+    ★ 2026-09-23. 목록이 둘로 갈린 순간 갈릴 자리가 생긴다 — 한쪽만 고치는 것이
+      이 저장소가 반복한 2족(정본이 둘)이다. 그래서 한 방향이 아니라 둘을 본다.
+      ① SPEC 의 사실마다 표에 행이 있고 정본 파일이 같다
+      ② 표의 행마다 SPEC 에 사실이 있다(표에만 적고 강제를 안 붙인 것이 없다)
+    """
+    rows, bad = master_table(), []
+    for name, fact in sorted(SPEC.items()):
+        want = fact["owner"]["file"]
+        if name not in rows:
+            bad.append(f"SPEC 의 {name!r} 이 MASTER §17-1 표에 없다 — 사람이 볼 자리가 없다")
+        elif rows[name] != want:
+            bad.append(f"{name!r} 의 정본 파일이 갈렸다 — 표 {rows[name]!r} · SPEC {want!r}")
+    for name in sorted(set(rows) - set(SPEC)):
+        bad.append(f"MASTER §17-1 표의 {name!r} 이 SPEC 에 없다 — 적어놓고 강제자가 없다")
+    assert not bad, ("MASTER §17-1 표와 SPEC 이 갈렸다:\n  " + "\n  ".join(bad)
+                     + "\n  사실을 더하거나 지울 때는 **둘 다** 고친다.")
 
 
 # ── 검사가 무는가 ──────────────────────────────────────────────
@@ -148,3 +324,20 @@ def test_unpinned_installer_and_stray_literal_are_caught(tmp_path, monkeypatch):
     assert "setup.sh 에" in joined and "ci.yml 에" in joined, joined
     assert "안 적었다" in joined, joined
     assert "other.yml 에 9.9.9" in joined, joined
+
+
+def test_master_table_reader_bites(tmp_path, monkeypatch):
+    """표 읽기가 살아 있는가 — 행이 빠지면 · 정본이 다르면 각각 잡힌다."""
+    doc = tmp_path / "MASTER.md"
+    doc.write_text(
+        "### 17-1. 정본\n\n"
+        "| 사실 | 정본 파일 | 따르는 곳 | 강제자 |\n"
+        "|---|---|---|---|\n"
+        "| `uv` | `Dockerfile` | CI 둘 | `x.py` |\n"
+        "| `ghost` | `nowhere` | 없다 | `x.py` |\n\n"
+        "## 18. 다음\n", encoding="utf-8")
+    monkeypatch.setattr(__import__(__name__), "MASTER", doc)
+    got = master_table()
+    assert got == {"uv": "Dockerfile", "ghost": "nowhere"}, got
+    assert set(got) - set(SPEC) == {"ghost"}, "강제자 없는 행이 안 드러난다"
+    assert {n for n in SPEC if n not in got}, "표에서 빠진 사실이 안 드러난다"

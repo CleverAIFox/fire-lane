@@ -30,7 +30,7 @@ ETL = ROOT / "src" / "firelane"
 # 파이프라인 단계로 실제로 실행되는 스크립트. 라이브러리 모듈은 제외한다
 # (seg/ 는 segments.py 가 부르는 부품이지 스스로 도는 단계가 아니다).
 STAGE_SCRIPTS = [
-    "ingest.py", "segments.py", "streetlight.py",
+    "ingest.py", "segments.py", "display_scope.py", "streetlight.py",
     "terrain.py", "ortho.py", "publish_web.py",
 ]
 
@@ -40,6 +40,25 @@ def _doc(name: str) -> str:
 
 
 # ── R1 ─────────────────────────────────────────────────────────
+def test_stage_scripts_are_every_pipeline_step():
+    """목록이 `pipeline.STEPS` 와 같은가. **양방향이다.**
+
+    ★ 2026-09-23 (PLAN §13 W3-6). 단계 `scope`(display_scope.py)를 새로 달면서 넣었다.
+      이 목록은 손으로 관리한다(`deadcheck ② EXEMPT_HANDLIST` — `seg/` 부품과 단계를
+      가르는 경계는 유도가 안 된다). 손목록에 강제자가 없으면 **새 단계는 R1 검사 밖에서
+      태어난다** — IN/OUT 선언 없이 도는 단계가 생기고, 그것이 R1 을 만든 이유였다.
+    """
+    import importlib.util
+    import sys
+
+    spec = importlib.util.spec_from_file_location("pipeline", ETL / "pipeline.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules["pipeline"] = m
+    spec.loader.exec_module(m)
+    assert sorted(STAGE_SCRIPTS) == sorted(f"{s.module}.py" for s in m.STEPS), (
+        "STAGE_SCRIPTS 와 pipeline.STEPS 가 다르다 — 새 단계가 R1 검사 밖이다")
+
+
 @pytest.mark.parametrize("name", STAGE_SCRIPTS)
 def test_r1_declares_in_and_out(name):
     """

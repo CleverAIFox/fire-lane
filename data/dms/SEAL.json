@@ -1,13 +1,13 @@
 {
- "sealed_at": "2026-09-22T20:34:30+09:00",
- "commit": "328c631",
- "tool": "8be73d758b86a805",
+ "sealed_at": "2026-09-23T11:19:38+09:00",
+ "commit": "7ff4dcd",
+ "tool": "c80a711ed1f8c8f1",
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "d47f8c3e46d40b28",
-  "docs/DECISIONS.md": "23f266e317791410",
-  "docs/PLAN.md": "a56c814ad0508da1",
-  "README.md": "ded9cc2327f93ff4"
+  "docs/MASTER.md": "10e8ee99a16e9d89",
+  "docs/DECISIONS.md": "ee0d4b81b0444da9",
+  "docs/PLAN.md": "c2ffbc99b58a4b4d",
+  "README.md": "5daa26cfa4768c01"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -242,26 +242,27 @@
   ]
  },
  "code": {
-  "sha256": "b26cc403de574a65",
+  "sha256": "4c8b85b006ec3e41",
   "files": {
    "data/field/fieldsheet.md": "3fce0c05fba34da06d06a1945abfb756bffc10d1ae834bb9c520791c666cb73c",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "data/field/obs_points.csv": "2c5fe0b969b720a76beca0de01c973f711a7223ec3f9fa46427eba8cc654a37e",
    "data/field/sample_segments.csv": "2582c25e7e284a78e38a6ee72c60604e39803752367c6d11853c5aa1dda025f9",
    "pyproject.toml": "1be04d8a9993a2f90fd5705eecb2da75c96865c387572448e06504bf1d88593a",
-   "sources.yaml": "d204e67c9672204ea8cdd077d245c70893b84dc7627692d3367e13ece6c7a23f",
+   "sources.yaml": "af07ccda3be8f0c78a5fb8f70a89731db13426b16a6623c445b0f405216661a8",
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d14f1c58854c21c64348c040cde02795cf99a09ed8bab81849d0f77b7596865b",
-   "src/firelane/README.md": "ac02194021cc22a41723d3640e77bc430da39aff9d09762eca8127c2fe4ee004",
+   "src/firelane/README.md": "4f8393392da4fec151b8d9de04e8a46b9a433916ce4c2268b542ec9d513c8bcf",
    "src/firelane/__init__.py": "0bd7b7a56b6a73f056247deff02bd4ed15d198551ad8a053cf57eb439fd8ef03",
    "src/firelane/console.py": "5cd87db3b9a951e1de622681cc7fc8a673311dacffe9bb6c1cb0a14b1abe0972",
    "src/firelane/contract.py": "6efc7a9c49246ab0edde76b1a2e18f7eeab6a2b5de8381cfd9f71dded2eb410f",
    "src/firelane/datalog.py": "0aba0e8b193c4f44df7b682adbe039e9a4089620be2c64263b927af69a729bf3",
    "src/firelane/destinations.py": "917b7457b2ebba71c8ac9962aab45517a50ed92953a3d78b1649809c7a1e26b6",
+   "src/firelane/display_scope.py": "eaa7dfc8af14edda4b9b04b2aaa22bc76a5bc7fa6a1cdb3f56070b45cd9823ab",
    "src/firelane/encoding.py": "c2b6eef43d7023e88934b8d76ef0767380540af3802b5e93ffa3797dc9d95ebe",
-   "src/firelane/generated.py": "77ba1f6e8d8bbbc928191b5c60e2dfe3baa828ffd5351a7ee03702b2190aacb8",
-   "src/firelane/guards.py": "be1ae4d7133a00f21a7d868126dda7585bcd990bffba39b5247493b800cfc1cf",
+   "src/firelane/generated.py": "acdbb6cacdb878d48546727da101416a1c86c12823f91e10d707394777f9a7fe",
+   "src/firelane/guards.py": "1813193092b12be25de907c6f5f70bf7bdfb9798ab68151632f7ba3f1422a380",
    "src/firelane/hashing.py": "cba3052b673d71c98022bc745a03493b0e743bb7db6d48eb057fba0782d7249c",
    "src/firelane/ingest.py": "8bbf2b398259f0253cdaa9eb0d9668291676451b2689967659c39aebdc79b8c2",
    "src/firelane/intake_rules.py": "4549ade9c9036da5900aba73955c97578058770a88f3f75fa7c5e1b31360019d",
@@ -281,7 +282,7 @@
    "src/firelane/normalize_raw.py": "0e1d7eb804888df7227e53adea3e7eb7b3f800acc467a7279fdeb19ab6605de6",
    "src/firelane/ortho.py": "742ce80c1266ff305e1500661d3ec0ad5ec158ab227a1d0b3bda4cc1f9db2aa9",
    "src/firelane/paths.py": "499ea4cfe4cfd1d68093dc25013c11ebfecdb3107560038e60ee4c41f69ff63c",
-   "src/firelane/pipeline.py": "c282277727b09647b751255615fa30f21291dce90f46d7e663687aebf6adfb5b",
+   "src/firelane/pipeline.py": "263b52eb0374fa7e38547726c1648deabdfd2da459b5463f09b013f9851ba081",
    "src/firelane/prep.py": "30179b09b2eb1043f8d914cfdd16167872b0364193686c3e68a5c6068428d98a",
    "src/firelane/probe.py": "52544d4fede864ef123276fc79423ffd6987eb97795a7a40c1a4e74741734aec",
    "src/firelane/providers.py": "56d4289ef55b65a705d487d2ab216a51014c2133107b949521b35a9f5ff3d290",
@@ -298,14 +299,14 @@
    "src/firelane/seg/centerline_correction.py": "e99223898e4e6ba9b27cdb69a61a88be4dc16b9acbf0635836a06154c602b2c9",
    "src/firelane/seg/geom.py": "c35fb948a6b96a7d6b55c85464faa6a0e601b81597d170f229c1732c591841fc",
    "src/firelane/seg/graph.py": "0d2409a459cf1f27d30c3c0325e9708a3be1f95c192393aa43f0d65fa7dbb326",
-   "src/firelane/seg/params.py": "a6d9d0194b07f66526aaefa5afe5446d0371c4e038ab2ed2b8eb7a0a6d65fcf6",
+   "src/firelane/seg/params.py": "46ced1e5a742330c632eb9f5d1d656b9b70fc1ae6b08b4e8545d8e0a36ee9ed4",
    "src/firelane/seg/report.py": "eb3055737c941e23a593dee4aeebf7fdeefb0c88e33c1ae5abe5e6b0bd64dc10",
    "src/firelane/seg/roadname.py": "91223b7f9f2444cd07251da7ca9fd80ebbabb535167fded94453d912629234d8",
-   "src/firelane/seg/scope.py": "17c091da5a17e29cb58775901664caed81dcf1ffc80debf46b4696e32a48aa4c",
+   "src/firelane/seg/scope.py": "e4309accf1a317ea426a6ea4f8d71d3e5b61937d6e5f1ff6b3ec5d3b32aac596",
    "src/firelane/seg/vehicle.py": "0b1a2bcd164dcaa699e9640b63db3184c0bbdf64b1e800653f824bb7443fa095",
    "src/firelane/seg/width.py": "9244467fc04a22346d9a2be3599ee803c806d105f58fbff55a9bec259db914db",
    "src/firelane/segkey.py": "fb1d88a159abfc5bd8c7f1108cf78c42835c0d28057f188e3c79b8ef8f602a4b",
-   "src/firelane/segments.py": "6cc5b5aac8fccdd3d4e0f0db0309934ca7b8843925bf1ba65066224909130930",
+   "src/firelane/segments.py": "76be7bb4ff9b6945aa97166b5a320fa34f6d1b6dadcc3582003553f6cdc08ef7",
    "src/firelane/shardseal.py": "9d8a7cb61b4cf844909486279b9dee94242c58bf813154417336a6f041126407",
    "src/firelane/skeleton.py": "36ab78145348825d45d0ec464a13297f966bb3caec2c8180199c8cf1c2c40e09",
    "src/firelane/streetlight.py": "37a0b215294e8f8d8538645164f3ab54d546e2c00da2e4644b94e23d25474c8f",
@@ -313,7 +314,7 @@
    "src/firelane/transition.py": "36db27bf5fd3f1d3851ac28de06a72bbd74ad19c9824d3edf0270d86807d78cb",
    "src/firelane/vehiclecard.py": "65481769102ccdcb6a7d0f40769bbcc9aae55e5b29b2d3e8d659c89f900c9f5f",
    "src/firelane/webmanifest.py": "6d769b7864376a9d8ae02867c9ab955e0bf2a9545c759543e520d6367ac8f542",
-   "uv.lock": "441b2f117a607642a18ee3e498e2a0060b4f37790665a49d1853e03f5a40cb85"
+   "uv.lock": "d73af4236428e69ba0c65208c657de60e1f240a26f8b5ad651c25479c4db26c1"
   }
  },
  "sections": {
@@ -360,7 +361,7 @@
    "title": "2-1. `unknown` 399 의 사유"
   },
   "MASTER/2-2": {
-   "h": "d3f351a54aa08001",
+   "h": "81faedb7fd9dc046",
    "state": "inherit",
    "doc": "docs/MASTER.md",
    "title": "2-2. 판정 기준의 출처"
@@ -432,7 +433,7 @@
    "title": "3-9. \"못 간다\"는 세 가지 값이 있다"
   },
   "MASTER/3-10": {
-   "h": "887ca35c03e1360f",
+   "h": "d89dfe57f46dc64e",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "3-10. 경로가 둘인 이유"
@@ -480,7 +481,7 @@
    "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
   },
   "MASTER/5": {
-   "h": "a6b3c56ac86fb61f",
+   "h": "8258246a750b7b04",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5. 시스템 구성"
@@ -671,6 +672,12 @@
    "doc": "docs/MASTER.md",
    "title": "11-2. 파일 구조"
   },
+  "MASTER/11-2a": {
+   "h": "8f95349863a34895",
+   "state": "blank",
+   "doc": "docs/MASTER.md",
+   "title": "11-2a. 여유폭 — 색과 수, 그리고 빨강의 사유 (2026-09-23 · DECISIONS §220)"
+  },
   "MASTER/11-3": {
    "h": "8bc7be703bc31925",
    "state": "blank",
@@ -840,7 +847,7 @@
    "title": "14-1. 받자마자 한 번"
   },
   "MASTER/14-2": {
-   "h": "ebf216ba506d653e",
+   "h": "9e4d6f9ad9484cd1",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-2. 파이프라인은 한 명령이다"
@@ -852,7 +859,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER/14-4": {
-   "h": "a405c9972e533744",
+   "h": "c6b0b70b4cfe8108",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -864,7 +871,7 @@
    "title": "14-4a. 사람이 부르는 나머지 도구"
   },
   "MASTER/14-4b": {
-   "h": "b2fb8c75ece6357b",
+   "h": "00bfaac43331bdd7",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다"
@@ -888,7 +895,7 @@
    "title": "14-7. 데이터 실물은 저장소에 없다"
   },
   "MASTER/15": {
-   "h": "8147676e658890cb",
+   "h": "f22f96152bb88dac",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "15. 대외 산출물"
@@ -930,10 +937,16 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "9c779e17859b1591",
+   "h": "3b278eb7f537e05f",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
+  },
+  "MASTER/17-1": {
+   "h": "97b8534ec7e1eaca",
+   "state": "blank",
+   "doc": "docs/MASTER.md",
+   "title": "17-1. 정본은 하나 — 사실 · 정본 파일 · 따르는 곳 · 강제자"
   },
   "MASTER/18": {
    "h": "4e8c251dca0c9dda",
@@ -1146,13 +1159,13 @@
    "title": "20. 경로"
   },
   "MASTER/20-1": {
-   "h": "1ba0fdeaa9e87a3f",
+   "h": "dfd0a0abc7886454",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "20-1. 지금 무엇으로 푸는가"
   },
   "MASTER/20-2": {
-   "h": "52566487fa3a441c",
+   "h": "76252024d8a1b851",
    "state": "blank",
    "doc": "docs/MASTER.md",
    "title": "20-2. 두 번 돈다"
@@ -5172,7 +5185,7 @@
    "title": "218-5. 가드 —— 의존성 · 관문 · 증표 · 길이"
   },
   "DECISIONS/218-6": {
-   "h": "9d730bbb68344fa3",
+   "h": "1bb26f80aadbd5f6",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "218-6. 가드 2 · 5 · 6 과 문서 쪽"
@@ -5184,10 +5197,76 @@
    "title": "218-7. fl.sh —— 3단계가 대 보는 자리 · verify 가 남긴 생성물"
   },
   "DECISIONS/219": {
-   "h": "74587f9e97c18a95",
+   "h": "e1fb815d63c2c1f5",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "219. 09-22 멘토링 — 10/1 멘토링 데이는 기획서 · 시연으로, 여유폭을 색과 수로 (판정 불변)"
+  },
+  "DECISIONS/220": {
+   "h": "d24cf0d9d630851d",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "220. 여유폭을 색과 수로 · 표출을 판정 지문 밖으로 · 의존성 일곱 (판정 불변)"
+  },
+  "DECISIONS/220-1": {
+   "h": "53170e05d12c57a2",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "220-1. 여유폭 · 빨강의 사유 · 같은 경로 (멘토링 §219)"
+  },
+  "DECISIONS/220-2": {
+   "h": "09b5512a9b845d3c",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "220-2. 표출을 판정 지문 밖으로 (W3-6) · `guards.CRITICAL` 5 → 13"
+  },
+  "DECISIONS/220-3": {
+   "h": "f3ad0f2fcbf94e49",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "220-3. 의존성 일곱 · 재잠금은 한 번"
+  },
+  "DECISIONS/220-4": {
+   "h": "67b82c3020bc306d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "220-4. 배치 도구 셋 (어제 실물에서 나온 것)"
+  },
+  "DECISIONS/220-5": {
+   "h": "98d2d84876950cb3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "220-5. 문서는 넷뿐이다 — yaml 정본을 되돌린다"
+  },
+  "DECISIONS/220-6": {
+   "h": "2976636d1e6aa261",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "220-6. 진행일지 26회 — 10/1 에 눈에 보여야 하는 것"
+  },
+  "DECISIONS/221": {
+   "h": "2a3d61d8dd18a65b",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "221. 기획서 그림을 도구가 넣는다 · 봇 PR 은 배치를 막지 않는다"
+  },
+  "DECISIONS/221-1": {
+   "h": "4f845873db06df76",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "221-1. 「사람이 넣는다」 를 걷어낸다"
+  },
+  "DECISIONS/221-2": {
+   "h": "a2afdcdd9e4d64df",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "221-2. 봇 PR 이 배치를 막고 있었다"
+  },
+  "DECISIONS/221-3": {
+   "h": "dfec3e70b6ea7964",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "221-3. 닫은 두 행 — 이미 고쳐져 있었다"
   },
   "PLAN/0": {
    "h": "1e514a0dd00b05cd",
@@ -5208,10 +5287,10 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN/1": {
-   "h": "e165d675776d6999",
+   "h": "410ee498f3f64bd4",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "1. 남은 일 — 56행"
+   "title": "1. 남은 일 — 54행"
   },
   "PLAN/1-23": {
    "h": "45f802835c7c288a",
@@ -5232,10 +5311,16 @@
    "title": "1-25. ⚠ A* 를 인터뷰에 걸지 않는다"
   },
   "PLAN/1-26": {
-   "h": "00561049212ada4a",
+   "h": "07aaf36a0a192813",
    "state": "inherit",
    "doc": "docs/PLAN.md",
    "title": "1-26. 도로대장 정보공개가 부존재로 돌아왔다"
+  },
+  "PLAN/1-27": {
+   "h": "52a43781aa21b5fb",
+   "state": "wired",
+   "doc": "docs/PLAN.md",
+   "title": "1-27. 측정 대장 — 재기 전에 적는다 (가드 6)"
   },
   "PLAN/2": {
    "h": "f6bedb3d1206c6cf",
@@ -5604,7 +5689,7 @@
    "title": "13. 결함 대장 — 판정을 안 움직이는 일"
   },
   "PLAN/13-1": {
-   "h": "045ea2a954c9c9c2",
+   "h": "5c458372160ab16f",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-1. 이 절이 생긴 이유"
@@ -5616,13 +5701,13 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN/13-3": {
-   "h": "7a52161ab6d93844",
+   "h": "4372b1136d17a09a",
    "state": "none",
    "doc": "docs/PLAN.md",
-   "title": "13-3. 남은 결함 2건"
+   "title": "13-3. 남은 결함 1건"
   },
   "PLAN/13-4": {
-   "h": "034e551ac7955015",
+   "h": "c9ab2cfa032a461f",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-4. 클래스 가드 — 이 절이 닫히는 조건"
@@ -5664,13 +5749,13 @@
    "title": "숫자의 정본은 문서가 아니다"
   },
   "README/실행": {
-   "h": "7482536741bbffce",
+   "h": "1f2b136e9e51e469",
    "state": "wired",
    "doc": "README.md",
    "title": "실행"
   },
   "README/실행/파이프라인": {
-   "h": "8920f038b1bce78b",
+   "h": "a8da0f92a78e9f0d",
    "state": "wired",
    "doc": "README.md",
    "title": "파이프라인"
@@ -5718,7 +5803,7 @@
    "title": "게이트"
   },
   "README/구조": {
-   "h": "5aac94584a2823c2",
+   "h": "ff92982ae27ea28c",
    "state": "none",
    "doc": "README.md",
    "title": "구조"
@@ -5748,14 +5833,14 @@
    "title": "문서는 어디에"
   }
  },
- "denominator": 272,
+ "denominator": 274,
  "dead_refs": 3,
  "dup_groups": 5,
  "enforcers": {
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "1153 passed in 145.79s (0:02:25)"
+   "tail": "1180 passed in 278.93s (0:04:38)"
   },
   "probe/deadcheck": {
    "rc": 0,

@@ -13,7 +13,11 @@ import { FL, test, ok } from "./harness";
 import {
   GLYPHS, sources, baseLayers, altRouteLayers, routeLayers, markerLayers, stationLayers,
   opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
+  opsClearanceBand, opsClearanceColor,
 } from "../src/components/layers";
+import { CLEARANCE_SCALE } from "../src/ui/clearanceMeaning";
+import { CLEARANCE_WIDE_M, type ClearanceBand } from "../src/domain/clearance";
+import { TUNING } from "../src/domain/vehicle";
 
 const style = FL.graph.style ?? {};
 
@@ -44,6 +48,22 @@ test("관제 레이어 — 판정선 · 이력 · 덧그림 (무효 식이 조�
   check("ops-history", opsHistoryLayers());
   check("ops-overlay", opsOverlayLayers(3, 200));
   check("hillshade", [hillshadeLayer()]);
+});
+
+/**
+ * ★ 2026-09-23 (§220). 여유폭 모드는 `line-color` · `filter` 를 **실행 중에** 갈아 끼운다.
+ *   무효 식이면 §217-3 과 똑같이 조용히 안 그려지므로 여기서도 검증기에 건다.
+ *   거르기 식(`opsClearanceBand`)은 `in` 의 왼쪽에 들어가므로 그 모양 그대로 시험한다.
+ */
+test("관제 여유폭 모드 — 색 식 · 거르기 식", () => {
+  const col = opsClearanceColor(3.0, TUNING.tightMarginM, CLEARANCE_WIDE_M,
+                                (k) => CLEARANCE_SCALE[k as ClearanceBand].color);
+  check("ops-clearance", [{ id: "ops-verdict", type: "line", source: "segments",
+    paint: { "line-color": col } }] as never);
+  const band = opsClearanceBand(3.0, TUNING.tightMarginM, CLEARANCE_WIDE_M);
+  check("ops-clearance-filter", [{ id: "ops-verdict", type: "line", source: "segments",
+    filter: ["!", ["in", band, ["literal", ["neg", "unknown"]]]],
+    paint: { "line-color": "#888888" } }] as never);
 });
 
 test("검증기가 살아 있다 — 줌 보간을 + 로 감싼 옛 식은 운다", () => {

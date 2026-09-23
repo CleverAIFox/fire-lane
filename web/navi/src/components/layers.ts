@@ -259,6 +259,13 @@ export function routeLayers(style: Record<string, VerdictStyle> = {}): LayerSpec
  *   지금은 더하기를 보간 **안쪽**(멈춤점마다)에 넣고, `test/style.test.ts` 가 모든 레이어를
  *   style-spec 검증기에 통과시킨다.
  */
+/** 판정 4색 식. 기본 모드의 구간 색이고, 모드를 되돌릴 때도 이것을 다시 건다 */
+export function opsVerdictColor(col: (k: string) => string): unknown {
+  return ["match", ["get", "verdict"],
+    "clear", col("clear"), "needs_cv", col("needs_cv"),
+    "blocked", col("blocked"), col("unknown")];
+}
+
 export function opsSegLayers(col: (k: string) => string): LayerSpecification[] {
   const wm = ["min", 12, ["max", 2, ["coalesce", ["get", "width_min_m"], 3]]];
   const W = (add = 0) => ["interpolate", ["linear"], ["zoom"],
@@ -271,9 +278,7 @@ export function opsSegLayers(col: (k: string) => string): LayerSpecification[] {
       layout: { "line-cap": "round", "line-join": "round" },
       paint: {
         "line-width": W(),
-        "line-color": ["match", ["get", "verdict"],
-          "clear", col("clear"), "needs_cv", col("needs_cv"),
-          "blocked", col("blocked"), col("unknown")] as never,
+        "line-color": opsVerdictColor(col) as never,
       } },
     { id: "ops-unreach", type: "line", source: "segments",
       layout: { "line-cap": "butt", visibility: "none" },
@@ -283,6 +288,37 @@ export function opsSegLayers(col: (k: string) => string): LayerSpecification[] {
       filter: ["==", ["get", "seg_uid"], ""] as never,
       paint: { "line-width": W(7), "line-color": "#1d4ed8", "line-opacity": .55 } },
   ];
+}
+
+/**
+ * 관제 **여유폭 모드**의 구간 색 식.  (DECISIONS §219 → §220)
+ *
+ * 고른 차의 요구폭을 빼서 네 단으로 칠한다 — `domain/clearance.ts` 의 뺄셈을 지도
+ * 표현식으로 옮긴 것이다. 같은 문턱(0 · `TUNING.tightMarginM` · `CLEARANCE_WIDE_M`)을
+ * 인자로 받으므로 카드의 수와 지도의 색이 갈릴 수 없다.
+ *
+ * ★ 2026-09-23. `width_min_m` 은 **null 로 발행되는 칸이 있다**(1,281 중 2). `["get"]` 은
+ *   null 을 그대로 내고 그것을 `["-"]` 에 넣으면 그 레이어가 통째로 무효가 된다(§217-3 이
+ *   겪은 자리). `coalesce` 로 있을 수 없는 수(-999)를 세우고 **그 칸을 먼저 걸러낸다.**
+ *
+ * @param needM 요구폭(m) — `requiredWidth(spec)`
+ * @param col   구간 키 → 색. `ui/clearanceMeaning.ts::CLEARANCE_SCALE` 이 든다
+ */
+export function opsClearanceColor(
+  needM: number, tightM: number, wideM: number, col: (k: string) => string,
+): unknown {
+  const c = ["-", ["coalesce", ["get", "width_min_m"], -999], needM];
+  return ["case",
+    ["<", c, -900], col("unknown"),
+    ["<", c, 0], col("neg"),
+    ["<", c, tightM], col("tight"),
+    ["<", c, wideM], col("mid"),
+    col("wide")];
+}
+
+/** 같은 식의 **구간 키** 판. 여유폭 모드의 거르기가 이것을 쓴다 */
+export function opsClearanceBand(needM: number, tightM: number, wideM: number): unknown {
+  return opsClearanceColor(needM, tightM, wideM, (k) => k);
 }
 
 /** 관제 지형 음영 (§217-2) — 위에서 본 평면에서도 등성이 · 골이 보인다 */

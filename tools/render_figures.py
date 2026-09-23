@@ -13,9 +13,10 @@ render_figures.py — 정본에서 그림을 만든다.
 24장 중 **넷은 값이 정본에 있다.** 그리면 되는 것이지 사람이 다시 그릴
 이유가 없다 — `web/workflow.html` 이 `MASTER §12` 에서 나오는 것과 같다.
 
-★ `.docx` 안 이미지를 코드가 교체하지는 않는다. 기획서는 대외 제출본이고
-  생성물이 아니다(4축 표). 여기서는 **SVG 를 만들고 어긋남을 알린다** —
-  교체는 사람이 한다. 알기만 해도 오늘 나온 문제는 다 잡힌다.
+★ 2026-09-23 (DECISIONS §221-1). 종전에는 여기에 「`.docx` 안 이미지를 코드가
+  교체하지는 않는다 — 알리기만 하고 넣는 것은 사람이 한다」 고 적혀 있었다.
+  그 결정을 뒤집었다. 이 파일은 **SVG 를 만들고 어긋남을 알리고**,
+  `tools/docx_figs.py --sync` 가 그것을 기획서 안에 **넣는다.**
 
 IN    data/golden/segments.fingerprint.json · src/firelane/seg/params.py
 OUT   docs/figures/*.svg · docs/figures/.lock.json
@@ -214,34 +215,53 @@ def fig_threshold() -> str:
 
 
 def fig_cctv() -> str:
-    """유효 측정 범위. `CCTV_RANGE` 가 정본이다."""
+    """유효 측정 범위. `CCTV_RANGE` 가 정본이다.
+
+    ★ 2026-09-23. 원(반경 25m) 그림을 **복도** 그림으로 바꿨다. 이유 둘 —
+      ① 부제(`정본 …params.py`)가 원에 덮여 있었다. `_fits()` 는 글자↔사각형만 보고
+         **원은 안 본다**(PLAN §1 #37 의 「겹침은 못 잡는다」가 실제로 난 자리).
+      ② 이 그림이 기획서 [그림 22] 를 대신한다(`tools/docx_figs.py`). 손그림이 담던
+         「확인 구간 / 미확인 구간」 대비를 정본 값으로 다시 그린 것이다. 대신 GSD 수치는
+         안 적는다 — `params.py` 에 없는 값을 그림이 지어내면 그림이 또 하나의 손대장이다.
+    """
     p = _params()
     r = p.get("CCTV_RANGE", 25.0)
-    cx, cy, rr = 200, 150, 110
+    x0, xm, x1, y, h = 60, 420, 690, 96, 58
     body = [f'<text x="12" y="30" font-size="15" font-weight="700" '
-            f'fill="#0f172a">유효 측정 범위 — 반경 {r:g}m</text>',
+            f'fill="#0f172a">유효 측정 범위 — 카메라에서 {r:g}m</text>',
             '<text x="12" y="50" font-size="11" fill="#64748b">'
             '정본 src/firelane/seg/params.py · CCTV_RANGE</text>',
-            f'<circle cx="{cx}" cy="{cy}" r="{rr}" fill="#eff6ff" '
-            f'stroke="#3b82f6" stroke-dasharray="5 4"/>',
-            f'<circle cx="{cx}" cy="{cy}" r="5" fill="#1d4ed8"/>',
-            f'<text x="{cx}" y="{cy - 14}" font-size="11" fill="#1e3a8a" '
-            f'text-anchor="middle">CCTV</text>',
-            f'<line x1="{cx}" y1="{cy}" x2="{cx + rr}" y2="{cy}" '
-            f'stroke="#1d4ed8"/>',
-            f'<text x="{cx + rr / 2}" y="{cy - 6}" font-size="11" '
-            f'fill="#1d4ed8" text-anchor="middle">{r:g}m</text>',
-            '<text x="360" y="120" font-size="12" fill="#0f172a">'
-            '이 안에 든 구간만 영상으로 판정한다.</text>',
-            '<text x="360" y="142" font-size="12" fill="#64748b">'
+            '<defs><pattern id="h" width="8" height="8" patternUnits="userSpaceOnUse" '
+            'patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" '
+            'stroke="#cbd5e1" stroke-width="3"/></pattern></defs>',
+            f'<rect x="{x0}" y="{y}" width="{xm - x0}" height="{h}" fill="#dcfce7" '
+            f'stroke="{COLOR["clear"]}" rx="3"/>',
+            f'<rect x="{xm}" y="{y}" width="{x1 - xm}" height="{h}" fill="url(#h)" '
+            f'stroke="#94a3b8" rx="3"/>',
+            f'<polygon points="{x0 - 18},{y + h / 2 - 9} {x0 - 2},{y + h / 2} '
+            f'{x0 - 18},{y + h / 2 + 9}" fill="#0f172a"/>',
+            f'<text x="{x0 - 20}" y="{y - 10}" font-size="11" fill="#0f172a">카메라</text>',
+            f'<text x="{(x0 + xm) / 2}" y="{y + 35}" font-size="12" '
+            f'fill="#166534" text-anchor="middle">확인 완료 구간 — 판정 유효</text>',
+            f'<text x="{(xm + x1) / 2}" y="{y + 35}" font-size="12" '
+            f'fill="#475569" text-anchor="middle">미확인 구간 — unknown 으로 출력</text>',
+            f'<line x1="{x0}" y1="{y + h + 26}" x2="{xm}" y2="{y + h + 26}" '
+            f'stroke="{COLOR["clear"]}" marker-end="url(#a)"/>',
+            '<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" '
+            f'markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" '
+            f'fill="{COLOR["clear"]}"/></marker></defs>',
+            f'<text x="{(x0 + xm) / 2}" y="{y + h + 48}" font-size="12" '
+            f'fill="#166534" text-anchor="middle">카메라에서 {r:g}m 까지</text>',
+            f'<text x="{(xm + x1) / 2}" y="{y + h + 48}" font-size="12" '
+            f'fill="#475569" text-anchor="middle">호모그래피 오차가 급격히 커진다</text>',
             # ★ 2026-09-20 (W4-6). `unknown` 이라고 적었고 **백틱이 그대로 그려졌다.**
             #   SVG `<text>` 는 마크다운을 모른다 — 여기서 백틱은 코드 표기가 아니라
             #   그냥 글자다. 그림에 쓰는 문자열은 마크다운이 아니라는 것이
             #   `tests/test_figure_text.py` 로 강제된다.
-            '밖은 unknown — 모른다고 적지 통과로 보지 않는다.</text>',
-            '<text x="360" y="164" font-size="12" fill="#64748b">'
-            '거리에 따라 픽셀당 실거리가 커져 오차가 늘어난다.</text>']
-    return _svg("".join(body), h=290)
+            f'<text x="{x0}" y="{y + h + 84}" font-size="12" fill="{COLOR["blocked"]}">'
+            '※ 이 경계를 안 정하면 보지도 못한 구간을 통과 가능이라고 말하게 된다 — '
+            '밖은 unknown 이지 통과가 아니다.</text>']
+    return _svg("".join(body), h=y + h + 104)
 
 
 def fig_unknown() -> str:
@@ -418,9 +438,11 @@ def main() -> int:
         if drift:
             print("★ 그림이 정본과 어긋난다 — " + " · ".join(drift))
             print("  값이 바뀌었는데 기획서 그림이 옛 값을 그리고 있다.")
-            print("  uv run python tools/render_figures.py  로 다시 만들고")
-            print("  docs/figures/*.svg 를 기획서에 넣어라. **사람이 넣는다** —")
-            print("  기획서는 대외 제출본이고 생성물이 아니다(4축 표).")
+            print("  uv run python tools/render_figures.py         다시 만든다")
+            print("  uv run python tools/docx_figs.py --sync       기획서에 넣는다")
+            # ★ 2026-09-23 (DECISIONS §221-1). 종전에는 여기서 「사람이 넣는다 — 기획서는
+            #   대외 제출본이고 생성물이 아니다」 라고 했다. 그 사이 `docx_fix.py` 가 같은
+            #   파일의 문단을 기계로 고치고 있었고, 「사람이 넣는다」 는 곧 「안 넣는다」 였다.
             return 1
         if not old:
             print("! 잠금이 없다 — 한 번 생성해서 기준을 만들어라")
@@ -428,14 +450,18 @@ def main() -> int:
         print(f"그림 OK — {len(made)}장 정본과 일치")
         return 0
 
-    LOCK.write_text(json.dumps({"figures": made}, ensure_ascii=False,
+    # ★ 2026-09-23. 잠금을 **덮어쓰지 않고 합친다.** `docx_figs.py` 가 같은 파일에
+    #   `placed`(기획서에 박힌 지문)를 쓴다 — 덮어쓰면 그쪽 기록이 매번 사라지고,
+    #   그러면 「기획서가 낡았는가」 를 묻는 관문이 조용히 통과한다.
+    keep = json.loads(LOCK.read_text(encoding="utf-8")) if LOCK.exists() else {}
+    LOCK.write_text(json.dumps({**keep, "figures": made}, ensure_ascii=False,
                                indent=2, sort_keys=True) + "\n",
                     encoding="utf-8")
     for k in sorted(made):
         mark = " ★ 바뀜" if k in drift else ""
         print(f"  docs/figures/{k}.svg  {made[k]}{mark}")
     if drift:
-        print("\n★ 바뀐 그림을 기획서에 다시 넣어라. 사람이 넣는다.")
+        print("\n★ 바뀐 그림을 기획서에 넣는다:  uv run python tools/docx_figs.py --sync")
     return 0
 
 
