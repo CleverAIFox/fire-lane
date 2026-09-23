@@ -22,15 +22,18 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _rf():
-    spec = importlib.util.spec_from_file_location(
-        "render_figures", ROOT / "tools" / "render_figures.py")
+def _mod(name: str):
+    spec = importlib.util.spec_from_file_location(name, ROOT / "tools" / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
 
-rf = _rf()
+# ★ 2026-09-24. 배치 검사는 `tools/svg_fit.py` 로 떨어져 나갔다 —
+#   `render_figures` 가 600줄 상한을 넘었고, 넘은 이유는 **그림이 늘어서**지
+#   검사가 커져서가 아니다. 그림 목록은 여전히 `render_figures` 가 든다.
+rf = _mod("svg_fit")
+figs = _mod("render_figures")
 
 
 def test_anchor_inside_but_label_overflows_is_caught():
@@ -110,7 +113,7 @@ def test_width_estimate_rules():
     assert right - left == pytest.approx(10 + 6 + 6)
 
 
-@pytest.mark.parametrize("name", sorted(rf.FIGURES))
+@pytest.mark.parametrize("name", sorted(figs.FIGURES))
 def test_published_figures_fit(name: str):
     """발행된 SVG 도 같은 검사를 통과한다(생성 시 `_svg` 가 막지만 손댄 파일도 본다)."""
     svg = (ROOT / "docs" / "figures" / f"{name}.svg").read_text(encoding="utf-8")

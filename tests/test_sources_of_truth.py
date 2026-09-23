@@ -194,7 +194,10 @@ SPEC: dict[str, dict] = {
     },
     "font_stack": {
         "what": "그림 · 화면 글꼴 스택",
-        "owner": {"file": "tools/render_figures.py", "regex": r'^FONT = "([^"]+)"'},
+        # ★ 2026-09-24. `render_figures` 가 600줄을 넘어 배치 검사를 `svg_fit` 으로
+        #   뗐고, 글꼴은 **SVG 를 쓰는 쪽**을 따라갔다. 집을 옮겼으면 여기도 옮긴다 —
+        #   안 옮기면 정규식이 0번 걸려 이 검사가 「집이 하나가 아니다」로 운다.
+        "owner": {"file": "tools/svg_fit.py", "regex": r'^FONT = "([^"]+)"'},
         "consumers": [
             {"file": "web/navi/src/ui/tokens.ts", "has": 'family: "{v}"'},
             {"file": "web/proposal.html", "has": "{v}"},

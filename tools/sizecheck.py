@@ -64,11 +64,11 @@ EXCEPTIONS: dict[str, int] = {
     # 코드 (상한 600)
     "tools/dms.py": 1360,
     "src/firelane/ingest.py": 1105,
-    "tools/deadcheck.py": 1044,
+    "tools/deadcheck.py": 1047,
     # ★ 2026-09-23. 976 → 980 → 991. 「기획서 그림 ↔ 정본」(§221-1)과 「죽은 강제자
     #   참조」(§222-2)가 들어갔다. verify.sh 는 검사의 목록이라 검사가 늘면 늘어난다 —
     #   쪼개면 「어느 파일에 있나」 가 또 하나의 기억거리가 된다(§18-3).
-    "tools/verify.sh": 1007,
+    "tools/verify.sh": 1011,
     "src/firelane/segments.py": 878,
     "tools/doc_fsck.py": 653,
     "tools/render_workflow.py": 636,

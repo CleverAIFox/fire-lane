@@ -502,6 +502,10 @@ step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 # ★ 2026-09-22 — ⑤⑥ 이 golden · 발행 구간 · 대장을 읽는다(W4-2). 범위를 좁게 두면 조용히 건너뛴다
 scope "docs/* tools/* data/* web/* src/* tests/* .github/* sources.yaml"
 step "기획서 대조"     uv run python tools/docx_check.py
+# ★ 2026-09-24. 배치 판정기 자신이 **합성 넘침 셋**을 잡는가. 그림이 다 들어맞는
+#   날(정상)에도 판정기가 사는지 알아야 한다 — 「0건이 청결인가 죽음인가」(§230).
+scope "tools/*"
+step "배치 판정기 자기검사" uv run python tools/svg_fit.py
 # ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
 scope "docs/* tools/* src/* data/*"
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check

@@ -28,18 +28,20 @@ PARAM --check
 from __future__ import annotations
 
 import hashlib
-import html
 import json
 import re
 import sys
 from pathlib import Path
 
+# ★ 같은 `tools/` 안이다. `pyproject.toml` 의 `pythonpath = ["tools", "src"]` 와
+#   스크립트 실행 시 `sys.path[0]` 둘 다 이 자리를 잡는다 — 경로 조작 없이 붙는다.
+import svg_fit
+from svg_fit import FONT, H, W, text_extent  # noqa: F401  카나리아가 든다
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs/figures"
 LOCK = OUT / ".lock.json"
 
-W, H = 720, 300
-FONT = "Pretendard, system-ui, sans-serif"
 COLOR = {"clear": "#16a34a", "needs_cv": "#ea580c",
          "blocked": "#dc2626", "unknown": "#94a3b8"}
 LABEL = {"clear": "통행 가능", "needs_cv": "판정 보류",
@@ -65,124 +67,6 @@ def _params() -> dict:
     return out
 
 
-_TEXT = re.compile(r"<text\b([^>]*)>(.*?)</text>", re.S)
-_RECT = re.compile(r'<rect x="([\d.]+)" y="([\d.]+)" '
-                   r'width="([\d.]+)" height="([\d.]+)"')
-#: 원. **외접 사각형으로 본다** — 아래 `_boxes()` 가 사각형과 같은 자리에 넣는다.
-_CIRCLE = re.compile(r'<circle cx="(-?[\d.]+)" cy="(-?[\d.]+)" r="([\d.]+)"')
-
-
-def _boxes(body: str) -> list[tuple[float, float, float, float]]:
-    """배치 검사가 보는 도형들의 `(x, y, w, h)`.
-
-    ★ 2026-09-24 (PLAN §12 #15). 종전에는 `<rect>` 만 봤다. `fig_cctv` 가
-      2026-09-23 에 원 그림을 복도로 바꾼 사유가 바로 **「`_fits()` 는 원을
-      안 본다」** 였다 — 그림을 고쳐서 검사의 눈먼 자리를 피해 간 것이고,
-      눈먼 자리는 그대로 남았다. 원을 쓰는 그림이 하나 생기는 김에 메운다.
-
-      원은 **외접 사각형**으로 본다. 라벨이 원의 둥근 모서리 옆으로 조금
-      비어져 나가는 것까지 우는 쪽이다 — 보수적으로 틀린다.
-    """
-    out = [tuple(float(g) for g in m.groups()) for m in _RECT.finditer(body)]
-    for m in _CIRCLE.finditer(body):
-        cx, cy, r = (float(g) for g in m.groups())
-        out.append((cx - r, cy - r, 2 * r, 2 * r))
-    return out
-
-
-def _attr(attrs: str, name: str, default: str | None = None) -> str | None:
-    m = re.search(rf'\b{name}="([^"]*)"', attrs)
-    return m.group(1) if m else default
-
-
-def _em(ch: str) -> float:
-    """글자 한 자의 폭(em). 한글·한자·전각 1.0 · 나머지 0.6 — 어림이다."""
-    o = ord(ch)
-    wide = (0x1100 <= o <= 0x11FF or 0x2E80 <= o <= 0x9FFF
-            or 0xAC00 <= o <= 0xD7AF or 0xF900 <= o <= 0xFAFF
-            or 0xFF00 <= o <= 0xFF60)
-    return 1.0 if wide else 0.6
-
-
-def text_extent(attrs: str, inner: str) -> tuple[float, float, float, str]:
-    """`<text>` 하나의 (왼쪽 끝, 오른쪽 끝, 기준선 y, 그려지는 글자).
-
-    폭은 글자 수 × 글꼴 크기 × em 어림이다. `text-anchor` start/middle/end 를 따른다.
-    """
-    shown = html.unescape(re.sub(r"<[^>]+>", "", inner))
-    size = float(_attr(attrs, "font-size", "16") or 16)
-    x = float(_attr(attrs, "x", "0") or 0)
-    y = float(_attr(attrs, "y", "0") or 0)
-    tw = sum(_em(c) for c in shown) * size
-    anchor = _attr(attrs, "text-anchor", "start")
-    left = x - tw / 2 if anchor == "middle" else x - tw if anchor == "end" else x
-    return left, left + tw, y, shown
-
-
-def _fits(body: str, w: int, h: int) -> list[str]:
-    """모든 요소가 `viewBox` 안에 있는가 — 글자는 **폭까지** 본다.
-
-    ★ 2026-09-02. `fig_branch` 는 파트가 셋이라 `x = 60 + i*200` 으로 720
-      안에 들어간다. **넷이 되면 넘친다.** 그런데 넘쳐도 SVG 는 오류 없이
-      그려진다 — 박스가 화면 밖으로 나갈 뿐이고 **아무도 모른다.**
-
-      `--check` 는 값이 바뀐 것을 잡지 배치가 깨진 것은 못 잡는다.
-      좌표가 코드에 박혀 있는 한(레이아웃 엔진이 없다) 이 검사가 그
-      자리를 대신한다(DECISIONS §111).
-
-    ★ 2026-09-22 (DECISIONS §218-6) 글자는 기준점 한 점만 보았다. 기준점이 안에
-      있으면 라벨이 아무리 길어도 통과했다 — 같은 족(1족)이 글자 쪽에서 무음이었다.
-      이제 라벨 폭을 어림해(한글 1.0em · 라틴·숫자 0.6em × font-size, text-anchor
-      반영) viewBox 를 넘는지, 기준점이 든 가장 작은 박스를 가로로 넘는지 본다.
-      어림은 보수적이다(공백도 0.6em) — 넘치면 줄이거나 줄을 나누거나 박스를 넓힌다.
-
-    ★ 2026-09-24 `<circle>` 도 본다(`_boxes()`). 그 전까지는 원이 검사 밖이었고,
-      2026-09-23 에 `fig_cctv` 의 원 그림을 복도로 바꾼 사유가 바로 그것이었다.
-    """
-    bad = []
-    rects = []
-    for x, y, bw, bh in _boxes(body):
-        rects.append((x, y, bw, bh))
-        if x < 0 or y < 0 or x + bw > w or y + bh > h:
-            bad.append(f"도형 ({x:g},{y:g} {bw:g}x{bh:g}) 가 {w}x{h} 밖이다")
-    for m in _TEXT.finditer(body):
-        left, right, y, shown = text_extent(m.group(1), m.group(2))
-        tag = f"글자 {shown[:24]!r} ({left:.0f}~{right:.0f}, y={y:g})"
-        if left < 0 or right > w or y < 0 or y > h:
-            bad.append(f"{tag} 가 {w}x{h} 밖이다")
-            continue
-        ax = float(_attr(m.group(1), "x", "0") or 0)
-        inside = [r for r in rects
-                  if r[0] <= ax <= r[0] + r[2] and r[1] <= y <= r[1] + r[3]]
-        if inside:
-            bx, _, bw, _ = min(inside, key=lambda r: r[2] * r[3])
-            if left < bx or right > bx + bw:
-                bad.append(f"{tag} 가 박스 ({bx:g}~{bx + bw:g}) 를 넘는다")
-            continue
-        # 어느 박스에도 안 든 라벨(범례·값)이 옆 막대 위로 번지는가.
-        # 글자 높이는 기준선 위 0.8em · 아래 0.2em 으로 어림한다.
-        size = float(_attr(m.group(1), "font-size", "16") or 16)
-        top, bot = y - 0.8 * size, y + 0.2 * size
-        for rx, ry, rw, rh in rects:
-            if left < rx + rw and right > rx and top < ry + rh and bot > ry:
-                bad.append(f"{tag} 가 박스 ({rx:g},{ry:g} {rw:g}x{rh:g}) 를 덮는다")
-                break
-    return bad
-
-
-def _svg(body: str, *, w: int = W, h: int = H) -> str:
-    over = _fits(body, w, h)
-    if over:
-        raise SystemExit(
-            "★ 그림이 화면을 넘는다 — " + " · ".join(over[:4])
-            + "\n  노드가 늘어 좌표가 안 맞는다. 배치를 손보거나 폭을 늘려라.\n"
-            "  ★ 넘쳐도 SVG 는 오류 없이 그려진다 — 이 검사가 없으면\n"
-            "    아무도 모른다(DECISIONS §111).")
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" '
-            f'width="{w}" height="{h}" font-family="{FONT}">'
-            f'<rect width="{w}" height="{h}" fill="#fff"/>{body}</svg>\n')
-
-
 def fig_verdict() -> str:
     """판정 4종 분포. 값은 golden 이 정본이다."""
     g = _golden()
@@ -203,7 +87,7 @@ def fig_verdict() -> str:
             f'fill="#0f172a">판정 4종 분포 — 전체 {n:,}구간</text>'
             f'<text x="12" y="50" font-size="11" fill="#64748b">'
             f'정본 data/golden/segments.fingerprint.json</text>')
-    return _svg(head + "".join(bars) + "".join(legend), h=70 + 4 * 46 + 20)
+    return svg_fit.svg(head + "".join(bars) + "".join(legend), h=70 + 4 * 46 + 20)
 
 
 def fig_threshold() -> str:
@@ -236,7 +120,7 @@ def fig_threshold() -> str:
     body.append('<text x="60" y="196" font-size="11" fill="#64748b">'
                 f'최소 폭이 하한 미만이면 통행 불가, {clear_at}m 이상이면 통행 가능. '
                 '그 사이는 영상판정 대상이다.</text>')
-    return _svg("".join(body), h=220)
+    return svg_fit.svg("".join(body), h=220)
 
 
 def fig_cctv() -> str:
@@ -286,7 +170,7 @@ def fig_cctv() -> str:
             f'<text x="{x0}" y="{y + h + 84}" font-size="12" fill="{COLOR["blocked"]}">'
             '※ 이 경계를 안 정하면 보지도 못한 구간을 통과 가능이라고 말하게 된다 — '
             '밖은 unknown 이지 통과가 아니다.</text>']
-    return _svg("".join(body), h=y + h + 104)
+    return svg_fit.svg("".join(body), h=y + h + 104)
 
 
 def fig_unknown() -> str:
@@ -309,7 +193,7 @@ def fig_unknown() -> str:
                     f'fill="#0f172a">{c}</text>')
         body.append(f'<text x="12" y="{100 + i * 44}" font-size="11" '
                     f'fill="#475569">{ko.get(k, k)}</text>')
-    return _svg("".join(body), h=80 + 4 * 44 + 16)
+    return svg_fit.svg("".join(body), h=80 + 4 * 44 + 16)
 
 
 def _rulesets() -> list[tuple[str, str, str]]:
@@ -373,7 +257,7 @@ def fig_branch() -> str:
     body.append('<text x="12" y="352" font-size="11" fill="#64748b">'
                 '화살표는 PR 방향이다. 위 셋은 보호 브랜치이며 직푸시가 막힌다 — '
                 '자유롭게 만들고 지울 수 있는 것은 feat 뿐이다(§12-4).</text>')
-    return _svg("".join(body), h=372)
+    return svg_fit.svg("".join(body), h=372)
 
 
 def fig_deploy() -> str:
@@ -426,7 +310,7 @@ def fig_deploy() -> str:
             '<text x="20" y="305" font-size="11" fill="#64748b">'
             '★ 한 대는 단일 장애점이다. 자동 복구는 restart 하나이고 '
             '인스턴스가 죽으면 사람이 띄운다.</text>']
-    return _svg("".join(body), h=325)
+    return svg_fit.svg("".join(body), h=325)
 
 
 def fig_xsec() -> str:
@@ -446,9 +330,16 @@ def fig_xsec() -> str:
       같은 표본**인데 버려지는 표본 수가 다르다. 원은 작은 교차부를
       과하게 도려내고, 큰 교차부에서는 오염을 남긴다.
 
-    ★ 교차부 모양은 **모식**이다. 실형상은 교차부마다 다르고 그 정본은
-      `ngii1k_xsec_5186.gpkg`(A0080000)다 — 값이 아니라 **규칙**을 그린다.
-      값 그림과 구조 그림을 가르는 것은 `fig_branch` 와 같다.
+    ★ 교차부 모양과 표본 수는 **모식**이다. 실형상은 교차부마다 다르고 그
+      정본은 `ngii1k_xsec_5186.gpkg`(A0080000)다 — 값이 아니라 **규칙**을
+      그린다. 값 그림과 구조 그림을 가르는 것은 `fig_branch` 와 같다.
+      반경과 표본 간격만 정본에서 온다.
+
+    ★ 2026-09-24 2판. 1판은 8px/m 이라 32m 에 트랜섹트 39개가 서서 **울타리로
+      보였고**, 노드가 표본 사이에 떨어져 두 줄의 버린 수가 **같았다**(4 대 4).
+      그림이 아무 말도 못 하는 상태였다. 20px/m · 표본 15 · 노드를 표본 위상에
+      맞춰 5 대 3 이 보이게 했다. 트랜섹트는 담에서 담까지 그리고 양끝에 점을
+      찍는다 — 세로선이 아니라 **폭 1회 측정**으로 읽혀야 한다.
     """
     p = _params()
     # ★ **기본값을 안 둔다.** 다른 그림들은 `p.get(키, 사본)` 으로 적는데
@@ -458,76 +349,137 @@ def fig_xsec() -> str:
         raise SystemExit("★ params.py 에서 XSEC_EXCL 을 못 읽었다 — "
                          "이름이 바뀌었거나 표기가 바뀌었다. 그림을 지어내지 않는다.")
     r_m = p["XSEC_EXCL"]
-    px_m = 8.0                  # 1m = 8px. 그림 안에서만 쓰는 축척이다
-    r = r_m * px_m
-    half = 3.0 * px_m                # 노면 반폭 3m — 모식값
-    x0, x1, cx = 44.0, 684.0, 410.0
-    poly_half = 26.0                 # 실형상 가로 반폭(모식) — 원보다 작다
+
+    # ── 축척 ─────────────────────────────────────────────────
+    # ★ 2026-09-24 2판. 1판은 8px/m 이라 32m 구간에 트랜섹트 39개가 서서
+    #   **울타리로 보였다.** 교차부가 노면보다 작아 피처로 안 읽혔고,
+    #   「버림 5 대 버림 3」 이라는 그림의 주장이 눈에 안 들어왔다.
+    #   20px/m 으로 키우고 구간을 32m 로 줄였다 — 트랜섹트 17개.
+    PX = 20.0                        # 1m = 20px
+    STEP_M = 2.0                     # 표본 간격. `seg/width.py::widths` 의 np.arange 보폭
+    ROAD_M, CROSS_M = 6.0, 6.0       # 노면 폭 · 교차 도로 폭 (모식)
+    half, chalf = ROAD_M / 2 * PX, CROSS_M / 2 * PX
+    x0, x1, cx = 40.0, 680.0, 360.0
+    r = r_m * PX
+    #: 실형상 가로 반폭(모식). 원보다 **작다** — 작은 교차부가 과하게
+    #: 도려내지는 것이 `seg/width.py` 주석이 든 실제 현상이다.
+    poly_half = 3.2 / 2 * PX + 32.0
+
+    A_CY, B_CY = 175.0, 403.0
 
     def road(cy: float) -> str:
-        """가로 노면 + 세로 노면. 사각형이 아니라 실제로 십자 도형이다."""
+        """가로 노면 + 세로 노면. 담(경계)을 진하게 그려 「담~담 폭」이 읽히게."""
         return (f'<path d="M{x0} {cy - half} H{x1} V{cy + half} H{x0} Z" '
-                f'fill="#f1f5f9" stroke="#cbd5e1"/>'
-                f'<path d="M{cx - half} {cy - 40} H{cx + half} V{cy + 40} '
-                f'H{cx - half} Z" fill="#f1f5f9" stroke="#cbd5e1"/>')
+                f'fill="#f8fafc" stroke="none"/>'
+                f'<path d="M{cx - chalf} {cy - half - 34} H{cx + chalf} '
+                f'V{cy + half + 34} H{cx - chalf} Z" fill="#f8fafc" stroke="none"/>'
+                f'<line x1="{x0}" y1="{cy - half}" x2="{cx - chalf}" y2="{cy - half}" '
+                f'stroke="#475569" stroke-width="2"/>'
+                f'<line x1="{cx + chalf}" y1="{cy - half}" x2="{x1}" y2="{cy - half}" '
+                f'stroke="#475569" stroke-width="2"/>'
+                f'<line x1="{x0}" y1="{cy + half}" x2="{cx - chalf}" y2="{cy + half}" '
+                f'stroke="#475569" stroke-width="2"/>'
+                f'<line x1="{cx + chalf}" y1="{cy + half}" x2="{x1}" y2="{cy + half}" '
+                f'stroke="#475569" stroke-width="2"/>'
+                f'<line x1="{cx - chalf}" y1="{cy - half - 34}" x2="{cx - chalf}" '
+                f'y2="{cy - half}" stroke="#475569" stroke-width="2"/>'
+                f'<line x1="{cx + chalf}" y1="{cy - half - 34}" x2="{cx + chalf}" '
+                f'y2="{cy - half}" stroke="#475569" stroke-width="2"/>'
+                f'<line x1="{cx - chalf}" y1="{cy + half}" x2="{cx - chalf}" '
+                f'y2="{cy + half + 34}" stroke="#475569" stroke-width="2"/>'
+                f'<line x1="{cx + chalf}" y1="{cy + half}" x2="{cx + chalf}" '
+                f'y2="{cy + half + 34}" stroke="#475569" stroke-width="2"/>')
 
     def ticks(cy: float, drop) -> tuple[str, int, int]:
-        """법선 트랜섹트. 버린 것은 회색 점선, 잰 것은 초록 실선."""
+        """법선 트랜섹트. **담에서 담까지**가 한 번의 폭 측정이다.
+
+        잰 것은 초록 실선 + 양끝 점, 버린 것은 회색 점선이고 점이 없다.
+        """
         out, n, k = [], 0, 0
-        t = x0 + 14
-        while t <= x1 - 14:
+        # ★ 첫 표본을 교차 노드와 **같은 위상**에 둔다. 2m 간격에서 노드가 표본
+        #   사이에 떨어지면 반경 5.0m 와 실형상 3.2m 가 **같은 수를 버려** 그림이
+        #   아무 말도 못 한다. 실제 `widths()` 의 보폭도 2m 이고 위상은 구간마다
+        #   다르다 — 여기서는 차이가 **보이는 위상**을 그린다(모식).
+        t = cx - round((cx - (x0 + 20)) / (STEP_M * PX)) * STEP_M * PX
+        while t < x0 + 20:          # 노면 끝에 붙은 첫 표본은 끝단 캡처럼 읽힌다
+            t += STEP_M * PX
+        while t <= x1 - 20:
             n += 1
             bad = drop(t)
             k += bad
-            style = ('stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3 3"'
-                     if bad else f'stroke="{COLOR["clear"]}" stroke-width="2"')
-            out.append(f'<line x1="{t:.0f}" y1="{cy - half - 6:.0f}" '
-                       f'x2="{t:.0f}" y2="{cy + half + 6:.0f}" {style}/>')
-            t += 2.0 * px_m          # 표본 간격 2m
+            if bad:
+                out.append(f'<line x1="{t:.0f}" y1="{cy - half:.0f}" '
+                           f'x2="{t:.0f}" y2="{cy + half:.0f}" stroke="#cbd5e1" '
+                           f'stroke-width="2" stroke-dasharray="4 4"/>')
+            else:
+                c = COLOR["clear"]
+                out.append(f'<line x1="{t:.0f}" y1="{cy - half:.0f}" '
+                           f'x2="{t:.0f}" y2="{cy + half:.0f}" stroke="{c}" '
+                           f'stroke-width="2"/>'
+                           f'<circle cx="{t:.0f}" cy="{cy - half:.0f}" r="2.5" fill="{c}"/>'
+                           f'<circle cx="{t:.0f}" cy="{cy + half:.0f}" r="2.5" fill="{c}"/>')
+            t += STEP_M * PX
         return "".join(out), n, k
 
-    a_cy, b_cy = 118.0, 232.0
-    a_body, a_n, a_k = ticks(a_cy, lambda t: abs(t - cx) < r)
-    b_body, b_n, b_k = ticks(b_cy, lambda t: abs(t - cx) < poly_half)
+    a_body, a_n, a_k = ticks(A_CY, lambda t: abs(t - cx) < r)
+    b_body, b_n, b_k = ticks(B_CY, lambda t: abs(t - cx) < poly_half)
 
     # 실형상 모식 — 네 갈래가 만나는 자리라 사각형이 아니다
-    ph, pw = 30.0, poly_half
-    shape = (f'<path d="M{cx - pw} {b_cy - ph} L{cx + pw - 6} {b_cy - ph + 4} '
-             f'L{cx + pw} {b_cy + 2} L{cx + pw - 8} {b_cy + ph} '
-             f'L{cx - pw + 4} {b_cy + ph - 3} L{cx - pw - 2} {b_cy - 4} Z" '
-             f'fill="#fed7aa" fill-opacity="0.8" stroke="{COLOR["needs_cv"]}" '
-             f'stroke-width="2"/>')
+    pw, ph = poly_half, chalf + 10
+    shape = (f'<path d="M{cx - pw:.0f} {B_CY - ph + 8:.0f} '
+             f'L{cx - pw + 12:.0f} {B_CY - ph:.0f} L{cx + pw - 8:.0f} {B_CY - ph + 3:.0f} '
+             f'L{cx + pw:.0f} {B_CY + 6:.0f} L{cx + pw - 12:.0f} {B_CY + ph:.0f} '
+             f'L{cx - pw + 6:.0f} {B_CY + ph - 4:.0f} Z" '
+             f'fill="#fed7aa" fill-opacity="0.85" stroke="{COLOR["needs_cv"]}" '
+             f'stroke-width="2.5"/>')
 
-    # ★ 그림 → 글자 순서로 쌓는다. 종전 배치에서 세로 노면이 줄머리 라벨을
-    #   덮었다 — SVG 는 뒤에 온 것이 위에 그려지고, `_fits()` 는 `<path>` 를
-    #   안 본다(도형은 `<rect>` · `<circle>` 만 본다).
+    # ★ 그림 → 글자 순서로 쌓는다. SVG 는 뒤에 온 것이 위에 그려지고,
+    #   `_fits()` 는 `<path>` 를 안 본다(도형은 `<rect>` · `<circle>` 만).
+    sb_x, sb_m = 40.0, 10.0          # 축척 막대 — 10m
     art = [
-        road(a_cy), a_body,
-        f'<circle cx="{cx:.0f}" cy="{a_cy:.0f}" r="{r:.0f}" fill="none" '
-        f'stroke="{COLOR["blocked"]}" stroke-width="2" stroke-dasharray="6 4"/>',
-        road(b_cy), shape, b_body,
+        # 제외 도형을 **먼저** 깔고 트랜섹트를 그 위에 올린다 — 버린 표본이
+        # 도형에 가리면 「무엇이 왜 버려졌나」가 안 보인다.
+        road(A_CY),
+        f'<circle cx="{cx:.0f}" cy="{A_CY:.0f}" r="{r:.0f}" fill="{COLOR["blocked"]}" '
+        f'fill-opacity="0.08" stroke="{COLOR["blocked"]}" stroke-width="2.5" '
+        f'stroke-dasharray="7 5"/>',
+        a_body,
+        road(B_CY), shape, b_body,
+        # 축척 막대
+        f'<line x1="{sb_x}" y1="520" x2="{sb_x + sb_m * PX}" y2="520" '
+        f'stroke="#0f172a" stroke-width="2"/>'
+        f'<line x1="{sb_x}" y1="515" x2="{sb_x}" y2="525" stroke="#0f172a" stroke-width="2"/>'
+        f'<line x1="{sb_x + sb_m * PX}" y1="515" x2="{sb_x + sb_m * PX}" y2="525" '
+        f'stroke="#0f172a" stroke-width="2"/>',
     ]
     txt = [
-        '<text x="12" y="28" font-size="15" font-weight="700" fill="#0f172a">'
+        '<text x="12" y="26" font-size="16" font-weight="700" fill="#0f172a">'
         '도로폭 산출 — 법선 트랜섹트와 평면교차점 실형상 제외</text>',
-        '<text x="12" y="48" font-size="11" fill="#64748b">'
-        '정본 src/firelane/seg/params.py · XSEC_EXCL — 규칙은 seg/width.py</text>',
-        f'<text x="{x0:.0f}" y="68" font-size="12" fill="#475569">'
-        f'폴백 — 평면교차점 실형상이 없는 교차로에서만. 노드에서 {r_m:g}m</text>',
-        f'<text x="676" y="{a_cy - 34:.0f}" font-size="12" fill="#0f172a" '
-        f'text-anchor="end">표본 {a_n} · 버림 {a_k}</text>',
-        f'<text x="{x0:.0f}" y="182" font-size="12" fill="#475569">'
-        '실형상 — 평면교차점 폴리곤 안의 표본만 버린다. 이쪽이 규칙이다</text>',
-        f'<text x="676" y="{b_cy - 34:.0f}" font-size="12" fill="#0f172a" '
-        f'text-anchor="end">표본 {b_n} · 버림 {b_k}</text>',
-        '<text x="12" y="300" font-size="11" fill="#64748b">'
-        '세로선 하나가 법선 트랜섹트 한 번이다 — 초록은 잰 것, 회색 점선은 '
-        '버린 것이다.</text>',
-        f'<text x="12" y="318" font-size="11" fill="{COLOR["blocked"]}">'
+        '<text x="12" y="46" font-size="11" fill="#64748b">'
+        '정본 src/firelane/seg/params.py · XSEC_EXCL — 제외 규칙은 seg/width.py</text>',
+
+        f'<text x="{x0:.0f}" y="66" font-size="13" font-weight="700" fill="{COLOR["blocked"]}">'
+        f'① 폴백 — 노드에서 {r_m:g}m. 실형상이 없는 교차로에서만</text>',
+        f'<text x="700" y="66" font-size="13" fill="#0f172a" text-anchor="end">'
+        f'표본 {a_n} · 버림 {a_k}</text>',
+
+        f'<text x="{x0:.0f}" y="294" font-size="13" font-weight="700" '
+        f'fill="{COLOR["needs_cv"]}">② 실형상 — 평면교차점 폴리곤 안만 버린다. '
+        '이쪽이 규칙이다</text>',
+        f'<text x="700" y="294" font-size="13" fill="#0f172a" text-anchor="end">'
+        f'표본 {b_n} · 버림 {b_k}</text>',
+
+        f'<text x="{sb_x + sb_m * PX + 10:.0f}" y="524" font-size="11" fill="#475569">'
+        f'{sb_m:g}m · 노면 {ROAD_M:g}m · 표본 간격 {STEP_M:g}m · '
+        '표본 수는 이 모식도의 것이다</text>',
+        '<text x="12" y="554" font-size="12" fill="#475569">'
+        '세로선 하나가 폭 1회 측정이다 — 담에서 담까지. 초록은 잰 것, '
+        '회색 점선은 버린 것.</text>',
+        f'<text x="12" y="574" font-size="12" fill="{COLOR["blocked"]}">'
         f'※ 원은 규칙이 아니라 폴백이다. 반경 {r_m:g}m 는 작은 교차부를 '
         '과하게 도려내고 큰 교차부에는 오염을 남긴다.</text>',
     ]
-    return _svg("".join(art + txt), h=336)
+    return svg_fit.svg("".join(art + txt), h=592)
 
 
 FIGURES = {

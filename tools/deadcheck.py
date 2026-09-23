@@ -511,6 +511,9 @@ EXEMPT_SCOPE = {
     "tests/test_declaration_sync.py::test_unwired_sources_declare_purpose":
         f"{_PROD_ONLY} — 「대장 소스가 배선됐는가」의 소비자는 판정·도구다. "
         "테스트가 소스 이름을 적는 것을 소비로 세면 모든 소스가 영원히 배선된다",
+    # ★ 2026-09-24. **반대 방향**의 면제 — 위는 「tests 를 뺐다」, 이것은 「tests 만 본다」.
+    "tests/test_skip_policy.py::_skip_literals":
+        "`pytest.skip` 은 시험 안에만 산다 — src · tools 에 0건이라 넓히면 빈 폴더를 훑는다",
     "tests/test_guards.py::test_repo_python_compiles":
         f"{_PROD_ONLY} — tests 의 구문 오류는 pytest 수집이 먼저 **오류로** 낸다. "
         "여기서 또 컴파일할 이유가 없다",

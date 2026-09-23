@@ -23,13 +23,17 @@ test_dest_scope.py — 목적지 색인의 **범위가 선언대로인가.**
 ★ 이 시험이 있었으면 그 발견이 애초에 안 났다. 그래서 여기 세운다 —
   **관측을 판정으로 만드는 것은 범위 선언이고, 그 선언은 실행돼야 한다.**
 
-IN    web/data/dest.geojson · web/data/poi.geojson · data/processed/boundary_emd.geojson
+IN    web/data/dest.geojson · web/data/poi.geojson ·
+      data/processed/boundary_emd.geojson (없으면 tests/fixtures/dongmyeong_boundary.geojson)
 OUT   없음 (검사)
 밖    **검색이 잘 되는가는 안 본다.** 초성·부분일치 같은 질의 동작은
       `web/navi/test/domain.test.ts` 소관이다. 여기서 드는 것은 색인에
       **무엇이 들어 있는가** 하나다.
       그리고 주소·건물 항목의 범위는 안 본다 — 그쪽은 `navi_build` ·
       `navi_jibun` 이 원천이고 상가와 계보가 다르다.
+      **관공서 갈래는 CI 에서 안 돈다** — `data/processed/civil_office.geojson` 이
+      추적 밖이다. 경계와 달리 그쪽은 사본을 안 뜬다(64건 · 용도가 이 시험 하나뿐이라
+      사본 유지 비용이 값어치를 넘는다). 그 갈래는 레이크 기계에서만 선다.
 """
 from __future__ import annotations
 
@@ -42,6 +46,12 @@ ROOT = Path(__file__).resolve().parents[1]
 DEST = ROOT / "web" / "data" / "dest.geojson"
 POI = ROOT / "web" / "data" / "poi.geojson"
 BND = ROOT / "data" / "processed" / "boundary_emd.geojson"
+#: 동명동 경계 **한 장**을 떼어 커밋한 것. `BND` 는 `.gitignore:26` 으로 추적 밖이라
+#: CI 클론에 없고, 그러면 이 파일의 시험 다섯이 통째로 안 돈다 — 범위를 강제하려고
+#: 세운 시험이 정작 관문에서 안 도는 것이다(2026-09-24 · DECISIONS §238).
+#: 낡을 위험은 `test_committed_boundary_matches_the_pipeline` 이 든다 —
+#: 레이크 기계에서 원본과 다르면 운다. **사본이 조용히 갈리는 길을 막는다.**
+FIXTURE = ROOT / "tests" / "fixtures" / "dongmyeong_boundary.geojson"
 
 #: 상가가 아닌 색인 항목. 계보가 달라 범위 규칙도 다르다.
 NON_STORE = {"주소", "건물"}
@@ -49,20 +59,51 @@ NON_STORE = {"주소", "건물"}
 
 def _load(p: Path):
     if not p.exists():
-        pytest.skip(f"{p.relative_to(ROOT)} 이 없다 — 파이프라인 산출물이다")
+        # ★ 2026-09-24. 사유가 **분류 밖**이었다(`tests/skip_policy.py`). `boundary_emd`
+        #   · `civil_office` 는 `.gitignore:26` 으로 추적 밖이라 CI 클론에는 없고,
+        #   그러면 `conftest` 가 이 skip 을 **실패로** 바꾼다 — 로컬 초록 · CI 빨강
+        #   (DECISIONS §206 이 제일 나쁜 모양이라고 적은 것).
+        pytest.skip(f"환경skip(산출물) — {p.relative_to(ROOT)} 이 없다")
     return json.loads(p.read_text(encoding="utf-8"))
+
+
+def _dongmyeong(doc) -> list:
+    return [f for f in doc["features"]
+            if f["properties"].get("EMD_KOR_NM") == "동명동"]
 
 
 @pytest.fixture(scope="module")
 def emd():
+    """동명동 경계. **원본이 있으면 원본, 없으면 커밋된 사본.**
+
+    ★ 사본을 쓰는 것이 아니라 *원본이 없을 때만* 쓴다. 둘이 갈리는 것은
+      아래 `test_committed_boundary_matches_the_pipeline` 이 든다.
+    """
     from shapely.geometry import shape
-    b = _load(BND)
-    got = [shape(f["geometry"]) for f in b["features"]
-           if f["properties"].get("EMD_KOR_NM") == "동명동"]
+    src = BND if BND.exists() else FIXTURE
+    got = _dongmyeong(json.loads(src.read_text(encoding="utf-8")))
     assert len(got) == 1, (
-        f"동명동 경계가 {len(got)}개다 — 경계 원본이 바뀌었다. "
+        f"{src.name} 의 동명동 경계가 {len(got)}개다 — 경계 원본이 바뀌었다. "
         "이 시험의 전제가 깨졌으므로 수를 고치기 전에 원인을 본다")
-    return got[0]
+    return shape(got[0]["geometry"])
+
+
+def test_committed_boundary_matches_the_pipeline():
+    """커밋된 경계 사본이 파이프라인 산출과 **같은가.**
+
+    ★ 사본을 두는 대가가 이것이다 — 원본이 바뀌면 사본이 조용히 낡는다.
+      레이크 기계(원본이 있는 곳)에서만 잴 수 있고, 거기서 재면 충분하다.
+      CI 는 사본으로 돌고 사본의 참은 여기서 지킨다(2족 · 정본이 둘).
+    """
+    if not BND.exists():
+        pytest.skip(f"환경skip(산출물) — {BND.relative_to(ROOT)} 이 없다")
+    real = _dongmyeong(json.loads(BND.read_text(encoding="utf-8")))
+    kept = _dongmyeong(json.loads(FIXTURE.read_text(encoding="utf-8")))
+    assert len(real) == 1 and len(kept) == 1, (real and len(real), len(kept))
+    assert real[0]["properties"] == kept[0]["properties"], "속성이 갈렸다"
+    assert real[0]["geometry"] == kept[0]["geometry"], (
+        f"커밋된 경계 사본이 파이프라인 산출과 다르다 — {FIXTURE.relative_to(ROOT)} 를 다시 떼라.\n"
+        "  이대로 두면 CI 는 옛 경계로 범위를 판정한다.")
 
 
 @pytest.fixture(scope="module")

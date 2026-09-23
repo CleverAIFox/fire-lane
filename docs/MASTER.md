@@ -2163,7 +2163,7 @@ python -m firelane.contract                     대장 선언 ↔ raw 실물 대
 ### 14-4. 검사
 
 ```bash
-bash tools/verify.sh          # 52단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 53단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 파이프라인 전량 생략
 ```
 
@@ -2563,7 +2563,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 형태를 갖는다 — 규약은 주석이나 문서에 존재하고 이를 강제하는 검사가 없다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
-강제자  `tests/test_doc_style.py` · `tools/dms.py`(마지막 줄 「새 규칙을 적을 때는 강제자를 같이 만든다」를 세는 자리가 이 도구다 — 분모 232) · `tools/scopedecl.py`(강제자가 자기 범위를 선언하는가)
+강제자  `tests/test_doc_style.py` · `tools/dms.py`(마지막 줄 「새 규칙을 적을 때는 강제자를 같이 만든다」를 세는 자리가 이 도구다 — **분모 0**(2026-09-24 · 절 1,004 전수. 종전 232 는 그 도구가 절을 틀리게 세던 때의 수다. 다음 분모는 물림 308 중 **부모가 아무 말 없는 243** 이다)) · `tools/scopedecl.py`(강제자가 자기 범위를 선언하는가)
 
 ### 17-1. 정본은 하나 — 사실 · 정본 파일 · 따르는 곳 · 강제자
 
@@ -2583,7 +2583,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 | `park_m` | `src/firelane/seg/params.py` | `tools/render_figures.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · 문구 둘(`seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `code_owner` | `.github/CODEOWNERS` | `tools/navi_setup.py` 기본값 · `tools/ruleset_check.py` 관리자 · 기본 저장소 · 배치 도구 셋의 `REPO=` | `tests/test_sources_of_truth.py` |
-| `font_stack` | `tools/render_figures.py` | `web/navi/src/ui/tokens.ts` · `web/proposal.html` | `tests/test_sources_of_truth.py` |
+| `font_stack` | `tools/svg_fit.py` | `web/navi/src/ui/tokens.ts` · `web/proposal.html` | `tests/test_sources_of_truth.py` |
 
 ★ **2026-09-23 — 열 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5). 종전에는 `uv` ·
 `python` 둘만 저장소를 훑었고 나머지 여덟은 **선언된 자리만** 봤다. 훑기를 켜려면 오탐 둘을
