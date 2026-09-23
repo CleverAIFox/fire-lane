@@ -40,9 +40,11 @@ EMD_CD        = "12210108"   # 동명동
 #   segments 가 그것을 import 해야 해서 계층이 거꾸로 선다.
 STATION_RADIUS = 300         # 안전센터 주변 판정·표출 반경(m). 판정 범위에 든다(DECISIONS §170)
 CORRIDOR_BUFFER = 70.0       # 접근회랑 주변 판정·표출 범위(m). 종전 segments.py 에 70 이 두 번 박혀 있었다
-DISPLAY_BUFFER = 60.0        # 동 경계 주변 지도 여백(m). 판정 범위를 덮는다
-DISPLAY_CLOSE = 150.0        # 표출 범위 닫힘 반경(m). 폭 300m 미만의 틈 · 안쪽 구멍을 메운다(DECISIONS §182-7)
-                             #   판정 범위(judgment_scope)에는 안 쓴다 — 마스크 · 표출 필터만 넓어진다
+# ★ 2026-09-23 (PLAN §13 W3-6). `DISPLAY_BUFFER`(60.0) · `DISPLAY_CLOSE`(150.0) 를
+#   `firelane/display_scope.py` 로 옮겼다. 이 파일은 판정 지문(= `firelane.segments`
+#   import 닫힘) 안이라, 표출 전용 숫자가 여기 있으면 지도 여백만 고쳐도 판정
+#   게이트가 울고 재잠금이 따라온다. 값은 안 바꿨고 위치만 옮겼다.
+#   여기 남는 것은 **판정에 드는 숫자**뿐이다.
 GRAPH_BUFFER  = 1500.0       # 안전센터(대인 1.0km / 지산 1.2km)까지 포함
 KEEP_BUFFER   = 50.0         # 산출물에 남길 범위
 SNAP_TOL      = 0.5          # 끝점 투영 반경. T자 접합 해소

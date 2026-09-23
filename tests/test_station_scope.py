@@ -2,7 +2,10 @@
 import pytest
 from shapely.geometry import LineString, Point, box
 
-from firelane.seg.scope import display_scope, judgment_scope
+# ★ 2026-09-23 (PLAN §13 W3-6). `display_scope` 는 판정 지문 밖(`firelane/display_scope.py`)
+#   으로 옮겼다. 판정 범위는 `seg/scope.py` 에 그대로다 — 여기서 둘을 같이 본다.
+from firelane.display_scope import display_scope
+from firelane.seg.scope import judgment_scope
 
 
 @pytest.fixture
@@ -89,3 +92,68 @@ def test_display_scope_has_no_notches_or_holes():
     assert not keep.covers(Point(600, 500)), "프로브 — 판정 범위는 넓히지 않는다"
     far = display_scope(boundary, [], [Point(5000, 5000)])
     assert not far.covers(Point(2500, 2500)), "닫힘이 떨어진 조각 사이를 잇는다 — 반경이 과하다"
+
+
+# ── 표출 범위는 **자기 단계**다 (2026-09-23 · PLAN §13 W3-6) ───────────────────
+def _pipeline():
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location("pipeline", root / "src/firelane/pipeline.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules["pipeline"] = m        # @dataclass 가 sys.modules 를 되짚는다
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_scope_step_is_declared_between_segments_and_its_readers():
+    """`scope` 단계가 선언돼 있고 순방향인가.
+
+    ★ 표출 계산이 `segments` 안에 있으면 표출 상수가 판정 지문 안이다(W3-6). 꺼내되
+      **순서는 그대로여야 한다** — 회랑을 내는 segments 뒤, 스코프를 읽는 ortho·publish 앞.
+      한 칸만 밀려도 ortho 가 지난 실행의 스코프로 정사영상을 굽는다(2026-09-04 에 고친 그 병).
+    """
+    m = _pipeline()
+    names = [s.name for s in m.STEPS]
+    assert "scope" in names, "표출 범위 단계가 STEPS 에 없다 — `--from scope` 도 못 쓴다"
+    step = next(s for s in m.STEPS if s.name == "scope")
+    assert step.module == "display_scope"
+    assert names.index("segments") < names.index("scope")
+    for reader in ("ortho", "publish"):
+        assert names.index("scope") < names.index(reader), f"{reader} 가 스코프를 먼저 읽는다"
+
+    P = m.PROCESSED
+    assert step.writes == (P / "scope_5186.gpkg",) and not step.mutates
+    assert set(step.reads) == {P / "boundary_emd_5186.gpkg", P / "corridor_5186.gpkg",
+                               P / "fire_station.geojson"}
+    seg = next(s for s in m.STEPS if s.name == "segments")
+    assert P / "scope_5186.gpkg" not in seg.produces, (
+        "segments 가 아직 스코프를 낸다 — 두 단계가 같은 파일을 쓰면 순서가 결과를 바꾼다")
+    assert P / "corridor_5186.gpkg" in seg.writes, "회랑은 segments 가 낸다(scope 의 입력)"
+
+
+def test_scope_step_invalidates_its_readers():
+    """`--only scope` 로 돌리면 하류(ortho · publish)가 낡는다고 말하는가."""
+    m = _pipeline()
+    assert {s.name for s in m.downstream({"scope"})} >= {"ortho", "publish"}
+    # 반대 방향 — segments 만 돌려도 scope 가 낡는다(회랑이 바뀐다)
+    assert "scope" in {s.name for s in m.downstream({"segments"})}
+
+
+def test_scope_step_module_does_not_import_judgment_stage():
+    """표출 단계가 `segments` 를 import 하면 지문 계산이 거꾸로 선다."""
+    import ast
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    src = (root / "src/firelane/display_scope.py").read_text(encoding="utf-8")
+    mods = set()
+    for n in ast.walk(ast.parse(src)):
+        if isinstance(n, ast.Import):
+            mods |= {a.name for a in n.names}
+        elif isinstance(n, ast.ImportFrom) and n.module:
+            mods.add(n.module)
+    assert "firelane.segments" not in mods
+    assert "firelane.seg.scope" in mods, "판정 범위 규칙의 정본은 seg/scope.py 하나다"

@@ -6,6 +6,7 @@
 #   bash tools/fl.sh <브랜치> --all        위 + PR + CI 대기 + 스쿼시 + dev PR + 릴리즈 + 가지 정리(봇 PR 닫기) + 위생
 #   bash tools/fl.sh <브랜치> --undo       가지를 지우고 원상복구
 #   bash tools/fl.sh <브랜치> --resume     끊긴 자리부터 잇는다 (PR · CI · 스쿼시 · 방송 · 정리)
+#   … --relock                             적용 뒤 `fire-lane --from segments` + `golden.py lock` 한 번 (판정 지문이 바뀌는 배치)
 #
 # ★ 2026-09-22 (DECISIONS §214-1). **정본이 저장소로 들어왔다.** 종전에는 이 파일이
 #   INBOX(다운로드 폴더)에만 살았다 — 버전 관리 · 시험 · 리뷰 밖이었고, INBOX 를
@@ -33,7 +34,7 @@
 #   붙일 값어치가 있는 기능은 여기가 아니라 그쪽으로 간다. 여기 있는 것은
 #   **순서와 전제 확인**뿐이고, 그것이 이 파일이 존재하는 유일한 이유다.
 set -uo pipefail
-VERSION=2026-09-22.7
+VERSION=2026-09-23.1
 
 # ── 자기 복사 → 재실행 ────────────────────────────────────────
 if [ -z "${FL_RELOCATED:-}" ]; then
@@ -76,7 +77,15 @@ ask()  {
 printf '%sfl %s%s\n' "$D" "$VERSION" "$Z"
 
 BR="${1:-}"
-MODE="${2:-}"
+MODE=""
+RELOCK=0
+for _a in "${@:2}"; do
+    case "$_a" in
+        --relock) RELOCK=1 ;;              # 판정 지문이 바뀌는 배치 — 적용 뒤 재잠금 한 번 (§220)
+        "") : ;;
+        *) MODE="$_a" ;;
+    esac
+done
 case "$BR" in
     ""|-*) die "브랜치 이름이 없다." "  $FL_CMD feat/burndown --all" ;;
     feat/*) : ;;
@@ -181,13 +190,30 @@ ok "origin/$BASE = $(git rev-parse --short "origin/$BASE")"
 
 # ★ **다른 배치가 열려 있으면 여기서 멈춘다.** 2026-09-20 에 #129 가 안 머지된 채
 #   다음 패치를 적용해 `does not apply` 로 터졌다. 순서를 사람이 기억하는 대신 여기서 본다.
-OPEN=$(gh pr list -R "$GH_REPO" --base "$BASE" --state open --json number,headRefName \
-       --jq '.[] | "#\(.number) \(.headRefName)"' 2>/dev/null)
-if [ -n "$OPEN" ] && ! printf '%s' "$OPEN" | grep -q " ${BR#refs/heads/}$"; then
-    die "$BASE 로 가는 **다른** PR 이 열려 있다 — 그것부터 끝내라:" "$OPEN" \
+# ★ 2026-09-23. 봇 PR 은 **막는 것이 아니다.** 종전에는 작성자를 안 보고 전부 막아서,
+#   `branch_tidy --close-bots` 가 「알림」으로 **일부러 남기는**(§218-4 청소 규칙) dependabot
+#   PR 넷이 그다음 배치를 영영 세웠다 — 두 규칙이 서로를 막았다. 봇 PR 은 base 가 바뀌면
+#   dependabot 이 스스로 rebase 하고, 이 배치가 그 판을 이미 흡수했으면 스스로 닫는다.
+#   사람 PR 만 막는다 — 그것은 순서를 아무도 안 보고 있다는 뜻이고 `git am` 이 터진다.
+OPEN=$(gh pr list -R "$GH_REPO" --base "$BASE" --state open --json number,headRefName,author \
+       --jq '.[] | "#\(.number)\t\(.headRefName)\t\(.author.login)"' 2>/dev/null)
+HUMAN=""; BOT=""
+while IFS=$'\t' read -r n head who; do
+    [ -z "$n" ] && continue
+    [ "$head" = "${BR#refs/heads/}" ] && continue
+    case "$who" in *[Dd]ependabot*|*[Bb]ot) BOT="$BOT$n $head"$'\n' ;;
+                   *) HUMAN="$HUMAN$n $head ($who)"$'\n' ;; esac
+done <<<"$OPEN"
+if [ -n "$HUMAN" ]; then
+    die "$BASE 로 가는 **사람** PR 이 열려 있다 — 그것부터 끝내라:" "$HUMAN" \
         "  그 PR 이 머지되기 전에 다음 패치를 얹으면 base 가 달라 git am 이 터진다."
 fi
-ok "$BASE 로 열린 다른 PR 0"
+if [ -n "$BOT" ]; then
+    warn "$BASE 로 열린 봇 PR $(printf '%s' "$BOT" | grep -c .) 개 — 막지 않는다(§218-4 청소가 맡는다)"
+    printf '%s' "$BOT" | sed 's/^/      /'
+else
+    ok "$BASE 로 열린 다른 PR 0"
+fi
 
 # ── --resume ──────────────────────────────────────────────────
 # ★ 2026-09-22 실제 사고 (§215-3). 8단계(dev PR 개설) 중에 Ctrl-C 가 눌렸다. 패치는 이미
@@ -251,7 +277,14 @@ for p in "${PATCHES[@]}"; do printf '     %s\n' "$(basename "$p")"; done
 
 # shellcheck disable=SC2012  # 후보 둘뿐이고 이름이 고정이다
 BODY=$(ls -t "$WORK"/PR_BODY.md "$IN"/PR_BODY.md 2>/dev/null | head -1)
-if [ -n "$BODY" ]; then ok "PR_BODY.md  $BODY"; else warn "PR_BODY.md 가 없다 — --all 은 못 간다"; fi
+if [ -n "$BODY" ]; then
+    # ★ 2026-09-23 (DECISIONS §220). 본문 검사를 **여기서** 한다. 종전에는 6단계(PR)에서 봐서
+    #   전수 verify 10분을 태운 뒤에야 「리뷰어가 볼 곳이 비었다」로 멈췄다(2026-09-22 실물).
+    uv run python tools/pr_body_check.py --body-file "$BODY" \
+        || die "PR 본문이 템플릿 검사를 못 넘는다: $BODY" \
+               "  고치고 다시 돌려라 — verify 를 태우기 전에 본다."
+    ok "PR_BODY.md  $BODY"
+else warn "PR_BODY.md 가 없다 — --all 은 못 간다"; fi
 
 # ══ 3. 붙는지 먼저 본다 ═══════════════════════════════════════
 # ★ **이것이 오늘 없어서 터진 단계다.** `git am` 은 반쯤 적용한 뒤에 멈추고,
@@ -314,7 +347,7 @@ if [ -n "$BAD" ]; then
 fi
 ok "패치 $N 개 전부 $BASE 에 붙는다"
 
-if ! ask "이 $N 개를 $BR 에 적용하고 전수 verify 를 돌린다 (7분). 진행?"; then echo 멈춤; exit 0; fi
+if ! ask "이 $N 개를 $BR 에 적용하고 전수 verify 를 돌린다 (10분 · --relock 이면 파이프라인이 한 번 더). 진행?"; then echo 멈춤; exit 0; fi
 
 # ══ 4. 적용 ═══════════════════════════════════════════════════
 step "4. 적용"
@@ -336,6 +369,45 @@ for p in "${PATCHES[@]}"; do
 done
 git log --oneline "origin/$BASE..HEAD" | sed 's/^/     /'
 ok "$(git rev-list --count "origin/$BASE..HEAD") 커밋"
+
+# ══ 4b. 재잠금 (선택) ══════════════════════════════════════════
+# ★ 2026-09-23 (DECISIONS §220). 판정 지문(`data/golden/.code_fingerprint`)이 바뀌는 배치는
+#   재잠금이 따른다 — 종전에는 사람이 두 명령을 손으로 쳤고, 그 사이에 verify 를 돌리면
+#   「잠긴 코드 지문과 지금 코드가 다르다」로 반드시 빨갛다. 배치가 친다. 판정 **산출물**이
+#   움직이면 여기서 멈춘다 — 그것은 배선 배치가 아니라 측정 배치다(§13-5 규칙 2).
+if [ "$RELOCK" = 1 ]; then
+    step "4b. 재잠금 — 파이프라인 · golden.py lock"
+    # ★ 2026-09-23 (독립 검토). ingest 닫힘 파일(guards.py 등)이 바뀌면 샤드 봉인의 `code` 칸이
+    #   전부 찢어져 **다음 전량 실행이 45종을 다시 빌드**하고 커밋된 `data/processed/_manifest.json`
+    #   이 바뀐다. 그것을 재잠금에 안 담으면 5단계 「커밋된 web/data 가 최신인가」가 반드시 빨갛다.
+    #   그래서 닫힘이 움직인 배치는 **전량**을 돌린다(8GB 기계 · --split).
+    if git diff --name-only "origin/$BASE..HEAD" | grep -qxFf <(
+           uv run --no-sync python -c 'from firelane.shardseal import code_closure
+from firelane.paths import ROOT
+for p in sorted(code_closure("firelane.ingest")): print(p.relative_to(ROOT).as_posix())'); then
+        warn "ingest 닫힘이 바뀌었다 — 샤드를 다시 빌드한다(전량 · --split)"
+        uv run fire-lane --split || die "전량 재실행이 실패했다 — 재잠금 전에 멈춘다"
+    else
+        uv run fire-lane --from segments || die "파이프라인 재실행이 실패했다 — 재잠금 전에 멈춘다" \
+            "  계보가 어긋났으면:  uv run fire-lane --from segments --reset-lineage"
+    fi
+    # ★ 판정 **산출물**이 움직였으면 멈춘다 — 그것은 배선 배치가 아니라 측정 배치다(§13-5 규칙 2).
+    #   지문 파일이 아니라 파이프라인이 **실제로 쓰는** 추적 산출물을 본다. 지문은 `golden.py lock`
+    #   만 쓰므로 그것을 대 보면 언제나 깨끗하다 — 독립 검토가 잡은 빈 그물이다.
+    if ! git diff --quiet -- data/processed/segments.geojson data/processed/seg_uid_map.csv; then
+        git diff --stat -- data/processed/segments.geojson data/processed/seg_uid_map.csv
+        die "판정 산출물이 움직였다 — 이 배치는 배선이 아니라 측정이다." \
+            "  전후 값을 PR 본문에 적고 사람이 판단한다:  uv run python tools/golden.py check --allow-stale"
+    fi
+    uv run python tools/golden.py lock || die "golden 재잠금이 실패했다"
+    if git diff --quiet -- data/golden data/processed web/data; then
+        warn "재잠금할 것이 없었다 — 지문도 산출물도 이미 같다"
+    else
+        git add data/golden data/processed web/data
+        git commit -q -m "seal: golden 재잠금 · 샤드 봉인 (판정 불변)"
+        ok "재잠금 커밋 $(git rev-parse --short HEAD)"
+    fi
+fi
 
 # ══ 5. 전수 verify ════════════════════════════════════════════
 step "5. 전수 verify"

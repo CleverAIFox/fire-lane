@@ -26,10 +26,20 @@ import type { VerdictStyle, View } from "../domain/types";
 import type { FeedItem, Unit } from "../domain/opsProtocol";
 import {
   GLYPHS, sources, baseLayers, opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer, applyTerrain, markerLayers, stationLayers,
+  opsVerdictColor, opsClearanceColor, opsClearanceBand,
   cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
+import { CLEARANCE_WIDE_M, type ClearanceBand } from "../domain/clearance";
+import { TUNING } from "../domain/vehicle";
+import { CLEARANCE_SCALE } from "../ui/clearanceMeaning";
 
 maplibregl.setWorkerUrl(workerUrl);
+
+/**
+ * ★ 2026-09-23 (DECISIONS §220). 구간 색에 **두 번째 모드**가 생겼다 — 「여유폭」.
+ *   판정 4색이 기본이고, 모드를 바꾸면 같은 선을 고른 차의 여유폭으로 칠한다.
+ *   레이어는 그대로고 `line-color` 와 거르기 축만 바뀐다.
+ */
 
 /** CCTV 영상판정 유효 반경(m). 정본은 seg/params.py CCTV_RANGE — 표시용 사본 */
 const CCTV_RANGE_M = 25;
@@ -64,7 +74,16 @@ interface Props {
   terrain?: { enabled: boolean; exaggeration: number };
   style: Record<string, VerdictStyle>;
   layers: OpsLayers;
+  /**
+   * 구간 색의 기준 (§220). `verdict` 가 기본 — 파이프라인이 낸 4색이다.
+   * `clearance` 는 **고른 차의 여유폭**으로 칠한다. 색만 바뀌고 판정은 그대로다.
+   */
+  colorMode: "verdict" | "clearance";
+  /** 여유폭 모드에서 뺄 요구폭(m) — `requiredWidth(spec)` */
+  requiredM: number;
   hidden: ReadonlySet<string>;
+  /** 여유폭 모드에서 숨긴 구간 키(`ClearanceBand`) */
+  hiddenBands: ReadonlySet<string>;
   /** 닿는 구간. null 이면 겹침 없음 */
   reachable: ReadonlySet<string> | null;
   incident: LngLat | null;
@@ -218,18 +237,40 @@ export function OpsMap(props: Props) {
     });
   }, [props.layers]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── 판정 거르기 · 도달 불가 · 선택 ─────────────────────────────
+  // ── 구간 색 — 판정 4색 ↔ 여유폭 4단 (§220) ─────────────────────
+  // ★ 레이어를 새로 올리지 않고 `line-color` 만 갈아 끼운다. 굵기(= 최소 유효폭) ·
+  //   테두리 · 선택 강조는 두 모드가 같은 것을 쓴다.
   useEffect(() => {
     whenReady((m) => {
-      const hid = [...P.current.hidden];
-      m.setFilter("ops-verdict", hid.length ? ["!", ["in", ["get", "verdict"], ["literal", hid]]] as never : null);
-      m.setFilter("ops-verdict-case", hid.length ? ["!", ["in", ["get", "verdict"], ["literal", hid]]] as never : null);
+      const p = P.current;
+      const col = p.colorMode === "clearance"
+        ? opsClearanceColor(p.requiredM, TUNING.tightMarginM, CLEARANCE_WIDE_M,
+                            (k) => CLEARANCE_SCALE[k as ClearanceBand].color)
+        : opsVerdictColor((k) => p.style[k]?.color ?? "rgb(120,128,140)");
+      m.setPaintProperty("ops-verdict", "line-color", col as never);
+    });
+  }, [props.colorMode, props.requiredM, props.style]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 거르기 · 도달 불가 · 선택 ─────────────────────────────────
+  useEffect(() => {
+    whenReady((m) => {
+      const p = P.current;
+      // ★ 모드마다 거르는 축이 다르다 — 판정 모드는 `verdict`, 여유폭 모드는 여유폭 구간.
+      //   범례에서 지금 보이는 줄만 눌러 숨길 수 있게 한다.
+      const hid = p.colorMode === "clearance" ? [...p.hiddenBands] : [...p.hidden];
+      const key = p.colorMode === "clearance"
+        ? opsClearanceBand(p.requiredM, TUNING.tightMarginM, CLEARANCE_WIDE_M)
+        : ["get", "verdict"];
+      const f = hid.length ? ["!", ["in", key, ["literal", hid]]] as never : null;
+      m.setFilter("ops-verdict", f);
+      m.setFilter("ops-verdict-case", f);
       const r = P.current.reachable;
       m.setFilter("ops-unreach", r ? ["!", ["in", ["get", "seg_uid"], ["literal", [...r]]]] as never : null);
       m.setLayoutProperty("ops-unreach", "visibility", P.current.layers.reach && r ? "visible" : "none");
       m.setFilter("ops-selected", ["==", ["get", "seg_uid"], P.current.selectedSeg ?? ""] as never);
     });
-  }, [props.hidden, props.reachable, props.selectedSeg, props.layers.reach]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [props.hidden, props.hiddenBands, props.colorMode, props.requiredM,
+      props.reachable, props.selectedSeg, props.layers.reach]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 출동 미리보기 ─────────────────────────────────────────────
   useEffect(() => {

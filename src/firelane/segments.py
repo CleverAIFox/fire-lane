@@ -11,8 +11,10 @@ IN    processed/{boundary_emd,road_link,road_rw,ngii_road,ngii1k,ngii1k_center,
 OUT   processed/segments_5186.gpkg · segments.geojson · segments.schema.json
       processed/seg_uid_map.csv · nfa_compare.json · corridor_5186.gpkg
       processed/route_vehicle.csv   ★ publish 가 읽어 web 으로 낸다
-      processed/scope_5186.gpkg     ★ 2026-09-04 신설. ortho·publish 가 읽는다
       processed/width_samples.csv · uncovered_units.json  (진단 덤프)
+      ★ 2026-09-23 (PLAN §13 W3-6). `scope_5186.gpkg` 는 여기서 안 낸다.
+        표출 상수를 판정 지문 밖으로 내려고 `firelane/display_scope.py`
+        단계로 옮겼다. 그 단계가 방금 낸 corridor_5186.gpkg 를 읽는다
 PARAM seg/params.py 가 정본. TRUCK=3.0 PARK=2.0 CCTV_RANGE=25.0 등
 
 전제
@@ -70,7 +72,7 @@ from firelane.seg.params import (
     XSEC_EXCL,
 )
 from firelane.seg.roadname import RoadNameIndex
-from firelane.seg.scope import display_scope, judgment_scope
+from firelane.seg.scope import judgment_scope
 from firelane.seg.width import WidthEngine
 from firelane.segkey import attach_seg_uid, save_uid_map, uid_retention
 
@@ -123,7 +125,7 @@ def _write_route(g) -> None:
       `route_vehicle.csv` 로 따로 낸다 — golden 지문이 그대로다.
 
     ── 왜 2차인가 ───────────────────────────────────────────────
-    `access_corridor()` 는 **폭 산출보다 먼저** 돈다(194줄 vs 435줄).
+    `access_corridor()` 는 **폭 산출(`WidthEngine`)보다 먼저** 돈다 — 줄번호로 인용하지 않는다(W3-5 족).
     그래서 `weight="length"` 밖에 못 쓴다. 그 결과가 `route_usage` 다.
 
     스키마는 정직하게 *"최단경로 사용횟수"* 라고 적혀 있다. 문제는 이름이
@@ -344,40 +346,6 @@ def _write_samples(g) -> None:
     #   -19,393 결측)` 이 나왔다 — **음수가 나온 순간 알아챘어야 했다.**
     print(f"  폭 표본 {n:,}행 ({ok:,} 유효 · {n - ok:,} 결측) · "
           f"구간 {len(uid_of):,} → {dst.name}")
-
-
-def _write_scope(poly, corridors, stations) -> None:
-    """표출 스코프를 `processed/scope_5186.gpkg` 로 낸다.
-
-    ★ 2026-09-04. 종전에는 `publish_web.main()` 이 계산했고 결과를
-      `web/data/scope.geojson` 으로 냈다. 그런데 `ortho` 가 그것을
-      읽는다 — STEPS 순서가 … → ortho → publish 라 **뒤 단계 산출을
-      앞 단계가 읽고 있었다.** 늘 지난 실행의 스코프로 정사영상을
-      구웠고, 스코프가 바뀌면 한 실행 늦게 따라왔다.
-
-    ★ 재료 셋이 전부 이 시점에 있다 —
-        poly                   boundary_emd (ingest · 호출자가 준다)
-        corridor_5186.gpkg     seg/graph.py:145 가 방금 냈다
-        fire_station.geojson   ingest
-      그래서 여기로 옮기면 순방향이 된다.
-
-    ★ **기하는 그대로다.** 같은 순서로 같은 연산을 하고 저장 위치만
-      앞당긴다. publish 는 이 파일을 읽어 4326 으로 돌려 mask ·
-      mask_soft 를 만든다 — 변환 단계를 종전과 똑같이 유지해야
-      golden 의 L3 기하 동일이 유지된다.
-
-    IN    processed/corridor_5186.gpkg · processed/fire_station.geojson
-    OUT   processed/scope_5186.gpkg
-    """
-    # ★ 2026-09-16. 판정과 **같은 실행의** 회랑 · 안전센터를 받는다(DECISIONS §170). 종전에는
-    #   지난 실행이 남긴 corridor_5186.gpkg 를 다시 읽었다 — 회랑이 바뀌면 한 실행 늦게 따라왔다.
-    #   규칙은 seg/scope.py 한 곳이다. 판정 범위를 전부 덮고 동 경계 여백 60m 를 유지한다.
-    scope = display_scope(poly, corridors, stations)
-
-    dst = PROCESSED / "scope_5186.gpkg"
-    gpd.GeoDataFrame(geometry=[scope], crs=5186).to_file(
-        dst, driver="GPKG", layer="scope")
-    print(f"스코프 {scope.area / 1e6:.3f}km2 -> {dst.name}")
 
 
 def main():
@@ -901,7 +869,6 @@ def main():
     _write_samples(g)
     _write_route(g)
     seg_report.write_outputs(g)
-    _write_scope(poly, corridors, stations.geometry)
 
 
 if __name__ == "__main__":

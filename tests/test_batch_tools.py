@@ -356,3 +356,65 @@ def test_bot_prs_are_vacuumed_not_wiped():
     assert "밀렸다" in s and "흐름 밖" in s, "청소 기준(밀림 · 흐름 밖)이 없다"
     assert "gh pr diff" in s, "닫기 전에 diff 를 보관하지 않는다"
     assert "봇 대기" in s, "남긴 봇 PR 을 알리지 않는다"
+
+
+def test_pr_body_check_runs_before_verify():
+    """본문 검사가 전수 verify **앞**에 있다 (DECISIONS §220).
+
+    2026-09-22 실물 — 본문의 「리뷰어가 볼 곳」이 비어 10분짜리 verify 를 태운 **뒤에** 멈췄다.
+    """
+    fl = (ROOT / "tools" / "fl.sh").read_text(encoding="utf-8")
+    first = fl.index("pr_body_check.py")
+    verify = fl.index('step "5. 전수 verify"')
+    assert first < verify, "본문 검사가 verify 뒤에 있다 — 빨강을 10분 늦게 본다"
+
+
+def test_relock_step_stops_when_judgment_moved():
+    """`--relock` 은 지문만 다시 찍고, 판정 **값**이 움직이면 멈춘다 (DECISIONS §220)."""
+    fl = (ROOT / "tools" / "fl.sh").read_text(encoding="utf-8")
+    assert "--relock) RELOCK=1" in fl, "--relock 을 안 받는다"
+    i = fl.index('if [ "$RELOCK" = 1 ]; then')
+    blk = fl[i:fl.index('step "5. 전수 verify"')]
+    assert "fire-lane --from segments" in blk and "golden.py lock" in blk, "재잠금 두 명령이 없다"
+    # ★ 2026-09-23. 종전에는 `data/golden/segments.fingerprint.json` 을 대조했는데 그 파일은
+    #   `golden.py lock` 만 쓴다 — 재잠금 전에는 언제나 안 움직여 그물이 비어 있었다.
+    #   판정이 움직였는지는 **추적되는 파이프라인 산출물**이 말한다.
+    cmp_ = "git diff --quiet -- data/processed/segments.geojson data/processed/seg_uid_map.csv"
+    assert cmp_ in blk, "판정 산출물 대조가 없다 — 지문 파일만 보면 빈 그물이다"
+    assert blk.index(cmp_) < blk.index("tools/golden.py lock"), \
+        "값 대조를 재잠금 **뒤에** 한다 — 그러면 움직인 판정을 덮어쓴다"
+    # ingest 닫힘이 바뀐 배치는 샤드 봉인이 찢어진다 — `--from segments` 로는 _manifest 가 낡는다
+    assert "code_closure(\"firelane.ingest\")" in blk and "fire-lane --split" in blk, \
+        "ingest 닫힘이 바뀐 배치에서 전량 재빌드를 안 한다"
+
+
+def test_release_checkbox_asks_only_about_judgment():
+    """릴리즈 체크박스는 판정 지문만 본다 — 발행 파일 수는 `계보` 줄이 말한다 (§220)."""
+    mb = (ROOT / "tools" / "merge_batch.sh").read_text(encoding="utf-8")
+    i = mb.index('out = changed(')
+    line = mb[i:mb.index("\n", i)]
+    assert "segments.fingerprint.json" in line and "web/data" not in line, line
+
+
+def test_tag_prompt_accepts_the_suggested_tag():
+    """제안 태그를 그대로 치면 「예」다 — y/N 자리에 태그를 치는 사람이 있다 (§220)."""
+    mb = (ROOT / "tools" / "merge_batch.sh").read_text(encoding="utf-8")
+    assert '[y/N/태그]' in mb and 'y|Y|"$next") tag="$next"' in mb, "태그 입력을 y 로 안 받는다"
+
+
+def test_bot_prs_do_not_block_a_batch():
+    """봇 PR 은 배치를 막지 않는다 — 막는 것은 **사람** PR 뿐이다 (DECISIONS §221-2).
+
+    `branch_tidy --close-bots` 는 봇 PR 을 알림으로 **일부러 남긴다**(§218-4).
+    1단계가 작성자를 안 보면 그 남긴 PR 이 다음 배치를 영영 세운다 — 규칙 둘이
+    서로를 막는다. 2026-09-23 에 실제로 섰다.
+    """
+    fl = (ROOT / "tools" / "fl.sh").read_text(encoding="utf-8")
+    i = fl.index('step "1. 전제"')
+    blk = fl[i:fl.index('step "2.', i)]
+    assert "author" in blk and "dependabot" in blk.lower(), "1단계가 PR 작성자를 안 본다"
+    assert "**사람** PR" in blk, "사람 PR 만 막는다는 것이 메시지에 없다"
+    # 봇 목록은 `die` 가 아니라 `warn` 으로 나간다
+    j = blk.index("BOT")
+    tail = blk[j:]
+    assert "warn " in tail and 'die "$BASE 로 가는 **봇' not in tail, "봇 PR 에서 죽는다"

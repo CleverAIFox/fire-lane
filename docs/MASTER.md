@@ -175,7 +175,8 @@ clear     최소 폭 >= 3.0 + 2 x 2.0 = 7.0            양쪽 주차를 가정�
 ```
 
 `clear` 가 양쪽 주차를 가정하는 이유는 양방 주차가 상시인 골목에서 한쪽만
-보는 것이 낙관 방향이기 때문이다. 임계값 정본은 `src/firelane/seg/params.py` 다.
+보는 것이 낙관 방향이기 때문이다. 판정 임계값 정본은 `src/firelane/seg/params.py` 이고,
+표출 상수(지도 여백 · 닫힘 반경)는 `src/firelane/display_scope.py` 가 든다 — 판정 지문 밖이다.
 
 ### 2-3. 이 숫자가 바뀌지 않는다는 근거
 
@@ -416,7 +417,7 @@ route_usage        weight="length"       회랑 산정용. 폭을 모른다
 route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 ```
 
-`access_corridor()` 는 **폭 산출보다 먼저** 돈다(`segments.py` 194줄 대 435줄).
+`access_corridor()` 는 **폭 산출보다 먼저** 돈다(`segments.py` 에서 `WidthEngine` 앞).
 그래서 거리만 쓸 수 있고, 그 결과가 `route_usage` 다. 순서를 바꾸지 않는 이유는
 회랑 산정(표출 스코프)이 폭에 의존하면 계보가 꼬이기 때문이다.
 
@@ -632,7 +633,8 @@ data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취
 data/processed/    대장 72종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
-      seg/params.py     임계값 정본 (web/config.js 는 표시용 사본)
+      seg/params.py     판정 임계값 정본 (web/config.js 는 표시용 사본)
+      display_scope.py  표출 범위 단계 — 판정 지문 밖(DECISIONS §220)
       seg/graph.py      노딩 · 최대성분 · 접근 회랑
       seg/width.py      폭 산출 (WidthEngine)
       seg/geom.py       verdict · _seal · _join · _dirv (폐포 없는 순수 함수)
@@ -1235,6 +1237,21 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `web/data/` | 생성물. 손으로 고치지 않는다 |
 
 강제자  `tests/test_guards.py::test_docs_point_at_the_real_package` — 파일 구조 표가 실제 패키지 경로를 가리키는지 본다
+
+### 11-2a. 여유폭 — 색과 수, 그리고 빨강의 사유 (2026-09-23 · DECISIONS §220)
+
+**여유폭 = 최소 유효폭(`width_min_m`) − 요구폭**이고, 요구폭은 `domain/vehicle.ts` 의 `requiredWidth`
+(전폭 + 필요 여유 · 지금 편성은 전부 3.0m)다. **뺄셈에 쓰는 폭이 경로가 통행 가부에 쓰는 폭과 같다** —
+화면의 수와 경로의 가부가 갈릴 수 없다(`web/navi/test/clearance.test.ts` 가 1,281구간 전량을 댄다).
+
+    관제   「판정 4색 / 여유폭」 모드 토글. 여유폭 모드는 음수 · 0~0.5 · 0.5~1 · 1m+ · 폭 미상으로 칠하고
+           범례가 통째로 바뀐다(구간 수 포함). 기본은 판정 4색이다
+    카드   구간 카드 · 내비 병목판에 여유폭 수치와 사유 — 어느 폭이 요구폭에 얼마 모자라는지,
+           관제사가 지금 취할 조치 한 줄. 초록이고 여유가 넉넉하면 그 줄이 통째로 빠진다
+    경로   안전 경로와 빠른 경로가 같은 구간 순서면 카드 하나로 「안전하면서 빠른 추천 경로」
+
+★ 0.5m 는 `TUNING.tightMarginM`(비용 1.8배가 걸리는 그 값)이고 1.0m 는 **표시 전용**이다.
+  새 문턱을 세우지 않았다 — 판정 문턱의 정본은 여전히 `seg/params.py` 다.
 
 ### 11-3. 값은 바뀌고 구조는 안 바뀐다
 
@@ -2003,7 +2020,7 @@ editable 로 알아서 깐다.
 ### 14-2. 파이프라인은 한 명령이다
 
 ```
-ingest → segments → streetlight → terrain → ortho → publish → 계약 테스트 → 지문 대조
+ingest → segments → scope → streetlight → terrain → ortho → publish → 계약 테스트 → 지문 대조
 ```
 
 ```bash
@@ -2040,7 +2057,7 @@ python -m firelane.contract                     대장 선언 ↔ raw 실물 대
 ### 14-4. 검사
 
 ```bash
-bash tools/verify.sh          # 49단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 50단계 전부. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 파이프라인 전량 생략
 ```
 
@@ -2175,6 +2192,7 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
     encoding_check   UTF-8 · LF · 개행
     treecheck        트리 구조
     docx_check       기획서 숫자 ↔ 대장
+    docx_figs        기획서 그림 ↔ 정본. `--sync` 가 docx 안 이미지를 교체한다
     docnum_check     문서 숫자 ↔ 실물
     ledger_stem      대장 stem 이관 · 무손실 증명
     ledger_fields    대장 별칭 필드 통합
@@ -2261,6 +2279,12 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 
 발표·제출에서 무엇을 말할 수 있고 무엇을 말할 수 없는가를 정한다.
 기획서 자체의 갱신 대상은 PLAN §12 가 든다.
+
+★ **기획서는 손으로 고치지 않는다.** 숫자와 문단은 `tools/docx_fix.py`, 그림은
+`tools/docx_figs.py --sync` 가 넣는다. 정본에서 나온 것을 사람이 옮겨 붙이는 자리는
+남기지 않는다 — 그 자리는 매번 미뤄져서 제출본만 옛 값을 든 채 남는다(DECISIONS §221-1).
+`tools/docx_figs.py` 의 `PLACE` 가 「어느 생성 그림이 기획서 몇 번 그림인가」의 정본이고,
+기획서에 자리가 없는 그림은 사유를 적어 `internal` 로 선언한다.
 
 ### 15-1. 말할 수 있는 것
 
@@ -2418,6 +2442,41 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 ★ **강제되지 않는 규약은 장식이다.** 이 저장소에서 반복된 사고는 하나의
 형태를 갖는다 — 규약은 주석이나 문서에 존재하고 이를 강제하는 검사가 없다.
 반복 사례는 `DECISIONS.md` 가 든다.
+
+### 17-1. 정본은 하나 — 사실 · 정본 파일 · 따르는 곳 · 강제자
+
+위 원칙 둘이 실물로 서는 자리다 — 「문서에 적힌 값과 코드가 다르면 코드가
+정본이다」와 「새 규칙을 적을 때는 강제자를 같이 만든다」. 같은 값이 여러
+파일에 literal 로 사는 것을 못 막는 자리가 있다(YAML · Dockerfile · 셸은
+서로를 import 못 한다). 못 막으면 **목록으로 적고 기계가 맞춘다.**
+
+| 사실 | 정본 파일 | 따르는 곳(요약) | 강제자 |
+|---|---|---|---|
+| `uv` | `Dockerfile` | CI 둘(contract · _deploy)의 `setup-uv` · `.devcontainer/setup.sh` 의 대체 설치 줄 | `tests/test_sources_of_truth.py` — 목록 밖 literal · 판 없는 설치 줄까지 본다 |
+| `node` | `web/navi/.nvmrc` | build-navi 액션 · contract 가 파일을 읽는다 · `.devcontainer/devcontainer.json` | `tests/test_sources_of_truth.py` · `tests/test_ci_env.py` |
+| `python` | `.python-version` | `Dockerfile` 베이스 이미지 · `pyproject.toml` requires-python · CI 둘이 파일을 읽는다 | `tests/test_sources_of_truth.py` |
+| `pytest` | `pyproject.toml` | `uv.lock` 의 잠긴 판(하한 이상) | `tests/test_sources_of_truth.py` |
+| `coverage_floor` | `tools/verify.sh` | 같은 파일의 명령줄이 변수를 읽는다 · `tests/test_verify_citations.py` | `tests/test_sources_of_truth.py` |
+| `truck_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `park_m` | `src/firelane/seg/params.py` | `tools/render_figures.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `code_owner` | `.github/CODEOWNERS` | `tools/navi_setup.py` 기본값 · `tools/ruleset_check.py` 관리자 · 기본 저장소 | `tests/test_sources_of_truth.py` |
+| `font_stack` | `tools/render_figures.py` | `web/navi/src/ui/tokens.ts` · `web/proposal.html` | `tests/test_sources_of_truth.py` |
+
+★ **기계가 읽는 판은 `tests/test_sources_of_truth.py` 의 `SPEC` 이다.** 정규식 ·
+비교 · 훑기 범위처럼 사람이 안 읽는 것은 강제자와 같은 파일에 산다. 이 표와
+`SPEC` 이 갈리면 `test_master_table_and_spec_agree` 가 **양방향**으로 운다 —
+표에만 있는 행(강제자 없는 선언)도, `SPEC` 에만 있는 사실(사람이 못 보는
+규율)도 잡는다. 2026-09-23 이전에는 둘을 합친 별도 파일이었고, 그것이
+**문서를 넷으로 묶는 규칙**을 어겼다.
+
+★ 사실을 더하거나 지울 때는 **표와 `SPEC` 둘 다** 고친다. 새 자리가 생겼는데
+목록에 안 더하면 `uv` · `python` 은 훑기 범위가 있어 바로 울고, 나머지는
+조용하다 — 조용한 쪽이 이 표가 있는 이유다.
+
+★ 문서(`docs/*.md`)는 이 표에 안 든다. 커버리지 래칫의 문서 대조는
+`tests/test_verify_citations.py` 가, 판정 숫자의 문서 대조는
+`tools/docnum_check.py` 가 이미 한다.
 
 ---
 
@@ -3233,8 +3292,8 @@ BEV 는 디버그 플래그 뒤에 둔다.
 ★ **판정을 안 본다.** `blocked` 구간도 최단이면 지나간다. 그러면 "소방차가
 갈 수 있는 길" 이 아니라 **"제일 짧은 선"** 이다.
 
-★ `access_corridor()` 는 **폭 산출보다 먼저** 돈다(`segments.py` 194줄 대
-435줄). 순서를 바꾸지 않으면 폭을 비용에 넣을 수 없다.
+★ `access_corridor()` 는 **폭 산출보다 먼저** 돈다(`segments.py` 에서 `WidthEngine`
+앞이다 — 줄번호로 인용하지 않는다). 순서를 바꾸지 않으면 폭을 비용에 넣을 수 없다.
 
 ### 20-2. 두 번 돈다
 
@@ -3245,7 +3304,7 @@ BEV 는 디버그 플래그 뒤에 둔다.
     1차  access_corridor()           weight="length"     → route_usage
     2차  segments.py::_write_route()  vehicle.edge_cost() → route_vehicle.csv
 
-`_write_route()` 는 826줄에서 호출된다. 폭 · 내륜차 · 회전반경 · 판정을
+`_write_route()` 는 `segments.main()` 의 끝에서 호출된다. 폭 · 내륜차 · 회전반경 · 판정을
 반영한 2차 그래프를 새로 만들어 Dijkstra 를 다시 돌린다.
 
 ★ **판정을 안 바꾼다.** `segments.geojson` 에 컬럼을 더하지 않고

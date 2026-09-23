@@ -317,8 +317,11 @@ put("  예)  src/firelane/seg/width.py:212  — 횡단선 간격을 0.5 → 0.25
 #   바로 위 put() 이 이 체크박스 옆에 「판정 4수치가 움직였는가. 위 release_brief
 #   표의 `판정` 줄」을 적어 넣는다 — 물음은 4수치이고 측정은 디렉터리였다.
 #   원칙 ② 그 형태다: 잘못된 것을 정확히 지킨다.
-out = changed("data/golden/segments.fingerprint.json",
-              "web/data", ":(exclude)web/data/_manifest.json")
+# ★ 2026-09-23 (DECISIONS §220). `web/data` 를 같이 보던 것을 **판정 지문 하나**로 좁혔다.
+#   v0.35 에서 옛 지도 전용 발행 다섯을 멈춘 릴리즈가 「바뀐다 → golden 재잠금」에 찍혔다 —
+#   판정 4수치는 한 칸도 안 움직였는데 표출 파일 수가 줄어서다. 물음은 「판정이 움직였나」다.
+#   발행물 변화는 위 release_brief 표의 `계보` 줄이 이미 말한다.
+out = changed("data/golden/segments.fingerprint.json")
 t = t.replace("- [ ] 바뀐다" if out else "- [ ] 안 바뀐다", "- [x] 바뀐다" if out else "- [x] 안 바뀐다", 1)
 con = changed("src/contracts", "tests/test_contract.py", "web/config.js")
 t = t.replace("- [ ] `src/contracts/`" if con else "- [ ] 안 건드린다",
@@ -355,9 +358,19 @@ ok "main $(git rev-parse --short origin/main) · dev 와 내용 같음"
 last=$(git tag -l 'v[0-9]*.[0-9]*' | { grep -E '^v[0-9]+\.[0-9]+$' || true; } | sort -V | tail -1)
 next=""
 if [ -n "$last" ]; then next="${last%.*}.$(( ${last##*.} + 1 ))"; fi
+# ★ 2026-09-23 (DECISIONS §220). y/N 자리에 **태그를 그대로 치는** 사람이 있다(실제로 그랬다).
+#   제안한 태그를 치면 그것은 「예」다 — 다시 묻지 않는다.
 tag=""
-if [ -n "$next" ] && ask "릴리즈 태그 $next (직전 $last) 를 붙이고 GitHub Release 를 만든다. 진행?"; then
-    tag="$next"
+if [ -n "$next" ]; then
+    a=$(read_answer "릴리즈 태그 $next (직전 $last) 를 붙이고 GitHub Release 를 만든다. [y/N/태그] ")
+    a=$(printf '%s' "$a" | LC_ALL=C tr -cd 'A-Za-z0-9.-')
+    case "$a" in
+        y|Y|"$next") tag="$next" ;;
+        # ★ 2026-09-23. [y/N/태그] 를 읽고 `n` 이라고 답하면 종전에는 태그 이름 `n` 으로 새어
+        #   형식 검사에서 경고가 났다 — 거절은 거절로 받는다(빈 답과 같다).
+        ""|n|N|no|No|NO) tag="" ;;
+        *) tag="$a" ;;
+    esac
 else
     tag=$(read_answer "릴리즈 태그를 직접 (예 v0.3 · 비우면 안 붙인다): ")
 fi

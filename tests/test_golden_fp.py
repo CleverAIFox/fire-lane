@@ -5,8 +5,10 @@
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
+from pathlib import Path
 
 import golden
 
@@ -79,3 +81,52 @@ def test_lock_writes_method_and_old_method_is_reported(tmp_path, monkeypatch):
     fp.write_text(json.dumps({"all": now, "files": per}) + "\n", encoding="utf-8")     # 값은 같아도 방식 칸이 없다
     out = golden._staleness()
     assert out and "옛 방식" in out[0], "옛 방식 잠금을 조용히 통과시켰다"
+
+
+# ── 지문의 **범위** — 표출은 판정 밖이다 (2026-09-23 · PLAN §13 W3-6) ───────────
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _assigned_names(rel: str) -> set[str]:
+    """그 파일이 **정의하는** 최상위 이름. 주석에 적힌 이름은 안 센다."""
+    out: set[str] = set()
+    for n in ast.walk(ast.parse((ROOT / rel).read_text(encoding="utf-8"))):
+        if isinstance(n, ast.Assign):
+            out |= {t.id for t in n.targets if isinstance(t, ast.Name)}
+        elif isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name):
+            out.add(n.target.id)
+    return out
+
+
+def test_display_only_constants_are_outside_the_judgment_closure():
+    """표출 전용 상수가 판정 지문 안에 있으면, **지도 여백만 고쳐도 재잠금이 따라온다.**
+
+    ★ 판정은 한 구간도 안 움직이는데 게이트가 우는 자리이고, 그 반복이 `--allow-stale` 을
+      습관으로 만든다(DECISIONS §69). 범위를 정하는 것은 import 다 — `firelane.segments` 가
+      `firelane.display_scope` 를 import 하는 순간 이 검사가 운다.
+    """
+    files = golden.judgment_files()
+    assert "src/firelane/display_scope.py" not in files, (
+        "표출 범위 모듈이 판정 지문 안이다 — segments 쪽에서 import 했다.\n"
+        "  계산은 `pipeline.STEPS` 의 `scope` 단계가 한다. 판정 코드는 그것을 몰라야 한다.")
+    bad = [f"{rel}:{nm}" for rel in files if rel.endswith(".py")
+           for nm in sorted(_assigned_names(rel)) if nm.startswith("DISPLAY_")]
+    assert not bad, (
+        f"표출 전용 상수가 판정 지문 안에서 정의된다 — {bad}\n"
+        "  `firelane/display_scope.py` 가 그 정본이다(W3-6).")
+
+
+def test_display_constants_still_exist_where_they_moved():
+    """카나리아 — 이름이 바뀌면 위 검사가 눈이 먼다. 옮긴 자리에 **값 그대로** 있는가."""
+    from firelane import display_scope as ds
+
+    assert (ds.DISPLAY_BUFFER, ds.DISPLAY_CLOSE) == (60.0, 150.0), "값은 안 바꿨어야 한다"
+    assert "DISPLAY_BUFFER" in _assigned_names("src/firelane/display_scope.py")
+
+
+def test_ingest_shards_do_not_see_the_display_scope_module():
+    """ingest 샤드 봉인의 `code` 칸에도 안 들어간다 — 들어가면 표출 한 줄에 45 샤드가 찢어진다."""
+    from firelane.shardseal import code_closure
+
+    ing = {p.relative_to(ROOT).as_posix() for p in code_closure("firelane.ingest")}
+    assert "src/firelane/display_scope.py" not in ing

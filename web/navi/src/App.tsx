@@ -27,7 +27,7 @@ import { useScreens } from "./app/useScreens";
 import { useFleet } from "./app/useFleet";
 import { useShare } from "./app/useShare";
 import { useOpsUplink, type UnitSnapshot } from "./app/useOpsUplink";
-import { compareMarks } from "./domain/compare";
+import { compareKind, compareMarks, routeStats, sameRoute } from "./domain/compare";
 import { cumulative, pointAlong } from "./domain/geo";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
 import { requiredWidth } from "./domain/vehicle";
@@ -53,6 +53,7 @@ import { C, F, fmtDur } from "./ui/tokens";
 import { ruleSummary } from "./domain/rules";
 import { hazardSummary, routeHazards } from "./domain/context";
 import { grayReason } from "./ui/verdictMeaning";
+import { segmentReason } from "./ui/clearanceMeaning";
 
 /** 병목 탭을 띄우는 앞 거리(m). 와이어프레임 04 가 「전방 300m」 다 */
 const BOTTLENECK_AHEAD_M = 400;
@@ -173,11 +174,16 @@ export default function App() {
   }, [wantRoute]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 경로 비교 카드 ────────────────────────────────────────────
+  // ★ 2026-09-23 (§220). 「같다」 를 여기서 판단해 **화면에 그대로 넘긴다.** 종전엔
+  //   같으면 둘째 경로를 null 로 지워 화면이 「둘째 경로가 없다」 로 읽었다 — 없는 것과
+  //   같은 것은 다른 말이다(멘토링 §219: 겹치면 「안전하면서 빠른 추천 경로」).
   const compare = useMemo(() => {
     const a = n.plan;
     if (!a) return null;
-    const b = n.fastPlan && !samePlan(a, n.fastPlan) ? n.fastPlan : null;
+    const same = compareKind(a, n.fastPlan) === "same";
+    const b = n.fastPlan && !same ? n.fastPlan : null;
     return {
+      same,
       safe: routeOption(a, need, b, true, n.access, n.data?.context ?? null),
       fast: b ? routeOption(b, need, a, false, n.access, n.data?.context ?? null) : null,
     };
@@ -232,11 +238,13 @@ export default function App() {
       coverage: e.width_cov ?? null, samples: e.n_sample ?? null,
       cctvDistM: e.cctv_dist_m ?? null,
       grayReason: grayReason(e)?.long ?? null,
+      // ★ 2026-09-23 (§220) 색만이 아니라 사유를. 판정마다 한 줄 — 없으면 null 이고 패널이 뺀다
+      reason: segmentReason(e, spec),
       park: e.park ?? null,
       verdictLabel: style[e.verdict]?.label ?? e.verdict,
       verdictColor: style[e.verdict]?.color ?? C.panelInk,
     };
-  }, [bottleneckEdge, n.plan, n.driven, need, style]);
+  }, [bottleneckEdge, n.plan, n.driven, need, spec, style]);
 
   /** 병목 구간의 가운데 — 관제 공유 좌표 · 카메라 초점 */
   const bottleneckAt: LngLat | null = useMemo(() => {
@@ -313,7 +321,7 @@ export default function App() {
   };
   // 02 — 공통 구간 · 확인 필요 표지
   const notes: MapNote[] = useMemo(() => {
-    if (s.screen !== "compare" || !n.plan || !n.fastPlan || samePlan(n.plan, n.fastPlan)) return [];
+    if (s.screen !== "compare" || !n.plan || !n.fastPlan || sameRoute(n.plan, n.fastPlan)) return [];
     const base = choice === "safe" ? n.plan : n.fastPlan;
     const other = choice === "safe" ? n.fastPlan : n.plan;
     const m = compareMarks(base, other);
@@ -411,7 +419,7 @@ export default function App() {
       )}
 
       {s.screen === "compare" && compare && (
-        <RouteCompare safe={compare.safe} fast={compare.fast}
+        <RouteCompare safe={compare.safe} fast={compare.fast} same={compare.same}
                       selected={choice} onSelect={setChoice}
                       onChangeVehicle={fleet.fleet ? () => s.open("vehicle") : undefined}
                       onConfirm={() => {
@@ -510,12 +518,11 @@ function routeOption(
   access: { alt: boolean; walkM: number } | null,
   ctx: GeoJSON.FeatureCollection | null,
 ): RouteOption {
-  const isUnc = (e: GraphEdge) => e.verdict === "needs_cv" || e.verdict === "unknown";
-  const unc = p.edges.filter(isUnc);
-  const w = p.edges.map((e) => e.width_min_m).filter((x): x is number => x != null);
+  const st = routeStats(p);
+  const unc = { length: st.uncertainCount };
   const sec = travelSeconds(p);
   const deltaSec = other ? sec - travelSeconds(other) : 0;
-  const otherUnc = other ? other.edges.filter(isUnc).length : unc.length;
+  const otherUnc = other ? routeStats(other).uncertainCount : unc.length;
   // ★ 2026-09-22 (§214-2). 문구를 **실제 수로** 쓴다. 종전 「확인 필요 구간 11개를
   //   지납니다」 는 비교 상대를 안 말해서 추천 이유가 안 보였다.
   const slower = deltaSec > 1 ? `${fmtDur(deltaSec)} 느리지만 ` : "";
@@ -525,20 +532,18 @@ function routeOption(
   const tail = access?.alt
     ? ` 차량은 사건 지점 약 ${Math.round(access.walkM)}m(직선) 앞 대체 접근 지점까지 갑니다.` : "";
   return {
-    title: rec ? "폭 기준 추천" : "빠른 경로", recommended: rec, sec, lengthM: p.lengthM,
-    uncertainCount: unc.length,
-    uncertainM: unc.reduce((a, e) => a + (e.length_m ?? 0), 0),
-    minWidthM: w.length ? Math.min(...w) : null,
+    title: rec ? "폭 기준 추천" : "빠른 경로", recommended: rec, sec, lengthM: st.lengthM,
+    uncertainCount: st.uncertainCount,
+    uncertainM: st.uncertainM,
+    minWidthM: st.minWidthM,
     requiredM: need,
+    blockedCount: st.blockedCount,
+    ruleCount: st.ruleCount,
     deltaSec,
     note: (rec ? recNote : "도착은 빠르지만 폭 측정 신뢰도가 낮은 구간이 포함됩니다.") + tail,
     rules: ruleSummary(p.rules),
     around: hazardSummary(routeHazards(p, ctx)),
   };
-}
-
-function samePlan(a: RoutePlan, b: RoutePlan): boolean {
-  return a.edges.length === b.edges.length && a.edges.every((e, i) => e.seg_uid === b.edges[i].seg_uid);
 }
 
 /** 비교 화면에서 선택 안 된 쪽 경로. `choose` 전이라 plan 이 안전 경로다 */

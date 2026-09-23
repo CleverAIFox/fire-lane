@@ -331,6 +331,11 @@ EXEMPT_HANDLIST = {
     "SELF": "대장 기계 자신. 자기를 소비자로 세면 모든 대장 항목이 영원히 소비자를 갖는다",
     "_LEGACY_WATCH": "**동결된 옛 범위.** `golden.py rescope` 가 「옛 잠금이 이 범위로 재서 같은가」를 "
                      "증명할 때만 쓴다. 늘어나면 안 되는 목록이라 유도하면 증명이 깨진다",
+    # ★ 2026-09-23 (W3-6). ② 를 src 로 넓히며 걸린 유일한 건. 값은 5 → 13종으로 넓혔다.
+    "CRITICAL": "판정 관문의 입력 목록. **유도하면 대장의 서술 칸이 관문을 움직인다** — 분모 "
+                "`datasets.*.feeds` 는 `shardseal.DOC_KEYS` 가 「산출에 안 닿는 칸」으로 분류한 필드고"
+                "(§216-1), 그 한 줄이 관문을 조용히 **좁히면** 거짓 초록이다. 값은 코드에 두고 어긋나면 "
+                "우는 강제자를 뒀다 — `test_guards.py::test_critical_covers_every_dataset_feeding_judgment_code`",
 }
 
 
@@ -341,7 +346,10 @@ def probe_handlist(root: Path = ROOT) -> None:
         hit("② 손목록", ROOT / "tools" / "deadcheck.py", 0,
             f"원본을 못 쟀다 — {type(e).__name__}: {e}. **분모가 없으면 이 프로브는 빈 그물이다**")
         return
-    for p in sorted((root / "tests").rglob("*.py")) + sorted((root / "tools").rglob("*.py")):
+    # ★ 2026-09-23 (W3-6). `src` 를 넣었다 — 검사 코드만 보는 검사는 **제품 코드의 같은 병**을
+    #   못 본다. `guards.CRITICAL`(5종)이 대장 13종보다 좁은 채로 대상 밖에 살았다.
+    for p in sorted((root / "tests").rglob("*.py")) + sorted((root / "tools").rglob("*.py")) \
+            + sorted((root / "src").rglob("*.py")):
         t = tree(p)
         if t is None:
             continue
@@ -569,13 +577,6 @@ EXEMPT_SCOPE = {
     "src/firelane/inventory.py::_code_text":
         "속성이 **쓰이는가**는 판정(src)과 화면(web/*.js)이 읽는가다. 탐색 도구가 컬럼을 "
         "읽는 것을 사용으로 세면 모든 컬럼이 영원히 쓰인다(test_declaration_sync 와 같은 이유)",
-    # ★ 여기부터는 **미룬 것**이지 옳은 것이 아니다. 이름을 대고 적는다.
-    "tools/deadcheck.py::probe_handlist":
-        "**미룸 — PLAN §13 W3-6 에 얹었다(새 행을 안 단다).** ② 를 src 로 넓히면 "
-        "`src/firelane/guards.py:43 CRITICAL`(5종)이 걸린다 — 판정 코드에 feeds 가 닿는 datasets 는 "
-        "13종이다. guards.py 는 `firelane.segments` 닫힘 안이라 고치면 golden 지문이 바뀌고 "
-        "**재잠금 1회**가 따른다. W3-6(DISPLAY_* 를 지문 밖으로)도 같은 재잠금을 부른다 — 한 번에 한다. "
-        "③·⑤ 는 같은 날 src 로 넓혔다(새 건 0)",
 }
 
 
