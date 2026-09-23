@@ -49,8 +49,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
+
+#: `.rels` 의 기본 이름공간. 등록해야 다시 쓸 때 `ns0:` 접두가 안 붙는다.
+RELS_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+ET.register_namespace("", RELS_NS)
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCX = ROOT / "docs/proposal.docx"
@@ -191,11 +196,12 @@ def _prune_media(path: Path) -> None:
         blobs = {n: z.read(n) for n in z.namelist()}
     if rels_name not in blobs:
         return
-    from lxml import etree  # python-docx 가 들고 온다
-
+    # ★ 2026-09-23. 종전에는 `lxml` 을 직접 import 했다 — `deptry` DEP003 이 잡았다.
+    #   lxml 은 python-docx 가 끌고 오는 **전이 의존**이라 선언 없이 기대면, python-docx 가
+    #   내부 구현을 바꾸는 날 이 도구가 조용히 죽는다(4족). 표준 라이브러리로 쓴다.
     body = blobs["word/document.xml"]
     used_ids = {m.group(1).decode() for m in re.finditer(rb'r:(?:embed|link)="([^"]+)"', body)}
-    rels = etree.fromstring(blobs[rels_name])
+    rels = ET.fromstring(blobs[rels_name])
     drop_media = set()
     for rel in list(rels):
         target = rel.get("Target", "")
@@ -204,8 +210,7 @@ def _prune_media(path: Path) -> None:
             rels.remove(rel)
     if not drop_media:
         return
-    blobs[rels_name] = etree.tostring(rels, xml_declaration=True,
-                                      encoding="UTF-8", standalone=True)
+    blobs[rels_name] = ET.tostring(rels, xml_declaration=True, encoding="UTF-8")
     tmp = path.with_suffix(".tmp")
     with zipfile.ZipFile(path) as z, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as o:
         for item in z.infolist():
