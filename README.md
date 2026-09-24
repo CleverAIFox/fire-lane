@@ -5,7 +5,7 @@
 ```
 착수      2026-08-03
 기간      4개월
-대상      동명동 + 119안전센터 접근 회랑
+대상      동명동 + 119안전센터 접근 회랑 + 안전센터 반경 300m
 ```
 
 골목 1,281구간의 실제 통행 가능 폭을 산출해 소방차가 지나갈 수 있는지 판정하고,
@@ -146,7 +146,7 @@ editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
 
 ```bash
-bash tools/verify.sh          # 55단계 전부. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh          # 전 단계. 실패해도 끝까지 돌고 표로 보여준다
 bash tools/verify.sh --fast   # 급할 때. ★ `부분 실행` 에서 일부러 빨갛게 죽는다
 ```
 
@@ -276,7 +276,6 @@ uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구
 uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
 uv run python tools/matchcheck.py       Mapbox Map Matching 커버리지 (MAPBOX_TOKEN 필요)
 uv run python tools/field_compare.py    실측 야장 ↔ 우리 폭 · 판정 — 위험 오판 · 보정 제안 (트랙 C 봉인)
-uv run python tools/scan_data.py        데이터 레이크 구조 점검
 uv run python tools/ruleset_check.py    GitHub 룰셋 실물 ↔ MASTER §12-1 표 대조
 ```
 
@@ -315,8 +314,8 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 ```
 
 `access_corridor()` 는 폭 산출보다 먼저 돌기 때문에 거리만 쓸 수 있다.
-★ 그래서 **`route_usage` 는 통행 가능성을 뜻하지 않는다** — 0 초과인 579구간
-중 통과 불가가 41, 폭 3.0m 미만이 168이다.
+★ 그래서 **`route_usage` 는 통행 가능성을 뜻하지 않는다** — 0 초과인 580구간
+중 통과 불가가 40, 폭 3.0m 미만이 167이다.
 
 강제자  `tests/test_guards.py::test_route_usage_is_not_a_passability_claim`. 정본은 `MASTER §3-10` 이고 이 절은 그 사본이다 — 값이 갈리면 `tools/docnum_check.py` 가 운다
 
@@ -428,7 +427,7 @@ tools/
   acquire.py              landing → raw 획득 게이트 · sha 대조
   baseline.py             판정 산출물 봉인 · 실행 간 전이 대조
   golden.py               ★ 리팩 전후 산출물 동일 증명. baseline 과 반대 용도
-  scan_data.py            데이터 레이크 구조 점검. §7 이 레이크 **밖**도 본다
+  scan_data.py            데이터 레이크 구조 점검. 그 도구의 §7(선언 밖 형제)이 레이크 **밖**도 본다
   docnum_check.py         문서 ↔ 산출물 숫자 · 필드표 대조
   plan_renumber.py        PLAN §1 표 번호를 1..N 으로 · 결번 해소
   commit_policy.py        산출물 · 일회성 스크립트 · 비밀값 차단
@@ -552,12 +551,12 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 노딩 규칙이 바뀌면 `seg_id` 가 전부 밀린다. 외부 참조에는 `seg_uid` 를 쓴다.
 중간 단계의 구간 수와 그 사유는 `DECISIONS.md` 가 든다.
 
-## 나는 어느 파트인가
+## 어느 파트인가
 
 ★ 이 파일은 루트라 **누구든 처음 본다.** 지금은 GIS 파이프라인 서술이 많은데
 그것은 `src/firelane/README.md` 가 정본이다(PLAN 이 그 정리를 든다).
 
-| 나는 | 브랜치 | 볼 곳 | 문서 |
+| 파트 | 브랜치 | 볼 곳 | 문서 |
 |---|---|---|---|
 | GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
 | Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 226구간 · `cctv.geojson` | MASTER §10-2(판정 4종 · 색값은 `web/config.js`) |
@@ -566,7 +565,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
 `web/data/`(40MB 상한)만으로 작업할 수 있다.
 
-배포된 화면 다섯이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
+배포된 화면 다섯이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 다섯 곳에 산다.
 가는 길은 여기 하나다(DECISIONS §99). 플레이북(`web/playbook.html`)은 협업 방침을 그리는
 **틀**이라 따로 배포하지 않는다(§216-5).
 
