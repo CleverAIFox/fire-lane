@@ -118,6 +118,17 @@ def load() -> dict:
 
 
 # ── 활용도 ────────────────────────────────────────────────────
+#: 데이터를 **소비하지 않는** 피드. 이름표를 붙여 `data/raw` 에 놓을 뿐이다.
+#: ★ 2026-09-24 (PLAN §13 W13-5 · DECISIONS §243). `normalize_raw` 는 머리말대로
+#:   「다운로드 폴더의 원본을 명명규칙에 맞게 배치한다」 — 배치기이지 소비자가
+#:   아니다. 그런데 `grade()` 가 「feeds 가 비지 않았다」만 봐서 **이 한 줄짜리
+#:   일곱**(node_link_changelog · hydrant_summary · ngii_road_center · bin_trash ·
+#:   bin_cloth · bldg_ledger_dm · admin_cctv)을 활성으로 셌다. 일곱 다 제
+#:   `feeds_note` 에 「미투입」이라 적고 있었다 — **대장이 제 자신과 어긋났고
+#:   집계가 산문을 이겼다.** 미사용은 19가 아니라 26이다.
+RENAME_ONLY = frozenset({"src/firelane/normalize_raw.py"})
+
+
 def grade(entry: dict) -> str:
     """**자동 산출.** 대장에 적힌 값이 있어도 무시한다."""
     feeds = entry.get("feeds")
@@ -127,7 +138,12 @@ def grade(entry: dict) -> str:
     if not feeds:
         return "unused"
     if entry.get("kind") == "raw_only":
+        # 「원본만 보관」은 **왜 여기 있나**의 답이지 소비 여부가 아니다.
+        # 이 갈래를 뒤로 미루면 raw_only 열다섯이 미사용으로 뒤집힌다.
         return "reference"
+    if not set(feeds) - RENAME_ONLY:
+        # 이름표만 붙는다 — 아무도 안 읽는 것과 같다.
+        return "unused"
     return "active"
 
 

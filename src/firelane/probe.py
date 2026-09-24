@@ -12,7 +12,7 @@ probe.py — 데이터를 파이프라인에 넣기 전 통과시키는 진단�
 """
 from __future__ import annotations
 
-import sys
+import argparse
 from collections import Counter
 
 import geopandas as gpd
@@ -96,13 +96,17 @@ def cmd_topo(path: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print(__doc__)
-        sys.exit(1)
-    mode, target = sys.argv[1], sys.argv[2]
-    if mode == "crs":
-        cmd_crs(target, nationwide="--kr" in sys.argv)
-    elif mode == "topo":
-        cmd_topo(target)
+    # ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). `"--kr" in sys.argv` 였다 —
+    #   `--k` 나 `--KR` 는 조용히 무시돼 **광주 범위로만 역추정**하고, 그 답을
+    #   「전국을 봤다」로 읽는다. argparse 는 모르는 인자에 스스로 운다.
+    _ap = argparse.ArgumentParser(prog="python -m firelane.probe",
+                                  description="데이터를 넣기 전 통과시키는 진단기")
+    _ap.add_argument("mode", choices=("crs", "topo"))
+    _ap.add_argument("target")
+    _ap.add_argument("--kr", action="store_true",
+                     help="crs — 광주가 아니라 전국 범위로 역추정한다")
+    _a = _ap.parse_args()
+    if _a.mode == "crs":
+        cmd_crs(_a.target, nationwide=_a.kr)
     else:
-        print(__doc__)
+        cmd_topo(_a.target)

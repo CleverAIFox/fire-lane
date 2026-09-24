@@ -38,6 +38,7 @@ PARAM --check · --deploy
 """
 from __future__ import annotations
 
+import argparse
 import shutil
 import sys
 from pathlib import Path
@@ -71,8 +72,15 @@ def _drop_for_deploy() -> None:
 
 
 def main() -> int:
-    check = "--check" in sys.argv
-    if "--deploy" in sys.argv:
+    # ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). 종전에는 `"--x" in sys.argv`
+    #   였다 — **오타가 조용히 무시된다.** `--delpoy` 는 배포본에서 뺄 것을 안 뺐다.
+    #   argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+    ap = argparse.ArgumentParser(description="발행 페이지 staging")
+    ap.add_argument("--check", action="store_true", help="쓰지 않고 낡았는지만 본다")
+    ap.add_argument("--deploy", action="store_true", help="배포본에서 뺄 것을 뺀다")
+    a = ap.parse_args()
+    check = a.check
+    if a.deploy:
         _drop_for_deploy()
     bad = 0
     for src_rel, dst_rel in STAGED:

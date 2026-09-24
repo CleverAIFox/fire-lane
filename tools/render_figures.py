@@ -27,6 +27,7 @@ PARAM --check
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import re
@@ -498,7 +499,12 @@ FIGURES = {
 
 
 def main() -> int:
-    check = "--check" in sys.argv
+    # ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). 종전에는 `"--x" in sys.argv`
+    #   였다 — **오타가 조용히 무시된다.** `--chek` 는 검사 대신 **그림 파일을 덮어썼다.**
+    #   argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+    ap = argparse.ArgumentParser(description="정본 → docs/figures/*.svg")
+    ap.add_argument("--check", action="store_true", help="쓰지 않고 낡았는지만 본다")
+    check = ap.parse_args().check
     OUT.mkdir(parents=True, exist_ok=True)
     made = {}
     for name, fn in FIGURES.items():

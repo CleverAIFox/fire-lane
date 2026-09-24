@@ -17,6 +17,7 @@ CI 는 push 후에 돈다. 그때 잡히면 이미 히스토리에 박혀 있고
 """
 from __future__ import annotations
 
+import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -144,7 +145,13 @@ def check_size(paths: list[str]) -> list[str]:
 
 
 def main() -> int:
-    full = "--tracked" in sys.argv
+    # ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). 종전에는 `"--x" in sys.argv`
+    #   였다 — **오타가 조용히 무시된다.** `--traked` 는 전량 검사 대신 스테이지만 보고 통과했다.
+    #   argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+    ap = argparse.ArgumentParser(description="커밋 정책 — 스테이지 또는 저장소 전체")
+    ap.add_argument("--tracked", action="store_true",
+                    help="스테이지가 아니라 추적 파일 전부를 본다")
+    full = ap.parse_args().tracked
     paths = tracked() if full else staged()
 
     # ★ 못 본 것과 볼 것이 없는 것은 다르다.

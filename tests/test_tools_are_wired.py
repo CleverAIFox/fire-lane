@@ -277,6 +277,52 @@ def test_every_tool_is_named_in_readme():
           "  일회성이면 저장소 밖(`~/oneoff/`)으로 옮겨라 — README 규약이 둘 중 하나다.")
 
 
+def _argv_flags(src: str) -> list[str]:
+    """`"--x" in sys.argv` 꼴로 읽는 플래그. selftest 가 같은 함수를 쓴다."""
+    import ast
+    out = []
+    for n in ast.walk(ast.parse(src)):
+        if (isinstance(n, ast.Compare) and len(n.ops) == 1
+                and isinstance(n.ops[0], ast.In)
+                and isinstance(n.left, ast.Constant)
+                and isinstance(n.left.value, str) and n.left.value.startswith("-")
+                and ast.unparse(n.comparators[0]).endswith("sys.argv")):
+            out.append(n.left.value)
+    return out
+
+
+def test_no_tool_reads_flags_by_membership():
+    """`"--x" in sys.argv` 는 **오타를 조용히 무시한다.**
+
+    ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). 여섯이 그랬다 —
+      `render_figures.py --chek` 은 `check=False` 로 떨어져 **검사 대신 그림
+      파일을 덮어썼고**, `commit_policy.py --traked` 는 전량 대신 스테이지만
+      보고 통과했다. 둘 다 「안 한 일을 한 것처럼」 끝난다.
+
+    ★ argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+    """
+    # ★ `tools/` 만 보지 않는다. `python -m firelane.x` 로 치는 모듈도 같은 병에
+    #   걸리고, 좁게 훑는 검사는 넓힐 때까지 그 절반을 영영 안 본다(deadcheck ⑤).
+    files = sorted((ROOT / "tools").glob("*.py")) + \
+        sorted((ROOT / "src/firelane").rglob("*.py")) + \
+        sorted((ROOT / "tests").glob("*.py"))
+    bad = {p.relative_to(ROOT).as_posix(): f for p in files
+           if (f := _argv_flags(p.read_text(encoding="utf-8")))}
+    assert not bad, (
+        "멤버십으로 플래그를 읽는다 — 오타가 조용히 무시된다:\n  "
+        + "\n  ".join(f"{k}  {v}" for k, v in bad.items())
+        + "\n  argparse 로 옮겨라. 모르는 인자에 스스로 운다.")
+
+
+def test_the_flag_matcher_is_alive():
+    """**목표에 닿는 날 빨개지는가.** 실물이 다 깨끗해도 판별식이 사는지 본다."""
+    assert _argv_flags('x = "--check" in sys.argv') == ["--check"]
+    assert _argv_flags('if "--sync" in sys.argv:\n    pass') == ["--sync"]
+    assert _argv_flags('x = "--check" in argv') == [], "sys.argv 가 아닌데 잡는다"
+    assert _argv_flags('x = "check" in sys.argv') == [], "플래그가 아닌데 잡는다"
+    assert _argv_flags('p.add_argument("--check")') == []
+
+
 def test_the_compare_tool_list_has_one_home():
     """「대조 도구」 목록이 두 문서에 사본으로 살면 갈린다. 실제로 아홉이 갈렸다.
 

@@ -41,6 +41,7 @@ PARAM --sync --check
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import io
 import json
@@ -288,9 +289,12 @@ def sync() -> int:
 
 
 def main() -> int:
-    if "--sync" in sys.argv:
-        return sync()
-    return check()
+    # ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). 종전에는 `"--x" in sys.argv`
+    #   였다 — **오타가 조용히 무시된다.** `--snyc` 는 바꿔 넣는 대신 대조만 하고 끝났다.
+    #   argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+    ap = argparse.ArgumentParser(description="기획서 그림 ↔ 정본")
+    ap.add_argument("--sync", action="store_true", help="기획서의 그림을 정본으로 바꿔 넣는다")
+    return sync() if ap.parse_args().sync else check()
 
 
 if __name__ == "__main__":

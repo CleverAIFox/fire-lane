@@ -37,6 +37,7 @@ OUT  REDLIST.json  ·  종료코드 = 빨간불 건수(0 이면 초록)
 """
 from __future__ import annotations
 
+import argparse
 import ast
 import json
 import re
@@ -956,8 +957,14 @@ CEILING = {
 
 
 def main() -> int:
-    selftest = "--selftest" in sys.argv
-    ratchet = "--ratchet" in sys.argv
+    # ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). 종전에는 `"--x" in sys.argv`
+    #   였다 — **오타가 조용히 무시된다.** `--ratchett` 는 래칫을 고쳐 적는 대신 조용히 판정만 했다.
+    #   argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+    ap = argparse.ArgumentParser(description="죽은 검사 탐지 — 다섯 갈래")
+    ap.add_argument("--selftest", action="store_true", help="합성 트리로 판별식만 문다")
+    ap.add_argument("--ratchet", action="store_true", help="REDLIST 를 지금 실물로 고쳐 적는다")
+    a = ap.parse_args()
+    selftest, ratchet = a.selftest, a.ratchet
 
     # ★ 생사는 **합성 트리**에서 먼저 묻는다. 그 답이 있어야 아래의 0건을
     #   「청결」로 읽을 수 있다 — 순서가 뒤바뀌면 이 도구가 세는 병에 걸린다.
