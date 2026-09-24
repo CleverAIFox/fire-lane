@@ -174,6 +174,23 @@ SPEC: dict[str, dict] = {
         "code_only": True,
         "near": r"CCTV_RANGE|cctv|유효\s*범위|유효\s*측정",
     },
+    "offtrack_min": {
+        "what": "내륜차를 무시하는 문턱(m). 이보다 작은 내륜차는 0 으로 친다",
+        # ★ 2026-09-24 (PLAN §1 #125 · DECISIONS §245). 종전에는 **이름 없이**
+        #   `2 * 0.05` 꼴로 세 곳 두 언어에 있었다. 맨숫자라 이 표에도 없었고
+        #   아무도 안 봤다 — 그 값이 「이 골목으로 돌 수 있나」를 가른다.
+        "owner": {"file": "src/firelane/seg/params.py",
+                  "regex": r"^OFFTRACK_MIN\s*=\s*([\d.]+)"},
+        "consumers": [
+            {"file": "web/navi/src/domain/vehicle.ts", "has": "OFFTRACK_MIN = {v}"},
+        ],
+        "scan": ["src/firelane/**/*.py", "web/navi/src/**/*.ts"],
+        "exclusive": True,
+        "code_only": True,
+        # ★ `0.05` 는 허용오차·비율로도 쓰이는 흔한 수다. 문맥 낱말과 같은
+        #   줄일 때만 이 사실의 사본으로 센다 — 안 그러면 오탐이 본문을 덮는다.
+        "near": r"OFFTRACK|내륜차|offtrack|wheelbase",
+    },
     "local_lat0": {
         "what": "국소 평면 근사의 기준 위도(동명동 중심). 조사 도구 셋이 거리를 잰다",
         # ★ 2026-09-24 (PLAN §13 W12-1 · DECISIONS §239). 세 도구가 글자까지 같게

@@ -513,6 +513,11 @@ EXEMPT_SCOPE = {
         f"{_PROD_ONLY} — 「대장 소스가 배선됐는가」의 소비자는 판정·도구다. "
         "테스트가 소스 이름을 적는 것을 소비로 세면 모든 소스가 영원히 배선된다",
     # ★ 2026-09-24. **반대 방향**의 면제 — 위는 「tests 를 뺐다」, 이것은 「tests 만 본다」.
+    # ★ 2026-09-24 (DECISIONS §245). 폭 소스 우선순위는 **판정 코드 안에서만**
+    #   사실이다. `tools/` 의 대조 도구와 `tests/` 는 그 순서를 인용해서 보므로
+    #   넓히면 정상 인용이 전부 위반이 된다 — 오탐이 본문을 덮으면 사람이 끈다.
+    "tests/test_seg_width.py::test_width_source_priority_has_one_home":
+        "정본 단일화의 대상은 `src/firelane` 이다. 대조 도구·시험의 인용은 사본이 아니라 검증이다",
     "tests/test_skip_policy.py::_skip_literals":
         "`pytest.skip` 은 시험 안에만 산다 — src · tools 에 0건이라 넓히면 빈 폴더를 훑는다",
     "tests/test_guards.py::test_repo_python_compiles":

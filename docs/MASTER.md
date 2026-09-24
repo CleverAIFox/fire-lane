@@ -2615,6 +2615,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 | `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · 문구 둘(`seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `code_owner` | `.github/CODEOWNERS` | `tools/navi_setup.py` 기본값 · `tools/ruleset_check.py` 관리자 · 기본 저장소 · 배치 도구 셋의 `REPO=` | `tests/test_sources_of_truth.py` |
 | `font_stack` | `tools/svg_fit.py` | `web/navi/src/ui/tokens.ts` · `web/proposal.html` | `tests/test_sources_of_truth.py` |
+| `offtrack_min` | `src/firelane/seg/params.py` | `web/navi/src/domain/vehicle.ts` | `tests/test_sources_of_truth.py` |
 | `local_lat0` | `tools/localgeo.py` | 조사 도구 셋이 **import 한다**(사본 없음) | `tests/test_sources_of_truth.py` |
 
 ★ **2026-09-23 — 열 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5). 종전에는 `uv` ·

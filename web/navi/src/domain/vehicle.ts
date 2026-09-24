@@ -32,11 +32,19 @@ import type { RouteVehicle, GraphEdge, VehicleSpec, Verdict } from "./types";
  *   하한만 남는다 — 근거 없이 **막지 않는** 쪽이고 `canTurn` 과 같은
  *   선택이다(DECISIONS §81 · §86-4).
  */
+/** 내륜차를 무시하는 문턱(m).
+ *
+ * ★ 정본은 `src/firelane/seg/params.py::OFFTRACK_MIN` 이다. 여기 있는 것은
+ *   **사본**이고, 두 언어가 같은 규칙을 각자 구현하는 자리라 어쩔 수 없다
+ *   (PLAN §1 #126 이 그 이중 구현 자체를 든다). 값이 갈리면
+ *   `tests/test_sources_of_truth.py` 가 운다. */
+const OFFTRACK_MIN = 0.05;
+
 export function offtracking(spec: VehicleSpec, radiusM?: number | null): number {
   if (radiusM == null || radiusM <= 0) return 0;
   if (!spec.wheelbase_verified || spec.wheelbase_m == null) return 0;
   const wb = spec.wheelbase_m;
-  if (radiusM >= (wb * wb) / (2 * 0.05)) return 0;
+  if (radiusM >= (wb * wb) / (2 * OFFTRACK_MIN)) return 0;
   if (radiusM <= wb) return wb;   // 축거보다 급한 반경은 물리적으로 못 돈다
   return radiusM - Math.sqrt(radiusM * radiusM - wb * wb);
 }

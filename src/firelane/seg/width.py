@@ -33,6 +33,7 @@ from firelane.seg.params import (
     OLD_SNAP,
     SNAP_MAX,
     SNAP_TRUST,
+    WIDTH_SRCS,
     WMAX_CAP,
     XSEC_EXCL,
 )
@@ -151,7 +152,8 @@ class WidthEngine:
             return v, None
 
         # ── 측정 지점 결정 ──────────────────────────────────
-        _srcs3 = ((self.ngii1k_u, "ngii1k"), (self.ngii_u, "ngii"), (self.rw_u, "silpok"))
+        _srcs3 = tuple(zip((self.ngii1k_u, self.ngii_u, self.rw_u),
+                           WIDTH_SRCS, strict=True))
         if OLD_SNAP:
             # 종전 방식. 소스 하나라도 덮으면 snap 없음, 아니면 최근접 하나로 전부 이동.
             _live = [u for u, _ in _srcs3 if u is not None and not u.is_empty]
@@ -195,7 +197,7 @@ class WidthEngine:
         # 실폭도로는 실측 11.8m 인 동계천로에 1.30m 짜리 측구 조각을 그려 놓았고
         # min() 은 그것을 무조건 채택했다. 틀린 값은 보수적인 게 아니라 틀린 것이다.
         A, src, P = None, None, p0
-        for nm in ("ngii1k", "ngii", "silpok"):
+        for nm in WIDTH_SRCS:
             if res[nm][0] is not None:
                 A, src, P = res[nm][0], nm, res[nm][2]
                 break
@@ -223,17 +225,17 @@ class WidthEngine:
         if A is not None and B is not None and B < A:
             B = A
 
-        a_1k, a_ngii, a_rw = res["ngii1k"][0], res["ngii"][0], res["silpok"][0]
+        a_1k, a_ngii, a_rw = (res[nm][0] for nm in WIDTH_SRCS)
         if _DBG["on"]:
             print("      " + "  ".join(
                 f"{nm}={res[nm][0] if res[nm][0] is not None else res[nm][1]}"
                 f"(snap{res[nm][3] if res[nm][3] is not None else '-'})"
-                for nm in ("ngii1k", "ngii", "silpok"))
+                for nm in WIDTH_SRCS)
                 + f" → A={A} src={src} B={B}")
         why = None
         if A is None:
             why = "|".join(f"{k}:{res[n][1]}" for k, n in
-                           (("1k", "ngii1k"), ("ng", "ngii"), ("rw", "silpok")))
+                           zip(("1k", "ng", "rw"), WIDTH_SRCS, strict=True))
         return A, B, src, (a_1k, a_ngii, a_rw), why, res
 
     def widths(self, s):
@@ -248,8 +250,8 @@ class WidthEngine:
         if not _ts:
             _ts = [s.length/2]
         _nc, _nx_skip, _whys = 0, 0, []
-        _cov = {"ngii1k": 0, "ngii": 0, "silpok": 0}
-        _by  = {"ngii1k": [], "ngii": [], "silpok": []}
+        _cov = dict.fromkeys(WIDTH_SRCS, 0)
+        _by  = {nm: [] for nm in WIDTH_SRCS}
         _n_try = 0
 
         # ★ 2026-08-23. 표본을 버리지 않고 남긴다.
@@ -350,7 +352,7 @@ class WidthEngine:
                 _sn = _r[3]
                 return _sn is None or _sn <= SNAP_TRUST
 
-            for _nm in ("ngii1k", "ngii", "silpok"):
+            for _nm in WIDTH_SRCS:
                 if _trusted(_nm):
                     _cov[_nm] += 1
             if _why: _whys.append(_why)
@@ -367,7 +369,7 @@ class WidthEngine:
             # ★ pr 은 measure() 가 항상 3-튜플로 준다. strict=True 로
             #   그 계약을 고정한다 — 소스가 늘거나 줄면 여기서 죽어야
             #   조용히 한 소스가 빠지는 일이 없다.
-            for _nm, _vv in zip(("ngii1k", "ngii", "silpok"), pr, strict=True):
+            for _nm, _vv in zip(WIDTH_SRCS, pr, strict=True):
                 if _vv is not None and _trusted(_nm):
                     _by[_nm].append(_vv)
             if b: B.append(b)
@@ -400,7 +402,7 @@ class WidthEngine:
             # 커버율은 소스를 '고르는' 기준이 아니라 '자격'이다.
             # 커버율로 고르면 실폭도로(0.955)가 항상 이겨 결정 63 이 뒤집힌다.
             _covnow = _covr()[0]
-            for _nm in ("ngii1k", "ngii", "silpok"):
+            for _nm in WIDTH_SRCS:
                 if not _by[_nm]:
                     continue
                 _cv = _covnow.get(_nm)
@@ -410,7 +412,7 @@ class WidthEngine:
                 break
             # 전부 자격 미달이면 우선순위대로 하나는 쓴다(폭을 못 내는 것보다 낫다).
             if _pick is None:
-                for _nm in ("ngii1k", "ngii", "silpok"):
+                for _nm in WIDTH_SRCS:
                     if _by[_nm]:
                         _pick = _nm
                         break
