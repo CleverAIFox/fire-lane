@@ -50,6 +50,8 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 
 ### 일회성 도구는 저장소에 두지 않는다
 
+강제자  `tests/test_tools_are_wired.py`(`tools/` 의 것이 README 에 적히고 어딘가에서 불리는가 — 둘 다 아니면 저장소 밖으로 나가야 한다)
+
     "내년에도 이걸 돌릴 일이 있나"
       있다  →  `tools/`            재현적이다. `verify.sh` 에 배선하고 README 에 적는다
       없다  →  저장소 밖에서 돈다   `~/oneoff/<저장소>/`. 커밋하지 않는다
@@ -109,10 +111,14 @@ uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 
 ### `D-XX` 는 날짜가 아니다
 
+강제자 없음 — 사유: 새 D 번호를 안 만든다는 약속이라 기계가 셀 것이 없다. 대응표가 실재하는지는 `tools/refcheck.py` 가 본다
+
 **미결정 항목 번호(Decision)** 다. 2026-08-07 「미결정 사항 정리」에서 왔고
 `MASTER §10-0` 에 대응표가 있다. 새 D 번호는 만들지 않는다.
 
 ### 숫자의 정본은 문서가 아니다
+
+강제자  `tools/docnum_check.py`(문서 ↔ golden) · `tools/golden.py`(golden ↔ 산출물)
 
 문서에 적힌 구간 수·판정 수는 **파이프라인 산출물의 사본**이다. 정본은
 `data/processed/segments.geojson`, 기대값은 `data/golden/segments.fingerprint.json`
@@ -529,7 +535,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 **폭 값은 아직 미검증이다**(`width_verified: false`, 전건). 레이저 실측 후 바뀐다.
 값은 바뀌어도 필드와 `verdict` 어휘는 안 바뀐다. 계약 테스트가 그것을 보장한다.
 
-강제자 없음 — 사유: 수치는 docnum_check 가 segments · 판정 수를 대조하고 도달 가능 수는 다음 코드 배치다
+강제자 없음 — 사유: 수치는 docnum_check 가 segments · 판정 수를 대조하고 도달 가능 수는 다음 코드 배치다. 하위 한 절도 같은 사유다 — 셀 것이 없다
 
 ### 구간 수는 고정값이 아니다
 

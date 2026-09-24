@@ -62,7 +62,7 @@ EXCEPTIONS: dict[str, int] = {
     #   어느 파일에 적어야 하는지가 또 하나의 기억거리가 되고, 그때 한쪽만 고치는 날이 온다.
     "tests/test_declaration_sync.py": 783,
     # 코드 (상한 600)
-    "tools/dms.py": 1360,
+    "tools/dms.py": 1470,
     "src/firelane/ingest.py": 1105,
     "tools/deadcheck.py": 1047,
     # ★ 2026-09-23. 976 → 980 → 991. 「기획서 그림 ↔ 정본」(§221-1)과 「죽은 강제자

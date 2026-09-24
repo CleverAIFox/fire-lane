@@ -161,6 +161,8 @@ CCTV 25m 안     451  (35.2%)
 
 ### 2-2. 판정 기준의 출처
 
+강제자  `tests/test_sources_of_truth.py`(`truck_m` · `park_m` — 소방청 기준에서 온 두 수의 집이 `seg/params.py` 하나인가) · `tools/docnum_check.py`(판정 4종 ↔ golden)
+
 임의 임계값이 아니다. 소방청 「2025 화재현장 골든타임 확보 종합대책」을 따른다.
 
 ```
@@ -690,7 +692,7 @@ GitHub Pages       gis · main 푸시 시 자동 배포
 형식 · 레이크 넷은 **입력이 선언과 맞는가**를 보고, 재현은 **출력이 입력의 함수인가**를
 본다. 비용 문제는 겹침이 아니라 **주기**이고 `rawdiff` 가 가른다(DECISIONS §161).
 
-강제자  `tools/verify.sh` — 계층별 책임 표의 재현 층을 이 스크립트가 실행한다
+강제자  `tools/verify.sh` — 계층별 책임 표의 재현 층을 이 스크립트가 실행한다. 하위 둘이 이 칸을 물려받는다
 
 ### 5-1. 왜 나눴나
 
@@ -704,6 +706,8 @@ GitHub Pages       gis · main 푸시 시 자동 배포
     폐포 6    ngii1k_u · ngii_u · rw_u · bld_u · xn · xsec_poly → seg/width
 
 ### 5-2. 계약
+
+강제자  `tests/test_contract.py` · `src/firelane/contract.py`(얼린 것이 그대로인가)
 
 ```
 얼린다:  좌표계 EPSG:4326 · 필드명/타입 · verdict 어휘 4종
@@ -755,6 +759,8 @@ src/firelane/publish_navi.py  내비 그래프 · publish_fleet 차종 · destin
 ```
 
 ### 5-4. 판정 뼈대는 아직 `road_link` 위에 있다 — 교체는 **보류**다
+
+강제자  `tools/skeleton_compare.py` · `tests/test_r1.py`(뼈대 후보 대조표). 보류를 풀지 말지는 `PLAN §1` 이 들고 이 칸은 대조가 재현되는가만 든다
 
 판정 구간은 도로명주소 `road_link` 를 노딩해 만든다(§3-2). 그 선은 주소 관리용이라 측량 위치가 아니고,
 폭은 NGII 1:1,000 도로경계에서 재므로 **뼈대와 폭 원천이 다른 측량 위에 있다**(§173-7 · PLAN #51).
@@ -934,7 +940,7 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 > **남은 일은 여기 없다. `PLAN.md` §1 이 정본이다.**
 > 이 절은 **지금 산출물이 무엇을 근사했고 무엇이 검증 안 됐는가**만 적는다.
 > 그것은 남은 일이 아니라 현재 상태다.
-> 강제자 — `tests/test_reproducibility.py::test_open_work_lives_only_in_plan`
+> 강제자 — `tests/test_reproducibility.py::test_open_work_lives_only_in_plan`. 하위 둘이 이 칸을 물려받는다
 
 ### 7-1. 알려진 근사
 
@@ -1006,7 +1012,7 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 **모르는 것을 모른다고 표시하는 것**이 이 지도의 설계 원칙이다.
 전부 초록으로 칠하면 첫 질문에 무너진다.
 
-강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다
+강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다. 하위 둘도 같은 사유다 — 셀 것이 없다
 
 ### 9-1. 현장 진술이 흔든 전제 넷
 
@@ -2104,7 +2110,7 @@ uv run python tools/baseline.py diff 20260824-pre-nreg
 
 ## 14. 실행
 
-강제자 없음 — 사유: 절 머리말이다. 명령 하나하나는 하위 절이 들고, 문서에 적힌 명령이 실재하는지는 `tools/doc_fsck.py::check_commands` 가 본다
+강제자 없음 — 사유: 절 머리말이다. 명령 하나하나는 하위 다섯이 들고, 문서에 적힌 명령이 실재하는지는 `tools/doc_fsck.py::check_commands` 가 본다
 
 ### 14-1. 받자마자 한 번
 
@@ -2563,7 +2569,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 형태를 갖는다 — 규약은 주석이나 문서에 존재하고 이를 강제하는 검사가 없다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
-강제자  `tests/test_doc_style.py` · `tools/dms.py`(마지막 줄 「새 규칙을 적을 때는 강제자를 같이 만든다」를 세는 자리가 이 도구다 — **분모 0**(2026-09-24 · 절 1,004 전수. 종전 232 는 그 도구가 절을 틀리게 세던 때의 수다. 다음 분모는 물림 308 중 **부모가 아무 말 없는 243** 이다)) · `tools/scopedecl.py`(강제자가 자기 범위를 선언하는가)
+강제자  `tests/test_doc_style.py` · `tools/dms.py`(마지막 줄 「새 규칙을 적을 때는 강제자를 같이 만든다」를 세는 자리가 이 도구다 — **분모 0**(2026-09-24 · 절 1,004 전수. 종전 232 는 그 도구가 절을 틀리게 세던 때의 수다. 물림 312 도 **전부 선언됐고 수까지 적혀 있다** — 하위 절이 늘면 수가 어긋나 운다)) · `tools/scopedecl.py`(강제자가 자기 범위를 선언하는가)
 
 ### 17-1. 정본은 하나 — 사실 · 정본 파일 · 따르는 곳 · 강제자
 

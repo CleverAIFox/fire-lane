@@ -155,17 +155,36 @@ def _assign_ids(stem: str, secs: list[dict]) -> None:
         s["id"] = f"{stem}/{key}" + (f"~{seen[key]}" if seen[key] > 1 else "")
 
 
+#: 칸 블록이 끝나는 줄. 제목 · 표 · 별표 문단 · 펜스 · 빈 줄에서 끊는다.
+FIELD_END = re.compile(r"^(#|---|\||★|```|\s*$)")
+
+
 def classify(sec: dict) -> tuple[str, str, int]:
-    """(상태, 칸 원문, 칸 줄번호). 코드펜스 안의 줄은 칸으로 안 센다."""
+    """(상태, 칸 **전문**, 칸 줄번호). 코드펜스 안의 줄은 칸으로 안 센다.
+
+    ★ 2026-09-24 (DECISIONS §241). 종전에는 **첫 줄만** 칸으로 들었다. 칸은
+      113곳에서 여러 줄에 걸친다 — 이어지는 줄에 적힌 강제자 이름도, 물림
+      선언도 이 도구 눈에 안 보였다. 그래서 「하위 둘이 이 칸을 물려받는다」를
+      이어지는 줄에 적으면 **적어도 안 적은 것으로 세어졌다.**
+
+      물음이 「이 절에 칸이 있는가」이므로 답은 칸 **전체**여야 한다.
+      첫 줄만 보는 것은 범위가 이름보다 좁은 자리다(§226).
+    """
     fence = False
-    for n, line in sec["body"]:
+    body = sec["body"]
+    for i, (n, line) in enumerate(body):
         if FENCE.match(line):
             fence = not fence
             continue
         if fence or not FIELD.match(line):
             continue
+        block = [line.strip()]
+        for _, nxt in body[i + 1:]:
+            if FIELD_END.match(nxt):
+                break
+            block.append(nxt.strip())
         rest = FIELD.sub("", line).strip()
-        return ("none" if NONE_ANY.search(rest) else "wired"), line.strip(), n
+        return ("none" if NONE_ANY.search(rest) else "wired"), " ".join(block), n
     return "blank", "", sec["line"]
 
 
@@ -304,7 +323,64 @@ def notation(data: dict) -> list[str]:
             if r["state"] == "none" and not r["field"].startswith(CANON_NONE)]
 
 
-INHERIT_SAID = re.compile(r"물려받|하위 (절|둘|셋|넷|다섯|여섯|일곱|여덟|[0-9]+)")
+#: ★ 2026-09-24 (DECISIONS §241). 「하나」 가 빠져 있었다 — 하위 절이 **하나뿐인**
+#:   부모는 아무리 적어도 「아무 말 없음」으로 세어졌다. 어휘는 아래 `WORD_N` 과
+#:   같은 자리에서 만든다. 손으로 두 벌 적으면 또 갈린다(2족).
+INHERIT_SAID = re.compile(r"물려받|하위\s*(?:절\s*)?(?:한|하나|둘|셋|넷|다섯|여섯|일곱|"
+                          r"여덟|아홉|열하나|열둘|열|[0-9]+|절)")
+
+#: 우리말 수. 선언은 사람이 읽는 줄이라 말로 적고, 기계는 여기서 수로 되짚는다.
+WORD_N = {"한": 1, "하나": 1, "둘": 2, "셋": 3, "넷": 4, "다섯": 5, "여섯": 6,
+          "일곱": 7, "여덟": 8, "아홉": 9, "열": 10, "열하나": 11, "열둘": 12}
+#: `하위 절 여덟이` · `하위 넷이` · `하위 3절` — 셋 다 인정한다.
+#: ★ **절 번호는 수가 아니다.** `하위 절 187-1 ~ 187-3` 의 `187` 을 수로 읽으면
+#:   그 줄이 「하위 187절」이 된다(2026-09-24 에 둘 실제로 났다). 숫자 꼴은
+#:   뒤에 `절` 이 붙을 때만 수로 본다 — `하위 3절` 은 수, `하위 절 187-1` 은 번호다.
+SAID_N = re.compile(
+    r"하위\s*(?:절\s*)?(?:(열하나|열둘|열|한|하나|둘|셋|넷|다섯|여섯|일곱|여덟|아홉)"
+    r"|([0-9]+)\s*절)(?![\d-])")
+
+
+def _said_count(field: str) -> int | None:
+    """부모 칸이 적은 **하위 절 수**. 수가 없으면 `None`."""
+    m = SAID_N.search(field)
+    if not m:
+        return None
+    return WORD_N.get(m.group(1)) if m.group(1) else int(m.group(2))
+
+
+def inherit_counts(data: dict) -> list[str]:
+    """부모가 적은 **하위 절 수**가 실제와 같은가.
+
+    ★ 2026-09-24 (DECISIONS §241). 「하위 절이 이 칸을 물려받는다」는 한 줄은
+      **검증된 적이 없는 주장**이다. 하위 절이 하나 늘어도 그 줄은 그대로 참인
+      것처럼 보인다 — 새로 생긴 절은 아무도 안 본 채 물림으로 들어간다.
+
+      수를 적게 하면 그 자리가 **세어진다.** 절이 늘거나 줄면 수가 어긋나고,
+      어긋나면 사람이 **그 새 절을 실제로 본다.** 이 저장소가 래칫에 거는
+      논리와 같다 — 선언을 세는 것으로 바꾼다.
+
+    ★ 수를 안 적은 옛 표기(`물려받는다` 만)는 세지 않는다. 그것까지 한 번에
+      강제하면 이 검사가 첫날부터 시끄러워지고, 시끄러운 검사는 꺼진다.
+      **수를 적은 선언만** 그 수를 지킨다.
+    """
+    field = {r["id"]: r.get("field", "") for r in data["rows"]}
+    kids: dict[str, int] = {}
+    for r in data["rows"]:
+        if r["state"] != "inherit":
+            continue
+        doc, _, tail = r["id"].partition("/")
+        parent = f"{doc}/{tail.split('/')[0].split('-')[0]}"
+        kids[parent] = kids.get(parent, 0) + 1
+    at = {r["id"]: (r["doc"], r["at"]) for r in data["rows"]}
+    bad = []
+    for pid, n in sorted(kids.items()):
+        said = _said_count(field.get(pid, ""))
+        if said is None or said == n:
+            continue
+        doc, line = at.get(pid, ("?", 0))
+        bad.append(f"  {doc}:{line}  {pid}  「하위 {said}」 라고 적었는데 실제 {n} 이다")
+    return bad
 
 
 def inherit_split(data: dict) -> tuple[list[str], list[str]]:
@@ -1042,6 +1118,35 @@ def selftest() -> int:
     real = {"line": 0, "body": [(1, "강제자  `tests/test_guards.py::test_x`")]}
     if classify(real)[0] != "wired":
         bad.append("정상 칸을 못 셌다")
+    # ★ 2026-09-24 (DECISIONS §241). 칸은 **여러 줄**에 걸친다(실측 113곳).
+    #   첫 줄만 들면 이어지는 줄의 강제자 이름도 물림 선언도 안 보인다.
+    wrapped = {"line": 0, "body": [(1, "강제자  `tests/test_a.py` ·"),
+                              (2, "`tests/test_b.py`. 하위 둘이 이 칸을 물려받는다"),
+                              (3, ""),
+                              (4, "다음 문단은 칸이 아니다")]}
+    st, field, _ = classify(wrapped)
+    if st != "wired" or "test_b" not in field:
+        bad.append("여러 줄 칸의 뒷줄을 안 본다 — 범위가 이름보다 좁다")
+    if "다음 문단" in field:
+        bad.append("빈 줄 뒤까지 칸으로 먹는다")
+    # ★ 물림 선언이 적은 **수**를 되짚는가. 안 되짚으면 수를 적어도 안 세어진다.
+    for txt, want in (("하위 둘이 이 칸을", 2), ("하위 절 여덟이", 8), ("하위 3절", 3),
+                      ("하위 한 절도 같은", 1), ("하위 절 187-1 ~ 187-3", None),
+                      ("강제자 `tests/test_x.py`", None)):
+        if _said_count(txt) != want:
+            bad.append(f"물림 수 오독 — {txt!r} → {_said_count(txt)} (기대 {want})")
+    # ★ 수가 어긋나면 우는가. 합성 데이터로 본다 — 실물이 0 이어도 판정기는 살아야 한다.
+    synth = {"rows": [
+        {"id": "D/9", "doc": "d.md", "at": 1, "state": "wired",
+         "field": "강제자 `tests/test_x.py`. 하위 셋이 이 칸을 물려받는다"},
+        {"id": "D/9-1", "doc": "d.md", "at": 2, "state": "inherit", "field": ""},
+        {"id": "D/9-2", "doc": "d.md", "at": 3, "state": "inherit", "field": ""},
+    ]}
+    if not inherit_counts(synth):
+        bad.append("물림 수 어긋남(선언 3 · 실제 2)을 안 잡는다 — 그물이 비었다")
+    synth["rows"][0]["field"] = "강제자 `tests/test_x.py`. 하위 둘이 이 칸을 물려받는다"
+    if inherit_counts(synth):
+        bad.append("맞는 수를 어긋남으로 잡는다 — 거짓 빨강")
     # ★ 2026-09-24 (DECISIONS §228). 강제자를 지목하면서 **범위를 덧붙인** 칸을
     #   `none` 으로 세면 안 된다. 실측 8건이 그 상태였다.
     ranged = {"line": 0, "body": [
@@ -1345,7 +1450,12 @@ def main() -> int:
         dead = verify(data)
         print(f"죽은 강제자 참조 {len(dead)}건")
         print("\n".join(dead))
-        return min(len(dead), 255)
+        # ★ 2026-09-24 (DECISIONS §241). 물림 선언이 적은 **수**가 실제와 같은가.
+        #   선언만으로는 하위 절이 늘어도 조용하다 — 수를 세면 늘 때 운다.
+        cnt = inherit_counts(data)
+        print(f"물림 수 어긋남 {len(cnt)}건")
+        print("\n".join(cnt))
+        return min(len(dead) + len(cnt), 255)
 
     if a.cmd == "propose":
         n = a.ids[0] if a.ids else "1"

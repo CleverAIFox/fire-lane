@@ -1081,7 +1081,7 @@ union 하면 면적이 정답의 2/3 로 나온다.
 
 재현: `tools/clearance_probe.py`
 
-강제자  `tests/test_tools_are_wired.py::EXEMPT`(`clearance_probe` 가 「2026-08-22 기각」 사유와 함께 면제로 남아 있다 — 기각을 기록으로 남기는 자리) · `tools/clearance_probe.py`. 하위 절이 이 칸을 물려받는다
+강제자  `tests/test_tools_are_wired.py::EXEMPT`(`clearance_probe` 가 「2026-08-22 기각」 사유와 함께 면제로 남아 있다 — 기각을 기록으로 남기는 자리) · `tools/clearance_probe.py`. 하위 한 절이 이 칸을 물려받는다
 
 ### ★ 2026-08-23 추가 — 기각 근거를 다시 본다
 
@@ -2266,7 +2266,7 @@ PLAN 은 "남은 일만 담는다"고 스스로 선언해놓고 §12 에 완료 
 옮긴 항목의 사유는 대부분 이 문서의 §19~§63 에 이미 있다. 여기에는 목록만
 남긴다.
 
-강제자 없음 — 사유: 이관 기록이다. PLAN 에서 해소된 항목을 여기로 옮겼다는 사실이고, PLAN 이 완료 목록을 쌓지 않는 것은 `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed` 가 든다
+강제자 없음 — 사유: 이관 기록이다. PLAN 에서 해소된 항목을 여기로 옮겼다는 사실이고, PLAN 이 완료 목록을 쌓지 않는 것은 `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed` 가 든다. 하위 셋도 같은 사유다 — 셀 것이 없다
 
 ### 재현성 · 파이프라인
 
@@ -2938,7 +2938,7 @@ L1·L2·L3 전부 동일하게 나왔고 그것을 "norm 이 값을 안 바꾼�
 `test_manifest_keeps_lineage` · `tests/test_static.py::test_no_conflict_markers` ·
 `test_tracked_python_compiles` · `tests/test_layers.py::test_no_layer_is_orphaned` (§18-1a 의 R2 — R 표의 R2 와 다른 체계다) ·
 `test_backup_scope_follows_layers` (§18-1a 의 R2) · `tests/test_normalize_rules.py::test_missing_list_is_actually_missing` ·
-`tools/docnum_check.py` (대장 대조)
+`tools/docnum_check.py` (대장 대조). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 2026-08-31. 하루에 열두 건을 잡았다. 새로 생긴 버그는 **하나도 없다.**
 전부 이미 있던 것이고 검사 범위를 넓히자마자 나왔다.
@@ -3018,7 +3018,7 @@ L1·L2·L3 전부 동일하게 나왔고 그것을 "norm 이 값을 안 바꾼�
 > 2026-08-31
 
 강제자 — `tools/ruleset_check.py` ·
-`tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check`
+`tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check`. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `§78` 이 낡음을 다뤘다면 이것은 **예외**다. 낡음은 문서 안에서 생기고
 사람이 읽으면 보인다. 예외는 문서 밖에서 자라서 **읽어도 안 보인다.**
@@ -3192,7 +3192,7 @@ D-30 에서 관내 보유 차종의 실제 반경이 나오면 `turn_radius_veri
 > 2026-09-01
 
 강제자 — `tests/test_crosswalk.py` (전건 등재 · 번호 연속 · 상태 어휘 ·
-PLAN 참조 유효)
+PLAN 참조 유효). 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 팀은 회의록 8건(08-03~08-11) · 진행일지 11건(08-12~08-31) · 흐름도 ·
 멘토링일지를 생산했고 그 안에 **결정 85건 · 미결 56건**이 있다. 이 저장소는
@@ -3346,7 +3346,7 @@ PLAN 참조 유효)
 강제자 없음 — 사유: 목록의 내용은 코드가 검사할 수 없다. 지킬 수 있는 것은
 `CONFIG.fleet[].profile` 이 `profiles.json` 에 실재하는 id 인지뿐이며, 그것은
 `vehicle.js` 가 없는 id 를 만나면 해당 항목의 제원 칸을 비우는 것으로 대신한다.
-잘못된 항목이 목록에 남아 있는 것은 검사가 아니라 §5 의 확보 경로가 닫는다.
+잘못된 항목이 목록에 남아 있는 것은 검사가 아니라 §5 의 확보 경로가 닫는다. 하위 일곱도 같은 사유다 — 셀 것이 없다
 
 ### 84-1. 없는 차의 회전반경으로 골목을 판단할 뻔했다
 
@@ -3474,7 +3474,7 @@ PLAN 참조 유효)
 > 2026-09-01
 
 강제자 없음 — 사유: 관할과 보유는 외부 기관의 사실이라 코드가 검사할 수 없다.
-`data/field/` 의 두 CSV 가 근거이며, 어긋나면 그 파일을 갱신한다.
+`data/field/` 의 두 CSV 가 근거이며, 어긋나면 그 파일을 갱신한다. 하위 셋도 같은 사유다 — 셀 것이 없다
 
 §84 에서 동명동 관할 차량 목록을 짜면서 **대인과 지산을 합쳐서 셌다.** 틀렸다.
 
@@ -3534,7 +3534,7 @@ PLAN 참조 유효)
 > 2026-09-01
 
 강제자 — `tests/test_guards.py::test_turn_block_requires_a_verified_radius`
-(양방향) · `tools/corner_probe.py` (읽기 전용 대조)
+(양방향) · `tools/corner_probe.py` (읽기 전용 대조). 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `D-08`(회전 반경 · 코너 판정)은 2026-08-07 이래 미결이었고 `MASTER §10-0` 이
 *"미결. 적용 범위 한정안만 있음"* 으로 적어 왔다. <!--voice-ok--> 전건이 `D-30`
@@ -3684,7 +3684,7 @@ PLAN 참조 유효)
 
 > 2026-09-01
 
-강제자 — `tools/doc_fsck.py` · `tests/test_doc_fsck.py` (넷 + 역방향 시험)
+강제자 — `tools/doc_fsck.py` · `tests/test_doc_fsck.py` (넷 + 역방향 시험). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 강제자 23종이 전부 **문서 ↔ 실물** 한 방향이었다. **문서 ↔ 문서** 를 보는
 것이 하나도 없었고, 하루에 그 자리에서 넷이 한꺼번에 나왔다.
@@ -3770,7 +3770,7 @@ PLAN 참조 유효)
 
 강제자 — `tools/pull_data.py` (여덟 단계 · 실패 시 정지) ·
 `tools/doc_fsck.py` + `tests/test_doc_fsck.py` (다섯) ·
-`tools/render_workflow.py` 의 `audit` · `slots` (양방향)
+`tools/render_workflow.py` 의 `audit` · `slots` (양방향). 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 88-1. 파이프라인의 머리 다섯이 도구로만 있었다
 
@@ -3906,7 +3906,7 @@ PLAN 참조 유효)
 > 2026-09-02
 
 강제자 — `tests/test_guards.py::test_verify_covers_every_ci_job` ·
-`::test_strict_lint_args_have_one_home` · `.ruff-strict.toml`
+`::test_strict_lint_args_have_one_home` · `.ruff-strict.toml`. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `tools/verify.sh` 는 스스로 *"CI 전체 위생 검사 로컬 고속 재현"* 이라고 적는다.
 그 선언이 세 번 거짓이었다.
@@ -4194,7 +4194,7 @@ ALB · 타깃 그룹 · IAM 역할 다섯을 알아야 고칠 수 있고, EC2 + 
 어딘가에 담겼나" 만 보므로 담기기만 하면 통과한다. 사람은 *"아침에 뭐
 하나"* 로 찾지 *"몇 절인가"* 로 찾지 않는데, 그 축이 정본에 없었다.
 
-강제자  `tools/render_workflow.py --check`(화면이 정본에서 생성되는가) · `tests/test_workflow_html_sync.py::test_generated_matches_master` · `test_no_handwritten_copy`. 하위 절이 이 칸을 물려받는다
+강제자  `tools/render_workflow.py --check`(화면이 정본에서 생성되는가) · `tests/test_workflow_html_sync.py::test_generated_matches_master` · `test_no_handwritten_copy`. 하위 한 절이 이 칸을 물려받는다
 
 ### 94-1. 파싱이 서식을 스키마로 쓰고 있었다
 
@@ -4252,7 +4252,7 @@ ALB · 타깃 그룹 · IAM 역할 다섯을 알아야 고칠 수 있고, EC2 + 
 종전대로 둔다 — 전부 문맥 대조로 넓히면 오탐이 늘고, 시끄러운 검사는
 사람이 끈다(§78-4).
 
-강제자  `tools/docnum_check.py`(존재 대조를 **라벨 옆 값** 대조로 바꾼 그 도구다) · `tests/test_declaration_sync.py`. 하위 절이 이 칸을 물려받는다
+강제자  `tools/docnum_check.py`(존재 대조를 **라벨 옆 값** 대조로 바꾼 그 도구다) · `tests/test_declaration_sync.py`. 하위 한 절이 이 칸을 물려받는다
 
 ### 95-1. README 가 대상에서 빠져 있었다
 
@@ -4697,7 +4697,7 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 "없으면 건너뛴다" 를 `is_dir()` 하나로 쓰고 있었고, 그 함수가 두 경우를
 다르게 처리한다는 것을 아무도 몰랐다.
 
-강제자  `src/firelane/paths.py::alive`(「없다」와 「죽었다」를 가르는 정본) · `tests/test_layers.py` · `tests/test_skip_policy.py`(매체 없는 기계에서 무엇을 건너뛰는가). 하위 절이 이 칸을 물려받는다
+강제자  `src/firelane/paths.py::alive`(「없다」와 「죽었다」를 가르는 정본) · `tests/test_layers.py` · `tests/test_skip_policy.py`(매체 없는 기계에서 무엇을 건너뛰는가). 하위 한 절이 이 칸을 물려받는다
 
 ### 104-1. 왜 지금 고치나
 
@@ -4800,7 +4800,7 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 **자리를 새로 만들고 원래 있던 것을 안 치웠다.** 주입을 붙인 것과 사본을
 없앤 것은 다른 일인데 전자만 했다.
 
-강제자  `tools/render_workflow.py --check` · `tests/test_workflow_html_sync.py::test_no_handwritten_copy`(사본이 되살아나면 운다). 하위 절이 이 칸을 물려받는다
+강제자  `tools/render_workflow.py --check` · `tests/test_workflow_html_sync.py::test_no_handwritten_copy`(사본이 되살아나면 운다). 하위 한 절이 이 칸을 물려받는다
 
 ### 106-1. 지우기만 하면 껍데기를 잃는다
 
@@ -4845,7 +4845,7 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 `class="w-full text-left text-xs"` 와 `<thead class="bg-slate-50 …">` 가
 사라졌다. 화면에서 **표 헤더가 그냥 텍스트로 흘렀다.**
 
-강제자  `tools/render_workflow.py --check`(표 열 수 대조 — 안 맞으면 렌더가 죽는다) · `tests/test_workflow_html_sync.py::test_generated_has_components`. 하위 절이 이 칸을 물려받는다
+강제자  `tools/render_workflow.py --check`(표 열 수 대조 — 안 맞으면 렌더가 죽는다) · `tests/test_workflow_html_sync.py::test_generated_has_components`. 하위 한 절이 이 칸을 물려받는다
 
 ### 107-1. `as_rows()` — 행만 낸다
 
@@ -4882,7 +4882,7 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 
 > 2026-09-02
 
-강제자  `tests/test_ownership.py::test_catch_all_comes_first` · `test_owner_handles_look_real`(이탈자가 포괄 소유자로 남지 않는가) · `tools/render_figures.py --check`(그림 ↔ 정본). 하위 절이 이 칸을 물려받는다
+강제자  `tests/test_ownership.py::test_catch_all_comes_first` · `test_owner_handles_look_real`(이탈자가 포괄 소유자로 남지 않는가) · `tools/render_figures.py --check`(그림 ↔ 정본). 하위 한 절이 이 칸을 물려받는다
 
 ### 108-1. 포괄 소유자를 잘못 넣었다
 
@@ -4981,7 +4981,7 @@ CODEOWNERS 로 정해지는데, 릴리즈 PR 을 올리는 사람이 곧 포괄 
 
 > 2026-09-02
 
-강제자  `tools/render_figures.py --check`(구조 그림도 정본에서 생성되는가) · `tools/docx_figs.py --check`(기획서가 든 그림도 같은 정본인가) · `tests/test_figure_text.py`. 하위 절이 이 칸을 물려받는다
+강제자  `tools/render_figures.py --check`(구조 그림도 정본에서 생성되는가) · `tools/docx_figs.py --check`(기획서가 든 그림도 같은 정본인가) · `tests/test_figure_text.py`. 하위 한 절이 이 칸을 물려받는다
 
 ### 110-1. 값 그림과 구조 그림은 다르다
 
@@ -5039,7 +5039,7 @@ compose 에서 읽는다. 룰셋 표를 고치면 그림이 따라온다.
 **배치가 깨진 것은 못 잡는다** — 지문은 정상적으로 달라지고 재생성하면
 통과한다.
 
-강제자  `tests/test_figure_fit.py`(박스와 글자가 전부 뷰박스 안인가 — 넘쳐도 그려지던 자리). 하위 절이 이 칸을 물려받는다
+강제자  `tests/test_figure_fit.py`(박스와 글자가 전부 뷰박스 안인가 — 넘쳐도 그려지던 자리). 하위 한 절이 이 칸을 물려받는다
 
 ### 111-1. 좌표가 코드에 있는 한 이 검사가 그 자리를 대신한다
 
@@ -5077,7 +5077,7 @@ compose 에서 읽는다. 룰셋 표를 고치면 그림이 따라온다.
 
 강제자 — `tests/test_declaration_reality.py` 가 `route_vehicle` 의 **발행부**를
 본다. 소비부(프론트엔드)는 저장소 밖이라 검사가 닿지 않는다. **그래서 계약을
-여기 적는다.** 코드가 없어져도 이 절만 있으면 다시 만들 수 있다.
+여기 적는다.** 코드가 없어져도 이 절만 있으면 다시 만들 수 있다. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `web/data/route_vehicle.json` 은 2026-08-31 부터 발행되는데 읽는 쪽이 없었다
 (`web/js` 참조 0건, 83KB 가 소비자 없이 커밋돼 있었다). 소비자를 붙이기 전에
@@ -5176,7 +5176,7 @@ V-World 키   web/config.js  vworld.key
 > 2026-09-03
 
 강제자 — `seg/vehicle.py::offtracking()` 이 `wheelbase_verified` 를 본다.
-`can_turn()` 이 `turn_radius_verified` 를 보는 것과 같은 구조다.
+`can_turn()` 이 `turn_radius_verified` 를 보는 것과 같은 구조다. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 도로폭은 구간의 **최소**로 판정한다 — 제일 좁은 데를 못 지나면 못 지난다.
 차량은 그 뒤집음이다. 범주의 **최대** 축거로 판정하면 그 범주의 나머지는
@@ -5240,7 +5240,7 @@ V-World 키   web/config.js  vworld.key
 > 2026-09-03 ~ 09-04
 
 강제자 — 역방향 검사 다섯. `ALLOW` · `FIELD_EXEMPT` · `BACKWARD` ·
-`raw_only ↔ norm` · `META`.
+`raw_only ↔ norm` · `META`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 2026-09-03 감사에서 34건이 나왔고 뿌리는 하나였다 — **정본을 바꿀 때 그것을
 읽는 곳 전부를 세지 않았다.** 그런데 왜 안 세었나를 파고들면 검사의 모양이
@@ -5346,7 +5346,7 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 
 소비자가 없던 83KB 짜리 파일이 이제 골든 테스트다.
 
-강제자  `web/navi/test/rules.test.ts` · `tests/test_navi_graph_fresh.py`(클라이언트가 먹는 그래프가 발행본과 같은가) · `tests/test_reach_overlay.py`. 하위 절이 이 칸을 물려받는다
+강제자  `web/navi/test/rules.test.ts` · `tests/test_navi_graph_fresh.py`(클라이언트가 먹는 그래프가 발행본과 같은가) · `tests/test_reach_overlay.py`. 하위 한 절이 이 칸을 물려받는다
 
 ### 115-1. 왜 서버에서 돌리지 않나
 
@@ -5423,7 +5423,7 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 실측에서 101도로 꺾이는 길도 갈림길이 없으면 조용하다. 운전자가 선택할 것이
 없으면 안내할 것도 없다.
 
-강제자  `web/navi/test/rules.test.ts`(분기 유무로 회전을 내는가 · 도로명이 기준이 아닌가) · `web/navi/test/turning.test.ts`. 하위 절이 이 칸을 물려받는다
+강제자  `web/navi/test/rules.test.ts`(분기 유무로 회전을 내는가 · 도로명이 기준이 아닌가) · `web/navi/test/turning.test.ts`. 하위 한 절이 이 칸을 물려받는다
 
 ### 117-1. 도로명은 기준이 아니다
 
@@ -5463,7 +5463,7 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 전**이다. 말이 끝나기도 전에 회전이 온다. 그래서 실제 속도를 재서 문턱을
 만든다 — 먼저알림 12초 · 준비 6초 · 실행 2.5초.
 
-강제자  `web/navi/test/progress.test.ts`(안내 문턱 12·6·2.5초) · `web/navi/test/rules.test.ts`. 하위 절이 이 칸을 물려받는다
+강제자  `web/navi/test/progress.test.ts`(안내 문턱 12·6·2.5초) · `web/navi/test/rules.test.ts`. 하위 한 절이 이 칸을 물려받는다
 
 ### 118-1. 회전 간격 21% 가 30m 미만이다
 
@@ -5568,7 +5568,7 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`ui` 만 다시
 짠다.
 
-강제자  `tests/test_layering.py`(계층 방향) · `web/navi/test/domain.test.ts`(domain 이 순수한가 — React·MapLibre·fetch 를 모르는가). 하위 절이 이 칸을 물려받는다
+강제자  `tests/test_layering.py`(계층 방향) · `web/navi/test/domain.test.ts`(domain 이 순수한가 — React·MapLibre·fetch 를 모르는가). 하위 한 절이 이 칸을 물려받는다
 
 ### 121-1. 순환은 setState 로 되먹일 때 생긴다
 
@@ -8460,6 +8460,8 @@ R3 는 뼈대를 간다. 그러면 **구간이 다른 자리에서 잘린다** �
 
 ### 187-1. 교체 직전 봉인 — `baseline.py freeze 20260918-pre-r3`
 
+강제자  `tests/test_reproducibility.py`(봉인 재현) · `tools/freshcheck.py`(봉인이 트리에 있는가) · `tests/test_seal_survives_squash.py`(스쿼시로 사라지지 않는가)
+
 현행 뼈대(도로명주소 `road_link`)로 낸 마지막 산출물을 봉인한다. `seg_uid` 는 중점 좌표 + 도로명 해시라
 뼈대가 갈리면 **전량이 새 키가 된다** — 옛 키의 피처 기록은 이 봉인 하나뿐이 된다(§171-3).
 실측(`field`)이 옛 `seg_uid` 로 붙어 있으므로, 이것이 없으면 R3 뒤 실측값이 미아가 된다.
@@ -8482,6 +8484,8 @@ R3 는 뼈대를 간다. 그러면 **구간이 다른 자리에서 잘린다** �
 강제자  `tests/test_r2.py::test_identity_is_all_one_to_one` · `::test_shared_node_does_not_leak_a_vote_to_the_neighbour` · `::test_split_is_one_to_n_and_conserves_length` · `::test_merge_is_n_to_one_and_disappearance_is_counted` · `::test_new_segment_with_no_old_counterpart_is_added` · `::test_midpoint_fallback_only_when_direction_match_fails` · `::test_transition_is_not_wired_into_judgment_code` · `tests/test_tools_are_wired.py`(EXEMPT 사유)
 
 ### 187-3. `baseline.py diff --transition` 이 같은 모듈을 쓴다
+
+강제자  `tests/test_r2.py`(같은 모듈을 쓰는가 · 정본이 둘이 아닌가) · `tests/test_tools_are_wired.py`(호출이 early return 뒤로 밀리지 않는가 — 조용히 생략되던 자리)
 
 정본을 둘로 만들지 않는다. diff 는 1:1 표를 그대로 내고, `--transition` 이 붙으면 경계가 갈린 경우까지 덧붙인다.
 
@@ -8542,6 +8546,8 @@ import 는 분기 안에 둔다 — 꼭대기로 올리면 스위치와 무관�
 강제자  `tests/test_r3.py::test_as_road_takes_width_from_ngii_but_name_from_road_link` · `::test_as_road_fills_blank_ngii_name_from_road_link_beyond_roadname_band` · `::test_as_road_defaults_dpn_to_main_road_when_unknown` · `::test_as_road_keeps_every_edge_and_geometry`
 
 ### 188-3. 측정 — 봉인 ↔ 시험 산출물을 `tools/transition.py` 로
+
+강제자  `tools/golden.py check`(되돌린 뒤 산출물이 봉인과 바이트 동일한가 — 다르면 R3a 가 판정 불변이 아니다) · `tests/test_r2.py`
 
 스위치를 켜고 파이프라인을 한 번 돌린 뒤 `tools/transition.py 20260918-pre-r3 --csv` 를 부른다.
 옛 봉인(도로명주소 뼈대) ↔ 지금 산출물(NGII 뼈대)의 1:1 · 1:N · N:1 · 소멸 · 신설과 **길이 가중 판정 전이표**가 나온다.
@@ -10029,7 +10035,7 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
 
 **148건이 REDLIST.json 에 앉아 있었고 아무도 읽지 않았다.**
 
-강제자  `tests/test_deadcheck_probes.py` (관문이 `--ratchet` 인가 · 짝짓기가 부분집합인가 · 면제가 죽지 않았는가 · 분모 정본이 하나인가)
+강제자  `tests/test_deadcheck_probes.py` (관문이 `--ratchet` 인가 · 짝짓기가 부분집합인가 · 면제가 죽지 않았는가 · 분모 정본이 하나인가). 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 202-1. 관문의 방향이 뒤집혀 있었다
 
@@ -10230,7 +10236,7 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
 W4 몸통(5족 — 생성물인데 생성기가 없다)을 한 배치로 닫으려고 일곱 행의
 전제를 하나씩 쟀다. **셋이 유령이었다.**
 
-강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `tests/test_figure_text.py` · `tests/test_rawdiff_code.py::test_code_diff_names_the_file_that_moved`
+강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `tests/test_figure_text.py` · `tests/test_rawdiff_code.py::test_code_diff_names_the_file_that_moved`. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 203-1. 없는 디렉터리에 대한 결함 둘
 
@@ -10374,7 +10380,7 @@ SVG `<text>` 는 마크다운을 모른다. 코드 표기 의도가 그냥 글�
 
 **20행 중 17행이 어떤 식으로든 틀렸다.**
 
-강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `::test_defect_ledger_counts_agree_everywhere`
+강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `::test_defect_ledger_counts_agree_everywhere`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 204-1. 제일 무거운 것 — 봉인이 없는 커밋을 가리킨다
 
@@ -10502,7 +10508,7 @@ EPSG:5186 으로 재니 **1.7500km²**, 동명동 **0.4292km²**, 비율 **4.077
 시작했다. 재번호를 하려고 파급을 쟀더니 **하면 안 되는 이유**가 나왔고,
 그것이 곧 **왜 목록이 안 줄어드는가**의 답이었다.
 
-강제자  `tests/test_declaration_sync.py::test_plan_row_numbers_are_unique_and_sorted` · `::test_plan_renumber_cannot_shift_numbers_any_more` · `::test_plan_section1_count_agrees` · `tests/test_tile_zoom_agreement.py`
+강제자  `tests/test_declaration_sync.py::test_plan_row_numbers_are_unique_and_sorted` · `::test_plan_renumber_cannot_shift_numbers_any_more` · `::test_plan_section1_count_agrees` · `tests/test_tile_zoom_agreement.py`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 205-1. §1 은 행을 지울 수가 없었다
 
@@ -10638,7 +10644,7 @@ PR #132 이 CI 에서만 빨갰다. 로컬은 837 통과 · 전수 46/46 초록�
 §203 이 세운 「대장의 행이 실재하는 것을 가리키는가」가 CI 에서만 울었다.
 **둘 다 같은 코드고 같은 트리인데 판정이 달랐다.**
 
-강제자  `tests/test_declaration_sync.py::test_ledger_exemptions_are_not_dead` (면제가 죽으면 운다)
+강제자  `tests/test_declaration_sync.py::test_ledger_exemptions_are_not_dead` (면제가 죽으면 운다). 하위 둘은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 206-1. 원인 — 훑는 자리가 물음보다 넓었다
 
@@ -10699,7 +10705,7 @@ ref 가 `packed-refs` 하나로 묶이고 그 파일이 없다 —— **거기�
 역사에 없으면 기준선이 아니라 **없는 곳을 가리키는 숫자**다. 신선한 클론에는
 `refs/pull/*` 이 안 따라오므로 거기서는 `git cat-file -t 2130b14` 조차 죽는다.
 
-강제자  `tests/test_seal_survives_squash.py` (다섯) · `tools/merge_batch.sh` A-0
+강제자  `tests/test_seal_survives_squash.py` (다섯) · `tools/merge_batch.sh` A-0. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 207-1. 원인은 「깜빡했다」가 아니다 —— 구조가 그렇게 만든다
 
@@ -10783,7 +10789,7 @@ v0.28 릴리즈에서 §207 이 세운 A-0 이 제자리에서 돌았고 —— 
 
 강제자  `tests/test_deadcheck_probes.py` —— `test_every_probe_has_a_positive_control` ·
 `test_the_positive_control_is_green` · `test_the_control_catches_a_dead_probe`(다섯) ·
-`test_selftest_does_not_read_the_real_tree_any_more` · `test_dms_still_asks_liveness_not_the_ratchet`
+`test_selftest_does_not_read_the_real_tree_any_more` · `test_dms_still_asks_liveness_not_the_ratchet`. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 208-1. 빨간 이유가 「② 가 깨끗해서」였다
 
@@ -10893,7 +10899,7 @@ v0.29 방송에서 A-0 이 **처음으로 봉인을 찍었다.** §208 이 막�
 
 강제자  `tests/test_gitleaks_allowlist.py`(여섯) · `tests/test_seal_survives_squash.py`
 —— `test_seal_is_committed_and_goes_through_a_pr` · `test_seal_never_pushes_straight_to_part_infra` ·
-`test_seal_pr_ci_wait_cannot_kill_the_release` · `test_red_seal_pr_is_closed_not_left_open`
+`test_seal_pr_ci_wait_cannot_kill_the_release` · `test_red_seal_pr_is_closed_not_left_open`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ★ 강제자 칸을 **여기(`##` 본문)** 에 둔다. `dms` 는 `###` 가 부모 `##` 의 칸을
   물려받게 하는데, 칸을 맨 끝에 두면 그것은 **마지막 `###` 의 본문**이 되어
@@ -11025,7 +11031,7 @@ V-World 키(`web/config.js` · `web/index.html` · `sources.yaml` ·
 
 > 2026-09-21 · 오창준
 
-강제자  `tests/test_dms_ancestry.py`(여섯) · `tools/verify.sh` 「봉인 조상」 · `tests/test_seal_survives_squash.py::test_seal_pr_body_template_passes_the_gate` · `::test_a0_checks_the_body_before_making_anything`
+강제자  `tests/test_dms_ancestry.py`(여섯) · `tools/verify.sh` 「봉인 조상」 · `tests/test_seal_survives_squash.py::test_seal_pr_body_template_passes_the_gate` · `::test_a0_checks_the_body_before_making_anything`. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 v0.29 가 나갔다. main 에 실린 봉인은 `e0f9069` 커밋이 적은 `ad1c679` 이고, 그
 커밋은 **main 의 조상**이다 —— 봉인 도입 이래 처음이다. A-0 이 새로 찍은 봉인
@@ -11091,7 +11097,7 @@ verify 에 세웠다 —— `step "봉인 조상" uv run python tools/dms.py anc
 
 > 2026-09-21 · 오창준
 
-강제자  `tests/test_navi_wireframe.py`(넷 — 28장 전부 자리가 있는가 · 상태표가 시연 순서와 같은가 · 신호 없는 상태에 주입 표지가 있는가 · 병목 상세의 정직함 두 줄) · `tools/verify.sh` 「내비 타입 검사」
+강제자  `tests/test_navi_wireframe.py`(넷 — 28장 전부 자리가 있는가 · 상태표가 시연 순서와 같은가 · 신호 없는 상태에 주입 표지가 있는가 · 병목 상세의 정직함 두 줄) · `tools/verify.sh` 「내비 타입 검사」. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 지혜님이 와이어프레임 09-21 판 28장을 넘겼다(00 출동 정보 입력 ~ 23 도착 보고 공유).
 09-05 판으로 짠 내비 위에 반영했다. 판정 산출물은 한 바이트도 안 움직였다.
@@ -11180,7 +11186,7 @@ CCTV 없는 골목 > 안전/빠른. 경로가 없는데 「골목 주행 중」 
 
 > 2026-09-22 · 오창준
 
-강제자  `tests/test_fleet_turn_radius.py`(다섯 — 커밋본이 규칙과 같은가 · turn_unknown 은 숫자 없음 · 화면은 fleet.json 에서만 숫자를 읽고 참고·미반영 고지가 있는가 · 판정 쪽은 참고값을 안 읽는가 · publish_web 이 publish_fleet 을 부르는가)
+강제자  `tests/test_fleet_turn_radius.py`(다섯 — 커밋본이 규칙과 같은가 · turn_unknown 은 숫자 없음 · 화면은 fleet.json 에서만 숫자를 읽고 참고·미반영 고지가 있는가 · 판정 쪽은 참고값을 안 읽는가 · publish_web 이 publish_fleet 을 부르는가). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 §211-4 에서 지혜님께 넘긴 확인 사항 셋 중 둘이 답을 받았다 —— 「회전반경은 되는
 제원만 숫자로, 차종은 실제 편성으로, 주차 차량은 미반영」.
@@ -11235,7 +11241,7 @@ publish_fleet 가 기준 차량 전폭 2.5m 로 떨어진다. 필요폭이 3.0m 
 
 > 2026-09-22 · 오창준
 
-강제자  `web/navi/test/progress.test.ts`(아홉 — 1Hz 잡음 오차 · 음영 순간이동 · 강제 +250m · 되돌아 나오는 경로 · 이탈 두 측위 · 추측항법 상한 · 안내 문턱 · 재동기화 문구 · 자 변환) · `tools/navi_env.py`(잠금 → npm ci · 로컬 노드 = .nvmrc · 잠금 engines 전부 만족) · `tools/verify.sh` 「내비 환경 = CI」 「내비 단위 시험」 · `.github/workflows/contract.yml` 같은 둘
+강제자  `web/navi/test/progress.test.ts`(아홉 — 1Hz 잡음 오차 · 음영 순간이동 · 강제 +250m · 되돌아 나오는 경로 · 이탈 두 측위 · 추측항법 상한 · 안내 문턱 · 재동기화 문구 · 자 변환) · `tools/navi_env.py`(잠금 → npm ci · 로컬 노드 = .nvmrc · 잠금 engines 전부 만족) · `tools/verify.sh` 「내비 환경 = CI」 「내비 단위 시험」 · `.github/workflows/contract.yml` 같은 둘. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 v0.32 직후 사용자 지적 넷 —— 「턴바이턴이 차가 이렇게 갈 거라고 가정만 한다」, 「CI 에서
 실패하는데 verify 가 모르는 게 말이 되냐」, 「대비가 없다」, 「사건 입력 → 사건 접수」.
@@ -11321,7 +11327,7 @@ publish_web 이 부른다). 새로 들인 데이터는 없다. **판정과 무�
 
 > 2026-09-22 · 오창준
 
-강제자  `web/navi/test/domain.test.ts`(여섯 — 대체 접근 지점 · 도보 상한 · 도달 가능 구간 · 경로 비교 표지 · 차종 이름 · 관제 말) · `tests/test_batch_tools.py`(열둘 — 스크립트 문법 · 부트스트랩 여섯(zip 과 풀린 패치가 같이 있어도 한 번 · 남의 패치 무시) · 패치 고르기 둘(남의 패치 무시 — 실제 사고) · 정리 배선 · --auto 안전 · 레이크 처분) · `tests/test_navi_wireframe.py`(상태 키 둘 추가 뒤에도 28장 · 시연 순서 · 주입 표지)
+강제자  `web/navi/test/domain.test.ts`(여섯 — 대체 접근 지점 · 도보 상한 · 도달 가능 구간 · 경로 비교 표지 · 차종 이름 · 관제 말) · `tests/test_batch_tools.py`(열둘 — 스크립트 문법 · 부트스트랩 여섯(zip 과 풀린 패치가 같이 있어도 한 번 · 남의 패치 무시) · 패치 고르기 둘(남의 패치 무시 — 실제 사고) · 정리 배선 · --auto 안전 · 레이크 처분) · `tests/test_navi_wireframe.py`(상태 키 둘 추가 뒤에도 28장 · 시연 순서 · 주입 표지). 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 §213 배치가 verify 에서 레이크 L3 에 막혔고, 사용자가 INBOX 를 비우면서 배치 도구까지 사라졌다.
 같은 자리에서 「내비 이 정도로 충분하냐 · GIS 도 내비와 협응해 갈아엎어라 · 와이어프레임과
@@ -11454,7 +11460,7 @@ Mapbox 가 아예 없었다. 새 기계를 세팅하면 내비만 조용히 음�
 
 > 2026-09-22 · 오창준
 
-강제자  `web/navi/test/rules.test.ts`(여덟 — 규칙 없는 최단 · 금지 회전 우회와 불가피할 때 경고 · 골목 유턴으로 금지 회피 없음 · 반대 회전은 무관 · 알려진 일방통행 · 방향 모름 · 다가오는 규칙 · 발행 그래프 대조) · `web/navi/test/domain.test.ts`(회색 사유) · `tests/test_navi_graph_fresh.py::test_navi_graph_carries_traffic_rules` · `tests/test_batch_tools.py`(이어가기 다섯) · `tests/test_fieldsheet.py`(셋)
+강제자  `web/navi/test/rules.test.ts`(여덟 — 규칙 없는 최단 · 금지 회전 우회와 불가피할 때 경고 · 골목 유턴으로 금지 회피 없음 · 반대 회전은 무관 · 알려진 일방통행 · 방향 모름 · 다가오는 규칙 · 발행 그래프 대조) · `web/navi/test/domain.test.ts`(회색 사유) · `tests/test_navi_graph_fresh.py::test_navi_graph_carries_traffic_rules` · `tests/test_batch_tools.py`(이어가기 다섯) · `tests/test_fieldsheet.py`(셋). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 v0.33 뒤 데이터 활용을 점검하다가 **내비가 일방통행을 모른다**는 것이 드러났다. `graph.ts` 가
 모든 엣지를 양방향으로 넣었고, 1:1000 중심선의 일방통행 1,176선 위에 우리 구간이 올라 있었다.
@@ -11535,7 +11541,7 @@ dependabot 은 파이썬 · 내비의 **메이저 판을 정기로 받지 않는
 
 > 2026-09-22 · 오창준
 
-강제자  `tests/test_shardseal.py`(넷 — 서술 칸 무시 · 모르는 칸은 찢음 · 옛 봉인 수용과 재기록 · 커밋 대장 새 지문) · `tests/test_publish_context.py`(여섯) · `web/navi/test/domain.test.ts`(건물 밑면) · `tests/test_batch_tools.py`
+강제자  `tests/test_shardseal.py`(넷 — 서술 칸 무시 · 모르는 칸은 찢음 · 옛 봉인 수용과 재기록 · 커밋 대장 새 지문) · `tests/test_publish_context.py`(여섯) · `web/navi/test/domain.test.ts`(건물 밑면) · `tests/test_batch_tools.py`. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 §215 배치가 verify 의 「파이프라인 전량」 에서 멈췄다(ingest FAIL 1종 — turn_restriction). 같은 자리에서
 사용자가 다섯을 더 냈다 —「받은 데이터 다 쓰고 있나(부족하면 또 구한다)」 · 「내비가 끊긴다」 ·
@@ -11629,7 +11635,7 @@ CI 전용)가 틀과 `web/README.md` 를 뺀다. README 의 「(해당 파트가
 
     닫힘   W11-1 · W3-5 · W3-2 · W3-3 · W4-2 · W3-9 · W7-3 · W3-15 · W3-18 · W8-1 · W9-4 · W9-5 · W3-13 · W10-1 · W5-1
 
-강제자  `tests/test_defect_evidence.py`  닫힘 줄의 ID 마다 그 닫힘을 지키는 시험이 트리에 있는가
+강제자  `tests/test_defect_evidence.py`  닫힘 줄의 ID 마다 그 닫힘을 지키는 시험이 트리에 있는가. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 217-1. W11-1 —— 회전제한은 원인 자리에서 멈춘다
 
@@ -11730,7 +11736,7 @@ PLAN §13 은 3행 → **2행**(W3-6 · W6-1 — 둘 다 막힌 이유가 행에
 (#48 커버리지 — 래칫이 섰다 · #49 휘발 구역 — 경로를 브라우저가 계산해 커밋되지 않는다 · #50 구간
 투영 · #61 건물 잘림 — 재현되지 않고 매 verify 가 바이트 대조한다). 새 행 0.
 
-강제자  `tests/test_defect_evidence.py` · 아래 절마다의 시험
+강제자  `tests/test_defect_evidence.py` · 아래 절마다의 시험. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  지난 배치의 빨강 셋(엄격 린트 · 표지 수정일 · 배포 그림)은 전부 **커밋한 뒤에만** 걸리는
 검사였다(`doc_fsck` ⑥ 은 커밋 날짜를, 그림 검사는 워크플로 목록을 본다). 커밋 전 부분 검사로 초록을
@@ -11870,7 +11876,7 @@ v0.35 뒤 첫 배치다. 멘토링(§219)이 든 화면 셋을 넣고, PLAN §13
 
     닫힘   W3-6
 
-강제자  `web/navi/test/clearance.test.ts` · `tests/test_golden_fp.py` · `tests/test_guards.py` · `tests/test_batch_tools.py`
+강제자  `web/navi/test/clearance.test.ts` · `tests/test_golden_fp.py` · `tests/test_guards.py` · `tests/test_batch_tools.py`. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  판정 지문이 바뀌는 배치는 **재잠금까지가 한 배치**다. 어제는 사람이 두 명령을 손으로 쳐야
 했고, 그 사이에 verify 를 돌리면 반드시 빨갛다. 배치 도구가 친다(`fl.sh --relock`).
@@ -11954,7 +11960,7 @@ datasets 가 13종이고, 좁은 관문은 FAIL 을 조용히 통과시킨다(10
     닫힘   PLAN §1 #43 · #44
 
 강제자  `tests/test_docx_targets.py`(그림 선언 · 기획서 대조 · 변환기 없이 도는가) ·
-`tests/test_batch_tools.py::test_bot_prs_do_not_block_a_batch` · `tools/verify.sh` 「기획서 그림 ↔ 정본」
+`tests/test_batch_tools.py::test_bot_prs_do_not_block_a_batch` · `tools/verify.sh` 「기획서 그림 ↔ 정본」. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  「사람이 넣는다」 는 규율이 아니라 **미룸의 다른 이름**이다. 같은 파일을 기계가
 이미 고치고 있었으면 예외는 예외가 아니라 구멍이다.
@@ -12029,7 +12035,7 @@ v0.36 뒤 첫 배치다. **어제·오늘 두 번 「인스턴스만 잡고 족�
 
 강제자  `tests/test_batch_tools.py::test_pr_sweeps_read_the_author` ·
 `tools/verify.sh` 「죽은 강제자 참조」 · `tests/test_sources_of_truth.py`(열 사실 전부 `scan`) ·
-`tools/plan_renumber.py` 결번 대장 · `tests/test_declaration_sync.py::test_plan_retired_numbers_are_declared`
+`tools/plan_renumber.py` 결번 대장 · `tests/test_declaration_sync.py::test_plan_retired_numbers_are_declared`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  **고친 자리 옆을 안 본 것이 오늘 두 번 있었다.** 같은 물음을 치는 자리가 둘이면
 하나를 고치는 것은 고친 것이 아니다. 「같은 물음을 치는 자리를 전부 찾는 검사」가 족 가드다.
@@ -12138,7 +12144,7 @@ W6-1 의 전건이 「대장 `feeds` 산문 해소」다. `ledger_feeds --apply`
     닫힘   PLAN §1 #12
 
 강제자  `tests/test_ortho_seal.py`(여섯) · `tests/test_desk_tools.py`(열일곱) ·
-`tools/verify.sh` 「커버리지 래칫」 `COV_MIN=28`
+`tools/verify.sh` 「커버리지 래칫」 `COV_MIN=28`. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  **매번 다시 만드는 단계는 「느리다」가 아니라 「봉인지가 없다」다.** ingest 는
 2026-09-14 에 그것을 배웠는데(§164 · §165) 같은 규율을 옆 단계에 안 내렸다.
@@ -12491,7 +12497,7 @@ PLAN 을 안 믿게 되고, 안 믿는 계획은 없는 계획이다. 이 배치
 
 > 2026-09-24
 
-강제자  `tests/test_batch_tools.py`(계급 가드 넷) · `tests/test_seal_survives_squash.py::test_unread_seal_pr_is_left_alone`
+강제자  `tests/test_batch_tools.py`(계급 가드 넷) · `tests/test_seal_survives_squash.py::test_unread_seal_pr_is_left_alone`. 하위 여덟은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 2026-09-23 v0.38 릴리즈에서 도구가 **네 번** 틀렸다. 네 번 다 사람이 손으로
 수습했고, 네 번 다 **도구 쪽 결함**이었다. 「사람이 잘 하면 된다」로 넘기면
@@ -12571,7 +12577,7 @@ PR 을 빠뜨렸다」로 멈췄다. 그 PR 은 **사람이 만드는 것이 아
 
 > 2026-09-24
 
-강제자  `tools/scopedecl.py` · `tests/test_scopedecl.py`(여섯)
+강제자  `tools/scopedecl.py` · `tests/test_scopedecl.py`(여섯). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 같은 결함이 일곱 번 났다 — `PLAN §13` W3-8 · W4-8 · W3-16 · W3-18 · W4-9 ·
 §197-1, 그리고 2026-09-24 의 `env_check`. 형태가 매번 같았다.
@@ -12654,7 +12660,7 @@ PR 을 빠뜨렸다」로 멈췄다. 그 PR 은 **사람이 만드는 것이 아
 
 > 2026-09-24
 
-강제자  `tests/test_ledger_contract.py`(아흔하나) · `tests/test_defect_evidence.py::EVIDENCE`
+강제자  `tests/test_ledger_contract.py`(아흔하나) · `tests/test_defect_evidence.py::EVIDENCE`. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 2026-09-18 감사가 낸 47건의 **마지막 행**이 닫혔다. `PLAN §13-3` 표가 비었다.
 
@@ -12769,7 +12775,7 @@ W6-1 의 수용 조건은 「불변」이 아니라 **「불변 증명」**이�
 
 > 2026-09-24
 
-강제자  `tools/dms.py::_missing_member` · 같은 파일 `--selftest` 의 「실재하는 파일 + 없는 함수」 카나리아
+강제자  `tools/dms.py::_missing_member` · 같은 파일 `--selftest` 의 「실재하는 파일 + 없는 함수」 카나리아. 하위 둘은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `dms verify` 는 「칸이 지목한 이름이 실재하는가」를 묻는다. 그런데
 `tests/test_guards.py::없는함수` 를 **초록으로 통과시켰다** — 규칙 ⑤ 가
@@ -12802,7 +12808,7 @@ W6-1 의 수용 조건은 「불변」이 아니라 **「불변 증명」**이�
 
 > 2026-09-24
 
-강제자  `tools/dms.py --selftest`(합성 입력으로 생사를 본다) · `tests/test_declaration_sync.py::test_defect_ledger_counts_agree_everywhere`
+강제자  `tools/dms.py --selftest`(합성 입력으로 생사를 본다) · `tests/test_declaration_sync.py::test_defect_ledger_counts_agree_everywhere`. 하위 한 절은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 같은 형태를 하루에 두 번 더 만났다.
 
@@ -12832,11 +12838,15 @@ W6-1 의 수용 조건은 「불변」이 아니라 **「불변 증명」**이�
   물려받는다」를 **적거나**, 안 덮이는 자식에 제 칸을 적거나. 어느 쪽이든
   **가정이 선언으로 바뀐다.**
 
+★ 2026-09-24 에 **0 이 됐다**(§241). 둘 다 썼다 — 아홉 절에 제 칸을 달고
+  나머지 부모에 **수를 적은** 선언을 달았다. 수를 적게 한 것이 핵심이다.
+  선언만으로는 하위 절이 늘어도 조용하지만, 수는 어긋나면 운다.
+
 ## 231. 기획서를 PDF 로 굽는다 — 「확인할 방법이 없다」가 틀렸다
 
 > 2026-09-24
 
-강제자  `tools/proposal_pdf.py`(쪽수 · 본문 한글 줄 · 판정 수치 · 그림 수) · `tests/test_proposal_pdf.py`(여덟 — 네 갈래가 전부 우는가)
+강제자  `tools/proposal_pdf.py`(쪽수 · 본문 한글 줄 · 판정 수치 · 그림 수) · `tests/test_proposal_pdf.py`(여덟 — 네 갈래가 전부 우는가). 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `web/proposal.html` 이 `.docx` 를 브라우저에서 `docx-preview` 로 그렸다.
 그 선택의 근거가 이렇게 적혀 있었다 —
@@ -12898,7 +12908,7 @@ PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어�
 
 > 2026-09-24
 
-강제자  `web/navi/test/egobox.test.ts`(여덟 — 치수 · 방위 · 제원 없을 때 · 전폭 대 필요폭) · `web/navi/test/style.test.ts`
+강제자  `web/navi/test/egobox.test.ts`(여덟 — 치수 · 방위 · 제원 없을 때 · 전폭 대 필요폭) · `web/navi/test/style.test.ts`. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 자차 표시가 DOM 마커(SVG)였다. DOM 마커는 **화면 픽셀**로 그려지므로 줌이
 바뀌면 차와 길의 비율이 바뀐다 — 줌 아웃에서 차가 골목을 통째로 덮고, 줌
@@ -12941,7 +12951,7 @@ PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어�
 
 > 2026-09-24
 
-강제자  `tests/test_refcheck_paths.py`(여덟 — 넘기는 갈래마다 **넘기면 안 되는 짝**을 같이 든다) · `tools/refcheck.py` ⑦
+강제자  `tests/test_refcheck_paths.py`(여덟 — 넘기는 갈래마다 **넘기면 안 되는 짝**을 같이 든다) · `tools/refcheck.py` ⑦. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `refcheck ⑦` 이 문서에 적힌 경로가 실재하는지 본다. 넘겨야 할 것 셋을 안
 넘겨서 **경고 일곱이 상시로 떠 있었다.** 상시 경고는 아무도 안 읽는다 —
@@ -12988,7 +12998,7 @@ PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어�
 
 > 2026-09-24
 
-강제자  `tests/test_declaration_sync.py::test_plan_section1_count_agrees` · `tools/plan_renumber.py`(결번 대장 ↔ 실물)
+강제자  `tests/test_declaration_sync.py::test_plan_section1_count_agrees` · `tools/plan_renumber.py`(결번 대장 ↔ 실물). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `PLAN` 은 **빚 목록**이다(§0-2). 갚은 빚은 목록에 없고, **결정이 끝난 것도
 빚이 아니다.** 그런데 다섯 행이 스스로 「결정은 끝났다 · 지금 하지 않는다」
@@ -13059,7 +13069,7 @@ PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어�
 
 > 2026-09-24
 
-강제자  `tests/test_dest_scope.py`(셋 — 넘침 · 모자람 · 빈 그물) · `web/navi/test/domain.test.ts`
+강제자  `tests/test_dest_scope.py`(셋 — 넘침 · 모자람 · 빈 그물) · `web/navi/test/domain.test.ts`. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 2026-09-23 밤에 조사 도구가 이렇게 냈다 —
 
@@ -13122,7 +13132,7 @@ PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어�
 
 > 2026-09-24
 
-강제자  `tests/test_figure_xsec.py`(일곱) · `tests/test_figure_fit.py`(원 넷) · `tools/docx_figs.py --check`
+강제자  `tests/test_figure_xsec.py`(일곱) · `tests/test_figure_fit.py`(원 넷) · `tools/docx_figs.py --check`. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 기획서 [그림 13] 의 캡션은 2026-08-31 에 **「평면교차점 실형상 제외」**로 고쳐졌다.
 **그림은 안 고쳐졌다.** 반경 5m 원 하나만 그린 채로 석 주를 서 있었고, 캡션과
@@ -13173,7 +13183,7 @@ PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어�
 
 > 2026-09-24
 
-강제자  `tests/test_docx_targets.py`(아홉 — 지목 · **수** · 빈 그물 프로브) · `tools/docx_fix.py --touch` · `tools/doc_fsck.py` ⑥
+강제자  `tests/test_docx_targets.py`(아홉 — 지목 · **수** · 빈 그물 프로브) · `tools/docx_fix.py --touch` · `tools/doc_fsck.py` ⑥. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `PLAN §12`(기획서 갱신 대상) 넷을 닫으려고 문서를 뒤졌더니 **둘은 이미
 닫혀 있었다.**
@@ -13226,7 +13236,7 @@ PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어�
 
 > 2026-09-24
 
-강제자  `tests/test_skip_policy.py::test_every_written_skip_reason_is_already_in_policy`(정적) · `::test_hook_turns_unclassified_skip_into_failure`(런타임)
+강제자  `tests/test_skip_policy.py::test_every_written_skip_reason_is_already_in_policy`(정적) · `::test_hook_turns_unclassified_skip_into_failure`(런타임). 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 skip 정책(§175)은 `conftest` 훅이 **보고된 skip** 에 건다. 안 타진 갈래는 안
 본다. 그래서 분류 밖 사유 셋이 조용히 살아 있었다 —
@@ -13296,7 +13306,7 @@ CI 에서는 통째로 skip 이고, **범위를 강제하려고 세운 시험이
 
 > 2026-09-24
 
-강제자  `tests/test_tools_are_wired.py`(카나리아 여섯 · 합성 이름) · `tests/test_ownership.py`(이름 붙은 소유자) · `tests/test_provider_registry.py` · `tests/test_declaration_sync.py`
+강제자  `tests/test_tools_are_wired.py`(카나리아 여섯 · 합성 이름) · `tests/test_ownership.py`(이름 붙은 소유자) · `tests/test_provider_registry.py` · `tests/test_declaration_sync.py`. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `tools/` 와 `tests/` 를 전수로 감사했다. 발견은 한 가지 모양으로 모인다 —
 **검사가 「글자가 있는가」를 「일이 일어나는가」로 착각한다.**
@@ -13378,7 +13388,7 @@ CI 에서는 통째로 skip 이고, **범위를 강제하려고 세운 시험이
 
 > 2026-09-24
 
-강제자  `tools/localgeo.py` · `tests/docparse.py` · `tests/test_docref.py::test_code_comments_do_not_cite_a_section_that_does_not_exist` · `::test_fence_handling_has_exactly_one_home` · `tests/test_building_road_overlap.py`(셋)
+강제자  `tools/localgeo.py` · `tests/docparse.py` · `tests/test_docref.py::test_code_comments_do_not_cite_a_section_that_does_not_exist` · `::test_fence_handling_has_exactly_one_home` · `tests/test_building_road_overlap.py`(셋). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 §239 감사가 `PLAN §13-3` 에 여섯을 올렸다(0행 → 6행). 같은 날 여섯을 닫았다.
 판정 산출물은 바이트 동일하다 — `golden check` 에서 움직인 것은 `uv.lock`
@@ -13435,3 +13445,65 @@ CI 에서는 통째로 skip 이고, **범위를 강제하려고 세운 시험이
 
 ★ 그러고도 살아 있는 신호가 정수 비교 하나였다 — `partial.append` 가 한 번도
   안 돈다. 합성 사각형으로 세 갈래를 밀리초에 확인한다(§230).
+
+---
+
+## 241. 물림 246 을 0 으로 — 선언을 **세는 것**으로 바꿨다
+
+> 2026-09-24
+
+강제자  `tools/dms.py::inherit_counts`(선언한 수 ↔ 실제) · `tools/dms.py --selftest`(합성 데이터로 생사) · `tools/dms.py::classify`(칸 **전문**). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`§230-1` 이 다음 분모로 지목한 물림(부모 칸이 하위 논점까지 덮는다는 **가정**)을
+닫았다. 0 이다.
+
+### 241-1. 「물려받는다」 한 줄은 검증된 적이 없다
+
+하위 절이 하나 늘어도 그 줄은 그대로 참인 것처럼 보인다 — **새로 생긴 절은
+아무도 안 본 채 물림으로 들어간다.** 선언이 가정을 감추는 자리다.
+
+★ **수를 적게 했다.** 절이 늘거나 줄면 수가 어긋나고, 어긋나면 사람이 그 새
+  절을 실제로 본다. 이 저장소가 래칫에 거는 논리와 같다 — 선언을 **세는 것**으로
+  바꾼다. 수를 안 적은 옛 표기 16곳에도 수를 박았다.
+
+★ 수를 안 적은 선언은 세지 않는다. 그것까지 한 번에 강제하면 첫날부터
+  시끄럽고, 시끄러운 검사는 꺼진다. **수를 적은 선언만** 그 수를 지킨다.
+
+### 241-2. 칸은 여러 줄에 걸친다 — 도구가 첫 줄만 보고 있었다
+
+실측 **113곳**이 두 줄 이상이다. `classify` 는 첫 줄만 칸으로 들었다. 그래서
+이어지는 줄에 적힌 강제자 이름도, 물림 선언도 이 도구 눈에 **안 보였다.**
+
+★ 처음에 선언을 칸의 **첫 줄**에 붙였더니 문장 한복판이 갈렸다 —
+  「… (전건 등재 · 번호 연속 · 상태 어휘 · 하위 일곱은 …」. 칸이 한 줄이라는
+  가정으로 쓴 스크립트였다. 되돌리고 **칸 블록의 마지막 줄**에 붙였다.
+
+★ 물음이 「이 절에 칸이 있는가」이므로 답은 칸 **전체**여야 한다. 첫 줄만
+  보는 것은 범위가 이름보다 좁은 자리다(§226). 고치고 나니 죽은 참조는
+  0 이었다 — 이어지는 줄도 깨끗했다.
+
+### 241-3. 수를 세자 **거짓 선언 둘**이 나왔다
+
+    §187   「하위 절 187-1 ~ 187-3 이 각자 강제자 칸을 든다」
+           → 187-1 · 187-3 은 칸이 없었다
+    §188   「하위 절 188-1 ~ 188-3 이 각자 강제자 칸을 든다」
+           → 188-3 은 칸이 없었다
+
+셋에 제 칸을 달아 선언을 참으로 만들었다. **세기 시작하면 거짓이 드러난다** —
+그것이 수를 적는 값어치다.
+
+### 241-4. 어디에 칸을 달고 어디를 물리게 했나
+
+부모 칸이 자식을 **정말 덮는지**를 보고 갈랐다. 덮지 않는 아홉에 제 칸을 달았다 —
+
+    MASTER §2-2    판정 기준의 출처. 부모는 「강제자 없음」인데 `truck_m` ·
+                   `park_m` 은 `test_sources_of_truth` 가 든다
+    MASTER §5-2    계약 → `tests/test_contract.py`
+    MASTER §5-4    뼈대 교체 보류 → `tools/skeleton_compare.py` · `tests/test_r1.py`
+    README 셋       일회성 도구 · `D-XX` 표기 · 숫자의 정본
+    DECISIONS 셋    §187-1 · §187-3 · §188-3 (위 거짓 선언 셋)
+
+★ DECISIONS 의 `### N-M` 은 **같은 결정의 조각**이라 상위 절의 강제자가 결정
+  전체를 든다 — 거기는 물림이 맞다. MASTER 는 다르다. `§12` 에 칸을 적었을 때
+  자식 열하나가 한 번에 빠졌는데 그 칸은 §12-8a 도 §12-11 도 안 덮었다(§230-1).
+  **문서의 성격이 다르면 물림의 참 거짓도 다르다.**
