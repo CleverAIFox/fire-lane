@@ -162,6 +162,15 @@ FIELD_END = re.compile(r"^(#|---|\||★|```|\s*$)")
 def classify(sec: dict) -> tuple[str, str, int]:
     """(상태, 칸 **전문**, 칸 줄번호). 코드펜스 안의 줄은 칸으로 안 센다.
 
+    ★ 2026-09-24 (DECISIONS §243). 종전에는 절마다 **첫 칸에서 멈췄다.**
+      한 절에 강제자 칸이 둘 이상인 곳이 있고(PLAN §0-2 는 셋), 둘째부터는
+      이 도구 눈에 없었다. 그래서 `PLAN:98` 이 **개명된 시험**
+      (`test_plan_has_no_closed_items` → `test_plan_status_vocabulary_is_closed`)
+      을 가리킨 채 「죽은 강제자 참조 0건」이 찍히고 있었다. 검사를 세워 두고
+      그 검사가 못 보는 자리에 결함이 살았다.
+
+      상태는 칸 **전부**로 정한다 — 하나라도 배선이면 배선이다.
+
     ★ 2026-09-24 (DECISIONS §241). 종전에는 **첫 줄만** 칸으로 들었다. 칸은
       113곳에서 여러 줄에 걸친다 — 이어지는 줄에 적힌 강제자 이름도, 물림
       선언도 이 도구 눈에 안 보였다. 그래서 「하위 둘이 이 칸을 물려받는다」를
@@ -172,6 +181,9 @@ def classify(sec: dict) -> tuple[str, str, int]:
     """
     fence = False
     body = sec["body"]
+    blocks: list[str] = []
+    wired = False
+    at = sec["line"]
     for i, (n, line) in enumerate(body):
         if FENCE.match(line):
             fence = not fence
@@ -183,9 +195,13 @@ def classify(sec: dict) -> tuple[str, str, int]:
             if FIELD_END.match(nxt):
                 break
             block.append(nxt.strip())
-        rest = FIELD.sub("", line).strip()
-        return ("none" if NONE_ANY.search(rest) else "wired"), " ".join(block), n
-    return "blank", "", sec["line"]
+        if not blocks:
+            at = n
+        blocks.append(" ".join(block))
+        wired |= not NONE_ANY.search(FIELD.sub("", line).strip())
+    if not blocks:
+        return "blank", "", sec["line"]
+    return ("wired" if wired else "none"), " ".join(blocks), at
 
 
 def scan() -> dict:

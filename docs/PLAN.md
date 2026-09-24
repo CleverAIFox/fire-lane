@@ -95,7 +95,7 @@ PLAN 은 빚 목록이다 — **갚은 빚은 목록에 안 남는다.** 슬롯�
 ★ **개발이 끝나면 이 문서는 비어야 한다.** 남은 일이 없다는 뜻이다.
 남은 일이 없는데 문서가 두꺼우면 무언가 잘못된 것이다.
 
-강제자 — `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자 — `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
 
 ## 1. 남은 일 — 45행
 

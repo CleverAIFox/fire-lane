@@ -126,3 +126,28 @@ def test_a_multiline_field_is_read_whole():
     assert "test_b" in field, "이어지는 줄을 안 본다 — 범위가 이름보다 좁다"
     assert m._said_count(field) == 2, "뒷줄의 물림 수를 못 읽는다"
     assert "이 문단은" not in field, "빈 줄 뒤까지 칸으로 먹는다"
+
+
+def test_every_field_in_a_section_is_read():
+    """한 절에 칸이 둘 이상이면 **둘째부터**가 안 보였다.
+
+    ★ 2026-09-24 (PLAN §13 W13-7 · DECISIONS §243). `classify` 가 첫 칸에서
+      `return` 했다. PLAN §0-2 에는 강제자 칸이 셋 있고, 그중 `PLAN:98` 이
+      **개명된 시험**을 가리킨 채 「죽은 강제자 참조 0건」이 찍히고 있었다.
+      검사를 세워 두고 그 검사가 **못 보는 자리**에 결함이 살았다 —
+      0건이 청결인가 죽음인가(§230)의 또 다른 꼴이다.
+    """
+    m = _dms()
+    sec = {"line": 0, "body": [(1, "강제자 없음 — 사유: 머리말이다"),
+                               (2, ""),
+                               (3, "본문"),
+                               (4, "강제자 — `tests/test_second.py`")]}
+    state, field, at = m.classify(sec)
+    assert "test_second" in field, "둘째 칸을 안 본다 — 첫 칸에서 멈춘다"
+    assert state == "wired", "하나라도 배선이면 배선이다"
+    assert at == 1, "줄번호는 첫 칸을 가리켜야 한다"
+
+    only_none = {"line": 0, "body": [(1, "강제자 없음 — 사유: 어휘다"),
+                                     (2, ""),
+                                     (3, "강제자 없음 — 사유: 분류다")]}
+    assert m.classify(only_none)[0] == "none", "둘 다 없음인데 배선으로 센다"

@@ -532,9 +532,22 @@ backup_policy:
   state: single_copy
   decided: 2026-08-27
   by: 오창준
-  what: 외장 SSD 한 벌. 추가 백업 없음
+  what: 외장 SSD 한 벌. 추가 백업 없음 — **`data/raw` 에 한한다**
   why: sources.yaml 의 url 로 재취득 가능하고 sha 대장이 동일성을 증명한다
-  revisit: raw 5GB 초과 · 재취득 불가 자산 편입 · 팀 인원 증가
+  revisit: raw 5GB 초과 · 재취득 불가 자산이 **raw 에** 편입 · 팀 인원 증가
+  # ★ 2026-09-24 (DECISIONS §243). 「재취득 불가 자산 편입」 방아쇠가 이미
+  #   당겨져 있는 것처럼 보였다 — `data/field`(실측. "8월 20일 오전 10시의 그
+  #   골목은 다시 안 온다")와 `data/baseline`(원본 소실. 재생성 불가) 둘 다
+  #   재취득이 안 된다. 그런데 **둘 다 저장소에 커밋된다.** 원격이 곧 두 번째
+  #   벌이므로 한 벌 정책 밖이다. 방아쇠의 대상이 raw 임을 명시한다 —
+  #   범위를 안 적은 방아쇠는 당겨졌는지 아닌지를 아무도 못 정한다.
+  covers: data/raw
+  outside: [data/field, data/baseline]      # 커밋된다 — git 원격이 두 번째 벌
+  outside_gap: |
+    ★ 무결성 지문이 없다. git 은 **사본**을 주지만 「이 파일이 그날의 그
+      파일인가」를 안 묻는다. data/processed 는 `_manifest.json` 이,
+      판정은 `segments.fingerprint.json` 이 드는데 data/field 는 아무도 안 든다.
+      PLAN §13 이 든다.
 
 layers:
   landing:
