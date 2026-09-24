@@ -18,7 +18,7 @@
  *   않는다. 신호를 모아 `domain/status.ts::deriveStatus` 에 넘기고, 나온
  *   한 줄을 `TopBar` 가 그린다. 18장이 그 한 줄로 갈린다.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NaviMap, type MapMarks, type MapNote } from "./components/NaviMap";
 import { useNavigation } from "./app/useNavigation";
 import { useVoice } from "./app/useVoice";
@@ -89,7 +89,12 @@ export default function App() {
   const [detourAt, setDetourAt] = useState<number | null>(null);
   const [arrivedAt, setArrivedAt] = useState<string | null>(null);
   const [wantRoute, setWantRoute] = useState(0);
-  const dev = useMemo(() => new URLSearchParams(location.search).get("dev") !== "0", []);
+  // ★ 2026-09-24 (PLAN §13 W13-1). 종전 `!== "0"` — **`?dev=0` 을 명시하지 않으면
+  //   항상 켜짐**이었다. `web/index.html` 의 내비 링크에 그 인자가 없으므로 배포본이
+  //   시연 막대를 달고 나갔다. 운전석에서 손이 스치면 ▶ 가 눌리고 **모의 주행이 실제
+  //   GPS 를 대체한다**(useNavigation 이 replay 소스로 갈아탄다). 화면의 차가
+  //   운전자가 아니게 된다. 켜는 쪽을 명시하게 뒤집는다.
+  const dev = useMemo(() => new URLSearchParams(location.search).get("dev") === "1", []);
 
   const spec = fleet.spec ?? n.data?.spec ?? EMPTY_SPEC;
   const style = n.data?.graph.style ?? {};
@@ -282,13 +287,22 @@ export default function App() {
     return () => clearTimeout(t);
   }, [arrived]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ★ 2026-09-24 (PLAN §13 W13-6). 아래 1.8초 타이머에 **정리가 없었다.**
+  //   신고 직후 「처음부터」를 누르면 초기화된 그래프 위에서 늦게 터져
+  //   새 출동이 엉뚱한 구간을 막은 채 시작한다. `useShare` 는 같은 일을
+  //   ref + clear 로 제대로 거두는데 여기만 맨손이었다.
+  const blockTimer = useRef(0);
+  useEffect(() => () => { if (blockTimer.current) clearTimeout(blockTimer.current); }, []);
+
   const reportBlocked = useCallback(() => {
     if (!bottleneck) return;
     const uid = bottleneck.segUid;
     setBlockedPending(true);
     setBnOpen(false);
     share.share("blocked", `${bottleneck.segLabel} 통행 불가 신고 · ${vehicleKind}`, bottleneckAt);
-    setTimeout(() => {
+    if (blockTimer.current) clearTimeout(blockTimer.current);
+    blockTimer.current = window.setTimeout(() => {
+      blockTimer.current = 0;
       const ok = n.blockEdge(uid);
       setBlockedPending(false);
       setBnForced(null);
@@ -305,6 +319,7 @@ export default function App() {
     remainM: n.remainM,
     onUnverified: n.current?.verdict === "unknown" && !!n.current.onRoute,
     injected,
+    gpsAccM: n.gpsAccM,
   });
   const st = STATUS[statusKey];
   const blockedEdges = useMemo(
@@ -350,6 +365,8 @@ export default function App() {
   const notice = useFading(n.notice, 6000);
 
   const reset = () => {
+    // 늦게 터질 신고 타이머를 먼저 거둔다 — 새 출동의 그래프를 오염시킨다.
+    if (blockTimer.current) { clearTimeout(blockTimer.current); blockTimer.current = 0; }
     n.reset(); share.reset();
     setIncident(null); setInjected(null); setBnOpen(false); setBnForced(null);
     setDetourAt(null); setBlockedPending(false); setChoice("safe");
@@ -444,6 +461,7 @@ export default function App() {
                   turnKind={hud.turnKind} nextDistM={hud.nextDistM} roadName={hud.nextLabel}
                   nowText={nowText} etaText={hud.etaText} incidentText={incidentText}
                   arrivedText={arrivedAt}
+                  injected={injected != null}
                   voiceOn={v.available ? voice : null}
                   onToggleVoice={() => setVoice((x) => !x)}
                   onSwitchRoute={n.fastPlan ? () => {

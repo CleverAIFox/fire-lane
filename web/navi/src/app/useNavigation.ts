@@ -40,6 +40,7 @@ import {
 } from "../domain/snap";
 import { verifyAgainstPrecomputed } from "../domain/vehicle";
 import { alternateAccess } from "../domain/access";
+import { GPS_WEAK_M } from "../domain/status";
 import {
   locate, pointAtM, predictS, routeGeom, type ProgressState, type RouteGeom,
 } from "../domain/progress";
@@ -114,6 +115,16 @@ export function useNavigation(spec: VehicleSpec | null) {
   const [access, setAccess] = useState<{ alt: boolean; walkM: number } | null>(null);
 
   const live = useRef<LiveFix>({ lon: 0, lat: 0, brg: 0, on: false });
+  /**
+   * 마지막 측위의 수평 정확도(m). 모르면 `null`.
+   *
+   * ★ 2026-09-24 (PLAN §13 W13-2). 위치 자체는 `live`(ref)로만 흘러 React 가
+   *   모르는데, **정확도는 화면 상태를 가른다**(08 GPS 약함). 그래서 이것만
+   *   state 다. 갱신은 `onFix` 에서 **값이 임계를 넘나들 때만** 한다 —
+   *   매 측위마다 setState 하면 1Hz 리렌더가 하나 더 붙는다.
+   */
+  const [gpsAccM, setGpsAccM] = useState<number | null>(null);
+  const accRef = useRef<number | null>(null);
   const tracker = useRef<Tracker | null>(null);
   const prepared = useRef<ReturnType<typeof prepare> | null>(null);
   const lastSnapAt = useRef(0);
@@ -181,6 +192,12 @@ export function useNavigation(spec: VehicleSpec | null) {
       brg = bearing(p, [f.lon, f.lat]); lastPos.current = [f.lon, f.lat];
     } else if (!p) lastPos.current = [f.lon, f.lat];
     sparse.current = f.source === "gps" || f.source === "replay";
+    // ★ 정확도는 **임계를 넘나들 때만** 올린다. 값 자체는 화면에 안 쓴다.
+    const acc = f.accuracy ?? null;
+    const was = accRef.current;
+    accRef.current = acc;
+    const cross = (a: number | null) => (a == null ? null : a > GPS_WEAK_M);
+    if (cross(was) !== cross(acc)) setGpsAccM(acc);
 
     // ── 안내 중: 경로 위 진행을 추정한다 (§213-2) ──────────────
     const g = geomRef.current;
@@ -541,7 +558,7 @@ export function useNavigation(spec: VehicleSpec | null) {
   }, [plan, current, driven, phase]);
 
   return {
-    phase, fatal, notice, data, live,
+    phase, fatal, notice, data, live, gpsAccM,
     current, origin, dest, plan, fastPlan, offRoute,
     lenient, setLenient, simSpeed, setSimSpeed,
     rerouting, noRoute, blocked, remainM,

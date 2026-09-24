@@ -240,6 +240,15 @@ export interface Fix {
   /** replay = GPS 흉내(1Hz · 잡음 · 음영). 실주행과 같은 코드를 지난다(§213-3) */
   source: "gps" | "simulation" | "manual" | "replay";
   /**
+   * 수평 정확도(m · 95% 신뢰). 모르면 `null`.
+   *
+   * ★ 2026-09-24 (PLAN §13 W13-2). 이 칸이 **없었다.** `gps.ts` 가
+   *   `coords.accuracy` 를 안 읽었고 타입에도 자리가 없어, 신호가 50m 로
+   *   흔들려도 화면은 초록 「안전 경로 안내중」 이었다. 그래서 08 화면
+   *   (GPS 신호 약함)이 시연 전용으로 남아 있었다 — **알 방법이 없어서**다.
+   */
+  accuracy?: number | null;
+  /**
    * 측위 시각(ms, `performance.now()` 시계). 위치 추정이 속도 × 경과로 예측한다.
    * 비어 있으면 받는 쪽이 받은 시각으로 채운다.
    */

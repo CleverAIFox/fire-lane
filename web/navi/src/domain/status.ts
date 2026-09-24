@@ -8,12 +8,20 @@
  * 곳이다. 상단바(`ui/TopBar.tsx`)는 이 표를 읽기만 한다.
  *
  * ── 신호가 있는 것과 없는 것 ───────────────────────────────────
- * 이탈 · 도착 · 경로 없음 · CCTV 없는 골목 · 최종 접근 · 통행 불가/우회는
- * **실제 신호**에서 나온다(`deriveStatus`). GPS 약함 · 통신 끊김 · 서버
- * 오류 · 데이터 지연은 지금 그 신호를 내는 곳이 없다 — 서버도 없고
- * GPS 정확도도 안 받는다. 그래서 `injected: true` 로 표시하고 시연 막대가
- * 주입한다. **주입인 줄 모르고 보면 그것이 거짓 화면이다** — 그래서
- * 상단바가 주입 상태에 작은 표지를 단다.
+ * 이탈 · 도착 · 경로 없음 · CCTV 없는 골목 · 최종 접근 · 통행 불가/우회 ·
+ * **GPS 약함**은 실제 신호에서 나온다(`deriveStatus`). 통신 끊김 · 서버
+ * 오류 · 데이터 지연은 아직 그 신호를 내는 곳이 없다 — 서버가 없다.
+ * 그것들은 시연 막대가 주입한다.
+ *
+ * ★ 2026-09-24 (PLAN §13 W13-2). **GPS 약함이 여기 있었다.** 이유는
+ *   「정확도를 안 받는다」였고, 안 받은 이유는 `Fix` 에 칸이 없어서였다.
+ *   칸을 뚫고 `gps.ts` 가 `coords.accuracy` 를 넘기게 했다. 이제 08 화면은
+ *   주입이 아니라 신호다 — **신호가 50m 로 흔들리는데 초록불이던 것**이
+ *   이 배치 이전 상태다.
+ *
+ * ★ **주입인 줄 모르고 보면 그것이 거짓 화면이다.** 그래서 상단바가 주입에
+ *   작은 표지를 단다. 그 표지는 이 표의 칸이 아니라 **실제 주입 여부**를
+ *   봐야 한다 — 표를 보면 18갈래 중 다섯에만 붙는다(2026-09-24 실측).
  *
  * ★ 판정 임계값·판정색은 여기 없다. 정본은 `seg/params.py` 와
  *   `web/config.js` 다. 여기는 **화면 어휘**만 든다.
@@ -94,7 +102,7 @@ export const STATUS: Record<StatusKey, StatusSpec> = {
     eta: "value", route: "solid" },
   gpsWeak: { wf: ["08"], tone: "cyan", tag: "위치 확인", label: "GPS 신호 약함",
     title: "현재 위치 확인 중", sub: "마지막 수신 {last}",
-    eta: "checking", route: "faded", blankRemain: true, injected: true },
+    eta: "checking", route: "faded", blankRemain: true },
   offline: { wf: ["09", "09A"], tone: "cyan", tag: "통신 끊김",
     label: "저장 경로로 안내 중", eta: "value", route: "solid", injected: true },
   restored: { wf: ["10"], tone: "cyan", tag: "안내 복구",
@@ -165,7 +173,24 @@ export interface StatusSignals {
   onUnverified: boolean;
   /** 시연 막대가 넣은 상태. 있으면 이긴다 */
   injected: StatusKey | null;
+  /**
+   * 마지막 측위의 수평 정확도(m). 모르면 `null` — **모른다는 것과 좋다는 것은 다르다.**
+   * `null` 은 08 을 안 띄운다(근거가 없다). 임계 초과일 때만 띄운다.
+   */
+  gpsAccM?: number | null;
 }
+
+/**
+ * GPS 정확도 임계(m). 이보다 나쁘면 화면이 「위치 확인 중」 으로 내려간다.
+ *
+ * ★ 근거 — 판정 폭 하한이 3.0m 이고 구간 길이 중앙이 30m 대다. 25m 는
+ *   **구간 하나를 통째로 헷갈릴 수 있는 크기**이며, 그 정도면 회전 안내가
+ *   엉뚱한 교차로에서 나간다. `CCTV_RANGE`(25m)와 우연히 같은 수이지만
+ *   출처가 다르다 — 둘을 한 상수로 묶지 않는다.
+ * ★ 이 값은 **근거 있는 어림**이지 실측이 아니다. 실주행 로그가 생기면
+ *   분포를 보고 다시 정한다(PLAN §13 W13-2).
+ */
+export const GPS_WEAK_M = 25;
 
 /** 최종 접근으로 바꾸는 남은 거리(m). 와이어프레임 05 가 목적지 100여 m 앞이다. */
 export const APPROACH_M = 120;
@@ -180,6 +205,10 @@ export const APPROACH_M = 120;
 export function deriveStatus(s: StatusSignals): StatusKey {
   if (s.injected) return s.injected;
   if (s.phase === "arrived") return s.arrivalAcked ? "reported" : "arrived";
+  // ★ 2026-09-24 (W13-2). 도착 다음이다 — 도착은 정확도가 나빠도 사실이고,
+  //   그 아래(경로 없음 · 재탐색 · 회전 안내)는 전부 **위치를 믿어야** 성립한다.
+  //   위치를 못 믿는데 「안전 경로 안내중」 을 띄우면 그것이 거짓 화면이다.
+  if (s.gpsAccM != null && s.gpsAccM > GPS_WEAK_M) return "gpsWeak";
   if (s.noRoute) return s.blockedAny ? "noDetour" : "noRoute";
   if (s.blockedPending) return "blocked";
   if (s.rerouting) return "reroute";
