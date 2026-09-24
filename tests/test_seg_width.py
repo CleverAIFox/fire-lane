@@ -1,7 +1,7 @@
 """
 test_seg_width.py — 폭 산출 단위 테스트
 
-`ngii1k 1014 · silpok 84 · ngii 1` 을 만드는 코드다. 소스 우선순위(결정 63),
+`ngii1k 1166 · silpok 112 · ngii 1` 을 만드는 코드다. 소스 우선순위(결정 63),
 표본 snap, 커버율 자격(COV_MIN)이 전부 여기서 갈린다. Stage 3 리팩 전까지
 `main()` 안에 중첩돼 있어 테스트가 0개였다.
 

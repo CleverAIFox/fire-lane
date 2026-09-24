@@ -2,7 +2,7 @@
 """
 seg/width.py — 구간 폭 산출.
 
-이 파일이 `ngii1k 1014 · silpok 84 · ngii 1` 을 만든다. 소스 우선순위(결정 63),
+이 파일이 `ngii1k 1166 · silpok 112 · ngii 1` 을 만든다. 소스 우선순위(결정 63),
 표본 snap, 커버율 자격(COV_MIN), 교차부 제외까지 폭에 관한 판단이 전부 여기 있다.
 
 2026-08-18 Stage 3 에서 `segments.py` 의 `main()` 밖으로 꺼냈다. `measure`(178줄)

@@ -123,7 +123,7 @@ uv run python tools/docnum_check.py
 
 ## 2. 현재 판정
 
-기준일 2026-08-24. 산출물 지문 `data/golden/segments.fingerprint.json` 이 정본이다.
+기준일 2026-09-16(흡수-2 · DECISIONS §170). 산출물 지문 `data/golden/segments.fingerprint.json` 이 정본이다.
 
 | 판정 | 구간 | 뜻 |
 |---|---:|---|
@@ -323,7 +323,7 @@ DECISIONS 소관이다.
 부르게 된다. 값을 낸 최우선 소스 하나로 고정하고 그 소스의 표본만 쓴다.
 
 ```
-채택 소스   ngii1k 1,014 · silpok 84 · ngii 1 · 미산출 2
+채택 소스   ngii1k 1,166 · silpok 112 · ngii 1 · 미산출 2
 소스 순위   1:1,000 도로경계 → 1:5,000 도로경계면 → 실폭도로
 자격 조건   커버율 COV_MIN 0.5 미만이면 탈락. 다음 순위가 올라간다
 ```
@@ -332,7 +332,7 @@ DECISIONS 소관이다.
 채택하면 소스 우선순위 결정을 정면으로 뒤집는다. 커버율은 **선택 기준이 아니라
 자격 기준**이다.
 
-강제자  `tests/test_seg_width.py::test_thin_coverage_source_is_disqualified`(커버율 자격 `COV_MIN`) · 같은 파일 「소스 우선순위」 묶음(결정 63). 채택 수 `ngii1k 1,014 · silpok 84 · ngii 1` 은 실측값이라 대조 도구가 없다
+강제자  `tests/test_seg_width.py::test_thin_coverage_source_is_disqualified`(커버율 자격 `COV_MIN`) · 같은 파일 「소스 우선순위」 묶음(결정 63). 채택 수 `ngii1k 1,166 · silpok 112 · ngii 1` 은 `tests/test_doc_numbers.py::test_width_source_counts_match_the_fingerprint` 가 지문과 대조한다
 
 ### 3-6. 교차로 안에서는 그 도로의 폭을 잴 수 없다
 
@@ -1167,7 +1167,7 @@ CCTV 사각 하나뿐이다. 좁은 쪽을 넓은 이름으로 부르면 현재 
 개요서의 "내부 5단계" 는 산출 어휘에 없으므로 인용하지 않는다.
 
 `needs_cv` 는 폭 3.0~7.0m 이면서 CCTV 25m 안인 구간이다. 같은 폭 대역이라도
-CCTV 밖이면 `unknown`(`no_cctv_band` 152)으로 내려간다(§2-1). 기획서의
+CCTV 밖이면 `unknown`(`no_cctv_band` 183)으로 내려간다(§2-1). 기획서의
 "needs_cv + CCTV 있음" 서술은 이것과 같은 모델이다.
 
 강제자  `tests/test_contract.py::test_verdict_matches_rules_for_every_segment`
@@ -2077,7 +2077,7 @@ git config --global core.precomposeunicode true
 
 원본이 소실돼 재생성 불가가 된 산출물, 그리고 판정이 바뀌기 직전의 상태를
 `data/baseline/<태그>/` 에 봉인한다. 재생성 가능한 것은 봉인하지 않는다 —
-전량 재실행이 약 285초이고, raw + 코드 + 대장이 있으면 결정론적으로 나온다.
+전량 재실행이 약 2분45초이고, raw + 코드 + 대장이 있으면 결정론적으로 나온다.
 
 | 태그 | 무엇 | 판정 |
 |---|---|---|
@@ -2110,7 +2110,7 @@ uv run python tools/baseline.py diff 20260824-pre-nreg
 
 ## 14. 실행
 
-강제자 없음 — 사유: 절 머리말이다. 명령 하나하나는 하위 다섯이 들고, 문서에 적힌 명령이 실재하는지는 `tools/doc_fsck.py::check_commands` 가 본다
+강제자 없음 — 사유: 절 머리말이다. 명령 하나하나는 하위 넷이 들고, 문서에 적힌 명령이 실재하는지는 `tools/doc_fsck.py::check_commands` 가 본다
 
 ### 14-1. 받자마자 한 번
 
@@ -2151,7 +2151,7 @@ uv run fire-lane --only publish
 사람이 치는 명령이 아니다.** 직접 부르면 대장은 갱신되고 계보 기록은 빠져
 다음 실행이 교착한다.
 
-전량 재실행 약 285초. 몇 번을 돌려도 결과가 같고, 두 번째부터는 캐시가 걸린다.
+전량 재실행 약 2분45초. 몇 번을 돌려도 결과가 같고, 두 번째부터는 캐시가 걸린다.
 
 강제자  `tools/verify.sh` 의 「진입점 · cwd 독립성」 단계 · `tests/test_reproducibility.py::test_web_manifest_is_cwd_independent` · `tools/doc_fsck.py::check_commands`(이 블록의 단계 이름이 실재하는 단계인가). 단계 순서의 정본은 `src/firelane/pipeline.py::STEPS` 다
 
@@ -2161,7 +2161,7 @@ uv run fire-lane --only publish
 uv run python tools/acquire.py                  세 판정만 (아무것도 안 옮긴다)
 uv run python tools/acquire.py --stage --yes    landing → raw 편입 + sha 기록
 uv run python -m firelane.normalize_raw <다운로드폴더> --dry-run
-python -m firelane.contract                     대장 선언 ↔ raw 실물 대조
+uv run python -m firelane.contract              대장 선언 ↔ raw 실물 대조
 ```
 
 강제자  `tools/doc_fsck.py::check_commands`(네 명령이 실재하는 도구·모듈인가) · `tests/test_ledger_contract.py`(대장 선언 ↔ 실물 판정의 경계)
@@ -2194,7 +2194,7 @@ golden 지문 · PLAN 번호·참조 · 커버리지 래칫을 밟는다.
   ② 전량이 돌 때 ingest 가 소스마다 봉인지(raw · cfg · code · out)를 대조해
   **찢어진 샤드만** 다시 만든다(`§165`). 이 8GB 기계에서 `ngii_road` 는 다시
   빌드하면 거의 반드시 OOM 이라, 샤드 봉인이 곧 전량을 돌 수 있게 하는 조건이다.
-  전량은 이제 2분40초 안팎이다.
+  전량은 이제 2분45초 안팎이다(8GB 기계 · 사람이 잰 값. **실측 정본은 없다** — `PLAN §13`).
 
 ★ **커버리지는 래칫이다.** 2026-09-22 실측 **27.47%**(사용자 WSL 전수 · 종전 26.88%).
   `tools/verify.sh` 의 `COV_MIN=28` 로 걸려 있고 **올린 뒤에는 안 내린다.**
@@ -2292,7 +2292,7 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
     refcheck.py      문서·코드의 참조가 낡았는가
     intake.py        받은 것을 landing 으로 들인다
     triage.py        받은 더미를 분류한다
-    docpatch.py      docx 를 규칙으로 고친다
+    docpatch.py      마크다운 문서(주로 PLAN)의 절을 멱등 교체한다
     docx_fix.py      docx 위생
 
 ### 14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다
@@ -2322,21 +2322,20 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
 
 읽고 표를 내거나 페이지를 만들 뿐이라 golden 지문에 영향이 없다.
 
-```bash
-uv run python tools/width_fn.py         폭을 함수 w(s) 로 — min 대 통과폭
-uv run python tools/jijeok_probe.py     연속지적도(세 번째 계보)로 폭 대조
-uv run python tools/jijeok_review.py    갈리는 구간을 정사영상 위에서 판정
-uv run python tools/lanes_probe.py      표준노드링크 차로수로 폭 하한 대조
-uv run python tools/route_probe.py      소방차 통행 비용으로 경로 — 거리만 대 차량
-uv run python tools/clearance_probe.py  최대내접원 방식 (2026-08-22 기각)
-uv run python tools/corner_probe.py     코너 꺾임각·반경 — 회전 가능성 대조
-uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
-uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치는 규모
-uv run python tools/scan_data.py        데이터 레이크 구조 점검
-uv run python tools/ruleset_check.py    GitHub 룰셋 실물 ↔ §12-1 표 대조
-```
+**목록은 `README.md` 의 「대조 도구」 블록이 정본이다.**
+
+★ 2026-09-24 (DECISIONS §243). 여기 **같은 목록의 사본**이 있었고 아홉이
+  갈려 있었다 — README 에만 여섯(`skeleton_compare` · `transition` ·
+  `bridge_audit` · `its_linkmap` · `matchcheck` · `field_compare`),
+  여기에만 셋(`corner_probe` · `scan_data` · `ruleset_check`).
+  「한 항목은 한 문서에만 산다」를 이 절이 어기고 있었다.
+  README 쪽을 정본으로 둔 이유는 강제자가 그쪽에 있기 때문이다 —
+  `tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme` 는
+  `tools/` 실물이 README 에 이름을 들었는가를 보지, MASTER 는 안 읽는다.
 
 **측정하고 대조한 뒤에 판정을 바꾼다.**
+
+강제자  `tests/test_tools_are_wired.py::test_the_compare_tool_list_has_one_home`(이 절이 사본을 다시 들면 운다)
 
 ### 14-6. 진단 스위치
 

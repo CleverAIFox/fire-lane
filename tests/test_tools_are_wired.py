@@ -277,6 +277,31 @@ def test_every_tool_is_named_in_readme():
           "  일회성이면 저장소 밖(`~/oneoff/`)으로 옮겨라 — README 규약이 둘 중 하나다.")
 
 
+def test_the_compare_tool_list_has_one_home():
+    """「대조 도구」 목록이 두 문서에 사본으로 살면 갈린다. 실제로 아홉이 갈렸다.
+
+    ★ 2026-09-24 (DECISIONS §243). README 와 MASTER §14-5 가 같은 목록을
+      각자 들고 있었다 — README 에만 여섯, MASTER 에만 셋. 어느 쪽도
+      상대를 안 봤고 대조하는 검사가 없었다. README 를 정본으로 두고
+      (강제자가 그쪽에 있다 — 바로 위 `test_every_tool_is_named_in_readme`)
+      MASTER 는 가리키기만 한다.
+
+    ★ 보는 것은 **MASTER §14-5 안에 `tools/*.py` 호출줄이 있는가** 하나다.
+      목록이 돌아오는 유일한 꼴이 그것이고, 문장 대조가 아니라 꼴 대조라
+      사람이 말을 바꿔 써도 안 깨진다.
+    """
+    import re
+    m = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
+    a = m.index("### 14-5.")
+    b = m.index("### 14-6.", a)
+    dup = sorted(set(re.findall(r"tools/([\w_]+\.(?:py|sh|mjs))", m[a:b])))
+    assert not dup, (
+        "MASTER §14-5 가 대조 도구 목록의 **사본**을 다시 들었다 — "
+        + ", ".join(dup) + "\n"
+        "  목록의 집은 README 의 「대조 도구」 블록 하나다.\n"
+        "  여기서는 가리키기만 해라 — 두 벌이 되면 갈린다(2026-09-24 에 아홉이 갈렸다).")
+
+
 def test_readme_exempt_entries_are_real_and_reasoned():
     have = {p.name for p in (ROOT / "tools").iterdir() if p.is_file()}
     ghost = sorted(n for n in README_EXEMPT if n not in have)

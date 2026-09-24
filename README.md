@@ -213,7 +213,7 @@ uv run fire-lane --split          # ingest 를 소스별 자식 프로세스로 
 `golden.py check` 를 돌려 **통과했다.** 옛 산출물을 옛 지문과 비교한 것이라
 아무것도 증명하지 않는다. 가장 위험한 종류의 초록불이다.
 
-전량 재실행 약 285초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
+전량 재실행 약 2분45초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
 raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
 
 **단계를 하나씩 손으로 치지 않는다.** 순서가 중요하고 빠뜨리기 쉽다.
@@ -267,6 +267,7 @@ uv run python tools/jijeok_review.py    갈리는 구간을 정사영상 위에�
 uv run python tools/lanes_probe.py      표준노드링크 차로수로 폭 하한 대조
 uv run python tools/route_probe.py      소방차 통행 비용으로 경로 — 거리만 대 차량
 uv run python tools/clearance_probe.py  최대내접원 방식 (2026-08-22 기각)
+uv run python tools/corner_probe.py     코너 꺾임각·반경 — 회전 가능성 대조
 uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
 uv run python tools/skeleton_compare.py NGII 1:1,000 뼈대 후보 대 현행 구간 — 위치 의심표 (R1)
 uv run python tools/transition.py      옛 구간 → 새 구간 전이표 — 1:N · N:1 · 소멸 · 신설 (R2)
@@ -275,6 +276,8 @@ uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구
 uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
 uv run python tools/matchcheck.py       Mapbox Map Matching 커버리지 (MAPBOX_TOKEN 필요)
 uv run python tools/field_compare.py    실측 야장 ↔ 우리 폭 · 판정 — 위험 오판 · 보정 제안 (트랙 C 봉인)
+uv run python tools/scan_data.py        데이터 레이크 구조 점검
+uv run python tools/ruleset_check.py    GitHub 룰셋 실물 ↔ MASTER §12-1 표 대조
 ```
 
 읽고 표를 내거나 페이지를 만들 뿐이라 `golden` 지문에 영향이 없다.
@@ -557,7 +560,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 | 나는 | 브랜치 | 볼 곳 | 문서 |
 |---|---|---|---|
 | GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
-| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 226구간 · `cctv.geojson` | DECISIONS §213-5(4색 정의) |
+| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 226구간 · `cctv.geojson` | MASTER §10-2(판정 4종 · 색값은 `web/config.js`) |
 | Infra · API | `part/infra` | 아직 서버 없음 — 배포는 `.github/workflows/deploy.yml` · 배치는 `tools/fl.sh` | README `## 도구` |
 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
@@ -579,7 +582,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 
 ## 문서는 어디에
 
-머리의 [문서는 넷이다](#문서는-넷이다) 표가 정본이다.
+축 표의 정본은 `docs/MASTER.md` 머리다 — 이 문서 머리의 [문서는 넷이다](#문서는-넷이다) 표와 PLAN 머리는 사본이다.
 어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
 
 강제자  `tools/doc_fsck.py`(문서 ↔ 문서 · 이 절이 스스로 그렇게 적는다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)
