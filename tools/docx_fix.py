@@ -107,9 +107,9 @@ def rules() -> list[tuple[str, str, str]]:
 
     # ── PostGIS 미채택 (docker-compose.yml 주석이 근거) ──
     # segments.geojson 996KB · 1,101구간이라 PostGIS 를 쓸 규모가 아니고,
-    # 파이프라인이 285초에 결정론적으로 재생성되므로 DB 의 주 가치인
+    # 파이프라인이 2분45초에 결정론적으로 재생성되므로 DB 의 주 가치인
     # 상태 보존이 필요 없다. DB 가 필요해지는 시점은 동적 계층뿐이며
-    # 그때도 seg_uid → status 한 테이블이면 된다(PLAN §2-2).
+    # 그때도 seg_uid → status 한 테이블이면 된다(PLAN §1 #63).
     out += [
         (r"PostgreSQL\s*\+\s*PostGIS\s*정적·동적\s*계층\s*분리\s*적재",
          "정적 계층 파일(GeoJSON) + 동적 상태 테이블 분리", "PostGIS 미채택"),

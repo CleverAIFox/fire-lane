@@ -262,8 +262,14 @@ def _headings(doc: str) -> set[str]:
 def test_code_comments_do_not_cite_a_section_that_does_not_exist():
     """코드가 드는 `<문서> §N-M` 이 실재하는가."""
     have = {d: _headings(d) for d in ("MASTER", "PLAN", "DECISIONS")}
-    assert all(len(v) > 40 for v in have.values()), \
-        f"절 제목 수집이 죽었다: { {k: len(v) for k, v in have.items()} }"
+    # ★ 카나리아 — 파서가 죽으면 0 이 나온다. 「0 이 아니다」로는 약해서 하한을 둔다.
+    # ★ 2026-09-24 (DECISIONS §244). PLAN 만 하한이 다르다. 다른 둘은 **자라는**
+    #   문서지만 PLAN 은 **빚 목록이라 줄어드는 것이 목표**다(§0-1 — 개발이 끝나면
+    #   이 문서는 비어야 한다). 같은 하한을 걸면 **목표에 닿는 날 검사가 빨개지고**,
+    #   그날 사람이 검사를 끈다. 실제로 이 배치에서 PLAN 하위 절이 49 → 25 가 됐다.
+    FLOOR = {"MASTER": 40, "DECISIONS": 40, "PLAN": 5}
+    thin = {k: len(v) for k, v in have.items() if len(v) <= FLOOR[k]}
+    assert not thin, f"절 제목 수집이 죽었다: {thin}"
     bad = []
     for p in _code_files():
         for i, line in enumerate(p.read_text(encoding="utf-8", errors="ignore")

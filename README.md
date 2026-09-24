@@ -342,7 +342,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 
 정본은 **`MASTER §18`** 이다. 계층 선언은 `sources.yaml` 의 `layers` 블록,
 경로 해석은 `src/firelane/paths.py`, 계층별 책임(획득 · 계약 · 생산 · 재현)은
-`MASTER §5-3a` 가 든다. 여기에는 입구만 적는다.
+`MASTER §5` 머리의 계층별 책임 표가 든다. 여기에는 입구만 적는다.
 
 강제자 없음 — 사유: 정본은 MASTER §18 이고 이 절은 참조만 둔다
 
