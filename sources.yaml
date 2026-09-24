@@ -3342,27 +3342,29 @@ outputs:
     produced_by: src/firelane/ingest.py
     path: data/processed/jijeok.geojson
     inputs: [jijeok]
-    consumers:
-    - tools/jijeok_probe.py
-    - tools/jijeok_review.py
+    consumers: []
     what: 연속지적도 24,183 필지
     note: |
       ★ 2026-09-14 등재. 디스크에 있는데 대장에 없었다. `on_demand: true`
         를 달면서 더 중요해졌다 — 전량에서 안 만들어지므로, 대장에 없으면
         "이 파일이 왜 여기 있나" 를 아무도 모른다.
-      ★ 판정은 이것을 안 읽는다. `segments.py` · `seg/*.py` · `web/js`
-        어디에도 없다. 소비자는 탐색 도구 둘뿐이다.
+      ★ 판정은 이것을 안 읽는다. `segments.py` · `seg/*.py` 어디에도 없다.
+      ★ 2026-09-24. 소비자로 `jijeok_probe` · `jijeok_review` 를 적고 있었는데
+        **둘 다 이 파일을 안 읽는다** — probe 는 raw zip 과 제가 만든
+        `jijeok_scope.gpkg` 를, review 는 `jijeok_width.gpkg` 를 읽는다.
+        지금 소비자는 0이다.
       ★ 만들려면 —  uv run python -m firelane.ingest --only jijeok
     verified: false
   jijeok_5186:
     produced_by: src/firelane/ingest.py
     path: data/processed/jijeok_5186.gpkg
     inputs: [jijeok]
-    consumers:
-    - tools/jijeok_probe.py
+    consumers: []
     what: 위와 같은 것의 5186 GeoPackage 판. 공간 질의용
     note: |
       ★ 2026-09-14 등재. `jijeok.geojson` 과 짝이다. ingest 가 같이 낸다.
+      ★ 2026-09-24. `jijeok_probe.py` 를 소비자로 적고 있었으나 그 도구는
+        이 파일 이름을 한 번도 안 든다. 짝과 같이 소비자 0이다.
     verified: false
   segments_schema:
     produced_by: src/firelane/segments.py
@@ -3370,7 +3372,10 @@ outputs:
     inputs: [segments]
     consumers:
     - src/firelane/publish_web.py
-    - src/firelane/contract.py
+    - src/firelane/pipeline.py
+    - src/firelane/webmanifest.py
+    - tools/baseline.py
+    - tools/release_brief.py
     - tests/test_contract.py
     note: |
       segments.geojson 의 컬럼 계약. publish 가 web/data 로 사본을 낸다.
@@ -3457,7 +3462,7 @@ outputs:
     produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_walk_5186.gpkg
     inputs: [ngii1k]
-    consumers: []
+    consumers: [src/firelane/publish_basemap.py]
     what: 보도 A0033320. 차도폭 분리용
     verified: false
     known_issues:
@@ -3486,7 +3491,7 @@ outputs:
     produced_by: 현장 실측 (사람)
     path: data/field/obs_points.csv
     inputs: [field_sample]
-    consumers: [data/field/fieldsheet.md]
+    consumers: [tools/field_compare.py, tests/test_fieldsheet.py]
     what: 관측점 좌표·기준 지물 서술. 실측 야장의 원자료
     verified: false
     known_issues:
@@ -3509,7 +3514,7 @@ outputs:
     path: data/field/sample_segments.csv
     inputs: [segments]
     stable_key: seg_uid
-    consumers: [data/field/fieldsheet.md]
+    consumers: []
     what: 실측 대상 25구간(트랙 A12/B8/C5) + 관측점 75. 시드 20260814
     verified: false
     known_issues:
@@ -3522,29 +3527,35 @@ outputs:
     produced_by: src/firelane/seg/graph.py
     path: data/processed/corridor_5186.gpkg
     inputs: [ngii1k, boundary_emd]
-    consumers: [src/firelane/segments.py, src/firelane/publish_web.py, tools/skeleton_compare.py]
+    consumers: [src/firelane/display_scope.py, tools/skeleton_compare.py]
     what: 동명동 + 접근 회랑 폴리곤. 스코프 판정의 공간 기준
     verified: false
   nfa_compare:
     produced_by: src/firelane/seg/report.py
     path: data/processed/nfa_compare.json
     inputs: [segments, fire_access]
-    consumers: [src/firelane/guards.py, src/firelane/pipeline.py]
+    consumers: [tools/docnum_check.py, tools/baseline.py]
     what: 소방서 소방통로 지정구간 대 우리 판정 대조. ★ 게이트로 썼으므로 검증이 아니다(MASTER §15-2)
     verified: false
   route_vehicle:
     produced_by: src/firelane/segments.py
     path: data/processed/route_vehicle.csv
     inputs: [segments, node_link, turn_restriction]
-    consumers: [tools/route_probe.py]
+    consumers: [src/firelane/publish_web.py]
     what: 소방차 통행 비용 기준 경로 산출. 거리만 대 차등 비교용
     verified: false
   streetlight_point:
     produced_by: src/firelane/streetlight.py
     path: data/processed/streetlight_point.geojson
     inputs: [streetlight]
-    consumers: [src/firelane/publish_web.py, src/firelane/pipeline.py]
+    consumers: []
     what: 가로등 점형. 야간 가시성 · 폭 차감 후보
+    note: |
+      ★ 2026-09-24. 소비자로 `publish_web.py` · `pipeline.py` 를 적고 있었다.
+        전자는 이 이름을 한 번도 안 들고, 후자는 `Step` 선언에만 든다 —
+        **단계 선언은 소비가 아니다**(그것을 소비로 세면 모든 산출물이
+        제 선언 덕에 통과한다). 옛 지도(web/js)가 걷히면서 소비자가 0이 됐고
+        아무도 안 울었다.
     verified: false
   hydrant_point:
     produced_by: src/firelane/ingest.py
@@ -3553,7 +3564,6 @@ outputs:
     consumers:
     - src/firelane/publish_web.py
     - src/firelane/terrain.py
-    - src/firelane/contract.py
     what: 소화전 점형. 광주 5,002 · 동구 651
     note: |
       ★ 2026-09-13 등재. `Step('ingest').writes` 에는 처음부터 있었고

@@ -107,7 +107,11 @@ GEN_ROOTS: tuple[str, ...] = (
 FAMILIES: tuple[Family, ...] = (
     Family("web-data", ("web/data/*",),
            # publish_web 이 publish_navi · publish_fleet · publish_basemap ·
-           # publish_context 를 불러 스물세 파일을 낸다(publish_web 머리말 OUT)
+           # publish_context 를 불러 **열일곱** 파일을 낸다(publish_web 머리말 OUT).
+           # ★ 2026-09-24. 여기 「스물세」라 적혀 있었다 — 머리말을 근거로 인용하면서
+           #   머리말과 다른 수를 말했다. 실물 `web/data/*` 는 18이고 차이 하나는
+           #   `view.json` 이다. 그것은 terrain·ortho 가 만들고 publish 가 **덧쓴다**
+           #   (Step 의 writes 가 아니라 mutates). 발행 수와 실물 수는 다르다.
            "firelane.publish_web",
            ("uv run python tools/freshcheck.py",
             "uv run python tools/web_manifest.py --check"),
@@ -125,7 +129,12 @@ FAMILIES: tuple[Family, ...] = (
            ("src/firelane/publish_web.py", "tools/golden.py", "tools/baseline.py")),
     Family("golden", ("data/golden/*",), "tools/golden.py",
            ("uv run python tools/golden.py check",),
-           ("tools/render_figures.py", "tools/docx_check.py", "tools/docnum_check.py")),
+           # ★ 2026-09-24. `docnum_check` 가 여기 있었는데 그 도구는 golden 을
+           #   **주석으로만** 든다 — 읽는 것은 `data/processed/segments.geojson` 이다.
+           #   실제 독자 둘(`docx_fix.py` · `pipeline.py`)이 빠져 있었다.
+           ("tools/render_figures.py", "tools/docx_check.py", "tools/docx_fix.py",
+            "tools/proposal_pdf.py", "tools/release_brief.py",
+            "src/firelane/pipeline.py")),
     Family("baseline", ("data/baseline/**",),
            # ★ 봉인 사본이다 — 원본이 교체돼 재생성할 수 없다(baseline.py 머리말).
            #   재현 검사가 성립하지 않고 `list` 가 meta.json 을 읽어 집계를 보일 뿐이다.

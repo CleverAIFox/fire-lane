@@ -162,12 +162,21 @@ STEPS = [
          mutates=(WEB / "view.json", P / "_manifest.json")),
     Step("publish", "publish_web", "→ web/data",
          WEB / "segments.geojson",
+         # ★ 2026-09-24 (DECISIONS §243). 유령 read 셋을 걷었다 —
+         #   `streetlight_point.geojson` · `corridor_5186.gpkg` ·
+         #   `ngii1k_light_5186.gpkg`. publish 계열 다섯(web · navi · fleet ·
+         #   basemap · context) 어디도 이 셋을 안 연다. 대신 `publish_basemap`
+         #   이 실제로 여는 셋이 빠져 있었다. **단계 선언이 곧 영향 분석의
+         #   근거**인데 그 근거가 양쪽으로 틀려 있었다.
          reads=(P / "segments.geojson", P / "segments.schema.json",
-                P / "streetlight_point.geojson", P / "boundary_emd.geojson",
+                P / "boundary_emd.geojson",
                 P / "fire_station.geojson", P / "hydrant_point.geojson",
                 P / "cctv.geojson", P / "poi_store.geojson",
-                P / "corridor_5186.gpkg", P / "building_5186.gpkg",
-                P / "ngii1k_light_5186.gpkg", P / "route_vehicle.csv", P / "scope_5186.gpkg",
+                P / "building_5186.gpkg",
+                P / "route_vehicle.csv", P / "scope_5186.gpkg",
+                # ★ publish_basemap 의 SOURCES — road_area · sidewalk 의 재료
+                P / "ngii1k_5186.gpkg", P / "road_rw_5186.gpkg",
+                P / "ngii1k_walk_5186.gpkg",
                 P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson",
                 # ★ 2026-09-22 (§215-1). 내비 그래프의 통행 규칙 — 일방통행 · 회전 금지
                 P / "ngii1k_center_5186.gpkg", P / "node_link_5186.gpkg",
@@ -186,7 +195,12 @@ STEPS = [
                  WEB / "cctv.geojson", WEB / "poi.geojson",
                  WEB / "vehicle_spec.json", WEB / "route_vehicle.json",
                  WEB / "navi_graph.json", WEB / "dest.geojson",
-                 WEB / "context.geojson", WEB / "history.geojson"),
+                 WEB / "context.geojson", WEB / "history.geojson",
+                 # ★ 2026-09-24. 발행되는데 선언에 없던 셋.
+                 #   `fleet.json`(publish_fleet) · `road_area.geojson` ·
+                 #   `sidewalk.geojson`(publish_basemap).
+                 WEB / "fleet.json", WEB / "road_area.geojson",
+                 WEB / "sidewalk.geojson"),
          # ★ view.json 은 terrain·ortho 가 구운 범위를 넣어둔 것을 읽어
          #   보존하고 다시 쓴다. writes 가 아니라 mutates 다.
          mutates=(WEB / "view.json",)),

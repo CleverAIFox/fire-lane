@@ -62,7 +62,7 @@ PIPE_README = ROOT / "src/firelane/README.md"
 # ★ 등재가 아직 안 된 field 파일. **늘리지 마라.** 여기 있는 동안은 그 파일이
 #   무엇인지 저장소가 설명하지 못한다. PLAN 이 이 목록의 처리를 든다.
 FIELD_EXEMPT = {
-    "fieldsheet.md",            # sources.yaml consumers 가 든다
+    "fieldsheet.md",      # 들고 나가는 종이. 코드 소비자가 없다(DECISIONS §243)
     # ── 2026-09-03. 네이버 산출 넷(DECISIONS §42)을 지웠다.
     #
     # ★ **저장소에는 한 번도 없었다.** 실물은 SSD 의 `data/field/` 에 있었고
