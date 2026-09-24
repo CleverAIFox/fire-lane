@@ -43,7 +43,7 @@ import { angleDelta, type LngLat } from "../domain/geo";
 import { egoBox, egoFeature } from "../domain/egobox";
 import type { GraphEdge, RoutePlan, VehicleSpec, VerdictStyle, View } from "../domain/types";
 import type { RouteLook } from "../domain/status";
-import type { LiveFix } from "../app/useNavigation";
+import type { LiveFix } from "../domain/types";
 import { C, S } from "../ui/tokens";
 import {
   GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers,

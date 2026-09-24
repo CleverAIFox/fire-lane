@@ -268,3 +268,28 @@ export interface HistorySummary {
   fire_donggu: { n: number; median_s: number | null };
   note: string;
 }
+
+/* ── 화면이 훅에게서 받는 것 ─────────────────────────────────
+ * ★ 2026-09-24 (DECISIONS §244). 셋이 `app/` 에 살았고 `ui/` · `components/`
+ *   가 거기서 import 했다 — **표현 계층이 훅 모듈을 아는 것**이라 의존
+ *   방향이 뒤집힌다. type-only 라 런타임 영향은 없었으나, 계층은 런타임이
+ *   아니라 **읽는 사람의 머릿속**에서 먼저 무너진다. */
+
+/** 자차의 현재 자리. rAF 가 ref 로 들고 다닌다 — React 상태가 아니다 */
+export interface LiveFix { lon: number; lat: number; brg: number; on: boolean }
+
+/** 시연 막대의 위치원 선택. `route` 는 경로 따라가기 · `gpsSim` 은 GPS 흉내 */
+export type PosMode = "route" | "gpsSim";
+
+/** 신고 한 건의 진행 단계 */
+export type ShareState = "idle" | "sending" | "awaiting" | "acked" | "failed";
+
+/** 통행 불가 신고의 화면 상태 */
+export interface ShareInfo {
+  state: ShareState;
+  kind: import("./opsProtocol").ShareKind | null;
+  /** 관제 확인 시각(HH:MM) */
+  ackedAt: string | null;
+  /** 관제가 없어 흉내 냈다 */
+  simulated: boolean;
+}

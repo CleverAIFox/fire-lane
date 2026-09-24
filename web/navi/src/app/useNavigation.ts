@@ -63,13 +63,14 @@ export type Phase =
   | "loading" | "idle" | "picked" | "preview" | "guiding" | "arrived";
 
 /** 카메라가 프레임마다 읽는 위치. React 가 모른다. */
-export interface LiveFix { lon: number; lat: number; brg: number; on: boolean }
+// ★ 집은 `domain/types.ts` 다(DECISIONS §244). 여기서는 다시 내보낸다.
+import type { LiveFix, PosMode } from "../domain/types";
+export type { LiveFix, PosMode };
 
 /**
  * 시연 위치원.  route = 경로를 따라 걷는 정답 점(60fps) · gpsSim = GPS 흉내(1Hz · 잡음 · 음영).
  * ★ 폐루프 검수는 gpsSim 으로 한다. route 는 추정이 틀려도 맞아 보인다(§213-3).
  */
-export type PosMode = "route" | "gpsSim";
 
 /** 도착으로 보는 남은 거리(m). 시뮬레이션 끝 신호가 없는 실주행에서 쓴다 */
 const ARRIVE_M = 15;

@@ -44,8 +44,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DIRS = ("src", "tools", "tests")
-SUFFIX = (".py", ".sh", ".mjs")
+# ★ 2026-09-24 (DECISIONS §244). `web/navi/src` 가 범위 밖이었다. 그래서 상한을
+#   넘는 프런트 파일 셋(`OpsApp.tsx` 744 · `App.tsx` 640 · `domain/graph.ts` 627)이
+#   **래칫에 한 번도 안 잡혔다.** 길이 상한은 「한 파일이 몇 가지 일을 하는가」를
+#   재는 것이고 그 물음에 언어는 상관없다.
+DIRS = ("src", "tools", "tests", "web/navi/src", "web/navi/test")
+SUFFIX = (".py", ".sh", ".mjs", ".ts", ".tsx")
 SKIP = {"__pycache__", ".venv", "node_modules", "fixtures"}
 
 # ★ 상한. 한 곳에만 산다 — 부르는 쪽(verify.sh · contract.yml)은 인자를 안 적는다.
@@ -74,6 +78,12 @@ EXCEPTIONS: dict[str, int] = {
     "tools/render_workflow.py": 635,
     "tools/golden.py": 613,
     "src/firelane/normalize_raw.py": 609,
+    # ★ 2026-09-24. 프런트가 래칫에 처음 들어왔다. **오늘 수 그대로** 박는다 —
+    #   래칫의 값어치는 「지금보다 나빠지지 않는다」이지 「지금이 옳다」가 아니다.
+    #   셋 다 쪼갤 자리가 있고 그것은 `PLAN §1` 이 든다(#121).
+    "web/navi/src/OpsApp.tsx": 744,
+    "web/navi/src/App.tsx": 640,
+    "web/navi/src/domain/graph.ts": 627,
 }
 
 

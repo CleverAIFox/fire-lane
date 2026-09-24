@@ -48,15 +48,77 @@ FORBIDDEN = {"firelane.paths", "firelane.guards", "firelane.lineage",
 
 
 def _imports(path: Path) -> set[str]:
-    """최상위·함수 안을 가리지 않고 이 파일이 하는 모든 import."""
+    """최상위·함수 안을 가리지 않고 이 파일이 하는 모든 import.
+
+    ★ 2026-09-24 (DECISIONS §244). 종전에는 `from firelane import paths` 를
+      **`firelane` 하나로만** 기록했다. `FORBIDDEN` 에 든 것은
+      `firelane.paths` 라서 **영영 안 걸린다** — 이 시험 열넷이 초록인 채로
+      판정 도메인 전체가 `paths` 에 매여 있었다. `seg/params.py:24` 가
+      정확히 그 꼴이다.
+
+    ★ **같은 저장소가 같은 문제를 이미 올바르게 풀어놨다** —
+      `src/firelane/shardseal.py::code_closure` 는 `from X import Y` 를
+      `X.Y` 로 푼다. AST 순회기가 두 벌인데 봉인용은 맞고 계층 강제용은
+      틀렸던 것이다. 2족(정본이 둘)이 **도구 안에서** 난 자리다.
+
+    ★ 상대 import(`from . import x`)는 `node.level > 0` 이라 `node.module`
+      만으로는 대상을 모른다. 이 저장소의 `src/firelane` 은 상대 import 를
+      안 쓰지만, 쓰기 시작하면 조용히 빠져나가므로 **모르면 적어 둔다**.
+    """
     tree = ast.parse(path.read_text(encoding="utf-8"))
     out: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             out |= {a.name for a in node.names}
-        elif isinstance(node, ast.ImportFrom) and node.module:
+        elif isinstance(node, ast.ImportFrom):
+            if node.level:                      # `from . import x` — 대상 불명
+                out.add(f"<relative level={node.level}>")
+                continue
+            if not node.module:
+                continue
             out.add(node.module)
+            # `from firelane import paths` → `firelane.paths` 도 센다
+            out |= {f"{node.module}.{a.name}" for a in node.names}
     return out
+
+
+def test_the_import_collector_reads_from_x_import_y():
+    """**판별식이 살아 있는가.** 합성 소스로 직접 문다.
+
+    ★ 위 시험들은 지금 초록이다. 초록인 검사는 제가 보고 있다는 것을 스스로
+      증명하지 못한다 — 그 상태로 이 수집기가 석 달을 살았다.
+    """
+    import tempfile
+    cases = {
+        "from firelane import paths": "firelane.paths",
+        "from firelane.seg import params": "firelane.seg.params",
+        "import firelane.paths": "firelane.paths",
+        "from firelane import paths as p": "firelane.paths",
+    }
+    with tempfile.TemporaryDirectory() as d:
+        for src, want in cases.items():
+            f = Path(d) / "x.py"
+            f.write_text(src + "\n", encoding="utf-8")
+            assert want in _imports(f), f"{src!r} 에서 {want} 를 못 읽는다"
+        f = Path(d) / "y.py"
+        f.write_text("from . import sibling\n", encoding="utf-8")
+        assert any(s.startswith("<relative") for s in _imports(f)), \
+            "상대 import 를 모른다고 적지 않는다 — 조용히 빠져나간다"
+
+
+#: 아직 못 걷은 위반. **늘리지 마라.** 사유와 닫는 조건을 같이 적는다.
+#: ★ 2026-09-24 (DECISIONS §244). 수집기의 구멍을 막자마자 하나가 드러났다.
+#:   **이 배치에서 안 고친다** — `seg/params.py` 는 판정 코드 폐포 안이라
+#:   손대면 재잠금이 따라오고, 레이크가 없는 자리에서는 산출물이 바이트
+#:   동일한지 증명할 수 없다. 증명 못 하는 수술은 하지 않는다(§13-5 규칙 2).
+EXEMPT: dict[str, str] = {
+    "seg/params.py": (
+        "환경 스위치 다섯(NO_MERGE · DEBUG_SEG · DEBUG_XY · OLD_SNAP · MIX_SRC)을 "
+        "`paths.flag()` · `paths.env()` 로 **import 시점에** 읽는다. "
+        "닫는 법 — 다섯을 `WidthEngine.__init__` 인자로 올린다(그 자리는 이미 "
+        "「실행 내내 불변」 묶음이다). 폐포 안이라 재잠금 1회. PLAN §1 #121"
+    ),
+}
 
 
 @pytest.mark.parametrize("rel", DOMAIN)
@@ -64,11 +126,24 @@ def test_domain_모듈은_인프라를_모른다(rel):
     got = _imports(PKG / rel)
     bad = sorted(m for m in got if m in FORBIDDEN
                  or any(m.startswith(f + ".") for f in FORBIDDEN))
+    if rel in EXEMPT:
+        assert bad, (
+            f"{rel} 이 EXEMPT 에 있는데 **이미 깨끗하다** — 줄을 지워라.\n"
+            f"  면제가 낡으면 그 자리가 사각지대가 된다"
+        )
+        return
     assert not bad, (
         f"{rel} 가 상위 계층을 import 한다: {bad}\n"
         f"  순수 모듈은 경로를 모른다. 쓸 곳은 호출자가 인자로 준다.\n"
         f"  (예: access_corridor(..., out_dir=OUT) — 2026-08-21)"
     )
+
+
+def test_exempt_entries_are_real_and_reasoned():
+    """면제가 실재하는 모듈을 가리키고 사유를 갖는가."""
+    ghost = sorted(r for r in EXEMPT if r not in DOMAIN)
+    blank = sorted(r for r, why in EXEMPT.items() if len(why.strip()) < 40)
+    assert not ghost and not blank, f"DOMAIN 밖 {ghost} · 사유가 빈약함 {blank}"
 
 
 @pytest.mark.parametrize("rel", DOMAIN)
