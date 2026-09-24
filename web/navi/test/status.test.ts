@@ -39,7 +39,8 @@ test("정확도를 **모르면** 08 을 안 띄운다 — 모르는 것과 나�
 
 test("도착은 GPS 가 나빠도 도착이다 — 우선순위가 위다", () => {
   ok(S({ phase: "arrived", gpsAccM: 99 }) === "arrived", "도착보다 08 이 이긴다");
-  ok(S({ phase: "arrived", arrivalAcked: true, gpsAccM: 99 }) === "reported");
+  ok(S({ phase: "arrived", arrivalAcked: true, gpsAccM: 99 }) === "reported",
+     "신고 완료가 08 에 밀린다");
 });
 
 test("위치를 못 믿으면 재탐색 · 경로없음 · 골목경고보다 08 이 앞선다", () => {
@@ -50,8 +51,8 @@ test("위치를 못 믿으면 재탐색 · 경로없음 · 골목경고보다 08
 });
 
 test("주입은 무엇이든 이긴다 — 시연 막대의 계약이다", () => {
-  ok(S({ injected: "noRoute", gpsAccM: 99 }) === "noRoute");
-  ok(S({ injected: "arrived", phase: "guiding" }) === "arrived");
+  ok(S({ injected: "noRoute", gpsAccM: 99 }) === "noRoute", "주입이 08 에 밀린다");
+  ok(S({ injected: "arrived", phase: "guiding" }) === "arrived", "주입이 단계에 밀린다");
 });
 
 test("★ 08 이 더는 **주입 전용**이 아니다", () => {
