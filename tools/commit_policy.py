@@ -158,11 +158,16 @@ def main() -> int:
         return 1
     if not paths:
         # 스테이지가 비어 있는 것은 정상이다(커밋할 것이 없다).
+        # ★ 2026-09-24 (PLAN §13 W13-11). 다만 **조용히** 통과하지 않는다.
+        #   CI 의 `pre-commit run --all-files` 가 이 갈래를 타면서 로그에는
+        #   `commit-policy Passed` 만 찍혔다 — 아무것도 보증하지 않는 초록이다.
+        #   무엇을 봤는지가 안 보이면 초록이 거짓말을 한다(§202).
+        print("커밋 정책: 스테이지가 비어 있다 — 볼 것이 없다 "
+              "(저장소 전체를 보려면 --tracked)")
         return 0
 
-    # ★ web/data 상한은 스테이지 내용과 무관하게 본다. 종전에는 이 검사가
-    #   check_size(paths) 안에 묶여 있어, 스테이지가 비면 같이 죽었다.
-
+    # ★ web/data 상한은 **스테이지에 그 폴더가 없어도** 본다. 합계 상한이라
+    #   지금 커밋과 무관하게 넘을 수 있다. 위의 빈 스테이지 갈래만 예외다.
     bad = check_paths(paths) + check_size(paths)
     if not bad:
         n = len(paths)

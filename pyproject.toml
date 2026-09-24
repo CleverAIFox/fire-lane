@@ -117,7 +117,11 @@ where = ["src"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+# ★ 2026-09-24 (PLAN §13 W13-12). `py311` 이었다 — 나머지 다섯(`.python-version` ·
+# `requires-python` · `uv.lock` · Dockerfile · CI)이 전부 3.14 인데 **여기만**
+# 세 판 낮았고, 이 값의 강제자는 0 이었다. `UP`(pyupgrade)이 켜져 있으므로
+# ruff 가 런타임을 3.11 로 믿으면 3.12+ 현대화를 제안하지 않는다.
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "W605"]   # W605 — 무효 이스케이프(`"\d"`)가 죽은 정규식이 된 사고(plan_renumber) · 토트 모범 §218-4

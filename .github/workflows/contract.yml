@@ -145,10 +145,15 @@ jobs:
             echo "::warning::공통 조상을 못 찾아 base 간극을 세지 못했다 (얕은 클론). 이 PR 에서 간극 검사는 돌지 않았다"
             exit 0
           fi
-          N=$(git rev-list --count "$BASE..origin/${{ github.base_ref }}")
-          echo "이 브랜치는 ${{ github.base_ref }} 보다 $N 커밋 뒤처져 있다"
+          # ★ 2026-09-24 (PLAN §13 W13-9). 이 셋만 `${{ }}` 직접 보간이 남아
+          #   있었다 — 바로 위 주석이 「환경변수로 건넨다」 를 선언하고
+          #   `BASE_REF` 까지 놓았는데 **같은 블록의 절반만 고쳐졌다.**
+          #   `base_ref` 는 포크 공격자가 못 정하지만 **push 권한자가 정한다**
+          #   — git 브랜치 이름에 `;` `$` `` ` `` 가 허용된다.
+          N=$(git rev-list --count "$BASE..origin/$BASE_REF")
+          echo "이 브랜치는 $BASE_REF 보다 $N 커밋 뒤처져 있다"
           if [ "$N" -ge 20 ]; then
-            echo "::error::$N 커밋 뒤처졌다. 머지 전에 base 를 받아라 — git merge origin/${{ github.base_ref }}"
+            echo "::error::$N 커밋 뒤처졌다. 머지 전에 base 를 받아라 — git merge origin/$BASE_REF"
             exit 1
           elif [ "$N" -ge 5 ]; then
             echo "::warning::$N 커밋 뒤처졌다. 아침에 base 를 받는 습관이 없으면 곧 대형 충돌이 난다"

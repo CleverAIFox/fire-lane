@@ -63,6 +63,10 @@ on:
       - 'docs/proposal.docx'
       - 'tools/render_workflow.py'
       - 'tools/stage_pages.py'
+      # ★ 2026-09-24 (PLAN §13 W13-10). `stage_pages` 가 **import 로** 부르는
+      #   파일이라 경로 리터럴이 워크플로에 없었고, 그래서 `gate_parity` 도
+      #   못 봤다. 이것만 고친 PR 은 그 코드가 **한 번도 안 돈 채** 초록이다.
+      - 'tools/proposal_pdf.py'
       - '.github/actions/build-navi/action.yml'
       - '.github/actions/stage-site/action.yml'
       - '.github/workflows/deploy.yml'
@@ -77,6 +81,10 @@ on:
       - 'docs/proposal.docx'
       - 'tools/render_workflow.py'
       - 'tools/stage_pages.py'
+      # ★ 2026-09-24 (PLAN §13 W13-10). `stage_pages` 가 **import 로** 부르는
+      #   파일이라 경로 리터럴이 워크플로에 없었고, 그래서 `gate_parity` 도
+      #   못 봤다. 이것만 고친 PR 은 그 코드가 **한 번도 안 돈 채** 초록이다.
+      - 'tools/proposal_pdf.py'
   # ★ 머지 전에 가지를 골라 태워볼 수 있다. 2026-09-19 에 권한 오류를 두 번
   #   연달아 **릴리즈로** 발견했는데 이것을 쓰면 릴리즈 없이 봤다.
   #   dispatch 는 진짜로 배포하므로 정적 검사가 먼저고 이것은 보조다.

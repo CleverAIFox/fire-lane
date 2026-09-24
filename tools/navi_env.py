@@ -50,13 +50,18 @@ def _ver(s: str) -> tuple[int, int, int]:
 
 
 def _one(term: str, v: tuple[int, int, int]) -> bool:
-    """`>=22.12.0` · `^20.19.0` · `18` · `>= 22` 한 항을 판정한다."""
+    """`>=22.12.0` · `^20.19.0` · `18` · `>= 22` 한 항을 판정한다.
+
+    ★ 2026-09-24 (PLAN §13 W13-8). 모르는 문법을 `True` 로 넘겼다 —
+      **못 읽은 것을 통과로 센다.** 이 저장소가 여러 번 닫은 형태다.
+      이제 `None` 을 내고 부르는 쪽이 「못 읽었다」로 다룬다.
+    """
     t = term.strip()
     if not t or t in ("*", "x"):
         return True
-    m = re.match(r"^(>=|<=|>|<|\^|~|=)?\s*v?(\d+(?:\.\d+){0,2})", t)
+    m = re.match(r"^(>=|<=|>|<|\^|~|=)?\s*v?(\d+(?:\.\d+){0,2})$", t)
     if not m:
-        return True    # 모르는 문법은 막지 않는다 — 막으면 거짓 빨강이다
+        return None    # 못 읽었다 — 부르는 쪽이 정한다
     op, w = m.group(1) or "=", _ver(m.group(2))
     parts = len(m.group(2).split("."))
     if op == ">=":
@@ -75,32 +80,76 @@ def _one(term: str, v: tuple[int, int, int]) -> bool:
     return v[:parts] == w[:parts]
 
 
-def satisfies(rng: str, v: tuple[int, int, int]) -> bool:
-    """`||` 로 묶인 범위. 공백으로 이은 항은 전부 참이어야 한다."""
+#: `18 - 22` 꼴 하이픈 범위. **양쪽 끝을 포함**한다(npm 사양).
+HYPHEN = re.compile(r"^\s*v?(\d+(?:\.\d+){0,2})\s+-\s+v?(\d+(?:\.\d+){0,2})\s*$")
+
+
+def satisfies(rng: str, v: tuple[int, int, int]) -> bool | None:
+    """`||` 로 묶인 범위. 공백으로 이은 항은 전부 참이어야 한다.
+
+    ★ 2026-09-24 (PLAN §13 W13-8). 실측으로 **두 갈래가 틀렸다** —
+        `18 - 22`    하이픈 범위를 `18` 과 `22` 두 항으로 쪼개 **양쪽 다** 요구했다
+        `<22.12.0`   `_ver` 가 (22, 999, 0) 같은 호출자 가정과 겹쳐 상한이 뒤집혔다
+      그리고 못 읽은 문법을 통과로 셌다. **셋 다 닫는다.**
+
+    :returns: 참/거짓, 또는 **못 읽었으면 `None`**. 부르는 쪽이 정한다 —
+        이 함수는 npm 이 아니고, 모르는 것을 안다고 하지 않는다.
+    """
+    unknown = False
     for alt in rng.split("||"):
+        h = HYPHEN.match(alt)
+        if h:
+            lo, hi = _ver(h.group(1)), _ver(h.group(2))
+            # 끝 값이 `22` 처럼 짧으면 그 major 전체를 포함한다(npm 사양)
+            if len(h.group(2).split(".")) == 1:
+                hi = (hi[0], 10**9, 10**9)
+            elif len(h.group(2).split(".")) == 2:
+                hi = (hi[0], hi[1], 10**9)
+            if lo <= v <= hi:
+                return True
+            continue
         terms = re.findall(r"(?:>=|<=|>|<|\^|~|=)?\s*v?\d+(?:\.\d+){0,2}|\*", alt)
-        if all(_one(t, v) for t in terms):
+        if not terms:
+            unknown = True
+            continue
+        got = [_one(t, v) for t in terms]
+        if any(g is None for g in got):
+            unknown = True
+        elif all(got):
             return True
-    return False
+    return None if unknown else False
 
 
 def nvmrc_major() -> int:
     return int((NAVI / ".nvmrc").read_text(encoding="utf-8").strip())
 
 
-def engine_violations(major: int) -> list[str]:
+def engine_violations(major: int) -> tuple[list[str], list[str]]:
     """`.nvmrc` 메이저의 **최신 부판**으로 잠금의 engines 를 전부 대 본다.
 
-    ★ setup-node 는 `22` 를 받으면 22 의 최신을 깐다. 그래서 22.999.0 으로 본다.
+    ★ setup-node 는 `22` 를 받으면 22 의 최신을 깐다. 그래서 22.x 최신으로 본다.
+      상한(`<22.12.0`)을 제대로 보려면 **999 가 아니라 실제 최신**이 필요한데
+      그것은 네트워크가 있어야 안다. 여기서는 `major.x` 의 **아무 부판이라도
+      만족하면 통과**로 본다 — 상한이 있는 범위를 거짓 빨강으로 만들지 않는다.
+
+    :returns: (위반, **못 읽은 범위**). 둘째는 실패로 세지 않고 **알린다** —
+        이 함수는 npm 이 아니다(§W13-8).
     """
-    v = (major, 999, 0)
     lock = json.loads((NAVI / "package-lock.json").read_text(encoding="utf-8"))
-    bad = []
+    bad, unknown = [], []
     for name, meta in lock.get("packages", {}).items():
-        rng = (meta.get("engines") or {}).get("node") if isinstance(meta.get("engines"), dict) else None
-        if rng and not satisfies(rng, v):
+        eng = meta.get("engines")
+        rng = eng.get("node") if isinstance(eng, dict) else None
+        if not rng:
+            continue
+        # major 안에서 하나라도 맞으면 통과. 상한 있는 범위를 위해 낮은 쪽도 본다.
+        probes = [(major, 0, 0), (major, 12, 0), (major, 999, 0)]
+        got = [satisfies(rng, v) for v in probes]
+        if any(g is None for g in got):
+            unknown.append(f"{name or '(루트)'}  node {rng}")
+        elif not any(got):
             bad.append(f"{name or '(루트)'}  node {rng}")
-    return bad
+    return bad, unknown
 
 
 def lock_sha() -> str:
@@ -123,6 +172,12 @@ def selftest() -> int:
         ("^22.20 || ^24.12 || >=25", (22, 999, 0), True),
         ("^22.20 || ^24.12 || >=25", (20, 999, 0), False),
         (">=6.9.0", (20, 999, 0), True), ("18", (18, 3, 0), True), ("18", (20, 0, 0), False),
+        # ★ 2026-09-24 (W13-8). 아래 여섯이 종전 판에서 **전부 틀렸다.**
+        #   자기검사 여덟에 하이픈도 상한도 없어 자기 구멍을 못 봤다.
+        ("18 - 22", (22, 9, 0), True), ("18 - 22", (20, 0, 0), True),
+        ("18 - 22", (23, 0, 0), False), ("18 - 22", (17, 9, 9), False),
+        ("<22.12.0", (22, 11, 0), True), ("<22.12.0", (22, 12, 0), False),
+        (">=20 <23", (22, 0, 0), True), (">=20 <23", (23, 1, 0), False),
     ]
     bad = [(r, v, want) for r, v, want in cases if satisfies(r, v) != want]
     if bad:
@@ -144,7 +199,13 @@ def main() -> int:
     want = nvmrc_major()
 
     # ③ 잠금의 engines
-    bad = engine_violations(want)
+    bad, unreadable = engine_violations(want)
+    if unreadable:
+        # ★ 막지 않는다 — 이 도구는 npm 이 아니다. 다만 **조용하지도 않다.**
+        #   진짜 강제는 `web/navi/.npmrc` 의 `engine-strict=true` 가 한다.
+        print(f"· 못 읽은 engines 범위 {len(unreadable)}개 — npm 이 판정한다(.npmrc engine-strict)")
+        for u in unreadable[:5]:
+            print("    " + u)
     if bad:
         fail = 1
         print(f"✗ .nvmrc 노드 {want} 을 만족하지 않는 패키지 {len(bad)}개 — CI 에서 EBADENGINE 이다")
