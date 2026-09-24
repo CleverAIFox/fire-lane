@@ -509,6 +509,10 @@ step "배치 판정기 자기검사" uv run python tools/svg_fit.py
 # ★ 2026-09-24 (W12-1). 좌표 상수 세 사본을 한 곳으로 올렸다. 근사가 뜻하는
 #   크기를 내는지 스스로 확인한다 — 상수를 잘못 고치면 여기서 운다.
 step "국소 평면 근사"     uv run python tools/localgeo.py
+# ★ 2026-09-24 (W13-4). 「이름으로 칸을 빼는」 재귀가 둘이었다(봉인 지문 · 신선도
+#   대조). 하나로 올렸고, 깊이·리스트·원본 보존을 스스로 확인한다.
+scope "src/*"
+step "JSON 칸 걸러내기"  uv run python -m firelane.jsonkeys
 # ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
 scope "docs/* tools/* src/* data/*"
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check

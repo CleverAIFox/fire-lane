@@ -905,7 +905,7 @@ datasets:
   kfs_pumptruck:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_pumptruck
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표가 폭 판정 기준이다. 코드가 키로 참조하지 않는다
@@ -926,7 +926,7 @@ datasets:
   kfs_watertank:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_watertank
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -949,7 +949,7 @@ datasets:
   kfs_chemical:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_chemical
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -967,7 +967,7 @@ datasets:
   kfs_ladder_articulated:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_ladder_articulated
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -988,7 +988,7 @@ datasets:
   kfs_rescue:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_rescue
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -1005,7 +1005,7 @@ datasets:
   kfs_ambulance_special:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_ambulance_special
     ext: [hwp, pdf]
     primary: hwp
@@ -1032,7 +1032,7 @@ datasets:
   kfs_ladder_small:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_ladder_small
     ext: [pdf]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -1045,7 +1045,7 @@ datasets:
       동명동 골목에 실제로 들어가는 차종이 펌프차가 아닐 수 있어 같이 받았다.
   mas_optional_spec:
     feeds: []
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 선택장비 규격 근거(호스릴 연장 등). 차량 치수는 안 든다 — 그것은 mas_vehicle_spec 이다(MASTER §3-13)'
     stem: safety_mas_optional_spec
     ext: [hwp, pdf]
     primary: hwp
@@ -1066,7 +1066,7 @@ datasets:
   mas_vehicle_spec:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_mas_vehicle_spec
     ext: [hwp, pdf]
     primary: hwp
@@ -1403,8 +1403,13 @@ datasets:
     encoding: cp949                        # 2026-08-17 실물 확인. 구 선언 utf-8 은 틀렸다
     note: |
       ★ 좌표계 EPSG:5179. (정사영상 도곽표는 5186이므로 겹칠 때 통일 필요)
-      ★ rvwd 컬럼 = 도로폭 속성. 1.5~46.0m, 정수 76%.
-        ROAD_BT(정수 90%, 2.0에 30% 몰림)보다 세분화됨. 교차검증용으로 반드시 병행.
+      ★ **rvwd(도로폭)는 이 레이어에 없다.** schema.columns 는 gid · fmta ·
+        scls · ufid 넷뿐이다. 2026-08-17 에 도로중심선으로 옮겨갔고(위 주석)
+        속성은 `datasets.ngii_road_center` 가 든다 — 1.5~46.0m · 정수 76% ·
+        ROAD_BT(정수 90% · 2.0에 30% 몰림)보다 세분화. 교차검증은 그쪽에서 한다.
+      ★ 2026-09-24. 여기 「rvwd 컬럼 = … 교차검증용으로 반드시 병행」이
+        남아 있었다. 바로 위 주석이 그 컬럼의 이사를 적고 있는데도 그랬다 —
+        읽는 사람은 없는 컬럼을 찾는다.
       ★ 최협소 골목을 도로면으로 그리지 않음. 표본 100개 중 70개만 커버.
         나머지는 road_rw 폴백.
       도엽 커버리지(5179): X 945,332~949,918 / Y 1,681,228~1,686,800
@@ -1942,14 +1947,14 @@ datasets:
         래스터에서 도로 경계를 읽으려면 세그멘테이션이 필요하고
         그림자·처마·주차 차량 때문에 정확도가 안 나온다.
         폭은 벡터(실폭도로·건물 폴리곤)로 잰다.
-      산출: web/data/ortho/{z}/{x}/{y}.jpg (388장, z15~18, 8.3MB)
+      산출: web/data/ortho/{z}/{x}/{y}.jpg (1,423장, z15~19, 27MB)
       4도엽 전량 1.25GB. ingest 는 읽지 않는다(raw_only).
 
   # ── 좌표 없는 표 (참조용) ────────────────────────────────
   hydrant_summary:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 소방용수 분모 근거(MASTER §3-12). 표준데이터 441 대 관할 589'
+    feeds_note: '미투입 — 소방용수 분모 근거(MASTER §3-12). 표준데이터 좌표 동구 445 대 관할 소화전 589'
     stem: safety_hydrant_summary
     ext: [csv]
     feeds_why: 대조용 — 관할 654 를 API 실측 651 과 맞추는 데 썼다. 판정에 안 들어간다
@@ -1962,12 +1967,19 @@ datasets:
     kind: csv_table
     encoding: cp949
     note: |
-      ★ 좌표 없음. 집계표다.
-        동부소방서 관할 지상식 418 + 지하식 171 = 589개.
-        그런데 전국소방용수시설표준데이터의 광주 동구는 31개뿐 = 공개율 5%.
-        동명동은 1개(동계로13번길 18-2).
-      → 소화전 레이어는 발표에서 제외. 대신 "588개 중 31개만 공개"를  <!--stale-ok-->
-        D-30 인터뷰 협조요청 근거이자 발표 논거로 사용.
+      ★ 좌표 없음. 집계표다. **축을 섞지 않는다**(MASTER §3-12 가 정본) —
+          소화전            동부소방서 관할 지상식 418 + 지하식 171 = 589
+          소방용수시설      589 + 저수조 32 + 급수탑 1 + 비상소화장치 32 = 654
+          표준데이터 좌표   동구 445 (스코프 안 153 · 동명동 41)
+          API 실측          동구 651 (소방용수시설 축. 관할 654 와 3건 차)
+      ★ 2026-09-24. 여기 「전국표준데이터 광주 동구는 31개뿐 = 공개율 5% ·
+        동명동은 1개」와 「588개 중 31개만 공개를 발표 논거로」가 남아 있었고
+        `<!--stale-ok-->` 가 그것을 얼려두고 있었다. **같은 파일 1823행이
+        그 문장을 이미 폐기했다**(2026-08-31 재측정 · 동구 445 · 동명동 41).
+        마커가 폐기된 문장을 신선도 검사 밖으로 빼내 살려두고 있었다 —
+        마커는 「일부러 옛 값을 인용한다」는 뜻이지 「고치지 않겠다」가 아니다.
+      → 발표 논거는 **분모가 공개 데이터에 없다**는 것 자체다(§3-12).
+        「1개뿐」·「31개만 공개」를 쓰지 않는다.
 
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['구분', '계', '주거지역', '상가지역', '고지대', '시장_화재예방강화지구', '소방차진입불가지역', '데이터기준일자']
@@ -3070,7 +3082,14 @@ raw_only:
       ★ GeoTIFF 아님. 지오태그 없음, .tfw 미동봉, XML에도 도곽좌표 없음.
         복원 규칙과 도엽별 X0/Y0는 docs/MASTER.md §10 참조 (EPSG:5186).
       Phase 3-A(정사영상 DL 세그멘테이션) 재료. 우선순위 4위.
-      현 단계 파이프라인 미투입. S3에만 두고 로컬에서 지워도 무방.
+      ★ 2026-09-24. 여기 「현 단계 파이프라인 미투입. S3에만 두고 로컬에서
+        지워도 무방」이 적혀 있었다. **거짓이다** — `firelane.ortho` 가 정식
+        단계이고(`pipeline.py` Step("ortho")) 이 TIF 를 읽어 관제 지도의 배경
+        타일 1,423장을 굽는다. 지우면 `[SKIP] 정사영상 TIF 없음` 으로
+        **조용히 빠지고** 지도가 흰 바탕이 된다. 같은 파일의
+        `datasets.ortho.feeds` 가 `ortho.py` 를 이미 들고 있었다 —
+        한 파일이 제 자신과 모순돼 있었다.
+      DL 세그멘테이션(3-A)은 아직 미투입이다. 타일 굽기는 투입돼 있다.
 
   building_change:
     what: GIS건물통합정보 일변동분

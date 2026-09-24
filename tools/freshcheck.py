@@ -54,6 +54,7 @@ import subprocess
 import sys
 from typing import Any
 
+from firelane import jsonkeys
 from firelane.generated import for_role
 
 # 실행마다 반드시 달라지는 필드. 내용이 아니다.
@@ -76,12 +77,12 @@ SEAL_KIND = {"code": "코드봉인", "cfg": "설정봉인", "raw": "원본봉인
 
 
 def canon(obj: Any) -> Any:
-    """비결정 필드를 뺀 정규형."""
-    if isinstance(obj, dict):
-        return {k: canon(v) for k, v in obj.items() if k not in NONDET}
-    if isinstance(obj, list):
-        return [canon(v) for v in obj]
-    return obj
+    """비결정 필드를 뺀 정규형.
+
+    ★ 2026-09-24. 재귀는 `firelane.jsonkeys.drop` 이 든다 — `shardseal` 과
+      글자까지 같은 59노드였다(DECISIONS §243). **무엇을 뺄지는 여기가 정한다.**
+    """
+    return jsonkeys.drop(obj, NONDET)
 
 
 def diff_spots(a: Any, b: Any, trail: tuple[str, ...] = ()) -> list[tuple[str, ...]]:

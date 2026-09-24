@@ -267,6 +267,9 @@ jobs:
       # ★ 2026-09-24 (W12-1). 좌표 상수의 집이 하나인가 + 근사가 뜻하는 크기인가.
       - name: 국소 평면 근사
         run: uv run python tools/localgeo.py
+      # ★ 2026-09-24 (W13-4). 칸 걸러내기의 집이 하나인가 + 깊이·리스트를 파는가.
+      - name: JSON 칸 걸러내기
+        run: uv run python -m firelane.jsonkeys
       - name: 그림 ↔ 정본
         run: uv run python tools/render_figures.py --check
       # ★ 2026-09-23 (DECISIONS §221-1). 기획서가 든 그림도 같은 정본인가.
