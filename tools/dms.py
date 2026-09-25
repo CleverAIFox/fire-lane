@@ -661,35 +661,48 @@ def _tool_prints() -> dict[str, str]:
 #: 봉인 축 → **그 축의 값을 만드는 도구.** 이 목록에 든 도구가 바뀐 축만 무효다.
 #:
 #: ★ 2026-09-25 (DECISIONS §255). 종전에는 `tool` 지문 **하나**가 봉인 전체를
-#:   무효화했다 — `dupcheck.py` 한 줄만 고쳐도 절 1,036개가 통째로 재검사
+#:   무효화했다 — `dupcheck.py` 한 줄만 고쳐도 절 천여 개가 통째로 재검사
 #:   대상이 됐다. `dupcheck` 는 **코드 사본을 세는 도구**이고 절 내용과 아무
 #:   상관이 없는데도 그랬다.
 #:
 #:   그 구조가 「감사할 일을 만든다」. 전수 재검사는 비싸고(OOM 위험) 사람이
-#:   그것을 회피하기 시작하면 봉인이 장식이 된다. 실제로 이 배치가
-#:   `verify.sh` 에 단계 하나를 더한 순간 봉인 전체가 무효가 됐다.
+#:   그것을 회피하기 시작하면 봉인이 장식이 된다. 실제로 `verify.sh` 에 단계
+#:   하나를 더한 순간 봉인 전체가 무효가 됐다.
 #:
 #: ★ **무효화는 실제 영향만큼만 넓어야 한다.** §243 이 「선언이 검사보다 넓으면
 #:   거짓 초록이 된다」를 적었고, 이것은 그 거울상이다 — **무효화가 영향보다
 #:   넓으면 재검사가 습관적으로 건너뛰어진다.**
 #:
-#: ★ 축 이름은 `SEAL.json` 의 키와 같다. 새 축이 생겼는데 여기 없으면
-#:   `tests/test_seal_axes.py` 가 운다 — 손목록이 실물보다 좁아지는 것을 막는다.
-AXIS_TOOLS: dict[str, tuple[str, ...]] = {
-    # 절 해시·상태·물림은 `dms.py` 의 파싱·분류 규칙만이 정한다.
-    "sections": ("tools/dms.py",),
-    "denominator": ("tools/dms.py",),
-    "dead_refs": ("tools/dms.py",),
-    # 사본군은 `dupcheck` 가 센다. 절과 무관하다.
-    "dup_groups": ("tools/dupcheck.py",),
-    # 강제자 통과 기록은 관문이 정한다.
-    "enforcers": ("tools/verify.sh", "tools/deadcheck.py", "tools/env_check.py"),
-    # 아래 넷은 **도구와 무관하다** — 순수 파일·입력 해시다.
-    "docs": (),
-    "raw": (),
-    "code": (),
-    "declared_red": (),
-}
+#: ★ **그러나 좁히는 것은 입증 뒤에만 한다.** 이 표를 처음 손으로 적었을 때
+#:   `enforcers` 에서 `dms.py` 와 `dupcheck.py` 를 빠뜨렸다 — `PROBES` 가 그
+#:   둘을 `--selftest` 로 돌리는데 그것을 안 봤다. **손목록은 실물보다
+#:   좁아진다**(W3-8 족). 그래서 `enforcers` 는 이제 손으로 안 적고
+#:   `PROBES` 에서 **뽑는다.** 새 프로브가 붙으면 그 순간 범위가 따라간다.
+def _enforcer_tools() -> tuple[str, ...]:
+    """`enforcers` 축이 실제로 타는 도구. **`PROBES` 에서 뽑는다 — 손목록이 아니다.**"""
+    out = {"tools/verify.sh"}
+    out |= {str(cmd[0]) for _label, cmd in PROBES if str(cmd[0]).startswith("tools/")}
+    return tuple(sorted(out))
+
+
+def axis_tools() -> dict[str, tuple[str, ...]]:
+    """축 → 그 축을 무효화하는 도구. 축 이름은 `SEAL.json` 의 키와 같다."""
+    return {
+        # 절 해시·상태·물림은 `dms.py` 의 파싱·분류 규칙만이 정한다.
+        "sections": ("tools/dms.py",),
+        "denominator": ("tools/dms.py",),
+        "dead_refs": ("tools/dms.py",),
+        # 사본군은 `dupcheck` 가 센다(`cmd_seal` 이 직접 부른다). 절과 무관하다.
+        "dup_groups": ("tools/dupcheck.py",),
+        # 강제자 기록은 관문과 프로브 전부가 정한다 — **뽑아서** 쓴다.
+        "enforcers": _enforcer_tools(),
+        # 아래 넷은 **도구와 무관하다** — 순수 파일·입력 해시다.
+        "docs": (),
+        "raw": (),
+        "code": (),
+        "declared_red": (),
+    }
+
 
 #: 축이 아니라 봉인 자신의 기록. 무효 판정 대상이 아니다.
 SEAL_META = ("sealed_at", "commit", "tool", "tools", "scope", "red_ages", "red_reasons")
@@ -703,10 +716,10 @@ def stale_axes(old: dict) -> dict[str, list[str]]:
     """
     was = old.get("tools")
     if not isinstance(was, dict):
-        return {a: ["(옛 봉인 — 도구별 지문이 없다)"] for a in AXIS_TOOLS}
+        return {a: ["(옛 봉인 — 도구별 지문이 없다)"] for a in axis_tools()}
     now = _tool_prints()
     out: dict[str, list[str]] = {}
-    for axis, tools in AXIS_TOOLS.items():
+    for axis, tools in axis_tools().items():
         moved = [t for t in tools if was.get(t) != now.get(t)]
         if moved:
             out[axis] = moved
@@ -1106,8 +1119,8 @@ def cmd_delta(data: dict) -> int:
         print("★ 도구가 바뀐 축:")
         for axis, tools in sorted(stale.items()):
             print(f"    {axis:14} ← {' · '.join(Path(x).name for x in tools)}")
-        live = sorted(set(AXIS_TOOLS) - set(stale))
-        print(f"  **살아 있는 축 {len(live)}/{len(AXIS_TOOLS)}** — {' · '.join(live)}")
+        live = sorted(set(axis_tools()) - set(stale))
+        print(f"  **살아 있는 축 {len(live)}/{len(axis_tools())}** — {' · '.join(live)}")
         print("  무효인 축만 다시 본다. 전수가 아니다.")
         # ★ 여기서 빨개지면 안 된다. `seal` 이 verify.sh 를 돌리고 verify.sh 가
         #   이 단계를 부르므로, 빨강이면 seal 이 영영 못 찍힌다(자기참조).
