@@ -116,8 +116,18 @@ STEPS = [
          #   통과했다(PLAN #70 · DECISIONS §39).
          writes=(P / "segments.geojson", P / "segments_5186.gpkg",
                  P / "segments.schema.json", P / "corridor_5186.gpkg",
-                 P / "nfa_compare.json", P / "seg_uid_map.csv",
+                 P / "seg_uid_map.csv",
                  P / "route_vehicle.csv")),
+    # ★ 2026-09-25 (PLAN §1 #124). `seg/report.py::nfa_compare` 를 자기 단계로
+    #   내렸다. 그 안의 `from firelane import ledger` 한 줄이 ledger · naming ·
+    #   scope · kinds = 1,137줄을 판정 지문(= `firelane.segments` import 닫힘)에
+    #   넣고 있었다 — **파일명 문법 파서를 고쳐도 판정 게이트가 울었다.**
+    #   폐포 21 → 17 파일. 순서는 순방향이다 — segments(판정을 낸다) →
+    #   nfa_compare(그것을 외부 자료와 댄다).
+    Step("nfa_compare", "nfa_compare", "소방서 지정 구간 ↔ 우리 폭 대조",
+         P / "nfa_compare.json",
+         reads=(P / "segments_5186.gpkg", P / "road_link_5186.gpkg"),
+         writes=(P / "nfa_compare.json",)),
     # ★ 2026-09-23 (PLAN §13 W3-6). `segments._write_scope()` 를 자기 단계로 내렸다.
     #   표출 상수(DISPLAY_BUFFER · DISPLAY_CLOSE)가 `seg/params.py` 에 있으면 판정 지문
     #   (= `firelane.segments` import 닫힘) 안이라, **지도 여백만 고쳐도 판정 게이트가

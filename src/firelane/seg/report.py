@@ -5,19 +5,21 @@ seg/report.py — 대조 · 진단 · 산출물 기록.
 판정이 끝난 GeoDataFrame 하나만 받는다. 계산은 하지 않는다.
 2026-08-18 Stage 4 에서 `segments.py` 의 `main()` 밖으로 꺼냈다.
 
-`nfa_compare` 는 우리 폭에 대한 **유일한 외부 대조 수단**이다. 두 번 소실됐다 —
-경로 오류로 죽어 있던 것이 08-13, 터미널에만 존재하던 것이 08-17. 이제 모듈로
-분리돼 있으니 세 번째로 조용히 사라지기 어렵다.
-
 로직은 한 글자도 바꾸지 않았다. `tools/golden.py` 로 산출물 동일을 증명한다.
+
+★ 2026-09-25 (PLAN §1 #124 · DECISIONS §247). `nfa_compare` 와
+  `_fire_access_csv` 를 **`firelane.nfa_compare` 단계로 내보냈다.** 그 둘 안의
+  `from firelane import ledger` 한 줄이 `ledger` · `naming` · `scope` · `kinds`
+  = 1,137줄을 판정 지문에 넣고 있었다(폐포 21 → 17). 넷 다 판정에 기여하지
+  않는다 — 파일명 문법 파서와 행정범위 어휘다.
+
+  **여기서 `firelane.ledger` 를 다시 import 하면 그 넷이 통째로 돌아온다.**
+  대장을 읽어야 하는 일이 생기면 이 모듈이 아니라 단계로 만들어라.
 """
 from __future__ import annotations
 
 import hashlib
 import json
-
-import geopandas as gpd
-from shapely.ops import unary_union
 
 from firelane.paths import PROCESSED
 from firelane.seg.geom import VERDICT_RULE
@@ -35,118 +37,6 @@ from firelane.seg.params import (
 
 OUT = PROCESSED
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
-
-
-def _fire_access_csv():
-    """소방서 지정 구간 CSV 를 **대장에서** 찾는다.
-
-    ★ 못 찾으면 `None` 을 주되 **왜 못 찾았는지 찍는다.** 조용히 넘기면
-      대조가 0건인 채로 초록불이 되고, 그것이 이 저장소가 두 번 겪은
-      사고다 — 경로 오류로 죽어 있던 것이 2026-08-13, 터미널에만 있던 것이
-      08-17 이다. `MASTER §4` 는 이 대조를 **우리 폭에 대한 유일한 외부
-      대조 수단**이라고 든다.
-    """
-    from firelane import ledger
-    from firelane.paths import RAW as _RAW
-
-    e = (ledger.load().get("datasets") or {}).get("fire_access")
-    if e is None:
-        print("  [소방서 대조] 대장에 `fire_access` 가 없다 — 건너뛴다")
-        return None
-    hits = [p for p in ledger.paths_of(e, _RAW) if p.exists()]
-    if not hits:
-        print("  [소방서 대조] 대장은 `fire_access` 를 들지만 raw 에 실물이 "
-              "없다 — 건너뛴다")
-        return None
-    if len(hits) > 1:
-        print(f"  [소방서 대조] 후보 {len(hits)}개 — 최신을 쓴다: {hits[-1].name}")
-    return sorted(hits)[-1]
-
-
-def nfa_compare(g):
-    """소방서 지정 구간과 우리 폭을 도로명 단위로 대조하고 파일로 남긴다."""
-    # ── 소방서 지정 구간 대조 ────────────────────────────────
-    # 동부소방서 소방통로확보대상 지역 현황(2025-07-31)의 폭과 비교한다.
-    # 좌표가 없어 도로명 단위로만 매칭되므로 참고값이다.
-    # 소방서가 지정한 것은 그 도로명 중 가장 좁은 구간이므로,
-    # 우리 값도 최솟값 쪽으로 비교하는 것이 타당하다.
-    # ★ RAW 는 $FIRE_LANE_RAW 다. ROOT/"data"/"raw" 로 박아두면 exists() 가
-    #   항상 거짓이라 이 블록이 통째로 죽는다. 실제로 한 번도 실행된 적이 없었다.
-    #   소방서 지정 구간은 우리 폭에 대한 유일한 외부 대조 수단이다.
-    # ★ 2026-09-02. 경로를 직접 조립하지 않는다. 대장이 `stem` + `ext` 로
-    #   실물을 찾고 코드는 그 결과만 받는다 — 개명하면 대장·sha대장·실물
-    #   셋이 함께 움직이는데, 코드가 그 셋 밖에서 경로를 만들면 혼자
-    #   남는다. 2026-08-13 에 그 사고가 있었고 그때는 **한 번도 실행된 적이
-    #   없었다.** 예외가 안 나고 블록이 통째로 조용히 죽는다(DECISIONS §98).
-    fa = _fire_access_csv()
-    if fa is not None and fa.exists():
-        import csv
-        import re
-        rows = list(csv.DictReader(fa.open(encoding="cp949")))
-        road = gpd.read_file(OUT/"road_link_5186.gpkg").to_crs(CRS_M)
-        print("\n[소방서 지정 구간 대조]")
-        # ★ 2026-08-18. print 만 하던 것을 파일로도 남긴다.
-        #   이 대조는 우리 폭에 대한 유일한 외부 대조 수단인데 두 번 소실됐다.
-        #   경로 오류로 죽어 있던 것이 8/13, 터미널에만 있던 것이 8/17 이다.
-        #   8/17 봉인 때 7.24m 를 문서에서 손으로 옮겨 적어야 했다.
-        _nfa_rows = []
-        for r in rows:
-            for rn in set(re.findall(r"[가-힣]+로\d*번?길", r["지역명"])):
-                sel = road[road.RN == rn]
-                if not len(sel):
-                    continue
-                ru = unary_union(list(sel.geometry))
-                hit = g[g.geometry.buffer(1).intersects(ru)].dropna(subset=["width_min_m"])
-                if not len(hit):
-                    continue
-                w_nfa = r["폭(m)"]
-                try:
-                    wf = float(str(w_nfa).split("~")[0])
-                except ValueError:
-                    continue
-                # 소방서 기록폭은 구간 대표폭으로 보인다. 최솟값이 아니라 중앙값과 비교한다.
-                # (하위10% 로 비교하면 교차로 근처 극협소 지점을 잡아 -3~-7m 로 벌어진다)
-                med = hit.width_min_m.median()
-                print(f"  {rn:14s} 소방서 {w_nfa:>7s}m │ 우리 중앙 {med:5.2f}m "
-                      f"({med - wf:+.2f}) │ 세그 {len(hit):3d} │ "
-                      + " ".join(f"{k}:{v}" for k, v in hit.verdict.value_counts().items()))
-                _nfa_rows.append({
-                    "road": rn,
-                    "nfa_m": wf,
-                    "nfa_raw": str(w_nfa),
-                    "ours_median_m": round(float(med), 2),
-                    "dev_m": round(float(med) - wf, 2),
-                    "n_seg": len(hit),
-                    "verdict": {k: int(v) for k, v in hit.verdict.value_counts().items()},
-                })
-
-        if _nfa_rows:
-            import json as _json
-            from datetime import datetime as _dt
-            from datetime import timedelta as _td
-            from datetime import timezone as _tz
-            _abs = round(sum(abs(x["dev_m"]) for x in _nfa_rows), 2)
-            _out = {
-                "as_of": _dt.now(_tz(_td(hours=9))).isoformat(timespec="seconds"),
-                "source": str(fa.name),
-                "ref": "동부소방서 소방통로확보대상 지역 현황 (20구간 7,120m)",
-                "match_by": "도로명. 소방서 자료에 좌표가 없다",
-                "compare": "구간 대표폭이므로 중앙값과 비교. 최솟값이면 -3~-7m 로 벌어진다",
-                "caveat": ("★ 이것은 검증이 아니라 적합(fit)일 수 있다. 12.6 → 7.24 로 "
-                           "줄이는 과정에서 이 표를 게이트로 썼다. 게이트로 쓴 자료는 "
-                           "그 순간부터 외부 검증 수단이 아니다. MASTER 4절 참조."),
-                "abs_dev_sum_m": _abs,
-                "n_road": len(_nfa_rows),
-                "rows": sorted(_nfa_rows, key=lambda x: abs(x["dev_m"])),
-            }
-            (OUT / "nfa_compare.json").write_text(
-                _json.dumps(_out, ensure_ascii=False, indent=2) + "\n",
-                encoding="utf-8")
-            print(f"  절대편차 합 {_abs}m · {len(_nfa_rows)}구간"
-                  f"  → {(OUT / 'nfa_compare.json').name}")
-        else:
-            # 없으면 소리를 낸다. 조용한 결측을 만들지 않는다.
-            print("  ★ 매칭 0구간. 도로명 매칭이 깨졌다 — RN 컬럼과 지역명 형식 확인")
 
 
 def diagnostics(g):

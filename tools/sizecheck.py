@@ -73,7 +73,7 @@ EXCEPTIONS: dict[str, int] = {
     #   참조」(§222-2)가 들어갔다. verify.sh 는 검사의 목록이라 검사가 늘면 늘어난다 —
     #   쪼개면 「어느 파일에 있나」 가 또 하나의 기억거리가 된다(§18-3).
     "tools/verify.sh": 1018,
-    "src/firelane/segments.py": 878,
+    "src/firelane/segments.py": 877,
     "tools/doc_fsck.py": 659,
     "tools/render_workflow.py": 635,
     "tools/golden.py": 613,

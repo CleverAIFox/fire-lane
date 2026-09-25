@@ -9,7 +9,7 @@ IN    processed/{boundary_emd,road_link,road_rw,ngii_road,ngii1k,ngii1k_center,
       processed/seg_uid_map.csv         직전 실행 키. 유지율 산출용
       $FIRE_LANE_DATA/raw/safety/safety_fire_access_*.csv   외부 대조(선택)
 OUT   processed/segments_5186.gpkg · segments.geojson · segments.schema.json
-      processed/seg_uid_map.csv · nfa_compare.json · corridor_5186.gpkg
+      processed/seg_uid_map.csv · corridor_5186.gpkg
       processed/route_vehicle.csv   ★ publish 가 읽어 web 으로 낸다
       processed/width_samples.csv · uncovered_units.json  (진단 덤프)
       ★ 2026-09-23 (PLAN §13 W3-6). `scope_5186.gpkg` 는 여기서 안 낸다.
@@ -842,7 +842,6 @@ def main():
         print("  ! 유지율 90% 미만 — segkey 규칙 재검토 필요")
     save_uid_map(g, OUT / "seg_uid_map.csv")
 
-    seg_report.nfa_compare(g)
     # ── 소스별 커버율 ────────────────────────────────────────
     seg_report.diagnostics(g)
 
