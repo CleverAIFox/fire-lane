@@ -288,6 +288,7 @@ def l7(D: Path, y: dict) -> None:
     if not ds:
         hit("L7", "★ 대장 datasets 를 못 읽었다 — 프로브를 의심하라")
         return
+    globs: set[str] = set()
     # ★ 2026-09-24. **`stem` 이 정본이다.** 대장 키가 곧 파일명이 아니다 —
     #   `node_link` 의 파일은 `its_nodelink_kr_*.zip` 이다. 키만 보면 등재된 것을
     #   「대장 밖」으로 센다(내가 만든 첫 판이 실제로 그랬고, 그 거짓 목록 위에
@@ -296,9 +297,26 @@ def l7(D: Path, y: dict) -> None:
     known = {str((v or {}).get("stem", "")).lower() for v in ds.values() if isinstance(v, dict)}
     known |= {k.lower() for k, v in ds.items()
               if not (isinstance(v, dict) and v.get("stem"))}
+    # ★ 2026-09-25 (DECISIONS §258). **`stems`(복수)와 `files` 글롭도 선언이다.**
+    #   종전에는 `stem` 단수와 키만 봤다 — `ngii1k` 은 `stems: [vworld_map1k,
+    #   vworld_map1k_ngi]` 로 적고 `stem` 이 없어서, **대장이 아는 20MB 도엽을
+    #   「모른다」로 셌다.** 이 프로브 머리말이 「범위가 이름보다 좁고 그것이
+    #   선언돼 있지 않았다(W3-8 족)」고 적으면서 제가 그 족을 저질렀다.
+    for v in ds.values():
+        if not isinstance(v, dict):
+            continue
+        known |= {str(s).lower() for s in (v.get("stems") or [])}
+        # `files` 는 글롭이다 — 파일명 부분만 떼어 아래 fnmatch 가 쓴다
+        globs.update(Path(str(f)).name.lower() for f in (v.get("files") or []))
     # 은퇴도 선언이다 — 「모른다」가 아니라 「사유와 함께 안 쓴다」다
     for k, v in (y.get("retired") or {}).items():
         known.add(str((v or {}).get("stem") or k).lower() if isinstance(v, dict) else k.lower())
+    # ★ landing 처분도 선언이다. `202608_상세주소DB_전체분.zip` 은 2026-08-30 에
+    #   `landing_disposition` 으로 판단이 끝났는데(승인 계열 · 우선순위 낮음)
+    #   이 프로브가 그것을 안 보고 「모른다」로 셌다. **`disposed()` 로 읽는다** —
+    #   L3 이 쓰는 그 문이다. 손으로 다시 읽으면 「사유가 없으면 처분이 아니다」
+    #   규칙이 두 벌이 되고, 한 쪽만 고쳐진다.
+    globs.update(g.lower() for g in disposed(y))
     known.discard("")
     lim = L7_MIN_MB << 20
     big = 0
@@ -313,13 +331,16 @@ def l7(D: Path, y: dict) -> None:
             except OSError:
                 continue
             big += 1
-            stem = f.stem.lower()
+            stem, name = f.stem.lower(), f.name.lower()
             if any(stem.startswith(k) for k in known):
+                continue
+            # 글롭 선언(`files` · `landing_disposition`)은 이름 전체로 맞춘다
+            if any(fnmatch.fnmatch(name, g) or fnmatch.fnmatch(stem, g) for g in globs):
                 continue
             hit("L7", f"{zone}/{f.name}: 대장이 모른다 ({f.stat().st_size >> 20}MB)",
                 f"상위 폴더 {f.parent.name}",
                 "sources.yaml 에 등재하거나, 이미 등재돼 있으면 stem 을 파일명에 맞춰라")
-    print(f"     {L7_MIN_MB}MB+ 원본 {big}건 · 대장 키 {len(known)}")
+    print(f"     {L7_MIN_MB}MB+ 원본 {big}건 · 대장 키 {len(known)} · 글롭 {len(globs)}")
     if big == 0:
         hit("L7", f"★ {L7_MIN_MB}MB 넘는 원본이 0건이다 — 프로브를 의심하라",
             "raw 2.5GB 가 있는 기계라면 0 일 수 없다")
