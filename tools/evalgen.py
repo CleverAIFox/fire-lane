@@ -386,7 +386,7 @@ def _table(doc: dict) -> None:
     print("\n  출발  목의 구간            판정        폭    CCTV  d1     d2      비율  목적지")
     for r in doc["scenarios"]["rows"]:
         print(f"  {r['station'][:2]}   {str(r['pinch_label'])[:20]:22}{r['pinch_verdict']:10}"
-              f"{str(r['pinch_width_min_m']):6}{'있음' if r['cctv_covered'] else '없음':6}"
+              f"{r['pinch_width_min_m']!s:6}{'있음' if r['cctv_covered'] else '없음':6}"
               f"{r['d1_m']:7.0f}{r['d2_m']:8.0f}{r['ratio']:7.2f}{r['n_dest']:5d}")
 
 

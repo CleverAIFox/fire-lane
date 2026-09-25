@@ -646,9 +646,71 @@ def _tool_scope() -> list[Path]:
 
 
 def _tool_print() -> str:
+    """도구 전체 지문. **무효화 범위로는 쓰지 않는다** — `AXIS_TOOLS` 를 봐라."""
     return _sha("\n".join(f"{p.relative_to(ROOT).as_posix()}\0"
                           f"{_sha(p.read_text(encoding='utf-8'))}"
                           for p in _tool_scope()))
+
+
+def _tool_prints() -> dict[str, str]:
+    """도구 **하나씩** 지문. 축별 무효 판정의 재료다."""
+    return {p.relative_to(ROOT).as_posix(): _sha(p.read_text(encoding="utf-8"))
+            for p in _tool_scope()}
+
+
+#: 봉인 축 → **그 축의 값을 만드는 도구.** 이 목록에 든 도구가 바뀐 축만 무효다.
+#:
+#: ★ 2026-09-25 (DECISIONS §255). 종전에는 `tool` 지문 **하나**가 봉인 전체를
+#:   무효화했다 — `dupcheck.py` 한 줄만 고쳐도 절 1,036개가 통째로 재검사
+#:   대상이 됐다. `dupcheck` 는 **코드 사본을 세는 도구**이고 절 내용과 아무
+#:   상관이 없는데도 그랬다.
+#:
+#:   그 구조가 「감사할 일을 만든다」. 전수 재검사는 비싸고(OOM 위험) 사람이
+#:   그것을 회피하기 시작하면 봉인이 장식이 된다. 실제로 이 배치가
+#:   `verify.sh` 에 단계 하나를 더한 순간 봉인 전체가 무효가 됐다.
+#:
+#: ★ **무효화는 실제 영향만큼만 넓어야 한다.** §243 이 「선언이 검사보다 넓으면
+#:   거짓 초록이 된다」를 적었고, 이것은 그 거울상이다 — **무효화가 영향보다
+#:   넓으면 재검사가 습관적으로 건너뛰어진다.**
+#:
+#: ★ 축 이름은 `SEAL.json` 의 키와 같다. 새 축이 생겼는데 여기 없으면
+#:   `tests/test_seal_axes.py` 가 운다 — 손목록이 실물보다 좁아지는 것을 막는다.
+AXIS_TOOLS: dict[str, tuple[str, ...]] = {
+    # 절 해시·상태·물림은 `dms.py` 의 파싱·분류 규칙만이 정한다.
+    "sections": ("tools/dms.py",),
+    "denominator": ("tools/dms.py",),
+    "dead_refs": ("tools/dms.py",),
+    # 사본군은 `dupcheck` 가 센다. 절과 무관하다.
+    "dup_groups": ("tools/dupcheck.py",),
+    # 강제자 통과 기록은 관문이 정한다.
+    "enforcers": ("tools/verify.sh", "tools/deadcheck.py", "tools/env_check.py"),
+    # 아래 넷은 **도구와 무관하다** — 순수 파일·입력 해시다.
+    "docs": (),
+    "raw": (),
+    "code": (),
+    "declared_red": (),
+}
+
+#: 축이 아니라 봉인 자신의 기록. 무효 판정 대상이 아니다.
+SEAL_META = ("sealed_at", "commit", "tool", "tools", "scope", "red_ages", "red_reasons")
+
+
+def stale_axes(old: dict) -> dict[str, list[str]]:
+    """봉인 뒤 **어느 축이 무효가 됐나.** 축 → 바뀐 도구 목록.
+
+    ★ 옛 봉인(`tools` 칸이 없다)은 축별 판정을 할 수 없으므로 전 축을 무효로
+      본다. 모를 때 유효하다고 말하는 것은 검사를 끄는 것과 같다.
+    """
+    was = old.get("tools")
+    if not isinstance(was, dict):
+        return {a: ["(옛 봉인 — 도구별 지문이 없다)"] for a in AXIS_TOOLS}
+    now = _tool_prints()
+    out: dict[str, list[str]] = {}
+    for axis, tools in AXIS_TOOLS.items():
+        moved = [t for t in tools if was.get(t) != now.get(t)]
+        if moved:
+            out[axis] = moved
+    return out
 
 
 def _state_now(data: dict) -> dict:
@@ -990,6 +1052,9 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
                      .isoformat(timespec="seconds"),
         "commit": _run(["git", "rev-parse", "--short", "HEAD"], 20)[1] or "(git 밖)",
         "tool": _tool_print(),
+        # ★ 2026-09-25 (§255). **도구 하나씩** 남긴다. `delta` 가 이것으로
+        #   축별 무효를 판정한다 — 종전에는 위 한 줄이 봉인 전체를 무효화했다.
+        "tools": _tool_prints(),
         "scope": ("verify.sh 로그" if log else
                   "pytest+프로브" if quick else "verify.sh 전 단계"),
         "docs": {rel: _sha((ROOT / rel).read_text(encoding="utf-8"))
@@ -1032,14 +1097,24 @@ def cmd_delta(data: dict) -> int:
         print(f"  지금 분모 {sum(1 for r in data['rows'] if r['state'] == 'blank')}")
         return 0
     old = json.loads(p.read_text(encoding="utf-8"))
-    if old["tool"] != _tool_print():
-        print(f"★ 도구가 바뀌었다 {old['tool']} → {_tool_print()}")
-        print("  판정 규칙이 바뀌면 옛 통과는 증표가 아니다. **전수 재검사다.**")
-        print("  전수로 보고 다시 `seal` 을 찍어라.")
+    # ★ 2026-09-25 (§255). **축별로** 무효를 판정한다. 종전에는 `tool` 지문
+    #   하나가 봉인 전체를 무효화해서, `dupcheck.py` 한 줄만 고쳐도 절
+    #   1,036개가 재검사 대상이 됐다 — 절 내용과 아무 상관이 없는데도.
+    #   무효화가 실제 영향보다 넓으면 재검사가 습관적으로 건너뛰어진다.
+    stale = stale_axes(old)
+    if stale:
+        print("★ 도구가 바뀐 축:")
+        for axis, tools in sorted(stale.items()):
+            print(f"    {axis:14} ← {' · '.join(Path(x).name for x in tools)}")
+        live = sorted(set(AXIS_TOOLS) - set(stale))
+        print(f"  **살아 있는 축 {len(live)}/{len(AXIS_TOOLS)}** — {' · '.join(live)}")
+        print("  무효인 축만 다시 본다. 전수가 아니다.")
         # ★ 여기서 빨개지면 안 된다. `seal` 이 verify.sh 를 돌리고 verify.sh 가
         #   이 단계를 부르므로, 빨강이면 seal 이 영영 못 찍힌다(자기참조).
         #   봉인의 유효성은 `seal` 이 판정한다. 이 단계는 **보고**만 한다.
-        return 0
+        if "sections" in stale:
+            print("  ★ `sections` 가 무효다 — 절 대조는 전수로 봐야 한다.")
+            return 0
     same = [rel for rel in DOCS
             if old["docs"].get(rel) == _sha((ROOT / rel).read_text(encoding="utf-8"))]
     now, prev = _state_now(data), old["sections"]
