@@ -62,7 +62,11 @@ BASE = _p.BASELINE
 KST = timezone(timedelta(hours=9))
 
 FILES = ["segments.geojson", "segments.schema.json",
-         "_manifest.json", "seg_uid_map.csv"]
+         "_manifest.json", "seg_uid_map.csv",
+         # ★ 2026-09-25 (PLAN §1 #91). 지표를 봉인에 넣는다 — 「지표는 값이 아니라
+         #   실행이다. 터미널에만 있는 숫자는 소실된다」. 형식을 다른 대조 산출물과
+         #   맞춰 놨으므로 이 한 줄이면 `freeze`/`diff` 가 실행 간 자동 대조한다.
+         "eval.json"]
 
 NFA = "nfa_compare.json"
 

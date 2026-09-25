@@ -232,6 +232,8 @@ uv run python tools/acquire.py             landing → raw 획득 게이트
 uv run python tools/scan_data.py           데이터 레이크 구조 점검
 uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간 전이 대조
 uv run python tools/golden.py              리팩 전후 산출물 동일 증명
+uv run python tools/evalgate.py            평가지표를 뽑아도 되는가 — 지문 · 전이행렬 · 매니페스트
+uv run python tools/evalgen.py             평가지표 E-1 · E-3 + #120 역산 → data/processed/eval.json
 bash tools/merge_batch.sh [--release]       배치 PR 머지 → 파트 동기화 (적용 스크립트가 초록일 때만)
 bash tools/fl.sh <feat/x> [--all|--undo|--resume]  ★ 배치 한 명령 — 적용 · verify · PR · 스쿼시 · 방송 · 정리
 bash tools/branch_tidy.sh [--auto] [--close-bots]  열린 PR · 원격/로컬 가지 정리 · 봇 PR 닫기 (fl.sh 10단계가 부른다)

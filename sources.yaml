@@ -3461,6 +3461,10 @@ outputs:
     # ★ 2026-09-06. 또 하나. `publish_navi` 가 내비용 그래프를 낸다 —
     #   같은 병이 두 번째다(손대장이라 읽는 쪽이 늘어도 아무도 안 적는다).
     - src/firelane/publish_navi.py
+    # ★ 2026-09-25 (PLAN §1 #91 · #120). 평가지표 산출기와 그 게이트.
+    - tools/evalgate.py
+    - tools/evalgen.py
+    - tests/test_evalgen.py
     what: 구간 단위 통행 판정. verdict 4종 + 폭 + CCTV 가시성
     verified: false
     known_issues:
@@ -3573,8 +3577,28 @@ outputs:
     produced_by: src/firelane/segments.py
     path: data/processed/route_vehicle.csv
     inputs: [segments, node_link, turn_restriction]
-    consumers: [src/firelane/publish_web.py]
+    consumers: [src/firelane/publish_web.py, tools/evalgate.py, tools/evalgen.py]
     what: 소방차 통행 비용 기준 경로 산출. 거리만 대 차등 비교용
+    verified: false
+  eval:
+    produced_by: tools/evalgen.py
+    path: data/processed/eval.json
+    inputs: [segments, route_vehicle]
+    consumers: [tests/test_evalgen.py]
+    what: 평가지표 E-1 · E-3 과 #120 시나리오 역산. 재현성 게이트 보고를 함께 든다
+    note: |
+      ★ PLAN §1 #91. **지표는 값이 아니라 실행이다** — 터미널에만 있는 숫자는
+        소실된다. 문서에 손으로 옮겨 적힌 값 대신 이 파일이 정본이다.
+      ★ 칸 이름은 봉인 `meta.json` 과 맞췄다(`as_of` · `git_sha` · `tally` ·
+        `sha256` · `known_limits`). `tools/baseline.py` 의 `FILES` 에 이 이름을
+        넣는 한 줄이 남아 있고, 넣으면 `freeze` · `diff` 가 지표까지 실행 간
+        대조한다.
+      ★ `gate.passed` 가 false 인 파일은 나오지 않는다 — 산출기가 그 경우
+        **안 쓰고 죽는다**. 그러므로 이 파일의 존재 자체가 통과 증적이다.
+    known_issues:
+    - E-1 분모는 노드다. 건물이냐 노드냐는 PLAN §1 #94 가 미정으로 든다
+    - E-2(#117) · E-4(#93)는 전건이 없어 안 낸다. 이 파일에 칸도 없다
+    - 폭 실측 검증 0건이라 모든 지표가 미검증 폭 위에서 나온다(#4)
     verified: false
   streetlight_point:
     produced_by: src/firelane/streetlight.py

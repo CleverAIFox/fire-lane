@@ -880,6 +880,10 @@ step "배포에 내비 빌드"    uv run python tools/pages_add_navi.py --check
 scope "web/* tools/* .github/*"
 step "루트 잔재·유령 면제" uv run python tools/navi_setup.py --check
 scope "docs/*"
+# ci-exempt: tools/evalgen.py `route_vehicle.csv` 가 커밋 대상이 아니다 — 파이프라인 산출이고 CI 는 파이프라인을 안 돈다
+# ★ 2026-09-25 (#91). 게이트 셋이 어긋나면 지표를 안 뽑고 죽는다 — 도는 것이 곧 증적이다.
+step "평가지표 산출"      uv run python tools/evalgen.py
+
 step "문서 제목 무결"      uv run python tools/docpatch.py check \
      docs/MASTER.md docs/PLAN.md docs/DECISIONS.md
 
