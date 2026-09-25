@@ -176,9 +176,16 @@ jobs:
           for f in index.html workflow.html proposal.html proposal.docx navi/index.html data/navi_graph.json; do
             test -f "web/$f" || { echo "★ web/$f 가 없다 — 배포하면 빠진다"; exit 1; }
           done
-          # ★ 2026-09-22. 옛 GIS 지도를 걷어냈다. 입구(index.html)는 관제로 넘기는 한 쪽이다.
+          # ★ 2026-09-25 (§258). **배포면은 둘이다 — 관제(루트) · 내비(/navi/).**
+          #   2026-09-22 에 옛 GIS 지도를 걷어냈고, 그때 루트는 관제로 튕기는
+          #   리다이렉트가 됐다. 쿼리스트링은 주소가 아니다 — 이제 루트가 곧
+          #   관제 화면이다(`build-navi` 가 빌드본을 앉히고 표시를 박는다).
+          grep -q '__FL_VIEW="ops"' web/index.html \
+            || { echo "★ web/index.html 이 관제 화면이 아니다 — build-navi 의 루트 앉히기가 실패했다"; exit 1; }
+          grep -q 'src="/[^"]*/navi/assets/' web/index.html \
+            || { echo "★ web/index.html 이 빌드본이 아니다 — 소스가 빌드본을 가렸다"; exit 1; }
           grep -q 'url=navi/?view=ops' web/index.html \
-            || { echo "★ web/index.html 이 관제(navi/?view=ops)로 안 넘긴다"; exit 1; }
+            && { echo "★ 루트가 아직 리다이렉트다 — 화면이 아니라 넘기기만 한다"; exit 1; }
           for f in js style.css key.js; do
             test ! -e "web/$f" || { echo "★ web/$f 가 남았다 — 옛 지도는 걷어냈다"; exit 1; }
           done

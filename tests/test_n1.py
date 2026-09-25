@@ -172,6 +172,64 @@ def test_no_doc_sends_people_to_old_pages_domain():
     assert "cleveraifox.github.io/fire-lane/navi/" in (ROOT / "README.md").read_text(encoding="utf-8")
 
 
+def test_the_deployed_surface_table_matches_web():
+    """README 의 배포면 표가 **`web/` 실물과 같은가.**  (§258)
+
+    ★ 2026-09-25 실제 사고. 2026-09-22 에 옛 GIS 지도(`web/js` · `style.css`)를
+      걷어내면서 `web/index.html` 을 관제로 튕기는 `meta refresh` 한 줄로 바꿨다.
+      그런데 README 와 MASTER 는 그 주소를 계속 **「지도」**라고 적었다. 세 달째
+      쓰는 사람이 「지도」를 누르면 관제로 튕긴다.
+
+      `doc_fsck ②` 는 **경로가 실재하는지만** 본다 — 리다이렉트도 실재하므로
+      조용했다. 「범위가 이름보다 좁다」 그 족(W3-8)이고, **딱지의 참을 보는
+      검사가 없으면 딱지는 조용히 낡는다.**
+
+    두 방향으로 잰다.
+      ㉠ 표가 드는 경로마다 `web/` 아래 실물이 있다.
+      ㉡ 그 실물이 **리다이렉트**면 `build-navi` 가 그 자리에 빌드본을 앉힌다고
+         선언돼 있어야 한다. 로컬에는 빌드본이 없으니 저장소 파일은 리다이렉트로
+         남는 것이 정상이고, **아무도 안 채우는 리다이렉트를 화면이라 부르는 것**이
+         결함이다.
+
+    밖  화면의 내용이 딱지와 맞는지는 안 본다(그건 내비 시험 소관). 배포가 실제로
+        앉히는지도 안 본다 — 그건 `deploy.yml` 시운전이 `__FL_VIEW` 로 잰다.
+    """
+    import re as _re
+
+    md = (ROOT / "README.md").read_text(encoding="utf-8")
+    block = _re.search(r"```\n((?:[^\n]*cleveraifox[^\n]*\n)+)```", md)
+    assert block, "README 의 배포면 표를 못 찾았다 — 표기가 바뀌었으면 이 시험을 고쳐라"
+    rows = [ln for ln in block.group(1).splitlines() if "cleveraifox" in ln]
+    assert len(rows) >= 4, f"배포면이 {len(rows)}줄 — 표를 덜 읽었다"
+
+    # ★ 리다이렉트가 화면 자리에 있어도 된다 — **배포가 그 자리에 빌드본을
+    #   앉히는 경우에만.** 로컬 `serve.py` 에는 빌드본이 없으므로 저장소의
+    #   루트 파일은 리다이렉트로 남는다. 그래서 여기서 보는 것은 「딱지가 거짓인가」
+    #   가 아니라 **「누가 그 자리를 채우는가가 선언돼 있는가」** 다.
+    seats = (ROOT / ".github/actions/build-navi/action.yml").read_text(encoding="utf-8")
+    bad = []
+    for ln in rows:
+        # ★ 딱지에 공백이 있다(「협업 방침」) — 자리로 가르지 않고 주소를 찾는다.
+        m = _re.search(r"cleveraifox\.github\.io/fire-lane/(\S*)", ln)
+        assert m, ln
+        label = ln[: m.start()].strip()
+        url, path = m.group(0), m.group(1).split("?", 1)[0]
+        f = ROOT / "web" / (path if path.endswith(".html") else path + "index.html")
+        if not f.is_file():
+            bad.append(f"  {label}  {url} → web/{f.relative_to(ROOT / 'web')} 이 없다")
+            continue
+        body = f.read_text(encoding="utf-8", errors="ignore")
+        redirect = "http-equiv=\"refresh\"" in body or "http-equiv='refresh'" in body
+        rel = f.relative_to(ROOT / "web").as_posix()
+        if redirect and f"> {rel}" not in seats and f"> {rel}\n" not in seats:
+            bad.append(f"  {label}  {url} 의 {rel} 은 리다이렉트인데 "
+                       f"`build-navi` 가 그 자리에 빌드본을 앉히지 않는다")
+    assert not bad, (
+        "배포면 표가 실물과 다르다\n" + "\n".join(bad)
+        + "\n  딱지를 실물에 맞춘다. 화면이 사라졌으면 그 줄을 지운다.\n"
+        + "  리다이렉트를 화면 자리에 둘 거면 `build-navi` 가 거기에 빌드본을 앉혀야 한다.")
+
+
 def test_contract_counts_navi_as_consumer():
     """§181-7 — 계약 테스트의 고아 검사가 내비를 소비자로 센다. 실물 web/data 없이도 여기서 운다."""
     import importlib.util
