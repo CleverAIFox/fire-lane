@@ -56,10 +56,56 @@ OWNER_BLOCK = re.compile(
 EXEMPT_FILES = {"src/firelane/ledger.py", "src/firelane/lake.py", "tests/test_lake.py"}
 
 
+def code_only(src: str) -> str:
+    """**주석과 문자열 리터럴을 뺀 코드.**  (§258-7 · PLAN #131 닫힘)
+
+    ★ 2026-09-25. 종전에는 파일을 글자로 그대로 훑었다. 그래서 주석·독스트링
+      안의 호출 표기도 사본으로 셌고, **「이 표기를 왜 안 쓰는가」를 설명하려면
+      그 표기를 써야 하는데 그것이 래칫을 올렸다.** 2026-09-25 에 두 번
+      막혔고(§246 · §258) 둘 다 표기를 피해 적어 우회했다 — 우회는 되지만 다음
+      사람이 같은 데서 막힌다. `test_layering` 은 같은 문제를 2026-08-23 에
+      주석을 빼서 풀었다.
+
+    ★ **일반 문자열 리터럴은 남긴다.** 처음 판은 그것까지 뺐고 두 수가 0 이 됐다 —
+      판별식이 찾는 표식이 `"sources.yaml"` **이라는 리터럴 자체**라서 빼면 눈이
+      먼다. 거짓 초록이다. 빼는 것은 주석과 **독스트링**(제 몫이 값이 아닌 문장)
+      뿐이다.
+
+    밖  `ast` 가 파싱을 못 하면 **원문을 그대로 돌린다.** 조용히 빈 문자열을
+        내면 그 파일이 판별식 밖으로 사라진다 — 같은 거짓 초록이다.
+        살아남은 문자열 안의 `#` 뒤도 같이 잘린다. 이 판별식들이 찾는 표식에 `#`
+        이 없으므로 결과가 안 바뀐다 — `#` 을 보는 판별식을 여기 태우지 마라.
+    """
+    import ast
+
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return src
+    holes: list[tuple[int, int, int, int]] = []
+    for n in ast.walk(tree):
+        body = getattr(n, "body", None)
+        if not isinstance(body, list) or not isinstance(
+                n, ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        d = body[0] if body else None
+        if (isinstance(d, ast.Expr) and isinstance(d.value, ast.Constant)
+                and isinstance(d.value.value, str)
+                and d.end_lineno is not None and d.end_col_offset is not None):
+            holes.append((d.lineno, d.col_offset, d.end_lineno, d.end_col_offset))
+    lines = src.splitlines()
+    for a, ac, b, bc in holes:
+        for i in range(a - 1, min(b, len(lines))):
+            s, e = (ac if i == a - 1 else 0), (bc if i == b - 1 else len(lines[i]))
+            lines[i] = lines[i][:s] + " " * (e - s) + lines[i][e:]
+    return "\n".join(ln.split("#", 1)[0] for ln in lines)
+
+
 def _sources() -> list[tuple[str, str]]:
     files = [*(ROOT / "src").rglob("*.py"), *(ROOT / "tools").glob("*.py"),
              *(ROOT / "tests").glob("*.py")]
-    return [(p.relative_to(ROOT).as_posix(), p.read_text(encoding="utf-8")) for p in sorted(files)]
+    return [(p.relative_to(ROOT).as_posix(), code_only(p.read_text(encoding="utf-8")))
+            for p in sorted(files)]
 
 
 def ledger_loaders(srcs: list[tuple[str, str]]) -> list[str]:
@@ -134,6 +180,52 @@ def test_ratchet_probes_are_alive():
             ("src/firelane/ledger.py", 'yaml.safe_load(open("sources.yaml")) ; y["retired"]')]
     assert ledger_loaders(srcs) == ["tools/a.py"], "대장 로드 판별식이 죽었다"
     assert owner_block_readers(srcs) == ["tools/b.py"], "주인 블록 판별식이 죽었다"
+
+
+def test_prose_is_not_a_copy(tmp_path):
+    """**주석과 독스트링은 사본이 아니다.**  (§258-7 · PLAN #131 닫힘)
+
+    ★ 2026-09-25 에 두 번 막혔다 — 「이 표기를 왜 안 쓰는가」를 설명하려면 그
+      표기를 써야 하는데 그것이 래칫을 올렸다. 설명을 못 쓰게 만드는 검사는
+      다음 사람을 같은 데서 막는다.
+
+    ★ 반대편이 더 중요하다. 판별식이 찾는 표식은 리터럴 **자체**라, 일반 문자열을
+      같이 빼면 두 수가 0 이 되고 **검사가 통째로 눈이 먼다.** 처음 판이 실제로
+      그랬다. 그래서 여기서 양쪽을 다 잰다.
+    """
+    door = "sources" ".yaml"           # 이 파일 자신이 판별식에 걸리지 않게 나눠 쓴다
+    prose = [
+        ("tools/c1.py", f'# 주석이다 — yaml.safe_load("{door}") 를 쓰지 마라\nx = 1\n'),
+        ("tools/c2.py", f'"""머리말이다.\n\n  yaml.safe_load("{door}") 는 금지다.\n"""\nx = 1\n'),
+        ("tools/c3.py", '# y.get("retired") 를 직접 읽지 마라\nx = 1\n'),
+        ("tools/c4.py", '"""주인 블록(`y["landing_disposition"]`)은 lake 가 든다."""\nx = 1\n'),
+    ]
+    stripped = [(r, code_only(s)) for r, s in prose]
+    assert ledger_loaders(stripped) == [], "주석·독스트링을 사본으로 센다"
+    assert owner_block_readers(stripped) == [], "주석·독스트링을 사본으로 센다"
+
+    # ㉡ 실물 호출은 여전히 걸린다 — 코드 안 리터럴을 빼면 안 된다
+    real = [("tools/r1.py", f'import yaml\nd = yaml.safe_load(open("{door}"))\n'),
+            ("tools/r2.py", 'd = y.get("retired") or {}\n')]
+    real = [(r, code_only(s)) for r, s in real]
+    assert ledger_loaders(real) == ["tools/r1.py"], "실물 호출을 놓친다 — 판별식이 눈이 멀었다"
+    assert owner_block_readers(real) == ["tools/r2.py"], "실물 호출을 놓친다"
+
+    # ㉢ 문법이 깨진 파일은 원문 그대로 본다 — 조용히 사라지면 거짓 초록이다
+    broken = code_only(f'def (\n  yaml.safe_load("{door}")\n')
+    assert "safe_load" in broken and door in broken
+
+    # ㉣ **배선이 살아 있는가.** ㉠~㉢ 은 `code_only` 를 직접 부르므로 `_sources()`
+    #    가 그것을 안 거치게 바뀌어도 초록이다 — 실제로 첫 판이 그랬다(주입으로
+    #    확인). 라인 검사와 같은 형태로 호출을 못박는다.
+    import ast
+
+    src = (ROOT / "tests" / "test_lake.py").read_text(encoding="utf-8")
+    fn = next(n for n in ast.walk(ast.parse(src))
+              if isinstance(n, ast.FunctionDef) and n.name == "_sources")
+    called = {n.func.id for n in ast.walk(fn)
+              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "code_only" in called, "`_sources()` 가 주석을 안 걷는다 — ㉠ 이 무의미해진다"
 
 
 # ── 해석기 카나리아 — 모의 레이크 ───────────────────────────────────

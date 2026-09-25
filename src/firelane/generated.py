@@ -46,6 +46,7 @@ import argparse
 import re
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -80,6 +81,50 @@ REGISTRY: tuple[Gen, ...] = (
 )
 
 ROLES: frozenset[str] = frozenset(r for g in REGISTRY for r in g.roles)
+
+#: **문서가 가리켜도 작업나무에 없을 수 있는 생성물** → 그것을 굽는 도구.  (§258)
+#:
+#: ★ `REGISTRY` 와 자리가 다른 이유. 저 표는 「이 경로가 실재한다」를 전제로
+#:   하고 `tests/test_generated_registry.py::test_registry_paths_exist` 가 그것을
+#:   잠근다. 여기 것은 **없는 것이 정상**인 생성물이다 — `web/proposal.pdf` 는
+#:   `.gitignore` 고 libreoffice 가 있는 기계에서만 구워진다.
+#:
+#: ★ **면제가 아니라 주장이다.** 「이 도구가 이것을 굽는다」고 적고 `dead_claims()`
+#:   가 그 도구의 `OUT` 머리말을 대조한다. 굽기를 멈추면 주장이 죽고 검사가 다시
+#:   운다 — 죽은 강제자 참조를 `dms verify` 가 잡는 것과 같은 규율이다.
+#:   사유 없는 침묵은 만들지 않는다(§69).
+DOC_ABSENT: dict[str, str] = {
+    "web/proposal.pdf": "tools/proposal_pdf.py",
+}
+
+
+def _out_header(tool: Path) -> str:
+    """도구 머리말의 `OUT` 칸. 없으면 빈 문자열."""
+    if not tool.is_file():
+        return ""
+    take, buf = False, []
+    for ln in tool.read_text(encoding="utf-8", errors="ignore").split("\n")[:80]:
+        if ln.startswith("OUT"):
+            take, buf = True, [ln[3:]]
+        elif take and ln[:1] in (" ", "\t"):
+            buf.append(ln)
+        elif take:
+            break
+    return " ".join(buf)
+
+
+def dead_claims(root: Path) -> list[str]:
+    """`DOC_ABSENT` 의 주장이 살아 있는가. 살아 있으면 빈 목록."""
+    bad = []
+    for path, tool in sorted(DOC_ABSENT.items()):
+        t = root / tool
+        if not t.is_file():
+            bad.append(f"{path} 을 굽는다고 적힌 {tool} 이 없다 — "
+                       f"firelane.generated.DOC_ABSENT 를 고쳐라")
+        elif path not in _out_header(t):
+            bad.append(f"{tool} 의 `OUT` 머리말에 {path} 가 없다 — 굽기를 멈췄으면 "
+                       f"문서에서 그 경로를 지우고 `DOC_ABSENT` 에서도 빼라")
+    return bad
 
 
 @dataclass(frozen=True)

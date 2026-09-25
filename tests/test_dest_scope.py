@@ -97,12 +97,28 @@ def test_committed_boundary_matches_the_pipeline():
     """
     if not BND.exists():
         pytest.skip(f"환경skip(산출물) — {BND.relative_to(ROOT)} 이 없다")
-    real = _dongmyeong(json.loads(BND.read_text(encoding="utf-8")))
-    kept = _dongmyeong(json.loads(FIXTURE.read_text(encoding="utf-8")))
+    src = json.loads(BND.read_text(encoding="utf-8"))
+    kept_doc = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    real, kept = _dongmyeong(src), _dongmyeong(kept_doc)
     assert len(real) == 1 and len(kept) == 1, (real and len(real), len(kept))
-    assert real[0]["properties"] == kept[0]["properties"], "속성이 갈렸다"
-    assert real[0]["geometry"] == kept[0]["geometry"], (
-        f"커밋된 경계 사본이 파이프라인 산출과 다르다 — {FIXTURE.relative_to(ROOT)} 를 다시 떼라.\n"
+    if real[0]["properties"] == kept[0]["properties"] and real[0]["geometry"] == kept[0]["geometry"]:
+        return
+    # ★ 2026-09-25 (§258). **갈렸을 때 원인을 여기서 가른다.** 「다시 떼라」만
+    #   적혀 있던 종전 판은 원인이 ㉠ 재현 불가인지 ㉡ 원본 판 변경인지 알려주지
+    #   않았고, 처방이 정반대다. 도구가 그 수치를 든다 — 사람이 손으로 재지 않는다.
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "fixture_recut_t", ROOT / "tools" / "fixture_recut.py")
+    assert spec and spec.loader
+    fr = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fr)
+    why = "\n".join(fr.diagnose(kept_doc, src, fr.CUTS[0]))
+    raise AssertionError(
+        f"커밋된 경계 사본이 파이프라인 산출과 다르다 — {FIXTURE.relative_to(ROOT)}\n"
+        f"{why}\n"
+        "  ㉡ 이면:  uv run python tools/fixture_recut.py --write\n"
+        "  ㉠ 이면 다시 떠도 또 갈린다 — ingest 의 재현성을 봐라(사본 문제가 아니다).\n"
         "  이대로 두면 CI 는 옛 경계로 범위를 판정한다.")
 
 

@@ -39,6 +39,8 @@ from pathlib import Path
 
 import yaml
 
+from firelane import generated
+
 
 def _today() -> str:
     """오늘(KST).
@@ -89,6 +91,8 @@ PATH_EXEMPT = {
     #   적으면 **낡은 서술**이라 울어야 한다.
 }
 
+# ★ 2026-09-25 (§258). 생성물은 「없다」가 아니라 「아직 안 구웠다」다 — 표와 판정은
+#   `firelane.generated.DOC_ABSENT` · `dead_claims()` 가 든다(생성물 지식의 한 문).
 # 경로 참조를 찾을 때 저장소 안인 것만 본다. data/raw · norm · landing ·
 # interim · _quarantine 은 외장 SSD 라 여기서 존재를 확인할 수 없고,
 # data/processed 는 재생성물이라 clone 직후에는 없는 것이 정상이다.
@@ -158,7 +162,8 @@ def check_paths() -> list[str]:
                 seen.setdefault(p, set()).add(str(f.relative_to(ROOT)))
     return [f"{p} 이 없다 — {' · '.join(sorted(src))} 가 가리킨다"
             for p, src in sorted(seen.items())
-            if p not in PATH_EXEMPT and not (ROOT / p).exists()]
+            if p not in PATH_EXEMPT and p not in generated.DOC_ABSENT
+            and not (ROOT / p).exists()] + generated.dead_claims(ROOT)
 
 
 # ── 3. 부재 선언 — "없다" 고 적은 값이 실물에 있는가 ──────────────
