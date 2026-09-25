@@ -72,7 +72,10 @@ EXCEPTIONS: dict[str, int] = {
     # ★ 2026-09-23. 976 → 980 → 991. 「기획서 그림 ↔ 정본」(§221-1)과 「죽은 강제자
     #   참조」(§222-2)가 들어갔다. verify.sh 는 검사의 목록이라 검사가 늘면 늘어난다 —
     #   쪼개면 「어느 파일에 있나」 가 또 하나의 기억거리가 된다(§18-3).
-    "tools/verify.sh": 1022,
+    # ★ 2026-09-25 (DECISIONS §246). 1022 → 1030. 「문서 생성 블록 ↔ 실물」
+    #   단계와 그 사유가 들어갔다. verify.sh 는 검사의 목록이므로 검사가 늘면
+    #   는다 — 위 문단과 같은 이유로 쪼개지 않는다.
+    "tools/verify.sh": 1030,
     "src/firelane/segments.py": 863,
     "tools/doc_fsck.py": 659,
     "tools/render_workflow.py": 635,

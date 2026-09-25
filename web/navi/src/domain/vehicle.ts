@@ -166,6 +166,34 @@ export interface TuningKnobs {
    *   (파이썬과 통행 가부 대조)가 그대로 맞는다.
    */
   avoidUncertain: number;
+
+  /**
+   * ── 점유 압력 계수 넷. **전부 0 이고, 0 인 것이 이 값들의 요점이다.** ──────
+   *
+   * ★ 2026-09-25. 받아 두고 **경로 비용에 못 닿던** 자료를 엣지에 붙였다
+   *   (`domain/pressure.ts` · PLAN §1 #2 · #31 · #60). 배선 · 자료 · 결측 구분 ·
+   *   시험은 다 섰고 **계수만 비었다.**
+   *
+   *   비운 것이 미완성이 아니라 **판단**이다. 위 `avoidUncertain = 2.0` 은 근거 없이
+   *   들어가 PLAN §1 #2 · #70 에 「근거 없는 값」 으로 앉아 있다. 같은 자리를 넷 더
+   *   만들면 갚을 빚이 다섯이 된다. 그래서 이 저장소 규율대로 한다 —
+   *   **「값보다 스키마가 먼저다」.** 0 이면 `pressureFactor()` 가 정확히 1 을 내고
+   *   경로는 한 치도 안 움직인다. 근거가 서는 날 이 넷만 고치면 켜진다.
+   *
+   * ★ **켜려면 먼저 적어야 한다.** 재기 전에 PLAN §1-27 측정 대장에 행을 세운다
+   *   (가드 6 — 기준을 재고 나서 적으면 그것은 판정이 아니라 사후 합리화다).
+   *   `tests/test_cost_inputs.py` 가 「0 이 아니게 됐는데 대장 행이 없다」 를 잡는다.
+   */
+  /** 단속 이력 1,000건당 더할 비용 비율. **근거 없음 — 그래서 0 이다** */
+  parkPer1000: number;
+  /** 단속 카메라 한 지점당. **근거 없음 — 그래서 0 이다** */
+  ecamPerSite: number;
+  /** 과속방지턱 하나당. **근거 없음 — 그래서 0 이다** */
+  speedbumpEach: number;
+  /** 단속카메라(교통) 하나당. **근거 없음 — 그래서 0 이다** */
+  speedcamEach: number;
+  /** 보호구역 시설 하나당(어린이 · 노인 합산). **근거 없음 — 그래서 0 이다** */
+  zoneEach: number;
 }
 
 export const TUNING: TuningKnobs = {
@@ -176,6 +204,12 @@ export const TUNING: TuningKnobs = {
   tightMarginM: 0.5,
   tight: 1.8,
   avoidUncertain: 2.0,
+  // ★ 넷이 아니라 다섯이고 **전부 0** 이다. 값을 넣기 전에 PLAN §1-27 에 행을 세운다.
+  parkPer1000: 0,
+  ecamPerSite: 0,
+  speedbumpEach: 0,
+  speedcamEach: 0,
+  zoneEach: 0,
 };
 
 /**

@@ -2137,11 +2137,19 @@ datasets:
       columns: ['구분', '종류', '연번', '주차장명', '주소', '면적_㎡', '면수', '행정동', '관리주체', '주차요금', '비고']
       encoding_seen: 'utf-8'
   enforce_cam:
-    feeds: []
-    feeds_note: '미투입 — A* 비용함수 입력(#2). 무인카메라 57지점'
+    feeds:
+      - src/firelane/publish_navi.py
+    feeds_note: '투입 — 도로명으로 구간에 붙었다(`ecam`). 57지점 중 18지점 · 나머지는 지번 주소'
     stem: gjcity_enforce_cam
     ext: [csv]
-    feeds_why: 미배선 — 단속 압력 + 운영시간. 지오코딩 필요
+    feeds_why: |
+      ★ 2026-09-25 투입. `publish_navi.py` 가 **도로명**으로 구간에 붙인다(`ecam` 칸) —
+      지오코딩을 기다리지 않았다. 단속 장소가 「구성로 249」 꼴이라 `parking_enforce` 와
+      같은 `_road_of` 로 도로명을 뽑는다. 57지점 중 **18지점**이 붙고 39지점은 지번 주소
+      (「지산동 521-3」)라 못 붙는다 — 그 몫을 `counts.ecam_unplaced_sites` 로 같이 싣는다.
+      **행이 아니라 번호(지점)를 센다** — 한 지점이 방향마다 한 행이다(아래 note).
+      ★ 그래서 `ecam: 0` 은 「카메라가 없다」가 아니라 「붙은 18지점 중에 없다」다.
+      운영시간은 아직 안 싣는다 — 시간대별 비용은 근거가 없다(PLAN §1 #2).
     scope: jngj-donggu
     updated: '2026-08-28'
     what: 동구 불법주정차 단속 무인카메라 (57지점 · 방향 65)

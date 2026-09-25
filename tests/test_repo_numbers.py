@@ -12,9 +12,20 @@
   판정 산출물 수(`width_src` · `unknown_reason`)만 본다. 저장소가 자기
   구조를 몇 개라고 말하는지는 **아무도 안 봤다.**
 
+★ **2026-09-25 후속. 축이 울기만 하고 고쳐주지 않았다.** 그 뒤 하루에 절 수를
+  네 번(1,004 → 1,017 → 1,030 → 1,033 → 1,036) 손으로 맞췄다. 고치는 일이
+  사람에게 남아 있으면 그 일은 갈린다 — 그래서 `tools/docgen.py` 가 생성
+  블록에 실물을 **채운다.** 이 파일은 그 뒤에도 남는다: 도구는 **블록만**
+  열고, 이 검사는 **문서 어디에 적힌 수든** 본다. 고치는 자리는 좁아야
+  하고 보는 자리는 넓어야 한다.
+
+★ **축과 정본의 집은 `tools/docgen.py` 하나다**(R3). 이 파일은 `AXES` ·
+  `truth()` · `claims()` 를 거기서 받아 쓴다. 종전에는 여기서 대장을 직접
+  열었고, 그러면 같은 판별식이 도구와 검사에 두 벌이 된다.
+
 ★ `test_doc_numbers.py` 와 **일부러 파일을 갈랐다.** 그쪽 정본은
   `data/golden/segments.fingerprint.json`(판정 산출물)이고 이쪽 정본은
-  `sources.yaml` · `dms.scan()`(저장소 구조)다. 한 파일에 두 정본을 두면
+  대장 · `dms.scan()`(저장소 구조)다. 한 파일에 두 정본을 두면
   「무엇이 정본인가」가 흐려지고, 그것이 이 저장소가 반복해 배운 형태다.
 
 ★ **표기를 좁게 잡는다.** 「소스 21종」처럼 부분집합을 말하는 자리가 실재한다
@@ -23,7 +34,7 @@
   부분집합이 걸려 사람이 검사를 끈다 — §243 이 적은 「선언이 검사보다 넓으면
   거짓 초록이 된다」의 거울상이다.
 
-IN    `ledger.load()` · `dms.scan()` · 문서 넷
+IN    `tools/docgen.py`(축 · 실물) · 문서 넷
 OUT   없음
 PARAM 없음
 밖    ① **정본이 없는 값은 안 본다.** 봉인 시점 절 수가 그렇다 — 다음 봉인이
@@ -34,16 +45,15 @@ PARAM 없음
          래칫이 세는 사본이다. 축 하나를 위해 다른 강제자를 깨지 않는다 —
          `MASTER §18` 의 「`retired` 4종」은 **감시 밖**이고, 그렇다고 적는다.
          열려면 `firelane.lake` 가 폐기 종수를 주는 문을 먼저 내야 한다.
+      ③ **블록이 실물과 같은가는 안 본다.** 그것은 `tests/test_docgen.py` 가
+         `docgen --check` 로 든다. 이 파일은 블록 **밖**까지 본다.
 """
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
-import dms
+import docgen
 import pytest
-
-from firelane import ledger
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -52,38 +62,23 @@ TARGETS = ("README.md", "docs/MASTER.md", "docs/PLAN.md", "docs/DECISIONS.md")
 
 ALLOW = "<!--stale-ok-->"
 
-#: 축 이름 → (정규식, 사람이 읽을 설명).
-#: ★ 각 정규식은 **그 수 하나만** 잡는다. 부분집합 표기가 걸리지 않게
-#:   정본 이름이나 `raw` 를 앵커로 쓴다.
-AXES: dict[str, tuple[re.Pattern[str], str]] = {
-    "datasets": (re.compile(r"`datasets`\s+([\d,]+)\s*종"),
-                 "대장 전체 — `sources.yaml::datasets`"),
-    "sealable": (re.compile(r"소스\s+([\d,]+)\s*종의\s+raw"),
-                 "봉인 대상 — datasets 에서 `on_demand` 를 뺀 수"),
-    "sections": (re.compile(r"절\s+([\d,]+)\s*전수"),
-                 "지금 세는 절 — `dms.scan()` 행 수"),
-}
+#: 축 이름 → (정규식, 뜻). **정본은 `tools/docgen.py::AXES` 하나다.**
+#: ★ 여기서 다시 적지 않는다. 종전에는 이 파일이 정규식을 들었고, 도구가
+#:   생기면서 같은 표기가 두 곳에 살 수 있게 됐다 — 그 순간 「표기가 바뀌면
+#:   어느 쪽을 고치나」가 생긴다(R3).
+AXES = docgen.AXES
 
 
 @pytest.fixture(scope="module")
 def truth() -> dict[str, int]:
     """실물. **문서를 안 읽는다** — 대장과 도구가 정본이다.
 
-    ★ `ledger.load()` 로 읽는다. yaml 로 대장을 직접 열면
-      `test_lake.py::test_ledger_is_loaded_through_one_door` 래칫이 오른다 —
-      **이 파일을 처음 쓸 때 실제로 41로 올려 놨다**(§246). 강제자를 만드는
-      배치가 다른 강제자를 깨는 것이 이 저장소가 반복한 형태다.
-
-    ★ 그 두 판별식은 **주석과 머리말도 본다**(`test_layering` 은 일부러 뺀다 —
-      「자기 문서를 자기가 막는다」). 그래서 여기서는 문제의 호출 표기를
-      글자로 쓰지 않는다. 판별식을 넓히는 쪽이 옳은지는 `PLAN §1 #131` 이 든다.
+    ★ `docgen.truth()` 가 낸다. 그 안에서 대장은 `ledger.load()` 로 읽는다 —
+      yaml 로 직접 열면 `test_lake.py::test_ledger_is_loaded_through_one_door`
+      래칫이 오른다. **이 파일을 처음 쓸 때 실제로 41로 올려 놨다**(§246).
+      강제자를 만드는 배치가 다른 강제자를 깨는 것이 이 저장소가 반복한 형태다.
     """
-    ds = ledger.load()["datasets"]
-    return {
-        "datasets": len(ds),
-        "sealable": sum(1 for v in ds.values() if not v.get("on_demand")),
-        "sections": len(dms.scan()["rows"]),
-    }
+    return docgen.truth()
 
 
 def _lines(rel: str) -> list[tuple[int, str]]:
@@ -93,8 +88,8 @@ def _lines(rel: str) -> list[tuple[int, str]]:
 
 
 def _claims(axis: str, text: str) -> list[int]:
-    """`axis` 표기가 이 문자열에서 말하는 수들. selftest 가 같은 함수를 쓴다."""
-    return [int(m.replace(",", "")) for m in AXES[axis][0].findall(text)]
+    """`axis` 표기가 이 문자열에서 말하는 수들. 도구와 같은 문을 쓴다."""
+    return docgen.claims(axis, text)
 
 
 @pytest.mark.parametrize("axis", sorted(AXES))
@@ -106,15 +101,16 @@ def test_the_documents_count_the_repository_correctly(axis: str, truth: dict[str
            for got in _claims(axis, ln) if got != want]
     assert not bad, (
         f"`{axis}` 수가 실물과 다르다:\n  " + "\n  ".join(bad) + "\n"
-        f"  뜻: {AXES[axis][1]}\n"
-        f"  ★ 값만 고치면 다음에 또 낡는다 — 이 검사가 그 다음을 받는다.\n"
+        f"  뜻: {AXES[axis].what}\n"
+        f"  ★ 값만 고치면 다음에 또 낡는다 — `<!--gen: {axis}-->` 블록 안이면\n"
+        f"     `uv run python tools/docgen.py` 가 채운다. 블록 밖이면 블록으로 넣어라.\n"
         f"  회고로 옛 값을 인용하는 줄이면 줄 끝에 {ALLOW} 를 붙여라.")
 
 
 def test_the_matchers_are_alive():
     """**목표에 닿는 날 빨개지는가.** 합성 문장으로 직접 문다.
 
-    ★ 위 셋은 지금 초록이다. 초록인 검사는 제가 보고 있다는 것을 스스로
+    ★ 위 축들은 지금 초록이다. 초록인 검사는 제가 보고 있다는 것을 스스로
       증명하지 못한다 — §243 이 만든 `test_doc_numbers` 가 바로 그 상태로
       이 셋을 못 봤고, `test_contract.navi_reads()` 의 `[\\w_]+` 는 점 둘인
       이름을 영영 안 먹고 있었다.
@@ -125,6 +121,12 @@ def test_the_matchers_are_alive():
         "`raw` 앵커를 못 읽는다"
     assert _claims("sections", "**분모 0**(2026-09-25 · 절 1,017 전수.") == [1017], \
         "쉼표 있는 절 수를 못 읽는다"
+    assert _claims("inherit", "절 1,036 전수 · 물림(inherit) 352절.") == [352], \
+        "`물림(inherit)` 앵커를 못 읽는다"
+    assert _claims("blank", "**분모(blank) 0절** · 물림(inherit) 352절") == [0], \
+        "`분모(blank)` 앵커를 못 읽는다 — 0 은 값이지 없음이 아니다"
+    assert _claims("plan_open", "## 1. 남은 일 — 108행") == [108], \
+        "PLAN §1 제목의 수를 못 읽는다"
 
     # ★ **부분집합을 잡으면 안 된다.** 이것이 이 검사에서 가장 비싼 오판이다 —
     #   한 번 오탐이 나면 사람이 검사를 끄고, 그 뒤로는 영영 안 본다.
@@ -135,6 +137,15 @@ def test_the_matchers_are_alive():
         "어순이 다른데 잡는다 — `종의 raw` 라는 앵커가 느슨해졌다"
     assert _claims("sections", "절 540개의 (제목+본문) 해시") == [], \
         "봉인 스냅샷 표기를 잡는다 — 그 수는 정본이 없다(§246-2)"
+
+    # ★ 회고가 옛 수를 **문장 안에서** 인용하는 꼴은 안 잡는다. DECISIONS 는
+    #   append-only 역사라 그때의 수가 옳고, 잡으면 역사를 고치게 된다.
+    assert _claims("plan_open", "제목이 `## 1. 남은 일 — 60행` 이 됐고") == [], \
+        "제목을 인용한 산문을 제목으로 읽는다 — 줄머리 앵커가 풀렸다"
+    assert _claims("inherit", "★ 물림(inherit) = 281   부모가 덮는다고 적은 것 65") == [], \
+        "`=` 꼴 진단 출력을 서술로 읽는다"
+    assert _claims("blank", "분모(blank)가 0 이 됐으므로 이제 의심은 물림에 있다") == [], \
+        "조사 붙은 산문을 수 서술로 읽는다"
 
 
 def test_every_axis_is_actually_claimed_somewhere(truth: dict[str, int]):
@@ -154,10 +165,9 @@ def test_every_axis_is_actually_claimed_somewhere(truth: dict[str, int]):
 
 
 def test_the_truth_comes_from_the_ledger_not_the_docs(truth: dict[str, int]):
-    """정본이 살아 있는가. 값이 0이면 위 셋이 통째로 무의미해진다."""
-    assert truth["datasets"] > 50, f"datasets {truth['datasets']}종 — 대장을 못 읽었다"
-    assert truth["sections"] > 500, f"절 {truth['sections']} — `dms.scan()` 이 죽었다"
-    assert truth["sealable"] <= truth["datasets"], "봉인 대상이 대장보다 많다"
-    assert truth["sealable"] < truth["datasets"], (
-        "`on_demand` 소스가 0이다 — 970MB 인 `jijeok` 이 빠져 있어야 한다.\n"
-        "  정말 0이 됐으면 이 줄을 고쳐라. 지금은 축이 낡았다는 신호다.")
+    """정본이 살아 있는가. 값이 0이면 위의 축들이 통째로 무의미해진다.
+
+    ★ 판별식은 `docgen.alive()` 하나다. 종전에는 이 시험이 같은 물음을 직접
+      적었고, 도구가 생기면서 두 벌이 될 자리였다(R3).
+    """
+    assert not docgen.alive(truth), "\n".join(docgen.alive(truth))

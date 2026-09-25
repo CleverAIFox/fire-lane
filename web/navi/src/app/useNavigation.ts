@@ -45,6 +45,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SCOPE_M, SNAP_INTERVAL_MS } from "../config";
 import { bearing, distM, type LngLat } from "../domain/geo";
 import { buildAdjacency, type Adjacency } from "../domain/adjacency";
+import { buildHazardIndex } from "../domain/pressure";
 import { fullProgress } from "../domain/edgeSnap";
 import { progressAlongRoute, routeUids } from "../domain/routeDerive";
 import { reaches, solveRoute } from "../domain/routeSolve";
@@ -145,16 +146,29 @@ export function useNavigation(spec: VehicleSpec | null) {
   //   무한 리렌더가 났다. 의존은 useFleet → useNavigation 한 방향이다.
   const active = spec ?? data?.spec ?? null;
 
+  /**
+   * 주변 사정을 **구간마다** 센 색인(`domain/pressure.ts`). 그래프 · 주변 사정이
+   * 바뀔 때만 다시 센다 — 인접리스트보다 훨씬 덜 바뀐다.
+   *
+   * ★ 이것이 있어야 과속방지턱 · 보호구역이 **길을 고르기 전에** 비용에 닿는다.
+   *   `domain/context.ts` 는 경로가 정해진 **뒤** 안내로만 쓴다 — 그것은 선택이 아니다.
+   * ★ 지금은 압력 계수가 전부 0 이라 경로가 안 움직인다(`TUNING` · 근거 없음).
+   *   배선만 세워 둔다.
+   */
+  const hazIdx = useMemo(
+    () => (data ? buildHazardIndex(data.graph, data.context ?? null) : null),
+    [data]);
+
   const adj: Adjacency | null = useMemo(
     () => (data && active
-      ? buildAdjacency(data.graph, active, lenient, "safe", undefined, blocked)
+      ? buildAdjacency(data.graph, active, lenient, "safe", undefined, blocked, hazIdx)
       : null),
-    [data, active, lenient, blocked]);
+    [data, active, lenient, blocked, hazIdx]);
   const adjFast: Adjacency | null = useMemo(
     () => (data && active
-      ? buildAdjacency(data.graph, active, lenient, "fastest", undefined, blocked)
+      ? buildAdjacency(data.graph, active, lenient, "fastest", undefined, blocked, hazIdx)
       : null),
-    [data, active, lenient, blocked]);
+    [data, active, lenient, blocked, hazIdx]);
 
   const onFix = useCallback((f: Fix) => {
     const t = f.t ?? performance.now();
@@ -377,12 +391,12 @@ export function useNavigation(spec: VehicleSpec | null) {
     if (!data || !active || !dest) return false;
     const next = new Set(blocked); next.add(uid);
     setBlocked(next);
-    const safe = buildAdjacency(data.graph, active, lenient, "safe", undefined, next);
-    const fast = buildAdjacency(data.graph, active, lenient, "fastest", undefined, next);
+    const safe = buildAdjacency(data.graph, active, lenient, "safe", undefined, next, hazIdx);
+    const fast = buildAdjacency(data.graph, active, lenient, "fastest", undefined, next, hazIdx);
     const from = current ?? origin;
     if (!from) return false;
     return route(from, dest, phase === "guiding", { safe, fast });
-  }, [data, active, dest, blocked, lenient, current, origin, phase, route]);
+  }, [data, active, dest, blocked, lenient, current, origin, phase, route, hazIdx]);
 
   /**
    * 시연 — 막아도 우회(또는 대체 접근 지점)가 남는 좁은 구간을 고른다(§214-2).
@@ -397,13 +411,13 @@ export function useNavigation(spec: VehicleSpec | null) {
     if (data && active && dest) {
       const from = current ?? origin;
       for (const { e } of byWidth.slice(0, 12)) {
-        const A = buildAdjacency(data.graph, active, lenient, "safe", undefined, new Set([...blocked, e.seg_uid]));
+        const A = buildAdjacency(data.graph, active, lenient, "safe", undefined, new Set([...blocked, e.seg_uid]), hazIdx);
         if (!from) break;
         if (reaches(data.graph, A, from.point, dest.point)) return e;
       }
     }
     return (byWidth[0] ?? { e: pl.edges[0] }).e;
-  }, [data, active, dest, current, origin, lenient, blocked, driven]);
+  }, [data, active, dest, current, origin, lenient, blocked, driven, hazIdx]);
 
   /** 차종·모드가 바뀌었을 때 같은 목적지로 다시 낸다. */
   const recompute = useCallback(() => {

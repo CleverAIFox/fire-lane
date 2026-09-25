@@ -67,6 +67,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 ### 문서에도 검사가 붙어 있다
 
 ```bash
+uv run python tools/docgen.py           # ★ 문서의 생성 블록을 실물 값으로 채운다 (--check 면 대조만)
 uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
 uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
 uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
@@ -77,6 +78,7 @@ uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 · 결번 
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
 uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
+uv run python tools/cost_inputs.py      # 경로 비용 입력이 결측과 0 을 가르는가 · 압력 계수가 근거 없이 켜졌나
 uv run python tools/proposal_pdf.py     # 기획서 → web/proposal.pdf · 쪽수·본문·수치·그림 대조
 # ★ 위 도구가 세는 사본을 합친 자리 —
 #   src/firelane/hashing.py    파일 sha256. 10곳이 한 벌이었다
@@ -431,6 +433,8 @@ tools/
   golden.py               ★ 리팩 전후 산출물 동일 증명. baseline 과 반대 용도
   scan_data.py            데이터 레이크 구조 점검. 그 도구의 §7(선언 밖 형제)이 레이크 **밖**도 본다
   docnum_check.py         문서 ↔ 산출물 숫자 · 필드표 대조
+  docgen.py               ★ 문서의 생성 블록에 실물 값을 **넣는다**. 흐르는 숫자는
+                          문서가 들지 않는다 (DECISIONS §246)
   plan_renumber.py        PLAN §1 표 번호를 1..N 으로 · 결번 해소
   commit_policy.py        산출물 · 일회성 스크립트 · 비밀값 차단
   encoding_check.py       인코딩 · 개행
@@ -502,6 +506,7 @@ web/
 
 ## 지금 상태
 
+<!--gen: datasets-->
 ```
 세그먼트     1,281   (동명동 416 + 119안전센터 접근 회랑 70m + 안전센터 반경 300m)
 판정        통행 가능 465 · 판정 보류 226 · 통행 불가 191 · 영상판정 불가 399
@@ -517,6 +522,7 @@ web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_ma
 관제        web/navi/?view=ops — 유일한 지도 화면. 옛 GIS 지도(web/js)는 2026-09-22 걷어냈다(DECISIONS §218-1)
 KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 (42%)
 ```
+<!--/gen-->
 
 `영상판정 불가` 399 는 전부 CCTV 사각이다. 폭 산출 불가는 0 이다.
 

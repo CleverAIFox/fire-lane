@@ -260,7 +260,9 @@ export default function App() {
       grayReason: grayReason(e)?.long ?? null,
       // ★ 2026-09-23 (§220) 색만이 아니라 사유를. 판정마다 한 줄 — 없으면 null 이고 패널이 뺀다
       reason: segmentReason(e, spec),
+      // ★ `?? null` — 옛 발행물의 `undefined` 를 0 이 아니라 **모름**으로 옮긴다
       park: e.park ?? null,
+      ecam: e.ecam ?? null,
       verdictLabel: style[e.verdict]?.label ?? e.verdict,
       verdictColor: style[e.verdict]?.color ?? C.panelInk,
     };

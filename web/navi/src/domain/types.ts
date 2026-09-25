@@ -120,10 +120,28 @@ export interface GraphEdge {
    */
   ow?: 0 | 1 | -1 | 2;
   /**
-   * 이 구간 **도로명**의 불법주정차 단속 건수(2022-01~2025-02). 없으면 0(§216-3).
+   * 이 구간 **도로명**의 불법주정차 단속 건수(2022-01~2025-02 · §216-3).
    * ★ 도로 단위다 — 같은 도로명 구간은 같은 수. 현재 주차가 아니라 위험의 대리값이다.
+   *
+   * ★ **`null` 과 `0` 이 다르다** (2026-09-25). 섞어 쓰면 모르는 것을 없다고 말한다.
+   *
+   *     null         도로명이 없어 **셀 수 없었다** — 모른다
+   *     0            도로명이 있고 그 도로에 찍힌 것이 없다
+   *     undefined    이 칸이 없는 **옛 발행물**이다 — 역시 모른다
+   *
+   * ★ 옛 발행물에서는 0 이 **빠진 채** 왔다(`if n:`). 그래서 `undefined` 를 0 으로
+   *   읽으면 안 된다 — 화면은 `parkText()`(`domain/pressure.ts`)로 찍는다.
    */
-  park?: number;
+  park?: number | null;
+  /**
+   * 이 구간 **도로명**에 선 불법주정차 단속 **카메라 지점** 수(`enforce_cam` · 57지점).
+   * `park` 와 같은 null · 0 · undefined 규약이다.
+   *
+   * ★ **0 이 약하다.** 57지점 중 18지점만 도로명이 붙었다(나머지는 지번 주소라 못
+   *   붙인다 · `counts.ecam_unplaced_sites`). 0 은 「카메라가 없다」가 아니라
+   *   「붙은 18지점 중에 없다」다.
+   */
+  ecam?: number | null;
 
   /**
    * **경로 안에서만** 붙는다 — 출발·도착 구간을 투영점에서 자른 사본이다(DECISIONS §218-3).
@@ -145,7 +163,12 @@ export interface NaviGraph {
   crs: string;
   node_tol_m: number;
   counts: { nodes: number; edges: number; self_loops: number;
-            oneway?: number; oneway_dir_known?: number; turn_bans?: number };
+            oneway?: number; oneway_dir_known?: number; turn_bans?: number;
+            /** `park` · `ecam` 의 결측 · 0 구간 수. 옛 발행물에는 없다 */
+            park_null?: number; park_zero?: number;
+            ecam_null?: number; ecam_zero?: number;
+            /** 원천에서 도로명이 안 나와 **어느 구간에도 못 붙은** 몫 — 0 의 약함 */
+            park_unplaced_rows?: number; ecam_unplaced_sites?: number };
   style: Record<string, VerdictStyle>;
   nodes: LngLat[];
   edges: GraphEdge[];

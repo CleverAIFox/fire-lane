@@ -493,6 +493,14 @@ step "관문 동등"  uv run python tools/gate_parity.py
 scope "src/* tools/* .env.example"
 step "환경변수 선언↔실물" uv run python tools/env_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
+# ★ 2026-09-25 (DECISIONS §246). 축은 §246 이 세웠는데 **울기만 하고 고쳐주지
+#   않았다** — 절 수를 하루에 네 번, PLAN §1 제목을 열두 번 손으로 맞췄다.
+#   이제 흐르는 숫자는 문서가 들지 않고 `<!--gen:-->` 블록이 든다. 이 단계는
+#   **대조만** 한다 — 관문이 문서를 고치면 사람이 무엇이 바뀌었는지 모른다.
+#   빨간불이면 `uv run python tools/docgen.py` 를 치면 채워진다.
+# ci-exempt: tools/docgen.py CI 워크플로(.github/**)가 이 배치의 범위 밖이라 단계를 못 붙였다. 같은 판정은 `tests/test_docgen.py` 가 pytest 로 CI 에서 든다 — 관문이 새는 것은 아니고, 단계 배선만 남았다
+scope "docs/* tools/* sources.yaml"
+step "문서 생성 블록 ↔ 실물" uv run python tools/docgen.py --check
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
 #   ⑥ 기획서 수정일 · ⑦ 셸 명령 · ⑧ 기한은 **사람이 손으로 칠 때만**
 #   돌았다. 그 사람이 나가면 아무도 안 친다.

@@ -26,6 +26,7 @@ import { edgeClearance, fmtClearance } from "../domain/clearance";
 import type { GraphEdge, VehicleSpec, VerdictStyle } from "../domain/types";
 import { CLEARANCE_SCALE, segmentReason } from "./clearanceMeaning";
 import { grayReason, VERDICT_MEANING } from "./verdictMeaning";
+import { countText } from "../domain/pressure";
 import { Row } from "./OpsBits";
 import { D, dot, secBox, whyBox } from "./opsTheme";
 
@@ -73,7 +74,10 @@ export function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
           <b>회색 사유 — {gray.short}</b><br />{gray.long}
         </div>
       )}
-      <Row k="불법주정차 단속(도로명 · 3년)" v={e.park ? `${e.park.toLocaleString()}건` : "없음"} warn={(e.park ?? 0) >= 200} />
+      {/* ★ 「없음」 으로 접지 않는다 — `null`(도로명이 없어 못 셌다)과 0(세었고 없다)이 다르다.
+          `warn` 은 모름에 안 건다: 증거가 없는 것을 위험으로도 안전으로도 읽지 않는다. */}
+      <Row k="불법주정차 단속(도로명 · 3년)" v={countText(e.park, "건")} warn={(e.park ?? 0) >= 200} />
+      <Row k="단속 카메라(도로명)" v={countText(e.ecam, "지점")} />
       {e.ow ? (
         <Row k="일방통행" v={e.ow === 2 ? "방향 미확인" : "방향 확정"} warn={e.ow === 2} />
       ) : null}

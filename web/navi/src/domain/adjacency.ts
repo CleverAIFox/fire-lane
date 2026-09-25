@@ -14,7 +14,7 @@
  *
  * ★ 순수하다. React·MapLibre·fetch 를 모른다.
  *
- * IN    NaviGraph · VehicleSpec · 조율값 · 신고로 뺀 구간
+ * IN    NaviGraph · VehicleSpec · 조율값 · 신고로 뺀 구간 · 주변 사정 색인(`pressure.ts`)
  * OUT   Adjacency — 노드 → 나가는 전이 목록. 비용은 방향마다 다르다
  * 밖    길을 고르는 것은 여기 일이 아니다(`graph.ts`). 여기는 **갈 수 있는가와
  *       얼마인가**만 센다. 구간 위 투영도 여기 없다(`edgeSnap.ts`).
@@ -24,6 +24,7 @@ import { distM, type LngLat } from "./geo";
 import { edgeCost, type TuningKnobs, TUNING } from "./vehicle";
 import { directionFactor, edgeIndex } from "./rules";
 import { tightTurn } from "./turning";
+import { hazardsOf, pressureFactor, type HazardIndex } from "./pressure";
 import type { GraphEdge, NaviGraph, VehicleSpec } from "./types";
 
 /** `idx` 는 `graph.edges` 인덱스 — 회전 금지가 인덱스로 적혀 있다 */
@@ -64,6 +65,7 @@ export function buildAdjacency(
   graph: NaviGraph, spec: VehicleSpec, lenient = false,
   mode: CostMode = "safe", tuning: TuningKnobs = TUNING,
   excluded?: ReadonlySet<string>,
+  hazards?: HazardIndex | null,
 ): Adjacency {
   const adj: Adjacency = new Map();
   ADJ_SPEC.set(adj, spec);
@@ -82,7 +84,14 @@ export function buildAdjacency(
     //   연결성 우선(lenient)에서는 안 피한다 — 그 모드는 닿는 것이 먼저다.
     const avoid = mode === "safe" && !lenient && e.width_min_m != null
       && (e.verdict === "needs_cv" || e.verdict === "unknown") ? tuning.avoidUncertain : 1;
-    const cost = mode === "fastest" ? (e.length_m ?? penalized) : penalized * avoid;
+    // ★ **점유 압력** — 단속 이력 · 단속 카메라 · 주변 사정(과속방지턱 · 보호구역)을
+    //   길을 고르기 **전에** 비용에 놓는다(`domain/pressure.ts` · PLAN §1 #2 · #31 · #60).
+    //   종전에는 이 자료가 경로가 정해진 **뒤에** 안내로만 붙었다 — 안내는 선택이 아니다.
+    // ★ **지금은 정확히 1 이다.** `TUNING` 의 압력 계수가 전부 0 이라 경로가 안 움직인다.
+    //   근거 없는 배수를 하나 더 만들지 않겠다는 뜻이고, 배선은 여기 살아 있다.
+    // ★ 「빠른 경로」에는 안 건다. 그 모드는 **실거리**가 정의다(아래 `mode` 분기).
+    const press = mode === "safe" ? pressureFactor(e, hazardsOf(hazards, e), tuning) : 1;
+    const cost = mode === "fastest" ? (e.length_m ?? penalized) : penalized * avoid * press;
     const idx = index.get(e)!;
     // ★ 2026-09-22 (§215-1). 일방통행은 **방향마다** 값이 다르다. 두 모드 다 건다 —
     //   「빠른 길」 이 역주행이면 빠른 것이 아니라 어기는 것이다. 빼지는 않는다(rules.ts).
