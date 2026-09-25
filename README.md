@@ -11,9 +11,8 @@
 골목 1,281구간의 실제 통행 가능 폭을 산출해 소방차가 지나갈 수 있는지 판정하고,
 **판정할 수 없는 이유까지** 지도에 표시한다.
 
-**지도** https://cleveraifox.github.io/fire-lane/
-**내비** https://cleveraifox.github.io/fire-lane/navi/
-**관제** https://cleveraifox.github.io/fire-lane/navi/?view=ops — 사건 접수 · 출동 지령 · 판정 지도 · 출동 중 차 · 현장 공유 확인 (내비와 같은 브라우저 탭끼리 연결)
+**관제** https://cleveraifox.github.io/fire-lane/ — 사건 접수 · 출동 지령 · **판정 지도** · 출동 중 차 · 현장 공유 확인
+**내비** https://cleveraifox.github.io/fire-lane/navi/ — 출동 경로 안내 (관제와 같은 브라우저 탭끼리 연결)
 
 ---
 
@@ -287,6 +286,8 @@ uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대�
 uv run python tools/matchcheck.py       Mapbox Map Matching 커버리지 (MAPBOX_TOKEN 필요)
 uv run python tools/field_compare.py    실측 야장 ↔ 우리 폭 · 판정 — 위험 오판 · 보정 제안 (트랙 C 봉인)
 uv run python tools/ruleset_check.py    GitHub 룰셋 실물 ↔ MASTER §12-1 표 대조
+uv run python tools/fixture_recut.py    커밋된 사본 픽스처 ↔ 산출물. 갈렸으면 ㉠ 재현 불가 · ㉡ 판 변경을 가른다 (`--write` 면 다시 뗀다)
+uv run python tools/argcheck.py         관문이 부르는 인자 ↔ 도구가 `--help` 로 내는 인자 (DECISIONS §257-2 의 족)
 ```
 
 읽고 표를 내거나 페이지를 만들 뿐이라 `golden` 지문에 영향이 없다.
@@ -584,14 +585,14 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 **틀**이라 따로 배포하지 않는다(§216-5).
 
 ```
-지도        cleveraifox.github.io/fire-lane/
+관제        cleveraifox.github.io/fire-lane/               사건 접수 · 출동 지령 · 판정 지도 · 실시간 공유 확인
+내비        cleveraifox.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
 협업 방침    cleveraifox.github.io/fire-lane/workflow.html   MASTER §12 생성물
 기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.docx 를 구운 PDF. 굽고 나서 넷을 대조한다(§231)
-내비        cleveraifox.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
-관제        cleveraifox.github.io/fire-lane/navi/?view=ops 사건 접수 · 출동 지령 · 실시간 공유 확인
 ```
 
 강제자  `tests/test_n1.py::test_no_doc_sends_people_to_old_pages_domain` — 옛 조직 주소(이관 전 배포)로 보내지 않는다(DECISIONS §181-6)
+강제자  `tests/test_n1.py::test_the_deployed_surface_table_matches_web` — 이 표의 딱지가 `web/` 실물과 같은가. 리다이렉트를 화면처럼 적으면 운다(§258)
 
 ## 문서는 어디에
 
