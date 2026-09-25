@@ -240,9 +240,12 @@ bash tools/merge_batch.sh [--release]       배치 PR 머지 → 파트 동기�
 bash tools/fl.sh <feat/x> [--all|--undo|--resume]  ★ 배치 한 명령 — 적용 · verify · PR · 스쿼시 · 방송 · 정리
 bash tools/branch_tidy.sh [--auto] [--close-bots]  열린 PR · 원격/로컬 가지 정리 · 봇 PR 닫기 (fl.sh 10단계가 부른다)
 bash tools/inbox_fl.sh                      INBOX 에 `fl.sh` 로 두는 부트스트랩 — 패치 안 판을 골라 부른다
+bash tools/inbox_go.sh                      INBOX 에 `go.sh` 로 두는 한 줄 진입점 — .env 적재 · zip 풀기 · 브랜치 · `--relock` 판단까지
 ```
 
-★ 배치는 INBOX 에서 이렇게 돈다: `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
+★ 배치는 INBOX 에서 **한 줄**로 돈다 — `bash ~/Downloads/go.sh`.
+  그것이 `.env` 적재 · zip 풀기 · 브랜치 이름 · `--relock` 여부를 다 판단한다
+  (DECISIONS §256). 직접 부르려면 `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
   INBOX 의 `fl.sh` 는 `tools/inbox_fl.sh` 사본이고, 진짜 도구는 **패치 안(없으면
   origin/part/infra)의 `tools/fl.sh`** 다(DECISIONS §214-1).
 ★ 배치 끝의 두 단계 — 10 가지 정리(`branch_tidy.sh --auto --close-bots` · 봇 PR 을 사유 댓글과 닫는다) ·
