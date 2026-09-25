@@ -96,7 +96,11 @@ NO_DECL = 152
 # ★ 2026-09-25. 15 → 16. `tools/cost_inputs.py` 가 `--selftest` 를 갖고 왔다
 #   (경로 비용 입력의 결측·0 구분 · 압력 계수). 계수가 전부 0 이라 그 도구는
 #   **빈 그물이 되기 쉬운** 꼴이다 — 자기검사가 없으면 영원히 초록이다.
-SELFTEST_MIN = 16
+# ★ 2026-09-25 (§258). 16 → 17. `tools/fixture_recut.py` 가 `--selftest` 를 든다 —
+#   사본 픽스처가 갈렸을 때 ㉠ 재현 불가와 ㉡ 판 변경을 가르는 판별식이라,
+#   그 판별식이 빈 그물이면 진단이 조용히 거짓말한다.
+# ★ 2026-09-25 (§258-8). 17 → 18. `tools/argcheck.py` — 관문 호출 인자 대조.
+SELFTEST_MIN = 18
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)
 WALK_FN = {"glob", "rglob", "iterdir", "walk"}

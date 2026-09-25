@@ -146,6 +146,13 @@ def test_the_matchers_are_alive():
         "`=` 꼴 진단 출력을 서술로 읽는다"
     assert _claims("blank", "분모(blank)가 0 이 됐으므로 이제 의심은 물림에 있다") == [], \
         "조사 붙은 산문을 수 서술로 읽는다"
+    # ★ 2026-09-25 (§258). DECISIONS 에 실제로 있는 두 꼴이다. 앵커 없이 맨
+    #   `` `COV_MIN=28` `` 만 잡으면 회고를 고치게 된다.
+    for prose in ("`MASTER §14-4` 가 `COV_MIN=23` 을 인용하고 있었고",
+                  "`tools/verify.sh` 「커버리지 래칫」 `COV_MIN=28`. 하위 다섯은"):
+        assert _claims("cov_min", prose) == [], f"회고 인용을 선언으로 읽는다: {prose}"
+    assert _claims("cov_min", "`tools/verify.sh` 의 `COV_MIN=32` 로 걸려 있고") == [32], \
+        "살아 있는 선언을 못 읽는다 — 앵커가 너무 좁다"
 
 
 def test_every_axis_is_actually_claimed_somewhere(truth: dict[str, int]):

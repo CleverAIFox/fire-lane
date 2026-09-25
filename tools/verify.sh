@@ -732,6 +732,13 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --ratchet
 scope "tools/* tests/*"
 step "강제자 범위 선언" uv run python tools/scopedecl.py
 
+# ★ 2026-09-25 (§258-8 · PLAN #133 닫힘). **관문이 부르는 인자를 도구가 받는가.**
+#   §257-2 에서 `docx_figs.py --check` 가 `unrecognized arguments` 로 죽었고
+#   **전수 verify 를 돌린 뒤에야** 드러났다 — `test_tools_are_wired` 는 도구 이름이
+#   관문에 있는지만 본다. 이 단계는 각 도구를 `--help` 로 태워 실제 인자를 읽는다.
+scope "tools/*"
+step "관문 호출 인자" uv run python tools/argcheck.py
+
 # ── 소급 · 사본 (B5 ⓪ · 원칙 ⑥) ────────────────────────────────
 # ★ `delta` 는 봉인 뒤 바뀐 절만 센다. 전수는 `seal` 이 한 번 돈다.
 #   기준선이 없으면 전수가 곧 분모라고 스스로 말한다.
@@ -859,7 +866,11 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 # ★ 2026-09-23 (DECISIONS §223-2). 27 → 28. 두 배치 연속 「실측 28.1x% · 28 로 조여라」가
 #   떴고, 그것을 안 조이면 **매번 뜨는 권고**가 되어 곧 안 읽히는 줄이 된다.
 #   이번 배치가 `desk_check` · `wmax_audit` 시험 열일곱을 더해 실측을 올렸다(PLAN §1 #12).
-COV_MIN=28
+# ★ 2026-09-25 (§258). 28 → 32. 2026-09-25 실기 전수 verify 의 권고가 「실측
+#   32.93% · COV_MIN 을 32 로 조여라」였다. v2 배치가 시험 파일 일곱을 더해
+#   실측을 4.6%p 올렸다 — 올린 배치에서 같이 조인다. 안 조이면 다음 배치가
+#   되돌아가도 초록이고, 권고 줄은 매번 떠서 곧 안 읽히는 줄이 된다.
+COV_MIN=32
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."

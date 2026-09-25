@@ -113,6 +113,14 @@ AXES: dict[str, Axis] = {
                   "제 칸도 부모 칸도 없는 절 — `dms.scan()` 의 `blank`"),
     "plan_open": Axis(re.compile(r"^## 1\. 남은 일 — ([\d,]+)행$", re.M),
                       "PLAN §1 표 행 수 — `plan_renumber` 가 세는 것"),
+    # ★ 2026-09-25 (§258). 커버리지 래칫. 정본은 `tools/verify.sh` 의 `COV_MIN=`
+    #   한 줄이고(`test_coverage_ratchet_has_one_home`), 문서가 그 수를 손으로
+    #   들면 올릴 때마다 한쪽만 움직인다 — 2026-09-25 에 실제로 그랬다.
+    #   ★ 앵커가 「로 걸려 있」이다. 맨 표기(`` `COV_MIN=28` ``)만 잡으면
+    #     DECISIONS 의 **회고 인용**을 같이 잡고, 그러면 역사를 고치게 된다
+    #     (다른 축들이 `종의 raw` · 줄머리 `## 1.` 로 앵커를 다는 것과 같다).
+    "cov_min": Axis(re.compile(r"`COV_MIN=(\d+)` 로 걸려 있"),
+                    "커버리지 래칫 — `tools/verify.sh` 의 `COV_MIN=` 선언"),
 }
 
 OPEN = re.compile(r"^<!--gen:\s*([\w ]+?)\s*-->$")
@@ -120,6 +128,18 @@ CLOSE = re.compile(r"^<!--/gen-->$")
 
 
 # ── 실물 ────────────────────────────────────────────────────────
+def _cov_min() -> int:
+    """`tools/verify.sh` 의 `COV_MIN=` 한 줄. **정본은 거기다.**
+
+    ★ 정규식을 여기서 또 쓰는 것이 R3 처럼 보이지만 아니다 —
+      `tests/test_verify_citations.py` 는 「집이 하나인가」를 묻고 이 함수는
+      「그 집의 값이 얼마인가」를 묻는다. 같은 줄을 다른 질문으로 읽는다.
+    """
+    m = re.search(r"^COV_MIN=(\d+)\s*$",
+                  (ROOT / "tools" / "verify.sh").read_text(encoding="utf-8"), re.M)
+    return int(m.group(1)) if m else 0
+
+
 def truth() -> dict[str, int]:
     """축마다의 **실물**. 문서를 한 줄도 안 읽는다 — PLAN §1 표만 예외다.
 
@@ -146,6 +166,7 @@ def truth() -> dict[str, int]:
         # ★ 밑줄 이름을 그대로 부른다. 같은 범위를 세는 판별식이 이미 거기
         #   있고, 여기서 다시 쓰면 도구와 검사가 다른 것을 센다(R3).
         "plan_open": len(plan_renumber._rows(plan)),
+        "cov_min": _cov_min(),
     }
 
 
@@ -157,12 +178,20 @@ def alive(want: dict[str, int]) -> list[str]:
       `tests/test_repo_numbers.py` 가 같은 함수를 부른다(정본은 하나다).
     """
     bad = []
+    # ★ 2026-09-25. 축을 더하면서 이 함수가 `KeyError` 로 죽었다. **없는 축은
+    #   에러가 아니라 결함이다** — 죽으면 「왜 우는가」가 안 보이고, 이 함수의
+    #   일은 우는 것이다. 빠진 축을 먼저 낸다.
+    if missing := [a for a in AXES if a not in want]:
+        bad.append(f"축 {missing} 의 실물이 없다 — `truth()` 가 그 축을 안 센다")
+    want = {a: want.get(a, 0) for a in AXES}
     if want["datasets"] <= 50:
         bad.append(f"대장 {want['datasets']}종 — 대장을 못 읽었다")
     if want["sections"] <= 500:
         bad.append(f"절 {want['sections']} — `dms.scan()` 이 죽었다")
     if want["plan_open"] <= 0:
         bad.append("PLAN §1 표 행이 0 — 표를 못 찾았다")
+    if want["cov_min"] <= 0:
+        bad.append("`COV_MIN` 을 못 읽었다 — `tools/verify.sh` 의 선언 한 줄이 사라졌다")
     if want["sealable"] > want["datasets"]:
         bad.append("봉인 대상이 대장보다 많다")
     if want["sealable"] >= want["datasets"]:

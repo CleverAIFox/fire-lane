@@ -52,6 +52,12 @@ SYNTH = "\n".join([
     "## 1. 남은 일 — 6행",
     "<!--/gen-->",
     "",
+    # ★ 2026-09-25 (§258). 커버리지 래칫 축. 정본은 `tools/verify.sh` 의 선언 한 줄이고
+    #   문서가 그 수를 손으로 들면 올릴 때 한쪽만 움직인다 — 그날 실제로 그랬다.
+    "<!--gen: cov_min-->",
+    "커버리지는 래칫이다. `COV_MIN=7` 로 걸려 있다.",
+    "<!--/gen-->",
+    "",
 ])
 
 #: 블록 **밖**에 같은 표기가 있는 문서. 축 하나를 블록으로 덮고 같은 표기를
@@ -66,7 +72,7 @@ SYNTH_OUT = "\n".join([
 ])
 
 WANT = {"datasets": 72, "sealable": 71, "sections": 1036,
-        "inherit": 352, "blank": 0, "plan_open": 108}
+        "inherit": 352, "blank": 0, "plan_open": 108, "cov_min": 32}
 
 
 def _one(text: str, want: dict[str, int] | None = None) -> docgen.Result:
@@ -75,7 +81,7 @@ def _one(text: str, want: dict[str, int] | None = None) -> docgen.Result:
 
 # ── ① 넣는가 ────────────────────────────────────────────────────
 def test_every_axis_is_injected_into_the_block():
-    """여섯 축이 **합성 문서에서** 실제로 갈린다. 축 하나가 죽으면 여기서 운다."""
+    """모든 축이 **합성 문서에서** 실제로 갈린다. 축 하나가 죽으면 여기서 운다."""
     res = _one(SYNTH)
     got = res.texts["x.md"]
     for axis, v in WANT.items():
@@ -166,11 +172,15 @@ def test_dead_truth_is_refused_before_anything_is_written():
     ★ 값이 0인 채로 채우면 문서가 「기계가 보증한 거짓」이 된다. 검사는 사람을
       부르는데 주입기는 안 부르므로, 주입기의 전제는 주입 전에 봐야 한다.
     """
-    dead = {"datasets": 0, "sealable": 0, "sections": 0,
-            "inherit": 0, "blank": 0, "plan_open": 0}
+    # ★ 2026-09-25. **축 목록에서 짓는다.** 손목록이던 종전 판은 축을 더한 날
+    #   `KeyError` 로 죽었다 — 축이 늘면 손목록이 낡는다(§255-3 과 같은 형태).
+    dead = dict.fromkeys(docgen.AXES, 0)
     why = docgen.alive(dead)
     assert len(why) >= 3, f"죽은 정본을 안 운다: {why}"
     assert not docgen.alive(WANT), f"정상 입력에서 운다: {docgen.alive(WANT)}"
+    # 축이 통째로 빠진 것도 결함이다 — 조용히 0으로 읽으면 안 된다
+    short = {a: v for a, v in WANT.items() if a != "cov_min"}
+    assert any("실물이 없다" in w for w in docgen.alive(short)), "빠진 축을 안 운다"
 
 
 def test_the_axis_pattern_captures_exactly_one_number():
