@@ -609,7 +609,7 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 
 절대편차 합 8.31m. 앞의 둘이 ±0.1 안이고, 필문대로289번길 하나가 2.79 를 차지한다.
 
-강제자  `src/firelane/seg/report.py::nfa_compare`(대조를 내는 정본) · `tests/test_contract.py::test_segment_fields_are_internally_consistent`(`nfa_designated` ↔ 구간 일관) · `tools/docnum_check.py`(소방청 지정 수). 절대편차 값 자체는 실측이라 대조 도구가 없다
+강제자  `src/firelane/nfa_compare.py::nfa_compare`(대조를 내는 정본 — 2026-09-25 에 `seg/report.py` 에서 자기 단계로 내렸다 · DECISIONS §247) · `tests/test_contract.py::test_segment_fields_are_internally_consistent`(`nfa_designated` ↔ 구간 일관) · `tools/docnum_check.py`(소방청 지정 수). 절대편차 값 자체는 실측이라 대조 도구가 없다
 
 ### 4-1. ★ 이 대조는 검증이 아니라 적합이다
 
@@ -2594,7 +2594,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 형태를 갖는다 — 규약은 주석이나 문서에 존재하고 이를 강제하는 검사가 없다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
-강제자  `tests/test_doc_style.py` · `tools/dms.py`(마지막 줄 「새 규칙을 적을 때는 강제자를 같이 만든다」를 세는 자리가 이 도구다 — **분모 0**(2026-09-25 · 절 1,017 전수. 종전 232 는 그 도구가 절을 틀리게 세던 때의 수다. 물림 312 도 **전부 선언됐고 수까지 적혀 있다** — 하위 절이 늘면 수가 어긋나 운다)) · `tools/scopedecl.py`(강제자가 자기 범위를 선언하는가)
+강제자  `tests/test_doc_style.py` · `tools/dms.py`(마지막 줄 「새 규칙을 적을 때는 강제자를 같이 만든다」를 세는 자리가 이 도구다 — **분모 0**(2026-09-25 · 절 1,030 전수. 종전 232 는 그 도구가 절을 틀리게 세던 때의 수다. 물림 312 도 **전부 선언됐고 수까지 적혀 있다** — 하위 절이 늘면 수가 어긋나 운다)) · `tools/scopedecl.py`(강제자가 자기 범위를 선언하는가)
 
 ### 17-1. 정본은 하나 — 사실 · 정본 파일 · 따르는 곳 · 강제자
 

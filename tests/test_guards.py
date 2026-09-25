@@ -1901,31 +1901,25 @@ def test_route_usage_is_not_a_passability_claim():
         "route_vehicle 을 segments 컬럼으로 넣었다 — golden 이 깨진다"
 
 
-def test_route_does_not_pass_through_blocked_edges():
-    """차량 경로가 통행 불가 엣지를 지나가지 않는가.
+def test_the_route_guard_lives_where_it_can_see_behavior():
+    """차량 경로의 막힘·도달 규칙은 **행동으로** 지킨다 — 여기서는 자리만 든다.
 
-    ★ 2026-08-24. 처음엔 막힌 엣지에 `BIG = 1e7` 을 주고 그래프에 남겼다.
-      `math.inf` 를 networkx 가 못 다루기 때문이었다. 그러나 **다른 길이
-      없으면 Dijkstra 가 그 엣지를 쓴다.**
-
-          통행 불가 416  ·  경로에 쓰인 구간 996
-
-      "막힌 길로라도 도달" 이라 답이 아니다. 막힌 엣지를 **빼고** 돈다.
-      도달하지 못하면 그것이 사실이다 — `unknown` 352구간을 회색으로
-      남기는 것과 같은 규칙이다.
-
-    ★ `reachable` 은 양 끝 노드가 모두 도달 가능할 때만 1 이다.
-      한쪽만 닿으면 그 구간에 들어갈 수 없다.
+    ★ **2026-09-25 (PLAN §1 #127 · DECISIONS §250).** 이 자리에 단언 넷이
+      있었고 넷 다 `segments.py` 를 글자로 읽었다 — 이음매가 없어 결과를 볼
+      수 없었기 때문인데, 그것은 검사가 아니라 **표절 대조**다. 지역변수를
+      바꾸면 행동이 그대로인데 빨개지고, `and` 를 `or` 로 바꾸면 행동이
+      뒤집히는데 초록이었다(둘 다 실측함). 진짜 행동 시험은
+      `tests/test_write_route.py` 다. 여기서는 그것이 있는지만 본다.
     """
-    src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
-    i = src.index("def _write_route")
-    body = src[i:i + 6000]
-    assert "P.remove_edges_from" in body, \
-        "막힌 엣지를 그래프에 남겨둔 채 경로를 돈다"
-    assert 'd["blocked"]]' in body, "무엇을 뺄지 blocked 로 안 고른다"
-    assert "reachable" in body, "도달 가능 여부를 안 낸다"
-    assert 'd["a"] in reach and d["b"] in reach' in body, \
-        "한쪽 끝만 닿아도 도달로 본다 — 그 구간에는 못 들어간다"
+    f = ROOT / "tests/test_write_route.py"
+    assert f.exists(), (
+        "`tests/test_write_route.py` 가 없다 — 막힘·도달 규칙의 강제자다.\n"
+        "  지우려거든 같은 규칙을 **산출물로 보는** 검사를 먼저 세워라.\n"
+        "  소스 문자열을 찾는 검사로 되돌리지 마라(#127).")
+    body = f.read_text(encoding="utf-8")
+    for want, why in (("passable", "통행 가부"), ("reachable", "도달"),
+                      ("route_vehicle", "경로 사용")):
+        assert want in body, f"{why} 를 안 본다 — 강제자가 얇아졌다"
 
 
 def test_route_graph_snaps_nodes_like_build_graph():

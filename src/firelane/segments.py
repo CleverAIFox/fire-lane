@@ -115,8 +115,8 @@ def endpoint_snap(lines, tol=SNAP_TOL):
 _SAMPLES: dict[str, list] = {}
 
 
-def _write_route(g) -> None:
-    """폭·내륜차를 반영한 2차 경로를 낸다.
+def _write_route(g, dst=None) -> None:
+    """폭·내륜차를 반영한 2차 경로를 낸다. `dst` 는 시험용 이음매다(#127).
 
     ★ 판정을 안 바꾼다. `segments.geojson` 에 컬럼을 더하지 않는다.
       `route_vehicle.csv` 로 따로 낸다 — golden 지문이 그대로다.
@@ -246,7 +246,7 @@ def _write_route(g) -> None:
             for u2, v2 in zip(pp, pp[1:], strict=False):
                 use[P.edges[u2, v2]["seg_id"]] += 1
 
-    dst = PROCESSED / "route_vehicle.csv"
+    dst = dst or PROCESSED / "route_vehicle.csv"
     n_blk = sum(1 for d in meta.values() if d["blocked"])
     with dst.open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
