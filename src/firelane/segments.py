@@ -48,6 +48,7 @@ from shapely.strtree import STRtree
 
 from firelane import segkey as _segkey
 from firelane.paths import PROCESSED
+from firelane.paths import env as _env
 from firelane.paths import flag as _flag
 
 # ── 파라미터 · 순수 함수 ──────────────────────────────────────
@@ -58,14 +59,10 @@ from firelane.seg.basisno import BasisIntervalIndex
 from firelane.seg.centerline_correction import apply_approved_centerline_corrections
 from firelane.seg.geom import _dirv, _join, _seal, verdict
 from firelane.seg.params import (
-    _DBG,
     CCTV_RANGE,
-    DEBUG_SEG,
-    DEBUG_XY,
     EMD_CD,
     MIN_SEG_LEN,
     NFA_RUN_M,
-    NO_MERGE,
     PARK,
     SNAP_TOL,
     TRUCK,
@@ -349,6 +346,7 @@ def _write_samples(g) -> None:
 
 
 def main():
+    _no_merge = _flag("FIRE_LANE_NO_MERGE")   # ★ #121 — 스위치는 단계층이 읽는다
     emd = load("boundary_emd")
     poly = shapely.make_valid(emd.loc[emd.EMD_CD == EMD_CD, "geometry"].iloc[0])
     _lineage_check()
@@ -468,7 +466,9 @@ def main():
 
     # ── 폭 산출 엔진 ─────────────────────────────────────────
     # 폭 소스 3종 + 건물 + 교차부. 실행 내내 불변이므로 한 번 묶는다.
-    _wx = WidthEngine(ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly)
+    _wx = WidthEngine(ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
+                      mix_src=_flag("FIRE_LANE_MIX_SRC"),
+                      old_snap=_flag("FIRE_LANE_OLD_SNAP"))
     widths = _wx.widths
 
 
@@ -589,7 +589,7 @@ def main():
 
     _cos_lim = -np.cos(np.radians(COLLIN_DEG))
     _mrg = []
-    for _pass in range(0 if NO_MERGE else MERGE_PASS):
+    for _pass in range(0 if _no_merge else MERGE_PASS):
         _todo = [uid for uid in list(units)
                  if uid in W and W[uid][0] is None]
         if not _todo:
@@ -843,11 +843,11 @@ def main():
     save_uid_map(g, OUT / "seg_uid_map.csv")
 
     # ── 소스별 커버율 ────────────────────────────────────────
-    seg_report.diagnostics(g)
+    seg_report.diagnostics(g, old_snap=_wx.old_snap)
 
-    _dbg_ids = list(DEBUG_SEG)
-    if DEBUG_XY:
-        _x, _y = (float(v) for v in DEBUG_XY.split(",")[:2])
+    _dbg_ids = [x.strip() for x in _env("FIRE_LANE_DEBUG_SEG").split(",") if x.strip()]
+    if _dbg_xy := _env("FIRE_LANE_DEBUG_XY").strip():
+        _x, _y = (float(v) for v in _dbg_xy.split(",")[:2])
         _near = g.iloc[g.distance(Point(_x, _y)).values.argmin()]
         print(f"\n[덤프대상] ({_x:.0f},{_y:.0f}) 최근접 = {_near.seg_id} "
               f"{_near.road_name} {_near.length_m}m")
@@ -861,9 +861,9 @@ def main():
         print(f"\n[덤프] {_sid} {_row.road_name.iloc[0]} "
               f"len={_row.length_m.iloc[0]}m merged={_row.merged_n.iloc[0]} "
               f"side={_row.road_side.iloc[0]} bt={_row.road_bt_m.iloc[0]}")
-        _DBG["on"] = True
+        _wx.debug = True
         _r = widths(_gg)
-        _DBG["on"] = False
+        _wx.debug = False
         print(f"  → wmin={_r[0]} wmax={_r[1]} src={_r[3]} fail={_r[5]} cov={_r[6]}")
     _write_samples(g)
     _write_route(g)

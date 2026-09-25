@@ -27,7 +27,6 @@ from firelane.seg.params import (
     CCTV_RANGE,
     MIN_SEG_LEN,
     NFA_RUN_M,
-    OLD_SNAP,
     PARK,
     SNAP_TOL,
     TRUCK,
@@ -39,12 +38,17 @@ OUT = PROCESSED
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
 
 
-def diagnostics(g):
-    """산출물을 사람이 읽을 수 있게 요약한다. 아무것도 바꾸지 않는다."""
+def diagnostics(g, *, old_snap: bool = False):
+    """산출물을 사람이 읽을 수 있게 요약한다. 아무것도 바꾸지 않는다.
+
+    ★ 2026-09-25 (PLAN §1 #121). `old_snap` 은 종전에 `seg/params.py` 의 모듈
+      전역이었다. **출력 한 줄에 쓰려고** 판정 파라미터 정본이 `.env` 를
+      읽고 있었다. 부르는 쪽이 넘긴다.
+    """
     # 표본 축 소스 혼합이 어디서 얼마나 일어나는지. 채택 규칙(STEP 5-1) 근거.
     _gv = g[g.n_sample > 0]
     print(f"\n[소스 커버율] 표본 있는 단위 {len(_gv)}"
-          f" · 소스별 snap {'OFF(종전)' if OLD_SNAP else 'ON'}")
+          f" · 소스별 snap {'OFF(종전)' if old_snap else 'ON'}")
     print(_gv[["cov_ngii1k", "cov_ngii", "cov_silpok"]]
           .describe(percentiles=[.25, .5, .75]).round(3).to_string())
     _mix = _gv[(_gv.cov_ngii1k > 0) & (_gv.cov_ngii1k < 1)]

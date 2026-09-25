@@ -26,11 +26,8 @@ from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
 
 from firelane.seg.params import (
-    _DBG,
     COV_MIN,
     MIN_SEG_LEN,
-    MIX_SRC,
-    OLD_SNAP,
     SNAP_MAX,
     SNAP_TRUST,
     WIDTH_SRCS,
@@ -50,13 +47,21 @@ class WidthEngine:
     xsec_poly 평면교차점 실형상.    있으면 이쪽이 우선
     """
 
-    def __init__(self, ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly):
+    def __init__(self, ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
+                 *, mix_src: bool = False, old_snap: bool = False):
         self.ngii1k_u = ngii1k_u
         self.ngii_u = ngii_u
         self.rw_u = rw_u
         self.bld_u = bld_u
         self.xn = xn
         self.xsec_poly = xsec_poly
+        # ★ 2026-09-25 (PLAN §1 #121 · #123). 종전에는 셋 다 `seg/params.py` 의
+        #   모듈 전역이었고 그 파일이 `.env` 를 읽었다. 이제 **부르는 쪽이 정한다.**
+        #   기본은 전부 꺼짐 — 셋 다 「종전 동작으로 되돌리는」 진단 스위치이고,
+        #   기본값이 곧 판정 경로다. 값을 안 넘기면 판정 경로로 돈다.
+        self.mix_src = mix_src      # 구간 폭을 표본 혼합 집합의 최솟값으로(종전)
+        self.old_snap = old_snap    # snap 을 소스별이 아닌 종전 방식으로
+        self.debug = False          # 표본 단위 덤프. `segments.main()` 이 켰다 끈다
 
     def measure(self, s, t):
         p0 = s.interpolate(t)
@@ -154,7 +159,7 @@ class WidthEngine:
         # ── 측정 지점 결정 ──────────────────────────────────
         _srcs3 = tuple(zip((self.ngii1k_u, self.ngii_u, self.rw_u),
                            WIDTH_SRCS, strict=True))
-        if OLD_SNAP:
+        if self.old_snap:
             # 종전 방식. 소스 하나라도 덮으면 snap 없음, 아니면 최근접 하나로 전부 이동.
             _live = [u for u, _ in _srcs3 if u is not None and not u.is_empty]
             _pp = p0
@@ -189,7 +194,7 @@ class WidthEngine:
             # 없다. 다른 폴리곤 조각에 억지로 들어가 그 조각의 좁은 데를 잰 것이다.
             # 45.9m 구간이 이런 표본 하나로 1.26m 판정을 받고 있었다.
             # 측정값 자신으로 검증하므로 임계값을 새로 만들지 않는다.
-            if (not OLD_SNAP) and v is not None and sn is not None and sn > v / 2.0:
+            if (not self.old_snap) and v is not None and sn is not None and sn > v / 2.0:
                 v, c = None, f"snap{sn:.1f}>w/2"
             res[nm] = (v, c, pt, sn)
 
@@ -226,7 +231,7 @@ class WidthEngine:
             B = A
 
         a_1k, a_ngii, a_rw = (res[nm][0] for nm in WIDTH_SRCS)
-        if _DBG["on"]:
+        if self.debug:
             print("      " + "  ".join(
                 f"{nm}={res[nm][0] if res[nm][0] is not None else res[nm][1]}"
                 f"(snap{res[nm][3] if res[nm][3] is not None else '-'})"
@@ -326,12 +331,12 @@ class WidthEngine:
                 _nx_skip += 1
                 _rows.append({"s": round(t, 2), "w": None, "src": None,
                               "drop": "xsec"})
-                if _DBG["on"]:
+                if self.debug:
                     _how = "폴리곤" if (self.xsec_poly is not None
                                        and self.xsec_poly.intersects(_pt)) else "반경"
                     print(f"    t={t:7.1f}  교차로 {self.xn.distance(_pt):.1f}m ({_how}) — 제외")
                 continue
-            if _DBG["on"]:
+            if self.debug:
                 _pp = s.interpolate(t)
                 print(f"    t={t:7.1f}  ({_pp.x:.1f},{_pp.y:.1f})")
             a, b, sc, pr, _why, _res = self.measure(s, t)
@@ -398,7 +403,7 @@ class WidthEngine:
         # 부분커버 구간은 그 소스가 못 잰 구간을 모르는 채로 판정하는 것이므로
         # width_cov 로 노출해 D-25 실측 우선순위에 쓴다.
         _pick = None
-        if not MIX_SRC:
+        if not self.mix_src:
             # 커버율은 소스를 '고르는' 기준이 아니라 '자격'이다.
             # 커버율로 고르면 실폭도로(0.955)가 항상 이겨 결정 63 이 뒤집힌다.
             _covnow = _covr()[0]

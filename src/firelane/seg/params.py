@@ -13,26 +13,21 @@ seg/params.py — 구간 판정 파라미터 정본.
 """
 from __future__ import annotations
 
-# 진단 스위치. 재현성 있게 저장소에 남긴다.
-#   FIRE_LANE_NO_MERGE=1        산출단위 병합을 끈다. 병합 전 기준값을 뽑을 때
-#   FIRE_LANE_DEBUG_SEG=DM03223 해당 단위의 표본을 전부 덤프한다
-#   FIRE_LANE_DEBUG_XY=192837,284314   좌표 최근접 단위를 덤프한다
-#                               seg_id 는 실행 간 유지되지 않는다. XY 를 쓸 것
-#   FIRE_LANE_MIX_SRC=1         구간 폭을 표본 혼합 집합의 최솟값으로 되돌린다(종전).
-#   FIRE_LANE_OLD_SNAP=1        snap 을 소스별이 아닌 종전 방식으로 되돌린다.
-#                               소스별 snap 도입 전후를 한 바이너리로 비교할 때
-from firelane import paths
-
-# ★ 2026-09-14. `os.environ` 직접 읽기를 접근자로 바꿨다. `paths.py` 가
-#   환경변수의 유일한 독자다 — 목록을 세는 검사는 이름을 바꾸면 눈이 먼다.
-#   `flag()` 는 `"1"` 만 켜짐으로 본다. 종전 `== "1"` 과 같은 값이다.
-NO_MERGE  = paths.flag("FIRE_LANE_NO_MERGE")
-DEBUG_SEG = [x.strip() for x in
-             paths.env("FIRE_LANE_DEBUG_SEG").split(",") if x.strip()]
-DEBUG_XY  = paths.env("FIRE_LANE_DEBUG_XY").strip()
-OLD_SNAP  = paths.flag("FIRE_LANE_OLD_SNAP")
-MIX_SRC   = paths.flag("FIRE_LANE_MIX_SRC")
-_DBG = {"on": False}
+# ★ 2026-09-25 (PLAN §1 #121 · #123 · DECISIONS §249). 진단 스위치 다섯과
+#   가변 전역 `_DBG` 를 **여기서 뺐다.** 이 파일은 판정 파라미터의 정본인데
+#   그것들 때문에 `firelane.paths` 를 import 했고, `paths` 는 모듈 적재 시점에
+#   `.env` 를 읽는다 — **순수 판정 도메인이 디스크를 만지고 있었다.**
+#   읽는 자리는 단계층(`segments.main`)이고, 쓰는 자리는 인자다:
+#
+#       FIRE_LANE_NO_MERGE   → segments.main() 지역변수
+#       FIRE_LANE_DEBUG_SEG  → segments.main() 지역변수
+#       FIRE_LANE_DEBUG_XY   → segments.main() 지역변수
+#       FIRE_LANE_MIX_SRC    → WidthEngine(mix_src=...)
+#       FIRE_LANE_OLD_SNAP   → WidthEngine(old_snap=...) · diagnostics(old_snap=...)
+#       _DBG["on"]           → WidthEngine.debug (인스턴스 필드)
+#
+#   스위치의 뜻은 `paths.py` 의 `ENV` 표와 `segments.py` 머리말이 든다.
+#   강제자 `tests/test_layering.py` · `tests/test_seg_params_is_pure.py`
 
 EMD_CD        = "12210108"   # 동명동
 # ★ 2026-09-04. `publish_web.py:43` 에 있던 것을 올렸다. 스코프 계산이

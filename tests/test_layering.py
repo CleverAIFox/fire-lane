@@ -107,18 +107,14 @@ def test_the_import_collector_reads_from_x_import_y():
 
 
 #: 아직 못 걷은 위반. **늘리지 마라.** 사유와 닫는 조건을 같이 적는다.
-#: ★ 2026-09-24 (DECISIONS §244). 수집기의 구멍을 막자마자 하나가 드러났다.
-#:   **이 배치에서 안 고친다** — `seg/params.py` 는 판정 코드 폐포 안이라
-#:   손대면 재잠금이 따라오고, 레이크가 없는 자리에서는 산출물이 바이트
-#:   동일한지 증명할 수 없다. 증명 못 하는 수술은 하지 않는다(§13-5 규칙 2).
-EXEMPT: dict[str, str] = {
-    "seg/params.py": (
-        "환경 스위치 다섯(NO_MERGE · DEBUG_SEG · DEBUG_XY · OLD_SNAP · MIX_SRC)을 "
-        "`paths.flag()` · `paths.env()` 로 **import 시점에** 읽는다. "
-        "닫는 법 — 다섯을 `WidthEngine.__init__` 인자로 올린다(그 자리는 이미 "
-        "「실행 내내 불변」 묶음이다). 폐포 안이라 재잠금 1회. PLAN §1 #121"
-    ),
-}
+#: ★ 2026-09-24 (DECISIONS §244). 수집기의 구멍을 막자마자 `seg/params.py` 가
+#:   드러났다 — 환경 스위치 다섯을 import 시점에 읽고 있었다. 그 배치는
+#:   「폐포 안이라 산출물 불변을 증명할 수 없다」며 면제로 적었다.
+#: ★ **2026-09-25 (DECISIONS §249). 비었다.** 그 전제가 틀렸다 — `segments`
+#:   단계는 `data/raw` 를 안 읽으므로 레이크 없이도 재실행된다. 다섯을
+#:   단계층으로 올리고 판정 산출물 다섯이 바이트 동일함을 확인했다.
+#:   비어 있는 것이 정상이다. 채우려거든 사유와 **닫는 조건**을 같이 적어라.
+EXEMPT: dict[str, str] = {}
 
 
 @pytest.mark.parametrize("rel", DOMAIN)

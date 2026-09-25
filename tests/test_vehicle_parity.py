@@ -464,8 +464,12 @@ def test_a_verified_flag_without_its_value_is_where_the_two_split():
     # ── 덫. 값 없이 플래그만 올리는 날 여기서 운다 ──────────────
     led = V._spec()                       # 대장 원본. 캐시를 안 건드린다
     pub = ROOT / "web" / "data" / "vehicle_spec.json"
-    if not pub.exists():
-        return                            # 발행 전 기계. 위 단언만으로 충분하다
+    # ★ 2026-09-25. 종전에는 `if not pub.exists(): return` 이었고 `deadcheck ③`
+    #   (조용한 통과)이 그것을 물었다 — **대상을 못 찾으면 실패가 아니라 통과**다.
+    #   이 파일은 커밋 대상이므로 없으면 그것 자체가 사고다.
+    assert pub.exists(), (
+        f"{pub.relative_to(ROOT)} 가 없다 — 이 파일은 커밋 대상이다.\n"
+        "  없으면 아래 덫이 통째로 안 돈다. 없어도 되는 파일이면 이 덫을 지워라.")
     got = json.loads(pub.read_text(encoding="utf-8"))
     for flag, value in (("wheelbase_verified", "wheelbase_m"),
                         ("turn_radius_verified", "turn_radius_m")):
