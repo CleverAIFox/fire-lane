@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 # tools/inbox_go.sh — **INBOX 에 `go.sh` 라는 이름으로 두는 한 줄 진입점.**  (DECISIONS §256)
 #
-#   bash ~/Downloads/go.sh
+#   cd ~/projects/fire-lane && bash tools/inbox_go.sh     ← 저장소에 들어온 뒤로는 이 한 줄
+#   bash "$FIRE_LANE_INBOX/go.sh"                         ← 아직 안 들어왔을 때(zip 안 사본)
+#
+# ★ **`~/Downloads` 가 아니다.** WSL 에서 `~` 는 리눅스 홈(`/home/fox`)이고 브라우저
+#   다운로드는 윈도우 쪽(`/mnt/c/Users/Fox/Downloads`)에 떨어진다. 그 경로가
+#   `.env` 의 `$FIRE_LANE_INBOX` 다 — **경로를 손으로 쓰지 말고 그 변수를 쓴다.**
+#   2026-09-25 에 안내에 `~/Downloads` 라 적어 실제로 `unzip` 이 못 찾았다.
 #
 # 이것이 하는 일은 넷이고, 종전에는 **사람이 매번 손으로 쳤다** —
 #

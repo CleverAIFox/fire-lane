@@ -243,9 +243,12 @@ bash tools/inbox_fl.sh                      INBOX 에 `fl.sh` 로 두는 부트�
 bash tools/inbox_go.sh                      INBOX 에 `go.sh` 로 두는 한 줄 진입점 — .env 적재 · zip 풀기 · 브랜치 · `--relock` 판단까지
 ```
 
-★ 배치는 INBOX 에서 **한 줄**로 돈다 — `bash ~/Downloads/go.sh`.
-  그것이 `.env` 적재 · zip 풀기 · 브랜치 이름 · `--relock` 여부를 다 판단한다
-  (DECISIONS §256). 직접 부르려면 `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
+★ 배치는 **한 줄**로 돈다 — `cd ~/projects/fire-lane && bash tools/inbox_go.sh`.
+  그것이 `.env` 적재 · INBOX 최신 zip 찾기·풀기 · 브랜치 이름 · `--relock` 여부를
+  다 판단한다(DECISIONS §256). 직접 부르려면
+  `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
+  ★ **`~/Downloads` 가 아니다.** WSL 에서 `~` 는 리눅스 홈이고 다운로드는
+  `/mnt/c/Users/Fox/Downloads` 에 떨어진다 — `.env` 의 `$FIRE_LANE_INBOX` 를 쓴다.
   INBOX 의 `fl.sh` 는 `tools/inbox_fl.sh` 사본이고, 진짜 도구는 **패치 안(없으면
   origin/part/infra)의 `tools/fl.sh`** 다(DECISIONS §214-1).
 ★ 배치 끝의 두 단계 — 10 가지 정리(`branch_tidy.sh --auto --close-bots` · 봇 PR 을 사유 댓글과 닫는다) ·
