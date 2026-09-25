@@ -646,7 +646,7 @@ def _tool_scope() -> list[Path]:
 
 
 def _tool_print() -> str:
-    """도구 전체 지문. **무효화 범위로는 쓰지 않는다** — `AXIS_TOOLS` 를 봐라."""
+    """도구 전체 지문. **무효화 범위로는 쓰지 않는다** — `axis_tools()` 를 봐라."""
     return _sha("\n".join(f"{p.relative_to(ROOT).as_posix()}\0"
                           f"{_sha(p.read_text(encoding='utf-8'))}"
                           for p in _tool_scope()))

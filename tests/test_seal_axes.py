@@ -16,7 +16,7 @@
   재검사가 습관적으로 건너뛰어진다.**
 
 ★ 이 파일이 지키는 것은 둘이다. ① 축별 무효가 **실제로 좁게** 나오는가
-  ② 새 축이 생겼는데 `AXIS_TOOLS` 에 없으면 우는가 — **손목록이 실물보다
+  ② 새 축이 생겼는데 `axis_tools()` 에 없으면 우는가 — **손목록이 실물보다
   좁아지는 것**이 이 저장소가 반복해 겪은 형태다(W3-8 족).
 
 IN    tools/dms.py (읽기) · data/dms/SEAL.json (있으면)
@@ -58,7 +58,7 @@ def test_every_sealed_axis_is_declared():
     keys = set(json.loads(SEAL.read_text(encoding="utf-8")))
     missing = sorted(keys - set(dms.axis_tools()) - set(dms.SEAL_META))
     assert not missing, (
-        f"봉인에 있는데 `AXIS_TOOLS` 에 없는 축: {missing}\n"
+        f"봉인에 있는데 `axis_tools()` 에 없는 축: {missing}\n"
         "  선언 밖의 축은 **무효 판정을 안 받는다** — 도구가 바뀌어도 유효한\n"
         "  것처럼 남는다. 축을 더하고 어느 도구가 그것을 정하는지 적어라.\n"
         "  봉인 자신의 기록이면 `SEAL_META` 에 넣어라.")
@@ -71,7 +71,7 @@ def test_no_declared_axis_is_a_ghost():
     keys = set(json.loads(SEAL.read_text(encoding="utf-8")))
     ghost = sorted(set(dms.axis_tools()) - keys)
     assert not ghost, (
-        f"`AXIS_TOOLS` 에만 있고 봉인에 없는 축: {ghost}\n"
+        f"`axis_tools()` 에만 있고 봉인에 없는 축: {ghost}\n"
         "  유령 선언은 「있다고 적혀 있으면 사람이 안 본다」의 형태다(§243).")
 
 

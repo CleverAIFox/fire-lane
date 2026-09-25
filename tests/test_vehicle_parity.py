@@ -76,8 +76,10 @@ from __future__ import annotations
 
 import json
 import math
+import pathlib
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -292,21 +294,58 @@ process.stdout.write(JSON.stringify(runCases(vehicle, payload)));
 """
 
 
+#: `esbuild` — `node` 가 `.ts` 를 못 먹는 기계의 우회로.
+#: ★ 2026-09-25. `node v22.22.1` 에서 `ERR_NO_TYPESCRIPT` 로 죽었다. 같은
+#:   22.22.x 인데 **TypeScript 지원 없이 빌드된 바이너리**가 있다 — 버전으로
+#:   판단할 수 없다. `esbuild` 는 `web/navi` 의 vite 가 이미 품고 있어 새
+#:   의존성이 아니다(`uv lock` 도 `npm i` 도 필요 없다).
+ESBUILD = NAVI / "node_modules" / ".bin" / "esbuild"
+
+
+def _strip_types(src: pathlib.Path, out: pathlib.Path) -> bool:
+    """`esbuild` 로 타입만 떼어 `.mjs` 로 낸다. 없으면 False."""
+    if not ESBUILD.exists():
+        return False
+    r = subprocess.run(                                    # noqa: S603
+        [str(ESBUILD), str(src), "--format=esm", "--platform=node",
+         f"--outfile={out}", "--log-level=error"],
+        cwd=NAVI, capture_output=True, text=True, timeout=120)
+    return r.returncode == 0 and out.exists()
+
+
 def _ts(payload: dict) -> list:
-    """`node` 로 TS 판을 부른다. 표준입력으로 격자, 표준출력으로 결과."""
-    code = _GLUE % (json.dumps(IMPL.as_uri()), json.dumps(RUNNER.as_uri()))
+    """`node` 로 TS 판을 부른다. 표준입력으로 격자, 표준출력으로 결과.
+
+    ★ 세 갈래를 **차례로** 시도한다 — 무플래그(22.18+) · `--experimental-strip-types`
+      (그 아래) · `esbuild` 로 미리 타입을 떼기(TypeScript 지원 없이 빌드된 node).
+      셋 다 실패하면 **skip 하지 않고 죽는다** — 부를 수 없으면 대조가 없고,
+      대조 없는 초록이 이 시험이 막으려는 것 그 자체다.
+    """
     body = json.dumps(payload, allow_nan=False)
     last = None
-    # 22.18+ 는 무플래그로 `.ts` 를 먹는다. 그 아래는 플래그가 필요하다
     for extra in ([], ["--experimental-strip-types"]):
+        code = _GLUE % (json.dumps(IMPL.as_uri()), json.dumps(RUNNER.as_uri()))
         last = subprocess.run(                             # noqa: S603
             ["node", *extra, "--input-type=module", "-e", code],
             cwd=NAVI, input=body, capture_output=True, text=True, timeout=300)
         if last.returncode == 0:
             return json.loads(last.stdout)
+
+    # ③ node 가 TS 를 통째로 모르는 기계 — esbuild 로 먼저 떼어 낸다.
+    with tempfile.TemporaryDirectory() as d:
+        impl, runner = Path(d) / "v.mjs", Path(d) / "r.mjs"
+        if _strip_types(IMPL, impl) and _strip_types(RUNNER, runner):
+            code = _GLUE % (json.dumps(impl.as_uri()), json.dumps(runner.as_uri()))
+            r = subprocess.run(                            # noqa: S603
+                ["node", "--input-type=module", "-e", code],
+                cwd=NAVI, input=body, capture_output=True, text=True, timeout=300)
+            if r.returncode == 0:
+                return json.loads(r.stdout)
+            last = r
     raise AssertionError(
         "TS 판을 부를 수 없다. **skip 하지 않는다** — 부를 수 없으면 대조가 없고,\n"
         "  대조 없는 초록은 이 시험이 막으려는 것 그 자체다.\n"
+        f"  esbuild {'있다' if ESBUILD.exists() else '없다'}: {ESBUILD}\n"
         f"  rc={last.returncode}\n{last.stderr[-2000:]}")
 
 

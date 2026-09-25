@@ -293,6 +293,13 @@ def main() -> int:
     #   argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
     ap = argparse.ArgumentParser(description="기획서 그림 ↔ 정본")
     ap.add_argument("--sync", action="store_true", help="기획서의 그림을 정본으로 바꿔 넣는다")
+    # ★ 2026-09-25 (DECISIONS §257). `--check` 를 받는다. **기본 동작과 같다** —
+    #   `verify.sh:530` 이 그것으로 부르는데 argparse 로 옮기면서(§243) 인자를
+    #   좁혀 `unrecognized arguments: --check` 로 죽었다. `verify.sh` 전량을
+    #   돌린 적이 없어 배치 안에서 안 드러났다. `test_tools_are_wired` 는
+    #   「부르는가」만 보고 **「인자가 맞는가」는 안 본다**(PLAN §1 #133).
+    ap.add_argument("--check", action="store_true",
+                    help="대조만 한다 (기본 동작 — `verify.sh` 가 이 이름으로 부른다)")
     return sync() if ap.parse_args().sync else check()
 
 
