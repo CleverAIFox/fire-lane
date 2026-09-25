@@ -32,6 +32,19 @@
  *     우           차량 상태판 · 현장 공유 · 구간 정보 · 출동 이력 요약
  * ★ 와이어프레임이 아니다. 지혜님이 깊게 파기 전의 **초안**이다 — 구조와 데이터 배선을 먼저
  *   세우고, 모양은 와이어프레임이 오면 따른다.
+ *
+ * ══ 넷을 떼었다 (2026-09-25 · PLAN §1 #130) ═══════════════════════
+ * ★ 744줄로 길이 상한(600)을 넘었다. 이 파일에 **시험이 없다** — 컴파일 수준 보증뿐이라
+ *   계산을 옮기지 않고 **상태를 하나도 안 지는 것**부터 뗀다. 되돌리기 비용이 낮은 순이다.
+ *
+ *     `ui/opsTheme.ts`      색 · 틀 · 단추 · 줄 (값만 있다)
+ *     `ui/OpsBits.tsx`      Row · Sec · Tile · Center
+ *     `ui/SegCard.tsx`      구간 카드 한 장
+ *     `ui/tokens.ts`        시각 문자열 — `App.tsx` 와 **글자까지 같던** hhmm 을 한자리로
+ *     `domain/fleetName.ts` 센터 이름 줄이기 — 같은 이유
+ *
+ *   남은 것은 **배선**이다 — 적재 · 내비 링크 · 검색 · 도달 가능 · 미리보기 경로, 그리고
+ *   그 값을 어느 조각에 넘길지.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OpsMap, type OpsLayers } from "./components/OpsMap";
@@ -48,16 +61,23 @@ import { preparePois, searchPois, type PoiHit } from "./domain/search";
 import { travelSeconds } from "./domain/speed";
 import { requiredWidth } from "./domain/vehicle";
 import {
-  CLEARANCE_BAND_ORDER, clearanceCounts, edgeClearance, fmtClearance,
+  CLEARANCE_BAND_ORDER, clearanceCounts, fmtClearance,
 } from "./domain/clearance";
 import { snap as snapOnce, prepare } from "./domain/snap";
 import { distM, type LngLat } from "./domain/geo";
-import type { GraphEdge, HistorySummary, VehicleSpec } from "./domain/types";
-import { F, fmtDur } from "./ui/tokens";
-import { GRAY_REASON, grayReason, VERDICT_MEANING, VERDICT_ORDER } from "./ui/verdictMeaning";
-import { CLEARANCE_FORMULA, CLEARANCE_SCALE, segmentReason } from "./ui/clearanceMeaning";
+import type { GraphEdge, HistorySummary } from "./domain/types";
+import { fmtDur, fmtSec, hhmm, hhmmss } from "./ui/tokens";
+import { GRAY_REASON, VERDICT_MEANING, VERDICT_ORDER } from "./ui/verdictMeaning";
+import { CLEARANCE_FORMULA, CLEARANCE_SCALE } from "./ui/clearanceMeaning";
 import { VehicleArt } from "./ui/VehicleArt";
-import { displayName, vehicleClass } from "./domain/fleetName";
+import { Center, Row, Sec, Tile } from "./ui/OpsBits";
+import { SegCard } from "./ui/SegCard";
+import {
+  ackBtn, body, btnSm, card, chip, clock, colL, colR, cta, D, dot, feedRow, input, lab,
+  legendBox, legendHead, legendRow, linkBtn, list, listItem, mapBox, modeBtn, shell,
+  toggleRow, top, unitRow, vehRow,
+} from "./ui/opsTheme";
+import { displayName, shortStation, vehicleClass } from "./domain/fleetName";
 
 interface Incident { point: LngLat; label: string; at: Date }
 
@@ -231,7 +251,7 @@ export default function OpsApp() {
         <Tile k={`실측 도착 중앙값${myCenter ? ` · ${station?.name.replace(/119안전센터$/, "")}` : ""}`}
               v={fmtSec(myCenter?.median_s ?? hs?.resp_median_s ?? null)}
               sub={myCenter ? `${myCenter.n}건` : hs ? `${hs.resp_n}건` : "이력 없음"} />
-        <div style={clock}>{clockText(now)}</div>
+        <div style={clock}>{hhmmss(new Date(now))}</div>
       </header>
 
       <div style={body}>
@@ -529,216 +549,3 @@ export default function OpsApp() {
     </div>
   );
 }
-
-/**
- * 구간 카드.
- *
- * ★ 2026-09-23 (DECISIONS §220). 두 가지가 들어왔다 — **여유폭을 수로**(색과 같은 4단
- *   색을 글자에 입힌다) 와 **사유 한 줄**. 사유는 빨강만이 아니라 판정마다 낸다.
- *   초록이고 여유가 넉넉하면 `segmentReason` 이 null 을 내고 그 칸이 통째로 빠진다 —
- *   관제사가 그것으로 취할 조치가 없으면 화면에서도 뺀다.
- */
-function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
-  e: GraphEdge; style: Bundle["graph"]["style"]; spec: VehicleSpec; reachable: boolean | null;
-  vehicle: string; onClose: () => void;
-}) {
-  const s = style[e.verdict];
-  const c = edgeClearance(e, spec);
-  const why = segmentReason(e, spec);
-  const cctvOk = e.cctv_dist_m != null && e.cctv_dist_m <= 25;
-  const gray = grayReason(e);
-  return (
-    <div style={{ ...secBox }}>
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <b style={{ fontSize: 15, flex: 1 }}>{e.seg_label ?? e.road_name ?? e.seg_uid}</b>
-        <button onClick={onClose} style={{ border: "none", background: "none", fontSize: 18, cursor: "pointer", color: D.sub }}>✕</button>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-        <i style={{ ...dot, background: s?.color }} />
-        <b>{s?.label ?? e.verdict}</b>
-        <span style={{ fontSize: 11, color: D.sub }}>{VERDICT_MEANING[e.verdict]}</span>
-      </div>
-      {why && (
-        <div style={{ ...whyBox, borderColor: CLEARANCE_SCALE[c.band].color }}>
-          <b style={{ color: CLEARANCE_SCALE[c.band].color }}>{why.head}</b>
-          <div style={{ color: D.ink, marginTop: 2 }}>{why.detail}</div>
-          {why.action && <div style={{ color: D.sub, marginTop: 2 }}>→ {why.action}</div>}
-        </div>
-      )}
-      <Row k="최소 · 최대 유효폭" v={`${e.width_min_m?.toFixed(1) ?? "—"} · ${e.width_max_m?.toFixed(1) ?? "—"}m`} />
-      <Row k={`${vehicle} 요구폭 (전폭 + 여유)`} v={`${c.requiredM.toFixed(1)}m`} />
-      {/* ★ 멘토링 §219 — 「여유폭을 색과 수로」. 이 한 줄이 그 수다 */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, padding: "4px 0",
-                    borderBottom: `1px solid ${D.line}` }}>
-        <span style={{ color: D.sub }}>여유폭 = 최소 유효폭 − 요구폭</span>
-        <b style={{ color: CLEARANCE_SCALE[c.band].color, textAlign: "right" }}>
-          {fmtClearance(c.m)} <span style={{ fontWeight: 600, color: D.sub }}>{CLEARANCE_SCALE[c.band].short}</span>
-        </b>
-      </div>
-      <Row k="측정 신뢰도 · 폭 표본" v={`${e.width_cov != null ? Math.round(e.width_cov * 100) + "%" : "—"} · ${e.n_sample ?? "—"}개`} />
-      <Row k="가까운 CCTV" v={e.cctv_dist_m != null ? `${Math.round(e.cctv_dist_m)}m ${cctvOk ? "(영상판정 가능)" : "(25m 밖)"}` : "—"} />
-      {gray && (
-        <div style={{ fontSize: 12, background: "#0f172a", border: `1px solid ${D.line}`, borderRadius: 8, padding: "7px 9px", marginTop: 6, lineHeight: 1.5 }}>
-          <b>회색 사유 — {gray.short}</b><br />{gray.long}
-        </div>
-      )}
-      <Row k="불법주정차 단속(도로명 · 3년)" v={e.park ? `${e.park.toLocaleString()}건` : "없음"} warn={(e.park ?? 0) >= 200} />
-      {e.ow ? (
-        <Row k="일방통행" v={e.ow === 2 ? "방향 미확인" : "방향 확정"} warn={e.ow === 2} />
-      ) : null}
-      <Row k="길이" v={e.length_m != null ? `${Math.round(e.length_m)}m` : "—"} />
-      <Row k="선택 센터에서" v={reachable == null ? "—" : reachable ? "도달 가능" : "도달 불가"} warn={reachable === false} />
-      <div style={{ fontSize: 11, color: D.sub, marginTop: 8, lineHeight: 1.5 }}>
-        폭은 도면 기반 미검증 값이다. 실시간 주정차 · 공사 · 회전 · 높이는 반영하지 않는다.
-      </div>
-    </div>
-  );
-}
-
-function Row({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, padding: "4px 0",
-                  borderBottom: `1px solid ${D.line}` }}>
-      <span style={{ color: D.sub }}>{k}</span>
-      <b style={{ color: warn ? D.danger : D.ink, textAlign: "right" }}>{v}</b>
-    </div>
-  );
-}
-function Sec({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section style={secBox}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, letterSpacing: .6, marginBottom: 8 }}>{title}</div>
-      {children}
-    </section>
-  );
-}
-function Tile({ k, v, sub, tone }: { k: string; v: string; sub?: string; tone?: "ok" | "warn" | "danger" }) {
-  const c = tone === "ok" ? D.ok : tone === "warn" ? D.warn : tone === "danger" ? D.danger : D.ink;
-  return (
-    <div style={tile}>
-      <div style={{ fontSize: 10.5, color: D.sub, whiteSpace: "nowrap" }}>{k}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, lineHeight: 1.15 }}>
-        {v}{sub && <span style={{ fontSize: 10.5, color: D.sub, fontWeight: 600 }}> {sub}</span>}
-      </div>
-    </div>
-  );
-}
-function Center({ children }: { children: React.ReactNode }) {
-  return <div style={{ ...shell, display: "grid", placeItems: "center" }}>{children}</div>;
-}
-function hhmm(d: Date): string {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-function clockText(t: number): string {
-  const d = new Date(t);
-  return `${hhmm(d)}:${String(d.getSeconds()).padStart(2, "0")}`;
-}
-function fmtSec(s: number | null | undefined): string {
-  if (s == null) return "—";
-  return `${Math.floor(s / 60)}분 ${String(Math.round(s % 60)).padStart(2, "0")}초`;
-}
-function shortStation(raw: string): string {
-  const m = raw.match(/광주-(.+)$/);
-  return (m ? m[1] : raw).replace(/[-\s]/g, "");
-}
-
-// ── 관제실 톤 (§216-4) ─────────────────────────────────────────────
-// ★ 판정 4색은 여기 없다(정본 `style`). 틀 · 글자 · 상태 색만이다.
-const D = {
-  bg: "#0b1220", panel: "#0f172a", card: "#111c2f", line: "#23324a", ink: "#e5e7eb", sub: "#94a3b8",
-  accent: "#38bdf8", ok: "#22c55e", warn: "#f59e0b", danger: "#ef4444",
-};
-const shell: React.CSSProperties = {
-  position: "fixed", inset: 0, background: D.bg, fontFamily: F.family, color: D.ink,
-  display: "flex", flexDirection: "column",
-};
-const top: React.CSSProperties = {
-  height: 58, flex: "0 0 auto", display: "flex", alignItems: "center", gap: 10, padding: "0 14px",
-  borderBottom: `1px solid ${D.line}`, background: "#070d18",
-};
-const tile: React.CSSProperties = {
-  border: `1px solid ${D.line}`, borderRadius: 8, padding: "4px 10px", background: D.panel, minWidth: 74,
-};
-const clock: React.CSSProperties = {
-  fontSize: 22, fontWeight: 800, fontVariantNumeric: "tabular-nums", marginLeft: 6, color: D.accent,
-};
-const body: React.CSSProperties = {
-  flex: 1, minHeight: 0, display: "grid", gridTemplateColumns: "340px 1fr 360px",
-};
-const colL: React.CSSProperties = {
-  borderRight: `1px solid ${D.line}`, overflowY: "auto", padding: 10, display: "flex", flexDirection: "column", gap: 10,
-  background: D.panel,
-};
-const colR: React.CSSProperties = { ...colL, borderRight: "none", borderLeft: `1px solid ${D.line}` };
-const mapBox: React.CSSProperties = { position: "relative", minWidth: 0 };
-const secBox: React.CSSProperties = {
-  background: D.card, border: `1px solid ${D.line}`, borderRadius: 10, padding: "10px 12px",
-};
-const whyBox: React.CSSProperties = {
-  fontSize: 11.5, background: "#0f172a", border: "1.5px solid", borderRadius: 8,
-  padding: "7px 9px", margin: "8px 0 2px", lineHeight: 1.5,
-};
-const legendBox: React.CSSProperties = {
-  position: "absolute", left: 10, bottom: 10, width: 270, zIndex: 3, background: "rgba(11,18,32,.9)",
-  border: `1px solid ${D.line}`, borderRadius: 10, padding: "8px 10px", fontSize: 12,
-};
-// ★ 접기 손잡이. 접었을 때도 **무엇이 접혀 있는지** 보여야 한다 —
-//   빈 막대만 남으면 다음 사람이 그것을 지우려고 한다.
-const legendHead: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 6, width: "100%", padding: 0, marginBottom: 6,
-  background: "transparent", border: "none", color: D.sub, cursor: "pointer",
-  fontFamily: F.family, fontSize: 11, fontWeight: 800,
-};
-const input: React.CSSProperties = {
-  flex: 1, width: "100%", boxSizing: "border-box", border: `1px solid ${D.line}`, borderRadius: 8,
-  padding: "8px 10px", fontSize: 13, fontFamily: F.family, background: D.panel, color: D.ink,
-};
-const btnSm: React.CSSProperties = {
-  border: `1px solid ${D.accent}`, borderRadius: 8, padding: "0 10px", fontWeight: 800, fontSize: 12,
-  cursor: "pointer", fontFamily: F.family, whiteSpace: "nowrap",
-};
-const linkBtn: React.CSSProperties = {
-  border: "none", background: "none", color: D.sub, fontSize: 11, cursor: "pointer", padding: 0,
-  fontFamily: F.family, textDecoration: "underline",
-};
-const list: React.CSSProperties = { border: `1px solid ${D.line}`, borderRadius: 8, marginTop: 6, overflow: "hidden" };
-const listItem: React.CSSProperties = {
-  display: "block", width: "100%", textAlign: "left", border: "none", borderBottom: `1px solid ${D.line}`,
-  background: D.panel, color: D.ink, padding: "7px 10px", cursor: "pointer", fontFamily: F.family, fontSize: 13,
-};
-const card: React.CSSProperties = {
-  marginTop: 8, border: `1.5px solid ${D.line}`, borderRadius: 10, padding: "9px 11px", background: D.panel,
-};
-const lab: React.CSSProperties = { display: "block", fontSize: 11, color: D.sub, margin: "8px 0 4px" };
-const vehRow: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 8, border: "1px solid", borderRadius: 8, padding: "4px 8px",
-  cursor: "pointer", fontFamily: F.family, color: D.ink,
-};
-const cta: React.CSSProperties = {
-  width: "100%", marginTop: 10, border: "none", borderRadius: 10, padding: "12px 0",
-  background: "linear-gradient(90deg,#dc2626,#ef4444)", color: "#fff", fontWeight: 800, fontSize: 15,
-  cursor: "pointer", fontFamily: F.family, letterSpacing: .3,
-};
-const modeBtn: React.CSSProperties = {
-  flex: 1, border: "1px solid", borderRadius: 7, padding: "4px 0", fontSize: 11.5, fontWeight: 800,
-  cursor: "pointer", fontFamily: F.family,
-};
-const legendRow: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 8, width: "100%", border: "none", background: "none",
-  padding: "3px 0", cursor: "pointer", fontFamily: F.family, color: D.ink, fontSize: 12,
-};
-const dot: React.CSSProperties = { width: 12, height: 12, borderRadius: 6, flex: "0 0 auto", border: "2px solid rgba(255,255,255,.25)" };
-const toggleRow: React.CSSProperties = { display: "flex", alignItems: "center", gap: 7, fontSize: 12, padding: "2px 0" };
-const chip: React.CSSProperties = { border: "1px solid", borderRadius: 999, padding: "1px 8px", fontSize: 11, fontWeight: 800 };
-const unitRow: React.CSSProperties = {
-  display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%", gap: 2, marginTop: 6,
-  border: `1px solid ${D.line}`, borderRadius: 8, padding: "7px 9px", background: D.panel,
-  cursor: "pointer", fontFamily: F.family, color: D.ink, textAlign: "left",
-};
-const feedRow: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: `1px solid ${D.line}`,
-};
-const ackBtn: React.CSSProperties = {
-  border: "none", background: D.accent, color: "#0b1220", borderRadius: 7, padding: "6px 11px",
-  fontWeight: 800, cursor: "pointer", fontFamily: F.family,
-};

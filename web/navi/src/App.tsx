@@ -17,6 +17,18 @@
  * ★ 주행 화면의 상태(재탐색 · 골목 · 최종 접근 · 도착 …)는 여기서 가르지
  *   않는다. 신호를 모아 `domain/status.ts::deriveStatus` 에 넘기고, 나온
  *   한 줄을 `TopBar` 가 그린다. 18장이 그 한 줄로 갈린다.
+ *
+ * ── 넷을 떼었다 (2026-09-25 · PLAN §1 #130) ─────────────────────
+ * ★ 640줄로 길이 상한(600)을 넘었다. **머리말이 「계산도 그림도 여기서 하지 않는다」 고
+ *   적어 놓고 둘 다 들고 있었다** — 비교 카드 문장, 바탕색, 연기 keyframes, 시계 훅.
+ *   이 파일에는 시험이 없으니 계산을 옮기지 않고 **상태를 안 지는 것**부터 뗀다.
+ *
+ *     `ui/routeOption.ts`   경로 하나 → 비교 카드 한 벌 (문장 포함)
+ *     `ui/appShell.tsx`     바탕 · 토스트 · 차량 칩 · Center · 연기 CSS
+ *     `app/useNow.ts`       초 단위 시계
+ *     `app/useFading.ts`    값이 바뀌면 보이고 잠시 뒤 사라진다
+ *     `ui/tokens.ts`        hhmm · hhmmss — `OpsApp.tsx` 와 **글자까지 같던** 것
+ *     `domain/fleetName.ts` 센터 이름 줄이기 — 같은 이유
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NaviMap, type MapMarks, type MapNote } from "./components/NaviMap";
@@ -27,14 +39,15 @@ import { useScreens } from "./app/useScreens";
 import { useFleet } from "./app/useFleet";
 import { useShare } from "./app/useShare";
 import { useOpsUplink, type UnitSnapshot } from "./app/useOpsUplink";
-import { compareKind, compareMarks, routeStats, sameRoute } from "./domain/compare";
+import { compareKind, compareMarks, sameRoute } from "./domain/compare";
 import { cumulative, pointAlong } from "./domain/geo";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
 import { requiredWidth } from "./domain/vehicle";
-import { travelSeconds } from "./domain/speed";
 import { STATUS, deriveStatus, type StatusKey } from "./domain/status";
 import type { LngLat } from "./domain/geo";
 import type { GraphEdge, RoutePlan, VehicleSpec } from "./domain/types";
+import { useNow } from "./app/useNow";
+import { useFading } from "./app/useFading";
 import { TopBar } from "./ui/TopBar";
 import { MapControls } from "./ui/MapControls";
 import { RemainPill } from "./ui/RemainPill";
@@ -46,12 +59,14 @@ import { SearchPanel } from "./ui/SearchPanel";
 import { PlanHeader, TimeBox } from "./ui/Sheet";
 import { DispatchPanel, type StationOpt } from "./ui/DispatchPanel";
 import { VehiclePicker } from "./ui/VehiclePicker";
-import { RouteCompare, type RouteOption } from "./ui/RouteCompare";
+import { RouteCompare } from "./ui/RouteCompare";
+import { routeOption } from "./ui/routeOption";
+import { Center, SMOKE_CSS, shell, toast, vehChip } from "./ui/appShell";
 import { BottleneckPanel } from "./ui/BottleneckPanel";
 import { Truck } from "./ui/icons";
-import { C, F, fmtDur } from "./ui/tokens";
-import { ruleSummary } from "./domain/rules";
-import { hazardSummary, routeHazards } from "./domain/context";
+import { C, hhmm, hhmmss } from "./ui/tokens";
+import { routeHazards } from "./domain/context";
+import { shortStation } from "./domain/fleetName";
 import { grayReason } from "./ui/verdictMeaning";
 import { segmentReason } from "./ui/clearanceMeaning";
 
@@ -531,110 +546,11 @@ export default function App() {
 
 // ── 도움 ────────────────────────────────────────────────────────
 
-function routeOption(
-  p: RoutePlan, need: number, other: RoutePlan | null, rec: boolean,
-  access: { alt: boolean; walkM: number } | null,
-  ctx: GeoJSON.FeatureCollection | null,
-): RouteOption {
-  const st = routeStats(p);
-  const unc = { length: st.uncertainCount };
-  const sec = travelSeconds(p);
-  const deltaSec = other ? sec - travelSeconds(other) : 0;
-  const otherUnc = other ? routeStats(other).uncertainCount : unc.length;
-  // ★ 2026-09-22 (§214-2). 문구를 **실제 수로** 쓴다. 종전 「확인 필요 구간 11개를
-  //   지납니다」 는 비교 상대를 안 말해서 추천 이유가 안 보였다.
-  const slower = deltaSec > 1 ? `${fmtDur(deltaSec)} 느리지만 ` : "";
-  const recNote = !unc.length ? `${slower}확인 필요 구간을 우회합니다.`
-    : unc.length < otherUnc ? `${slower}확인 필요 구간이 ${otherUnc - unc.length}개 적습니다.`
-    : `확인 필요 구간 ${unc.length}개를 지납니다 — 피할 수 있는 경로가 없습니다.`;
-  const tail = access?.alt
-    ? ` 차량은 사건 지점 약 ${Math.round(access.walkM)}m(직선) 앞 대체 접근 지점까지 갑니다.` : "";
-  return {
-    title: rec ? "폭 기준 추천" : "빠른 경로", recommended: rec, sec, lengthM: st.lengthM,
-    uncertainCount: st.uncertainCount,
-    uncertainM: st.uncertainM,
-    minWidthM: st.minWidthM,
-    requiredM: need,
-    blockedCount: st.blockedCount,
-    ruleCount: st.ruleCount,
-    deltaSec,
-    note: (rec ? recNote : "도착은 빠르지만 폭 측정 신뢰도가 낮은 구간이 포함됩니다.") + tail,
-    rules: ruleSummary(p.rules),
-    around: hazardSummary(routeHazards(p, ctx)),
-  };
-}
-
 /** 비교 화면에서 선택 안 된 쪽 경로. `choose` 전이라 plan 이 안전 경로다 */
 function otherPlan(n: { plan: RoutePlan | null; fastPlan: RoutePlan | null }, choice: "safe" | "fast") {
   return choice === "safe" ? n.fastPlan : n.plan;
 }
 
-/** `동부소방서_광주-지산-119 안전센터` → `지산119안전센터` */
-function shortStation(raw: string): string {
-  const m = raw.match(/광주-(.+)$/);
-  return (m ? m[1] : raw).replace(/[-\s]/g, "");
-}
-
-function hhmm(d: Date): string {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-function hhmmss(d: Date): string {
-  return `${hhmm(d)}:${String(d.getSeconds()).padStart(2, "0")}`;
-}
-
-/** 값이 바뀌면 보이고 `ms` 뒤 사라진다. 같은 값이 다시 와도 새로 보이지 않는다 */
-function useFading(v: string | null, ms: number): string | null {
-  const [shown, setShown] = useState<string | null>(null);
-  useEffect(() => {
-    setShown(v);
-    if (!v) return;
-    const t = setTimeout(() => setShown(null), ms);
-    return () => clearTimeout(t);
-  }, [v, ms]);
-  return shown;
-}
-
-/** 초 단위 시계. 상단 「현재 시간」 이 이것을 읽는다 */
-function useNow(): Date {
-  const [t, setT] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setT(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return t;
-}
-
-/** 사건 지점 연기 — 와이어프레임 05 · 15 · 23. 순수 CSS 라 지도 위 DOM 마커에 붙는다 */
-const SMOKE_CSS = `
-.fl-smoke{position:absolute;left:50%;top:-6px;width:0;height:0;pointer-events:none}
-.fl-smoke i{position:absolute;left:-14px;top:-10px;width:28px;height:28px;border-radius:50%;
-  background:radial-gradient(circle,rgba(90,90,96,.55),rgba(120,120,128,0) 70%);
-  animation:flsmoke 3.2s linear infinite}
-.fl-smoke i:nth-child(2){animation-delay:1.05s}
-.fl-smoke i:nth-child(3){animation-delay:2.1s}
-@keyframes flsmoke{0%{transform:translate(0,0) scale(.5);opacity:0}
-  15%{opacity:.9}100%{transform:translate(10px,-70px) scale(2.2);opacity:0}}`;
-
 const EMPTY_SPEC: VehicleSpec = {
   width_m: 0, wheelbase_m: null, turn_radius_m: null, clearance_m: 0,
 };
-
-const shell: React.CSSProperties = {
-  position: "fixed", inset: 0, background: "#e2e7ed", color: C.panelInk,
-  fontFamily: F.family,
-};
-const toast: React.CSSProperties = {
-  position: "absolute", zIndex: 8, bottom: 90, left: "50%",
-  transform: "translateX(-50%)", maxWidth: "70vw",
-  background: "rgba(9,12,18,.94)", color: C.darkInk,
-  border: `1px solid ${C.warn}66`, borderRadius: 12,
-  padding: "10px 16px", fontSize: F.base,
-};
-const vehChip: React.CSSProperties = {
-  background: "#1f2937", color: "#fff", borderRadius: 8, padding: "6px 12px",
-  fontSize: 14, fontWeight: 800,
-};
-function Center({ children }: { children: React.ReactNode }) {
-  return <div style={{ ...shell, display: "grid", placeItems: "center",
-                       padding: 24, textAlign: "center" }}>{children}</div>;
-}

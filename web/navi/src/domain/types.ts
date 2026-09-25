@@ -278,6 +278,20 @@ export interface HistorySummary {
 /** 자차의 현재 자리. rAF 가 ref 로 들고 다닌다 — React 상태가 아니다 */
 export interface LiveFix { lon: number; lat: number; brg: number; on: boolean }
 
+/**
+ * 대기 → 목적지 선택 → **경로 확인** → 안내 → 도착
+ *
+ * ★ `preview` 가 2026-09-06 에 생겼다. 그 전에는 목적지를 고르면 즉시
+ *   안내가 시작됐는데, 상용 내비는 경로와 예상 시간을 보여주고 사용자가
+ *   시작을 누른다.
+ * ★ 2026-09-25 (PLAN §1 #129). 집이 `app/useNavigation.ts` 였다. 위치원 배선과
+ *   추측항법을 형제 훅으로 가르면서 **셋이 같은 단계 이름을 읽어야** 했다 —
+ *   훅끼리 서로를 import 해 타입을 얻으면 의존이 고리를 그린다. 공유 타입의
+ *   집은 여기다(§244 · `LiveFix` · `PosMode` 와 같은 이유).
+ */
+export type Phase =
+  | "loading" | "idle" | "picked" | "preview" | "guiding" | "arrived";
+
 /** 시연 막대의 위치원 선택. `route` 는 경로 따라가기 · `gpsSim` 은 GPS 흉내 */
 export type PosMode = "route" | "gpsSim";
 

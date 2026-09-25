@@ -8,6 +8,19 @@
  *   스냅  5Hz        2.2ms 브루트포스라 매 프레임은 낭비다
  *   UI    구간 변경   setState
  *
+ * ── 넷을 들고 있었다 (PLAN §1 #129) ─────────────────────────────
+ * ★ 2026-09-25. 570줄이었고 한 훅이 넷을 들었다. 셋을 형제로 떼고 **단계 기계와
+ *   5Hz 스냅만** 남겼다 — 형제 여섯(`useFleet` · `useHudData` · `useOpsUplink` ·
+ *   `useScreens` · `useShare` · `useVoice`)과 같은 규율이다.
+ *
+ *     `useBundle`          `web/data` 적재 · 스냅기 · `snapAt`
+ *     `usePositionSource`  gps · 흉내 · 경로 따라가기 중 하나를 잇는다 · teleport
+ *     `useDeadReckoning`   드문 측위 사이를 60fps 로 메운다 (ref 만 고친다)
+ *     `domain/routeSolve`  투영 → A* → 대체 접근 지점 → 빠른 경로 (순수)
+ *
+ *   여기 남은 것은 **상태를 가진 일**뿐이다 — 단계 전이, 5Hz 스냅 결과를 state 로
+ *   옮기기, 이탈 재탐색 타이머. 반환 객체의 이름 서른아홉은 한 글자도 안 바뀌었다.
+ *
  * ★ 2026-09-22 (DECISIONS §213-2). **주행 거리는 위치 추정기(`domain/progress`)가
  *   낸다.** 종전에는 구간 스냅의 seg_uid 로 `progressAlongRoute` 를 파생했는데
  *   교차로에서 스냅이 망설이면 옛 값을 붙들었고, 순간이동을 몰랐다. 이제
@@ -31,41 +44,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SCOPE_M, SNAP_INTERVAL_MS } from "../config";
 import { bearing, distM, type LngLat } from "../domain/geo";
-import {
-  buildAdjacency, findRouteBetween, fullProgress, progressAlongRoute, routeUids, snapToEdge,
-  type Adjacency, type RouteEnd,
-} from "../domain/graph";
-import {
-  createTracker, prepare, snap as snapOnce, type Tracker,
-} from "../domain/snap";
-import { verifyAgainstPrecomputed } from "../domain/vehicle";
-import { alternateAccess } from "../domain/access";
+import { buildAdjacency, type Adjacency } from "../domain/adjacency";
+import { fullProgress } from "../domain/edgeSnap";
+import { progressAlongRoute, routeUids } from "../domain/routeDerive";
+import { reaches, solveRoute } from "../domain/routeSolve";
 import { GPS_WEAK_M } from "../domain/status";
 import {
-  locate, pointAtM, predictS, routeGeom, type ProgressState, type RouteGeom,
+  locate, pointAtM, routeGeom, type ProgressState, type RouteGeom,
 } from "../domain/progress";
-import { loadAll, type Bundle } from "../infra/dataSource";
-import { createGpsSource } from "../infra/position/gps";
-import { createSimulationSource } from "../infra/position/simulation";
-import { createReplaySource } from "../infra/position/replay";
+import { useBundle } from "./useBundle";
+import { useDeadReckoning } from "./useDeadReckoning";
+import { usePositionSource } from "./usePositionSource";
 import type {
-  Fix, RoutePlan, SnapResult, VehicleSpec,
+  Fix, Phase, RoutePlan, SnapResult, VehicleSpec,
 } from "../domain/types";
 
-/**
- * 대기 → 목적지 선택 → **경로 확인** → 안내 → 도착
- *
- * ★ `preview` 가 2026-09-06 에 생겼다. 그 전에는 목적지를 고르면 즉시
- *   안내가 시작됐는데, 상용 내비는 경로와 예상 시간을 보여주고 사용자가
- *   시작을 누른다.
- */
-export type Phase =
-  | "loading" | "idle" | "picked" | "preview" | "guiding" | "arrived";
-
-/** 카메라가 프레임마다 읽는 위치. React 가 모른다. */
 // ★ 집은 `domain/types.ts` 다(DECISIONS §244). 여기서는 다시 내보낸다.
 import type { LiveFix, PosMode } from "../domain/types";
-export type { LiveFix, PosMode };
+export type { LiveFix, PosMode, Phase };
 
 /**
  * 시연 위치원.  route = 경로를 따라 걷는 정답 점(60fps) · gpsSim = GPS 흉내(1Hz · 잡음 · 음영).
@@ -80,9 +76,7 @@ const MOVE_MIN_M = 1.2;
 
 export function useNavigation(spec: VehicleSpec | null) {
   const [phase, setPhase] = useState<Phase>("loading");
-  const [fatal, setFatal] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [data, setData] = useState<Bundle | null>(null);
 
   const [current, setCurrent] = useState<SnapResult | null>(null);
   const [origin, setOrigin] = useState<SnapResult | null>(null);
@@ -126,8 +120,6 @@ export function useNavigation(spec: VehicleSpec | null) {
    */
   const [gpsAccM, setGpsAccM] = useState<number | null>(null);
   const accRef = useRef<number | null>(null);
-  const tracker = useRef<Tracker | null>(null);
-  const prepared = useRef<ReturnType<typeof prepare> | null>(null);
   const lastSnapAt = useRef(0);
   const lastPos = useRef<LngLat | null>(null);
   const curUid = useRef<string | null>(null);
@@ -143,35 +135,15 @@ export function useNavigation(spec: VehicleSpec | null) {
   const onRouteRef = useRef(true);
   /** 측위가 드문 위치원인가(GPS · 흉내). 드물면 측위 사이를 추측항법으로 메운다 */
   const sparse = useRef(false);
-  const srcRef = useRef<{ seek(m: number): void; readonly alongM?: number; readonly truthM?: number } | null>(null);
+
+  // ── ① 적재 — 한 번 돌고 끝난다(`useBundle`) ────────────────────
+  const onLoaded = useCallback(() => setPhase("idle"), []);
+  const { data, fatal, tracker, snapAt } = useBundle(onLoaded, setNotice);
 
   // 판정 기준 차량. `useFleet` 이 만들어 넘긴다.
   // ★ 되먹이지 않는다 — 2026-09-06 에 setState 로 밀어넣었다가
   //   무한 리렌더가 났다. 의존은 useFleet → useNavigation 한 방향이다.
   const active = spec ?? data?.spec ?? null;
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const d = await loadAll();
-        // ★ 파이썬과 같은 답을 내는지 즉시 대조한다.
-        const v = verifyAgainstPrecomputed(d.graph.edges, d.spec, d.routeVehicle);
-        if (v.mismatch.length) {
-          console.error("★ edgeCost 이식이 파이썬과 갈렸다", v.mismatch.slice(0, 10));
-          setNotice(`edgeCost 대조 실패 — ${v.mismatch.length}건 (콘솔 확인)`);
-        } else {
-          console.info(`edgeCost 대조 OK — ${v.checked}구간 전량 일치`);
-        }
-        prepared.current = prepare(d.graph.edges.map((e) => ({
-          seg_uid: e.seg_uid, verdict: e.verdict,
-          width_min_m: e.width_min_m, seg_label: e.seg_label, coords: e.coords,
-        })));
-        tracker.current = createTracker(prepared.current);
-        setData(d);
-        setPhase("idle");
-      } catch (e) { setFatal(String(e)); }
-    })();
-  }, []);
 
   const adj: Adjacency | null = useMemo(
     () => (data && active
@@ -265,7 +237,7 @@ export function useNavigation(spec: VehicleSpec | null) {
     curUid.current = r.seg_uid;
     setNotice(null);
     setCurrent(r);
-  }, []);
+  }, [tracker]);
 
   // 경로가 바뀌면(산출 · 재탐색 · 우회) 추정을 새로 시작한다 — 새 경로는 현위치에서 시작한다
   useEffect(() => {
@@ -274,72 +246,14 @@ export function useNavigation(spec: VehicleSpec | null) {
     setDriven(plan ? 0 : null);
   }, [plan]);
 
-  // ── 추측항법 — 드문 측위 사이를 메운다. 1.5초 넘게 앞서 가지 않는다 ──
-  useEffect(() => {
-    if (phase !== "guiding" || !geom) return;
-    let raf = 0;
-    const tick = () => {
-      const st = prog.current;
-      if (st && sparse.current && onRouteRef.current) {
-        const q = pointAtM(geom, predictS(st, performance.now(), geom.totalM));
-        live.current = { lon: q.point[0], lat: q.point[1], brg: q.bearing, on: true };
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [phase, geom]);
+  // ── ③ 추측항법 — 드문 측위 사이를 메운다(`useDeadReckoning`) ────
+  useDeadReckoning({ phase, geom, prog, sparse, onRoute: onRouteRef, live });
 
-  // ★ 2026-09-21. 배속을 바꾸면 시뮬레이션이 **처음부터 다시** 돌았다 —
-  //   소스를 새로 만들면서 진행 거리를 버렸기 때문이다. 같은 경로면 멈춘
-  //   자리에서 이어 간다. 경로가 바뀌면(우회·재탐색) 새 경로는 현위치에서
-  //   시작하므로 0 이 맞다.
-  const simAt = useRef<{ plan: RoutePlan | null; along: number }>({ plan: null, along: 0 });
-  useEffect(() => {
-    // ★ 2026-09-21. 주행 전(00 · 01 · 02)에는 위치를 안 받는다. 출발지가
-    //   안전센터라 현위치가 쓰이지 않고, 받으면 「위치 없음」 알림만 뜬다.
-    if (phase !== "guiding") return;
-    if (simSpeed > 0 && plan) {
-      // 속도는 구간에서 읽는다. simSpeed 는 **재생 배속**이다.
-      const end = () => { setSimSpeed(0); setPhase("arrived"); };
-      if (posMode === "gpsSim") {
-        // ★ GPS 흉내 — 1Hz · σ5m · 40초마다 8초 음영. 마커는 추정기가 낸 자리다
-        const src = createReplaySource(plan, { rate: simSpeed }, end);
-        if (simAt.current.plan === plan) src.seek(simAt.current.along);
-        srcRef.current = src;
-        const stop = src.start(onFix);
-        return () => { simAt.current = { plan, along: src.truthM }; srcRef.current = null; stop(); };
-      }
-      const src = createSimulationSource(plan, simSpeed, end);
-      if (simAt.current.plan === plan) src.seek(simAt.current.along);
-      srcRef.current = src;
-      const stop = src.start(onFix);
-      return () => { simAt.current = { plan, along: src.alongM }; srcRef.current = null; stop(); };
-    }
-    // ★ 실제 GPS 가 없는 기기(데스크톱 · 거부)에서 「위치 없음 (User denied…)」 이 주행
-    //   화면을 덮었다. 무엇을 하면 되는지를 말한다.
-    return createGpsSource().start(onFix, (m) => setNotice(
-      m.startsWith("위치 없음") ? "실제 GPS 신호가 없다 — 시연은 아래 ▶ 로 주행한다" : m));
-  }, [phase, simSpeed, plan, onFix, posMode]);
-
-  /**
-   * 시연 — 차를 앞으로 순간이동시킨다. GPS 가 음영에서 튀어 돌아온 상황이다.
-   * ★ 화면이 따라붙는지(마커 · 안내 · 남은 거리)를 보는 단추다. 위치원만 옮기고
-   *   추정기에는 아무것도 알리지 않는다 — 알아채는 것이 추정기의 일이다.
-   */
-  const teleport = useCallback((m: number) => {
-    const s = srcRef.current;
-    if (!s) return;
-    const at = s.truthM ?? s.alongM ?? 0;
-    s.seek(at + m);
-  }, []);
-
-  /** 좌표를 도로에 붙여본다. 목적지 후보의 판정을 미리 보는 데 쓴다. */
-  const snapAt = useCallback((lon: number, lat: number): SnapResult | null => {
-    if (!prepared.current) return null;
-    const r = snapOnce(lon, lat, prepared.current, {});
-    return r && r.dist_m <= SCOPE_M ? r : null;
-  }, []);
+  // ── ② 위치원 — gps · 흉내 · 경로 따라가기(`usePositionSource`) ──
+  const onSimEnd = useCallback(() => { setSimSpeed(0); setPhase("arrived"); }, []);
+  const { teleport, forget } = usePositionSource({
+    phase, simSpeed, plan, posMode, onFix, onEnd: onSimEnd, onNotice: setNotice,
+  });
 
   const route = useCallback((
     from: SnapResult, to: SnapResult, keepGuiding = false,
@@ -348,25 +262,10 @@ export function useNavigation(spec: VehicleSpec | null) {
     const A = adjOverride?.safe ?? adj;
     const F = adjOverride?.fast ?? adjFast;
     if (!data || !A) return false;
-    // ★ 2026-09-22 (DECISIONS §218-3). 출발·도착을 가장 가까운 **노드**가 아니라 **구간**에
-    //   투영한다. 노드에 붙이면 구간 한가운데 선 차를 교차점으로 옮겨 경로를 짰다.
-    const S = snapToEdge(data.graph, A, from.point);
-    let goal: RouteEnd | null = snapToEdge(data.graph, A, to.point);
-    let r = S && goal ? findRouteBetween(data.graph, A, S, goal) : null;
-    let alt = false;
-    if (!r && S) {
-      // ★ 2026-09-22 (§214-2). 사건 지점까지 못 가면 **닿는 가장 가까운 곳**에 댄다.
-      //   종전에는 13(경로 없음)을 띄우고 끝났다 — 다른 접근 지점을 사람에게 넘겼다.
-      //   출발 구간의 두 끝점은 같은 성분이라 어느 쪽에서 세어도 닿는 곳이 같다.
-      const acc = alternateAccess(data.graph, A, S.edge.a, to.point);
-      if (acc) {
-        goal = { node: acc.node };
-        r = findRouteBetween(data.graph, A, S, goal);
-        if (r && !r.edges.length) r = null;       // 제자리가 대체 지점이면 경로가 아니다
-        alt = !!r;
-      }
-    }
-    if (!r) {
+    // ★ 투영 · 대체 접근 지점 · 빠른 경로는 `domain/routeSolve` 가 순수하게 푼다.
+    //   여기서는 그 결과를 상태로 옮기기만 한다.
+    const sol = solveRoute(data.graph, A, F, from.point, to.point);
+    if (!sol) {
       // ★ 문구를 「연결성 우선으로 바꿔봐라」 에서 상태로 옮겼다. 폭 조건을
       //   푸는 것은 사람이 정할 일이지 화면이 권할 일이 아니다(와이어프레임 13).
       setNoRoute(true);
@@ -374,19 +273,16 @@ export function useNavigation(spec: VehicleSpec | null) {
       return false;
     }
     setNoRoute(false);
-    const end = r.coords[r.coords.length - 1];
-    setAccess({ alt, walkM: end ? distM(end, to.point) : 0 });
-    tracker.current?.setRoute(routeUids(r));
-    setPlan(r);
-    const FS = F ? snapToEdge(data.graph, F, from.point) : null;
-    const FG = F ? (alt ? goal : snapToEdge(data.graph, F, to.point)) : null;
-    setFastPlan(F && FS && FG ? findRouteBetween(data.graph, F, FS, FG) : null);
+    setAccess({ alt: sol.alt, walkM: sol.walkM });
+    tracker.current?.setRoute(routeUids(sol.plan));
+    setPlan(sol.plan);
+    setFastPlan(sol.fast);
     setOffRoute(false); setNotice(null);
     // ★ 여기서 멈춘다. 사용자가 "안내 시작" 을 눌러야 guiding 이 된다.
     //   주행 중 재탐색·우회는 멈추지 않는다.
     if (!keepGuiding) setPhase("preview");
     return true;
-  }, [data, adj, adjFast]);
+  }, [data, adj, adjFast, tracker]);
 
   // ── 이탈 → 재탐색 (와이어프레임 06) ──────────────────────────
   // ★ 이탈을 알리기만 하고 끝내지 않는다. 짧게 「재탐색 중」 을 보인 뒤
@@ -426,7 +322,7 @@ export function useNavigation(spec: VehicleSpec | null) {
     }
     setDest(s);
     route(origin, s);
-  }, [snapAt, origin, phase, route]);
+  }, [snapAt, origin, phase, route, tracker]);
 
   /**
    * 출발지를 둔다 — 안전센터 좌표(와이어프레임 00).
@@ -442,7 +338,7 @@ export function useNavigation(spec: VehicleSpec | null) {
     tracker.current?.setRoute(null);
     setPhase((p) => (p === "loading" ? p : "picked"));
     return true;
-  }, [snapAt]);
+  }, [snapAt, tracker]);
 
   /** 도착지(사건 위치)를 둔다. **경로는 아직 안 낸다** — 차량을 먼저 고른다. */
   const setDestAt = useCallback((lon: number, lat: number): boolean => {
@@ -503,10 +399,7 @@ export function useNavigation(spec: VehicleSpec | null) {
       for (const { e } of byWidth.slice(0, 12)) {
         const A = buildAdjacency(data.graph, active, lenient, "safe", undefined, new Set([...blocked, e.seg_uid]));
         if (!from) break;
-        const S = snapToEdge(data.graph, A, from.point);
-        const T = snapToEdge(data.graph, A, dest.point);
-        if (S && T && (findRouteBetween(data.graph, A, S, T)
-          || alternateAccess(data.graph, A, S.edge.a, dest.point))) return e;
+        if (reaches(data.graph, A, from.point, dest.point)) return e;
       }
     }
     return (byWidth[0] ?? { e: pl.edges[0] }).e;
@@ -524,7 +417,7 @@ export function useNavigation(spec: VehicleSpec | null) {
       setPlan(fastPlan);
       setFastPlan(plan);
     }
-  }, [plan, fastPlan]);
+  }, [plan, fastPlan, tracker]);
 
   /** 안내를 시작한다. `preview` 에서 사용자가 누른다. */
   const start = useCallback(() => {
@@ -543,12 +436,12 @@ export function useNavigation(spec: VehicleSpec | null) {
     setCurrent(null); setSimSpeed(0); setOffRoute(false); setNotice(null);
     setNoRoute(false); setRerouting(false); setBlocked(new Set());
     setDriven(null); prog.current = null; setAccess(null);
-    simAt.current = { plan: null, along: 0 };
+    forget();
     lastPos.current = null; curUid.current = null;
     live.current.on = false;
     tracker.current?.reset();
     setPhase("idle");
-  }, []);
+  }, [forget, tracker]);
 
   /** 경로 끝까지 남은 거리(m). 최종 접근(05) 판단에 쓴다 */
   const remainM = useMemo(() => {

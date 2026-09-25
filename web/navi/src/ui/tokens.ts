@@ -130,3 +130,23 @@ export function fmtDur(sec: number): string {
   const s = Math.max(0, Math.round(sec));
   return s < 60 ? `${s}초` : `${Math.floor(s / 60)}분${s % 60 ? ` ${s % 60}초` : ""}`;
 }
+
+/* ── 시각 문자열 ────────────────────────────────────────────────
+ * ★ 2026-09-25 (PLAN §1 #130). `hhmm` 이 `App.tsx` · `OpsApp.tsx` 에 **글자까지 같게**
+ *   따로 적혀 있었다. 둘 다 상한(600)을 넘던 파일이고, 같은 함수를 두 벌 들고 있는 것이
+ *   그 길이의 한 조각이었다. 형식을 바꿀 일이 오면 한 곳만 고친다 — 서식은 `fmtDist` ·
+ *   `fmtDur` 과 같은 종류의 것이고 그 집은 여기다. */
+
+/** 「09:07」 */
+export function hhmm(d: Date): string {
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+/** 「09:07:42」 — 초까지. 상황판 시계와 「마지막 갱신」 이 읽는다 */
+export function hhmmss(d: Date): string {
+  return `${hhmm(d)}:${String(d.getSeconds()).padStart(2, "0")}`;
+}
+/** 초를 「3분 05초」 로. 실측 도착 시간(119 이력)을 적는 데 쓴다. 모르면 「—」 */
+export function fmtSec(s: number | null | undefined): string {
+  if (s == null) return "—";
+  return `${Math.floor(s / 60)}분 ${String(Math.round(s % 60)).padStart(2, "0")}초`;
+}
