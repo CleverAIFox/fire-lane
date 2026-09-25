@@ -144,9 +144,27 @@ def main() -> None:
     complete = _complete_profiles()
     clearance = float(spec["clearance_m"])
 
+    # ★ 2026-09-25 (PLAN §1 #38 · DECISIONS §253). **없는 이름을 조용히 넘기지 않는다.**
+    #   종전에는 `profiles.get(id, {})` 가 빈 dict 를 주고 `p.get("width_m", spec["width_m"])`
+    #   이 기준차 2.5 로 떨어졌다. 그 결과 열 차종 중 **여섯**이 대장에 없는 이름을
+    #   가리키는 채로 전장·전고가 통째로 null 이었고 **아무도 몰랐다** —
+    #   인터뷰가 「커서 못 들어간다」고 지목한 물탱크차가 그중 하나다(전장 10.0m).
+    #   대장에 **없는** 이름이면 죽는다. 대응이 없는 차는 `profile: null` 로 적는다.
+    unknown = sorted({str(f["profile"]) for f in fleet
+                      if f.get("profile") and str(f["profile"]) not in profiles})
+    if unknown:
+        raise SystemExit(
+            f"★ config.js 의 fleet 이 대장에 없는 profile 을 가리킨다: {unknown}\n"
+            f"  대장 `vehicle_profiles.items` 에 있는 이름: {sorted(profiles)}\n"
+            "  대응이 있으면 그 이름으로 고치고, **없으면 `profile: null` 로 적어라.**\n"
+            "  없는 이름을 두면 전장·전고가 조용히 null 이 되고 전폭이 기준차로 떨어진다.")
+
     rows = []
     for f in fleet:
-        p = profiles.get(str(f.get("profile", "")), {})
+        pid = str(f.get("profile") or "")
+        p = profiles.get(pid, {})
+        # profile 이 null 인 차는 기준차 전폭을 쓴다 — 그것이 소방청 기준값이고,
+        # 그 사실이 `match`/`note` 에 적혀 화면까지 간다(§212).
         width = float(p.get("width_m", spec["width_m"]))
         unknown = bool(f.get("turnUnknown", False))
         radius = None if unknown else radii.get(str(f.get("profile", "")))
