@@ -50,6 +50,7 @@ from firelane import segkey as _segkey
 from firelane.paths import PROCESSED
 from firelane.paths import env as _env
 from firelane.paths import flag as _flag
+from firelane.seg import geom as seg_geom
 
 # ── 파라미터 · 순수 함수 ──────────────────────────────────────
 # ★ 정본은 seg/ 다. 여기서 다시 정의하지 않는다(R3).
@@ -168,7 +169,6 @@ def _write_route(g, dst=None) -> None:
     #   `graph.py` 는 같은 문제를 union-find 로 푼다(§4 노드 접합).
     #   경계가 없으므로 0.02m 차이가 노드를 가르지 않는다. 같은 방식을 쓴다.
     #   **두 곳이 다른 규칙으로 노드를 묶으면 그래프가 두 개가 된다.**
-    from shapely.strtree import STRtree
 
     from firelane.seg.params import NODE_TOL
 
@@ -180,27 +180,13 @@ def _write_route(g, dst=None) -> None:
         _ends.append((r, co[0], co[-1]))
 
     _pts = [Point(q) for _, a, b in _ends for q in (a, b)]
-    _tree = STRtree(_pts)
-    _par = list(range(len(_pts)))
-
-    def _find(i):
-        while _par[i] != i:
-            _par[i] = _par[_par[i]]
-            i = _par[i]
-        return i
-
-    for i, pt in enumerate(_pts):
-        for j in _tree.query(pt.buffer(NODE_TOL)):
-            j = int(j)
-            if j != i and _pts[i].distance(_pts[j]) <= NODE_TOL:
-                ri, rj = _find(i), _find(j)
-                if ri != rj:
-                    _par[max(ri, rj)] = min(ri, rj)
+    # ★ 2026-09-25 (PLAN §1 #125 · DECISIONS §252). `seg/graph.py` 와 같은 15줄이었다.
+    _rep = seg_geom.snap_groups(_pts, NODE_TOL)
 
     H = nx.Graph()
     meta = {}
     for k, (r, _a, _b) in enumerate(_ends):
-        a, b = _find(2 * k), _find(2 * k + 1)
+        a, b = _rep[2 * k], _rep[2 * k + 1]
         if a == b:
             continue
         geom = r.geometry
@@ -230,10 +216,10 @@ def _write_route(g, dst=None) -> None:
         return
     import numpy as np
     # 노드 대표 좌표 — union-find 그룹의 첫 점을 쓴다
-    _rep = {}
+    _xy = {}
     for i2, pt2 in enumerate(_pts):
-        _rep.setdefault(_find(i2), (pt2.x, pt2.y))
-    npts = np.array([_rep[n] for n in nodes], dtype=float)
+        _xy.setdefault(_rep[i2], (pt2.x, pt2.y))
+    npts = np.array([_xy[n] for n in nodes], dtype=float)
     use = Counter()
     reach = set()
     for lon, lat in seg_graph.STATIONS.values():

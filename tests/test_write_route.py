@@ -24,7 +24,12 @@
 IN    합성 GeoDataFrame (레이크 불필요) · `sources.yaml`(차량 제원)
 OUT   tmp_path 의 CSV
 PARAM 없음
-밖    경로가 **최적인지**는 안 본다 — 그것은 비용함수(`vehicle.edge_cost`)가
+밖    ① 0.02m 접합 사고(2026-08-24)는 **여기서 못 본다.** 시험을 써 보고 지웠다 —
+         안전센터가 둘이라 합성 그래프에서 지산이 **떨어져 나간 쪽에 직접 붙는다.**
+         그러면 노드가 갈려도 `reachable` 이 1 이라 늘 초록이다. 거짓 초록을
+         남기느니 없는 편이 낫다. 그 경계는
+         `tests/test_snap_groups.py::test_a_two_centimetre_gap_still_joins` 가 든다.
+      ② 경로가 **최적인지**는 안 본다 — 그것은 비용함수(`vehicle.edge_cost`)가
       정하고 `PLAN §1 #2` 가 든다. 여기서 보는 것은 「막힌 길을 쓰는가」와
       「못 가는 곳을 갈 수 있다고 하는가」 둘이다. 둘 다 **미탐 방향**이라
       소방차를 잘못 보낸다.

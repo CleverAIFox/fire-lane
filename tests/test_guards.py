@@ -1938,27 +1938,27 @@ def test_route_graph_snaps_nodes_like_build_graph():
     ★ **두 곳이 다른 규칙으로 노드를 묶으면 그래프가 두 개가 된다.**
       `route_usage` 와 `route_vehicle` 이 서로 다른 위상 위에서 계산되면
       비교 자체가 성립하지 않는다.
+
+    ★ **2026-09-25 (PLAN §1 #125 · DECISIONS §252).** 이 자리에도 소스 문자열
+      단언 넷이 있었고(`"_tree = STRtree(_pts)" in body` 등), #127 과 같은 병이다.
+      두 곳의 union-find 를 `seg.geom.snap_groups` 하나로 합치면서 그 문자열이
+      사라졌다 — **행동은 그대로인데 검사가 빨개졌다.** 그것이 이 형태의 값이
+      음수라는 증거다.
+
+      지금은 **한 문을 쓰는지**만 보고, 접합 규칙 자체는
+      `tests/test_snap_groups.py` 가, 0.02m 사고 재현은
+      `tests/test_write_route.py::test_two_endpoints_two_centimetres_apart_are_one_node`
+      가 산출물로 든다.
     """
-    pytest.importorskip("geopandas")   # ★ CI 는 로컬보다 좁다.
-    # 2026-08-24. 이 테스트는 PR #40 이 먹어서 한 번도 CI 를 안 거쳤다.
-    src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
-    i = src.index("def _write_route")
-    body = src[i:i + 8000]
-    # ★ 문자열 존재가 아니라 **실제로 도는지**를 본다. 처음에 `"STRtree" in
-    #   body` 로만 봤더니 import 줄을 지워도 주석에 남은 이름 때문에 통과했다.
-    assert "_tree = STRtree(_pts)" in body, "격자 반올림으로 노드를 묶는다"
-    assert "_pts[i].distance(_pts[j]) <= NODE_TOL" in body, \
-        "graph.py 와 다른 허용치로 묶는다"
-    assert "_par[max(ri, rj)] = min(ri, rj)" in body, "union-find 접합이 없다"
-    assert "round(co[0][0] / TOL" not in body, "격자 반올림이 남아 있다"
-
-    # 실제로 import 되는가 — 모듈을 불러 확인한다
-    import firelane.segments as _S
-    assert hasattr(_S, "_write_route")
-
-    # graph.py 도 같은 상수를 쓰는지
-    gp = (ROOT / "src/firelane/seg/graph.py").read_text(encoding="utf-8")
-    assert "NODE_TOL" in gp, "graph.py 가 NODE_TOL 을 안 쓴다"
+    for rel, why in (("src/firelane/segments.py", "2차 경로"),
+                     ("src/firelane/seg/graph.py", "§4 노드 접합")):
+        src = (ROOT / rel).read_text(encoding="utf-8")
+        assert "snap_groups(" in src, (
+            f"{rel}({why})이 접합을 자기 손으로 한다 — 두 곳이 다른 규칙으로 묶으면\n"
+            "  **그래프가 두 개가 된다.** 집은 `firelane.seg.geom.snap_groups` 다.")
+        assert "round(co[0][0] / TOL" not in src, "격자 반올림이 돌아왔다"
+    assert (ROOT / "tests/test_snap_groups.py").exists(), \
+        "접합 규칙의 강제자가 사라졌다"
 
 
 def test_ship_reports_the_real_failure():

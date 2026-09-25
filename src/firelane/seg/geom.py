@@ -123,3 +123,51 @@ def _join(g1, g2):
     B = c2 if i2 == 0 else c2[::-1]
     mid = ((A[-1][0]+B[0][0])/2.0, (A[-1][1]+B[0][1])/2.0)
     return LineString(A[:-1] + [mid] + B[1:])
+
+def snap_groups(pts, tol: float = NODE_TOL) -> list[int]:
+    """끝점을 `tol` 안에서 union-find 로 묶는다. **각 점의 대표 인덱스**를 준다.
+
+    ★ 2026-09-25 (PLAN §1 #125 · DECISIONS §252). 같은 15줄이 `seg/graph.py`
+      (§4 노드 접합)와 `segments.py::_write_route`(2차 경로) 두 곳에 있었다.
+      **둘이 글자까지 같지는 않았다** — 행은 「공백까지 같게」라 적었지만
+      합집합 방향이 달랐다:
+
+          graph.py     _par[ri] = rj                 먼저 만난 쪽을 뒤로
+          segments.py  _par[max(ri, rj)] = min(...)  큰 인덱스를 작은 쪽 아래로
+
+      **집합 분할은 같다** — union-find 에서 대표가 누구인가는 묶음을 안 바꾼다.
+      다른 것은 대표 인덱스뿐이고, 두 쓰임 다 그것에 안 기댄다: `graph.py` 는
+      그룹의 무게중심을 쓰고, `segments.py` 는 그룹의 **최소 인덱스 점** 좌표를
+      쓴다(`_rep.setdefault` 가 오름차순 순회에서 첫 점을 잡는다).
+
+      그래도 **추론으로 합치지 않았다** — `PLAN §1 #47` 이 「`_find` ×5 동치성이
+      확인되지 않았다」로 들고 있고, 합치기 전에 증명이 먼저다. `segments`
+      단계를 재실행해 판정 산출물 다섯이 바이트 동일함을 확인하고 합쳤다.
+
+    ★ 대표 규칙은 `max → min` 을 골랐다. **가장 작은 인덱스가 대표**라는 것이
+      읽는 사람에게 설명 없이 전달되고, 순회 순서와 무관하게 결정적이다.
+
+    밖  무엇을 묶을지는 안 정한다 — `tol` 은 부르는 쪽이 준다. 기본값
+        `NODE_TOL` 은 두 쓰임이 같은 값을 쓰기 때문이고, 다른 값이 필요하면
+        넘겨라. mm 반올림으로 노드를 식별하면 4cm 떨어진 두 점이 별개가 되고
+        그 사이에 길이 0.04m 엣지가 남는다(§4).
+    """
+    from shapely.strtree import STRtree
+
+    par = list(range(len(pts)))
+
+    def find(i: int) -> int:
+        while par[i] != i:
+            par[i] = par[par[i]]
+            i = par[i]
+        return i
+
+    tree = STRtree(pts)
+    for i, pt in enumerate(pts):
+        for j in tree.query(pt.buffer(tol)):
+            j = int(j)
+            if j != i and pts[i].distance(pts[j]) <= tol:
+                ri, rj = find(i), find(j)
+                if ri != rj:
+                    par[max(ri, rj)] = min(ri, rj)
+    return [find(i) for i in range(len(pts))]
