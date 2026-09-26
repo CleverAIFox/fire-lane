@@ -55,12 +55,39 @@ DATA_EXT = {".zip", ".7z", ".csv", ".json", ".shp", ".gpkg", ".tif",
             ".hwp", ".hwpx", ".xls", ".xlsx", ".txt", ".dbf", ".pdf", ".xml"}
 
 
-def sha(p: Path) -> str:
-    h = hashlib.sha256()
-    with open(p, "rb") as f:
-        for b in iter(lambda: f.read(1 << 20), b""):
-            h.update(b)
-    return h.hexdigest()
+#: 읽다 실패한 파일 — 사유와 함께. 비어야 통과다.
+UNREAD: list[tuple[str, str]] = []
+
+
+def sha(p: Path, *, chunks=(1 << 18, 1 << 15)) -> str | None:
+    """파일의 sha256. **못 읽으면 None 을 내고 `UNREAD` 에 적는다.**
+
+    ★ 2026-09-26 (§258-15). 종전에는 1MB 씩 읽었고, 외장 SSD 가 붙은
+      `/mnt/` (DrvFs) 에서 `OSError: [Errno 12] Cannot allocate memory` 로
+      **트레이스백을 내며 죽었다.** 실기에서 사흘 연속 같은 자리였다.
+      진짜 메모리 부족이 아니다 — 그때 스왑은 16GB 중 377MB 만 쓰고 있었다.
+      DrvFs 가 큰 읽기 버퍼를 호스트 쪽에 못 맵핑할 때 나는 오류다.
+
+    ★ **두 가지를 고친다.**
+      ㉠ 버퍼를 256KB 로 줄이고, 그래도 실패하면 32KB 로 한 번 더 시도한다.
+      ㉡ 그래도 못 읽으면 **어느 파일인지 적고 넘어간다.** 종전 트레이스백은
+         파일 이름을 한 글자도 안 냈다 — 사흘 동안 무엇이 안 읽히는지 몰랐다.
+
+    ★ 넘어가되 **조용히 넘어가지 않는다.** `UNREAD` 가 비지 않으면 `main` 이
+      빨갛게 끝낸다. 못 읽은 원본을 「레이크에 없다」로 세면 그 다음 판단
+      (중복인가 · 지워도 되는가)이 전부 거짓이 된다.
+    """
+    for n in chunks:
+        h = hashlib.sha256()
+        try:
+            with open(p, "rb") as f:
+                for b in iter(lambda n=n: f.read(n), b""):
+                    h.update(b)
+            return h.hexdigest()
+        except OSError as e:
+            last = f"{type(e).__name__}: {e}"
+    UNREAD.append((str(p), last))
+    return None
 
 
 def led() -> dict:
@@ -231,7 +258,8 @@ def main() -> int:
     for zone in ("raw", "norm"):
         for p in (D / zone).rglob("*"):
             if p.is_file():
-                lake.setdefault(sha(p), p.relative_to(D))
+                if (d := sha(p)) is not None:
+                    lake.setdefault(d, p.relative_to(D))
     print(f" {len(lake)}건")
 
     dele = scan("① 다운로드 폴더", IN, lake, ret, held, min_mb=0.0)
@@ -250,20 +278,33 @@ def main() -> int:
 
     fix_docs(a.yes)
 
+    # ★ 2026-09-26 (§258-15). **못 읽은 원본이 있으면 이 실행의 판단은 부분이다.**
+    #   레이크 지문이 비어 있는 파일은 「레이크에 없다」로 세어지고, 그러면
+    #   「중복이라 지워도 된다」가 거짓이 된다. 목록은 끝까지 내되 빨갛게 끝낸다 —
+    #   조용히 넘어가면 지우면 안 될 것을 지우라고 말하게 된다.
+    if UNREAD:
+        print(f"\n★ 못 읽은 원본 {len(UNREAD)}건 — 이 실행의 판단은 **부분**이다")
+        for q, why in UNREAD[:10]:
+            print(f"   {q}\n     {why}")
+        if len(UNREAD) > 10:
+            print(f"   … 외 {len(UNREAD) - 10}건")
+        print("   외장 SSD 가 /mnt/ (DrvFs) 로 붙어 있으면 큰 읽기가 ENOMEM 을 낸다.")
+        print("   그 원본을 리눅스 쪽 디스크로 옮기거나, 그 파일만 빼고 판단해라.")
+
     todo = dele + land
     total = sum(p.stat().st_size for p, _, _ in todo)
     print(f"\n══ 정리 대상 {len(todo)}건 · {total / 1e6:.0f}MB")
     if not todo:
         print("   없다")
-        return 0
+        return 1 if UNREAD else 0
     if not a.sweep:
         print("   `--sweep` 으로 지울 목록을 확정한다")
-        return 0
+        return 1 if UNREAD else 0
     if not a.yes:
         for p, v, _w in todo:
             print(f"   지울 것  {p.name[:50]:52s} [{v}]")
         print("\n   실제로 지우려면 --sweep --yes")
-        return 0
+        return 1 if UNREAD else 0
     n = 0
     for p, v, w in todo:
         p.unlink()
@@ -271,7 +312,7 @@ def main() -> int:
         n += 1
     print(f"\n   {n}건 삭제 · {total / 1e6:.0f}MB 확보")
     print("   ★ 근거가 대장에 있는 것만 지웠다. 보류·미판단은 남아 있다")
-    return 0
+    return 1 if UNREAD else 0
 
 
 if __name__ == "__main__":

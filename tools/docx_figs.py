@@ -48,6 +48,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
@@ -71,6 +72,7 @@ def _render_figures():
     spec = importlib.util.spec_from_file_location(
         "_render_figures", Path(__file__).resolve().parent / "render_figures.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 

@@ -427,13 +427,20 @@ def test_a_by_path_loader_registers_the_module():
       **강제자가 없어서** 열여덟 파일이 그 함정을 밟은 채로 살아 있었다.
       터지는 날은 그 도구가 `@dataclass` 를 갖는 날이라 **지연 신관**이다.
 
+    ★ 2026-09-26. 처음 판은 `tests/` 만 훑었고 `deadcheck ⑤`(좁은 범위)가 그것을
+      잡았다 — **강제자가 제 이름보다 좁았다.** 넓히자 `tools/` 에서 넷이 더
+      나왔다(`docx_check` · `docx_figs` · `pull_data` · `treecheck`).
+      「범위가 이름보다 좁다」를 잡으려고 만든 배치에서 또 그 족을 저질렀고,
+      이번엔 **사람이 아니라 검사가** 잡았다.
+
     밖  등록 **이름**이 옳은지는 안 본다(`spec.name` 을 쓰는 것이 관례다).
-        `src/` 안의 정상 import 는 대상이 아니다 — 경로 적재만 본다.
+        평범한 `import` 는 대상이 아니다 — 경로 적재만 본다.
     """
     import ast as _ast
 
     bad = []
-    for p in sorted((ROOT / "tests").glob("*.py")):
+    scan = [q for d in ("src", "tools", "tests") for q in sorted((ROOT / d).rglob("*.py"))]
+    for p in scan:
         tree = _ast.parse(p.read_text(encoding="utf-8"))
         loads = [n for n in _ast.walk(tree)
                  if isinstance(n, _ast.Call) and isinstance(n.func, _ast.Attribute)
@@ -444,7 +451,7 @@ def test_a_by_path_loader_registers_the_module():
                 if isinstance(n, _ast.Subscript) and isinstance(n.value, _ast.Attribute)
                 and n.value.attr == "modules"]
         if len(regs) < len(loads):
-            bad.append(f"  tests/{p.name}  적재 {len(loads)} · 등록 {len(regs)}")
+            bad.append(f"  {p.relative_to(ROOT)}  적재 {len(loads)} · 등록 {len(regs)}")
     assert not bad, (
         "경로로 적재하고 `sys.modules` 에 안 넣었다\n" + "\n".join(bad)
         + "\n\n  `spec.loader.exec_module(m)` **앞에** 한 줄 넣는다 —\n"

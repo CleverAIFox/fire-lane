@@ -14507,7 +14507,7 @@ blocked 191). 빨간 것은 전부 주변이고, 그중 **넷이 이 배치가 �
 
 > 2026-09-25
 
-강제자  `tests/test_lakecheck_l7.py` · `tests/test_doc_fsck.py::test_a_generated_path_is_a_claim_not_a_silence` · `tests/test_vintage_multi.py::test_the_index_reads_plural_stem_lists` · `tests/test_n1.py::test_the_deployed_surface_table_matches_web` · `tools/fixture_recut.py --selftest` · `tools/argcheck.py --selftest`. 하위 둘은 이 결정의 조각이고 위 강제자들이 결정 전체를 든다
+강제자  `tests/test_lakecheck_l7.py` · `tests/test_doc_fsck.py::test_a_generated_path_is_a_claim_not_a_silence` · `tests/test_vintage_multi.py::test_the_index_reads_plural_stem_lists` · `tests/test_n1.py::test_the_deployed_surface_table_matches_web` · `tools/fixture_recut.py --selftest` · `tools/argcheck.py --selftest`. 하위 셋은 이 결정의 조각이고 위 강제자들이 결정 전체를 든다
 
 §257 의 끝에 「남은 셋은 사람이 판단할 자리라 손대지 않았다」고 적었다. **그 판단이
 틀렸다.** 셋 다 도구가 할 수 있는 일이었고, 셋 다 원인이 같았다 — **검사의 범위가
@@ -14801,3 +14801,42 @@ SKIP 사유 강제(다음 배치)를 봉인 안 찢는 것과 찢는 것으로 �
 
 ★ 이 사본은 개발 기계의 2026-09-19 산출물에서 떴고 실기는 제 WSL 스택으로 굽는다.
   **사본은 레이크 기계에서 떠야 한다** — 거기가 정본이 사는 곳이다.
+
+### 258-15. 읽기 실패가 **어느 파일인지 한 글자도 안 냈다**
+
+강제자  `tools/sweep.py` 의 `UNREAD` — 비지 않으면 빨갛게 끝난다
+
+`레이크 정리 대상` 단계가 사흘 연속 같은 자리에서 트레이스백을 내며 죽었다 —
+`sweep.py:61` 의 `f.read(1 << 20)` 에서 `OSError: [Errno 12] Cannot allocate memory`.
+
+★ **진짜 메모리 부족이 아니다.** 2026-09-26 14:34 실행에서 스왑은 16GB 중 377MB 만
+  쓰고 있었고 같은 실행의 다른 57단계가 전부 돌았다. 외장 SSD 가 `/mnt/`(DrvFs)로
+  붙어 있을 때 큰 읽기 버퍼를 호스트 쪽에 못 맵핑하면 나는 오류다.
+
+★ **제일 나쁜 것은 파일 이름이 없었다는 것이다.** 사흘 동안 무엇이 안 읽히는지
+  몰랐다. 트레이스백은 `sweep.py:61` 만 가리켰고 그 줄은 모든 파일에 공통이다.
+  진단이 「어디서 죽었나」만 말하고 「무엇에서 죽었나」를 안 말했다.
+
+세 가지를 고쳤다 — 버퍼를 256KB 로 줄이고, 실패하면 32KB 로 한 번 더 시도하고,
+그래도 못 읽으면 **경로와 사유를 적고 넘어간다.**
+
+★ **넘어가되 조용히 넘어가지 않는다.** 지문이 빠진 파일은 「레이크에 없다」로
+  세어지고, 그러면 「중복이라 지워도 된다」가 거짓이 된다 — 지우면 안 될 것을
+  지우라고 말하게 된다. 그래서 목록은 끝까지 내되 `UNREAD` 가 비지 않으면
+  실행이 빨갛다. 「건너뛴 것은 통과가 아니다」를 이 자리에도 적용한다.
+
+### 258-16. 강제자가 또 제 이름보다 좁았다 — 이번엔 **검사가 잡았다**
+
+`test_a_by_path_loader_registers_the_module` 을 `tests/` 만 훑게 썼다.
+`deadcheck ⑤`(좁은 범위)가 그것을 잡았다 — "`['tests']` 만 훑는다 —
+`['src', 'tools']` 의 143개 파일이 대상 밖이다".
+
+범위를 넓히자 `tools/` 에서 넷이 더 나왔다 — `docx_check` · `docx_figs` ·
+`pull_data` · `treecheck`. 전부 경로로 적재하고 `sys.modules` 에 안 넣는다.
+
+★ 「범위가 이름보다 좁다」 족을 잡으려고 세운 강제자가 **그 족이었다.** 이 배치가
+  같은 실수를 세 번째 저질렀다(§258-1 의 L7 · §258-2 의 vintage · 여기).
+
+★ 그런데 이번에는 **사람이 아니라 검사가 잡았다.** §226 이 `deadcheck ⑤` 를
+  세운 값어치가 여기서 났다 — 강제자를 세우는 배치가 만든 좁은 강제자를
+  기존 강제자가 잡는다. 그것이 관문을 층으로 쌓는 이유다.

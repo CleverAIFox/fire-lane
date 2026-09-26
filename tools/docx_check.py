@@ -177,6 +177,7 @@ def audit(p: Path) -> list[str]:
     import importlib.util
     spec = importlib.util.spec_from_file_location("_docx_fix", ROOT / "tools" / "docx_fix.py")
     fx = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = fx   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(fx)
     full = "\n".join(txt for _, txt in cells)
     for rx, rep, why in fx.rules():
