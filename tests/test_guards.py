@@ -37,13 +37,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 # ── 1. 계보 검사 ────────────────────────────────────────────────
-def _manifest(tmp_path: Path, outputs=None, notes=None, **status) -> Path:
+def _manifest(tmp_path: Path, outputs=None, **status) -> Path:
     d = tmp_path / "processed"
     d.mkdir(exist_ok=True)
-    outputs, notes = outputs or {}, notes or {}
+    outputs = outputs or {}
     (d / "_manifest.json").write_text(json.dumps(
-        {"datasets": [{"key": k, "status": v, "outputs": outputs.get(k, []),
-                       "note": notes.get(k, "")}
+        {"datasets": [{"key": k, "status": v, "outputs": outputs.get(k, [])}
                       for k, v in status.items()]}),
         encoding="utf-8")
     return d
@@ -53,40 +52,19 @@ def test_lineage_passes_when_all_ok(tmp_path):
     lineage_check(_manifest(tmp_path, **{k: "OK" for k in CRITICAL}))
 
 
-def test_lineage_accepts_a_declared_skip(tmp_path):
-    """SKIP 은 **사유가 선언돼 있을 때만** 통과다.  (§258-11)
+# ★ 2026-09-26. SKIP 사유 강제는 **다음 배치다.** 구현이
+#   `src/firelane/guards.py` 에 들어가는데 그것은 ingest 폐포 안이라 전 샤드가
+#   찢어진다(재빌드 20분 · 8GB 기계 OOM 위험 · PLAN #132). 시험만 먼저 얹으면
+#   구현 없는 빨간불이 되고, 그것이 2026-09-26 에 실제로 났다 — **쪼갤 때
+#   시험과 구현이 갈라졌다.** 구현과 같은 배치로 간다.
+def test_lineage_accepts_skip(tmp_path):
+    """SKIP 은 '이번 실행에서 건드리지 않음'이다. 실패가 아니다.
 
-    ★ 2026-09-26. 종전 이 시험의 이름은 `test_lineage_accepts_skip` 이었고,
-      `cctv`(판정 입력)를 사유 없이 SKIP 으로 놓고 **「통과가 맞다」고 잠갔다.**
-      그것이 결함을 시험으로 고정한 자리다 — cctv 가 어떤 이유로든 SKIP 이 되면
-      `segments` 는 옛 cctv 파일을 읽고 판정이 조용히 옛 자료로 나온다.
-      1093 사고의 모양 그대로다.
+    ★ 이 시험이 **사유를 안 본다**는 것이 다음 배치가 닫을 결함이다. 지금은
+      종전 그대로 둔다 — 고치는 배치가 구현을 같이 들고 온다.
     """
     st = {k: "OK" for k in CRITICAL}
     st["cctv"] = "SKIP"
-    lineage_check(_manifest(tmp_path, notes={"cctv": "raw_only — 별도 스크립트가 직접 읽는다"}, **st))
-
-
-def test_lineage_blocks_an_undeclared_skip(tmp_path):
-    """★ 반대편. 사유 없는 SKIP 은 「안 봤다」이고 통과가 아니다."""
-    st = {k: "OK" for k in CRITICAL}
-    st["cctv"] = "SKIP"
-    with pytest.raises(GuardFailure, match="사유 없이"):
-        lineage_check(_manifest(tmp_path, **st))
-    # 아무 말이나 적어서 입을 막을 수 없다 — 분류 안의 사유여야 한다
-    with pytest.raises(GuardFailure, match="사유 없이"):
-        lineage_check(_manifest(tmp_path, notes={"cctv": "그냥 건너뜀"}, **st))
-
-
-def test_a_skip_outside_the_judgment_inputs_is_not_this_guards_business(tmp_path):
-    """밖 — 판정 입력이 아닌 소스의 SKIP 은 여기서 안 본다.
-
-    ★ 넓히면 이 관문이 대장 전건의 생략 정책을 들게 되고, 그것은
-      `lakecheck` · `refcheck` 소관이다. 강제자가 제 이름보다 넓어지는 것도
-      좁아지는 것만큼 나쁘다 — 아무도 그 범위를 기대하지 않는다.
-    """
-    st = {k: "OK" for k in CRITICAL}
-    st["donggu_statbook"] = "SKIP"          # 판정 입력이 아니다
     lineage_check(_manifest(tmp_path, **st))
 
 
