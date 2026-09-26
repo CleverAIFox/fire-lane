@@ -39,23 +39,16 @@ from pathlib import Path
 
 import yaml
 
+# ★ 2026-09-26 (§258-19 · PLAN #136 닫힘). 프로브 셋을 `tools/docfsck/` 로 내렸다 —
+#   664줄이 상한(600)을 넘었다. **진입점은 여기 하나**이고 `CHECKS` 표도 여기 있다.
+#   「어느 파일에 있나」가 기억거리가 되는 문제(§18-3)는 **프로브 번호가 곧 파일
+#   이름**이라 안 생긴다(③ absent · ⑤ expiry · ⑥ docx_revised).
+from docfsck import _today
+from docfsck.absent import check_absent
+from docfsck.docx_revised import check_docx_revised
+from docfsck.expiry import check_expiry
+
 from firelane import generated
-
-
-def _today() -> str:
-    """오늘(KST).
-
-    ★ 시간대를 명시한다. `date.today()` 는 실행 머신의 시간대를 쓰는데
-      CI 는 UTC 이고 사람은 KST 다. 게이트가 아홉 시간 늦게 운다.
-      `.ruff-strict.toml` 의 DTZ011 이 이것을 막는다.
-
-    ★ 계산을 한 곳에 둔다. 종전에는 `check_expiry` 안에만 있었고
-      `check_deferred` 가 생기면서 두 벌이 됐다(§73 과 같은 형태).
-    """
-    import datetime as _dt
-    return _dt.datetime.now(
-        tz=_dt.timezone(_dt.timedelta(hours=9))).date().isoformat()
-
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "sources.yaml"
@@ -84,8 +77,13 @@ FIELD_EXEMPT = {
 # ★ 한시 유예. **늘리지 마라.** 사유와 해소 조건을 함께 적는다(§80 과 같은 형태).
 PATH_EXEMPT = {
     # 2026-09-01. 파일이 광인사 그램에만 있다. UI 담당이 커밋하면 해소된다.
-    #   config.js:327 · vehicle.js:187 이 fetch 하고, 없으면 화면이
-    #   "제원 미확인" 만 띄운다. PLAN 이 이 항목을 든다.
+    # ★ 2026-09-26 사유 정정 (§258-18). 종전에는 「`config.js:327` · `vehicle.js:187`
+    #   이 fetch 하고, 없으면 화면이 "제원 미확인" 만 띄운다」고 적혀 있었다.
+    #   **둘 다 죽었다** — `vehicle.js` 는 옛 지도와 함께 걷어냈고(2026-09-22),
+    #   `web/config.js` 는 **어떤 HTML 도 로드하지 않는다**(전수 확인). 즉 브라우저는
+    #   이 파일을 부르지 않으며 화면에 미치는 영향이 0이다.
+    #   실제 유일한 독자는 `src/firelane/publish_fleet.py` 이고, 없으면 그 발행기가
+    #   전장을 못 채운다 — 그것이 지금의 진짜 대가다.
     "web/assets/vehicles/profiles.json",
     # ★ 2026-09-22. `web/key.js` 를 뺐다 — 옛 지도와 함께 생성을 멈췄다. 이제 문서가 그 경로를
     #   적으면 **낡은 서술**이라 울어야 한다.
@@ -166,111 +164,10 @@ def check_paths() -> list[str]:
             and not (ROOT / p).exists()] + generated.dead_claims(ROOT)
 
 
-# ── 3. 부재 선언 — "없다" 고 적은 값이 실물에 있는가 ──────────────
-def _key_in_text(path: str, text: str, key: str) -> bool:
-    """그 파일 형식에서 `key` 가 **필드로** 있는가.
-
-    ★ 2026-09-03. 종전에는 형식과 무관하게 `f'"{key}"'` 로만 찾았다 —
-      큰따옴표로 감싼 JSON 키 문법이다. 그래서 CSV 는 헤더에 컬럼이
-      분명히 있어도 영원히 "그 키가 없다" 로 울었다.
-
-      `nfa_dispatch_119.csv` 의 헤더가 `DCLR_PSTN_LAT,DCLR_PSTN_LOT,...`
-      인데 검사는 `"DCLR_PSTN_LAT"` 를 찾았다. **필드 이름이 `json_key`
-      인데 대장은 CSV 컬럼도 그 이름으로 적게 되어 있다** — 이름과
-      실제 형식이 어긋난 것이고, 건초더미에 `.csv` 를 더해도 안 풀렸다.
-
-    ★ 형식으로 갈라 본다. `json_key` 라는 필드명은 그대로 둔다 —
-      바꾸면 대장 전건과 DECISIONS §91 참조가 함께 움직여야 한다.
-    """
-    if path.endswith(".csv"):
-        head = text.split("\n", 1)[0]
-        cols = [c.strip().strip('"').lstrip("\ufeff") for c in head.split(",")]
-        return key in cols
-    return f'"{key}"' in text
 
 
-def _has_key(p, key: str) -> bool:
-    return _key_in_text(str(p).replace("\\", "/"), 
-                        p.read_text(encoding="utf-8", errors="ignore"), key)
 
 
-def check_absent(led: dict) -> list[str]:
-    """`absent:` 선언을 실물과 **양방향**으로 대조한다.
-
-    ★ `absent` 는 "어디에도 없다" 가 아니라 **"이 출처에 없다"** 다.
-      스코프가 없으면 후자로 읽히고, 2026-09-02 에 셋 다 거짓 선언으로
-      드러났다 — `profiles.json` 이 커밋되자 값이 다 있었다.
-
-    ★ 이름을 추측하지 않는다. 종전에는 `turn_radius_m` 을 camelCase 로
-      바꾸고 접미를 떼어 찾았는데 실물은 `turningRadius` 였다. **우연히
-      엇갈려 통과했다.** 소화전 속성이 `속성 0종` 으로 조용히 발행된 것과
-      같은 형태다(DECISIONS §49). `json_key` 로 못박는다.
-
-    판정 둘 —
-        elsewhere 있음   그 파일에 json_key 가 **있어야** 한다. 없으면
-                        이름이 바뀐 것이고 선언이 낡았다
-        elsewhere 없음   진짜 부재. 저장소 어디에도 **없어야** 한다
-    """
-    entries: list[tuple[str, str, object]] = []
-
-    def walk(node, trail: str):
-        if isinstance(node, dict):
-            for k, v in node.items():
-                if k == "absent" and isinstance(v, dict):
-                    entries.extend((trail or "(최상위)", f, s)
-                                   for f, s in v.items())
-                else:
-                    walk(v, f"{trail}.{k}" if trail else k)
-
-    walk(led, "")
-    if not entries:
-        return []
-
-    bad: list[str] = []
-    hay: list[tuple[str, str]] = []
-    # ★ 2026-09-03. 건초더미가 `data/processed/*.json` 만 봤다. 그런데
-    #   `ingest` 는 `<key>.csv` 도 낸다(nfa_dispatch_119.csv 등).
-    #   그래서 `.csv` 를 `elsewhere` 로 적으면 파일이 실재해도 영원히
-    #   "그 키가 없다" 로 울었다 — **검사 범위가 실물보다 좁았다.**
-    #   오늘 네 번째로 같은 형태다(scan_data §4 · intake stem ·
-    #   normalize_raw 정규식 · 여기).
-    for g in ("web/**/*.json", "web/**/*.js", "data/field/*.csv",
-              "data/processed/*.json", "data/processed/*.csv"):
-        for f in ROOT.glob(g):
-            if f.is_file():
-                hay.append((str(f.relative_to(ROOT)),
-                            f.read_text(encoding="utf-8", errors="ignore")))
-
-    for where, field, spec in entries:
-        tag = f"{where}.absent.{field}"
-        if not isinstance(spec, dict):
-            bad.append(f"{tag} 이 스코프를 안 든다. `in:` · `json_key:` 를 "
-                       f"적는다 — absent 는 '어디에도 없다' 가 아니라 "
-                       f"'그 출처에 없다' 이다(DECISIONS §91)")
-            continue
-        for need in ("in", "json_key"):
-            if not spec.get(need):
-                bad.append(f"{tag} 에 `{need}:` 가 없다")
-        key = spec.get("json_key")
-        if not key:
-            continue
-        src = spec.get("elsewhere")
-        if src:
-            p = ROOT / src
-            if not p.exists():
-                bad.append(f"{tag}.elsewhere 가 가리키는 {src} 이 없다")
-            elif not _has_key(p, key):
-                bad.append(f"{tag} 은 {src} 에 `{key}` 로 있다고 하는데 "
-                           f"그 키가 없다. 이름이 바뀌었거나 선언이 낡았다 "
-                           f"— 추측으로 메우지 않는다(§49)")
-        else:
-            hits = sorted({q for q, txt in hay
-                            if _key_in_text(q, txt, key)})
-            if hits:
-                bad.append(f"{tag} 은 없다고 선언했는데 "
-                           f"{' · '.join(hits[:3])} 에 `{key}` 가 있다. "
-                           f"`elsewhere:` 로 어디에 있는지 적는다")
-    return bad
 
 
 # ── 4. 등재 — 사람이 만드는 계층의 파일이 대장에 있는가 ───────────
@@ -297,179 +194,11 @@ def check_field_ledger(led: dict) -> list[str]:
     return bad
 
 
-# ── 5. 만료 — 한시가 한시로 끝나는가 ──────────────────────────
-# ★ 2026-09-03. 회수 완료. bypass_actors 를 비우고 ADMINS 를 줄이고
-#   BYPASS 카드를 지웠으므로 이 게이트는 걸 대상이 없다.
-#
-# ★ **절과 기계는 남긴다.** 번호는 자산이고(MASTER §0-2), 다음 한시
-#   예외가 생기면 아래 두 줄만 채우면 즉시 시계가 돈다. 코드를 지우면
-#   다음 사람이 `§80` 처럼 회수를 사람 기억에 맡긴다.
-#
-#     DEPARTURE = "YYYY-MM-DD"   회수 기한
-#     LEAVING   = "<핸들>"        ruleset_check.ADMINS 에서 빠져야 하는 사람
-DEPARTURE: str | None = None
-LEAVING: str | None = None
-
-_BANNER = """
-  ████████████████████████████████████████████████████████████
-  ██                                                        ██
-  ██   기한이 지난 예외가 살아 있다. 이건 경고가 아니다.      ██
-  ██   회수하기 전에는 이 검사가 안 풀린다.                  ██
-  ██                                                        ██
-  ████████████████████████████████████████████████████████████
-"""
-
-_TODO = """
-  ── 할 일 (전부 끝나야 초록이 된다) ─────────────────────────
-   1  GitHub 룰셋에서 bypass_actors 를 전부 비운다
-        Settings → Rules → main · dev · part/* → Bypass list 비우기
-        확인:  uv run python tools/ruleset_check.py
-   2  tools/ruleset_check.py 의 ADMINS 에서 이탈자를 뺀다
-   3  @woongtopia/gis 팀에서 이탈자를 뺀다
-        CODEOWNERS 파일은 고치지 않는다 — 팀에서 빼면 리뷰가 자동으로
-        남은 gis 팀원에게 넘어간다(MASTER §8)
-   4  web/playbook.html 의 BYPASS 카드를 통째로 지운다
-   5  MASTER §12-1 의 회수일 서술을 지운다
-   6  doc_fsck.py 의 DEPARTURE · LEAVING 두 줄을 지운다  ← 이 검사를 끈다
-  ────────────────────────────────────────────────────────────
-"""
 
 
-def check_expiry() -> list[str]:
-    """기한이 지난 예외가 남아 있는가.
-
-    ★ 2026-09-02. `§80` 이 bypass 를 **한시** 부여하고 회수를 사람 기억에
-      맡겼다. 한시가 한시로 끝나려면 시계가 있어야 한다. 여기 있는 것은
-      알림이 아니라 **게이트**다 — 날짜가 지나면 CI 가 빨간불이 되고
-      회수하기 전에는 안 풀린다.
-
-    ★ 날짜만 보지 않는다. **회수됐는지까지 본다** —
-      `ruleset_check.ADMINS` 에 이탈자가 남아 있으면 실패한다. 날짜만
-      보면 "카드를 지웠으니 됐다" 로 끝나고 룰셋은 그대로 남는다.
-      룰셋 실물은 관리자 토큰이 있어야 읽으므로 `ruleset_check` 가 보고,
-      이쪽은 **그 도구가 무엇을 기대하는지**를 본다.
-
-    ★ 실패 메시지를 크게 낸다. 빨간 줄 하나면 다른 팀원이 무슨 일인지
-      모르고 당황한다. 무엇을 해야 하는지가 화면에 다 있어야 한다.
-    """
-    if DEPARTURE is None:
-        # ★ 걸 대상이 없다. 그래도 **화면에 남은 만료 뱃지는 잡는다** —
-        #   회수했는데 카드가 남으면 지난 날짜가 지침처럼 읽힌다.
-        stray = []
-        for g in ("web/*.html", "docs/*.md"):
-            for f in ROOT.glob(g):
-                if 'data-expires="' in f.read_text(encoding="utf-8", errors="ignore"):
-                    stray.append(f"{f.relative_to(ROOT)} 에 data-expires 가 남았다 — "
-                                 "회수가 끝났으면 그 카드를 지운다")
-        return stray
-
-    today = _today()
-    bad, seen = [], {}
-
-    for g in ("web/*.html", "docs/*.md"):
-        for f in ROOT.glob(g):
-            txt = f.read_text(encoding="utf-8", errors="ignore")
-            for d in re.findall(r'data-expires="(\d{4}-\d{2}-\d{2})"', txt):
-                seen.setdefault(d, []).append(str(f.relative_to(ROOT)))
-
-    # 화면과 MASTER 가 같은 날짜를 드는가 — 지나기 전에도 본다
-    mst = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
-    m = re.search(r"(\d{4}-\d{2}-\d{2})\s*[에]?\s*회수", mst)
-    if seen and DEPARTURE not in seen:
-        bad.append(f"화면의 data-expires 는 {' · '.join(sorted(seen))} 인데 "
-                   f"이탈일은 {DEPARTURE} 다. 하나로 맞춰라")
-    if m and m.group(1) != DEPARTURE:
-        bad.append(f"MASTER 는 회수일을 {m.group(1)} 로 적는데 "
-                   f"이탈일은 {DEPARTURE} 다")
-
-    if today <= DEPARTURE:
-        return bad
-
-    # ── 기한이 지났다. 여기서부터는 크게 운다 ──────────────────
-    bad.append(_BANNER.rstrip())
-    bad.append(f"이탈일 {DEPARTURE} 이 지났다 (오늘 {today}).")
-
-    rs = ROOT / "tools/ruleset_check.py"
-    if rs.exists() and LEAVING in rs.read_text(encoding="utf-8"):
-        bad.append(f"★ ruleset_check.ADMINS 에 {LEAVING} 이 아직 있다 — "
-                   "룰셋을 회수하지 않았거나 명단을 안 고쳤다")
-    for d, where in sorted(seen.items()):
-        if d <= DEPARTURE:
-            bad.append(f"★ {' · '.join(where)} 의 BYPASS 카드가 남아 있다")
-    if m:
-        bad.append("★ MASTER §12-1 에 회수일 서술이 남아 있다")
-    bad.append(_TODO.rstrip())
-    return bad
 
 
-# ── 6. 기획서 최종 수정일 ──────────────────────────────────────
-def check_docx_revised() -> list[str]:
-    """기획서를 고쳤는데 표지의 최종 수정일이 그대로인가.
 
-    ★ 2026-09-02. 표지가 `2026. 08. 14.` 하나만 들고 있었고 그 뒤로 다섯 번
-      고쳤다. **외부가 읽는 유일한 문서라 날짜가 곧 신뢰다** — 심사위원이
-      8월 문서를 받으면 그동안 아무것도 안 한 것으로 읽는다.
-
-    ★ 파일 mtime 이 아니라 **git 이 아는 마지막 수정 커밋일**과 비교한다.
-      mtime 은 clone 하면 전부 오늘이 된다.
-
-    ★ 2026-09-18. **얕은 저장소에서는 재지 않는다.** `actions/checkout@v4` 는
-      `fetch-depth: 1` 이라 커밋이 하나뿐이고, 그러면 `git log -1 -- <파일>` 이
-      모든 파일에 대해 **HEAD 의 날짜**를 돌려준다. 실제 마지막 수정일이 아니다.
-      W2 가 이 검사를 CI 에 넣었다가 그대로 빨개졌다(DECISIONS §191-5).
-      이 절의 나머지 일곱(①~⑤·⑦·⑧)은 히스토리가 필요 없어 CI 에서 그대로 돈다 —
-      **검사 하나가 자기 전제를 선언하면 나머지를 같이 뺄 필요가 없다.**
-    """
-    import subprocess
-    docs = list(ROOT.glob("docs/*.docx"))
-    if not docs:
-        return []
-    f = docs[0]
-    # ★ 전제 선언. 못 재는 것을 못 잰다고 말한다 — 조용히 통과하지도, 거짓으로
-    #   빨개지지도 않는다.
-    # ★ 2026-09-24 (§239). `sh.returncode` 를 안 봤다. 판별이 실패하면 stdout 이
-    #   비어 **얕지 않다고 판단**하고 except 가 삼켰다 — 아래 `git log` 가 빈
-    #   결과를 내 「수정일 미상」이 정상값으로 흐른다. 못 잰 것은 못 잰다고 말한다.
-    try:
-        sh = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
-                            cwd=ROOT, capture_output=True, text=True, timeout=10)
-    except Exception as e:                                # noqa: BLE001
-        return [f"{f.name} — 얕은 저장소인지 판별하지 못했다: {type(e).__name__}: {e}"]
-    if sh.returncode != 0:
-        return [f"{f.name} — 얕은 저장소 판별 실패(rc={sh.returncode}): "
-                f"{sh.stderr.strip()[:120]}. 못 잰 것을 통과로 세지 않는다"]
-    if sh.stdout.strip() == "true":
-        print("   (건너뜀 — 얕은 저장소라 마지막 수정 커밋일을 못 잰다)")
-        return []
-    try:
-        r = subprocess.run(
-            ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(f)],
-            cwd=ROOT, capture_output=True, text=True, timeout=10)
-        last = r.stdout.strip()
-    except Exception as e:                                # noqa: BLE001
-        # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전에는 `return []` —
-        #   git 이 죽으면 이 검사가 **초록**이었다. 얕은 저장소처럼 전제를
-        #   선언한 경우가 아니라 **못 잰 것**이므로 못 쟀다고 말한다.
-        return [f"{f.name} 의 마지막 수정 커밋일을 못 쟀다 — git log 실패: "
-                f"{type(e).__name__}: {e}"]
-    if not last:
-        return []
-    try:
-        import docx as _dx
-        txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
-    except Exception as e:                                # noqa: BLE001
-        # ★ 2026-09-22 (W10-1 · deadcheck ③). `python-docx` 는 선언된 의존성이다
-        #   (pyproject). 그것이 없거나 기획서가 안 열리면 표지를 못 읽은 것이지
-        #   표지가 맞는 것이 아니다 — 종전 `return []` 은 그 둘을 같게 읽었다.
-        return [f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"]
-    shown = re.findall(r"20\d\d\.\s*\d{1,2}\.\s*\d{1,2}", txt)
-    if not shown:
-        return [f"{f.name} 표지에 날짜가 없다. 작성일과 최종 수정일을 적어라"]
-    norm = {re.sub(r"[.\s]", "", s) for s in shown}
-    if re.sub(r"-", "", last) not in norm:
-        return [f"{f.name} 의 마지막 수정 커밋은 {last} 인데 표지는 "
-                f"{' · '.join(shown)} 만 든다. 최종 수정일을 갱신해라"]
-    return []
 
 
 # ── ⑦ 명령 ────────────────────────────────────────────────────

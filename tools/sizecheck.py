@@ -85,11 +85,6 @@ EXCEPTIONS: dict[str, int] = {
     #   쪼개지 않는다.
     "tools/verify.sh": 1041,
     "src/firelane/segments.py": 863,
-    # ★ 2026-09-25 (§258). 659 → 664. ② 가 **생성물 주장**을 같이 본다 —
-    #   「문서가 가리키는데 없다」와 「생성물이라 아직 안 구웠다」를 가른다.
-    #   표와 판정은 `firelane.generated` 로 옮겼으므로 여기 남은 것은 호출 셋이다.
-    #   ★ 이 파일은 상한(600)을 넘는다. 쪼갤 자리는 `PLAN §1` 이 든다(#136).
-    "tools/doc_fsck.py": 664,
     "tools/render_workflow.py": 635,
     "tools/golden.py": 613,
     "src/firelane/normalize_raw.py": 609,

@@ -66,9 +66,12 @@ const CONFIG = {
      publish_fleet.py 가 이 배열을 정규식으로 읽어 fleet.json 을 낸다(내비 VehiclePicker 가 읽는다).
 
    ★ 여기는 "무엇을 띄우는가"만 적는다. 제원(전폭·회전반경)의 정본은
-     web/assets/vehicles/profiles.json 이고 vehicle.js 가 그 파일을
-     fetch 해서 profile 키로 붙인다. 숫자를 여기 복사하지 말 것 —
+     web/assets/vehicles/profiles.json 이다. 숫자를 여기 복사하지 말 것 —
      실측으로 교체될 때 두 곳이 갈라진다.
+   ★ 2026-09-26 정정 (§258-18). 종전에는 「vehicle.js 가 그 파일을 fetch 해서
+     profile 키로 붙인다」고 적었다. **vehicle.js 는 옛 지도와 함께 걷어냈다**
+     (2026-09-22). 그리고 이 파일 자신도 **브라우저가 안 부른다** — 어떤 HTML 도
+     `<script src="config.js">` 를 안 쓴다. 읽는 것은 publish_fleet.py 하나다.
 
    ★ **동명동은 지산119안전센터 관할이다.** 대인이 아니다.
      「전남광주통합특별시_동부소방서 관할구역 현황」(2025-07-31, 공공데이터포털

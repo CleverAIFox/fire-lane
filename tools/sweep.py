@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -57,6 +58,53 @@ DATA_EXT = {".zip", ".7z", ".csv", ".json", ".shp", ".gpkg", ".tif",
 
 #: 읽다 실패한 파일 — 사유와 함께. 비어야 통과다.
 UNREAD: list[tuple[str, str]] = []
+
+#: 레이크 지문 **북마크**.  (§258-17)
+#:
+#: ★ 2026-09-26. 종전에는 매 실행 2.5GB 를 처음부터 다시 해싱했다(30~90초).
+#:   이 저장소는 이미 「안 바뀐 것은 다시 안 한다」를 샤드 봉인으로 하고 있는데
+#:   **여기만 그 원리가 없었다** — ENOMEM 을 버퍼 크기로 때운 것이 그 증상이다.
+#:   증상을 고치기 전에 「왜 2.5GB 를 매번 읽나」를 물었어야 했다.
+#:
+#: ★ 샤드 봉인의 `seal.raw` 는 **데이터셋 단위 집계 지문 하나**라 여기 못 쓴다 —
+#:   sweep 이 묻는 것은 「이 파일 하나가 레이크 어디에 있나」이고 그것은 파일별
+#:   해시를 요구한다. 그래서 같은 원리로 **파일별 북마크**를 따로 둔다.
+#:
+#: ★ 무효 조건은 **크기와 mtime_ns** 다. 둘 중 하나라도 다르면 다시 판다.
+#:   내용이 같은데 mtime 만 바뀌면 헛일을 한 번 하지만 그것은 안전한 쪽이다 —
+#:   반대(내용이 바뀌었는데 재사용)는 「지워도 된다」를 거짓으로 만든다.
+FP_CACHE = ROOT / ".work" / "lake_fp.json"
+
+
+def _fp_load() -> dict[str, list]:
+    try:
+        return json.loads(FP_CACHE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}          # 없거나 깨졌으면 전부 다시 판다 — 조용히 비어도 안전하다
+
+
+def fp_valid(was: list | None, size: int, mtime_ns: int) -> bool:
+    """북마크를 **재사용해도 되는가.** 이 한 줄이 이 기능의 전부다.
+
+    ★ 판단을 이름 있는 자리로 뺀 이유. 처음 판은 이 비교를 `main` 루프 안에
+      인라인으로 뒀고, 시험은 `_fp_load`/`_fp_save` 만 쟀다. 그래서 **「mtime 을
+      무시하고 무조건 재사용」 주입이 안 잡혔다** — 헬퍼만 재고 판단을 안 쟀다.
+      이 저장소가 반복한 형태다(§258-10 의 배선 미검사와 같다).
+
+    ★ **안전한 쪽이 어느 쪽인지가 비대칭이다.** 내용이 같은데 mtime 만 바뀌면
+      헛일을 한 번 한다 — 느릴 뿐이다. 반대로 내용이 바뀌었는데 재사용하면
+      sweep 이 「이 파일은 레이크에 이미 있다 = 지워도 된다」를 **거짓으로**
+      말하고, 지우는 것은 되돌릴 수 없다. 그래서 의심스러우면 다시 판다.
+    """
+    return bool(was) and list(was[:2]) == [size, mtime_ns]
+
+
+def _fp_save(fp: dict[str, list]) -> None:
+    try:
+        FP_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        FP_CACHE.write_text(json.dumps(fp) + "\n", encoding="utf-8")
+    except OSError:
+        pass               # 못 써도 다음 실행이 느려질 뿐이다. 판단은 안 바뀐다
 
 
 def sha(p: Path, *, chunks=(1 << 18, 1 << 15)) -> str | None:
@@ -252,15 +300,32 @@ def main() -> int:
     y = led()
     ret, held = retired_names(y), held_names(y)
 
-    # 레이크 지문 — raw·norm 이 정본이다
+    # 레이크 지문 — raw·norm 이 정본이다. **북마크가 아는 것은 다시 안 판다**(§258-17)
     print("레이크 지문화 중…", end="", flush=True)
     lake: dict[str, Path] = {}
+    fp, seen, reused, hashed = _fp_load(), {}, 0, 0
     for zone in ("raw", "norm"):
         for p in (D / zone).rglob("*"):
-            if p.is_file():
-                if (d := sha(p)) is not None:
-                    lake.setdefault(d, p.relative_to(D))
-    print(f" {len(lake)}건")
+            if not p.is_file():
+                continue
+            rel = p.relative_to(D).as_posix()
+            try:
+                st = p.stat()
+                key = [st.st_size, st.st_mtime_ns]
+            except OSError as e:
+                UNREAD.append((str(p), f"{type(e).__name__}: {e}"))
+                continue
+            was = fp.get(rel)
+            if fp_valid(was, *key):
+                d, reused = was[2], reused + 1
+            elif (d := sha(p)) is not None:
+                hashed += 1
+            else:
+                continue
+            seen[rel] = [*key, d]
+            lake.setdefault(d, p.relative_to(D))
+    _fp_save(seen)          # 사라진 파일은 자연히 빠진다 — 북마크가 안 자란다
+    print(f" {len(lake)}건 (북마크 {reused} · 새로 {hashed})")
 
     dele = scan("① 다운로드 폴더", IN, lake, ret, held, min_mb=0.0)
 

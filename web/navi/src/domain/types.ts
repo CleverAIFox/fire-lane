@@ -24,9 +24,18 @@ export interface VehicleSpec {
    * 자차를 실측 크기 상자로 놓는 데만 쓰고, 없으면 상자를 안 놓는다(§232).
    */
   height_m?: number | null;
-  /** 미검증이면 null 로 발행된다. publish_web.py 가 그렇게 막는다 */
-  wheelbase_m: number | null;
-  turn_radius_m: number | null;
+  /**
+   * ★ 2026-09-26 정정 (§258-18). 종전 주석은 「미검증이면 **null 로** 발행된다」
+   * 였는데 틀렸다 — `publish_web.py` 의 `_keep` 화이트리스트가 미검증 키를
+   * **아예 안 싣는다**(그 주석: "안 보내면 실수로 쓸 위험까지 같이 사라진다").
+   * 그래서 실물 `vehicle_spec.json` 에는 이 두 키가 **없다.**
+   *
+   * 필수로 선언해 두면 타입이 거짓말을 한다. 지금은 `vehicle.ts` 가
+   * `*_verified` 를 먼저 보고 빠져나가 안 터지지만, 그 플래그를 올리는 날
+   * `undefined` 를 읽는다 — §248 의 그 덫과 같은 자리다.
+   */
+  wheelbase_m?: number | null;
+  turn_radius_m?: number | null;
   clearance_m: number;
   wheelbase_verified?: boolean;
   turn_radius_verified?: boolean;
