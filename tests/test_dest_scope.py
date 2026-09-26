@@ -119,8 +119,8 @@ def test_committed_boundary_matches_the_pipeline():
     raise AssertionError(
         f"커밋된 경계 사본이 파이프라인 산출과 다르다 — {FIXTURE.relative_to(ROOT)}\n"
         f"{why}\n"
-        "  ㉡ 이면:  uv run python tools/fixture_recut.py --write\n"
-        "  ㉠ 이면 다시 떠도 또 갈린다 — ingest 의 재현성을 봐라(사본 문제가 아니다).\n"
+        "  1mm 넘게 움직였으면:  uv run python tools/fixture_recut.py --write\n"
+        "  1mm 미만이면 같은 기계에서 두 번 돌려 원인을 먼저 가른다(§258-14).\n"
         "  이대로 두면 CI 는 옛 경계로 범위를 판정한다.")
 
 

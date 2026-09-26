@@ -22,12 +22,10 @@ fixture_recut.py — 커밋된 **사본 픽스처**를 산출물에서 다시 �
   피처를 어떤 정밀도로 떼는지가 매번 사람 손에 달리고, 그것이 사본을 두는 값을
   다시 올린다. 그래서 여기 둔다.
 
-★ **진단을 같이 낸다.** 사본이 갈렸을 때 원인은 둘이고 처방이 정반대다 —
-    ㉠ 좌표가 미세하게 흔들렸다 → **ingest 가 재현 불가**다. 사본을 다시 떠도
-       다음 실행에 또 갈린다. 판정 지문 자체를 못 믿는다는 뜻이라 심각하다.
-    ㉡ 모양이 실제로 바뀌었다 → 원본 판(vintage)이 바뀐 것이다. 다시 뜨면 된다.
-  그래서 `--check` 가 **꼭짓점 최대 이동거리**와 **면적 변화**를 같이 찍는다.
-  1mm 미만이면 ㉠, 그보다 크면 ㉡ 이다. 한 번 돌리면 어느 쪽인지 갈린다.
+★ **진단을 같이 낸다** — 꼭짓점 최대 이동거리 · 갈린 좌표의 실제 값 · 면적 변화.
+  1mm 넘게 움직였으면 판이 바뀐 것이고 다시 뜨면 된다. **1mm 미만이면 이 수치로
+  단정하지 않는다** — 같은 기계에서 두 번 돌려야 「재현 불가」와 「다른 스택」이
+  갈린다. 그 명령을 진단이 같이 낸다(§258-14).
 
 ★ 자동으로 안 쓴다. 관문에 `--write` 를 넣으면 갈린 사본이 **조용히** 맞춰지고,
   사본을 두는 값이 0 이 된다. 관문은 `--check` 만 보고, 쓰는 것은 사람이 시킨다.
@@ -109,7 +107,21 @@ def _ring_area(pts: list[tuple[float, float]]) -> float:
 
 
 def diagnose(old: dict, new: dict, cut: Cut) -> list[str]:
-    """갈린 원인이 ㉠ 재현 불가인지 ㉡ 판 변경인지 가르는 수치."""
+    """갈린 원인을 가르는 **수치**. 판정은 안 한다.
+
+    ★ 2026-09-26 정정 (§258-14). 처음 판은 「1mm 미만이면 ㉠ 재현 불가」라고
+      **단정했다.** 실기에서 최대 이동 0.0000 m · 면적 0.000000% 가 나왔는데
+      그 한 줄이 「ingest 가 재현 불가다」라고 말했다 — 그것은 셋 중 하나일 뿐이다:
+
+        ㉮ 같은 기계에서 두 번 돌려도 갈린다        → 진짜 재현 불가. 심각하다
+        ㉯ 기계가 다르다(GDAL·PROJ 판이 다르다)      → 재투영 말미. 사본을 다시 뜬다
+        ㉰ 값은 같고 **표기**만 다르다               → 사본을 다시 뜨면 끝이다
+
+      **수치 하나로는 셋을 못 가른다.** 가르는 것은 「같은 기계에서 두 번」이고
+      그것은 사람이 명령 하나로 한다. 그래서 이 함수는 수치와 그 명령만 낸다.
+      단정하는 진단은 틀린 처방을 부른다 — 사본을 다시 뜨면 될 일에
+      「ingest 재현성을 봐라」로 사람을 보냈다.
+    """
     a, b = _feats(old, cut), _feats(new, cut)
     if len(a) != 1 or len(b) != 1:
         return [f"고른 피처가 {len(a)} · {len(b)} 개다 — 1개여야 한다 "
@@ -123,15 +135,29 @@ def diagnose(old: dict, new: dict, cut: Cut) -> list[str]:
     if len(pa) == len(pb) and pa:
         # 같은 순서를 가정한다 — ingest 가 순서를 바꾸면 꼭짓점 수가 같아도
         # 이 값이 커진다. 그 경우도 「재현 불가」쪽 신호라 결론이 안 바뀐다.
-        far = max(((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-                  for (x1, y1), (x2, y2) in zip(pa, pb, strict=True))
+        d = [(((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5, i)
+             for i, ((x1, y1), (x2, y2)) in enumerate(zip(pa, pb, strict=True))]
+        far, idx = max(d)
         m = far * 111_000          # 도 → m, 위도 기준 대략치
-        lines.append(f"  꼭짓점 최대 이동 {m:.4f} m "
-                     + ("→ ㉠ **재현 불가**다. 다시 떠도 또 갈린다 — ingest 를 봐라"
-                        if m < 0.001 else
-                        "→ ㉡ 원본 판이 바뀐 것이다. `--write` 로 다시 뜨면 된다"))
+        lines.append(f"  꼭짓점 최대 이동 {m:.6f} m  (#{idx})")
+        if far:
+            # ★ 값 자체를 보여준다. 「0.0000 m」 만으로는 표기 차이인지 안 보인다.
+            lines.append(f"    사본 {pa[idx][0]!r}, {pa[idx][1]!r}")
+            lines.append(f"    산출 {pb[idx][0]!r}, {pb[idx][1]!r}")
+        if m < 0.001:
+            lines.append("  → **1mm 미만이다.** 판정을 움직일 수 없는 크기다.")
+            lines.append("    원인 셋을 이 수치로는 못 가른다 — 같은 기계에서 두 번 돌려 가른다:")
+            lines.append("      uv run fire-lane --only ingest && "
+                         "cp data/processed/boundary_emd.geojson /tmp/a.geojson")
+            lines.append("      uv run fire-lane --only ingest --rebuild && "
+                         "cmp /tmp/a.geojson data/processed/boundary_emd.geojson")
+            lines.append("    같으면 이 기계에서는 재현된다 → 사본이 **다른 스택에서**")
+            lines.append("    떠진 것이다. `--write` 로 이 기계 기준으로 다시 뜬다.")
+            lines.append("    다르면 ingest 가 재현 불가다 — 거기서 멈추고 그것을 먼저 본다.")
+        else:
+            lines.append("  → 판이 바뀌었다. `--write` 로 다시 뜨면 된다")
     else:
-        lines.append("  꼭짓점 수가 달라졌다 → ㉡ 원본 판이 바뀐 것이다")
+        lines.append("  꼭짓점 수가 달라졌다 → 판이 바뀌었다. `--write` 로 다시 뜬다")
     if pa and pb:
         aa, ab = _ring_area(pa), _ring_area(pb)
         if aa:
@@ -209,12 +235,18 @@ def selftest() -> int:
     # ㉠ 1mm 미만 흔들림 → 재현 불가로 읽어야 한다
     jitter = copy.deepcopy(base)
     jitter["features"][0]["geometry"]["coordinates"][0][0][0] += 1e-9
-    if not any("재현 불가" in ln for ln in diagnose(base, jitter, cut)):
-        bad.append("미세 흔들림을 「재현 불가」로 읽지 않는다")
+    # ㉠ 1mm 미만 → **단정하지 않는다.** 두 번 돌리라는 명령을 낸다
+    tiny = diagnose(base, jitter, cut)
+    if not any("1mm 미만" in ln for ln in tiny):
+        bad.append("1mm 미만을 그렇게 안 읽는다")
+    if any("재현 불가다" in ln and "→" in ln for ln in tiny):
+        bad.append("1mm 미만인데 재현 불가로 **단정한다** — 수치로는 못 가른다")
+    if not any("두 번 돌려" in ln for ln in tiny):
+        bad.append("가르는 명령을 안 낸다")
     # ㉡ 실제 모양 변경 → 판 변경으로 읽어야 한다
     moved = copy.deepcopy(base)
     moved["features"][0]["geometry"]["coordinates"][0][0][0] += 1e-4
-    if not any("판이 바뀐" in ln for ln in diagnose(base, moved, cut)):
+    if not any("판이 바뀌었다" in ln for ln in diagnose(base, moved, cut)):
         bad.append("모양 변경을 「판 변경」으로 읽지 않는다")
     # 속성만 갈린 것도 잡아야 한다
     prop = copy.deepcopy(base)
