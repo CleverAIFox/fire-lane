@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def _tool(name: str):
     spec = importlib.util.spec_from_file_location(f"k2_{name}", ROOT / "tools" / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(mod)
     return mod
 

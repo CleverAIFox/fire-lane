@@ -14,12 +14,10 @@ ledger.py — 대장 항목 스키마의 정본. **산문을 필드로 바꾼다
 
 ── 항목 스키마 ────────────────────────────────────────────────
     what        한 줄. 무슨 데이터인가                        [필수]
-    provider    제공기관                                       [필수]
     scope       행정 범위. firelane.scope 통제 어휘            [필수]
+    kind        자료 형태. 아래 `kinds.py` 통제 어휘            [필수]
     authority   관할기관. ★ 행정구역과 경계가 다르다           [선택]
     updated     데이터 갱신일. 다운로드일이 아니다             [필수]
-    acquired    우리가 받은 날                                 [필수]
-    license     이용 조건. TODO 금지                           [필수]
     stem        실물 파일 접두. ext 와 짝을 이룬다              [필수]
     files       stem 으로 못 가르는 항목의 글롭 예외            [선택]
     primary     그중 파이프라인이 읽는 하나                    [단수 kind 필수]
@@ -65,6 +63,13 @@ from firelane import scope as sc
 #   그래서 `globs()` 만 stem 우선으로 바꾸면 37종이 "필수 필드 없음"
 #   으로 죽는다. 실제로 그렇게 죽였고 `golden` 은 초록불이었다 —
 #   `segments.geojson` 만 읽으니 대장이 깨진 것을 모른다.
+# ★ 2026-09-24 (PLAN §13 W13-15). 이 파일 머리말이 `provider` · `acquired` ·
+#   `license` 를 **[필수]** 로 적고 있었다. 셋 다 2026-08-30 재작성에서 제거된
+#   필드이고 실측 **0/72** 다 — 바로 아래 옛 주석이 그 제거를 스스로 기록한다.
+#   반대로 `kind` 는 REQUIRED 인데 머리말 목록에 **없었다.**
+#   `sources.yaml` 이 2026-09-10 에 자기 머리말에 대해 똑같은 정정을 했는데
+#   (「대장이 자기 스키마를 틀리게 적고 있었다」) **대장의 정본이라고 선언한
+#   이 파일은 안 고쳤다.** 정본이 스키마를 틀리게 아는 것이 제일 나쁘다.
 REQUIRED = ("what", "scope", "updated", "kind", "schema", "feeds")
 # ★ 2026-09-07. **코드가 읽지 않는 문서 필드.** 검사 대상이 아니다.
 #   `used_for` 는 12종에 있고 전부 차량 제원표다 — `vehicle.py` 의
@@ -113,6 +118,17 @@ def load() -> dict:
 
 
 # ── 활용도 ────────────────────────────────────────────────────
+#: 데이터를 **소비하지 않는** 피드. 이름표를 붙여 `data/raw` 에 놓을 뿐이다.
+#: ★ 2026-09-24 (PLAN §13 W13-5 · DECISIONS §243). `normalize_raw` 는 머리말대로
+#:   「다운로드 폴더의 원본을 명명규칙에 맞게 배치한다」 — 배치기이지 소비자가
+#:   아니다. 그런데 `grade()` 가 「feeds 가 비지 않았다」만 봐서 **이 한 줄짜리
+#:   일곱**(node_link_changelog · hydrant_summary · ngii_road_center · bin_trash ·
+#:   bin_cloth · bldg_ledger_dm · admin_cctv)을 활성으로 셌다. 일곱 다 제
+#:   `feeds_note` 에 「미투입」이라 적고 있었다 — **대장이 제 자신과 어긋났고
+#:   집계가 산문을 이겼다.** 미사용은 19가 아니라 26이다.
+RENAME_ONLY = frozenset({"src/firelane/normalize_raw.py"})
+
+
 def grade(entry: dict) -> str:
     """**자동 산출.** 대장에 적힌 값이 있어도 무시한다."""
     feeds = entry.get("feeds")
@@ -122,7 +138,12 @@ def grade(entry: dict) -> str:
     if not feeds:
         return "unused"
     if entry.get("kind") == "raw_only":
+        # 「원본만 보관」은 **왜 여기 있나**의 답이지 소비 여부가 아니다.
+        # 이 갈래를 뒤로 미루면 raw_only 열다섯이 미사용으로 뒤집힌다.
         return "reference"
+    if not set(feeds) - RENAME_ONLY:
+        # 이름표만 붙는다 — 아무도 안 읽는 것과 같다.
+        return "unused"
     return "active"
 
 

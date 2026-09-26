@@ -37,6 +37,7 @@ OUT  REDLIST.json  ·  종료코드 = 빨간불 건수(0 이면 초록)
 """
 from __future__ import annotations
 
+import argparse
 import ast
 import json
 import re
@@ -511,6 +512,14 @@ EXEMPT_SCOPE = {
     "tests/test_declaration_sync.py::test_unwired_sources_declare_purpose":
         f"{_PROD_ONLY} — 「대장 소스가 배선됐는가」의 소비자는 판정·도구다. "
         "테스트가 소스 이름을 적는 것을 소비로 세면 모든 소스가 영원히 배선된다",
+    # ★ 2026-09-24. **반대 방향**의 면제 — 위는 「tests 를 뺐다」, 이것은 「tests 만 본다」.
+    # ★ 2026-09-24 (DECISIONS §245). 폭 소스 우선순위는 **판정 코드 안에서만**
+    #   사실이다. `tools/` 의 대조 도구와 `tests/` 는 그 순서를 인용해서 보므로
+    #   넓히면 정상 인용이 전부 위반이 된다 — 오탐이 본문을 덮으면 사람이 끈다.
+    "tests/test_seg_width.py::test_width_source_priority_has_one_home":
+        "정본 단일화의 대상은 `src/firelane` 이다. 대조 도구·시험의 인용은 사본이 아니라 검증이다",
+    "tests/test_skip_policy.py::_skip_literals":
+        "`pytest.skip` 은 시험 안에만 산다 — src · tools 에 0건이라 넓히면 빈 폴더를 훑는다",
     "tests/test_guards.py::test_repo_python_compiles":
         f"{_PROD_ONLY} — tests 의 구문 오류는 pytest 수집이 먼저 **오류로** 낸다. "
         "여기서 또 컴파일할 이유가 없다",
@@ -574,6 +583,19 @@ EXEMPT_SCOPE = {
     "tools/widen.py::w4":
         "「tools 전량이 어디선가 불리는가」 — 우주가 tools/ 다. 건초더미(`hay`)는 src·tests·tools "
         "전부다(같은 함수 안 `pys(...)`)",
+    # ── 2026-09-24 (DECISIONS §226). ⑤ 는 **폴더** 축, `scopedecl` ② 는 **접미사** 축이다.
+    #    둘은 같은 족의 다른 축이고 서로를 대신하지 못한다 — 겹치는 것이 아니라 직교한다.
+    "tools/env_check.py::_sh":
+        "`.sh` 의 우주가 `tools/` 다 — `src/` 와 `tests/` 에는 셸 스크립트가 0개다. "
+        "이 함수는 **셸에 사는 환경변수**를 세려고 2026-09-24 에 생겼다",
+    "tests/test_refcheck_paths.py::test_example_names_are_only_placeholders":
+        "예시 이름 목록이 **도구 이름**을 삼키는지 보는 대조표다. 그 목록의 우주가 "
+        "`tools/` 이고(`refcheck` 가 `tools/x.py` 꼴만 예시로 든다), `src`·`tests` 는 "
+        "그 목록의 비교 대상이 아니다",
+    "tools/scopedecl.py::enforcers":
+        "강제자의 우주가 `tools/`(도구) + `tests/test_*.py`(검사) 둘이다. 두 줄로 나눠 "
+        "모으므로 줄마다 보면 한쪽만 훑는 것으로 보인다 — 합쳐서 보면 `src/` 만 빠지고 "
+        "**`src/` 는 강제자가 아니라 강제 대상**이다(`dms.py::_units` 와 같은 사유)",
     "src/firelane/inventory.py::_code_text":
         "속성이 **쓰이는가**는 판정(src)과 화면(web/*.js)이 읽는가다. 탐색 도구가 컬럼을 "
         "읽는 것을 사용으로 세면 모든 컬럼이 영원히 쓰인다(test_declaration_sync 와 같은 이유)",
@@ -940,8 +962,14 @@ CEILING = {
 
 
 def main() -> int:
-    selftest = "--selftest" in sys.argv
-    ratchet = "--ratchet" in sys.argv
+    # ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). 종전에는 `"--x" in sys.argv`
+    #   였다 — **오타가 조용히 무시된다.** `--ratchett` 는 래칫을 고쳐 적는 대신 조용히 판정만 했다.
+    #   argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+    ap = argparse.ArgumentParser(description="죽은 검사 탐지 — 다섯 갈래")
+    ap.add_argument("--selftest", action="store_true", help="합성 트리로 판별식만 문다")
+    ap.add_argument("--ratchet", action="store_true", help="REDLIST 를 지금 실물로 고쳐 적는다")
+    a = ap.parse_args()
+    selftest, ratchet = a.selftest, a.ratchet
 
     # ★ 생사는 **합성 트리**에서 먼저 묻는다. 그 답이 있어야 아래의 0건을
     #   「청결」로 읽을 수 있다 — 순서가 뒤바뀌면 이 도구가 세는 병에 걸린다.

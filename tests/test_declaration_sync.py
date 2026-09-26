@@ -503,7 +503,18 @@ def test_defect_ledger_counts_agree_everywhere():
     """
     plan = (ROOT / "docs" / "PLAN.md").read_text(encoding="utf-8")
     rows = _ledger_rows()
-    assert rows, "§13-3 에서 행을 0개 찾았다"
+
+    # ★ 2026-09-24 (DECISIONS §227). 종전에는 `assert rows` 였다 — **0행을 프로브의
+    #   죽음으로 읽었다.** 그런데 0행은 이 절이 노리던 **목표 상태**다. 목표에
+    #   닿는 날 관문이 빨개지는 검사는 그날 꺼진다(`deadcheck` 가 2026-09-21 에
+    #   배운 것과 같다 — 「제 일을 다 해서 0건이 된 날 봉인이 막혔다」).
+    #   대신 **표 머리**가 있는지를 본다. 머리가 사라졌으면 절을 지운 것이고,
+    #   머리가 있는데 행이 0이면 빚이 없는 것이다 — 둘은 다른 사건이다.
+    sec = _ledger_section()
+    assert re.search(r"^\|\s*ID\s*\|.*\|\s*닫는 법\s*\|\s*$", sec, re.M), (
+        "§13-3 의 표 머리(`| ID | 결함 | 족 | 상태 | 닫는 법 |`)가 없다 —\n"
+        "  행이 0이어도 머리는 남긴다. 결함은 다시 자라고, 그때 여기로 돌아온다.\n"
+        "  머리가 없으면 이 검사는 「표를 못 찾았다」와 「빚이 없다」를 구별 못 한다.")
 
     t = re.search(r"^### 13-3\. 남은 결함 (\d+)건", plan, re.M)
     assert t, "§13-3 제목이 「남은 결함 N건」 꼴이 아니다 — 세는 자리가 사라졌다"
@@ -639,6 +650,37 @@ def test_every_ledger_row_points_at_something_real():
         "  **애초에 없던 것**일 수도 있다 — 어느 쪽인지 git 으로 먼저 확인해라:\n"
         "    git log --all --diff-filter=D --name-only -- '<경로>'\n"
         "  경로가 아니라 표기(ID 꼴 등)이면 `LEDGER_NOT_A_PATH` 에 사유와 함께 적는다.")
+
+
+def test_the_ledger_judges_are_alive_even_at_zero_rows():
+    """★ 2026-09-24 (DECISIONS §239). §13-3 이 **0행**이 되자 위 셋이 통째로 잠들었다.
+
+    `_ledger_citations()` 가 빈 목록이라 판정 루프가 0회 돌고, 그 안의
+    `_resolves()` 는 물론 `_tracked()` 까지 **한 번도 안 불린다.** `_tracked()`
+    안의 카나리아 둘(「git ls-files 가 실패했다」 · 「추적 파일이 0개다」)이
+    그래서 **죽은 코드**가 됐다 — 빈 그물을 막으려고 박은 단언이 빈 그물에
+    같이 묻힌 것이다.
+
+    0행은 **목표 상태**다. 같은 파일의 `test_defect_ledger_counts_agree_everywhere`
+    가 2026-09-24 에 그 처방(표 머리 확인)을 받았는데 **형제 셋은 못 받았다.**
+    여기서 판정기를 직접 문다 — 결함이 다시 자라는 날, `_resolves()` 는
+    한 번도 검증된 적 없는 상태로 처음 돌면 안 된다.
+    """
+    files = _tracked()                      # 카나리아 둘을 되살린다
+    assert len(files) > 500, f"추적 파일 {len(files)}개 — git ls-files 가 죽었다"
+
+    assert _resolves("docs/MASTER.md"), "실재하는 경로를 못 찾는다 — 판정기가 죽었다"
+    assert _resolves("tools/"), "디렉터리 인용을 못 찾는다"
+    assert not _resolves("docs/zq7_absent.md"), "없는 경로를 실재로 본다 — 그물이 비었다"
+    assert not _resolves("tools/zq7_absent.py"), "없는 도구를 실재로 본다"
+
+    # 인용 뽑기 — 표 한 줄을 합성해 넣는다
+    got = sorted(set(_LEDGER_PATH.findall("| W9-9 | `tools/zq7.py` 와 `docs/zq7.md` |")))
+    assert got == ["docs/zq7.md", "tools/zq7.py"], got
+
+    # 사유 길이 판정(아래 `test_every_ledger_exemption_states_a_reason` 의 것)
+    assert not (lambda w: bool(w) and len(w) > 15)("짧다"), "짧은 사유를 통과시킨다"
+    assert (lambda w: bool(w) and len(w) > 15)("경로가 아니라 ID 표기라서 실재할 수 없다")
 
 
 def test_ledger_exemptions_are_not_dead():

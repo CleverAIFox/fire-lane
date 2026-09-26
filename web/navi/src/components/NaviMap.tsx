@@ -40,9 +40,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 //   명시해야 산출물에 워커가 들어간다 — 빠지면 빌드는 초록이고 지도만 안 그려진다.
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { angleDelta, type LngLat } from "../domain/geo";
-import type { GraphEdge, RoutePlan, VerdictStyle, View } from "../domain/types";
+import { egoBox, egoFeature } from "../domain/egobox";
+import type { GraphEdge, RoutePlan, VehicleSpec, VerdictStyle, View } from "../domain/types";
 import type { RouteLook } from "../domain/status";
-import type { LiveFix } from "../app/useNavigation";
+import type { LiveFix } from "../domain/types";
 import { C, S } from "../ui/tokens";
 import {
   GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers,
@@ -88,6 +89,8 @@ interface Props {
   firstPerson: boolean;
   /** 배경 도로 판정 음영 */
   tint: boolean;
+  /** 자차를 **실측 크기 상자**로 놓는다. 전장·전고가 없으면 납작 마커로 남는다(§232) */
+  spec?: VehicleSpec | null;
   /** 조작 명령. `n` 이 바뀔 때만 한 번 실행한다. focus 는 그 점으로 카메라를 옮긴다 */
   cmd: { n: number; kind: "in" | "out" | "north" | "focus"; at?: LngLat } | null;
   /** 지도 위 알약 표지 */
@@ -121,6 +124,8 @@ export function NaviMap(props: Props) {
   const pan = useRef(p.onUserPan); pan.current = p.onUserPan;
   const cam = useRef({ lon: 0, lat: 0, brg: 0, init: false, plon: 0, plat: 0, pbrg: 0, pzb: NaN });
   const follow = useRef(false);
+  /** 마지막으로 **그린** 자차 자리. 같으면 다시 안 그린다(W13-4). */
+  const ego = useRef({ lon: 0, lat: 0, brg: 0, on: false });
   const zoomBias = useRef(0);
 
   useEffect(() => {
@@ -176,6 +181,19 @@ export function NaviMap(props: Props) {
       for (const L of altRouteLayers()) m.addLayer(L);
       for (const L of routeLayers(styleRef.current)) m.addLayer(L);
       for (const L of markerLayers()) m.addLayer(L);
+      // ★ 2026-09-24 (§232) 자차 — **실측 크기 상자.** 좌표가 미터라 줌·피치와
+      //   무관하게 길과의 비율이 유지된다. 제원이 없으면 비어 있고 납작 마커가 남는다.
+      m.addSource("ego", { type: "geojson", data: egoFeature(null) });
+      m.addLayer({
+        id: "ego-3d", type: "fill-extrusion", source: "ego",
+        paint: {
+          "fill-extrusion-color": C.egoBody,
+          "fill-extrusion-height": ["get", "h"],
+          "fill-extrusion-base": 0,
+          "fill-extrusion-opacity": 0.95,
+          "fill-extrusion-vertical-gradient": true,
+        },
+      });
       for (const L of stationLayers()) m.addLayer(L);
       // ★ 2026-09-22 (§217-2) 지형을 켠다. `?terrain=0` 이면 평면(느린 기계 · 비교용)
       if (p.view.terrainBounds) {
@@ -200,9 +218,34 @@ export function NaviMap(props: Props) {
     const loop = () => {
       raf = requestAnimationFrame(loop);
       const t = p.live.current;
-      if (t.on) {
-        if (!car.current!.getElement().isConnected) car.current!.addTo(m);
-        car.current!.setLngLat([t.lon, t.lat]).setRotation(t.brg);
+      // ★ 2026-09-24 (PLAN §13 W13-4). 자차 그리기가 **매 프레임 무조건** 돌았다.
+      //   `setData` 는 GeoJSON 소스를 통째로 더럽히므로, 아래 「제자리면 안
+      //   그린다」 가드(2026-09-22 · §216-2)가 잡아 둔 비용이 그대로 돌아왔다 —
+      //   신호 대기나 도착 뒤에도 지도가 계속 다시 그려졌다. 제원 없는 차는
+      //   **빈 FeatureCollection 을 60fps 로** 밀어 넣고 있었다.
+      //   자차가 실제로 **움직였을 때만** 그린다.
+      const egoMoved = !ego.current.on || t.lon !== ego.current.lon
+        || t.lat !== ego.current.lat || t.brg !== ego.current.brg
+        || t.on !== ego.current.on;
+      if (t.on && egoMoved) {
+        ego.current = { lon: t.lon, lat: t.lat, brg: t.brg, on: true };
+        // ★ 제원이 있으면 상자, 없으면 납작 마커. **둘을 같이 띄우지 않는다** —
+        //   같은 차가 두 크기로 보이면 어느 쪽이 실제인지 화면이 거짓말한다.
+        const bx = egoBox(P.current.spec, t.lon, t.lat, t.brg);
+        const src = m.getSource("ego") as maplibregl.GeoJSONSource | undefined;
+        src?.setData(egoFeature(bx) as never);
+        if (bx) {
+          if (car.current!.getElement().isConnected) car.current!.remove();
+        } else {
+          if (!car.current!.getElement().isConnected) car.current!.addTo(m);
+          car.current!.setLngLat([t.lon, t.lat]).setRotation(t.brg);
+        }
+      } else if (!t.on && ego.current.on) {
+        // 위치가 꺼지면 한 번만 거둔다.
+        ego.current = { ...ego.current, on: false };
+        const src = m.getSource("ego") as maplibregl.GeoJSONSource | undefined;
+        src?.setData(egoFeature(null) as never);
+        if (car.current!.getElement().isConnected) car.current!.remove();
       }
       if (!follow.current || !t.on) { cam.current.init = false; return; }
       const c = cam.current;

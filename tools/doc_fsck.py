@@ -39,6 +39,8 @@ from pathlib import Path
 
 import yaml
 
+from firelane import generated
+
 
 def _today() -> str:
     """오늘(KST).
@@ -62,7 +64,7 @@ PIPE_README = ROOT / "src/firelane/README.md"
 # ★ 등재가 아직 안 된 field 파일. **늘리지 마라.** 여기 있는 동안은 그 파일이
 #   무엇인지 저장소가 설명하지 못한다. PLAN 이 이 목록의 처리를 든다.
 FIELD_EXEMPT = {
-    "fieldsheet.md",            # sources.yaml consumers 가 든다
+    "fieldsheet.md",      # 들고 나가는 종이. 코드 소비자가 없다(DECISIONS §243)
     # ── 2026-09-03. 네이버 산출 넷(DECISIONS §42)을 지웠다.
     #
     # ★ **저장소에는 한 번도 없었다.** 실물은 SSD 의 `data/field/` 에 있었고
@@ -89,6 +91,8 @@ PATH_EXEMPT = {
     #   적으면 **낡은 서술**이라 울어야 한다.
 }
 
+# ★ 2026-09-25 (§258). 생성물은 「없다」가 아니라 「아직 안 구웠다」다 — 표와 판정은
+#   `firelane.generated.DOC_ABSENT` · `dead_claims()` 가 든다(생성물 지식의 한 문).
 # 경로 참조를 찾을 때 저장소 안인 것만 본다. data/raw · norm · landing ·
 # interim · _quarantine 은 외장 SSD 라 여기서 존재를 확인할 수 없고,
 # data/processed 는 재생성물이라 clone 직후에는 없는 것이 정상이다.
@@ -158,7 +162,8 @@ def check_paths() -> list[str]:
                 seen.setdefault(p, set()).add(str(f.relative_to(ROOT)))
     return [f"{p} 이 없다 — {' · '.join(sorted(src))} 가 가리킨다"
             for p, src in sorted(seen.items())
-            if p not in PATH_EXEMPT and not (ROOT / p).exists()]
+            if p not in PATH_EXEMPT and p not in generated.DOC_ABSENT
+            and not (ROOT / p).exists()] + generated.dead_claims(ROOT)
 
 
 # ── 3. 부재 선언 — "없다" 고 적은 값이 실물에 있는가 ──────────────
@@ -422,14 +427,20 @@ def check_docx_revised() -> list[str]:
     f = docs[0]
     # ★ 전제 선언. 못 재는 것을 못 잰다고 말한다 — 조용히 통과하지도, 거짓으로
     #   빨개지지도 않는다.
+    # ★ 2026-09-24 (§239). `sh.returncode` 를 안 봤다. 판별이 실패하면 stdout 이
+    #   비어 **얕지 않다고 판단**하고 except 가 삼켰다 — 아래 `git log` 가 빈
+    #   결과를 내 「수정일 미상」이 정상값으로 흐른다. 못 잰 것은 못 잰다고 말한다.
     try:
         sh = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
                             cwd=ROOT, capture_output=True, text=True, timeout=10)
-        if sh.stdout.strip() == "true":
-            print("   (건너뜀 — 얕은 저장소라 마지막 수정 커밋일을 못 잰다)")
-            return []
-    except Exception:                                     # noqa: BLE001
-        pass
+    except Exception as e:                                # noqa: BLE001
+        return [f"{f.name} — 얕은 저장소인지 판별하지 못했다: {type(e).__name__}: {e}"]
+    if sh.returncode != 0:
+        return [f"{f.name} — 얕은 저장소 판별 실패(rc={sh.returncode}): "
+                f"{sh.stderr.strip()[:120]}. 못 잰 것을 통과로 세지 않는다"]
+    if sh.stdout.strip() == "true":
+        print("   (건너뜀 — 얕은 저장소라 마지막 수정 커밋일을 못 잰다)")
+        return []
     try:
         r = subprocess.run(
             ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(f)],
@@ -580,12 +591,12 @@ DEFERRED = (
     #   ★ 09-30 이 지나야 "무엇을 냈나" 가 확정되고, 그래야 개요서 표기와
     #     PLAN 우선순위를 같은 값으로 적는다. 그 전에 적으면 또 갈린다.
     #   ★ 셋을 같은 날로 묶은 것도 그 이유다. 따로 하면 서로 어긋난다.
-    ("2026-10-05", "docs/PLAN.md",
-     "그림 자체가 여전히 반경 5m 원을 그린다", "기획서 [그림 13] 재생성"),
+    # ★ 2026-09-24 해소. [그림 13] 을 `render_figures.fig_xsec` 이 그리고
+    #   `docx_figs --sync` 가 넣었다(§236). 아래 「이미지 작업이라 남긴다」의
+    #   전제가 2026-09-23 에 뒤집혔는데(§221-1) 기한만 연장돼 있었다.
     # ★ 2026-09-16 해소. 개요서 판정 표기 · MVP 기한 둘을 지웠다. 연기 사유
     #   ("09-30 이 지나야 확정") 가 둘 다에 안 맞았다 — 표기는 대응표 한 열로
     #   끝나고, 기한은 지나기 전에 적어야 기한이다(DECISIONS §162-6).
-    #   [그림 13] 은 이미지 작업이라 남긴다.
     # ★ 2026-09-10 이관. D-30 인터뷰를 `sources.yaml` 의 `pending` 으로
     #   옮겼다(key: vehicle_spec_measured). 여기는 **우리가 할 일**을 재는
     #   기계인데 그것은 남이 하고 결과만 받는 일이라 기한이 와도 우리가

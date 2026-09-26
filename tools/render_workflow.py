@@ -49,7 +49,6 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "docs/MASTER.md"
 OUT = ROOT / "web/workflow.html"
 
-TROUBLE = "12-4"          # 이 절은 통째로 '막히면' 탭
 
 
 def sections(text: str, want: set[str]) -> list[str]:

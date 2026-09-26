@@ -14,6 +14,7 @@ OUT   없음 (검사)
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -26,6 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 _spec = importlib.util.spec_from_file_location(
     "doc_fsck", ROOT / "tools" / "doc_fsck.py")
 doc_fsck = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = doc_fsck   # @dataclass 가 되짚는다 (§258-10)
 _spec.loader.exec_module(doc_fsck)
 
 
@@ -78,6 +80,51 @@ def test_temporary_things_actually_expire():
     _fail("한시로 정한 것의 기한이 지났다", doc_fsck.check_expiry(),
           "회수하고 그 카드·서술을 지우거나, 날짜를 다시 정해라. "
           "지난 날짜가 적힌 안내는 안 지킨 규칙처럼 읽힌다.")
+
+
+def test_a_generated_path_is_a_claim_not_a_silence():
+    """★ 2026-09-25 (§258). `DOC_ABSENT` 는 **면제가 아니라 주장**이다 —
+    「이 도구가 이 경로를 굽는다」. 그 주장이 죽으면 ② 가 그 사실을 낸다.
+
+    셋을 잰다. ㉠ 살아 있는 주장은 조용하다. ㉡ 없는 도구를 적으면 운다.
+    ㉢ 그 도구가 그 경로를 더 이상 안 굽으면(머리말 `OUT` 에서 빠지면) 운다.
+    ㉢ 이 빠지면 굽기를 멈춘 뒤에도 문서가 조용히 거짓말한다.
+    """
+    from firelane import generated
+
+    assert generated.DOC_ABSENT, "생성물 주장이 비었다 — 그러면 이 시험이 빈 그물이다"
+    for path, tool in generated.DOC_ABSENT.items():
+        assert (ROOT / tool).is_file(), f"{tool} 이 없다"
+        assert path in generated._out_header(ROOT / tool), (
+            f"{tool} 의 OUT 머리말이 {path} 를 안 든다")
+    assert not generated.dead_claims(ROOT)
+
+    real = dict(generated.DOC_ABSENT)
+    try:
+        generated.DOC_ABSENT.clear()
+        generated.DOC_ABSENT["web/없는것.pdf"] = "tools/__없는도구__.py"
+        assert generated.dead_claims(ROOT), "없는 도구를 적었는데 조용하다"
+        generated.DOC_ABSENT.clear()
+        # 실재하는 도구인데 그 경로를 안 굽는다 — 굽기를 멈춘 꼴
+        generated.DOC_ABSENT["web/굽지않는것.pdf"] = "tools/doc_fsck.py"
+        assert generated.dead_claims(ROOT), "OUT 에 없는 경로를 적었는데 조용하다"
+    finally:
+        generated.DOC_ABSENT.clear()
+        generated.DOC_ABSENT.update(real)
+    assert not generated.dead_claims(ROOT), "복원이 안 됐다"
+
+
+def test_a_generated_claim_does_not_silence_a_real_absence():
+    """★ 넓힌 쪽의 반대편. 주장에 적히지 **않은** 없는 경로는 여전히 운다."""
+    probe = ROOT / "docs/MASTER.md"
+    original = probe.read_text(encoding="utf-8")
+    try:
+        probe.write_text(original + "\n\n<!-- web/__가짜생성물__.pdf -->\n",
+                         encoding="utf-8")
+        assert any("__가짜생성물__" in b for b in doc_fsck.check_paths()), (
+            "생성물 주장을 넣은 뒤 ② 가 다른 없는 경로를 놓친다")
+    finally:
+        probe.write_text(original, encoding="utf-8")
 
 
 def test_the_gate_actually_cries():

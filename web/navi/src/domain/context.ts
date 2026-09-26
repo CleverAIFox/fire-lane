@@ -37,8 +37,14 @@ const WORD: Record<ContextKind, string> = {
   senior_zone: "노인보호구역 시설 부근",
 };
 
-/** 점 p 를 경로 좌표열에 투영 — (경로 위 거리, 수직거리). 짧은 경로라 선형 탐색으로 충분하다 */
-function project(coords: LngLat[], cum: number[], p: LngLat): { s: number; d: number } {
+/**
+ * 점 p 를 좌표열에 투영 — (선 위 거리, 수직거리). 짧은 선이라 선형 탐색으로 충분하다.
+ *
+ * ★ `domain/pressure.ts` 가 **구간 하나**에 같은 것을 쓴다(경로가 아니라 엣지에 붙인다).
+ *   투영을 두 번 구현하지 않는다 — 두 벌이면 같은 점이 경로에서는 걸리고 구간에서는
+ *   안 걸리는 일이 생기고, 그것은 찾기 어렵다.
+ */
+export function nearestOnPath(coords: LngLat[], cum: number[], p: LngLat): { s: number; d: number } {
   let best = { s: 0, d: Infinity };
   const kx = 111_320 * Math.cos((p[1] * Math.PI) / 180), ky = 110_540;
   for (let i = 0; i + 1 < coords.length; i++) {
@@ -65,7 +71,7 @@ export function routeHazards(plan: Pick<RoutePlan, "coords">, ctx: GeoJSON.Featu
     const kind = f.properties?.kind as ContextKind | undefined;
     if (!kind || !(kind in NEAR_M) || f.geometry.type !== "Point") continue;
     const at = f.geometry.coordinates as LngLat;
-    const { s, d } = project(plan.coords, cum, at);
+    const { s, d } = nearestOnPath(plan.coords, cum, at);
     if (d > NEAR_M[kind]) continue;
     const lim = kind === "speedcam" && f.properties?.limit ? ` · 제한 ${f.properties.limit}km/h` : "";
     hits.push({ kind, atM: s, at, text: WORD[kind] + lim });

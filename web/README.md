@@ -16,7 +16,7 @@
 | `data/` | 생성물. 파이프라인(`publish_*.py`) 산출. 손으로 고치지 말 것 |
 | `config.js` | **파이프라인 설정**이다. `publish_navi.py` 가 판정색 · 지형을, `publish_fleet.py` 가 편성을 정규식으로 읽는다. 화면은 이 파일을 직접 안 싣는다 |
 | `assets/vehicles/profiles.json` | 차종 치수 정본. `publish_fleet.py` 가 회전반경을 읽는다 |
-| `proposal.html` | 기획서 뷰어. `proposal.docx` 는 배포 직전 `tools/stage_pages.py` 가 `docs/` 에서 옮긴다 |
+| `proposal.html` | 기획서 뷰어. **PDF 를 띄운다**(2026-09-24 · DECISIONS §231) — `tools/proposal_pdf.py` 가 `docs/proposal.docx` 를 구워 `proposal.pdf` 를 내고, 쪽수 · 본문 · 판정 수치 · 그림 수를 대조해야 배포된다. `.docx` 원본도 같이 옮겨 내려받기로 남긴다 |
 | `workflow.html` | 협업 방침. `tools/render_workflow.py` 가 `playbook.html`(틀)로 만든다 |
 | `playbook.html` | 위의 틀. 배포에는 안 싣는다 |
 

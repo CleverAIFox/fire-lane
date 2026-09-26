@@ -34,6 +34,7 @@ import ast
 import json
 from pathlib import Path
 
+from firelane import jsonkeys
 from firelane.hashing import sha256
 from firelane.paths import ROOT
 
@@ -124,21 +125,58 @@ DOC_KEYS = frozenset({
 })
 
 
-def cfg_print(cfg: dict, key: str) -> str:
-    glob = {k: cfg.get(k) for k in INGEST_GLOBAL}
-    own = cfg.get("datasets", {}).get(key)
-    if isinstance(own, dict):
-        own = {k: v for k, v in own.items() if k not in DOC_KEYS}
+def _no_docs(v):
+    """중첩된 어느 깊이에서든 서술 칸을 뺀다.
+
+    ★ 2026-09-24 (DECISIONS §243). §216-1 이 **자기 항목에서만** 서술 칸을
+      뺐다. 전역 칸(`INGEST_GLOBAL`)은 통째로 쟀고, 그 안에도 산문이 산다 —
+      `raw_only.ortho.note` · `layers.*.what` · `scopes.*.note` 열일곱 칸이다.
+      그래서 **주석 한 줄을 고치면 45샤드가 전부 찢어진다.** 8GB 기계에서
+      `ngii_road` 를 다시 빌드하면 거의 반드시 OOM 이고, 샤드 봉인은 바로
+      그것을 막으려고 만든 것이다. 막으려던 사고를 제 전역 칸이 불렀다.
+    """
+    return jsonkeys.drop(v, DOC_KEYS)
+
+
+def _print(glob: dict, own: object) -> str:
     return _short(json.dumps({"global": glob, "own": own}, sort_keys=True,
                              ensure_ascii=False, default=str))
+
+
+def _raw_glob(cfg: dict) -> dict:
+    return {k: cfg.get(k) for k in INGEST_GLOBAL}
+
+
+def _own(cfg: dict, key: str) -> object:
+    return cfg.get("datasets", {}).get(key)
+
+
+def cfg_print(cfg: dict, key: str) -> str:
+    return _print({k: _no_docs(cfg.get(k)) for k in INGEST_GLOBAL},
+                  _no_docs(_own(cfg, key)))
+
+
+def _cfg_print_v2(cfg: dict, key: str) -> str:
+    """2026-09-22~09-24 판 — 자기 항목만 서술 칸을 뺐다."""
+    own = _own(cfg, key)
+    if isinstance(own, dict):
+        own = {k: v for k, v in own.items() if k not in DOC_KEYS}
+    return _print(_raw_glob(cfg), own)
+
+
+def _cfg_print_v1(cfg: dict, key: str) -> str:
+    """2026-09-22 이전 판 — 자기 항목 전체."""
+    return _print(_raw_glob(cfg), _own(cfg, key))
+
+
+#: 옛 판 지문. 만나면 **다시 빌드 없이** 받고 새 판으로 고쳐 적는다.
+#: ★ 줄이 늘 때마다 「한 번 지나면 안 찢어진다」가 한 세대 더 보장된다.
+LEGACY_PRINTS = (_cfg_print_v2, _cfg_print_v1)
 
 
 def cfg_print_legacy(cfg: dict, key: str) -> str:
-    """2026-09-22 이전 판 — 자기 항목 전체. 옛 봉인지를 **다시 빌드 없이** 받으려고 남긴다."""
-    glob = {k: cfg.get(k) for k in INGEST_GLOBAL}
-    own = cfg.get("datasets", {}).get(key)
-    return _short(json.dumps({"global": glob, "own": own}, sort_keys=True,
-                             ensure_ascii=False, default=str))
+    """가장 오래된 판. 이름을 쓰는 곳이 있어 남긴다."""
+    return _cfg_print_v1(cfg, key)
 
 
 # ── raw 지문 기억표 ────────────────────────────────────────────
@@ -282,7 +320,7 @@ def check(prev: dict | None, cfg: dict, key: str, hits: list[Path], out_dir: Pat
     if s["cfg"] != cfg_print(cfg, key):
         # ★ 옛 판 지문이면 받고 **새 판으로 고쳐 적는다**(재빌드 없음). 한 번 지나면 서술 칸을
         #   고쳐도 안 찢어진다. prev 는 ingest 가 그대로 대장에 되쓰는 레코드다.
-        if s["cfg"] != cfg_print_legacy(cfg, key):
+        if not any(s["cfg"] == f(cfg, key) for f in LEGACY_PRINTS):
             return False, "sources.yaml 설정이 바뀌었다"
         s["cfg"] = cfg_print(cfg, key)
     raw = raw_print(hits)

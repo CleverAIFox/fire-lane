@@ -136,6 +136,18 @@ export function useVoice(i: VoiceInput): VoiceState {
     }
   }, [i.jumpSeq]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ★ 2026-09-24 (PLAN §13 W13-5). 종전에는 아래 효과가 `if (!i.enabled) return`
+  //   하고 끝이었다 — **말하던 문장이 안 멈췄다.** 병목 구간에서 「조용히 해」를
+  //   눌러도 그 문장과 큐에 남은 둘이 끝까지 나갔다. `speaker.setEnabled` 는
+  //   만들어 놓고 **한 번도 안 불렀다**(전수 grep 0건).
+  useEffect(() => {
+    speaker.setEnabled(i.enabled);
+    if (!i.enabled) speaker.cancel();
+  }, [i.enabled, speaker]);
+
+  // 페이지를 떠나면 합성기를 놓는다 — 깨우기 타이머가 남으면 누수다.
+  useEffect(() => () => speaker.dispose(), [speaker]);
+
   useEffect(() => {
     if (!i.enabled) return;
 

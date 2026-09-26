@@ -532,9 +532,22 @@ backup_policy:
   state: single_copy
   decided: 2026-08-27
   by: 오창준
-  what: 외장 SSD 한 벌. 추가 백업 없음
+  what: 외장 SSD 한 벌. 추가 백업 없음 — **`data/raw` 에 한한다**
   why: sources.yaml 의 url 로 재취득 가능하고 sha 대장이 동일성을 증명한다
-  revisit: raw 5GB 초과 · 재취득 불가 자산 편입 · 팀 인원 증가
+  revisit: raw 5GB 초과 · 재취득 불가 자산이 **raw 에** 편입 · 팀 인원 증가
+  # ★ 2026-09-24 (DECISIONS §243). 「재취득 불가 자산 편입」 방아쇠가 이미
+  #   당겨져 있는 것처럼 보였다 — `data/field`(실측. "8월 20일 오전 10시의 그
+  #   골목은 다시 안 온다")와 `data/baseline`(원본 소실. 재생성 불가) 둘 다
+  #   재취득이 안 된다. 그런데 **둘 다 저장소에 커밋된다.** 원격이 곧 두 번째
+  #   벌이므로 한 벌 정책 밖이다. 방아쇠의 대상이 raw 임을 명시한다 —
+  #   범위를 안 적은 방아쇠는 당겨졌는지 아닌지를 아무도 못 정한다.
+  covers: data/raw
+  outside: [data/field, data/baseline]      # 커밋된다 — git 원격이 두 번째 벌
+  outside_gap: |
+    ★ 무결성 지문이 없다. git 은 **사본**을 주지만 「이 파일이 그날의 그
+      파일인가」를 안 묻는다. data/processed 는 `_manifest.json` 이,
+      판정은 `segments.fingerprint.json` 이 드는데 data/field 는 아무도 안 든다.
+      PLAN §13 이 든다.
 
 layers:
   landing:
@@ -905,7 +918,7 @@ datasets:
   kfs_pumptruck:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_pumptruck
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표가 폭 판정 기준이다. 코드가 키로 참조하지 않는다
@@ -926,7 +939,7 @@ datasets:
   kfs_watertank:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_watertank
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -949,7 +962,7 @@ datasets:
   kfs_chemical:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_chemical
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -967,7 +980,7 @@ datasets:
   kfs_ladder_articulated:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_ladder_articulated
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -988,7 +1001,7 @@ datasets:
   kfs_rescue:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_rescue
     ext: [hwpx]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -1005,7 +1018,7 @@ datasets:
   kfs_ambulance_special:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_ambulance_special
     ext: [hwp, pdf]
     primary: hwp
@@ -1032,7 +1045,7 @@ datasets:
   kfs_ladder_small:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_kfs_ladder_small
     ext: [pdf]
     feeds_why: 근거 문서 — used_for 제원표. 상동
@@ -1045,7 +1058,7 @@ datasets:
       동명동 골목에 실제로 들어가는 차종이 펌프차가 아닐 수 있어 같이 받았다.
   mas_optional_spec:
     feeds: []
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 선택장비 규격 근거(호스릴 연장 등). 차량 치수는 안 든다 — 그것은 mas_vehicle_spec 이다(MASTER §3-13)'
     stem: safety_mas_optional_spec
     ext: [hwp, pdf]
     primary: hwp
@@ -1066,7 +1079,7 @@ datasets:
   mas_vehicle_spec:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 차량 제원 정본. 소비자는 코드가 아니라 기획서다(MASTER §3-13)'
+    feeds_note: '미투입 — 차량 제원의 근거 문서. 정본은 vehicle_spec 이다(MASTER §3-13). 소비자는 코드가 아니라 기획서다'
     stem: safety_mas_vehicle_spec
     ext: [hwp, pdf]
     primary: hwp
@@ -1308,7 +1321,6 @@ datasets:
       - tools/width_fn.py
     stems: [vworld_map1k, vworld_map1k_ngi]
     ext: [zip]
-    scope: jngj-donggu        # 종전 '광주 동구 74도엽' — 산문이었다
     files:
       - vworld/vworld_map1k*_jngj-donggu_20260307.zip
     what: 수치지형도 1:1,000. 도로경계·중심선·보도·평면교차점·가로등폴
@@ -1404,8 +1416,13 @@ datasets:
     encoding: cp949                        # 2026-08-17 실물 확인. 구 선언 utf-8 은 틀렸다
     note: |
       ★ 좌표계 EPSG:5179. (정사영상 도곽표는 5186이므로 겹칠 때 통일 필요)
-      ★ rvwd 컬럼 = 도로폭 속성. 1.5~46.0m, 정수 76%.
-        ROAD_BT(정수 90%, 2.0에 30% 몰림)보다 세분화됨. 교차검증용으로 반드시 병행.
+      ★ **rvwd(도로폭)는 이 레이어에 없다.** schema.columns 는 gid · fmta ·
+        scls · ufid 넷뿐이다. 2026-08-17 에 도로중심선으로 옮겨갔고(위 주석)
+        속성은 `datasets.ngii_road_center` 가 든다 — 1.5~46.0m · 정수 76% ·
+        ROAD_BT(정수 90% · 2.0에 30% 몰림)보다 세분화. 교차검증은 그쪽에서 한다.
+      ★ 2026-09-24. 여기 「rvwd 컬럼 = … 교차검증용으로 반드시 병행」이
+        남아 있었다. 바로 위 주석이 그 컬럼의 이사를 적고 있는데도 그랬다 —
+        읽는 사람은 없는 컬럼을 찾는다.
       ★ 최협소 골목을 도로면으로 그리지 않음. 표본 100개 중 70개만 커버.
         나머지는 road_rw 폴백.
       도엽 커버리지(5179): X 945,332~949,918 / Y 1,681,228~1,686,800
@@ -1943,14 +1960,14 @@ datasets:
         래스터에서 도로 경계를 읽으려면 세그멘테이션이 필요하고
         그림자·처마·주차 차량 때문에 정확도가 안 나온다.
         폭은 벡터(실폭도로·건물 폴리곤)로 잰다.
-      산출: web/data/ortho/{z}/{x}/{y}.jpg (388장, z15~18, 8.3MB)
+      산출: web/data/ortho/{z}/{x}/{y}.jpg (1,423장, z15~19, 27MB)
       4도엽 전량 1.25GB. ingest 는 읽지 않는다(raw_only).
 
   # ── 좌표 없는 표 (참조용) ────────────────────────────────
   hydrant_summary:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 소방용수 분모 근거(MASTER §3-12). 표준데이터 441 대 관할 589'
+    feeds_note: '미투입 — 소방용수 분모 근거(MASTER §3-12). 표준데이터 좌표 동구 445 대 관할 소화전 589'
     stem: safety_hydrant_summary
     ext: [csv]
     feeds_why: 대조용 — 관할 654 를 API 실측 651 과 맞추는 데 썼다. 판정에 안 들어간다
@@ -1963,12 +1980,19 @@ datasets:
     kind: csv_table
     encoding: cp949
     note: |
-      ★ 좌표 없음. 집계표다.
-        동부소방서 관할 지상식 418 + 지하식 171 = 589개.
-        그런데 전국소방용수시설표준데이터의 광주 동구는 31개뿐 = 공개율 5%.
-        동명동은 1개(동계로13번길 18-2).
-      → 소화전 레이어는 발표에서 제외. 대신 "588개 중 31개만 공개"를  <!--stale-ok-->
-        D-30 인터뷰 협조요청 근거이자 발표 논거로 사용.
+      ★ 좌표 없음. 집계표다. **축을 섞지 않는다**(MASTER §3-12 가 정본) —
+          소화전            동부소방서 관할 지상식 418 + 지하식 171 = 589
+          소방용수시설      589 + 저수조 32 + 급수탑 1 + 비상소화장치 32 = 654
+          표준데이터 좌표   동구 445 (스코프 안 153 · 동명동 41)
+          API 실측          동구 651 (소방용수시설 축. 관할 654 와 3건 차)
+      ★ 2026-09-24. 여기 「전국표준데이터 광주 동구는 31개뿐 = 공개율 5% ·
+        동명동은 1개」와 「588개 중 31개만 공개를 발표 논거로」가 남아 있었고
+        `<!--stale-ok-->` 가 그것을 얼려두고 있었다. **같은 파일 1823행이
+        그 문장을 이미 폐기했다**(2026-08-31 재측정 · 동구 445 · 동명동 41).
+        마커가 폐기된 문장을 신선도 검사 밖으로 빼내 살려두고 있었다 —
+        마커는 「일부러 옛 값을 인용한다」는 뜻이지 「고치지 않겠다」가 아니다.
+      → 발표 논거는 **분모가 공개 데이터에 없다**는 것 자체다(§3-12).
+        「1개뿐」·「31개만 공개」를 쓰지 않는다.
 
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['구분', '계', '주거지역', '상가지역', '고지대', '시장_화재예방강화지구', '소방차진입불가지역', '데이터기준일자']
@@ -2113,11 +2137,19 @@ datasets:
       columns: ['구분', '종류', '연번', '주차장명', '주소', '면적_㎡', '면수', '행정동', '관리주체', '주차요금', '비고']
       encoding_seen: 'utf-8'
   enforce_cam:
-    feeds: []
-    feeds_note: '미투입 — A* 비용함수 입력(#2). 무인카메라 57지점'
+    feeds:
+      - src/firelane/publish_navi.py
+    feeds_note: '투입 — 도로명으로 구간에 붙었다(`ecam`). 57지점 중 18지점 · 나머지는 지번 주소'
     stem: gjcity_enforce_cam
     ext: [csv]
-    feeds_why: 미배선 — 단속 압력 + 운영시간. 지오코딩 필요
+    feeds_why: |
+      ★ 2026-09-25 투입. `publish_navi.py` 가 **도로명**으로 구간에 붙인다(`ecam` 칸) —
+      지오코딩을 기다리지 않았다. 단속 장소가 「구성로 249」 꼴이라 `parking_enforce` 와
+      같은 `_road_of` 로 도로명을 뽑는다. 57지점 중 **18지점**이 붙고 39지점은 지번 주소
+      (「지산동 521-3」)라 못 붙는다 — 그 몫을 `counts.ecam_unplaced_sites` 로 같이 싣는다.
+      **행이 아니라 번호(지점)를 센다** — 한 지점이 방향마다 한 행이다(아래 note).
+      ★ 그래서 `ecam: 0` 은 「카메라가 없다」가 아니라 「붙은 18지점 중에 없다」다.
+      운영시간은 아직 안 싣는다 — 시간대별 비용은 근거가 없다(PLAN §1 #2).
     scope: jngj-donggu
     updated: '2026-08-28'
     what: 동구 불법주정차 단속 무인카메라 (57지점 · 방향 65)
@@ -2421,7 +2453,6 @@ datasets:
         in: 화재 현황 CSV 60열 (2019~2025 전 연도)
         elsewhere: data/processed/_manifest.json
         json_key: DCLR_PSTN_LAT
-        json_key: DCLR_PSTN_LAT
         note: |
           좌표 열이 없다. 2026-09-03 헤더 전수 확인.
           ★ 2026-09-04. `elsewhere` 가 `nfa_dispatch_119.csv` 를 가리켰다가
@@ -2434,7 +2465,6 @@ datasets:
       EMD_NM:
         in: 화재 현황 CSV 60열
         elsewhere: data/processed/_manifest.json
-        json_key: EMD_NM
         json_key: EMD_NM
         note: |
           읍면동 열이 없다. SGG_NM 까지가 한계라 scope 가 jngj-donggu 다.
@@ -2689,14 +2719,6 @@ datasets:
     kind:       json_table
     encoding:   utf-8
     what:       건축물대장 표제부. 동명동 1,989동 · 필드 77
-    note: |
-      ★ `retired.building_ledger`(2026-08-31 폐기)의 후속이다.
-        그때 사유는 "높이·주차대수만 있고 건물 형상은 building 이 이미
-        낸다. 11.3MB 소비자 0곳" 이었고 **그 판단은 틀리지 않았다.**
-        바뀐 것은 상황이다 — β 점유위험도(#60)와 주차 0인 주거건물
-        84% 가 이 표를 읽는다. 소비자가 생겼다.
-      ★ 같은 자료가 아니다. 폐기분은 전국 11.3MB 였고 이것은 동명동
-        1,989동으로 좁힌 판이다. stem 도 `_dm` 이 붙는다.
     feeds_why: |
       ★ **이 파일 하나가 세 문제를 푼다.**
         ① 원룸 판별 — 단독주택 932동 중 다가구(가구3+) 170 · 2가구 184.
@@ -2706,6 +2728,16 @@ datasets:
           단속 이력은 "적발된 것" 만 보는데 이것은 **압력 자체**를 준다.
         ③ 건물높이 523동 — buildings.h(층수 추정)의 실측 대조축.
     note: |
+      ★ 2026-09-24 — 이 항목에 `note:` 가 **두 번** 있었다. YAML 은 뒤엣것만
+        남기므로 앞 문단(폐기 → 후속 계보)이 **기계 눈에서 사라져 있었다.**
+        사람이 열면 보이고 도구가 읽으면 없는 상태였다. 합친다.
+      ★ `retired.building_ledger`(2026-08-31 폐기)의 후속이다.
+        그때 사유는 "높이·주차대수만 있고 건물 형상은 building 이 이미
+        낸다. 11.3MB 소비자 0곳" 이었고 **그 판단은 틀리지 않았다.**
+        바뀐 것은 상황이다 — β 점유위험도(#60)와 주차 0인 주거건물
+        84% 가 이 표를 읽는다. 소비자가 생겼다.
+      ★ 같은 자료가 아니다. 폐기분은 전국 11.3MB 였고 이것은 동명동
+        1,989동으로 좁힌 판이다. stem 도 `_dm` 이 붙는다.
       ★ **좌표가 없다.** 대지위치(지번) 1,989 · 도로명대지위치 1,873 뿐.
         jijeok(24,183) 이나 building 폴리곤과 **지번으로 붙여야** 한다.
       ★ {Description, Data} 구조다. Description 이 필드 사전이다.
@@ -3071,7 +3103,14 @@ raw_only:
       ★ GeoTIFF 아님. 지오태그 없음, .tfw 미동봉, XML에도 도곽좌표 없음.
         복원 규칙과 도엽별 X0/Y0는 docs/MASTER.md §10 참조 (EPSG:5186).
       Phase 3-A(정사영상 DL 세그멘테이션) 재료. 우선순위 4위.
-      현 단계 파이프라인 미투입. S3에만 두고 로컬에서 지워도 무방.
+      ★ 2026-09-24. 여기 「현 단계 파이프라인 미투입. S3에만 두고 로컬에서
+        지워도 무방」이 적혀 있었다. **거짓이다** — `firelane.ortho` 가 정식
+        단계이고(`pipeline.py` Step("ortho")) 이 TIF 를 읽어 관제 지도의 배경
+        타일 1,423장을 굽는다. 지우면 `[SKIP] 정사영상 TIF 없음` 으로
+        **조용히 빠지고** 지도가 흰 바탕이 된다. 같은 파일의
+        `datasets.ortho.feeds` 가 `ortho.py` 를 이미 들고 있었다 —
+        한 파일이 제 자신과 모순돼 있었다.
+      DL 세그멘테이션(3-A)은 아직 미투입이다. 타일 굽기는 투입돼 있다.
 
   building_change:
     what: GIS건물통합정보 일변동분
@@ -3343,27 +3382,29 @@ outputs:
     produced_by: src/firelane/ingest.py
     path: data/processed/jijeok.geojson
     inputs: [jijeok]
-    consumers:
-    - tools/jijeok_probe.py
-    - tools/jijeok_review.py
+    consumers: []
     what: 연속지적도 24,183 필지
     note: |
       ★ 2026-09-14 등재. 디스크에 있는데 대장에 없었다. `on_demand: true`
         를 달면서 더 중요해졌다 — 전량에서 안 만들어지므로, 대장에 없으면
         "이 파일이 왜 여기 있나" 를 아무도 모른다.
-      ★ 판정은 이것을 안 읽는다. `segments.py` · `seg/*.py` · `web/js`
-        어디에도 없다. 소비자는 탐색 도구 둘뿐이다.
+      ★ 판정은 이것을 안 읽는다. `segments.py` · `seg/*.py` 어디에도 없다.
+      ★ 2026-09-24. 소비자로 `jijeok_probe` · `jijeok_review` 를 적고 있었는데
+        **둘 다 이 파일을 안 읽는다** — probe 는 raw zip 과 제가 만든
+        `jijeok_scope.gpkg` 를, review 는 `jijeok_width.gpkg` 를 읽는다.
+        지금 소비자는 0이다.
       ★ 만들려면 —  uv run python -m firelane.ingest --only jijeok
     verified: false
   jijeok_5186:
     produced_by: src/firelane/ingest.py
     path: data/processed/jijeok_5186.gpkg
     inputs: [jijeok]
-    consumers:
-    - tools/jijeok_probe.py
+    consumers: []
     what: 위와 같은 것의 5186 GeoPackage 판. 공간 질의용
     note: |
       ★ 2026-09-14 등재. `jijeok.geojson` 과 짝이다. ingest 가 같이 낸다.
+      ★ 2026-09-24. `jijeok_probe.py` 를 소비자로 적고 있었으나 그 도구는
+        이 파일 이름을 한 번도 안 든다. 짝과 같이 소비자 0이다.
     verified: false
   segments_schema:
     produced_by: src/firelane/segments.py
@@ -3371,7 +3412,10 @@ outputs:
     inputs: [segments]
     consumers:
     - src/firelane/publish_web.py
-    - src/firelane/contract.py
+    - src/firelane/pipeline.py
+    - src/firelane/webmanifest.py
+    - tools/baseline.py
+    - tools/release_brief.py
     - tests/test_contract.py
     note: |
       segments.geojson 의 컬럼 계약. publish 가 web/data 로 사본을 낸다.
@@ -3425,6 +3469,10 @@ outputs:
     # ★ 2026-09-06. 또 하나. `publish_navi` 가 내비용 그래프를 낸다 —
     #   같은 병이 두 번째다(손대장이라 읽는 쪽이 늘어도 아무도 안 적는다).
     - src/firelane/publish_navi.py
+    # ★ 2026-09-25 (PLAN §1 #91 · #120). 평가지표 산출기와 그 게이트.
+    - tools/evalgate.py
+    - tools/evalgen.py
+    - tests/test_evalgen.py
     what: 구간 단위 통행 판정. verdict 4종 + 폭 + CCTV 가시성
     verified: false
     known_issues:
@@ -3458,7 +3506,7 @@ outputs:
     produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_walk_5186.gpkg
     inputs: [ngii1k]
-    consumers: []
+    consumers: [src/firelane/publish_basemap.py]
     what: 보도 A0033320. 차도폭 분리용
     verified: false
     known_issues:
@@ -3487,7 +3535,7 @@ outputs:
     produced_by: 현장 실측 (사람)
     path: data/field/obs_points.csv
     inputs: [field_sample]
-    consumers: [data/field/fieldsheet.md]
+    consumers: [tools/field_compare.py, tests/test_fieldsheet.py]
     what: 관측점 좌표·기준 지물 서술. 실측 야장의 원자료
     verified: false
     known_issues:
@@ -3510,7 +3558,7 @@ outputs:
     path: data/field/sample_segments.csv
     inputs: [segments]
     stable_key: seg_uid
-    consumers: [data/field/fieldsheet.md]
+    consumers: []
     what: 실측 대상 25구간(트랙 A12/B8/C5) + 관측점 75. 시드 20260814
     verified: false
     known_issues:
@@ -3523,29 +3571,55 @@ outputs:
     produced_by: src/firelane/seg/graph.py
     path: data/processed/corridor_5186.gpkg
     inputs: [ngii1k, boundary_emd]
-    consumers: [src/firelane/segments.py, src/firelane/publish_web.py, tools/skeleton_compare.py]
+    consumers: [src/firelane/display_scope.py, tools/skeleton_compare.py]
     what: 동명동 + 접근 회랑 폴리곤. 스코프 판정의 공간 기준
     verified: false
   nfa_compare:
     produced_by: src/firelane/seg/report.py
     path: data/processed/nfa_compare.json
     inputs: [segments, fire_access]
-    consumers: [src/firelane/guards.py, src/firelane/pipeline.py]
+    consumers: [tools/docnum_check.py, tools/baseline.py]
     what: 소방서 소방통로 지정구간 대 우리 판정 대조. ★ 게이트로 썼으므로 검증이 아니다(MASTER §15-2)
     verified: false
   route_vehicle:
     produced_by: src/firelane/segments.py
     path: data/processed/route_vehicle.csv
     inputs: [segments, node_link, turn_restriction]
-    consumers: [tools/route_probe.py]
+    consumers: [src/firelane/publish_web.py, tools/evalgate.py, tools/evalgen.py]
     what: 소방차 통행 비용 기준 경로 산출. 거리만 대 차등 비교용
+    verified: false
+  eval:
+    produced_by: tools/evalgen.py
+    path: data/processed/eval.json
+    inputs: [segments, route_vehicle]
+    consumers: [tests/test_evalgen.py]
+    what: 평가지표 E-1 · E-3 과 #120 시나리오 역산. 재현성 게이트 보고를 함께 든다
+    note: |
+      ★ PLAN §1 #91. **지표는 값이 아니라 실행이다** — 터미널에만 있는 숫자는
+        소실된다. 문서에 손으로 옮겨 적힌 값 대신 이 파일이 정본이다.
+      ★ 칸 이름은 봉인 `meta.json` 과 맞췄다(`as_of` · `git_sha` · `tally` ·
+        `sha256` · `known_limits`). `tools/baseline.py` 의 `FILES` 에 이 이름을
+        넣는 한 줄이 남아 있고, 넣으면 `freeze` · `diff` 가 지표까지 실행 간
+        대조한다.
+      ★ `gate.passed` 가 false 인 파일은 나오지 않는다 — 산출기가 그 경우
+        **안 쓰고 죽는다**. 그러므로 이 파일의 존재 자체가 통과 증적이다.
+    known_issues:
+    - E-1 분모는 노드다. 건물이냐 노드냐는 PLAN §1 #94 가 미정으로 든다
+    - E-2(#117) · E-4(#93)는 전건이 없어 안 낸다. 이 파일에 칸도 없다
+    - 폭 실측 검증 0건이라 모든 지표가 미검증 폭 위에서 나온다(#4)
     verified: false
   streetlight_point:
     produced_by: src/firelane/streetlight.py
     path: data/processed/streetlight_point.geojson
     inputs: [streetlight]
-    consumers: [src/firelane/publish_web.py, src/firelane/pipeline.py]
+    consumers: []
     what: 가로등 점형. 야간 가시성 · 폭 차감 후보
+    note: |
+      ★ 2026-09-24. 소비자로 `publish_web.py` · `pipeline.py` 를 적고 있었다.
+        전자는 이 이름을 한 번도 안 들고, 후자는 `Step` 선언에만 든다 —
+        **단계 선언은 소비가 아니다**(그것을 소비로 세면 모든 산출물이
+        제 선언 덕에 통과한다). 옛 지도(web/js)가 걷히면서 소비자가 0이 됐고
+        아무도 안 울었다.
     verified: false
   hydrant_point:
     produced_by: src/firelane/ingest.py
@@ -3554,7 +3628,6 @@ outputs:
     consumers:
     - src/firelane/publish_web.py
     - src/firelane/terrain.py
-    - src/firelane/contract.py
     what: 소화전 점형. 광주 5,002 · 동구 651
     note: |
       ★ 2026-09-13 등재. `Step('ingest').writes` 에는 처음부터 있었고

@@ -41,7 +41,7 @@
    "length_m": null,
    "height_m": null,
    "match": "확정",
-   "note": "제원표에 회전반경이 비어 있다"
+   "note": "제원표에 회전반경이 비어 있다. ★ 2026-09-25 — `ambulance_current_example` 이라 적혀 있었으나 **대장 `vehicle_profiles` 에 구급차 항목이 아예 없다**(KFS 7종에 특수구급차 규격은 있으나 제원 표에는 안 들어왔다). 없는 이름을 가리키면 조용히 기준차 값으로 떨어지므로 null 로 적는다 — 없는 것은 없다고 적는다"
   },
   {
    "id": "pump-di",
@@ -73,15 +73,15 @@
    "required_width_m": 3.0,
    "turn_grade": "주의",
    "turn_unknown": false,
-   "turn_radius_ref_m": 11.2,
+   "turn_radius_ref_m": null,
    "turn_radius_verified": false,
-   "spec_complete": true,
-   "turn_check_radius_m": 11.2,
-   "wheelbase_m": 4.92,
-   "length_m": null,
-   "height_m": null,
+   "spec_complete": false,
+   "turn_check_radius_m": null,
+   "wheelbase_m": null,
+   "length_m": 10.0,
+   "height_m": 3.7,
    "match": "확정",
-   "note": null
+   "note": "★ 2026-09-25. `tanker_large` 라 적혀 있었는데 대장에 그 이름이 없다 — 전장·전고가 통째로 null 로 떨어지고 있었다(조용히). 대장 이름은 `water_large`(물탱크차 대형 · 전장 10.0m)다. **인터뷰가 「커서 못 들어간다」고 지목한 차가 이 차이고, 그 근거가 폭이 아니라 전장인데 그 값이 비어 있었다**"
   },
   {
    "id": "chem",
@@ -121,7 +121,7 @@
    "length_m": null,
    "height_m": null,
    "match": "추정",
-   "note": "광주 규격서(2025-06)에 회전반경 규정이 없다. 차대가 6x4 3축·전장 13m 이하라 제원표의 2축 대표값(11.89m)은 실제보다 작다 — 그래서 안 띄운다"
+   "note": "★ 2026-09-25 — `ladder_33m_plus` 는 대장에 없는 이름이었다. 대장의 `articulated_*` 는 **굴절차**이고 이 차는 직진형이라 다른 축이다 — 억지로 붙이지 않고 null 로 둔다. 광주 규격서(2025-06)에 회전반경 규정이 없다. 차대가 6x4 3축·전장 13m 이하라 제원표의 2축 대표값(11.89m)은 실제보다 작다 — 그래서 안 띄운다"
   },
   {
    "id": "ladder-a",
@@ -138,10 +138,10 @@
    "spec_complete": false,
    "turn_check_radius_m": null,
    "wheelbase_m": null,
-   "length_m": null,
-   "height_m": null,
+   "length_m": 10.0,
+   "height_m": 3.8,
    "match": "추정",
-   "note": "제원표는 길이로 갈리는데 굴절형은 관절 유무로 갈린다. 다른 축이라 회전반경을 가져오지 않는다"
+   "note": "제원표는 길이로 갈리는데 굴절형은 관절 유무로 갈린다. 다른 축이라 회전반경을 가져오지 않는다. ★ 2026-09-25 — `ladder_under_33m` 은 대장에 없는 이름이었다. 대장은 `articulated_u33`(굴절차 33m 미만급 · 전장 10.0m)이다"
   },
   {
    "id": "amb-di",
@@ -161,7 +161,7 @@
    "length_m": null,
    "height_m": null,
    "match": "확정",
-   "note": "제원표에 회전반경이 비어 있다"
+   "note": "제원표에 회전반경이 비어 있다. ★ 2026-09-25 — 위 `amb-js` 와 같은 사유로 null"
   },
   {
    "id": "light",
@@ -201,7 +201,7 @@
    "length_m": null,
    "height_m": null,
    "match": "확정",
-   "note": "제원표에 회전반경이 비어 있다"
+   "note": "제원표에 회전반경이 비어 있다. ★ 2026-09-25 — `rescue_5t` 는 대장에 없는 이름이었다. 대장은 `rescue_medium`(7.8m)·`rescue_large`(8.5m) 둘로 갈리는데 **5t 가 어느 쪽인지 근거가 없다** — 추측해서 붙이면 그 값이 판정에 들어간다. D-30 질문지에 올린다"
   }
  ]
 }

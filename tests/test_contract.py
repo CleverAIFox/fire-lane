@@ -120,7 +120,11 @@ def navi_reads() -> set[str]:
     for p in sorted((WEBDIR / "navi" / "src").rglob("*.ts*")):
         src = re.sub(r"/\*.*?\*/", "", p.read_text(encoding="utf-8"), flags=re.DOTALL)
         src = re.sub(r"^\s*//.*$", "", src, flags=re.MULTILINE)
-        out |= set(re.findall(r'"([\w_]+\.(?:geojson|json))"', src))
+        # ★ 2026-09-24 (PLAN §13 W13-16). `[\w_]+` 는 **점을 안 먹는다** —
+        #   `segments.schema.json` 처럼 점이 둘인 이름은 내비가 실제로 읽어도
+        #   영원히 매치되지 않았다. 지금은 증상이 없지만(그 파일을 아직 안 읽는다)
+        #   배선하는 날 조용히 실패한다.
+        out |= set(re.findall(r'"([\w_]+(?:\.[\w_]+)*\.(?:geojson|json))"', src))
     return out
 
 
@@ -393,6 +397,16 @@ def test_web_data_has_no_unintended_orphan():
         # 같은 날 발행에서 뺐다(DECISIONS §218-1). 지금 의도된 미배선은 없다.
     }
 
+    # ★ 2026-09-24 (PLAN §13 W13-16 · DECISIONS §243). 화면이 아니라 **도구가**
+    #   읽는 발행물이 둘 있다. 이것은 「배선 대기」가 아니다 — 영원히 화면에
+    #   안 간다. INTENDED(철거 대기 목록)에 섞으면 다음 사람이 지우러 온다.
+    #   그래서 **읽는 파일을 같이 적고**, 그 파일이 정말 이름을 들고 있는지
+    #   아래에서 검사한다. 소비자가 사라지면 이 줄이 먼저 빨개진다.
+    TOOLSIDE: dict[str, str] = {
+        "_manifest.json": "tools/release_brief.py",        # 계보 — 타일 지문이 바뀌었나
+        "segments.schema.json": "tools/release_brief.py",  # 계약 — 스키마가 바뀌었나
+    }
+
     # 파이프라인이 **읽는** 것도 소비자다(ortho 가 scope.geojson 을 읽는다).
     # 쓰기(to_file)는 소비가 아니다 — 그것을 소비로 세면 모든 발행물이
     # 자기 자신 덕에 통과한다.
@@ -407,10 +421,25 @@ def test_web_data_has_no_unintended_orphan():
     # ★ 2026-09-22. 옛 지도를 걷어내 이제 화면 소비자는 내비(관제 포함) 하나다.
     read |= navi_reads()
 
-    published = {p.name for p in (WEB).glob("*.geojson")}
+    # ★ 2026-09-24 (PLAN §13 W13-16). `*.geojson` 만 봤다 — `web/data` 의 `.json`
+    #   일곱이 고아 검사 **밖**이었다. 이 검사의 존재 이유는 「web/data 는 40MB
+    #   상한을 받는 공간이고 아무도 안 읽는 파일이 쌓이면 그 상한이 빨리 찬다」
+    #   인데, 그 상한은 **바이트 기준**이지 확장자 기준이 아니다.
+    #   `navi_graph.json`(557KB)이 화면에서 끊겨도 이 검사는 초록이었다.
+    published = {p.name for p in WEB.glob("*.geojson")} | {p.name for p in WEB.glob("*.json")}
     # ★ 면제가 낡으면 사각지대다. 소비자가 생겼거나 발행이 멈췄으면 줄을 지워라.
     stale = sorted(n for n in INTENDED if n in read or n not in published)
     assert not stale, f"INTENDED 가 낡았다 — 이미 읽히거나 발행되지 않는다: {stale}"
+
+    # ★ 도구 소비자는 **이름을 들고 있는지 확인하고서** 소비로 센다.
+    #   적는 것만으로 통과하면 이 표는 면제 목록이 된다.
+    for name, tool in sorted(TOOLSIDE.items()):
+        src = (ROOT / tool).read_text(encoding="utf-8")
+        assert f"web/data/{name}" in src, (
+            f"TOOLSIDE 가 낡았다 — {tool} 이 web/data/{name} 을 더는 안 읽는다.\n"
+            "  소비자가 사라졌으면 발행을 멈추거나 줄을 옮겨라.")
+    read |= set(TOOLSIDE)
+
     orphan = sorted(published - read - set(INTENDED))
     assert not orphan, (
         f"발행되는데 아무도 안 읽는 레이어: {orphan}\n"

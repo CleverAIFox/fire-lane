@@ -52,8 +52,17 @@ def test_lineage_passes_when_all_ok(tmp_path):
     lineage_check(_manifest(tmp_path, **{k: "OK" for k in CRITICAL}))
 
 
+# ★ 2026-09-26. SKIP 사유 강제는 **다음 배치다.** 구현이
+#   `src/firelane/guards.py` 에 들어가는데 그것은 ingest 폐포 안이라 전 샤드가
+#   찢어진다(재빌드 20분 · 8GB 기계 OOM 위험 · PLAN #132). 시험만 먼저 얹으면
+#   구현 없는 빨간불이 되고, 그것이 2026-09-26 에 실제로 났다 — **쪼갤 때
+#   시험과 구현이 갈라졌다.** 구현과 같은 배치로 간다.
 def test_lineage_accepts_skip(tmp_path):
-    """SKIP 은 '이번 실행에서 건드리지 않음'이다. 실패가 아니다."""
+    """SKIP 은 '이번 실행에서 건드리지 않음'이다. 실패가 아니다.
+
+    ★ 이 시험이 **사유를 안 본다**는 것이 다음 배치가 닫을 결함이다. 지금은
+      종전 그대로 둔다 — 고치는 배치가 구현을 같이 들고 온다.
+    """
     st = {k: "OK" for k in CRITICAL}
     st["cctv"] = "SKIP"
     lineage_check(_manifest(tmp_path, **st))
@@ -1412,7 +1421,11 @@ def test_ci_installs_what_the_tests_import():
                 #   목록을 손으로 유지하지 않는다 — 파일 존재로 판정한다.
                 if top in std or top == "firelane" or top == "pytest":
                     continue
-                if (ROOT / "tools" / f"{top}.py").exists():
+                # ★ 2026-09-24 (PLAN §13 W12-5). `tests/` 의 공용 모듈도 같다 —
+                #   `skip_policy` · `docparse` 는 pytest 가 rootdir 로 잡는다.
+                #   `tools/` 만 보던 탓에 `docparse` 가 **pip 대상**으로 세어졌다.
+                if ((ROOT / "tools" / f"{top}.py").exists()
+                        or (ROOT / "tests" / f"{top}.py").exists()):
                     continue
                 need.setdefault(DIST.get(top, top).lower(), set()).add(name)
 
@@ -1897,31 +1910,25 @@ def test_route_usage_is_not_a_passability_claim():
         "route_vehicle 을 segments 컬럼으로 넣었다 — golden 이 깨진다"
 
 
-def test_route_does_not_pass_through_blocked_edges():
-    """차량 경로가 통행 불가 엣지를 지나가지 않는가.
+def test_the_route_guard_lives_where_it_can_see_behavior():
+    """차량 경로의 막힘·도달 규칙은 **행동으로** 지킨다 — 여기서는 자리만 든다.
 
-    ★ 2026-08-24. 처음엔 막힌 엣지에 `BIG = 1e7` 을 주고 그래프에 남겼다.
-      `math.inf` 를 networkx 가 못 다루기 때문이었다. 그러나 **다른 길이
-      없으면 Dijkstra 가 그 엣지를 쓴다.**
-
-          통행 불가 416  ·  경로에 쓰인 구간 996
-
-      "막힌 길로라도 도달" 이라 답이 아니다. 막힌 엣지를 **빼고** 돈다.
-      도달하지 못하면 그것이 사실이다 — `unknown` 352구간을 회색으로
-      남기는 것과 같은 규칙이다.
-
-    ★ `reachable` 은 양 끝 노드가 모두 도달 가능할 때만 1 이다.
-      한쪽만 닿으면 그 구간에 들어갈 수 없다.
+    ★ **2026-09-25 (PLAN §1 #127 · DECISIONS §250).** 이 자리에 단언 넷이
+      있었고 넷 다 `segments.py` 를 글자로 읽었다 — 이음매가 없어 결과를 볼
+      수 없었기 때문인데, 그것은 검사가 아니라 **표절 대조**다. 지역변수를
+      바꾸면 행동이 그대로인데 빨개지고, `and` 를 `or` 로 바꾸면 행동이
+      뒤집히는데 초록이었다(둘 다 실측함). 진짜 행동 시험은
+      `tests/test_write_route.py` 다. 여기서는 그것이 있는지만 본다.
     """
-    src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
-    i = src.index("def _write_route")
-    body = src[i:i + 6000]
-    assert "P.remove_edges_from" in body, \
-        "막힌 엣지를 그래프에 남겨둔 채 경로를 돈다"
-    assert 'd["blocked"]]' in body, "무엇을 뺄지 blocked 로 안 고른다"
-    assert "reachable" in body, "도달 가능 여부를 안 낸다"
-    assert 'd["a"] in reach and d["b"] in reach' in body, \
-        "한쪽 끝만 닿아도 도달로 본다 — 그 구간에는 못 들어간다"
+    f = ROOT / "tests/test_write_route.py"
+    assert f.exists(), (
+        "`tests/test_write_route.py` 가 없다 — 막힘·도달 규칙의 강제자다.\n"
+        "  지우려거든 같은 규칙을 **산출물로 보는** 검사를 먼저 세워라.\n"
+        "  소스 문자열을 찾는 검사로 되돌리지 마라(#127).")
+    body = f.read_text(encoding="utf-8")
+    for want, why in (("passable", "통행 가부"), ("reachable", "도달"),
+                      ("route_vehicle", "경로 사용")):
+        assert want in body, f"{why} 를 안 본다 — 강제자가 얇아졌다"
 
 
 def test_route_graph_snaps_nodes_like_build_graph():
@@ -1940,27 +1947,27 @@ def test_route_graph_snaps_nodes_like_build_graph():
     ★ **두 곳이 다른 규칙으로 노드를 묶으면 그래프가 두 개가 된다.**
       `route_usage` 와 `route_vehicle` 이 서로 다른 위상 위에서 계산되면
       비교 자체가 성립하지 않는다.
+
+    ★ **2026-09-25 (PLAN §1 #125 · DECISIONS §252).** 이 자리에도 소스 문자열
+      단언 넷이 있었고(`"_tree = STRtree(_pts)" in body` 등), #127 과 같은 병이다.
+      두 곳의 union-find 를 `seg.geom.snap_groups` 하나로 합치면서 그 문자열이
+      사라졌다 — **행동은 그대로인데 검사가 빨개졌다.** 그것이 이 형태의 값이
+      음수라는 증거다.
+
+      지금은 **한 문을 쓰는지**만 보고, 접합 규칙 자체는
+      `tests/test_snap_groups.py` 가, 0.02m 사고 재현은
+      `tests/test_write_route.py::test_two_endpoints_two_centimetres_apart_are_one_node`
+      가 산출물로 든다.
     """
-    pytest.importorskip("geopandas")   # ★ CI 는 로컬보다 좁다.
-    # 2026-08-24. 이 테스트는 PR #40 이 먹어서 한 번도 CI 를 안 거쳤다.
-    src = (ROOT / "src/firelane/segments.py").read_text(encoding="utf-8")
-    i = src.index("def _write_route")
-    body = src[i:i + 8000]
-    # ★ 문자열 존재가 아니라 **실제로 도는지**를 본다. 처음에 `"STRtree" in
-    #   body` 로만 봤더니 import 줄을 지워도 주석에 남은 이름 때문에 통과했다.
-    assert "_tree = STRtree(_pts)" in body, "격자 반올림으로 노드를 묶는다"
-    assert "_pts[i].distance(_pts[j]) <= NODE_TOL" in body, \
-        "graph.py 와 다른 허용치로 묶는다"
-    assert "_par[max(ri, rj)] = min(ri, rj)" in body, "union-find 접합이 없다"
-    assert "round(co[0][0] / TOL" not in body, "격자 반올림이 남아 있다"
-
-    # 실제로 import 되는가 — 모듈을 불러 확인한다
-    import firelane.segments as _S
-    assert hasattr(_S, "_write_route")
-
-    # graph.py 도 같은 상수를 쓰는지
-    gp = (ROOT / "src/firelane/seg/graph.py").read_text(encoding="utf-8")
-    assert "NODE_TOL" in gp, "graph.py 가 NODE_TOL 을 안 쓴다"
+    for rel, why in (("src/firelane/segments.py", "2차 경로"),
+                     ("src/firelane/seg/graph.py", "§4 노드 접합")):
+        src = (ROOT / rel).read_text(encoding="utf-8")
+        assert "snap_groups(" in src, (
+            f"{rel}({why})이 접합을 자기 손으로 한다 — 두 곳이 다른 규칙으로 묶으면\n"
+            "  **그래프가 두 개가 된다.** 집은 `firelane.seg.geom.snap_groups` 다.")
+        assert "round(co[0][0] / TOL" not in src, "격자 반올림이 돌아왔다"
+    assert (ROOT / "tests/test_snap_groups.py").exists(), \
+        "접합 규칙의 강제자가 사라졌다"
 
 
 def test_ship_reports_the_real_failure():
@@ -2411,6 +2418,7 @@ def test_retired_glob_never_claims_an_active_file(tmp_path, monkeypatch):
 
     spec = importlib.util.spec_from_file_location("acq_guard", ROOT / "tools" / "acquire.py")
     acq = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = acq   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(acq)
     active = []
     for k in ("fire_station", "hydrant_point"):

@@ -18,7 +18,12 @@ export type Verdict = "clear" | "needs_cv" | "unknown" | "blocked";
 export interface VehicleSpec {
   kind?: string;
   width_m: number;
-  length_m?: number;
+  length_m?: number | null;
+  /**
+   * 전고(m) — **판정에 안 쓴다.** 상공 장애물 데이터가 없다(`fleet.json` note).
+   * 자차를 실측 크기 상자로 놓는 데만 쓰고, 없으면 상자를 안 놓는다(§232).
+   */
+  height_m?: number | null;
   /** 미검증이면 null 로 발행된다. publish_web.py 가 그렇게 막는다 */
   wheelbase_m: number | null;
   turn_radius_m: number | null;
@@ -115,10 +120,28 @@ export interface GraphEdge {
    */
   ow?: 0 | 1 | -1 | 2;
   /**
-   * 이 구간 **도로명**의 불법주정차 단속 건수(2022-01~2025-02). 없으면 0(§216-3).
+   * 이 구간 **도로명**의 불법주정차 단속 건수(2022-01~2025-02 · §216-3).
    * ★ 도로 단위다 — 같은 도로명 구간은 같은 수. 현재 주차가 아니라 위험의 대리값이다.
+   *
+   * ★ **`null` 과 `0` 이 다르다** (2026-09-25). 섞어 쓰면 모르는 것을 없다고 말한다.
+   *
+   *     null         도로명이 없어 **셀 수 없었다** — 모른다
+   *     0            도로명이 있고 그 도로에 찍힌 것이 없다
+   *     undefined    이 칸이 없는 **옛 발행물**이다 — 역시 모른다
+   *
+   * ★ 옛 발행물에서는 0 이 **빠진 채** 왔다(`if n:`). 그래서 `undefined` 를 0 으로
+   *   읽으면 안 된다 — 화면은 `parkText()`(`domain/pressure.ts`)로 찍는다.
    */
-  park?: number;
+  park?: number | null;
+  /**
+   * 이 구간 **도로명**에 선 불법주정차 단속 **카메라 지점** 수(`enforce_cam` · 57지점).
+   * `park` 와 같은 null · 0 · undefined 규약이다.
+   *
+   * ★ **0 이 약하다.** 57지점 중 18지점만 도로명이 붙었다(나머지는 지번 주소라 못
+   *   붙인다 · `counts.ecam_unplaced_sites`). 0 은 「카메라가 없다」가 아니라
+   *   「붙은 18지점 중에 없다」다.
+   */
+  ecam?: number | null;
 
   /**
    * **경로 안에서만** 붙는다 — 출발·도착 구간을 투영점에서 자른 사본이다(DECISIONS §218-3).
@@ -140,7 +163,12 @@ export interface NaviGraph {
   crs: string;
   node_tol_m: number;
   counts: { nodes: number; edges: number; self_loops: number;
-            oneway?: number; oneway_dir_known?: number; turn_bans?: number };
+            oneway?: number; oneway_dir_known?: number; turn_bans?: number;
+            /** `park` · `ecam` 의 결측 · 0 구간 수. 옛 발행물에는 없다 */
+            park_null?: number; park_zero?: number;
+            ecam_null?: number; ecam_zero?: number;
+            /** 원천에서 도로명이 안 나와 **어느 구간에도 못 붙은** 몫 — 0 의 약함 */
+            park_unplaced_rows?: number; ecam_unplaced_sites?: number };
   style: Record<string, VerdictStyle>;
   nodes: LngLat[];
   edges: GraphEdge[];
@@ -235,6 +263,15 @@ export interface Fix {
   /** replay = GPS 흉내(1Hz · 잡음 · 음영). 실주행과 같은 코드를 지난다(§213-3) */
   source: "gps" | "simulation" | "manual" | "replay";
   /**
+   * 수평 정확도(m · 95% 신뢰). 모르면 `null`.
+   *
+   * ★ 2026-09-24 (PLAN §13 W13-2). 이 칸이 **없었다.** `gps.ts` 가
+   *   `coords.accuracy` 를 안 읽었고 타입에도 자리가 없어, 신호가 50m 로
+   *   흔들려도 화면은 초록 「안전 경로 안내중」 이었다. 그래서 08 화면
+   *   (GPS 신호 약함)이 시연 전용으로 남아 있었다 — **알 방법이 없어서**다.
+   */
+  accuracy?: number | null;
+  /**
    * 측위 시각(ms, `performance.now()` 시계). 위치 추정이 속도 × 경과로 예측한다.
    * 비어 있으면 받는 쪽이 받은 시각으로 채운다.
    */
@@ -253,4 +290,43 @@ export interface HistorySummary {
   by_center: Record<string, { n: number; median_s: number | null; straight_kmh: number | null }>;
   fire_donggu: { n: number; median_s: number | null };
   note: string;
+}
+
+/* ── 화면이 훅에게서 받는 것 ─────────────────────────────────
+ * ★ 2026-09-24 (DECISIONS §244). 셋이 `app/` 에 살았고 `ui/` · `components/`
+ *   가 거기서 import 했다 — **표현 계층이 훅 모듈을 아는 것**이라 의존
+ *   방향이 뒤집힌다. type-only 라 런타임 영향은 없었으나, 계층은 런타임이
+ *   아니라 **읽는 사람의 머릿속**에서 먼저 무너진다. */
+
+/** 자차의 현재 자리. rAF 가 ref 로 들고 다닌다 — React 상태가 아니다 */
+export interface LiveFix { lon: number; lat: number; brg: number; on: boolean }
+
+/**
+ * 대기 → 목적지 선택 → **경로 확인** → 안내 → 도착
+ *
+ * ★ `preview` 가 2026-09-06 에 생겼다. 그 전에는 목적지를 고르면 즉시
+ *   안내가 시작됐는데, 상용 내비는 경로와 예상 시간을 보여주고 사용자가
+ *   시작을 누른다.
+ * ★ 2026-09-25 (PLAN §1 #129). 집이 `app/useNavigation.ts` 였다. 위치원 배선과
+ *   추측항법을 형제 훅으로 가르면서 **셋이 같은 단계 이름을 읽어야** 했다 —
+ *   훅끼리 서로를 import 해 타입을 얻으면 의존이 고리를 그린다. 공유 타입의
+ *   집은 여기다(§244 · `LiveFix` · `PosMode` 와 같은 이유).
+ */
+export type Phase =
+  | "loading" | "idle" | "picked" | "preview" | "guiding" | "arrived";
+
+/** 시연 막대의 위치원 선택. `route` 는 경로 따라가기 · `gpsSim` 은 GPS 흉내 */
+export type PosMode = "route" | "gpsSim";
+
+/** 신고 한 건의 진행 단계 */
+export type ShareState = "idle" | "sending" | "awaiting" | "acked" | "failed";
+
+/** 통행 불가 신고의 화면 상태 */
+export interface ShareInfo {
+  state: ShareState;
+  kind: import("./opsProtocol").ShareKind | null;
+  /** 관제 확인 시각(HH:MM) */
+  ackedAt: string | null;
+  /** 관제가 없어 흉내 냈다 */
+  simulated: boolean;
 }

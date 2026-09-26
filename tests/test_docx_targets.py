@@ -29,6 +29,7 @@ PARAM 없음
 from __future__ import annotations
 
 import re
+import sys
 import zipfile
 from pathlib import Path
 
@@ -41,8 +42,12 @@ DOCX = ROOT / "docs/proposal.docx"
 #   `docx_fix` 를 "기획서에 없다" 로 잡은 것이 이 목록이 생긴 이유다.
 SKIP = re.compile(
     r"^(MASTER|PLAN|DECISIONS|docs/|src/|tools/|tests/|\.github/|#\d)"
-    r"|^[a-z][a-z0-9_]*(\.py)?$"          # docx_fix · segments.geojson 류
+    r"|^[a-z][a-z0-9_]*(\.py)?( --?[a-z-]+)*$"   # docx_fix · docx_fix --write 류
     r"|^[a-z_]+/[a-z_./]+$")
+
+#: 표가 「이 수가 문서에 박혀 있다」고 지목하는 꼴. 천단위 쉼표가 있는 것만 본다 —
+#: 맨 두세 자리 수는 표 번호·절 번호와 구별이 안 된다.
+NUMBER = re.compile(r"\b\d{1,3},\d{3}\b")
 
 
 def _docx_text() -> str:
@@ -65,6 +70,28 @@ def _open_rows() -> list[tuple[str, str]]:
         if m and "⬛" not in line and "완료" not in line:
             out.append((m.group(1), m.group(2)))
     return out
+
+
+def _stale_numbers(rows: list[tuple[str, str]], txt: str) -> list[str]:
+    """행이 든 천단위 수가 기획서에 하나도 없으면 그 행은 이미 고쳐진 것이다."""
+    bad = []
+    for num, body in rows:
+        want = NUMBER.findall(body)
+        if want and not any(w in txt for w in want):
+            bad.append(f"  #{num}  표가 든 수 {want} 가 기획서에 하나도 없다")
+    return bad
+
+
+def test_stale_number_probe_is_not_an_empty_net():
+    """★ 표가 비어도 판정기는 살아 있어야 한다 — 합성 행으로 확인한다.
+
+    실물 표의 행 수로 생사를 재면 **목표에 닿는 날 검사가 죽는다**
+    (`deadcheck` 2026-09-21 · `dms --selftest` 2026-09-23 과 같은 규율).
+    """
+    doc = "산출단위 1,281구간에 판정을 냈다"
+    assert _stale_numbers([("X", "`산출단위 1,102` 두 곳. 정본은 1,101 이다")], doc)
+    assert _stale_numbers([("X", "구간 수 1,281 이 맞다")], doc) == []
+    assert _stale_numbers([("X", "수가 없는 행")], doc) == []
 
 
 def test_plan12_targets_exist_in_docx():
@@ -101,10 +128,49 @@ def test_plan12_targets_exist_in_docx():
         "  08-31 에 다섯 건 중 셋이 이 상태였다 — 표가 문서보다 먼저 낡았다.")
 
 
+def test_the_quoted_target_judge_bites():
+    """★ 2026-09-24 (DECISIONS §239). `test_plan12_targets_exist_in_docx` 의
+    판정 루프도 **0회 돈다**(§12 표가 비었다). 닻(제목 확인)은 2026-09-22 에
+    박혔지만 **판정기 대조는 같은 파일의 형제만 받았다** —
+    `test_stale_number_probe_is_not_an_empty_net` 은 있고 이쪽은 없었다.
+
+    한 파일 안에서 처방이 갈린 자리라 여기서 맞춘다.
+    """
+    doc = "산출단위 1,281구간 · 동명동 경계"
+    def judge(body: str) -> bool:
+        quoted = [q for q in re.findall(r"`([^`]+)`", body)
+                  if not SKIP.match(q) and len(q) >= 3]
+        return bool(quoted) and all(q not in doc for q in quoted)
+
+    assert judge("`동명동 경계선` 을 고친다"), "문서에 없는 지목을 못 잡는다 — 그물이 비었다"
+    assert not judge("`산출단위` 표기를 고친다"), "문서에 있는 지목을 잡는다 — 거짓 빨강"
+    assert not judge("`docx_fix` 로 고친다"), "도구 이름을 지목으로 센다 — SKIP 이 죽었다"
+    assert not judge("백틱 없는 행"), "지목이 없는 행을 잡는다"
+
+
+def test_plan12_numbers_are_still_in_the_docx():
+    """★ 2026-09-24 (PLAN §12 #21 · DECISIONS §237). 표가 든 **수**도 본다.
+
+    위 검사는 백틱 지목이 **전부** 없을 때만 운다. `#21`(`산출단위 1,102`)은
+    백틱 지목 중 `산출단위` 가 새 수(1,281)와 함께 문서에 살아 있어서
+    **이미 고쳐진 행이 석 주를 남았다.** 낱말은 남고 수만 바뀌는 것이
+    이 표의 가장 흔한 꼴인데 그 방향이 비어 있었다.
+
+    규칙 — 행이 천단위 수를 하나라도 들면 그중 **적어도 하나**는 기획서에
+    있어야 한다. 맞는 수를 들면(고칠 대상) 통과하고, 옛 수만 들면(이미
+    고쳐짐) 운다.
+    """
+    bad = _stale_numbers(_open_rows(), _docx_text())
+    assert not bad, (
+        "PLAN §12 의 행이 이미 고쳐진 수를 가리킨다:\n" + "\n".join(bad) +
+        "\n\n  고쳐졌으면 그 행을 걷어라. 표에 남은 행은 **아직 남은 일**이다.")
+
+
 def _check_mod():
     import importlib.util
     spec = importlib.util.spec_from_file_location("_docx_check", ROOT / "tools" / "docx_check.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 
@@ -155,6 +221,7 @@ def _figs_mod():
     import importlib.util
     spec = importlib.util.spec_from_file_location("_docx_figs", ROOT / "tools" / "docx_figs.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 

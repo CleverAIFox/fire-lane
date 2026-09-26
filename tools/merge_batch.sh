@@ -67,25 +67,91 @@ command -v gh >/dev/null || die "gh 가 없다"
 gh auth status -h github.com >/dev/null 2>&1 || die "gh 인증이 없다 — gh auth login"
 [ -z "$(git status --porcelain --untracked-files=no)" ] || die "추적 파일에 변경이 있다"
 
-wait_checks() {   # wait_checks <PR번호> [since ISO8601]
-    local n=$1 since=${2:-} sha cnt
+# ── 오류를 알아본다 ────────────────────────────────────────────
+# ★ 2026-09-24 (DECISIONS §225-1). 도구가 **모르는 것을 안다고 우겼다.**
+#   `gh pr checks` 는 「검사가 빨갛다」와 「API 를 못 읽었다」에 똑같이 0 아닌
+#   값을 낸다. 2026-09-23 에 GitHub 이 503 을 뱉었고, 이 스크립트는 그것을
+#   빨간불로 읽어 **PR 을 닫고 가지를 지웠다.** 못 읽은 것을 근거로 파괴적
+#   동작을 했다 — `ruleset_check.py` 가 자기 머리말에 「못 읽은 것을 '없다' 로
+#   적지 않는다」고 써 둔 바로 그 원칙을 옆 도구가 어겼다.
+#
+# ★ 이름이 아니라 **글자**로 가른다. 종료코드는 둘을 안 가르므로 출력을 본다 —
+#   여기서는 그것 말고 가를 방법이 없고, 못 가르면 또 지운다.
+unreadable() {    # unreadable <출력>  — 네트워크·서버 문제인가
+    printf '%s' "$1" | grep -qiE 'HTTP (4[0-9][0-9]|5[0-9][0-9])|Service Unavailable|Bad Gateway|timeout|timed out|connection reset|EOF|could not resolve|dial tcp|rate limit'
+}
+
+# ★ 아는 실패에는 처방을 찍는다. 「메시지를 끝까지 읽어라」만 찍으면 그 메시지가
+#   `Permission denied (publickey)` 일 때 사람이 40분을 버린다(2026-09-23).
+diagnose() {      # diagnose <출력>
+    local o=$1
+    case "$o" in
+      *"Permission denied (publickey)"*)
+        printf '  ★ ssh 키가 에이전트에 없다 — wsl --shutdown 뒤에 흔하다.\n'
+        printf '      eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519\n'
+        printf '      ssh -T git@github.com     # Hi <너> 가 나와야 한다\n' ;;
+      *"Head branch is out of date"*)
+        printf '  ★ 머리가 밀렸다 — 방금 누가(또는 이 도구가) 그 가지에 밀었다.\n'
+        printf '      git fetch origin && 다시 실행하면 새 머리로 시도한다.\n' ;;
+      *"workflow scope"*|*"refusing to allow"*)
+        printf '  ★ 토큰에 workflow 스코프가 없다.\n'
+        printf '      gh auth refresh -h github.com -s workflow\n' ;;
+    esac
+}
+
+wait_checks() {   # wait_checks <PR번호> [since ISO8601]  → 0 초록 · 1 빨강 · 2 못 읽음
+    local n=$1 since=${2:-} sha cnt out rc try
     say "CI 대기 — PR #$n"
     # ★ 2026-09-17 (DECISIONS §182-8 · G-23). "체크가 하나라도 있으면" 기다림을 끝냈다. 본문을 고친 직후(edited)에는
     #   **옛 실행**의 결과가 이미 있어서, 새 실행이 등록되기 전에 옛 실패 · 옛 초록으로 판정했다(#59 가 본문 검사
     #   실패인 채 스쿼시됐다). PR 머리 커밋의 check-run 을 보고, since 가 주어지면 그 뒤에 **시작된** 실행이
     #   생길 때까지 기다린다.
+    # ★ 2026-09-24. 아래 둘은 **조회 실패**다 — `die`(코드 1)로 나가면 호출부가
+    #   그것을 「CI 빨강」으로 읽고 PR 을 지운다. 2 로 나간다.
     sha=$(gh pr view "$n" -R "$REPO" --json headRefOid --jq '.headRefOid // empty')
-    [ -n "$sha" ] || die "PR #$n 의 머리 커밋을 못 읽었다"
+    [ -n "$sha" ] || { warn "PR #$n 의 머리 커밋을 못 읽었다 — 검사 상태 미상"; return 2; }
     for _ in $(seq 1 30); do
         cnt=$(gh api "repos/$REPO/commits/$sha/check-runs" \
               --jq "[.check_runs[] | select(\"$since\" == \"\" or .started_at >= \"$since\")] | length" 2>/dev/null || echo 0)
         [ "${cnt:-0}" -gt 0 ] && break
         sleep 10
     done
-    [ "${cnt:-0}" -gt 0 ] || die "PR #$n 머리 ${sha:0:7} 에 ${since:+$since 이후 }시작된 검사가 5분 동안 없다"
-    gh pr checks "$n" -R "$REPO" --watch --fail-fast \
-      || die "PR #$n CI 가 실패했다. 메시지를 끝까지 읽어라:\n  gh pr checks $n -R $REPO"
-    ok "PR #$n CI 초록 · 머리 ${sha:0:7}"
+    [ "${cnt:-0}" -gt 0 ] || {
+        warn "PR #$n 머리 ${sha:0:7} 에 ${since:+$since 이후 }시작된 검사가 5분 동안 없다 — 미상"
+        return 2; }
+    # ★ 세 번까지 다시 묻는다. 503 은 대개 한 번이고, 세 번 다 못 읽으면
+    #   그것은 **못 읽은 것**이지 빨간불이 아니다 — 종료코드 2 로 가른다.
+    # ★ `set -e` 아래서는 `x=$(cmd); rc=$?` 가 **rc 를 읽기 전에 죽는다** —
+    #   대입의 종료코드가 곧 cmd 의 종료코드이기 때문이다. if 로 감싼다.
+    for try in 1 2 3; do
+        if out=$(gh pr checks "$n" -R "$REPO" --watch --fail-fast 2>&1); then rc=0; else rc=$?; fi
+        printf '%s\n' "$out"
+        [ "$rc" = 0 ] && { ok "PR #$n CI 초록 · 머리 ${sha:0:7}"; return 0; }
+        if unreadable "$out"; then
+            warn "검사 상태를 못 읽었다 ($try/3) — 20초 뒤 다시 묻는다"
+            sleep 20; continue
+        fi
+        diagnose "$out"
+        warn "PR #$n CI 가 **빨갛다**:  gh pr checks $n -R $REPO"
+        return 1
+    done
+    diagnose "$out"
+    warn "PR #$n 의 검사 상태를 세 번 물어도 못 읽었다 — **빨간불이 아니다.**
+  모르는 것을 근거로 아무것도 지우지 않는다. 손으로 보고 판단해라:
+    gh pr checks $n -R $REPO"
+    return 2
+}
+
+# ★ 2026-09-24 (DECISIONS §225-1). 머지 직전의 판정. `wait_checks` 가 셋을 내므로
+#   호출부가 셋을 다 다뤄야 한다 — 종전에는 `die` 하나에 기대서 「못 읽음」이 없었다.
+#     0 초록 → 간다        1 빨강 → 멈춘다        2 미상 → **멈춘다.** 지우지도 밀지도 않는다
+require_green() {  # require_green <PR번호>
+    local n=$1 rc
+    if wait_checks "$n"; then rc=0; else rc=$?; fi
+    [ "$rc" = 0 ] && return 0
+    [ "$rc" = 1 ] && die "PR #$n CI 가 빨갛다 — 머지하지 않는다.\n  gh pr checks $n -R $REPO"
+    die "PR #$n 의 검사 상태를 못 읽었다 — **빨간불이 아니라 모르는 것이다.**\n\
+  모르는 채로 머지하지 않는다. 손으로 보고 다시 돌려라:\n    gh pr checks $n -R $REPO"
 }
 
 sync_parts() {    # dev 를 파트로 fast-forward
@@ -179,7 +245,7 @@ fi
 #
 # ★ 봉인 PR 의 CI 가 빨가면 **릴리즈는 계속한다**(§207-2 — 봉인은 기준선이지 관문이 아니다).
 #   다만 이번에는 빨간 봉인이 part/infra 에 **안 들어간다** — PR 을 닫고 가지를 지운다.
-#   `wait_checks` 는 실패하면 `die` 하므로 **서브셸**에서 부른다.
+#   `wait_checks` 는 0 초록 · 1 빨강 · 2 미상을 낸다. `set -e` 를 피하려고 서브셸에서 부른다.
 say "A-0. 봉인 — 스쿼시 뒤 part/infra 에서 (PR 로)"
 git switch -q part/infra 2>/dev/null || git switch -q -c part/infra origin/part/infra
 git merge -q --ff-only origin/part/infra || die "로컬 part/infra 가 원격과 갈렸다 — git reset --hard origin/part/infra"
@@ -209,7 +275,8 @@ if uv run python tools/dms.py seal --quick; then
             >/dev/null || die "봉인 PR 을 못 열었다"
         spr=$(gh pr list -R "$REPO" --head "$sb" --state open --json number --jq '.[0].number // empty')
         [ -n "$spr" ] || die "봉인 PR 번호를 못 읽었다"
-        if ( wait_checks "$spr" ); then
+        if ( wait_checks "$spr" ); then wrc=0; else wrc=$?; fi
+        if [ "$wrc" = 0 ]; then
             gh pr merge "$spr" -R "$REPO" --squash --delete-branch >/dev/null \
                 || die "봉인 PR #$spr 을 스쿼시하지 못했다"
             git switch -q part/infra
@@ -217,6 +284,17 @@ if uv run python tools/dms.py seal --quick; then
             git merge -q --ff-only origin/part/infra || die "봉인 스쿼시 뒤 part/infra 를 못 당겼다"
             git branch -q -D "$sb" 2>/dev/null || true
             ok "봉인 갱신 · PR #$spr · part/infra $(git rev-parse --short origin/part/infra)"
+        elif [ "$wrc" = 2 ]; then
+            # ★ 2026-09-24 (DECISIONS §225-1). **모르면 안 지운다.** 종전에는 여기서
+            #   PR 을 닫고 가지를 지웠는데, 2026-09-23 에 그 「빨강」이 GitHub 의
+            #   503 이었다. 못 읽은 것을 근거로 되돌릴 수 없는 일을 했다.
+            git switch -q part/infra
+            warn "봉인 PR #$spr 의 검사 상태를 못 읽었다 — **PR 과 가지를 남긴다.**
+  빨간불이 아니라 모르는 것이다. 사람이 보고 정한다:
+    gh pr checks $spr -R $REPO
+    gh pr merge $spr -R $REPO --squash --delete-branch   # 초록이면
+    gh pr close $spr -R $REPO --delete-branch            # 진짜 빨강이면
+  릴리즈는 계속한다 — 봉인은 기준선이지 관문이 아니다(§207-2)."
         else
             gh pr close "$spr" -R "$REPO" --delete-branch >/dev/null 2>&1 || true
             git switch -q part/infra
@@ -248,15 +326,72 @@ if [ -z "$pr" ]; then
     # ★ 2026-09-17 (DECISIONS §180 · G-10). 종전에는 경고만 하고 넘어갔다. part/infra 가 dev 보다
     #   앞서 있는데 PR 이 없으면 **PR 을 빠뜨린 것**이다 — 동기화도 건너뛰어 배치 D 가 part 에만 머물렀다.
     if ! git merge-base --is-ancestor origin/part/infra origin/dev; then
-        die "part/infra 가 dev 보다 앞서 있는데 열린 part/infra → dev PR 이 없다 — PR 을 빠뜨렸다\n  gh pr create -R $REPO --base dev --head part/infra --title ... --body-file ..."
+        # ★ 2026-09-24 (DECISIONS §225-3). **도구가 자기가 깨뜨린 전제를 사람 탓했다.**
+        #   바로 위 A-0 이 part/infra 에 봉인 커밋을 얹어 dev 보다 앞세워 놓고,
+        #   여기서 「PR 을 빠뜨렸다」며 죽었다. 빠뜨린 것은 사람이 아니라 A-0 이다.
+        #   2026-09-23 에 이 한 줄 때문에 배치가 세 번 왕복했다.
+        #   **커밋을 만든 쪽이 PR 도 연다.** 본문은 봉인 PR 과 같은 템플릿을 쓰고,
+        #   열기 전에 로컬에서 관문(`pr_body_check`)에 넣어 본다 — 자동 절차가 여는
+        #   PR 도 사람이 여는 PR 과 같은 관문을 지난다(§210).
+        say "part/infra → dev PR 이 없다 — 이 도구가 만든 커밋이니 이 도구가 연다"
+        _h=$(git rev-parse --short origin/part/infra)
+        _b=$(mktemp)
+        sed "s/{HEAD}/$_h/g" .github/seal_pr_template.md > "$_b"
+        if uv run python tools/pr_body_check.py --body-file "$_b" >/dev/null 2>&1; then
+            gh pr create -R "$REPO" --base dev --head part/infra \
+                --title "파트 동기화 — part/infra $_h" --body-file "$_b" >/dev/null \
+                && ok "파트 동기화 PR 을 열었다" \
+                || die "파트 동기화 PR 을 못 열었다 — 손으로:\n  gh pr create -R $REPO --base dev --head part/infra"
+            pr=$(gh pr list -R "$REPO" --base dev --head part/infra --state open \
+                 --json number --jq '.[0].number // empty')
+            [ -n "$pr" ] || die "PR 을 열었는데 목록에 없다 — 화면에서 확인하라"
+        else
+            rm -f "$_b"
+            die "part/infra 가 dev 보다 앞서 있는데 PR 이 없고, 본문 템플릿이 관문을 못 넘는다.\n\
+  .github/seal_pr_template.md 를 고치거나 손으로 열어라:\n\
+    gh pr create -R $REPO --base dev --head part/infra --title ... --body-file ..."
+        fi
+        rm -f "$_b"
+    else
+        ok "열린 part/infra → dev PR 없음 · part/infra 가 dev 에 들어 있다 — 동기화만 한다"
     fi
-    ok "열린 part/infra → dev PR 없음 · part/infra 가 dev 에 들어 있다 — 동기화만 한다"
-else
+fi
+
+# ★ 2026-09-24 (DECISIONS §225-3). 갈래가 아니라 **한 줄**이다. 위에서 PR 을 새로
+#   열었으면 그것도 여기로 떨어진다 — 종전 구조는 `else` 갈래에만 머지가 있어서,
+#   A-0 이 연 PR 이 그 실행에서 머지되지 않고 다음 실행을 기다렸다.
+if [ -n "$pr" ]; then
     gh pr view "$pr" -R "$REPO" --json number,title,commits,additions,deletions \
       --jq '"#\(.number)  \(.title)\n  커밋 \(.commits|length) · +\(.additions) −\(.deletions)"'
     ask "PR #$pr 을 dev 에 merge commit 으로 머지한다. 진행?" || { echo 멈춤; exit 0; }
-    wait_checks "$pr"
-    gh pr merge "$pr" -R "$REPO" --merge
+    require_green "$pr"
+    # ★ 2026-09-24 (DECISIONS §225-4). **머리를 다시 읽고 그 머리로 머지한다.**
+    #   종전에는 `wait_checks` 가 A-0 의 push **이전** 머리를 읽고 그것으로 머지를
+    #   걸어, GitHub 이 `Head branch is out of date` 로 거부했다(2026-09-23).
+    #   `--match-head-commit` 으로 **무엇을 머지하는지 명시**한다 — 그 사이에 또
+    #   움직였으면 조용히 엉뚱한 것을 머지하는 대신 거부당하는 편이 낫다.
+    git fetch -q origin
+    _head=$(gh pr view "$pr" -R "$REPO" --json headRefOid --jq '.headRefOid // empty')
+    for _try in 1 2 3; do
+        if [ -n "$_head" ]; then
+            if _out=$(gh pr merge "$pr" -R "$REPO" --merge --match-head-commit "$_head" 2>&1)
+            then _rc=0; else _rc=$?; fi
+        else
+            if _out=$(gh pr merge "$pr" -R "$REPO" --merge 2>&1); then _rc=0; else _rc=$?; fi
+        fi
+        printf '%s\n' "$_out"
+        [ "$_rc" = 0 ] && break
+        case "$_out" in
+          *"out of date"*|*"not mergeable"*|*"Base branch was modified"*)
+            warn "머리가 그 사이 움직였다 ($_try/3) — 다시 읽고 시도한다"
+            sleep 8; git fetch -q origin
+            _head=$(gh pr view "$pr" -R "$REPO" --json headRefOid --jq '.headRefOid // empty')
+            continue ;;
+        esac
+        diagnose "$_out"
+        die "PR #$pr 을 머지하지 못했다 — 위 메시지를 읽어라"
+    done
+    [ "$_rc" = 0 ] || die "PR #$pr 을 세 번 시도해도 머지하지 못했다 — 화면에서 확인하라"
     git fetch -q origin
     git merge-base --is-ancestor origin/part/infra origin/dev \
       || die "머지했다는데 origin/dev 가 part/infra 를 안 품는다 — 화면에서 확인하라"
@@ -355,7 +490,7 @@ if [ -z "$rel" ]; then
 else
     warn "이미 열린 릴리즈 PR #$rel 을 쓴다"
 fi
-wait_checks "$rel"
+require_green "$rel"
 ask "PR #$rel 을 main 에 merge commit 으로 머지한다(승인 1 은 --admin 으로 넘는다). 진행?" || { echo 멈춤; exit 0; }
 gh pr merge "$rel" -R "$REPO" --merge --admin
 git fetch -q origin

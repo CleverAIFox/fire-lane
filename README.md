@@ -5,15 +5,14 @@
 ```
 착수      2026-08-03
 기간      4개월
-대상      동명동 + 119안전센터 접근 회랑
+대상      동명동 + 119안전센터 접근 회랑 + 안전센터 반경 300m
 ```
 
 골목 1,281구간의 실제 통행 가능 폭을 산출해 소방차가 지나갈 수 있는지 판정하고,
 **판정할 수 없는 이유까지** 지도에 표시한다.
 
-**지도** https://cleveraifox.github.io/fire-lane/
-**내비** https://cleveraifox.github.io/fire-lane/navi/
-**관제** https://cleveraifox.github.io/fire-lane/navi/?view=ops — 사건 접수 · 출동 지령 · 판정 지도 · 출동 중 차 · 현장 공유 확인 (내비와 같은 브라우저 탭끼리 연결)
+**관제** https://cleveraifox.github.io/fire-lane/ — 사건 접수 · 출동 지령 · **판정 지도** · 출동 중 차 · 현장 공유 확인
+**내비** https://cleveraifox.github.io/fire-lane/navi/ — 출동 경로 안내 (관제와 같은 브라우저 탭끼리 연결)
 
 ---
 
@@ -50,6 +49,8 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 
 ### 일회성 도구는 저장소에 두지 않는다
 
+강제자  `tests/test_tools_are_wired.py`(`tools/` 의 것이 README 에 적히고 어딘가에서 불리는가 — 둘 다 아니면 저장소 밖으로 나가야 한다)
+
     "내년에도 이걸 돌릴 일이 있나"
       있다  →  `tools/`            재현적이다. `verify.sh` 에 배선하고 README 에 적는다
       없다  →  저장소 밖에서 돈다   `~/oneoff/<저장소>/`. 커밋하지 않는다
@@ -65,6 +66,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 ### 문서에도 검사가 붙어 있다
 
 ```bash
+uv run python tools/docgen.py           # ★ 문서의 생성 블록을 실물 값으로 채운다 (--check 면 대조만)
 uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
 uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
 uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
@@ -74,6 +76,9 @@ uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 �
 uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 · 결번 대장 (★ --apply 는 폐지 — 번호는 영구 식별자다)
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
+uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
+uv run python tools/cost_inputs.py      # 경로 비용 입력이 결측과 0 을 가르는가 · 압력 계수가 근거 없이 켜졌나
+uv run python tools/proposal_pdf.py     # 기획서 → web/proposal.pdf · 쪽수·본문·수치·그림 대조
 # ★ 위 도구가 세는 사본을 합친 자리 —
 #   src/firelane/hashing.py    파일 sha256. 10곳이 한 벌이었다
 #   src/firelane/console.py    col · human · 팔레트. 17곳
@@ -107,10 +112,14 @@ uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 
 ### `D-XX` 는 날짜가 아니다
 
+강제자 없음 — 사유: 새 D 번호를 안 만든다는 약속이라 기계가 셀 것이 없다. 대응표가 실재하는지는 `tools/refcheck.py` 가 본다
+
 **미결정 항목 번호(Decision)** 다. 2026-08-07 「미결정 사항 정리」에서 왔고
 `MASTER §10-0` 에 대응표가 있다. 새 D 번호는 만들지 않는다.
 
 ### 숫자의 정본은 문서가 아니다
+
+강제자  `tools/docnum_check.py`(문서 ↔ golden) · `tools/golden.py`(golden ↔ 산출물)
 
 문서에 적힌 구간 수·판정 수는 **파이프라인 산출물의 사본**이다. 정본은
 `data/processed/segments.geojson`, 기대값은 `data/golden/segments.fingerprint.json`
@@ -138,9 +147,22 @@ editable 로 알아서 깐다 — 검사 스크립트의 첫 단계가 그것이
 받자마자 한 번, 그리고 큰 변경 뒤에는 이것 하나면 된다.
 
 ```bash
-bash tools/verify.sh          # 51단계 전부. 실패해도 끝까지 돌고 표로 보여준다
-bash tools/verify.sh --fast   # 급할 때. ★ `부분 실행` 에서 일부러 빨갛게 죽는다
+bash tools/verify.sh                  # 전 단계. 실패해도 끝까지 돌고 표로 보여준다
+bash tools/verify.sh --since=origin/dev   # ★ 바뀐 것이 닿는 단계만. 되먹임용
+bash tools/verify.sh --scope-list     # 단계마다 어느 경로에 반응하는가 (아무것도 안 돈다)
+bash tools/verify.sh --only=pytest    # 이름이 맞는 단계만
+bash tools/verify.sh --fast           # 급할 때. 파이프라인 전량을 뺀다
 ```
+
+★ **`--since` 가 「매번 58개를 다 도는가」에 대한 답이다.** 단계마다 `scope` 선언이
+붙어 있고(40/59 · 나머지 19는 **선언이 없어 항상 돈다** — 그것이 안전한 기본값이다),
+`--since` 는 그 범위에 닿은 변경이 없는 단계를 건너뛴다. 문서만 고친 배치면
+`파이프라인 전량`(20분) · 레이크 셋이 빠져 35분이 10분이 된다.
+
+★ 그런데 **`--only` · `--fast` · `--since` 셋 다 마지막에 「부분 실행」 단계에서
+일부러 빨갛게 죽는다.** 부분 실행은 **빠른 되먹임 도구지 수용이 아니다** — 여기서
+안 울면 `dms.py seal` 이 반쪽 실행을 전수로 착각하고 봉인한다. 머지 관문은 언제나
+인자 없는 전수다.
 
 ★ `--fast` 로 찍은 로그로는 **봉인할 수 없다.** 건너뛴 것은 통과가 아니다.
 근거 있는 생략은 두 겹이다. `dms.py rawdiff` 가 raw **와 파이프라인 코드**가 봉인과
@@ -205,7 +227,7 @@ uv run fire-lane --split          # ingest 를 소스별 자식 프로세스로 
 `golden.py check` 를 돌려 **통과했다.** 옛 산출물을 옛 지문과 비교한 것이라
 아무것도 증명하지 않는다. 가장 위험한 종류의 초록불이다.
 
-전량 재실행 약 285초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
+전량 재실행 약 2분45초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
 raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
 
 **단계를 하나씩 손으로 치지 않는다.** 순서가 중요하고 빠뜨리기 쉽다.
@@ -224,13 +246,21 @@ uv run python tools/acquire.py             landing → raw 획득 게이트
 uv run python tools/scan_data.py           데이터 레이크 구조 점검
 uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간 전이 대조
 uv run python tools/golden.py              리팩 전후 산출물 동일 증명
+uv run python tools/evalgate.py            평가지표를 뽑아도 되는가 — 지문 · 전이행렬 · 매니페스트
+uv run python tools/evalgen.py             평가지표 E-1 · E-3 + #120 역산 → data/processed/eval.json
 bash tools/merge_batch.sh [--release]       배치 PR 머지 → 파트 동기화 (적용 스크립트가 초록일 때만)
 bash tools/fl.sh <feat/x> [--all|--undo|--resume]  ★ 배치 한 명령 — 적용 · verify · PR · 스쿼시 · 방송 · 정리
 bash tools/branch_tidy.sh [--auto] [--close-bots]  열린 PR · 원격/로컬 가지 정리 · 봇 PR 닫기 (fl.sh 10단계가 부른다)
 bash tools/inbox_fl.sh                      INBOX 에 `fl.sh` 로 두는 부트스트랩 — 패치 안 판을 골라 부른다
+bash tools/inbox_go.sh                      INBOX 에 `go.sh` 로 두는 한 줄 진입점 — .env 적재 · zip 풀기 · 브랜치 · `--relock` 판단까지
 ```
 
-★ 배치는 INBOX 에서 이렇게 돈다: `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
+★ 배치는 **한 줄**로 돈다 — `cd ~/projects/fire-lane && bash tools/inbox_go.sh`.
+  그것이 `.env` 적재 · INBOX 최신 zip 찾기·풀기 · 브랜치 이름 · `--relock` 여부를
+  다 판단한다(DECISIONS §256). 직접 부르려면
+  `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
+  ★ **`~/Downloads` 가 아니다.** WSL 에서 `~` 는 리눅스 홈이고 다운로드는
+  `/mnt/c/Users/Fox/Downloads` 에 떨어진다 — `.env` 의 `$FIRE_LANE_INBOX` 를 쓴다.
   INBOX 의 `fl.sh` 는 `tools/inbox_fl.sh` 사본이고, 진짜 도구는 **패치 안(없으면
   origin/part/infra)의 `tools/fl.sh`** 다(DECISIONS §214-1).
 ★ 배치 끝의 두 단계 — 10 가지 정리(`branch_tidy.sh --auto --close-bots` · 봇 PR 을 사유 댓글과 닫는다) ·
@@ -259,6 +289,7 @@ uv run python tools/jijeok_review.py    갈리는 구간을 정사영상 위에�
 uv run python tools/lanes_probe.py      표준노드링크 차로수로 폭 하한 대조
 uv run python tools/route_probe.py      소방차 통행 비용으로 경로 — 거리만 대 차량
 uv run python tools/clearance_probe.py  최대내접원 방식 (2026-08-22 기각)
+uv run python tools/corner_probe.py     코너 꺾임각·반경 — 회전 가능성 대조
 uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
 uv run python tools/skeleton_compare.py NGII 1:1,000 뼈대 후보 대 현행 구간 — 위치 의심표 (R1)
 uv run python tools/transition.py      옛 구간 → 새 구간 전이표 — 1:N · N:1 · 소멸 · 신설 (R2)
@@ -267,6 +298,9 @@ uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구
 uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
 uv run python tools/matchcheck.py       Mapbox Map Matching 커버리지 (MAPBOX_TOKEN 필요)
 uv run python tools/field_compare.py    실측 야장 ↔ 우리 폭 · 판정 — 위험 오판 · 보정 제안 (트랙 C 봉인)
+uv run python tools/ruleset_check.py    GitHub 룰셋 실물 ↔ MASTER §12-1 표 대조
+uv run python tools/fixture_recut.py    커밋된 사본 픽스처 ↔ 산출물. 갈렸으면 ㉠ 재현 불가 · ㉡ 판 변경을 가른다 (`--write` 면 다시 뗀다)
+uv run python tools/argcheck.py         관문이 부르는 인자 ↔ 도구가 `--help` 로 내는 인자 (DECISIONS §257-2 의 족)
 ```
 
 읽고 표를 내거나 페이지를 만들 뿐이라 `golden` 지문에 영향이 없다.
@@ -294,6 +328,8 @@ PARK  = 2.0     주차 1대 노면 점유
 ★ **축거와 최소회전반경은 공식 규격에 없다.** 내륜차 계산에 그 둘이 필요하므로
 지금 값은 추정이며 `wheelbase_verified: false` 가 그 표시다.
 
+강제자  `tests/test_sources_of_truth.py`(`TRUCK`·`PARK` 의 정본이 `seg/params.py` 하나인가 — README 의 값은 사본이다) · `tests/test_seg_geom.py::test_verdict_table` · `tools/docnum_check.py`(README 숫자 대조)
+
 ### 경로가 둘인 이유
 
 ```
@@ -302,8 +338,10 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 ```
 
 `access_corridor()` 는 폭 산출보다 먼저 돌기 때문에 거리만 쓸 수 있다.
-★ 그래서 **`route_usage` 는 통행 가능성을 뜻하지 않는다** — 0 초과인 579구간
-중 통과 불가가 41, 폭 3.0m 미만이 168이다.
+★ 그래서 **`route_usage` 는 통행 가능성을 뜻하지 않는다** — 0 초과인 580구간
+중 통과 불가가 40, 폭 3.0m 미만이 167이다.
+
+강제자  `tests/test_guards.py::test_route_usage_is_not_a_passability_claim`. 정본은 `MASTER §3-10` 이고 이 절은 그 사본이다 — 값이 갈리면 `tools/docnum_check.py` 가 운다
 
 ### 도달 가능성은 개별 판정과 다르다
 
@@ -327,7 +365,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 
 정본은 **`MASTER §18`** 이다. 계층 선언은 `sources.yaml` 의 `layers` 블록,
 경로 해석은 `src/firelane/paths.py`, 계층별 책임(획득 · 계약 · 생산 · 재현)은
-`MASTER §5-3a` 가 든다. 여기에는 입구만 적는다.
+`MASTER §5` 머리의 계층별 책임 표가 든다. 여기에는 입구만 적는다.
 
 강제자 없음 — 사유: 정본은 MASTER §18 이고 이 절은 참조만 둔다
 
@@ -413,8 +451,10 @@ tools/
   acquire.py              landing → raw 획득 게이트 · sha 대조
   baseline.py             판정 산출물 봉인 · 실행 간 전이 대조
   golden.py               ★ 리팩 전후 산출물 동일 증명. baseline 과 반대 용도
-  scan_data.py            데이터 레이크 구조 점검. §7 이 레이크 **밖**도 본다
+  scan_data.py            데이터 레이크 구조 점검. 그 도구의 §7(선언 밖 형제)이 레이크 **밖**도 본다
   docnum_check.py         문서 ↔ 산출물 숫자 · 필드표 대조
+  docgen.py               ★ 문서의 생성 블록에 실물 값을 **넣는다**. 흐르는 숫자는
+                          문서가 들지 않는다 (DECISIONS §246)
   plan_renumber.py        PLAN §1 표 번호를 1..N 으로 · 결번 해소
   commit_policy.py        산출물 · 일회성 스크립트 · 비밀값 차단
   encoding_check.py       인코딩 · 개행
@@ -442,7 +482,9 @@ tools/
   ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
   render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
   stage_pages.py          ★ 배포 준비 한 곳 — docs/proposal.docx → web/
-  render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 · 라벨 넘침 · 막대 덮음 대조
+  svg_fit.py              ★ 손으로 좌표 박은 SVG 가 화면·도형을 넘는가 — rect · circle · 라벨 폭
+  localgeo.py             ★ 동명동 국소 평면 근사 — 좌표 상수의 집. kpi · bridge_audit · its_linkmap 이 읽는다
+  render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 대조 (배치는 svg_fit 이 본다)
   docx_figs.py            ★ 그 그림을 기획서 안에 넣는다 — --sync 가 교체 · --check 는 변환기 없이 대조
   release_brief.py        ★ 이 PR 이 무엇을 흡수하나 — 판정·계보·대장·계약
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
@@ -484,6 +526,7 @@ web/
 
 ## 지금 상태
 
+<!--gen: datasets-->
 ```
 세그먼트     1,281   (동명동 416 + 119안전센터 접근 회랑 70m + 안전센터 반경 300m)
 판정        통행 가능 465 · 판정 보류 226 · 통행 불가 191 · 영상판정 불가 399
@@ -499,6 +542,7 @@ web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_ma
 관제        web/navi/?view=ops — 유일한 지도 화면. 옛 GIS 지도(web/js)는 2026-09-22 걷어냈다(DECISIONS §218-1)
 KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 (42%)
 ```
+<!--/gen-->
 
 `영상판정 불가` 399 는 전부 CCTV 사각이다. 폭 산출 불가는 0 이다.
 
@@ -521,7 +565,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 **폭 값은 아직 미검증이다**(`width_verified: false`, 전건). 레이저 실측 후 바뀐다.
 값은 바뀌어도 필드와 `verdict` 어휘는 안 바뀐다. 계약 테스트가 그것을 보장한다.
 
-강제자 없음 — 사유: 수치는 docnum_check 가 segments · 판정 수를 대조하고 도달 가능 수는 다음 코드 배치다
+강제자 없음 — 사유: 수치는 docnum_check 가 segments · 판정 수를 대조하고 도달 가능 수는 다음 코드 배치다. 하위 한 절도 같은 사유다 — 셀 것이 없다
 
 ### 구간 수는 고정값이 아니다
 
@@ -535,35 +579,37 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 노딩 규칙이 바뀌면 `seg_id` 가 전부 밀린다. 외부 참조에는 `seg_uid` 를 쓴다.
 중간 단계의 구간 수와 그 사유는 `DECISIONS.md` 가 든다.
 
-## 나는 어느 파트인가
+## 어느 파트인가
 
 ★ 이 파일은 루트라 **누구든 처음 본다.** 지금은 GIS 파이프라인 서술이 많은데
 그것은 `src/firelane/README.md` 가 정본이다(PLAN 이 그 정리를 든다).
 
-| 나는 | 브랜치 | 볼 곳 | 문서 |
+| 파트 | 브랜치 | 볼 곳 | 문서 |
 |---|---|---|---|
 | GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
-| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 226구간 · `cctv.geojson` | DECISIONS §213-5(4색 정의) |
+| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 226구간 · `cctv.geojson` | MASTER §10-2(판정 4종 · 색값은 `web/config.js`) |
 | Infra · API | `part/infra` | 아직 서버 없음 — 배포는 `.github/workflows/deploy.yml` · 배치는 `tools/fl.sh` | README `## 도구` |
 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
 `web/data/`(40MB 상한)만으로 작업할 수 있다.
 
-배포된 화면 다섯이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
+배포된 화면 다섯이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 다섯 곳에 산다.
 가는 길은 여기 하나다(DECISIONS §99). 플레이북(`web/playbook.html`)은 협업 방침을 그리는
 **틀**이라 따로 배포하지 않는다(§216-5).
 
 ```
-지도        cleveraifox.github.io/fire-lane/
-협업 방침    cleveraifox.github.io/fire-lane/workflow.html   MASTER §12 생성물
-기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.docx 를 그대로 그린다
+관제        cleveraifox.github.io/fire-lane/               사건 접수 · 출동 지령 · 판정 지도 · 실시간 공유 확인
 내비        cleveraifox.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
-관제        cleveraifox.github.io/fire-lane/navi/?view=ops 사건 접수 · 출동 지령 · 실시간 공유 확인
+협업 방침    cleveraifox.github.io/fire-lane/workflow.html   MASTER §12 생성물
+기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.docx 를 구운 PDF. 굽고 나서 넷을 대조한다(§231)
 ```
 
 강제자  `tests/test_n1.py::test_no_doc_sends_people_to_old_pages_domain` — 옛 조직 주소(이관 전 배포)로 보내지 않는다(DECISIONS §181-6)
+강제자  `tests/test_n1.py::test_the_deployed_surface_table_matches_web` — 이 표의 딱지가 `web/` 실물과 같은가. 리다이렉트를 화면처럼 적으면 운다(§258)
 
 ## 문서는 어디에
 
-머리의 [문서는 넷이다](#문서는-넷이다) 표가 정본이다.
+축 표의 정본은 `docs/MASTER.md` 머리다 — 이 문서 머리의 [문서는 넷이다](#문서는-넷이다) 표와 PLAN 머리는 사본이다.
 어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
+
+강제자  `tools/doc_fsck.py`(문서 ↔ 문서 · 이 절이 스스로 그렇게 적는다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)

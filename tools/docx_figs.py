@@ -41,6 +41,7 @@ PARAM --sync --check
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import io
 import json
@@ -71,6 +72,7 @@ def _render_figures():
     spec = importlib.util.spec_from_file_location(
         "_render_figures", Path(__file__).resolve().parent / "render_figures.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 
@@ -81,6 +83,10 @@ FIGURES = _render_figures().FIGURES
 PLACE: dict[str, dict] = {
     "cctv": {"fig": 22, "caption": "유효 측정 범위"},
     "deploy": {"fig": 24, "caption": "배포 아키텍처"},
+    # ★ 2026-09-24 (PLAN §12 #15). 캡션은 2026-09-01 에 「평면교차점 실형상 제외」로
+    #   고쳤는데 **그림은 반경 5m 원 하나만 그린 채**였다. 캡션을 보는 검사는
+    #   그림을 못 본다 — 그것이 이 도구가 생긴 이유고, 이 줄이 그 자리를 덮는다.
+    "xsec": {"fig": 13, "caption": "법선 트랜섹트 샘플링과 평면교차점 실형상 제외"},
     "verdict": {"internal": "기획서에 대응 그림이 없다 — 판정 4종 수는 본문 숫자로 들어가고 "
                             "tools/docnum_check.py 가 golden 과 대조한다"},
     "unknown": {"internal": "기획서에 대응 그림이 없다 — 사유 분해는 본문 표가 든다"},
@@ -101,7 +107,6 @@ CONVERTERS = (
 )
 APT = "sudo apt-get install -y librsvg2-bin"
 
-EMU_PER_PX = 9525  # 1px(96dpi) = 9525 EMU
 NS_A = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
 NS_R = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 NS_WP = "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}"
@@ -285,9 +290,19 @@ def sync() -> int:
 
 
 def main() -> int:
-    if "--sync" in sys.argv:
-        return sync()
-    return check()
+    # ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). 종전에는 `"--x" in sys.argv`
+    #   였다 — **오타가 조용히 무시된다.** `--snyc` 는 바꿔 넣는 대신 대조만 하고 끝났다.
+    #   argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+    ap = argparse.ArgumentParser(description="기획서 그림 ↔ 정본")
+    ap.add_argument("--sync", action="store_true", help="기획서의 그림을 정본으로 바꿔 넣는다")
+    # ★ 2026-09-25 (DECISIONS §257). `--check` 를 받는다. **기본 동작과 같다** —
+    #   `verify.sh:530` 이 그것으로 부르는데 argparse 로 옮기면서(§243) 인자를
+    #   좁혀 `unrecognized arguments: --check` 로 죽었다. `verify.sh` 전량을
+    #   돌린 적이 없어 배치 안에서 안 드러났다. `test_tools_are_wired` 는
+    #   「부르는가」만 보고 **「인자가 맞는가」는 안 본다**(PLAN §1 #133).
+    ap.add_argument("--check", action="store_true",
+                    help="대조만 한다 (기본 동작 — `verify.sh` 가 이 이름으로 부른다)")
+    return sync() if ap.parse_args().sync else check()
 
 
 if __name__ == "__main__":

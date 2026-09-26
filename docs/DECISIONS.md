@@ -35,6 +35,8 @@ MASTER 는 **지금 어떤가**를 적는다. 이 파일은 **왜 그렇게 됐�
 앞으로 일회성 작업은 돌리고 지운다. 남길 값이 있으면 여기에 적는다.
 `tests/test_guards.py::test_no_dated_scripts_in_tools` 가 이 규칙을 강제한다.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `test_no_source_patching_scripts`(두 검사가 겹쳐 덮는다 — 삭제된 9개로 역검증했다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)
+
 ---
 
 ## 1. `tools/ledger_20260817.py` (삭제됨)
@@ -93,6 +95,8 @@ raw 에는 있는데 대장에 없어 매 스캔 격리 대상으로 떴다.
 
 ortho .tif 만 잡아 메타데이터 .xml 4건이 격리로 떴다. 패턴 확장.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools`(이 파일이 돌아오면 운다) · `uv run python -m firelane.ledger`(대장이 정본이라는 결론의 현재 지킴이)
+
 ---
 
 ## 2. `tools/rules_20260817.py` (삭제됨)
@@ -116,6 +120,8 @@ rules_20260817.py — 새 소스 3종의 배치 규칙과 필수 목록을 등�
 파일을 덮어쓰지 않고 앵커를 확인한 뒤 삽입·치환만 한다.
 앵커가 없으면 아무것도 쓰지 않는다. 재실행해도 안전하다.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tests/test_intake_rules.py`(소스 3종이 잘못 잡히는 것 — 편입 규칙이 지금 그 자리를 든다)
+
 ---
 
 ## 3. `tools/fix3_20260817.py` (삭제됨)
@@ -136,6 +142,8 @@ fix3_20260817.py — 남은 배선 3건.
    ★ 결손은 폐기가 아니다(MASTER 18-3). 속성이 없거나 0건이어도
    빈 레이어로 발행하고 멈추지 않는다. 대신 조용히 넘어가지도 않는다.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `uv run python -m firelane.ledger`(대장 주석과 값이 어긋나는 것 — 지금은 대장 필드 검사가 든다)
+
 ---
 
 ## 4. `tools/docfix_20260817.py` (삭제됨)
@@ -151,6 +159,8 @@ docfix_20260817.py — MASTER 를 2026-08-17 산출과 맞추고 빠진 절을 �
 §2 판정 숫자 1093 / 383·216·65·429. CCTV 유효범위 재계산
 §10-0 D-XX 대응표. 46회 인용되는데 정의가 저장소 밖에 있었다
 §11 데이터 필드 절의 구간 수
+
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tools/docnum_check.py`(MASTER 숫자를 산출에 맞추는 일 — 지금은 도구가 매 실행 댄다)
 
 ---
 
@@ -170,6 +180,8 @@ docnum_check.py 는 판정 숫자만 본다. 아래는 서술이라 도구가 �
 §16 근거 없는 상수 5 → 4. XSEC_EXCL 이 실형상으로 해소됐다
 CCTV_RANGE 가 가르는 구간 수도 396 → 429
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tools/docnum_check.py`. ★ 「서술이라 도구가 못 잡는다」던 자리가 지금은 `tools/doc_fsck.py`(문서↔문서)와 `tools/dms.py`(강제자 칸)로 좁아졌다
+
 ---
 
 ## 6. `tools/docfix3_20260817.py` (삭제됨)
@@ -184,6 +196,8 @@ sources.yaml 이 크게 바뀌었다. 그래서 파일을 통째로 덮어쓰지
 앵커가 없으면 아무것도 쓰지 않고 멈춘다. 그때는 사람이 손으로 넣는다.
 
 이미 들어가 있으면 건너뛴다(재실행 안전).
+
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tools/baseline.py`(봉인 등재 — 지금은 도구가 한다)
 
 ---
 
@@ -206,6 +220,8 @@ nfa_out_20260818.py — 소방서 지정 구간 대조를 파일로 남긴다.
 무엇을 바꾸나
 print 를 지우지 않는다. 사람이 보는 출력은 그대로 두고 파일을 추가한다.
 산출물은 data/processed/nfa_compare.json 이며 baseline 봉인 형식과 같다.
+
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `src/firelane/seg/report.py::nfa_compare`(「두 번 소실됐다」던 외부 대조가 지금은 파이프라인 안에서 매 실행 산출된다)
 
 ---
 
@@ -236,6 +252,8 @@ data/processed 에 그대로 남고, segments 는 파일이 있으면 읽는다.
        OK 가 아니면 어떤 파일이 있든 정지한다. 개명이 실패했거나 사람이 손으로
        파일을 만들어 둔 경우까지 잡는 이중 안전이다.
 
+강제자  `tests/test_guards.py::test_lineage_blocks_orphan_derived_output` · `test_lineage_ok_when_all_outputs_declared`(FAIL 난 단계의 옛 산출물이 하류에 먹히는 것 — 지금은 `guards.lineage_check` 가 든다)
+
 ---
 
 ## 9. `tools/docfix3_20260818.py` (삭제됨)
@@ -257,6 +275,8 @@ NGI 보완분을 넣자 silpok 84 로 돌아왔다 — 베이스라인과 같은
 이 두 번의 정정 자체가 기록으로 남을 값이 있다. 소스를 갈아엎은 뒤
 숫자가 나왔다고 바로 문서에 박으면, 중간 상태를 확정값으로 적게 된다.
 
+강제자  `tests/test_guards.py::test_no_dated_scripts_in_tools` · `tools/docnum_check.py`(「어제 쓴 서술을 뒤집는다」가 반복되지 않게 숫자는 도구가 낸다)
+
 ---
 
 ## 10. MASTER §7 에서 해소된 항목
@@ -274,6 +294,8 @@ ngii1k 5개 레이어(도로경계·중심선·보도·평면교차점·가로�
 ★ 끝난 일이 '남은 일'에 남아 있으면 다음 사람이 이미 있는 것을 또 만든다.
 08-18 오후까지 목록에 남아 있었고, `docnum_check` 는 판정 숫자만 보므로
 이런 어긋남을 못 잡았다.
+
+강제자 없음 — 사유: 해소 기록이다. `ngii1k` 가 `STEPS` 에 들어 있다는 사실은 `src/firelane/pipeline.py::STEPS` 가 정본이고 `tests/test_reproducibility.py` 가 든다
 
 ---
 
@@ -300,6 +322,8 @@ ngii1k 5개 레이어(도로경계·중심선·보도·평면교차점·가로�
 필드표 대조도 붙였다. MASTER §11 이 `n_sample` 등 7개를 웹 필드로 적어놨는데
 `publish_web.py` 는 내보내지 않는다. UI 담당이 그 표를 보고 코드를 짜면
 `undefined` 가 나온다. 반대로 `width_verified` 등 3개는 산출물에만 있었다.
+
+강제자  `tools/docnum_check.py`(지금은 「맞는 숫자가 있는가」가 아니라 **옛 숫자가 남아 있는가**를 본다) · `tests/test_declaration_sync.py`
 
 ---
 
@@ -337,6 +361,8 @@ MASTER §11 은 그것을 "큰 도로는 건물이 40m 밖이라"로 설명했�
 판정과 평가지표 양쪽에 동시에 나타나고 있다.
 그때까지 `blocked` 63 은 확정 개수가 아니라 **하한**이다.
 
+강제자  `tests/test_seg_geom.py::test_wmax_missing_is_not_failure` · `tests/test_seg_width.py`(`WMAX_CAP`) · `tools/wmax_audit.py`(결손 규모를 재는 자리)
+
 ---
 
 ## 13. 팝업이 `seg_id` 를 머리글로 쓰고 있었다
@@ -356,6 +382,8 @@ MASTER §11 은 `seg_id` 를 **외부 참조 금지**로 못 박아 놓고, 화�
 `run_length_m` 행은 지웠다. 소방청 기준(연속 100m)의 중간 변수인데 결론인 척
 표에 앉아 있어서 안 읽혔다. 948개 카드에 `—` 만 채우고 있었다. `nfa_designated`
 가 참인 153개에만 배지로 띄우고, 거기에 실제 연속 길이를 적는다.
+
+강제자  `tests/test_contract.py::test_seg_uid_format` · `test_seg_uid_unique`(외부 참조 키가 `seg_uid` 하나라는 것) · `web/navi/test/style.test.ts`
 
 ---
 
@@ -377,6 +405,8 @@ MASTER 에 적어둔 규칙이었으면 사람이 읽어야 작동했을 것이�
 `test_guards.py` 머리말이 말한 그대로다.
 
 내용은 PLAN §8-2 로 들어갔다. 절 번호만 한 단계 내렸고 본문은 그대로다.
+
+강제자  `tests/test_doc_style.py`(다섯 번째 문서 금지 — 그날 이 검사가 잡았고 지금도 같은 자리에 있다)
 
 ---
 
@@ -428,6 +458,8 @@ width_min_m |Δ|>1m 0건 · seg_uid 유지율 100.0%
 이상이거나 없는 결손 64건이 남는다. 실측이나 건물 형상 보완(PLAN #8)이
 있어야 판정된다. 발표 자료에서 159 를 확정으로 쓰지 말 것.
 
+강제자  `tests/test_seg_geom.py::test_below_truck_is_blocked` · `test_single_sample_still_gets_blocked` · `test_blocked_wins_over_clear` · `tests/test_contract.py::test_verdict_matches_rules_for_every_segment`
+
 ---
 
 ## 16. gpkg 에 옛 레이어가 남아 하류가 옛 데이터를 읽었다
@@ -468,6 +500,8 @@ gpkg 는 매 실행 바뀐다.
 ③ pipeline 이 단계 실행 전 verify / 후 record. 단계는 계보를 모른다
 ④ stale_guard 의 개명 방식은 삭제한다. 증상 대응이 원인 대응으로 대체된다
 
+강제자  `tests/test_guards.py::test_lineage_blocks_orphan_derived_output`(gpkg 안 옛 레이어가 남아 하류가 옛 데이터를 읽던 자리) · `tests/test_reproducibility.py`
+
 ---
 
 ## 17. 정사영상을 검증 소스로 세지 않고 있었다
@@ -501,6 +535,8 @@ gpkg 는 매 실행 바뀐다.
 ★ 원본 TIF 에 geotransform 이 없어 도엽 번호로 위치를 유추하고 있다.
 `.xml` 사이드카에 투영원점 중부 · GRS80 · TM(= EPSG:5186)이 들어 있으므로
 유추를 선언으로 바꿀 수 있다. `desk_check` 신뢰도가 여기 달려 있다.
+
+강제자  `tools/render_figures.py --check`(정사영상 바탕 그림이 정본에서 나오는가) · `tests/test_ortho_seal.py`(정사영상 봉인지) · `tools/desk_check.py`(그날 만든 도구 · 지금도 사람이 부른다)
 
 ---
 
@@ -572,6 +608,8 @@ MASTER 3,222줄을 한 번에 갈면 `docnum_check` 앵커와 `test_reproducibil
 
 '서/중/동' 같은 임의 어휘는 대안이 아니다. 우리가 만든 말이라 현장에서
 통하지 않는다.
+
+강제자  `tests/test_r1.py` · `tests/test_contract.py::test_seg_uid_format`(`seg_no` 가 표기 전용이고 외부 키는 `seg_uid` 라는 것) · `src/firelane/seg/basisno.py`(기초번호 정본). 하위 둘(폐기한 접근 · 채택한 방식)이 이 칸을 물려받는다
 
 ### 폐기한 접근
 
@@ -651,6 +689,8 @@ EVE_BSI_MN   짝수측 본번        BSI_INT_SN   기초구간 일련번호
 현재 `pipeline.EXPECT` 는 `segments` 산출물만 검사하고 `ingest` 건수는 보지
 않는다. PLAN #16.
 
+강제자  `tests/test_turn_restriction_filter.py`(전국 44,125 오염 · `node_point` 없이 조용히 0건이 되는 것 · `status` 가 OK 인 채 오염되는 것)
+
 ---
 
 ## 21. 정사영상 cp949 오류 — 사이드카 XML
@@ -692,6 +732,8 @@ GDAL 은 래스터를 열 때 사이드카를 탐색하기 위해 디렉터리�
 (메모리 부족)를 이 트레이스백 사이에서 찾느라 시간을 소모했다. **잡음은
 실제 오류를 가린다.**
 
+강제자  `src/firelane/quiet_gdal.py`(GDAL 콜백 소음을 한 자리에서 끈다) · `tests/test_ortho_seal.py`. 사이드카 XML 자체는 raw 의 실물이라 `tools/lakecheck.py` 가 목록으로 든다
+
 ---
 
 ## 22. 계보 검사의 구조적 오탐 두 가지
@@ -701,6 +743,8 @@ GDAL 은 래스터를 열 때 사이드카를 탐색하기 위해 디렉터리�
 이 검사는 2026-08-18 사고를 막기 위해 도입했고 실제로 여러 차례 제 역할을
 했다. 그러나 오탐이 잦으면 실제 경보를 무시하게 된다. 그것이 반대편 위험이다.
 2026-08-21 하루에 `_lineage.json` 을 여섯 차례 삭제했다.
+
+강제자  `tests/test_guards.py`(계보 세 층 — 키 · 파일 · 자가) · `tests/test_lineage_branches.py`. 하위 셋(바이트 비교 · `mutates` 자가대조 · 탈출구)이 이 칸을 물려받는다
 
 ### 1. `_manifest.json` 을 바이트 전체로 비교했다
 
@@ -761,6 +805,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 **필요한 조치:** 단계 스크립트가 `__main__` 으로 호출될 때 경고하거나, 계보
 기록까지 수행하도록 통일한다. PLAN #17.
 
+강제자  `src/firelane/guards.py::warn_direct_call`(단계 모듈 일곱이 직접 호출을 경고한다) · `tools/doc_fsck.py::check_commands`(문서가 단계 직접 호출을 적으면 운다)
+
 ---
 
 ## 24. 인코딩에는 강제자가 없었다
@@ -796,6 +842,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 
 <!-- 묶음 구분: 2026-08-22 ~ 23 — 절 제목으로 쓰지 않는다 (PLAN §0-1) -->
 
+강제자  `tools/encoding_check.py`(verify 「인코딩·개행」 단계) · `.gitattributes`. ★ 이 절이 「강제자가 없었다」는 제목으로 남아 있는 것 자체가 기록이고, 지금은 있다
+
 ## 25. 스크립트 더미를 패키지로 — `sys.path` 17군데가 원인이었다
 
 > 2026-08-22 ~ 23
@@ -823,6 +871,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 
 검증: import 28/28 · pytest 208 · 판정 불변 1,101 · `/tmp` 에서 동작
 
+강제자  `tests/test_layering.py::test_sys_path_해킹이_없다`(경로 조작이 되살아나면 운다) · `pyproject.toml` 의 `pythonpath` 선언이 그 자리를 대신한다
+
 ## 26. 계층에 강제자가 없었다
 
 > 2026-08-22 ~ 23
@@ -843,6 +893,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 
 `access_corridor` 는 `out_dir` 를 인자로 받게 바꿨다. 쓸 곳은 호출자가
 정한다.
+
+강제자  `tests/test_layering.py`(계층 방향을 import 로 강제 · 넷을 본다) · `tests/test_layers.py`(선언 ↔ 실물)
 
 ## 27. `app.js` 1,260줄을 27개 모듈로
 
@@ -867,6 +919,8 @@ README 의 "단계를 하나씩 손으로 치지 마라"가 가리키는 것이 
 "쓰이나 보다" 하고 유지한다.
 
 검증: 레이어 · 소스 · DOM id 52/52 · 이벤트 13/13 · 누락 0 · 추가 0
+
+강제자 없음 — 사유: 기록이다. 그 27개 모듈(`web/js`)은 2026-09-22 에 통째로 걷혔다(§218-1). 되살아나지 않는 것은 `tests/test_web_ownership.py::test_old_map_is_retired_and_entry_redirects` 가 든다
 
 ## 28. ★ `node --check` 는 ES 모듈 문법 오류를 잡지 못한다
 
@@ -893,6 +947,8 @@ Node 가 `.js` 를 CommonJS 로 읽다 `export` 에서 실패하면 조용히 �
 `signs.js` 에 있는데 `icons/*` 가 참조). **둘 다 문법 검사도 그래프 검사도
 통과한다.**
 
+강제자 없음 — 사유: 기록이다. 그 검사가 붙어 있던 `web/js` 는 2026-09-22 에 걷혔고 지금 화면은 `web/navi`(vite + vitest)다. 문법 오류는 `npm run -s typecheck` 가 잡는다
+
 ## 29. ★ `window.CONFIG` 는 undefined 다
 
 > 2026-08-22 ~ 23
@@ -910,9 +966,13 @@ Node 가 `.js` 를 CommonJS 로 읽다 `export` 에서 실패하면 조용히 �
 `js/config-access.js` 가 `typeof` 로 확인한다. ES 모듈의 스코프 체인은
 전역 선언적 환경까지 닿으므로 이름으로 참조하면 보인다.
 
+강제자 없음 — 사유: 기록이다. `window.CONFIG` 를 읽던 옛 지도는 걷혔다. `web/config.js` 는 지금 **파이프라인 설정**이고 화면이 직접 안 읽는다(MASTER §11-2) — `tests/test_declaration_sync.py::test_config_js_thresholds_match_params` 가 그 값이 정본과 같은지 든다
+
 ## 30. 실패가 조용히 통과하던 자리 넷
 
 > 2026-08-22 ~ 23
+
+강제자  `tests/test_guards.py`(조용한 통과 네 자리) · `tools/deadcheck.py` ③(실패해야 할 자리에서 `return`/`pass`/`continue` 하는가 · 천장 0). 하위 넷이 이 칸을 물려받는다
 
 ### `ingest` 가 데이터셋 FAIL 에도 종료코드 0
 
@@ -984,6 +1044,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
     --from segments(입력 그대로)       통과
     --only 인데 입력 몰래 바뀜          차단 ★
 
+강제자  `tests/test_lineage_branches.py`(②가 통과해도 ③이 막던 자리) · `tests/test_guards.py`(계보 세 층의 관계)
+
 ## 32. clearance(최대내접원) 방식을 검토하고 기각했다
 
 > 2026-08-22 ~ 23
@@ -1018,6 +1080,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
 0.056). 파이프라인이 커버율로 이미 지목한 실측 우선순위와 일치한다.
 
 재현: `tools/clearance_probe.py`
+
+강제자  `tests/test_tools_are_wired.py::EXEMPT`(`clearance_probe` 가 「2026-08-22 기각」 사유와 함께 면제로 남아 있다 — 기각을 기록으로 남기는 자리) · `tools/clearance_probe.py`. 하위 한 절이 이 칸을 물려받는다
 
 ### ★ 2026-08-23 추가 — 기각 근거를 다시 본다
 
@@ -1089,6 +1153,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
 생긴다. 폭 데이터로는 절대 안 나오는 정보이고, 계보가 다른 데이터를
 겹쳤기 때문에 보였다.
 
+강제자  `tools/lakecheck.py`(대장 선언 ↔ 실물 — 세 계보가 실제로 있는가) · `tools/refcheck.py`(선언 ↔ 실물). 네이버를 안 쓴다는 결론은 `sources.yaml` 에 그 소스가 없다는 사실이 정본이다
+
 ## 34. `unknown` 352구간의 사유가 하나뿐이었다
 
 > 2026-08-22 ~ 23
@@ -1117,6 +1183,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
 
 판정 4숫자 불변(159/400/190/352). `unknown_reason` 만 바뀌었다.
 
+강제자  `tests/test_contract.py::test_unknown_reason_vocabulary_is_declared_in_three_places`(회색 사유 어휘가 세 곳에서 같은가) · `test_verdict_matches_rules_for_every_segment`
+
 ## 35. 구간별 판정을 아무도 검증한 적이 없었다
 
 > 2026-08-22 ~ 23
@@ -1135,6 +1203,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
 
 ★ 두 번째가 이 테스트의 위험을 보여준다. **컬럼이 빠지면 조용히 틀린
 답을 낸다.** 필요 컬럼이 없으면 통과가 아니라 실패하게 했다.
+
+강제자  `tests/test_contract.py::test_verdict_matches_rules_for_every_segment`(규칙 일곱을 구간마다 재현한다 — 개수만 보던 구멍을 닫은 그 검사다)
 
 ## 36. 툴팁이 개발자 화면이었다
 
@@ -1157,6 +1227,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
 `test_web_uses_stable_segment_key` 가 `seg_no` · `seg_uid` 를 표출에서
 쓰면 실패한다. `test_web_css_has_no_dead_tip_rules` 가 `#tip` 규칙 중
 참조 0건이면 실패한다.
+
+강제자  `web/navi/test/style.test.ts` · `tests/test_navi_wireframe.py`(카드가 무엇을 띄우는가). `seg_uid` 가 표시 전용이 아니라는 것은 `tests/test_contract.py::test_seg_uid_format` 이 든다
 
 ## 37. 캐시 — 개발 서버와 배포 스탬프 두 층
 
@@ -1183,6 +1255,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
 캐시된다. `view.json` **만** 매 로드 고유 URL(`?t=Date.now()`)로 받고,
 그 뒤 모든 데이터는 해시 스탬프를 달아 캐시가 정상 동작한다.
 
+강제자  `tests/test_desk_tools.py`(`serve.py` 가 캐시를 끄는가) · `tests/test_publish_context.py`(배포 스탬프). 배포 워크플로 쪽은 `tests/test_workflow_static.py` 가 든다
+
 ## 38. ★ CI 가 `main` 에서만 돌고 있었다
 
 > 2026-08-22 ~ 23
@@ -1200,6 +1274,8 @@ union 하면 면적이 정답의 2/3 로 나온다.
     ruff                155개 (한 번도 초록불이 아니었다)
     web/data 계보       매니페스트와 산출물이 어긋나 있었다
     문서 숫자 대조       MASTER §11 표에 n_sample · width_cov 가 없었다
+
+강제자  `tools/gate_parity.py`(로컬 ↔ CI 검사기 차집합) · `tests/test_workflow_guards.py`(트리거 브랜치 목록 — `main` 만 도는 상태가 되면 운다)
 
 ## 39. `web/data` 계보를 생산자가 쓰지 않았다
 
@@ -1220,6 +1296,8 @@ cwd 의존도 제거했다. 종전 `WEB = Path("web/data")` 는 저장소 루트
 이라고 했는데 `publish_web.py` 는 이 파일을 만들지 않았다. 그 안내를 따라
 `--only publish` 를 돌렸다가 아무것도 안 바뀌는 일이 실제로 있었다.
 이제 `publish` 가 만드므로 그 안내가 비로소 참이 됐다.
+
+강제자  `tools/web_manifest.py --check`(발행 계보) · `tests/test_ledger_outputs.py`. 본체가 `publish` 안으로 들어가 사람이 기억할 순서가 사라진 것이 이 절의 결론이다
 
 ## 40. ruff 155 → 0
 
@@ -1244,6 +1322,8 @@ CI 에 넣어두고 한 번도 통과한 적이 없었다. 실질 위험을 고�
 
 `tools/verify.sh` 의 ruff 를 참고에서 게이트로 바꿨다.
 
+강제자  `uv run ruff check src tools tests`(verify 「ruff」 단계) · verify 「엄격 린트 (CI 와 같은 인자)」 · `tests/test_gate_parity_args.py`(인자가 CI 와 글자까지 같은가)
+
 ## 41. `w_ngi=0.5` 거리뷰 대조 51개를 폐기했다
 
 > 2026-08-22 ~ 23
@@ -1267,6 +1347,8 @@ CI 에 넣어두고 한 번도 통과한 적이 없었다. 실질 위험을 고�
 
 ★ 선언과 실물이 갈리는 자리가 계층마다 있다 — `PLAN #60`(landing 잔류 5건)
 이 같은 형태다. **폐기는 선언이 아니라 삭제로 끝난다.**
+
+강제자 없음 — 사유: 폐기 기록이다. `data/field/ngi_width_05_check.csv` 는 지워졌고 되살아나면 `tools/treecheck.py --repo` 가 근거 없는 파일로 운다. 실측 표본의 정본은 `tests/test_measurements.py` 의 대장이다
 
 ## 42. 네이버 지도를 준-실측으로 쓸 수 있는지 재본다
 
@@ -1305,6 +1387,8 @@ CI 에 넣어두고 한 번도 통과한 적이 없었다. 실질 위험을 고�
 
 산출물 넷도 같이 지웠다. 봉인을 풀 도구가 없어 값을 쓸 수도 없었다.
 
+강제자  `tests/test_measurements.py`(오염 칸 — 우리 값을 가리고 재지 않으면 그 대조는 검증이 아니다). 네이버 봉인 CSV 는 지금 없고, 쓰게 되면 `data/field/` 아래로 들어와 `tests/test_fieldsheet.py` 가 받는다
+
 ## 43. 영상판정 인터페이스를 못박았다
 
 > 2026-08-22 ~ 23
@@ -1330,6 +1414,8 @@ BEV 이미지는 만들지 않는다. 폭 계산에 필요한 것은 마스크 �
 
 MASTER §19 에 정본을 둔다.
 
+강제자  `tests/test_contract_vision.py`(하드 강제 넷 — 판정과 임계값을 넘기지 않는다가 그중 하나다) · `src/contracts/vision.py`
+
 ## 44. 이 세션에서 반복된 실수
 
 > 2026-08-22 ~ 23
@@ -1349,6 +1435,8 @@ MASTER §19 에 정본을 둔다.
 (`-d .d.zip`) 자리표시자가 그대로 실행됐다(`<실패한 것들>`). ruff 출력이
 파일명으로 해석돼 **쓰레기 파일 18개가 커밋되기도 했다.** 그 뒤로 한 줄씩
 주는 방식으로 바꿨다.
+
+강제자  `tools/fl.sh`(배치가 zip 전체를 담고 verify 를 통과해야 PR 이 열린다 — 「넣기 전에 결과를 검사하지 않았다」를 구조로 막는다) · `tests/test_batch_tools.py`
 
 ## 45. `paths.FIELD` 가 문서 셋을 다 어기고 있었다
 
@@ -1389,6 +1477,8 @@ MASTER §19 에 정본을 둔다.
 ---
 
 <!-- 묶음 구분: 2026-08-24 — 절 제목으로 쓰지 않는다 (PLAN §0-1) -->
+
+강제자  `tests/test_layers.py`(계층 선언 ↔ `paths.py` 실물 — `FIELD` 가 문서와 어긋나면 운다) · `tests/test_fieldsheet.py`
 
 ## 46. 경로 비용을 차량 기준으로 바꾼다
 
@@ -2078,6 +2168,8 @@ MASTER §16 은 결정 표와 그 사유를 함께 들고 있었다. 표는 "지
 어느 쪽을 고쳐야 하는지가 사람마다 갈린다.** 표만 MASTER 에 남기고 사유를
 여기로 옮긴다.
 
+강제자  `tools/docnum_check.py`(MASTER §16 결정 표) · `tests/test_declaration_sync.py`. 하위 절 여덟이 각 결정의 사유이고 이 칸을 물려받는다
+
 ### 71 → 72. `seg_id` 를 강등하고 `seg_uid` 를 만들었다
 
 `seg_id` "불변 키" 문언을 폐기하고 실행 간 유지되는 키를 신설했다.
@@ -2174,6 +2266,8 @@ PLAN 은 "남은 일만 담는다"고 스스로 선언해놓고 §12 에 완료 
 옮긴 항목의 사유는 대부분 이 문서의 §19~§63 에 이미 있다. 여기에는 목록만
 남긴다.
 
+강제자 없음 — 사유: 이관 기록이다. PLAN 에서 해소된 항목을 여기로 옮겼다는 사실이고, PLAN 이 완료 목록을 쌓지 않는 것은 `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed` 가 든다. 하위 셋도 같은 사유다 — 셀 것이 없다
+
 ### 재현성 · 파이프라인
 
     ngii1k 를 pipeline STEPS 에 편입          다른 기기에서 폭 주 소스 없이 돌던 것
@@ -2234,6 +2328,8 @@ PLAN 은 "남은 일만 담는다"고 스스로 선언해놓고 §12 에 완료 
 
 검사는 전부 초록불이었는데 문서는 틀려 있었다. **검사가 보는 범위 밖에서
 문서가 자란 것**이고, 이 저장소가 계보·계층·인코딩에서 반복해 배운 그 모양이다.
+
+강제자  `tests/test_doc_style.py`(문서 넷의 시제 · 다섯째 금지) · `tools/doc_fsck.py`(문서 ↔ 문서). 하위 둘이 이 칸을 물려받는다
 
 ### 무엇이 틀려 있었나
 
@@ -2842,7 +2938,7 @@ L1·L2·L3 전부 동일하게 나왔고 그것을 "norm 이 값을 안 바꾼�
 `test_manifest_keeps_lineage` · `tests/test_static.py::test_no_conflict_markers` ·
 `test_tracked_python_compiles` · `tests/test_layers.py::test_no_layer_is_orphaned` (§18-1a 의 R2 — R 표의 R2 와 다른 체계다) ·
 `test_backup_scope_follows_layers` (§18-1a 의 R2) · `tests/test_normalize_rules.py::test_missing_list_is_actually_missing` ·
-`tools/docnum_check.py` (대장 대조)
+`tools/docnum_check.py` (대장 대조). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 2026-08-31. 하루에 열두 건을 잡았다. 새로 생긴 버그는 **하나도 없다.**
 전부 이미 있던 것이고 검사 범위를 넓히자마자 나왔다.
@@ -2922,7 +3018,7 @@ L1·L2·L3 전부 동일하게 나왔고 그것을 "norm 이 값을 안 바꾼�
 > 2026-08-31
 
 강제자 — `tools/ruleset_check.py` ·
-`tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check`
+`tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check`. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `§78` 이 낡음을 다뤘다면 이것은 **예외**다. 낡음은 문서 안에서 생기고
 사람이 읽으면 보인다. 예외는 문서 밖에서 자라서 **읽어도 안 보인다.**
@@ -3096,7 +3192,7 @@ D-30 에서 관내 보유 차종의 실제 반경이 나오면 `turn_radius_veri
 > 2026-09-01
 
 강제자 — `tests/test_crosswalk.py` (전건 등재 · 번호 연속 · 상태 어휘 ·
-PLAN 참조 유효)
+PLAN 참조 유효). 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 팀은 회의록 8건(08-03~08-11) · 진행일지 11건(08-12~08-31) · 흐름도 ·
 멘토링일지를 생산했고 그 안에 **결정 85건 · 미결 56건**이 있다. 이 저장소는
@@ -3250,7 +3346,7 @@ PLAN 참조 유효)
 강제자 없음 — 사유: 목록의 내용은 코드가 검사할 수 없다. 지킬 수 있는 것은
 `CONFIG.fleet[].profile` 이 `profiles.json` 에 실재하는 id 인지뿐이며, 그것은
 `vehicle.js` 가 없는 id 를 만나면 해당 항목의 제원 칸을 비우는 것으로 대신한다.
-잘못된 항목이 목록에 남아 있는 것은 검사가 아니라 §5 의 확보 경로가 닫는다.
+잘못된 항목이 목록에 남아 있는 것은 검사가 아니라 §5 의 확보 경로가 닫는다. 하위 일곱도 같은 사유다 — 셀 것이 없다
 
 ### 84-1. 없는 차의 회전반경으로 골목을 판단할 뻔했다
 
@@ -3378,7 +3474,7 @@ PLAN 참조 유효)
 > 2026-09-01
 
 강제자 없음 — 사유: 관할과 보유는 외부 기관의 사실이라 코드가 검사할 수 없다.
-`data/field/` 의 두 CSV 가 근거이며, 어긋나면 그 파일을 갱신한다.
+`data/field/` 의 두 CSV 가 근거이며, 어긋나면 그 파일을 갱신한다. 하위 셋도 같은 사유다 — 셀 것이 없다
 
 §84 에서 동명동 관할 차량 목록을 짜면서 **대인과 지산을 합쳐서 셌다.** 틀렸다.
 
@@ -3438,7 +3534,7 @@ PLAN 참조 유효)
 > 2026-09-01
 
 강제자 — `tests/test_guards.py::test_turn_block_requires_a_verified_radius`
-(양방향) · `tools/corner_probe.py` (읽기 전용 대조)
+(양방향) · `tools/corner_probe.py` (읽기 전용 대조). 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `D-08`(회전 반경 · 코너 판정)은 2026-08-07 이래 미결이었고 `MASTER §10-0` 이
 *"미결. 적용 범위 한정안만 있음"* 으로 적어 왔다. <!--voice-ok--> 전건이 `D-30`
@@ -3588,7 +3684,7 @@ PLAN 참조 유효)
 
 > 2026-09-01
 
-강제자 — `tools/doc_fsck.py` · `tests/test_doc_fsck.py` (넷 + 역방향 시험)
+강제자 — `tools/doc_fsck.py` · `tests/test_doc_fsck.py` (넷 + 역방향 시험). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 강제자 23종이 전부 **문서 ↔ 실물** 한 방향이었다. **문서 ↔ 문서** 를 보는
 것이 하나도 없었고, 하루에 그 자리에서 넷이 한꺼번에 나왔다.
@@ -3674,7 +3770,7 @@ PLAN 참조 유효)
 
 강제자 — `tools/pull_data.py` (여덟 단계 · 실패 시 정지) ·
 `tools/doc_fsck.py` + `tests/test_doc_fsck.py` (다섯) ·
-`tools/render_workflow.py` 의 `audit` · `slots` (양방향)
+`tools/render_workflow.py` 의 `audit` · `slots` (양방향). 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 88-1. 파이프라인의 머리 다섯이 도구로만 있었다
 
@@ -3810,7 +3906,7 @@ PLAN 참조 유효)
 > 2026-09-02
 
 강제자 — `tests/test_guards.py::test_verify_covers_every_ci_job` ·
-`::test_strict_lint_args_have_one_home` · `.ruff-strict.toml`
+`::test_strict_lint_args_have_one_home` · `.ruff-strict.toml`. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `tools/verify.sh` 는 스스로 *"CI 전체 위생 검사 로컬 고속 재현"* 이라고 적는다.
 그 선언이 세 번 거짓이었다.
@@ -3942,6 +4038,8 @@ v0.4 에서 **태그가 한 커밋 뒤에 붙었다.** `gh pr create` 직후 같
 `absent` 에 세 필드를 필수로 넣었다 — `in`(어느 출처에 없나) ·
 `elsewhere`(값이 있는 곳) · `json_key`(그 파일의 실제 키).
 
+강제자  `tools/doc_fsck.py`(③ `absent` 선언 ↔ 실물) · `tests/test_doc_fsck.py::test_absent_declarations_are_true`. 하위 둘이 이 칸을 물려받는다
+
 ### 91-1. ★ 이름이 우연히 엇갈려 통과하고 있었다
 
 `turn_radius_m` 은 값이 있는데도 잡히지 않았다. `check_absent` 가 필드명을
@@ -3990,6 +4088,8 @@ camelCase 로 바꾸고(`turnRadiusM`) 접미를 떼어(`turn_radius`) 찾았는
 로도 부르고 어순도 뒤집는다(`확정 1,102 산출단위`). 어휘를 셋으로 넓히고
 앞뒤 두 형태를 함께 본다.
 
+강제자  `tools/deadcheck.py`(② 손목록 — 코드에 박힌 목록이 데이터 원본보다 좁은가 · 천장 0) · `tests/test_deadcheck_probes.py`. 「어휘가 갈리면 검사가 비껴간다」가 그 프로브를 만든 이유다
+
 ### 92-1. 규칙이 아니라 목록으로 못박는다
 
 셋 다 **규칙 기반 이름 추론**이 원인이다. camelCase 로 바꿔 보고, 접미를
@@ -4018,6 +4118,8 @@ camelCase 로 바꾸고(`turnRadiusM`) 접미를 떼어(`turn_radius`) 찾았는
 
 둘 다 "예정" 이라 실물이 없었고, **그래서 아무도 어긋난 줄 몰랐다.** 실물이
 없는 것끼리는 대조할 상대가 없어 낡음이 조용하다.
+
+강제자  `tools/docx_check.py`(기획서 ↔ MASTER 대조가 이 어긋남을 잡았다) · `tests/test_docx_targets.py::test_docx_check_is_bidirectional`. 하위 넷이 이 칸을 물려받는다
 
 ### 93-1. 왜 기획서 쪽인가
 
@@ -4092,6 +4194,8 @@ ALB · 타깃 그룹 · IAM 역할 다섯을 알아야 고칠 수 있고, EC2 + 
 어딘가에 담겼나" 만 보므로 담기기만 하면 통과한다. 사람은 *"아침에 뭐
 하나"* 로 찾지 *"몇 절인가"* 로 찾지 않는데, 그 축이 정본에 없었다.
 
+강제자  `tools/render_workflow.py --check`(화면이 정본에서 생성되는가) · `tests/test_workflow_html_sync.py::test_generated_matches_master` · `test_no_handwritten_copy`. 하위 한 절이 이 칸을 물려받는다
+
 ### 94-1. 파싱이 서식을 스키마로 쓰고 있었다
 
 `classify()` 는 들여쓴 블록이면 그림, `|` 로 시작하면 표, 나머지는 산문으로
@@ -4148,6 +4252,8 @@ ALB · 타깃 그룹 · IAM 역할 다섯을 알아야 고칠 수 있고, EC2 + 
 종전대로 둔다 — 전부 문맥 대조로 넓히면 오탐이 늘고, 시끄러운 검사는
 사람이 끈다(§78-4).
 
+강제자  `tools/docnum_check.py`(존재 대조를 **라벨 옆 값** 대조로 바꾼 그 도구다) · `tests/test_declaration_sync.py`. 하위 한 절이 이 칸을 물려받는다
+
 ### 95-1. README 가 대상에서 빠져 있었다
 
 `docnum_check` 의 `RULES` 가 `docs/MASTER.md` 와 `sources.yaml` 만 들었다.
@@ -4179,6 +4285,8 @@ CI 에도 테스트에도 걸려 있지 않았다.**
 같은 상태가 넷이었다 — `docx_check` · `refcheck` · `treecheck` · `triage`.
 `README` 는 이것들을 도구 목록에 나열한다. **목록에 있는 것과 도는 것은
 다르다.**
+
+강제자  `tests/test_tools_are_wired.py`(도구가 `verify.sh` · `ship.py` · CI · 시험 중 한 곳에서 실제로 불리는가 · `EXEMPT` 는 사유와 함께) · `tools/scopedecl.py`(그 도구가 자기 범위를 선언하는가)
 
 ### 96-1. 만드는 것과 거는 것은 다른 일이다
 
@@ -4214,6 +4322,8 @@ no-op 이다(R8). 데이터 레이크가 필요한 것은 CI 에서 돌 수 없�
     treecheck   추적 안 된 파일 하나        ★ 검사가 옳다. 커밋하면 사라진다
     docx_check  캡션 `원천 11종`            ★ 검사가 옳다. 표가 낡았다
     refcheck    죽은 참조 4 · 경고 13      ★ 절반이 오탐이었다
+
+강제자  `tools/verify.sh`(셋을 실제로 부르는 자리) · `tools/gate_parity.py`(로컬 ↔ CI 차집합). 하위 둘이 이 칸을 물려받는다
 
 ### 97-1. 폐기 기록을 죽은 참조로 세면 회고를 못 쓴다
 
@@ -4267,6 +4377,8 @@ turningRadius) · `§92`(구간 ↔ 산출단위) · 이것. **검사가 실물�
 로 있다. **파일명은 `jngj-dong`, 대장은 `jngj-donggu` 다.** 지금은 돌지만
 개명하면 어긋난다.
 
+강제자  `tests/test_layers.py::test_no_tool_writes_outside_declared_layers`(도구가 선언 밖 경로를 조립하지 않는가) · `tools/refcheck.py`(선언 ↔ 실물). 하위 둘이 이 칸을 물려받는다
+
 ### 98-1. 이 자리에서 두 번 죽었다
 
     2026-08-13   경로가 ROOT/data/raw 라 exists() 가 항상 거짓
@@ -4316,6 +4428,8 @@ turningRadius) · `§92`(구간 ↔ 산출단위) · 이것. **검사가 실물�
 이유로 연다 — 지도는 현장과 심사, 협업 방침과 플레이북은 팀, 기획서는
 외부다. 한 사이트로 묶어 보이게 할 이유가 약하다.
 
+강제자  `tests/test_web_ownership.py`(화면 소유 · 옛 사이드바가 되살아나지 않는가) · `tools/stage_pages.py` · `tests/test_publish_context.py::test_deploy_uses_drop_list`. 하위 둘이 이 칸을 물려받는다
+
 ### 99-1. 배포 준비를 한 곳으로
 
 `web/proposal.html` 이 `./proposal.docx` 를 부르는데 그 파일은 `docs/` 에
@@ -4354,6 +4468,8 @@ Pages 는 저장소당 사이트 하나라 어느 워크플로가 돌든 `web/` 
 
 `§94` 에서 `MASTER §12-0` 상황별 색인을 만들었다. **계약만 세우고 렌더러는
 여전히 서식으로 갈랐다.** 이 절이 그 계약을 소비하는 쪽이다.
+
+강제자  `tools/render_workflow.py --check`(색인이 정본이고 렌더러가 그것을 읽는가) · `tests/test_workflow_html_sync.py`(여섯). 하위 둘이 이 칸을 물려받는다
 
 ### 100-1. 무엇이 바뀌었나
 
@@ -4401,6 +4517,8 @@ Pages 는 저장소당 사이트 하나라 어느 워크플로가 돌든 `web/` 
     증상   gh pr create 가 "No commits between" · "Base ref must be a branch"
            git pull 이 "no such ref was fetched"
     원인   저장소 설정 `delete_branch_on_merge: true`
+
+강제자  `tools/ruleset_check.py`(룰셋 **과 저장소 설정** · 브랜치 존재) · `tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check`. 하위 셋이 이 칸을 물려받는다
 
 ### 101-1. 그 설정은 head 를 가리지 않는다
 
@@ -4471,6 +4589,8 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 `PLAN #1`(그래프 투입) · `#2`(A* 비용함수) · `#61`(GPS 스냅) ·
 `#63`(React 내비)의 상태를 `⏳` 로 바꿨다. **GIS 담당이 그 항목을 놓는다.**
 
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`(`⏳` 가 어휘 안에 있는가 — 담당 공백을 표기로 남기는 자리) · `tools/plan_renumber.py`(지운 번호를 안 당긴다). 하위 둘이 이 칸을 물려받는다
+
 ### 102-1. 지우지 않는다
 
 `§0-2` 는 완료된 것을 `⬛` 슬롯으로 남기라고 한다. 이건 완료가 아니라
@@ -4521,6 +4641,8 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 ★ 규칙을 없애지 않고 **하위 절당 여덟**으로 바꿨다. 그리고 뜻을 뒤집었다 — 다섯을
 넘는 것은 강조가 과한 것이 아니라 **절이 너무 큰 것**이다. 별표를 지우지
 말고 절을 쪼개라는 신호로 쓴다. 강제자를 같이 붙였다(§17).
+
+강제자  `tests/test_doc_style.py`(`★` 상한 · 4칸 들여쓰기 · 문체) · `tools/doc_fsck.py`. 하위 둘이 이 칸을 물려받는다
 
 ### 103-1. 지키지 못할 규칙은 다른 규칙까지 깎는다
 
@@ -4575,6 +4697,8 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 "없으면 건너뛴다" 를 `is_dir()` 하나로 쓰고 있었고, 그 함수가 두 경우를
 다르게 처리한다는 것을 아무도 몰랐다.
 
+강제자  `src/firelane/paths.py::alive`(「없다」와 「죽었다」를 가르는 정본) · `tests/test_layers.py` · `tests/test_skip_policy.py`(매체 없는 기계에서 무엇을 건너뛰는가). 하위 한 절이 이 칸을 물려받는다
+
 ### 104-1. 왜 지금 고치나
 
 2026-09-07 에 매체를 GIS 통합 담당에게 넘긴다. 그러면 **GIS 담당 기계의
@@ -4615,6 +4739,8 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 그 사이 `render_workflow.render()` 는 HTML 을 f-string 으로 **처음부터
 새로 짰다.** 같은 내용을 두 모양으로 만든 것이고, 두 모양이 서로를
 모른다.
+
+강제자  `tools/render_workflow.py --check`(템플릿을 **채우는** 하네스가 도는가) · `tests/test_workflow_html_sync.py::test_generated_has_components`. 하위 둘이 이 칸을 물려받는다
 
 ### 105-1. 그래서 화면이 비었다
 
@@ -4674,6 +4800,8 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 **자리를 새로 만들고 원래 있던 것을 안 치웠다.** 주입을 붙인 것과 사본을
 없앤 것은 다른 일인데 전자만 했다.
 
+강제자  `tools/render_workflow.py --check` · `tests/test_workflow_html_sync.py::test_no_handwritten_copy`(사본이 되살아나면 운다). 하위 한 절이 이 칸을 물려받는다
+
 ### 106-1. 지우기만 하면 껍데기를 잃는다
 
 사본을 통째로 지우면 `code-box` 의 복사 버튼과 표 스타일이 같이 사라진다.
@@ -4717,6 +4845,8 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 `class="w-full text-left text-xs"` 와 `<thead class="bg-slate-50 …">` 가
 사라졌다. 화면에서 **표 헤더가 그냥 텍스트로 흘렀다.**
 
+강제자  `tools/render_workflow.py --check`(표 열 수 대조 — 안 맞으면 렌더가 죽는다) · `tests/test_workflow_html_sync.py::test_generated_has_components`. 하위 한 절이 이 칸을 물려받는다
+
 ### 107-1. `as_rows()` — 행만 낸다
 
 표 껍데기(`<table>` · `<thead>` · 클래스)는 템플릿 것이고 `<tbody>` 에
@@ -4751,6 +4881,8 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 ## 108. 소유와 승인은 다른 자리다 · 그림에 강제자를 붙였다
 
 > 2026-09-02
+
+강제자  `tests/test_ownership.py::test_catch_all_comes_first` · `test_owner_handles_look_real`(이탈자가 포괄 소유자로 남지 않는가) · `tools/render_figures.py --check`(그림 ↔ 정본). 하위 한 절이 이 칸을 물려받는다
 
 ### 108-1. 포괄 소유자를 잘못 넣었다
 
@@ -4809,6 +4941,8 @@ CODEOWNERS 로 정해지는데, 릴리즈 PR 을 올리는 사람이 곧 포괄 
 ★ **두 번째 눈이 볼 것이 있어야 값이 생긴다.** 승인 자체가 아니라
 **무엇을 보고 누르는가**가 문제였다.
 
+강제자  `tools/release_brief.py`(넷을 요약해 PR 에 단다) · `tools/verify.sh` 의 `note` 자리 · `tests/test_release_procedure.py`. 하위 둘이 이 칸을 물려받는다
+
 ### 109-1. 넷만 본다
 
     판정   golden/segments.fingerprint.json   4수치가 움직였나
@@ -4846,6 +4980,8 @@ CODEOWNERS 로 정해지는데, 릴리즈 PR 을 올리는 사람이 곧 포괄 
 ## 110. 구조 그림에 강제자를 붙였다 · 브리핑을 CI 가 단다
 
 > 2026-09-02
+
+강제자  `tools/render_figures.py --check`(구조 그림도 정본에서 생성되는가) · `tools/docx_figs.py --check`(기획서가 든 그림도 같은 정본인가) · `tests/test_figure_text.py`. 하위 한 절이 이 칸을 물려받는다
 
 ### 110-1. 값 그림과 구조 그림은 다르다
 
@@ -4903,6 +5039,8 @@ compose 에서 읽는다. 룰셋 표를 고치면 그림이 따라온다.
 **배치가 깨진 것은 못 잡는다** — 지문은 정상적으로 달라지고 재생성하면
 통과한다.
 
+강제자  `tests/test_figure_fit.py`(박스와 글자가 전부 뷰박스 안인가 — 넘쳐도 그려지던 자리). 하위 한 절이 이 칸을 물려받는다
+
 ### 111-1. 좌표가 코드에 있는 한 이 검사가 그 자리를 대신한다
 
 모든 `<rect>` 와 `<text>` 가 `viewBox` 안에 있는지 센다. 밖이면 렌더가
@@ -4928,8 +5066,8 @@ compose 에서 읽는다. 룰셋 표를 고치면 그림이 따라온다.
 ★ 조건을 미리 적는 이유는 `§93-4`(ECS 재검토 조건)와 같다. 기각을
 영구로 두지 않으면서, 매번 다시 논의하지도 않는다.
 
-강제자  `tools/render_figures.py::_fits`
-재현    `uv run python tools/render_figures.py`
+강제자  `tools/svg_fit.py::_fits`
+재현    `uv run python tools/svg_fit.py`
 
 ---
 
@@ -4939,7 +5077,7 @@ compose 에서 읽는다. 룰셋 표를 고치면 그림이 따라온다.
 
 강제자 — `tests/test_declaration_reality.py` 가 `route_vehicle` 의 **발행부**를
 본다. 소비부(프론트엔드)는 저장소 밖이라 검사가 닿지 않는다. **그래서 계약을
-여기 적는다.** 코드가 없어져도 이 절만 있으면 다시 만들 수 있다.
+여기 적는다.** 코드가 없어져도 이 절만 있으면 다시 만들 수 있다. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 `web/data/route_vehicle.json` 은 2026-08-31 부터 발행되는데 읽는 쪽이 없었다
 (`web/js` 참조 0건, 83KB 가 소비자 없이 커밋돼 있었다). 소비자를 붙이기 전에
@@ -5038,7 +5176,7 @@ V-World 키   web/config.js  vworld.key
 > 2026-09-03
 
 강제자 — `seg/vehicle.py::offtracking()` 이 `wheelbase_verified` 를 본다.
-`can_turn()` 이 `turn_radius_verified` 를 보는 것과 같은 구조다.
+`can_turn()` 이 `turn_radius_verified` 를 보는 것과 같은 구조다. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 도로폭은 구간의 **최소**로 판정한다 — 제일 좁은 데를 못 지나면 못 지난다.
 차량은 그 뒤집음이다. 범주의 **최대** 축거로 판정하면 그 범주의 나머지는
@@ -5102,7 +5240,7 @@ V-World 키   web/config.js  vworld.key
 > 2026-09-03 ~ 09-04
 
 강제자 — 역방향 검사 다섯. `ALLOW` · `FIELD_EXEMPT` · `BACKWARD` ·
-`raw_only ↔ norm` · `META`.
+`raw_only ↔ norm` · `META`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 2026-09-03 감사에서 34건이 나왔고 뿌리는 하나였다 — **정본을 바꿀 때 그것을
 읽는 곳 전부를 세지 않았다.** 그런데 왜 안 세었나를 파고들면 검사의 모양이
@@ -5208,6 +5346,8 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 
 소비자가 없던 83KB 짜리 파일이 이제 골든 테스트다.
 
+강제자  `web/navi/test/rules.test.ts` · `tests/test_navi_graph_fresh.py`(클라이언트가 먹는 그래프가 발행본과 같은가) · `tests/test_reach_overlay.py`. 하위 한 절이 이 칸을 물려받는다
+
 ### 115-1. 왜 서버에서 돌리지 않나
 
 989 노드에서 A* 가 0.2ms 다. 서버 왕복이 계산보다 길다. 그리고 출동 중 통신이
@@ -5253,6 +5393,8 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 그리고 우리 경로는 **실거리가 더 길지도 않다** — 중앙값 1.00배다. 돌아가지
 않으면서 못 가는 길을 피한다.
 
+강제자  `tools/kpi.py`(진입 실패율을 내는 자리 — 「시간 단축은 우리가 이길 축이 아니다」의 근거값) · `tests/test_tools_are_wired.py::EXEMPT`(발표 인용값이라 사람이 조건과 함께 부른다고 선언돼 있다)
+
 ### 116-1. 숫자를 문서에 손으로 적지 않는다
 
 판정이 바뀌면 이 숫자도 바뀐다. `tools/kpi.py` 가 계산 조건(안전센터 · 필요폭 ·
@@ -5280,6 +5422,8 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 
 실측에서 101도로 꺾이는 길도 갈림길이 없으면 조용하다. 운전자가 선택할 것이
 없으면 안내할 것도 없다.
+
+강제자  `web/navi/test/rules.test.ts`(분기 유무로 회전을 내는가 · 도로명이 기준이 아닌가) · `web/navi/test/turning.test.ts`. 하위 한 절이 이 칸을 물려받는다
 
 ### 117-1. 도로명은 기준이 아니다
 
@@ -5319,6 +5463,8 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 전**이다. 말이 끝나기도 전에 회전이 온다. 그래서 실제 속도를 재서 문턱을
 만든다 — 먼저알림 12초 · 준비 6초 · 실행 2.5초.
 
+강제자  `web/navi/test/progress.test.ts`(안내 문턱 12·6·2.5초) · `web/navi/test/rules.test.ts`. 하위 한 절이 이 칸을 물려받는다
+
 ### 118-1. 회전 간격 21% 가 30m 미만이다
 
 42m 뒤에 또 회전하면 두 번 말할 시간이 없다. **"좌회전 후 우회전"** 으로 한
@@ -5351,6 +5497,8 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 아예 못 붙게 하면 이탈을 영원히 감지하지 못한다. 실제로 벗어나면 할인을 이기고
 밖에 붙고, 그것이 재탐색 신호다.
 
+강제자  `web/navi/test/pointRoute.test.ts`(스냅이 활성 경로에 할인을 주는가 · 하드 제한이 아닌가) · `web/navi/test/rules.test.ts`
+
 ### 119-1. 진행방향은 형상 방향이 아니다
 
 `segments.geojson` 의 선이 어느 쪽으로 그려졌는지는 임의다. 경로가 구간을
@@ -5380,6 +5528,8 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 **3.0m 에서 절벽처럼 갈린다.** 그리고 3.0m 는 `params.py` 의 통과 하한, 즉 우리
 소방차 최소 필요폭과 같은 숫자다. 경계선을 우리가 고른 것이 아니라 물리가
 골라줬다 — 상용이 아는 길 ≈ 차가 다니는 길 ≈ 소방차 최소폭 이상.
+
+강제자  `tools/matchcheck.py`(Map Matching 커버리지 대조 — 토큰이 필요해 CI 에 못 걸고 `tests/test_tools_are_wired.py::EXEMPT` 가 사유와 함께 면제한다) · `web/navi/test/clearance.test.ts`(우리 폭이 경로 가부에 실제로 쓰이는가)
 
 ### 120-1. 폭 1.19m 골목을 신뢰도 0.97 로 안다
 
@@ -5417,6 +5567,8 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 이 구조의 값어치는 테스트가 아니라 **렌더러 교체가 열린다**는 것이다. React
 Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`ui` 만 다시
 짠다.
+
+강제자  `tests/test_layering.py`(계층 방향) · `web/navi/test/domain.test.ts`(domain 이 순수한가 — React·MapLibre·fetch 를 모르는가). 하위 한 절이 이 칸을 물려받는다
 
 ### 121-1. 순환은 setState 로 되먹일 때 생긴다
 
@@ -5480,7 +5632,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #16` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5493,20 +5645,20 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #31` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
   PLAN 은 미래만 담는데 닫힌 항목이 본문째 남아 중복이 쌓였다.
   §0-2 가 *"슬롯만 남는다"* 고 적어놨는데 강제자가 없었다.
 
-**2026-08-26 기각.** `web/js/map.js` 가 상대경로로 읽고 `pages.yml` 이 그 트리를 발행한다 — 빼면 배포 지도가 깨진다. 재생성에 raw 1.3GB 가 필요해 CI 도 못 만든다. 저장소 밖 호스팅은 배포 인프라 결정이다. §8-7
+**2026-08-26 기각.** 당시 `web/js/map.js` 가 상대경로로 읽고 `pages.yml` 이 그 트리를 발행했다(둘 다 지금은 없다 — 지도는 관제 `OpsMap`, 배포는 `deploy.yml` 하나다) — 빼면 배포 지도가 깨진다. 재생성에 raw 1.3GB 가 필요해 CI 도 못 만든다. 저장소 밖 호스팅은 배포 인프라 결정이다. §8-7
 
 ## 125. sources.yaml` AUTO 블록 재생성 확인
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #38` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5519,7 +5671,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #39` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5532,7 +5684,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #40` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5545,7 +5697,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #41` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5558,7 +5710,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #43` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5571,7 +5723,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #44` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5584,7 +5736,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #47` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5597,7 +5749,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #48` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5610,7 +5762,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #49` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5623,7 +5775,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #52` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5636,7 +5788,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #71` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5649,7 +5801,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #4` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5662,7 +5814,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #5` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5675,7 +5827,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #6` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5688,7 +5840,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #8` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5701,7 +5853,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #11` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5714,7 +5866,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #12` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5727,7 +5879,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #17` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5740,7 +5892,7 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — PLAN 에 ⬛ 가 하나라도 있으면 운다.
 
 ★ `PLAN #18` 에서 옮겼다(2026-09-12). **글자는 안 바꿨다.**
@@ -5882,7 +6034,7 @@ gitignore)로 뺐다. `tools/stage_pages.py` 가 환경에서 읽어 만들고,
 
 > 2026-09-13 · 오창준
 
-강제자  `tests/test_doc_fsck.py::test_plan_has_no_closed_items`
+강제자  `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
         — ⬛ 가 하나라도 있으면 운다.
         `tools/plan_renumber.py` — 결번을 1..N 으로 당긴다.
 
@@ -7081,7 +7233,8 @@ append-only 라 §168 을 고쳐 쓰지 않고 여기 적는다. MASTER · `sour
 ### 170-6. 도달 여부는 판정에 합치지 않고 `route_vehicle` 한 곳에 둔다
 
 PLAN 「경로 비용 판정 반영」 을 닫는다. `reachable` 은 verdict 에 넣지 않고 `segments.geojson` 에도
-복사하지 않는다. 필요한 쪽이 `seg_uid` 로 조인한다(`web/js/reach.js` · 83KB · 조인 1회 1ms 미만).
+복사하지 않는다. 필요한 쪽이 `seg_uid` 로 조인한다(당시 `web/js/reach.js` · 83KB · 조인 1회 1ms 미만 —
+그 파일은 2026-09-22 옛 지도와 함께 걷어냈고 지금은 관제 `OpsMap` 이 같은 일을 한다).
 
     ① 도달은 **구간 × 차량**의 값이다 — 차종이 늘면 같은 구간이 펌프차로는 닿고 굴절차로는 못 닿는다
     ② 경로 비용 모델(제원 · 회전 · 일방통행 D-07)은 판정보다 자주 바뀐다 — 섞으면 판정 지문이 같이 흔들린다
@@ -8307,6 +8460,8 @@ R3 는 뼈대를 간다. 그러면 **구간이 다른 자리에서 잘린다** �
 
 ### 187-1. 교체 직전 봉인 — `baseline.py freeze 20260918-pre-r3`
 
+강제자  `tests/test_reproducibility.py`(봉인 재현) · `tools/freshcheck.py`(봉인이 트리에 있는가) · `tests/test_seal_survives_squash.py`(스쿼시로 사라지지 않는가)
+
 현행 뼈대(도로명주소 `road_link`)로 낸 마지막 산출물을 봉인한다. `seg_uid` 는 중점 좌표 + 도로명 해시라
 뼈대가 갈리면 **전량이 새 키가 된다** — 옛 키의 피처 기록은 이 봉인 하나뿐이 된다(§171-3).
 실측(`field`)이 옛 `seg_uid` 로 붙어 있으므로, 이것이 없으면 R3 뒤 실측값이 미아가 된다.
@@ -8329,6 +8484,8 @@ R3 는 뼈대를 간다. 그러면 **구간이 다른 자리에서 잘린다** �
 강제자  `tests/test_r2.py::test_identity_is_all_one_to_one` · `::test_shared_node_does_not_leak_a_vote_to_the_neighbour` · `::test_split_is_one_to_n_and_conserves_length` · `::test_merge_is_n_to_one_and_disappearance_is_counted` · `::test_new_segment_with_no_old_counterpart_is_added` · `::test_midpoint_fallback_only_when_direction_match_fails` · `::test_transition_is_not_wired_into_judgment_code` · `tests/test_tools_are_wired.py`(EXEMPT 사유)
 
 ### 187-3. `baseline.py diff --transition` 이 같은 모듈을 쓴다
+
+강제자  `tests/test_r2.py`(같은 모듈을 쓰는가 · 정본이 둘이 아닌가) · `tests/test_tools_are_wired.py`(호출이 early return 뒤로 밀리지 않는가 — 조용히 생략되던 자리)
 
 정본을 둘로 만들지 않는다. diff 는 1:1 표를 그대로 내고, `--transition` 이 붙으면 경계가 갈린 경우까지 덧붙인다.
 
@@ -8386,9 +8543,11 @@ import 는 분기 안에 둔다 — 꼭대기로 올리면 스위치와 무관�
 ★ 채우기 반경은 12m 다. `roadname.BAND` 는 0.5m 이고, **뼈대가 5~15m 옆에 서는 것이 R3 의 전제다**(§184-4) —
   그 창으로는 한 건도 못 채운다. 2026-09-18 실측: 1,860 엣지 중 NGII 이름만으로 채워지는 것 1,328 · 나머지 532 는 이 경로가 채운다.
 
-강제자  `tests/test_r3.py::test_as_road_prefers_ngii_name_and_width` · `::test_as_road_fills_blank_ngii_name_from_road_link_beyond_roadname_band` · `::test_as_road_defaults_dpn_to_main_road_when_unknown` · `::test_as_road_keeps_every_edge_and_geometry`
+강제자  `tests/test_r3.py::test_as_road_takes_width_from_ngii_but_name_from_road_link` · `::test_as_road_fills_blank_ngii_name_from_road_link_beyond_roadname_band` · `::test_as_road_defaults_dpn_to_main_road_when_unknown` · `::test_as_road_keeps_every_edge_and_geometry`
 
 ### 188-3. 측정 — 봉인 ↔ 시험 산출물을 `tools/transition.py` 로
+
+강제자  `tools/golden.py check`(되돌린 뒤 산출물이 봉인과 바이트 동일한가 — 다르면 R3a 가 판정 불변이 아니다) · `tests/test_r2.py`
 
 스위치를 켜고 파이프라인을 한 번 돌린 뒤 `tools/transition.py 20260918-pre-r3 --csv` 를 부른다.
 옛 봉인(도로명주소 뼈대) ↔ 지금 산출물(NGII 뼈대)의 1:1 · 1:N · N:1 · 소멸 · 신설과 **길이 가중 판정 전이표**가 나온다.
@@ -9876,7 +10035,7 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
 
 **148건이 REDLIST.json 에 앉아 있었고 아무도 읽지 않았다.**
 
-강제자  `tests/test_deadcheck_probes.py` (관문이 `--ratchet` 인가 · 짝짓기가 부분집합인가 · 면제가 죽지 않았는가 · 분모 정본이 하나인가)
+강제자  `tests/test_deadcheck_probes.py` (관문이 `--ratchet` 인가 · 짝짓기가 부분집합인가 · 면제가 죽지 않았는가 · 분모 정본이 하나인가). 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 202-1. 관문의 방향이 뒤집혀 있었다
 
@@ -10077,7 +10236,7 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
 W4 몸통(5족 — 생성물인데 생성기가 없다)을 한 배치로 닫으려고 일곱 행의
 전제를 하나씩 쟀다. **셋이 유령이었다.**
 
-강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `tests/test_figure_text.py` · `tests/test_rawdiff_code.py::test_code_diff_names_the_file_that_moved`
+강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `tests/test_figure_text.py` · `tests/test_rawdiff_code.py::test_code_diff_names_the_file_that_moved`. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 203-1. 없는 디렉터리에 대한 결함 둘
 
@@ -10221,7 +10380,7 @@ SVG `<text>` 는 마크다운을 모른다. 코드 표기 의도가 그냥 글�
 
 **20행 중 17행이 어떤 식으로든 틀렸다.**
 
-강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `::test_defect_ledger_counts_agree_everywhere`
+강제자  `tests/test_declaration_sync.py::test_every_ledger_row_points_at_something_real` · `::test_defect_ledger_counts_agree_everywhere`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 204-1. 제일 무거운 것 — 봉인이 없는 커밋을 가리킨다
 
@@ -10349,7 +10508,7 @@ EPSG:5186 으로 재니 **1.7500km²**, 동명동 **0.4292km²**, 비율 **4.077
 시작했다. 재번호를 하려고 파급을 쟀더니 **하면 안 되는 이유**가 나왔고,
 그것이 곧 **왜 목록이 안 줄어드는가**의 답이었다.
 
-강제자  `tests/test_declaration_sync.py::test_plan_row_numbers_are_unique_and_sorted` · `::test_plan_renumber_cannot_shift_numbers_any_more` · `::test_plan_section1_count_agrees` · `tests/test_tile_zoom_agreement.py`
+강제자  `tests/test_declaration_sync.py::test_plan_row_numbers_are_unique_and_sorted` · `::test_plan_renumber_cannot_shift_numbers_any_more` · `::test_plan_section1_count_agrees` · `tests/test_tile_zoom_agreement.py`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 205-1. §1 은 행을 지울 수가 없었다
 
@@ -10432,7 +10591,7 @@ DECISIONS 70곳은 append-only 역사라 **고칠 수가 없다.** 그러면 답
 ### 205-5. 줌이 셋으로 갈려 있었다 (W9-2 닫음)
 
     src/firelane/ortho.py   TILE_Z = (15, 16, 17, 18, 19)     굽는 쪽
-    web/js/map.js           minzoom:15, maxzoom:18            읽는 쪽
+    web/js/map.js           minzoom:15, maxzoom:18            읽는 쪽 (당시. 지금은 관제 OpsMap)
     tools/desk_check.py     Z = 18   # ortho.py TILE_Z 의 최대값
 
 MapLibre 는 소스 `maxzoom` 위로 타일을 요청하지 않는다. 그래서 z19
@@ -10485,7 +10644,7 @@ PR #132 이 CI 에서만 빨갰다. 로컬은 837 통과 · 전수 46/46 초록�
 §203 이 세운 「대장의 행이 실재하는 것을 가리키는가」가 CI 에서만 울었다.
 **둘 다 같은 코드고 같은 트리인데 판정이 달랐다.**
 
-강제자  `tests/test_declaration_sync.py::test_ledger_exemptions_are_not_dead` (면제가 죽으면 운다)
+강제자  `tests/test_declaration_sync.py::test_ledger_exemptions_are_not_dead` (면제가 죽으면 운다). 하위 둘은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 206-1. 원인 — 훑는 자리가 물음보다 넓었다
 
@@ -10546,7 +10705,7 @@ ref 가 `packed-refs` 하나로 묶이고 그 파일이 없다 —— **거기�
 역사에 없으면 기준선이 아니라 **없는 곳을 가리키는 숫자**다. 신선한 클론에는
 `refs/pull/*` 이 안 따라오므로 거기서는 `git cat-file -t 2130b14` 조차 죽는다.
 
-강제자  `tests/test_seal_survives_squash.py` (다섯) · `tools/merge_batch.sh` A-0
+강제자  `tests/test_seal_survives_squash.py` (다섯) · `tools/merge_batch.sh` A-0. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 207-1. 원인은 「깜빡했다」가 아니다 —— 구조가 그렇게 만든다
 
@@ -10630,7 +10789,7 @@ v0.28 릴리즈에서 §207 이 세운 A-0 이 제자리에서 돌았고 —— 
 
 강제자  `tests/test_deadcheck_probes.py` —— `test_every_probe_has_a_positive_control` ·
 `test_the_positive_control_is_green` · `test_the_control_catches_a_dead_probe`(다섯) ·
-`test_selftest_does_not_read_the_real_tree_any_more` · `test_dms_still_asks_liveness_not_the_ratchet`
+`test_selftest_does_not_read_the_real_tree_any_more` · `test_dms_still_asks_liveness_not_the_ratchet`. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 208-1. 빨간 이유가 「② 가 깨끗해서」였다
 
@@ -10740,7 +10899,7 @@ v0.29 방송에서 A-0 이 **처음으로 봉인을 찍었다.** §208 이 막�
 
 강제자  `tests/test_gitleaks_allowlist.py`(여섯) · `tests/test_seal_survives_squash.py`
 —— `test_seal_is_committed_and_goes_through_a_pr` · `test_seal_never_pushes_straight_to_part_infra` ·
-`test_seal_pr_ci_wait_cannot_kill_the_release` · `test_red_seal_pr_is_closed_not_left_open`
+`test_seal_pr_ci_wait_cannot_kill_the_release` · `test_red_seal_pr_is_closed_not_left_open`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ★ 강제자 칸을 **여기(`##` 본문)** 에 둔다. `dms` 는 `###` 가 부모 `##` 의 칸을
   물려받게 하는데, 칸을 맨 끝에 두면 그것은 **마지막 `###` 의 본문**이 되어
@@ -10872,7 +11031,7 @@ V-World 키(`web/config.js` · `web/index.html` · `sources.yaml` ·
 
 > 2026-09-21 · 오창준
 
-강제자  `tests/test_dms_ancestry.py`(여섯) · `tools/verify.sh` 「봉인 조상」 · `tests/test_seal_survives_squash.py::test_seal_pr_body_template_passes_the_gate` · `::test_a0_checks_the_body_before_making_anything`
+강제자  `tests/test_dms_ancestry.py`(여섯) · `tools/verify.sh` 「봉인 조상」 · `tests/test_seal_survives_squash.py::test_seal_pr_body_template_passes_the_gate` · `::test_a0_checks_the_body_before_making_anything`. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 v0.29 가 나갔다. main 에 실린 봉인은 `e0f9069` 커밋이 적은 `ad1c679` 이고, 그
 커밋은 **main 의 조상**이다 —— 봉인 도입 이래 처음이다. A-0 이 새로 찍은 봉인
@@ -10938,7 +11097,7 @@ verify 에 세웠다 —— `step "봉인 조상" uv run python tools/dms.py anc
 
 > 2026-09-21 · 오창준
 
-강제자  `tests/test_navi_wireframe.py`(넷 — 28장 전부 자리가 있는가 · 상태표가 시연 순서와 같은가 · 신호 없는 상태에 주입 표지가 있는가 · 병목 상세의 정직함 두 줄) · `tools/verify.sh` 「내비 타입 검사」
+강제자  `tests/test_navi_wireframe.py`(넷 — 28장 전부 자리가 있는가 · 상태표가 시연 순서와 같은가 · 신호 없는 상태에 주입 표지가 있는가 · 병목 상세의 정직함 두 줄) · `tools/verify.sh` 「내비 타입 검사」. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 지혜님이 와이어프레임 09-21 판 28장을 넘겼다(00 출동 정보 입력 ~ 23 도착 보고 공유).
 09-05 판으로 짠 내비 위에 반영했다. 판정 산출물은 한 바이트도 안 움직였다.
@@ -11027,7 +11186,7 @@ CCTV 없는 골목 > 안전/빠른. 경로가 없는데 「골목 주행 중」 
 
 > 2026-09-22 · 오창준
 
-강제자  `tests/test_fleet_turn_radius.py`(다섯 — 커밋본이 규칙과 같은가 · turn_unknown 은 숫자 없음 · 화면은 fleet.json 에서만 숫자를 읽고 참고·미반영 고지가 있는가 · 판정 쪽은 참고값을 안 읽는가 · publish_web 이 publish_fleet 을 부르는가)
+강제자  `tests/test_fleet_turn_radius.py`(다섯 — 커밋본이 규칙과 같은가 · turn_unknown 은 숫자 없음 · 화면은 fleet.json 에서만 숫자를 읽고 참고·미반영 고지가 있는가 · 판정 쪽은 참고값을 안 읽는가 · publish_web 이 publish_fleet 을 부르는가). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 §211-4 에서 지혜님께 넘긴 확인 사항 셋 중 둘이 답을 받았다 —— 「회전반경은 되는
 제원만 숫자로, 차종은 실제 편성으로, 주차 차량은 미반영」.
@@ -11082,7 +11241,7 @@ publish_fleet 가 기준 차량 전폭 2.5m 로 떨어진다. 필요폭이 3.0m 
 
 > 2026-09-22 · 오창준
 
-강제자  `web/navi/test/progress.test.ts`(아홉 — 1Hz 잡음 오차 · 음영 순간이동 · 강제 +250m · 되돌아 나오는 경로 · 이탈 두 측위 · 추측항법 상한 · 안내 문턱 · 재동기화 문구 · 자 변환) · `tools/navi_env.py`(잠금 → npm ci · 로컬 노드 = .nvmrc · 잠금 engines 전부 만족) · `tools/verify.sh` 「내비 환경 = CI」 「내비 단위 시험」 · `.github/workflows/contract.yml` 같은 둘
+강제자  `web/navi/test/progress.test.ts`(아홉 — 1Hz 잡음 오차 · 음영 순간이동 · 강제 +250m · 되돌아 나오는 경로 · 이탈 두 측위 · 추측항법 상한 · 안내 문턱 · 재동기화 문구 · 자 변환) · `tools/navi_env.py`(잠금 → npm ci · 로컬 노드 = .nvmrc · 잠금 engines 전부 만족) · `tools/verify.sh` 「내비 환경 = CI」 「내비 단위 시험」 · `.github/workflows/contract.yml` 같은 둘. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 v0.32 직후 사용자 지적 넷 —— 「턴바이턴이 차가 이렇게 갈 거라고 가정만 한다」, 「CI 에서
 실패하는데 verify 가 모르는 게 말이 되냐」, 「대비가 없다」, 「사건 입력 → 사건 접수」.
@@ -11168,7 +11327,7 @@ publish_web 이 부른다). 새로 들인 데이터는 없다. **판정과 무�
 
 > 2026-09-22 · 오창준
 
-강제자  `web/navi/test/domain.test.ts`(여섯 — 대체 접근 지점 · 도보 상한 · 도달 가능 구간 · 경로 비교 표지 · 차종 이름 · 관제 말) · `tests/test_batch_tools.py`(열둘 — 스크립트 문법 · 부트스트랩 여섯(zip 과 풀린 패치가 같이 있어도 한 번 · 남의 패치 무시) · 패치 고르기 둘(남의 패치 무시 — 실제 사고) · 정리 배선 · --auto 안전 · 레이크 처분) · `tests/test_navi_wireframe.py`(상태 키 둘 추가 뒤에도 28장 · 시연 순서 · 주입 표지)
+강제자  `web/navi/test/domain.test.ts`(여섯 — 대체 접근 지점 · 도보 상한 · 도달 가능 구간 · 경로 비교 표지 · 차종 이름 · 관제 말) · `tests/test_batch_tools.py`(열둘 — 스크립트 문법 · 부트스트랩 여섯(zip 과 풀린 패치가 같이 있어도 한 번 · 남의 패치 무시) · 패치 고르기 둘(남의 패치 무시 — 실제 사고) · 정리 배선 · --auto 안전 · 레이크 처분) · `tests/test_navi_wireframe.py`(상태 키 둘 추가 뒤에도 28장 · 시연 순서 · 주입 표지). 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 §213 배치가 verify 에서 레이크 L3 에 막혔고, 사용자가 INBOX 를 비우면서 배치 도구까지 사라졌다.
 같은 자리에서 「내비 이 정도로 충분하냐 · GIS 도 내비와 협응해 갈아엎어라 · 와이어프레임과
@@ -11301,7 +11460,7 @@ Mapbox 가 아예 없었다. 새 기계를 세팅하면 내비만 조용히 음�
 
 > 2026-09-22 · 오창준
 
-강제자  `web/navi/test/rules.test.ts`(여덟 — 규칙 없는 최단 · 금지 회전 우회와 불가피할 때 경고 · 골목 유턴으로 금지 회피 없음 · 반대 회전은 무관 · 알려진 일방통행 · 방향 모름 · 다가오는 규칙 · 발행 그래프 대조) · `web/navi/test/domain.test.ts`(회색 사유) · `tests/test_navi_graph_fresh.py::test_navi_graph_carries_traffic_rules` · `tests/test_batch_tools.py`(이어가기 다섯) · `tests/test_fieldsheet.py`(셋)
+강제자  `web/navi/test/rules.test.ts`(여덟 — 규칙 없는 최단 · 금지 회전 우회와 불가피할 때 경고 · 골목 유턴으로 금지 회피 없음 · 반대 회전은 무관 · 알려진 일방통행 · 방향 모름 · 다가오는 규칙 · 발행 그래프 대조) · `web/navi/test/domain.test.ts`(회색 사유) · `tests/test_navi_graph_fresh.py::test_navi_graph_carries_traffic_rules` · `tests/test_batch_tools.py`(이어가기 다섯) · `tests/test_fieldsheet.py`(셋). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 v0.33 뒤 데이터 활용을 점검하다가 **내비가 일방통행을 모른다**는 것이 드러났다. `graph.ts` 가
 모든 엣지를 양방향으로 넣었고, 1:1000 중심선의 일방통행 1,176선 위에 우리 구간이 올라 있었다.
@@ -11382,7 +11541,7 @@ dependabot 은 파이썬 · 내비의 **메이저 판을 정기로 받지 않는
 
 > 2026-09-22 · 오창준
 
-강제자  `tests/test_shardseal.py`(넷 — 서술 칸 무시 · 모르는 칸은 찢음 · 옛 봉인 수용과 재기록 · 커밋 대장 새 지문) · `tests/test_publish_context.py`(여섯) · `web/navi/test/domain.test.ts`(건물 밑면) · `tests/test_batch_tools.py`
+강제자  `tests/test_shardseal.py`(넷 — 서술 칸 무시 · 모르는 칸은 찢음 · 옛 봉인 수용과 재기록 · 커밋 대장 새 지문) · `tests/test_publish_context.py`(여섯) · `web/navi/test/domain.test.ts`(건물 밑면) · `tests/test_batch_tools.py`. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 §215 배치가 verify 의 「파이프라인 전량」 에서 멈췄다(ingest FAIL 1종 — turn_restriction). 같은 자리에서
 사용자가 다섯을 더 냈다 —「받은 데이터 다 쓰고 있나(부족하면 또 구한다)」 · 「내비가 끊긴다」 ·
@@ -11476,7 +11635,7 @@ CI 전용)가 틀과 `web/README.md` 를 뺀다. README 의 「(해당 파트가
 
     닫힘   W11-1 · W3-5 · W3-2 · W3-3 · W4-2 · W3-9 · W7-3 · W3-15 · W3-18 · W8-1 · W9-4 · W9-5 · W3-13 · W10-1 · W5-1
 
-강제자  `tests/test_defect_evidence.py`  닫힘 줄의 ID 마다 그 닫힘을 지키는 시험이 트리에 있는가
+강제자  `tests/test_defect_evidence.py`  닫힘 줄의 ID 마다 그 닫힘을 지키는 시험이 트리에 있는가. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 217-1. W11-1 —— 회전제한은 원인 자리에서 멈춘다
 
@@ -11577,7 +11736,7 @@ PLAN §13 은 3행 → **2행**(W3-6 · W6-1 — 둘 다 막힌 이유가 행에
 (#48 커버리지 — 래칫이 섰다 · #49 휘발 구역 — 경로를 브라우저가 계산해 커밋되지 않는다 · #50 구간
 투영 · #61 건물 잘림 — 재현되지 않고 매 verify 가 바이트 대조한다). 새 행 0.
 
-강제자  `tests/test_defect_evidence.py` · 아래 절마다의 시험
+강제자  `tests/test_defect_evidence.py` · 아래 절마다의 시험. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  지난 배치의 빨강 셋(엄격 린트 · 표지 수정일 · 배포 그림)은 전부 **커밋한 뒤에만** 걸리는
 검사였다(`doc_fsck` ⑥ 은 커밋 날짜를, 그림 검사는 워크플로 목록을 본다). 커밋 전 부분 검사로 초록을
@@ -11717,7 +11876,7 @@ v0.35 뒤 첫 배치다. 멘토링(§219)이 든 화면 셋을 넣고, PLAN §13
 
     닫힘   W3-6
 
-강제자  `web/navi/test/clearance.test.ts` · `tests/test_golden_fp.py` · `tests/test_guards.py` · `tests/test_batch_tools.py`
+강제자  `web/navi/test/clearance.test.ts` · `tests/test_golden_fp.py` · `tests/test_guards.py` · `tests/test_batch_tools.py`. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  판정 지문이 바뀌는 배치는 **재잠금까지가 한 배치**다. 어제는 사람이 두 명령을 손으로 쳐야
 했고, 그 사이에 verify 를 돌리면 반드시 빨갛다. 배치 도구가 친다(`fl.sh --relock`).
@@ -11768,10 +11927,10 @@ datasets 가 13종이고, 좁은 관문은 FAIL 을 조용히 통과시킨다(10
     릴리즈      체크박스가 판정 지문만 본다 — v0.35 는 표출 파일 다섯이 준 것으로 「바뀐다」 에 찍혔다.
                 태그 물음에 태그를 그대로 치면 「예」로 받는다(어제 두 번 물었다)
 
-### 220-5. 문서는 넷뿐이다 — yaml 정본을 되돌린다
+### 220-5. 문서는 넷뿐이다 — yaml 정본을 되돌렸다
 
-이 배치가 §17-1(정본 표)과 측정 대장을 각각 `docs/SOURCES_OF_TRUTH.yaml` · `docs/MEASUREMENTS.yaml`
-이라는 **새 문서**로 냈다. 규칙 위반이다. 문서는 `docs/MASTER.md` · `docs/PLAN.md` ·
+이 배치가 §17-1(정본 표)과 측정 대장을 각각 `docs/SOURCES_OF_TRUTH.yaml` · `docs/MEASUREMENTS.yaml` 이라는 **새 문서**로 냈고 규칙 위반이라 둘 다 지웠다.
+문서는 `docs/MASTER.md` · `docs/PLAN.md` · 문서는 `docs/MASTER.md` · `docs/PLAN.md` ·
 `docs/DECISIONS.md` · `docs/proposal.docx` 넷이고 그 밖에는 `README.md` 만 둔다.
 
 <!--voice-ok-->
@@ -11801,7 +11960,7 @@ datasets 가 13종이고, 좁은 관문은 FAIL 을 조용히 통과시킨다(10
     닫힘   PLAN §1 #43 · #44
 
 강제자  `tests/test_docx_targets.py`(그림 선언 · 기획서 대조 · 변환기 없이 도는가) ·
-`tests/test_batch_tools.py::test_bot_prs_do_not_block_a_batch` · `tools/verify.sh` 「기획서 그림 ↔ 정본」
+`tests/test_batch_tools.py::test_bot_prs_do_not_block_a_batch` · `tools/verify.sh` 「기획서 그림 ↔ 정본」. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  「사람이 넣는다」 는 규율이 아니라 **미룸의 다른 이름**이다. 같은 파일을 기계가
 이미 고치고 있었으면 예외는 예외가 아니라 구멍이다.
@@ -11876,7 +12035,7 @@ v0.36 뒤 첫 배치다. **어제·오늘 두 번 「인스턴스만 잡고 족�
 
 강제자  `tests/test_batch_tools.py::test_pr_sweeps_read_the_author` ·
 `tools/verify.sh` 「죽은 강제자 참조」 · `tests/test_sources_of_truth.py`(열 사실 전부 `scan`) ·
-`tools/plan_renumber.py` 결번 대장 · `tests/test_declaration_sync.py::test_plan_retired_numbers_are_declared`
+`tools/plan_renumber.py` 결번 대장 · `tests/test_declaration_sync.py::test_plan_retired_numbers_are_declared`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  **고친 자리 옆을 안 본 것이 오늘 두 번 있었다.** 같은 물음을 치는 자리가 둘이면
 하나를 고치는 것은 고친 것이 아니다. 「같은 물음을 치는 자리를 전부 찾는 검사」가 족 가드다.
@@ -11985,7 +12144,7 @@ W6-1 의 전건이 「대장 `feeds` 산문 해소」다. `ledger_feeds --apply`
     닫힘   PLAN §1 #12
 
 강제자  `tests/test_ortho_seal.py`(여섯) · `tests/test_desk_tools.py`(열일곱) ·
-`tools/verify.sh` 「커버리지 래칫」 `COV_MIN=28`
+`tools/verify.sh` 「커버리지 래칫」 `COV_MIN=28`. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  **매번 다시 만드는 단계는 「느리다」가 아니라 「봉인지가 없다」다.** ingest 는
 2026-09-14 에 그것을 배웠는데(§164 · §165) 같은 규율을 옆 단계에 안 내렸다.
@@ -12074,6 +12233,8 @@ ingest 샤드 봉인지와 같은 방식을 이 단계에 내린다. 칸은 넷�
 「데이터 배포를 꼭 해야 하는 거임?? 시운전은 뭐야?」. 답을 찾으려고 워크플로
 여섯을 읽었더니 이름이 구조를 잘못 말하고 있었고, 그 줄을 당기니 봉인지의
 설계 구멍과 거짓 안내가 같이 딸려 나왔다.
+
+강제자  `tools/gate_parity.py`(워크플로 여섯 → 하나 뒤에도 로컬 ↔ CI 차집합이 없는가) · `tests/test_workflow_static.py` · `tools/pages_add_navi.py --check`(배포에 내비 빌드가 실려 있는가). 하위 일곱이 이 칸을 물려받는다
 
 ### 224-1. 배포 이름이 「배포 대상」처럼 읽혔다 — 실제로는 촉발 조건이었다
 
@@ -12164,6 +12325,8 @@ raw 는 2.5GB 다. 즉 **판정 비용이 원천 크기에 비례**했다.
 크기와 mtime 을 둘 다 맞추는 위변조는 `tools/acquire.py` 의 원천 대장(raw 전수
 sha256)이 맡는다. **여기는 봉인 판정이지 위변조 감사가 아니다.**
 
+강제자  `tests/test_shardseal.py`(봉인 네 칸 — `raw`·`cfg`·`code`·`out`) · `tests/test_rawdiff_code.py`. `raw_one()` 의 `(크기, mtime_ns)` 기억은 원천을 다시 안 읽게 하는 자리다
+
 ### 224-2a. 그리고 **ingest 를 고칠 수 없는 구조**였다 — `--reseal-code`
 
 위 고침을 넣으려는 순간 벽에 부딪혔다. `code` 칸은 ingest 가 import 하는
@@ -12188,6 +12351,8 @@ firelane 모듈 전부의 로직 지문이다. 이미 두 겹으로 좁혀 놨�
 ★ 이 명령은 **아무것도 빌드하지 않는 별도 프로세스**에서 돈다. 해시 버퍼
 1 MiB 말고는 아무것도 안 쥐므로, 빌드하다 터진 프로세스와 달리 메모리에
 여유가 있다. 기억표(§224-2)도 이때 채워진다.
+
+강제자  `tests/test_shardseal.py`(`--reseal-code` — `raw` 와 `out` 이 둘 다 봉인과 같은 레코드만 `code` 칸을 고친다) · `tests/test_golden_fp.py`(판정 닫힘 22개)
 
 ### 224-3. 안내가 **조건을 안 보고** 찍혔다 — 사람이 그 말을 따라 헛돌았다
 
@@ -12215,6 +12380,8 @@ ingest 가 OOM 으로 죽었는데 파이프라인이 이렇게 찍었다 —
 `pages_add_navi` 의 앵커가 한국어 주석이었던 것과 같은 자리다. 종료코드로 가른다.
 ★ 값의 정본은 `stagerun.ENOMEM_RC` **하나**다. `ingest` 가 내고 `pipeline` 이 읽는다.
 양쪽에 숫자를 박으면 그것이 곧 갈린다(MASTER §18-3).
+
+강제자  `tests/test_guards.py`(안내가 조건을 보고 찍히는가) · `src/firelane/stagerun.py::oom_exit`(메모리 사유일 때만 메모리 처방을 찍는다) · `src/firelane/pipeline.py`(rc 12·137 분기)
 
 ### 224-3a. 그 안내문을 `guards.py` 에 뒀다가 **golden 을 찢었다**
 
@@ -12253,6 +12420,8 @@ ingest 가 OOM 으로 죽었는데 파이프라인이 이렇게 찍었다 —
 맞다 — ingest 가 실제로 그 코드를 돌리기 때문이다. 그쪽은 §224-2a 의
 `--reseal-code` 가 받는다. **두 봉인의 답이 다른 것이 정상이다.**
 
+강제자  `tests/test_golden_fp.py::test_display_only_constants_are_outside_the_judgment_closure`(판정 닫힘 밖에 있어야 할 것이 안으로 들어오면 운다) · `tools/golden.py check`
+
 ### 224-4. 관제 범례가 없는 기능을 글로 약속했다
 
 범례 머리글이 「판정 (CV = 영상판정) · **눌러서 숨기기**」였다. 화면을 보면
@@ -12263,6 +12432,8 @@ ingest 가 OOM 으로 죽었는데 파이프라인이 이렇게 찍었다 —
 둘 다 고쳤다 — 문구를 「줄을 누르면 그 색만 지도에서 뺀다」로 바꾸고, 범례
 머리에 **진짜 접기 단추**를 달았다. 접었을 때도 「범례 · 레이어」라는 이름이
 남는다. 빈 막대만 남으면 다음 사람이 그것을 지우려고 한다.
+
+강제자  `tests/test_navi_wireframe.py`(범례가 약속한 동작을 실제로 하는가) · `web/navi/test/style.test.ts`
 
 ### 224-5. 초성 검색 — 「수천 건이면 부분일치로 충분하다」가 누구 사정이었나
 
@@ -12278,6 +12449,8 @@ ingest 가 OOM 으로 죽었는데 파이프라인이 이렇게 찍었다 —
 
 초성은 색인할 때 한 번만 만든다(`Poi.cho`). 한글 음절만 바꾸고 숫자 · 영문 ·
 기호는 그대로 둔다 — `GS25` 가 `GS25` 로 남아야 한다.
+
+강제자  `web/navi/test/domain.test.ts`(질의가 **전부 초성일 때만** 초성으로 찾는가 — `ㅇㅁㄷ` 로 아무것도 안 나와야 통과한다)
 
 ### 224-6. 실측 — 지도에 있는 점포 1,587개가 검색 색인에 없다
 
@@ -12305,6 +12478,8 @@ ingest 가 OOM 으로 죽었는데 파이프라인이 이렇게 찍었다 —
 **회랑 안 인접 대형 목적지**(조선대 · 전남대병원)가 색인에 있는지를 따로 봐야
 한다 — 출동 목적지는 동 경계를 안 지킨다.
 
+강제자 없음 — 사유: 실측 기록이다. 색인 수가 갈리면 `tools/docnum_check.py` 가 울고, 「1,587 누락」의 처분은 `PLAN #59` 가 든다. ★ 2026-09-24 정정 — 그 1,587 은 **동명동 경계 밖**이라 결함이 아니다(DECISIONS §183-1 이 목적지를 동명동으로 한정한다)
+
 ### 224-7. 이 배치가 PLAN 을 못 줄였다 — 그렇게 적는다
 
 §13 에 남은 행은 `W6-1` 하나이고 이 배치가 닫지 않았다. 닫으려면 전량 재실행 +
@@ -12315,3 +12490,2353 @@ golden 대조로 판정 불변을 증명해야 하는데, 파이프라인이 §2
 ★ 줄이지 못한 배치를 「줄였다」로 적지 않는다. 그 한 줄이 거짓이면 다음 사람이
 PLAN 을 안 믿게 되고, 안 믿는 계획은 없는 계획이다. 이 배치가 줄인 것은
 **워크플로 여섯 → 하나**와 **거짓 안내 하나**이고, 그것은 PLAN 의 행이 아니었다.
+
+강제자 없음 — 사유: 그 배치의 결산 기록이다. 「줄이지 못한 배치를 줄였다고 적지 않는다」는 규율이고, 수를 세는 자리는 `tests/test_declaration_sync.py::test_plan_section1_count_agrees` 와 `test_defect_ledger_counts_agree_everywhere` 다
+
+## 225. 도구가 「모른다」를 「빨강」으로 읽었다 — 릴리즈 절차 넷 (판정 불변)
+
+> 2026-09-24
+
+강제자  `tests/test_batch_tools.py`(계급 가드 넷) · `tests/test_seal_survives_squash.py::test_unread_seal_pr_is_left_alone`. 하위 여덟은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+2026-09-23 v0.38 릴리즈에서 도구가 **네 번** 틀렸다. 네 번 다 사람이 손으로
+수습했고, 네 번 다 **도구 쪽 결함**이었다. 「사람이 잘 하면 된다」로 넘기면
+다음 릴리즈에 또 난다 — 그래서 넷을 전부 도구로 되돌린다.
+
+### 225-1. GitHub 503 을 CI 빨간불로 읽고 PR 과 가지를 지웠다
+
+봉인 PR #196 의 검사 상태를 `gh pr checks` 로 묻는 동안 GitHub 가 503 을 냈다.
+`wait_checks` 는 갈래가 둘(초록·빨강)뿐이라 **읽지 못한 것을 빨강으로** 셌고,
+`gh pr close --delete-branch` 가 돌았다. **되돌릴 수 없는 일을 「모른다」를
+근거로 했다.**
+
+갈래를 셋으로 가른다 — `0 초록 · 1 빨강 · 2 못 읽음`. 2 는 **아무것도 안
+지운다.** PR 과 가지를 남기고, 사람이 볼 명령 셋을 찍고, 릴리즈는 계속한다
+(봉인은 기준선이지 관문이 아니다 · §207-2).
+
+「못 읽음」의 정의를 코드에 적는다 — HTTP 4xx·5xx · Service Unavailable ·
+Bad Gateway · timeout · connection reset · EOF · could not resolve · dial tcp ·
+rate limit. 이 중 하나가 보이면 20초 쉬고 **세 번까지** 다시 묻는다. 세 번 다
+못 읽으면 그때도 2 다.
+
+★ 검사 수가 **0건**인 것도 2 다. 종전에는 0건을 초록으로 셌다 — 워크플로가
+  아직 안 붙은 PR 과 전부 통과한 PR 이 같은 답을 냈다.
+
+### 225-2. 패치가 한 줄 때문에 통째로 거부됐다
+
+`git am` 이 3-way 없이 돌았다. `docs/DECISIONS.md:12065` 한 자리가 어긋나
+붙던 패치 전체가 `does not apply` 로 떨어졌다. `git am -3` 으로 바꿨다.
+패치는 **앞 배치가 같은 문서 끝에 절을 붙였다**는 이유로 거의 매번 이
+자리에서 어긋난다 — 3-way 는 그 경우를 위해 있는 기능이다.
+
+### 225-3. 도구가 자기가 안 만든 PR 을 사람 탓했다
+
+`merge_batch.sh` 가 「`part/infra` 가 dev 보다 앞서 있는데 열린 PR 이 없다 —
+PR 을 빠뜨렸다」로 멈췄다. 그 PR 은 **사람이 만드는 것이 아니라 이 도구가
+만드는 것**이다. 자기가 안 한 일을 사람에게 돌린 자기모순이다.
+이제 도구가 `.github/seal_pr_template.md` 로 본문을 짓고 `pr_body_check` 를
+태운 뒤 PR 을 열고, 그대로 머지 흐름으로 떨어진다.
+
+### 225-4. `Head branch is out of date`
+
+머지 직전에 다른 커밋이 base 에 들어가면 GraphQL 이 거부한다. 머지 **직전에**
+`git fetch` 하고 `headRefOid` 를 다시 읽어 `--match-head-commit` 으로 민다.
+`out of date` · `not mergeable` · `Base branch was modified` 는 세 번 재시도한다.
+
+### 225-5. 40분째에 나온 `Permission denied (publickey)`
+
+`wsl --shutdown` 뒤 ssh-agent 가 죽은 상태로 배치를 시작했고, verify 51단계를
+다 돌고 **밀 때** 처음 알았다. 1단계에 `git push --dry-run` 탐침을 넣는다 —
+보호 브랜치 거부는 정상(쓸 수 있다는 뜻)이고, 인증 실패면 그 자리에서
+`ssh-add` 명령과 함께 죽는다. **전제는 시작할 때 묻는다.**
+
+### 225-6. `set -e` 아래 `x=$(cmd); rc=$?` — 네 곳
+
+대입문의 종료코드가 곧 그 명령의 종료코드다. 그래서 `cmd` 가 실패하는 순간
+`set -e` 가 스크립트를 죽이고 **다음 줄의 `rc` 는 영영 안 읽힌다.**
+225-1 의 세 갈래를 짜면서 이 함정이 네 곳에 새로 들어갔다.
+전부 `if x=$(cmd); then rc=0; else rc=$?; fi` 로 바꿨고,
+`test_no_exit_code_read_after_assignment_under_set_e` 가 재발을 든다.
+
+### 225-7. 파괴 탐지기가 **안내문을 동작으로** 셌다
+
+「못 읽으면 아무것도 안 지운다」를 지키는 계급 가드를 세우자, 그 가드가
+`die "… gh pr close --delete-branch …"` 라는 **사람에게 보여주는 문자열**을
+파괴 동작으로 셌다. 안내문을 쓸수록 검사가 빨개지는 구조다.
+줄머리가 따옴표거나 `die|warn|ok|say|echo|printf` 면 건너뛴다.
+여러 줄 문자열 안은 줄머리로 안 걸러지므로 `_unquoted()` 가 겹따옴표 안을
+지운 뒤에 본다.
+
+### 225-8. `lakecheck` L7 — 쪼그라든 원본
+
+원본이 20MB 미만으로 줄어 있으면 내려받다 끊긴 것이다. 크기는 대장이 아니라
+**실물**이 답하므로 프로브가 잰다.
+
+
+## 226. 「범위가 이름보다 좁다」 — 일곱 번째에 족을 보이게 한다
+
+> 2026-09-24
+
+강제자  `tools/scopedecl.py` · `tests/test_scopedecl.py`(여섯). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+같은 결함이 일곱 번 났다 — `PLAN §13` W3-8 · W4-8 · W3-16 · W3-18 · W4-9 ·
+§197-1, 그리고 2026-09-24 의 `env_check`. 형태가 매번 같았다.
+
+    범위가 이름보다 좁고, 그것이 어디에도 선언돼 있지 않다.
+
+여섯 번을 「검사를 하나 더 만든다」로 대응했다. 그래서 강제자가 백예순이
+됐고, **그 백예순이 각자 같은 결함을 새로 낳았다.** 검사를 더 만드는 것으로는
+이 족이 안 죽는다.
+
+### 226-1. `env_check` 가 자기 머리말이 든 변수를 못 보고 있었다
+
+`tools/env_check.py` 머리말은 「새 변수를 코드에 넣고 `.env.example` 에 안
+적는다 — 오늘 `FIRE_LANE_INBOX` 가 그랬다」고 적고 있었다. 그런데 그 변수를
+쓰는 자리는 `tools/fl.sh` 와 `tools/inbox_fl.sh` **셸 둘**이고, 이 검사는
+`src/**.py` 와 `tools/**.py` 만 훑었다. **자기가 사례로 든 그 변수를 못 보는
+상태로 열흘을 돌았다.**
+
+셸까지 넓히자마자 결함이 하나 나왔다 — `FIRE_LANE_REPO` 가 `.env.example` 에
+없었다. 새 기계를 세팅하면 `fl.sh` 가 `$HOME/projects/fire-lane` 을 가정하고,
+저장소가 다른 자리에 있으면 **엉뚱한 곳에서 패치를 찾는다.** 열흘간 아무도
+몰랐던 이유는 두 기계 다 우연히 기본 경로였기 때문이다.
+
+★ 셸의 「단일 독자」 규율은 안 본다. 셸에는 `paths.py` 같은 접근자를 둘 방법이
+  없다 — 그 경계를 `밖` 칸에 적었다.
+
+### 226-2. `밖` 칸 · 자동 탐지 · 자기검사
+
+`tools/scopedecl.py` 가 셋을 든다.
+
+| | 묻는 것 | 방식 |
+|---|---|---|
+| ① | 강제자가 「이름이 시사하지만 안 보는 것」을 머리말에 적는가 | 래칫 153 · 내려가는 쪽으로만 |
+| ② | 디렉터리를 훑으면서 접미사로 거르는데 실물에 다른 접미사가 있는가 | **실측** |
+| ③ | 도구가 `--selftest` 를 갖는가 | 래칫 14 · 올라가는 쪽으로만 |
+
+①③ 을 래칫으로 두는 이유는 오늘 못 채운 것을 오늘 빨간불로 만들지 않기
+위해서다. ② 를 래칫으로 **안** 두는 이유는 반대다 — 파일 하나가 새로 생기면
+조용히 사각지대가 늘어나므로, 래칫으로 덮으면 래칫이 사각지대가 된다.
+
+② 가 처음 돌 때 6건을 냈고 그날 전부 닫았다. 넷은 좁은 것이 옳아서 `밖` 칸으로
+선언했고(`docx_check` · `docx_fix` · `test_layering` · `test_layers`), 둘은
+실제 결함이라 넓혔다(`env_check` 의 셸 · `widen` 의 `web/*.tsx` 21개와
+`*.html` 5개 — 내비 화면은 대부분 `.tsx` 라 정본 상수를 다시 정의해도 안
+걸리는 자리가 스물하나 있었다).
+
+### 226-3. 이 도구가 **거짓 발견을 안 내게** 만든 두 규칙
+
+처음 판은 43건을 냈고 그중 스물여덟이 `src/*.txt` 같은 곁다리였다. 도구가
+거짓말을 하면 사람이 도구를 안 믿고, 안 믿는 도구는 없는 것과 같다
+(2026-09-23 밤에 조사 도구 셋이 거짓 발견 셋을 내고 얻은 교훈이다).
+
+    ① 접미사를 **어디서도 입에 올리지 않을 때만** 운다
+       — 한 함수에서 훑고 다른 함수에서 거르는 것은 흔한 꼴이다.
+         이 규칙 하나가 거짓 5건을 없앴다(`doc_fsck` 가 `docs/*.md` 를
+         안 본다는 거짓이 그중 하나다).
+    ② 짝짓는 **단위는 함수 하나**다
+       — 모듈 전체를 한 단위로 보면 A 함수가 훑은 디렉터리와 B 함수가 건
+         접미사가 짝지어진다. §205 가 `deadcheck` ⑤ 에서 같은 것을 배웠다.
+
+세는 접미사는 사람이 쓰는 텍스트 열하나로 한정하고, 한 디렉터리에 셋 미만인
+접미사는 안 센다. 43 → 6 이 됐고 여섯은 전부 참이었다.
+
+### 226-4. `deadcheck` ⑤ 와 겹치지 않는다 — 직교한다
+
+`deadcheck` 의 ⑤ 「좁은 범위」는 **폴더** 축을 본다(`tests/` 만 훑고 `tools/` 를
+빠뜨렸는가). `scopedecl` ② 는 **접미사** 축을 본다(`tools/` 를 훑는데 `.sh` 를
+빠뜨렸는가). 둘은 서로를 대신하지 못한다 — `env_check` 는 ⑤ 를 통과하면서
+⑦번째 결함을 갖고 있었다. 정본이 둘이 아니라 축이 둘이고, 그 사실을
+`EXEMPT_SCOPE` 에 사유와 함께 적었다.
+
+### 226-5. 분모를 적는다 — 153
+
+`밖` 칸이 없는 강제자가 153개다. 이것이 **셀 수 있는 빚**이고, 래칫이
+오늘부터 늘지 못하게 든다. 「결함이 무한히 나온다」는 느낌의 정체는
+분모가 없다는 것이었다 — 분모가 서면 끝이 보인다.
+
+
+## 227. `W6-1` — §13 이 비었다 (판정 불변 증명)
+
+> 2026-09-24
+
+강제자  `tests/test_ledger_contract.py`(아흔하나) · `tests/test_defect_evidence.py::EVIDENCE`. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+2026-09-18 감사가 낸 47건의 **마지막 행**이 닫혔다. `PLAN §13-3` 표가 비었다.
+
+### 227-1. 전건이 이미 닫혀 있었다
+
+W6-1 은 「전건 — 대장 `feeds` 43종 산문 해소」로 막혀 있었고, §204 가 그
+포인터를 유령이라고 정정하면서 실물은 **산문 45 · 구조 29** 라고 다시 셌다.
+2026-09-24 에 실측했더니 **산문 0 · 구조 72** 였다. `tools/ledger_feeds.py --apply`
+가 그 사이에 돌았고 **아무도 W6-1 의 전건 칸을 안 지웠다.**
+
+★ 막힌 행은 막은 것이 치워져도 스스로 열리지 않는다. 전건을 적을 때는
+  **누가 그것을 닫으면 이 행이 열린다**까지 적어야 한다.
+
+### 227-2. Pandera 로 옮긴 것과 **안 옮긴 것**
+
+옮긴 것은 셋이다 — `required_cols` · `rows`(±허용폭) · `scope_min`.
+셋 다 데이터프레임의 성질이고 `pandera.DataFrameSchema` 가 원래 가진 기능이다.
+
+안 옮긴 것도 셋이고, `contract.py` 머리말의 `밖` 칸에 적었다.
+
+    ① 파일 인코딩      데이터프레임이 되기 **전**의 성질이라 스키마에 못 적는다
+    ② zip 안 레이어    파일시스템 물음이다
+    ③ 컬럼 **추가**    Pandera 의 `strict` 는 추가를 실패로만 다룰 수 있고
+                       경고가 없다. 추가는 실패가 아니다
+
+★ 표준으로 옮기는 일의 절반은 **옮기지 않을 것을 고르는 것**이고, 그 경계를
+  안 적으면 다음 사람이 「왜 반만 했나」를 묻는다. 지금은 `밖` 칸이 그 자리다.
+
+### 227-3. 「같게 짰다」가 아니라 「같은 답을 낸다」
+
+W6-1 의 수용 조건은 「불변」이 아니라 **「불변 증명」**이었다 — 계약은 판정
+상류라 받아들이는 행이 한 건 달라지면 구간 1,281 이 움직인다.
+
+그래서 **옛 판정을 시험 안에 박제했다**(`hand_verdict`). 옮기기 전 `check_one`
+에서 그대로 떼어 온 코드이고, 같은 입력에 같은 답을 내는지 매 실행 대조한다.
+경계 아흔한 가지 — 건수 12×5 · 스코프 6×3 · 컬럼 6 · 셋이 함께 4 — 전부 같았다.
+
+    옛  lo, hi = want*(1-tol), want*(1+tol);  if not (lo <= len(d) <= hi)
+    새  pa.Check(lambda d: lo <= len(d) <= hi, name="rows", error=…)
+
+닫힌 구간도 허용폭 기본 0.30 도 한 글자 안 바뀌었다.
+
+### 227-4. 0행을 **프로브의 죽음**으로 읽던 검사
+
+`test_defect_ledger_counts_agree_everywhere` 가 `assert rows` 로 시작했다.
+행이 0이면 「§13-3 에서 행을 0개 찾았다」로 빨개진다 — 그런데 **0행은 이 절이
+노리던 목표 상태**다. 목표에 닿는 날 관문이 빨개지는 검사는 그날 꺼진다.
+`deadcheck` 가 2026-09-21 에 같은 것을 배웠다(「② 손목록이 제 일을 다 해서
+0건이 된 바로 그날 봉인이 막혔다」).
+
+이제 **표 머리**가 있는지를 본다. 머리가 사라졌으면 절을 지운 것이고, 머리가
+있는데 행이 0이면 빚이 없는 것이다. 둘은 다른 사건이다.
+
+★ §13-3 표가 비어도 절을 지우지 않는다. 결함은 다시 자란다 — 2026-09-19 에
+  W9 다섯이 들어왔다. 빈 표는 **지금 빚이 없다**는 선언이다.
+
+### 227-5. `uv.lock` — 왜 재잠금이 한 번 필요한가
+
+`pandera` 가 의존성에 들어가므로 `uv.lock` 이 바뀐다. 그 파일은 판정 지문
+22개 중 하나다(§220) — geopandas·shapely 판이 바뀌면 판정이 바뀔 수 있으므로
+일부러 넣어 둔 것이다. 그래서 이 배치는 `--relock` 이 붙는다.
+
+★ **산출물이 움직이면 그때는 멈춘다.** `fl.sh` 4b 가 재실행 뒤
+  `data/processed/segments.geojson` 과 `seg_uid_map.csv` 의 diff 를 보고,
+  움직였으면 「이 배치는 배선이 아니라 측정이다」로 죽는다. 재잠금은
+  **지문이 바뀌는 것**을 받아들이는 것이지 **판정이 바뀌는 것**을 받아들이는
+  것이 아니다.
+
+닫힘  W6-1
+
+## 228. 분모가 0 이 됐다 — 강제자 칸 282절 전수
+
+> 2026-09-24
+
+강제자  `tools/dms.py`(`scan` 이 매 실행 분모를 낸다 · `verify` 가 지목된 검사의 실재를 본다) · `tests/test_dms_ids.py`
+
+「검사가 부족한가」를 묻는 유일한 재현 가능한 값이 `dms` 의 **blank** 다.
+2026-09-23 밤에 282였고 2026-09-24 에 **0** 이 됐다.
+
+    문서            9-23   지금     방식
+    MASTER.md         86      0     아홉 배치. 58절이 강제자를 지목했다
+    PLAN.md           48      0     25절이 「아직 안 한 일」 · 17절은 지금 지켜지는 것이 따로 있었다
+    README.md          3      0     셋 다 MASTER 의 사본이었다
+    DECISIONS.md     145      0     일곱 배치. 과거 기록이어도 **누가 지키나**는 적는다
+
+★ **DECISIONS 를 「과거니까 강제자가 필요 없다」로 넘기지 않았다.** 그 문서의
+  서술 규약이 이미 「필수 요소 — 무엇을 했나 · 왜 그렇게 판단했나 · **누가
+  지키나**」이고 「강제자가 없다는 사실 자체가 기록이어야 한다」고 적고 있다.
+  규약을 고쳐 분모를 줄이는 것과 분모를 채우는 것은 다른 일이다.
+
+★ 읽으면서 **세 가지가 새로 드러났다** —
+    ① 없는 검사를 강제자로 든 절 26(§229)
+    ② `dms` 자신의 오분류 8(§228-1)
+    ③ 「아직 안 한 일」에도 강제자가 붙어 있는 자리 17(PLAN)
+  ③ 이 제일 뜻밖이었다. `📄` 는 「구현이 없다」는 뜻이지 「검사가 없다」가
+  아닌데, 그것을 안 적어두면 다음 사람이 「아무도 안 본다」고 읽고 고친다.
+
+### 228-1. 분모를 세는 도구가 분모를 틀리게 셌다
+
+`NONE_ANY = 없음|없다` 를 칸 **아무 데서나** 찾았다. 그래서 강제자를 제대로
+지목하면서 범위를 덧붙인 칸이 `none` 으로 세어졌다 —
+
+    강제자  `tests/test_x.py::test_y`. 나머지 수는 실측값이라 대조 도구가 없다
+                                                                ^^^^^^
+
+실측 8건. 넷은 2026-09-17 부터 그 상태였다. 방향이 **wired 를 줄이는 쪽**이라
+「강제자가 있는 절」이 실제보다 적어 보였다 — **좁아지는 쪽으로 망가지는
+프로브는 아무도 모른다**(§190 과 같은 형태). 줄머리 앵커로 고쳤다.
+
+
+## 229. 강제자 칸이 지목한 **검사**가 실재하는지 한 번도 안 봤다
+
+> 2026-09-24
+
+강제자  `tools/dms.py::_missing_member` · 같은 파일 `--selftest` 의 「실재하는 파일 + 없는 함수」 카나리아. 하위 둘은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`dms verify` 는 「칸이 지목한 이름이 실재하는가」를 묻는다. 그런데
+`tests/test_guards.py::없는함수` 를 **초록으로 통과시켰다** — 규칙 ⑤ 가
+파일만 보고 `::` 뒤를 안 봤다.
+
+    if {leaf, stem, head} & files:      # ⑤ 파일 참조
+        continue                        # ← 여기서 끝났다
+
+칸이 지목하는 것은 파일이 아니라 **검사**다.
+
+### 229-1. 26건 중 22건이 하나였다
+
+`tests/test_doc_fsck.py::test_plan_has_no_closed_items` 를 §123~§143 과 §148
+이 강제자로 들고 있었다. **그 함수는 없다.** 현재 이름은
+`test_plan_status_vocabulary_is_closed` 다.
+
+★ `dms.py` 제 머리말이 이렇게 적고 있었다 — 「§123~143 스물한 절이 **없는
+  검사를 강제자로 들고 있었는데** 어떤 검사도 안 잡았다. 사람이 눈으로 봤다.」
+  **적어만 두고 잡지는 못했다.** 그 사실을 적은 도구가 그 사실을 못 봤다.
+
+### 229-2. 고치자마자 둘을 새로 만들었고 새 검사가 잡았다
+
+같은 배치에서 강제자 칸을 282개 적었다. 그중 둘이 없는 함수였고
+(`test_direct_stage_call_warns` · `test_entry_point_is_cwd_independent`)
+**새로 붙인 검사가 그 자리에서 잡았다.** 검사가 없었으면 282개를 적는 동안
+몇 개를 더 만들었을지 알 수 없다 — 사람이 많이 적을수록 틀릴 확률이 오른다.
+
+
+## 230. 목표에 닿는 날 빨개지는 검사 — 세 번째
+
+> 2026-09-24
+
+강제자  `tools/dms.py --selftest`(합성 입력으로 생사를 본다) · `tests/test_declaration_sync.py::test_defect_ledger_counts_agree_everywhere`. 하위 한 절은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+같은 형태를 하루에 두 번 더 만났다.
+
+    2026-09-21  deadcheck ②  손목록이 59 → 0 이 된 **그날** 봉인이 막혔다
+    2026-09-24  §13 결함 대장  `assert rows` — 0행이 목표인데 0행이면 빨갛다
+    2026-09-24  dms selftest  「blank 가 0 이면 판정이 무르다」 — 0 이 목표다
+
+셋 다 **실제 트리의 수로 프로브의 생사를 판정**했다. 그러면 프로브가 제 일을
+다 한 날 관문이 빨개지고, 그때 사람은 검사를 끈다. 끈 문턱은 없는 것과 같다.
+
+★ **생사는 합성 입력이 증명한다.** 일부러 결함을 심은 입력에서 울면 살아
+  있는 것이고, 그러면 실제 트리의 0 은 **청결**이다. `deadcheck` 의
+  `CONTROLS` 가 2026-09-21 에 간 길이고 나머지 둘도 그리로 보냈다.
+
+### 230-1. 남은 의심은 `inherit` 281 이다
+
+분모(blank)가 0 이 됐으므로 이제 의심은 **물림**에 있다. `###` 는 부모 `##` 의
+칸을 물려받는데 **그 가정은 검증된 적이 없다.** 실제로 `MASTER §12` 에 칸을
+적자 자식 열하나가 한 번에 빠졌고, 그 칸은 §12-8a(매체 저장)도 §12-11(한글
+파일명)도 안 덮었다 — 그래서 자식에도 제 칸을 따로 적었다.
+
+`dms scan` 이 이제 물림을 둘로 갈라 찍는다.
+
+    ★ 물림(inherit) = 281   부모가 **덮는다고 적은 것** 65 · 아무 말 없는 것 216
+
+★ 216 이 다음 분모다. 줄이는 방법은 둘이다 — 부모 칸에 「하위 N 이 이 칸을
+  물려받는다」를 **적거나**, 안 덮이는 자식에 제 칸을 적거나. 어느 쪽이든
+  **가정이 선언으로 바뀐다.**
+
+★ 2026-09-24 에 **0 이 됐다**(§241). 둘 다 썼다 — 아홉 절에 제 칸을 달고
+  나머지 부모에 **수를 적은** 선언을 달았다. 수를 적게 한 것이 핵심이다.
+  선언만으로는 하위 절이 늘어도 조용하지만, 수는 어긋나면 운다.
+
+## 231. 기획서를 PDF 로 굽는다 — 「확인할 방법이 없다」가 틀렸다
+
+> 2026-09-24
+
+강제자  `tools/proposal_pdf.py`(쪽수 · 본문 한글 줄 · 판정 수치 · 그림 수) · `tests/test_proposal_pdf.py`(여덟 — 네 갈래가 전부 우는가). 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`web/proposal.html` 이 `.docx` 를 브라우저에서 `docx-preview` 로 그렸다.
+그 선택의 근거가 이렇게 적혀 있었다 —
+
+    변환 단계를 두지 않는다. PDF 로 굽으면 "굽는 과정에서 깨졌나" 를
+    의심할 자리가 하나 생기고, **그 의심을 확인할 방법이 없다.**
+
+앞 절반은 옳고 **뒤 절반이 틀렸다.** `pdfinfo` 로 쪽수를, `pdftotext` 로
+본문 글자를, `pdfimages` 로 그림을 센다.
+
+그리고 **안 구우면 다른 의심이 생긴다** — 실물이 그랬다. 브라우저 렌더러가
+글꼴을 치환하고 그림 배치를 제 방식대로 해서 화면에서 무너졌다.
+**제출본과 화면이 이미 갈려 있었다.** 굽지 않는 선택이 지키려던 바로 그것이
+지켜지지 않고 있었다.
+
+★ PDF 가 이기는 이유가 하나 더 있다 — **글꼴을 파일 안에 넣는다.** 받는
+  기계에 한글 글꼴이 없어도 같게 보인다. `.docx` 를 브라우저가 그리면 그
+  기계의 글꼴에 의존한다.
+
+### 231-1. 네 축으로 센다 — 그리고 굽기 **전에** 하나를 더 본다
+
+    ① 한글 글꼴   `fc-list :lang=ko`   ★ 굽기 전에 본다
+    ② 쪽수        pdfinfo              하한 40 (실측 63)
+    ③ 본문        pdftotext            한글 줄 하한 800 (실측 2,255) + 판정 수치
+    ④ 그림        pdfimages            하한 8 (실측 43)
+
+★ ① 이 제일 중요하다. 한글 글꼴이 없으면 LibreOffice 가 본문을 **네모로**
+  굽는데 **글자층은 멀쩡하다.** ②③④ 가 전부 초록인 채로 읽을 수 없는 PDF 가
+  나간다 — 그래서 굽기 전에 막는다. CI 액션이 `fonts-noto-cjk` 를 깐다.
+
+★ 판정 수치는 `docx_check._canon()` 을 **불러서** 쓴다. `golden` 지문이 정본이고
+  이 도구에 숫자를 적지 않는다 — `tests/test_proposal_pdf.py` 가 그 도구 코드에
+  판정 수치 literal 이 있으면 운다(`selftest()` 의 합성 픽스처는 뺀다).
+
+### 231-2. 로컬은 최선, CI 는 필수
+
+변환기가 없는 기계에서 `serve.py` 로 화면을 보려는 사람을 libreoffice 설치
+앞에서 막지 않는다. `stage_pages.py` 가 로컬에서는 경고하고 넘어가고, 뷰어는
+PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어본다).
+`GITHUB_ACTIONS=true` 면 같은 자리가 실패다.
+
+★ **「못 지키는 문턱은 끄게 된다」의 반대 처방이다.** 문턱을 무르게 만든 것이
+  아니라 **지킬 수 있는 자리에만 세웠다** — 배포되는 것은 CI 가 구운 PDF 하나뿐이다.
+
+### 231-3. 고치면서 잡은 것 셋
+
+    ① `tests/test_tools_are_wired.py::call_sites` 가 `f.endswith(name)` 로
+       호출자에서 파일을 뺐다. **`tests/test_proposal_pdf.py` 가
+       `proposal_pdf.py` 로 끝나므로 그 도구의 시험이 통째로 빠졌고**,
+       도구가 제 시험 하나로만 배선돼 있으면 「아무 데서도 안 부른다」가 났다.
+       빼야 하는 것은 **도구 자신**이지 이름이 그것으로 끝나는 파일이 아니다.
+    ② 내가 쓴 시험 둘이 **제 주석·독스트링을 코드로 읽었다** — 뷰어 HTML 의
+       `<!-- … docx-preview … -->` 이력과 `selftest()` 의 합성 숫자.
+       같은 구멍을 이 저장소가 2026-09-20 · 09-21 · 09-24 에 각각 앓았다.
+    ③ `sys.path.insert` 를 두 곳에 썼다가 `test_layering` 이 잡았다.
+       같은 `tools/` 안이라 조작이 필요 없었다.
+
+## 232. 자차를 실측 크기 상자로 놓는다 — 줌마다 크기가 바뀌던 것
+
+> 2026-09-24
+
+강제자  `web/navi/test/egobox.test.ts`(여덟 — 치수 · 방위 · 제원 없을 때 · 전폭 대 필요폭) · `web/navi/test/style.test.ts`. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+자차 표시가 DOM 마커(SVG)였다. DOM 마커는 **화면 픽셀**로 그려지므로 줌이
+바뀌면 차와 길의 비율이 바뀐다 — 줌 아웃에서 차가 골목을 통째로 덮고, 줌
+인에서 점이 된다. **「이 차가 이 골목에 들어가나」를 눈으로 가늠할 수 없다.**
+그것이 이 화면의 존재 이유인데.
+
+`fill-extrusion` 으로 놓으면 좌표가 **미터**다. 줌·피치와 무관하게 실제
+비율이 유지되고 높이도 실제 전고가 된다. 펌프차(중형)는 2.5 × 8.0 × 3.2m 다.
+
+### 232-1. 제원이 없으면 상자를 안 놓는다
+
+`fleet.json` 열 편성 중 전장·전고가 있는 것은 **셋**뿐이다(`pump-js` ·
+`pump-di` 8.0×3.2 · `chem` 9.0×3.4). 없는 차에 기본값을 주면 **없는 숫자를
+그림으로 주장하는 것**이다. `egoBox()` 가 `null` 을 내고 화면은 종전 납작
+마커로 남는다 — `canTurn` · `offtracking` 이 미검증 값으로 안 막는 것과 같은
+규율(§81 · §86-4).
+
+★ **둘을 같이 띄우지 않는다.** 같은 차가 두 크기로 보이면 어느 쪽이 실제인지
+  화면이 거짓말한다. 상자가 서면 마커를 뗀다.
+
+### 232-2. 상자 폭은 전폭이지 필요폭이 아니다
+
+판정에 쓰는 `requiredWidth` 는 전폭 2.5 + 여유 0.5 = 3.0m 이고, **그 여유는
+사람이 내릴 공간이지 차체가 아니다.** 상자를 3.0 으로 그리면 화면이 차를
+실제보다 넓게 주장한다. 시험이 그 경계를 든다 — 상자 폭이 필요폭에 가까우면
+운다.
+
+### 232-3. 범례가 **말하지 않은 것**을 적는다
+
+판정 색은 도면에서 잰 **정적 폭 조건**이고 지금 그 골목에 차가 서 있는지는
+안 본다. 회색 399가 그 사실을 이미 말하고 있는데 **초록·주황·빨강에는 그
+말이 없었다.** 초록을 「지금 갈 수 있다」로 읽으면 관제가 화면을 잘못 믿는다.
+범례 아래 한 줄로 적었다.
+
+★ 「무엇을 말하는가」보다 **「무엇을 말하지 않는가」**를 적는 것이 이 저장소가
+  반복해 배운 것이다 — `route_usage` 가 통행 가능성이 아니라는 것(§3-10) ·
+  소방서 대조가 검증이 아니라는 것(§4-1) · 강제자의 `밖` 칸(§226).
+
+## 233. 상시 경고 일곱을 없앴다 — 그리고 토큰이 새는 자리를 찾았다
+
+> 2026-09-24
+
+강제자  `tests/test_refcheck_paths.py`(여덟 — 넘기는 갈래마다 **넘기면 안 되는 짝**을 같이 든다) · `tools/refcheck.py` ⑦. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`refcheck ⑦` 이 문서에 적힌 경로가 실재하는지 본다. 넘겨야 할 것 셋을 안
+넘겨서 **경고 일곱이 상시로 떠 있었다.** 상시 경고는 아무도 안 읽는다 —
+그러면 진짜 경고가 왔을 때도 안 읽는다.
+
+    ① 기계마다 있는 파일   `web/navi/.env.local` — gitignore 된 자리다
+    ② 예시 이름           `tools/x.py 를 참고할 것` — 자리표다
+    ③ 「그때 그랬다」       `종전` · `당시` · `옛` 이 든 줄
+
+### 233-1. ①을 고치다 **토큰이 새는 자리**가 나왔다
+
+`.gitignore` 가 `.env` 만 막고 **`.env.local` 을 안 막았다.** 그 파일은
+`web/navi` 의 `VITE_MAPBOX_TOKEN` 이 사는 자리이고(§216-5 가 그 경로를
+문서로 적는다), 막히는 층이 `tools/commit_policy.py` **하나**였다.
+훅은 `--no-verify` 로 건너뛸 수 있다 — **락이 3중인 이유가 이것**이고
+(MASTER §12-9) 제일 싼 층이 `.gitignore` 다. `.env.local` · `.env.*.local`
+두 줄을 더했다.
+
+★ 이 결함은 **경고를 없애려다** 나왔다. 상시 경고를 치우는 일이 잡음
+  청소가 아니라 **가려져 있던 것을 드러내는 일**이었다.
+
+### 233-2. 넘기는 규칙은 **넓어지는 쪽으로 망가진다**
+
+좁아지면 시끄럽고, 넓어지면 **죽은 참조가 조용히 통과한다.** 후자가 이
+검사가 막으려던 바로 그것이다. 그래서 시험이 넘기는 갈래마다 짝을 든다 —
+
+    `_ignored` 가 아무거나 참이 아닌가      README.md · docs/MASTER.md 로 확인
+    예시 이름이 실제 도구를 삼키지 않는가    `tools/*.py` 전량과 대조
+    존재 확인이 넘기기보다 **앞**에 있는가   순서가 뒤집히면 있는 경로도 넘어간다
+    합성 죽은 참조를 실제로 우는가           없는 도구 이름을 넣었다 뺀다
+
+### 233-3. `PLAN #23` 이 **자기 경고 둘을 스스로 끄고 있었다**
+
+그 행이 「`삭제`된 스크립트」와 두 경로(평가지표 산출물 · CV 파트 README)를 **한 줄에** 들고 있어서, 행을 지우면 경고 둘이
+되살아나는 구조였다(§162). 둘 다 다른 이유로 정당하게 넘어간다 —
+앞은 `data/processed/*.json` 이 gitignore 된 생성물이고, 뒤는 그 줄이
+「없다」고 적는 자리다. 행을 지우고 번호 `#23` 을 결번으로 남겼다.
+
+★ 중간에 「아직 안 만든 것」 전용 표시(`<!--아직-->`)를 만들었다가 **도로
+  걷었다.** 쓰는 자리가 0 이었다 — 쓰는 곳 없는 기구는 죽은 면제이고,
+  이 저장소가 `EXEMPT` 에서 반복해 배운 것이다. 필요해지면 그때 만든다.
+
+## 234. PLAN 에서 **결정이 끝난 다섯 행**을 걷었다
+
+> 2026-09-24
+
+강제자  `tests/test_declaration_sync.py::test_plan_section1_count_agrees` · `tools/plan_renumber.py`(결번 대장 ↔ 실물). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`PLAN` 은 **빚 목록**이다(§0-2). 갚은 빚은 목록에 없고, **결정이 끝난 것도
+빚이 아니다.** 그런데 다섯 행이 스스로 「결정은 끝났다 · 지금 하지 않는다」
+라고 적은 채 남아 있었다. 남은 일을 세면 다섯이 부풀고, 부푼 수를 보면
+사람은 목록을 안 읽는다.
+
+★ **행을 지우면서 사유를 여기로 옮긴다.** PLAN 에서 지운 것이 사라지면
+  같은 물음이 반년 뒤 다시 올라온다 — 그것이 이 문서가 있는 이유다.
+
+### 234-1. `#24` `contract-strict` — 결함이 아니라 결정이었다
+
+제목이 「저장소 전체를 잠갔다」인데 **2026-09-02 이후 매번 초록**이다.
+본문의 1,291건은 `.ruff-strict.toml` 이전 수치다. 남은 것은 `ignore` 목록의
+범위 판단 하나였고, **그 판단은 그 파일 머리말이 이미 적고 있다** — 여덟을
+끄는 이유가 규칙마다 한 줄씩 있다(한글 전각 셋 · `PTH123` 표준 관용 ·
+`RUF005/007/059/100`). 정본이 그 파일이고 PLAN 이 그것을 다시 물을 자리가
+아니다.
+
+★ **`--select ALL` 로 안 간다**(2026-08-30 재측정). 1,694건 중 상위 다섯이
+  전부 오탐이었다 — 켤 것을 고르는 쪽이 끌 것을 나열하는 쪽보다 적다.
+
+### 234-2. `#35` CI 에 LLM 에이전트 — **안 붙인다**
+
+게이트 자리에는 안 붙인다(근거 넷은 그 행이 이미 적었다 — 비결정성 ·
+빨간불 이유가 매번 다름 · 근거를 못 되짚음 · 드리프트를 디버깅할 사람이 없음).
+붙일 자리로 좁혀졌던 **릴리즈 브리핑**도 안 만든다 — 재료인
+`tools/release_brief.py` 가 판정·계보·대장·계약 넷의 차이를 **결정론적으로**
+내고, 그 표가 이미 사람이 읽을 만큼 낸다. **요약 한 문단을 얹어 얻는 것보다
+「그 문단이 맞나」를 매번 의심하는 비용이 크다.**
+
+★ 되돌릴 조건 — 브리핑을 읽는 사람이 **저장소 밖**에 생기고(심사위원 ·
+  타 파트), 그 사람이 차이표를 못 읽을 때. 지금은 읽는 사람이 릴리즈
+  매니저 하나다.
+
+### 234-3. `#36` 검사마다 재스캔 — **안 고친다**
+
+`refcheck`·`treecheck`·`doc_fsck`·`docnum_check` 가 각자 트리를 스캔한다.
+`treecheck --json` 을 나머지 셋이 읽으면 스캔이 한 번이 된다. **하지 않는다** —
+하루짜리이고 남은 사람이 이해할 코드가 하나 더 는다. 브로커나 API 가 아니라
+**인덱스 한 벌**이면 되는 문제라는 사실을 여기 적어 둔다.
+
+★ 되돌릴 조건 — 전수 검사 시간이 사람이 기다리기 싫은 선을 넘을 때.
+  2026-09-24 실측으로 넷을 합쳐 5초 미만이다.
+
+### 234-4. `#37` 그림 배치 — **안 옮긴다**
+
+구조 그림 둘의 박스 좌표를 코드가 정한다(`x = 60 + i*200`). Graphviz `dot`
+으로 옮기면 배치를 엔진이 맡지만 의존이 하나 늘고 CI 설치가 필요하다.
+**노드가 고정이다** — 브랜치 넷 · 배포 다섯. 넘침은 `_fits()` 가 잡는다(§111).
+
+★ 가는 조건 셋 중 **둘 이상**일 때 옮긴다 — ① 구조 그림이 넷을 넘는다
+  ② 한 그림의 노드가 여덟을 넘는다 ③ `_fits()` 가 배치 손보기로 안 풀린다.
+  `dot` 은 출력이 결정론적이라 `--check` 지문 대조가 그대로 산다 —
+  그것이 Mermaid 대신 `dot` 인 이유다.
+
+### 234-5. `#46` `dupcheck` 인라인 표현식 — **축을 안 만든다**
+
+함수 단위로만 지문을 낸다. 곡선 중점 `interpolate(0.5, normalized=True)` 가
+두 곳에 인라인으로 있었고 축 밖이었다 — 사람이 `grep` 으로 찾았다.
+인라인 축을 만들면 **표현식 하나짜리 사본군이 수백 개 나온다**(실측 전에
+그렇게 될 것이 뻔한 이유 — 파이썬의 관용구가 곧 사본으로 세어진다).
+필요해질 때 정한다.
+
+★ 되돌릴 조건 — 인라인 사본이 **판정을 가른 사고**가 한 번 더 날 때.
+  지금까지 한 번이고, 그때도 잡은 것은 사람이었다.
+
+## 235. 「상가 1,587건 누락」은 결함이 아니었다 — 범위를 모르는 도구가 낸 판정
+
+> 2026-09-24
+
+강제자  `tests/test_dest_scope.py`(셋 — 넘침 · 모자람 · 빈 그물) · `web/navi/test/domain.test.ts`. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+2026-09-23 밤에 조사 도구가 이렇게 냈다 —
+
+    지도에 찍히는 상가 2,106건 중 검색 색인에 든 것이 519건뿐이다.
+    **1,587건이 빠졌다.**
+
+그것이 `PLAN #59` 의 남은 일로 올라갔다. **결함이 아니었다.**
+
+### 235-1. 동명동 경계 폴리곤으로 다시 쟀다
+
+    지도 상가 poi   2,106   동명동 **안** 519 · **밖** 1,587
+    검색 색인 상가     521   동명동 **밖** 0
+    동명동 안인데 색인에 없는 이름      **0**
+
+`DECISIONS §183-1` 이 목적지를 **동명동 경계 안**으로 한정한다. 지도는
+표출 스코프(동명동 + 접근 회랑)를 그린다. **그 차이가 정확히 1,587 이다.**
+
+### 235-2. 왜 그 도구가 틀렸나 — 수는 맞게 세고 결론이 틀렸다
+
+**경계를 안 읽고 수만 셌다.** 두 수가 다르다는 것은 관측이지만 「빠졌다」는
+판정이고, **판정에는 범위가 필요하다.** 같은 날 같은 형태로 셋이 났다(§226) —
+`stem` 칸을 안 읽은 것 · 대장을 아예 안 읽은 것 · 그리고 이것.
+
+★ 처음 다시 쟀을 때도 한 번 더 틀렸다. `boundary_emd.geojson` 이 **동구
+  전체 27개 동**의 경계라 27개를 통째로 합쳐 「안」을 판정했고, 그 판에서는
+  2,104가 「안」이라 **결함이 되살아났다.** 동명동 하나만 뽑아야 519 가 나온다.
+  **범위를 잘못 잡으면 같은 데이터가 정반대 결론을 낸다.**
+
+### 235-3. 그래서 시험을 세운다 — 양방향으로
+
+관측을 판정으로 만드는 것은 **범위 선언**이고, 선언은 실행돼야 한다.
+
+    넘치지 않는가   색인에 동명동 **밖**이 있으면 운다
+    모자라지 않는가  동명동 **안** 상가가 색인에 없으면 운다
+    빈 그물 아닌가   지도·색인의 차이가 100건 미만이면 앞 둘이 아무것도 안 든 것이다
+
+★ 「모자라지 않는가」가 진짜 결함을 잡는 쪽이다. 사용자가 화면에서 보는
+  가게를 검색창에 쳐서 안 나오면 그것이 결함이고, 지금은 0 건이다.
+
+### 235-4. 같은 자를 대고 둘을 더 쟀다 — 둘 다 결함이 아니었다
+
+    관공서   `civil_office` 64건 중 **동명동 안이 정확히 2**
+             (동명동행정복지센터 · 광주서석초등학교). 색인 2건과 같다
+    아파트   `조대명품타운 104동` · `105동` 이 **각각 산다.** 같은 도로명주소가
+             둘 이상인 주소는 4개(8행)이고 전부 서로 다른 건물이다
+
+★ 아파트 쪽에서 **이름만으로 유일성을 보면 안 된다**는 것이 나왔다 —
+  `주건축물제1동` 은 건축물대장의 **일반 라벨**이라 다른 주소의 다른 건물이
+  같은 이름을 갖는다. 실제로 둘 있다. 유일한 것은 `(이름, 주소)` 짝이다.
+  처음 쓴 시험이 이름만 보고 빨개졌다 — **같은 병(범위를 좁게 잡음)을 시험
+  안에서 한 번 더 앓았다.**
+
+★ `PLAN #59` 에 남은 것은 이제 **범위 물음 하나**다 — 회랑 안 인접 대형
+  목적지(조선대 · 전남대병원)를 색인에 넣을 것인가. 출동 목적지는 동 경계를
+  안 지킨다. 넓히려면 §183-1 을 먼저 고친다.
+
+---
+
+## 236. 「도구가 못 고친다」로 적힌 행은 전제가 바뀌어도 아무도 다시 안 본다
+
+> 2026-09-24
+
+강제자  `tests/test_figure_xsec.py`(일곱) · `tests/test_figure_fit.py`(원 넷) · `tools/docx_figs.py --check`. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+기획서 [그림 13] 의 캡션은 2026-08-31 에 **「평면교차점 실형상 제외」**로 고쳐졌다.
+**그림은 안 고쳐졌다.** 반경 5m 원 하나만 그린 채로 석 주를 서 있었고, 캡션과
+그림이 서로 다른 모델을 말했다.
+
+### 236-1. 아무것도 안 울었던 이유
+
+    docx_check              캡션 **글자**를 저장소 어휘와 대조한다. 그림은 안 본다
+    render_figures --check  지문이 정본과 같은가를 본다. 틀린 그림을 두 번 만들면 지문도 같다
+    PLAN §12 표             「도구가 못 고친다」라고 **사람이 적어** 두었다
+
+★ 셋째가 제일 오래 갔다. 2026-09-02 에는 참이었다 — 그때는 `.docx` 안 이미지를
+  기계가 안 바꿨다. **2026-09-23 에 그 전제가 뒤집혔는데**(§221-1 ·
+  `tools/docx_figs.py --sync`) 이 행은 안 읽혔다.
+
+★ 족이다 — **「못 한다」로 적힌 행은 완료 조건이 없다.** 「하면 닫힌다」는 행은
+  누가 언제 닫을지가 붙지만, 「못 한다」는 행은 **다시 볼 계기가 없다.**
+  막힌 이유가 사라져도 그대로 남는다. §1 의 `📄`(보류)와 같은 모양이고,
+  그쪽은 「되돌릴 조건」을 적는 규율이 이미 있다(§0-2). 표 쪽에는 없었다.
+
+### 236-2. 무엇을 그리게 했나
+
+실제 규칙은 `seg/width.py` 가 든다 — **평면교차점 폴리곤이 가까이 있으면
+폴리곤만 믿고**(`distance < XSEC_EXCL * 2`), 폴리곤이 **아예 없는** 교차로에서만
+노드 반경으로 폴백한다. 원은 폴백이지 규칙이 아니다.
+
+`fig_xsec` 은 **같은 길 · 같은 표본**을 두 줄로 그리고 버리는 수를 다르게 낸다.
+원이 작은 교차부를 과하게 도려낸다는 것이 그림 자체에서 읽힌다 — 두 수가
+같아지면 `tests/test_figure_xsec.py` 가 운다.
+
+★ 반경에 **기본값을 안 뒀다.** 다른 그림들은 `p.get(키, 사본)` 으로 적는데
+  그 사본이 정본과 갈리면 그림이 조용히 옛 값을 그린다. 이 그림이 바로 그
+  병으로 났으므로 여기서는 없으면 우는 쪽으로 둔다.
+
+### 236-3. 원이 검사 밖이었다
+
+`render_figures._fits()` 는 `<rect>` 만 봤다. 2026-09-23 에 `fig_cctv` 의 원
+그림을 복도로 바꾼 사유가 **「`_fits()` 는 원을 안 본다」**였다 — 그림을 바꿔서
+눈먼 자리를 피해 간 것이고 자리는 그대로 남았다. 원을 쓰는 그림이 생기는
+김에 메웠다(`_boxes()` · 외접 사각형으로 본다).
+
+★ **검사의 눈먼 자리를 피해 가는 것은 고치는 것이 아니다.** 피하면 다음
+  사람이 같은 자리에 빠진다. 이 저장소에서 이 모양이 난 것은 두 번째다.
+
+---
+
+## 237. 대장이 스스로 낡는다 — §12 넷 중 둘은 이미 닫혀 있었다
+
+> 2026-09-24
+
+강제자  `tests/test_docx_targets.py`(아홉 — 지목 · **수** · 빈 그물 프로브) · `tools/docx_fix.py --touch` · `tools/doc_fsck.py` ⑥. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`PLAN §12`(기획서 갱신 대상) 넷을 닫으려고 문서를 뒤졌더니 **둘은 이미
+닫혀 있었다.**
+
+    #21  `산출단위 1,102` 두 곳   2026-09-02 에 어휘를 넓힌 `docx_check` 가
+                                 잡아 그때 고쳐졌다. 문서에는 1,281 뿐이다
+    #20  `원천 11종` 여섯 자리    파급 다섯은 2026-09-02 에 걷혔다. 남은 것은
+                                 **수를 만든 표 제목** 하나였다
+
+### 237-1. 왜 조용했나 — 검사가 「전부 없을 때만」 운다
+
+`test_docx_targets` 는 행의 백틱 지목이 **하나도** 문서에 없을 때 운다.
+`#21` 의 지목은 `산출단위` 였고 그 낱말은 새 수(1,281)와 함께 문서에 살아
+있다. **낱말은 남고 수만 바뀐 것**이고, 그 방향을 보는 눈이 없었다.
+
+★ 이 표에서 제일 흔한 꼴이 그것이다 — 고치는 일이란 대개 낱말을 남기고
+  수를 바꾸는 일이다. 검사가 낱말만 보면 **고친 뒤에도 늘 초록**이다.
+
+★ 규칙을 더했다 — 행이 천단위 수를 들면 그중 적어도 하나는 기획서에
+  있어야 한다. 맞는 수를 들면(아직 고칠 것) 통과하고 옛 수만 들면 운다.
+  표가 비어도 판정기가 사는지는 **합성 행**으로 확인한다(§230).
+
+### 237-2. 제목에서도 수를 뺀다
+
+`#20` 의 `11` 은 원천 데이터 표의 **행 수**였다. 2026-09-02 에 파급 다섯을
+걷을 때의 판단이 「수를 고치지 않고 없앤다」였는데, **정작 수를 만든 표는
+제목이 「목록」인 채로 남았다.** 제목이 전수를 주장하면 독자가 표의 행을
+세고 그 수가 또 퍼진다.
+
+    종전   □ 원천 데이터 목록
+    지금   □ 주요 원천 데이터 — 전수는 sources.yaml 대장이 정본이다
+
+★ 제목에도 수를 안 적는다. 적으면 대장이 늘 때마다 또 낡는다(대장은 그
+  사이 43 → 72 가 됐다). **수의 정본은 대장이고 문서는 대장을 가리킨다.**
+
+### 237-3. 날짜는 빼지 않고 강제자를 붙인다
+
+`#22` 는 「수치 표기 원칙에 날짜가 박혀 있다 — 날짜를 뺀다」였다. 빼지
+않았다. `docx_fix --touch` 가 표지 최종 수정일과 함께 찍고 `doc_fsck ⑥` 이
+「고쳤는데 표지가 그대로인가」를 본다. **날짜가 낡는 것을 막는 방법이
+날짜를 지우는 것만은 아니다** — 낡으면 우는 것도 방법이고, 외부가 읽는
+문서에서는 기준일이 있는 쪽이 낫다.
+
+★ 기획서가 바뀐 배치는 `--touch <오늘>` 을 같이 돌린다. 규칙에 넣지 않는
+  이유는 §218 이 든다 — 날짜를 규칙으로 두면 다음 날부터 매일 운다.
+
+---
+
+## 238. 정책이 **타져야만** 걸리면 안 타지는 갈래는 정책 밖이다
+
+> 2026-09-24
+
+강제자  `tests/test_skip_policy.py::test_every_written_skip_reason_is_already_in_policy`(정적) · `::test_hook_turns_unclassified_skip_into_failure`(런타임). 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+skip 정책(§175)은 `conftest` 훅이 **보고된 skip** 에 건다. 안 타진 갈래는 안
+본다. 그래서 분류 밖 사유 셋이 조용히 살아 있었다 —
+
+    tests/test_dest_scope.py          .gitignore 된 경계 파일. **CI 에만** 없다
+    tests/test_generated_families.py  git 없는 기계에만
+    tests/test_tile_zoom_agreement.py 타일을 안 구운 기계에만
+
+셋 다 **로컬에서 한 번도 안 타진다.** CI 에서 처음 타지고, 그때 훅이 skip 을
+**실패로** 바꾼다. 로컬 초록 · CI 빨강 — §206 이 이 저장소에서 제일 나쁜
+모양이라고 적은 것이다.
+
+★ 정적 갈래를 더했다. 소스를 읽어 `pytest.skip(...)` 의 **정적으로 아는 앞머리**를
+  전수로 본다. 안 타지는 갈래도 글자는 있으므로 **그날이 와야 아는 것을 오늘
+  안다.** 런타임 훅과 짝이다 — 훅은 동적 사유를, 정적 갈래는 앞머리를 본다.
+  둘 중 하나만으로는 반이 빈다.
+
+### 238-1. `test_dest_scope` 는 그대로 두면 CI 에서 **한 줄도 안 돌았다**
+
+`data/processed/*.geojson` 은 `.gitignore:26` 으로 추적 밖이다. 사유를 고쳐도
+CI 에서는 통째로 skip 이고, **범위를 강제하려고 세운 시험이 정작 관문에서
+안 도는 것**이다(§235).
+
+동명동 경계 한 장(17KB · 438점)을 `tests/fixtures/` 에 떼어 커밋했다.
+원본이 있으면 원본, 없으면 사본을 쓴다.
+
+★ **사본을 두는 대가**는 낡는 것이다. `test_committed_boundary_matches_the_pipeline`
+  이 레이크 기계에서 원본과 대조한다 — 사본이 조용히 갈리는 길을 막는다(2족).
+
+★ 관공서 갈래는 사본을 안 뜬다. 64건이고 쓰는 곳이 이 시험 하나라 사본 유지
+  비용이 값어치를 넘는다. **그 갈래는 레이크 기계에서만 선다**고 머리말에 적었다 —
+  안 도는 것과 안 도는 줄 모르는 것은 다르다.
+
+### 238-2. [그림 13] 2판 — 1판은 아무 말도 안 하고 있었다
+
+    1판   8px/m · 32m 에 트랜섹트 39개 → **울타리로 보인다**
+          노드가 표본 사이에 떨어져 두 줄의 버린 수가 **같았다**(4 대 4)
+    2판   20px/m · 표본 15 · 노드를 표본 위상에 맞춰 **5 대 3**
+          담에서 담까지 + 양끝 점 → 세로선이 아니라 **폭 1회 측정**으로 읽힌다
+          축척 막대를 넣고 「표본 수는 모식의 것」이라고 적었다
+
+★ 그림이 **수를 주장하면 그 수의 출처를 그림 안에 적는다.** 반경과 표본
+  간격은 정본에서 오고 표본 수는 모식이다. 둘을 안 가르면 읽는 사람이
+  전부 실측으로 읽는다.
+
+### 238-3. 배치 판정기를 `tools/svg_fit.py` 로 뗐다
+
+`render_figures` 가 600줄을 넘었다. **넘은 이유는 그림이 늘어서지 배치 검사가
+커져서가 아니다.** 둘은 다른 일이라 그 선에서 쪼갰다 —
+
+    svg_fit          어떤 SVG 든 요소가 화면·도형 안에 드는가
+    render_figures   이 저장소의 정본에서 무엇을 그리는가
+
+★ 떼면서 셋이 따라왔고, **셋 다 강제자가 잡았다** —
+  `dms verify` 가 `§111-2` 의 `render_figures::_fits` 를 죽은 참조로,
+  `test_sources_of_truth` 가 `font_stack` 의 집이 옮겨진 것을,
+  `dupcheck` 가 옮기다 남긴 `_svg` 사본을. **쪼개는 일이 안전한 것은
+  강제자가 있어서다.**
+
+★ `svg_fit` 은 `--selftest` 가 아니라 **기본 실행이 자기검사**다. 합성 넘침
+  셋을 잡고 멀쩡한 라벨은 통과시킨다 — 그림이 다 들어맞는 날에도 판정기가
+  사는지 알아야 한다(§230).
+
+---
+
+## 239. 감사 — 강제자가 **자기 이름을 산문에서 읽고** 배선됐다고 믿었다
+
+> 2026-09-24
+
+강제자  `tests/test_tools_are_wired.py`(카나리아 여섯 · 합성 이름) · `tests/test_ownership.py`(이름 붙은 소유자) · `tests/test_provider_registry.py` · `tests/test_declaration_sync.py`. 하위 여섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`tools/` 와 `tests/` 를 전수로 감사했다. 발견은 한 가지 모양으로 모인다 —
+**검사가 「글자가 있는가」를 「일이 일어나는가」로 착각한다.**
+
+### 239-1. 배선 판정이 독스트링 산문을 호출로 셌다
+
+`test_tools_are_wired._scan()` 은 `#` 로 시작하는 줄만 걸렀다. `"""…"""`
+안의 산문은 **코드로 셌다.** 그래서 도구 넷이 시험 파일 머리말 한 줄로
+「배선됐다」가 됐다 —
+
+    doctor        tests/test_norm_wiring.py 머리말의 설명 한 줄
+    jijeok_probe  tests/test_shp_zip_multi_bbox.py 머리말
+    ledger_feeds  tests/test_declaration_reality.py · _sync.py 머리말
+    serve         tools/verify.sh 의 `printf` 안내문 한 줄
+
+★ 이 검사의 주석 ③ 이 「주석 속 이름을 호출로 셌다」를 고쳤다고 적는다.
+  **같은 병의 다른 꼴 둘이 그대로 남아 있었다** — 독스트링과 `printf`.
+  한 인스턴스를 고치고 족을 안 세우면 이렇게 된다.
+
+★ 독스트링만 뺀다. 다른 문자열은 못 뺀다 —
+  `subprocess.run([..., str(ROOT / "tools" / "x.py")])` 의 문자열은 **진짜 호출**이다.
+
+### 239-2. 반대 방향 — `importlib` 로 조립한 호출을 못 봤다
+
+`spec_from_file_location("x", ROOT / "tools" / "x.py")` 는 `tools/x.py` 라는
+**리터럴을 만들지 않는다.** 그래서 CI 에서 실제로 도는 셋이 「사람이 부른다」
+면제에 앉아 있었다(`ledger_schema` · `skeleton_compare` · `wmax_audit`).
+
+★ **면제는 사각지대다.** 거짓 면제는 이유 없이 사각지대를 넓힌다. 셋을 뺐다.
+
+★ 판별식을 **합성 입력**으로 직접 문다(카나리아 여섯). 실물이 다 맞으면
+  판별식이 망가져도 초록이기 때문이다. 합성에는 **없는 도구 이름**을 쓴다 —
+  실제 이름을 코드 줄에 적으면 이 파일이 그 도구의 호출자가 되어,
+  검사를 시험하다 검사를 어긴다.
+
+### 239-3. 소유 검사가 **구조적으로 실패할 수 없었다**
+
+`CODEOWNERS:55` 의 `*` 은 `fnmatch(rel, "*")` 로 **모든 경로에 참**이라
+`unowned()` 가 언제나 빈 목록이다. 그리고 `test_codeowners_has_a_catch_all`
+이 그 `*` 줄을 **강제**하므로 동어반복을 풀 길도 없다 — 두 시험이 서로를
+무효화한다. 「이 저장소의 핵심 방어」라고 적힌 자리다.
+
+★ 물음을 바꿨다 — **기본값 말고 제 이름으로 지목된 소유자가 있는가.**
+  실측 14건(`docs/` 9 · 루트 설정 5)이 기본값에만 걸려 있었다. CODEOWNERS §9
+  로 맡겼다. 기본값만 걸린 것은 **아무도 안 정한 것**이지 정해진 것이 아니다.
+
+### 239-4. 0건이 되자 판정기가 같이 잠들었다 — **형제 간에 처방이 갈렸다**
+
+    test_declaration_sync   넷 중 하나만 받았다. `_tracked()` 의 카나리아 둘이
+                            죽은 코드가 됐다 — 빈 그물을 막는 단언이 빈 그물에 묻혔다
+    test_docx_targets       둘 중 하나만 받았다(`_stale_numbers` 는 있고 지목 쪽은 없다)
+    test_provider_registry  `reserved()` 가 빈 집합이라 루프가 0회. 닻도 대조도 없었다
+
+셋 다 합성 입력 대조를 붙였다. **0행은 목표 상태다**(§227) — 목표에 닿는 날
+검사가 죽으면 그 목표는 지켜지지 않는다(§230).
+
+### 239-5. 실패를 조용히 삼키던 세 자리
+
+    docx_check ⑦   `git ls-files` 의 종료코드를 안 봤다. 아래 판정이
+                   `if tracked and …` 라 git 이 없으면 **두 갈래가 0건으로 초록**
+    owned_paths    같은 꼴. 빈 목록이 `unowned()` 로 흘러 「0건」이 된다
+    doc_fsck ⑥     얕은 저장소 판별 실패를 `except: pass` 로 삼켰다
+
+★ 셋 다 **못 잰 것을 통과로 세는** 자리다. 이제 못 쟀다고 말한다.
+
+### 239-6. 고친 것이 아니라 **남긴 것**
+
+감사는 이보다 많이 냈다. 판정을 안 움직이고 이 배치에서 안 닫은 것은
+`PLAN §13` 에 올린다 — 좌표 상수 세 사본(`kpi` · `bridge_audit` ·
+`its_linkmap` 의 `LAT0`/`MX`/`MY`), `EMD_CD` 네 사본, `docx_fix` 가 드는
+실재하지 않는 절 넷, 죽은 상수 다섯, 절 번호 유일성을 보는 **파서 셋**의
+코드펜스 처리 불일치, 34.6초짜리 시험 하나(전체의 25%).
+
+★ **감사 결과를 대장에 안 올리면 감사를 안 한 것과 같다**(§190-1).
+
+---
+
+## 240. 감사가 낸 여섯을 같은 날 닫았다 — 대장이 하루를 안 넘겼다
+
+> 2026-09-24
+
+강제자  `tools/localgeo.py` · `tests/docparse.py` · `tests/test_docref.py::test_code_comments_do_not_cite_a_section_that_does_not_exist` · `::test_fence_handling_has_exactly_one_home` · `tests/test_building_road_overlap.py`(셋). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+§239 감사가 `PLAN §13-3` 에 여섯을 올렸다(0행 → 6행). 같은 날 여섯을 닫았다.
+판정 산출물은 바이트 동일하다 — `golden check` 에서 움직인 것은 `uv.lock`
+하나이고 판정 코드 21파일은 전부 불변이다.
+
+### 240-1. 사본을 없앨 때 **어디로 올릴지**가 결정이다
+
+    W12-1  LAT0 · MX · MY   `tools/localgeo.py` 로. `seg/params.py` 가 아니다
+    W12-2  EMD_CD           `seg/params.py` 를 **읽게** 했다. 값은 안 옮겼다
+
+★ 둘의 방향이 반대인 이유는 하나다 — `seg/params.py` 는 **판정 지문** 안이다
+  (`code_closure("firelane.segments")` 22파일). 거기에 상수를 더하면 코드
+  지문이 움직이고 재잠금이 따라온다. `LAT0` 는 판정에 안 드는 값이라
+  올릴 이유가 없고, `EMD_CD` 는 이미 거기 사는 판정 값이라 옮길 이유가 없다.
+
+★ **정본을 하나로 만드는 것과 지문을 흔드는 것은 다른 일이다.** 둘을 섞으면
+  재잠금이 값싸 보이기 시작한다.
+
+### 240-2. 없는 절을 근거로 드는 것을 **처음으로** 검사한다
+
+`dms verify` 는 문서 → 강제자 방향을 본다. **코드 주석이 드는 `§N-M`** 은
+아무도 안 봤고, `docx_fix` 가 실재하지 않는 절 넷을 규칙의 근거로 들고 있었다.
+
+★ 범위를 좁게 선언한다 — 문서 이름이 붙은 **하위 절** 참조만 본다.
+  `PLAN §1-16`(표 행 번호) · `MASTER §18-5`(규칙 번호) · 묶음 표기는
+  이 저장소의 관용이고 `test_docref` 머리말이 이미 그것을 든다.
+  일부러 죽은 참조를 인용하는 줄에는 `ref-ok` 를 적는다.
+
+### 240-3. 파서가 셋이면 **같은 문서에 세 답**이 나온다
+
+절 번호 유일성을 `test_doc_style`(`##` · 펜스 제외) · `test_reproducibility`
+(`##`+`###` · 펜스 제외) · `test_docref`(`###` · **펜스 제외 안 함**) 셋이
+각각 봤다. 오늘은 발현하지 않는다 — 세 문서의 펜스 안에 절 제목꼴이 0건이다.
+**회고 한 줄이 펜스 안에 절 제목을 인용하는 순간** 하나만 빨개진다.
+
+★ 읽는 규칙만 `tests/docparse.py` 로 올렸다. **무엇을 셀지는 각자 정한다** —
+  물음이 다른 것은 규칙이 갈린 것이 아니다. 손으로 짠 펜스 토글이 되살아나면
+  `test_fence_handling_has_exactly_one_home` 이 운다.
+
+### 240-4. 34.6초가 9.8초가 된 이유는 예선이 아무도 안 떨궈서다
+
+`test_buildings_do_not_sit_on_roads` 가 전체 시험 시간의 **25%** 였다.
+실물을 보니 도로면은 **63장**뿐이라 STRtree 의 bbox 예선이 거의 아무도 안
+떨군다 — 건물 12,663개에 후보쌍 12,917. 그 전부에 대해 파이썬 루프가
+`unary_union` 과 `intersection` 을 돌고 있었다.
+
+    predicate="intersects"   예선이 실제 교차를 본다 → 124쌍
+    벡터 한 번               shapely 2 의 `intersection` · `area`
+    도로면 비겹침 전제        상호 겹침 최댓값 0.0 을 **따로 검사로 세웠다**
+
+★ 몫을 **더해서** 내므로 도로면이 서로 겹치면 같은 자리를 두 번 센다.
+  빠르게 만들면서 생긴 전제라 그 전제를 검사로 남긴다 — 빠른 것과 맞는 것은
+  다른 일이고, 빨라지려고 조용히 가정하면 그것이 다음 결함이다.
+
+★ 그러고도 살아 있는 신호가 정수 비교 하나였다 — `partial.append` 가 한 번도
+  안 돈다. 합성 사각형으로 세 갈래를 밀리초에 확인한다(§230).
+
+---
+
+## 241. 물림 246 을 0 으로 — 선언을 **세는 것**으로 바꿨다
+
+> 2026-09-24
+
+강제자  `tools/dms.py::inherit_counts`(선언한 수 ↔ 실제) · `tools/dms.py --selftest`(합성 데이터로 생사) · `tools/dms.py::classify`(칸 **전문**). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`§230-1` 이 다음 분모로 지목한 물림(부모 칸이 하위 논점까지 덮는다는 **가정**)을
+닫았다. 0 이다.
+
+### 241-1. 「물려받는다」 한 줄은 검증된 적이 없다
+
+하위 절이 하나 늘어도 그 줄은 그대로 참인 것처럼 보인다 — **새로 생긴 절은
+아무도 안 본 채 물림으로 들어간다.** 선언이 가정을 감추는 자리다.
+
+★ **수를 적게 했다.** 절이 늘거나 줄면 수가 어긋나고, 어긋나면 사람이 그 새
+  절을 실제로 본다. 이 저장소가 래칫에 거는 논리와 같다 — 선언을 **세는 것**으로
+  바꾼다. 수를 안 적은 옛 표기 16곳에도 수를 박았다.
+
+★ 수를 안 적은 선언은 세지 않는다. 그것까지 한 번에 강제하면 첫날부터
+  시끄럽고, 시끄러운 검사는 꺼진다. **수를 적은 선언만** 그 수를 지킨다.
+
+### 241-2. 칸은 여러 줄에 걸친다 — 도구가 첫 줄만 보고 있었다
+
+실측 **113곳**이 두 줄 이상이다. `classify` 는 첫 줄만 칸으로 들었다. 그래서
+이어지는 줄에 적힌 강제자 이름도, 물림 선언도 이 도구 눈에 **안 보였다.**
+
+★ 처음에 선언을 칸의 **첫 줄**에 붙였더니 문장 한복판이 갈렸다 —
+  「… (전건 등재 · 번호 연속 · 상태 어휘 · 하위 일곱은 …」. 칸이 한 줄이라는
+  가정으로 쓴 스크립트였다. 되돌리고 **칸 블록의 마지막 줄**에 붙였다.
+
+★ 물음이 「이 절에 칸이 있는가」이므로 답은 칸 **전체**여야 한다. 첫 줄만
+  보는 것은 범위가 이름보다 좁은 자리다(§226). 고치고 나니 죽은 참조는
+  0 이었다 — 이어지는 줄도 깨끗했다.
+
+### 241-3. 수를 세자 **거짓 선언 둘**이 나왔다
+
+    §187   「하위 절 187-1 ~ 187-3 이 각자 강제자 칸을 든다」
+           → 187-1 · 187-3 은 칸이 없었다
+    §188   「하위 절 188-1 ~ 188-3 이 각자 강제자 칸을 든다」
+           → 188-3 은 칸이 없었다
+
+셋에 제 칸을 달아 선언을 참으로 만들었다. **세기 시작하면 거짓이 드러난다** —
+그것이 수를 적는 값어치다.
+
+### 241-4. 어디에 칸을 달고 어디를 물리게 했나
+
+부모 칸이 자식을 **정말 덮는지**를 보고 갈랐다. 덮지 않는 아홉에 제 칸을 달았다 —
+
+    MASTER §2-2    판정 기준의 출처. 부모는 「강제자 없음」인데 `truck_m` ·
+                   `park_m` 은 `test_sources_of_truth` 가 든다
+    MASTER §5-2    계약 → `tests/test_contract.py`
+    MASTER §5-4    뼈대 교체 보류 → `tools/skeleton_compare.py` · `tests/test_r1.py`
+    README 셋       일회성 도구 · `D-XX` 표기 · 숫자의 정본
+    DECISIONS 셋    §187-1 · §187-3 · §188-3 (위 거짓 선언 셋)
+
+★ DECISIONS 의 `### N-M` 은 **같은 결정의 조각**이라 상위 절의 강제자가 결정
+  전체를 든다 — 거기는 물림이 맞다. MASTER 는 다르다. `§12` 에 칸을 적었을 때
+  자식 열하나가 한 번에 빠졌는데 그 칸은 §12-8a 도 §12-11 도 안 덮었다(§230-1).
+  **문서의 성격이 다르면 물림의 참 거짓도 다르다.**
+
+---
+
+## 242. 내비 감사 — 화면이 **언제 거짓말하는가**에 대한 방어가 비어 있었다
+
+> 2026-09-24
+
+강제자  `web/navi/test/status.test.ts`(여덟) · `tests/test_navi_wireframe.py::test_the_injected_badge_reads_the_fact_not_the_table` · `::test_the_dev_bar_is_off_unless_asked`. 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`web/navi` 를 전수 감사했다. 설계는 이 규모치고 정직하다 — 계산이 `domain/` 에
+순수하게 모여 있고, 위치가 ref 로만 흘러 rAF 가 React 를 안 건드리며, `any` 가
+0개고, GPS 흉내가 실주행과 **같은 코드**를 지나 폐루프가 진짜로 돈다.
+
+**그런데 「운전자가 보는 화면이 언제 거짓말하는가」에 대한 방어가 없었다.**
+
+### 242-1. 시연 막대가 배포본에서 **기본으로 켜져 있었다**
+
+`App.tsx` 가 `get("dev") !== "0"` 이었다 — **`?dev=0` 을 명시하지 않으면 항상
+켜짐**이고, `web/index.html` 의 내비 링크에 그 인자가 없다.
+
+★ 운전석에서 손이 스치면 ▶ 가 눌리고 `useNavigation` 이 실제 GPS 대신 replay
+  소스를 붙인다. **화면의 차가 운전자가 아니게 된다.** 「연결성」 을 누르면
+  폭 판정이 느슨해져 다른 경로가 선다. 켜는 쪽을 명시하게 뒤집었다.
+
+### 242-2. GPS 정확도를 **받을 타입조차 없었다**
+
+`gps.ts` 가 `coords.accuracy` 를 안 읽었고 `Fix` 인터페이스에 칸이 없었다.
+그래서 신호가 50m 로 흔들려도 화면은 초록 「안전 경로 안내중」 이었고,
+`progress.locate` 가 그 잡음을 경로에 투영해 남은 거리·ETA·회전 안내가
+틀린 자리에서 나갔다.
+
+★ **08 화면(GPS 신호 약함)이 시연 전용이었던 이유가 그것이다** — 띄울 근거가
+  없었다. 칸을 뚫고 `deriveStatus` 에 갈래를 세웠다. 우선순위는 도착 **아래**,
+  나머지 **위**다 — 도착은 정확도가 나빠도 사실이고, 그 아래는 전부 위치를
+  믿어야 성립한다.
+
+★ 측위 **시각**도 같이 뚫었다. `maximumAge: 5000` 이라 최대 5초 묵은 캐시가
+  오는데 받는 쪽이 「받은 시각」으로 덮고 있었다 — dt 가 작아져 순간속도가
+  부풀고 추측항법이 차를 앞으로 민다. 에포크 ms 를 `performance.now()` 시계로
+  옮긴다. **시계를 섞으면 첫 dt 가 수십억이 된다.**
+
+★ `GPS_WEAK_M = 25` 는 **근거 있는 어림이지 실측이 아니다** — 구간 길이 중앙이
+  30m 대라 25m 면 구간 하나를 통째로 헷갈린다. 실주행 로그가 생기면 다시 정한다.
+
+### 242-3. 「시연」 표지가 주입 18갈래 중 **넷에만** 붙었다
+
+`TopBar` 가 `spec.injected`(정적 표의 칸)를 봤다. 시연 막대는 18갈래 **전부**를
+주입할 수 있다 — `arrived` 를 주입하면 표지 없이 「도착」 이 떴다. 달리는 중인데.
+
+★ 표가 아니라 **사실**을 본다. `status.ts` 가 세운 규율(「주입인 줄 모르고 보면
+  그것이 거짓 화면이다」)이 13갈래에서 안 지켜지고 있었다.
+
+### 242-4. 이틀 전 넣은 가드 **위에** 매 프레임 그리기가 얹혔다
+
+rAF 루프가 조건 없이 `setData` 를 불렀다. 그 **아래** 있는 「제자리면 안 그린다」
+가드는 2026-09-22 것이고(§216-2), 자차 상자는 2026-09-24 것이다 —
+**나중 것이 앞 것의 값어치를 지웠다.** 제원 없는 차는 빈 FeatureCollection 을
+60fps 로 밀어 넣고 있었다. 자차가 실제로 움직였을 때만 그린다.
+
+### 242-5. 끄는 길이 없던 것 셋
+
+    음성을 꺼도 말하던 문장이 안 멈췄다   `setEnabled` 를 만들고 **한 번도 안 불렀다**
+    합성기 깨우기 타이머에 핸들이 없었다   페이지 수명 내내 못 끄는 타이머 하나
+    통행 불가 신고 1.8초 타이머에 정리 없음 「처음부터」를 누르면 새 출동을 오염시킨다
+
+★ 셋 다 **만들어 둔 정리 수단을 안 쓴** 자리다. `useShare` 는 같은 일을 ref +
+  clear 로 제대로 거둔다 — 규율이 있는데 한 곳만 맨손이었다.
+
+★ **React · infra 층에 시험이 한 줄도 없다**는 것이 이 다섯의 공통 원인이다.
+  `deriveStatus` 는 순수 함수인데도 안 물고 있었다 — 여덟을 세웠다.
+  나머지(`useNavigation` 552줄 · `gps.ts` · `useVoice`)는 `PLAN §13` 이 든다.
+
+## 243. 전수 감사 — 검사가 **스스로 못 보는 자리**에 결함을 키우고 있었다
+
+> 2026-09-24
+
+강제자  `tests/test_doc_numbers.py`(문서 숫자 ↔ 커밋된 지문) · `tests/test_ledger_outputs.py::test_consumers_actually_read_it` · `tests/test_tools_are_wired.py::test_no_tool_reads_flags_by_membership` · `::test_the_compare_tool_list_has_one_home` · `tests/test_shardseal.py::test_a_note_in_the_global_block_does_not_tear_every_shard` · `tests/test_dms_ids.py::test_every_field_in_a_section_is_read`. 하위 일곱은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+CI · 데브컨테이너 · 문서 체계 · 강제자 · 배선 · 파이프라인 · 데이터 카탈로그 ·
+대장 · 봉인 · 기획서를 전수로 댔다. **닫힌 것은 전부 「검사는 있었는데 그
+검사가 그 자리를 안 봤다」 한 가지 꼴이다.**
+
+### 243-1. 숫자 — 흡수-2 가 건너뛴 일곱
+
+2026-09-16 흡수-2 가 구간 1,101 → 1,281 을 만들었고(§170) MASTER §2 표는
+따라갔다. **일곱 자리가 안 따라갔다** — 머리의 기준일, §3-5 채택 소스 둘,
+§10-2 `no_cctv_band`, `seg/width.py` 와 그 시험의 머리말, PLAN #3 의
+`needs_cv`. 옛 값 전부가 `data/baseline/20260824-pre-nreg/meta.json` 한
+파일에서 글자 그대로 나온다.
+
+★ **`docnum_check` 가 못 잡는 자리였다.** 그 도구는 판정 4종 · CCTV · 소방청
+  지정만 보고, 무엇보다 `data/processed/segments.geojson` 을 읽는다 —
+  **커밋 대상이 아니라서 clone 직후 · CI · 남의 기계에서 안 돈다.** 숫자
+  대조가 「전량을 돌린 사람의 기계」에서만 살아 있었고, 문서를 고치는 사람은
+  대개 그 기계가 아니다.
+
+★ 그래서 강제자를 **커밋된 지문**(`data/golden/segments.fingerprint.json`
+  L1)에 붙였다. 지문은 판정 산출물이므로 읽기만 한다 — 문서를 맞추려고
+  산출물을 고치는 순간 대조가 뒤집힌다.
+
+★ MASTER §3-5 는 그 자리에 **「실측값이라 대조 도구가 없다」**고 적고 있었다.
+  없다고 적은 자리가 틀려 있었다. 없다는 선언은 그 자리를 영구 사각지대로
+  만든다 — 적어 두는 것과 막아 두는 것은 다르다.
+
+### 243-2. 유령 소비자 열하나 — 영향 분석의 근거가 거짓이었다
+
+대장 `outputs.*.consumers` 는 「이것을 지우면 누가 깨지나」의 근거다. 그 표가
+**양쪽으로** 거짓이었다 — 안 읽는 것이 적혀 있고(열하나) 읽는 것이 빠져
+있었다. `guards.py` 는 `nfa_compare` 를 **주석 두 줄로만** 들고 소비자였고,
+`fieldsheet.md` 는 `obs_points` 의 소비자가 아니라 **같은 생성기의 형제
+산출물**이었다.
+
+★ 종전 검사는 `Path.exists()` 만 봤다. 파일이 실재하기만 하면 통과라 열하나가
+  전부 초록이었다. 이제 소비자가 그 이름을 **문자열 리터럴로** 드는지 본다.
+  주석 · docstring · `Step(...)` 은 뺀다 — **단계 선언을 소비로 세면 모든
+  산출물이 제 선언 덕에 통과한다**(`test_contract` 가 「쓰기는 소비가 아니다」로
+  같은 함정을 이미 한 번 피했다).
+
+★ 같은 병이 `pipeline.Step("publish")` 에도 있었다. 유령 read 셋과 빠진 write
+  셋. 선언이 곧 영향 분석의 근거인데 그 근거가 양쪽으로 틀려 있었다.
+
+### 243-3. 주석 한 줄이 45샤드를 찢고 있었다
+
+`raw_only.ortho.note` 를 고치자 **45샤드 전부**의 봉인이 깨졌다. §216-1 이
+서술 칸을 **자기 항목에서만** 뺐고 전역 칸은 통째로 쟀는데, 그 안에도 산문이
+열일곱 칸 산다(`raw_only.*.note` · `layers.*.what` · `scopes.*.note`).
+
+★ 8GB 기계에서 `ngii_road` 재빌드는 거의 반드시 OOM 이고, **샤드 봉인은 바로
+  그것을 막으려고 만든 것이다.** 막으려던 사고를 제 전역 칸이 불렀다.
+  §165-8 과 §166-3 이 같은 자리에서 두 번 배운 것을 세 번째로 배운 셈이다.
+
+★ 커밋된 봉인지 45개는 새 판으로 고쳐 적었다. **옛 `sources.yaml` 로 전부
+  재현되는 것을 먼저 확인했다** — 재현되지 않으면 그것은 서술 변경이 아니라
+  설정 변경이고, 그때는 다시 빌드해야 한다.
+
+### 243-4. 「안 한 일을 한 것처럼」 끝나던 일곱
+
+`"--x" in sys.argv` 로 플래그를 읽는 것이 일곱이었다. **오타가 조용히
+무시된다** —
+
+    render_figures.py --chek    검사 대신 **그림 파일을 덮어쓴다**
+    commit_policy.py --traked   전량 대신 스테이지만 보고 통과한다
+    firelane.probe --k          광주 범위로만 잰 답을 「전국을 봤다」로 읽는다
+
+★ argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+
+★ **강제자를 `tools/` 에만 걸지 않았다.** 좁게 훑는 검사는 넓힐 때까지 나머지
+  절반을 영영 안 본다(deadcheck ⑤). 넓히자마자 `firelane/probe.py` 가 일곱째로
+  나왔다 — 범위를 넓힌 그 자리에서 바로 값이 나왔다.
+
+### 243-5. 집계가 산문을 이기던 자리
+
+`grade()` 가 「`feeds` 가 비지 않았다」만 보고 `normalize_raw` 한 줄짜리
+일곱을 활성으로 셌다. 그 도구는 머리말대로 **이름표를 붙여 raw 에 놓을
+뿐**이고, 일곱 다 제 `feeds_note` 에 「미투입」이라 적고 있었다.
+**대장이 제 자신과 어긋났고, 사람이 읽는 산문이 아니라 기계가 세는 쪽이
+이겼다.** 미사용은 19가 아니라 26이다.
+
+★ 같은 꼴이 대장 곳곳에 있었다 — 아홉 항목이 전부 「차량 제원 정본」이라
+  적었고(정본은 `vehicle_spec` 하나다), `ngii_road` 가 **없는 컬럼**으로
+  교차검증을 시켰고, `raw_only.ortho` 가 「지워도 무방」이라 적었는데 그것을
+  지우면 관제 지도가 흰 바탕이 된다. 소화전은 441 · 589 · 654 · 651 네 축이
+  섞여 있었고, **폐기된 「588 중 31」을 `<!--stale-ok-->` 가 얼려 발표 논거로
+  살려두고 있었다.** 마커는 「일부러 옛 값을 인용한다」는 뜻이지 「고치지
+  않겠다」가 아니다.
+
+### 243-6. 검사가 제 눈 밖에 둔 자리 둘
+
+`dms.classify` 가 절마다 **첫 칸에서 멈췄다.** 한 절에 강제자 칸이 둘 이상인
+곳이 있고(PLAN §0-2 는 셋) 둘째부터는 이 도구 눈에 없었다. 그래서 `PLAN:98`
+이 **개명된 시험**을 가리킨 채 「죽은 강제자 참조 0건」이 찍히고 있었다.
+
+`test_contract` 의 `web/data` 고아 검사는 `*.geojson` 만 봤다. `.json` 일곱이
+검사 **밖**이었고, 그 검사의 존재 이유인 40MB 상한은 **바이트 기준**이지
+확장자 기준이 아니다. `navi_graph.json`(557KB)이 화면에서 끊겨도 초록이었다.
+
+★ 둘 다 **검사를 세워 두고 그 검사가 못 보는 자리에 결함이 살았다.**
+  0건이 청결인가 죽음인가(§230)의 또 다른 꼴이고, 이번에는 셋째 답이
+  나왔다 — **0건이 「안 보는 것」**이었다.
+
+### 243-7. 외부가 읽는 문서가 안 쓰는 것을 현재형으로 적고 있었다
+
+기획서가 1:5,000 도로경계면을 **주 소스**라 적는다. 실물의 주 소스는 1:1,000
+수치지형도 도로경계이고 1,281 중 1,166 이 그것이다 — 1:5,000 채택은 1건이다.
+V-World 는 일곱 자리에서 현재형이고(2026-09-22 에 걷혔다), 배포는 SSH 로
+적혀 있다. 실제는 SSM Run Command 이고 **키를 Secrets 에 넣지 않는 것**이
+그 선택의 이유다.
+
+★ 넷 다 **모델·사실**이 어긋난 자리라 `docx_check` 가 구조적으로 못 잡는다 —
+  그것은 문서에 있는 숫자를 산출물과 댄다. 숫자가 아닌 것은 아무도 안 봤다.
+
+★ 고치면서 긴 칸 래칫이 1,401자로 울었다. 바꿔 넣는 문장을 줄여 1,380 안으로
+  들여놨다 — **고치는 일이 래칫을 밀어내지 않는다.**
+
+## 244. 전면 재편 — 빚 목록이 빚의 절반만 알고 있었다
+
+> 2026-09-24
+
+강제자  `tests/test_layering.py::test_the_import_collector_reads_from_x_import_y` · `web/navi/test/layering.test.ts` · `tools/sizecheck.py`(프런트 포함) · `tests/test_docref.py`(문서별 하한) · `tools/docx_fix.py`(삽입 목록 ↔ 치환 규칙). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+§243 의 감사가 닫히자 주인이 물었다 — **「PLAN 이 1,500행이 말이 되냐」.**
+그 물음이 이 배치를 열었고, 답은 문서 문제가 아니었다.
+
+### 244-1. §1 이 「남은 일의 정본」이라 적고 빚의 절반만 알았다
+
+PLAN §2~§11 에 「앞으로 할 일」이 **문단으로 386행** 흩어져 있었다. §1 은
+45건만 들고 있었고 제 머리말에 「판정을 움직이는 남은 일의 정본은 이 절
+하나다」라고 적었다 — **선언이 거짓이었다.**
+
+★ §13-1 이 2026-09-18 에 **같은 사고**를 겪었다. 그때 42건을 §13 으로 모으며
+  적었다 — 「§1 은 머리말에 "남은 일의 정본" 이라고 적어놓고 남은 일의
+  대부분을 모르고 있었다」. 그리고 **§2~§11 은 손대지 않았다.** 같은 병이
+  같은 문서의 옆 절에서 여섯 달을 더 살았다.
+
+★ 접고 나니 빚이 54 → 113건이다. **늘어난 것이 아니라 세어진 것이다.**
+  문서는 1,564 → 583행으로 줄었다 — 두께는 빚이 아니라 산문이었다.
+
+### 244-2. 절을 지울 수 없었다 — 과거가 현재를 인질로 잡는다
+
+§2~§11 을 통째로 지우려 했으나 밖에서 45건이 그 절들을 가리키고 **24건이
+DECISIONS**다. append-only 라 고치면 과거 기록 위조다.
+
+★ 그런데 `test_docref` 는 **세 문서 절 번호의 합집합**에서 찾는다. 계산해
+  보니 PLAN 에만 있는 하위 절 21개 중 실제로 인용되는 것은 **13개**였다.
+  13줄을 묘비로 남기면 끝나는 일이었다 — **막힌 줄 알았던 것이 재보니
+  13줄이었다.** 재기 전에 포기했으면 검사를 고치거나 면제를 만들었을 것이다.
+
+### 244-3. 강제자에 구멍이 있는데 초록이라 안 보였다
+
+`test_layering.py` 가 「domain 은 순수하다」를 강제한다고 선언하고 **열넷
+초록**이었다. AST 순회기가 `from firelane import paths` 를 **`firelane`
+하나로만** 기록했고, 금지 목록에 든 것은 `firelane.paths` 다.
+
+★ **같은 저장소가 같은 문제를 이미 올바르게 풀어놨다** —
+  `shardseal.code_closure` 는 `from X import Y` 를 `X.Y` 로 푼다. AST 순회기가
+  두 벌인데 봉인용은 맞고 계층 강제용은 틀렸다. **2족(정본이 둘)이 도구
+  안에서 난 것**이고, 이 저장소가 2족 가드를 세워 둔 축은 「사실」이지
+  「알고리즘」이 아니었다.
+
+★ 막자마자 진짜 위반이 하나 드러났다. **고치지 않았다** — 폐포 안이라
+  재잠금이 따르고 레이크 없이는 산출물 불변을 증명할 수 없다.
+  증명 못 하는 수술은 하지 않는다. 사유와 닫는 조건을 면제에 적고,
+  **면제가 낡으면(이미 깨끗해지면) 빨개지게** 했다.
+
+### 244-4. 강제 범위가 실물을 덜 덮었다
+
+    sizecheck     `web/navi/src` 가 범위 밖 — 상한 위 세 파일이 한 번도 안 잡혔다
+    TS 계층       강제자 자체가 없었다. 깨끗한 것은 규율이지 강제가 아니다
+    docnum_check  `data/processed` 를 읽어 clone 직후·CI 에서 안 돈다(§243-1)
+
+★ 셋 다 「없는 줄 몰랐다」가 아니라 **「있는 줄 알았다」**이다. 선언이 검사보다
+  넓으면 거짓 초록이 되고, 그 상태는 검사가 없는 것보다 나쁘다 — 없으면
+  사람이 의심이라도 한다.
+
+### 244-5. 도구가 오지 않은 미래를 과거형으로 박고 있었다
+
+`docx_fix` 에 「축거·회전반경은 동부소방서 인터뷰로 **확정**」을 기획서에
+**바꿔 넣는** 규칙이 있었다. 그 확정은 오지 않았다 — 전폭·전장만 답이 왔고
+축거·최소회전반경은 공식 규격에 없다. 저장소 넷이 「추정으로 남는다」고
+적는데 **리스크 표만 해소를 선언**했고, 그 선언을 만든 것이 우리 도구였다.
+
+★ 같은 도구에서 두 번째가 나왔다 — `inserts()` 가 삽입할 문단을 **옛 문장
+  그대로** 들고 있어서, 치환이 그 문단을 고치면 「없다」고 보고 **옛 꼴을 다시
+  넣었다.** 같은 문단이 둘이 되고 하나는 영영 안 고쳐진다. 치환 규칙과 삽입
+  목록이 같은 문서를 두 벌로 들고 있던 것이다.
+
+★ 셋째 — `par.runs` 는 문단의 **직계 `w:r` 만** 준다. 하이퍼링크 안 텍스트는
+  `par.text` 로 보이는데 고칠 수는 없었다. `w:t` 를 직접 순회한다.
+
+## 245. 판정 핵심 안에서 R3 가 깨져 있었다 — 아홉 번 쓰인 규칙과 이름 없는 문턱
+
+> 2026-09-24
+
+강제자  `tests/test_seg_width.py::test_width_source_priority_has_one_home` · `tests/test_sources_of_truth.py`(`offtrack_min` · 양방향 대조 · `near` 문맥) · `MASTER §17-1` 표. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+§244 의 아키텍처 감사가 낸 것 중 **증명 가능한 둘**을 닫는다.
+
+### 245-1. 가장 많이 인용되는 규칙이 한 파일 안에서 아홉 번 쓰였다
+
+폭 소스 우선순위(`ngii1k` → `ngii` → `silpok` · 「결정 63」)가 `seg/width.py`
+한 파일 안에서 **아홉 번** 재기술되고 있었다. 순서를 바꾸려면 아홉 곳을
+고쳐야 했다.
+
+★ 이 저장소는 R3(정본 하나)를 클래스 가드로 세워 뒀고 `MASTER §17-1` 표와
+  `SPEC` 이 양방향으로 대조한다. 그런데 **그 축은 「값」이다** — `TRUCK = 3.0`
+  처럼 수 하나인 사실만 본다. 여기서 사실은 **순서**였고, 순서는 그 표에
+  들어갈 꼴이 아니라 **가드 밖에 있었다.**
+
+★ `WIDTH_SRCS` 로 올리고 강제자를 세웠다. 값이 아니라 **「세 이름이 한 줄에
+  같이 나오는가」**를 본다 — 대상은 `src/firelane` 뿐이다. 대조 도구와 시험이
+  그 순서를 인용하는 것은 사본이 아니라 검증이고, 넓히면 정상 인용이 전부
+  위반이 된다. 오탐이 본문을 덮으면 사람이 검사를 끈다(`deadcheck` ⑤ 면제에
+  그 사유를 적었다).
+
+### 245-2. 이름이 없어서 표에 못 들어간 값
+
+내륜차를 무시하는 문턱 `0.05` 가 **이름 없이** `2 * 0.05` 꼴로 세 곳 두
+언어에 있었다(`seg/vehicle.py` 둘 · `domain/vehicle.ts` 하나).
+
+★ `test_sources_of_truth` 의 값 목록에 없었던 이유가 그것이다 — **맨숫자는
+  적을 이름이 없어서 표에 안 들어간다.** 그리고 표에 없으면 아무도 안 본다.
+  그 값이 「이 골목으로 돌 수 있나」를 가른다.
+
+★ `OFFTRACK_MIN` 으로 이름을 주고 SPEC 에 등재했다. TS 사본에는 정본이
+  어디인지 주석으로 박았다 — 두 언어가 같은 규칙을 각자 구현하는 자리는
+  `PLAN §1 #126` 이 따로 든다. 이름을 준 것이 그 이중 구현을 없애지는 않지만
+  **값이 갈리는 날 울게는 한다.**
+
+### 245-3. 안 고친 것과 그 이유
+
+같은 감사가 낸 나머지(#121 환경 스위치 · #123 `_DBG` 전역 · #124 늦은 import ·
+#127 이음매 없음)는 **안 고쳤다.** 파이프라인 구조나 호출 규약을 바꾸는
+일이고, 레이크가 없는 자리에서는 산출물이 바이트 동일한지 **증명할 수 없다.**
+
+★ §244 가 「증명 못 하는 수술은 하지 않는다」를 적었다. 그 줄을 쓴 배치가
+  다음 배치에서 그것을 어기면 규율이 아니라 장식이 된다.
+
+★ 이번에 닫은 둘은 **순수 치환**이다 — 리터럴을 상수 이름으로 바꾼 것이고
+  제어 흐름이 한 글자도 안 바뀐다. `ruff` 와 시험 1,402가 그것을 받는다.
+
+## 246. 문서가 적은 저장소 숫자 — 대조 축이 없으면 셋 다 낡는다
+
+> 2026-09-25
+
+강제자  `tests/test_repo_numbers.py`(축 셋 · 부분집합 오탐 방어 · 빈 축 감지) · `MASTER §21-2`(봉인 스냅샷 수를 적지 않는다). 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+§243 감사를 닫고 봉인을 씌울 수 있느냐는 물음에 답하려고
+남은 것을 다시 셌다. **2분 만에 새 어긋남 셋이 나왔다.**
+
+    MASTER:2213   봉인 소스 종수를 64 라 적었다      실물 71종
+    MASTER:2597   전수 절 수를 1,004 라 적었다       실물 1,017절
+    MASTER:3667   봉인 절 수를 540 이라 적었다       봉인 실물 909절
+
+★ **이 세 줄이 옛 표기를 그대로 쓰지 않는 이유**가 있다 — 아래 강제자가
+  표기를 보고 문다. 회고가 옛 표기를 그대로 인용하면 회고 자신이 빨개진다.
+  `<!--stale-ok-->` 로 끌 수도 있지만, **끄는 것보다 표기를 안 쓰는 것이
+  낫다** — 면제는 쌓이고 아무도 안 걷는다(§243 이 유령 면제 열넷을 걷었다).
+
+★ **셋 다 §243 이 지나간 자리다.** 그 감사가 91건을 고치면서 이 셋을 못 본
+  이유는 단순하다 — **대조 축이 없었다.** `dms verify` 는 참조가 살아 있는지만
+  보고 수는 안 본다. `test_doc_numbers`(§243 이 신설)는 `width_src` ·
+  `unknown_reason` 둘만 본다. 즉 감사는 「사람이 그 줄을 읽었나」에 걸려
+  있었고, 1만 4천 행 문서에서 사람이 읽는 것은 축이 아니다.
+
+★ 같은 날 **§243 배치의 PR 본문에 적힌 「`dupcheck` 1군」도 틀렸다** — 실측은
+  사본군 5 · 함수 13이다. 같은 형태의 과장이 이 감사에서 세 번째다(§244 가
+  둘을 적었다). 문서를 고치는 배치의 **보고문 자체가 축 밖**이라는 것이 이
+  항목의 진짜 발견이고, 보고문에는 강제자가 없다.
+
+### 246-1. 숫자를 고치는 것은 처방이 아니다
+
+강제자  `tests/test_repo_numbers.py::test_the_documents_count_the_repository_correctly`
+
+세 자리를 71 · 1,013 으로 고치면 **다음 소스를 붙이는 날 다시 낡는다.**
+§243 이 고친 91건 중 상당수가 그렇게 생긴 것이다(2026-09-16 흡수-2 가
+건너뛴 일곱). 처방은 **축을 박는 것**이고, 축은 정본이 있어야 선다.
+
+    `datasets` NN종      ← `sources.yaml::datasets`        (대장 전체)
+    `retired` N종        ← `sources.yaml::retired`
+    소스 NN종의 raw      ← datasets − `on_demand`          (봉인 대상)
+    절 N,NNN 전수        ← `dms.scan()` 행 수              (지금 세는 절)
+
+`tests/test_repo_numbers.py` 가 이 넷을 문서 넷에서 잡아 실물과 댄다.
+강제자는 **문서를 읽지 않는다** — 표기를 읽는다.
+
+★ **표기를 좁게 잡았다.** 「소스 21종」처럼 부분집합을 말하는 자리가 실재한다
+  (`MASTER §18` · `authority` 칸이 있는 것만 센다). 그래서 정본 이름이나
+  `raw` 가 붙은 표기만 본다. 넓게 잡으면 부분집합이 걸려 사람이 검사를 끄고,
+  그것이 §243 이 「선언이 검사보다 넓으면 거짓 초록이 된다」로 적은 것의
+  거울상이다 — **검사가 선언보다 넓으면 사람이 검사를 끈다.**
+
+### 246-2. 봉인 스냅샷의 수는 문서에 안 적는다
+
+강제자  `tests/test_repo_numbers.py::test_the_matchers_are_alive`(봉인 표기를 잡으면 오탐이라고 문다)
+
+`MASTER §21-2` 가 「절 540개」라 적고 있었다. 봉인은 **그 순간의 스냅샷**이고
+절 수는 봉인마다 변한다 — 고정 숫자로 적는 자리 자체가 틀렸다. 값을 고치는
+대신 **수를 뺐다.** 지금 수는 `dms.py verify` 가 띄운다.
+
+★ 위 넷과 이것의 차이는 **정본이 있느냐**다. `datasets` 종수는 `sources.yaml`
+  이 정본이라 축이 선다. 봉인 시점 절 수는 정본이 될 수 없다 — 다음 봉인이
+  덮어쓴다. **정본이 없는 값은 문서에 적지 않는다**가 이 항목의 규약이다.
+
+### 246-3. 그래서 봉인을 씌울 수 있는가 — 아니다
+
+강제자 없음 — 사유: 닫는 조건 ①은 레이크가 있는 기계에서만 관측된다. ②~④는 `PLAN §1` 이 든다
+
+물음은 「감사 다 돌렸고 다 클린하고 다 정합하고 아키텍처적으로 완벽한가」
+였다. 셋 다 아니다. 근거는 숫자다 —
+
+    PLAN §1        114건 열림 (🟡 55 · 🔴 21 · ⏳ 20 · 📄 18) — #131 은 이 항목이 냈다
+    아키텍처 부채   #121 · #123 · #124 · #126~#130 아홉 — 손대지 않았다
+    정합            이 항목이 방금 셋을 찾았다
+    판정 불변       **정적 관측뿐**이다 — `git diff` 에 산출물이 0건이라는 것
+
+★ 재실행 바이트 동일은 `tools/fl.sh --relock`(4b 단계 · 429행)이 관측한다.
+  레이크가 없는 자리에서 낼 수 있는 것은 그 관측의 **전제**까지다.
+
+★ **닫는 조건을 여기 적는다.** ① `--relock` 재실행 산출물 바이트 동일
+  ② PLAN §1 의 🔴 21건 처리(닫거나 근거를 적고 내림) ③ `on_demand` 를 뺀
+  소스 71종 전부가 `dms rawdiff` 를 통과 ④ 기획서 표 16 · 29 확정.
+  **①은 네 기계에서만 난다.** ②~④는 여기서 할 수 있고, ②가 가장 크다.
+
+## 247. 레이크 없이도 판정은 돈다 — 그 전제가 틀려서 수술 넷을 미뤄 뒀었다
+
+> 2026-09-25
+
+강제자  `tests/test_nfa_compare.py`(폐포 래칫 17 · 대장 파서 넷 재진입 · gpkg 왕복 등가 · 단계 배선) · `tests/test_reproducibility.py::test_stage_scripts_are_every_pipeline_step`. 하위 둘은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+§244 와 §245 가 아키텍처 부채 아홉을 열어 두면서 같은 이유를 적었다 —
+「폐포 안이라 재잠금이 따르고, **레이크가 없는 자리에서는 산출물이 바이트
+동일한지 증명할 수 없다.** 증명 못 하는 수술은 하지 않는다」.
+
+**그 전제가 틀렸다.**
+
+`pipeline.STEPS` 를 읽으면 `RAW` 를 읽는 단계는 `ingest` · `terrain` · `ortho`
+셋뿐이다. **`segments`(노딩 → 폭 → 판정)는 `data/processed` 만 읽는다** —
+그 입력 열하나가 전부 저장소에 있다. `pipeline.py:459` 도 raw 가 비었을 때
+`ingest` 가 대상 단계에 없으면 죽이지 않는다.
+
+    uv run python -m firelane.segments      1분 44초 · raw 불필요
+
+실제로 돌려 확인한 것 —
+
+    판정      clear 465 · unknown 399 · needs_cv 226 · blocked 191
+    결정론    두 번 돌려 `segments.geojson` 바이트 동일
+    커밋본과  판정 속성은 `z` 하나만 다르다 — `terrain` 이 나중에 덧쓰는 값이라
+              판정이 아니다. 형상은 24구간에서 부동소수점 마지막 자리만 다르고
+              그것은 커밋본이 다른 기계 산출이기 때문이다
+
+★ **왜 이것을 못 봤나.** 「레이크가 없다」를 「파이프라인을 못 돌린다」로 읽었다.
+  단계별 입력 선언이 코드에 있는데(`Step.reads`) 그것을 안 열어 봤다 —
+  선언을 믿지 않고 **가정을 믿었다.** 이 저장소가 반복해 배운 형태의 거울상이다.
+  §243 이 「선언이 검사보다 넓으면 거짓 초록」을 적었는데, 여기서는
+  **가정이 선언보다 좁아 할 수 있는 일을 안 했다.**
+
+### 247-1. 늦은 import 한 줄이 1,137줄을 판정 지문에 넣고 있었다
+
+강제자  `tests/test_nfa_compare.py::test_the_ledger_parsers_stay_out_of_the_judgment_closure`
+
+`seg/report.py::_fire_access_csv` 안의 `from firelane import ledger` 하나가
+`ledger`(509) · `naming`(440) · `scope`(188) · `kinds`(93)를
+`firelane.segments` 의 import 닫힘에 넣었다. 그 닫힘이 곧 판정 지문이다
+(`tools/golden.py::judgment_files`). **넷 다 판정에 한 톨도 기여하지 않는다** —
+파일명 문법 파서와 행정범위 어휘다.
+
+그래서 `naming.py` 의 정규식 하나만 고쳐도 `golden check` 가 울고 재잠금이
+따라왔다. 정당하지 않은 반복 경보는 `--allow-stale` 을 습관으로 만든다(§69).
+
+    폐포  21파일 → 17파일
+
+★ `kinds` 는 `PLAN #124` 가 안 세던 것이다. `ledger` 를 통해서만 들어오므로
+  그 한 줄이 끊기면 같이 빠진다. 행은 「21 → 18」이라 적었고 실제는 17이다.
+
+★ **로직을 한 글자도 안 바꿨다.** 달라진 것은 `g` 를 어디서 받는가 하나다 —
+  메모리 인자에서 직전 단계가 낸 `segments_5186.gpkg` 로. 그 왕복이 등가인지는
+  추론이 아니라 실물로 봐야 한다: gpkg 가 좌표를 배정밀도로 저장한다는 것을
+  **믿는 것과 확인하는 것은 다르다.** 합성 입력으로 세 칸 · 네 연산을 댔다.
+
+### 247-2. 선례가 있었다
+
+`segments._write_scope()` 를 같은 이유로 `display_scope` 단계로 내린 것이
+2026-09-23(§W3-6)이다. 표출 상수가 판정 지문 안에 있어 **지도 여백 60m 를
+고쳐도 재잠금이 따라왔다.** 이번 것은 같은 병의 더 큰 판이다 — 그때는 상수
+둘이었고 이번엔 모듈 넷 1,137줄이다.
+
+★ 선례가 있는데 아홉 달 동안 같은 형태가 하나 더 살아 있었다는 것이,
+  「한 번 고친 병은 검사로 박지 않으면 다시 자란다」의 증거다. 그래서 이번에는
+  **폐포 수 자체에 래칫**을 걸었다 — 17에서 늘면 무엇이 왜 들어왔는지 적게 된다.
+
+### 247-3. 남은 것 하나
+
+이 단계는 raw 의 `fire_access` CSV 가 있어야 돈다. 그것이 없는 기계에서는
+`nfa_compare.json` 이 재생성되지 않고 **종전 파일이 그대로 남는다**(원본도
+같은 조건에서 조용히 건너뛰었으므로 동작은 같다). 첫 전량 실행에서
+`abs_dev_sum_m` 이 8.31 로 나오는지 보고 닫아라 — `PLAN §1 #124` 가 든다.
+
+## 248. 차량 규칙이 두 언어로 사는데 알고리즘 동치를 아무도 안 봤다
+
+> 2026-09-25
+
+강제자  `tests/test_vehicle_parity.py`(격자 18,228칸 · 경계값 · 주입 다섯) · `web/navi/test/vehicleParity.ts`. 하위 둘은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`seg/vehicle.py` 와 `domain/vehicle.ts` 가 같은 규칙(내륜차 · 필요폭 ·
+회전가부)을 각자 구현한다. 지금 강제자는 **상수 재선언 존재 여부**만 본다 —
+`test_sources_of_truth` 가 `OFFTRACK_MIN = 0.05` 라는 문자열이 TS 에 있는지
+확인하는 수준이고, **계산식을 바꿔도 아무도 안 운다.**
+
+격자 18,228칸을 양쪽에 넣어 댔다. **계약 안에서는 비트까지 같다** — 최대 차
+0.0. 두 판이 쓰는 연산은 사칙과 제곱근뿐이고 IEEE-754 에서 그 다섯은 정확히
+반올림이므로, 같은 순서·같은 값이면 비트가 같은 것이 당연하다. 허용오차
+1e-12 는 JSON 십진 왕복의 여유일 뿐이고 **경계 판정에는 허용오차를 안 둔다** —
+한 비트가 통행 가부를 뒤집는다.
+
+### 248-1. 계약 밖에서 갈리는 자리 하나
+
+강제자  `tests/test_vehicle_parity.py::test_a_verified_flag_without_its_value_is_where_the_two_split`
+
+    wheelbase_verified: true 인데 wheelbase_m 이 제원에 없을 때
+        py   KeyError
+        ts   내륜차 0 · 늘 회전 가능
+
+**이론이 아니다 — 오늘 발행물이 정확히 그 꼴이다.** `publish_web._keep` 이
+`wheelbase_m` · `turn_radius_m` 을 일부러 안 싣는다(미검증 값은 안 보낸다 ·
+§81 · §86-5). 즉 **지금 TS 판은 플래그와 무관하게 늘 내륜차 0** 이다.
+
+두 판이 오늘 같은 답을 내는 이유는 식이 같아서가 아니라 **대장의 플래그 둘이
+다 false 라서**다. D-30 인터뷰로 축거를 받아 `wheelbase_verified` 를 켜는 날
+R=8m 코너 필요폭이 py 4.07m · ts 3.00m 로 **1.07m** 갈리고,
+`test_sources_of_truth` 는 그때도 초록이다. 그날 우는 덫을 걸었다.
+
+★ **고치지 않았다.** `PLAN §1 #126` 이 「파트 간 합의」로 열려 있고 어느 쪽이
+  옳은지는 사람이 정한다. 이 배치가 한 일은 **차이를 보이게 한 것**이다.
+
+### 248-2. 무엇을 안 보는가
+
+강제자 없음 — 사유: 호출부 대조는 이 검사의 범위 밖이고, 그 층을 세우려면 두 앱의 상태 흐름을 모사해야 한다. `PLAN §1 #126` 이 든다
+
+두 판이 같은 답을 내도 **부르는 쪽이 다른 인자를 넣으면** 화면과 판정이
+갈린다. 248-1 이 바로 그 층이고, 이 검사는 그것을 *발견*했을 뿐 상시로 잡지
+않는다. 계수(2.5 · 1.2 · 1.8)가 **같은가**는 보지만 **옳은가**는 안 본다.
+
+## 249. 판정 파라미터 정본이 `.env` 를 읽고 있었다
+
+> 2026-09-25
+
+강제자  `tests/test_seg_params_is_pure.py`(순수성 · 배선 생존 · 기본값) · `tests/test_layering.py`(EXEMPT 가 비었다). 하위 둘은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`seg/params.py` 는 임계값의 유일한 정본인데(MASTER §18-5 R3) 진단 스위치
+다섯을 담느라 `firelane.paths` 를 import 했고, `paths` 는 **모듈 적재 시점에
+`.env` 를 읽는다**(`paths.py:65`). 「폭 3.0m」를 알고 싶어 이 모듈을 import
+하는 것만으로 디스크가 열렸다. 같은 파일에 가변 전역 `_DBG = {"on": False}`
+도 있었고 `segments.py` 가 그것을 켰다 껐다 했다 — 도메인 모듈에 **실행
+상태**가 살았다.
+
+    FIRE_LANE_MIX_SRC    → WidthEngine(mix_src=...)
+    FIRE_LANE_OLD_SNAP   → WidthEngine(old_snap=...) · diagnostics(old_snap=...)
+    FIRE_LANE_NO_MERGE   → segments.main() 지역변수
+    FIRE_LANE_DEBUG_SEG  → segments.main() 지역변수
+    FIRE_LANE_DEBUG_XY   → segments.main() 지역변수
+    _DBG["on"]           → WidthEngine.debug
+
+**`seg/params.py` 가 이제 아무것도 import 하지 않는다.**
+
+### 249-1. 옮긴 배선이 죽지 않았는지 실측한다
+
+강제자  `tests/test_seg_params_is_pure.py::test_the_mix_src_switch_still_changes_the_answer`
+
+이 수술에서 가장 흔한 사고는 값이 틀리는 것이 아니라 스위치가 **아무 데도
+안 닿는 것**이다. 그러면 판정은 그대로라 게이트가 안 울고, 진단 스위치는 쓸
+일이 드물어 몇 달 뒤에야 드러난다. 그래서 실제로 켜서 돌렸다 —
+
+    기본            clear 465 · unknown 399 · needs_cv 226 · blocked 191
+    MIX_SRC=1       clear 459 · unknown 398 · needs_cv 231 · blocked 193
+
+★ 시험 쪽은 합성 형상으로 같은 것을 본다(레이크가 없어도 돈다). 「켜면
+  달라지는가」만 보고 **켠 쪽이 옳은지는 안 본다** — 다섯 다 종전 동작으로
+  되돌리는 진단용이고 옳은 쪽은 기본값이다.
+
+### 249-2. 행이 적던 것 둘이 틀렸다
+
+강제자 없음 — 사유: 행 본문의 정확성을 재는 축이 없다. `PLAN §13` 의 측정 대장이 그 자리다
+
+`PLAN #121` 은 「다섯을 `WidthEngine.__init__` 인자로 올린다」고 적었는데
+실제로 `WidthEngine` 에 닿는 것은 둘뿐이고 `OLD_SNAP` 은 `seg/report.py` 도
+쓴다. `#123` 은 `widths(geom, debug=False)` 라 적었는데 `widths` 는 자유
+함수가 아니라 **메서드**다(`seg/width.py:241`).
+
+★ 둘 다 **닫는 법을 적어 둔 행**이다. 닫는 법이 틀려 있으면 그것을 믿고
+  시작한 사람이 중간에 막힌다 — 행을 믿게 하려면 행도 대조돼야 한다.
+
+## 250. 검사가 소스 문자열을 읽고 있었다 — 이음매가 없어서
+
+> 2026-09-25
+
+강제자  `tests/test_write_route.py`(막힘 · 도달 · 칸 계약 · 기본 경로) · `tests/test_guards.py::test_the_route_guard_lives_where_it_can_see_behavior`(자리 지킴). 하위 하나는 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+차량 경로의 막힘·도달 규칙을 지키던 것은 단언 넷이었고, 넷 다
+`segments.py` 를 **글자로 읽었다** —
+
+    "P.remove_edges_from" in body
+    'd["blocked"]]' in body
+    "reachable" in body
+    'd["a"] in reach and d["b"] in reach' in body
+
+그것은 검사가 아니라 **표절 대조**다. 실측으로 확인했다 —
+
+    지역변수 `P` → `Q` (행동 불변)      종전 빨강 · 새 검사 초록
+    `and` → `or`  (도달 판정이 뒤집힘)   종전이 볼 수 있는 것은 그 문자열뿐
+    막힌 엣지를 그래프에 남김            새 검사 둘이 빨강
+
+### 250-1. 이음매 하나로 열린다
+
+`_write_route` 가 `PROCESSED` 에 직접 썼으므로 시험이 결과를 볼 방법이
+없었다. `dst` 인자 하나(`dst = dst or PROCESSED / "route_vehicle.csv"`)로
+합성 그래프를 넣고 CSV 를 읽을 수 있다. 이 함수는 **파일을 하나도 안 읽는다** —
+`g` 를 받아 계산하고 CSV 하나를 쓴다. 그래서 이음매가 싸다.
+
+★ `route_vehicle.csv` 는 골든 지문(L1·L2·L3)에 없다. 즉 **판정은 구조상
+  안 건드린다.** 그럼에도 `segments` 를 재실행해 산출물 다섯의 바이트 동일을
+  확인했다 — 구조상 그렇다는 것과 그런 것은 다르다.
+
+### 250-2. 무엇을 지키는가
+
+강제자 없음 — 사유: 경로가 **최적인지**는 비용함수가 정하고 `PLAN §1 #2` 가 든다
+
+보는 것은 둘이다. ① 막힌 길을 쓰는가 ② 못 가는 곳을 갈 수 있다고 하는가.
+**둘 다 미탐 방향**이라 소방차를 잘못 보낸다. 2026-08-24 에 통행 불가 416인데
+경로에 996구간이 쓰인 것이 ①이다.
+
+★ 카나리아를 같이 뒀다 — 경로에 쓰인 구간이 0이면 ①은 늘 초록이다.
+  합성 그래프가 안 서면 검사가 통째로 거짓이 되는 자리다.
+
+## 251. 지표가 터미널에만 있었다 — 산출기와 그 게이트
+
+> 2026-09-25
+
+강제자  `tests/test_evalgen.py`(게이트 세 팔을 따로 깨서 깬 팔만 우는지까지 본다 · 변이 넷) · `tools/baseline.py::FILES`(실행 간 자동 대조) · `tools/verify.sh`(관문). 하위 둘은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`PLAN §1 #91` 이 「**지표는 값이 아니라 실행이다 — 터미널에만 있는 숫자는
+소실된다**」고 적고 열려 있었다. `tools/evalgen.py` 가 `data/processed/eval.json`
+으로 낸다. 형식을 봉인 `meta.json` 과 맞춰 `baseline.FILES` 한 줄로 실행 간
+자동 대조가 붙는다.
+
+★ **게이트가 첫 줄이다.** 지문(L1·L2·L3) · 전이행렬 · 매니페스트 셋을 보고
+  어긋나면 **지표를 안 뽑고 rc=2 로 죽는다.** 즉 `eval.json` 이 존재한다는 것
+  자체가 「이 숫자는 이 산출물에서 나왔다」의 증적이다. 값만 적어 두면 어느
+  실행의 것인지 아무도 모른다 — 이 저장소가 두 번 겪은 형태다(§143 의 네 값).
+
+    E-1  진입 실패 1,762 (81.2%) · 실거리비 중앙 1.000 · p90 1.163 · 최대 2.475
+    E-3  영상판정 불가 399/1,281 (31.1%) · 연장 17,168m/58,309m (29.4%)
+
+★ **E-2 · E-4 는 안 냈다.** E-2 는 오류 비대칭(#117)이 미정이고 E-4 는 D-25
+  실측(#4)이 전건이다. **없는 전건을 산출기가 대신 정하지 않는다** — 파일의
+  `known_limits` 가 그것을 든다. 표본 설계(#94)도 미정이고 분모가 노드라는
+  것을 파일이 적는다.
+
+### 251-1. 지산119안전센터가 섬에 있다
+
+강제자 없음 — 사유: 이것이 데이터 결함인지 실제인지 아직 모른다. 아는 것을 적는 것이 먼저다. `PLAN §1 #120` 이 든다
+
+`#120` 역산이 `d2/d1 > 1.5 and d2 < inf` 쌍 11 → 자리 4 → 조건 충족 3을 냈다.
+**그런데 지산 출발은 0 자리다.** 접속 노드가 통행 가능 그래프에서
+**3/1,086 노드**짜리 성분에 있다 — 통행 불가 구간에 둘러싸여 있다.
+
+파이프라인 자신의 `route_vehicle.csv`(도달 834/1,281)와 같은 결과이므로 새
+사실이 아니라 **한 번도 이름을 안 붙인 사실**이다. `#94` 의 「결손은 분모에서
+빼지 말고 별도 항으로」대로 `E1.gaps` 에 항으로 적고 쌍은 분모에 남긴다.
+
+★ **답사 계획을 세우기 전에 이것이 데이터 결함인지 실제인지 먼저 봐야 한다.**
+  실제라면 지산 관할이 통째로 접근 곤란이라는 뜻이고, 그것은 이 프로젝트가
+  낼 수 있는 가장 큰 발견이다. 결함이라면 노딩이나 폭 판정이 그 근처에서
+  틀린 것이다.
+
+### 251-2. 코너 조건이 지금 아무것도 안 거른다
+
+강제자  `tests/test_evalgen.py::test_scenario_corner_condition_is_declared_vacuous`
+
+`turn_radius_verified: false` 라 `can_turn` 이 항상 참이고, 따라서 선정 조건
+셋 중 「코너 통과 가능」은 **조건을 통과한 것이 아니라 조건이 비어 있는 것**이다.
+`corner_vacuous: true` 로 파일에 적었다.
+
+★ 조건이 실제로 무언가를 거르기 시작하면 그 선언이 거짓이 되고 강제자가
+  운다 — **목표에 닿는 날 빨개지는 검사**다.
+
+## 252. 노드 접합이 두 곳에 있었고 **규칙이 달랐다**
+
+> 2026-09-25
+
+강제자  `tests/test_snap_groups.py`(한 문 강제 · 접합 규칙 · 0.02m 경계 · 퇴화 입력) · `tests/test_guards.py::test_route_graph_snaps_nodes_like_build_graph`(두 곳이 그 문을 쓰는가). 하위 하나는 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+같은 union-find 15줄이 `seg/graph.py`(§4 노드 접합)와
+`segments.py::_write_route`(2차 경로) 두 곳에 있었다. `PLAN §1 #125` 는
+「**공백까지 같게**」라 적었는데 **틀렸다** —
+
+    graph.py     _par[ri] = rj                  먼저 만난 쪽을 뒤로
+    segments.py  _par[max(ri, rj)] = min(...)   큰 인덱스를 작은 쪽 아래로
+
+집합 분할은 같지만 **대표 인덱스가 다르다.** 그것이 하류로 새면 두 그래프가
+갈린다 — 그리고 `segments.py` 머리말이 「**두 곳이 다른 규칙으로 노드를 묶으면
+그래프가 두 개가 된다**」고 적고 있었다. **정작 그 두 곳이 다른 규칙이었다.**
+
+### 252-1. 추론으로 합치지 않았다
+
+`PLAN §1 #47` 이 「`_find` ×5 동치성이 확인되지 않았다」로 들고 있고, 합치기
+전에 증명이 먼저라는 것이 그 행의 조건이다. 순서를 이렇게 했다 —
+
+    ① `graph.py` 쪽 **방향만** 바꾼다(`_par[ri] = rj` → `max → min`)
+    ② `segments` 재실행 → 판정 산출물 다섯 **바이트 동일**
+    ③ 그제서야 `segments.py` 를 합친다
+    ④ 다시 재실행 → 바이트 동일
+
+②가 동치의 관측이다. 「집합 분할이 같으니 괜찮다」는 논증이 아니라, **방향을
+바꿔도 산출물이 안 움직인다**는 사실이 근거다.
+
+★ 하류가 대표 인덱스에 안 기댄다는 것도 확인했다 — `graph.py` 는 그룹의
+  무게중심을 쓰고, `segments.py` 는 그룹의 **최소 인덱스 점** 좌표를 쓴다
+  (`setdefault` 가 오름차순 순회에서 첫 점을 잡으므로 대표가 누구든 같다).
+
+    사본군 함수 13 → 12 · `segments.py` 877 → 863행
+
+### 252-2. 여기서도 문자열 단언이 나왔다
+
+강제자 없음 — 사유: 같은 형태가 또 있는지 세는 축이 없다. `PLAN §13` 이 그 자리다
+
+`test_route_graph_snaps_nodes_like_build_graph` 가 `segments.py` 를 글자로 읽어
+`"_tree = STRtree(_pts)"` 같은 조각 넷을 찾고 있었다 — §250 과 같은 병이다.
+두 곳을 한 문으로 합치자 그 문자열이 사라져 **행동은 그대로인데 빨개졌다.**
+그것이 이 형태의 값이 음수라는 증거다.
+
+★ **거짓 초록도 하나 만들었다가 지웠다.** 0.02m 접합 사고를 `_write_route`
+  산출물로 재현하려 했는데, 안전센터가 둘이라 합성 그래프에서 지산이 **떨어져
+  나간 쪽에 직접 붙는다.** 노드가 갈려도 `reachable` 이 1 이라 늘 초록이었다.
+  `NODE_TOL` 을 0.001 로 내려 보고 알았다 — **초록인 검사는 스스로 보고 있다는
+  것을 증명하지 못한다**(§243). 경계는 `snap_groups` 단위 시험으로 옮겼다.
+
+## 253. 차량 열 중 여섯이 대장에 없는 profile 을 가리키고 있었다
+
+> 2026-09-25
+
+강제자  `tests/test_fleet_profiles.py`(이름 실재 · 발행기 거부 · 전장 갈림 · 물탱크차 값 · null 사유 · 전폭 동일이 규격임) · `src/firelane/publish_fleet.py`(없는 이름이면 죽는다). 하위 하나는 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`publish_fleet` 이 `profiles.get(id, {})` 로 받고 `p.get("width_m", spec["width_m"])`
+로 떨어뜨렸다 — **없는 이름을 조용히 넘겼다.** 열 차종 중 **여섯**이 전장·전고
+null 이고 전폭은 기준차 2.5 였다.
+
+★ **그중 하나가 물탱크차다.** 대장은 `water_large`(전장 10.0m)를 들고 있는데
+  config 가 `tanker_large` 를 불렀다. 2026-08-24 전북소방 인터뷰의 「물탱크차는
+  커서 못 들어간다」가 **폭이 아니라 전장**이라고 대장 `vehicle_profiles.notes`
+  가 적어 두었고, 정작 그 전장이 비어 있었다.
+
+    전장  8.0 하나뿐 → 8.0 · 9.0 · 10.0 셋으로
+
+★ **전폭이 전 차종 2.5 인 것은 결함이 아니다.** 대장이 「경형·소형(1.9·2.2)을
+  빼면 전 차종 2.5 로 같다」고 적는다 — 소방청 기본규격이고 동구에 경형·소형이
+  없다. 이 배치에서 그것을 결함으로 **오진할 뻔했다.** 다음 사람이 같은 오진을
+  하지 않게 「대장이 그 줄을 들고 있는가」를 보는 검사를 세웠다.
+
+### 253-1. 추측해서 붙이지 않았다
+
+명확한 둘만 매핑했다 — `water_large`(라벨이 「물탱크차 (대형)」 그대로) ·
+`articulated_u33`(「굴절형 27m」 = 「굴절차 33m 미만급」). 나머지 넷은
+`profile: null` + 사유다:
+
+- **구급차** — 대장 `vehicle_profiles` 에 항목이 아예 없다
+- **직진형 53m 사다리차** — 대장의 `articulated_*` 는 굴절차이고 다른 축이다
+- **`rescue_5t`** — 중형(7.8)·대형(8.5) 어느 쪽인지 근거가 없다
+
+억지로 붙이면 그 값이 판정까지 간다. `light`(조연차)가 이미 `profile: null` 로
+그 선례를 세워 두었다.
+
+★ **조용한 fallback 을 없앴다.** 대장에 없는 이름이면 `publish_fleet` 이 죽는다.
+  그것이 이 결함이 숨은 유일한 이유다.
+
+★ 이 배치가 또 「한 문으로 읽어라」 래칫을 깼다 — 새 검사가 대장을 yaml 로 직접
+  열었다. **§246 에 같은 사고를 적고도 반복했다.** `ledger.load()` 로 고쳤다.
+
+## 254. 문서가 숫자를 들고 있으면 낡는다 — 도구가 주입한다
+
+> 2026-09-25
+
+강제자  `tools/docgen.py`(`--check` 는 대조 · 인자 없으면 채운다) · `tests/test_docgen.py`(합성 문서로 주입기를 문다) · `tools/verify.sh`(관문). 하위 하나는 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+§246 이 대조 축을 세웠지만 **울기만 하고 고쳐주지 않아** 사람이 매번 손으로
+맞췄다. 오늘 하루에만 —
+
+    전수 절 수  1,004 → 1,017 → 1,030 → 1,033 → 1,036 → 1,039   (다섯 번)
+    PLAN 빚     114 → 108 → 109
+
+`tools/docgen.py` 가 생성 블록 일곱 곳을 실물로 채운다. 축 여섯 —
+`datasets` · `sealable` · `sections` · `inherit` · `blank` · `plan_open`.
+`git log -S` 로 **반복해 고쳐진 줄**을 재서 골랐다(`plan_open` 은 열두 번).
+
+★ **새 낡음 하나가 그 자리에서 나왔다** — `MASTER §17` 이 「물림 312」라 적고
+  실물은 352 였다. 축이 없던 자리라 아무도 안 울었다.
+
+★ **정본이 없는 수는 지웠다** — `PLAN §13` 의 「강제자 49개」 세 곳. 2026-09-18
+  감사가 눈으로 센 값이고 재는 도구가 없다. §246-2 와 같은 판단이다.
+
+★ 정본을 하나로 뒀다 — `test_repo_numbers.py` 가 직접 하던 `ledger.load()` ·
+  `dms.scan()` · 정규식을 걷어내고 `docgen` 에서 받는다. **도구는 블록만 열고
+  시험은 문서 넷 전부를 본다** — 고치는 자리는 좁게, 보는 자리는 넓게.
+
+★ **첫 실전에서 일했다.** 이 배치가 §255 를 쓰자 절 수가 1,036 → 1,039 로,
+  물림이 352 → 353 으로 움직였고 `docgen` 이 그것을 **손 안 대고** 채웠다.
+
+### 254-1. 있는 자료가 경로에 못 닿고 있었다
+
+강제자  `tools/cost_inputs.py` · `tests/test_cost_inputs.py` · `web/navi/test/pressure.test.ts`
+
+`speedbump` · `speedcam` · `child_zone` · `senior_zone` 는 **이미 발행되고 화면이
+읽는데** A* 는 못 봤다. 경로를 고른 **뒤에** 「몇 m 앞에 무엇이 있다」로 말할
+뿐이었다 — 안내는 선택이 아니다. `pressure.ts` 가 실측 415/1,281 구간에 붙고,
+`enforce_cam` 57지점 중 18이 도로명으로 붙는다.
+
+★ **계수를 전부 0 으로 뒀다.** `pressureFactor()` 가 정확히 1 을 내고 경로가 한
+  치도 안 움직인다. 근거 없는 배수를 넣으면 `§1-27` 측정 대장에 행을 세워야
+  하는데 그 표는 행 추가를 금한다 — **「값보다 스키마가 먼저다」.**
+  `avoidUncertain = 2.0` 도 안 건드렸다. 빚을 하나에서 여섯으로 늘리지 않는다.
+
+★ **결측과 0 을 갈랐다.** `if n:` 을 지워 `null`(못 셌다) · `0`(세었고 없다) ·
+  `undefined`(옛 발행물) 셋이 화면까지 간다. 그리고 **0 의 강도가 둘로
+  갈린다** — `ecam: 0` 은 「없다」가 아니라 「붙은 18지점 중에 없다」다.
+  미배치 몫을 발행물이 스스로 든다. 지오코딩을 지어내 0 을 메우지 않았다.
+
+★ **브리핑 정정 둘.** ① 「19종을 아무도 안 읽는다」에서 넷은 이미 읽히고 있었다 —
+  문제는 미사용이 아니라 **비용에 못 닿는 것**이었다(실제 `feeds: []` 는
+  `enforce_cam` · `school_zone` 둘). ② 「`park` 결측 110건」은 **전부 실제 0**
+  이었다. 「없음」 표기는 우연히 맞았고 스키마가 틀렸다.
+
+## 255. 봉인 무효화가 실제 영향보다 넓었다 — 그래서 감사할 일이 생겼다
+
+> 2026-09-25
+
+강제자  `tests/test_seal_axes.py`(선언이 실물 축을 덮는가 · 축별 무효가 좁게 나오는가 · 도구 무관 축 · 옛 봉인 · 카나리아) · `tools/dms.py::axis_tools`. 하위 하나는 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+`SEAL.json` 의 `tool` 지문 **하나**가 봉인 전체를 무효화했다. `_tool_print()` 가
+`dms.py` 가 부르는 도구 다섯(`dms` · `dupcheck` · `deadcheck` · `env_check` ·
+`verify.sh`)을 한 해시로 합쳤기 때문이다. 그래서 —
+
+    `dupcheck.py` 한 줄 수정  →  절 1,036개가 통째로 재검사 대상
+
+`dupcheck` 는 **코드 사본을 세는 도구**이고 절 내용과 아무 상관이 없다. 실제로
+이 배치가 `verify.sh` 에 단계 하나를 더한 순간 봉인 전체가 무효가 됐다.
+
+★ **그 구조가 「감사할 일을 만든다».** 전수 재검사는 비싸고(샤드 쪽에서는 OOM
+  위험이다 · `PLAN §1 #128`), 사람이 그것을 회피하기 시작하면 봉인은 장식이
+  된다. §243 이 「선언이 검사보다 넓으면 거짓 초록이 된다」를 적었고 이것은 그
+  **거울상**이다 — 무효화가 영향보다 넓으면 재검사가 습관적으로 건너뛰어진다.
+
+### 255-1. 축마다 자기를 무효화하는 도구를 든다
+
+    sections · denominator · dead_refs   ← tools/dms.py           (파싱·분류 규칙)
+    dup_groups                           ← tools/dupcheck.py
+    enforcers                            ← verify.sh · deadcheck · env_check
+    docs · raw · code · declared_red     ← (없음 — 순수 파일·입력 해시)
+
+`SEAL.json` 이 `tools` 칸에 **도구 하나씩** 지문을 남기고, `delta` 가 축별로
+무효를 판정한다. 실측 —
+
+    dupcheck.py 를 흔들면    무효 `dup_groups` 하나 · 절 1,036개는 **살아 있다**
+    verify.sh 를 흔들면      무효 `enforcers` 하나
+    dms.py 를 흔들면         무효 절 축 셋 (정당하다)
+    도구를 전부 흔들어도     `docs` · `raw` · `code` 는 살아 있다
+
+★ **옛 봉인(`tools` 칸이 없다)은 전 축 무효로 본다.** 축별 판정의 재료가 없는데
+  유효하다고 말하는 것은 검사를 끄는 것과 같다.
+
+### 255-2. 선언이 실물보다 좁아지는 것을 막는다
+
+강제자  `tests/test_seal_axes.py::test_every_sealed_axis_is_declared`
+
+축 표를 손으로 적는 것은 손목록이고, 손목록은 실물보다 좁아진다 — 이 저장소가 반복해
+겪은 형태다(W3-8 족 · `sizecheck` 가 `web/navi/src` 를 안 보던 것 · `gate_parity`
+의 유령 면제). 그래서 **양방향**으로 묶었다: 봉인에 있는데 선언에 없는 축이
+있으면 운다(무효 판정을 안 받는 축이 생긴다), 선언에만 있고 봉인에 없어도 운다
+(유령 선언은 「있다고 적혀 있으면 사람이 안 본다」다).
+
+★ 선언이 가리키는 도구가 `_tool_scope()` 밖이면 **지문이 아예 안 잡혀** 영영
+  안 바뀐 것으로 보인다. 그것도 검사가 잡는다.
+
+### 255-3. 좁히는 것은 **입증 뒤에만** 한다
+
+강제자  `tests/test_seal_axes.py::test_the_enforcer_axis_is_derived_not_hand_written` · `::test_no_axis_declares_less_than_the_code_calls` · `::test_the_declaration_is_not_wider_than_the_code_either`
+
+이 표를 처음 **손으로** 적었을 때 `enforcers` 에서 `dms.py` 와 `dupcheck.py` 를
+빠뜨렸다 — `PROBES` 가 그 둘을 `--selftest` 로 돌리는데 그것을 안 봤다.
+**입증 없이 무효 범위를 좁힌 것**이고, 좁힌 축은 「도구가 바뀌었는데 유효하다」고
+말한다. **거짓 초록보다 나쁘다** — 거짓 초록은 검사가 못 본 것이고, 이것은
+검사가 **봤다고 말하는데 안 본 것**이다.
+
+★ **손목록은 실물보다 좁아진다**(W3-8 족 · `sizecheck` 가 `web/navi/src` 를 안
+  보던 것 · `gate_parity` 의 유령 면제). 그래서 `enforcers` 는 손으로 안 적고
+  `PROBES` 에서 **뽑는다.** 새 프로브가 붙으면 그 순간 범위가 따라간다.
+
+★ 그리고 **입증을 검사로 박았다.** `cmd_seal` 이 부르는 `tools/…` 리터럴을 AST 로
+  뽑아 어느 축도 그것을 빠뜨리지 않았는지 본다(정적이라 실행이 필요 없다).
+  반대 방향도 본다 — 아무도 안 부르는 도구를 선언하면 근거 없이 무효가 넓어진다.
+
+★ 입증이 **실제로 내 단언을 정정했다.** 「`dupcheck` 를 흔들면 `dup_groups` 하나만
+  무효」라고 적었는데 실측은 `dup_groups` · `enforcers` 둘이다. 시험을 실물에
+  맞췄다. 핵심 주장은 그대로다 — **절 축 셋은 살아 있다.**
+
+    deadcheck.py     무효 1/9 · 살아있음 8
+    env_check.py     무효 1/9 · 살아있음 8
+    verify.sh        무효 1/9 · 살아있음 8
+    dupcheck.py      무효 2/9 · 살아있음 7   ← 절 1,043개 유효
+    dms.py           무효 4/9 · 살아있음 5   (정당하다)
+
+★ **이 검사가 아직 안 보는 것** — 선언이 **넓게** 틀린 경우다. `sections` 가 실은
+  `dupcheck` 결과에 의존한다면(그렇지 않다) 여기서는 안 잡히고 `seal` 재실행이
+  잡는다. 정적 추출은 「부르는가」를 보고 「값이 딸려 움직이는가」는 못 본다.
+
+## 256. 배치 진입에 사람이 매번 치던 네 줄이 있었다
+
+> 2026-09-25
+
+강제자 없음 — 사유: 이 스크립트는 INBOX 진입점이고 저장소 관문 밖에서 돈다(`fl.sh` 부트스트랩과 같은 자리). `bash -n` 과 모의 실행으로 본다
+
+전달 절차가 이랬다 —
+
+    cd ~/projects/fire-lane
+    set -a; . ./.env; set +a
+    unzip -o "$FIRE_LANE_INBOX/<zip>" -d "$FIRE_LANE_INBOX"
+    bash "$FIRE_LANE_INBOX/fl.sh" feat/<name> --all [--relock]
+
+네 줄을 손으로 치는 동안 매번 같은 셋이 틀릴 수 있다 — `.env` 를 안 태워
+`$FIRE_LANE_INBOX` 가 비거나, 브랜치 이름을 이전 배치 것으로 재사용하거나,
+**`--relock` 을 잊는 것**이다.
+
+★ **셋째가 제일 비싸다.** 판정 지문이 바뀌는 배치에서 재잠금을 빼면
+  `golden check` 가 다음 실행부터 계속 울고, 그 빨간불이 습관이 된다(§69).
+  그런데 「필요한가」는 **PR 본문이 이미 알고 있다** — 사람이 기억할 일이 아니다.
+
+`tools/inbox_go.sh` 가 INBOX 에 `go.sh` 로 배포된다.
+
+    bash ~/Downloads/go.sh
+
+`.env` 적재 · 최신 zip 풀기 · 브랜치 이름(PR_TITLE 에서 뽑고 날짜를 붙인다) ·
+`--relock` 여부(PR 본문의 「재잠금은 필요하다」를 읽는다)를 다 판단하고 `fl.sh` 를
+부른다. 인자로 브랜치를 주면 그것을 쓴다.
+
+★ **`.env` 값을 찍지 않는다.** 있는지와 줄 수만 본다 — `$VWORLD_KEY` 가 거기 있다.
+
+★ `tools/inbox_fl.sh` 와 같은 규율로 **저장소에 둔다.** INBOX 에만 사는
+  스크립트는 버전 관리·시험·리뷰 밖이고 INBOX 를 비우는 순간 사라진다
+  (그날 실제로 사라졌다 · §214-1).
+
+★ 모의 실행으로 넷을 확인했다 — 재잠금 요구가 있을 때 붙고, 없을 때 안 붙고,
+  브랜치를 직접 주면 그것을 쓰고, zip 이 없으면 풀린 패치로 넘어간다.
+
+★ **첫 안내가 틀렸다(2026-09-25).** `bash ~/Downloads/go.sh` 라고 적었는데 WSL 에서
+  `~` 는 리눅스 홈(`/home/fox`)이고 브라우저 다운로드는 윈도우 쪽
+  (`/mnt/c/Users/Fox/Downloads`)에 떨어진다. `unzip` 이 파일을 못 찾았다.
+  **경로를 손으로 쓴 것이 원인**이고, 그 경로는 이미 `.env` 의
+  `$FIRE_LANE_INBOX` 가 든다 — 이 스크립트가 존재하는 이유와 같은 병을 안내문이
+  저질렀다. 스크립트 머리말과 README 에 그 함정을 박았다.
+
+★ 저장소에 들어온 뒤로는 **`cd ~/projects/fire-lane && bash tools/inbox_go.sh`** 가
+  전부다. zip 을 미리 풀 필요도 없다 — 스크립트가 INBOX 에서 최신 zip 을 찾는다.
+
+## 257. 전수 verify 를 돌린 뒤에야 드러난 넷
+
+> 2026-09-25
+
+강제자  `tools/verify.sh`(전수 — 이것이 유일한 강제자다) · `PLAN §1 #133`(인자 대조 축 신설). 하위 둘은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+
+배치를 네 기계에 적용해 전수 `verify.sh` 를 돌리자 일곱이 빨갰다. **판정은
+통과했다** — 파이프라인 전량 초록 · `golden` 판정 불변 초록 · 판정 4종이
+개발 기계 값과 한 구간도 다르지 않았다(clear 465 · unknown 399 · needs_cv 226 ·
+blocked 191). 빨간 것은 전부 주변이고, 그중 **넷이 이 배치가 만든 것**이다.
+
+★ **공통 원인 하나** — 개발 기계에서는 `verify.sh` 전량을 돌릴 수 없다(레이크가
+  없다). 그래서 `pytest` 와 도구 아홉으로 대신했고, **관문 57단계 중 그 밖의
+  자리가 안 보였다.** 「돌릴 수 없는 검사는 없는 검사와 같다」의 판이다.
+
+### 257-1. 주석에 적은 빈 표현식이 워크플로 린트를 죽였다
+
+`run:` 블록 주석에 이중 중괄호를 **빈 채로** 적었다. `actionlint` 는 주석인지
+가리지 않고 그것을 표현식으로 파싱하고, 빈 것은 「unexpected end of input」이다.
+
+★ 위치가 `contract.yml:128:1395` 로 나온다 — 128행은 `run: |` 이고 1395는
+  **블록 전체를 한 줄로 본 오프셋**이다. 그 행을 읽으면 빈 줄이라 원인이 안
+  보인다. 같은 표기가 같은 파일에 둘 있었고 하나는 2026-08(#121) 것이다.
+
+### 257-2. 배선 검사가 「부르는가」만 보고 「인자가 맞는가」를 안 봤다
+
+`verify.sh:530` 이 `docx_figs.py --check` 로 부르는데 §243 이 그 도구를
+`"--x" in sys.argv` 에서 argparse 로 옮기면서 **`--check` 를 안 받게 했다.**
+`--sync` 가 없으면 대조하는 것이 기본 동작이므로 뜻은 같았지만 argparse 가
+모르는 인자에 죽는다.
+
+★ §243 이 고친 결함(오타가 조용히 무시된다)의 **짝**이다. 좁히는 쪽으로
+  고치면서 부르는 자리를 안 봤다. `test_tools_are_wired` 는 도구 **이름**이
+  관문에 있는지만 본다 — 인자 대조 축은 `PLAN §1 #133` 이 든다.
+
+### 257-3. node 가 TypeScript 를 못 먹는 기계가 있다
+
+강제자  `tests/test_vehicle_parity.py::_ts`(세 갈래 · 마지막은 esbuild)
+
+차분 시험이 `node` 에 `.ts` 를 직접 먹였다. 네 기계의 `node v22.22.1` 은
+`ERR_NO_TYPESCRIPT` 로 죽었다 — 개발 기계는 `v22.22.2` 이고 먹는다.
+**같은 22.22.x 인데 TypeScript 지원 없이 빌드된 바이너리가 있다.** 버전으로
+판단할 수 없다.
+
+`esbuild` 로 타입을 먼저 떼는 갈래를 더했다 — `web/navi` 의 vite 가 이미 품고
+있어 **새 의존성이 아니다**(`uv lock` 도 `npm i` 도 필요 없다).
+`--no-experimental-strip-types` 로 node 의 TS 지원을 끄고 돌려 그 갈래가
+실제로 통과하는 것을 확인했다.
+
+★ **skip 으로 넘기지 않았다.** 부를 수 없으면 대조가 없고, 대조 없는 초록이
+  이 시험이 막으려는 것 그 자체다(§248).
+
+★ 남은 셋은 이 배치 것이 아니다 — `web/proposal.pdf` 미생성(`tools/proposal_pdf.py`
+  가 만든다) · 레이크의 대장 밖 원본 둘. 사람이 판단할 자리라 손대지 않았다.
+
+## 258. 남은 셋은 사람이 판단할 자리가 아니었다 — 셋 다 검사의 범위가 좁았다
+
+> 2026-09-25
+
+강제자  `tests/test_lakecheck_l7.py` · `tests/test_doc_fsck.py::test_a_generated_path_is_a_claim_not_a_silence` · `tests/test_vintage_multi.py::test_the_index_reads_plural_stem_lists` · `tests/test_n1.py::test_the_deployed_surface_table_matches_web` · `tools/fixture_recut.py --selftest` · `tools/argcheck.py --selftest`. 하위 셋은 이 결정의 조각이고 위 강제자들이 결정 전체를 든다
+
+§257 의 끝에 「남은 셋은 사람이 판단할 자리라 손대지 않았다」고 적었다. **그 판단이
+틀렸다.** 셋 다 도구가 할 수 있는 일이었고, 셋 다 원인이 같았다 — **검사의 범위가
+자기 이름보다 좁았다**(W3-8 족). 그 족을 잡으려고 만든 검사들이 스스로 그 족이었다.
+
+★ 「사람이 판단할 자리」라고 부르는 것이 제일 비싼 오판이다. 사람에게 넘기면 그
+  자리는 다음 배치에도 남고, 남은 빨간불은 곧 안 읽히는 줄이 된다(§69).
+
+### 258-1. `lakecheck L7` 이 복수형 stem 목록과 글롭 선언을 안 봤다
+
+강제자  `tests/test_lakecheck_l7.py`(열하나 · 네 선언 형태를 각각)
+
+L7 은 「20MB 넘는 원본인데 대장이 모른다」를 센다. 두 건이 울었고 **둘 다 거짓
+양성**이었다 —
+
+- `vworld_map1k_jngj-donggu_20260307.zip` 은 `ngii1k` 이 복수형 stem 목록과 `files`
+  글롭으로 선언한다. 단수 칸이 없다. L7 은 단수 칸과 대장 키만 읽었다.
+  같은 실행의 ingest 로그가 그 zip 을 실제로 먹었다(도엽 74장).
+- `202608_상세주소DB_전체분.zip` 은 착륙 처분 블록에 사유까지 적혀 2026-08-30 에
+  판단이 끝났다. L7 은 그 블록을 아예 안 읽었다.
+
+판별식을 선언 면적만큼 넓혔다. 착륙 처분은 **`disposed()` 로** 읽는다 — L3 이 쓰는
+그 문이다. 손으로 다시 읽으면 「사유가 없으면 처분이 아니다」 규칙이 두 벌이 되고
+한 쪽만 고쳐진다.
+
+★ 반대편도 같이 잠갔다. 넓힌 판별식이 **진짜 누락을 놓치지 않는가** · 글롭이 폴더
+  전체를 변호하지 않는가 · 사유 없는 처분이 입을 막지 않는가. 네 주입이 각각 잡혔다.
+
+★ 시험이 **제 자신의 거짓 초록을 잡았다.** 처음 쓴 착륙 사례 둘은 `datasets` 를
+  비워 두어 L7 의 조기 반환(「대장을 못 읽었다」)을 타고 있었다 — 판별식을 재는
+  대신 조기 반환을 재고 있었다. 자리 채우기 항목을 넣어 막고, 그 조기 반환 자체는
+  따로 잰다.
+
+### 258-2. `vintage_check` 가 같은 날 같은 병으로 「대장에 없다」를 냈다
+
+`vintage_check` 의 색인도 단수 stem 칸만 읽었다. 그래서 대장이 아는 stem 둘을
+V3 「대장에 없는 stem」으로 적었다. 같은 한 줄이고 같은 처방이다.
+
+★ 결함으로 세지 않는 참고 항목이라 관문을 막지는 않았다. **그래서 엿새를 살았다.**
+  안 막는 줄도 사람이 읽는다 — 거짓이면 다음 거짓도 넘기게 된다.
+
+### 258-3. 생성물을 「없다」로 세는 검사에 「아직 안 구웠다」가 없었다
+
+강제자  `firelane.generated.dead_claims()` · `tests/test_doc_fsck.py::test_a_generated_path_is_a_claim_not_a_silence`
+
+`web/proposal.pdf` 는 `.gitignore` 고 변환기(libreoffice)가 있는 기계에서만
+구워진다. clone 직후에도 CI 에도 없는 것이 정상인데 README 와 MASTER 가 현재형으로
+가리킨다. `doc_fsck ②` 와 pytest 가 같이 빨개졌다.
+
+`data/processed` 를 검사 범위에서 뺀 사유가 **똑같다** — "재생성물이라 clone 직후에는
+없는 것이 정상". 그 경로는 `web/` 아래라 안 빠졌을 뿐이다.
+
+★ **면제를 만들지 않았다. 주장을 만들었다.** 「이 도구가 이것을 굽는다」고 적고,
+  검사가 **그 도구의 `OUT` 머리말에 그 경로가 실제로 적혀 있는지** 대조한다. 굽기를
+  멈추면 주장이 죽고 검사가 다시 운다 — 죽은 강제자 참조를 `dms verify` 가 잡는
+  것과 같은 규율이다. 사유 없는 침묵은 만들지 않는다.
+
+★ 표와 판정은 `firelane.generated` 에 둔다. 생성물 지식의 한 문이 거기고,
+  `doc_fsck` 는 이미 길이 예외 파일이라 거기 더 쌓을 자리가 아니다.
+
+### 258-4. 경계 사본이 엿새 낡아 있었고, 다시 뜨는 도구가 없었다
+
+강제자  `tools/fixture_recut.py --selftest` · `tests/test_dest_scope.py::test_committed_boundary_matches_the_pipeline`
+
+`tests/fixtures/dongmyeong_boundary.geojson` 은 `data/processed/boundary_emd.geojson`
+에서 손으로 뗀 한 장이다. 원본은 추적 밖이라 CI 에 없고, 사본이 없으면 범위 시험
+다섯이 통째로 안 돈다(§238). 사본을 두는 **대가가 조용히 낡는 것**이다.
+
+그 낡음이 2026-09-25 에 처음 울었다. **이 배치가 봉인지를 찢어 ingest 를 전량 다시
+돌렸기 때문이다** — 종전 실행은 샤드 봉인으로 거의 다 `SKIP` 이었고, 그래서 사본이
+9월 19일판에 맞춰진 채 엿새를 갔다. 재잠금이 그것을 드러냈다.
+
+그런데 「다시 떼라」는 안내만 있고 **떼는 도구가 없었다.**
+
+★ **진단을 같이 낸다.** 갈렸을 때 원인은 둘이고 처방이 정반대다 — ㉠ 좌표가 미세하게
+  흔들렸으면 ingest 가 재현 불가이고 다시 떠도 또 갈린다(판정 지문을 못 믿는다는
+  뜻이라 심각하다). ㉡ 모양이 실제로 바뀌었으면 원본 판이 바뀐 것이고 다시 뜨면
+  된다. 그래서 꼭짓점 최대 이동거리와 면적 변화를 찍는다 — 1mm 미만이면 ㉠ 이다.
+  시험이 갈렸을 때 그 수치를 **실패 메시지에 같이 낸다**. 사람이 손으로 재지 않는다.
+
+★ 관문에 `--write` 를 넣지 않았다. 자동으로 맞추면 갈린 사본이 조용히 맞춰지고
+  사본을 두는 값이 0 이 된다. 관문은 대조만 하고 쓰는 것은 사람이 시킨다.
+
+★ 처음 판은 **바이트로** 비교해서 들여쓰기 한 칸 차이에 「사본이 갈렸다」고 했다.
+  쓰는 쪽이 파싱해서 비교하므로 판정 기준을 그쪽에 맞췄다 — 형식만 다르면
+  건드리지 않는다.
+
+### 258-5. 「지도」라는 딱지가 석 달 낡아 있었다 — 배포면은 관제와 내비 둘이다
+
+강제자  `tests/test_n1.py::test_the_deployed_surface_table_matches_web` · `.github/workflows/deploy.yml`(배포 리허설의 루트 검사)
+
+2026-09-22 에 옛 GIS 지도(`web/js` · `style.css`)를 걷어내고 `web/index.html` 을
+관제로 넘기는 한 줄로 바꿨다. **그런데 README 와 MASTER 는 그 주소를 계속
+「지도」라고 적었다.** 세 달째 쓰는 사람이 「지도」를 누르면 관제로 튕긴다.
+
+`doc_fsck ②` 는 **경로가 실재하는지만** 본다 — 리다이렉트도 실재하므로 조용했다.
+**딱지의 참을 보는 검사가 없으면 딱지는 조용히 낡는다.**
+
+배포면을 둘로 정리했다 — **관제(`/<repo>/`) · 내비(`/<repo>/navi/`)**. 옛 체계의
+지도/내비가 그대로 관제/내비로 옮겨 앉는다.
+
+★ 관제의 공개 주소가 `navi/?view=ops` 인 것이 진짜 결함이었다. 쿼리스트링은 주소가
+  아니다 — 남에게 보낼 링크가 못 되고 북마크도 안 된다. 내비 빌드의 자산 경로가
+  **절대**(`/<repo>/navi/assets/`)라서 **같은 빌드본을 루트에 두면 그대로 뜬다.**
+  `build-navi` 가 그것을 앉히고 `window.__FL_VIEW="ops"` 를 박는다. 옛 쿼리 주소도
+  계속 산다 — 이미 나간 링크를 깨지 않는다.
+
+★ 경로(`location.pathname`)로 화면을 고르지 않았다. dev 서버의 루트는 `web/navi` 라
+  경로로 보면 **개발에서 기본 화면이 내비에서 관제로 뒤집힌다.** 박아 넣은 표시를
+  읽으면 그 사고가 없다.
+
+★ 강제자는 「딱지가 거짓인가」를 묻지 않는다. 로컬에는 빌드본이 없어 저장소의 루트
+  파일은 리다이렉트로 남는 것이 정상이다. 묻는 것은 **「그 자리를 누가 채우는가가
+  선언돼 있는가」** 다 — 아무도 안 채우는 리다이렉트를 화면이라 부르는 것이 결함이다.
+  배포가 실제로 앉히는지는 배포 리허설이 `__FL_VIEW` 로 잰다.
+
+★ 호스트는 안 바꿨다. 브이월드 키의 등록 도메인이 그것이고(§181-6), 바꾸면
+  배경지도가 **조용히** 빈 화면이 된다. 얻는 것이 없다.
+
+### 258-6. 커버리지 래칫 숫자를 문서가 손으로 들고 있었다
+
+28 → 32 로 올렸다(실기 실측 32.93% · v2 배치가 시험 파일 일곱을 더해 4.6%p 올렸다).
+올린 배치에서 같이 조인다 — 안 조이면 다음 배치가 되돌아가도 초록이고, 권고 줄은
+매번 떠서 곧 안 읽히는 줄이 된다.
+
+그런데 값을 바꾸자 MASTER 가 28 을 든 채 남아 `test_coverage_ratchet_has_one_home`
+이 울었다. **정본 단일화 가드가 또 값을 했다** — 그리고 그것이 이 숫자를 손으로 들
+이유가 없다는 증거다. `docgen` 축으로 옮겼다.
+
+★ 앵커를 「로 걸려 있」으로 달았다. 맨 표기만 잡으면 DECISIONS 의 **회고 인용**을
+  같이 잡고, 그러면 역사를 고치게 된다. 실제로 두 곳이 그렇게 걸렸다.
+
+★ `alive()` 가 축을 더하는 순간 `KeyError` 로 죽었다. **없는 축은 에러가 아니라
+  결함이다** — 죽으면 「왜 우는가」가 안 보이고 이 함수의 일이 우는 것이다. 빠진
+  축을 먼저 내게 고쳤고, 그 손목록이던 시험도 축 목록에서 짓게 바꿨다(§255-3 과
+  같은 형태다).
+
+### 258-7. 사본 판별식이 산문을 사본으로 세서 설명을 못 쓰게 만들었다
+
+강제자  `tests/test_lake.py::test_prose_is_not_a_copy`(네 갈래 · 배선까지)
+
+`test_lake` 의 두 래칫이 소스를 **글자로** 훑어 주석과 독스트링 안의 호출 표기도
+사본으로 셌다. 그래서 「이 표기를 왜 안 쓰는가」를 설명하려면 그 표기를 써야 하는데
+그것이 래칫을 올렸다. 2026-09-25 에 두 번 막혔고 둘 다 표기를 피해 적어 우회했다 —
+**우회는 되지만 다음 사람이 같은 데서 막힌다.** `test_layering` 은 같은 문제를
+2026-08-23 에 주석을 빼서 풀었다.
+
+주석과 독스트링을 걷었다. 두 수는 **40 · 11 그대로다** — 걷어낸 것이 전부 산문이
+아니었다는 뜻이고, 상한을 안 내린다. 값은 「이제 산문을 자유롭게 쓸 수 있다」는 것이다.
+
+★ **처음 판은 일반 문자열 리터럴까지 뺐고 두 수가 0 이 됐다.** 판별식이 찾는 표식이
+  대장 파일명 **리터럴 자체**라서 빼면 눈이 먼다. 「0 이 됐다」를 개선으로 읽으면
+  그날로 검사가 죽는다 — 그래서 반대편(실물 호출은 여전히 걸린다)을 같이 잠갔다.
+
+★ 첫 시험은 `code_only` 를 직접 불러서 **`_sources()` 의 배선을 안 봤다.** 주석
+  제거를 끄는 주입에 조용했다. 호출을 AST 로 못박아 그것도 잡는다.
+
+### 258-8. 관문이 부르는 인자를 도구가 받는지 아무도 안 봤다
+
+강제자  `tools/argcheck.py`(+ `--selftest`) · CI 「관문 호출 인자」 · `verify.sh` 같은 이름 단계
+
+§257-2 가 **전수 verify 를 돌린 뒤에야** 드러난 이유가 이 축이 없었기 때문이다.
+`test_tools_are_wired` 는 도구 **이름**이 관문에 있는지만 본다.
+
+`verify.sh` 의 `step` 줄에서 도구 호출을 뽑아 각 도구를 `--help` 로 태워 받는 인자와
+대조한다. 관문 호출 35종 중 인자 있는 13종을 댄다.
+
+★ **실행해서 묻는다.** 소스를 정규식으로 읽으면 `add_argument` 를 루프나 함수로
+  부르는 도구를 놓치고, 놓친 것은 조용하다. `-h` 는 argparse 가 rc=0 으로 내므로
+  기계로 물을 수 있는 유일한 정본이다.
+
+★ §257-2 를 **정확히 재현해서** 잡는 것을 봤다 — `docx_figs.py` 에서 그 인자 선언
+  두 줄을 지우자 「그 인자를 안 받는다」로 울었다.
+
+★ 주석 처리된 `step` 도 센다. 되살아날 호출이고, 되살아나는 날 인자가 틀려 있으면
+  그때 또 전수를 돌려야 안다.
+
+### 258-9. 재잠금 필요 여부를 **배치가 아니라 세션 기준으로** 판단했다
+
+강제자 없음 — 사유: `PLAN #137` 이 「도구가 계산한다」를 든다. 지금은 사람이 PR 본문에 적고 `go.sh` 가 그것을 읽는다(§256)
+
+2026-09-25 두 번째 실기에서 실패 여덟이 났고 **다섯이 한 원인**이었다 — PR 본문에
+「재잠금은 필요 없다」고 적었는데 틀렸다.
+
+기준을 잘못 잡았다. 이번 세션의 다섯 커밋은 판정 코드를 안 건드린다(`generated.py`
+하나뿐이고 그것은 `ingest` · `segments` 폐포 밖이다 — 확인했다). 그런데 **`fl.sh` 는
+매번 base 에서 브랜치를 새로 짓는다.** 그러니 기준은 배치 전체(56 커밋)이고, 그
+안에는 v2 의 판정 코드 변경이 있다 — `segments.py`(패치 0037 · 0039 · 0040 · 0042)와
+`uv.lock`(패치 0003). 앞 실행의 재잠금 커밋은 **이 브랜치에 없다.**
+
+그래서 `golden` 이 코드 지문 어긋남으로 울고(`29cf506e9956 → 2e2a781f777e`), 커밋된
+`_manifest.json` 이 재잠금 전 판이라 봉인 40자리가 어긋나고, `web/data 계보` ·
+`커밋된 web/data` · 경계 사본 시험까지 줄줄이 빨개졌다. **하나가 다섯으로 보였다.**
+
+★ 그리고 나머지 셋(메모리 부족)도 그 때문이다. 봉인이 안 맞으니 `파이프라인 전량`
+  단계가 **한 프로세스 안에서** 전 샤드를 다시 빌드하고 terrain · ortho · publish 까지
+  이어 돌았다(6분28초 → 10분21초). 8GB 기계에서 그것이 터진다 — `PLAN #132` 가
+  예측한 그것이다. 앞 실행은 `--relock` 이 재빌드를 앞에서 따로 처리해서 verify 의
+  파이프라인 단계가 전부 SKIP 할 수 있었다. **재잠금은 정합성 문제만이 아니라
+  메모리 문제이기도 하다.**
+
+★ 규칙 — **재잠금 필요 여부는 「이번에 무엇을 고쳤나」가 아니라 「이 배치가 base 에
+  얹혔을 때 판정 코드 지문이 움직이나」다.** 사람이 그 차이를 매번 옳게 셀 수 없다.
+  `go.sh` 가 사람의 기억을 없앤 자리인데(§256) **판단은 여전히 사람 산문에 있었다.**
+  `PLAN #137` 이 그것을 도구로 옮긴다.
+
+### 258-10. 경로로 적재한 모듈을 등록 안 해서 시험이 크래시했다
+
+강제자  `tests/test_tools_are_wired.py::test_a_by_path_loader_registers_the_module`
+
+2026-09-26 전수 verify 의 **유일한 실패**가 이것이고, 검사 내용이 아니라 **시험
+자신이 죽은 것**이었다. `tests/test_dest_scope.py` 가 `tools/fixture_recut.py` 를
+경로로 적재하면서 `sys.modules` 에 안 넣었다. 그 도구에 `@dataclass` 가 있고
+`dataclasses` 는 문자열 주석을 풀려고 `sys.modules[cls.__module__]` 를 되짚는다 —
+없으면 `AttributeError: 'NoneType' object has no attribute '__dict__'` 다.
+
+★ **지식은 이미 저장소에 있었다.** `tests/test_guards.py` 가 같은 자리에
+  「@dataclass 는 cls.__module__ 로 sys.modules 를 되짚는다. 등록 없이 exec_module
+  하면 AttributeError 로 죽는다」고 적어 뒀다. **주석으로만 있고 강제자가 없었다.**
+  적재기를 쓰는 시험 28개 중 18개가 그 함정을 밟은 채였고, 강제자를 세우자
+  「일부만 등록」인 셋을 더 잡았다 — 손으로 센 것보다 넓었다.
+
+★ **지연 신관이다.** 등록을 빼도 그 도구에 `@dataclass` 가 없으면 조용하다. 터지는
+  날은 그 도구가 dataclass 를 갖는 날이고, 그때는 원인이 안 보인다. 실제로
+  `fixture_recut` 이 생긴 날 터졌다.
+
+★ 크래시가 **진짜 발견을 가렸다.** 그 시험이 재려던 것은 「경계 사본이 낡았나」이고
+  실기에서는 실제로 갈려 있다. 고친 뒤에야 ㉠ 재현 불가 · ㉡ 판 변경 진단이 나온다.
+
+### 258-12. 「매번 58단계를 다 도는가」 — 이미 조건부다. 문서에 없었을 뿐이다
+
+강제자  `tools/verify.sh --scope-list`(선언이 어느 단계에도 안 붙으면 그것을 말한다) · `부분 실행` 단계
+
+`verify.sh` 는 단계마다 `scope` 선언을 들고 `--since=<ref>` 로 **그 범위에 닿은 변경이
+없는 단계를 건너뛴다.** 실측 선언 40 · 미선언 19 · 단계 59 — 미선언은 **항상 돈다.**
+그것이 안전한 기본값이다. 문서만 고친 배치면 `파이프라인 전량`(20분)과 레이크 셋이
+빠져 35분이 10분이 된다.
+
+★ **회전 분할(오늘 상체 · 내일 하체)로 하면 안 된다.** 그것은 실행마다 일부만 덮고
+  전체가 초록인 순간이 영영 없다 — 정확히 「도장 찍기」다. 조건부 실행은 다르다:
+  **안 돈 단계는 그 범위가 안 바뀌었다는 것이 증명된 것**이고, 그 증명이 `scope`
+  선언이다. 샤드 봉인지와 같은 구조다.
+
+★ 그리고 **부분 실행은 수용이 아니다.** `--only` · `--fast` · `--since` 셋 다 마지막
+  「부분 실행」 단계에서 일부러 빨갛게 죽는다. 안 울면 `dms.py seal` 이 반쪽 실행을
+  전수로 착각하고 봉인한다. 머지 관문은 언제나 인자 없는 전수다.
+
+★ 그래서 이 절의 결함은 기계가 아니라 **문서**다. `--since` 도 `--scope-list` 도
+  README 에 한 줄도 없었다 — 있는데 아무도 모르는 도구는 없는 도구다.
+
+### 258-13. 배치를 쪼개면서 **시험과 구현을 갈랐다**
+
+강제자 없음 — 사유: `PLAN #138` 이 「봉인 폐포에 닿는 파일과 그 시험이 같은 커밋인가」를 든다
+
+SKIP 사유 강제(다음 배치)를 봉인 안 찢는 것과 찢는 것으로 갈랐다. 그런데 `git add tests/`
+로 한꺼번에 담는 바람에 **시험은 앞 커밋, 구현은 뒤 커밋**이 됐다. 앞 커밋만 실기에
+얹히자 `DID NOT RAISE` 로 울었다 — 없는 기능을 시험이 요구했다.
+
+같은 실수가 문서에도 났다. 앞 커밋의 README·시험이 `§258-10` · `§258-12` 를 가리키는데
+그 절들은 뒤 커밋의 DECISIONS 에 있었다 — `test_docref` 가 **참조 28건**으로 잡았다.
+
+★ 쪼개는 기준은 「봉인을 찢는가」로 옳았다. 틀린 것은 **담는 방법**이다. 경로 묶음
+  (`git add tests/`)으로 담으면 한 파일이 두 관심사를 들고 있을 때 갈라진다.
+  그 배치는 `tests/test_guards.py` 하나에 두 관심사(경로 적재 등록 · SKIP 사유)를
+  넣었고 그 파일이 통째로 앞 커밋에 갔다.
+
+★ 교훈 — **쪼갠 커밋은 각각 단독으로 초록이어야 한다.** 앞 커밋만 얹은 상태를
+  실제로 재현해 보지 않았고, 그래서 실기가 대신 재현했다.
+
+### 258-14. 진단이 수치 하나로 **단정했다** — 1mm 미만은 셋을 못 가른다
+
+강제자  `tools/fixture_recut.py --selftest`(1mm 미만에서 단정하면 빨강)
+
+`fixture_recut` 의 첫 판은 「꼭짓점 최대 이동 1mm 미만이면 ㉠ 재현 불가」라고 적었다.
+2026-09-26 실기에서 **최대 이동 0.0000 m · 면적 0.000000% · 꼭짓점 438 → 438** 이
+나왔고, 그 한 줄이 「ingest 가 재현 불가다. 다시 떠도 또 갈린다」라고 말했다.
+
+**틀렸다.** 1mm 미만 차이의 원인은 셋이고 처방이 다르다 —
+
+    ㉮ 같은 기계에서 두 번 돌려도 갈린다        진짜 재현 불가. 심각하다
+    ㉯ 기계가 다르다(GDAL · PROJ 판이 다르다)    재투영 말미. 사본을 다시 뜬다
+    ㉰ 값은 같고 **표기**만 다르다               사본을 다시 뜨면 끝이다
+
+**수치 하나로는 못 가른다.** 가르는 것은 「같은 기계에서 두 번」이고 그것은 명령
+하나다. 이제 진단은 수치와 **그 명령**을 내고 판정은 안 한다. 갈린 좌표의 실제 값도
+`repr` 로 같이 찍는다 — 「0.0000 m」만으로는 표기 차이인지 안 보인다.
+
+★ **단정하는 진단이 틀린 처방을 부른다.** 사본을 다시 뜨면 될 일에 ingest 재현성 조사
+  쪽으로 사람을 보냈다. 진단 도구의 값어치는 「무엇을 재었나」이지 「무엇이라고
+  결론지었나」가 아니다 — 재는 것과 판단하는 것을 한 줄에 섞은 것이 잘못이다.
+
+★ 이 사본은 개발 기계의 2026-09-19 산출물에서 떴고 실기는 제 WSL 스택으로 굽는다.
+  **사본은 레이크 기계에서 떠야 한다** — 거기가 정본이 사는 곳이다.
+
+### 258-15. 읽기 실패가 **어느 파일인지 한 글자도 안 냈다**
+
+강제자  `tools/sweep.py` 의 `UNREAD` — 비지 않으면 빨갛게 끝난다
+
+`레이크 정리 대상` 단계가 사흘 연속 같은 자리에서 트레이스백을 내며 죽었다 —
+`sweep.py:61` 의 `f.read(1 << 20)` 에서 `OSError: [Errno 12] Cannot allocate memory`.
+
+★ **진짜 메모리 부족이 아니다.** 2026-09-26 14:34 실행에서 스왑은 16GB 중 377MB 만
+  쓰고 있었고 같은 실행의 다른 57단계가 전부 돌았다. 외장 SSD 가 `/mnt/`(DrvFs)로
+  붙어 있을 때 큰 읽기 버퍼를 호스트 쪽에 못 맵핑하면 나는 오류다.
+
+★ **제일 나쁜 것은 파일 이름이 없었다는 것이다.** 사흘 동안 무엇이 안 읽히는지
+  몰랐다. 트레이스백은 `sweep.py:61` 만 가리켰고 그 줄은 모든 파일에 공통이다.
+  진단이 「어디서 죽었나」만 말하고 「무엇에서 죽었나」를 안 말했다.
+
+세 가지를 고쳤다 — 버퍼를 256KB 로 줄이고, 실패하면 32KB 로 한 번 더 시도하고,
+그래도 못 읽으면 **경로와 사유를 적고 넘어간다.**
+
+★ **넘어가되 조용히 넘어가지 않는다.** 지문이 빠진 파일은 「레이크에 없다」로
+  세어지고, 그러면 「중복이라 지워도 된다」가 거짓이 된다 — 지우면 안 될 것을
+  지우라고 말하게 된다. 그래서 목록은 끝까지 내되 `UNREAD` 가 비지 않으면
+  실행이 빨갛다. 「건너뛴 것은 통과가 아니다」를 이 자리에도 적용한다.
+
+### 258-16. 강제자가 또 제 이름보다 좁았다 — 이번엔 **검사가 잡았다**
+
+`test_a_by_path_loader_registers_the_module` 을 `tests/` 만 훑게 썼다.
+`deadcheck ⑤`(좁은 범위)가 그것을 잡았다 — "`['tests']` 만 훑는다 —
+`['src', 'tools']` 의 143개 파일이 대상 밖이다".
+
+범위를 넓히자 `tools/` 에서 넷이 더 나왔다 — `docx_check` · `docx_figs` ·
+`pull_data` · `treecheck`. 전부 경로로 적재하고 `sys.modules` 에 안 넣는다.
+
+★ 「범위가 이름보다 좁다」 족을 잡으려고 세운 강제자가 **그 족이었다.** 이 배치가
+  같은 실수를 세 번째 저질렀다(§258-1 의 L7 · §258-2 의 vintage · 여기).
+
+★ 그런데 이번에는 **사람이 아니라 검사가 잡았다.** §226 이 `deadcheck ⑤` 를
+  세운 값어치가 여기서 났다 — 강제자를 세우는 배치가 만든 좁은 강제자를
+  기존 강제자가 잡는다. 그것이 관문을 층으로 쌓는 이유다.

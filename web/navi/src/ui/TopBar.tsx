@@ -33,6 +33,15 @@ export interface TopBarProps {
   etaText: string | null;
   incidentText: string | null;
   arrivedText?: string | null;
+  /**
+   * 이 상태가 **시연 막대가 넣은 것인가.**
+   *
+   * ★ 2026-09-24 (PLAN §13 W13-3). 종전에는 `spec.injected`(정적 표의 칸)를
+   *   봤다. 그 칸이 붙은 것은 18갈래 중 다섯뿐인데 시연 막대는 **18갈래 전부**
+   *   를 주입할 수 있다. `arrived` 를 주입하면 표지 없이 「도착」 이 떴다 —
+   *   아직 달리는 중인데. 표가 아니라 **사실**을 본다.
+   */
+  injected?: boolean;
   voiceOn?: boolean | null;
   onToggleVoice?: () => void;
   /** 태그를 눌러 경로를 바꾼다. safe/fast 에서만 준다 */
@@ -106,7 +115,7 @@ export function TopBar(p: TopBarProps) {
             <span style={{ ...tag, background: tagBg }}>{s.tag}</span>
           )}
           <span style={chip}><Truck /> {p.vehicleKind}</span>
-          {s.injected && <span style={injected} title="이 상태는 신호가 아니라 시연 막대가 넣었다">시연</span>}
+          {p.injected && <span style={injected} title="이 상태는 신호가 아니라 시연 막대가 넣었다">시연</span>}
         </div>
         {s.caution ? (
           <div style={{ fontSize: 13, fontWeight: 700, color: C.toneInk, marginTop: 6 }}>

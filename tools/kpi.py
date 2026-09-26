@@ -41,9 +41,10 @@ ROOT = Path(__file__).resolve().parents[1]
 from firelane.seg.params import NODE_TOL, STATIONS
 
 WEB = ROOT / "web" / "data"
-LAT0 = 35.151
-MX = 111320 * math.cos(math.radians(LAT0))
-MY = 110574
+# ★ 2026-09-24 (PLAN §13 W12-1). 여기 세 줄(`LAT0` · `MX` · `MY`)이 도구 셋에
+#   **글자까지 같게** 박혀 있었다. 정본을 `tools/localgeo.py` 하나로 올렸다 —
+#   갈리면 셋이 각자 다른 좌표계로 거리를 재면서 아무도 안 운다.
+from localgeo import LAT0, MX, MY  # noqa: F401  일부는 LAT0 만 쓴다
 
 
 def _coords(g: dict) -> list:

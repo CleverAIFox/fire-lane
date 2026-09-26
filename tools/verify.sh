@@ -493,6 +493,14 @@ step "관문 동등"  uv run python tools/gate_parity.py
 scope "src/* tools/* .env.example"
 step "환경변수 선언↔실물" uv run python tools/env_check.py
 step "문서 숫자 대조"   uv run python tools/docnum_check.py
+# ★ 2026-09-25 (DECISIONS §246). 축은 §246 이 세웠는데 **울기만 하고 고쳐주지
+#   않았다** — 절 수를 하루에 네 번, PLAN §1 제목을 열두 번 손으로 맞췄다.
+#   이제 흐르는 숫자는 문서가 들지 않고 `<!--gen:-->` 블록이 든다. 이 단계는
+#   **대조만** 한다 — 관문이 문서를 고치면 사람이 무엇이 바뀌었는지 모른다.
+#   빨간불이면 `uv run python tools/docgen.py` 를 치면 채워진다.
+# ci-exempt: tools/docgen.py CI 워크플로(.github/**)가 이 배치의 범위 밖이라 단계를 못 붙였다. 같은 판정은 `tests/test_docgen.py` 가 pytest 로 CI 에서 든다 — 관문이 새는 것은 아니고, 단계 배선만 남았다
+scope "docs/* tools/* sources.yaml"
+step "문서 생성 블록 ↔ 실물" uv run python tools/docgen.py --check
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
 #   ⑥ 기획서 수정일 · ⑦ 셸 명령 · ⑧ 기한은 **사람이 손으로 칠 때만**
 #   돌았다. 그 사람이 나가면 아무도 안 친다.
@@ -502,6 +510,17 @@ step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 # ★ 2026-09-22 — ⑤⑥ 이 golden · 발행 구간 · 대장을 읽는다(W4-2). 범위를 좁게 두면 조용히 건너뛴다
 scope "docs/* tools/* data/* web/* src/* tests/* .github/* sources.yaml"
 step "기획서 대조"     uv run python tools/docx_check.py
+# ★ 2026-09-24. 배치 판정기 자신이 **합성 넘침 셋**을 잡는가. 그림이 다 들어맞는
+#   날(정상)에도 판정기가 사는지 알아야 한다 — 「0건이 청결인가 죽음인가」(§230).
+scope "tools/*"
+step "배치 판정기 자기검사" uv run python tools/svg_fit.py
+# ★ 2026-09-24 (W12-1). 좌표 상수 세 사본을 한 곳으로 올렸다. 근사가 뜻하는
+#   크기를 내는지 스스로 확인한다 — 상수를 잘못 고치면 여기서 운다.
+step "국소 평면 근사"     uv run python tools/localgeo.py
+# ★ 2026-09-24 (W13-4). 「이름으로 칸을 빼는」 재귀가 둘이었다(봉인 지문 · 신선도
+#   대조). 하나로 올렸고, 깊이·리스트·원본 보존을 스스로 확인한다.
+scope "src/*"
+step "JSON 칸 걸러내기"  uv run python -m firelane.jsonkeys
 # ★ 캡션만 보던 것을 그림 자체로 넓혔다. 값이 바뀌면 그림이 낡는다.
 scope "docs/* tools/* src/* data/*"
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
@@ -700,6 +719,26 @@ step "레이크 관문" uv run python -m firelane.lake gate
 #   `--ratchet` 은 프로브별 수를 `CEILING` 과 대조하고 양성 대조도 함께 든다.
 step "검사가 죽었는가" uv run python tools/deadcheck.py --ratchet
 
+# ── 범위 선언 (S3 · DECISIONS §226) ────────────────────────────
+# ★ 2026-09-24. 위 단계의 주석이 「이름이 약속한 범위가 실제보다 넓고 그것이
+#   선언돼 있지 않았다(W3-8 · W4-8 과 같은 족의 **여섯 번째**)」로 끝난다.
+#   그 줄을 쓰고 이틀 만에 일곱 번째가 났다 — `env_check` 가 `.py` 만 훑어
+#   **자기 머리말이 사례로 든 `FIRE_LANE_INBOX` 를** 못 보고 있었다.
+#
+#   여섯 번을 「검사를 하나 더 만든다」로 대응했고 그래서 강제자가 백예순이
+#   됐다. 일곱 번째에는 **족을 보이게 만든다** — 디렉터리를 훑으면서 접미사로
+#   거르는 자리를 AST 로 찾아 실물과 대조하고, 좁으면 `밖` 칸을 요구한다.
+#   이 단계는 래칫이 아니라 **실측**이다(파일 하나 생기면 그날 걸린다).
+scope "tools/* tests/*"
+step "강제자 범위 선언" uv run python tools/scopedecl.py
+
+# ★ 2026-09-25 (§258-8 · PLAN #133 닫힘). **관문이 부르는 인자를 도구가 받는가.**
+#   §257-2 에서 `docx_figs.py --check` 가 `unrecognized arguments` 로 죽었고
+#   **전수 verify 를 돌린 뒤에야** 드러났다 — `test_tools_are_wired` 는 도구 이름이
+#   관문에 있는지만 본다. 이 단계는 각 도구를 `--help` 로 태워 실제 인자를 읽는다.
+scope "tools/*"
+step "관문 호출 인자" uv run python tools/argcheck.py
+
 # ── 소급 · 사본 (B5 ⓪ · 원칙 ⑥) ────────────────────────────────
 # ★ `delta` 는 봉인 뒤 바뀐 절만 센다. 전수는 `seal` 이 한 번 돈다.
 #   기준선이 없으면 전수가 곧 분모라고 스스로 말한다.
@@ -827,7 +866,11 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 # ★ 2026-09-23 (DECISIONS §223-2). 27 → 28. 두 배치 연속 「실측 28.1x% · 28 로 조여라」가
 #   떴고, 그것을 안 조이면 **매번 뜨는 권고**가 되어 곧 안 읽히는 줄이 된다.
 #   이번 배치가 `desk_check` · `wmax_audit` 시험 열일곱을 더해 실측을 올렸다(PLAN §1 #12).
-COV_MIN=28
+# ★ 2026-09-25 (§258). 28 → 32. 2026-09-25 실기 전수 verify 의 권고가 「실측
+#   32.93% · COV_MIN 을 32 로 조여라」였다. v2 배치가 시험 파일 일곱을 더해
+#   실측을 4.6%p 올렸다 — 올린 배치에서 같이 조인다. 안 조이면 다음 배치가
+#   되돌아가도 초록이고, 권고 줄은 매번 떠서 곧 안 읽히는 줄이 된다.
+COV_MIN=32
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."
@@ -856,6 +899,10 @@ step "배포에 내비 빌드"    uv run python tools/pages_add_navi.py --check
 scope "web/* tools/* .github/*"
 step "루트 잔재·유령 면제" uv run python tools/navi_setup.py --check
 scope "docs/*"
+# ci-exempt: tools/evalgen.py `route_vehicle.csv` 가 커밋 대상이 아니다 — 파이프라인 산출이고 CI 는 파이프라인을 안 돈다
+# ★ 2026-09-25 (#91). 게이트 셋이 어긋나면 지표를 안 뽑고 죽는다 — 도는 것이 곧 증적이다.
+step "평가지표 산출"      uv run python tools/evalgen.py
+
 step "문서 제목 무결"      uv run python tools/docpatch.py check \
      docs/MASTER.md docs/PLAN.md docs/DECISIONS.md
 

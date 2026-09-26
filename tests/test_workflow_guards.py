@@ -132,7 +132,12 @@ def test_every_workflow_parses(name: str) -> None:
 
 # ★ 2026-09-20 (PLAN §13 W3-15). 공격자가 값을 정할 수 있는 컨텍스트.
 #   포크 PR 에서 브랜치 이름 · 제목 · 본문 · 작성자명은 전부 남이 쓴다.
-UNTRUSTED = ("github.head_ref", "github.event.pull_request.title",
+# ★ 2026-09-24 (PLAN §13 W13-9). `github.base_ref` 가 빠져 있었다.
+#   포크 공격자가 못 정한다는 이유였겠으나 **push 권한자는 정한다** —
+#   git 브랜치 이름에 `;` `$` `` ` `` `"` `|` 가 허용되고 이 저장소는
+#   `part/**` · `feat/**` 를 PR base 로 받는다. 실제로 `contract.yml` 의
+#   같은 블록에서 절반만 고쳐진 채 남아 있었고 이 목록이 그것을 못 봤다.
+UNTRUSTED = ("github.head_ref", "github.base_ref", "github.event.pull_request.title",
              "github.event.pull_request.body", "github.event.pull_request.head.ref",
              "github.event.comment.body", "github.event.issue.title",
              "github.event.issue.body", "github.event.head_commit.message")

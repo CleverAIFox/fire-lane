@@ -61,6 +61,7 @@ OUT   data/dms/DMS.json · data/dms/BOOKMARK.json
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import subprocess
@@ -84,7 +85,14 @@ FENCE = re.compile(r"^\s*(```|~~~)")
 
 # 규약 정본. DECISIONS 서술 규약 표가 든 형태다
 CANON_NONE = "강제자 없음 — 사유:"
-NONE_ANY = re.compile(r"없음|없다")
+# ★ 2026-09-24 (DECISIONS §228). **줄머리에 있을 때만** 「없음」 선언이다.
+#   종전에는 `없음|없다` 를 칸 **아무 데서나** 찾았다. 그래서 강제자를 제대로
+#   지목하면서 「진입점 수는 실측값이라 대조 도구가 없다」처럼 범위를 덧붙인 칸이
+#   **`none` 으로 세어졌다.** 실측 8건 — 그중 넷(`DECISIONS/162-1` · `199-1` ·
+#   `212` · `215`)은 2026-09-17 부터 그 상태였다.
+#   분모를 세는 도구가 분모를 틀리게 세고 있었고, 방향은 **wired 를 줄이는 쪽**이라
+#   「강제자가 있는 절」이 실제보다 적어 보였다. 좁아지는 쪽으로 망가지는 프로브다.
+NONE_ANY = re.compile(r"^(?:없음|없다)")
 
 # ── 정밀 프로브 — 1차 소급 192건 중 174가 오탐이었다 ──────────
 EXAMPLE_NAMES = {"xxx", "yyy", "zzz", "foo", "bar", "baz", "name", "test_xxx",
@@ -147,18 +155,53 @@ def _assign_ids(stem: str, secs: list[dict]) -> None:
         s["id"] = f"{stem}/{key}" + (f"~{seen[key]}" if seen[key] > 1 else "")
 
 
+#: 칸 블록이 끝나는 줄. 제목 · 표 · 별표 문단 · 펜스 · 빈 줄에서 끊는다.
+FIELD_END = re.compile(r"^(#|---|\||★|```|\s*$)")
+
+
 def classify(sec: dict) -> tuple[str, str, int]:
-    """(상태, 칸 원문, 칸 줄번호). 코드펜스 안의 줄은 칸으로 안 센다."""
+    """(상태, 칸 **전문**, 칸 줄번호). 코드펜스 안의 줄은 칸으로 안 센다.
+
+    ★ 2026-09-24 (DECISIONS §243). 종전에는 절마다 **첫 칸에서 멈췄다.**
+      한 절에 강제자 칸이 둘 이상인 곳이 있고(PLAN §0-2 는 셋), 둘째부터는
+      이 도구 눈에 없었다. 그래서 `PLAN:98` 이 **개명된 시험**
+      (`test_plan_has_no_closed_items` → `test_plan_status_vocabulary_is_closed`)
+      을 가리킨 채 「죽은 강제자 참조 0건」이 찍히고 있었다. 검사를 세워 두고
+      그 검사가 못 보는 자리에 결함이 살았다.
+
+      상태는 칸 **전부**로 정한다 — 하나라도 배선이면 배선이다.
+
+    ★ 2026-09-24 (DECISIONS §241). 종전에는 **첫 줄만** 칸으로 들었다. 칸은
+      113곳에서 여러 줄에 걸친다 — 이어지는 줄에 적힌 강제자 이름도, 물림
+      선언도 이 도구 눈에 안 보였다. 그래서 「하위 둘이 이 칸을 물려받는다」를
+      이어지는 줄에 적으면 **적어도 안 적은 것으로 세어졌다.**
+
+      물음이 「이 절에 칸이 있는가」이므로 답은 칸 **전체**여야 한다.
+      첫 줄만 보는 것은 범위가 이름보다 좁은 자리다(§226).
+    """
     fence = False
-    for n, line in sec["body"]:
+    body = sec["body"]
+    blocks: list[str] = []
+    wired = False
+    at = sec["line"]
+    for i, (n, line) in enumerate(body):
         if FENCE.match(line):
             fence = not fence
             continue
         if fence or not FIELD.match(line):
             continue
-        rest = FIELD.sub("", line).strip()
-        return ("none" if NONE_ANY.search(rest) else "wired"), line.strip(), n
-    return "blank", "", sec["line"]
+        block = [line.strip()]
+        for _, nxt in body[i + 1:]:
+            if FIELD_END.match(nxt):
+                break
+            block.append(nxt.strip())
+        if not blocks:
+            at = n
+        blocks.append(" ".join(block))
+        wired |= not NONE_ANY.search(FIELD.sub("", line).strip())
+    if not blocks:
+        return "blank", "", sec["line"]
+    return ("wired" if wired else "none"), " ".join(blocks), at
 
 
 def scan() -> dict:
@@ -219,6 +262,41 @@ def _corpus() -> tuple[str, set[str]]:
     return "\n".join(buf), files
 
 
+def _missing_member(head: str, member: str) -> str:
+    """`파일::이름` 에서 그 이름이 파일에 없으면 사유를, 있으면 빈 문자열."""
+    # ★ 첨자는 떼고 본다 — `EXPECT["part"]` 가 지목하는 것은 `EXPECT` 다.
+    member = re.sub(r"\[.*$", "", member.strip().rstrip("()").strip("`")).strip()
+    if not member or NOT_A_NAME.search(member):
+        return ""
+    cands = [p for p in (ROOT / "x").parent.rglob(Path(head).name)
+             if p.is_file() and not any(s in p.parts for s in SKIP_DIR)]
+    exact = [p for p in cands if p.as_posix().endswith(head)]
+    for p in (exact or cands):
+        if member in _members(p):
+            return ""
+    if not (exact or cands):
+        return ""                                   # 파일을 못 찾으면 ⑥ 이 본다
+    return f"`{member}` 가 {head} 에 없다"
+
+
+def _members(path: Path) -> set[str]:
+    """그 파일이 **선언한 이름들.** `.py` 는 AST, 나머지는 문자열로 본다."""
+    txt = path.read_text(encoding="utf-8", errors="ignore")
+    if path.suffix != ".py":
+        return set(re.findall(r"[A-Za-z_][A-Za-z0-9_]{2,}", txt))
+    try:
+        tree = ast.parse(txt)
+    except SyntaxError:
+        return set(re.findall(r"[A-Za-z_][A-Za-z0-9_]{2,}", txt))
+    out: set[str] = set()
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            out.add(n.name)
+        elif isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store):
+            out.add(n.id)          # `EXEMPT = {...}` 같은 모듈 상수도 칸이 지목한다
+    return out
+
+
 def verify(data: dict, corpus: tuple[str, set[str]] | None = None) -> list[str]:
     """칸이 지목한 이름이 실재하는가. **오탐 다섯을 먼저 뺀다.**"""
     text, files = corpus or _corpus()
@@ -239,6 +317,13 @@ def verify(data: dict, corpus: tuple[str, set[str]] | None = None) -> list[str]:
             if DATED_SCRIPT.search(tok):        # ④ 과거 서술 — 일회성 패처
                 continue
             if {leaf, stem, head} & files:      # ⑤ 파일 참조
+                # ★ 2026-09-24 (DECISIONS §229). **`::` 뒤를 안 봤다.**
+                #   파일만 있으면 통과시켰으므로 `tests/test_guards.py::없는함수`
+                #   가 초록이었다. 칸이 지목하는 것은 파일이 아니라 **검사**인데
+                #   검사가 실재하는지는 한 번도 안 본 것이다 —
+                #   「선언이 이름보다 넓다」 족(PLAN §13 · §226)의 문서판이다.
+                if "::" in tok and (bad := _missing_member(head, tok.split("::", 1)[1])):
+                    dead.append(f"  {r['doc']}:{r['at']}  {r['id']}  {raw}  ← {bad}")
                 continue
             parts = [p for p in re.split(r"[:/]+", tok) if p]   # ⑥ 전문 대조
             if all(p in text or Path(p).stem in text for p in parts):
@@ -252,6 +337,89 @@ def notation(data: dict) -> list[str]:
     return [f"  {r['doc']}:{r['at']}  {r['id']}  {r['field'][:60]}"
             for r in data["rows"]
             if r["state"] == "none" and not r["field"].startswith(CANON_NONE)]
+
+
+#: ★ 2026-09-24 (DECISIONS §241). 「하나」 가 빠져 있었다 — 하위 절이 **하나뿐인**
+#:   부모는 아무리 적어도 「아무 말 없음」으로 세어졌다. 어휘는 아래 `WORD_N` 과
+#:   같은 자리에서 만든다. 손으로 두 벌 적으면 또 갈린다(2족).
+INHERIT_SAID = re.compile(r"물려받|하위\s*(?:절\s*)?(?:한|하나|둘|셋|넷|다섯|여섯|일곱|"
+                          r"여덟|아홉|열하나|열둘|열|[0-9]+|절)")
+
+#: 우리말 수. 선언은 사람이 읽는 줄이라 말로 적고, 기계는 여기서 수로 되짚는다.
+WORD_N = {"한": 1, "하나": 1, "둘": 2, "셋": 3, "넷": 4, "다섯": 5, "여섯": 6,
+          "일곱": 7, "여덟": 8, "아홉": 9, "열": 10, "열하나": 11, "열둘": 12}
+#: `하위 절 여덟이` · `하위 넷이` · `하위 3절` — 셋 다 인정한다.
+#: ★ **절 번호는 수가 아니다.** `하위 절 187-1 ~ 187-3` 의 `187` 을 수로 읽으면
+#:   그 줄이 「하위 187절」이 된다(2026-09-24 에 둘 실제로 났다). 숫자 꼴은
+#:   뒤에 `절` 이 붙을 때만 수로 본다 — `하위 3절` 은 수, `하위 절 187-1` 은 번호다.
+SAID_N = re.compile(
+    r"하위\s*(?:절\s*)?(?:(열하나|열둘|열|한|하나|둘|셋|넷|다섯|여섯|일곱|여덟|아홉)"
+    r"|([0-9]+)\s*절)(?![\d-])")
+
+
+def _said_count(field: str) -> int | None:
+    """부모 칸이 적은 **하위 절 수**. 수가 없으면 `None`."""
+    m = SAID_N.search(field)
+    if not m:
+        return None
+    return WORD_N.get(m.group(1)) if m.group(1) else int(m.group(2))
+
+
+def inherit_counts(data: dict) -> list[str]:
+    """부모가 적은 **하위 절 수**가 실제와 같은가.
+
+    ★ 2026-09-24 (DECISIONS §241). 「하위 절이 이 칸을 물려받는다」는 한 줄은
+      **검증된 적이 없는 주장**이다. 하위 절이 하나 늘어도 그 줄은 그대로 참인
+      것처럼 보인다 — 새로 생긴 절은 아무도 안 본 채 물림으로 들어간다.
+
+      수를 적게 하면 그 자리가 **세어진다.** 절이 늘거나 줄면 수가 어긋나고,
+      어긋나면 사람이 **그 새 절을 실제로 본다.** 이 저장소가 래칫에 거는
+      논리와 같다 — 선언을 세는 것으로 바꾼다.
+
+    ★ 수를 안 적은 옛 표기(`물려받는다` 만)는 세지 않는다. 그것까지 한 번에
+      강제하면 이 검사가 첫날부터 시끄러워지고, 시끄러운 검사는 꺼진다.
+      **수를 적은 선언만** 그 수를 지킨다.
+    """
+    field = {r["id"]: r.get("field", "") for r in data["rows"]}
+    kids: dict[str, int] = {}
+    for r in data["rows"]:
+        if r["state"] != "inherit":
+            continue
+        doc, _, tail = r["id"].partition("/")
+        parent = f"{doc}/{tail.split('/')[0].split('-')[0]}"
+        kids[parent] = kids.get(parent, 0) + 1
+    at = {r["id"]: (r["doc"], r["at"]) for r in data["rows"]}
+    bad = []
+    for pid, n in sorted(kids.items()):
+        said = _said_count(field.get(pid, ""))
+        if said is None or said == n:
+            continue
+        doc, line = at.get(pid, ("?", 0))
+        bad.append(f"  {doc}:{line}  {pid}  「하위 {said}」 라고 적었는데 실제 {n} 이다")
+    return bad
+
+
+def inherit_split(data: dict) -> tuple[list[str], list[str]]:
+    """`inherit` 을 둘로 가른다 — 부모가 **덮는다고 적은 것** / 아무 말 없는 것.
+
+    ★ 2026-09-24 (DECISIONS §230). `inherit` 은 「부모 칸이 하위 논점까지
+      덮는다」는 **가정**이고 그 가정은 검증된 적이 없다. 실제로 `MASTER §12` 에
+      칸을 적자 자식 열하나가 한 번에 분모에서 빠졌는데, 그 칸은 §12-8a(매체
+      저장)나 §12-11(한글 파일명)을 안 덮었다.
+      분모(blank)가 0 이 된 지금, **남은 의심은 전부 여기 있다.**
+      세는 자리를 만들어 두면 다음 배치가 줄일 수 있다.
+    """
+    field = {r["id"]: r.get("field", "") for r in data["rows"]}
+    said, mute = [], []
+    for r in data["rows"]:
+        if r["state"] != "inherit":
+            continue
+        # `DOC/12-8a` → `DOC/12` · `DOC/22/3` → `DOC/22` · `DOC/18/원칙_다섯` → `DOC/18`
+        doc, _, tail = r["id"].partition("/")
+        parent = f"{doc}/{tail.split('/')[0].split('-')[0]}"
+        f = field.get(parent, "")
+        (said if INHERIT_SAID.search(f) else mute).append(r["id"])
+    return said, mute
 
 
 def summary(data: dict) -> None:
@@ -270,6 +438,10 @@ def summary(data: dict) -> None:
     print(f"{'합계':20} {sum(tot.values()):5} {tot['wired']:6} "
           f"{tot['none']:6} {tot['inherit']:8} {tot['blank']:6}")
     print(f"\n★ 분모(blank) = {tot['blank']}")
+    said, mute = inherit_split(data)
+    print(f"★ 물림(inherit) = {len(said) + len(mute)}"
+          f"   부모가 **덮는다고 적은 것** {len(said)}"
+          f" · 아무 말 없는 것 {len(mute)}")
 
 
 # ══ 후보 추천 — 사람은 고르기만 한다 ═════════════════════════
@@ -474,9 +646,84 @@ def _tool_scope() -> list[Path]:
 
 
 def _tool_print() -> str:
+    """도구 전체 지문. **무효화 범위로는 쓰지 않는다** — `axis_tools()` 를 봐라."""
     return _sha("\n".join(f"{p.relative_to(ROOT).as_posix()}\0"
                           f"{_sha(p.read_text(encoding='utf-8'))}"
                           for p in _tool_scope()))
+
+
+def _tool_prints() -> dict[str, str]:
+    """도구 **하나씩** 지문. 축별 무효 판정의 재료다."""
+    return {p.relative_to(ROOT).as_posix(): _sha(p.read_text(encoding="utf-8"))
+            for p in _tool_scope()}
+
+
+#: 봉인 축 → **그 축의 값을 만드는 도구.** 이 목록에 든 도구가 바뀐 축만 무효다.
+#:
+#: ★ 2026-09-25 (DECISIONS §255). 종전에는 `tool` 지문 **하나**가 봉인 전체를
+#:   무효화했다 — `dupcheck.py` 한 줄만 고쳐도 절 천여 개가 통째로 재검사
+#:   대상이 됐다. `dupcheck` 는 **코드 사본을 세는 도구**이고 절 내용과 아무
+#:   상관이 없는데도 그랬다.
+#:
+#:   그 구조가 「감사할 일을 만든다」. 전수 재검사는 비싸고(OOM 위험) 사람이
+#:   그것을 회피하기 시작하면 봉인이 장식이 된다. 실제로 `verify.sh` 에 단계
+#:   하나를 더한 순간 봉인 전체가 무효가 됐다.
+#:
+#: ★ **무효화는 실제 영향만큼만 넓어야 한다.** §243 이 「선언이 검사보다 넓으면
+#:   거짓 초록이 된다」를 적었고, 이것은 그 거울상이다 — **무효화가 영향보다
+#:   넓으면 재검사가 습관적으로 건너뛰어진다.**
+#:
+#: ★ **그러나 좁히는 것은 입증 뒤에만 한다.** 이 표를 처음 손으로 적었을 때
+#:   `enforcers` 에서 `dms.py` 와 `dupcheck.py` 를 빠뜨렸다 — `PROBES` 가 그
+#:   둘을 `--selftest` 로 돌리는데 그것을 안 봤다. **손목록은 실물보다
+#:   좁아진다**(W3-8 족). 그래서 `enforcers` 는 이제 손으로 안 적고
+#:   `PROBES` 에서 **뽑는다.** 새 프로브가 붙으면 그 순간 범위가 따라간다.
+def _enforcer_tools() -> tuple[str, ...]:
+    """`enforcers` 축이 실제로 타는 도구. **`PROBES` 에서 뽑는다 — 손목록이 아니다.**"""
+    out = {"tools/verify.sh"}
+    out |= {str(cmd[0]) for _label, cmd in PROBES if str(cmd[0]).startswith("tools/")}
+    return tuple(sorted(out))
+
+
+def axis_tools() -> dict[str, tuple[str, ...]]:
+    """축 → 그 축을 무효화하는 도구. 축 이름은 `SEAL.json` 의 키와 같다."""
+    return {
+        # 절 해시·상태·물림은 `dms.py` 의 파싱·분류 규칙만이 정한다.
+        "sections": ("tools/dms.py",),
+        "denominator": ("tools/dms.py",),
+        "dead_refs": ("tools/dms.py",),
+        # 사본군은 `dupcheck` 가 센다(`cmd_seal` 이 직접 부른다). 절과 무관하다.
+        "dup_groups": ("tools/dupcheck.py",),
+        # 강제자 기록은 관문과 프로브 전부가 정한다 — **뽑아서** 쓴다.
+        "enforcers": _enforcer_tools(),
+        # 아래 넷은 **도구와 무관하다** — 순수 파일·입력 해시다.
+        "docs": (),
+        "raw": (),
+        "code": (),
+        "declared_red": (),
+    }
+
+
+#: 축이 아니라 봉인 자신의 기록. 무효 판정 대상이 아니다.
+SEAL_META = ("sealed_at", "commit", "tool", "tools", "scope", "red_ages", "red_reasons")
+
+
+def stale_axes(old: dict) -> dict[str, list[str]]:
+    """봉인 뒤 **어느 축이 무효가 됐나.** 축 → 바뀐 도구 목록.
+
+    ★ 옛 봉인(`tools` 칸이 없다)은 축별 판정을 할 수 없으므로 전 축을 무효로
+      본다. 모를 때 유효하다고 말하는 것은 검사를 끄는 것과 같다.
+    """
+    was = old.get("tools")
+    if not isinstance(was, dict):
+        return {a: ["(옛 봉인 — 도구별 지문이 없다)"] for a in axis_tools()}
+    now = _tool_prints()
+    out: dict[str, list[str]] = {}
+    for axis, tools in axis_tools().items():
+        moved = [t for t in tools if was.get(t) != now.get(t)]
+        if moved:
+            out[axis] = moved
+    return out
 
 
 def _state_now(data: dict) -> dict:
@@ -818,6 +1065,9 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
                      .isoformat(timespec="seconds"),
         "commit": _run(["git", "rev-parse", "--short", "HEAD"], 20)[1] or "(git 밖)",
         "tool": _tool_print(),
+        # ★ 2026-09-25 (§255). **도구 하나씩** 남긴다. `delta` 가 이것으로
+        #   축별 무효를 판정한다 — 종전에는 위 한 줄이 봉인 전체를 무효화했다.
+        "tools": _tool_prints(),
         "scope": ("verify.sh 로그" if log else
                   "pytest+프로브" if quick else "verify.sh 전 단계"),
         "docs": {rel: _sha((ROOT / rel).read_text(encoding="utf-8"))
@@ -860,14 +1110,24 @@ def cmd_delta(data: dict) -> int:
         print(f"  지금 분모 {sum(1 for r in data['rows'] if r['state'] == 'blank')}")
         return 0
     old = json.loads(p.read_text(encoding="utf-8"))
-    if old["tool"] != _tool_print():
-        print(f"★ 도구가 바뀌었다 {old['tool']} → {_tool_print()}")
-        print("  판정 규칙이 바뀌면 옛 통과는 증표가 아니다. **전수 재검사다.**")
-        print("  전수로 보고 다시 `seal` 을 찍어라.")
+    # ★ 2026-09-25 (§255). **축별로** 무효를 판정한다. 종전에는 `tool` 지문
+    #   하나가 봉인 전체를 무효화해서, `dupcheck.py` 한 줄만 고쳐도 절
+    #   1,036개가 재검사 대상이 됐다 — 절 내용과 아무 상관이 없는데도.
+    #   무효화가 실제 영향보다 넓으면 재검사가 습관적으로 건너뛰어진다.
+    stale = stale_axes(old)
+    if stale:
+        print("★ 도구가 바뀐 축:")
+        for axis, tools in sorted(stale.items()):
+            print(f"    {axis:14} ← {' · '.join(Path(x).name for x in tools)}")
+        live = sorted(set(axis_tools()) - set(stale))
+        print(f"  **살아 있는 축 {len(live)}/{len(axis_tools())}** — {' · '.join(live)}")
+        print("  무효인 축만 다시 본다. 전수가 아니다.")
         # ★ 여기서 빨개지면 안 된다. `seal` 이 verify.sh 를 돌리고 verify.sh 가
         #   이 단계를 부르므로, 빨강이면 seal 이 영영 못 찍힌다(자기참조).
         #   봉인의 유효성은 `seal` 이 판정한다. 이 단계는 **보고**만 한다.
-        return 0
+        if "sections" in stale:
+            print("  ★ `sections` 가 무효다 — 절 대조는 전수로 봐야 한다.")
+            return 0
     same = [rel for rel in DOCS
             if old["docs"].get(rel) == _sha((ROOT / rel).read_text(encoding="utf-8"))]
     now, prev = _state_now(data), old["sections"]
@@ -929,10 +1189,18 @@ def selftest() -> int:
     data = scan()
     if not data["rows"]:
         bad.append("절을 하나도 못 셌다")
-    if not any(r["state"] == "blank" for r in data["rows"]):
-        bad.append("blank 가 0 이다 — 칸 판정이 너무 무르다")
+    # ★ 2026-09-24 (DECISIONS §230). 종전에는 「실제 트리에 blank 가 하나도
+    #   없으면 칸 판정이 무르다」로 봤다. **그 0 이 목표 상태**인데 목표에
+    #   닿는 날 관문이 빨개지는 검사이고, 그러면 사람이 검사를 끈다.
+    #   `deadcheck` 가 2026-09-21 에, `test_defect_ledger_counts_agree_everywhere`
+    #   가 2026-09-24 에 같은 것을 배웠다. **생사는 합성 입력이 증명한다.**
+    empty = {"line": 0, "body": [(1, "칸이 없는 절이다"), (2, "두 줄이다")]}
+    if classify(empty)[0] != "blank":
+        bad.append("칸 없는 절을 blank 로 안 센다 — 판정이 무르다")
     if not any(r["state"] == "wired" for r in data["rows"]):
         bad.append("wired 가 0 이다 — 칸 판정이 너무 세다")
+    if not data["rows"] or len(data["rows"]) < 500:
+        bad.append(f"절을 {len(data['rows'])}개밖에 못 셌다 — 수집기가 죽었다")
     # 산문을 칸으로 세면 안 된다
     fake = {"line": 0, "body": [(1, "인코딩만 **강제자가 없었다.** 그래서")]}
     if classify(fake)[0] != "blank":
@@ -954,6 +1222,45 @@ def selftest() -> int:
     real = {"line": 0, "body": [(1, "강제자  `tests/test_guards.py::test_x`")]}
     if classify(real)[0] != "wired":
         bad.append("정상 칸을 못 셌다")
+    # ★ 2026-09-24 (DECISIONS §241). 칸은 **여러 줄**에 걸친다(실측 113곳).
+    #   첫 줄만 들면 이어지는 줄의 강제자 이름도 물림 선언도 안 보인다.
+    wrapped = {"line": 0, "body": [(1, "강제자  `tests/test_a.py` ·"),
+                              (2, "`tests/test_b.py`. 하위 둘이 이 칸을 물려받는다"),
+                              (3, ""),
+                              (4, "다음 문단은 칸이 아니다")]}
+    st, field, _ = classify(wrapped)
+    if st != "wired" or "test_b" not in field:
+        bad.append("여러 줄 칸의 뒷줄을 안 본다 — 범위가 이름보다 좁다")
+    if "다음 문단" in field:
+        bad.append("빈 줄 뒤까지 칸으로 먹는다")
+    # ★ 물림 선언이 적은 **수**를 되짚는가. 안 되짚으면 수를 적어도 안 세어진다.
+    for txt, want in (("하위 둘이 이 칸을", 2), ("하위 절 여덟이", 8), ("하위 3절", 3),
+                      ("하위 한 절도 같은", 1), ("하위 절 187-1 ~ 187-3", None),
+                      ("강제자 `tests/test_x.py`", None)):
+        if _said_count(txt) != want:
+            bad.append(f"물림 수 오독 — {txt!r} → {_said_count(txt)} (기대 {want})")
+    # ★ 수가 어긋나면 우는가. 합성 데이터로 본다 — 실물이 0 이어도 판정기는 살아야 한다.
+    synth = {"rows": [
+        {"id": "D/9", "doc": "d.md", "at": 1, "state": "wired",
+         "field": "강제자 `tests/test_x.py`. 하위 셋이 이 칸을 물려받는다"},
+        {"id": "D/9-1", "doc": "d.md", "at": 2, "state": "inherit", "field": ""},
+        {"id": "D/9-2", "doc": "d.md", "at": 3, "state": "inherit", "field": ""},
+    ]}
+    if not inherit_counts(synth):
+        bad.append("물림 수 어긋남(선언 3 · 실제 2)을 안 잡는다 — 그물이 비었다")
+    synth["rows"][0]["field"] = "강제자 `tests/test_x.py`. 하위 둘이 이 칸을 물려받는다"
+    if inherit_counts(synth):
+        bad.append("맞는 수를 어긋남으로 잡는다 — 거짓 빨강")
+    # ★ 2026-09-24 (DECISIONS §228). 강제자를 지목하면서 **범위를 덧붙인** 칸을
+    #   `none` 으로 세면 안 된다. 실측 8건이 그 상태였다.
+    ranged = {"line": 0, "body": [
+        (1, "강제자  `tests/test_x.py::test_y`. 나머지 수는 실측값이라 대조 도구가 없다")]}
+    if classify(ranged)[0] != "wired":
+        bad.append("강제자를 지목한 칸을 `없다` 한 단어 때문에 none 으로 셌다")
+    # 「없음」 선언은 **줄머리**에 있을 때만이다
+    declared = {"line": 0, "body": [(1, "강제자 없음 — 사유: 기록이다")]}
+    if classify(declared)[0] != "none":
+        bad.append("줄머리 `없음` 선언을 none 으로 안 셌다")
     # ★ 전문 대조는 무르다. 확실히 죽은 이름을 넣어 프로브가 우는지 본다
     # ★ 이름을 조립한다. 리터럴로 적으면 이 파일 자신이 전문에 걸려 통과한다
     ghost = "test_" + "zq7" + "_absent"
@@ -962,6 +1269,18 @@ def selftest() -> int:
                         "field": f"강제자  `tests/{ghost}.py::{ghost}`"}]}
     if not verify(canary):
         bad.append("합성 죽은 참조를 못 잡았다 — 프로브가 죽었다")
+    # ★ 2026-09-24 (DECISIONS §229). **실재하는 파일 + 없는 함수**가 제일 위험하다.
+    #   파일만 보던 시절에는 26건이 초록으로 앉아 있었고 그중 22건이
+    #   `test_plan_has_no_closed_items` 하나였다 — 이 도구 머리말이 「§123~143
+    #   스물한 절이 없는 검사를 강제자로 들고 있었다」고 적은 바로 그것이다.
+    #   **적어만 두고 잡지는 못했다.**
+    live = {"rows": [{"state": "wired", "doc": "x", "at": 0, "id": "MEMBER",
+                      "title": "member", "field":
+                      f"강제자  `tests/test_guards.py::{ghost}`"}]}
+    if not verify(live):
+        bad.append("실재하는 파일 안의 **없는 함수**를 못 잡았다")
+    if _missing_member("tests/test_guards.py", "test_no_dated_scripts_in_tools"):
+        bad.append("실재하는 함수를 없다고 한다 — 오탐")
     for line in bad:
         print(f"  {line}")
     print("selftest " + ("빨강" if bad else "초록"))
@@ -1235,7 +1554,12 @@ def main() -> int:
         dead = verify(data)
         print(f"죽은 강제자 참조 {len(dead)}건")
         print("\n".join(dead))
-        return min(len(dead), 255)
+        # ★ 2026-09-24 (DECISIONS §241). 물림 선언이 적은 **수**가 실제와 같은가.
+        #   선언만으로는 하위 절이 늘어도 조용하다 — 수를 세면 늘 때 운다.
+        cnt = inherit_counts(data)
+        print(f"물림 수 어긋남 {len(cnt)}건")
+        print("\n".join(cnt))
+        return min(len(dead) + len(cnt), 255)
 
     if a.cmd == "propose":
         n = a.ids[0] if a.ids else "1"

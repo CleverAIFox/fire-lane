@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +33,7 @@ def _mod():
     spec = importlib.util.spec_from_file_location(
         "rw", ROOT / "tools/render_workflow.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 
@@ -77,6 +79,7 @@ def test_rules_table_agrees_with_ruleset_check():
     spec = importlib.util.spec_from_file_location(
         "rsc", ROOT / "tools/ruleset_check.py")
     rsc = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = rsc   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(rsc)
 
     master = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
@@ -139,6 +142,7 @@ def test_rules_table_approvals_and_codeowners_match_expect():
     spec = importlib.util.spec_from_file_location(
         "rsc", ROOT / "tools/ruleset_check.py")
     rsc = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = rsc   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(rsc)
 
     table = _rules_table((ROOT / "docs/MASTER.md").read_text(encoding="utf-8"))

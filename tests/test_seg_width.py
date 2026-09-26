@@ -1,7 +1,7 @@
 """
 test_seg_width.py — 폭 산출 단위 테스트
 
-`ngii1k 1014 · silpok 84 · ngii 1` 을 만드는 코드다. 소스 우선순위(결정 63),
+`ngii1k 1166 · silpok 112 · ngii 1` 을 만드는 코드다. 소스 우선순위(결정 63),
 표본 snap, 커버율 자격(COV_MIN)이 전부 여기서 갈린다. Stage 3 리팩 전까지
 `main()` 안에 중첩돼 있어 테스트가 0개였다.
 
@@ -177,3 +177,36 @@ def test_engine_state_is_explicit():
     wx = engine(ngii1k=road(6.0))
     for f in ("ngii1k_u", "ngii_u", "rw_u", "bld_u", "xn", "xsec_poly"):
         assert hasattr(wx, f), f"{f} 가 엔진 상태에 없다"
+
+
+def test_width_source_priority_has_one_home():
+    """폭 소스 우선순위가 **한 곳**에만 사는가.
+
+    ★ 2026-09-24 (PLAN §1 #125 · DECISIONS §245). 이 순서가 `seg/width.py`
+      한 파일 안에서 **아홉 번** 재기술되고 있었다. 「결정 63」은 이 저장소에서
+      가장 많이 인용되는 규칙인데, 순서를 바꾸려면 아홉 곳을 고쳐야 했다 —
+      R3(정본 하나)가 **판정 핵심 안에서** 깨져 있던 자리다.
+
+    ★ 보는 것은 「세 이름이 한 줄에 같이 나오는가」다. 값 하나가 아니라
+      **순서**가 사실이므로 SPEC(값 대조)으로는 못 잡는다.
+    """
+    import re
+
+    from firelane.seg.params import WIDTH_SRCS
+
+    assert WIDTH_SRCS == ("ngii1k", "ngii", "silpok"), WIDTH_SRCS
+    home = ROOT / "src/firelane/seg/params.py"
+    pat = re.compile(r'"ngii1k"[^\n]*"ngii"[^\n]*"silpok"')
+    bad = []
+    for p in sorted((ROOT / "src/firelane").rglob("*.py")):
+        if p == home:
+            continue
+        for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            if line.lstrip().startswith("#"):
+                continue          # 주석은 사본이 아니다
+            if pat.search(line):
+                bad.append(f"{p.relative_to(ROOT)}:{i}  {line.strip()[:70]}")
+    assert not bad, (
+        "폭 소스 우선순위가 `seg/params.py::WIDTH_SRCS` 밖에서 또 쓰였다:\n  "
+        + "\n  ".join(bad)
+        + "\n  순서가 곧 규칙이다 — 두 벌이면 한쪽만 고치는 날이 온다(결정 63).")

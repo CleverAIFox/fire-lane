@@ -79,6 +79,11 @@ repos:
       # ★ 저장소 고유 규칙. 표준 훅에 대응물이 없다 —
       #   web/data 40MB 합계 상한 · processed 산출물 · .stale_* 격리 ·
       #   루트 일회성 스크립트 · 계보 기록. 각 규칙이 **왜** 를 같이 출력한다.
+      # ★ 2026-09-24 (PLAN §13 W13-11). 이 훅은 `git diff --cached` 를 본다.
+      #   CI 의 `pre-commit run --all-files` 는 **스테이지가 비어 있어** 아무것도
+      #   안 보고 로그에 `commit-policy Passed` 만 찍혔다 — 보증하지 않는 초록이다.
+      #   CI 의 실검사는 `contract.yml` 의 `--tracked` 한 줄이고, 그쪽이 정본이다.
+      #   여기서는 **아무것도 안 봤다는 것을 말하게** 했다(도구 쪽 `--tracked` 안내).
       - id: commit-policy
         name: 커밋 정책 (저장소 고유)
         entry: uv run python tools/commit_policy.py

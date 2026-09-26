@@ -185,6 +185,25 @@ else
     die "gh 토큰에 workflow 스코프가 없다." \
         "  gh auth refresh -h github.com -s workflow" "  그 뒤 이 명령을 다시 실행."
 fi
+# ★ 2026-09-24 (DECISIONS §225-5). **20분 뒤에 쓸 자격증명을 0분에 본다.**
+#   2026-09-23 — verify 12분 + 머지 둘을 다 끝낸 뒤 방송의 `git push` 가
+#   `Permission denied (publickey)` 로 죽었다. `wsl --shutdown` 뒤 새 ssh-agent 에
+#   키가 안 실린 것이었다. 전제 검사의 뜻은 「비싼 일을 시작하기 전에 막는 것」인데
+#   그 폭만큼 거짓이었다 — **읽기(fetch)만 보고 쓰기(push)를 안 봤다.**
+#   `--dry-run` 은 실제로 밀지 않으면서 인증·권한을 그대로 탄다.
+if ! _pt=$(git push --dry-run --porcelain origin "HEAD:refs/heads/_fl_probe_$$" 2>&1); then
+    case "$_pt" in
+      *"Permission denied (publickey)"*)
+        die "원격에 밀 수 없다 — ssh 키가 에이전트에 없다(wsl --shutdown 뒤에 흔하다)." \
+            "    eval \"\$(ssh-agent -s)\" && ssh-add ~/.ssh/id_ed25519" \
+            "    ssh -T git@github.com     # Hi <너> 가 나와야 한다" \
+            "  ★ 지금 막는 이유 — 이걸 안 보면 verify 12분과 머지 둘을 다 하고서 죽는다." ;;
+      *"protected branch"*|*"pre-receive"*|*"denied to"*)
+        : ;;   # 보호 규칙이 막은 것이다. 인증은 된다
+      *) die "원격에 밀 수 없다:" "$_pt" ;;
+    esac
+fi
+ok "원격 쓰기 인증"
 git fetch -q --prune origin
 ok "origin/$BASE = $(git rev-parse --short "origin/$BASE")"
 
@@ -361,9 +380,16 @@ else git switch -q -c "$BR" "origin/$BASE" 2>/dev/null || {
 }; fi
 for p in "${PATCHES[@]}"; do
     applied "$p" && continue
-    git am -q "$p" || {
+    # ★ 2026-09-24 (DECISIONS §225-2). `-3` 를 붙인다. 3단계는 `git apply --cached
+    #   --3way` 로 「붙는다」를 판정하는데 여기는 3way 가 아니었다 — **전제 검사가
+    #   실제 동작보다 느슨했다.** 2026-09-23 에 3단계가 「패치 1 개 전부 붙는다」를
+    #   찍고 4단계가 `patch does not apply` 로 죽었다. 전제가 약속한 것을 동작이
+    #   못 지키면 그 전제는 거짓이다. 엄격도를 맞춘다 — 넓히는 쪽으로.
+    git am -q -3 "$p" || {
         git am --abort 2>/dev/null
         die "git am 이 멈췄다 — $(basename "$p")" \
+            "  3단계가 붙는다고 했는데 여기서 멈췄다면 **base 가 그 사이에 움직였다.**" \
+            "    git fetch origin && $FL_CMD $BR --all   로 다시 본다" \
             "  되돌리려면:  $FL_CMD $BR --undo"
     }
 done

@@ -116,8 +116,18 @@ STEPS = [
          #   통과했다(PLAN #70 · DECISIONS §39).
          writes=(P / "segments.geojson", P / "segments_5186.gpkg",
                  P / "segments.schema.json", P / "corridor_5186.gpkg",
-                 P / "nfa_compare.json", P / "seg_uid_map.csv",
+                 P / "seg_uid_map.csv",
                  P / "route_vehicle.csv")),
+    # ★ 2026-09-25 (PLAN §1 #124). `seg/report.py::nfa_compare` 를 자기 단계로
+    #   내렸다. 그 안의 `from firelane import ledger` 한 줄이 ledger · naming ·
+    #   scope · kinds = 1,137줄을 판정 지문(= `firelane.segments` import 닫힘)에
+    #   넣고 있었다 — **파일명 문법 파서를 고쳐도 판정 게이트가 울었다.**
+    #   폐포 21 → 17 파일. 순서는 순방향이다 — segments(판정을 낸다) →
+    #   nfa_compare(그것을 외부 자료와 댄다).
+    Step("nfa_compare", "nfa_compare", "소방서 지정 구간 ↔ 우리 폭 대조",
+         P / "nfa_compare.json",
+         reads=(P / "segments_5186.gpkg", P / "road_link_5186.gpkg"),
+         writes=(P / "nfa_compare.json",)),
     # ★ 2026-09-23 (PLAN §13 W3-6). `segments._write_scope()` 를 자기 단계로 내렸다.
     #   표출 상수(DISPLAY_BUFFER · DISPLAY_CLOSE)가 `seg/params.py` 에 있으면 판정 지문
     #   (= `firelane.segments` import 닫힘) 안이라, **지도 여백만 고쳐도 판정 게이트가
@@ -162,12 +172,21 @@ STEPS = [
          mutates=(WEB / "view.json", P / "_manifest.json")),
     Step("publish", "publish_web", "→ web/data",
          WEB / "segments.geojson",
+         # ★ 2026-09-24 (DECISIONS §243). 유령 read 셋을 걷었다 —
+         #   `streetlight_point.geojson` · `corridor_5186.gpkg` ·
+         #   `ngii1k_light_5186.gpkg`. publish 계열 다섯(web · navi · fleet ·
+         #   basemap · context) 어디도 이 셋을 안 연다. 대신 `publish_basemap`
+         #   이 실제로 여는 셋이 빠져 있었다. **단계 선언이 곧 영향 분석의
+         #   근거**인데 그 근거가 양쪽으로 틀려 있었다.
          reads=(P / "segments.geojson", P / "segments.schema.json",
-                P / "streetlight_point.geojson", P / "boundary_emd.geojson",
+                P / "boundary_emd.geojson",
                 P / "fire_station.geojson", P / "hydrant_point.geojson",
                 P / "cctv.geojson", P / "poi_store.geojson",
-                P / "corridor_5186.gpkg", P / "building_5186.gpkg",
-                P / "ngii1k_light_5186.gpkg", P / "route_vehicle.csv", P / "scope_5186.gpkg",
+                P / "building_5186.gpkg",
+                P / "route_vehicle.csv", P / "scope_5186.gpkg",
+                # ★ publish_basemap 의 SOURCES — road_area · sidewalk 의 재료
+                P / "ngii1k_5186.gpkg", P / "road_rw_5186.gpkg",
+                P / "ngii1k_walk_5186.gpkg",
                 P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson",
                 # ★ 2026-09-22 (§215-1). 내비 그래프의 통행 규칙 — 일방통행 · 회전 금지
                 P / "ngii1k_center_5186.gpkg", P / "node_link_5186.gpkg",
@@ -186,7 +205,12 @@ STEPS = [
                  WEB / "cctv.geojson", WEB / "poi.geojson",
                  WEB / "vehicle_spec.json", WEB / "route_vehicle.json",
                  WEB / "navi_graph.json", WEB / "dest.geojson",
-                 WEB / "context.geojson", WEB / "history.geojson"),
+                 WEB / "context.geojson", WEB / "history.geojson",
+                 # ★ 2026-09-24. 발행되는데 선언에 없던 셋.
+                 #   `fleet.json`(publish_fleet) · `road_area.geojson` ·
+                 #   `sidewalk.geojson`(publish_basemap).
+                 WEB / "fleet.json", WEB / "road_area.geojson",
+                 WEB / "sidewalk.geojson"),
          # ★ view.json 은 terrain·ortho 가 구운 범위를 넣어둔 것을 읽어
          #   보존하고 다시 쓴다. writes 가 아니라 mutates 다.
          mutates=(WEB / "view.json",)),
@@ -226,7 +250,7 @@ def downstream(names: set[str]) -> list[Step]:
 #   이제 `golden.py lock` 한 번이 정본을 옮긴다.
 #   ingest 기준선만 여기 남는다 — 그것은 산출이 아니라 입력 계약이다.
 # ★ 2026-08-23. 이 표는 선언만 있고 **아무도 읽지 않았다.** 죽은 코드였는데
-#   지울 것이 아니라 배선할 것이었다 — PLAN §1-16 이 정확히 이 게이트를
+#   지울 것이 아니라 배선할 것이었다 — PLAN §1 #13 이 정확히 이 게이트를
 #   요구한다.
 #
 #   2026-08-21, `turn_restriction` 이 87 이어야 하는데 전국 44,125행(507배)을
@@ -293,7 +317,7 @@ def verify_ingest() -> list[str]:
     """대장의 건수를 입력 계약과 대조한다. 어긋난 것을 목록으로 낸다.
 
     ★ 산출물이 아니라 **입력**을 본다. segments 지문이 같아도 입력이
-      507배로 늘어난 것은 못 잡는다(PLAN §1-16).
+      507배로 늘어난 것은 못 잡는다(PLAN §1 #13).
     """
     import json
     man = PROCESSED / "_manifest.json"

@@ -44,8 +44,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DIRS = ("src", "tools", "tests")
-SUFFIX = (".py", ".sh", ".mjs")
+# ★ 2026-09-24 (DECISIONS §244). `web/navi/src` 가 범위 밖이었다. 그래서 상한을
+#   넘는 프런트 파일 셋(`OpsApp.tsx` 744 · `App.tsx` 640 · `domain/graph.ts` 627)이
+#   **래칫에 한 번도 안 잡혔다.** 길이 상한은 「한 파일이 몇 가지 일을 하는가」를
+#   재는 것이고 그 물음에 언어는 상관없다.
+DIRS = ("src", "tools", "tests", "web/navi/src", "web/navi/test")
+SUFFIX = (".py", ".sh", ".mjs", ".ts", ".tsx")
 SKIP = {"__pycache__", ".venv", "node_modules", "fixtures"}
 
 # ★ 상한. 한 곳에만 산다 — 부르는 쪽(verify.sh · contract.yml)은 인자를 안 적는다.
@@ -56,24 +60,45 @@ LIMITS = {"code": 600, "test": 700}
 #   늘려야 할 때는 여기 수를 올리고 **왜 쪼개지 않는지** 커밋에 적는다.
 EXCEPTIONS: dict[str, int] = {
     # 시험 (상한 700)
-    "tests/test_guards.py": 2432,
+    # ★ 2026-09-26 (§258-10). 2430 → 2440. 경로 적재 셋에 `sys.modules` 등록 줄과
+    #   SKIP 사유 강제를 다음 배치로 미룬 사유다.
+    "tests/test_guards.py": 2440,
     # ★ 2026-09-23 (DECISIONS §222-6). 718. **쪼개지 않는다** — 이 파일은 「선언과 실물이
     #   같은가」 한 물음의 사례 목록이고, 선언이 늘면 같이 는다. 둘로 가르면 새 선언을
     #   어느 파일에 적어야 하는지가 또 하나의 기억거리가 되고, 그때 한쪽만 고치는 날이 온다.
-    "tests/test_declaration_sync.py": 741,
+    "tests/test_declaration_sync.py": 783,
     # 코드 (상한 600)
-    "tools/dms.py": 1250,
+    "tools/dms.py": 1574,
     "src/firelane/ingest.py": 1105,
-    "tools/deadcheck.py": 1031,
+    "tools/deadcheck.py": 1059,
     # ★ 2026-09-23. 976 → 980 → 991. 「기획서 그림 ↔ 정본」(§221-1)과 「죽은 강제자
     #   참조」(§222-2)가 들어갔다. verify.sh 는 검사의 목록이라 검사가 늘면 늘어난다 —
     #   쪼개면 「어느 파일에 있나」 가 또 하나의 기억거리가 된다(§18-3).
-    "tools/verify.sh": 994,
-    "src/firelane/segments.py": 878,
-    "tools/doc_fsck.py": 653,
-    "tools/render_workflow.py": 636,
+    # ★ 2026-09-25 (DECISIONS §246). 1022 → 1030. 「문서 생성 블록 ↔ 실물」
+    #   단계와 그 사유가 들어갔다. verify.sh 는 검사의 목록이므로 검사가 늘면
+    #   는다 — 위 문단과 같은 이유로 쪼개지 않는다.
+    # ★ 2026-09-25 (§258). 1030 → 1034. 커버리지 래칫을 28 → 32 로 올린 사유
+    #   네 줄이다. 값만 바꾸고 사유를 안 적으면 다음 사람이 「왜 32냐」를 못 찾고,
+    #   못 찾는 래칫은 곧 내려간다.
+    # ★ 2026-09-25 (§258-8). 1034 → 1041. 「관문 호출 인자」 단계와 그 사유다.
+    #   verify.sh 는 검사의 목록이라 검사가 늘면 는다 — 위 문단과 같은 이유로
+    #   쪼개지 않는다.
+    "tools/verify.sh": 1041,
+    "src/firelane/segments.py": 863,
+    # ★ 2026-09-25 (§258). 659 → 664. ② 가 **생성물 주장**을 같이 본다 —
+    #   「문서가 가리키는데 없다」와 「생성물이라 아직 안 구웠다」를 가른다.
+    #   표와 판정은 `firelane.generated` 로 옮겼으므로 여기 남은 것은 호출 셋이다.
+    #   ★ 이 파일은 상한(600)을 넘는다. 쪼갤 자리는 `PLAN §1` 이 든다(#136).
+    "tools/doc_fsck.py": 664,
+    "tools/render_workflow.py": 635,
     "tools/golden.py": 613,
     "src/firelane/normalize_raw.py": 609,
+    # ★ 2026-09-24. 프런트가 래칫에 처음 들어왔다. **오늘 수 그대로** 박는다 —
+    #   래칫의 값어치는 「지금보다 나빠지지 않는다」이지 「지금이 옳다」가 아니다.
+    #   셋 다 쪼갤 자리가 있고 그것은 `PLAN §1` 이 든다(#130).
+    # ★ 2026-09-25 (PLAN §1 #130). 셋을 쪼갰다 — `OpsApp.tsx` 744→551 · `App.tsx`
+    #   640→556 · `domain/graph.ts` 627→375. 상한 아래로 내려왔으므로 **줄을 지운다.**
+    #   앞 문단을 남겨 둔다 — 프런트가 어떻게 들어왔는지는 기록으로 값이 있다.
 }
 
 

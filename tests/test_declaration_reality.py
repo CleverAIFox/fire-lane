@@ -305,6 +305,7 @@ def test_field_exempt_has_no_ghosts():
     import importlib.util
     spec = importlib.util.spec_from_file_location("doc_fsck", ROOT / "tools/doc_fsck.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     field = ROOT / "data" / "field"
     # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). `data/field/` 는 추적된다(fieldsheet 등). 종전

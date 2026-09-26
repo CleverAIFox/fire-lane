@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def _vc():
     spec = importlib.util.spec_from_file_location("vc_multi", ROOT / "tools/vintage_check.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 
@@ -33,3 +35,18 @@ def test_undeclared_edition_still_cries():
 
 def test_vintage_selftest_is_green():
     assert _vc().selftest() == 0
+
+
+def test_the_index_reads_plural_stem_lists():
+    """★ 2026-09-25 (§258). 단수 `stem` 칸이 없고 **목록으로만** 적은 항목의
+    stem 이 색인에 들어야 한다. 종전에는 단수만 읽어 `ngii1k` 의 두 stem 이
+    V3 「대장에 없는 stem」으로 나왔다 — 대장이 아는 것을 모른다고 적었다.
+
+    같은 날 `lakecheck L7` 이 같은 병으로 두 건을 거짓 양성으로 냈다.
+    """
+    vc = _vc()
+    idx = vc._ledger_index()
+    for stem in ("vworld_map1k", "vworld_map1k_ngi"):
+        assert stem in idx, f"{stem} 이 색인에 없다 — 복수형 목록을 안 읽는다"
+    # ㉡ 반대편 — 단수 칸만 있는 항목도 여전히 들어온다
+    assert any(v for k, v in idx.items() if k.startswith("its_")), "단수 stem 이 사라졌다"

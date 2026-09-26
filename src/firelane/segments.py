@@ -9,7 +9,7 @@ IN    processed/{boundary_emd,road_link,road_rw,ngii_road,ngii1k,ngii1k_center,
       processed/seg_uid_map.csv         직전 실행 키. 유지율 산출용
       $FIRE_LANE_DATA/raw/safety/safety_fire_access_*.csv   외부 대조(선택)
 OUT   processed/segments_5186.gpkg · segments.geojson · segments.schema.json
-      processed/seg_uid_map.csv · nfa_compare.json · corridor_5186.gpkg
+      processed/seg_uid_map.csv · corridor_5186.gpkg
       processed/route_vehicle.csv   ★ publish 가 읽어 web 으로 낸다
       processed/width_samples.csv · uncovered_units.json  (진단 덤프)
       ★ 2026-09-23 (PLAN §13 W3-6). `scope_5186.gpkg` 는 여기서 안 낸다.
@@ -48,7 +48,9 @@ from shapely.strtree import STRtree
 
 from firelane import segkey as _segkey
 from firelane.paths import PROCESSED
+from firelane.paths import env as _env
 from firelane.paths import flag as _flag
+from firelane.seg import geom as seg_geom
 
 # ── 파라미터 · 순수 함수 ──────────────────────────────────────
 # ★ 정본은 seg/ 다. 여기서 다시 정의하지 않는다(R3).
@@ -58,14 +60,10 @@ from firelane.seg.basisno import BasisIntervalIndex
 from firelane.seg.centerline_correction import apply_approved_centerline_corrections
 from firelane.seg.geom import _dirv, _join, _seal, verdict
 from firelane.seg.params import (
-    _DBG,
     CCTV_RANGE,
-    DEBUG_SEG,
-    DEBUG_XY,
     EMD_CD,
     MIN_SEG_LEN,
     NFA_RUN_M,
-    NO_MERGE,
     PARK,
     SNAP_TOL,
     TRUCK,
@@ -118,8 +116,8 @@ def endpoint_snap(lines, tol=SNAP_TOL):
 _SAMPLES: dict[str, list] = {}
 
 
-def _write_route(g) -> None:
-    """폭·내륜차를 반영한 2차 경로를 낸다.
+def _write_route(g, dst=None) -> None:
+    """폭·내륜차를 반영한 2차 경로를 낸다. `dst` 는 시험용 이음매다(#127).
 
     ★ 판정을 안 바꾼다. `segments.geojson` 에 컬럼을 더하지 않는다.
       `route_vehicle.csv` 로 따로 낸다 — golden 지문이 그대로다.
@@ -171,7 +169,6 @@ def _write_route(g) -> None:
     #   `graph.py` 는 같은 문제를 union-find 로 푼다(§4 노드 접합).
     #   경계가 없으므로 0.02m 차이가 노드를 가르지 않는다. 같은 방식을 쓴다.
     #   **두 곳이 다른 규칙으로 노드를 묶으면 그래프가 두 개가 된다.**
-    from shapely.strtree import STRtree
 
     from firelane.seg.params import NODE_TOL
 
@@ -183,27 +180,13 @@ def _write_route(g) -> None:
         _ends.append((r, co[0], co[-1]))
 
     _pts = [Point(q) for _, a, b in _ends for q in (a, b)]
-    _tree = STRtree(_pts)
-    _par = list(range(len(_pts)))
-
-    def _find(i):
-        while _par[i] != i:
-            _par[i] = _par[_par[i]]
-            i = _par[i]
-        return i
-
-    for i, pt in enumerate(_pts):
-        for j in _tree.query(pt.buffer(NODE_TOL)):
-            j = int(j)
-            if j != i and _pts[i].distance(_pts[j]) <= NODE_TOL:
-                ri, rj = _find(i), _find(j)
-                if ri != rj:
-                    _par[max(ri, rj)] = min(ri, rj)
+    # ★ 2026-09-25 (PLAN §1 #125 · DECISIONS §252). `seg/graph.py` 와 같은 15줄이었다.
+    _rep = seg_geom.snap_groups(_pts, NODE_TOL)
 
     H = nx.Graph()
     meta = {}
     for k, (r, _a, _b) in enumerate(_ends):
-        a, b = _find(2 * k), _find(2 * k + 1)
+        a, b = _rep[2 * k], _rep[2 * k + 1]
         if a == b:
             continue
         geom = r.geometry
@@ -233,10 +216,10 @@ def _write_route(g) -> None:
         return
     import numpy as np
     # 노드 대표 좌표 — union-find 그룹의 첫 점을 쓴다
-    _rep = {}
+    _xy = {}
     for i2, pt2 in enumerate(_pts):
-        _rep.setdefault(_find(i2), (pt2.x, pt2.y))
-    npts = np.array([_rep[n] for n in nodes], dtype=float)
+        _xy.setdefault(_rep[i2], (pt2.x, pt2.y))
+    npts = np.array([_xy[n] for n in nodes], dtype=float)
     use = Counter()
     reach = set()
     for lon, lat in seg_graph.STATIONS.values():
@@ -249,7 +232,7 @@ def _write_route(g) -> None:
             for u2, v2 in zip(pp, pp[1:], strict=False):
                 use[P.edges[u2, v2]["seg_id"]] += 1
 
-    dst = PROCESSED / "route_vehicle.csv"
+    dst = dst or PROCESSED / "route_vehicle.csv"
     n_blk = sum(1 for d in meta.values() if d["blocked"])
     with dst.open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
@@ -349,6 +332,7 @@ def _write_samples(g) -> None:
 
 
 def main():
+    _no_merge = _flag("FIRE_LANE_NO_MERGE")   # ★ #121 — 스위치는 단계층이 읽는다
     emd = load("boundary_emd")
     poly = shapely.make_valid(emd.loc[emd.EMD_CD == EMD_CD, "geometry"].iloc[0])
     _lineage_check()
@@ -468,7 +452,9 @@ def main():
 
     # ── 폭 산출 엔진 ─────────────────────────────────────────
     # 폭 소스 3종 + 건물 + 교차부. 실행 내내 불변이므로 한 번 묶는다.
-    _wx = WidthEngine(ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly)
+    _wx = WidthEngine(ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
+                      mix_src=_flag("FIRE_LANE_MIX_SRC"),
+                      old_snap=_flag("FIRE_LANE_OLD_SNAP"))
     widths = _wx.widths
 
 
@@ -589,7 +575,7 @@ def main():
 
     _cos_lim = -np.cos(np.radians(COLLIN_DEG))
     _mrg = []
-    for _pass in range(0 if NO_MERGE else MERGE_PASS):
+    for _pass in range(0 if _no_merge else MERGE_PASS):
         _todo = [uid for uid in list(units)
                  if uid in W and W[uid][0] is None]
         if not _todo:
@@ -842,13 +828,12 @@ def main():
         print("  ! 유지율 90% 미만 — segkey 규칙 재검토 필요")
     save_uid_map(g, OUT / "seg_uid_map.csv")
 
-    seg_report.nfa_compare(g)
     # ── 소스별 커버율 ────────────────────────────────────────
-    seg_report.diagnostics(g)
+    seg_report.diagnostics(g, old_snap=_wx.old_snap)
 
-    _dbg_ids = list(DEBUG_SEG)
-    if DEBUG_XY:
-        _x, _y = (float(v) for v in DEBUG_XY.split(",")[:2])
+    _dbg_ids = [x.strip() for x in _env("FIRE_LANE_DEBUG_SEG").split(",") if x.strip()]
+    if _dbg_xy := _env("FIRE_LANE_DEBUG_XY").strip():
+        _x, _y = (float(v) for v in _dbg_xy.split(",")[:2])
         _near = g.iloc[g.distance(Point(_x, _y)).values.argmin()]
         print(f"\n[덤프대상] ({_x:.0f},{_y:.0f}) 최근접 = {_near.seg_id} "
               f"{_near.road_name} {_near.length_m}m")
@@ -862,9 +847,9 @@ def main():
         print(f"\n[덤프] {_sid} {_row.road_name.iloc[0]} "
               f"len={_row.length_m.iloc[0]}m merged={_row.merged_n.iloc[0]} "
               f"side={_row.road_side.iloc[0]} bt={_row.road_bt_m.iloc[0]}")
-        _DBG["on"] = True
+        _wx.debug = True
         _r = widths(_gg)
-        _DBG["on"] = False
+        _wx.debug = False
         print(f"  → wmin={_r[0]} wmax={_r[1]} src={_r[3]} fail={_r[5]} cov={_r[6]}")
     _write_samples(g)
     _write_route(g)

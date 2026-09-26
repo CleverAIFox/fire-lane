@@ -126,7 +126,7 @@ def test_baked_folders_match_the_declaration():
     if not TILES.is_dir():
         # ★ 조용히 통과하지 않는다. 못 봤다는 것을 말한다.
         import pytest
-        pytest.skip(f"{TILES} 가 없다 — 굽힌 줌을 실물로 대조하지 못했다")
+        pytest.skip(f"환경skip(산출물) — {TILES} 가 없다. 굽힌 줌을 실물로 못 댔다")
     baked = sorted(int(d.name) for d in TILES.iterdir()
                    if d.is_dir() and d.name.isdigit())
     assert baked == sorted(_tile_z()), (

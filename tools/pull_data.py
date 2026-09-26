@@ -168,6 +168,7 @@ def main() -> int:
         _s = importlib.util.spec_from_file_location(
             "_fl_paths", ROOT / "src" / "firelane" / "paths.py")
         P = importlib.util.module_from_spec(_s)
+        sys.modules[_s.name] = P   # @dataclass 가 되짚는다 (§258-10)
         _s.loader.exec_module(P)
         print(c("반입 체인", "1"))
         print(f"  inbox    {P.inbox()}")
