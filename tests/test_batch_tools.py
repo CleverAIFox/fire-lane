@@ -23,6 +23,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -207,6 +208,7 @@ def test_lake_disposition_knows_our_patch_zip():
     spec = importlib.util.spec_from_file_location("lakecheck_t", T / "lakecheck.py")
     assert spec and spec.loader
     lakecheck = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = lakecheck   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(lakecheck)
     globs = lakecheck.disposed(ledger.load_sources())
     for name in ("fire-lane-navi-closed-loop.zip", "fire-lane-turn-radius.zip"):
@@ -340,6 +342,7 @@ def test_tidy_keeps_long_lived_branches_like_branch_tidy():
     import re as _re
     spec = importlib.util.spec_from_file_location("_tidy", ROOT / "tools" / "tidy.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     sh = (ROOT / "tools" / "branch_tidy.sh").read_text(encoding="utf-8")
     keep = _re.search(r"KEEP_RE='\^\(([^)]*)\)\$'", sh).group(1).split("|")

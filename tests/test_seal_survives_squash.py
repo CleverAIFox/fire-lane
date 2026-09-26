@@ -32,6 +32,7 @@ PR #108 을 **스쿼시**로 머지하고 브랜치를 지웠기 때문이다. �
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -293,6 +294,7 @@ def test_seal_pr_body_template_passes_the_gate():
     spec = importlib.util.spec_from_file_location(
         "_pbc", ROOT / "tools" / "pr_body_check.py")
     pbc = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = pbc   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(pbc)
     tpl = (ROOT / ".github" / "seal_pr_template.md").read_text(encoding="utf-8")
     assert "{HEAD}" in tpl, "템플릿에 `{HEAD}` 자리가 없다 — A-0 의 sed 가 채울 곳이 없다"

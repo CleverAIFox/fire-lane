@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def _vc():
     spec = importlib.util.spec_from_file_location("vc_multi", ROOT / "tools/vintage_check.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 

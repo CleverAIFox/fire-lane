@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def _mod(name: str):
     spec = importlib.util.spec_from_file_location(name, ROOT / "tools" / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(mod)
     return mod
 

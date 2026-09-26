@@ -20,6 +20,7 @@ R3 는 `test_seg_geom.py::test_params_are_not_redefined_in_segments` 가 본다.
 """
 import ast
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -583,6 +584,7 @@ def _baseline_tool():
     spec = importlib.util.spec_from_file_location(
         "baseline_tool", ROOT / "tools" / "baseline.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 

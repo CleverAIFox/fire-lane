@@ -38,6 +38,7 @@ OUT   없음 (검사)
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -112,6 +113,7 @@ def test_committed_boundary_matches_the_pipeline():
         "fixture_recut_t", ROOT / "tools" / "fixture_recut.py")
     assert spec and spec.loader
     fr = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = fr   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(fr)
     why = "\n".join(fr.diagnose(kept_doc, src, fr.CUTS[0]))
     raise AssertionError(

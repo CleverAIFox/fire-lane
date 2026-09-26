@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import re
+import sys
 import zipfile
 from pathlib import Path
 
@@ -235,6 +236,7 @@ def test_contract_counts_navi_as_consumer():
     import importlib.util
     spec = importlib.util.spec_from_file_location("contract_t", ROOT / "tests" / "test_contract.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     got = m.navi_reads()
     assert "dest.geojson" in got, "내비가 읽는 dest.geojson 을 못 본다 — 발행 기계에서 계약이 선다"

@@ -21,6 +21,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def _dms():
     spec = importlib.util.spec_from_file_location("dms_rawdiff", ROOT / "tools/dms.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 

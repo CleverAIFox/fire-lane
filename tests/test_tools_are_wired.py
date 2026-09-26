@@ -410,3 +410,44 @@ def test_the_loader_helper_form_is_seen():
     """`_load("x")` 꼴도 본다 — 이 저장소 시험들이 실제로 쓰는 축약이다."""
     lines = [("tests/test_y.py", 3, 'mod = _load("skeleton_compare")')]
     assert call_sites("skeleton_compare.py", lines) == ["tests/test_y.py:3"]
+
+
+def test_a_by_path_loader_registers_the_module():
+    """경로로 적재한 모듈을 **`sys.modules` 에 등록하는가.**  (§258-10)
+
+    ★ 2026-09-26 실기 사고. `tests/test_dest_scope.py` 가 `tools/fixture_recut.py`
+      를 경로로 적재했는데 등록을 안 했다. 그 도구에 `@dataclass` 가 있고,
+      `dataclasses` 는 문자열 주석을 풀려고 `sys.modules[cls.__module__]` 를
+      되짚는다 — 없으면 `AttributeError: 'NoneType' object has no attribute
+      '__dict__'` 로 죽는다. 전수 verify 의 **유일한 실패**가 그것이었다.
+
+    ★ **지식은 이미 저장소에 있었다.** `tests/test_guards.py` 가 같은 자리에
+      「@dataclass 는 cls.__module__ 로 sys.modules 를 되짚는다. 등록 없이
+      exec_module 하면 AttributeError 로 죽는다」고 적어 뒀다. 주석으로만 있고
+      **강제자가 없어서** 열여덟 파일이 그 함정을 밟은 채로 살아 있었다.
+      터지는 날은 그 도구가 `@dataclass` 를 갖는 날이라 **지연 신관**이다.
+
+    밖  등록 **이름**이 옳은지는 안 본다(`spec.name` 을 쓰는 것이 관례다).
+        `src/` 안의 정상 import 는 대상이 아니다 — 경로 적재만 본다.
+    """
+    import ast as _ast
+
+    bad = []
+    for p in sorted((ROOT / "tests").glob("*.py")):
+        tree = _ast.parse(p.read_text(encoding="utf-8"))
+        loads = [n for n in _ast.walk(tree)
+                 if isinstance(n, _ast.Call) and isinstance(n.func, _ast.Attribute)
+                 and n.func.attr == "module_from_spec"]
+        if not loads:
+            continue
+        regs = [n for n in _ast.walk(tree)
+                if isinstance(n, _ast.Subscript) and isinstance(n.value, _ast.Attribute)
+                and n.value.attr == "modules"]
+        if len(regs) < len(loads):
+            bad.append(f"  tests/{p.name}  적재 {len(loads)} · 등록 {len(regs)}")
+    assert not bad, (
+        "경로로 적재하고 `sys.modules` 에 안 넣었다\n" + "\n".join(bad)
+        + "\n\n  `spec.loader.exec_module(m)` **앞에** 한 줄 넣는다 —\n"
+          "      sys.modules[spec.name] = m\n"
+          "  `@dataclass` 가 `cls.__module__` 로 되짚는다. 없으면 AttributeError 다.\n"
+          "  지금 안 터져도 그 도구가 dataclass 를 갖는 날 터진다 — 지연 신관이다.")

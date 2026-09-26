@@ -24,6 +24,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import pathlib
+import sys
 
 import pytest
 
@@ -39,6 +40,7 @@ def lc():
     spec = importlib.util.spec_from_file_location("lakecheck_l7t", SRC)
     assert spec and spec.loader
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     m.HITS.clear()
     return m

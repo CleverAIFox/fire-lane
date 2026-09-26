@@ -29,6 +29,7 @@ PARAM 없음
 from __future__ import annotations
 
 import re
+import sys
 import zipfile
 from pathlib import Path
 
@@ -169,6 +170,7 @@ def _check_mod():
     import importlib.util
     spec = importlib.util.spec_from_file_location("_docx_check", ROOT / "tools" / "docx_check.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 
@@ -219,6 +221,7 @@ def _figs_mod():
     import importlib.util
     spec = importlib.util.spec_from_file_location("_docx_figs", ROOT / "tools" / "docx_figs.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 
