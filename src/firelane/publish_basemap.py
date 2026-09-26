@@ -33,7 +33,9 @@ from __future__ import annotations
 import json
 
 import geopandas as gpd
-from shapely.geometry import box, mapping
+import shapely
+from shapely.geometry import MultiPolygon, box, mapping
+from shapely.geometry.polygon import orient
 
 from firelane.paths import ROOT
 
@@ -80,20 +82,95 @@ def union(name: str, frame):
     return gpd.GeoSeries(parts, crs=5186).union_all()
 
 
+def _polys(geom):
+    """어떤 기하에서든 **폴리곤만** 재귀로 꺼낸다.
+
+    ★ 2026-09-26 (§260). `GeoSeries.explode()` 는 **한 겹만** 푼다.
+      `make_valid` 가 내는 `GeometryCollection` 안에 `MultiPolygon` 이 들어 있으면
+      한 번 풀어도 `MultiPolygon` 이 남고, `geom_type == "Polygon"` 거름망이
+      그것을 **통째로 버린다.** 실제로 그렇게 도로면 1.22km² 가 0.03km² 가 됐다 —
+      고치려던 자리에서 더 큰 것을 깨뜨렸다.
+    """
+    if geom is None or geom.is_empty:
+        return []
+    if geom.geom_type == "Polygon":
+        return [geom]
+    if hasattr(geom, "geoms"):
+        return [q for g in geom.geoms for q in _polys(g)]
+    return []                                        # 선·점은 면이 아니다
+
+
+def _order(polys):
+    """발행 순서. **바이트 안정성**이 목적이라 면적·중심으로 못박는다."""
+    return sorted(polys, key=lambda p: (-round(p.area, 9),
+                                        round(p.centroid.x, 9), round(p.centroid.y, 9)))
+
+
+def rfc7946(p):
+    """RFC 7946 §3.1.6 — 외곽은 반시계, 구멍은 시계. (§260-4)
+
+    ★ 지금 쓰는 렌더러는 감김을 안 본다. 그래서 **화면으로는 안 드러나는** 위반이고,
+      드러나지 않는 위반은 다음 소비자가 생길 때까지 조용하다. 벡터 타일러나
+      다른 파서가 붙는 날 알아차리는 것보다 지금 한 줄이 싸다.
+
+    ★ 건물은 `MultiPolygon` 이 섞여 온다 — `orient` 는 `Polygon` 만 받으므로 편다.
+    """
+    if p.geom_type == "MultiPolygon":
+        return MultiPolygon([orient(q, sign=1.0) for q in p.geoms])
+    return orient(p, sign=1.0) if p.geom_type == "Polygon" else p
+
+
+def snap_orient(g, prec: int = PREC):
+    """격자 스냅 → 유효화 → RFC 7946 감김. 폴리곤이 안 남으면 None. (§260-4)
+
+    ★ **쓰기 직전에 이 순서로** 한다. 반올림은 기하를 깨뜨리므로 반올림보다 먼저
+      고치면 소용이 없다 — §260 의 결함이 정확히 그것이었다. `publish_web` 이
+      `COORDINATE_PRECISION=6` 으로 드라이버에게 반올림을 맡기는데, 그 반올림이
+      shapely 가 맞춰 놓은 감김을 여섯 건 도로 뒤집었다. 여기서 격자에 먼저
+      앉히면 드라이버의 반올림은 이미 격자 위인 수를 다시 쓸 뿐이다.
+
+    ★ 두 발행기가 **같은 문**으로 이것을 한다. 두 벌이면 한 쪽만 고쳐진다.
+    """
+    ps = _polys(shapely.make_valid(shapely.set_precision(g, 10 ** -prec)))
+    if not ps:
+        return None
+    return rfc7946(ps[0] if len(ps) == 1 else MultiPolygon(ps))
+
+
 def build(name: str, frame) -> dict:
-    u = union(name, frame).simplify(SIMPLIFY_M)
-    polys = gpd.GeoSeries([u], crs=5186).explode(index_parts=False)
-    polys = polys[polys.geom_type == "Polygon"]
-    polys = polys[polys.area >= 1.0]                 # 1㎡ 미만 부스러기는 버린다
-    key = sorted(polys, key=lambda p: (-round(p.area, 1), round(p.centroid.x, 1), round(p.centroid.y, 1)))
-    out = gpd.GeoSeries(key, crs=5186).to_crs(4326)
+    polys = [g for g in _polys(union(name, frame).simplify(SIMPLIFY_M)) if g.area >= 1.0]
+    out = gpd.GeoSeries(_order(polys), crs=5186).to_crs(4326)
+
+    # ★ 2026-09-26 (§260). **반올림을 기하로 한다 — 좌표를 글자로 깎지 않는다.**
+    #   `_round` 가 6자리(약 11cm)로 깎는데, 그 안쪽의 두 점이 같은 점이 되면
+    #   작은 고리가 점 셋 이하로 찌그러지고 폴리곤 전체가
+    #   `Too few points in geometry component` 로 무효가 된다. 실제로
+    #   `road_area` 가 그랬다 — 외곽 1 + 구멍 826 중 하나가 찌그러져 전체가
+    #   무효였고, 렌더러가 구멍 파기를 포기해 **외곽 4.2km² 가 통째로 칠해졌다.**
+    #   화면에 도로망 대신 회색 슬래브가 떴다.
+    #   격자에 먼저 스냅하면 `_round` 는 이미 격자 위인 수를 다시 쓸 뿐이다.
+    #
+    #   하중재는 `set_precision` 이다 — 그 한 줄을 빼면 아래 관문이 운다.
+    #   `make_valid` 는 스냅이 고리를 무너뜨릴 때를 위한 안전벨트고, 이 데이터로는
+    #   빼도 초록이다. 단순화 **직후**에도 한 번 걸어 뒀었는데 빼도 초록이라
+    #   걷어냈다 — 첫 오진(「단순화가 범인」)의 잔해였다.
+    # ★ 조각마다 따로 스냅하면 안 된다. 그렇게 했더니 이웃한 두 조각의 공유 경계가
+    #   따로 움직여 3.9e-12 만큼 **겹쳤고**, 건물 몫을 도로면마다 더하는 아래 검사가
+    #   같은 자리를 두 번 셌다(`test_road_polygons_do_not_overlap_each_other`).
+    #   통째로 넘기면 GEOS 가 전체를 한 번에 노딩해 겹침 없는 결과를 보장한다.
+    snapped = _order(_polys(snap_orient(shapely.union_all(list(out)))))
+
+    # ★ 무효면 **조용히 내보내지 않는다.** 화면이 도로망 대신 슬래브를 그리는
+    #   것이 정확히 그 대가였다. 이 관문이 없어서 결함이 커밋까지 갔다.
+    if (bad := sum(0 if q.is_valid else 1 for q in snapped)):
+        raise SystemExit(f"★ {name}: 무효 기하 {bad}건 — 조용히 발행하지 않는다")
     return {
         "type": "FeatureCollection",
         "name": name,
         "features": [
             {"type": "Feature", "properties": {},
              "geometry": _round(mapping(p))}
-            for p in out
+            for p in snapped
         ],
     }
 

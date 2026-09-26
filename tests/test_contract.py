@@ -82,6 +82,59 @@ def test_schema_matches_data(seg):
     assert set(s["fields"]) >= set(REQUIRED)
 
 
+def test_published_polygons_are_well_formed():
+    """발행된 면이 **렌더러가 그릴 수 있는 기하인가.**  (§260)
+
+    ★ 2026-09-26 실제 사고. `road_area.geojson` 의 도로망 한 덩어리가
+      `is_valid=False` 였다 — 외곽 1 + 구멍 826 중 하나가 점 세 개 이하로
+      찌그러져 `Too few points in geometry component` 였다. 무효 폴리곤의
+      구멍을 렌더러가 신뢰하지 못해 **외곽 4.2km² 를 통째로 칠했고**, 화면에
+      도로망 대신 회색 슬래브가 떴다. 파이프라인도 계약 시험도 전부 초록이었다 —
+      **아무도 발행물의 기하가 유효한지 안 봤다.**
+
+    ★ 원인은 **순서**였다. `publish_basemap` 이 union 입력에만 `make_valid` 를
+      걸고, 그 뒤 `simplify` 와 6자리 반올림이 고리를 다시 찌그러뜨렸다.
+      고치는 것보다 **고친 뒤에 또 깨뜨리지 않는가**가 어려웠다.
+
+    밖  면이 **옳은 자리에** 있는지는 안 본다 — 그것은 계보와 눈이 든다.
+        `Point` · `LineString` 은 대상이 아니다(유효·무효가 없다).
+    """
+    from shapely.geometry import shape
+
+    bad: list[str] = []
+    cw: list[str] = []
+    seen = 0
+    for name in ("road_area", "sidewalk", "buildings"):
+        f = WEB / f"{name}.geojson"
+        if not f.exists():
+            continue
+        d = json.loads(f.read_text(encoding="utf-8"))
+        for i, ft in enumerate(d.get("features", [])):
+            g = ft.get("geometry") or {}
+            if g.get("type") not in ("Polygon", "MultiPolygon"):
+                continue
+            s = shape(g)
+            if not s.is_valid:
+                from shapely.validation import explain_validity
+                bad.append(f"  {name}.geojson #{i}  {explain_validity(s)[:80]}")
+            seen += 1
+            for q in (s.geoms if s.geom_type == "MultiPolygon" else [s]):
+                if not q.exterior.is_ccw:
+                    cw.append(f"{name}.geojson #{i}")
+    assert seen, "★ 훑은 면이 0건이다 — 발행물을 못 보고 있다. 판별식을 의심하라"
+    assert not bad, (
+        "발행된 면 중 무효 기하가 있다 — 렌더러가 구멍을 포기하고 외곽을 통째로 칠한다\n"
+        + "\n".join(bad[:10])
+        + "\n\n  `src/firelane/publish_basemap.py` 가 격자 스냅 뒤 `make_valid` 를 한다.\n"
+          "  거기서 안 잡혔으면 **다른 발행기가 같은 순서 실수**를 하고 있다 —\n"
+          "  단순화·반올림은 기하를 깨뜨리므로 **그 뒤에** 고쳐야 한다(§260).")
+    assert not cw, (
+        f"외곽 고리가 시계방향이다 {len(cw)}건 — RFC 7946 §3.1.6 위반 (§260-4)\n"
+        + "\n".join(sorted(set(cw))[:5])
+        + "\n\n  발행기가 `publish_basemap.rfc7946()` 를 안 거쳤다. 지금 렌더러는\n"
+          "  감김을 안 보므로 **화면으로는 안 드러난다** — 그래서 시험이 든다.")
+
+
 def test_buildings_have_height():
     """3D extrusion 재료. h 가 없거나 0이면 건물이 납작해진다."""
     b = json.loads((WEB / "buildings.geojson").read_text(encoding="utf-8"))
