@@ -100,7 +100,7 @@ NO_DECL = 152
 #   사본 픽스처가 갈렸을 때 ㉠ 재현 불가와 ㉡ 판 변경을 가르는 판별식이라,
 #   그 판별식이 빈 그물이면 진단이 조용히 거짓말한다.
 # ★ 2026-09-25 (§258-8). 17 → 18. `tools/argcheck.py` — 관문 호출 인자 대조.
-SELFTEST_MIN = 18
+SELFTEST_MIN = 19
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)
 WALK_FN = {"glob", "rglob", "iterdir", "walk"}

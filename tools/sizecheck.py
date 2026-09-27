@@ -83,7 +83,7 @@ EXCEPTIONS: dict[str, int] = {
     # ★ 2026-09-25 (§258-8). 1034 → 1041. 「관문 호출 인자」 단계와 그 사유다.
     #   verify.sh 는 검사의 목록이라 검사가 늘면 는다 — 위 문단과 같은 이유로
     #   쪼개지 않는다.
-    "tools/verify.sh": 1035,
+    "tools/verify.sh": 1030,
     "src/firelane/segments.py": 863,
     "tools/render_workflow.py": 635,
     "tools/golden.py": 613,

@@ -666,21 +666,11 @@ else
     #   있어서 **간접적으로, 우연히** 드러난 것이다. `dms.py` 의
     #   `SEAL_MAY_BE_DIRTY` 는 그 파일을 이미 알고 있었다 — 같은 사실이
     #   저장소에 있는데 이 자리가 손으로 다시 적으며 틀렸다(DECISIONS §192).
-    #   디렉터리로 넓힌다. 추적되는 것은 넷이고 전부 결정적이다
-    #   (`_manifest.json` 은 `write_stable` 이 시각만 바뀌면 안 쓴다).
-    #   ★ 단계 이름은 안 고쳤다 — DECISIONS §179 가 이 이름을
-    #     인용한다. W3-13(2026-09-22 닫힘)은 목록만 등록부로 옮겼고 이름은 그대로 둔다.
-    #   ★ 2026-09-20 (W4-10). 종전에는 여기서 `git diff --quiet` 한 줄이
-    #     돌았고 **파일 이름까지만** 말했다. 그날 두 매니페스트가 48줄씩
-    #     움직였는데 그중 45자리가 `datasets.*.seal.code` 였다 — 그 배치가
-    #     `src/firelane/prep.py` 를 고쳤으니 **움직이는 것이 옳다.** 그런데
-    #     화면에서는 판정값이 드리프트한 경우와 구분이 안 됐고, 안내문은
-    #     「생성물이므로 그대로 커밋하면 된다」라 사람에게 도장 찍는 법을
-    #     가르쳤다. 2026-09-19 의 재커밋에는 봉인 `cfg` 가 실제로 바뀐 것이
-    #     섞여 있었고 48줄 사이에 묻혔다.
-    #   ★ **경계는 안 바꿨다.** 시각만 움직인 경우는 `manifest.write_stable`
-    #     이 이미 안 쓴다(그것을 「구조적 빨강」으로 잘못 읽은 등재를
-    #     정정했다 — DECISIONS §200). 바뀐 것은 빨강일 때 사람이 보는 것이다.
+    #   디렉터리로 넓힌다. 추적되는 것은 넷이고 전부 결정적이다.
+    #   ★ 2026-09-20 (W4-10). 종전에는 `git diff --quiet` 한 줄이 **파일 이름까지만**
+    #     말해, 봉인 `cfg` 가 실제로 바뀐 것이 48줄 사이에 묻혔다. 경계는 안 바꿨고
+    #     (시각만 움직이면 `write_stable` 이 안 쓴다 — DECISIONS §200) 빨강일 때
+    #     사람이 보는 것을 바꿨다. 단계 이름은 DECISIONS §179 가 인용하므로 그대로 둔다.
     # ci-exempt: tools/freshcheck.py 파이프라인 재실행 산출과 커밋본을 견준다. CI 는 파이프라인을 안 돈다
     scope "$CODE_SCOPE"
     step "커밋된 web/data 가 최신인가" uv run python tools/freshcheck.py
@@ -896,6 +886,11 @@ scope "docs/*"
 # ci-exempt: tools/evalgen.py `route_vehicle.csv` 가 커밋 대상이 아니다 — 파이프라인 산출이고 CI 는 파이프라인을 안 돈다
 # ★ 2026-09-25 (#91). 게이트 셋이 어긋나면 지표를 안 뽑고 죽는다 — 도는 것이 곧 증적이다.
 step "평가지표 산출"      uv run python tools/evalgen.py
+
+# ★ 2026-09-27 (DECISIONS §265). 문서↔코드 **정합 도장.** 무효는 「틀렸다」가
+#   아니라 **「다시 보라」**다.
+step "문서 정합 도장"      uv run python tools/docseal.py check
+scope "docs/* src/* tools/* tests/* web/*"
 
 step "문서 제목 무결"      uv run python tools/docpatch.py check \
      docs/MASTER.md docs/PLAN.md docs/DECISIONS.md

@@ -324,6 +324,8 @@ jobs:
         run: uv run python tools/plan_renumber.py
       - name: 문서 제목 무결
         run: uv run python tools/docpatch.py check docs/MASTER.md docs/PLAN.md docs/DECISIONS.md
+      - name: 문서 정합 도장
+        run: uv run python tools/docseal.py check
       - name: 내비 소스 목록
         run: uv run python tools/install_navi.py --check
       - name: 배포에 내비 빌드
