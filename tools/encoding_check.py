@@ -23,8 +23,8 @@ tools/encoding_check.py — 저장소 텍스트의 인코딩·개행을 검사�
 """
 from __future__ import annotations
 
+import argparse
 import subprocess
-import sys
 from pathlib import Path
 
 # 검사 대상 확장자. 정본은 firelane/encoding.py 의 TEXT_EXT_SOURCE 다.
@@ -95,7 +95,12 @@ def fix(p: Path, b: bytes) -> bool:
 
 
 def main() -> int:
-    do_fix = "--fix" in sys.argv
+    # ★ 2026-09-24 (PLAN §13 W13-6 · DECISIONS §243). 종전에는 `"--x" in sys.argv`
+    #   였다 — **오타가 조용히 무시된다.** `--fx` 는 고치는 대신 대조만 하고 통과했다.
+    #   argparse 는 모르는 인자에 스스로 운다. 직접 구현할 일이 아니다(4족).
+    ap = argparse.ArgumentParser(description="인코딩 위생 — 대조 또는 교정")
+    ap.add_argument("--fix", action="store_true", help="찾은 것을 고친다")
+    do_fix = ap.parse_args().fix
     hits, fixed = [], 0
 
     for p in tracked():

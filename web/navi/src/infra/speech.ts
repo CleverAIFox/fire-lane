@@ -36,6 +36,14 @@ export interface Speaker {
   say(text: string, priority?: Priority): void;
   cancel(): void;
   setEnabled(on: boolean): void;
+  /**
+   * 합성기를 놓는다. 깨우기 타이머를 끄고 말하던 것을 멈춘다.
+   *
+   * ★ 2026-09-24 (PLAN §13 W13-5). 종전에는 이것이 **없었고** 깨우기
+   *   `setInterval` 의 핸들도 안 잡았다 — 페이지 수명 내내 못 끄는 타이머가
+   *   하나(StrictMode 개발 모드에서는 둘) 돌았다.
+   */
+  dispose(): void;
 }
 
 export function createSpeaker(): Speaker {
@@ -51,12 +59,14 @@ export function createSpeaker(): Speaker {
     ko = vs.find((v) => v.lang === "ko-KR")
       ?? vs.find((v) => v.lang?.startsWith("ko")) ?? null;
   };
+  let wake = 0;
   if (synth) {
     pick();
     // 음성 목록은 비동기로 채워진다. 한 번 더 잡는다.
     synth.onvoiceschanged = pick;
     // ★ Chrome 이 합성기를 멈추는 버그. 주기적으로 깨운다.
-    setInterval(() => {
+    //   핸들을 잡는다 — 못 끄는 타이머는 누수다(W13-5).
+    wake = window.setInterval(() => {
       if (synth.speaking && !synth.paused) { synth.pause(); synth.resume(); }
     }, 8000);
   }
@@ -84,6 +94,11 @@ export function createSpeaker(): Speaker {
     },
     cancel() {
       queue.length = 0; speaking = false; synth?.cancel();
+    },
+    dispose() {
+      if (wake) { clearInterval(wake); wake = 0; }
+      queue.length = 0; speaking = false; enabled = false;
+      if (synth) { synth.onvoiceschanged = null; synth.cancel(); }
     },
     say(text, priority = "normal") {
       if (!synth || !enabled || !text) return;

@@ -43,9 +43,10 @@ ROOT = Path(__file__).resolve().parents[1]
 P = ROOT / "data" / "processed"
 W = ROOT / "web" / "data"
 
-LAT0 = 35.151
-MX = 111320 * math.cos(math.radians(LAT0))
-MY = 110574
+# ★ 2026-09-24 (PLAN §13 W12-1). 여기 세 줄(`LAT0` · `MX` · `MY`)이 도구 셋에
+#   **글자까지 같게** 박혀 있었다. 정본을 `tools/localgeo.py` 하나로 올렸다 —
+#   갈리면 셋이 각자 다른 좌표계로 거리를 재면서 아무도 안 운다.
+from localgeo import LAT0, MX, MY  # noqa: F401  일부는 LAT0 만 쓴다
 
 # 소통정보가 실려 오는 도로등급. 시군도(107)·기타(108)는 번호가 없다.
 # 설명자료: 101 고속 · 102 도시고속 · 103 일반국도 · 104 특별광역시도

@@ -118,8 +118,24 @@ EXTERNAL = {
 
 
 def _nocomment(text: str) -> str:
-    """`#` 주석을 걷는다. 주석의 도구 이름은 호출이 아니다(머리말 ★)."""
-    return "\n".join(line.split("#", 1)[0] for line in text.splitlines())
+    """`#` 주석을 걷는다. 주석의 도구 이름은 호출이 아니다(머리말 ★).
+
+    ★ 2026-09-24 (PLAN §13 W13-13). 종전에는 `line.split("#", 1)[0]` 이었다 —
+      **줄 안 어디든** `#` 부터 잘랐다. 셸 파라미터 확장(`${VAR#*/}`)과
+      따옴표 안의 `#` 까지 잘려, 그 뒤에 적힌 도구 호출이 CI 집합에서
+      사라졌다. 실물에 이미 있었다 — `build-navi/action.yml` 의
+      `REPO="${GITHUB_REPOSITORY#*/}"` 가 `REPO="${GITHUB_REPOSITORY` 로 잘린다.
+
+      사라지는 쪽으로 틀리므로 **「미선언 로컬 전용」이 늘어 래칫이 터지거나**,
+      반대로 로컬 쪽이 잘려 차집합이 조용히 0 이 된다. 둘 다 나쁘다.
+
+      **줄머리 주석만** 걷는다. 줄 끝 주석까지 정확히 가르려면 셸 파서가
+      필요하고, 그것은 이 도구의 범위가 아니다 — 범위를 넓히는 대신
+      **좁게 틀리는 쪽**을 고른다(여분의 토큰은 양쪽에 똑같이 들어간다).
+      같은 물음을 보는 `tests/test_ci_env.py:40` 도 줄머리만 본다 — 둘을 맞췄다.
+    """
+    return "\n".join("" if line.lstrip().startswith("#") else line
+                      for line in text.splitlines())
 
 
 def tokens(text: str) -> set[str]:

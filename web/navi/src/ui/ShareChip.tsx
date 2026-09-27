@@ -11,7 +11,7 @@
  */
 import type { CSSProperties } from "react";
 import { C, S } from "./tokens";
-import type { ShareInfo } from "../app/useShare";
+import type { ShareInfo } from "../domain/types";
 
 const KIND: Record<string, string> = {
   bottleneck: "병목 구간", blocked: "통행 불가", arrival: "도착 보고",

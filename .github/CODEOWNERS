@@ -144,3 +144,17 @@
 /web/navi/src/lib/       @CleverAIFox           # !strict
 /web/navi/src/components/ @CleverAIFox
 /web/navi/               @CleverAIFox
+
+
+# ── 9. 기본값 말고 **이름으로** 맡는다 ──────────────────────────
+# ★ 2026-09-24 (DECISIONS §239). `test_every_tracked_path_has_an_owner` 는
+#   위 `*` 때문에 **구조적으로 실패할 수 없었다** — 모든 경로가 기본값에
+#   걸려 미소유가 0 이다. 기본값만 걸린 것은 **아무도 안 정한 것**이다.
+#   실측 14건(docs 9 · 루트 설정 5)을 이름으로 맡긴다.
+#   `test_every_tracked_file_has_a_named_owner` 가 다음 것을 막는다.
+/docs/                   @CleverAIFox
+/README.md               @CleverAIFox           # !strict
+/.gitleaks.toml          @CleverAIFox           # !strict
+/.pre-commit-config.yaml @CleverAIFox           # !strict
+/.ruff-strict.toml       @CleverAIFox           # !strict
+/.python-version         @CleverAIFox           # !strict

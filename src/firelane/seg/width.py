@@ -2,7 +2,7 @@
 """
 seg/width.py — 구간 폭 산출.
 
-이 파일이 `ngii1k 1014 · silpok 84 · ngii 1` 을 만든다. 소스 우선순위(결정 63),
+이 파일이 `ngii1k 1166 · silpok 112 · ngii 1` 을 만든다. 소스 우선순위(결정 63),
 표본 snap, 커버율 자격(COV_MIN), 교차부 제외까지 폭에 관한 판단이 전부 여기 있다.
 
 2026-08-18 Stage 3 에서 `segments.py` 의 `main()` 밖으로 꺼냈다. `measure`(178줄)
@@ -26,13 +26,11 @@ from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
 
 from firelane.seg.params import (
-    _DBG,
     COV_MIN,
     MIN_SEG_LEN,
-    MIX_SRC,
-    OLD_SNAP,
     SNAP_MAX,
     SNAP_TRUST,
+    WIDTH_SRCS,
     WMAX_CAP,
     XSEC_EXCL,
 )
@@ -49,13 +47,21 @@ class WidthEngine:
     xsec_poly 평면교차점 실형상.    있으면 이쪽이 우선
     """
 
-    def __init__(self, ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly):
+    def __init__(self, ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
+                 *, mix_src: bool = False, old_snap: bool = False):
         self.ngii1k_u = ngii1k_u
         self.ngii_u = ngii_u
         self.rw_u = rw_u
         self.bld_u = bld_u
         self.xn = xn
         self.xsec_poly = xsec_poly
+        # ★ 2026-09-25 (PLAN §1 #121 · #123). 종전에는 셋 다 `seg/params.py` 의
+        #   모듈 전역이었고 그 파일이 `.env` 를 읽었다. 이제 **부르는 쪽이 정한다.**
+        #   기본은 전부 꺼짐 — 셋 다 「종전 동작으로 되돌리는」 진단 스위치이고,
+        #   기본값이 곧 판정 경로다. 값을 안 넘기면 판정 경로로 돈다.
+        self.mix_src = mix_src      # 구간 폭을 표본 혼합 집합의 최솟값으로(종전)
+        self.old_snap = old_snap    # snap 을 소스별이 아닌 종전 방식으로
+        self.debug = False          # 표본 단위 덤프. `segments.main()` 이 켰다 끈다
 
     def measure(self, s, t):
         p0 = s.interpolate(t)
@@ -151,8 +157,9 @@ class WidthEngine:
             return v, None
 
         # ── 측정 지점 결정 ──────────────────────────────────
-        _srcs3 = ((self.ngii1k_u, "ngii1k"), (self.ngii_u, "ngii"), (self.rw_u, "silpok"))
-        if OLD_SNAP:
+        _srcs3 = tuple(zip((self.ngii1k_u, self.ngii_u, self.rw_u),
+                           WIDTH_SRCS, strict=True))
+        if self.old_snap:
             # 종전 방식. 소스 하나라도 덮으면 snap 없음, 아니면 최근접 하나로 전부 이동.
             _live = [u for u, _ in _srcs3 if u is not None and not u.is_empty]
             _pp = p0
@@ -187,7 +194,7 @@ class WidthEngine:
             # 없다. 다른 폴리곤 조각에 억지로 들어가 그 조각의 좁은 데를 잰 것이다.
             # 45.9m 구간이 이런 표본 하나로 1.26m 판정을 받고 있었다.
             # 측정값 자신으로 검증하므로 임계값을 새로 만들지 않는다.
-            if (not OLD_SNAP) and v is not None and sn is not None and sn > v / 2.0:
+            if (not self.old_snap) and v is not None and sn is not None and sn > v / 2.0:
                 v, c = None, f"snap{sn:.1f}>w/2"
             res[nm] = (v, c, pt, sn)
 
@@ -195,7 +202,7 @@ class WidthEngine:
         # 실폭도로는 실측 11.8m 인 동계천로에 1.30m 짜리 측구 조각을 그려 놓았고
         # min() 은 그것을 무조건 채택했다. 틀린 값은 보수적인 게 아니라 틀린 것이다.
         A, src, P = None, None, p0
-        for nm in ("ngii1k", "ngii", "silpok"):
+        for nm in WIDTH_SRCS:
             if res[nm][0] is not None:
                 A, src, P = res[nm][0], nm, res[nm][2]
                 break
@@ -223,17 +230,17 @@ class WidthEngine:
         if A is not None and B is not None and B < A:
             B = A
 
-        a_1k, a_ngii, a_rw = res["ngii1k"][0], res["ngii"][0], res["silpok"][0]
-        if _DBG["on"]:
+        a_1k, a_ngii, a_rw = (res[nm][0] for nm in WIDTH_SRCS)
+        if self.debug:
             print("      " + "  ".join(
                 f"{nm}={res[nm][0] if res[nm][0] is not None else res[nm][1]}"
                 f"(snap{res[nm][3] if res[nm][3] is not None else '-'})"
-                for nm in ("ngii1k", "ngii", "silpok"))
+                for nm in WIDTH_SRCS)
                 + f" → A={A} src={src} B={B}")
         why = None
         if A is None:
             why = "|".join(f"{k}:{res[n][1]}" for k, n in
-                           (("1k", "ngii1k"), ("ng", "ngii"), ("rw", "silpok")))
+                           zip(("1k", "ng", "rw"), WIDTH_SRCS, strict=True))
         return A, B, src, (a_1k, a_ngii, a_rw), why, res
 
     def widths(self, s):
@@ -248,8 +255,8 @@ class WidthEngine:
         if not _ts:
             _ts = [s.length/2]
         _nc, _nx_skip, _whys = 0, 0, []
-        _cov = {"ngii1k": 0, "ngii": 0, "silpok": 0}
-        _by  = {"ngii1k": [], "ngii": [], "silpok": []}
+        _cov = dict.fromkeys(WIDTH_SRCS, 0)
+        _by  = {nm: [] for nm in WIDTH_SRCS}
         _n_try = 0
 
         # ★ 2026-08-23. 표본을 버리지 않고 남긴다.
@@ -324,12 +331,12 @@ class WidthEngine:
                 _nx_skip += 1
                 _rows.append({"s": round(t, 2), "w": None, "src": None,
                               "drop": "xsec"})
-                if _DBG["on"]:
+                if self.debug:
                     _how = "폴리곤" if (self.xsec_poly is not None
                                        and self.xsec_poly.intersects(_pt)) else "반경"
                     print(f"    t={t:7.1f}  교차로 {self.xn.distance(_pt):.1f}m ({_how}) — 제외")
                 continue
-            if _DBG["on"]:
+            if self.debug:
                 _pp = s.interpolate(t)
                 print(f"    t={t:7.1f}  ({_pp.x:.1f},{_pp.y:.1f})")
             a, b, sc, pr, _why, _res = self.measure(s, t)
@@ -350,7 +357,7 @@ class WidthEngine:
                 _sn = _r[3]
                 return _sn is None or _sn <= SNAP_TRUST
 
-            for _nm in ("ngii1k", "ngii", "silpok"):
+            for _nm in WIDTH_SRCS:
                 if _trusted(_nm):
                     _cov[_nm] += 1
             if _why: _whys.append(_why)
@@ -367,7 +374,7 @@ class WidthEngine:
             # ★ pr 은 measure() 가 항상 3-튜플로 준다. strict=True 로
             #   그 계약을 고정한다 — 소스가 늘거나 줄면 여기서 죽어야
             #   조용히 한 소스가 빠지는 일이 없다.
-            for _nm, _vv in zip(("ngii1k", "ngii", "silpok"), pr, strict=True):
+            for _nm, _vv in zip(WIDTH_SRCS, pr, strict=True):
                 if _vv is not None and _trusted(_nm):
                     _by[_nm].append(_vv)
             if b: B.append(b)
@@ -396,11 +403,11 @@ class WidthEngine:
         # 부분커버 구간은 그 소스가 못 잰 구간을 모르는 채로 판정하는 것이므로
         # width_cov 로 노출해 D-25 실측 우선순위에 쓴다.
         _pick = None
-        if not MIX_SRC:
+        if not self.mix_src:
             # 커버율은 소스를 '고르는' 기준이 아니라 '자격'이다.
             # 커버율로 고르면 실폭도로(0.955)가 항상 이겨 결정 63 이 뒤집힌다.
             _covnow = _covr()[0]
-            for _nm in ("ngii1k", "ngii", "silpok"):
+            for _nm in WIDTH_SRCS:
                 if not _by[_nm]:
                     continue
                 _cv = _covnow.get(_nm)
@@ -410,7 +417,7 @@ class WidthEngine:
                 break
             # 전부 자격 미달이면 우선순위대로 하나는 쓴다(폭을 못 내는 것보다 낫다).
             if _pick is None:
-                for _nm in ("ngii1k", "ngii", "silpok"):
+                for _nm in WIDTH_SRCS:
                     if _by[_nm]:
                         _pick = _nm
                         break

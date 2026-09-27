@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -55,12 +56,86 @@ DATA_EXT = {".zip", ".7z", ".csv", ".json", ".shp", ".gpkg", ".tif",
             ".hwp", ".hwpx", ".xls", ".xlsx", ".txt", ".dbf", ".pdf", ".xml"}
 
 
-def sha(p: Path) -> str:
-    h = hashlib.sha256()
-    with open(p, "rb") as f:
-        for b in iter(lambda: f.read(1 << 20), b""):
-            h.update(b)
-    return h.hexdigest()
+#: 읽다 실패한 파일 — 사유와 함께. 비어야 통과다.
+UNREAD: list[tuple[str, str]] = []
+
+#: 레이크 지문 **북마크**.  (§258-17)
+#:
+#: ★ 2026-09-26. 종전에는 매 실행 2.5GB 를 처음부터 다시 해싱했다(30~90초).
+#:   이 저장소는 이미 「안 바뀐 것은 다시 안 한다」를 샤드 봉인으로 하고 있는데
+#:   **여기만 그 원리가 없었다** — ENOMEM 을 버퍼 크기로 때운 것이 그 증상이다.
+#:   증상을 고치기 전에 「왜 2.5GB 를 매번 읽나」를 물었어야 했다.
+#:
+#: ★ 샤드 봉인의 `seal.raw` 는 **데이터셋 단위 집계 지문 하나**라 여기 못 쓴다 —
+#:   sweep 이 묻는 것은 「이 파일 하나가 레이크 어디에 있나」이고 그것은 파일별
+#:   해시를 요구한다. 그래서 같은 원리로 **파일별 북마크**를 따로 둔다.
+#:
+#: ★ 무효 조건은 **크기와 mtime_ns** 다. 둘 중 하나라도 다르면 다시 판다.
+#:   내용이 같은데 mtime 만 바뀌면 헛일을 한 번 하지만 그것은 안전한 쪽이다 —
+#:   반대(내용이 바뀌었는데 재사용)는 「지워도 된다」를 거짓으로 만든다.
+FP_CACHE = ROOT / ".work" / "lake_fp.json"
+
+
+def _fp_load() -> dict[str, list]:
+    try:
+        return json.loads(FP_CACHE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}          # 없거나 깨졌으면 전부 다시 판다 — 조용히 비어도 안전하다
+
+
+def fp_valid(was: list | None, size: int, mtime_ns: int) -> bool:
+    """북마크를 **재사용해도 되는가.** 이 한 줄이 이 기능의 전부다.
+
+    ★ 판단을 이름 있는 자리로 뺀 이유. 처음 판은 이 비교를 `main` 루프 안에
+      인라인으로 뒀고, 시험은 `_fp_load`/`_fp_save` 만 쟀다. 그래서 **「mtime 을
+      무시하고 무조건 재사용」 주입이 안 잡혔다** — 헬퍼만 재고 판단을 안 쟀다.
+      이 저장소가 반복한 형태다(§258-10 의 배선 미검사와 같다).
+
+    ★ **안전한 쪽이 어느 쪽인지가 비대칭이다.** 내용이 같은데 mtime 만 바뀌면
+      헛일을 한 번 한다 — 느릴 뿐이다. 반대로 내용이 바뀌었는데 재사용하면
+      sweep 이 「이 파일은 레이크에 이미 있다 = 지워도 된다」를 **거짓으로**
+      말하고, 지우는 것은 되돌릴 수 없다. 그래서 의심스러우면 다시 판다.
+    """
+    return bool(was) and list(was[:2]) == [size, mtime_ns]
+
+
+def _fp_save(fp: dict[str, list]) -> None:
+    try:
+        FP_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        FP_CACHE.write_text(json.dumps(fp) + "\n", encoding="utf-8")
+    except OSError:
+        pass               # 못 써도 다음 실행이 느려질 뿐이다. 판단은 안 바뀐다
+
+
+def sha(p: Path, *, chunks=(1 << 18, 1 << 15)) -> str | None:
+    """파일의 sha256. **못 읽으면 None 을 내고 `UNREAD` 에 적는다.**
+
+    ★ 2026-09-26 (§258-15). 종전에는 1MB 씩 읽었고, 외장 SSD 가 붙은
+      `/mnt/` (DrvFs) 에서 `OSError: [Errno 12] Cannot allocate memory` 로
+      **트레이스백을 내며 죽었다.** 실기에서 사흘 연속 같은 자리였다.
+      진짜 메모리 부족이 아니다 — 그때 스왑은 16GB 중 377MB 만 쓰고 있었다.
+      DrvFs 가 큰 읽기 버퍼를 호스트 쪽에 못 맵핑할 때 나는 오류다.
+
+    ★ **두 가지를 고친다.**
+      ㉠ 버퍼를 256KB 로 줄이고, 그래도 실패하면 32KB 로 한 번 더 시도한다.
+      ㉡ 그래도 못 읽으면 **어느 파일인지 적고 넘어간다.** 종전 트레이스백은
+         파일 이름을 한 글자도 안 냈다 — 사흘 동안 무엇이 안 읽히는지 몰랐다.
+
+    ★ 넘어가되 **조용히 넘어가지 않는다.** `UNREAD` 가 비지 않으면 `main` 이
+      빨갛게 끝낸다. 못 읽은 원본을 「레이크에 없다」로 세면 그 다음 판단
+      (중복인가 · 지워도 되는가)이 전부 거짓이 된다.
+    """
+    for n in chunks:
+        h = hashlib.sha256()
+        try:
+            with open(p, "rb") as f:
+                for b in iter(lambda n=n: f.read(n), b""):
+                    h.update(b)
+            return h.hexdigest()
+        except OSError as e:
+            last = f"{type(e).__name__}: {e}"
+    UNREAD.append((str(p), last))
+    return None
 
 
 def led() -> dict:
@@ -225,14 +300,32 @@ def main() -> int:
     y = led()
     ret, held = retired_names(y), held_names(y)
 
-    # 레이크 지문 — raw·norm 이 정본이다
+    # 레이크 지문 — raw·norm 이 정본이다. **북마크가 아는 것은 다시 안 판다**(§258-17)
     print("레이크 지문화 중…", end="", flush=True)
     lake: dict[str, Path] = {}
+    fp, seen, reused, hashed = _fp_load(), {}, 0, 0
     for zone in ("raw", "norm"):
         for p in (D / zone).rglob("*"):
-            if p.is_file():
-                lake.setdefault(sha(p), p.relative_to(D))
-    print(f" {len(lake)}건")
+            if not p.is_file():
+                continue
+            rel = p.relative_to(D).as_posix()
+            try:
+                st = p.stat()
+                key = [st.st_size, st.st_mtime_ns]
+            except OSError as e:
+                UNREAD.append((str(p), f"{type(e).__name__}: {e}"))
+                continue
+            was = fp.get(rel)
+            if fp_valid(was, *key):
+                d, reused = was[2], reused + 1
+            elif (d := sha(p)) is not None:
+                hashed += 1
+            else:
+                continue
+            seen[rel] = [*key, d]
+            lake.setdefault(d, p.relative_to(D))
+    _fp_save(seen)          # 사라진 파일은 자연히 빠진다 — 북마크가 안 자란다
+    print(f" {len(lake)}건 (북마크 {reused} · 새로 {hashed})")
 
     dele = scan("① 다운로드 폴더", IN, lake, ret, held, min_mb=0.0)
 
@@ -250,20 +343,33 @@ def main() -> int:
 
     fix_docs(a.yes)
 
+    # ★ 2026-09-26 (§258-15). **못 읽은 원본이 있으면 이 실행의 판단은 부분이다.**
+    #   레이크 지문이 비어 있는 파일은 「레이크에 없다」로 세어지고, 그러면
+    #   「중복이라 지워도 된다」가 거짓이 된다. 목록은 끝까지 내되 빨갛게 끝낸다 —
+    #   조용히 넘어가면 지우면 안 될 것을 지우라고 말하게 된다.
+    if UNREAD:
+        print(f"\n★ 못 읽은 원본 {len(UNREAD)}건 — 이 실행의 판단은 **부분**이다")
+        for q, why in UNREAD[:10]:
+            print(f"   {q}\n     {why}")
+        if len(UNREAD) > 10:
+            print(f"   … 외 {len(UNREAD) - 10}건")
+        print("   외장 SSD 가 /mnt/ (DrvFs) 로 붙어 있으면 큰 읽기가 ENOMEM 을 낸다.")
+        print("   그 원본을 리눅스 쪽 디스크로 옮기거나, 그 파일만 빼고 판단해라.")
+
     todo = dele + land
     total = sum(p.stat().st_size for p, _, _ in todo)
     print(f"\n══ 정리 대상 {len(todo)}건 · {total / 1e6:.0f}MB")
     if not todo:
         print("   없다")
-        return 0
+        return 1 if UNREAD else 0
     if not a.sweep:
         print("   `--sweep` 으로 지울 목록을 확정한다")
-        return 0
+        return 1 if UNREAD else 0
     if not a.yes:
         for p, v, _w in todo:
             print(f"   지울 것  {p.name[:50]:52s} [{v}]")
         print("\n   실제로 지우려면 --sweep --yes")
-        return 0
+        return 1 if UNREAD else 0
     n = 0
     for p, v, w in todo:
         p.unlink()
@@ -271,7 +377,7 @@ def main() -> int:
         n += 1
     print(f"\n   {n}건 삭제 · {total / 1e6:.0f}MB 확보")
     print("   ★ 근거가 대장에 있는 것만 지웠다. 보류·미판단은 남아 있다")
-    return 0
+    return 1 if UNREAD else 0
 
 
 if __name__ == "__main__":

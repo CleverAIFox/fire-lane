@@ -3,12 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<!-- 사이트 입구. 옛 GIS 지도(web/js · style.css)는 2026-09-22 에 걷어냈다 —
-     관제 화면(내비 앱의 ?view=ops)이 그 기능을 넘겨받았다.
+<!-- **로컬 대역**이다. 배포에서는 이 자리가 관제 화면 그 자체다 (§258) —
+     `.github/actions/build-navi` 가 내비 빌드본을 여기 앉히고 `window.__FL_VIEW="ops"`
+     를 박는다. 배포면은 둘이다: 관제(`/<repo>/`) · 내비(`/<repo>/navi/`).
+     로컬에는 빌드본이 없으므로 `serve.py` 용으로 관제로 넘겨만 준다.
+     옛 GIS 지도(web/js · style.css)는 2026-09-22 에 걷어냈고 판정 지도는 관제 안 OpsMap 이다.
      ★ 주소는 상대 경로다. Pages 가 /<repo>/ 아래에 서빙해도, 로컬 serve.py 가 / 에 서빙해도 맞는다.
      ★ 외부 자원을 부르지 않는다. 이 파일은 그 자체로 끝난다. -->
 <meta http-equiv="refresh" content="0; url=navi/?view=ops">
-<title>소방 진입로 — 관제 화면으로 이동</title>
+<title>소방 진입로 — 관제</title>
 <style>body{font:16px/1.6 system-ui,sans-serif;margin:3rem auto;max-width:32rem;padding:0 1rem;color:#222;background:#fff}
 @media (prefers-color-scheme:dark){body{color:#ddd;background:#111}a{color:#8ab4f8}}</style>
 </head>

@@ -174,6 +174,41 @@ SPEC: dict[str, dict] = {
         "code_only": True,
         "near": r"CCTV_RANGE|cctv|유효\s*범위|유효\s*측정",
     },
+    "offtrack_min": {
+        "what": "내륜차를 무시하는 문턱(m). 이보다 작은 내륜차는 0 으로 친다",
+        # ★ 2026-09-24 (PLAN §1 #125 · DECISIONS §245). 종전에는 **이름 없이**
+        #   `2 * 0.05` 꼴로 세 곳 두 언어에 있었다. 맨숫자라 이 표에도 없었고
+        #   아무도 안 봤다 — 그 값이 「이 골목으로 돌 수 있나」를 가른다.
+        "owner": {"file": "src/firelane/seg/params.py",
+                  "regex": r"^OFFTRACK_MIN\s*=\s*([\d.]+)"},
+        "consumers": [
+            {"file": "web/navi/src/domain/vehicle.ts", "has": "OFFTRACK_MIN = {v}"},
+        ],
+        "scan": ["src/firelane/**/*.py", "web/navi/src/**/*.ts"],
+        "exclusive": True,
+        "code_only": True,
+        # ★ `0.05` 는 허용오차·비율로도 쓰이는 흔한 수다. 문맥 낱말과 같은
+        #   줄일 때만 이 사실의 사본으로 센다 — 안 그러면 오탐이 본문을 덮는다.
+        "near": r"OFFTRACK|내륜차|offtrack|wheelbase",
+    },
+    "local_lat0": {
+        "what": "국소 평면 근사의 기준 위도(동명동 중심). 조사 도구 셋이 거리를 잰다",
+        # ★ 2026-09-24 (PLAN §13 W12-1 · DECISIONS §239). 세 도구가 글자까지 같게
+        #   박고 있었다. `seg/params.py` 로 안 올린 이유는 그 파일이 **판정 지문**
+        #   안이라 상수 하나에 재잠금이 따라오기 때문이다 — 이 값은 판정에 안 든다.
+        "owner": {"file": "tools/localgeo.py", "regex": r"^LAT0 = ([\d.]+)"},
+        # ★ consumers 가 비어 있다 — 셋은 값을 **적지 않고 import 한다.** 사본이
+        #   없으니 대조할 자리도 없다. 여기에 경로를 적으면 그 줄이
+        #   `test_tools_are_wired` 에 **호출로** 세어져(경로 리터럴) 면제 셋이
+        #   거짓으로 죽는다. 선언표가 배선표로 읽히는 자리다.
+        #   지키는 것은 아래 `exclusive` 다 — `tools/*.py` 어디에도 값이 또
+        #   나오면 운다.
+        "consumers": [],
+        "scan": ["tools/*.py"],
+        "exclusive": True,
+        "code_only": True,
+        "near": r"LAT0|위도|lat",
+    },
     "code_owner": {
         "what": "저장소 단독 소유자(CODEOWNERS 기본 규칙 · 2026-09-09 개인 계정 이관)",
         "owner": {"file": ".github/CODEOWNERS", "regex": r"^\*\s+@(\S+)"},
@@ -194,7 +229,10 @@ SPEC: dict[str, dict] = {
     },
     "font_stack": {
         "what": "그림 · 화면 글꼴 스택",
-        "owner": {"file": "tools/render_figures.py", "regex": r'^FONT = "([^"]+)"'},
+        # ★ 2026-09-24. `render_figures` 가 600줄을 넘어 배치 검사를 `svg_fit` 으로
+        #   뗐고, 글꼴은 **SVG 를 쓰는 쪽**을 따라갔다. 집을 옮겼으면 여기도 옮긴다 —
+        #   안 옮기면 정규식이 0번 걸려 이 검사가 「집이 하나가 아니다」로 운다.
+        "owner": {"file": "tools/svg_fit.py", "regex": r'^FONT = "([^"]+)"'},
         "consumers": [
             {"file": "web/navi/src/ui/tokens.ts", "has": 'family: "{v}"'},
             {"file": "web/proposal.html", "has": "{v}"},

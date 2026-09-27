@@ -20,17 +20,9 @@ import { shareState, type ShareKind } from "../domain/opsProtocol";
 import type { OpsUplink } from "./useOpsUplink";
 import type { LngLat } from "../domain/geo";
 
-export type ShareState = "idle" | "sending" | "awaiting" | "acked" | "failed";
-export type { ShareKind };
-
-export interface ShareInfo {
-  state: ShareState;
-  kind: ShareKind | null;
-  /** 관제 확인 시각(HH:MM) */
-  ackedAt: string | null;
-  /** 관제가 없어 흉내 냈다 */
-  simulated: boolean;
-}
+// ★ 집은 `domain/types.ts` 다(DECISIONS §244). 여기서는 다시 내보낸다.
+import type { ShareInfo, ShareState } from "../domain/types";
+export type { ShareInfo, ShareState, ShareKind };
 
 /** 흉내 지연(ms). 실제 관제 응답 시간을 잰 적이 없다 — 시연용 값이다 */
 const SEND_MS = 1200;

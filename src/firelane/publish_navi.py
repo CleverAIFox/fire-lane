@@ -6,6 +6,7 @@ IN    data/processed/segments.geojson · web/config.js
       data/processed/ngii1k_center_5186.gpkg · node_link_5186.gpkg ·
       node_point_5186.gpkg · turn_restriction.csv          (통행 규칙 — 없으면 규칙 없이 낸다)
       data/processed/parking_enforce.csv                    (불법주정차 단속 이력 — 도로 단위)
+      data/processed/enforce_cam.csv                        (불법주정차 단속 카메라 — 도로 단위)
 OUT   web/data/navi_graph.json
 PARAM 노드접합 NODE_TOL(seg/params.py) · 좌표 정밀도 PREC · 크기 상한 SIZE_MAX
 
@@ -30,10 +31,34 @@ golden 지문이 걸려 있다. **새 파일로 내면 기존 열여섯은 한 �
   22선 중 같음 8 · 반대 14 였다 — 가정이 틀렸다. 방향은 표준노드링크(`node_link`)가 한
   방향 링크만 가진 곳에서만 확정한다. 나머지는 2 로 내고, 내비가 **양쪽 다 조금 불리하게**
   본다(역주행일 수도 있다). 지어내지 않는다.
-`park` — 그 구간 **도로명**에 찍힌 불법주정차 단속 건수(2022-01~2025-02 · 두 판 합). 없으면 0.
+`park` — 그 구간 **도로명**에 찍힌 불법주정차 단속 건수(2022-01~2025-02 · 두 판 합).
+`ecam` — 그 구간 **도로명**에 선 불법주정차 단속 **카메라 지점** 수(`enforce_cam` · 57지점).
     ★ 도로 단위다. 단속 장소가 「동명로 123」 처럼 도로명 + 번지라 구간까지 못 내린다 —
       같은 도로명의 구간은 같은 수를 받는다. 주정차 **위험의 대리값**이지 현재 주차가 아니다.
-    ★ 판정에 안 쓴다. 화면(구간 카드 · 병목 패널)이 「단속 이력」 으로 띄울 뿐이다.
+    ★ 카메라는 **지점**으로 센다. 한 지점이 방향마다 한 행이라(3·36·40·41·42·45번) 행으로
+      세면 같은 곳이 둘로 셋으로 불어난다. 번호가 지점이고 행이 방향이다(대장 note).
+    ★ 판정에 안 쓴다. 화면(구간 카드 · 병목 패널)이 「단속 이력」 으로 띄우고,
+      경로 비용은 `web/navi/src/domain/pressure.ts` 가 **계수 0** 으로 받는다 — 칸만 섰다.
+
+★ **결측과 0 을 가른다** (2026-09-25). 둘 다 `null` 과 `0` 으로 **명시해서** 싣는다.
+
+      null   그 구간에 **도로명이 없다.** 셀 수가 없었다 — 모른다
+      0      도로명이 있고, 그 도로명에 찍힌 것이 **하나도 없다**
+
+  종전에는 `if n:` 으로 0 을 **빼서** 발행했다. 그러면 받는 쪽에서 결측과 0 이 같은
+  모습(`undefined`)이 되고, 「없음」 하나로 찍힌다 — **모르는 것을 없다고 말하는**
+  자리다. 크기보다 이쪽이 중하다.
+
+★ **0 이 「없다」가 아니다** (2026-09-25 실측). 지금 구간 1,281 전부에 도로명이 있어
+  `park` 결측은 0 이고, 종전에 빠져 있던 110 은 **전부 실제 0** 이었다 — 그 자리의
+  「없음」 표기는 우연히 맞았다. 그러나 **0 의 강도가 둘로 갈린다:**
+
+      park  141,556행 중 54,541행만 도로명이 붙었다(87,015행 미배치 — 지번 표기)
+      ecam  57지점 중 18지점만 붙었다(39지점 미배치 — 「지산동 521-3」 꼴)
+
+  그래서 `ecam: 0` 은 「카메라가 없다」가 아니라 **「붙은 18지점 중에 없다」** 다.
+  미배치 몫을 `counts.*_unplaced_*` 로 같이 실어 읽는 쪽이 0 의 강도를 알게 한다.
+  지오코딩을 지어내서 0 을 메우지 않는다.
 `turns` — 표준노드링크 TURNINFO 의 금지 셋(101 좌회전 · 102 직진 · 103 우회전 금지).
     011(유턴 허용) 같은 허용 규칙은 싣지 않는다.
 ★ 경로에서 **빼지 않는다.** 소방차는 불리하게 계산하고 경고한다(사용자 결정 2026-09-22).
@@ -270,15 +295,24 @@ def _road_of(txt: str, have: set[str]) -> str | None:
     return best
 
 
-def _parking(names: list[str | None]) -> tuple[list[int], dict]:
-    """도로명별 단속 건수를 구간에 나눠 준다. 없으면 전부 0."""
+def _spread(cnt: dict[str, int], names: list[str | None]) -> list[int | None]:
+    """도로명별 수를 구간에 나눠 준다.
+
+    ★ **도로명이 없는 구간은 `None`** 이다 — 0 이 아니다. 셀 수가 없었다는 뜻이고,
+      「그 도로에 한 건도 없다」(0)와 섞으면 모르는 것을 없다고 말하게 된다.
+    """
+    return [(cnt.get(n, 0) if n else None) for n in names]
+
+
+def _parking(names: list[str | None]) -> tuple[list[int | None], dict]:
+    """도로명별 불법주정차 단속 **건수**. 자료가 없으면 전부 결측(`None`)이다."""
     import pandas as pd
     src = P / "parking_enforce.csv"
-    out = [0] * len(names)
     stat = {"rows": 0, "matched": 0, "roads": 0}
     if not src.exists():
-        print("  ! parking_enforce 없음 — 단속 이력 없이 낸다")
-        return out, stat
+        # ★ 0 으로 채우지 않는다. 자료가 없는 것은 「한 건도 없다」가 아니다.
+        print("  ! parking_enforce 없음 — 단속 이력을 결측으로 낸다")
+        return [None] * len(names), stat
     s = pd.read_csv(src, usecols=["위반장소명"], dtype=str)["위반장소명"].fillna("")
     stat["rows"] = len(s)
     have = {n for n in names if n}
@@ -289,7 +323,39 @@ def _parking(names: list[str | None]) -> tuple[list[int], dict]:
             cnt[k] = cnt.get(k, 0) + 1
     stat["matched"] = sum(cnt.values())
     stat["roads"] = len(cnt)
-    return [cnt.get(n, 0) if n else 0 for n in names], stat
+    return _spread(cnt, names), stat
+
+
+def _enforce_cam(names: list[str | None]) -> tuple[list[int | None], dict]:
+    """도로명별 단속 카메라 **지점** 수. 자료가 없으면 전부 결측(`None`)이다.
+
+    ★ 행이 아니라 **번호**를 센다. 한 지점이 방향마다 한 행이라 행으로 세면 같은
+      카메라가 두 번 세 번 센다(3·36·40·41·42·45번 · 대장 `enforce_cam.note`).
+    ★ 주소가 지번(「지산동 521-3」)인 지점은 도로명이 안 나와 **못 붙는다.** 지오코딩을
+      지어내지 않는다 — 붙은 수와 못 붙은 수를 같이 찍어 얼마나 성긴지 보이게 한다.
+    """
+    import pandas as pd
+    src = P / "enforce_cam.csv"
+    stat = {"rows": 0, "sites": 0, "matched": 0, "roads": 0}
+    if not src.exists():
+        print("  ! enforce_cam 없음 — 단속 카메라를 결측으로 낸다")
+        return [None] * len(names), stat
+    df = pd.read_csv(src, usecols=["번호", "주소"], dtype=str).fillna("")
+    stat["rows"] = len(df)
+    have = {n for n in names if n}
+    # 지점(번호) → 그 지점의 도로명. 방향 행 여럿이 같은 지점을 가리킨다.
+    site: dict[str, str] = {}
+    for r in df.itertuples(index=False):
+        k = _road_of(r.주소, have)
+        if k and r.번호 not in site:
+            site[r.번호] = k
+    stat["sites"] = df["번호"].nunique()
+    stat["matched"] = len(site)
+    cnt: dict[str, int] = {}
+    for k in site.values():
+        cnt[k] = cnt.get(k, 0) + 1
+    stat["roads"] = len(cnt)
+    return _spread(cnt, names), stat
 
 
 def _turns(m: gpd.GeoDataFrame, nodes_m: list, ea: list, eb: list) -> tuple[list, dict]:
@@ -443,17 +509,35 @@ def main() -> None:
             rec["ow"] = ow[i]
         edges.append(rec)
     turns, tr_stat = _turns(m, nodes_m, [e["a"] for e in edges], [e["b"] for e in edges])
-    park, pk_stat = _parking([e.get("road_name") for e in edges])
-    for e, n in zip(edges, park, strict=True):
-        if n:
-            e["park"] = n
+    rn = [e.get("road_name") for e in edges]
+    park, pk_stat = _parking(rn)
+    ecam, ec_stat = _enforce_cam(rn)
+    # ★ `if n:` 을 쓰지 않는다. 0 과 결측을 **둘 다 명시해서** 싣는다 — 빼면 받는 쪽에서
+    #   둘이 같은 모습이 되고, 그것이 「모르는 것을 없다고 말하는」 결함이었다.
+    for e, n, c in zip(edges, park, ecam, strict=True):
+        e["park"] = n
+        e["ecam"] = c
+
+    # 결측(도로명 없음) · 0(도로명은 있고 찍힌 것이 없음)을 **발행물이 스스로 센다.**
+    # 이 수가 있으면 「없음 110건」 같은 오독을 도구가 기계로 잡는다.
+    pk_stat["null_edges"] = sum(1 for n in park if n is None)
+    pk_stat["zero_edges"] = sum(1 for n in park if n == 0)
+    ec_stat["null_edges"] = sum(1 for n in ecam if n is None)
+    ec_stat["zero_edges"] = sum(1 for n in ecam if n == 0)
 
     out = {
         "crs": "EPSG:4326",
         "node_tol_m": NODE_TOL,
         "counts": {"nodes": len(nodes), "edges": len(edges), "self_loops": loops,
                    "oneway": ow_stat["oneway"], "oneway_dir_known": ow_stat["dir_known"],
-                   "turn_bans": len(turns)},
+                   "turn_bans": len(turns),
+                   "park_null": pk_stat["null_edges"], "park_zero": pk_stat["zero_edges"],
+                   "ecam_null": ec_stat["null_edges"], "ecam_zero": ec_stat["zero_edges"],
+                   # ★ **0 이 얼마나 약한가.** 원천에서 도로명이 안 나와 어느 구간에도
+                   #   못 붙은 몫이다. 이것이 크면 `park`·`ecam` 의 0 은 「없다」가
+                   #   아니라 「붙은 것 중에 없다」다 — 읽는 쪽이 그것을 알아야 한다.
+                   "park_unplaced_rows": pk_stat["rows"] - pk_stat["matched"],
+                   "ecam_unplaced_sites": ec_stat["sites"] - ec_stat["matched"]},
         "style": style,
         "terrain": _terrain(),
         "nodes": nodes,
@@ -472,7 +556,11 @@ def main() -> None:
           f" · 표준노드링크가 양방향 {ow_stat['nl_twoway']}) · 회전 금지 {tr_stat['rules']}건 중"
           f" {tr_stat['mapped']} 을 그래프에")
     print(f"  주정차 단속  {pk_stat['rows']:,}건 중 도로명이 맞는 {pk_stat['matched']:,}건"
-          f" · 도로 {pk_stat['roads']}")
+          f" · 도로 {pk_stat['roads']}"
+          f" · 구간 결측 {pk_stat['null_edges']} · 0건 {pk_stat['zero_edges']}")
+    print(f"  단속 카메라  {ec_stat['sites']}지점({ec_stat['rows']}방향) 중 도로명이 맞는"
+          f" {ec_stat['matched']}지점 · 도로 {ec_stat['roads']}"
+          f" · 구간 결측 {ec_stat['null_edges']} · 0지점 {ec_stat['zero_edges']}")
     if size > SIZE_MAX:
         raise SystemExit(
             f"★ navi_graph.json 이 상한을 넘었다 {size / 1024 / 1024:.1f}MB "

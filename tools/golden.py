@@ -149,23 +149,13 @@ def cmd_lock(_args) -> int:
 
 FP_METHOD = "tokens-v1"
 
-# ★ 2026-09-20 (W3-8 · DECISIONS §202). **손 목록을 지웠다.**
-#   여섯 개를 손으로 적고 있었고, `firelane.segments` 의 실제 import 닫힘은
-#   **21개**다. 즉 **15개 파일 3,385줄이 판정 지문 밖**이었다 —
-#   `guards.py` · `skeleton.py` · `seg/vehicle.py` · `seg/centerline_correction.py` ·
-#   `segkey.py` 처럼 판정을 바로 움직이는 것들이 들어 있다.
-#   그것들을 고치고 파이프라인을 안 돌려도 게이트가 조용했다.
-#
-# ★ 범위를 정하는 것은 **import 다, 사람이 아니다.** 같은 답을 `shardseal.py` 가
-#   이미 쓰고 있다(ingest 샤드 봉인). 그래서 새로 짜지 않고 `code_closure` 를 부른다 —
-#   정본이 하나다. 이 파일이 닫힘 계산을 다시 구현하면 그것이 2족이다.
-#
-# ★ `uv.lock` 이 들어간다. geopandas·shapely 판이 바뀌면 판정이 바뀔 수 있다.
-#   **새 비용이 아니다** — 잠금이 움직이면 `shardseal` 이 이미 45 샤드를 찢어
-#   파이프라인 전량이 돌고 있다(§200). 여기는 그 뒤에 재잠금 한 번이 붙을 뿐이다.
-#
-# ★ 지문 방식은 `tokens-v1` 그대로다(G-24). 파일 **목록**만 유도로 바뀐다 —
-#   `ast.dump` 로 되돌리면 파이썬 판마다 지문이 갈린다.
+# ★ 2026-09-20 (W3-8 · DECISIONS §202). 손 목록을 지웠다 — 여섯을 손으로 적는 동안
+#   실제 닫힘은 21개라 **15파일 3,385줄이 판정 지문 밖**이었다. 사연은 §202 가 든다.
+# ★ 범위를 정하는 것은 **import 다, 사람이 아니다.** `shardseal.code_closure` 를
+#   부른다 — 여기서 닫힘을 다시 구현하면 그것이 2족이다.
+# ★ `uv.lock` 이 들어간다(판이 바뀌면 판정이 바뀔 수 있다). 새 비용은 아니다 —
+#   잠금이 움직이면 `shardseal` 이 이미 45샤드를 찢는다(§200).
+# ★ 지문 방식은 `tokens-v1` 그대로다(G-24). `ast.dump` 로 되돌리면 파이썬 판마다 갈린다.
 _LEGACY_WATCH = ["src/firelane/segments.py", "src/firelane/seg/width.py",
                  "src/firelane/seg/geom.py", "src/firelane/seg/params.py",
                  "src/firelane/seg/graph.py", "src/firelane/seg/report.py"]
@@ -357,17 +347,11 @@ def cmd_rescope(_args) -> int:
     print("  ★ 산출물은 안 건드렸다. `segments.fingerprint.json` 그대로다.")
     return 0
 
-# ★ 2026-08-31. `SEG.parent`(= data/processed) 에 있었다. 그 계층은
-#   `regenerable: true` 라 gitignore 이고, 그래서 **지문이 저장소에 안
-#   남아 다른 기계에서 매번 stale 이 떴다**(PLAN #43).
-#
-#   .gitignore 주석은 "생성물이라 커밋하지 않는다" 고 적었는데 그것이
-#   틀렸다. 이 값은 **그 시점 코드의 기억**이라 지금 코드로 다시 만들면
-#   다른 값이 나온다 — 재생성 가능한 것이 아니다. R2 가 말하는 근거
-#   ("재생성 가능성이 .gitignore 의 근거다")를 반대로 적용한 것이다.
-#
-#   `golden` 계층이 `committed: true · regenerable: false` 이고 지문의
-#   성격이 정확히 그것이다. 옆의 `segments.fingerprint.json` 과 같은 자리에 둔다.
+# ★ 2026-08-31 (PLAN #43). 종전 자리(`data/processed`)는 `regenerable: true` 라
+#   gitignore 였고, 그래서 지문이 저장소에 안 남아 다른 기계에서 매번 stale 이 떴다.
+#   이 값은 **그 시점 코드의 기억**이라 지금 코드로 다시 만들면 다른 값이 나온다 —
+#   재생성 가능한 것이 아니다. `golden` 계층(`committed · not regenerable`)이 제자리고,
+#   옆의 `segments.fingerprint.json` 과 같이 둔다.
 from firelane import layers as _ly
 
 CODE_FP = _ly.path("golden") / ".code_fingerprint"
@@ -436,6 +420,23 @@ def _staleness() -> list[str]:
     return out
 
 
+def cmd_stale(_args) -> int:
+    """재잠금이 필요한가. **rc 0 불필요 · rc 1 필요** (1초 · 파이프라인 안 탄다).
+
+    ★ 종전에는 이 판단이 PR 본문 산문이었고 실패 여덟 중 다섯이 거기서 나왔다. 답은
+      `_staleness()` 에 있었고 없던 것은 **입구**뿐이다. 사연은 §262-3 · §258-9. (#137 닫힘)
+    """
+    if not (GOLD / "segments.fingerprint.json").exists():
+        print("★ 잠근 지문이 없다 — 재잠금이 필요한지 말할 수 없다")
+    elif not (stale := _staleness()):
+        print("✓ 잠긴 코드 지문과 지금 코드가 같다 — 재잠금 불필요")
+        return 0
+    else:
+        print(f"★ 코드 지문이 어긋난다 {len(stale)}건 — 재잠금이 필요하다")
+        print("\n".join(f"    {r}" for r in stale))
+    return 1
+
+
 def cmd_check(args) -> int:
     p = GOLD / "segments.fingerprint.json"
     if not p.exists():
@@ -452,10 +453,8 @@ def cmd_check(args) -> int:
         # ★ 2026-09-14. 문구를 고쳤다. 종전에는 "산출물이 낡았다 ·
         #   segments.geojson 보다 최근이다 · `--from segments` 를 먼저
         #   돌려라" 였는데 **셋 다 사실이 아니다.** `_staleness()` 는
-        #   산출물도 mtime 도 안 본다 — `.code_fingerprint` 에 잠긴
-        #   지문과 지금 코드 지문만 견준다. 파이프라인을 몇 번 돌리든
-        #   안 닫힌다. 그 말을 믿고 전량을 세 번, 한 시간 넘게 돌렸다.
-        #   틀린 사유는 침묵보다 나쁘다 — 사람을 엉뚱한 작업으로 보낸다.
+        #   산출물도 mtime 도 안 본다. 그 말을 믿고 전량을 세 번, 한 시간
+        #   넘게 돌렸다 — 틀린 사유는 침묵보다 나쁘다.
         print("\n  ★ 파이프라인을 다시 돌려도 안 닫힌다. 산출물 문제가 아니다.")
         print("    잠긴 코드 지문과 지금 코드 지문이 다르다는 뜻이다.")
         print("\n  판정을 **바꿀 생각이 없었다면** — 재잠금한다:")
@@ -600,6 +599,7 @@ def main() -> int:
     sub.add_parser("selftest").set_defaults(fn=cmd_selftest)
     sub.add_parser("rehash", help="옛 ast.dump 지문을 토큰열 지문으로 옮긴다(증명 뒤에만)").set_defaults(fn=cmd_rehash)
     sub.add_parser("rescope", help="손목록 범위를 import 닫힘으로 옮긴다(증명 뒤에만 · 산출물 불변)").set_defaults(fn=cmd_rescope)
+    sub.add_parser("stale", help="재잠금이 필요한가 (rc 0 불필요 · rc 1 필요)").set_defaults(fn=cmd_stale)
     c = sub.add_parser("check")
     c.add_argument("--allow-stale", action="store_true",
                    help="산출물이 코드보다 낡아도 대조한다 (증명이 아님을 알고 쓸 것)")

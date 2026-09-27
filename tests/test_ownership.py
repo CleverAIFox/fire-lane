@@ -34,6 +34,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import owned_paths as op
 import pytest
 
 # ★ sys.path 를 조작하지 않는다(test_layering). `tools/` 는 pyproject 의
@@ -43,8 +44,61 @@ from owned_paths import CODEOWNERS, rules, unowned
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def test_the_unowned_judge_actually_bites():
+    """★ 2026-09-24 (DECISIONS §239). 아래 검사는 **구조적으로 실패할 수 없다.**
+
+    `CODEOWNERS:55` 가 `*  @CleverAIFox` 다. `owned_paths._match` 는 글롭을
+    `fnmatch(rel, "*")` 로 보고 그것은 **모든 경로에 참**이다. 그래서
+    `unowned()` 는 언제나 빈 목록이고, 아래 단언은 동어반복이다 —
+    그리고 `test_codeowners_has_a_catch_all` 이 그 `*` 줄을 **강제**하므로
+    이 동어반복을 풀 길도 없다. 두 시험이 서로를 무효화한다.
+
+    ★ 그래서 실물 대신 **판정기**를 문다. 기본값 없는 규칙표에서 미소유가
+      실제로 나오는가 — 나오면 아래 「0건」이 청결이라는 뜻이고,
+      안 나오면 아래는 죽은 것이다(§230 과 같은 규율).
+    """
+    fake = [("/src/", {"@a"}, False)]
+    def owners(rel: str) -> set[str]:
+        got: set[str] = set()
+        for pat, own, _ in fake:
+            if op._match(pat, rel):
+                got = own
+        return got
+    assert owners("src/x.py") == {"@a"}, "디렉토리 규칙이 안 걸린다 — 판정기가 죽었다"
+    assert owners("tools/x.py") == set(), "규칙 없는 경로를 소유로 본다 — 판정기가 죽었다"
+    # 기본값이 들어오면 **전부** 소유가 된다는 것도 같이 박는다.
+    fake.insert(0, ("*", {"@root"}, False))
+    assert owners("tools/x.py") == {"@a"} or owners("tools/x.py") == {"@root"}, \
+        "기본값이 아무것도 안 잡는다 — CODEOWNERS 해석이 GitHub 과 갈렸다"
+
+
+def test_every_tracked_file_has_a_named_owner():
+    """★ 기본값 **말고** 제 이름으로 지목된 소유자가 있는가.
+
+    이것이 아래 검사가 하려던 일이다 — 새 파일이 소유자 선언 없이
+    들어오면 빨간불이 떠야 한다. 기본값이 있으면 `unowned()` 로는
+    영원히 못 잡는다. **기본값을 빼고** 다시 판정한다.
+
+    ★ 2026-09-24 실측 14건(docs 9 · 루트 설정 5)을 CODEOWNERS §9 로 맡겼다.
+    """
+    named = [(pat, own, st) for pat, own, st in rules() if pat != "*"]
+    files = op.tracked()
+    assert len(files) > 500, f"추적 파일이 {len(files)}개다 — git ls-files 가 죽었다"
+    bad = [t for t in files if not any(op._match(pat, t) for pat, _, _ in named)]
+    assert not bad, (
+        f"기본값 말고는 아무도 안 맡은 파일 {len(bad)}건\n"
+        + "\n".join(f"  {b}" for b in bad[:20])
+        + "\n\n  .github/CODEOWNERS 에 `/<경로>/  @핸들` 한 줄을 더해라.\n"
+        "  기본값(`*`)만 걸린 것은 **아무도 안 정한 것**이지 정해진 것이 아니다.")
+
+
 def test_every_tracked_path_has_an_owner():
-    """★ 이 저장소의 핵심 방어. 미소유 경로는 존재할 수 없다."""
+    """미소유 경로는 존재할 수 없다.
+
+    ★ 기본값 규칙 때문에 이 단언은 늘 참이다. **위 두 시험이 그 자리를
+      대신한다** — 하나는 판정기가 사는지, 하나는 이름 붙은 소유자가 있는지.
+      이 줄은 「기본값이 사라지면 곧바로 운다」는 마지막 그물로 남긴다.
+    """
     bad = unowned()
     assert not bad, (
         f"소유자 없는 경로 {len(bad)}건\n"

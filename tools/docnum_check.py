@@ -85,7 +85,7 @@ RETIRED: dict[str, list[str]] = {
     # ★ 2026-09-16 흡수-2. needs_cv 의 옛 값 191 은 넣지 않는다 — 지금 blocked 가 191 이다.
     "blocked": ["57", "62", "63", "159"],
     # ★ 2026-08-23 추가. 실제 nfa_designated 는 158 인데 MASTER §10 이 139,
-    #   PLAN §7-2-4 가 153 으로 적고 있었다. PRESENT 검사는 §2 표에 158 이
+    #   PLAN §7-2-4 가 153 으로 적고 있었다. PRESENT 검사는 §2 표에 158 이  ref-ok
     #   있다는 이유로 통과했다 — "있는지" 만 보는 검사의 한계 그대로다.
     "소방청 지정": ["139", "153", "158"],
     # ★ width_cov 0.5 미만은 실측 4 인데 PLAN 두 곳이 69 였다.
@@ -127,7 +127,7 @@ def counts() -> dict[str, int]:
         "cctv_in": sum(1 for p in P if p["cctv_dist_m"] is not None and p["cctv_dist_m"] <= 25),
         "nfa": sum(1 for p in P if p.get("nfa_designated")),
         # 채택 소스가 구간의 절반도 못 덮은 것. D-25 실측 1순위이고
-        # MASTER §7 · PLAN §3-1 · §6-2 가 같은 숫자를 말해야 한다.
+        # MASTER §7 과 PLAN §1 #65 가 같은 숫자를 말해야 한다.
         "cov_thin": sum(1 for p in P
                         if p.get("width_cov") is not None and p["width_cov"] < 0.5),
         **ledger_counts(),

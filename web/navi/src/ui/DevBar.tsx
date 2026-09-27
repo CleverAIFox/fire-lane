@@ -18,7 +18,7 @@
  *   추정이 틀려도 맞아 보인다. 「+200m」 는 GPS 가 음영에서 튀어 돌아온 상황이고,
  *   옆의 「재동기화 N」 이 추정기가 그것을 알아챘는지를 센다.
  */
-import type { PosMode } from "../app/useNavigation";
+import type { PosMode } from "../domain/types";
 import { C, F } from "./tokens";
 import { STATUS, STATUS_ORDER, type StatusKey } from "../domain/status";
 

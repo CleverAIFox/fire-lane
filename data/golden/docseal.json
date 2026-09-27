@@ -1,0 +1,118 @@
+{
+ "DECISIONS/188-1": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_r3.py"
+  ],
+  "sha": "d6eda6014e7d40a4"
+ },
+ "DECISIONS/260": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_building_road_overlap.py",
+   "tests/test_contract.py"
+  ],
+  "sha": "53ebd2c3ea9ea824"
+ },
+ "DECISIONS/261": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "web/navi/test/contact.test.ts",
+   "web/navi/test/style.test.ts"
+  ],
+  "sha": "b2311d15f8678933"
+ },
+ "DECISIONS/262": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_delegation.py",
+   "tests/test_relock_decision.py",
+   "tools/install_navi.py"
+  ],
+  "sha": "66799f43081c8e05"
+ },
+ "DECISIONS/263": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "data/golden/segments.fingerprint.json",
+   "tests/test_ci_env.py",
+   "tests/test_evalgen.py",
+   "tools/verify.sh"
+  ],
+  "sha": "2da0ef93b060b440"
+ },
+ "DECISIONS/265": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_ci_env.py",
+   "tools/docseal.py",
+   "tools/install_navi.py"
+  ],
+  "sha": "e4bd0c575f15433b"
+ },
+ "DECISIONS/266": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_r3.py",
+   "tools/env_check.py",
+   "tools/sizecheck.py",
+   "tools/skeleton_compare.py"
+  ],
+  "sha": "8567656fe9e9c2a8"
+ },
+ "DECISIONS/267": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_docseal.py",
+   "tests/test_seal_axes.py"
+  ],
+  "sha": "986c0e7fa2042966"
+ },
+ "DECISIONS/269": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_ci_env.py",
+   "tests/test_skip_policy.py"
+  ],
+  "sha": "de6aef56ec2f75c8"
+ },
+ "DECISIONS/270": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_delegation.py",
+   "web/config.js"
+  ],
+  "sha": "2f4b11c80f409b05"
+ },
+ "DECISIONS/271": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py",
+   "tools/plan_renumber.py"
+  ],
+  "sha": "59d77bb3c7eb33da"
+ },
+ "DECISIONS/272": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_docseal.py",
+   "tests/test_r3.py",
+   "tools/docseal.py"
+  ],
+  "sha": "98ca96d5079b8058"
+ },
+ "MASTER/17-0": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tools/deadcheck.py"
+  ],
+  "sha": "4253f41376232bdd"
+ },
+ "MASTER/21-0": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tools/docseal.py"
+  ],
+  "sha": "0b5a75d4349ab01b"
+ }
+}

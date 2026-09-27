@@ -11,6 +11,19 @@
 #   문서 검사 · 테스트 · 린트다. 파이프라인은 레이크가 붙은 기계에서
 #   돈다(MASTER §12-7).
 #
+# ★ 2026-09-24 (PLAN §13 W13-14). **배포 러너와 apt 가 다르다.** 이 컨테이너에
+#   없고 `stage-site` 액션에만 있는 것 넷 —
+#       libreoffice-writer   기획서 → PDF 변환 (`proposal_pdf.bake`)
+#       fonts-noto-cjk       그 PDF 의 한글 글꼴
+#       poppler-utils        구운 PDF 의 쪽수 · 본문 · 그림 판정
+#       librsvg2-bin         SVG → PNG (`docx_figs --sync`)
+#   그래서 **컨테이너에서 초록인 것이 배포에서 초록을 뜻하지 않는다.**
+#   `proposal_pdf` 는 변환기가 없으면 「없다」로 돌아가고 `stage_pages` 는
+#   CI 밖에서 경고만 찍는다 — 조용히 통과하는 것이 아니라 **말은 한다.**
+#   넷을 여기 깔지 않는 이유는 용량이다(libreoffice 만 500MB 대). 기획서를
+#   고치는 일은 레이크 기계나 CI 에서 한다. 이 차이를 **적어 두는 것**이
+#   이 파일의 존재 이유다 — 「기계 차이를 사람 기억에 맡기지 않는다」.
+#
 # ★ 2026-09-18 (W1). node 가 들어왔다. 종전에는 이미지에 node 가 없어
 #   `verify.sh` 의 JS 넷이 이 안에서 못 돌았고, `js_graph_check` 는 `note` 가
 #   아니라 `step` 이라 **권장 명령(`verify.sh --fast`)이 컨테이너에서 빨간불로

@@ -69,6 +69,8 @@ from pathlib import Path
 
 import yaml
 
+from firelane.seg.params import OFFTRACK_MIN
+
 _ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -117,9 +119,9 @@ def __getattr__(name: str):
     if name in m:
         return float(spec()[m[name]])
     if name == "STRAIGHT_R":
-        # 내륜차가 5cm 미만이 되는 반경
+        # 내륜차가 무시 문턱 아래로 내려가는 반경
         wb = float(spec()["wheelbase_m"])
-        return wb * wb / (2 * 0.05)
+        return wb * wb / (2 * OFFTRACK_MIN)
     raise AttributeError(name)
 
 
@@ -156,7 +158,7 @@ def offtracking(radius_m: float) -> float:
     if not s.get("wheelbase_verified", False):
         return 0.0
     wb = float(s["wheelbase_m"])
-    if radius_m >= wb * wb / (2 * 0.05):
+    if radius_m >= wb * wb / (2 * OFFTRACK_MIN):
         return 0.0
     if radius_m <= wb:
         # 축거보다 작은 반경은 물리적으로 못 돈다. 최대값을 준다.
