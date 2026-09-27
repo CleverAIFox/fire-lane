@@ -486,7 +486,7 @@ def fig_xsec() -> str:
 def _contract_fields() -> dict[str, list[str]]:
     """`src/contracts/vision.py` 의 두 계약 모델 필드. **임포트하지 않는다** —
     도구가 파이프라인에 안 붙는다(`_params()` 와 같은 이유). AST 로 읽는다."""
-    import ast  # noqa: PLC0415
+    import ast
     src = (ROOT / "src/contracts/vision.py").read_text(encoding="utf-8")
     out: dict[str, list[str]] = {}
     for c in ast.parse(src).body:

@@ -190,7 +190,9 @@ def test_verify_skips_are_real_skips():
     #   (`verify.sh` 의 `evidence_check`). 그래서 묶음 이름 「파이프라인 전량 + golden」이
     #   단계 이름 넷으로 펴졌고, 내비 갈래도 셋이 됐다. 못 도는 조건은 그대로 둘이다 — npm 부재 · --fast/raw 부재.
     #   「JS 부팅 스모크」는 옛 지도 철거로 단계째 없어졌다.
-    allowed = {"내비 환경 = CI", "내비 타입 검사", "내비 단위 시험",
+    # ★ 2026-09-28 (DECISIONS §279-4). 「내비 린트」가 넷째다. 못 도는 조건은
+    #   위 셋과 같다 — npm 이 없으면 eslint 도 없다.
+    allowed = {"내비 환경 = CI", "내비 린트", "내비 타입 검사", "내비 단위 시험",
                "파이프라인 전량", "golden 판정 불변", "golden 게이트 해제 경로",
                "커밋된 web/data 가 최신인가"}
     assert set(names) <= allowed, f"생략 사유가 새로 생겼다 — 못 도는 조건인지 보고 여기 적는다: {sorted(set(names) - allowed)}"

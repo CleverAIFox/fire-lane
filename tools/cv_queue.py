@@ -146,7 +146,7 @@ def main(argv=None) -> int:
 def selftest() -> int:
     """층이 실제로 갈리는가. 하나로 뭉개지면 순서가 없는 것과 같다."""
     bad = []
-    mk = lambda w, u=0, v="needs_cv", f=True: {  # noqa: E731
+    mk = lambda w, u=0, v="needs_cv", f=True: {
         "properties": {"width_min_m": w, "route_usage": u, "verdict": v,
                        "cv_feasible": f, "length_m": 10}}
     feats = [mk(4.0, 5), mk(1.0, 9), mk(None, 1), mk(9.0, 3),

@@ -391,7 +391,7 @@ def main():
         try:
             _prev = {r["key"]: r for r in json.loads(_man0.read_text(encoding="utf-8"))
                      .get("datasets", []) if isinstance(r, dict) and "key" in r}
-        except Exception:                                   # noqa: BLE001
+        except Exception:
             _prev = {}
 
     if a.reseal_out:
@@ -413,7 +413,7 @@ def main():
                 continue
             try:
                 _h = paths_for(key, e)
-            except Exception:                               # noqa: BLE001
+            except Exception:
                 _h = []
             s = shardseal.make(cfg, key, _h, OUT, r.get("outputs", []), _code)
             if s is None:
@@ -485,7 +485,7 @@ def main():
         if not (a.only or a.emit_json or a.rebuild):
             try:
                 _hits = paths_for(key, e)
-            except Exception:                               # noqa: BLE001
+            except Exception:
                 _hits = []                                  # 못 재면 재사용 안 한다
             _ok, _why = shardseal.check(_prev.get(key), cfg, key, _hits, OUT, _code)
             if _ok:
@@ -500,7 +500,7 @@ def main():
                 _s = shardseal.make(cfg, key, paths_for(key, e), OUT, r.get("outputs", []), _code)
                 if _s:
                     r["seal"] = _s
-        except Exception as ex:                             # noqa: BLE001
+        except Exception as ex:
             r = {"key": key, "status": "FAIL", "error": f"{type(ex).__name__}: {ex}"}
             # ★ FAIL 이면 이 key 의 기존 산출물을 개명해 하류에서 떼어낸다.
             #   2026-08-17 ngii1k FAIL 때 8/13 gpkg 가 남아 segments 가 그것으로
@@ -599,7 +599,7 @@ def main():
     if a.only and man.exists():
         try:
             prev = json.loads(man.read_text(encoding="utf-8")).get("datasets", [])
-        except Exception:                                   # noqa: BLE001
+        except Exception:
             prev = []
         merged = {r["key"]: r for r in prev if isinstance(r, dict) and "key" in r}
         merged.update({r["key"]: r for r in results})

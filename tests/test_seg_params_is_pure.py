@@ -119,7 +119,7 @@ def engine_pair():
     ngii = band(-2.0, 2.0)
     rw = band(-0.9, 0.9)
     empty = MultiPolygon([])
-    mk = lambda **kw: WidthEngine(ngii1k, ngii, rw, empty,  # noqa: E731
+    mk = lambda **kw: WidthEngine(ngii1k, ngii, rw, empty,
                                   unary_union([Point(1e6, 1e6)]), None, **kw)
     return mk
 

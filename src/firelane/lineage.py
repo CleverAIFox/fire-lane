@@ -105,7 +105,7 @@ def fingerprint(p: Path) -> dict | None:
             layers = sorted(r[0] for r in pyogrio.list_layers(p))
             n = sum(pyogrio.read_info(p, layer=lay)["features"] for lay in layers)
             return {"kind": "vector", "layers": layers, "features": int(n)}
-        except Exception as e:                       # noqa: BLE001
+        except Exception as e:
             # 조용히 넘어가지 않는다. 지문을 못 뜬 사실 자체를 기록한다.
             return {"kind": "vector", "error": f"{type(e).__name__}: {e}"[:120]}
     if p.name == "_manifest.json":
@@ -131,7 +131,7 @@ def _manifest_digest(p: Path) -> dict:
     import json as _json
     try:
         d = _json.loads(p.read_text(encoding="utf-8"))
-    except Exception:                                    # noqa: BLE001
+    except Exception:
         # 파싱 실패는 숨기지 않는다. 바이트 해시로 떨어뜨린다.
         return {"kind": "bytes", "sha256": _sha(p)}
     owned = {k: d.get(k) for k in _MANIFEST_OWNED if k in d}

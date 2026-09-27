@@ -306,7 +306,7 @@ def _strip_types(src: pathlib.Path, out: pathlib.Path) -> bool:
     """`esbuild` 로 타입만 떼어 `.mjs` 로 낸다. 없으면 False."""
     if not ESBUILD.exists():
         return False
-    r = subprocess.run(                                    # noqa: S603
+    r = subprocess.run(
         [str(ESBUILD), str(src), "--format=esm", "--platform=node",
          f"--outfile={out}", "--log-level=error"],
         cwd=NAVI, capture_output=True, text=True, timeout=120)
@@ -325,7 +325,7 @@ def _ts(payload: dict) -> list:
     last = None
     for extra in ([], ["--experimental-strip-types"]):
         code = _GLUE % (json.dumps(IMPL.as_uri()), json.dumps(RUNNER.as_uri()))
-        last = subprocess.run(                             # noqa: S603
+        last = subprocess.run(
             ["node", *extra, "--input-type=module", "-e", code],
             cwd=NAVI, input=body, capture_output=True, text=True, timeout=300)
         if last.returncode == 0:
@@ -336,7 +336,7 @@ def _ts(payload: dict) -> list:
         impl, runner = Path(d) / "v.mjs", Path(d) / "r.mjs"
         if _strip_types(IMPL, impl) and _strip_types(RUNNER, runner):
             code = _GLUE % (json.dumps(impl.as_uri()), json.dumps(runner.as_uri()))
-            r = subprocess.run(                            # noqa: S603
+            r = subprocess.run(
                 ["node", "--input-type=module", "-e", code],
                 cwd=NAVI, input=body, capture_output=True, text=True, timeout=300)
             if r.returncode == 0:

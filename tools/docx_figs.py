@@ -247,7 +247,7 @@ def _undeclared() -> list[str]:
 
 def sourceless() -> list[int]:
     """기획서 캡션에는 있는데 `PLACE` 가 안 대는 그림 번호. 고칠 수 없는 것들이다."""
-    import docx  # noqa: PLC0415
+    import docx
     caps = {int(m.group(1)) for p in docx.Document(str(DOCX)).paragraphs
             if (m := re.match(r"^\[?그림\s*(\d+)\]?", p.text.strip()))}
     return sorted(caps - {s["fig"] for s in PLACE.values() if "fig" in s})

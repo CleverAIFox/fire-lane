@@ -28,9 +28,9 @@ ROOT = Path(__file__).resolve().parent.parent
 # ★ sys.path 를 조작하지 않는다(test_layering). `src` 레이아웃 패키지이므로
 #   `uv sync` 가 editable 로 깔아준다. 경로를 손대면 다음 테스트도 따라 한다.
 pytest.importorskip("pydantic")
-from pydantic import ValidationError  # noqa: E402
+from pydantic import ValidationError
 
-from contracts import ObsSpec, VisionResult  # noqa: E402
+from contracts import ObsSpec, VisionResult
 
 MASTER = ROOT / "docs/MASTER.md"
 

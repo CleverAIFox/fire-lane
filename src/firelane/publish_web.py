@@ -48,7 +48,7 @@ P, W = ROOT/"data"/"processed", ROOT/"web"/"data"
 #   정본은 `seg/params.py` 다 — 그 파일은 **판정 지문** 안이라 값이 거기
 #   살아야 맞고, 나머지는 읽기만 한다. 대상 행정동이 바뀔 때 한 곳만 고치면
 #   되고, 한쪽만 고쳐 발행물과 대조표가 **다른 동**을 보는 일이 없어진다.
-from firelane.seg.params import EMD_CD  # noqa: E402
+from firelane.seg.params import EMD_CD
 
 # ★ CCTV_RADIUS 는 삭제했다(2026-08-23). 여기서 0회 참조였고, 커버리지
 #   원의 반경 정본은 web/config.js 의 markers[].cover.radius 다.

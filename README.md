@@ -477,6 +477,7 @@ tools/
   docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
   docstyle.py             ★ 기획서에 개요 층이 있는가 — 없으면 목차도 PDF 북마크도 안 생긴다 (--write)
   tonecheck.py            ★ 문서 넷 + 리드미의 말투 — 비속어 · 은어 · 대화체 (<!--voice-ok--> 면 통과)
+  suppress.py             ★ 사유 없이 검사를 끄는 주석 — noqa · type:ignore · eslint-disable · 문서 표기. 양방향 래칫
   doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
   intake.py               Downloads → landing 게이트 · 대장 미매칭 차단
   pull_data.py            ★ 반입 입구. 여덟 단계. 삭제는 검증에 매달려 있다

@@ -325,7 +325,7 @@ export function NaviMap(props: Props) {
   // ── 판정 음영 ─────────────────────────────────────────────────
   useEffect(() => {
     whenReady((m) => m.setLayoutProperty("seg-tint", "visibility", P.current.tint ? "visible" : "none"));
-  }, [p.tint]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.tint]);  
 
   // ── 경로 ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -346,7 +346,7 @@ export function NaviMap(props: Props) {
         }],
       } : EMPTY);
     });
-  }, [p.plan, p.altPlan, p.look, p.blockedEdges, p.finalLeg]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.plan, p.altPlan, p.look, p.blockedEdges, p.finalLeg]);  
 
   // ── 마커 (출발 · 사건 · P) ────────────────────────────────────
   useEffect(() => {
@@ -370,7 +370,7 @@ export function NaviMap(props: Props) {
         }).setLngLat(ap).addTo(m);
       }
     });
-  }, [p.marks.origin, p.marks.incident, p.marks.approach, p.marks.approachLabel]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.marks.origin, p.marks.incident, p.marks.approach, p.marks.approachLabel]);  
 
   // ── 알약 표지 (02 — 공통 구간 · 확인 필요) ─────────────────────
   useEffect(() => {
@@ -382,7 +382,7 @@ export function NaviMap(props: Props) {
           .setLngLat(n.at).addTo(m);
       }
     });
-  }, [p.notes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.notes]);  
 
   // ── plan 모드 카메라 — 출발·도착·경로를 한눈에 ──────────────────
   useEffect(() => {
@@ -403,7 +403,7 @@ export function NaviMap(props: Props) {
         pitch: 45, bearing: -18, duration: 700, maxZoom: 17.2,
       });
     });
-  }, [p.mode, p.plan, p.altPlan, p.marks.origin, p.marks.incident]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.mode, p.plan, p.altPlan, p.marks.origin, p.marks.incident]);  
 
   return <div ref={box} style={{ position: "absolute", inset: 0 }} />;
 }

@@ -521,6 +521,11 @@ step "기획서 개요 층"   uv run python tools/docstyle.py
 #   인용 블록은 `<!--voice-ok-->` 로 통과시킨다 — 기존 규약이다(MASTER §0-3).
 scope "docs/* tools/*"
 step "문서 말투"       uv run python tools/tonecheck.py
+# ★ 2026-09-28 (§279-6). 사유 딸린 면제표는 이미 조여 있었다(빈 사유 0). 남은 빚은
+#   **주석 한 줄짜리 억제**에 몰려 있었다 — 표에 안 들어가고 사유를 안 적어도 되고
+#   아무도 안 세는 자리다. 119 에서 시작해 같은 날 죽은 `noqa` 59개를 지워 57 이다.
+scope "src/* tools/* tests/* web/* docs/*"
+step "사유 없는 억제"   uv run python tools/suppress.py
 # ★ 2026-09-24. 배치 판정기 자신이 **합성 넘침 셋**을 잡는가. 그림이 다 들어맞는
 #   날(정상)에도 판정기가 사는지 알아야 한다 — 「0건이 청결인가 죽음인가」(§230).
 scope "tools/*"
@@ -594,6 +599,13 @@ step "web/data 용량"    bash -c '
 if command -v npm >/dev/null 2>&1; then
     scope "web/navi/*"
     step "내비 환경 = CI" uv run python tools/navi_env.py
+    # ★ 2026-09-28 (DECISIONS §279-4). eslint 가 **저장소에 아예 없었다** — 설정도
+    #   의존성도 스크립트도 0 인데 `eslint-disable-line react-hooks/exhaustive-deps`
+    #   가 28개 있었다. 있지도 않은 검사를 억제하는 주석이고 1족(무음 통과)의
+    #   교과서적 형태다. 규칙을 켜자 **14개는 아무것도 억제 안 하고 있었고**
+    #   나머지가 진짜 결함 다섯을 가리고 있었다.
+    scope "web/navi/*"
+    step "내비 린트" bash -c 'cd web/navi && npm run -s lint'
     scope "web/navi/*"
     step "내비 타입 검사" bash -c 'cd web/navi && npm run -s typecheck'
     # ★ 2026-09-22 (§213-3). 위치 추정 · 턴바이턴은 화면으로 검수가 안 된다 —
@@ -604,6 +616,7 @@ else
     # ★ 2026-09-22 (DECISIONS §218-5). 종전에는 셋 중 「내비 타입 검사」 한 행만 남겼다.
     #   갈래가 건너뛰는 단계는 **이름마다** 한 행이다 — 아래 `evidence_check` 가 센다.
     note "내비 환경 = CI" "npm 이 없다"
+    note "내비 린트" "npm 이 없다"
     note "내비 타입 검사" "npm 이 없다"
     note "내비 단위 시험" "npm 이 없다"
 fi

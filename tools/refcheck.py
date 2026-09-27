@@ -212,8 +212,12 @@ def check() -> list[tuple[str, str, str]]:
             if pol.get("required") and not L.path(n).is_dir():
                 out.append((FAIL, f"layers.{n}",
                             f"{L.path(n)} — required 인데 없다"))
-    except Exception as ex:                        # noqa: BLE001
-        out.append((WARN, "layers", f"{type(ex).__name__}: {ex}"[:70]))
+    except Exception as ex:
+        # ★ 2026-09-28 (DECISIONS §279-2). 종전에는 `WARN` 이었다. 종료코드는
+        #   `FAIL` 만 세므로 **`layers.*.required` 검사 전체가 조용히 빠져도**
+        #   관문은 초록이었다. 못 읽은 것은 통과가 아니다.
+        out.append((FAIL, "layers",
+                    f"계층 검사 자체가 죽었다: {type(ex).__name__}: {ex}"[:90]))
 
     return out
 

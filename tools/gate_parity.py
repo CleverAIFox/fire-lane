@@ -98,9 +98,17 @@ ACT = ROOT / ".github" / "actions"
 #   선언했다. 0 이므로 새 검사를 로컬에만 붙이는 순간 여기서 운다.
 RATCHET = 0
 
+# ★ 2026-09-28 (DECISIONS §279-1). **래칫이 한쪽만 있었다.** 「로컬에만 있는 검사」는
+#   0 으로 조여 놓고 「CI 에만 있는 검사」는 **세서 찍기만** 했다. 여섯이 그 상태로
+#   있었고 게이트가 없으니 일곱이 되어도 아무도 모른다. 관문 동등은 **양방향**이다 —
+#   한쪽만 보면 반대쪽이 사각지대가 된다(§78 · R23).
+CI_ONLY_RATCHET = 0
+
 # `# ci-exempt: <검사기> <사유...>` — 사유는 다섯 글자 이상이어야 한다.
 #   짧은 사유는 사유가 아니다. "필요" 두 글자로 면제받는 길을 막는다.
 EXEMPT_RE = re.compile(r"^\s*#\s*ci-exempt:\s*(\S+)\s+(.+?)\s*$", re.M)
+#: 반대 방향. 워크플로에 적는다 — **로컬에서 원리적으로 못 도는 검사기**.
+LOCAL_EXEMPT_RE = re.compile(r"^\s*#\s*local-exempt:\s*(\S+)\s+(.+?)\s*$", re.M)
 MIN_REASON = 5
 
 # ★ 검사기 하나에 패턴 하나. 늘릴 때는 **왜 그것이 검사기인가** 를 적는다.
@@ -112,6 +120,9 @@ EXTERNAL = {
     "navi:typecheck": r"npm run\s+(?:-s\s+)?typecheck",
     # ★ 2026-09-22 (§213-3). 내비 단위 시험. 검사기가 npm 스크립트라 파일로 못 잡는다
     "navi:test": r"npm run\s+(?:-s\s+)?test\b",
+    # ★ 2026-09-28 (§279-4). React 훅 규칙. 저장소에 eslint 가 없던 동안
+    #   `eslint-disable-line` 28개가 **아무것도 안 막고** 있었다
+    "navi:lint": r"npm run\s+(?:-s\s+)?lint\b",
     # ★ 2026-09-22 (DECISIONS §218-5). 의존성 선언 ↔ import. 잠금 밖 `--with` 로 얹는 외부 도구다
     "deptry": r"\bdeptry\b",
 }
@@ -174,10 +185,58 @@ def exemptions() -> dict[str, str]:
             for m in EXEMPT_RE.finditer(_verify_src())}
 
 
+def local_exemptions() -> dict[str, str]:
+    """`# local-exempt:` 선언 — 검사기 → 사유. 워크플로 쪽에 적는다.
+
+    ★ `exemptions()` 의 거울이다. 저쪽은 「CI 에서 못 돈다」, 이쪽은 「로컬에서
+      못 돈다」 — PR 번호가 있어야 하거나, 배포 산출을 짓는 단계들이다.
+    """
+    out: dict[str, str] = {}
+    for p in sorted(WF.glob("*.yml")) + sorted(ACT.rglob("*.yml")):
+        for m in LOCAL_EXEMPT_RE.finditer(p.read_text(encoding="utf-8")):
+            out[m.group(1)] = m.group(2).strip()
+    return out
+
+
+#: `paths:` · `paths-ignore:` 목록을 여는 줄.
+_PATHS_HEAD = re.compile(r"^(\s*)paths(?:-ignore)?:\s*$")
+
+
+def _no_path_filters(text: str) -> str:
+    """`paths:` 목록을 걷는다. **줄 단위로** 읽는다 — 목록 사이에 빈 줄이
+    끼면(주석을 걷은 자리) 정규식 한 덩어리로는 끊긴다.
+
+    ★ 2026-09-28 (DECISIONS §279-1). 종전에는 이것을 **호출로 셌다.**
+      `deploy.yml` 의 `paths:` 에 `tools/proposal_pdf.py` 가 적혀 있다는 이유로
+      「CI 가 그 검사기를 돈다」고 읽었다 — 실제로 부르는 줄은 어디에도 없다.
+      경로 필터는 「이 파일이 바뀌면 이 워크플로를 깨워라」이지 「이 검사를
+      돈다」가 아니다.
+
+    ★ **틀리는 방향이 나쁘다.** CI 쪽이 부풀면 「로컬 전용」 차집합이 줄어서
+      **로컬에만 있는 검사가 조용히 0 으로 보인다** — 래칫이 0 인 채로 새는
+      자리가 생긴다. 반대 방향 래칫을 세우다가 드러났다.
+    """
+    out, indent = [], None
+    for line in text.splitlines(keepends=True):
+        if indent is not None:
+            bare = line.strip()
+            if not bare:                      # 주석을 걷은 빈 줄 — 목록이 이어진다
+                out.append(line)
+                continue
+            if bare.startswith("-") and (len(line) - len(line.lstrip())) > indent:
+                out.append("\n")             # 항목을 지운다. 줄 수는 지킨다
+                continue
+            indent = None
+        if m := _PATHS_HEAD.match(line):
+            indent = len(m.group(1))
+        out.append(line)
+    return "".join(out)
+
+
 def ci_tokens() -> set[str]:
     out: set[str] = set()
     for p in sorted(WF.glob("*.yml")) + sorted(ACT.rglob("*.yml")):
-        out |= tokens(_nocomment(p.read_text(encoding="utf-8")))
+        out |= tokens(_no_path_filters(_nocomment(p.read_text(encoding="utf-8"))))
     return out
 
 
@@ -217,11 +276,31 @@ def report(max_local: int | None) -> int:
     for t in undeclared:
         print(f"    {t}")
     print()
-    print(f"CI 전용 {len(only_ci)}개 — 로컬이 이것을 안 본다")
-    for t in only_ci:
+    lex = local_exemptions()
+    ci_declared = sorted(t for t in only_ci if t in lex)
+    ci_undeclared = sorted(t for t in only_ci if t not in lex)
+    print(f"선언된 면제 {len(ci_declared)}개 — 로컬에서 원리적으로 못 돈다")
+    for t in ci_declared:
+        print(f"    {t}  —  {lex[t]}")
+    print()
+    print(f"★ 미선언 CI 전용 {len(ci_undeclared)}개 — 로컬이 이것을 안 본다")
+    for t in ci_undeclared:
         print(f"    {t}")
 
     rc = 0
+
+    # ★ 죽은 면제 — 반대 방향도 같이 본다.
+    for t, why in sorted(lex.items()):
+        if len(why) < MIN_REASON:
+            dead_ci = f"{t}: 사유가 너무 짧다 ({why!r}) — {MIN_REASON}자 이상"
+        elif t not in ci:
+            dead_ci = f"{t}: CI 가 안 부르는 검사기를 면제했다"
+        elif t in loc:
+            dead_ci = f"{t}: 로컬이 이미 돈다 — `# local-exempt:` 를 지워라"
+        else:
+            continue
+        print(f"\n★ 죽은 면제 (반대 방향)\n    ✗ {dead_ci}")
+        rc = 1
 
     # ★ 죽은 면제 — 면제해 놓고 CI 로 옮겼거나, 아예 없는 검사기를 면제했다.
     #   면제는 선언이므로 **선언이 실물과 갈리면 그 자체가 결함**이다.
@@ -270,6 +349,23 @@ def report(max_local: int | None) -> int:
         else:
             print(f"✓ 미선언 로컬 전용 {len(only_local)} = 래칫 {max_local}"
                   f" · 선언된 면제 {len(declared)}")
+
+        # ★ 반대 방향도 **같은 규율**이다. 늘면 울고, 줄여도 기록을 안 내리면 운다.
+        if len(ci_undeclared) > CI_ONLY_RATCHET:
+            print(f"✗ 미선언 CI 전용 {len(ci_undeclared)} > 래칫 {CI_ONLY_RATCHET}")
+            print("  CI 에만 있는 검사는 **로컬이 못 본다** — 밀어 올리기 전에는 아무도 모른다.")
+            print("  셋 중 하나를 해라 —")
+            print("    ① verify.sh 에도 넣는다")
+            print("    ② `# local-exempt: <검사기> <사유>` 를 워크플로에 적는다")
+            print(f"    ③ {__file__} 의 CI_ONLY_RATCHET 을 올리고 **왜** 를 커밋에 적는다")
+            rc = 1
+        elif len(ci_undeclared) < CI_ONLY_RATCHET:
+            print(f"✗ 미선언 CI 전용 {len(ci_undeclared)} < 래칫 {CI_ONLY_RATCHET}"
+                  f" — CI_ONLY_RATCHET 을 {len(ci_undeclared)} 로 내려라")
+            rc = 1
+        else:
+            print(f"✓ 미선언 CI 전용 {len(ci_undeclared)} = 래칫 {CI_ONLY_RATCHET}"
+                  f" · 선언된 면제 {len(ci_declared)}")
     return rc
 
 
