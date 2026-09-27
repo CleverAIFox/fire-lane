@@ -119,8 +119,30 @@ def main() -> int:
     ap.add_argument("--body-file", help="PR 본문 파일 (로컬 시험용)")
     a = ap.parse_args()
 
+    # ★ 2026-09-27 (DECISIONS §273-4). `--body-file ""` 이 **rc 0 으로 통과했다.**
+    #   빈 파일과 없는 파일은 제대로 우는데 **빈 인자만 조용했다** — 아래 `if` 가
+    #   빈 문자열을 「안 줬다」로 읽어 PR 컨텍스트 분기로 떨어지고, 거기서
+    #   `GITHUB_EVENT_PATH` 가 없으니 「건너뛴다」를 찍었다.
+    #
+    #   실제로 그 조용함이 `fl.sh` 8단계를 태웠다. INBOX 가 비어 `BODY` 가 빈
+    #   문자열이었고, 이 검사가 통과시키자 `gh pr create --body-file ""` 이
+    #   usage 를 뱉으며 죽었다. **원인이 두 칸 앞에 있었는데 아무도 안 울었다.**
+    #
+    #   인자를 **줬다는 사실**과 그 값이 비었다는 사실은 다르다. 준 인자가
+    #   비었으면 그것은 부름 쪽의 결함이므로 건너뛰지 않고 운다.
+    if a.body_file is not None and not a.body_file.strip():
+        print("★ `--body-file` 을 줬는데 값이 비었다 — 부르는 쪽이 경로를 못 만든 것이다.\n"
+              "  건너뛰지 않는다. 빈 경로로 통과하면 다음 자리에서 엉뚱한 말로 죽는다.")
+        return 1
+
     if a.body_file:
-        body = open(a.body_file, encoding="utf-8").read()
+        try:
+            body = Path(a.body_file).read_text(encoding="utf-8")
+        except OSError as e:
+            # ★ 역추적이 아니라 **문장**으로 낸다(§258-16 과 같은 규율 — 읽기 실패가
+            #   파일 이름을 안 내면 부르는 쪽이 무엇을 못 찾았는지 모른다).
+            print(f"★ PR 본문 파일을 못 읽었다 — {a.body_file}\n  {e.strerror}")
+            return 1
     else:
         ev = os.environ.get("GITHUB_EVENT_PATH")
         if not ev or not Path(ev).exists():

@@ -45,8 +45,10 @@ PARAM --baseline · --out · --scenarios · --data · RATIO_MIN · 분모(노드
       **표본 설계를 안 정한다** — 층화 · 표본 수 · 시드 · E-1 분모(건물이냐
       노드냐)는 PLAN §1 #94 가 미정으로 들고 있다. 여기서는 노드를 분모로 쓰고
       그 사실을 `eval.json` 에 적을 뿐이며, 정해지면 이 도구가 아니라 #94 가 바꾼다.
-      **E-2 · E-4 도 안 낸다** — E-2 는 오류 비대칭(#117)이 미정이고 E-4 는
-      D-25 실측(#4)이 전건이다. 없는 전건을 이 도구가 대신 정하지 않는다.
+      **E-4 는 안 낸다** — D-25 실측(#4)이 전건이다. 없는 전건을 이 도구가
+      대신 정하지 않는다. **E-2 는 경로 탐색의 기울기를 안 정한다** — 그것은
+      `edge_cost` 가 들고, 여기서 정하는 것은 「단일 수치로 무엇을 주장하는가」
+      하나다. 그리고 E-2 의 노출 둘은 **주장의 노출**이며 지상진실이 아니다.
       **답사 계획도 안 세운다** — 역산은 「어느 골목인가」까지다. 관측점과
       촬영은 의존 사슬의 다음 칸이고 이 도구 밖이다.
 """
@@ -81,6 +83,32 @@ KST = timezone(timedelta(hours=9))
 
 #: 역산 문턱. PLAN §1 #120 이 적은 값이다. 여기가 정본이다.
 RATIO_MIN = 1.5
+
+# ── 오류 비대칭 (E-2 · PLAN §1 #117) ───────────────────────────
+# ★ 2026-09-27. #117 이 열려 있던 이유는 자료가 아니라 **선언이 없음**이었다.
+#   셋을 다 낼 수는 있었는데 **어느 것이 대표인가**를 아무도 적지 않았고, 그래서
+#   이 도구가 E-2 를 아예 안 냈다. 선언은 하나다 —
+#
+#       대표 수치는 **비관**이다. 검증 없이 「통행 가능」을 주장하지 않는다.
+#
+#   근거는 비용비다. 미탐(못 가는 길로 보냄)은 출동 실패이고 오탐(갈 수 있는 길을
+#   막음)은 우회다. 100:1 로 두면 실측이 이렇게 나온다(2026-09-27 · 구간 1,281):
+#
+#       기울기      주장    미탐노출  오탐노출  가중손실
+#       비관         465        0      625        625
+#       현행         807      342      283     34,483
+#       낙관       1,090      625        0     62,500
+#
+#   비관이 현행보다 55배, 낙관보다 100배 낫다. 셋을 다 내는 것은 그대로다 —
+#   **대표를 고르는 것**이 이 상수이고, 바뀌면 여기만 고친다.
+#
+# ★ 이것은 **판정을 안 바꾼다.** 저장 판정은 넷(clear·needs_cv·blocked·unknown)
+#   그대로고 `unknown` 은 여전히 「못 재서 모른다」다(DB 의 NULL). 바뀌는 것은
+#   「단일 수치로 무엇을 주장하는가」 하나다. 경로 탐색은 `edge_cost` 가 들고,
+#   거기서 회색을 막으면 도로망이 1,000 → 269구간으로 3등분된다(§273-2 실측).
+TILT = "pessimistic"
+MISS_COST = 100          # 미탐:오탐 비용비. 근거는 출동 실패 대 우회다(MASTER §2-1a)
+TILTS = ("pessimistic", "current", "optimistic")
 
 # ── 그래프 · 쌍 거리 ───────────────────────────────────────────
 def build_nodes(feats: list[dict]) -> tuple[dict, dict]:
@@ -202,6 +230,67 @@ def _gaps(per: dict) -> list[dict]:
                         "역산이 성립하지 않는다 — 쌍을 0 으로 세지 말고 이 항으로 읽어라"),
             })
     return out
+
+
+def _claims(p: dict, tilt: str, rv: dict) -> bool:
+    """이 기울기에서 「이 구간은 통행 가능하다」를 **주장하는가.**
+
+    ★ `blocked` 는 어느 기울기에서도 주장하지 않는다 — 그것만은 판정이 확정이다.
+    ★ `current` 는 지어낸 축이 아니라 **지금 발행되는 것**이다(`route_vehicle.csv`
+      의 `passable`). 현행을 따로 재지 않으면 「고쳐서 얼마가 나아졌나」를 못 낸다.
+    """
+    v = p["verdict"]
+    if v == "blocked":
+        return False
+    if tilt == "optimistic":
+        return True
+    if tilt == "pessimistic":
+        return v == "clear"
+    return (rv.get(p["seg_uid"]) or {}).get("passable") == "1"
+
+
+def e2(feats: list[dict], rv: dict) -> dict:
+    """E-2 — 오류 비대칭. **기울기 셋을 다 내고 대표를 하나 지목한다**(PLAN §1 #117).
+
+    두 노출을 센다. 어느 쪽도 지상진실이 아니라 **주장의 노출**이다 —
+    폭 실측이 0건이므로(D-25 · #4) 「실제로 못 갔다」는 아직 못 센다.
+
+        미탐 노출  통행 가능을 주장했는데 그 폭이 `needs_cv`·`unknown` 인 구간
+        오탐 노출  `blocked` 가 아닌데 주장하지 않은 구간
+
+    ★ 미탐 노출을 「미검증 전부」로 세지 않는다. `verified` 가 전 구간 false 라
+      (D-25 0건) 그렇게 세면 셋이 다 같아지고 지표가 장식이 된다. 판정 어휘가
+      남은 유일한 정보이므로 그것으로 센다.
+    """
+    P = [f["properties"] for f in feats]
+    per = {}
+    for tilt in TILTS:
+        cl = [p for p in P if _claims(p, tilt, rv)]
+        miss = sum(1 for p in cl if p["verdict"] in ("needs_cv", "unknown"))
+        fneg = sum(1 for p in P if p["verdict"] != "blocked" and not _claims(p, tilt, rv))
+        per[tilt] = {
+            "claimed": len(cl),
+            "claimed_km": round(sum(p.get("length_m") or 0 for p in cl) / 1000, 1),
+            "miss_exposure": miss,
+            "false_negative_exposure": fneg,
+            "weighted_loss": MISS_COST * miss + fneg,
+        }
+    best = min(TILTS, key=lambda t: per[t]["weighted_loss"])
+    return {
+        "what": "오류 비대칭. 미탐(출동 실패) 대 오탐(우회) 비용비 아래에서 기울기 셋",
+        "tilt": TILT,
+        "tilt_why": f"미탐:오탐 = {MISS_COST}:1. 검증 없이 통행 가능을 주장하지 않는다",
+        "miss_cost": MISS_COST,
+        "per_tilt": per,
+        "lowest_loss_tilt": best,
+        "tilt_is_lowest_loss": best == TILT,
+        "current_unverified_claims": per["current"]["miss_exposure"],
+        "unresolved": ("미탐 노출은 **주장의 노출**이고 지상진실이 아니다. "
+                       "「실제로 못 갔다」는 D-25 실측(#4)이 전건이다"),
+        "not_measured": ("경로 탐색의 기울기는 여기서 안 정한다 — `edge_cost` 가 든다. "
+                         "거기서 회색을 막으면 통행 가능 성분이 1,000 → 269구간으로 "
+                         "쪼개져 대부분의 쌍에 경로가 없어진다"),
+    }
 
 
 def e3(feats: list[dict]) -> dict:
@@ -347,11 +436,14 @@ def build(proc: Path, gold: Path, base: Path, tag: str | None) -> tuple[dict, li
                                        "wheelbase_verified")},
         },
         "E1": e1(per, rows, feats, rv),
+        "E2": e2(feats, rv),
         "E3": e3(feats),
         "scenarios": scenarios(rows, feats, rv, rad, pos),
         "known_limits": [
             "폭 실측 검증 0건. 모든 지표가 미검증 폭 위에서 나온다(D-25 · PLAN §1 #4)",
-            "E-2(오류 비대칭 · #117) · E-4(폭 정확도 · #93)는 전건이 없어 안 낸다",
+            "E-4(폭 정확도 · #93)는 D-25 실측(#4)이 전건이어서 안 낸다",
+            "E-2 의 두 노출은 **주장의 노출**이고 지상진실이 아니다 — "
+            "「실제로 못 갔다」는 폭 실측(#4)이 전건이다",
             "E-1 분모는 노드다. 건물이냐 노드냐는 PLAN §1 #94 가 미정으로 든다",
             "거리는 국소 평면 근사(localgeo)로 잰다. 투영이 아니다",
             "`node` 는 실행 안에서만 뜻이 있는 번호다. 실행 간 인용은 `dest_lon`·`dest_lat` 로 한다",
@@ -372,6 +464,19 @@ def _print(doc: dict) -> None:
           f"실거리비 중앙 {e['ratio_median']} · p90 {e['ratio_p90']} · 최대 {e['ratio_max']}")
     for gap in e["gaps"]:
         print(f"     ★ 결손 {gap['station']} — {gap['what']}")
+    a = doc["E2"]
+    print(f"\nE-2  기울기 **{a['tilt']}** (미탐:오탐 {a['miss_cost']}:1)")
+    for t in TILTS:
+        v = a["per_tilt"][t]
+        mark = " ←대표" if t == a["tilt"] else ""
+        print(f"     {t:<12} 주장 {v['claimed']:>5,} ({v['claimed_km']:>5}km) · "
+              f"미탐노출 {v['miss_exposure']:>4} · 오탐노출 {v['false_negative_exposure']:>4} · "
+              f"가중손실 {v['weighted_loss']:>7,}{mark}")
+    if not a["tilt_is_lowest_loss"]:
+        print(f"     ★ 대표가 최소 손실이 아니다 — 최소는 {a['lowest_loss_tilt']} 다. "
+              f"선언을 고칠 것인가 근거를 적을 것인가")
+    print(f"     현행 발행물이 검증 없이 통행 가능을 주장하는 구간 "
+          f"{a['current_unverified_claims']}")
     x = doc["E3"]
     print(f"\nE-3  영상판정 불가 {x['cv_impossible']}/{x['n']} ({x['cv_impossible_pct']}%) · "
           f"연장 {x['cv_impossible_length_m']:,}m/{x['length_total_m']:,}m "
