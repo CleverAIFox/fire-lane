@@ -59,7 +59,7 @@
    "tests/test_docseal.py",
    "tests/test_seal_axes.py"
   ],
-  "sha": "aae23ae421ee0f37"
+  "sha": "986c0e7fa2042966"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
