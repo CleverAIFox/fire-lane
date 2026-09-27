@@ -45,7 +45,7 @@ import yaml
 #   이름**이라 안 생긴다(③ absent · ⑤ expiry · ⑥ docx_revised).
 from docfsck import _today
 from docfsck.absent import check_absent
-from docfsck.docx_revised import check_docx_revised
+from docfsck.docx_revised import check_docx_ready_for_squash, check_docx_revised
 from docfsck.expiry import check_expiry
 
 from firelane import generated
@@ -370,7 +370,8 @@ CHECKS = (
     ("③ 부재선언 '없다' 고 적은 값 ↔ 실물", lambda led: check_absent(led)),
     ("④ 등재     사람이 만드는 계층 ↔ 대장", lambda led: check_field_ledger(led)),
     ("⑤ 만료     한시로 정한 것이 한시로 끝났는가", lambda led: check_expiry()),
-    ("⑥ 기획서    고쳤는데 최종 수정일이 그대로인가", lambda led: check_docx_revised()),
+    ("⑥ 기획서    고쳤는데 최종 수정일이 그대로인가",
+     lambda led: check_docx_revised() + check_docx_ready_for_squash()),
     ("⑦ 명령     문서가 적은 셸 명령 ↔ 룰셋 · 진입점 · tools 실물", lambda led: check_commands()),
     ("⑧ 기한     미룬 것이 기한 안에 끝났는가 (양방향)", lambda led: check_deferred()),
 )

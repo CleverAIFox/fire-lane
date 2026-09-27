@@ -68,8 +68,8 @@ def _sections() -> list[dict]:
     return m.scan()["rows"]
 
 
-def body(rows: list[dict], i: int) -> str:
-    """절 본문 — 다음 **같거나 얕은** 깊이의 제목 전까지."""
+def _body_v1(rows: list[dict], i: int) -> str:
+    """2026-09-27 이전 판 — 끝의 빈 줄을 안 뗐다. 만나면 받고 새 판으로 고쳐 적는다."""
     r = rows[i]
     lines = (ROOT / r["doc"]).read_text(encoding="utf-8").splitlines()
     end = len(lines)
@@ -78,6 +78,32 @@ def body(rows: list[dict], i: int) -> str:
             end = q["line"] - 1
             break
     return "\n".join(lines[r["line"] - 1:end])
+
+
+#: 옛 판 본문 잘라내기. 줄이 늘 때마다 「한 번 지나면 안 흔들린다」가 한 세대 더 간다.
+LEGACY_BODIES = (_body_v1,)
+
+
+def body(rows: list[dict], i: int) -> str:
+    """절 본문 — 다음 **같거나 얕은** 깊이의 제목 전까지. 끝의 빈 줄은 뗀다.
+
+    ★ 2026-09-27 (DECISIONS §273-10). 끝을 안 떼면 **절을 하나 append 할 때마다
+      직전 절의 도장이 무효가 된다.** 마지막 절은 EOF 까지 잘리는데, 뒤에 새 절이
+      붙는 순간 구분용 빈 줄 하나가 본문에 들고 나기 때문이다. 실제로 §272 가
+      그렇게 무효가 됐다 — 참조 파일이 **하나도 안 바뀌었는데**.
+
+    ★ 거짓 무효는 도장을 죽인다. 매번 뜨는 「다시 보라」는 아무도 안 읽고,
+      그러면 진짜 무효도 같이 안 읽힌다(§18-13 · 오탐이 본문을 덮는다).
+      끝의 빈 줄은 뜻을 안 바꾸므로 떼는 것이 옳다.
+    """
+    r = rows[i]
+    lines = (ROOT / r["doc"]).read_text(encoding="utf-8").splitlines()
+    end = len(lines)
+    for q in rows[i + 1:]:
+        if q["doc"] == r["doc"] and q["depth"] <= r["depth"]:
+            end = q["line"] - 1
+            break
+    return "\n".join(lines[r["line"] - 1:end]).rstrip()
 
 
 def refs(text: str) -> list[str]:
@@ -112,15 +138,32 @@ def survey() -> tuple[dict, dict]:
         fs = refs(t + " " + (r.get("field") or ""))
         if not fs:
             continue                      # 코드를 안 가리키는 절은 도장 대상이 아니다
-        now[r["id"]] = {"sha": digest(t, fs), "files": fs, "doc": r["doc"]}
+        now[r["id"]] = {"sha": digest(t, fs), "files": fs, "doc": r["doc"],
+                        "legacy": [digest(f(rows, i), fs) for f in LEGACY_BODIES]}
     was = json.loads(SEAL.read_text(encoding="utf-8")) if SEAL.is_file() else {}
     return now, was
 
 
+def valid(now_one: dict, was_one: dict | None) -> bool:
+    """도장이 아직 맞는가. **옛 판 지문도 받는다.**
+
+    ★ 2026-09-27 (DECISIONS §273-10). 본문 잘라내기 규칙을 고치자 도장 14개가
+      한꺼번에 무효가 됐다. 내용은 한 글자도 안 바뀌었고 **규칙만** 바뀐 것이다.
+      열넷을 안 읽고 다시 찍으면 그것이 도장 찍기다(§272).
+
+    ★ 이 저장소엔 이미 답이 있다 — `shardseal.LEGACY_PRINTS` 가 cfg 지문에
+      같은 일을 한다(「옛 판 지문이면 받고 새 판으로 고쳐 적는다 · 재빌드 없음」).
+      같은 규약을 쓴다. 규칙이 바뀌어도 **사람이 확인한 사실**은 그대로다.
+    """
+    if not was_one:
+        return False
+    return was_one.get("sha") in {now_one["sha"], *now_one.get("legacy", [])}
+
+
 def status() -> int:
     now, was = survey()
-    ok = [k for k, v in now.items() if was.get(k, {}).get("sha") == v["sha"]]
-    void = [k for k, v in now.items() if k in was and was[k]["sha"] != v["sha"]]
+    ok = [k for k, v in now.items() if valid(v, was.get(k))]
+    void = [k for k, v in now.items() if k in was and not valid(v, was[k])]
     none = [k for k in now if k not in was]
     gone = [k for k in was if k not in now]
     print(f"  도장 대상 {len(now)}절 (코드를 지목하는 wired 절)")
@@ -139,7 +182,7 @@ def check() -> int:
     if not now:
         print("★ 도장 대상이 0절이다 — 판별식을 의심하라")
         return 1
-    void = sorted(k for k, v in now.items() if k in was and was[k]["sha"] != v["sha"])
+    void = sorted(k for k, v in now.items() if k in was and not valid(v, was[k]))
     if not void:
         n = sum(1 for k in now if k in was)
         print(f"✓ 도장 {n}/{len(now)}절 유효 · 무효 0 — 확인한 뒤로 안 바뀌었다")

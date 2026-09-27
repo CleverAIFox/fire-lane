@@ -39,7 +39,10 @@
    "tests/test_evalgen.py",
    "tools/verify.sh"
   ],
-  "sha": "2da0ef93b060b440"
+  "legacy": [
+   "ac1d2866db1ad966"
+  ],
+  "sha": "a6316306da507a31"
  },
  "DECISIONS/265": {
   "doc": "docs/DECISIONS.md",
@@ -48,7 +51,10 @@
    "tools/docseal.py",
    "tools/install_navi.py"
   ],
-  "sha": "e4bd0c575f15433b"
+  "legacy": [
+   "05d8bde3f70e073a"
+  ],
+  "sha": "4195df938d6e3b5e"
  },
  "DECISIONS/266": {
   "doc": "docs/DECISIONS.md",
@@ -58,7 +64,10 @@
    "tools/sizecheck.py",
    "tools/skeleton_compare.py"
   ],
-  "sha": "8567656fe9e9c2a8"
+  "legacy": [
+   "802b7641284422fb"
+  ],
+  "sha": "6decb2ded33157a2"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -66,7 +75,10 @@
    "tests/test_docseal.py",
    "tests/test_seal_axes.py"
   ],
-  "sha": "986c0e7fa2042966"
+  "legacy": [
+   "448107b9be20bf4c"
+  ],
+  "sha": "081bf3a5922cefd3"
  },
  "DECISIONS/269": {
   "doc": "docs/DECISIONS.md",
@@ -99,7 +111,35 @@
    "tests/test_r3.py",
    "tools/docseal.py"
   ],
-  "sha": "98ca96d5079b8058"
+  "legacy": [
+   "7080b3cd30e4cf4f"
+  ],
+  "sha": "907888f1727d38c2"
+ },
+ "DECISIONS/273": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_embeddable.py",
+   "tests/test_vehicle_parity.py",
+   "tools/after_squash.py",
+   "tools/cv_queue.py",
+   "tools/deliver.py",
+   "tools/serve.py"
+  ],
+  "legacy": [
+   "4845da6fb748703e"
+  ],
+  "sha": "4845da6fb748703e"
+ },
+ "MASTER/11-0": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_embeddable.py"
+  ],
+  "legacy": [
+   "6ada605d623491ad"
+  ],
+  "sha": "de57e43dbf108bf9"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -108,11 +148,26 @@
   ],
   "sha": "4253f41376232bdd"
  },
+ "MASTER/2-1a": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_evalgen.py",
+   "tests/test_vehicle_parity.py",
+   "tools/evalgen.py"
+  ],
+  "legacy": [
+   "524edf3ab5e50568"
+  ],
+  "sha": "adc7b7e57e7ddd81"
+ },
  "MASTER/21-0": {
   "doc": "docs/MASTER.md",
   "files": [
    "tools/docseal.py"
   ],
-  "sha": "0b5a75d4349ab01b"
+  "legacy": [
+   "709baa0b694e2c81"
+  ],
+  "sha": "a47ee60d882d202f"
  }
 }

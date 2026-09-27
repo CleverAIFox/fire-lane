@@ -179,3 +179,53 @@ def test_check_carries_its_own_premise():
     rc, out = run({"user": {"type": "User", "login": "fox"}, "body": ""})
     assert rc != 0, (
         "**사람**의 빈 본문이 통과했다 — 전제를 넓게 잡아 검사를 껐다.\n" + out)
+
+
+def test_an_empty_body_file_argument_is_not_a_skip():
+    """★ 2026-09-27 (DECISIONS §273-4). `--body-file ""` 이 **rc 0 으로 통과했다.**
+
+    빈 파일(`test_empty_body_fails`)과 없는 파일은 제대로 울었다. **빈 인자만
+    조용했다** — `if a.body_file:` 이 빈 문자열을 「안 줬다」로 읽어 PR 컨텍스트
+    분기로 떨어지고, 거기서 `GITHUB_EVENT_PATH` 가 없으니 「건너뛴다」였다.
+
+    그 조용함이 `fl.sh` 8단계를 태웠다. INBOX 가 비어 `BODY` 가 빈 문자열이었고
+    이 검사가 통과시키자 `gh pr create --body-file ""` 이 usage 를 뱉으며 죽었다.
+    **원인이 두 칸 앞에 있었는데 아무도 안 울었다.**
+
+    ★ 인자를 **줬다는 사실**과 그 값이 비었다는 사실은 다르다. 전자는 전제가
+      안 선 것이고 후자는 부르는 쪽의 결함이다. 전제와 결함을 같은 분기로
+      받으면 결함이 전제로 위장한다.
+    """
+    import os
+    import subprocess
+    import sys
+
+    def run(*args: str) -> tuple[int, str]:
+        r = subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "pr_body_check.py"), *args],
+            capture_output=True, text=True, cwd=ROOT, timeout=60,
+            env={k: v for k, v in
+                 {**os.environ,
+                  "PYTHONPATH": f"{ROOT / 'src'}{os.pathsep}{ROOT / 'tools'}"}.items()
+                 if k != "GITHUB_EVENT_PATH"})
+        return r.returncode, r.stdout + r.stderr
+
+    for empty in ("", "   ", "\t"):
+        rc, out = run("--body-file", empty)
+        assert rc != 0, (
+            f"`--body-file {empty!r}` 가 통과했다 — 빈 경로로 통과하면 "
+            f"다음 자리에서 엉뚱한 말로 죽는다.\n{out}")
+        assert "비었다" in out, f"왜 빨간지 말하지 않는다.\n{out}"
+
+    rc, out = run("--body-file", str(ROOT / "없는파일_abc.md"))
+    assert rc != 0, "없는 파일이 통과했다"
+    assert "Traceback" not in out, (
+        "읽기 실패를 **역추적으로** 낸다 — 부르는 쪽이 무엇을 못 찾았는지 "
+        f"문장으로 말해야 한다(§258-16).\n{out}")
+    assert "없는파일_abc.md" in out, f"못 읽은 파일 이름을 안 낸다.\n{out}"
+
+    # ★ 인자를 아예 안 주고 PR 컨텍스트도 없으면 그것은 **전제가 안 선 것**이므로
+    #   건너뛰는 것이 맞다. 이 갈래를 같이 못박지 않으면 위 고침이 전제까지 막는다.
+    rc, out = run()
+    assert rc == 0, f"전제가 안 선 자리에서 빨갛다 — 검사가 제 전제를 잃었다.\n{out}"
+    assert "건너뛴다" in out

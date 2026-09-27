@@ -541,3 +541,97 @@ def test_cli_runs_end_to_end(tmp_path):
     doc = json.loads(out.read_text(encoding="utf-8"))
     assert doc["scenarios"]["rule"].startswith("d2/d1 >")
     assert doc["E1"]["pairs"] > 0
+
+
+# ── E-2 오류 비대칭 (§273 · PLAN §1 #117) ─────────────────────
+# ★ 여기서 재는 것은 「기울기가 옳은가」가 아니다 — 그것은 사람이 정했다.
+#   재는 것은 **선언이 실제로 계산에 닿는가**다. #117 이 한 달 열려 있던 이유가
+#   「셋을 낼 수는 있는데 대표가 없다」였고, 그 형태가 다시 오는 것을 막는다.
+def _seg(uid, verdict, length=100.0):
+    return {"properties": {"seg_uid": uid, "verdict": verdict, "length_m": length}}
+
+
+_E2_FEATS = [_seg("a", "clear"), _seg("b", "needs_cv"), _seg("c", "unknown"),
+             _seg("d", "blocked"), _seg("e", "clear")]
+_E2_RV = {"a": {"passable": "1"}, "b": {"passable": "1"}, "c": {"passable": "0"},
+          "d": {"passable": "0"}, "e": {"passable": "1"}}
+
+
+def test_no_tilt_ever_claims_a_blocked_segment():
+    """`blocked` 만은 판정이 확정이다. 어느 기울기에서도 주장하지 않는다."""
+    for tilt in ev.TILTS:
+        assert not ev._claims(_seg("d", "blocked")["properties"], tilt, _E2_RV), \
+            f"{tilt} 이 blocked 를 통행 가능으로 주장한다"
+
+
+def test_the_pessimistic_tilt_has_no_miss_exposure_by_construction():
+    """비관이 미탐 노출을 내면 정의가 깨진 것이다 — 그 기울기는 clear 만 주장한다."""
+    got = ev.e2(_E2_FEATS, _E2_RV)
+    assert got["per_tilt"]["pessimistic"]["miss_exposure"] == 0
+    assert got["per_tilt"]["pessimistic"]["claimed"] == 2, "clear 둘만 주장해야 한다"
+
+
+def test_the_optimistic_tilt_has_no_false_negative_exposure_by_construction():
+    got = ev.e2(_E2_FEATS, _E2_RV)
+    assert got["per_tilt"]["optimistic"]["false_negative_exposure"] == 0
+    assert got["per_tilt"]["optimistic"]["claimed"] == 4, "blocked 하나만 빼야 한다"
+
+
+def test_the_current_tilt_reads_the_published_passable_column():
+    """★ 현행 축이 `route_vehicle.csv` 를 **정말로 읽는가.** 안 읽고 판정 어휘로만
+    세면 「고쳐서 얼마가 나아졌나」가 거짓이 되고, 그 거짓은 조용하다."""
+    got = ev.e2(_E2_FEATS, _E2_RV)
+    assert got["per_tilt"]["current"]["claimed"] == 3, "a·b·e 셋이 passable 1 이다"
+    blind = ev.e2(_E2_FEATS, {})
+    assert blind["per_tilt"]["current"]["claimed"] == 0, \
+        "발행 열을 안 읽는데도 주장이 남는다 — 다른 자료로 세고 있다"
+
+
+def test_the_three_tilts_do_not_collapse_into_one_number():
+    """★ `deadcheck ③`. 셋의 가중손실이 같으면 지표가 장식이다."""
+    per = ev.e2(_E2_FEATS, _E2_RV)["per_tilt"]
+    loss = {t: per[t]["weighted_loss"] for t in ev.TILTS}
+    assert len(set(loss.values())) == len(ev.TILTS), f"기울기가 안 갈린다: {loss}"
+
+
+def test_the_declared_tilt_is_a_real_tilt_and_costs_the_least():
+    """선언이 대장 안에 있고, **최소 손실인가.**
+
+    ★ 이 시험이 빨개지는 날은 자료가 바뀌어 비관이 더는 최소가 아닌 날이다.
+      그때 할 일은 이 시험을 고치는 것이 아니라 **선언을 다시 하거나
+      `MISS_COST` 의 근거를 적는 것**이다. 조용히 지나가면 #117 이 다시 열린다.
+    """
+    assert ev.TILT in ev.TILTS, "선언한 기울기가 대장에 없다"
+    got = ev.e2(_E2_FEATS, _E2_RV)
+    assert got["tilt"] == ev.TILT, "선언이 산출에 안 닿는다"
+    assert got["tilt_is_lowest_loss"], (
+        f"선언 {ev.TILT} 가 최소 손실이 아니다 — 최소는 {got['lowest_loss_tilt']} 다. "
+        f"선언을 고치거나 MISS_COST({ev.MISS_COST}) 의 근거를 적어라")
+
+
+def test_the_miss_cost_ratio_actually_tilts_the_answer():
+    """★ 비용비를 1:1 로 되돌리면 답이 바뀌어야 한다 — 안 바뀌면 그 수가 안 쓰인다."""
+    was = ev.MISS_COST
+    try:
+        ev.MISS_COST = 1
+        flat = ev.e2(_E2_FEATS, _E2_RV)
+    finally:
+        ev.MISS_COST = was
+    steep = ev.e2(_E2_FEATS, _E2_RV)
+    assert flat["per_tilt"]["optimistic"]["weighted_loss"] \
+        != steep["per_tilt"]["optimistic"]["weighted_loss"], \
+        "MISS_COST 가 가중손실에 안 닿는다"
+
+
+@need_real
+def test_e2_on_the_real_tree_names_the_current_unverified_claims():
+    """실물에서 **현행 발행물의 미검증 주장 수**가 나오는가. 0 이면 셀 것이 없다는 뜻이고,
+    그때는 이 지표가 아니라 판정이 이상하다."""
+    doc = ev.build(REAL / "processed", REAL / "golden", REAL / "baseline",
+                   gt.newest_tag(REAL / "baseline"))[0]
+    a = doc["E2"]
+    assert a["tilt"] == "pessimistic"
+    assert a["current_unverified_claims"] > 0, \
+        "현행이 미검증 주장을 0 건 한다 — 그러면 #117 은 애초에 문제가 아니었다"
+    assert a["per_tilt"]["pessimistic"]["weighted_loss"] \
+        < a["per_tilt"]["current"]["weighted_loss"], "비관이 현행보다 나쁘다"

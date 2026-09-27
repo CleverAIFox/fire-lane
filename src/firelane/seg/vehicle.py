@@ -65,6 +65,7 @@ firelane/seg/vehicle.py — 소방차 제원과 통행 비용
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -218,12 +219,45 @@ def can_turn(radius_m: float | None) -> bool:
     return radius_m is None or radius_m >= float(spec()["turn_radius_m"])
 
 
+@dataclass(frozen=True)
+class Tuning:
+    """갈아끼울 계수. **여기 있는 값은 전부 미검증이다.**
+
+    ★ 2026-09-27 (DECISIONS §273-3). TS 쪽에는 이 객체가 `TuningKnobs` 라는
+      이름으로 이미 있고 그 머리말이 「남는 사람이 회색 해법을 정하면 여기만
+      고치면 된다」고 적는다. **파이썬에는 없었다** — 같은 값 여섯이 함수 본문에
+      박혀 있어서 이쪽만 「함수를 고쳐야 한다」였다. 값은 한 개도 안 바꿨다.
+      정본이 두 언어에 각각 하나씩 있고 `tests/test_vehicle_parity.py` 가 둘을
+      맞춘다 — `params.py` ↔ `config.js` 와 같은 모양이다.
+
+    ★ 근거 있는 값(전폭 2.5 · 필요폭 3.0)은 여기 없다. 그것은 `vehicle_spec.json`
+      과 `seg/params.py` 가 든다. 여기 있는 것은 **회색을 얼마나 피하나**뿐이고
+      그 근거는 아직 없다(PLAN §1 #2 · #60 · #70).
+
+    ★ `avoid_uncertain` 은 파이썬이 안 쓴다 — 안전 경로 변형은 TS
+      (`domain/adjacency.ts`)에만 있다. 그래도 **적어 둔다**: 두 언어의 노브
+      대장이 같아야 「저쪽에만 있는 손잡이」를 사람이 알아챈다.
+    """
+
+    unknown: float = 2.5           # 판정이 모른다 — 보수
+    unknown_lenient: float = 1.2   # 판정이 모른다 — 연결성 확인용
+    no_width: float = 3.0          # 판정 어휘조차 없다 — 보수
+    no_width_lenient: float = 1.5
+    tight_margin_m: float = 0.5    # 이 여유 미만이면 서행으로 본다
+    tight: float = 1.8
+    avoid_uncertain: float = 2.0   # TS 전용(adjacency.ts). 여기서는 안 쓴다
+
+
+TUNING = Tuning()
+
+
 def edge_cost(length_m: float,
               width_m: float | None,
               verdict: str | None = None,
               radius_m: float | None = None,
               *,
-              lenient: bool = False) -> float:
+              lenient: bool = False,
+              t: Tuning = TUNING) -> float:
     """엣지 하나의 통행 비용. `math.inf` 면 못 간다.
 
     ── 왜 거리만으로는 안 되나 ──────────────────────────────────
@@ -261,12 +295,11 @@ def edge_cost(length_m: float,
     if width_m is None:
         # 폭을 모른다. 판정 어휘가 남은 정보다.
         if verdict in ("needs_cv", "unknown"):
-            return length_m * (1.2 if lenient else 2.5)
-        return length_m * (1.5 if lenient else 3.0)
+            return length_m * (t.unknown_lenient if lenient else t.unknown)
+        return length_m * (t.no_width_lenient if lenient else t.no_width)
 
     if width_m < need:
         return math.inf
-    margin = width_m - need
-    if margin < 0.5:
-        return length_m * 1.8
+    if width_m - need < t.tight_margin_m:
+        return length_m * t.tight
     return float(length_m)

@@ -111,3 +111,43 @@ def test_only_wired_sections_are_targets(ds):
     rows = {r["id"]: r for r in ds._sections()}
     bad = [k for k in now if rows[k]["state"] != "wired"]
     assert not bad, f"물리는 절까지 도장 대상으로 센다: {bad[:5]}"
+
+
+# ── 절을 하나 붙였다고 직전 절이 무효가 되면 안 된다 (§273-10) ──
+def test_appending_a_section_does_not_void_the_one_before_it(ds, tmp_path, monkeypatch):
+    """★ 2026-09-27 실측. `§273` 을 붙이자 `§272` 의 도장이 무효가 됐다 —
+    **참조 파일이 하나도 안 바뀌었는데.** 마지막 절은 EOF 까지 잘리는데 뒤에 새
+    절이 붙으면 구분용 빈 줄 하나가 본문에 들고 나기 때문이다.
+
+    ★ 거짓 무효는 도장을 죽인다. 배치마다 뜨는 「다시 보라」는 아무도 안 읽고,
+      그러면 진짜 무효도 같이 안 읽힌다.
+    """
+    # ★ 실물 모양을 그대로 쓴다. 붙이기 전에는 파일이 본문에서 끝나고(빈 줄 없음),
+    #   붙인 뒤에는 절 사이 **구분 빈 줄 하나**가 생긴다. 처음에 양쪽 다 빈 줄을
+    #   넣고 재현했더니 `.rstrip()` 을 떼도 초록이었다 — 합성이 실물과 달랐다.
+    one = tmp_path / "d.md"
+    monkeypatch.setattr(ds, "ROOT", tmp_path)
+
+    one.write_text("## 1\n본문\n", encoding="utf-8")
+    alone = ds.body([{"doc": "d.md", "line": 1, "depth": 2, "id": "d/1"}], 0)
+    one.write_text("## 1\n본문\n\n## 2\n뒤에 붙은 절\n", encoding="utf-8")
+    rows = [{"doc": "d.md", "line": 1, "depth": 2, "id": "d/1"},
+            {"doc": "d.md", "line": 4, "depth": 2, "id": "d/2"}]
+    followed = ds.body(rows, 0)
+    assert alone == followed, (
+        "절을 뒤에 붙였더니 앞 절의 본문이 달라진다 — 도장이 이유 없이 무효가 된다.\n"
+        f"  홀로: {alone!r}\n  뒤에 절: {followed!r}")
+
+
+def test_an_old_digest_is_accepted_and_not_a_silent_pass(ds):
+    """★ 규칙이 바뀌어도 **사람이 확인한 사실**은 그대로다 — 옛 지문을 받는다.
+
+    다만 **아무 지문이나 받지는 않는다.** 받는 것은 `LEGACY_BODIES` 가 내는 것뿐이고,
+    엉뚱한 지문은 여전히 무효다. 그 둘을 안 가르면 도장이 통과만 하는 도장이 된다.
+    """
+    now = {"sha": "새것", "legacy": ["옛것"]}
+    assert ds.valid(now, {"sha": "새것"}), "새 지문을 거절한다"
+    assert ds.valid(now, {"sha": "옛것"}), "옛 판 지문을 안 받는다 — 규칙만 바꿔도 전부 무효가 된다"
+    assert not ds.valid(now, {"sha": "엉뚱한것"}), "아무 지문이나 받는다 — 도장이 죽었다"
+    assert not ds.valid(now, None), "도장이 없는데 유효라고 한다"
+    assert ds.LEGACY_BODIES, "옛 판 목록이 비었다 — 빈 목록은 통과가 아니다"
