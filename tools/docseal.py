@@ -44,6 +44,7 @@ PARAM 없음
 from __future__ import annotations
 
 import argparse
+import functools
 import hashlib
 import json
 import re
@@ -117,7 +118,26 @@ def refs(text: str) -> list[str]:
     except ValueError:       # 도장 파일이 저장소 밖(시험 · 임시 경로)이면 뺄 것이 없다
         me = ""
     return sorted({p for p in PATH.findall(text)
-                   if p != me and (ROOT / p).is_file()})
+                   if p != me and (ROOT / p).is_file() and p in _tracked()})
+
+
+@functools.lru_cache(maxsize=1)
+def _tracked() -> frozenset[str]:
+    """git 이 추적하는 파일. **추적 밖은 도장의 기반이 못 된다.**
+
+    ★ 2026-09-28 (DECISIONS §278-10). 세 절이 `data/processed/*.json` 을 물고
+      있었다 — `.gitignore:28` 로 추적 밖이고 **파이프라인이 돌 때마다 내용이
+      바뀌는 생성물**이다. 그 절들의 도장은 찍은 다음 날이면 무효였고, 앞으로도
+      영원히 그렇다. 「확인한 뒤로 안 바뀌었다」는 주장이 성립할 수가 없다.
+
+    ★ 지목 자체는 정당하다 — 절이 그 산출을 근거로 말할 수 있다. 다만 **도장의
+      기반**은 사람이 다시 읽어야 할 만큼 의미 있게 바뀌는 것이어야 하고,
+      매번 바뀌는 것은 그 신호를 0 으로 만든다. 그 자리는 `freshcheck` ·
+      `golden` 이 따로 든다.
+    """
+    r = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                       capture_output=True, text=True, check=False)
+    return frozenset(x for x in r.stdout.split("\0") if x)
 
 
 def digest(text: str, files: list[str]) -> str:

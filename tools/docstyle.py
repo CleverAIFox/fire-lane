@@ -220,7 +220,7 @@ def renumber() -> int:
             print(f"✗ 단락 {i} 이 run {len(doc_runs)}개다 — 손대면 서식이 갈린다: {old[:48]}")
             return 1
     for i, _old, new in plan:
-        [r for r in d.paragraphs[i].runs if r.text][0].text = new
+        next(r for r in d.paragraphs[i].runs if r.text).text = new
     d.save(str(DOCX))
     print(f"✓ 제목 {len(plan)}개를 맞바꿨다 — 세 편의 계층이 같아졌다")
     for _i, old, new in plan[:6]:

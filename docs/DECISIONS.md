@@ -16235,7 +16235,7 @@ GPS 가 **없는** 경우는 이미 막혀 있었다. 데스크톱 · 권한 거
 
 > 2026-09-28
 
-강제자  `tools/docstyle.py` · `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/proposal_pdf.py`(`BOOKMARKS_MIN`) · `tools/docx_figs.py`(`SOURCELESS_MAX`) · `tools/ci_wait.sh` · `tests/test_docstyle.py`(8) · `tests/test_figure_fit.py`(6) · `tests/test_batch_tools.py`(6). 하위 9가 이 칸을 물려받는다
+강제자  `tools/docstyle.py` · `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/proposal_pdf.py`(`BOOKMARKS_MIN`) · `tools/docx_figs.py`(`SOURCELESS_MAX`) · `tools/ci_wait.sh` · `tests/test_docstyle.py`(8) · `tests/test_figure_fit.py`(6) · `tests/test_batch_tools.py`(6). 하위 11이 이 칸을 물려받는다
 
 문서 넷 중 `proposal.docx` 만 **저장소 밖으로 나간다.** 그런데 이 문서에 걸린
 검사는 「숫자가 산출물과 맞는가」(`docx_check`)와 「그림이 정본과 같은가」
@@ -16425,3 +16425,33 @@ INBOX 는 다운로드 폴더라 **공용이다.** zip 은 `fire-lane-*.zip` 인
   이미 끝나 있었는데 행이 안 닫힌 것**이다 — `evalgen` 이 E-1 · E-2 · E-3 을
   전부 내는데 행은 「산출 미착수」로 남아 있었다. **닫지 않은 행은 열린 행과
   구별되지 않고, 그러면 104 라는 수가 아무 뜻도 없다.**
+
+### 278-10. 도장이 **매번 바뀌는 생성물**을 기반으로 삼고 있었다
+
+세 절(`MASTER §4` · `MASTER §4-3` · `DECISIONS §224-2`)이 `data/processed/*.json`
+을 지목했고 도장이 그 내용까지 해시했다. 그 파일들은 `.gitignore:28` 로 **추적
+밖**이고 파이프라인이 돌 때마다 바뀐다.
+
+★ 그 도장은 **찍은 다음 날이면 무효**였고 앞으로도 영원히 그렇다. 「확인한 뒤로
+  안 바뀌었다」는 주장이 성립할 수가 없는 기반이다. 매번 우는 신호는 신호가
+  아니다 — 사람이 곧 무시하게 되고, 그러면 **진짜로 바뀐 절도 같이 묻힌다.**
+
+★ 지목 자체는 정당하다. 절이 그 산출을 근거로 말할 수 있다. 다만 **도장의
+  기반**은 사람이 다시 읽어야 할 만큼 의미 있게 바뀌는 것이어야 한다. 생성물이
+  낡았는가는 `freshcheck` · `golden` 이 따로 든다 — 두 물음을 한 도장에 싣지
+  않는다(R3).
+
+★ 이제 `git ls-files` 에 있는 파일만 기반으로 센다. 실측으로 추적 밖 파일을 문
+  도장은 **0** 이 됐다.
+
+### 278-11. 닫은 행이 들고 있던 수는 **갈 곳을 정해야 한다**
+
+`#92` 를 닫자 `docnum_check` 가 울었다 — 「`docs/PLAN.md` 에 `unknown 399` 가
+없다」. 그 수를 들던 유일한 자리가 그 행이었다.
+
+★ 행을 지우는 것은 **일이 끝났다**는 뜻이지 **그 수가 없어졌다**는 뜻이 아니다.
+  399구간은 여전히 참이고 PLAN 이 그것을 근거로 말하는 행(`#60` — CCTV 없는
+  구간의 가중치)이 열려 있다. 그리로 옮겼다.
+
+★ 강제자가 없었으면 조용히 사라졌을 자리다. 「문서가 산출물의 수를 든다」를
+  기계가 물고 있어서 **행을 지우는 순간** 울었다.

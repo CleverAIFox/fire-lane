@@ -42,7 +42,7 @@
    "tests/test_layers.py",
    "tests/test_skip_policy.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
    "76b55f7f9a448320"
   ],
@@ -789,16 +789,15 @@
  "DECISIONS/224-2": {
   "doc": "docs/DECISIONS.md",
   "files": [
-   "data/processed/.rawprint.json",
    "tests/test_rawdiff_code.py",
    "tests/test_shardseal.py",
    "tools/acquire.py"
   ],
   "kind": "read",
   "legacy": [
-   "1902b90b7e1ae7a7"
+   "a0e1df650170eaab"
   ],
-  "sha": "9667b5dec97b5173"
+  "sha": "3b87fe60ed49cf8b"
  },
  "DECISIONS/224-2a": {
   "doc": "docs/DECISIONS.md",
@@ -1327,9 +1326,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "2c36d02e0d5f69d9"
+   "f316ce92d53486fa"
   ],
-  "sha": "f97acf53bdecc656"
+  "sha": "7a940e1a3d9ea09b"
  },
  "DECISIONS/266": {
   "doc": "docs/DECISIONS.md",
@@ -1363,7 +1362,11 @@
    "tests/test_ci_env.py",
    "tests/test_skip_policy.py"
   ],
-  "sha": "de6aef56ec2f75c8"
+  "kind": "read",
+  "legacy": [
+   "de6aef56ec2f75c8"
+  ],
+  "sha": "5448589cfd4cb39b"
  },
  "DECISIONS/270": {
   "doc": "docs/DECISIONS.md",
@@ -1390,9 +1393,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "86c17d70837d6571"
+   "4fd9bfd8228c2cab"
   ],
-  "sha": "5877f98d97f15812"
+  "sha": "fd6aef5b52aecaa4"
  },
  "DECISIONS/273": {
   "doc": "docs/DECISIONS.md",
@@ -1460,9 +1463,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "4dc3eb415cb309e4"
+   "3e66ac50af7b53ad"
   ],
-  "sha": "f2f568a43358e7e1"
+  "sha": "1ecec482ef51663a"
  },
  "DECISIONS/34": {
   "doc": "docs/DECISIONS.md",
@@ -1518,7 +1521,7 @@
    "tests/test_workflow_guards.py",
    "tools/gate_parity.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
    "d2b97d91b7da59da"
   ],
@@ -2016,9 +2019,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "482132abc5869b23"
+   "54dafee8f2d35159"
   ],
-  "sha": "5de352cfdcaed5d9"
+  "sha": "ce36b777edb20d5c"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -2203,9 +2206,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "71239b6564346be8"
+   "9d83c6438238e906"
   ],
-  "sha": "851dad97b006866d"
+  "sha": "fd1bca0d1d777d63"
  },
  "MASTER/3-3": {
   "doc": "docs/MASTER.md",
@@ -2246,7 +2249,6 @@
  "MASTER/4": {
   "doc": "docs/MASTER.md",
   "files": [
-   "data/processed/nfa_compare.json",
    "src/firelane/nfa_compare.py",
    "tests/test_contract.py",
    "tests/test_docx_targets.py",
@@ -2254,11 +2256,11 @@
    "tests/test_reproducibility.py",
    "tools/docnum_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "8d576582af558353"
+   "cf008f1801812c08"
   ],
-  "sha": "e10cbba53822cc72"
+  "sha": "ad8f5ff4267d9f62"
  },
  "MASTER/4-1": {
   "doc": "docs/MASTER.md",
@@ -2275,15 +2277,14 @@
  "MASTER/4-3": {
   "doc": "docs/MASTER.md",
   "files": [
-   "data/processed/nfa_compare.json",
    "tests/test_reproducibility.py",
    "tools/docnum_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "773ae6edaac9542a"
+   "cd239475cb0e6903"
   ],
-  "sha": "47224c4542727259"
+  "sha": "0cf8204d51f24c05"
  },
  "MASTER/5-4": {
   "doc": "docs/MASTER.md",
@@ -2347,9 +2348,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "a5cb8c27ae10d803"
+   "5eafa822f6ba2919"
   ],
-  "sha": "4527a4bfd2150b4a"
+  "sha": "3a58d54de6f8a098"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
@@ -2402,7 +2403,7 @@
    "tools/gate_parity.py",
    "web/navi/src/domain/vehicle.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
    "a59660dfd865de38"
   ],
