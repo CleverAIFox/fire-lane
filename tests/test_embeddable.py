@@ -96,3 +96,38 @@ def test_the_decision_is_written_where_values_live():
     assert "임베드" in m, (
         "MASTER 에 산출물 형태 결정이 없다 — 검사만 있고 선언이 없으면 "
         "다음 사람이 왜 이런지 모른다(PLAN §1 #28)")
+
+
+# ── 로컬과 배포가 같은 주소를 쓰는가 (§273-12) ─────────────────
+SERVE = ROOT / "tools" / "serve.py"
+BUILD = ROOT / ".github" / "actions" / "build-navi" / "action.yml"
+
+
+def test_the_local_server_seats_ops_at_the_root_like_the_deploy_does():
+    """★ 2026-09-27 실측. 배포는 `/` 가 관제인데 로컬은 `navi/?view=ops` 였다.
+
+    §258 이 「쿼리스트링은 주소가 아니다」라며 배포만 옮겼고 이 도구는 안 따라왔다.
+    **같은 화면이 두 주소를 갖는다.** 그러면 눈으로 보는 사람이 배포와 다른 것을
+    보고 판단한다 — 실제로 그 화면을 놓고 「이게 뭐냐」가 나왔다.
+
+    재는 것은 「똑같이 생겼는가」가 아니라 **둘 다 루트에 관제를 앉히는가**다.
+    """
+    serve = SERVE.read_text(encoding="utf-8")
+    build = BUILD.read_text(encoding="utf-8")
+    tag = '__FL_VIEW="ops"'
+    assert tag in build, "배포가 루트에 관제를 안 앉힌다 — 이 시험의 전제가 깨졌다"
+    assert tag in serve, (
+        "로컬 서버가 루트에 관제를 안 앉힌다 — 배포는 앉힌다.\n"
+        "  같은 화면이 두 주소를 가지면 눈으로 보는 사람이 배포와 다른 것을 본다")
+
+
+def test_the_local_server_does_not_advertise_the_retired_query_address():
+    """안내문이 낡으면 사람이 그 주소로 간다. 화면보다 안내가 먼저 낡는다."""
+    printed = [ln for ln in SERVE.read_text(encoding="utf-8").splitlines()
+               if "print(" in ln and "localhost" in ln]
+    assert printed, "서버가 주소를 하나도 안 찍는다"
+    bad = [ln.strip() for ln in printed if "view=ops" in ln]
+    assert not bad, (
+        "폐기된 쿼리 주소를 아직 안내한다(§258 — 쿼리스트링은 주소가 아니다).\n  "
+        + "\n  ".join(bad))
+    assert any("/navi/" in ln for ln in printed), "내비 주소를 안 찍는다"

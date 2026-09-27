@@ -19,7 +19,7 @@ tools/serve.py — web/ 개발 서버. 캐시를 끈다.
     uv run python tools/serve.py 8080
 ════════════════════════════════════════════════════════════════
 
-★ 2026-09-22. 옛 지도(web/js)를 걷어냈다. `web/index.html` 은 `navi/?view=ops` 로
+★ 2026-09-22. 옛 지도(web/js)를 걷어냈다. 종전에는 `web/index.html` 이 `navi/?view=ops` 로
   넘기는 입구다. 그래서 이 서버는 **배포 모양**을 흉내 낸다 —
 
     /navi/...        web/navi/dist/...   (빌드본. 배포에서도 이 자리에 앉는다)
@@ -34,6 +34,7 @@ from __future__ import annotations
 import sys
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from io import BytesIO
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "web"
@@ -58,6 +59,30 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
             return
         super().send_header(keyword, value)
 
+    # ★ 2026-09-27 (DECISIONS §273-12). **로컬과 배포의 주소가 달랐다.**
+    #   §258 이 「쿼리스트링은 주소가 아니다」라며 배포에서 관제를 루트로 옮겼는데
+    #   이 도구는 안 따라와서 로컬 관제는 `navi/?view=ops` 였다. 같은 화면이 두
+    #   주소를 갖고, 눈으로 보는 사람이 **배포와 다른 것을 보고 판단**한다.
+    #   배포가 하는 일(`build-navi`)과 **같은 한 줄**을 여기서도 한다.
+    OPS_TAG = b'<script>window.__FL_VIEW="ops"</script>'
+
+    def _ops_root(self) -> bytes | None:
+        """루트에 앉힐 관제 문서. 빌드본이 없으면 None(평소 서빙으로 떨어진다)."""
+        f = DIST / "index.html"
+        if not f.is_file():
+            return None
+        html = f.read_bytes()
+        return html.replace(b"</head>", self.OPS_TAG + b"</head>", 1)
+
+    def send_head(self):
+        if self.path.split("?")[0].rstrip("/") in ("", BASE) and (doc := self._ops_root()):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(doc)))
+            self.end_headers()
+            return BytesIO(doc)
+        return super().send_head()
+
     def translate_path(self, path):
         # ★ 배포 모양. 빌드본은 /fire-lane/navi/assets/... 를 부르고, 입구는 navi/ 로 넘긴다.
         if path == BASE or path.startswith(BASE + "/"):
@@ -80,7 +105,9 @@ def main():
         raise SystemExit(f"★ {ROOT} 가 없다")
     handler = partial(NoCacheHandler, directory=str(ROOT))
     print(f"web/ → http://localhost:{port}   (캐시 없음)")
-    print(f"  관제  http://localhost:{port}/navi/?view=ops")
+    # ★ 배포와 **같은 주소**를 안내한다. 다르면 사람이 배포와 다른 것을 보고 판단한다.
+    print(f"  관제  http://localhost:{port}/        (루트 = 관제 · 배포와 같다)")
+    print(f"  내비  http://localhost:{port}/navi/")
     if not DIST.is_dir():
         print("  ★ web/navi/dist 가 없다 — 관제·내비가 빈 화면이다.\n"
               "    cd web/navi && npm run build   (개발은 npm run dev)")

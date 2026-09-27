@@ -123,12 +123,13 @@
    "tests/test_vehicle_parity.py",
    "tools/after_squash.py",
    "tools/cv_queue.py",
-   "tools/deliver.py"
+   "tools/deliver.py",
+   "tools/serve.py"
   ],
   "legacy": [
-   "6b6823b219e18428"
+   "d5d143f52ed14940"
   ],
-  "sha": "6b6823b219e18428"
+  "sha": "d5d143f52ed14940"
  },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",
@@ -136,9 +137,9 @@
    "tests/test_embeddable.py"
   ],
   "legacy": [
-   "98d3e12c48f06151"
+   "6ada605d623491ad"
   ],
-  "sha": "662c371bbe9ea25e"
+  "sha": "de57e43dbf108bf9"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
