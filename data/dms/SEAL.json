@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-09-27T22:59:20+09:00",
- "commit": "b370630",
+ "sealed_at": "2026-09-28T00:59:40+09:00",
+ "commit": "d3a3e0d",
  "tool": "ef5fb69625deac11",
  "tools": {
   "tools/deadcheck.py": "2494ab4ab1e5b2a2",
@@ -11,10 +11,10 @@
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "6d06e88fc0d51bf2",
-  "docs/DECISIONS.md": "1b824840e4a922eb",
+  "docs/MASTER.md": "09eeba65857b33b1",
+  "docs/DECISIONS.md": "c8ebd9a565d68ef9",
   "docs/PLAN.md": "6253414368e1da37",
-  "README.md": "825b3e646ec555fe"
+  "README.md": "c6a344617528b6dc"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -973,7 +973,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "a53a4de6a7fe7a18",
+   "h": "73db29f9af4d3fe2",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -6822,6 +6822,72 @@
    "doc": "docs/DECISIONS.md",
    "title": "274-10. 「못 잰다」가 틀렸다 — 레이크 없이도 재는 법이 있었다"
   },
+  "DECISIONS/275": {
+   "h": "4c26ab899e254e58",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "275. 잡히는데 엉뚱한 데서 잡히는 GPS — 조용한 실패였다"
+  },
+  "DECISIONS/275-1": {
+   "h": "7cb6ec4882a95b8d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "275-1. 에러가 아닌 실패는 아무 안내도 안 낸다"
+  },
+  "DECISIONS/275-2": {
+   "h": "fe26dafe99f3a4e2",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "275-2. 범위 밖은 예외가 아니라 평소다 — 그래서 안 지운다"
+  },
+  "DECISIONS/275-3": {
+   "h": "c97efcf3f2f0635e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "275-3. 경계는 만들지 않는다 — `view.json` 이 이미 든다"
+  },
+  "DECISIONS/276": {
+   "h": "f9abbdb3f606052a",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "276. 도구가 생애 한 시점을 전부로 읽는다 — 하루에 다섯 번"
+  },
+  "DECISIONS/276-1": {
+   "h": "cbc3fe9896a2dfbd",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "276-1. 배달 도구가 PR 본문만 안 쟀다 — 그리고 그 족은 이미 고친 적이 있다"
+  },
+  "DECISIONS/276-2": {
+   "h": "cb852122457e97ca",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "276-2. 열차 3단계가 증분을 «교체» 로 읽었다"
+  },
+  "DECISIONS/276-3": {
+   "h": "b9bb71ac073deed0",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "276-3. `branch_tidy` 가 전진한 main 을 «미머지» 로 읽었다"
+  },
+  "DECISIONS/276-4": {
+   "h": "97bfefb492355b91",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "276-4. 남은 둘 — 재도장이 한 단계만 안다"
+  },
+  "DECISIONS/276-5": {
+   "h": "cae61e4142081b2a",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "276-5. 두 검사가 «불린다» 를 다르게 셌다"
+  },
+  "DECISIONS/276-6": {
+   "h": "7e2aac9ec0599ec6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "276-6. 도구가 **안 잰 것**을 잰 것처럼 말했다 — 이 절을 쓰면서"
+  },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
    "state": "none",
@@ -7069,7 +7135,7 @@
    "title": "일회성 도구는 저장소에 두지 않는다"
   },
   "README/문서는_넷이다/문서에도_검사가_붙어_있다": {
-   "h": "75c061ce02ac34ef",
+   "h": "73db37db628569e0",
    "state": "none",
    "doc": "README.md",
    "title": "문서에도 검사가 붙어 있다"
@@ -7178,7 +7244,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "1678 passed in 254.62s (0:04:14)"
+   "tail": "1692 passed in 167.72s (0:02:47)"
   },
   "probe/deadcheck": {
    "rc": 0,
