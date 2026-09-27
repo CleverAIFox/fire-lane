@@ -440,7 +440,10 @@ def cmd_pack(a) -> int:
                        ("본문이 템플릿을 못 넘는다", bodies_bad(out, _run, str(_py())))):
         if bad:
             print(f"★ {label} — 배달하지 않는다\n  " + "\n  ".join(bad)); return 1
-    print(f"  본문   {' · '.join(sorted(n for n in names if n.startswith('PR_')))} 검사 통과")
+    # ★ **잰 것만 적는다.** 처음엔 `PR_*` 전부를 적었고, 그래서 `PR_TITLE` 까지
+    #   「검사 통과」로 찍혔다 — 검사기는 `PR_BODY*.md` 만 태운다. 이 배치가 든
+    #   물음이 바로 그것이다(§276-1): **도구가 안 잰 것을 잰 것처럼 말하지 않는다.**
+    print(f"  본문   {' · '.join(sorted(f.name for f in out.glob('PR_BODY*.md')))} 검사 통과")
 
     if a.zip:
         z = Path(a.zip)

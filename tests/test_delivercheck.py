@@ -15,6 +15,7 @@ OUT   없음 (검사)
 """
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
@@ -22,9 +23,17 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
 
-import delivercheck as D  # noqa: E402
+# ★ `sys.path` 를 건드리지 않는다 — `test_layering::test_sys_path_해킹이_없다` 가
+#   막는다. 경로를 박으면 그 파일이 어디 있는지가 두 곳에 적히고, 옮기는 날
+#   한쪽만 따라간다. 저장소 관례대로 파일에서 직접 올린다.
+# ★ 경로를 **한 줄 리터럴**로 적는다. `test_tools_are_wired` 의 배선 탐지가
+#   줄 단위라, 두 줄로 나누면 「아무도 안 부른다」로 읽힌다(§276-1 꼬리).
+_spec = importlib.util.spec_from_file_location("delivercheck", ROOT / "tools/delivercheck.py")
+assert _spec and _spec.loader
+D = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = D
+_spec.loader.exec_module(D)
 
 
 def _run(args: list[str]) -> tuple[int, str]:

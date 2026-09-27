@@ -65,9 +65,9 @@
    "tools/skeleton_compare.py"
   ],
   "legacy": [
-   "daff76cddc502ea4"
+   "403c1cc7744669ab"
   ],
-  "sha": "d96e1e6ada595f1a"
+  "sha": "82a16d446a95d64c"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -127,9 +127,9 @@
    "tools/serve.py"
   ],
   "legacy": [
-   "7f85b1d123eeb093"
+   "1a7708f9d861b521"
   ],
-  "sha": "147d9ac2aaf974ca"
+  "sha": "467eca2a1e2e77f8"
  },
  "DECISIONS/274": {
   "doc": "docs/DECISIONS.md",
@@ -140,9 +140,9 @@
    "tools/sizecheck.py"
   ],
   "legacy": [
-   "c2e2bd8621ac722c"
+   "bd31b84e502d08c6"
   ],
-  "sha": "c2e2bd8621ac722c"
+  "sha": "6499a8db1903a1b8"
  },
  "DECISIONS/275": {
   "doc": "docs/DECISIONS.md",
@@ -166,9 +166,9 @@
    "tools/pr_body_check.py"
   ],
   "legacy": [
-   "beef4f0deb5e720f"
+   "ef52653731363c4b"
   ],
-  "sha": "beef4f0deb5e720f"
+  "sha": "ef52653731363c4b"
  },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",
