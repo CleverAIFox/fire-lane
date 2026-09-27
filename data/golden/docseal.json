@@ -43,6 +43,16 @@
   ],
   "sha": "db787494207ffd96"
  },
+ "DECISIONS/266": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_r3.py",
+   "tools/env_check.py",
+   "tools/sizecheck.py",
+   "tools/skeleton_compare.py"
+  ],
+  "sha": "ad55d9e97afead7c"
+ },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
   "files": [

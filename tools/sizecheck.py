@@ -84,7 +84,7 @@ EXCEPTIONS: dict[str, int] = {
     #   verify.sh 는 검사의 목록이라 검사가 늘면 는다 — 위 문단과 같은 이유로
     #   쪼개지 않는다.
     "tools/verify.sh": 1030,
-    "src/firelane/segments.py": 863,
+    "src/firelane/segments.py": 853,
     "tools/render_workflow.py": 635,
     "tools/golden.py": 613,
     "src/firelane/normalize_raw.py": 609,

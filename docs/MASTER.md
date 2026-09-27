@@ -791,7 +791,6 @@ firelane/skeleton.py     뼈대 후보 — NGII 중심선 + road_link 폴백 하
 firelane/transition.py   옛 구간 → 새 구간 전이표. 1:N · N:1 · 소멸 · 신설 (R2 · §187)
 tools/skeleton_compare.py  현행 1,281 구간 대 뼈대 후보 — 위치 의심표
 tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기검사
-FIRE_LANE_SKELETON=1       뼈대를 갈아 끼우고 한 번 돌려 보는 **시험 스위치**. 기본 꺼짐 (R3a · §188-1)
 ```
 
 ★ **스위치는 꺼져 있다.** 켜면 `segments.py` 가 `road_link` 대신 하이브리드 뼈대를 그래프로 쓴다.
@@ -2608,7 +2607,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,094 전수 · **분모(blank) 0절** · 물림(inherit) 379절.
+★ **강제자 칸의 분모.** 절 1,098 전수 · **분모(blank) 0절** · 물림(inherit) 382절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

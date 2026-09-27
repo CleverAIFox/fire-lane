@@ -350,22 +350,12 @@ def main():
             f"  중심선 보정 {report.correction_id}: RDS {report.target_rds_man_no} "
             f"{report.source_length_m:.3f}→{report.corrected_length_m:.3f}m · {trims}"
         )
-    # ★ 2026-09-18 (DECISIONS §188 · R3a). 뼈대 시험 교체 스위치. **기본은 꺼짐이라 판정이 안 바뀐다.**
-    #   켜면 road_link 대신 NGII 1:1,000 중심선 하이브리드(firelane.skeleton)를 그래프 뼈대로 쓴다.
-    #   R3b 가 이 스위치를 걷고 기본을 바꾼다 — 그때 판정이 움직이고 golden 을 다시 잠근다.
-    #   `.env` 에 적지 않는다. 셸에서 한 번 export 하고 마는 **스위치**다(env_check.SWITCHES).
-    #   ★ `os.environ` 을 직접 안 읽는다 — `paths` 밖에서 읽으면 `env_check` 가 운다(단일 독자 규칙).
-    #     `paths.flag` 는 `"1"` 만 켜짐으로 본다. `FIRE_LANE_SKELETON=1` 로 켠다.
-    if _flag("FIRE_LANE_SKELETON"):
-        from firelane import skeleton as _sk
-        from firelane.seg.params import GRAPH_BUFFER as _GB
-        _keep = poly.buffer(_GB)          # build_graph 가 쓰는 범위와 같다 — 두 곳이 어긋나지 않게
-        _edges = _sk.build(ngii_center, road, _keep)
-        road = _sk.as_road(_edges, road)
-        _by = _edges.groupby("src").size().to_dict()
-        print(f"  ★ 뼈대 시험 교체(FIRE_LANE_SKELETON) — 엣지 {len(_edges):,} · "
-              + " · ".join(f"{k} {v}" for k, v in sorted(_by.items()))
-              + f" · 이름 {int(road['RN'].notna().sum()):,}/{len(road):,}")
+    # ★ 2026-09-27 (DECISIONS §266). 뼈대 시험 교체 스위치(`FIRE_LANE_SKELETON`)를 걷었다.
+    #   R3a 가 배선했고(DECISIONS §188) **판정을 한 번도 안 움직였다** — 기본이 꺼짐이었다.
+    #   R3c 는 하지 않기로 결정됐으므로(DECISIONS §189-5) 되살아날 일정이 없다.
+    #   그 한 줄이 `skeleton.py` 417줄을 **판정 지문 안**에 넣고 있었다 — 뼈대 상수를
+    #   하나 만질 때마다 재잠금이 따라왔다. DECISIONS §247-1 이 고친 것과 같은 형태다.
+    #   ★ 대조는 없어지지 않는다 — `tools/skeleton_compare.py` 가 R1 판정을 그대로 든다.
 
     rw   = load("road_rw")
     # 가로등. 지번 단위 회로 대표점이라 개별 폴 위치가 아니다.

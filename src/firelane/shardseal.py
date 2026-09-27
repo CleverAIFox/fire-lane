@@ -93,7 +93,14 @@ def logic_print(p: Path) -> str:
 
 # ★ 봉인 로직 자신은 산출물을 만들지 않는다. 넣으면 봉인 규칙을 고칠 때마다 40 샤드가
 #   찢어지고, 이 기계에서는 그것이 `ngii_road` OOM 이다(DECISIONS §165-8).
-NOT_PRODUCERS = ("shardseal.py",)
+# ★ 2026-09-27 (DECISIONS §266). `stagerun.py` 를 같은 사유로 더한다. 그 파일이 하는
+#   일은 `main()` 을 감싸 `MemoryError` · `ENOMEM` 을 잡고 **처방을 찍는 것**뿐이다 —
+#   산출물에 한 바이트도 기여하지 않는데, 폐포 안이라 안내 문구 한 줄에 65종이
+#   찢어졌다. 기준은 파일의 위치가 아니라 **「고치면 산출물이 바뀌는가」**다.
+#   ★ `jsonkeys.py` 는 안 넣는다 — `shardseal` 이 **cfg 지문**을 뜰 때 쓰므로
+#     고치면 봉인 판단 자체가 달라진다. 코드 축에서 빼도 cfg 축으로 찢어지니
+#     빼는 값이 없고, 「산출물을 안 만든다」도 그 파일에는 참이 아니다.
+NOT_PRODUCERS = ("shardseal.py", "stagerun.py")
 
 
 def code_print(start: str = "firelane.ingest") -> str:
