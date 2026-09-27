@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import subprocess
-from datetime import date
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -92,7 +92,9 @@ def check_docx_ready_for_squash(bases: tuple[str, ...] = BASES) -> list[str]:
     shown, why = _cover_dates(f)
     if why:
         return [why]
-    today = date.today().isoformat()
+    # ★ 시간대 없는 `date.today()` 는 CI(`DTZ011`)가 문다. 이 검사의 「오늘」은
+    #   **한국 시각의 오늘**이다 — 배치를 그 시각으로 스쿼시하기 때문이다.
+    today = datetime.now(tz=timezone(timedelta(hours=9))).date().isoformat()
     if _norm(today) in {_norm(s) for s in shown}:
         return []
     return [f"{rel} 을 이 배치에서 고쳤는데(기준 {base}) 표지는 "

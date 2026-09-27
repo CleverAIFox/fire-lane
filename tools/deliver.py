@@ -31,6 +31,12 @@ deliver.py — **배달물이 제 밑동을 증명하는가.** 패치 묶음의 
    미끄러지면 내용 기반으로 떨어지는 것까지 받는 쪽 `go.sh` 와 같은 순서다.
    붙지 않으면 zip 이 안 나온다.
 
+②′ **스윕은 `verify.sh` 를 그대로 돈다.** 흉내내지 않는다. 처음에 도구 여섯을
+   손으로 들었다가 `deadcheck ②` 에 걸렸고, `step` 줄을 정규식으로 유도했더니
+   **60 중 22** 만 잡혔다 — `bash -c` 여러 줄 · `uv run ruff` · `python -m` 형태를
+   못 봤고, 그래서 **엄격 린트와 문서 정합 도장이 예습 밖**이었다. 둘 다 실기에서
+   빨갛게 났다. 손목록 → 유도 → **원본 실행**. 관문과 예습이 같은 파일이면 갈릴 수가 없다.
+
 ③ **실측 → `EXPECT`** — 그 워크트리에서 폐포 지문·`golden.py stale`·`web/data`
    변동·전수 pytest 를 **재고, 잰 수를 `EXPECT` 파일에 적는다.** 받는 쪽
    `go.sh` 는 그 파일을 읽어서 제가 잰 값과 대조한다. 어긋나면 거기서 죽는다.
@@ -48,7 +54,7 @@ deliver.py — **배달물이 제 밑동을 증명하는가.** 패치 묶음의 
 
 IN    저장소 · origin/<가지> · 배달 디렉터리
 OUT   배달 디렉터리 (0*.patch · BASE · EXPECT) · 표준출력
-PARAM LAKE_ONLY · FORBIDDEN · SWEEP_LINE
+PARAM LAKE_ONLY · FORBIDDEN · FAIL_LINE
 밖    **go.sh 의 내용은 안 짠다.** 그것은 사람이 짜고 이 도구는 `EXPECT` 를
       준다 — 받는 쪽이 무엇을 대조하는가는 `tests/test_expect_contract.py`
       가 본다. 그리고 **`EXPECT` 의 수가 옳은가는 못 본다** — 이 도구가 잰
@@ -93,20 +99,19 @@ FORBIDDEN = ("Co-Authored-By: Claude", "Claude-Session:")
 # ★ 레이크가 필요한 축(`freshcheck` · `lakecheck` · `golden check`)은 여기서 빼지
 #   않는다. **기준선 대조가 흡수한다** — 밑동에서도 빨가면 이 배치의 죄가 아니다.
 #   빼는 목록을 두면 그것이 또 손목록이고, 같은 결함을 한 칸 옆으로 옮길 뿐이다.
-SWEEP_LINE = re.compile(
-    r'^\s*step "(?P<name>[^"]+)" uv run python (?P<cmd>tools/[a-z_0-9]+\.py[^|&#\n]*)',
-    re.M)
-
-
-def sweep_cmds(root: Path = ROOT) -> list[tuple[str, list[str]]]:
-    """`verify.sh` 가 부르는 파이썬 도구를 **인자까지 그대로**. 비면 예외다."""
-    vs = root / "tools" / "verify.sh"
-    got = [(m.group("name"), m.group("cmd").split())
-           for m in SWEEP_LINE.finditer(vs.read_text(encoding="utf-8"))]
-    if not got:
-        raise SystemExit("★ verify.sh 에서 스윕을 한 줄도 못 읽었다 — "
-                         "빈 스윕은 통과가 아니다(deadcheck ③)")
-    return got
+# ★ 2026-09-27 (2차). 유도로 바꿨더니 **22축이었다 — `verify.sh` 의 step 은 60이다.**
+#   정규식이 `step "이름" uv run python tools/x.py` 한 형태만 봤고, 실제 관문은
+#   `bash -c '…'`(여러 줄) · `uv run pytest` · `uv run ruff` · `python -m firelane.x`
+#   로도 부른다. 그래서 **엄격 린트와 문서 정합 도장이 예습 밖**이었고, 둘 다
+#   실기에서 빨갛게 났다. 손목록을 유도로 바꾼 것이 부족했다 — **유도의 범위가
+#   또 이름보다 좁았다.**
+#
+#   흉내내기를 그만둔다. **`verify.sh` 를 그대로 돌린다.** 관문과 예습이
+#   같은 파일이면 갈릴 수가 없다. 느린 값은 내 시간이지 그의 시간이 아니다.
+#
+# ★ 실패 이름은 `verify.sh` 가 끝에 찍는 요약에서 읽는다. 종료코드만 보면
+#   「무엇이」 빨간지 모르고, 그러면 기준선 대조를 축별로 못 한다.
+FAIL_LINE = re.compile(r"^\s+✗\s+(.+?)(?:\s{2,}|$)", re.M)
 
 
 def _run(args: list[str], cwd: Path | None = None, env: dict | None = None,
@@ -115,7 +120,7 @@ def _run(args: list[str], cwd: Path | None = None, env: dict | None = None,
     if env:
         e.update(env)
     p = subprocess.run(args, cwd=cwd or ROOT, env=e, capture_output=True,
-                       text=True, timeout=timeout)
+                       text=True, timeout=timeout, check=False)
     return p.returncode, (p.stdout + p.stderr)
 
 
@@ -307,9 +312,13 @@ def _excused(name: str, wt: Path) -> str | None:
 
 
 def _sweep_red(wt: Path, env: dict) -> set[str]:
-    """스윕에서 빨간 도구의 이름. 판정이 아니라 **채집**이다."""
-    return {name for name, cmd in sweep_cmds(wt)
-            if _run([str(_py()), *cmd], cwd=wt, env=env)[0]}
+    """`verify.sh` 를 **그대로 돌리고** 빨간 축의 이름만 걷는다. 채집이지 판정이 아니다."""
+    rc, out = _run(["bash", "tools/verify.sh"], cwd=wt, env=env, timeout=3600)
+    names = set(FAIL_LINE.findall(out))
+    if rc and not names:
+        # ★ 죽었는데 이름을 못 읽었다. **0건으로 세면 빈 그물이다.**
+        names.add(f"verify.sh 가 rc={rc} 로 죽었는데 요약을 못 읽었다 — {out.strip()[-300:]}")
+    return names
 
 
 def _redlist(wt: Path, env: dict) -> tuple[set[str], str]:
@@ -399,7 +408,7 @@ def cmd_base(a) -> int:
 
 def cmd_dryrun(a) -> int:
     ps = sorted(Path(a.out).glob("0*.patch")) if a.out else \
-        sorted(Path(".").glob("0*.patch"))
+        sorted(Path().glob("0*.patch"))
     if not ps:
         print("★ 패치가 없다"); return 1
     for k, v in dryrun(a.branch, a.range, ps, tests=not a.no_tests).items():

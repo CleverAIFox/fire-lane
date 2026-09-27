@@ -65,9 +65,9 @@
    "tools/skeleton_compare.py"
   ],
   "legacy": [
-   "030dcde7f64172bf"
+   "802b7641284422fb"
   ],
-  "sha": "762456f849f8df7b"
+  "sha": "6decb2ded33157a2"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -126,9 +126,9 @@
    "tools/deliver.py"
   ],
   "legacy": [
-   "0fce29a5f7dace94"
+   "6b6823b219e18428"
   ],
-  "sha": "0fce29a5f7dace94"
+  "sha": "6b6823b219e18428"
  },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",
@@ -155,9 +155,9 @@
    "tools/evalgen.py"
   ],
   "legacy": [
-   "6dc574c35809b0e1"
+   "524edf3ab5e50568"
   ],
-  "sha": "76e450a3916558a4"
+  "sha": "adc7b7e57e7ddd81"
  },
  "MASTER/21-0": {
   "doc": "docs/MASTER.md",
