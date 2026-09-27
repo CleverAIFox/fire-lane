@@ -138,9 +138,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "9df4edc798613db3"
+   "c9166023a31edcb4"
   ],
-  "sha": "cf83c42ea806bc78"
+  "sha": "694ae534bba3403d"
  },
  "DECISIONS/111-2": {
   "doc": "docs/DECISIONS.md",
@@ -394,9 +394,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "cb7f862c8accf5b4"
+   "6e76aabba8232a11"
   ],
-  "sha": "2d5ddfe3f7dca945"
+  "sha": "1fbcde1b4dcec965"
  },
  "DECISIONS/136": {
   "doc": "docs/DECISIONS.md",
@@ -939,9 +939,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "e429353f84d5e1d6"
+   "49c1eb5dc3270d8c"
   ],
-  "sha": "e4bd82e0d8e8981a"
+  "sha": "220d5741af79d433"
  },
  "DECISIONS/238": {
   "doc": "docs/DECISIONS.md",
@@ -1012,11 +1012,11 @@
    "tests/test_seg_width.py",
    "tests/test_sources_of_truth.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "4eeb304732c000d1"
+   "256f624102f2418b"
   ],
-  "sha": "9094175248f106bb"
+  "sha": "4c279066a53c548b"
  },
  "DECISIONS/247": {
   "doc": "docs/DECISIONS.md",
@@ -1340,9 +1340,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "5b0610ce50a074af"
+   "5acda688a725ddfc"
   ],
-  "sha": "ae5e3e37a87eb7f5"
+  "sha": "f4922ced6df3f94d"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -1423,9 +1423,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "466b5182cacdf96b"
+   "f02fabb3d9fa91b3"
   ],
-  "sha": "c88c98dbe8a2523f"
+  "sha": "6f1bcce11a91d4b2"
  },
  "DECISIONS/275": {
   "doc": "docs/DECISIONS.md",
@@ -1815,11 +1815,11 @@
    "tests/test_sources_of_truth.py",
    "web/navi/test/clearance.test.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "684e94ff2ac9c56d"
+   "53834e1d98684245"
   ],
-  "sha": "974eb83a1380a4a3"
+  "sha": "1cc323d9e536a4a5"
  },
  "MASTER/11-3": {
   "doc": "docs/MASTER.md",
@@ -1965,9 +1965,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "3a17bbb625d3724a"
+   "da747bfd32f19e33"
   ],
-  "sha": "e5ab9712f59fed20"
+  "sha": "caafebf64f5b7232"
  },
  "MASTER/15-3": {
   "doc": "docs/MASTER.md",
@@ -1987,11 +1987,11 @@
    "tests/test_measurements.py",
    "tests/test_sources_of_truth.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "1b73d08fafde9a97"
+   "90f52660fbac209c"
   ],
-  "sha": "241fced0de473088"
+  "sha": "3f8e744c82264b65"
  },
  "MASTER/17": {
   "doc": "docs/MASTER.md",
@@ -2019,9 +2019,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "457a22d64e8dee65"
+   "ddc3ee8701e88452"
   ],
-  "sha": "169890642566fa74"
+  "sha": "725e5e56f2638813"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -2051,9 +2051,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "f7e5ec60b3885791"
+   "fa8f4163a2fc1128"
   ],
-  "sha": "b53b78367c049012"
+  "sha": "9c07715bbf3a0c22"
  },
  "MASTER/18-2c": {
   "doc": "docs/MASTER.md",
@@ -2180,11 +2180,11 @@
    "tests/test_sources_of_truth.py",
    "tools/docnum_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "ea758ff61a363d38"
+   "9686cdd0864adebe"
   ],
-  "sha": "55520064ad2acb96"
+  "sha": "4a2566bcae0c8b78"
  },
  "MASTER/20-4": {
   "doc": "docs/MASTER.md",
@@ -2217,11 +2217,11 @@
    "tests/test_seg_width.py",
    "tests/test_sources_of_truth.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "8344d76f70db6bd4"
+   "aca1c68ad7e14752"
   ],
-  "sha": "9cfe41408e34181b"
+  "sha": "f84855c71e4ca7b6"
  },
  "MASTER/3-5": {
   "doc": "docs/MASTER.md",
@@ -2405,9 +2405,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "3e2869bcadfaa761"
+   "affef1ad997b9512"
   ],
-  "sha": "32493881cf6603e0"
+  "sha": "60afb8d56d1a2b85"
  },
  "README/문서는_넷이다/숫자의_정본은_문서가_아니다": {
   "doc": "README.md",
