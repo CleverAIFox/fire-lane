@@ -386,6 +386,21 @@ def paths_of(e: dict, root) -> list:
     return sorted({p for p in set(out) if not is_acquisition_meta(p)})
 
 
+def bbox_4326() -> tuple[float, float, float, float]:
+    """동명동 + 여유. **정본은 대장의 `bbox_4326` 이다.**
+
+    ★ 2026-09-16 (§169). 종전에는 `ingest.py` 에 튜플이 박혀 있었고 대장과
+      **두 벌**이었다 — 샤드 봉인지 cfg 칸은 대장 값을 재는데 실제 거르기는
+      그 튜플이 했다. 대장만 고치면 샤드가 찢어져 다시 빌드하고도 산출은
+      그대로인, 근거와 실물이 갈린 상태였다.
+
+    ★ 2026-09-27 (§274-4). 그 뒤 `read/_io.py` 가 같은 값을 필요로 했다.
+      거기서 `load()` 를 또 부르면 **대장 문이 하나 더 는다** — 값 하나를
+      쓰려고 문을 늘리지 않는다. 대장의 칸은 대장이 내준다.
+    """
+    return tuple(load()["bbox_4326"])
+
+
 def crs_of(e: dict) -> str:
     """crs_native → 'EPSG:NNNN'.
 

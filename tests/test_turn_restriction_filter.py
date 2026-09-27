@@ -124,10 +124,10 @@ def test_the_normal_case_still_filters(tmp_path):
 
 def test_ingest_calls_the_gate_rather_than_filtering_by_hand():
     """★ 관문이 있어도 `ingest` 가 손으로 거르면 아무 소용이 없다."""
-    from pathlib import Path
-    src = (Path(__file__).resolve().parents[1] / "src" / "firelane" / "ingest.py") \
-        .read_text(encoding="utf-8")
-    i = src.index('elif kind == "dbf_in_zip"')
-    block = src[i:i + 2000]
+    # ★ 2026-09-27 (§274). 갈래가 `read/dbf.py` 로 내려갔다. 함수를 통째로 본다.
+    import inspect
+
+    from firelane.read import dbf
+    block = inspect.getsource(dbf.read_dbf_in_zip)
     assert "subset_by_nodes" in block, "dbf_in_zip 분기가 관문을 안 부른다"
     assert ".isin(ids)" not in block, "관문을 두고 손으로 또 거른다 — 정본이 둘이다"

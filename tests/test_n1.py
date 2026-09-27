@@ -102,7 +102,7 @@ def _shp_zip(path: Path, inner: str, n: int):
 
 def test_unzip_is_isolated_per_zip(tmp_path):
     """§181-4 · G-22 — 앞 zip 이 푼 같은 이름의 shp 를 뒤 zip 이 읽지 않는다. 글롭은 정확히 하나."""
-    from firelane import ingest
+    from firelane.read import _io as ingest  # §274 — 연장이 read/_io 로 내려갔다
     work = tmp_path / "work"
     work.mkdir()
     a, b = tmp_path / "a.zip", tmp_path / "b.zip"
@@ -121,7 +121,10 @@ def test_unzip_is_isolated_per_zip(tmp_path):
 
 
 def test_ingest_has_no_shared_extract():
-    src = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
+    # ★ 2026-09-27 (§274). 푸는 자리가 `read/_io.py` 로 내려갔다. 두 곳을 다 본다 —
+    #   한쪽만 보면 나머지 한쪽에 되돌아와도 이 검사가 조용하다.
+    src = "\n".join((ROOT / p).read_text(encoding="utf-8") for p in
+                    ("src/firelane/ingest.py", "src/firelane/read/_io.py"))
     assert not re.search(r"extractall\(tmp\)", src), "공용 .work 에 푸는 자리가 돌아왔다(G-22)"
 
 
