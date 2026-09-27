@@ -72,9 +72,12 @@ RETIRED = {"FIRE_LANE_RAW"}
 #   doctor          기계 진단이 본업. 동적 접근이 그 도구의 내용이다
 #   pr_body_check   GITHUB_*. CI 가 주는 값이지 우리 변수가 아니다
 #   pull_data       NO_COLOR. 표시용 관례 변수다
+#   deliver         `pipeline` 과 같다 — 워크트리에서 도는 **자식에게 환경을 넘긴다.**
+#                   읽어서 제 동작을 바꾸는 값이 하나도 없다
 EXEMPT = ("src/firelane/paths.py", "src/firelane/quiet_gdal.py", "tests/",
           "src/firelane/pipeline.py", "tools/doctor.py",
-          "tools/pr_body_check.py", "tools/pull_data.py")
+          "tools/pr_body_check.py", "tools/pull_data.py",
+          "tools/deliver.py")
 
 # ★ 2026-09-14. `paths.env|flag|secret("KEY")` 를 같이 본다.
 #   단일 독자로 옮기는 순간 종전 판은 그 키를 **못 보게 됐다** —

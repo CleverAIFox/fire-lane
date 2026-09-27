@@ -279,8 +279,7 @@ def e2(feats: list[dict], rv: dict) -> dict:
     return {
         "what": "오류 비대칭. 미탐(출동 실패) 대 오탐(우회) 비용비 아래에서 기울기 셋",
         "tilt": TILT,
-        "tilt_why": ("미탐:오탐 = %d:1. 검증 없이 통행 가능을 주장하지 않는다"
-                     % MISS_COST),
+        "tilt_why": f"미탐:오탐 = {MISS_COST}:1. 검증 없이 통행 가능을 주장하지 않는다",
         "miss_cost": MISS_COST,
         "per_tilt": per,
         "lowest_loss_tilt": best,

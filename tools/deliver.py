@@ -65,6 +65,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 
@@ -158,6 +159,25 @@ def tails(names: list[str]) -> list[str]:
     return sorted(f"{k}: {' · '.join(v)}" for k, v in seen.items() if len(v) > 1)
 
 
+def _message_of(p: Path, text: str) -> str:
+    """패치에서 **커밋 메시지**만. diff 는 뺀다.
+
+    ★ 2026-09-27. 첫 배달에서 이 검사가 **제 금지 목록 선언**을 잡았다 —
+      `FORBIDDEN = ("Co-Authored-By: Claude", …)` 이 diff 에 들어 있었기 때문이다.
+      규약은 「**커밋 메시지**에 서명이 없어야 한다」이지 「저장소 어디에도 그 글자가
+      없어야 한다」가 아니다. 그렇게 넓히면 그 규약을 **무는 검사 자체**를 못 쓴다.
+    ★ `git format-patch` 는 메시지와 diff 를 `---` 한 줄로 가른다.
+    """
+    if p.suffix != ".patch":
+        return text
+    out = []
+    for line in text.splitlines():
+        if line.rstrip() == "---":
+            break
+        out.append(line)
+    return "\n".join(out)
+
+
 def forbidden(paths: list[Path]) -> list[str]:
     bad = []
     for p in paths:
@@ -165,8 +185,9 @@ def forbidden(paths: list[Path]) -> list[str]:
             t = p.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
+        head = _message_of(p, t)
         for s in FORBIDDEN:
-            if s in t:
+            if s in head:
                 bad.append(f"{p.name}: {s}")
     return bad
 
@@ -232,7 +253,7 @@ def dryrun(branch: str, rng: str, patches: list[Path],
            fetch: bool = True, tests: bool = True) -> dict:
     """원격 팁 위에 실제로 얹고 **재서** 사실을 낸다. 여기서 나온 수가 `EXPECT` 다."""
     sha, subj = remote_tip(branch, fetch=fetch)
-    wt = Path(os.environ.get("TMPDIR", "/tmp")) / "fl-dryrun"
+    wt = Path(tempfile.gettempdir()) / "fl-dryrun"
     if wt.exists():
         _run(["git", "worktree", "remove", "--force", str(wt)])
         shutil.rmtree(wt, ignore_errors=True)
@@ -263,11 +284,12 @@ def dryrun(branch: str, rng: str, patches: list[Path],
 
         rc, _ = _run([str(_py()), "tools/golden.py", "stale"], cwd=wt, env=env)
         fact["golden.relock"] = "no" if rc == 0 else "yes"
+        relock = rc != 0
 
         rc, out = _run(["git", "status", "--porcelain", "--", "web/data"], cwd=wt)
         fact["webdata"] = "unchanged" if not out.strip() else "changed"
 
-        fact["sweep"] = _diff_sweep(base_sweep, _sweep_red(wt, env), wt)
+        fact["sweep"] = _diff_sweep(base_sweep, _sweep_red(wt, env), wt, relock)
         fact["pytest"] = _diff_tests(base_red, _redlist(wt, env), wt) if tests \
             else "skipped"
     finally:
@@ -310,13 +332,31 @@ def _new(base: set[str], after: set[str], wt: Path, label: str) -> list[str]:
     return fresh
 
 
-def _diff_sweep(base: set[str], after: set[str], wt: Path) -> str:
+#: 재잠금이 선언된 배치에서 **빨간 것이 결과인** 축. 사유를 함께 든다.
+RELOCK_AXES = {
+    "golden 판정 불변":
+        "판정 폐포의 코드 지문이 움직였다는 뜻이고, 그것이 곧 재잠금이 필요한 이유다. "
+        "`golden.py stale` 이 rc 로 말할 때만 받는다 — 사람이 적는 값이 아니다",
+    "커밋된 web/data 가 최신인가":
+        "재잠금은 상류를 다시 돌리므로 커밋본이 그 뒤에 온다. 같은 실행에서 커밋된다",
+}
+
+
+def _diff_sweep(base: set[str], after: set[str], wt: Path,
+                relock: bool = False) -> str:
+    # ★ 재잠금을 **도구가 필요하다고 말한** 배치에서는 위 축이 빨간 것이 결과다.
+    #   사람이 「재잠금 배치니까요」라고 적어서 넘기는 것이 아니라, `golden.py stale`
+    #   의 rc 가 참일 때만 받는다. 거짓이면 그대로 운다.
+    if relock:
+        after = after - set(RELOCK_AXES)
     fresh = _new(base, after, wt, "스윕")
     bits = [f"새 빨간불 {len(fresh)}"]
     if base:
         bits.append(f"밑동에서 이미 빨감 {len(base)}({' · '.join(sorted(base))})")
     if fixed := sorted(base - after):
         bits.append(f"이 배치가 고침 {len(fixed)}({' · '.join(fixed)})")
+    if relock:
+        bits.append(f"재잠금 선언으로 받은 축 {len(RELOCK_AXES)}")
     return " · ".join(bits)
 
 
@@ -444,6 +484,17 @@ def selftest() -> int:
             bad.append("금지 문자열을 심었는데 못 잡는다")
         if forbidden([clean]):
             bad.append("멀쩡한 파일에 운다")
+        # ★ diff 안의 같은 글자는 **결함이 아니다.** 규약은 커밋 메시지에 걸린다.
+        indiff = Path(td) / "0003-z.patch"
+        indiff.write_text(f"제목\n\n본문\n---\n a | 1 +\n+{FORBIDDEN[0]}\n",
+                          encoding="utf-8")
+        if forbidden([indiff]):
+            bad.append("diff 안의 글자를 결함으로 센다 — 그 규약을 무는 검사를 못 쓰게 된다")
+        inmsg = Path(td) / "0004-z.patch"
+        inmsg.write_text(f"제목\n\n{FORBIDDEN[0]} <x@y>\n---\n a | 1 +\n",
+                         encoding="utf-8")
+        if not forbidden([inmsg]):
+            bad.append("메시지의 서명을 못 잡는다")
         # ★ 면제는 **판별식이 참일 때만**이다. 레이크가 있는 자리에서는 안 봐준다.
         frag = next(iter(LAKE_ONLY))
         (Path(td) / "data" / "raw").mkdir(parents=True)
@@ -454,6 +505,17 @@ def selftest() -> int:
             bad.append("레이크가 없는데 면제를 안 해준다")
         if _excused("test_아무거나", Path(td)) is not None:
             bad.append("대장에 없는 빨간불을 면제해준다")
+        # ★ 재잠금 축은 **재잠금이 선언됐을 때만** 받는다. 아니면 그대로 운다.
+        axis = next(iter(RELOCK_AXES))
+        try:
+            _diff_sweep(set(), {axis}, Path(td), relock=True)
+        except SystemExit:
+            bad.append("재잠금 배치에서 재잠금 축에 운다")
+        try:
+            _diff_sweep(set(), {axis}, Path(td), relock=False)
+            bad.append("재잠금이 아닌데 재잠금 축을 받아준다 — 도장 찍기다")
+        except SystemExit:
+            pass
         # ★ ④ 기준선 대조. 밑동에서 이미 빨간 것은 흡수하고, 새것은 울어야 한다.
         try:
             _new({"a::b"}, {"a::b"}, Path(td), "시험")
@@ -470,7 +532,7 @@ def selftest() -> int:
             bad.append("레이크 없는 자리에서 레이크 전용 빨간불에 운다")
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad)); return 1
-    print("✓ 자기검사 — 판별식 14개가 다 운다")
+    print("✓ 자기검사 — 판별식 18개가 다 운다")
     return 0
 
 

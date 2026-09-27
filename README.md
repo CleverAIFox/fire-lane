@@ -71,10 +71,13 @@ uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드�
 uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
 uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
 uv run python tools/docseal.py check     # 문서 절 ↔ 그 절이 지목한 코드 · 정합 도장
+uv run python tools/after_squash.py      # 스쿼시 뒤에만 답이 바뀌는 검사만 (열차 7b · --list 로 사유)
+uv run python tools/cv_queue.py          # 영상판정을 어느 구간부터 — 측량이 못 가른 곳 먼저 (--out CSV)
 uv run python tools/gate_parity.py     # 로컬 관문 ↔ CI 차집합 (래칫 · 정본은 도구 안)
 uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증분)
 uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
 uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 · 결번 대장 (★ --apply 는 폐지 — 번호는 영구 식별자다)
+uv run python tools/deliver.py pack <가지> <범위> --out DIR   # ★ 배달물이 제 밑동을 증명한다 — origin 에서 읽고 워크트리에 얹어 예습
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
 uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)

@@ -77,9 +77,16 @@ CHECKS: dict[str, tuple[tuple[str, ...], str, bool]] = {
 
 
 def has_lake() -> bool:
-    import os
-    return (ROOT / "data" / "raw").is_dir() or bool(
-        os.environ.get("FIRE_LANE_RAW") or os.environ.get("FIRE_LANE_DATA"))
+    """레이크가 붙어 있나. **환경을 직접 안 읽는다** — `paths.py` 가 유일한 독자다.
+
+    ★ 처음엔 `os.environ.get("FIRE_LANE_RAW")` 를 직접 읽었고 `env_check` 가 잡았다.
+      단일 독자가 깨지면 키 목록 대조가 동적 접근을 못 잡는다(그 도구 머리말).
+    """
+    try:
+        from firelane.paths import RAW
+    except Exception:                                   # noqa: BLE001
+        return (ROOT / "data" / "raw").is_dir()
+    return bool(RAW and Path(RAW).is_dir())
 
 
 def run_one(cmd: tuple[str, ...]) -> tuple[int, str]:
