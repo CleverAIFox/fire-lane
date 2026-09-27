@@ -260,6 +260,11 @@ def _resume_world(tmp: Path, main_has_infra: bool):
     (work / "tools" / "merge_batch.sh").write_text("echo MERGE_BATCH \"$@\"\n")
     (work / "tools" / "branch_tidy.sh").write_text("echo TIDY \"$@\"\n")
     (work / "tools" / "verify.sh").write_text("exit 0\n")
+    # ★ 2026-09-27 (DECISIONS §273-5). 7b 가 부르는 도구를 합성 트리도 들고 간다.
+    #   없으면 fl.sh 가 「스쿼시 뒤 빨간불」로 죽는데, 그것은 **옳은 동작**이다 —
+    #   여기서 조용히 건너뛰게 만들면 이 시험이 7b 를 안 보는 시험이 된다(§272).
+    (work / "tools" / "after_squash.py").write_text(
+        "import sys; print('열차 뒤 검사 — 합성 트리'); sys.exit(0)\n")
     _git(work, "add", "-A")
     _git(work, "commit", "-q", "-m", "tools")
     _git(work, "push", "-q", "origin", "HEAD:refs/heads/part/infra", "HEAD:refs/heads/dev")
@@ -658,3 +663,30 @@ def test_no_exit_code_read_after_assignment_under_set_e():
         "`set -e` 아래서 대입 뒤 `$?` 를 읽는다 — 그 줄은 **안 돈다**:\n"
         + "\n".join(bad)
         + "\n\n  if x=$(cmd); then rc=0; else rc=$?; fi")
+
+
+def test_fl_runs_the_after_squash_check_before_opening_the_dev_pr():
+    """★ 7b 가 **스쿼시와 dev PR 사이에** 있는가.  (DECISIONS §273-5)
+
+    같은 날 CI 가 로컬 verify 를 세 번 이겼다. 셋 다 「전수 verify 는 `feat` 에서
+    한 번 돌고, 그 뒤 스쿼시 · 재도장 · 발행이 만든 상태는 아무도 안 본다」였다.
+    7b 는 그 자리를 메운다 — **순서가 곧 그 검사의 존재 이유**라서 위치까지 문다.
+    뒤로 밀리면 dev PR 이 먼저 열리고, 그때는 이미 CI 가 도는 중이다.
+    """
+    raw = (ROOT / "tools" / "fl.sh").read_text(encoding="utf-8")
+    # ★ **주석을 걷는다.** 처음에 원문에서 찾았더니 호출을 `true` 로 바꿔도 초록이었다 —
+    #   바로 위 주석에 같은 이름이 있어서다. 인용은 호출이 아니다(§272-2 와 같은 병).
+    src = "\n".join("" if ln.lstrip().startswith("#") else ln
+                    for ln in raw.splitlines())
+    call = src.find("tools/after_squash.py")
+    assert call > 0, "fl.sh 가 7b 를 안 부른다 — 열차 뒤 상태를 아무도 안 본다"
+
+    squash = src.find('step "7.')
+    devpr = src.find('step "8.')
+    assert squash > 0 and devpr > squash, "7 · 8 단계를 못 찾았다 — 이 시험이 낡았다"
+    assert squash < call < devpr, (
+        f"7b 가 스쿼시(7)와 dev PR(8) 사이에 없다 — 위치 {call}, 7 {squash}, 8 {devpr}")
+
+    # ★ 빨간불에서 **멈추는가.** 찍고 지나가면 그 검사는 없는 것과 같다.
+    tail = src[call:call + 400]
+    assert "die" in tail, "7b 가 빨간불에서 안 죽는다 — 찍고 지나가면 CI 까지 간다"

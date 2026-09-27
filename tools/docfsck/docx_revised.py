@@ -1,15 +1,105 @@
 """`doc_fsck ⑥` — 기획서를 고쳤는데 최종 수정일이 그대로인가.  (§258-19)
 
-IN    docs/proposal.docx · 그 안의 최종 수정일 표기
+IN    docs/proposal.docx · 그 안의 최종 수정일 표기 · git 이력 · origin/dev 의 사본
 OUT   결함 문장 목록 (비면 통과)
 밖    기획서 **내용**이 산출물과 맞는가는 `tools/docx_check.py` 소관이다.
+      **스쿼시 뒤의 다른 검사들은 안 본다** — 열차가 만드는 상태를 통틀어 다시
+      보는 것은 `tools/fl.sh` 의 「7b. 열차 뒤 검사」 소관이다.
 """
 from __future__ import annotations
 
 import re
+import subprocess
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def _git(*args: str, timeout: int = 10) -> tuple[int, str]:
+    try:
+        r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True,
+                           text=True, timeout=timeout)
+    except Exception as e:                                # noqa: BLE001
+        return 1, f"{type(e).__name__}: {e}"
+    return r.returncode, r.stdout.strip()
+
+
+def _cover_dates(f: Path) -> tuple[list[str], str | None]:
+    """표지 앞 40단락의 날짜 표기와, 못 읽었으면 그 사유."""
+    try:
+        import docx as _dx
+        txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
+    except Exception as e:                                # noqa: BLE001
+        return [], f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"
+    return re.findall(r"20\d\d\.\s*\d{1,2}\.\s*\d{1,2}", txt), None
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"[.\s-]", "", s)
+
+
+# ── 6b. 스쿼시가 날짜를 옮긴다 ─────────────────────────────────
+BASES = ("origin/part/infra", "origin/dev")
+
+
+def check_docx_ready_for_squash(bases: tuple[str, ...] = BASES) -> list[str]:
+    """기획서를 **이 배치에서 고쳤는데** 표지가 오늘 날짜가 아닌가.  (§273-5)
+
+    ── 왜 생겼나 (2026-09-27) ──────────────────────────────────
+    ⑥ 은 `git log -1 -- proposal.docx` 의 **저자 날짜**를 표지와 견준다. 그런데
+    **스쿼시가 그 날짜를 머지일로 바꾼다** — 커밋 여럿이 한 개로 접히면서 파일별
+    저자 날짜가 사라지고 스쿼시 커밋의 날짜 하나만 남는다.
+
+    그래서 이 배치에서 실제로 일어난 일이 이렇다.
+
+        feat/batch-0926 (4986e7b)   기획서의 마지막 커밋 09-24 · 표지 09-24  → 초록
+        part/infra (0a4dd53, 스쿼시) 같은 파일의 커밋이 09-27 로 바뀜        → 빨강
+
+    **로컬 전수 verify 가 볼 수 없는 빨간불이다.** 스쿼시는 CI 뒤에 일어나므로
+    사람이 미리 잴 방법이 ⑥ 에는 없었다. 그 결과 왕복 하나를 태웠다.
+
+    ★ 그래서 팔을 하나 더 단다 — **짜는 동안** 운다. 기획서가 `base` 의 사본과
+      내용이 다르면 그 배치는 기획서를 고친 것이고, 그러면 표지는 **머지일**을
+      들어야 한다. 같은 날 머지하는 것이 이 저장소의 실측 전부이므로 「오늘」로
+      본다. 날이 넘어가면 `fl.sh` 의 7b 가 스쿼시 직후에 다시 운다 —
+      **두 팔이 각각 다른 시점을 든다.**
+
+    ★ `base` 를 못 읽으면 **재지 않는다.** 얕은 클론 · 원격 없는 사본에서
+      거짓으로 빨개지는 것이 진짜 경보를 죽인다(§18-13 · ⑥ 머리말과 같은 규율).
+    """
+    docs = list(ROOT.glob("docs/*.docx"))
+    if not docs:
+        return []
+    f = docs[0]
+    rel = f.relative_to(ROOT).as_posix()
+
+    # ★ 스쿼시가 일어나는 곳이 기준이다 — `feat` → `part/infra` 다. `dev` 를 기준으로
+    #   잡으면 `part/infra` 가 `dev` 보다 앞선 동안 **남의 배치의 변경**까지 내 것으로
+    #   세서 거짓으로 빨개진다. 실제로 그렇게 짰다가 바로 걸렸다.
+    base = next((b for b in bases
+                 if _git("rev-parse", "--verify", "--quiet", f"{b}^{{commit}}")[0] == 0),
+                None)
+    if base is None:
+        return []                     # 기준을 모른다 — 모를 때 막지 않는다
+    rc, out = _git("diff", "--name-only", f"{base}...HEAD", "--", rel, timeout=30)
+    if rc != 0:
+        return [f"{rel} 이 {base} 와 다른지 판별하지 못했다: {out[:120]}. "
+                f"못 잰 것을 통과로 세지 않는다"]
+    if not out:
+        return []                     # 이 배치가 기획서를 안 고쳤다
+
+    shown, why = _cover_dates(f)
+    if why:
+        return [why]
+    today = date.today().isoformat()
+    if _norm(today) in {_norm(s) for s in shown}:
+        return []
+    return [f"{rel} 을 이 배치에서 고쳤는데(기준 {base}) 표지는 "
+            f"{' · '.join(shown) or '날짜 없음'} 만 든다.\n"
+            f"      ★ 스쿼시가 파일의 커밋 날짜를 머지일로 바꾸므로 지금 초록이어도 "
+            f"머지 뒤 ⑥ 이 운다.\n"
+            f"      고치는 법 — uv run python tools/docx_fix.py --touch {today} --write"]
 
 
 # ── 6. 기획서 최종 수정일 ──────────────────────────────────────
