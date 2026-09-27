@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-09-27T22:30:28+09:00",
- "commit": "9a6d5e5",
+ "sealed_at": "2026-09-27T22:59:20+09:00",
+ "commit": "b370630",
  "tool": "ef5fb69625deac11",
  "tools": {
   "tools/deadcheck.py": "2494ab4ab1e5b2a2",
@@ -7178,7 +7178,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "1678 passed in 167.81s (0:02:47)"
+   "tail": "1678 passed in 254.62s (0:04:14)"
   },
   "probe/deadcheck": {
    "rc": 0,
