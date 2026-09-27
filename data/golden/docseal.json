@@ -44,9 +44,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "d449e29b25d54943"
+   "4a158ceac10f7b0b"
   ],
-  "sha": "5843bac2a4183b36"
+  "sha": "e4ebb76fb500a6f0"
  },
  "DECISIONS/105": {
   "doc": "docs/DECISIONS.md",
@@ -234,11 +234,11 @@
    "tests/test_layering.py",
    "web/navi/test/domain.test.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "573bbea21f7e5136"
+   "4b6a796951f33d5c"
   ],
-  "sha": "573bbea21f7e5136"
+  "sha": "4b6a796951f33d5c"
  },
  "DECISIONS/123": {
   "doc": "docs/DECISIONS.md",
@@ -732,9 +732,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "cae7641c2681c5f7"
+   "80e2a934a195ce49"
   ],
-  "sha": "6c2a89bfef10a7e6"
+  "sha": "0c013493737c9747"
  },
  "DECISIONS/211": {
   "doc": "docs/DECISIONS.md",
@@ -744,9 +744,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "411f4e713504ddc1"
+   "62ce3908e99cb869"
   ],
-  "sha": "b886769b420e8888"
+  "sha": "85ec76a1dc7304da"
  },
  "DECISIONS/212": {
   "doc": "docs/DECISIONS.md",
@@ -769,9 +769,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "5ea1eaba998e1d6d"
+   "bcf26178169f6fe7"
   ],
-  "sha": "de46d8476db1bd6a"
+  "sha": "8b7475d764910aa9"
  },
  "DECISIONS/223": {
   "doc": "docs/DECISIONS.md",
@@ -782,9 +782,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "a77285f69755d15b"
+   "dcf863ea24945c74"
   ],
-  "sha": "7d9b9abe1aaae009"
+  "sha": "e3b654699c323062"
  },
  "DECISIONS/224-2": {
   "doc": "docs/DECISIONS.md",
@@ -1074,9 +1074,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "3145e8c4fbcd3587"
+   "cbea1f4cc1587559"
   ],
-  "sha": "2d6a32aacdc742ad"
+  "sha": "778dfe30f6c2ce0d"
  },
  "DECISIONS/249-1": {
   "doc": "docs/DECISIONS.md",
@@ -1094,11 +1094,11 @@
   "files": [
    "tests/test_layering.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "b3b25723cb55e7c0"
+   "349d3f7675b82bc5"
   ],
-  "sha": "ddbbadfb977d1be9"
+  "sha": "751171fed343b011"
  },
  "DECISIONS/253": {
   "doc": "docs/DECISIONS.md",
@@ -1124,9 +1124,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "14e9acc3c6f163fb"
+   "84f430f55bdb44f8"
   ],
-  "sha": "a02ef40bcc720f74"
+  "sha": "ae9f25fb97a30629"
  },
  "DECISIONS/254-1": {
   "doc": "docs/DECISIONS.md",
@@ -1184,9 +1184,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "ae3071238ee31b39"
+   "17933071270a83a3"
   ],
-  "sha": "f1f6b1b909fd09e2"
+  "sha": "8796dfda93468c01"
  },
  "DECISIONS/257-3": {
   "doc": "docs/DECISIONS.md",
@@ -1274,9 +1274,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "ac4a04afa9a548da"
+   "9f1d404b41925917"
   ],
-  "sha": "fdba5983234fd59a"
+  "sha": "2a611ddbbc1a4ef4"
  },
  "DECISIONS/260": {
   "doc": "docs/DECISIONS.md",
@@ -1313,9 +1313,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "718c19a960d43638"
+   "66c9fae1d8f30a74"
   ],
-  "sha": "b400d927eb1ad79f"
+  "sha": "e566012a93e23b31"
  },
  "DECISIONS/265": {
   "doc": "docs/DECISIONS.md",
@@ -1340,9 +1340,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "a31752a4de1f30d8"
+   "5b0610ce50a074af"
   ],
-  "sha": "0c6a1b8021264b7b"
+  "sha": "ae5e3e37a87eb7f5"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -1423,9 +1423,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "f286fb8a9c6d7275"
+   "466b5182cacdf96b"
   ],
-  "sha": "ae94b2d6ce03a1d0"
+  "sha": "c88c98dbe8a2523f"
  },
  "DECISIONS/275": {
   "doc": "docs/DECISIONS.md",
@@ -1463,9 +1463,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "3e66ac50af7b53ad"
+   "6da95e7ca3cb9455"
   ],
-  "sha": "1ecec482ef51663a"
+  "sha": "674f2db63ee60e7c"
  },
  "DECISIONS/34": {
   "doc": "docs/DECISIONS.md",
@@ -1534,11 +1534,11 @@
    "tests/test_ledger_outputs.py",
    "tools/web_manifest.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "5be8bae3907cb014"
+   "5abe8283fe6b16a1"
   ],
-  "sha": "dba6c1b5a929a3ea"
+  "sha": "6b8b7040e8c4a283"
  },
  "DECISIONS/40": {
   "doc": "docs/DECISIONS.md",
@@ -1548,9 +1548,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "9f6133b99f89e38f"
+   "4efcb6284d37fc03"
   ],
-  "sha": "308cbdc2b5d3ade1"
+  "sha": "2f5854ef2cf4377a"
  },
  "DECISIONS/42": {
   "doc": "docs/DECISIONS.md",
@@ -1584,9 +1584,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "fea60be17fc5dc5b"
+   "096ab85220afa66e"
   ],
-  "sha": "ef3f3cd607c5af88"
+  "sha": "cec42b668ac5d96f"
  },
  "DECISIONS/66": {
   "doc": "docs/DECISIONS.md",
@@ -1611,9 +1611,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "678610d5000d8fbc"
+   "2631b2357cc316ad"
   ],
-  "sha": "006a51652ec59977"
+  "sha": "f211e4d2edf13418"
  },
  "DECISIONS/79": {
   "doc": "docs/DECISIONS.md",
@@ -1696,9 +1696,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "e1a6d66cf018e09e"
+   "852bc0b16e0c9cb2"
   ],
-  "sha": "f8206d68f989f52c"
+  "sha": "8274dda8eabf8eec"
  },
  "DECISIONS/98": {
   "doc": "docs/DECISIONS.md",
@@ -1708,9 +1708,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "cf02a2483e405123"
+   "b34f42b07018d755"
   ],
-  "sha": "5024bf286feafb06"
+  "sha": "7b927a529c9a0d68"
  },
  "DECISIONS/99": {
   "doc": "docs/DECISIONS.md",
@@ -2019,9 +2019,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "18705681326d5dbd"
+   "457a22d64e8dee65"
   ],
-  "sha": "56299c1e87a54505"
+  "sha": "169890642566fa74"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -2051,9 +2051,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "6192a68327688ec1"
+   "f7e5ec60b3885791"
   ],
-  "sha": "e95af3265acc33af"
+  "sha": "b53b78367c049012"
  },
  "MASTER/18-2c": {
   "doc": "docs/MASTER.md",
@@ -2083,11 +2083,11 @@
   "files": [
    "tests/test_ledger_outputs.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "8c2c4253c23aa4a9"
+   "041147d1a1041733"
   ],
-  "sha": "3847cce37da28998"
+  "sha": "d3ba19f753095e3f"
  },
  "MASTER/18/계층이_열인_이유": {
   "doc": "docs/MASTER.md",
@@ -2096,9 +2096,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "f5982cbd48c606f2"
+   "4172dce8e7bc0f29"
   ],
-  "sha": "b0da960f6b0d9649"
+  "sha": "c229f8123b6981dd"
  },
  "MASTER/18/원칙_다섯": {
   "doc": "docs/MASTER.md",
@@ -2121,9 +2121,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "a041cb62cf714bac"
+   "f01e20d4194a4ae3"
   ],
-  "sha": "91fdf273b26ccbca"
+  "sha": "bb86fb2e33b6d42c"
  },
  "MASTER/19-1": {
   "doc": "docs/MASTER.md",
@@ -2348,9 +2348,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "535ab6b83194c2d3"
+   "65ad563860f72aa4"
   ],
-  "sha": "0b729101451d3f07"
+  "sha": "19c83016773ec0c2"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",

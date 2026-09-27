@@ -704,6 +704,16 @@ fi
 # ★ 선언과 실물이 갈리는 것을 fsck 가 다 보지 못했다 — 제공기관 state ·
 #   격리 잔재 · landing 우회 · ext 어휘 · norm 계보 다섯 축이 밖에 있었다.
 #   lakecheck 이 그 축을 든다. FIRE_LANE_INBOX 를 기본 스캔 대상으로 쓴다.
+# ★ 2026-09-28 (DECISIONS §280-3). **MASTER §18-1 · §18-7 이 강제자로 명령줄까지
+#   적어 둔 것인데 어디서도 안 불렀다.** `tests/test_layers.py` 가 이미
+#   「사람이 돌리는 도구다. 안 돌리면 안 돈다」고 적어 뒀고, 그 말대로 안 돌았다.
+#   레이크를 붙이고 돌려 보니 초록이다 — 거짓으로 우는 검사라서 안 걸린 것이
+#   아니라 **그냥 안 걸려 있었다.** 배선 검사가 `tools/*` 만 훑어서
+#   `src/firelane/` 의 CLI 는 그 그물 밖이었다(§280-4 가 그것을 넓힌다).
+# ci-exempt: firelane.datalog `verify` 는 문서↔트리라 CI 로 갈 수 있으나 같은 도구의 `fsck` 가 레이크 층의 실재와 백업 대상을 본다. CI 에 레이크가 없다
+scope "$CODE_SCOPE sources.yaml"
+step "계층 선언↔실물" uv run python -m firelane.datalog fsck
+
 # ci-exempt: tools/lakecheck.py 레이크(2.5GB 외장)를 직접 훑는다. CI 에 없다
 scope "$CODE_SCOPE"
 step "레이크 선언↔실물" uv run python tools/lakecheck.py

@@ -287,9 +287,30 @@ def test_backup_scope_follows_layers():
       `datalog` 가 다시 손목록으로 돌아간 것이다.
     """
     from firelane import datalog, layers
-    want = {"data/" + n for n in layers.names() if layers.policy(n).get("backup")}
+    from firelane.lake import ABOLISHED
+    # ★ 2026-09-28 (DECISIONS §280-2). 이 시험이 **같은 버그를 박고 있었다** —
+    #   `"data/" + n` 으로 이름에서 경로를 만들었다. `sub` 가 이름과 다른 층에서
+    #   어긋나고, 실물이 그랬다: `quarantine` 의 `sub` 는 `_quarantine` 인데
+    #   `data/quarantine` 을 가리켰다 — **실재하지 않는 경로**다. 없는 경로를
+    #   훑는 백업은 매번 0건을 복사하고 조용히 통과한다.
+    #   구현과 같은 식을 시험에 베껴 적으면 **둘이 같이 틀린다.** 성질로 문다.
     got = set(datalog.BACKUP_TARGETS)
-    assert want == got, (
-        f"백업 범위가 layers 선언과 다르다.\n  선언: {sorted(want)}\n"
+    declared = {n: (layers.policy(n).get("sub") or n) for n in layers.names()
+                if layers.policy(n).get("backup")}
+    live = {n: sub for n, sub in declared.items() if sub not in ABOLISHED}
+
+    missing = sorted(n for n in live if not any(t.endswith(live[n]) for t in got))
+    assert not missing, f"backup 선언인데 대상에 없다 — {missing}"
+
+    dead = sorted(t for t in got
+                  if any(t.endswith(sub) for sub in ABOLISHED))
+    assert not dead, (f"폐지된 층이 백업 대상에 남아 있다 — {dead}\n"
+                      "  그 경로는 실재하지 않는다. 0건을 복사하고 조용히 통과한다.")
+
+    assert len(got) == len(live), (
+        f"백업 범위가 layers 선언과 다르다.\n  살아 있는 선언: {sorted(live)}\n"
         f"  datalog: {sorted(got)}\n"
         "  BACKUP_TARGETS 를 손으로 적지 마라. layers 가 정본이다(R2·R3).")
+
+    for t in got:
+        assert not t.startswith("data/data/"), f"경로를 두 번 붙였다 — {t}"
