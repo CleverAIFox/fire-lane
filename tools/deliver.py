@@ -53,7 +53,7 @@ deliver.py — **배달물이 제 밑동을 증명하는가.** 패치 묶음의 
    메시지와 스크립트에 공동저자 줄이 남아 있으면 거부한다(둘 다 실제로 났다).
 
 IN    저장소 · origin/<가지> · 배달 디렉터리
-OUT   배달 디렉터리 (0*.patch · BASE · EXPECT) · 표준출력
+OUT   배달 디렉터리 (fire-lane-0*.patch · BASE · EXPECT) · 표준출력
 PARAM LAKE_ONLY · FORBIDDEN · FAIL_LINE
 밖    **go.sh 의 내용은 안 짠다.** 그것은 사람이 짜고 이 도구는 `EXPECT` 를
       준다 — 받는 쪽이 무엇을 대조하는가는 `tests/test_expect_contract.py`
@@ -145,6 +145,10 @@ PREDICATES = {"no_lake": no_lake}
 # ── ① 밑동 ──────────────────────────────────────────────────────
 #: 새 가지의 밑동. `origin/<가지>` 가 없으면 여기서 읽는다.
 FALLBACK_BASE = "part/infra"
+
+#: 패치 이름 접두사. INBOX(다운로드 폴더)는 공용이라 `0001-….patch` 만으로는
+#: 남의 저장소 패치와 안 갈린다(§278-5). `fl.sh` 의 낱개 규칙이 이것을 본다.
+PATCH_PREFIX = "fire-lane-"
 
 
 def remote_tip(branch: str, fetch: bool = True) -> tuple[str, str]:
@@ -393,8 +397,8 @@ def cmd_base(a) -> int:
 
 
 def cmd_dryrun(a) -> int:
-    ps = sorted(Path(a.out).glob("0*.patch")) if a.out else \
-        sorted(Path().glob("0*.patch"))
+    pat = f"{PATCH_PREFIX}0*.patch"
+    ps = sorted(Path(a.out).glob(pat)) if a.out else sorted(Path().glob(pat))
     if not ps:
         print("★ 패치가 없다"); return 1
     for k, v in dryrun(a.branch, a.range, ps, tests=not a.no_tests).items():
@@ -413,7 +417,14 @@ def cmd_pack(a) -> int:
                   "--no-signature", "-q"])
     if rc:
         print(f"★ 패치를 못 떴다\n{o}"); return 1
-    ps = sorted(out.glob("0*.patch"))
+    # ★ 2026-09-28 (DECISIONS §278-5). INBOX 는 **다운로드 폴더라 공용이다.**
+    #   `git format-patch` 이름(`0001-….patch`)은 어느 저장소에서 떠도 같은 꼴이라
+    #   남의 프로젝트 패치와 이름만으로는 안 갈린다. zip 은 이미 `fire-lane-*` 인데
+    #   낱개로 풀린 패치가 그렇지 않았다. 여기서 접두사를 박아 **파일 이름 자체가
+    #   출처를 지게** 한다 — `fl.sh` 의 낱개 규칙도 이 접두사를 본다.
+    for p in sorted(out.glob("0*.patch")):
+        p.rename(p.with_name(PATCH_PREFIX + p.name))
+    ps = sorted(out.glob(f"{PATCH_PREFIX}0*.patch"))
     names = [p.name for p in ps]
     for label, bad in (("이름 충돌", collide(names)), ("같은 꼬리", tails(names)),
                        ("금지 문자열", forbidden(ps))):
@@ -463,6 +474,11 @@ def selftest() -> int:
         bad.append("이름 충돌을 못 잡는다")
     if collide(["0001-a.patch", "0002-b.patch"]):
         bad.append("멀쩡한 이름에 운다")
+    # ★ §278-5. 접두사가 붙어도 같은 꼬리를 잡는가. 안 떼면 무음으로 통과한다.
+    if not tails([f"{PATCH_PREFIX}0001-x.patch", f"{PATCH_PREFIX}0003-x.patch"]):
+        bad.append("접두사 붙은 같은 꼬리를 안 잡는다")
+    if tails([f"{PATCH_PREFIX}0001-x.patch", f"{PATCH_PREFIX}0002-y.patch"]):
+        bad.append("접두사 붙은 다른 꼬리를 잡는다")
     if not tails(["0001-x.patch", "0003-x.patch"]):
         bad.append("번호만 다른 같은 꼬리를 못 잡는다")
     if tails(["0001-x.patch", "0002-y.patch"]):

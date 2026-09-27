@@ -75,11 +75,10 @@ gh auth status -h github.com >/dev/null 2>&1 || die "gh 인증이 없다 — gh 
 #   동작을 했다 — `ruleset_check.py` 가 자기 머리말에 「못 읽은 것을 '없다' 로
 #   적지 않는다」고 써 둔 바로 그 원칙을 옆 도구가 어겼다.
 #
-# ★ 이름이 아니라 **글자**로 가른다. 종료코드는 둘을 안 가르므로 출력을 본다 —
-#   여기서는 그것 말고 가를 방법이 없고, 못 가르면 또 지운다.
-unreadable() {    # unreadable <출력>  — 네트워크·서버 문제인가
-    printf '%s' "$1" | grep -qiE 'HTTP (4[0-9][0-9]|5[0-9][0-9])|Service Unavailable|Bad Gateway|timeout|timed out|connection reset|EOF|could not resolve|dial tcp|rate limit'
-}
+# ★ 2026-09-28 (§278-6). 가르는 자리를 `tools/ci_wait.sh` **하나로** 올렸다.
+#   같은 물음을 `fl.sh` 도 물었는데 거기서는 비영이면 전부 빨강으로 읽고 있었다 —
+#   §225-1 이 여기서 고친 그 결함이 옆 도구에 그대로 남아 있었던 것이다.
+CI_WAIT="$ROOT/tools/ci_wait.sh"
 
 # ★ 아는 실패에는 처방을 찍는다. 「메시지를 끝까지 읽어라」만 찍으면 그 메시지가
 #   `Permission denied (publickey)` 일 때 사람이 40분을 버린다(2026-09-23).
@@ -119,15 +118,19 @@ wait_checks() {   # wait_checks <PR번호> [since ISO8601]  → 0 초록 · 1 �
     [ "${cnt:-0}" -gt 0 ] || {
         warn "PR #$n 머리 ${sha:0:7} 에 ${since:+$since 이후 }시작된 검사가 5분 동안 없다 — 미상"
         return 2; }
+    # ★ 2026-09-28 (§278-6). 종전에는 `gh pr checks --watch` 가 10초마다 표 전체를
+    #   다시 찍어 배치 로그 853줄 중 564줄(66%)이 같은 표의 반복이었다. 실패 0건인
+    #   로그를 사람이 열고 「문제가 쏟아진다」고 읽었다 — **안 읽히는 로그에서는
+    #   진짜 실패도 안 보인다.** 이제 요약 한 줄을 상태가 **바뀔 때만** 찍는다.
     # ★ 세 번까지 다시 묻는다. 503 은 대개 한 번이고, 세 번 다 못 읽으면
     #   그것은 **못 읽은 것**이지 빨간불이 아니다 — 종료코드 2 로 가른다.
     # ★ `set -e` 아래서는 `x=$(cmd); rc=$?` 가 **rc 를 읽기 전에 죽는다** —
     #   대입의 종료코드가 곧 cmd 의 종료코드이기 때문이다. if 로 감싼다.
     for try in 1 2 3; do
-        if out=$(gh pr checks "$n" -R "$REPO" --watch --fail-fast 2>&1); then rc=0; else rc=$?; fi
+        if out=$(bash "$CI_WAIT" "$n" "$REPO" 2>&1); then rc=0; else rc=$?; fi
         printf '%s\n' "$out"
         [ "$rc" = 0 ] && { ok "PR #$n CI 초록 · 머리 ${sha:0:7}"; return 0; }
-        if unreadable "$out"; then
+        if [ "$rc" = 2 ]; then
             warn "검사 상태를 못 읽었다 ($try/3) — 20초 뒤 다시 묻는다"
             sleep 20; continue
         fi
