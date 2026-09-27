@@ -105,6 +105,13 @@ def _fits(body: str, w: int, h: int) -> list[str]:
 
     ★ 2026-09-24 `<circle>` 도 본다(`_boxes()`). 그 전까지는 원이 검사 밖이었고,
       2026-09-23 에 `fig_cctv` 의 원 그림을 복도로 바꾼 사유가 바로 그것이었다.
+
+    ★ 2026-09-28 (DECISIONS §278-4) **글자끼리 겹치는 것**을 본다. 그전까지 이
+      검사는 글자를 화면·박스하고만 견줬고 **글자 둘을 서로 견준 적이 없었다.**
+      기획서 [그림 8] 이 라벨 두 개를 같은 자리에 겹쳐 찍은 채 제출본에 있었다 —
+      검사 59개가 전부 초록인 채로. 겹쳐도 SVG 는 오류 없이 그려지고, 쪽수도
+      글자 수도 그림 수도 안 변한다. 이 검사가 없으면 **사람이 눈으로 볼 때만**
+      걸린다.
     """
     bad = []
     rects = []
@@ -134,6 +141,35 @@ def _fits(body: str, w: int, h: int) -> list[str]:
             if left < rx + rw and right > rx and top < ry + rh and bot > ry:
                 bad.append(f"{tag} 가 박스 ({rx:g},{ry:g} {rw:g}x{rh:g}) 를 덮는다")
                 break
+    bad += _collisions(body)
+    return bad
+
+
+#: 글자끼리 이만큼 겹치는 것은 안 센다. 어림이 보수적이라 스치는 것이 나온다.
+OVERLAP_PX = 1.5
+
+
+def _spans(body: str) -> list[tuple[float, float, float, float, str]]:
+    """글자마다 (좌, 우, 위, 아래, 보이는 글). 높이는 기준선 위 0.8em · 아래 0.2em."""
+    out = []
+    for m in _TEXT.finditer(body):
+        left, right, y, shown = text_extent(m.group(1), m.group(2))
+        size = float(_attr(m.group(1), "font-size", "16") or 16)
+        out.append((left, right, y - 0.8 * size, y + 0.2 * size, shown))
+    return out
+
+
+def _collisions(body: str) -> list[str]:
+    """★ 글자 둘이 서로를 덮는가. 겹쳐도 SVG 는 조용히 그린다."""
+    sp = _spans(body)
+    bad = []
+    for i, (l1, r1, t1, b1, s1) in enumerate(sp):
+        for l2, r2, t2, b2, s2 in sp[i + 1:]:
+            dx = min(r1, r2) - max(l1, l2)
+            dy = min(b1, b2) - max(t1, t2)
+            if dx > OVERLAP_PX and dy > OVERLAP_PX:
+                bad.append(f"글자 {s1[:18]!r} 와 {s2[:18]!r} 가 "
+                           f"{dx:.0f}x{dy:.0f}px 겹친다")
     return bad
 
 
@@ -168,7 +204,19 @@ def selftest() -> int:
     if _fits('<text x="12" y="40" font-size="12">짧다</text>', 720, 120):
         print("★ 멀쩡한 라벨을 잡았다")
         return 1
-    print("svg_fit OK — 넘침 셋을 잡고 멀쩡한 것은 통과")
+    # ★ 글자끼리 겹침 — 기획서 [그림 8] 이 이 꼴로 제출본에 있었다.
+    dup = ('<text x="60" y="40" font-size="12">① 관측점 선정</text>'
+           '<text x="60" y="40" font-size="12">② 판정 결과</text>')
+    if not any("겹친다" in b for b in _fits(dup, 720, 120)):
+        print("★ 같은 자리에 겹쳐 찍은 라벨 둘을 안 잡았다")
+        return 1
+    # 같은 박스 안 여러 줄(15px 간격)은 겹침이 아니다 — 오탐이면 못 쓴다.
+    lines = "".join(f'<text x="60" y="{40 + i * 15}" font-size="10">줄 {i}</text>'
+                    for i in range(4))
+    if _fits(lines, 720, 120):
+        print("★ 줄 간격이 성한 여러 줄을 겹쳤다고 한다")
+        return 1
+    print("svg_fit OK — 넘침 셋과 겹침을 잡고 멀쩡한 것은 통과")
     return 0
 
 

@@ -309,6 +309,10 @@ jobs:
         run: uv run python tools/ledger_fields.py --check
       - name: 기획서 대조
         run: uv run python tools/docx_check.py
+      - name: 기획서 개요 층
+        run: uv run python tools/docstyle.py
+      - name: 문서 말투
+        run: uv run python tools/tonecheck.py
       # ★ 로컬에서는 파이프라인 재실행 **뒤에** 돌아 「새 산출 = golden」을 묻는다. 여기서는
       #   커밋된 data/processed 를 대조하므로 「커밋된 산출 = golden」이다 — 물음이 좁고 그것을
       #   여기 선언한다. 커밋본이 golden 과 갈린 채 머지되는 길은 이것으로 닫힌다.

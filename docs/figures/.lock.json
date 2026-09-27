@@ -1,5 +1,6 @@
 {
   "figures": {
+    "boundary": "c2f764ff6aee773f",
     "branch": "3a4efe9dcdce4c4a",
     "cctv": "5d8d114a1dc9f057",
     "deploy": "4a2035d7f9326b0c",
@@ -9,6 +10,7 @@
     "xsec": "09fac9e5365e3b6e"
   },
   "placed": {
+    "boundary": "c2f764ff6aee773f",
     "cctv": "5d8d114a1dc9f057",
     "deploy": "4a2035d7f9326b0c",
     "xsec": "09fac9e5365e3b6e"

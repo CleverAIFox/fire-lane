@@ -510,6 +510,17 @@ step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 # ★ 2026-09-22 — ⑤⑥ 이 golden · 발행 구간 · 대장을 읽는다(W4-2). 범위를 좁게 두면 조용히 건너뛴다
 scope "docs/* tools/* data/* web/* src/* tests/* .github/* sources.yaml"
 step "기획서 대조"     uv run python tools/docx_check.py
+# ★ 2026-09-28 (§278-3). 기획서 522단락에 `pStyle` 이 하나도 없어 **제목 계층이
+#   사람 눈에만** 있었다 — 63쪽 PDF 의 북마크가 0 이었다. `w:outlineLvl` 만 넣어
+#   서식은 그대로 두고 개요를 만든다. 편마다 장 꼴이 달라(Part II 는 `□` 가 장)
+#   지도를 편별로 선언한다.
+scope "docs/*"
+step "기획서 개요 층"   uv run python tools/docstyle.py
+# ★ 2026-09-28 (§278-2). 문서 넷과 리드미 셋에 비속어·은어·대화체가 남는 길이
+#   열려 있었다. 사람이 읽고 지우는 방식은 한 번 지나가면 다시 쌓인다.
+#   인용 블록은 `<!--voice-ok-->` 로 통과시킨다 — 기존 규약이다(MASTER §0-3).
+scope "docs/* tools/*"
+step "문서 말투"       uv run python tools/tonecheck.py
 # ★ 2026-09-24. 배치 판정기 자신이 **합성 넘침 셋**을 잡는가. 그림이 다 들어맞는
 #   날(정상)에도 판정기가 사는지 알아야 한다 — 「0건이 청결인가 죽음인가」(§230).
 scope "tools/*"
