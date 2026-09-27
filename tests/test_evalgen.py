@@ -49,11 +49,37 @@ TAG = "synth-0001"
 #: 합성 트리의 기준점. 대인119안전센터 바로 옆이라 스냅이 A 노드로 간다.
 LON0, LAT0 = 126.9150, 35.1546
 
-HAVE_REAL = ((REAL / "processed" / "segments.geojson").is_file()
-             and (REAL / "golden" / "segments.fingerprint.json").is_file())
-need_real = pytest.mark.skipif(
-    not HAVE_REAL,
-    reason="환경skip(산출물) — data/processed · data/golden 이 없다. 파이프라인 전이다")
+def _why_no_real() -> str:
+    """실제 트리로 잴 수 **없는** 사유. 빈 문자열이면 잴 수 있다.  (§263)
+
+    ★ 2026-09-27. 종전 `HAVE_REAL` 은 파일 **둘**(`segments.geojson` ·
+      `segments.fingerprint.json`)만 봤는데 **그 둘은 커밋돼 있다.** 그래서 CI 에서
+      항상 참이 됐고, 아래 넷이 레이크가 굽는 산출물 74개와 `route_vehicle.csv` 를
+      요구하다 빨개졌다 — **가드가 제 시험보다 좁았다**(W3-8 족).
+
+    ★ 그 사실은 이미 적혀 있었다. `tools/verify.sh` 의
+      `# ci-exempt: tools/evalgen.py` 가 「`route_vehicle.csv` 가 커밋 대상이
+      아니다 — 파이프라인 산출이고 **CI 는 파이프라인을 안 돈다**」라고 든다.
+      도구 단계만 면제하고 **시험은 안 면제했다.** 아는 것이 강제되는 자리에
+      없으면 없는 것과 같다(MASTER §17).
+
+    ★ 「무엇이 있어야 하는가」를 여기서 다시 세지 않는다 — `gate_manifest()` 가
+      이미 그 판단을 들고 `outputs_missing` 으로 낸다. 두 벌이면 한 쪽만 고쳐진다.
+    """
+    for p in (REAL / "processed" / "segments.geojson",
+              REAL / "golden" / "segments.fingerprint.json",
+              REAL / "processed" / "route_vehicle.csv"):
+        if not p.is_file():
+            return f"환경skip(산출물) — {p.relative_to(ROOT)} 가 없다. 파이프라인 전이다"
+    if (n := (gt.gate_manifest(REAL / "processed")[0] or {}).get("outputs_missing")):
+        return (f"환경skip(산출물) — 매니페스트가 낸다고 적은 산출물 {n}개가 없다. "
+                "레이크 기계에서 돈다")
+    return ""
+
+
+_NO_REAL = _why_no_real()
+HAVE_REAL = not _NO_REAL
+need_real = pytest.mark.skipif(bool(_NO_REAL), reason=_NO_REAL)
 
 
 # ── 합성 트리 ──────────────────────────────────────────────────
