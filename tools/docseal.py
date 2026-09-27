@@ -47,6 +47,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -127,6 +128,75 @@ def digest(text: str, files: list[str]) -> str:
     return h.hexdigest()[:16]
 
 
+#: 도장의 갈래. **같은 칸에 다른 주장을 적지 않는다.**
+#:
+#: ★ 2026-09-28 (DECISIONS §277). 미날인이 470절이었다. 절 단위로 재보니 그중
+#:   174절은 **절을 쓴 뒤로 지목 코드가 한 번도 안 움직였다** — 쓸 때 참이었고
+#:   그대로다. 그걸 기계가 찍을 수 있다. 그런데 「사람이 읽었다」와 같은 도장으로
+#:   찍으면 **그 수가 거짓말이 된다** — 읽은 적 없는 174가 읽은 것으로 세어진다.
+#:   주장이 다르면 칸도 다르다.
+KINDS = {
+    "read": "사람이 절과 코드를 같이 읽었다",
+    "unmoved": "절을 쓴 뒤로 지목 코드가 한 번도 안 움직였다 — 기계가 찍었다",
+}
+#: 옛 판에는 갈래 칸이 없다. 그것들은 **사람이 찍은 것**이다.
+DEFAULT_KIND = "read"
+
+
+def _git_ct(*args: str) -> int:
+    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+    return int(r.stdout.strip() or 0) if r.returncode == 0 else 0
+
+
+def _blame(doc: str) -> list[int]:
+    """문서 한 장의 **줄마다 마지막으로 바뀐 시각**. 문서당 한 번만 부른다."""
+    r = subprocess.run(["git", "blame", "-t", "--line-porcelain", doc],
+                       cwd=ROOT, capture_output=True, text=True)
+    out, cur = [], 0
+    for ln in r.stdout.splitlines():
+        if ln.startswith("author-time "):
+            cur = int(ln.split()[1])
+        elif ln.startswith("\t"):
+            out.append(cur)
+    return out
+
+
+def _span(rows: list[dict], i: int) -> tuple[int, int]:
+    """절의 줄 범위. **`body()` 와 같은 규칙**이어야 한다 — 두 벌이면 갈린다."""
+    r = rows[i]
+    end = len((ROOT / r["doc"]).read_text(encoding="utf-8").splitlines())
+    for q in rows[i + 1:]:
+        if q["doc"] == r["doc"] and q["depth"] <= r["depth"]:
+            end = q["line"] - 1
+            break
+    return r["line"] - 1, end
+
+
+def moved_after(rows: list[dict], i: int, files: list[str],
+                blames: dict[str, list[int]], mtimes: dict[str, int]) -> int:
+    """지목 코드가 **절을 쓴 뒤에** 움직였나. 움직였으면 그 시각, 아니면 0.
+
+    ★ 문서 전체의 mtime 으로 재면 안 된다 — 문서는 배치마다 손대므로 **모든 절이
+      「코드보다 나중」**으로 나온다. 실제로 그렇게 재봤다가 459/470 이라는 쓸모없는
+      수가 나왔다. 절 단위 blame 이라야 뜻이 있다.
+    """
+    r = rows[i]
+    doc = r["doc"]
+    if doc not in blames:
+        blames[doc] = _blame(doc)
+    a, b = _span(rows, i)
+    lines = blames[doc][a:b]
+    if not lines:
+        return 0                       # 못 쟀다 — 안 찍는다
+    sec = max(lines)
+    newest = 0
+    for f in files:
+        if f not in mtimes:
+            mtimes[f] = _git_ct("log", "-1", "--format=%ct", "--", f)
+        newest = max(newest, mtimes[f])
+    return newest if newest > sec else 0
+
+
 def survey() -> tuple[dict, dict]:
     """절 → 지금 지문. 그리고 찍혀 있는 도장."""
     rows = _sections()
@@ -160,20 +230,60 @@ def valid(now_one: dict, was_one: dict | None) -> bool:
     return was_one.get("sha") in {now_one["sha"], *now_one.get("legacy", [])}
 
 
+def kind_of(one: dict | None) -> str:
+    return (one or {}).get("kind", DEFAULT_KIND)
+
+
 def status() -> int:
     now, was = survey()
     ok = [k for k, v in now.items() if valid(v, was.get(k))]
+    read = [k for k in ok if kind_of(was.get(k)) == "read"]
+    unm = [k for k in ok if kind_of(was.get(k)) == "unmoved"]
     void = [k for k, v in now.items() if k in was and not valid(v, was[k])]
     none = [k for k in now if k not in was]
     gone = [k for k in was if k not in now]
     print(f"  도장 대상 {len(now)}절 (코드를 지목하는 wired 절)")
-    print(f"    유효   {len(ok):>4}   확인한 뒤로 양쪽 다 안 바뀌었다")
+    print(f"    읽음   {len(read):>4}   {KINDS['read']}")
+    print(f"    불변   {len(unm):>4}   {KINDS['unmoved']}")
     print(f"    무효   {len(void):>4}   한쪽이 바뀌었다 — 다시 봐야 한다")
     print(f"    미날인 {len(none):>4}   아직 아무도 확인 안 했다")
     if gone:
         print(f"    사라짐 {len(gone):>4}   절이 없어졌거나 코드 지목을 잃었다")
     for k in void[:10]:
         print(f"      ✗ {k}")
+    return 0
+
+
+def queue(limit: int = 30) -> int:
+    """**사람이 읽어야 할 줄.** 코드가 절보다 나중에 움직인 절을, 최근 순으로.
+
+    ★ 470 을 뭉뚱그려 「미날인」이라 부르면 어디부터 읽을지 모른다. 위험한 것은
+      **절을 쓴 뒤에 코드가 움직인 절**이고, 최근에 움직였을수록 어긋났을 확률이 높다.
+    """
+    import datetime as _dt
+    rows = _sections()
+    now, was = survey()
+    idx = {r["id"]: i for i, r in enumerate(rows)}
+    blames: dict[str, list[int]] = {}
+    mtimes: dict[str, int] = {}
+    out = []
+    for k, v in now.items():
+        if valid(v, was.get(k)):
+            continue
+        i = idx.get(k)
+        if i is None:
+            continue
+        at = moved_after(rows, i, v["files"], blames, mtimes)
+        if at:
+            out.append((at, k, v["files"]))
+    out.sort(reverse=True)
+    print(f"  읽어야 할 절 {len(out)} — 코드가 절보다 **나중에** 움직였다 (최근 순)")
+    for at, k, fs in out[:limit]:
+        d = _dt.datetime.fromtimestamp(at, tz=_dt.UTC).strftime("%m-%d")
+        print(f"    {d}  {k:<18} {' · '.join(fs[:3])}")
+    if len(out) > limit:
+        print(f"    … {len(out) - limit}절 더 (--limit 로 늘려라)")
+    print("\n  하나 읽었으면:  uv run python tools/docseal.py stamp --only <절>")
     return 0
 
 
@@ -195,19 +305,57 @@ def check() -> int:
     return 1
 
 
-def stamp(only: str | None) -> int:
+def _write(was: dict) -> None:
+    SEAL.write_text(json.dumps(was, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
+                    encoding="utf-8")
+
+
+def stamp(only: str | None, unmoved: bool = False) -> int:
+    """도장을 찍는다. **인자 없이는 안 찍는다.**
+
+    ★ 2026-09-28 (DECISIONS §277-2). 종전에는 `stamp` 를 인자 없이 부르면
+      `was = now` 로 **전부** 찍었다. 470절을 한 줄로 「확인했다」로 만드는
+      명령이 있었다는 뜻이다 — 이 도구의 뜻이 그 한 줄로 죽는다.
+      찍으려면 **무엇을 왜 찍는지**를 말해야 한다.
+    """
     now, was = survey()
     if only:
         if only not in now:
             print(f"✗ `{only}` 는 도장 대상이 아니다 (wired 이고 코드를 지목해야 한다)")
             return 1
-        was[only] = now[only]
-    else:
-        was = now
-    SEAL.write_text(json.dumps(was, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
-                    encoding="utf-8")
-    print(f"✓ 도장 {len(was)}절 → {SEAL.relative_to(ROOT)}")
-    return 0
+        was[only] = {**now[only], "kind": "read"}
+        _write(was)
+        print(f"✓ 읽음 도장 — {only}  (총 {len(was)}절)")
+        return 0
+
+    if unmoved:
+        rows = _sections()
+        idx = {r["id"]: i for i, r in enumerate(rows)}
+        blames: dict[str, list[int]] = {}
+        mtimes: dict[str, int] = {}
+        hit = []
+        for k, v in now.items():
+            if valid(v, was.get(k)):
+                continue
+            i = idx.get(k)
+            if i is None:
+                continue
+            if not moved_after(rows, i, v["files"], blames, mtimes):
+                was[k] = {**v, "kind": "unmoved"}
+                hit.append(k)
+        if not hit:
+            print("  찍을 것이 없다 — 미날인 절 전부 코드가 나중에 움직였다")
+            return 0
+        _write(was)
+        print(f"✓ 불변 도장 {len(hit)}절 — {KINDS['unmoved']}")
+        print("  이제 사람이 읽을 줄:  uv run python tools/docseal.py queue")
+        return 0
+
+    print("✗ 무엇을 찍을지 말해라 — 인자 없는 `stamp` 는 없다.")
+    print("    --only <절>   사람이 읽고 찍는다")
+    print("    --unmoved     절을 쓴 뒤로 코드가 안 움직인 절을 기계가 찍는다")
+    print("  ★ 종전에는 인자 없이 부르면 **전부** 찍었다. 그 한 줄로 이 도구가 죽는다(§277-2).")
+    return 1
 
 
 def selftest() -> int:
@@ -245,13 +393,19 @@ def main(argv: list[str] | None = None) -> int:
     #   전부 인자 없이 부르면 **검사**다(`sizecheck` · `deadcheck` · `treecheck` …).
     #   같은 규약으로 맞춘다 — 이름이 같으면 행동도 같아야 한다.
     ap.add_argument("cmd", nargs="?", default="check",
-                    choices=["status", "check", "stamp"])
-    ap.add_argument("--only", help="그 절 하나만 찍는다")
+                    choices=["status", "check", "stamp", "queue"])
+    ap.add_argument("--only", help="그 절 하나만 찍는다 (사람이 읽었다)")
+    ap.add_argument("--unmoved", action="store_true",
+                    help="절을 쓴 뒤로 코드가 안 움직인 절을 기계가 찍는다")
+    ap.add_argument("--limit", type=int, default=30, help="queue 가 보여줄 줄 수")
     ap.add_argument("--selftest", action="store_true", help="판별식 자기검사")
     a = ap.parse_args(argv)
     if a.selftest:
         return selftest()
-    return {"status": status, "check": check}.get(a.cmd, lambda: stamp(a.only))()
+    if a.cmd == "queue":
+        return queue(a.limit)
+    return {"status": status, "check": check}.get(
+        a.cmd, lambda: stamp(a.only, a.unmoved))()
 
 
 if __name__ == "__main__":

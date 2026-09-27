@@ -1,10 +1,1283 @@
 {
+ "DECISIONS/100": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_workflow_html_sync.py",
+   "tools/render_workflow.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "33086d11423f96cb"
+  ],
+  "sha": "399eaf1153805cea"
+ },
+ "DECISIONS/101": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_workflow_html_sync.py",
+   "tools/ruleset_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "b5a4b67f8afc24cb"
+  ],
+  "sha": "99f6091ed295746c"
+ },
+ "DECISIONS/102": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py",
+   "tools/plan_renumber.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "7d70b6e9af63e6d8"
+  ],
+  "sha": "20459f5277a6f1f3"
+ },
+ "DECISIONS/104": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/paths.py",
+   "tests/test_layers.py",
+   "tests/test_skip_policy.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "76b55f7f9a448320"
+  ],
+  "sha": "8a9db8aba0761d39"
+ },
+ "DECISIONS/105": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_workflow_html_sync.py",
+   "tools/render_workflow.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "105f3ecfbb72bba4"
+  ],
+  "sha": "aa5633065cff5205"
+ },
+ "DECISIONS/106": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_workflow_html_sync.py",
+   "tools/render_workflow.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "a2841c16ee8560fc"
+  ],
+  "sha": "1697b37c3703cf7c"
+ },
+ "DECISIONS/107": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_workflow_html_sync.py",
+   "tools/render_workflow.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "47c575103f623407"
+  ],
+  "sha": "faf10ff98d10416c"
+ },
+ "DECISIONS/108": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_ownership.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "2d550a9e54e6524b"
+  ],
+  "sha": "a59c75eabaf6175f"
+ },
+ "DECISIONS/109": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_release_procedure.py",
+   "tools/release_brief.py",
+   "tools/verify.sh"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "d492e5b1dd46ddf5"
+  ],
+  "sha": "eca4e20952ae1a22"
+ },
+ "DECISIONS/11": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py",
+   "tools/docnum_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "2f8ff4dc879dc5e3"
+  ],
+  "sha": "0c1b231bdbb2ae39"
+ },
+ "DECISIONS/110": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_figure_text.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "8c28df31a2a70764"
+  ],
+  "sha": "93331dbddff2a93b"
+ },
+ "DECISIONS/111": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_figure_fit.py",
+   "tools/svg_fit.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "6bdf6fd1619111b8"
+  ],
+  "sha": "c8791f445e74f63f"
+ },
+ "DECISIONS/111-2": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tools/svg_fit.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "e14417e77066c5a1"
+  ],
+  "sha": "542cd067b707bc2d"
+ },
+ "DECISIONS/112": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_reality.py",
+   "web/data/route_vehicle.json"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "de175b52b18fab73"
+  ],
+  "sha": "cf2449ba3cb7f043"
+ },
+ "DECISIONS/115": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_navi_graph_fresh.py",
+   "tests/test_reach_overlay.py",
+   "web/navi/src/domain/vehicle.ts",
+   "web/navi/test/rules.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "b708093bfa857410"
+  ],
+  "sha": "30160a38fe433d4c"
+ },
+ "DECISIONS/117": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "web/navi/test/rules.test.ts",
+   "web/navi/test/turning.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "32792cdfbf69f435"
+  ],
+  "sha": "942ceff3d2d48e0c"
+ },
+ "DECISIONS/118": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "web/navi/test/progress.test.ts",
+   "web/navi/test/rules.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "2c7c1696c0999b8e"
+  ],
+  "sha": "52e2b42584dd3866"
+ },
+ "DECISIONS/119": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "web/navi/test/pointRoute.test.ts",
+   "web/navi/test/rules.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "8bf99391e2e5ce51"
+  ],
+  "sha": "cc9bfe2ad58a258d"
+ },
+ "DECISIONS/12": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_seg_geom.py",
+   "tests/test_seg_width.py",
+   "tools/wmax_audit.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "346560abccf31c0e"
+  ],
+  "sha": "dd0edeeb74ab2f93"
+ },
+ "DECISIONS/121": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_layering.py",
+   "web/navi/test/domain.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "573bbea21f7e5136"
+  ],
+  "sha": "573bbea21f7e5136"
+ },
+ "DECISIONS/123": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "c5d1663234de48e8"
+  ],
+  "sha": "7f959ffe6203928d"
+ },
+ "DECISIONS/124": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "094d78a01f2d0829"
+  ],
+  "sha": "c80865ebcd82fb48"
+ },
+ "DECISIONS/125": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "84c21d93765821ad"
+  ],
+  "sha": "8c9c45126413e95d"
+ },
+ "DECISIONS/126": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "161de646caffca44"
+  ],
+  "sha": "f83cc98a0b08e183"
+ },
+ "DECISIONS/127": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "3ce65ebf7d7c37f0"
+  ],
+  "sha": "60f6ee437b9c2d0f"
+ },
+ "DECISIONS/128": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "53b2612657905723"
+  ],
+  "sha": "febab8afeb1f5a30"
+ },
+ "DECISIONS/129": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "87e2f39630e4b707"
+  ],
+  "sha": "7c22f0b3aebbbc4b"
+ },
+ "DECISIONS/13": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_contract.py",
+   "web/navi/test/style.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "54bd84587b6139fc"
+  ],
+  "sha": "cce7f38da25f12e3"
+ },
+ "DECISIONS/130": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py",
+   "tests/test_norm_wiring.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "74c769036e360564"
+  ],
+  "sha": "72c6b02fae98e68e"
+ },
+ "DECISIONS/131": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "46b76ccdce24a71f"
+  ],
+  "sha": "57bf30ed7090a6e7"
+ },
+ "DECISIONS/132": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "c21b00b6a4d14177"
+  ],
+  "sha": "3c8af1f66942620e"
+ },
+ "DECISIONS/133": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "a6f13b368329c73c"
+  ],
+  "sha": "1c21191e317197a6"
+ },
+ "DECISIONS/134": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "0a189c23529ed297"
+  ],
+  "sha": "da0314bc19d1ce51"
+ },
+ "DECISIONS/135": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py",
+   "tools/render_figures.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "ea1c57204f73298f"
+  ],
+  "sha": "cb4aef67a3e9c784"
+ },
+ "DECISIONS/136": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "0a04d3915855209e"
+  ],
+  "sha": "076f2262c853ce1e"
+ },
+ "DECISIONS/137": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "bbf06b9ea51af6be"
+  ],
+  "sha": "09c873412bbefcd8"
+ },
+ "DECISIONS/138": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "ee5c7a379505c617"
+  ],
+  "sha": "97f742812bc690c4"
+ },
+ "DECISIONS/139": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "9d8c3cb69657983f"
+  ],
+  "sha": "f4f077f5cfad63ed"
+ },
+ "DECISIONS/14": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_style.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "d29d5448ded50aad"
+  ],
+  "sha": "f717b5df2532897e"
+ },
+ "DECISIONS/140": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "cb6f09183476813f"
+  ],
+  "sha": "90594356a795050f"
+ },
+ "DECISIONS/141": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "702da5abd8a78b39"
+  ],
+  "sha": "ce0e3f0bab25d7dc"
+ },
+ "DECISIONS/142": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "4c2b01808f6f7823"
+  ],
+  "sha": "ac5d0f6e2354753d"
+ },
+ "DECISIONS/143": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "dbf20b64d0c55cdf"
+  ],
+  "sha": "bffcb427538810fd"
+ },
+ "DECISIONS/148": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py",
+   "tools/plan_renumber.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "f9107049fb092c38"
+  ],
+  "sha": "597fd1c5e45ee534"
+ },
+ "DECISIONS/15": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_contract.py",
+   "tests/test_seg_geom.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "75c04abee792b071"
+  ],
+  "sha": "1592a50c65dc65fb"
+ },
+ "DECISIONS/162-5": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_crosswalk.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "0d3603c2a5b04d89"
+  ],
+  "sha": "01db5034d9f28a8f"
+ },
+ "DECISIONS/166-1": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_reach_overlay.py",
+   "web/navi/test/style.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "34810672feec37f7"
+  ],
+  "sha": "e2b30be447ed982c"
+ },
+ "DECISIONS/17": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_ortho_seal.py",
+   "tools/desk_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "7fba52981e828c39"
+  ],
+  "sha": "10cce4abc20b3515"
+ },
+ "DECISIONS/170-6": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_reach_overlay.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "f0b8ab852bea2762"
+  ],
+  "sha": "fb67645addffb900"
+ },
+ "DECISIONS/187-1": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_reproducibility.py",
+   "tests/test_seal_survives_squash.py",
+   "tools/freshcheck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "bca08ebf499d3a32"
+  ],
+  "sha": "929491ac9ad7bea4"
+ },
  "DECISIONS/188-1": {
   "doc": "docs/DECISIONS.md",
   "files": [
    "tests/test_r3.py"
   ],
   "sha": "d6eda6014e7d40a4"
+ },
+ "DECISIONS/188-2": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_r3.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "a5e8c7a30bf34a1b"
+  ],
+  "sha": "f884bd390966d8a2"
+ },
+ "DECISIONS/188-3": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_r2.py",
+   "tools/transition.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "53cbc316785df31a"
+  ],
+  "sha": "0f6c1605c347040e"
+ },
+ "DECISIONS/19": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/seg/basisno.py",
+   "tests/test_contract.py",
+   "tests/test_r1.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "6843110679e1e515"
+  ],
+  "sha": "05e66dc755a28ace"
+ },
+ "DECISIONS/199-5": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_commit_policy.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "c65461fb7b5e07f7"
+  ],
+  "sha": "53b2b9e43506ad76"
+ },
+ "DECISIONS/202": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_deadcheck_probes.py",
+   "tests/test_declaration_sync.py",
+   "tools/deadcheck.py",
+   "web/navi/src/ui/tokens.ts",
+   "web/navi/test/clearance.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "5cd2b4f10b7be5f3"
+  ],
+  "sha": "c1cd95c0d6e6988a"
+ },
+ "DECISIONS/203": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py",
+   "tests/test_figure_text.py",
+   "tests/test_rawdiff_code.py",
+   "tools/baseline.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "2ef3ad696c3dd9fe"
+  ],
+  "sha": "020036f84a55a97f"
+ },
+ "DECISIONS/204": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "6855a91ec4f402c1"
+  ],
+  "sha": "84586026610b8b5c"
+ },
+ "DECISIONS/205": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py",
+   "tests/test_tile_zoom_agreement.py",
+   "tools/plan_renumber.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "10a1817aec567f25"
+  ],
+  "sha": "98cf343596e28d54"
+ },
+ "DECISIONS/206": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "bf52ab5c198c2dd0"
+  ],
+  "sha": "6657516a87250e96"
+ },
+ "DECISIONS/208": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_deadcheck_probes.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "c25fe75876a20b9e"
+  ],
+  "sha": "6fdb227238a2fe5d"
+ },
+ "DECISIONS/21": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/quiet_gdal.py",
+   "tests/test_ortho_seal.py",
+   "tools/lakecheck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "513b178c7361ba3d"
+  ],
+  "sha": "a14650e8d95ddbf5"
+ },
+ "DECISIONS/210": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_dms_ancestry.py",
+   "tests/test_seal_survives_squash.py",
+   "tools/dms.py",
+   "tools/verify.sh"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "30799b4c152da877"
+  ],
+  "sha": "5f98d364538ddabe"
+ },
+ "DECISIONS/211": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_navi_wireframe.py",
+   "tools/verify.sh"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "9037da292f513878"
+  ],
+  "sha": "0d82cc5bc59a4f0f"
+ },
+ "DECISIONS/212": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_fleet_turn_radius.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "495cec2870de7b23"
+  ],
+  "sha": "4a4d7d1cd55197fe"
+ },
+ "DECISIONS/213": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tools/navi_env.py",
+   "tools/verify.sh",
+   "web/config.js",
+   "web/navi/test/progress.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "3668fe467a800433"
+  ],
+  "sha": "f6545044a0ad53a3"
+ },
+ "DECISIONS/223": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_desk_tools.py",
+   "tests/test_ortho_seal.py",
+   "tools/verify.sh"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "aadef584262e3077"
+  ],
+  "sha": "d560a343e475bab9"
+ },
+ "DECISIONS/224-2": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "data/processed/.rawprint.json",
+   "tests/test_rawdiff_code.py",
+   "tests/test_shardseal.py",
+   "tools/acquire.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "8db6b80df2353aa8"
+  ],
+  "sha": "63482d6afccc3a1e"
+ },
+ "DECISIONS/224-2a": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_golden_fp.py",
+   "tests/test_shardseal.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "ec9a6eb62d92c877"
+  ],
+  "sha": "c111d52e33859f99"
+ },
+ "DECISIONS/224-3a": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/stagerun.py",
+   "tests/test_golden_fp.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "58a2eccaffc6fdd5"
+  ],
+  "sha": "60ef3f86df9051d0"
+ },
+ "DECISIONS/224-4": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_navi_wireframe.py",
+   "web/navi/test/style.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "f01a51a840df89d6"
+  ],
+  "sha": "dba043470c810e36"
+ },
+ "DECISIONS/224-5": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "web/navi/test/domain.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "2eedd1739f46462a"
+  ],
+  "sha": "a09c5e0beabe5db7"
+ },
+ "DECISIONS/227": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_defect_evidence.py",
+   "tests/test_ledger_contract.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "80907e37ee109d76"
+  ],
+  "sha": "e538d6c19b2a8a98"
+ },
+ "DECISIONS/228": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_dms_ids.py",
+   "tools/dms.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "563edc38d9b68be8"
+  ],
+  "sha": "3af1d461694a1263"
+ },
+ "DECISIONS/230": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "6feaf3e02123cca2"
+  ],
+  "sha": "835fe957453622b2"
+ },
+ "DECISIONS/232": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "web/navi/test/egobox.test.ts",
+   "web/navi/test/style.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "d7402b4d026b2148"
+  ],
+  "sha": "f5cfe73123c666b6"
+ },
+ "DECISIONS/233": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_refcheck_paths.py",
+   "tools/commit_policy.py",
+   "tools/refcheck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "215715e17ae01d63"
+  ],
+  "sha": "3a9da43e0d890e5c"
+ },
+ "DECISIONS/234": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py",
+   "tools/plan_renumber.py",
+   "tools/release_brief.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "0aa3eea70e67e2b2"
+  ],
+  "sha": "0fb88010edbe3fad"
+ },
+ "DECISIONS/235": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_dest_scope.py",
+   "web/navi/test/domain.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "34cb36b547fedbfd"
+  ],
+  "sha": "f23fda237151922d"
+ },
+ "DECISIONS/236": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_figure_fit.py",
+   "tests/test_figure_xsec.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "0517d5ccd3244b10"
+  ],
+  "sha": "d6d6d4a9f6eea6cf"
+ },
+ "DECISIONS/238": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_skip_policy.py",
+   "tools/svg_fit.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "10a00929e88da23c"
+  ],
+  "sha": "81b42bf0421dd510"
+ },
+ "DECISIONS/24": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tools/encoding_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "9173d9e488549d0c"
+  ],
+  "sha": "f018066a95272c9f"
+ },
+ "DECISIONS/240": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/docparse.py",
+   "tests/test_building_road_overlap.py",
+   "tests/test_docref.py",
+   "tools/localgeo.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "7fbd31c50cc4a718"
+  ],
+  "sha": "a4994dd1d1490a70"
+ },
+ "DECISIONS/241": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_contract.py",
+   "tests/test_r1.py",
+   "tools/dms.py",
+   "tools/skeleton_compare.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "c8ec3845cdf44be1"
+  ],
+  "sha": "17bbc1460d8469cb"
+ },
+ "DECISIONS/242": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_navi_wireframe.py",
+   "web/navi/test/status.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "b8fecb18bbc54ffe"
+  ],
+  "sha": "be0fe2223d065aec"
+ },
+ "DECISIONS/245": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_seg_width.py",
+   "tests/test_sources_of_truth.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "4eeb304732c000d1"
+  ],
+  "sha": "9094175248f106bb"
+ },
+ "DECISIONS/247": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_nfa_compare.py",
+   "tests/test_reproducibility.py",
+   "tools/golden.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "773607ea82417d54"
+  ],
+  "sha": "60f19382762cdb9d"
+ },
+ "DECISIONS/247-1": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_nfa_compare.py",
+   "tools/golden.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "b249f9ad18b25a1e"
+  ],
+  "sha": "3fa8eba4f4ad9ba7"
+ },
+ "DECISIONS/248": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_vehicle_parity.py",
+   "web/navi/test/vehicleParity.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "7bc53eb23af710a9"
+  ],
+  "sha": "42cf6d04f0a73931"
+ },
+ "DECISIONS/248-1": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_vehicle_parity.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "8f813cc8cb751469"
+  ],
+  "sha": "9ba860698072a7ca"
+ },
+ "DECISIONS/249": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_layering.py",
+   "tests/test_seg_params_is_pure.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "e8d074a1d06bb42c"
+  ],
+  "sha": "01cd40dce82fe840"
+ },
+ "DECISIONS/249-1": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_seg_params_is_pure.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "bd79ffaa25330a89"
+  ],
+  "sha": "b99711d8e55d98cc"
+ },
+ "DECISIONS/25": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_layering.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "b3b25723cb55e7c0"
+  ],
+  "sha": "ddbbadfb977d1be9"
+ },
+ "DECISIONS/253": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/publish_fleet.py",
+   "tests/test_fleet_profiles.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "ff33c0e429b37342"
+  ],
+  "sha": "b7f48f3fc8caafdd"
+ },
+ "DECISIONS/254": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_cost_inputs.py",
+   "tests/test_docgen.py",
+   "tools/cost_inputs.py",
+   "tools/docgen.py",
+   "tools/verify.sh",
+   "web/navi/test/pressure.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "d761539dfa1d622f"
+  ],
+  "sha": "4c508521acd13f42"
+ },
+ "DECISIONS/254-1": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_cost_inputs.py",
+   "tools/cost_inputs.py",
+   "web/navi/test/pressure.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "b1a0d036c9ad6c7d"
+  ],
+  "sha": "792199cc8ce093c8"
+ },
+ "DECISIONS/255": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_seal_axes.py",
+   "tools/dms.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "c00b90b60dca6a07"
+  ],
+  "sha": "d83cf793e81b1a05"
+ },
+ "DECISIONS/255-2": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_seal_axes.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "46a62c261c8676ab"
+  ],
+  "sha": "513b25bc5b073db0"
+ },
+ "DECISIONS/255-3": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_seal_axes.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "559d082e3e8d6bc0"
+  ],
+  "sha": "f3fa1d1505c52c6a"
+ },
+ "DECISIONS/257": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_vehicle_parity.py",
+   "tools/proposal_pdf.py",
+   "tools/verify.sh"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "a4d9af6bef10def2"
+  ],
+  "sha": "373af2f03a75e58d"
+ },
+ "DECISIONS/257-3": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_vehicle_parity.py",
+   "tools/proposal_pdf.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "168b737fc7e16cde"
+  ],
+  "sha": "d682c8f6b8e10203"
+ },
+ "DECISIONS/258-1": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_lakecheck_l7.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "6b5bac28c6a2b9cc"
+  ],
+  "sha": "69882708524137e8"
+ },
+ "DECISIONS/258-15": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tools/sweep.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "0cd539ef740a68e4"
+  ],
+  "sha": "c2504ecad65336be"
+ },
+ "DECISIONS/258-3": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_doc_fsck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "fc013bf576b73353"
+  ],
+  "sha": "c398af452f7e7ce3"
+ },
+ "DECISIONS/258-4": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_dest_scope.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "5d5ddbb81f11f784"
+  ],
+  "sha": "f250254ef3c84572"
+ },
+ "DECISIONS/258-7": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_lake.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "8903dee16eb55f5f"
+  ],
+  "sha": "810c7cddb7ad1a34"
+ },
+ "DECISIONS/258-8": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tools/argcheck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "09a21be3df91748e"
+  ],
+  "sha": "d610c89f63d1f374"
+ },
+ "DECISIONS/26": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_layering.py",
+   "tests/test_layers.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "64e2276348507ac4"
+  ],
+  "sha": "5488198e986eb3d6"
  },
  "DECISIONS/260": {
   "doc": "docs/DECISIONS.md",
@@ -51,10 +1324,11 @@
    "tools/docseal.py",
    "tools/install_navi.py"
   ],
+  "kind": "read",
   "legacy": [
-   "05d8bde3f70e073a"
+   "2c36d02e0d5f69d9"
   ],
-  "sha": "4195df938d6e3b5e"
+  "sha": "f97acf53bdecc656"
  },
  "DECISIONS/266": {
   "doc": "docs/DECISIONS.md",
@@ -75,10 +1349,11 @@
    "tests/test_docseal.py",
    "tests/test_seal_axes.py"
   ],
+  "kind": "read",
   "legacy": [
-   "448107b9be20bf4c"
+   "c04b6cb059bc5f35"
   ],
-  "sha": "081bf3a5922cefd3"
+  "sha": "f960e1f7e1e59cbb"
  },
  "DECISIONS/269": {
   "doc": "docs/DECISIONS.md",
@@ -111,10 +1386,11 @@
    "tests/test_r3.py",
    "tools/docseal.py"
   ],
+  "kind": "read",
   "legacy": [
-   "7080b3cd30e4cf4f"
+   "86c17d70837d6571"
   ],
-  "sha": "907888f1727d38c2"
+  "sha": "5877f98d97f15812"
  },
  "DECISIONS/273": {
   "doc": "docs/DECISIONS.md",
@@ -170,6 +1446,339 @@
   ],
   "sha": "ef52653731363c4b"
  },
+ "DECISIONS/277": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_docseal.py",
+   "tests/test_tools_are_wired.py",
+   "tools/docseal.py"
+  ],
+  "kind": "read",
+  "legacy": [
+   "8966e3e0cf46a93f"
+  ],
+  "sha": "8966e3e0cf46a93f"
+ },
+ "DECISIONS/34": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_contract.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "f752585d1210fd71"
+  ],
+  "sha": "87c01c36d9f08853"
+ },
+ "DECISIONS/35": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_contract.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "e9f61319e5f8c7a1"
+  ],
+  "sha": "097d382065afae17"
+ },
+ "DECISIONS/36": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_contract.py",
+   "tests/test_navi_wireframe.py",
+   "web/navi/test/style.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "76e7059238d087e9"
+  ],
+  "sha": "dc1b1d190fa29010"
+ },
+ "DECISIONS/37": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_desk_tools.py",
+   "tests/test_publish_context.py",
+   "tests/test_workflow_static.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "d99d226aa8ad4dc5"
+  ],
+  "sha": "482e2fd2e2310daf"
+ },
+ "DECISIONS/38": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_workflow_guards.py",
+   "tools/gate_parity.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "d2b97d91b7da59da"
+  ],
+  "sha": "8dbb7fd85400a6ce"
+ },
+ "DECISIONS/39": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/webmanifest.py",
+   "tests/test_ledger_outputs.py",
+   "tools/web_manifest.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "5be8bae3907cb014"
+  ],
+  "sha": "dba6c1b5a929a3ea"
+ },
+ "DECISIONS/40": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_gate_parity_args.py",
+   "tools/verify.sh"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "d76c20b1d14e5075"
+  ],
+  "sha": "ad402f29a91a9b8c"
+ },
+ "DECISIONS/42": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_fieldsheet.py",
+   "tests/test_measurements.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "0478af3e44313f3f"
+  ],
+  "sha": "b780d1c0e8c56133"
+ },
+ "DECISIONS/43": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/contracts/vision.py",
+   "tests/test_contract_vision.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "f819bd45801ddda6"
+  ],
+  "sha": "ac1705a8544170fa"
+ },
+ "DECISIONS/45": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_fieldsheet.py",
+   "tests/test_layers.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "1fcdb9b1255a5210"
+  ],
+  "sha": "cf036146d921c60d"
+ },
+ "DECISIONS/66": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py",
+   "tools/docnum_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "340f892e2a2a7e98"
+  ],
+  "sha": "0dde2635cc77ccfb"
+ },
+ "DECISIONS/78": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_layers.py",
+   "tests/test_ledger_outputs.py",
+   "tests/test_normalize_rules.py",
+   "tests/test_static.py",
+   "tools/docnum_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "4f2a95fe85365803"
+  ],
+  "sha": "092c9377046aaaaf"
+ },
+ "DECISIONS/79": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_workflow_html_sync.py",
+   "tools/ruleset_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "beb611850752f5a2"
+  ],
+  "sha": "edb0229f84fcbd53"
+ },
+ "DECISIONS/82": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tools/corner_probe.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "775249e0c635683e"
+  ],
+  "sha": "20e0aeca4a5498fb"
+ },
+ "DECISIONS/83": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_crosswalk.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "274f16b742945012"
+  ],
+  "sha": "2d838b3937a8b5a1"
+ },
+ "DECISIONS/92": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_deadcheck_probes.py",
+   "tools/deadcheck.py",
+   "tools/docx_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "f9ae65836fe7d095"
+  ],
+  "sha": "3d268eca190cd77a"
+ },
+ "DECISIONS/93": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_docx_targets.py",
+   "tools/docx_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "64a5923a8a1ecd1d"
+  ],
+  "sha": "fa5ac884ab8024ea"
+ },
+ "DECISIONS/94": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_workflow_html_sync.py",
+   "tools/render_workflow.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "54a8d406a1f56913"
+  ],
+  "sha": "a86a1a3e481c7410"
+ },
+ "DECISIONS/97": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tools/docx_check.py",
+   "tools/gate_parity.py",
+   "tools/refcheck.py",
+   "tools/verify.sh"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "caf9993afae57552"
+  ],
+  "sha": "4419a0d2ce61a73e"
+ },
+ "DECISIONS/98": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_layers.py",
+   "tools/refcheck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "29558ea0c3f41fd5"
+  ],
+  "sha": "549b9ec7fbdc80da"
+ },
+ "DECISIONS/99": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_publish_context.py",
+   "tests/test_web_ownership.py",
+   "tools/stage_pages.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "6cbe89d187a8198a"
+  ],
+  "sha": "dc3636b9d23a7bd9"
+ },
+ "MASTER/0": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "data/golden/segments.fingerprint.json",
+   "tests/test_doc_style.py",
+   "tests/test_reproducibility.py",
+   "tools/docgen.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "2490e94ec0ded09c"
+  ],
+  "sha": "99721ee1faee73f7"
+ },
+ "MASTER/0-3": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "data/golden/segments.fingerprint.json",
+   "tests/test_doc_style.py",
+   "tools/docgen.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "fe68ae4d6385a330"
+  ],
+  "sha": "3728465cc5fa1fc3"
+ },
+ "MASTER/10-2": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_contract.py",
+   "web/config.js"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "33a47b1aea501f90"
+  ],
+  "sha": "068763537874a495"
+ },
+ "MASTER/10-6": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_station_scope.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "c1992c5a72f22021"
+  ],
+  "sha": "07b4ce86ace554b5"
+ },
+ "MASTER/10-7": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tools/docnum_check.py",
+   "web/navi/test/style.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "70a99fb1d51c952c"
+  ],
+  "sha": "70cbfe615cab7253"
+ },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",
   "files": [
@@ -180,12 +1789,366 @@
   ],
   "sha": "de57e43dbf108bf9"
  },
+ "MASTER/11-1": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_desk_tools.py",
+   "tools/navi_env.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "77b9fd8c139418c9"
+  ],
+  "sha": "4cb46781cb086c0b"
+ },
+ "MASTER/11-2a": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_sources_of_truth.py",
+   "web/navi/test/clearance.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "684e94ff2ac9c56d"
+  ],
+  "sha": "974eb83a1380a4a3"
+ },
+ "MASTER/11-3": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_contract.py",
+   "tools/docnum_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "a7f92ba4f35ce216"
+  ],
+  "sha": "26bd6689f8d6c6d3"
+ },
+ "MASTER/11-5": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "web/navi/test/style.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "47afa8790c865dae"
+  ],
+  "sha": "5053cf354b051af1"
+ },
+ "MASTER/12-1": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_workflow_html_sync.py",
+   "tools/ruleset_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "2d760fcab451f7e1"
+  ],
+  "sha": "61c4f45b759b7cbb"
+ },
+ "MASTER/12-11": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tools/encoding_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "3d87c61ac7ecfa92"
+  ],
+  "sha": "69591dda96e2c032"
+ },
+ "MASTER/12-1a": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tools/ruleset_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "f3b3980110772c87"
+  ],
+  "sha": "9c468db5e502b434"
+ },
+ "MASTER/12-2": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_release_procedure.py",
+   "tools/ruleset_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "503b2b07ca09be16"
+  ],
+  "sha": "6b7fe4186b4d044b"
+ },
+ "MASTER/12-3": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_ownership.py",
+   "tools/owned_paths.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "94e7a989a94dc88f"
+  ],
+  "sha": "7fcb6f93faa728aa"
+ },
+ "MASTER/12-6": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_commit_policy.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "f5d3f52d7d6475cb"
+  ],
+  "sha": "be3477015d9a07ad"
+ },
+ "MASTER/12-8": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "docker-compose.yml",
+   "tests/test_publish_context.py",
+   "tests/test_workflow_static.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "f24cc43d7c85d56c"
+  ],
+  "sha": "992d685ab6555947"
+ },
+ "MASTER/12-9": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_contract.py",
+   "tests/test_ownership.py",
+   "tools/commit_policy.py",
+   "tools/ruleset_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "d62f59a456338adb"
+  ],
+  "sha": "81c7921bec9d5a8c"
+ },
+ "MASTER/13": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_reproducibility.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "d08236c69646c74e"
+  ],
+  "sha": "f6a50dc371686320"
+ },
+ "MASTER/15": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_contract.py",
+   "tests/test_docx_targets.py",
+   "tools/docnum_check.py",
+   "tools/docx_check.py",
+   "tools/docx_figs.py",
+   "tools/docx_fix.py",
+   "tools/proposal_pdf.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "76f57bf98ad0e815"
+  ],
+  "sha": "be6d8c0c7db77b01"
+ },
+ "MASTER/15-3": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_contract.py",
+   "tools/docnum_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "1f6a3754b66c8e82"
+  ],
+  "sha": "c05999770d68a9f2"
+ },
+ "MASTER/16-2": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_measurements.py",
+   "tests/test_sources_of_truth.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "1b73d08fafde9a97"
+  ],
+  "sha": "241fced0de473088"
+ },
+ "MASTER/17": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "src/firelane/seg/params.py",
+   "tests/test_ci_env.py",
+   "tests/test_declaration_sync.py",
+   "tests/test_doc_style.py",
+   "tests/test_sources_of_truth.py",
+   "tests/test_verify_citations.py",
+   "tools/deadcheck.py",
+   "tools/dms.py",
+   "tools/docgen.py",
+   "tools/docnum_check.py",
+   "tools/localgeo.py",
+   "tools/navi_setup.py",
+   "tools/render_figures.py",
+   "tools/ruleset_check.py",
+   "tools/scopedecl.py",
+   "tools/svg_fit.py",
+   "tools/verify.sh",
+   "web/config.js",
+   "web/navi/src/domain/vehicle.ts",
+   "web/navi/src/ui/tokens.ts"
+  ],
+  "kind": "read",
+  "legacy": [
+   "27c1032596bebffc"
+  ],
+  "sha": "1062b4e5d13a8926"
+ },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
   "files": [
    "tools/deadcheck.py"
   ],
   "sha": "4253f41376232bdd"
+ },
+ "MASTER/17-1": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "src/firelane/seg/params.py",
+   "tests/test_ci_env.py",
+   "tests/test_declaration_sync.py",
+   "tests/test_sources_of_truth.py",
+   "tests/test_verify_citations.py",
+   "tools/docnum_check.py",
+   "tools/localgeo.py",
+   "tools/navi_setup.py",
+   "tools/render_figures.py",
+   "tools/ruleset_check.py",
+   "tools/svg_fit.py",
+   "tools/verify.sh",
+   "web/config.js",
+   "web/navi/src/domain/vehicle.ts",
+   "web/navi/src/ui/tokens.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "03a4f4d145b72063"
+  ],
+  "sha": "ef9cca2eab75e777"
+ },
+ "MASTER/18-2c": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_norm_wiring.py",
+   "tests/test_normalize_rules.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "ffc0f4432e74c0b3"
+  ],
+  "sha": "f65877fbfc68d3ad"
+ },
+ "MASTER/18-3b": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_ledger_contract.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "0fcafc3e46af20ec"
+  ],
+  "sha": "0fe49c979ea0de2a"
+ },
+ "MASTER/18-6": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_ledger_outputs.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "8c2c4253c23aa4a9"
+  ],
+  "sha": "3847cce37da28998"
+ },
+ "MASTER/18/계층이_열인_이유": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_layers.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "88d57c5cd4c12f8a"
+  ],
+  "sha": "f1067ef589282a7a"
+ },
+ "MASTER/18/원칙_다섯": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_normalize_rules.py",
+   "tools/acquire.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "39867e0847a75dd7"
+  ],
+  "sha": "efd4a52ba52bb5ff"
+ },
+ "MASTER/19": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "src/contracts/vision.py",
+   "tests/test_contract_vision.py",
+   "tests/test_layering.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "a9669ea8b334eb91"
+  ],
+  "sha": "87f05f6ef759c837"
+ },
+ "MASTER/19-1": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "src/contracts/vision.py",
+   "tests/test_contract_vision.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "299b23b364dede05"
+  ],
+  "sha": "0d7f7754db9e47de"
+ },
+ "MASTER/19-2": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_contract_vision.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "34f20e5218c88388"
+  ],
+  "sha": "7899017c089cd5ee"
+ },
+ "MASTER/19-5": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_contract_vision.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "4b4addba06a555c5"
+  ],
+  "sha": "29b3ed7ecaa85bb4"
  },
  "MASTER/2-1a": {
   "doc": "docs/MASTER.md",
@@ -199,14 +2162,256 @@
   ],
   "sha": "adc7b7e57e7ddd81"
  },
+ "MASTER/2-2": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "src/firelane/display_scope.py",
+   "src/firelane/seg/params.py",
+   "tests/test_sources_of_truth.py",
+   "tools/docnum_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "ea758ff61a363d38"
+  ],
+  "sha": "55520064ad2acb96"
+ },
+ "MASTER/20-4": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_navi_graph_fresh.py",
+   "tests/test_reach_overlay.py",
+   "web/navi/test/rules.test.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "fd2da3e64bd6c285"
+  ],
+  "sha": "319488c62d82bc58"
+ },
  "MASTER/21-0": {
   "doc": "docs/MASTER.md",
   "files": [
    "tools/docseal.py"
   ],
+  "kind": "read",
   "legacy": [
-   "709baa0b694e2c81"
+   "71239b6564346be8"
   ],
-  "sha": "a47ee60d882d202f"
+  "sha": "851dad97b006866d"
+ },
+ "MASTER/3-3": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_seg_geom.py",
+   "tests/test_seg_width.py",
+   "tests/test_sources_of_truth.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "8344d76f70db6bd4"
+  ],
+  "sha": "9cfe41408e34181b"
+ },
+ "MASTER/3-5": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_doc_numbers.py",
+   "tests/test_seg_width.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "8534840fa243dd3c"
+  ],
+  "sha": "b35215a63c996727"
+ },
+ "MASTER/3-8": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_station_scope.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "0142a530116e4587"
+  ],
+  "sha": "c620b834ecaed808"
+ },
+ "MASTER/4": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "data/processed/nfa_compare.json",
+   "src/firelane/nfa_compare.py",
+   "tests/test_contract.py",
+   "tests/test_docx_targets.py",
+   "tests/test_measurements.py",
+   "tests/test_reproducibility.py",
+   "tools/docnum_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "8d576582af558353"
+  ],
+  "sha": "e10cbba53822cc72"
+ },
+ "MASTER/4-1": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_docx_targets.py",
+   "tests/test_measurements.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "7a5a92d92bf9a983"
+  ],
+  "sha": "dcc7bf50143fbd75"
+ },
+ "MASTER/4-3": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "data/processed/nfa_compare.json",
+   "tests/test_reproducibility.py",
+   "tools/docnum_check.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "773ae6edaac9542a"
+  ],
+  "sha": "47224c4542727259"
+ },
+ "MASTER/5-4": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_r1.py",
+   "tools/skeleton_compare.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "5ad33d391ba03c25"
+  ],
+  "sha": "1293fb74b0fa3e2b"
+ },
+ "MASTER/6-4": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_contract.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "ee5851b9551ceee4"
+  ],
+  "sha": "cb188d1059c08c27"
+ },
+ "MASTER/7": {
+  "doc": "docs/MASTER.md",
+  "files": [
+   "tests/test_reproducibility.py",
+   "web/config.js"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "2670cd3e3e3ed816"
+  ],
+  "sha": "2577266091e6a29e"
+ },
+ "PLAN/1": {
+  "doc": "docs/PLAN.md",
+  "files": [
+   "sources.yaml",
+   "tests/test_contract.py",
+   "tests/test_declaration_sync.py",
+   "tests/test_dest_scope.py",
+   "tests/test_ledger_outputs.py",
+   "tests/test_measurements.py",
+   "tests/test_station_scope.py",
+   "tests/test_vehicle_parity.py",
+   "tools/axis_gain.py",
+   "tools/docgen.py",
+   "tools/evalgen.py",
+   "tools/field_compare.py",
+   "tools/fixture_recut.py",
+   "tools/its_linkmap.py",
+   "tools/matchcheck.py",
+   "tools/plan_renumber.py",
+   "tools/scopecheck.py",
+   "tools/skeleton_compare.py",
+   "tools/verify.sh",
+   "tools/wmax_audit.py",
+   "web/navi/src/domain/vehicle.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "77c1c2283cf44c04"
+  ],
+  "sha": "22aa61d9d6834fae"
+ },
+ "PLAN/1-27": {
+  "doc": "docs/PLAN.md",
+  "files": [
+   "tests/test_measurements.py",
+   "tools/field_compare.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "49a221354341d4f3"
+  ],
+  "sha": "592446f2984f3c6a"
+ },
+ "PLAN/12": {
+  "doc": "docs/PLAN.md",
+  "files": [
+   "tests/test_docx_targets.py",
+   "tools/docx_check.py",
+   "tools/docx_fix.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "15fbc55d7c613596"
+  ],
+  "sha": "eb90726961986ef8"
+ },
+ "PLAN/13-1": {
+  "doc": "docs/PLAN.md",
+  "files": [
+   "tests/test_declaration_sync.py",
+   "tests/test_defect_evidence.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "6827e9ff292a7b79"
+  ],
+  "sha": "2dea7c42fce82c07"
+ },
+ "PLAN/13-4": {
+  "doc": "docs/PLAN.md",
+  "files": [
+   "tests/test_defect_evidence.py",
+   "tests/test_deptry_config.py",
+   "tests/test_gate_parity_args.py",
+   "tests/test_generated_families.py",
+   "tests/test_measurements.py",
+   "tests/test_sources_of_truth.py",
+   "tests/test_verify_citations.py",
+   "tests/test_verify_evidence.py",
+   "tools/gate_parity.py",
+   "web/navi/src/domain/vehicle.ts"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "a59660dfd865de38"
+  ],
+  "sha": "55ccc585f1c4f352"
+ },
+ "README/문서는_넷이다/숫자의_정본은_문서가_아니다": {
+  "doc": "README.md",
+  "files": [
+   "data/golden/segments.fingerprint.json",
+   "tools/docnum_check.py",
+   "tools/golden.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "92f24bc0ca9f51d6"
+  ],
+  "sha": "e0856bd5b2637240"
  }
 }

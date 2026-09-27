@@ -151,3 +151,78 @@ def test_an_old_digest_is_accepted_and_not_a_silent_pass(ds):
     assert not ds.valid(now, {"sha": "엉뚱한것"}), "아무 지문이나 받는다 — 도장이 죽었다"
     assert not ds.valid(now, None), "도장이 없는데 유효라고 한다"
     assert ds.LEGACY_BODIES, "옛 판 목록이 비었다 — 빈 목록은 통과가 아니다"
+
+
+# ── 도장 갈래 — «읽음» 과 «불변» 은 다른 주장이다  (§277) ────────
+def test_a_bare_stamp_refuses(ds):
+    """★ 이 파일에서 제일 중요한 시험이다.
+
+    종전에는 `stamp` 를 인자 없이 부르면 `was = now` 로 **전부** 찍었다.
+    490절을 한 줄로 「확인했다」로 만드는 명령이 있었다는 뜻이고, 그러면
+    이 도구의 뜻이 그 한 줄로 죽는다. 무엇을 왜 찍는지 말해야 찍는다.
+    """
+    assert ds.stamp(None, unmoved=False) == 1, "인자 없는 stamp 가 전부 찍는다"
+    assert not ds.SEAL.exists(), "찍지 말아야 하는데 파일을 썼다"
+
+
+def test_the_two_kinds_are_not_the_same_claim(ds):
+    """「사람이 읽었다」와 「안 움직였다」를 한 칸에 적으면 수가 거짓이 된다."""
+    assert set(ds.KINDS) == {"read", "unmoved"}
+    assert ds.KINDS["read"] != ds.KINDS["unmoved"]
+    assert ds.DEFAULT_KIND == "read", \
+        "갈래 칸이 없는 옛 도장은 **사람이 찍은 것**이다 — 기계 것으로 세면 읽음이 준다"
+
+
+def test_an_old_stamp_without_a_kind_counts_as_read(ds):
+    """옛 판에는 갈래 칸이 없다. 그것을 「불변」으로 읽으면 사람이 읽은 기록이 사라진다."""
+    assert ds.kind_of({"sha": "x"}) == "read"
+    assert ds.kind_of(None) == "read"
+    assert ds.kind_of({"sha": "x", "kind": "unmoved"}) == "unmoved"
+
+
+def test_stamping_one_section_marks_it_read(ds, monkeypatch):
+    monkeypatch.setattr(ds, "survey", lambda: ({"D/1": {"sha": "a", "files": [], "doc": "d"}}, {}))
+    assert ds.stamp("D/1") == 0
+    got = json.loads(ds.SEAL.read_text(encoding="utf-8"))
+    assert got["D/1"]["kind"] == "read", "사람이 찍었는데 기계 갈래로 적혔다"
+
+
+# ── 절 단위로 재는가  (§277-1) ──────────────────────────────────
+def test_moved_after_is_measured_per_section_not_per_document(ds, monkeypatch):
+    """★ 문서 mtime 으로 재면 **모든 절**이 「코드보다 나중」이 된다.
+
+    문서는 배치마다 손대기 때문이다. 실제로 그렇게 재봤다가 459/470 이라는
+    쓸모없는 수가 나왔다 — 그 수로는 어느 절도 못 고른다.
+    """
+    rows = [{"id": "D/1", "doc": "docs/D.md", "line": 1, "depth": 2},
+            {"id": "D/2", "doc": "docs/D.md", "line": 5, "depth": 2}]
+    monkeypatch.setattr(ds, "_span", lambda r, i: (0, 4) if i == 0 else (4, 9))
+    # 1절은 100 에 쓰였고, 2절은 300 에 쓰였다
+    blames = {"docs/D.md": [100, 100, 100, 100, 300, 300, 300, 300, 300]}
+    mt = {"a.py": 200}
+    assert ds.moved_after(rows, 0, ["a.py"], blames, mt) == 200, \
+        "절(100)보다 코드(200)가 나중인데 0 을 냈다"
+    assert ds.moved_after(rows, 1, ["a.py"], blames, mt) == 0, \
+        "절(300)이 코드(200)보다 나중인데 움직였다고 했다"
+
+
+def test_moved_after_refuses_when_it_cannot_measure(ds, monkeypatch):
+    """★ blame 을 못 읽으면 **안 찍는다.** 못 잰 것을 「불변」으로 찍으면 거짓 도장이다."""
+    rows = [{"id": "D/1", "doc": "docs/D.md", "line": 1, "depth": 2}]
+    monkeypatch.setattr(ds, "_span", lambda r, i: (0, 0))
+    assert ds.moved_after(rows, 0, ["a.py"], {"docs/D.md": []}, {"a.py": 999}) == 0
+
+
+def test_span_follows_the_same_rule_as_body(ds, tmp_path, monkeypatch):
+    """★ 경계 규칙이 두 벌이면 갈린다 — 도장은 `body()` 로 뜨고 시각은 `_span()` 으로 잰다."""
+    monkeypatch.setattr(ds, "ROOT", tmp_path)
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "D.md").write_text(
+        "## 1. 가\n본문\n\n### 1-1. 나\n안쪽\n\n## 2. 다\n딴절\n", encoding="utf-8")
+    rows = [{"id": "D/1", "doc": "docs/D.md", "line": 1, "depth": 2},
+            {"id": "D/1-1", "doc": "docs/D.md", "line": 4, "depth": 3},
+            {"id": "D/2", "doc": "docs/D.md", "line": 7, "depth": 2}]
+    a, b = ds._span(rows, 0)
+    assert (a, b) == (0, 6), "얕은 제목 전까지가 아니다"
+    assert "딴절" not in ds.body(rows, 0), "옆 절을 삼켰다"
+    assert "안쪽" in ds.body(rows, 0), "하위 절을 잘라냈다"
