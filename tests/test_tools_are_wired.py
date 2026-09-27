@@ -41,6 +41,9 @@ ROOT = Path(__file__).resolve().parents[1]
 #   면제 목록에 남아 있었다. `--check` 로 강제자 승격만 하고 여기서 안 뺐다.
 #   그 상태에서는 verify.sh 배선을 끊어도 우는 곳이 없다. 면제가 사각지대다.
 EXEMPT = {
+    "deliver": "저장소를 **나가기 전에** 도는 도구다 — `origin` 에서 밑동을 읽고\n"
+               "             워크트리에 얹어 예습한다. 저장소 안에서 부르면 제 밑동을 제가\n"
+               "             정하는 셈이라 예습이 거짓이 된다. 동작은 `tests/test_deliver.py` 가 든다",
     "widen": "넓혔을 때를 **재는** 도구다. 지금 상태에서 항상 수십 건을 내므로\n             배선하면 매번 뜨는 경고가 되고, 그러면 아무도 안 읽는다",
     "codepatch": "배치 스크립트가 import 하는 **라이브러리**다. 실행 대상이 아니다",
     "inbox_fl": "INBOX 에 `fl.sh` 로 **복사해 두는** 부트스트랩이다. 저장소 안에서 부르는 곳이\n             없는 것이 설계다 — 사람이 INBOX 에서 부른다. 동작은 test_batch_tools 가 든다(§214-1)",
@@ -76,7 +79,12 @@ EXEMPT = {
     # ── 2026-09-20. 검사 범위를 `.sh` · `.mjs` 까지 넓히며 드러났다.
 }
 
-CALLERS = ("tools/verify.sh", "tools/ship.py")
+# ★ 2026-09-27 (DECISIONS §273-5). **`fl.sh` 와 `merge_batch.sh` 가 빠져 있었다.**
+#   둘은 배치를 실제로 굴리는 자리이고 `verify.sh` · `pr_body_check` · `golden` ·
+#   `branch_tidy` · `tidy` 를 부른다 — 그 호출이 **한 건도 안 세어지고 있었다.**
+#   이름은 `every_tool_is_called_somewhere` 인데 호출자가 둘뿐이었다. 위 ①과 같은
+#   족의 일곱 번째다(W3-8 · W4-8 · W3-16 · W3-18 · §197-1 · janitor.sh).
+CALLERS = ("tools/verify.sh", "tools/ship.py", "tools/fl.sh", "tools/merge_batch.sh")
 
 # ★ 2026-09-20. 이 검사가 **네 자리에서 헐거웠다.** 실측으로 하나씩 확인했다.
 #   ① 범위가 `tools/*.py` 뿐이었다 — `.sh` · `.mjs` 다섯이 검사 밖이었고

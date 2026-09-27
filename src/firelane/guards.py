@@ -323,6 +323,54 @@ def _cli() -> int:
 if __name__ == "__main__":
     sys.exit(_cli())
 
+def subset_by_nodes(df, node_path, key: str, col: str = "NODE_ID"):
+    """좌표 없는 표를 **노드 산출물로 한정한다.** 못 거르면 멈춘다.  (PLAN §1 #13)
+
+    ── 왜 있나 (2026-09-27 · DECISIONS §273-7) ─────────────────
+    `turn_restriction` 은 좌표가 없는 전국 DBF(44,125행)라 `node_point` 산출물로만
+    걸러진다. §217-1 이 **파일 부재**를 막았지만 남은 셋은 전부 같은 형태였다 —
+    **필터가 조용히 사라지는데 `status` 는 OK 다.**
+
+        칸 없음   `col` 이 없으면 거르는 코드가 통째로 안 돌고 전국분이 나간다.
+                  DBF 스키마가 한 번 바뀌면 그날부터다
+        열쇠 없음 노드 집합이 비면 결과가 0행인데 그것도 OK 다
+        안 걸림   거르기 전후가 같으면 **거른 것이 아니다**
+        다 걸림   0행을 정상으로 적으면 하류가 「회전제한 없음」으로 읽는다
+
+    ★ **수를 박지 않는다.** 오늘 87행이라고 관문에 87 을 적으면 판정이 움직이는
+      날 그 수가 먼저 낡고, 낡은 관문은 사람이 끈다. 대신 「필터가 일을 했는가」를
+      센다 — 그 성질은 안 낡는다.
+    ★ 좌표 없는 표는 앞으로도 는다. 그래서 `turn_restriction` 전용이 아니라
+      **열쇠 칸 이름을 받는 일반 관문**으로 둔다.
+    """
+    import geopandas as gpd
+
+    before = len(df)
+    if col not in df.columns:
+        raise ValueError(
+            f"{key}: `{col}` 칸이 없다 — 한정할 열쇠가 사라졌다. 전국 {before:,}행을 "
+            f"그대로 내보내지 않는다. 실제 칸: {', '.join(map(str, df.columns[:12]))}")
+    node_path = Path(node_path)
+    if not node_path.exists():
+        raise FileNotFoundError(
+            f"{key}: {node_path.name} 이 없다 — 한정할 노드 산출물이 없다. "
+            "그 단계를 먼저 ingest 한다(대장 순서 · --retry-failed)")
+    ids = set(gpd.read_file(node_path)[col])
+    if not ids:
+        raise ValueError(f"{key}: {node_path.name} 에 {col} 가 0개다 — 거르면 전부 "
+                         "사라진다. 빈 결과를 정상으로 적지 않는다")
+    out = df[df[col].isin(ids)]
+    if len(out) == before:
+        raise ValueError(
+            f"{key}: 거르기 전후가 {before:,}행으로 같다 — 필터가 아무것도 안 걸렀다. "
+            f"전국분이 그대로 나가는 길이다(노드 {len(ids):,}개와 열쇠가 어긋났다)")
+    if not len(out):
+        raise ValueError(
+            f"{key}: 거르고 나니 0행이다 — 노드 {len(ids):,}개와 겹치는 행이 없다. "
+            "0행을 정상으로 적으면 하류가 「없음」으로 읽는다")
+    return out
+
+
 def warn_direct_call(mod: str) -> None:
     """파이프라인 단계를 사람이 직접 부를 때 알린다. **막지는 않는다.**
 

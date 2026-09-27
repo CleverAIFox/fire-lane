@@ -303,7 +303,9 @@ if [ -n "$BODY" ]; then
         || die "PR 본문이 템플릿 검사를 못 넘는다: $BODY" \
                "  고치고 다시 돌려라 — verify 를 태우기 전에 본다."
     ok "PR_BODY.md  $BODY"
-else warn "PR_BODY.md 가 없다 — --all 은 못 간다"; fi
+# ★ 경고만 하고 verify 14분을 태운 뒤 6단계에서 죽었다(DECISIONS §273-13).
+elif [ "$MODE" = "--all" ]; then die "PR_BODY.md 가 없다 — --all 은 못 간다. 찾아본 곳: $WORK · $IN"
+else warn "PR_BODY.md 가 없다 — PR 단계에서 멈춘다"; fi
 
 # ══ 3. 붙는지 먼저 본다 ═══════════════════════════════════════
 # ★ **이것이 오늘 없어서 터진 단계다.** `git am` 은 반쯤 적용한 뒤에 멈추고,
@@ -538,6 +540,11 @@ fi                            # ── CI 대기 · 스쿼시 끝 ──
 
 if [ "$RESUME" != tidy ]; then                      # ── dev PR · 방송 ──
 
+# ★ 7b. 사연과 목록은 tools/after_squash.py (DECISIONS §273-5).
+step "7b. 열차가 만든 상태 — 스쿼시 뒤 다시 본다"
+uv run python tools/after_squash.py || die \
+  "스쿼시 뒤에 빨간불이다 — dev PR 을 열지 않는다. 무엇을 왜 보는지: after_squash.py --list"
+
 # ══ 8. part/infra → dev PR ════════════════════════════════════
 step "8. $BASE → dev PR"
 if git merge-base --is-ancestor "origin/$BASE" origin/dev; then
@@ -552,6 +559,10 @@ else
         # ★ 없으면 **지어내지 않는다.** feat PR 본문을 그대로 쓴다 — 같은 배치이므로
         #   내용이 맞고, 지어낸 요약보다 낫다. 배치마다 다른 본문을 원하면 넣어라.
         [ -n "$DBODY" ] || { DBODY="$BODY"; warn "PR_BODY_DEV.md 가 없다 — feat 본문을 그대로 쓴다"; }
+        # ★ 6단계에는 이 가드가 있고 여기에는 없었다 — 빈 본문이 그대로 `gh` 까지
+        #   가서 usage 로 죽었다(DECISIONS §273-4).
+        [ -n "$DBODY" ] || die "dev PR 본문을 못 찾았다 — 본문 없이 PR 을 열지 않는다." \
+            "  INBOX 에 PR_BODY_DEV.md(없으면 PR_BODY.md)를 두어라. 소비했으면 $IN/_applied/ 에 있다"
         uv run python tools/pr_body_check.py --body-file "$DBODY" || die "dev 본문이 검사를 못 넘는다: $DBODY"
         DTITLE=$(head -1 "$WORK/PR_TITLE_DEV" 2>/dev/null || head -1 "$IN/PR_TITLE_DEV" 2>/dev/null \
                  || echo "파트 동기화 — $TITLE")

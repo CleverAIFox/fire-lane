@@ -10,9 +10,12 @@
 import type {
   Fleet, NaviGraph, RouteVehicle, VehicleSpec, View,
 } from "../domain/types";
+import { dataBase } from "./dataBase";
 
-/** base 가 /<repo>/navi/ 이므로 ../data/ 가 곧 web/data 다. */
-const DATA = new URL("../data/", document.baseURI).href;
+/** ★ 2026-09-27. 여기 있던 `new URL("../data/", document.baseURI)` 가
+ *  관제 루트에서 404 를 냈다 — 주석이 「base 가 /<repo>/navi/ 이므로」라고
+ *  전제를 적고 있었고 §258 이 그 전제를 깼다. 정본은 `dataBase()` 하나다. */
+const DATA = dataBase();
 
 async function j<T>(name: string): Promise<T> {
   const r = await fetch(DATA + name);

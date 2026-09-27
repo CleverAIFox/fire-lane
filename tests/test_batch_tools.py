@@ -260,6 +260,11 @@ def _resume_world(tmp: Path, main_has_infra: bool):
     (work / "tools" / "merge_batch.sh").write_text("echo MERGE_BATCH \"$@\"\n")
     (work / "tools" / "branch_tidy.sh").write_text("echo TIDY \"$@\"\n")
     (work / "tools" / "verify.sh").write_text("exit 0\n")
+    # ★ 2026-09-27 (DECISIONS §273-5). 7b 가 부르는 도구를 합성 트리도 들고 간다.
+    #   없으면 fl.sh 가 「스쿼시 뒤 빨간불」로 죽는데, 그것은 **옳은 동작**이다 —
+    #   여기서 조용히 건너뛰게 만들면 이 시험이 7b 를 안 보는 시험이 된다(§272).
+    (work / "tools" / "after_squash.py").write_text(
+        "import sys; print('열차 뒤 검사 — 합성 트리'); sys.exit(0)\n")
     _git(work, "add", "-A")
     _git(work, "commit", "-q", "-m", "tools")
     _git(work, "push", "-q", "origin", "HEAD:refs/heads/part/infra", "HEAD:refs/heads/dev")
@@ -658,3 +663,4 @@ def test_no_exit_code_read_after_assignment_under_set_e():
         "`set -e` 아래서 대입 뒤 `$?` 를 읽는다 — 그 줄은 **안 돈다**:\n"
         + "\n".join(bad)
         + "\n\n  if x=$(cmd); then rc=0; else rc=$?; fi")
+

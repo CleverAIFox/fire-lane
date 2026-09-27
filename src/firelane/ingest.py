@@ -480,14 +480,10 @@ def build(key: str, e: dict, tmp: Path) -> dict:
         #   거르지 않고** 전국 44,125행을 냈다. 대장 순서상 node_point 가 앞이지만 그것이 FAIL 로
         #   격리(.stale_)되면 조용히 전국분이 나왔다 — 파이프라인 행수 관문(`pipeline` 의 87)이
         #   늦게 잡을 뿐이었다. 원인 자리에서 멈춘다.
-        np_path = OUT / "node_point_5186.gpkg"
-        if "NODE_ID" in t.columns:
-            if not np_path.exists():
-                raise FileNotFoundError(
-                    f"{key}: node_point_5186.gpkg 가 없다 — 회전제한을 동명동 노드로 못 거른다. "
-                    "node_point 를 먼저 ingest 한다(대장 순서 · --retry-failed)")
-            ids = set(gpd.read_file(np_path)["NODE_ID"])
-            t = t[t["NODE_ID"].isin(ids)]
+        # ★ 관문은 `guards.subset_by_nodes` 가 든다 — 「필터가 조용히 사라지는데
+        #   status 는 OK」 네 갈래를 한 자리에서 막는다(PLAN §1 #13 · DECISIONS §273-7).
+        from firelane.guards import subset_by_nodes
+        t = subset_by_nodes(t, OUT / "node_point_5186.gpkg", key)
         t.to_csv(
             OUT / f"{key}.csv", index=False, encoding="utf-8-sig")
         rec |= {"status": "OK", "features": len(t), "geom": [],
