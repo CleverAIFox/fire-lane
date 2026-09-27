@@ -49,6 +49,7 @@ import {
   GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers,
   stationLayers, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
+import { dataBase } from "../infra/dataBase";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -130,7 +131,7 @@ export function NaviMap(props: Props) {
 
   useEffect(() => {
     if (!box.current || map.current) return;
-    const D = new URL("../data/", document.baseURI).href;
+    const D = dataBase();
     const home = p.view.center ?? ([126.9266, 35.1512] as LngLat);
 
     const m = new maplibregl.Map({

@@ -32,6 +32,7 @@ import {
 import { CLEARANCE_WIDE_M, type ClearanceBand } from "../domain/clearance";
 import { TUNING } from "../domain/vehicle";
 import { CLEARANCE_SCALE } from "../ui/clearanceMeaning";
+import { dataBase } from "../infra/dataBase";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -125,7 +126,7 @@ export function OpsMap(props: Props) {
 
   useEffect(() => {
     if (!box.current || map.current) return;
-    const D = new URL("../data/", document.baseURI).href;
+    const D = dataBase();
     const v = P.current.view;
     const st = P.current.style;
     const col = (k: string) => st[k]?.color ?? "rgb(120,128,140)";
