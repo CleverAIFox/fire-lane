@@ -47,6 +47,7 @@ EXEMPT = {
     "axis_gain": "`#132`(샤드 축 분리)의 **이득을 재는** 도구다. 답이 나오면 그 행이\n                 닫히므로 항상 도는 관문이 아니다 — 설계를 정할 때 사람이 친다.\n                 판정기는 `--selftest` 가 양쪽으로 운다(DECISIONS §274-10)",
     "widen": "넓혔을 때를 **재는** 도구다. 지금 상태에서 항상 수십 건을 내므로\n             배선하면 매번 뜨는 경고가 되고, 그러면 아무도 안 읽는다",
     "codepatch": "배치 스크립트가 import 하는 **라이브러리**다. 실행 대상이 아니다",
+    "delivercheck": "`deliver` 가 import 하는 **판별식 묶음**이다 — 진입점이 없다.\n             `codepatch` 와 같은 자리. 동작은 `tests/test_delivercheck.py` 가 든다",
     "inbox_fl": "INBOX 에 `fl.sh` 로 **복사해 두는** 부트스트랩이다. 저장소 안에서 부르는 곳이\n             없는 것이 설계다 — 사람이 INBOX 에서 부른다. 동작은 test_batch_tools 가 든다(§214-1)",
     "inbox_go": "INBOX 에 `go.sh` 로 **복사해 두는** 한 줄 진입점이다. `inbox_fl` 과 같은 자리 —\n             저장소 안에서 부르는 곳이 없는 것이 설계다. `.env` 적재 · zip 풀기 · 브랜치 ·\n             `--relock` 판단을 하고 `fl.sh` 를 부른다. 모의 실행으로 넷을 봤다(§256)",
 

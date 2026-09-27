@@ -144,6 +144,32 @@
   ],
   "sha": "c2e2bd8621ac722c"
  },
+ "DECISIONS/275": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "web/data/view.json",
+   "web/navi/src/domain/serviceArea.ts",
+   "web/navi/test/serviceArea.test.ts"
+  ],
+  "legacy": [
+   "13cb07837532d859"
+  ],
+  "sha": "25a65931136a4646"
+ },
+ "DECISIONS/276": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_delivercheck.py",
+   "tools/branch_tidy.sh",
+   "tools/delivercheck.py",
+   "tools/fl.sh",
+   "tools/pr_body_check.py"
+  ],
+  "legacy": [
+   "beef4f0deb5e720f"
+  ],
+  "sha": "beef4f0deb5e720f"
+ },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",
   "files": [

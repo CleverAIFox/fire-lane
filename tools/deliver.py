@@ -65,6 +65,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import inspect
 import json
 import os
 import re
@@ -75,6 +76,17 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+# ★ 판별식은 `delivercheck` 가 든다(§276-1). 여기서 다시 정의하면 두 벌이 된다.
+from delivercheck import (
+    BODY_CHECK,
+    FORBIDDEN,
+    bodies_bad,
+    bodies_missing,
+    collide,
+    forbidden,
+    tails,
+)
+
 ROOT = Path(__file__).resolve().parents[1]
 
 # ── ④ 레이크 없는 기계에서만 빨갛다고 인정하는 것 ────────────────
@@ -84,8 +96,6 @@ LAKE_ONLY: dict[str, tuple[str, str]] = {
         ("커밋된 web/data 가 낡았다 — 발행은 레이크 기계에서만 된다", "no_lake"),
 }
 
-# ── ⑤ 배달물에 있으면 안 되는 것 ────────────────────────────────
-FORBIDDEN = ("Co-Authored-By: Claude", "Claude-Session:")
 
 # ── ③ 워크트리에서 도는 스윕 ────────────────────────────────────
 # ★ 2026-09-27. 종전에는 여섯을 **손으로** 들었다. `deadcheck ②` 가 그것을 잡았다 —
@@ -171,53 +181,6 @@ def remote_tip(branch: str, fetch: bool = True) -> tuple[str, str]:
 
 
 # ── ⑤ 묶기 전 검사 ──────────────────────────────────────────────
-def collide(names: list[str]) -> list[str]:
-    """같은 basename 이 둘 이상인가. 오늘 `0001-` 과 `0003-` 이 그랬다."""
-    seen: dict[str, int] = {}
-    for n in names:
-        seen[n] = seen.get(n, 0) + 1
-    return sorted(k for k, v in seen.items() if v > 1)
-
-
-def tails(names: list[str]) -> list[str]:
-    """번호를 뗀 꼬리가 겹치는가 — 이름이 달라도 같은 커밋이면 두 번 얹는다."""
-    seen: dict[str, list[str]] = {}
-    for n in names:
-        seen.setdefault(re.sub(r"^\d+-", "", n), []).append(n)
-    return sorted(f"{k}: {' · '.join(v)}" for k, v in seen.items() if len(v) > 1)
-
-
-def _message_of(p: Path, text: str) -> str:
-    """패치에서 **커밋 메시지**만. diff 는 뺀다.
-
-    ★ 2026-09-27. 첫 배달에서 이 검사가 **제 금지 목록 선언**을 잡았다 —
-      `FORBIDDEN = ("Co-Authored-By: Claude", …)` 이 diff 에 들어 있었기 때문이다.
-      규약은 「**커밋 메시지**에 서명이 없어야 한다」이지 「저장소 어디에도 그 글자가
-      없어야 한다」가 아니다. 그렇게 넓히면 그 규약을 **무는 검사 자체**를 못 쓴다.
-    ★ `git format-patch` 는 메시지와 diff 를 `---` 한 줄로 가른다.
-    """
-    if p.suffix != ".patch":
-        return text
-    out = []
-    for line in text.splitlines():
-        if line.rstrip() == "---":
-            break
-        out.append(line)
-    return "\n".join(out)
-
-
-def forbidden(paths: list[Path]) -> list[str]:
-    bad = []
-    for p in paths:
-        try:
-            t = p.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            continue
-        head = _message_of(p, t)
-        for s in FORBIDDEN:
-            if s in head:
-                bad.append(f"{p.name}: {s}")
-    return bad
 
 
 # ── ② 얹힘 ──────────────────────────────────────────────────────
@@ -471,6 +434,14 @@ def cmd_pack(a) -> int:
     if bad := forbidden(sorted(out.iterdir())):
         print("★ 배달 디렉터리에 금지 문자열이 남았다\n  " + "\n  ".join(bad)); return 1
 
+    # ★ 본문을 **검사기에 태운다.** 산문으로 「넘는다」고 적지 않는다(§276-1).
+    names = [f.name for f in out.iterdir() if f.is_file()]
+    for label, bad in (("본문 없음", bodies_missing(names)),
+                       ("본문이 템플릿을 못 넘는다", bodies_bad(out, _run, str(_py())))):
+        if bad:
+            print(f"★ {label} — 배달하지 않는다\n  " + "\n  ".join(bad)); return 1
+    print(f"  본문   {' · '.join(sorted(n for n in names if n.startswith('PR_')))} 검사 통과")
+
     if a.zip:
         z = Path(a.zip)
         z.unlink(missing_ok=True)
@@ -503,6 +474,12 @@ def selftest() -> int:
         bad.append("`FORBIDDEN` 이 비었다 — 볼 것이 없으면 통과가 아니다")
     if not LAKE_ONLY:
         bad.append("`LAKE_ONLY` 가 비었다 — 면제 대장이 비면 ④ 가 죽은 칸이다")
+    if not bodies_missing(["0001-x.patch", "EXPECT"]):
+        bad.append("`PR_BODY.md` 가 없는데 안 운다")
+    if bodies_missing(["PR_BODY.md", "PR_BODY_DEV.md"]):
+        bad.append("본문이 있는데 운다")
+    if not (ROOT / BODY_CHECK).exists():
+        bad.append(f"`{BODY_CHECK}` 가 없다 — 본문 검사가 죽은 칸이다")
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad)); return 1
 
@@ -564,7 +541,12 @@ def selftest() -> int:
             bad.append("레이크 없는 자리에서 레이크 전용 빨간불에 운다")
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad)); return 1
-    print("✓ 자기검사 — 판별식 18개가 다 운다")
+    # ★ 2026-09-27 (§276-1). 종전에는 `18개` 가 **손으로 박혀** 있었다. 팔을
+    #   더해도 그 수가 안 따라오므로 곧 거짓이 된다 — 이 저장소가 수를 손으로
+    #   적었다가 열두 번 고친 자리와 같은 형태다(PLAN §1 제목 · DECISIONS §246).
+    #   판별식 하나가 `bad.append` 하나이므로 **소스에서 센다.**
+    arms = inspect.getsource(selftest).count("bad.append(")
+    print(f"✓ 자기검사 — 판별식 {arms}개가 다 운다")
     return 0
 
 
