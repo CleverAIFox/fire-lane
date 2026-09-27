@@ -350,15 +350,37 @@ rm -f "$CHK_IDX"
 #   대 본 자리와 얹는 자리가 달랐다.
 #   가지에 이 배치 것이 아닌 커밋이 있고 얹을 패치가 남았으면 **base 에서 새로 짓는다.**
 REBUILD=0
+# ★ 2026-09-27 (DECISIONS §276-2). **증분인지 먼저 잰다.** 종전에는 「가지에 커밋이
+#   있는데 안 얹힌 패치가 왔다」를 곧바로 **교체 시도**로 읽고, 원격에 올라가 있으면
+#   가지를 지우고 다시 지으라고 했다. 그런데 배치 중간에 고친 것을 **얹는 것**은
+#   정상 흐름이고, 그때 `--undo` 는 이미 통과한 verify 와 재잠금을 통째로 버린다.
+#   실제로 그 길로 몰려 손으로 우회했다(2026-09-27 배치 A 꼬리).
+#
+# ★ 가르는 물음은 하나다 — **남은 패치가 가지 팁 위에 붙는가.** 붙으면 증분이고,
+#   안 붙으면 그때가 교체다. 그 값은 여기서 재면 된다. 재놓고 안 쓰는 것이
+#   §273-13 이 적은 그 형태다.
 if [ -n "$HAVE" ] && [ "$MISSING" -gt 0 ]; then
-    if git rev-parse -q --verify "origin/$BR" >/dev/null; then
-        die "$BR 가 원격에 이미 올라가 있고, 거기 없는 새 판 패치가 왔다." \
-            "  새 판으로 갈아 끼우려면 원격 가지 · PR 을 먼저 정리해라:" \
+    TIP_IDX=$(mktemp); rm -f "$TIP_IDX"
+    GIT_INDEX_FILE="$TIP_IDX" git read-tree "$BR" 2>/dev/null || true
+    INCR=1
+    for p in "${PATCHES[@]}"; do
+        applied "$p" && continue
+        if GIT_INDEX_FILE="$TIP_IDX" git apply --cached --check --3way "$p" 2>/dev/null; then
+            GIT_INDEX_FILE="$TIP_IDX" git apply --cached --3way "$p" 2>/dev/null || true
+        else INCR=0; break; fi
+    done
+    rm -f "$TIP_IDX"
+    if [ "$INCR" = 1 ]; then
+        warn "$BR 에 없는 패치 $MISSING 개가 **가지 팁 위에 붙는다** — 증분이다. 이어 붙인다"
+    elif git rev-parse -q --verify "origin/$BR" >/dev/null; then
+        die "$BR 가 원격에 이미 올라가 있고, 새 판 패치가 **팁 위에 안 붙는다**." \
+            "  증분이 아니라 갈아 끼우는 것이다. 원격 가지 · PR 을 먼저 정리해라:" \
             "    gh pr close --delete-branch $BR   (또는 git push origin --delete $BR)" \
             "  그 뒤  $FL_CMD $BR --undo  →  --all"
+    else
+        REBUILD=1
+        warn "$BR 에 옛 판 커밋이 있다 ($(git rev-parse --short "$BR")) — base 에서 새로 짓는다"
     fi
-    REBUILD=1
-    warn "$BR 에 옛 판 커밋이 있다 ($(git rev-parse --short "$BR")) — base 에서 새로 짓는다"
 fi
 if [ -n "$BAD" ]; then
     die "이 패치는 현재 $BASE ($(git rev-parse --short "origin/$BASE")) 에 안 붙는다:" \
