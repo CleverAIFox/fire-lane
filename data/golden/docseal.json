@@ -65,9 +65,9 @@
    "tools/skeleton_compare.py"
   ],
   "legacy": [
-   "802b7641284422fb"
+   "daff76cddc502ea4"
   ],
-  "sha": "6decb2ded33157a2"
+  "sha": "d96e1e6ada595f1a"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -130,6 +130,18 @@
    "4845da6fb748703e"
   ],
   "sha": "4845da6fb748703e"
+ },
+ "DECISIONS/274": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/read/__init__.py",
+   "tests/test_read_dispatch.py",
+   "tools/sizecheck.py"
+  ],
+  "legacy": [
+   "88f379871c4df9a8"
+  ],
+  "sha": "88f379871c4df9a8"
  },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",

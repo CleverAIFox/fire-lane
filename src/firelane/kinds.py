@@ -35,8 +35,13 @@ kinds.py — `kind` 분류의 **정본**. 여섯 곳에 흩어져 있던 것을 
 
 ── 새 kind 를 추가하는 법 ─────────────────────────────────────
     1. 여기 KINDS 에 한 줄 추가한다
-    2. `ingest.build()` 에 분기를 만든다
-    3. `inventory` 에 probe 가 없으면 만들고 PROBE_FN 에 잇는다
+    2. 갈래 모듈(`read/<갈래>.py`)에 `read_<kind>(c: Ctx)` 를 만든다
+    3. `read.READERS` 표에 잇는다 — 도형을 내면 `read.GEOM_KINDS` 에도
+    4. `inventory` 에 probe 가 없으면 만들고 PROBE_FN 에 잇는다
+
+★ 2026-09-27 (DECISIONS §274). 2번이 종전에는 `ingest.build()` 의 손 분기였다.
+  그 한 함수가 열두 갈래 389줄을 들고 있었고, 그래서 이 머리말이 적은
+  「분기를 만든다」가 **파일 하나를 계속 불리는 지시**였다.
 
 `test_kind_registry_is_the_single_source` 가 셋을 **양방향**으로 대조한다.
 하나만 하면 운다. 정적 목록에는 반드시 역방향 검사를 붙인다(2026-09-04).
