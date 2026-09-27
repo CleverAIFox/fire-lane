@@ -62,14 +62,14 @@ EXCEPTIONS: dict[str, int] = {
     # 시험 (상한 700)
     # ★ 2026-09-26 (§258-10). 2430 → 2440. 경로 적재 셋에 `sys.modules` 등록 줄과
     #   SKIP 사유 강제를 다음 배치로 미룬 사유다.
-    "tests/test_guards.py": 2440,
+    "tests/test_guards.py": 2439,
     # ★ 2026-09-23 (DECISIONS §222-6). 718. **쪼개지 않는다** — 이 파일은 「선언과 실물이
     #   같은가」 한 물음의 사례 목록이고, 선언이 늘면 같이 는다. 둘로 가르면 새 선언을
     #   어느 파일에 적어야 하는지가 또 하나의 기억거리가 되고, 그때 한쪽만 고치는 날이 온다.
     "tests/test_declaration_sync.py": 783,
     # 코드 (상한 600)
     "tools/dms.py": 1574,
-    "src/firelane/ingest.py": 1101,
+    "src/firelane/ingest.py": 646,
     "tools/deadcheck.py": 1059,
     # ★ 2026-09-23. 976 → 980 → 991. 「기획서 그림 ↔ 정본」(§221-1)과 「죽은 강제자
     #   참조」(§222-2)가 들어갔다. verify.sh 는 검사의 목록이라 검사가 늘면 늘어난다 —

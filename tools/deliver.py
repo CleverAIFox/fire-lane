@@ -133,15 +133,38 @@ PREDICATES = {"no_lake": no_lake}
 
 
 # ── ① 밑동 ──────────────────────────────────────────────────────
+#: 새 가지의 밑동. `origin/<가지>` 가 없으면 여기서 읽는다.
+FALLBACK_BASE = "part/infra"
+
+
 def remote_tip(branch: str, fetch: bool = True) -> tuple[str, str]:
-    """`origin/<가지>` 의 실제 팁. **못 읽으면 예외다** — 추측하지 않는다."""
+    """`origin/<가지>` 의 실제 팁. **못 읽으면 예외다** — 추측하지 않는다.
+
+    ★ 2026-09-27 (DECISIONS §274-9). **새 가지는 원격에 없다.** 종전에는 그것을
+      「origin 에 못 닿았다」로 읽고 배달을 거부했다 — 배치를 새로 뜰 때마다
+      걸리는데, 그 상황이 바로 이 도구를 제일 쓰고 싶은 순간이다.
+      없으면 **밑동 가지**(`part/infra`)를 읽고 그렇게 말한다. 추측이 아니라
+      **다른 참조를 읽는 것**이므로 이 도구의 규율은 그대로다.
+    """
+    ref = branch
     if fetch:
         rc, out = _run(["git", "fetch", "origin", branch], timeout=180)
         if rc:
-            raise SystemExit(f"★ origin 에 못 닿았다 — 밑동을 읽을 수 없으면 배달하지 않는다\n{out}")
-    rc, sha = _run(["git", "rev-parse", f"origin/{branch}"])
+            rc2, out2 = _run(["git", "fetch", "origin", FALLBACK_BASE], timeout=180)
+            if rc2:
+                raise SystemExit(
+                    "★ origin 에 못 닿았다 — 밑동을 읽을 수 없으면 배달하지 않는다\n"
+                    f"  {branch}: {out}\n  {FALLBACK_BASE}: {out2}")
+            ref = FALLBACK_BASE
+            print(f"  ★ origin/{branch} 가 아직 없다 — 새 가지다. "
+                  f"밑동을 origin/{FALLBACK_BASE} 에서 읽는다")
+    rc, sha = _run(["git", "rev-parse", f"origin/{ref}"])
+    if rc and ref != FALLBACK_BASE:
+        ref = FALLBACK_BASE
+        print(f"  ★ origin/{branch} 가 아직 없다 — 밑동을 origin/{ref} 에서 읽는다")
+        rc, sha = _run(["git", "rev-parse", f"origin/{ref}"])
     if rc:
-        raise SystemExit(f"★ origin/{branch} 가 없다\n{sha}")
+        raise SystemExit(f"★ origin/{ref} 가 없다\n{sha}")
     sha = sha.strip()
     _, subj = _run(["git", "log", "-1", "--format=%s", sha])
     return sha, subj.strip()

@@ -91,6 +91,7 @@ uv run python tools/proposal_pdf.py     # 기획서 → web/proposal.pdf · 쪽�
 uv run python tools/vintage_check.py    # 파일명 날짜 ↔ 대장 updated (자료 기준일)
 uv run python -m firelane.prep --check  # norm 이 지금의 raw 에서 나왔나 (재현성)
 uv run python tools/widen.py            # 검사 범위를 넓히면 뭐가 걸리나
+uv run python tools/axis_gain.py        # 샤드 봉인 축을 쪼개면 얼마나 아끼나 (PLAN #132)
 uv run python tools/codepatch.py        # 파이썬 소스 멱등 편집기 (배치용)
 
 # 배치가 세운 상태가 유지되는가 — verify.sh 가 부른다

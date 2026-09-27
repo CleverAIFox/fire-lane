@@ -659,15 +659,12 @@ def test_ingest_kinds_are_documented():
 
     import yaml
 
-    src = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
-    body = src[src.index("def build("):src.index("\ndef main(")]
-    impl = set()
-    for m in re.finditer(r'kind\s*==\s*"(\w+)"|kind\s+in\s*\(([^)]+)\)', body):
-        if m.group(1):
-            impl.add(m.group(1))
-        else:
-            impl |= {x.strip().strip('"') for x in m.group(2).split(",")}
-    assert len(impl) >= 8, f"ingest 분기를 못 읽었다: {impl}"
+    # ★ 2026-09-27 (§274). 종전에는 `ingest.build` 본문을 정규식으로 긁었다.
+    #   분기가 `read/` 로 내려가면서 **선언 표**가 생겼다 — 긁는 것보다
+    #   선언을 보는 쪽이 정확하고, 표가 비면 아래 assert 가 그것도 문다.
+    from firelane import read
+    impl = set(read.READERS)
+    assert len(impl) >= 8, f"read.READERS 가 비었다: {impl}"
 
     y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
     used = {(v or {}).get("kind") for v in y["datasets"].values()} - {None}
@@ -2130,10 +2127,12 @@ def test_multi_part_reader_refuses_mixed_columns():
     ★ `pd.concat` 은 없는 컬럼을 조용히 NaN 으로 메운다. 그러면 판이 섞인
       채로 통과하고, 그 결과를 아무도 못 본다(R6 — 조용한 실패 금지).
     """
-    src = (ROOT / "src/firelane/ingest.py").read_text(encoding="utf-8")
-    i = src.find('kind == "csv_table_multi"')
-    assert i > 0, "csv_table_multi 핸들러가 없다"
-    body = src[i:i + 2200]
+    # ★ 2026-09-27 (§274). 갈래가 `read/delimited.py` 로 내려갔다. **함수 하나**를
+    #   통째로 보므로 ±2200자 창보다 정확하다 — 창은 옆 갈래를 집어삼킨다(§273-13).
+    import inspect
+
+    from firelane.read import delimited
+    body = inspect.getsource(delimited.read_csv_table_multi)
     assert '"status": "FAIL"' in body, "컬럼 불일치에 FAIL 하지 않는다"
     assert '"_src"' in body, "어느 판에서 온 행인지 산출물에 안 남긴다"
     # ★ 예외는 대장 선언으로만 열린다. 코드에 박은 화이트리스트는

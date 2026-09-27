@@ -61,7 +61,21 @@ uv run fire-lane --only publish
 항목이 0건**이었고, 그 예시를 보고 대장 초안을 쓰면 어긋났다.
 `tests/test_doc_fsck.py::test_ledger_schema_doc_matches_reality` 가 지킨다.
 
-### `kind` — 정본은 `ingest.py` 의 `build()` 다
+### `kind` — 정본은 `read/__init__.py` 의 `READERS` 표다
+
+★ **2026-09-27 (DECISIONS §274).** 종전에는 `ingest.build()` 의 손 분기 열둘이
+정본이었다(389줄 · 파일의 35%). 그 한 함수가 72개 데이터셋 전부의 샤드
+`seal.code` 를 들어서 `text_table` 한 줄을 고치면 `raw_only` 26개까지 재도장됐다.
+갈래를 다섯 모듈로 내렸다 — 가른 기준은 크기가 아니라 **무엇을 읽는가**다.
+
+| 갈래 모듈 | 무엇을 읽나 | 데이터셋 |
+|---|---|---|
+| `read/delimited.py` | CSV · `\|` 구분 텍스트 · 좌표 없는 표 | 29 (40%) |
+| `read/shapefile.py` | zip 안 SHP · 도엽 묶음 · NGI 혼재 | 13 (18%) |
+| `read/jsondoc.py` | 표준데이터 · 건축행정시스템 JSON | 3 (4%) |
+| `read/dbf.py` | 회전제한 (지오메트리 없음) | 1 (1%) |
+| `read/passthrough.py` | 읽지 않는다. 존재만 기록 | 26 (36%) |
+
 
 | kind | 무엇 |
 |---|---|
