@@ -127,9 +127,9 @@
    "tools/serve.py"
   ],
   "legacy": [
-   "4845da6fb748703e"
+   "7f85b1d123eeb093"
   ],
-  "sha": "4845da6fb748703e"
+  "sha": "147d9ac2aaf974ca"
  },
  "DECISIONS/274": {
   "doc": "docs/DECISIONS.md",
@@ -139,9 +139,9 @@
    "tools/sizecheck.py"
   ],
   "legacy": [
-   "88f379871c4df9a8"
+   "d31c2edafa984f26"
   ],
-  "sha": "88f379871c4df9a8"
+  "sha": "d31c2edafa984f26"
  },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",
