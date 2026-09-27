@@ -136,12 +136,13 @@
   "files": [
    "src/firelane/read/__init__.py",
    "tests/test_read_dispatch.py",
+   "tools/axis_gain.py",
    "tools/sizecheck.py"
   ],
   "legacy": [
-   "d31c2edafa984f26"
+   "c2e2bd8621ac722c"
   ],
-  "sha": "d31c2edafa984f26"
+  "sha": "c2e2bd8621ac722c"
  },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",
