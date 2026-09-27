@@ -127,9 +127,9 @@
    "tools/serve.py"
   ],
   "legacy": [
-   "d5d143f52ed14940"
+   "4845da6fb748703e"
   ],
-  "sha": "d5d143f52ed14940"
+  "sha": "4845da6fb748703e"
  },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",

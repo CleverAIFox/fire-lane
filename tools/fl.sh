@@ -303,7 +303,9 @@ if [ -n "$BODY" ]; then
         || die "PR 본문이 템플릿 검사를 못 넘는다: $BODY" \
                "  고치고 다시 돌려라 — verify 를 태우기 전에 본다."
     ok "PR_BODY.md  $BODY"
-else warn "PR_BODY.md 가 없다 — --all 은 못 간다"; fi
+# ★ 경고만 하고 verify 14분을 태운 뒤 6단계에서 죽었다(DECISIONS §273-13).
+elif [ "$MODE" = "--all" ]; then die "PR_BODY.md 가 없다 — --all 은 못 간다. 찾아본 곳: $WORK · $IN"
+else warn "PR_BODY.md 가 없다 — PR 단계에서 멈춘다"; fi
 
 # ══ 3. 붙는지 먼저 본다 ═══════════════════════════════════════
 # ★ **이것이 오늘 없어서 터진 단계다.** `git am` 은 반쯤 적용한 뒤에 멈추고,
@@ -538,12 +540,10 @@ fi                            # ── CI 대기 · 스쿼시 끝 ──
 
 if [ "$RESUME" != tidy ]; then                      # ── dev PR · 방송 ──
 
-# ★ 7b. 전수 verify 는 feat 에서 한 번 돌고 스쿼시·재도장·발행이 만든 상태는
-#   아무도 안 봤다. 사연과 목록은 tools/after_squash.py (DECISIONS §273-5).
+# ★ 7b. 사연과 목록은 tools/after_squash.py (DECISIONS §273-5).
 step "7b. 열차가 만든 상태 — 스쿼시 뒤 다시 본다"
 uv run python tools/after_squash.py || die \
-  "스쿼시 뒤에 빨간불이다 — dev PR 을 열지 않는다. 고치고 part/infra 로 PR 하나 더." \
-  "  무엇을 왜 보는지:  uv run python tools/after_squash.py --list"
+  "스쿼시 뒤에 빨간불이다 — dev PR 을 열지 않는다. 무엇을 왜 보는지: after_squash.py --list"
 
 # ══ 8. part/infra → dev PR ════════════════════════════════════
 step "8. $BASE → dev PR"
