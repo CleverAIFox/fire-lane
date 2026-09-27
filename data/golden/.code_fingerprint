@@ -1,5 +1,5 @@
 {
- "all": "28950144159924de",
+ "all": "03131d2da15b2104",
  "method": "tokens-v1",
  "files": {
   "src/firelane/__init__.py": "fa4d63348469",
@@ -17,8 +17,7 @@
   "src/firelane/seg/vehicle.py": "52a14bf37903",
   "src/firelane/seg/width.py": "18ae71f80efe",
   "src/firelane/segkey.py": "44c023f55096",
-  "src/firelane/segments.py": "2e2a781f777e",
-  "src/firelane/skeleton.py": "f6ae79a244a1",
+  "src/firelane/segments.py": "942e3fc60ac4",
   "uv.lock": "1108503cbf9bbac7"
  }
 }
