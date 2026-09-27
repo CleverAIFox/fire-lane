@@ -53,6 +53,14 @@
   ],
   "sha": "ad55d9e97afead7c"
  },
+ "DECISIONS/267": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_docseal.py",
+   "tests/test_seal_axes.py"
+  ],
+  "sha": "aae23ae421ee0f37"
+ },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
   "files": [

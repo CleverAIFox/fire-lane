@@ -85,7 +85,10 @@ def refs(text: str) -> list[str]:
     # ★ 도장 파일 자신은 뺀다. 안 빼면 그 파일을 지목한 절이 **찍는 순간 무효**가
     #   된다 — 찍기가 도장 파일을 바꾸고 그 변경이 그 절의 코드 쪽이기 때문이다.
     #   §265 에서 실제로 무한 루프가 났다.
-    me = SEAL.relative_to(ROOT).as_posix()
+    try:
+        me = SEAL.relative_to(ROOT).as_posix()
+    except ValueError:       # 도장 파일이 저장소 밖(시험 · 임시 경로)이면 뺄 것이 없다
+        me = ""
     return sorted({p for p in PATH.findall(text)
                    if p != me and (ROOT / p).is_file()})
 

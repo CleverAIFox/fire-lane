@@ -447,6 +447,37 @@ def reseal_code_cli(man_path: Path, cfg: dict, out_dir: Path, code: str,
           + ("" if wrote else "\n  대장 불변"))
     if skipped:
         print("  ★ 거절된 것은 **다시 빌드해야 한다.** 봉인은 그래서 있다.")
+    if wrote:
+        _relineage(man_path)
+    return 0
+
+
+def _relineage(man_path: Path) -> None:
+    """재도장으로 바뀐 대장 해시를 **계보 기록에도** 반영한다.  (DECISIONS §267)
+
+    ★ 2026-09-27 실측. 재도장은 대장을 고치는데 `_lineage.json` 의
+      `ingest.outputs["data/processed/_manifest.json"]` 은 옛 해시를 든 채였다.
+      그래서 바로 다음 `segments` 가 「입력이 바뀌었으니 상류부터 다시 돌려라」로
+      막혔다 — **재도장이 재빌드를 부르는** 자리였고, 그것은 이 도구가 없애려던
+      바로 그 비용이다(DECISIONS §224-2).
+
+    ★ 갱신이 안전한 이유는 재도장의 정의다 — `code` 칸만 고치고 **산출물은 한
+      바이트도 안 건드린다.** 거절된 종은 애초에 안 고쳐지므로 여기 안 온다.
+      바꾸는 것은 대장 한 칸이고, 나머지 계보는 그대로 둔다.
+    """
+    from firelane import lineage
+
+    lin = man_path.parent / lineage.LINEAGE
+    if not lin.exists():
+        return                       # 계보가 없으면 다음 실행이 새로 적는다
+    doc = json.loads(lin.read_text(encoding="utf-8"))
+    key = f"data/processed/{man_path.name}"
+    for step in doc.values():
+        out = (step or {}).get("outputs") or {}
+        if key in out:
+            out[key] = lineage._manifest_digest(man_path)
+    lin.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"  계보 기록의 `{key}` 도 같이 갱신했다 — 재도장이 재빌드를 안 부르게")
 
 
 def _short(text: str) -> str:

@@ -232,3 +232,53 @@ def test_the_declaration_is_not_wider_than_the_code_either():
         f"선언에만 있고 `dms.py` 가 이름조차 안 드는 도구: {ghost}\n"
         "  그 도구가 바뀔 때마다 근거 없이 축이 무효가 된다 — 재검사를 습관적으로\n"
         "  건너뛰게 만드는 쪽이다(§255).")
+
+
+# ── 재도장이 계보를 같이 갱신하는가 ────────────────────────────
+def test_resealing_also_refreshes_the_lineage_entry(tmp_path):
+    """★ 2026-09-27 실기 (DECISIONS §267). 재도장이 대장을 고치는데 `_lineage.json` 은
+    옛 해시를 든 채였다. 바로 다음 `segments` 가 「입력이 바뀌었으니 상류부터
+    다시 돌려라」로 막혔다 — **재도장이 재빌드를 부르는** 자리였고, 그것은 이
+    도구가 없애려던 바로 그 비용이다(DECISIONS §224-2).
+
+    밖  재도장이 **무엇을** 고치는지는 위 시험들이 든다. 여기서 보는 것은
+        「고친 뒤 계보가 따라오는가」 하나다.
+    """
+    import importlib.util
+    import json
+    import sys
+
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location("ss_lin", root / "src/firelane/shardseal.py")
+    assert spec and spec.loader
+    ss = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = ss      # @dataclass 가 되짚는다 (DECISIONS §258-10)
+    spec.loader.exec_module(ss)
+    from firelane import lineage
+
+    man = tmp_path / "_manifest.json"
+    man.write_text(json.dumps({"datasets": [{"key": "a"}]}, ensure_ascii=False), encoding="utf-8")
+    lin = tmp_path / lineage.LINEAGE
+    lin.write_text(json.dumps({"ingest": {"outputs": {
+        "data/processed/_manifest.json": {"kind": "manifest", "n": 1, "sha256": "옛해시"}}}},
+        ensure_ascii=False), encoding="utf-8")
+
+    ss._relineage(man)
+
+    got = json.loads(lin.read_text(encoding="utf-8"))["ingest"]["outputs"][
+        "data/processed/_manifest.json"]
+    assert got["sha256"] != "옛해시", "계보가 안 따라온다 — 다음 단계가 상류 재실행을 요구한다"
+    assert got == lineage._manifest_digest(man), "계보 값이 `lineage` 의 계산과 다르다 — 두 벌이다"
+
+
+def test_relineage_is_wired_into_the_reseal_path():
+    """★ 함수만 있고 안 불리면 장식이다. 부르는 자리를 짚는다."""
+    import ast
+
+    root = Path(__file__).resolve().parents[1]
+    src = (root / "src/firelane/shardseal.py").read_text(encoding="utf-8")
+    fn = next(n for n in ast.walk(ast.parse(src))
+              if isinstance(n, ast.FunctionDef) and n.name == "reseal_code_cli")
+    called = {n.func.id for n in ast.walk(fn)
+              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "_relineage" in called, "재도장 경로가 계보를 안 갱신한다 — §267 이 그대로 돌아온다"
