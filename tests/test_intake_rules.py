@@ -12,6 +12,8 @@ test_intake_rules.py — 획득 규칙 삼종의 강제자.
 """
 from __future__ import annotations
 
+import sys
+
 import pytest
 
 from firelane import encoding as enc
@@ -275,6 +277,7 @@ def _pull():
     spec = importlib.util.spec_from_file_location(
         "pull_data", root / "tools/pull_data.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 

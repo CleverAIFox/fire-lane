@@ -20,8 +20,10 @@ from __future__ import annotations
 
 import fnmatch
 import os
+import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -206,6 +208,7 @@ def test_lake_disposition_knows_our_patch_zip():
     spec = importlib.util.spec_from_file_location("lakecheck_t", T / "lakecheck.py")
     assert spec and spec.loader
     lakecheck = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = lakecheck   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(lakecheck)
     globs = lakecheck.disposed(ledger.load_sources())
     for name in ("fire-lane-navi-closed-loop.zip", "fire-lane-turn-radius.zip"):
@@ -339,6 +342,7 @@ def test_tidy_keeps_long_lived_branches_like_branch_tidy():
     import re as _re
     spec = importlib.util.spec_from_file_location("_tidy", ROOT / "tools" / "tidy.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     sh = (ROOT / "tools" / "branch_tidy.sh").read_text(encoding="utf-8")
     keep = _re.search(r"KEEP_RE='\^\(([^)]*)\)\$'", sh).group(1).split("|")
@@ -508,3 +512,149 @@ def test_verify_failure_keeps_a_legitimate_generated_change():
     assert blk.index("tools/golden.py check") < blk.index('git checkout -q -- "${GEN[@]}"'), \
         "되돌린 **뒤에** 판정을 본다 — 그러면 이미 버린 것이다"
     assert "커밋한 뒤 다시 돌려라" in blk, "무엇을 하라는지 안 적는다"
+
+
+# ════════════════════════════════════════════════════════════════
+# 족 — 도구가 **모르는 것을 안다고 우긴다** (DECISIONS §225)
+#
+# 2026-09-23 하루에 셋이 연달아 터졌고 전부 같은 병이다.
+#   A0  `gh pr checks` 의 503 을 「CI 빨강」으로 읽고 **PR 을 닫고 가지를 지웠다**
+#   A4  A-0 이 part/infra 를 앞세워 놓고 「PR 을 빠뜨렸다」고 **사람을 탓했다**
+#   A5  push **이전** 머리로 머지를 걸어 `Head branch is out of date` 로 거부당했다
+#
+# 인스턴스를 하나씩 잡으면 다음 것이 남는다 — 위 `test_pr_sweeps_read_the_author`
+# 가 그 교훈으로 생겼다. 여기 둘은 그 족을 정적으로 막는다.
+# ════════════════════════════════════════════════════════════════
+
+#: 되돌릴 수 없는 동작. 여기 한 줄이 늘면 아래 시험이 사유를 요구한다.
+DESTRUCTIVE = (
+    "gh pr close",
+    "--delete-branch",
+    "git branch -q -D",
+    "git branch -D",
+    "git push --delete",
+    "git push -d ",
+)
+
+#: 파괴적 동작이 **「모름」과 무관한** 자리. (파일, 줄에 든 조각) → 사유.
+#: ★ 사유는 「왜 모름이 여기 못 오는가」여야 한다. 「안전하다」는 사유가 아니다.
+DESTROY_EXEMPT = {
+    ("tools/merge_batch.sh", 'git branch -q -D "$sb"'):
+        "조회가 아니라 **우리가 방금 만든** 로컬 가지를 치운다 — 원격은 gh 가 이미 지웠거나 남겼다",
+    ("tools/branch_tidy.sh", "--delete-branch"):
+        "branch_tidy 는 자기 조회 실패를 스스로 본다(--close-bots 는 목록을 먼저 낸다)",
+    ("tools/fl.sh", 'git branch -D "$BR" && ok'):
+        "`--undo` 다. **사람이 지우라고 친 것**이지 조회 결과가 시킨 것이 아니다",
+    ("tools/fl.sh", "--squash --delete-branch"):
+        "머지가 **성공한 뒤**다. 가지는 base 에 흡수됐으므로 지우는 것이 맞다 — "
+        "실패하면 바로 옆 `|| die` 가 먼저 문다",
+    ("tools/fl.sh", 'git branch -D "$BR" >/dev/null'):
+        "스쿼시 성공 뒤 로컬 정리. 원격은 이미 gh 가 지웠고 내용은 base 에 있다",
+    ("tools/branch_tidy.sh", 'git branch -q -D "$b"'):
+        "지우는 대상 `GONE` 은 `git fetch --prune` 이 **원격에서 사라졌다고 표시한** 것뿐이다. "
+        "fetch 가 실패하면 아무것도 gone 으로 안 서고 목록이 비어 **아무것도 안 지운다** — "
+        "조회 실패가 파괴로 가는 길이 구조적으로 없다",
+}
+
+
+def _destructive_sites() -> list[tuple[str, int, str]]:
+    out = []
+    for rel in ("tools/fl.sh", "tools/merge_batch.sh", "tools/branch_tidy.sh"):
+        p = ROOT / rel
+        if not p.is_file():
+            continue
+        for i, ln in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            s = ln.split("#", 1)[0]
+            if not any(d in s for d in DESTRUCTIVE):
+                continue
+            # ★ 2026-09-24. **사람에게 보여주는 문구를 동작으로 세지 않는다.**
+            #   `die "… gh pr close --delete-branch $BR …"` 는 지우는 코드가 아니라
+            #   지우는 법을 알려주는 글이다. 처음 판이 그것을 잡았고, 그러면
+            #   「고칠 수 없는 빨강」이 생겨 사람이 검사를 우회한다(MASTER §17).
+            b = s.strip()
+            if b.startswith(('"', "'")) or re.match(r'^(die|warn|ok|say|echo|printf)\b', b):
+                continue
+            out.append((rel, i, ln.strip()))
+    return out
+
+
+def test_nothing_is_destroyed_on_an_unread_answer():
+    """**모르면 안 지운다.** 파괴적 동작 앞 25줄이 「미상」을 가르는가.
+
+    ★ 2026-09-23 실물. GitHub 이 503 을 뱉었고 `merge_batch.sh` 가 그것을 CI
+      빨강으로 읽어 봉인 PR 을 닫고 가지를 지웠다. 못 읽은 것을 근거로 되돌릴
+      수 없는 일을 했다 — `ruleset_check.py` 가 자기 머리말에 「못 읽은 것을
+      '없다' 로 적지 않는다」고 써 둔 바로 그 원칙을 옆 도구가 어겼다.
+
+    ★ 무엇을 보는가 — 파괴 자리 위쪽에 **세 갈래를 가르는 표시**가 있는가.
+      `wrc`/`rc` 를 `2` 와 비교하거나, 「미상 · 못 읽」 이라는 말이 있어야 한다.
+      말만 있고 코드가 없으면 그것은 다음 시험(`…_actually_returns_three`)이 잡는다.
+    """
+    bad = []
+    for rel, line, src in _destructive_sites():
+        if any(rel == r and frag in src for (r, frag) in DESTROY_EXEMPT):
+            continue
+        lines = (ROOT / rel).read_text(encoding="utf-8").splitlines()
+        ctx = "\n".join(lines[max(0, line - 26):line])
+        if re.search(r'=\s*"?2"?\s*\]|=\s*2\s*\]|미상|못 읽', ctx):
+            continue
+        bad.append(f"  {rel}:{line}  {src[:100]}")
+    assert not bad, (
+        "되돌릴 수 없는 동작인데 **「못 읽었다」를 「빨갛다」와 안 가른다**:\n"
+        + "\n".join(bad)
+        + "\n\n  조회가 실패하면 0/1 이 아니라 **세 번째 값**을 내고, 그 값에서는\n"
+          "  아무것도 지우지 마라(merge_batch 의 `wait_checks` → 0·1·2 가 본보기).\n"
+          "  「모름」이 여기 못 온다면 DESTROY_EXEMPT 에 **그 이유**를 적어라.")
+
+
+def test_destroy_exempt_entries_are_alive():
+    """면제가 유령이 되지 않게."""
+    sites = [(r, s) for r, _, s in _destructive_sites()]
+    dead = [f"{r}  {frag}" for (r, frag) in DESTROY_EXEMPT
+            if not any(rr == r and frag in ss for rr, ss in sites)]
+    assert not dead, f"DESTROY_EXEMPT 가 없는 자리를 든다: {dead}"
+
+
+def test_status_probe_actually_returns_three():
+    """조회 함수가 **정말로** 세 갈래를 내는가 — 말이 아니라 코드로.
+
+    ★ 앞 시험은 「가른다고 적혀 있는가」를 본다. 적어만 두고 안 가르면 그것이
+      1족(무음 통과)이다. 여기서는 `wait_checks` 본문에 `return 2` 가 실재하고
+      호출부가 그 2 를 실제로 읽는지 센다.
+    """
+    src = (ROOT / "tools/merge_batch.sh").read_text(encoding="utf-8")
+    body = src[src.index("wait_checks() {"):src.index("require_green() {")]
+    assert "return 2" in body, (
+        "`wait_checks` 가 「못 읽음」을 낼 길이 없다 — 0/1 뿐이면 호출부가 못 가른다")
+    assert body.count("return 2") >= 2, (
+        "조회 실패 자리가 하나뿐이다 — 머리 조회 · 검사 등록 대기 · 상태 조회 셋이 "
+        "전부 「못 읽음」이다")
+    users = [ln for ln in src.splitlines() if re.search(r'(wrc|rc)"?\s*=\s*"?2"?', ln)]
+    assert users, "아무도 2 를 안 읽는다 — 내기만 하고 안 가르면 없는 것과 같다"
+
+
+def test_no_exit_code_read_after_assignment_under_set_e():
+    """`set -e` 아래서 `x=$(cmd); rc=$?` 는 **rc 를 읽기 전에 죽는다.**
+
+    ★ 2026-09-24. 이 배치를 만들다 내가 네 자리에서 저질렀다. 대입의 종료코드가
+      곧 명령의 종료코드라 `set -e` 가 먼저 문다 — 그래서 「실패를 분류하려고 쓴
+      코드」가 **분류하기 전에 스크립트를 죽인다.** 조용하지도 않다: 죽긴 죽는데
+      개발자가 의도한 분기는 영원히 안 돈다.
+    ★ 고치는 법은 `if x=$(cmd); then rc=0; else rc=$?; fi` 다.
+    """
+    bad = []
+    for rel in ("tools/fl.sh", "tools/merge_batch.sh", "tools/branch_tidy.sh"):
+        p = ROOT / rel
+        if not p.is_file():
+            continue
+        src = p.read_text(encoding="utf-8")
+        if not re.search(r"^set -\w*e", src, re.M):
+            continue
+        for i, ln in enumerate(src.splitlines(), 1):
+            s = ln.split("#", 1)[0]
+            if re.search(r"^\s*\w+=\$\(.*\)\s*;\s*\w+=\$\?", s):
+                bad.append(f"  {rel}:{i}  {ln.strip()[:100]}")
+    assert not bad, (
+        "`set -e` 아래서 대입 뒤 `$?` 를 읽는다 — 그 줄은 **안 돈다**:\n"
+        + "\n".join(bad)
+        + "\n\n  if x=$(cmd); then rc=0; else rc=$?; fi")

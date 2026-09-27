@@ -162,7 +162,9 @@ def test_pilmun_289_real_data_preserves_approved_topology():
     assert reports[0].corrected_length_m == pytest.approx(95.7800073)
     assert "NC-F8B3DA6F96C8" not in PILMUN_289.centerline_ids
 
-    poly = boundary.loc[boundary.EMD_CD == "12210108", "geometry"].iloc[0]
+    # ★ 2026-09-24 (W12-2). 코드에 박힌 네 번째 사본이었다. 정본에서 읽는다.
+    from firelane.seg.params import EMD_CD
+    poly = boundary.loc[boundary.EMD_CD == EMD_CD, "geometry"].iloc[0]
     old_graph, _ = build_graph(road, poly, endpoint_snap)
     new_graph, _ = build_graph(corrected, poly, endpoint_snap)
     assert (old_graph.number_of_nodes(), old_graph.number_of_edges()) == (2877, 3470)

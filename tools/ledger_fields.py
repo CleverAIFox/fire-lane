@@ -90,8 +90,6 @@ def _entry_span(s: str, key: str) -> tuple[int, int, str]:
     return m.end(), m.end() + len(body.group(1)), body.group(1)
 
 
-def _has(body: str, field: str) -> bool:
-    return re.search(rf"^    {re.escape(field)}:", body, re.MULTILINE) is not None
 
 
 def _drop(body_text: str, field: str) -> str:

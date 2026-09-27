@@ -36,10 +36,12 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import docparse
+
 ROOT = Path(__file__).resolve().parent.parent
 
 # ★ 참조는 세 문서 어디든 가리킨다. 처음에 MASTER 만 정본으로 잡았다가
-#   114건이 오탐으로 떴다 — `PLAN §4-4` · `DECISIONS §7-5` 가 그것이다.
+#   114건이 오탐으로 떴다 — `PLAN §4-4` · `DECISIONS §7-5` 가 그것이다.  ref-ok
 #   **어느 문서를 가리키는지는 글에 안 적히는 경우가 많다.** 그래서
 #   세 문서의 절 번호를 합집합으로 두고, 그 어디에도 없을 때만 잡는다.
 #   느슨하지만 오탐이 없다 — 검사가 시끄러우면 사람이 끈다.
@@ -56,11 +58,17 @@ SCAN_DIRS = ("src", "tools", "tests", "docs")
 
 
 def _sections(p: Path) -> list[tuple[str, str, int]]:
-    """(절번호, 제목, 줄번호)."""
+    """(절번호, 제목, 줄번호).
+
+    ★ 2026-09-24 (PLAN §13 W12-5). 종전에는 **코드 펜스 안까지 봤다.**
+      같은 물음을 보는 시험 셋 중 여기만 그랬다 — 펜스 안에 절 제목을
+      인용하는 회고 한 줄이 들어오면 이 시험만 빨개진다. 펜스 처리의
+      집을 `tests/docparse.py` 하나로 올렸다.
+    """
     if not p.exists():
         return []
     out = []
-    for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+    for i, line in docparse.prose_lines(p):
         m = SUB.match(line)
         if m:
             out.append((f"{m.group(1)}-{m.group(2)}{m.group(3)}",
@@ -113,8 +121,12 @@ def test_section_references_resolve():
     #   본문을 덮고, 그러면 사람이 검사를 끈다.
     #
     #   그래서 대상을 **`### N-M.` 제목이 3개 이상 연속으로 붙은 상위
-    #   절**로 좁힌다. 지금은 §12 하나다. 새 절이 그 체계를 갖추면
-    #   자동으로 대상에 들어온다 — 목록을 손으로 관리하지 않는다.
+    #   절**로 좁힌다. 새 절이 그 체계를 갖추면 자동으로 대상에 들어온다 —
+    #   목록을 손으로 관리하지 않는다.
+    #   ★ 2026-09-24 (§239). 이 자리에 「지금은 §12 하나다」라고 적혀 있었다.
+    #     실측 **99개**다(DECISIONS §78~§237 이 전부 들어온다). 규칙이 스스로
+    #     넓어진 것이고 그것이 설계인데, **주석이 범위를 99분의 1로 적고 있었다.**
+    #     검사가 선언보다 넓으면 거짓 초록은 아니지만 거짓 빨강의 출처를 못 찾는다.
     #   판정은 **실제 제목만** 센다. 위에서 별칭(`18-1a`→`18-1`)을 have 에
     #   넣었으므로 그것까지 세면 §18 이 대상이 되어 버린다.
     real: dict[str, list[int]] = {}
@@ -213,3 +225,104 @@ def test_subsection_numbers_are_contiguous():
 
     assert not bad, ("하위 절 번호가 연속이 아니다\n" + "\n".join(bad)
                      + "\n\n  지운 절은 슬롯을 유지한다(MASTER §0).")
+
+
+# ── 코드 → 문서 방향 ─────────────────────────────────────────────
+#
+# ★ 2026-09-24 (PLAN §13 W12-3 · DECISIONS §239). 위 검사들은 **문서 안의**
+#   참조를 본다. `tools/*.py` 주석이 드는 `MASTER §N-M` 은 아무도 안 봤고,
+#   `tools/docx_fix.py` 가 **실재하지 않는 절 넷**을 규칙의 근거로 들고 있었다
+#   (`PLAN §12-4` · `§12-7` · `§12-2` · `MASTER §16-3`). 기획서를 실제로  ref-ok
+#   고치는 도구의 근거라, 확인할 수 없으면 규칙을 검증할 수 없다.
+#
+# ★ 범위를 좁게 선언한다 — **문서 이름이 붙은 하위 절 참조**만 본다.
+#   `PLAN §1-16`(표 행 번호) · `MASTER §18-5`(규칙 번호) · `§0-0`(묶음 표기)은
+#   이 저장소의 관용이고 위 주석이 이미 그것을 든다. 그 셋은 대상이 아니다.
+CODE_REF = re.compile(r"\b(MASTER|PLAN|DECISIONS)\s*§\s*(\d+)-(\d+)\b")
+
+#: 절이 아닌 `N-M` 표기. 위 주석의 셋을 그대로 옮긴 것이다.
+IDIOM = {("PLAN", "1"), ("PLAN", "0"), ("MASTER", "18")}
+
+#: 일부러 **죽은 참조를 인용하는** 줄. 고친 경위를 적는 자리라 살아 있으면 안 된다.
+REF_OK = "ref-ok"
+
+
+def _code_files():
+    for d in ("tools", "src", "tests"):
+        for p in sorted((ROOT / d).rglob("*")):
+            if p.suffix in (".py", ".sh", ".mjs") and "__pycache__" not in str(p):
+                yield p
+
+
+def _headings(doc: str) -> set[str]:
+    t = (ROOT / "docs" / f"{doc}.md").read_text(encoding="utf-8")
+    return set(re.findall(r"^### (\d+-\d+)\.", t, re.M))
+
+
+def test_code_comments_do_not_cite_a_section_that_does_not_exist():
+    """코드가 드는 `<문서> §N-M` 이 실재하는가."""
+    have = {d: _headings(d) for d in ("MASTER", "PLAN", "DECISIONS")}
+    # ★ 카나리아 — 파서가 죽으면 0 이 나온다. 「0 이 아니다」로는 약해서 하한을 둔다.
+    # ★ 2026-09-24 (DECISIONS §244). PLAN 만 하한이 다르다. 다른 둘은 **자라는**
+    #   문서지만 PLAN 은 **빚 목록이라 줄어드는 것이 목표**다(§0-1 — 개발이 끝나면
+    #   이 문서는 비어야 한다). 같은 하한을 걸면 **목표에 닿는 날 검사가 빨개지고**,
+    #   그날 사람이 검사를 끈다. 실제로 이 배치에서 PLAN 하위 절이 49 → 25 가 됐다.
+    FLOOR = {"MASTER": 40, "DECISIONS": 40, "PLAN": 5}
+    thin = {k: len(v) for k, v in have.items() if len(v) <= FLOOR[k]}
+    assert not thin, f"절 제목 수집이 죽었다: {thin}"
+    bad = []
+    for p in _code_files():
+        for i, line in enumerate(p.read_text(encoding="utf-8", errors="ignore")
+                                 .splitlines(), 1):
+            if REF_OK in line:
+                continue
+            for doc, top, sub in CODE_REF.findall(line):
+                if (doc, top) in IDIOM or f"{top}-{sub}" in have[doc]:
+                    continue
+                bad.append(f"  {p.relative_to(ROOT)}:{i}  {doc} §{top}-{sub}")
+    assert not bad, (
+        "코드 주석이 **없는 절**을 근거로 든다:\n" + "\n".join(bad) + "\n\n"
+        "  절 번호를 고치거나, 일부러 죽은 참조를 인용하는 줄이면 그 줄에\n"
+        f"  `{REF_OK}` 를 적어라. 근거를 확인할 수 없으면 규칙을 검증할 수 없다.")
+
+
+def test_the_code_ref_probe_bites():
+    """★ 빈 그물인가 — 0건이 되므로 합성 입력으로 확인한다."""
+    have = {"MASTER": {"2-2"}, "PLAN": set(), "DECISIONS": set()}
+
+    def judge(line: str) -> list[str]:
+        if REF_OK in line:
+            return []
+        return [f"{d} §{t}-{s}" for d, t, s in CODE_REF.findall(line)
+                if (d, t) not in IDIOM and f"{t}-{s}" not in have[d]]
+
+    assert judge("# 근거는 MASTER §16-3 이다") == ["MASTER §16-3"]  # ref-ok
+    assert judge("# 근거는 MASTER §2-2 이다") == []
+    assert judge("# PLAN §1-16 행") == [], "표 행 번호를 절로 본다 — 오탐이 쏟아진다"
+    assert judge("# MASTER §18-5 규칙") == [], "규칙 번호를 절로 본다"
+    assert judge("# 종전에 MASTER §16-3 을 들었다  ref-ok") == []
+
+
+def test_fence_handling_has_exactly_one_home():
+    """★ 2026-09-24 (PLAN §13 W12-5). 같은 규칙이 시험 셋에 각자 살아 있었고
+    그중 하나(`test_docref`)는 **펜스를 안 뺐다.** 오늘은 발현 안 하지만,
+    펜스 안에 절 제목을 인용하는 회고 한 줄이 들어오면 이쪽만 빨개진다.
+
+    이 저장소는 「정본이 둘이면 갈린다」를 강제자로 세운다
+    (`tests/test_sources_of_truth.py`). 그 저장소에서 파서가 셋이었다.
+    """
+    assert docparse.selftest() == 0, "펜스 처리기의 자기검사가 빨갛다"
+    users = ["tests/test_docref.py", "tests/test_doc_style.py",
+             "tests/test_reproducibility.py"]
+    bad = []
+    for rel in users:
+        src = (ROOT / rel).read_text(encoding="utf-8")
+        if "docparse.prose_lines" not in src:
+            bad.append(f"  {rel} 가 제 펜스 루프를 다시 짠다")
+        # 손으로 짠 토글이 되살아났는가
+        if re.search(r"fence\s*=\s*not\s+fence", src):
+            bad.append(f"  {rel} 에 손으로 짠 펜스 토글이 있다")
+    assert not bad, (
+        "펜스 처리의 집이 둘 이상이다:\n" + "\n".join(bad) + "\n\n"
+        "  `tests/docparse.prose_lines` 를 써라. 규칙이 갈리면 같은 문서에\n"
+        "  대해 시험마다 다른 답이 나온다.")

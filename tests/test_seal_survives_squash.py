@@ -32,6 +32,7 @@ PR #108 을 **스쿼시**로 머지하고 브랜치를 지웠기 때문이다. �
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -128,19 +129,78 @@ def test_seal_pr_ci_wait_cannot_kill_the_release():
         "  그 안의 `die` 가 릴리즈 스크립트 전체를 끝낸다.")
 
 
+def _unquoted(sh: str) -> str:
+    """겹따옴표 안을 **지운** 셸 조각. 주석 줄도 지운다.
+
+    ★ 2026-09-24. 사람에게 「이렇게 치면 된다」고 안내하는 `warn "…"` 안에
+      `gh pr close --delete-branch` 가 **글자로** 들어 있다. 그것을 동작으로
+      세면 안내문을 쓸수록 검사가 빨개진다 — `test_batch_tools` 가 같은 날
+      배운 것과 같은 구멍이고(안내문 ≠ 동작), 그쪽은 줄머리로 걸렀다.
+      여기는 **여러 줄 문자열** 안이라 줄머리로는 안 걸러진다.
+    """
+    out, quoted = [], False
+    for line in sh.splitlines():
+        if not quoted and line.lstrip().startswith("#"):
+            continue
+        buf = []
+        for ch in line:
+            if ch == '"':
+                quoted = not quoted
+                continue
+            if not quoted:
+                buf.append(ch)
+        out.append("".join(buf))
+    return "\n".join(out)
+
+
+def _wrc_arms() -> dict[str, str]:
+    """봉인 PR 판정의 세 갈래를 갈라 돌려준다 — `0 초록` · `2 못 읽음` · `else 빨강`.
+
+    ★ 2026-09-24 (DECISIONS §225-1). 종전에는 `split("else", 1)` 하나로 갈랐다.
+      그런데 `wait_checks` 를 부르는 줄 자체가 `… ; else wrc=$?; fi` 라서 그
+      `else` 가 먼저 잡혔고, 검사가 **rc 대입 한 줄을 「빨강 갈래」로 읽었다.**
+      갈래가 둘이던 시절에는 우연히 맞았을 뿐이다.
+    """
+    code = _a0_block()
+    i = code.index('if [ "$wrc" = 0 ]; then')
+    body = code[i:]
+    # 이 `if` 의 끝 — 줄머리가 8칸 들여쓴 `fi`
+    end = re.search(r"\n {8}fi\b", body)
+    assert end, "봉인 PR 판정 `if` 의 끝(`fi`)을 못 찾았다"
+    body = body[: end.start()]
+    green, rest = body.split('elif [ "$wrc" = 2 ]; then', 1)
+    unread, red = rest.split("\n        else\n", 1)
+    return {"green": green, "unread": unread, "red": red}
+
+
 def test_red_seal_pr_is_closed_not_left_open():
-    """봉인 PR 이 빨가면 **닫고 가지를 지우는가.**
+    """봉인 PR 이 **빨가면** 닫고 가지를 지우는가.
 
     ★ 열어둔 채 넘어가면 다음 `fl.sh` 가 「part/infra 로 열린 다른 PR」로 1단계에서
       거부한다. v0.28 뒤에 `RED.txt` 가 다음 배치를 막은 것과 같은 모양이다 —
       자동 절차가 남긴 것이 다음 절차를 막는다(§208-6).
     """
-    code = _a0_block()
-    i = code.index('if ( wait_checks "$spr" ); then')
-    red = code[i:].split("else", 1)[1].split("fi", 1)[0]
+    red = _wrc_arms()["red"]
     assert "gh pr close" in red and "--delete-branch" in red, (
         "봉인 PR 이 빨갈 때 PR 을 닫고 가지를 지우지 않는다 — 다음 배치가 막힌다")
     assert "git switch -q part/infra" in red, "빨간 봉인 뒤 part/infra 로 돌아오지 않는다"
+
+
+def test_unread_seal_pr_is_left_alone():
+    """검사 상태를 **못 읽었을 때** 아무것도 안 지우는가.
+
+    ★ 2026-09-23 사고(DECISIONS §225-1). GitHub 가 503 을 냈고 `gh pr checks` 가
+      비어 돌아왔다. 그것을 「빨강」으로 읽어 PR #196 을 닫고 가지를 지웠다 —
+      **되돌릴 수 없는 일을 「모른다」를 근거로 했다.**
+      모르는 것은 빨간불이 아니다. 갈래를 셋으로 가르고, 가운데는 남긴다.
+    """
+    unread = _unquoted(_wrc_arms()["unread"])
+    bad = [w for w in ("gh pr close", "--delete-branch", "git branch -q -D",
+                       "git push --delete") if w in unread]
+    assert not bad, (
+        "검사 상태를 못 읽었는데 되돌릴 수 없는 일을 한다 — " + ", ".join(bad)
+        + "\n  「모른다」는 빨간불이 아니다. 남기고 사람에게 넘긴다.")
+    assert "warn" in unread, "못 읽었다는 사실을 사람에게 말하지 않는다"
 
 
 def test_seal_happens_before_the_dev_merge():
@@ -234,6 +294,7 @@ def test_seal_pr_body_template_passes_the_gate():
     spec = importlib.util.spec_from_file_location(
         "_pbc", ROOT / "tools" / "pr_body_check.py")
     pbc = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = pbc   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(pbc)
     tpl = (ROOT / ".github" / "seal_pr_template.md").read_text(encoding="utf-8")
     assert "{HEAD}" in tpl, "템플릿에 `{HEAD}` 자리가 없다 — A-0 의 sed 가 채울 곳이 없다"

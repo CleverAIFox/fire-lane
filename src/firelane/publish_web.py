@@ -44,7 +44,12 @@ from firelane.paths import PROCESSED, ROOT
 
 OUT = PROCESSED
 P, W = ROOT/"data"/"processed", ROOT/"web"/"data"
-EMD_CD = "12210108"
+# ★ 2026-09-24 (PLAN §13 W12-2). `EMD_CD` 가 네 곳에 손으로 박혀 있었다.
+#   정본은 `seg/params.py` 다 — 그 파일은 **판정 지문** 안이라 값이 거기
+#   살아야 맞고, 나머지는 읽기만 한다. 대상 행정동이 바뀔 때 한 곳만 고치면
+#   되고, 한쪽만 고쳐 발행물과 대조표가 **다른 동**을 보는 일이 없어진다.
+from firelane.seg.params import EMD_CD  # noqa: E402
+
 # ★ CCTV_RADIUS 는 삭제했다(2026-08-23). 여기서 0회 참조였고, 커버리지
 #   원의 반경 정본은 web/config.js 의 markers[].cover.radius 다.
 #   판정 임계(CCTV_RANGE 25.0)의 정본은 seg/params.py 다. 같은 숫자를
@@ -178,14 +183,25 @@ def main():
     print(f"  건물 · 도로 겹침 {int(_cut.sum())}동 잘라냄 · 절반 넘게 도로 위 {int((_ov > 0.5).sum())}동은 그대로")
     cols = ["BUL_MAN_NO","BULD_NM","flo","h"] + (["z"] if "z" in b.columns else [])
     b = b[cols+["geometry"]]
-    b.to_crs(4326).to_file(W/"buildings.geojson", **PREC)
+    # ★ 2026-09-26 (§260-4). RFC 7946 감김 — 외곽 반시계 · 구멍 시계. 12,679 외곽
+    #   중 12,004 가 반대였다. **쓰는 자리에서** 맞춘다 — 감김 한 번 걸고 그 뒤에
+    #   단순화하면 미세 고리 여섯이 다시 뒤집혔다(부호면적이 0 에 붙어 있다).
+    #   순서 실수가 §260 의 결함과 같은 족이라 같은 자리에서 막는다.
+    #   결과는 `test_published_polygons_are_well_formed` 가 실물로 다시 묻는다.
+    def _emit(gdf) -> None:
+        gdf = gdf.to_crs(4326)
+        g = gdf.geometry.map(_bm.snap_orient)
+        if (gone := int(g.isna().sum())):
+            raise SystemExit(f"★ 건물 {gone}동이 격자 스냅으로 사라졌다 — 조용히 빼지 않는다")
+        gdf.assign(geometry=g).to_file(W/"buildings.geojson", **PREC)
+
+    _emit(b)
     # ★ 예산을 넘을 때만 단순화한다(§181-2). 늘 깎으면 스코프 안 건물 모양까지 바뀐다.
     #   공차는 고정 단계라 같은 입력에 같은 산출물이다.
     for tol in BLDG_TOL:
         if (W/"buildings.geojson").stat().st_size <= BLDG_MB * 1_000_000:
             break
-        b.assign(geometry=b.geometry.simplify(tol, preserve_topology=True)) \
-         .to_crs(4326).to_file(W/"buildings.geojson", **PREC)
+        _emit(b.assign(geometry=b.geometry.simplify(tol, preserve_topology=True)))
         print(f"  건물 단순화 {tol}m")
     _mb = (W/"buildings.geojson").stat().st_size / 1_000_000
     if _mb > BLDG_MB:

@@ -101,9 +101,18 @@ def tracked(prefix: str = "") -> list[str]:
     ★ 2026-08-24 의 교훈이다(test_web_ownership). 디스크를 보면 로컬
       생성물 때문에 기기마다 결과가 갈린다. CODEOWNERS 는 리뷰 권한을
       정하는 파일이고, 저장소에 안 들어오는 것은 리뷰 대상이 아니다.
+
+    ★ 2026-09-24 (DECISIONS §239). 종전에는 `r.returncode` 를 안 봤다. git 이
+      실패하면 **빈 목록**이 나가고 그것을 받는 `unowned()` 가 「소유자 없는
+      경로 0건」으로 통과한다. `verify.sh` 쪽은 `[ -n "$FILES" ]` 로 막아 뒀지만
+      `import` 로 쓰는 `tests/test_ownership.py` 에는 그 방어가 없었다.
+      **0건은 청결이 아니다** — 못 잰 것과 깨끗한 것을 가른다.
     """
     r = subprocess.run(["git", "ls-files", prefix] if prefix else ["git", "ls-files"],
                        cwd=ROOT, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise SystemExit(f"★ git ls-files 실패(rc={r.returncode}) — "
+                         f"소유 검사가 빈 목록으로 통과하면 안 된다: {r.stderr.strip()[:200]}")
     return sorted(x for x in r.stdout.split() if x)
 
 

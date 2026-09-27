@@ -1,219 +1,50 @@
 /**
- * domain/graph.ts — 인접리스트 · A* · 경로 파생값.
+ * domain/graph.ts — A*. 그리고 경로 계산의 **한 문**이다.
  *
  * `MASTER §20-5` 가 "하지 않았다" 고 남겨둔 자리를 닫는다.
  *
- * ★ 순수하다. React·MapLibre·fetch 를 모른다.
- */
-
-import { distM, angleDelta, MX, MY, type LngLat } from "./geo";
-import { edgeCost, requiredWidth, type TuningKnobs, TUNING } from "./vehicle";
-import { directionFactor, edgeIndex, routeRuleWarnings, turnBan, TURN_BAN_M } from "./rules";
-import { tightTurn, TIGHT_TURN_M } from "./turning";
-import type { GraphEdge, NaviGraph, RoutePlan, VehicleSpec } from "./types";
-
-/** `idx` 는 `graph.edges` 인덱스 — 회전 금지가 인덱스로 적혀 있다 */
-interface Adj { to: number; cost: number; edge: GraphEdge; idx: number }
-export type Adjacency = Map<number, Adj[]>;
-export type CostMode = "safe" | "fastest";
-
-/** 인접리스트를 구운 차 — 코너 회전 점검(§218-2)이 전이마다 차를 알아야 한다 */
-const ADJ_SPEC = new WeakMap<Adjacency, VehicleSpec>();
-const TIGHT_CACHE = new WeakMap<Adjacency, Map<string, boolean>>();
-
-/** 이 인접리스트의 차에게 `(들어온, 노드, 나갈)` 전이가 좁은 코너인가. 캐시한다 */
-function isTight(graph: NaviGraph, adj: Adjacency, inIdx: number, node: number, outIdx: number): boolean {
-  const spec = ADJ_SPEC.get(adj);
-  if (!spec?.turn_check_radius_m) return false;
-  let m = TIGHT_CACHE.get(adj);
-  if (!m) TIGHT_CACHE.set(adj, (m = new Map()));
-  const k = `${inIdx}|${node}|${outIdx}`;
-  let v = m.get(k);
-  if (v === undefined) m.set(k, (v = tightTurn(graph, spec, inIdx, node, outIdx) !== null));
-  return v;
-}
-
-/** 인접리스트를 구운 차. 경고를 다시 셀 때 쓴다 */
-export function adjacencySpec(adj: Adjacency): VehicleSpec | undefined {
-  return ADJ_SPEC.get(adj);
-}
-
-/**
- * 그래프를 A* 용 인접리스트로 굽는다. **한 번만 호출한다.**
+ * ── 왜 셋으로 갈랐나 (PLAN §1 #130) ─────────────────────────────
+ * ★ 2026-09-25. 627줄로 길이 상한(600)을 넘었다. 한 파일이 네 가지 일을 했고 넷은
+ *   서로 다른 이유로 바뀐다. 셋을 떼고 **길을 고르는 일만** 남겼다 —
  *
- * @param mode "fastest" 면 통행 가부는 그대로 보되 **비용을 실거리로** 쓴다.
- *   ★ "fastest" 라도 `blocked` 와 필요폭 미만은 막는다. 소방차가 못
- *     지나가는 길은 빠른 것이 아니라 못 가는 길이다.
- * ★ 자기루프(a===b)는 뺀다. `seg/graph.py` 가 버리는 것과 같다.
+ *     `adjacency.ts`    인접리스트 굽기 · 차 기억 · 가까운 노드 · 방향별 비용
+ *     `edgeSnap.ts`     구간 위 투영 · 형상 자르기 (§218-3)
+ *     `routeDerive.ts`  다 난 경로에서 값 읽기 (주행거리 · 앞쪽 구간 · 경계 자르기)
+ *
+ * ★ **이름은 안 옮겼다.** 아래 재수출로 `domain/graph` 의 표면이 갈라기 전과 한 글자도
+ *   같다 — 시험 여섯 파일과 화면 셋이 이 이름으로 읽는다. 새로 쓰는 쪽은 위 세 파일을
+ *   직접 부르는 것이 낫다. 여기를 거치면 왜 그 함수가 있는지가 안 보인다.
+ *
+ * ★ 순수하다. React·MapLibre·fetch 를 모른다.
+ *
+ * IN    NaviGraph · Adjacency · 끝점(노드이거나 구간 위 투영점)
+ * OUT   RoutePlan — 구간 목록 · 진행방향 · 좌표 · 비용 · 길이 · 판정별 길이 · 규칙 경고
+ * 밖    통행 가부와 비용은 여기서 안 정한다(`adjacency.ts`). 화면·음성이 쓰는 파생값도
+ *       여기 없다(`routeDerive.ts`).
  */
-export function buildAdjacency(
-  graph: NaviGraph, spec: VehicleSpec, lenient = false,
-  mode: CostMode = "safe", tuning: TuningKnobs = TUNING,
-  excluded?: ReadonlySet<string>,
-): Adjacency {
-  const adj: Adjacency = new Map();
-  ADJ_SPEC.set(adj, spec);
-  const index = edgeIndex(graph);
-  for (const e of graph.edges) {
-    if (e.a === e.b) continue;
-    // ★ 2026-09-21 (와이어프레임 16·17). 현장에서 「통행 불가」로 신고한
-    //   구간은 **그래프에서 뺀다.** 비용을 올리는 것이 아니다 — 올리면 다른
-    //   길이 더 비쌀 때 그 구간으로 다시 안내한다. 사람이 막혔다고 말한
-    //   길을 계산이 되살리면 안 된다.
-    if (excluded?.has(e.seg_uid)) continue;
-    const penalized = edgeCost(
-      spec, e.length_m, e.width_min_m, e.verdict, null, lenient, tuning);
-    if (!Number.isFinite(penalized)) continue;
-    // ★ 안전 경로는 폭을 아는 확인 필요 구간을 피한다(`TuningKnobs.avoidUncertain`).
-    //   연결성 우선(lenient)에서는 안 피한다 — 그 모드는 닿는 것이 먼저다.
-    const avoid = mode === "safe" && !lenient && e.width_min_m != null
-      && (e.verdict === "needs_cv" || e.verdict === "unknown") ? tuning.avoidUncertain : 1;
-    const cost = mode === "fastest" ? (e.length_m ?? penalized) : penalized * avoid;
-    const idx = index.get(e)!;
-    // ★ 2026-09-22 (§215-1). 일방통행은 **방향마다** 값이 다르다. 두 모드 다 건다 —
-    //   「빠른 길」 이 역주행이면 빠른 것이 아니라 어기는 것이다. 빼지는 않는다(rules.ts).
-    for (const [from, to] of [[e.a, e.b], [e.b, e.a]] as const) {
-      let list = adj.get(from);
-      if (!list) adj.set(from, (list = []));
-      list.push({ to, cost: cost * directionFactor(e, from === e.a), edge: e, idx });
-    }
-  }
-  return adj;
-}
 
-/** 좌표에서 가장 가까운 통행가능 노드. */
-export function nearestNode(graph: NaviGraph, adj: Adjacency, p: LngLat): number {
-  let best = -1;
-  let bd = Infinity;
-  for (const n of adj.keys()) {
-    const d = distM(graph.nodes[n], p);
-    if (d < bd) { bd = d; best = n; }
-  }
-  return best;
-}
+import { distM, angleDelta, type LngLat } from "./geo";
+import { edgeIndex, routeRuleWarnings, turnBan, TURN_BAN_M } from "./rules";
+import { TIGHT_TURN_M } from "./turning";
+import {
+  adjacencySpec, dirCost, isTight, type Adjacency,
+} from "./adjacency";
+import {
+  clipCoords, geomLen, snapToEdge, NODE_EPS_M, type EdgeSnap,
+} from "./edgeSnap";
+import type { GraphEdge, NaviGraph, RoutePlan } from "./types";
 
-// ── 구간 위 투영 (DECISIONS §218-3) ──────────────────────────────────────
-//
-// ★ 2026-09-22. 출발·도착을 가장 가까운 **노드**에 붙이면 구간 한가운데 선 사람이
-//   교차점으로 옮겨진다. 웅토피아(DECISIONS §134)가 같은 결함으로 20m 를 1,172m 로
-//   안내했다. 가장 가까운 **통행가능 구간**에 투영하고 부분 구간 비용을 셈에 넣는다.
-
-/** 이보다 짧은 부분 구간(형상 m)은 노드 위에 선 것으로 본다 */
-const NODE_EPS_M = 0.05;
-
-/** 구간 위 투영 결과 */
-export interface EdgeSnap {
-  /** `graph.edges` 인덱스 */
-  idx: number;
-  edge: GraphEdge;
-  /** 투영점 */
-  point: LngLat;
-  /** 형상(a→b) 위 비율 0~1 */
-  t: number;
-  /** 원점 → 투영점 직선거리(m) */
-  distM: number;
-  /** 투영점 → a · → b 부분 길이(m, `length_m` 공간) */
-  toA_M: number;
-  toB_M: number;
-}
-
-const USABLE = new WeakMap<Adjacency, number[]>();
-
-/** 인접리스트에 실린(= nearestNode 가 통행가능으로 보는) 구간 인덱스 */
-function usableEdges(adj: Adjacency): number[] {
-  let u = USABLE.get(adj);
-  if (!u) {
-    const s = new Set<number>();
-    for (const list of adj.values()) for (const x of list) s.add(x.idx);
-    USABLE.set(adj, (u = [...s].sort((p, q) => p - q)));
-  }
-  return u;
-}
-
-function geomLen(coords: LngLat[]): number {
-  let L = 0;
-  for (let i = 1; i < coords.length; i++) L += distM(coords[i - 1], coords[i]);
-  return L;
-}
-
-/** 형상(a→b)의 비율 t0..t1 부분. a→b 순서로 낸다 */
-export function clipCoords(coords: LngLat[], t0: number, t1: number): LngLat[] {
-  const total = geomLen(coords);
-  if (coords.length < 2 || total <= 0) return [coords[0], coords[coords.length - 1]];
-  const d0 = t0 * total, d1 = t1 * total;
-  const at = (d: number): LngLat => {
-    let acc = 0;
-    for (let i = 1; i < coords.length; i++) {
-      const s = distM(coords[i - 1], coords[i]);
-      if (acc + s >= d || i === coords.length - 1) {
-        const f = s > 0 ? Math.max(0, Math.min(1, (d - acc) / s)) : 0;
-        const p = coords[i - 1], q = coords[i];
-        return [p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f];
-      }
-      acc += s;
-    }
-    return coords[coords.length - 1];
-  };
-  const out: LngLat[] = [at(d0)];
-  let acc = 0;
-  for (let i = 1; i < coords.length - 1; i++) {
-    acc += distM(coords[i - 1], coords[i]);
-    if (acc > d0 && acc < d1) out.push(coords[i]);
-  }
-  out.push(at(d1));
-  return out;
-}
-
-/**
- * 좌표에서 가장 가까운 **통행가능 구간**과 그 위 투영점.
- * 통행가능 = 인접리스트에 실린 구간(`nearestNode` 와 같은 기준 — 막힘 · 폭 미달 · 신고 제외는 빠진다).
- */
-export function snapToEdge(graph: NaviGraph, adj: Adjacency, p: LngLat): EdgeSnap | null {
-  const px = p[0] * MX, py = p[1] * MY;
-  let best: { idx: number; d2: number; along: number; total: number; pt: LngLat } | null = null;
-  for (const idx of usableEdges(adj)) {
-    const c = graph.edges[idx].coords;
-    let acc = 0;
-    let total = 0;
-    for (let i = 1; i < c.length; i++) total += distM(c[i - 1], c[i]);
-    for (let i = 1; i < c.length; i++) {
-      const ax = c[i - 1][0] * MX, ay = c[i - 1][1] * MY;
-      const bx = c[i][0] * MX, by = c[i][1] * MY;
-      const dx = bx - ax, dy = by - ay;
-      const L2 = dx * dx + dy * dy;
-      const f = L2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L2)) : 0;
-      const qx = ax + dx * f, qy = ay + dy * f;
-      const d2 = (px - qx) ** 2 + (py - qy) ** 2;
-      if (!best || d2 < best.d2) {
-        best = { idx, d2, along: acc + Math.sqrt(L2) * f, total, pt: [qx / MX, qy / MY] };
-      }
-      acc += Math.sqrt(L2);
-    }
-  }
-  if (!best) return null;
-  const edge = graph.edges[best.idx];
-  const t = best.total > 0 ? Math.max(0, Math.min(1, best.along / best.total)) : 0;
-  const L = edge.length_m ?? best.total;
-  return {
-    idx: best.idx, edge, point: best.pt, t, distM: Math.sqrt(best.d2),
-    toA_M: L * t, toB_M: L * (1 - t),
-  };
-}
-
-/** 인접리스트가 이 구간의 한 방향에 매긴 비용(배수 · 일방통행 포함). 없으면 Infinity */
-function dirCost(adj: Adjacency, e: GraphEdge, idx: number, forward: boolean): number {
-  const [from, to] = forward ? [e.a, e.b] : [e.b, e.a];
-  for (const x of adj.get(from) ?? []) if (x.idx === idx && x.to === to) return x.cost;
-  return Infinity;
-}
-
-/**
- * 자른 사본의 선형 비율(a→b, 0~1) → 원본 구간 비율. 자르지 않은 구간은 그대로.
- * 스냅의 `progress` 는 원본 기준이라 둘을 오갈 때 쓴다.
- */
-export function fullProgress(e: GraphEdge, f01: number): number {
-  return e.clip ? e.clip.t0 + f01 * (e.clip.t1 - e.clip.t0) : f01;
-}
+// ── 갈라기 전 표면을 그대로 둔다 (위 머리말 참조) ─────────────────
+export {
+  adjacencySpec, buildAdjacency, dirCost, isTight, nearestNode, usableEdges,
+  type Adjacency, type CostMode,
+} from "./adjacency";
+export {
+  clipCoords, fullProgress, geomLen, snapToEdge, NODE_EPS_M, type EdgeSnap,
+} from "./edgeSnap";
+export {
+  lookAhead, progressAlongRoute, routeUids, splitAtHybridBoundary,
+} from "./routeDerive";
 
 /**
  * A*.
@@ -317,7 +148,7 @@ export function findRoute(
   return {
     edges, forward, nodes, coords,
     cost: total, lengthM, byVerdict,
-    rules: routeRuleWarnings(graph, { edges, forward, nodes }, ADJ_SPEC.get(adj)),
+    rules: routeRuleWarnings(graph, { edges, forward, nodes }, adjacencySpec(adj)),
   };
 }
 
@@ -537,91 +368,8 @@ export function findRouteBetween(
   return {
     edges, forward, nodes, coords,
     cost: best.g, lengthM, byVerdict,
-    rules: routeRuleWarnings(graph, { edges, forward, nodes }, ADJ_SPEC.get(adj)),
+    rules: routeRuleWarnings(graph, { edges, forward, nodes }, adjacencySpec(adj)),
   };
-}
-
-/** 경로 구간 집합. 스냅이 경로를 알게 하는 데 쓴다. */
-export function routeUids(plan: RoutePlan): Set<string> {
-  return new Set(plan.edges.map((e) => e.seg_uid));
-}
-
-/**
- * 경로 시작점부터 현재 위치까지 실제로 온 거리(m).
- *
- * ★ **진행방향을 본다.** 경로가 구간을 거꾸로 지나면 스냅의 `progress`
- *   를 뒤집어야 한다 — 21% 가 그런 구간이고, 안 뒤집으면 주행거리가
- *   앞뒤로 튀어 안내가 늦거나 이미 지나서 나온다(2026-09-06).
- *
- * ★ 경로 밖이면 null 이다. 이탈 중에는 남은 거리를 말하지 않는다.
- */
-export function progressAlongRoute(
-  plan: RoutePlan, current: { seg_uid: string; progress: number } | null,
-): number | null {
-  if (!current) return null;
-  let acc = 0;
-  for (let i = 0; i < plan.edges.length; i++) {
-    const e = plan.edges[i];
-    const L = e.length_m ?? 0;
-    if (e.seg_uid === current.seg_uid) {
-      // 자른 사본(출발·도착 구간)이면 원본 비율을 사본 비율로 옮긴다
-      const q = e.clip
-        ? (e.clip.t1 > e.clip.t0 ? (current.progress - e.clip.t0) / (e.clip.t1 - e.clip.t0) : 0)
-        : current.progress;
-      const p = plan.forward[i] ? q : 1 - q;
-      return acc + L * Math.max(0, Math.min(1, p));
-    }
-    acc += L;
-  }
-  return null;
-}
-
-/**
- * 현재 위치에서 `aheadM` 앞에 있는 구간.
- *
- * ★ 판정 안내를 **진입 전에** 하려고 있다. 회색 구간에 들어가 놓고
- *   "주행 중" 이라고 하면 운전자가 이미 결정을 내린 뒤라 쓸모가 없다.
- */
-export function lookAhead(
-  plan: RoutePlan, drivenM: number, aheadM: number,
-): GraphEdge | null {
-  const target = drivenM + aheadM;
-  let acc = 0;
-  for (const e of plan.edges) {
-    const L = e.length_m ?? 0;
-    if (acc + L > target) return acc > drivenM ? e : null;
-    acc += L;
-  }
-  return null;
-}
-
-/**
- * 경로를 **하이브리드 경계**로 자른다.
- *
- * 폭 3.0m 이상 구간은 상용 도로망에 있고(1,101건 전량 대조: 89%), 그
- * 아래는 없다(23%). 경계값을 발명하지 않았다 — `requiredWidth(spec)` 과
- * 같은 숫자이고, 그것이 우연이 아니라는 것이 이 설계의 논거다.
- */
-export function splitAtHybridBoundary(
-  plan: RoutePlan, spec: VehicleSpec,
-): { sdk: GraphEdge[][]; own: GraphEdge[][] } {
-  const need = requiredWidth(spec);
-  const sdk: GraphEdge[][] = [];
-  const own: GraphEdge[][] = [];
-  let run: GraphEdge[] = [];
-  let wide: boolean | null = null;
-  const flush = () => {
-    if (run.length && wide !== null) (wide ? sdk : own).push(run);
-    run = [];
-  };
-  for (const e of plan.edges) {
-    const w = e.width_min_m != null && e.width_min_m >= need;
-    if (wide !== null && w !== wide) flush();
-    wide = w;
-    run.push(e);
-  }
-  flush();
-  return { sdk, own };
 }
 
 export { angleDelta };

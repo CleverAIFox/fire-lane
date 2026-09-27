@@ -106,6 +106,27 @@ def test_unknown_field_still_tears(shard):
     assert not ok and "설정" in why, why
 
 
+def test_a_note_in_the_global_block_does_not_tear_every_shard(shard):
+    """전역 칸의 **산문**을 고쳐도 안 찢어진다.
+
+    ★ 2026-09-24 (PLAN §13 W13-3 · DECISIONS §243). §216-1 이 서술 칸을
+      **자기 항목에서만** 뺐다. 전역 칸은 통째로 쟀고 그 안에도 산문이 산다 —
+      `raw_only.*.note` · `layers.*.what` · `scopes.*.note` 열일곱이다.
+      그래서 `raw_only.ortho.note` 한 줄을 고치자 **45샤드가 전부 찢어졌다.**
+      8GB 기계에서 `ngii_road` 재빌드는 거의 반드시 OOM 이고, 샤드 봉인은
+      바로 그것을 막으려고 만든 것이다 — 막으려던 사고를 제 전역 칸이 불렀다.
+    """
+    ro = {"ortho": {"what": "다른 설명", "note": "다른 주석", "size": "1.3 GB"}}
+    cfg = {**CFG, "raw_only": ro}
+    base = {**CFG, "raw_only": {"ortho": {"what": "설명", "note": "주석", "size": "1.3 GB"}}}
+    assert shardseal.cfg_print(cfg, "road") == shardseal.cfg_print(base, "road"), \
+        "전역 칸의 산문이 지문을 움직인다"
+    # ★ 산문 아닌 칸은 여전히 잰다. 안 그러면 낡은 산출물을 재사용한다.
+    moved = {**CFG, "raw_only": {"ortho": {"what": "설명", "note": "주석", "size": "2 GB"}}}
+    assert shardseal.cfg_print(moved, "road") != shardseal.cfg_print(base, "road"), \
+        "전역 칸의 **실질** 변화를 안 잡는다"
+
+
 def test_legacy_seal_is_accepted_and_restamped(shard):
     """옛 판(항목 전체) 지문은 **다시 빌드 없이** 받고 새 판으로 고쳐 적는다."""
     road = {**CFG["datasets"]["road"], "what": "설명"}

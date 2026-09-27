@@ -93,8 +93,27 @@ def test_no_second_copy_of_the_provider_list():
 
 
 def test_reserved_providers_document_why():
-    """reserved 는 빈 폴더에 근거를 붙이는 장치다. 근거가 없으면 의미가 없다."""
+    """reserved 는 빈 폴더에 근거를 붙이는 장치다. 근거가 없으면 의미가 없다.
+
+    ★ 2026-09-24 (DECISIONS §239). `P.reserved()` 가 **빈 집합**이라 이 루프는
+      한 번도 안 돌았고, 단언 없이 통과했다. 0건이 청결인지 죽음인지 못 가르는
+      상태다 — 사유 주석을 전부 지워도, reserved 를 사유 없이 다시 등재해도
+      초록이었다. 판정기를 합성 입력으로 따로 문다(§230).
+    """
     y = (ROOT / "sources.yaml").read_text(encoding="utf-8")
+
+    def judge(doc: str, name: str) -> bool:
+        i = doc.find(f"      {name}:")
+        return i > 0 and "#" in doc[i:i + 700]
+
+    # ★ 머리 한 줄을 둔다 — 실제 `sources.yaml` 처럼 블록이 0번 자리에 안 온다.
+    #   (판정기가 `i > 0` 이라 0번 자리 블록은 못 본다. 실물에서는 안 나는 일이다.)
+    head = "providers:\n"
+    assert judge(head + "      zq7:\n        kind: reserved  # 폴더를 만들지 않는다\n", "zq7")
+    assert not judge(head + "      zq7:\n        kind: reserved\n", "zq7"), \
+        "사유 없는 선언을 통과시킨다 — 판정기가 죽었다"
+    assert not judge(head, "zq7"), "선언이 없는데 통과시킨다"
+
     for name in sorted(P.reserved()):
         i = y.find(f"      {name}:")
         assert i > 0, f"{name} 선언을 못 찾았다"

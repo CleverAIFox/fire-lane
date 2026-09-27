@@ -181,6 +181,7 @@ def check_repo() -> list[F]:
             _s = _iu.spec_from_file_location("owned_paths",
                                              ROOT / "tools" / "owned_paths.py")
             _m = _iu.module_from_spec(_s)
+            sys.modules[_s.name] = _m   # @dataclass 가 되짚는다 (§258-10)
             _s.loader.exec_module(_m)
             for t in sorted(trk):
                 if not _m.owners_of(t):

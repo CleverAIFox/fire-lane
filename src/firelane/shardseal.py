@@ -34,6 +34,7 @@ import ast
 import json
 from pathlib import Path
 
+from firelane import jsonkeys
 from firelane.hashing import sha256
 from firelane.paths import ROOT
 
@@ -92,7 +93,14 @@ def logic_print(p: Path) -> str:
 
 # ★ 봉인 로직 자신은 산출물을 만들지 않는다. 넣으면 봉인 규칙을 고칠 때마다 40 샤드가
 #   찢어지고, 이 기계에서는 그것이 `ngii_road` OOM 이다(DECISIONS §165-8).
-NOT_PRODUCERS = ("shardseal.py",)
+# ★ 2026-09-27 (DECISIONS §266). `stagerun.py` 를 같은 사유로 더한다. 그 파일이 하는
+#   일은 `main()` 을 감싸 `MemoryError` · `ENOMEM` 을 잡고 **처방을 찍는 것**뿐이다 —
+#   산출물에 한 바이트도 기여하지 않는데, 폐포 안이라 안내 문구 한 줄에 65종이
+#   찢어졌다. 기준은 파일의 위치가 아니라 **「고치면 산출물이 바뀌는가」**다.
+#   ★ `jsonkeys.py` 는 안 넣는다 — `shardseal` 이 **cfg 지문**을 뜰 때 쓰므로
+#     고치면 봉인 판단 자체가 달라진다. 코드 축에서 빼도 cfg 축으로 찢어지니
+#     빼는 값이 없고, 「산출물을 안 만든다」도 그 파일에는 참이 아니다.
+NOT_PRODUCERS = ("shardseal.py", "stagerun.py")
 
 
 def code_print(start: str = "firelane.ingest") -> str:
@@ -124,21 +132,58 @@ DOC_KEYS = frozenset({
 })
 
 
-def cfg_print(cfg: dict, key: str) -> str:
-    glob = {k: cfg.get(k) for k in INGEST_GLOBAL}
-    own = cfg.get("datasets", {}).get(key)
-    if isinstance(own, dict):
-        own = {k: v for k, v in own.items() if k not in DOC_KEYS}
+def _no_docs(v):
+    """중첩된 어느 깊이에서든 서술 칸을 뺀다.
+
+    ★ 2026-09-24 (DECISIONS §243). §216-1 이 **자기 항목에서만** 서술 칸을
+      뺐다. 전역 칸(`INGEST_GLOBAL`)은 통째로 쟀고, 그 안에도 산문이 산다 —
+      `raw_only.ortho.note` · `layers.*.what` · `scopes.*.note` 열일곱 칸이다.
+      그래서 **주석 한 줄을 고치면 45샤드가 전부 찢어진다.** 8GB 기계에서
+      `ngii_road` 를 다시 빌드하면 거의 반드시 OOM 이고, 샤드 봉인은 바로
+      그것을 막으려고 만든 것이다. 막으려던 사고를 제 전역 칸이 불렀다.
+    """
+    return jsonkeys.drop(v, DOC_KEYS)
+
+
+def _print(glob: dict, own: object) -> str:
     return _short(json.dumps({"global": glob, "own": own}, sort_keys=True,
                              ensure_ascii=False, default=str))
+
+
+def _raw_glob(cfg: dict) -> dict:
+    return {k: cfg.get(k) for k in INGEST_GLOBAL}
+
+
+def _own(cfg: dict, key: str) -> object:
+    return cfg.get("datasets", {}).get(key)
+
+
+def cfg_print(cfg: dict, key: str) -> str:
+    return _print({k: _no_docs(cfg.get(k)) for k in INGEST_GLOBAL},
+                  _no_docs(_own(cfg, key)))
+
+
+def _cfg_print_v2(cfg: dict, key: str) -> str:
+    """2026-09-22~09-24 판 — 자기 항목만 서술 칸을 뺐다."""
+    own = _own(cfg, key)
+    if isinstance(own, dict):
+        own = {k: v for k, v in own.items() if k not in DOC_KEYS}
+    return _print(_raw_glob(cfg), own)
+
+
+def _cfg_print_v1(cfg: dict, key: str) -> str:
+    """2026-09-22 이전 판 — 자기 항목 전체."""
+    return _print(_raw_glob(cfg), _own(cfg, key))
+
+
+#: 옛 판 지문. 만나면 **다시 빌드 없이** 받고 새 판으로 고쳐 적는다.
+#: ★ 줄이 늘 때마다 「한 번 지나면 안 찢어진다」가 한 세대 더 보장된다.
+LEGACY_PRINTS = (_cfg_print_v2, _cfg_print_v1)
 
 
 def cfg_print_legacy(cfg: dict, key: str) -> str:
-    """2026-09-22 이전 판 — 자기 항목 전체. 옛 봉인지를 **다시 빌드 없이** 받으려고 남긴다."""
-    glob = {k: cfg.get(k) for k in INGEST_GLOBAL}
-    own = cfg.get("datasets", {}).get(key)
-    return _short(json.dumps({"global": glob, "own": own}, sort_keys=True,
-                             ensure_ascii=False, default=str))
+    """가장 오래된 판. 이름을 쓰는 곳이 있어 남긴다."""
+    return _cfg_print_v1(cfg, key)
 
 
 # ── raw 지문 기억표 ────────────────────────────────────────────
@@ -282,7 +327,7 @@ def check(prev: dict | None, cfg: dict, key: str, hits: list[Path], out_dir: Pat
     if s["cfg"] != cfg_print(cfg, key):
         # ★ 옛 판 지문이면 받고 **새 판으로 고쳐 적는다**(재빌드 없음). 한 번 지나면 서술 칸을
         #   고쳐도 안 찢어진다. prev 는 ingest 가 그대로 대장에 되쓰는 레코드다.
-        if s["cfg"] != cfg_print_legacy(cfg, key):
+        if not any(s["cfg"] == f(cfg, key) for f in LEGACY_PRINTS):
             return False, "sources.yaml 설정이 바뀌었다"
         s["cfg"] = cfg_print(cfg, key)
     raw = raw_print(hits)
@@ -402,6 +447,37 @@ def reseal_code_cli(man_path: Path, cfg: dict, out_dir: Path, code: str,
           + ("" if wrote else "\n  대장 불변"))
     if skipped:
         print("  ★ 거절된 것은 **다시 빌드해야 한다.** 봉인은 그래서 있다.")
+    if wrote:
+        _relineage(man_path)
+    return 0
+
+
+def _relineage(man_path: Path) -> None:
+    """재도장으로 바뀐 대장 해시를 **계보 기록에도** 반영한다.  (DECISIONS §267)
+
+    ★ 2026-09-27 실측. 재도장은 대장을 고치는데 `_lineage.json` 의
+      `ingest.outputs["data/processed/_manifest.json"]` 은 옛 해시를 든 채였다.
+      그래서 바로 다음 `segments` 가 「입력이 바뀌었으니 상류부터 다시 돌려라」로
+      막혔다 — **재도장이 재빌드를 부르는** 자리였고, 그것은 이 도구가 없애려던
+      바로 그 비용이다(DECISIONS §224-2).
+
+    ★ 갱신이 안전한 이유는 재도장의 정의다 — `code` 칸만 고치고 **산출물은 한
+      바이트도 안 건드린다.** 거절된 종은 애초에 안 고쳐지므로 여기 안 온다.
+      바꾸는 것은 대장 한 칸이고, 나머지 계보는 그대로 둔다.
+    """
+    from firelane import lineage
+
+    lin = man_path.parent / lineage.LINEAGE
+    if not lin.exists():
+        return                       # 계보가 없으면 다음 실행이 새로 적는다
+    doc = json.loads(lin.read_text(encoding="utf-8"))
+    key = f"data/processed/{man_path.name}"
+    for step in doc.values():
+        out = (step or {}).get("outputs") or {}
+        if key in out:
+            out[key] = lineage._manifest_digest(man_path)
+    lin.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"  계보 기록의 `{key}` 도 같이 갱신했다 — 재도장이 재빌드를 안 부르게")
 
 
 def _short(text: str) -> str:
