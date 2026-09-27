@@ -89,24 +89,23 @@
   "files": [
    "tests/test_ownership.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "2d550a9e54e6524b"
+   "40f1e61cf37f4443"
   ],
-  "sha": "a59c75eabaf6175f"
+  "sha": "24201daea773b0ea"
  },
  "DECISIONS/109": {
   "doc": "docs/DECISIONS.md",
   "files": [
    "tests/test_release_procedure.py",
-   "tools/release_brief.py",
-   "tools/verify.sh"
+   "tools/release_brief.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "d492e5b1dd46ddf5"
+   "325689114387e291"
   ],
-  "sha": "eca4e20952ae1a22"
+  "sha": "2c599e52ca3c0768"
  },
  "DECISIONS/11": {
   "doc": "docs/DECISIONS.md",
@@ -137,22 +136,22 @@
    "tests/test_figure_fit.py",
    "tools/svg_fit.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "6bdf6fd1619111b8"
+   "9df4edc798613db3"
   ],
-  "sha": "c8791f445e74f63f"
+  "sha": "cf83c42ea806bc78"
  },
  "DECISIONS/111-2": {
   "doc": "docs/DECISIONS.md",
   "files": [
    "tools/svg_fit.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "e14417e77066c5a1"
+   "b3d147183f9b76b8"
   ],
-  "sha": "542cd067b707bc2d"
+  "sha": "eafcb49105b50b29"
  },
  "DECISIONS/112": {
   "doc": "docs/DECISIONS.md",
@@ -160,11 +159,11 @@
    "tests/test_declaration_reality.py",
    "web/data/route_vehicle.json"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "de175b52b18fab73"
+   "416b6d80900b0794"
   ],
-  "sha": "cf2449ba3cb7f043"
+  "sha": "4612a74202d7af1a"
  },
  "DECISIONS/115": {
   "doc": "docs/DECISIONS.md",
@@ -389,14 +388,15 @@
  "DECISIONS/135": {
   "doc": "docs/DECISIONS.md",
   "files": [
+   "src/contracts/vision.py",
    "tests/test_doc_fsck.py",
    "tools/render_figures.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "ea1c57204f73298f"
+   "c40697e7cebbbc15"
   ],
-  "sha": "cb4aef67a3e9c784"
+  "sha": "fe403336553247b9"
  },
  "DECISIONS/136": {
   "doc": "docs/DECISIONS.md",
@@ -730,11 +730,11 @@
    "tools/dms.py",
    "tools/verify.sh"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "30799b4c152da877"
+   "4bfd0087b19fb912"
   ],
-  "sha": "5f98d364538ddabe"
+  "sha": "7efee5a4c44fc24e"
  },
  "DECISIONS/211": {
   "doc": "docs/DECISIONS.md",
@@ -742,11 +742,11 @@
    "tests/test_navi_wireframe.py",
    "tools/verify.sh"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "9037da292f513878"
+   "74536470fc052baf"
   ],
-  "sha": "0d82cc5bc59a4f0f"
+  "sha": "50fb8cb423ed34c0"
  },
  "DECISIONS/212": {
   "doc": "docs/DECISIONS.md",
@@ -767,11 +767,11 @@
    "web/config.js",
    "web/navi/test/progress.test.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "3668fe467a800433"
+   "77293e98e91c2dca"
   ],
-  "sha": "f6545044a0ad53a3"
+  "sha": "cb32bdbea28804e2"
  },
  "DECISIONS/223": {
   "doc": "docs/DECISIONS.md",
@@ -780,11 +780,11 @@
    "tests/test_ortho_seal.py",
    "tools/verify.sh"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "aadef584262e3077"
+   "34d04253ff6a66c5"
   ],
-  "sha": "d560a343e475bab9"
+  "sha": "ecad01d432dedf04"
  },
  "DECISIONS/224-2": {
   "doc": "docs/DECISIONS.md",
@@ -794,11 +794,11 @@
    "tests/test_shardseal.py",
    "tools/acquire.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "8db6b80df2353aa8"
+   "1902b90b7e1ae7a7"
   ],
-  "sha": "63482d6afccc3a1e"
+  "sha": "9667b5dec97b5173"
  },
  "DECISIONS/224-2a": {
   "doc": "docs/DECISIONS.md",
@@ -901,11 +901,11 @@
    "tools/commit_policy.py",
    "tools/refcheck.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "215715e17ae01d63"
+   "574fdfbe67ca0cee"
   ],
-  "sha": "3a9da43e0d890e5c"
+  "sha": "393076f921465e79"
  },
  "DECISIONS/234": {
   "doc": "docs/DECISIONS.md",
@@ -938,11 +938,11 @@
    "tests/test_figure_fit.py",
    "tests/test_figure_xsec.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "0517d5ccd3244b10"
+   "e429353f84d5e1d6"
   ],
-  "sha": "d6d6d4a9f6eea6cf"
+  "sha": "e4bd82e0d8e8981a"
  },
  "DECISIONS/238": {
   "doc": "docs/DECISIONS.md",
@@ -950,11 +950,11 @@
    "tests/test_skip_policy.py",
    "tools/svg_fit.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "10a00929e88da23c"
+   "1a79844bb32a88c6"
   ],
-  "sha": "81b42bf0421dd510"
+  "sha": "00e4d0c2406c559d"
  },
  "DECISIONS/24": {
   "doc": "docs/DECISIONS.md",
@@ -1123,11 +1123,11 @@
    "tools/verify.sh",
    "web/navi/test/pressure.test.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "d761539dfa1d622f"
+   "82f1fd47f3dc86ae"
   ],
-  "sha": "4c508521acd13f42"
+  "sha": "3a7eb698dd08e409"
  },
  "DECISIONS/254-1": {
   "doc": "docs/DECISIONS.md",
@@ -1183,11 +1183,11 @@
    "tools/proposal_pdf.py",
    "tools/verify.sh"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "a4d9af6bef10def2"
+   "00ca6bb88e6499c8"
   ],
-  "sha": "373af2f03a75e58d"
+  "sha": "2f9f1189d6eefb85"
  },
  "DECISIONS/257-3": {
   "doc": "docs/DECISIONS.md",
@@ -1195,11 +1195,11 @@
    "tests/test_vehicle_parity.py",
    "tools/proposal_pdf.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "168b737fc7e16cde"
+   "e4dd20e790537839"
   ],
-  "sha": "d682c8f6b8e10203"
+  "sha": "86c5c931f208b4f1"
  },
  "DECISIONS/258-1": {
   "doc": "docs/DECISIONS.md",
@@ -1312,10 +1312,11 @@
    "tests/test_evalgen.py",
    "tools/verify.sh"
   ],
+  "kind": "read",
   "legacy": [
-   "ac1d2866db1ad966"
+   "211e742962fcbdf4"
   ],
-  "sha": "a6316306da507a31"
+  "sha": "7a2093e1fe962790"
  },
  "DECISIONS/265": {
   "doc": "docs/DECISIONS.md",
@@ -1338,10 +1339,11 @@
    "tools/sizecheck.py",
    "tools/skeleton_compare.py"
   ],
+  "kind": "read",
   "legacy": [
-   "403c1cc7744669ab"
+   "cb1eb09e79fb38e2"
   ],
-  "sha": "82a16d446a95d64c"
+  "sha": "62caa43c024c83bb"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -1402,10 +1404,11 @@
    "tools/deliver.py",
    "tools/serve.py"
   ],
+  "kind": "read",
   "legacy": [
-   "1a7708f9d861b521"
+   "f67c503ebbb972f2"
   ],
-  "sha": "467eca2a1e2e77f8"
+  "sha": "3ef433eb745b00a2"
  },
  "DECISIONS/274": {
   "doc": "docs/DECISIONS.md",
@@ -1415,10 +1418,11 @@
    "tools/axis_gain.py",
    "tools/sizecheck.py"
   ],
+  "kind": "read",
   "legacy": [
-   "bd31b84e502d08c6"
+   "0b4da45a1e30a69c"
   ],
-  "sha": "6499a8db1903a1b8"
+  "sha": "ba72ca5312a07068"
  },
  "DECISIONS/275": {
   "doc": "docs/DECISIONS.md",
@@ -1441,10 +1445,11 @@
    "tools/fl.sh",
    "tools/pr_body_check.py"
   ],
+  "kind": "read",
   "legacy": [
-   "ef52653731363c4b"
+   "df05f820c2b2d98e"
   ],
-  "sha": "ef52653731363c4b"
+  "sha": "3cba552217654a2a"
  },
  "DECISIONS/277": {
   "doc": "docs/DECISIONS.md",
@@ -1455,9 +1460,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "8966e3e0cf46a93f"
+   "4dc3eb415cb309e4"
   ],
-  "sha": "8966e3e0cf46a93f"
+  "sha": "f2f568a43358e7e1"
  },
  "DECISIONS/34": {
   "doc": "docs/DECISIONS.md",
@@ -1538,11 +1543,11 @@
    "tests/test_gate_parity_args.py",
    "tools/verify.sh"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "d76c20b1d14e5075"
+   "b00a71262042e25f"
   ],
-  "sha": "ad402f29a91a9b8c"
+  "sha": "794e22d1296d15e3"
  },
  "DECISIONS/42": {
   "doc": "docs/DECISIONS.md",
@@ -1686,11 +1691,11 @@
    "tools/refcheck.py",
    "tools/verify.sh"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "caf9993afae57552"
+   "8280b10a96d2f535"
   ],
-  "sha": "4419a0d2ce61a73e"
+  "sha": "64622038ae4b2620"
  },
  "DECISIONS/98": {
   "doc": "docs/DECISIONS.md",
@@ -1698,11 +1703,11 @@
    "tests/test_layers.py",
    "tools/refcheck.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "29558ea0c3f41fd5"
+   "81fe323848c2c29c"
   ],
-  "sha": "549b9ec7fbdc80da"
+  "sha": "c2afe1c261af3c50"
  },
  "DECISIONS/99": {
   "doc": "docs/DECISIONS.md",
@@ -1952,13 +1957,14 @@
    "tools/docx_check.py",
    "tools/docx_figs.py",
    "tools/docx_fix.py",
+   "tools/evalgen.py",
    "tools/proposal_pdf.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "76f57bf98ad0e815"
+   "219cf223ff104a08"
   ],
-  "sha": "be6d8c0c7db77b01"
+  "sha": "224d6acb388bf5ea"
  },
  "MASTER/15-3": {
   "doc": "docs/MASTER.md",
@@ -2010,9 +2016,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "27c1032596bebffc"
+   "482132abc5869b23"
   ],
-  "sha": "1062b4e5d13a8926"
+  "sha": "5de352cfdcaed5d9"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -2040,11 +2046,11 @@
    "web/navi/src/domain/vehicle.ts",
    "web/navi/src/ui/tokens.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "03a4f4d145b72063"
+   "a078c707559291b3"
   ],
-  "sha": "ef9cca2eab75e777"
+  "sha": "cdcc33dbe37d143d"
  },
  "MASTER/18-2c": {
   "doc": "docs/MASTER.md",
@@ -2157,10 +2163,11 @@
    "tests/test_vehicle_parity.py",
    "tools/evalgen.py"
   ],
+  "kind": "read",
   "legacy": [
-   "524edf3ab5e50568"
+   "a4fe24e9f8501979"
   ],
-  "sha": "adc7b7e57e7ddd81"
+  "sha": "0708402d519489aa"
  },
  "MASTER/2-2": {
   "doc": "docs/MASTER.md",
@@ -2338,11 +2345,11 @@
    "tools/wmax_audit.py",
    "web/navi/src/domain/vehicle.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "77c1c2283cf44c04"
+   "a5cb8c27ae10d803"
   ],
-  "sha": "22aa61d9d6834fae"
+  "sha": "4527a4bfd2150b4a"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
