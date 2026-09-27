@@ -265,8 +265,13 @@ export function useNavigation(spec: VehicleSpec | null) {
 
   // ── ② 위치원 — gps · 흉내 · 경로 따라가기(`usePositionSource`) ──
   const onSimEnd = useCallback(() => { setSimSpeed(0); setPhase("arrived"); }, []);
+  // ★ 2026-09-27 (§275). 측위가 **데이터 범위 밖**이면 실제 GPS 로는 안내가 안 된다.
+  //   데이터가 동명동 한 동네뿐이고 개발은 그 밖에서 한다 — 범위 밖이 예외가
+  //   아니라 평소다. 말하고 경로 주행으로 갈아탄다. 배속 1 은 실제 속도다.
+  const onOutOfArea = useCallback(() => { setSimSpeed(1); }, []);
   const { teleport, forget } = usePositionSource({
     phase, simSpeed, plan, posMode, onFix, onEnd: onSimEnd, onNotice: setNotice,
+    area: data?.view.maxBounds, onOutOfArea,
   });
 
   const route = useCallback((

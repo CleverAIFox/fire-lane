@@ -56,12 +56,30 @@ git fetch -q --prune origin
 HAVE_GH=1
 gh auth status >/dev/null 2>&1 || HAVE_GH=0
 
-# 가지가 바꾼 파일들이 origin/main 에서 같은 내용이면 들어간 것이다
+# 가지가 main 에 들어갔는가.  0 들어갔다 · 1 안 들어갔다 · 2 **못 쟀다**
+#
+# ★ 2026-09-27 (DECISIONS §276-3). 종전 판정은 「가지 팁 == main 지금」이었다.
+#   **main 이 전진하면 그 비교는 영원히 거짓**이다 — 완전히 머지된 가지도 릴리즈
+#   한 번만 지나면 「main 에 없는 변경 있음」으로 영구히 빨개진다. 실제로
+#   `feat/batch-0925` 둘이 네 판(v0.37~v0.40) 뒤 그 상태였고, 손으로 `merge-tree`
+#   를 돌려서야 「다 들어갔다」를 확인했다. **도구가 할 일을 사람이 했다.**
+#
+# ★ 올바른 물음은 **「이 가지를 합치면 main 이 달라지는가」**다. 그리고
+#   충돌이 나서 못 재면 **「안 들어갔다」가 아니라 「못 쟀다」**로 말한다 —
+#   못 잰 것을 판정으로 내면 사람이 그 경고를 끄고, 끈 경고는 진짜를 덮는다.
 merged_by_content() {
-  local b=$1 ch=()
-  mapfile -t ch < <(git diff --name-only "origin/main...$b" 2>/dev/null || true)
-  [ ${#ch[@]} -eq 0 ] && return 0
-  git diff --quiet "$b" origin/main -- "${ch[@]}" 2>/dev/null
+  local b=$1 t only
+  # ① 가지에만 있는 파일이 하나라도 있으면 **확실히** 안 들어갔다
+  only=$(comm -23 <(git ls-tree -r --name-only "$b" | sort) \
+                  <(git ls-tree -r --name-only origin/main | sort))
+  [ -n "$only" ] && return 1
+  # ② 합쳐도 main 트리가 그대로면 들어간 것이다 (git 2.38+)
+  if t=$(git merge-tree --write-tree origin/main "$b" 2>/dev/null); then
+      [ "$t" = "$(git rev-parse "origin/main^{tree}")" ] && return 0
+      return 1
+  fi
+  # ③ 충돌이 났거나 옛 git 이다 — **판정하지 않는다**
+  return 2
 }
 
 # 봇 PR 의 묶음 — dependabot 가지는 `dependabot/<생태계>/<묶음·패키지>-<판>` 이다.
@@ -157,11 +175,17 @@ GONE=(); LIVE=()
 for b in "${LB[@]:-}"; do
   [ -z "$b" ] && continue; keep "$b" && continue
   ahead=$(git rev-list --count "origin/main..$b" 2>/dev/null || echo "?")
-  if merged_by_content "$b"; then
-    printf '   %-50s 커밋 %-4s 내용 main 에 있음\n' "$b" "$ahead"; GONE+=("$b")
-  else
-    printf '   %-50s 커밋 %-4s main 에 없는 변경 있음\n' "$b" "$ahead"; LIVE+=("$b")
-  fi
+  # ★ `set -e` 아래서는 0 아닌 반환이 **스크립트를 죽인다.** `|| _m=$?` 로 받는다 —
+  #   세 갈래 판정을 쓰려면 반환값을 값으로 다뤄야 한다.
+  _m=0; merged_by_content "$b" || _m=$?
+  case "$_m" in
+    0) printf '   %-50s 커밋 %-4s 내용 main 에 있음\n' "$b" "$ahead"; GONE+=("$b") ;;
+    1) printf '   %-50s 커밋 %-4s main 에 없는 변경 있음\n' "$b" "$ahead"; LIVE+=("$b") ;;
+    # ★ 못 쟀다 ≠ 안 들어갔다. 지우지는 않되 **다른 말로** 말한다(§276-3).
+    *) printf '   %-50s 커밋 %-4s ? 판정 못 함 — 합쳐 보다 충돌\n' "$b" "$ahead"
+       printf '        손으로:  git merge-tree --write-tree origin/main %s\n' "$b"
+       LIVE+=("$b") ;;
+  esac
 done
 TARGET=("${GONE[@]:-}")
 if [ "$AUTO" = 0 ] && [ ${#LIVE[@]} -gt 0 ]; then
