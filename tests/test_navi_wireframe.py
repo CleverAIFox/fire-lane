@@ -38,7 +38,11 @@ WIREFRAME = {
 }
 
 #: 신호가 없어 시연 막대가 넣는 상태. 늘면 여기와 status.ts 를 같이 고친다
-INJECTED = {"gpsWeak", "offline", "restored", "dataDelayed", "serviceError"}
+#: ★ 2026-09-24 (PLAN §13 W13-2). `gpsWeak` 를 뺐다 — **신호가 생겼다.**
+#:   `Fix.accuracy` 를 뚫고 `gps.ts` 가 `coords.accuracy` 를 넘기며
+#:   `deriveStatus` 가 `GPS_WEAK_M` 으로 가른다. 종전에는 정확도를 받을
+#:   타입조차 없어 50m 로 흔들려도 초록 「안전 경로 안내중」 이었다.
+INJECTED = {"offline", "restored", "dataDelayed", "serviceError"}
 
 
 def _src_files() -> list[Path]:
@@ -116,3 +120,38 @@ def test_bottleneck_keeps_the_two_honest_lines():
         assert need in s, (
             f"병목 상세에서 「{need}」 가 사라졌다.\n"
             "  판정이 무엇을 안 보는지 화면에 남기는 유일한 장치다(DECISIONS §86-5).")
+
+
+def test_the_injected_badge_reads_the_fact_not_the_table():
+    """★ 2026-09-24 (PLAN §13 W13-3). 「시연」 표지가 **정적 표**를 보고 있었다.
+
+    `TopBar` 가 `s.injected`(= `STATUS[key].injected`) 를 봤는데 그 칸이 붙은
+    것은 18갈래 중 넷뿐이고, 시연 막대는 **18갈래 전부**를 주입할 수 있다.
+    `arrived` 를 주입하면 표지 없이 「도착」 이 떴다 — 아직 달리는 중인데.
+    표지는 표가 아니라 **실제 주입 여부**를 봐야 한다.
+    """
+    top = (ROOT / "web/navi/src/ui/TopBar.tsx").read_text(encoding="utf-8")
+    assert "{p.injected &&" in top, (
+        "「시연」 표지가 주입 **사실**(props)을 안 본다.\n"
+        "  `s.injected`(정적 표의 칸)로 되돌아갔으면 주입 18갈래 중 넷만 표지가 붙는다.")
+    assert "{s.injected &&" not in top, "옛 판정이 남아 있다"
+
+    app = (ROOT / "web/navi/src/App.tsx").read_text(encoding="utf-8")
+    assert "injected={injected != null}" in app, (
+        "App 이 상단바에 주입 사실을 안 넘긴다 — 표지가 영원히 안 붙는다")
+
+
+def test_the_dev_bar_is_off_unless_asked():
+    """★ 2026-09-24 (PLAN §13 W13-1). 시연 막대가 배포본에서 **기본 켜짐**이었다.
+
+    `?dev=0` 을 명시하지 않으면 항상 켜졌고, `web/index.html` 의 내비 링크에
+    그 인자가 없다. 운전석에서 손이 스치면 ▶ 가 눌려 **모의 주행이 실제 GPS 를
+    대체한다** — 화면의 차가 운전자가 아니게 된다.
+    """
+    app = (ROOT / "web/navi/src/App.tsx").read_text(encoding="utf-8")
+    m = re.search(r'get\("dev"\)\s*(===|!==)\s*"([01])"', app)
+    assert m, "시연 막대 판정식을 못 찾았다 — 이름이 바뀌었으면 여기도 옮겨라"
+    assert (m.group(1), m.group(2)) == ("===", "1"), (
+        f"시연 막대가 `dev {m.group(1)} \"{m.group(2)}\"` 로 켜진다 — "
+        "켜는 쪽을 명시하게 `=== \"1\"` 이어야 한다.\n"
+        "  기본 켜짐이면 배포본이 시연 막대를 달고 나간다.")

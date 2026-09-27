@@ -13,26 +13,21 @@ seg/params.py — 구간 판정 파라미터 정본.
 """
 from __future__ import annotations
 
-# 진단 스위치. 재현성 있게 저장소에 남긴다.
-#   FIRE_LANE_NO_MERGE=1        산출단위 병합을 끈다. 병합 전 기준값을 뽑을 때
-#   FIRE_LANE_DEBUG_SEG=DM03223 해당 단위의 표본을 전부 덤프한다
-#   FIRE_LANE_DEBUG_XY=192837,284314   좌표 최근접 단위를 덤프한다
-#                               seg_id 는 실행 간 유지되지 않는다. XY 를 쓸 것
-#   FIRE_LANE_MIX_SRC=1         구간 폭을 표본 혼합 집합의 최솟값으로 되돌린다(종전).
-#   FIRE_LANE_OLD_SNAP=1        snap 을 소스별이 아닌 종전 방식으로 되돌린다.
-#                               소스별 snap 도입 전후를 한 바이너리로 비교할 때
-from firelane import paths
-
-# ★ 2026-09-14. `os.environ` 직접 읽기를 접근자로 바꿨다. `paths.py` 가
-#   환경변수의 유일한 독자다 — 목록을 세는 검사는 이름을 바꾸면 눈이 먼다.
-#   `flag()` 는 `"1"` 만 켜짐으로 본다. 종전 `== "1"` 과 같은 값이다.
-NO_MERGE  = paths.flag("FIRE_LANE_NO_MERGE")
-DEBUG_SEG = [x.strip() for x in
-             paths.env("FIRE_LANE_DEBUG_SEG").split(",") if x.strip()]
-DEBUG_XY  = paths.env("FIRE_LANE_DEBUG_XY").strip()
-OLD_SNAP  = paths.flag("FIRE_LANE_OLD_SNAP")
-MIX_SRC   = paths.flag("FIRE_LANE_MIX_SRC")
-_DBG = {"on": False}
+# ★ 2026-09-25 (PLAN §1 #121 · #123 · DECISIONS §249). 진단 스위치 다섯과
+#   가변 전역 `_DBG` 를 **여기서 뺐다.** 이 파일은 판정 파라미터의 정본인데
+#   그것들 때문에 `firelane.paths` 를 import 했고, `paths` 는 모듈 적재 시점에
+#   `.env` 를 읽는다 — **순수 판정 도메인이 디스크를 만지고 있었다.**
+#   읽는 자리는 단계층(`segments.main`)이고, 쓰는 자리는 인자다:
+#
+#       FIRE_LANE_NO_MERGE   → segments.main() 지역변수
+#       FIRE_LANE_DEBUG_SEG  → segments.main() 지역변수
+#       FIRE_LANE_DEBUG_XY   → segments.main() 지역변수
+#       FIRE_LANE_MIX_SRC    → WidthEngine(mix_src=...)
+#       FIRE_LANE_OLD_SNAP   → WidthEngine(old_snap=...) · diagnostics(old_snap=...)
+#       _DBG["on"]           → WidthEngine.debug (인스턴스 필드)
+#
+#   스위치의 뜻은 `paths.py` 의 `ENV` 표와 `segments.py` 머리말이 든다.
+#   강제자 `tests/test_layering.py` · `tests/test_seg_params_is_pure.py`
 
 EMD_CD        = "12210108"   # 동명동
 # ★ 2026-09-04. `publish_web.py:43` 에 있던 것을 올렸다. 스코프 계산이
@@ -57,6 +52,22 @@ XSEC_EXCL     = 5.0          # 교차로 노드 제외 반경. blob 폭 폭발 �
 WMAX_CAP      = 60.0         # 담~담 상한. 15m로 잡으면 대로가 전멸한다
 SNAP_TRUST    = 2.0          # 이보다 많이 끌어온 표본은 폭 산출에서 뺀다.
 COV_MIN       = 0.5          # 채택 자격. 구간의 절반 미만을 잰 소스는 대표시키지 않는다.
+
+# ★ 2026-09-24 (PLAN §1 #125 · DECISIONS §245). **폭 소스 우선순위의 집.**
+#   종전에는 이 순서가 `seg/width.py` 한 파일 안에서 **아홉 번** 재기술됐다
+#   (`("ngii1k", "ngii", "silpok")` 꼴). 「결정 63」은 이 저장소에서 가장 많이
+#   인용되는 규칙인데, 순서를 바꾸려면 아홉 곳을 고쳐야 했다 — R3(정본 하나)가
+#   **판정 핵심 안에서** 깨져 있던 자리다.
+#   ★ 순서가 곧 우선순위다. 앞엣것이 자격(COV_MIN)을 통과하면 그것을 쓴다.
+#     1:1,000 측량 도로경계 → 1:5,000 도로경계면 → 실폭도로.
+WIDTH_SRCS: tuple[str, ...] = ("ngii1k", "ngii", "silpok")
+
+# ★ 2026-09-24 (PLAN §1 #125 · DECISIONS §245). 내륜차를 **무시하는** 문턱.
+#   이 값보다 작은 내륜차는 0 으로 친다. 종전에는 이름 없이 `2 * 0.05` 꼴로
+#   **세 곳 두 언어**에 흩어져 있었고(`seg/vehicle.py` 둘 · `domain/vehicle.ts`
+#   하나) `test_sources_of_truth` 의 값 목록에도 없었다 — 맨숫자라 아무도
+#   안 봤다. 5cm 는 측량 오차보다 작아 판정에 못 미친다는 뜻이다.
+OFFTRACK_MIN = 0.05   # m. 내륜차가 이보다 작으면 0 으로 본다
 #   소스 우선순위(결정 63)를 바꾸는 것이 아니라 자격 미달을 거르는 것이다.
 #   자격 미달로 탈락하면 다음 순위 소스가 자동으로 올라간다.
 #   근거: 정상 구간(<=15m)의 채택소스 커버율은 중앙 1.0 · p10 0.667 인데

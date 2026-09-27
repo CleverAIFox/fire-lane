@@ -17,49 +17,43 @@ def gdf(lines, **cols):
     return gpd.GeoDataFrame(cols, geometry=lines, crs=5186)
 
 
-def test_switch_is_off_by_default_and_import_stays_inside_it():
-    """★ 스위치가 꺼져 있으면 뼈대 모듈이 **아예 안 불린다.**
+def test_the_skeleton_switch_stays_out_of_the_judgment_closure():
+    """★ 2026-09-27 (DECISIONS §266). 스위치를 **걷었다.** 다시 들어오면 운다.
 
-    import 를 모듈 꼭대기로 올리면 스위치와 무관하게 실행되고, 그 순간 R3a 가 판정 불변이 아니게 된다.
-    2026-09-18. 이 저장소가 반복해 겪은 형태는 '있는데 안 부른다' 였는데, 여기는 반대 방향이다 —
-    **안 부르기로 한 것이 조용히 불린다.**
+    R3a 가 배선한 `FIRE_LANE_SKELETON` 은 판정을 한 번도 안 움직였고(기본 꺼짐),
+    R3c 는 하지 않기로 결정됐다(DECISIONS §189-5). 그런데 그 한 줄이 `skeleton.py`
+    417줄을 **판정 지문 안**에 넣고 있어서, 뼈대 상수를 만질 때마다 재잠금이
+    따라왔다 — DECISIONS §247-1 이 고친 것과 같은 형태다.
+
+    ★ 되살리려면 **판정 폐포가 늘어난다는 것을 알고** 되살려야 한다. 그래서 여기서
+      막는다 — 지우는 것이 아니라 **값을 보이게** 하는 자리다.
+
+    밖  `skeleton.as_road` 의 동작은 아래 시험들이 그대로 든다 —
+        모듈은 살아 있고 `tools/skeleton_compare.py` 가 R1 대조로 쓴다.
     """
     src = SEGMENTS.read_text(encoding="utf-8")
-    assert "FIRE_LANE_SKELETON" in src, "뼈대 스위치가 없다"
     tree = ast.parse(src)
-    top = {n.module for n in ast.walk(tree)
-           if isinstance(n, ast.ImportFrom) and n.col_offset == 0 and n.module}
-    assert "firelane.skeleton" not in top, (
-        "skeleton import 가 모듈 최상단에 있다 — 스위치와 무관하게 돈다")
-    guarded = [n for n in ast.walk(tree)
-               if isinstance(n, ast.If) and "FIRE_LANE_SKELETON" in ast.dump(n.test)
-               and any(isinstance(x, (ast.Import, ast.ImportFrom)) for x in ast.walk(n))]
-    assert guarded, "skeleton import 가 FIRE_LANE_SKELETON 분기 안에 없다"
+    imports = {n.module for n in ast.walk(tree)
+               if isinstance(n, ast.ImportFrom) and n.module}
+    imports |= {a.name for n in ast.walk(tree) if isinstance(n, ast.Import)
+                for a in n.names}
+    assert "firelane.skeleton" not in imports, (
+        "`segments.py` 가 다시 `skeleton` 을 든다 — 판정 폐포가 16 → 17 로 는다.\n"
+        "  정말 되살릴 것이면 `tests/test_lake.py` 의 폐포 래칫과 이 시험을 같이 고쳐라.")
 
+    from firelane.shardseal import code_closure
+    n = len(code_closure("firelane.segments"))
+    assert n == 16, f"판정 폐포가 {n}이다 — 16 이어야 한다(DECISIONS §266)"
 
-def test_switch_is_registered_as_a_shell_switch_not_a_setting():
-    """분류 — 설정은 `.env`, 스위치는 셸 export (`env_check` 가 강제한다).
-
-    ★ 2026-09-18 R3a verify 1회차. 등재를 빠뜨려 `환경변수 선언↔실물` 이 둘로 울었다 —
-      ① `.env.example` 에 없다(= 미분류 유령) ② `paths` 밖에서 `os.environ` 을 읽는다.
-      스위치는 `.env.example` 에 **적으면 안 되고**(분류 위반) `env_check.SWITCHES` 에 등재해야 한다.
-    """
-    import env_check
-
-    assert "FIRE_LANE_SKELETON" in env_check.SWITCHES, "env_check.SWITCHES 에 등재가 없다 — 유령 변수로 운다"
-    assert "FIRE_LANE_SKELETON" not in env_check.SETTINGS
-    env = (ROOT / ".env.example").read_text(encoding="utf-8")
-    for line in env.splitlines():
-        head = line.split("#", 1)[0].strip()
-        assert not head.startswith("FIRE_LANE_SKELETON"), ".env.example 에 스위치를 설정으로 적었다(분류 위반)"
-
-
-def test_switch_is_read_through_paths_not_os_environ():
-    """`paths` 밖에서 `os.environ` 을 읽으면 `env_check` 의 단일 독자 규칙이 운다."""
-    src = SEGMENTS.read_text(encoding="utf-8")
-    code = "\n".join(ln.split("#", 1)[0] for ln in src.splitlines())   # 주석은 본다(설명이 그 이름을 쓴다)
-    assert "os.environ" not in code, "segments.py 가 os.environ 을 직접 읽는다 — paths.flag 를 쓴다"
-    assert "_flag(\"FIRE_LANE_SKELETON\")" in src, "paths.flag 로 안 읽는다"
+    import importlib.util
+    import sys as _sys
+    spec = importlib.util.spec_from_file_location("envchk_r3", ROOT / "tools" / "env_check.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    _sys.modules[spec.name] = m       # @dataclass 가 되짚는다 (DECISIONS §258-10)
+    spec.loader.exec_module(m)
+    assert "FIRE_LANE_SKELETON" not in m.SWITCHES, (
+        "`env_check.SWITCHES` 에 등재가 남았다 — 유령 변수다")
 
 
 def test_as_road_takes_width_from_ngii_but_name_from_road_link():

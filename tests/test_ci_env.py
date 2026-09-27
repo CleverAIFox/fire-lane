@@ -28,6 +28,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 WF = sorted((ROOT / ".github/workflows").glob("*.yml"))
 
@@ -243,3 +245,84 @@ def test_devcontainer_env_notice_is_conditional():
     s = (ROOT / ".devcontainer/setup.sh").read_text(encoding="utf-8")
     assert "paths.env(k)" in s and 'if [ -n "$MISSING" ]' in s, "환경변수 안내가 조건 없이 찍힌다"
     assert "FIRE_LANE_INBOX" in s, "머리말이 드는 INBOX 를 안 본다"
+
+
+# ── 「가드가 제 시험보다 좁다」 ─────────────────────────────────
+# ★ 2026-09-27 (§263). 일반 판별식을 **네 번 시도해서 네 번 실패했다.**
+#     ① `# ci-exempt` 가 이름 댄 파일명을 시험에서 찾기
+#        → 오탐(`tmp_path / "route_vehicle.csv"`). 게다가 원래 결함은 파일명이
+#          시험에 안 나온다(게이트가 안에서 읽는다) — 애초에 못 잡는 형태였다
+#     ② 모듈의 `data/` 경로가 전부 커밋돼 있으면 결함
+#        → `ROOT / "tools"` 를 `data/tools` 로 붙여 **전 모듈 통과**. 빈 그물
+#     ③ ②의 접두를 고침 → `test_lake.py` 오탐. 가드는 `lake_attached()` 인데
+#        모듈 **딴 데** 있는 경로를 가드로 읽었다
+#     ④ 가드 식만 AST 로 떼어내기 → 가드가 함수·헬퍼·`lru_cache` 로 흩어져 있어
+#        「가드 식」이라는 것이 모듈마다 다른 모양이다
+#   거짓 빨강은 침묵보다 나쁘다 — 사람이 검사를 끈다(§69). **일반화를 포기하고
+#   좁고 참인 것만 남긴다.** 이 족의 일반 강제자는 CI 자신이다(그리고 CI 가
+#   실제로 이번에 잡았다). 여기 남는 것은 그 한 모듈에 대한 충분성 검사다.
+
+
+def test_the_evalgen_guard_is_not_narrower_than_its_tests():
+    """★ 위 시험은 「가드가 있는가」만 본다. 이건 **그 가드가 충분한가**를 본다.
+
+    2026-09-27 의 결함이 정확히 「가드는 있는데 좁았다」였다 — 있는 것만 보고
+    통과시키면 다음 사람이 「가드가 있으니 봤겠지」로 읽는다.
+    """
+    # ★ 경로를 건드리지 않고 모듈로 읽는다 — `test_layering` 이 `sys.path` 조작을 막는다.
+    import importlib.util
+    import sys
+
+    spec = importlib.util.spec_from_file_location("te_guard", ROOT / "tests" / "test_evalgen.py")
+    assert spec and spec.loader
+    te = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = te      # @dataclass 가 되짚는다 (§258-10)
+    spec.loader.exec_module(te)
+
+    if not te.HAVE_REAL:
+        # ★ 조용히 통과하지 않는다(`deadcheck ③`). 트리가 없으면 **잴 것이 없는
+        #   것**이지 깨끗한 것이 아니다 — 생략으로 세어 그 사실이 보이게 한다.
+        pytest.skip("환경skip(산출물) — 실제 트리가 없다. 이 검사는 CI 에서 문다")
+    need = [te.REAL / "processed" / "route_vehicle.csv",
+            te.REAL / "processed" / "segments.geojson",
+            te.REAL / "golden" / "segments.fingerprint.json"]
+    missing = [str(p.relative_to(ROOT)) for p in need if not p.is_file()]
+    assert not missing, (
+        f"가드가 「실제 트리 있음」이라 했는데 {missing} 가 없다 — 가드가 좁다(§263)")
+    import evalgate as gt
+
+    n = (gt.gate_manifest(te.REAL / "processed")[0] or {}).get("outputs_missing")
+    assert not n, (
+        f"가드가 「실제 트리 있음」이라 했는데 매니페스트 산출물 {n}개가 없다 — "
+        "CI 에서 이 상태로 시험 넷이 돌다 죽었다(§263)")
+
+
+def test_the_navi_lock_stamp_is_not_inside_what_npm_ci_deletes():
+    """★ 2026-09-27 (DECISIONS §269). 잠금 지문이 `node_modules/` **안**에 살았다.
+
+    그런데 `npm ci` 는 그 디렉터리를 통째로 지우고 다시 깐다 — **지문을 지우는
+    명령이 지문을 들고 있었다.** 누가 `npm install` 을 치거나 devcontainer 를 다시
+    만들거나 트리를 옮기면 지문이 사라지고, 다음 verify 가 예고 없이 네트워크로
+    `npm ci` 를 돈다. 실패하면 `node_modules` 가 반쯤 지워진 채 남아 뒤의
+    `내비 타입 검사` · `내비 단위 시험` 이 연쇄로 죽는다.
+
+    밖  지문 계산이 옳은지는 안 본다 — `navi_env` 소관이다. 여기서 보는 것은
+        **지문이 사는 자리** 하나다.
+    """
+    import importlib.util
+    import sys
+
+    spec = importlib.util.spec_from_file_location("navienv_t", ROOT / "tools" / "navi_env.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m       # @dataclass 가 되짚는다 (DECISIONS §258-10)
+    spec.loader.exec_module(m)
+
+    rel = m.STAMP.relative_to(ROOT).as_posix()
+    assert "node_modules" not in rel, (
+        f"잠금 지문이 `{rel}` 에 있다 — `npm ci` 가 그 디렉터리를 지운다.\n"
+        "  지워지면 다음 verify 가 예고 없이 네트워크로 `npm ci` 를 돈다(§269).")
+
+    ign = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert rel in ign, (
+        f"`{rel}` 이 gitignore 밖이다 — 기계마다 다른 값이 커밋된다")

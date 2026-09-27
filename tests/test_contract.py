@@ -82,6 +82,59 @@ def test_schema_matches_data(seg):
     assert set(s["fields"]) >= set(REQUIRED)
 
 
+def test_published_polygons_are_well_formed():
+    """발행된 면이 **렌더러가 그릴 수 있는 기하인가.**  (§260)
+
+    ★ 2026-09-26 실제 사고. `road_area.geojson` 의 도로망 한 덩어리가
+      `is_valid=False` 였다 — 외곽 1 + 구멍 826 중 하나가 점 세 개 이하로
+      찌그러져 `Too few points in geometry component` 였다. 무효 폴리곤의
+      구멍을 렌더러가 신뢰하지 못해 **외곽 4.2km² 를 통째로 칠했고**, 화면에
+      도로망 대신 회색 슬래브가 떴다. 파이프라인도 계약 시험도 전부 초록이었다 —
+      **아무도 발행물의 기하가 유효한지 안 봤다.**
+
+    ★ 원인은 **순서**였다. `publish_basemap` 이 union 입력에만 `make_valid` 를
+      걸고, 그 뒤 `simplify` 와 6자리 반올림이 고리를 다시 찌그러뜨렸다.
+      고치는 것보다 **고친 뒤에 또 깨뜨리지 않는가**가 어려웠다.
+
+    밖  면이 **옳은 자리에** 있는지는 안 본다 — 그것은 계보와 눈이 든다.
+        `Point` · `LineString` 은 대상이 아니다(유효·무효가 없다).
+    """
+    from shapely.geometry import shape
+
+    bad: list[str] = []
+    cw: list[str] = []
+    seen = 0
+    for name in ("road_area", "sidewalk", "buildings"):
+        f = WEB / f"{name}.geojson"
+        if not f.exists():
+            continue
+        d = json.loads(f.read_text(encoding="utf-8"))
+        for i, ft in enumerate(d.get("features", [])):
+            g = ft.get("geometry") or {}
+            if g.get("type") not in ("Polygon", "MultiPolygon"):
+                continue
+            s = shape(g)
+            if not s.is_valid:
+                from shapely.validation import explain_validity
+                bad.append(f"  {name}.geojson #{i}  {explain_validity(s)[:80]}")
+            seen += 1
+            for q in (s.geoms if s.geom_type == "MultiPolygon" else [s]):
+                if not q.exterior.is_ccw:
+                    cw.append(f"{name}.geojson #{i}")
+    assert seen, "★ 훑은 면이 0건이다 — 발행물을 못 보고 있다. 판별식을 의심하라"
+    assert not bad, (
+        "발행된 면 중 무효 기하가 있다 — 렌더러가 구멍을 포기하고 외곽을 통째로 칠한다\n"
+        + "\n".join(bad[:10])
+        + "\n\n  `src/firelane/publish_basemap.py` 가 격자 스냅 뒤 `make_valid` 를 한다.\n"
+          "  거기서 안 잡혔으면 **다른 발행기가 같은 순서 실수**를 하고 있다 —\n"
+          "  단순화·반올림은 기하를 깨뜨리므로 **그 뒤에** 고쳐야 한다(§260).")
+    assert not cw, (
+        f"외곽 고리가 시계방향이다 {len(cw)}건 — RFC 7946 §3.1.6 위반 (§260-4)\n"
+        + "\n".join(sorted(set(cw))[:5])
+        + "\n\n  발행기가 `publish_basemap.rfc7946()` 를 안 거쳤다. 지금 렌더러는\n"
+          "  감김을 안 보므로 **화면으로는 안 드러난다** — 그래서 시험이 든다.")
+
+
 def test_buildings_have_height():
     """3D extrusion 재료. h 가 없거나 0이면 건물이 납작해진다."""
     b = json.loads((WEB / "buildings.geojson").read_text(encoding="utf-8"))
@@ -120,7 +173,11 @@ def navi_reads() -> set[str]:
     for p in sorted((WEBDIR / "navi" / "src").rglob("*.ts*")):
         src = re.sub(r"/\*.*?\*/", "", p.read_text(encoding="utf-8"), flags=re.DOTALL)
         src = re.sub(r"^\s*//.*$", "", src, flags=re.MULTILINE)
-        out |= set(re.findall(r'"([\w_]+\.(?:geojson|json))"', src))
+        # ★ 2026-09-24 (PLAN §13 W13-16). `[\w_]+` 는 **점을 안 먹는다** —
+        #   `segments.schema.json` 처럼 점이 둘인 이름은 내비가 실제로 읽어도
+        #   영원히 매치되지 않았다. 지금은 증상이 없지만(그 파일을 아직 안 읽는다)
+        #   배선하는 날 조용히 실패한다.
+        out |= set(re.findall(r'"([\w_]+(?:\.[\w_]+)*\.(?:geojson|json))"', src))
     return out
 
 
@@ -393,6 +450,16 @@ def test_web_data_has_no_unintended_orphan():
         # 같은 날 발행에서 뺐다(DECISIONS §218-1). 지금 의도된 미배선은 없다.
     }
 
+    # ★ 2026-09-24 (PLAN §13 W13-16 · DECISIONS §243). 화면이 아니라 **도구가**
+    #   읽는 발행물이 둘 있다. 이것은 「배선 대기」가 아니다 — 영원히 화면에
+    #   안 간다. INTENDED(철거 대기 목록)에 섞으면 다음 사람이 지우러 온다.
+    #   그래서 **읽는 파일을 같이 적고**, 그 파일이 정말 이름을 들고 있는지
+    #   아래에서 검사한다. 소비자가 사라지면 이 줄이 먼저 빨개진다.
+    TOOLSIDE: dict[str, str] = {
+        "_manifest.json": "tools/release_brief.py",        # 계보 — 타일 지문이 바뀌었나
+        "segments.schema.json": "tools/release_brief.py",  # 계약 — 스키마가 바뀌었나
+    }
+
     # 파이프라인이 **읽는** 것도 소비자다(ortho 가 scope.geojson 을 읽는다).
     # 쓰기(to_file)는 소비가 아니다 — 그것을 소비로 세면 모든 발행물이
     # 자기 자신 덕에 통과한다.
@@ -407,10 +474,25 @@ def test_web_data_has_no_unintended_orphan():
     # ★ 2026-09-22. 옛 지도를 걷어내 이제 화면 소비자는 내비(관제 포함) 하나다.
     read |= navi_reads()
 
-    published = {p.name for p in (WEB).glob("*.geojson")}
+    # ★ 2026-09-24 (PLAN §13 W13-16). `*.geojson` 만 봤다 — `web/data` 의 `.json`
+    #   일곱이 고아 검사 **밖**이었다. 이 검사의 존재 이유는 「web/data 는 40MB
+    #   상한을 받는 공간이고 아무도 안 읽는 파일이 쌓이면 그 상한이 빨리 찬다」
+    #   인데, 그 상한은 **바이트 기준**이지 확장자 기준이 아니다.
+    #   `navi_graph.json`(557KB)이 화면에서 끊겨도 이 검사는 초록이었다.
+    published = {p.name for p in WEB.glob("*.geojson")} | {p.name for p in WEB.glob("*.json")}
     # ★ 면제가 낡으면 사각지대다. 소비자가 생겼거나 발행이 멈췄으면 줄을 지워라.
     stale = sorted(n for n in INTENDED if n in read or n not in published)
     assert not stale, f"INTENDED 가 낡았다 — 이미 읽히거나 발행되지 않는다: {stale}"
+
+    # ★ 도구 소비자는 **이름을 들고 있는지 확인하고서** 소비로 센다.
+    #   적는 것만으로 통과하면 이 표는 면제 목록이 된다.
+    for name, tool in sorted(TOOLSIDE.items()):
+        src = (ROOT / tool).read_text(encoding="utf-8")
+        assert f"web/data/{name}" in src, (
+            f"TOOLSIDE 가 낡았다 — {tool} 이 web/data/{name} 을 더는 안 읽는다.\n"
+            "  소비자가 사라졌으면 발행을 멈추거나 줄을 옮겨라.")
+    read |= set(TOOLSIDE)
+
     orphan = sorted(published - read - set(INTENDED))
     assert not orphan, (
         f"발행되는데 아무도 안 읽는 레이어: {orphan}\n"

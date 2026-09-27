@@ -1,6 +1,8 @@
 """R1 — 하이브리드 뼈대와 대조의 순수 함수. 합성 기하(EPSG:5186 미터). (DECISIONS §184)"""
 from __future__ import annotations
 
+import sys
+
 import geopandas as gpd
 import shapely
 from shapely.geometry import LineString, Polygon, box
@@ -87,6 +89,7 @@ def test_tool_reads_nested_vworld_building_layer(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     spec = importlib.util.spec_from_file_location("r1_tool", root / "tools" / "skeleton_compare.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
 
     shp_dir = tmp_path / "shp"

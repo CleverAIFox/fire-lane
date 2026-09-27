@@ -43,6 +43,10 @@ EVIDENCE = {
     "W5-1": "tests/test_defect_evidence.py::test_evidence_exists_in_tree",
     "W4-7": "tests/test_docx_targets.py::test_long_cell_ratchet_bites",
     "W3-6": "tests/test_golden_fp.py::test_display_only_constants_are_outside_the_judgment_closure",
+    # ★ 2026-09-24 (DECISIONS §227). §13 의 **마지막** 행. 증표는 옛 판정을
+    #   박제해 경계에서 대조하는 시험이다 — 수용 조건이 「불변 증명」이었으므로
+    #   증표도 「불변이 관측된다」여야 한다.
+    "W6-1": "tests/test_ledger_contract.py::test_row_count_boundary_is_unchanged",
 }
 
 

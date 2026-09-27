@@ -37,7 +37,7 @@ def _tracked() -> list[str]:
         out = subprocess.run(["git", "ls-files", "--", *G.GEN_ROOTS], cwd=ROOT,
                              capture_output=True, text=True, check=True).stdout
     except (OSError, subprocess.CalledProcessError):
-        pytest.skip("git 저장소가 아니다")
+        pytest.skip("환경skip(도구) — git 저장소가 아니다")
     # 작업나무에서 지운 파일(미커밋 삭제)은 뺀다
     return [p for p in out.splitlines() if (ROOT / p).exists()]
 

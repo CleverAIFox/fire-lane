@@ -29,8 +29,22 @@ DST = ROOT / "web" / "navi" / "src"
 
 
 # ── 앉힌 것이 그대로 있는가 ─────────────────────────────────────
-# ★ 내용은 안 본다 — 지문은 golden 이 이미 한다. 여기서 또 하면 지문
-#   구현이 여섯 번째가 된다. 여기는 **목록**만 책임진다.
+# ★ 2026-09-27 (§262). 종전 이 자리는 「내용은 안 본다 — 지문은 golden 이 이미
+#   한다」였고 출력도 「내용 대조는 golden 소관」이었다. **둘 다 거짓이었다.**
+#   `golden.judgment_files()` 는 `code_closure("firelane.segments")` + `uv.lock`
+#   이라 내비 파일을 **하나도** 안 잠근다. 76파일이 「누가 든다」를 잘못 적은 채
+#   서 있었고, 그런 문장은 다음 사람에게 「저기서 봤겠지」를 판다.
+#
+# ★ golden 에 넣지 않는다. golden 은 **판정 지문**이라 UI 한 줄에도 재잠금을
+#   부른다 — 판정과 무관한 변경이 판정 잠금을 흔든다.
+# ★ 지문 파일을 새로 두지도 않는다. 내비 소스의 변화감지는 **git 이 이미** 한다.
+#   하나 더 만들면 UI 를 고칠 때마다 갱신해야 하고, 잊으면 영구 빨간불이 된다 —
+#   사람이 검사를 끄게 만드는 그 형태다(§69).
+#
+# 내비 **내용**을 실제로 드는 것은 아래 넷이고, 여기는 **목록**만 책임진다.
+GUARDS = ("tsc", "vitest", "style-spec 검증기", "git")
+
+
 def check() -> int:
     dst = ROOT / "web" / "navi" / "src"
     if not dst.is_dir():
@@ -40,7 +54,7 @@ def check() -> int:
     if not n:
         print("\u2717 web/navi/src 가 비었다")
         return 1
-    print(f"\u2713 web/navi/src {n}파일 — 내용 대조는 golden 소관")
+    print(f"\u2713 web/navi/src {n}파일 (목록) — 내용은 " + " · ".join(GUARDS) + " 가 든다")
     return 0
 
 

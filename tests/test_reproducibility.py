@@ -20,6 +20,7 @@ R3 는 `test_seg_geom.py::test_params_are_not_redefined_in_segments` 가 본다.
 """
 import ast
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -30,8 +31,8 @@ ETL = ROOT / "src" / "firelane"
 # 파이프라인 단계로 실제로 실행되는 스크립트. 라이브러리 모듈은 제외한다
 # (seg/ 는 segments.py 가 부르는 부품이지 스스로 도는 단계가 아니다).
 STAGE_SCRIPTS = [
-    "ingest.py", "segments.py", "display_scope.py", "streetlight.py",
-    "terrain.py", "ortho.py", "publish_web.py",
+    "ingest.py", "segments.py", "nfa_compare.py", "display_scope.py",
+    "streetlight.py", "terrain.py", "ortho.py", "publish_web.py",
 ]
 
 
@@ -381,15 +382,12 @@ def test_doc_axis_tables_are_consistent():
 
 # ── 문서 형식 (2026-08-18) ────────────────────────────────────
 def _body_lines(rel: str) -> list[tuple[int, str]]:
-    """코드블록 밖의 줄만. ``` 안의 `## 작업` 은 셸 주석이지 절이 아니다."""
-    out, fence = [], False
-    for i, s in enumerate((ROOT / rel).read_text(encoding="utf-8").splitlines(), 1):
-        if s.lstrip().startswith("```"):
-            fence = not fence
-            continue
-        if not fence:
-            out.append((i, s))
-    return out
+    """코드블록 밖의 줄만. ``` 안의 `## 작업` 은 셸 주석이지 절이 아니다.
+
+    ★ 2026-09-24 (PLAN §13 W12-5). 펜스 처리의 집은 `tests/docparse.py` 다.
+    """
+    import docparse
+    return docparse.prose_lines(ROOT / rel)
 
 
 def test_master_headings_are_numbered():
@@ -449,14 +447,12 @@ def test_plan_headings_are_numbered_and_unique():
     멱등하지 않아 두 번 들어갔고, 앵커 검사는 앵커가 하나라 통과했다.
     """
     import re
-    seen, dup, unnum, fence = {}, [], [], False
-    for no, s in enumerate(
-            (ROOT / "docs/PLAN.md").read_text(encoding="utf-8").splitlines(), 1):
-        if s.lstrip().startswith("```"):
-            fence = not fence
-            continue
-        if fence:
-            continue
+
+    import docparse
+    # ★ 2026-09-24 (PLAN §13 W12-5). 펜스 처리를 손으로 다시 짜고 있었다.
+    #   같은 규칙이 시험 셋에 각자 살아 있었고 그중 하나는 펜스를 안 뺐다.
+    seen, dup, unnum = {}, [], []
+    for no, s in docparse.prose_lines(ROOT / "docs/PLAN.md"):
         if s.startswith("## ") and not s[3:4].isdigit():
             unnum.append(f"{no} {s}")
         m = re.match(r"^#{2,3} ([\d-]+)\.", s)
@@ -588,6 +584,7 @@ def _baseline_tool():
     spec = importlib.util.spec_from_file_location(
         "baseline_tool", ROOT / "tools" / "baseline.py")
     m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
     return m
 

@@ -96,13 +96,17 @@ def _ledger_index() -> dict[str, tuple[str, str]]:
     upd: dict[str, str] = {}
     DECL.clear()
     for key, e in (_sources().get("datasets") or {}).items():
-        stem = e.get("stem")
-        if not stem:
-            continue
-        keys[str(stem)].append(key)
-        upd.setdefault(str(stem), _norm(e.get("updated")))
-        if _declared(e):
-            DECL[str(stem)] = DECL.get(str(stem), frozenset()) | _declared(e)
+        # ★ 2026-09-25 (§258). **복수형 stem 목록도 본다.** 종전에는 단수 칸만
+        #   읽어서, 단수가 없고 목록으로만 적은 `ngii1k` 의 두 stem 이 V3
+        #   「대장에 없는 stem」으로 나왔다 — 대장이 아는 것을 모른다고 적었다.
+        #   `lakecheck L7` 이 같은 날 같은 병으로 두 건을 거짓 양성으로 냈다.
+        for stem in [e.get("stem"), *(e.get("stems") or [])]:
+            if not stem:
+                continue
+            keys[str(stem)].append(key)
+            upd.setdefault(str(stem), _norm(e.get("updated")))
+            if _declared(e):
+                DECL[str(stem)] = DECL.get(str(stem), frozenset()) | _declared(e)
     return {s: (" · ".join(sorted(ks)), upd[s]) for s, ks in keys.items()}
 
 

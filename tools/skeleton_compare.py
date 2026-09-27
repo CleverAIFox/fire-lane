@@ -49,7 +49,12 @@ ROOT = Path(__file__).resolve().parents[1]
 P = ROOT / "data" / "processed"
 OUT = ROOT / "data" / "desk" / "r1"
 WORK = ROOT / ".work" / "r1"
-EMD_CD = "12210108"
+# ★ 2026-09-24 (PLAN §13 W12-2). `EMD_CD` 가 네 곳에 손으로 박혀 있었다.
+#   정본은 `seg/params.py` 다 — 그 파일은 **판정 지문** 안이라 값이 거기
+#   살아야 맞고, 나머지는 읽기만 한다. 대상 행정동이 바뀔 때 한 곳만 고치면
+#   되고, 한쪽만 고쳐 발행물과 대조표가 **다른 동**을 보는 일이 없어진다.
+from firelane.seg.params import EMD_CD  # noqa: E402
+
 CRIT_REPLACE = 20      # §184 — C(5~15m) 중 needs_cv · unknown 이 이 이상이면 뼈대 교체, 미만이면 구간 보정
 
 

@@ -17,7 +17,9 @@ test_ledger_outputs.py — data/processed 산출물이 대장에 등재됐는가
 """
 from __future__ import annotations
 
-from pathlib import Path
+import ast
+import re
+from pathlib import Path, PurePosixPath
 
 import pytest
 import yaml
@@ -222,6 +224,102 @@ def test_consumers_exist():
     assert not dead, (
         "존재하지 않는 소비자:\n  " + "\n  ".join(dead) +
         "\n  파일을 개명·삭제했으면 대장도 같이 고친다")
+
+
+def _named_in(path: Path, names: set[str]) -> bool:
+    """이 파일이 `names` 중 하나를 **문자열 리터럴로** 드는가.
+
+    ★ 주석과 docstring 은 뺀다. 「이 파일을 누가 읽나」를 산문에서 읽으면
+      머리말에 이름만 적어도 소비자가 된다 — `guards.py` 가 `nfa_compare` 를
+      주석 두 줄로만 들고 소비자로 등재돼 있었다(2026-09-24).
+    ★ `Step(...)` 안의 이름도 뺀다. **단계 선언은 소비가 아니다.**
+      그것을 소비로 세면 모든 산출물이 제 선언 덕에 통과한다 —
+      `test_contract` 가 「쓰기(to_file)는 소비가 아니다」로 같은 함정을
+      이미 한 번 피했다.
+    """
+    src = path.read_text(encoding="utf-8")
+    if path.suffix != ".py":
+        return any(re.search(rf"(?<!\w){re.escape(n)}(?!\w)", src) for n in names)
+    tree = ast.parse(src)
+    skip: set[int] = set()
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            b = n.body
+            if b and isinstance(b[0], ast.Expr) and isinstance(b[0].value, ast.Constant) \
+               and isinstance(b[0].value.value, str):
+                skip.add(id(b[0].value))
+        if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "Step":
+            skip.update(id(d) for d in ast.walk(n) if isinstance(d, ast.Constant))
+    lits = {n.value for n in ast.walk(tree)
+            if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in skip}
+    pat = re.compile("|".join(rf"(?<!\w){re.escape(n)}(?!\w)" for n in sorted(names)))
+    return any(pat.search(s) for s in lits)
+
+
+def test_consumers_actually_read_it():
+    """소비자로 적힌 파일이 그 산출물을 **정말 드는가**.
+
+    ★ 2026-09-24 (PLAN §13 W13-2 · DECISIONS §243). 바로 위 검사는
+      `Path.exists()` 만 봤다 — 파일이 실재하기만 하면 통과다. 그래서
+      **열한 개의 유령 소비자**가 대장에 앉아 있었다:
+
+          jijeok · jijeok_5186    탐색 도구 둘은 raw zip 과 제가 만든
+                                  gpkg 를 읽는다. 이 산출물이 아니다
+          streetlight_point       publish_web 은 이름조차 안 든다
+          corridor                실제 독자는 display_scope.py
+          nfa_compare             guards.py 는 주석 두 줄뿐
+          route_vehicle           실제 독자는 publish_web.py
+          hydrant_point           contract.py 는 raw 를 보는 도구다
+          obs_points·field_sample fieldsheet.md 는 **같은 생성기의 형제
+                                  산출물**이지 소비자가 아니다
+
+      영향 분석이 이 표를 근거로 「이것을 지우면 누가 깨지나」를 답한다.
+      표가 거짓이면 **지워도 되는 것을 지키고, 지키던 것을 지운다.**
+
+    ★ 이름 대조는 느슨하다 — basename · stem · `_5186` 없는 stem 중
+      하나면 통과다. `terrain.py` 처럼 `LAYERS = [..., "hydrant_point"]`
+      로 조립하는 꼴을 잡으려면 그래야 한다. **좁히다 오탐이 나면
+      사람이 검사를 끈다.**
+    """
+    ghost = []
+    for k, v in ledger().items():
+        v = v or {}
+        pp = PurePosixPath(v.get("path") or "")
+        if not pp.name:
+            continue
+        names = {pp.name, pp.stem, re.sub(r"_5186$", "", pp.stem)}
+        for c in v.get("consumers") or []:
+            f = ROOT / c
+            if f.exists() and not _named_in(f, names):
+                ghost.append(f"outputs.{k}.consumers → {c}  ({pp.name} 을 안 든다)")
+    assert not ghost, (
+        "유령 소비자 — 적혀 있는데 그 산출물을 안 읽는다:\n  " + "\n  ".join(ghost) +
+        "\n  진짜 독자로 고치거나, 없으면 `consumers: []` 로 내리고 사유를 note 에 적어라.")
+
+
+def test_the_consumer_matcher_is_alive():
+    """**목표에 닿는 날 빨개지는가.** 실물 트리가 아니라 합성 파일로 증명한다.
+
+    ★ 위 검사는 지금 초록이다. 초록인 검사는 제가 보고 있다는 것을 스스로
+      증명 못 한다 — 리터럴 수집이 망가지면 영영 초록이고, 그 상태가
+      2026-09-24 이전의 `test_consumers_exist` 였다.
+    """
+    import tempfile
+    cases = {
+        "read.py":  ('X = P / "nfa_compare.json"', True),
+        "doc.py":   ('"""머리말에 nfa_compare.json 이라 적기만 한다."""\nX = 1', False),
+        "cmt.py":   ('# nfa_compare.json 을 읽는다\nX = 1', False),
+        "step.py":  ('Step("x", reads=("nfa_compare.json",))', False),
+        "join.py":  ('LAYERS = ["hydrant_point"]', True),
+        "near.py":  ('X = "jijeok_width.gpkg"', False),
+    }
+    want = {"nfa_compare.json", "nfa_compare", "hydrant_point", "jijeok"}
+    with tempfile.TemporaryDirectory() as d:
+        for name, (src, expect) in cases.items():
+            p = Path(d) / name
+            p.write_text(src, encoding="utf-8")
+            got = _named_in(p, want)
+            assert got is expect, f"{name}: {got} 여야 할 것이 {expect}"
 
 
 def test_no_todo_in_ledger():

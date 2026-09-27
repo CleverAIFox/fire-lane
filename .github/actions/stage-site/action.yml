@@ -31,7 +31,21 @@ runs:
       with:
         mapbox-token: ${{ inputs.mapbox-token }}
 
-    - name: 배포 준비 (docs/proposal.docx → web/ · 틀 빼기)
+    - name: 기획서 PDF 변환기 (libreoffice · 한글 글꼴 · poppler)
+      # ★ 2026-09-24 (DECISIONS §231). 셋이 전부 있어야 한다 —
+      #     libreoffice-writer  .docx → .pdf
+      #     fonts-noto-cjk      **없으면 본문이 네모로 구워진다.** 글자층은
+      #                         멀쩡해서 pdftotext 로는 안 걸린다. proposal_pdf 가
+      #                         굽기 **전에** `fc-list :lang=ko` 로 막는다
+      #     poppler-utils       pdfinfo · pdftotext · pdfimages (판정 셋)
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq --no-install-recommends \
+          libreoffice-writer fonts-noto-cjk poppler-utils
+        fc-cache -f >/dev/null
+
+    - name: 배포 준비 (docs/proposal.docx → web/ · 기획서 PDF · 틀 빼기)
       # ★ 2026-09-22. `web/key.js`(V-World 키) 생성을 뺐다 — 쓰던 것이 옛 지도 하나였다.
       # ★ 2026-09-22 (§216-5). `--deploy` 가 템플릿(playbook.html) · web/README.md 를 뺀다.
       #   협업 방침은 workflow.html 하나로 뜬다. 렌더(위 단계)가 템플릿을 다 읽은 뒤라 안전하다.

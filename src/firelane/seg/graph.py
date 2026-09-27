@@ -22,8 +22,8 @@ import networkx as nx
 import numpy as np
 from shapely.geometry import Point
 from shapely.ops import unary_union
-from shapely.strtree import STRtree
 
+from firelane.seg import geom
 from firelane.seg.params import GRAPH_BUFFER, NODE_TOL, STATIONS
 
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
@@ -45,25 +45,12 @@ def build_graph(road, poly, endpoint_snap):
     # 접합 후 양 끝이 같은 노드가 된 엣지는 자기루프이므로 버린다. 이것이 §4 의
     # 마이크로 엣지(길이 0.0~0.5m)다. 잘라낸 것이 아니라 애초에 노드가 하나였다.
     _pts = [Point(q) for e in _E for q in (e[0], e[1])]
-    _tree = STRtree(_pts)
-    _par = list(range(len(_pts)))
-
-    def _find(i):
-        while _par[i] != i:
-            _par[i] = _par[_par[i]]
-            i = _par[i]
-        return i
-
-    for i, pt in enumerate(_pts):
-        for j in _tree.query(pt.buffer(NODE_TOL)):
-            j = int(j)
-            if j != i and _pts[i].distance(_pts[j]) <= NODE_TOL:
-                ri, rj = _find(i), _find(j)
-                if ri != rj:
-                    _par[ri] = rj
+    # ★ 2026-09-25 (PLAN §1 #125 · DECISIONS §252). 같은 15줄이 `_write_route` 에도
+    #   있었다. 합집합 방향만 달랐고 집합 분할은 같다 — 판정 재실행으로 확인하고 합쳤다.
+    _rep = geom.snap_groups(_pts, NODE_TOL)
     _grp = {}
-    for i in range(len(_pts)):
-        _grp.setdefault(_find(i), []).append(i)
+    for i, r in enumerate(_rep):
+        _grp.setdefault(r, []).append(i)
     _key, _dmax = {}, 0.0
     for _, mem in _grp.items():
         cx = sum(_pts[m].x for m in mem) / len(mem)
