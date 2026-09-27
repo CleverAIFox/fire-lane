@@ -2,8 +2,8 @@
 """
 docseal.py — 문서 절과 그 절이 가리키는 코드에 **정합 도장**을 찍는다.  (§265)
 
+    uv run python tools/docseal.py            무효가 된 도장을 낸다 (rc 1) ← 기본
     uv run python tools/docseal.py status     몇 개가 유효 · 무효 · 미날인인가
-    uv run python tools/docseal.py check      무효가 된 도장을 낸다 (rc 1)
     uv run python tools/docseal.py stamp      지금 상태로 도장을 찍는다
     uv run python tools/docseal.py stamp --only DECISIONS/262
     uv run python tools/docseal.py --selftest 판별식이 살아 있나
@@ -196,7 +196,12 @@ def selftest() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="문서 절 ↔ 코드 정합 도장")
-    ap.add_argument("cmd", nargs="?", default="status",
+    # ★ 2026-09-27 (DECISIONS §272). 기본이 `status` 였다 — **rc 를 늘 0 으로 낸다.**
+    #   그래서 `uv run python tools/docseal.py` 를 검사로 부른 스윕이 **빈 그물**이었고,
+    #   관문(`check`)이 잡은 무효를 개발 기계가 못 잡았다. 이 저장소의 다른 도구는
+    #   전부 인자 없이 부르면 **검사**다(`sizecheck` · `deadcheck` · `treecheck` …).
+    #   같은 규약으로 맞춘다 — 이름이 같으면 행동도 같아야 한다.
+    ap.add_argument("cmd", nargs="?", default="check",
                     choices=["status", "check", "stamp"])
     ap.add_argument("--only", help="그 절 하나만 찍는다")
     ap.add_argument("--selftest", action="store_true", help="판별식 자기검사")

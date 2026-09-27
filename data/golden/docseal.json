@@ -1,4 +1,11 @@
 {
+ "DECISIONS/188-1": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_r3.py"
+  ],
+  "sha": "d6eda6014e7d40a4"
+ },
  "DECISIONS/260": {
   "doc": "docs/DECISIONS.md",
   "files": [
@@ -22,7 +29,7 @@
    "tests/test_relock_decision.py",
    "tools/install_navi.py"
   ],
-  "sha": "d51dfc04428f14ba"
+  "sha": "66799f43081c8e05"
  },
  "DECISIONS/263": {
   "doc": "docs/DECISIONS.md",
@@ -32,7 +39,7 @@
    "tests/test_evalgen.py",
    "tools/verify.sh"
   ],
-  "sha": "f5442f1d211779e6"
+  "sha": "2da0ef93b060b440"
  },
  "DECISIONS/265": {
   "doc": "docs/DECISIONS.md",
@@ -41,7 +48,7 @@
    "tools/docseal.py",
    "tools/install_navi.py"
   ],
-  "sha": "db787494207ffd96"
+  "sha": "e4bd0c575f15433b"
  },
  "DECISIONS/266": {
   "doc": "docs/DECISIONS.md",
@@ -51,7 +58,7 @@
    "tools/sizecheck.py",
    "tools/skeleton_compare.py"
   ],
-  "sha": "ad55d9e97afead7c"
+  "sha": "8567656fe9e9c2a8"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -67,7 +74,7 @@
    "tests/test_ci_env.py",
    "tests/test_skip_policy.py"
   ],
-  "sha": "5448589cfd4cb39b"
+  "sha": "de6aef56ec2f75c8"
  },
  "DECISIONS/270": {
   "doc": "docs/DECISIONS.md",
@@ -75,7 +82,7 @@
    "tests/test_delegation.py",
    "web/config.js"
   ],
-  "sha": "b0d8522e827e356e"
+  "sha": "2f4b11c80f409b05"
  },
  "DECISIONS/271": {
   "doc": "docs/DECISIONS.md",
@@ -83,7 +90,16 @@
    "tests/test_declaration_sync.py",
    "tools/plan_renumber.py"
   ],
-  "sha": "c5bc77a355b07509"
+  "sha": "59d77bb3c7eb33da"
+ },
+ "DECISIONS/272": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_docseal.py",
+   "tests/test_r3.py",
+   "tools/docseal.py"
+  ],
+  "sha": "98ca96d5079b8058"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -97,6 +113,6 @@
   "files": [
    "tools/docseal.py"
   ],
-  "sha": "b98e75048f4043f1"
+  "sha": "0b5a75d4349ab01b"
  }
 }

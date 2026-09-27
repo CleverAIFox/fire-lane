@@ -8530,7 +8530,7 @@ import 는 분기 안에 둔다 — 꼭대기로 올리면 스위치와 무관�
 ★ `segments.py` 는 판정 지문 파일이라 코드가 바뀌면 golden 이 운다. **의도된 울음이 아니다** — 판정은 안 바뀐다.
   산출물 사진(L1 집계 · L2 구간별 · L3 기하)이 전부 같음을 확인한 뒤 코드 지문만 재잠금한다(2026-09-18 확인: 셋 다 동일).
 
-강제자  `tests/test_r3.py::test_switch_is_off_by_default_and_import_stays_inside_it` · `::test_switch_is_registered_as_a_shell_switch_not_a_setting` · `::test_switch_is_read_through_paths_not_os_environ`
+강제자  `tests/test_r3.py::test_the_skeleton_switch_stays_out_of_the_judgment_closure` — ★ 2026-09-27 (DECISIONS §266) 스위치를 걷었다. 그것을 재던 강제자 셋은 같이 걷혔고, 지금은 **다시 들어오는 것**을 막는 하나가 그 자리를 든다
 
 ### 188-2. `skeleton.as_road` — 엣지에 `RN · RDS_DPN_SE · ROAD_BT` 를 입힌다
 
@@ -15487,3 +15487,31 @@ registry 못 닿으면 그 단계가 빨강). 실패하면 `node_modules` 가 �
 ★ 이 결함은 **꼬리를 닫을 때만** 드러난다. 중간을 닫는 일이 대부분이라 아홉 달
   동안 안 보였다. 경계값이 그렇다 — 자주 밟는 자리가 아니라 **마지막으로 밟는
   자리**에 산다.
+
+## 272. 내 스윕이 빈 그물이었다 — 기본 하위명령이 rc 0 이었다
+
+> 2026-09-27
+
+강제자  `tools/docseal.py`(인자 없이 부르면 `check`) · `tests/test_docseal.py`. 하위 2가 이 칸을 물려받는다
+
+§266 실기에서 관문이 둘을 잡았고 **둘 다 개발 기계 스윕이 놓친 것**이다.
+
+### 272-1. 같은 도구를 다르게 불렀다
+
+관문은 `tools/docseal.py check` 를 부르는데 개발 스윕은 `tools/docseal.py` 를
+인자 없이 불렀다. 기본이 `status` 였고 **`status` 는 rc 를 늘 0 으로 낸다.**
+즉 스윕에서 그 줄은 **아무것도 안 보는 줄**이었다.
+
+★ 이 저장소의 다른 도구는 전부 인자 없이 부르면 **검사**다(`sizecheck` ·
+  `deadcheck` · `treecheck` · `doc_fsck` …). 하나만 규약이 달랐고, 그 하나가
+  **이 배치가 만든 것**이다. 기본을 `check` 로 맞췄다 — 이름이 같으면 행동도 같아야 한다.
+
+### 272-2. 스위치를 걷으며 그것을 가리키던 강제자 칸을 안 고쳤다
+
+§266 이 `tests/test_r3.py` 의 시험 셋을 걷었는데 `DECISIONS §188-1` 의 강제자
+칸이 그 셋을 이름으로 들고 있었다 — 죽은 참조 3건. **강제자를 지울 때 그것을
+가리키는 자리를 같이 봐야 한다**(커밋 `0987aab` 이 세운 규율이고, 그 검사가
+실기에서 제 일을 했다).
+
+★ 고치면서 옛 이름을 백틱 안에 남겼다가 **같은 검사에 또 걸렸다.** 인용도
+  참조로 세어진다 — 역사는 백틱 밖에 적는다.
