@@ -25,6 +25,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { createGpsSource } from "../infra/position/gps";
 import { createSimulationSource } from "../infra/position/simulation";
 import { createReplaySource } from "../infra/position/replay";
+import { outsideNotice, outsideServiceArea, metresOutside } from "../domain/serviceArea";
+import type { LngLat } from "../domain/geo";
 import type { Fix, Phase, PosMode, RoutePlan } from "../domain/types";
 
 /** 위치원이 공통으로 내주는 손잡이 — 앞으로 감기와 지금까지 온 거리 */
@@ -43,9 +45,15 @@ export function usePositionSource(a: {
   /** 시뮬레이션이 경로 끝에 닿았다 */
   onEnd: () => void;
   onNotice: (m: string | null) => void;
+  /** `view.json` 의 `maxBounds`. 없으면 범위 판정을 **안 한다**(§275) */
+  area?: readonly [LngLat, LngLat];
+  /** 측위가 범위 밖이다 — 경로 주행으로 갈아타라고 위에 알린다 */
+  onOutOfArea?: (metres: number) => void;
 }) {
-  const { phase, simSpeed, plan, posMode, onFix, onEnd, onNotice } = a;
+  const { phase, simSpeed, plan, posMode, onFix, onEnd, onNotice, area, onOutOfArea } = a;
   const srcRef = useRef<Source | null>(null);
+  /** 범위 밖 알림은 **한 번만.** 1Hz 로 뜨면 그것이 화면을 덮는다 */
+  const saidOut = useRef(false);
   const simAt = useRef<{ plan: RoutePlan | null; along: number }>({ plan: null, along: 0 });
 
   useEffect(() => {
@@ -70,7 +78,23 @@ export function usePositionSource(a: {
     }
     // ★ 실제 GPS 가 없는 기기(데스크톱 · 거부)에서 「위치 없음 (User denied…)」 이 주행
     //   화면을 덮었다. 무엇을 하면 되는지를 말한다.
-    return createGpsSource().start(onFix, (m) => onNotice(
+    //
+    // ★ 2026-09-27 (§275). **잡히는데 엉뚱한 데서 잡히는 경우**가 구멍이었다.
+    //   서울에서 열면 GPS 가 정상으로 서울 좌표를 준다 — 에러가 아니므로 위
+    //   안내가 안 뜨고, 경로는 동명동인데 현위치는 200km 밖이다. 맵매칭이
+    //   조용히 실패한다. 첫 측위가 범위 밖이면 **말하고 갈아탄다.**
+    const guard = (f: Fix) => {
+      const p: LngLat = [f.lon, f.lat];
+      if (!saidOut.current && outsideServiceArea(p, area)) {
+        saidOut.current = true;
+        const m = metresOutside(p, area);
+        onNotice(outsideNotice(m));
+        onOutOfArea?.(m);
+        return;                    // 이 측위는 쓰지 않는다 — 경로 밖이다
+      }
+      onFix(f);
+    };
+    return createGpsSource().start(guard, (m) => onNotice(
       m.startsWith("위치 없음") ? "실제 GPS 신호가 없다 — 시연은 아래 ▶ 로 주행한다" : m));
   }, [phase, simSpeed, plan, onFix, posMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
