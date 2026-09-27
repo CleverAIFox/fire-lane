@@ -699,7 +699,15 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 
 ```
 data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취득
-  ↓ src/firelane/ingest.py            선언형. sources.yaml 만 고치면 된다
+  ↓ src/firelane/ingest.py            배선부. 실물을 고르고 저장하고 계보를 적는다
+      read/__init__.py  `kind` → 갈래 함수 표 **정본** (READERS · 15항목)
+      read/ctx.py       갈래가 받는 한 덩이 (대장 항목 · 실물 · save 주입)
+      read/_io.py       연장 넷 + 좌표계 · 절단 상자
+      read/shapefile.py zip 안 SHP · 도엽 묶음 · NGI 혼재      13개(18%)
+      read/delimited.py CSV · `|` 구분 텍스트 · 좌표 없는 표   29개(40%)
+      read/jsondoc.py   표준데이터 · 건축행정시스템 JSON        3개( 4%)
+      read/dbf.py       회전제한 (지오메트리 없음)              1개( 1%)
+      read/passthrough.py  읽지 않는다. 존재만 기록            26개(36%)
 data/processed/    대장 72종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
@@ -2651,7 +2659,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,128 전수 · **분모(blank) 0절** · 물림(inherit) 403절.
+★ **강제자 칸의 분모.** 절 1,139 전수 · **분모(blank) 0절** · 물림(inherit) 413절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

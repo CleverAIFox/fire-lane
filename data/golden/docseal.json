@@ -65,9 +65,9 @@
    "tools/skeleton_compare.py"
   ],
   "legacy": [
-   "802b7641284422fb"
+   "daff76cddc502ea4"
   ],
-  "sha": "6decb2ded33157a2"
+  "sha": "d96e1e6ada595f1a"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -127,9 +127,22 @@
    "tools/serve.py"
   ],
   "legacy": [
-   "4845da6fb748703e"
+   "7f85b1d123eeb093"
   ],
-  "sha": "4845da6fb748703e"
+  "sha": "147d9ac2aaf974ca"
+ },
+ "DECISIONS/274": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/read/__init__.py",
+   "tests/test_read_dispatch.py",
+   "tools/axis_gain.py",
+   "tools/sizecheck.py"
+  ],
+  "legacy": [
+   "c2e2bd8621ac722c"
+  ],
+  "sha": "c2e2bd8621ac722c"
  },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",

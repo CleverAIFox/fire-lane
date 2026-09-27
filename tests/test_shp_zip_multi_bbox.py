@@ -23,6 +23,7 @@ import pytest
 from shapely.geometry import Polygon, box
 
 from firelane import ingest
+from firelane.read import shapefile
 
 X0, Y0 = 200_000.0, 500_000.0
 BB = (X0, Y0, X0 + 100, Y0 + 100)
@@ -58,7 +59,9 @@ def run(tmp_path, monkeypatch, multi_zip):
     out.mkdir()
     monkeypatch.setattr(ingest, "OUT", out)
     monkeypatch.setattr(ingest, "paths_for", lambda key, e: [multi_zip])
-    monkeypatch.setattr(ingest, "bbox_in", lambda crs: BB)
+    # ★ 2026-09-27 (§274). `bbox_in` 은 `read/shapefile.py` 가 임포트 시점에
+    #   묶는다 — `ingest` 를 갈아도 갈래는 옛것을 본다. 묶인 자리를 간다.
+    monkeypatch.setattr(shapefile, "bbox_in", lambda crs: BB)
     e = {"kind": "shp_zip_multi", "layer": "T.shp", "crs_native": 5186,
          "encoding": "utf-8", "files": ["t_multi.zip"], "parts": ["", "2"]}
 
