@@ -29,7 +29,7 @@ doc_fsck.py — 문서가 하는 말과 실물이 어긋나는 곳을 여덟만 
 
 IN    src/firelane/README.md · sources.yaml · docs/*.md · web/ · data/field
 OUT   없음 (검사). 어긋나면 1
-PARAM FIELD_EXEMPT — 등재 유예 목록. 비우는 것이 목표다
+PARAM FIELD_EXEMPT · PATH_EXEMPT — 등재 유예. 값은 **읽는 코드 목록**이고 대조된다(§270)
 """
 from __future__ import annotations
 
@@ -56,8 +56,14 @@ PIPE_README = ROOT / "src/firelane/README.md"
 
 # ★ 등재가 아직 안 된 field 파일. **늘리지 마라.** 여기 있는 동안은 그 파일이
 #   무엇인지 저장소가 설명하지 못한다. PLAN 이 이 목록의 처리를 든다.
-FIELD_EXEMPT = {
-    "fieldsheet.md",      # 들고 나가는 종이. 코드 소비자가 없다(DECISIONS §243)
+# ★ 2026-09-27 (DECISIONS §270 · PLAN #139 닫힘). 값이 **기계로 물을 수 있는 한 줄**이다 —
+#   그 경로를 **참조하는 코드의 전부**. `tests/test_delegation.py` 가 실물과
+#   **정확히 같은 집합**인지 본다 — 하나가 늘어도, 하나가 죽어도 운다.
+#   이 파일(`doc_fsck.py`) 자신은 표가 사는 자리라 뺀다. 산문 사유는 그 옆에 남는다.
+FIELD_EXEMPT: dict[str, tuple[str, ...]] = {
+    # 들고 나가는 종이. 코드 소비자가 없다(DECISIONS §243)
+    "fieldsheet.md": ("src/firelane/sample_design.py", "tools/field_compare.py",
+                      "tests/test_ledger_outputs.py", "tests/test_reproducibility.py"),
     # ── 2026-09-03. 네이버 산출 넷(DECISIONS §42)을 지웠다.
     #
     # ★ **저장소에는 한 번도 없었다.** 실물은 SSD 의 `data/field/` 에 있었고
@@ -75,7 +81,7 @@ FIELD_EXEMPT = {
 }
 
 # ★ 한시 유예. **늘리지 마라.** 사유와 해소 조건을 함께 적는다(§80 과 같은 형태).
-PATH_EXEMPT = {
+PATH_EXEMPT: dict[str, tuple[str, ...]] = {
     # 2026-09-01. 파일이 광인사 그램에만 있다. UI 담당이 커밋하면 해소된다.
     # ★ 2026-09-26 사유 정정 (§258-18). 종전에는 「`config.js:327` · `vehicle.js:187`
     #   이 fetch 하고, 없으면 화면이 "제원 미확인" 만 띄운다」고 적혀 있었다.
@@ -84,7 +90,10 @@ PATH_EXEMPT = {
     #   이 파일을 부르지 않으며 화면에 미치는 영향이 0이다.
     #   실제 유일한 독자는 `src/firelane/publish_fleet.py` 이고, 없으면 그 발행기가
     #   전장을 못 채운다 — 그것이 지금의 진짜 대가다.
-    "web/assets/vehicles/profiles.json",
+    #   ★ `web/config.js` 도 아직 이 경로를 적는다 — 그러나 **브라우저가 그 파일을
+    #     로드하지 않으므로**(§259-2 전수 확인) 죽은 소비자다. 죽었다고 목록에서
+    #     빼면 그 파일이 되살아나도 조용하다. 적어 두고 대조한다.
+    "web/assets/vehicles/profiles.json": ("src/firelane/publish_fleet.py", "web/config.js"),
     # ★ 2026-09-22. `web/key.js` 를 뺐다 — 옛 지도와 함께 생성을 멈췄다. 이제 문서가 그 경로를
     #   적으면 **낡은 서술**이라 울어야 한다.
 }

@@ -168,7 +168,17 @@ def main() -> int:
             print(f"  ✗ {b}")
         return 1
 
-    gaps = sorted(set(range(1, max(nums) + 1)) - set(nums))
+    # ★ 2026-09-27 (DECISIONS §271). 종전에는 `max(nums)` 까지만 셌다. 그러면 **꼬리
+    #   번호를 닫은 날 그 번호를 결번으로 못 적는다** — 구멍이 아니라 끝이 되기
+    #   때문이다. 그런데 다음 행은 `맨 끝 + 1` 을 쓰므로 그 번호를 **조용히
+    #   재사용한다.** 결번 대장이 막으려던 바로 그것이다(#139 를 닫으며 드러났다).
+    #   수위(high-water)는 **선언된 결번까지 포함한 최댓값**이다. 한 번 쓴 번호는
+    #   행이 사라져도 수위를 내리지 않는다.
+    _said0 = [int(x) for x in re.findall(r"#(\d+)", (
+        re.search(r"^결번 — (.+)$", text, re.M) or type("", (), {"group": lambda *_: ""})()
+    ).group(1))]
+    _hi = max([*nums, *_said0])
+    gaps = sorted(set(range(1, _hi + 1)) - set(nums))
 
     # ── 결번 대장 — **번호 재사용을 막는다** (2026-09-23 · DECISIONS §222-4) ──
     # ★ §205 가 「결번을 허용한다」로 규약을 뒤집었지만, **재사용을 막는 것은 없었다.**

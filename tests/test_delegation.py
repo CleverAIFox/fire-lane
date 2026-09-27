@@ -216,3 +216,52 @@ def test_install_navi_names_guards_that_are_actually_wired():
     assert not dead, (
         f"`GUARDS` 가 **안 도는 것**을 든다고 말한다: {dead}\n"
         "  고치기 전 「golden 소관」과 같은 거짓말이다(§262).")
+
+
+# ── 면제의 **사유**가 기계로 물어지는가 ─────────────────────────
+def test_every_exemption_declares_readers_that_are_real():
+    """★ 2026-09-27 (§270 · PLAN #139 닫힘). 면제의 **사유가 낡는 것**이 면제 자체보다
+    위험하다. 사유가 거짓이면 다음 사람이 대가를 잘못 재고, 잘못 잰 대가로 면제를
+    연장한다. 2026-09-26 에 실제로 그랬다 — `profiles.json` 의 사유가 「`config.js` ·
+    `vehicle.js` 가 fetch 한다」였는데 하나는 걷어냈고 하나는 로드조차 안 됐다
+    (DECISIONS §259-2).
+
+    ★ 그래서 면제마다 **기계로 물을 수 있는 한 줄**을 요구한다 — 그 파일을 읽는
+      코드의 목록. 빈 tuple 은 「읽는 코드가 없다」는 **적극적 주장**이고 그것도
+      대조된다. 산문 사유는 그 옆에 남는다.
+
+    밖  사유의 산문이 **옳은지**는 안 본다 — 기계가 못 읽는다. 읽는 코드가 실재
+        하는가, 그리고 없다고 한 것이 정말 없는가, 둘만 본다.
+    """
+    import importlib.util
+    import subprocess
+    import sys
+
+    spec = importlib.util.spec_from_file_location("dfsck_x", ROOT / "tools" / "doc_fsck.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m       # @dataclass 가 되짚는다 (DECISIONS §258-10)
+    spec.loader.exec_module(m)
+
+    tables = {"PATH_EXEMPT": m.PATH_EXEMPT, "FIELD_EXEMPT": m.FIELD_EXEMPT}
+    assert any(tables.values()), "★ 면제가 0건이다 — 판별식을 의심하라"
+    code = [f for f in subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True,
+                                      text=True).stdout.split()
+            if f.endswith((".py", ".js", ".ts", ".tsx", ".sh", ".html"))]
+
+    bad = []
+    for name, tab in tables.items():
+        assert isinstance(tab, dict), f"{name} 이 사전이 아니다 — 사유를 기계로 못 읽는다"
+        for key, readers in tab.items():
+            # ★ 표가 사는 파일 자신은 뺀다 — 자기를 참조로 세면 늘 한 건이다.
+            found = {f for f in code if f != "tools/doc_fsck.py"
+                     and key in (ROOT / f).read_text(encoding="utf-8", errors="ignore")}
+            said = set(readers)
+            for r in said - found:
+                bad.append(f"  {name}[{key}] 이 `{r}` 를 참조자로 드는데 실물이 아니다")
+            for r in found - said:
+                bad.append(f"  {name}[{key}] 을 `{r}` 가 참조하는데 목록에 없다")
+    assert not bad, (
+        f"면제의 사유가 실물과 다르다 {len(bad)}건\n" + "\n".join(bad) + "\n\n"
+        "  사유가 거짓이면 다음 사람이 **대가를 잘못 재고** 그 잘못 잰 대가로\n"
+        "  면제를 연장한다(§270). 독자 목록을 고치거나 면제를 걷어라.")

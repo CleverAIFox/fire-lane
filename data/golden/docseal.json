@@ -69,6 +69,22 @@
   ],
   "sha": "5448589cfd4cb39b"
  },
+ "DECISIONS/270": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_delegation.py",
+   "web/config.js"
+  ],
+  "sha": "b0d8522e827e356e"
+ },
+ "DECISIONS/271": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_declaration_sync.py",
+   "tools/plan_renumber.py"
+  ],
+  "sha": "c5bc77a355b07509"
+ },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
   "files": [
