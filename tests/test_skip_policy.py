@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import skip_policy as sp
@@ -41,7 +41,12 @@ def test_judge_rejects_what_hides():
     assert _j("환경skip — 태그 없음"), "환경skip 은 무엇이 없는지 태그를 단다"
     assert _j("유예skip — 「없는 행」 · 2026-09-10 — x"), "닫힌 PLAN 행을 붙든 유예"
     assert _j("유예skip — 「대장 · SSD 디렉토리 구조와 해석기 하나」 · 2026-08-01 — x"), "21일 넘은 유예"
-    assert _j("유예skip — 「대장 · SSD 디렉토리 구조와 해석기 하나」 · 2026-10-01 — x"), "미래 날짜"
+    # ★ 2026-09-27 (DECISIONS §269). 종전에는 `2026-10-01` 을 손으로 박고 「미래 날짜」라
+    #   불렀다. **2026-10-01 이 오면 미래가 아니게 되어 나흘 뒤 빨개질 시험이었다** —
+    #   DECISIONS §230 「목표에 닿는 날 빨개지는 검사」의 네 번째 인스턴스다.
+    #   기준일에서 상대로 잡는다. 날짜가 흘러도 뜻이 안 변한다.
+    _far = (TODAY + timedelta(days=7)).isoformat()
+    assert _j(f"유예skip — 「대장 · SSD 디렉토리 구조와 해석기 하나」 · {_far} — x"), "미래 날짜"
 
 
 def test_plan_titles_are_read():

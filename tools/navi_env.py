@@ -26,7 +26,7 @@ navi_env.py — **내비를 검사하는 환경이 CI 와 같은가.**
        — **경고를 실패로 올린다.** 경고로 두면 3 이 또 난다
 
 IN    web/navi/.nvmrc · web/navi/package.json · web/navi/package-lock.json
-OUT   web/navi/node_modules/.fl-lock-sha256 (지문) · 표준출력
+OUT   web/navi/.fl-lock-sha256 (지문 · gitignore) · 표준출력
 """
 from __future__ import annotations
 
@@ -41,7 +41,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 NAVI = ROOT / "web" / "navi"
-STAMP = NAVI / "node_modules" / ".fl-lock-sha256"
+# ★ 2026-09-27 (DECISIONS §269). 지문이 `node_modules/` **안**에 살았다 —
+#   그런데 `npm ci` 는 그 디렉터리를 **통째로 지우고** 다시 깐다. 즉 **지문을
+#   지우는 명령이 지문을 들고 있었다.** 누가 `npm install` 을 한 번 치거나
+#   devcontainer 를 다시 만들거나 트리를 옮기면 지문이 사라지고, 다음 verify 가
+#   예고 없이 **네트워크로 `npm ci`** 를 돈다(수 분 · registry 못 닿으면 단계 빨강 ·
+#   실패하면 `node_modules` 가 반쯤 지워진 채 남아 뒤 두 단계가 연쇄로 죽는다).
+#   `node_modules` 밖에 두면 `npm ci` 가 못 지운다. gitignore 라 커밋되지도 않는다.
+STAMP = NAVI / ".fl-lock-sha256"
 
 
 def _ver(s: str) -> tuple[int, int, int]:

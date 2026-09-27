@@ -61,6 +61,14 @@
   ],
   "sha": "986c0e7fa2042966"
  },
+ "DECISIONS/269": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_ci_env.py",
+   "tests/test_skip_policy.py"
+  ],
+  "sha": "5448589cfd4cb39b"
+ },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
   "files": [

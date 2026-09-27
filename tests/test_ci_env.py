@@ -295,3 +295,34 @@ def test_the_evalgen_guard_is_not_narrower_than_its_tests():
     assert not n, (
         f"가드가 「실제 트리 있음」이라 했는데 매니페스트 산출물 {n}개가 없다 — "
         "CI 에서 이 상태로 시험 넷이 돌다 죽었다(§263)")
+
+
+def test_the_navi_lock_stamp_is_not_inside_what_npm_ci_deletes():
+    """★ 2026-09-27 (DECISIONS §269). 잠금 지문이 `node_modules/` **안**에 살았다.
+
+    그런데 `npm ci` 는 그 디렉터리를 통째로 지우고 다시 깐다 — **지문을 지우는
+    명령이 지문을 들고 있었다.** 누가 `npm install` 을 치거나 devcontainer 를 다시
+    만들거나 트리를 옮기면 지문이 사라지고, 다음 verify 가 예고 없이 네트워크로
+    `npm ci` 를 돈다. 실패하면 `node_modules` 가 반쯤 지워진 채 남아 뒤의
+    `내비 타입 검사` · `내비 단위 시험` 이 연쇄로 죽는다.
+
+    밖  지문 계산이 옳은지는 안 본다 — `navi_env` 소관이다. 여기서 보는 것은
+        **지문이 사는 자리** 하나다.
+    """
+    import importlib.util
+    import sys
+
+    spec = importlib.util.spec_from_file_location("navienv_t", ROOT / "tools" / "navi_env.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m       # @dataclass 가 되짚는다 (DECISIONS §258-10)
+    spec.loader.exec_module(m)
+
+    rel = m.STAMP.relative_to(ROOT).as_posix()
+    assert "node_modules" not in rel, (
+        f"잠금 지문이 `{rel}` 에 있다 — `npm ci` 가 그 디렉터리를 지운다.\n"
+        "  지워지면 다음 verify 가 예고 없이 네트워크로 `npm ci` 를 돈다(§269).")
+
+    ign = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert rel in ign, (
+        f"`{rel}` 이 gitignore 밖이다 — 기계마다 다른 값이 커밋된다")
