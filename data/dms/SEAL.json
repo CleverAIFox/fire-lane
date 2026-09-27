@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-09-27T18:11:47+09:00",
- "commit": "7965a35",
+ "sealed_at": "2026-09-27T22:30:28+09:00",
+ "commit": "9a6d5e5",
  "tool": "ef5fb69625deac11",
  "tools": {
   "tools/deadcheck.py": "2494ab4ab1e5b2a2",
@@ -11,10 +11,10 @@
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "b7450de90123b277",
-  "docs/DECISIONS.md": "2f6e8317281cf58f",
-  "docs/PLAN.md": "d34fb4282ccd27d7",
-  "README.md": "f99a0f6be7ee6e80"
+  "docs/MASTER.md": "6d06e88fc0d51bf2",
+  "docs/DECISIONS.md": "1b824840e4a922eb",
+  "docs/PLAN.md": "6253414368e1da37",
+  "README.md": "825b3e646ec555fe"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -249,7 +249,7 @@
   ]
  },
  "code": {
-  "sha256": "cffeb22eacd217b5",
+  "sha256": "692a1a8c7e675f12",
   "files": {
    "data/field/fieldsheet.md": "3fce0c05fba34da06d06a1945abfb756bffc10d1ae834bb9c520791c666cb73c",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
@@ -260,7 +260,7 @@
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d16004113ef6e158febf3069febd5b43064abe2ffd93623481aa241272e5b627",
-   "src/firelane/README.md": "4f8393392da4fec151b8d9de04e8a46b9a433916ce4c2268b542ec9d513c8bcf",
+   "src/firelane/README.md": "b4559381f0710e930e5dd605852095177033b67314683a4e6d71ba9c14686dd9",
    "src/firelane/__init__.py": "0bd7b7a56b6a73f056247deff02bd4ed15d198551ad8a053cf57eb439fd8ef03",
    "src/firelane/console.py": "5cd87db3b9a951e1de622681cc7fc8a673311dacffe9bb6c1cb0a14b1abe0972",
    "src/firelane/contract.py": "07bab48334c3ff2bd40fb6e3432b8667713ac7a461e273e35d5c556ab848026b",
@@ -271,16 +271,16 @@
    "src/firelane/generated.py": "e8c78730a57abc66f1179ffd835dafb113a0801f9b906ebc1886727247649fa7",
    "src/firelane/guards.py": "7cee6c273072f1e38e51e69b80c92ef838b650295086bf0754d7c212e09c9e46",
    "src/firelane/hashing.py": "cba3052b673d71c98022bc745a03493b0e743bb7db6d48eb057fba0782d7249c",
-   "src/firelane/ingest.py": "2aa9ff4a219cc7e68e03670635f63fde54547e428d1014edb6954b06c298b1e0",
+   "src/firelane/ingest.py": "05f1559e57c6cad41eb41b6aa37013eee69a65d039dd817a33cfa58972288bb0",
    "src/firelane/intake_rules.py": "4549ade9c9036da5900aba73955c97578058770a88f3f75fa7c5e1b31360019d",
    "src/firelane/inventory.py": "4ddbab3742a44aaad257304af4aa943bf122b9bc8b2c252bd85431fec554d232",
    "src/firelane/jsonkeys.py": "b3f8fb30c9168afe3c88bf282a09da9f891c32e3e95d529f62e8a81c5461663a",
-   "src/firelane/kinds.py": "a62a75ccbc1e4e18fa68c1ce24a81d3966ccf9f0aeda0daedaf961902c7158f6",
+   "src/firelane/kinds.py": "4a8c6d4a809f82fe9834f0c71bd54a4fd6128534a987fabeea754d701379095e",
    "src/firelane/krgis/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
    "src/firelane/krgis/crs.py": "d003938eeee6e6961057a34d228a3c9bfc168143d6f24836f51fa54ffa369ab1",
    "src/firelane/lake.py": "48548917c3f7d7c6117579a688b1defa3bac3b63ac21dab7f1a6c1ea954dbf91",
    "src/firelane/layers.py": "0fd51d80eda725222dd24dc36ba5df30eee12438276c567541d4be4d4f23baf1",
-   "src/firelane/ledger.py": "8dd4cd7140b534b1b64beba00ea3e308d9f7ab8bbe28b2cd638532cecdecb276",
+   "src/firelane/ledger.py": "8c2e1bcb9e646bd211b8d387ee0483b7568baeb31b3a0f578e391963b1047216",
    "src/firelane/lineage.py": "056900fc498d0acb05c0cff54cbcf99fad810d5097d5a3e82fe0a3607a342d84",
    "src/firelane/manifest.py": "b75106fde403b60230f1560acc60f730d0c52e32d8f5788e6269b247c08c7d31",
    "src/firelane/mercator.py": "8932ab6bd44d3f4046a7458b412fa5a615c20533a737aa5c7625f7ce2d151adc",
@@ -301,6 +301,14 @@
    "src/firelane/publish_navi.py": "645e68479372a283e8845ab6e5d6a433bb4016bf3f217cae3d5e7d318b063b6a",
    "src/firelane/publish_web.py": "02091b5c9a493588b6b4617cef41957c66525ed13dcb7549dbd879ec948debff",
    "src/firelane/quiet_gdal.py": "6ca08fdd7aae83ec4c1f7e8da6671b848462d72dcd74074908730885dfc75eec",
+   "src/firelane/read/__init__.py": "3ec06df2a7b6dd93535a508d6e76607e701fe2162810a4d326440c1ee6992aed",
+   "src/firelane/read/_io.py": "0cfa97e5692767dc6811a8741d65b71532c38598394900f3822d94bfb86a55bf",
+   "src/firelane/read/ctx.py": "3e81f811ee2c4aac5eccd897054ae909daa1d1b98398195eba22214daf8c8d9a",
+   "src/firelane/read/dbf.py": "efd463b12a8c65ffe57b4d687a798e3049666dd5de02a486193590ef1669270a",
+   "src/firelane/read/delimited.py": "200b1acf551691dc1d83dd674b1dbc95e0fbf80cad4c73c84205176725b70e5f",
+   "src/firelane/read/jsondoc.py": "803a35062eaed99881235444ee2f4edfe56c204b2c6f9ea07dd5dcad0443538e",
+   "src/firelane/read/passthrough.py": "09ee8e952cea9e260635c4108acf8777b0ebef782881e61774a6262ac672e57c",
+   "src/firelane/read/shapefile.py": "853016732e807b074c64af1ea62ef4bda5d635f63d7ab3edc79a21339affc460",
    "src/firelane/sample_design.py": "489059ca819d8cc40e1d12f2116ca98614b9fbcf0d1b67bc8139b93f77586ed4",
    "src/firelane/scope.py": "81451ac9f7380aecde569634f810ae7cd64eb3db4acf02e7ee4fb651891fef4d",
    "src/firelane/seg/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -497,7 +505,7 @@
    "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
   },
   "MASTER/5": {
-   "h": "4a7d4a4696e95212",
+   "h": "556c53a058d922d9",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5. 시스템 구성"
@@ -965,7 +973,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "bb74682df7478bab",
+   "h": "a53a4de6a7fe7a18",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -6748,6 +6756,72 @@
    "doc": "docs/DECISIONS.md",
    "title": "273-13. 경고는 행동이 아니다 — 아는 자리에서 멈춰야 한다"
   },
+  "DECISIONS/274": {
+   "h": "36cf6e03d908feeb",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "274. 읽기를 `read/` 로 내렸다 — 그리고 축 분리는 독립 항목이 아니었다"
+  },
+  "DECISIONS/274-1": {
+   "h": "52436abe9c1d3e6c",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-1. 열둘로 쪼개지 않았다 — 재고 나서 정했다"
+  },
+  "DECISIONS/274-2": {
+   "h": "708807e6146cd511",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-2. 가른 기준은 크기가 아니라 «무엇을 읽는가» 다"
+  },
+  "DECISIONS/274-3": {
+   "h": "f9f364b2796196b8",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-3. #132 는 독립 항목이 아니었다 — B1 의 부산물이다"
+  },
+  "DECISIONS/274-4": {
+   "h": "a354d0c68f11528f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-4. 연장을 아래로 내려 임포트 고리를 끊었다"
+  },
+  "DECISIONS/274-5": {
+   "h": "fce37958ed076e08",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-5. `sha256` 이 두 벌이었다"
+  },
+  "DECISIONS/274-6": {
+   "h": "9f02e6a231b2e8b4",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-6. 사본을 떴더니 칸이 조용히 사라졌다"
+  },
+  "DECISIONS/274-7": {
+   "h": "3c360ec0771755a2",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-7. 옮기는 일은 기계가 했다"
+  },
+  "DECISIONS/274-8": {
+   "h": "bd0f36e825165c83",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-8. 창으로 재던 시험 둘을 함수 단위로 바꿨다"
+  },
+  "DECISIONS/274-9": {
+   "h": "634d30485f7a83c8",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-9. 배달 도구가 «새 가지» 를 몰랐다 — 제일 쓰고 싶은 순간에 거부했다"
+  },
+  "DECISIONS/274-10": {
+   "h": "e67df27100fc0834",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "274-10. 「못 잰다」가 틀렸다 — 레이크 없이도 재는 법이 있었다"
+  },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
    "state": "none",
@@ -6767,10 +6841,10 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN/1": {
-   "h": "5d59f1cb2af3eb99",
+   "h": "5605442964485832",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "1. 남은 일 — 105행"
+   "title": "1. 남은 일 — 104행"
   },
   "PLAN/1-23": {
    "h": "45f802835c7c288a",
@@ -6995,7 +7069,7 @@
    "title": "일회성 도구는 저장소에 두지 않는다"
   },
   "README/문서는_넷이다/문서에도_검사가_붙어_있다": {
-   "h": "2c656dbeca0152ac",
+   "h": "75c061ce02ac34ef",
    "state": "none",
    "doc": "README.md",
    "title": "문서에도 검사가 붙어 있다"
@@ -7104,7 +7178,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "1654 passed in 159.18s (0:02:39)"
+   "tail": "1678 passed in 167.81s (0:02:47)"
   },
   "probe/deadcheck": {
    "rc": 0,
