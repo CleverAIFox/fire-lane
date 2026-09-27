@@ -92,6 +92,8 @@ export const MAP = {
   bldgLow: "#aab0b9",
   bldgHigh: "#8f96a1",
   roof: "#e2e5e9",
+  /** 접지 그림자(§261). 배경보다 한참 어두워야 「닿았다」로 읽힌다 — 배경 대비 L 을 절반쯤 */
+  contact: "#8a8578",
   label: "#1f2937",
   labelHalo: "#ffffff",
   roadLabel: "#ffffff",

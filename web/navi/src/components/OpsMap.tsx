@@ -65,7 +65,7 @@ export interface OpsLayers {
  */
 const DARK = {
   bg: "#0b1220", sidewalk: "#131c2e", road: "#1f2a3d", roadEdge: "#26334a", segRoad: "#2b384f",
-  bldgFlat: "#172033", bldgEdge: "#2a3650", label: "#cbd5e1", halo: "#0b1220",
+  bldgFlat: "#172033", bldgEdge: "#2a3650", contact: "#05080f", label: "#cbd5e1", halo: "#0b1220",
 };
 
 interface Props {
@@ -169,6 +169,7 @@ export function OpsMap(props: Props) {
       m.setPaintProperty("bldg-flat", "fill-color", DARK.bldgFlat);
       m.setPaintProperty("bldg-flat", "fill-outline-color", DARK.bldgEdge);
       m.setPaintProperty("bldg", "fill-extrusion-color", "#24304a");
+      m.setPaintProperty("bldg-contact", "fill-color", DARK.contact);
       // ── 지형 음영 (§217-2) — 위에서 본 평면에서도 등성이 · 골이 보인다 ──
       if (m.getSource("dem")) {
         m.addLayer(hillshadeLayer(), "sidewalk");
@@ -222,6 +223,7 @@ export function OpsMap(props: Props) {
       vis("ortho", L.ortho);
       vis("cctv-cov", L.cctvCov);
       vis("bldg", L.bldg && !L.ortho);
+      vis("bldg-contact", L.bldg && !L.ortho);   // 압출과 같이 — 그림자만 남으면 안 된다
       vis("bldg-flat", !L.bldg && !L.ortho);
       vis("hist-heat", L.history);
       vis("hist-pt", L.history);

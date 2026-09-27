@@ -295,6 +295,7 @@ export function NaviMap(props: Props) {
     whenReady((mm) => {
       const op = p.mode === "drive" ? 0.86 : 1;
       mm.setPaintProperty("bldg", "fill-extrusion-opacity", op);
+      mm.setPaintProperty("bldg-contact", "fill-opacity", op * 0.55);  // 건물이 비치면 그림자도 같이
     });
     if (on) {
       m.dragRotate.disable(); m.touchZoomRotate.disableRotation(); m.dragPan.disable();

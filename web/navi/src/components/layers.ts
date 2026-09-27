@@ -125,6 +125,22 @@ export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecificat
         "line-opacity": .85,
       } },
 
+    // 접지 그림자 — 건물이 **땅에 붙어 보이게** 하는 한 겹. (§261)
+    // ★ 2026-09-27. 사용자 보고 「도로랑 건물이 서로 다른 지면에 올라간 것처럼 뜬다」.
+    //   원인은 높이가 아니다 — 건물은 base 0, 도로면도 z=0 으로 **같은 평면**에 있다.
+    //   빠진 것은 **접지 음영**이다. 압출 벽이 하드 엣지로 바닥을 만나고 그 자리에
+    //   그림자도 AO 도 없어서, 눈이 「닿아 있다」를 읽을 단서가 하나도 없다.
+    // ★ 지형(`setTerrain`)으로는 못 고친다. 공개DEM 이 90m 격자라 스코프 0.43km²
+    //   전체가 12×12 픽셀이다(terrain.py 머리말) — 노면 종단 경사를 담을 해상도가
+    //   두 자릿수 모자라고, 켜면 도로가 그 메시를 뚫는다. §216-2 가 지형 없이 `z` 를
+    //   base 로 썼다가 건물이 16m 뜬 것과 같은 자리다.
+    // ★ 흐린 테두리(`line-blur`)가 아니라 **평행이동한 fill** 이다. 12,663동에
+    //   블러를 걸면 프래그먼트 비용이 붙는다 — §216-2 가 지붕 판을 뺀 그 이유다.
+    //   `fill-translate-anchor: "map"` 이라 회전해도 빛 방향이 지면에 붙어 있다.
+    { id: "bldg-contact", type: "fill", source: "buildings", minzoom: 14.5,
+      paint: { "fill-color": MAP.contact, "fill-opacity": 0.55,
+               "fill-translate": [3, 3], "fill-translate-anchor": "map" } },
+
     // 건물 — 지면에서 h(높이)만큼. 지형을 켜면 MapLibre 가 지면 높이에 올려 놓는다.
     // ★ 2026-09-22 (DECISIONS §216-2) 사용자 보고 「줌을 당기니 건물이 공중에 뜬다」.
     //   종전에는 base 를 z(해발 지반고 5.5~130m · 중앙 16.6m)로 뒀다. 그것은 **지형을 켠**
