@@ -1969,7 +1969,7 @@ MASTER §18-1 이 계층을 산문으로 선언하고 `paths.py` 가 경로를 �
 > 2026-08-24
 
 강제자 `tests/test_web_ownership.py` (4종)
-· 저장소 `index.html` 에 해시 스탬프 금지
+· 옛 GIS 지도가 되살아나지 않았고 입구가 관제로 넘기는가 (2026-09-28 정정 — 종전에 「`index.html` 에 해시 스탬프 금지」라고 적었다. 캐시 스탬프가 없어져 그 검사도 §218-1 에서 지웠다)
 · 코드가 사람 소유 web 파일을 쓰지 않는가
 · `web/` 전 경로에 소유자가 있는가
 · `web/data` 생성물에 수정 금지 표기가 있는가
@@ -4585,7 +4585,8 @@ Actions 사이드바는 `.github/workflows/` 를 **전부** 나열하고 숨기�
 
     contract           검사
     Dependency Graph   깃허브 기본
-    기획서 배포 · 지도 배포 · 협업 방침 배포
+    배포               deploy.yml 하나 (당시 셋 — §224-1 이 합쳤다)
+    image · secret-scan
 
 여기에 정리 작업이 끼면 **그 화면이 무엇을 보여주는 자리인지 흐려진다.**
 배포 셋을 액션 단에서 가른 이유가 "무엇이 바뀌면 다시 올리나" 를 한눈에
@@ -5645,12 +5646,14 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 필문대로289번길 RDS1109 중심선을 수치지형도로 보정한 뒤 산출물을 다시
 생성했다는 내용이다. 결과는 1,101구간 48,579.7m → 1,281구간 58,308.7m 다.
 
-**코드는 받지 않았다.** 이 저장소의 산출물은 여전히 1,101구간이고
-`golden` 지문도 그 판이다.
+**당시 코드는 받지 않았다.** 그때 이 저장소의 산출물은 1,101구간이었고
+`golden` 지문도 그 판이었다. 그래서 그날은 문서 숫자를 1,281 로 고치지 않았다 —
+`docnum_check` 는 산출물을 정본으로 삼으므로, 산출물 없이 숫자만 바꾸면 문서가
+실물보다 앞서게 되고 그것이 이 저장소가 반복해서 당한 형태다(§73 · MASTER §17).
 
-★ 그러므로 문서 숫자를 1,281 로 고치지 않는다. `docnum_check` 는 산출물을
-  정본으로 삼는다 — 산출물 없이 숫자만 바꾸면 문서가 실물보다 앞서게 되고,
-  그것이 이 저장소가 반복해서 당한 형태다(§73 · MASTER §17).
+★ **그 뒤 흡수됐다**(§170 · 2026-09-16). 지금 산출물은 **1,281구간 58,308.7m**
+  이고 `golden` 지문도 그 판이다 — 이 절이 「팀 재계산 결과」로 적은 값 그대로다.
+  `docnum_check` 의 `RETIRED` 가 `1,101` 을 폐기값으로 들고 있어 되살아나면 운다.
 
 받은 문서에서 **재계산 없이도 유효한 지적** 셋을 기록해 둔다.
 
@@ -6009,13 +6012,17 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 
 > 2026-09-13 · 오창준
 
-강제자  `.github/workflows/secret-scan.yml` — gitleaks 가 `fetch-depth: 0`
-        으로 **이력 전체**를 본다. 훅(`~/.githooks/credential-check`)은
+강제자  `.github/workflows/secret-scan.yml` — gitleaks 가 그 push/PR 의
+        **커밋 범위**를 본다(`fetch-depth: 0` 은 그 범위를 계산하려고 받는
+        것이다 · §209 가 「이력 전체」를 거짓으로 정정했다. 이력 전수는 로컬
+        `gitleaks git --log-opts` 가 잰다). 훅(`~/.githooks/credential-check`)은
         커밋 전 · 내 기계만 보고, 이쪽은 push 후 · 모든 기여자를 본다.
 
 `web/config.js` 에 평문으로 커밋돼 있던 것을 `web/key.js`(생성물 ·
-gitignore)로 뺐다. `tools/stage_pages.py` 가 환경에서 읽어 만들고,
-로컬은 `.env` · 배포는 GitHub Secrets 가 같은 이름으로 넣는다.
+gitignore)로 뺐다. 당시 `tools/stage_pages.py` 가 환경에서 읽어 만들고
+로컬은 `.env` · 배포는 GitHub Secrets 가 같은 이름으로 넣었다.
+★ 2026-09-22 (§218-1) 에 그 생성을 **뺐다.** V-World 키 자체를 폐기했고
+  `web/key.js` 를 읽던 옛 지도가 걷혔다.
 
 ★ **은닉이 목적이 아니다. 될 수도 없다.** 브라우저가 WMTS 를 직접 부르니
   빌드 결과에 실려 나가고 F12 한 번에 보인다. 실효 방어는 **도메인 잠금
@@ -6674,8 +6681,9 @@ DECISIONS · 핸드오프에 적힌 `PLAN #N` 은 행이 지워질 때마다 다
 
 ### 163-5. `web/js/` 담당 공백 — 1인 저장소에 공백이 없다
 
-행 「`web/js/` 로직 담당 공백」 을 닫았다. `CODEOWNERS` 가 `/web/js/` 전부를
-`@CleverAIFox` 로 들고, 고칠 사람도 같다. 팀 쪽 UI 협력은 **코드 소유가 아니라
+행 「`web/js/` 로직 담당 공백」 을 닫았다. 당시 `CODEOWNERS` 가 `/web/js/` 전부를
+`@CleverAIFox` 로 들었고 고칠 사람도 같았다. **그 디렉터리는 2026-09-22 에
+걷혔다**(§218-1 — 관제가 넘겨받았다) — 지금은 `web/` 전 경로가 그 소유다. 팀 쪽 UI 협력은 **코드 소유가 아니라
 zip 교환**이다 — 저장소를 동기화하지 않고, 가져온 것은 출처와 함께 이 문서에
 적는다(§162-5).
 
@@ -8102,7 +8110,7 @@ landing 을 훑을 때 규칙에 안 걸리는 파일을 전부 "규칙에 없�
 
     G-2    feat → part/infra PR 이 열려 있으면 멈춘다(squash 를 빠뜨린 것)
     G-10   열린 part/infra → dev PR 이 없는데 part/infra 가 dev 보다 앞서 있으면 멈춘다 — 배치 D 가 part 에만 머물렀다
-    G-11   릴리즈 본문의 "산출물이 바뀌는가" 를 golden · web/data(매니페스트 제외)만 보고 체크한다 — 대장 65 → 66 을 산출물 변화로 체크했다
+    G-11   릴리즈 본문의 "판정이 바뀌는가" 를 **판정 지문 한 파일**로 체크한다 — 대장 65 → 66 을 산출물 변화로 체크했다
     G-12   태그 입력에서 인쇄 가능한 ASCII 만 남긴다 — 한글 입력기 상태의 깨진 바이트가 형식 검사에 걸렸다
 
 G-3(raw 가 바뀐 배치의 `data/processed/_manifest.json` 을 봉인 커밋에 넣기)은 적용 스크립트 쪽에서 L2b.2 부터 들어갔다.
@@ -8190,7 +8198,9 @@ c23·c24 중심점 · c25·c26 출입구(EPSG:5179), 지번 c03 읍면동 · c05
 ### 181-2. 건물과 목적지는 판정 스코프가 아니라 `view.maxBounds` 로 자른다
 
 스코프로 자르면 지도 안에 보이는 광주지방법원이 건물로도 검색으로도 없다. 지도가 움직일 수 있는 범위가 곧 사용자가 볼 수 있는 범위다.
-`web/data` 32MB / 상한 40MB 라 건물에 예산 6MB 를 두고 **넘을 때만** 0.3 → 0.6 → 1.0m 로 단순화한다. 늘 깎으면 스코프 안 건물 모양까지
+`web/data` 32MB / 상한 40MB 라 건물에 예산을 두고 **넘을 때만** 0.3 → 0.6 → 1.0m 로 단순화한다.
+(당시 6.0MiB. §218-3 이 커밋 정책의 5.0MB(10진)와 단위를 맞춰 **4.9MB** 로 내렸다 —
+둘 사이에 떨어진 발행물이 파이프라인은 통과하고 커밋에서 막히던 자리다.) 늘 깎으면 스코프 안 건물 모양까지
 바뀐다. 셋으로도 못 맞추면 발행이 죽는다.
 
 강제자  `tests/test_n1.py::test_publish_and_navi_are_wired_to_dest`
@@ -8226,7 +8236,7 @@ README · MASTER · `.env.example` 이 `woongtopia.github.io/fire-lane/` 를 지
 옛 주소는 이관 전 배포가 남아 있을 뿐이라 **새 판정이 안 올라간다** — 거기를 보면 낡은 지도를 본다.
 
 §147 의 "`@woongtopia` 흔적은 일부러 남긴다" 는 그대로다. 고친 것은 **사람을 보내는 주소** 셋뿐이고, 팀 핸들 · 이관 기록 ·
-머지 번호 같은 옛 조직 표기는 사실이므로 둔다. `web/config.js` 주석은 이관 전 등록 도메인을 기록으로 적은 것이라 허용한다.
+머지 번호 같은 옛 조직 표기는 사실이므로 둔다. 당시 `web/config.js` 주석은 이관 전 등록 도메인을 기록으로 적은 것이라 허용한다.
 
 README 셋(루트 · `src/firelane` · `web`)의 전수 대조는 PLAN 「README 가 루트인데 GIS 전용이다」 로 미룬다.
 
@@ -8477,8 +8487,10 @@ R1 판 2 · G-24 를 싣기 전에 인프라를 훑다 둘을 찾았다. 둘 다
 "2026-09-02 하루에 기계 차이로 세 번 걸렸다" 를 이유로 만든 파일인데 배선이 빠져 있었다.
 
 같이 고친 둘 — ① 이미지가 `/bin/uv` 를 넣는데도 매번 `curl | sh` 로 uv 를 다시 받았다. 네트워크가 없으면 거기서 죽는다.
-없을 때만 받는다. ② 안내 문구가 데브컨테이너에서 되는 것에 `JS · 화면` 을 적었다. **이미지에 node 가 없다**(`python:3.11-slim` ·
-`features` 선언 없음) — `verify.sh` 의 JS 넷과 내비 타입 검사는 이 안에서 못 돈다. 되는 것만 적는다.
+없을 때만 받는다. ② 안내 문구가 데브컨테이너에서 되는 것에 `JS · 화면` 을 적었다. 당시 **이미지에 node 가 없었다**(`python:3.11-slim` ·
+`features` 선언 없음) — `verify.sh` 의 JS 넷과 내비 타입 검사가 이 안에서 못 돌았다. 되는 것만 적는다.
+★ 2026-09-19 (W3-18) 에 node feature 를 붙였다 — 지금 이미지는 `python:3.14-slim` 이고
+  데브컨테이너가 node 22 를 든다(`tests/test_ci_env.py` 가 `.nvmrc` 와 같은지 본다).
 
 강제자  `tests/test_ci_env.py::test_devcontainer_actually_runs_its_setup_script`
 
@@ -8488,9 +8500,10 @@ R1 판 2 · G-24 를 싣기 전에 인프라를 훑다 둘을 찾았다. 둘 다
 그 게이트는 maplibre 5→6 · vite 5→6 이 PR 초록 · 0 vulnerabilities 로 통과해 main 에서 `TS1192` 로 죽은 사고 때문에 생긴 것이다
 (`contract.yml`). 게이트가 통과시킨 판과 배포가 빌드하는 판이 다르면 **같은 형태가 또 난다.**
 
-`web/navi/.nvmrc`(20) 를 두고 양쪽이 `node-version-file` 로 읽는다. `web/*.js` 클래식 스크립트 셋은 22 그대로다 — 그쪽은 내비와
-무관하고, 한 판으로 억지로 묶으면 바꿀 이유가 생겼을 때 둘이 같이 끌려간다. 배포 셋(`pages` · `navi` · `proposal`)은 `build-navi` 에
-위임하므로 자기 자리에 판을 안 적는다.
+`web/navi/.nvmrc` 를 두고 양쪽이 `node-version-file` 로 읽는다(당시 20 · 지금 **22**). `web/*.js` 클래식 스크립트 셋은 22 그대로다 — 그쪽은 내비와
+무관하고, 한 판으로 억지로 묶으면 바꿀 이유가 생겼을 때 둘이 같이 끌려간다. 배포는 `build-navi` 에
+위임하므로 자기 자리에 판을 안 적는다(당시 셋 — `pages` · `navi` · `proposal`.
+§224-1 이 `deploy.yml` 하나로 합쳤다).
 
 강제자  `tests/test_ci_env.py::test_navi_node_version_has_one_source_of_truth`
 
@@ -9068,7 +9081,7 @@ def _tool_print() -> str:
     return _sha(Path(__file__).read_text(encoding="utf-8"))
 ```
 
-`dms.py` 자기 자신만 해시한다. 증거는 오늘 나왔다 — 배치 0 복구로 `verify.sh`
+당시 `dms.py` 자기 자신만 해시했다. 증거는 그날 나왔다 — 배치 0 복구로 `verify.sh`
 가 +58 −9 만큼 바뀌었는데 지문이 `4e5793923f7cb248` 로 **한 글자도 안 움직였다**
 (`b8fa473` · `49e34f6` · `cc6ef5e` 세 봉인에서 동일).
 
@@ -9111,7 +9124,7 @@ W2 가 3족(관문이 갈림)을 닫으면서 `tools/refcheck.py` 를 `contract.
   CI 를 영구 빨강으로 만들었다. 배치의 수용 조건에 「CI 가 초록인가」가
   없었기 때문이다 — 로컬 `verify.sh` 만 봤다.
 
-강제자  `tools/gate_parity.py`  ★ 지금은 수만 센다. 선언을 요구하는 판은 PLAN §13 W3-10 이 만든다
+강제자  `tools/gate_parity.py`  ★ 당시에는 수만 셌다. **W3-10 이 면제 칸을 넣어**(2026-09-20 · §202) 지금은 `# ci-exempt:` 선언을 읽고 **미선언만** 센다 — 실측 미선언 0 · 선언된 면제 14
 
 ### 191-5. 같은 사고가 한 시간 만에 두 번째 — 이번엔 검사가 전제를 선언한다
 
@@ -9743,8 +9756,10 @@ W7 배치를 닫고 남은 §13 을 훑었다. 서른다섯 행 중 여섯이 **
 
 ### 199-1. 느슨해진 래칫은 초록으로 위장한다
 
-이산 래칫 넷(`dupcheck` · `vintage_check` · `firelane.prep` · 커버리지)이
+이산 래칫 넷(`gate_parity` · `dupcheck` · `vintage_check` · `firelane.prep`)이
 전부 `n > cap` 만 봤다. `n < cap` 이면 조용히 통과한다.
+(커버리지는 **연속**이라 이 넷이 아니다 — 미달은 실패 · 초과는 경고다.
+2026-09-28 정정: 이 자리에 커버리지가 적혀 있었고 두 문단 뒤가 스스로 뒤집었다.)
 
 ★ **나흘간 실물이었다.** 커버리지 래칫이 `14` 로 박혀 있는 동안 실측은
   `24%` 였다. `--fail-under` 는 아래만 보므로 열 점이 남는 것을 아무도
@@ -10280,7 +10295,11 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
 강제자  `tests/test_declaration_sync.py::test_defect_ledger_counts_agree_everywhere` · `tests/test_deadcheck_probes.py`
 
 ★ 2026-09-23 정정. `tests/test_map_colour_keys.py` 를 뺐다 — 옛 GIS 철거(§218-6)가 지운 파일이다.
-판정 4종의 색은 이제 `web/navi/src/ui/tokens.ts` 가 정본이고 `web/navi/test/clearance.test.ts` 가 든다.
+판정 4종의 색은 `web/config.js` 가 정본이고(MASTER §10-2) `navi_graph.json.style` 로
+흘러온다 — `tests/test_contract.py::test_verdict_matches_rules_for_every_segment` 가 든다.
+`web/navi/src/ui/tokens.ts` 는 스스로 「**판정 4색은 여기 없다**」고 적고, `clearance.test.ts`
+가 드는 것은 **여유폭 4단** 색이다. 2026-09-28 정정 — 이 자리에 tokens.ts 를 정본으로
+적어 두었고, 그 파일의 부정이 먼저 있었으므로 한 번도 참이 아니었다.
 
 ## 203. 대장 25행 중 셋이 실재하지 않았다 (판정 불변)
 
@@ -10758,7 +10777,7 @@ ref 가 `packed-refs` 하나로 묶이고 그 파일이 없다 —— **거기�
 역사에 없으면 기준선이 아니라 **없는 곳을 가리키는 숫자**다. 신선한 클론에는
 `refs/pull/*` 이 안 따라오므로 거기서는 `git cat-file -t 2130b14` 조차 죽는다.
 
-강제자  `tests/test_seal_survives_squash.py` (다섯) · `tools/merge_batch.sh` A-0. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+강제자  `tests/test_seal_survives_squash.py` (열둘 — 직푸시 금지 둘을 포함한다) · `tools/merge_batch.sh` A-0. 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 ### 207-1. 원인은 「깜빡했다」가 아니다 —— 구조가 그렇게 만든다
 
@@ -10783,7 +10802,7 @@ dev PR 을 열기 **전에**, `part/infra` 위에서 찍는다 ——
     A-0. 봉인 — 스쿼시 뒤 part/infra 에서
         git switch part/infra · --ff-only 로 원격과 같음을 확인
         uv run python tools/dms.py seal --quick
-        바뀐 게 있으면  git add · commit · push origin part/infra
+        바뀐 게 있으면  git add · commit → 봉인 가지 → PR (당시에는 `push origin part/infra` 직푸시였다. §209 가 걷었다)
 
 그 커밋은 `part/infra` → (머지 커밋) → `dev` → `main` 을 타고 간다.
 **스쿼시를 한 번도 안 탄다** —— 배치 PR 만 스쿼시고 그 위의 두 단은 머지다.
@@ -12631,10 +12650,14 @@ PR 을 빠뜨렸다」로 멈췄다. 그 PR 은 **사람이 만드는 것이 아
 여러 줄 문자열 안은 줄머리로 안 걸러지므로 `_unquoted()` 가 겹따옴표 안을
 지운 뒤에 본다.
 
-### 225-8. `lakecheck` L7 — 쪼그라든 원본
+### 225-8. `lakecheck` L7 — 대장이 모르는 큰 원본
 
-원본이 20MB 미만으로 줄어 있으면 내려받다 끊긴 것이다. 크기는 대장이 아니라
-**실물**이 답하므로 프로브가 잰다.
+레이크에 **20MB 를 넘게** 앉아 있는데 대장이 이름으로도 모르는 원본을 문다 —
+받아두고 안 쓰는 것이다. 크기는 대장이 아니라 **실물**이 답하므로 프로브가 잰다.
+
+★ 2026-09-28 정정 — 이 절이 「원본이 20MB **미만으로 줄어** 있으면 내려받다
+  끊긴 것이다」라고 적고 있었다. 프로브의 방향이 그 반대다(`L7_MIN_MB = 20` 을
+  **넘으면** 문다). 크기 축소를 보는 프로브는 저장소에 없다.
 
 
 ## 226. 「범위가 이름보다 좁다」 — 일곱 번째에 족을 보이게 한다
@@ -12674,7 +12697,7 @@ PR 을 빠뜨렸다」로 멈췄다. 그 PR 은 **사람이 만드는 것이 아
 
 | | 묻는 것 | 방식 |
 |---|---|---|
-| ① | 강제자가 「이름이 시사하지만 안 보는 것」을 머리말에 적는가 | 래칫 153 · 내려가는 쪽으로만 |
+| ① | 강제자가 「이름이 시사하지만 안 보는 것」을 머리말에 적는가 | `NO_DECL` 래칫 · 내려가는 쪽으로만 (당시 153 · 지금 150) |
 | ② | 디렉터리를 훑으면서 접미사로 거르는데 실물에 다른 접미사가 있는가 | **실측** |
 | ③ | 도구가 `--selftest` 를 갖는가 | 래칫 14 · 올라가는 쪽으로만 |
 
@@ -12715,7 +12738,7 @@ PR 을 빠뜨렸다」로 멈췄다. 그 PR 은 **사람이 만드는 것이 아
 
 ### 226-5. 분모를 적는다 — 153
 
-`밖` 칸이 없는 강제자가 153개다. 이것이 **셀 수 있는 빚**이고, 래칫이
+`밖` 칸이 없는 강제자가 당시 153개였다(지금 150 — 수의 정본은 `scopedecl.NO_DECL` 이다). 이것이 **셀 수 있는 빚**이고, 래칫이
 오늘부터 늘지 못하게 든다. 「결함이 무한히 나온다」는 느낌의 정체는
 분모가 없다는 것이었다 — 분모가 서면 끝이 보인다.
 
@@ -16308,7 +16331,7 @@ GPS 가 **없는** 경우는 이미 막혀 있었다. 데스크톱 · 권한 거
 
 > 2026-09-28
 
-강제자  `tools/docstyle.py` · `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/proposal_pdf.py`(`BOOKMARKS_MIN`) · `tools/docx_figs.py`(`SOURCELESS_MAX`) · `tools/ci_wait.sh` · `tests/test_docstyle.py`(8) · `tests/test_figure_fit.py`(6) · `tests/test_batch_tools.py`(6). 하위 11이 이 칸을 물려받는다
+강제자  `tools/docstyle.py` · `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/proposal_pdf.py`(`BOOKMARKS_MIN`) · `tools/docx_figs.py`(`SOURCELESS_MAX`) · `tools/ci_wait.sh` · `tests/test_docstyle.py`(10) · `tests/test_figure_fit.py`(6) · `tests/test_batch_tools.py`(6). 하위 11이 이 칸을 물려받는다
 
 문서 넷 중 `proposal.docx` 만 **저장소 밖으로 나간다.** 그런데 이 문서에 걸린
 검사는 「숫자가 산출물과 맞는가」(`docx_check`)와 「그림이 정본과 같은가」

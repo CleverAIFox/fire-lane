@@ -605,7 +605,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
 `web/data/`(40MB 상한)만으로 작업할 수 있다.
 
-배포된 화면 다섯이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 다섯 곳에 산다.
+배포된 화면 넷이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
 가는 길은 여기 하나다(DECISIONS §99). 플레이북(`web/playbook.html`)은 협업 방침을 그리는
 **틀**이라 따로 배포하지 않는다(§216-5).
 
@@ -622,6 +622,6 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 ## 문서는 어디에
 
 축 표의 정본은 `docs/MASTER.md` 머리다 — 이 문서 머리의 [문서는 넷이다](#문서는-넷이다) 표와 PLAN 머리는 사본이다.
-어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
+어긋나면 `uv run pytest tests/test_reproducibility.py::test_doc_axis_tables_are_consistent` 가 운다.
 
-강제자  `tools/doc_fsck.py`(문서 ↔ 문서 · 이 절이 스스로 그렇게 적는다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)
+강제자  `tests/test_reproducibility.py::test_doc_axis_tables_are_consistent`(축 표 셋이 서로 같은가 — 2026-09-28 정정. 종전에 `doc_fsck` 를 댔는데 그 도구에는 축 표를 보는 검사가 없다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)

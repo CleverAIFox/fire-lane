@@ -148,7 +148,10 @@ EXCEPTIONS: dict[str, int] = {
     "tools/verify.sh": 1130,
     "src/firelane/segments.py": 853,
     "tools/render_workflow.py": 635,
-    "tools/golden.py": 613,
+    # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이
+    #   「21+잠금」 이라고 **수를 박아** 두고 있었다(실물 17). 수를 빼고 그 사유를
+    #   적은 네 줄이다 — 베낀 수는 반드시 낡는다.
+    "tools/golden.py": 617,
     "src/firelane/normalize_raw.py": 609,
     # ★ 2026-09-24. 프런트가 래칫에 처음 들어왔다. **오늘 수 그대로** 박는다 —
     #   래칫의 값어치는 「지금보다 나빠지지 않는다」이지 「지금이 옳다」가 아니다.

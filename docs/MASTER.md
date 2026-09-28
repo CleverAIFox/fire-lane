@@ -2320,7 +2320,7 @@ uv run python -m firelane.normalize_raw <다운로드폴더> --dry-run
 uv run python -m firelane.contract              대장 선언 ↔ raw 실물 대조
 ```
 
-강제자  `tools/doc_fsck.py::check_commands`(네 명령이 실재하는 도구·모듈인가) · `tests/test_ledger_contract.py`(대장 선언 ↔ 실물 판정의 경계)
+강제자  `tools/doc_fsck.py::check_commands`(명령의 `tools/*.py` 가 실재하는가 · 단계를 직접 부르지 않는가 — **모듈 실재는 안 본다.** 2026-09-28 정정) · `tests/test_ledger_contract.py`(대장 선언 ↔ 실물 판정의 경계)
 
 ### 14-4. 검사
 
