@@ -98,6 +98,7 @@ uv run python tools/widen.py            # 검사 범위를 넓히면 뭐가 걸�
 uv run python tools/axis_gain.py        # 샤드 봉인 축을 쪼개면 얼마나 아끼나 (PLAN #132)
 uv run python tools/codepatch.py        # 파이썬 소스 멱등 편집기 (배치용)
 #   tools/delivercheck.py               # 배달물 판별식 (deliver 가 import — 진입점 없음)
+#   tools/docsealfp.py                  # 도장 지문 · 절별 관점 (docseal 가 import — 진입점 없음)
 
 # 배치가 세운 상태가 유지되는가 — verify.sh 가 부른다
 uv run python tools/install_navi.py --check    # web/navi/src 목록

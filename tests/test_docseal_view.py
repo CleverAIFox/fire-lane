@@ -16,7 +16,7 @@
     ② 지목한 도구를 관문에서 **떼면** 지문이 움직인다     (느슨해지지 않았다)
   ②가 없으면 이 고침은 검사를 끈 것과 같다.
 
-IN    tools/docseal.py (`view` · `LIST_VIEW` · `FP_METHOD`)
+IN    tools/docsealfp.py (`view` · `LIST_VIEW` · `FP_METHOD` · `_generated`)
 OUT   없음
 밖    어느 절이 어느 파일을 지목하는가(`refs`)는 여기서 판단하지 않는다.
       지문을 **어떤 관점으로** 내는가만 든다.
@@ -31,12 +31,13 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / "tools" / "docseal.py"
+FP = ROOT / "tools" / "docsealfp.py"   # ★ 지문의 정본 (§297 · §298)
 
 
 @pytest.fixture
 def ds():
     """경로를 건드리지 않고 도구 파일을 모듈로 읽는다(test_layering — 경로 조작 금지)."""
-    spec = importlib.util.spec_from_file_location("docseal_viewt", SRC)
+    spec = importlib.util.spec_from_file_location("docsealfp", ROOT / "tools/docsealfp.py")
     assert spec and spec.loader
     m = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = m
@@ -131,8 +132,51 @@ def test_지문_공식에_판_이름이_있다(ds):
 
 def test_parts_는_digest_와_같은_관점을_쓴다(ds):
     """다르면 「무효인데 어디가 움직였는지 아무 칸도 안 바뀌었다」가 나온다."""
-    src = SRC.read_text(encoding="utf-8")
+    src = FP.read_text(encoding="utf-8")
     i = src.index("def parts(")
-    j = src.index("\ndef why(", i)
+    j = len(src)
     body = src[i:j]
     assert "view(f," in body, "`parts` 가 관점을 안 쓴다 — 설명이 판정과 어긋난다"
+
+
+# ── §298 · 생성물은 도장의 기반이 못 된다 ───────────────────────
+
+
+def test_생성물은_기반에서_빠진다(ds):
+    """재잠금이 매번 다시 쓰는 파일을 물면 재잠금마다 도장이 죽는다."""
+    for p in ("web/data/_manifest.json", "data/processed/_manifest.json",
+              "data/dms/SEAL.json"):
+        assert ds._generated(p), f"{p} 를 생성물로 안 본다 — 재잠금마다 도장이 죽는다"
+
+
+def test_손으로_쓰는_파일은_안_빠진다(ds):
+    """넓히면 도장이 아무것도 안 무는 상태가 된다."""
+    for p in ("tools/verify.sh", "src/firelane/seg/params.py",
+              "tests/test_docseal_view.py", "sources.yaml"):
+        assert not ds._generated(p), f"{p} 를 생성물로 본다 — 기반이 비어 간다"
+
+
+def test_등록부가_정본이다(ds):
+    """목록을 두 곳에 쓰면 두 집에 사는 사실이 된다(2족)."""
+    src = FP.read_text(encoding="utf-8")
+    i = src.index("def _gen_roots(")
+    j = src.index("def _generated(", i)
+    body = src[i:j]
+    assert "generated" in body and "REGISTRY" in body, (
+        "`firelane.generated.REGISTRY` 를 안 읽는다 — 손목록이 또 생겼다")
+
+
+def test_디렉터리_항목이_그_아래를_덮는다(ds):
+    """`data/dms` 한 줄이 `SEAL.json` 을 덮어야 한다 — 파일마다 적으면 빠뜨린다."""
+    assert ds._generated("data/dms/무엇이든.json")
+    assert ds._generated("web/data/segments.geojson")
+
+
+def test_등록부를_못_읽으면_조용히_통과하지_않는지_적어둔다(ds):
+    """★ `_gen_roots` 가 빈 튜플을 내면 **아무것도 생성물이 아니게 된다.**
+
+    그것은 종전 동작(전부 기반에 넣는다)과 같아서 **더 엄격한 쪽으로 실패한다** —
+    거짓 초록이 아니라 거짓 빨간불이 된다. 그 방향이 옳으므로 그대로 두고,
+    여기서는 **등록부가 실제로 읽히는지**를 재서 빈 그물을 막는다.
+    """
+    assert ds._gen_roots(), "등록부를 하나도 못 읽었다 — 이 관문이 죽은 칸이다"
