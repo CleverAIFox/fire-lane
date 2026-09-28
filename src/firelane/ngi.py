@@ -208,9 +208,12 @@ def layer_index(ngi_path: Path) -> dict[str, dict]:
 
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) < 2:
-        print(__doc__); sys.exit(1)
-    for lay, info in sorted(layer_index(Path(sys.argv[1])).items()):
+    import argparse
+    # ★ 예전엔 `sys.argv[1]` 을 그대로 `Path` 에 넣었다. `--없는깃발` 이
+    #   경로로 들어가 역추적을 토했다(§283-2).
+    _ap = argparse.ArgumentParser(description=__doc__)
+    _ap.add_argument("경로", help="NGI 파일 또는 폴더")
+    _a = _ap.parse_args()
+    for lay, info in sorted(layer_index(Path(_a.경로)).items()):
         f = info.get("fields", [])
         print(f"{lay}  {info['geom_type'] or '-':<11} {info['n']:>5}건  {', '.join(f)}")

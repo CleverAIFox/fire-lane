@@ -100,9 +100,14 @@ def _bytes_only(moved: list) -> bool:
 
 
 def main() -> int:
-    args = sys.argv[1:]
-    base = args[args.index("--base") + 1] if "--base" in args else "dev"
-    md = "--md" in args
+    # ★ 예전엔 `args.index("--base")` 를 손으로 뒤졌다. 모르는 깃발은 조용히
+    #   무시되고 도구는 기본값으로 **일을 했다**(§283-2).
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--base", default="dev", help="대조할 밑동 가지")
+    ap.add_argument("--md", action="store_true", help="표를 마크다운으로")
+    a = ap.parse_args()
+    base, md = a.base, a.md
 
     rows: list[tuple[str, str, str, str, bool]] = []
     for label, rel in WATCH.items():

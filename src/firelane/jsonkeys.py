@@ -23,6 +23,8 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
+from firelane.cli import no_args
+
 
 def drop(obj: Any, names: Iterable[str]) -> Any:
     """`names` 에 든 키를 **어느 깊이에서든** 뺀 사본."""
@@ -49,4 +51,5 @@ def selftest() -> int:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     raise SystemExit(selftest())

@@ -3,7 +3,7 @@
 datalog.py — 데이터 대장 도구
 
     python -m firelane.datalog record      매니페스트 갱신(파이프라인 끝에서 호출)
-    python -m firelane.datalog graph       의존 그래프 → docs/lineage.mmd
+    python -m firelane.datalog graph       의존 그래프 → data/interim/lineage.mmd
     python -m firelane.datalog impact KEY  이 소스를 바꾸면 깨지는 것
     python -m firelane.datalog backup DIR  외장으로 복사 + sha 기록
     python -m firelane.datalog verify DIR  외장 대조
@@ -25,11 +25,21 @@ from pathlib import Path
 
 import yaml
 
+from firelane.cli import USAGE_EXIT
+from firelane.layerfsck import cmd_fsck  # 사용법 오류 종료코드는 정본 하나다
 from firelane.paths import ROOT
+
+
+def _tracked_paths() -> frozenset[str]:
+    """git 이 추적하는 경로. **추적 밖은 「안 지었다」이고 결함이 아니다**(§290-7)."""
+    r = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                       capture_output=True, text=True, check=False, timeout=60)
+    return frozenset(x for x in r.stdout.split("\0") if x)
 
 KST = timezone(timedelta(hours=9))
 SOURCES = ROOT / "sources.yaml"
 PROCESSED = ROOT / "data" / "processed"
+INTERIM = ROOT / "data" / "interim"   # 재생성 가능 계층 — 생성물이 사는 곳
 MANIFEST = PROCESSED / "_manifest.json"
 RUNLOG = PROCESSED / "_runlog.json"     # ★ datalog 소유. `_manifest.json` 은 ingest 소유다(§280-1)
 # ★ processed 는 백업하지 않는다. raw + 코드 + 대장으로 재생성된다.
@@ -107,7 +117,6 @@ CRITICAL = ["data/" + n for n in _layer_rels("backup")
 
 
 # ──────────────────────────────────────────────────────────────
-from firelane import paths
 from firelane.hashing import sha256 as _h_sha256
 
 
@@ -226,10 +235,18 @@ def cmd_graph() -> None:
             L.append(f"  {k} --> {cid}")
     L.append("```")
 
-    p = ROOT / "docs" / "lineage.mmd"
-    p.parent.mkdir(exist_ok=True)
+    # ★ 2026-09-28. 예전엔 `docs/lineage.mmd` 였다. 세 가지가 동시에 틀렸다 —
+    #   ① `docs/` 는 문서 넷만 사는 곳인데 생성물이 거기 살았고, 이 명령을
+    #      한 번 돌리면 `test_docs_dir_holds_only_the_allowed_documents` 가
+    #      빨강이 됐다. **검사를 깨는 도구**였다.
+    #   ② gitignore 되어 있어서 아무도 diff 로 못 봤다.
+    #   ③ **아무도 안 읽었다** — 저장소 전체에서 이 파일을 가리키는 곳이 0.
+    #   생성물은 재생성 가능 계층에 산다(§283-7). 그림으로 쓸 것이면
+    #   `tools/figures/` 가 대장에서 직접 그린다 — PLAN 참조.
+    p = INTERIM / "lineage.mmd"
+    p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text("\n".join(L), encoding="utf-8")
-    print(f"→ {p}  (노드 {len(ds)+len(out)})")
+    print(f"→ {p.relative_to(ROOT)}  (노드 {len(ds)+len(out)})")
 
 
 def cmd_impact(key: str) -> None:
@@ -290,23 +307,27 @@ def cmd_check() -> None:
     #     게이트가 죽는다. `golden` 낡음 검사에서 이미 배운 것이다
     #     (2026-08-23). 158건은 아무도 안 읽고 있었다.
     #
-    #   정본은 `ledger.REQUIRED` 하나다. 여기서는 그것을 읽고, 이 검사에만
-    #   해당하는 축(`crs_native`)을 **조건부로** 더한다.
-    from firelane import kinds as _K
+    #   정본은 `ledger.REQUIRED` 하나다.
+    #
+    # ★ 2026-09-28 (§285-2). **교훈을 절반만 적용하고 있었다.** 목록
+    #   베끼기는 멈췄는데 **판정은 여전히 베꼈다** — `not v.get(f)` 는
+    #   「키가 없다」와 「비었다」를 뭉갠다. `ledger` 는 그 둘을 가른다:
+    #   키 부재는 FAIL 이고, 빈 `feeds` 는 `grade()` 가 `unused` 로 읽어
+    #   **`feeds_why` 에 사유를 적으면 통과**한다(§77 의 탈출구).
+    #
+    #   그래서 같은 대장을 두고 `firelane.ledger` 는 FAIL 0 인데 여기는
+    #   「feeds 없음」 18건을 냈다. **판정이 둘이면 배선을 못 한다** —
+    #   이미 배선된 쪽이 통과시키는 것을 새로 배선할 쪽이 막으니까.
+    #   이것이 이 도구가 §280 이후에도 안 붙어 있던 진짜 이유다.
+    #
+    #   목록이 아니라 **함수**를 부른다. 필드 판정은 `ledger` 소관이고
+    #   여기는 아래 그래프 축만 본다.
     from firelane import ledger as _L
 
     for k, v in ds.items():
-        for f in _L.REQUIRED:
-            if f == "schema" and v.get("kind") in _L.NO_SCHEMA_KINDS:
-                continue          # raw_only 는 구조 선언을 요구할 근거가 없다
-            if not v.get(f):
-                print(f"  ! datasets.{k} 에 {f} 없음"); bad += 1
-        # ★ 좌표가 나오는 kind 에만 좌표계를 요구한다. `kinds.KINDS[*].geom`
-        #   이 정본이다 — 여기 목록을 또 만들면 사본이 하나 더 생긴다.
-        kd = _K.KINDS.get(v.get("kind"))
-        if kd and kd.geom and not v.get("crs_native"):
-            print(f"  ! datasets.{k} 에 crs_native 없음 (좌표가 나오는 kind 다)")
-            bad += 1
+        for iss in _L.check_entry(k, v):
+            if iss.level == _L.FAIL:
+                print(f"  ! datasets.{k}: {iss.msg}"); bad += 1
     for k, v in out.items():
         for f in ["produced_by", "inputs", "consumers", "what"]:
             # consumers 는 빈 리스트가 정상일 수 있다(아직 아무도 안 쓰는 산출물).
@@ -321,10 +342,25 @@ def cmd_check() -> None:
                 print(f"  ! outputs.{k} 에 {f} 없음"); bad += 1
 
     # 3. 선언된 산출물이 실제로 존재하는가
+    #
+    # ★ 2026-09-28 (DECISIONS §290-7). **추적 밖 산출물의 부재는 결함이 아니다.**
+    #   `data/processed/*.gpkg` 는 `.gitignore` 가 덮는 재생성물이고, 파이프라인을
+    #   안 돌린 기계(새 워크트리 · CI)에는 당연히 없다. 그것을 실패로 세면 이
+    #   단계는 **레이크 있는 기계에서만 초록**이 되고, 그 사실이 선언 안 돼 있어서
+    #   배달 예습을 통째로 막았다 — 예습이 워크트리에서 돌기 때문이다.
+    #
+    #   대장이 틀린 것과 이 기계가 안 지은 것은 다른 사실이다. **추적되는 경로가
+    #   없으면 대장이 틀린 것이고, 추적 밖이면 안 지은 것이다.** `docseal` 이
+    #   같은 규율을 쓴다(§278-10 — 추적 밖은 도장의 기반이 못 된다).
+    tracked = _tracked_paths()
     for k, v in out.items():
-        p = ROOT / v.get("path", "")
-        if v.get("path") and not p.exists():
-            print(f"  ! outputs.{k}.path 없음: {v['path']}"); bad += 1
+        rel = v.get("path", "")
+        if not rel or (ROOT / rel).exists():
+            continue
+        if rel in tracked:
+            print(f"  ! outputs.{k}.path 없음: {rel} — **추적되는데 없다**"); bad += 1
+        else:
+            print(f"  · outputs.{k}.path 아직 안 지었다: {rel} (추적 밖 · 재생성물)")
 
     # 4. verified=false 인데 발표에 쓰이는 것 (경고만)
     unver = [k for k, v in out.items() if not v.get("verified")]
@@ -409,171 +445,46 @@ def cmd_verify(dest: str) -> None:
 
 
 
-# ── fsck — 계층 선언과 실물을 대조한다 ────────────────────────
-def cmd_fsck() -> None:
-    """`sources.yaml` 의 layers 선언과 디스크·git·기계 설정을 대조한다.
-
-    ★ 2026-08-24 신설. 이 저장소가 반복해 배운 것은 하나다 —
-      **측정은 하는데 대조가 없다.** 계층도 같았다. 문서가 여섯이라 적고
-      코드가 넷만 알아도 아무도 몰랐고, 없는 계층을 쓰려던 도구는 자기
-      자리를 발명했다(SSD 루트 11.7MB).
-    """
-    import subprocess
-
-    from firelane import layers as L
-
-    bad: list[str] = []
-    warn: list[str] = []
-    print("── 계층 fsck")
-
-    for n in L.names():
-        pol, p = L.policy(n), L.path(n)
-        mark = "OK  " if p.is_dir() else "없음"
-        note = ""
-        # ① required — 조용한 폴백을 금지한다
-        if pol["required"] and not p.is_dir():
-            bad.append(f"{n}: required 인데 없다 — {p}")
-            mark = "★없음"
-        if pol.get("status") == "미구현":
-            note = "  (선언상 미구현)"
-        # ② base 가 선언대로인가
-        want = L.expected_base(n)
-        try:
-            p.relative_to(want)
-        except ValueError:
-            bad.append(f"{n}: base={pol['base']} 인데 {want} 아래가 아니다 — {p}")
-        print(f"  {mark} {n:11s} {pol['base']:5s} {p}{note}")
-
-    # ③ naming — 규칙 위반 파일
-    print("\n── 파일명 규칙")
-    for n in L.names():
-        rx = pol_rx = L.policy(n).get("naming")
-        p = L.path(n)
-        if not rx or not p.is_dir():
-            continue
-        import re as _re
-        pat = _re.compile(pol_rx)
-        off = [str(q.relative_to(p)) for q in p.rglob("*")
-               if q.is_file() and not q.name.startswith("_")
-               and not pat.match(str(q.relative_to(p)))]
-        print(f"  {n:11s} 위반 {len(off)}건")
-        for q in off[:5]:
-            bad.append(f"{n}: 명명규칙 위반 — {q}")
-
-    # ④ committed 선언 ↔ .gitignore 실제
-    print("\n── git 추적")
-    for n in L.names():
-        pol, p = L.policy(n), L.path(n)
-        try:
-            rel = p.relative_to(ROOT)
-        except ValueError:
-            continue                     # 저장소 밖이면 git 이 볼 일이 없다
-        # ★ 백업 대상인데 저장소 밖인 계층(raw · quarantine)은 여기 안 온다.
-        #   그쪽은 datalog verify 가 sha 로 본다.
-        r = subprocess.run(["git", "check-ignore", "-q", str(rel)],
-                           cwd=ROOT, capture_output=True)
-        ignored = (r.returncode == 0)
-        # ★ 2026-08-24. 폴더만 보면 안 된다. `.gitignore` 가 폴더를 막고
-        #   `!` 로 몇 개만 여는 패턴이 있다(processed 넷). 선언의
-        #   committed_exceptions 와 실제 추적 목록을 대조한다.
-        exc = set(pol.get("committed_exceptions") or [])
-        tracked = set()
-        if rel:
-            out = subprocess.run(["git", "ls-files", str(rel)], cwd=ROOT,
-                                 capture_output=True, text=True).stdout.split()
-            tracked = {Path(x).name for x in out}
-        if exc:
-            miss, extra = sorted(exc - tracked), sorted(tracked - exc)
-            ok = not miss and not extra
-            print(f"  {'OK  ' if ok else '★   '} {n:11s} "
-                  f"예외 {len(exc)}개 · 추적 {len(tracked)}개")
-            for q in miss:
-                bad.append(f"{n}: 선언은 {q} 를 추적한다는데 git 이 모른다")
-            for q in extra:
-                bad.append(f"{n}: git 이 {q} 를 추적하는데 선언에 없다")
-        else:
-            ok = (ignored != bool(pol["committed"]))
-            print(f"  {'OK  ' if ok else '★   '} {n:11s} "
-                  f"committed={pol['committed']} · gitignore={ignored}")
-            if not ok:
-                bad.append(f"{n}: committed={pol['committed']} 인데 "
-                           f"gitignore={ignored} — 선언과 실제가 다르다")
-
-    # ⑤ regenerable:false 인데 커밋도 안 되고 백업도 아니면 소실 대기
-    print("\n── 소실 위험 (R2)")
-    for n in L.names():
-        pol = L.policy(n)
-        if pol["regenerable"] or pol["committed"] or pol["backup"]:
-            continue
-        if not L.path(n).is_dir():
-            continue
-        warn.append(f"{n}: 재생성 불가인데 커밋도 백업도 아니다 — 소실 대기")
-        print(f"  ★    {n}")
-    if not warn:
-        print("  없음")
-
-    # ⑥ backup — 마지막 백업 시각
-    print("\n── 백업")
-    for n in L.of("backup"):
-        p = L.path(n)
-        print(f"  {n:11s} {'있음' if p.is_dir() else '없음'}  {p}")
-    print("  ★ 마지막 백업 시각은 datalog verify DIR 로 확인한다")
-
-    # ⑦ 기계 설정 — 환경변수도 검사 대상이다
-    print("\n── 기계 설정")
-    if paths.env("FIRE_LANE_RAW"):
-        bad.append("FIRE_LANE_RAW(폐기) 가 설정돼 있다 — "
-                   "FIRE_LANE_DATA 를 덮어써 기계 간 산출물이 갈린다")
-        print("  ★    FIRE_LANE_RAW 잔존")
-    else:
-        print("  OK   FIRE_LANE_RAW 없음")
-    if not paths.env("FIRE_LANE_DATA"):
-        warn.append("FIRE_LANE_DATA 미설정 — raw 가 저장소 안으로 떨어진다")
-        print("  ★    FIRE_LANE_DATA 미설정")
-    else:
-        print("  OK   FIRE_LANE_DATA 설정됨")
-    # ★ 2026-09-18 (W1b). 종전에는 `core.hooksPath == ".githooks"` 를 요구했고,
-    #   그것은 `dms.py::hook/local-hooksPath`(로컬이 설정돼 있으면 실패)와 정확히
-    #   반대였다 — 어느 기계든 한쪽은 항상 울었다(2족 기존 인스턴스).
-    #   구조는 이렇다: **전역 훅이 주인이고, 후보 경로에서 저장소 훅을 찾아 부른다.**
-    #   그러니 볼 것은 셋이다 — 전역이 있는가 · 로컬이 안 덮는가 ·
-    #   저장소 훅이 실행 가능한가(전역이 `[ -x ]` 로 고른다).
-    # ★ 도달 자체는 여기서 안 잰다. 그것은 실행이 필요하고
-    #   `.githooks/global-chain.sh --check` 가 탐침으로 한다 — `doctor` 는 관측이다.
-    def _cfg(scope: str) -> str:
-        return subprocess.run(["git", "config", scope, "core.hooksPath"],
-                              cwd=ROOT, capture_output=True, text=True).stdout.strip()
-
-    g, loc = _cfg("--global"), _cfg("--local")
-    hook = ROOT / ".githooks" / "pre-commit"
-    if not g:
-        warn.append("전역 core.hooksPath 미설정 — 자격증명 검사가 어느 저장소에도 안 돈다. "
-                    "git config --global core.hooksPath ~/.githooks")
-        print("  ★    전역 core.hooksPath 없음")
-    elif loc:
-        warn.append(f"로컬 core.hooksPath({loc}) 가 전역을 이긴다 — 자격증명 검사가 사라진다. "
-                    "git config --local --unset core.hooksPath")
-        print(f"  ★    로컬 core.hooksPath = {loc} (전역을 덮는다)")
-    elif not (hook.exists() and hook.stat().st_mode & 0o111):
-        warn.append(".githooks/pre-commit 이 없거나 실행 불가 — 전역 훅이 후보로 안 집는다. "
-                    "chmod +x .githooks/pre-commit")
-        print("  ★    .githooks/pre-commit 실행 불가")
-    else:
-        print(f"  OK   전역 훅 {g} · 저장소 훅 실행 가능 (도달은 global-chain.sh --check)")
-
-    print()
-    for w in warn:
-        print(f"  ⚠ {w}")
-    for b in bad:
-        print(f"  ★ {b}")
-    print(f"\n{'계층 선언과 실물이 일치한다' if not bad else f'★ {len(bad)}건 어긋남'}")
-    sys.exit(1 if bad else 0)
-
 # ──────────────────────────────────────────────────────────────
+# ★ 2026-09-28. 분기부가 `{...}[cmd](*rest)` 였다. 세 갈래로 깨져 있었다 —
+#   ① 모르는 명령 → `KeyError`  ② 인자 수가 틀림 → `TypeError` + 역추적
+#   ③ **인자가 뭔지 아무도 모른다** → `verify.sh` 가 배선을 못 했다(§283-1).
+#   머리말은 `impact KEY` · `backup DIR` 을 옳게 적고 있었고 분기부만 안 지켰다.
+#   **선언과 실물이 갈린 자리는 늘 선언 쪽이 아니라 부르는 쪽이 조용히 죽는다.**
+#: 이름 → (함수, 인자 이름들). 인자 이름은 사용법 출력과 시험이 같이 읽는다.
+COMMANDS: dict[str, tuple] = {
+    "record": (cmd_record, ()),
+    "graph":  (cmd_graph, ()),
+    "check":  (cmd_check, ()),
+    "fsck":   (cmd_fsck, ()),
+    "impact": (cmd_impact, ("KEY",)),
+    "backup": (cmd_backup, ("DIR",)),
+    "verify": (cmd_verify, ("DIR",)),
+}
+
+
+def usage(why: str = "") -> int:
+    """사용법. **역추적이 아니라 이것을 낸다.**"""
+    if why:
+        print(f"✗ {why}\n")
+    for name, (_fn, args) in COMMANDS.items():
+        print(f"  python -m firelane.datalog {name} {' '.join(args)}".rstrip())
+    return USAGE_EXIT
+
+
+def dispatch(argv: list[str]) -> int:
+    if not argv:
+        return usage("명령이 없다")
+    cmd, *rest = argv
+    if cmd not in COMMANDS:
+        return usage(f"모르는 명령 {cmd!r}")
+    fn, args = COMMANDS[cmd]
+    if len(rest) != len(args):
+        need = " ".join(args) or "(없음)"
+        return usage(f"{cmd} 는 인자 {len(args)}개가 필요하다 — {need}")
+    fn(*rest)
+    return 0
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(__doc__); sys.exit(1)
-    cmd, *rest = sys.argv[1:]
-    {"record": cmd_record, "graph": cmd_graph, "check": cmd_check,
-     "impact": cmd_impact, "backup": cmd_backup, "verify": cmd_verify,
-     "fsck": cmd_fsck}[cmd](*rest)
+    sys.exit(dispatch(sys.argv[1:]))

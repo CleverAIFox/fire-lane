@@ -90,6 +90,7 @@ PATHABLE = ("stem", "stems", "files")
 #     SINGLE_PICK      single=True       hits[0] 하나만 읽는다
 #       ★ csv_table_multi 는 hits 전부를 이어붙이므로 single=False 다.
 #         넣으면 "하나만 읽는데 files 가 2개다" 를 매번 오탐한다.
+from firelane.cli import no_args
 from firelane.kinds import (
     NO_SCHEMA_KINDS,
     SINGLE_PICK,
@@ -98,6 +99,49 @@ from firelane.kinds import (
 
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 FORBIDDEN_VALUES = {"TODO", "todo", "TBD", "?", "-", ""}
+
+# ── 계약 어휘 (2026-09-28 · DECISIONS §284-1) ──────────────────
+# ★ `contract:` 블록의 키를 **아무도 세지 않았다.** 실측 3방향 어긋남 —
+#
+#     키                머리말  읽는 코드  대장
+#     crs                 ○       ✗        0    ★ 개명 전 이름이 남아 있었다
+#     delimiter           ✗       ○        2    ★ 어휘인데 머리말에 없었다
+#     optional_cols       ✗       ○        1    ★ 같다
+#
+#   `crs` 는 항목 수준 `crs_native` 로 개명됐는데(`crs_of()` 참조)
+#   `contract.py` 머리말만 옛 이름을 들고 있었다. **낡은 참조 하나가
+#   「CRS 대조를 한다」는 약속으로 읽혔다.** 아무도 안 했다.
+#
+#   오타는 더 조용하다. `required_col` 이라 적으면 `c.get("required_cols")`
+#   가 `None` 을 받고 **검사가 그냥 사라진다.** 빨강도 경고도 없다.
+#   그래서 어휘를 여기 하나로 두고 셋을 대조한다.
+#: 키 → (한 줄, 읽는 모듈). **읽는 모듈이 실제로 읽는지 시험이 본다.**
+CONTRACT_KEYS: dict[str, tuple[str, str]] = {
+    "encoding":         ("선언 인코딩과 실물 디코딩이 맞는가", "firelane.contract"),
+    "required_cols":    ("있어야 하는 컬럼. 소실은 실패, 추가는 경고", "firelane.contract"),
+    "optional_cols":    ("없어도 되는 컬럼. 결손을 보정한다", "firelane.read.delimited"),
+    "rows":             ("건수 선언. 기본 허용폭 0.30", "firelane.contract"),
+    "rows_tolerance":   ("건수 허용폭", "firelane.contract"),
+    "scope_min":        ("스코프 안 유효 건수 하한. 조용한 0건을 막는다", "firelane.contract"),
+    "layer_must_exist": ("zip 안에 layer 가 실제로 있는가", "firelane.contract"),
+    "delimiter":        ("구분자. 안 적으면 갈래 기본값", "firelane.ledger"),
+    "columns":          ("헤더 없는 원본의 컬럼 이름. 사람이 적는다", "firelane.read.delimited"),
+}
+
+
+def delimiter_of(e: dict) -> str:
+    """구분자. **기본값의 정본은 여기 하나다.**
+
+    ★ 2026-09-28. 기본값이 두 곳에 각기 있었다 — `read/delimited.py` 와
+      `tools/ledger_schema.py` 가 `"|"`, `contract.py` 는 pandas 기본 쉼표.
+      셋이 같은 대장 키를 다르게 해석했다. 갈래가 정하는 값이므로
+      `kinds.DELIM_KINDS`(= `schema="delim"`) 에서 유도한다.
+    """
+    from firelane.kinds import DELIM_KINDS
+    c = e.get("contract") or {}
+    if (v := c.get("delimiter")) not in (None, ""):
+        return str(v)
+    return "|" if e.get("kind") in DELIM_KINDS else ","
 
 FAIL, WARN = "FAIL", "WARN"
 
@@ -160,6 +204,24 @@ def check_entry(key: str, e: dict) -> list[Issue]:
             out.append(Issue(FAIL, key, f"필수 필드 없음: {f}"))
         elif bad(e[f]):
             out.append(Issue(FAIL, key, f"{f} 가 비었거나 TODO 다: {e[f]!r}"))
+
+    # ── 좌표가 나오는 갈래에는 좌표계 선언이 있어야 한다 ──────
+    # ★ 2026-09-28 (§285-2). 이 규칙이 **세 곳에 생길 뻔했다** —
+    #   `datalog.cmd_check` 에 하나, `contract --declared` 에 하나(그날
+    #   새로 쓰다 잡았다), 그리고 여기. 항목 필드의 판정은 이 함수가
+    #   정본이고, 나머지는 여기를 부른다.
+    # ★ `kinds.KINDS[*].geom` 이 「좌표가 나오나」의 정본이다 — 목록을
+    #   또 만들면 사본이 하나 더 생긴다. `raw_only` 문서에까지 좌표계를
+    #   요구하던 옛 판이 그래서 158건을 냈고 아무도 안 읽었다.
+    # ★ WARN 이다. 35/72 가 비어 있고 FAIL 로 올리면 대장이 통째로
+    #   빨개진다 — 정상 상태에서 우는 게이트는 사람이 무시하고, 무시되는
+    #   게이트는 죽은 것이다. 수는 `contract --declared` 의 래칫이 든다.
+    from firelane import kinds as _kinds
+    _kd = _kinds.KINDS.get(e.get("kind"))
+    if _kd and _kd.geom and not crs_of(e):
+        out.append(Issue(WARN, key,
+                         f"좌표가 나오는 갈래({e.get('kind')})인데 crs_native 가 "
+                         "없다 — 계보에 빈 좌표계가 박힌다"))
 
     # ── 실물 경로를 낼 수 있는가 ──────────────────────────────
     # ★ 2026-08-31. `files` 를 REQUIRED 에서 뺐다(#46). 빼기만 하면 경로를
@@ -416,6 +478,7 @@ def crs_of(e: dict) -> str:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     import sys
     issues = check_all()
     for i in issues:

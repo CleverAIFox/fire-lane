@@ -78,9 +78,13 @@ uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증�
 uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
 uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 · 결번 대장 (★ --apply 는 폐지 — 번호는 영구 식별자다)
 uv run python tools/deliver.py pack <가지> <범위> --out DIR   # ★ 배달물이 제 밑동을 증명한다 — origin 에서 읽고 워크트리에 얹어 예습
+uv run python tools/expectcheck.py "$FIRE_LANE_INBOX/EXPECT"  # ★ 받는 쪽이 그 계약을 **다시 재어** 댄다 (fl.sh 4c 가 부른다)
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
 uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
+uv run python tools/selftests.py         # ★ 선언된 `--selftest` 를 전부 돌린다 (문 하나 · --list 로 건너뜀 사유)
+uv run python tools/fieldseal.py         # ★ data/field 무결성 지문 — DECISIONS 가 인용하는 파생표 (--write 는 새로 뽑았을 때만)
+uv run python tools/widthcross.py        # ★ 폭을 방법이 다른 원천끼리 댄다 — 측량 도로폭 · 도로대장 (판정 밖)
 uv run python tools/cost_inputs.py      # 경로 비용 입력이 결측과 0 을 가르는가 · 압력 계수가 근거 없이 켜졌나
 uv run python tools/proposal_pdf.py     # 기획서 → web/proposal.pdf · 쪽수·본문·수치·그림 대조
 # ★ 위 도구가 세는 사본을 합친 자리 —
@@ -304,7 +308,6 @@ uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치�
 uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구간 — 실측 우선순위
 uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
 uv run python tools/matchcheck.py       Mapbox Map Matching 커버리지 (MAPBOX_TOKEN 필요)
-uv run python tools/field_compare.py    실측 야장 ↔ 우리 폭 · 판정 — 위험 오판 · 보정 제안 (트랙 C 봉인)
 uv run python tools/ruleset_check.py    GitHub 룰셋 실물 ↔ MASTER §12-1 표 대조
 uv run python tools/fixture_recut.py    커밋된 사본 픽스처 ↔ 산출물. 갈렸으면 ㉠ 재현 불가 · ㉡ 판 변경을 가른다 (`--write` 면 다시 뗀다)
 uv run python tools/argcheck.py         관문이 부르는 인자 ↔ 도구가 `--help` 로 내는 인자 (DECISIONS §257-2 의 족)
@@ -446,7 +449,6 @@ src/firelane/
   webmanifest.py          web/data 계보. publish 가 직접 쓴다
   datalog.py              대장 정합성 · 계보 · 영향분석 · 백업 검증
   inventory.py            원본 레이어·속성 인벤토리 → sources.yaml
-  sample_design.py        실측 표본 설계. 시드 고정
   segkey.py               seg_uid + 관측점 방위각
   probe.py                좌표계 역추정 · 그래프 위상 진단
   quiet_gdal.py           GDAL 잡음 억제
@@ -603,7 +605,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
 `web/data/`(40MB 상한)만으로 작업할 수 있다.
 
-배포된 화면 다섯이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 다섯 곳에 산다.
+배포된 화면 넷이다. **서로 링크하지 않는다** — 각각 다른 사람이 다른 이유로 열고, 화면마다 이동 메뉴를 두면 같은 목록이 네 곳에 산다.
 가는 길은 여기 하나다(DECISIONS §99). 플레이북(`web/playbook.html`)은 협업 방침을 그리는
 **틀**이라 따로 배포하지 않는다(§216-5).
 
@@ -620,6 +622,6 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 ## 문서는 어디에
 
 축 표의 정본은 `docs/MASTER.md` 머리다 — 이 문서 머리의 [문서는 넷이다](#문서는-넷이다) 표와 PLAN 머리는 사본이다.
-어긋나면 `uv run python tools/doc_fsck.py` 가 운다.
+어긋나면 `uv run pytest tests/test_reproducibility.py::test_doc_axis_tables_are_consistent` 가 운다.
 
-강제자  `tools/doc_fsck.py`(문서 ↔ 문서 · 이 절이 스스로 그렇게 적는다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)
+강제자  `tests/test_reproducibility.py::test_doc_axis_tables_are_consistent`(축 표 셋이 서로 같은가 — 2026-09-28 정정. 종전에 `doc_fsck` 를 댔는데 그 도구에는 축 표를 보는 검사가 없다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)

@@ -151,10 +151,12 @@ def convert(src: Path, dst: Path) -> dict:
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print(__doc__)
-        return 2
-    rec = parse(chunks_of(Path(sys.argv[1])))
+    # ★ 개수는 봤지만 **꼴은 안 봤다.** `--없는깃발` 이 경로로 들어가
+    #   역추적을 토했다(§283-2). argparse 가 둘을 같이 본다.
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("경로", help="차량카드 파일")
+    rec = parse(chunks_of(Path(ap.parse_args().경로)))
     for k in HEAD:
         print(f"  {k:18s} {rec[k]}")
     return 0

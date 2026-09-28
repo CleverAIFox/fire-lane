@@ -334,16 +334,17 @@ def cmd_rollback() -> int:
 
 
 def main() -> int:
-    # ★ 관문. 레이크가 없으면 여기서 멈춘다 — 판정만 하고 안 막으면
-    #   엉뚱한 곳에 계층을 만든다(2026-08-27).
     from firelane.paths import require_lake
-    require_lake(need=("raw",))
 
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--yes", action="store_true", help="실물을 실제로 옮긴다")
     ap.add_argument("--rollback", action="store_true")
     a = ap.parse_args()
+    # ★ 관문. 레이크가 없으면 여기서 멈춘다 — 판정만 하고 안 막으면
+    #   엉뚱한 곳에 계층을 만든다(2026-08-27).
+    # ★ **`parse_args` 뒤다** — 앞에 두면 `--help` 가 종료 2 였다(§283-4).
+    require_lake(need=("raw",))
     if a.rollback:
         return cmd_rollback()
 

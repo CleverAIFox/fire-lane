@@ -42,8 +42,10 @@ import json
 import sys
 from pathlib import Path
 
-# 정본. params.py 는 os 말고 아무것도 import 하지 않으므로 이 도구의
-# 순수 표준 라이브러리 성격이 깨지지 않는다.
+from firelane.cli import no_args
+
+# 정본. params.py 는 os 말고, cli.py 는 sys 말고 아무것도 import 하지
+# 않으므로 이 도구의 순수 표준 라이브러리 성격이 깨지지 않는다.
 from firelane.seg.params import TRUCK
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -118,4 +120,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     sys.exit(main())
