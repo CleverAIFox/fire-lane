@@ -197,5 +197,5 @@ def main() -> None:
 if __name__ == "__main__":
     from firelane.guards import warn_direct_call
 
-    warn_direct_call(__name__)
+    warn_direct_call(__name__, doc=__doc__)   # doc → 모르는 깃발도 거절(§283-2)
     main()

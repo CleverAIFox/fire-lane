@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from pyproj import CRS, Transformer
 from pyproj.exceptions import CRSError
 
+from firelane.cli import no_args
+
 # ─────────────────────────────────────────────────────────────
 # 프로젝트 표준
 # ─────────────────────────────────────────────────────────────
@@ -122,6 +124,7 @@ def offset_between(x: float, y: float, crs_a: str, crs_b: str) -> float:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     print("=== 좌표계 지문 (동명동 기준) ===")
     for code in CANDIDATES:
         tf = Transformer.from_crs(CRS_WGS84, code, always_xy=True)

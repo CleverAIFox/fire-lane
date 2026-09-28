@@ -148,7 +148,8 @@ def probe(key: str, e: dict) -> dict | None:
             #   컬럼명으로 먹고 조용히 1행을 잃는다. 컬럼명은 파일에 없고
             #   제공처 활용가이드 PDF 에만 있으므로 `contract.columns` 에
             #   사람이 적는다 — 여기서는 **열 개수와 행 수만** 센다.
-            delim = (e.get("contract") or {}).get("delimiter", "|")
+            # ★ 기본값의 정본은 `ledger.delimiter_of` 하나다(§284-4).
+            delim = _led.delimiter_of(e)
             inner_key = e.get("inner_contains", "")
             if src.suffix.lower() == ".zip":
                 with zipfile.ZipFile(src) as z:
@@ -328,18 +329,20 @@ def run(*, apply: bool, check: bool, missing: bool = False) -> int:
 
 
 def main() -> int:
-    # ★ 관문. 레이크가 없으면 여기서 멈춘다 — 판정만 하고 안 막으면
-    #   엉뚱한 곳에 계층을 만든다(2026-08-27).
     from firelane.paths import require_lake
-    require_lake(need=("raw",))
 
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--check", action="store_true",
                     help="대장과 실물이 어긋났나. CI 가 아니라 사람이 돌린다")
     ap.add_argument("--missing", action="store_true",
                     help="schema 가 없는 항목만 (§182-1)")
     a = ap.parse_args()
+    # ★ 관문. 레이크가 없으면 여기서 멈춘다 — 판정만 하고 안 막으면
+    #   엉뚱한 곳에 계층을 만든다(2026-08-27).
+    # ★ **`parse_args` 뒤다.** 앞에 두면 레이크가 없을 때 `--help` 조차
+    #   종료 2 로 죽어 「이 도구가 무엇이냐」를 물을 길이 없었다(§283-4).
+    require_lake(need=("raw",))
     return run(apply=a.apply, check=a.check, missing=a.missing)
 
 

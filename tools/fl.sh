@@ -96,7 +96,11 @@ esac
 
 # ══ 0. 저장소 · INBOX ═════════════════════════════════════════
 step "0. 저장소"
-[ -d "$REPO_DIR/.git" ] || die "저장소가 없다 — $REPO_DIR"
+# ★ 2026-09-28 (DECISIONS §290-8). `-d .git` 은 **워크트리를 저장소가 아니라고 한다** —
+#   워크트리에서 `.git` 은 본 저장소를 가리키는 **파일**이다. 배달 예습이 워크트리에서
+#   돌므로 이 줄 하나가 `test_fl_*` 둘을 예습에서 영구히 빨갛게 만들었다.
+#   git 에게 직접 묻는다 — 「저장소인가」의 정본은 git 이다.
+git -C "$REPO_DIR" rev-parse --git-dir >/dev/null 2>&1 || die "저장소가 없다 — $REPO_DIR"
 cd "$REPO_DIR" || exit 1
 _IN_ENV="${FIRE_LANE_INBOX:-}"          # 명시한 환경변수가 .env 를 이긴다
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
@@ -479,6 +483,24 @@ for p in sorted(code_closure("firelane.ingest")): print(p.relative_to(ROOT).as_p
         git commit -q -m "seal: golden 재잠금 · 샤드 봉인 (판정 불변)"
         ok "재잠금 커밋 $(git rev-parse --short HEAD)"
     fi
+fi
+
+# ══ 4c. 계약 대조 — EXPECT 를 **읽는다** ═══════════════════════
+# ★ 2026-09-28 (DECISIONS §290-4). 종전에는 `EXPECT` 를 **아무도 읽지 않았다.**
+#   `deliver.py` 가 원격 팁 위에서 재서 쓰고, zip 에 담겨 건너오고, 여기서 끝이었다 —
+#   저장소 전체에서 그 파일을 읽는 코드가 0개였다. 기계가 쓴 주장도 읽는 쪽이
+#   없으면 사람이 쓴 주장과 값이 같다.
+#
+# ★ **전수 verify 앞에 둔다.** 28분을 기다린 뒤에 「배달 기계는 이 다섯 축을
+#   증명하지 않았다」를 읽으면 늦다. 어긋남도 여기서 먼저 죽는 것이 싸다.
+if [ -f "$IN/EXPECT" ]; then
+    step "4c. 계약 대조 — 배달물의 EXPECT"
+    uv run --no-sync python tools/expectcheck.py "$IN/EXPECT" \
+        || die "배달 계약과 이 기계의 실측이 어긋난다." \
+               "  ★ EXPECT 를 고치지 마라 — 고치는 것은 주장을 되살리는 것이다." \
+               "  되돌리려면:  $FL_CMD $BR --undo"
+else
+    warn "EXPECT 가 없다 — 계약 없는 배달이다. deliver.py pack 으로 싸지 않았다는 뜻이다"
 fi
 
 # ══ 5. 전수 verify ════════════════════════════════════════════

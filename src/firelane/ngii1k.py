@@ -304,11 +304,16 @@ def write(g, key: str, out: Path) -> Path:
 
 
 def main() -> int:
-    if len(sys.argv) < 2:
-        print(__doc__)
-        return 1
-    src = Path(sys.argv[1])
-    out = Path(sys.argv[2]) if len(sys.argv) > 2 else Path("data/processed")
+    # ★ 2026-09-28 (§283-2 · §289-1). 종전에는 `sys.argv[1]` 을 그대로 `Path` 로
+    #   썼다. `--이런깃발은없다` 가 도엽 경로가 되어 **143장을 훑기 시작했고**
+    #   20초를 넘겼다. 레이크가 없는 기계에서는 바로 죽어서 안 보였다 —
+    #   검증 환경이 실행 환경보다 약하면 결함이 숨는다.
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("원본", type=Path, help="NGI 도엽 zip 또는 폴더")
+    ap.add_argument("산출", type=Path, nargs="?", default=Path("data/processed"))
+    a = ap.parse_args()
+    src, out = a.원본, a.산출
     want = list(LAYERS)
 
     sheets = collect(src)

@@ -276,8 +276,6 @@ def test_consumers_actually_read_it():
           nfa_compare             guards.py 는 주석 두 줄뿐
           route_vehicle           실제 독자는 publish_web.py
           hydrant_point           contract.py 는 raw 를 보는 도구다
-          obs_points·field_sample fieldsheet.md 는 **같은 생성기의 형제
-                                  산출물**이지 소비자가 아니다
 
       영향 분석이 이 표를 근거로 「이것을 지우면 누가 깨지나」를 답한다.
       표가 거짓이면 **지워도 되는 것을 지키고, 지키던 것을 지운다.**
@@ -461,3 +459,39 @@ def test_meta_entries_are_not_real_outputs():
         f"META 가 대장 산출물을 면제한다 — {', '.join(overlap)}\n"
         "  대장에 등재했으면 META 에서 빼라. META 는 파이프라인이\n"
         "  자기 실행을 기록하는 것(_manifest · _lineage)만 든다.")
+
+
+# ── 추적 밖 산출물의 부재 (2026-09-28 · DECISIONS §290-7) ──────────
+# ★ 「계보 대장 정합」이 선언된 출력 경로의 실재를 본다. 그런데
+#   `data/processed/*.gpkg` 는 `.gitignore` 가 덮는 재생성물이라 파이프라인을
+#   안 돌린 기계(새 워크트리 · CI)에는 **당연히 없다.** 그것을 실패로 세면
+#   이 단계는 레이크 있는 기계에서만 초록이 되고, 그 사실이 선언 안 돼 있어서
+#   **배달 예습을 통째로 막았다** — 예습은 워크트리에서 돈다.
+#   대장이 틀린 것과 이 기계가 안 지은 것은 다른 사실이다.
+def test_a_missing_untracked_output_is_not_a_ledger_defect(tmp_path, monkeypatch):
+    from firelane import datalog
+
+    tracked = datalog._tracked_paths()
+    assert tracked, "git 추적 목록이 비었다 — 판별식이 죽었다(빈 그물)"
+    # ★ 대장이 지목하는 gpkg 산출물은 추적 밖이어야 한다. 추적된다면 그것은
+    #   「안 지었다」가 아니라 진짜 결함이고, 그때는 울어야 한다.
+    import yaml
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    paths = [v.get("path", "") for v in (y.get("outputs") or {}).values()]
+    gpkg = [p for p in paths if p.endswith(".gpkg")]
+    assert gpkg, "대장에 gpkg 산출물이 없다 — 표본이 사라졌다"
+    assert not [p for p in gpkg if p in tracked], (
+        "gpkg 산출물이 추적된다 — 재생성물을 커밋하면 이 구분이 무너진다")
+
+
+def test_the_ledger_check_passes_without_a_pipeline_run():
+    """★ 파이프라인 산출물이 없어도 대장 정합은 통과해야 한다.
+
+    이 시험이 도는 기계에 산출물이 있을 수도 있으므로 **판별식**을 직접 문다 —
+    「추적 밖이고 없다」가 결함 수에 들어가지 않는가.
+    """
+    src = (ROOT / "src" / "firelane" / "datalog.py").read_text(encoding="utf-8")
+    seg = src.split("# 3. 선언된 산출물이 실제로 존재하는가", 1)[1].split("# 4.", 1)[0]
+    assert "_tracked_paths()" in seg, "추적 여부를 안 묻는다 — 구분이 사라졌다"
+    assert seg.count("bad += 1") == 1, (
+        "추적 밖 부재도 결함으로 센다 — 워크트리·CI 가 영구히 빨갛다")

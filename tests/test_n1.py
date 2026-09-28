@@ -154,8 +154,13 @@ def test_publish_and_navi_are_wired_to_dest():
 
 def test_no_doc_sends_people_to_old_pages_domain():
     """§181-6 — 배포 주소는 cleveraifox.github.io 다. 옛 조직 주소는 이관 전 배포라 낡은 지도를 보여준다.
-    기록(DECISIONS) · 이관 전 등록 도메인 주석(web/config.js)만 허용한다."""
-    allow = {"docs/DECISIONS.md", "web/config.js", "tests/test_n1.py"}
+    기록(DECISIONS) 만 허용한다.
+
+    ★ 2026-09-28. `web/config.js` 를 allow 에서 뺐다. 「이관 전 등록 도메인
+      주석」이 사유였는데 그 주석은 §218-1 에서 vworld 블록과 함께 사라졌다 —
+      **면제가 없는 것을 면제하고 있었다.** 목록이 실물보다 넓으면 방패가
+      아니라 사각지대다(§291-3 과 같은 형태)."""
+    allow = {"docs/DECISIONS.md", "tests/test_n1.py"}
     skip = {".git", ".venv", "node_modules", "dist", "__pycache__", "baseline", "terrain", "ortho"}
     hits = []
     for p in ROOT.rglob("*"):

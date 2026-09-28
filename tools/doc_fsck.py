@@ -49,6 +49,7 @@ from docfsck.docx_revised import check_docx_ready_for_squash, check_docx_revised
 from docfsck.expiry import check_expiry
 
 from firelane import generated
+from firelane.cli import no_args
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "sources.yaml"
@@ -61,9 +62,10 @@ PIPE_README = ROOT / "src/firelane/README.md"
 #   **정확히 같은 집합**인지 본다 — 하나가 늘어도, 하나가 죽어도 운다.
 #   이 파일(`doc_fsck.py`) 자신은 표가 사는 자리라 뺀다. 산문 사유는 그 옆에 남는다.
 FIELD_EXEMPT: dict[str, tuple[str, ...]] = {
-    # 들고 나가는 종이. 코드 소비자가 없다(DECISIONS §243)
-    "fieldsheet.md": ("src/firelane/sample_design.py", "tools/field_compare.py",
-                      "tests/test_ledger_outputs.py", "tests/test_reproducibility.py"),
+    # ★ 2026-09-28 (DECISIONS §291). `fieldsheet.md` 면제를 **지웠다.** 파일도
+    #   그 소비자 넷도 없다. 실측 계획을 접었고(적힌 실측값 0/75) 야장·표본
+    #   설계·대조 도구를 전부 지웠다. 목록이 실물보다 넓으면 그 목록은 방패가
+    #   아니라 사각지대다 — 바로 아래 2026-09-03 문단이 같은 말을 하고 있다.
     # ── 2026-09-03. 네이버 산출 넷(DECISIONS §42)을 지웠다.
     #
     # ★ **저장소에는 한 번도 없었다.** 실물은 SSD 의 `data/field/` 에 있었고
@@ -400,4 +402,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     sys.exit(main())

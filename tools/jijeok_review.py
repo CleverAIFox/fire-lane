@@ -48,6 +48,7 @@ import sys
 
 import geopandas as gpd
 
+from firelane.cli import no_args
 from firelane.paths import INTERIM, PROCESSED, ROOT, WEB
 
 # ★ paths.WEB 은 `web/data` 다(산출물 폴더). review.html 은 그 부모인
@@ -384,4 +385,5 @@ function reset() { ans = {}; localStorage.removeItem(KEY); draw(); }
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     sys.exit(main())
