@@ -133,7 +133,9 @@ SPEC: dict[str, dict] = {
         "owner": {"file": "src/firelane/seg/params.py", "regex": r"^TRUCK\s*=\s*([\d.]+)"},
         "consumers": [
             {"file": "web/config.js", "has": "폭 {v}m 미만"},
-            {"file": "tools/render_figures.py", "ref": '"TRUCK"'},
+            # ★ 2026-09-28 (§281-2). `render_figures.py` 를 `tools/figures/`
+            #   패키지로 쪼갰다. 정본을 읽는 자리가 그쪽으로 옮겨갔다.
+            {"file": "tools/figures/value.py", "ref": '"TRUCK"'},
             {"file": "tests/test_declaration_sync.py", "ref": 'p["TRUCK"]'},
             # ★ 2026-09-23 (DECISIONS §222-5). `scan` 이 찾아낸 자리들. 전부 **문구**지만
             #   TRUCK 이 움직이면 그 문구가 거짓말이 된다 — 그래서 사본이 맞다. 등재한다.
@@ -151,7 +153,9 @@ SPEC: dict[str, dict] = {
         "what": "주차 1대 노면점유(m) — 여유선 = TRUCK + 2×PARK",
         "owner": {"file": "src/firelane/seg/params.py", "regex": r"^PARK\s*=\s*([\d.]+)"},
         "consumers": [
-            {"file": "tools/render_figures.py", "ref": '"PARK"'},
+            # ★ 2026-09-28 (§281-2). `render_figures.py` 를 `tools/figures/`
+            #   패키지로 쪼갰다. 정본을 읽는 자리가 그쪽으로 옮겨갔다.
+            {"file": "tools/figures/value.py", "ref": '"PARK"'},
             {"file": "tests/test_declaration_sync.py", "ref": 'p["PARK"]'},
         ],
         "scan": ["web/navi/src/domain/*.ts", "web/*.js"],
@@ -165,7 +169,9 @@ SPEC: dict[str, dict] = {
                   "regex": r"^CCTV_RANGE\s*=\s*([\d.]+)"},
         "consumers": [
             {"file": "web/config.js", "has": "유효범위 {v:g}m 밖"},
-            {"file": "tools/render_figures.py", "ref": '"CCTV_RANGE"'},
+            # ★ 2026-09-28 (§281-2). `render_figures.py` 를 `tools/figures/`
+            #   패키지로 쪼갰다. 정본을 읽는 자리가 그쪽으로 옮겨갔다.
+            {"file": "tools/figures/value.py", "ref": '"CCTV_RANGE"'},
             {"file": "src/firelane/seg/vehicle.py", "has": "CCTV_RANGE = {v}"},
             {"file": "src/firelane/segments.py", "has": "CCTV_RANGE={v}"},
         ],

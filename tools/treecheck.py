@@ -188,8 +188,14 @@ def check_repo() -> list[F]:
                     out.append(F("T3", BAD, t,
                                  "CODEOWNERS 매치가 없다. 기본값 `*` 줄이"
                                  " 지워졌는지 보라"))
-        except Exception as ex:                              # noqa: BLE001
-            out.append(F("T3", WARN, "owned_paths", f"소유 판정 불가: {ex}"))
+        except Exception as ex:
+            # ★ 2026-09-28 (DECISIONS §279-2). 종전에는 `WARN` 이었다. 종료코드는
+            #   `BAD` 만 세므로 **소유 판정이 통째로 죽어도 관문은 초록**이었다.
+            #   못 읽은 것은 통과가 아니다 — 이 저장소가 `ruleset_check` 머리말에
+            #   써 둔 규칙(「못 읽은 것을 '없다' 로 적지 않는다」)이 여기서 깨져
+            #   있었다. `refcheck.py` 의 짝도 같이 고쳤다.
+            out.append(F("T3", BAD, "owned_paths",
+                         f"소유 판정 자체가 죽었다: {type(ex).__name__}: {ex}"))
 
     #  T4 — base=repo 계층이 실재하나
     for name in L.names():
@@ -247,7 +253,7 @@ def check_names(rels: set[str], *, src: str) -> list[F]:
             continue
         try:
             n = nm.parse(fn, folder=folder)
-        except Exception as ex:                              # noqa: BLE001
+        except Exception as ex:
             out.append(F("D6", BAD, f"{src}:{rel}", str(ex)))
             continue
         if n.provider != folder:

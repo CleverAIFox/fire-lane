@@ -70,16 +70,22 @@ def _why_no_real() -> str:
               REAL / "golden" / "segments.fingerprint.json",
               REAL / "processed" / "route_vehicle.csv"):
         if not p.is_file():
-            return f"환경skip(산출물) — {p.relative_to(ROOT)} 가 없다. 파이프라인 전이다"
+            return f"{p.relative_to(ROOT)} 가 없다. 파이프라인 전이다"
     if (n := (gt.gate_manifest(REAL / "processed")[0] or {}).get("outputs_missing")):
-        return (f"환경skip(산출물) — 매니페스트가 낸다고 적은 산출물 {n}개가 없다. "
+        return (f"매니페스트가 낸다고 적은 산출물 {n}개가 없다. "
                 "레이크 기계에서 돈다")
     return ""
 
 
+# ★ 2026-09-28 (DECISIONS §279-3). 분류 접두사는 **여기 글자로** 둔다. 종전에는
+#   `_why_no_real()` 이 접두사까지 만들어 돌려주고 `reason=_NO_REAL` 이었다 —
+#   값은 맞았지만 **정적 스캔이 못 본다.** 정책이 요구하는 것은 「접두사가
+#   f-string 의 고정 부분에 있을 것」이고, 그래야 그 갈래가 안 타는 기계에서도
+#   오늘 확인된다.
 _NO_REAL = _why_no_real()
 HAVE_REAL = not _NO_REAL
-need_real = pytest.mark.skipif(bool(_NO_REAL), reason=_NO_REAL)
+need_real = pytest.mark.skipif(
+    bool(_NO_REAL), reason=f"환경skip(산출물) — {_NO_REAL}")
 
 
 # ── 합성 트리 ──────────────────────────────────────────────────

@@ -33,7 +33,7 @@
  * ★ 이 훅은 `RoutePlan` 만 받고 **그것이 어떻게 만들어졌는지 모른다.**
  *   경로 알고리즘이 바뀌어도 여기는 안 바뀐다.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSpeaker } from "../infra/speech";
 import {
   buildIncidence, extractManeuvers, nextManeuver, mergePhrase, gateIndex,
@@ -115,7 +115,9 @@ export function useVoice(i: VoiceInput): VoiceState {
   const { m, distM, after } = nextManeuver(maneuvers, driven, MERGE_M);
   const banner = m ? mergePhrase(m, after, distM) : null;
 
-  const gateOf = (d: number) => gateIndex(d, speed);
+  // ★ 2026-09-28 (§279-4). 매 렌더 새 함수였다. `speed` 만 걸면 값은 같으므로
+  //   안정화해서 의존에 **넣는다** — 억제로 덮지 않는다.
+  const gateOf = useCallback((d: number) => gateIndex(d, speed), [speed]);
 
   // ── 재동기화 — 순간이동한 자리에서 바로 말한다 ─────────────
   // ★ 이 효과가 아래 본 효과보다 **먼저** 선언돼야 한다. 같은 렌더에서 문턱 기록을
@@ -218,7 +220,7 @@ export function useVoice(i: VoiceInput): VoiceState {
       ? " CCTV 없음." : "";
     speaker.say(`잠시 후 ${label} 구간.${w}${why}`);
   }, [i.enabled, i.offRoute, i.plan, i.style, i.hazards, m, after, distM, driven,
-      speed, speaker]);
+      speed, speaker, gateOf]);
 
   return {
     banner, maneuver: m, distM,

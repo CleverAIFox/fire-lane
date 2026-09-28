@@ -335,7 +335,7 @@ def main() -> int:
             try:
                 seg = maximum_inscribed_circle(geom)
                 rad.append(seg.length)          # 중심 → 경계 거리 = 내접원 반경
-            except Exception:                   # noqa: BLE001
+            except Exception:
                 rad.append(float("nan"))
         x["r_m"] = rad
         rs = x["r_m"].dropna()

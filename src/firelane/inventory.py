@@ -199,7 +199,7 @@ def probe_raw_only(paths: list[Path]) -> dict:
     return out
 
 
-from firelane.kinds import KINDS as _KINDS  # noqa: E402
+from firelane.kinds import KINDS as _KINDS
 
 
 def probe_json(paths: list[Path]) -> dict:
@@ -214,7 +214,7 @@ def probe_json(paths: list[Path]) -> dict:
                 raw.get("records") or raw.get("Data") or [])
             rec.update(encoding="utf-8", rows=len(rows),
                        fields=list(rows[0]) if rows else [])
-        except Exception as ex:                    # noqa: BLE001
+        except Exception as ex:
             rec["error"] = f"{type(ex).__name__}: {ex}"[:80]
         out["files"].append(rec)
     return out
@@ -251,7 +251,7 @@ def probe_delim(paths: list[Path]) -> dict:
                 break
             else:
                 rec["error"] = "인코딩 판별 실패"
-        except Exception as ex:                    # noqa: BLE001
+        except Exception as ex:
             rec["error"] = f"{type(ex).__name__}: {ex}"[:80]
         out["files"].append(rec)
     return out

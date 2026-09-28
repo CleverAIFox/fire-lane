@@ -62,7 +62,7 @@ YAML = ROOT / "sources.yaml"
 #   종전 CSV_KINDS 에 `json_points` 가 **없었다.** 그래서 표준데이터 JSON
 #   소스는 `--check` 가 실물 변경을 못 잡았다 — 조용히 None 을 냈다.
 #   ngii1k·ngii_1k 는 shp_dir 의 옛 이름인데 SHP_KINDS 에만 빠져 있었다.
-from firelane.kinds import (  # noqa: E402
+from firelane.kinds import (
     CSV_KINDS,
     DELIM_KINDS,
     JSON_KINDS,
@@ -216,10 +216,10 @@ def probe(key: str, e: dict) -> dict | None:
                     info = pyogrio.read_info(f"/vsizip/{src}/{lay}", encoding=e.get("encoding"))
                     out["columns"] = list(info["fields"])[:MAX_COLS]
                     out["features"] = int(info["features"])
-                except Exception as ex:            # noqa: BLE001
+                except Exception as ex:
                     out["columns_error"] = f"{type(ex).__name__}: {ex}"[:90]
             return out
-    except Exception as ex:                        # noqa: BLE001
+    except Exception as ex:
         return {"error": f"{type(ex).__name__}: {ex}"[:110]}
     return None
 

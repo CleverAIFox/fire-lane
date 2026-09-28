@@ -1312,7 +1312,7 @@ def raw_print() -> dict[str, list[str]] | None:
     try:
         p = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
                            stdin=subprocess.DEVNULL, timeout=900, check=False)
-    except Exception:                                       # noqa: BLE001
+    except Exception:
         return None
     if p.returncode:
         return None
@@ -1342,7 +1342,7 @@ def code_print(root: Path = ROOT) -> dict | None:
     try:
         r = subprocess.run(["git", "ls-files", "-z", "--", *CODE_PATHS],
                            cwd=root, capture_output=True, timeout=60, check=False)
-    except Exception:                                       # noqa: BLE001
+    except Exception:
         return None
     if r.returncode:
         return None

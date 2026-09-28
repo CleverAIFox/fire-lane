@@ -149,7 +149,7 @@ def pipeline_report() -> None:
         if new:
             _todo.append("uv run python tools/intake.py --stage --yes"
                          f"   (다운로드 {len(new)}건이 대기 중)")
-    except Exception as ex:                        # noqa: BLE001
+    except Exception as ex:
         print(f"{WARN} 다운로드 검사 실패 — {type(ex).__name__}: {ex}"[:78])
 
     # landing → raw
@@ -264,7 +264,7 @@ def integrity_report() -> None:
         for rel in led:
             try:
                 n = _nm.parse(rel.rsplit("/", 1)[-1], strict=False)
-            except Exception:                      # noqa: BLE001
+            except Exception:
                 continue
             stems = e.get("stems") or ([e["stem"]] if e.get("stem") else [])
             if f"{n.provider}_{n.dataset}" in stems:

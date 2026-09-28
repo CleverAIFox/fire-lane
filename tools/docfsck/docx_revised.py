@@ -20,7 +20,7 @@ def _git(*args: str, timeout: int = 10) -> tuple[int, str]:
     try:
         r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True,
                            text=True, timeout=timeout)
-    except Exception as e:                                # noqa: BLE001
+    except Exception as e:
         return 1, f"{type(e).__name__}: {e}"
     return r.returncode, r.stdout.strip()
 
@@ -30,7 +30,7 @@ def _cover_dates(f: Path) -> tuple[list[str], str | None]:
     try:
         import docx as _dx
         txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
-    except Exception as e:                                # noqa: BLE001
+    except Exception as e:
         return [], f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"
     return re.findall(r"20\d\d\.\s*\d{1,2}\.\s*\d{1,2}", txt), None
 
@@ -135,7 +135,7 @@ def check_docx_revised() -> list[str]:
     try:
         sh = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
                             cwd=ROOT, capture_output=True, text=True, timeout=10)
-    except Exception as e:                                # noqa: BLE001
+    except Exception as e:
         return [f"{f.name} — 얕은 저장소인지 판별하지 못했다: {type(e).__name__}: {e}"]
     if sh.returncode != 0:
         return [f"{f.name} — 얕은 저장소 판별 실패(rc={sh.returncode}): "
@@ -148,7 +148,7 @@ def check_docx_revised() -> list[str]:
             ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(f)],
             cwd=ROOT, capture_output=True, text=True, timeout=10)
         last = r.stdout.strip()
-    except Exception as e:                                # noqa: BLE001
+    except Exception as e:
         # ★ 2026-09-22 (PLAN §13 W10-1 · deadcheck ③). 종전에는 `return []` —
         #   git 이 죽으면 이 검사가 **초록**이었다. 얕은 저장소처럼 전제를
         #   선언한 경우가 아니라 **못 잰 것**이므로 못 쟀다고 말한다.
@@ -159,7 +159,7 @@ def check_docx_revised() -> list[str]:
     try:
         import docx as _dx
         txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
-    except Exception as e:                                # noqa: BLE001
+    except Exception as e:
         # ★ 2026-09-22 (W10-1 · deadcheck ③). `python-docx` 는 선언된 의존성이다
         #   (pyproject). 그것이 없거나 기획서가 안 열리면 표지를 못 읽은 것이지
         #   표지가 맞는 것이 아니다 — 종전 `return []` 은 그 둘을 같게 읽었다.

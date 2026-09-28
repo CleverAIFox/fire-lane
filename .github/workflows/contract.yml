@@ -184,6 +184,7 @@ jobs:
           MARK='<!-- fire-lane:brief -->'
           git fetch -q origin "$BASE"
           { echo "$MARK"
+            # local-exempt: tools/release_brief.py base 와의 차이를 **PR 본문에 단다**. 로컬에는 PR 이 없다 — 같은 표를 사람이 보는 자리는 `merge_batch.sh --release` 다
             uv run python tools/release_brief.py --base "$BASE" --md
           } > /tmp/brief.md
           ID=$(gh api "repos/${{ github.repository }}/issues/$PR/comments" \
@@ -221,6 +222,7 @@ jobs:
         #   썼는가). 전제를 워크플로가 대신 들면 정본이 둘이고, 검사를 다른
         #   자리에서 부를 때 전제가 안 따라온다.
         if: github.event_name == 'pull_request'
+        # local-exempt: tools/pr_body_check.py PR 번호가 있어야 본문을 읽는다. 로컬 대응은 `tools/deliver.py` 의 본문 검사(§276-1)이고 그것이 PR 을 열기 **전에** 같은 물음을 든다
         run: uv run python tools/pr_body_check.py
 
       - name: 커밋 정책
@@ -313,6 +315,8 @@ jobs:
         run: uv run python tools/docstyle.py
       - name: 문서 말투
         run: uv run python tools/tonecheck.py
+      - name: 사유 없는 억제
+        run: uv run python tools/suppress.py
       # ★ 로컬에서는 파이프라인 재실행 **뒤에** 돌아 「새 산출 = golden」을 묻는다. 여기서는
       #   커밋된 data/processed 를 대조하므로 「커밋된 산출 = golden」이다 — 물음이 좁고 그것을
       #   여기 선언한다. 커밋본이 golden 과 갈린 채 머지되는 길은 이것으로 닫힌다.
@@ -400,6 +404,10 @@ jobs:
           uv run python tools/navi_env.py --no-sync
           cd web/navi
           npm ci --no-audit --no-fund
+          # ★ 2026-09-28 (DECISIONS §279-4). eslint 가 저장소에 **아예 없었는데**
+          #   `eslint-disable-line` 은 28개 있었다. 규칙을 켜자 14개는 아무것도
+          #   억제 안 하고 있었고 나머지가 진짜 결함 다섯을 가리고 있었다.
+          npm run lint
           npm run typecheck
 
       - name: ★ 내비 단위 시험 (위치 추정 · 턴바이턴)

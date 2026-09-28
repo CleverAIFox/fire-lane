@@ -465,7 +465,7 @@ def main():
             _intrvl = _intrvl.to_crs(road.crs)
         _bnx = BasisIntervalIndex.from_gdf(_intrvl)
         print(f"[기초번호] 기초구간 {len(_intrvl)}개")
-    except Exception as _e:                                   # noqa: BLE001
+    except Exception as _e:
         print(f"[기초번호] 기초구간을 못 읽었다 — seg_label 은 도로명만: {_e}")
 
 

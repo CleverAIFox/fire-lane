@@ -477,6 +477,7 @@ tools/
   docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
   docstyle.py             ★ 기획서에 개요 층이 있는가 — 없으면 목차도 PDF 북마크도 안 생긴다 (--write)
   tonecheck.py            ★ 문서 넷 + 리드미의 말투 — 비속어 · 은어 · 대화체 (<!--voice-ok--> 면 통과)
+  suppress.py             ★ 사유 없이 검사를 끄는 주석 — noqa · type:ignore · eslint-disable · 문서 표기. 양방향 래칫
   doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
   intake.py               Downloads → landing 게이트 · 대장 미매칭 차단
   pull_data.py            ★ 반입 입구. 여덟 단계. 삭제는 검증에 매달려 있다
@@ -493,7 +494,7 @@ tools/
   stage_pages.py          ★ 배포 준비 한 곳 — docs/proposal.docx → web/
   svg_fit.py              ★ 손으로 좌표 박은 SVG 가 화면·도형을 넘는가 — rect · circle · 라벨 폭
   localgeo.py             ★ 동명동 국소 평면 근사 — 좌표 상수의 집. kpi · bridge_audit · its_linkmap 이 읽는다
-  render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 대조 (배치는 svg_fit 이 본다)
+  render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 대조. 그리는 함수는 tools/figures/ 패키지 (배치는 svg_fit 이 본다)
   docx_figs.py            ★ 그 그림을 기획서 안에 넣는다 — --sync 가 교체 · --check 는 변환기 없이 대조
   release_brief.py        ★ 이 PR 이 무엇을 흡수하나 — 판정·계보·대장·계약
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)

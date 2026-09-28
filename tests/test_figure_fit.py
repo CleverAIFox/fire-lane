@@ -171,7 +171,8 @@ def test_sourceless_figures_match_the_ratchet():
 
 def test_figure_eight_is_drawn_from_the_contract():
     """★ [그림 8] 의 필드는 손으로 안 적는다 — 계약이 바뀌면 그림이 따라 바뀐다."""
-    fig = _mod("render_figures")
+    # ★ 2026-09-28 (§281-2). 구조 그림은 `tools/figures/structure.py` 로 갔다.
+    fig = _mod("figures/structure")
     c = fig._contract_fields()
     assert set(c) == {"ObsSpec", "VisionResult"}
     svg = fig.fig_boundary()
