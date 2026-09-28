@@ -100,14 +100,29 @@ def _skip_literals() -> list[tuple[str, int, str]]:
     out = []
     for f in sorted((ROOT / "tests").rglob("*.py")):
         for n in ast.walk(ast.parse(f.read_text(encoding="utf-8"))):
-            if not isinstance(n, ast.Call) or not n.args:
+            if not isinstance(n, ast.Call):
                 continue
             fn = n.func
             name = fn.attr if isinstance(fn, ast.Attribute) else (
                 fn.id if isinstance(fn, ast.Name) else None)
-            if name not in ("skip", "xfail"):
+            if name in ("skip", "xfail") and not n.args:
                 continue
-            a = n.args[0]
+            if name not in ("skip", "xfail", "skipif"):
+                continue
+            # ★ 2026-09-28 (DECISIONS §279-3). `skipif` 는 사유가 **키워드**
+            #   `reason=` 로 온다. 종전에는 이름 거르기에서 `skipif` 를 빼서
+            #   **정적으로 한 번도 안 봤다.** 런타임 훅(`conftest.py`)은 skip 이
+            #   실제로 나야 보므로, 레이크·산출물이 있는 기계에서는 영원히
+            #   안 타고 없는 기계에서 **처음 타면서 실패**한다 — 로컬 초록 ·
+            #   CI 빨강, 이 저장소가 제일 나쁜 모양이라 적은 그것이다(§206).
+            if name == "skipif":
+                kw = next((k.value for k in n.keywords if k.arg == "reason"), None)
+                if kw is None:
+                    out.append((str(f.relative_to(ROOT)), n.lineno, "\x00"))
+                    continue
+                a = kw
+            else:
+                a = n.args[0]
             if isinstance(a, ast.Constant) and isinstance(a.value, str):
                 s = a.value
             elif isinstance(a, ast.JoinedStr):

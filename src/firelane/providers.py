@@ -63,7 +63,7 @@ def spec() -> dict[str, dict]:
     return dict(P)
 
 
-def all() -> set[str]:                                      # noqa: A001
+def all() -> set[str]:
     """선언된 전부. `normalize_raw` 통과 규칙이 쓰는 집합이다."""
     return set(spec())
 

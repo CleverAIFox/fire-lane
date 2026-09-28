@@ -90,7 +90,7 @@ PATHABLE = ("stem", "stems", "files")
 #     SINGLE_PICK      single=True       hits[0] 하나만 읽는다
 #       ★ csv_table_multi 는 hits 전부를 이어붙이므로 single=False 다.
 #         넣으면 "하나만 읽는데 files 가 2개다" 를 매번 오탐한다.
-from firelane.kinds import (  # noqa: E402
+from firelane.kinds import (
     NO_SCHEMA_KINDS,
     SINGLE_PICK,
     TEXT_KINDS,

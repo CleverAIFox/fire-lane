@@ -238,7 +238,7 @@ export function OpsMap(props: Props) {
       vis("ops-unreach", L.reach && !!P.current.reachable);
       m.easeTo({ pitch: L.bldg && !L.ortho ? 45 : 0, duration: 400 });
     });
-  }, [props.layers]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [props.layers]);  
 
   // ── 구간 색 — 판정 4색 ↔ 여유폭 4단 (§220) ─────────────────────
   // ★ 레이어를 새로 올리지 않고 `line-color` 만 갈아 끼운다. 굵기(= 최소 유효폭) ·
@@ -252,7 +252,7 @@ export function OpsMap(props: Props) {
         : opsVerdictColor((k) => p.style[k]?.color ?? "rgb(120,128,140)");
       m.setPaintProperty("ops-verdict", "line-color", col as never);
     });
-  }, [props.colorMode, props.requiredM, props.style]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [props.colorMode, props.requiredM, props.style]);  
 
   // ── 거르기 · 도달 불가 · 선택 ─────────────────────────────────
   useEffect(() => {
@@ -273,7 +273,7 @@ export function OpsMap(props: Props) {
       m.setFilter("ops-selected", ["==", ["get", "seg_uid"], P.current.selectedSeg ?? ""] as never);
     });
   }, [props.hidden, props.hiddenBands, props.colorMode, props.requiredM,
-      props.reachable, props.selectedSeg, props.layers.reach]); // eslint-disable-line react-hooks/exhaustive-deps
+      props.reachable, props.selectedSeg, props.layers.reach]);  
 
   // ── 출동 미리보기 ─────────────────────────────────────────────
   useEffect(() => {
@@ -281,7 +281,7 @@ export function OpsMap(props: Props) {
       (m.getSource("preview") as maplibregl.GeoJSONSource).setData(line(P.current.preview));
       (m.getSource("preview-walk") as maplibregl.GeoJSONSource).setData(line(P.current.previewWalk));
     });
-  }, [props.preview, props.previewWalk]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [props.preview, props.previewWalk]);  
 
   // ── 사건 지점 ─────────────────────────────────────────────────
   useEffect(() => {
@@ -290,7 +290,7 @@ export function OpsMap(props: Props) {
       const at = P.current.incident;
       if (at) incMk.current = new maplibregl.Marker({ element: firePin(), anchor: "bottom" }).setLngLat(at).addTo(m);
     });
-  }, [props.incident]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [props.incident]);  
 
   // ── 출동 중인 차 ──────────────────────────────────────────────
   useEffect(() => {
@@ -319,7 +319,7 @@ export function OpsMap(props: Props) {
       }
       (m.getSource("unit-routes") as maplibregl.GeoJSONSource).setData({ type: "FeatureCollection", features: routes });
     });
-  }, [props.units]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [props.units]);  
 
   // ── 공유된 지점 ───────────────────────────────────────────────
   useEffect(() => {
@@ -340,14 +340,14 @@ export function OpsMap(props: Props) {
         if (!seen.has(k)) { mk.remove(); delete feedMk.current[k]; }
       }
     });
-  }, [props.feed]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [props.feed]);  
 
   // ── 초점 ──────────────────────────────────────────────────────
   useEffect(() => {
     const f = P.current.focus;
     if (!f) return;
     whenReady((m) => m.easeTo({ center: f.at, zoom: f.zoom ?? 17, duration: 600 }));
-  }, [props.focus?.n]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [props.focus?.n]);  
 
   return <div ref={box} style={{ position: "absolute", inset: 0 }} />;
 }

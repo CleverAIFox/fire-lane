@@ -53,7 +53,7 @@ def install() -> None:
     try:
         from rasterio.errors import NotGeoreferencedWarning
         warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
-    except Exception:                                        # noqa: BLE001
+    except Exception:
         warnings.filterwarnings("ignore", message=".*not georeferenced.*")
 
     # 2. rasterio 로그 콜백의 cp949 디코딩 실패

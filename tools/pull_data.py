@@ -118,7 +118,7 @@ class Step:
 
 def steps(a) -> list[Step]:
     py = [sys.executable]
-    T = lambda n: [*py, str(ROOT / "tools" / n)]          # noqa: E731
+    T = lambda n: [*py, str(ROOT / "tools" / n)]
     out = [
         Step("intake", "Downloads → landing",
              T("intake.py") + ["--stage"]),
@@ -174,7 +174,7 @@ def main() -> int:
         print(f"  inbox    {P.inbox()}")
         print(f"  landing  {P.LANDING}")
         print(f"  raw      {P.RAW}")
-    except Exception as e:                                # noqa: BLE001
+    except Exception as e:
         print(c(f"  경로를 못 읽었다: {e}", "31"))
         return 2
 

@@ -17,11 +17,11 @@
    "tests/test_workflow_html_sync.py",
    "tools/ruleset_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "b5a4b67f8afc24cb"
+   "83a39a9ca115a43f"
   ],
-  "sha": "99f6091ed295746c"
+  "sha": "76e0b3fa9b3bd217"
  },
  "DECISIONS/102": {
   "doc": "docs/DECISIONS.md",
@@ -44,9 +44,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "76b55f7f9a448320"
+   "4a158ceac10f7b0b"
   ],
-  "sha": "8a9db8aba0761d39"
+  "sha": "e4ebb76fb500a6f0"
  },
  "DECISIONS/105": {
   "doc": "docs/DECISIONS.md",
@@ -138,9 +138,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "9df4edc798613db3"
+   "c9166023a31edcb4"
   ],
-  "sha": "cf83c42ea806bc78"
+  "sha": "694ae534bba3403d"
  },
  "DECISIONS/111-2": {
   "doc": "docs/DECISIONS.md",
@@ -234,11 +234,11 @@
    "tests/test_layering.py",
    "web/navi/test/domain.test.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "573bbea21f7e5136"
+   "4b6a796951f33d5c"
   ],
-  "sha": "573bbea21f7e5136"
+  "sha": "4b6a796951f33d5c"
  },
  "DECISIONS/123": {
   "doc": "docs/DECISIONS.md",
@@ -394,9 +394,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "c40697e7cebbbc15"
+   "6e76aabba8232a11"
   ],
-  "sha": "fe403336553247b9"
+  "sha": "1fbcde1b4dcec965"
  },
  "DECISIONS/136": {
   "doc": "docs/DECISIONS.md",
@@ -643,11 +643,11 @@
    "web/navi/src/ui/tokens.ts",
    "web/navi/test/clearance.test.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "5cd2b4f10b7be5f3"
+   "ea651f165e20022d"
   ],
-  "sha": "c1cd95c0d6e6988a"
+  "sha": "6cb3d92fe549049c"
  },
  "DECISIONS/203": {
   "doc": "docs/DECISIONS.md",
@@ -657,11 +657,11 @@
    "tests/test_rawdiff_code.py",
    "tools/baseline.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "2ef3ad696c3dd9fe"
+   "4704c2ffa8ace4a4"
   ],
-  "sha": "020036f84a55a97f"
+  "sha": "06fba8ad260d2e50"
  },
  "DECISIONS/204": {
   "doc": "docs/DECISIONS.md",
@@ -716,11 +716,11 @@
    "tests/test_ortho_seal.py",
    "tools/lakecheck.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "513b178c7361ba3d"
+   "6446bf5bca776178"
   ],
-  "sha": "a14650e8d95ddbf5"
+  "sha": "19122df51036d998"
  },
  "DECISIONS/210": {
   "doc": "docs/DECISIONS.md",
@@ -732,9 +732,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "4bfd0087b19fb912"
+   "80e2a934a195ce49"
   ],
-  "sha": "7efee5a4c44fc24e"
+  "sha": "0c013493737c9747"
  },
  "DECISIONS/211": {
   "doc": "docs/DECISIONS.md",
@@ -744,9 +744,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "74536470fc052baf"
+   "62ce3908e99cb869"
   ],
-  "sha": "50fb8cb423ed34c0"
+  "sha": "85ec76a1dc7304da"
  },
  "DECISIONS/212": {
   "doc": "docs/DECISIONS.md",
@@ -769,9 +769,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "77293e98e91c2dca"
+   "bcf26178169f6fe7"
   ],
-  "sha": "cb32bdbea28804e2"
+  "sha": "8b7475d764910aa9"
  },
  "DECISIONS/223": {
   "doc": "docs/DECISIONS.md",
@@ -782,9 +782,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "34d04253ff6a66c5"
+   "dcf863ea24945c74"
   ],
-  "sha": "ecad01d432dedf04"
+  "sha": "e3b654699c323062"
  },
  "DECISIONS/224-2": {
   "doc": "docs/DECISIONS.md",
@@ -864,11 +864,11 @@
    "tests/test_dms_ids.py",
    "tools/dms.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "563edc38d9b68be8"
+   "4e2342b14c607b0e"
   ],
-  "sha": "3af1d461694a1263"
+  "sha": "569b9a55107bf6cd"
  },
  "DECISIONS/230": {
   "doc": "docs/DECISIONS.md",
@@ -902,9 +902,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "574fdfbe67ca0cee"
+   "b303533dae777042"
   ],
-  "sha": "393076f921465e79"
+  "sha": "af601f048cfb96de"
  },
  "DECISIONS/234": {
   "doc": "docs/DECISIONS.md",
@@ -939,9 +939,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "e429353f84d5e1d6"
+   "49c1eb5dc3270d8c"
   ],
-  "sha": "e4bd82e0d8e8981a"
+  "sha": "220d5741af79d433"
  },
  "DECISIONS/238": {
   "doc": "docs/DECISIONS.md",
@@ -951,9 +951,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "1a79844bb32a88c6"
+   "70aac64acc6a1c68"
   ],
-  "sha": "00e4d0c2406c559d"
+  "sha": "5ab81ec91dde7e61"
  },
  "DECISIONS/24": {
   "doc": "docs/DECISIONS.md",
@@ -988,11 +988,11 @@
    "tools/dms.py",
    "tools/skeleton_compare.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "c8ec3845cdf44be1"
+   "5da761e701fceb33"
   ],
-  "sha": "17bbc1460d8469cb"
+  "sha": "4437123da24ce05e"
  },
  "DECISIONS/242": {
   "doc": "docs/DECISIONS.md",
@@ -1012,11 +1012,11 @@
    "tests/test_seg_width.py",
    "tests/test_sources_of_truth.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "4eeb304732c000d1"
+   "256f624102f2418b"
   ],
-  "sha": "9094175248f106bb"
+  "sha": "4c279066a53c548b"
  },
  "DECISIONS/247": {
   "doc": "docs/DECISIONS.md",
@@ -1049,22 +1049,22 @@
    "tests/test_vehicle_parity.py",
    "web/navi/test/vehicleParity.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "7bc53eb23af710a9"
+   "4d9828976afc5c43"
   ],
-  "sha": "42cf6d04f0a73931"
+  "sha": "0841bece92b4e3ee"
  },
  "DECISIONS/248-1": {
   "doc": "docs/DECISIONS.md",
   "files": [
    "tests/test_vehicle_parity.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "8f813cc8cb751469"
+   "391d1fd45f4d319a"
   ],
-  "sha": "9ba860698072a7ca"
+  "sha": "d2f5e0479d18d768"
  },
  "DECISIONS/249": {
   "doc": "docs/DECISIONS.md",
@@ -1072,33 +1072,33 @@
    "tests/test_layering.py",
    "tests/test_seg_params_is_pure.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "e8d074a1d06bb42c"
+   "cbea1f4cc1587559"
   ],
-  "sha": "01cd40dce82fe840"
+  "sha": "778dfe30f6c2ce0d"
  },
  "DECISIONS/249-1": {
   "doc": "docs/DECISIONS.md",
   "files": [
    "tests/test_seg_params_is_pure.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "bd79ffaa25330a89"
+   "3b19485357e45a79"
   ],
-  "sha": "b99711d8e55d98cc"
+  "sha": "94c59a2ba5f4c18d"
  },
  "DECISIONS/25": {
   "doc": "docs/DECISIONS.md",
   "files": [
    "tests/test_layering.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "b3b25723cb55e7c0"
+   "349d3f7675b82bc5"
   ],
-  "sha": "ddbbadfb977d1be9"
+  "sha": "751171fed343b011"
  },
  "DECISIONS/253": {
   "doc": "docs/DECISIONS.md",
@@ -1124,9 +1124,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "82f1fd47f3dc86ae"
+   "84f430f55bdb44f8"
   ],
-  "sha": "3a7eb698dd08e409"
+  "sha": "ae9f25fb97a30629"
  },
  "DECISIONS/254-1": {
   "doc": "docs/DECISIONS.md",
@@ -1147,11 +1147,11 @@
    "tests/test_seal_axes.py",
    "tools/dms.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "c00b90b60dca6a07"
+   "a96a8a35a6b72c67"
   ],
-  "sha": "d83cf793e81b1a05"
+  "sha": "18e9052256c76db3"
  },
  "DECISIONS/255-2": {
   "doc": "docs/DECISIONS.md",
@@ -1184,9 +1184,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "00ca6bb88e6499c8"
+   "17933071270a83a3"
   ],
-  "sha": "2f9f1189d6eefb85"
+  "sha": "8796dfda93468c01"
  },
  "DECISIONS/257-3": {
   "doc": "docs/DECISIONS.md",
@@ -1196,9 +1196,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "e4dd20e790537839"
+   "8a2b955e9eb88151"
   ],
-  "sha": "86c5c931f208b4f1"
+  "sha": "8ccb1a5837d2c21d"
  },
  "DECISIONS/258-1": {
   "doc": "docs/DECISIONS.md",
@@ -1272,11 +1272,11 @@
    "tests/test_layering.py",
    "tests/test_layers.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "64e2276348507ac4"
+   "9f1d404b41925917"
   ],
-  "sha": "5488198e986eb3d6"
+  "sha": "2a611ddbbc1a4ef4"
  },
  "DECISIONS/260": {
   "doc": "docs/DECISIONS.md",
@@ -1313,9 +1313,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "211e742962fcbdf4"
+   "66c9fae1d8f30a74"
   ],
-  "sha": "7a2093e1fe962790"
+  "sha": "e566012a93e23b31"
  },
  "DECISIONS/265": {
   "doc": "docs/DECISIONS.md",
@@ -1340,9 +1340,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "cb1eb09e79fb38e2"
+   "3896b707c36ff9ec"
   ],
-  "sha": "62caa43c024c83bb"
+  "sha": "c87d36241266062b"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -1364,9 +1364,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "de6aef56ec2f75c8"
+   "05d1ffc31f7dd1b6"
   ],
-  "sha": "5448589cfd4cb39b"
+  "sha": "dd06fee94e1b2822"
  },
  "DECISIONS/270": {
   "doc": "docs/DECISIONS.md",
@@ -1409,9 +1409,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "f67c503ebbb972f2"
+   "374d93d831ae2c33"
   ],
-  "sha": "3ef433eb745b00a2"
+  "sha": "4b79c348199de647"
  },
  "DECISIONS/274": {
   "doc": "docs/DECISIONS.md",
@@ -1423,9 +1423,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "0b4da45a1e30a69c"
+   "48e16c052c720e80"
   ],
-  "sha": "ba72ca5312a07068"
+  "sha": "64925991498b315b"
  },
  "DECISIONS/275": {
   "doc": "docs/DECISIONS.md",
@@ -1463,9 +1463,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "3e66ac50af7b53ad"
+   "6da95e7ca3cb9455"
   ],
-  "sha": "1ecec482ef51663a"
+  "sha": "674f2db63ee60e7c"
  },
  "DECISIONS/34": {
   "doc": "docs/DECISIONS.md",
@@ -1523,9 +1523,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "d2b97d91b7da59da"
+   "dfef8b5b22848139"
   ],
-  "sha": "8dbb7fd85400a6ce"
+  "sha": "b7dbafa31ac9175f"
  },
  "DECISIONS/39": {
   "doc": "docs/DECISIONS.md",
@@ -1534,11 +1534,11 @@
    "tests/test_ledger_outputs.py",
    "tools/web_manifest.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "5be8bae3907cb014"
+   "5abe8283fe6b16a1"
   ],
-  "sha": "dba6c1b5a929a3ea"
+  "sha": "6b8b7040e8c4a283"
  },
  "DECISIONS/40": {
   "doc": "docs/DECISIONS.md",
@@ -1548,9 +1548,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "b00a71262042e25f"
+   "4efcb6284d37fc03"
   ],
-  "sha": "794e22d1296d15e3"
+  "sha": "2f5854ef2cf4377a"
  },
  "DECISIONS/42": {
   "doc": "docs/DECISIONS.md",
@@ -1570,11 +1570,11 @@
    "src/contracts/vision.py",
    "tests/test_contract_vision.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "f819bd45801ddda6"
+   "9a2eb2f1da799549"
   ],
-  "sha": "ac1705a8544170fa"
+  "sha": "4d3f7b6b79c8d59f"
  },
  "DECISIONS/45": {
   "doc": "docs/DECISIONS.md",
@@ -1582,11 +1582,11 @@
    "tests/test_fieldsheet.py",
    "tests/test_layers.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "1fcdb9b1255a5210"
+   "096ab85220afa66e"
   ],
-  "sha": "cf036146d921c60d"
+  "sha": "cec42b668ac5d96f"
  },
  "DECISIONS/66": {
   "doc": "docs/DECISIONS.md",
@@ -1609,11 +1609,11 @@
    "tests/test_static.py",
    "tools/docnum_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "4f2a95fe85365803"
+   "2631b2357cc316ad"
   ],
-  "sha": "092c9377046aaaaf"
+  "sha": "f211e4d2edf13418"
  },
  "DECISIONS/79": {
   "doc": "docs/DECISIONS.md",
@@ -1621,22 +1621,22 @@
    "tests/test_workflow_html_sync.py",
    "tools/ruleset_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "beb611850752f5a2"
+   "24ccd00dcf3b2997"
   ],
-  "sha": "edb0229f84fcbd53"
+  "sha": "0f389765eb49917b"
  },
  "DECISIONS/82": {
   "doc": "docs/DECISIONS.md",
   "files": [
    "tools/corner_probe.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "775249e0c635683e"
+   "a9360bad5db74990"
   ],
-  "sha": "20e0aeca4a5498fb"
+  "sha": "038518cfbd48f79a"
  },
  "DECISIONS/83": {
   "doc": "docs/DECISIONS.md",
@@ -1656,11 +1656,11 @@
    "tools/deadcheck.py",
    "tools/docx_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "f9ae65836fe7d095"
+   "e2432eb3e1231433"
   ],
-  "sha": "3d268eca190cd77a"
+  "sha": "4e364a664a714141"
  },
  "DECISIONS/93": {
   "doc": "docs/DECISIONS.md",
@@ -1696,9 +1696,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "8280b10a96d2f535"
+   "852bc0b16e0c9cb2"
   ],
-  "sha": "64622038ae4b2620"
+  "sha": "8274dda8eabf8eec"
  },
  "DECISIONS/98": {
   "doc": "docs/DECISIONS.md",
@@ -1708,9 +1708,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "81fe323848c2c29c"
+   "b34f42b07018d755"
   ],
-  "sha": "c2afe1c261af3c50"
+  "sha": "7b927a529c9a0d68"
  },
  "DECISIONS/99": {
   "doc": "docs/DECISIONS.md",
@@ -1815,11 +1815,11 @@
    "tests/test_sources_of_truth.py",
    "web/navi/test/clearance.test.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "684e94ff2ac9c56d"
+   "53834e1d98684245"
   ],
-  "sha": "974eb83a1380a4a3"
+  "sha": "1cc323d9e536a4a5"
  },
  "MASTER/11-3": {
   "doc": "docs/MASTER.md",
@@ -1850,11 +1850,11 @@
    "tests/test_workflow_html_sync.py",
    "tools/ruleset_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "2d760fcab451f7e1"
+   "561fc84af1bb4a02"
   ],
-  "sha": "61c4f45b759b7cbb"
+  "sha": "ec29d5d52276ad87"
  },
  "MASTER/12-11": {
   "doc": "docs/MASTER.md",
@@ -1872,11 +1872,11 @@
   "files": [
    "tools/ruleset_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "f3b3980110772c87"
+   "48bdf300528f3bfd"
   ],
-  "sha": "9c468db5e502b434"
+  "sha": "8f5c06e51d02c600"
  },
  "MASTER/12-2": {
   "doc": "docs/MASTER.md",
@@ -1884,11 +1884,11 @@
    "tests/test_release_procedure.py",
    "tools/ruleset_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "503b2b07ca09be16"
+   "c95e479b19bbfce6"
   ],
-  "sha": "6b7fe4186b4d044b"
+  "sha": "3bf517d89657102c"
  },
  "MASTER/12-3": {
   "doc": "docs/MASTER.md",
@@ -1934,11 +1934,11 @@
    "tools/commit_policy.py",
    "tools/ruleset_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "d62f59a456338adb"
+   "1dbe21403f8f54dd"
   ],
-  "sha": "81c7921bec9d5a8c"
+  "sha": "787f63ad306efa37"
  },
  "MASTER/13": {
   "doc": "docs/MASTER.md",
@@ -1965,9 +1965,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "219cf223ff104a08"
+   "da747bfd32f19e33"
   ],
-  "sha": "224d6acb388bf5ea"
+  "sha": "caafebf64f5b7232"
  },
  "MASTER/15-3": {
   "doc": "docs/MASTER.md",
@@ -1987,11 +1987,11 @@
    "tests/test_measurements.py",
    "tests/test_sources_of_truth.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "1b73d08fafde9a97"
+   "90f52660fbac209c"
   ],
-  "sha": "241fced0de473088"
+  "sha": "3f8e744c82264b65"
  },
  "MASTER/17": {
   "doc": "docs/MASTER.md",
@@ -2019,16 +2019,20 @@
   ],
   "kind": "read",
   "legacy": [
-   "54dafee8f2d35159"
+   "11852a1a6071ec13"
   ],
-  "sha": "ce36b777edb20d5c"
+  "sha": "e9fc1c6cbf7dab74"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
   "files": [
    "tools/deadcheck.py"
   ],
-  "sha": "4253f41376232bdd"
+  "kind": "read",
+  "legacy": [
+   "fca96d2fee775659"
+  ],
+  "sha": "520efce873be353a"
  },
  "MASTER/17-1": {
   "doc": "docs/MASTER.md",
@@ -2051,9 +2055,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "a078c707559291b3"
+   "fa8f4163a2fc1128"
   ],
-  "sha": "cdcc33dbe37d143d"
+  "sha": "9c07715bbf3a0c22"
  },
  "MASTER/18-2c": {
   "doc": "docs/MASTER.md",
@@ -2083,22 +2087,22 @@
   "files": [
    "tests/test_ledger_outputs.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "8c2c4253c23aa4a9"
+   "041147d1a1041733"
   ],
-  "sha": "3847cce37da28998"
+  "sha": "d3ba19f753095e3f"
  },
  "MASTER/18/계층이_열인_이유": {
   "doc": "docs/MASTER.md",
   "files": [
    "tests/test_layers.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "88d57c5cd4c12f8a"
+   "4172dce8e7bc0f29"
   ],
-  "sha": "f1067ef589282a7a"
+  "sha": "c229f8123b6981dd"
  },
  "MASTER/18/원칙_다섯": {
   "doc": "docs/MASTER.md",
@@ -2119,11 +2123,11 @@
    "tests/test_contract_vision.py",
    "tests/test_layering.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "a9669ea8b334eb91"
+   "f01e20d4194a4ae3"
   ],
-  "sha": "87f05f6ef759c837"
+  "sha": "bb86fb2e33b6d42c"
  },
  "MASTER/19-1": {
   "doc": "docs/MASTER.md",
@@ -2131,33 +2135,33 @@
    "src/contracts/vision.py",
    "tests/test_contract_vision.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "299b23b364dede05"
+   "046bbc573094569f"
   ],
-  "sha": "0d7f7754db9e47de"
+  "sha": "7d33b7187d65c804"
  },
  "MASTER/19-2": {
   "doc": "docs/MASTER.md",
   "files": [
    "tests/test_contract_vision.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "34f20e5218c88388"
+   "c75da9fc71bc15a6"
   ],
-  "sha": "7899017c089cd5ee"
+  "sha": "c278e2470dd71819"
  },
  "MASTER/19-5": {
   "doc": "docs/MASTER.md",
   "files": [
    "tests/test_contract_vision.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "4b4addba06a555c5"
+   "ff2cfa3daa3a031f"
   ],
-  "sha": "29b3ed7ecaa85bb4"
+  "sha": "5ec2eaa91fbca7f1"
  },
  "MASTER/2-1a": {
   "doc": "docs/MASTER.md",
@@ -2168,9 +2172,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "a4fe24e9f8501979"
+   "4c7a9128bfba4a32"
   ],
-  "sha": "0708402d519489aa"
+  "sha": "9fe46c856f05790f"
  },
  "MASTER/2-2": {
   "doc": "docs/MASTER.md",
@@ -2180,11 +2184,11 @@
    "tests/test_sources_of_truth.py",
    "tools/docnum_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "ea758ff61a363d38"
+   "9686cdd0864adebe"
   ],
-  "sha": "55520064ad2acb96"
+  "sha": "4a2566bcae0c8b78"
  },
  "MASTER/20-4": {
   "doc": "docs/MASTER.md",
@@ -2217,11 +2221,11 @@
    "tests/test_seg_width.py",
    "tests/test_sources_of_truth.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "8344d76f70db6bd4"
+   "aca1c68ad7e14752"
   ],
-  "sha": "9cfe41408e34181b"
+  "sha": "f84855c71e4ca7b6"
  },
  "MASTER/3-5": {
   "doc": "docs/MASTER.md",
@@ -2292,11 +2296,11 @@
    "tests/test_r1.py",
    "tools/skeleton_compare.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "5ad33d391ba03c25"
+   "733fc78c7c4ff675"
   ],
-  "sha": "1293fb74b0fa3e2b"
+  "sha": "4bf071d8414e13e0"
  },
  "MASTER/6-4": {
   "doc": "docs/MASTER.md",
@@ -2348,9 +2352,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "5eafa822f6ba2919"
+   "65ad563860f72aa4"
   ],
-  "sha": "3a58d54de6f8a098"
+  "sha": "19c83016773ec0c2"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
@@ -2405,9 +2409,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "a59660dfd865de38"
+   "affef1ad997b9512"
   ],
-  "sha": "55ccc585f1c4f352"
+  "sha": "60afb8d56d1a2b85"
  },
  "README/문서는_넷이다/숫자의_정본은_문서가_아니다": {
   "doc": "README.md",

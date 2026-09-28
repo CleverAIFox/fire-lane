@@ -155,7 +155,7 @@ def probe_csv(p: Path, declared: str | None, entry: dict | None = None) -> dict:
         out["hangul"] = round(v.hangul_ratio, 3)
         if getattr(v, "notes", None):
             out["encoding_notes"] = list(v.notes)[:3]
-    except Exception as ex:                                  # noqa: BLE001
+    except Exception as ex:
         out["encoding_error"] = f"{type(ex).__name__}: {ex}"
     use = declared or out.get("encoding") or "utf-8"
     try:
@@ -217,7 +217,7 @@ def probe_csv(p: Path, declared: str | None, entry: dict | None = None) -> dict:
                                if b[0] <= y <= b[2] and b[1] <= x <= b[3])
                     if swap:
                         out["★축반전"] = f"x↔y 로 보면 {swap}건이 대상지 안이다"
-    except Exception as ex:                                  # noqa: BLE001
+    except Exception as ex:
         out["parse_error"] = f"{type(ex).__name__}: {ex}"
     return out
 

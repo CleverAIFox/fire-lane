@@ -29,6 +29,7 @@ OUT   없음 (검사)
 from __future__ import annotations
 
 import ast
+import re
 from pathlib import Path
 
 import pytest
@@ -37,9 +38,14 @@ ROOT = Path(__file__).resolve().parents[1]
 PKG = ROOT / "src" / "firelane"
 
 # 순수해야 하는 모듈. I/O 도 경로도 몰라야 한다.
+# ★ 2026-09-28 (DECISIONS §279-8 · PLAN #122). 판정 모듈 셋이 **조용히 빠져
+#   있었다** — `seg/vehicle.py` · `seg/scope.py` · `seg/centerline_correction.py`.
+#   `report.py` 는 제외 사유가 적혀 있었는데 이 셋은 사유도 없이 없었다.
+#   목록에 없으면 위반해도 아무도 모른다 — 실제로 하나가 위반 중이었다.
 DOMAIN = [
     "seg/params.py", "seg/geom.py", "seg/width.py",
     "seg/roadname.py", "seg/basisno.py", "seg/graph.py",
+    "seg/vehicle.py", "seg/scope.py", "seg/centerline_correction.py",
 ]
 
 # domain 이 절대 import 하면 안 되는 것
@@ -115,7 +121,6 @@ def test_the_import_collector_reads_from_x_import_y():
 #:   단계층으로 올리고 판정 산출물 다섯이 바이트 동일함을 확인했다.
 #:   비어 있는 것이 정상이다. 채우려거든 사유와 **닫는 조건**을 같이 적어라.
 EXEMPT: dict[str, str] = {}
-
 
 @pytest.mark.parametrize("rel", DOMAIN)
 def test_domain_모듈은_인프라를_모른다(rel):
@@ -207,3 +212,52 @@ def test_순환_의존이_없다():
     for m in sorted(graph):
         walk(m)
     assert not cycles, "순환 의존:\n  " + "\n  ".join(sorted(set(cycles)))
+
+
+# ── 도메인이 **저장소를 직접 읽는가** (2026-09-28 · DECISIONS §279-8) ──────
+# ★ 위 검사는 **import 만** 본다. `seg/vehicle.py` 는 `firelane.paths` 를 안
+#   부르고도 계층을 깬다 — `Path(__file__).resolve().parents[3]` 으로 **제
+#   루트를 손수 계산해** `sources.yaml` 을 읽는다. import 가 없으니 조용히
+#   통과했고, PLAN #122 가 그것을 두 달 들고 있었다.
+#
+# ★ 금지는 import 가 아니라 **행위**다. 도메인은 파일을 안 읽는다 — 값은
+#   인자로 받는다. TS 쪽이 이미 그 모양이다(`domain/vehicle.ts` 는 `spec` 을
+#   받는다).
+_OWN_ROOT = re.compile(r"Path\(__file__\)\.resolve\(\)\.parents\[")
+# ★ 읽기 호출만 본다. 파서 이름()은 안 적는다 — 「대장 직접 로드」
+#   래칫이 **글자로** 세는 탐지기라 이 파일이 그 목록에 들어가 버린다.
+_READS = re.compile(r"\.read_text\(|\.read_bytes\(|\bopen\(")
+
+#: 사유를 적으면 면제. **빈 사유는 금지**이고, 깨끗해지면 「낡았다」로 운다.
+READS_EXEMPT: dict[str, str] = {
+    "seg/vehicle.py":
+        "sources.yaml 의 vehicle_spec 을 직접 읽고 전역에 캐시한다. 고치는 법은 "
+        "정해져 있다 — 읽는 쪽을 인프라로 올리고 도메인은 주입받는다. `spec()` 이 "
+        "전역 캐시이고 `__getattr__` 으로 `V.WIDTH` 까지 이어서 호출부 넷과 "
+        "파이프라인을 같이 건드린다. 재잠금 1회가 붙어 배치를 따로 잡는다(PLAN #122)",
+}
+
+
+@pytest.mark.parametrize("rel", DOMAIN)
+def test_domain_모듈은_저장소를_직접_안_읽는다(rel):
+    src = (PKG / rel).read_text(encoding="utf-8")
+    bad = []
+    if _OWN_ROOT.search(src):
+        bad.append("제 루트를 손수 계산한다 (`parents[...]`)")
+    if _READS.search(src):
+        bad.append("파일을 읽는다")
+    if rel in READS_EXEMPT:
+        assert bad, (f"{rel} 이 READS_EXEMPT 에 있는데 **이미 깨끗하다** — 줄을 지워라.\n"
+                     "  면제가 낡으면 그 자리가 사각지대가 된다")
+        assert READS_EXEMPT[rel].strip(), f"{rel} 의 면제에 사유가 없다"
+        return
+    assert not bad, (
+        f"{rel} 이 도메인인데 {' · '.join(bad)}.\n"
+        "  도메인은 값을 **인자로 받는다** — 읽는 것은 인프라의 일이다.\n"
+        "  못 고치면 READS_EXEMPT 에 **사유와 함께** 적어라.")
+
+
+def test_reads_exempt_has_no_ghost():
+    """없는 파일을 면제하고 있으면 목록이 낡은 것이다. 양방향이다."""
+    ghost = sorted(r for r in READS_EXEMPT if r not in DOMAIN)
+    assert not ghost, f"DOMAIN 에 없는 것을 면제한다 — {ghost}"

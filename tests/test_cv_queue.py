@@ -114,7 +114,12 @@ def test_the_tool_declares_that_it_does_not_touch_the_verdict(q):
 
 
 # ── 실물 ──────────────────────────────────────────────────────
-need_real = pytest.mark.skipif(not SEG.is_file(), reason="산출물이 없다")
+# ★ 2026-09-28 (DECISIONS §279-3). 사유가 정책 어휘 밖이었다. `skipif` 는 정적
+#   스캔을 한 번도 안 거쳐서 **산출물이 있는 기계에서는 영원히 초록**이었고,
+#   없는 기계에서 처음 타면서 실패했을 것이다.
+need_real = pytest.mark.skipif(
+    not SEG.is_file(),
+    reason=f"환경skip(산출물) — {SEG.name} 이 없다. 파이프라인 전이다")
 
 
 @need_real

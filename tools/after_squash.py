@@ -84,7 +84,7 @@ def has_lake() -> bool:
     """
     try:
         from firelane.paths import RAW
-    except Exception:                                   # noqa: BLE001
+    except Exception:
         return (ROOT / "data" / "raw").is_dir()
     return bool(RAW and Path(RAW).is_dir())
 
@@ -96,7 +96,7 @@ def run_one(cmd: tuple[str, ...]) -> tuple[int, str]:
     argv = [sys.executable, *cmd[1:]] if cmd[0] == "python" else list(cmd)
     try:
         r = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, timeout=900)
-    except Exception as e:                              # noqa: BLE001
+    except Exception as e:
         return 1, f"{type(e).__name__}: {e}"
     return r.returncode, (r.stdout + r.stderr)
 

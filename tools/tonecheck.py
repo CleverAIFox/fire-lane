@@ -91,7 +91,7 @@ def exempt(rel: str) -> bool:
 
 def _docparse():
     """`tests/docparse.py` — **산문 판정의 정본**. 여기서 다시 짜지 않는다."""
-    import importlib.util  # noqa: PLC0415
+    import importlib.util
     spec = importlib.util.spec_from_file_location("dp_tone", ROOT / "tests/docparse.py")
     assert spec and spec.loader
     m = importlib.util.module_from_spec(spec)

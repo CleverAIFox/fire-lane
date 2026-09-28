@@ -103,7 +103,7 @@ NO_DECL = 152
 # ★ 2026-09-28 (DECISIONS §278-1). 23 → 24. **수가 는 것이 아니라 세는 법이 고쳐졌다** —
 #   문자열 검사가 `localgeo` · `svg_fit`(하위명령으로 받는다)을 **놓치고**,
 #   `verify.sh`(남의 도구에 붙여 부른다)를 **잘못 세고** 있었다. 양방향으로 틀렸다.
-SELFTEST_MIN = 27
+SELFTEST_MIN = 28
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)
 

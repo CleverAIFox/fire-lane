@@ -112,7 +112,10 @@ export default function App() {
   const dev = useMemo(() => new URLSearchParams(location.search).get("dev") === "1", []);
 
   const spec = fleet.spec ?? n.data?.spec ?? EMPTY_SPEC;
-  const style = n.data?.graph.style ?? {};
+  // ★ 2026-09-28 (§279-4). `?? {}` 가 매 렌더 **새 객체**를 만들어 아래 두
+  //   memo(175 · 269)의 의존이 매번 바뀌었다 — 캐시가 한 번도 안 맞았다.
+  //   eslint 가 없던 동안 아무도 몰랐다.
+  const style = useMemo(() => n.data?.graph.style ?? {}, [n.data?.graph.style]);
   const need = requiredWidth(spec);
   const vehicleKind = fleet.current?.label ?? spec.kind ?? "소방차";
   const guiding = n.phase === "guiding";
@@ -374,8 +377,11 @@ export default function App() {
       status: guiding || arrived ? statusKey : "planning", title: snapTitle,
       remainM: n.remainM, etaText: hud?.etaText ?? null, route: n.plan?.coords ?? null,
     });
+    // ★ `n.live.current` 는 ref 다. 의존에 넣으면 매 프레임 재실행되고, 안 넣어도
+    //   읽는 시점 값은 최신이다. 필요한 필드는 아래에 개별로 걸었다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- n.live 는 ref 다
   }, [vehicleKind, station?.name, incident, n.current, n.origin, statusKey, snapTitle,
-      n.remainM, hud?.etaText, n.plan, guiding, arrived]); // eslint-disable-line react-hooks/exhaustive-deps
+      n.remainM, hud?.etaText, n.plan, guiding, arrived]);  
 
   // ★ 알림은 6초 뒤 내린다. 「위치 없음」 처럼 한 번 알면 되는 것이 주행 내내
   //   남아 남은 시간 알약 위를 가렸다(검수 스크린샷).

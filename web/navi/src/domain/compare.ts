@@ -115,7 +115,7 @@ export function compareMarks(base: RoutePlan, other: RoutePlan): CompareMarks {
   }
   // 비교 경로에만 있는 확인 필요 구간 — 첫 연속 묶음
   const inBase = new Set(base.edges.map((e) => e.seg_uid));
-  let run: LngLat[] = [];
+  const run: LngLat[] = [];
   let runM = 0;
   for (let i = 0; i < other.edges.length; i++) {
     const e: GraphEdge = other.edges[i];

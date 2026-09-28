@@ -31,6 +31,7 @@ KST = timezone(timedelta(hours=9))
 SOURCES = ROOT / "sources.yaml"
 PROCESSED = ROOT / "data" / "processed"
 MANIFEST = PROCESSED / "_manifest.json"
+RUNLOG = PROCESSED / "_runlog.json"     # ★ datalog 소유. `_manifest.json` 은 ingest 소유다(§280-1)
 # ★ processed 는 백업하지 않는다. raw + 코드 + 대장으로 재생성된다.
 #   보관 우선순위: raw·field(재생성 불가) > norm(재정규화 가능) > processed(버림)
 # 저장소 **안**에 있을 때만 해당한다. 밖에 있으면 external_targets() 가 잡는다.
@@ -41,10 +42,29 @@ MANIFEST = PROCESSED / "_manifest.json"
 #   **정본이 둘이면 반드시 어긋난다**(R3). 이제 하나만 읽는다.
 def _layer_rels(flag: str) -> list[str]:
     from firelane import layers as _ly
-    return [n for n in _ly.names() if _ly.policy(n).get(flag)]
+    from firelane.lake import ABOLISHED
+    # ★ `ABOLISHED` 는 층 **이름이 아니라 `sub`** 다(`("_quarantine",)`). 이름으로
+    #   견주면 안 걸린다 — 실제로 안 걸리고 있었다. 같은 종류의 실수가 바로
+    #   아래 경로 조립에도 있었다: 이름으로 경로를 만들면 `sub` 가 다른 층에서
+    #   어긋난다.
+    return [n for n in _ly.names()
+            if _ly.policy(n).get(flag)
+            and (_ly.policy(n).get("sub") or n) not in ABOLISHED]
 
 
-BACKUP_TARGETS = ["data/" + n for n in _layer_rels("backup")]
+def _layer_path(name: str) -> str:
+    """층의 실제 상대경로. **이름이 아니라 `sub` 를 쓴다**(§280-2)."""
+    from firelane import layers as _ly
+    sub = _ly.policy(name).get("sub") or name
+    return sub if sub.startswith("data/") else f"data/{sub}"
+
+
+# ★ 2026-09-28 (§280-2). 종전에는 **층 이름**으로 경로를 조립했다 — `sub` 가
+#   이름과 다른 층에서 어긋난다. 실물이 그랬다: `quarantine` 의 `sub` 는
+#   `_quarantine` 인데 `data/quarantine` 을 가리켰고, 그 경로는 **실재하지
+#   않는다.** 없는 경로를 훑는 백업은 매번 0건을 복사하고 조용히 통과한다.
+#   게다가 그 층은 2026-09-17 에 **폐지**됐다(`lake.ABOLISHED`).
+BACKUP_TARGETS = [_layer_path(n) for n in _layer_rels("backup")]
 # raw 는 레포 밖에 있다. 상대경로만 훑으면 2.5GB 가 통째로 빠진다.
 # 백업 대상에서 raw 가 빠졌다는 것을 파일 개수로만 알 수 있으면 조용한 결측이다.
 #
@@ -150,8 +170,23 @@ def cmd_record() -> None:
                 "git": g, "python": sys.version.split()[0]},
         "outputs": rec,
     }
-    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-                        encoding="utf-8")
+    # ★ 2026-09-28 (DECISIONS §280-1). **종전에는 `MANIFEST` 를 덮었다.**
+    #   그 파일은 `ingest` 소유이고 모양이 아예 다르다 —
+    #     ingest   {"datasets": [72종], "terrain", "ortho", "bbox_4326", …}
+    #     여기     {"run": {...git...}, "outputs": {...}}
+    #   한 번만 돌면 `datasets` 블록이 사라지고 **계보 지문**
+    #   (`lineage._manifest_digest` 가 그 블록을 해시한다)과 **샤드 봉인 45개**
+    #   (`seal` 칸)가 통째로 날아간다. 그리고 이 명령은 MASTER §18-7 에
+    #   명령줄까지 적혀 있다 — 문서를 읽고 그대로 친 사람이 파이프라인을 지운다.
+    #
+    #   같은 경로에 두 주인을 두지 않는다(R3). 제 기록은 제 파일에 쓴다.
+    if MANIFEST.exists():
+        cur = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        if "datasets" in cur:
+            print(f"  ★ {MANIFEST.name} 은 ingest 소유다 — 안 덮는다. "
+                  f"{RUNLOG.name} 에 쓴다")
+    RUNLOG.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+                      encoding="utf-8")
 
     n_und = sum(1 for v in rec.values() if v.get("undeclared"))
     print(f"기록 {len(rec)}개 → {MANIFEST}")
