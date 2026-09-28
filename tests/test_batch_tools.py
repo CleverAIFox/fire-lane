@@ -721,3 +721,23 @@ def test_ci_wait_selftest_is_not_an_empty_net():
     r = subprocess.run(["bash", str(T / "ci_wait.sh"), "--selftest"],
                        capture_output=True, text=True, timeout=120)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_ci_wait_separates_red_from_not_mergeable():
+    """★ 「빨강이 없다」와 「밑동이 받아준다」는 다르다 (DECISIONS §282-1).
+
+    배치 D 에서 이 도구가 「초록 3 · 빨강 0」을 찍고 스쿼시가 거부됐다 —
+    같은 SHA 에 `contract-shared` 가 둘이었고 하나가 결론이 없었다.
+    """
+    src = (T / "ci_wait.sh").read_text(encoding="utf-8")
+    for fn in ("unresolved()", "required_of()", "open_runs()", "blocking()"):
+        assert fn in src, f"{fn} 이 없다 — 필수 검사 미해결을 못 본다"
+    # ★ `mergeStateStatus` 하나만 보면 승인 대기(main)에서 영원히 멈춘다.
+    #   **주석은 걷는다** — 「왜 그것을 안 쓰는가」를 적은 줄까지 위반으로 세면
+    #   사유를 못 적는다.
+    code = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))
+    assert "mergeStateStatus" not in code, (
+        "`mergeStateStatus` 를 직접 보면 승인 부족과 검사 미해결이 안 갈린다 — "
+        "릴리즈가 멈춘다. 필수 검사 목록과의 교집합으로 본다")
+    body = src[src.index("wait_ci() {"):src.index("selftest() {")]
+    assert "blocking " in body, "`wait_ci` 가 초록 직전에 미해결 필수 검사를 안 묻는다"

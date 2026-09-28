@@ -71,7 +71,10 @@ EXCEPTIONS: dict[str, int] = {
     #   「배치 도구가 규약을 지키는가」 한 물음의 사례 목록이고, 규약이 늘면
     #   같이 는다(`test_declaration_sync.py` 와 같은 사유). 둘로 가르면 새 규약을
     #   어느 파일에 적을지가 또 하나의 기억거리가 된다.
-    "tests/test_batch_tools.py": 723,
+    # ★ 2026-09-28 (DECISIONS §282-1). 723 → 743. 「초록이라 말하고 스쿼시가
+    #   거부됐다」를 무는 시험이다. 이 파일은 배치 도구 규약의 사례 목록이라
+    #   규약이 늘면 는다.
+    "tests/test_batch_tools.py": 743,
     # 코드 (상한 600)
     "tools/dms.py": 1574,
     "src/firelane/ingest.py": 646,

@@ -643,11 +643,11 @@
    "web/navi/src/ui/tokens.ts",
    "web/navi/test/clearance.test.ts"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "5cd2b4f10b7be5f3"
+   "ea651f165e20022d"
   ],
-  "sha": "c1cd95c0d6e6988a"
+  "sha": "6cb3d92fe549049c"
  },
  "DECISIONS/203": {
   "doc": "docs/DECISIONS.md",
@@ -1340,9 +1340,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "5acda688a725ddfc"
+   "3896b707c36ff9ec"
   ],
-  "sha": "f4922ced6df3f94d"
+  "sha": "c87d36241266062b"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -1423,9 +1423,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "f02fabb3d9fa91b3"
+   "48e16c052c720e80"
   ],
-  "sha": "6f1bcce11a91d4b2"
+  "sha": "64925991498b315b"
  },
  "DECISIONS/275": {
   "doc": "docs/DECISIONS.md",
@@ -1656,11 +1656,11 @@
    "tools/deadcheck.py",
    "tools/docx_check.py"
   ],
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "f9ae65836fe7d095"
+   "e2432eb3e1231433"
   ],
-  "sha": "3d268eca190cd77a"
+  "sha": "4e364a664a714141"
  },
  "DECISIONS/93": {
   "doc": "docs/DECISIONS.md",
@@ -2019,16 +2019,20 @@
   ],
   "kind": "read",
   "legacy": [
-   "ddc3ee8701e88452"
+   "11852a1a6071ec13"
   ],
-  "sha": "725e5e56f2638813"
+  "sha": "e9fc1c6cbf7dab74"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
   "files": [
    "tools/deadcheck.py"
   ],
-  "sha": "4253f41376232bdd"
+  "kind": "read",
+  "legacy": [
+   "fca96d2fee775659"
+  ],
+  "sha": "520efce873be353a"
  },
  "MASTER/17-1": {
   "doc": "docs/MASTER.md",
