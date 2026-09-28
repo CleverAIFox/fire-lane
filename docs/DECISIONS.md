@@ -1390,7 +1390,7 @@ CI 에 넣어두고 한 번도 통과한 적이 없었다. 실질 위험을 고�
 
 산출물 넷도 같이 지웠다. 봉인을 풀 도구가 없어 값을 쓸 수도 없었다.
 
-강제자  `tests/test_measurements.py`(오염 칸 — 우리 값을 가리고 재지 않으면 그 대조는 검증이 아니다). 네이버 봉인 CSV 는 지금 없다. 당시 `tests/test_fieldsheet.py` 가 받게 되어 있었는데 그 시험은 실측 집합과 함께 2026-09-28 에 삭제됐다(§291)
+강제자  `tests/test_measurements.py`(오염 칸 — 우리 값을 가리고 재지 않으면 그 대조는 검증이 아니다). 네이버 봉인 CSV 는 지금 없다. 그것을 받을 시험도 없다 — 실측 집합과 함께 2026-09-28 에 삭제됐다(§291). 쓰게 되면 그때 강제자를 세운다
 
 ## 43. 영상판정 인터페이스를 못박았다
 
@@ -1481,7 +1481,7 @@ MASTER §19 에 정본을 둔다.
 
 <!-- 묶음 구분: 2026-08-24 — 절 제목으로 쓰지 않는다 (PLAN §0-1) -->
 
-강제자  `tests/test_layers.py`(계층 선언 ↔ `paths.py` 실물 — `FIELD` 가 문서와 어긋나면 운다) · 당시 `tests/test_fieldsheet.py`(2026-09-28 삭제 · §291. 그 자리는 `tools/fieldseal.py` 가 든다)
+강제자  `tests/test_layers.py`(계층 선언 ↔ `paths.py` 실물 — `FIELD` 가 문서와 어긋나면 운다) · `tools/fieldseal.py`(`data/field` 지문 — 2026-09-28 에 삭제된 야장 시험의 자리를 물려받았다 · §291)
 
 ## 46. 경로 비용을 차량 기준으로 바꾼다
 
@@ -11500,7 +11500,7 @@ Mapbox 가 아예 없었다. 새 기계를 세팅하면 내비만 조용히 음�
 
 > 2026-09-22 · 오창준
 
-강제자  `web/navi/test/rules.test.ts`(여덟 — 규칙 없는 최단 · 금지 회전 우회와 불가피할 때 경고 · 골목 유턴으로 금지 회피 없음 · 반대 회전은 무관 · 알려진 일방통행 · 방향 모름 · 다가오는 규칙 · 발행 그래프 대조) · `web/navi/test/domain.test.ts`(회색 사유) · `tests/test_navi_graph_fresh.py::test_navi_graph_carries_traffic_rules` · `tests/test_batch_tools.py`(이어가기 다섯) · 당시 `tests/test_fieldsheet.py`(셋 · 2026-09-28 삭제 · §291). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+강제자  `web/navi/test/rules.test.ts`(여덟 — 규칙 없는 최단 · 금지 회전 우회와 불가피할 때 경고 · 골목 유턴으로 금지 회피 없음 · 반대 회전은 무관 · 알려진 일방통행 · 방향 모름 · 다가오는 규칙 · 발행 그래프 대조) · `web/navi/test/domain.test.ts`(회색 사유) · `tests/test_navi_graph_fresh.py::test_navi_graph_carries_traffic_rules` · `tests/test_batch_tools.py`(이어가기 다섯) (야장 시험 셋이 여기 있었고 2026-09-28 에 실측 집합과 함께 삭제됐다 · §291). 하위 넷은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 v0.33 뒤 데이터 활용을 점검하다가 **내비가 일방통행을 모른다**는 것이 드러났다. `graph.ts` 가
 모든 엣지를 양방향으로 넣었고, 1:1000 중심선의 일방통행 1,176선 위에 우리 구간이 올라 있었다.
@@ -17314,7 +17314,7 @@ CLI 전수에 모르는 깃발을 하나씩 줘 보다가(§283-2) 도구들이 
 
 > 2026-09-28
 
-강제자  `tools/widthcross.py`(`contradictions` · `quartiles` · `cross` · `selftest`) · `tests/test_widthcross.py` · `tools/verify.sh`「폭 교차대조」 · `sources.yaml::outputs.width_cross`. 하위 6이 이 칸을 물려받는다
+강제자  `tools/widthcross.py`(`contradictions` · `quartiles` · `cross` · `selftest`) · `tests/test_widthcross.py` · `tools/verify.sh`「폭 교차대조」 · `sources.yaml::width_cross`(outputs). 하위 6이 이 칸을 물려받는다
 
 ### 289-1. 검증 수단이 0 이라고 적어 두고 증인 둘을 뽑아만 놓고 있었다
 
@@ -17504,6 +17504,27 @@ F 배치는 전수 verify 에서 실패 셋으로 멈췄다.
   없으면 대장이 틀린 것이고, 추적 밖이면 안 지은 것이다. `docseal` 이 같은
   규율을 쓴다(§278-10 — 추적 밖은 도장의 기반이 못 된다). 그 구분을 넣자
   레이크 없는 기계에서도 초록이 되고, **레이크 있는 기계에서는 그대로 운다.**
+
+### 290-8. 예습이 워크트리에서 도는데 워크트리를 모르는 코드가 둘 있었다
+
+§290-7 로 환경을 맞추자 예습이 처음으로 끝까지 돌았고, **본 저장소에서는
+초록인 시험 셋**이 거기서 빨갰다. 둘 다 「워크트리」라는 상태를 모르는 코드다.
+
+    tools/fl.sh        `[ -d "$REPO_DIR/.git" ]` — 워크트리에서 `.git` 은 본
+                       저장소를 가리키는 **파일**이다. 그래서 「저장소가 없다」로
+                       죽고 `test_fl_picks_only_this_batch` · `test_fl_without_zip…`
+                       둘이 예습에서 영구히 빨갰다
+    tests/test_guards  `PYTHONPATH` 를 `tools` **하나로 덮어썼다.** 그러면
+                       `import firelane` 이 설치된 편집 패키지(= 본 저장소)로
+                       풀리고 `golden` 이 `relative_to(ROOT)` 에서 죽는다
+
+★ 둘 다 **본 저장소에서는 절대 발현하지 않는다.** 예습이 이제 실제로 도니까
+  드러난 것이고, §290-7 을 고치지 않았으면 영원히 안 보였다 —
+  **관문이 도는 자리에서 안 재면 그 관문은 그 자리를 모른다.**
+
+★ 고친 방향이 같다. 앞은 「저장소인가」를 **git 에게 직접 묻고**, 뒤는
+  「시험은 그것이 사는 체크아웃을 잰다」로 `src` 를 먼저 둔다. 둘 다 정본을
+  베끼지 않고 물어보는 쪽으로 갔다.
 
 ### 290-5. BASE 파일도 같은 결함이었다
 

@@ -690,7 +690,7 @@ wmax-survey    25% +1.32 · 중앙 +2.10 · 75% +3.90
 
 ★ **판정을 안 바꾼다.** `nfa_compare` 와 같은 자리이고 판정 지문 밖이다.
 
-강제자  `tools/widthcross.py`(`--selftest`) · `tests/test_widthcross.py`(폐포 밖 · 문턱 상수 재등장 금지 · 독립 원천 선언) · `tools/verify.sh`「폭 교차대조」 · `sources.yaml::outputs.width_cross`
+강제자  `tools/widthcross.py`(`--selftest`) · `tests/test_widthcross.py`(폐포 밖 · 문턱 상수 재등장 금지 · 독립 원천 선언) · `tools/verify.sh`「폭 교차대조」 · `sources.yaml::width_cross`(outputs)
 
 ### 4-1b. 현장 실측을 접은 근거
 
@@ -2715,7 +2715,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,239 전수 · **분모(blank) 0절** · 물림(inherit) 494절.
+★ **강제자 칸의 분모.** 절 1,240 전수 · **분모(blank) 0절** · 물림(inherit) 495절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

@@ -1548,7 +1548,15 @@ def test_golden_staleness_ignores_comments():
         #   가 잡는다. 정당한 지적이라 PYTHONPATH 로 넘긴다 —
         #   경로 조작을 코드에 심지 않는다는 규칙은 문자열 안에서도 같다.
         import os
-        env = dict(os.environ, PYTHONPATH=str(ROOT / "tools"))
+        # ★ 2026-09-28 (DECISIONS §290-8). 종전에는 `PYTHONPATH` 를 `tools`
+        #   **하나로 덮어썼다.** 그러면 `import firelane` 이 설치된 편집
+        #   패키지(= 본 저장소)로 풀리고, 워크트리에서 돌 때 `golden` 이
+        #   `relative_to(ROOT)` 에서 죽는다. 배달 예습이 워크트리에서 도므로
+        #   이 한 줄이 예습을 영구히 빨갛게 만들었다.
+        #   **시험은 그것이 사는 체크아웃을 재야 한다** — `src` 를 먼저 둔다.
+        env = dict(os.environ, PYTHONPATH=os.pathsep.join(
+            [str(ROOT / "tools"), str(ROOT / "src"),
+             *([os.environ["PYTHONPATH"]] if os.environ.get("PYTHONPATH") else [])]))
         r = subprocess.run(
             [sys.executable, "-c",
              "import golden; print(golden._staleness())"],

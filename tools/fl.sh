@@ -96,7 +96,11 @@ esac
 
 # ══ 0. 저장소 · INBOX ═════════════════════════════════════════
 step "0. 저장소"
-[ -d "$REPO_DIR/.git" ] || die "저장소가 없다 — $REPO_DIR"
+# ★ 2026-09-28 (DECISIONS §290-8). `-d .git` 은 **워크트리를 저장소가 아니라고 한다** —
+#   워크트리에서 `.git` 은 본 저장소를 가리키는 **파일**이다. 배달 예습이 워크트리에서
+#   돌므로 이 줄 하나가 `test_fl_*` 둘을 예습에서 영구히 빨갛게 만들었다.
+#   git 에게 직접 묻는다 — 「저장소인가」의 정본은 git 이다.
+git -C "$REPO_DIR" rev-parse --git-dir >/dev/null 2>&1 || die "저장소가 없다 — $REPO_DIR"
 cd "$REPO_DIR" || exit 1
 _IN_ENV="${FIRE_LANE_INBOX:-}"          # 명시한 환경변수가 .env 를 이긴다
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
