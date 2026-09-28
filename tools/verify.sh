@@ -745,6 +745,18 @@ step "자기검사 전수"   uv run python tools/selftests.py
 scope "data/field/* data/golden/field.fingerprint.json tools/fieldseal.py"
 step "실측 층 지문"   uv run python tools/fieldseal.py
 
+# ★ 2026-09-28 (DECISIONS §289). **오염 안 된 외부 대조.** `nfa_compare` 는
+#   튜닝 게이트로 써서 검증 수단이 아니다(MASTER §4-1). 방법이 독립인 증인
+#   둘(1:1,000 측량 도로폭 · 도로대장 명목폭)은 이미 대장에 있었고 아무도
+#   대조하지 않았다. 판정을 안 바꾼다 — `nfa_compare` 와 같은 자리다.
+# ci-exempt: tools/widthcross.py 파이프라인 산출물(processed/*.gpkg)을 읽는다. CI 에 없다
+if [ ! -f data/processed/segments_5186.gpkg ]; then
+    note "폭 교차대조" "산출물이 없다. 파이프라인을 먼저 돌려라"
+else
+    scope "src/firelane/seg/* tools/widthcross.py"
+    step "폭 교차대조"   uv run python tools/widthcross.py
+fi
+
 # ci-exempt: tools/lakecheck.py 레이크(2.5GB 외장)를 직접 훑는다. CI 에 없다
 scope "$CODE_SCOPE"
 step "레이크 선언↔실물" uv run python tools/lakecheck.py
@@ -929,8 +941,11 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   여유가 0.1%p 아래로 얇아지는 것은 정상이다 — 시험을 빼면 그 자리에서 우는 것이
 #   래칫의 뜻이다.
 # ★ 이력 (사유는 DECISIONS 가 든다) — 09-20 W10 23→24 · 09-23 §223-2 27→28 ·
-#   09-25 §258 28→32 · 09-27 §260 32→33(실측 33.03%).
-COV_MIN=33
+#   09-25 §258 28→32 · 09-27 §260 32→33(실측 33.03%) · 09-28 §290 33→34(실측 34.19%).
+# ★ F 배치가 이 권고 줄을 **읽고도 안 조였다.** 위 문단이 「올린 배치에서 같이
+#   조인다」고 적어 두었는데 그대로 흘렸다 — 매번 뜨는 줄이 안 읽히는 줄이 된다는
+#   그 문단의 예고가 한 배치 뒤에 맞았다.
+COV_MIN=34
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."

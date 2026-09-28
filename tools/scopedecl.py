@@ -90,7 +90,7 @@ MIN_FILES = 3
 GAP_EXEMPT: dict[tuple[str, str, str], str] = {}
 
 # ── ① 래칫. 오늘 값. **내려가는 쪽으로만.**
-NO_DECL = 152
+NO_DECL = 150
 
 # ── ③ 래칫. 오늘 값. **올라가는 쪽으로만.**
 # ★ 2026-09-25. 15 → 16. `tools/cost_inputs.py` 가 `--selftest` 를 갖고 왔다
@@ -109,7 +109,7 @@ NO_DECL = 152
 # ★ 2026-09-28 (PLAN W13-7 · DECISIONS §288). 29 → 30. `tools/fieldseal.py` —
 #   재취득 불가 층의 무결성 지문. 판별식이 바뀜·사라짐·새로 생김 셋을
 #   실제로 가르는지 자기검사가 문다.
-SELFTEST_MIN = 30
+SELFTEST_MIN = 32
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)
 

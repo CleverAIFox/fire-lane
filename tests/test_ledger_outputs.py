@@ -276,8 +276,6 @@ def test_consumers_actually_read_it():
           nfa_compare             guards.py 는 주석 두 줄뿐
           route_vehicle           실제 독자는 publish_web.py
           hydrant_point           contract.py 는 raw 를 보는 도구다
-          obs_points·field_sample fieldsheet.md 는 **같은 생성기의 형제
-                                  산출물**이지 소비자가 아니다
 
       영향 분석이 이 표를 근거로 「이것을 지우면 누가 깨지나」를 답한다.
       표가 거짓이면 **지워도 되는 것을 지키고, 지키던 것을 지운다.**

@@ -435,6 +435,41 @@ NO_CONTRACT_RATCHET = 36
 #: (`csv_table` · `raw_only`)는 적을 근거가 없으므로 전수는 목표가 아니다.
 CRS_DECLARED_RATCHET = 35
 
+# ── 실물 갈래의 래칫 ──────────────────────────────────────────
+#: 실측 2026-09-28, 레이크 있는 기계(F 배치 전수 verify [49/71]). **72종 · 실패 8 · 경고 51.**
+#:
+#: ★ 이 수를 왜 래칫으로 두는가. 이 단계를 F 에서 `verify.sh` 에 처음 붙였고,
+#:   처음 켜자마자 빨갰다. 그 빨간불은 **이 배치가 만든 회귀가 아니라 원래
+#:   그랬던 것을 처음 재서 본 것**이다. 고치려면 대장 72종을 실물과 하나씩
+#:   맞춰야 하고 그것은 한 배치의 일이 아니다.
+#:
+#: ★ 그런데 영구히 빨간 관문은 **꺼진 관문보다 나쁘다.** 사람이 그 빨강을
+#:   풍경으로 만들고, 그 옆에서 진짜 회귀가 지나간다(§69 와 같은 자리).
+#:   그래서 「지금 값」을 기록하고 **늘면 울게** 한다. 이 저장소가
+#:   `suppress` · `gate_parity` · 커버리지에서 이미 쓰는 규약이다.
+#:
+#: ★ 래칫은 **목표가 아니다.** 8 과 51 은 갚아야 할 빚이고 PLAN 이 그 줄을 든다.
+#:   줄면 기록을 조이라고 운다 — 느슨해진 래칫은 초록으로 위장한다.
+REAL_FAIL_RATCHET = 8
+REAL_WARN_RATCHET = 51
+
+
+def real_verdict(nf: int, nw: int) -> tuple[int, list[str]]:
+    """전수 갈래의 판정. **키를 짚어 부른 것에는 안 쓴다** — 그때는 정확히 그 종이다."""
+    say: list[str] = []
+    rc = 0
+    for what, got, rat, name in (("실패", nf, REAL_FAIL_RATCHET, "REAL_FAIL_RATCHET"),
+                                 ("경고", nw, REAL_WARN_RATCHET, "REAL_WARN_RATCHET")):
+        if got > rat:
+            say.append(f"✗ {what} {got} — 기록 {rat} 보다 늘었다. **이 배치가 늘렸다**")
+            rc = 1
+        elif got < rat:
+            say.append(f"★ {what} {got} 로 줄었다 — `{name}` 을 {got} 으로 조여라."
+                       f" 안 조이면 되돌아간다")
+        else:
+            say.append(f"  {what} {got} = 래칫 {rat} (갚아야 할 빚이다 · PLAN)")
+    return rc, say
+
 
 def declared_issues(ds: dict) -> tuple[list[str], list[str], int, int]:
     """대장 선언 자체만 본다. **실물을 안 읽는다** → CI 에서 돈다.
@@ -540,7 +575,16 @@ def main() -> int:
         print("★ 대장과 실물이 다르다. ingest 를 돌리기 전에 맞춰라.")
         print("  실물이 옳으면 대장을 고친다 — 코드가 대장을 따르는 것이지")
         print("  대장이 무조건 맞다는 뜻이 아니다.")
-    return 1 if (nf or (a.strict and nw)) else 0
+
+    # ★ 키를 짚어 부른 것은 **정확히 그 종의 판정**이다. 래칫을 끼우면
+    #   「내가 고친 그 한 종이 여전히 깨졌다」가 초록으로 나온다.
+    if a.keys or a.strict:
+        return 1 if (nf or (a.strict and nw)) else 0
+    rc, say = real_verdict(nf, nw)
+    print()
+    for line in say:
+        print(line)
+    return rc
 
 
 if __name__ == "__main__":

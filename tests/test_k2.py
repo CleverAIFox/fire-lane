@@ -253,7 +253,10 @@ def test_verify_skips_are_real_skips():
     allowed = {"내비 환경 = CI", "내비 린트", "내비 타입 검사", "내비 단위 시험",
                "파이프라인 전량", "golden 판정 불변", "golden 게이트 해제 경로",
                "커밋된 web/data 가 최신인가",
-               "취입 계약 실물", "대장 스키마↔실물"}
+               "취입 계약 실물", "대장 스키마↔실물",
+               # ★ 2026-09-28 (§289). 파이프라인 산출물(processed/*.gpkg)을 읽는다.
+               #   레이크 없는 기계에서는 산출물이 없다 — CI 도 같다.
+               "폭 교차대조"}
     assert set(names) <= allowed, f"생략 사유가 새로 생겼다 — 못 도는 조건인지 보고 여기 적는다: {sorted(set(names) - allowed)}"
     brief = (ROOT / "tools/merge_batch.sh").read_text(encoding="utf-8")
     assert "tools/release_brief.py --base main --md" in brief, "release_brief 가 릴리즈 흐름에서도 빠졌다 — 표가 사라진다"
