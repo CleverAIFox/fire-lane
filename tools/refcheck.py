@@ -14,7 +14,7 @@ FL_DATA_MIGRATION — git 밖 실물과 원자적으로 움직인다
 
     2026-08-24  계층 선언에 interim 이 없어 도구가 SSD 루트에 떨궜다
     2026-08-25  대장이 `.hwpx|.pdf` 를 한 항목으로 봐 hits[0] 이 뒤집혔다
-    2026-08-26  대장 consumers 가 `web/app.js` 를 가리켰다(실물은 js/data.js)
+    2026-08-26  대장 consumers 가 당시 `web/app.js` 를 가리켰다(실물은 js/data.js)
     2026-08-26  개명 뒤 대장 글롭 넷이 0건이 됐다. 조용했다
     PLAN #36    MASTER 가 추적되지 않는 nfa_compare.json 을 가리킨다
 

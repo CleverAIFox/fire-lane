@@ -127,3 +127,62 @@ def test_forbidden_strings_are_read_from_the_message_not_the_diff(tmp_path: Path
 def test_the_forbidden_list_is_not_empty():
     """★ 대장이 비면 통과가 아니라 **볼 것이 없음**이다(`deadcheck ③`)."""
     assert D.FORBIDDEN, "`FORBIDDEN` 이 비었다"
+
+
+# ── ⑥ 스윕 채집과 기준선 대조 (§290-6) ───────────────────────────
+# ★ `deliver.py` 가 상한을 또 넘어 이 블록이 여기로 왔다. 순수해서 시험이
+#   직접 부를 수 있고, 그것이 옮긴 이유다 — 종전에는 `deliver --selftest` 만
+#   들었고 그 자기검사는 `bad.append` 목록이라 **어느 팔이 죽었는지** 안 보였다.
+SWEEP_OUT = (
+    "\x1b[36m── 취입 계약 실물\x1b[0m\n\x1b[33m   생략\x1b[0m  레이크가 없다\n"
+    "\n── 폭 교차대조\n   생략  산출물이 없다. 파이프라인을 먼저 돌려라\n"
+    "\n── pytest\n   OK  1825 passed\n"
+    "\n  실패 2\n    ✗ pytest                      1 failed\n"
+    "    ✗ 문서 정합 도장              stamp --only <절>\n")
+
+
+def test_sweep_verdict_reads_both_the_red_and_the_unexercised():
+    red, skipped = D.sweep_verdict(1, SWEEP_OUT)
+    assert red == {"pytest", "문서 정합 도장"}
+    assert set(skipped) == {"취입 계약 실물", "폭 교차대조"}
+    assert "레이크" in skipped["취입 계약 실물"]
+
+
+def test_a_passing_step_is_not_counted_as_unexercised():
+    """★ 초록을 생략으로 세면 **못 돈 축** 칸이 거짓이 된다."""
+    assert not D.sweep_verdict(0, "── 이름\n   OK  잘 됐다\n")[1]
+
+
+def test_a_dead_sweep_is_never_zero_red():
+    """★ 죽었는데 이름을 못 읽으면 **0건이 아니라 한 건**이다(빈 그물 금지)."""
+    red, _ = D.sweep_verdict(2, "세그멘테이션 오류")
+    assert len(red) == 1 and "rc=2" in next(iter(red))
+    assert not D.sweep_verdict(0, "다 초록이다")[0]
+
+
+def test_the_lake_only_excuse_needs_its_predicate_to_hold(tmp_path):
+    frag = next(iter(D.LAKE_ONLY))
+    assert D.excused(frag, tmp_path), "레이크가 없는데 면제를 안 해준다"
+    (tmp_path / "data" / "raw").mkdir(parents=True)
+    assert D.excused(frag, tmp_path) is None, "레이크가 있는데 면제해준다 — 판별식이 죽었다"
+    assert D.excused("test_아무거나", tmp_path) is None
+
+
+def test_only_what_this_batch_newly_reddened_is_refused(tmp_path):
+    assert D.new_red({"a::b"}, {"a::b"}, tmp_path, "시험") == []
+    with pytest.raises(SystemExit):
+        D.new_red({"a::b"}, {"a::b", "c::d"}, tmp_path, "시험")
+
+
+def test_the_relock_axes_are_only_forgiven_when_relock_was_declared(tmp_path):
+    axis = next(iter(D.RELOCK_AXES))
+    assert "새 빨간불 0" in D.diff_sweep(set(), {axis}, tmp_path, relock=True)
+    with pytest.raises(SystemExit):
+        D.diff_sweep(set(), {axis}, tmp_path, relock=False)
+
+
+def test_the_relock_axes_are_not_empty():
+    """★ 대장이 비면 통과가 아니라 **볼 것이 없음**이다(`deadcheck ③`)."""
+    assert D.RELOCK_AXES and D.LAKE_ONLY
+    for why in D.RELOCK_AXES.values():
+        assert len(why) > 30, "면제에 사유가 없다 — 사유 없는 면제는 도장 찍기다"

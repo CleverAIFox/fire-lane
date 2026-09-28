@@ -35,6 +35,114 @@ BODY_CHECK = "tools/pr_body_check.py"
 FORBIDDEN = ("Co-Authored-By: Claude", "Claude-Session:")
 
 
+# ── ⑥ 스윕 채집과 기준선 대조 ───────────────────────────────────
+# ★ 2026-09-28 (DECISIONS §290-6). `deliver.py` 가 **또** 상한(600)을 넘었다 —
+#   657줄. 넘은 만큼이 이 블록이고, 이 파일의 머리말이 적은 기준과 꼭 맞는다:
+#   **파일 이름과 글자만 보는 순수 함수**라 레이크도 git 도 안 든다. 저쪽에
+#   남은 것은 「워크트리를 떠서 실제로 돌리는 일」뿐이고, 그 둘이 갈리면
+#   시험이 판별식을 직접 부를 수 있다.
+#
+#: 화면 색. 이름을 정규식으로 잡으려면 먼저 걷어야 한다.
+ANSI = re.compile(r"\x1b\[[0-9;]*m")
+#: `verify.sh` 요약의 빨간 줄.
+FAIL_LINE = re.compile(r"^\s+✗\s+(.+?)(?:\s{2,}|$)", re.M)
+#: `verify.sh` 의 `note()` 가 찍는 두 줄 — `── <이름>` 다음 줄이 `생략  <사유>`.
+SKIP_LINE = re.compile(r"^── (.+?)\s*\n\s+생략\s+(.+?)\s*$", re.M)
+
+#: 레이크 없는 기계에서만 빨갛다고 인정하는 것.
+#: (노드 id 조각, 사유, 판별식). **판별식이 거짓인데 빨갛다면 거부한다.**
+LAKE_ONLY: dict[str, tuple[str, str]] = {
+    "test_published_polygons_are_well_formed":
+        ("커밋된 web/data 가 낡았다 — 발행은 레이크 기계에서만 된다", "no_lake"),
+}
+
+#: 재잠금이 선언된 배치에서 **빨간 것이 결과인** 축. 사유를 함께 든다.
+RELOCK_AXES = {
+    "golden 판정 불변":
+        "판정 폐포의 코드 지문이 움직였다는 뜻이고, 그것이 곧 재잠금이 필요한 이유다. "
+        "`golden.py stale` 이 rc 로 말할 때만 받는다 — 사람이 적는 값이 아니다",
+    "커밋된 web/data 가 최신인가":
+        "재잠금은 상류를 다시 돌리므로 커밋본이 그 뒤에 온다. 같은 실행에서 커밋된다",
+}
+
+
+def no_lake(root: Path) -> bool:
+    """레이크가 없는 기계인가. `LAKE_ONLY` 의 판별식이다."""
+    return not (root / "data" / "raw").is_dir()
+
+
+PREDICATES = {"no_lake": no_lake}
+
+
+def sweep_verdict(rc: int, out: str) -> tuple[set[str], dict[str, str]]:
+    """`verify.sh` 의 출력에서 **빨간 축**과 **이 기계에서 아예 못 돈 축**을 걷는다.
+
+    ★ 2026-09-28 (DECISIONS §290-3). F 배치가 빨갛게 머지 직전까지 갔고 실패 셋 중
+      **둘이 「이 기계에서 못 도는 단계」였다** — 취입 계약 실물(레이크 필요)과
+      CLI 표면(레이크가 없으면 도구가 일을 시작하기 전에 죽어 초록으로 보였다).
+      기준선 대조는 그것을 못 잡는다: 밑동에서도 안 돌고 배치에서도 안 도니
+      **새 빨간불 0** 이 정직하게 나온다. 빠진 것은 비교가 아니라 **범위**다.
+
+    ★ 그래서 **못 돈 목록을 배달물에 적는다.** 없는 것을 있다고 하지 않기 위해서고,
+      받는 쪽이 「이 배치는 이 다섯 축을 증명하지 않았다」를 읽고 시작하게 하려고다.
+      `note_hard` 로 덮개 없는 생략은 이미 실패로 찍히므로 여기 남는 것은
+      **덮개가 선언된 생략**뿐이다 — 그래도 이 배치가 증명한 것은 아니다.
+    """
+    out = ANSI.sub("", out)
+    names = set(FAIL_LINE.findall(out))
+    if rc and not names:
+        # ★ 죽었는데 이름을 못 읽었다. **0건으로 세면 빈 그물이다.**
+        names.add(f"verify.sh 가 rc={rc} 로 죽었는데 요약을 못 읽었다 — {out.strip()[-300:]}")
+    return names, dict(SKIP_LINE.findall(out))
+
+
+def excused(name: str, wt: Path) -> str | None:
+    """**판별식이 참일 때만** 면제다. 거짓이면 사유가 있어도 안 봐준다."""
+    for frag, (why, pred) in LAKE_ONLY.items():
+        if frag in name:
+            return why if PREDICATES[pred](wt) else None
+    return None
+
+
+def new_red(base: set[str], after: set[str], wt: Path, label: str) -> list[str]:
+    """**이 배치가 새로 빨갛게 만든 것**만. 면제는 판별식이 참일 때만 붙는다."""
+    fresh = sorted(after - base)
+    un = [f for f in fresh if not excused(f, wt)]
+    if un:
+        raise SystemExit(f"★ 이 배치가 {label} 를 새로 빨갛게 만들었다 — 배달하지 않는다\n  "
+                         + "\n  ".join(un))
+    return fresh
+
+
+def diff_sweep(base: set[str], after: set[str], wt: Path,
+               relock: bool = False) -> str:
+    # ★ 재잠금을 **도구가 필요하다고 말한** 배치에서는 위 축이 빨간 것이 결과다.
+    #   사람이 「재잠금 배치니까요」라고 적어서 넘기는 것이 아니라, `golden.py stale`
+    #   의 rc 가 참일 때만 받는다. 거짓이면 그대로 운다.
+    if relock:
+        after = after - set(RELOCK_AXES)
+    fresh = new_red(base, after, wt, "스윕")
+    bits = [f"새 빨간불 {len(fresh)}"]
+    if base:
+        bits.append(f"밑동에서 이미 빨감 {len(base)}({' · '.join(sorted(base))})")
+    if fixed := sorted(base - after):
+        bits.append(f"이 배치가 고침 {len(fixed)}({' · '.join(fixed)})")
+    if relock:
+        bits.append(f"재잠금 선언으로 받은 축 {len(RELOCK_AXES)}")
+    return " · ".join(bits)
+
+
+def diff_tests(base: tuple[set[str], str], after: tuple[set[str], str],
+               wt: Path) -> str:
+    fresh = new_red(base[0], after[0], wt, "시험")
+    bits = [after[1], f"새 빨간불 {len(fresh)}"]
+    if base[0]:
+        bits.append(f"밑동에서 이미 빨감 {len(base[0])}")
+    if fixed := sorted(base[0] - after[0]):
+        bits.append(f"이 배치가 고침 {len(fixed)}")
+    return " · ".join(bits)
+
+
 def bodies_missing(names: list[str]) -> list[str]:
     """배달물에 `PR_BODY.md` 가 있는가.
 

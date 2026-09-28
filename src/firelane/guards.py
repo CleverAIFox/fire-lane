@@ -6,7 +6,7 @@ guards.py — 파이프라인 방어 로직 정본.
     python -m firelane.guards coverage     공간 커버리지 검사만 단독 실행
 
 ── 왜 이 파일이 생겼나 ─────────────────────────────────────────
-이 방어들은 2026-08-18 까지 `tools/stale_guard_20260818.py` 가 ingest.py 와
+이 방어들은 2026-08-18 까지 당시 `tools/stale_guard_20260818.py`(일회성 패처 · 삭제됨)가 ingest.py 와
 segments.py 에 **문자열로 주입한 코드 덩어리**였다. 주입된 코드는
 
     1. 테스트할 수 없다     — segments.py 는 import 만 해도 geopandas 를 끌고 온다
@@ -388,8 +388,8 @@ def warn_direct_call(mod: str, *, doc: str | None = None) -> None:
     ── `doc` 을 주면 모르는 깃발도 거절한다 (2026-09-28 · §283-2) ──
     단계 모듈은 인자를 안 받는다. 그런데 `sys.argv` 를 **아무도 안 봐서**
     `--이런깃발은없다` 를 줘도 조용히 무시하고 **일을 했다** — `segments`
-    는 25초를 돌았고 `sample_design` 은 `data/field`(재생성 불가 층)를
-    덮어썼다. 직접 호출을 막지 않는다는 것과 **알아들을 수 없는 호출을
+    는 25초를 돌았고 당시의 `sample_design`(2026-09-28 삭제 · §291)은
+    `data/field`(재생성 불가 층)를 덮어썼다. 직접 호출을 막지 않는다는 것과 **알아들을 수 없는 호출을
     받아들인다**는 것은 다르다.
 
     ★ 옵트인이다. `ingest` 는 파이프라인에서 `--keep-work` · `--split` 을

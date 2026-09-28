@@ -33,7 +33,10 @@ PARAM 없음
 """
 from __future__ import annotations
 
+import ast
+import functools
 import re
+import subprocess
 from pathlib import Path
 
 import docparse
@@ -326,3 +329,80 @@ def test_fence_handling_has_exactly_one_home():
         "펜스 처리의 집이 둘 이상이다:\n" + "\n".join(bad) + "\n\n"
         "  `tests/docparse.prose_lines` 를 써라. 규칙이 갈리면 같은 문서에\n"
         "  대해 시험마다 다른 답이 나온다.")
+
+# ── 머리말이 대는 **파일**이 실재하는가 (2026-09-28 · DECISIONS §290-4) ──
+# ★ 도구 머리말은 강제자·독자·시험을 이름으로 댄다. 그런데 그 이름이 실재하는지를
+#   보는 곳이 없었다. `tools/refcheck.py` ⑦ 은 `docs/` 와 `README.md` 만 본다.
+#   그래서 `deliver.py` 가 **둘**을 거짓으로 대고 있었다 —
+#     「받는 쪽 `go.sh` 가 제가 잰 값과 대조한다」   그런 코드가 0개였다
+#     「`tests/test_expect_contract.py` 가 본다」    그런 파일이 없었다
+#   둘 다 **없는 강제자를 있다고 적은 것**이고, 머리말이 검사 밖이라 조용했다.
+#: 머리말 안의 저장소 경로. 백틱 안이든 밖이든 잡는다.
+# ★ 확장자는 **긴 것부터** 적는다. `js` 를 앞에 두면 `foo.json` 이 `foo.js` 로
+#   잘려 「없는 파일」이 우수수 나온다 — 첫 실행에서 실제로 그랬다.
+HEAD_PATH = re.compile(r"(?:tools|tests|src|web|docs|data|\.github)/[A-Za-z0-9_./-]+"
+                       r"\.(?:jsonl|json|yaml|yml|toml|mjs|tsx|ts|js|py|sh|md)\b")
+#: 자리표 · 예시 이름. `refcheck` 와 같은 어휘를 쓰고 늘리지 않는다.
+HEAD_PLACEHOLDER = ("x", "X", "xxx", "yyy", "zzz", "foo", "bar", "baz")
+#: 그 줄이 「지금 그렇다」가 아니라 「그때 그랬다」를 말하면 뺀다. `refcheck` ⑦ 과 같은 낱말.
+HEAD_PAST = ("삭제", "폐기", "지웠다", "되돌렸다", "없앴다", "철거",
+             "종전", "당시", "옛 ", "없었다")
+
+
+@functools.cache
+def _ignored(rel: str) -> bool:
+    """`.gitignore` 가 덮는 경로인가. 산출물은 지금 없는 것이 정상이다."""
+    return subprocess.run(["git", "check-ignore", "-q", rel], cwd=ROOT,
+                          check=False, timeout=30).returncode == 0
+
+
+def _docstring(p: Path) -> str:
+    """파일 머리말. 없으면 빈 글자열."""
+    try:
+        mod = ast.parse(p.read_text(encoding="utf-8", errors="ignore"))
+    except SyntaxError:
+        return ""
+    return ast.get_docstring(mod) or ""
+
+
+def test_tool_headers_do_not_cite_a_file_that_does_not_exist():
+    """머리말이 강제자·독자로 대는 경로가 실재하는가."""
+    seen = bad = 0
+    miss = []
+    # ★ `src` 까지 본다. 판정 모듈 머리말도 강제자를 이름으로 댄다 — `deadcheck ⑤`
+    #   가 「`src` 74개가 대상 밖이다」로 첫 실행에서 잡았고, 그 지적이 맞다.
+    for p in (sorted((ROOT / "tools").glob("*.py"))
+              + sorted((ROOT / "tests").glob("*.py"))
+              + sorted((ROOT / "src").rglob("*.py"))):
+        head = _docstring(p)
+        if not head:
+            continue
+        for line in head.splitlines():
+            if any(k in line for k in HEAD_PAST):
+                continue                        # 그때 그랬다고 적은 줄이다
+            for m in HEAD_PATH.findall(line):
+                seen += 1
+                if Path(m).stem in HEAD_PLACEHOLDER or (ROOT / m).exists():
+                    continue
+                # ★ **산출물과 사람이 주는 입력은 지금 없는 것이 정상이다.**
+                #   `.gitignore` 에게 직접 묻는다 — 규칙을 여기 베껴 적으면
+                #   정본이 둘이 된다(`refcheck` ⑦ 과 같은 판단).
+                if _ignored(m):
+                    continue
+                bad += 1
+                miss.append(f"  {p.relative_to(ROOT)}  →  {m}")
+    # ★ 카나리아 — 0건을 통과로 읽으면 빈 그물이다. 머리말은 경로를 많이 댄다.
+    assert seen > 50, f"머리말에서 경로를 {seen}개만 뽑았다 — 수집이 죽었다"
+    assert not miss, (
+        "도구 머리말이 **없는 파일**을 강제자·독자로 댄다:\n" + "\n".join(sorted(miss))
+        + "\n\n  없는 소비자를 있다고 적는 것이 §290-4 의 결함이다."
+        "\n  만들거나, 지웠으면 그 줄에 `삭제` · `종전` · `당시` 를 적어라.")
+
+
+def test_the_header_path_probe_bites():
+    """★ 합성 입력으로 문다 — 통과가 0건이라 그물의 생사를 따로 확인한다."""
+    assert HEAD_PATH.findall("`tests/test_expect_contract.py` 가 본다") == \
+        ["tests/test_expect_contract.py"]
+    assert HEAD_PATH.findall("강제자  tools/verify.sh 「폭 교차대조」") == ["tools/verify.sh"]
+    assert not HEAD_PATH.findall("go.sh 가 대조한다"), "저장소 경로가 아닌 이름을 잡는다"
+    assert any(k in "종전에는 tools/없다.py 였다" for k in HEAD_PAST)
