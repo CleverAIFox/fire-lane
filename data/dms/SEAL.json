@@ -1,20 +1,20 @@
 {
- "sealed_at": "2026-09-28T00:59:40+09:00",
- "commit": "d3a3e0d",
- "tool": "ef5fb69625deac11",
+ "sealed_at": "2026-09-28T09:50:07+09:00",
+ "commit": "5aea17d",
+ "tool": "fe23825e0b732fa1",
  "tools": {
   "tools/deadcheck.py": "2494ab4ab1e5b2a2",
   "tools/dms.py": "b39bbc300b1280b1",
   "tools/dupcheck.py": "50e4756f13fd85fe",
   "tools/env_check.py": "1cd9676a084d78cc",
-  "tools/verify.sh": "be816a0b5af8eb21"
+  "tools/verify.sh": "3242262f8fee30c9"
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "09eeba65857b33b1",
-  "docs/DECISIONS.md": "c8ebd9a565d68ef9",
-  "docs/PLAN.md": "6253414368e1da37",
-  "README.md": "c6a344617528b6dc"
+  "docs/MASTER.md": "9ce29050ce0a9799",
+  "docs/DECISIONS.md": "1f19cfb902c539af",
+  "docs/PLAN.md": "ce000e342f4496a5",
+  "README.md": "18ccf9dc340afa50"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -931,13 +931,13 @@
    "title": "14-7. 데이터 실물은 저장소에 없다"
   },
   "MASTER/15": {
-   "h": "1074592edf773b36",
+   "h": "1f13259ff98655ab",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "15. 대외 산출물"
   },
   "MASTER/15-1": {
-   "h": "c45947b43e733814",
+   "h": "2336c6b5f892b147",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "15-1. 말할 수 있는 것"
@@ -973,7 +973,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "73db29f9af4d3fe2",
+   "h": "f40ec0e6c2436187",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -1237,7 +1237,7 @@
    "title": "21. 감사 축 · 봉인"
   },
   "MASTER/21-0": {
-   "h": "40f50d72fa6d6e11",
+   "h": "36a515ca56e600b4",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "21-0. 문서 정합 도장 — 뜻 층은 **확인 기록**으로 닫는다"
@@ -2395,7 +2395,7 @@
    "title": "97-1. 폐기 기록을 죽은 참조로 세면 회고를 못 쓴다"
   },
   "DECISIONS/97-2": {
-   "h": "70c8fcf8753e5598",
+   "h": "476ca44fd4391623",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "97-2. 대장이 쓰는 방식과 다르게 대조했다"
@@ -2647,13 +2647,13 @@
    "title": "108-1. 포괄 소유자를 잘못 넣었다"
   },
   "DECISIONS/108-2": {
-   "h": "3ce6f641ff96388e",
+   "h": "e3cc1f7ecec9350a",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "108-2. 그림에 강제자가 캡션뿐이었다"
   },
   "DECISIONS/109": {
-   "h": "645b2c2262b392e6",
+   "h": "99aba5a4cdb8c613",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "109. 승인이 형식인 이유 — 리뷰어가 볼 것이 없었다"
@@ -2701,13 +2701,13 @@
    "title": "111. 넘쳐도 그려진다 — 그래서 아무도 모른다"
   },
   "DECISIONS/111-1": {
-   "h": "ef2904fa8f312e94",
+   "h": "ab0f8107804c3469",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "111-1. 좌표가 코드에 있는 한 이 검사가 그 자리를 대신한다"
   },
   "DECISIONS/111-2": {
-   "h": "26a20cd301a35492",
+   "h": "c70ef23dbd10f4dc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "111-2. 레이아웃 엔진으로 갈 조건을 미리 적는다"
@@ -3013,7 +3013,7 @@
    "title": "134. parts` 가 두 뜻이다"
   },
   "DECISIONS/135": {
-   "h": "d9af4868f3e79ce8",
+   "h": "43d56b5dde1037a0",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "135. 그림 생성 파이"
@@ -5371,7 +5371,7 @@
    "title": "222-8. `feeds` 를 채우는 도구가 **빌드 산출물**을 소비자로 셌다"
   },
   "DECISIONS/223": {
-   "h": "f79a6fd27d99bea2",
+   "h": "fd0043739fb0a006",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "223. ortho 봉인지 · 커버리지 28 · 회차 한 절 (판정 불변)"
@@ -5395,7 +5395,7 @@
    "title": "223-3. 「좌표 변환이 틀려도 아무도 모른다」 — PLAN §1 #12"
   },
   "DECISIONS/223-4": {
-   "h": "3f310ba2617a80b4",
+   "h": "2fd9c52d33c3f7b3",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "223-4. 회차를 돌렸는데 한 절만 찼다 — 후보 정밀도가 낮다"
@@ -6295,7 +6295,7 @@
    "title": "257-1. 주석에 적은 빈 표현식이 워크플로 린트를 죽였다"
   },
   "DECISIONS/257-2": {
-   "h": "5fc56b15fa0f0b47",
+   "h": "35e474607f880aec",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "257-2. 배선 검사가 「부르는가」만 보고 「인자가 맞는가」를 안 봤다"
@@ -6739,7 +6739,7 @@
    "title": "273-10. 절을 하나 붙였더니 직전 절의 도장이 무효가 됐다"
   },
   "DECISIONS/273-11": {
-   "h": "a298b9587cd1743f",
+   "h": "bee31ce9d5a0048a",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "273-11. 손목록을 유도로 바꿨는데, 그 유도가 또 이름보다 좁았다"
@@ -6888,6 +6888,108 @@
    "doc": "docs/DECISIONS.md",
    "title": "276-6. 도구가 **안 잰 것**을 잰 것처럼 말했다 — 이 절을 쓰면서"
   },
+  "DECISIONS/277": {
+   "h": "9b9e04522f9c75b9",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "277. 미날인 470절을 갈랐다 — 「읽었다」와 「안 움직였다」는 다른 주장이다"
+  },
+  "DECISIONS/277-1": {
+   "h": "1b22aa5fcb4a46be",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "277-1. 「사람이 읽었다」와 「안 움직였다」는 다른 주장이다"
+  },
+  "DECISIONS/277-2": {
+   "h": "9648938769398e3d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "277-2. 인자 없는 `stamp` 가 **전부** 찍었다"
+  },
+  "DECISIONS/277-3": {
+   "h": "ca798b73fbd5c517",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "277-3. 문서 mtime 으로 재면 **전부** 「코드보다 나중」이 된다"
+  },
+  "DECISIONS/277-4": {
+   "h": "c528d8d77bc27772",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "277-4. 읽을 줄에는 순서가 있다"
+  },
+  "DECISIONS/278": {
+   "h": "8aeae2e8717229db",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "278. 밖이 읽는 문서에 **형태**를 보는 강제자가 없었다"
+  },
+  "DECISIONS/278-1": {
+   "h": "f733fa6b2f02ea1f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-1. 「없는 것」을 보는 검사가 빠지는 자리"
+  },
+  "DECISIONS/278-2": {
+   "h": "5ce238e1c5eff060",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-2. 문서 말투 — `tools/tonecheck.py`"
+  },
+  "DECISIONS/278-3": {
+   "h": "d60738205fc4718e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-3. 기획서에 개요 층이 없었다 — `tools/docstyle.py`"
+  },
+  "DECISIONS/278-4": {
+   "h": "f6d69313d7edef43",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-4. 그림이 겹쳐 있었고, 고칠 수가 없었다"
+  },
+  "DECISIONS/278-5": {
+   "h": "79d2f3f05dded5cf",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-5. 배달 패치 이름이 출처를 안 졌다"
+  },
+  "DECISIONS/278-6": {
+   "h": "7895def9c56c19db",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-6. CI 대기가 로그의 66%였다 — 소음도 결함이다"
+  },
+  "DECISIONS/278-7": {
+   "h": "871fe22934f4afae",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-7. 편마다 다른 지도는 엉망을 코드로 박제한 것이다"
+  },
+  "DECISIONS/278-8": {
+   "h": "fc09894b96ca2fd2",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-8. 「빠졌나」만 보는 검사는 「틀렸나」를 통과시킨다"
+  },
+  "DECISIONS/278-9": {
+   "h": "703cb5a4026d1a1e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-9. 도구 셋의 죽은 참조를 고치면서 문서 쪽 짝을 안 고쳤다"
+  },
+  "DECISIONS/278-10": {
+   "h": "15a7c9ee5d291b85",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-10. 도장이 **매번 바뀌는 생성물**을 기반으로 삼고 있었다"
+  },
+  "DECISIONS/278-11": {
+   "h": "99a997cef75a119e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "278-11. 닫은 행이 들고 있던 수는 **갈 곳을 정해야 한다**"
+  },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
    "state": "none",
@@ -6907,10 +7009,10 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN/1": {
-   "h": "5605442964485832",
+   "h": "05edbec34f0f8e43",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "1. 남은 일 — 104행"
+   "title": "1. 남은 일 — 100행"
   },
   "PLAN/1-23": {
    "h": "45f802835c7c288a",
@@ -7165,7 +7267,7 @@
    "title": "파이프라인"
   },
   "README/도구": {
-   "h": "7f38d6115a5ea5d5",
+   "h": "a6af5deae425e701",
    "state": "wired",
    "doc": "README.md",
    "title": "도구"
@@ -7207,7 +7309,7 @@
    "title": "게이트"
   },
   "README/구조": {
-   "h": "2159ba8f9dc9db0a",
+   "h": "8d07fb2710e9b3d6",
    "state": "none",
    "doc": "README.md",
    "title": "구조"
@@ -7244,7 +7346,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "1692 passed in 167.72s (0:02:47)"
+   "tail": "1729 passed in 166.88s (0:02:46)"
   },
   "probe/deadcheck": {
    "rc": 0,
