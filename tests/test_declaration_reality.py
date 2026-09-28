@@ -59,7 +59,7 @@ ROOT = Path(__file__).resolve().parents[1]
 #   **역방향 검사를 함께 둔다**(test_allow_entries_are_real).
 ALLOW: dict[str, str] = {
     # 진단 덤프. 사람이 볼 때만 생기고 하류가 없다.
-    "uncovered_units.json": "진단 덤프. 소비자 없음 · PLAN #12 가 든다",
+    "uncovered_units.json": "진단 덤프. 소비자 없음 · PLAN #11 이 든다",
     "width_samples.csv": "표본 덤프. 실측 지점 선정에만 쓴다",
     # 계보 자신. 모든 단계가 쓰므로 선언하면 전 단계가 서로를 물고 돈다.
     "_lineage.json": "계보 기록 자신. lineage.record 가 쓴다",

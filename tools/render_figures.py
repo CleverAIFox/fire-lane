@@ -483,6 +483,90 @@ def fig_xsec() -> str:
     return svg_fit.svg("".join(art + txt), h=592)
 
 
+def _contract_fields() -> dict[str, list[str]]:
+    """`src/contracts/vision.py` 의 두 계약 모델 필드. **임포트하지 않는다** —
+    도구가 파이프라인에 안 붙는다(`_params()` 와 같은 이유). AST 로 읽는다."""
+    import ast  # noqa: PLC0415
+    src = (ROOT / "src/contracts/vision.py").read_text(encoding="utf-8")
+    out: dict[str, list[str]] = {}
+    for c in ast.parse(src).body:
+        if isinstance(c, ast.ClassDef) and c.name in ("ObsSpec", "VisionResult"):
+            out[c.name] = [n.target.id for n in c.body
+                           if isinstance(n, ast.AnnAssign)
+                           and isinstance(n.target, ast.Name)
+                           and not n.target.id.startswith("model_")]
+    return out
+
+
+def fig_boundary() -> str:
+    """GIS ↔ 비전 모듈 경계. 기획서 [그림 8]. 정본은 `src/contracts/vision.py`.
+
+    ★ 2026-09-28 (DECISIONS §278-4). 종전 [그림 8] 은 저장소 밖에서 그려
+      `.docx` 안에만 있는 PNG 였고, **접점 라벨 둘이 같은 자리에 겹쳐** 찍혀
+      있었다. 래스터라 고칠 수가 없었다 — 다시 그리는 수밖에 없었다.
+      기획서 그림 24장 중 21장이 그 상태다(정본 없음).
+
+    ★ 접점의 필드는 **손으로 안 적는다.** 계약 모델에서 읽는다. 계약이 늘거나
+      줄면 그림이 따라 바뀐다 — 두 곳에 적으면 갈린다(R3·R14). 캡션이 주장하는
+      「접점은 둘뿐이다」 도 여기서 센다.
+    """
+    f = _contract_fields()
+    obs, res = f["ObsSpec"], f["VisionResult"]
+    half = (len(res) + 1) // 2
+
+    def box(x, y, w, h, title, lines, fill, stroke):
+        out = (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6" '
+               f'fill="{fill}" stroke="{stroke}"/>'
+               f'<text x="{x + w / 2}" y="{y + 22}" font-size="13" font-weight="700" '
+               f'fill="#0f172a" text-anchor="middle">{title}</text>')
+        for i, ln in enumerate(lines):
+            out += (f'<text x="{x + w / 2}" y="{y + 44 + i * 15}" font-size="10" '
+                    f'fill="#64748b" text-anchor="middle">{ln}</text>')
+        return out
+
+    body = ['<defs><marker id="m8" viewBox="0 0 10 10" refX="9" refY="5" '
+            'markerWidth="7" markerHeight="7" orient="auto">'
+            '<path d="M0 0 L10 5 L0 10 z" fill="#64748b"/></marker></defs>',
+            '<text x="12" y="24" font-size="15" font-weight="700" fill="#0f172a">'
+            'GIS ↔ 비전 모듈 경계 — 정본 src/contracts/vision.py</text>',
+            box(14, 44, 165, 100, "GIS 모듈",
+                ["세그먼트 도형", "width_min_m", "tier · 커버리지", "그래프 · 경로탐색"],
+                "#dcfce7", "#22c55e"),
+            box(541, 44, 165, 100, "비전 모듈",
+                ["호모그래피", "세그멘테이션", "유효 통행폭 측정"],
+                "#fee2e2", "#ef4444"),
+            # ── 접점은 둘뿐이다. 화살표는 이름만 지고, 필드는 아래 줄이 진다.
+            #    한 줄에 다 실으면 박스를 덮는다 — `svg_fit` 이 그것으로 운다.
+            '<path d="M183 76 L537 76" stroke="#64748b" marker-end="url(#m8)"/>',
+            '<text x="360" y="68" font-size="11" font-weight="700" fill="#0f172a" '
+            'text-anchor="middle">① 관측점 선정</text>',
+            '<path d="M537 120 L183 120" stroke="#64748b" marker-end="url(#m8)"/>',
+            '<text x="360" y="112" font-size="11" font-weight="700" fill="#0f172a" '
+            'text-anchor="middle">② 판정 결과</text>',
+            f'<text x="14" y="172" font-size="10" font-weight="700" fill="#0f172a">'
+            f'① GIS → 비전 · ObsSpec ({len(obs)})</text>',
+            f'<text x="14" y="187" font-size="9" fill="#64748b">'
+            f'{" · ".join(obs)}</text>',
+            f'<text x="14" y="211" font-size="10" font-weight="700" fill="#0f172a">'
+            f'② 비전 → GIS · VisionResult ({len(res)})</text>',
+            f'<text x="14" y="226" font-size="9" fill="#64748b">'
+            f'{" · ".join(res[:half])}</text>',
+            f'<text x="14" y="239" font-size="9" fill="#64748b">'
+            f'{" · ".join(res[half:])}</text>',
+            '<rect x="14" y="254" width="692" height="64" rx="6" '
+            'fill="#fffbeb" stroke="#f59e0b"/>',
+            '<text x="26" y="274" font-size="11" fill="#78350f">'
+            '※ 반대 방향이 없다. GIS 도로폭은 호모그래피 입력으로 안 들어간다.</text>',
+            '<text x="26" y="290" font-size="11" fill="#78350f">'
+            '   흐름이 있다고 보면 지적도 캘리브레이션 시도로 되돌아간다(§19-2).</text>',
+            '<text x="26" y="308" font-size="11" fill="#78350f">'
+            '※ 비전은 판정(verdict)을 안 넘긴다 — 임계값이 두 군데에 박힌다(§19-1).</text>',
+            '<text x="14" y="338" font-size="10" fill="#94a3b8">'
+            '★ 접점은 이 둘뿐이다. 필드는 계약 모델에서 읽는다 — '
+            '계약이 바뀌면 이 그림이 따라 바뀐다.</text>']
+    return svg_fit.svg("".join(body), h=352)
+
+
 FIGURES = {
     "verdict": fig_verdict,
     "threshold": fig_threshold,
@@ -495,6 +579,9 @@ FIGURES = {
     # ★ 2026-09-24 (PLAN §12 #15). 캡션은 고쳐졌는데 그림이 옛 모델을 그리던
     #   자리다. 값이 아니라 **규칙**을 그린다.
     "xsec": fig_xsec,
+    # ★ 2026-09-28 (§278-4). 기획서 [그림 8] 이 라벨 둘을 겹쳐 찍은 채 제출본에
+    #   있었다. 저장소 밖 PNG 라 고칠 수가 없었다 — 여기로 옮긴다.
+    "boundary": fig_boundary,
 }
 
 

@@ -196,7 +196,7 @@ def check() -> list[tuple[str, str, str]]:
             #   대장의 `stem: safety_fire_access` 와 같은 것을 가리키는데도
             #   걸렸다. 대장이 쓰는 방식과 같은 방식으로 대조한다.
             #   ★ 그래도 **하드코딩은 하드코딩이다** — 개명하면 깨진다.
-            #     그 위험은 PLAN #74 가 든다.
+            #     그 위험은 PLAN #101 이 든다(raw 개명을 `norm/` 계층 분리로).
             _stem = Path(rel).name.split("_20")[0]
             if any(r == rel or Path(r).name.startswith(_stem) for r in led):
                 continue

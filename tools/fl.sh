@@ -110,7 +110,8 @@ IN="${_IN_ENV:-${FIRE_LANE_INBOX:-}}"
 #   규칙 —
 #     · 최신 `fire-lane-*.zip` 이 있으면 **그 안의 패치만** 쓴다. INBOX 에 풀린
 #       같은 패치는 내용 지문으로 한 번만 센다
-#     · zip 이 없으면 `git format-patch` 이름(`0001-….patch`)만 쓴다
+#     · zip 이 없으면 **`fire-lane-` 접두사가 붙은 것**만 쓴다(§278-5).
+#       `0001-….patch` 는 어느 저장소에서 떠도 같은 꼴이라 이름으로 안 갈린다
 #     · 그 밖의 `.patch` 는 **남의 것**이다 — 이름만 보여 주고 건드리지 않는다
 pick_patches() {                        # pick_patches <INBOX> <WORK> → WORK 에 채운다
     local in=$1 work=$2 zip f h seen=" "
@@ -127,7 +128,7 @@ pick_patches() {                        # pick_patches <INBOX> <WORK> → WORK �
         [ -e "$f" ] || continue
         h=$(sha256sum "$f" | cut -c1-16)
         case "$seen" in *" $h "*) continue ;; esac
-        if [ -z "$zip" ] && [[ "$(basename "$f")" =~ ^[0-9]{4}-.+\.patch$ ]]; then
+        if [ -z "$zip" ] && [[ "$(basename "$f")" =~ ^fire-lane-[0-9]{4}-.+\.patch$ ]]; then
             cp -f "$f" "$work/"; seen="$seen$h "
         else
             printf '     %s(무시 — 이 배치 것이 아니다: %s)%s\n' "$D" "$(basename "$f")" "$Z"
@@ -291,7 +292,7 @@ pick_patches "$IN" "$WORK"
 # shellcheck disable=SC2012  # 우리가 방금 만든 디렉터리다. 이름이 이상할 수 없다
 mapfile -t PATCHES < <(ls -1 "$WORK"/*.patch 2>/dev/null | sort)
 N=${#PATCHES[@]}
-[ "$N" -ge 1 ] || die "패치를 못 찾았다." "찾아본 곳: $IN/fire-lane-*.zip · $IN/0001-*.patch"
+[ "$N" -ge 1 ] || die "패치를 못 찾았다." "찾아본 곳: $IN/fire-lane-*.zip · $IN/fire-lane-0001-*.patch"
 for p in "${PATCHES[@]}"; do printf '     %s\n' "$(basename "$p")"; done
 
 # shellcheck disable=SC2012  # 후보 둘뿐이고 이름이 고정이다
@@ -386,7 +387,7 @@ if [ -n "$BAD" ]; then
     die "이 패치는 현재 $BASE ($(git rev-parse --short "origin/$BASE")) 에 안 붙는다:" \
         "  $BAD" "" \
         "  흔한 원인 — 앞 배치가 아직 안 머지됐거나, INBOX 에 옛 패치가 남아 있다." \
-        "  INBOX 를 확인해라:  ls -la $IN/*.patch $IN/fire-lane-*.zip"
+        "  INBOX 를 확인해라:  ls -la $IN/fire-lane-* "
 fi
 ok "패치 $N 개 전부 $BASE 에 붙는다"
 
@@ -537,8 +538,17 @@ fi                            # ── 처음 돌 때만 끝 ──
 if [ -z "$RESUME" ] || [ "$RESUME" = ci ]; then     # ── CI 대기 · 스쿼시 ──
 
 sub "CI 대기"
-gh pr checks "$PR" -R "$GH_REPO" --watch --fail-fast \
-  || die "PR #$PR CI 가 빨갛다." "  gh pr checks $PR -R $GH_REPO"
+# ★ 2026-09-28 (§278-6). 종전에는 `gh pr checks --watch` 를 직접 불러 **비영이면
+#   전부 빨강**으로 읽었다 — `merge_batch` 가 §225-1 에서 고친 그 결함(503 을
+#   빨강으로 읽고 PR 을 지웠다)이 여기 그대로 남아 있었다. 같은 물음을 두 곳이
+#   다르게 답하고 있었다. 이제 둘 다 `tools/ci_wait.sh` 하나를 부른다.
+if bash tools/ci_wait.sh "$PR" "$GH_REPO"; then :; else
+    case $? in
+      1) die "PR #$PR CI 가 빨갛다." "  gh pr checks $PR -R $GH_REPO" ;;
+      *) die "PR #$PR 검사 상태를 못 읽었다 — **빨간불이 아니라 모름이다.**" \
+             "  손으로 보고 다시 돌려라:  gh pr checks $PR -R $GH_REPO" ;;
+    esac
+fi
 ok "CI 초록"
 
 # ══ 7. 스쿼시 ═════════════════════════════════════════════════

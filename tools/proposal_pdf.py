@@ -31,10 +31,14 @@ proposal_pdf.py — 기획서를 **PDF 로 굽고, 구운 것이 성한지 본�
    정본은 `data/golden/segments.fingerprint.json` 이고 `docx_check` 와
    **같은 자리에서 읽는다**(`docx_check._canon`) — 숫자를 두 곳에 적지 않는다.
 ④ **그림** — `IMAGES_MIN` 하한. 그림이 통째로 빠진 PDF 도 글자는 멀쩡하다.
+⑤ **북마크** — `BOOKMARKS_MIN` 하한. 63쪽을 스크롤로만 찾게 두지 않는다.
+   북마크는 `.docx` 의 개요 층(`w:outlineLvl`)에서 나온다. 개요가 지워지면
+   쪽수·글자·그림은 그대로인 채 **북마크만 조용히 0 이 된다** — 실제로
+   2026-09-28 까지 0 이었다. 넣는 쪽은 `tools/docstyle.py` 다.
 
 IN    docs/proposal.docx · data/golden/segments.fingerprint.json
 OUT   web/proposal.pdf  (생성물. .gitignore)
-PARAM PAGES_MIN · IMAGES_MIN · KOREAN_LINES_MIN
+PARAM PAGES_MIN · IMAGES_MIN · KOREAN_LINES_MIN · BOOKMARKS_MIN
 밖    **레이아웃이 예쁜가는 못 본다.** 쪽이 밀렸는지, 표가 쪽 경계에서
       잘렸는지, 글꼴이 의도한 그것인지는 사람이 눈으로 본다. 이 검사가
       드는 것은 「통째로 망가지지 않았다」까지다.
@@ -59,6 +63,7 @@ OUT = ROOT / "web" / "proposal.pdf"
 PAGES_MIN = 40            # 2026-09-24 실측 63쪽
 IMAGES_MIN = 8            # 2026-09-24 실측 — 그림이 통째로 빠지면 여기서 걸린다
 KOREAN_LINES_MIN = 800    # 2026-09-24 실측 2,255줄
+BOOKMARKS_MIN = 100       # 2026-09-28 실측 136 — 개요가 지워지면 0 으로 떨어진다
 
 HANGUL = re.compile(r"[가-힣]")
 
@@ -114,6 +119,17 @@ def body(pdf: Path) -> str:
     return _run(["pdftotext", str(pdf), "-"]).stdout
 
 
+def bookmarks(pdf: Path) -> int:
+    """북마크(개요) 수. poppler 는 이것을 안 세므로 `pypdf` 로 읽는다."""
+    import pypdf  # noqa: PLC0415
+    def walk(node) -> int:
+        return sum(walk(x) if isinstance(x, list) else 1 for x in node)
+    try:
+        return walk(pypdf.PdfReader(str(pdf)).outline)
+    except Exception:          # noqa: BLE001 — 못 읽으면 0. 모르는 것을 통과로 세지 않는다
+        return 0
+
+
 def wanted_numbers() -> dict[str, int]:
     """판정 수치의 정본. **`docx_check` 와 같은 자리에서 읽는다.**"""
     import docx_check  # ★ 같은 tools/ 안. 경로 조작을 하지 않는다
@@ -122,7 +138,7 @@ def wanted_numbers() -> dict[str, int]:
 
 
 def judge(n_pages: int, n_images: int, text: str,
-          want: dict[str, int] | None = None) -> list[str]:
+          want: dict[str, int] | None = None, n_marks: int = BOOKMARKS_MIN) -> list[str]:
     """빨간불 사유들. 비면 초록. **순수 함수** — 합성 입력으로 부를 수 있다."""
     bad = []
     if n_pages < PAGES_MIN:
@@ -133,6 +149,10 @@ def judge(n_pages: int, n_images: int, text: str,
     ko = sum(1 for ln in text.splitlines() if HANGUL.search(ln))
     if ko < KOREAN_LINES_MIN:
         bad.append(f"한글 줄 {ko} < 하한 {KOREAN_LINES_MIN} — 본문이 안 나왔다")
+    if n_marks < BOOKMARKS_MIN:
+        bad.append(f"북마크 {n_marks} < 하한 {BOOKMARKS_MIN} — 개요 층이 없다. "
+                   "쪽수 · 글자 · 그림은 멀쩡하므로 나머지 검사로는 안 걸린다. "
+                   "넣는 법: uv run python tools/docstyle.py --write")
     for label, n in (want or {}).items():
         if f"{n:,}" not in text and str(n) not in text:
             bad.append(f"판정 수치가 PDF 본문에 없다 — {label} {n:,}")
@@ -145,7 +165,7 @@ def check(pdf: Path = OUT) -> list[str]:
     for exe in ("pdfinfo", "pdftotext", "pdfimages"):
         if not shutil.which(exe):
             return [f"`{exe}` 가 없다 — poppler-utils 를 깔아라"]
-    return judge(pages(pdf), images(pdf), body(pdf), wanted_numbers())
+    return judge(pages(pdf), images(pdf), body(pdf), wanted_numbers(), bookmarks(pdf))
 
 
 # ── 자기검사 ────────────────────────────────────────────────────
@@ -163,12 +183,16 @@ def selftest() -> int:
         dead.append("본문에 한글이 없는데 안 운다")
     if not judge(PAGES_MIN, IMAGES_MIN, ok_text, {"구간 수": 9999}):
         dead.append("판정 수치가 없는데 안 운다")
+    if not judge(PAGES_MIN, IMAGES_MIN, ok_text, {}, n_marks=BOOKMARKS_MIN - 1):
+        dead.append("북마크 미달을 안 운다")
+    if not judge(PAGES_MIN, IMAGES_MIN, ok_text, {}, n_marks=0):
+        dead.append("북마크가 0 인데 안 운다 — 2026-09-28 까지의 실제 상태다")
     if not wanted_numbers():
         dead.append("판정 수치 정본을 못 읽었다 — golden 지문이 없다")
     if dead:
         print("✗ 판정기 자기검사 실패 — " + ", ".join(dead))
         return 1
-    print("✓ 판정기 자기검사 — 다섯 갈래 전부 운다")
+    print("✓ 판정기 자기검사 — 여섯 갈래 전부 운다")
     return 0
 
 
@@ -195,7 +219,7 @@ def main() -> int:
         for b in bad:
             print(f"   {b}")
         return 1
-    print(f"✓ 기획서 PDF — {pages(OUT)}쪽 · 그림 {images(OUT)}")
+    print(f"✓ 기획서 PDF — {pages(OUT)}쪽 · 그림 {images(OUT)} · 북마크 {bookmarks(OUT)}")
     return 0
 
 

@@ -179,9 +179,48 @@ def _scan() -> list[tuple[str, int, str]]:
     return out
 
 
-def call_sites(name: str, lines: list[tuple[str, int, str]] | None = None) -> list[str]:
-    """도구 하나를 **실제로 부르는** 자리들. 없으면 빈 목록."""
+def _blanked() -> dict[str, str]:
+    """호출자 파일을 **줄 수를 보존한 채** 주석·독스트링만 비운 본문.
+
+    ★ 2026-09-28 (DECISIONS §278-2). `_scan()` 은 **한 줄씩** 준다. 그래서
+      `spec_from_file_location(` 과 경로가 다른 줄에 있으면 `dyn_rx` 가 못 본다 —
+      줄바꿈 하나로 「아무도 안 부른다」가 된다. 실제로 `delivercheck` 를 넣으며
+      걸렸고, 그때는 **부르는 쪽을 한 줄로 고쳐서** 넘겼다. 검사를 고치는 것이 옳다.
+
+    ★ 줄을 지우지 않고 **비운다.** 그래야 정규식이 찾은 자리에서 줄 번호가
+      그대로 나온다 — 「어디서 부르는가」를 못 대면 배선 증거가 아니다.
+    """
+    out: dict[str, str] = {}
+    files = [ROOT / r for r in CALLERS]
+    for d in (".github/workflows", "tests"):
+        base = ROOT / d
+        if base.exists():
+            files += [p for p in base.rglob("*")
+                      if p.is_file() and p.suffix in (".yml", ".yaml", ".py")]
+    for p in files:
+        if not p.is_file():
+            continue
+        src = p.read_text(encoding="utf-8", errors="ignore")
+        doc = _docstring_lines(src) if p.suffix == ".py" else set()
+        keep = []
+        for i, line in enumerate(src.splitlines(), 1):
+            s = line.strip()
+            keep.append("" if (not s or s.startswith(_COMMENT) or i in doc
+                               or _PRINTS.match(line)) else line)
+        out[str(p.relative_to(ROOT))] = "\n".join(keep)
+    return out
+
+
+def call_sites(name: str, lines: list[tuple[str, int, str]] | None = None,
+               texts: dict[str, str] | None = None) -> list[str]:
+    """도구 하나를 **실제로 부르는** 자리들. 없으면 빈 목록.
+
+    ★ `lines` 를 손으로 주면 `texts` 도 손으로 준다(기본 빈 것). 한쪽만 주면
+      합성 입력으로 재면서 **실제 저장소를 같이 훑어** 남의 자리가 섞인다.
+    """
+    synthetic = lines is not None
     lines = _scan() if lines is None else lines
+    texts = ({} if synthetic else _blanked()) if texts is None else texts
     stem = name.rsplit(".", 1)[0]
     path_rx = re.compile(rf"tools/{re.escape(name)}(?![\w.])")
     # ★ `import <stem>` 은 `src/firelane/` 에 같은 이름이 없을 때만 인정한다.
@@ -207,6 +246,17 @@ def call_sites(name: str, lines: list[tuple[str, int, str]] | None = None) -> li
             continue
         if path_rx.search(s) or (imp_rx and imp_rx.search(s)) or dyn_rx.search(s):
             hits.append(f"{f}:{i}")
+
+    # ★ 2026-09-28 (DECISIONS §278-2). `importlib` 조립은 **여러 줄에 걸친다.**
+    #   위 줄 단위 훑기는 그것을 못 본다 — 줄바꿈 하나로 배선이 사라진다.
+    #   줄 수를 보존한 채 비운 본문에서 한 번 더 찾고, 찾은 자리의 줄 번호를 낸다.
+    for f, src in texts.items():
+        if f == f"tools/{name}":
+            continue
+        for m in dyn_rx.finditer(src):
+            at = f"{f}:{src.count(chr(10), 0, m.start()) + 1}"
+            if at not in hits:
+                hits.append(at)
     return hits
 
 
@@ -467,3 +517,48 @@ def test_a_by_path_loader_registers_the_module():
           "      sys.modules[spec.name] = m\n"
           "  `@dataclass` 가 `cls.__module__` 로 되짚는다. 없으면 AttributeError 다.\n"
           "  지금 안 터져도 그 도구가 dataclass 를 갖는 날 터진다 — 지연 신관이다.")
+
+
+# ── 여러 줄에 걸친 동적 임포트  (§278-2) ────────────────────────
+def test_a_multiline_importlib_call_is_seen():
+    """★ 2026-09-28. 줄 단위 훑기는 **줄바꿈 하나로** 배선을 놓친다.
+
+    `delivercheck` 를 넣으며 실제로 걸렸다 — `spec_from_file_location(` 과 경로를
+    두 줄에 나눠 적었더니 「아무도 안 부른다」가 됐다. 그때는 **부르는 쪽을 한 줄로**
+    고쳐서 넘겼고, 그것은 검사를 사람에게 맞춘 것이다. 검사를 고친다.
+    """
+    src = ('_spec = importlib.util.spec_from_file_location(\n'
+           '    "widget", ROOT / "tools" / "widget.py")\n')
+    assert call_sites("widget.py", lines=[], texts={"tests/test_w.py": src}) == \
+        ["tests/test_w.py:1"], "여러 줄에 걸친 조립을 못 본다"
+
+
+def test_a_single_line_importlib_call_is_still_seen():
+    """한 줄짜리도 그대로 잡혀야 한다 — 넓히면서 좁히면 안 된다."""
+    src = '_s = importlib.util.spec_from_file_location("widget", ROOT / "tools/widget.py")\n'
+    assert call_sites("widget.py", lines=[], texts={"tests/test_w.py": src})
+
+
+def test_a_mention_in_a_comment_is_not_a_call():
+    """★ 주석 속 이름은 배선이 아니다. 비운 본문으로 재므로 안 잡혀야 한다."""
+    assert not call_sites("widget.py", lines=[], texts={"tests/test_w.py": "\n\n"})
+
+
+def test_the_blanked_view_keeps_line_numbers():
+    """★ 줄을 **지우지 않고 비운다.** 안 그러면 찾은 자리의 줄 번호가 밀린다 —
+    「어디서 부르는가」를 못 대면 배선 증거가 아니다.
+
+    ★ 줄 **수**로 재지 않는다. 끝의 빈 줄은 `join` 에서 사라지는데 그것은 번호에
+      영향이 없다 — 수로 재면 그 오차가 결함으로 보이고, 진짜 밀림을 덮는다.
+      재는 것은 **남아 있는 줄의 번호가 실물과 같은가**다.
+    """
+    got = _blanked()
+    assert got, "비운 본문이 하나도 없다"
+    checked = 0
+    for f, src in got.items():
+        real = (ROOT / f).read_text(encoding="utf-8", errors="ignore").splitlines()
+        for i, line in enumerate(src.splitlines()):
+            if line:
+                assert real[i] == line, f"{f}:{i + 1} 이 밀렸다 — 실물은 {real[i]!r}"
+                checked += 1
+    assert checked > 500, f"대조한 줄이 {checked}뿐이다 — 비운 본문이 거의 비었다"
