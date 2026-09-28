@@ -527,6 +527,18 @@ EXEMPT_SCOPE = {
     #   넓히면 정상 인용이 전부 위반이 된다 — 오탐이 본문을 덮으면 사람이 끈다.
     "tests/test_seg_width.py::test_width_source_priority_has_one_home":
         "정본 단일화의 대상은 `src/firelane` 이다. 대조 도구·시험의 인용은 사본이 아니라 검증이다",
+    # ★ 2026-09-28 (DECISIONS §283 · §286 · §284-5). 셋 다 **좁은 것이 규칙의
+    #   뜻**이다. 넓히면 오탐이 본문을 덮고, 오탐이 덮으면 사람이 끈다.
+    "tests/test_cli_surface.py::clis":
+        "명령줄 도구는 `src/firelane` 과 `tools` 에만 산다. `tests` 는 "
+        "`pytest` 가 부르는 것이지 사람이 치는 명령이 아니다",
+    "tools/selftests.py::tools":
+        "`--selftest` 를 선언하는 것은 도구다. 시험의 자기검사는 `pytest` "
+        "자신이 돌린다 — 넓히면 같은 것을 두 문이 돈다",
+    "tests/test_no_unbounded_waits.py::_files":
+        "**반대 방향**이다. 시한 없는 기다림이 문제가 되는 곳은 시험이다 — "
+        "도구가 사람의 답을 기다리는 것은 정상이고(`merge_batch` 의 `ask`) "
+        "거기에 시한을 걸면 배치가 답을 못 받고 죽는다",
     "tests/test_skip_policy.py::_skip_literals":
         "`pytest.skip` 은 시험 안에만 산다 — src · tools 에 0건이라 넓히면 빈 폴더를 훑는다",
     "tests/test_guards.py::test_repo_python_compiles":

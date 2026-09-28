@@ -330,7 +330,7 @@ def _write(was: dict) -> None:
                     encoding="utf-8")
 
 
-def stamp(only: str | None, unmoved: bool = False) -> int:
+def stamp(only: list[str] | None, unmoved: bool = False) -> int:
     """도장을 찍는다. **인자 없이는 안 찍는다.**
 
     ★ 2026-09-28 (DECISIONS §277-2). 종전에는 `stamp` 를 인자 없이 부르면
@@ -338,14 +338,33 @@ def stamp(only: str | None, unmoved: bool = False) -> int:
       명령이 있었다는 뜻이다 — 이 도구의 뜻이 그 한 줄로 죽는다.
       찍으려면 **무엇을 왜 찍는지**를 말해야 한다.
     """
+    # ★ 2026-09-28 (§287-2). `only` 를 목록으로 넓히면서 **글자열 함정**이
+    #   생겼다 — `stamp("DECISIONS/1")` 이 조용히 한 글자씩 순회해
+    #   「`D` 는 도장 대상이 아니다」를 낸다. 파이썬에서 목록을 받는 함수가
+    #   반드시 밟는 자리고, 부르는 쪽이 아니라 **여기서** 막는다.
+    if isinstance(only, str):
+        only = [only]
     now, was = survey()
     if only:
-        if only not in now:
-            print(f"✗ `{only}` 는 도장 대상이 아니다 (wired 이고 코드를 지목해야 한다)")
+        # ★ 2026-09-28 (DECISIONS §287-2). 종전에는 절 **하나**만 받았다.
+        #   한 번이 13초인데(절 500개를 매번 다시 재느라) 스무 절을 찍으려면
+        #   같은 조사를 스무 번 했다. 사람이 그 짓을 하다 지치면 도장을 안
+        #   찍고, **안 찍힌 절은 분모로 남는다.** 도구가 할 수 있는 일을
+        #   사람에게 미룬 자리다(§285-1 과 같은 병).
+        #   ★ 「전부 찍기」는 여전히 없다. 이름을 대야 찍힌다(§277-2).
+        miss = [s for s in only if s not in now]
+        if miss:
+            for s in miss:
+                print(f"✗ `{s}` 는 도장 대상이 아니다 (wired 이고 코드를 지목해야 한다)")
             return 1
-        was[only] = {**now[only], "kind": "read"}
+        for s in only:
+            was[s] = {**now[s], "kind": "read"}
         _write(was)
-        print(f"✓ 읽음 도장 — {only}  (총 {len(was)}절)")
+        head = only[0] if len(only) == 1 else f"{len(only)}절"
+        print(f"✓ 읽음 도장 — {head}  (총 {len(was)}절)")
+        if len(only) > 1:
+            for s in only:
+                print(f"    {s}")
         return 0
 
     if unmoved:
@@ -414,7 +433,8 @@ def main(argv: list[str] | None = None) -> int:
     #   같은 규약으로 맞춘다 — 이름이 같으면 행동도 같아야 한다.
     ap.add_argument("cmd", nargs="?", default="check",
                     choices=["status", "check", "stamp", "queue"])
-    ap.add_argument("--only", help="그 절 하나만 찍는다 (사람이 읽었다)")
+    ap.add_argument("--only", action="append", metavar="절",
+                    help="그 절을 찍는다 (사람이 읽었다). 여러 번 줄 수 있다")
     ap.add_argument("--unmoved", action="store_true",
                     help="절을 쓴 뒤로 코드가 안 움직인 절을 기계가 찍는다")
     ap.add_argument("--limit", type=int, default=30, help="queue 가 보여줄 줄 수")

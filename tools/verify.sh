@@ -710,13 +710,59 @@ fi
 #   레이크를 붙이고 돌려 보니 초록이다 — 거짓으로 우는 검사라서 안 걸린 것이
 #   아니라 **그냥 안 걸려 있었다.** 배선 검사가 `tools/*` 만 훑어서
 #   `src/firelane/` 의 CLI 는 그 그물 밖이었다(§280-4 가 그것을 넓힌다).
-# ci-exempt: firelane.datalog `verify` 는 문서↔트리라 CI 로 갈 수 있으나 같은 도구의 `fsck` 가 레이크 층의 실재와 백업 대상을 본다. CI 에 레이크가 없다
+# ★ 2026-09-28 (§285-4). 여기 있던 `# ci-exempt: firelane.datalog` 가 오늘
+#   죽었다 — 같은 도구의 `check` · `graph` 가 CI 로 올라갔기 때문이다.
+#   `gate_parity` 는 **도구 단위**라 「같은 도구의 이 갈래만 레이크가
+#   필요하다」를 적을 자리가 없다. 죽은 면제를 남기느니 사실을 적는다 —
+#   `fsck` 는 **레이크가 있어야 통과한다**(층의 실재·백업 대상을 본다.
+#   레이크 없으면 실측 5건 어긋남). 갈래 단위 동등은 PLAN 에 남긴다.
 scope "$CODE_SCOPE sources.yaml"
 step "계층 선언↔실물" uv run python -m firelane.datalog fsck
+
+# ★ 2026-09-28 (DECISIONS §285). 문서가 관문이라 이름까지 적어 둔 것들이
+#   어디서도 안 불렸다(§280). 이유는 게으름이 아니라 **부를 수가 없었기
+#   때문**이고, 셋을 고치고 나서야 붙는다 — 내역은 §285 에 있다.
+#   **관문은 부를 수 있어야 관문이다.**
+scope "sources.yaml src/firelane/datalog.py src/firelane/ledger.py"
+step "계보 대장 정합"   uv run python -m firelane.datalog check
+# ★ 그리는 것 자체가 검사다 — 입력이 대장 밖을 가리키면 여기서 죽는다.
+scope "sources.yaml src/firelane/datalog.py"
+step "계보 그림 생성"   uv run python -m firelane.datalog graph
+# ★ MASTER §18-3b 의 취입 관문. 여기는 **대장 선언만** 본다(무계약 ·
+#   모르는 계약 키 · 미선언 좌표계). 실물 대조는 아래 레이크 갈래다 —
+#   절반이라도 상설인 것이 전체가 안 도는 것보다 세다(§284-3).
+scope "sources.yaml src/firelane/contract.py src/firelane/ledger.py"
+step "취입 계약 선언"   uv run python -m firelane.contract --declared
+
+# ★ 2026-09-28 (§286). `--selftest` 26개 중 **16개를 아무도 안 불렀다.** 문
+#   하나로 모은다 — 16줄을 붙이면 17번째 도구에서 또 빠진다. 처음 돌린 날
+#   바로 빨강 하나를 찾았다(§286-2).
+scope "tools/* src/firelane/*"
+step "자기검사 전수"   uv run python tools/selftests.py
+
+# ★ 2026-09-28 (W13-7 · §288). 재취득 불가 층의 지문. git 은 「바뀌었다」만
+#   알려주고 「그날 잰 그 파일인가」는 안 묻는다. 커밋되는 층이라 CI 도 돈다.
+scope "data/field/* data/golden/field.fingerprint.json tools/fieldseal.py"
+step "실측 층 지문"   uv run python tools/fieldseal.py
 
 # ci-exempt: tools/lakecheck.py 레이크(2.5GB 외장)를 직접 훑는다. CI 에 없다
 scope "$CODE_SCOPE"
 step "레이크 선언↔실물" uv run python tools/lakecheck.py
+
+# ★ 2026-09-28 (§285-3). 레이크가 있어야만 도는 절반. 좌표계 대조(§284-2)가
+#   여기서 처음 실물에 닿는다 — 레이크가 붙은 기계의 첫 실행은 시끄러울
+#   것이고 **그것이 목적이다.**
+# ci-exempt: tools/ledger_schema.py raw 실물에서 스키마를 읽어 대장과 대조한다. CI 에 레이크가 없다(MASTER §18-12)
+if [ -z "${FIRE_LANE_DATA:-}${FIRE_LANE_RAW:-}" ] && [ ! -d data/raw/gjcity ]; then
+    _why="raw 가 없다. 대장 선언 절반은 「취입 계약 선언」이 이미 돌았다"
+    note "취입 계약 실물" "$_why"
+    note "대장 스키마↔실물" "$_why"
+else
+    scope "sources.yaml src/firelane/contract.py src/firelane/krgis/crs.py"
+    step "취입 계약 실물"   uv run python -m firelane.contract
+    scope "sources.yaml tools/ledger_schema.py"
+    step "대장 스키마↔실물" uv run python tools/ledger_schema.py --check
+fi
 
 # ★ 스캔만 한다. 지우려면 --sweep --yes 를 사람이 친다.
 #   "정리는 사람이 한다" 를 도구가 대신하되 삭제는 명시적으로.

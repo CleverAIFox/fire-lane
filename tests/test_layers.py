@@ -314,3 +314,69 @@ def test_backup_scope_follows_layers():
 
     for t in got:
         assert not t.startswith("data/data/"), f"경로를 두 번 붙였다 — {t}"
+
+
+# ── 목표 층 목록 ↔ 대장 층 선언 (2026-09-28 · DECISIONS §287) ──
+#: `lake.LAYERS` 는 **§173-2 목표 구조**이고 대장 `layers:` 는 **지금 상태**다.
+#: 둘이 다른 것은 결함이 아니다 — `lake.py` 머리말이 「대장 `layers` 에
+#: retired 가 들어가는 것은 레이크를 세운 뒤다」라고 적어 두었다.
+#:
+#: ★ 결함은 **그 간극에 강제자가 없다**는 것이다. 지금 `retired` 하나인데,
+#:   누가 대장에 층을 하나 더 더하면 `lake.LAYERS` 는 그것을 모르고 그
+#:   층의 파일은 해석기에서 **미상**이 된다. 선언과 코드가 조용히 갈린다 —
+#:   이 저장소가 `BACKUP_TARGETS`(§173) · `ledger.REQUIRED`(§285-2) 에서
+#:   이미 두 번 겪은 그 자리다.
+#:
+#: 간극을 **데이터로 못 박는다.** 산문으로 적힌 계획을 수로 바꾼다.
+#: 좁히면 여기를 같이 줄인다. 넓히려면 사유를 적어야 한다.
+TARGET_ONLY = {
+    "retired": "§173-2 목표 층. 레이크를 세운 뒤 대장에 들어간다"
+               "(`lake.py` 머리말 · PLAN 「대장 · SSD 디렉토리 구조와 해석기 하나」). "
+               "그때 `LAYERS` 를 대장에서 읽도록 바꾼다",
+}
+#: 대장에만 있는 층 — **레이크 밖**이라 레이크 해석기가 알 필요가 없다.
+LEDGER_ONLY = {
+    "baseline": "저장소 안. 봉인 기준선이다",
+    "field": "저장소 안. 실측 원본이라 커밋된다",
+    "golden": "저장소 안. 산출물 지문이다",
+    "processed": "저장소 안. 파이프라인 산출물이다",
+    "web": "저장소 안. 관제·내비가 읽는 발행물이라 커밋된다",
+    "quarantine": "폐지 중. `lake.ABOLISHED` 가 들고 있고 `retired` 로 흡수된다(§173-2)",
+}
+
+
+def test_the_gap_between_target_and_ledger_layers_is_declared():
+    """★ 목표 층 목록과 대장 층 선언의 차이가 **선언된 그대로**인가."""
+    from firelane.lake import LAYERS
+
+    declared = set(_L().names())
+    target = set(LAYERS)
+
+    only_target = target - declared
+    assert only_target == set(TARGET_ONLY), (
+        f"목표에만 있는 층이 선언과 다르다 — 실측 {sorted(only_target)} · "
+        f"선언 {sorted(TARGET_ONLY)}\n"
+        "  층이 대장으로 들어왔으면 `TARGET_ONLY` 에서 빼라. 새로 생겼으면\n"
+        "  **왜 아직 대장에 없는지**를 적어라.")
+
+    only_ledger = declared - target
+    assert only_ledger == set(LEDGER_ONLY), (
+        f"대장에만 있는 층이 선언과 다르다 — 실측 {sorted(only_ledger)} · "
+        f"선언 {sorted(LEDGER_ONLY)}\n"
+        "  레이크 해석기가 모르는 층의 파일은 **미상**이 된다. 레이크 안의\n"
+        "  층이면 `lake.LAYERS` 에 더하고, 저장소 안이면 여기 사유를 적어라.")
+
+
+def test_every_gap_entry_carries_a_reason():
+    """「필요」 두 글자로 빠지는 길을 막는다 — `ci-exempt` 와 같은 설계."""
+    thin = [k for k, why in {**TARGET_ONLY, **LEDGER_ONLY}.items()
+            if len(why.strip()) < 15]
+    assert not thin, f"간극 사유가 너무 짧다 — {thin}"
+
+
+def test_the_abolished_layer_is_not_a_target():
+    """폐지층이 목표 목록에 남아 있으면 「없앤다」와 「쓴다」가 같은 모양이 된다."""
+    from firelane.lake import ABOLISHED, LAYERS
+
+    for name in ABOLISHED:
+        assert name not in LAYERS, f"폐지층 {name} 이 목표 층 목록에 있다"
