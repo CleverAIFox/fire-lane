@@ -532,6 +532,13 @@ EXEMPT_SCOPE = {
     "tests/test_cli_surface.py::clis":
         "명령줄 도구는 `src/firelane` 과 `tools` 에만 산다. `tests` 는 "
         "`pytest` 가 부르는 것이지 사람이 치는 명령이 아니다",
+    # ★ 2026-09-28 (DECISIONS §290). 위와 **같은 사유**의 정적 팔이다. 동적 팔은
+    #   도구를 실제로 돌려 보는데 그 판정이 레이크 유무에 달려 있었다(F 배치에서
+    #   샌드박스 초록 · 실기 빨강). 그래서 환경에 안 달린 정적 팔을 더했고,
+    #   범위는 같다 — `sys.argv` 를 명령줄로 읽는 것은 명령줄 도구뿐이다.
+    "tests/test_cli_surface.py::test_no_new_direct_argv_indexing":
+        "명령줄 도구는 `src/firelane` 과 `tools` 에만 산다. 시험이 `sys.argv` 를 "
+        "만지는 것은 명령줄 표면이 아니다 — 넓히면 오탐이 본문을 덮는다",
     "tools/selftests.py::tools":
         "`--selftest` 를 선언하는 것은 도구다. 시험의 자기검사는 `pytest` "
         "자신이 돌린다 — 넓히면 같은 것을 두 문이 돈다",

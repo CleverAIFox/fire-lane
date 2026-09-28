@@ -276,3 +276,92 @@ def test_datalog_rejects_bad_calls_without_a_traceback():
     for argv in ([], ["impact"], ["없는명령"], ["graph", "남는인자"]):
         assert datalog.dispatch(argv) == datalog.USAGE_EXIT, \
             f"{argv} 를 거절하지 않았다"
+
+
+# ── ⑤ 정적 팔 — 환경에 안 흔들린다 (2026-09-28 · DECISIONS §289) ──
+# ★ 위 ①은 **도구를 실제로 불러 보는** 동적 검사다. 그래서 **환경이 판정을
+#   바꾼다.** 2026-09-28 에 실제로 났다 —
+#
+#     샌드박스(레이크 없음)   `ngii1k.py --없는깃발` → 도엽을 못 찾고 즉시 죽음 → 초록
+#     Fox 기계(레이크 있음)   같은 명령이 **도엽 143장을 훑기 시작** → 20초 초과 → 빨강
+#
+#   `sys.argv[1]` 을 그대로 `Path` 로 쓰는 코드였고, 읽을 것이 있어야만 증상이
+#   난다. **검증 환경이 실행 환경보다 약하면 결함이 숨는다.** 동적 검사만으로는
+#   그 사실을 못 덮는다.
+#
+# ★ 그래서 정적 팔을 붙인다. 「모르는 깃발을 데이터로 쓰는가」를 **실행 없이**
+#   본다. 레이크가 있든 없든 답이 같다.
+#: 하위명령 분기라 안전한 자리 → 사유. **사유 없이 늘리지 않는다.**
+ARGV_INDEX_EXEMPT = {
+    "src/firelane/guards.py":
+        "하위명령 분기다(`lineage` · `coverage`). 닫힌 목록과 대조하고 "
+        "모르는 것은 「모르는 명령」으로 거절한다 — 값이 데이터로 안 흐른다",
+    "src/firelane/lineage.py":
+        "같은 꼴 — `show` · `verify` 두 갈래. 값이 경로나 수로 안 쓰인다",
+}
+
+
+def argv_index_hits(path: Path) -> list[int]:
+    """`sys.argv[N]`(N≥1) 을 직접 첨자하는 줄. **0 은 프로그램 이름이라 뺀다.**"""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except SyntaxError:
+        return []
+    return [n.lineno for n in ast.walk(tree)
+            if isinstance(n, ast.Subscript)
+            and isinstance(n.value, ast.Attribute) and n.value.attr == "argv"
+            and isinstance(n.slice, ast.Constant)
+            and isinstance(n.slice.value, int) and n.slice.value != 0]
+
+
+def test_no_new_direct_argv_indexing():
+    """★ 명령줄 인자는 `argparse` 가 읽는다. `sys.argv[1]` 을 데이터로 쓰지 않는다.
+
+    이 규칙이 `ngii1k.py` 를 잡는다 — 그 파일은 `Path(sys.argv[1])` 로 도엽
+    경로를 만들었고, 깃발이 경로가 되어 레이크 전체를 훑기 시작했다.
+    """
+    bad = []
+    for p in [*sorted((ROOT / "tools").rglob("*.py")),
+              *sorted((ROOT / "src").rglob("*.py"))]:
+        if "__pycache__" in p.parts:
+            continue
+        rel = p.relative_to(ROOT).as_posix()
+        if rel in ARGV_INDEX_EXEMPT:
+            continue
+        if (ln := argv_index_hits(p)):
+            bad.append(f"{rel}:{ln}")
+    assert not bad, (
+        "`sys.argv[N]` 을 직접 첨자한다 — " + " · ".join(bad) +
+        "\n  `argparse` 로 받아라. 깃발이 경로·수로 흘러 들어가면 도구가"
+        "\n  **모르는 입력으로 일을 시작한다**(§289-1).")
+
+
+def test_argv_exemptions_are_not_dead():
+    """면제인데 실물에 그 꼴이 없으면 죽은 선언이다."""
+    dead = [rel for rel in ARGV_INDEX_EXEMPT
+            if not argv_index_hits(ROOT / rel)]
+    assert not dead, f"죽은 면제 — {dead}"
+
+
+def test_every_argv_exemption_carries_a_reason():
+    thin = [k for k, why in ARGV_INDEX_EXEMPT.items() if len(why.strip()) < 20]
+    assert not thin, f"사유가 너무 짧다 — {thin}"
+
+
+def test_the_static_arm_catches_what_the_dynamic_arm_missed(tmp_path):
+    """★ 빈 그물 자기검사. `ngii1k` 가 갖고 있던 꼴을 그대로 심는다."""
+    planted = tmp_path / "옛ngii1k.py"
+    planted.write_text(
+        "import sys\nfrom pathlib import Path\n"
+        'if __name__ == "__main__":\n'
+        "    src = Path(sys.argv[1])\n", encoding="utf-8")
+    assert argv_index_hits(planted) == [4], "그 꼴을 못 잡는다"
+
+    ok = tmp_path / "고친판.py"
+    ok.write_text(
+        "import argparse\nfrom pathlib import Path\n"
+        'if __name__ == "__main__":\n'
+        "    ap = argparse.ArgumentParser()\n"
+        '    ap.add_argument("원본", type=Path)\n'
+        "    src = ap.parse_args().원본\n", encoding="utf-8")
+    assert argv_index_hits(ok) == [], "고친 꼴을 결함으로 센다"
