@@ -2734,7 +2734,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,248 전수 · **분모(blank) 0절** · 물림(inherit) 501절.
+★ **강제자 칸의 분모.** 절 1,249 전수 · **분모(blank) 0절** · 물림(inherit) 501절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3468,7 +3468,11 @@ acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
 **3번이 실질 검증이다.** 1·2번은 형식 검사이고 3번은 물리 검사다.
 `crs` 는 **"명시"와 "추정"을 구분해서 적는다.**
 
-강제자  `tests/test_bbox_single_source.py` · `tests/test_shp_zip_multi_bbox.py`(2번 범위 검사) · `uv run python -m firelane.contract`(1번 — `crs` 선언 ↔ `.prj`/`.xml`). 3번 교차 정합은 사람이 눈으로 보는 것이라 검사가 없다 — 그것이 실질 검증인데 자동화가 안 된 자리다
+강제자  `uv run python -m firelane.contract`(1번 — `crs` 선언 ↔ `.prj`/`.xml` · `prj_verdict`) · `src/firelane/krgis/crs.py`(`GWANGJU_BBOX` 126.60,35.00,127.05,35.32 — 4326 범위) · `tests/test_n1.py`(5179 X 9.3e5~9.7e5 · Y 1.67e6~1.70e6).
+
+★ 2026-09-29 정정 — 종전에 2번 범위 검사의 강제자로 `tests/test_bbox_single_source.py` · `tests/test_shp_zip_multi_bbox.py` 를 지목했다. **둘 다 범위를 안 본다** — 앞은 bbox 단일 정본과 4326 꼴 튜플 사본을 보고, 뒤는 읽기 시점 bbox 필터만 본다(그 합성 좌표는 X 200,000 · Y 500,000 으로 위 표의 5186 범위 밖이다). **위 표의 5186 X 190k~210k · Y 260k~300k 를 검사하는 코드는 저장소에 없다.** 강제자 칸을 실물로 고쳤고, 5186 범위 검사는 아직 사람 눈이다 — 3번과 같은 자리다.
+
+3번 교차 정합은 사람이 눈으로 보는 것이라 검사가 없다 — 그것이 실질 검증인데 자동화가 안 된 자리다
 
 ---
 

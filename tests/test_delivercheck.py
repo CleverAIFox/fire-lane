@@ -186,3 +186,40 @@ def test_the_relock_axes_are_not_empty():
     assert D.RELOCK_AXES and D.LAKE_ONLY
     for why in D.RELOCK_AXES.values():
         assert len(why) > 30, "면제에 사유가 없다 — 사유 없는 면제는 도장 찍기다"
+
+
+# ── §294 · zip 이 제 목록에 드는가 ──────────────────────────────
+
+
+def _stage(tmp):
+    for n in ("fire-lane-0001-x.patch", "EXPECT", "PR_BODY.md"):
+        (tmp / n).write_text("x", encoding="utf-8")
+    z = tmp / "fire-lane-batch.zip"
+    z.write_text("", encoding="utf-8")
+    return z
+
+
+def test_zip_은_제_목록에_안_든다(tmp_path):
+    """★ 이것이 4.5GB 를 만든 줄이다. 되돌리면 여기서 걸린다."""
+    z = _stage(tmp_path)
+    assert z.name not in [f.name for f in D.zip_items(tmp_path, z)]
+
+
+def test_멀쩡한_것은_하나도_안_뺀다(tmp_path):
+    """한쪽만 재면 「전부 빼기」가 통과한다."""
+    z = _stage(tmp_path)
+    assert sorted(f.name for f in D.zip_items(tmp_path, z)) == [
+        "EXPECT", "PR_BODY.md", "fire-lane-0001-x.patch"]
+
+
+def test_경로_꼴이_달라도_뺀다(tmp_path):
+    """`--zip ../h/x.zip` 은 같은 파일을 다른 글자로 가리킨다."""
+    z = _stage(tmp_path)
+    odd = tmp_path / ".." / tmp_path.name / z.name
+    assert z.name not in [f.name for f in D.zip_items(tmp_path, odd)]
+
+
+def test_디렉터리는_안_넣는다(tmp_path):
+    z = _stage(tmp_path)
+    (tmp_path / "하위폴더").mkdir()
+    assert "하위폴더" not in [f.name for f in D.zip_items(tmp_path, z)]

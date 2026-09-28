@@ -1964,6 +1964,10 @@ MASTER §18-1 이 계층을 산문으로 선언하고 `paths.py` 가 경로를 �
 두고 소스 하나씩 옮기며 매 건 `golden.py check` 한다(R11 · PLAN #18).
 **미구현을 현황처럼 기술하면 다음 사람이 존재한다고 믿는다.**
 
+★ 2026-09-29 정정 — **그 선언은 이미 움직였다.** 대장의 `norm` 은 지금
+  `status: 진행중` 이고 `migrated` 에 키 14개가 들어 있다. 위 두 값은 이 절을
+  쓴 날의 상태다. 옮기는 규율(한 건마다 `golden.py check`)은 그대로다.
+
 ## 62. 캐시 스탬프가 사람 소유 파일을 오염시켰다
 
 > 2026-08-24
@@ -4189,9 +4193,14 @@ ALB · 타깃 그룹 · IAM 역할 다섯을 알아야 고칠 수 있고, EC2 + 
 ### 93-5. 남은 확인
 
 이 절은 GIS 담당이 쓴 초안이다. **인프라 담당(김재웅)이 확인해야 한다.**
-`src/api/` · `infra/` 가 그 파트 소유이고(CODEOWNERS), 실물을 만들 사람이
-정본을 쥔다. 틀렸으면 §12-8 을 고치고 `[그림 24]` 를 재생성한다 —
-그때는 기획서가 따라오는 쪽이다.
+실물을 만들 사람이 정본을 쥔다. 틀렸으면 §12-8 을 고치고 `[그림 24]` 를
+재생성한다 — 그때는 기획서가 따라오는 쪽이다.
+
+★ 2026-09-29 정정 — 이 자리에 「`src/api/` · `infra/` 가 그 파트 소유이고
+  (CODEOWNERS)」라 적혀 있었다. **근거가 둘 다 없다.** `CODEOWNERS` 의 소유자
+  핸들 47건은 전부 `@CleverAIFox` 하나이고 파트·팀 핸들은 0건이다(§163-1 ·
+  MASTER §12-1c). 두 디렉터리도 저장소에 없다. 확인을 받아야 한다는 판단은
+  그대로 서지만 **소유 구조를 근거로 들 수 없다.**
 
 강제자  `tools/docx_check.py` 캡션 절 (CAPTION_STALE)
 재현    `uv run python tools/docx_check.py`
@@ -5400,7 +5409,14 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 `publish_fleet.py` 가 `fleet.json` 을 낸다.
 
 `route_vehicle.csv` 를 별 파일로 뺀 것과 같은 수법이다(§20-2). 기존 열여섯은 한
-바이트도 안 바뀌었고 `sha 254c8a90394128b4` 가 그대로다.
+바이트도 안 바뀌었다.
+
+★ 2026-09-29 정정 — 이 자리에 `sha 254c8a90394128b4` 가 그대로라 적혀 있었다.
+  그 값은 **`web/data` 의 어느 파일과도 안 맞고 이 문서 안에만 있다.**
+  `segments.geojson` 의 `sha256[:16]` 은 `9a6b92997e785d4d` 이다(속성 28칸 ·
+  피처 1,281). 이 절이 든 주장은 「그때 안 바뀌었다」이고 그것은 참이지만,
+  **지금 값을 적어 두면 다음 사람이 그것으로 대조한다.** 지문은 문서가 아니라
+  `data/golden` 이 든다 — 여기서는 수를 빼고 근거만 남긴다.
 
 강제자  `web/navi/src/domain/vehicle.ts::verifyAgainstPrecomputed`
         앱이 켜질 때마다 `route_vehicle.json` 과 대조하고 갈리면 콘솔·화면에
@@ -5585,7 +5601,9 @@ SSD 의 `data/field/` 가 `FIRE_LANE_DATA`(`fire-lane-data/`)의 **형제**라
 강제자  `tools/matchcheck.py`
         Mapbox 토큰이 필요해 CI 에 못 건다.
         `test_tools_are_wired` 의 EXEMPT 에 사유와 함께 등재했다
-재현    `uv run python tools/matchcheck.py --all`
+재현    `uv run python tools/matchcheck.py web/data/segments.geojson --all`
+        ★ 2026-09-29 정정 — 종전에는 `segments` 없이 적혀 있어 **안 돌았다.**
+          `segments` 는 필수 위치 인자다(`matchcheck.py:77`).
 
 ---
 
@@ -6001,11 +6019,15 @@ Native 로 가면 `domain`·`infra`·`app` 은 그대로 돌고 `components`·`u
 ★ **의존성을 안 늘렸다.** `python-dotenv` 를 `paths.py` 에 물리면 순수
   표준 라이브러리 도구까지 전염된다. 15줄 파서로 끝난다.
 
-★ **"`paths.py` 가 유일한 독자" 는 목표지 현재 상태가 아니다.**
-  `os.environ` 을 직접 읽는 파일이 12개이고 **그것들은 `.env` 를 못 읽는다.**
-  오늘 `lakecheck` 가 정확히 그것으로 실패했다 — `.env` 에 값이 있는데
-  "FIRE_LANE_DATA 가 없다" 를 냈다. `env_check --readers` 가 세는 숫자가
-  곧 `.env` 가 안 먹는 곳의 수다. 다음 배치의 첫 항목이다.
+★ **"`paths.py` 가 유일한 독자" 는 그때 목표였고 지금은 상태다.**
+  이 절을 쓴 날에는 `os.environ` 을 직접 읽는 파일이 12개였고 **그것들은
+  `.env` 를 못 읽었다.** 그날 `lakecheck` 가 정확히 그것으로 실패했다 —
+  `.env` 에 값이 있는데 "FIRE_LANE_DATA 가 없다" 를 냈다.
+
+★ 2026-09-29 정정 — 지금 `EXEMPT` 밖 독자는 **0파일 0곳**이다(AST 로 셌다).
+  탐지기는 살아 있다 — 면제된 `paths.py` 에서 9곳을 잡는다. `env_check` 자신도
+  「0 이 목표다」라 찍는다. `env_check --readers` 가 세는 숫자가 곧 `.env` 가
+  안 먹는 곳의 수라는 것은 그대로다.
 
 
 ## 146. V-World 키는 숨길 수 없다 — 옮기는 목적이 다르다
@@ -7050,7 +7072,7 @@ README 와 MASTER §8 이 `web/js` 를 **"공백 · 이탈로 소유자 없음 (
 실측하니 `fleet.json` 의 `source` 를 **읽는 곳이 없다** — 화면에 안 나간다. 고칠 결함이
 아니라서 두었다.
 
-강제자  `tests/test_declaration_reality.py::test_document_counts_match_reality` — 모듈 수 대조가 README · MASTER · web/README 를 잡았다
+강제자  `tests/test_declaration_reality.py::test_document_counts_match_reality`. ★ 2026-09-29 정정 — 종전에 「모듈 수 대조가 README · MASTER · web/README 를 잡았다」라 적혀 있었다. `COUNTS` 는 지금 한 줄(「제공기관 폴더」)뿐이고 `web/js` 모듈 행은 2026-09-22 에 삭제됐다(`test_declaration_reality.py:241`). 대조 대상 파일도 `README.md` · `docs/MASTER.md` · `tools/scan_data.py` 다
 
 ## 167. 문서 정리 — 도달 가능 687 은 688 이었다 · 전량 생략 서술을 두 겹으로
 
@@ -8639,7 +8661,14 @@ import 는 분기 안에 둔다 — 꼭대기로 올리면 스위치와 무관�
 (2026-09-18 옛 판과 직접 대조 — seg_uid 불변). ② `skeleton.as_road` 는 빈 값을 `None` 하나로 접는다 —
 `NaN` 을 흘리면 하류가 `or` 로 못 거른다. `ROAD_BT` 도 같다.
 
-★ `segkey.py` 는 golden 이 보는 판정 지문 파일이 **아니다**(watch 여섯에 없다). 코드 지문도 안 움직인다.
+★ 2026-09-29 정정 — 이 자리에 「`segkey.py` 는 golden 이 보는 판정 지문 파일이
+  **아니다**(watch 여섯에 없다). 코드 지문도 안 움직인다」라 적혀 있었다. **그때는
+  맞았고 §202 가 그것을 무효로 만들었다.** 판정 지문 범위가 손목록에서 import
+  닫힘으로 바뀌었고(`judgment_files()` = `code_closure("firelane.segments")`),
+  `segments.py:49 · 75` 가 `segkey` 를 import 하므로 `segkey.py` 는 지금
+  **지문 안에 있다**(`data/golden/.code_fingerprint:19`). 손목록 여섯은
+  `_LEGACY_WATCH`(rehash 전용 동결본)로 밀려났다.
+  **이 절을 근거로 `segkey.py` 를 고치면 재잠금 없이 판정 지문을 건드린다.**
 
 강제자  `tests/test_r3.py::test_road_hash_treats_nan_as_no_name_and_keeps_string_results_identical` · `::test_as_road_never_emits_nan_into_name_or_width`
 
@@ -9956,7 +9985,11 @@ AST 닫힘 안에 있으니 **움직이는 것이 옳다.**
 
 `tools/freshcheck.py` 가 자리마다 이름을 붙인다 —
 
-    시각 · 코드봉인 · 설정봉인 · 원본봉인 · 산출봉인 · 파생 · 산출값
+    시각 · 코드봉인 · 설정봉인 · 원본봉인 · 산출봉인 · 범위봉인 · 파생 · 산출값
+
+★ 2026-09-29 정정 — 「범위봉인」이 빠져 있었다. §223-5 가 `SEAL_KIND` 에
+  `scope` 를 넣었고 이 목록은 그 앞의 일곱이었다. 자리 이름은 도구가 든다
+  (`freshcheck.py:75`) — 문서가 그것을 베끼면 도구가 늘 때마다 낡는다.
 
 같은 사건을 다시 돌리면 이렇게 나온다.
 
@@ -16125,7 +16158,7 @@ GPS 가 **없는** 경우는 이미 막혀 있었다. 데스크톱 · 권한 거
 
 > 2026-09-27
 
-강제자  `tools/delivercheck.py` · `tests/test_delivercheck.py`(17) · `tools/fl.sh` 3단계 · `tools/branch_tidy.sh`. 하위 여섯이 이 칸을 물려받는다
+강제자  `tools/delivercheck.py` · `tests/test_delivercheck.py`(21) · `tools/fl.sh` 3단계 · `tools/branch_tidy.sh`. 하위 여섯이 이 칸을 물려받는다
 
 배치 B 하나를 보내면서 도구 결함 다섯을 만났고 **다섯이 같은 형태**였다.
 
@@ -16782,7 +16815,7 @@ CI `if:` 6 · `# ci-exempt:` 12 · 면제표 94항목, **사유가 빈 것 0**. 
 
 > 2026-09-28
 
-강제자  `tools/render_figures.py`(`fig_verdict_flow` · `_verdict_rules`) · `tools/docx_figs.py`(`SOURCELESS_MAX` 19) · `tests/test_figure_fit.py`. 하위 둘이 이 칸을 물려받는다
+강제자  `tools/figures/structure.py`(`fig_verdict_flow` 261 · `_verdict_rules` 222) · `tools/docx_figs.py`(`SOURCELESS_MAX` 19) · `tests/test_figure_fit.py`. ★ 2026-09-29 정정 — 종전에 이 둘을 `tools/render_figures.py` 로 지목했다. **하위 281-2 가 이 배치에서 쪼갠 그 자리이고 칸이 안 따라왔다** — `render_figures.py` 는 `fig_verdict_flow` 를 import 만 하고 `_verdict_rules` 는 아예 안 든다. 하위 둘이 이 칸을 물려받는다
 
 ### 281-1. [그림 14] — 규칙 문언 · 임계값 · 구간 수를 **셋 다** 정본에서 읽는다
 
@@ -17813,3 +17846,34 @@ L3 은 「입구를 안 거친 원본이 밖에 있나」를 센다. 이름이 �
   `verify.sh` 의 병렬 폭을 줄이지 않았다 — 폭이 문제였으면 다른 단계도 죽었을
   것이고, 죽은 것은 **레이크 전체를 해시하는 단계 하나**였다. 원인을 고쳤으니
   폭은 건드리지 않는다. 다른 단계가 같은 자리에서 죽으면 그때 폭을 잰다.
+
+## 294. 배달 도구가 zip 을 제 목록에 넣어 자신을 압축했다
+
+> 2026-09-29
+
+강제자  `tools/delivercheck.py`(`zip_items`) · `tools/deliver.py`(`--selftest` 세 팔)
+
+`--zip $OUT/x.zip` 으로 묶으니 zip 이 **4.5GB 까지 자랐고** 멈춘 것은 사람이었다.
+
+    z.unlink(missing_ok=True)
+    with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED) as zf:
+        for f in sorted(out.iterdir()):
+
+`ZipFile(z, "w")` 가 파일을 **만든 뒤** `out.iterdir()` 를 부른다. `--zip` 이
+`--out` 안을 가리키면 zip 자신이 그 목록에 들고, `zf.write` 가 그것을 읽는 동안
+파일이 자란다. 끝이 없다.
+
+★ `--zip $OUT/x.zip` 은 **자연스러운 씀씀이다.** 배달물을 한 자리에 모으는 것이
+  이 도구의 뜻이고, 여태 안 터진 것은 zip 을 늘 `out` 밖에 뒀기 때문이다 —
+  규율로 피해 온 것이고 도구는 몰랐다. 사람이 피하게 하지 않고 도구가 막는다.
+
+★ 목록을 **열기 전에** 고정하는 것이 고침의 핵이다. 이름으로만 빼면
+  `--zip ../h/x.zip` 처럼 같은 파일을 다른 글자로 가리킬 때 다시 샌다.
+  `resolve()` 로 실물을 대고, 자기검사가 그 경로 꼴까지 잰다.
+
+★ 자기검사를 **양방향으로** 건다 — 자신은 빠지고 나머지는 하나도 안 빠진다.
+  한쪽만 재면 「전부 빼기」가 통과한다.
+
+★ 제품이 아니라 배달 도구의 결함이다. 그런데 이 배치가 든 물음이 바로
+  **배달물이 제 성질을 주장하고 그 주장을 사람이 쓴다**는 것이었다(§273-8 ·
+  §276-1 · §290-4). 같은 족이 배달 도구 안에 하나 더 있었다.

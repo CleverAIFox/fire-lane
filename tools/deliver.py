@@ -108,6 +108,8 @@ from delivercheck import (
     new_red,
     sweep_verdict,
     tails,
+    zip_items,
+    zip_items_broken,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -421,11 +423,8 @@ def cmd_pack(a) -> int:
 
     print(f"  밑동  {sha[:12]}  {subj}")
     fact = dryrun(a.branch, a.range, ps, fetch=False, tests=not a.no_tests)
-    # ★ 2026-09-28 (DECISIONS §290-5). `BASE` 파일을 **뺐다.** 밑동 제목을 담았는데
-    #   `EXPECT` 의 `base.subject` · `base.sha` 가 같은 사실을 이미 담고 있었고,
-    #   **저장소에서 그 파일을 읽는 코드는 0개였다.** 두 집에 사는 사실 중 하나는
-    #   반드시 낡는다(2족) — 낡는 쪽은 독자가 없는 쪽이다.
-    #   이제 `expectcheck.py` 가 `base.sha` 가 HEAD 의 조상인지를 **재서** 댄다.
+    # ★ §290-5. `BASE` 파일을 뺐다 — `EXPECT` 가 같은 사실을 담는데 독자가 0개였다.
+    #   이제 `expectcheck.py` 가 `base.sha` 의 조상 여부를 **재서** 댄다.
     (out / "EXPECT").write_text(render(fact), encoding="utf-8")
     for k, v in fact.items():
         print(f"  {k:<20} {v}")
@@ -450,12 +449,13 @@ def cmd_pack(a) -> int:
 
     if a.zip:
         z = Path(a.zip)
+        items = zip_items(out, z)     # ★ §294. 목록을 **열기 전에** 고정한다
         z.unlink(missing_ok=True)
         with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED) as zf:
-            for f in sorted(out.iterdir()):
-                if f.is_file():
-                    zf.write(f, f.name)
-        print(f"  zip   {z}  sha256 {hashlib.sha256(z.read_bytes()).hexdigest()[:16]}")
+            for f in items:
+                zf.write(f, f.name)
+        sha = hashlib.sha256(z.read_bytes()).hexdigest()[:16]
+        print(f"  zip   {z}  sha256 {sha}  ({len(items)}개)")
     return 0
 
 
@@ -491,6 +491,9 @@ def selftest() -> int:
         bad.append("본문이 있는데 운다")
     if not (ROOT / BODY_CHECK).exists():
         bad.append(f"`{BODY_CHECK}` 가 없다 — 본문 검사가 죽은 칸이다")
+    # ★ §294. zip 이 제 목록에 들면 끝나지 않는다. 경로 꼴까지 재는 전수는
+    #   `tests/test_delivercheck.py` 가 들고, 여기서는 **죽은 칸만** 막는다.
+    bad += zip_items_broken()
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad)); return 1
 

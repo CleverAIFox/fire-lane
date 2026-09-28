@@ -229,3 +229,46 @@ def forbidden(paths: list[Path]) -> list[str]:
             if s in head:
                 bad.append(f"{p.name}: {s}")
     return bad
+
+
+def zip_items(out: Path, z: Path) -> list[Path]:
+    """zip 에 넣을 파일. **zip 자신은 뺀다.**
+
+    ── 왜 생겼나 (2026-09-29 · §294) ───────────────────────────
+    종전 코드는 `ZipFile(z, "w")` 로 파일을 **만든 뒤** `out.iterdir()` 를
+    불렀다. `--zip` 이 `--out` 안을 가리키면 그 목록에 zip 자신이 들어가고,
+    `zf.write` 가 그것을 읽는 동안 파일이 자란다 — **끝나지 않는다.**
+    실기에서 4.5GB 까지 갔고 멈춘 것은 도구가 아니라 사람이다.
+
+    ★ `--zip $OUT/x.zip` 은 **자연스러운 씀씀이다.** 배달물 한 자리에 모아
+      두는 것이 이 도구의 뜻이다. 사람이 피하게 하지 않고 도구가 막는다.
+
+    ★ 목록을 **열기 전에** 고정하는 것이 고침의 핵이다. 이름으로만 빼면
+      `--zip ../h/x.zip` 처럼 같은 파일을 다른 글자로 가리킬 때 다시 샌다.
+      `resolve()` 로 실물을 대고, 열기 전에 목록을 뜬다.
+    """
+    zr = z.resolve()
+    return [f for f in sorted(out.iterdir())
+            if f.is_file() and f.resolve() != zr]
+
+
+def zip_items_broken() -> list[str]:
+    """`zip_items` 가 죽었나. 양방향으로 잰다 — 자신은 빠지고 나머지는 안 빠진다.
+
+    ★ 한쪽만 재면 「전부 빼기」가 통과한다. 경로 꼴(`resolve()`)까지 재는
+      전수는 `tests/test_delivercheck.py` 가 든다.
+    """
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        o = Path(td)
+        for n in ("fire-lane-0001-x.patch", "EXPECT", "PR_BODY.md"):
+            (o / n).write_text("x", encoding="utf-8")
+        z = o / "fire-lane-batch.zip"
+        z.write_text("", encoding="utf-8")
+        got = [f.name for f in zip_items(o, z)]
+    bad = []
+    if z.name in got:
+        bad.append("zip 이 제 목록에 든다 — 자기를 압축한다(§294)")
+    if len(got) != 3:
+        bad.append(f"zip 목록이 3개여야 하는데 {len(got)}개다 — 멀쩡한 것을 뺐다")
+    return bad
