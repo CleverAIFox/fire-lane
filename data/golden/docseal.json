@@ -1007,15 +1007,15 @@
   ],
   "kind": "read",
   "legacy": [
-   "6446bf5bca776178"
+   "2531fe94d7fd2d51"
   ],
   "parts": {
    "src/firelane/quiet_gdal.py": "41381bb7a3e462e2",
    "tests/test_ortho_seal.py": "d12326beb58a69fd",
-   "tools/lakecheck.py": "6298abd56053d0fe",
+   "tools/lakecheck.py": "e1909c52aacfac7c",
    "본문": "ba0d9873e510775a"
   },
-  "sha": "19122df51036d998"
+  "sha": "87b2fd0e1d25c3e9"
  },
  "DECISIONS/210": {
   "doc": "docs/DECISIONS.md",
@@ -3033,7 +3033,7 @@
   ],
   "kind": "read",
   "legacy": [
-   "74d10e4d0834fc55"
+   "755ade22e519505f"
   ],
   "parts": {
    "src/firelane/seg/params.py": "420b3d8812bb87a4",
@@ -3056,9 +3056,9 @@
    "web/config.js": "ed851b78a3c520eb",
    "web/navi/src/domain/vehicle.ts": "449e1612784f93ec",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "2759b1a8f058f195"
+   "본문": "8b0b4438e3c55a97"
   },
-  "sha": "11a6bcda1d960bac"
+  "sha": "d2fdc13a0ad9b65d"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
