@@ -80,17 +80,42 @@ def notice(want: dict) -> list[str]:
     return out
 
 
+def drift(want: dict, got: dict) -> list[str]:
+    """**판정이 아니라 통보.** 기계 사이에서 정당하게 달라지는 축들이다.
+
+    ★ 2026-09-28 (DECISIONS §292). 처음 판에는 이 둘이 **판정**이었고 첫 실기에서
+      바로 거짓 빨간불을 냈다. 원인은 둘 다 명확하다 —
+
+        closure.*   `shardseal.code_print` 이 **`uv.lock` 의 sha 를 지문에 넣는다**
+                    (shardseal.py:109 — 「geopandas 판이 바뀌면 산출물도 바뀐다」).
+                    그리고 받는 쪽 4b 는 `uv run` 으로 파이프라인을 다시 돌리므로
+                    그 자리에서 `uv.lock` 이 움직일 수 있다. 즉 **기계가 다르면
+                    이 값은 달라지는 것이 정상**이고, 대면 반드시 운다.
+        webdata     재잠금 커밋이 훅 실패로 안 앉으면 생성물이 더러운 채 남는다.
+                    그 판정은 `verify.sh` 의 「커밋된 web/data 가 최신인가」가
+                    이미 든다 — 여기서 또 내면 관문이 둘이다(3족).
+
+    ★ 그래서 **버리지 않고 옮겼다.** 값은 보여 준다 — 사람이 보고 판단할 것이
+      있는 수다. 다만 이 단계가 배달을 막는 근거로 쓰지 않는다.
+    """
+    out: list[str] = []
+    for k in ("closure.ingest", "closure.segments"):
+        if k in want and closure_target(want[k]) != got[k]:
+            out.append(f"{k}  적힘 {closure_target(want[k])} · 실측 {got[k]}"
+                       "  (지문에 `uv.lock` 이 들어 있다 — 기계가 다르면 다르다)")
+    if want.get("webdata") == "unchanged" and got["webdata"] == "changed":
+        out.append("webdata  안 바뀐다고 적혔는데 더럽다 — 「커밋된 web/data 가 최신인가」가 든다")
+    return out
+
+
 def disagreements(want: dict, got: dict, root: Path) -> list[str]:
-    """계약과 실측이 어긋난 것. **순수하게 대기만 한다** — 밑동 조상만 git 을 든다."""
+    """계약과 실측이 어긋난 것. **기계가 달라도 같아야 하는 것만 댄다.**"""
     bad: list[str] = []
     if sha := want.get("base.sha"):
         rc, _ = _run(["git", "merge-base", "--is-ancestor", sha, "HEAD"], cwd=root)
         if rc:
             bad.append(f"base.sha {sha} 가 HEAD 의 조상이 아니다 — "
                        "이 배달물은 **다른 밑동에서 재어졌다**")
-    for k in ("closure.ingest", "closure.segments"):
-        if k in want and closure_target(want[k]) != got[k]:
-            bad.append(f"{k}  적힘 {closure_target(want[k])} · 실측 {got[k]}")
     # ★ 재잠금은 **여기서 이미 끝났어야 한다.** EXPECT 가 `yes` 였다면 `fl.sh --relock`
     #   이 4b 에서 돌았을 것이고 그랬으면 지금은 `no` 다. `yes` 로 남아 있으면
     #   재잠금을 안 한 것이다 — `golden check` 가 다음 실행부터 계속 울고
@@ -98,8 +123,6 @@ def disagreements(want: dict, got: dict, root: Path) -> list[str]:
     if got["golden.stale"] != "no":
         bad.append("golden.stale  지금도 `yes` 다 — 재잠금이 안 돌았다"
                    f" (EXPECT 의 예고는 `{want.get('golden.relock', '?')}`)")
-    if want.get("webdata") == "unchanged" and got["webdata"] == "changed":
-        bad.append("webdata  안 바뀐다고 적혔는데 바뀌었다")
     return bad
 
 
@@ -116,6 +139,10 @@ def check(expect: Path, root: Path = ROOT) -> int:
         print(line)
 
     got = state(root, _wt_env(root))
+    if d := drift(want, got):
+        print("\n  기계 사이에서 **정당하게** 다른 축 (판정 아님)")
+        for line in d:
+            print(f"    {line}")
     if bad := disagreements(want, got, root):
         print(f"\n✗ 계약과 실측이 어긋난다 {len(bad)}건")
         for b in bad:
@@ -137,15 +164,18 @@ def selftest() -> int:
             "webdata": "unchanged", "unexercised": "0"}
     if disagreements(want, ok, ROOT):
         bad.append(f"맞는 계약에 운다 — {disagreements(want, ok, ROOT)}")
-    if not disagreements({**want, "closure.segments": "same:cccc"}, ok, ROOT):
-        bad.append("폐포 지문이 달라도 안 운다")
     if not disagreements(want, {**ok, "golden.stale": "yes"}, ROOT):
         bad.append("재잠금이 안 돌았는데 안 운다")
-    if not disagreements(want, {**ok, "webdata": "changed"}, ROOT):
-        bad.append("web/data 가 안 바뀐다고 적혔는데 바뀐 것을 안 잡는다")
-    if disagreements({**want, "webdata": "changed"},
-                     {**ok, "webdata": "changed"}, ROOT):
-        bad.append("바뀐다고 적힌 web/data 가 바뀐 것에 운다 — 그것은 예고대로다")
+    # ★ 판정에서 뺀 둘(§292). **판정으로 돌아오면 운다** — 첫 실기에서 거짓
+    #   빨간불을 낸 자리이고, 되돌아가는 것을 이 팔이 막는다.
+    if disagreements({**want, "closure.segments": "same:cccc"}, ok, ROOT):
+        bad.append("폐포 지문 차이를 **판정**으로 쓴다 — `uv.lock` 이 지문에 있다(§292)")
+    if disagreements(want, {**ok, "webdata": "changed"}, ROOT):
+        bad.append("web/data 더러움을 **판정**으로 쓴다 — verify 가 이미 든다(§292)")
+    if not drift({**want, "closure.segments": "same:cccc"}, ok):
+        bad.append("폐포 지문 차이를 통보로도 안 낸다 — 값은 보여야 한다")
+    if not drift(want, {**ok, "webdata": "changed"}):
+        bad.append("web/data 더러움을 통보로도 안 낸다")
 
     # ★ `moved:a->b` 는 **뒤쪽**이 기준이다. 앞을 대면 늘 어긋난다.
     if closure_target("same:abc123") != "abc123":

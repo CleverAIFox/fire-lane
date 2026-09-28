@@ -337,13 +337,18 @@ printf '%suv    %s  %s\n\n' "$D" "$Z" "$(uv --version 2>/dev/null || echo '없�
 step "의존성 동기화 (uv sync --frozen --dev)" uv sync --frozen --dev
 
 # ── 1. 패키지가 실제로 import 되는가 ─────────────────────────
+# ★ 2026-09-28 (DECISIONS §292-2). 목록을 **유도로** 바꿨다. 종전에는 31개를 손으로
+#   적어 뒀고, `sample_design.py` 를 지운 배치에서 그 목록만 안 따라와 이 단계가
+#   `ModuleNotFoundError` 로 죽었다 — **손목록은 반드시 실물과 갈린다**(deadcheck ②).
+#   유도로 바꾸니 31 → 68 로 넓어졌다. 모듈을 더하는 배치도 자동으로 덮인다.
 step "패키지 import" uv run python -c '
-import importlib, sys
-mods = ["paths","manifest","quiet_gdal","krgis.crs","seg.params","seg.geom","seg.width",
-        "seg.roadname","seg.basisno","seg.graph","seg.report","segkey","guards",
-        "lineage","ngi","ngii1k","probe","contract","inventory","datalog",
-        "normalize_raw","sample_design","ingest","segments","display_scope","streetlight",
-        "terrain","ortho","publish_web","pipeline","shardseal"]
+import importlib, pathlib, sys
+root = pathlib.Path("src/firelane")
+mods = sorted(".".join(p.relative_to(root).with_suffix("").parts)
+              for p in root.rglob("*.py")
+              if "__pycache__" not in p.parts and p.name != "__init__.py")
+if len(mods) < 40:
+    print(f"모듈을 {len(mods)}개만 찾았다 — 수집이 죽었다(빈 그물)"); sys.exit(1)
 bad = []
 for m in mods:
     try: importlib.import_module("firelane." + m)

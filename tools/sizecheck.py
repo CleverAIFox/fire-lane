@@ -78,7 +78,10 @@ EXCEPTIONS: dict[str, int] = {
     #   규약이 늘면 는다.
     "tests/test_batch_tools.py": 743,
     # 코드 (상한 600)
-    "tools/dms.py": 1574,
+    # ★ 2026-09-28 (DECISIONS §292-4). 1574 → 1588. `SAID_N` 에 숫자 꼴 갈래와
+    #   자기검사 네 팔, 그리고 그 사유다. 그 한 갈래가 없어서 물림 수 어긋남
+    #   10건이 조용히 통과하고 있었다 — 검사가 늘면 이 파일이 는 것이 맞다.
+    "tools/dms.py": 1588,
     "src/firelane/ingest.py": 646,
     # ★ 2026-09-28 (DECISIONS §280-3). 1059 → 1068.  에 짝 하나와
     #   그 사유다. 이 파일은 프로브 다섯의 면제 목록이라 면제가 늘면 는다 —
@@ -140,7 +143,9 @@ EXCEPTIONS: dict[str, int] = {
     #   대장에 있었고 아무도 대지 않았다. verify.sh 는 검사의 목록이라 검사가 늘면 는다.
     # ★ 2026-09-28 (DECISIONS §290). +3. 커버리지 래칫 33→34 와 **F 가 그 권고를
     #   읽고도 안 조인 사실**을 그 자리에 적었다. 검사가 아니라 사유 세 줄이다.
-    "tools/verify.sh": 1125,
+    # ★ 2026-09-28 (DECISIONS §292-2). 1125 → 1130. 「패키지 import」의 손목록 31개를
+    #   유도로 바꾼 다섯 줄과 사유다. 목록이 줄어들고 덮는 범위는 31 → 68 로 늘었다.
+    "tools/verify.sh": 1130,
     "src/firelane/segments.py": 853,
     "tools/render_workflow.py": 635,
     "tools/golden.py": 613,
