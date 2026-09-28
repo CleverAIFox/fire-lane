@@ -96,7 +96,9 @@ def read_text_table(c: Ctx):
     #   아니라 **실행되는 것**이 된다.
     con = e.get("contract") or {}
     sel = e.get("select") or {}
-    delim = con.get("delimiter", "|")
+    # ★ 기본값의 정본은 `ledger.delimiter_of` 하나다(§284-4).
+    from firelane import ledger as _led
+    delim = _led.delimiter_of(e)
     enc = e.get("encoding", "cp949")
     inner_key = e.get("inner_contains", "")
     cols = con.get("columns")

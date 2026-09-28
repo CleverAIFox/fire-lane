@@ -3410,6 +3410,7 @@ outputs:
     produced_by: src/firelane/segments.py
     path: data/processed/segments.schema.json
     inputs: [segments]
+    what: segments.geojson 의 컬럼 계약. 표출이 읽기 전에 구조를 못박는다
     consumers:
     - src/firelane/publish_web.py
     - src/firelane/pipeline.py
@@ -3431,6 +3432,7 @@ outputs:
     produced_by: src/firelane/display_scope.py
     path: data/processed/scope_5186.gpkg
     inputs: [boundary_emd, fire_station]
+    what: 표출 스코프 폴리곤. 동명동 경계 60m ∪ 접근 회랑 70m ∪ 안전센터 300m
     consumers:
     - src/firelane/ortho.py
     - src/firelane/publish_web.py
@@ -3547,6 +3549,10 @@ outputs:
     path: data/field/ngi_width_05_check.csv
     inputs: [ngii1k]
     what: 폭 0.5m 로 나온 51행 대조표. 광주 동구 전체에서 뽑았다
+    # ★ 2026-09-28 (§285-2). `consumers` 키 자체가 없었다. 「아직 소비자가
+    #   없다」(빈 리스트)와 「선언을 안 했다」(키 부재)는 다르다 — 앞은
+    #   판단이고 뒤는 빠뜨린 것이다. 이 표의 독자는 코드가 아니라 문서다.
+    consumers: [docs/DECISIONS.md]
     verified: false
     known_issues:
     - ★ 파생물이다. field 에 있으나 실측이 아니라 재생성 가능하다.
