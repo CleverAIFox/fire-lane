@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-fieldseal.py — `data/field` 의 **무결성 지문**. 재취득 불가 층의 유일한 증표다.
+fieldseal.py — `data/field` 의 **무결성 지문**. 인용의 밑동이 안 움직였음을 든다.
 
     uv run python tools/fieldseal.py            대조 (verify · CI 가 이것을 돈다)
     uv run python tools/fieldseal.py --write    지문을 다시 뜬다 (★ 사람이 친다)
@@ -19,9 +19,16 @@ fieldseal.py — `data/field` 의 **무결성 지문**. 재취득 불가 층의 
 내용이 정본이었는지를 선언하지 않는다.
 
 ★ 2026-09-28 에 실제로 났다. CLI 전수에 모르는 깃발을 하나씩 줘 보다가
-  (§283-2) 도구들이 그것을 무시하고 **일을 해서** `obs_points.csv` ·
+  (§283-2) 도구들이 그것을 무시하고 **일을 해서** 그때의 `obs_points.csv` ·
   `sample_segments.csv` · `fieldsheet.md` 가 덮어써졌다. `git status` 를
   우연히 본 사람이 되돌렸다. **우연에 기대고 있었다.**
+
+★ 2026-09-28 (DECISIONS §291). **그 셋을 지웠다.** 현장 실측을 안 가기로
+  판단했고(근거는 §291), 야장에 적힌 실측값은 75행 중 **0행**이었다 —
+  빈 양식이었다. 이 층에 남은 것은 `ngi_width_05_check.csv` 하나이고
+  그것은 실측이 아니라 **파생물**이다. 그래서 이 도구의 뜻이 바뀌었다:
+  「그날 잰 그 파일인가」에서 **「DECISIONS 가 인용하는 그 표 그대로인가」**로.
+  손으로 뽑은 표라 파이프라인이 다시 못 만들고, 인용이 그것을 근거로 든다.
 
 ★ `data/field` 는 커밋되므로 **CI 가 이 검사를 돌 수 있다.** 레이크가
   필요 없는, 재생성 불가 층의 관문이다.
@@ -29,10 +36,10 @@ fieldseal.py — `data/field` 의 **무결성 지문**. 재취득 불가 층의 
 IN    data/field/**
 OUT   data/golden/field.fingerprint.json
 PARAM 없음
-밖    **값이 옳은가는 안 본다.** 관측점이 실제 그 자리인지, 폭 값이 맞는지는
-      `tests/test_fieldsheet.py` 와 실측 대장이 본다. 여기가 드는 것은
+밖    **값이 옳은가는 안 본다.** 표의 폭 값이 맞는지는 「폭 교차대조」
+      (`tools/widthcross.py`)가 다른 원천과 대서 본다. 여기가 드는 것은
       「선언한 그 파일 그대로인가」 하나다.
-      **재생성도 안 한다** — 재생성 불가 층이라 애초에 못 한다.
+      **재생성도 안 한다** — 손으로 뽑은 표라 파이프라인 단계가 없다.
 """
 from __future__ import annotations
 
@@ -141,9 +148,14 @@ def selftest() -> int:
         bad.append("사라진 파일을 못 잡는다")
     if not diff({**base, "b.csv": {"sha256": "z", "bytes": 1, "lines": 0}}, base):
         bad.append("새로 생긴 파일을 못 잡는다")
-    # ★ 실물에서도 재 본다. 0개를 재면 「전부 같다」가 거짓이 된다.
-    if len(survey()) < 2:
-        bad.append(f"실물을 {len(survey())}개만 읽었다 — 조사가 죽었다")
+    # ★ 실물에서도 재 본다. **0개를 재면 「전부 같다」가 거짓이 된다** — 그것이
+    #   이 팔의 유일한 뜻이다(빈 그물 금지).
+    # ★ 2026-09-28 (DECISIONS §291). 하한이 2 였다. 야장 셋을 지운 뒤 이 층에
+    #   남은 것이 하나라 **정당하게** 울었다 — 하한이 「그물이 비었나」가 아니라
+    #   「파일이 몇 개여야 하나」를 말하고 있었고, 후자는 이 도구가 정할 것이
+    #   아니다. 층의 구성은 대장(`sources.yaml`)이 든다.
+    if not survey():
+        bad.append("실물을 하나도 못 읽었다 — 조사가 죽었다(빈 그물)")
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad))
         return 1

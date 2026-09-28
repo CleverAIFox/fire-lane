@@ -62,14 +62,10 @@ PIPE_README = ROOT / "src/firelane/README.md"
 #   **정확히 같은 집합**인지 본다 — 하나가 늘어도, 하나가 죽어도 운다.
 #   이 파일(`doc_fsck.py`) 자신은 표가 사는 자리라 뺀다. 산문 사유는 그 옆에 남는다.
 FIELD_EXEMPT: dict[str, tuple[str, ...]] = {
-    # 들고 나가는 종이. 코드 소비자가 없다(DECISIONS §243)
-    # ★ 2026-09-28 (W13-7 · §288). `tools/fieldseal.py` 가 넷째 독자다 —
-    #   내용을 읽는 것이 아니라 **지문을 뜬다.** 재취득 불가 층이라 「그날 잰
-    #   그 파일인가」를 묻는 자리가 따로 필요하다. 목록에 안 넣으면
-    #   `test_delegation` 이 「사유가 실물과 다르다」로 운다 — 실제로 울었다.
-    "fieldsheet.md": ("src/firelane/sample_design.py", "tools/field_compare.py",
-                      "tools/fieldseal.py",
-                      "tests/test_ledger_outputs.py", "tests/test_reproducibility.py"),
+    # ★ 2026-09-28 (DECISIONS §291). `fieldsheet.md` 면제를 **지웠다.** 파일도
+    #   그 소비자 넷도 없다. 실측 계획을 접었고(적힌 실측값 0/75) 야장·표본
+    #   설계·대조 도구를 전부 지웠다. 목록이 실물보다 넓으면 그 목록은 방패가
+    #   아니라 사각지대다 — 바로 아래 2026-09-03 문단이 같은 말을 하고 있다.
     # ── 2026-09-03. 네이버 산출 넷(DECISIONS §42)을 지웠다.
     #
     # ★ **저장소에는 한 번도 없었다.** 실물은 SSD 의 `data/field/` 에 있었고

@@ -154,10 +154,14 @@ INTERIM = (DATA / "interim") if DATA else (ROOT / "data" / "interim")
 #   야장은 CSV 세 개에 수십 KB 이고, UI 담당·심사위원이 clone 만으로 봐야
 #   하는 자료다. web/data 를 git 에 넣는 것과 같은 논리다.
 #
-#   ★ 이 정의를 쓰는 곳이 한 곳도 없었다. sample_design.py 는 자기 파일에
-#     ROOT/"data"/"field" 를 따로 두고 있었고 그쪽이 맞았다. 아무도 안 쓰는
-#     정의가 조용히 문서를 어기고 있었던 것이고, 쓰기 시작하는 순간
-#     FIRE_LANE_DATA 가 설정된 기계에서 야장이 SSD 로 이사했을 것이다.
+#   ★ 이 정의를 쓰는 곳이 한 곳도 없었다. 당시 `sample_design.py`(2026-09-28
+#     삭제 · §291)는 자기 파일에 ROOT/"data"/"field" 를 따로 두고 있었고
+#     그쪽이 맞았다. 아무도 안 쓰는 정의가 조용히 문서를 어기고 있었던 것이고,
+#     쓰기 시작하는 순간 FIRE_LANE_DATA 가 설정된 기계에서 야장이 SSD 로
+#     이사했을 것이다.
+#   ★ 2026-09-28 (§291). 야장·표본·대조 도구를 지운 뒤로 이 층에 남은 것은
+#     `ngi_width_05_check.csv` 하나다 — **실측이 아니라 파생물**이고 DECISIONS
+#     가 근거로 인용한다. `tools/fieldseal.py` 가 지문을 든다.
 FIELD = ROOT / "data" / "field"
 
 # 대장에 없는 파일. 삭제하지 않고 격리한다(MASTER §18-12).

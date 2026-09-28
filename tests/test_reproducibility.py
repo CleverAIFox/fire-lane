@@ -230,7 +230,6 @@ def test_no_fifth_doc():
         "README.md",                    # 저장소 첫 인상. 넷을 가리키기만 한다
         "web/README.md",                # UI 담당용 실행 안내
         "src/firelane/README.md",       # 대장 작성법 · kind 표
-        "data/field/fieldsheet.md",     # 야장. 들고 나가는 종이다
         # ★ 2026-08-27. 규약을 서술하는 문서가 아니라 **양식**이다.
         #   GitHub 이 PR 화면에 자동으로 채워 넣는 폼이고, 내용의 정본은
         #   MASTER §12 다. 강제자는 tools/pr_body_check.py 가 따로 든다.
@@ -520,8 +519,9 @@ def test_paths_match_layer_table():
       적어놨다. field 는 CSV 세 개에 수십 KB 이고 UI 담당·심사위원이
       clone 만으로 봐야 하는 자료다.
 
-      그런데 그 정의를 **쓰는 곳이 한 곳도 없었다.** sample_design.py 는
-      자기 파일에 ROOT/"data"/"field" 를 따로 두고 있었고 그쪽이 맞았다.
+      그런데 그 정의를 **쓰는 곳이 한 곳도 없었다.** 당시 `sample_design.py`
+      (2026-09-28 삭제 · §291)가 자기 파일에 ROOT/"data"/"field" 를 따로
+      두고 있었고 그쪽이 맞았다.
       아무도 안 쓰는 정의가 조용히 문서를 어기고 있었고, 쓰기 시작하는
       순간 FIRE_LANE_DATA 가 설정된 기계에서 야장이 SSD 로 이사했을 것이다.
 
