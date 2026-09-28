@@ -2659,7 +2659,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,186 전수 · **분모(blank) 0절** · 물림(inherit) 452절.
+★ **강제자 칸의 분모.** 절 1,218 전수 · **분모(blank) 0절** · 물림(inherit) 478절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -2696,7 +2696,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 ★ 판단이 루프 안에 인라인으로 있으면 주입이 안 걸린다. **판단을 이름 있는 함수로
   꺼내고 합성 사례가 그 함수를 재게 한다** — 그러면 실물이 깨끗해도 그물은 산다.
 
-강제자  `tools/deadcheck.py` 의 프로브 다섯(①손목록 ②죽은 게이트 ③조용한 통과 ④천장 ⑤좁은 범위)이 **기계로 잡을 수 있는 몫**을 든다. 주입을 실제로 걸었는가는 기계가 못 본다 — 그 몫은 **권고**이고, 걸었으면 결과를 `DECISIONS` 에 남긴다(이 절 머리의 「못 만들겠으면 권고라고 적는다」)
+강제자  `tools/deadcheck.py` 의 프로브 다섯(①빈 그물 ②손목록 ③조용한 통과 ④죽은 게이트 ⑤좁은 범위)이 **기계로 잡을 수 있는 몫**을 든다. **★ 2026-09-28 정정** — 종전 「①손목록 ②죽은 게이트 ③조용한 통과 ④천장 ⑤좁은 범위」였다. 번호 셋이 어긋났고 **「천장」은 프로브가 아니다**(`CEILING` · `--ratchet` 이다). 무엇보다 **①빈 그물이 빠져 있었다** — 이 절의 주장이 「빈 그물은 침묵보다 나쁘다」인데 그 몫을 세는 프로브 이름을 절이 틀리게 적었다. 쓰인 날(2026-09-27)부터 어긋나 있었고 봉인지가 오늘 잡았다. 주입을 실제로 걸었는가는 기계가 못 본다 — 그 몫은 **권고**이고, 걸었으면 결과를 `DECISIONS` 에 남긴다(이 절 머리의 「못 만들겠으면 권고라고 적는다」)
 
 ### 17-1. 정본은 하나 — 사실 · 정본 파일 · 따르는 곳 · 강제자
 
@@ -2712,15 +2712,18 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 | `python` | `.python-version` | `Dockerfile` 베이스 이미지 · `pyproject.toml` requires-python · CI 둘이 파일을 읽는다 | `tests/test_sources_of_truth.py` |
 | `pytest` | `pyproject.toml` | `uv.lock` 의 잠긴 판(하한 이상) | `tests/test_sources_of_truth.py` |
 | `coverage_floor` | `tools/verify.sh` | 같은 파일의 명령줄이 변수를 읽는다 · `tests/test_verify_citations.py` | `tests/test_sources_of_truth.py` |
-| `truck_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · `tests/test_declaration_sync.py` · 문구 넷(`seg/geom.py` · `seg/report.py` · `seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
-| `park_m` | `src/firelane/seg/params.py` | `tools/render_figures.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
-| `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · 문구 둘(`seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `truck_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/figures/value.py` · `tests/test_declaration_sync.py` · 문구 넷(`seg/geom.py` · `seg/report.py` · `seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `park_m` | `src/firelane/seg/params.py` | `tools/figures/value.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/figures/value.py` · 문구 둘(`seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `code_owner` | `.github/CODEOWNERS` | `tools/navi_setup.py` 기본값 · `tools/ruleset_check.py` 관리자 · 기본 저장소 · 배치 도구 셋의 `REPO=` | `tests/test_sources_of_truth.py` |
 | `font_stack` | `tools/svg_fit.py` | `web/navi/src/ui/tokens.ts` · `web/proposal.html` | `tests/test_sources_of_truth.py` |
 | `offtrack_min` | `src/firelane/seg/params.py` | `web/navi/src/domain/vehicle.ts` | `tests/test_sources_of_truth.py` |
 | `local_lat0` | `tools/localgeo.py` | 조사 도구 셋이 **import 한다**(사본 없음) | `tests/test_sources_of_truth.py` |
 
-★ **2026-09-23 — 열 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5). 종전에는 `uv` ·
+★ **2026-09-23 — 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5).
+  ★ 2026-09-28 정정 — 그때 열이었고 지금 **열둘**이다(`offtrack_min` ·
+    `local_lat0` 가 2026-09-24 에 늘었다). 수를 글로 적으면 그 글이 낡는다 —
+    기계가 읽는 정본은 `tests/test_sources_of_truth.py` 의 `SPEC` 이다. 종전에는 `uv` ·
 `python` 둘만 저장소를 훑었고 나머지 여덟은 **선언된 자리만** 봤다. 훑기를 켜려면 오탐 둘을
 먼저 없애야 했다 — 주석 속 값(`code_only` 가 걷는다)과 맨숫자(`near` 로 문맥 낱말과 같은
 줄일 때만 센다). 켜자마자 나온 사본이 위 표의 새 칸들이다.
@@ -2740,7 +2743,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 `tests/test_verify_citations.py` 가, 판정 숫자의 문서 대조는
 `tools/docnum_check.py` 가 이미 한다.
 
-강제자  `tests/test_sources_of_truth.py`(`SPEC` 의 열 사실 전부 — 목록 밖 literal 까지 양방향으로 본다) · `tests/test_ci_env.py` · `tests/test_verify_citations.py`
+강제자  `tests/test_sources_of_truth.py`(`SPEC` 의 **사실 전부** — 목록 밖 literal 까지 양방향으로 본다) · `tests/test_ci_env.py` · `tests/test_verify_citations.py`
 
 ---
 

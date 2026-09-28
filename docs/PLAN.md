@@ -516,7 +516,7 @@ DECISIONS 가 든다. 남은 것이 아래 **9행**이다 — 2026-09-24 전수 
 | W13-4 | 내비가 오프라인에서 못 뜬다 — service worker · manifest · `404.html` 이 없고 글리프가 외부 CDN(`demotiles.maplibre.org`)이다 | 5 | 열림 | 글리프를 자체 발행으로 옮기고 SW · manifest 를 붙인다. 지금은 지하·산간에서 **지도 글자가 사라진다** |
 | W13-5 | React · infra 층에 시험이 없다 — `useNavigation`(552줄) · `gps.ts` · `useVoice` | 1 | 열림 | `deriveStatus` 여덟처럼 **순수 조각부터** 문다. 552줄 훅을 통째로 물려고 하면 안 물게 된다 |
 | W13-6 | 액션이 떠 있는 태그(`@v7`)로 고정돼 있고, 작업 넷 중 셋에 `timeout-minutes` 가 없다 | 1 | 열림 | SHA 고정 + 타임아웃. 태그가 옮겨지면 **조용히 다른 코드가 돈다** |
-| W13-7 | `data/field` 에 무결성 지문이 없다 | 5 | 열림 | 재취득 불가인데 「그날의 그 파일인가」를 아무도 안 묻는다. `processed` 는 `_manifest.json` 이, 판정은 `segments.fingerprint.json` 이 든다 |
+| W13-7 | `data/field` 에 무결성 지문이 없다 | 5 | **닫힘**(2026-09-28) | `tools/fieldseal.py` · `data/golden/field.fingerprint.json` · `verify.sh`「실측 층 지문」 · CI 같은 단계. 재취득 불가 층이라 **커밋되므로 CI 도 돈다.** ★ 닫은 계기가 실제 사고다 — CLI 전수에 모르는 깃발을 주자 도구들이 그것을 무시하고 일을 해 `obs_points.csv` · `sample_segments.csv` · `fieldsheet.md` 가 덮어써졌고, `git status` 를 **우연히** 본 사람이 되돌렸다(DECISIONS §288). git 은 「바뀌었다」를 알려주지만 「그날 잰 그 파일인가」는 안 묻는다 |
 | W13-8 | 소비자 0 인 산출물 넷 — `jijeok` · `jijeok_5186` · `streetlight_point` · `field_sample` | 5 | 열림 | **배선인가 철거인가**를 정한다. 지금은 발행만 되고 아무도 안 읽는다(DECISIONS §243-2) |
 | W13-9 | 전량 재실행 시간에 실측 정본이 없다 — 285초 · 2분45초 · 2분40초 · 5분18초 넷이 돌아다녔다 | 2 | 열림 | 한 기계에서 재고 정본을 하나 정한다. 문서는 2분45초로 모아 뒀다(DECISIONS §243-1) | <!--stale-ok-->
 
@@ -543,7 +543,7 @@ DECISIONS 가 든다. 남은 것이 아래 **9행**이다 — 2026-09-24 전수 
 | 가드 | 족 | 묻는 것 | 강제자 | 상태 |
 |---|---|---|---|---|
 | 1. 증표 계수 | 1 | 실행된 단계 수 = 선언된 단계 수인가 · 닫혔다고 적힌 배치의 증표가 트리에 있는가 | `verify.sh` 끝의 `evidence_check` · `tests/test_verify_evidence.py` · `tests/test_defect_evidence.py` | **섰다**(2026-09-22) |
-| 2. 정본 단일화 | 2 | 이 사실이 정본 밖에서 반복되는가 | `MASTER §17-1`(사람이 읽는 표) · `tests/test_sources_of_truth.py`(기계가 읽는 `SPEC` · 양방향 대조 · **열 사실 전부 `scan`**) · `tests/test_verify_citations.py` | **섰다**(2026-09-23) — 목록 밖 반복을 열 사실 **전부**에서 본다. 주석·docstring 은 빼고(`code_only`), 맨숫자는 문맥 낱말과 같은 줄일 때만 센다(`near`) |
+| 2. 정본 단일화 | 2 | 이 사실이 정본 밖에서 반복되는가 | `MASTER §17-1`(사람이 읽는 표) · `tests/test_sources_of_truth.py`(기계가 읽는 `SPEC` · 양방향 대조 · **사실 전부 `scan`**) · `tests/test_verify_citations.py` | **섰다**(2026-09-23) — 목록 밖 반복을 사실 **전부**에서 본다(2026-09-28 기준 열둘). 주석·docstring 은 빼고(`code_only`), 맨숫자는 문맥 낱말과 같은 줄일 때만 센다(`near`) |
 | 3. 관문 동등 | 3 | `verify.sh` ↔ CI **미선언** 차집합이 있는가 | `tools/gate_parity.py` · `tests/test_gate_parity_args.py` | **섰다** — 미선언 0(2026-09-22 · 11 → 0), 인자까지 대조 |
 | 4. 의존성 회수 | 4 | 선언해놓고 안 쓰는 의존성이 있는가 | `deptry`(잠금 밖 `--with`) · `tests/test_deptry_config.py` | **섰다** — 알려진 예외 여덟은 사유와 함께 래칫 |
 | 5. 생성물 등재 | 5 | 모든 생성물이 생성기·`--check`·소비자를 갖는가 | `firelane.generated.FAMILIES` · `tests/test_generated_families.py` | **섰다** — `data/baseline` 만 재현 검사가 성립하지 않는다(봉인이라 다시 못 만든다) |

@@ -44,9 +44,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "4a158ceac10f7b0b"
+   "ac211ee1cbc47adf"
   ],
-  "sha": "e4ebb76fb500a6f0"
+  "sha": "14d8f4066201f33b"
  },
  "DECISIONS/105": {
   "doc": "docs/DECISIONS.md",
@@ -101,11 +101,11 @@
    "tests/test_release_procedure.py",
    "tools/release_brief.py"
   ],
-  "kind": "read",
+  "kind": "unmoved",
   "legacy": [
-   "325689114387e291"
+   "1ef1ce65e9126c2b"
   ],
-  "sha": "2c599e52ca3c0768"
+  "sha": "1d6e9ae7271dfee0"
  },
  "DECISIONS/11": {
   "doc": "docs/DECISIONS.md",
@@ -115,9 +115,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "2f8ff4dc879dc5e3"
+   "ad32701894381145"
   ],
-  "sha": "0c1b231bdbb2ae39"
+  "sha": "2ade4c149a767862"
  },
  "DECISIONS/110": {
   "doc": "docs/DECISIONS.md",
@@ -138,20 +138,20 @@
   ],
   "kind": "read",
   "legacy": [
-   "c9166023a31edcb4"
+   "e3baa0f4573f3984"
   ],
-  "sha": "694ae534bba3403d"
+  "sha": "221c0a3fd92c8b07"
  },
  "DECISIONS/111-2": {
   "doc": "docs/DECISIONS.md",
   "files": [
    "tools/svg_fit.py"
   ],
-  "kind": "read",
+  "kind": "unmoved",
   "legacy": [
-   "b3d147183f9b76b8"
+   "c0f6906ca9a2f875"
   ],
-  "sha": "eafcb49105b50b29"
+  "sha": "da33afa72e3e8902"
  },
  "DECISIONS/112": {
   "doc": "docs/DECISIONS.md",
@@ -224,9 +224,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "346560abccf31c0e"
+   "63ea302086e784f4"
   ],
-  "sha": "dd0edeeb74ab2f93"
+  "sha": "c27e7b7fb4abb202"
  },
  "DECISIONS/121": {
   "doc": "docs/DECISIONS.md",
@@ -645,9 +645,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "ea651f165e20022d"
+   "f7b661c4d2f35fa0"
   ],
-  "sha": "6cb3d92fe549049c"
+  "sha": "35712d9f6a583003"
  },
  "DECISIONS/203": {
   "doc": "docs/DECISIONS.md",
@@ -730,11 +730,11 @@
    "tools/dms.py",
    "tools/verify.sh"
   ],
-  "kind": "read",
+  "kind": "unmoved",
   "legacy": [
-   "80e2a934a195ce49"
+   "89761de855fcf8c2"
   ],
-  "sha": "0c013493737c9747"
+  "sha": "3ba18d3c1774e20a"
  },
  "DECISIONS/211": {
   "doc": "docs/DECISIONS.md",
@@ -742,11 +742,11 @@
    "tests/test_navi_wireframe.py",
    "tools/verify.sh"
   ],
-  "kind": "read",
+  "kind": "unmoved",
   "legacy": [
-   "62ce3908e99cb869"
+   "e4ea6a42ff8a465f"
   ],
-  "sha": "85ec76a1dc7304da"
+  "sha": "954cacc7e5555984"
  },
  "DECISIONS/212": {
   "doc": "docs/DECISIONS.md",
@@ -769,9 +769,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "bcf26178169f6fe7"
+   "26e1582acbdd998e"
   ],
-  "sha": "8b7475d764910aa9"
+  "sha": "441c21f2aafe236b"
  },
  "DECISIONS/223": {
   "doc": "docs/DECISIONS.md",
@@ -782,9 +782,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "dcf863ea24945c74"
+   "2c234adfa93a8387"
   ],
-  "sha": "e3b654699c323062"
+  "sha": "4105c1bf751ec108"
  },
  "DECISIONS/224-2": {
   "doc": "docs/DECISIONS.md",
@@ -793,11 +793,11 @@
    "tests/test_shardseal.py",
    "tools/acquire.py"
   ],
-  "kind": "read",
+  "kind": "unmoved",
   "legacy": [
-   "a0e1df650170eaab"
+   "138a33af5f04d685"
   ],
-  "sha": "3b87fe60ed49cf8b"
+  "sha": "0b4e06fe64583f98"
  },
  "DECISIONS/224-2a": {
   "doc": "docs/DECISIONS.md",
@@ -915,9 +915,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "0aa3eea70e67e2b2"
+   "be89e1583c0b8ac8"
   ],
-  "sha": "0fb88010edbe3fad"
+  "sha": "5b176be61c9044d6"
  },
  "DECISIONS/235": {
   "doc": "docs/DECISIONS.md",
@@ -951,9 +951,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "70aac64acc6a1c68"
+   "8d604aaecb0d0e90"
   ],
-  "sha": "5ab81ec91dde7e61"
+  "sha": "95c46ce10a3c0558"
  },
  "DECISIONS/24": {
   "doc": "docs/DECISIONS.md",
@@ -976,9 +976,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "7fbd31c50cc4a718"
+   "9c2210edad6acd9e"
   ],
-  "sha": "a4994dd1d1490a70"
+  "sha": "63892b68f956c0ad"
  },
  "DECISIONS/241": {
   "doc": "docs/DECISIONS.md",
@@ -1108,9 +1108,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "ff33c0e429b37342"
+   "b3d453d7ceec8dcf"
   ],
-  "sha": "b7f48f3fc8caafdd"
+  "sha": "d7f716bd239ac265"
  },
  "DECISIONS/254": {
   "doc": "docs/DECISIONS.md",
@@ -1124,9 +1124,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "84f430f55bdb44f8"
+   "f46909c47f525218"
   ],
-  "sha": "ae9f25fb97a30629"
+  "sha": "ffeb829d199a800d"
  },
  "DECISIONS/254-1": {
   "doc": "docs/DECISIONS.md",
@@ -1184,9 +1184,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "17933071270a83a3"
+   "bcf9dd6f76bc1055"
   ],
-  "sha": "8796dfda93468c01"
+  "sha": "ed04b03c4b1f2a98"
  },
  "DECISIONS/257-3": {
   "doc": "docs/DECISIONS.md",
@@ -1274,9 +1274,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "9f1d404b41925917"
+   "2094997eb053ecb4"
   ],
-  "sha": "2a611ddbbc1a4ef4"
+  "sha": "f5fad15f9808a0eb"
  },
  "DECISIONS/260": {
   "doc": "docs/DECISIONS.md",
@@ -1313,9 +1313,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "66c9fae1d8f30a74"
+   "4c66c6550d171ed1"
   ],
-  "sha": "e566012a93e23b31"
+  "sha": "2c4c76fb96f0bb0b"
  },
  "DECISIONS/265": {
   "doc": "docs/DECISIONS.md",
@@ -1326,9 +1326,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "f316ce92d53486fa"
+   "563ae0aedc3d74ab"
   ],
-  "sha": "7a940e1a3d9ea09b"
+  "sha": "9d18286ccb789172"
  },
  "DECISIONS/266": {
   "doc": "docs/DECISIONS.md",
@@ -1340,9 +1340,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "3896b707c36ff9ec"
+   "44c0c4264e2978d9"
   ],
-  "sha": "c87d36241266062b"
+  "sha": "0df582d7af2a2ab2"
  },
  "DECISIONS/267": {
   "doc": "docs/DECISIONS.md",
@@ -1393,9 +1393,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "4fd9bfd8228c2cab"
+   "82be59333bc1b7b7"
   ],
-  "sha": "fd6aef5b52aecaa4"
+  "sha": "60f9c8ce871625b6"
  },
  "DECISIONS/273": {
   "doc": "docs/DECISIONS.md",
@@ -1409,9 +1409,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "374d93d831ae2c33"
+   "3e508b5964ad8982"
   ],
-  "sha": "4b79c348199de647"
+  "sha": "0e6469a8a71d6e53"
  },
  "DECISIONS/274": {
   "doc": "docs/DECISIONS.md",
@@ -1423,9 +1423,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "48e16c052c720e80"
+   "000166f720bec985"
   ],
-  "sha": "64925991498b315b"
+  "sha": "1e3db64c1e341fea"
  },
  "DECISIONS/275": {
   "doc": "docs/DECISIONS.md",
@@ -1463,9 +1463,112 @@
   ],
   "kind": "read",
   "legacy": [
-   "6da95e7ca3cb9455"
+   "433ffdc02d4a7502"
   ],
-  "sha": "674f2db63ee60e7c"
+  "sha": "27f81ab62255c39b"
+ },
+ "DECISIONS/282": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_batch_tools.py",
+   "tools/ci_wait.sh"
+  ],
+  "kind": "read",
+  "legacy": [
+   "15e60f7423b926d0"
+  ],
+  "sha": "c068e383c5224998"
+ },
+ "DECISIONS/283": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "sources.yaml",
+   "src/firelane/cli.py",
+   "src/firelane/datalog.py",
+   "src/firelane/guards.py",
+   "src/firelane/layerfsck.py",
+   "tests/test_cli_surface.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "611146b61608fd8e"
+  ],
+  "sha": "c4543f2ff0232ea8"
+ },
+ "DECISIONS/284": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "sources.yaml",
+   "src/firelane/contract.py",
+   "src/firelane/ledger.py",
+   "tests/test_contract_vocab.py",
+   "tests/test_crs_gate.py",
+   "tests/test_k2.py",
+   "tests/test_no_unbounded_waits.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "311a167ec52fe603"
+  ],
+  "sha": "3885183b41f193a2"
+ },
+ "DECISIONS/285": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/datalog.py",
+   "src/firelane/ledger.py",
+   "tests/test_batch_tools.py",
+   "tests/test_no_unbounded_waits.py",
+   "tools/verify.sh"
+  ],
+  "kind": "read",
+  "legacy": [
+   "e98c828e1456a264"
+  ],
+  "sha": "d73abd46d0c46937"
+ },
+ "DECISIONS/286": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_selftests_are_run.py",
+   "tools/gate_parity.py",
+   "tools/scopedecl.py",
+   "tools/selftests.py",
+   "tools/verify.sh"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "9285d28d2c492082"
+  ],
+  "sha": "21a2b4a4dbc33a9e"
+ },
+ "DECISIONS/287": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_layers.py",
+   "tools/docseal.py",
+   "tools/figures/value.py",
+   "tools/render_figures.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "3b758c3a7b83354a"
+  ],
+  "sha": "de1e2021b38d4a10"
+ },
+ "DECISIONS/288": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "data/golden/field.fingerprint.json",
+   "sources.yaml",
+   "tools/fieldseal.py",
+   "tools/verify.sh"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "c9ff17455553312b"
+  ],
+  "sha": "c9ff17455553312b"
  },
  "DECISIONS/34": {
   "doc": "docs/DECISIONS.md",
@@ -1518,14 +1621,15 @@
  "DECISIONS/38": {
   "doc": "docs/DECISIONS.md",
   "files": [
+   "tests/test_guards.py",
    "tests/test_workflow_guards.py",
    "tools/gate_parity.py"
   ],
   "kind": "read",
   "legacy": [
-   "dfef8b5b22848139"
+   "41cfe59d454ee806"
   ],
-  "sha": "b7dbafa31ac9175f"
+  "sha": "7966e72619feaf4a"
  },
  "DECISIONS/39": {
   "doc": "docs/DECISIONS.md",
@@ -1548,9 +1652,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "4efcb6284d37fc03"
+   "1fbfa20284a8aa17"
   ],
-  "sha": "2f5854ef2cf4377a"
+  "sha": "7f9359811f9399cf"
  },
  "DECISIONS/42": {
   "doc": "docs/DECISIONS.md",
@@ -1584,9 +1688,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "096ab85220afa66e"
+   "4e70be5538db47f8"
   ],
-  "sha": "cec42b668ac5d96f"
+  "sha": "3aff893b0d387177"
  },
  "DECISIONS/66": {
   "doc": "docs/DECISIONS.md",
@@ -1596,9 +1700,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "340f892e2a2a7e98"
+   "b47145d8cae411a6"
   ],
-  "sha": "0dde2635cc77ccfb"
+  "sha": "959ac008ad3a5f7c"
  },
  "DECISIONS/78": {
   "doc": "docs/DECISIONS.md",
@@ -1611,9 +1715,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "2631b2357cc316ad"
+   "3af7b9233c18ed11"
   ],
-  "sha": "f211e4d2edf13418"
+  "sha": "4eebee9ab5494e51"
  },
  "DECISIONS/79": {
   "doc": "docs/DECISIONS.md",
@@ -1658,9 +1762,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "e2432eb3e1231433"
+   "b3fbad56ae929128"
   ],
-  "sha": "4e364a664a714141"
+  "sha": "94487e6fdca4d646"
  },
  "DECISIONS/93": {
   "doc": "docs/DECISIONS.md",
@@ -1696,9 +1800,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "852bc0b16e0c9cb2"
+   "5a11aedb6ebb507b"
   ],
-  "sha": "8274dda8eabf8eec"
+  "sha": "4a4af4bf54b802c5"
  },
  "DECISIONS/98": {
   "doc": "docs/DECISIONS.md",
@@ -1708,9 +1812,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "b34f42b07018d755"
+   "1dddecb638613dbf"
   ],
-  "sha": "7b927a529c9a0d68"
+  "sha": "7dee8b1a730604bb"
  },
  "DECISIONS/99": {
   "doc": "docs/DECISIONS.md",
@@ -1783,9 +1887,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "70a99fb1d51c952c"
+   "98e52cb5adf3e842"
   ],
-  "sha": "70cbfe615cab7253"
+  "sha": "25dee9dd9cb5d2f0"
  },
  "MASTER/11-0": {
   "doc": "docs/MASTER.md",
@@ -1829,9 +1933,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "a7f92ba4f35ce216"
+   "e1a059783bf8d1c6"
   ],
-  "sha": "26bd6689f8d6c6d3"
+  "sha": "0d8d726133d814ab"
  },
  "MASTER/11-5": {
   "doc": "docs/MASTER.md",
@@ -1965,9 +2069,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "da747bfd32f19e33"
+   "d030bcad7bf5c2dc"
   ],
-  "sha": "caafebf64f5b7232"
+  "sha": "14b900559f8fc793"
  },
  "MASTER/15-3": {
   "doc": "docs/MASTER.md",
@@ -1977,9 +2081,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "1f6a3754b66c8e82"
+   "060a2727acc82898"
   ],
-  "sha": "c05999770d68a9f2"
+  "sha": "7fe087e92d30d559"
  },
  "MASTER/16-2": {
   "doc": "docs/MASTER.md",
@@ -2006,9 +2110,9 @@
    "tools/dms.py",
    "tools/docgen.py",
    "tools/docnum_check.py",
+   "tools/figures/value.py",
    "tools/localgeo.py",
    "tools/navi_setup.py",
-   "tools/render_figures.py",
    "tools/ruleset_check.py",
    "tools/scopedecl.py",
    "tools/svg_fit.py",
@@ -2019,9 +2123,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "11852a1a6071ec13"
+   "f0fdfafd0809c92b"
   ],
-  "sha": "e9fc1c6cbf7dab74"
+  "sha": "b7ddff6b612e59dd"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -2030,9 +2134,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "fca96d2fee775659"
+   "ce2c1f73e7521345"
   ],
-  "sha": "520efce873be353a"
+  "sha": "7368ced061df56a8"
  },
  "MASTER/17-1": {
   "doc": "docs/MASTER.md",
@@ -2043,9 +2147,9 @@
    "tests/test_sources_of_truth.py",
    "tests/test_verify_citations.py",
    "tools/docnum_check.py",
+   "tools/figures/value.py",
    "tools/localgeo.py",
    "tools/navi_setup.py",
-   "tools/render_figures.py",
    "tools/ruleset_check.py",
    "tools/svg_fit.py",
    "tools/verify.sh",
@@ -2053,11 +2157,11 @@
    "web/navi/src/domain/vehicle.ts",
    "web/navi/src/ui/tokens.ts"
   ],
-  "kind": "read",
+  "kind": "unmoved",
   "legacy": [
-   "fa8f4163a2fc1128"
+   "3fe5c561d3192480"
   ],
-  "sha": "9c07715bbf3a0c22"
+  "sha": "2401a2e92889ce53"
  },
  "MASTER/18-2c": {
   "doc": "docs/MASTER.md",
@@ -2100,9 +2204,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "4172dce8e7bc0f29"
+   "ee50ada53b3be447"
   ],
-  "sha": "c229f8123b6981dd"
+  "sha": "4540fda119e5189e"
  },
  "MASTER/18/원칙_다섯": {
   "doc": "docs/MASTER.md",
@@ -2112,9 +2216,9 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "39867e0847a75dd7"
+   "801870a4233d9fdf"
   ],
-  "sha": "efd4a52ba52bb5ff"
+  "sha": "1fd7f5213533ed61"
  },
  "MASTER/19": {
   "doc": "docs/MASTER.md",
@@ -2186,9 +2290,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "9686cdd0864adebe"
+   "83080f43c923ab76"
   ],
-  "sha": "4a2566bcae0c8b78"
+  "sha": "8c4031c3a046cb7e"
  },
  "MASTER/20-4": {
   "doc": "docs/MASTER.md",
@@ -2208,11 +2312,11 @@
   "files": [
    "tools/docseal.py"
   ],
-  "kind": "read",
+  "kind": "unmoved",
   "legacy": [
-   "9d83c6438238e906"
+   "028da0814ab46c78"
   ],
-  "sha": "fd1bca0d1d777d63"
+  "sha": "0e61f3c88805a2de"
  },
  "MASTER/3-3": {
   "doc": "docs/MASTER.md",
@@ -2260,11 +2364,11 @@
    "tests/test_reproducibility.py",
    "tools/docnum_check.py"
   ],
-  "kind": "read",
+  "kind": "unmoved",
   "legacy": [
-   "cf008f1801812c08"
+   "3e33638049a98eb9"
   ],
-  "sha": "ad8f5ff4267d9f62"
+  "sha": "c4bec8ab3876d93e"
  },
  "MASTER/4-1": {
   "doc": "docs/MASTER.md",
@@ -2284,11 +2388,11 @@
    "tests/test_reproducibility.py",
    "tools/docnum_check.py"
   ],
-  "kind": "read",
+  "kind": "unmoved",
   "legacy": [
-   "cd239475cb0e6903"
+   "c9d84a2299745006"
   ],
-  "sha": "0cf8204d51f24c05"
+  "sha": "f417fb0be1a012ad"
  },
  "MASTER/5-4": {
   "doc": "docs/MASTER.md",
@@ -2352,9 +2456,9 @@
   ],
   "kind": "read",
   "legacy": [
-   "65ad563860f72aa4"
+   "cbe045e678d2920d"
   ],
-  "sha": "19c83016773ec0c2"
+  "sha": "e05510541a609397"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
@@ -2409,9 +2513,26 @@
   ],
   "kind": "read",
   "legacy": [
-   "affef1ad997b9512"
+   "b260386461eeb635"
   ],
-  "sha": "60afb8d56d1a2b85"
+  "sha": "198d75c0edf3093d"
+ },
+ "README/문서는_넷이다": {
+  "doc": "README.md",
+  "files": [
+   "data/golden/segments.fingerprint.json",
+   "sources.yaml",
+   "tests/test_reproducibility.py",
+   "tests/test_tools_are_wired.py",
+   "tools/docnum_check.py",
+   "tools/golden.py",
+   "tools/refcheck.py"
+  ],
+  "kind": "unmoved",
+  "legacy": [
+   "5e09e1e70d58f404"
+  ],
+  "sha": "b8e40cb5192ec308"
  },
  "README/문서는_넷이다/숫자의_정본은_문서가_아니다": {
   "doc": "README.md",
@@ -2422,8 +2543,8 @@
   ],
   "kind": "unmoved",
   "legacy": [
-   "92f24bc0ca9f51d6"
+   "c9efa8aeaa281b0a"
   ],
-  "sha": "e0856bd5b2637240"
+  "sha": "ab86aede0b800898"
  }
 }
