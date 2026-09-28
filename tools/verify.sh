@@ -950,7 +950,7 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 # ★ F 배치가 이 권고 줄을 **읽고도 안 조였다.** 위 문단이 「올린 배치에서 같이
 #   조인다」고 적어 두었는데 그대로 흘렸다 — 매번 뜨는 줄이 안 읽히는 줄이 된다는
 #   그 문단의 예고가 한 배치 뒤에 맞았다.
-COV_MIN=34
+COV_MIN=35
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."

@@ -140,11 +140,52 @@ def _tracked() -> frozenset[str]:
     return frozenset(x for x in r.stdout.split("\0") if x)
 
 
+# ── 목록 파일의 절별 관점 ────────────────────────────────────────
+#   `tools/verify.sh` 는 **검사의 목록**이다. 바이트로 물면 단계를 하나 붙이거나
+#   래칫 한 글자를 고칠 때마다 그 파일을 지목한 절 전부가 죽는다.
+LIST_VIEW = ("tools/verify.sh",)
+# ★ 지문 공식의 판. 공식이 바뀌면 옛 도장은 **전부** 무효가 되므로, 그때는
+#   「옛 공식에서 유효했는가」를 증명해 옮긴다(일회성 이관 · §297). 이 값이
+#   도장에 박혀 있어 **어느 공식으로 찍힌 도장인지** 나중에 갈릴 수 있다.
+FP_METHOD = "view-v1"
+_STEP = re.compile(r'^\s*(?:step|note)\s+"([^"]+)"', re.M)
+
+
+def view(path: str, raw: bytes, others: list[str]) -> bytes:
+    """절이 **주장하는 것만** 지문에 넣는다.  (DECISIONS §297 · PLAN W13-10)
+
+    ★ 실측 2026-09-29 — `verify.sh` 의 `COV_MIN` 을 34 에서 35 로 **한 글자**
+      바꾸자 27절의 도장이 한꺼번에 무효가 됐다. 그 절들이 주장하는 것은
+      「이 관문이 이 도구를 부른다」이고, 단계가 늘어난 것이 그 주장을 거짓으로
+      만들지 않는다. 배치마다 27절을 다시 찍으면 그것이 도장 찍기다(§290-2).
+
+    ★ 그래서 `verify.sh` 에서는 **그 절이 함께 지목한 도구를 부르는 줄**만 본다.
+      26/27 절이 다른 도구를 함께 지목하므로 이 관점이 거의 전부를 덮는다.
+      함께 지목한 것이 없으면 **단계 이름 목록**을 본다 — 그 절의 주장이
+      「이런 단계가 있다」이기 때문이다.
+
+    ★ **느슨해지는 것이 아니다.** 지목한 도구를 `verify.sh` 에서 떼면 그 줄이
+      사라져 지문이 바뀌고 여전히 운다. 안 무는 것은 **그 절과 무관한 줄**뿐이다.
+      그리고 도구를 아예 안 부르는 경우에는 빈 지문을 내지 않고 그 사실을 박는다 —
+      빈 것을 해시하면 「안 부른다」가 조용히 통과한다(빈 그물).
+    """
+    if path not in LIST_VIEW:
+        return raw
+    keys = [o for o in others if o != path]
+    txt = raw.decode("utf-8", errors="replace")
+    if keys:
+        lines = [ln for ln in txt.splitlines() if any(k in ln for k in keys)]
+        if lines:
+            return "\n".join(lines).encode("utf-8")
+        return ("★ 안 부른다: " + " ".join(sorted(keys))).encode("utf-8")
+    return "\n".join(_STEP.findall(txt)).encode("utf-8")
+
+
 def digest(text: str, files: list[str]) -> str:
     h = hashlib.sha256(text.encode("utf-8"))
     for f in files:
         h.update(f.encode("utf-8"))
-        h.update(hashlib.sha256((ROOT / f).read_bytes()).digest())
+        h.update(hashlib.sha256(view(f, (ROOT / f).read_bytes(), files)).digest())
     return h.hexdigest()[:16]
 
 
@@ -163,7 +204,9 @@ def parts(text: str, files: list[str]) -> dict[str, str]:
     """
     out = {"본문": hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]}
     for f in files:
-        out[f] = hashlib.sha256((ROOT / f).read_bytes()).hexdigest()[:16]
+        # ★ `digest` 와 **같은 관점**을 써야 한다. 다르면 「무효인데 어디가 움직였는지
+        #   아무 칸도 안 바뀌었다」가 나온다 — 설명이 판정과 어긋나는 꼴이다(§297).
+        out[f] = hashlib.sha256(view(f, (ROOT / f).read_bytes(), files)).hexdigest()[:16]
     return out
 
 

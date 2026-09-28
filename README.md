@@ -164,8 +164,9 @@ bash tools/verify.sh --only=pytest    # 이름이 맞는 단계만
 bash tools/verify.sh --fast           # 급할 때. 파이프라인 전량을 뺀다
 ```
 
-★ **`--since` 가 「매번 58개를 다 도는가」에 대한 답이다.** 단계마다 `scope` 선언이
-붙어 있고(40/59 · 나머지 19는 **선언이 없어 항상 돈다** — 그것이 안전한 기본값이다),
+★ **`--since` 가 「매번 전부 다 도는가」에 대한 답이다.** 단계마다 `scope` 선언이
+붙어 있고(`verify.sh --scope-list` 가 실측을 낸다 — 선언 없는 단계는 **항상 돈다**,
+그것이 안전한 기본값이다),
 `--since` 는 그 범위에 닿은 변경이 없는 단계를 건너뛴다. 문서만 고친 배치면
 `파이프라인 전량`(20분) · 레이크 셋이 빠져 35분이 10분이 된다.
 
@@ -216,7 +217,7 @@ bash tools/janitor.sh       # 기계·저장소·레이크 세 층을 한 표로
 ### 파이프라인
 
 ```
-ingest → segments → scope → streetlight → terrain → ortho → publish → 계약 테스트 → 지문 대조
+ingest → segments → nfa_compare → scope → streetlight → terrain → ortho → publish → 계약 테스트 → 지문 대조
 ```
 
 ```bash
@@ -335,8 +336,10 @@ PARK  = 2.0     주차 1대 노면 점유
 임계값 정본은 `src/firelane/seg/params.py`, 차량 제원 정본은 `sources.yaml` 의
 `vehicle_spec` 이다. 상세는 `MASTER §2-2` · `§3-13`.
 
-★ **축거와 최소회전반경은 공식 규격에 없다.** 내륜차 계산에 그 둘이 필요하므로
-지금 값은 추정이며 `wheelbase_verified: false` 가 그 표시다.
+★ **축거는 공식 규격에 없다.** 내륜차 계산에 그것이 필요하므로 지금 값은
+추정이며 `wheelbase_verified: false` 가 그 표시다. **최소회전반경은 근거가
+있다** — 자동차규칙 제9조①의 법정 상한 12m 이고, 상한이지 성능값이 아니므로
+`turn_radius_verified: false` 가 따로 남는다.
 
 강제자  `tests/test_sources_of_truth.py`(`TRUCK`·`PARK` 의 정본이 `seg/params.py` 하나인가 — README 의 값은 사본이다) · `tests/test_seg_geom.py::test_verdict_table` · `tools/docnum_check.py`(README 숫자 대조)
 
