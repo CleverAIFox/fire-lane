@@ -330,7 +330,7 @@ def cmd_diff(args) -> int:
     dl = nfa_delta(old_n, json.loads(np_.read_text(encoding="utf-8")))
     print(f"\n  소방서 대조  절대편차 합 {dl['abs_old']}m → {dl['abs_new']}m")
     for r in dl["rows"]:
-        f = lambda v: "   —  " if v is None else f"{v:+6.2f}"  # noqa: E731
+        f = lambda v: "   —  " if v is None else f"{v:+6.2f}"
         print(f"    {r['road']:14s} {f(r['old_dev_m'])} → {f(r['new_dev_m'])}   "
               f"세그 {r['old_n'] or 0:3d} → {r['new_n'] or 0:3d}")
     if old_n.get("as_of", "") <= "2026-08-13":

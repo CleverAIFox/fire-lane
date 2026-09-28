@@ -233,8 +233,8 @@ def renumber() -> int:
 
 def _set_level(p, lvl: int) -> None:
     """`w:outlineLvl` 만 넣는다. **글꼴 · 크기 · 색은 안 건드린다.**"""
-    from docx.oxml.ns import qn  # noqa: PLC0415
-    from docx.oxml.shared import OxmlElement  # noqa: PLC0415
+    from docx.oxml.ns import qn
+    from docx.oxml.shared import OxmlElement
     pr = p._p.get_or_add_pPr()
     if (old := pr.find(f"{W}outlineLvl")) is not None:
         pr.remove(old)
@@ -244,7 +244,7 @@ def _set_level(p, lvl: int) -> None:
 
 
 def _open():
-    import docx  # noqa: PLC0415
+    import docx
     return docx.Document(str(DOCX))
 
 

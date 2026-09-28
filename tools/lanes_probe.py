@@ -189,12 +189,14 @@ def main() -> int:
 
     # ★ 2026-08-24. 링크도 25% 다 — "골목이 없어서" 가 아니다.
     #   원인을 더 가른다. 거리만 봤을 때와 각도까지 봤을 때를 나눈다.
+    near = {}
     for r in (SNAP, 15.0, 25.0):
         nb = nl.copy()
         nb["geometry"] = nb.geometry.buffer(r)
         jj = gpd.sjoin(sg[["seg_uid", "geometry"]], nb[["geometry"]],
                        how="inner", predicate="intersects")
         ns = jj.seg_uid.nunique()
+        near[r] = ns
         nlk = jj.index_right.nunique()
         print(f"   거리 {r:>4.0f}m 만       구간 {ns:>5,} ({ns/len(sg)*100:>3.0f}%)"
               f" · 링크 {nlk:>5,} ({nlk/len(nl)*100:>3.0f}%)")
@@ -207,11 +209,28 @@ def main() -> int:
         print(f"   구간망에서 {t:>3}m 안 링크 {int((d <= t).sum()):>5,}"
               f" ({(d <= t).mean()*100:>3.0f}%)")
 
+    # ★ 2026-09-28 (DECISIONS §279-7). 종전에는 **읽는 규칙만** 적고 사람이
+    #   갈랐다. 「소스냐 로직이냐」가 PLAN #21 의 물음 전부였는데 그 판정을
+    #   사람에게 미루니 두 달 동안 안 갈렸다. 여기서 **수로 가른다.**
+    #
+    #   갈림은 간단하다 — 각도를 빼고 거리만으로 붙는 구간이 얼마나 느는가.
+    #     각도로 잃은 것   거리만 매칭 − 전체 매칭   → **로직**(ANGLE 문턱)
+    #     아예 없는 것     전체 − 거리만 매칭        → **데이터**(링크가 없다)
+    matched = len(g)          # g 는 seg_uid 로 groupby 한 것이다
+    only_dist = near[SNAP]
+    by_angle = max(0, only_dist - matched)
+    absent = len(sg) - only_dist
+    unmatched = len(sg) - matched
     print()
-    print(col("   판정 —", "c"))
-    print(col("     링크 매칭률 높고 구간 낮다  → 데이터. 골목이 원래 없다", "d"))
-    print(col("     링크도 낮다                → 로직. SNAP·ANGLE·현(chord)", "d"))
-    print(col("     연장 % 가 개수 % 보다 훨씬 높다 → 간선만 담긴 것이 확정", "d"))
+    print(col("   판정 — 안 붙은 구간을 원인으로 가른다", "c"))
+    print(f"     안 붙음 {unmatched:>5,}")
+    print(f"       각도가 떨궜다  {by_angle:>5,} ({by_angle / max(1, unmatched) * 100:>3.0f}%)"
+          f"  ← 로직. ANGLE 문턱을 만지면 회수된다")
+    print(f"       링크가 없다    {absent:>5,} ({absent / max(1, unmatched) * 100:>3.0f}%)"
+          f"  ← 데이터. {SNAP:.0f}m 안에 표준링크가 아예 없다")
+    verdict = "데이터" if absent > by_angle else "로직"
+    print(col(f"     ★ 지배 원인 — **{verdict}**", "c"))
+    print(col("     연장 % 가 개수 % 보다 높으면 간선만 담긴 것이다", "d"))
 
     m = sg.merge(g, on="seg_uid", how="inner")
     m["lane_min"] = m.lanes.map(LANE_MIN)

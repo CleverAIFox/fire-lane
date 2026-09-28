@@ -562,3 +562,122 @@ def test_the_blanked_view_keeps_line_numbers():
                 assert real[i] == line, f"{f}:{i + 1} 이 밀렸다 — 실물은 {real[i]!r}"
                 checked += 1
     assert checked > 500, f"대조한 줄이 {checked}뿐이다 — 비운 본문이 거의 비었다"
+
+
+# ── `src/firelane/` 의 CLI 도 도구다 (2026-09-28 · DECISIONS §280-4) ────────
+# ★ 위 검사는 `tools/*` 만 훑는다(`_tools()` 가 `ROOT/"tools"` 를 iterdir 한다).
+#   그래서 `src/firelane/` 의 CLI 는 **그 그물 밖**이었고, 문서가 강제자로
+#   명령줄까지 적어 둔 것들이 어디서도 안 불린 채 남아 있었다 —
+#   `firelane.contract`(MASTER §18-3b 「계약 대조를 통과해야 편입이다」) ·
+#   `firelane.datalog fsck`(§18-1 · §18-7). 둘 다 **레이크를 붙이면 돈다.**
+#   거짓으로 우는 검사라서 안 걸린 것이 아니라 **아무도 안 걸었다.**
+#
+# ★ 파이프라인 단계(`publish_*` · `terrain` · `ortho` …)는 `pipeline.py` 가
+#   **함수로** 부르므로 이름으로는 안 보인다. 그래서 「`--check` 류 인자를 가진
+#   것」만 센다 — 그것이 **검사기**의 표식이다.
+SRC_EXEMPT: dict[str, str] = {
+    "firelane.probe":
+        "조사 도구다 — `probe crs <파일>` · `probe topo <파일>` 처럼 **사람이 인자를 "
+        "정해** 묻는다. 자동으로 돌 물음이 없다(무엇을 물을지가 매번 다르다)",
+    "firelane.sample_design":
+        "답사 전에 **사람이 한 번** 돌려 야장을 만든다. 자동으로 돌리면 표본이 "
+        "매 실행 바뀌어 이미 잰 점과 안 맞는다 — 표본은 고정이 목적이다",
+}
+
+#: `src/firelane/` 모듈이 **CLI** 인가 — 스스로 실행될 수 있는가.
+def _src_clis() -> list[str]:
+    out = []
+    for q in sorted((ROOT / "src" / "firelane").rglob("*.py")):
+        src = q.read_text(encoding="utf-8")
+        if '__name__ == "__main__"' not in src:
+            continue
+        rel = q.relative_to(ROOT / "src").with_suffix("")
+        out.append(".".join(rel.parts))
+    return out
+
+
+_PIPELINE = (ROOT / "src" / "firelane" / "pipeline.py").read_text(encoding="utf-8")
+
+
+def _src_lines() -> list[tuple[str, int, str]]:
+    """`_scan()` 에 **`src/firelane/` 안**을 더한다.
+
+    ★ `_scan()` 의 범위는 「사람·관문이 부르는 자리」다(verify · CI · 훅 · 시험).
+      그런데 `src` 모듈은 **서로가 부른다** — `publish_web` 이
+      `from firelane import webmanifest` 로 든다. 그 자리를 안 보면 멀쩡히
+      배선된 모듈이 「아무도 안 부른다」로 뜬다.
+    """
+    out = list(_scan())
+    for q in sorted((ROOT / "src" / "firelane").rglob("*.py")):
+        src = q.read_text(encoding="utf-8")
+        doc = _docstring_lines(src)
+        for i, line in enumerate(src.splitlines(), 1):
+            t = line.strip()
+            if t and not t.startswith(_COMMENT) and i not in doc:
+                out.append((str(q.relative_to(ROOT)), i, t))
+    return out
+
+
+def _src_called(mod: str, lines) -> list[str]:
+    """그 모듈이 **실제로** 불리는 자리.
+
+    ★ 위 `call_sites()` 를 못 쓴다 — 점 있는 모듈 이름에 **거짓 양성**을 낸다.
+      `firelane.console` 을 `firelane.contract` 의 호출로 셌다. 거짓 양성이
+      섞이면 이 검사는 **영원히 초록인 빈 그물**이 된다. 정확히 대조한다.
+    """
+    last = mod.rsplit(".", 1)[-1]
+    # ★ `pipeline.py` 는 `Step(<이름>, <모듈>, …)` 표를 읽어
+    #   `python -m firelane.{module}` 로 **동적으로** 부른다(pipeline.py:524).
+    #   그 표가 곧 배선이다 — 이름으로는 안 보이므로 표를 직접 읽는다.
+    if re.search(rf'Step\(\s*"[^"]*"\s*,\s*"{re.escape(last)}"',
+                 _PIPELINE, re.S):
+        return [f"src/firelane/pipeline.py:Step({last})"]
+    pats = (
+        re.compile(rf"-m\s+{re.escape(mod)}(?:\s|$)"),            # python -m firelane.x
+        re.compile(rf"^\s*from\s+{re.escape(mod)}\s+import\b"),  # from firelane.x import
+        re.compile(rf"^\s*import\s+{re.escape(mod)}(?:\s|$)"),
+        re.compile(rf"^\s*from\s+firelane\s+import\s+.*\b{re.escape(last)}\b"),
+        re.compile(rf"{re.escape(mod.replace('.', '/'))}\.py\b"),  # src/firelane/x.py
+    )
+    hits = []
+    for f, ln, text in lines:
+        if any(rx.search(text) for rx in pats):
+            hits.append(f"{f}:{ln}")
+    return hits
+
+
+def test_every_src_checker_is_called_somewhere():
+    """`src/firelane/` 의 CLI 도 **불리는가.** 문서가 강제자로 적었으면 돌아야 한다."""
+    lines = _src_lines()
+    bad = [f"  {m} 를 아무 데서도 안 부른다"
+           for m in _src_clis()
+           if m not in SRC_EXEMPT and not _src_called(m, lines)]
+    assert not bad, (
+        "`src/firelane/` 에 만들어놓고 안 부르는 검사기가 있다.\n" + "\n".join(bad)
+        + "\n\n  `verify.sh` 에 걸거나, 못 거는 사유를 SRC_EXEMPT 에 적어라.\n"
+          "  **문서가 강제자로 이름을 적어 두는 것으로는 안 돈다** —\n"
+          "  2026-09-28 에 여덟이 그 상태였다(§280-3).")
+
+
+def test_src_exemptions_are_not_dead():
+    """양방향이다. 실제로 불리는데 면제에 남아 있으면 그 자리가 사각지대다."""
+    lines = _scan()
+    lines = _src_lines()
+    dead = [f"  {n}  {', '.join(_src_called(n, lines)[:3])}"
+            for n in sorted(SRC_EXEMPT) if _src_called(n, lines)]
+    assert not dead, "실제로 불리는데 SRC_EXEMPT 에 남아 있다.\n" + "\n".join(dead)
+
+
+def test_src_exemptions_have_reasons():
+    blank = sorted(n for n, why in SRC_EXEMPT.items() if not (why or "").strip())
+    assert not blank, f"사유 없는 SRC_EXEMPT — {', '.join(blank)}"
+
+
+def test_the_src_probe_is_not_an_empty_net():
+    """★ 검사기를 하나도 못 찾으면 이 검사 전체가 영원히 초록이다."""
+    found = _src_clis()
+    assert len(found) >= 20, f"`src/firelane/` CLI 를 {len(found)}개만 찾았다 — {found}"
+    # ★ 대조기가 거짓 양성을 내면 이 검사가 영원히 초록이다. 없는 모듈로 문다.
+    lines = _src_lines()
+    assert not _src_called("firelane.이런모듈은없다", lines), "대조기가 거짓 양성을 낸다"
+    assert _src_called("firelane.ingest", lines), "대조기가 실재 호출을 못 본다"

@@ -404,7 +404,7 @@ def reseal_code(records: list[dict], cfg: dict, out_dir: Path, code: str,
             continue                                   # 이미 같다
         try:
             hits = paths_for(key, cfg["datasets"][key])
-        except Exception:                              # noqa: BLE001
+        except Exception:
             skipped.append(key); continue
         if raw_print(hits) != s["raw"] or out_print(out_dir, list(s["out"])) != s["out"]:
             skipped.append(key); continue              # 입력이나 산출물이 달라졌다 — 다시 빌드해야 한다

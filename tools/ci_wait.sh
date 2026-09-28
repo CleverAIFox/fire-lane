@@ -54,6 +54,52 @@ tally() {                       # tally <출력> → "초록 N · 빨강 N · �
 
 reds() { printf '%s\n' "$1" | awk -F'\t' 'NF>=2 && ($2=="fail" || $2=="cancel")' ; }
 
+# ★ 2026-09-28 (DECISIONS §282-1). **「빨강이 없다」와 「밑동이 받아준다」는 다르다.**
+#   2026-09-28 배치 D 에서 이 도구가 「초록 3 · 빨강 0」을 찍고 초록이라 말했는데
+#   스쿼시가 거부됐다 — `the base branch policy prohibits the merge`.
+#   원인: `push` 와 `pull_request` 가 같은 워크플로를 깨워 **같은 SHA 에
+#   `contract-shared` check-run 이 둘** 생겼고, 그중 하나가 **결론이 없었다.**
+#   GitHub 은 필수 검사의 결론 없는 실행을 미충족으로 본다. `gh pr checks` 는
+#   그것을 안 세므로 초록이라 말한다 — 어제 배치에서 난 것과 **같은 결함**이다.
+#
+#   그래서 초록의 정의를 바꾼다: 빨강이 없고 **필수 검사가 전부 결론이 났을 때**.
+#   결론 없는 필수 검사가 남아 있으면 그것은 초록이 아니라 **아직 대기**다 —
+#   대개 도는 중이고 기다리면 풀린다. 안 풀리면 시간 초과가 2(모름)로 낸다.
+#
+#   ★ 「승인이 없어 BLOCKED」와 섞지 않는다. `mergeStateStatus` 하나만 보면
+#     `main` 처럼 승인 1 이 필요한 가지에서 영원히 기다린다(릴리즈가 멈춘다).
+#     **검사 쪽만** 본다 — 필수 검사 목록과 결론 없는 실행의 교집합.
+unresolved() {          # unresolved <필수목록> <결론없는목록> → 교집합
+    local req=$1 open=$2
+    [ -n "$req" ] && [ -n "$open" ] || return 0
+    printf '%s\n' "$open" | sort -u | while read -r n; do
+        [ -n "$n" ] || continue
+        printf '%s\n' "$req" | grep -qxF "$n" && printf '%s\n' "$n"
+    done
+}
+
+required_of() {         # required_of <REPO> <base가지> → 필수 검사 이름들
+    local repo=$1 base=$2
+    gh api "repos/$repo/rules/branches/${base//\//%2F}" \
+       --jq '[.[]|select(.type=="required_status_checks")
+              |.parameters.required_status_checks[].context]|.[]' 2>/dev/null
+}
+
+open_runs() {           # open_runs <REPO> <PR> → 결론이 없는 check-run 이름들
+    local repo=$1 n=$2 sha
+    sha=$(gh pr view "$n" -R "$repo" --json headRefOid --jq .headRefOid 2>/dev/null) || return 0
+    [ -n "$sha" ] || return 0
+    gh api "repos/$repo/commits/$sha/check-runs" --paginate \
+       --jq '.check_runs[]|select(.conclusion==null)|.name' 2>/dev/null
+}
+
+blocking() {            # blocking <REPO> <PR> → 아직 결론 없는 **필수** 검사
+    local repo=$1 n=$2 base
+    base=$(gh pr view "$n" -R "$repo" --json baseRefName --jq .baseRefName 2>/dev/null) || return 0
+    [ -n "$base" ] || return 0
+    unresolved "$(required_of "$repo" "$base")" "$(open_runs "$repo" "$n")"
+}
+
 # ★ 한 번 물은 결과를 어떻게 읽는가. **순수 함수** — 합성 입력으로 부를 수 있다.
 #   0 초록 · 1 빨강 · 3 아직 돈다 · 2 못 읽음
 verdict() {                     # verdict <gh 종료코드> <출력>
@@ -66,10 +112,23 @@ verdict() {                     # verdict <gh 종료코드> <출력>
 }
 
 wait_ci() {                     # wait_ci <PR> <REPO> → 0 · 1 · 2
-    local n=$1 repo=$2 t=0 out rc v last="" line
+    local n=$1 repo=$2 t=0 out rc v last="" line miss
     while [ "$t" -lt "$CI_WAIT_MAX" ]; do
         if out=$(gh pr checks "$n" -R "$repo" 2>&1); then rc=0; else rc=$?; fi
         verdict "$rc" "$out"; v=$?
+        # ★ 초록이라고 나와도 **필수 검사에 결론 없는 실행**이 남아 있으면
+        #   그것은 초록이 아니다(§282-1). 초록일 때만 묻는다 — 매 회 물으면
+        #   API 를 세 번씩 더 친다.
+        if [ "$v" = 0 ]; then
+            miss=$(blocking "$repo" "$n")
+            if [ -n "$miss" ]; then
+                [ "$last" != "wait:$miss" ] && {
+                    printf '     필수 검사가 아직 결론이 없다 — %s\n' \
+                           "$(printf '%s' "$miss" | tr '\n' ' ')"
+                    last="wait:$miss"; }
+                sleep "$CI_WAIT_POLL"; t=$((t + CI_WAIT_POLL)); continue
+            fi
+        fi
         if [ "$v" != 3 ]; then
             line=$(tally "$out")
             [ "$line" != "$last" ] && printf '     %s\n' "$line"
@@ -83,6 +142,9 @@ wait_ci() {                     # wait_ci <PR> <REPO> → 0 · 1 · 2
         sleep "$CI_WAIT_POLL"; t=$((t + CI_WAIT_POLL))
     done
     printf '  ! PR #%s 검사가 %s초 안에 안 끝났다 — **빨간불이 아니라 모름이다.**\n' "$n" "$CI_WAIT_MAX"
+    miss=$(blocking "$repo" "$n")
+    [ -n "$miss" ] && printf '    결론 없는 필수 검사: %s\n      같은 이름이 두 번 돈 것일 수 있다(push · pull_request).\n      한쪽을 다시 돌려라:  gh run rerun <id> -R %s\n' \
+        "$(printf '%s' "$miss" | tr '\n' ' ')" "$repo"
     return 2
 }
 
@@ -101,12 +163,21 @@ selftest() {
         || bad+=("503 을 **빨강으로 읽는다** — §225-1 이 PR 을 지운 그 결함이다")
     ( verdict 1 "could not resolve host" ); [ $? = 2 ] || bad+=("이름 풀이 실패를 빨강으로 읽는다")
     unreadable "$red" && bad+=("평범한 빨강을 «못 읽음» 으로 읽는다 — 그러면 빨강이 통과한다")
+    # ★ §282-1. 필수 검사 ∩ 결론 없는 검사.
+    [ "$(unresolved $'contract-shared\nsecret-scan' $'contract-shared')" = "contract-shared" ] \
+        || bad+=("결론 없는 **필수** 검사를 안 잡는다 — 배치 D 를 세운 그 자리다")
+    [ -z "$(unresolved $'contract-shared' $'dry')" ] \
+        || bad+=("필수가 아닌 검사를 막는 것으로 본다 — 그러면 영원히 기다린다")
+    [ -z "$(unresolved "" $'contract-shared')" ] \
+        || bad+=("필수 목록을 못 읽었는데 막는 것으로 본다 — 모르면 안 막는다")
+    [ -z "$(unresolved $'contract-shared' "")" ] \
+        || bad+=("결론 없는 것이 없는데 막는 것으로 본다")
     # ★ 시간 초과가 2 인가. 1 이면 호출부가 PR 을 지운다.
     ( CI_WAIT_MAX=0; wait_ci 1 x/y >/dev/null ); [ $? = 2 ] || bad+=("시간 초과를 2 로 안 낸다")
     if [ ${#bad[@]} -gt 0 ]; then
         printf '★ 자기검사 실패\n'; printf '  %s\n' "${bad[@]}"; return 1
     fi
-    printf '✓ ci_wait — 초록 · 대기 · 빨강 · 조회실패 · 시간초과를 다 가른다\n'
+    printf '✓ ci_wait — 초록 · 대기 · 빨강 · 조회실패 · 시간초과 · 결론없는 필수검사를 다 가른다\n'
 }
 
 case "${1:-}" in

@@ -223,7 +223,7 @@ def main() -> int:
     #   차례로 사라졌고, 사라진 동안 **룰셋이 안 붙어 직푸시가 나갔다.**
     try:
         refs = {b["name"] for b in _gh(f"repos/{REPO}/branches?per_page=100")}
-    except Exception as e:                      # noqa: BLE001
+    except Exception as e:
         refs = None
         print(f"  (브랜치 목록을 못 읽었다: {e})")
     if refs is not None:

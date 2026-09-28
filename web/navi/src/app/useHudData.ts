@@ -126,6 +126,8 @@ export function buildHudData(i: HudInput): HudData | null {
 }
 
 export function useHudData(i: HudInput): HudData | null {
+  // ★ `i` 자체는 매 렌더 새 객체라 의존으로 쓸 수 없다. 쓰는 필드를 개별로 건다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- i 는 매 렌더 새 객체다
   return useMemo(() => buildHudData(i), [
     i.plan, i.fastPlan, i.current, i.driven, i.lenient, i.offRoute,
     i.spec, i.style, i.maneuver, i.maneuverDistM, i.maneuverText,

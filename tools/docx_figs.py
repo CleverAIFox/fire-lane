@@ -91,6 +91,10 @@ PLACE: dict[str, dict] = {
     #   있던 PNG 였고, **접점 라벨 둘이 같은 자리에 겹쳐** 찍혀 있었다. 래스터라 고칠
     #   수가 없어 코드로 다시 그렸다. 겹침을 잡는 검사는 `svg_fit._collisions` 다.
     "boundary": {"fig": 8, "caption": "접점은 관측점 선정과 판정 결과 두 개뿐이다"},
+    # ★ 2026-09-28 (DECISIONS §281-1). 규칙 문언 · 임계값 · 구간 수 셋을 전부
+    #   정본에서 읽는다. 규칙이 바뀌면 그림이 따라 바뀐다 — [그림 13] 이 폐기된
+    #   반경 5m 원을 석 주 동안 그리고 있던 자리와 같은 종류다(§236).
+    "verdict_flow": {"fig": 14, "caption": "판정 4종 분류에서 4색 상태 확정까지"},
     "verdict": {"internal": "기획서에 대응 그림이 없다 — 판정 4종 수는 본문 숫자로 들어가고 "
                             "tools/docnum_check.py 가 golden 과 대조한다"},
     "unknown": {"internal": "기획서에 대응 그림이 없다 — 사유 분해는 본문 표가 든다"},
@@ -237,8 +241,9 @@ def _prune_media(path: Path) -> None:
 #:   PLACE 에 선언돼야 한다」 를 강제하지만 그 강제는 **코드가 그리는 것**에만
 #:   걸렸다. 손으로 붙인 그림은 애초에 대장 밖이라 아무도 안 봤고, [그림 8] 이
 #:   라벨 둘을 겹쳐 찍은 채 제출본에 살아 있었다 — 검사 59개가 전부 초록인 채로.
-#:   래칫이 없으면 다음 그림도 똑같이 손으로 붙는다. 20 은 [그림 8] 을 옮긴 뒤다.
-SOURCELESS_MAX = 20
+#:   래칫이 없으면 다음 그림도 똑같이 손으로 붙는다. 21 → 20([그림 8] · §278-4)
+#:   → **19**([그림 14] · §281-1).
+SOURCELESS_MAX = 19
 
 
 def _undeclared() -> list[str]:
@@ -247,7 +252,7 @@ def _undeclared() -> list[str]:
 
 def sourceless() -> list[int]:
     """기획서 캡션에는 있는데 `PLACE` 가 안 대는 그림 번호. 고칠 수 없는 것들이다."""
-    import docx  # noqa: PLC0415
+    import docx
     caps = {int(m.group(1)) for p in docx.Document(str(DOCX)).paragraphs
             if (m := re.match(r"^\[?그림\s*(\d+)\]?", p.text.strip()))}
     return sorted(caps - {s["fig"] for s in PLACE.values() if "fig" in s})

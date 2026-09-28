@@ -76,7 +76,7 @@ KST = timezone(timedelta(hours=9))
 LEDGER = ROOT / "data" / "_intake.json"
 
 # JUNK 정본은 firelane.intake_rules 다. 여기서 재정의하지 않는다.
-from firelane.intake_rules import JUNK  # noqa: F401
+from firelane.intake_rules import JUNK
 
 # ★ inbox() 는 `firelane.paths` 로 옮겼다(2026-08-26). 경로 정본은 거기다 —
 #   여기 두었더니 `doctor.py` 가 쓰려고 sys.path 를 조작했고 규칙에 걸렸다.

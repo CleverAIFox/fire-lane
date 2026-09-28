@@ -121,7 +121,7 @@ def body(pdf: Path) -> str:
 
 def bookmarks(pdf: Path) -> int:
     """북마크(개요) 수. poppler 는 이것을 안 세므로 `pypdf` 로 읽는다."""
-    import pypdf  # noqa: PLC0415
+    import pypdf
     def walk(node) -> int:
         return sum(walk(x) if isinstance(x, list) else 1 for x in node)
     try:

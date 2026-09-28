@@ -84,7 +84,9 @@ def test_the_radius_comes_from_params_not_from_here():
 
     # ★ 그림 코드에 그 수가 literal 로 박혀 있으면 정본이 둘이 된다.
     import ast
-    tree = ast.parse((ROOT / "tools/render_figures.py").read_text(encoding="utf-8"))
+    # ★ 2026-09-28 (§281-2). `render_figures.py` 를 `tools/figures/` 패키지로
+    #   쪼갰다. 그림 함수는 그쪽에 산다.
+    tree = ast.parse((ROOT / "tools/figures/xsec.py").read_text(encoding="utf-8"))
     fn = next(f for f in ast.walk(tree)
               if isinstance(f, ast.FunctionDef) and f.name == "fig_xsec")
     lit = [n.value for n in ast.walk(fn)

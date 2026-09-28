@@ -78,7 +78,7 @@ DATE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
 #   12도엽을 통째로 버려 755구간(69%)이 폴리곤 밖이었다.
 #   "여럿이어도 괜찮다" 를 전역으로 열면 그 사고가 되돌아온다.
 # ★ 2026-09-07. `firelane.kinds` 의 container=="dir" 에서 유도한다.
-from firelane.kinds import BUNDLE_KINDS  # noqa: E402
+from firelane.kinds import BUNDLE_KINDS
 
 
 def _vintage(e: dict) -> str | None:

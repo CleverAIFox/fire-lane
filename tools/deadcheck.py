@@ -509,6 +509,15 @@ def probe_dead_gate(root: Path = ROOT) -> None:
 #   적는 순간 세어지고 `tests/test_deadcheck_probes.py` 가 죽은 면제를 지운다.
 _PROD_ONLY = "tests 는 **제품 코드가 아니다**"
 EXEMPT_SCOPE = {
+    # ★ 2026-09-28 (DECISIONS §280-3). 둘 다 **일부러 `src` 만** 본다.
+    #   `tools/` 는 바로 위 `_tools()` 가 이미 훑는다 — 넓히면 같은 파일을 두
+    #   그물이 세고, 「tools 도구가 안 불린다」가 두 이름으로 두 번 뜬다.
+    #   이 짝은 `src/firelane/` 의 CLI 가 그 그물 **밖**이었다는 것이 사유다.
+    "tests/test_tools_are_wired.py::_src_clis":
+        "`src/firelane/` 의 CLI 만 센다. `tools/` 는 `_tools()` 가 든다",
+    "tests/test_tools_are_wired.py::_src_lines":
+        "`_scan()`(verify · CI · 훅 · 시험)에 **`src` 안**을 더하는 함수다. "
+        "`src` 모듈끼리의 import 를 보려는 것이고 나머지는 `_scan()` 이 든다",
     "tests/test_declaration_sync.py::test_unwired_sources_declare_purpose":
         f"{_PROD_ONLY} — 「대장 소스가 배선됐는가」의 소비자는 판정·도구다. "
         "테스트가 소스 이름을 적는 것을 소비로 세면 모든 소스가 영원히 배선된다",

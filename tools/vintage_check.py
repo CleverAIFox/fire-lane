@@ -169,7 +169,7 @@ def selftest() -> int:
         if nm.parse("its_nodelink_kr_20260810.zip", strict=False).vintage \
                 != "20260810":
             bad.append("파일명에서 vintage 를 못 뽑는다")
-    except Exception as exc:       # noqa: BLE001
+    except Exception as exc:
         bad.append(f"파일명 파싱이 터진다: {exc}")
     # 앞자리 비교가 정밀도 차이를 오탐하지 않는가
     got, want = "202608", "20260812"
