@@ -49,6 +49,7 @@ from docfsck.docx_revised import check_docx_ready_for_squash, check_docx_revised
 from docfsck.expiry import check_expiry
 
 from firelane import generated
+from firelane.cli import no_args
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "sources.yaml"
@@ -62,7 +63,12 @@ PIPE_README = ROOT / "src/firelane/README.md"
 #   이 파일(`doc_fsck.py`) 자신은 표가 사는 자리라 뺀다. 산문 사유는 그 옆에 남는다.
 FIELD_EXEMPT: dict[str, tuple[str, ...]] = {
     # 들고 나가는 종이. 코드 소비자가 없다(DECISIONS §243)
+    # ★ 2026-09-28 (W13-7 · §288). `tools/fieldseal.py` 가 넷째 독자다 —
+    #   내용을 읽는 것이 아니라 **지문을 뜬다.** 재취득 불가 층이라 「그날 잰
+    #   그 파일인가」를 묻는 자리가 따로 필요하다. 목록에 안 넣으면
+    #   `test_delegation` 이 「사유가 실물과 다르다」로 운다 — 실제로 울었다.
     "fieldsheet.md": ("src/firelane/sample_design.py", "tools/field_compare.py",
+                      "tools/fieldseal.py",
                       "tests/test_ledger_outputs.py", "tests/test_reproducibility.py"),
     # ── 2026-09-03. 네이버 산출 넷(DECISIONS §42)을 지웠다.
     #
@@ -400,4 +406,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     sys.exit(main())

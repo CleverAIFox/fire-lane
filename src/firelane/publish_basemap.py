@@ -37,6 +37,7 @@ import shapely
 from shapely.geometry import MultiPolygon, box, mapping
 from shapely.geometry.polygon import orient
 
+from firelane.cli import no_args
 from firelane.paths import ROOT
 
 P = ROOT / "data" / "processed"
@@ -189,4 +190,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     main()

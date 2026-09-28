@@ -33,6 +33,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
+from firelane.cli import no_args
 from firelane.paths import FIELD, PROCESSED
 from firelane.segkey import attach_seg_uid, bearing_at
 
@@ -222,4 +223,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     main()

@@ -232,6 +232,10 @@ def obs_context(g: gpd.GeoDataFrame, seg_uid: str, offset_m: float) -> dict:
 # ──────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    # 모르는 깃발을 조용히 무시하지 않는다 (§283-2). ★ `firelane.cli` 를 안 쓴다 —
+    # 이 모듈은 **판정 폐포**(§266) 안에 있고 import 하나가 폐포를 늘린다.
+    import argparse
+    argparse.ArgumentParser(description=__doc__).parse_args()
     # 자체 점검. 실제 데이터 없이도 형식이 맞는지 본다.
     ln = LineString([(192740, 283600), (192750, 283640)])
     uid = make_seg_uid(ln, "동명로82번길")

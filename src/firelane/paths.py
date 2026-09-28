@@ -238,6 +238,10 @@ def check() -> None:
 
 
 if __name__ == "__main__":
+    # 모르는 깃발을 조용히 무시하지 않는다 (§283-2). ★ `firelane.cli` 를 안 쓴다 —
+    # 이 모듈은 **판정 폐포**(§266) 안에 있고 import 하나가 폐포를 늘린다.
+    import argparse
+    argparse.ArgumentParser(description=__doc__).parse_args()
     check()
 
 

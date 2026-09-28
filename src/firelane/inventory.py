@@ -31,7 +31,6 @@ import glob as _glob
 import io
 import json
 import re
-import sys
 import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -355,9 +354,14 @@ def write_block(inv: dict) -> None:
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    only = args[args.index("--only") + 1] if "--only" in args else None
-    inv = collect(only)
+    # ★ 예전엔 `args.index("--only")` 를 손으로 뒤졌다. 모르는 깃발은 조용히
+    #   무시되고 도구는 **전체를 돌았다**(§283-2).
+    import argparse
+    _ap = argparse.ArgumentParser(description=__doc__)
+    _ap.add_argument("--only", help="이 데이터셋 하나만")
+    _ap.add_argument("--dry", action="store_true", help="갱신 없이 출력만")
+    _a = _ap.parse_args()
+    inv = collect(_a.only)
 
     tot = sum(len(v.get("unused_fields", [])) for v in inv["datasets"].values())
     print(f"\n미사용 속성 총 {tot}개 — 원본에 있는데 코드가 안 보는 것들이다")
@@ -365,5 +369,5 @@ if __name__ == "__main__":
         if v.get("unused_fields"):
             print(f"  {k}: {', '.join(v['unused_fields'][:12])}")
 
-    if "--dry" not in args:
+    if not _a.dry:
         write_block(inv)

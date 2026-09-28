@@ -371,8 +371,8 @@ def subset_by_nodes(df, node_path, key: str, col: str = "NODE_ID"):
     return out
 
 
-def warn_direct_call(mod: str) -> None:
-    """파이프라인 단계를 사람이 직접 부를 때 알린다. **막지는 않는다.**
+def warn_direct_call(mod: str, *, doc: str | None = None) -> None:
+    """파이프라인 단계를 사람이 직접 부를 때 알린다. **직접 호출은 막지 않는다.**
 
     ★ 2026-08-31 신설(PLAN #15). 단계 모듈은 파이프라인이 부르는 대상이지
       사람이 치는 명령이 아니다. 직접 부르면 대장은 갱신되고 계보 기록이
@@ -384,9 +384,27 @@ def warn_direct_call(mod: str) -> None:
       (MASTER §18-13). 경고는 하되 종료코드는 건드리지 않는다.
 
     ★ 문구를 여섯 모듈에 복사하지 않는다. 복사한 순간 그것이 낡을 자리다.
+
+    ── `doc` 을 주면 모르는 깃발도 거절한다 (2026-09-28 · §283-2) ──
+    단계 모듈은 인자를 안 받는다. 그런데 `sys.argv` 를 **아무도 안 봐서**
+    `--이런깃발은없다` 를 줘도 조용히 무시하고 **일을 했다** — `segments`
+    는 25초를 돌았고 `sample_design` 은 `data/field`(재생성 불가 층)를
+    덮어썼다. 직접 호출을 막지 않는다는 것과 **알아들을 수 없는 호출을
+    받아들인다**는 것은 다르다.
+
+    ★ 옵트인이다. `ingest` 는 파이프라인에서 `--keep-work` · `--split` 을
+      받으므로 `doc` 을 안 넘긴다. 무조건 거절로 만들면 그것이 깨진다.
+    ★ `firelane.cli.no_args` 를 여기서 부르지 않는다 — 단계 모듈 여럿이
+      **판정 폐포**(§266) 안이고 import 하나가 폐포를 늘린다.
     """
     import sys as _sys
 
+    if doc is not None and (rest := _sys.argv[1:]):
+        if len(rest) == 1 and rest[0] in ("-h", "--help"):
+            print(doc.strip())
+            _sys.exit(0)
+        print(f"✗ 이 단계는 인자를 받지 않는다 — {' '.join(rest)}", file=_sys.stderr)
+        _sys.exit(2)
     if paths.env("FIRE_LANE_STAGE"):
         return
     # ★ `python -m` 으로 부르면 `__name__` 이 "__main__" 이라 모듈명을 못 얻는다.
