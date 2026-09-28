@@ -170,13 +170,29 @@ def test_fl_picks_only_this_batch(tmp_path):
     assert _pick(inbox) == ["0001-fix.patch"]
 
 
-def test_fl_without_zip_takes_format_patch_names_only(tmp_path):
+def test_fl_without_zip_takes_only_prefixed_patches(tmp_path):
+    """zip 없이 낱개로 풀린 패치는 **`fire-lane-` 접두사가 붙은 것만** 집는다.
+
+    ★ 2026-09-28 (DECISIONS §278-5). 종전 규칙은 `0001-….patch` 였는데 그것은
+      `git format-patch` 기본 이름이라 **어느 저장소에서 떠도 같은 꼴**이다.
+      INBOX 가 다운로드 폴더라 공용인 이상 이름으로 안 갈린다 — 접두사를
+      주는 쪽(`deliver.py`)이 박고 여기서 그것을 본다.
+    """
     inbox = tmp_path / "in"
     inbox.mkdir()
-    (inbox / "0001-a.patch").write_text("From a\n")
-    (inbox / "0002-b.patch").write_text("From b\n")
+    (inbox / "fire-lane-0001-a.patch").write_text("From a\n")
+    (inbox / "fire-lane-0002-b.patch").write_text("From b\n")
+    (inbox / "0003-c.patch").write_text("From c\n")   # ← 접두사 없다. 남의 것일 수 있다
     (inbox / "D0216.patch").write_text(FOREIGN)
-    assert _pick(inbox) == ["0001-a.patch", "0002-b.patch"]
+    assert _pick(inbox) == ["fire-lane-0001-a.patch", "fire-lane-0002-b.patch"]
+
+
+def test_deliver_stamps_the_prefix_that_fl_looks_for():
+    """★ 주는 쪽과 고르는 쪽이 **같은 접두사**를 봐야 한다. 갈리면 아무것도 안 집는다."""
+    d = (T / "deliver.py").read_text(encoding="utf-8")
+    f = (T / "fl.sh").read_text(encoding="utf-8")
+    assert 'PATCH_PREFIX = "fire-lane-"' in d
+    assert "^fire-lane-[0-9]{4}-.+\\.patch$" in f
 
 
 def test_fl_runs_tidy_after_release_and_clears_inbox():
@@ -664,3 +680,44 @@ def test_no_exit_code_read_after_assignment_under_set_e():
         + "\n".join(bad)
         + "\n\n  if x=$(cmd); then rc=0; else rc=$?; fi")
 
+
+
+# ── CI 대기 — 조용한가 (2026-09-28 · DECISIONS §278-6) ──────────
+def test_nobody_calls_gh_pr_checks_watch_any_more():
+    """★ `--watch` 는 10초마다 **표 전체**를 다시 찍는다.
+
+    2026-09-28 배치 로그 853줄 중 564줄(66%)이 같은 표의 반복이었다.
+    실패는 0건인데 사람이 열고 「문제가 쏟아진다」고 읽었다 —
+    **안 읽히는 로그에서는 진짜 실패도 안 보인다.**
+    """
+    for name in ("fl.sh", "merge_batch.sh", "ci_wait.sh"):
+        code = "\n".join(l for l in (T / name).read_text(encoding="utf-8").splitlines()
+                         if not l.lstrip().startswith("#"))
+        assert "--watch" not in code, f"{name} 이 아직 `gh pr checks --watch` 를 부른다"
+
+
+def test_both_callers_use_the_one_ci_wait_door():
+    """★ 같은 물음을 두 곳이 다르게 답하던 자리다.
+
+    `merge_batch` 는 §225-1 에서 「빨강」과 「못 읽음」을 갈랐는데 `fl.sh` 는
+    **비영이면 전부 빨강**으로 읽었다 — 503 을 빨강으로 읽고 PR 을 지운 그
+    결함이 옆 도구에 그대로 있었다. 문은 하나여야 한다.
+    """
+    for name in ("fl.sh", "merge_batch.sh"):
+        assert "ci_wait.sh" in (T / name).read_text(encoding="utf-8"), \
+            f"{name} 이 CI 대기를 제 손으로 한다 — 두 곳이면 또 갈린다"
+
+
+def test_ci_wait_has_a_timeout_and_it_is_not_red():
+    """시간 초과를 1(빨강)로 내면 호출부가 **PR 을 지운다.** 2(모름)여야 한다."""
+    src = (T / "ci_wait.sh").read_text(encoding="utf-8")
+    assert "CI_WAIT_MAX" in src, "시간 제한이 없다 — 안 끝나는 CI 에 영원히 매달린다"
+    body = src[src.index("wait_ci() {"):src.index("selftest() {")]
+    assert "return 2" in body.split("while", 1)[1].split("done", 1)[1], \
+        "시간 초과가 2 로 안 나간다 — 「안 끝났다」와 「빨갛다」는 다르다"
+
+
+def test_ci_wait_selftest_is_not_an_empty_net():
+    r = subprocess.run(["bash", str(T / "ci_wait.sh"), "--selftest"],
+                       capture_output=True, text=True, timeout=120)
+    assert r.returncode == 0, r.stdout + r.stderr

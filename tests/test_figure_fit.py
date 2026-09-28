@@ -124,3 +124,58 @@ def test_published_figures_fit(name: str):
     # 배경 rect(전체 크기)는 모든 글자를 품으므로 빼고 본다
     body = re.sub(r'<rect width="\d+" height="\d+" fill="#fff"/>', "", svg, count=1)
     assert rf._fits(body, int(m.group(1)), int(m.group(2))) == []
+
+
+# ── 글자끼리 겹침 (2026-09-28 · DECISIONS §278-4) ───────────────
+# ★ 이 검사는 글자를 **화면·박스하고만** 견줬다. 글자 둘을 서로 견준 적이
+#   한 번도 없었다. 기획서 [그림 8] 이 접점 라벨 둘을 같은 자리에 겹쳐 찍은
+#   채 제출본에 있었고, 검사 59개가 전부 초록이었다.
+def test_labels_stacked_on_the_same_spot_are_caught():
+    """[그림 8] 이 제출본에 들고 있던 바로 그 꼴."""
+    body = ('<text x="60" y="40" font-size="12">① 관측점 선정 (seg_uid)</text>'
+            '<text x="60" y="40" font-size="12">② 판정 결과 (통행폭)</text>')
+    assert any("겹친다" in b for b in rf._fits(body, 720, 120))
+
+
+def test_partly_overlapping_labels_are_caught():
+    """딱 포개지지 않고 **절반만** 물려도 읽을 수 없다."""
+    body = ('<text x="60" y="40" font-size="12">관측점 선정</text>'
+            '<text x="100" y="44" font-size="12">판정 결과</text>')
+    assert any("겹친다" in b for b in rf._fits(body, 720, 120))
+
+
+def test_normal_line_spacing_is_not_an_overlap():
+    """오탐이면 못 쓴다 — 박스 안 여러 줄은 15px 간격으로 성하다."""
+    body = "".join(f'<text x="60" y="{40 + i * 15}" font-size="10">줄 {i}</text>'
+                   for i in range(4))
+    assert not rf._fits(body, 720, 120)
+
+
+def test_selftest_covers_the_overlap_arm():
+    assert rf.selftest() == 0
+
+
+# ── 정본 없는 그림 래칫 (DECISIONS §278-4) ─────────────────────
+def test_sourceless_figures_match_the_ratchet():
+    """저장소 밖에서 그린 그림은 **고칠 수가 없다.** 겹치거나 낡아도 못 고친다.
+
+    ★ 양방향이다. 줄었는데 기록을 안 내리면 느슨해진 래칫이 초록으로
+      위장한다(`sizecheck` 머리말과 같은 사유).
+    """
+    figs = _mod("docx_figs")
+    n = len(figs.sourceless())
+    assert n == figs.SOURCELESS_MAX, (
+        f"정본 없는 그림 {n} 장 · 기록 {figs.SOURCELESS_MAX}\n"
+        "  늘었으면 render_figures 로 옮기고, 줄었으면 SOURCELESS_MAX 를 조여라.")
+
+
+def test_figure_eight_is_drawn_from_the_contract():
+    """★ [그림 8] 의 필드는 손으로 안 적는다 — 계약이 바뀌면 그림이 따라 바뀐다."""
+    fig = _mod("render_figures")
+    c = fig._contract_fields()
+    assert set(c) == {"ObsSpec", "VisionResult"}
+    svg = fig.fig_boundary()
+    for name in c["ObsSpec"] + c["VisionResult"]:
+        assert name in svg, f"계약 필드 {name} 이 [그림 8] 에 없다"
+    assert f"ObsSpec ({len(c['ObsSpec'])})" in svg
+    assert f"VisionResult ({len(c['VisionResult'])})" in svg

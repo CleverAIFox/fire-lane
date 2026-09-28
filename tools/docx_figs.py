@@ -87,6 +87,10 @@ PLACE: dict[str, dict] = {
     #   고쳤는데 **그림은 반경 5m 원 하나만 그린 채**였다. 캡션을 보는 검사는
     #   그림을 못 본다 — 그것이 이 도구가 생긴 이유고, 이 줄이 그 자리를 덮는다.
     "xsec": {"fig": 13, "caption": "법선 트랜섹트 샘플링과 평면교차점 실형상 제외"},
+    # ★ 2026-09-28 (DECISIONS §278-4). 종전 [그림 8] 은 저장소 밖에서 그려 docx 안에만
+    #   있던 PNG 였고, **접점 라벨 둘이 같은 자리에 겹쳐** 찍혀 있었다. 래스터라 고칠
+    #   수가 없어 코드로 다시 그렸다. 겹침을 잡는 검사는 `svg_fit._collisions` 다.
+    "boundary": {"fig": 8, "caption": "접점은 관측점 선정과 판정 결과 두 개뿐이다"},
     "verdict": {"internal": "기획서에 대응 그림이 없다 — 판정 4종 수는 본문 숫자로 들어가고 "
                             "tools/docnum_check.py 가 golden 과 대조한다"},
     "unknown": {"internal": "기획서에 대응 그림이 없다 — 사유 분해는 본문 표가 든다"},
@@ -226,8 +230,27 @@ def _prune_media(path: Path) -> None:
     print(f"  안 쓰는 이미지 {len(drop_media)}개와 그 관계를 버렸다")
 
 
+#: 기획서에 있는데 **저장소에 정본이 없는** 그림 수. 저장소 밖에서 그려 docx 안에만
+#: 있는 래스터들이다. **줄기만 한다.**
+#:
+#: ★ 2026-09-28 (DECISIONS §278-4) 21 에서 시작한다. `docx_figs` 는 「모든 그림은
+#:   PLACE 에 선언돼야 한다」 를 강제하지만 그 강제는 **코드가 그리는 것**에만
+#:   걸렸다. 손으로 붙인 그림은 애초에 대장 밖이라 아무도 안 봤고, [그림 8] 이
+#:   라벨 둘을 겹쳐 찍은 채 제출본에 살아 있었다 — 검사 59개가 전부 초록인 채로.
+#:   래칫이 없으면 다음 그림도 똑같이 손으로 붙는다. 20 은 [그림 8] 을 옮긴 뒤다.
+SOURCELESS_MAX = 20
+
+
 def _undeclared() -> list[str]:
     return sorted(set(FIGURES) - set(PLACE))
+
+
+def sourceless() -> list[int]:
+    """기획서 캡션에는 있는데 `PLACE` 가 안 대는 그림 번호. 고칠 수 없는 것들이다."""
+    import docx  # noqa: PLC0415
+    caps = {int(m.group(1)) for p in docx.Document(str(DOCX)).paragraphs
+            if (m := re.match(r"^\[?그림\s*(\d+)\]?", p.text.strip()))}
+    return sorted(caps - {s["fig"] for s in PLACE.values() if "fig" in s})
 
 
 def check() -> int:
@@ -246,8 +269,21 @@ def check() -> int:
         print("  값이 바뀌었는데 기획서가 옛 그림을 든다.")
         print("  uv run python tools/docx_figs.py --sync")
         return 1
+    none = sourceless()
+    if len(none) > SOURCELESS_MAX:
+        print(f"★ 정본 없는 그림이 {len(none)} 장 — 기록 {SOURCELESS_MAX} 보다 늘었다: "
+              + ", ".join(f"[그림 {i}]" for i in none))
+        print("  저장소 밖에서 그린 그림은 **고칠 수가 없다.** 겹치거나 낡아도 다시")
+        print("  그리는 수밖에 없다 — [그림 8] 이 그래서 라벨 둘을 겹쳐 찍은 채 있었다.")
+        print("  render_figures.FIGURES 에 그리는 함수를 얹고 PLACE 에 한 줄을 달아라.")
+        return 1
+    if len(none) < SOURCELESS_MAX:
+        print(f"★ 정본 없는 그림이 {len(none)} 장으로 줄었다 — "
+              f"tools/docx_figs.py 의 SOURCELESS_MAX 를 {len(none)} 으로 조여라")
+        return 1
     n = sum(1 for s in PLACE.values() if "fig" in s)
-    print(f"기획서 그림 OK — {n}장이 정본과 같다 (내부 {len(PLACE) - n}장은 선언됨)")
+    print(f"기획서 그림 OK — {n}장이 정본과 같다 (내부 {len(PLACE) - n}장은 선언됨 · "
+          f"정본 없는 {len(none)}장은 래칫)")
     return 0
 
 
