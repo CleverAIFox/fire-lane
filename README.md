@@ -257,6 +257,7 @@ uv run python tools/evalgen.py             평가지표 E-1 · E-3 + #120 역산
 bash tools/merge_batch.sh [--release]       배치 PR 머지 → 파트 동기화 (적용 스크립트가 초록일 때만)
 bash tools/fl.sh <feat/x> [--all|--undo|--resume]  ★ 배치 한 명령 — 적용 · verify · PR · 스쿼시 · 방송 · 정리
 bash tools/branch_tidy.sh [--auto] [--close-bots]  열린 PR · 원격/로컬 가지 정리 · 봇 PR 닫기 (fl.sh 10단계가 부른다)
+bash tools/ci_wait.sh <PR번호>              ★ PR 검사를 **조용히** 기다린다 — 0 초록 · 1 빨강 · 2 모름. fl.sh · merge_batch 가 같이 부르는 단일 창구
 bash tools/inbox_fl.sh                      INBOX 에 `fl.sh` 로 두는 부트스트랩 — 패치 안 판을 골라 부른다
 bash tools/inbox_go.sh                      INBOX 에 `go.sh` 로 두는 한 줄 진입점 — .env 적재 · zip 풀기 · 브랜치 · `--relock` 판단까지
 ```
@@ -474,6 +475,8 @@ tools/
   pr_body_check.py        PR 본문이 템플릿을 실제로 채웠는가
   docx_check.py           기획서 ↔ 산출물 숫자·폐기 용어 대조
   docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
+  docstyle.py             ★ 기획서에 개요 층이 있는가 — 없으면 목차도 PDF 북마크도 안 생긴다 (--write)
+  tonecheck.py            ★ 문서 넷 + 리드미의 말투 — 비속어 · 은어 · 대화체 (<!--voice-ok--> 면 통과)
   doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
   intake.py               Downloads → landing 게이트 · 대장 미매칭 차단
   pull_data.py            ★ 반입 입구. 여덟 단계. 삭제는 검증에 매달려 있다

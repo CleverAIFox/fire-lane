@@ -79,10 +79,14 @@ def collide(names: list[str]) -> list[str]:
 
 
 def tails(names: list[str]) -> list[str]:
-    """번호를 뗀 꼬리가 겹치는가 — 이름이 달라도 같은 커밋이면 두 번 얹는다."""
+    """번호를 뗀 꼬리가 겹치는가 — 이름이 달라도 같은 커밋이면 두 번 얹는다.
+
+    ★ 2026-09-28 (§278-5). 접두사(`fire-lane-`)도 같이 뗀다. 안 떼면 접두사 붙은
+      것과 안 붙은 것이 **다른 꼬리**로 보여 같은 커밋 둘을 못 잡는다.
+    """
     seen: dict[str, list[str]] = {}
     for n in names:
-        seen.setdefault(re.sub(r"^\d+-", "", n), []).append(n)
+        seen.setdefault(re.sub(r"^(?:[a-z-]+-)?\d+-", "", n), []).append(n)
     return sorted(f"{k}: {' · '.join(v)}" for k, v in seen.items() if len(v) > 1)
 
 

@@ -100,9 +100,15 @@ NO_DECL = 152
 #   사본 픽스처가 갈렸을 때 ㉠ 재현 불가와 ㉡ 판 변경을 가르는 판별식이라,
 #   그 판별식이 빈 그물이면 진단이 조용히 거짓말한다.
 # ★ 2026-09-25 (§258-8). 17 → 18. `tools/argcheck.py` — 관문 호출 인자 대조.
-SELFTEST_MIN = 23
+# ★ 2026-09-28 (DECISIONS §278-1). 23 → 24. **수가 는 것이 아니라 세는 법이 고쳐졌다** —
+#   문자열 검사가 `localgeo` · `svg_fit`(하위명령으로 받는다)을 **놓치고**,
+#   `verify.sh`(남의 도구에 붙여 부른다)를 **잘못 세고** 있었다. 양방향으로 틀렸다.
+SELFTEST_MIN = 27
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)
+
+#: 셸 도구가 `--selftest` 를 **제 인자로 받는** 자리. 남을 그렇게 부르는 것은 아니다.
+SH_SELF = re.compile(r'(?m)^\s*(?:--selftest\)|.*?\$\{?[\w@#]+\}?"?\s*(?:==?)\s*"?--selftest)')
 WALK_FN = {"glob", "rglob", "iterdir", "walk"}
 
 
@@ -143,9 +149,34 @@ def declares(p: Path) -> str | None:
 
 def has_selftest(p: Path) -> bool:
     """★ `tools/` 만 센다. 시험은 자기가 곧 자기검사라 세면 수가 부풀고,
-    부푼 수는 「자기검사가 늘었다」는 거짓 신호를 낸다."""
-    return (p.parent.name == "tools"
-            and "--selftest" in p.read_text(encoding="utf-8", errors="ignore"))
+    부푼 수는 「자기검사가 늘었다」는 거짓 신호를 낸다.
+
+    ★ 2026-09-28 (DECISIONS §278-1). 종전에는 파일 **본문에 `--selftest` 라는
+      글자가 있는가**만 봤다. 그래서 머리말에 「`--selftest` 가 재는 것이…」라고
+      **설명만 적어도** 자기검사 하나로 세어졌다 — 실제로 그렇게 늘었고,
+      래칫을 그 수로 올렸으면 **진짜 자기검사가 하나 사라져도 안 운다.**
+
+    ★ 실행되는 자리만 센다 — 최상위 `def selftest(` 이 있거나, 문자열
+      `"--selftest"` 가 **호출의 인자**로 들어간다(`add_argument` 따위).
+      주석 · 독스트링은 어느 쪽도 아니다.
+    """
+    if p.parent.name != "tools":
+        return False
+    if p.suffix != ".py":
+        # ★ 셸 도구는 **제 인자로 받는 자리**만 센다. `verify.sh` 는 남의 도구에
+        #   `--selftest` 를 붙여 부를 뿐인데 종전 문자열 검사는 그것을 제 자기검사로
+        #   셌다 — 거짓 양성이 래칫에 앉으면 그만큼이 사각지대다.
+        return bool(SH_SELF.search(p.read_text(encoding="utf-8", errors="ignore")))
+    try:
+        tree = ast.parse(p.read_text(encoding="utf-8", errors="ignore"))
+    except SyntaxError:
+        return False
+    if any(isinstance(n, ast.FunctionDef) and n.name == "selftest" for n in tree.body):
+        return True
+    return any(isinstance(n, ast.Call)
+               and any(isinstance(a, ast.Constant) and a.value == "--selftest"
+                       for a in n.args)
+               for n in ast.walk(tree))
 
 
 # ── ② 자동 탐지 ─────────────────────────────────────────────────
