@@ -1350,7 +1350,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_web.py
       - src/firelane/segments.py
-      - src/firelane/streetlight.py
     stem: gjcity_streetlight
     ext: [csv]
     scope: jngj-donggu
@@ -3594,19 +3593,6 @@ outputs:
     - E-1 분모는 노드다. 건물이냐 노드냐는 PLAN §1 #94 가 미정으로 든다
     - E-2 는 2026-09-27 부터 낸다(DECISIONS §273-1 · 기울기 비관). E-4(#93)는 전건이 없어 안 낸다
     - 폭 실측 검증 0건이라 모든 지표가 미검증 폭 위에서 나온다(#4)
-    verified: false
-  streetlight_point:
-    produced_by: src/firelane/streetlight.py
-    path: data/processed/streetlight_point.geojson
-    inputs: [streetlight]
-    consumers: []
-    what: 가로등 점형. 야간 가시성 · 폭 차감 후보
-    note: |
-      ★ 2026-09-24. 소비자로 `publish_web.py` · `pipeline.py` 를 적고 있었다.
-        전자는 이 이름을 한 번도 안 들고, 후자는 `Step` 선언에만 든다 —
-        **단계 선언은 소비가 아니다**(그것을 소비로 세면 모든 산출물이
-        제 선언 덕에 통과한다). 옛 지도(web/js)가 걷히면서 소비자가 0이 됐고
-        아무도 안 울었다.
     verified: false
   hydrant_point:
     produced_by: src/firelane/ingest.py

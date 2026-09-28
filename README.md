@@ -218,7 +218,7 @@ bash tools/janitor.sh       # 기계·저장소·레이크 세 층을 한 표로
 ### 파이프라인
 
 ```
-ingest → segments → nfa_compare → scope → streetlight → terrain → ortho → publish → 계약 테스트 → 지문 대조
+ingest → segments → nfa_compare → scope → terrain → ortho → publish → 계약 테스트 → 지문 대조
 ```
 
 ```bash
@@ -440,7 +440,6 @@ src/firelane/
     scope.py              판정 범위 (judgment_scope) — 표출 범위는 판정 지문 밖이다
     centerline_correction.py  사람이 승인한 중심선 위치 보정. 지문이 안 맞으면 실패한다
   display_scope.py        ★ 표출 범위 단계 (display_scope · DISPLAY_BUFFER/CLOSE) — 판정 지문 밖 · scope_5186.gpkg
-  streetlight.py          가로등 지점 단위 집계
   terrain.py              공개DEM → Terrain-RGB 타일
   ortho.py                항공정사영상 → 배경 타일
   publish_web.py          → web/data
