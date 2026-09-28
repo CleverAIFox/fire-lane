@@ -22,7 +22,25 @@
  *   그 길이 있다. 지금은 정책을 먼저 고친다.
  */
 
-export type Priority = "critical" | "normal";
+/**
+ * 안내의 **급함**. 큐가 밀리면 이 순서로 버린다.
+ *
+ * ★ 2026-09-29 (DECISIONS §301). 종전에는 `critical | normal` 둘이었고
+ *   `normal` 끼리는 **도착 순서로** 버렸다 — 큐가 둘을 넘으면 가장 오래된 것을
+ *   밀어냈다. 그래서 **회전 실행 안내가 판정 안내 때문에 버려질 수 있었다.**
+ *   둘 다 `normal` 이기 때문이다. 버리는 기준이 「언제 왔나」였고 「얼마나
+ *   급한가」가 아니었다.
+ *
+ *   turn      회전 · 이탈 — 놓치면 길을 잘못 든다
+ *   rule      통행 규칙 — 놓치면 역주행한다
+ *   notice    판정 · 주변 사정 — 놓쳐도 운전은 된다
+ */
+export type Priority = "critical" | "turn" | "rule" | "notice" | "normal";
+
+/** 급한 순서. 큰 수가 급하다. `normal` 은 종전 호출부를 위해 `notice` 와 같다. */
+export const RANK: Readonly<Record<Priority, number>> = {
+  critical: 3, turn: 2, rule: 1, notice: 0, normal: 0,
+};
 
 export interface Speaker {
   readonly available: boolean;
@@ -30,8 +48,9 @@ export interface Speaker {
   readonly enabled: boolean;
   /**
    * 말한다.
-   * @param priority "critical" 이면 큐를 비우고 즉시 말한다(이탈 등).
-   *   "normal" 은 재생 중이면 큐에 넣는다 — **자르지 않는다.**
+   * @param priority `critical` 은 큐를 비우고 **말하던 것을 자르고** 즉시 말한다.
+   *   나머지는 재생 중이면 큐에 넣고 **자르지 않는다.** 큐가 밀리면
+   *   `RANK` 가 낮은 것부터 버린다 — 도착 순서가 아니다(§301).
    */
   say(text: string, priority?: Priority): void;
   cancel(): void;
@@ -51,7 +70,18 @@ export function createSpeaker(): Speaker {
   let enabled = true;
   let ko: SpeechSynthesisVoice | null = null;
   let speaking = false;
-  const queue: string[] = [];
+  /** ★ §301. 글만 담으면 급함을 모르고, 모르면 도착 순서로 버릴 수밖에 없다. */
+  const queue: { text: string; rank: number }[] = [];
+  /** 지금 말하는 것의 급함. 더 급한 것이 오면 자른다. */
+  let nowRank = -1;
+  /**
+   * 지금 말하는 **글**. 중복 제거가 이것을 봐야 한다.
+   *
+   * ★ 2026-09-29 (§301-2). 종전 중복 제거는 `queue` 만 봤다. 재생에 들어간 문장은
+   *   큐에서 빠졌으므로, 같은 문장이 한 번 더 오면 **또 큐에 들어가 두 번 나갔다.**
+   *   시험을 쓰자마자 잡혔다 — 이 파일에 시험이 없어서 그동안 안 보였다(W13-5).
+   */
+  let nowText: string | null = null;
 
   const pick = () => {
     if (!synth) return;
@@ -73,14 +103,24 @@ export function createSpeaker(): Speaker {
 
   const drain = () => {
     if (!synth || !enabled || speaking) return;
-    const text = queue.shift();
-    if (!text) return;
+    // ★ §301. **가장 급한 것부터** 낸다. 같은 급함이면 먼저 온 것부터.
+    let at = 0;
+    for (let k = 1; k < queue.length; k += 1) {
+      if (queue[k].rank > queue[at].rank) at = k;
+    }
+    const item = queue.splice(at, 1)[0];
+    if (!item) return;
+    const { text } = item;
+    nowRank = item.rank;
+    nowText = text;
     speaking = true;
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "ko-KR";
     if (ko) u.voice = ko;
     u.rate = 1.0;
-    u.onend = u.onerror = () => { speaking = false; drain(); };
+    u.onend = u.onerror = () => {
+      speaking = false; nowRank = -1; nowText = null; drain();
+    };
     synth.speak(u);
   };
 
@@ -90,29 +130,51 @@ export function createSpeaker(): Speaker {
     get enabled() { return enabled; },
     setEnabled(on) {
       enabled = on;
-      if (!on) { queue.length = 0; speaking = false; synth?.cancel(); }
+      if (!on) { queue.length = 0; speaking = false; nowRank = -1; nowText = null; synth?.cancel(); }
     },
     cancel() {
-      queue.length = 0; speaking = false; synth?.cancel();
+      queue.length = 0; speaking = false; nowRank = -1; synth?.cancel();
     },
     dispose() {
       if (wake) { clearInterval(wake); wake = 0; }
-      queue.length = 0; speaking = false; enabled = false;
+      queue.length = 0; speaking = false; nowRank = -1; nowText = null; enabled = false;
       if (synth) { synth.onvoiceschanged = null; synth.cancel(); }
     },
     say(text, priority = "normal") {
       if (!synth || !enabled || !text) return;
+      const rank = RANK[priority] ?? 0;
       if (priority === "critical") {
         queue.length = 0;
         synth.cancel();
         speaking = false;
-      } else if (queue.includes(text)) {
-        return;                     // 같은 안내가 대기 중이면 넣지 않는다
+        nowRank = -1;
+        nowText = null;
+      } else if (text === nowText || queue.some((q) => q.text === text)) {
+        return;     // 같은 안내가 **재생 중이거나** 대기 중이면 넣지 않는다(§301-2)
+      } else if (speaking && rank > nowRank) {
+        // ★ §301-1. **더 급한 것이 오면 자른다.** 2026-09-05 에 「말할 때마다
+        //   cancel 을 불렀다」를 고쳤는데(안 겹치는데도 매번 잘랐다) 그때 자르기를
+        //   **전부** 없앴다. 그래서 「300m 앞 우회전」이 재생되는 3초 동안 실행
+        //   문턱(2.5초 전)이 지나가면 「우회전입니다」가 뒤에 붙어 **늦게** 나갔다.
+        //   시속 30km 에서 2.5초는 21m 다 — 회전을 지나서 말하는 것이다.
+        //   ★ 조건이 좁다. **엄격히 더 급할 때만** 자른다. 같은 급함끼리는 안 자른다.
+        synth.cancel();
+        speaking = false;
+        nowRank = -1;
+        nowText = null;
       } else if (queue.length >= 2) {
-        // 밀린 안내는 버린다. 지난 안내를 늦게 듣는 것은 방해다.
-        queue.shift();
+        // ★ §301. 밀린 안내는 버린다 — 지난 안내를 늦게 듣는 것은 방해다.
+        //   다만 **가장 안 급한 것**을 버린다. 종전에는 가장 오래된 것을 버려
+        //   회전 실행 안내가 판정 안내에 밀려나갔다.
+        let worst = 0;
+        for (let k = 1; k < queue.length; k += 1) {
+          if (queue[k].rank < queue[worst].rank) worst = k;
+        }
+        // 새로 온 것이 큐의 어느 것보다도 안 급하면 **새 것을 버린다.**
+        if (queue[worst].rank > rank) { drain(); return; }
+        queue.splice(worst, 1);
       }
-      queue.push(text);
+      queue.push({ text, rank });
       drain();
     },
   };
