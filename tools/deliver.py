@@ -242,13 +242,39 @@ def _py() -> Path:
 
 def _wt_env(wt: Path) -> dict:
     """★ 워크트리의 `src` 가 **먼저** 와야 한다. `.venv` 는 본 저장소를 가리키므로
-    그냥 돌리면 옛 코드를 재고 「붙였는데 그대로다」라는 거짓말이 나온다."""
+    그냥 돌리면 옛 코드를 재고 「붙였는데 그대로다」라는 거짓말이 나온다.
+
+    ── 워크트리에는 `.venv` 가 없다 (2026-09-28 · DECISIONS §290-7) ──
+    ★ 그래서 워크트리 안의 `uv run` 이 **환경을 새로 만들려 들고** 그 순간
+      의존성을 내려받으러 나간다. 망이 막힌 기계에서는 그 단계가 전부 빨갛다.
+      그 자체는 환경 문제이고 **기준선 대조가 흡수한다** — 밑동에서도 같이
+      빨가니 「이 배치의 죄」로 안 세어진다.
+
+    ★ 그런데 **이 배치가 새로 붙인 단계는 흡수가 안 된다.** 밑동에는 그 단계가
+      없으므로 base_red 에 있을 수가 없고, 워크트리에서 환경 때문에 빨가면
+      그대로 「이 배치가 새로 빨갛게 만들었다」가 된다. 실측 2026-09-28 —
+      F 가 붙인 단계 다섯(「계보 대장 정합」·「계보 그림 생성」·「취입 계약
+      선언」·「자기검사 전수」·「실측 층 지문」)이 그 꼴로 배달을 막았고,
+      본 저장소에서 그 다섯은 **전부 초록**이었다.
+
+    ★ 즉 **관문을 붙이는 배치는 구조적으로 예습을 통과할 수 없었다.** 그러면
+      사람은 예습을 건너뛰고, 건너뛴 예습이 F 를 빨간 채로 내보냈다(§290-1).
+      고치는 자리는 예습을 끄는 쪽이 아니라 **환경을 맞추는 쪽**이다.
+
+    ★ 그래서 본 저장소의 `.venv` 를 빌려준다. 코드는 워크트리에서 오고(위
+      PYTHONPATH) 의존성은 이 기계에서 온다 — 대는 것이 **코드**이므로 그것이
+      맞다. `UV_NO_SYNC` · `UV_OFFLINE` 은 그 환경을 다시 풀지 말라는 뜻이다.
+    """
     pp = [str(wt / "src")]
     if shim := os.environ.get("FL_PYSHIM"):
         pp.append(shim)
     if old := os.environ.get("PYTHONPATH"):
         pp.append(old)
-    return {"PYTHONPATH": os.pathsep.join(pp)}
+    env = {"PYTHONPATH": os.pathsep.join(pp)}
+    if (venv := ROOT / ".venv").is_dir():
+        env |= {"UV_PROJECT_ENVIRONMENT": str(venv), "VIRTUAL_ENV": str(venv),
+                "UV_NO_SYNC": "1", "UV_OFFLINE": "1"}
+    return env
 
 
 def dryrun(branch: str, rng: str, patches: list[Path],

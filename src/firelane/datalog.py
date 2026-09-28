@@ -29,6 +29,13 @@ from firelane.cli import USAGE_EXIT
 from firelane.layerfsck import cmd_fsck  # 사용법 오류 종료코드는 정본 하나다
 from firelane.paths import ROOT
 
+
+def _tracked_paths() -> frozenset[str]:
+    """git 이 추적하는 경로. **추적 밖은 「안 지었다」이고 결함이 아니다**(§290-7)."""
+    r = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                       capture_output=True, text=True, check=False, timeout=60)
+    return frozenset(x for x in r.stdout.split("\0") if x)
+
 KST = timezone(timedelta(hours=9))
 SOURCES = ROOT / "sources.yaml"
 PROCESSED = ROOT / "data" / "processed"
@@ -335,10 +342,25 @@ def cmd_check() -> None:
                 print(f"  ! outputs.{k} 에 {f} 없음"); bad += 1
 
     # 3. 선언된 산출물이 실제로 존재하는가
+    #
+    # ★ 2026-09-28 (DECISIONS §290-7). **추적 밖 산출물의 부재는 결함이 아니다.**
+    #   `data/processed/*.gpkg` 는 `.gitignore` 가 덮는 재생성물이고, 파이프라인을
+    #   안 돌린 기계(새 워크트리 · CI)에는 당연히 없다. 그것을 실패로 세면 이
+    #   단계는 **레이크 있는 기계에서만 초록**이 되고, 그 사실이 선언 안 돼 있어서
+    #   배달 예습을 통째로 막았다 — 예습이 워크트리에서 돌기 때문이다.
+    #
+    #   대장이 틀린 것과 이 기계가 안 지은 것은 다른 사실이다. **추적되는 경로가
+    #   없으면 대장이 틀린 것이고, 추적 밖이면 안 지은 것이다.** `docseal` 이
+    #   같은 규율을 쓴다(§278-10 — 추적 밖은 도장의 기반이 못 된다).
+    tracked = _tracked_paths()
     for k, v in out.items():
-        p = ROOT / v.get("path", "")
-        if v.get("path") and not p.exists():
-            print(f"  ! outputs.{k}.path 없음: {v['path']}"); bad += 1
+        rel = v.get("path", "")
+        if not rel or (ROOT / rel).exists():
+            continue
+        if rel in tracked:
+            print(f"  ! outputs.{k}.path 없음: {rel} — **추적되는데 없다**"); bad += 1
+        else:
+            print(f"  · outputs.{k}.path 아직 안 지었다: {rel} (추적 밖 · 재생성물)")
 
     # 4. verified=false 인데 발표에 쓰이는 것 (경고만)
     unver = [k for k, v in out.items() if not v.get("verified")]
