@@ -29,7 +29,11 @@ import fontnik from "fontnik";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const NAVI = path.resolve(HERE, "..");
 const SRC = path.join(NAVI, "fonts-src", "LiberationSans-Regular.ttf");
-const OUT = path.resolve(NAVI, "..", "fonts", "Liberation Sans Regular");
+// ★ 2026-09-30 (§316). 스택 이름에 **공백을 안 쓴다.** 종전 `Liberation Sans
+//   Regular` 로 뒀더니 `.github/CODEOWNERS` 가 그 경로를 표현하지 못했다 —
+//   CODEOWNERS 는 공백으로 경로와 소유자를 가른다. 파일 다섯이 「아무도 안
+//   맡은 것」으로 떨어졌고, 그것은 이름 때문이지 사람 때문이 아니었다.
+const OUT = path.resolve(NAVI, "..", "fonts", "LiberationSans");
 
 /**
  * **기기가 스스로 그리는 구간.** MapLibre 의 `localIdeographFontFamily` 가 맡는다.

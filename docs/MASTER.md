@@ -135,12 +135,14 @@ uv run python tools/docnum_check.py
 
 기준일 2026-09-16(흡수-2 · DECISIONS §170). 산출물 지문 `data/golden/segments.fingerprint.json` 이 정본이다.
 
+<!--gen: v_clear v_needs_cv v_blocked v_unknown-->
 | 판정 | 구간 | 뜻 |
 |---|---:|---|
 | `clear` 통행 가능 | 465 | 양쪽 주차가 있어도 통과. 영상판정 불필요 |
 | `needs_cv` 판정 보류 | 226 | 상습주차 여부로 갈린다. 영상판정 대상 |
 | `blocked` 통행 불가 | 191 | 차가 없어도 통과 불가 |
 | `unknown` 영상판정 불가 | 399 | CCTV 25m 밖. 영상판정 자체가 불가능 |
+<!--/gen-->
 
 ```
 세그먼트        1,281
@@ -403,12 +405,14 @@ DECISIONS 소관이다.
 
 CCTV 유효범위를 25m 로 잡으면(초과 시 호모그래피 오차 급증) 이렇게 된다.
 
+<!--gen: v_unknown-->
 ```
 CCTV 유효범위 안      451 / 1,281   (35.2%)
 CCTV 거리 중앙값       38.5 m
 최대                   212 m
 영상판정 불가          399구간 · 17,168m   (전체 연장의 29%)
 ```
+<!--/gen-->
 
 ★ **영상 기반 진입 판정 시스템을 만들어도 골목의 65%에는 적용할 수 없다.
 알고리즘의 한계가 아니라 인프라의 한계다.**
@@ -441,7 +445,9 @@ CCTV 거리 중앙값       38.5 m
 
 | 값 | 수 | 무엇을 세나 | 어디서 나오나 |
 |---|---:|---|---|
+<!--gen: v_blocked-->
 | `verdict` 통행 불가 | 191 | 구간 자체의 폭이 모자란다. 지도의 빨강 | `seg/geom.py::verdict()` |
+<!--/gen-->
 | 차량 비용 통행 불가 | 474 | 폭 여유 · 내륜차 · 회전반경까지 넣으면 비용이 무한대다 | `seg/vehicle.py::edge_cost()` |
 | 도달 불가 | 447 | 구간은 지나갈 수 있어도 안전센터에서 거기까지 길이 끊긴다 | 막힌 엣지를 뺀 Dijkstra |
 
@@ -1535,7 +1541,7 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 |---|---:|---|
 | `segments.geojson` | 1,281 | 판정 본체 — 관제 판정선 |
 | `navi_graph.json` | — | 경로 그래프 · 일방통행 · 회전 금지 · 단속 이력 · 지형 설정 — 내비 · 관제 경로 |
-| `buildings.geojson` | 12,663 | `h` = 층수 × 3.3. 도로면과 겹친 만큼 잘랐다(DECISIONS §217-3) |
+| `buildings.geojson` | 12,663 | `h` = 층수 × 3.3. 도로면과 겹친 만큼 잘랐다(DECISIONS §217-3). ★ `BUL_MAN_NO` 는 **이름이 시사하는 건물관리번호가 아니다** — 발행본 안에서만 유효한 정수 번호다(DECISIONS §320) |
 | `road_area.geojson` · `sidewalk.geojson` | — | 바탕 면 |
 | `poi.geojson` · `dest.geojson` | — | 지도 라벨 · 목적지 검색 색인(동명동 경계 안만 · DECISIONS §183-1) |
 | `cctv.geojson` · `hydrants.geojson` · `stations.geojson` | — | 시설 표지 |
@@ -2392,7 +2398,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 
 ★ **커버리지는 래칫이다.** 2026-09-25 에 28 → 32 로 올렸다(실측 32.93%).
 <!--gen: cov_min-->
-  `tools/verify.sh` 의 `COV_MIN=35` 로 걸려 있고 **올린 뒤에는 안 내린다.**
+  `tools/verify.sh` 의 `COV_MIN=36` 로 걸려 있고 **올린 뒤에는 안 내린다.**
 <!--/gen-->
   80% 를 목표로 잡지 않는다 — 못 지키는 문턱은 끄게 되고, 끈 문턱은 없는 것과 같다.
   2026-09-20 정정 — 종전 이 자리는 「실측 24 에 23 을 거는 것은 화면의
@@ -2765,7 +2771,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,317 전수 · **분모(blank) 0절** · 물림(inherit) 549절.
+★ **강제자 칸의 분모.** 절 1,333 전수 · **분모(blank) 0절** · 물림(inherit) 557절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

@@ -67,11 +67,15 @@ PARAM 없다. **문턱이 없다** — 방향만 본다
       안에서 인쇄와 함께 계산돼 값만 꺼낼 수가 없다. 둘 다 0 이고 움직인 적이
       없어 값이 작다 — 꺼내는 리팩터는 별개의 일이다(PLAN).
       **`data/golden` · 봉인지는 안 든다.** 그것은 래칫이 아니라 지문이다.
+      **레이크가 있어야 재는 래칫은 CI 에서 안 든다.** `verify.sh` 의
+      `# ci-exempt:` 선언을 물려받아 사유와 함께 건너뛴다 — 전부 건너뛰면
+      빈 그물이라 빨간불이다(§318).
 """
 from __future__ import annotations
 
 import argparse
 import ast
+import functools
 import importlib.util
 import sys
 from pathlib import Path
@@ -111,6 +115,35 @@ def owners() -> list[tuple[Path, object]]:
         if m is not None:
             out.append((p, m))
     return out
+
+
+@functools.lru_cache(maxsize=1)
+def lake_only() -> dict[str, str]:
+    """레이크가 있어야 재는 도구 → 그 사유. **손목록이 아니다.**
+
+    ★ 정본은 `tools/verify.sh` 의 `# ci-exempt:` 선언이고, 그것을 읽는 자리는
+      `tools/gate_parity.py` 의 `exemptions()` 하나다. 여기서 또 읽으면 같은
+      사실이 두 집에 살고 둘은 반드시 갈린다(2족) — 그래서 **그 함수를 부른다.**
+
+    ★ 왜 이 갈래가 필요한가 (§318). 래칫은 「어디서나 잴 수 있는 수」를
+      전제한다. `widthcross` 의 두 수는 `processed/*.gpkg` 에서 나오고 CI 에는
+      그것이 없다 — 그러면 `ratchet_values()` 가 죽고, 죽으면 이 도구가
+      **CI 에서 영원히 빨갛다.** 「원래 빨간 것」을 사람이 배우면 그 옆의 진짜
+      빨강도 같이 묻힌다(§313-1 ③ 과 같은 족).
+
+    ★ 그렇다고 조용히 빠지지는 않는다. 건너뛴 것은 **사유와 함께 찍히고**,
+      전부 건너뛰면 빨간불이다(빈 그물). SKIP 은 엄격하게 다룬다.
+    """
+    # ★ `TOOLS` 가 아니라 `ROOT` 로 간다. `TOOLS` 는 시험이 사본으로 갈아끼우는
+    #   자리이고, 면제 선언은 **언제나 실물 트리**에 있다.
+    gp = ROOT / "tools" / "gate_parity.py"
+    spec = importlib.util.spec_from_file_location("_rt_gate_parity", gp)
+    if not spec or not spec.loader:
+        return {}
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return {Path(k).name: v for k, v in m.exemptions().items() if k.endswith(".py")}
 
 
 def _scalar(src: str, name: str) -> tuple[int, int, int] | None:
@@ -178,6 +211,7 @@ def tightens(direction: str, declared: int, measured: int) -> bool:
 def survey() -> list[dict]:
     """도구 × 래칫 × 실측. 판정은 안 한다."""
     rows: list[dict] = []
+    exempt = lake_only()
     for p, m in owners():
         try:
             vals = m.ratchet_values()
@@ -186,8 +220,14 @@ def survey() -> list[dict]:
                          "`RATCHETS` 는 선언했는데 `ratchet_values()` 가 없다"})
             continue
         except Exception as e:            # noqa: BLE001 — 남의 실측 함수를 부른다
-            rows.append({"tool": p.name, "name": "—", "err":
-                         f"`ratchet_values()` 가 죽었다 — {type(e).__name__}: {e}"})
+            # ★ 선언된 레이크 의존만 건너뛴다. 선언이 없으면 그대로 빨강이다 —
+            #   「죽었으면 봐 준다」가 되면 어떤 결함도 면제로 통과한다(§318).
+            if p.name in exempt:
+                rows.append({"tool": p.name, "name": "—", "skip": exempt[p.name],
+                             "cause": f"{type(e).__name__}: {e}"})
+            else:
+                rows.append({"tool": p.name, "name": "—", "err":
+                             f"`ratchet_values()` 가 죽었다 — {type(e).__name__}: {e}"})
             continue
         src = p.read_text(encoding="utf-8")
         for name, direction in m.RATCHETS.items():
@@ -243,15 +283,29 @@ def run(write: bool) -> int:
         return 1
 
     err = [r for r in rows if "err" in r]
-    stale = [r for r in rows if "err" not in r and r["declared"] != r["measured"]]
+    skip = [r for r in rows if "skip" in r]
+    live = [r for r in rows if "err" not in r and "skip" not in r]
+    stale = [r for r in live if r["declared"] != r["measured"]]
     loose = [r for r in stale if not tightens(r["dir"], r["declared"], r["measured"])]
     tight = [r for r in stale if tightens(r["dir"], r["declared"], r["measured"])]
 
-    print(f"래칫 {len(rows) - len(err)}개 · 낡음 {len(stale)}"
-          f" (조이는 쪽 {len(tight)} · 느슨해진 쪽 {len(loose)})")
+    print(f"래칫 {len(live)}개 · 낡음 {len(stale)}"
+          f" (조이는 쪽 {len(tight)} · 느슨해진 쪽 {len(loose)})"
+          + (f" · 건너뜀 {len(skip)}" if skip else ""))
 
     for r in err:
         print(f"  ✗ {r['tool']} · {r['name']} — {r['err']}")
+
+    for r in skip:
+        # ★ 건너뛴 것은 **사유와 원인을 같이** 찍는다. 조용한 SKIP 은 초록으로
+        #   위장하고, 위장한 초록은 없는 관문보다 나쁘다.
+        print(f"  ~ {r['tool']} 건너뜀 — {r['skip']}")
+        print(f"      원인 {r['cause']}")
+
+    if skip and not live:
+        print("\n✗ 재어 본 래칫이 하나도 없다 — 전부 건너뛰었다. **빈 그물이다.**")
+        print("  이 기계에서는 이 관문이 아무것도 안 든다. 레이크가 붙은 기계에서 돌려라.")
+        return 1
 
     for r in loose:
         k = f"[{r['key']}]" if "key" in r else ""
@@ -273,6 +327,12 @@ def run(write: bool) -> int:
         for p, edits in by.items():
             _apply(p, edits)
         print(f"\n✓ {len(tight)}개를 조였다 — 커밋에 **왜 움직였는지**를 적어라")
+        # ★ 2026-09-30. 종전에는 여기서 무조건 0 을 냈다 — **조일 것이 하나라도
+        #   있으면 느슨해진 쪽의 빨강이 함께 묻혔다.** 자동으로 조이는 도구가
+        #   결함을 덮으면 그 도구는 관문이 아니라 은폐 장치다(§309 의 반대 방향).
+        if loose or err:
+            print("  ✗ 그런데 **느슨해진 쪽**이 남았다 — 위를 읽어라. 조인 것과 별개다.")
+            return 1
         return 0
 
     if loose or err:

@@ -556,6 +556,8 @@ step "기획서 그림 ↔ 정본" uv run python tools/docx_figs.py --check
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "sources.yaml src/* tools/*"
 step "대장 필드 검사"   uv run python -m firelane.ledger
+# ★ 2026-09-30 (§317). 그 검사는 활용도를 **찍기만** 했다 — 목표 없는 수는 안 읽힌다.
+step "미배선 자료"     uv run python tools/unusedcheck.py
 # ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
 # ci-exempt: tools/refcheck.py 대장 file/files 를 raw 실물과 대조한다. CI 에 레이크가 없다(DECISIONS §191-4)
 step "선언 ↔ 실물"     uv run python tools/refcheck.py
@@ -996,9 +998,9 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   매번 뜨고, 매번 뜨는 줄은 곧 안 읽히는 줄이 된다. 내림값이라 조여도 안전하다.
 #   여유가 0.1%p 아래로 얇아지는 것은 정상이다 — 시험을 빼면 그 자리에서 우는 것이
 #   래칫의 뜻이다.
-# ★ 이력 (사유는 DECISIONS 가 든다) — 09-20 W10 23→24 · 09-23 §223-2 27→28 ·
-#   09-25 §258 28→32 · 09-27 §260 32→33(실측 33.03%) · 09-28 §290 33→34(실측 34.19%).
-COV_MIN=35
+# ★ 이력 (사유·실측은 DECISIONS 가 든다) — 09-20 W10 23→24 · 09-23 §223-2 27→28 ·
+#   09-25 §258 28→32 · 09-27 §260 32→33 · 09-28 §290 33→34 · 09-29 34→35 · 09-30 §318 35→36.
+COV_MIN=36
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."

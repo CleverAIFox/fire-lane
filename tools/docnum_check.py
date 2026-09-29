@@ -114,15 +114,27 @@ CONTEXT = {
 }
 
 
+def verdicts() -> dict[str, int]:
+    """판정 네 수 + 구간 수. **산출물에서 직접 센다.**
+
+    ★ 2026-09-30 (§319). `tools/docgen.py` 가 이 함수를 부른다 — 같은 수를
+      거기서 또 세면 두 집이 되고, 판정이 움직이는 날 한쪽만 움직인다(2족).
+      좁게 떼어 둔 이유는 `counts()` 가 대장·실물까지 읽어 **레이크 없는
+      기계에서 죽기** 때문이다. 문서 블록을 채우는 데 레이크는 필요 없다.
+    """
+    import verdict_tally
+    t = verdict_tally.tally(SEG)
+    # ★ 모르는 어휘가 있으면 그 도구가 `★` 칸으로 낸다. 여기서 버리면
+    #   **네 수의 합이 구간 수와 다른 채로** 문서에 실린다.
+    if any(k.startswith("★") for k in t):
+        raise SystemExit(f"! 발행 어휘 밖의 판정이 있다 — {t}")
+    return t
+
+
 def counts() -> dict[str, int]:
     P = [f["properties"] for f in json.loads(SEG.read_text(encoding="utf-8"))["features"]]
-    v = collections.Counter(p["verdict"] for p in P)
     return {
-        "n": len(P),
-        "clear": v["clear"],
-        "needs_cv": v["needs_cv"],
-        "blocked": v["blocked"],
-        "unknown": v["unknown"],
+        **verdicts(),
         "in_emd": sum(1 for p in P if p["in_emd"]),
         # ★ 2026-09-16. `(d or 9e9)` 는 거리 **0.0** 을 결손으로 읽었다 — 카메라 바로 옆 2구간이
         #   유효범위 밖으로 세어져 451 을 449 로 냈다(DECISIONS §170-5). 결손은 None 뿐이다.

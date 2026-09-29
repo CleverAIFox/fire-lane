@@ -7,6 +7,7 @@
 #   bash tools/fl.sh <브랜치> --undo       가지를 지우고 원상복구
 #   bash tools/fl.sh <브랜치> --resume     끊긴 자리부터 잇는다 (PR · CI · 스쿼시 · 방송 · 정리)
 #   … --relock                             적용 뒤 `fire-lane --from segments` + `golden.py lock` 한 번 (판정 지문이 바뀌는 배치)
+#   … --measured=<태그>                     판정 **산출물**이 움직이는 배치. 재생성 사슬을 도구가 돌리고 그 태그로 봉인한다 (§319)
 #
 # ★ 2026-09-22 (DECISIONS §214-1). **정본이 저장소로 들어왔다.** 종전에는 이 파일이
 #   INBOX(다운로드 폴더)에만 살았다 — 버전 관리 · 시험 · 리뷰 밖이었고, INBOX 를
@@ -79,9 +80,12 @@ printf '%sfl %s%s\n' "$D" "$VERSION" "$Z"
 BR="${1:-}"
 MODE=""
 RELOCK=0
+MEASURED=""
 for _a in "${@:2}"; do
     case "$_a" in
         --relock) RELOCK=1 ;;              # 판정 지문이 바뀌는 배치 — 적용 뒤 재잠금 한 번 (§220)
+        --measured=*) MEASURED="${_a#--measured=}"; RELOCK=1 ;;   # 판정 산출물이 움직인다 (§319)
+        --measured) die "태그를 붙여라 —  --measured=v0.48" ;;
         "") : ;;
         *) MODE="$_a" ;;
     esac
@@ -476,16 +480,24 @@ for p in sorted(code_closure("firelane.ingest")): print(p.relative_to(ROOT).as_p
     # ★ 판정 **산출물**이 움직였으면 멈춘다 — 그것은 배선 배치가 아니라 측정 배치다(§13-5 규칙 2).
     #   지문 파일이 아니라 파이프라인이 **실제로 쓰는** 추적 산출물을 본다. 지문은 `golden.py lock`
     #   만 쓰므로 그것을 대 보면 언제나 깨끗하다 — 독립 검토가 잡은 빈 그물이다.
-    if ! git diff --quiet -- data/processed/segments.geojson data/processed/seg_uid_map.csv; then
-        git diff --stat -- data/processed/segments.geojson data/processed/seg_uid_map.csv
-        die "판정 산출물이 움직였다 — 이 배치는 배선이 아니라 측정이다." \
-            "  전후 값을 PR 본문에 적고 사람이 판단한다:  uv run python tools/golden.py check --allow-stale"
-    fi
-    uv run python tools/golden.py lock || die "golden 재잠금이 실패했다"
+    # ★ 2026-09-30 (DECISIONS §319). 종전에는 여기가 **막다른 길**이었다 — 멈추는
+    #   것은 옳지만(§13-5 규칙 2) 멈춘 다음에 할 일이 글로도 없었고, 사람이 손으로
+    #   여섯 도구를 순서 없이 돌려 전수 verify 가 여덟 단계 빨갰다. **판단은 여전히
+    #   사람이 한다**(`--measured=<태그>` 가 그 판단이다) — 순서와 받아적기만 뺀다.
+    #   사슬 자체는 여기 없다. 셸 분기에 적은 순서는 시험이 못 들기 때문이다.
+    uv run python tools/remeasure.py --tag "${MEASURED:-}" \
+        || die "측정 배치다 — 위 안내를 끝까지 읽어라." \
+               "  움직임을 받아들이겠다면:  $FL_CMD $BR $MODE --measured=v0.48" \
+               "  산문을 고친 뒤 이으려면:  $FL_CMD $BR --resume"
+    [ -z "$MEASURED" ] || RELOCK_DONE=1
+    [ "${RELOCK_DONE:-0}" = 1 ] || uv run python tools/golden.py lock \
+        || die "golden 재잠금이 실패했다"
     if git diff --quiet -- data/golden data/processed web/data; then
         warn "재잠금할 것이 없었다 — 지문도 산출물도 이미 같다"
     else
         git add data/golden data/processed web/data
+        # ★ 측정 배치는 사슬이 문서 · 기획서 · 봉인지까지 건드린다 (§295-1 과 같은 형태).
+        [ -z "$MEASURED" ] || git add docs data/baseline tools README.md
         # ★ §295-3. 코드 지문이 `uv.lock` 의 sha 를 문다. 빼면 지문과 잠금이 따로 앉고,
         #   미스테이지가 남아 훅이 커밋을 죽인다. 사유는 그 절이 든다.
         if ! git diff --quiet -- uv.lock; then
@@ -496,7 +508,7 @@ for p in sorted(code_closure("firelane.ingest")): print(p.relative_to(ROOT).as_p
         # ★ §295-1 (실기 2회). **종료코드가 아니라 HEAD 가 움직였는지 잰다** — 훅이 0 으로
         #   죽는 경우까지 막힌다. 도구가 제 일을 했다고 주장하지 않는다(§273-8).
         _seal_before=$(git rev-parse HEAD)
-        git commit -q -m "seal: golden 재잠금 · 샤드 봉인 (판정 불변)" || true
+        git commit -q -m "${MEASURED:+seal: 측정 배치 재생성 · 봉인 $MEASURED}${MEASURED:-seal: golden 재잠금 · 샤드 봉인 (판정 불변)}" || true
         if [ "$(git rev-parse HEAD)" = "$_seal_before" ]; then
             die "재잠금 커밋이 **앉지 않았다.** 위 훅 메시지를 끝까지 읽어라." \
                 "  ★ 이것을 넘기면 재잠금 없는 가지가 올라가고 CI 가" \

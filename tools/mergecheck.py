@@ -53,6 +53,34 @@ import subprocess
 #: 머지 시점에는 빨강과 같다 — 기다리지 않고 누른 것이다.
 OK_STATES = ("SUCCESS",)
 
+#: **이미 일어난 우회.** PR 번호 → (날짜, 무엇을 우회했나, 그 뒤에 무엇이 달라졌나)
+#:
+#: ★ 왜 목록이 필요한가. 이 도구는 「최근 머지 20건」을 본다 — 이미 일어난
+#:   우회는 **20건이 지나갈 때까지 매번 빨갛다.** 매번 뜨는 빨강은 곧 안 읽히는
+#:   빨강이 되고, 그때 진짜 우회도 같이 묻힌다(§313-1 ③ 과 같은 족).
+#:
+#: ★ 그런데 「알려진 것이면 봐 준다」는 위험하다. 그래서 선언은 **셋을 다 든다** —
+#:   ① 날짜 ② 무엇을 우회했나 ③ 그 뒤에 무엇이 달라졌나. ③이 없는 선언은
+#:   면제가 아니라 미결이고, 미결은 PLAN 이 든다. 사유 없는 이름은 선언이 아니다.
+#:
+#: ★ **죽은 선언도 잡는다.** 여기 적힌 PR 이 실제로 초록이었으면 그 선언은
+#:   거짓말이고, 거짓말하는 면제는 없는 면제보다 나쁘다(`gate_parity` 와 같은 규율).
+KNOWN_BYPASS: dict[int, tuple[str, str, str]] = {
+    236: ("2026-09-29",
+          "`gh pr merge --admin` 으로 상태 검사까지 껐다. 빨간 사유는 "
+          "`tools/pr_body_check.py` — PR 본문이 템플릿의 「리뷰어가 볼 곳」을 안 채웠다",
+          "이 도구(`tools/mergecheck.py`)가 그 배치에서 섰다. 그리고 머지는 "
+          "`tools/merge_batch.sh` 의 `wait_checks()` 로만 한다 — 손으로 쓴 머지 "
+          "스크립트를 금지했다(그것이 `--admin` 을 부른 자리였다)"),
+}
+
+#: 선언의 사유 칸이 이보다 짧으면 사유가 아니다. `gate_parity.MIN_REASON` 과 같은 틀.
+MIN_REASON = 20
+
+#: 선언 건수 래칫. **늘면 운다** — 우회가 한 번 더 있었다는 뜻이다.
+#: 줄지는 않는다(역사는 안 줄어든다) 그래서 `ratchet.py` 규약에는 안 태운다.
+BYPASS_MAX = 1
+
 QUERY = """
 query($owner:String!, $name:String!, $n:Int!) {
   repository(owner:$owner, name:$name) {
@@ -74,7 +102,7 @@ def _repo() -> tuple[str, str] | None:
     if not shutil.which("gh"):
         return None
     r = subprocess.run(["gh", "repo", "view", "--json", "owner,name"],  # noqa: S607 — PATH 의 gh 를 쓴다. 러너 표준이다
-                       capture_output=True, text=True, check=False)
+                       capture_output=True, text=True, check=False, timeout=30)
     if r.returncode != 0:
         return None
     d = json.loads(r.stdout)
@@ -85,28 +113,41 @@ def fetch(owner: str, name: str, n: int) -> list[dict]:
     r = subprocess.run(  # noqa: S607 — 위와 같다
         ["gh", "api", "graphql", "-f", f"query={QUERY}",
          "-F", f"owner={owner}", "-F", f"name={name}", "-F", f"n={n}"],
-        capture_output=True, text=True, check=False)
+        capture_output=True, text=True, check=False, timeout=60)
     if r.returncode != 0:
         raise RuntimeError(r.stderr.strip() or "gh api 가 실패했다")
     return json.loads(r.stdout)["data"]["repository"]["pullRequests"]["nodes"]
 
 
-def judge(nodes: list[dict]) -> tuple[list[str], int]:
-    """(빨간불 사유들, 초록으로 머지된 건수)."""
-    bad, ok = [], 0
+def judge(nodes: list[dict]) -> tuple[list[str], int, list[str]]:
+    """(빨간불 사유들, 초록으로 머지된 건수, 선언으로 덮인 것들).
+
+    ★ 선언으로 덮인 것은 **조용히 빠지지 않는다.** 셋째 값으로 나와 사람이
+      읽는 자리에 사유와 함께 찍힌다. 조용한 면제는 초록으로 위장한다.
+    """
+    bad, ok, known = [], 0, []
     for pr in nodes:
         c = pr["commits"]["nodes"]
         roll = (c[0]["commit"].get("statusCheckRollup") or {}) if c else {}
         state = roll.get("state")
+        n = pr["number"]
         if state in OK_STATES:
             ok += 1
-        elif state is None:
-            bad.append(f"#{pr['number']} {pr['title'][:56]}\n"
-                       "       **검사가 하나도 안 돌고 머지됐다** — 만들자마자 눌렀다는 뜻이다")
-        else:
-            bad.append(f"#{pr['number']} {pr['title'][:56]}\n"
-                       f"       **{state} 인 채로 머지됐다** — 우회가 상태 검사까지 껐다")
-    return bad, ok
+            if n in KNOWN_BYPASS:
+                # ★ 죽은 선언. 초록이었던 PR 을 우회라고 적어 두면 그 목록을
+                #   아무도 안 믿게 되고, 그때 진짜 선언도 같이 안 읽힌다.
+                bad.append(f"#{n} 은 **초록으로 머지됐는데** `KNOWN_BYPASS` 에 있다\n"
+                           "       — 죽은 선언이다. 목록에서 지워라")
+            continue
+        why = "**검사가 하나도 안 돌고 머지됐다** — 만들자마자 눌렀다는 뜻이다" \
+            if state is None else \
+            f"**{state} 인 채로 머지됐다** — 우회가 상태 검사까지 껐다"
+        if n in KNOWN_BYPASS:
+            d, what, after = KNOWN_BYPASS[n]
+            known.append(f"#{n} {d} — {what}\n       그 뒤  {after}")
+            continue
+        bad.append(f"#{n} {pr['title'][:56]}\n       {why}")
+    return bad, ok, known
 
 
 def selftest() -> int:
@@ -117,29 +158,52 @@ def selftest() -> int:
                 "commits": {"nodes": [{"commit": {"statusCheckRollup":
                                                   ({"state": st} if st else None)}}]}}
 
-    bad, ok = judge([node(1, "SUCCESS")])
+    bad, ok, _ = judge([node(1, "SUCCESS")])
     if bad or ok != 1:
         fails.append("초록을 초록이라 안 한다")
 
-    bad, ok = judge([node(2, "FAILURE")])
+    bad, ok, _ = judge([node(2, "FAILURE")])
     if not bad or ok:
         fails.append("**빨간불 머지를 통과시킨다** — 이 도구의 존재 이유가 그것이다")
 
-    bad, _ = judge([node(3, None)])
+    bad, _, _ = judge([node(3, None)])
     if not bad:
         fails.append("검사가 안 돈 머지를 통과시킨다 — 3초 머지가 이 꼴이다")
 
-    bad, _ = judge([node(4, "PENDING")])
+    bad, _, _ = judge([node(4, "PENDING")])
     if not bad:
         fails.append("PENDING 을 초록으로 본다 — 기다리지 않고 누른 것이다")
 
-    bad, _ = judge([{"number": 5, "title": "t", "mergedAt": "", "commits": {"nodes": []}}])
+    bad, _, _ = judge([{"number": 5, "title": "t", "mergedAt": "", "commits": {"nodes": []}}])
     if not bad:
         fails.append("커밋이 없는 PR 을 통과시킨다")
 
+    # ── 선언 (§320) ──────────────────────────────────────────
+    n = next(iter(KNOWN_BYPASS))
+    bad, _, known = judge([node(n, "FAILURE")])
+    if bad or len(known) != 1:
+        fails.append("선언된 우회를 빨강으로 센다 — 스무 건이 지나갈 때까지 매번 운다")
+    if not known or "그 뒤" not in known[0]:
+        fails.append("선언을 찍는데 **그 뒤에 무엇이 달라졌나**를 안 찍는다")
+
+    bad, _, known = judge([node(n, "SUCCESS")])
+    if not bad:
+        fails.append("**죽은 선언을 통과시킨다** — 초록이었던 PR 을 우회라고 적어 뒀다")
+
+    bad, _, known = judge([node(99999, "FAILURE")])
+    if not bad or known:
+        fails.append("선언에 없는 새 우회를 덮는다 — 목록이 면죄부가 됐다")
+
+    if len(KNOWN_BYPASS) > BYPASS_MAX:
+        fails.append(f"선언이 {len(KNOWN_BYPASS)} — 래칫 {BYPASS_MAX} 보다 늘었다."
+                     " 우회가 한 번 더 있었다는 뜻이다")
+    for k, v in KNOWN_BYPASS.items():
+        if len(v) != 3 or any(len(x) < MIN_REASON for x in v[1:]):
+            fails.append(f"#{k} 선언이 셋을 다 안 든다(날짜 · 무엇을 · 그 뒤에)")
+
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 5")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 10")
     return 1 if fails else 0
 
 
@@ -164,8 +228,13 @@ def main() -> int:
         return 0
 
     nodes = fetch(*who, a.limit)
-    bad, ok = judge(nodes)
-    print(f"머지 {len(nodes)}건 · 초록에서 머지 {ok} · 빨간 채로 머지 {len(bad)}")
+    bad, ok, known = judge(nodes)
+    print(f"머지 {len(nodes)}건 · 초록에서 머지 {ok} · 빨간 채로 머지 {len(bad)}"
+          + (f" · 선언된 우회 {len(known)}" if known else ""))
+    for k in known:
+        # ★ 선언은 **사유와 함께 찍힌다.** 조용히 빠지면 초록으로 위장하고,
+        #   위장한 초록은 없는 관문보다 나쁘다.
+        print(f"\n  ~ 선언된 우회 — {k}")
     if bad:
         print("\n✗ 우회가 상태 검사를 껐다")
         for b in bad:

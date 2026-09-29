@@ -182,10 +182,40 @@ def test_a_red_merge_is_caught():
                 "commits": {"nodes": [{"commit": {"statusCheckRollup":
                                                   ({"state": st} if st else None)}}]}}
     for st in ("FAILURE", "PENDING", None):
-        bad, ok = MC.judge([node(1, st)])
+        bad, ok, _ = MC.judge([node(1, st)])
         assert bad and not ok, f"{st} 를 초록으로 본다"
-    bad, ok = MC.judge([node(1, "SUCCESS")])
+    bad, ok, _ = MC.judge([node(1, "SUCCESS")])
     assert not bad and ok == 1
+
+
+def test_a_declared_bypass_is_shown_not_hidden():
+    """★ 이미 일어난 우회는 **사유와 함께 찍히고** 빨강으로 안 센다(§320).
+
+    ★ 왜 선언이 필요한가. 이 도구는 최근 20건을 본다 — 이미 일어난 우회는
+      20건이 지나갈 때까지 매번 빨갛다. 매번 뜨는 빨강은 안 읽히는 빨강이 되고,
+      그때 **진짜 우회도 같이 묻힌다**(§313-1 ③ 과 같은 족).
+    """
+    def node(n, st):
+        return {"number": n, "title": "t", "mergedAt": "",
+                "commits": {"nodes": [{"commit": {"statusCheckRollup":
+                                                  ({"state": st} if st else None)}}]}}
+    n = next(iter(MC.KNOWN_BYPASS))
+    bad, _ok, known = MC.judge([node(n, "FAILURE")])
+    assert not bad and len(known) == 1, "선언된 우회를 빨강으로 센다"
+    assert "그 뒤" in known[0], "**그 뒤에 무엇이 달라졌나**를 안 찍는다 — 그것이 없으면 미결이다"
+
+    # ★ 반대 방향 둘. 없으면 목록이 면죄부가 된다.
+    bad, _ok, _k = MC.judge([node(424242, "FAILURE")])
+    assert bad, "선언에 없는 새 우회를 덮는다"
+    bad, _ok, _k = MC.judge([node(n, "SUCCESS")])
+    assert bad, "죽은 선언(초록이었던 PR)을 통과시킨다 — 거짓말하는 면제다"
+
+    for k, v in MC.KNOWN_BYPASS.items():
+        assert len(v) == 3, f"#{k} 선언이 날짜 · 무엇을 · 그 뒤에 셋을 안 든다"
+        assert all(len(x) >= MC.MIN_REASON for x in v[1:]), f"#{k} 사유가 사유가 아니다"
+    assert len(MC.KNOWN_BYPASS) <= MC.BYPASS_MAX, (
+        f"선언이 {len(MC.KNOWN_BYPASS)} — 래칫 {MC.BYPASS_MAX} 보다 늘었다."
+        " 우회가 한 번 더 있었다는 뜻이다")
 
 
 def test_mergecheck_is_ci_only_and_says_so():
@@ -218,5 +248,5 @@ def test_the_source_axis_is_in_ci():
 def test_selftests_are_alive():
     for t in ("uicheck", "mergecheck"):
         r = subprocess.run([sys.executable, str(ROOT / "tools" / f"{t}.py"), "--selftest"],  # noqa: S603 — 트리 안의 도구다
-                           capture_output=True, text=True, cwd=ROOT)
+                           capture_output=True, text=True, cwd=ROOT, timeout=120)
         assert r.returncode == 0, f"{t} --selftest 실패\n{r.stdout}{r.stderr}"

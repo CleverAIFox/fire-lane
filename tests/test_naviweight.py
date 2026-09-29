@@ -144,24 +144,24 @@ def test_the_bundle_is_split():
         assert f'"{want}"' in cfg, f"`{want}` 청크 선언이 없다"
 
 
-def test_the_entry_ratchet_is_declared_and_measured():
-    """★ **어느 갈래로 가도 무는 것이 있다.**
+def test_the_entry_ratchet_is_declared_and_wired():
+    """★ **이 시험은 빌드본을 안 읽는다.**
 
-    종전에는 빌드본이 없으면 `return` 으로 빠져나갔다 — `deadcheck` 의 ③ 조용한
-    통과 프로브가 그것을 잡았다(§313-1). 「대상을 못 찾으면 실패가 아니라 통과」는
-    이 저장소가 사냥하는 형태이고, 그것을 **관문을 짓는 시험이** 저질렀다.
+    2026-09-30 실기. 종전에는 `dist` 를 읽어 래칫과 댔는데, `verify.sh` 의
+    「내비 빌드」가 pytest **뒤(65/81)** 에 있어 pytest(4/81)는 **패치 적용 전
+    빌드본**을 본다. 시험이 단계 순서에 기댄 것이고, 그렇게 붙은 빨간불은
+    배치의 결함이 아니라 **관문 자신의 결함**이라 제일 찾기 어렵다(§316 ③).
+
+    ★ 빌드본을 재는 일은 `naviweight --build` 하나가 한다. 여기가 무는 것은
+      「선언이 있고 관문에 배선됐는가」 — 소스만 보면 답이 나오는 것들이다.
     """
     assert isinstance(NW.ENTRY_KB, int) and NW.ENTRY_KB > 0, "래칫이 수가 아니다"
-    kb = NW.entry_kb()
-    if kb is None:
-        # 빌드본이 없는 기계. 그래도 **무는 것이 있다** — 관문이 그 앞에서 짓는가.
-        sh = (ROOT / "tools" / "verify.sh").read_text(encoding="utf-8")
-        assert "npm run -s build" in sh, (
-            "빌드본도 없고 관문이 짓지도 않는다 — 진입 무게를 아무도 안 잰다")
-        return
-    assert kb == NW.ENTRY_KB, (
-        f"진입 청크 {kb}KB ≠ 래칫 {NW.ENTRY_KB}KB — "
-        "`uv run python tools/ratchet.py --write` 로 조여라")
+    assert "ENTRY_KB" not in NW.RATCHETS, (
+        "`ENTRY_KB` 를 래칫 규약에 태웠다 — 어디서나 잴 수 있는 수가 아니다(§313-1 ①)")
+    sh = (ROOT / "tools" / "verify.sh").read_text(encoding="utf-8")
+    assert "npm run -s build" in sh, "관문이 빌드본을 안 짓는다 — 새 클론이 늘 빨갛다"
+    assert sh.index("npm run -s build") < sh.index("tools/naviweight.py --build"), \
+        "짓기 전에 잰다 — 순서가 뒤집혔다"
 
 
 # ── ④ 배선 ─────────────────────────────────────────────────────
@@ -179,7 +179,7 @@ def test_the_source_axis_is_in_ci():
 
 def test_the_selftest_is_alive():
     r = subprocess.run([sys.executable, str(ROOT / "tools" / "naviweight.py"), "--selftest"],  # noqa: S603 — 트리 안의 도구다
-                       capture_output=True, text=True, cwd=ROOT)
+                       capture_output=True, text=True, cwd=ROOT, timeout=120)
     assert r.returncode == 0, r.stdout + r.stderr
 
 

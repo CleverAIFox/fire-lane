@@ -49,8 +49,9 @@ import { C, MAP } from "../ui/tokens";
 
 // ★ 실물 이름이다. 종전 `Open Sans Regular` 는 demotiles 의 이름이었고 우리가
 //   뽑는 글자는 Liberation Sans 다(§312). 이름과 실물이 다르면 다음 사람이
+//   없는 글꼴을 찾는다. **공백은 안 쓴다** — CODEOWNERS 가 못 읽는다(§316).
 //   없는 글꼴을 찾는다. 뽑는 곳 — `web/navi/scripts/glyphs.mjs`
-const FONT = ["Liberation Sans Regular"];
+const FONT = ["LiberationSans"];
 /**
  * 지도 글자. **저장소 안에서 온다** (PLAN §13 W13-4 · DECISIONS §312).
  *

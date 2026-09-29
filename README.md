@@ -82,6 +82,7 @@ uv run python tools/expectcheck.py "$FIRE_LANE_INBOX/EXPECT"  # ★ 받는 쪽�
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
 uv run python tools/ratchet.py          # 래칫 선언 = 실측인가 (관문은 읽기만 한다)
+uv run python tools/unusedcheck.py      # 미배선 자료가 몇이고 늘지 않는가 (래칫 · 영구 참조와 가른다)
 uv run python tools/uicheck.py --split  # 관제와 내비가 다른 화면인가 (공유 지도 층 래칫)
 uv run python tools/uicheck.py --build  # 화면이 지금 코드에서 나왔는가 (빌드본 신선도)
 uv run python tools/mergecheck.py       # 빨간불 위에서 머지된 PR 이 있는가 (CI 전용)
@@ -89,6 +90,9 @@ uv run python tools/naviweight.py       # 내비가 밖에 몇 개 기대는가 
 uv run python tools/naviweight.py --build  # 진입 청크 무게 래칫
 cd web/navi && npm run glyphs           # 지도 글자를 저장소 안에서 다시 뽑는다
 uv run python tools/ratchet.py --write  # 조이는 쪽으로만 고쳐 적는다 — 느슨해지는 쪽은 거부한다
+uv run python tools/verdict_tally.py data/processed/segments.geojson  # 판정 네 수 한 줄 (전후 비교용)
+uv run python tools/remeasure.py --tag ""      # 판정 산출물이 움직였는가 (안 고친다)
+uv run python tools/remeasure.py --tag v0.48   # 움직임을 받아들인다 — 재생성 사슬을 순서대로 돌린다
 uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
 uv run python tools/selftests.py         # ★ 선언된 `--selftest` 를 전부 돌린다 (문 하나 · --list 로 건너뜀 사유)
 uv run python tools/fieldseal.py         # ★ data/field 무결성 지문 — DECISIONS 가 인용하는 파생표 (--write 는 새로 뽑았을 때만)
@@ -471,9 +475,16 @@ tools/
   tidy.py                 머지 후 로컬 찌꺼기
   acquire.py              landing → raw 획득 게이트 · sha 대조
   baseline.py             판정 산출물 봉인 · 실행 간 전이 대조
+  remeasure.py            ★ 판정이 움직인 배치의 **재생성 사슬.** 순서가 내용물이다 —
+                          지문 → 지표 → 문서 → 그림 → 봉인. 태그가 없으면 아무것도
+                          안 고치고 멈춘다(움직임을 받아들이는 판단은 사람이 한다)
+  verdict_tally.py        판정 네 수를 한 줄로. 전후를 **같은 셈**으로 재기 위한 문 하나
   golden.py               ★ 리팩 전후 산출물 동일 증명. baseline 과 반대 용도
   scan_data.py            데이터 레이크 구조 점검. 그 도구의 §7(선언 밖 형제)이 레이크 **밖**도 본다
   docnum_check.py         문서 ↔ 산출물 숫자 · 필드표 대조
+  unusedcheck.py          ★ 미배선 자료 래칫. 「참조용 · 대조용 · 근거 자료」(영구)와
+                          「미투입 · 미배선」(내릴 대상)을 `feeds_why` 첫 낱말로 가른다 —
+                          둘을 한 수로 세니 「미활용 25」가 한 달 동안 25 였다 (§317)
   docgen.py               ★ 문서의 생성 블록에 실물 값을 **넣는다**. 흐르는 숫자는
                           문서가 들지 않는다 (DECISIONS §246)
   plan_renumber.py        PLAN §1 표 번호를 1..N 으로 · 결번 해소
@@ -550,7 +561,7 @@ web/
 
 ## 지금 상태
 
-<!--gen: datasets-->
+<!--gen: datasets v_clear v_needs_cv v_blocked v_unknown-->
 ```
 세그먼트     1,281   (동명동 416 + 119안전센터 접근 회랑 70m + 안전센터 반경 300m)
 판정        통행 가능 465 · 판정 보류 226 · 통행 불가 191 · 영상판정 불가 399
@@ -568,7 +579,9 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 ```
 <!--/gen-->
 
+<!--gen: v_unknown-->
 `영상판정 불가` 399 는 전부 CCTV 사각이다. 폭 산출 불가는 0 이다.
+<!--/gen-->
 
 **시간을 줄이는 앱이 아니라 못 가는 길로 보내지 않는 앱이다.** 폭을 모르는
 내비의 최단경로는 세 번 중 한 번 이상 소방차가 못 지나가는 구간을 지난다.
@@ -577,7 +590,9 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 사유는 `no_cctv_band` 183 · `no_cctv_thin` 142 · `no_cctv_narrow` 61 ·
 `no_cctv_single` 13 넷으로 갈라 적는다.
 
+<!--gen: v_blocked-->
 ★ `통행 불가` 191 은 확정 개수가 아니라 **하한**이다. `width_max_m` 결손
+<!--/gen-->
 675건 중 노면 3.0m 미만인데 도로대장 명목폭이 3.0m 이상이거나 없는 92건은 막을 근거가 하나뿐이라 막지 않는다.
 발표 자료에서 191 을 확정으로 쓰지 않는다.
 
@@ -637,3 +652,23 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 어긋나면 `uv run pytest tests/test_reproducibility.py::test_doc_axis_tables_are_consistent` 가 운다.
 
 강제자  `tests/test_reproducibility.py::test_doc_axis_tables_are_consistent`(축 표 셋이 서로 같은가 — 2026-09-28 정정. 종전에 `doc_fsck` 를 댔는데 그 도구에는 축 표를 보는 검사가 없다) · `tests/test_doc_style.py`(다섯 번째 문서 금지)
+
+### 저장소 메타 파일 — 넣은 둘과 안 넣은 넷
+
+> 2026-09-30 (DECISIONS §320 옆 판단). GitHub 이 권하는 파일 여섯 중 **둘만** 넣었다.
+> 나머지 넷을 안 넣은 것은 잊은 것이 아니라 정한 것이고, 그래서 여기 적는다.
+
+| 파일 | 넣었나 | 사유 |
+|---|---|---|
+| `LICENSE` | ✅ | 라이선스 없는 저장소는 **아무도 못 쓴다.** 코드는 MIT, **데이터는 아니다** — 자료마다 제공기관 조건이 달라 그 경계를 파일 안에 적었다(정본은 `sources.yaml` 의 `authority`) |
+| `SECURITY.md` | ✅ | 2026-09-12 이전 커밋에 키가 평문으로 있었다. 폐기했고 역사는 안 지웠다 — **그 사실과 신고 주소가 어딘가에 있어야 한다** |
+| `CONTRIBUTING.md` | ❌ | 기여자가 **없다.** 단독 개발이고 배치 절차는 `tools/fl.sh` 와 `docs/PLAN.md` 가 든다. 없는 독자를 위한 문서를 두면 그것은 곧 낡고, 낡은 절차 문서는 없는 것보다 나쁘다 |
+| `CODE_OF_CONDUCT.md` | ❌ | 규율할 공동체가 없다. 사람이 둘 이상 들어오는 날 넣는다 |
+| 이슈·PR 템플릿 | ❌ | PR 템플릿은 **이미 있고 강제된다**(`.github/pull_request_template.md` · `tools/pr_body_check.py`). 이슈는 쓰지 않는다 — 남은 일은 `docs/PLAN.md` §1 한 표가 들고, 두 집에 두면 갈린다 |
+| `CHANGELOG.md` | ❌ | **다섯 번째 문서가 된다.** 「왜 그렇게 고쳤나」는 `docs/DECISIONS.md` 가 절 번호로 들고, 릴리즈 노트는 태그와 PR 본문이 든다 |
+
+★ GitHub 저장소 Description 과 Topics 는 저장소 설정에 있고 파일이 아니다 —
+`fire-lane` · `소방차 진입 가능성 판정 · 골목 폭 산출 · 출동 내비` 로 적는다.
+그것을 여기 적는 이유는 **파일이 아닌 것은 아무 검사도 못 들기 때문**이다.
+
+강제자  `tests/test_doc_style.py`(다섯 번째 문서 금지 — 위 넷을 안 넣는 쪽을 든다) · `tools/env_check.py` · `.gitleaks.toml`(SECURITY.md 가 약속한 것을 실제로 막는다)

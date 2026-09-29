@@ -167,6 +167,74 @@ def test_every_declared_ratchet_is_a_real_module_constant():
             assert hasattr(m, name), f"{p.name} 이 없는 이름 `{name}` 을 선언했다"
 
 
+# ── ⑤ 레이크에 기대는 래칫 (§318) ──────────────────────────────
+
+def test_a_declared_lake_only_tool_is_skipped_with_a_reason(tmp_path, monkeypatch):
+    """★ 선언된 레이크 의존은 **사유와 함께** 건너뛴다. 조용히 빠지지 않는다."""
+    fake = tmp_path / "tools"
+    fake.mkdir()
+    (fake / "faker.py").write_text(
+        "RATCHETS = {'N': 'down'}\nN = 5\n"
+        "def ratchet_values():\n"
+        "    raise RuntimeError('segments_5186.gpkg 가 없다')\n", encoding="utf-8")
+    (fake / "other.py").write_text(
+        "RATCHETS = {'M': 'down'}\nM = 5\n"
+        "def ratchet_values():\n    return {'M': 5}\n", encoding="utf-8")
+    monkeypatch.setattr(RT, "TOOLS", fake)
+    monkeypatch.setattr(RT, "lake_only",
+                        lambda: {"faker.py": "레이크(2.5GB 외장)가 있어야 돈다"})
+    rows = RT.survey()
+    sk = [r for r in rows if "skip" in r]
+    assert len(sk) == 1 and sk[0]["tool"] == "faker.py"
+    assert "레이크" in sk[0]["skip"], "사유를 안 들고 건너뛴다"
+    assert "RuntimeError" in sk[0]["cause"], "원인을 안 들고 건너뛴다"
+    assert RT.run(write=False) == 0, "선언된 면제인데 빨간불이다"
+
+
+def test_an_undeclared_death_stays_red(tmp_path, monkeypatch):
+    """★ 반대 방향. 「죽었으면 봐 준다」가 되면 어떤 결함도 면제로 통과한다."""
+    fake = tmp_path / "tools"
+    fake.mkdir()
+    (fake / "faker.py").write_text(
+        "RATCHETS = {'N': 'down'}\nN = 5\n"
+        "def ratchet_values():\n    raise ZeroDivisionError('진짜 결함')\n",
+        encoding="utf-8")
+    monkeypatch.setattr(RT, "TOOLS", fake)
+    monkeypatch.setattr(RT, "lake_only", lambda: {})
+    assert RT.run(write=False) == 1
+    assert any("err" in r for r in RT.survey())
+
+
+def test_skipping_everything_is_an_empty_net(tmp_path, monkeypatch):
+    """★ 전부 건너뛰면 **빈 그물**이다. 초록이면 관문이 없는 것과 같다."""
+    fake = tmp_path / "tools"
+    fake.mkdir()
+    (fake / "faker.py").write_text(
+        "RATCHETS = {'N': 'down'}\nN = 5\n"
+        "def ratchet_values():\n    raise RuntimeError('레이크 없음')\n",
+        encoding="utf-8")
+    monkeypatch.setattr(RT, "TOOLS", fake)
+    monkeypatch.setattr(RT, "lake_only", lambda: {"faker.py": "레이크가 있어야 돈다"})
+    assert RT.run(write=False) == 1, "재어 본 래칫이 0인데 초록을 냈다"
+
+
+def test_lake_only_comes_from_verify_not_a_hand_list():
+    """★ 정본 하나. 손목록이면 `verify.sh` 와 갈리고, 갈린 순간 면제가 거짓이 된다."""
+    got = RT.lake_only()
+    assert "widthcross.py" in got, "`ci-exempt` 선언을 안 물려받는다"
+    assert len(got["widthcross.py"]) > 5, "사유가 사유가 아니다"
+    src = TOOL.read_text(encoding="utf-8")
+    assert "gate_parity" in src, "면제 정본을 안 부른다 — 두 번째 독자를 만들었다"
+    # ★ **AST 로 본다.** 글자로 보면 「왜 직접 안 읽는가」를 적은 주석이
+    #   직접 읽는 것으로 세어진다 — §283-3 이 세 번 겪은 그 결함이다.
+    import ast
+    lits = [n.value for n in ast.walk(ast.parse(src))
+            if isinstance(n, ast.Constant) and isinstance(n.value, str)
+            and len(n.value) < 80]
+    assert not [x for x in lits if "verify.sh" in x], (
+        "`ratchet.py` 안에 `verify.sh` 경로 문자열이 있다 — 독자가 둘이 됐다")
+
+
 def test_the_real_tree_is_at_its_ratchets():
     """지금 트리에서 선언 = 실측이다. **이것이 관문 자체다.**"""
     assert RT.run(write=False) == 0, (
@@ -175,7 +243,7 @@ def test_the_real_tree_is_at_its_ratchets():
 
 def test_the_selftest_is_alive():
     r = subprocess.run([sys.executable, str(TOOL), "--selftest"],  # noqa: S603 — 트리 안의 도구다
-                       capture_output=True, text=True, cwd=ROOT)
+                       capture_output=True, text=True, cwd=ROOT, timeout=120)
     assert r.returncode == 0, r.stdout + r.stderr
 
 

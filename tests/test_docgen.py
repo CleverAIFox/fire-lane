@@ -58,6 +58,16 @@ SYNTH = "\n".join([
     "커버리지는 래칫이다. `COV_MIN=7` 로 걸려 있다.",
     "<!--/gen-->",
     "",
+    # ★ 2026-09-30 (§319). 판정 네 수. 산문 서식과 표 칸 서식을 **둘 다** 둔다 —
+    #   실물에 둘 다 있고, 한쪽만 두면 다른 쪽이 안 갈려도 여기가 조용하다.
+    "<!--gen: v_clear v_needs_cv v_unknown-->",
+    "판정        통행 가능 8 · 판정 보류 9 · 영상판정 불가 11",
+    "<!--/gen-->",
+    "",
+    "<!--gen: v_blocked-->",
+    "| `blocked` 통행 불가 | 10 | 차가 없어도 통과 불가 |",
+    "<!--/gen-->",
+    "",
 ])
 
 #: 블록 **밖**에 같은 표기가 있는 문서. 축 하나를 블록으로 덮고 같은 표기를
@@ -72,7 +82,8 @@ SYNTH_OUT = "\n".join([
 ])
 
 WANT = {"datasets": 72, "sealable": 71, "sections": 1036,
-        "inherit": 352, "blank": 0, "plan_open": 108, "cov_min": 32}
+        "inherit": 352, "blank": 0, "plan_open": 108, "cov_min": 32,
+        "v_clear": 465, "v_needs_cv": 226, "v_blocked": 191, "v_unknown": 399}
 
 
 def _one(text: str, want: dict[str, int] | None = None) -> docgen.Result:

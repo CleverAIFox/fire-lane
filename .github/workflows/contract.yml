@@ -560,3 +560,8 @@ jobs:
           #   도달 불가 분기는 주석보다 위험하다 — 살아 있는 것처럼 보인다.
           uv run python tools/docnum_check.py
 
+      # ★ 2026-09-30 (§317). 미배선 자료 래칫. 대장만 읽으므로 레이크가 필요 없다 —
+      #   로컬 전용으로 두면 `gate_parity` 가 미선언으로 센다(그리고 그것이 맞다).
+      - name: 미배선 자료
+        run: uv run python tools/unusedcheck.py
+
