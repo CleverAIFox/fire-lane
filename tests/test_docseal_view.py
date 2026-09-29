@@ -131,12 +131,26 @@ def test_지문_공식에_판_이름이_있다(ds):
 
 
 def test_parts_는_digest_와_같은_관점을_쓴다(ds):
-    """다르면 「무효인데 어디가 움직였는지 아무 칸도 안 바뀌었다」가 나온다."""
-    src = FP.read_text(encoding="utf-8")
-    i = src.index("def parts(")
-    j = len(src)
-    body = src[i:j]
-    assert "view(f," in body, "`parts` 가 관점을 안 쓴다 — 설명이 판정과 어긋난다"
+    """다르면 「무효인데 어디가 움직였는지 아무 칸도 안 바뀌었다」가 나온다.
+
+    ★ 2026-09-29 (§307-1). 종전에는 `parts` 의 **글자열**에서 `view(f,` 를 찾았다.
+      관점을 인자로 받게 되면서(`vf=view`) 그 검사가 깨졌고, **깨진 방식이
+      나빴다** — 「관점을 안 쓴다」고 말했지만 실제로는 기본값으로 쓰고 있었다.
+      글자열로 재는 검사는 이름이 바뀌면 거짓을 낸다. 지금은 **실행으로** 잰다:
+      같은 절·같은 파일에 대해 두 함수가 같은 관점을 보는지를 값으로 확인한다.
+    """
+    import hashlib
+    f = "tools/verify.sh"
+    text = "이 절은 `tools/verify.sh` 와 `tools/sizecheck.py` 를 지목한다"
+    files = [f, "tools/sizecheck.py"]
+    raw = (ROOT / f).read_bytes()
+    want = hashlib.sha256(ds.view(f, raw, files, text)).hexdigest()[:16]
+    assert ds.parts(text, files)[f] == want, (
+        "`parts` 가 `digest` 와 다른 관점을 쓴다 — 설명이 판정과 어긋난다")
+    # 관점을 갈아 넣으면 값이 달라진다 — 인자가 실제로 쓰인다는 반대 방향
+    assert ds.parts(text, files, ds.view_v1)[f] != want or \
+        ds.view_v1(f, raw, files, text) == ds.view(f, raw, files, text), (
+        "`vf` 인자가 무시된다 — 옛 관점으로도 같은 값이 나온다")
 
 
 # ── §298 · 생성물은 도장의 기반이 못 된다 ───────────────────────
