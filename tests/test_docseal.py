@@ -101,13 +101,13 @@ def test_selftest_is_not_an_empty_net(ds):
 
 def test_check_fails_when_there_is_nothing_to_check(ds, monkeypatch):
     """★ `deadcheck ③` 조용한 통과. 도장 대상이 0절이면 통과가 아니라 실패다."""
-    monkeypatch.setattr(ds, "survey", lambda: ({}, {}))
+    monkeypatch.setattr(ds, "survey", lambda: ({}, {}, {}))
     assert ds.check() == 1
 
 
 def test_only_wired_sections_are_targets(ds):
     """부모 칸을 무는 절(`inherit`)은 부모 도장이 덮는다 — 두 번 찍지 않는다."""
-    now, _ = ds.survey()
+    now, _, _b = ds.survey()
     rows = {r["id"]: r for r in ds._sections()}
     bad = [k for k in now if rows[k]["state"] != "wired"]
     assert not bad, f"물리는 절까지 도장 대상으로 센다: {bad[:5]}"
@@ -181,7 +181,8 @@ def test_an_old_stamp_without_a_kind_counts_as_read(ds):
 
 
 def test_stamping_one_section_marks_it_read(ds, monkeypatch):
-    monkeypatch.setattr(ds, "survey", lambda: ({"D/1": {"sha": "a", "files": [], "doc": "d"}}, {}))
+    monkeypatch.setattr(ds, "survey",
+                        lambda: ({"D/1": {"sha": "a", "files": [], "doc": "d"}}, {}, {"D/1": ""}))
     assert ds.stamp("D/1") == 0
     got = json.loads(ds.SEAL.read_text(encoding="utf-8"))
     assert got["D/1"]["kind"] == "read", "사람이 찍었는데 기계 갈래로 적혔다"
