@@ -109,3 +109,23 @@ def test_the_tool_the_train_calls_exists_and_takes_that_argument():
             and n.args and isinstance(n.args[0], ast.Constant)}
     assert "expect" in args, f"EXPECT 경로를 받는 인자가 없다 — {sorted(args)}"
     assert "--selftest" in args, "`--selftest` 가 없다 — 「자기검사 전수」가 못 든다"
+
+
+def test_a_delivery_without_a_contract_is_refused_not_warned():
+    """★ 계약이 **없는** 경우(§319-2). 「읽는 쪽이 있는가」와 다른 물음이다.
+
+    위 시험들은 `EXPECT` 가 있을 때 누가 읽는가를 묻는다. 2026-09-30 까지
+    `fl.sh` 4c 의 `else` 는 `warn` 이었다 — **손으로 싼 묶음이 경고 한 줄을
+    남기고 끝까지 갔다.** 받는 기계는 아무도 안 잰 주장을 걸고 8GB 와 20분을 쓴다.
+
+    ★ 손으로 **쓴** `EXPECT` 는 이미 막혀 있었다(`expectcheck` 가 「읽을 줄이
+      없다」로 rc 1). 구멍은 「쓴 것」이 아니라 **「없는 것」**이었다.
+    """
+    sh = (ROOT / "tools" / "fl.sh").read_text(encoding="utf-8")
+    i = sh.index('if [ -f "$IN/EXPECT" ]; then')
+    blk = sh[i:sh.index("# ══ 5.", i)]
+    tail = blk[blk.index("else"):]
+    assert "die " in tail, "EXPECT 가 없어도 배치가 계속된다 — 계약 없는 배달이 통과한다"
+    assert "warn " not in tail, "경고로 넘긴다 — 경고는 곧 안 읽히는 줄이 된다"
+    # ★ 반대 방향. 있을 때는 **대조**해야 한다 — 죽는 것만 보면 초록도 못 간다.
+    assert "tools/expectcheck.py" in blk, "있을 때 아무도 안 댄다"
