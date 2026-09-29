@@ -180,21 +180,90 @@ def test_declared_paths_point_into_a_declared_layer():
 
 @pytest.mark.skipif(not PROCESSED.is_dir() or not actual_files(),
                     reason="환경skip(산출물) — data/processed 가 비었다")
+def retired_outputs() -> dict[str, dict]:
+    """철거된 산출물 대장. 「더는 아무도 만들지 않는다」를 선언한 칸.
+
+    ★ `retired`(원천 데이터셋 폐기)와 **다른 칸이다.** 계약이 반대라
+      `outputs` 에도 못 넣는다 — 자세한 사유는 `sources.yaml` 의 그 칸 머리말.
+    """
+    d = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+    return {k: (v or {}) for k, v in (d.get("retired_outputs") or {}).items()}
+
+
+def retired_paths() -> dict[str, str]:
+    """철거 경로 → 대장 키."""
+    return {v["path"]: k for k, v in retired_outputs().items() if v.get("path")}
+
+
 def test_no_undeclared_output():
     """processed 에 있는데 대장에 없는 파일이 없다.
 
     route_vehicle.csv 한 건에서 출발해 미등재 산출물 전수를 잡는다.
+
+    ★ 2026-09-29 (DECISIONS §305). **철거된 것과 안 적은 것을 갈라 말한다.**
+      종전에는 둘이 같은 메시지로 나왔고, 그 메시지는 「대장에 등재하라」였다.
+      §302 가 `streetlight` 단계를 철거한 뒤 이 시험이 그 잔재로 울었는데,
+      메시지를 그대로 따르면 **철거한 것을 다시 등재하게 된다.** 관문이 옳게
+      울고도 사람을 틀린 쪽으로 보냈다.
     """
     known = set(declared_paths())
-    orphan = [str(p.relative_to(ROOT)) for p in actual_files()
-              if str(p.relative_to(ROOT)) not in known]
+    ret = retired_paths()
+    orphan, torn = [], []
+    for p in actual_files():
+        rel = str(p.relative_to(ROOT))
+        if rel in known:
+            continue
+        (torn if rel in ret else orphan).append(rel)
+
+    assert not torn, (
+        "**철거된** 산출물이 디스크에 남아 있다:\n  " +
+        "\n  ".join(f"{t}  ← retired_outputs.{ret[t]}" for t in torn) +
+        "\n\n  대장에 다시 등재하지 마라. 치우는 것이 답이다:\n"
+        "    uv run python tools/sweep.py --sweep --yes\n"
+        "  예전 실행이 만들어 둔 파일이고, 이제 아무 단계도 안 만든다.")
+
     assert not orphan, (
         "대장에 없는 산출물:\n  " + "\n  ".join(orphan) +
         "\n\n  sources.yaml 의 outputs 에 등재하라. 최소 항목:\n"
         "    produced_by · path · inputs · consumers · what · verified\n"
         "  대장에 없으면 datalog impact 가 이 파일을 못 따라가고,\n"
         "  검증 상태와 known_issues 가 아무 데도 안 적힌다.\n"
-        "  META 에 넣는 것은 파이프라인 메타데이터일 때만이다.")
+        "  META 에 넣는 것은 파이프라인 메타데이터일 때만이다.\n"
+        "  ★ 철거해서 더는 안 만드는 파일이면 `retired_outputs` 로 간다.")
+
+
+def test_retirement_declares_its_ground():
+    """철거 항목마다 § 근거가 있다. 근거 없는 철거는 등재하지 않는다."""
+    for k, v in retired_outputs().items():
+        for need in ("path", "produced_by", "decided", "why"):
+            assert v.get(need), f"retired_outputs.{k} 에 {need} 가 없다"
+        assert "§" in str(v["decided"]), (
+            f"retired_outputs.{k}.decided 에 § 가 없다 — "
+            "철거는 결정이고 결정은 대장에 번호가 있다")
+
+
+def test_retirement_has_one_home():
+    """같은 경로가 `outputs` 와 `retired_outputs` 에 동시에 있지 않다 (R3)."""
+    both = sorted(set(retired_paths()) & set(declared_paths()))
+    assert not both, (
+        "한 경로가 두 칸에 산다: " + ", ".join(both) +
+        "\n  살아 있으면 outputs, 철거했으면 retired_outputs. 둘 다는 없다")
+
+
+def test_retired_step_is_really_gone():
+    """`produced_by` 로 적은 단계가 파이프라인에 남아 있지 않다.
+
+    ★ 이것이 없으면 「철거했다」고 적어 두고 단계가 계속 돌 수 있다. 그러면
+      매 실행 파일이 다시 생기고, 위 시험은 sweep 을 시키고, 다음 실행이 또
+      만든다 — 사람이 영원히 지우게 된다.
+    """
+    from firelane.pipeline import STEPS
+    live = {s.name for s in STEPS}
+    bad = {k: v["produced_by"] for k, v in retired_outputs().items()
+           if v.get("produced_by") in live}
+    assert not bad, (
+        f"철거했다고 적은 단계가 아직 돈다: {bad}\n"
+        "  단계를 지우거나, 철거 선언을 지워라. 둘 다는 앞뒤가 안 맞는다")
 
 
 @pytest.mark.skipif(not PROCESSED.is_dir() or not actual_files(),
