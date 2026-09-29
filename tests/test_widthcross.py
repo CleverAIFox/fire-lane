@@ -128,3 +128,82 @@ def test_the_comparison_stays_outside_the_judgment_closure():
 
 def test_selftest_is_not_an_empty_net():
     assert W.selftest() == 0
+
+
+# ── 축 ③ · `clear` 가 대장과 서로를 부정하는가 (§299) ───────────
+
+
+def _clear(ledger, **kw):
+    return {"seg_uid": "A", "verdict": "clear", "ledger": ledger, **kw}
+
+
+def test_대장이_넉넉하면_과대주장이_아니다():
+    assert not W.overclaim([_clear(8.0)], W.TRUCK)
+    assert not W.overclaim([_clear(7.0)], W.CLEAR_M)
+
+
+def test_대장이_소방차_하한_미만인데_clear_면_모순이다():
+    """★ 실측 9건. 대장이 「소방차가 물리적으로 못 들어간다」고 적은 길이다."""
+    got = W.overclaim([_clear(2.0)], W.TRUCK)
+    assert len(got) == 1
+    assert "clear 인데" in got[0]["why"]
+
+
+def test_clear_가_아닌_판정은_안_센다():
+    """그 구간은 강한 주장을 **안 했다.** 안 한 주장을 모순이라 하면 안 된다."""
+    for v in ("needs_cv", "blocked", "unknown"):
+        assert not W.overclaim([{"seg_uid": "A", "verdict": v, "ledger": 2.0}],
+                               W.TRUCK)
+
+
+def test_대장이_결측이면_모순이_아니다():
+    """회색은 모순이 아니다 — 잴 것이 없는 것과 어긋난 것은 다르다."""
+    assert not W.overclaim([_clear(None)], W.TRUCK)
+
+
+def test_두_층이_갈려_있다():
+    """★ 한 수로 세면 「대장 6.0 대 wmin 7.0」이 「대장 2.0 대 29.91」을 묻는다."""
+    six = [_clear(6.0)]
+    assert not W.overclaim(six, W.TRUCK), "딱딱한 층이 경계 사례를 잡는다"
+    assert W.overclaim(six, W.CLEAR_M), "부드러운 층이 경계 사례를 안 잡는다"
+
+
+def test_부드러운_층이_딱딱한_층을_덮는다():
+    """층이 뒤집히면 딱딱한 건이 부드러운 집계에서 사라진다."""
+    assert W.CLEAR_M > W.TRUCK
+    two = [_clear(2.0)]
+    assert W.overclaim(two, W.TRUCK) and W.overclaim(two, W.CLEAR_M)
+
+
+def test_문턱을_발명하지_않았다():
+    """`clear` 의 문턱은 **판정기가 정본이다.** 도구가 수를 적으면 두 집에 산다."""
+    from firelane.seg.params import PARK, TRUCK
+    assert W.CLEAR_M == TRUCK + 2 * PARK
+    src = (Path(__file__).resolve().parents[1] / "tools/widthcross.py").read_text(
+        encoding="utf-8")
+    assert "CLEAR_M = TRUCK + 2 * PARK" in src, "문턱을 수로 박았다"
+
+
+def test_전수_집계가_두_층을_따로_낸다():
+    rows = [_clear(2.0), {"seg_uid": "B", "verdict": "clear", "ledger": 6.0},
+            {"seg_uid": "C", "verdict": "clear", "ledger": 9.0}]
+    r = W.cross(rows)
+    assert len(r["과대주장 딱딱"]) == 1
+    assert len(r["과대주장 부드러움"]) == 2
+
+
+def test_래칫이_선언돼_있다():
+    """래칫이 없으면 수가 조용히 는다."""
+    assert isinstance(W.OVERCLAIM_HARD, int) and W.OVERCLAIM_HARD >= 0
+    assert isinstance(W.OVERCLAIM_SOFT, int)
+    assert W.OVERCLAIM_SOFT >= W.OVERCLAIM_HARD, "부드러운 층이 딱딱한 층보다 작다"
+
+
+def test_모순에_근거가_붙는다():
+    """★ 근거 없는 모순 보고는 조사를 사람에게 미룬다(§290-2 와 같은 병)."""
+    r = W.cross([{"seg_uid": "A", "wmin": 7.0, "survey": 5.0,
+                  "road_name": "가로", "survey_name": "나로", "n_sample": 3}])
+    assert len(r["모순"]) == 1
+    e = r["모순"][0]["증거"]
+    assert e["road_name"] == "가로" and e["survey_name"] == "나로"
+    assert e["n_sample"] == 3

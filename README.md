@@ -98,6 +98,7 @@ uv run python tools/widen.py            # 검사 범위를 넓히면 뭐가 걸�
 uv run python tools/axis_gain.py        # 샤드 봉인 축을 쪼개면 얼마나 아끼나 (PLAN #132)
 uv run python tools/codepatch.py        # 파이썬 소스 멱등 편집기 (배치용)
 #   tools/delivercheck.py               # 배달물 판별식 (deliver 가 import — 진입점 없음)
+#   tools/docsealfp.py                  # 도장 지문 · 절별 관점 (docseal 가 import — 진입점 없음)
 
 # 배치가 세운 상태가 유지되는가 — verify.sh 가 부른다
 uv run python tools/install_navi.py --check    # web/navi/src 목록
@@ -164,8 +165,9 @@ bash tools/verify.sh --only=pytest    # 이름이 맞는 단계만
 bash tools/verify.sh --fast           # 급할 때. 파이프라인 전량을 뺀다
 ```
 
-★ **`--since` 가 「매번 58개를 다 도는가」에 대한 답이다.** 단계마다 `scope` 선언이
-붙어 있고(40/59 · 나머지 19는 **선언이 없어 항상 돈다** — 그것이 안전한 기본값이다),
+★ **`--since` 가 「매번 전부 다 도는가」에 대한 답이다.** 단계마다 `scope` 선언이
+붙어 있고(`verify.sh --scope-list` 가 실측을 낸다 — 선언 없는 단계는 **항상 돈다**,
+그것이 안전한 기본값이다),
 `--since` 는 그 범위에 닿은 변경이 없는 단계를 건너뛴다. 문서만 고친 배치면
 `파이프라인 전량`(20분) · 레이크 셋이 빠져 35분이 10분이 된다.
 
@@ -216,7 +218,7 @@ bash tools/janitor.sh       # 기계·저장소·레이크 세 층을 한 표로
 ### 파이프라인
 
 ```
-ingest → segments → scope → streetlight → terrain → ortho → publish → 계약 테스트 → 지문 대조
+ingest → segments → nfa_compare → scope → terrain → ortho → publish → 계약 테스트 → 지문 대조
 ```
 
 ```bash
@@ -335,8 +337,10 @@ PARK  = 2.0     주차 1대 노면 점유
 임계값 정본은 `src/firelane/seg/params.py`, 차량 제원 정본은 `sources.yaml` 의
 `vehicle_spec` 이다. 상세는 `MASTER §2-2` · `§3-13`.
 
-★ **축거와 최소회전반경은 공식 규격에 없다.** 내륜차 계산에 그 둘이 필요하므로
-지금 값은 추정이며 `wheelbase_verified: false` 가 그 표시다.
+★ **축거는 공식 규격에 없다.** 내륜차 계산에 그것이 필요하므로 지금 값은
+추정이며 `wheelbase_verified: false` 가 그 표시다. **최소회전반경은 근거가
+있다** — 자동차규칙 제9조①의 법정 상한 12m 이고, 상한이지 성능값이 아니므로
+`turn_radius_verified: false` 가 따로 남는다.
 
 강제자  `tests/test_sources_of_truth.py`(`TRUCK`·`PARK` 의 정본이 `seg/params.py` 하나인가 — README 의 값은 사본이다) · `tests/test_seg_geom.py::test_verdict_table` · `tools/docnum_check.py`(README 숫자 대조)
 
@@ -436,7 +440,6 @@ src/firelane/
     scope.py              판정 범위 (judgment_scope) — 표출 범위는 판정 지문 밖이다
     centerline_correction.py  사람이 승인한 중심선 위치 보정. 지문이 안 맞으면 실패한다
   display_scope.py        ★ 표출 범위 단계 (display_scope · DISPLAY_BUFFER/CLOSE) — 판정 지문 밖 · scope_5186.gpkg
-  streetlight.py          가로등 지점 단위 집계
   terrain.py              공개DEM → Terrain-RGB 타일
   ortho.py                항공정사영상 → 배경 타일
   publish_web.py          → web/data

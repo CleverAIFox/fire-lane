@@ -29,7 +29,15 @@
  * 올리면 — 말하던 것을 끊고, 문턱 기록을 비우고, **새 자리의 다음 회전을 바로**
  * 말한다. 문턱(12·6·2.5초)을 기다리지 않는다. 상용 내비가 터널을 나오며 하는 일이다.
  *
- * ★ 우선순위 — 이탈 > 재동기화 > 회전 > 판정.
+ * ★ 우선순위 — 이탈 > 재동기화 > 회전 > 규칙 > 사정 > 판정.
+ *
+ * ── ★ 그 우선순위를 **발화기에도 알려준다** (2026-09-29 · DECISIONS §301) ──────
+ * 이 훅의 `return` 사슬은 **한 틱에 하나만** 말하게 한다. 그런데 말한 것이 재생되는
+ * 2~3초 동안 다음 틱이 오고, 그것들이 발화기 큐에 쌓인다. 종전에는 회전과 판정이
+ * **둘 다 `normal`** 이라 발화기가 급함을 몰랐고, 큐가 밀리면 **도착 순서로** 버렸다 —
+ * 회전 실행 안내가 판정 안내에 밀려나갈 수 있었다.
+ * 이제 자리마다 급함을 준다: 회전 `turn` · 규칙 `rule`(역주행은 `critical`) ·
+ * 사정·판정 `notice`. 발화기는 **가장 안 급한 것부터** 버리고 **더 급한 것이 오면 자른다.**
  * ★ 이 훅은 `RoutePlan` 만 받고 **그것이 어떻게 만들어졌는지 모른다.**
  *   경로 알고리즘이 바뀌어도 여기는 안 바뀐다.
  */
@@ -173,7 +181,7 @@ export function useVoice(i: VoiceInput): VoiceState {
         const prev = spokenGate.current.get(m.atM);
         if (prev == null || gate > prev) {
           spokenGate.current.set(m.atM, gate);
-          speaker.say(mergePhrase(m, after, distM));
+          speaker.say(mergePhrase(m, after, distM), "turn");
           return;   // 회전이 판정을 이긴다
         }
       }
@@ -188,7 +196,8 @@ export function useVoice(i: VoiceInput): VoiceState {
       const k = `${rule.kind}@${rule.atM.toFixed(0)}`;
       if (!spokenRule.current.has(k)) {
         spokenRule.current.add(k);
-        speaker.say(rulePhrase(rule), rule.kind === "wrong_way" ? "critical" : undefined);
+        speaker.say(rulePhrase(rule),
+                    rule.kind === "wrong_way" ? "critical" : "rule");
         return;
       }
     }
@@ -200,7 +209,7 @@ export function useVoice(i: VoiceInput): VoiceState {
       const k = `hz-${hz.kind}@${hz.atM.toFixed(0)}`;
       if (!spokenRule.current.has(k)) {
         spokenRule.current.add(k);
-        speaker.say(hazardPhrase(hz));
+        speaker.say(hazardPhrase(hz), "notice");
         return;
       }
     }
@@ -218,7 +227,7 @@ export function useVoice(i: VoiceInput): VoiceState {
     // ★ §215-2. 회색은 **왜** 회색인지 한 마디 붙인다. 카메라가 없어서인지가 운전자에게 제일 쓸모 있다
     const why = ahead.verdict === "unknown" && ahead.unknown_reason?.startsWith("no_cctv")
       ? " CCTV 없음." : "";
-    speaker.say(`잠시 후 ${label} 구간.${w}${why}`);
+    speaker.say(`잠시 후 ${label} 구간.${w}${why}`, "notice");
   }, [i.enabled, i.offRoute, i.plan, i.style, i.hazards, m, after, distM, driven,
       speed, speaker, gateOf]);
 

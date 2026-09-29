@@ -45,12 +45,13 @@ from __future__ import annotations
 
 import argparse
 import functools
-import hashlib
 import json
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+from docsealfp import FP_METHOD, _generated, digest, parts
 
 ROOT = Path(__file__).resolve().parents[1]
 SEAL = ROOT / "data" / "golden" / "docseal.json"
@@ -118,7 +119,8 @@ def refs(text: str) -> list[str]:
     except ValueError:       # 도장 파일이 저장소 밖(시험 · 임시 경로)이면 뺄 것이 없다
         me = ""
     return sorted({p for p in PATH.findall(text)
-                   if p != me and (ROOT / p).is_file() and p in _tracked()})
+                   if p != me and (ROOT / p).is_file()
+                   and p in _tracked() and not _generated(p)})
 
 
 @functools.lru_cache(maxsize=1)
@@ -138,33 +140,6 @@ def _tracked() -> frozenset[str]:
     r = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
                        capture_output=True, text=True, check=False)
     return frozenset(x for x in r.stdout.split("\0") if x)
-
-
-def digest(text: str, files: list[str]) -> str:
-    h = hashlib.sha256(text.encode("utf-8"))
-    for f in files:
-        h.update(f.encode("utf-8"))
-        h.update(hashlib.sha256((ROOT / f).read_bytes()).digest())
-    return h.hexdigest()[:16]
-
-
-def parts(text: str, files: list[str]) -> dict[str, str]:
-    """**한 덩어리 지문을 쪼갠 것.** 무효가 됐을 때 어디가 움직였는지 말하려고 든다.
-
-    ★ 2026-09-28 (DECISIONS §290). F 배치에서 이 관문이 네 절에 빨간불을 켰고
-      메시지는 그 절이 **지목하는 파일 목록**을 냈다. 그것은 「무엇이 바뀌었나」가
-      아니라 「무엇을 보고 있나」다. 네 절이 왜 무효인지 알아내려고 지문을 손으로
-      다시 계산했다 — **관문이 사람에게 조사를 미룬 것이고, 미룬 조사는 미뤄진다.**
-      한 덩어리 sha 는 「같다/다르다」만 말할 수 있으므로 판별식 자체를 쪼갠다.
-
-    ★ `sha` 는 그대로 둔다. 이 칸은 **판정을 안 바꾼다** — 유·무효는 여전히
-      `sha` 하나로 정해지고, 이 칸은 무효일 때 읽는 설명이다. 판정을 두 군데서
-      내면 그 둘이 어긋나는 날이 온다(2족).
-    """
-    out = {"본문": hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]}
-    for f in files:
-        out[f] = hashlib.sha256((ROOT / f).read_bytes()).hexdigest()[:16]
-    return out
 
 
 def why(now_one: dict, was_one: dict) -> list[str]:
@@ -273,8 +248,11 @@ def survey() -> tuple[dict, dict]:
         fs = refs(t + " " + (r.get("field") or ""))
         if not fs:
             continue                      # 코드를 안 가리키는 절은 도장 대상이 아니다
+        # ★ 2026-09-29 (§297-2). `fp` 를 **찍는 모든 도장에 박는다.** 종전에는 상수만
+        #   선언하고 아무 도장에도 안 적었다 — 「공식이 바뀌었는지 갈릴 수 있다」는
+        #   주장이 그 자체로 거짓이었다. 선언만 하고 안 쓰는 것이 이 저장소의 상습이다.
         now[r["id"]] = {"sha": digest(t, fs), "files": fs, "doc": r["doc"],
-                        "parts": parts(t, fs),
+                        "parts": parts(t, fs), "fp": FP_METHOD,
                         "legacy": [digest(f(rows, i), fs) for f in LEGACY_BODIES]}
     was = json.loads(SEAL.read_text(encoding="utf-8")) if SEAL.is_file() else {}
     return now, was
