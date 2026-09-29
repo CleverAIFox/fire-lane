@@ -395,20 +395,19 @@ def test_unknown_reason_vocabulary_is_declared_in_three_places():
 
     ★ 산출물이 아니라 **코드**를 본다. 스키마 JSON 은 생성물이라 파이프라인을
       다시 돌려야 갱신되는데, 그러면 이 검사가 재실행 시점에 의존한다.
-      어휘를 정하는 곳은 `segments.py` 이므로 거기서 읽는다.
+
+    ★ 2026-09-29 (DECISIONS §303). 어휘의 집이 옮겨갔다 — 종전에는
+      `segments.py` 본문을 정규식으로 긁었다. 사슬이 `seg/classify.py` 로
+      나가면서 그 정규식이 `{'width'}` 하나만 찾아 이 시험이 울었고, **옳게
+      울었다.** 지금은 `classify.REASONS` 가 **이름 붙은 정본**이라 긁을
+      필요가 없다 — 긁는 검사는 코드가 움직이면 깨지고, 깨질 때 「어휘가
+      틀렸다」와 「내가 못 찾았다」를 구별하지 못한다.
+      `classify()` 가 그 다섯을 **실제로 내는지**는
+      `tests/test_classify.py::test_reason_splits_the_grey` 가 든다.
     """
-    import re
-    # ★ 주석을 먼저 걷어낸다. segments.py 는 이 어휘를 주석에서도 잔뜩
-    #   설명하므로, 안 걷으면 "설명만 있고 코드에는 없는" 값까지 잡는다.
-    seg_src = "\n".join(
-        re.sub(r"#.*$", "", ln)
-        for ln in (ROOT / "src/firelane/segments.py")
-        .read_text(encoding="utf-8").splitlines())
-    # ★ `reason = "..."` 만 보면 안 된다. 실제 코드에는 여러 줄 삼항이 있어
-    #   (`("no_cctv_narrow" if ... else "no_cctv_thin")`) 그 방식으로는
-    #   넷 중 둘을 놓친다. 값 자체를 찾는다.
-    emitted = set(re.findall(r'"(no_cctv[a-z_]*|width)"', seg_src))
-    assert len(emitted) >= 5, f"segments.py 에서 사유 어휘를 못 찾았다: {emitted}"
+    from firelane.seg.classify import REASONS
+    emitted = set(REASONS)
+    assert len(emitted) >= 5, f"사유 어휘가 다섯 미만이다: {emitted}"
 
     schema_src = (ROOT / "src/firelane/seg/report.py").read_text(encoding="utf-8")
     blk = schema_src[schema_src.index('"unknown_reason"'):][:900]

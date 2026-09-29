@@ -43,7 +43,13 @@ def test_the_skeleton_switch_stays_out_of_the_judgment_closure():
 
     from firelane.shardseal import code_closure
     n = len(code_closure("firelane.segments"))
-    assert n == 16, f"판정 폐포가 {n}이다 — 16 이어야 한다(DECISIONS §266)"
+    # ★ 2026-09-29 (DECISIONS §303). 16 → 17. `seg/classify.py` 가 들어왔다.
+    #   **판정 면적이 늘어난 것이 아니다** — 사슬 일곱 줄 중 둘이 `segments.py`
+    #   (이미 폐포 안) 에서 새 파일로 나갔을 뿐이고, 새 파일도 폐포 안이다.
+    #   폐포는 「판정을 만지면 재잠금이 따라오는 파일들」이라 이 이사는 수를
+    #   하나 늘린다. 줄이려면 `verdict()` 를 `classify.py` 로 합쳐야 하는데
+    #   그러면 `geom.verdict()` 를 보는 기존 시험 스물여섯이 함께 이사한다.
+    assert n == 17, f"판정 폐포가 {n}이다 — 17 이어야 한다(DECISIONS §266 · §303)"
 
     import importlib.util
     import sys as _sys

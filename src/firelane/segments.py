@@ -58,15 +58,13 @@ from firelane.seg import graph as seg_graph
 from firelane.seg import report as seg_report
 from firelane.seg.basisno import BasisIntervalIndex
 from firelane.seg.centerline_correction import apply_approved_centerline_corrections
-from firelane.seg.geom import _dirv, _join, _seal, verdict
+from firelane.seg.classify import classify
+from firelane.seg.geom import _dirv, _join, _seal
 from firelane.seg.params import (
     CCTV_RANGE,
     EMD_CD,
-    MIN_SEG_LEN,
     NFA_RUN_M,
-    PARK,
     SNAP_TOL,
-    TRUCK,
     XSEC_EXCL,
 )
 from firelane.seg.roadname import RoadNameIndex
@@ -631,7 +629,6 @@ def main():
         if not g.intersects(keep):
             continue
         sid = f"DM{i:05d}"
-        short = g.length < MIN_SEG_LEN
         if uid not in W:
             W[uid] = widths(g)          # 병합으로 범위 안에 들어온 단위
         wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt, wrows, wneff) = W[uid]
@@ -644,91 +641,21 @@ def main():
         #   `sid`(DM00001)를 쓴다. 그것이 `rec` 의 키이자 `g.seg_id` 다.
         _SAMPLES[sid] = wrows
         _road_nm, _road_side, _road_bt = _rnx.match(g)
-        # ★ 2026-08-24 회수(a64a8c5, 2026-08-19). 종전에는 wnt(**시도**
-        #   표본 수)를 넘겼다. verdict 의 '표본 1개로는 clear 를 주지
-        #   않는다' 규칙은 **값이 나온** 표본을 세야 한다.
+        # ── 판정 ────────────────────────────────────────────
+        # ★ 2026-09-29 (DECISIONS §303). 여기 있던 사슬 일곱 줄을
+        #   `seg/classify.py` 로 **통째로 옮겼다.** 로직은 한 줄도 안
+        #   바꿨고, 동일함은 주장이 아니라 공개본 1,281행 재현으로
+        #   증명한다(`tests/test_classify_published.py`).
         #
-        #       DM02647 구성로238번길
-        #         시도 18 · 유효 1(width_cov 0.056) · wmin 10.51m
-        #         도로대장 명목폭 2.0m
-        #       근거 하나로 clear 가 나갔다. clear 는 '영상판정조차 필요
-        #       없다' 는 가장 강한 주장이라 근거가 필요하다.
-        #
-        #   ★ 파라미터 이름이 처음부터 `nreg` 였다. 이름이 맞지 않는 것을
-        #     아무도 못 봤다. 이 수정은 2026-08-19 에 이미 있었으나
-        #     feat/audit-eval-wmin 브랜치에 갇혀 있었다(#40 계열).
-        v = verdict(wmin, wmax, wneff)
-        if short and wmin is None:
-            v = "fragment"
-
-        # ── 도로대장 명목폭에 의한 확정 (2026-08-18 적용 범위 확대) ──
-        # verdict() 는 blocked 를 wmax 로만 낸다. wmax 가 없으면 아무리 좁아도
-        # blocked 로 갈 길이 없다. 결손 496건 중 도로 폭 3.0m 미만이 160건이며
-        # 그중 blocked 는 0 이었다(대조군은 24%). 폭 0.38m 짜리가 "CCTV 가 없어
-        # 판정 보류"로 표시됐다. 결손이 관대한 쪽으로 해석되고 있었다.
-        #
-        # 종전에는 아래 `elif v == "unknown"` 가지에만 걸려 적용이 2건이었다.
-        # 그 가지는 wmin 조차 없는 구간만 오는데, 실제로 막힌 것은
-        # **wmin 은 있고 wmax 가 없는** 구간이다.
-        #
-        # 두 근거가 독립적으로 일치할 때만 건다.
-        #     실측 노면폭 < TRUCK   그리고   도로대장 명목폭 < TRUCK
-        # 대장폭 단독으로 실측을 뒤집지 않는다(§3-3 원칙). 실측이 3.0 이상인데
-        # 대장이 미만인 모순 6건은 이 규칙에 걸리지 않는다.
-        #
-        # CCTV 강등보다 앞에 둔다. blocked 는 도면으로 확정되므로 카메라 유무와
-        # 무관하다. 뒤에 두면 needs_cv → no_cctv 로 먼저 내려가 이 규칙을 비껴간다.
-        if (wmax is None
-                and (wmin is None or wmin < TRUCK)
-                and _road_bt is not None and _road_bt < TRUCK):
-            v = "blocked"
-
-        # 영상판정 가능성. 구간에서 가장 가까운 CCTV 까지의 거리로 판단한다.
+        #   왜 옮겼나 — `VERDICT_RULE` 일곱 줄 중 둘이 이 `main()` 안에
+        #   있었다. 그래서 규칙 변경의 판정 이동을 **호수를 다시 돌리지
+        #   않고는 잴 수 없었고**, 호수가 없는 곳에서는 아예 못 쟀다.
+        #   이제 `tools/verdictsim.py` 가 공개본만으로 전후를 잰다.
         d_cctv = round(g.distance(cctv_u), 1)
         cv_ok = d_cctv <= CCTV_RANGE
-
-        # needs_cv 인데 CCTV 사각이면 영상판정이 성립하지 않는다.
-        # 도면으로도 확정 못 하고 영상으로도 확정 못 하므로 unknown 이다.
-        # blocked / clear 는 도면만으로 확정되므로 CCTV 와 무관하다.
-        # ★ 2026-08-22. unknown 352구간이 전부 "no_cctv" 하나였다.
-        #   화면에서 회색 한 덩어리로 보이지만 안에는 성격이 다른 넷이 있다.
-        #   판정은 전부 정당하다 — 확인한 결과 오분류는 0건이었다. 다만
-        #   "왜 회색인가" 를 화면이 설명하지 못했다.
-        #
-        #     no_cctv_narrow  62  노면 < 3.0 이고 **대장폭도** < 3.0 이다.
-        #                         두 근거가 일치하는데도 blocked 가 아닌 이유는
-        #                         담~담이 3.0 이상이기 때문이다. 갓길로 지날
-        #                         여지가 있어 도면만으로 확정하지 않는다.
-        #                         (62건 전부 wmax >= 3.0 · 최대 17.26m)
-        #     no_cctv_thin   128  노면만 < 3.0 이고 대장폭은 3.0 이상이거나
-        #                         없다. 근거가 하나뿐이라 더 약하다.
-        #                         §3-3 — 대장폭 단독으로 실측을 뒤집지 않는다.
-        #     no_cctv_band   152  3.0~7.0 대역. 주정차 여부로 갈린다.
-        #                         영상판정의 본래 대상이다.
-        #     no_cctv_single  10  wmin >= 7.0 인데 정규표본이 1개라 clear 를
-        #                         보류했다. DM02825 사고(2.7m 구간이 표본
-        #                         하나로 42.1m → clear)의 방어다.
-        #     width          128  폭 산출 자체가 안 됐거나 근거가 하나다.
-        #
-        #   ★ 색은 바뀌지 않는다. 판정도 바뀌지 않는다. 툴팁만 정확해진다.
-        reason = None
-        if v == "needs_cv" and not cv_ok:
-            if wmin is None:
-                reason = "width"
-            elif wmin >= TRUCK + 2 * PARK:
-                reason = "no_cctv_single"      # 표본 부족으로 clear 보류
-            elif wmin < TRUCK:
-                # 대장폭이 같이 좁으면 근거 2개, 아니면 1개다. 갈라 적는다.
-                reason = ("no_cctv_narrow"
-                          if _road_bt is not None and _road_bt < TRUCK
-                          else "no_cctv_thin")
-            else:
-                reason = "no_cctv_band"        # 3~7m. 주정차로 갈린다
-            v = "unknown"
-        elif v == "unknown":
-            # ROAD_BT 에 의한 확정은 위로 올렸다. 여기 남은 unknown 은
-            # 대장폭도 없거나 3.0m 이상인 구간이다.
-            reason = "width"
+        v, reason = classify(wmin=wmin, wmax=wmax, nreg=wneff,
+                             road_bt=_road_bt, length_m=g.length,
+                             cctv_dist=d_cctv)
 
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
                         verdict=v, unknown_reason=reason,

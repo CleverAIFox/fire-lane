@@ -47,6 +47,21 @@ EVIDENCE = {
     #   박제해 경계에서 대조하는 시험이다 — 수용 조건이 「불변 증명」이었으므로
     #   증표도 「불변이 관측된다」여야 한다.
     "W6-1": "tests/test_ledger_contract.py::test_row_count_boundary_is_unchanged",
+    # ★ 2026-09-29 (DECISIONS §306). 셋을 늦게 등록했다. 셋 다 PLAN §13-3 표에
+    #   「닫힘」으로 **남아 있었고** 등록부에는 없었다 — §13-1 이 「닫힌 결함은
+    #   행이 아니라 부재로 기록된다」고 적어둔 그 규약을 세 번 어긴 것이다.
+    #   관문 ③이 이것을 잡아야 했는데, 그것은 DECISIONS 의 `닫힘` **줄**만
+    #   읽고 §288 · §297 · §302 가 그 형식을 안 썼다. 줄을 같이 넣었고,
+    #   표에 닫힘이 남는 것 자체를 무는 관문을 새로 세웠다
+    #   (`test_no_closed_row_lingers_in_the_table`).
+    #
+    # ★ W13-7 은 **증표가 아예 없었다.** `fieldseal` 을 무는 시험이 트리에
+    #   하나도 없이 닫혀 있었다 — 도구는 있고 `verify.sh` 가 부르는데, 그것이
+    #   「불린다」와 「무엇을 본다」를 증명하지는 않는다. 그래서 등록하면서
+    #   증표를 새로 썼다(`tests/test_fieldseal.py` 6개).
+    "W13-7": "tests/test_fieldseal.py::test_the_seal_matches_the_tracked_table",
+    "W13-8": "tests/test_ledger_outputs.py::test_retired_step_is_really_gone",
+    "W13-10": "tests/test_docseal_view.py::test_지목한_도구를_관문에서_떼면_지문이_움직인다",
 }
 
 
@@ -70,6 +85,33 @@ def test_evidence_exists_in_tree():
         if fn not in names:
             missing.append(f"{wid}: {node} 가 없다")
     assert not missing, "닫힘의 증표가 트리에 없다 — 그 배치가 떨어졌다:\n  " + "\n  ".join(missing)
+
+
+def test_no_closed_row_lingers_in_the_table():
+    """★ 2026-09-29 (DECISIONS §306). **표에 「닫힘」이 남아 있으면 결함이다.**
+
+    PLAN §13-1 이 이미 그렇게 적는다 — 「이 절은 빚 목록이다. 닫힌 결함은 행이
+    아니라 부재로 기록된다.」 그런데 그 규약을 무는 것이 없었다. 아래
+    `test_closed_ids_are_not_open` 은 **등록부에 든 ID** 만 보므로, 등록도 안
+    하고 표에 「닫힘」으로 눌러앉은 행은 어느 관문도 안 봤다. 실제로 셋이
+    그 상태로 있었다(W13-7 · W13-8 · W13-10).
+
+    ★ 왜 「부재로 기록」이 맞는가. 닫힌 행을 남기면 표가 **단조 증가**한다.
+      그러면 「남은 결함 N건」이 빚의 크기를 못 말하고, 사람이 표를 보고
+      「얼마나 남았나」를 셀 수 없다. 닫힌 이유는 DECISIONS 가, 닫힘을 지키는
+      시험은 위 등록부가 든다 — 표가 세 번째 집이 될 이유가 없다(R3).
+    """
+    plan = (ROOT / "docs" / "PLAN.md").read_text(encoding="utf-8")
+    sec = plan[plan.index("### 13-3."):]
+    sec = sec[:sec.index("\n### ", 5)]
+    lingering = [m.group(1) for m in re.finditer(r"^\| (W\d+-\d+) \|.*$", sec, re.M)
+                 if "닫힘" in m.group(0)]
+    assert not lingering, (
+        f"닫힌 행이 §13-3 표에 남아 있다: {lingering}\n"
+        "  §13-1 — 「닫힌 결함은 행이 아니라 부재로 기록된다」\n"
+        "  ① 행을 지우고  ② 제목·문단의 수를 내리고\n"
+        "  ③ EVIDENCE 에 그 닫힘을 지키는 시험을 한 줄 적고\n"
+        "  ④ DECISIONS 의 해당 절에 `    닫힘   <ID>` 줄을 넣어라")
 
 
 def test_closed_ids_are_not_open():
