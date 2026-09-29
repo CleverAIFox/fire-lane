@@ -91,6 +91,18 @@ export function sources(dataUrl: string, terrainBounds?: [number, number, number
  * 배경 — 도로와 건물.
  * @param style `navi_graph.json.style`. 판정 4색의 정본이 여기로 흘러온다.
  */
+/**
+ * **주행 화면이 끄는 바탕 층.** 관제는 전부 켠다 — 두 화면의 일이 다르다.
+ * 기준·실측·남긴 이유는 DECISIONS §311.
+ *
+ * ★ 선언이 여기 하나다. `NaviMap` 이 끄고 `tools/uicheck.py` 가 빼서 센다 —
+ *   도구가 제 목록을 따로 들면 **수만 내려가고 화면은 그대로인 날**이 온다.
+ */
+export const NAVI_OFF = [
+  // 접지 그림자 · 평면 건물 · 전 도로 판정 4색 · 건물 라벨 12,663 · 상가 라벨 2,106
+  "bldg-contact", "bldg-flat", "seg-tint", "lbl-bldg", "lbl-poi",
+] as const;
+
 export function baseLayers(style: Record<string, VerdictStyle>): LayerSpecification[] {
   const tint = (k: string) => shade(style[k]?.color ?? "rgb(120,128,140)");
   const w = (a: number, b: number) =>

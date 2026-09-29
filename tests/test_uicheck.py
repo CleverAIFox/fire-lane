@@ -52,15 +52,46 @@ def test_the_two_screens_share_exactly_the_declared_layers():
         f"공유 지도 층 {len(sh)} ≠ 선언 {UI.SHARED_LAYERS}\n  {' '.join(sh)}")
 
 
-def test_the_shared_set_names_what_makes_the_screens_look_alike():
-    """★ 수만 맞추면 안 된다. **무엇이 공유되는지**가 결함의 내용이다.
+def test_the_shared_set_is_what_driving_still_needs():
+    """★ 수만 맞추면 안 된다. **무엇이 남았는지**가 판단의 내용이다(§311).
 
-    사람이 「내비가 GIS 뷰어 같다」고 말한 것의 근거가 이 셋이다 —
-    건물 전량 3D · 전 도로 판정색 · 라벨 3종.
+    주행 화면에도 값이 있어 남긴 것들 — 바탕 · 도로 선 · 다음 회전 도로명 ·
+    소화전. 이것이 사라지면 세는 법이 틀린 것이다.
     """
     sh = set(UI.shared_layers())
-    for want in ("bldg", "bldg-flat", "seg-tint", "seg-road", "lbl-poi", "lbl-bldg"):
-        assert want in sh, f"`{want}` 가 공유 목록에 없다 — 세는 법이 바뀌었으면 §310 을 고쳐라"
+    for want in ("bg", "road-area", "seg-road", "lbl-road", "hydrant", "bldg"):
+        assert want in sh, f"`{want}` 가 공유 목록에 없다 — 세는 법이 바뀌었으면 §311 을 고쳐라"
+
+
+def test_what_driving_turns_off_is_really_gone():
+    """★ 반대 방향. 사람이 「내비가 GIS 뷰어 같다」고 한 근거가 이것들이었다.
+
+    끄기로 선언한 것이 공유에 남아 있으면 **수만 내려가고 화면은 그대로**다.
+    """
+    off, sh = set(UI.navi_off()), set(UI.shared_layers())
+    assert off, "`NAVI_OFF` 선언을 못 읽었다"
+    for gone in ("lbl-bldg", "lbl-poi", "seg-tint", "bldg-contact"):
+        assert gone in off, f"`{gone}` 가 주행 예산에서 빠졌다"
+        assert gone not in sh, f"`{gone}` 가 아직 공유다"
+
+
+def test_the_declaration_has_exactly_one_home():
+    """★ `NaviMap` 이 그 목록을 **실제로 돈다.** 도구가 제 목록을 따로 들면 정본이 둘이다."""
+    navimap = (UI.SRC / "components" / "NaviMap.tsx").read_text(encoding="utf-8")
+    assert "NAVI_OFF" in navimap, "내비가 선언을 안 쓴다 — 선언만 하고 안 끄는 꼴이다"
+    opsmap = (UI.SRC / "components" / "OpsMap.tsx").read_text(encoding="utf-8")
+    assert "NAVI_OFF" not in opsmap, "관제가 주행 예산을 쓴다 — 두 화면의 일이 다르다"
+    for o in UI.navi_off():
+        assert any(o in v for v in UI.layer_ids().values()), f"`{o}` 는 실재하지 않는 층이다"
+
+
+def test_ops_starts_in_3d():
+    """★ 관제 기본이 3D 다(§311). 토글은 2026-09-23 부터 있었고 기본이 꺼져 있었다."""
+    src = (UI.SRC / "OpsApp.tsx").read_text(encoding="utf-8")
+    import re as _re
+    m = _re.search(r"bldg:\s*(true|false)", src)
+    assert m, "`bldg` 기본값을 못 찾았다"
+    assert m.group(1) == "true", "관제가 평면으로 시작한다 — 층수가 진입 판단에 든다"
 
 
 def test_a_layer_moved_into_both_screens_turns_it_red():

@@ -90,7 +90,7 @@ OPS_FNS = ("baseLayers", "hillshadeLayer", "opsHistoryLayers", "opsSegLayers",
 # ★ 2026-09-29 (§310). 오늘 실측 그대로 박는다 — 래칫의 값어치는 「지금보다
 #   나빠지지 않는다」이지 「지금이 옳다」가 아니다. 17은 옳지 않다.
 #   baseLayers 9 + markerLayers 6 + stationLayers 2 = 17.
-SHARED_LAYERS = 17
+SHARED_LAYERS = 12
 
 #: `tools/ratchet.py` 가 **줄었을 때만** 이 수를 고쳐 적는다(§309).
 RATCHETS = {"SHARED_LAYERS": "down"}
@@ -117,10 +117,28 @@ def layer_ids() -> dict[str, list[str]]:
     return out
 
 
+def navi_off() -> list[str]:
+    """주행 화면이 끄는 층. **선언은 `layers.ts` 의 `NAVI_OFF` 하나다**(§311).
+
+    ★ 이 도구가 제 목록을 따로 들면 그 순간 정본이 둘이 된다. 실물이 끄는 것과
+      관문이 뺀다고 믿는 것이 갈리면, 수는 내려가는데 화면은 그대로인 날이 온다.
+    """
+    src = LAYERS.read_text(encoding="utf-8")
+    m = re.search(r"export const NAVI_OFF\s*=\s*\[(.*?)\]\s*as const", src, re.S)
+    if not m:
+        return []
+    return re.findall(r'"([^"]+)"', m.group(1))
+
+
 def shared_layers() -> list[str]:
-    """**두 화면에 똑같이 깔리는 층.** 이 도구가 재는 것이 이 수다."""
+    """**두 화면에 똑같이 깔리는 층.** 이 도구가 재는 것이 이 수다.
+
+    내비가 끄는 것은 안 센다 — 꺼진 층은 화면에 없다. 다만 **끈다고 선언만 하고
+    실제로 안 끄는 것**은 아래 `split()` 이 따로 문다(`NaviMap` 이 그 목록을
+    실제로 도는가).
+    """
     per = layer_ids()
-    navi = {i for f in NAVI_FNS for i in per.get(f, ())}
+    navi = {i for f in NAVI_FNS for i in per.get(f, ())} - set(navi_off())
     ops = {i for f in OPS_FNS for i in per.get(f, ())}
     return sorted(navi & ops)
 
@@ -151,7 +169,24 @@ def split() -> list[str]:
             if _uses(other, p):
                 bad.append(f"{other} 가 `<{p}>` 를 쓴다 — **{app} 전용이다.** 두 화면이 섞인다")
 
-    # ㉢ 공유 층 — 이 도구의 본체
+    # ㉢ 선언한 것을 실제로 끄는가 — 선언만 하고 안 끄면 수만 내려간다
+    off = navi_off()
+    if not off:
+        bad.append("`layers.ts` 에 `NAVI_OFF` 선언이 없다 — 주행 표출 예산이 사라졌다")
+    navimap = (SRC / "components" / "NaviMap.tsx").read_text(encoding="utf-8")
+    if off and "NAVI_OFF" not in navimap:
+        bad.append("`NaviMap` 이 `NAVI_OFF` 를 안 쓴다 — **선언만 하고 안 끄고 있다.**\n"
+                   "       그러면 공유 층 수만 내려가고 화면은 그대로다")
+    allids = {i for v in layer_ids().values() for i in v}
+    for o in off:
+        if o not in allids:
+            bad.append(f"`NAVI_OFF` 의 `{o}` 가 실재하지 않는 층이다 — 죽은 선언은 "
+                       "**수만 줄이는 말**이 된다")
+    opsmap = (SRC / "components" / "OpsMap.tsx").read_text(encoding="utf-8")
+    if "NAVI_OFF" in opsmap:
+        bad.append("`OpsMap` 이 `NAVI_OFF` 를 쓴다 — 그것은 **주행** 화면의 예산이다")
+
+    # ㉣ 공유 층 — 이 도구의 본체
     sh = shared_layers()
     if len(sh) > SHARED_LAYERS:
         bad.append(f"두 화면이 공유하는 지도 층이 늘었다 — 선언 {SHARED_LAYERS} · 실측 {len(sh)}\n"
@@ -248,9 +283,19 @@ def selftest() -> int:
     sh = shared_layers()
     if not sh:
         fails.append("공유 층이 0 이다 — 두 지도가 `baseLayers` 를 같이 부르는데 0 일 수 없다")
-    for want in ("bldg", "seg-tint", "lbl-poi"):
+    # ★ 주행에도 값이 있어 **남긴** 것들. 이것이 사라지면 세는 법이 틀린 것이다.
+    for want in ("bg", "seg-road", "lbl-road", "hydrant"):
         if want not in sh:
             fails.append(f"공유 층에 `{want}` 가 없다 — 세는 법이 틀렸다")
+    # ★ 반대 방향 — 끈 것이 공유에 남아 있으면 빼기가 안 먹은 것이다(§311).
+    off = set(navi_off())
+    if not off:
+        fails.append("`NAVI_OFF` 를 못 읽었다 — 빼기가 통째로 안 먹는다")
+    for gone in ("lbl-poi", "lbl-bldg", "seg-tint"):
+        if gone in sh:
+            fails.append(f"`{gone}` 가 아직 공유다 — 내비가 그것을 안 끈다")
+        if gone not in off:
+            fails.append(f"`{gone}` 가 `NAVI_OFF` 에서 빠졌다 — 주행 예산이 헐거워졌다")
 
     # 배타 판별식이 **거짓을 거짓이라 하는가**
     if _uses("OpsApp.tsx", "NaviMap"):
@@ -264,7 +309,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 8")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 12")
     return 1 if fails else 0
 
 

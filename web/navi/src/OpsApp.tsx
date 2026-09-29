@@ -28,7 +28,10 @@
  * 모양이었다. 상황실 벽 화면의 문법으로 바꾼다 —
  *     상단 상황판   시계 · 접수 · 출동 중 · 미확인 공유 · **실측 도착 중앙값**(119 이력)
  *     좌           접수 · 지령(차종 목록 = 요구폭)
- *     중앙          북쪽 위 **평면** 지도 · 어두운 바탕에 판정 4색 · 범례와 레이어는 지도 위
+ *     중앙          북쪽 위 지도 · 어두운 바탕에 판정 4색 · 범례와 레이어는 지도 위
+ *                   ★ 2026-09-29 (§311) 기본이 **3D 건물**(피치 45°)이다. 층수가 진입
+ *                     판단에 들고, 그 토글이 2026-09-23 부터 있었는데 기본이 꺼져 있었다.
+ *                     평면이 필요하면 같은 단추로 끈다 — 그때 `bldg-flat` 이 켜진다
  *     우           차량 상태판 · 현장 공유 · 구간 정보 · 출동 이력 요약
  * ★ 와이어프레임이 아니다. 지혜님이 깊게 파기 전의 **초안**이다 — 구조와 데이터 배선을 먼저
  *   세우고, 모양은 와이어프레임이 오면 따른다.
@@ -89,7 +92,11 @@ export default function OpsApp() {
   const [picking, setPicking] = useState(false);
   const [stationId, setStationId] = useState<string>("0");
   const [layers, setLayers] = useState<OpsLayers>({
-    ortho: false, reach: true, cctvCov: false, bldg: false, history: false, context: false, terrain: true,
+    // ★ 2026-09-29 (DECISIONS §311). `bldg` 기본을 켠다 — 종전 `false`.
+    //   토글도 압출도 2026-09-23 부터 있었는데 **기본이 꺼져 있어** 아무도 3D 관제를
+    //   못 봤다. 관제는 건물에 몇 층이 사는지를 보는 화면이고(`flo` · 12,663동),
+    //   그 수가 진입 판단에 든다. 평면이 필요하면 같은 단추로 끈다.
+    ortho: false, reach: true, cctvCov: false, bldg: true, history: false, context: false, terrain: true,
   });
   const [history, setHistory] = useState<{ summary?: HistorySummary } | null>(null);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
