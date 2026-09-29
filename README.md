@@ -68,7 +68,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 ```bash
 uv run python tools/docgen.py           # ★ 문서의 생성 블록을 실물 값으로 채운다 (--check 면 대조만)
 uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
-uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L6)
+uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L7)
 uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
 uv run python tools/docseal.py check     # 문서 절 ↔ 그 절이 지목한 코드 · 정합 도장
 uv run python tools/after_squash.py      # 스쿼시 뒤에만 답이 바뀌는 검사만 (열차 7b · --list 로 사유)
@@ -85,6 +85,7 @@ uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선�
 uv run python tools/selftests.py         # ★ 선언된 `--selftest` 를 전부 돌린다 (문 하나 · --list 로 건너뜀 사유)
 uv run python tools/fieldseal.py         # ★ data/field 무결성 지문 — DECISIONS 가 인용하는 파생표 (--write 는 새로 뽑았을 때만)
 uv run python tools/widthcross.py        # ★ 폭을 방법이 다른 원천끼리 댄다 — 측량 도로폭 · 도로대장 (판정 밖)
+uv run python tools/verdictsim.py        # ★ 판정 규칙 변경의 **전후를 호수 없이** 잰다 — 공개본 1,281행 재현 + 후보 이동량 (판정 밖)
 uv run python tools/cost_inputs.py      # 경로 비용 입력이 결측과 0 을 가르는가 · 압력 계수가 근거 없이 켜졌나
 uv run python tools/proposal_pdf.py     # 기획서 → web/proposal.pdf · 쪽수·본문·수치·그림 대조
 # ★ 위 도구가 세는 사본을 합친 자리 —
