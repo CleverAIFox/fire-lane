@@ -5640,9 +5640,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "b8a41d37119ed6ae",
-   "052b8c1a3b45ee1c",
-   "f5497873a1dfe2d3"
+   "7d033dc167213382",
+   "abb6ee822d3b01d9",
+   "f13554bb3b7387cb"
   ],
   "parts": {
    "src/firelane/seg/params.py": "420b3d8812bb87a4",
@@ -5665,9 +5665,9 @@
    "web/config.js": "ed851b78a3c520eb",
    "web/navi/src/domain/vehicle.ts": "449e1612784f93ec",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "97c13a7bbcc66e91"
+   "본문": "ac1d008501819bbb"
   },
-  "sha": "1f2ba9867fcd84a8"
+  "sha": "63808ad7e51c6f7b"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
