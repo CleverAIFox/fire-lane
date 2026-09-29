@@ -18884,6 +18884,12 @@ raw 가 필요한 것은 `ingest` · `normalize` 뿐이고 **raw 는 변동이 �
 이 고침은 판정을 움직이므로 **재잠금까지가 한 배치**다(§265 의 규약). `z` 가 빠진
 판을 배달하면 퇴행이므로 산출물은 보내지 않고 전량 실행이 낸다.
 
+★ **2026-09-30. 그 「전량 실행이 낸다」에 길이 없었다**(§319). 실행이 판정을 움직이면
+  `fl.sh` 4b 가 멈추는데, 멈춘 뒤에 할 일(지문 · 지표 · 문서 · 그림 · 래칫 · 봉인을
+  그 순서로)이 글로도 없었다. `tools/remeasure.py` 가 그 사슬을 들고, 사람은 태그
+  하나로 「이 움직임을 받아들인다」만 답한다. 이 절의 464 · 225 · 192 · 400 이
+  문서에 앉는 것도 이제 `docgen` 의 판정 네 축이 한다 — 받아적지 않는다.
+
 
 ## 309. 관문이 답을 알면서 사람에게 받아적게 했다 — 래칫을 도구가 스스로 조인다
 
@@ -18920,6 +18926,11 @@ raw 가 필요한 것은 `ingest` · `normalize` 뿐이고 **raw 는 변동이 �
 반대 방향이면 **안 쓰고 빨간불을 낸다.** 그 경우는 받아적을 일이 아니라 결함이고,
 결함은 사람이 본다. 안 쓰는 것으로 끝나지도 않는다 — 초록으로 덮으면 자동화를
 돌리는 사람이 나빠진 사실을 영영 못 본다.
+
+★ **2026-09-30 정정**(§318-1). 바로 위 문단을 이 도구가 어기고 있었다 — 조일 것이
+  하나라도 있으면 `--write` 가 **종료코드 0** 을 냈고, 느슨해진 쪽이 같이 있어도
+  그랬다. 쓰기와 판정을 한 종료코드에 실은 것이고, 자동으로 조이는 도구가 결함을
+  덮으면 그 도구는 관문이 아니라 은폐 장치다.
 
 같은 배치에서 그 거절이 실제로 한 번 일어났다. 「래칫 정합」 단계를 `verify.sh` 에
 붙이며 그 파일이 아홉 줄 늘었고, `sizecheck` 의 예외가 는 쪽이라 도구가 안 썼다.
@@ -19122,6 +19133,10 @@ W13-4 를 「무게」로 적어 뒀는데 둘 다 실은 **의존**의 문제�
 ★ 스택 이름을 실물에 맞췄다. 종전 `Open Sans Regular` 는 demotiles 의 이름이었고
   우리가 뽑는 글자는 Liberation Sans 다. 이름과 실물이 다르면 다음 사람이 없는
   글꼴을 찾는다.
+  ★ **2026-09-30 정정**(§316). 그때 고른 이름 `Liberation Sans Regular` 에 공백이
+    있어 CODEOWNERS 가 그 경로를 표현하지 못했고 파일 다섯이 미소유로 떨어졌다.
+    `LiberationSans` 로 다시 고쳤다 — 이름을 실물에 맞추는 것과 **그 이름을
+    도구가 표현할 수 있는가**는 다른 축이고, 그때는 뒤쪽을 안 봤다.
 
 ### 312-2. 바깥 호스트 셋 → 하나
 
@@ -19228,7 +19243,7 @@ W13-4 를 「무게」로 적어 뒀는데 둘 다 실은 **의존**의 문제�
 > 2026-09-30
 강제자  `sources.yaml` 의 `parking_enforce.note`(단속 활동 분포라는 성질) ·
 `src/firelane/seg/params.py` 의 `PARK` 옆 문단(판정에 시간 축이 없다는 계약) ·
-`tests/test_sources_of_truth.py`(그 상수의 정본이 하나인가)
+`tests/test_sources_of_truth.py`(그 상수의 정본이 하나인가). 하위 둘이 이 칸을 물려받는다
 배운 것  **음성 결과는 결과다.** 죽은 가설을 안 적으면 다음 사람이 같은 자료로
 같은 기대를 품고 같은 시간을 쓴다. 이 저장소가 이미 세 번 그랬다(§189 이름 가설 ·
 §291 현장 실측 · §235 상가 누락).
@@ -19312,7 +19327,7 @@ oneway-disclosure 행이 로드뷰 56구간을 든다) · `tests/test_declaratio
 > 2026-09-30
 강제자  `tests/test_web_ownership.py::test_codeowners_covers_every_web_path` ·
 `tests/test_ownership.py::test_every_tracked_file_has_a_named_owner` ·
-`web/navi/scripts/glyphs.mjs` 의 `OUT` 경로 주석
+`web/navi/scripts/glyphs.mjs` 의 `OUT` 경로 주석. 하위 하나가 이 칸을 물려받는다
 배운 것  **이름에 공백을 넣는 순간 그 이름을 표현 못 하는 도구가 생긴다.**
 공백은 거의 모든 목록 형식에서 구분자이고, 구분자를 이름에 넣으면 그 이름은
 목록에 못 들어간다.
@@ -19364,7 +19379,8 @@ Regular/*.pbf` 가 됐다. CODEOWNERS 는 줄을 **공백으로 쪼갠다** — 
 > 2026-09-30
 강제자  `tools/unusedcheck.py`(미배선 래칫 · `RATCHETS` 규약에 태웠다) ·
 `firelane.ledger.why_token()` · `tests/test_unusedcheck.py` ·
-`tests/test_unusedcheck.py::test_the_warning_in_the_code_is_now_the_code`
+`tests/test_unusedcheck.py::test_the_warning_in_the_code_is_now_the_code`.
+하위 둘이 이 칸을 물려받는다
 배운 것  **목표 없는 수는 아무도 안 본다.** 「미활용 25」는 한 달 동안 25 였고
 아무도 그것을 이상하게 여기지 않았다 — 0 으로 갈 수 없는 수였기 때문이다.
 0 으로 갈 수 없는 것을 0 으로 가는 수에 섞으면, 섞인 수가 둘 다 죽인다.
@@ -19414,7 +19430,8 @@ Regular/*.pbf` 가 됐다. CODEOWNERS 는 줄을 **공백으로 쪼갠다** — 
 > 2026-09-30
 강제자  `tools/ratchet.py` 의 `lake_only()`(면제 정본은 `gate_parity.exemptions()`
 하나다) · `tests/test_ratchet.py::test_a_declared_lake_only_tool_is_skipped_with_a_reason` ·
-`test_an_undeclared_death_stays_red` · `test_skipping_everything_is_an_empty_net`
+`test_an_undeclared_death_stays_red` · `test_skipping_everything_is_an_empty_net`.
+하위 둘이 이 칸을 물려받는다
 배운 것  **「원래 빨간 것」을 사람이 배우면 그 옆의 진짜 빨강도 같이 묻힌다.**
 §313-1 ③이 같은 족이었다(빌드본 없는 새 클론이 무조건 빨강).
 
@@ -19452,7 +19469,8 @@ Regular/*.pbf` 가 됐다. CODEOWNERS 는 줄을 **공백으로 쪼갠다** — 
 강제자  `tools/remeasure.py`(사슬과 그 순서 · `--selftest` 가 순서를 문다) ·
 `tools/verdict_tally.py`(전후를 같은 셈으로 재는 문 하나) ·
 `tests/test_remeasure.py` · `tools/docgen.py` 의 판정 네 축 ·
-`tests/test_docgen.py::test_every_axis_is_injected_into_the_block`
+`tests/test_docgen.py::test_every_axis_is_injected_into_the_block`.
+하위 하나가 이 칸을 물려받는다
 배운 것  **판단과 받아적기를 가르면 규율이 안 약해진다.** §13-5 규칙 2 는
 「판정이 움직이면 사람이 판단한다」이고, 그 판단은 **하나**다 — 「이 움직임을
 받아들이는가」. 나머지는 전부 순서이고 순서는 기계가 지켜야 한다.
@@ -19493,13 +19511,28 @@ Regular/*.pbf` 가 됐다. CODEOWNERS 는 줄을 **공백으로 쪼갠다** — 
 뒤에 `docnum_check` 가 그 넷을 물어 배치가 다시 멈춘다 — **막다른 길을 없애려는
 배치가 새 막다른 길을 만들면 안 된다.**
 
+★ **축 하나가 억제 넷을 낳았다.** 축이 문서 넷을 다 보므로 `DECISIONS` 의 회고
+  인용 네 줄(2026-08-24 의 `blocked` 416 따위)이 함께 걸렸고, 역사는 고칠 수
+  없으니 그 줄에 회고 표기(`§0-3` 의 stale-ok)를 붙였다. `suppress` 래칫이 **57 → 61** 로
+  올랐다 — 올리는 방향은 그 도구가 금지하므로 사람이 손으로 올리고 사유를 그
+  자리에 적었다(§309-1 의 규약: 값을 올리는 일에는 말이 따른다).
+
+  ★ 그리고 그 도구는 **표기를 글로 적은 줄까지 센다** — 바로 위 문단을 처음
+    쓸 때 표기를 그대로 적었더니 억제가 하나 더 늘었다. 글자로 세는 검사가
+    글을 코드로 세는 형태이고(§283-3 이 세 번 겪었다) 지금 스물 중 몇이 그것이다.
+  ★ 이 넷은 「검사를 껐다」가 아니라 **「이 줄은 과거다」라는 사실 표기**다.
+    그런데 `suppress` 가 문서 표기 둘을 「뒤에 말이 붙을 자리가 없어 전부 센다」로
+    두어 가를 수가 없다. 표기에 사유를 붙일 수 있게 하는 일은 별개의 배치이고,
+    그때 그 수에서 스물넷이 빠진다. **그때까지 61 보다 늘면 진짜 결함이다.**
+
 ---
 
 ## 320. 이름이 거짓말하는 칸 하나를 아직 아무도 안 믿고 있었다
 
 > 2026-09-30
 강제자  `tests/test_classify_published.py::test_the_published_building_number_is_not_used_as_a_join_key` ·
-`src/firelane/publish_web.py` 의 `cols` 옆 주석 · `MASTER §11-4`
+`src/firelane/publish_web.py` 의 `cols` 옆 주석 · `MASTER §11-4`.
+하위 하나가 이 칸을 물려받는다
 배운 것  **스키마가 거짓을 안 적어도 이름이 사람을 속인다.** `route_usage`
 (「최단경로 사용횟수」인데 「출동 경로」로 읽힌다)와 같은 족이고, 그때 배운 것은
 **아직 아무도 안 믿고 있을 때 잡아야 싸다**는 것이었다.
@@ -19518,3 +19551,31 @@ Regular/*.pbf` 가 됐다. CODEOWNERS 는 줄을 **공백으로 쪼갠다** — 
 ★ 왜 지금 적는가 — **조인 키로 쓰기 직전이 제일 위험하다.** 위험도 가중에
   `nfa_target_building`(좌표 없음 · 도로명주소로만 이을 수 있다)을 붙이는 일이
   PLAN 에 열려 있고, 그 작업을 하는 사람이 이 칸을 보면 키로 쓴다.
+
+### 320-1. 문서가 여드레 동안 없는 화면을 설명했다
+
+`MASTER §10-7`(시설 마커)에 봉인을 찍으려고 절과 코드를 같이 읽었다 —
+**절이 걷어낸 지도를 서술하고 있었다.**
+
+    종전 본문   「마커는 전부 3D 입체다. 원기둥 3~4개를 쌓아…」
+    실물        평면 배지 둘(`hydrantIcon` · `cctvIcon`)과 원 하나(`station-dot`)
+
+원기둥 마커는 옛 GIS 지도(`web/js`)의 것이고 그 지도는 2026-09-22 에 걷혔다
+(§218-1). 더 나쁜 것이 둘 더 있었다 —
+
+    ① 가로등 · 가로등 폴 두 줄이 **없는 마커**다. `streetlights.geojson` ·
+       `lightpoles.geojson` 은 발행을 멈췄고 `publish_web` 이 매 실행 지운다.
+       가로등은 판정 칸 `light_count` 로만 산다.
+    ② 소화전 **171** 은 다른 축이었다 — 집계표의 `지하식` 수다. 발행 스코프
+       안 소화전은 157 이고, §317 이 가른 그 축 혼동과 같은 것이다.
+
+★ **도장이 이것을 잡았다.** §265 가 도장을 만든 사유가 「문서↔코드 강제자
+  열일곱이 전부 한 방향(문서가 가리킨 것이 실재하는가)이라 뜻이 거짓인 절을
+  못 잡는다」였고, 이 절이 정확히 그 꼴이었다 — 지목한 파일
+  (`style.test.ts` · `docnum_check.py`)은 전부 실재했다.
+
+★ 왜 다른 검사가 다 통과했나. `web_manifest --check` 는 「발행된 파일이 커밋본과
+  같은 계보인가」를 보고, **없는 파일은 물을 대상이 아니다.** 「문서가 있다고 적은
+  마커가 실제로 그려지는가」를 보는 검사는 저장소에 없었다. 지금도 없다 —
+  `uicheck --split` 이 층 목록을 들지만 그것과 문서 표를 대조하지는 않는다.
+  **그 대조는 다음 배치의 일이고, 그때까지는 도장이 유일한 방어다.**

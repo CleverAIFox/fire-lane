@@ -81,7 +81,7 @@ def _one(tok: str) -> bool:
     return False
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _defs(f: Path) -> frozenset[str]:
     """그 파일이 정의한 이름들 — 함수 · 클래스 · 메서드.
 

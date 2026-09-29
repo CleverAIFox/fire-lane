@@ -75,7 +75,7 @@ def test_the_human_judgment_has_a_place_in_the_chain():
 
 
 def test_the_selftest_is_alive():
-    r = subprocess.run([sys.executable, str(ROOT / "tools" / "remeasure.py"),  # noqa: S603
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "remeasure.py"),  # noqa: S603 — 트리 안의 도구다
                         "--selftest"], capture_output=True, text=True,
                        cwd=ROOT, timeout=120)
     assert r.returncode == 0, r.stdout + r.stderr

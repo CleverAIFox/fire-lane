@@ -78,7 +78,7 @@ def _run(argv: list[str]) -> int:
 
 def moved() -> list[str]:
     """`WATCH` 중 git 과 다른 것. 비면 배선 배치다."""
-    r = subprocess.run(["git", "diff", "--name-only", "--", *WATCH],  # noqa: S603,S607
+    r = subprocess.run(["git", "diff", "--name-only", "--", *WATCH],  # noqa: S603,S607 — PATH 의 git 이다
                        cwd=ROOT, capture_output=True, text=True, timeout=60, check=False)
     return [x for x in r.stdout.split() if x]
 
@@ -92,15 +92,15 @@ def tally(ref: str | None) -> str:
     seg = WATCH[0]
     tool = str(ROOT / "tools" / "verdict_tally.py")
     if ref is None:
-        r = subprocess.run([sys.executable, tool, seg], cwd=ROOT,  # noqa: S603
+        r = subprocess.run([sys.executable, tool, seg], cwd=ROOT,  # noqa: S603 — 트리 안의 도구다
                            capture_output=True, text=True, timeout=300, check=False)
         return r.stdout.strip() or "?"
-    blob = subprocess.run(["git", "show", f"{ref}:{seg}"],  # noqa: S603,S607
+    blob = subprocess.run(["git", "show", f"{ref}:{seg}"],  # noqa: S603,S607 — PATH 의 git 이다
                           cwd=ROOT, capture_output=True, text=True,
                           timeout=120, check=False)
     if blob.returncode != 0:
         return "?"
-    r = subprocess.run([sys.executable, tool, "-"], cwd=ROOT,  # noqa: S603
+    r = subprocess.run([sys.executable, tool, "-"], cwd=ROOT,  # noqa: S603 — 트리 안의 도구다
                        input=blob.stdout, capture_output=True, text=True,
                        timeout=300, check=False)
     return r.stdout.strip() or "?"

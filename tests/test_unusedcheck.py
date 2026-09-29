@@ -27,10 +27,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+from firelane import ledger
 
-from firelane import ledger  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load(name: str):
@@ -121,6 +120,6 @@ def test_the_gate_is_wired_both_sides():
 
 
 def test_the_selftest_is_alive():
-    r = subprocess.run([sys.executable, str(ROOT / "tools" / "unusedcheck.py"),  # noqa: S603
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "unusedcheck.py"),  # noqa: S603 — 트리 안의 도구다
                         "--selftest"], capture_output=True, text=True, cwd=ROOT, timeout=120)
     assert r.returncode == 0, r.stdout + r.stderr

@@ -39,10 +39,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
+from firelane import ledger
 
-from firelane import ledger  # noqa: E402 — 위 경로 삽입 뒤여야 한다
+ROOT = Path(__file__).resolve().parents[1]
 
 #: 미배선 자료 수. **오늘 값에서 시작해 내린다.**
 #:
