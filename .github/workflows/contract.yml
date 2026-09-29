@@ -348,6 +348,17 @@ jobs:
         run: uv run python tools/dupcheck.py --min 40 --max 1
       - name: 파일 길이 래칫 (양방향)
         run: uv run python tools/sizecheck.py
+      # ★ `--write` 를 CI 에서 안 돈다 — 쓰고 나서 재면 영영 초록이다(§309).
+      - name: 래칫 정합 (선언 = 실측)
+        run: uv run python tools/ratchet.py
+      # ★ 소스 축만 CI 에 있다. 빌드본 축은 여기서 내비를 안 지어 못 본다(§310).
+      - name: 화면 분리 (관제 ≠ 내비)
+        run: uv run python tools/uicheck.py --split
+      - name: 머지 절차 (빨간불 위에서 머지했는가)
+        run: uv run python tools/mergecheck.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI: "1"
       - name: PLAN 번호·참조 정합
         run: uv run python tools/plan_renumber.py
       - name: 문서 제목 무결

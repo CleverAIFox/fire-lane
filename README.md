@@ -81,6 +81,11 @@ uv run python tools/deliver.py pack <가지> <범위> --out DIR   # ★ 배달�
 uv run python tools/expectcheck.py "$FIRE_LANE_INBOX/EXPECT"  # ★ 받는 쪽이 그 계약을 **다시 재어** 댄다 (fl.sh 4c 가 부른다)
 uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
 uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
+uv run python tools/ratchet.py          # 래칫 선언 = 실측인가 (관문은 읽기만 한다)
+uv run python tools/uicheck.py --split  # 관제와 내비가 다른 화면인가 (공유 지도 층 래칫)
+uv run python tools/uicheck.py --build  # 화면이 지금 코드에서 나왔는가 (빌드본 신선도)
+uv run python tools/mergecheck.py       # 빨간불 위에서 머지된 PR 이 있는가 (CI 전용)
+uv run python tools/ratchet.py --write  # 조이는 쪽으로만 고쳐 적는다 — 느슨해지는 쪽은 거부한다
 uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
 uv run python tools/selftests.py         # ★ 선언된 `--selftest` 를 전부 돌린다 (문 하나 · --list 로 건너뜀 사유)
 uv run python tools/fieldseal.py         # ★ data/field 무결성 지문 — DECISIONS 가 인용하는 파생표 (--write 는 새로 뽑았을 때만)

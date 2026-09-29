@@ -874,6 +874,31 @@ step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
 scope "src/* tools/* tests/*"
 step "파일 길이 래칫" uv run python tools/sizecheck.py
 
+# ★ 2026-09-29 (DECISIONS §309). 래칫을 **도구가 스스로 조인다.** 배치 L 에서
+#   관문 여덟이 「숫자를 같이 내려라/올려라」였고, 그 수는 도구가 이미 알고
+#   있었다 — 사람이 하던 것은 받아적기뿐이다. 안 받아적으면 래칫이 낡고,
+#   **낡은 래칫은 초록으로 위장한다.**
+# ★ `--write` 를 여기서 안 돈다. 쓰고 나서 재면 이 관문은 영영 초록이다.
+#   여기는 「선언이 실측과 같은가」만 묻고, 고치는 것은 사람이 그 명령을 돈다.
+scope "tools/*"
+step "래칫 정합" uv run python tools/ratchet.py
+
+# ★ 2026-09-29 (DECISIONS §310). **사람 눈이 마지막 관문이던 자리다.**
+#   73단계가 전부 초록인 날, 관제 화면이 아예 안 떠 있었다 — 열흘 묵은 빌드본이
+#   전환 깃발을 읽는 코드 이전에 지어진 것이었고, `web/navi/dist` 를 보는 단계가
+#   여기 **하나도 없었다.** 아래 마지막 줄이 그 구멍이었다:
+#     "WebGL 은 스크립트가 못 본다. 사람이 눈으로 확인할 것"
+#   ★ `--split` 은 소스만 보므로 어디서나 돈다. 공유 지도 층 수가 래칫이다 —
+#     내비와 관제가 같은 바탕을 깔고 있는 정도이고, 그것이 「닮았다」의 실측이다.
+scope "web/navi/src/* tools/*"
+step "화면 분리" uv run python tools/uicheck.py --split
+# ci-exempt: tools/uicheck.py --build 빌드본(web/navi/dist)을 본다. contract CI 는 빌드를 안 만든다 — 내비를 짓는 곳은 deploy 의 build-navi 하나다
+scope "web/navi/dist/* web/navi/src/* tools/*"
+step "화면 빌드본" uv run python tools/uicheck.py --build
+# ci-exempt: tools/mergecheck.py 원격 PR 의 검사 상태를 본다. 로컬에는 이 물음의 답이 없다 — 상태는 원격에만 산다
+scope "tools/*"
+step "머지 절차" uv run python tools/mergecheck.py
+
 # ★ 파일명의 날짜가 자료 기준일인가 내려받은 날인가. `naming` 규약은
 #   "다운로드일이 아니다" 라고 적었는데 `_plausible_date` 는 형식만 본다 —
 #   규약은 있고 강제자가 그 규약을 안 지켰다(원칙 ①·②). 대가가

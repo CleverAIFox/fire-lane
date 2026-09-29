@@ -64,6 +64,16 @@ ROOT = Path(__file__).resolve().parents[1]
 #: **줄기만 한다.**
 RATCHET = 57
 
+#: `tools/ratchet.py` 가 **줄었을 때만** 이 수를 고쳐 적는다(§309).
+#: **느는** 쪽은 안 쓴다 — 그것은 받아적을 일이 아니라 결함이다.
+RATCHETS = {"RATCHET": "down"}
+
+
+def ratchet_values() -> dict[str, int]:
+    """사유 없는 억제의 지금 수. **판정은 `check()` 소관**이다."""
+    return {"RATCHET": sum(len(v) for v in tally().values())}
+
+
 #: 갈래 → (무엇을 보나, 어디를 보나, 사유가 붙었는지 가르는 패턴)
 #: 사유 = 억제 뒤에 오는 **말**. 있으면 안 센다.
 FAMILIES: dict[str, tuple[re.Pattern, tuple[str, ...], tuple[str, ...]]] = {
