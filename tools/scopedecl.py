@@ -90,7 +90,7 @@ MIN_FILES = 3
 GAP_EXEMPT: dict[tuple[str, str, str], str] = {}
 
 # ── ① 래칫. 오늘 값. **내려가는 쪽으로만.**
-NO_DECL = 152
+NO_DECL = 150
 
 # ── ③ 래칫. 오늘 값. **올라가는 쪽으로만.**
 # ★ 2026-09-25. 15 → 16. `tools/cost_inputs.py` 가 `--selftest` 를 갖고 왔다
@@ -103,7 +103,13 @@ NO_DECL = 152
 # ★ 2026-09-28 (DECISIONS §278-1). 23 → 24. **수가 는 것이 아니라 세는 법이 고쳐졌다** —
 #   문자열 검사가 `localgeo` · `svg_fit`(하위명령으로 받는다)을 **놓치고**,
 #   `verify.sh`(남의 도구에 붙여 부른다)를 **잘못 세고** 있었다. 양방향으로 틀렸다.
-SELFTEST_MIN = 28
+# ★ 2026-09-28 (DECISIONS §286). 28 → 29. `tools/selftests.py` — 선언된
+#   자기검사를 전부 도는 문 하나다. 그 도구 자신도 자기검사를 갖는다
+#   (수집이 0개를 모으면 「전부 초록」이 거짓말이 된다).
+# ★ 2026-09-28 (PLAN W13-7 · DECISIONS §288). 29 → 30. `tools/fieldseal.py` —
+#   재취득 불가 층의 무결성 지문. 판별식이 바뀜·사라짐·새로 생김 셋을
+#   실제로 가르는지 자기검사가 문다.
+SELFTEST_MIN = 32
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)
 

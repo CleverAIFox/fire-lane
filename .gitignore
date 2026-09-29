@@ -43,7 +43,7 @@ data/desk/
 web/review.html
 _backup_*/
 *.bak_*
-docs/lineage.mmd
+data/interim/lineage.mmd
 
 # ── Python ─────────────────────────────────────────────────
 __pycache__/

@@ -37,6 +37,8 @@ from __future__ import annotations
 
 import math
 
+from firelane.cli import no_args
+
 #: 동명동 중심 위도. 국소 평면 근사의 기준점이다.
 LAT0 = 35.151
 #: 경도 1도의 미터. 위도에 따라 줄어든다.
@@ -74,4 +76,5 @@ def selftest() -> int:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     raise SystemExit(selftest())

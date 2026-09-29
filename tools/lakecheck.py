@@ -178,6 +178,15 @@ def l3(D: Path, y: dict, scan: list[Path]) -> None:
 
     ★ 이것이 제일 중요하다. `landing` 이 비면 "받았는데 안 넣은 것" 을
       셀 수 없고, 입구가 우회되면 그 뒤 검사 전부가 부분집합 위에서 돈다.
+
+    ★ 2026-09-28 (§293). 종전에는 레이크를 **두 번** 훑고 100KB 넘는 것을
+      **전부** 해시했다. 레이크는 2.5GB 라 이 한 프로브가 23초를 먹었고,
+      `verify.sh` 가 단계를 병렬로 돌리는 WSL 에서 `OSError: [Errno 12]`
+      로 **죽었다**. 죽은 프로브는 설계대로 빨간불을 냈으니 무음 통과는
+      아니었지만, 결함이 0건인 레이크에서 배달이 멈췄다.
+      같은 내용이면 **크기도 같다.** 후보를 먼저 고르고, 레이크에서
+      크기가 겹치는 것만 해시한다 — 판정은 글자 그대로 같고 읽는
+      바이트만 줄어든다(보통 0).
     """
     DATA_EXT = {".zip", ".7z", ".csv", ".json", ".shp", ".gpkg", ".tif",
                 ".hwp", ".hwpx", ".xls", ".xlsx", ".txt", ".dbf"}
@@ -192,25 +201,39 @@ def l3(D: Path, y: dict, scan: list[Path]) -> None:
             "다운로드 폴더 등 사람이 파일을 받는 자리",
             "uv run python tools/lakecheck.py --scan <다운로드 경로>")
         return
-    # ★ 이름이 아니라 **내용**으로 본다. 반입하며 개명하므로 이름은 안 맞는다.
-    #   첫 판은 이름만 봐서 이미 반입된 넷을 미반입으로 냈다.
-    have = {p.name for p in D.rglob("*") if p.is_file()}
-    fp = {_sha(p) for p in D.rglob("*") if p.is_file() and p.stat().st_size > 100_000}
+
+    # ── ① 후보를 먼저 고른다. 레이크는 후보가 있을 때만 읽는다 ──
+    skip = disposed(y)              # ★ 적힌 것은 운지 않는다. 글롭을 받는다
+    cand: list[Path] = []
     for d in scan:
         if not d.is_dir():
             hit("L3", f"★ --scan {d} 가 폴더가 아니다")
             continue
-        out = [p for p in d.iterdir()
-               if p.is_file() and p.suffix.lower() in DATA_EXT
-               and p.name not in have and p.stat().st_size > 100_000]
-        out = [p for p in out if _sha(p) not in fp]
-        skip = disposed(y)          # ★ 적힌 것은 운지 않는다. 글롭을 받는다
-        out = [p for p in out
-               if not any(fnmatch.fnmatch(p.name, s) for s in skip)]
-        for p in sorted(out, key=lambda x: -x.stat().st_size):
-            hit("L3", f"{p.name}: 레이크 밖에 있다",
-                f"{p.stat().st_size / 1e6:.0f}MB · {d}",
-                "landing 으로 옮기고 landing_disposition 에 적는다")
+        cand += [p for p in d.iterdir()
+                 if p.is_file() and p.suffix.lower() in DATA_EXT
+                 and p.stat().st_size > 100_000
+                 and not any(fnmatch.fnmatch(p.name, s) for s in skip)]
+    if not cand:
+        return
+
+    # ── ② 이름이 아니라 **내용**으로 본다. 반입하며 개명하므로 이름은 안 맞는다 ──
+    #   첫 판은 이름만 봐서 이미 반입된 넷을 미반입으로 냈다.
+    want = {p.stat().st_size for p in cand}
+    have: set[str] = set()
+    fp: set[str] = set()
+    for p in D.rglob("*"):
+        if not p.is_file():
+            continue
+        have.add(p.name)
+        if p.stat().st_size in want:
+            fp.add(_sha(p))
+
+    for p in sorted(cand, key=lambda x: -x.stat().st_size):
+        if p.name in have or _sha(p) in fp:
+            continue
+        hit("L3", f"{p.name}: 레이크 밖에 있다",
+            f"{p.stat().st_size / 1e6:.0f}MB · {p.parent}",
+            "landing 으로 옮기고 landing_disposition 에 적는다")
 
 
 # ── L4  ext 어휘 밖 ─────────────────────────────────────────────
@@ -413,7 +436,13 @@ def main() -> int:
         try:
             fn(D, y, scan) if fn is l3 else fn(D, y)
         except Exception as e:
-            hit(tag[:2], f"★ 프로브가 예외로 죽었다 — {type(e).__name__}: {e}")
+            # ★ 2026-09-28 (§293). 「죽었다」만 적고 고치는 법을 안 적었다. 실기에서
+            #   ENOMEM 으로 L3 가 죽었을 때 사람이 「레이크에 결함 1건」으로 읽었다.
+            #   프로브가 못 잰 것과 결함을 센 것은 **둘 다 빨간불이지만 다른 일이다.**
+            hit(tag[:2], f"★ 프로브가 예외로 죽었다 — {type(e).__name__}: {e}",
+                "결함을 센 것이 아니라 **못 쟀다.** 레이크는 아직 판정 밖이다",
+                "단독으로 돌려 재현하라: uv run python tools/lakecheck.py"
+                " — 단독이 0건이면 전수 verify 의 병렬 부하다")
         n = len(HITS) - before
         for h in HITS[before:]:
             print(f"     ✗ {h['what']}")

@@ -112,19 +112,27 @@ LOCAL_EXEMPT_RE = re.compile(r"^\s*#\s*local-exempt:\s*(\S+)\s+(.+?)\s*$", re.M)
 MIN_REASON = 5
 
 # ★ 검사기 하나에 패턴 하나. 늘릴 때는 **왜 그것이 검사기인가** 를 적는다.
-EXTERNAL = {
-    "pytest": r"\bpytest\b",
-    "ruff": r"\bruff\b",
-    "pre-commit": r"\bpre-commit\b",
-    "gitleaks": r"gitleaks",
-    "navi:typecheck": r"npm run\s+(?:-s\s+)?typecheck",
+#
+# ★ 2026-09-28 (DECISIONS §286-2). **표본을 패턴 옆에 붙였다.** 종전에는
+#   자기검사가 제 안에 표본표를 따로 들고 있었고, `navi:lint` 를 넣은 날
+#   (§279-4) 그 표를 안 고쳤다. 자기검사가 `uv run navi:lint` 라는 없는
+#   명령으로 패턴을 시험해 **그날부터 빨갰다.** 그런데 `--selftest` 를
+#   아무도 안 불러서(§286-1) 아무도 몰랐다.
+#   표본이 패턴 옆에 있으면 **항목을 더하면서 표본을 빼먹을 수가 없다.**
+#: 이름 → (패턴, 자기검사 표본). 표본은 그 패턴이 **반드시 잡아야 하는** 글이다.
+EXTERNAL: dict[str, tuple[str, str]] = {
+    "pytest": (r"\bpytest\b", "uv run pytest tests/ -q"),
+    "ruff": (r"\bruff\b", "uv run ruff check src tools tests"),
+    "pre-commit": (r"\bpre-commit\b", "uv run pre-commit run --all-files"),
+    "gitleaks": (r"gitleaks", "gitleaks detect --no-banner"),
+    "navi:typecheck": (r"npm run\s+(?:-s\s+)?typecheck", "npm run typecheck"),
     # ★ 2026-09-22 (§213-3). 내비 단위 시험. 검사기가 npm 스크립트라 파일로 못 잡는다
-    "navi:test": r"npm run\s+(?:-s\s+)?test\b",
+    "navi:test": (r"npm run\s+(?:-s\s+)?test\b", "npm run -s test"),
     # ★ 2026-09-28 (§279-4). React 훅 규칙. 저장소에 eslint 가 없던 동안
     #   `eslint-disable-line` 28개가 **아무것도 안 막고** 있었다
-    "navi:lint": r"npm run\s+(?:-s\s+)?lint\b",
+    "navi:lint": (r"npm run\s+(?:-s\s+)?lint\b", "npm run -s lint"),
     # ★ 2026-09-22 (DECISIONS §218-5). 의존성 선언 ↔ import. 잠금 밖 `--with` 로 얹는 외부 도구다
-    "deptry": r"\bdeptry\b",
+    "deptry": (r"\bdeptry\b", "uv run --with deptry==0.25.1 deptry src tools"),
 }
 
 
@@ -157,7 +165,7 @@ def tokens(text: str) -> set[str]:
         out.add(m.group(1))
     for m in re.finditer(r"\.githooks/([A-Za-z0-9_.-]+\.sh)", text):
         out.add(".githooks/" + m.group(1))
-    for name, pat in EXTERNAL.items():
+    for name, (pat, _sample) in EXTERNAL.items():
         if re.search(pat, text):
             out.add(name)
     return out
@@ -387,10 +395,10 @@ def selftest() -> int:
         bad.append("주석 속 도구 이름을 호출로 센다 — 거짓 선언이 통과한다")
     if not tokens("uv run python tools/nonexistent_probe.py"):
         bad.append("호출을 못 센다 — 추출기가 죽었다")
-    for name in EXTERNAL:
-        if not tokens({"navi:typecheck": "npm run typecheck",
-                       "navi:test": "npm run test"}.get(name, f"uv run {name}")):
-            bad.append(f"외부 도구 {name} 패턴이 자기 예상을 못 잡는다")
+    # ★ 표본은 패턴 옆에 산다. 항목을 더하면서 표본을 빼먹을 수가 없다(§286-2).
+    for name, (_pat, sample) in EXTERNAL.items():
+        if name not in tokens(sample):
+            bad.append(f"외부 도구 {name} 의 패턴이 제 표본 {sample!r} 을 못 잡는다")
     # ★ 면제 파서가 죽으면 **전부 미선언으로 세어 래칫이 폭발**하거나, 반대로
     #   아무거나 면제로 읽어 차집합이 조용히 0 이 된다. 둘 다 조용하지 않게
     #   여기서 양성·음성 대조를 한다.

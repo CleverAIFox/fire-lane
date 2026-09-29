@@ -540,12 +540,9 @@ def cmd_quarantine(dry: bool, force: bool = False) -> int:  # noqa: ARG001 — �
 
 
 def main() -> int:
-    # ★ 관문. 레이크가 없으면 여기서 멈춘다 — 판정만 하고 안 막으면
-    #   엉뚱한 곳에 계층을 만든다(2026-08-27).
     from firelane.paths import require_lake
-    require_lake(need=("raw",))
 
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--stage", action="store_true", help="landing → raw 편입")
     ap.add_argument("--verify", action="store_true", help="raw sha 대조")
     ap.add_argument("--prune-landing", action="store_true", help="중복 원본 삭제")
@@ -554,6 +551,10 @@ def main() -> int:
                     help="대장에 없는 것도 격리한다. ★ 먼저 대장에 적어라")
     ap.add_argument("--yes", action="store_true", help="실제로 옮기거나 지운다")
     a = ap.parse_args()
+    # ★ 관문. 레이크가 없으면 여기서 멈춘다 — 판정만 하고 안 막으면
+    #   엉뚱한 곳에 계층을 만든다(2026-08-27).
+    # ★ **`parse_args` 뒤다** — 앞에 두면 `--help` 가 종료 2 였다(§283-4).
+    require_lake(need=("raw",))
 
     if not RAW.is_dir():
         print(col(f"raw 가 없다: {RAW}", "r"))

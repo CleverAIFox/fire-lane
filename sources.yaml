@@ -1141,7 +1141,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/centerline_correction.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
@@ -1188,7 +1187,6 @@ datasets:
       - src/firelane/publish_basemap.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
@@ -1300,7 +1298,6 @@ datasets:
       - src/firelane/publish_basemap.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/centerline_correction.py
       - src/firelane/seg/graph.py
       - src/firelane/seg/report.py
@@ -1353,7 +1350,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_web.py
       - src/firelane/segments.py
-      - src/firelane/streetlight.py
     stem: gjcity_streetlight
     ext: [csv]
     scope: jngj-donggu
@@ -1386,7 +1382,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
@@ -1442,7 +1437,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
@@ -1510,7 +1504,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
@@ -1547,7 +1540,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/terrain.py
@@ -1600,7 +1592,6 @@ datasets:
       - src/firelane/publish_context.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/terrain.py
@@ -1615,7 +1606,7 @@ datasets:
       - tools/skeleton_compare.py
       - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '# ★ 2026-09-23 (PLAN §13 W3-6). 표출 범위 단계가 생겼다 — 안전센터 300m 원을 직접 읽는다 - src/firelane/display_scope.py - src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
+    feeds_note: '# ★ 2026-09-23 (PLAN §13 W3-6). 표출 범위 단계가 생겼다 — 안전센터 300m 원을 직접 읽는다 - src/firelane/display_scope.py - src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/seg/report.py - src/firelane/terrain.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: safety_firestation
     ext: [csv]
     scope: kr
@@ -1682,7 +1673,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/graph.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
@@ -1697,7 +1687,7 @@ datasets:
       - tools/skeleton_compare.py
       - tools/transition.py
       - tools/width_fn.py
-    feeds_note: '# ★ 2026-09-23 (PLAN §13 W3-6). 표출 범위 단계가 생겼다 — 동 경계를 직접 읽는다 - src/firelane/display_scope.py - src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/sample_design.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
+    feeds_note: '# ★ 2026-09-23 (PLAN §13 W3-6). 표출 범위 단계가 생겼다 — 동 경계를 직접 읽는다 - src/firelane/display_scope.py - src/firelane/guards.py - src/firelane/normalize_raw.py - src/firelane/pipeline.py - src/firelane/publish_web.py - src/firelane/seg/report.py - src/firelane/segments.py - src/firelane/webmanifest.py - tools/baseline.py - tools/corner_probe.py - tools/width_fn.py'
     stem: juso_elctrnmap
     ext: [zip]
     scope: jngj
@@ -1729,7 +1719,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/terrain.py
@@ -1774,7 +1763,6 @@ datasets:
       - src/firelane/pipeline.py
       - src/firelane/publish_navi.py
       - src/firelane/publish_web.py
-      - src/firelane/sample_design.py
       - src/firelane/seg/report.py
       - src/firelane/segments.py
       - src/firelane/webmanifest.py
@@ -3410,6 +3398,7 @@ outputs:
     produced_by: src/firelane/segments.py
     path: data/processed/segments.schema.json
     inputs: [segments]
+    what: segments.geojson 의 컬럼 계약. 표출이 읽기 전에 구조를 못박는다
     consumers:
     - src/firelane/publish_web.py
     - src/firelane/pipeline.py
@@ -3431,6 +3420,7 @@ outputs:
     produced_by: src/firelane/display_scope.py
     path: data/processed/scope_5186.gpkg
     inputs: [boundary_emd, fire_station]
+    what: 표출 스코프 폴리곤. 동명동 경계 60m ∪ 접근 회랑 70m ∪ 안전센터 300m
     consumers:
     - src/firelane/ortho.py
     - src/firelane/publish_web.py
@@ -3458,7 +3448,6 @@ outputs:
     stable_key: seg_uid
     consumers:
     - src/firelane/publish_web.py
-    - src/firelane/sample_design.py
     - tests/test_contract.py
     - tests/test_reach_overlay.py          # 2026-09-16 도달 불가 오버레이 조인 키
     # ★ 2026-09-03. 셋을 더했다. `test_declaration_reality` 가 실물에서
@@ -3531,38 +3520,35 @@ outputs:
     what: 런 간 seg_uid 유지율 대조 이력. 게이트 90%
     verified: true
 
-  obs_points:
-    produced_by: 현장 실측 (사람)
-    path: data/field/obs_points.csv
-    inputs: [field_sample]
-    consumers: [tools/field_compare.py, tests/test_fieldsheet.py]
-    what: 관측점 좌표·기준 지물 서술. 실측 야장의 원자료
+  width_cross:
+    produced_by: tools/widthcross.py
+    path: data/processed/width_cross.json
+    inputs: [segments, ngii1k]
+    # ★ 2026-09-28 (DECISIONS §289). 독자는 아직 사람이다 — 「얼마나 다르면
+    #   이상한가」를 이 분포를 보고 **다음 배치가** 정한다. 빈 리스트는
+    #   「선언 안 함」이 아니라 「아직 코드 독자가 없다」는 판단이다.
+    consumers: []
+    what: 폭 네 원천의 쌍별 차이 사분위와 논리적 모순. 방법이 독립인 증인 둘(측량 도로폭 · 도로대장 명목폭)을 댄다
     verified: false
     known_issues:
-    - ★ 2026-09-01 등재. 그전까지 대장 밖에서 자랐다. field 는 regenerable
-      false 라 대장에 없으면 백업 대상 목록에서도 빠진다
+    - ★ **판정을 안 바꾼다.** `nfa_compare` 와 같은 자리다 — 판정이 끝난 것을
+      읽어 외부 자료와 댈 뿐이고 판정 지문 밖이다
+    - 문턱이 없다. 1판은 분포와 모순만 센다
 
   ngi_width_check:
     produced_by: src/firelane/seg/width.py (수동 추출)
     path: data/field/ngi_width_05_check.csv
     inputs: [ngii1k]
     what: 폭 0.5m 로 나온 51행 대조표. 광주 동구 전체에서 뽑았다
+    # ★ 2026-09-28 (§285-2). `consumers` 키 자체가 없었다. 「아직 소비자가
+    #   없다」(빈 리스트)와 「선언을 안 했다」(키 부재)는 다르다 — 앞은
+    #   판단이고 뒤는 빠뜨린 것이다. 이 표의 독자는 코드가 아니라 문서다.
+    consumers: [docs/DECISIONS.md]
     verified: false
     known_issues:
     - ★ 파생물이다. field 에 있으나 실측이 아니라 재생성 가능하다.
       DECISIONS 가 근거로 인용하므로 인용이 깨지지 않게 봉인해 둔다
     - 컬럼 w_ngi · lanes · oneway · len_m · lat · lon
-
-  field_sample:
-    produced_by: src/firelane/sample_design.py
-    path: data/field/sample_segments.csv
-    inputs: [segments]
-    stable_key: seg_uid
-    consumers: []
-    what: 실측 대상 25구간(트랙 A12/B8/C5) + 관측점 75. 시드 20260814
-    verified: false
-    known_issues:
-    - 트랙 C 5구간은 봉인. 분석에 쓰면 외부 검증 수단이 다시 0이 된다
 
 # ── landing 처분 결정 (2026-08-30) ────────────────────────────
 # ★ 판단은 끝났는데 도구가 모르면 검사가 매번 같은 말을 한다.
@@ -3607,19 +3593,6 @@ outputs:
     - E-1 분모는 노드다. 건물이냐 노드냐는 PLAN §1 #94 가 미정으로 든다
     - E-2 는 2026-09-27 부터 낸다(DECISIONS §273-1 · 기울기 비관). E-4(#93)는 전건이 없어 안 낸다
     - 폭 실측 검증 0건이라 모든 지표가 미검증 폭 위에서 나온다(#4)
-    verified: false
-  streetlight_point:
-    produced_by: src/firelane/streetlight.py
-    path: data/processed/streetlight_point.geojson
-    inputs: [streetlight]
-    consumers: []
-    what: 가로등 점형. 야간 가시성 · 폭 차감 후보
-    note: |
-      ★ 2026-09-24. 소비자로 `publish_web.py` · `pipeline.py` 를 적고 있었다.
-        전자는 이 이름을 한 번도 안 들고, 후자는 `Step` 선언에만 든다 —
-        **단계 선언은 소비가 아니다**(그것을 소비로 세면 모든 산출물이
-        제 선언 덕에 통과한다). 옛 지도(web/js)가 걷히면서 소비자가 0이 됐고
-        아무도 안 울었다.
     verified: false
   hydrant_point:
     produced_by: src/firelane/ingest.py

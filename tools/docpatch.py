@@ -7,10 +7,10 @@
 원칙 — **넣기 전에 이미 넣었는지 검사한다.** 앵커가 있는지가 아니라
 넣을 내용이 있는지를 본다. 두 번 실행해도 결과가 같다.
 
+    # ★ `docs/_patch/*` 는 **사람이 그때 만들어 주는 입력**이다 (추적 밖)
     python tools/docpatch.py ensure-section docs/PLAN.md '### 8-5.' \
-        docs/_patch/PLAN.8-5.md --after '### 8-4.'
-    python tools/docpatch.py append-rows docs/PLAN.md '## 1.' \
-        docs/_patch/PLAN.1.rows.md
+        docs/_patch/X.md --after '### 8-4.'
+    python tools/docpatch.py append-rows docs/PLAN.md '## 1.' docs/_patch/X.md
     python tools/docpatch.py check docs/PLAN.md
 """
 

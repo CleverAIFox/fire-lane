@@ -138,10 +138,13 @@ STEPS = [
          reads=(P / "boundary_emd_5186.gpkg", P / "corridor_5186.gpkg",
                 P / "fire_station.geojson"),
          writes=(P / "scope_5186.gpkg",)),
-    Step("streetlight", "streetlight", "가로등 → 지점 집계",
-         P / "streetlight_point.geojson",
-         reads=(P / "streetlight_5186.gpkg",),
-         writes=(P / "streetlight_point.geojson",)),
+    # ★ 2026-09-29 (DECISIONS §302 · PLAN W13-8 닫힘). 「streetlight」 단계를 철거했다.
+    #   그 단계가 만든 `streetlight_point.geojson` 은 **옛 지도(web/js)의 마커**가
+    #   유일한 소비자였고 그 지도는 §218-1 에서 걷혔다. `segments.py:362` 가
+    #   「마커 표현은 streetlight.py 가 담당한다」고, `publish_web.py:90` 이
+    #   「가로등은 판정(light_count)에만 쓴다」고 적어 둔 그대로다.
+    #   구간의 `light_count` 는 `streetlight_5186.gpkg`(ingest 산출)에서 나오므로
+    #   **판정에 영향이 없다.** §243 이 이미 publish 의 유령 read 에서 이 파일을 걷었다.
     Step("terrain", "terrain", "공개DEM → Terrain-RGB 타일",
          WEB / "terrain",
          reads=(RAW, P / "segments_5186.gpkg"),

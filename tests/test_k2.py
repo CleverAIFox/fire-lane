@@ -84,6 +84,44 @@ def _tty_block() -> str:
     return src.split("# >>> tty", 1)[1].split("# <<< tty", 1)[0]
 
 
+def _reap(pid: int, timeout: float) -> bool:
+    """자식을 거둔다. 시한을 넘기면 **죽이고** True 를 낸다.
+
+    ★ 프로세스 그룹째 죽인다. `bash ask.sh` 는 하위 셸을 남기고, 실측에서
+      한 번 호출에 `bash` 셋이 살아 있었다. 우두머리만 죽이면 나머지가
+      고아로 남아 다음 실행까지 쌓인다 — Fox 의 기계에 1시간 11분 된
+      찌꺼기가 그렇게 남아 있었다.
+    """
+    import os
+    import signal
+    import time
+
+    end = time.time() + timeout
+    while time.time() < end:
+        try:
+            done, _ = os.waitpid(pid, os.WNOHANG)
+        except ChildProcessError:
+            return False
+        if done == pid:
+            return False
+        time.sleep(0.05)
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(os.getpgid(pid), sig)
+        except (ProcessLookupError, PermissionError):
+            try:
+                os.kill(pid, sig)
+            except ProcessLookupError:
+                break
+        time.sleep(0.2)
+        try:
+            if os.waitpid(pid, os.WNOHANG)[0] == pid:
+                break
+        except ChildProcessError:
+            break
+    return True
+
+
 def _ask_in_pty(tmp_path, garbage: bytes, answer: bytes) -> str:
     import os
     import pty
@@ -113,7 +151,19 @@ def _ask_in_pty(tmp_path, garbage: bytes, answer: bytes) -> str:
         if not d:
             break
         out += d
-    os.waitpid(pid, 0)
+    # ★ 2026-09-28 실측 (§284-5). 종전에는 `os.waitpid(pid, 0)` 이었다.
+    #   **시간 제한이 없다.** 자식 bash 가 안 죽으면 영원히 기다린다.
+    #   Fox 의 기계에서 실제로 났다 — `merge_batch --release` 의
+    #   `dms seal --quick` 이 18분째 멈춰 있었고, 1시간 11분 된 `ask.sh`
+    #   찌꺼기가 따로 둘 더 살아 있었다. **전에도 났고 아무도 몰랐다.**
+    #
+    #   영원히 매달릴 수 있는 시험은 그 자체가 결함이다. 빨강을 무한 대기로
+    #   바꿔 놓고, 무한 대기는 사람이 죽이고, 죽이면 무엇이 틀렸는지 영영
+    #   모른다. **빨강은 빨강으로 나와야 한다.**
+    _stuck = _reap(pid, timeout=10.0)
+    os.close(fd)
+    assert not _stuck, ("가상 터미널 자식이 10초 안에 안 끝났다 — 죽였다. "
+                        "`merge_batch` 의 tty 구간이 입력을 못 읽고 매달린다")
     hit = [ln for ln in out.decode("utf-8", "replace").splitlines() if "RESULT=" in ln]
     return hit[-1].split("RESULT=", 1)[1].strip() if hit else "(없음)"
 
@@ -192,9 +242,21 @@ def test_verify_skips_are_real_skips():
     #   「JS 부팅 스모크」는 옛 지도 철거로 단계째 없어졌다.
     # ★ 2026-09-28 (DECISIONS §279-4). 「내비 린트」가 넷째다. 못 도는 조건은
     #   위 셋과 같다 — npm 이 없으면 eslint 도 없다.
+    # ★ 2026-09-28 (DECISIONS §285-3). 다섯째·여섯째. 못 도는 조건은 **raw
+    #   부재** 하나다. 둘 다 레이크의 실물을 읽는다 —
+    #     취입 계약 실물    대장 선언 ↔ raw 파일 · 컬럼 · 건수 · 좌표계(.prj)
+    #     대장 스키마↔실물  raw 에서 스키마를 읽어 대장과 대조 (MASTER §18-12)
+    #   **덮개가 있다.** 같은 도구의 레이크 불필요 절반을 CI 가 돈다 —
+    #   `contract --declared`(무계약 · 모르는 키 · 미선언 좌표계)가 그것이다.
+    #   `ledger_schema --check` 는 덮개가 없다. 실물에서 읽는 것이 전부라
+    #   대장만 보고 할 수 있는 절반이 없다.
     allowed = {"내비 환경 = CI", "내비 린트", "내비 타입 검사", "내비 단위 시험",
                "파이프라인 전량", "golden 판정 불변", "golden 게이트 해제 경로",
-               "커밋된 web/data 가 최신인가"}
+               "커밋된 web/data 가 최신인가",
+               "취입 계약 실물", "대장 스키마↔실물",
+               # ★ 2026-09-28 (§289). 파이프라인 산출물(processed/*.gpkg)을 읽는다.
+               #   레이크 없는 기계에서는 산출물이 없다 — CI 도 같다.
+               "폭 교차대조"}
     assert set(names) <= allowed, f"생략 사유가 새로 생겼다 — 못 도는 조건인지 보고 여기 적는다: {sorted(set(names) - allowed)}"
     brief = (ROOT / "tools/merge_batch.sh").read_text(encoding="utf-8")
     assert "tools/release_brief.py --base main --md" in brief, "release_brief 가 릴리즈 흐름에서도 빠졌다 — 표가 사라진다"

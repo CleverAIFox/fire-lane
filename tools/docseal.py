@@ -45,12 +45,13 @@ from __future__ import annotations
 
 import argparse
 import functools
-import hashlib
 import json
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+from docsealfp import FP_METHOD, _generated, digest, parts
 
 ROOT = Path(__file__).resolve().parents[1]
 SEAL = ROOT / "data" / "golden" / "docseal.json"
@@ -118,7 +119,8 @@ def refs(text: str) -> list[str]:
     except ValueError:       # 도장 파일이 저장소 밖(시험 · 임시 경로)이면 뺄 것이 없다
         me = ""
     return sorted({p for p in PATH.findall(text)
-                   if p != me and (ROOT / p).is_file() and p in _tracked()})
+                   if p != me and (ROOT / p).is_file()
+                   and p in _tracked() and not _generated(p)})
 
 
 @functools.lru_cache(maxsize=1)
@@ -140,12 +142,30 @@ def _tracked() -> frozenset[str]:
     return frozenset(x for x in r.stdout.split("\0") if x)
 
 
-def digest(text: str, files: list[str]) -> str:
-    h = hashlib.sha256(text.encode("utf-8"))
-    for f in files:
-        h.update(f.encode("utf-8"))
-        h.update(hashlib.sha256((ROOT / f).read_bytes()).digest())
-    return h.hexdigest()[:16]
+def why(now_one: dict, was_one: dict) -> list[str]:
+    """무효의 **사유**. 「어디가」를 말한다. 못 말하면 못 말한다고 말한다."""
+    out: list[str] = []
+    old_fs, new_fs = set(was_one.get("files", ())), set(now_one["files"])
+    for f in sorted(new_fs - old_fs):
+        out.append(f"+ {f} — 절이 새로 지목한다")
+    for f in sorted(old_fs - new_fs):
+        out.append(f"- {f} — 절이 더 이상 안 지목한다 (지워졌거나 추적 밖)")
+
+    was_p, now_p = was_one.get("parts"), now_one["parts"]
+    if not was_p:
+        # ★ 옛 도장에는 이 칸이 없다. **추측해서 채우지 않는다** — 없는 것을
+        #   있는 것처럼 말하면 다음 사람이 그 말을 믿는다.
+        out.append("옛 도장에 부분 지문이 없다 — 어디가 움직였는지 이 도구가 모른다."
+                   " 다시 찍으면 다음부터 나온다")
+        return out
+    if was_p.get("본문") != now_p["본문"]:
+        out.append("본문 — 절의 글이 바뀌었다")
+    for f in sorted(new_fs & old_fs):
+        if was_p.get(f) != now_p[f]:
+            out.append(f"{f} — 코드가 바뀌었다")
+    if not out:
+        out.append("부분 지문은 전부 같은데 합이 다르다 — **판별식을 의심하라**")
+    return out
 
 
 #: 도장의 갈래. **같은 칸에 다른 주장을 적지 않는다.**
@@ -228,7 +248,11 @@ def survey() -> tuple[dict, dict]:
         fs = refs(t + " " + (r.get("field") or ""))
         if not fs:
             continue                      # 코드를 안 가리키는 절은 도장 대상이 아니다
+        # ★ 2026-09-29 (§297-2). `fp` 를 **찍는 모든 도장에 박는다.** 종전에는 상수만
+        #   선언하고 아무 도장에도 안 적었다 — 「공식이 바뀌었는지 갈릴 수 있다」는
+        #   주장이 그 자체로 거짓이었다. 선언만 하고 안 쓰는 것이 이 저장소의 상습이다.
         now[r["id"]] = {"sha": digest(t, fs), "files": fs, "doc": r["doc"],
+                        "parts": parts(t, fs), "fp": FP_METHOD,
                         "legacy": [digest(f(rows, i), fs) for f in LEGACY_BODIES]}
     was = json.loads(SEAL.read_text(encoding="utf-8")) if SEAL.is_file() else {}
     return now, was
@@ -319,9 +343,11 @@ def check() -> int:
         return 0
     print(f"✗ 도장이 무효가 된 절 {len(void)}건 — **틀렸다가 아니라 다시 보라는 뜻이다**")
     for k in void:
-        print(f"    {k}   {' · '.join(was[k]['files'][:3])}")
+        print(f"    {k}")
+        for line in why(now[k], was[k]):
+            print(f"        {line}")
     print("\n  절과 코드를 같이 읽고, 여전히 맞으면 다시 찍어라:")
-    print("    uv run python tools/docseal.py stamp --only <절>")
+    print("    uv run python tools/docseal.py stamp --only " + " --only ".join(void[:3]))
     return 1
 
 
@@ -330,7 +356,8 @@ def _write(was: dict) -> None:
                     encoding="utf-8")
 
 
-def stamp(only: str | None, unmoved: bool = False) -> int:
+def stamp(only: list[str] | None, unmoved: bool = False,
+          fill: bool = False) -> int:
     """도장을 찍는다. **인자 없이는 안 찍는다.**
 
     ★ 2026-09-28 (DECISIONS §277-2). 종전에는 `stamp` 를 인자 없이 부르면
@@ -338,14 +365,52 @@ def stamp(only: str | None, unmoved: bool = False) -> int:
       명령이 있었다는 뜻이다 — 이 도구의 뜻이 그 한 줄로 죽는다.
       찍으려면 **무엇을 왜 찍는지**를 말해야 한다.
     """
+    # ★ 2026-09-28 (§287-2). `only` 를 목록으로 넓히면서 **글자열 함정**이
+    #   생겼다 — `stamp("DECISIONS/1")` 이 조용히 한 글자씩 순회해
+    #   「`D` 는 도장 대상이 아니다」를 낸다. 파이썬에서 목록을 받는 함수가
+    #   반드시 밟는 자리고, 부르는 쪽이 아니라 **여기서** 막는다.
+    if isinstance(only, str):
+        only = [only]
     now, was = survey()
     if only:
-        if only not in now:
-            print(f"✗ `{only}` 는 도장 대상이 아니다 (wired 이고 코드를 지목해야 한다)")
+        # ★ 2026-09-28 (DECISIONS §287-2). 종전에는 절 **하나**만 받았다.
+        #   한 번이 13초인데(절 500개를 매번 다시 재느라) 스무 절을 찍으려면
+        #   같은 조사를 스무 번 했다. 사람이 그 짓을 하다 지치면 도장을 안
+        #   찍고, **안 찍힌 절은 분모로 남는다.** 도구가 할 수 있는 일을
+        #   사람에게 미룬 자리다(§285-1 과 같은 병).
+        #   ★ 「전부 찍기」는 여전히 없다. 이름을 대야 찍힌다(§277-2).
+        miss = [s for s in only if s not in now]
+        if miss:
+            for s in miss:
+                print(f"✗ `{s}` 는 도장 대상이 아니다 (wired 이고 코드를 지목해야 한다)")
             return 1
-        was[only] = {**now[only], "kind": "read"}
+        for s in only:
+            was[s] = {**now[s], "kind": "read"}
         _write(was)
-        print(f"✓ 읽음 도장 — {only}  (총 {len(was)}절)")
+        head = only[0] if len(only) == 1 else f"{len(only)}절"
+        print(f"✓ 읽음 도장 — {head}  (총 {len(was)}절)")
+        if len(only) > 1:
+            for s in only:
+                print(f"    {s}")
+        return 0
+
+    if fill:
+        # ★ 2026-09-28 (DECISIONS §290-2). **새 주장을 하지 않는다.** 이미
+        #   `valid` 인 도장만 손대고, 그 뜻은 「내용이 사람이 읽은 그때와 증명상
+        #   동일하다」이므로 그 동일한 내용의 **내역**을 적는 것은 새 확인이
+        #   아니다. `kind` 도 `sha` 도 안 건드린다 — 무효인 절은 건너뛴다.
+        #   그것들은 내용이 이미 달라서 쪼갤 근거가 없다.
+        hit = [k for k, v in now.items()
+               if valid(v, was.get(k)) and not was[k].get("parts")]
+        for k in hit:
+            was[k] = {**was[k], "parts": now[k]["parts"], "files": now[k]["files"]}
+        if not hit:
+            print("  채울 것이 없다 — 유효한 도장 전부 부분 지문을 갖고 있다")
+            return 0
+        _write(was)
+        print(f"✓ 부분 지문 {len(hit)}절 — **확인을 새로 주장하지 않는다.** "
+              f"유효한 도장의 내역을 적었을 뿐이다")
+        print("  이제 무효가 나면 어느 파일이 움직였는지 관문이 말한다")
         return 0
 
     if unmoved:
@@ -374,6 +439,7 @@ def stamp(only: str | None, unmoved: bool = False) -> int:
     print("✗ 무엇을 찍을지 말해라 — 인자 없는 `stamp` 는 없다.")
     print("    --only <절>   사람이 읽고 찍는다")
     print("    --unmoved     절을 쓴 뒤로 코드가 안 움직인 절을 기계가 찍는다")
+    print("    --parts       유효한 도장에 부분 지문을 채운다 (새 확인 아님)")
     print("  ★ 종전에는 인자 없이 부르면 **전부** 찍었다. 그 한 줄로 이 도구가 죽는다(§277-2).")
     return 1
 
@@ -393,6 +459,30 @@ def selftest() -> int:
         bad.append("문서 쪽이 바뀌어도 지문이 같다")
     if a == digest("본문", []):
         bad.append("코드 쪽을 안 센다")
+
+    # ★ 무효의 **사유**를 말하는가 (§290). 합만 보면 「다르다」밖에 못 말한다.
+    p = parts("본문", ["tools/docseal.py"])
+    if set(p) != {"본문", "tools/docseal.py"}:
+        bad.append(f"부분 지문의 칸이 틀렸다 — {sorted(p)}")
+    w = why({"files": ["tools/docseal.py"], "parts": {**p, "본문": "0" * 16}},
+            {"files": ["tools/docseal.py"], "parts": p})
+    if not any("본문" in x for x in w):
+        bad.append(f"본문이 바뀐 것을 사유로 못 낸다 — {w}")
+    w = why({"files": ["tools/docseal.py"],
+             "parts": {**p, "tools/docseal.py": "0" * 16}},
+            {"files": ["tools/docseal.py"], "parts": p})
+    if not any(x.startswith("tools/docseal.py") for x in w):
+        bad.append(f"어느 파일이 움직였는지 못 낸다 — {w}")
+    w = why({"files": ["tools/docseal.py", "tools/sizecheck.py"],
+             "parts": parts("본문", ["tools/docseal.py", "tools/sizecheck.py"])},
+            {"files": ["tools/docseal.py"], "parts": p})
+    if not any(x.startswith("+ tools/sizecheck.py") for x in w):
+        bad.append(f"새로 지목된 파일을 못 낸다 — {w}")
+    w = why({"files": ["tools/docseal.py"], "parts": p},
+            {"files": ["tools/docseal.py"]})          # 옛 도장 — 부분 지문 없음
+    if not any("옛 도장" in x for x in w):
+        bad.append("부분 지문이 없는 옛 도장을 아는 척한다")
+
     now, _ = survey()
     if len(now) < 20:
         bad.append(f"도장 대상이 {len(now)}절뿐이다 — 수집이 좁다")
@@ -414,9 +504,12 @@ def main(argv: list[str] | None = None) -> int:
     #   같은 규약으로 맞춘다 — 이름이 같으면 행동도 같아야 한다.
     ap.add_argument("cmd", nargs="?", default="check",
                     choices=["status", "check", "stamp", "queue"])
-    ap.add_argument("--only", help="그 절 하나만 찍는다 (사람이 읽었다)")
+    ap.add_argument("--only", action="append", metavar="절",
+                    help="그 절을 찍는다 (사람이 읽었다). 여러 번 줄 수 있다")
     ap.add_argument("--unmoved", action="store_true",
                     help="절을 쓴 뒤로 코드가 안 움직인 절을 기계가 찍는다")
+    ap.add_argument("--parts", action="store_true",
+                    help="이미 유효한 도장에 부분 지문을 채운다 (새 확인이 아니다)")
     ap.add_argument("--limit", type=int, default=30, help="queue 가 보여줄 줄 수")
     ap.add_argument("--selftest", action="store_true", help="판별식 자기검사")
     a = ap.parse_args(argv)
@@ -425,7 +518,7 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "queue":
         return queue(a.limit)
     return {"status": status, "check": check}.get(
-        a.cmd, lambda: stamp(a.only, a.unmoved))()
+        a.cmd, lambda: stamp(a.only, a.unmoved, a.parts))()
 
 
 if __name__ == "__main__":

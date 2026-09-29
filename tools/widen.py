@@ -25,6 +25,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from firelane.cli import no_args
+
 ROOT = Path(__file__).resolve().parents[1]
 BUILTIN = set(dir(builtins)) | {
     # ★ 모듈 전역은 바인딩 없이도 산다. 이것을 빼면 71건 중 대부분이
@@ -258,4 +260,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     sys.exit(main())

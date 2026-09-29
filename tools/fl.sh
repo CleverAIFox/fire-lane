@@ -96,7 +96,11 @@ esac
 
 # ══ 0. 저장소 · INBOX ═════════════════════════════════════════
 step "0. 저장소"
-[ -d "$REPO_DIR/.git" ] || die "저장소가 없다 — $REPO_DIR"
+# ★ 2026-09-28 (DECISIONS §290-8). `-d .git` 은 **워크트리를 저장소가 아니라고 한다** —
+#   워크트리에서 `.git` 은 본 저장소를 가리키는 **파일**이다. 배달 예습이 워크트리에서
+#   돌므로 이 줄 하나가 `test_fl_*` 둘을 예습에서 영구히 빨갛게 만들었다.
+#   git 에게 직접 묻는다 — 「저장소인가」의 정본은 git 이다.
+git -C "$REPO_DIR" rev-parse --git-dir >/dev/null 2>&1 || die "저장소가 없다 — $REPO_DIR"
 cd "$REPO_DIR" || exit 1
 _IN_ENV="${FIRE_LANE_INBOX:-}"          # 명시한 환경변수가 .env 를 이긴다
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
@@ -142,6 +146,12 @@ archive_inbox() {
     local done_ p f
     done_="$IN/_applied/$(date +%Y%m%d-%H%M)-${BR//\//_}"
     mkdir -p "$done_"
+    # ★ §296. **치우기 전에 `$WORK` 로 챙긴다.** 8단계가 dev PR 본문을 읽는데 종전에는
+    #   이 함수가 그것을 먼저 옮겨 버렸다. `--resume` 은 INBOX 를 직접 가리키므로 더 잘 터진다.
+    for f in "$IN"/PR_BODY*.md "$IN"/PR_TITLE*; do
+        [ -e "$f" ] && cp -f "$f" "$WORK/" 2>/dev/null
+    done
+    [ -f "$WORK/PR_BODY.md" ] && BODY="$WORK/PR_BODY.md"
     [ -n "${ZIP:-}" ] && mv -f "$ZIP" "$done_/" 2>/dev/null
     for p in "${PATCHES[@]}"; do [ -e "$IN/$(basename "$p")" ] && mv -f "$IN/$(basename "$p")" "$done_/"; done
     for f in "$IN"/PR_BODY*.md "$IN"/PR_TITLE*; do [ -e "$f" ] && mv -f "$f" "$done_/"; done
@@ -476,9 +486,47 @@ for p in sorted(code_closure("firelane.ingest")): print(p.relative_to(ROOT).as_p
         warn "재잠금할 것이 없었다 — 지문도 산출물도 이미 같다"
     else
         git add data/golden data/processed web/data
-        git commit -q -m "seal: golden 재잠금 · 샤드 봉인 (판정 불변)"
+        # ★ §295-3. 코드 지문이 `uv.lock` 의 sha 를 문다. 빼면 지문과 잠금이 따로 앉고,
+        #   미스테이지가 남아 훅이 커밋을 죽인다. 사유는 그 절이 든다.
+        if ! git diff --quiet -- uv.lock; then
+            warn "uv.lock 이 움직였다 — 지문이 그것을 물고 있어 함께 앉힌다"
+            git diff --stat -- uv.lock | sed 's/^/      /'
+            git add uv.lock
+        fi
+        # ★ §295-1 (실기 2회). **종료코드가 아니라 HEAD 가 움직였는지 잰다** — 훅이 0 으로
+        #   죽는 경우까지 막힌다. 도구가 제 일을 했다고 주장하지 않는다(§273-8).
+        _seal_before=$(git rev-parse HEAD)
+        git commit -q -m "seal: golden 재잠금 · 샤드 봉인 (판정 불변)" || true
+        if [ "$(git rev-parse HEAD)" = "$_seal_before" ]; then
+            die "재잠금 커밋이 **앉지 않았다.** 위 훅 메시지를 끝까지 읽어라." \
+                "  ★ 이것을 넘기면 재잠금 없는 가지가 올라가고 CI 가" \
+                "     「잠긴 코드 지문과 지금 코드가 다르다」로 죽는다(§295-1)." \
+                "  흔한 원인 둘 —" \
+                "    · 미스테이지 변경이 함께 있어 stash 가 훅의 자동수정과 충돌했다" \
+                "      → git add -A 로 남김없이 올린 뒤 손으로 커밋해라" \
+                "    · 훅이 uv run 으로 망을 탄다 — 오프라인·pypi 장애면 훅이 죽는다" \
+                "  앉힌 뒤 이어라:  $FL_CMD $BR --resume"
+        fi
         ok "재잠금 커밋 $(git rev-parse --short HEAD)"
     fi
+fi
+
+# ══ 4c. 계약 대조 — EXPECT 를 **읽는다** ═══════════════════════
+# ★ 2026-09-28 (DECISIONS §290-4). 종전에는 `EXPECT` 를 **아무도 읽지 않았다.**
+#   `deliver.py` 가 원격 팁 위에서 재서 쓰고, zip 에 담겨 건너오고, 여기서 끝이었다 —
+#   저장소 전체에서 그 파일을 읽는 코드가 0개였다. 기계가 쓴 주장도 읽는 쪽이
+#   없으면 사람이 쓴 주장과 값이 같다.
+#
+# ★ **전수 verify 앞에 둔다.** 28분을 기다린 뒤에 「배달 기계는 이 다섯 축을
+#   증명하지 않았다」를 읽으면 늦다. 어긋남도 여기서 먼저 죽는 것이 싸다.
+if [ -f "$IN/EXPECT" ]; then
+    step "4c. 계약 대조 — 배달물의 EXPECT"
+    uv run --no-sync python tools/expectcheck.py "$IN/EXPECT" \
+        || die "배달 계약과 이 기계의 실측이 어긋난다." \
+               "  ★ EXPECT 를 고치지 마라 — 고치는 것은 주장을 되살리는 것이다." \
+               "  되돌리려면:  $FL_CMD $BR --undo"
+else
+    warn "EXPECT 가 없다 — 계약 없는 배달이다. deliver.py pack 으로 싸지 않았다는 뜻이다"
 fi
 
 # ══ 5. 전수 verify ════════════════════════════════════════════
@@ -511,6 +559,21 @@ if ! bash tools/verify.sh; then
         "  되돌리려면:  $FL_CMD $BR --undo"
 fi
 ok "전수 초록"
+
+# ★ §295-2. **검증한 트리와 보내는 트리가 같아야 한다.** verify 는 작업 트리를 보고
+#   6단계는 커밋본을 push 한다 — 갈리면 CI 가 다른 것을 본다. `verify.sh` 가 첫 줄에
+#   찍는 `+미커밋` 을 판정에 쓰는 자리다. 회색은 NULL 이다(§69).
+#   ★ verify 가 쓰는 파일은 전부 무시 대상이고 추적 생성물은 `write_stable` 로 같은
+#     바이트를 낸다 — **초록인데 더러우면 그것이 곧 결함이다.** 근거는 그 절이 든다.
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    git status --short --untracked-files=no | sed 's/^/      /'
+    die "전수는 초록인데 **추적 파일이 더럽다.** 이대로 push 하면 CI 는 다른 트리를 본다." \
+        "  ★ 위 파일은 verify 가 본 것이고 커밋에는 없다 — 검증한 것과 보내는 것이 다르다." \
+        "  4b 재잠금이 훅에 막혔을 때 이 꼴이 된다(§295-1)." \
+        "  커밋한 뒤 이어라:" \
+        "    git add -A && git commit -m '<무엇을 왜>'" \
+        "    $FL_CMD $BR --all"
+fi
 
 if [ "$MODE" != "--all" ]; then
     step "여기까지"

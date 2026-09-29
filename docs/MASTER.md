@@ -243,7 +243,7 @@ uv run python tools/baseline.py diff 20260824-pre-nreg
 ```
 
 ★ **매칭 안 된 240구간은 측량으로 검증되지 않는다.** 대부분 수치지도가 도로면으로 안 그린
-최협소 골목이고 그래서 blocked 가 몰려 있다. 이 구간의 정본은 D-25 실측이다.
+최협소 골목이고 그래서 blocked 가 몰려 있다. 이 240구간의 폭은 **어느 독립 원천도 안 덮는다** — 대조 매칭 32.9% 가 낮은 이유가 여기다(§4-1a). 현장 실측은 접었으므로(§4-1b) 이 구간은 미검증으로 남는다.
 ★ 조잡한 매칭(구간 중점 12m 안 최근접 중심선)은 옆 골목을 집어 미탐 10 · 오탐 16 을 **거짓으로**
 냈다. 방향 · 겹침 조건 없이 측량을 대조하지 않는다(DECISIONS §170-4).
 
@@ -557,10 +557,16 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 밖이다. `can_turn()` 이 미검증 반경으로 막지 않는 것과 짝이 맞지 않는다
 (DECISIONS §86-4). 실측 규모는 13코너(1.5%)로 작으나 방향이 반대다.
 
-★ **축거와 최소회전반경은 공식 규격에 없다.** KFS-1-0073 ·
-KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전수 확인했다.
-내륜차 계산에 그 둘이 필요하므로 지금 값은 추정이며 `wheelbase_verified` ·
-`turn_radius_verified` 가 그 표시다. D-30 소방서 인터뷰에서 확정한다.
+★ **축거는 공식 규격에 없다.** KFS-1-0073 · KFS-1-0030(소형사다리차) ·
+2025년 MAS 차종별 제작규격 셋을 전수 확인했다. 내륜차 계산에 그것이 필요하므로
+지금 값은 추정이며 `wheelbase_verified` 가 그 표시다. D-30 소방서 인터뷰에서
+확정한다.
+
+★ **최소회전반경은 근거가 있다** — 자동차규칙 제9조①의 법정 상한 12m 이고
+  `vehicle_spec.turn_radius_m: 12.0` 이 그 값이다(2026-08-25 확인).
+  상한이지 성능값이 아니므로 `turn_radius_verified: false` 가 남아 있다 —
+  **「미확정」의 뜻이 축거와 다르다.** 축거는 값을 모르고, 회전반경은 값의
+  근거는 있으나 그것이 이 차량의 실제 성능인지를 모른다.
 
 ★ **차종별 제원은 `web/assets/vehicles/profiles.json` 이 든다**(2026-09-02
 편입). 10차종의 전장·전폭·전고·축거·최소회전반경이며 출처는 강원 인제소방서
@@ -570,7 +576,8 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 
 ★ **제원 완성 차종은 내비가 코너 회전을 점검한다**(2026-09-22 · DECISIONS §218-2). 전장 · 전폭 ·
 전고 · 축거 · 최소회전반경 다섯이 다 있고 편성 대장과 **확정** 대응인 차(`fleet.json` 의
-`spec_complete`)만이다 — 지금 중형 펌프차(지산 · 대인) · 대형 물탱크차 셋. 코너가 쓸 수 있는 중심선
+`spec_complete`)만이다 — 지금 **중형 펌프차 둘**(지산 · 대인)이다. 대형 물탱크차는
+`spec_complete: false` · `wheelbase_m: null` 로 아직 빠진다. 코너가 쓸 수 있는 중심선
 반지름 `(폭 − 전폭) / (1 − cos(꺾임/2))` 이 필요 반지름(최소회전반경 − 전폭/2)보다 작으면 **막지
 않고** 벌점(400m 우회 상당 · 가정값)과 「좁은 코너」 경고를 낸다. 폭은 벽~벽 최대 폭을 먼저 쓴다.
 
@@ -648,14 +655,68 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 게이트로 쓴 자료는 그 순간부터 외부 검증 수단이 아니다.
 
 ```
-현재 외부 검증 수단      0개
-그 자리를 대신할 것      D-25 실측 (미착수). 봉인 표본은 트랙 C 5구간
+이 대조를 쓸 수 있는 자리   정합성 보고. 「우리가 옳다」의 증거로는 못 쓴다
+그 자리를 대신하는 것      **폭 교차대조** — 방법이 독립인 원천 둘 (§4-1a)
 ```
 
 소방서 7구간은 "기존 행정자료와 대체로 일치한다"는 정합성 근거로는 유효하지만
 "우리가 옳다"는 증거로는 쓸 수 없다.
 
 강제자  `tests/test_measurements.py`(오염 칸 — `nfa_compare_abs_dev` 를 적합에 쓴 지표로 표시하고 그것을 통과 조건으로 쓰면 운다) · `tests/test_docx_targets.py`(기획서에서 이 대조를 「검증」으로 부르는 것을 막는다)
+
+### 4-1a. 폭 교차대조 —— 방법이 독립인 증인 둘
+
+> 2026-09-28 · DECISIONS §289 · `tools/widthcross.py`
+
+우리 노면폭은 도로 폴리곤에 중심선의 법선을 그어 잰 **최소 법선 거리**다.
+그 값을 **다른 방법으로 얻은 폭** 둘과 댄다.
+
+```
+survey   1:1,000 수치지형도 도로중심선 `도로폭`   측량 성과
+ledger   도로명주소 도로대장 명목폭 `ROAD_BT`     행정 기록
+```
+
+실측 2026-09-28 (구간 1,281 · 매칭 422)
+
+```
+wmin-survey    25% -0.51 · 중앙 -0.22 · 75% -0.05
+survey-ledger  25% -1.00 · 중앙 -0.50 · 75% +0.00
+wmax-survey    25% +1.32 · 중앙 +2.10 · 75% +3.90
+모순 17 / 422 (4%)
+```
+
+★ **우리가 측량과 맞는 정도(0.22m)가 두 공식 자료가 서로 맞는 정도(0.50m)보다
+좋다.** 우리 값이 옳다는 증명은 아니다 — 「두 공식 자료 사이의 불일치보다
+작은 차이」라는 규모의 답이다.
+
+★ 표본 편향을 따로 쟀다. 매칭된 422구간이 미매칭 857구간보다 **더 좁다**
+(중앙 4.88m 대 5.50m). 넓고 쉬운 길만 맞아서 좋아 보이는 것이 아니다.
+
+★ **문턱이 없다.** 1판은 분포와 논리적 모순만 센다. 「얼마 이상 다르면
+이상한가」는 이 분포를 보고 정하고, 그 자리는 PLAN 측정 대장 `width-cross` 다.
+
+★ **판정을 안 바꾼다.** `nfa_compare` 와 같은 자리이고 판정 지문 밖이다.
+
+강제자  `tools/widthcross.py`(`--selftest`) · `tests/test_widthcross.py`(폐포 밖 · 문턱 상수 재등장 금지 · 독립 원천 선언) · `tools/verify.sh`「폭 교차대조」 · `sources.yaml::width_cross`(outputs)
+
+### 4-1b. 현장 실측을 접은 근거
+
+> 2026-09-28 · DECISIONS §291
+
+세 가지다.
+
+1. 우리 폭은 **좌표평면 위의 최소 법선 거리**다. 현장에서 재려면 그 최솟값을
+   만드는 두 점을 지정해야 하고, 그 두 점이 현실의 어디인지 알 방법이 없다.
+2. 비교 대상인 공식 폭도 같은 성질이다 — 좌표평면 파생이라 오차가 0 일 수
+   없다. 「정답값」이 있고 우리가 맞추는 구도가 아니다.
+3. 그래서 값이 큰 쪽은 **폭 자료를 전부 긁어 큰 수의 법칙에 거는 것**이고,
+   그것이 §4-1a 다. 422구간 × 방법 둘은 현장 25구간으로 못 얻는 규모다.
+
+야장 · 표본 설계 · 대조 도구는 지웠다. 적힌 실측값은 75행 중 **0행**이었다.
+`width_verified` 는 이 대조로 **켜지지 않는다** — 검증이지 실측이 아니다.
+
+강제자  `tools/fieldseal.py`(남은 파생표의 지문) · `sources.yaml`(산출물 등재 삭제) · `tools/doc_fsck.py::FIELD_EXEMPT`
+
 
 ### 4-2. 대조의 한계
 
@@ -666,8 +727,11 @@ KFS-1-0030(소형사다리차) · 2025년 MAS 차종별 제작규격 셋을 전�
 
 필문대로289번길은 본선과 측도가 한 폴리곤인 구간이다. 정보공개청구 17337943
 도로대장을 여기에 걸었으나 **부존재로 종결됐다**(2026-08-24 · PLAN §1-26).
-★ 도로대장은 검증축이 아니다. 독립 대조는 `ngii1k_center` 의 측량 성과
-도로폭이 맡고(n=909 · 절대편차 중앙 0.32m), 정본은 D-25 실측이다.
+★ 2026-09-28 정정 — **도로대장도 독립 대조축이다**(§4-1a). 종전 이 줄은
+「도로대장은 검증축이 아니다 · 정본은 D-25 실측이다」라고 적었다. 앞은 정보공개
+부존재를 축의 부재로 읽은 것이고, `road_bt_m` 은 **구간마다 이미 붙어 있었다.**
+뒤는 접었다(§4-1b). 독립 대조는 측량 도로폭(n=909 · 절대편차 중앙 0.32m)과
+도로대장 명목폭 **둘**이 맡는다.
 
 강제자 없음 — 사유: 「소방서 자료에 좌표가 없다」는 외부 기관의 사실이라 코드가 검사할 수 없다. 중앙값으로 비교한다는 선택은 `seg/report.py::nfa_compare` 가 정본이고 그 코드 한 곳에만 있다
 
@@ -723,7 +787,7 @@ data/processed/    대장 72종
   ↓ src/firelane/publish_web.py       표출용 경량 사본
 web/data/          화면 입력 · git 포함 (지형·정사영상 타일 포함) — 백엔드와 화면 사이의 계약
   ↓ web/navi/        React + MapLibre — 내비 · 관제(?view=ops). web/index.html 은 관제로 넘기는 입구
-GitHub Pages       gis · main 푸시 시 자동 배포
+GitHub Pages       main 푸시 시 자동 배포 (`deploy.yml` 하나 · §12-7b)
 ```
 
 **계층별 책임** — 데이터를 **만드는 것** · **맞는지 보는 것** · **다시 만들어도
@@ -734,7 +798,7 @@ GitHub Pages       gis · main 푸시 시 자동 배포
 | 획득 | `tools/pull_data.py` (`intake` · `acquire`) | landing → raw | 파일이 대장 선언대로 들어왔다 |
 | 계약 | `python -m firelane.contract` | 안 쓴다 | raw 실물이 대장 선언과 맞다. `ingest` 앞에 선다 |
 | 형식 | `python -m firelane.prep` | raw → norm | `--check` — norm 이 **지금의** raw 에서 나왔다 |
-| 레이크 | `tools/lakecheck.py` | 안 쓴다 | 레이크 선언 ↔ 실물 (L1~L6) |
+| 레이크 | `tools/lakecheck.py` | 안 쓴다 | 레이크 선언 ↔ 실물 (L1~L7) |
 | **생산** | `ingest` → `segments` → `publish_web` | processed · web/data | — **검사가 아니다** |
 | **재현** | `verify.sh` 의 `파이프라인 전량` + `golden 판정 불변` | processed 를 다시 만든다 | 같은 입력 · 같은 코드면 같은 판정 |
 | 봉인 | `tools/dms.py seal` · `rawdiff` | `data/dms/SEAL.json` | raw 가 봉인과 같다 → 전량 생략 근거 |
@@ -768,7 +832,7 @@ GitHub Pages       gis · main 푸시 시 자동 배포
 
 | 파일 | 보는 것 |
 |---|---|
-| `tests/test_contract.py` | GIS ↔ UI 경계 (좌표계 · 필드 · verdict 어휘 · DOM id) |
+| `tests/test_contract.py` | GIS ↔ UI 경계 (좌표계 · 필드 · verdict 어휘 · web/data 파일 이름 계약) |
 | `tests/test_guards.py` | 계보 2층 · 낡은 산출물 격리 · 공간 커버리지 · 저장소 위생 |
 | `tests/test_seg_*.py` | verdict · RoadNameIndex · WidthEngine 단위 |
 | `tests/test_static.py` | 정의되지 않은 이름 (실패 경로의 NameError) |
@@ -796,7 +860,6 @@ src/firelane/guards.py        낡은 산출물 격리 · 공간 커버리지
 src/firelane/datalog.py       대장 정합성 · 계보 · 영향분석 · 백업 검증
 src/firelane/inventory.py     원본 레이어·속성 인벤토리 → sources.yaml AUTO 블록
 src/firelane/segkey.py        seg_uid + 관측점 방위각
-src/firelane/sample_design.py 실측 표본 설계. SEED 고정
 src/firelane/webmanifest.py   web/data 계보 지문. publish 가 직접 쓴다
 src/firelane/ngi.py           NGI/NDA 리더
 src/firelane/ngii1k.py        수치지형도 도엽 → 레이어별 gpkg
@@ -940,20 +1003,29 @@ bbox 와 교차 검증한다. 강제자 — `guards.coverage_check`(상한 10%)
 ### 6-4. 가로등 — 두 데이터가 서로를 대체하지 않는다
 
 ```
-streetlights   46지점 · 573등    지번 대표점(±50m). 등 수 · 관리번호가 정본
-lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는 없다
+streetlight     1,848등 · 서로 다른 좌표 140   지번 대표점(±50m). 등 수 · 관리번호가 정본
+ngii1k_light   11,439점                        측량 폴 위치. 구분만 있고 등 수는 없다
 ```
 
 위치를 보려면 폴, 등 수를 보려면 지점이다. 좌표가 지번 대표점 하나로 뭉쳐
 있으므로 그대로 점을 찍으면 "여기 가로등 1개"라는 거짓말이 된다. 그렇다고
-`distinct` 로 좌표당 1행만 남기면 등 수의 93% 가 사라진다. **중복 행이 아니라
-좌표만 뭉쳐진 서로 다른 등이다.** group-by + count 로 등 수를 보존하고,
-지주 굵기 √n · 반경 50m 점선 원으로 불확실성을 드러낸다.
+`distinct` 로 좌표당 1행만 남기면 등 수의 92% 가 사라진다. **중복 행이 아니라
+좌표만 뭉쳐진 서로 다른 등이다.**
 
-★ 이 원은 CCTV 커버리지 원과 의미가 정반대다. CCTV 는 "이 범위를 본다"이고
-가로등은 "이 범위 안에 있다"이다. 색과 선 종류를 다르게 쓰고 범례에 명시한다.
+★ 2026-09-29 정정(DECISIONS §302). 이 절이 「group-by + count 로 등 수를 보존하고
+  **지주 굵기 √n · 반경 50m 점선 원**으로 불확실성을 드러낸다」고 적고, 그 원을
+  CCTV 원과 대비하는 설명까지 달고 있었다. **그 표현은 옛 지도(`web/js`)의 것이고
+  §218-1 에서 걷혔다.** 지금 화면(`web/navi`)은 가로등을 그리지 않는다 —
+  `publish_web.py:90` 이 「가로등은 판정(`light_count`)에만 쓴다」고 적는다.
+  그 표현을 만들던 「지점 집계」 단계도 2026-09-29 에 철거했다.
+  ★ 수 셋도 전부 낡아 있었다(46지점 · 573등 · 1,143폴 → 실측 140 · 1,848 · 11,439).
+    **이 절은 걷힌 화면을 현재형으로 설명하고 있었다.**
 
-강제자  `tests/test_contract.py::test_optional_layers_not_silently_empty`(`light_count` 가 전부 0 이면 운다 — 2026-08-14 에 경로가 바뀌어 등 수가 통째로 0 인 채 「OK」를 찍었다). 등 수 보존(group-by + count)과 폴/지점의 구분 자체는 `streetlight` 단계 코드가 정본이다
+★ 뭉침 자체는 그대로 남는 사실이다 — 등 수를 쓰려면 group-by + count 가 필요하고,
+  **위치의 불확실성(±50m)을 어딘가에 드러내는 일은 아직 안 했다.** 화면이 다시
+  가로등을 그릴 때 그 자리가 온다.
+
+강제자  `tests/test_contract.py::test_optional_layers_not_silently_empty`(`light_count` 가 전부 0 이면 운다 — 2026-08-14 에 경로가 바뀌어 등 수가 통째로 0 인 채 「OK」를 찍었다). 등 수 보존과 폴/지점의 구분은 ingest 의 `streetlight` 데이터셋이 정본이다 — 「지점 집계」 단계는 2026-09-29 에 철거했다(DECISIONS §302)
 
 ### 6-5. 쓸 수 없는 것 — 확인 완료
 
@@ -982,7 +1054,7 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 | 5m DEM | 경사 보정 + 3D 지형 | 국토정보플랫폼 신청 |
 | 소화전 **비공개분** 좌표 | 소방용수 접근성 | D-30 인터뷰. 관할 589 중 표준데이터 좌표는 동구 445 이고 스코프 안 171 이다(§3-12). 여기서 미확보인 것은 그 차이분이다 |
 | 소방통로 구간 좌표 | 정밀 대조 | D-30 인터뷰 |
-| 폭 실측 10~20지점 | 소스 판정 | D-25 레이저 거리계 |
+| 폭 실측 10~20지점 | — | **접었다**(§4-1b). 소스 판정은 폭 교차대조가 든다(§4-1a) |
 
 강제자 없음 — 사유: 미확보 목록이다. 소화전 수는 §3-12 를 따른다
 
@@ -1025,7 +1097,7 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
   §16-1 이 그 근거를 다룬다.
 - **`width_cov` 0.5 미만 4구간.** 채택 소스가 그 구간의 절반도 못 덮었다는
   뜻이다. 표본 축 소스 혼합을 없앤 대가이며(§3-5), 혼합할 때는 다른 소스 값에
-  섞여 보이지 않던 것이다. **D-25 실측 1순위.**
+  섞여 보이지 않던 것이다. **폭 교차대조 1순위** — 이 구간들이 측량폭·대장폭과 얼마나 다른지부터 본다(§4-1a).
 - `width_max_m` 이 교차로에서 46~57m 로 샌다. `min(B)` 라 판정 영향은 작지만
   필드 자체는 신뢰할 수 없다.
 - `inherited` 는 더 이상 쓰지 않는다(항상 `false`).
@@ -1143,7 +1215,7 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 | `D-08` | 회전 반경 · 코너 판정 | **해소.** 적용 범위 한정(DECISIONS §86). 판정 미반영 |
 | `D-13` | 야간 성능 · 가로등 데이터 | 데이터 확보. 야간 답사 미실시 |
 | `D-21` | 주정차/주행 판별 · 시간대 촬영 | 미착수. 영상 담당 |
-| `D-25` | 레이저 거리계 실측 | **미착수.** 폭 검증 전건이 걸려 있다 |
+| `D-25` | 레이저 거리계 실측 | **접었다**(2026-09-28 · §4-1b · DECISIONS §291). 폭 검증은 교차대조가 든다(§4-1a) |
 | `D-28` | 시나리오 자동 탐색 | 미착수 |
 | `D-30` | 소방서 정식 인터뷰 | **정식 미착수. 비공식 2건 완료**(§9-1). 소화전 좌표 · 차량 제원은 정식 회신 대기 |
 
@@ -1157,7 +1229,7 @@ lightpoles   1,143점             실제 폴 위치. 구분만 있고 등 수는
 ```
 1단계  도면 프루닝     완료      ← 지금 지도에 보이는 색
 2단계  영상판정        미착수    ← 호모그래피. 주황색이 여기서 갈린다
-3단계  현장 실측       D-25      ← 레이저 거리계. 폭 값이 확정된다
+3단계  폭 교차대조     진행      ← 방법이 다른 원천 둘과 댄다(§4-1a). 현장 실측은 접었다(§4-1b)
 ```
 
 **지금 색상은 최종 판정이 아니다.** 도면(공공 GIS 데이터)만으로 낼 수 있는
@@ -1360,7 +1432,8 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 
 `web/navi/dist` 가 없으면 `serve.py` 가 `npm run build` 를 먼저 하라고 말한다.
 
-강제자  `tools/install_navi.py --check`(내비 소스 목록) · `tools/navi_env.py`(로컬 노드 판 = CI). `serve.py` 가 빌드 없이 돌 때 무엇을 말하는지는 `tests/test_desk_tools.py` 가 든다
+강제자  `tools/install_navi.py --check`(내비 소스 목록) · `tools/navi_env.py`(로컬 노드 판 = CI).
+★ 2026-09-28 정정 — 「`serve.py` 가 빌드 없이 돌 때 무엇을 말하는지는 `tests/test_desk_tools.py` 가 든다」고 적혀 있었다. 그 시험은 `desk_check` · `wmax_audit` 의 좌표·분류만 보고 `serve.py` 를 한 번도 안 읽는다. **그 안내 문구를 세우는 시험이 저장소에 없다** — 강제자 없음이다
 
 ### 11-2. 파일 구조
 
@@ -1423,11 +1496,11 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `unknown_reason` | 회색의 하위 구분. `no_cctv_band` · `no_cctv_thin` · `no_cctv_narrow` · `no_cctv_single` · null |
 | `route_usage` | 최단경로 사용횟수. **통행 가능성이 아니다**(§3-10) |
 | `width_src` | 채택 소스. `ngii1k` · `ngii` · `silpok` 중 하나. 구간 단위 단일 소스 |
-| `width_disagree_m` | 소스 간 최대−최소. D-25 실측 지점 선정 기준 |
-| `width_cov` | 채택 소스의 커버율. 낮을수록 실측 우선순위가 높다 |
+| `width_disagree_m` | 소스 간 최대−최소. **우리 방법 셋끼리만** 잰다 — 같은 자로 세 번 잰 값이다(§4-1a) |
+| `width_cov` | 채택 소스의 커버율. 낮을수록 교차대조 우선순위가 높다 |
 | `n_sample` | **정규표본 수**(값이 나온 표본). 1이면 `verdict()` 가 통과 확정을 보류한다 |
 | `n_try` | 시도한 표본 수. `n_sample / n_try` 가 곧 커버율이다 |
-| `width_verified` | D-25 실측 완료 여부. 지금은 전건 `false` |
+| `width_verified` | 현장 실측 완료 여부. **전건 `false` 이고 그대로 남는다** — 실측을 접었으므로(§4-1b) 이 칸을 켜는 근거가 생기지 않는다. 교차대조는 이것을 안 켠다(검증이지 실측이 아니다). 칸을 지우는 것은 발행 스키마를 바꾸므로 측정 배치의 일이고 PLAN 이 그 줄을 든다 |
 | `midpoint_fallback` | 정규표본이 없어 중점 하나로 잰 구간 |
 | `inherited` | 인접 구간 상속 여부. 폐기됐고 항상 `false` |
 | `road_name` | 겹침 길이 최대 매칭 |
@@ -1574,6 +1647,11 @@ diff 가 쌓인다. 하루짜리 셋이면 매일 착지한다.
 ★ **한 절은 정확히 한 상황에 산다.** 두 곳에 넣고 싶어지면 그 절이 두
 가지를 하고 있는 것이고, 그때 쪼갠다. 절을 쪼개는 근거를 이 표가 만든다.
 
+★ 2026-09-29 — 이 규칙이 **`§12-1a-2` 에는 안 걸린다.** 색인이 절 머리를
+`^### (12-[0-9a-z]+)\.` 로 잡는데 하이픈이 둘인 이름을 못 읽는다. 색인에 없어도
+렌더가 안 죽으니 조용히 빠진 것이고, 「색인에 없으면 렌더가 죽는다」는 주장이
+그 절에서는 거짓이다. 정규식이 이름 꼴보다 좁다.
+
 ★ **`§12` 밖도 든다.** 사람은 "아침에 뭐 하나" 로 찾지 "몇 절인가" 로 찾지
 않는다. `data-slot` 이 이미 `§0` · `§10-2` · `§14-1` · `§18-11` 을 다루고
 있었으므로 새로 만드는 것이 아니라 **정본이 그 사실을 따라잡는 것**이다.
@@ -1632,12 +1710,21 @@ git push origin --delete feat/<이름>
 지금 룰셋 실물이 위 표와 어긋난 것들이다. **되돌릴 날과 함께 적는다** —
 적어두지 않은 완화는 영구가 된다(`DECISIONS §76`).
 
-★ **`bypass_actors` 는 2026-09-03 에 회수됐다.** 세 룰셋 모두 비어 있고
+★ **`bypass_actors` 는 2026-09-03 에 한 번 회수됐다.** 그날 세 룰셋이 모두 비었고
 `release` 의 승인 1 을 켰다. 2026-08-27 에 `Repository admin` 역할(actor_id 5)을
 `always` 로 넣었던 것이고(DECISIONS §80), 한시로 부여한 것을 한시로 끝냈다.
 `web/playbook.html` 의 BYPASS 카드와 `doc_fsck.DEPARTURE` 도 같은 날 걷었다.
 
-강제자  `tools/ruleset_check.py`(회수가 실제로 끝났는가 — `bypass_actors` 가 비었는지 실물로 본다). 「되돌릴 날과 함께 적는다」는 규약이고 날짜 자체를 세는 검사는 없다
+★ 2026-09-29 정정 — 이 자리가 「세 룰셋 모두 비어 있고」를 **현재형**으로 적고,
+  강제자 칸이 「`bypass_actors` 가 비었는지 실물로 본다」고 적고 있었다. **둘 다
+  지금은 거짓이다.** `RepositoryRole:5(always)` 가 다시 들어가 있고,
+  `ruleset_check.py` 는 그것을 `BYPASS_DECLARED` 에 담아 **경고 없이 통과시킨다**
+  (`if set(who) <= BYPASS_DECLARED: continue`). 회수 조건도 날짜가 아니라
+  **협업자 2명 이상**으로 바뀌었다 — 그것은 §12-1c 가 든다.
+  문서는 「비었는지 본다」고, 도구 주석은 「그 영구 예외를 §12-1a 가 선언했다」고
+  적어 **서로를 반대로 가리키고 있었다.**
+
+강제자  `tools/ruleset_check.py`(`BYPASS_DECLARED` 밖의 bypass 가 있는지 · `collaborators` 를 세서 회수 조건이 찼는지). 선언된 `RepositoryRole:5(always)` 는 통과시킨다 — 그 예외의 사유와 회수 조건은 §12-1c 가 든다
 
 ### 12-1c. 지금 살아 있는 예외
 
@@ -1730,9 +1817,13 @@ bypass 는 개인이 아니라 역할에 준다. **admin 이 늘면 우회 가�
 정본은 그 파일의 `EXPECT` 이며 이 표와 `web/workflow.html` 의 `§12-1` 카드는
 사람이 읽는 사본이다.
 강제자 — `tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check`
-★ 그 검사는 이름·대상 ref·머지 방식만 본다. **승인 수와 Code Owners 는 아무
-검사도 대조하지 않는다** — 이 표와 `EXPECT` 가 갈려도 조용하다. 릴리즈 직전에
-`ruleset_check` 를 치는 것이 그 자리를 메우는 유일한 수단이다.
+★ 승인 수와 Code Owners 도 대조한다 —
+`tests/test_workflow_html_sync.py::test_rules_table_approvals_and_codeowners_match_expect`
+가 이 표를 열 이름으로 파싱해 `EXPECT` 의 `approvals` · `codeowners` 와 행마다
+맞춘다(그 파서의 카나리아는 `::test_rules_table_probe_is_alive` 다).
+2026-09-28 정정 — 이 자리에 「**승인 수와 Code Owners 는 아무 검사도 대조하지
+않는다** · 릴리즈 직전 `ruleset_check` 가 유일한 수단」이라고 적혀 있었다.
+그 시험은 2026-09-16 부터 있었다.
 
 ★ 접두사를 섞지 않는다. 통합 브랜치는 `part/`, 임시 브랜치는 `feat/` 다.
 둘 다 `feat/` 로 두면 룰셋이 구분하지 못해 임시 브랜치까지 force push 가
@@ -1800,9 +1891,13 @@ bypass 를 한시로 부여하고 회수를 사람 기억에 맡겼으므로 `do
 | 그 외 | 아침에 `git pull --ff-only` 를 빼먹은 것이다 |
 
 ★ `main` · `dev` · `part/**` 는 전부 보호 브랜치이며 직푸시가 막힌다 —
-**저장소 admin 도 PR 이 필요하다.** 자유롭게 만들고 지울 수 있는 것은 `feat/**` 뿐이다.
+자유롭게 만들고 지울 수 있는 것은 `feat/**` 뿐이다.
+★ 2026-09-28 정정 — 이 자리에 「**저장소 admin 도 PR 이 필요하다**」고 적혀 있었다.
+  거짓이다. admin 은 세 룰셋 전부에 **영구 bypass** 를 갖는다(§12-1c · `RepositoryRole:5`
+  `always`). 1인 운용 동안 3·4단계는 fast-forward 직푸시다(§12-8b). 협업자가 둘이
+  되면 그 bypass 를 회수한다 — 그때 이 줄이 참이 된다.
 
-강제자  `tests/test_doc_fsck.py` · `tools/doc_fsck.py::check_commands`(문서가 적은 명령이 보호 브랜치에 직푸시·로컬 머지를 시키지 않는가 — 이 표가 바로 그 대상이다)
+강제자  `tests/test_doc_fsck.py` · `tools/doc_fsck.py::check_commands`(문서가 적은 명령이 보호 브랜치에 직푸시·로컬 머지를 시키지 않는가 — 대상은 **코드블록**이다. `|` 로 시작하는 표 줄은 그 도구가 안 본다)
 
 ### 12-5. 하루 흐름
 
@@ -1944,9 +2039,13 @@ JSON 을 `web/data` 에 쓰고 내비 · 관제가 `../data/` 로 읽으므로 *
   없으면 죽는다. 낡은 내비가 올라가면 그것이 `web/data` 와 갈리고,
   갈렸다는 것을 아무도 모른다.
 
-★ Mapbox 토큰은 `secrets.MAPBOX_TOKEN` 이다. **없어도 배포된다** —
-  `config.ts` 의 `MATCHING_ENABLED` 가 false 로 떨어지고 음성 안내가 전부
-  자체 문구로 나간다. 소유자가 바뀌면 Secret 하나만 갈아끼운다.
+★ Mapbox 토큰은 `secrets.MAPBOX_TOKEN` 이다. **없으면 배포가 멈춘다** —
+  `build-navi` 가 `test -n "$VITE_MAPBOX_TOKEN"` 으로 그 자리에서 죽는다.
+  시운전만 더미 토큰(`pk.dry-run-no-secret`)으로 돈다. 소유자가 바뀌면
+  Secret 하나만 갈아끼운다.
+  2026-09-28 정정 — 종전에 「없어도 배포된다 · `MATCHING_ENABLED` 가 false 로
+  떨어진다」고 적혀 있었다. 그때는 빈 문자열이 들어가 빌드도 배포도 성공했고
+  **낡은 내비가 조용히 올라갔다.** 원인 자리에서 죽는 편이 낫다.
 
 강제자  `tools/verify.sh` 의 「배포에 내비 빌드」 단계 — 사이트를 짓는 워크플로가 **하나**이고 그것이 `stage-site` → `build-navi` 로 가며 배포 · 시운전 둘 다 같은 본문을 태우는가  ★ 2026-09-19 정정 — 종전엔 「42단계」로 **위치**를 들었다. 앞에 단계 하나만 끼우면 이 칸이 조용히 다른 검사를 가리킨다(PLAN §13 W3-5 와 같은 족). `tests/test_verify_citations.py` 가 위치 인용을 막는다
 
@@ -2214,7 +2313,7 @@ editable 로 알아서 깐다.
 ### 14-2. 파이프라인은 한 명령이다
 
 ```
-ingest → segments → scope → streetlight → terrain → ortho → publish → 계약 테스트 → 지문 대조
+ingest → segments → nfa_compare → scope → terrain → ortho → publish → 계약 테스트 → 지문 대조
 ```
 
 ```bash
@@ -2250,7 +2349,7 @@ uv run python -m firelane.normalize_raw <다운로드폴더> --dry-run
 uv run python -m firelane.contract              대장 선언 ↔ raw 실물 대조
 ```
 
-강제자  `tools/doc_fsck.py::check_commands`(네 명령이 실재하는 도구·모듈인가) · `tests/test_ledger_contract.py`(대장 선언 ↔ 실물 판정의 경계)
+강제자  `tools/doc_fsck.py::check_commands`(명령의 `tools/*.py` 가 실재하는가 · 단계를 직접 부르지 않는가 — **모듈 실재는 안 본다.** 2026-09-28 정정) · `tests/test_ledger_contract.py`(대장 선언 ↔ 실물 판정의 경계)
 
 ### 14-4. 검사
 
@@ -2260,9 +2359,14 @@ bash tools/verify.sh --fast   # 파이프라인 전량 생략
 ```
 
 `verify.sh` 는 의존성 동기화 · 패키지 import · 진입점 · pytest · 계층 · ruff ·
-CI 환경 재현 · 커밋 정책 · 인코딩 · 문서 숫자 · web/data 계보 · 로컬 찌꺼기 ·
-web/data 용량 · JS 문법·순환 · JS 부팅 · 내비 타입 · 파이프라인 전량 ·
-golden 지문 · PLAN 번호·참조 · 커버리지 래칫을 밟는다.
+커밋 정책 · 인코딩 · 문서 숫자 · web/data 계보 · 로컬 찌꺼기 · web/data 용량 ·
+내비 린트 · 내비 타입 검사 · 내비 단위 시험 · 파이프라인 전량 · golden 지문 ·
+PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
+2026-09-28 정정 — 종전에 「CI 환경 재현 · JS 문법·순환 · JS 부팅」 셋이 적혀
+있었다. 셋 다 **도구째 지웠다** — 「CI 환경 재현」은 존재하지 않는 CI 를
+검사했고(2026-09-18 W2), 나머지 둘은 걷어낸 옛 지도만 봤다. 단계의 정본은
+`tools/verify.sh` 의 `step` 줄이고, 이 열거는 갈래를 보여줄 뿐 수를 적지
+않는다 — 적으면 그 수가 낡는다.
 
 ★ **`--fast` 는 `부분 실행` 단계에서 일부러 빨갛게 죽는다**(2026-09-15).
   전량을 통째로 생략하면서 전수처럼 통과하던 것을 막았다 — 건너뛴 것은
@@ -2286,7 +2390,7 @@ golden 지문 · PLAN 번호·참조 · 커버리지 래칫을 밟는다.
 
 ★ **커버리지는 래칫이다.** 2026-09-25 에 28 → 32 로 올렸다(실측 32.93%).
 <!--gen: cov_min-->
-  `tools/verify.sh` 의 `COV_MIN=33` 로 걸려 있고 **올린 뒤에는 안 내린다.**
+  `tools/verify.sh` 의 `COV_MIN=35` 로 걸려 있고 **올린 뒤에는 안 내린다.**
 <!--/gen-->
   80% 를 목표로 잡지 않는다 — 못 지키는 문턱은 끄게 되고, 끈 문턱은 없는 것과 같다.
   2026-09-20 정정 — 종전 이 자리는 「실측 24 에 23 을 거는 것은 화면의
@@ -2562,10 +2666,10 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 | 81 | 08-14 | 교차부 제외는 `A0080000` 실제 폴리곤으로 판정 | 적용 |
 | 82 | 08-14 | `A0020000.도로폭 0.500` 은 차량 통행 불가 통로 코드 | 적용 |
 | 83 | 08-14 | 마커는 `config.js` 스펙이 자기 데이터·팝업·표현을 전부 든다 | 폐기 2026-09-22 — 옛 지도와 함께 markers 블록을 걷어냈다(DECISIONS §218-1) |
-| 115 | 09-06 | 안내 문턱은 거리가 아니라 시간이다 (12·6·2.5초) | 적용 |
-| 116 | 09-06 | 스냅은 활성 경로에 할인을 준다. 하드 제한이 아니다 | 적용 |
-| 117 | 09-06 | 하이브리드 경계는 폭 3.0m — 물리가 고른 선이다 | 적용 |
-| 118 | 09-06 | 내비 계층은 의존이 한 방향이다. 순환은 setState 되먹임에서 온다 | 적용 |
+| 118 | 09-06 | 안내 문턱은 거리가 아니라 시간이다 (12·6·2.5초) | 적용 |
+| 119 | 09-06 | 스냅은 활성 경로에 할인을 준다. 하드 제한이 아니다 | 적용 |
+| 120 | 09-06 | 하이브리드 경계는 폭 3.0m — 물리가 고른 선이다 | 적용 |
+| 121 | 09-06 | 내비 계층은 의존이 한 방향이다. 순환은 setState 되먹임에서 온다 | 적용 |
 
 ★ **번호는 재사용하지 않는다.** 새 결정은 `DECISIONS.md` 의 다음 절 번호로
 기록하고, 그것이 효력을 갖는 규칙이면 이 표에 한 줄을 더한다.
@@ -2659,7 +2763,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,186 전수 · **분모(blank) 0절** · 물림(inherit) 452절.
+★ **강제자 칸의 분모.** 절 1,275 전수 · **분모(blank) 0절** · 물림(inherit) 518절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -2696,7 +2800,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 ★ 판단이 루프 안에 인라인으로 있으면 주입이 안 걸린다. **판단을 이름 있는 함수로
   꺼내고 합성 사례가 그 함수를 재게 한다** — 그러면 실물이 깨끗해도 그물은 산다.
 
-강제자  `tools/deadcheck.py` 의 프로브 다섯(①손목록 ②죽은 게이트 ③조용한 통과 ④천장 ⑤좁은 범위)이 **기계로 잡을 수 있는 몫**을 든다. 주입을 실제로 걸었는가는 기계가 못 본다 — 그 몫은 **권고**이고, 걸었으면 결과를 `DECISIONS` 에 남긴다(이 절 머리의 「못 만들겠으면 권고라고 적는다」)
+강제자  `tools/deadcheck.py` 의 프로브 다섯(①빈 그물 ②손목록 ③조용한 통과 ④죽은 게이트 ⑤좁은 범위)이 **기계로 잡을 수 있는 몫**을 든다. **★ 2026-09-28 정정** — 종전 「①손목록 ②죽은 게이트 ③조용한 통과 ④천장 ⑤좁은 범위」였다. 번호 셋이 어긋났고 **「천장」은 프로브가 아니다**(`CEILING` · `--ratchet` 이다). 무엇보다 **①빈 그물이 빠져 있었다** — 이 절의 주장이 「빈 그물은 침묵보다 나쁘다」인데 그 몫을 세는 프로브 이름을 절이 틀리게 적었다. 쓰인 날(2026-09-27)부터 어긋나 있었고 봉인지가 오늘 잡았다. 주입을 실제로 걸었는가는 기계가 못 본다 — 그 몫은 **권고**이고, 걸었으면 결과를 `DECISIONS` 에 남긴다(이 절 머리의 「못 만들겠으면 권고라고 적는다」)
 
 ### 17-1. 정본은 하나 — 사실 · 정본 파일 · 따르는 곳 · 강제자
 
@@ -2712,15 +2816,18 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 | `python` | `.python-version` | `Dockerfile` 베이스 이미지 · `pyproject.toml` requires-python · CI 둘이 파일을 읽는다 | `tests/test_sources_of_truth.py` |
 | `pytest` | `pyproject.toml` | `uv.lock` 의 잠긴 판(하한 이상) | `tests/test_sources_of_truth.py` |
 | `coverage_floor` | `tools/verify.sh` | 같은 파일의 명령줄이 변수를 읽는다 · `tests/test_verify_citations.py` | `tests/test_sources_of_truth.py` |
-| `truck_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · `tests/test_declaration_sync.py` · 문구 넷(`seg/geom.py` · `seg/report.py` · `seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
-| `park_m` | `src/firelane/seg/params.py` | `tools/render_figures.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
-| `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/render_figures.py` · 문구 둘(`seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `truck_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/figures/value.py` · `tests/test_declaration_sync.py` · 문구 넷(`seg/geom.py` · `seg/report.py` · `seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `park_m` | `src/firelane/seg/params.py` | `tools/figures/value.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
+| `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/figures/value.py` · 문구 둘(`seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `code_owner` | `.github/CODEOWNERS` | `tools/navi_setup.py` 기본값 · `tools/ruleset_check.py` 관리자 · 기본 저장소 · 배치 도구 셋의 `REPO=` | `tests/test_sources_of_truth.py` |
 | `font_stack` | `tools/svg_fit.py` | `web/navi/src/ui/tokens.ts` · `web/proposal.html` | `tests/test_sources_of_truth.py` |
 | `offtrack_min` | `src/firelane/seg/params.py` | `web/navi/src/domain/vehicle.ts` | `tests/test_sources_of_truth.py` |
 | `local_lat0` | `tools/localgeo.py` | 조사 도구 셋이 **import 한다**(사본 없음) | `tests/test_sources_of_truth.py` |
 
-★ **2026-09-23 — 열 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5). 종전에는 `uv` ·
+★ **2026-09-23 — 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5).
+  ★ 2026-09-28 정정 — 그때 열이었고 지금 **열둘**이다(`offtrack_min` ·
+    `local_lat0` 가 2026-09-24 에 늘었다). 수를 글로 적으면 그 글이 낡는다 —
+    기계가 읽는 정본은 `tests/test_sources_of_truth.py` 의 `SPEC` 이다. 종전에는 `uv` ·
 `python` 둘만 저장소를 훑었고 나머지 여덟은 **선언된 자리만** 봤다. 훑기를 켜려면 오탐 둘을
 먼저 없애야 했다 — 주석 속 값(`code_only` 가 걷는다)과 맨숫자(`near` 로 문맥 낱말과 같은
 줄일 때만 센다). 켜자마자 나온 사본이 위 표의 새 칸들이다.
@@ -2740,7 +2847,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 `tests/test_verify_citations.py` 가, 판정 숫자의 문서 대조는
 `tools/docnum_check.py` 가 이미 한다.
 
-강제자  `tests/test_sources_of_truth.py`(`SPEC` 의 열 사실 전부 — 목록 밖 literal 까지 양방향으로 본다) · `tests/test_ci_env.py` · `tests/test_verify_citations.py`
+강제자  `tests/test_sources_of_truth.py`(`SPEC` 의 **사실 전부** — 목록 밖 literal 까지 양방향으로 본다) · `tests/test_ci_env.py` · `tests/test_verify_citations.py`
 
 ---
 
@@ -2843,7 +2950,8 @@ ngii     국토지리정보원            vworld   브이월드
 safety   소방청·행정안전부          gjcity   전남광주통합특별시
 sbiz     소상공인시장진흥공단       eais     건축행정시스템 세움터
 nsdi     국가공간정보포털          mois     행정안전부
-gjbg     광주광역시 북구            nfa      소방청
+gjbg     전남광주통합특별시         nfa      소방청
+         빅데이터 통합플랫폼
 ```
 
 ★ `ngii` 와 `vworld` 를 나눈다. 같은 수치지형도라도 **원천이 다르면 폴더가
@@ -2862,22 +2970,29 @@ data/raw/{제공기관}/{download_date}/{정규명}
 ### 18-2b. norm 이후 — 여기서 규칙을 강제한다
 
 ```
-{dataset_key}_{region}_{vintage}_{crs}_v{n}.{ext}
+{제공기관}/{제공기관}_{dataset}_{scope}_{vintage}[_{part}][_r{rev}].{ext}
 
-ngii1k_gwangju-donggu_2026q2_5186_v1.gpkg
-streetlight_gwangju-donggu_2025_4326_v1.csv
+ngii/ngii_ngii1k_jngj-donggu_20260417.gpkg
+gjcity/gjcity_streetlight_jngj-donggu_20250731.csv
 ```
 
 | 토큰 | 규칙 |
 |---|---|
-| `dataset_key` | `sources.yaml` 의 키와 **문자열까지 동일**. 다르면 대장이 무의미해진다 |
-| `region` | 소문자 로마자, 하이픈. 한글·공백 금지 |
-| `vintage` | 데이터 기준 시점. 다운로드 날짜가 아니다 |
-| `crs` | EPSG 숫자만. **이게 제일 자주 나는 사고이기 때문에 파일명에 박는다** |
-| `v{n}` | 같은 소스를 다시 받았을 때 증가. 덮어쓰지 않는다 |
+| `제공기관` | 폴더와 파일 접두에 **둘 다** 든다. `sources.yaml::layers.raw.providers` 의 키 |
+| `dataset` | `sources.yaml` 의 키와 **문자열까지 동일**. 다르면 대장이 무의미해진다 |
+| `scope` | 대장 `scopes` 의 키(`jngj-donggu` · `jngj` …). 소문자 로마자, 하이픈 |
+| `vintage` | 데이터 기준 시점 **8자리**(`20260417`). 다운로드 날짜가 아니다 |
+| `part` | 한 취득이 여러 조각일 때. 선택 |
+| `_r{rev}` | 같은 소스를 다시 받았을 때 증가. 덮어쓰지 않는다. 선택 |
+
+★ 2026-09-28 정정 — 이 표에 `crs`(EPSG 숫자) 와 `v{n}` 이 있었다. **둘 다 실물
+  문법에 없다.** 좌표계는 대장의 `crs_native` 가 들고, 판번호는 `_r{rev}` 다.
+  적혀 있던 예시(`ngii1k_gwangju-donggu_2026q2_5186_v1.gpkg`)는 지금 관문
+  (`sources.yaml::layers.norm.naming`)을 통과하지 못한다. 정본은
+  `src/firelane/naming.py` 머리말과 그 `naming` 정규식이다.
 
 **금지** — 한글, 공백, 대문자, `final`, `최종`, `수정본`, `real_final2`.
-`v{n}` 이 있는데 `final` 을 쓰면 어느 쪽이 최신인지 모른다.
+`_r{rev}` 가 있는데 `final` 을 쓰면 어느 쪽이 최신인지 모른다.
 
 강제자  `tests/test_normalize_rules.py`(norm 이름 규칙 토큰) · `tools/refcheck.py`(`dataset_key` 가 대장 키와 문자열까지 같은가) · `uv run python -m firelane.ledger`(대장 필드 검사)
 
@@ -3029,12 +3144,20 @@ uv run python -m firelane.lake gate      이동 · 삭제 전 관문. 막히면 
 `data/processed/_manifest.json` 이 매 실행의 원본 sha256 · 건수 · 상태를
 축적한다. `web/data/_manifest.json` 은 `publish_web.py` 가 직접 쓴다.
 
-- `git_dirty: true` 로 만들어진 산출물은 **재현 불가**다. 커밋 안 한 채로 돌린
-  결과가 발표 자료가 되는 것을 막는다.
-- `input_shas` 가 있으면 "이 산출물이 어느 버전의 입력으로 나왔는가"가 남는다.
-  입력이 바뀌었는데 산출물이 안 바뀌었으면 파이프라인이 안 돈 것이다.
-- `params` 를 박는 이유는 임계값을 바꾼 뒤 옛 산출물과 비교할 때 어느 쪽이
-  어떤 임계로 나왔는지 알아야 하기 때문이다.
+지금 담는 칸은 `key` · `source_files` · `source_sha256` · `resolved` ·
+`source_crs` · `status` · `features` · `geom` · `note` · `outputs` · `seal` 이다.
+
+★ **아직 없는 칸 셋** — `git_dirty` · `input_shas` · `params`. PLAN #101 이 그
+  줄을 들고 있고, 2026-09-28 까지 두 매니페스트에 그 세 칸은 0건이다. 각각이
+  왜 필요한가는 그대로다 —
+  - `git_dirty: true` 로 만들어진 산출물은 **재현 불가**다. 커밋 안 한 채로
+    돌린 결과가 발표 자료가 되는 것을 막는다.
+  - `input_shas` 가 있으면 "이 산출물이 어느 버전의 입력으로 나왔는가"가 남는다.
+    입력이 바뀌었는데 산출물이 안 바뀌었으면 파이프라인이 안 돈 것이다.
+  - `params` 를 박는 이유는 임계값을 바꾼 뒤 옛 산출물과 비교할 때 어느 쪽이
+    어떤 임계로 나왔는지 알아야 하기 때문이다.
+  세 칸이 **있는 것처럼** 적혀 있었다(2026-09-28 정정). 지금 그 자리를 메우는
+  것은 `source_sha256`(입력 sha) · `seal`(코드·설정 지문)이다.
 
 ★ **`generated_at` 은 "마지막 실행 시각"이 아니라 "내용이 마지막으로 실제
 달라진 시각"이다.** 두 매니페스트는 커밋되는 파일이라, 매 실행 시각만 바뀌면
@@ -3208,7 +3331,9 @@ uv run python -m firelane.datalog impact ngii1k
 
 `impact` 를 실무에서 제일 자주 쓴다. 소스 갱신 전에 이것을 돌린다.
 
-강제자  `uv run python -m firelane.datalog fsck`(선언 ↔ 실물) · `tests/test_declaration_sync.py`(`inputs`/`consumers` 선언이 실물 배선과 같은가). 「손으로 안 그린다」는 그래프가 생성물이라는 뜻이고 `tools/refcheck.py` 가 죽은 참조를 든다
+강제자  `uv run python -m firelane.datalog fsck`(선언 ↔ 실물) · `tests/test_declaration_reality.py::test_ledger_consumers_are_complete`(`consumers` 선언이 실물 배선과 같은가). 「손으로 안 그린다」는 그래프가 생성물이라는 뜻이고 `tools/refcheck.py` 가 죽은 참조를 든다
+
+★ 2026-09-29 정정 — 종전에 `tests/test_declaration_sync.py` 를 이 자리의 강제자로 들었다. **그 파일에는 `inputs` · `consumers` 라는 낱말이 한 번도 안 나온다** — 있는 것을 안 가리키고 없는 것을 가리켰다. 「범위가 이름보다 좁고 그것이 선언돼 있지 않다」 족이 강제자 칸 자신에 있었다.
 
 ---
 
@@ -3287,7 +3412,9 @@ git_dirty 상태로 만든 산출물을 발표에 사용
 문서를 다섯 번째로 만들기
 ```
 
-강제자  `tools/commit_policy.py --tracked`(산출물·비밀값 커밋) · `tools/treecheck.py --repo`(근거 없는 파일) · `tests/test_guards.py::test_nothing_writes_into_raw` · `test_no_dated_scripts_in_tools` · `tests/test_doc_style.py`(다섯째 문서 금지) · `tools/dupcheck.py`(같은 상수 복사)
+강제자  `tools/commit_policy.py --tracked`(산출물·비밀값 커밋) · `tools/treecheck.py --repo`(근거 없는 파일) · `tests/test_guards.py::test_nothing_writes_into_raw` · `test_no_dated_scripts_in_tools` · `tests/test_doc_style.py`(다섯째 문서 금지) · `tests/test_sources_of_truth.py`(같은 상수 복사 — 정본 표 · `exclusive`/`pins`)
+
+★ 2026-09-29 정정 — 종전에 마지막 자리를 `tools/dupcheck.py`(같은 상수 복사) 로 들었다. **그 도구는 함수 본문만 본다** — `ast.walk` 에서 `FunctionDef` 만 집어 25노드 넘는 본문의 지문을 내고, 머리말이 스스로 「아무 판정도 안 한다」고 적는다. 모듈 수준 상수가 두 파일에 복사된 것은 세지 않는다.
 
 ---
 
@@ -3374,7 +3501,11 @@ acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
 **3번이 실질 검증이다.** 1·2번은 형식 검사이고 3번은 물리 검사다.
 `crs` 는 **"명시"와 "추정"을 구분해서 적는다.**
 
-강제자  `tests/test_bbox_single_source.py` · `tests/test_shp_zip_multi_bbox.py`(2번 범위 검사) · `uv run python -m firelane.contract`(1번 — `crs` 선언 ↔ `.prj`/`.xml`). 3번 교차 정합은 사람이 눈으로 보는 것이라 검사가 없다 — 그것이 실질 검증인데 자동화가 안 된 자리다
+강제자  `uv run python -m firelane.contract`(1번 — `crs` 선언 ↔ `.prj`/`.xml` · `prj_verdict`) · `src/firelane/krgis/crs.py`(`GWANGJU_BBOX` 126.60,35.00,127.05,35.32 — 4326 범위) · `tests/test_n1.py`(5179 X 9.3e5~9.7e5 · Y 1.67e6~1.70e6).
+
+★ 2026-09-29 정정 — 종전에 2번 범위 검사의 강제자로 `tests/test_bbox_single_source.py` · `tests/test_shp_zip_multi_bbox.py` 를 지목했다. **둘 다 범위를 안 본다** — 앞은 bbox 단일 정본과 4326 꼴 튜플 사본을 보고, 뒤는 읽기 시점 bbox 필터만 본다(그 합성 좌표는 X 200,000 · Y 500,000 으로 위 표의 5186 범위 밖이다). **위 표의 5186 X 190k~210k · Y 260k~300k 를 검사하는 코드는 저장소에 없다.** 강제자 칸을 실물로 고쳤고, 5186 범위 검사는 아직 사람 눈이다 — 3번과 같은 자리다.
+
+3번 교차 정합은 사람이 눈으로 보는 것이라 검사가 없다 — 그것이 실질 검증인데 자동화가 안 된 자리다
 
 ---
 
@@ -3408,7 +3539,7 @@ paths.require_lake()     레이크가 붙었나. 종료코드 2
                          ★ 빈 디렉터리는 붙은 것으로 안 친다 —
                            WSL 은 마운트가 없어도 /mnt/d 를 만든다
 intake --stage           대장 미매칭 차단. 우회는 --force
-                         ★ 단서 셋 — 문서번호 · 취득 규칙 · 없음
+                         ★ 단서 넷 — 문서번호 · 취득 규칙 · 대장 stem · 없음
 acquire --quarantine     폐지 — 종료코드 2 로 거부한다(DECISIONS §180)
                          ★ 대장 밖 파일은 격리하지 않고 반입을 멈춘다
 ```
@@ -3742,10 +3873,12 @@ style                                                판정 4색
 **「양쪽 다 안 바뀌었으면 그때의 입증이 아직 유효하다」**.
 
 ```
-도장   = sha(절 본문, 그 절이 백틱으로 지목한 실재 파일들의 내용)
+도장   = sha(절 본문, 그 절이 백틱으로 지목한 실재 파일들의 **절별 관점**)
 무효   = 둘 중 하나라도 바뀌었다 → **틀렸다가 아니라 다시 보라**
 미날인 = 아직 아무도 확인 안 했다
 ```
+
+절별 관점과 공식 판은 아래 §21-0a 가 든다.
 
 ★ **도장은 두 갈래다**(2026-09-28 · DECISIONS §277). 주장이 다르면 칸도 다르다 —
   한 칸에 적으면 「우리 문서 중 얼마가 검증됐나」에 아무도 답할 수 없게 된다.
@@ -3781,6 +3914,26 @@ style                                                판정 4색
 
 강제자  `tools/docseal.py`(`check` 가 `verify.sh` 단계 「문서 정합 도장」으로 돈다 · `--selftest` 가 판별식을 잰다)
 
+### 21-0a. 도장이 무는 것은 파일이 아니라 **절이 주장하는 것**이다
+
+`tools/verify.sh` 는 검사의 **목록**이라 배치마다 자란다. 바이트로 물면 래칫 한
+글자에 그 파일을 지목한 절 전부가 죽는다 — 실측으로 **27절**이었고, 배치마다 그
+27절을 다시 찍으면 그것이 도장 찍기다.
+
+그 절들의 주장은 「이 관문이 이 도구를 부른다」이다. 그래서 보는 것은 **그 절이
+함께 지목한 도구를 부르는 줄**이고, 같이 지목한 것이 없으면 **단계 이름 목록**이다.
+관점을 주는 파일은 `docseal.LIST_VIEW` 가 든다.
+
+★ **느슨해진 것이 아니다.** 지목한 도구를 관문에서 떼면 지문이 움직이고, 부르는
+  줄의 인자가 바뀌어도 움직이며, 아예 안 부르면 **그 사실이 지문에 박힌다** —
+  빈 것을 해시하면 「안 부른다」가 조용히 통과한다.
+
+★ 지문 공식 자체가 바뀌면 옛 도장은 **내용이 그대로여도** 전부 무효다. 그때는
+  「옛 공식에서 실제로 유효했는가」와 「새 관점으로 보면 그 변경이 안 보이는가」
+  둘을 증명해 옮긴다. 어느 공식으로 찍힌 도장인지는 `FP_METHOD` 가 든다.
+
+강제자  `tools/docseal.py`(`view` · `LIST_VIEW` · `FP_METHOD`) · `tests/test_docseal_view.py`(10 — 양방향)
+
 ### 21-1. 축 — 분모가 재현되는 것만 센다
 
 2026-09-13 까지 감사 분모는 "232건" 이었다. 그 내역이 저장소에 없다 —
@@ -3798,7 +3951,7 @@ style                                                판정 4색
 | `os.environ` 독자 | `env_check.py` | 0 — `paths.py` 가 유일 독자 |
 | vintage 결함 | `vintage_check.py --max 0` | 0 |
 | norm 계보 | `prep --check --max 0` | 0 |
-| 레이크 L1~L6 | `lakecheck.py` | 0 |
+| 레이크 L1~L7 | `lakecheck.py` | 0 |
 | 트리 전수 | `treecheck.py` | 0 |
 | 저장소 내 일회성 | `test_no_one_off_in_repo` | 0 |
 | 개행 생성기 | `test_generators_end_json_with_newline` | 0 |
@@ -3822,7 +3975,8 @@ style                                                판정 4색
 ★ **절 수를 여기 적지 않는다.** 봉인은 그 순간의 스냅샷이고 절 수는 봉인마다
   변한다 — 고정 숫자로 적으면 다음 봉인에 낡는다. 실제로 「540개」로 적혀
   있었고 실물은 909였다(2026-09-25 · DECISIONS §246). 지금 수는
-  `dms.py verify` 가 띄운다. 강제자 `tests/test_repo_numbers.py`.
+  `dms.py scan` 이 띄운다(`verify` 는 죽은 참조와 물림 수만 본다).
+  강제자 `tests/test_repo_numbers.py`.
 
 ```bash
 bash tools/verify.sh 2>&1 | tee /tmp/verify.log

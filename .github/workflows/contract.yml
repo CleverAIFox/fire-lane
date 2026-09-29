@@ -309,6 +309,26 @@ jobs:
         run: uv run python -m firelane.ledger
       - name: 대장 별칭 이관 유지
         run: uv run python tools/ledger_fields.py --check
+      # ── 2026-09-28 (DECISIONS §285). 문서가 관문이라 이름까지 적어 둔 것이
+      #   여덟, 아무도 안 불렀다(§280). 그중 셋이 여기로 온다 — **레이크 없이
+      #   도는 절반**이다. 셋 다 커밋된 `sources.yaml` 만 읽고 아무것도 안 쓴다.
+      # ★ `--declared` 가 그 절반이다. 실물 대조는 레이크가 붙은 기계에서
+      #   `verify.sh` 의 「취입 계약 실물」이 돈다(§284-3). 관문이 절반이라도
+      #   상설인 것이 전체가 아무 데서도 안 도는 것보다 세다.
+      - name: 계보 대장 정합
+        run: uv run python -m firelane.datalog check
+      - name: 계보 그림 생성
+        run: uv run python -m firelane.datalog graph
+      - name: 취입 계약 선언
+        run: uv run python -m firelane.contract --declared
+      # ★ 2026-09-28 (§286). 검사기가 살아 있는지 보는 것을 아무도 안 돌렸다.
+      #   레이크가 필요한 여섯은 `selftests.py` 의 `SKIP` 이 사유와 함께 뺀다.
+      - name: 자기검사 전수
+        run: uv run python tools/selftests.py
+      # ★ 2026-09-28 (W13-7). 재취득 불가 층의 지문. `data/field` 는 커밋되므로
+      #   레이크 없이 돈다 — 2026-09-28 에 도구가 그 층을 덮어쓴 일이 있었다.
+      - name: 실측 층 지문
+        run: uv run python tools/fieldseal.py
       - name: 기획서 대조
         run: uv run python tools/docx_check.py
       - name: 기획서 개요 층

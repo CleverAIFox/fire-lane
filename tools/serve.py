@@ -31,7 +31,6 @@ tools/serve.py — web/ 개발 서버. 캐시를 끈다.
 """
 from __future__ import annotations
 
-import sys
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from io import BytesIO
@@ -100,7 +99,12 @@ class NoCacheHandler(SimpleHTTPRequestHandler):
 
 
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    # ★ 예전엔 `int(sys.argv[1])` 이었다. 숫자가 아니면 `ValueError` 역추적을
+    #   토했다(§283-2). argparse 의 `type=int` 이 사용법으로 거절한다.
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("port", nargs="?", type=int, default=8000, help="들을 포트")
+    port = ap.parse_args().port
     if not ROOT.exists():
         raise SystemExit(f"★ {ROOT} 가 없다")
     handler = partial(NoCacheHandler, directory=str(ROOT))
