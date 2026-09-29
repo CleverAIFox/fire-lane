@@ -69,6 +69,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "web" / "navi" / "src"
 DIST = ROOT / "web" / "navi" / "dist"
+#: 층 명세가 사는 파일들. **둘 다 읽는다** — 하나만 읽으면 옮겨간 층이 사라진다.
+#: ★ 2026-09-29 (§311). `opsLayers.ts` 가 갈라져 나온 날, 이 도구가 `layers.ts` 만
+#:   보고 있었다. 공유 수는 우연히 그대로였고(바탕 층이 안 옮겨갔다) **그래서 더
+#:   나빴다** — 초록인 채로 그물에 구멍이 났다. 아래 자기검사가 그것을 문다.
+LAYER_FILES = ("layers.ts", "opsLayers.ts")
 LAYERS = SRC / "components" / "layers.ts"
 
 #: 전환 깃발. `serve.py` 가 루트에 박고, 번들이 읽어야 한다. 한쪽만 있으면 안 된다.
@@ -103,8 +108,9 @@ def ratchet_values() -> dict[str, int]:
 
 # ── ① 소스 ──────────────────────────────────────────────────────
 def layer_ids() -> dict[str, list[str]]:
-    """`layers.ts` 의 export 함수 → 그 함수가 내는 층 id 들."""
-    src = LAYERS.read_text(encoding="utf-8")
+    """층 명세 파일들의 export 함수 → 그 함수가 내는 층 id 들."""
+    src = "\n".join((SRC / "components" / f).read_text(encoding="utf-8")
+                    for f in LAYER_FILES if (SRC / "components" / f).is_file())
     marks = [(m.start(), m.group(1)) for m in re.finditer(r"^export function (\w+)", src, re.M)]
     marks.append((len(src), ""))
     out: dict[str, list[str]] = {}
@@ -235,7 +241,8 @@ def build() -> list[str]:
     entry = DIST / "index.html"
     if not entry.is_file():
         return ["빌드본이 없다 — `cd web/navi && npm run build`\n"
-                "       ★ 이것은 건너뛸 사유가 아니다. 빌드본이 없으면 화면도 없다"]
+                "       ★ 건너뛸 사유가 아니다. 다만 `verify.sh` 는 이 앞 단계에서\n"
+                "         **직접 짓는다** — 여기서 이 줄이 보이면 그 단계가 빠진 것이다"]
 
     # ㉠ 신선도 — 오늘의 결함
     d_at, s_at = _newest(DIST), _newest(SRC)
@@ -276,9 +283,17 @@ def selftest() -> int:
     fails = []
     per = layer_ids()
     if not per:
-        fails.append("`layers.ts` 에서 층을 하나도 못 읽었다 — 빈 그물이다")
+        fails.append("층을 하나도 못 읽었다 — 빈 그물이다")
     if "baseLayers" not in per:
         fails.append("`baseLayers` 를 못 찾았다 — 공유 층 계산이 0 이 된다")
+    # ★ 파일이 갈라져도 그물이 덮는가. 한 파일만 읽으면 여기서 걸린다(§311).
+    for fn in NAVI_FNS + OPS_FNS:
+        if fn not in per:
+            fails.append(f"`{fn}` 을 못 찾았다 — 층 명세 파일이 갈라졌는데 "
+                         "`LAYER_FILES` 에 안 넣었을 수 있다")
+    for f in LAYER_FILES:
+        if not (SRC / "components" / f).is_file():
+            fails.append(f"`{f}` 가 없다 — 선언이 낡았다")
 
     sh = shared_layers()
     if not sh:
@@ -309,7 +324,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 12")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 15")
     return 1 if fails else 0
 
 

@@ -97,7 +97,25 @@ export default defineConfig(({ mode }) => ({
   base,
   plugins: [react(), serveWebData()],
   define: { "import.meta.env.VITE_MAPBOX_TOKEN": JSON.stringify(mapboxToken(mode)) },
-  build: { outDir: "dist", emptyOutDir: true },
+  build: {
+    outDir: "dist", emptyOutDir: true,
+    // ★ 2026-09-29 (PLAN §13 W13-3 · DECISIONS §312). 단일 청크 1,390kB 였다.
+    //   **4G 첫 진입 시간이 곧 출동 시각이다** — 지도 엔진과 React 는 첫 화면에
+    //   같이 필요하지만, 한 덩어리면 하나가 늦을 때 둘 다 늦고 **하나가 바뀌면
+    //   둘 다 다시 받는다.** 판정 코드만 고쳐도 maplibre 500kB 를 다시 받았다.
+    //   갈라 두면 지도 엔진은 판마다 안 바뀌므로 브라우저 캐시가 산다.
+    // ★ 무게 자체를 줄이는 것은 아니다. 그것은 별개의 일이고 `naviweight` 가 센다.
+    // ★ vite 8 은 rolldown 이다 — `manualChunks` 가 **함수여야** 한다(표 형태를 거부한다).
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes("node_modules/maplibre-gl")) return "maplibre";
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return "react";
+          return undefined;
+        },
+      },
+    },
+  },
   // 단위 시험 — vitest 가 이 설정(번들러 · 변환)을 그대로 먹는다 (DECISIONS §217-5)
   test: { include: ["test/**/*.test.ts"], environment: "node", testTimeout: 60_000 },
 }));

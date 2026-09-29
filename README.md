@@ -85,6 +85,9 @@ uv run python tools/ratchet.py          # 래칫 선언 = 실측인가 (관문�
 uv run python tools/uicheck.py --split  # 관제와 내비가 다른 화면인가 (공유 지도 층 래칫)
 uv run python tools/uicheck.py --build  # 화면이 지금 코드에서 나왔는가 (빌드본 신선도)
 uv run python tools/mergecheck.py       # 빨간불 위에서 머지된 PR 이 있는가 (CI 전용)
+uv run python tools/naviweight.py       # 내비가 밖에 몇 개 기대는가 (오프라인)
+uv run python tools/naviweight.py --build  # 진입 청크 무게 래칫
+cd web/navi && npm run glyphs           # 지도 글자를 저장소 안에서 다시 뽑는다
 uv run python tools/ratchet.py --write  # 조이는 쪽으로만 고쳐 적는다 — 느슨해지는 쪽은 거부한다
 uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
 uv run python tools/selftests.py         # ★ 선언된 `--selftest` 를 전부 돌린다 (문 하나 · --list 로 건너뜀 사유)

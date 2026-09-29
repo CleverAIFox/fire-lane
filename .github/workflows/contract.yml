@@ -356,6 +356,9 @@ jobs:
         run: uv run python tools/uicheck.py --split
       - name: 머지 절차 (빨간불 위에서 머지했는가)
         run: uv run python tools/mergecheck.py
+      # ★ 소스 축만. 빌드본 무게와 글자 대조는 여기서 내비를 안 지어 못 본다(§312).
+      - name: 내비 의존 (출동 중에 끊기는 것)
+        run: uv run python tools/naviweight.py
         env:
           GH_TOKEN: ${{ github.token }}
           CI: "1"

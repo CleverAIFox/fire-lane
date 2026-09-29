@@ -30,3 +30,12 @@ createRoot(document.getElementById("root")!).render(
       : <App />}
   </StrictMode>,
 );
+
+// ★ 2026-09-29 (PLAN §13 W13-4 · DECISIONS §312). 통신이 끊겨도 돈다.
+//   실패는 삼킨다 — 서비스 워커가 없다고 내비가 안 뜨면 그것이 더 나쁘다
+//   (http 로 열었거나, 브라우저가 막았거나, 사설 모드다).
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
+  });
+}

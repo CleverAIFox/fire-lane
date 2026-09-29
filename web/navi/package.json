@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "glyphs": "node scripts/glyphs.mjs"
   },
   "dependencies": {
     "maplibre-gl": "^6.11.0",
@@ -24,6 +25,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^6.1.1",
+    "fontnik": "^0.7.7",
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.0",

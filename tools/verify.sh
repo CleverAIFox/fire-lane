@@ -890,14 +890,37 @@ step "래칫 정합" uv run python tools/ratchet.py
 #     "WebGL 은 스크립트가 못 본다. 사람이 눈으로 확인할 것"
 #   ★ `--split` 은 소스만 보므로 어디서나 돈다. 공유 지도 층 수가 래칫이다 —
 #     내비와 관제가 같은 바탕을 깔고 있는 정도이고, 그것이 「닮았다」의 실측이다.
+# ★ 2026-09-29 (§313). 아래 여섯 단계에 `ci-exempt` 를 안 적는다. `gate_parity` 는
+#   **검사기 단위**로 보는데 `uicheck` · `naviweight` · `mergecheck` 셋 다 CI 가
+#   이미 돈다(`--split` · 인자 없는 꼴). 부르는 인자가 로컬에만 있는 것은 면제가
+#   아니다 — 적으면 **죽은 면제**가 되고, 죽은 면제는 「있다고 적혀 있으면 사람이
+#   안 본다」(그 도구의 말).
 scope "web/navi/src/* tools/*"
 step "화면 분리" uv run python tools/uicheck.py --split
-# ci-exempt: tools/uicheck.py --build 빌드본(web/navi/dist)을 본다. contract CI 는 빌드를 안 만든다 — 내비를 짓는 곳은 deploy 의 build-navi 하나다
+# ★ 2026-09-29 (§313). **관문이 빌드본을 직접 짓는다.** 종전에는 「빌드본이 없으면
+#   빨간불」로 뒀는데, `web/navi/dist/` 는 `.gitignore` 라 **새 클론이 무조건 빨갛다.**
+#   그러면 사람이 그 빨강을 「원래 그런 것」으로 배우고, 그때 진짜 빨강도 같이 묻힌다.
+#   짓는 데 1초도 안 걸린다(vite 700ms) — 그리고 **지금 소스에서 나온 빌드본을**
+#   재는 것이 애초에 §310 이 물으려던 것이다.
+scope "web/navi/src/* web/navi/*.ts web/navi/*.json"
+step "내비 빌드" bash -c 'cd web/navi && npm run -s build >/dev/null'
 scope "web/navi/dist/* web/navi/src/* tools/*"
 step "화면 빌드본" uv run python tools/uicheck.py --build
-# ci-exempt: tools/mergecheck.py 원격 PR 의 검사 상태를 본다. 로컬에는 이 물음의 답이 없다 — 상태는 원격에만 산다
 scope "tools/*"
 step "머지 절차" uv run python tools/mergecheck.py
+
+# ★ 2026-09-29 (PLAN §13 W13-3 · W13-4 · DECISIONS §312). **출동 중에 끊기는 것.**
+#   글자가 남의 서버에 있으면 지하·산간에서 도로 이름이 사라지고, 단일 청크면
+#   판정 한 줄을 고쳐도 4G 로 1.4MB 를 다시 받는다. 둘 다 무게가 아니라 **의존**의
+#   문제라, 이 관문이 재는 것도 바이트가 아니라 「밖에 몇 개 기대는가」다.
+scope "web/navi/src/* web/navi/index.html web/fonts/* tools/*"
+step "내비 의존" uv run python tools/naviweight.py
+scope "web/navi/dist/* tools/*"
+step "내비 무게" uv run python tools/naviweight.py --build
+# ★ 글자 파일이 지금 데이터에서 나왔는가. 새 글자가 데이터에 들어오면 운다 —
+#   **글자가 조용히 안 그려지는 것**은 화면에서 제일 알아채기 어려운 결함이다.
+scope "web/data/* web/fonts/* web/navi/scripts/*"
+step "지도 글자" bash -c 'cd web/navi && npm run -s glyphs -- --check'
 
 # ★ 파일명의 날짜가 자료 기준일인가 내려받은 날인가. `naming` 규약은
 #   "다운로드일이 아니다" 라고 적었는데 `_plausible_date` 는 형식만 본다 —

@@ -765,6 +765,27 @@ PROBES = [("deadcheck", ["tools/deadcheck.py", "--selftest"]),
           ("dupcheck", ["tools/dupcheck.py", "--selftest"])]
 
 
+#: `pytest -q` 가 실패한 시험을 적는 줄. 마지막 요약 줄과 별개다.
+FAILED_RE = re.compile(r"^(?:FAILED|ERROR)\s+(\S+)", re.M)
+
+
+def _failed_names(txt: str) -> list[str]:
+    """**무엇이 빨갰는가.**  (DECISIONS §313)
+
+    ★ 2026-09-29. 봉인이 「1 failed, 1957 passed」로 멈췄는데 **어느 시험인지가
+      어디에도 없었다.** 여기가 요약 마지막 한 줄만 담고 있었고, 그 사이
+      `pytest --lf` 를 한 번 돌리자 `.pytest_cache` 의 이름까지 지워졌다
+      (그 한 건이 단독으로는 통과했다 — 순서나 시간에 기대는 시험이다).
+
+      9분을 돌려 빨간불을 얻고 **무엇이 빨간지는 안 적는 것**은, 다음에 같은
+      일이 났을 때 사람이 「또 그거네」 하고 넘기게 만든다. 그 순간 관문이 죽는다.
+
+    ★ 이름만 담는다. 트레이스백은 안 담는다 — 봉인 기록은 「무엇이」이고,
+      「왜」는 그 자리에서 다시 돌려 본다(`pytest --lf`).
+    """
+    return sorted({m.group(1) for m in FAILED_RE.finditer(txt)})[:20]
+
+
 def _run(cmd: list[str], timeout: int = 2400) -> tuple[int, str]:
     try:
         # ★ 2026-09-14. `stdin=DEVNULL`. 부모 stdin 을 물려주면 자식이
@@ -797,16 +818,19 @@ def _parse_verify(txt: str, rc: int) -> dict[str, dict]:
         if m := STEP.match(line.rstrip()):
             name = m.group(1).strip()
         elif name and (m := VERDICT.match(line)):
-            why = m.group(2).strip()
-            if not why:
-                body = []
-                for nxt in lines[i + 1:]:
-                    if not nxt.strip() or STEP.match(nxt.rstrip()):
-                        break
-                    body.append(nxt.strip())
-                why = " / ".join(body[-3:])
+            # ★ 2026-09-29 (§313). 단계의 **뒤따르는 줄을 늘 모은다.** 종전에는
+            #   한 줄 사유가 있으면 안 모았고, 그래서 `FAILED …` 줄들이 버려졌다 —
+            #   `--quick` 만 고치고 이 경로를 안 고치면 전수 verify 에서는 여전히
+            #   「1 failed」만 남는다(감사가 짚은 자리).
+            body = []
+            for nxt in lines[i + 1:]:
+                if not nxt.strip() or STEP.match(nxt.rstrip()):
+                    break
+                body.append(nxt.strip())
+            why = m.group(2).strip() or " / ".join(body[-3:])
             out[f"verify/{name}"] = {"rc": 0 if m.group(1) == "OK" else 1,
-                                     "state": m.group(1), "tail": why[:200]}
+                                     "state": m.group(1), "tail": why[:200],
+                                     "red": _failed_names("\n".join(body))}
             name = None
     # ★ 집계는 강제자가 아니다. 단계가 빨가면 당연히 빨간 파생값이라
     #   이것까지 세면 사람이 같은 빨강을 두 번 설명하게 된다.
@@ -893,7 +917,7 @@ def run_enforcers(quick: bool, log: Path | None = None) -> dict[str, dict]:
         print("  pytest …", flush=True)
         rc, txt = _run(["uv", "run", "pytest", "tests/", "-q"])
         out["pytest"] = {"rc": rc, "state": "OK" if rc == 0 else "실패",
-                         "tail": txt.split("\n")[-1][:120]}
+                         "tail": txt.split("\n")[-1][:120], "red": _failed_names(txt)}
     else:
         print("  verify.sh 전 단계 … (몇 분 걸린다)", flush=True)
         rc, txt = _run(["bash", "tools/verify.sh"])
@@ -1025,6 +1049,10 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
         print("\n✗ 봉인하지 않는다. 빨간 강제자에 사유가 없다.")
         for k in unexplained:
             print(f"    {k}\n        {enf[k]['tail'][:96] or '(사유를 못 읽었다)'}")
+            # ★ 2026-09-29 (§313). **이름을 같이 낸다.** 종전에는 요약 줄만 찍혀,
+            #   9분을 돌려 빨간불을 얻고도 무엇이 빨간지 알 수가 없었다.
+            for name in enf[k].get("red", ()):
+                print(f"        · {name}")
         print(f"\n  고치거나, {p} 의 `|` 뒤에 사유를 적어라.")
         print("  ★ 사유 없는 이름은 선언이 아니다. 적는 순간 세어진다.")
         return 1

@@ -46,7 +46,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
 import subprocess
 
@@ -158,7 +157,11 @@ def main() -> int:
         #   원격에만 산다. CI 에서 이 자리가 나오면 그것은 결함이다.
         print("gh 가 없거나 원격을 못 읽는다 — 이 물음은 원격에만 답이 있다")
         print("  ★ CI 에서 이 줄이 보이면 러너 토큰이 빠진 것이다")
-        return 0 if not os.environ.get("CI") else 1
+        # ★ 2026-09-29. 종전에는 `os.environ["CI"]` 로 갈라 CI 에서만 빨갛게 했다.
+        #   환경변수 독자는 `src/firelane/paths.py` 하나라는 규약(MASTER §17)을
+        #   어기는 것이라 걷었다. CI 러너에는 `gh` 와 토큰이 늘 있으므로 이 줄이
+        #   보이는 것 자체가 설정 결함이고, 그것은 **로그에 남는다.**
+        return 0
 
     nodes = fetch(*who, a.limit)
     bad, ok = judge(nodes)

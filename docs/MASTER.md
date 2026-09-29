@@ -1442,7 +1442,7 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | 경로 | 내용 |
 |---|---|
 | `web/navi/src/domain/` | 판정 · 경로 · 통행 규칙 · 속도 — 화면과 무관한 순수 로직. 단위 시험이 여기를 본다 |
-| `web/navi/src/components/` | 지도(`NaviMap` · `OpsMap`) · 레이어 선언(`layers.ts`) |
+| `web/navi/src/components/` | 지도(`NaviMap` · `OpsMap`) · 레이어 선언(공용 `layers.ts` · 관제 전용 `opsLayers.ts`) |
 | `web/navi/src/` 나머지 | 내비 흐름(`App.tsx`) · 관제(`OpsApp.tsx`) · UI 조각 |
 | `web/navi/test/` | vitest — 실제 발행 그래프를 먹는다. `style.test.ts` 가 모든 레이어를 style-spec 검증기에 통과시킨다 |
 | `web/config.js` | **파이프라인 설정**이다(판정색 · 지형 과장 · 편성). 화면이 직접 읽지 않고 발행이 옮긴다 |
@@ -2765,7 +2765,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,309 전수 · **분모(blank) 0절** · 물림(inherit) 543절.
+★ **강제자 칸의 분모.** 절 1,317 전수 · **분모(blank) 0절** · 물림(inherit) 549절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
