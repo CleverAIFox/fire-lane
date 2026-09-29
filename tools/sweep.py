@@ -142,6 +142,32 @@ def led() -> dict:
     return ledger.load_sources()
 
 
+def torn_down(y: dict, root: Path = ROOT) -> list[tuple[Path, str, str]]:
+    """**철거된 산출물**이 디스크에 남아 있는가. 대장 `retired_outputs` 가 근거다.
+
+    ★ 2026-09-29 (DECISIONS §305). `processed` 를 통째로 훑지 않는다 — 그쪽을
+      무는 것은 `tests/test_ledger_outputs.py::test_no_undeclared_output` 이고,
+      여기서 또 판단하면 「대장에 없다」의 뜻이 두 집에 산다(R3). 이 함수는
+      **철거를 선언한 경로만** 본다. 선언 밖은 안 지운다.
+
+    `root` 는 시험이 임시 트리를 가리키게 하는 자리다 — 저장소를 건드리지 않고
+    이 판정을 잴 수 있어야 한다.
+
+    ★ 왜 sweep 이 하나. 단계를 철거하면 그 단계가 예전에 만든 파일이 **기계마다
+      남는다.** 배치 K 가 71/72 로 죽은 원인이고(내 기계엔 그 파일이 없어서
+      초록이었다), 네 파트 기계가 각자 같은 파일을 들고 있다. 사람이 `rm` 을
+      기억할 일이 아니다 — 「삭제도 파이프라인의 일이다」가 이 도구의 전제다.
+    """
+    out: list[tuple[Path, str, str]] = []
+    for k, v in (y.get("retired_outputs") or {}).items():
+        if not isinstance(v, dict) or not v.get("path"):
+            continue
+        q = root / str(v["path"])
+        if q.is_file():
+            out.append((q, "판단 완료", f"retired_outputs.{k} · {v.get('decided', '?')}"))
+    return out
+
+
 def retired_names(y: dict) -> dict[str, str]:
     """폐기 대장이 지목하는 이름 → 항목 키.
 
@@ -341,6 +367,15 @@ def main() -> int:
         sz = sum(p.stat().st_size for p in z.rglob("*") if p.is_file()) if z.is_dir() else 0
         print(f"   {zone:12s} {n:3d}건 {sz / 1e6:8.1f}MB   {note}")
 
+    torn = torn_down(y)
+    print("\n══ ④ 철거된 산출물 (repo processed)")
+    if not torn:
+        print("   없다 — 철거 선언 "
+              f"{len(y.get('retired_outputs') or {})}건 모두 디스크에서 사라졌다")
+    for q, v, w in torn:
+        print(f"   🗑 [{v:9s}] {q.relative_to(ROOT)}  {q.stat().st_size / 1e6:.1f}MB")
+        print(f"        {w}")
+
     fix_docs(a.yes)
 
     # ★ 2026-09-26 (§258-15). **못 읽은 원본이 있으면 이 실행의 판단은 부분이다.**
@@ -356,7 +391,7 @@ def main() -> int:
         print("   외장 SSD 가 /mnt/ (DrvFs) 로 붙어 있으면 큰 읽기가 ENOMEM 을 낸다.")
         print("   그 원본을 리눅스 쪽 디스크로 옮기거나, 그 파일만 빼고 판단해라.")
 
-    todo = dele + land
+    todo = dele + land + torn
     total = sum(p.stat().st_size for p, _, _ in todo)
     print(f"\n══ 정리 대상 {len(todo)}건 · {total / 1e6:.0f}MB")
     if not todo:

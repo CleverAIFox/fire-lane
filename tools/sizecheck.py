@@ -156,7 +156,7 @@ EXCEPTIONS: dict[str, int] = {
     # ★ 2026-09-28 (DECISIONS §292-2). 1125 → 1130. 「패키지 import」의 손목록 31개를
     #   유도로 바꾼 다섯 줄과 사유다. 목록이 줄어들고 덮는 범위는 31 → 68 로 늘었다.
     "tools/verify.sh": 1130,
-    "src/firelane/segments.py": 853,
+    "src/firelane/segments.py": 780,
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이
     #   「21+잠금」 이라고 **수를 박아** 두고 있었다(실물 17). 수를 빼고 그 사유를

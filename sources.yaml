@@ -3365,6 +3365,34 @@ inventory:
 # ── 산출물 ────────────────────────────────────────────────────
 # consumers 가 "이 데이터를 지금 누가 쓰고 있나"다.
 # 이게 없으면 소스 하나를 못 건드린다. datalog.py impact 가 이걸 읽는다.
+# ── 철거된 산출물 ──────────────────────────────────────────────
+# ★ 2026-09-29 신설 (DECISIONS §305). `retired` 와 다른 칸이다 — 그쪽은
+#   **원천 데이터셋**의 폐기이고 여기는 **단계를 철거해서 더는 아무도 만들지
+#   않는 processed 산출물**이다. 계약이 정반대라 `outputs` 에 되넣을 수 없다 —
+#   `outputs` 항목은 「실행 뒤에 있어야 하고 소비자가 그것을 읽는다」인데
+#   여기 것은 「없어야 하고 생산자도 소비자도 없다」다.
+#
+# ★ 이 칸이 왜 필요했나. §302 가 `streetlight` 단계를 철거하면서 이 대장에서
+#   등재를 뺐다. 그런데 **파일은 기계마다 남았다** — 예전 실행이 만들어 둔
+#   것이다. `test_no_undeclared_output` 이 옳게 울었고(배치 K 71/72),
+#   사람이 `rm` 을 기억할 일이 아니다. 철거를 선언하면 `tools/sweep.py` 가
+#   치운다. 강제자 — `tests/test_ledger_outputs.py` 의 철거 시험 셋.
+#
+# 항목마다 `decided` 에 § 를 적는다. 근거 없는 철거는 등재하지 않는다.
+retired_outputs:
+  streetlight_point:
+    path: data/processed/streetlight_point.geojson
+    produced_by: streetlight            # 철거된 파이프라인 단계 이름
+    decided: DECISIONS §302 · PLAN §13 W13-8
+    at: 2026-09-29
+    why: |
+      소비자 0. 옛 지도(`web/js`)의 가로등 마커였고 현재 지도(`web/navi`)는
+      안 읽는다. 매 실행 3.2초를 썼다. 근거가 `segments.py:360` ·
+      `publish_web.py:90` 주석에 이미 있었다.
+      ★ 구간의 `light_count` 는 이것이 아니라 `streetlight_5186.gpkg`(ingest
+        산출)에서 나온다. 그 파일은 **살아 있다** — 철거 대상이 아니다.
+      ★ 판정 무영향. 재잠금 없음.
+
 outputs:
   jijeok:
     produced_by: src/firelane/ingest.py

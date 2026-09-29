@@ -975,8 +975,10 @@ setx FIRE_LANE_DATA "<raw 상위 폴더 경로>"            # 윈도우
 있으면 `FIRE_LANE_DATA` 를 덮어써 기계 간 산출물이 갈린다. 실행 시 경고가
 나온다. 셸 프로필에 남아 있으면 지울 것.
 
-`field` 와 `processed` 는 환경변수를 타지 않는다. 야장은 수십 KB 이고 UI
-담당·심사위원이 clone 만으로 봐야 하는 자료다.
+`field` 와 `processed` 는 환경변수를 타지 않는다. 이 층에 남은 것은 손으로 뽑은
+파생표 `ngi_width_05_check.csv` 하나(2.3KB)이고, DECISIONS 가 그것을 근거로
+인용하므로 UI 담당·심사위원이 clone 만으로 봐야 한다 — 야장 셋은 2026-09-28 에
+지웠다(§291). 지문은 `tools/fieldseal.py` 가 든다.
 강제자 — `tests/test_reproducibility.py::test_paths_match_layer_table`
 
 ### 6-3. 폭 주 소스 — 1:1,000 수치지형도
@@ -2763,7 +2765,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,275 전수 · **분모(blank) 0절** · 물림(inherit) 518절.
+★ **강제자 칸의 분모.** 절 1,292 전수 · **분모(blank) 0절** · 물림(inherit) 530절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3922,7 +3924,7 @@ style                                                판정 4색
 
 그 절들의 주장은 「이 관문이 이 도구를 부른다」이다. 그래서 보는 것은 **그 절이
 함께 지목한 도구를 부르는 줄**이고, 같이 지목한 것이 없으면 **단계 이름 목록**이다.
-관점을 주는 파일은 `docseal.LIST_VIEW` 가 든다.
+관점을 주는 대상은 `docsealfp.LIST_VIEW`(목록 파일) · `docsealfp.KEY_VIEW`(대장) · `_is_test`(시험 파일 규칙) 셋이 든다.
 
 ★ **느슨해진 것이 아니다.** 지목한 도구를 관문에서 떼면 지문이 움직이고, 부르는
   줄의 인자가 바뀌어도 움직이며, 아예 안 부르면 **그 사실이 지문에 박힌다** —
@@ -3932,7 +3934,7 @@ style                                                판정 4색
   「옛 공식에서 실제로 유효했는가」와 「새 관점으로 보면 그 변경이 안 보이는가」
   둘을 증명해 옮긴다. 어느 공식으로 찍힌 도장인지는 `FP_METHOD` 가 든다.
 
-강제자  `tools/docseal.py`(`view` · `LIST_VIEW` · `FP_METHOD`) · `tests/test_docseal_view.py`(10 — 양방향)
+강제자  `tools/docsealfp.py`(`view` · `LIST_VIEW` · `KEY_VIEW` · `FP_METHOD`) · `tests/test_docseal_view.py`(15 — 양방향)
 
 ### 21-1. 축 — 분모가 재현되는 것만 센다
 
@@ -3989,7 +3991,7 @@ uv run python tools/dms.py seal --log /tmp/verify.log
 |---|---|
 | 절 내용이 바뀌었다 | 그 절만 다시 본다 |
 | 절이 생겼다·사라졌다 | 그 절만 다시 본다 |
-| **도구가 바뀌었다** | 전수 재검사. 봉인 전체가 무효 |
+| **도구가 바뀌었다** | 그 도구가 무는 **축만** 무효 — 무효인 축만 다시 본다(§255). `dms.py` 는 절 축 전부, `dupcheck.py` 는 사본군 축 |
 
 ★ 셋째가 핵심이다. 판정 규칙이 바뀌면 옛 통과는 증표가 아니다.
 `golden.py lock` 이 코드 지문을 같이 넣는 것과 같은 이유다.

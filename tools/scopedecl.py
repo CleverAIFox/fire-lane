@@ -109,7 +109,7 @@ NO_DECL = 150
 # ★ 2026-09-28 (PLAN W13-7 · DECISIONS §288). 29 → 30. `tools/fieldseal.py` —
 #   재취득 불가 층의 무결성 지문. 판별식이 바뀜·사라짐·새로 생김 셋을
 #   실제로 가르는지 자기검사가 문다.
-SELFTEST_MIN = 32
+SELFTEST_MIN = 33
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)
 

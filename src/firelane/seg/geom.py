@@ -41,7 +41,13 @@ VERDICT_RULE = (
     "wmin >= 7.0 + 정규표본 1개 -> needs_cv (표본 하나로 clear 를 주지 않는다)",
     "wmin 있음 -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)",
     "그 외 -> unknown (reason=width). 폭 산출 불가",
-    "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv). 영상판정 불가",
+    # ★ 2026-09-29 (DECISIONS §305). `reason=no_cctv` 라고 적혀 있었다.
+    #   **그 값은 산출물에 한 번도 없다** — 2026-08-22 에 넷으로 쪼갰고(§
+    #   no_cctv_narrow · _thin · _band · _single) 같은 스키마의 `unknown_reason`
+    #   필드 서술은 넷을 옳게 적고 있었다. 한 파일이 두 곳에서 다르게 말했다.
+    #   `no_cctv` 로 분기하는 소비자는 399건 중 0행을 받는다.
+    "needs_cv 인데 CCTV 25m 밖 -> unknown "
+    "(reason=no_cctv_narrow|no_cctv_thin|no_cctv_band|no_cctv_single). 영상판정 불가",
 )
 """판정 규칙의 문언 정본.
 
@@ -49,8 +55,12 @@ VERDICT_RULE = (
 생성된다. 손으로 적으면 규칙을 고칠 때 한쪽만 바뀐다 — 실제로
 `nreg <= 1` 보류 규칙이 코드·테스트·UI 에는 있고 스키마에만 없었다.
 
-순서는 아래 `verdict()` 의 분기 순서이며, 마지막 줄만 `segments.py` 가
-CCTV 거리로 적용한다. 강제자 — `tests/test_declaration_sync.py`
+순서는 아래 `verdict()` 의 분기 순서다.
+
+★ 2026-09-29 정정 (DECISIONS §303). 종전에 「마지막 줄만 `segments.py` 가
+CCTV 거리로 적용한다」고 적혀 있었다. **둘이었다** — `[1]`(대장폭 확정)도
+`segments.py` 안이었다. 지금은 일곱 줄 전부 `seg/classify.py` 가 실행하고
+`verdict()` 는 그중 다섯(`[0]` · `[2]`~`[5]`)의 순수 분기다. 강제자 — `tests/test_declaration_sync.py`
 """
 
 

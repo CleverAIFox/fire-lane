@@ -51,7 +51,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from docsealfp import FP_METHOD, _generated, digest, parts
+from docsealfp import FP_METHOD, LEGACY_VIEWS, _generated, digest, parts, view, view_v1
 
 ROOT = Path(__file__).resolve().parents[1]
 SEAL = ROOT / "data" / "golden" / "docseal.json"
@@ -142,8 +142,25 @@ def _tracked() -> frozenset[str]:
     return frozenset(x for x in r.stdout.split("\0") if x)
 
 
-def why(now_one: dict, was_one: dict) -> list[str]:
-    """무효의 **사유**. 「어디가」를 말한다. 못 말하면 못 말한다고 말한다."""
+#: 공식 판 → 그 판의 관점 함수. `why` 가 **저장된 판으로** 조각을 다시 낼 때 쓴다.
+FP_VIEWS = {"view-v1": view_v1, FP_METHOD: view}
+
+
+def why(now_one: dict, was_one: dict, text: str = "") -> list[str]:
+    """무효의 **사유**. 「어디가」를 말한다. 못 말하면 못 말한다고 말한다.
+
+    ★ 2026-09-29 (DECISIONS §307-3). **공식이 바뀌면 이 함수가 거짓을 냈다.**
+      저장된 `parts` 는 그때의 공식(`fp`)으로 낸 것이고 `now_one["parts"]` 는
+      지금 공식으로 낸 것이다. 둘을 그대로 대면 **바이트가 한 글자도 안 바뀐
+      파일도 「코드가 바뀌었다」로 찍힌다** — 실측으로 `tests/test_docseal.py` 를
+      지목한 절들이 그렇게 나왔고 그 파일은 변경이 없었다.
+
+      §290 이 이 칸을 만든 이유가 「관문이 사람에게 조사를 미루지 않게」였다.
+      설명이 거짓이면 조사를 미루는 것보다 나쁘다 — 사람을 엉뚱한 파일로 보낸다.
+
+    ★ 고침은 **저장된 판으로 다시 내는 것**이다. 판정(`sha`)은 안 건드린다 —
+      유·무효는 여전히 `valid()` 하나가 정하고, 이 함수는 그 뒤의 설명이다.
+    """
     out: list[str] = []
     old_fs, new_fs = set(was_one.get("files", ())), set(now_one["files"])
     for f in sorted(new_fs - old_fs):
@@ -160,6 +177,23 @@ def why(now_one: dict, was_one: dict) -> list[str]:
         return out
     if was_p.get("본문") != now_p["본문"]:
         out.append("본문 — 절의 글이 바뀌었다")
+    # ★ 저장된 공식으로 조각을 다시 낸다. 판이 같으면 그대로 쓴다.
+    old_fp = was_one.get("fp", "view-v1")
+    vf = FP_VIEWS.get(old_fp)
+    if old_fp != FP_METHOD and vf is not None and text:
+        then_p = parts(text, now_one["files"], vf)
+        moved = [f for f in sorted(new_fs & old_fs) if was_p.get(f) != then_p.get(f)]
+        body_moved = was_p.get("본문") != then_p.get("본문")
+        out = [x for x in out if not x.startswith("본문 —")]
+        if body_moved:
+            out.append("본문 — 절의 글이 바뀌었다")
+        for f in moved:
+            out.append(f"{f} — 코드가 바뀌었다")
+        out.append(f"★ 지문 공식이 {old_fp} → {FP_METHOD} 로 바뀌었다 — "
+                   f"위 목록은 **옛 공식으로 다시 재서** 낸 것이다")
+        if not moved and not body_moved:
+            out.append("옛 공식으로는 아무것도 안 움직였다 — 공식 변경만으로 무효가 됐다")
+        return out
     for f in sorted(new_fs & old_fs):
         if was_p.get(f) != now_p[f]:
             out.append(f"{f} — 코드가 바뀌었다")
@@ -237,10 +271,15 @@ def moved_after(rows: list[dict], i: int, files: list[str],
     return newest if newest > sec else 0
 
 
-def survey() -> tuple[dict, dict]:
-    """절 → 지금 지문. 그리고 찍혀 있는 도장."""
+def survey() -> tuple[dict, dict, dict]:
+    """절 → 지금 지문 · 찍혀 있는 도장 · **절 본문**.
+
+    ★ 2026-09-29 (§307-3). 본문을 같이 낸다. `why()` 가 저장된 공식으로 조각을
+      다시 내려면 본문이 필요하고, 그것을 다시 긁으면 `body()` 의 규칙이 두 집에
+      산다. 도장에는 안 들어간다 — 세 번째 반환값이고 디스크에 안 쓴다.
+    """
     rows = _sections()
-    now = {}
+    now, bodies = {}, {}
     for i, r in enumerate(rows):
         if r["state"] != "wired":
             continue                      # 무는 절은 부모 도장이 덮는다(머리말 `밖`)
@@ -253,9 +292,21 @@ def survey() -> tuple[dict, dict]:
         #   주장이 그 자체로 거짓이었다. 선언만 하고 안 쓰는 것이 이 저장소의 상습이다.
         now[r["id"]] = {"sha": digest(t, fs), "files": fs, "doc": r["doc"],
                         "parts": parts(t, fs), "fp": FP_METHOD,
-                        "legacy": [digest(f(rows, i), fs) for f in LEGACY_BODIES]}
+                        # ★ 2026-09-29 (§307-1). **옛 관점 지문도 낸다.** 종전에는
+                        #   옛 **본문 규칙**만 받았다(§273-10). 관점 공식을 v1 → v2 로
+                        #   바꾸자 시험 파일을 지목한 절 전부 — 320개 — 가 한꺼번에
+                        #   무효가 됐다. 내용이 한 글자도 안 바뀐 절까지 죽는 것은
+                        #   공식 변경의 부작용이고, 그것을 다시 찍으면 도장 찍기다.
+                        #   본문 판 × 관점 판을 곱해 전부 낸다 — 어느 조합으로 찍혔든
+                        #   **내용이 그대로면** 받는다. 내용이 움직이면 모든 조합이
+                        #   같이 움직여 여전히 죽는다.
+                        "legacy": [digest(b, fs, vf)
+                                   for b in [t] + [f(rows, i) for f in LEGACY_BODIES]
+                                   for vf in LEGACY_VIEWS]
+                        + [digest(f(rows, i), fs) for f in LEGACY_BODIES]}
+        bodies[r["id"]] = t
     was = json.loads(SEAL.read_text(encoding="utf-8")) if SEAL.is_file() else {}
-    return now, was
+    return now, was, bodies
 
 
 def valid(now_one: dict, was_one: dict | None) -> bool:
@@ -279,7 +330,7 @@ def kind_of(one: dict | None) -> str:
 
 
 def status() -> int:
-    now, was = survey()
+    now, was, bodies = survey()
     ok = [k for k, v in now.items() if valid(v, was.get(k))]
     read = [k for k in ok if kind_of(was.get(k)) == "read"]
     unm = [k for k in ok if kind_of(was.get(k)) == "unmoved"]
@@ -306,7 +357,7 @@ def queue(limit: int = 30) -> int:
     """
     import datetime as _dt
     rows = _sections()
-    now, was = survey()
+    now, was, bodies = survey()
     idx = {r["id"]: i for i, r in enumerate(rows)}
     blames: dict[str, list[int]] = {}
     mtimes: dict[str, int] = {}
@@ -332,7 +383,7 @@ def queue(limit: int = 30) -> int:
 
 
 def check() -> int:
-    now, was = survey()
+    now, was, bodies = survey()
     if not now:
         print("★ 도장 대상이 0절이다 — 판별식을 의심하라")
         return 1
@@ -344,7 +395,7 @@ def check() -> int:
     print(f"✗ 도장이 무효가 된 절 {len(void)}건 — **틀렸다가 아니라 다시 보라는 뜻이다**")
     for k in void:
         print(f"    {k}")
-        for line in why(now[k], was[k]):
+        for line in why(now[k], was[k], bodies.get(k, "")):
             print(f"        {line}")
     print("\n  절과 코드를 같이 읽고, 여전히 맞으면 다시 찍어라:")
     print("    uv run python tools/docseal.py stamp --only " + " --only ".join(void[:3]))
@@ -371,7 +422,7 @@ def stamp(only: list[str] | None, unmoved: bool = False,
     #   반드시 밟는 자리고, 부르는 쪽이 아니라 **여기서** 막는다.
     if isinstance(only, str):
         only = [only]
-    now, was = survey()
+    now, was, bodies = survey()
     if only:
         # ★ 2026-09-28 (DECISIONS §287-2). 종전에는 절 **하나**만 받았다.
         #   한 번이 13초인데(절 500개를 매번 다시 재느라) 스무 절을 찍으려면
@@ -483,7 +534,7 @@ def selftest() -> int:
     if not any("옛 도장" in x for x in w):
         bad.append("부분 지문이 없는 옛 도장을 아는 척한다")
 
-    now, _ = survey()
+    now, _, _b = survey()
     if len(now) < 20:
         bad.append(f"도장 대상이 {len(now)}절뿐이다 — 수집이 좁다")
     if bad:
