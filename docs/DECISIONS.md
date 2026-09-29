@@ -19475,8 +19475,9 @@ Regular/*.pbf` 가 됐다. CODEOWNERS 는 줄을 **공백으로 쪼갠다** — 
 `tests/test_remeasure.py` · `tools/docgen.py` 의 판정 네 축 ·
 `tests/test_docgen.py::test_every_axis_is_injected_into_the_block` ·
 `tests/test_batch_tools.py`(4c 가 `EXPECT` 없이 통과하지 않는가) ·
-`tests/test_delivercheck.py`(스윕 채집이 빨간 축을 떨구지 않는가).
-하위 셋이 이 칸을 물려받는다
+`tests/test_delivercheck.py`(스윕 채집이 빨간 축을 떨구지 않는가) ·
+`tests/test_verify_scope.py`(영향 범위 선언이 실재하는 뿌리를 가리키는가).
+하위 넷이 이 칸을 물려받는다
 배운 것  **판단과 받아적기를 가르면 규율이 안 약해진다.** §13-5 규칙 2 는
 「판정이 움직이면 사람이 판단한다」이고, 그 판단은 **하나**다 — 「이 움직임을
 받아들이는가」. 나머지는 전부 순서이고 순서는 기계가 지켜야 한다.
@@ -19578,6 +19579,25 @@ Regular/*.pbf` 가 됐다. CODEOWNERS 는 줄을 **공백으로 쪼갠다** — 
   채집이 틀리면 **셀 것이 사라진다.** `sweep_verdict` 의 「죽었는데 이름을 못
   읽으면 0건이 아니라 한 건」(빈 그물 금지)은 같은 병의 다른 얼굴을 이미 막고
   있었는데, **한 줄만 빠지는 경우**는 그 그물 밖이었다.
+
+### 319-4. 추적되지 않는 경로를 영향 범위로 선언했다
+
+같은 pack 이 세 번째로 거부했다 — 이번에는 `pytest` 가 밑동에서 초록인데 배치에서
+빨갛다. 사유 하나였다 —
+
+    scope "web/navi/dist/* …"   ← `web/navi/dist` 가 저장소에 없다
+
+`web/navi/dist/` 는 `.gitignore` 다. 그래서 **`--since` 가 볼 수 있는 변경이 아니고**
+그 토큰은 처음부터 아무것도 안 고른다(죽은 선언). 게다가 새 클론에는 그 폴더가
+없어서 `tests/test_verify_scope.py` 가 「없는 뿌리」로 운다 — pytest 는 4단계이고
+빌드는 63단계라, **그 순서로는 그 폴더가 영영 없다.**
+
+★ §313-1 ③ 과 같은 족의 네 번째다 — 「빌드본이 있다고 가정한 검사」. 그때는
+  `naviweight` 였고, 그때 고치면서 **같은 가정이 `scope` 선언에도 있다는 것은 못
+  봤다.** 한 배치가 같은 병의 한 얼굴만 고치는 형태다.
+
+★ 두 토큰을 `web/navi/src/*` 로 바꿨다. 빌드본은 `src` 에서 나오므로 같은 변경을
+  그쪽이 이미 덮는다 — **범위가 좁아지지 않는다.**
 
 ---
 

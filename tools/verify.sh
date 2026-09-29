@@ -906,7 +906,7 @@ step "화면 분리" uv run python tools/uicheck.py --split
 #   재는 것이 애초에 §310 이 물으려던 것이다.
 scope "web/navi/src/* web/navi/*.ts web/navi/*.json"
 step "내비 빌드" bash -c 'cd web/navi && npm run -s build >/dev/null'
-scope "web/navi/dist/* web/navi/src/* tools/*"
+scope "web/navi/src/* tools/*"   # ★ dist 는 추적 밖이라 --since 가 못 본다(§319-4)
 step "화면 빌드본" uv run python tools/uicheck.py --build
 scope "tools/*"
 step "머지 절차" uv run python tools/mergecheck.py
@@ -917,7 +917,7 @@ step "머지 절차" uv run python tools/mergecheck.py
 #   문제라, 이 관문이 재는 것도 바이트가 아니라 「밖에 몇 개 기대는가」다.
 scope "web/navi/src/* web/navi/index.html web/fonts/* tools/*"
 step "내비 의존" uv run python tools/naviweight.py
-scope "web/navi/dist/* tools/*"
+scope "web/navi/src/* tools/*"   # ★ dist 는 추적 밖이라 --since 가 못 본다(§319-4)
 step "내비 무게" uv run python tools/naviweight.py --build
 # ★ 글자 파일이 지금 데이터에서 나왔는가. 새 글자가 데이터에 들어오면 운다 —
 #   **글자가 조용히 안 그려지는 것**은 화면에서 제일 알아채기 어려운 결함이다.
