@@ -18,6 +18,7 @@ PLAN §13 W13-3 · W13-4 둘이 같은 자리를 가리켰다 — **4G 첫 진�
 
     ① 밖에 기대는 것이 몇 개인가        절대 URL 래칫 (내려가는 쪽으로만)
     ② 첫 화면이 받아야 하는 것이 얼마인가  진입 청크 무게 래칫
+    ③ 지도 워커가 산출물에 **있고 참조되는가**  (DECISIONS §323)
 
 ★ ①이 본체다. 1MB 를 받는 것은 느린 것이고, **못 받는 것은 없는 것**이다.
   출동은 통신이 제일 먼저 끊기는 곳으로 간다.
@@ -35,6 +36,8 @@ PARAM 없다. 문턱 둘 다 래칫이고, `EXTERNAL` 만 `ratchet.py` 가 조�
       **런타임에 만든 URL 은 못 본다.** 문자열을 이어 붙여 만든 주소는 정적으로
       안 보인다 — 그 몫은 서비스 워커의 `url.origin !== location.origin` 이
       막는다(밖은 안 건드린다). 여기가 드는 것은 **소스에 적힌 것**이다.
+      **어느 청크에 있어야 하는가는 안 본다** — 번들러가 정한다. ③이 묻는 것은
+      「산출물 **어딘가**에 있는가」 하나다(§323 이 그 반대로 물어서 죽었다).
 """
 from __future__ import annotations
 
@@ -114,6 +117,64 @@ def entry_kb() -> int | None:
     return round(max(p.stat().st_size for p in got) / 1024)
 
 
+# ── ③ 지도 워커가 산출물에 있는가 ───────────────────────────────
+#: 워커 자산 이름의 뿌리. `maplibre-gl-worker-<해시>.js` 로 나온다.
+WORKER = "maplibre-gl-worker"
+
+
+def worker_faults(assets: Path | None = None) -> list[str]:
+    """빌드본이 워커를 **파일로 내고** **자산 경로로 참조하는가.**
+
+    ── 왜 이것을 재나 (DECISIONS §323) ─────────────────────────
+    maplibre-gl 6 은 워커 URL 을 런타임에 만든다 —
+
+        new URL(`./${t}`, import.meta.url)
+
+    템플릿 문자열이라 번들러가 정적으로 못 보고 워커를 산출물에 안 넣는다.
+    그러면 `vite build` 는 종료코드 0, `dist/index.html` 도 있고,
+    **브라우저에서 워커만 404** 다. 타일 파싱이 워커에서 도니 지도 껍데기만
+    뜨고 내용이 안 그려진다. 타입 검사도 빌드도 이것을 못 봤다 — **산출물을
+    세는 검사만이 봤다.**
+
+    ★ 종전에 이 검사는 `.github/actions/build-navi` 의 셸 한 줄이었고 **진입
+      청크(`index-*.js`)만** 읽었다. §313 이 청크를 가르자 워커 참조가
+      `maplibre-*.js` 로 옮겨갔고 검사가 울었다 — 없어진 것은 워커가 아니라
+      **검사의 시야**였다. 어느 청크에 놓을지는 번들러가 정하므로 여기서는
+      **산출물 전체**를 본다.
+
+    ★ 파일과 참조를 **따로** 든다. 파일만 있고 참조가 없으면 브라우저가 안
+      부르고, 참조만 있고 파일이 없으면 404 다 — 둘은 다른 고장이다.
+    """
+    d = assets if assets is not None else DIST / "assets"
+    if not d.is_dir():
+        return [f"`{d}` 가 없다 — `cd web/navi && npm run build`"]
+
+    got = sorted(p.name for p in d.iterdir() if WORKER in p.name)
+    # ★ 참조는 **자산 경로로** 적혀 있어야 한다. 고장난 상태에서는 번들에
+    #   `maplibre-gl-worker.mjs` 만 남고 `assets/` 접두가 없어 안 걸린다.
+    rx = re.compile(r"assets/" + re.escape(WORKER) + r"[\w.\-]*")
+    seen: dict[str, list[str]] = {}
+    for p in sorted(d.glob("*.js")):
+        if WORKER in p.name:
+            continue              # 워커가 제 이름을 적은 것은 참조가 아니다
+        for m in rx.finditer(p.read_text(encoding="utf-8", errors="replace")):
+            seen.setdefault(m.group(0).split("/", 1)[1], []).append(p.name)
+
+    bad = []
+    if not got:
+        bad.append(f"산출물에 `{WORKER}*` 파일이 없다 — **브라우저에서 워커만 404** 다\n"
+                   "       `NaviMap.tsx` · `OpsMap.tsx` 의 `?worker&url` 임포트를 확인할 것")
+    if not seen:
+        bad.append(f"번들이 워커를 `assets/{WORKER}…` 로 참조하지 않는다\n"
+                   "       `setWorkerUrl(workerUrl)` 이 살아 있는지 확인할 것")
+    for name in sorted(set(seen) - set(got)):
+        bad.append(f"번들이 없는 워커 `{name}` 를 가리킨다 ({' · '.join(seen[name])}) — 404")
+    if got and seen and not bad:
+        where = sorted({c for v in seen.values() for c in v})
+        print(f"워커 {' · '.join(got)} ← {' · '.join(where)}")
+    return bad
+
+
 def check(build: bool) -> list[str]:
     bad = []
     h = hosts()
@@ -159,6 +220,7 @@ def check(build: bool) -> list[str]:
                            "       **4G 첫 진입 시간이 곧 출동 시각이다**")
             elif kb < ENTRY_KB:
                 bad.append(f"진입 청크가 {kb}KB 로 줄었다 — `ratchet.py --write` 로 조여라")
+        bad += worker_faults()
     return bad
 
 
@@ -185,9 +247,36 @@ def selftest() -> int:
     for gone in ("demotiles.maplibre.org", "cdn.jsdelivr.net"):
         if gone in h:
             fails.append(f"`{gone}` 가 아직 있다 — 오프라인에서 글자가 사라진다")
+
+    # ★ ③ 워커 — **역방향으로 묻는다.** 「초록이 나오나」가 아니라 「고장을
+    #   정말 잡나」다. 2026-09-30 에 죽은 것은 판정이 아니라 **시야**였다.
+    with tempfile.TemporaryDirectory() as d:
+        a = Path(d) / "assets"
+        a.mkdir()
+        ok = f"{WORKER}-BbFVVOSM.js"
+        (a / ok).write_text("// 워커\n", encoding="utf-8")
+
+        # ⓐ 참조가 **진입 청크가 아닌 청크**에 있어도 통과해야 한다 —
+        #    이것이 §313 이 청크를 가른 뒤의 실제 모양이다
+        (a / "maplibre-DWQEZNJQ.js").write_text(f'u="assets/{ok}";', encoding="utf-8")
+        (a / "index-CBuyQVHW.js").write_text("// 워커 얘기 없다\n", encoding="utf-8")
+        if worker_faults(a):
+            fails.append("워커가 진입 청크 밖에 있으면 운다 — 청크 배치는 번들러가 정한다")
+
+        # ⓑ 접두 없는 참조는 참조가 아니다
+        (a / "maplibre-DWQEZNJQ.js").write_text(f'u="{ok}";', encoding="utf-8")
+        if not worker_faults(a):
+            fails.append("`assets/` 접두 없는 이름을 참조로 센다 — 고장난 상태가 이 꼴이다")
+
+        # ⓒ 파일이 사라지면 운다
+        (a / "maplibre-DWQEZNJQ.js").write_text(f'u="assets/{ok}";', encoding="utf-8")
+        (a / ok).unlink()
+        if not worker_faults(a):
+            fails.append("워커 파일이 없는데 통과한다 — **브라우저에서 404** 다")
+
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 5")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 8")
     return 1 if fails else 0
 
 

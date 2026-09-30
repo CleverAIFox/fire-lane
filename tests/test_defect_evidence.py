@@ -139,5 +139,17 @@ def test_navi_toolchain_is_vite8_and_vitest():
     assert re.match(r"\^?6\.", dev["@vitejs/plugin-react"]), dev["@vitejs/plugin-react"]
     assert "vitest" in dev and pkg["scripts"]["test"].startswith("vitest"), pkg["scripts"]["test"]
     assert not (ROOT / "web" / "navi" / "scripts" / "test.mjs").exists(), "수제 러너가 되살아났다"
-    act = (ROOT / ".github" / "actions" / "build-navi" / "action.yml").read_text(encoding="utf-8")
-    assert "maplibre-gl-worker[^\"'\"'\"'`]" in act, "워커 grep 이 백틱을 모른다 — rolldown 번들에서 죽는다"
+
+    # ★ **2026-09-30 (DECISIONS §323). 이 축의 증표가 옮겨갔다.**
+    #   종전에는 「`build-navi` 의 워커 grep 이 백틱을 아는가」를 물었다 —
+    #   rolldown 압축기가 문자열을 백틱으로 내므로 셸 grep 의 문자 클래스에
+    #   백틱이 없으면 다음 따옴표까지 3,348자를 삼켰기 때문이다.
+    #
+    #   그 grep 이 없어졌다. 판정이 `tools/naviweight.py` 로 갔고, 파이썬
+    #   정규식은 낱말 문자에서 끊으므로 **백틱도 따옴표도 삼킬 수가 없다.**
+    #   고친 것이 아니라 **그 결함이 성립하지 않는 자리로 옮긴 것**이고,
+    #   그래서 여기서 묻는 것도 바뀐다 — 「그 판정이 아직 있는가」다.
+    nw = (ROOT / "tools" / "naviweight.py").read_text(encoding="utf-8")
+    assert "def worker_faults" in nw, "워커 판정이 없다 — 배포본을 아무도 안 본다(§323)"
+    assert r"[\w.\-]*" in nw, (
+        "워커 참조 정규식이 낱말 문자에서 안 끊긴다 — rolldown 의 백틱을 삼킬 수 있다")

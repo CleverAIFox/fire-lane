@@ -71,30 +71,27 @@ runs:
         test -f dist/index.html || { echo "★ dist/index.html 이 없다"; exit 1; }
         echo "내비 빌드 $(du -sh dist | cut -f1)"
 
-        # ★ 2026-09-15. **워커 자산이 산출물에 있는가.**
-        #   maplibre-gl 6 은 워커 URL 을
-        #     new URL(`./${t}`, import.meta.url)
-        #   로 런타임에 만든다. 템플릿 문자열이라 번들러(Rollup → 2026-09-22 부터 Rolldown)가 정적으로 못 보고
-        #   워커를 산출물에 안 넣는다. 그러면 `vite build` 는 종료코드 0,
-        #   `dist/index.html` 도 있고, **브라우저에서 워커만 404** 다.
-        #   타일 파싱이 워커에서 도니 지도 껍데기만 뜨고 내용이 안 그려진다.
+        # ★ **산출물 검사를 여기 적지 않는다.** 2026-09-30 (DECISIONS §323).
         #
-        #   타입 검사도 빌드도 이것을 못 봤다(둘 다 0 이었다). **산출물을
-        #   세는 검사만이 봤다.** 그래서 여기 둔다 — `?worker&url` 을 누가
-        #   지우거나 maplibre 가 또 방식을 바꾸면 여기서 죽는다.
+        #   종전에는 「워커 자산이 산출물에 있는가」를 이 자리의 셸 한 줄이
+        #   들었고, 그 한 줄이 **진입 청크(`dist/assets/index-*.js`)만** 읽었다.
+        #   §313 이 청크를 가르자 워커 참조가 `maplibre-*.js` 로 옮겨갔다 —
+        #   없어진 것은 워커가 아니라 **검사의 시야**였다. 어느 청크에 놓을지는
+        #   번들러가 정하는데 검사가 자리를 박고 있었다.
         #
-        #   `assets/` 접두를 요구하는 것이 핵심이다. 고장난 상태에서는
-        #   번들에 `maplibre-gl-worker.mjs` 만 남고 접두가 없어 안 걸린다.
-        #   ★ 2026-09-22 vite 8(rolldown) 압축기가 문자열을 백틱으로 낸다 — 문자 클래스에
-        #   백틱을 더했다. 안 더하면 다음 따옴표까지 3,348자를 삼켜 `test -f` 가 죽는다.
-        W=$(grep -oh 'assets/maplibre-gl-worker[^"'"'"'`]*' dist/assets/index-*.js | head -1)
-        test -n "$W" || {
-          echo "★ 번들이 워커를 자산으로 참조하지 않는다."
-          echo '  NaviMap.tsx 의 ?worker&url 임포트와 setWorkerUrl 을 확인할 것.'
-          exit 1
-        }
-        test -f "dist/$W" || { echo "★ 참조한 워커가 없다: dist/$W"; exit 1; }
-        echo "워커 자산 확인  $W"
+        #   그리고 그것이 **CI 에만 살았다.** 로컬 전수 verify 82/82 초록에서
+        #   CI 가 빨갰다(3족 · 관문이 갈림). 게다가 진단이 한 줄도 안 나왔다 —
+        #   `shell: bash` 는 `-eo pipefail` 이고, grep 이 미탐으로 1 을 내면
+        #   **`echo "★ …"` 에 닿기 전에** `set -e` 가 단계를 죽인다. 사람이 본
+        #   것은 `Error: Process completed with exit code 1.` 하나였다.
+        #
+        #   그래서 판정을 `tools/naviweight.py` 로 내렸다. 그것은 이미 `dist/` 를
+        #   읽고, `verify.sh` 의 「내비 무게」가 **같은 도구**를 부른다. 문 하나다 —
+        #   셸에 다시 적으면 그 문이 둘이 된다.
+        #   ★ `uv` 는 `deploy.yml` 의 두 작업(`deploy` · `dry`)이 `stage-site`
+        #     앞에서 깐다. `tests/test_navi_worker.py` 가 그 순서를 든다.
+        cd "$GITHUB_WORKSPACE"
+        uv run python tools/naviweight.py --build
 
         # ★ 2026-09-07. **dist 를 navi/ 자리에 앉힌다.** 이 세 줄이 없어서
         #   09-05 부터 내비가 안 떴다.

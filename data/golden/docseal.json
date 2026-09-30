@@ -4440,19 +4440,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "648ec811fe72b7c3",
-   "2cd4a663c4983035",
-   "62662ce0f885259c"
+   "2795e7e123447021",
+   "14bd3660be3e8584",
+   "09a02c91e6a525e2"
   ],
   "parts": {
    "tests/test_naviweight.py": "28cbf23ec42a8c5e",
-   "tools/naviweight.py": "6153d01302953383",
+   "tools/naviweight.py": "1359eee4e16dc30f",
    "tools/uicheck.py": "2776c8353d474bcc",
    "tools/verify.sh": "60e13bfd6b926ed5",
    "web/navi/scripts/glyphs.mjs": "c28ef924361fcdc5",
-   "본문": "9ce60e1681d91dea"
+   "본문": "00f18fc1da568923"
   },
-  "sha": "f99f57199efddc45"
+  "sha": "0e3d669af966cd67"
  },
  "DECISIONS/313": {
   "doc": "docs/DECISIONS.md",
@@ -5845,17 +5845,19 @@
    "tests/test_verify_citations.py",
    "tools/verify.sh"
   ],
-  "fp": "view-v1",
-  "kind": "unmoved",
+  "fp": "view-v2",
+  "kind": "read",
   "legacy": [
-   "766a8bcefd307720"
+   "129964c08aa70b0c",
+   "9329da6cf02c15ba",
+   "cba4535881777a83"
   ],
   "parts": {
-   "tests/test_verify_citations.py": "ee58d75a3b590995",
+   "tests/test_verify_citations.py": "a82737b1d5629c88",
    "tools/verify.sh": "f5660924aab1e32b",
-   "본문": "fdf5492f958ec031"
+   "본문": "b60f6b765260dbb2"
   },
-  "sha": "01df563bd8641272"
+  "sha": "cf91cc558fe027fb"
  },
  "MASTER/12-7b": {
   "doc": "docs/MASTER.md",
@@ -6120,9 +6122,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1de2f91e0f530861",
-   "2134f5d443bd8591",
-   "7b8a7de33d9299bb"
+   "7d0d090de4175515",
+   "20a3d82b71da0999",
+   "b7d17c1595daac65"
   ],
   "parts": {
    "src/firelane/seg/params.py": "53df7ea2ea107fd6",
@@ -6145,9 +6147,9 @@
    "web/config.js": "ed851b78a3c520eb",
    "web/navi/src/domain/vehicle.ts": "449e1612784f93ec",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "8ffbd75d2eae2c87"
+   "본문": "1b8407e9e1ed3e64"
   },
-  "sha": "ad6590ee60796078"
+  "sha": "f588ea2c5904c2d8"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -7264,9 +7266,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "621cfd6ed4b0ff1e",
-   "dc1ba6dd834bb774",
-   "48409b8a95a8e440"
+   "7df0947b4800d073",
+   "57e66d6ea2e6aaf8",
+   "d078b3137d6fe0ea"
   ],
   "parts": {
    "sources.yaml": "1f51dbbff5df08eb",
@@ -7275,9 +7277,9 @@
    "tools/docnum_check.py": "87e96c4aa25fa383",
    "tools/golden.py": "3783241145e85e01",
    "tools/refcheck.py": "623f651cfee7965c",
-   "본문": "dd4df104d0ca9856"
+   "본문": "b07fb04652cbfa01"
   },
-  "sha": "3181f659a1c8b8e1"
+  "sha": "61205114ad59478b"
  },
  "README/문서는_넷이다/숫자의_정본은_문서가_아니다": {
   "doc": "README.md",
