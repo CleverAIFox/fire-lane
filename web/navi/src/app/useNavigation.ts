@@ -43,13 +43,15 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SCOPE_M, SNAP_INTERVAL_MS } from "../config";
-import { bearing, distM, type LngLat } from "../domain/geo";
+import { type LngLat } from "../domain/geo";
 import { buildAdjacency, type Adjacency } from "../domain/adjacency";
 import { buildHazardIndex } from "../domain/pressure";
 import { fullProgress } from "../domain/edgeSnap";
 import { progressAlongRoute, routeUids } from "../domain/routeDerive";
 import { reaches, solveRoute } from "../domain/routeSolve";
 import { GPS_WEAK_M } from "../domain/status";
+import { nextPhase } from "../domain/phase";
+import { edgeShare, nextBearing, weakCrossed } from "../domain/track";
 import {
   locate, pointAtM, routeGeom, type ProgressState, type RouteGeom,
 } from "../domain/progress";
@@ -138,7 +140,7 @@ export function useNavigation(spec: VehicleSpec | null) {
   const sparse = useRef(false);
 
   // ── ① 적재 — 한 번 돌고 끝난다(`useBundle`) ────────────────────
-  const onLoaded = useCallback(() => setPhase("idle"), []);
+  const onLoaded = useCallback(() => setPhase((p) => nextPhase(p, "loaded")), []);
   const { data, fatal, tracker, snapAt } = useBundle(onLoaded, setNotice);
 
   // 판정 기준 차량. `useFleet` 이 만들어 넘긴다.
@@ -172,19 +174,14 @@ export function useNavigation(spec: VehicleSpec | null) {
 
   const onFix = useCallback((f: Fix) => {
     const t = f.t ?? performance.now();
-    let brg = live.current.brg;
-    const p = lastPos.current;
-    if (f.heading != null) { brg = f.heading; lastPos.current = [f.lon, f.lat]; }
-    else if (p && distM(p, [f.lon, f.lat]) >= MOVE_MIN_M) {
-      brg = bearing(p, [f.lon, f.lat]); lastPos.current = [f.lon, f.lat];
-    } else if (!p) lastPos.current = [f.lon, f.lat];
+    // ★ 정책은 `domain/track.ts` 가 든다(§336). 여기는 그 답을 상태로 옮긴다.
+    const nb = nextBearing(live.current.brg, f, lastPos.current, MOVE_MIN_M);
+    const brg = nb.brg;
+    lastPos.current = nb.lastPos;
     sparse.current = f.source === "gps" || f.source === "replay";
-    // ★ 정확도는 **임계를 넘나들 때만** 올린다. 값 자체는 화면에 안 쓴다.
     const acc = f.accuracy ?? null;
-    const was = accRef.current;
+    if (weakCrossed(accRef.current, acc, GPS_WEAK_M)) setGpsAccM(acc);
     accRef.current = acc;
-    const cross = (a: number | null) => (a == null ? null : a > GPS_WEAK_M);
-    if (cross(was) !== cross(acc)) setGpsAccM(acc);
 
     // ── 안내 중: 경로 위 진행을 추정한다 (§213-2) ──────────────
     const g = geomRef.current;
@@ -211,10 +208,7 @@ export function useNavigation(spec: VehicleSpec | null) {
         setDriven(res.s);
         const e = pl.edges[res.edge];
         if (e) {
-          let acc = 0;
-          for (let i = 0; i < res.edge; i++) acc += pl.edges[i].length_m ?? 0;
-          const L = e.length_m ?? 1;
-          const f01 = Math.max(0, Math.min(1, (res.s - acc) / L));
+          const f01 = edgeShare(pl.edges.map((x) => x.length_m), res.edge, res.s);
           curUid.current = e.seg_uid;
           setCurrent({
             seg_uid: e.seg_uid, verdict: e.verdict, width_min_m: e.width_min_m,
@@ -224,7 +218,7 @@ export function useNavigation(spec: VehicleSpec | null) {
             bearingKnown: true, point: res.point, confident: true, onRoute: true,
           });
         }
-        if (pl.lengthM - res.s <= ARRIVE_M) setPhase("arrived");
+        if (pl.lengthM - res.s <= ARRIVE_M) setPhase((p) => nextPhase(p, "arrive"));
       } else {
         // 이탈 — 재탐색 출발점은 **실제 도로망** 위여야 한다. 구간 스냅으로 돌아간다
         const sn = tracker.current?.update(f.lon, f.lat, brg);
@@ -264,7 +258,7 @@ export function useNavigation(spec: VehicleSpec | null) {
   useDeadReckoning({ phase, geom, prog, sparse, onRoute: onRouteRef, live });
 
   // ── ② 위치원 — gps · 흉내 · 경로 따라가기(`usePositionSource`) ──
-  const onSimEnd = useCallback(() => { setSimSpeed(0); setPhase("arrived"); }, []);
+  const onSimEnd = useCallback(() => { setSimSpeed(0); setPhase((p) => nextPhase(p, "arrive")); }, []);
   // ★ 2026-09-27 (§275). 측위가 **데이터 범위 밖**이면 실제 GPS 로는 안내가 안 된다.
   //   데이터가 동명동 한 동네뿐이고 개발은 그 밖에서 한다 — 범위 밖이 예외가
   //   아니라 평소다. 말하고 경로 주행으로 갈아탄다. 배속 1 은 실제 속도다.
@@ -275,7 +269,7 @@ export function useNavigation(spec: VehicleSpec | null) {
   });
 
   const route = useCallback((
-    from: SnapResult, to: SnapResult, keepGuiding = false,
+    from: SnapResult, to: SnapResult,
     adjOverride?: { safe: Adjacency; fast: Adjacency },
   ) => {
     const A = adjOverride?.safe ?? adj;
@@ -298,8 +292,10 @@ export function useNavigation(spec: VehicleSpec | null) {
     setFastPlan(sol.fast);
     setOffRoute(false); setNotice(null);
     // ★ 여기서 멈춘다. 사용자가 "안내 시작" 을 눌러야 guiding 이 된다.
-    //   주행 중 재탐색·우회는 멈추지 않는다.
-    if (!keepGuiding) setPhase("preview");
+    //   주행 중 재탐색·우회는 멈추지 않는다 — **그 규칙은 `nextPhase` 표가 든다**
+    //   (§336). 종전에는 `keepGuiding` 인자였고, 부르는 자리마다 그것을 다시
+    //   판단했다(참 하나 · `phase === "guiding"` 하나 · 기본값 셋).
+    setPhase((p) => nextPhase(p, "routed"));
     return true;
   }, [data, adj, adjFast, tracker]);
 
@@ -312,7 +308,7 @@ export function useNavigation(spec: VehicleSpec | null) {
     if (phase !== "guiding" || !offRoute || !dest || !current) return;
     setRerouting(true);
     const t = setTimeout(() => {
-      route(current, dest, true);
+      route(current, dest);
       setRerouting(false);
     }, REROUTE_MS);
     return () => { clearTimeout(t); setRerouting(false); };
@@ -336,7 +332,7 @@ export function useNavigation(spec: VehicleSpec | null) {
       lastPos.current = null;
       live.current = { lon: s.point[0], lat: s.point[1], brg: s.bearing, on: true };
       tracker.current?.setRoute(null);
-      setPhase("picked");
+      setPhase((p) => nextPhase(p, "pick"));
       return;
     }
     setDest(s);
@@ -355,7 +351,7 @@ export function useNavigation(spec: VehicleSpec | null) {
     live.current = { lon: s.point[0], lat: s.point[1], brg: s.bearing, on: true };
     setPlan(null); setFastPlan(null); setNoRoute(false);
     tracker.current?.setRoute(null);
-    setPhase((p) => (p === "loading" ? p : "picked"));
+    setPhase((p) => nextPhase(p, "pick"));
     return true;
   }, [snapAt, tracker]);
 
@@ -400,8 +396,8 @@ export function useNavigation(spec: VehicleSpec | null) {
     const fast = buildAdjacency(data.graph, active, lenient, "fastest", undefined, next, hazIdx);
     const from = current ?? origin;
     if (!from) return false;
-    return route(from, dest, phase === "guiding", { safe, fast });
-  }, [data, active, dest, blocked, lenient, current, origin, phase, route, hazIdx]);
+    return route(from, dest, { safe, fast });
+  }, [data, active, dest, blocked, lenient, current, origin, route, hazIdx]);
 
   /**
    * 시연 — 막아도 우회(또는 대체 접근 지점)가 남는 좁은 구간을 고른다(§214-2).
@@ -447,7 +443,7 @@ export function useNavigation(spec: VehicleSpec | null) {
     const g = routeGeom(pl);
     const q = pointAtM(g, 0);
     live.current = { lon: q.point[0], lat: q.point[1], brg: q.bearing, on: true };
-    setPhase("guiding");
+    setPhase((p) => nextPhase(p, "start"));
   }, []);
 
   const reset = useCallback(() => {
@@ -459,7 +455,7 @@ export function useNavigation(spec: VehicleSpec | null) {
     lastPos.current = null; curUid.current = null;
     live.current.on = false;
     tracker.current?.reset();
-    setPhase("idle");
+    setPhase((p) => nextPhase(p, "reset"));
   }, [forget, tracker]);
 
   /** 경로 끝까지 남은 거리(m). 최종 접근(05) 판단에 쓴다 */

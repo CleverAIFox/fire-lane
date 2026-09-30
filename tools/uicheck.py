@@ -155,6 +155,59 @@ def _uses(app: str, part: str) -> bool:
     return bool(re.search(rf"<{part}\b", t))
 
 
+#: 문서가 마커 표를 드는 자리. 절 제목으로 찾는다 — **줄 번호로 안 든다**(§217-5).
+MARKER_SEC = "### 10-7."
+
+
+def documented_markers() -> list[str]:
+    """`MASTER §10-7` 표의 **층 칸**이 드는 층 id 들.
+
+    ── 왜 이것을 재나 (DECISIONS §337) ─────────────────────────
+    §320-1 에서 그 절이 **걷어낸 지도를 서술하고 있었다.** 원기둥 마커 서술과
+    가로등 두 줄이 여드레 동안 살아 있었고, 검사 스물이 전부 초록이었다.
+    그 절 자신이 이렇게 적었다 —
+
+        「문서가 있다고 적은 마커가 실제로 그려지는가」를 보는 검사는 저장소에
+        없었다. 지금도 없다 … **그 대조는 다음 배치의 일이고, 그때까지는
+        도장이 유일한 방어다.**
+
+    여기가 그 대조다. 도장은 「다시 보라」를 시키고 사람이 읽어야 풀리는데,
+    이것은 **사람 없이 운다.**
+
+    ★ 표의 **둘째 칸만** 읽는다. 첫 칸은 사람이 읽는 이름(「소화전」)이고 넷째
+      칸의 백틱은 함수 이름(`hydrantIcon()`)이라 층이 아니다. 칸을 안 가르면
+      함수 이름이 층으로 세어지고, 그러면 **영원히 빨갛다.**
+    """
+    doc = (ROOT / "docs" / "MASTER.md").read_text(encoding="utf-8")
+    i = doc.find(MARKER_SEC)
+    if i < 0:
+        return []
+    j = doc.find("\n### ", i + 1)
+    out: list[str] = []
+    for line in doc[i:j if j > 0 else len(doc)].splitlines():
+        if not line.startswith("|"):
+            continue
+        cols = line.split("|")
+        if len(cols) < 4 or set(cols[1].strip()) <= {"-", ":", " "}:
+            continue                      # 표 머리와 구분선
+        out += re.findall(r"`([^`]+)`", cols[2])
+    return sorted(set(out))
+
+
+def marker_faults() -> list[str]:
+    """③ 문서가 적은 마커 층이 **실제로 그려지는가.**"""
+    said = documented_markers()
+    if not said:
+        return [f"`MASTER {MARKER_SEC.strip('# .')}` 의 마커 표를 못 읽었다 — "
+                "절이 옮겼거나 표 꼴이 바뀌었다. **이 검사가 빈 그물이다**"]
+    real = {i for v in layer_ids().values() for i in v}
+    if not real:
+        return ["층 id 를 하나도 못 읽었다 — 훑기가 `layers.ts` 와 갈렸다"]
+    return [f"`MASTER {MARKER_SEC.strip('# .')}` 이 층 `{s}` 를 적는데 **그리는 코드가 없다** — "
+            "없는 화면을 설명하는 문서다(§320-1 이 여드레 들고 있던 그 꼴)"
+            for s in said if s not in real]
+
+
 def split() -> list[str]:
     """빨간불 사유들. 비면 초록."""
     bad = []
@@ -201,6 +254,9 @@ def split() -> list[str]:
     elif len(sh) < SHARED_LAYERS:
         bad.append(f"공유 층이 {len(sh)} 으로 줄었다 — "
                    f"`uv run python tools/ratchet.py --write` 로 조여라 (선언 {SHARED_LAYERS})")
+
+    # ㉤ 문서가 적은 마커가 실제로 그려지는가 (§337)
+    bad += marker_faults()
     return bad
 
 
@@ -324,7 +380,21 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 15")
+    # ★ ③ 마커 대조 (§337). **문서를 읽기는 하는가** — 못 읽으면 언제나 초록이다.
+    said = documented_markers()
+    if not said:
+        fails.append(f"`MASTER {MARKER_SEC.strip('# .')}` 의 마커 표를 못 읽는다 — 빈 그물이다")
+    # ★ 칸을 가르는가. 둘째 칸이 층이고 넷째 칸의 백틱은 **함수 이름**이다 —
+    #   안 가르면 `hydrantIcon()` 이 층으로 세어져 영원히 빨갛다.
+    if any(s.endswith("()") for s in said):
+        fails.append(f"표의 함수 이름을 층으로 센다 — {[s for s in said if s.endswith('()')]}")
+    if "hydrant" not in said:
+        fails.append("표에서 `hydrant` 를 못 찾는다 — 둘째 칸을 안 읽고 있다")
+    # ★ 반대 방향 — 없는 층을 적으면 정말 우는가
+    if not [s for s in ("streetlight-dot", "lightpole")
+            if s not in {i for v in per.values() for i in v}]:
+        fails.append("걷어낸 가로등 층이 아직 코드에 있다 — 주입 판별식이 헛돈다")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 19")
     return 1 if fails else 0
 
 

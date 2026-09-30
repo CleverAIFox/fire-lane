@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-10-01T00:56:35+09:00",
- "commit": "050cc44",
+ "sealed_at": "2026-10-01T02:33:25+09:00",
+ "commit": "12731dc",
  "tool": "4b81f49aea843be0",
  "tools": {
   "tools/deadcheck.py": "1eff150213032dc9",
@@ -11,9 +11,9 @@
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "56f3db3f3bcc5ce5",
-  "docs/DECISIONS.md": "24ad1e5c6ff8b9d6",
-  "docs/PLAN.md": "05fcbc66b788f747",
+  "docs/MASTER.md": "a9850ce231c259b3",
+  "docs/DECISIONS.md": "2b12875f45543a2d",
+  "docs/PLAN.md": "d288363e8a830066",
   "README.md": "40ad0c4ca9cdfc59"
  },
  "raw": {
@@ -683,7 +683,7 @@
    "title": "10-6. 세그먼트 · 노딩 · 스코프"
   },
   "MASTER/10-7": {
-   "h": "3c96c3b77f3925f4",
+   "h": "9c74eab45a05fa2b",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "10-7. 시설 마커"
@@ -989,7 +989,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "eae15513a64d011a",
+   "h": "6dd81bbf876dd983",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -8345,10 +8345,52 @@
    "title": "335-2. 고친 방향 — 기본값을 바꾸지 않고, 갈래를 하나 더 판다"
   },
   "DECISIONS/335-3": {
-   "h": "eb7e5f7f2f8eab15",
+   "h": "4cff3903751416c7",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "335-3. 「기다리지 않는다」와 「빨강이라 부른다」는 다르다"
+  },
+  "DECISIONS/336": {
+   "h": "c473222bacf380f8",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "336. 훅에 남은 마지막 정책 넷 — 물으려면 렌더러가 필요했다"
+  },
+  "DECISIONS/336-1": {
+   "h": "89e44d369bf7c2a5",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "336-1. 무엇이 정책이었나"
+  },
+  "DECISIONS/336-2": {
+   "h": "e9d99b628f38a309",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "336-2. 시험이 규칙을 세 번 붙들었다"
+  },
+  "DECISIONS/336-3": {
+   "h": "65744b85dcb63d19",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "336-3. 무게 — 0.12KB 와 맞바꿨다"
+  },
+  "DECISIONS/337": {
+   "h": "33b6f32fc35469c0",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "337. 「다음 배치의 일」이라고 적어 둔 검사를 다음 배치가 안 했다"
+  },
+  "DECISIONS/337-1": {
+   "h": "af5ca15e4eedf7a0",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "337-1. 왜 도장으로는 부족한가"
+  },
+  "DECISIONS/337-2": {
+   "h": "8c0672b2617120e6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "337-2. 칸을 가른다 — 안 가르면 영원히 빨갛다"
   },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
@@ -8531,7 +8573,7 @@
    "title": "9. 외부 의존"
   },
   "PLAN/10": {
-   "h": "f234af90d7f498fc",
+   "h": "5dcf7c80e27ba75f",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "10. 우선순위"
@@ -8555,7 +8597,7 @@
    "title": "13. 결함 대장 — 판정을 안 움직이는 일"
   },
   "PLAN/13-1": {
-   "h": "92225b829e1b7bbc",
+   "h": "cc59792485e03edf",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-1. 이 절이 생긴 이유"
@@ -8567,10 +8609,10 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN/13-3": {
-   "h": "311ad8b19998db32",
+   "h": "467fa69b7fe5a7af",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "13-3. 남은 결함 3건"
+   "title": "13-3. 남은 결함 2건"
   },
   "PLAN/13-4": {
    "h": "af3a3ded9356e804",
@@ -8712,7 +8754,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2086 passed in 378.54s (0:06:18)",
+   "tail": "2087 passed in 356.34s (0:05:56)",
    "red": []
   },
   "probe/deadcheck": {

@@ -47,6 +47,10 @@ EVIDENCE = {
     #   박제해 경계에서 대조하는 시험이다 — 수용 조건이 「불변 증명」이었으므로
     #   증표도 「불변이 관측된다」여야 한다.
     "W6-1": "tests/test_ledger_contract.py::test_row_count_boundary_is_unchanged",
+    # ★ 2026-10-01 (DECISIONS §336). 정책 다섯이 훅에서 `domain` 으로 내려갔다.
+    #   증표는 **그 정책을 묻는 시험이 실재하는가** — 되돌리면 훅 안에 정책이
+    #   다시 생기고, 그때 이 시험 파일이 없어진다.
+    "W13-5": "tests/test_defect_evidence.py::test_navi_policy_lives_in_domain",
     # ★ 2026-09-29 (DECISIONS §306). 셋을 늦게 등록했다. 셋 다 PLAN §13-3 표에
     #   「닫힘」으로 **남아 있었고** 등록부에는 없었다 — §13-1 이 「닫힌 결함은
     #   행이 아니라 부재로 기록된다」고 적어둔 그 규약을 세 번 어긴 것이다.
@@ -129,6 +133,32 @@ def test_decisions_closures_have_evidence():
     assert said, "DECISIONS §217 부터 `닫힘` 줄이 하나도 안 읽힌다 — 이 시험이 빈 그물이다"
     lost = sorted(said - set(EVIDENCE))
     assert not lost, f"DECISIONS 가 닫았다고 적었는데 증표가 등록되지 않았다: {lost}"
+
+
+def test_navi_policy_lives_in_domain():
+    """W13-5 — 훅의 정책이 `domain` 에 있고 **물어지는가.** (DECISIONS §336)
+
+    ★ 증표는 「파일이 있다」가 아니라 **「그 정책을 묻는 시험이 있다」**다.
+      모듈만 두고 시험을 지우면 정책은 다시 아무도 안 묻는 값이 된다.
+    ★ 되돌리는 쪽도 문다 — 훅이 제 안에서 단계를 박으면(`setPhase("guiding")`)
+      표가 정본이 아니게 되고, 그때 이 시험이 운다.
+    """
+    navi = ROOT / "web" / "navi"
+    for mod, fns in (("domain/track.ts", ("chooseSource", "nextBearing", "weakCrossed", "edgeShare")),
+                     ("domain/phase.ts", ("nextPhase",))):
+        src = (navi / "src" / mod).read_text(encoding="utf-8")
+        for fn in fns:
+            assert f"export function {fn}" in src, f"`{mod}` 에 `{fn}` 이 없다 — 정책이 훅으로 돌아갔다"
+    for t_ in ("test/track.test.ts", "test/phase.test.ts"):
+        q = navi / t_
+        assert q.is_file(), f"`{t_}` 가 없다 — 정책이 다시 안 물어진다"
+        assert q.read_text(encoding="utf-8").count("it(") >= 8, f"`{t_}` 가 비었다"
+
+    hook = (navi / "src" / "app" / "useNavigation.ts").read_text(encoding="utf-8")
+    # ★ 단계를 **문자열로 박는** 자리가 남아 있으면 표가 정본이 아니다.
+    hard = re.findall(r'setPhase\(\s*"([a-z]+)"', hook)
+    assert not hard, f"훅이 단계를 문자열로 박는다 {hard} — 정본은 `nextPhase` 표다"
+    assert "nextPhase" in hook, "훅이 `nextPhase` 를 안 쓴다 — 표가 죽은 선언이다"
 
 
 def test_navi_toolchain_is_vite8_and_vitest():
