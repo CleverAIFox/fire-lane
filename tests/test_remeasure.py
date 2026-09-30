@@ -81,6 +81,14 @@ def test_the_second_seal_must_prove_it_touched_only_the_metrics():
     assert RM.prove_only_eval_moved(ok, {"segments.geojson": "b", "eval.json": "y"}), (
         "판정 산출물이 바뀌었는데 통과시킨다 — 두 번째 도장이 판정을 덮는다")
     assert RM.prove_only_eval_moved(ok, dict(ok)), "지표가 안 뽑혔는데 통과시킨다"
+    # ★ 2026-09-30 (§328). **이어 도는 판에서는 그 한 줄을 뺀다.** 지표는 결정론이라
+    #   이미 한 번 뽑힌 뒤에 다시 돌면 같은 값이 나온다 — 그대로 두면 되돌아올 길이
+    #   또 막히고, 그것이 이 도구가 생긴 이유였다.
+    assert not RM.prove_only_eval_moved(ok, dict(ok), resume=True), (
+        "이어 도는 판에서 「안 움직였다」로 죽는다 — 막다른 길이 되돌아왔다")
+    assert RM.prove_only_eval_moved(ok, {"segments.geojson": "b", "eval.json": "x"},
+                                    resume=True), (
+        "이어 도는 판이라고 **판정 산출물 이동까지** 봐준다 — 그쪽은 절대 안 봐준다")
     assert RM.prove_only_eval_moved({}, ok), "지문을 못 읽었는데 통과시킨다 — 빈 그물"
     assert RM.prove_only_eval_moved(ok, {}), "지문이 사라졌는데 통과시킨다"
     # ★ 사슬이 그 판별식을 **실제로 부르는가.** 함수만 있으면 강제자가 아니다.
@@ -193,3 +201,45 @@ def test_fl_calls_the_chain_and_keeps_the_judgment_with_the_human():
     # ★ 순서를 셸에 **다시 적지 않았는가.** 적으면 정본이 둘이 되고 갈린다.
     for t in ("tools/evalgen.py", "tools/baseline.py", "tools/docx_figs.py"):
         assert t not in sh, f"`fl.sh` 가 사슬의 `{t}` 를 직접 부른다 — 순서가 두 집에 산다"
+
+
+# ── ⑤ 봉인 실물 ────────────────────────────────────────────────
+
+def test_the_reader_uses_the_key_the_writer_writes():
+    """★ **2026-09-30 실기가 여기서 죽었다**(§328).
+
+    `seal_digests()` 가 `meta.json` 의 `"digests"` 를 읽고 있었는데 봉인을 쓰는
+    `tools/baseline.py` 는 `"sha256"` 으로 적는다. **실물을 안 열고 지은
+    이름**이라 늘 빈 표가 나왔고, 사슬이 끝에서 「지문을 못 읽었다」로 죽었다.
+
+    ★ 그때까지의 판별식은 전부 **합성 사전**으로 물었다. 합성으로는 이름이
+      틀린 것을 영원히 못 본다 — 그래서 여기는 **트리의 진짜 봉인**을 연다.
+    """
+    base = ROOT / "data" / "baseline"
+    metas = sorted(base.glob("*/meta.json")) if base.is_dir() else []
+    # ★ **건너뛰지 않는다.** 봉인 `meta.json` 은 **추적된다**(`git ls-files
+    #   data/baseline` — 넷). 없는 기계가 없으므로 「없으면 skip」 은 그저 빈
+    #   그물이고, 빈 그물이 이 판별식을 죽인 그 병이다.
+    assert metas, "트리에 봉인 `meta.json` 이 하나도 없다 — 추적되는 파일이다"
+    # ★ 쓰는 쪽이 정본이다. 그 파일에서 열쇠를 읽어 대조한다 —
+    #   여기에 낱말을 다시 적으면 같은 결함이 두 집에 산다.
+    writer = (ROOT / "tools" / "baseline.py").read_text(encoding="utf-8")
+    assert f'"{RM.SEAL_DIGEST_KEY}": digests' in writer, (
+        f"봉인을 쓰는 쪽이 `{RM.SEAL_DIGEST_KEY}` 로 안 적는다 — 읽는 이름이 틀렸다")
+    for m in metas:
+        got = json.loads(m.read_text(encoding="utf-8"))
+        assert RM.SEAL_DIGEST_KEY in got, f"{m} 에 `{RM.SEAL_DIGEST_KEY}` 가 없다"
+    tag = metas[0].parent.name
+    d = RM.seal_digests(tag)
+    assert d, f"진짜 봉인 `{tag}` 에서 지문을 하나도 못 읽는다 — **빈 그물이다**"
+    assert any(k.endswith(".geojson") or k.endswith(".json") for k in d), d
+
+
+def test_fresh_metrics_are_measured_against_the_produced_file():
+    """★ 「움직였는가」는 대리 지표다. 진짜 물음은 **봉인이 방금 뽑은 것을 들었는가**."""
+    src = (ROOT / "tools" / "remeasure.py").read_text(encoding="utf-8")
+    body = src[src.index("def run("):]
+    assert "prove_seal_carries_fresh_metrics" in body, "사슬이 그 판별식을 안 부른다"
+    fn = src[src.index("def prove_seal_carries_fresh_metrics"):src.index("def seal_state")]
+    assert "data" in fn and "processed" in fn, (
+        "산출물과 안 대 본다 — 봉인끼리만 대면 낡은 지표를 굳혀도 모른다")

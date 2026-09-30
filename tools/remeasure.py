@@ -93,20 +93,37 @@ def _run(argv: list[str]) -> int:
                           timeout=1800, check=False).returncode
 
 
+#: 봉인 `meta.json` 이 파일별 지문을 적는 열쇠.
+#:
+#: ★ 2026-09-30 실기 (DECISIONS §328). 여기가 `"digests"` 였다 — **실물을 안 열고
+#:   지은 이름이다.** `tools/baseline.py:184` 는 `"sha256"` 으로 적는다. 그래서
+#:   `seal_digests()` 가 늘 빈 표를 냈고 사슬이 끝에서 「지문을 못 읽었다」로 죽었다.
+#:   ★ 죽은 것이 옳다 — 그 자리의 반대 방향 판별식(「빈 그물 금지」)이 **제 일을
+#:     했다.** 틀린 것은 읽는 이름 하나였고, 그것을 짐작으로 적은 것이 결함이다.
+SEAL_DIGEST_KEY = "sha256"
+
+
 def seal_digests(tag: str) -> dict[str, str]:
     """봉인 `meta.json` 이 적은 파일별 지문. 없으면 빈 표."""
     m = ROOT / "data" / "baseline" / tag / "meta.json"
     if not m.is_file():
         return {}
-    return dict(json.loads(m.read_text(encoding="utf-8")).get("digests") or {})
+    return dict(json.loads(m.read_text(encoding="utf-8")).get(SEAL_DIGEST_KEY) or {})
 
 
-def prove_only_eval_moved(before: dict[str, str], after: dict[str, str]) -> list[str]:
+def prove_only_eval_moved(before: dict[str, str], after: dict[str, str],
+                          *, resume: bool = False) -> list[str]:
     """두 번째 봉인이 `eval.json` **말고** 아무것도 안 움직였는가.
 
     ★ 이것이 없으면 「봉인을 두 번 찍으면 된다」가 되고, 두 번째 도장이
       무엇을 덮었는지 아무도 모른다(§272). 잴 수 있는 것을 재서 가른다.
     ★ 지문이 없으면(옛 판 봉인) **통과가 아니라 실패다** — 빈 그물 금지.
+
+    :param resume: 이어 도는 판. ★ 2026-09-30 (§328). 지표는 결정론이라 **이미
+        한 번 뽑힌 뒤에 다시 돌면 같은 값이 나온다.** 「안 움직였으면 실패」를
+        그대로 두면 되돌아올 길이 다시 막힌다 — 첫 실기가 고치려던 그 병이다.
+        이어 도는 판에서 그 한 줄만 뺀다. 「봉인이 방금 뽑은 지표를 들었는가」는
+        `prove_seal_carries_fresh_metrics()` 가 **양쪽 모두에서** 든다.
     """
     if not before or not after:
         return ["봉인 `meta.json` 의 지문을 못 읽었다 — 두 번째 도장이 무엇을 덮었는지 모른다"]
@@ -115,8 +132,27 @@ def prove_only_eval_moved(before: dict[str, str], after: dict[str, str]) -> list
            if k != RESEAL_ONLY and before.get(k) != after.get(k)]
     if bad:
         return [f"두 번째 봉인이 `{RESEAL_ONLY}` 밖의 것을 움직였다 — " + " · ".join(bad)]
-    if before.get(RESEAL_ONLY) == after.get(RESEAL_ONLY):
+    if not resume and before.get(RESEAL_ONLY) == after.get(RESEAL_ONLY):
         return [f"`{RESEAL_ONLY}` 이 안 움직였다 — 지표가 새로 안 뽑혔다는 뜻이다"]
+    return []
+
+
+def prove_seal_carries_fresh_metrics(tag: str) -> list[str]:
+    """봉인 속 `eval.json` 지문이 **방금 산출한** 그것과 같은가.
+
+    ★ 이쪽이 진짜 물음이다. 「움직였는가」는 대리 지표이고 이어 도는 판에서
+      거짓 빨강을 낸다. 물으려던 것은 **봉인이 낡은 지표를 들고 있는가**이고,
+      그것은 산출물과 대 보면 바로 나온다 — 대리 말고 실물을 잰다.
+    """
+    sealed = seal_digests(tag).get(RESEAL_ONLY)
+    made = ROOT / "data" / "processed" / RESEAL_ONLY
+    if not sealed:
+        return [f"봉인이 `{RESEAL_ONLY}` 의 지문을 안 적었다"]
+    if not made.is_file():
+        return [f"`data/processed/{RESEAL_ONLY}` 이 없다 — 지표가 안 뽑혔다"]
+    from firelane.hashing import sha256 as _sha
+    if _sha(made) != sealed:
+        return [f"봉인의 `{RESEAL_ONLY}` 이 방금 산출한 것과 다르다 — **낡은 지표를 굳혔다**"]
     return []
 
 
@@ -226,13 +262,15 @@ def run(tag: str) -> int:
             now = seal_digests(tag)
             if "--force" not in cmd:
                 seal_before = now
-            elif bad := prove_only_eval_moved(seal_before, now):
+            elif bad := (prove_only_eval_moved(seal_before, now,
+                                               resume=(state == "resume"))
+                         + prove_seal_carries_fresh_metrics(tag)):
                 print("\n✗ " + "\n  ".join(bad))
                 print(f"  두 번째 봉인은 `{RESEAL_ONLY}` 하나만 갈아 넣는 자리다.")
                 return 1
             else:
-                print(f"   ✓ `{RESEAL_ONLY}` 만 움직였다 — 나머지 지문 "
-                      f"{len(seal_before) - 1}개가 그대로다")
+                print(f"   ✓ `{RESEAL_ONLY}` 만 움직였고 그것이 방금 산출한 것과 같다 — "
+                      f"나머지 지문 {len(seal_before) - 1}개가 그대로다")
     print(f"\n판정 이동 — PR 본문에 그대로 적어라\n    전  {before}\n    후  {tally(None)}\n")
 
     rc = 0
@@ -279,13 +317,22 @@ def selftest() -> int:
     #   태그는 거절한다 — 재지 않고 늘 덮으면 남의 기준선이 사라진다.
     if seal_state("__없는태그__")[0] != "new":
         fails.append("없는 태그를 새 태그로 안 본다")
+    # ★ 이어 도는 판에서 「안 움직였다」로 죽지 않는가(§328). 지표는 결정론이다.
+    if prove_only_eval_moved({"a": "1", "eval.json": "x"},
+                             {"a": "1", "eval.json": "x"}, resume=True):
+        fails.append("이어 도는 판에서 막다른 길이 되돌아왔다 — 이 도구가 생긴 이유다")
+    # ★ **읽는 이름이 쓰는 이름과 같은가**(§328). 09-30 실기가 여기서 죽었다 —
+    #   합성 사전으로만 물으면 이름이 틀린 것을 영원히 못 본다.
+    writer = (ROOT / "tools" / "baseline.py").read_text(encoding="utf-8")
+    if f'"{SEAL_DIGEST_KEY}": digests' not in writer:
+        fails.append(f"봉인을 쓰는 쪽이 `{SEAL_DIGEST_KEY}` 로 안 적는다 — 읽는 이름이 틀렸다")
     # ★ 반대 방향. 태그가 없으면 **아무것도 고치지 않는다.**
     src = Path(__file__).read_text(encoding="utf-8")
     if "advise()" not in src or "if not tag:" not in src:
         fails.append("태그 없는 갈래가 없다 — 판단 없이 사슬이 돈다")
     for f in fails:
         print(f"  ✗ {f}")
-    print("✓ 자기검사 통과 · 판별식 12" if not fails else f"✗ {len(fails)}건")
+    print("✓ 자기검사 통과 · 판별식 14" if not fails else f"✗ {len(fails)}건")
     return 1 if fails else 0
 
 
