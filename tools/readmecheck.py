@@ -26,7 +26,7 @@ PLAN #34 가 2026-09-17 에 「리드미 셋이 실물과 어긋났을 수 있�
     ① 파일 표    `web/README.md` 의 표 ↔ `web/` 의 최상위 항목
     ② 단계 목록  `src/firelane/README.md` 의 화살표 줄 ↔ `pipeline.STEPS`
 
-IN    README.md · web/README.md · src/firelane/README.md · web/** ·
+IN    README.md · web/README.md · src/firelane/README.md · git 가 아는 web/** ·
       src/firelane/pipeline.py
 OUT   표준출력
 PARAM 없다. 면제는 `EXEMPT_WEB` 에 **사유와 함께**
@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,24 +54,37 @@ PKG_DOC = ROOT / "src" / "firelane" / "README.md"
 EXEMPT_WEB: dict[str, str] = {
     "README.md":
         "이 문서 자신이다. 표가 자기를 한 줄 차지하면 그 줄은 아무것도 안 알려준다",
-    "proposal.docx":
-        "`docs/proposal.docx` 의 사본이다 — `proposal.html` 행이 「`.docx` 원본도 "
-        "같이 옮겨 내려받기로 남긴다」고 이미 적는다. 정본은 `docs/` 쪽이다",
-    "proposal.pdf":
-        "같은 이유. `tools/proposal_pdf.py` 가 굽고 `proposal.html` 행이 그 사슬을 적는다",
 }
 
 
 def web_entries() -> list[str]:
-    """`web/` 의 최상위 항목. 폴더는 `/` 를 붙인다."""
-    if not WEB.is_dir():
+    """`web/` 의 **추적된** 최상위 항목. 폴더는 `/` 를 붙인다.
+
+    ── 왜 추적된 것만 세나 (2026-09-30 실기) ────────────────────
+    ★ 생성물은 **기계마다 있고 없다.** `web/proposal.docx` · `web/proposal.pdf` 는
+      `tools/proposal_pdf.py` 가 굽는 추적 밖 파일이고 새 클론에는 없다. 그것을
+      면제로 적었더니 배달 예습(빈 워크트리)에서 **「죽은 면제」로 울었다** —
+      배치 P 의 포장이 거기서 거부됐다.
+    ★ 같은 결함이 §319-4 다(「추적되지 않는 경로를 영향 범위로 선언했다 — 새
+      클론에서 pytest 가 운다」). **그 절을 담은 배치가 같은 실수를 했다.**
+      기계마다 다른 것을 관문이 들면 그 관문은 기계마다 다르게 옳다.
+    ★ 그리고 이 표가 문서로서 설명하려는 것도 **저장소에 있는 것**이다. 굽는
+      순간에만 생기는 파일은 그것을 굽는 행(`proposal.html`)이 이미 적는다.
+    """
+    out = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z", "web/"],
+                         capture_output=True, text=True)
+    if out.returncode != 0:
         return []
-    out = []
-    for p in sorted(WEB.iterdir()):
-        if p.name.startswith("."):
+    top: dict[str, bool] = {}
+    for rel in out.stdout.split("\0"):
+        if not rel.startswith("web/"):
             continue
-        out.append(f"{p.name}/" if p.is_dir() else p.name)
-    return out
+        rest = rel[len("web/"):]
+        if not rest:
+            continue
+        head, _, tail = rest.partition("/")
+        top[head] = top.get(head, False) or bool(tail)
+    return sorted(f"{k}/" if v else k for k, v in top.items())
 
 
 def table_names(text: str) -> set[str]:
@@ -176,8 +190,19 @@ def selftest() -> int:
     fails = []
 
     # ★ 그물이 비지 않았는가 — 양쪽 다 실물을 읽는가
-    if not web_entries():
-        fails.append("`web/` 를 못 읽는다")
+    got = web_entries()
+    if not got:
+        fails.append("`web/` 를 못 읽는다 — git 이 없거나 훑기가 비었다")
+    # ★ **생성물을 세면 안 된다.** 기계마다 있고 없다 — 배달 예습(빈 워크트리)에서
+    #   이 도구가 거기서 죽었다. 굽는 파일 이름이 목록에 들면 그 관문은 기계마다
+    #   다르게 옳다(§319-4 와 같은 결함).
+    for made in ("proposal.pdf", "proposal.docx"):
+        if made in got:
+            fails.append(f"굽는 파일 `{made}` 를 최상위 목록에 센다 — 새 클론에서 운다")
+    # ★ 반대 방향 — 추적된 것은 반드시 있어야 한다
+    for must in ("index.html", "navi/", "data/"):
+        if must not in got:
+            fails.append(f"추적된 `{must}` 를 못 찾는다 — 훑기가 git 과 갈렸다")
     if len(real_steps()) < 2:
         fails.append("단계를 둘도 못 읽는다 — 정규식이 `pipeline.py` 와 갈렸다")
 
@@ -213,7 +238,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 9")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 14")
     return 1 if fails else 0
 
 
