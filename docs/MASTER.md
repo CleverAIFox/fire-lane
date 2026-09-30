@@ -162,8 +162,8 @@ CCTV 25m 안     451  (35.2%)
 |---|---:|---|
 | `no_cctv_band` | 183 | 3~7m 대역. 주정차 여부로 갈리는데 CCTV 25m 밖 |
 | `no_cctv_thin` | 142 | 노면 3m 미만 · 도로대장폭은 3m 이상 — 근거가 하나뿐 |
-| `no_cctv_narrow` | 61 | 노면도 도로대장도 3m 미만이나 벽 사이는 여유 있음 |
-| `no_cctv_single` | 13 | 7m 이상이나 표본 부족으로 통과 확정 보류 |
+| `no_cctv_narrow` | 63 | 노면도 도로대장도 3m 미만이나 벽 사이는 여유 있음 |
+| `no_cctv_single` | 12 | 7m 이상이나 표본 부족으로 통과 확정 보류 |
 
 **색은 4종 고정이다.** 사유는 회색의 하위 구분이지 다섯 번째 색이 아니다.
 범례에 별도 줄로 올리지 않는다 — 색이 5종으로 보이고 합계도 안 맞아 보인다.
@@ -369,7 +369,7 @@ DECISIONS 소관이다.
 부르게 된다. 값을 낸 최우선 소스 하나로 고정하고 그 소스의 표본만 쓴다.
 
 ```
-채택 소스   ngii1k 1,166 · silpok 112 · ngii 1 · 미산출 2
+채택 소스   ngii1k 1,162 · silpok 116 · ngii 1 · 미산출 2
 소스 순위   1:1,000 도로경계 → 1:5,000 도로경계면 → 실폭도로
 자격 조건   커버율 COV_MIN 0.5 미만이면 탈락. 다음 순위가 올라간다
 ```
@@ -378,7 +378,7 @@ DECISIONS 소관이다.
 채택하면 소스 우선순위 결정을 정면으로 뒤집는다. 커버율은 **선택 기준이 아니라
 자격 기준**이다.
 
-강제자  `tests/test_seg_width.py::test_thin_coverage_source_is_disqualified`(커버율 자격 `COV_MIN`) · 같은 파일 「소스 우선순위」 묶음(결정 63). 채택 수 `ngii1k 1,166 · silpok 112 · ngii 1` 은 `tests/test_doc_numbers.py::test_width_source_counts_match_the_fingerprint` 가 지문과 대조한다
+강제자  `tests/test_seg_width.py::test_thin_coverage_source_is_disqualified`(커버율 자격 `COV_MIN`) · 같은 파일 「소스 우선순위」 묶음(결정 63). 채택 수 `ngii1k 1,162 · silpok 116 · ngii 1` 은 `tests/test_doc_numbers.py::test_width_source_counts_match_the_fingerprint` 가 지문과 대조한다
 
 ### 3-6. 교차로 안에서는 그 도로의 폭을 잴 수 없다
 

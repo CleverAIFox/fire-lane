@@ -128,7 +128,7 @@ def test_counts_are_stated_not_assumed(rows):
     """
     c = collections.Counter(p["verdict"] for p in rows)
     assert len(rows) == 1281
-    assert dict(c) == {"clear": 465, "needs_cv": 226, "blocked": 191, "unknown": 399}
+    assert dict(c) == {"clear": 464, "needs_cv": 225, "blocked": 192, "unknown": 400}
 
 
 # ── 이름과 실물 (DECISIONS §320) ────────────────────────────────

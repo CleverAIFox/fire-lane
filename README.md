@@ -589,8 +589,8 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 내비의 최단경로는 세 번 중 한 번 이상 소방차가 못 지나가는 구간을 지난다.
 우리 경로는 그것을 피하면서 실거리가 더 길지 않다 — 중앙값 1.00배.
 숫자는 `uv run python tools/kpi.py` 가 계산 조건과 함께 낸다.
-사유는 `no_cctv_band` 183 · `no_cctv_thin` 142 · `no_cctv_narrow` 61 ·
-`no_cctv_single` 13 넷으로 갈라 적는다.
+사유는 `no_cctv_band` 183 · `no_cctv_thin` 142 · `no_cctv_narrow` 63 ·
+`no_cctv_single` 12 넷으로 갈라 적는다.
 
 <!--gen: v_blocked-->
 ★ `통행 불가` 192 은 확정 개수가 아니라 **하한**이다. `width_max_m` 결손
