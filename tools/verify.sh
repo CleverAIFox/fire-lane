@@ -494,6 +494,9 @@ step "훅 전역 연결"    bash .githooks/global-chain.sh --check
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "tools/* .github/* tests/* .pre-commit-config.yaml"
 step "관문 동등"  uv run python tools/gate_parity.py
+# ★ 2026-09-30 (W13-6 · §324). 관문이 **어느 코드로 도는가.** 사유는 그 도구 머리말.
+scope "tools/* .github/*"
+step "액션 고정"  uv run python tools/actionpin.py
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "src/* tools/* .env.example"
 step "환경변수 선언↔실물" uv run python tools/env_check.py
@@ -1044,6 +1047,12 @@ scope "docs/* src/* tools/* tests/* web/*"
 
 step "문서 제목 무결"      uv run python tools/docpatch.py check \
      docs/MASTER.md docs/PLAN.md docs/DECISIONS.md
+
+# ★ 2026-09-30 (DECISIONS §334). **리드미가 적은 목록이 실물과 같은가.**
+#   PLAN #34 가 「어긋났을 수 있다」를 사흘 들고 있었고 그 사흘 동안 둘이
+#   실제로 틀려 있었다. 「봐야 한다」를 문서에 적으면 아무도 안 본다.
+scope "README.md web/README.md src/firelane/README.md web/* src/firelane/pipeline.py"
+step "리드미 대조"        uv run python tools/readmecheck.py
 
 
 # ── 결과 ─────────────────────────────────────────────────────

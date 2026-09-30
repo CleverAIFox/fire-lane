@@ -85,7 +85,7 @@ for _a in "${@:2}"; do
     case "$_a" in
         --relock) RELOCK=1 ;;              # 판정 지문이 바뀌는 배치 — 적용 뒤 재잠금 한 번 (§220)
         --measured=*) MEASURED="${_a#--measured=}"; RELOCK=1 ;;   # 판정 산출물이 움직인다 (§319)
-        --measured) die "태그를 붙여라 —  --measured=v0.48" ;;
+        --measured) die "태그를 붙여라 —  --measured=20260930-covrate" ;;
         "") : ;;
         *) MODE="$_a" ;;
     esac
@@ -189,8 +189,22 @@ fi
 
 # ══ 1. 전제 ═══════════════════════════════════════════════════
 step "1. 전제"
-[ -z "$(git status --porcelain --untracked-files=no)" ] \
-  || die "추적 파일에 변경이 있다." "$(git status --short | head -8)"
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    # ★ 2026-09-30 (DECISIONS §331). 종전에는 여기서 그냥 죽었다. 그런데 4b 가
+    #   죽으면 **제 산출물을 앉히기 전에** 끝나므로 트리가 반드시 더럽고, 그러면
+    #   이 줄이 재개를 막는다 — 막다른 길이 1단계로 옮겨온 것이다. 그 자국을
+    #   알아보고 **되돌아올 길을 적는다.** 커밋은 사람이 한다(판정 산출물이다).
+    if git status --porcelain --untracked-files=no \
+         | grep -qE ' (data/golden|data/processed|web/data)/'; then
+        die "추적 파일에 변경이 있다 — **4b 가 앉히기 전에 멈춘 자국**이다." \
+            "$(git status --short | head -8)" \
+            "  판정 산출물이 나와 있고 커밋이 안 됐다. 앉힌 뒤 이어라 —" \
+            "    git add -A && git commit -m 'seal: 측정 배치 재생성 · 봉인 <태그>'" \
+            "    $FL_CMD $BR $MODE --measured=<태그>" \
+            "  ★ 앉혀도 사슬은 다시 돈다 — remeasure 가 밑동 이후 커밋된 이동까지 본다."
+    fi
+    die "추적 파일에 변경이 있다." "$(git status --short | head -8)"
+fi
 gh auth status -h github.com >/dev/null 2>&1 || die "gh 인증이 없다 — gh auth login"
 # ★ workflow 스코프를 **맨 앞에서** 본다. 방송 중간(흡수·동기화의 git push)에서
 #   막히면 태그까지 붙인 뒤에 죽는다 — 사슬에서 제일 비싼 자리다.
@@ -484,9 +498,9 @@ for p in sorted(code_closure("firelane.ingest")): print(p.relative_to(ROOT).as_p
     #   옳지만(§13-5 규칙 2) 그 다음에 할 일이 글로도 없어 사람이 여섯 도구를 순서
     #   없이 돌렸다. **판단은 여전히 사람이 한다**(`--measured=<태그>`) — 순서와
     #   받아적기만 뺀다. 사슬은 여기 없다. 셸에 적은 순서는 시험이 못 든다.
-    uv run python tools/remeasure.py --tag "${MEASURED:-}" \
+    uv run python tools/remeasure.py --tag "${MEASURED:-}" --since "origin/$BASE" \
         || die "측정 배치다 — 위 안내를 끝까지 읽어라." \
-               "  받아들이겠다면 $FL_CMD $BR $MODE --measured=v0.48 · 산문을 고쳤으면 --resume"
+               "  받아들이겠다면 $FL_CMD $BR $MODE --measured=20260930-covrate · 산문을 고쳤으면 --resume"
     [ -z "$MEASURED" ] || RELOCK_DONE=1
     [ "${RELOCK_DONE:-0}" = 1 ] || uv run python tools/golden.py lock \
         || die "golden 재잠금이 실패했다"

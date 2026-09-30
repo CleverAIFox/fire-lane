@@ -81,7 +81,7 @@ def test_the_second_seal_must_prove_it_touched_only_the_metrics():
     assert RM.prove_only_eval_moved(ok, {"segments.geojson": "b", "eval.json": "y"}), (
         "판정 산출물이 바뀌었는데 통과시킨다 — 두 번째 도장이 판정을 덮는다")
     assert RM.prove_only_eval_moved(ok, dict(ok)), "지표가 안 뽑혔는데 통과시킨다"
-    # ★ 2026-09-30 (§328). **이어 도는 판에서는 그 한 줄을 뺀다.** 지표는 결정론이라
+    # ★ 2026-09-30 (§329). **이어 도는 판에서는 그 한 줄을 뺀다.** 지표는 결정론이라
     #   이미 한 번 뽑힌 뒤에 다시 돌면 같은 값이 나온다 — 그대로 두면 되돌아올 길이
     #   또 막히고, 그것이 이 도구가 생긴 이유였다.
     assert not RM.prove_only_eval_moved(ok, dict(ok), resume=True), (
@@ -118,7 +118,7 @@ def test_the_selftest_is_alive():
 
 def test_without_a_tag_nothing_is_touched(monkeypatch, capsys):
     """★ **이것이 §13-5 규칙 2 다.** 태그가 없으면 사슬이 돌지 않는다."""
-    monkeypatch.setattr(RM, "moved", lambda: ["data/processed/segments.geojson"])
+    monkeypatch.setattr(RM, "moved", lambda *_a: ["data/processed/segments.geojson"])
     monkeypatch.setattr(RM, "tally", lambda _ref: "구간 1 · clear 1")
     ran: list[str] = []
     monkeypatch.setattr(RM, "_run", lambda argv: ran.append(argv[0]) or 0)
@@ -133,7 +133,7 @@ def test_without_a_tag_nothing_is_touched(monkeypatch, capsys):
 
 def test_nothing_moved_means_nothing_runs(monkeypatch):
     """배선 배치에서 사슬이 도는 것도 결함이다 — 봉인 태그가 헛되게 붙는다."""
-    monkeypatch.setattr(RM, "moved", lambda: [])
+    monkeypatch.setattr(RM, "moved", lambda *_a: [])
     ran: list[str] = []
     monkeypatch.setattr(RM, "_run", lambda argv: ran.append(argv[0]) or 0)
     assert RM.run("v9.99") == 0
@@ -142,7 +142,7 @@ def test_nothing_moved_means_nothing_runs(monkeypatch):
 
 def test_a_broken_link_stops_the_rest(monkeypatch):
     """★ 중간이 죽으면 **뒤를 안 돈다.** 건너뛰면 봉인이 거짓이 된다."""
-    monkeypatch.setattr(RM, "moved", lambda: ["x"])
+    monkeypatch.setattr(RM, "moved", lambda *_a: ["x"])
     monkeypatch.setattr(RM, "tally", lambda _ref: "?")
     ran: list[str] = []
 
@@ -159,7 +159,7 @@ def test_a_broken_link_stops_the_rest(monkeypatch):
 
 
 def test_the_tag_reaches_the_seal(monkeypatch):
-    monkeypatch.setattr(RM, "moved", lambda: ["x"])
+    monkeypatch.setattr(RM, "moved", lambda *_a: ["x"])
     monkeypatch.setattr(RM, "tally", lambda _ref: "?")
     seen: list[list[str]] = []
     monkeypatch.setattr(RM, "_run", lambda argv: seen.append(argv) or 0)
@@ -206,7 +206,7 @@ def test_fl_calls_the_chain_and_keeps_the_judgment_with_the_human():
 # ── ⑤ 봉인 실물 ────────────────────────────────────────────────
 
 def test_the_reader_uses_the_key_the_writer_writes():
-    """★ **2026-09-30 실기가 여기서 죽었다**(§328).
+    """★ **2026-09-30 실기가 여기서 죽었다**(§329).
 
     `seal_digests()` 가 `meta.json` 의 `"digests"` 를 읽고 있었는데 봉인을 쓰는
     `tools/baseline.py` 는 `"sha256"` 으로 적는다. **실물을 안 열고 지은
@@ -243,3 +243,33 @@ def test_fresh_metrics_are_measured_against_the_produced_file():
     fn = src[src.index("def prove_seal_carries_fresh_metrics"):src.index("def seal_state")]
     assert "data" in fn and "processed" in fn, (
         "산출물과 안 대 본다 — 봉인끼리만 대면 낡은 지표를 굳혀도 모른다")
+
+
+# ── ⑥ 되돌아올 길 (§331) ───────────────────────────────────────
+
+def test_committed_movement_is_still_movement(monkeypatch):
+    """★ **2026-09-30 실기의 세 번째 막다른 길.**
+
+    사슬이 중간에 죽으면 사람이 산출물을 손으로 앉힌다. 그 뒤 `moved()` 가
+    작업 트리만 보면 「안 움직였다」를 내고 **사슬이 통째로 건너뛴다** —
+    문서·그림·래칫이 옛 판정을 든 채로 전수 verify 로 간다.
+    """
+    seen: list[list[str]] = []
+
+    def fake(rng):
+        seen.append(rng)
+        return set() if not rng else {"data/processed/segments.geojson"}
+
+    monkeypatch.setattr(RM, "_diff", fake)
+    assert RM.moved() == [], "작업 트리가 깨끗한데 움직였다고 한다"
+    assert RM.moved("origin/x") == ["data/processed/segments.geojson"], (
+        "커밋된 이동을 못 본다 — 손으로 앉히면 사슬이 건너뛴다")
+    assert any(r and "..." in r[0] for r in seen), "밑동 범위를 안 물어본다"
+
+
+def test_fl_hands_back_a_way_in_when_4b_died():
+    """★ 1단계가 **거절하되 길을 적는가.** 거절만 하면 그것이 막다른 길이다."""
+    sh = (ROOT / "tools" / "fl.sh").read_text(encoding="utf-8")
+    assert "4b 가 앉히기 전에 멈춘 자국" in sh, "그 자국을 알아보지 못한다"
+    assert "git add -A && git commit" in sh, "되돌아올 명령을 안 적는다"
+    assert "--since" in sh, "`remeasure` 에 밑동을 안 넘긴다 — 앉히면 사슬이 건너뛴다"

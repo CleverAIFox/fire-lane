@@ -68,8 +68,11 @@ SPEC: dict[str, dict] = {
         ],
         "scan": [".github/**/*", "Dockerfile*", ".devcontainer/*"],
         "pins": [
+            # ★ 2026-09-30 (§324). `@\S+\s*\n` 이었다. 액션을 커밋 지문으로 고정하며
+            #   꼬리에 `# v7`(어느 판인지)을 붙였더니 **줄 끝 주석에서 정규식이 끊겼고**
+            #   판을 안 적은 것으로 읽혔다. 꼬리 주석은 줄의 일부다 — `[^\n]*` 로 받는다.
             {"find": "astral-sh/setup-uv@",
-             "regex": r'astral-sh/setup-uv@\S+\s*\n\s*with:\s*\n\s*version:\s*"([^"]*)"'},
+             "regex": r'astral-sh/setup-uv@\S+[^\n]*\n\s*with:\s*\n\s*version:\s*"([^"]*)"'},
             {"find": "astral-sh/uv:", "regex": r"astral-sh/uv:([\w.]+)"},
             {"find": "astral.sh/uv/", "regex": r"astral\.sh/uv/([\d.]+)/install\.sh"},
         ],

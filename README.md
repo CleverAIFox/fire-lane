@@ -74,6 +74,7 @@ uv run python tools/docseal.py check     # 문서 절 ↔ 그 절이 지목한 �
 uv run python tools/after_squash.py      # 스쿼시 뒤에만 답이 바뀌는 검사만 (열차 7b · --list 로 사유)
 uv run python tools/cv_queue.py          # 영상판정을 어느 구간부터 — 측량이 못 가른 곳 먼저 (--out CSV)
 uv run python tools/gate_parity.py     # 로컬 관문 ↔ CI 차집합 (래칫 · 정본은 도구 안)
+uv run python tools/actionpin.py --write # 액션 태그 → 커밋 지문 (네트워크 · 검사는 관문이 늘 돈다)
 uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증분)
 uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
 uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 · 결번 대장 (★ --apply 는 폐지 — 번호는 영구 식별자다)
@@ -89,10 +90,11 @@ uv run python tools/mergecheck.py       # 빨간불 위에서 머지된 PR 이 �
 uv run python tools/naviweight.py       # 내비가 밖에 몇 개 기대는가 (오프라인)
 uv run python tools/naviweight.py --build  # 진입 청크 무게 래칫 · 지도 워커가 번들에 있는가
 cd web/navi && npm run glyphs           # 지도 글자를 저장소 안에서 다시 뽑는다
+uv run python tools/readmecheck.py    # 리드미가 적은 목록이 실물과 같은가
 uv run python tools/ratchet.py --write  # 조이는 쪽으로만 고쳐 적는다 — 느슨해지는 쪽은 거부한다
 uv run python tools/verdict_tally.py data/processed/segments.geojson  # 판정 네 수 한 줄 (전후 비교용)
 uv run python tools/remeasure.py --tag ""      # 판정 산출물이 움직였는가 (안 고친다)
-uv run python tools/remeasure.py --tag v0.48   # 움직임을 받아들인다 — 재생성 사슬을 순서대로 돌린다
+uv run python tools/remeasure.py --tag 20260930-covrate  # 움직임을 받아들인다 — 재생성 사슬을 순서대로 돌린다
 uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
 uv run python tools/selftests.py         # ★ 선언된 `--selftest` 를 전부 돌린다 (문 하나 · --list 로 건너뜀 사유)
 uv run python tools/fieldseal.py         # ★ data/field 무결성 지문 — DECISIONS 가 인용하는 파생표 (--write 는 새로 뽑았을 때만)
@@ -191,7 +193,7 @@ bash tools/verify.sh --fast           # 급할 때. 파이프라인 전량을 �
 
 ★ `--fast` 로 찍은 로그로는 **봉인할 수 없다.** 건너뛴 것은 통과가 아니다.
 근거 있는 생략은 두 겹이다. `dms.py rawdiff` 가 raw **와 파이프라인 코드**가 봉인과
-같으면 전량을 안 돈다(44초). 돌 때는 ingest 가 소스마다 봉인지를 대조해 **찢어진
+같으면 전량을 안 돈다(1분 밑). 돌 때는 ingest 가 소스마다 봉인지를 대조해 **찢어진
 샤드만** 다시 만든다(DECISIONS §164 · §165). 모르면 안 건너뛴다.
 
 푸시 전에는 이것 하나면 된다.
@@ -241,9 +243,9 @@ uv run fire-lane --only publish
 uv run fire-lane --split          # ingest 를 소스별 자식 프로세스로 (메모리 반납)
 ```
 
-★ `--split` 은 기본값이 아니다. 8GB 기계에서 `Errno 12` 를 막지만 2분45초가
-3분59초가 된다 — 자식마다 `geopandas` 를 다시 import 하는 값이라 코드로 못
-줄인다. `verify.sh` 처럼 앞 단계가 이미 메모리를 먹은 맥락에서만 켠다
+★ `--split` 은 기본값이 아니다. 8GB 기계에서 `Errno 12` 를 막지만 전량이
+**1.4배**가 된다 — 늘어난 몫은 자식마다 `geopandas` 를 다시 import 하는
+값이라 코드로 못 줄인다. `verify.sh` 처럼 앞 단계가 이미 메모리를 먹은 맥락에서만 켠다
 (`DECISIONS §160`).
 
 ★ `uv run` 을 빼면 `command not found` 다. 진입점은 `.venv/bin/fire-lane` 에
@@ -252,8 +254,10 @@ uv run fire-lane --split          # ingest 를 소스별 자식 프로세스로 
 `golden.py check` 를 돌려 **통과했다.** 옛 산출물을 옛 지문과 비교한 것이라
 아무것도 증명하지 않는다. 가장 위험한 종류의 초록불이다.
 
-전량 재실행 약 2분45초. **`processed` 를 백업하지 않는 근거가 이 시간이다.**
-raw + 코드 + 대장이 있으면 결정론적으로 재생성된다.
+전량 재실행은 **수 분**이고, 그것이 `processed` 를 백업하지 않는 근거다.
+raw + 코드 + 대장이 있으면 결정론적으로 재생성된다. 걸린 시간은
+`uv run fire-lane` 이 끝에 `총 …s` 를 스스로 적는다 — **문서는 그 수를 안 든다**
+(기계마다 다르다 · `DECISIONS §326`).
 
 **단계를 하나씩 손으로 치지 않는다.** 순서가 중요하고 빠뜨리기 쉽다.
 
@@ -487,6 +491,9 @@ tools/
   unusedcheck.py          ★ 미배선 자료 래칫. 「참조용 · 대조용 · 근거 자료」(영구)와
                           「미투입 · 미배선」(내릴 대상)을 `feeds_why` 첫 낱말로 가른다 —
                           둘을 한 수로 세니 「미활용 25」가 한 달 동안 25 였다 (§317)
+  actionpin.py            ★ 워크플로 액션이 **떠 있는 태그**가 아니라 커밋 지문으로
+                          도는가 · 모든 작업이 시간 상한을 갖는가. 태그는 옮겨 다니므로
+                          우리가 고친 것 없이 CI 가 다른 코드를 돈다 (W13-6 · §324)
   docgen.py               ★ 문서의 생성 블록에 실물 값을 **넣는다**. 흐르는 숫자는
                           문서가 들지 않는다 (DECISIONS §246)
   plan_renumber.py        PLAN §1 표 번호를 1..N 으로 · 결번 해소
@@ -503,7 +510,7 @@ tools/
   docx_check.py           기획서 ↔ 산출물 숫자·폐기 용어 대조
   docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
   docstyle.py             ★ 기획서에 개요 층이 있는가 — 없으면 목차도 PDF 북마크도 안 생긴다 (--write)
-  tonecheck.py            ★ 문서 넷 + 리드미의 말투 — 비속어 · 은어 · 대화체 (<!--voice-ok--> 면 통과)
+  tonecheck.py            ★ 문서 넷 + 리드미의 말투 — 비속어 · 은어 · 대화체 (`<!--voice-ok-->` 면 통과)
   suppress.py             ★ 사유 없이 검사를 끄는 주석 — noqa · type:ignore · eslint-disable · 문서 표기. 양방향 래칫
   doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
   intake.py               Downloads → landing 게이트 · 대장 미매칭 차단

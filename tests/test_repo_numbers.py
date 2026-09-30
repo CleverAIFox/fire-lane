@@ -50,6 +50,7 @@ PARAM 없음
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import docgen
@@ -178,3 +179,50 @@ def test_the_truth_comes_from_the_ledger_not_the_docs(truth: dict[str, int]):
       적었고, 도구가 생기면서 두 벌이 될 자리였다(R3).
     """
     assert not docgen.alive(truth), "\n".join(docgen.alive(truth))
+
+
+# ── 기계마다 다른 수는 문서가 안 든다 (W13-9 · DECISIONS §326) ──────
+
+#: 살아 있는 문서. DECISIONS 는 회고라 **옛 실측을 그대로 둔다** — 그 수는
+#: 「그날 그 기계에서 이랬다」는 기록이고 지금을 주장하지 않는다.
+_LIVE = ("docs/MASTER.md", "docs/PLAN.md", "README.md",
+         "web/README.md", "src/firelane/README.md")
+
+#: 「N분M초」 · 「N초」 꼴. 벽시계 시간이다.
+_WALL = re.compile(r"\d+\s*분\s*\d+\s*초|(?<![\d.])\d{2,}\s*초")
+
+#: 그 수가 **전량 재실행**을 말하는 자리인지 가르는 낱말. 좁게 잡는다 —
+#: 「25m 안」 「30초 간격」 같은 다른 시간까지 걸면 사람이 검사를 끈다.
+_ABOUT = ("전량", "재실행", "파이프라인 전량", "fire-lane")
+
+
+def test_no_document_freezes_the_pipeline_wall_clock():
+    """★ **W13-9 의 가드다.** 285초 · 2분45초 · 2분40초 · 5분18초 넷이 돌아다녔다.
+
+    한 기계에서 재어 하나로 모아도 낫지 않는다 — **다음 기계에서 또 갈린다.**
+    이 수의 정본은 방금 그 실행뿐이고, `uv run fire-lane` 이 끝에 `총 …s` 로
+    제가 적는다. 문서는 자릿수(「수 분」)와 배수(「1.4배」)만 든다.
+    """
+    bad = []
+    for rel in _LIVE:
+        p = ROOT / rel
+        if not p.is_file():
+            continue
+        for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            if "<!--stale-ok-->" in line or not _WALL.search(line):
+                continue
+            if any(w in line for w in _ABOUT):
+                bad.append(f"{rel}:{i}  {line.strip()[:90]}")
+    assert not bad, (
+        "살아 있는 문서가 전량 재실행 시간을 **수로** 든다 —\n  "
+        + "\n  ".join(bad)
+        + "\n\n  그 수는 기계마다 다르다. 자릿수나 배수로 적어라.")
+
+
+def test_that_guard_would_catch_the_old_text():
+    """★ 반대 방향. 지운 문장이 다시 들어오면 **정말 우는가.**"""
+    old = "전량 재실행 약 2분45초. `processed` 를 백업하지 않는 근거가 이 시간이다."
+    assert _WALL.search(old) and any(w in old for w in _ABOUT), (
+        "2026-09-30 에 지운 그 문장을 판별식이 못 잡는다 — 빈 그물이다")
+    assert not _WALL.search("CCTV 유효범위 25m 안"), "거리를 시간으로 읽는다"
+    assert not any(w in "소요 3초" for w in _ABOUT), "다른 시간까지 이 검사가 문다"

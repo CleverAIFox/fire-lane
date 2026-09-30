@@ -2311,7 +2311,9 @@ git config --global core.precomposeunicode true
 
 원본이 소실돼 재생성 불가가 된 산출물, 그리고 판정이 바뀌기 직전의 상태를
 `data/baseline/<태그>/` 에 봉인한다. 재생성 가능한 것은 봉인하지 않는다 —
-전량 재실행이 약 2분45초이고, raw + 코드 + 대장이 있으면 결정론적으로 나온다.
+전량 재실행이 **수 분**이고, raw + 코드 + 대장이 있으면 결정론적으로 나온다.
+★ 2026-09-30 (W13-9 · DECISIONS §326). 여기 있던 「2분45초」를 뺐다 — 기계마다
+다른 수라 문서가 들면 반드시 낡는다. 봉인하지 않는 근거는 자릿수로 선다.
 
 | 태그 | 무엇 | 판정 |
 |---|---|---|
@@ -2386,7 +2388,8 @@ uv run fire-lane --only publish
 사람이 치는 명령이 아니다.** 직접 부르면 대장은 갱신되고 계보 기록은 빠져
 다음 실행이 교착한다.
 
-전량 재실행 약 2분45초. 몇 번을 돌려도 결과가 같고, 두 번째부터는 캐시가 걸린다.
+전량 재실행은 몇 번을 돌려도 결과가 같고, 두 번째부터는 캐시가 걸린다.
+걸린 시간은 `uv run fire-lane` 이 끝에 `총 …s` 를 **스스로 적는다**(W13-9 · §326).
 
 강제자  `tools/verify.sh` 의 「진입점 · cwd 독립성」 단계 · `tests/test_reproducibility.py::test_web_manifest_is_cwd_independent` · `tools/doc_fsck.py::check_commands`(이 블록의 단계 이름이 실재하는 단계인가). 단계 순서의 정본은 `src/firelane/pipeline.py::STEPS` 다
 
@@ -2426,7 +2429,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 <!--gen: sealable-->
 ★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15` · `#68` → `DECISIONS
   §160~161`). `SEAL.json` 이 소스 71종의 raw sha256 을 갖고, `dms.py rawdiff`
-  가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — 5분21초가 44초다.
+  가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — **한 자릿수 분이 1분 밑으로** 준다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
   끄는 것과 같다.
 <!--/gen-->
@@ -2436,7 +2439,8 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
   ② 전량이 돌 때 ingest 가 소스마다 봉인지(raw · cfg · code · out)를 대조해
   **찢어진 샤드만** 다시 만든다(`§165`). 이 8GB 기계에서 `ngii_road` 는 다시
   빌드하면 거의 반드시 OOM 이라, 샤드 봉인이 곧 전량을 돌 수 있게 하는 조건이다.
-  전량은 이제 2분45초 안팎이다(8GB 기계 · 사람이 잰 값. **실측 정본은 없다** — `PLAN §13`).
+  전량이 돌 수 있게 된 것이 요점이고, **걸린 시간은 문서가 안 든다** —
+  기계마다 다르고 그 수를 여기 적으면 다음 기계에서 낡는다(W13-9 · `DECISIONS §326`).
 
 ★ **커버리지는 래칫이다.** 2026-09-25 에 28 → 32 로 올렸다(실측 32.93%).
 <!--gen: cov_min-->
@@ -2478,15 +2482,15 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 강제자 — `tests/test_skip_policy.py::test_hook_turns_unclassified_skip_into_failure` · `::test_judge_rejects_what_hides`
 
 ```bash
-uv run fire-lane                       # 평소. 2분45초
+uv run fire-lane                       # 평소. 끝에 `총 …s` 를 스스로 적는다
 uv run fire-lane --no-test --split     # ingest 를 소스별 자식 프로세스로
 ```
 
 ★ `--split` 은 **기본값이 아니다.** `geopandas` 가 놓은 메모리를 OS 에 안
   돌려줘 한 프로세스로 66종을 돌면 RSS 가 단조증가하고 뒤쪽이 `Errno 12` 로
-  죽는다. 자식으로 돌리면 누적이 0 으로 리셋되지만 2분45초가 3분59초가 된다
-  — 74초는 자식마다 `geopandas`·`pyproj` 를 다시 import 하는 값이라 코드로
-  못 줄인다. **앞 단계가 이미 메모리를 먹은 맥락**(=`verify.sh`)에서만 켠다.
+  죽는다. 자식으로 돌리면 누적이 0 으로 리셋되지만 전량이 **1.4배**가 된다
+  — 늘어난 몫은 자식마다 `geopandas`·`pyproj` 를 다시 import 하는 값이라
+  코드로 못 줄인다. **앞 단계가 이미 메모리를 먹은 맥락**(=`verify.sh`)에서만 켠다.
 
 ★ **`shp_zip_multi` 는 읽는 시점에 bbox 로 거른다**(2026-09-16 · `DECISIONS §168`).
   `jijeok`(zip 하나 안의 shp 7장 × 100만 필지)이 조각을 전부 올린 뒤 잘라서
@@ -2640,6 +2644,12 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 남기지 않는다 — 그 자리는 매번 미뤄져서 제출본만 옛 값을 든 채 남는다(DECISIONS §221-1).
 `tools/docx_figs.py` 의 `PLACE` 가 「어느 생성 그림이 기획서 몇 번 그림인가」의 정본이고,
 기획서에 자리가 없는 그림은 사유를 적어 `internal` 로 선언한다.
+
+★ **고친 뒤의 확인도 사람에게 안 남긴다**(2026-09-30 · DECISIONS §333). 종전에
+`docx_fix --write` 의 마지막 줄은 안내문 한 줄로 끝났고, 그래서
+찾는 쪽이 고치는 쪽보다 넓은 것을 아무도 몰랐다(POC 문장 7곳 대 6곳). 지금은
+`--write` 가 `docx_check.audit()` 을 직접 불러 남은 것을 이름으로 내고 1 로 죽는다 —
+**위 문단의 원칙이 「고치는 것」에서 「끝났는지 아는 것」까지 간 것**이다.
 
 ★ **배포 화면은 PDF 다**(2026-09-24 · DECISIONS §231). `tools/proposal_pdf.py` 가
 `docs/proposal.docx` 를 구워 `web/proposal.pdf` 를 내고, 쪽수 · 본문 한글 줄 수 ·
@@ -2813,7 +2823,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,353 전수 · **분모(blank) 0절** · 물림(inherit) 573절.
+★ **강제자 칸의 분모.** 절 1,395 전수 · **분모(blank) 0절** · 물림(inherit) 603절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

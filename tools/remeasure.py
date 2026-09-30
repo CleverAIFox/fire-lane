@@ -3,7 +3,7 @@
 remeasure.py — 판정이 움직인 배치의 **재생성 사슬.** 순서가 이 도구의 내용물이다.
 
     uv run python tools/remeasure.py --tag ""          움직였는가만 본다 (안 고친다)
-    uv run python tools/remeasure.py --tag v0.48       움직였으면 사슬을 돌리고 그 태그로 봉인
+    uv run python tools/remeasure.py --tag 20260930-covrate   움직였으면 사슬을 돌리고 그 태그로 봉인
     uv run python tools/remeasure.py --selftest        ★ 순서가 선언과 같은가
 
 ── 왜 생겼나 (DECISIONS §319) ──────────────────────────────────
@@ -18,7 +18,7 @@ remeasure.py — 판정이 움직인 배치의 **재생성 사슬.** 순서가 �
 문서 숫자 대조 · 기획서 대조 · 그림↔정본 · 기획서 그림 · 평가지표 산출.
 
 ★ 그래서 **판단과 받아적기를 가른다.** 판단은 하나다 — 「이 움직임을
-  받아들이는가」이고, 그 답이 태그다(`--tag v0.48`). 나머지는 전부 순서이고
+  받아들이는가」이고, 그 답이 태그다(`--tag 20260930-covrate`). 나머지는 전부 순서이고
   순서는 기계가 지킨다. §309 가 래칫에서 한 것과 같은 가르기다.
 
 ★ 순서를 **셸 분기에 안 적는다.** 적으면 시험이 못 들고, 못 드는 순서는
@@ -95,7 +95,7 @@ def _run(argv: list[str]) -> int:
 
 #: 봉인 `meta.json` 이 파일별 지문을 적는 열쇠.
 #:
-#: ★ 2026-09-30 실기 (DECISIONS §328). 여기가 `"digests"` 였다 — **실물을 안 열고
+#: ★ 2026-09-30 실기 (DECISIONS §329). 여기가 `"digests"` 였다 — **실물을 안 열고
 #:   지은 이름이다.** `tools/baseline.py:184` 는 `"sha256"` 으로 적는다. 그래서
 #:   `seal_digests()` 가 늘 빈 표를 냈고 사슬이 끝에서 「지문을 못 읽었다」로 죽었다.
 #:   ★ 죽은 것이 옳다 — 그 자리의 반대 방향 판별식(「빈 그물 금지」)이 **제 일을
@@ -119,7 +119,7 @@ def prove_only_eval_moved(before: dict[str, str], after: dict[str, str],
       무엇을 덮었는지 아무도 모른다(§272). 잴 수 있는 것을 재서 가른다.
     ★ 지문이 없으면(옛 판 봉인) **통과가 아니라 실패다** — 빈 그물 금지.
 
-    :param resume: 이어 도는 판. ★ 2026-09-30 (§328). 지표는 결정론이라 **이미
+    :param resume: 이어 도는 판. ★ 2026-09-30 (§329). 지표는 결정론이라 **이미
         한 번 뽑힌 뒤에 다시 돌면 같은 값이 나온다.** 「안 움직였으면 실패」를
         그대로 두면 되돌아올 길이 다시 막힌다 — 첫 실기가 고치려던 그 병이다.
         이어 도는 판에서 그 한 줄만 뺀다. 「봉인이 방금 뽑은 지표를 들었는가」는
@@ -178,11 +178,24 @@ def seal_state(tag: str) -> tuple[str, str]:
                      "사라진다. 다른 태그를 줘라")
 
 
-def moved() -> list[str]:
-    """`WATCH` 중 git 과 다른 것. 비면 배선 배치다."""
-    r = subprocess.run(["git", "diff", "--name-only", "--", *WATCH],  # noqa: S603,S607 — PATH 의 git 이다
+def _diff(rng: list[str]) -> set[str]:
+    r = subprocess.run(["git", "diff", "--name-only", *rng, "--", *WATCH],  # noqa: S603,S607 — PATH 의 git 이다
                        cwd=ROOT, capture_output=True, text=True, timeout=60, check=False)
-    return [x for x in r.stdout.split() if x]
+    return {x for x in r.stdout.split() if x}
+
+
+def moved(since: str = "") -> list[str]:
+    """`WATCH` 가 움직였는가. 비면 배선 배치다.
+
+    ★ 2026-09-30 (DECISIONS §331). 종전에는 **작업 트리만** 봤다. 그래서 사슬이
+      중간에 죽어 사람이 산출물을 손으로 앉히고 나면, 다음 실행에서 이 함수가
+      「안 움직였다」를 내고 **사슬이 통째로 건너뛰어졌다** — 문서·그림·래칫이
+      옛 판정을 든 채로 전수 verify 로 갔다. 2026-09-30 실기가 그 꼴이었고
+      사람이 네 도구를 손으로 쳤다.
+    ★ 그래서 밑동 이후 **커밋된 이동**도 본다. 배치 전체가 물음의 단위이지
+      작업 트리가 아니다.
+    """
+    return sorted(_diff([]) | (_diff([f"{since}...HEAD"]) if since else set()))
 
 
 def tally(ref: str | None) -> str:
@@ -208,11 +221,11 @@ def tally(ref: str | None) -> str:
     return r.stdout.strip() or "?"
 
 
-def advise() -> None:
+def advise(since: str = "") -> None:
     """태그가 없을 때. **아무것도 안 고치고** 무엇을 할지만 적는다."""
     print("\n★ 판정 산출물이 움직였다 — 이 배치는 배선이 아니라 **측정**이다"
           "(PLAN §13-5 규칙 2).")
-    for f in moved():
+    for f in moved(since):
         print(f"    움직임  {f}")
     print(f"    전  {tally('HEAD')}")
     print(f"    후  {tally(None)}")
@@ -225,15 +238,15 @@ def advise() -> None:
     print("    본다:  uv run python tools/golden.py check --allow-stale")
 
 
-def run(tag: str) -> int:
-    got = moved()
+def run(tag: str, since: str = "") -> int:
+    got = moved(since)
     if not got:
         if tag:
             print(f"~ 판정 산출물이 안 움직였다 — `--measured={tag}` 는 필요 없었다."
                   " 사슬을 안 돌린다.")
         return 0
     if not tag:
-        advise()
+        advise(since)
         return 1
 
     state, why = seal_state(tag)
@@ -317,11 +330,11 @@ def selftest() -> int:
     #   태그는 거절한다 — 재지 않고 늘 덮으면 남의 기준선이 사라진다.
     if seal_state("__없는태그__")[0] != "new":
         fails.append("없는 태그를 새 태그로 안 본다")
-    # ★ 이어 도는 판에서 「안 움직였다」로 죽지 않는가(§328). 지표는 결정론이다.
+    # ★ 이어 도는 판에서 「안 움직였다」로 죽지 않는가(§329). 지표는 결정론이다.
     if prove_only_eval_moved({"a": "1", "eval.json": "x"},
                              {"a": "1", "eval.json": "x"}, resume=True):
         fails.append("이어 도는 판에서 막다른 길이 되돌아왔다 — 이 도구가 생긴 이유다")
-    # ★ **읽는 이름이 쓰는 이름과 같은가**(§328). 09-30 실기가 여기서 죽었다 —
+    # ★ **읽는 이름이 쓰는 이름과 같은가**(§329). 09-30 실기가 여기서 죽었다 —
     #   합성 사전으로만 물으면 이름이 틀린 것을 영원히 못 본다.
     writer = (ROOT / "tools" / "baseline.py").read_text(encoding="utf-8")
     if f'"{SEAL_DIGEST_KEY}": digests' not in writer:
@@ -340,9 +353,11 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=(__doc__ or "").strip().splitlines()[0])
     ap.add_argument("--tag", default="",
                     help="사람이 받아들인 봉인 태그. 비면 보기만 하고 멈춘다")
+    ap.add_argument("--since", default="",
+                    help="밑동 참조(`origin/part/infra` 따위). 커밋된 이동까지 본다")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args(argv)
-    return selftest() if a.selftest else run(a.tag.strip())
+    return selftest() if a.selftest else run(a.tag.strip(), a.since.strip())
 
 
 if __name__ == "__main__":
