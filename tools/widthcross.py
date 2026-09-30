@@ -153,8 +153,37 @@ CLEAR_M = TRUCK + 2 * PARK
 #:   목록에 있는 「대장 2.0 대 wmin 29.91」과 성격이 전혀 다르다. **구분 없는 목록은
 #:   신호를 묻는다** — 모순 열일곱 건이 그래서 한 달 동안 안 갈렸다.
 #: ★ 경계 둘 다 **기존 상수다.** 새로 발명하지 않았다.
-OVERCLAIM_HARD = 9
-OVERCLAIM_SOFT = 40
+#: ★ 이력 — 09-29 §299-2 층 분리(9 · 40) · 09-30 §318 8 · 39.
+#:   두 수 모두 **실측이 내려가서** 조였다. 판정을 안 움직였는데 왜 내려갔나 —
+#:   §308 이 커버율 관문을 켜면서 근거가 얇은 `clear` 가 `needs_cv` 로 갔고,
+#:   그 몫이 이 목록에서도 빠졌다. **한 배치가 두 곳을 조인다.**
+OVERCLAIM_HARD = 8
+OVERCLAIM_SOFT = 39
+
+#: ★ 이 둘을 `ratchet.py` 규약에 태운다(§309). 종전에는 도구가 「그 수로
+#:   내려라」를 찍고 **사람이 받아적었다** — 09-30 실기에서 그 두 줄이 그대로
+#:   남아 배치 하나를 통째로 다시 만들게 했다.
+#:
+#: ★ 이 도구는 `ci-exempt` 다(파이프라인 산출물을 읽는다). 래칫이 레이크에
+#:   기대므로 CI 에서는 실측이 불가능하고, `ratchet.py` 가 그 선언을 물려받아
+#:   **사유와 함께 건너뛴다** — 조용히 빠지는 것이 아니다(§318).
+RATCHETS = {"OVERCLAIM_HARD": "down", "OVERCLAIM_SOFT": "down"}
+
+
+def ratchet_values() -> dict[str, int]:
+    """래칫 이름 → 지금 실측값. **판정은 안 한다**(`show()` 소관).
+
+    산출물이 없으면 `RuntimeError` 를 던진다. **0 을 내지 않는다** — 0 은
+    「모순이 없다」는 뜻이고, 그것을 선언에 적으면 래칫이 조용히 최대로
+    조여져 다음 실행이 무조건 빨개진다(§313-1 ① 과 같은 족).
+    """
+    rows = _load()
+    if rows is None:
+        raise RuntimeError(
+            f"{PROCESSED.name}/segments_5186.gpkg 가 없다 — 실측 못 한다")
+    res = cross(rows)
+    return {"OVERCLAIM_HARD": len(res["과대주장 딱딱"]),
+            "OVERCLAIM_SOFT": len(res["과대주장 부드러움"])}
 
 
 def overclaim(rows: list[dict], floor: float) -> list[dict]:

@@ -348,6 +348,20 @@ jobs:
         run: uv run python tools/dupcheck.py --min 40 --max 1
       - name: 파일 길이 래칫 (양방향)
         run: uv run python tools/sizecheck.py
+      # ★ `--write` 를 CI 에서 안 돈다 — 쓰고 나서 재면 영영 초록이다(§309).
+      - name: 래칫 정합 (선언 = 실측)
+        run: uv run python tools/ratchet.py
+      # ★ 소스 축만 CI 에 있다. 빌드본 축은 여기서 내비를 안 지어 못 본다(§310).
+      - name: 화면 분리 (관제 ≠ 내비)
+        run: uv run python tools/uicheck.py --split
+      - name: 머지 절차 (빨간불 위에서 머지했는가)
+        run: uv run python tools/mergecheck.py
+      # ★ 소스 축만. 빌드본 무게와 글자 대조는 여기서 내비를 안 지어 못 본다(§312).
+      - name: 내비 의존 (출동 중에 끊기는 것)
+        run: uv run python tools/naviweight.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI: "1"
       - name: PLAN 번호·참조 정합
         run: uv run python tools/plan_renumber.py
       - name: 문서 제목 무결
@@ -545,4 +559,9 @@ jobs:
           #   진짜 조건으로 되돌리면 F-211(CI 에서 한 번도 안 돎)이 재발한다.
           #   도달 불가 분기는 주석보다 위험하다 — 살아 있는 것처럼 보인다.
           uv run python tools/docnum_check.py
+
+      # ★ 2026-09-30 (§317). 미배선 자료 래칫. 대장만 읽으므로 레이크가 필요 없다 —
+      #   로컬 전용으로 두면 `gate_parity` 가 미선언으로 센다(그리고 그것이 맞다).
+      - name: 미배선 자료
+        run: uv run python tools/unusedcheck.py
 

@@ -17,6 +17,25 @@ export default tseslint.config(
   { ignores: ["dist/**", "node_modules/**", "coverage/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  // ★ 2026-09-29 (§312). `scripts/` 는 **Node 에서 도는 빌드 도구**다.
+  //   브라우저 전역만 아는 채로 보면 `console` · `process` 가 전부 미정의로 뜬다.
+  //   규칙을 끄는 것이 아니라 **어디서 도는지를 적는 것**이다.
+  {
+    files: ["scripts/**/*.mjs", "*.config.{js,ts}"],
+    languageOptions: { globals: { console: "readonly", process: "readonly" } },
+  },
+  // ★ 2026-09-29 (§312). 서비스 워커는 **브라우저도 Node 도 아닌 제3의 전역**에서
+  //   돈다(`self` · `caches` · `clients`). 어디서 도는지를 적는 것이지 규칙을 끄는
+  //   것이 아니다 — 여기서 `no-undef` 를 끄면 진짜 오타를 놓친다.
+  {
+    files: ["public/sw.js"],
+    languageOptions: {
+      globals: {
+        self: "readonly", caches: "readonly", clients: "readonly",
+        fetch: "readonly", location: "readonly", URL: "readonly", Response: "readonly",
+      },
+    },
+  },
   {
     files: ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"],
     plugins: { "react-hooks": reactHooks },

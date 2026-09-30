@@ -109,7 +109,27 @@ NO_DECL = 150
 # ★ 2026-09-28 (PLAN W13-7 · DECISIONS §288). 29 → 30. `tools/fieldseal.py` —
 #   재취득 불가 층의 무결성 지문. 판별식이 바뀜·사라짐·새로 생김 셋을
 #   실제로 가르는지 자기검사가 문다.
-SELFTEST_MIN = 33
+# ★ 2026-09-29 (DECISIONS §309). 33 → 34. `tools/ratchet.py` — 래칫을 조이는
+#   쪽으로만 고쳐 적는 문 하나다. 그 도구의 값어치가 **느슨해지는 쪽을
+#   막는 것**에 전부 걸려 있으므로, 방향 판정이 살아 있는지를 판별식이 문다.
+#   ★ 이 줄은 그 도구가 스스로 써 넣었다 — 사람이 34 를 받아적지 않았다.
+# ★ 2026-09-29 (DECISIONS §310). 34 → 36. `tools/uicheck.py` · `tools/mergecheck.py` —
+#   사람 눈이 마지막 관문이던 두 자리다. 둘 다 **0건이 청결인지 죽음인지**가
+#   특히 흐린 꼴이라(화면은 늘 무언가 그려지고, 머지는 늘 되어 있다) 판별식이
+#   빈 그물이 아닌지 자기검사가 문다.
+#   ★ 이 수도 `ratchet.py` 가 스스로 써 넣었다(§309).
+SELFTEST_MIN = 40
+
+#: `tools/ratchet.py` 가 이 둘을 **조이는 쪽으로만** 고쳐 적는다(§309).
+#: 사람이 위 두 수를 받아적지 않는다 — 판정은 여전히 `judge()` 가 한다.
+RATCHETS = {"NO_DECL": "down", "SELFTEST_MIN": "up"}
+
+
+def ratchet_values() -> dict[str, int]:
+    """래칫 이름 → 지금 실측값. **판정은 안 한다**(`judge()` 소관)."""
+    _, missing, st, _ = measure()
+    return {"NO_DECL": len(missing), "SELFTEST_MIN": len(st)}
+
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)
 

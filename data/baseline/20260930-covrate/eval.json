@@ -1,0 +1,340 @@
+{
+ "as_of": "2026-09-30T17:14:55+09:00",
+ "git_sha": "87b024c886369a7ef579578a8c40f7c4f63bc0e4",
+ "produced_by": "tools/evalgen.py",
+ "gate": {
+  "passed": true,
+  "fingerprint": {
+   "locked": true,
+   "L1": true,
+   "L2_moved": 0,
+   "L2_gone": 0,
+   "L2_new": 0,
+   "L3": true
+  },
+  "transition": {
+   "tag": "v0.48",
+   "old_n": 1281,
+   "new_n": 1281,
+   "matched": 1281,
+   "uid_keep_pct": 100.0,
+   "moved": 0,
+   "matrix": {
+    "clear->clear": 464,
+    "needs_cv->needs_cv": 225,
+    "blocked->blocked": 192,
+    "unknown->unknown": 400
+   },
+   "old_tally": {
+    "n": 1281,
+    "verdict": {
+     "clear": 464,
+     "needs_cv": 225,
+     "blocked": 192,
+     "unknown": 400
+    },
+    "unknown_reason": {
+     "no_cctv_band": 183,
+     "no_cctv_thin": 142,
+     "no_cctv_narrow": 63,
+     "no_cctv_single": 12
+    },
+    "width_src": {
+     "ngii1k": 1162,
+     "silpok": 116,
+     "ngii": 1,
+     "null": 2
+    },
+    "length_total_m": 58309,
+    "in_emd": 416,
+    "route_usage_pos": 580,
+    "nfa_designated": 183,
+    "width_verified": 0
+   },
+   "new_tally": {
+    "n": 1281,
+    "verdict": {
+     "clear": 464,
+     "needs_cv": 225,
+     "blocked": 192,
+     "unknown": 400
+    },
+    "unknown_reason": {
+     "no_cctv_band": 183,
+     "no_cctv_thin": 142,
+     "no_cctv_narrow": 63,
+     "no_cctv_single": 12
+    },
+    "width_src": {
+     "ngii1k": 1162,
+     "silpok": 116,
+     "ngii": 1,
+     "null": 2
+    },
+    "length_total_m": 58309,
+    "in_emd": 416,
+    "route_usage_pos": 580,
+    "nfa_designated": 183,
+    "width_verified": 0
+   }
+  },
+  "manifest": {
+   "present": true,
+   "generated_at": "2026-09-30T15:05:33.235692+09:00",
+   "datasets": 72,
+   "outputs_declared": 74,
+   "outputs_missing": 0,
+   "route_vehicle": {
+    "present": true,
+    "rows": 1281,
+    "uid_only_segments": 0,
+    "uid_only_route": 0,
+    "passable_disagree": 0
+   }
+  },
+  "why": []
+ },
+ "tally": {
+  "n": 1281,
+  "verdict": {
+   "clear": 464,
+   "needs_cv": 225,
+   "blocked": 192,
+   "unknown": 400
+  },
+  "unknown_reason": {
+   "no_cctv_band": 183,
+   "no_cctv_thin": 142,
+   "no_cctv_narrow": 63,
+   "no_cctv_single": 12
+  },
+  "width_src": {
+   "ngii1k": 1162,
+   "silpok": 116,
+   "ngii": 1,
+   "null": 2
+  },
+  "length_total_m": 58309,
+  "in_emd": 416,
+  "route_usage_pos": 580,
+  "nfa_designated": 183,
+  "width_verified": 0
+ },
+ "sha256": {
+  "segments.geojson": "c12c19d0ebd99d870f068d151ae6e38210359ea822e0a059fdc47a2322289f4c",
+  "route_vehicle.csv": "eda8d27ffba3954cfaa8d4ac90d2b634f2062d00296248d2484794814f6f89cd",
+  "_manifest.json": "2e9c4c3f3efc80070da2ec742e6cc91f668fb9184f9a6bfa6b70511bc01afc3e",
+  "segments.fingerprint.json": "03ee2273ad3d6bd4dc577e8c954c6443941be8aebd2794e11b1d2b553df2cd6c"
+ },
+ "params": {
+  "node_tol_m": 0.5,
+  "required_width_m": 3.0,
+  "ratio_min": 1.5,
+  "stations": [
+   "대인119안전센터",
+   "지산119안전센터"
+  ],
+  "vehicle_spec_verified": {
+   "verified": false,
+   "turn_radius_verified": false,
+   "wheelbase_verified": false
+  }
+ },
+ "E1": {
+  "what": "현행 내비게이션(폭 미인지) 대비 개선. d1 제약 없음 · d2 제약 있음",
+  "denominator": "node",
+  "unresolved": "PLAN §1 #94 — 분모를 건물로 할지 노드로 할지 미정. 표본 수·시드도 미정",
+  "pairs": 2170,
+  "pairs_with_route": 705,
+  "unreachable": 1465,
+  "entry_fail": 1763,
+  "entry_fail_pct": 81.2,
+  "ratio_median": 1.0,
+  "ratio_p90": 1.163,
+  "ratio_max": 2.475,
+  "over_ratio_min": 11,
+  "per_station": {
+   "대인119안전센터": {
+    "snap_node": 2124,
+    "snap_dist_m": 30.1,
+    "d1_reach": 1086,
+    "d2_reach": 704,
+    "unreachable": 382
+   },
+   "지산119안전센터": {
+    "snap_node": 1828,
+    "snap_dist_m": 24.1,
+    "d1_reach": 1086,
+    "d2_reach": 3,
+    "unreachable": 1083
+   }
+  },
+  "gaps": [
+   {
+    "station": "지산119안전센터",
+    "what": "통행 가능 그래프에서 3/1086 노드만 닿는다",
+    "why": "접속 노드가 통행 가능 성분의 섬에 있다. 이 출발점에서는 역산이 성립하지 않는다 — 쌍을 0 으로 세지 말고 이 항으로 읽어라"
+   }
+  ]
+ },
+ "E2": {
+  "what": "오류 비대칭. 미탐(출동 실패) 대 오탐(우회) 비용비 아래에서 기울기 셋",
+  "tilt": "pessimistic",
+  "tilt_why": "미탐:오탐 = 100:1. 검증 없이 통행 가능을 주장하지 않는다",
+  "miss_cost": 100,
+  "per_tilt": {
+   "pessimistic": {
+    "claimed": 464,
+    "claimed_km": 21.8,
+    "miss_exposure": 0,
+    "false_negative_exposure": 625,
+    "weighted_loss": 625
+   },
+   "current": {
+    "claimed": 804,
+    "claimed_km": 38.3,
+    "miss_exposure": 340,
+    "false_negative_exposure": 285,
+    "weighted_loss": 34285
+   },
+   "optimistic": {
+    "claimed": 1089,
+    "claimed_km": 50.3,
+    "miss_exposure": 625,
+    "false_negative_exposure": 0,
+    "weighted_loss": 62500
+   }
+  },
+  "lowest_loss_tilt": "pessimistic",
+  "tilt_is_lowest_loss": true,
+  "current_unverified_claims": 340,
+  "unresolved": "미탐 노출은 **주장의 노출**이고 지상진실이 아니다. 「실제로 못 갔다」는 D-25 실측(#4)이 전건이다",
+  "not_measured": "경로 탐색의 기울기는 여기서 안 정한다 — `edge_cost` 가 든다. 거기서 회색을 막으면 통행 가능 성분이 1,000 → 269구간으로 쪼개져 대부분의 쌍에 경로가 없어진다"
+ },
+ "E3": {
+  "what": "영상판정 가능률. 분모는 1,281구간 전수다",
+  "n": 1281,
+  "cv_impossible": 400,
+  "cv_impossible_pct": 31.2,
+  "cv_impossible_length_m": 17181,
+  "length_total_m": 58309,
+  "cv_impossible_length_pct": 29.5,
+  "outside_cctv_range": 830,
+  "outside_cctv_range_pct": 64.8,
+  "unknown_reason": {
+   "no_cctv_band": 183,
+   "no_cctv_thin": 142,
+   "no_cctv_narrow": 63,
+   "no_cctv_single": 12
+  },
+  "mitigation": {
+   "what": "영상판정 불가 구간이 담당하는 통행량 몫",
+   "route_usage_unknown": 4385,
+   "route_usage_total": 24865,
+   "pct": 17.6
+  }
+ },
+ "scenarios": {
+  "rule": "d2/d1 > 1.5 and d2 < inf",
+  "conditions": [
+   "우회로 존재 (d2 < inf)",
+   "CCTV 커버 (cv_feasible)",
+   "코너 통과 가능 (can_turn)"
+  ],
+  "corner_vacuous": true,
+  "corner_vacuous_why": "`turn_radius_verified: false` 인 동안 `can_turn` 이 항상 참이라 코너 조건은 아무것도 안 거른다",
+  "pairs": 11,
+  "sites": 4,
+  "sites_meeting_conditions": 3,
+  "rows": [
+   {
+    "station": "대인119안전센터",
+    "node": 2127,
+    "dest_lon": 126.916769,
+    "dest_lat": 35.154713,
+    "d1_m": 207.0,
+    "d2_m": 512.4,
+    "ratio": 2.475,
+    "pinch_seg_uid": "DM-192391-284278-4W2N",
+    "pinch_label": "제봉로200번길 9-223",
+    "pinch_road": "제봉로200번길",
+    "pinch_verdict": "needs_cv",
+    "pinch_width_min_m": 1.47,
+    "cctv_covered": true,
+    "cctv_dist_m": 15.4,
+    "detour_corner_ok": true,
+    "detour_min_radius_m": 1846.8,
+    "detour_segments": 9,
+    "n_dest": 4
+   },
+   {
+    "station": "대인119안전센터",
+    "node": 1907,
+    "dest_lon": 126.91836,
+    "dest_lat": 35.153951,
+    "d1_m": 396.3,
+    "d2_m": 734.6,
+    "ratio": 1.854,
+    "pinch_seg_uid": "DM-192550-284203-JFYG",
+    "pinch_label": "동계천로 1-59",
+    "pinch_road": "동계천로",
+    "pinch_verdict": "unknown",
+    "pinch_width_min_m": 2.5,
+    "cctv_covered": false,
+    "cctv_dist_m": 83.0,
+    "detour_corner_ok": true,
+    "detour_min_radius_m": 69.9,
+    "detour_segments": 17,
+    "n_dest": 1
+   },
+   {
+    "station": "대인119안전센터",
+    "node": 2404,
+    "dest_lon": 126.922356,
+    "dest_lat": 35.148935,
+    "d1_m": 1180.1,
+    "d2_m": 1961.4,
+    "ratio": 1.662,
+    "pinch_seg_uid": "DM-192912-283629-W4QT",
+    "pinch_label": "제봉로 4-120",
+    "pinch_road": "제봉로",
+    "pinch_verdict": "blocked",
+    "pinch_width_min_m": 1.68,
+    "cctv_covered": true,
+    "cctv_dist_m": 3.8,
+    "detour_corner_ok": true,
+    "detour_min_radius_m": 25.4,
+    "detour_segments": 38,
+    "n_dest": 5
+   },
+   {
+    "station": "대인119안전센터",
+    "node": 2493,
+    "dest_lon": 126.921308,
+    "dest_lat": 35.152331,
+    "d1_m": 742.0,
+    "d2_m": 1117.3,
+    "ratio": 1.506,
+    "pinch_seg_uid": "DM-192800-283972-JFYG",
+    "pinch_label": "동계천로 91",
+    "pinch_road": "동계천로",
+    "pinch_verdict": "needs_cv",
+    "pinch_width_min_m": 2.54,
+    "cctv_covered": true,
+    "cctv_dist_m": 17.5,
+    "detour_corner_ok": true,
+    "detour_min_radius_m": 18.2,
+    "detour_segments": 31,
+    "n_dest": 1
+   }
+  ]
+ },
+ "known_limits": [
+  "폭 실측 검증 0건. 모든 지표가 미검증 폭 위에서 나온다(D-25 · PLAN §1 #4)",
+  "E-4(폭 정확도 · #93)는 D-25 실측(#4)이 전건이어서 안 낸다",
+  "E-2 의 두 노출은 **주장의 노출**이고 지상진실이 아니다 — 「실제로 못 갔다」는 폭 실측(#4)이 전건이다",
+  "E-1 분모는 노드다. 건물이냐 노드냐는 PLAN §1 #94 가 미정으로 든다",
+  "거리는 국소 평면 근사(localgeo)로 잰다. 투영이 아니다",
+  "`node` 는 실행 안에서만 뜻이 있는 번호다. 실행 간 인용은 `dest_lon`·`dest_lat` 로 한다"
+ ]
+}

@@ -148,6 +148,28 @@ def test_sweep_verdict_reads_both_the_red_and_the_unexercised():
     assert "레이크" in skipped["취입 계약 실물"]
 
 
+def test_a_red_axis_is_not_swallowed_by_the_line_before_it():
+    """★ **빨간 축을 조용히 떨구던 자리**(DECISIONS §319-3).
+
+    종전 판별식은 끝맺음이 `(?:\\s{2,}|$)` 였고 `\\s` 가 **줄바꿈을 먹었다.**
+    이름과 힌트 사이가 한 칸뿐인 줄은 `\\n` + 다음 줄 들여쓰기를 끝맺음으로
+    삼켰고, 그러면 그 **다음 `✗` 줄이 통째로 안 잡힌다.**
+
+    실측 2026-09-30 — 밑동 스윕에서 「선언 ↔ 실물」이 그렇게 빠졌다. 그리고
+    배치 쪽에서는 앞 줄이 달라 잡혔으므로 **없던 「새 빨간불」이 생겨** 배달이
+    거부됐다. 둘 중 **빠지는 쪽이 더 나쁘다** — 빨간 채로 나간다.
+    """
+    out = ("\n  실패 2\n"
+           # ★ 이름과 힌트 사이가 **한 칸**이다. 이것이 방아쇠였다.
+           "    ✗ 의존성 동기화 (uv sync) (v0.1.0) depends on `actionlint-py`\n"
+           "    ✗ 선언 ↔ 실물                        죽은 참조 1 · 경고 12\n")
+    red, _ = D.sweep_verdict(1, out)
+    assert "선언 ↔ 실물" in red, f"앞 줄이 뒤 줄을 먹었다 — {red}"
+    assert len(red) == 2, red
+    # ★ 반대 방향. 힌트 칸은 이름에 들어오지 않는다.
+    assert not any("죽은 참조" in x for x in red), red
+
+
 def test_a_passing_step_is_not_counted_as_unexercised():
     """★ 초록을 생략으로 세면 **못 돈 축** 칸이 거짓이 된다."""
     assert not D.sweep_verdict(0, "── 이름\n   OK  잘 됐다\n")[1]

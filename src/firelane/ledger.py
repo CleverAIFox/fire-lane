@@ -163,14 +163,25 @@ def load() -> dict:
 
 # ── 활용도 ────────────────────────────────────────────────────
 #: 데이터를 **소비하지 않는** 피드. 이름표를 붙여 `data/raw` 에 놓을 뿐이다.
-#: ★ 2026-09-24 (PLAN §13 W13-5 · DECISIONS §243). `normalize_raw` 는 머리말대로
-#:   「다운로드 폴더의 원본을 명명규칙에 맞게 배치한다」 — 배치기이지 소비자가
-#:   아니다. 그런데 `grade()` 가 「feeds 가 비지 않았다」만 봐서 **이 한 줄짜리
-#:   일곱**(node_link_changelog · hydrant_summary · ngii_road_center · bin_trash ·
-#:   bin_cloth · bldg_ledger_dm · admin_cctv)을 활성으로 셌다. 일곱 다 제
-#:   `feeds_note` 에 「미투입」이라 적고 있었다 — **대장이 제 자신과 어긋났고
-#:   집계가 산문을 이겼다.** 미사용은 19가 아니라 26이다.
+#: ★ 2026-09-24 (PLAN §13 W13-5 · DECISIONS §243). `normalize_raw` 는 배치기이지
+#:   소비자가 아니다. 그런데 `grade()` 가 「feeds 가 비지 않았다」만 봐서 이 한
+#:   줄짜리 일곱을 활성으로 셌다 — 일곱 다 제 `feeds_note` 에 「미투입」이라 적고
+#:   있었다. **대장이 제 자신과 어긋났고 집계가 산문을 이겼다.**
 RENAME_ONLY = frozenset({"src/firelane/normalize_raw.py"})
+
+
+#: `feeds_why` 의 **첫 낱말 = 선언**(DECISIONS §317). ① 영구 참조 ② 미배선 —
+#: 둘을 한 수로 세니 「미활용 25」가 한 달 동안 25 였다.
+REFERENCE_WHY = ("참조용", "대조용", "근거 자료")
+PENDING_WHY = ("미투입", "미배선")
+
+
+def why_token(entry: dict) -> str | None:
+    """`feeds_why` **첫 줄**이 든 선언 낱말. `★` 장식은 건너뛴다 — 산문 전체에서
+    찾으면 본문에 우연히 든 낱말까지 선언으로 읽힌다."""
+    w = entry.get("feeds_why")
+    head = w.lstrip("★ *·\n").split("\n", 1)[0] if isinstance(w, str) else ""
+    return next((t for t in REFERENCE_WHY + PENDING_WHY if head.startswith(t)), None)
 
 
 def grade(entry: dict) -> str:
@@ -179,15 +190,16 @@ def grade(entry: dict) -> str:
     if isinstance(feeds, str):
         # 산문이다. 아직 마이그레이션 전이므로 판정을 보류한다.
         return "prose"
-    if not feeds:
-        return "unused"
     if entry.get("kind") == "raw_only":
         # 「원본만 보관」은 **왜 여기 있나**의 답이지 소비 여부가 아니다.
         # 이 갈래를 뒤로 미루면 raw_only 열다섯이 미사용으로 뒤집힌다.
+        # ★ 2026-09-30 (§317). **위 경고를 이 함수가 어기고 있었다** — `if not
+        #   feeds` 가 앞에 있어 feeds 빈 아홉이 뒤집혔다. 글과 코드가 갈렸다.
         return "reference"
-    if not set(feeds) - RENAME_ONLY:
-        # 이름표만 붙는다 — 아무도 안 읽는 것과 같다.
-        return "unused"
+    if not feeds or not set(feeds) - RENAME_ONLY:
+        # 이름표만 붙는다 — 아무도 안 읽는 것과 같다. 그중 **영구 참조**는
+        # 소비자가 없는 것이 아니라 **소비자가 사람**이다(§317).
+        return "reference" if why_token(entry) in REFERENCE_WHY else "unused"
     return "active"
 
 
@@ -311,6 +323,7 @@ def check_entry(key: str, e: dict) -> list[Issue]:
     #   FAIL 4건이 묻혔다. **근거 없이 우는 검사가 아니라, 옳은데
     #   너무 자주 우는 검사도 진짜 경보를 죽인다.**
     #   판정은 유지하고(summary 가 센다) 출력만 총계로 낸다.
+    # ★ 선언 낱말이 없는 `feeds_why` 는 `tools/unusedcheck.py` 가 든다(§317).
     if g == "unused" and not e.get("feeds_why"):
         # ★ 2026-08-30. `feeds_why` 가 있으면 판단이 끝난 것이다.
         #   unused 는 판정 결과로 남기고(summary 가 센다) 경보만 거둔다.
