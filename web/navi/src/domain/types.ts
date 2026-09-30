@@ -339,3 +339,19 @@ export interface ShareInfo {
   /** 관제가 없어 흉내 냈다 */
   simulated: boolean;
 }
+
+/**
+ * 안내 한 마디가 **얼마나 급한가.**
+ *
+ * ★ 2026-09-30 (DECISIONS §329). 집이 `infra/speech.ts` 였다. 급함은
+ *   **정책**이고(무엇을 먼저 말하는가), 정책을 결정하는 자리가
+ *   `domain/voice.ts` 로 내려오면서 `domain` 이 `infra` 를 볼 수 없게 됐다
+ *   — 계층은 안쪽이 바깥쪽을 모른다(`test/layering.test.ts`).
+ *   **뜻**(무엇을 먼저 버리고 무엇이 자르는가)은 여전히 발화기가 든다(`RANK`).
+ *
+ *   turn      회전 · 이탈 — 놓치면 길을 잘못 든다
+ *   rule      통행 규칙 — 놓치면 역주행한다
+ *   notice    판정 · 주변 사정 — 놓쳐도 운전은 된다
+ *   normal    종전 호출부. `notice` 와 같다
+ */
+export type Priority = "critical" | "turn" | "rule" | "notice" | "normal";

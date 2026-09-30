@@ -17,6 +17,10 @@ PARAM --write 없이는 아무것도 쓰지 않는다
 밖    **`docs/*.md` 는 안 고친다.** 정본 셋(MASTER · PLAN · DECISIONS)의 숫자는
       `docnum_check.py` 가 대조하고 사람이 고친다 — `.md` 는 diff 가 되므로
       도구가 손댈 이유가 없고, 손대면 R9(문자열 치환 패처 금지)를 어긴다.
+      **무엇이 옳은 문장인가는 안 고른다** — 규칙은 사람이 쓰고 정본은 골든이다.
+
+★ **2026-09-30 (DECISIONS §333). 고친 뒤 스스로 대조한다** — `--write` 가
+  끝나면 `unreachable()` 이 찾는 쪽을 직접 부른다. 사유는 그 절이 든다.
 """
 from __future__ import annotations
 
@@ -560,6 +564,28 @@ def fix(p: Path, write: bool, extra: list | None = None) -> int:
     return n
 
 
+def unreachable() -> list[str]:
+    """고친 뒤에도 찾는 쪽이 잡는 것 — **이 도구의 규칙이 못 닿는 자리다**(§333).
+
+    ★ `tools/` 는 패키지가 아니라 `import` 로 못 부른다. `sys.path` 를 만지면
+      `test_layering` 이 운다 — 파일로 적재한다(시험들이 쓰는 그 방법이다).
+    ★ `exec_module` **앞에** `sys.modules` 에 넣는다. `@dataclass` 가
+      `cls.__module__` 로 저를 되짚으므로 없으면 그 도구가 dataclass 를 갖는 날
+      `AttributeError` 다 — 지금 안 터져도 지연 신관이고,
+      `test_tools_are_wired::test_a_by_path_loader_registers_the_module` 가 든다.
+    """
+    import importlib.util
+    q = ROOT / "tools" / "docx_check.py"
+    spec = importlib.util.spec_from_file_location("docx_check_probe", q)
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return [f"{p.name}  {line}"
+            for p in sorted((ROOT / "docs").glob("*.docx"))
+            for line in m.audit(p)]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
@@ -576,7 +602,17 @@ def main() -> int:
         print("\n아무것도 안 썼다. 적용하려면 --write")
         print("★ docx 는 git diff 가 안 된다. 적용 후 워드로 눈으로 확인할 것.")
     else:
-        print(f"\n{total}개 run 수정. tools/docx_check.py 로 대조해라.")
+        print(f"\n{total}개 run 수정.")
+        left = unreachable()
+        if left:
+            print("\n✗ 고친 뒤에도 `docx_check` 가 잡는 것이 남았다 — "
+                  "**찾는 쪽이 고치는 쪽보다 넓다**(§333)")
+            for x in left:
+                print(f"   {x}")
+            print("\n   규칙을 넓히거나, 그 자리를 손으로 고쳐라. "
+                  "「대조해라」로 사람에게 넘기지 않는다.")
+            return 1
+        print("✓ `docx_check` 가 잡을 것이 없다 — 고정점에 닿았다")
     return 0
 
 

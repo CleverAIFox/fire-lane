@@ -20,7 +20,12 @@ uv run fire-lane --only publish
 `guards.warn_direct_call()` 이 그때 경고한다 — 막지는 않는다. 디버깅에는
 필요하고, 정상 경로를 막으면 사람이 우회를 습관으로 만든다(MASTER §18-13).
 
-    ingest → segments → scope → streetlight → terrain → ortho → publish
+    ingest → segments → nfa_compare → scope → terrain → ortho → publish
+
+★ **2026-09-30 정정**(DECISIONS §334). 종전에 이 줄은 `… scope → streetlight →
+  terrain …` 이었다. `streetlight` 는 **단계가 아니다** — 가로등 데이터의 이름이고
+  그것을 읽는 자리는 `ingest` 다. 그리고 실물의 `nfa_compare`(소방청 판정 대조)가
+  목록에 없었다. 둘 다 `tools/readmecheck.py` 가 `pipeline.STEPS` 와 대조해 잡았다.
 
 상세는 `MASTER §14-2`. 게이트와 계층은 `MASTER §18` 이 정본이다.
 

@@ -76,6 +76,9 @@ RETIRED: dict[str, list[str]] = {
     "세그먼트 수": ["1087", "1,087", "1091", "1,091", "1093", "1,093",
                  "1102", "1,102", "1101", "1,101"],
     "unknown(회색)": ["396", "429", "352", "354"],
+    # ★ 2026-09-30 (§330). `400` 을 뺐다 — 측정 배치로 **`unknown` 이 400 이 됐다.**
+    #   폐기값이 다른 축의 현재값과 같으면, 판정 넷을 한 줄에 적는 문서가
+    #   그 줄 때문에 빨개진다. 아래 새 판별식이 그 상태를 막는다.
     "clear": ["392", "443", "386", "397"],
     # ★ 2026-08-24. 여기 "191" 이 있었는데 그것이 **현재값이 됐다.**
     #   폐기 목록이 현재값을 폐기라고 적으면 게이트가 반대로 돈다 —
@@ -98,6 +101,30 @@ RETIRED: dict[str, list[str]] = {
     "소화전 지하식": ["157"],
     "소화전 합": ["588"],
 }
+
+def retired_clashes(cur: dict[str, int], retired: dict[str, list[str]]) -> list[str]:
+    """폐기목록이 **지금 값**을 폐기라고 적고 있는가. 같은 축 · 다른 축 둘 다.
+
+    ★ 2026-09-30 (DECISIONS §330). 종전 검사는 **같은 축 안에서만** 봤다.
+      그래서 `clear` 의 폐기값 `400` 이 측정 배치로 `unknown` 의 **현재값**이
+      된 순간을 못 봤고, 판정 넷을 한 줄에 적는 `README` 가 그 줄 때문에
+      빨개졌다 — **맞는 문서가 빨간불이 되는** 병이고, 이 파일이 2026-08-24 에
+      같은 병을 같은 축 안에서 겪고 주석으로 적어 둔 그것이다.
+      §320 의 소화전 157 도 축을 가로질렀다. **두 번 났으면 축 사이를 본다.**
+
+    ★ 순수 함수다 — 문서도 산출물도 안 읽는다. 그래서 `--selftest` 가 부른다.
+    """
+    out: list[str] = []
+    live = {str(v): k for k, v in cur.items()}
+    for label, old in retired.items():
+        if label in cur and str(cur[label]) in old:
+            out.append(f"RETIRED[{label!r}] 에 현재값 {cur[label]} 이 있다 — 목록을 고쳐라")
+            continue
+        for x in sorted(set(old) & set(live)):
+            out.append(f"RETIRED[{label!r}] 의 {x} 가 **다른 축의 현재값**이다 "
+                       f"({live[x]}) — 그 줄을 쓴 문서가 빨개진다")
+    return out
+
 
 CONTEXT = {
     "unknown(회색)": ("unknown", "회색", "영상판정 불가"),
@@ -329,10 +356,9 @@ def main() -> int:
            "소화전 지상식": c.get("hyd_up", 0),
            "소화전 지하식": c.get("hyd_dn", 0),
            "소화전 합": c.get("hyd_sum", 0)}
-    for label, old in RETIRED.items():
-        if label in cur and str(cur[label]) in old:
-            print(f"! RETIRED[{label!r}] 에 현재값 {cur[label]} 이 있다 — 목록을 고쳐라")
-            bad += 1
+    for m in retired_clashes(cur, RETIRED):
+        print(f"! {m}")
+        bad += 1
 
     # ★ 2026-08-24. 뒤에 `%` 나 `m` 이 붙으면 판정 건수가 아니다.
     #   `도달 가능 687(62%)` 의 62 를 옛 blocked 값으로 잡았다.
@@ -415,6 +441,38 @@ def main() -> int:
     return 0
 
 
+def selftest() -> int:
+    """★ **폐기목록이 지금 값을 폐기라고 적는가**를 실제로 가르는가.
+
+    문서도 산출물도 안 읽는다 — 합성 표로 본다. 2026-09-30 실기의 그 모양을
+    그대로 넣는다: `clear` 의 폐기값 400 이 `unknown` 의 현재값이 됐다(§330).
+    """
+    fails = []
+    cur = {"clear": 464, "unknown": 400, "blocked": 192}
+
+    got = retired_clashes(cur, {"clear": ["392", "400"]})
+    if not any("다른 축" in g for g in got):
+        fails.append("**축을 가로지른 충돌을 못 본다** — 2026-09-30 실기가 그것이다")
+
+    got = retired_clashes(cur, {"clear": ["464"]})
+    if not any("현재값" in g and "다른 축" not in g for g in got):
+        fails.append("같은 축의 현재값이 폐기목록에 있는데 못 본다")
+
+    if retired_clashes(cur, {"clear": ["392", "443"]}):
+        fails.append("깨끗한 목록을 충돌로 읽는다 — 이러면 사람이 검사를 끈다")
+
+    # ★ 반대 방향. 실물 목록이 지금 깨끗한가 — 여기서 0 이 아니면 결함이다.
+    if retired_clashes({"clear": 1, "unknown": 2}, {}):
+        fails.append("빈 목록에서 무언가를 낸다 — 빈 그물의 반대쪽")
+
+    for f in fails:
+        print(f"  ✗ {f}")
+    print("✓ 자기검사 통과 · 판별식 4" if not fails else f"✗ {len(fails)}건")
+    return 1 if fails else 0
+
+
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--selftest"]:
+        sys.exit(selftest())
     no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     sys.exit(main())

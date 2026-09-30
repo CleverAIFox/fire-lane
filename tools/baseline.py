@@ -48,6 +48,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -149,7 +150,33 @@ def tally(rows) -> dict:
 
 
 # ── freeze ────────────────────────────────────────────────────
+
+def tag_rule() -> str:
+    """봉인 폴더 이름 규칙. **정본은 `sources.yaml` 의 `layers.baseline.naming`** 이다.
+
+    ★ 2026-09-30 (DECISIONS §332). 여기가 규칙을 몰랐다. 그래서 `v0.48` 이라는
+      태그가 그대로 앉았고, 같은 규칙을 드는 `lakecheck` L6 와 `datalog` 가
+      **전수 verify 에서** 울었다 — 파이프라인을 두 번 돌린 뒤였다.
+      규칙은 한 집에 살고 **쓰는 쪽이 그 집을 본다.** 여기 다시 적지 않는다.
+    """
+    from firelane import ledger
+    pol = ((ledger.load().get("layers") or {}).get("baseline") or {})
+    return str(pol.get("naming") or "")
+
+
+def tag_ok(tag: str) -> bool:
+    """그 태그로 만든 폴더가 규칙을 통과하는가. 규칙이 없으면 **막지 않는다.**"""
+    rx = tag_rule()
+    return True if not rx else bool(re.match(rx, f"{tag}/"))
+
+
 def cmd_freeze(args) -> int:
+    # ★ 만들기 **전에** 본다. 만든 뒤에 울면 되돌리는 값이 파이프라인 한 판이다.
+    if not tag_ok(args.tag):
+        print(f"! 태그 `{args.tag}` 가 봉인 명명 규칙을 어긴다 — `{tag_rule()}`")
+        print("  기존 봉인과 같은 꼴로 줘라:  20260930-covrate · 20260918-pre-r3")
+        print("  ★ 규칙의 정본은 `sources.yaml` 의 `layers.baseline.naming` 이다.")
+        return 1
     dst = BASE / args.tag
     if dst.exists() and not args.force:
         print(f"! 이미 있다: {dst}   덮어쓰려면 --force")

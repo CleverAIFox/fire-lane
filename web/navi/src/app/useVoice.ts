@@ -41,15 +41,14 @@
  * ★ 이 훅은 `RoutePlan` 만 받고 **그것이 어떻게 만들어졌는지 모른다.**
  *   경로 알고리즘이 바뀌어도 여기는 안 바뀐다.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createSpeaker } from "../infra/speech";
 import {
-  buildIncidence, extractManeuvers, nextManeuver, mergePhrase, gateIndex,
+  buildIncidence, extractManeuvers, nextManeuver, mergePhrase,
   type Incidence, type Maneuver,
 } from "../domain/turn";
-import { lookAhead } from "../domain/graph";
-import { nextRule, rulePhrase } from "../domain/rules";
-import { hazardPhrase, nextHazard, type Hazard } from "../domain/context";
+import { newMemory, resync, step, type VoiceTick } from "../domain/voice";
+import { type Hazard } from "../domain/context";
 import { requiredWidth } from "../domain/vehicle";
 import type {
   NaviGraph, RoutePlan, VehicleSpec, VerdictStyle,
@@ -57,9 +56,6 @@ import type {
 
 /** 이보다 가까운 다음 회전은 묶어서 한 번에 말한다. */
 const MERGE_M = 45;
-/** 판정 안내를 이만큼 앞에서 미리 낸다(초). */
-const VERDICT_AHEAD_SEC = 7;
-const VERDICT_MIN_M = 40;
 
 export interface VoiceInput {
   graph: NaviGraph | null;
@@ -87,10 +83,9 @@ export interface VoiceState {
 
 export function useVoice(i: VoiceInput): VoiceState {
   const speaker = useMemo(() => createSpeaker(), []);
-  const spokenGate = useRef(new Map<number, number>());
-  const spokenVerdict = useRef<string | null>(null);
-  const spokenRule = useRef(new Set<string>());
-  const wasOff = useRef(false);
+  // ★ 2026-09-30 (§329). 참조 넷이었다. 기억의 집이 `domain/voice.ts` 로
+  //   내려가면서 여기 남는 것은 **그 기억을 틱 사이에 들고 있는 일**뿐이다.
+  const mem = useRef(newMemory());
 
   // ── 실제 속도를 잰다. 문턱이 이것에 비례한다 ──────────────────
   const lastRef = useRef<{ m: number; t: number } | null>(null);
@@ -123,9 +118,14 @@ export function useVoice(i: VoiceInput): VoiceState {
   const { m, distM, after } = nextManeuver(maneuvers, driven, MERGE_M);
   const banner = m ? mergePhrase(m, after, distM) : null;
 
-  // ★ 2026-09-28 (§279-4). 매 렌더 새 함수였다. `speed` 만 걸면 값은 같으므로
-  //   안정화해서 의존에 **넣는다** — 억제로 덮지 않는다.
-  const gateOf = useCallback((d: number) => gateIndex(d, speed), [speed]);
+  // ★ 한 틱의 입력. 아래 두 효과가 **같은 것**을 본다 — 종전에는 각자
+  //   `i.*` 를 흩어 읽어서 무엇이 한 틱인지 읽는 사람이 모았어야 했다.
+  const tick: VoiceTick = {
+    enabled: i.enabled, offRoute: i.offRoute, plan: i.plan, driven,
+    speed, m, after, distM, style: i.style, hazards: i.hazards,
+  };
+  const tickRef = useRef(tick);
+  tickRef.current = tick;
 
   // ── 재동기화 — 순간이동한 자리에서 바로 말한다 ─────────────
   // ★ 이 효과가 아래 본 효과보다 **먼저** 선언돼야 한다. 같은 렌더에서 문턱 기록을
@@ -134,16 +134,13 @@ export function useVoice(i: VoiceInput): VoiceState {
   useEffect(() => {
     if (i.jumpSeq === seenJump.current) return;
     seenJump.current = i.jumpSeq;
-    spokenGate.current.clear();
-    spokenVerdict.current = null;
-    spokenRule.current.clear();
     lastRef.current = null;            // 끊긴 동안의 속도는 모른다
+    // ★ `resync` 가 기억을 비우는 것까지 든다 — 비우기와 말하기가 한 곳에
+    //   있어야 「비웠는데 안 말했다」가 안 생긴다.
+    const u = resync(tickRef.current, mem.current);
     if (!i.enabled || i.offRoute) return;
     speaker.cancel();
-    if (m && distM != null) {
-      spokenGate.current.set(m.atM, Math.max(0, gateOf(distM)));
-      speaker.say(mergePhrase(m, after, distM), "critical");
-    }
+    if (u) speaker.say(u.text, u.urgency);
   }, [i.jumpSeq]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ★ 2026-09-24 (PLAN §13 W13-5). 종전에는 아래 효과가 `if (!i.enabled) return`
@@ -158,78 +155,13 @@ export function useVoice(i: VoiceInput): VoiceState {
   // 페이지를 떠나면 합성기를 놓는다 — 깨우기 타이머가 남으면 누수다.
   useEffect(() => () => speaker.dispose(), [speaker]);
 
+  // ★ 본 걸음. 무엇을 말할지는 `domain/voice.ts::step` 이 정하고 여기는
+  //   **그것을 발화기에 넘길 뿐**이다(§329).
   useEffect(() => {
-    if (!i.enabled) return;
-
-    // ── 이탈이 최우선 ──────────────────────────────────────────
-    if (i.offRoute) {
-      if (!wasOff.current) {
-        wasOff.current = true;
-        speaker.say("경로를 벗어났습니다. 재탐색합니다.", "critical");
-      }
-      return;
-    }
-    wasOff.current = false;
-
-    // ── 회전 안내. 문턱이 속도에 비례한다 ──────────────────────
-    if (m && distM != null) {
-      // ★ 가장 안쪽 문턱을 고른다. 종전 `findIndex` 는 **바깥 문턱부터** 맞춰
-      //   「실행(2.5초 전)」 자리에서도 「먼저 알림」 으로 셌다 — 한 번 말한 뒤로는
-      //   `gate > prev` 가 거짓이라 실행 안내가 안 나갔다.
-      const gate = gateOf(distM);
-      if (gate >= 0) {
-        const prev = spokenGate.current.get(m.atM);
-        if (prev == null || gate > prev) {
-          spokenGate.current.set(m.atM, gate);
-          speaker.say(mergePhrase(m, after, distM), "turn");
-          return;   // 회전이 판정을 이긴다
-        }
-      }
-    }
-
-    // ── 통행 규칙. 역주행 · 방향 모를 일방통행 · 회전 금지 (§215-1) ──
-    // ★ 판정보다 앞이다. 폭은 지나가며 볼 수 있지만 대향차는 들어가 봐야 안다.
-    if (!i.plan || driven == null) return;
-    const reach = Math.max(VERDICT_MIN_M, speed * VERDICT_AHEAD_SEC);
-    const rule = nextRule(i.plan.rules, driven, reach);
-    if (rule) {
-      const k = `${rule.kind}@${rule.atM.toFixed(0)}`;
-      if (!spokenRule.current.has(k)) {
-        spokenRule.current.add(k);
-        speaker.say(rulePhrase(rule),
-                    rule.kind === "wrong_way" ? "critical" : "rule");
-        return;
-      }
-    }
-
-    // ── 주변 사정. 규칙 · 회전 다음, 판정 앞 (§216-3) ─────────────
-    // ★ 짧게 한 번. 60m 앞(속도 비례 문턱과 작은 쪽)에서만 — 멀리서 말하면 어느 것인지 모른다
-    const hz = nextHazard(i.hazards ?? [], driven, i.hazards?.length ? Math.min(reach, 60) : 0);
-    if (hz) {
-      const k = `hz-${hz.kind}@${hz.atM.toFixed(0)}`;
-      if (!spokenRule.current.has(k)) {
-        spokenRule.current.add(k);
-        speaker.say(hazardPhrase(hz), "notice");
-        return;
-      }
-    }
-
-    // ── 판정 안내. 회색 구간에만, 진입 **전에** ────────────────
-    const ahead = lookAhead(i.plan, driven, reach);
-    if (!ahead) return;
-    if (ahead.verdict !== "needs_cv" && ahead.verdict !== "unknown") return;
-    if (ahead.seg_uid === spokenVerdict.current) return;
-
-    spokenVerdict.current = ahead.seg_uid;
-    const label = i.style[ahead.verdict]?.label ?? ahead.verdict;
-    const w = ahead.width_min_m != null
-      ? ` 폭 ${ahead.width_min_m.toFixed(1)}미터.` : "";
-    // ★ §215-2. 회색은 **왜** 회색인지 한 마디 붙인다. 카메라가 없어서인지가 운전자에게 제일 쓸모 있다
-    const why = ahead.verdict === "unknown" && ahead.unknown_reason?.startsWith("no_cctv")
-      ? " CCTV 없음." : "";
-    speaker.say(`잠시 후 ${label} 구간.${w}${why}`, "notice");
+    const u = step(tickRef.current, mem.current);
+    if (u) speaker.say(u.text, u.urgency);
   }, [i.enabled, i.offRoute, i.plan, i.style, i.hazards, m, after, distM, driven,
-      speed, speaker, gateOf]);
+      speed, speaker]);
 
   return {
     banner, maneuver: m, distM,

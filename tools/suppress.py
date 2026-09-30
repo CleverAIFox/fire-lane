@@ -76,13 +76,39 @@ ROOT = Path(__file__).resolve().parents[1]
 #:   둘(`voice-ok` · `stale-ok`)을 「뒤에 말이 붙을 자리가 없어 전부 센다」로
 #:   두었으므로 가를 수가 없다. 가르는 일(표기에 사유를 붙일 수 있게 하는 것)은
 #:   별개의 배치이고, 그때 이 수는 스물넷이 빠진다.
-#: ★ 그때까지 이 수가 **61 보다 늘면 그것은 진짜 결함**이다. 래칫은 산다.
-#: ★ **2026-09-30. 61 → 64.** 측정 배치(v0.48 · clear 465→464 · unknown 399→400)가
-#:   **회고 세 줄을 얼렸다** — `DECISIONS §319` 의 실기 기록 한 줄과 `§308` 의 전후
-#:   기록 두 줄이다. 그 셋은 「그날 그랬다」는 기록이라 고칠 수 없고, 안 얼리면
-#:   `docnum` 이 「옛 수가 남았다」로 운다. **판정이 움직이면 회고가 굳는다** —
-#:   측정 배치마다 이 수가 몇 올라가는 것이 이 도구의 정상 동작이다.
-RATCHET = 64
+#:
+#: ★ **2026-09-30. 두 힘이 같은 날 이 수를 움직였다.** 방향이 반대라 둘을 같이 적는다 —
+#:
+#:   ① **측정 배치가 회고를 얼렸다** (61 → 64). 판정 산출물이 움직이자
+#:      `DECISIONS §319` 의 실기 기록 한 줄과 `§308` 의 전후 기록 두 줄이 옛 수를
+#:      들게 됐다. 그 셋은 「그날 그랬다」는 기록이라 고칠 수 없고, 안 얼리면
+#:      `docnum` 이 「옛 수가 남았다」로 운다. **판정이 움직이면 회고가 굳는다** —
+#:      측정 배치마다 이 수가 몇 올라가는 것이 이 도구의 정상 동작이다.
+#:
+#:   ② **세는 쪽의 결함 열셋을 걷었다**(DECISIONS §325). 위 문단의 「스물넷」이
+#:      틀렸다. 빠진 열셋은 어휘 문제가 아니라 **이 도구가 잘못 센 것**이었다 —
+#:
+#:          | `<!--stale-ok-->` | 옛 숫자를 의도적으로 인용한 줄 |   (MASTER §0-2)
+#:          tonecheck.py … (`<!--voice-ok-->` 면 통과)              (README 도구표)
+#:
+#:      **어휘를 정의하는 줄 자신**을 「사유 없이 검사를 끈 자리」로 세고 있었다.
+#:      규약을 적으면 빚이 느는 셈이고, 그러면 아무도 규약을 안 적는다. 백틱 안은
+#:      표기를 **말한 것**이지 **쓴 것**이 아니다(`mentioned()`).
+#:
+#:   ★ 아래 수는 **둘을 합산한 것이 아니라 병합된 트리에서 실측한 것**이다.
+#:     실제로 합산은 틀린다 — ①의 64 에서 ②의 13 과 W13-9 행의 1 을 빼면 50 인데
+#:     실측은 **52** 다. 이 배치가 제 회고에 `voice-ok` 둘을 더했기 때문이고,
+#:     그 둘은 §333 이 옛 안내문을 인용하는 자리다. 더하고 빼서 적으면 그것은
+#:     **재지 않은 수**이고, 이 저장소가 반복해 다친 그 형태다.
+#:     내역: type-ignore 5 · eslint 14 · voice-ok 16 · stale-ok 17.
+#:
+#: ★ 그래서 「표기에 사유 슬롯을 붙이는 배치」는 **안 만든다.** 남은 것은 대부분
+#:   DECISIONS·MASTER 의 회고 줄이고, 거기 붙일 사유는 전부 같은 한 마디
+#:   (「이 줄은 과거 기록이다」)다. 같은 말을 마흔 몇 번 적는 것은 빚을 갚는
+#:   것이 아니라 **빚을 예쁘게 적는 것**이다. 그리고 append-only 인 문서의 옛
+#:   줄을 마흔 몇 개 고치는 일이기도 하다. PLAN 이 줄었다.
+#: ★ 이 수가 아래 값보다 늘면 그것은 진짜 결함이다. 래칫은 산다.
+RATCHET = 52
 
 #: `tools/ratchet.py` 가 **줄었을 때만** 이 수를 고쳐 적는다(§309).
 #: **느는** 쪽은 안 쓴다 — 그것은 받아적을 일이 아니라 결함이다.
@@ -114,6 +140,27 @@ FAMILIES: dict[str, tuple[re.Pattern, tuple[str, ...], tuple[str, ...]]] = {
 #: 사유로 안 치는 꼬리 — 규칙 이름을 한 번 더 적은 것 따위.
 _NOISE = re.compile(r"^[\s:,\-]*$")
 
+#: 한 줄 안의 백틱 코드 구간.
+_CODE = re.compile(r"`[^`]*`")
+
+
+def mentioned(line: str, at: int) -> bool:
+    """그 자리가 **백틱 안**인가 — 즉 표기를 *쓴* 것이 아니라 *말한* 것인가.
+
+    ★ 2026-09-30 (DECISIONS §325). 종전 판은 이 구분을 안 했다. 그래서
+
+        `MASTER §0-2`  | `<!--stale-ok-->` | 옛 숫자를 의도적으로 인용한 줄 |
+        `README §도구`  tonecheck.py  … (`<!--voice-ok-->` 면 통과)
+
+      **어휘를 정의하는 줄 자신**이 「사유 없이 검사를 끈 자리」로 세어졌다.
+      규약을 적으면 빚이 느는 셈이라 아무도 규약을 안 적게 된다.
+
+    ★ 새 규칙이 아니다 — `test_sources_of_truth` 의 `code_only` 가 같은 구분을
+      먼저 했고(§222-5), 그때도 **오탐을 먼저 없애고 켰다.** 잘못된 경보는
+      진짜 경보를 죽인다(MASTER §18-13).
+    """
+    return any(m.start() <= at < m.end() for m in _CODE.finditer(line))
+
 
 def _files(roots: tuple[str, ...], globs: tuple[str, ...]) -> list[Path]:
     out: list[Path] = []
@@ -134,9 +181,13 @@ def hits(name: str) -> list[tuple[str, int, str]]:
     out = []
     for p in _files(roots, globs):
         for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
-            m = rx.search(line)
-            if m and _NOISE.match(m.group("why") or ""):
-                out.append((p.relative_to(ROOT).as_posix(), i, line.strip()[:90]))
+            # ★ `finditer` 다. 한 줄에 「표기를 말한 것」과 「실제로 붙인 것」이
+            #   같이 있을 수 있고, `search` 면 앞의 백틱에 걸려 **뒤의 진짜를
+            #   통째로 흘린다.** 미탐은 이 도구에서 제일 나쁜 방향이다.
+            for m in rx.finditer(line):
+                if _NOISE.match(m.group("why") or "") and not mentioned(line, m.start()):
+                    out.append((p.relative_to(ROOT).as_posix(), i, line.strip()[:90]))
+                    break
     return out
 
 
@@ -193,6 +244,21 @@ def selftest() -> int:
         ("voice-ok", "<!--voice-ok-->", True, "voice-ok 를 안 센다"),
         ("stale-ok", "| 21 | 266/1,101 | <!--stale-ok-->", True, "stale-ok 를 안 센다"),
     ]
+    # ★ 말한 것과 쓴 것. **어휘 정의 줄이 제 빚이 되면 규약을 못 적는다.**
+    for fam, mark in (("voice-ok", "<!--voice-ok-->"), ("stale-ok", "<!--stale-ok-->")):
+        said = f"| `{mark}` | 옛 것을 의도적으로 인용한 줄 |"
+        rx = FAMILIES[fam][0]
+        m = rx.search(said)
+        if not (m and mentioned(said, m.start())):
+            bad.append(f"{fam} — 백틱 안의 표기를 **쓴 것**으로 센다: {said!r}")
+        used = f"노드접합 · 병합 후   1,101     {mark}"
+        m = rx.search(used)
+        if not (m and not mentioned(used, m.start())):
+            bad.append(f"{fam} — 실제로 붙인 표기를 **말한 것**으로 흘린다: {used!r}")
+        # ★ 한 줄에 둘 — 앞이 백틱이어도 **뒤의 진짜**를 집어야 한다.
+        both = f"표기는 `{mark}` 다. 이 줄은 옛 수 1,101 을 든다 {mark}"
+        if not any(not mentioned(both, m.start()) for m in rx.finditer(both)):
+            bad.append(f"{fam} — 한 줄에 둘일 때 뒤엣것을 통째로 흘린다(미탐)")
     for fam, line, want, why in cases:
         if one(fam, line) is not want:
             bad.append(why + f" — {line!r}")
