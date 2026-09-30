@@ -439,10 +439,10 @@ MASTER §4-1 이 그 사고다).
 | 2 | 미배선 자료 | `unusedcheck` 래칫 12 | 🟡 DECISIONS §317 이 25 를 셋으로 갈랐다. 남은 12 |
 | 2 | 도로폭 고도화 | #4 · #140 | 🟡 DECISIONS §308 하나. 회색 어휘(#140)가 남았다 |
 | 3 | 관제 ↔ 내비 계약 | #63 계열 | ❌ |
-| 3 | 아키텍처 | `useNavigation`(482줄) | 🟡 `useVoice` 는 DECISIONS §329 이 내렸다. 훅 하나 남았다 |
+| 3 | 아키텍처 | `useNavigation` | ✅ DECISIONS §336 — 정책 다섯을 `domain` 으로. 남은 것은 배선이다 |
 | 3 | 턴바이턴 고도화 | #2 · #19 | ❌ 전건이 `D-30` 이다 |
 | 4 | 디렉 위생 도구화 | §13 · `tools/tidy.py` | ❌ |
-| 4 | 봉인 잔여 · PLAN | 미날인 절 | 🟡 |
+| 4 | 봉인 잔여 · PLAN | 미날인 절 | 🟡 DECISIONS §337 이 마커 축을 도장에서 기계로 옮겼다. 나머지는 남았다 |
 | 4 | README · 기획서 · 데모 | §1 #34 | ❌ |
 
 ★ **주 번호는 기한이 아니라 순서다.** 날짜를 박으면 하루 밀릴 때마다 표 전체가
@@ -509,7 +509,7 @@ MASTER §15-2 가 정본이다.
 
 ★ **이 절은 빚 목록이다**(§0-2). 닫힌 결함은 행이 아니라 부재로 기록된다.
 닫힌 배치의 증표는 `tests/test_defect_evidence.py` 의 등록부가 들고, 왜 닫혔는지는
-DECISIONS 가 든다. 남은 것이 아래 **3행**이다 — 2026-09-24 전수 감사(DECISIONS §243)가
+DECISIONS 가 든다. 남은 것이 아래 **2행**이다 — 2026-09-24 전수 감사(DECISIONS §243)가
 낸 것 중 **레이크·잠금·네트워크 없이는 못 닫는 것**들이다.
 
 ★ **닫힌 건수를 여기 적지 않는다.** 이 절은 행이 닫히기도 하고 **새로 늘기도
@@ -538,13 +538,12 @@ DECISIONS 가 든다. 남은 것이 아래 **3행**이다 — 2026-09-24 전수 
 
 강제자 없음 — 사유: 분류 어휘다. 족마다의 강제자는 §13-4 표가 따로 든다
 
-### 13-3. 남은 결함 3건
+### 13-3. 남은 결함 2건
 
 | ID | 결함 | 족 | 상태 | 닫는 법 |
 |---|---|---|---|---|
 | W13-1 | 미사용 의존성 여덟이 잠금에 남아 있다 — `ruamel-yaml`(core) · `fastapi` · `uvicorn` · `python-multipart` · `opencv-python` · `ultralytics` · `torch` · `torchvision` | 4 | 열림 | 빼고 `uv lock`. 지금은 **잠금을 흔들지 않으려고** `DEP002` 래칫으로 묶어만 뒀다(`pyproject.toml`). 잠금이 움직이면 판정 코드 지문도 같이 움직인다 |
 | W13-2 | 대장 `schema` 둘이 실물과 다르다 — `ngii1k.schema.layers: []` · `jijeok.schema` 의 `A0`~`A7` 과 `features: 1000000` | 5 | 열림 | `tools/ledger_schema.py` 를 레이크에서 다시 돌린다. 이 값들은 raw 에서만 나온다 |
-| W13-5 | React · infra 층에 시험이 없다 — `web/navi/src/app/useNavigation.ts`(552줄) · `web/navi/src/infra/position/gps.ts` · `web/navi/src/app/useVoice.ts` | 1 | 열림 | `deriveStatus` 여덟처럼 **순수 조각부터** 문다. 552줄 훅을 통째로 물려고 하면 안 물게 된다. ★ 2026-09-29 — `infra/speech.ts` 가 **첫 시험을 얻었다**(`web/navi/test/speech.test.ts` 15 · DECISIONS §301). 그 파일은 119줄인데 세 번 고쳐지면서 시험이 0이었고, **첫 시험이 결함 하나를 바로 잡았다**(중복 제거가 재생 중인 문장을 안 봤다). 정책만 잰다 — 가짜 합성기를 세우고 「무엇을 어떤 순서로 넘겼는가」만 본다. ★ 2026-09-30 — `web/navi/src/infra/position/gps.ts` 가 **첫 시험 12개**를 얻었다(`web/navi/test/gps.test.ts` · DECISIONS §328). 60줄짜리인데 그 안에 에포크 ↔ `performance` 시계를 섞으면 순간속도가 0 으로 죽는 자리가 있었고, 코드는 옳았는데 붙드는 것이 없었다. ★ 2026-09-30 — **`useVoice` 의 값을 통째로 내렸다**(DECISIONS §329). 우선순위 사슬(이탈 > 재동기화 > 회전 > 규칙 > 사정 > 판정)이 `web/navi/src/domain/voice.ts` 로 가고 시험 26개를 얻었다(`web/navi/test/voice.test.ts`). 훅에 남은 것은 React 배선뿐이다. ★ 남은 것 — `web/navi/src/app/useNavigation.ts`(482줄) 하나다. 같은 방법이 먼저다 — **렌더러를 의존성에 더하기 전에 정책을 `domain` 으로 내린다.** 그 훅에서 정책인 것은 위치원 전환과 단계(`Phase`) 이동이고, 남는 것이 진짜 배선이면 그때 렌더러를 논한다 |
 
 ★ **비었다고 이 절을 지우지 않는다.** 결함은 다시 자란다 — 표가 비어 있는 것이
 「지금 빚이 없다」는 선언이고, 새 결함은 여기 행으로 돌아온다. 표 머리를 남겨
