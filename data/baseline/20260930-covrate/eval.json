@@ -1,6 +1,6 @@
 {
- "as_of": "2026-09-30T15:10:28+09:00",
- "git_sha": "6dc21c4ce922752fe7e6cea3173d8dd2067fd068",
+ "as_of": "2026-09-30T17:14:55+09:00",
+ "git_sha": "87b024c886369a7ef579578a8c40f7c4f63bc0e4",
  "produced_by": "tools/evalgen.py",
  "gate": {
   "passed": true,

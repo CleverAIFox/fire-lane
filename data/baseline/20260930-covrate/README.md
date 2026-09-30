@@ -1,4 +1,4 @@
-# 베이스라인 `v0.48`
+# 베이스라인 `20260930-covrate`
 
 **지우지 마라. 재생성 불가다.**
 
@@ -15,7 +15,7 @@
 ## 대조
 
 ```bash
-uv run python tools/baseline.py diff v0.48
+uv run python tools/baseline.py diff 20260930-covrate
 ```
 
 새 원본으로 파이프라인을 돌린 뒤 실행하면 구간이 어떻게 갈렸는지 나온다.

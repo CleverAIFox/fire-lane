@@ -1,7 +1,7 @@
 {
-  "tag": "v0.48",
-  "frozen_at": "2026-09-30T15:10:28+09:00",
-  "git_sha": "6dc21c4ce922752fe7e6cea3173d8dd2067fd068",
+  "tag": "20260930-covrate",
+  "frozen_at": "2026-09-30T18:57:21+09:00",
+  "git_sha": "87b024c886369a7ef579578a8c40f7c4f63bc0e4",
   "note": "",
   "tally": {
     "n": 1281,
@@ -35,8 +35,8 @@
     "segments.schema.json": "b901d220455fbb4dfd6564e69b73678dc5cea2d30e99b3e0f693476f984fb841",
     "_manifest.json": "2e9c4c3f3efc80070da2ec742e6cc91f668fb9184f9a6bfa6b70511bc01afc3e",
     "seg_uid_map.csv": "446ee06255fe2d5e62d0ba309038a9ff01316b998bfbab01df35a506ae9a6f75",
-    "eval.json": "1554f8d958f17bd3a74ec82ea0443f6823e42b40ce5f7ef518cbe24354f98679",
-    "nfa_compare.json": "c85faed4e5f140f281b8e2b96348b803ba69378160d66eb1a64a400c1f8ebcda"
+    "eval.json": "b63c3c5cd4cc1f09184af78439f9725c9b81f2b4aba6a0dc994b6d80a96191d8",
+    "nfa_compare.json": "fc366992bf0b2a981127516b4444a8603d39d4fe52a1a7912e4428f1142dadcb"
   },
   "why": "구 원본(국토정보플랫폼 NGI 20도엽 2020·2022)이 2026-08-15 전량 재취득으로 소실됐다. 이 산출물은 재생성 불가다.",
   "known_limits": [
