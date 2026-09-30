@@ -19,16 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
---------------------------------------------------------------------------
-
-DATA IS NOT COVERED BY THIS LICENSE  ·  데이터는 이 라이선스가 덮지 않는다
-
-이 저장소의 코드에만 위 MIT 조건이 적용된다. `data/` · `web/data/` ·
-`docs/figures/` 아래의 공간정보·통계 자료와 그 파생물은 **각 제공기관의 이용
-조건**을 따른다. 제공기관과 출처는 `sources.yaml` 의 각 항목 `authority` 칸이
-들고, 그것이 정본이다.
-
-재배포·상업적 이용을 검토한다면 최소한 다음을 개별 확인해야 한다 —
-국토교통부 V-World(연속수치지도 · 항공정사영상), 도로명주소 전자지도,
-소방청 소방용수시설 표준데이터, 전남광주통합특별시 동구 제공 자료.
