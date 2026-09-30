@@ -2,21 +2,21 @@
  "L1": {
   "n": 1281,
   "verdict": {
-   "blocked": 191,
-   "clear": 465,
-   "needs_cv": 226,
-   "unknown": 399
+   "blocked": 192,
+   "clear": 464,
+   "needs_cv": 225,
+   "unknown": 400
   },
   "unknown_reason": {
    "no_cctv_band": 183,
-   "no_cctv_narrow": 61,
-   "no_cctv_single": 13,
+   "no_cctv_narrow": 63,
+   "no_cctv_single": 12,
    "no_cctv_thin": 142
   },
   "width_src": {
    "ngii": 1,
-   "ngii1k": 1166,
-   "silpok": 112
+   "ngii1k": 1162,
+   "silpok": 116
   },
   "length_total_m": 58308.7
  },
@@ -1067,9 +1067,9 @@
   },
   "DM-192433-284277-D6CG": {
    "verdict": "unknown",
-   "width_min_m": 6.3,
+   "width_min_m": 6.28,
    "width_max_m": null,
-   "width_src": "ngii1k",
+   "width_src": "silpok",
    "unknown_reason": "no_cctv_band",
    "length_m": 12.6,
    "route_usage": 0
@@ -1741,10 +1741,10 @@
    "route_usage": 0
   },
   "DM-192616-284261-PF48": {
-   "verdict": "needs_cv",
-   "width_min_m": 10.51,
+   "verdict": "blocked",
+   "width_min_m": 1.4,
    "width_max_m": null,
-   "width_src": "ngii1k",
+   "width_src": "silpok",
    "unknown_reason": null,
    "length_m": 37.1,
    "route_usage": 0
@@ -6475,11 +6475,11 @@
    "route_usage": 70
   },
   "DM-193435-283271-VXVD": {
-   "verdict": "clear",
-   "width_min_m": 29.91,
-   "width_max_m": 29.91,
-   "width_src": "ngii1k",
-   "unknown_reason": null,
+   "verdict": "unknown",
+   "width_min_m": 1.4,
+   "width_max_m": 4.19,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 13.3,
    "route_usage": 0
   },
@@ -6800,10 +6800,10 @@
   },
   "DM-193490-283404-VXVD": {
    "verdict": "unknown",
-   "width_min_m": 27.46,
+   "width_min_m": 0.73,
    "width_max_m": 30.15,
-   "width_src": "ngii1k",
-   "unknown_reason": "no_cctv_single",
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_narrow",
    "length_m": 13.1,
    "route_usage": 2
   },
