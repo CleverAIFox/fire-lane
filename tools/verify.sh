@@ -556,6 +556,8 @@ step "기획서 그림 ↔ 정본" uv run python tools/docx_figs.py --check
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "sources.yaml src/* tools/*"
 step "대장 필드 검사"   uv run python -m firelane.ledger
+# ★ 2026-09-30 (§317). 그 검사는 활용도를 **찍기만** 했다 — 목표 없는 수는 안 읽힌다.
+step "미배선 자료"     uv run python tools/unusedcheck.py
 # ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
 # ci-exempt: tools/refcheck.py 대장 file/files 를 raw 실물과 대조한다. CI 에 레이크가 없다(DECISIONS §191-4)
 step "선언 ↔ 실물"     uv run python tools/refcheck.py
@@ -874,6 +876,54 @@ step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
 scope "src/* tools/* tests/*"
 step "파일 길이 래칫" uv run python tools/sizecheck.py
 
+# ★ 2026-09-29 (DECISIONS §309). 래칫을 **도구가 스스로 조인다.** 배치 L 에서
+#   관문 여덟이 「숫자를 같이 내려라/올려라」였고, 그 수는 도구가 이미 알고
+#   있었다 — 사람이 하던 것은 받아적기뿐이다. 안 받아적으면 래칫이 낡고,
+#   **낡은 래칫은 초록으로 위장한다.**
+# ★ `--write` 를 여기서 안 돈다. 쓰고 나서 재면 이 관문은 영영 초록이다.
+#   여기는 「선언이 실측과 같은가」만 묻고, 고치는 것은 사람이 그 명령을 돈다.
+scope "tools/*"
+step "래칫 정합" uv run python tools/ratchet.py
+
+# ★ 2026-09-29 (DECISIONS §310). **사람 눈이 마지막 관문이던 자리다.**
+#   73단계가 전부 초록인 날, 관제 화면이 아예 안 떠 있었다 — 열흘 묵은 빌드본이
+#   전환 깃발을 읽는 코드 이전에 지어진 것이었고, `web/navi/dist` 를 보는 단계가
+#   여기 **하나도 없었다.** 아래 마지막 줄이 그 구멍이었다:
+#     "WebGL 은 스크립트가 못 본다. 사람이 눈으로 확인할 것"
+#   ★ `--split` 은 소스만 보므로 어디서나 돈다. 공유 지도 층 수가 래칫이다 —
+#     내비와 관제가 같은 바탕을 깔고 있는 정도이고, 그것이 「닮았다」의 실측이다.
+# ★ 2026-09-29 (§313). 아래 여섯 단계에 `ci-exempt` 를 안 적는다. `gate_parity` 는
+#   **검사기 단위**로 보는데 `uicheck` · `naviweight` · `mergecheck` 셋 다 CI 가
+#   이미 돈다(`--split` · 인자 없는 꼴). 부르는 인자가 로컬에만 있는 것은 면제가
+#   아니다 — 적으면 **죽은 면제**가 되고, 죽은 면제는 「있다고 적혀 있으면 사람이
+#   안 본다」(그 도구의 말).
+scope "web/navi/src/* tools/*"
+step "화면 분리" uv run python tools/uicheck.py --split
+# ★ 2026-09-29 (§313). **관문이 빌드본을 직접 짓는다.** 종전에는 「빌드본이 없으면
+#   빨간불」로 뒀는데, `web/navi/dist/` 는 `.gitignore` 라 **새 클론이 무조건 빨갛다.**
+#   그러면 사람이 그 빨강을 「원래 그런 것」으로 배우고, 그때 진짜 빨강도 같이 묻힌다.
+#   짓는 데 1초도 안 걸린다(vite 700ms) — 그리고 **지금 소스에서 나온 빌드본을**
+#   재는 것이 애초에 §310 이 물으려던 것이다.
+scope "web/navi/src/* web/navi/*.ts web/navi/*.json"
+step "내비 빌드" bash -c 'cd web/navi && npm run -s build >/dev/null'
+scope "web/navi/src/* tools/*"   # ★ dist 는 추적 밖이라 --since 가 못 본다(§319-4)
+step "화면 빌드본" uv run python tools/uicheck.py --build
+scope "tools/*"
+step "머지 절차" uv run python tools/mergecheck.py
+
+# ★ 2026-09-29 (PLAN §13 W13-3 · W13-4 · DECISIONS §312). **출동 중에 끊기는 것.**
+#   글자가 남의 서버에 있으면 지하·산간에서 도로 이름이 사라지고, 단일 청크면
+#   판정 한 줄을 고쳐도 4G 로 1.4MB 를 다시 받는다. 둘 다 무게가 아니라 **의존**의
+#   문제라, 이 관문이 재는 것도 바이트가 아니라 「밖에 몇 개 기대는가」다.
+scope "web/navi/src/* web/navi/index.html web/fonts/* tools/*"
+step "내비 의존" uv run python tools/naviweight.py
+scope "web/navi/src/* tools/*"   # ★ dist 는 추적 밖이라 --since 가 못 본다(§319-4)
+step "내비 무게" uv run python tools/naviweight.py --build
+# ★ 글자 파일이 지금 데이터에서 나왔는가. 새 글자가 데이터에 들어오면 운다 —
+#   **글자가 조용히 안 그려지는 것**은 화면에서 제일 알아채기 어려운 결함이다.
+scope "web/data/* web/fonts/* web/navi/scripts/*"
+step "지도 글자" bash -c 'cd web/navi && npm run -s glyphs -- --check'
+
 # ★ 파일명의 날짜가 자료 기준일인가 내려받은 날인가. `naming` 규약은
 #   "다운로드일이 아니다" 라고 적었는데 `_plausible_date` 는 형식만 본다 —
 #   규약은 있고 강제자가 그 규약을 안 지켰다(원칙 ①·②). 대가가
@@ -948,9 +998,9 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   매번 뜨고, 매번 뜨는 줄은 곧 안 읽히는 줄이 된다. 내림값이라 조여도 안전하다.
 #   여유가 0.1%p 아래로 얇아지는 것은 정상이다 — 시험을 빼면 그 자리에서 우는 것이
 #   래칫의 뜻이다.
-# ★ 이력 (사유는 DECISIONS 가 든다) — 09-20 W10 23→24 · 09-23 §223-2 27→28 ·
-#   09-25 §258 28→32 · 09-27 §260 32→33(실측 33.03%) · 09-28 §290 33→34(실측 34.19%).
-COV_MIN=35
+# ★ 이력 (사유·실측은 DECISIONS 가 든다) — 09-20 W10 23→24 · 09-23 §223-2 27→28 ·
+#   09-25 §258 28→32 · 09-27 §260 32→33 · 09-28 §290 33→34 · 09-29 34→35 · 09-30 §318 35→36.
+COV_MIN=36
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."

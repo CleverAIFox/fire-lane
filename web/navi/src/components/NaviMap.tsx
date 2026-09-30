@@ -46,7 +46,7 @@ import type { RouteLook } from "../domain/status";
 import type { LiveFix } from "../domain/types";
 import { C, S } from "../ui/tokens";
 import {
-  GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers,
+  GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers, NAVI_OFF,
   stationLayers, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
 import { dataBase } from "../infra/dataBase";
@@ -196,6 +196,14 @@ export function NaviMap(props: Props) {
         },
       });
       for (const L of stationLayers()) m.addLayer(L);
+      // ★ 2026-09-29 (DECISIONS §311). **주행 표출 예산.** 관제는 전부 켜고 내비는
+      //   `NAVI_OFF` 를 끈다 — 목록은 `layers.ts` 에 하나로 산다. 시속 60km 로 가는
+      //   사람이 건물 이름 12,663과 상가 이름 2,106을 읽지 않는다.
+      //   ★ 층이 없어도 죽지 않는다. 층 이름이 바뀌면 `tools/uicheck.py` 가 운다 —
+      //     여기서 던지면 **지도 전체가 안 뜨고**, 그것은 라벨 하나보다 나쁘다.
+      for (const id of NAVI_OFF) {
+        if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", "none");
+      }
       // ★ 2026-09-22 (§217-2) 지형을 켠다. `?terrain=0` 이면 평면(느린 기계 · 비교용)
       if (p.view.terrainBounds) {
         applyTerrain(m, p.terrain, new URLSearchParams(location.search).get("terrain") !== "0");

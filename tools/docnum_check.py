@@ -41,7 +41,6 @@ docnum_check.py — 문서에 적힌 숫자가 산출물과 같은지 본다.
 """
 from __future__ import annotations
 
-import collections
 import json
 import re
 import sys
@@ -77,7 +76,7 @@ RETIRED: dict[str, list[str]] = {
     "세그먼트 수": ["1087", "1,087", "1091", "1,091", "1093", "1,093",
                  "1102", "1,102", "1101", "1,101"],
     "unknown(회색)": ["396", "429", "352", "354"],
-    "clear": ["392", "443", "386", "400", "397"],
+    "clear": ["392", "443", "386", "397"],
     # ★ 2026-08-24. 여기 "191" 이 있었는데 그것이 **현재값이 됐다.**
     #   폐기 목록이 현재값을 폐기라고 적으면 게이트가 반대로 돈다 —
     #   맞는 숫자를 쓴 문서가 빨간불이 된다. 209 만 남기고 190 을 넣는다.
@@ -108,21 +107,39 @@ CONTEXT = {
     # 문맥 없이 139·153·69 를 잡으면 무관한 숫자가 무더기로 걸린다.
     "소방청 지정": ("nfa_designated", "소방청 지정"),
     "width_cov 0.5 미만": ("width_cov",),
-    "소화전 지상식": ("소화전", "지상식", "hydrant"),
-    "소화전 지하식": ("소화전", "지하식", "hydrant"),
-    "소화전 합": ("소화전", "소방용수", "hydrant"),
+    # ★ 2026-09-30 (DECISIONS §320). 종전에는 셋 다 문맥에 `소화전` · `hydrant` 를
+    #   두었다. 그러면 **소화전이 나오는 모든 줄**이 세 라벨의 문맥에 다 걸리고,
+    #   폐기값 하나가 다른 축의 현재값과 같은 순간(지하식 폐기값 157 = 발행
+    #   스코프 안 소화전 157) 맞는 문서가 빨개진다. 문맥은 **그 라벨을 가르는
+    #   낱말**이어야 한다 — `지상식` · `지하식` 은 그 자체로 갈라지고, 합은
+    #   집계표 낱말로 가른다.
+    "소화전 지상식": ("지상식",),
+    "소화전 지하식": ("지하식",),
+    "소화전 합": ("소방용수", "소화전 합", "지상식"),
 }
+
+
+def verdicts() -> dict[str, int]:
+    """판정 네 수 + 구간 수. **산출물에서 직접 센다.**
+
+    ★ 2026-09-30 (§319). `tools/docgen.py` 가 이 함수를 부른다 — 같은 수를
+      거기서 또 세면 두 집이 되고, 판정이 움직이는 날 한쪽만 움직인다(2족).
+      좁게 떼어 둔 이유는 `counts()` 가 대장·실물까지 읽어 **레이크 없는
+      기계에서 죽기** 때문이다. 문서 블록을 채우는 데 레이크는 필요 없다.
+    """
+    import verdict_tally
+    t = verdict_tally.tally(SEG)
+    # ★ 모르는 어휘가 있으면 그 도구가 `★` 칸으로 낸다. 여기서 버리면
+    #   **네 수의 합이 구간 수와 다른 채로** 문서에 실린다.
+    if any(k.startswith("★") for k in t):
+        raise SystemExit(f"! 발행 어휘 밖의 판정이 있다 — {t}")
+    return t
 
 
 def counts() -> dict[str, int]:
     P = [f["properties"] for f in json.loads(SEG.read_text(encoding="utf-8"))["features"]]
-    v = collections.Counter(p["verdict"] for p in P)
     return {
-        "n": len(P),
-        "clear": v["clear"],
-        "needs_cv": v["needs_cv"],
-        "blocked": v["blocked"],
-        "unknown": v["unknown"],
+        **verdicts(),
         "in_emd": sum(1 for p in P if p["in_emd"]),
         # ★ 2026-09-16. `(d or 9e9)` 는 거리 **0.0** 을 결손으로 읽었다 — 카메라 바로 옆 2구간이
         #   유효범위 밖으로 세어져 451 을 449 로 냈다(DECISIONS §170-5). 결손은 None 뿐이다.

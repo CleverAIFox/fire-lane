@@ -2,7 +2,7 @@
 """
 seg/width.py — 구간 폭 산출.
 
-이 파일이 `ngii1k 1166 · silpok 112 · ngii 1` 을 만든다. 소스 우선순위(결정 63),
+이 파일이 `ngii1k 1162 · silpok 116 · ngii 1` 을 만든다. 소스 우선순위(결정 63),
 표본 snap, 커버율 자격(COV_MIN), 교차부 제외까지 폭에 관한 판단이 전부 여기 있다.
 
 2026-08-18 Stage 3 에서 `segments.py` 의 `main()` 밖으로 꺼냈다. `measure`(178줄)
@@ -411,7 +411,21 @@ class WidthEngine:
                 if not _by[_nm]:
                     continue
                 _cv = _covnow.get(_nm)
-                if _cv is not None and _cv < COV_MIN and _n_reg >= 3:
+                # ★ 2026-09-29 (DECISIONS §308). 이 줄에 `and _n_reg >= 3` 이 붙어
+                #   있었다 — **정규표본이 3개 미만이면 자격 검사를 건너뛴다.** 즉
+                #   근거가 가장 얇은 구간에서 관문이 꺼졌고, 그 면제는 어느 주석에도
+                #   적혀 있지 않았다(무음 통과).
+                #
+                #   실측으로 뗐다. DM02918 필문대로289번길이 **폭 29.91m · clear**
+                #   로 발행되고 있었다 — ngii1k 가 표본 8개 중 2개(cov 0.25)로 낸
+                #   값이고, 실폭도로는 같은 구간을 **1.4m · cov 1.0** 으로 잰다.
+                #   `clear` 는 「영상판정조차 필요 없다」이므로 20배 틀린 값이
+                #   미탐 쪽으로 나가 있었다.
+                #
+                #   ★ §245 가 `COV_MIN` 으로 고친 병이 이 면제 뒤에 살아 있었다.
+                #     `verdict()` 주석이 인용하는 그 사고(DM02647 → 지금 DM02678)가
+                #     표본 1개짜리라 **바로 그 사례에서** 관문이 꺼졌다.
+                if _cv is not None and _cv < COV_MIN:
                     continue          # 자격 미달. 다음 순위로 넘긴다
                 _pick = _nm
                 break
