@@ -35,7 +35,10 @@
  *   rule      통행 규칙 — 놓치면 역주행한다
  *   notice    판정 · 주변 사정 — 놓쳐도 운전은 된다
  */
-export type Priority = "critical" | "turn" | "rule" | "notice" | "normal";
+// ★ 2026-09-30 (§329). 타입의 집은 `domain/types.ts` 다 — 여기서 다시
+//   선언하면 정본이 둘이 된다. **뜻은 아래 `RANK` 가 든다.**
+export type { Priority } from "../domain/types";
+import type { Priority } from "../domain/types";
 
 /** 급한 순서. 큰 수가 급하다. `normal` 은 종전 호출부를 위해 `notice` 와 같다. */
 export const RANK: Readonly<Record<Priority, number>> = {
