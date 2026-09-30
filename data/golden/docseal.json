@@ -4317,18 +4317,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0f0b010d0da5a9b7",
-   "5f0aba0bb7752e89",
-   "e45481c1a59d5d1c"
+   "ba3b228008daa582",
+   "e4d373c8da430daf",
+   "49f2c7d13c41353b"
   ],
   "parts": {
    "src/firelane/seg/width.py": "cfff981af33ee3a0",
    "tests/test_width_cov_gate.py": "bb0943c687f38e44",
-   "tools/remeasure.py": "8f5d2aba5d548d8a",
+   "tools/remeasure.py": "48683980e1cb0796",
    "tools/widthcross.py": "3e6a07f2ee2b21a3",
-   "본문": "908d97437fcc20f8"
+   "본문": "4079eaa2c4557eed"
   },
-  "sha": "6603341f909cf02b"
+  "sha": "9b1617263bfc271e"
  },
  "DECISIONS/309": {
   "doc": "docs/DECISIONS.md",
@@ -4595,22 +4595,22 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "5b61c20a9c07f686",
-   "db5b64f0f7f80eed",
-   "c11a68dbea29a990"
+   "270dd6ce261959a9",
+   "3c343b7046056245",
+   "8f04b9181bdbe618"
   ],
   "parts": {
    "tests/test_batch_tools.py": "1eee768170dcac35",
    "tests/test_delivercheck.py": "8522d2cbc422507d",
    "tests/test_docgen.py": "dd4b4656fd44470e",
-   "tests/test_remeasure.py": "871557632950b0d2",
+   "tests/test_remeasure.py": "db5e67b4d24bc933",
    "tests/test_verify_scope.py": "0253cd26d220ed20",
    "tools/docgen.py": "97d49e915f7ae5e0",
-   "tools/remeasure.py": "8f5d2aba5d548d8a",
+   "tools/remeasure.py": "48683980e1cb0796",
    "tools/verdict_tally.py": "fb52c64be496e6ad",
-   "본문": "f408113d99fdc7f1"
+   "본문": "2dd11f98c552fdb0"
   },
-  "sha": "df4eebf32a159618"
+  "sha": "aac513cc17fc7d3e"
  },
  "DECISIONS/320": {
   "doc": "docs/DECISIONS.md",
@@ -6116,9 +6116,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "4a0e271a14fbfc0c",
-   "eb3b908dcc71c56d",
-   "6fa3cd9e1b3e8eab"
+   "32dc68a121e409f8",
+   "1b28894e7b64683d",
+   "de4f5283bab460d5"
   ],
   "parts": {
    "src/firelane/seg/params.py": "53df7ea2ea107fd6",
@@ -6141,9 +6141,9 @@
    "web/config.js": "ed851b78a3c520eb",
    "web/navi/src/domain/vehicle.ts": "449e1612784f93ec",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "f79dbd80388b0a3b"
+   "본문": "869527c05b32810a"
   },
-  "sha": "493e9a29d3728df6"
+  "sha": "3ab0c16f1919d4fd"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",

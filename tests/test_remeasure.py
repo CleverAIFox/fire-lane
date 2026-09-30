@@ -53,15 +53,40 @@ VT = _load("verdict_tally")
 
 # ── ① 순서 ─────────────────────────────────────────────────────
 
-def test_the_seal_is_last_and_the_metrics_come_before_it():
-    """★ 09-30 에 틀린 그 순서. 되돌아오면 여기서 운다."""
+def test_the_metrics_sit_between_two_seals():
+    """★ 순환 의존을 끊는 자리(§319-5). 09-30 실기가 양쪽을 다 보여 줬다.
+
+        `evalgate`        봉인 대 지금이 대각선이어야 통과한다 — 측정 배치에서는
+                          **옛 봉인과 통과할 수 없다.** 봉인이 먼저여야 한다.
+        `baseline freeze` `eval.json` 을 **복사한다** — 지표가 먼저여야 한다.
+
+    둘 다 옳고 서로의 앞이다. 그래서 봉인이 **두 번**이고 지표가 그 사이다.
+    """
     tools = [a[0] for _n, a in RM.CHAIN]
-    assert tools[-1] == "tools/baseline.py", "봉인이 사슬의 끝이 아니다"
-    assert tools.index("tools/evalgen.py") < tools.index("tools/baseline.py"), (
-        "지표를 봉인 **뒤**에 낸다 — 봉인이 그 순간 거짓이 된다")
+    seals = [i for i, t in enumerate(tools) if t == "tools/baseline.py"]
+    assert len(seals) == 2, f"봉인이 {len(seals)}번이다 — 순환이 안 끊긴다"
+    ev = tools.index("tools/evalgen.py")
+    assert seals[0] < ev < seals[1], (
+        "지표가 봉인 둘 사이가 아니다 — 앞이면 게이트가 막고 뒤면 봉인이 거짓이다")
+    assert "--force" in RM.CHAIN[seals[1]][1], "두 번째 봉인이 덮어쓰지 못한다"
     assert tools.index("tools/golden.py") == 0, "판정 지문 재잠금이 처음이 아니다"
-    assert tools.index("tools/ratchet.py") < tools.index("tools/baseline.py"), (
-        "래칫 상수는 코드이고 코드는 지문에 든다 — 봉인 앞이어야 한다")
+    assert tools.index("tools/ratchet.py") > ev, (
+        "래칫을 지표보다 먼저 조인다 — 래칫 실측이 낡은 산출물에서 나온다")
+
+
+def test_the_second_seal_must_prove_it_touched_only_the_metrics():
+    """★ **두 번 찍는 것 자체는 §272(도장 찍기)다.** 재야 규율이 산다."""
+    ok = {"segments.geojson": "a", "eval.json": "x"}
+    assert not RM.prove_only_eval_moved(ok, {"segments.geojson": "a", "eval.json": "y"})
+    assert RM.prove_only_eval_moved(ok, {"segments.geojson": "b", "eval.json": "y"}), (
+        "판정 산출물이 바뀌었는데 통과시킨다 — 두 번째 도장이 판정을 덮는다")
+    assert RM.prove_only_eval_moved(ok, dict(ok)), "지표가 안 뽑혔는데 통과시킨다"
+    assert RM.prove_only_eval_moved({}, ok), "지문을 못 읽었는데 통과시킨다 — 빈 그물"
+    assert RM.prove_only_eval_moved(ok, {}), "지문이 사라졌는데 통과시킨다"
+    # ★ 사슬이 그 판별식을 **실제로 부르는가.** 함수만 있으면 강제자가 아니다.
+    src = (ROOT / "tools" / "remeasure.py").read_text(encoding="utf-8")
+    body = src[src.index("def run("):src.index("def selftest(")]
+    assert "prove_only_eval_moved" in body, "사슬이 그 판별식을 안 부른다"
 
 
 def test_every_link_in_the_chain_is_a_real_tool():
@@ -119,7 +144,10 @@ def test_a_broken_link_stops_the_rest(monkeypatch):
 
     monkeypatch.setattr(RM, "_run", fake)
     assert RM.run("v9.99") == 1
-    assert "tools/baseline.py" not in ran, "죽은 뒤에도 봉인까지 갔다"
+    # ★ 봉인은 지표 **앞**에 한 번 있다(§319-5) — 그 한 번까지는 돈다. 그래서
+    #   도구 이름으로는 못 가른다. **두 번째 봉인(`--force`)과 그 뒤**를 센다.
+    assert "tools/ratchet.py" not in ran and "tools/docgen.py" not in ran, ran
+    assert ran.count("tools/baseline.py") == 1, f"죽은 뒤에 봉인을 또 찍었다 — {ran}"
 
 
 def test_the_tag_reaches_the_seal(monkeypatch):
@@ -129,6 +157,8 @@ def test_the_tag_reaches_the_seal(monkeypatch):
     monkeypatch.setattr(RM, "_run", lambda argv: seen.append(argv) or 0)
     RM.run("v9.99")
     assert ["tools/baseline.py", "freeze", "v9.99"] in seen, "태그가 봉인에 안 닿는다"
+    assert ["tools/baseline.py", "freeze", "v9.99", "--force"] in seen, (
+        "두 번째 봉인에 태그가 안 닿는다 — 다른 봉인을 덮어쓸 수 있다")
     assert not any("{tag}" in a for c in seen for a in c), "`{tag}` 를 안 갈아 끼웠다"
 
 
