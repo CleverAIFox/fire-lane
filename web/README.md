@@ -11,9 +11,11 @@
 
 | 경로 | 내용 |
 |---|---|
-| `index.html` | 사이트 입구. `navi/?view=ops`(관제)로 넘긴다. 외부 자원 없음 · 상대 주소 |
+| `index.html` | **배포에서는 관제 화면 그 자체다**(§258) — `build-navi` 가 내비 빌드본을 여기 앉히고 `window.__FL_VIEW="ops"` 를 박는다. 저장소에 커밋된 판은 빌드본이 없는 로컬용 대역이고 `navi/?view=ops` 로 넘긴다. 외부 자원 없음 · 상대 주소 |
 | `navi/` | 내비 · 관제 앱(React + TypeScript + Vite · maplibre-gl 6). 배포에서는 빌드본이 이 자리에 앉는다(`.github/actions/build-navi`) |
 | `data/` | 생성물. 파이프라인(`publish_*.py`) 산출. 손으로 고치지 말 것 |
+| `fonts/` | 지도 글자(`**/*.pbf`). **오프라인에서 도로 이름이 사라지지 않는 이유**다(§312) — 숫자·로마자 5범위 119KB. `cd web/navi && npm run glyphs` 가 뽑고 `--check` 가 데이터에 새 글자가 들어왔는지 본다. 글꼴 원본은 `web/navi/fonts-src/`(SIL OFL 1.1) |
+| `404.html` | 오타 난 주소가 흰 화면이 되지 않게(§313). `naviweight` 가 존재를 든다 |
 | `config.js` | **파이프라인 설정**이다. `publish_navi.py` 가 판정색 · 지형을, `publish_fleet.py` 가 편성을 정규식으로 읽는다. 화면은 이 파일을 직접 안 싣는다 |
 | `assets/vehicles/profiles.json` | 차종 치수 정본. `publish_fleet.py` 가 회전반경을 읽는다 |
 | `proposal.html` | 기획서 뷰어. **PDF 를 띄운다**(2026-09-24 · DECISIONS §231) — `tools/proposal_pdf.py` 가 `docs/proposal.docx` 를 구워 `proposal.pdf` 를 내고, 쪽수 · 본문 · 판정 수치 · 그림 수를 대조해야 배포된다. `.docx` 원본도 같이 옮겨 내려받기로 남긴다 |
