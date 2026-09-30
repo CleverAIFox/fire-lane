@@ -1,0 +1,12 @@
+{
+  "name": "Fire-Lane 소방 진입로",
+  "short_name": "Fire-Lane",
+  "description": "소방차 진입 가능 여부와 경로. 통신이 끊겨도 마지막으로 받은 판정으로 돈다.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "lang": "ko"
+}

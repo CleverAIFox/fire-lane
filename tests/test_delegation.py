@@ -26,6 +26,8 @@ OUT   없음
 """
 from __future__ import annotations
 
+import ast
+import functools
 import re
 from pathlib import Path
 
@@ -79,12 +81,34 @@ def _one(tok: str) -> bool:
     return False
 
 
-def _resolves(phrase: str) -> bool:
+@functools.cache
+def _defs(f: Path) -> frozenset[str]:
+    """그 파일이 정의한 이름들 — 함수 · 클래스 · 메서드.
+
+    ★ 2026-09-30 (§320). **이 검사가 같은 파일 안의 위임을 못 봤다.** 「판정은
+      `judge()` 소관」처럼 *제 모듈의 함수*로 넘기는 것이 여섯 있었는데, 판별식이
+      낱말을 **파일 이름으로만** 풀어서 전부 「그런 것이 없다」로 떨어졌다.
+      위임은 실재했고 못 본 것은 판별식이다 — 그리고 그 오탐이 여섯이면
+      사람은 이 검사를 끈다(§246-1 이 적은 그 경로).
+    """
+    try:
+        tree = ast.parse(f.read_text(encoding="utf-8"))
+    except SyntaxError:
+        return frozenset()
+    return frozenset(n.name for n in ast.walk(tree)
+                     if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)))
+
+
+def _resolves(phrase: str, src: Path | None = None) -> bool:
     if phrase.strip() in NOT_A_TOOL or any(k in phrase for k in NOT_A_TOOL):
         return True
     # ★ 구 안의 **어느 낱말이든** 실재하면 통과다. `lakecheck L2` 는 `lakecheck`
     #   가, `tools/docx_figs.py --check`(그림 ↔ 정본) 은 그 경로가 든다.
-    return any(_one(t) for t in re.split(r"[\s`()]+", phrase))
+    toks = re.split(r"[\s`()]+", phrase)
+    if any(_one(t) for t in toks):
+        return True
+    # ★ 제 모듈 안의 함수로 넘긴 것. `judge()` · `check()` · `show()` 가 그 꼴이다.
+    return src is not None and any(t.strip("`*·,'\"「」 ") in _defs(src) for t in toks)
 
 
 # ── T1 · 넘긴 대상이 실재하는가 ─────────────────────────────────
@@ -96,7 +120,7 @@ def test_every_delegation_names_something_that_exists():
     got = _claims()
     assert len(got) >= 15, f"위임 주장을 {len(got)}건밖에 못 찾았다 — 판별식을 의심하라"
     bad = [f"  {f.relative_to(ROOT)}:{i}  「{n} 소관」 — 그런 것이 없다"
-           for f, i, n in got if not _resolves(n)]
+           for f, i, n in got if not _resolves(n, f)]
     assert not bad, (
         f"실재하지 않는 곳으로 넘긴다 {len(bad)}건\n" + "\n".join(bad) + "\n\n"
         "  대상을 고치거나, 도구가 아니면 `NOT_A_TOOL` 에 **사유와 함께** 적어라.")

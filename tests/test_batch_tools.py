@@ -401,12 +401,12 @@ def test_relock_step_stops_when_judgment_moved():
     i = fl.index('if [ "$RELOCK" = 1 ]; then')
     blk = fl[i:fl.index('step "5. 전수 verify"')]
     assert "fire-lane --from segments" in blk and "golden.py lock" in blk, "재잠금 두 명령이 없다"
-    # ★ 2026-09-23. 종전에는 `data/golden/segments.fingerprint.json` 을 대조했는데 그 파일은
-    #   `golden.py lock` 만 쓴다 — 재잠금 전에는 언제나 안 움직여 그물이 비어 있었다.
-    #   판정이 움직였는지는 **추적되는 파이프라인 산출물**이 말한다.
-    cmp_ = "git diff --quiet -- data/processed/segments.geojson data/processed/seg_uid_map.csv"
-    assert cmp_ in blk, "판정 산출물 대조가 없다 — 지문 파일만 보면 빈 그물이다"
-    assert blk.index(cmp_) < blk.index("tools/golden.py lock"), \
+    # ★ 2026-09-23. 지문 파일은 `golden.py lock` 만 써서 재잠금 전에는 늘 안 움직인다 —
+    #   판정이 움직였는지는 **추적되는 산출물**이 말한다. 2026-09-30 (§319) 그 대조가
+    #   `tools/remeasure.py` 로 갔다(멈춘 뒤 할 일이 같은 자리에 있어야 막다른 길이 아니다).
+    rm = (ROOT / "tools" / "remeasure.py").read_text(encoding="utf-8")
+    assert "data/processed/segments.geojson" in rm and '"--name-only"' in rm, "빈 그물이다"
+    assert blk.index("tools/remeasure.py") < blk.index("tools/golden.py lock"), \
         "값 대조를 재잠금 **뒤에** 한다 — 그러면 움직인 판정을 덮어쓴다"
     # ingest 닫힘이 바뀐 배치는 샤드 봉인이 찢어진다 — `--from segments` 로는 _manifest 가 낡는다
     assert "code_closure(\"firelane.ingest\")" in blk and "fire-lane --split" in blk, \

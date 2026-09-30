@@ -74,12 +74,26 @@ def unbounded(path: Path) -> list[tuple[int, str]]:
     imported = {a.asname or a.name
                 for n in ast.walk(tree) if isinstance(n, ast.ImportFrom)
                 and n.module in ("subprocess", "os") for a in n.names}
+    # ★ 두 번째 오탐 물결(2026-09-30). `RT.run(write=False)` 여섯 개를
+    #   `subprocess.run` 으로 셌다 — 점 뒤의 이름만 보고 **받는 쪽을 안 봤다.**
+    #   첫 물결(맨이름 `def run`)과 **같은 결함이고, 같은 고침을 점 있는 쪽에만
+    #   안 한 것**이다. 그래서 이제 `run`·`call`·`check_*`·`system`·`waitpid` 는
+    #   **실제로 import 한 모듈 이름을 받는 쪽으로 가진 호출만** 센다.
+    #   `communicate`·`wait` 는 그대로 받는 쪽을 안 본다 — `Popen` 을 담은
+    #   변수 이름은 아무거나일 수 있고, 그 둘은 다른 데 거의 안 쓰인다.
+    mods = {a.asname or a.name for n in ast.walk(tree)
+            if isinstance(n, ast.Import) for a in n.names
+            if a.name in ("subprocess", "os")}
+    ANY_RECEIVER = ("communicate", "wait")
     for n in ast.walk(tree):
         if not isinstance(n, ast.Call):
             continue
         f = n.func
         if isinstance(f, ast.Attribute):
             name = f.attr
+            if name not in ANY_RECEIVER and not (
+                    isinstance(f.value, ast.Name) and f.value.id in mods):
+                continue        # 남의 `.run()` 이다 — 자식을 안 낳는다
         elif isinstance(f, ast.Name) and f.id in imported:
             name = f.id
         else:
@@ -176,3 +190,21 @@ def test_the_probe_is_not_an_empty_net(tmp_path):
                  "def test_a():\n    run(['true'])\n", encoding="utf-8")
     assert [n for _l, n in unbounded(q)] == ["subprocess.run"], \
         "`from subprocess import run` 을 놓쳤다"
+
+    # ★ 점 있는 쪽의 오탐(2026-09-30). 남의 `.run()` 은 자식을 안 낳는다.
+    #   같이 심는다 — `Popen` 변수의 `.communicate()` 는 **받는 쪽을 몰라도**
+    #   세야 한다. 하나만 심으면 고침이 한쪽으로 기운다.
+    r = tmp_path / "test_받는쪽.py"
+    r.write_text(
+        "import subprocess\n"
+        "import ratchet as RT\n"
+        "def test_a():\n"
+        "    RT.run(write=False)\n"                    # ★ 세면 오탐
+        "def test_b():\n"
+        "    self.client.call('x')\n"                  # ★ 세면 오탐
+        "def test_c():\n"
+        "    p = subprocess.Popen(['true'])\n"
+        "    p.communicate()\n",                       # 받는 쪽을 몰라도 센다
+        encoding="utf-8")
+    assert [n for _l, n in unbounded(r)] == ["Popen.communicate"], (
+        f"받는 쪽을 안 본다 — {[n for _l, n in unbounded(r)]}")

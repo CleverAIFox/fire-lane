@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Fire-Lane 내비</title>
-  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#0b1220">
+  <!-- ★ 2026-09-29 (§312). 외부 글꼴 CSS 를 걷었다. 오프라인에서 이 링크는
+       그냥 실패하고, 실패한 뒤 쓰이는 것은 어차피 기기 글꼴이다 —
+       `localIdeographFontFamily` 의 대체 사슬이 그것을 이미 적어 뒀다.
+       **내비는 이제 외부를 하나도 안 부른다.** `tools/naviweight.py` 가 문다. -->
 </head>
 <body>
   <div id="root"></div>

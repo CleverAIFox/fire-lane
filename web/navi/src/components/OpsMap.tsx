@@ -25,10 +25,13 @@ import type { LngLat } from "../domain/geo";
 import type { VerdictStyle, View } from "../domain/types";
 import type { FeedItem, Unit } from "../domain/opsProtocol";
 import {
-  GLYPHS, sources, baseLayers, opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer, applyTerrain, markerLayers, stationLayers,
-  opsVerdictColor, opsClearanceColor, opsClearanceBand,
+  GLYPHS, sources, baseLayers, applyTerrain, markerLayers, stationLayers,
   cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
+import {
+  opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
+  opsVerdictColor, opsClearanceColor, opsClearanceBand,
+} from "./opsLayers";
 import { CLEARANCE_WIDE_M, type ClearanceBand } from "../domain/clearance";
 import { TUNING } from "../domain/vehicle";
 import { CLEARANCE_SCALE } from "../ui/clearanceMeaning";

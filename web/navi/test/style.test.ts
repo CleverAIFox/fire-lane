@@ -12,9 +12,12 @@ import type { StyleSpecification } from "maplibre-gl";
 import { FL, test, ok } from "./harness";
 import {
   GLYPHS, sources, baseLayers, altRouteLayers, routeLayers, markerLayers, stationLayers,
+} from "../src/components/layers";
+// ★ 2026-09-29 (§311). 관제 전용 층이 `opsLayers.ts` 로 갈라졌다 — 두 화면의 일이 다르다.
+import {
   opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
   opsClearanceBand, opsClearanceColor,
-} from "../src/components/layers";
+} from "../src/components/opsLayers";
 import { CLEARANCE_SCALE } from "../src/ui/clearanceMeaning";
 import { CLEARANCE_WIDE_M, type ClearanceBand } from "../src/domain/clearance";
 import { TUNING } from "../src/domain/vehicle";

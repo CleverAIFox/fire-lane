@@ -77,6 +77,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 import dms
+import docnum_check
 import plan_renumber
 
 from firelane import ledger
@@ -121,6 +122,23 @@ AXES: dict[str, Axis] = {
     #     (다른 축들이 `종의 raw` · 줄머리 `## 1.` 로 앵커를 다는 것과 같다).
     "cov_min": Axis(re.compile(r"`COV_MIN=(\d+)` 로 걸려 있"),
                     "커버리지 래칫 — `tools/verify.sh` 의 `COV_MIN=` 선언"),
+    # ★ 2026-09-30 (DECISIONS §319). 판정 네 수. 이것이 **가장 자주 낡는 수**이고
+    #   그때마다 사람이 받아적었다 — 09-30 실기에서 그 받아적기 하나 때문에
+    #   전수 verify 가 여덟 단계 빨갰다(문서 숫자 · 기획서 · 그림 · 평가지표).
+    #
+    # ★ 앵커는 **한글 라벨**이다. `clear` 같은 영문 토큰을 앵커로 쓰면
+    #   산문 전체가 걸린다. 라벨 뒤에 수가 바로 오는 두 서식(산문 `통행 가능 465`
+    #   와 표 칸 `통행 가능 | 465`)만 문다 — 실물을 보고 정했다.
+    # ★ `차량 비용 통행 불가 474` 는 **다른 축**이다(폭이 아니라 차량 비용).
+    #   **부정 후방탐색**으로 가른다 — 실물 세 줄이 그 꼴이었다.
+    "v_clear": Axis(re.compile(r"통행 가능`?\s*\|?\s*(\d[\d,]*)"),
+                    "판정 `clear` 구간 수 — 산출물 `segments.geojson`"),
+    "v_needs_cv": Axis(re.compile(r"판정 보류`?\s*\|?\s*(\d[\d,]*)"),
+                       "판정 `needs_cv` 구간 수"),
+    "v_blocked": Axis(re.compile(r"(?<!차량 비용 )통행 불가`?\s*\|?\s*(\d[\d,]*)"),
+                      "판정 `blocked` 구간 수"),
+    "v_unknown": Axis(re.compile(r"영상판정 불가`?\s*\|?\s*(\d[\d,]*)"),
+                      "판정 `unknown` 구간 수"),
 }
 
 OPEN = re.compile(r"^<!--gen:\s*([\w ]+?)\s*-->$")
@@ -167,6 +185,9 @@ def truth() -> dict[str, int]:
         #   있고, 여기서 다시 쓰면 도구와 검사가 다른 것을 센다(R3).
         "plan_open": len(plan_renumber._rows(plan)),
         "cov_min": _cov_min(),
+        # ★ `docnum_check` 를 부른다. 같은 수를 여기서 또 세면 두 집이 되고,
+        #   판정이 움직이는 날 한쪽만 움직인다(2족 · §319).
+        **{f"v_{k}": v for k, v in docnum_check.verdicts().items() if k != "n"},
     }
 
 
@@ -192,6 +213,11 @@ def alive(want: dict[str, int]) -> list[str]:
         bad.append("PLAN §1 표 행이 0 — 표를 못 찾았다")
     if want["cov_min"] <= 0:
         bad.append("`COV_MIN` 을 못 읽었다 — `tools/verify.sh` 의 선언 한 줄이 사라졌다")
+    # ★ 판정 네 수의 합이 구간 수여야 한다. 하나라도 0 이면 블록이 통째로
+    #   거짓이 되고 그 거짓은 **조용하다** — 도구가 0 을 채우고 검사가 통과시킨다.
+    for a in ("v_clear", "v_needs_cv", "v_blocked", "v_unknown"):
+        if want.get(a, 0) <= 0:
+            bad.append(f"`{a}` 가 0 — 산출물을 못 읽었거나 판정 어휘가 바뀌었다")
     if want["sealable"] > want["datasets"]:
         bad.append("봉인 대상이 대장보다 많다")
     if want["sealable"] >= want["datasets"]:

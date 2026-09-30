@@ -44,7 +44,8 @@ import pytest
 
 from firelane.seg.classify import REASONS, VERDICTS, classify
 
-PUB = Path(__file__).resolve().parents[1] / "web" / "data" / "segments.geojson"
+ROOT = Path(__file__).resolve().parents[1]
+PUB = ROOT / "web" / "data" / "segments.geojson"
 
 #: 사슬이 낸 뒤 `segments.main()` 이 **사후에** 손대는 전환.
 #: 파편은 인접 상속을 시도하고 실패하면 unknown/width 로 떨어진다. 그래서
@@ -127,4 +128,36 @@ def test_counts_are_stated_not_assumed(rows):
     """
     c = collections.Counter(p["verdict"] for p in rows)
     assert len(rows) == 1281
-    assert dict(c) == {"clear": 465, "needs_cv": 226, "blocked": 191, "unknown": 399}
+    assert dict(c) == {"clear": 464, "needs_cv": 225, "blocked": 192, "unknown": 400}
+
+
+# ── 이름과 실물 (DECISIONS §320) ────────────────────────────────
+
+def test_the_published_building_number_is_not_used_as_a_join_key():
+    """★ **이름이 거짓말하는 칸**(DECISIONS §320). 아무도 아직 안 믿고 있는가.
+
+    도로명주소 전자지도의 `BUL_MAN_NO`(건물관리번호)는 25자리 문자열이다.
+    발행본의 같은 이름 칸은 **정수 20~38,762**(고유 12,663)다 — 원천 키가
+    아니라 발행본 안에서만 유효한 지역 번호이고, 다시 발행하면 달라진다.
+
+    ★ `route_usage` 와 같은 족이다(아래 시험). 스키마는 거짓을 안 적었지만
+      **이름이 읽는 사람을 속인다.** 지금은 쓰는 곳이 0곳이라 사고가 안 났고,
+      그것을 지키는 것이 이 시험이다 — 이름을 고치는 일은 발행 스키마를
+      움직이므로 측정 배치의 것이다(§13-5 규칙 2 · PLAN 이 든다).
+    """
+    seen = []
+    for d in ("web/navi/src", "web/navi/test", "src/firelane", "tools"):
+        for f in sorted((ROOT / d).rglob("*")):
+            if f.suffix not in (".ts", ".tsx", ".py") or "__pycache__" in f.parts:
+                continue
+            for i, ln in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+                if "BUL_MAN_NO" not in ln:
+                    continue
+                # 발행하는 자리 하나와 이 시험 자신은 뺀다 — 거기가 그 칸을 **만든다**.
+                if f.name in ("publish_web.py", Path(__file__).name):
+                    continue
+                seen.append(f"{f.relative_to(ROOT)}:{i}  {ln.strip()[:70]}")
+    assert not seen, (
+        "발행본의 `BUL_MAN_NO` 를 읽는 자리가 생겼다 — **원천 건물관리번호가 아니다.**\n  "
+        + "\n  ".join(seen)
+        + "\n  재발행하면 값이 달라진다. 조인이 필요하면 도로명주소를 써라(§320).")

@@ -146,6 +146,19 @@
 /web/navi/               @CleverAIFox
 
 
+# ── 오프라인 세 짝 (DECISIONS §312 · §316) ─────────────────────
+# ★ 이 둘은 `web/navi/` 밖에 산다. 내비만 쓰는 것이 아니라서다 —
+#   글자 묶음은 관제 화면도 같은 주소로 받고, 없는 주소의 문은 두 문
+#   (`/fire-lane/` · `/fire-lane/navi/`) 을 함께 안내한다.
+#
+# ★ 2026-09-30. 글자 묶음 이름에 **공백이 있었다**(`Liberation Sans Regular`).
+#   CODEOWNERS 는 줄을 공백으로 쪼개므로 그 한 줄이 「Liberation」·「Sans」·
+#   「Regular/…」 셋으로 읽혀 **파일 다섯이 미소유로 떨어졌다.** 이름을
+#   `LiberationSans` 로 고쳤다 — 표현할 수 없는 이름은 쓰지 않는다.
+/web/fonts/              @CleverAIFox           # !strict
+/web/404.html            @CleverAIFox           # !strict
+
+
 # ── 9. 기본값 말고 **이름으로** 맡는다 ──────────────────────────
 # ★ 2026-09-24 (DECISIONS §239). `test_every_tracked_path_has_an_owner` 는
 #   위 `*` 때문에 **구조적으로 실패할 수 없었다** — 모든 경로가 기본값에
@@ -154,6 +167,8 @@
 #   `test_every_tracked_file_has_a_named_owner` 가 다음 것을 막는다.
 /docs/                   @CleverAIFox
 /README.md               @CleverAIFox           # !strict
+/LICENSE                 @CleverAIFox           # !strict
+/SECURITY.md             @CleverAIFox           # !strict
 /.gitleaks.toml          @CleverAIFox           # !strict
 /.pre-commit-config.yaml @CleverAIFox           # !strict
 /.ruff-strict.toml       @CleverAIFox           # !strict
