@@ -542,6 +542,15 @@ EXEMPT_SCOPE = {
     "tools/selftests.py::tools":
         "`--selftest` 를 선언하는 것은 도구다. 시험의 자기검사는 `pytest` "
         "자신이 돌린다 — 넓히면 같은 것을 두 문이 돈다",
+    # ★ 2026-10-01 (DECISIONS §342-1). **중개자 자신만** 본다. 묻는 것이
+    #   「중개자가 규약의 말을 아는가」라서 대상은 `src/firelane/ops/` 넷이다.
+    #   넓히면 규약을 **정당하게** 인용하는 자리가 전부 위반이 된다 —
+    #   `web/navi/src/domain/opsProtocol.ts` 는 정본이고, 내비 시험과 이 시험
+    #   자신(`PROTOCOL_WORDS`)은 그 말을 적어야 한다. 오탐이 본문을 덮으면
+    #   사람이 검사를 끈다(DECISIONS §69).
+    "tests/test_ops_roster.py::test_the_broker_source_does_not_name_the_protocol":
+        "중개자 자신(`src/firelane/ops/`)만 본다. 규약의 집은 "
+        "`opsProtocol.ts` 이고 그것을 인용하는 자리는 위반이 아니다",
     "tests/test_no_unbounded_waits.py::_files":
         "**반대 방향**이다. 시한 없는 기다림이 문제가 되는 곳은 시험이다 — "
         "도구가 사람의 답을 기다리는 것은 정상이고(`merge_batch` 의 `ask`) "

@@ -5,13 +5,15 @@
 #   ModuleNotFoundError 로 죽었다. 지금 이 저장소가 실제로 돌리는 것은
 #   ETL 파이프라인 하나뿐이므로 ETL 이미지로 정정한다.
 #
-# API 가 생기면 이 파일을 복사하지 말고 Dockerfile.api 를 따로 만들 것.
+# ★ 2026-10-01. API 가 생겼고, **복사하지 않고** `Dockerfile.api` 를 따로 만들었다.
 # GDAL + geopandas 는 1.5GB 가 넘는다. FastAPI 서빙에 그게 딸려가면
 # 기동이 무의미하게 길어진다. 이미지는 용도별로 나눈다.
 #
 #   etl     GDAL · geopandas · rasterio   ← 이 파일. 상시 실행 아님
-#   api     fastapi · uvicorn · shapely   ← 슬림. 상시 서비스가 될 것
-#   vision  opencv · ultralytics          ← 이가연 담당 붙을 때
+#   api     fastapi · uvicorn             ← `Dockerfile.api`. **섰다**(DECISIONS §342)
+#
+# ★ 2026-10-01. `vision` 행을 지웠다 — CV 는 이 저장소에서 끝났고 의존성
+#   선언도 사라졌다(PLAN W13-1 · DECISIONS §341).
 #
 # ★ 2026-09-03 정정. 종전에 "ECS 콜드스타트" · "ECS 에 올라갈 것" 으로
 #   적혀 있었다. 2026-09-02 에 배포를 **EC2 한 대 + Docker Compose** 로

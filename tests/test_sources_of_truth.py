@@ -65,6 +65,9 @@ SPEC: dict[str, dict] = {
             {"file": ".github/workflows/contract.yml", "has": 'version: "{v}"'},
             {"file": ".github/workflows/deploy.yml", "has": 'version: "{v}"'},
             {"file": ".devcontainer/setup.sh", "has": "astral.sh/uv/{v}/install.sh"},
+            # ★ 2026-10-01 (DECISIONS §342). 중개자 이미지도 같은 uv 로 깐다 —
+            #   `uv sync --frozen` 이 같은 잠금을 다르게 풀면 두 이미지가 갈린다.
+            {"file": "Dockerfile.api", "has": "ghcr.io/astral-sh/uv:{v}"},
         ],
         "scan": [".github/**/*", "Dockerfile*", ".devcontainer/*"],
         "pins": [
@@ -97,6 +100,10 @@ SPEC: dict[str, dict] = {
         "owner": {"file": ".python-version", "regex": r"^([\d.]+)\s*$"},
         "consumers": [
             {"file": "Dockerfile", "has": "FROM python:{v}-slim"},
+            # ★ 2026-10-01 (DECISIONS §342). 중개자 이미지. GDAL 을 안 넣으려고
+            #   따로 있지만 **해석기 판은 같아야 한다** — 다르면 `uv.lock` 이
+            #   같은데 두 이미지가 다른 휠을 깐다.
+            {"file": "Dockerfile.api", "has": "FROM python:{v}-slim"},
             {"file": "pyproject.toml", "has": 'requires-python = ">={v}"'},
             {"file": ".github/workflows/contract.yml",
              "ref": "python-version-file: .python-version"},

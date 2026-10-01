@@ -109,6 +109,128 @@ def _csv_header(data: bytes, declared: str | None) -> dict:
             "encoding_seen": used}
 
 
+#: 레이어가 **있어야** 하는 갈래. 없으면 읽기가 실패한 것이다.
+#: ★ 정본은 `SHP_KINDS` 다 — 여기서 목록을 다시 적지 않는다.
+#: 못 믿을 값의 **지금 수.** 내려가는 쪽으로만.
+#:
+#: ★ **읽는 쪽을 레이크 없이 못 고친다.** 중첩 zip(`ngii1k`)과 도엽 묶음(`jijeok`),
+#:   그리고 juso 전자지도 여섯의 `DataSourceError` 는 970MB·1.8GB 실물을 열어야
+#:   풀린다. 그래서 이 배치는 **고치지 않고 센다** — 이 저장소가 「취입 계약 경고
+#:   51 = 래칫 51」로 쓰는 그 방식이다(§13 빚 목록).
+#: ★ 세는 것과 고치는 것은 다른 일이고, **세는 것이 먼저**다. 지금까지는 드리프트
+#:   0 으로 **조용히 통과**했다 — 빚이 있다는 사실조차 수로 없었다.
+#: ★ 이 수는 `ratchet.py` 가 **줄었을 때만** 고쳐 적는다(§309).
+#:
+#: ★ 2026-10-01 **정정.** 처음에 8 로 적고 `ratchet_values()` 가 빈 값을 돌렸다 —
+#:   「레이크 없으면 이름을 안 낸다」는 판단이었는데, 그러면 **래칫이 선언만 있고
+#:   실측이 없는 상태**가 되어 「래칫 정합」이 빨개진다. `deliver.py` 의 시운전이
+#:   그것을 보내기 전에 잡았다(§340-4).
+#:   그리고 그 판단 자체가 틀렸다 — 세는 대상은 **대장에 적혀 있는 값**이고,
+#:   `sources.yaml` 은 저장소 안에 있다. 레이크는 **읽을 때만** 필요하다.
+#:   대장만으로 센 실측이 3 이다.
+UNREADABLE = 3
+
+RATCHETS = {"UNREADABLE": "down"}
+
+
+def ledger_nonsense() -> int:
+    """**대장에 적혀 있는** 못 믿을 값의 수. (DECISIONS §338 · §340-4)
+
+    ★ 레이크를 안 읽는다. 그래서 어느 기계에서도, 빈 작업나무에서도 같은 수가
+      난다 — 래칫은 **언제나 이름을 낼 수 있어야** 한다.
+
+    ★ 이것으로 충분한 이유. 못 믿을 값이 들어오는 길은 둘뿐이다 —
+      대장에 적혀 있거나(이 함수가 센다), 읽은 값과 대장이 다르거나
+      (드리프트가 운다). 읽은 값만 못 믿을 꼴이고 대장은 멀쩡하면 그것은
+      드리프트다. 둘을 합치면 빈 구멍이 없다.
+    """
+    try:
+        d = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return 0
+    n = 0
+    for key, e in (d.get("datasets") or {}).items():
+        sch = (e or {}).get("schema") or {}
+        if sch:
+            n += len(unreadable(key, sch, str((e or {}).get("kind") or "")))
+    return n
+
+
+def ratchet_values() -> dict[str, int]:
+    """실측. **대장만 읽는다** — 위 `ledger_nonsense()` 머리말이 그 이유를 적는다."""
+    return {"UNREADABLE": ledger_nonsense()}
+
+
+#: 기계마다 다른 자리. 대장은 **어느 기계에서 읽어도 같아야** 한다.
+#: ★ 대장 자신이 그 규칙을 적어 놨다(`sources.yaml` 의 `inventory:` 머리) —
+#:   「`raw:` 에 기계 고유 절대경로(`/mnt/ssd/...`)가 박혀 있었다. 기계마다
+#:   마운트가 달라 두 대에서 쓰는 순간 무의미해진다」. 그때 `raw:` 문은 막았고
+#:   `columns_error:` 라는 **다른 문으로 다시 들어왔다**(§340).
+ABS_PATH = re.compile(r"(?:^|[\s'\"(])(?:/mnt/|/home/|/Users/|/vsizip/|[A-Za-z]:\\\\)")
+
+
+def machine_paths(sch: dict) -> list[str]:
+    """스키마 안에 **기계 고유 경로**가 있는가. 어느 칸이든 본다.
+
+    ★ 칸 이름을 열거하지 않는다. `raw:` 하나를 막았더니 `columns_error:` 로
+      들어왔다 — **문을 하나씩 막으면 다음 문이 열린다.** 값 전체를 훑는다.
+    """
+    out = []
+    for k, v in sch.items():
+        for s in (v if isinstance(v, list) else [v]):
+            if isinstance(s, str) and ABS_PATH.search(s):
+                out.append(k)
+                break
+    return sorted(set(out))
+
+
+def unreadable(key: str, sch: dict, kind: str) -> list[str]:
+    """읽은 값이 **말이 되는가.** (DECISIONS §338)
+
+    ── 왜 이 물음이 따로 필요한가 ──────────────────────────────
+    `--check` 는 「읽은 값이 대장과 같은가」만 묻는다. 그런데 읽는 쪽이
+    **일관되게 틀리면** 대장에도 그 틀린 값이 앉아 있고, 그래서 드리프트가
+    **영원히 0** 이다. 2026-10-01 실기가 그것이었다 —
+
+        ngii1k   layers: []          드리프트 0
+        jijeok   features: 1000000   드리프트 0
+
+    두 값 다 명백히 읽기 실패인데 검사가 초록이었다. **족 1(무음 통과)**이다.
+
+    ★ **증명할 수 있는 것만 문다.** 「필드 이름이 이상하다」는 안 본다 —
+      `A0`~`A7` 은 국가공간정보포털 지적도의 **실제 필드명일 수 있고**,
+      짐작으로 빨갛게 만들면 고칠 수 없는 빨강이 된다(그런 빨강은 꺼진다).
+    """
+    bad = []
+    lay = sch.get("layers")
+    if kind in SHP_KINDS and lay is not None and not lay:
+        bad.append(f"{key}: `layers` 가 비었다 — SHP 갈래인데 읽은 레이어가 0개다. "
+                   "중첩 zip 이거나 SHP 가 아닌 형식일 수 있다")
+    if lay:
+        # ★ `이름`, `이름(2)`, `이름(3)` … 은 레이어 셋이 아니라 **같은 레이어가
+        #   여러 도엽에 있는 것**이다. 파일 이름이 겹쳐 OS 가 붙인 꼬리다.
+        stems = {re.sub(r"\(\d+\)$", "", str(x)).strip() for x in lay}
+        if len(lay) > 1 and len(stems) == 1:
+            bad.append(f"{key}: `layers` {len(lay)}개가 전부 `{stems.pop()}` 의 중복 꼬리다 — "
+                       "레이어가 여럿인 것이 아니라 **도엽이 여럿**이다")
+    # ★ `columns_error` 는 **에러인데 값으로 저장된다.** `probe()` 가 그것을
+    #   `sch` 에 담아 돌려주고, `--apply` 가 대장에 쓰고, 다음 실행이 같은 에러를
+    #   내므로 드리프트가 0 이다. 2026-10-01 실기에서 juso 전자지도 **여섯**이
+    #   그 꼴이었다 — `road_link` · `road_rw` · `road_intrvl` · `boundary_emd` ·
+    #   `building` · `building_entrance` 전부 `DataSourceError` 를 들고 초록이었다.
+    for k in machine_paths(sch):
+        bad.append(f"{key}: `{k}` 에 **기계 고유 경로**가 들어 있다 — "
+                   "대장은 어느 기계에서 읽어도 같아야 한다. 경로를 걷고 적어라")
+    if sch.get("columns_error"):
+        bad.append(f"{key}: `columns_error` 가 대장에 앉아 있다 — "
+                   "**읽기 실패가 값이 됐다.** 에러는 기록할 것이 아니라 고칠 것이다")
+    n = sch.get("features")
+    if isinstance(n, int) and n >= 100000 and str(n) == "1" + "0" * (len(str(n)) - 1):
+        bad.append(f"{key}: `features: {n}` 이 정확히 10의 거듭제곱이다 — "
+                   "실측이 아니라 **상한이나 추정**일 수 있다. 세는 쪽을 확인해라")
+    return bad
+
+
 def probe(key: str, e: dict) -> dict | None:
     """대장 항목 하나의 스키마. 못 읽으면 None."""
     kind = e.get("kind")
@@ -244,9 +366,13 @@ def _q(v) -> str:
 def _fmt(sch: dict) -> str:
     """YAML 블록. 손으로 고치지 말라는 표시를 단다."""
     lines = ["    schema:                       # AUTO — ledger_schema.py 가 쓴다"]
+    # ★ 2026-10-01 (DECISIONS §340). `error` · `columns_error` 를 **뺐다.**
+    #   에러는 **기록할 것이 아니라 고칠 것**이다. 적어 두면 ① 기계 고유 경로가
+    #   대장에 박히고(실제로 juso 여섯이 그랬다) ② 다음 실행이 같은 에러를 내므로
+    #   **드리프트가 영원히 0** 이다 — 읽기 실패가 「값」이 된다.
+    #   에러는 `unreadable()` 이 **매 실행 세고**, `UNREADABLE` 래칫이 든다.
     for k in ("layers", "layer_glob", "layer_used", "columns", "features",
-              "encoding_seen", "source", "headerless", "error", "columns_error",
-              "layers_total"):
+              "encoding_seen", "source", "headerless", "layers_total"):
         if k not in sch:
             continue
         v = sch[k]
@@ -280,7 +406,7 @@ def run(*, apply: bool, check: bool, missing: bool = False) -> int:
     s = YAML.read_text(encoding="utf-8")
     d = yaml.safe_load(s) or {}
     ds = d.get("datasets") or {}
-    ok = err = skip = drift = 0
+    ok = err = skip = drift = nonsense = 0
 
     for key, e in ds.items():
         # ★ §182-1. `--missing` — schema 가 이미 있는 항목은 읽지도 쓰지도 않는다.
@@ -299,6 +425,12 @@ def run(*, apply: bool, check: bool, missing: bool = False) -> int:
         print(f"  {key:22} {len(cols):3}개  {', '.join(map(str, cols[:6]))}"
               f"{' …' if len(cols) > 6 else ''}")
         ok += 1
+
+        # ★ 2026-10-01 (§338). **읽은 값이 말이 되는가.** 드리프트와 다른 축이다 —
+        #   읽는 쪽이 일관되게 틀리면 드리프트는 영원히 0 이다.
+        for why in unreadable(key, sch, str(e.get("kind") or "")):
+            print(f"      ★ {why}")
+            nonsense += 1
 
         if check:
             old = (e.get("schema") or {})
@@ -322,10 +454,82 @@ def run(*, apply: bool, check: bool, missing: bool = False) -> int:
         YAML.write_text(s, encoding="utf-8")
         print("\n적용 · YAML 파싱 OK")
     print(f"\n읽음 {ok} · 실패 {err} · 대상아님 {skip}"
-          + (f" · ★ 드리프트 {drift}" if check else ""))
+          + (f" · ★ 드리프트 {drift}" if check else "")
+          + (f" · ★ 못 믿을 값 {nonsense}" if nonsense else ""))
+    # ★ 2026-10-01 (§339 · §340). **이것은 드리프트가 아니다.** 대장과 실물이
+    #   같은데 둘 다 틀린 상태다. 읽는 쪽을 고쳐야 풀리고 그것은 레이크가 있어야
+    #   하는 일이라, 이 배치는 **고치지 않고 센다.** 래칫으로 든다.
+    # ★ 래칫이 재는 것은 위 `nonsense`(이번 실행이 **읽은** 값)가 아니라
+    #   **대장에 적혀 있는** 수다(§340-4). 둘은 보통 같고, 다르면 그것은
+    #   드리프트라 바로 위에서 이미 운다. 대장 쪽을 재는 이유는 하나 —
+    #   **레이크 없는 기계에서도 같은 수가 나야** 래칫이 이름을 낼 수 있다.
+    led = ledger_nonsense()
+    grew = led > UNREADABLE
+    if led and not grew:
+        print(f"   ★ 대장에 적힌 못 믿을 값 {led} = 래칫 {UNREADABLE} — **갚아야 할 빚이다.**\n"
+              "     읽는 쪽(`probe`)을 고쳐야 줄어든다. 대장만 고치면 다음 실행이 되돌린다.")
+    if grew:
+        print(f"   ★ 못 믿을 값이 {led} 로 **늘었다**(래칫 {UNREADABLE}).\n"
+              "     새로 생긴 읽기 실패다 — 이번 배치가 낸 것이다.")
+    if led < UNREADABLE:
+        print(f"   ★ {led} 로 **줄었다** — `uv run python tools/ratchet.py --write` 로 조여라")
     if not (apply or check):
         print("아무것도 바꾸지 않았다.  --apply 로 기록한다.")
-    return 1 if (err or drift) else 0
+    return 1 if (err or drift or led != UNREADABLE) else 0
+
+
+def selftest() -> int:
+    """판별식이 **두 결함을 실제로 가르는가.** (DECISIONS §338 · §340)"""
+    fails = []
+    P = "/mnt/f/projects/fire-lane/data/raw/juso/x.zip"
+
+    # ① 2026-10-01 실기의 세 꼴
+    if not unreadable("ngii1k", {"layers": []}, "shp_dir"):
+        fails.append("빈 `layers` 를 SHP 갈래에서 통과시킨다 — 중첩 zip 을 못 읽은 것이다")
+    dup = ["A_20260808", "A_20260808(2)", "A_20260808(3)"]
+    if not unreadable("jijeok", {"layers": dup}, "shp_zip_multi"):
+        fails.append("중복 꼬리 레이어를 여럿으로 센다 — 도엽이 여럿인 것이다")
+    if not unreadable("x", {"features": 1000000}, "csv_points"):
+        fails.append("`features: 1000000` 을 실측으로 읽는다")
+
+    # ② 멀쩡한 것은 **조용해야** 한다 — 안 그러면 사람이 검사를 끈다
+    if unreadable("ok", {"columns": ["A", "B"], "features": 63321}, "shp_zip"):
+        fails.append("멀쩡한 스키마에 운다 — 고칠 수 없는 빨강은 꺼진다")
+    if unreadable("y", {"columns": ["A0", "A1", "A7"]}, "shp_zip_multi"):
+        fails.append("`A0`~`A7` 에 운다 — **지적도의 실제 필드명일 수 있다.** 짐작으로 안 문다")
+    if unreadable("z", {"features": 100}, "csv_points"):
+        fails.append("작은 10의 거듭제곱(100)에 운다 — 진짜 100건일 수 있다")
+
+    # ③ 기계 경로 — **칸 이름을 안 가린다**(§340). 문을 하나씩 막으면 다음이 열린다
+    for k in ("columns_error", "error", "layer_used", "source"):
+        if machine_paths({k: f"DataSourceError: '/vsizip/{P}'"}) != [k]:
+            fails.append(f"`{k}` 칸의 기계 경로를 못 본다 — 칸을 가리고 있다")
+    if machine_paths({"layers": [P]}) != ["layers"]:
+        fails.append("목록 안의 경로를 못 본다")
+    if machine_paths({"columns": ["도로명", "폭(m)"], "features": 12}):
+        fails.append("경로가 아닌 값을 경로로 본다")
+
+    # ④ 에러를 **대장에 안 쓰는가** — 쓰면 드리프트가 영원히 0 이다
+    body = _fmt({"columns": ["A"], "columns_error": "boom", "error": "boom"})
+    for k in ("columns_error", "error"):
+        if k in body:
+            fails.append(f"`{k}` 를 대장에 쓴다 — 읽기 실패가 **값**이 된다(§340)")
+
+    # ⑤ 래칫이 **이름을 내는가** (§340-4). 안 내면 「래칫 정합」이 빨개진다 —
+    #    `deliver.py` 의 시운전이 보내기 전에 그것을 잡았다.
+    rv = ratchet_values()
+    if set(rv) != set(RATCHETS):
+        fails.append(f"`ratchet_values()` 가 {sorted(rv)} 를 내는데 선언은 {sorted(RATCHETS)} 다")
+    if not all(isinstance(v, int) for v in rv.values()):
+        fails.append("`ratchet_values()` 가 수가 아닌 것을 낸다")
+    if rv.get("UNREADABLE") != UNREADABLE:
+        fails.append(f"대장 실측 {rv.get('UNREADABLE')} ≠ 선언 {UNREADABLE}"
+                     " — 줄었으면 `ratchet.py --write`, 늘었으면 이번 배치가 낸 것이다")
+
+    for f in fails:
+        print(f"  ✗ {f}")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 18")
+    return 1 if fails else 0
 
 
 def main() -> int:
@@ -337,7 +541,11 @@ def main() -> int:
                     help="대장과 실물이 어긋났나. CI 가 아니라 사람이 돌린다")
     ap.add_argument("--missing", action="store_true",
                     help="schema 가 없는 항목만 (§182-1)")
+    ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
+    # ★ `--selftest` 는 레이크가 없어도 돈다 — 판별식은 합성 입력만 쓴다.
+    if a.selftest:
+        return selftest()
     # ★ 관문. 레이크가 없으면 여기서 멈춘다 — 판정만 하고 안 막으면
     #   엉뚱한 곳에 계층을 만든다(2026-08-27).
     # ★ **`parse_args` 뒤다.** 앞에 두면 레이크가 없을 때 `--help` 조차
