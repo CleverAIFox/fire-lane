@@ -53,8 +53,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from docsealfp import (FP_METHOD, LEGACY_VIEWS, _generated, claim, digest, parts, view,
-                       view_v1)
+from docsealfp import FP_METHOD, LEGACY_VIEWS, _generated, claim, digest, parts, view, view_v1
 
 ROOT = Path(__file__).resolve().parents[1]
 SEAL = ROOT / "data" / "golden" / "docseal.json"
