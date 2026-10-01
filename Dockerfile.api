@@ -1,0 +1,48 @@
+# Fire-Lane 중개자 이미지 — 관제 ↔ 내비
+#
+# ★ 2026-10-01 (DECISIONS §342). `Dockerfile` 머리말이 「API 가 생기면 이 파일을
+#   복사하지 말고 Dockerfile.api 를 따로 만들 것」이라고 적어 뒀다. 그 날이다.
+#
+#   etl     GDAL · geopandas · rasterio   1.5GB · 상시 실행 아님
+#   api     fastapi · uvicorn             ← 이 파일. 상시 서비스
+#
+# ★ **GDAL 을 안 넣는다.** 중개자는 글자를 옮기는 일만 하고 공간 연산을 한
+#   줄도 안 한다(`src/firelane/ops/server.py` 머리말). ETL 이미지를 그대로
+#   쓰면 상시 서비스의 기동 시간이 쓰지 않는 1.5GB 에 매달린다.
+#
+# ★ **의존성을 따로 적지 않는다.** `uv sync --frozen` 이 `uv.lock` 하나를
+#   본다 — 이미지마다 손목록을 들면 그것이 두 번째 대장이 되고 어긋난다
+#   (`pyproject.toml` 머리말의 `requirements-etl.txt` 사고가 그것이다).
+#   GDAL 이 없어도 `uv sync` 는 통과한다: geopandas 계열은 전부 휠이다
+#   (`pyogrio` 가 GDAL 을 **번들한다**).
+#
+# ★ **루트로 안 돈다.** 중개자는 바깥에 포트를 여는 유일한 프로세스다.
+#   들어온 글자를 그대로 옮기므로 코드 실행 경로는 없지만, 포트를 여는
+#   프로세스에 루트를 주지 않는 것은 값이 아니라 기본이다.
+#
+#   docker compose up ops
+#   docker compose build ops && docker compose up -d ops
+
+FROM python:3.14-slim
+
+COPY --from=ghcr.io/astral-sh/uv:0.12.13 /uv /uvx /bin/
+
+WORKDIR /app
+
+# 의존성 레이어를 소스와 분리한다. 코드만 고쳤을 때 재설치하지 않는다.
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project --no-dev
+
+# ★ `src` 만 넣는다. `tools` 도 `sources.yaml` 도 중개자가 안 읽는다 —
+#   넣으면 이미지에 **읽지 않는 대장**이 들어가고, 그것이 유출 표면이다.
+COPY src ./src
+RUN uv sync --frozen --no-dev
+
+RUN useradd --create-home --uid 10001 ops
+USER ops
+
+EXPOSE 8000
+
+# ★ 포트는 `FIRE_LANE_OPS_PORT` 가 정한다(없으면 8000). compose 가 그 값을
+#   주고, `tests/test_ops.py::test_the_port_is_written_once` 가 둘을 대조한다.
+CMD ["uv", "run", "--no-sync", "python", "-m", "firelane.ops"]

@@ -3,7 +3,7 @@
     "boundary": "c2f764ff6aee773f",
     "branch": "3a4efe9dcdce4c4a",
     "cctv": "5d8d114a1dc9f057",
-    "deploy": "4a2035d7f9326b0c",
+    "deploy": "8e6ad66e4700f82f",
     "threshold": "3b74745a9acfd68d",
     "unknown": "e323a938eb6088af",
     "verdict": "76f9b2793883db5d",
@@ -13,7 +13,7 @@
   "placed": {
     "boundary": "c2f764ff6aee773f",
     "cctv": "5d8d114a1dc9f057",
-    "deploy": "4a2035d7f9326b0c",
+    "deploy": "8e6ad66e4700f82f",
     "verdict_flow": "e7203d498a7656c1",
     "xsec": "09fac9e5365e3b6e"
   }

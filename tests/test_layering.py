@@ -46,6 +46,10 @@ DOMAIN = [
     "seg/params.py", "seg/geom.py", "seg/width.py",
     "seg/roadname.py", "seg/basisno.py", "seg/graph.py",
     "seg/vehicle.py", "seg/scope.py", "seg/centerline_correction.py",
+    # ★ 2026-10-01 (DECISIONS §342). 중개자의 명부. 소켓도 시계도 몰라야
+    #   하고, 그래야 시험이 서버 없이 돈다 — 실제로 `tests/test_ops_roster.py` 의
+    #   판별식 열셋이 서버를 안 띄우고 돈다.
+    "ops/roster.py",
 ]
 
 # domain 이 절대 import 하면 안 되는 것

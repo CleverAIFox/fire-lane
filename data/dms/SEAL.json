@@ -1,19 +1,19 @@
 {
- "sealed_at": "2026-10-01T02:33:25+09:00",
- "commit": "12731dc",
- "tool": "4b81f49aea843be0",
+ "sealed_at": "2026-10-01T19:39:54+09:00",
+ "commit": "a194a5f",
+ "tool": "fc42a66325710d44",
  "tools": {
-  "tools/deadcheck.py": "1eff150213032dc9",
+  "tools/deadcheck.py": "cbd5ececae8fdc6c",
   "tools/dms.py": "f2ef5dc609a4f045",
   "tools/dupcheck.py": "50e4756f13fd85fe",
-  "tools/env_check.py": "1cd9676a084d78cc",
+  "tools/env_check.py": "9c41c18ab2a68470",
   "tools/verify.sh": "d07a0a1d93f4ca02"
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "a9850ce231c259b3",
-  "docs/DECISIONS.md": "2b12875f45543a2d",
-  "docs/PLAN.md": "d288363e8a830066",
+  "docs/MASTER.md": "ca1262c453f10dd7",
+  "docs/DECISIONS.md": "43a870d19350af2d",
+  "docs/PLAN.md": "a50d884eefa0f64e",
   "README.md": "40ad0c4ca9cdfc59"
  },
  "raw": {
@@ -249,11 +249,11 @@
   ]
  },
  "code": {
-  "sha256": "2414472e8643d40b",
+  "sha256": "af487a7c039a530c",
   "files": {
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
-   "pyproject.toml": "fd47f76caa3b70a26839d6725be5081c2106354d4089029bf7e774f6f1f21f2c",
-   "sources.yaml": "ebed446214560e0545b3aa443e1cdf2f2c0e545e1c7748e5b3eb6524a02c8e49",
+   "pyproject.toml": "8fcce06301260d06fe7a2d2cf5663295b4d60219dc7e11c4a8bb8788bed1bd36",
+   "sources.yaml": "efcee56880c9b034767a87f2ea36a0510c4766da4def52c727e6b243c9cc43ae",
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d16004113ef6e158febf3069febd5b43064abe2ffd93623481aa241272e5b627",
@@ -288,6 +288,10 @@
    "src/firelane/ngi.py": "67854d6acabafaf330f2e725955653393ef357781eea35fdd1aaa3bf9533def5",
    "src/firelane/ngii1k.py": "3fc21c276931b4defaf41d809c6b1d2cae5035e5c2a2c2075c1d2ea73a34c2a3",
    "src/firelane/normalize_raw.py": "0e1d7eb804888df7227e53adea3e7eb7b3f800acc467a7279fdeb19ab6605de6",
+   "src/firelane/ops/__init__.py": "6dd20ca39e4364fc28d94eb8475d6faaf8ea8b876212e8b5e85580decd7e428d",
+   "src/firelane/ops/__main__.py": "ff6a4937be0d207cd1360975f0ed45ca5d0cc9166dc1d334d6c2e8de287cb413",
+   "src/firelane/ops/roster.py": "b8a6dfc347e2b4485db420dd4bf4e5aa641cacab3db000b7769bf4bf737b1359",
+   "src/firelane/ops/server.py": "ecb2d5bb5700665644b88dc800bfd20a63ef186afe60cb45d1bebd9a2b60bb58",
    "src/firelane/ortho.py": "b742ce578934445398e41cc5b52130e3d7bb359038fa82adb5f1d43cc5ec551b",
    "src/firelane/paths.py": "97d29a35d7e5a97a1b3cc776d3f7a44d2c5f5a2d82cd59666295f1f6b224eff9",
    "src/firelane/pipeline.py": "6004423d30419290c91c65ec9e82f3be1c0eb9a7d5e79cd48e594b21b319f32d",
@@ -330,7 +334,7 @@
    "src/firelane/transition.py": "36db27bf5fd3f1d3851ac28de06a72bbd74ad19c9824d3edf0270d86807d78cb",
    "src/firelane/vehiclecard.py": "1a69f1a6ac07899b6d93ade8954efea2fce791c179d44490640b838dca2584e8",
    "src/firelane/webmanifest.py": "6d769b7864376a9d8ae02867c9ab955e0bf2a9545c759543e520d6367ac8f542",
-   "uv.lock": "830dae2ea24e63902cbb9170a67d6d71825342d23cdc018a85e973377de8bedd"
+   "uv.lock": "21838fff95e4fa7795bf79a00b07612fe89bc22ec9d5c24802ea36118288bc93"
   }
  },
  "sections": {
@@ -839,7 +843,7 @@
    "title": "12-7c. 산출물 판정은 액션이 안 한다"
   },
   "MASTER/12-8": {
-   "h": "48a5e9b63c262e71",
+   "h": "cb055312a4ed7c75",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-8. 배포"
@@ -989,7 +993,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "6dd81bbf876dd983",
+   "h": "d06e45b8cdc02d5c",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -1469,13 +1473,13 @@
    "title": "24. 인코딩에는 강제자가 없었다"
   },
   "DECISIONS/25": {
-   "h": "6eb72c3e573ce8ca",
+   "h": "65cba632016f445b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "25. 스크립트 더미를 패키지로 — `sys.path` 17군데가 원인이었다"
   },
   "DECISIONS/26": {
-   "h": "1261ef1de109b6d9",
+   "h": "ae6df74ed5260824",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "26. 계층에 강제자가 없었다"
@@ -2951,7 +2955,7 @@
    "title": "121-1. 순환은 setState 로 되먹일 때 생긴다"
   },
   "DECISIONS/121-2": {
-   "h": "5f77f94665098a62",
+   "h": "675703e7f66b3220",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "121-2. 판정색은 파생한다"
@@ -8387,10 +8391,172 @@
    "title": "337-1. 왜 도장으로는 부족한가"
   },
   "DECISIONS/337-2": {
-   "h": "8c0672b2617120e6",
+   "h": "f6a150f2bd59658f",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "337-2. 칸을 가른다 — 안 가르면 영원히 빨갛다"
+  },
+  "DECISIONS/338": {
+   "h": "eb06a66e48f7c7bf",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "338. 정본에서 읽으라고 적어 둔 바로 다음 줄이 하드코딩이었다"
+  },
+  "DECISIONS/338-1": {
+   "h": "5bc82bdce850eca1",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "338-1. 그 목록이 양쪽으로 틀려 있었다"
+  },
+  "DECISIONS/338-2": {
+   "h": "1ae2e59ec64a17d3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "338-2. `paths.py` 를 **글로** 읽는다"
+  },
+  "DECISIONS/339": {
+   "h": "e7918fe0bcce0790",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "339. 명명 규칙이 틀린 것이 아니라 **좁았다**"
+  },
+  "DECISIONS/339-1": {
+   "h": "d2f53ac1cf4c39c8",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "339-1. 이름을 고치는 쪽은 **불가능하다**"
+  },
+  "DECISIONS/339-2": {
+   "h": "6fae7cfd169540c9",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "339-2. `retired` 를 선언하려다 **그 값을 쟀다** — 45샤드다"
+  },
+  "DECISIONS/339-3": {
+   "h": "4499c3e42904c9a6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "339-3. 그래서 안 넣는다 — 이것은 §173-2 의 일이다"
+  },
+  "DECISIONS/340": {
+   "h": "331134691138dd66",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "340. 읽기 실패가 대장에 **값으로** 저장돼 있었다"
+  },
+  "DECISIONS/340-1": {
+   "h": "f4c63d23bef250b0",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "340-1. 문을 하나씩 막으면 다음 문이 열린다"
+  },
+  "DECISIONS/340-2": {
+   "h": "352b52901fba739f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "340-2. 세는 것과 고치는 것은 다른 일이고, 세는 것이 먼저다"
+  },
+  "DECISIONS/340-3": {
+   "h": "873615b1fd5ccddb",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "340-3. 짐작으로는 안 문다"
+  },
+  "DECISIONS/340-4": {
+   "h": "549bc167123beecc",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "340-4. 처음 적은 8 이 **레이크 없이는 못 세는 수**였다"
+  },
+  "DECISIONS/341": {
+   "h": "c5231d90962705a8",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "341. 의존성 대장이 **실제와 달랐다** — 여덟이 0이 됐다"
+  },
+  "DECISIONS/341-1": {
+   "h": "7151fc9d4bc38f2b",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "341-1. 먼저 **쟀다** — 판이 하나도 안 움직인다"
+  },
+  "DECISIONS/341-2": {
+   "h": "b74c8a21f17c5dca",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "341-2. 여덟이 갈라지는 네 갈래"
+  },
+  "DECISIONS/341-3": {
+   "h": "666a87007fb90401",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "341-3. Dependabot 경보 셋이 **같이 닫혔다**"
+  },
+  "DECISIONS/341-4": {
+   "h": "12244fe0e99b5780",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "341-4. 남은 것 하나 — 폐포가 **의도보다 넓다**"
+  },
+  "DECISIONS/342": {
+   "h": "cb9a82fffcc8686f",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "342. 관제와 내비를 잇는 **프로세스**가 없었다"
+  },
+  "DECISIONS/342-1": {
+   "h": "a0aa19f568a30025",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "342-1. 중개자가 **말의 뜻을 안 본다**"
+  },
+  "DECISIONS/342-2": {
+   "h": "f84e65bc154fe234",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "342-2. 저장소도 인증도 **없다**"
+  },
+  "DECISIONS/342-3": {
+   "h": "7dc6a20b27214a8d",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "342-3. `TestClient` 로는 **못 재는 것**을 재야 했다"
+  },
+  "DECISIONS/342-4": {
+   "h": "f09471a6a370f192",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "342-4. `env_check` 가 **세 번째로** 눈이 멀었다"
+  },
+  "DECISIONS/342-5": {
+   "h": "adbb42f184cad0b7",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "342-5. 시험을 건너뛰게 두되, **아무 때나 건너뛰지는 못하게** 묶었다"
+  },
+  "DECISIONS/343": {
+   "h": "c8d4a666c48c6a22",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "343. 전송을 고르는 자리를 **문 하나 뒤로** 넣었다"
+  },
+  "DECISIONS/343-1": {
+   "h": "64f097dd6f7f396d",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "343-1. 못 보낸 것을 **쌓아 두지 않는다**"
+  },
+  "DECISIONS/343-2": {
+   "h": "f60ab39e9e4823e3",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "343-2. 재접속 간격이 **안 늘어난다**"
+  },
+  "DECISIONS/343-3": {
+   "h": "4ca09f38eba1e800",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "343-3. 주소는 **토큰이 아니다**"
   },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
@@ -8573,7 +8739,7 @@
    "title": "9. 외부 의존"
   },
   "PLAN/10": {
-   "h": "5dcf7c80e27ba75f",
+   "h": "e546d2b1c25c49ed",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "10. 우선순위"
@@ -8597,7 +8763,7 @@
    "title": "13. 결함 대장 — 판정을 안 움직이는 일"
   },
   "PLAN/13-1": {
-   "h": "cc59792485e03edf",
+   "h": "35cf083bcb326517",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-1. 이 절이 생긴 이유"
@@ -8609,10 +8775,10 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN/13-3": {
-   "h": "467fa69b7fe5a7af",
+   "h": "1a4400c87343b999",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "13-3. 남은 결함 2건"
+   "title": "13-3. 남은 결함 1건"
   },
   "PLAN/13-4": {
    "h": "af3a3ded9356e804",
@@ -8754,7 +8920,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2087 passed in 356.34s (0:05:56)",
+   "tail": "2131 passed in 335.46s (0:05:35)",
    "red": []
   },
   "probe/deadcheck": {

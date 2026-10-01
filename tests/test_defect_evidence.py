@@ -24,6 +24,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 #: 닫힌 W-ID → 그 닫힘을 지키는 시험. 행을 닫으면 여기에 한 줄을 단다.
 EVIDENCE = {
+    # ★ 2026-10-01 (DECISIONS §341). 미사용 의존성 여덟. 증표는 **면제의 수**다 —
+    #   `DEP002` 가 0 이고, 하나라도 다시 생기면 그 시험이 운다. 선언을 지우는
+    #   것만으로는 재발을 못 막는다(다음 사람이 또 적는다).
+    "W13-1": "tests/test_deptry_config.py::test_known_exceptions_do_not_grow",
     "W11-1": "tests/test_turn_restriction_filter.py::test_missing_node_point_stops",
     "W3-5": "tests/test_dms_ids.py::test_insert_does_not_shift_others",
     "W3-2": "tests/test_declaration_sync.py::test_master_roles_do_not_copy_codeowners",
