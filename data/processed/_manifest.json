@@ -26,11 +26,11 @@
     "georef": "원본 TIF 에 geotransform 없음. 도엽 격자로 역산",
     "tiles": "web/data/ortho/{z}/{x}/{y}.jpg (1423장, z15~19, 24.8MB)",
     "purpose": "배경 텍스처. 판정에는 사용하지 않는다.",
-    "generated_at": "2026-09-30T06:07:43+00:00",
+    "generated_at": "2026-10-01T09:22:48+00:00",
     "seal": {
       "raw": "afe2cbb4bcd15153:d83eec9e4da02b1b:c0d4850dfdbe197e:074d2d29a73dcaea",
       "scope": "bc2a1d42eb9b4b66",
-      "code": "007c928f87fcd8c3",
+      "code": "ddc57f0bdb637a48",
       "out": "1423:ac44cf183beed2d9"
     }
   },
