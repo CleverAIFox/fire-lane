@@ -43,7 +43,9 @@ export function useOpsUplink(snap: UnitSnapshot | null) {
       } else if (m.t === "ack" && m.unit === unit) {
         setAcks((a) => ({ ...a, [m.shareId]: m.at }));
       }
-    });
+      // ★ `who` 를 넘긴다 — 중개자가 관제와 차를 **다른 문으로** 받는다.
+      //   어느 전송으로 갈지는 `openLink` 가 설정을 보고 고른다(§343).
+    }, { kind: "unit", unit });
     link.current = l;
     const tick = setInterval(() => {
       setNow(Date.now());

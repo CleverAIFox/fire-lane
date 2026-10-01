@@ -31,7 +31,8 @@ env_check.py — 환경변수 선언 ↔ 실물. **양방향이다.**
   훑었다. 즉 **자기가 사례로 든 그 변수를 못 보는 상태**로 열흘을 돌았다.
   「범위가 이름보다 좁고 그것이 선언돼 있지 않다」 족의 일곱 번째다(PLAN §13).
 
-IN    .env.example · src/**.py · tools/**.py · tools/*.sh
+IN    .env.example · src/**.py · tools/**.py · tools/*.sh ·
+      web/navi/*.config.ts   ← 빌드 설정도 소비자다(2026-10-01 · §342-4)
 OUT   없음 (검사)
 밖    **셸의 단일 독자 규율은 안 본다.** `readers()` 는 파이썬 AST 라 `.sh` 를
       못 읽는다 — 셸에서는 키가 쓰이는가만 보고 `paths.py` 경유 여부는 안 본다.
@@ -103,6 +104,31 @@ def _sh() -> list[Path]:
     return sorted((ROOT / "tools").glob("*.sh"))
 
 
+# ★ 빌드 설정의 참조. `loadEnv` 가 돌려준 객체에서 꺼내는 꼴이다 —
+#     root.FIRE_LANE_OPS_URL   ·   root["FIRE_LANE_OPS_URL"]
+#   `VITE_` 접두사가 붙은 것은 **안 센다.** 그것은 `web/navi/.env.local` 의
+#   이름이고 저장소 루트 `.env` 의 계약이 아니다.
+TS_RE = re.compile(r"\b(?:[A-Za-z_$][\w$]*\.)?(FIRE_LANE_[A-Z0-9_]+)\b|"
+                   r"""\[\s*["'](FIRE_LANE_[A-Z0-9_]+)["']\s*\]""")
+
+
+def _ts() -> list[Path]:
+    """**빌드 설정도 환경변수의 소비자다.** (DECISIONS §342-4)
+
+    ★ 2026-10-01. `FIRE_LANE_OPS_URL` 을 `.env.example` 에 적었더니
+      「있는데 코드가 안 쓴다」로 울었다. 쓰는 자리는
+      `web/navi/vite.config.ts` 인데 이 검사는 `.py` 와 `.sh` 만 봤다.
+
+    ★ **같은 일이 세 번째다.** 2026-09-14 에 `os.environ` 을 `paths` 로
+      모으면서 스캐너가 `paths.env(` 를 몰랐고(§위 ★), 2026-09-24 에
+      셸 둘을 몰랐고(§226-1), 오늘 빌드 설정을 몰랐다. 족은 「스캐너가
+      아는 파일 종류」이고, 고치는 방향은 **소비자의 종류를 늘릴 때마다
+      여기에 더하는 것**이다. 그 목록이 `IN` 칸에 적혀 있다.
+    """
+    d = ROOT / "web" / "navi"
+    return sorted(d.glob("*.config.ts")) if d.is_dir() else []
+
+
 def used_keys() -> dict[str, list[str]]:
     out: dict[str, list[str]] = {}
     for p in _py():
@@ -112,6 +138,11 @@ def used_keys() -> dict[str, list[str]]:
                 out.setdefault(k, []).append(str(p.relative_to(ROOT)))
     for p in _sh():
         for m in SH_RE.finditer(p.read_text(encoding="utf-8", errors="replace")):
+            k = m.group(1) or m.group(2)
+            if k:
+                out.setdefault(k, []).append(str(p.relative_to(ROOT)))
+    for p in _ts():
+        for m in TS_RE.finditer(p.read_text(encoding="utf-8", errors="replace")):
             k = m.group(1) or m.group(2)
             if k:
                 out.setdefault(k, []).append(str(p.relative_to(ROOT)))

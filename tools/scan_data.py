@@ -40,10 +40,47 @@ ROOT_REPO = Path(__file__).resolve().parent.parent
 #   달랐다" 고 적고 통일했는데, 통일한 값이 또 복사된 것이다.
 #   정본은 layers.raw.providers 다. 여기는 읽기만 한다.
 PROVIDERS = {k: v["org"] for k, v in providers.spec().items()}
-TIERS = ["raw", "norm", "field", "_quarantine", "landing"]
+def lake_tiers() -> list[str]:
+    """레이크에 사는 계층의 **폴더 이름**. 정본은 `src/firelane/paths.py` 다.
 
-# provider_dataset_scope_date.ext  — 소문자·숫자·밑줄·하이픈·점만
-NAME_RE = re.compile(r"^[a-z0-9]+(_[a-z0-9\-]+)+_\d{8}\.[a-z0-9]+$")
+    ── 왜 읽어 오나 (DECISIONS §338) ───────────────────────────
+    ★ 바로 위 문단이 `PROVIDERS` 를 두고 「같은 목록이 **다섯 벌**이었고 값이
+      갈려 있었다 … 정본은 대장이다. 여기는 읽기만 한다」라고 적어 놨다.
+      그리고 **그 다음 줄의 `TIERS` 는 하드코딩으로 남아 있었다.** 규칙을
+      적은 자리와 어긴 자리가 두 줄 차이였다(§335 와 같은 꼴).
+
+    ★ 그 목록은 **양쪽으로** 틀려 있었다 —
+        `interim` 이 빠졌다   선언돼 있는 계층인데 「규칙에 없는 최상위」로 찍혔다
+        `field` 가 들었다     2026-08-23 에 **저장소 안이 정본**으로 정해진 계층이다
+                              (`paths.py:149`). 레이크에 없는 것을 「없다」고 조른다
+
+    ★ `paths.py` 를 **글로 읽는다.** 값을 적재해서 보면 `FIRE_LANE_DATA` 가
+      없는 기계에서 저장소 계층까지 섞인다(`(DATA / "x") if DATA else (ROOT / …)`).
+      `uicheck.navi_off()` 가 `layers.ts` 를 읽는 것과 같은 방법이다.
+    ★ **주석은 걷는다.** `paths.py:150` 이 「종전에는 `(DATA / "field")` 였는데」
+      라고 적어 놨고, 안 걷으면 그 회고가 계층으로 세어진다.
+    """
+    src = (ROOT_REPO / "src" / "firelane" / "paths.py").read_text(encoding="utf-8")
+    live = "\n".join(x for x in src.splitlines() if not x.lstrip().startswith("#"))
+    return sorted(set(re.findall(r"DATA\s*/\s*[\"']([a-z_][a-z0-9_]*)[\"']", live)))
+
+
+TIERS = lake_tiers()
+
+# provider_dataset_scope_date[_식별자].ext  — 소문자·숫자·밑줄·하이픈·점만
+#
+# ★ 2026-10-01 (DECISIONS §339). 꼬리 `(_[a-z0-9]+)?` 를 더했다. 15건이 이탈로
+#   찍히고 있었는데 **15개의 실수가 아니라 규칙 하나가 빠진 것**이었다 —
+#   `ngii_ortho_…_20251231_gj037.tif` 의 `gj037` 은 **도엽 번호**이고
+#   `safety_vehiclecard_…_20260904_daein11.pdf` 의 `daein11` 은 **차량 식별자**다.
+#
+# ★ **이름을 고치는 쪽은 불가능하다.** 꼬리를 지우면 ortho 넷이 한 이름으로
+#   뭉갠다(tif 4 · xml 4 · vehiclecard 4 · basemap 2). 꼬리가 정보를 든다.
+#
+# ★ 그리고 `sources.yaml` 의 `layers.norm.naming` 은 **이미 그 꼬리를 허용하고
+#   있었다**(`(?:_[a-z0-9-]+)?`). 같은 사실을 두 곳이 다르게 알고 있었고
+#   `raw` 를 보는 이쪽만 몰랐다.
+NAME_RE = re.compile(r"^[a-z0-9]+(_[a-z0-9\-]+)+_\d{8}(_[a-z0-9]+)?\.[a-z0-9]+$")
 
 SKIP = {".ds_store", "thumbs.db", "desktop.ini"}
 
@@ -77,12 +114,53 @@ def load_ledger() -> dict:
     return y.get("datasets", {}) or {}
 
 
+def selftest() -> int:
+    """계층 목록과 이름 규칙이 **실물에서 유도되는가.** (DECISIONS §338 · §339)"""
+    fails = []
+
+    # ① 계층 — `paths.py` 에서 나오는가
+    got = lake_tiers()
+    if not got:
+        fails.append("`paths.py` 에서 계층을 하나도 못 읽는다 — 빈 그물이다")
+    for must in ("raw", "norm", "landing"):
+        if must not in got:
+            fails.append(f"`{must}` 가 빠졌다 — 정규식이 `paths.py` 와 갈렸다")
+    # ★ 2026-08-23 에 **저장소 안이 정본**으로 정해진 계층이다. 레이크 목록에
+    #   있으면 없는 것을 「없다」고 조른다.
+    if "field" in got:
+        fails.append("`field` 가 레이크 계층으로 잡힌다 — 주석을 안 걷고 있다(`paths.py:150`)")
+    if "interim" not in got:
+        fails.append("`interim` 이 빠졌다 — 하드코딩이 그것을 빠뜨린 그 결함이다")
+
+    # ② 이름 규칙 — 꼬리를 받되 틀린 것은 거절하는가
+    for n in ("ngii_ortho_jngj-donggu_20251231_gj037.tif",
+              "safety_vehiclecard_jngj-donggu_20260904_daein11.pdf"):
+        if not NAME_RE.match(n):
+            fails.append(f"도엽·식별자 꼬리를 거절한다 — {n}")
+    for n in ("juso_road_geom_jngj_20260701.zip", "its_nodelink_kr_20260812.zip"):
+        if not NAME_RE.match(n):
+            fails.append(f"원래 맞던 이름을 거절한다 — {n}")
+    for n in ("대문자_안됨_20260101.csv", "no-underscore.csv",
+              "safety_cctv_jngj_2026063.csv", "safety_cctv_jngj_20260630_a_b.csv"):
+        if NAME_RE.match(n):
+            fails.append(f"넓히면서 **틀린 것까지 받는다** — {n}")
+
+    for f in fails:
+        print(f"  ✗ {f}")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 11")
+    return 1 if fails else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=str(paths.DATA or ""))
     ap.add_argument("--full", action="store_true")
     ap.add_argument("--sha", action="store_true")
+    ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
+    # ★ 레이크가 없어도 돈다 — 판별식은 `paths.py` 와 합성 이름만 쓴다.
+    if a.selftest:
+        return selftest()
 
     root = Path(a.root).expanduser()
     if not root.is_dir():

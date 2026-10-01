@@ -2101,9 +2101,20 @@ JSON 을 `web/data` 에 쓰고 내비 · 관제가 `../data/` 로 읽으므로 *
 
 ### 12-8. 배포
 
-★ **아직 없다.** 지금 `main` 이 배포하는 것은 정적 사이트 하나뿐이다
-(배포는 `web/` 을 통째로 올리는 워크플로 하나다, §12-7).
+★ **서버 런타임이 아직 없다.** 지금 `main` 이 배포하는 것은 정적 사이트
+하나뿐이다(배포는 `web/` 을 통째로 올리는 워크플로 하나다, §12-7).
 아래는 **정해 둔 것**이며 실물이 생기면 이 절을 사실로 다시 쓴다.
+
+★ 2026-10-01 정정 — **셋 중 둘이 섰다.** 종전에 이 절은 「아직 없다」 하나로
+덮고 있었는데 그 안에 세 가지가 섞여 있었다.
+
+    짓는 것      `Dockerfile.api` · compose `ops` 서비스      **섰다**(DECISIONS §342)
+    띄우는 것    EC2 한 대 · ECR · OIDC · SSM                 아직 없다
+    잇는 것      `FIRE_LANE_OPS_URL` → Pages 빌드             배선은 **섰다**, 값이 없다
+
+「잇는 것」은 `vars.FIRE_LANE_OPS_URL` 이 비어 있으면 빌드가 요란하게 적고
+통과한다 — 그러면 관제와 내비가 **같은 브라우저의 탭끼리만** 이어진다
+(DECISIONS §343-3). 값이 `wss://` 가 아니면 빌드가 죽는다.
 
 `dev` 를 판 이유가 여기 있다. `main` 에 배포를 물리는 순간 `main` 은
 "검증된 것만 들어가는 곳"이 되어야 하고, 그러면 통합용 트렁크가 따로
@@ -2112,7 +2123,7 @@ JSON 을 `web/data` 에 쓰고 내비 · 관제가 `../data/` 로 읽으므로 *
 | 갈래 | 트리거 | 산출 |
 |---|---|---|
 | `pages` | `main` 의 `web/**` | GitHub Pages. 정적 지도 |
-| `deploy` (예정) | `main` 의 `src/api/**` · `src/contracts/**` · `Dockerfile.api` | ECR 이미지 → EC2 한 대가 pull · `docker compose up -d` |
+| `deploy` (예정) | `main` 의 `src/firelane/ops/**` · `src/contracts/**` · `Dockerfile.api` | ECR 이미지 → EC2 한 대가 pull · `docker compose up -d` |
 
 ★ **EC2 한 대에 Docker Compose 다. ECS 가 아니다.**
 기획서 `[그림 24]` 가 이미 그렇게 나갔고, 실물 조건도 그쪽이 맞다 —
@@ -2124,11 +2135,16 @@ DB 가 없다(`docker-compose.yml` 머리말이 그 근거를 적는다). 기각
 GDAL 때문에 1.5GB 이고 상시 실행이 아니다. API 서빙에 그것이 딸려가면
 콜드스타트만 길어진다.
 
+★ 2026-10-01 (DECISIONS §342). `api` 이미지가 **섰다** — 관제 ↔ 내비 중개자다
+(`src/firelane/ops/`). ★ 위 표의 경로가 `src/api/**` 였는데 **그 디렉터리는
+존재한 적이 없다**(DECISIONS §25 가 2026-08-21 에 그것을 적었다) — 실물 자리로
+고쳤다. `vision` 행은 지웠다: CV 는 이 저장소에서 끝났고(PLAN W13-1 ·
+DECISIONS §341) 선언이 없는 이미지를 표에 두면 **있는 것처럼 읽힌다.**
+
 | 이미지 | 내용 | 실행 형태 |
 |---|---|---|
 | `etl` | GDAL · geopandas · rasterio | 배치. `docker compose run --rm etl` |
-| `api` | fastapi · uvicorn · shapely | Compose 상시 서비스 |
-| `vision` | opencv · ultralytics | CV 파트가 붙을 때 |
+| `api` | fastapi · uvicorn | Compose 상시 서비스. **섰다** — `Dockerfile.api` · `ops` 서비스 |
 
 미리 정해 두는 것 넷.
 
@@ -2823,7 +2839,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,402 전수 · **분모(blank) 0절** · 물림(inherit) 608절.
+★ **강제자 칸의 분모.** 절 1,429 전수 · **분모(blank) 0절** · 물림(inherit) 617절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

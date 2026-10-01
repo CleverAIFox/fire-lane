@@ -125,7 +125,9 @@ export default function OpsApp() {
     const l = openLink((d) => {
       const m = asNaviMsg(d);
       if (m) setOps((s) => opsReduce(s, m, Date.now()));
-    });
+      // ★ 관제는 `/ops` 로 붙는다. 전송(WebSocket · BroadcastChannel)을 고르는
+      //   일은 `openLink` 안에 있다 — 여기서 고르면 내비 쪽과 어긋난다(§343).
+    }, { kind: "ops" });
     link.current = l;
     const hb = () => l.send({ t: "hb", ops: opsId, at: Date.now() });
     hb();
