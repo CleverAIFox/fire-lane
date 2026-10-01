@@ -582,6 +582,15 @@ SRC_EXEMPT: dict[str, str] = {
     "firelane.probe":
         "조사 도구다 — `probe crs <파일>` · `probe topo <파일>` 처럼 **사람이 인자를 "
         "정해** 묻는다. 자동으로 돌 물음이 없다(무엇을 물을지가 매번 다르다)",
+    # ★ 2026-10-01 (DECISIONS §342). **검사기가 아니라 서버다.** 이것을 부르면
+    #   프로세스가 떠서 안 끝난다 — `verify.sh` 에 걸면 verify 가 멈춘다.
+    #   중개자가 맞게 도는지는 `tests/test_ops_server.py` 가 실물 uvicorn 을
+    #   띄워 재고(15 판별식), 이 파일의 `DEFAULT_PORT` 가 compose 와 같은지는
+    #   `tests/test_ops_roster.py::test_the_port_is_written_once` 가 든다.
+    "firelane.ops.__main__":
+        "서버 입구다 — 부르면 포트를 열고 **안 끝난다.** verify 에 걸면 verify 가 "
+        "멈춘다. 재는 자리는 `tests/test_ops_server.py`(실물 uvicorn · 15 판별식)와 "
+        "`tests/test_ops_roster.py::test_the_port_is_written_once` 다",
 }
 
 #: `src/firelane/` 모듈이 **CLI** 인가 — 스스로 실행될 수 있는가.

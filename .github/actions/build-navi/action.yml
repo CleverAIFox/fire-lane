@@ -21,6 +21,14 @@ inputs:
   mapbox-token:
     description: Mapbox public token. 없으면 스냅(Map Matching)이 죽는다.
     required: true
+  ops-url:
+    # ★ 2026-10-01 (DECISIONS §342 · §343). 관제 ↔ 내비 중개자의 주소.
+    #   **비어도 빌드는 된다** — 전송이 `BroadcastChannel` 로 떨어지고 그것은
+    #   같은 브라우저의 탭끼리만 닿는다. 그러면 배포된 화면에서 둘이 **안
+    #   이어진다**. 그래서 비면 요란하게 적는다(아래 단계).
+    description: 중개자 주소. 배포는 `wss://` 여야 한다(https 페이지).
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -40,6 +48,7 @@ runs:
       shell: bash
       env:
         VITE_MAPBOX_TOKEN: ${{ inputs.mapbox-token }}
+        VITE_OPS_URL: ${{ inputs.ops-url }}
       run: |
         # ★ 토큰이 없으면 여기서 죽는다. 종전에는 빈 문자열이 들어가고
         #   `config.ts` 가 `?? ""` 로 받아 **빌드도 배포도 성공했다.**
@@ -52,6 +61,24 @@ runs:
           echo "  ★ 번들에 박히므로 Mapbox 쪽에서 URL 제한을 같이 걸어라."
           exit 1
         }
+
+        # ★ 2026-10-01 (DECISIONS §343-3). **`ws://` 를 여기서 죽인다.**
+        #   Pages 는 https 이고 https 페이지는 평문 `ws://` 연결을 **브라우저가
+        #   거부한다**(mixed content). 빌드는 성공하고 배포도 성공하고, 런타임에
+        #   관제와 내비만 안 이어진다 — 토큰이 빈 문자열로 들어가던 그 형태다
+        #   (바로 위 ★). 원인 자리에서 죽는 편이 낫다.
+        case "$VITE_OPS_URL" in
+          "")  echo "★ 중개자 주소가 없다 — 관제와 내비가 **같은 브라우저의 탭끼리만** 이어진다."
+               echo "  Settings > Secrets and variables > Actions > Variables"
+               echo "  이름 FIRE_LANE_OPS_URL · 값 wss://<중개자>/  (토큰이 아니라 주소다)" ;;
+          wss://*) echo "중개자 주소 OK (wss)" ;;
+          *)   # ★ 겹따옴표 안에서 백틱을 쓰지 않는다 — 그것은 **명령 치환**이고
+               #   `wss://` 를 실행하려 든다. §323 이 백틱으로 당한 그 자리다.
+               echo '★ 중개자 주소가 wss:// 가 아니다.' 
+               echo "  Pages 는 https 다 — 평문 ws:// 는 브라우저가 거부하고,"
+               echo "  빌드와 배포는 성공한 채 **런타임에만** 안 이어진다."
+               exit 1 ;;
+        esac
 
         # ★ base 는 `github.repository` 에서 온다. Pages 가
         #   `https://<user>.github.io/<repo>/` 로 서빙하므로 내비는

@@ -23,6 +23,25 @@ export const MAPBOX_TOKEN: string =
 export const MATCHING_ENABLED = MAPBOX_TOKEN.startsWith("pk.");
 
 /**
+ * 중개자 주소. **이것이 있으면 관제와 내비가 다른 기계에서도 이어진다.**
+ * (DECISIONS §343 · `infra/opsLink.ts`)
+ *
+ *     저장소 루트 .env       FIRE_LANE_OPS_URL=wss://xxxx.cloudfront.net
+ *     web/navi/.env.local    VITE_OPS_URL=ws://127.0.0.1:8000
+ *     배포                   ${{ vars.FIRE_LANE_OPS_URL }}
+ *   고르는 순서는 vite.config.ts `opsUrl()` 이 든다.
+ *
+ * ★ **비어 있으면 앱이 그대로 돈다.** 전송이 `BroadcastChannel` 로 떨어지고,
+ *   그것은 같은 브라우저의 탭끼리만 닿는다 — 지금까지의 동작 그대로다.
+ *   서버가 없다고 내비가 멈추면 안 된다.
+ *
+ * ★ **토큰이 아니다.** 주소이고, 공개돼도 손해가 없다 — 그래서 secrets 가
+ *   아니라 vars 다. 중개자에 인증이 붙는 날 그 값은 secrets 로 간다.
+ */
+export const OPS_URL: string =
+  (import.meta as { env?: Record<string, string> }).env?.VITE_OPS_URL ?? "";
+
+/**
  * 주행 속도 가정(m/s).
  *
  * ★ **미검증이다.** 소방차 골목 주행 속도를 잰 적이 없다. 도착 예정

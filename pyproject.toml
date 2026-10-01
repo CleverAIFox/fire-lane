@@ -31,7 +31,6 @@ dependencies = [
     "PyYAML>=6.0",
     "rasterio>=1.4.4",
     "pillow>=12.3.0",
-    "ruamel-yaml>=0.19.1",
     # ★ tools/docx_check.py · docx_fix.py 가 import 한다. 기획서는 문서 넷 중
     #   유일하게 외부가 읽는데 시제 규칙 밖이라 강제자가 없어 낡았다.
     #   그 검사가 verify.sh 에서 도므로 코어다 — extras 로 내리면
@@ -48,46 +47,17 @@ dependencies = [
     #   것을 표준으로 옮긴다. 파일·zip·인코딩은 pandera 의 일이 아니라 그대로 둔다
     #   — `contract.py` 머리말의 `밖` 칸이 그 경계를 적는다.
     "pandera>=0.33,<1",
-]
-
-# ★ 2026-08-21. 종전 dependencies 에 fastapi·uvicorn·python-multipart·
-#   SQLAlchemy·psycopg2-binary·GeoAlchemy2·opencv-python·ultralytics·requests
-#   9종이 있었는데 src·tools·tests 어디에서도 import 0회였다. src/api/ 는
-#   존재하지 않고 PostGIS 는 안 쓰기로 결정했다(HANDOFF §4).
-#   안 쓰는 의존성은 devcontainer 리빌드 시간이고, 더 나쁘게는
-#   "이 프로젝트가 DB 를 쓴다"는 거짓 신호다. 쓰기 시작할 때 올린다.
-[project.optional-dependencies]
-api = [
+    # ★ 2026-10-01 (DECISIONS §341 · §342). **중개자가 쓴다** —
+    #   `src/firelane/ops/` 가 관제(1)와 내비(N) 사이를 잇는다. 종전에 이 둘은
+    #   `[project.optional-dependencies] api` 에 **자리표로** 앉아 있었고
+    #   주석이 "쓰기 시작할 때 올린다" 고 적었다. 그 날이 오늘이다.
+    # ★ extras 로 두면 `verify.sh` 가 안 깔고(extras 를 안 깐다), 그러면
+    #   중개자 시험이 Fox 의 기계에서 **조용히 건너뛴다.** 안 도는 시험은
+    #   없는 시험이다.
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
-    "python-multipart>=0.0.9",
 ]
-vision = [
-    "opencv-python>=4.10",
-    "ultralytics>=8.3",
-    # torch 는 ultralytics 의 전이 의존성이지만 여기에 직접 적는다.
-    # [tool.uv.sources] 는 직접 의존성에만 적용되므로, 선언하지 않으면
-    # CPU 인덱스 지정이 무시되고 CUDA 휠이 깔린다.
-    "torch>=2.4",
-    "torchvision>=0.19",
-]
-# ★ GPU 없는 기기에서 `uv sync --all-extras` 를 돌리지 마라.
-#   ultralytics 가 torch 를 끌고 오고 torch 가 CUDA 휠 3~5GB 를 끌고 온다.
-#   GIS·인프라 담당은 vision 이 필요 없다.
-#
-#       GPU 있는 기기   uv sync --all-extras
-#       GPU 없는 기기   uv sync --extra api --dev
-#
-#   CPU 전용 토치를 쓰려면 아래 주석을 풀어라. 휠이 200MB 대로 떨어진다.
-#
-#       [[tool.uv.index]]
-#       name = "pytorch-cpu"
-#       url = "https://download.pytorch.org/whl/cpu"
-#       explicit = true
-#
-#       [tool.uv.sources]
-#       torch = [{ index = "pytorch-cpu" }]
-#       torchvision = [{ index = "pytorch-cpu" }]
+
 # ★ 2026-09-20 (W3-1). 여기 있던 `dev` extras 를 지웠다. `[dependency-groups]`
 #   의 dev 와 **이름이 같고 내용이 달랐다** — pytest 가 한쪽은 >=8.3, 다른
 #   쪽은 >=9.1.1 이었고 pytest-cov · olefile 은 이쪽에 없었다.
@@ -168,22 +138,19 @@ ignore = [
 # ★ 선언과 import 이름이 다른 것만 적는다. extras 는 로컬에 안 깔려(verify 는
 #   `--dev` 만 깐다) deptry 가 이름을 **추측**한다 — 추측이 틀리면 면제가 헛돈다.
 #   `tests/test_deptry_config.py` 가 면제의 생사를 이 표로 잰다.
-package_module_name_map = { "opencv-python" = "cv2", "python-multipart" = ["multipart", "python_multipart"], "ruamel-yaml" = "ruamel", "pillow" = "PIL", "PyYAML" = "yaml", "python-docx" = "docx", "actionlint-py" = "actionlint_py", "shellcheck-py" = "shellcheck_py" }
+package_module_name_map = { "ruamel-yaml" = "ruamel", "pillow" = "PIL", "PyYAML" = "yaml", "python-docx" = "docx", "actionlint-py" = "actionlint_py", "shellcheck-py" = "shellcheck_py" }
 
 [tool.deptry.per_rule_ignores]
 # ★ **알려진 예외 — 래칫이다.** 오늘 실측(deptry 0.25.1 · 2026-09-22) 그대로 적었고
 #   더 늘리지 않는다. 새 미사용 선언이 생기면 여기 없으므로 운다. 반대로 아래 것을
 #   누가 import 하기 시작하면 `tests/test_deptry_config.py` 가 「면제를 지워라」로 운다.
 #   의존성 목록을 여기서 고치지 않는 이유 — 고치면 uv.lock 이 움직인다(위 ★).
-DEP002 = [
-    # 실결함. 코어인데 src·tools 어디서도 import 0회 — tests/test_workflow_guards.py 만 쓴다.
-    #   dev 그룹으로 내려야 한다(잠금이 움직이는 일이라 다음 잠금 배치가 받는다).
-    "ruamel-yaml",
-    # 실미사용 · 선언된 자리표. `[api]` extras — src/api/ 가 아직 없다(위 2026-08-21 주석).
-    "fastapi", "uvicorn", "python-multipart",
-    # 실미사용 · 선언된 자리표. `[vision]` extras — CV 파트 코드가 이 저장소에 아직 없다.
-    "opencv-python", "ultralytics", "torch", "torchvision",
-]
+# ★ 2026-10-01 (W13-1 닫힘 · DECISIONS §341). **여덟에서 0이 됐다.**
+#   네(`opencv-python` · `ultralytics` · `torch` · `torchvision`)는 선언을 지웠고,
+#   `ruamel-yaml` 은 dev 로 내렸고, `fastapi` · `uvicorn` 은 중개자가 쓰기
+#   시작했고, `python-multipart` 는 **중개자가 안 쓴다**(폼 업로드가 없다).
+#   면제는 사각지대다 — 0개가 맞는 상태다.
+DEP002 = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -257,20 +224,19 @@ dev = [
     "ruff>=0.6",
     "pre-commit>=3.8",
     "olefile>=0.47",
+    # ★ 2026-10-01 (W13-1 닫힘 · §341). 코어에 있었으나 `src` · `tools` 가
+    #   import 0회였고 `tests/test_workflow_guards.py` 만 썼다. 선언은
+    #   **쓰는 자리**를 가리켜야 한다 — PLAN W13-1 이 "다음 잠금 배치가
+    #   받는다" 고 적어 둔 그 일이다.
+    "ruamel-yaml>=0.19.1",
+    # ★ 2026-10-01 (§342-3). 중개자 시험이 **진짜 소켓**으로 왕복한다.
+    #   `fastapi.testclient.TestClient` 로는 못 잰다 — 세션마다 제 이벤트 루프를
+    #   세우므로 「연결 A 에서 연결 B 로」가 영원히 기다린다. 그런데 중개자가
+    #   하는 일이 바로 그것이다.
+    #   `uvicorn[standard]` 가 이미 끌고 오지만 **여기 적는다** — 시험이
+    #   전이 의존성에 매달리면, 그 전이가 끊기는 날 이유 없이 빨개진다.
+    "websockets>=15",
 ]
 
 
 
-# ── 토치 인덱스 ────────────────────────────────────────────────
-# ★ 2026-08-27. CPU 전용으로 고정했다. 기본 인덱스의 torch 는 CUDA 휠
-#   3~5GB 를 끌고 오는데 팀 5인 중 4인이 그램(GPU 없음)이고 CI 러너도
-#   GPU 가 없다. 다섯 중 넷과 CI 가 받자마자 버린다. CPU 휠은 200MB 대다.
-#   이 설정으로 전원이 `uv sync --all-extras` 하나만 쓴다.
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[tool.uv.sources]
-torch = [{ index = "pytorch-cpu" }]
-torchvision = [{ index = "pytorch-cpu" }]

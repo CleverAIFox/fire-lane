@@ -93,10 +93,29 @@ function mapboxToken(mode: string): string {
   return navi.VITE_MAPBOX_TOKEN || root.VITE_MAPBOX_TOKEN || root.MAPBOX_TOKEN || "";
 }
 
+/**
+ * 중개자 주소 한 자리.  (DECISIONS §343)
+ *
+ * ★ `mapboxToken()` 과 **같은 순서**다. 설정 하나가 다른 순서를 쓰기 시작하면
+ *   읽는 사람이 매번 그 파일을 열어야 한다.
+ *     1. 셸/CI 환경 `VITE_OPS_URL`
+ *     2. `web/navi/.env.local` 의 `VITE_OPS_URL`
+ *     3. 저장소 루트 `.env` 의 `FIRE_LANE_OPS_URL`  — **정본**
+ * ★ 비어 있어도 된다. 그러면 전송이 `BroadcastChannel` 로 떨어진다.
+ */
+function opsUrl(mode: string): string {
+  const navi = loadEnv(mode, HERE, "VITE_");
+  const root = loadEnv(mode, path.resolve(HERE, "..", ".."), "");
+  return navi.VITE_OPS_URL || root.VITE_OPS_URL || root.FIRE_LANE_OPS_URL || "";
+}
+
 export default defineConfig(({ mode }) => ({
   base,
   plugins: [react(), serveWebData()],
-  define: { "import.meta.env.VITE_MAPBOX_TOKEN": JSON.stringify(mapboxToken(mode)) },
+  define: {
+    "import.meta.env.VITE_MAPBOX_TOKEN": JSON.stringify(mapboxToken(mode)),
+    "import.meta.env.VITE_OPS_URL": JSON.stringify(opsUrl(mode)),
+  },
   build: {
     outDir: "dist", emptyOutDir: true,
     // ★ 2026-09-29 (PLAN §13 W13-3 · DECISIONS §312). 단일 청크 1,390kB 였다.

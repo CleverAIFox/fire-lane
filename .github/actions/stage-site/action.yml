@@ -13,6 +13,11 @@ inputs:
   mapbox-token:
     description: Mapbox public token
     required: true
+  ops-url:
+    # ★ 2026-10-01. 그대로 `build-navi` 로 넘긴다 — 이 액션은 값을 안 본다.
+    description: 중개자 주소(관제 ↔ 내비). 비어도 된다
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -31,6 +36,7 @@ runs:
     - uses: ./.github/actions/build-navi
       with:
         mapbox-token: ${{ inputs.mapbox-token }}
+        ops-url: ${{ inputs.ops-url }}
 
     - name: 기획서 PDF 변환기 (libreoffice · 한글 글꼴 · poppler)
       # ★ 2026-09-24 (DECISIONS §231). 셋이 전부 있어야 한다 —

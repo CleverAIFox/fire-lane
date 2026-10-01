@@ -21,7 +21,7 @@
 #   seg_uid → status 한 테이블이면 된다. 공간 연산은 ETL 에서 끝나 있고
 #   런타임에는 조회만 한다.
 #
-#   docker compose up web
+#   docker compose up web ops
 #   docker compose --profile etl run --rm etl uv run fire-lane
 
 services:
@@ -36,6 +36,32 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+
+  # ★ 2026-10-01 (DECISIONS §342). 관제 ↔ 내비 중개자.
+  #   **상시 서비스다** — `web` 은 정적 파일이고 이것은 프로세스다. MASTER
+  #   §12-8 이 배포를 「EC2 한 대 + Compose」로 정했고(§93), 「api 이미지는
+  #   슬림 · 상시 서비스가 될 것」이라고 적어 뒀다. 그 자리가 여기다.
+  # ★ GDAL 을 안 넣는다. `Dockerfile.api` 가 그래서 따로 있다 — ETL 이미지는
+  #   1.5GB 이고 중개자는 그걸 한 바이트도 안 쓴다(`Dockerfile` 머리말).
+  ops:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+    environment:
+      # ★ 컨테이너 안의 포트다. 바꾸려면 위 매핑도 같이 바꿔라 —
+      #   `tests/test_ops.py::test_the_port_is_written_once` 가 둘을 대조한다.
+      FIRE_LANE_OPS_PORT: "8000"
+    healthcheck:
+      # ★ `/health` 는 **사람이 아니라 이것을 위해** 있다. WebSocket 만 있는
+      #   서버는 살았는지 죽었는지 밖에서 알 길이 없다.
+      test: ["CMD", "python", "-c",
+             "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health').read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
 
   etl:
     build: .

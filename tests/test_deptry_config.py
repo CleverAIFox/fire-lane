@@ -95,13 +95,22 @@ def test_known_exceptions_name_declared_packages() -> None:
 
 
 def test_known_exceptions_do_not_grow() -> None:
-    """면제는 **래칫**이다 — 2026-09-22 실측 여덟에서 늘지 않는다.
+    """면제는 **래칫**이다 — 지금 실측 **0** 에서 늘지 않는다.
 
     ★ 늘려야 하면 이 수를 올리고 **왜 import 없이 선언하는지** 커밋에 적는다.
       줄면 이 수도 내린다(양방향). 수의 집은 여기 하나다.
+
+    ★ 2026-10-01 (PLAN W13-1 닫힘 · DECISIONS §341). **여덟에서 0이 됐다.**
+      네(`opencv-python`·`ultralytics`·`torch`·`torchvision`)는 선언을 지웠고,
+      `ruamel-yaml` 은 dev 로 내렸고, `fastapi`·`uvicorn` 은 중개자가 쓰기
+      시작했고, `python-multipart` 는 중개자가 안 쓴다.
+
+    ★ **0이 특별한 수다.** 면제가 비면 이 시험은 「늘지 않는가」만 보는
+      것이 아니라 「면제 기제 자체가 필요 없어졌는가」를 본다. 하나라도
+      다시 생기면 그것은 **사유가 있어야 하는 일**이다.
     """
     n = len(DEPTRY["per_rule_ignores"]["DEP002"])
-    assert n == 8, (f"DEP002 면제가 {n}개다 — 기록 8. 늘었으면 사유를, 줄었으면 이 수를 내려라"
+    assert n == 0, (f"DEP002 면제가 {n}개다 — 기록 0. 늘었으면 사유를, 줄었으면 이 수를 내려라"
                     " (느슨해진 래칫은 초록으로 위장한다)")
 
 

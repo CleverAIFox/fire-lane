@@ -1178,7 +1178,6 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
       layer_used: 'TL_SPRD_MANAGE.shp'
-      columns_error: 'DataSourceError: ''/vsizip//mnt/f/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data/raw/juso/jus'
   road_rw:
     feeds:
       - src/firelane/guards.py
@@ -1220,7 +1219,6 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
       layer_used: 'TL_SPRD_RW.shp'
-      columns_error: 'DataSourceError: ''/vsizip//mnt/f/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data/raw/juso/jus'
   road_intrvl:
     feeds:
       - src/firelane/guards.py
@@ -1249,7 +1247,6 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
       layer_used: 'TL_SPRD_INTRVL.shp'
-      columns_error: 'DataSourceError: ''/vsizip//mnt/f/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data/raw/juso/jus'
   spotaddr_geom:
     feeds:
       - src/firelane/normalize_raw.py
@@ -1711,7 +1708,6 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
       layer_used: 'TL_SCCO_EMD.shp'
-      columns_error: 'DataSourceError: ''/vsizip//mnt/f/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data/raw/juso/jus'
   building:
     feeds:
       - src/firelane/guards.py
@@ -1755,7 +1751,6 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
       layer_used: 'TL_SPBD_BULD.shp'
-      columns_error: 'DataSourceError: ''/vsizip//mnt/f/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data/raw/juso/jus'
   building_entrance:
     feeds:
       - src/firelane/guards.py
@@ -1794,7 +1789,6 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
       layer_used: 'TL_SPBD_ENTRC.shp'
-      columns_error: 'DataSourceError: ''/vsizip//mnt/f/인공_지능_사관학교/파이널_프로젝트_Fire_Lane/fire-lane-data/raw/juso/jus'
   hydrant_point:
     feeds:
       - src/firelane/normalize_raw.py
