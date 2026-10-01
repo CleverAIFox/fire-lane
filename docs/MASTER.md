@@ -649,11 +649,18 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 | 중앙로272번길 | 5m | 3.68m | -1.32 | 4 |
 | 동계로9번길 | 6m | 7.97m | +1.97 | 17 |
 | 제봉로184번길 | 5m | 7.02m | +2.02 | 19 |
-| 필문대로289번길 | 8m | 5.21m | **-2.79** | 31 |
+| 필문대로289번길 | 8m | 4.74m | **-3.26** | 31 |
 
-절대편차 합 8.31m. 앞의 둘이 ±0.1 안이고, 필문대로289번길 하나가 2.79 를 차지한다.
+절대편차 합 8.78m. 앞의 둘이 ±0.1 안이고, 필문대로289번길 하나가 3.26 을 차지한다.
 
-강제자  `src/firelane/nfa_compare.py::nfa_compare`(대조를 내는 정본 — 2026-09-25 에 `seg/report.py` 에서 자기 단계로 내렸다 · DECISIONS §247) · `tests/test_contract.py::test_segment_fields_are_internally_consistent`(`nfa_designated` ↔ 구간 일관) · `tools/docnum_check.py`(소방청 지정 수). 절대편차 값 자체는 실측이라 대조 도구가 없다
+★ 2026-10-01 정정 (DECISIONS §346). 이 표가 **8.31m 로 낡아 있었다.** 봉인
+`20260930-covrate` 가 9월 30일에 이미 8.78 을 적었는데 — 즉 **저장소 안에
+정본이 있었고 문서만 안 따라왔다.** 움직인 것은 필문대로289번길 한 행이다
+(5.21 → 4.74m). 그 구간은 본선과 측도가 한 폴리곤인 자리이고(PLAN #77)
+승인 보정이 걸린 유일한 구간이다(DECISIONS §305-2) — **설명되는 편차**다.
+이제 `tests/test_nfa_table.py` 가 이 표를 봉인 사본과 댄다.
+
+강제자  `src/firelane/nfa_compare.py::nfa_compare`(대조를 내는 정본 — 2026-09-25 에 `seg/report.py` 에서 자기 단계로 내렸다 · DECISIONS §247) · `tests/test_contract.py::test_segment_fields_are_internally_consistent`(`nfa_designated` ↔ 구간 일관) · `tools/docnum_check.py`(소방청 지정 수) · `tests/test_nfa_table.py`(위 표 일곱 행과 합을 **가장 최근 봉인 사본**과 댄다 — 2026-10-01 까지 이 자리에 「절대편차 값 자체는 실측이라 대조 도구가 없다」고 적혀 있었고, 그래서 표가 사흘 낡았다 · DECISIONS §346)
 
 ### 4-1. ★ 이 대조는 검증이 아니라 적합이다
 
@@ -744,7 +751,7 @@ wmax-survey    25% +1.32 · 중앙 +2.10 · 75% +3.90
 ### 4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다
 
 `segments` 단계가 매 실행 `data/processed/nfa_compare.json` 을 쓴다. 현재 값은
-절대편차 합 8.31m · 7구간이며 위 표와 같다. `tools/docnum_check.py` 가 실행할
+절대편차 합 8.78m · 7구간이며 위 표와 같다. `tools/docnum_check.py` 가 실행할
 때마다 이 값을 띄우므로 서술과 대조할 수 있다.
 
 다만 이 파일은 **커밋되지 않는다.** `.gitignore` 가 `data/processed/*.json` 을
@@ -1893,6 +1900,10 @@ bypass 를 한시로 부여하고 회수를 사람 기억에 맡겼으므로 `do
 줄 끝 `# !strict` 태그가 붙은 경로만 `contract-strict` 가 검사한다.
 `tools/owned_paths.py` 가 읽는다.
 
+★ 2026-10-01 (DECISIONS §344). 그 job 은 **`main` 에서만 돈다.** `strict` 를
+필수 검사로 요구하는 룰셋은 `release`(= `main`) 하나인데(§4 표 — main 2종 ·
+dev · part 1종) job 에 조건이 없어 요구하지 않는 가지에서도 전부 돌았다.
+
 ★ 미소유 경로는 존재할 수 없다(`tests/test_ownership.py`). 새 공용 파일이
 소유자 없이 들어오면 그 PR 에서 빨간불이 뜬다. **목록을 미리 관리하지
 않고 규칙 없는 상태로는 머지가 안 되게 한다.**
@@ -1963,7 +1974,7 @@ fix:  버그
 
 | 워크플로 | 시점 | 하는 일 |
 |---|---|---|
-| `contract.yml` | `main` · `dev` · `part/**` · `feat/**` 로 push · PR | 계약·위생·문서 검사. 깨지면 머지 차단 |
+| `contract.yml` | **PR** — `main` · `dev` · `part/**` · `feat/**` / **push** — `main` · `dev` · `part/**` | 계약·위생·문서 검사. 깨지면 머지 차단. ★ `feat/**` 는 PR 만 — 열차가 언제나 PR 을 거치므로 푸시 실행은 같은 트리를 두 번 세는 일이었다(DECISIONS §344). `part/**` 는 직접 커밋이 룰셋을 우회하므로 push 를 남긴다 |
 | `secret-scan.yml` | **전 브랜치** push · PR | 자격증명이 올라가는 것을 막는다. 브랜치 목록이 없는 유일한 검사다 |
 | `image.yml` | `Dockerfile` · `pyproject.toml` · `uv.lock` · 자기 자신 변경 | ETL 이미지를 짓고 그 안에서 import 를 세운다. **CI 전용**(로컬에 docker 가 없다) |
 | `배포` (`deploy.yml`) — **push** | `main` 의 `web/**` · `docs/MASTER.md` · `docs/proposal.docx` · `render_workflow.py` · `stage_pages.py` · `build-navi`/`stage-site` 액션 · 자기 자신 | `contract` 게이트를 지난 뒤 `stage-site` 로 짓고 `web/` **전체**를 Pages 에 올린다 |
@@ -2839,7 +2850,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,429 전수 · **분모(blank) 0절** · 물림(inherit) 617절.
+★ **강제자 칸의 분모.** 절 1,442 전수 · **분모(blank) 0절** · 물림(inherit) 627절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

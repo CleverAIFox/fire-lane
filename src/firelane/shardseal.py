@@ -103,12 +103,125 @@ def logic_print(p: Path) -> str:
 NOT_PRODUCERS = ("shardseal.py", "stagerun.py")
 
 
+def _norm(name: str) -> str:
+    """패키지 이름의 한 가지 꼴(PEP 503). `uv.lock` 은 소문자·하이픈, 사람이 적는
+    `pyproject` 는 `PyYAML`. 안 접으면 「못 찾았다」로 터지고 그 터짐이 **정당한
+    결함과 구별되지 않는다**(§345-2)."""
+    return name.lower().replace("_", "-")
+
+
+def _module_to_dist() -> dict[str, str]:
+    """import 이름 → 배포 이름. **정본은 `pyproject` 의 한 표다.**
+
+    ★ 여기서 표를 다시 적지 않는다. `[tool.deptry] package_module_name_map` 이
+      이미 그 짝의 집이고(`tests/test_deptry_config.py` 가 그 표의 생사를 든다),
+      두 벌이 되면 어긋난다(§18-3).
+    """
+    import tomllib
+    q = ROOT / "pyproject.toml"
+    if not q.is_file():          # ★ 합성 트리 — 이름이 다른 패키지도 없다
+        return {}
+    pp = tomllib.loads(q.read_text(encoding="utf-8"))
+    out: dict[str, str] = {}
+    for dist, mods in (pp.get("tool", {}).get("deptry", {})
+                       .get("package_module_name_map", {}) or {}).items():
+        for mod in ([mods] if isinstance(mods, str) else mods):
+            out[mod] = dist
+    return out
+
+
+def _lock_graph() -> dict[str, tuple[str, set[str]]]:
+    """`uv.lock` 의 `이름 → (판, 직접 의존)`. **글자로 읽는다** — 설치 상태를
+    안 본다. 설치를 읽으면 기계마다 지문이 갈린다(§185 가 `ast.dump` 로 배운 것).
+    """
+    import re
+    out: dict[str, tuple[str, set[str]]] = {}
+    for blk in (ROOT / "uv.lock").read_text(encoding="utf-8").split("[[package]]")[1:]:
+        n = re.search(r'^name = "(.+?)"', blk, re.M)
+        v = re.search(r'^version = "(.+?)"', blk, re.M)
+        if not (n and v):
+            continue
+        out[_norm(n.group(1))] = (v.group(1),
+                                  {_norm(d) for d in
+                                   re.findall(r'^\s*\{ name = "([^"]+)"', blk, re.M)})
+    return out
+
+
+def lock_deps(start: str = "firelane.ingest") -> list[str]:
+    """`start` 의 폐포가 **실제로 기대는** 패키지 — `이름==판` 을 정렬해 돌려준다.
+    (DECISIONS §345)
+
+    종전에는 `uv.lock` **파일 전체**를 해시했고 주석은 「geopandas 판이 바뀌면
+    산출물도 바뀐다」였다 — **의도보다 넓었다.** 취입에 한 바이트도 안 닿는
+    `ultralytics` 를 지우는 일이 45샤드를 찢었다(W13-1 이 몇 주 열려 있던 이유).
+    §166-3 · §216-1 과 같은 족의 세 번째이고, 둘 다 좁혀서 고쳤다.
+
+    ★ **모르는 것은 좁히지 않는다.** 씨앗을 잠금에서 못 찾으면 **터뜨린다** —
+      조용히 빼면 그 판이 움직여도 지문이 안 움직이고, 그것은 **낡은 산출물을
+      재사용하는** 방향이다. 되돌릴 수 없는 쪽이다.
+    ★ 전이 의존까지 센다. `geopandas` 가 끌고 온 `pyogrio` 가 실제로 읽는다.
+      실측은 §345-1 이 든다(ingest 12 · segments 13 · ortho 19 / 잠금 66).
+    """
+    import ast
+    import sys as _sys
+
+    std = set(_sys.stdlib_module_names)
+    tops: set[str] = set()
+    for q in code_closure(start):
+        for node in ast.walk(ast.parse(q.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Import):
+                mods = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+                mods = [node.module]
+            else:
+                continue
+            for mod in mods:
+                top = mod.split(".")[0]
+                if top not in std and top != "firelane":
+                    tops.add(top)
+
+    m2d = _module_to_dist()
+    graph = _lock_graph()
+    seeds = sorted({_norm(m2d.get(t, t)) for t in tops})
+    unknown = [x for x in seeds if x not in graph]
+    if unknown:
+        raise RuntimeError(
+            f"`{start}` 가 import 하는데 uv.lock 에서 못 찾은 패키지 — {unknown}\n"
+            "  import 이름과 배포 이름이 다르면 `pyproject.toml` 의\n"
+            "  `[tool.deptry] package_module_name_map` 에 그 짝을 적어라.\n"
+            "  ★ 조용히 빼지 않는다 — 빼면 그 패키지의 판이 움직여도 지문이\n"
+            "    안 움직이고, 그것은 낡은 산출물을 재사용하는 방향이다.")
+
+    seen: set[str] = set()
+    stack = list(seeds)
+    while stack:
+        cur = stack.pop()
+        if cur in seen:
+            continue
+        seen.add(cur)
+        stack.extend(d for d in graph[cur][1] if d not in seen and d in graph)
+    return sorted(f"{n}=={graph[n][0]}" for n in seen)
+
+
+def lock_print(start: str = "firelane.ingest") -> str:
+    """위 목록의 지문. 잠금이 없으면 빈 문자열 — 호출부가 그때 줄을 안 넣는다.
+
+    ★ `ROOT` 를 **호출 때** 읽는다. 모듈 적재 때 묶으면 합성 트리 시험이 진짜
+      저장소 파일을 읽는다(2026-10-01 에 그렇게 깨졌다).
+    """
+    if not (ROOT / "uv.lock").is_file():
+        return ""
+    return _short("\n".join(lock_deps(start)))
+
+
 def code_print(start: str = "firelane.ingest") -> str:
     lines = [f"{p.relative_to(ROOT).as_posix()}\0{logic_print(p)}" for p in code_closure(start)
              if p.name not in NOT_PRODUCERS]
-    lock = ROOT / "uv.lock"
-    if lock.is_file():
-        lines.append(f"uv.lock\0{sha256(lock)[:16]}")   # geopandas 판이 바뀌면 산출물도 바뀐다
+    # ★ 2026-10-01 (§345). 파일 전체가 아니라 **이 폐포가 기대는 패키지**의 판이다.
+    #   주석이 늘 적고 있던 그 뜻("geopandas 판이 바뀌면 산출물도 바뀐다")이
+    #   이제 구현이다.
+    if fp := lock_print(start):
+        lines.append(f"uv.lock\0{fp}")
     return _short("\n".join(lines))
 
 
