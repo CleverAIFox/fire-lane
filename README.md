@@ -145,11 +145,15 @@ uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 
 ### 숫자의 정본은 문서가 아니다
 
-강제자  `tools/docnum_check.py`(문서 ↔ golden) · `tools/golden.py`(golden ↔ 산출물)
+강제자  `tools/docnum_check.py`(문서 ↔ golden) · `tools/golden.py`(golden ↔ 산출물) · `tests/test_nfa_table.py`(MASTER §4 소방서 대조 표 ↔ 봉인 사본)
 
 문서에 적힌 구간 수·판정 수는 **파이프라인 산출물의 사본**이다. 정본은
 `data/processed/segments.geojson`, 기대값은 `data/golden/segments.fingerprint.json`
 이다. 셋이 어긋나면 산출물이 옳다.
+
+★ 2026-10-01 (DECISIONS §346). 이 원칙에 **짝이 없던 자리가 하나 있었다** —
+소방서 대조 표(MASTER §4)는 그 절이 스스로 「대조 도구가 없다」고 적어 둔 채
+사흘 낡았다(8.31 → 실측 8.78m). 정본은 커밋된 봉인 사본이고, 이제 짝이 있다.
 
 ---
 

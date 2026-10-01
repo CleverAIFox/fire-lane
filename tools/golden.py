@@ -153,8 +153,8 @@ FP_METHOD = "tokens-v1"
 #   실제 닫힘은 21개라 **15파일 3,385줄이 판정 지문 밖**이었다. 사연은 §202 가 든다.
 # ★ 범위를 정하는 것은 **import 다, 사람이 아니다.** `shardseal.code_closure` 를
 #   부른다 — 여기서 닫힘을 다시 구현하면 그것이 2족이다.
-# ★ `uv.lock` 이 들어간다(판이 바뀌면 판정이 바뀔 수 있다). 새 비용은 아니다 —
-#   잠금이 움직이면 `shardseal` 이 이미 45샤드를 찢는다(§200).
+# ★ `uv.lock` 이 들어간다 — 단 **파일 전체가 아니라** `firelane.segments` 가 기대는
+#   13 패키지의 판이다(§345). `shardseal` 과 같은 함수를 쓴다 — 한쪽만 좁히면 헛되다.
 # ★ 지문 방식은 `tokens-v1` 그대로다(G-24). `ast.dump` 로 되돌리면 파이썬 판마다 갈린다.
 _LEGACY_WATCH = ["src/firelane/segments.py", "src/firelane/seg/width.py",
                  "src/firelane/seg/geom.py", "src/firelane/seg/params.py",
@@ -255,8 +255,8 @@ def _logic_fingerprint(files: list[str] | None = None) -> tuple[str, dict[str, s
         if not q.exists():
             continue
         if rel == "uv.lock":
-            # ★ 잠금은 로직이 아니다 — 바이트로 잰다. `logic_text` 는 파이썬 전용이다.
-            digest = hashlib.sha256(q.read_bytes()).hexdigest()[:16]
+            from firelane.shardseal import lock_print  # ★ §345 — 파일 전체가 아니다
+            digest = lock_print("firelane.segments")
             per[rel] = digest
             h.update(rel.encode())
             h.update(digest.encode())
