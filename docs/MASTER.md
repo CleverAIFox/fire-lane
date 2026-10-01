@@ -2647,20 +2647,30 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
 
 읽고 표를 내거나 페이지를 만들 뿐이라 golden 지문에 영향이 없다.
 
-**목록은 `README.md` 의 「대조 도구」 블록이 정본이다.**
+**목록의 정본은 도구 자신이다.** 각 도구가 제 머리말 **첫 줄**에
+`<파일이름> — <한 줄>` 을 적고, 그것이 전부다. 문서는 어느 쪽도 베끼지 않는다.
+
+    uv run python tools/toolindex.py          전수 색인
+    uv run python tools/toolindex.py --check  모든 도구가 제 이름을 대는가
 
 ★ 2026-09-24 (DECISIONS §243). 여기 **같은 목록의 사본**이 있었고 아홉이
   갈려 있었다 — README 에만 여섯(`skeleton_compare` · `transition` ·
   `bridge_audit` · `its_linkmap` · `matchcheck` · `field_compare`),
   여기에만 셋(`corner_probe` · `scan_data` · `ruleset_check`).
   「한 항목은 한 문서에만 산다」를 이 절이 어기고 있었다.
-  README 쪽을 정본으로 둔 이유는 강제자가 그쪽에 있기 때문이다 —
-  `tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme` 는
-  `tools/` 실물이 README 에 이름을 들었는가를 보지, MASTER 는 안 읽는다.
+  그때는 README 쪽을 정본으로 뒀다 — 강제자가 그쪽에 있었기 때문이다.
+
+★ 2026-10-02 (DECISIONS §352) **집을 다시 옮겼다.** 그 강제자가 본 것은
+  「파일 이름이 README **문자열 안에** 있는가」뿐이고, 설명이 틀려도 · 비어도 ·
+  남의 것을 복사해도 초록이었다. 그리고 그 요구가 README 에 **같은 목록 넷**을
+  길렀다(합 240줄 / 689줄). 목록을 한 문서에 모으는 것은 사본을 **한 벌로
+  줄이는 것**이지 없애는 것이 아니다 — 도구가 111개면 설명도 111벌이고,
+  그중 110벌이 이미 **도구 자신의 머리말 첫 줄**에 있었다.
+  문서가 그것을 베낄 이유가 없다.
 
 **측정하고 대조한 뒤에 판정을 바꾼다.**
 
-강제자  `tests/test_tools_are_wired.py::test_the_compare_tool_list_has_one_home`(이 절이 사본을 다시 들면 운다)
+강제자  `tools/toolindex.py`(모든 도구가 제 이름·설명을 제 머리말에 대는가 · 꼴 · 복사 자국 · 빈 그물 · `--selftest` 14 · `verify.sh` 「도구 색인」 · CI) · `tests/test_tools_are_wired.py::test_every_tool_declares_its_own_summary`(그 판정기를 부른다) · 같은 파일 `test_the_summary_judge_is_not_an_empty_net`(판정기가 죽어도 초록이 아닌가) · 같은 파일 `test_the_compare_tool_list_has_one_home`(이 절이 사본을 **다시** 들면 운다)
 
 ### 14-6. 진단 스위치
 
@@ -2900,7 +2910,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,464 전수 · **분모(blank) 0절** · 물림(inherit) 642절.
+★ **강제자 칸의 분모.** 절 1,468 전수 · **분모(blank) 0절** · 물림(inherit) 645절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
