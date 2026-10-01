@@ -96,6 +96,8 @@ uv run python tools/verdict_tally.py data/processed/segments.geojson  # 판정 �
 uv run python tools/remeasure.py --tag ""      # 판정 산출물이 움직였는가 (안 고친다)
 uv run python tools/remeasure.py --tag 20260930-covrate  # 움직임을 받아들인다 — 재생성 사슬을 순서대로 돌린다
 uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
+uv run python tools/depgroups_check.py  # ★ 의존성 그룹이 판정 폐포를 덮는가 (--fix 가 쓴다 · 손으로 적지 마라)
+uv run python tools/ledger_cross.py     # ★ 대장의 약속(contract) ↔ 실측(schema) — 레이크 없이 돈다
 uv run python tools/selftests.py         # ★ 선언된 `--selftest` 를 전부 돌린다 (문 하나 · --list 로 건너뜀 사유)
 uv run python tools/fieldseal.py         # ★ data/field 무결성 지문 — DECISIONS 가 인용하는 파생표 (--write 는 새로 뽑았을 때만)
 uv run python tools/widthcross.py        # ★ 폭을 방법이 다른 원천끼리 댄다 — 측량 도로폭 · 도로대장 (판정 밖)

@@ -48,10 +48,17 @@ updates:
     commit-message:
       prefix: "deps"
     groups:
-      # ★ ABI 로 묶인 것은 **같이** 올린다. 따로 올리면 numpy 만 2.x 가 되어
-      #   rasterio 휠과 어긋나는 그 사고가 난다.
-      geo-abi:
-        patterns: ["numpy", "pandas", "rasterio", "pyogrio", "geopandas", "shapely", "pyproj"]
+      # ★ 2026-10-02 (DECISIONS §347). **이 목록은 손으로 적지 않는다.**
+      #   `tools/depgroups_check.py --fix` 가 `shardseal.lock_deps` 의
+      #   폐포(SEALED_AXES 셋의 합집합)로 다시 쓰고, 같은 도구가 verify·CI 에서
+      #   덮는지 문다. 종전 `geo-abi` 일곱은 2026-09-18 에 사람이 적은 목록이고
+      #   그 뒤로 아무도 안 셌다 — `networkx` 가 그 사이에 들어와 `rest` 로
+      #   샜고, 그래서 봇 PR 제목이 「rest 셋」이라 적힌 채 판정을 건드렸다.
+      #   ★ ABI 로 묶인 것을 같이 올리는 그 이유(numpy 2.x ↔ rasterio 휠)는
+      #     그대로다 — 폐포가 그 일곱을 전부 품는다. 더 넓게 품을 뿐이다.
+      #   ★ **맨 앞이어야 한다.** Dependabot 은 처음 걸리는 그룹에 넣는다.
+      judgment-closure:
+        patterns: ["affine", "attrs", "certifi", "click", "colorama", "geopandas", "networkx", "numpy", "packaging", "pandas", "pillow", "pyogrio", "pyparsing", "pyproj", "python-dateutil", "pyyaml", "rasterio", "shapely", "six", "tzdata"]
       dev-tools:
         patterns: ["ruff", "pytest*", "pre-commit"]
       # ★ 나머지를 하나로. 없으면 ultralytics 처럼 따로 하나씩 연다

@@ -260,3 +260,48 @@ def parts(text: str, files: list[str], vf=view) -> dict[str, str]:
     return out
 
 
+
+
+def claim(text: str, dms) -> str:
+    """절이 **산문으로** 주장하는 부분 — 강제자 칸을 뺀다.  (DECISIONS §348)
+
+    도장의 물음은 「이 절의 본문이 아직 참인가」다. 그 물음이 성립하려면 본문이
+    지목 파일의 **내용에 대해 주장**을 해야 한다. 강제자 칸은 주장이 아니라
+    **배선**이고, 배선의 실재는 `tools/dms.py` 의 `verify` 가 멤버까지 이미
+    기계로 본다(§229). 그래서 칸만이 코드 쪽인 절은 도장 대상이 아니다.
+
+    ★ 칸을 가르는 정규식의 정본은 `tools/dms.py` 다 — 여기서 다시 적지 않고
+      모듈을 **받는다.** 두 벌이 되면 갈린다(2족).
+    ★ 코드펜스 안의 `강제자` 는 예시다. `dms` 의 수집 루프와 같은 규칙으로 센다.
+
+    ★ 2026-10-02 **정정**(§348-4). `dms.FIELD` 만으로는 모자랐다. 그 정규식은
+      줄머리 「강제자」 뒤가 한글이 아니면 칸으로 보는데, **띄어쓰기는 한글이
+      아니다** — 그래서 「강제자 칸만이 코드 쪽인 절은 …」 같은 **산문**이 칸으로
+      잡혔다. `dms` 에서는 칸이 하나 더 붙을 뿐이지만 여기서는 그 줄부터 빈 줄까지를
+      **버린다.** 같은 정규식이 두 곳에서 심각도가 다르다. 실측으로 세 절이
+      산문 지목을 잃었고 그중 하나가 **`MASTER §21-0`, 도장 장치를 정의하는 바로
+      그 절**이다 — 이 함수가 제 근거 문서를 분모에서 밀어냈다.
+      그래서 **칸의 꼴**을 하나 더 본다: 칸은 백틱 경로를 들거나 `없음` · `—` 로
+      시작한다. 못 가리면 **안 버린다** — 넓게 틀리면 안 찍어도 될 것을 찍고,
+      좁게 틀리면 **주장하는 절이 도장 밖으로 나간다.** 뒤쪽이 되돌릴 수 없다.
+    """
+    out: list[str] = []
+    drop = fence = False
+    for ln in text.splitlines():
+        if dms.FENCE.match(ln):
+            fence = not fence
+        if drop:
+            drop = not dms.FIELD_END.match(ln)
+            if drop:
+                continue
+        elif not fence and dms.FIELD.match(ln) and _looks_like_field(ln, dms):
+            drop = True
+            continue
+        out.append(ln)
+    return "\n".join(out)
+
+
+def _looks_like_field(line: str, dms) -> bool:
+    """그 줄이 **정말 강제자 칸인가.** 산문과 가르는 둘째 물음(§348-4)."""
+    rest = dms.FIELD.sub("", line).strip()
+    return "`" in rest or rest.startswith(("없음", "—", "-", "("))

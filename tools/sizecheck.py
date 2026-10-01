@@ -200,7 +200,7 @@ EXCEPTIONS: dict[str, int] = {
     #   세 줄, `scope` 한 줄이다. 사유 본문은 `tools/readmecheck.py` 머리말에
     #   있고 여기는 **왜 이 단계가 생겼는가** 한 줄만 든다 — PLAN #34 가 「어긋
     #   났을 수 있다」를 열사흘 들고 있었고 그 사이 넷이 틀려 있었다.
-    "tools/verify.sh": 1189,
+    "tools/verify.sh": 1201,
     "src/firelane/segments.py": 780,
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이

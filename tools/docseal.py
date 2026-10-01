@@ -32,14 +32,16 @@ docseal.py — 문서 절과 그 절이 가리키는 코드에 **정합 도장**
 둘 중 **하나라도** 바뀌면 도장이 무효다. 무효는 「틀렸다」가 아니라
 **「다시 봐야 한다」**이다 — 사람이 보고 `stamp` 로 다시 찍는다.
 
+★ 2026-10-02 (§348). 대상은 **산문이 파일 내용을 주장하는 절**이다. 강제자
+  칸만이 코드 쪽인 절은 빠진다 — 그 주장은 「이 검사가 실재한다」 하나고
+  `dms.verify` 가 멤버까지 이미 기계로 본다. 574 → 222.
+
 IN    docs/*.md (tools/dms.py 의 절 수집) · 그 절이 지목한 파일
 OUT   data/golden/docseal.json
-PARAM 없음
-밖    **뜻이 옳은지는 안 본다.** 이 도구가 아는 것은 「확인한 뒤로 바뀌었는가」
-      하나다. 옳은지는 사람이 보고 찍는다 — 그 판단을 기계가 대신하는 척하면
-      도장이 거짓 초록이 된다.
-      강제자 칸이 없는 절(`blank`)과 부모 칸을 무는 절(`inherit`)은 대상이
-      아니다 — 무는 절은 부모의 도장이 덮는다.
+PARAM UNSEALED (래칫 · 미날인은 늘 수 없다)
+밖    **뜻이 옳은지는 안 본다.** 아는 것은 「확인한 뒤로 바뀌었는가」 하나다.
+      기계가 그 판단을 대신하는 척하면 도장이 거짓 초록이 된다.
+      칸 없는 절(`blank`) · 부모를 무는 절(`inherit`)도 대상이 아니다.
 """
 from __future__ import annotations
 
@@ -51,7 +53,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from docsealfp import FP_METHOD, LEGACY_VIEWS, _generated, digest, parts, view, view_v1
+from docsealfp import (FP_METHOD, LEGACY_VIEWS, _generated, claim, digest, parts, view,
+                       view_v1)
 
 ROOT = Path(__file__).resolve().parents[1]
 SEAL = ROOT / "data" / "golden" / "docseal.json"
@@ -60,35 +63,34 @@ SEAL = ROOT / "data" / "golden" / "docseal.json"
 PATH = re.compile(r"`([\w][\w./-]*\.(?:py|sh|ts|tsx|js|mjs|json|ya?ml))(?:::[\w.]+)?`")
 
 
-def _sections() -> list[dict]:
-    """`dms` 가 세는 절. **정본은 거기다** — 여기서 다시 세지 않는다."""
+@functools.lru_cache(maxsize=1)
+def _dms():
+    """`dms` 모듈. **절도 칸 정규식도 정본은 거기다** — 여기서 다시 적지 않는다."""
     import importlib.util
     spec = importlib.util.spec_from_file_location("dms_seal", ROOT / "tools" / "dms.py")
     assert spec and spec.loader
     m = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = m       # @dataclass 가 되짚는다 (DECISIONS §258-10)
     spec.loader.exec_module(m)
-    return m.scan()["rows"]
+    return m
+
+
+def _sections() -> list[dict]:
+    return _dms().scan()["rows"]
 
 
 def _body_v1(rows: list[dict], i: int) -> str:
     """2026-09-27 이전 판 — 끝의 빈 줄을 안 뗐다. 만나면 받고 새 판으로 고쳐 적는다."""
-    r = rows[i]
-    lines = (ROOT / r["doc"]).read_text(encoding="utf-8").splitlines()
-    end = len(lines)
-    for q in rows[i + 1:]:
-        if q["doc"] == r["doc"] and q["depth"] <= r["depth"]:
-            end = q["line"] - 1
-            break
-    return "\n".join(lines[r["line"] - 1:end])
+    return body(rows, i, strip=False)
 
 
 #: 옛 판 본문 잘라내기. 줄이 늘 때마다 「한 번 지나면 안 흔들린다」가 한 세대 더 간다.
 LEGACY_BODIES = (_body_v1,)
 
 
-def body(rows: list[dict], i: int) -> str:
+def body(rows: list[dict], i: int, strip: bool = True) -> str:
     """절 본문 — 다음 **같거나 얕은** 깊이의 제목 전까지. 끝의 빈 줄은 뗀다.
+    (`strip=False` 가 옛 판 `_body_v1` 이다 — 자르는 규칙은 **한 집에만** 산다.)
 
     ★ 2026-09-27 (DECISIONS §273-10). 끝을 안 떼면 **절을 하나 append 할 때마다
       직전 절의 도장이 무효가 된다.** 마지막 절은 EOF 까지 잘리는데, 뒤에 새 절이
@@ -106,7 +108,8 @@ def body(rows: list[dict], i: int) -> str:
         if q["doc"] == r["doc"] and q["depth"] <= r["depth"]:
             end = q["line"] - 1
             break
-    return "\n".join(lines[r["line"] - 1:end]).rstrip()
+    out = "\n".join(lines[r["line"] - 1:end])
+    return out.rstrip() if strip else out
 
 
 def refs(text: str) -> list[str]:
@@ -216,6 +219,20 @@ KINDS = {
 #: 옛 판에는 갈래 칸이 없다. 그것들은 **사람이 찍은 것**이다.
 DEFAULT_KIND = "read"
 
+#: 미날인 절. **늘 수 없다.** 2026-10-02 (§348-3) 이전에는 이 수에 관문이 하나도
+#: 없었다 — `check` 는 **무효만** 빨강으로 내고 미날인은 rc 에 안 닿는다. 그래서
+#: 195가 두 배치째 한 절도 안 움직였고, 아무 관문도 울지 않았다. 세는 자리가
+#: 없으면 안 줄어든다(`sizecheck` 머리말이 같은 것을 적는다).
+#: ★ 새 절을 쓰면 이 수가 는다 — 그것이 빨강이고, 고침은 그 절을 읽고 찍는 것이다.
+UNSEALED = 60
+RATCHETS = {"UNSEALED": "down"}
+
+
+def ratchet_values() -> dict[str, int]:
+    """래칫 이름 → 지금 실측값. **판정은 안 한다**(`check` 소관)."""
+    now, was, _ = survey()
+    return {"UNSEALED": sum(1 for k in now if k not in was)}
+
 
 def _git_ct(*args: str) -> int:
     r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
@@ -284,6 +301,12 @@ def survey() -> tuple[dict, dict, dict]:
         if r["state"] != "wired":
             continue                      # 무는 절은 부모 도장이 덮는다(머리말 `밖`)
         t = body(rows, i)
+        # ★ 2026-10-02 (§348). **산문이 파일 내용을 주장하는 절만** 대상이다.
+        #   강제자 칸만이 코드 쪽이면 그 절의 주장은 「이 검사가 실재한다」 하나고,
+        #   그것은 `dms.verify` 가 멤버까지 이미 기계로 본다(§229). §278-10 ·
+        #   §298 과 같은 수술 — 도장의 기반이 못 되는 것을 기반에서 뺀다.
+        if not refs(claim(t, _dms())):
+            continue
         fs = refs(t + " " + (r.get("field") or ""))
         if not fs:
             continue                      # 코드를 안 가리키는 절은 도장 대상이 아니다
