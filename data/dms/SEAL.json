@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-10-01T19:39:54+09:00",
- "commit": "a194a5f",
+ "sealed_at": "2026-10-01T23:27:24+09:00",
+ "commit": "8eef11f",
  "tool": "fc42a66325710d44",
  "tools": {
   "tools/deadcheck.py": "cbd5ececae8fdc6c",
@@ -11,10 +11,10 @@
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "ca1262c453f10dd7",
-  "docs/DECISIONS.md": "43a870d19350af2d",
+  "docs/MASTER.md": "add56bb95943c3d4",
+  "docs/DECISIONS.md": "88e63a4698ab63c5",
   "docs/PLAN.md": "a50d884eefa0f64e",
-  "README.md": "40ad0c4ca9cdfc59"
+  "README.md": "66d876add208d6de"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -249,7 +249,7 @@
   ]
  },
  "code": {
-  "sha256": "af487a7c039a530c",
+  "sha256": "a15fd3194e284661",
   "files": {
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "pyproject.toml": "8fcce06301260d06fe7a2d2cf5663295b4d60219dc7e11c4a8bb8788bed1bd36",
@@ -327,14 +327,14 @@
    "src/firelane/seg/width.py": "b3378500fe8c835927901c704207bad8b57f467aa2cb70258a6c17f2950ffe15",
    "src/firelane/segkey.py": "29d7175dfa7e81e115da1588cb56dd0e0830e65defb996328b771e9258e980ef",
    "src/firelane/segments.py": "4319b193ac4762f3b7bee14158685bd8625523afc343c73bb69d7a62a3a9dec5",
-   "src/firelane/shardseal.py": "dc1f5a568967667e774e3ca16670d8817a2bb1b25a5406c12ad98634236283c9",
+   "src/firelane/shardseal.py": "ff2e0e5f3dbf65078b512caf0aa8afd627857702ae3c2306f2f754884b5afbad",
    "src/firelane/skeleton.py": "36ab78145348825d45d0ec464a13297f966bb3caec2c8180199c8cf1c2c40e09",
    "src/firelane/stagerun.py": "59a31d961cdc1e4143cab724dc0285d289b44cbe4564d31d928cbe319a7372cd",
    "src/firelane/terrain.py": "a26f255d0955715dce31e37279fd36d16c6e24e98c82346946858df007fa29a1",
    "src/firelane/transition.py": "36db27bf5fd3f1d3851ac28de06a72bbd74ad19c9824d3edf0270d86807d78cb",
    "src/firelane/vehiclecard.py": "1a69f1a6ac07899b6d93ade8954efea2fce791c179d44490640b838dca2584e8",
    "src/firelane/webmanifest.py": "6d769b7864376a9d8ae02867c9ab955e0bf2a9545c759543e520d6367ac8f542",
-   "uv.lock": "21838fff95e4fa7795bf79a00b07612fe89bc22ec9d5c24802ea36118288bc93"
+   "uv.lock": "9ec03010327007ad40bab664e41295ebbd3ed6e6ae906e0664a7435bc793083b"
   }
  },
  "sections": {
@@ -483,7 +483,7 @@
    "title": "3-13. 차량 제원"
   },
   "MASTER/4": {
-   "h": "583209c1bca3e52e",
+   "h": "1abfd8bca90ab811",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "4. 외부 대조 — 소방서 지정 구간"
@@ -513,7 +513,7 @@
    "title": "4-2. 대조의 한계"
   },
   "MASTER/4-3": {
-   "h": "cc7e904b87511857",
+   "h": "bac5bc0d9dd12399",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "4-3. ★ 이 표는 파일로 남고, 봉인이 그 파일을 복사한다"
@@ -795,7 +795,7 @@
    "title": "12-2. 머지 방식"
   },
   "MASTER/12-3": {
-   "h": "bd8a38c1d6d3c018",
+   "h": "8203edb7506df428",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-3. 소유권"
@@ -819,7 +819,7 @@
    "title": "12-6. 커밋 메시지"
   },
   "MASTER/12-7": {
-   "h": "0047a31c4c8ac3c0",
+   "h": "6a73f0e39556d91c",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-7. 자동으로 도는 것"
@@ -993,7 +993,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "d06e45b8cdc02d5c",
+   "h": "dd30e29c48d7969e",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -8553,10 +8553,88 @@
    "title": "343-2. 재접속 간격이 **안 늘어난다**"
   },
   "DECISIONS/343-3": {
-   "h": "4ca09f38eba1e800",
+   "h": "ead6555794c78e65",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "343-3. 주소는 **토큰이 아니다**"
+  },
+  "DECISIONS/344": {
+   "h": "4dc2927c9506ddba",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "344. 같은 트리를 열 번 검사하고 있었다"
+  },
+  "DECISIONS/344-1": {
+   "h": "16f20c6a9ea41656",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "344-1. `feat/**` 의 push 실행은 순수 중복이다"
+  },
+  "DECISIONS/344-2": {
+   "h": "c46a86dcc3aa37f1",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "344-2. `contract-strict` 가 요구하지 않는 가지에서도 돌았다"
+  },
+  "DECISIONS/344-3": {
+   "h": "ff1173956409338f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "344-3. 머지 커밋은 **일부러 남긴다** — ff 로 안 바꾼다"
+  },
+  "DECISIONS/345": {
+   "h": "fe3f0ec3ba25ff65",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "345. 폐포가 **의도보다 넓었다** — 잠금 파일 전체를 해시하고 있었다"
+  },
+  "DECISIONS/345-1": {
+   "h": "4f4748ca6e65a510",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "345-1. 좁힌 것을 **쟀다**"
+  },
+  "DECISIONS/345-2": {
+   "h": "6df37ff945a47cb3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "345-2. 틀리는 방향이 둘이고 값이 다르다"
+  },
+  "DECISIONS/345-3": {
+   "h": "5a6d46d973d24409",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "345-3. 한쪽만 좁히면 헛되다"
+  },
+  "DECISIONS/345-4": {
+   "h": "7801657becaa1bde",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "345-4. 이 변경 자신이 **한 번** 찢는다"
+  },
+  "DECISIONS/345-5": {
+   "h": "9ed3b8369cca7f45",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "345-5. 같은 날 **실물에서 값을 냈다** — `virtualenv` 경보 둘"
+  },
+  "DECISIONS/346": {
+   "h": "1b32c12c3d76e6be",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "346. 「대조 도구가 없다」고 적어 두고 그 자리가 낡았다"
+  },
+  "DECISIONS/346-1": {
+   "h": "5bedc22b6659be09",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "346-1. 정본이 **저장소 안에 있었다**"
+  },
+  "DECISIONS/346-2": {
+   "h": "4afd5265dad8a137",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "346-2. 봉인 사본을 정본으로 본다 — 매 실행 산출물이 아니다"
   },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
@@ -8817,7 +8895,7 @@
    "title": "`D-XX` 는 날짜가 아니다"
   },
   "README/문서는_넷이다/숫자의_정본은_문서가_아니다": {
-   "h": "fabb3e12dcba699d",
+   "h": "bb70b5c7f0f9acfa",
    "state": "wired",
    "doc": "README.md",
    "title": "숫자의 정본은 문서가 아니다"
@@ -8920,7 +8998,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2131 passed in 335.46s (0:05:35)",
+   "tail": "2152 passed in 416.71s (0:06:56)",
    "red": []
   },
   "probe/deadcheck": {
