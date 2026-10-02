@@ -359,8 +359,15 @@ def _orphan_ref() -> str:
     import subprocess
     root = Path(__file__).resolve().parents[1]
 
+    # ★ 2026-10-02 (DECISIONS §362). `commit-tree` 는 **쓰기** 명령이라 커미터
+    #   신원이 있어야 돈다. 개발 기계에는 있고 **CI 러너에는 없다** — verify 는
+    #   초록인데 CI 가 `Author identity unknown` 으로 죽었다(PR #269).
+    #   시험이 환경에 있는 것을 전제로 쓰면 그 전제가 없는 곳에서 처음 드러난다.
+    #   그래서 **시험이 제 신원을 들고 간다** — 어느 기계에서도 같게 돈다.
+    ID = ("-c", "user.name=fl-test", "-c", "user.email=fl-test@invalid.example")
+
     def g(*a: str) -> str:
-        r = subprocess.run(["git", *a], cwd=root, capture_output=True,
+        r = subprocess.run(["git", *ID, *a], cwd=root, capture_output=True,
                            text=True, timeout=20, check=True)
         return r.stdout.strip()
 
