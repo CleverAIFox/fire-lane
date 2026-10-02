@@ -42,7 +42,13 @@ DOCX = ROOT / "docs/proposal.docx"
 #   `docx_fix` 를 "기획서에 없다" 로 잡은 것이 이 목록이 생긴 이유다.
 SKIP = re.compile(
     r"^(MASTER|PLAN|DECISIONS|docs/|src/|tools/|tests/|\.github/|#\d)"
-    r"|^[a-z][a-z0-9_]*(\.py)?( --?[a-z-]+)*$"   # docx_fix · docx_fix --write 류
+    # ★ 2026-10-03. 종전 `( --?[a-z-]+)*$`. 둘째 `-` 는 **이미 `[a-z-]` 안에
+    #   있어서** ` --a` 를 `-`+`-a` 로도 `--`+`a` 로도 끊을 수 있다. 그 갈림이
+    #   `*` 안에 있어 끝에서 실패할 때 되짚기가 지수로 샌다 — 실측 n=8 0.05ms ·
+    #   n=16 11.9ms · n=22 839ms (CodeQL `py/polynomial-redos`).
+    #   `-[a-z-]+` 는 **같은 언어**이고 끊는 길이 하나다(길이 6 전수 19,531개 +
+    #   무작위 60,000개 대조, 갈린 것 0 — `test_tool_token_pattern_is_unchanged`).
+    r"|^[a-z][a-z0-9_]*(\.py)?( -[a-z-]+)*$"   # docx_fix · docx_fix --write 류
     r"|^[a-z_]+/[a-z_./]+$")
 
 #: 표가 「이 수가 문서에 박혀 있다」고 지목하는 꼴. 천단위 쉼표가 있는 것만 본다 —
@@ -258,3 +264,61 @@ def test_manual_insertion_instruction_is_gone():
     out = [ln for ln in src.splitlines()
            if "사람이 넣는다" in ln and not ln.lstrip().startswith("#")]
     assert not out, f"안내가 아직 손 작업을 시킨다: {out}"
+
+
+def test_tool_token_pattern_is_unchanged():
+    """`SKIP` 의 도구 꼴을 **되짚기 안 새게** 고쳤다 — 뜻이 그대로인가. (§360)
+
+    종전 `( --?[a-z-]+)*$` 는 ` --a` 를 `-`+`-a` 로도 `--`+`a` 로도 끊을 수
+    있었다. 그 갈림이 `*` 안에 있어 끝에서 실패하면 되짚기가 지수로 샜다.
+    `-[a-z-]+` 는 둘째 `-` 가 이미 `[a-z-]` 안에 있으므로 **같은 언어**다.
+
+    ★ 뜻이 같다는 것을 말로 적지 않고 **전수로 센다.** 알파벳 다섯(` -ab.`)
+      으로 길이 6 까지 전부, 그리고 무작위 60,000개.
+    """
+    import itertools
+    import random
+
+    old = re.compile(r"^[a-z][a-z0-9_]*(\.py)?( --?[a-z-]+)*$")
+    new = re.compile(r"^[a-z][a-z0-9_]*(\.py)?( -[a-z-]+)*$")
+    assert new.pattern in SKIP.pattern, "SKIP 이 더는 이 꼴을 안 쓴다 — 시험을 맞춰라"
+
+    split = []
+    for L in range(7):
+        for tup in itertools.product(" -ab.", repeat=L):
+            s = "d" + "".join(tup)
+            if bool(old.match(s)) != bool(new.match(s)):
+                split.append(s)
+    random.seed(7)
+    for _ in range(60_000):
+        s = "".join(random.choice(" -abz.py_0") for _ in range(random.randint(1, 14)))
+        if bool(old.match(s)) != bool(new.match(s)):
+            split.append(s)
+    assert not split, f"두 꼴이 갈린다 {split[:5]}"
+
+
+def test_the_tool_token_pattern_does_not_blow_up():
+    """★ 반대 방향. 고친 꼴이 **길이에 선형**인가 — 아니면 고친 것이 아니다.
+
+    옛 꼴은 n=22 에 839ms 였다. 시계는 기계마다 다르므로 절대값이 아니라
+    **증가율**을 본다 — 길이를 두 배로 하면 시간도 대략 두 배여야 한다.
+    """
+    import time
+
+    new = re.compile(r"^[a-z][a-z0-9_]*(\.py)?( -[a-z-]+)*$")
+
+    def ms(n: int) -> float:
+        """n 번 반복한 꼴을 다섯 번 재고 **가장 빠른 것**을 쓴다 — 다른 일이
+        끼어든 판을 고르면 시계가 아니라 기계를 재게 된다."""
+        s = "docx_fix" + " --a" * n + "!"
+        runs = []
+        for _ in range(5):
+            t = time.perf_counter()
+            new.match(s)
+            runs.append((time.perf_counter() - t) * 1000)
+        return min(runs)
+
+    fast = ms(100)
+    slow = ms(400)
+    assert slow < max(fast * 20, 50.0), (
+        f"네 배 길어졌는데 {fast:.3f}ms → {slow:.3f}ms — 아직 되짚기가 샌다")
