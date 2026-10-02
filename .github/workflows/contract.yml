@@ -306,6 +306,11 @@ jobs:
       - name: ★ 강제자 범위 선언 (메타 가드)
         run: uv run python tools/scopedecl.py
 
+      # ★ 2026-10-02 (DECISIONS §352). 도구가 제 이름·설명을 제 머리말에 대는가.
+      #   목록의 정본이 문서에서 도구 자신으로 옮겨진 자리다.
+      - name: ★ 도구 색인 (정본은 도구 자신)
+        run: uv run python tools/toolindex.py --check
+
       # ★ 2026-10-02 (DECISIONS §347). 봇 PR 이 판정 폐포를 건드릴 때 제목이
       #   그렇다고 말하는가. 잠금과 선언만 읽으므로 레이크 없이 돈다.
       - name: ★ 의존성 그룹 (폐포에서 받는다)

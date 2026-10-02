@@ -77,9 +77,17 @@ def check_docx_ready_for_squash(bases: tuple[str, ...] = BASES) -> list[str]:
     # ★ 스쿼시가 일어나는 곳이 기준이다 — `feat` → `part/infra` 다. `dev` 를 기준으로
     #   잡으면 `part/infra` 가 `dev` 보다 앞선 동안 **남의 배치의 변경**까지 내 것으로
     #   세서 거짓으로 빨개진다. 실제로 그렇게 짰다가 바로 걸렸다.
+    #
+    # ★ 2026-10-02 (DECISIONS §355). 종전에는 **이름이 있는가**만 봤다
+    #   (`rev-parse --verify`). 얕은 클론에서는 `origin/part/infra` 라는 ref 가
+    #   있어도 **커밋이 없다** — 그래서 통과한 뒤 아래 `base...HEAD` 가
+    #   공통 조상을 못 찾아 죽었고, stderr 가 비어 「판별하지 못했다: .」 라는
+    #   사유 없는 빨강이 CI 에 섰다(PR #266).
+    #   필요한 것은 이름이 아니라 **공통 조상**이므로 그것으로 고른다.
+    #   바로 위 `check_docx_revised` 가 2026-09-18 에 선언한 전제와 같은 것이고,
+    #   이 팔만 그것을 안 물려받고 있었다.
     base = next((b for b in bases
-                 if _git("rev-parse", "--verify", "--quiet", f"{b}^{{commit}}")[0] == 0),
-                None)
+                 if _git("merge-base", "HEAD", b)[0] == 0), None)
     if base is None:
         return []                     # 기준을 모른다 — 모를 때 막지 않는다
     rc, out = _git("diff", "--name-only", f"{base}...HEAD", "--", rel, timeout=30)

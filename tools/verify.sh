@@ -833,6 +833,12 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --ratchet
 scope "tools/* tests/*"
 step "강제자 범위 선언" uv run python tools/scopedecl.py
 
+# ★ 2026-10-02 (DECISIONS §352). 도구 목록의 정본은 **도구 자신**이다. 종전 강제자는
+#   「파일 이름이 README 문자열 안에 있는가」만 봐서 설명이 틀려도 초록이었고,
+#   그 요구가 README 에 240줄짜리 목록 넷을 길렀다.
+scope "tools/*"
+step "도구 색인" uv run python tools/toolindex.py --check
+
 # ★ 2026-10-02 (DECISIONS §347). 봇이 판정 폐포를 건드릴 때 **그렇다고 말하는가.**
 #   `geo-abi` 일곱은 2026-09-18 에 사람이 적은 목록이고 그 뒤로 아무도 안 셌다 —
 #   `networkx` 가 그 사이에 들어와 `rest` 로 샜다. 이제 폐포에서 받는다.

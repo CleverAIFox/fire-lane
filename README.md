@@ -46,13 +46,12 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
         ★ 축 표의 정본은 MASTER 머리다. 이 표와 PLAN 머리는 사본이고 셋이 갈리면 운다.
           2026-09-18 까지 이 절은 검사 이름을 **산문으로만** 들었다 — `dms` 는 줄머리 칸만 센다.
 
-
 ### 일회성 도구는 저장소에 두지 않는다
 
-강제자  `tests/test_tools_are_wired.py`(`tools/` 의 것이 README 에 적히고 어딘가에서 불리는가 — 둘 다 아니면 저장소 밖으로 나가야 한다)
+강제자  `tests/test_tools_are_wired.py`(`tools/` 의 것이 **제 머리말 첫 줄에 제 이름·설명을 대고** 어딘가에서 불리는가 — 판정은 `tools/toolindex.py` 가 한다. 둘 다 아니면 저장소 밖으로 나가야 한다 · DECISIONS §352)
 
     "내년에도 이걸 돌릴 일이 있나"
-      있다  →  `tools/`            재현적이다. `verify.sh` 에 배선하고 README 에 적는다
+      있다  →  `tools/`            재현적이다. `verify.sh` 에 배선하고 **머리말 첫 줄**에 적는다
       없다  →  저장소 밖에서 돈다   `~/oneoff/<저장소>/`. 커밋하지 않는다
 
 한 번 돌고 끝난 스크립트는 남기지 않는다. 무엇을 왜 바꿨는지는
@@ -65,69 +64,10 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 
 ### 문서에도 검사가 붙어 있다
 
-```bash
-uv run python tools/docgen.py           # ★ 문서의 생성 블록을 실물 값으로 채운다 (--check 면 대조만)
-uv run python tools/docnum_check.py     # 문서 숫자 ↔ 산출물 · 필드표 대조
-uv run python tools/lakecheck.py        # 레이크 선언 ↔ 실물 (L1~L7)
-uv run python tools/deadcheck.py        # 검사가 죽었는지 검사 (프로브 5)
-uv run python tools/docseal.py check     # 문서 절 ↔ 그 절이 지목한 코드 · 정합 도장
-uv run python tools/after_squash.py      # 스쿼시 뒤에만 답이 바뀌는 검사만 (열차 7b · --list 로 사유)
-uv run python tools/cv_queue.py          # 영상판정을 어느 구간부터 — 측량이 못 가른 곳 먼저 (--out CSV)
-uv run python tools/gate_parity.py     # 로컬 관문 ↔ CI 차집합 (래칫 · 정본은 도구 안)
-uv run python tools/actionpin.py --write # 액션 태그 → 커밋 지문 (네트워크 · 검사는 관문이 늘 돈다)
-uv run python tools/dms.py delta         # 봉인 뒤 바뀐 절만 (소급 증분)
-uv run python tools/dms.py rawdiff       # raw 가 봉인과 같은가 (전량 생략 근거)
-uv run python tools/plan_renumber.py     # PLAN 번호·참조 정합 · 결번 대장 (★ --apply 는 폐지 — 번호는 영구 식별자다)
-uv run python tools/deliver.py pack <가지> <범위> --out DIR   # ★ 배달물이 제 밑동을 증명한다 — origin 에서 읽고 워크트리에 얹어 예습
-uv run python tools/expectcheck.py "$FIRE_LANE_INBOX/EXPECT"  # ★ 받는 쪽이 그 계약을 **다시 재어** 댄다 (fl.sh 4c 가 부른다)
-uv run python tools/dupcheck.py --min 40 # 같은 구조가 몇 벌인가 (사본군)
-uv run python tools/sizecheck.py        # 파일 길이 양방향 래칫 (코드 600 · 시험 700 · EXCEPTIONS)
-uv run python tools/ratchet.py          # 래칫 선언 = 실측인가 (관문은 읽기만 한다)
-uv run python tools/unusedcheck.py      # 미배선 자료가 몇이고 늘지 않는가 (래칫 · 영구 참조와 가른다)
-uv run python tools/uicheck.py --split  # 관제와 내비가 다른 화면인가 (공유 지도 층 래칫)
-uv run python tools/uicheck.py --build  # 화면이 지금 코드에서 나왔는가 (빌드본 신선도)
-uv run python tools/mergecheck.py       # 빨간불 위에서 머지된 PR 이 있는가 (CI 전용)
-uv run python tools/naviweight.py       # 내비가 밖에 몇 개 기대는가 (오프라인)
-uv run python tools/naviweight.py --build  # 진입 청크 무게 래칫 · 지도 워커가 번들에 있는가
-cd web/navi && npm run glyphs           # 지도 글자를 저장소 안에서 다시 뽑는다
-uv run python tools/readmecheck.py    # 리드미가 적은 목록이 실물과 같은가
-uv run python tools/ratchet.py --write  # 조이는 쪽으로만 고쳐 적는다 — 느슨해지는 쪽은 거부한다
-uv run python tools/verdict_tally.py data/processed/segments.geojson  # 판정 네 수 한 줄 (전후 비교용)
-uv run python tools/remeasure.py --tag ""      # 판정 산출물이 움직였는가 (안 고친다)
-uv run python tools/remeasure.py --tag 20260930-covrate  # 움직임을 받아들인다 — 재생성 사슬을 순서대로 돌린다
-uv run python tools/scopedecl.py        # ★ 강제자가 자기 범위를 선언하는가 (메타 가드)
-uv run python tools/depgroups_check.py  # ★ 의존성 그룹이 판정 폐포를 덮는가 (--fix 가 쓴다 · 손으로 적지 마라)
-uv run python tools/ledger_cross.py     # ★ 대장의 약속(contract) ↔ 실측(schema) — 레이크 없이 돈다
-uv run python tools/selftests.py         # ★ 선언된 `--selftest` 를 전부 돌린다 (문 하나 · --list 로 건너뜀 사유)
-uv run python tools/fieldseal.py         # ★ data/field 무결성 지문 — DECISIONS 가 인용하는 파생표 (--write 는 새로 뽑았을 때만)
-uv run python tools/widthcross.py        # ★ 폭을 방법이 다른 원천끼리 댄다 — 측량 도로폭 · 도로대장 (판정 밖)
-uv run python tools/verdictsim.py        # ★ 판정 규칙 변경의 **전후를 호수 없이** 잰다 — 공개본 1,281행 재현 + 후보 이동량 (판정 밖)
-uv run python tools/cost_inputs.py      # 경로 비용 입력이 결측과 0 을 가르는가 · 압력 계수가 근거 없이 켜졌나
-uv run python tools/proposal_pdf.py     # 기획서 → web/proposal.pdf · 쪽수·본문·수치·그림 대조
-# ★ 위 도구가 세는 사본을 합친 자리 —
-#   src/firelane/hashing.py    파일 sha256. 10곳이 한 벌이었다
-#   src/firelane/console.py    col · human · 팔레트. 17곳
-#   src/firelane/mercator.py   웹 메르카토르 역변환. 2곳
-#   ledger.yaml_span · load_sources   대장 원문 파싱. 7곳
-uv run python tools/vintage_check.py    # 파일명 날짜 ↔ 대장 updated (자료 기준일)
-uv run python -m firelane.prep --check  # norm 이 지금의 raw 에서 나왔나 (재현성)
-uv run python tools/widen.py            # 검사 범위를 넓히면 뭐가 걸리나
-uv run python tools/axis_gain.py        # 샤드 봉인 축을 쪼개면 얼마나 아끼나 (PLAN #132)
-uv run python tools/codepatch.py        # 파이썬 소스 멱등 편집기 (배치용)
-#   tools/delivercheck.py               # 배달물 판별식 (deliver 가 import — 진입점 없음)
-#   tools/docsealfp.py                  # 도장 지문 · 절별 관점 (docseal 가 import — 진입점 없음)
-
-# 배치가 세운 상태가 유지되는가 — verify.sh 가 부른다
-uv run python tools/install_navi.py --check    # web/navi/src 목록
-uv run python tools/navi_env.py                # 내비 환경 = CI (잠금 → npm ci · 노드 판 · engines)
-uv run python tools/pages_add_navi.py --check  # 배포에 내비 빌드
-uv run python tools/navi_setup.py --check      # 루트 잔재 · 유령 면제
-uv run python tools/ledger_fields.py --check   # 폐기 별칭 부활
-uv run python tools/sweep.py            # 다운로드·레이크 스캔 → 근거 있는 것만 정리
-uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
-```
-
-문체·절 번호·어휘·생애주기·죽은 경로를 전부 코드가 본다.
+문체·절 번호·어휘·생애주기·죽은 경로를 전부 코드가 본다. **어느 도구가 무엇을
+보는지는 그 도구가 제 머리에 적는다** — `uv run python tools/toolindex.py` 가
+전수 색인을 낸다. 종전에 여기 **61줄 · 도구 마흔넷**짜리 목록이 있었다. 설명이 두 벌이면
+갈린다(DECISIONS §352).
 **규약을 새로 적을 때는 강제자를 같이 만든다**(MASTER §17).
 
 ★ 강제자를 만들 때는 **그 강제자 자신의 목록 · 범위 · 형식 · 환경**을
@@ -136,7 +76,7 @@ uv run python -m pytest tests/test_doc_style.py tests/test_reproducibility.py -q
 참조하는 파일이 CI 에도 있는지 본다 — gitignore 대상이면 로컬에서만
 통과하는 검사가 된다.
 
-강제자 없음 — 사유: README 는 도구 목록이고 test_declaration_sync.py::test_readme_lists_tools_the_automation_calls 가 verify.sh 와 대조한다. 절 자체를 강제하는 것은 아니다
+강제자 없음 — 사유: 이 절은 「검사가 붙어 있다」는 사실만 적고 목록은 안 든다. 목록의 정본은 도구 자신이며 tools/toolindex.py 가 그것을 판정한다(DECISIONS §352). 절 자체를 강제하는 것은 아니다
 
 ### `D-XX` 는 날짜가 아니다
 
@@ -273,22 +213,12 @@ raw + 코드 + 대장이 있으면 결정론적으로 재생성된다. 걸린 �
 
 ## 도구
 
+**목록의 정본은 도구 자신이다.** 각 도구가 제 머리말 첫 줄에 `<이름> — <한 줄>` 을
+적고 그것이 전부다. 문서는 베끼지 않는다(DECISIONS §352).
+
 ```bash
-uv run python tools/ship.py --fix --push   ★ 내보내기 전 단일 진입점
-uv run python tools/tidy.py --yes          로컬 찌꺼기
-uv run python tools/pull_data.py --yes     ★ Downloads → norm 한 명령 (아래 참조)
-uv run python tools/acquire.py             landing → raw 획득 게이트
-uv run python tools/scan_data.py           데이터 레이크 구조 점검
-uv run python tools/baseline.py            판정 산출물 봉인 · 실행 간 전이 대조
-uv run python tools/golden.py              리팩 전후 산출물 동일 증명
-uv run python tools/evalgate.py            평가지표를 뽑아도 되는가 — 지문 · 전이행렬 · 매니페스트
-uv run python tools/evalgen.py             평가지표 E-1 · E-3 + #120 역산 → data/processed/eval.json
-bash tools/merge_batch.sh [--release]       배치 PR 머지 → 파트 동기화 (적용 스크립트가 초록일 때만)
-bash tools/fl.sh <feat/x> [--all|--undo|--resume]  ★ 배치 한 명령 — 적용 · verify · PR · 스쿼시 · 방송 · 정리
-bash tools/branch_tidy.sh [--auto] [--close-bots]  열린 PR · 원격/로컬 가지 정리 · 봇 PR 닫기 (fl.sh 10단계가 부른다)
-bash tools/ci_wait.sh <PR번호>              ★ PR 검사를 **조용히** 기다린다 — 0 초록 · 1 빨강 · 2 모름. fl.sh · merge_batch 가 같이 부르는 단일 창구
-bash tools/inbox_fl.sh                      INBOX 에 `fl.sh` 로 두는 부트스트랩 — 패치 안 판을 골라 부른다
-bash tools/inbox_go.sh                      INBOX 에 `go.sh` 로 두는 한 줄 진입점 — .env 적재 · zip 풀기 · 브랜치 · `--relock` 판단까지
+uv run python tools/toolindex.py           전수 색인 — 이름 · 한 줄
+uv run python tools/toolindex.py --check   모든 도구가 제 이름을 대는가 (verify.sh · CI)
 ```
 
 ★ 배치는 **한 줄**로 돈다 — `cd ~/projects/fire-lane && bash tools/inbox_go.sh`.
@@ -306,43 +236,27 @@ bash tools/inbox_go.sh                      INBOX 에 `go.sh` 로 두는 한 줄
 
 ★ **도구는 세 갈래다** — 어디에 두느냐가 갈래를 정한다.
 
-    ① 재현 · 자동     verify.sh · CI 가 부른다                         tools/ + 배선
-    ② 재현 · 사람     사람이 판단하려고 부른다. 같은 입력이면 같은 출력    tools/ + README 한 줄 +
-                                                                        (배선 또는 EXEMPT 에 사유)
-    ③ 한 번 쓰고 버림  조사 · 이관 · 디버그 스크립트                     **저장소 밖**
+    ① 재현 · 자동     verify.sh · CI 가 부른다                      tools/ + 머리말 한 줄 + 배선
+    ② 재현 · 사람     사람이 판단하려고 부른다. 같은 입력이면 같은 출력  tools/ + 머리말 한 줄 +
+                                                                     (배선 또는 EXEMPT 에 사유)
+    ③ 한 번 쓰고 버림  조사 · 이관 · 디버그 스크립트                   **저장소 밖**
 
   ③ 을 tools/ 에 넣지 않는다. 넣는 순간 ② 처럼 보이고, 아무도 안 고치는 채로 낡는다.
-  ② 로 올릴 값어치가 생기면 README 줄과 배선(또는 사유)을 같이 단다.
+  ② 로 올릴 값어치가 생기면 **머리말 한 줄**과 배선(또는 사유)을 같이 단다.
 
-강제자  `tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme`
+강제자  `tests/test_tools_are_wired.py::test_every_tool_declares_its_own_summary`(이름 · 설명이 제 파일에 있는가 — 판정은 `tools/toolindex.py` 가 한다)
 
 ### 대조 도구 — 아무것도 안 바꾼다
 
-```bash
-uv run python tools/width_fn.py         폭을 함수 w(s) 로 — min 대 통과폭
-uv run python tools/jijeok_probe.py     연속지적도(세 번째 계보)로 폭 대조
-uv run python tools/jijeok_review.py    갈리는 구간을 정사영상 위에서 판정
-uv run python tools/lanes_probe.py      표준노드링크 차로수로 폭 하한 대조
-uv run python tools/route_probe.py      소방차 통행 비용으로 경로 — 거리만 대 차량
-uv run python tools/clearance_probe.py  최대내접원 방식 (2026-08-22 기각)
-uv run python tools/corner_probe.py     코너 꺾임각·반경 — 회전 가능성 대조
-uv run python tools/desk_check.py       정사영상 위에 구간·폭 렌더 (책상 대조)
-uv run python tools/skeleton_compare.py NGII 1:1,000 뼈대 후보 대 현행 구간 — 위치 의심표 (R1)
-uv run python tools/transition.py      옛 구간 → 새 구간 전이표 — 1:N · N:1 · 소멸 · 신설 (R2)
-uv run python tools/wmax_audit.py       width_max_m 결손이 판정에 미치는 규모
-uv run python tools/bridge_audit.py     끊기면 뒤가 통째로 막히는 구간 — 실측 우선순위
-uv run python tools/its_linkmap.py      ITS 소통정보 링크 ↔ seg_uid 대조표
-uv run python tools/matchcheck.py       Mapbox Map Matching 커버리지 (MAPBOX_TOKEN 필요)
-uv run python tools/ruleset_check.py    GitHub 룰셋 실물 ↔ MASTER §12-1 표 대조
-uv run python tools/fixture_recut.py    커밋된 사본 픽스처 ↔ 산출물. 갈렸으면 ㉠ 재현 불가 · ㉡ 판 변경을 가른다 (`--write` 면 다시 뗀다)
-uv run python tools/argcheck.py         관문이 부르는 인자 ↔ 도구가 `--help` 로 내는 인자 (DECISIONS §257-2 의 족)
-```
+이 갈래의 도구는 읽고 표를 내거나 페이지를 만들 뿐이라 `golden` 지문에 영향이 없다.
 
-읽고 표를 내거나 페이지를 만들 뿐이라 `golden` 지문에 영향이 없다.
+★ **어느 것이 이 갈래인지는 기계가 안 든다.** `toolindex.py` 색인은 이름과 한 줄만
+낼 뿐 갈래 축이 없고, 머리말에도 갈래 표지가 없다. 지금 그 사실을 아는 유일한
+자리는 `tests/test_tools_are_wired.py::EXEMPT` 의 사유 칸이다(DECISIONS §162-1).
 **측정하고 대조한 뒤에 판정을 바꾼다** — `n=7` 로 방법 하나를 기각했다가
 근거를 다시 쓴 것이 그 교훈이다(DECISIONS).
 
-강제자  `tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme`
+강제자  `tests/test_tools_are_wired.py::test_every_tool_declares_its_own_summary`
 
 ---
 
