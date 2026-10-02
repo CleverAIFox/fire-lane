@@ -111,12 +111,9 @@ def _norm(name: str) -> str:
 
 
 def _module_to_dist() -> dict[str, str]:
-    """import 이름 → 배포 이름. **정본은 `pyproject` 의 한 표다.**
-
-    ★ 여기서 표를 다시 적지 않는다. `[tool.deptry] package_module_name_map` 이
-      이미 그 짝의 집이고(`tests/test_deptry_config.py` 가 그 표의 생사를 든다),
-      두 벌이 되면 어긋난다(§18-3).
-    """
+    """import 이름 → 배포 이름. **정본은 `pyproject` 의 한 표다** — 여기서 다시
+    적지 않는다. `[tool.deptry] package_module_name_map` 이 이미 그 짝의 집이고
+    (`tests/test_deptry_config.py` 가 든다), 두 벌이 되면 어긋난다(§18-3)."""
     import tomllib
     q = ROOT / "pyproject.toml"
     if not q.is_file():          # ★ 합성 트리 — 이름이 다른 패키지도 없다
@@ -148,8 +145,7 @@ def _lock_graph() -> dict[str, tuple[str, set[str]]]:
 
 
 def lock_deps(start: str = "firelane.ingest") -> list[str]:
-    """`start` 의 폐포가 **실제로 기대는** 패키지 — `이름==판` 을 정렬해 돌려준다.
-    (DECISIONS §345)
+    """`start` 의 폐포가 **실제로 기대는** 패키지 — `이름==판` 정렬 (DECISIONS §345).
 
     종전에는 `uv.lock` **파일 전체**를 해시했고 주석은 「geopandas 판이 바뀌면
     산출물도 바뀐다」였다 — **의도보다 넓었다.** 취입에 한 바이트도 안 닿는
@@ -201,6 +197,12 @@ def lock_deps(start: str = "firelane.ingest") -> list[str]:
         seen.add(cur)
         stack.extend(d for d in graph[cur][1] if d not in seen and d in graph)
     return sorted(f"{n}=={graph[n][0]}" for n in seen)
+
+
+#: 봉인이 거는 축. **여기가 집이다** — `ingest.py` · `golden.py` · `ortho.py` 가
+#: 쓰는 씨앗이고, `tools/depgroups_check.py` 가 이 셋의 폐포 합집합으로
+#: Dependabot 그룹을 쓴다(§347). 축이 늘면 여기에 적는다.
+SEALED_AXES = ("firelane.ingest", "firelane.segments", "firelane.ortho")
 
 
 def lock_print(start: str = "firelane.ingest") -> str:

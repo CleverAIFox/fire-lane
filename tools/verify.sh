@@ -559,6 +559,12 @@ step "기획서 그림 ↔ 정본" uv run python tools/docx_figs.py --check
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "sources.yaml src/* tools/*"
 step "대장 필드 검사"   uv run python -m firelane.ledger
+# ★ 2026-10-02 (DECISIONS §349). 대장은 같은 사실을 두 벌로 든다 — `contract`(규범) ·
+#   `schema`(실측). 갈라 둔 이유는 옳은데(합치면 실물이 바뀔 때 약속이 같이 바뀌어
+#   아무도 못 알아챈다) **둘을 대 보는 자리가 없었다.** 레이크를 안 읽으므로 CI 도 돈다 —
+#   그것이 `ledger_schema --check`(레이크 필요)와 갈라져 있는 이유다.
+scope "sources.yaml"
+step "대장 교차 선언"   uv run python tools/ledger_cross.py
 # ★ 2026-09-30 (§317). 그 검사는 활용도를 **찍기만** 했다 — 목표 없는 수는 안 읽힌다.
 step "미배선 자료"     uv run python tools/unusedcheck.py
 # ★ 선언이 가리키는 것이 실재하는가. 같은 이유로 안 걸려 있었다.
@@ -826,6 +832,12 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --ratchet
 #   이 단계는 래칫이 아니라 **실측**이다(파일 하나 생기면 그날 걸린다).
 scope "tools/* tests/*"
 step "강제자 범위 선언" uv run python tools/scopedecl.py
+
+# ★ 2026-10-02 (DECISIONS §347). 봇이 판정 폐포를 건드릴 때 **그렇다고 말하는가.**
+#   `geo-abi` 일곱은 2026-09-18 에 사람이 적은 목록이고 그 뒤로 아무도 안 셌다 —
+#   `networkx` 가 그 사이에 들어와 `rest` 로 샜다. 이제 폐포에서 받는다.
+scope "src/firelane/shardseal.py uv.lock .github/dependabot.yml"
+step "의존성 그룹" uv run python tools/depgroups_check.py
 
 # ★ 2026-09-25 (§258-8 · PLAN #133 닫힘). **관문이 부르는 인자를 도구가 받는가.**
 #   §257-2 에서 `docx_figs.py --check` 가 `unrecognized arguments` 로 죽었고

@@ -306,6 +306,17 @@ jobs:
       - name: ★ 강제자 범위 선언 (메타 가드)
         run: uv run python tools/scopedecl.py
 
+      # ★ 2026-10-02 (DECISIONS §347). 봇 PR 이 판정 폐포를 건드릴 때 제목이
+      #   그렇다고 말하는가. 잠금과 선언만 읽으므로 레이크 없이 돈다.
+      - name: ★ 의존성 그룹 (폐포에서 받는다)
+        run: uv run python tools/depgroups_check.py
+
+      # ★ 2026-10-02 (DECISIONS §349). 대장의 약속(`contract`) ↔ 실측(`schema`).
+      #   `ledger_schema --check` 는 레이크가 있어야 돌아 CI 에 한 번도 못 붙었다.
+      #   이쪽은 대장만 읽는다 — §285-3 의 「절반이라도 상설인 것이 낫다」.
+      - name: ★ 대장 교차 선언 (약속 ↔ 실측)
+        run: uv run python tools/ledger_cross.py
+
       # ★ 2026-09-25 (DECISIONS §258-8). 같은 족의 여덟 번째 — **관문이 부르는
       #   인자를 도구가 받는가.** §257-2 가 전수 verify 를 돌린 뒤에야 드러난
       #   이유가 이 축이 없었기 때문이다. 각 도구를 `--help` 로만 태우므로
