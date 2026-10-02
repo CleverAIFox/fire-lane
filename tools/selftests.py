@@ -61,21 +61,34 @@ SKIP: dict[str, str] = {
 
 
 def _has_selftest(p: Path) -> bool:
-    """`--selftest` 를 **인자로 선언**했나. 글자가 아니라 AST 로 본다.
+    """`--selftest` 를 받는가. 글자가 아니라 AST 로 본다.
 
     ★ 글자로 보면 머리말에 적힌 사용 예시가 선언으로 세어진다(§283-3).
+      그래서 **독스트링 안의 상수는 뺀다** — 그것이 §283-3 이 막은 전부다.
+
+    ★ 2026-10-03 (DECISIONS §359). 종전에는 `add_argument("--selftest")`
+      **하나만** 셌다. 그런데 이 저장소의 도구 절반은 `sys.argv` 를 손으로
+      가른다(`if rest == ["--selftest"]`) — argparse 를 안 쓴다. 그 꼴은
+      선언으로 안 세어져서, **자기검사가 있는데 아무도 안 돌리는 도구가
+      셋 있었다**: `docnum_check` · `unusedcheck` · `verdict_tally`.
+      셋 다 지금 돌리면 통과한다 — 그래서 더 나쁘다. **살아 있는데 안
+      불리는 검사는 죽은 검사와 구별이 안 된다**(1족 · 무음 통과).
+
+      이 함수가 넓어지면 `jsonkeys` · `localgeo` · `svg_fit` 도 들어온다.
+      셋은 **인자 없이** 자기검사를 돌던 도구라 플래그를 같이 받게 했다.
     """
     try:
-        tree = ast.parse(p.read_text(encoding="utf-8"))
-    except SyntaxError:
+        src = p.read_text(encoding="utf-8")
+        tree = ast.parse(src)
+    except (SyntaxError, OSError):
         return False
-    for n in ast.walk(tree):
-        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
-                and n.func.attr == "add_argument"
-                and any(isinstance(a, ast.Constant) and a.value == "--selftest"
-                        for a in n.args)):
-            return True
-    return False
+    docs = {id(n.body[0].value) for n in ast.walk(tree)
+            if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef,
+                              ast.AsyncFunctionDef))
+            and ast.get_docstring(n) is not None}
+    return any(isinstance(n, ast.Constant) and n.value == "--selftest"
+               and id(n) not in docs
+               for n in ast.walk(tree))
 
 
 def tools() -> list[Path]:
