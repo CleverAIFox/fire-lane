@@ -16212,7 +16212,7 @@ PLAN #132 는 「샤드 `seal.code` 를 축으로 쪼갠다」였고 **따로 �
 
 > 2026-09-27
 
-강제자  `web/navi/src/domain/serviceArea.ts` · `web/navi/test/serviceArea.test.ts`(9). 하위 3이 이 칸을 물려받는다
+강제자  `web/navi/src/domain/serviceArea.ts` · `web/navi/test/serviceArea.test.ts`. 하위 3이 이 칸을 물려받는다
 
 「서울에서 내비를 여는데 GPS 가 안 잡히겠지」에서 나왔다. **안 잡히는 게 아니라
 잡힌다** — 서울 좌표로. 그게 문제였다.
@@ -16400,7 +16400,7 @@ GPS 가 **없는** 경우는 이미 막혀 있었다. 데스크톱 · 권한 거
 
 > 2026-09-28
 
-강제자  `tools/docseal.py`(`KINDS` · `moved_after` · `queue`) · `tests/test_docseal.py`(19). 하위 넷이 이 칸을 물려받는다
+강제자  `tools/docseal.py`(`KINDS` · `moved_after` · `queue`) · `tests/test_docseal.py`. 하위 넷이 이 칸을 물려받는다
 
 도장 대상 490절 중 **미날인이 470** 이었다. 그 수는 「아직 아무도 확인 안 했다」
 하나로 뭉뚱그려져 있어서 **어디부터 읽을지도 몰랐다.** 절 단위로 갈랐다.
@@ -16472,7 +16472,7 @@ GPS 가 **없는** 경우는 이미 막혀 있었다. 데스크톱 · 권한 거
 
 > 2026-09-28
 
-강제자  `tools/docstyle.py` · `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/proposal_pdf.py`(`BOOKMARKS_MIN`) · `tools/docx_figs.py`(`SOURCELESS_MAX`) · `tools/ci_wait.sh` · `tests/test_docstyle.py`(10) · `tests/test_figure_fit.py`(6) · `tests/test_batch_tools.py`(6). 하위 11이 이 칸을 물려받는다
+강제자  `tools/docstyle.py` · `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/proposal_pdf.py`(`BOOKMARKS_MIN`) · `tools/docx_figs.py`(`SOURCELESS_MAX`) · `tools/ci_wait.sh` · `tests/test_docstyle.py` · `tests/test_figure_fit.py` · `tests/test_batch_tools.py`. 하위 11이 이 칸을 물려받는다
 
 문서 넷 중 `proposal.docx` 만 **저장소 밖으로 나간다.** 그런데 이 문서에 걸린
 검사는 「숫자가 산출물과 맞는가」(`docx_check`)와 「그림이 정본과 같은가」
@@ -17019,7 +17019,7 @@ CI `if:` 6 · `# ci-exempt:` 12 · 면제표 94항목, **사유가 빈 것 0**. 
 
 > 2026-09-28
 
-강제자  `src/firelane/cli.py`(`no_args` · `USAGE_EXIT`) · `src/firelane/guards.py`(`warn_direct_call(doc=)`) · `src/firelane/datalog.py`(`COMMANDS` · `dispatch` · `usage`) · `src/firelane/layerfsck.py` · `tests/test_cli_surface.py`(14 — 2026-09-28 에 환경에 안 달린 정적 팔이 들어갔다 · §290-3). 하위 7이 이 칸을 물려받는다
+강제자  `src/firelane/cli.py`(`no_args` · `USAGE_EXIT`) · `src/firelane/guards.py`(`warn_direct_call(doc=)`) · `src/firelane/datalog.py`(`COMMANDS` · `dispatch` · `usage`) · `src/firelane/layerfsck.py` · `tests/test_cli_surface.py`(2026-09-28 에 환경에 안 달린 정적 팔이 들어갔다 · §290-3). 하위 7이 이 칸을 물려받는다
 
 ### 283-1. 배선을 못 한 이유는 게으름이 아니라 부를 수 없었기 때문이다
 
@@ -17143,7 +17143,7 @@ MASTER 는 `firelane.contract` 를 취입 관문이라 적고, `ledger_schema.py
 
 > 2026-09-28
 
-강제자  `src/firelane/ledger.py`(`CONTRACT_KEYS` · `delimiter_of`) · `src/firelane/contract.py`(`--declared` · `prj_verdict` · `coord_verdict` · `EPSG_CONFIDENCE` · `NO_CONTRACT_RATCHET`) · `tests/test_contract_vocab.py`(11) · `tests/test_crs_gate.py`(19) · `tests/test_no_unbounded_waits.py`(4) · `pyproject.toml`(`timeout = 300`). 하위 6이 이 칸을 물려받는다
+강제자  `src/firelane/ledger.py`(`CONTRACT_KEYS` · `delimiter_of`) · `src/firelane/contract.py`(`--declared` · `prj_verdict` · `coord_verdict` · `EPSG_CONFIDENCE` · `NO_CONTRACT_RATCHET`) · `tests/test_contract_vocab.py` · `tests/test_crs_gate.py` · `tests/test_no_unbounded_waits.py` · `pyproject.toml`(`timeout = 300`). 하위 6이 이 칸을 물려받는다
 
 ### 284-1. 계약 어휘를 아무도 안 셌다
 
@@ -17255,7 +17255,7 @@ MASTER §18-3 은 「CRS 변경 → ★중단」을 관문으로 적어 두었�
 
 > 2026-09-28
 
-강제자  `tools/verify.sh`(「계보 대장 정합」 · 「계보 그림 생성」 · 「취입 계약 선언」 · 「취입 계약 실물」 · 「대장 스키마↔실물」) · `.github/workflows/contract.yml`(셋) · `src/firelane/datalog.py`(`cmd_check` → `ledger.check_entry`) · `src/firelane/ledger.py`(좌표계 판정) · `tests/test_no_unbounded_waits.py`(4) · `tests/test_batch_tools.py`. 하위 5가 이 칸을 물려받는다
+강제자  `tools/verify.sh`(「계보 대장 정합」 · 「계보 그림 생성」 · 「취입 계약 선언」 · 「취입 계약 실물」 · 「대장 스키마↔실물」) · `.github/workflows/contract.yml`(셋) · `src/firelane/datalog.py`(`cmd_check` → `ledger.check_entry`) · `src/firelane/ledger.py`(좌표계 판정) · `tests/test_no_unbounded_waits.py` · `tests/test_batch_tools.py`. 하위 5가 이 칸을 물려받는다
 
 ★ 2026-09-28 (§290-7). 여기서 붙인 단계 다섯이 **배달 예습을 통째로 막았다** —
   예습은 워크트리에서 도는데 밑동에 그 단계가 없어 기준선 대조가 흡수할 수가
@@ -17358,7 +17358,7 @@ PLAN 에 남긴다 — 지금 없는 축이라는 것을 아는 채로 둔다.
 
 > 2026-09-28
 
-강제자  `tools/selftests.py`(`tools` · `SKIP` · `selftest`) · `tools/verify.sh`「자기검사 전수」 · `.github/workflows/contract.yml`「자기검사 전수」 · `tools/gate_parity.py`(`EXTERNAL` 이 표본을 들고 있다) · `tests/test_selftests_are_run.py`(6) · `tools/scopedecl.py`(`SELFTEST_MIN` — **값은 여기 안 적는다.** 도구가 늘면 오르고, 적은 값은 낡는다). 하위 3이 이 칸을 물려받는다
+강제자  `tools/selftests.py`(`tools` · `SKIP` · `selftest`) · `tools/verify.sh`「자기검사 전수」 · `.github/workflows/contract.yml`「자기검사 전수」 · `tools/gate_parity.py`(`EXTERNAL` 이 표본을 들고 있다) · `tests/test_selftests_are_run.py` · `tools/scopedecl.py`(`SELFTEST_MIN` — **값은 여기 안 적는다.** 도구가 늘면 오르고, 적은 값은 낡는다). 하위 3이 이 칸을 물려받는다
 
 ### 286-1. 스물여섯 중 열여섯을 아무도 안 불렀다
 
@@ -17490,7 +17490,7 @@ F 배치가 코드를 움직이자 도장 26건이 무효가 됐다. 무효는 �
 
     닫힘   W13-7
 
-    ★ 이 닫힘은 **증표 없이** 선언돼 있었다. `fieldseal` 을 무는 시험이 트리에 하나도 없었다 — 2026-09-29 에 `tests/test_fieldseal.py`(6)로 채웠다(§306).
+    ★ 이 닫힘은 **증표 없이** 선언돼 있었다. `fieldseal` 을 무는 시험이 트리에 하나도 없었다 — 2026-09-29 에 `tests/test_fieldseal.py`로 채웠다(§306).
 
 강제자  `tools/fieldseal.py`(`survey` · `diff` · `selftest`) · `data/golden/field.fingerprint.json` · `tools/verify.sh`「실측 층 지문」 · `.github/workflows/contract.yml` 같은 단계. 하위 2가 이 칸을 물려받는다
 
@@ -17925,7 +17925,7 @@ pypi 를 못 읽어 125초 타임아웃 · exit 2) 열차는 이렇게 찍었다
 
 > 2026-09-28
 
-강제자  `tools/lakecheck.py`(`l3` · `main` 의 예외 칸) · `tests/test_lakecheck_l3.py`(10). 하위 둘이 이 칸을 물려받는다
+강제자  `tools/lakecheck.py`(`l3` · `main` 의 예외 칸) · `tests/test_lakecheck_l3.py`. 하위 둘이 이 칸을 물려받는다
 
 G 배치의 네 번째 실기가 71 통과 · 1 실패로 끝났다. 실패한 하나는
 「레이크 선언↔실물」이고 찍힌 것은 이랬다 —
@@ -18016,7 +18016,7 @@ L3 은 「입구를 안 거친 원본이 밖에 있나」를 센다. 이름이 �
 
 > 2026-09-29
 
-강제자  `tools/fl.sh`(4b 재잠금 · 5단계 뒤 트리 검사) · `tests/test_batch_tools.py`(4). 하위 셋이 이 칸을 물려받는다
+강제자  `tools/fl.sh`(4b 재잠금 · 5단계 뒤 트리 검사) · `tests/test_batch_tools.py`. 하위 셋이 이 칸을 물려받는다
 
 배치 H 가 받는 쪽에서 **전수 72/72 초록을 받고 CI 에서 죽었다.**
 
@@ -18096,7 +18096,7 @@ L3 은 「입구를 안 거친 원본이 밖에 있나」를 센다. 이름이 �
 
 > 2026-09-29
 
-강제자  `tools/fl.sh`(`archive_inbox`) · `tests/test_batch_tools.py`(2)
+강제자  `tools/fl.sh`(`archive_inbox`) · `tests/test_batch_tools.py`
 
 배치 H 가 **머지된 뒤** 8단계에서 죽었다.
 
@@ -18131,7 +18131,7 @@ L3 은 「입구를 안 거친 원본이 밖에 있나」를 센다. 이름이 �
 
     닫힘   W13-10
 
-강제자  `tools/docsealfp.py`(`view` · `LIST_VIEW` · `FP_METHOD`) · `tests/test_docseal_view.py`(15). 하위 둘이 이 칸을 물려받는다
+강제자  `tools/docsealfp.py`(`view` · `LIST_VIEW` · `FP_METHOD`) · `tests/test_docseal_view.py`. 하위 둘이 이 칸을 물려받는다
 
 `verify.sh` 의 `COV_MIN` 을 34 에서 35 로 바꿨다. **한 글자다.** 도장 27개가 죽었다.
 
@@ -18223,7 +18223,7 @@ L3 은 「입구를 안 거친 원본이 밖에 있나」를 센다. 이름이 �
 
 > 2026-09-29
 
-강제자  `tools/widthcross.py`(`overclaim` · `evidence` · `OVERCLAIM_HARD` · `OVERCLAIM_SOFT`) · `tests/test_widthcross.py`(23) · `tools/verify.sh`「폭 교차대조」. 하위 넷이 이 칸을 물려받는다
+강제자  `tools/widthcross.py`(`overclaim` · `evidence` · `OVERCLAIM_HARD` · `OVERCLAIM_SOFT`) · `tests/test_widthcross.py` · `tools/verify.sh`「폭 교차대조」. 하위 넷이 이 칸을 물려받는다
 
 「폭 모순 17건」을 가르러 들어갔다가 **더 큰 것을 찾았다.**
 
@@ -18370,7 +18370,7 @@ wmin 이 되어 clear 로 판정됐다. 실제로는 사거리 한복판이다(�
 
 > 2026-09-29
 
-강제자  `web/navi/src/infra/speech.ts`(`RANK` · `drain` · `say`) · `web/navi/test/speech.test.ts`(15 — **이 파일의 첫 시험이다**) · `web/navi/src/domain/voice.ts`(자리마다 급함). 하위 둘이 이 칸을 물려받는다
+강제자  `web/navi/src/infra/speech.ts`(`RANK` · `drain` · `say`) · `web/navi/test/speech.test.ts`(**이 파일의 첫 시험이다**) · `web/navi/src/domain/voice.ts`(자리마다 급함). 하위 둘이 이 칸을 물려받는다
 ★ **2026-09-30 정정**(§328). 「자리마다 급함」은 `web/navi/src/app/useVoice.ts` 에
 있었고 `web/navi/src/domain/voice.ts` 로 내려갔다 — 정책이 훅에 있으면 렌더러
 없이 물을 수 없었기 때문이다. **급함의 뜻**(무엇을 먼저 버리고 무엇이 자르는가)은
@@ -18674,9 +18674,9 @@ PLAN §1 #4 는 「판정 규칙을 고치면 **전후를 재라**」고 적는�
 ## 305. 공개된 계약이 한 파일 안에서 스스로를 반박했다
 
 > 2026-09-29
-강제자  `tests/test_schema_self_consistent.py`(8 — ①판정에 드는 열이 부정되지
+강제자  `tests/test_schema_self_consistent.py`(①판정에 드는 열이 부정되지
 않는가 ②규칙이 드는 낱말이 실재하는가 ③규칙의 숫자가 상수와 같은가 ④선언표가
-낡지 않았는가) · `tests/test_sweep_retired.py`(5) ·
+낡지 않았는가) · `tests/test_sweep_retired.py` ·
 `tests/test_ledger_outputs.py`(철거 셋) · `sources.yaml` 의 `retired_outputs`.
 하위 셋이 이 칸을 물려받는다
 배운 것  **문서 사이의 정합만 보고 문서 안의 정합은 안 봤다.** 이 저장소의 관문은
@@ -18793,7 +18793,7 @@ PLAN 표의 「닫힘」 칸과 커밋 제목에만 적었다. **그래서 셋�
 부른다 — 그러나 그것이 「불린다」와 「무엇을 본다」를 증명하지 않는다(§286 이 실측한
 그 형태: 선언된 `--selftest` 26개 중 16개를 아무도 안 불렀다).
 
-`tests/test_fieldseal.py`(6)로 채웠다. 무는 것이 셋이다 —
+`tests/test_fieldseal.py`로 채웠다. 무는 것이 셋이다 —
 
     ① `verify.sh` 가 정말 그 단계를 돈다 (그리고 `--write` 로 돌지 않는다 —
        돌면 지문이 매번 다시 떠져 **항상 통과하는 검사**가 된다)
@@ -18806,7 +18806,7 @@ PLAN 표의 「닫힘」 칸과 커밋 제목에만 적었다. **그래서 셋�
 > 2026-09-29
 강제자  `tools/docsealfp.py`(`view` · `view_v1` · `LEGACY_VIEWS` · `KEY_VIEW` ·
 `_is_test` · `_blocks` · `_funcs` · `FP_METHOD`) · `tools/docseal.py`(`survey` 의
-`legacy` 곱 · `why` 의 공식 맞추기) · `tests/test_docseal_view.py`(15).
+`legacy` 곱 · `why` 의 공식 맞추기) · `tests/test_docseal_view.py`.
 하위 셋이 이 칸을 물려받는다
 배운 것  **좁히는 고침은 검사를 끄는 것과 한 글자 차이다.** 그래서 관점을 넓힐 때마다
 반대 방향(「지목한 것이 사라지면 움직이는가」)을 같이 물려야 한다. 그리고 공식을
@@ -19197,6 +19197,11 @@ W13-4 를 「무게」로 적어 뒀는데 둘 다 실은 **의존**의 문제�
 것도 바이트가 아니라 「밖에 몇 개 기대는가」가 됐다. 그리고 그 수를 세기 시작하니
 **지울 수 있는 것과 선언해야 할 것이 바로 갈렸다** — 세기 전에는 셋 다 「어쩔 수
 없는 것」으로 보였다.
+
+★ **2026-10-03 — 셋째도 지울 수 있었다**(§366-2). 「선언해야 할 것」으로 남긴
+  마지막 하나(`api.mapbox.com`)의 사유가 **번들에 없는 파일의 런타임 되돌림**
+  이었다 — 그 파일을 아무도 import 하지 않았다. 래칫이 **0** 이다. 이 절이 배운
+  것이 세 번째로 맞았고, 이번에는 그 수가 아니라 **사유**를 읽어야 보였다.
 
     W13-3  단일 청크 1,386kB(gzip 392kB). 판정 한 줄을 고쳐도 전부 다시 받는다
     W13-4  글자가 `demotiles.maplibre.org` 에 있다. **지하·산간에서 도로 이름이 사라진다**
@@ -20289,7 +20294,7 @@ W13-6 은 「작업 **넷 중 셋**에 `timeout-minutes` 가 없다」고 적었
 ## 328. 위치 층에 첫 시험 — 에포크와 performance 시계를 섞는 자리
 
 > 2026-09-30
-강제자  `web/navi/test/gps.test.ts`(12건 · 시계 다섯 · 회색 셋 · 없어도 도는가 넷) ·
+강제자  `web/navi/test/gps.test.ts`(시계 다섯 · 회색 셋 · 없어도 도는가 넷) ·
 `tools/verify.sh` 「내비 단위」 단계 · `tests/test_sources_of_truth.py` 의
 `uv` 고정 판별식. 하위 셋이 이 칸을 물려받는다
 배운 것  **제일 조용한 결함은 화면이 멀쩡히 뜨는 결함이다.** 시계를 섞으면
@@ -20346,7 +20351,7 @@ WSL 에는 애초에 GPS 가 없다.
 
 > 2026-09-30
 강제자  `web/navi/src/domain/voice.ts`(`step` · `resync` · `reachOf`) ·
-`web/navi/test/voice.test.ts`(26건) · `web/navi/test/layering.test.ts`
+`web/navi/test/voice.test.ts` · `web/navi/test/layering.test.ts`
 (안쪽이 바깥쪽을 모른다) · `tools/naviweight.py` 의 `ENTRY_KB`.
 하위 셋이 이 칸을 물려받는다
 배운 것  **물을 수 없는 자리에 값이 있으면 그 값은 지켜지지 않는다.** 이
@@ -20749,7 +20754,7 @@ PR 의 **머리**에 매여 있고, 머리 커밋의 check-run 을 세는 일은
 > 2026-10-01
 강제자  `web/navi/src/domain/track.ts`(위치원 · 진행방향 · 정확도 보고 ·
 구간 내 비율) · `web/navi/src/domain/phase.ts`(단계 이동 표) ·
-`web/navi/test/track.test.ts`(17) · `web/navi/test/phase.test.ts`(11).
+`web/navi/test/track.test.ts` · `web/navi/test/phase.test.ts`.
 하위 셋이 이 칸을 물려받는다
 배운 것  **정책이 인자에 살면 부르는 자리마다 그 규칙을 다시 판단한다.**
 `route(from, to, keepGuiding)` 의 셋째 인자가 그 꼴이었다 — 참 하나,
@@ -21313,7 +21318,7 @@ import 하는 외부 최상위는 일곱이고(`geopandas`·`numpy`·`pandas`·`
 ## 343. 전송을 고르는 자리를 **문 하나 뒤로** 넣었다
 
 > 2026-10-01
-강제자  `web/navi/test/opsLink.test.ts`(16 판별식 — 전송 선택 · 문 갈림 · 쌓지 않음 ·
+강제자  `web/navi/test/opsLink.test.ts`(전송 선택 · 문 갈림 · 쌓지 않음 ·
 깨진 글자 · 재접속 · 연결 누수) · `web/navi/test/layering.test.ts`(`infra` 가 `app` 을
 모른다) · `.github/actions/build-navi/action.yml`(`wss://` 가 아니면 빌드가 죽는다).
 하위 셋이 이 칸을 물려받는다
@@ -21459,7 +21464,7 @@ CI 를 4회에서 1회로 줄이는 길이 따로 있었다. `part→dev` · `de
 ## 345. 폐포가 **의도보다 넓었다** — 잠금 파일 전체를 해시하고 있었다
 
 > 2026-10-01
-강제자  `tests/test_lock_closure.py`(14 — 전이 포함 · 안 쓰는 패키지 제거에 안 움직임 ·
+강제자  `tests/test_lock_closure.py`(전이 포함 · 안 쓰는 패키지 제거에 안 움직임 ·
 직접·전이 판 변화에 움직임 · import 제거에 움직임 · 모르는 씨앗에 터짐 · 잠금 없는
 트리 · `golden` 과 한 함수) · `src/firelane/shardseal.py::lock_deps` 머리말.
 하위 다섯이 이 칸을 물려받는다
@@ -21949,7 +21954,7 @@ GitHub 이 공짜로 주는 두 겹은 켜 본 적이 없다. 공개 저장소�
 
 > 2026-10-02
 강제자  `web/navi/src/domain/dispatch.ts`(`naviBase` · `dispatchUrl` — 순수) ·
-`web/navi/test/dispatch.test.ts`(판별식 9 — 두 자리가 실제로 다른가까지).
+`web/navi/test/dispatch.test.ts`(두 자리가 실제로 다른가까지).
 하위 둘이 이 칸을 물려받는다
 배운 것  **상대 주소는 「지금 있는 자리」다.** 그 자리가 어디인지는 배포가 정하고,
 배포가 그것을 옮긴 것은 2026-09-25 다(§258). 주소를 쓴 코드는 그때 안 따라갔다.
@@ -22770,11 +22775,14 @@ verify 단계 89개
 
 > 2026-10-03
 강제자  `web/navi/src/domain/cv.ts`(접기 · 삭기 · 좁히는 쪽만 · 급함) ·
-`web/navi/test/cv.test.ts`(24 판별식 — 반대 방향까지) ·
+`web/navi/test/cv.test.ts`(반대 방향까지) ·
 `web/navi/src/domain/voice.ts`(막은 측정이 회전을 밀어내는 자리) ·
-`web/navi/test/voice.test.ts`「영상 통과폭」(7) ·
+`web/navi/test/voice.test.ts`「영상 통과폭」 ·
 `src/firelane/ops/roster.py::targets`(영상은 둘 다에게 가고 아무것도 안 받는다) ·
-`src/firelane/ops/server.py` 의 `/cv/{cam}` 문 · `tests/test_ops_roster.py`(4).
+`src/firelane/ops/server.py` 의 `/cv/{cam}` 문 · `tests/test_ops_roster.py`
+(★ 2026-10-03 — 이 칸에 **판별식 수 셋을 적었다가 뺐다** · §366-4. 적은 그 밤에
+§364-2 가 「정본이 없는 값은 문서에 적지 않는다」로 같은 종을 여섯 자리에서
+빼고 있었다. 하나는 이미 틀려 있었다 — 「영상 통과폭(7)」의 실측이 8 이다).
 하위 다섯이 이 칸을 물려받는다
 배운 것  **재탐색의 값이 다르면 순서도 달라야 한다.** 늦는 것은 미뤄도 되고
 틀리는 것은 못 미룬다 — 상용 내비의 우선순위를 그대로 베끼면 그 구분이 사라진다.
@@ -22926,6 +22934,12 @@ MASTER §20-5 navi_graph.json 557KB → 570KB
 **정본이 없는 값은 문서에 적지 않는다.** 그리고 이 수들은 세는 기준조차
 하나가 아니다(함수 수 · 매개변수 전개 수 · `it` 수가 전부 다르다).
 
+★ **2026-10-03 정정 — 「전부」가 거짓이었다**(§366-4). 여섯 중 **다섯**만 빠졌다.
+  `§329` 강제자 칸의 `voice.test.ts`(26건)이 그대로 남아 있었고 실측은 34 다.
+  이 절이 위 표에 그 줄을 적고도 **안 고친 것**이다 — 「빼기로 했다」와 「뺐다」
+  사이에 검사가 없었고, 그 틈으로 하나가 빠져나갔다. 같은 밤 §363 이 **새로
+  셋을 적기까지 했다.** 수를 세는 검사를 세우지 않으면 규율은 배치마다 샌다.
+
 ★ 마지막 줄이 가장 조용했다. 바이트 수를 **지키는 검사가 없었다** — 노드·엣지
   수는 `docnum_check` 가 드는데 크기는 아무도 안 본다. 그 자리는 상한
   (「web/data 용량」 · `naviweight`)이 들고, 상한은 낡지 않는다.
@@ -23051,3 +23065,163 @@ web/data 추적 전체           33,195,301 B    상한 max_mb 40
 
 ★ 양성 대조로 **유령 ID 를 심어** 떨어지는지를 본다. 깨끗한 트리에서
   「0건이니 통과」는 안 떨어내는 문도 통과시킨다(§362 와 같은 꼴).
+
+---
+
+## 366. 영상이 **경로**에 들어왔다 — 그리고 고아 하나가 배포 전건을 끌고 있었다
+
+> 2026-10-03
+
+강제자  `web/navi/test/reroute.test.ts`(다섯 규율을 **반대 방향까지** · 비용 쪽
+다섯) · `web/navi/test/wiring.test.ts`(고아 모듈 · `orphans()` 합성 양성 대조
+여섯) · `tools/naviweight.py`(`EXTERNAL` 래칫 **0**) ·
+`.github/workflows/contract.yml` 「내비 빌드」 · `tools/countcheck.py`
+(`COUNTS` 래칫 **0** · `--fix` · `--selftest`).
+하위 넷이 이 칸을 물려받는다
+배운 것  **안 쓰는 파일은 「그냥 있는 것」이 아니다.** 고아 하나가 바깥 의존
+선언 하나와 **배포 전건 하나**를 끌고 있었고, 셋 다 사유를 적고 있었다 —
+사유가 전부 그 고아의 런타임 행동을 근거로 삼았다.
+
+```
+영상 → 경로   `buildAdjacency(…, cv)`      폭이 `edgeCost` 의 **같은 비교**로 들어간다
+영상 → 재탐색 `reroute.rerouteSignal`      앞만 · 막힘만 · 이력 · 발밑은 별도
+영상 → 말     `reroute.cvAhead` → `voice`  막히지 않은 것도 말한다
+바깥 호스트   1 → **0**                    내비 소스에 외부 주소가 없다
+```
+
+### 366-1. 영상 폭은 **정적 폭과 같은 문으로** 들어간다
+
+`cv.effectiveWidth` 는 §363 이 만들었지만 **읽는 쪽이 없었다** — 말(`voice.ts`)
+까지만 닿고 경로는 정적 `width_min_m` 만 봤다. 즉 영상이 「이 골목 지금 2.1m」
+라고 해도 **A\* 는 그 골목으로 안내했고** 음성만 못 지난다고 말했다.
+
+`buildAdjacency` 가 `cv` 를 받는다. 구간마다 `effectiveWidth(정적, 영상)` 을
+`edgeCost` 에 넘긴다. 필요폭 미만이면 `Infinity` 가 나와 그 구간이 **그래프에서
+빠진다** — 정적 폭이 좁을 때와 **같은 자리, 같은 판단**이다.
+
+★ **`excluded`(현장 신고)로 안 넣었다.** 사유 둘 —
+
+```
+① 신고는 사람의 **단언**이고 영상은 **삭는 측정**이다. 신고 집합에 넣으면
+   낡은 측정이 그 길을 영원히 닫고, 되돌릴 자리가 없다
+② 한 사실(「이 폭으로 못 지난다」)을 두 문이 들면 둘이 갈린다. 폭 판단은
+   `edgeCost` 하나다 — 정본 단일화(R3)
+```
+
+★ 네 자리 전부에 걸었다(안전 · 빠른 · `blockEdge` · `pickDetourable`). 하나만
+  빠지면 **우회가 막힌 길로 돌아온다.**
+
+### 366-2. 고아 하나 — 그리고 그것이 끌고 있던 것 셋
+
+파이썬에는 `test_tools_are_wired.py` 가 있다. **TS 쪽에는 없었다.**
+`test/layering.test.ts` 가 묻는 것은 「A 가 B 를 import 하는가」로 **방향**이고,
+「아무도 B 를 import 하지 않는가」는 아무도 안 물었다. 검사를 세우고 재니
+고아가 **둘**이었다 — 이 배치가 만든 `domain/reroute.ts`(배선했다)와,
+
+```
+web/navi/src/infra/matching.ts   90줄 · Mapbox Map Matching
+```
+
+**아무것도 그 파일을 import 하지 않는다.** 배럴도 부수효과 import 도 없다.
+그리고 `domain/snap.ts` 머리말이 그 이유를 이미 적고 있었다 — 「왜 상용
+map-matching 을 안 쓰는가: 구간이 1,101개뿐이고 브루트포스가 2.2ms 다」.
+**판단이 먼저 뒤집혔고 파일만 남았다.**
+
+끌고 있던 것 셋 —
+
+```
+tools/naviweight.ALLOWED   `api.mapbox.com` 을 **사유와 함께** 허용. 그 사유가
+                           「없어도 내비가 돈다(`matching.ts` 가 실패하면 원래
+                           점을 쓴다)」 — **번들에 없는 코드의 런타임 되돌림**
+build-navi/action.yml      `VITE_MAPBOX_TOKEN` 이 비면 **배포가 죽는다.** 즉
+                           토큰 없는 사람은 배포를 못 했다
+contract.yml               「빌드가 아니라 타입만 본다 — `vite build` 는
+                           MAPBOX_TOKEN 이 필요하다」로 **빌드 관문을 비웠다**
+```
+
+넷을 같이 걷었다. 그래서 바깥 호스트 래칫이 **1 → 0**(조이는 쪽)이고, 배포가
+시크릿 하나를 덜 요구하며, **CI 가 실제 빌드를 돈다**(실측 8초).
+
+★ 셋째가 가장 조용했다. 그 잡이 생긴 사유가 **「타입은 통과했는데 빌드가
+  main 에서 죽었다」**(maplibre 5→6)인데, 정작 빌드를 안 돌리는 이유로 든 것이
+  **안 쓰는 파일이 요구하는 토큰**이었다. 관문이 자기 존재 이유를 못 지키고
+  있었고 그 사유가 거짓이었다.
+
+★ 대조 능력은 안 잃는다 — `tools/matchcheck.py` 가 루트 `.env` 의 토큰으로
+  그대로 든다. §302 의 규율이다: **소비자 0 은 철거로 답하고, 필요해지면 그때
+  필요한 모양으로 다시 만든다.**
+
+### 366-3. 재탐색 방아쇠 — 상용의 둘과 **다른 축**이고 그래서 규율이 다르다
+
+§363 이 축을 적었다. 상용의 방아쇠는 **이탈**과 **소통**이고 둘 다 「옛 경로는
+여전히 갈 수는 있다」다. 우리 셋째는 **통과 가능성**이고 그때 옛 경로는 늦은
+것이 아니라 **틀린 것**이다.
+
+그런데 「틀렸으면 즉시 다시 낸다」만으로는 못 짠다. 통과폭을 정하는 것은 주차된
+차이고 그것은 **분 단위로 들락거린다.** 폴링마다 2.1 → 3.4 → 2.1 이 오면
+폴링마다 경로가 바뀌고, 화면이 떨리는 내비는 운전자가 끈다. 그래서 좁게 둔다 —
+
+```
+① 앞만 본다     지나온 구간이 좁아진 것은 재탐색이 아니다
+② 막힘만 센다   좁아져도 지나면 **말**이다. 상용이 소통으로 다시 내는 그
+                자리를 우리는 **비운다** — 영상은 「몇 분 더」를 못 잰다
+③ 한 번만 쏜다  같은 구간은 **더 좁아질 때만** 다시(문턱 0.3m)
+④ 낡음은 방아쇠도 **되돌림도** 아니다. 폭은 조용히 정적 판정으로 돌아가고,
+                「다시 지날 수 있습니다」라고 **말하지 않는다**
+```
+
+★ **발밑과 앞은 다른 일이다.** 막힌 구간이 밟고 있는 구간이면 재탐색은 쓸모가
+  없다 — 앞으로 못 나가는 구간에서 앞으로 가는 길을 계산하는 셈이고, 그 경로는
+  같은 구간으로 또 들어간다. 그때 낼 것은 **「정지 후 후진」**이고 그것은 말이다.
+  함수가 `ahead` · `underfoot` 을 **가려서** 돌려주고, 훅은 발밑에서 멈춘다.
+
+★ **이력이 판단 쪽에 있다.** 그래서 이 효과는 몇 번 돌아도 안전하고, 의존
+  목록을 **다 적을 수 있다** — 억제 주석이 없다. 위 이탈 재탐색은 억제 주석을
+  달고 있고 그 차이가 설계의 값이다: 「몇 번 도는가」로 정확성을 지키는 효과는
+  의존 목록이 곧 정책이 되고, 그러면 억제가 필요해진다(§279-4 가 센 그 52곳).
+  ★ 실제로 첫 판이 억제 주석을 달았고 **`suppress` 래칫이 52 → 53 으로 울었다.**
+    면제를 늘리지 않고 의존을 다 적는 쪽으로 고쳤다.
+
+★ 측정을 넣는 자리는 `useNavigation` 의 **둘째 인자 하나**다. 지금 아무도 안
+  넣는다(CV 산출물이 없다) — 그 한 자리를 비워 두는 것이 이 배선의 뜻이다.
+  **생기는 날 한 줄이다.** 없을 때 오늘과 한 글자도 다르지 않은 것은
+  `reroute.test.ts` 의 첫 묶음이 문다(그리고 **있으면 쏜다**를 같은 묶음이
+  이어서 물어 「항상 null」이 아님을 증명한다).
+
+### 366-4. 「수를 적지 않는다」는 규칙이 **그 규칙을 적은 밤에** 샜다
+
+§364-2 가 2026-10-03 에 낡은 수 여섯을 빼고 적었다 — 「전부 **빼고** 사유를
+적었다. 정본이 없는 값은 문서에 적지 않는다(§246-2)」.
+
+실측하면 **다섯만 빠졌다.** `§329` 강제자 칸의 `voice.test.ts`(26건)이 그대로
+남아 있었고 실측은 34 다. 그 절이 **제 표에 그 줄을 적고도 안 고쳤다.**
+그리고 같은 밤 §363 이 같은 꼴로 **새로 셋을 적었다** — 그중 하나(「영상
+통과폭(7)」)는 적힌 날 이미 틀렸다(실측 8).
+
+```
+규칙   §246-2(2026-09-26) → §364-2(2026-10-03) 이 적용
+실물   2026-10-03 실측 29곳. 그중 **여섯**은 어떤 셈으로도 안 맞는다
+```
+
+★ **낡아서 결함이 아니다. 낡았는지 알 수 없어서 결함이다.** 29곳의 수가 무엇을
+  센 것인지 자리마다 다르다 —
+
+```
+tests/test_batch_tools.py  (6) · (4) · (2)   같은 파일을 가리키는 셋.
+                                             실측 전수는 40 이다
+```
+
+  즉 그 수들은 「그 배치가 더한 수」이고 그것은 **다시 셀 수 없다.** 사람도
+  기계도 대조할 수 없는 수는 **영원히 참으로 보인다.**
+
+`tools/countcheck.py` 가 그 자리를 센다. 그물을 **시험 파일 + 수뿐인 괄호**로
+좁혔다 — 도구 파일의 괄호 안 수는 대개 선언된 상수이고(`sizecheck.py`(646) ·
+`test_lake.py`(상한 0)), 넓히면 오탐이 나고 **시끄러운 검사는 꺼진다**(§78-4).
+
+★ **괄호째 지우지 않는다.** `(15 — 양방향)` 의 「양방향」은 그 절이 무엇을
+  무는지를 말하는 **정보**다. `--fix` 가 수와 구분자만 빼고 꾸밈말을 남긴다.
+  29곳을 그 문으로 고쳤다.
+
+★ 이 도구가 **자기 교훈의 산물**이다 — 「규칙을 적을 때 강제자를 같이
+  만든다」(MASTER §17 마지막 줄)를 §364-2 가 안 지켰고, 그래서 규칙이 하룻밤을
+  못 버텼다. 규칙은 문서에 있고 세는 자리는 없는, 이 저장소가 반복해 겪은 꼴이다.

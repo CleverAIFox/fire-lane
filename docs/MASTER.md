@@ -2920,7 +2920,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,515 전수 · **분모(blank) 0절** · 물림(inherit) 676절.
+★ **강제자 칸의 분모.** 절 1,520 전수 · **분모(blank) 0절** · 물림(inherit) 680절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4114,7 +4114,7 @@ style                                                판정 4색
   「옛 공식에서 실제로 유효했는가」와 「새 관점으로 보면 그 변경이 안 보이는가」
   둘을 증명해 옮긴다. 어느 공식으로 찍힌 도장인지는 `FP_METHOD` 가 든다.
 
-강제자  `tools/docsealfp.py`(`view` · `LIST_VIEW` · `KEY_VIEW` · `FP_METHOD`) · `tests/test_docseal_view.py`(15 — 양방향)
+강제자  `tools/docsealfp.py`(`view` · `LIST_VIEW` · `KEY_VIEW` · `FP_METHOD`) · `tests/test_docseal_view.py`(양방향)
 
 ### 21-1. 축 — 분모가 재현되는 것만 센다
 

@@ -221,6 +221,11 @@ export default function App() {
     plan: guiding ? n.plan : null,
     driven: n.driven, jumpSeq: n.jumpSeq, offRoute: n.offRoute,
     style, enabled: voice, hazards,
+    // ★ 2026-10-03 (DECISIONS §366-3). 영상 소견을 음성까지 잇는다. 지금
+    //   `cvNow` 는 **늘 null** 이다 — 측정을 넣는 자리가 `useNavigation` 의
+    //   둘째 인자 하나이고 아직 아무도 안 넣는다(CV 쪽 산출물이 없다).
+    //   그 한 자리를 비워 두는 것이 이 배선의 뜻이다: **생기는 날 한 줄이다.**
+    cv: n.cvNow,
   });
   const hud = useHudData({
     spec, style, plan: n.plan, fastPlan: n.fastPlan,

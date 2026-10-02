@@ -15,9 +15,12 @@
  * ★ 순수하다. React·MapLibre·fetch 를 모른다.
  *
  * IN    NaviGraph · VehicleSpec · 조율값 · 신고로 뺀 구간 · 주변 사정 색인(`pressure.ts`)
+ *       · **영상이 지금 재 준 통과폭**(`cv.fold()` · DECISIONS §366)
  * OUT   Adjacency — 노드 → 나가는 전이 목록. 비용은 방향마다 다르다
  * 밖    길을 고르는 것은 여기 일이 아니다(`graph.ts`). 여기는 **갈 수 있는가와
  *       얼마인가**만 센다. 구간 위 투영도 여기 없다(`edgeSnap.ts`).
+ *       **「다시 낼 것인가」도 여기 없다**(`reroute.ts`) — 여기는 다시 낼 때
+ *       쓰는 **값**만 든다.
  */
 
 import { distM, type LngLat } from "./geo";
@@ -25,6 +28,7 @@ import { edgeCost, type TuningKnobs, TUNING } from "./vehicle";
 import { directionFactor, edgeIndex } from "./rules";
 import { tightTurn } from "./turning";
 import { hazardsOf, pressureFactor, type HazardIndex } from "./pressure";
+import { effectiveWidth, type CvView } from "./cv";
 import type { GraphEdge, NaviGraph, VehicleSpec } from "./types";
 
 /** `idx` 는 `graph.edges` 인덱스 — 회전 금지가 인덱스로 적혀 있다 */
@@ -59,6 +63,8 @@ export function adjacencySpec(adj: Adjacency): VehicleSpec | undefined {
  * @param mode "fastest" 면 통행 가부는 그대로 보되 **비용을 실거리로** 쓴다.
  *   ★ "fastest" 라도 `blocked` 와 필요폭 미만은 막는다. 소방차가 못
  *     지나가는 길은 빠른 것이 아니라 못 가는 길이다.
+ * @param cv `cv.fold()` 가 접은 구간별 영상 소견. 없으면 **오늘과 한 글자도
+ *   다르지 않다**(DECISIONS §366-1).
  * ★ 자기루프(a===b)는 뺀다. `seg/graph.py` 가 버리는 것과 같다.
  */
 export function buildAdjacency(
@@ -66,6 +72,7 @@ export function buildAdjacency(
   mode: CostMode = "safe", tuning: TuningKnobs = TUNING,
   excluded?: ReadonlySet<string>,
   hazards?: HazardIndex | null,
+  cv?: ReadonlyMap<string, CvView> | null,
 ): Adjacency {
   const adj: Adjacency = new Map();
   ADJ_SPEC.set(adj, spec);
@@ -77,8 +84,18 @@ export function buildAdjacency(
     //   길이 더 비쌀 때 그 구간으로 다시 안내한다. 사람이 막혔다고 말한
     //   길을 계산이 되살리면 안 된다.
     if (excluded?.has(e.seg_uid)) continue;
+    // ★ **영상 폭은 정적 폭과 같은 문으로 들어간다**(DECISIONS §366-1). 좁히는
+    //   쪽만 받고(`cv.effectiveWidth`), 필요폭 미만이 되면 `edgeCost` 가
+    //   `Infinity` 를 내 이 구간이 **그래프에서 빠진다** — 정적 폭이 좁을 때와
+    //   같은 자리, 같은 판단이다.
+    //   ★ `excluded`(현장 신고)로 안 넣은 이유 둘 —
+    //     ① 신고는 사람의 **단언**이고 영상은 **삭는 측정**이다. 신고 집합에
+    //        넣으면 낡은 측정이 그 길을 영원히 닫고, 그것을 되돌릴 자리가 없다
+    //     ② 한 사실(「이 폭으로 못 지난다」)을 두 문이 들면 둘이 갈린다.
+    //        폭 판단은 `edgeCost` 하나다(R3 · 정본 단일화)
+    const seenW = effectiveWidth(e.width_min_m, cv?.get(e.seg_uid));
     const penalized = edgeCost(
-      spec, e.length_m, e.width_min_m, e.verdict, null, lenient, tuning);
+      spec, e.length_m, seenW, e.verdict, null, lenient, tuning);
     if (!Number.isFinite(penalized)) continue;
     // ★ 안전 경로는 폭을 아는 확인 필요 구간을 피한다(`TuningKnobs.avoidUncertain`).
     //   연결성 우선(lenient)에서는 안 피한다 — 그 모드는 닿는 것이 먼저다.

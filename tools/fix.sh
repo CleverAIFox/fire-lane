@@ -73,6 +73,8 @@ echo
 fix "린트"            uv run ruff check --fix .
 fix "인코딩·개행"      uv run python tools/encoding_check.py --fix
 fix "문서 말투 서식"    uv run python tools/docstyle.py --write
+# ★ 수만 빼고 꾸밈말은 남긴다(§366-4). `(15 — 양방향)` 의 「양방향」은 정보다.
+fix "손으로 적은 시험 수" uv run python tools/countcheck.py --fix
 
 # ② 선언 ↔ 실물 ───────────────────────────────────────────────
 # ★ `plan_renumber --apply` 는 **안 부른다.** 폐지된 깃발이고(§205) 그 도구는

@@ -40,11 +40,32 @@
  * 필요폭이 바뀌기 때문이다 — 펌프차 3.0m 대 구급차 2.5m. 폭 2.7m 골목이
  * 한쪽엔 막히고 한쪽엔 뚫린다. `spec` 을 인자로 받아 그것이 바뀌면
  * 인접리스트가 다시 구워진다.
+ *
+ * ── ★ 영상 통과폭이 경로를 다시 내게 한다 (DECISIONS §366) ──────
+ * **같은 이유로 영상도 경로를 다시 내게 한다** — 바뀌는 것이 차의 필요폭이
+ * 아니라 길의 통과폭일 뿐이다. 둘은 `edgeCost` 의 같은 비교에서 만난다.
+ *
+ *     판단   `domain/reroute.rerouteSignal`  (순수 · 앞만 · 막힘만 · 이력)
+ *     값     `domain/cv.effectiveWidth` → `buildAdjacency(…, cv)` 의 폭
+ *     말     `domain/voice.ts` · `cv.phrase` · `reroute.reroutePhrase`
+ *
+ * ★ 이 훅이 하는 일은 그 셋을 **잇는 것뿐이다.** 「다시 낼 것인가」도
+ *   「얼마인가」도 여기서 안 정한다 — 그러면 정책이 React 안에 산다(§336).
+ *
+ * ★ 발밑이 막히면 **경로를 다시 안 낸다.** 앞으로 못 나가는 구간에서 앞으로
+ *   가는 길을 다시 계산하는 셈이고, 그 경로는 같은 구간으로 또 들어간다.
+ *   그때 낼 것은 경로가 아니라 「정지 후 후진」이고 그것은 말이다.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SCOPE_M, SNAP_INTERVAL_MS } from "../config";
 import { type LngLat } from "../domain/geo";
 import { buildAdjacency, type Adjacency } from "../domain/adjacency";
+import { fold, type CvReading, type CvView } from "../domain/cv";
+import {
+  pruneReroute, rememberReroute, rerouteSignal,
+  type RerouteMemory, type RerouteSignal,
+} from "../domain/reroute";
+import { requiredWidth } from "../domain/vehicle";
 import { buildHazardIndex } from "../domain/pressure";
 import { fullProgress } from "../domain/edgeSnap";
 import { progressAlongRoute, routeUids } from "../domain/routeDerive";
@@ -77,7 +98,15 @@ const ARRIVE_M = 15;
 /** 이만큼 움직여야 진행방향을 새로 계산한다(m). */
 const MOVE_MIN_M = 1.2;
 
-export function useNavigation(spec: VehicleSpec | null) {
+/**
+ * @param cvReadings 영상이 지금까지 보낸 통과폭 측정. **접기 전 날것**을 받는다 —
+ *   나이는 지금 시각에 달려 있어 보내는 쪽이 접을 수 없다(§363).
+ *   `undefined` 면 영상이 없는 것이고, 그때 이 훅은 **오늘과 한 글자도 다르지
+ *   않다**(`test/reroute.test.ts` 가 그 한 글자를 문다).
+ */
+export function useNavigation(
+  spec: VehicleSpec | null, cvReadings?: readonly CvReading[],
+) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -161,16 +190,31 @@ export function useNavigation(spec: VehicleSpec | null) {
     () => (data ? buildHazardIndex(data.graph, data.context ?? null) : null),
     [data]);
 
+  /**
+   * 영상 소견을 **구간별 한 벌**로 접는다(`domain/cv.fold`).
+   *
+   * ★ 접는 시각이 `cvReadings` 가 바뀐 그 순간이다. 초마다 다시 접지 **않는다** —
+   *   `fresh → aging` 전이만으로 인접리스트를 다시 굽는 것은 1초마다 A* 전체를
+   *   무효화하는 일이고, 얻는 것은 **이미 경로에 반영된 폭의 나이 한 칸**이다.
+   *   나이가 중요한 쪽(말)은 매 틱 `urgencyOf` 로 다시 본다(`voice.ts`).
+   * ★ 영상이 없으면 **빈 Map 이 아니라 null 이다** — `buildAdjacency` 가 그것을
+   *   보고 아무 일도 안 한다. 빈 Map 도 결과는 같지만, null 이 「없다」이고
+   *   빈 Map 은 「봤는데 없다」다. 둘을 가르면 읽는 사람이 안 헷갈린다.
+   */
+  const cvNow: ReadonlyMap<string, CvView> | null = useMemo(
+    () => (cvReadings?.length ? fold(cvReadings, Date.now()) : null),
+    [cvReadings]);
+
   const adj: Adjacency | null = useMemo(
     () => (data && active
-      ? buildAdjacency(data.graph, active, lenient, "safe", undefined, blocked, hazIdx)
+      ? buildAdjacency(data.graph, active, lenient, "safe", undefined, blocked, hazIdx, cvNow)
       : null),
-    [data, active, lenient, blocked, hazIdx]);
+    [data, active, lenient, blocked, hazIdx, cvNow]);
   const adjFast: Adjacency | null = useMemo(
     () => (data && active
-      ? buildAdjacency(data.graph, active, lenient, "fastest", undefined, blocked, hazIdx)
+      ? buildAdjacency(data.graph, active, lenient, "fastest", undefined, blocked, hazIdx, cvNow)
       : null),
-    [data, active, lenient, blocked, hazIdx]);
+    [data, active, lenient, blocked, hazIdx, cvNow]);
 
   const onFix = useCallback((f: Fix) => {
     const t = f.t ?? performance.now();
@@ -314,6 +358,62 @@ export function useNavigation(spec: VehicleSpec | null) {
     return () => { clearTimeout(t); setRerouting(false); };
   }, [phase, offRoute]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── 영상이 앞을 막았다 → 재탐색 (DECISIONS §366-3) ──────────
+  /**
+   * 이력. **쏜 구간과 그때의 폭**을 기억한다 — 깜빡임이 재탐색이 되면 안 된다.
+   * 정책은 `domain/reroute.ts` 가 들고 여기는 기억 자리만 준다.
+   */
+  const cvFired = useRef<RerouteMemory>(new Map());
+  /** 지금 영상이 막은 자리. 화면·음성이 읽는다. 없으면 null */
+  const [cvBlock, setCvBlock] = useState<RerouteSignal | null>(null);
+
+  useEffect(() => {
+    // 경로가 바뀌면 **경로 밖 기억만** 비운다 — 다 비우면 같은 구간을
+    // 다시 물 때 또 쏘고 재탐색이 무한히 돈다(`pruneReroute` 머리말).
+    pruneReroute(cvFired.current, plan);
+  }, [plan]);
+
+  /**
+   * ★ **의존을 다 적는다 — 억제 주석을 안 쓴다.**
+   *
+   * 위 이탈 재탐색(`[phase, offRoute]`)은 억제 주석을 달고 있다. 여기는 **달
+   * 필요가 없다**, 그리고 그 차이가 설계의 값이다 — 이 효과가 몇 번 돌아도
+   * 안전한 것은 **이력(`cvFired`)이 판단 쪽에 있기 때문**이다. 이미 쏜 구간은
+   * `rerouteSignal` 이 `null` 을 낸다. 「몇 번 도는가」로 정확성을 지키는 효과는
+   * 의존 목록이 곧 정책이 되고, 그래서 억제 주석이 필요해진다(§279-4 가 센 그 52곳).
+   *
+   * ★ `route()` 가 `plan` 을 바꿔 이 효과가 다시 돈다. 새 경로가 그 구간을
+   *   **또 물면**(돌아갈 길이 정말 없을 때) 기억이 살아 있어 다시 안 쏜다 —
+   *   `pruneReroute` 가 **경로 밖만** 비우는 이유가 바로 그 고리다.
+   */
+  useEffect(() => {
+    const sig = active && plan ? rerouteSignal({
+      plan, cv: cvNow, requiredM: requiredWidth(active),
+      driven, currentUid: current?.seg_uid ?? null, mem: cvFired.current,
+    }) : null;
+    // ★ 같은 자리면 상태를 안 건드린다. `driven` 이 매 틱 바뀌므로 그대로
+    //   넣으면 리렌더가 하나 더 붙는다(`gpsAccM` 이 문턱만 보는 그 사유).
+    setCvBlock((prev) => (
+      (prev?.seg_uid === sig?.seg_uid && prev?.passM === sig?.passM
+        && prev?.kind === sig?.kind) ? prev : sig));
+    if (!sig) return;
+    // ★ 발밑은 **재탐색이 아니다.** 상태로만 올리고 멈춘다 — 말은 음성이 든다.
+    if (sig.kind === "underfoot") return;
+    rememberReroute(cvFired.current, sig);
+    if (!data || !dest || !active) return;
+    const from = current ?? origin;
+    if (!from) return;
+    // ★ 인접리스트를 **여기서 바로 굽는다.** `cvNow` 가 반영된 `adj` 는 다음
+    //   렌더에야 생기므로 기다리면 옛 그래프로 **막힌 길을 한 번 더 낸다** —
+    //   `blockEdge` 가 같은 사유로 같은 일을 한다.
+    const safe = buildAdjacency(
+      data.graph, active, lenient, "safe", undefined, blocked, hazIdx, cvNow);
+    const fast = buildAdjacency(
+      data.graph, active, lenient, "fastest", undefined, blocked, hazIdx, cvNow);
+    route(from, dest, { safe, fast });
+  }, [cvNow, plan, driven, active, current, origin, data, dest,
+      lenient, blocked, hazIdx, route]);
+
   /**
    * 지도 클릭 · 검색 선택.
    * ★ 클릭 좌표를 그대로 쓰지 않는다. **반드시 도로에 스냅한다** —
@@ -392,12 +492,12 @@ export function useNavigation(spec: VehicleSpec | null) {
     if (!data || !active || !dest) return false;
     const next = new Set(blocked); next.add(uid);
     setBlocked(next);
-    const safe = buildAdjacency(data.graph, active, lenient, "safe", undefined, next, hazIdx);
-    const fast = buildAdjacency(data.graph, active, lenient, "fastest", undefined, next, hazIdx);
+    const safe = buildAdjacency(data.graph, active, lenient, "safe", undefined, next, hazIdx, cvNow);
+    const fast = buildAdjacency(data.graph, active, lenient, "fastest", undefined, next, hazIdx, cvNow);
     const from = current ?? origin;
     if (!from) return false;
     return route(from, dest, { safe, fast });
-  }, [data, active, dest, blocked, lenient, current, origin, route, hazIdx]);
+  }, [data, active, dest, blocked, lenient, current, origin, route, hazIdx, cvNow]);
 
   /**
    * 시연 — 막아도 우회(또는 대체 접근 지점)가 남는 좁은 구간을 고른다(§214-2).
@@ -412,13 +512,13 @@ export function useNavigation(spec: VehicleSpec | null) {
     if (data && active && dest) {
       const from = current ?? origin;
       for (const { e } of byWidth.slice(0, 12)) {
-        const A = buildAdjacency(data.graph, active, lenient, "safe", undefined, new Set([...blocked, e.seg_uid]), hazIdx);
+        const A = buildAdjacency(data.graph, active, lenient, "safe", undefined, new Set([...blocked, e.seg_uid]), hazIdx, cvNow);
         if (!from) break;
         if (reaches(data.graph, A, from.point, dest.point)) return e;
       }
     }
     return (byWidth[0] ?? { e: pl.edges[0] }).e;
-  }, [data, active, dest, current, origin, lenient, blocked, driven, hazIdx]);
+  }, [data, active, dest, current, origin, lenient, blocked, driven, hazIdx, cvNow]);
 
   /** 차종·모드가 바뀌었을 때 같은 목적지로 다시 낸다. */
   const recompute = useCallback(() => {
@@ -470,7 +570,7 @@ export function useNavigation(spec: VehicleSpec | null) {
     phase, fatal, notice, data, live, gpsAccM,
     current, origin, dest, plan, fastPlan, offRoute,
     lenient, setLenient, simSpeed, setSimSpeed,
-    rerouting, noRoute, blocked, remainM,
+    rerouting, noRoute, blocked, remainM, cvBlock, cvNow,
     driven, jumpSeq, lastJumpM, posMode, setPosMode, teleport, access, pickDetourable,
     pick, snapAt, recompute, choose, start, reset,
     setOriginAt, setDestAt, swap, computeRoutes, blockEdge,
