@@ -59,6 +59,7 @@ import {
 } from "./domain/opsProtocol";
 import { buildAdjacency, findRouteBetween, nearestNode, snapToEdge } from "./domain/graph";
 import { ruleSummary } from "./domain/rules";
+import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
 import { travelSeconds } from "./domain/speed";
@@ -234,10 +235,14 @@ export default function OpsApp() {
   const style = data.graph.style;
   const vehicle = fleet.current;
 
+  // ★ 2026-10-02 (§351). 종전에 `./?incident=…` 였고 **관제가 한 장 더 열렸다** —
+  //   배포에서 관제는 루트에 앉아 있고 `./` 는 지금 있는 자리다. 자리를 고르는
+  //   판단은 `domain/dispatch` 가 들고, 여기는 부르기만 한다(§336).
   const dispatchUrl = incident && vehicle && station
-    ? `./?incident=${incident.point[0].toFixed(6)},${incident.point[1].toFixed(6)}`
-      + `&label=${encodeURIComponent(incident.label)}&vehicle=${encodeURIComponent(vehicle.id)}`
-      + `&station=${encodeURIComponent(station.name)}`
+    ? mkDispatchUrl(window.__FL_VIEW, {
+        at: incident.point, label: incident.label,
+        vehicle: vehicle.id, station: station.name,
+      })
     : null;
 
   const waiting = ops.feed.filter((f) => !f.ackedAt).length;

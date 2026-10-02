@@ -26,6 +26,7 @@ import functools
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -61,42 +62,76 @@ def _verdict_rule() -> list[str]:
 
 
 # ─────────────────────────────────────────────────────────────
-# 1. 자동화가 부르는 도구가 README 에 있는가
+# 1. 자동화가 부르는 도구가 제 설명을 대는가
 # ─────────────────────────────────────────────────────────────
 
 # ★ 배포 본문이 옮겨 다니면서 `tools/` 호출도 같이 옮겨 다녔다 — `pages.yml`(W1) →
 #   `_deploy.yml` → `stage-site/action.yml`, 배포는 `deploy.yml` 하나(DECISIONS §224).
 #   빼면 `render_workflow.py` · `stage_pages.py` 가 그물 밖이다. **부르는 자리를 따라간다.**
+#: README 가 도구를 **목록으로** 다시 들기 시작하는 길이. 2026-10-02 실측 —
+#: 들어내기 전 최장 연속이 **23**, 들어낸 뒤가 **5**(쓰는 법 예시)다.
+#: ★ 예시 몇 줄은 목록이 아니다. 전수를 베끼는 것이 목록이다(DECISIONS §352).
+#: ★ 주입으로 물었다 — 옛 README 를 넣으면 23 으로 운다.
+RUN_MAX = 8
+
 CALLERS = (".github/workflows/contract.yml", ".github/workflows/deploy.yml",
            ".github/actions/stage-site/action.yml",
            "tools/verify.sh", "tools/ship.py")
 
 
-def test_readme_lists_tools_the_automation_calls():
-    """CI · verify · ship 이 부르는 도구는 README 에서 이름으로 찾을 수 있어야 한다.
+def test_tools_the_automation_calls_declare_themselves():
+    """CI · verify · ship 이 부르는 도구는 **제 머리말에 제 설명**이 있어야 한다.
 
-    ★ README §7 은 전수 색인이 아니라 요약이다. 그래서 **모든** 파일을
-      요구하지 않는다. 다만 자동화가 의존하는 것은 다르다 — 빨간불이
-      떴을 때 다음 사람이 그 도구가 무엇인지 알아야 한다.
-      `test_seg_*.py` 같은 글롭 표기는 그대로 인정한다.
+    ★ 2026-10-02 (DECISIONS §352) 에 뒤집혔다. 종전 이름은
+      `test_readme_lists_tools_the_automation_calls` 였고 「README 문자열 안에
+      이름이 있는가」를 봤다. 그 요구가 README 에 240줄짜리 목록 넷을 길렀고,
+      **설명이 맞는지는 아무도 안 봤다.**
+
+    ★ 요구의 뜻은 그대로다 — 빨간불이 떴을 때 다음 사람이 그 도구가 무엇인지
+      알아야 한다. 바뀐 것은 **어디서 아는가**다: 이제 그 도구 자신이 댄다.
+
+    ★ 이 시험이 `test_tools_are_wired` 의 전수 판정보다 **좁다.** 그쪽이 죽어도
+      자동화가 의존하는 것만은 여기서 운다 — 두 겹으로 둔다.
     """
     txt = "".join((ROOT / c).read_text(encoding="utf-8")
                   for c in CALLERS if (ROOT / c).exists())
     called = sorted(set(re.findall(r"tools/([A-Za-z0-9_]+\.(?:py|mjs|sh))", txt)))
     assert called, "자동화 정의에서 도구 호출을 찾지 못했다"
 
-    rd = README.read_text(encoding="utf-8")
-    globs = [t for t in re.findall(r"[A-Za-z0-9_*./-]+\.(?:py|mjs|sh)", rd) if "*" in t]
-    missing = [c for c in called
-               if c not in rd and not any(fnmatch.fnmatch(c, g) for g in globs)]
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("toolindex_ds", ROOT / "tools/toolindex.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m       # @dataclass 가 되짚는다 (DECISIONS §258-10)
+    spec.loader.exec_module(m)
+    reg = m.registry()
+    missing = [c for c in called if c not in reg]
     assert not missing, (
-        f"자동화가 부르는데 README 에 없는 도구 {len(missing)}개\n  "
-        + "\n  ".join(missing))
+        f"자동화가 부르는데 제 설명을 안 대는 도구 {len(missing)}개\n  "
+        + "\n  ".join(missing)
+        + "\n\n  머리말 첫 줄을 `<파일이름> — <한 줄>` 꼴로 적어라(DECISIONS §352).")
 
 
 def test_readme_globs_still_match_something():
-    """글롭 표기가 아무것도 안 가리키게 되면 목록이 거짓이 된다."""
+    """글롭 표기가 아무것도 안 가리키게 되면 목록이 거짓이 된다.
+
+    ★ 2026-10-02 (DECISIONS §352). **0건이 청결인지 죽음인지 가른다.** §352 가
+      README 에서 도구 목록 셋을 들어내면서 글롭 표기가 0개가 됐고, 그러면 아래
+      순회가 **영원히 빈 리스트**를 낸다 — 통과가 아니라 「안 봤다」다(§17-0 ③).
+      그래서 0 일 때는 **그것이 옳은 상태인지**를 따로 묻는다: 목록이 없으면
+      글롭도 없는 것이 맞고, 목록이 돌아왔는데 글롭이 0이면 의심해야 한다.
+    """
     rd = README.read_text(encoding="utf-8")
+    globs = {t for t in re.findall(r"[A-Za-z0-9_*./-]+\.(?:py|mjs|sh)", rd) if "*" in t}
+    if not globs:
+        run = best = 0           # 서로 다른 도구를 든 **연속** 줄의 최대 길이
+        for line in rd.splitlines():
+            run = run + 1 if re.search(r"tools/[\w.-]+\.(?:py|mjs|sh)", line) else 0
+            best = max(best, run)
+        assert best < RUN_MAX, (
+            f"글롭 표기가 0개인데 도구를 든 줄이 {best}개 **연속**이다 (상한 {RUN_MAX}) —\n"
+            "  목록이 돌아왔다. 정본은 각 도구의 머리말이다(DECISIONS §352).\n"
+            "  쓰는 법을 보이는 예시 몇 줄은 목록이 아니다 — 전수를 베끼는 것이 목록이다.")
     dead = []
     for g in {t for t in re.findall(r"[A-Za-z0-9_*./-]+\.(?:py|mjs|sh)", rd) if "*" in t}:
         if not any(fnmatch.fnmatch(p.name, g) for p in ROOT.rglob("*")

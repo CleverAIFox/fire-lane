@@ -32,6 +32,7 @@ PARAM EXEMPT
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -321,23 +322,31 @@ def test_exempt_entries_carry_a_reason():
     assert not blank, f"사유 없는 EXEMPT — {', '.join(blank)}"
 
 
-# ★ 2026-09-16. README 는 *"재현적이면 `tools/` 에 두고 verify.sh 에 배선하고 README 에
-#   적는다"* 고 적는다. 위 검사는 배선 반쪽만 봤다. 적는 반쪽에 강제자가 없어서
-#   `bridge_audit` · `its_linkmap` · `matchcheck` · `merge_batch.sh` 넷이 README 에 없었다 —
-#   머지 진입점까지 찾을 곳이 없었다(DECISIONS §168).
-README_EXEMPT: dict[str, str] = {}
+# ★ §168. 위는 **배선** 반쪽, 아래가 「적는」 반쪽이다. 그 집이 2026-10-02 에
+#   README 에서 **도구 자신**으로 옮겨졌다(§352).
+def _toolindex():
+    """`tools/toolindex.py` 를 적재한다. **판별식의 집은 거기다.**"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("toolindex", ROOT / "tools/toolindex.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m       # @dataclass 가 되짚는다 (DECISIONS §258-10)
+    spec.loader.exec_module(m)
+    return m
 
 
-def test_every_tool_is_named_in_readme():
-    """`tools/` 의 도구가 README 에 이름으로 적혀 있는가. 배선과 별개의 반쪽이다."""
-    text = (ROOT / "README.md").read_text(encoding="utf-8")
-    miss = sorted(p.name for p in (ROOT / "tools").iterdir()
-                  if p.is_file() and p.suffix in (".py", ".sh", ".mjs")
-                  and p.name not in README_EXEMPT and p.name not in text)
-    assert not miss, (
-        "README 에 없는 도구가 있다 — " + ", ".join(miss)
-        + "\n\n  README `## 도구` 또는 `### 대조 도구` 에 한 줄로 적어라.\n"
-          "  일회성이면 저장소 밖(`~/oneoff/`)으로 옮겨라 — README 규약이 둘 중 하나다.")
+def test_every_tool_declares_its_own_summary():
+    """도구가 **제 머리말 첫 줄에** 제 이름과 한 줄 설명을 대는가. (DECISIONS §352)
+
+    ★ 종전 이름은 `test_every_tool_is_named_in_readme` 였고 「파일 이름이
+      README **문자열 안에** 있는가」만 봤다 — **설명이 틀려도 · 비어도 · 남의
+      것을 복사해도 초록**이었다. 판정기는 `tools/toolindex.py` 가 든다(R3).
+    """
+    bad = _toolindex().judge()
+    assert not bad, (
+        f"도구가 제 이름 · 설명을 안 댄다 {len(bad)}건\n  " + "\n  ".join(bad)
+        + "\n\n  머리말 **첫 줄**을 `<파일이름> — <한 줄>` 꼴로 적어라. 문서에\n"
+          "  베껴 적지 마라 — 두 벌이 되면 갈린다(§352). 일회성이면 저장소 밖으로.")
 
 
 def _argv_flags(src: str) -> list[str]:
@@ -389,33 +398,32 @@ def test_the_flag_matcher_is_alive():
 def test_the_compare_tool_list_has_one_home():
     """「대조 도구」 목록이 두 문서에 사본으로 살면 갈린다. 실제로 아홉이 갈렸다.
 
-    ★ 2026-09-24 (DECISIONS §243). README 와 MASTER §14-5 가 같은 목록을
-      각자 들고 있었다 — README 에만 여섯, MASTER 에만 셋. 어느 쪽도
-      상대를 안 봤고 대조하는 검사가 없었다. README 를 정본으로 두고
-      (강제자가 그쪽에 있다 — 바로 위 `test_every_tool_is_named_in_readme`)
-      MASTER 는 가리키기만 한다.
-
-    ★ 보는 것은 **MASTER §14-5 안에 `tools/*.py` 호출줄이 있는가** 하나다.
-      목록이 돌아오는 유일한 꼴이 그것이고, 문장 대조가 아니라 꼴 대조라
-      사람이 말을 바꿔 써도 안 깨진다.
+    ★ §243. README 와 MASTER §14-5 가 같은 목록을 각자 들어 아홉이 갈렸다.
+      §352 가 그 목록을 **두 문서 모두에서** 없앴다 — 정본은 도구 자신의
+      머리말이다. 그래도 이 시험은 남는다: 목록이 **돌아오는** 자리가 §14-5 고,
+      돌아오면 또 갈린다. 보는 것은 `tools/*.py` 꼴 하나라 말을 바꿔도 안 깨진다.
     """
     import re
     m = (ROOT / "docs/MASTER.md").read_text(encoding="utf-8")
     a = m.index("### 14-5.")
     b = m.index("### 14-6.", a)
-    dup = sorted(set(re.findall(r"tools/([\w_]+\.(?:py|sh|mjs))", m[a:b])))
+    # ★ 색인을 **내는** 도구 하나는 든다. 그것은 사본이 아니라 가리킴이다.
+    dup = sorted(set(re.findall(r"tools/([\w_]+\.(?:py|sh|mjs))", m[a:b])) - {"toolindex.py"})
     assert not dup, (
-        "MASTER §14-5 가 대조 도구 목록의 **사본**을 다시 들었다 — "
-        + ", ".join(dup) + "\n"
-        "  목록의 집은 README 의 「대조 도구」 블록 하나다.\n"
-        "  여기서는 가리키기만 해라 — 두 벌이 되면 갈린다(2026-09-24 에 아홉이 갈렸다).")
+        "MASTER §14-5 가 도구 목록의 **사본**을 다시 들었다 — " + ", ".join(dup)
+        + "\n  목록의 집은 **도구 자신의 머리말**이다(§352). 여기서는 가리키기만 해라 —\n"
+          "  두 벌이 되면 갈린다(2026-09-24 에 아홉이 갈렸다).")
 
 
-def test_readme_exempt_entries_are_real_and_reasoned():
-    have = {p.name for p in (ROOT / "tools").iterdir() if p.is_file()}
-    ghost = sorted(n for n in README_EXEMPT if n not in have)
-    blank = sorted(n for n, why in README_EXEMPT.items() if not why.strip())
-    assert not ghost and not blank, f"없는 도구 {ghost} · 사유 없음 {blank}"
+def test_the_summary_judge_is_not_an_empty_net():
+    """★ `judge()` 가 빈 리스트를 내면 초록이다 — 판정기가 죽어도 초록이라는
+    뜻이라 여기서 직접 흔든다. §239 가 배운 꼴이고, 종전
+    `test_readme_exempt_entries_are_real_and_reasoned` 가 있던 자리다.
+    """
+    m = _toolindex()
+    assert m.judge([]) != [], "도구가 0개인데 초록이다 — 빈 그물"
+    assert len(m.tools()) >= 10, "실물 우주가 10개 미만이다 — 수집기를 의심하라"
+    assert m.selftest.__doc__, "판정기에 자기검사가 없다"
 
 
 # ── 판별식 카나리아 — 합성 입력으로 **직접** 흔든다 ───────────────

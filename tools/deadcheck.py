@@ -607,10 +607,9 @@ EXEMPT_SCOPE = {
     "tests/test_tools_are_wired.py::_ambiguous":
         "src 의 모듈 이름은 **도구 이름과 겹치는가**(동명 모호성)를 재는 사전이다. 훑는 대상이 "
         "아니라 대조표다",
-    "tests/test_tools_are_wired.py::test_every_tool_is_named_in_readme":
-        "tools/README 가 **도구**를 전부 적는가 — 우주가 tools/ 다",
-    "tests/test_tools_are_wired.py::test_readme_exempt_entries_are_real_and_reasoned":
-        "tools/README 면제 항목이 **tools/ 에 실재**하는가 — 우주가 tools/ 다",
+    "tools/toolindex.py::tools":
+        "tools/도구 **색인**이다. 우주가 `tools/` 인 것이 그 정의고 머리말 `밖` 칸이\n"
+        "                 적는다 — `src/firelane/` 의 모듈은 도구가 아니다(§352)",
     "tools/deadcheck.py::_members":
         "② 의 **분모**다 — `tools` · `src` 원본은 정의상 그 폴더 하나씩이다",
     "tools/dms.py::_units":
