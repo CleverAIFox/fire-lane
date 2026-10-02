@@ -2920,7 +2920,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,507 전수 · **분모(blank) 0절** · 물림(inherit) 670절.
+★ **강제자 칸의 분모.** 절 1,512 전수 · **분모(blank) 0절** · 물림(inherit) 674절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3968,11 +3968,17 @@ BEV 는 디버그 플래그 뒤에 둔다.
 ```
 web/data/segments.geojson   판정 · 폭 · 도형          지도가 읽는다
 web/data/route_vehicle.json 안전센터 2곳 사전계산      대조에 쓴다
-web/data/navi_graph.json    노드 1,139 · 엣지 1,281   내비가 읽는다  557KB
+web/data/navi_graph.json    노드 1,139 · 엣지 1,281   내비가 읽는다
 web/data/fleet.json         차종 10종 15대
 web/data/context.geojson    과속방지턱 · 단속카메라 · 보호구역 시설  내비가 읽는다(§216-3)
 web/data/history.geojson    119 신고 · 구조 + 실제 도착 시간          관제가 읽는다(§216-3)
 ```
+
+★ **2026-10-03 정정.** 이 표가 `navi_graph.json` 옆에 「557KB」를 적고 있었고
+실물은 570KB 였다. **그 수를 지키는 검사가 없다** — 노드·엣지 수는
+`tools/docnum_check.py` 가 들지만 바이트는 아무도 안 본다. 수를 고치지 않고
+**뺀다**(§246-2 와 같은 판단). 발행물 용량은 「web/data 용량」 관문과
+`naviweight` 가 들고, 그쪽은 상한이라 낡지 않는다.
 
 임의 출발지 경로 탐색은 `edge_cost` 규칙을 JS 로 옮기는 유일한 지점이다.
 **2026-09-06 에 했다**(DECISIONS §112).
