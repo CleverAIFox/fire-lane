@@ -67,6 +67,7 @@ from firelane.kinds import (
     DELIM_KINDS,
     JSON_KINDS,
     SHP_KINDS,
+    SINGLE_PICK,
 )
 from firelane.ledger import yaml_span as _led_yaml_span
 
@@ -128,7 +129,12 @@ def _csv_header(data: bytes, declared: str | None) -> dict:
 #:   그리고 그 판단 자체가 틀렸다 — 세는 대상은 **대장에 적혀 있는 값**이고,
 #:   `sources.yaml` 은 저장소 안에 있다. 레이크는 **읽을 때만** 필요하다.
 #:   대장만으로 센 실측이 3 이다.
-UNREADABLE = 3
+#:
+#: ★ 2026-10-02 **3 → 1** (DECISIONS §354). **셋 중 둘은 결함이 아니었다** —
+#:   레이크에서 실물을 읽어 확인했고 둘 다 `kind in SINGLE_PICK` 으로 멈췄다.
+#:   **느슨해지는 쪽이지만 실측이 근거다.** 남은 1(`ngii1k: layers 비었음`)이
+#:   진짜이고 `_nested_layers` 가 그 길을 뚫었다. 사연은 §354 가 든다.
+UNREADABLE = 1
 
 RATCHETS = {"UNREADABLE": "down"}
 
@@ -206,9 +212,10 @@ def unreadable(key: str, sch: dict, kind: str) -> list[str]:
     if kind in SHP_KINDS and lay is not None and not lay:
         bad.append(f"{key}: `layers` 가 비었다 — SHP 갈래인데 읽은 레이어가 0개다. "
                    "중첩 zip 이거나 SHP 가 아닌 형식일 수 있다")
-    if lay:
+    if lay and kind in SINGLE_PICK:
         # ★ `이름`, `이름(2)`, `이름(3)` … 은 레이어 셋이 아니라 **같은 레이어가
         #   여러 도엽에 있는 것**이다. 파일 이름이 겹쳐 OS 가 붙인 꼬리다.
+        # ★ §354. 도엽이 여럿인 갈래에서는 **그것이 선언된 모양**이다.
         stems = {re.sub(r"\(\d+\)$", "", str(x)).strip() for x in lay}
         if len(lay) > 1 and len(stems) == 1:
             bad.append(f"{key}: `layers` {len(lay)}개가 전부 `{stems.pop()}` 의 중복 꼬리다 — "
@@ -225,7 +232,9 @@ def unreadable(key: str, sch: dict, kind: str) -> list[str]:
         bad.append(f"{key}: `columns_error` 가 대장에 앉아 있다 — "
                    "**읽기 실패가 값이 됐다.** 에러는 기록할 것이 아니라 고칠 것이다")
     n = sch.get("features")
-    if isinstance(n, int) and n >= 100000 and str(n) == "1" + "0" * (len(str(n)) - 1):
+    # ★ §354. 쪼개어 내보내는 소스는 **조각 크기가 둥근 수**다 — 상한이 아니다.
+    if (isinstance(n, int) and n >= 100000 and kind in SINGLE_PICK
+            and str(n) == "1" + "0" * (len(str(n)) - 1)):
         bad.append(f"{key}: `features: {n}` 이 정확히 10의 거듭제곱이다 — "
                    "실측이 아니라 **상한이나 추정**일 수 있다. 세는 쪽을 확인해라")
     return bad
@@ -312,6 +321,8 @@ def probe(key: str, e: dict) -> dict | None:
         if kind in SHP_KINDS:
             with zipfile.ZipFile(src) as z:
                 infos = z.infolist()
+                if nested := _nested_layers(z, infos):
+                    return nested
             names = [i.filename for i in infos]
             # ★ 2026-09-17 (§182-1). UTF-8 플래그 없는 zip 의 한글 이름은 파이썬이 CP437 로 읽어 `╣╬┐°…` 가 된다
             #   (civil_office). 읽을 때는 그 이름 그대로 써야 열리고, **기록할 때는 사람이 읽는 이름**으로 되돌린다.
@@ -345,6 +356,40 @@ def probe(key: str, e: dict) -> dict | None:
     except Exception as ex:
         return {"error": f"{type(ex).__name__}: {ex}"[:110]}
     return None
+
+
+def _nested_layers(z: zipfile.ZipFile, infos: list) -> dict | None:
+    """**zip 안에 zip** 이면 한 겹 더 내려가 레이어 이름을 모은다. (DECISIONS §354)
+
+    ★ `ngii1k` 이 이 모양이다 — 바깥 zip 에 도엽 zip 74장이 있고 `.shp` 가 **없다.**
+      그래서 `layers: []` 를 적었고 다시 읽어도 같아 **드리프트가 영원히 0** 이었다.
+    ★ **한 장씩 올리고 버린다.** 한꺼번에 펼치면 8GB 기계에서 죽는다(대장 `note`).
+    ★ 안쪽 zip 이 없으면 `None` — 중첩 아닌 zip 의 동작을 안 바꾼다.
+    """
+    inner = [i.filename for i in infos if i.filename.lower().endswith(".zip")]
+    if not inner or any(i.filename.lower().endswith(".shp") for i in infos):
+        return None
+    seen: dict[str, int] = {}
+    for name in sorted(inner):
+        try:
+            with zipfile.ZipFile(io.BytesIO(z.read(name))) as iz:
+                # ★ **도엽 단위로 센다.** 한 층이 `.shp` 와 `.dbf` 둘로 오므로
+                #   파일 단위로 세면 같은 도엽을 두 번 센다.
+                here = {Path(_zip_display(q)).stem for q in iz.infolist()
+                        if q.filename.lower().endswith((".shp", ".dbf"))}
+        except (zipfile.BadZipFile, OSError):
+            continue
+        for stem in here:
+            seen[stem] = seen.get(stem, 0) + 1
+    if not seen:
+        return None
+    out: dict = {"layers": sorted(seen)[:MAX_COLS], "nested_zips": len(inner)}
+    if len(seen) > MAX_COLS:
+        out["layers_total"] = len(seen)
+    # ★ 전수에 있는 층을 따로 적는다 — 실측 68종 중 다섯뿐이다(§354-1).
+    if every := sorted(k for k, n in seen.items() if n == len(inner)):
+        out["layers_in_all"] = every[:MAX_COLS]
+    return out
 
 
 def _zip_display(info: zipfile.ZipInfo) -> str:
@@ -487,10 +532,36 @@ def selftest() -> int:
     if not unreadable("ngii1k", {"layers": []}, "shp_dir"):
         fails.append("빈 `layers` 를 SHP 갈래에서 통과시킨다 — 중첩 zip 을 못 읽은 것이다")
     dup = ["A_20260808", "A_20260808(2)", "A_20260808(3)"]
-    if not unreadable("jijeok", {"layers": dup}, "shp_zip_multi"):
+    if not unreadable("one", {"layers": dup}, "shp_zip"):
         fails.append("중복 꼬리 레이어를 여럿으로 센다 — 도엽이 여럿인 것이다")
     if not unreadable("x", {"features": 1000000}, "csv_points"):
         fails.append("`features: 1000000` 을 실측으로 읽는다")
+
+    # ①′ §354. **도엽이 여럿인 갈래에서는 둘 다 정상이다**(실측 §354-1).
+    if unreadable("jijeok", {"layers": dup}, "shp_zip_multi"):
+        fails.append("쪼갠 갈래의 중복 꼬리에 운다 — 그것이 선언된 모양이다")
+    if unreadable("jijeok", {"features": 1000000}, "shp_zip_multi"):
+        fails.append("쪼갠 갈래의 조각 크기에 운다 — 상한이 아니라 내보내기 단위다")
+
+    # ①″ 중첩 zip — `ngii1k` 의 실제 모양. 한 겹 내려가 이름을 모은다
+    def _zb(items):
+        b = io.BytesIO()
+        with zipfile.ZipFile(b, "w") as z:
+            for n, data in items:
+                z.writestr(n, data)
+        return b.getvalue()
+
+    leaf = _zb([("L1.shp", "x"), ("L1.dbf", "x"), ("L2.shp", "x")])
+    outer = _zb([("a.zip", leaf), ("b.zip", _zb([("L1.shp", "x")]))])
+    with zipfile.ZipFile(io.BytesIO(outer)) as z:
+        got = _nested_layers(z, z.infolist())
+    if (got or {}).get("layers") != ["L1", "L2"]:
+        fails.append(f"중첩 zip 의 레이어를 못 모은다 — {got}")
+    if (got or {}).get("layers_in_all") != ["L1"]:
+        fails.append("**전부에 있는 층**을 안 가린다 — 도엽마다 들쭉날쭉하다")
+    with zipfile.ZipFile(io.BytesIO(leaf)) as z:
+        if _nested_layers(z, z.infolist()) is not None:
+            fails.append("평범한 zip 을 중첩으로 본다 — 종전 경로를 바꾸면 안 된다")
 
     # ② 멀쩡한 것은 **조용해야** 한다 — 안 그러면 사람이 검사를 끈다
     if unreadable("ok", {"columns": ["A", "B"], "features": 63321}, "shp_zip"):
@@ -528,7 +599,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 18")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 23")
     return 1 if fails else 0
 
 
