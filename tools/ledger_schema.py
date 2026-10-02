@@ -134,7 +134,7 @@ def _csv_header(data: bytes, declared: str | None) -> dict:
 #:   레이크에서 실물을 읽어 확인했고 둘 다 `kind in SINGLE_PICK` 으로 멈췄다.
 #:   **느슨해지는 쪽이지만 실측이 근거다.** 남은 1(`ngii1k: layers 비었음`)이
 #:   진짜이고 `_nested_layers` 가 그 길을 뚫었다. 사연은 §354 가 든다.
-UNREADABLE = 1
+UNREADABLE = 0
 
 RATCHETS = {"UNREADABLE": "down"}
 
