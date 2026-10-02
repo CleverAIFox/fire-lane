@@ -4463,18 +4463,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0eb943f217d19a51",
-   "5719581b7cbf60dc",
-   "5719581b7cbf60dc"
+   "9cfc240c45b06502",
+   "9d5b385430618eb3",
+   "9d5b385430618eb3"
   ],
   "parts": {
    "web/navi/src/app/useVoice.ts": "7c12e32971d870d0",
-   "web/navi/src/domain/voice.ts": "5a1232708f32ac53",
+   "web/navi/src/domain/voice.ts": "10237901c0d1da7d",
    "web/navi/src/infra/speech.ts": "09fc262f786b2201",
    "web/navi/test/speech.test.ts": "25ca8188c6a2ca17",
-   "본문": "e009732abd62a5c8"
+   "본문": "6a4b995dc77924e3"
   },
-  "sha": "0eb943f217d19a51"
+  "sha": "9cfc240c45b06502"
  },
  "DECISIONS/302": {
   "doc": "docs/DECISIONS.md",
@@ -5533,6 +5533,30 @@
    "본문": "95f520089866aa83"
   },
   "sha": "70f6b9a920062a9d"
+ },
+ "DECISIONS/362": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_fix_door.py",
+   "tools/fix.sh",
+   "tools/fixable.py",
+   "tools/verify.sh"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "3bbc137f2c65b488",
+   "05f940c2a226d228",
+   "941031e7da7027b9"
+  ],
+  "parts": {
+   "tests/test_fix_door.py": "f70c782351befe5d",
+   "tools/fix.sh": "7fbdffc8b60071c4",
+   "tools/fixable.py": "f6d463a34b526eef",
+   "tools/verify.sh": "7d38954c5a2255db",
+   "본문": "0da3cf0cc581eb19"
+  },
+  "sha": "6cab60f63c232452"
  },
  "DECISIONS/37": {
   "doc": "docs/DECISIONS.md",
@@ -7166,9 +7190,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "6b8b9d0d6df9eae5",
-   "fa08500b4316191e",
-   "4d988cd6b8f1ba53"
+   "802fd3fce76c04b7",
+   "552430a6b96f9983",
+   "f75f446487ac8abf"
   ],
   "parts": {
    "src/firelane/seg/params.py": "53df7ea2ea107fd6",
@@ -7191,9 +7215,9 @@
    "web/config.js": "ed851b78a3c520eb",
    "web/navi/src/domain/vehicle.ts": "449e1612784f93ec",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "b3c5c0437424b265"
+   "본문": "b3bb19c843e7a0e4"
   },
-  "sha": "c9faee40ab70d596"
+  "sha": "ad46ff242e282b27"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",

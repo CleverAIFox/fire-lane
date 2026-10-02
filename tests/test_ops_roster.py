@@ -242,3 +242,52 @@ def test_the_server_file_actually_holds_the_round_trip() -> None:
     assert srv.count("def test_") >= 12, "test_ops_server.py 의 판별식이 너무 적다"
     for need in ("connect(", "uvicorn.Server", "recv("):
         assert need in srv, f"test_ops_server.py 가 `{need}` 를 안 쓴다 — 실물 왕복이 아니다"
+
+
+# ── 영상 문 (DECISIONS §363) ─────────────────────────────────────────
+def test_a_camera_reaches_both_control_and_the_trucks() -> None:
+    """측정은 **지휘와 현장 둘 다**에게 간다.
+
+    ★ 관제가 중계하면 그만큼 늦는다. 통과폭은 **들어가기 전에** 알아야 하고,
+      늦게 알면 소방차가 후진한다 — 그 값이 중계 한 단보다 크다.
+    ★ 「지휘는 관제를 거친다」는 규율은 **명령**에 대한 것이다. 측정은 명령이
+      아니다. 둘을 같은 규칙으로 묶으면 센서가 지휘 계통에 앉는다.
+    """
+    r = Roster()
+    ops = Peer(cid="o", kind="ops", unit="")
+    u1 = Peer(cid="u1", kind="unit", unit="1호")
+    u2 = Peer(cid="u2", kind="unit", unit="2호")
+    cam = Peer(cid="c", kind="cv", unit="CAM-7")
+    for p in (ops, u1, u2, cam):
+        r.join(p)
+    assert r.targets(cam) == ["o", "u1", "u2"]
+
+
+def test_a_camera_receives_nothing() -> None:
+    """★ 반대 방향. 카메라는 경로도 지령도 **안 받는다.**
+
+    받게 하면 그 순간 카메라가 상태를 들고, 상태를 든 센서는 센서가 아니다.
+    """
+    r = Roster()
+    ops = Peer(cid="o", kind="ops", unit="")
+    unit = Peer(cid="u", kind="unit", unit="1호")
+    cam = Peer(cid="c", kind="cv", unit="CAM-7")
+    for p in (ops, unit, cam):
+        r.join(p)
+    assert "c" not in r.targets(ops), "관제 지령이 카메라로 간다"
+    assert "c" not in r.targets(unit), "차량 상태가 카메라로 간다"
+
+
+def test_a_camera_is_not_counted_as_a_truck() -> None:
+    """명부가 카메라를 출동 차량으로 세면 관제 화면이 거짓을 든다."""
+    r = Roster()
+    r.join(Peer(cid="c", kind="cv", unit="CAM-7"))
+    assert r.units() == [], f"카메라가 차량으로 세어진다 — {r.units()}"
+    assert not r.ops_present(), "카메라가 관제로 세어진다"
+
+
+def test_the_camera_door_exists_and_carries_the_camera_name() -> None:
+    """문이 실재하고 **어느 카메라인가**를 들고 가는가."""
+    src = (ROOT / "src" / "firelane" / "ops" / "server.py").read_text(encoding="utf-8")
+    assert '@app.websocket("/cv/{cam}")' in src, "영상 문이 없다"
+    assert '_serve(ws, "cv", cam)' in src, "문이 카메라 이름을 안 넘긴다"
