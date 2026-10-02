@@ -397,6 +397,10 @@ jobs:
       #   그래서 로컬 전용이 아니라 여기도 든다 — 그 그래프가 발행본이기 때문이다.
       - name: 내비 그래프 결함 (측정 미결 넷)
         run: uv run python tools/navicheck.py
+      # ★ 2026-10-03 (§362). 수리 경로가 있는데 문에 안 걸린 단계가 있는가.
+      #   읽기만 한다 — CI 에서 **고치지 않는다**(쓰고 나서 재면 영영 초록이다).
+      - name: 수리 문 (기계가 고칠 수 있는데 문 밖인 것)
+        run: uv run python tools/fixable.py
       - name: PLAN 번호·참조 정합
         run: uv run python tools/plan_renumber.py
       - name: 문서 제목 무결

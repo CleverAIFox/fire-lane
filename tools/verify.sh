@@ -952,6 +952,13 @@ step "지도 글자" bash -c 'cd web/navi && npm run -s glyphs -- --check'
 scope "web/data/navi_graph.json src/firelane/publish_navi.py tools/*"
 step "내비 그래프 결함" uv run python tools/navicheck.py
 
+# ★ 2026-10-03 (DECISIONS §362). 이 파일은 **수리를 안 한다** — 아래 904줄 규율이
+#   그 사유다. 그런데 수리 문도 없어서 수리가 전부 사람 손으로 흘러갔다(실측:
+#   도구 120개 중 74개가 울기만 한다). `tools/fix.sh` 가 그 문이고, 이 단계는
+#   **그 문이 덜 열렸는가**를 센다 — 기계가 고칠 수 있는데 문에 안 걸린 것.
+scope "tools/*"
+step "수리 문" uv run python tools/fixable.py
+
 # ★ 파일명의 날짜가 자료 기준일인가 내려받은 날인가. `naming` 규약은
 #   "다운로드일이 아니다" 라고 적었는데 `_plausible_date` 는 형식만 본다 —
 #   규약은 있고 강제자가 그 규약을 안 지켰다(원칙 ①·②). 대가가
