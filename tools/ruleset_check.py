@@ -25,12 +25,14 @@ ruleset_check.py — GitHub 룰셋 실물이 문서의 방침과 같은가.
     1. 룰셋 셋이 존재하고 active 인가
     2. 대상 ref · 승인 수 · Code Owners · 머지 방식 · 필수 검사
     3. bypass_actors 가 비어 있는가            ← 예외는 문서 밖에서 자란다
+    4. 저장소 보안 설정 다섯                    ← 2026-10-01 까지 스크린샷으로 봤다
 
 ★ 이 도구는 **CI 에 붙이지 않는다.** 룰셋 읽기에는 관리자 토큰이 필요하고,
   그 토큰을 CI 시크릿에 두면 룰셋을 지킬 물건이 룰셋을 바꿀 수 있게 된다.
   사람이 주기적으로 친다. 절차는 workflow §7 에 적는다.
 
-IN    gh api repos/:owner/:repo/rulesets  ·  아래 EXPECT
+IN    gh api repos/:owner/:repo/rulesets · repos/:owner/:repo(`security_and_analysis`) ·
+      repos/:owner/:repo/collaborators · .github/workflows/*.yml · 아래 EXPECT · SECURITY
 OUT   없음 (검사). 어긋나면 종료코드 1
 PARAM 없음
 """
@@ -152,6 +154,50 @@ def _gh(path: str):
         print("  " + (r.stderr or "").strip()[:200])
         sys.exit(2)
     return json.loads(r.stdout)
+
+
+# ★ 2026-10-02 (DECISIONS §350). 저장소 **보안 설정**을 아무것도 안 보고 있었다.
+#   2026-10-01 에 사람이 그 화면을 **스크린샷으로 찍어 보냈다** — 룰셋을 똑같이
+#   손으로 적던 2026-08-31 과 글자 그대로 같은 자리다(이 파일 머리말).
+#   값은 `gh api repos/:owner/:repo --jq .security_and_analysis` 의 다섯 칸이고
+#   전부 `{"status": "enabled"|"disabled"}` 다. 2026-10-02 실측 — **다섯 다 disabled.**
+#   공개 저장소라 다섯 다 무료다(§12-1d).
+SECURITY = {
+    "secret_scanning": "enabled",
+    "secret_scanning_push_protection": "enabled",
+    "secret_scanning_non_provider_patterns": "enabled",
+    "secret_scanning_validity_checks": "enabled",
+    "dependabot_security_updates": "enabled",
+}
+
+
+def _security_gaps() -> list[str]:
+    """저장소 보안 설정이 `SECURITY` 선언과 같은가.
+
+    ★ **모르는 것은 빨강이다.** 칸이 응답에 없으면 「꺼짐」이 아니라 「못 읽었다」인데,
+      보안 축에서 그 둘을 같이 초록으로 보내면 검사가 아무것도 안 하는 것과 같다.
+      칸이 사라지면 GitHub 이 이름을 바꾼 것이고 그때 사람이 봐야 한다.
+
+    밖  **코드 스캐닝과 비공개 취약점 신고는 안 본다.** 이 응답에 없고 각자
+        다른 엔드포인트다 — 응답 꼴을 실물로 확인하기 전에는 안 적는다.
+        짐작으로 쓴 보안 검사는 무음 통과 아니면 영구 빨강이고 둘 다 없느니만 못하다.
+    """
+    got = (_gh(f"repos/{REPO}") or {}).get("security_and_analysis")
+    if not isinstance(got, dict) or not got:
+        return ["보안 설정을 하나도 못 읽었다 — `security_and_analysis` 가 비었다"
+                "\n      ★ 0건이 청결인지 죽음인지 가른다. 여기서는 죽음이다"]
+    bad = []
+    for key, want in SECURITY.items():
+        now = (got.get(key) or {}).get("status")
+        if now == want:
+            continue
+        if now is None:
+            bad.append(f"보안 설정 `{key}` 가 응답에 없다 — GitHub 이 이름을 바꿨는지 봐라"
+                       "\n      ★ 모르는 것을 꺼짐과 같이 두면 검사가 거짓말을 한다")
+        else:
+            bad.append(f"보안 설정 `{key}` 가 `{now}` 다 (선언 `{want}`)"
+                       "\n      Settings → Code security 에서 켠다. 공개 저장소라 무료다")
+    return bad
 
 
 def _secret_gaps() -> list[str]:
@@ -314,6 +360,7 @@ def main() -> int:
                    "\n        룰셋이 지원하지 않는다(DECISIONS 80)")
 
     bad += _secret_gaps()
+    bad += _security_gaps()
 
     if bad:
         print("★ 룰셋 실물이 방침과 다르다.\n")
