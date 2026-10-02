@@ -1842,8 +1842,8 @@ bypass 는 개인이 아니라 역할에 준다. **admin 이 늘면 우회 가�
 |---|---|---|
 | `secret_scanning` | 켬 | 이 저장소는 2026-08 에 키를 네 자리에 커밋한 적이 있다(§146) |
 | `secret_scanning_push_protection` | 켬 | 잡는 것보다 **막는 것**이 싸다. 올라간 키는 폐기해야 한다 |
-| `secret_scanning_non_provider_patterns` | 켬 | 발급사 꼴이 아닌 비밀번호 · 사설 토큰 |
-| `secret_scanning_validity_checks` | 켬 | 찾은 토큰이 **아직 살아 있는가** — 폐기 우선순위를 가른다 |
+| `secret_scanning_non_provider_patterns` | **못 켠다** | 발급사 꼴이 아닌 비밀번호 · 사설 토큰. 이 저장소에 그 칸이 **없다**(§357) |
+| `secret_scanning_validity_checks` | **못 켠다** | 찾은 토큰이 아직 살아 있는가. 같은 사유로 칸이 없다(§357) |
 | `dependabot_security_updates` | 켬 | 경보만 오고 PR 은 안 왔다. virtualenv 둘을 손으로 올렸다(§345-5) |
 
 ★ 공개 저장소라 다섯 다 **무료**다.
@@ -2920,7 +2920,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,480 전수 · **분모(blank) 0절** · 물림(inherit) 650절.
+★ **강제자 칸의 분모.** 절 1,484 전수 · **분모(blank) 0절** · 물림(inherit) 653절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

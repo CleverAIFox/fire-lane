@@ -22319,3 +22319,79 @@ base = next((b for b in bases
   §262 가 둘이 어긋났을 때 사실 쪽을 따르게 해 뒀고, 이번에 그것이 처음으로
   유용했다 — 본문은 재잠금이 필요하다고 맞게 적었지만, 맞게 적혔는지를
   **열차가 확인하지 않았다면** 틀리게 적힌 날에도 그대로 지나갔을 것이다.
+
+## 357. 켤 수 없는 칸 둘을 「켬」이라 선언해서 릴리즈를 막았다
+
+> 2026-10-02
+강제자  `tools/ruleset_check.py` 의 `SECURITY`(다섯 칸의 **선언된 값** ·
+`_security_gaps` 가 양방향으로 댄다 — 켜져도 운다) · `MASTER §12-1` 의 설정 표.
+하위 셋이 이 칸을 물려받는다
+배운 것  **선언을 쓰기 전에 그것이 설정 가능한지를 재야 한다.** 안 재면
+아무도 못 고치는 빨강이 서고, 그런 빨강은 검사를 끄게 만든다(§18-13).
+
+§350 이 저장소 보안 설정 다섯에 강제자를 세우면서 **전부 `enabled`** 로 적었다.
+그 다섯은 GitHub 문서를 보고 적은 것이고 **이 저장소에서 켤 수 있는지는 안 봤다.**
+2026-10-02 에 그 검사가 처음으로 릴리즈를 세웠고(`§12-8b`), 셋은 켰는데 둘이
+안 켜졌다.
+
+### 357-1. 실측 둘이 같은 답을 냈다
+
+```
+화면   Settings → Advanced Security 의 `Secret Protection` 은
+       Disable 단추 **하나짜리 묶음**이다. 하위 줄이 없다.
+API    gh api -X PATCH … secret_scanning_non_provider_patterns=enabled
+       → 200. 저장소 전체를 돌려주는데 그 칸은 그대로 `disabled` 다.
+       **에러도 안 내고 안 바꾼다.**
+```
+
+★ **둘 다 사람을 속인다.** 보안 개요 화면은 「Secret scanning • Enabled」를
+  초록으로 적는데 그것은 **발급사 패턴 스캔**이 켜졌다는 뜻이고(그것은 공개
+  저장소 무료다), API 는 거절을 성공으로 돌려준다. 둘 중 하나만 봤으면
+  「설정을 잘못 눌렀나」로 네 시간을 쓴다 — 2026-10-02 에 실제로 그랬다.
+
+### 357-1b. 왜 못 켜는가 — 측정만으로는 모자랐다
+
+처음에 이 절은 「화면에 없고 API 가 무시한다」까지만 적고 **못 켜는 이유를
+안 적었다.** 그것으로는 「유료 결제하면 되나」 · 「찾기만 못한 건가」가 안
+갈리고, 안 갈리면 다음 사람이 같은 네 시간을 쓴다. 문서를 찾아 봤다.
+
+```
+GitHub Docs — 둘 다 같은 문장이다
+    Organization-owned repositories on GitHub Team with
+    GitHub Secret Protection enabled
+    ★ Not supported: Public repositories owned by personal user accounts.
+
+이 저장소
+    owner.type  "User"      조직이 아니라 **개인 계정**이다
+    visibility  "public"
+```
+
+★ **돈 문제가 아니라 소유 주체 문제다.** 개인 계정 공개 저장소는 결제해도
+  대상 밖이다. 켜려면 저장소를 조직으로 옮기고 GitHub Team 이상에
+  Secret Protection 을 붙여야 하고, 이 프로젝트에 그럴 값이 없다.
+
+★ 이제 측정 셋이 같은 답을 낸다 — **화면 · API · 문서.** 셋이 갈리면 그때
+  다시 본다. 셋 중 둘만 보고 적었던 것이 이 절의 첫 판이었다.
+
+★ `dependabot_security_updates` 는 **전용 엔드포인트**였다 —
+  `PUT repos/:owner/:repo/automated-security-fixes` 가 한 번에 켰다.
+  같은 응답 안에 같이 실려 오는 칸들이라고 **같은 문으로 들어가지 않는다.**
+
+### 357-2. 「못 켠다」를 빼지 않고 **선언으로 적는다**
+
+```python
+# ↓ 이 저장소에서 켤 수 없다(§357). 켜지면 운다 — 그것이 신호다
+"secret_scanning_non_provider_patterns": "disabled",
+"secret_scanning_validity_checks": "disabled",
+```
+
+★ **검사에서 빼는 것이 가장 싸고 틀린 길이다.** 빼면 그 칸이 조용해지고,
+  GitHub 이 나중에 열어줘도 아무도 모른다. `_security_gaps` 는 선언과 실물을
+  **양방향으로** 대므로, 켜지는 날 「선언 `disabled` · 실물 `enabled`」로 운다 —
+  그때 사람이 §12-1 표를 고치고 선언을 `enabled` 로 올린다. §354 가 같은
+  배치에서 한 것과 같은 판단이다: **범위를 좁히되 축을 지우지 않는다.**
+
+★ 실패 문구도 고쳤다. 종전에는 「Settings → Code security 에서 켠다.
+  **공개 저장소라 무료다**」였고, 그 한 줄이 「있는데 못 찾는 것」이라고
+  믿게 만들었다. 이제 **그 칸이 이 저장소에 있는지부터 본다**고 적고, 없으면 고칠 곳이
+  설정이 아니라 선언이라고 적는다.
