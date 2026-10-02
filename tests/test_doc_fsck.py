@@ -338,3 +338,75 @@ def test_proposal_probe_is_alive():
     assert any(r[0] == "998" for r in caught), (
         "카나리아가 안 잡혔다. 닫힌 행을 심었는데 검사가 조용하다 —\n"
         "  `_proposal_rows` 의 정규식이 표 형식 변경으로 죽었다.")
+
+
+# ── ⑥b 의 전제 — 공통 조상이 없으면 재지 않는다 (DECISIONS §355) ──────
+#: ⑥b 가 사는 모듈. **`sys.path` 를 안 건드린다** — 위 `doc_fsck` 와 같은 방식이다.
+_spec6 = importlib.util.spec_from_file_location(
+    "docx_revised", ROOT / "tools" / "docfsck" / "docx_revised.py")
+docx_revised = importlib.util.module_from_spec(_spec6)
+sys.modules[_spec6.name] = docx_revised
+_spec6.loader.exec_module(docx_revised)
+
+
+def _orphan_ref() -> str:
+    """HEAD 와 **공통 조상이 없는** 커밋을 ref 로 만든다. 얕은 클론의 재현이다.
+
+    ★ 얕은 클론에서는 `origin/part/ไ…` 같은 ref 가 **있는데 커밋이 없다.**
+      여기서는 반대로 커밋은 있고 조상이 없게 만든다 — `base...HEAD` 가
+      공통 조상을 못 찾는다는 점에서 git 에게는 같은 상황이다.
+    """
+    import subprocess
+    root = Path(__file__).resolve().parents[1]
+
+    # ★ 2026-10-02 (DECISIONS §362). `commit-tree` 는 **쓰기** 명령이라 커미터
+    #   신원이 있어야 돈다. 개발 기계에는 있고 **CI 러너에는 없다** — verify 는
+    #   초록인데 CI 가 `Author identity unknown` 으로 죽었다(PR #269).
+    #   시험이 환경에 있는 것을 전제로 쓰면 그 전제가 없는 곳에서 처음 드러난다.
+    #   그래서 **시험이 제 신원을 들고 간다** — 어느 기계에서도 같게 돈다.
+    ID = ("-c", "user.name=fl-test", "-c", "user.email=fl-test@invalid.example")
+
+    def g(*a: str) -> str:
+        r = subprocess.run(["git", *ID, *a], cwd=root, capture_output=True,
+                           text=True, timeout=20, check=True)
+        return r.stdout.strip()
+
+    tree = g("hash-object", "-w", "-t", "tree", "/dev/null")
+    sha = g("commit-tree", tree, "-m", "orphan probe")
+    name = "refs/fl-test/orphan-probe"
+    g("update-ref", name, sha)
+    return name
+
+
+@pytest.mark.skipif(not (ROOT / ".git").exists(),
+                    reason="환경skip(도구) — git 저장소가 아니라 ref 를 못 심는다")
+def test_the_squash_arm_declines_to_measure_without_a_common_ancestor():
+    """**얕은 클론에서 사유 없이 빨개지지 않는다.**
+
+    ── 왜 (2026-10-02 · DECISIONS §355) ──────────────────────────
+    PR #266 의 CI 가 이렇게 울었다 —
+
+        docs/proposal.docx 이 origin/part/infra 와 다른지 판별하지 못했다: .
+
+    사유 칸이 비어 있다. `git diff base...HEAD` 가 공통 조상을 못 찾아 죽었고
+    stderr 가 비었기 때문이다. 종전 기준 선택은 **이름이 있는가**(`rev-parse
+    --verify`)만 봤는데, `checkout@v4` 의 얕은 클론에는 **이름은 있고 커밋이
+    없다.** 바로 위 `check_docx_revised` 가 2026-09-18 에 이미 선언한 전제를
+    이 팔만 안 물려받고 있었다.
+    """
+    m = docx_revised
+    ref = _orphan_ref()
+    try:
+        assert m.check_docx_ready_for_squash(bases=(ref,)) == [], (
+            "공통 조상이 없는 기준으로 쟀다 — 얕은 클론에서 CI 가 사유 없이 빨개진다")
+        # ★ 빈 그물이 아니다(MASTER §17-0 ③). 위 통과가 「조상이 없어서」인지
+        #   「프로브가 아예 안 돌아서」인지 가른다 — HEAD 는 제 조상이다.
+        assert m._git("merge-base", "HEAD", "HEAD")[0] == 0, (
+            "merge-base 프로브 자체가 안 돈다 — 위 통과는 아무것도 증명 안 한다")
+        assert m._git("merge-base", "HEAD", ref)[0] != 0, (
+            f"{ref} 가 HEAD 와 조상을 공유한다 — 주입이 성립 안 했다")
+    finally:
+        import subprocess
+        subprocess.run(["git", "update-ref", "-d", ref],
+                       cwd=Path(__file__).resolve().parents[1],
+                       capture_output=True, timeout=20, check=False)

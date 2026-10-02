@@ -223,7 +223,7 @@ DEFAULT_KIND = "read"
 #: 195가 두 배치째 한 절도 안 움직였고, 아무 관문도 울지 않았다. 세는 자리가
 #: 없으면 안 줄어든다(`sizecheck` 머리말이 같은 것을 적는다).
 #: ★ 새 절을 쓰면 이 수가 는다 — 그것이 빨강이고, 고침은 그 절을 읽고 찍는 것이다.
-UNSEALED = 60
+UNSEALED = 48
 RATCHETS = {"UNSEALED": "down"}
 
 

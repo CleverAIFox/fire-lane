@@ -162,12 +162,25 @@ def _gh(path: str):
 #   값은 `gh api repos/:owner/:repo --jq .security_and_analysis` 의 다섯 칸이고
 #   전부 `{"status": "enabled"|"disabled"}` 다. 2026-10-02 실측 — **다섯 다 disabled.**
 #   공개 저장소라 다섯 다 무료다(§12-1d).
+#: 저장소 보안 설정의 **선언된 값**. 정본 표는 `MASTER §12-1d` 다 — §12-1 은
+#: 룰셋 표이고 보안 설정은 그 하위 절에 따로 산다.
+#:
+#: ★ 2026-10-02 (DECISIONS §357). 종전에는 다섯이 전부 `enabled` 였다.
+#:   **셋만 켤 수 있었다.** 나머지 둘은 이 저장소에서 설정할 수 있는 칸이
+#:   아니다 — GitHub 문서가 둘 다 「조직 소유 + GitHub Team 이상 +
+#:   Secret Protection」을 요구하고 **개인 계정 공개 저장소는 지원 대상 밖**이라
+#:   적는다. 이 저장소는 `owner.type: "User"` 다. 설정 화면에 줄이 없고
+#:   API `PATCH` 는 요청을 에러 없이 무시한다 — 측정 셋이 같은 답이다.
+#: ★ **`disabled` 를 선언으로 적는다.** 「못 켠다」를 검사에서 빼면 그 칸이
+#:   조용해지고, 나중에 GitHub 이 열어줘도 아무도 모른다. 선언으로 적으면
+#:   켜지는 날 **반대 방향으로** 운다 — 그때 사람이 이 표를 고친다.
 SECURITY = {
     "secret_scanning": "enabled",
     "secret_scanning_push_protection": "enabled",
-    "secret_scanning_non_provider_patterns": "enabled",
-    "secret_scanning_validity_checks": "enabled",
     "dependabot_security_updates": "enabled",
+    # ↓ 이 저장소에서 **켤 수 없다**(§357). 켜지면 운다 — 그것이 신호다
+    "secret_scanning_non_provider_patterns": "disabled",
+    "secret_scanning_validity_checks": "disabled",
 }
 
 
@@ -195,8 +208,12 @@ def _security_gaps() -> list[str]:
             bad.append(f"보안 설정 `{key}` 가 응답에 없다 — GitHub 이 이름을 바꿨는지 봐라"
                        "\n      ★ 모르는 것을 꺼짐과 같이 두면 검사가 거짓말을 한다")
         else:
-            bad.append(f"보안 설정 `{key}` 가 `{now}` 다 (선언 `{want}`)"
-                       "\n      Settings → Code security 에서 켠다. 공개 저장소라 무료다")
+            bad.append(
+                f"보안 설정 `{key}` 가 `{now}` 다 (선언 `{want}`)"
+                "\n      ★ **먼저 그 칸이 이 저장소에 있는지 봐라.** 화면에 줄이 없고"
+                "\n        `gh api -X PATCH` 가 에러 없이 무시하면 **못 켜는 칸**이고,"
+                "\n        그때 고치는 곳은 설정이 아니라 `MASTER §12-1d` 와 `SECURITY` 다(§357)."
+                "\n      칸이 있으면 Settings → Code security 에서 켠다")
     return bad
 
 

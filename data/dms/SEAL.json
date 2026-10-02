@@ -1,20 +1,20 @@
 {
- "sealed_at": "2026-10-02T11:43:43+09:00",
- "commit": "95ad153",
- "tool": "f5f437455808aa90",
+ "sealed_at": "2026-10-02T23:15:16+09:00",
+ "commit": "bab31d2",
+ "tool": "81c32f9dc983d13a",
  "tools": {
-  "tools/deadcheck.py": "cbd5ececae8fdc6c",
+  "tools/deadcheck.py": "a4db7bf393ad64fd",
   "tools/dms.py": "f2ef5dc609a4f045",
   "tools/dupcheck.py": "50e4756f13fd85fe",
   "tools/env_check.py": "9c41c18ab2a68470",
-  "tools/verify.sh": "74f5f8dde07a9c86"
+  "tools/verify.sh": "eb7180d1430824a5"
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "c3010c72f782b4d9",
-  "docs/DECISIONS.md": "09cc82f6d527ad7c",
-  "docs/PLAN.md": "08d130ed2a7c2419",
-  "README.md": "a2b2adfc8a8dbb7c"
+  "docs/MASTER.md": "d106e02524d0f089",
+  "docs/DECISIONS.md": "89961a7a97162fae",
+  "docs/PLAN.md": "9702d0c14d7d1089",
+  "README.md": "3d67fb45e25d8d3a"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -249,11 +249,11 @@
   ]
  },
  "code": {
-  "sha256": "bc460d169b03ba9d",
+  "sha256": "2f887d48d04ff159",
   "files": {
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "pyproject.toml": "8fcce06301260d06fe7a2d2cf5663295b4d60219dc7e11c4a8bb8788bed1bd36",
-   "sources.yaml": "efcee56880c9b034767a87f2ea36a0510c4766da4def52c727e6b243c9cc43ae",
+   "sources.yaml": "0e6c022baaebe12d63886f9de1f1f54c7d1f696e8cecb992b202d63e139ddcbc",
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d16004113ef6e158febf3069febd5b43064abe2ffd93623481aa241272e5b627",
@@ -543,7 +543,7 @@
    "title": "5-3. 보조 모듈"
   },
   "MASTER/5-4": {
-   "h": "29651adddb9809a1",
+   "h": "fabd664474a9f641",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "5-4. 판정 뼈대는 아직 `road_link` 위에 있다 — 교체는 **보류**다"
@@ -609,7 +609,7 @@
    "title": "7-2. 아직 검증되지 않은 것"
   },
   "MASTER/8": {
-   "h": "adee19c098960762",
+   "h": "44b000be916cc8f3",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "8. 역할"
@@ -783,7 +783,7 @@
    "title": "12-1a-2. 역할 번호와 조회 함정"
   },
   "MASTER/12-1d": {
-   "h": "e6a81bdb1c22ed4a",
+   "h": "dc37b310ffe2bea1",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-1d. 저장소 보안 설정"
@@ -945,7 +945,7 @@
    "title": "14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다"
   },
   "MASTER/14-5": {
-   "h": "82a0434ea8a91c05",
+   "h": "7b1f72ad970f12d8",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-5. 대조 도구 — 아무것도 안 바꾼다"
@@ -987,25 +987,25 @@
    "title": "15-3. 수치 표기 원칙"
   },
   "MASTER/16": {
-   "h": "8e3bf71bc9274053",
+   "h": "58235aea8af155de",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "16. 결정 대장"
   },
   "MASTER/16-1": {
-   "h": "d610547f7a8570a1",
+   "h": "4fe9dca48a5770e7",
    "state": "none",
    "doc": "docs/MASTER.md",
    "title": "16-1. `CCTV_RANGE` 는 거리 상수가 아니라 촬영 기하의 함수다"
   },
   "MASTER/16-2": {
-   "h": "fbfccbecfa78edea",
+   "h": "e59ea343e1fed3f6",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "0f6b8ccfdadeafbe",
+   "h": "d359d7cc3e284c37",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -1875,7 +1875,7 @@
    "title": "어떻게 갈랐나"
   },
   "DECISIONS/69": {
-   "h": "5fe86e1eea42d548",
+   "h": "74d7b381b048a0da",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "69. 낡음 게이트가 스스로 해제될 길이 없었다"
@@ -3261,7 +3261,7 @@
    "title": "162-7. 여정지도 복원을 `⏳` 로 재분류했다"
   },
   "DECISIONS/162-8": {
-   "h": "1ad0eca5fbdae456",
+   "h": "e5a6fd9321e125e3",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "162-8. README 재편을 룰셋·소유 배치 뒤로 민다"
@@ -3495,7 +3495,7 @@
    "title": "168-2. `.cx` 카나리아가 처음엔 죽어 있었다"
   },
   "DECISIONS/168-3": {
-   "h": "996824ac687fec49",
+   "h": "760110c5ede647fc",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "168-3. README 에 없는 도구 넷 — 규약의 반쪽에 강제자가 없었다"
@@ -6021,7 +6021,7 @@
    "title": "242-5. 끄는 길이 없던 것 셋"
   },
   "DECISIONS/243": {
-   "h": "1c51cae315be8525",
+   "h": "36f0a62ed03e4d98",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "243. 전수 감사 — 검사가 **스스로 못 보는 자리**에 결함을 키우고 있었다"
@@ -7683,13 +7683,13 @@
    "title": "303-3. 판정 폐포가 16 → 17 이 됐다 — 면적이 는 것이 아니다"
   },
   "DECISIONS/304": {
-   "h": "a01408efe9346695",
+   "h": "e2779911905dfe8c",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "304. 규칙 변경을 배달 전에 재는 도구 — 반년 미결의 원인은 게으름이 아니라 「못 쟀다」였다"
   },
   "DECISIONS/304-1": {
-   "h": "d056017e7d992332",
+   "h": "7b3767e6fc930928",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "304-1. 첫 발견 — clear 를 내린 구간을 부를 회색 낱말이 없다"
@@ -8451,7 +8451,7 @@
    "title": "339-3. 그래서 안 넣는다 — 이것은 §173-2 의 일이다"
   },
   "DECISIONS/340": {
-   "h": "331134691138dd66",
+   "h": "c9222f7cfcd0c842",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "340. 읽기 실패가 대장에 **값으로** 저장돼 있었다"
@@ -8481,7 +8481,7 @@
    "title": "340-4. 처음 적은 8 이 **레이크 없이는 못 세는 수**였다"
   },
   "DECISIONS/341": {
-   "h": "c5231d90962705a8",
+   "h": "7a6a8bca3c28e6d7",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "341. 의존성 대장이 **실제와 달랐다** — 여덟이 0이 됐다"
@@ -8505,7 +8505,7 @@
    "title": "341-3. Dependabot 경보 셋이 **같이 닫혔다**"
   },
   "DECISIONS/341-4": {
-   "h": "12244fe0e99b5780",
+   "h": "5c4b9d03d9eaa798",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "341-4. 남은 것 하나 — 폐포가 **의도보다 넓다**"
@@ -8763,10 +8763,130 @@
    "title": "351-1. 검사 스물이 초록인 채로 여드레"
   },
   "DECISIONS/351-2": {
-   "h": "134df0fede6b51fc",
+   "h": "c023e9aa2e406f58",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "351-2. 경로로 판정하지 않는다 — `main.tsx` 가 그 함정을 이미 적어 뒀다"
+  },
+  "DECISIONS/352": {
+   "h": "29f3924e19fd3e95",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "352. 목록을 한 문서에 모으는 것은 사본을 한 벌로 줄이는 것이지 없애는 것이 아니다"
+  },
+  "DECISIONS/352-1": {
+   "h": "e2866a52dc7e40a9",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "352-1. 강제자가 **설명을 한 번도 안 봤다**"
+  },
+  "DECISIONS/352-2": {
+   "h": "270c65ada1daf7d8",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "352-2. 정본이 이미 파일 안에 있었다"
+  },
+  "DECISIONS/352-3": {
+   "h": "7e79e4c785f8723d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "352-3. 지운 것과 안 지운 것"
+  },
+  "DECISIONS/353": {
+   "h": "d74eaa5a6de90e7c",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "353. 미날인 열둘을 읽었더니 다섯이 거짓이었다"
+  },
+  "DECISIONS/353-1": {
+   "h": "9628d0074b15295c",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "353-1. 다섯"
+  },
+  "DECISIONS/353-2": {
+   "h": "e70097fbee504659",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "353-2. 「범위가 이름보다 넓다」가 둘"
+  },
+  "DECISIONS/354": {
+   "h": "4cb941024f0e4c17",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "354. 읽을 수 없다고 센 셋 중 둘은 읽을 수 있었다"
+  },
+  "DECISIONS/354-1": {
+   "h": "3dddda9e0d4bb817",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "354-1. 실측"
+  },
+  "DECISIONS/354-2": {
+   "h": "67f1098349d1df4b",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "354-2. 고친 것"
+  },
+  "DECISIONS/354-3": {
+   "h": "e95a226595a89ad5",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "354-3. `ledger_schema.py` 가 600 을 넘었다"
+  },
+  "DECISIONS/355": {
+   "h": "f46f9ea057a3f753",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "355. 아홉 날 전에 옆 팔이 선언한 전제를 새 팔이 안 물려받았다"
+  },
+  "DECISIONS/355-1": {
+   "h": "3946901ea8cd7d87",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "355-1. 같은 파일에서 한 팔은 알고 한 팔은 몰랐다"
+  },
+  "DECISIONS/355-2": {
+   "h": "2722cb0318730fd7",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "355-2. 고친 것 — 이름이 아니라 **공통 조상**으로 고른다"
+  },
+  "DECISIONS/356": {
+   "h": "f27af576c92998f1",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "356. 판정 폐포 안의 판 올리기가 판정을 안 움직였다"
+  },
+  "DECISIONS/356-1": {
+   "h": "f43034fcfd7b6e47",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "356-1. 본문이 적은 재잠금을 열차가 안 믿었다"
+  },
+  "DECISIONS/357": {
+   "h": "3ad1c68e052065b9",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "357. 켤 수 없는 칸 둘을 「켬」이라 선언해서 릴리즈를 막았다"
+  },
+  "DECISIONS/357-1": {
+   "h": "3a45aaaf73fb4b5e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "357-1. 실측 둘이 같은 답을 냈다"
+  },
+  "DECISIONS/357-1b": {
+   "h": "ea7b1a20088d6c26",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "357-1b. 왜 못 켜는가 — 측정만으로는 모자랐다"
+  },
+  "DECISIONS/357-2": {
+   "h": "369515eee8dd19f1",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "357-2. 「못 켠다」를 빼지 않고 **선언으로 적는다**"
   },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
@@ -8787,7 +8907,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN/1": {
-   "h": "6a7e37f295eb5723",
+   "h": "b34067d7d0c8e502",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일 — 97행"
@@ -8949,7 +9069,7 @@
    "title": "9. 외부 의존"
   },
   "PLAN/10": {
-   "h": "ff61715ea1185d34",
+   "h": "9a130960cd1dbccb",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "10. 우선순위"
@@ -8985,7 +9105,7 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN/13-3": {
-   "h": "1a4400c87343b999",
+   "h": "9aa767d79d59f1ad",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-3. 남은 결함 1건"
@@ -9003,19 +9123,19 @@
    "title": "13-5. 규약"
   },
   "README/문서는_넷이다": {
-   "h": "093694f02f7c962a",
+   "h": "bba1efcaa134270e",
    "state": "wired",
    "doc": "README.md",
    "title": "문서는 넷이다"
   },
   "README/문서는_넷이다/일회성_도구는_저장소에_두지_않는다": {
-   "h": "862acda41af912ec",
+   "h": "c47c895420a96d20",
    "state": "wired",
    "doc": "README.md",
    "title": "일회성 도구는 저장소에 두지 않는다"
   },
   "README/문서는_넷이다/문서에도_검사가_붙어_있다": {
-   "h": "d4bb68d0ba7bbdf7",
+   "h": "b56eac4b7aa5a144",
    "state": "none",
    "doc": "README.md",
    "title": "문서에도 검사가 붙어 있다"
@@ -9045,13 +9165,13 @@
    "title": "파이프라인"
   },
   "README/도구": {
-   "h": "a6af5deae425e701",
+   "h": "cd9de4f6dd9adfc2",
    "state": "wired",
    "doc": "README.md",
    "title": "도구"
   },
   "README/도구/대조_도구_아무것도_안_바꾼다": {
-   "h": "cf8285a5291aab9a",
+   "h": "a863d66cd68bafa8",
    "state": "wired",
    "doc": "README.md",
    "title": "대조 도구 — 아무것도 안 바꾼다"
@@ -9130,7 +9250,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2154 passed, 1 warning in 325.13s (0:05:25)",
+   "tail": "2156 passed, 1 warning in 315.10s (0:05:15)",
    "red": []
   },
   "probe/deadcheck": {
