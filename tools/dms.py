@@ -1210,6 +1210,45 @@ def cmd_round(data: dict, size: int) -> None:
     print(f"\n다 읽었으면 — tools/dms.py mark {' '.join(r['id'] for r in todo[:size])}")
 
 
+def cmd_prune(data: dict, apply: bool) -> int:
+    """북마크가 드는 절 중 **지금 없는 것**을 떨어낸다.
+
+    ── 왜 생겼나 (2026-10-03 · DECISIONS §365) ──────────────────
+    `cmd_mark` 는 더하기만 있었다. 그런데 문서는 **줄어든다** — PLAN 이
+    닫힌 하위 절을 지우는 것이 정상 경로다(§205 가 결번을 허용한 이유와
+    같다). 그때 북마크는 없는 절을 계속 들고 있고
+    `test_dms_ids::test_bookmark_and_seal_use_current_ids` 가 운다.
+
+    ★ 그 빨강은 **옳다.** 북마크가 없는 절을 들면 「읽었다」가 어디에
+      걸린 것인지 알 수 없고, 같은 ID 가 나중에 다른 절에 재사용되면
+      읽지도 않은 절이 읽은 것이 된다(PLAN 번호 재사용과 같은 병).
+      문제는 빨강이 아니라 **떨어낼 문이 없었다**는 것이다 —
+      그래서 사람이 JSON 을 손으로 고치게 됐다.
+
+    ★ 떨어낸 ID 를 **화면에 적는다.** 조용히 지우면 「읽은 절 N」이
+      소리 없이 줄고, 그 수는 봉인 회차의 분자다.
+    """
+    bm = load_bookmark()
+    now = {s["id"] for rel in DOCS for s in sections(rel)}
+    gone = sorted(set(bm.get("done", [])) - now)
+    if not gone:
+        print("북마크 전부가 실재하는 절이다 — 떨어낼 것이 없다")
+        return 0
+    print(f"없는 절을 드는 북마크 {len(gone)}건")
+    for k in gone:
+        print(f"  · {k}")
+    if not apply:
+        print("\n  --apply 로 떨어낸다. 그 절이 **왜 없어졌는지** 먼저 확인하라 —")
+        print("  지워진 것이면 떨어내는 것이 맞고, 번호가 바뀐 것이면 옮겨야 한다.")
+        return 0
+    bm["done"] = sorted(now & set(bm["done"]))
+    STATE.mkdir(parents=True, exist_ok=True)
+    bookmark_path().write_text(json.dumps(bm, ensure_ascii=False, indent=2) + "\n",
+                               encoding="utf-8")
+    print(f"\n떨어냈다 — 북마크 {len(bm['done'])}건")
+    return 0
+
+
 def cmd_mark(ids: list[str]) -> None:
     bm = load_bookmark()
     bm["done"] = sorted(set(bm["done"]) | set(ids))
@@ -1537,7 +1576,7 @@ def cmd_ancestry() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", nargs="?", default="scan",
-                    choices=["scan", "verify", "round", "mark",
+                    choices=["scan", "verify", "round", "mark", "prune",
                              "propose", "fill", "seal", "delta",
                              "rawdiff", "ancestry"])
     ap.add_argument("ids", nargs="*")
@@ -1576,6 +1615,8 @@ def main() -> int:
         return cmd_fill(f if f.exists() else STATE / f.name, a.apply)
 
     data = scan()
+    if a.cmd == "prune":
+        return cmd_prune(data, a.apply)
     if a.cmd == "seal":
         return cmd_seal(data, a.quick, a.red or [],
                         Path(a.log) if a.log else None)

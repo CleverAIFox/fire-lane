@@ -80,6 +80,9 @@ fix "문서 말투 서식"    uv run python tools/docstyle.py --write
 fix "의존성 그룹"      uv run python tools/depgroups_check.py --fix
 fix "대장 별칭 이관"    uv run python tools/ledger_fields.py --apply
 fix "죽은 강제자 참조"  uv run python tools/dms.py --apply
+# ★ 문서가 **줄면** 북마크가 없는 절을 든다. 더하기만 있던 자리에 뺄 문을
+#   달았다(§365). 떨어낸 ID 는 화면에 적힌다 — 조용히 줄면 봉인 분자가 샌다.
+fix "북마크 죽은 절"    uv run python tools/dms.py prune --apply
 
 # ③ 생성물 ← 정본 ─────────────────────────────────────────────
 fix "기획서 그림"      uv run python tools/docx_figs.py --sync

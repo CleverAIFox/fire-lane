@@ -816,3 +816,70 @@ def test_ledger_feeds_does_not_count_build_output():
     assert not fossil, (
         f"`feeds_note` 가 **기계가 쓴 리스트**를 산문으로 들고 있다: {fossil}\n"
         "  사람 판단만 그 칸에 산다. 기계 출력을 보존하면 그 칸은 낡기만 한다")
+
+
+# ── PLAN 안의 산 길잡이 — 밖만 보던 검사의 사각지대 ─────────────
+def _pr():
+    """`tools/plan_renumber.py` 를 모듈로 든다."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "plan_renumber_t", ROOT / "tools" / "plan_renumber.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_plan_guides_point_at_live_rows():
+    """`### 8-7. … → §1 #103` 꼴의 **산 길잡이**가 실재하는 행을 가리키는가.
+
+    ── 왜 생겼나 (2026-10-03 · DECISIONS §365) ──────────────────
+    `plan_renumber` 는 **밖에서** §1 을 가리키는 죽은 인용만 셌다. 그것은
+    역사라 안 고치는 것이 맞다. 그런데 **PLAN 안**에도 §1 을 가리키는 것이
+    있고 성질이 반대다 —
+
+        `→ **§1 로 접었다**(#96 … #103)`  묘비. 그 절이 무엇이 됐는지의 기록
+        `### 8-7. … → §1 #100 · #103`     **길잡이.** 「지금 이것을 보라」
+
+    실측에서 §8-7 이 닫혀 지워진 `#103` 을 들고 있었다. #103 은 2026-09-28
+    에 닫혔고(§278-9 가 닫은 넷 중 하나) 그날 제목을 안 고쳤다. **어떤 검사도
+    안 울었다** — 밖만 보는 검사가 안을 사각지대로 남겼다(§78 과 같은 병).
+
+    ★ 묘비는 **일부러 안 본다.** 번호는 영구 식별자라 재사용되지 않으므로
+      묘비의 죽은 번호는 조용히 틀릴 수 없다 — 그것은 기록으로 맞다.
+    """
+    pr = _pr()
+    text = PLAN.read_text(encoding="utf-8")
+    live = set(pr._rows(text))
+    assert live, "PLAN §1 행을 0개 셌다 — 이 검사가 빈 그물이 됐다"
+
+    guides = pr._guides(text)
+    assert guides, (
+        "`→ §1 #N` 꼴 길잡이를 0개 찾았다 — **프로브가 죽었다.**\n"
+        "  0 건은 깨끗해서일 수도 프로브가 죽어서일 수도 있다(§150 · §159).")
+
+    bad = [f"  PLAN:{ln}  {[n for n in ns if n not in live]}\n      {raw[:76]}"
+           for ln, raw, ns in guides if any(n not in live for n in ns)]
+    assert not bad, (
+        "PLAN 안의 길잡이가 **없는 행**을 가리킨다.\n" + "\n".join(bad)
+        + "\n  닫혀 지워진 번호면 제목에서 빼라. 다 빠지면 그 하위 절은 들 것이\n"
+        + "  없으므로 절째로 지운다 — 무엇이었는지는 `→ **§1 로 접었다**` 묘비가 든다.\n"
+        + "  ★ 다른 산 행으로 갈아 끼우지 마라. 틀린 참조가 맞는 참조인 척한다(W3-9).")
+
+
+def test_plan_guide_probe_tells_a_tombstone_from_a_guide():
+    """★ 양성 대조. 묘비와 길잡이를 **합성 문자열에서** 가르는가.
+
+    위 검사는 실제 트리에서 0건이 목표다. 그러면 「프로브가 묘비까지 집어
+    역사를 고치라고 운다」와 「묘비를 안 집는다」를 구별할 수 없다.
+    """
+    pr = _pr()
+    doc = ("## 8. 데이터\n\n"
+           "→ **§1 로 접었다**(#96 · #103).\n\n"
+           "### 8-7. 저장소 위생 → §1 #100 · #103\n"
+           "### 8-9. 딴 것 → §1 #4 (정본은 MASTER §19-5)\n")
+    got = [(ln, ns) for ln, _raw, ns in pr._guides(doc)]
+    assert got == [(5, [100, 103]), (6, [4])], (
+        f"길잡이 프로브가 {got} 를 찾았다.\n"
+        "  묘비(3줄)를 같이 집으면 역사를 고치라고 운다.\n"
+        "  `§1 #4` 뒤의 `MASTER §19-5` 를 같이 집으면 남의 절을 행으로 읽는다.")
