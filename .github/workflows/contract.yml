@@ -370,6 +370,8 @@ jobs:
         run: uv run python tools/countcheck.py
       - name: 구조 묶음 선언
         run: uv run python tools/archcost.py
+      - name: 회색 어휘 구멍
+        run: uv run python tools/greycheck.py
       - name: 사유 없는 억제
         run: uv run python tools/suppress.py
       # ★ 로컬에서는 파이프라인 재실행 **뒤에** 돌아 「새 산출 = golden」을 묻는다. 여기서는

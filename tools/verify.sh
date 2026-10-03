@@ -539,6 +539,11 @@ step "문서가 적은 시험 수" uv run python tools/countcheck.py
 #   생기면 어느 묶음인지 정해야 하고, 안 정하면 평평한 이름공간이 그대로 큰다.
 scope "src/firelane/*"
 step "구조 묶음 선언"    uv run python tools/archcost.py
+# ★ 2026-10-03 (§369). `PLAN §1 #140` 의 구멍을 **발행된 판정에서** 센다 —
+#   회색 어휘 다섯이 「대장이 반박했다」를 부를 낱말이 없다. `widthcross` 가
+#   같은 축을 들지만 그쪽은 processed/*.gpkg 를 읽어 CI 에서 건너뛴다.
+scope "data/processed/segments.geojson src/firelane/seg/*"
+step "회색 어휘 구멍"    uv run python tools/greycheck.py
 # ★ 2026-09-28 (§279-6). 사유 딸린 면제표는 이미 조여 있었다(빈 사유 0). 남은 빚은
 #   **주석 한 줄짜리 억제**에 몰려 있었다 — 표에 안 들어가고 사유를 안 적어도 되고
 #   아무도 안 세는 자리다. 119 에서 시작해 같은 날 죽은 `noqa` 59개를 지워 57 이다.

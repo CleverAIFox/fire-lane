@@ -250,7 +250,10 @@ EXCEPTIONS: dict[str, int] = {
     # ★ 2026-10-03 (DECISIONS §368). 1227 → 1231. 「구조 묶음 선언」 한 단계와
     #   그 사유다. 「리팩할 게 있나」를 **값으로** 답하는 자리이고, 새 소스가
     #   생기면 어느 묶음인지 정하게 만든다 — 안 정하면 평평한 이름공간이 큰다.
-    "tools/verify.sh": 1231,
+    # ★ 2026-10-03 (DECISIONS §369). 1231 → 1236. 「회색 어휘 구멍」 한 단계와
+    #   그 사유다. `PLAN §1 #140` 이 적은 구멍을 **발행된 판정에서** 세고,
+    #   `widthcross` 가 같은 축을 들지만 CI 에서 건너뛴다(레이크를 읽는다).
+    "tools/verify.sh": 1236,
     "src/firelane/segments.py": 780,
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이
