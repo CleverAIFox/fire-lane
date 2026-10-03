@@ -410,3 +410,50 @@ def test_the_squash_arm_declines_to_measure_without_a_common_ancestor():
         subprocess.run(["git", "update-ref", "-d", ref],
                        cwd=Path(__file__).resolve().parents[1],
                        capture_output=True, timeout=20, check=False)
+
+
+# ── ⑧ 기한 — **0건이 청결인가 죽음인가** (DECISIONS §359) ──────────────────
+def test_the_deadline_arm_is_still_alive_while_the_table_is_empty():
+    """★ 양성 대조. `DEFERRED` 가 빈 동안 이 검사는 `[]` 만 돌려줬다.
+
+    2026-09-24 에 마지막 줄이 해소되면서 표가 비었고, 그 뒤로 ⑧ 은 **열흘 가까이
+    항상 통과**했다. 머리말이 바로 그 병을 경고하고 있었는데(「해제만 검사하면
+    항상 통과하는 검사가 된다(§69)」) 정작 자기가 걸렸다.
+
+    빈 것 자체는 옳다 — 네 줄이 전부 해소·이관됐다. 고칠 것은 **0건을 선언으로
+    만드는 일**이고, 선언은 「지금 빚이 없다」를 **증명할 수 있을 때만** 선언이다.
+    그래서 합성 행으로 울려 본다.
+    """
+    anchor = "# Fire-Lane"            # README 첫 줄 — 실재하는 앵커
+    assert anchor in (ROOT / "README.md").read_text(encoding="utf-8")[:200], \
+        "앵커가 더는 README 에 없다 — 이 시험의 전제를 고쳐라"
+
+    past = doc_fsck.check_deferred(
+        (("2000-01-01", "README.md", anchor, "합성 — 지난 기한"),), _use=True)
+    assert past, "기한이 지난 줄을 안 운다 — ⑧ 의 앞 방향이 죽었다"
+    assert "2000-01-01" in past[0]
+
+    gone = doc_fsck.check_deferred(
+        (("2999-01-01", "README.md", "이런 글자는 문서에 없다",
+          "합성 — 해소된 줄"),), _use=True)
+    assert gone, "해소된 줄이 표에 남았는데 안 운다 — ⑧ 의 뒤 방향이 죽었다"
+    assert "해소" in gone[0]
+
+    future = doc_fsck.check_deferred(
+        (("2999-01-01", "README.md", anchor, "합성 — 아직 기한 안"),), _use=True)
+    assert not future, f"기한 안인데 운다 — 늘 우는 검사다 {future}"
+
+
+def test_the_deadline_table_is_empty_on_purpose():
+    """표가 **왜** 비었는지가 소스에 적혀 있는가. 적혀 있지 않으면 사고다.
+
+    ★ 지운 줄마다 「해소」 또는 「이관」과 그 날짜가 주석으로 남아 있어야 한다.
+      남기지 않으면 다음 사람은 **표가 비었다**와 **표를 지웠다**를 구별 못 한다.
+    """
+    src = (ROOT / "tools" / "doc_fsck.py").read_text(encoding="utf-8")
+    body = src.split("DEFERRED = (", 1)[1].split("\n)", 1)[0]
+    if doc_fsck.DEFERRED:
+        return                                   # 줄이 있으면 이 물음이 아니다
+    assert body.strip(), "표가 비었는데 사유도 없다 — 왜 비었는지 아무도 모른다"
+    assert ("해소" in body or "이관" in body), \
+        "표가 비었는데 어느 줄이 왜 사라졌는지 안 적혀 있다"

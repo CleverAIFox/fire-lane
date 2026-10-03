@@ -393,6 +393,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CI: "1"
+      # ★ 2026-10-03 (§358). `navi_graph.json` 은 커밋돼 있어 **레이크 없이 돈다.**
+      #   그래서 로컬 전용이 아니라 여기도 든다 — 그 그래프가 발행본이기 때문이다.
+      - name: 내비 그래프 결함 (측정 미결 넷)
+        run: uv run python tools/navicheck.py
       - name: PLAN 번호·참조 정합
         run: uv run python tools/plan_renumber.py
       - name: 문서 제목 무결

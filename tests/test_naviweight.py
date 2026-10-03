@@ -65,7 +65,11 @@ def test_a_new_outside_host_turns_it_red(tmp_path: Path, monkeypatch):
     (fake / "src" / "x.ts").write_text('const U = "https://evil.example.com/a";\n', encoding="utf-8")
     (fake / "index.html").write_text("<html></html>", encoding="utf-8")
     monkeypatch.setattr(NW, "NAVI", fake)
-    assert "evil.example.com" in NW.hosts(), "새 바깥 호스트를 못 잡는다"
+    # ★ 2026-10-03. 종전 `"evil.example.com" in NW.hosts()`. `hosts()` 는 호스트
+    #   **목록**이라 `in` 이 정확 일치인데, 꼴만 보면 부분문자열 검사와 구별이
+    #   안 된다(CodeQL `py/incomplete-url-substring-sanitization`). 정확 일치를
+    #   정확 일치로 적는다 — 덤으로 `a.evil.example.com` 이 들어와도 안 속는다.
+    assert any(h == "evil.example.com" for h in NW.hosts()), "새 바깥 호스트를 못 잡는다"
 
 
 def test_a_commented_out_url_is_not_counted(tmp_path: Path, monkeypatch):
