@@ -27,7 +27,7 @@ import { distM, angleDelta, type LngLat } from "./geo";
 import { edgeIndex, routeRuleWarnings, turnBan, TURN_BAN_M } from "./rules";
 import { TIGHT_TURN_M } from "./turning";
 import {
-  adjacencySpec, dirCost, isTight, type Adjacency,
+  adjacencyMinFactor, adjacencySpec, dirCost, isTight, type Adjacency,
 } from "./adjacency";
 import {
   clipCoords, geomLen, snapToEdge, NODE_EPS_M, type EdgeSnap,
@@ -36,8 +36,8 @@ import type { GraphEdge, NaviGraph, RoutePlan } from "./types";
 
 // ── 갈라기 전 표면을 그대로 둔다 (위 머리말 참조) ─────────────────
 export {
-  adjacencySpec, buildAdjacency, dirCost, isTight, nearestNode, usableEdges,
-  type Adjacency, type CostMode,
+  adjacencyMinFactor, adjacencySpec, buildAdjacency, dirCost, isTight,
+  nearestNode, usableEdges, type Adjacency, type CostMode,
 } from "./adjacency";
 export {
   clipCoords, fullProgress, geomLen, snapToEdge, NODE_EPS_M, type EdgeSnap,
@@ -50,9 +50,21 @@ export {
  * A*.
  *
  * ── 휴리스틱이 admissible 한 이유 ────────────────────────────────
- * `edgeCost` 의 배수 최솟값은 **1.0** 이다. 따라서 비용 ≥ 실거리이고
- * 직선거리를 그대로 휴리스틱으로 써도 과대추정하지 않는다.
- * ★ `TUNING` 에 1.0 미만 배수를 넣으면 이 성질이 깨진다(PLAN §4-2).
+ * 비용 ≥ 직선거리 × **(그 인접리스트의 배수 하한)** 이다. 그래서 휴리스틱이
+ * 그 하한을 곱한다 — `adjacencyMinFactor(adj)`.
+ *
+ * ★ 2026-10-03 (PLAN §1 #71). 종전에는 이 자리에 「배수 최솟값은 1.0 이다」가
+ *   **선언으로만** 적혀 있었고 강제자가 0 이었다. 그리고 그 아래 줄이 스스로
+ *   「`TUNING` 에 1.0 미만 배수를 넣으면 이 성질이 깨진다」고 경고했다 —
+ *   `TUNING` 은 **「남는 사람이 회색 해법을 정하면 여기만 고치면 된다」**고
+ *   선언된 자리다. 즉 깨뜨릴 사람이 이 머리말을 읽을 이유가 없다.
+ *
+ *   실측으로 그 성질이 값에 매달려 있음을 확인했다(`test/astar.test.ts`) —
+ *   지금 값에서는 A* 와 다익스트라가 같고, 배수 하나를 1.0 아래로 내리면
+ *   **A* 가 더 나쁜 답을 낸다.** 이제 하한이 계산되므로 그 날에도 산다.
+ *
+ * ★ 하한이 1 이면 **지금과 한 글자도 다르지 않다.** 작아지면 휴리스틱이 약해져
+ *   더 많이 열지만 답은 옳다 — **느린 것은 틀린 것보다 낫다.**
  *
  * ── ★ 진행방향을 기록한다 ───────────────────────────────────────
  * 2026-09-06. 주행거리가 앞뒤로 튀어 안내가 늦거나 이미 지나서 나왔다.
@@ -69,7 +81,10 @@ export function findRoute(
 ): RoutePlan | null {
   if (startNode < 0 || goalNode < 0) return null;
   const goal = graph.nodes[goalNode];
-  const h = (n: number) => (heuristic ? distM(graph.nodes[n], goal) : 0);
+  // ★ PLAN §1 #71. 구운 조율의 하한을 곱한다. 모르는 인접리스트면 0 —
+  //   그것은 다익스트라이고, 느린 것은 틀린 것보다 낫다.
+  const mf = adjacencyMinFactor(adj);
+  const h = (n: number) => (heuristic ? distM(graph.nodes[n], goal) * mf : 0);
 
   // ★ 2026-09-22 (§215-1). 상태는 **(노드, 들어온 엣지)** 다. 회전 금지는 「어느 길로
   //   와서 어느 길로 나가나」 에 걸리므로 노드만 상태로 두면 표현이 안 된다. 금지가 없는

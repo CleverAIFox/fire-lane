@@ -30,6 +30,17 @@ export type { RuleWarning };
 
 export const WRONG_WAY = 4;
 export const ONEWAY_UNKNOWN = 1.5;
+
+/**
+ * 방향 계수의 **하한.** A* 휴리스틱이 이것까지 곱한다(PLAN §1 #71).
+ *
+ * ★ 둘 다 1 이상이라 지금은 1 이다. 누가 「역주행을 덜 불리하게」 하려고
+ *   1.0 아래로 내리면 이 수가 따라 내려가 최적해를 지킨다 — 선언이 아니라
+ *   **계산**이라야 값이 움직일 때 같이 움직인다.
+ */
+export function minDirectionFactor(): number {
+  return Math.min(1, WRONG_WAY, ONEWAY_UNKNOWN);
+}
 export const TURN_BAN_M = 200;
 
 /** `navi_graph.json.turns[][3]` — 표준노드링크 TURN_TYPE */

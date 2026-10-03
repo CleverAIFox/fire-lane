@@ -24,8 +24,10 @@
  */
 
 import { distM, type LngLat } from "./geo";
-import { edgeCost, type TuningKnobs, TUNING } from "./vehicle";
-import { directionFactor, edgeIndex } from "./rules";
+import {
+  edgeCost, minCostFactor, pressureIsSane, type TuningKnobs, TUNING,
+} from "./vehicle";
+import { directionFactor, edgeIndex, minDirectionFactor } from "./rules";
 import { tightTurn } from "./turning";
 import { hazardsOf, pressureFactor, type HazardIndex } from "./pressure";
 import { effectiveWidth, type CvView } from "./cv";
@@ -38,6 +40,14 @@ export type CostMode = "safe" | "fastest";
 
 /** 인접리스트를 구운 차 — 코너 회전 점검(§218-2)이 전이마다 차를 알아야 한다 */
 const ADJ_SPEC = new WeakMap<Adjacency, VehicleSpec>();
+/**
+ * 이 인접리스트의 **비용/직선거리 하한.** A* 휴리스틱이 곱한다(PLAN §1 #71).
+ *
+ * ★ 조율값과 **같은 자리에서** 잰다. `findRoute` 가 `TUNING` 을 다시 읽으면
+ *   인접리스트를 다른 조율로 구운 경우(시험 · 비교 모드)에 둘이 갈리고,
+ *   갈리면 휴리스틱이 **과대추정**해 최적해가 깨진다. 구운 쪽이 기억한다.
+ */
+const ADJ_MIN_FACTOR = new WeakMap<Adjacency, number>();
 const TIGHT_CACHE = new WeakMap<Adjacency, Map<string, boolean>>();
 
 /** 이 인접리스트의 차에게 `(들어온, 노드, 나갈)` 전이가 좁은 코너인가. 캐시한다 */
@@ -55,6 +65,14 @@ export function isTight(graph: NaviGraph, adj: Adjacency, inIdx: number, node: n
 /** 인접리스트를 구운 차. 경고를 다시 셀 때 쓴다 */
 export function adjacencySpec(adj: Adjacency): VehicleSpec | undefined {
   return ADJ_SPEC.get(adj);
+}
+
+/**
+ * 이 인접리스트의 비용/직선거리 **하한**. 모르면 보수적으로 가장 작은 값(0)을
+ * 준다 — 휴리스틱 0 은 다익스트라이고, **느린 것은 틀린 것보다 낫다.**
+ */
+export function adjacencyMinFactor(adj: Adjacency): number {
+  return ADJ_MIN_FACTOR.get(adj) ?? 0;
 }
 
 /**
@@ -76,6 +94,12 @@ export function buildAdjacency(
 ): Adjacency {
   const adj: Adjacency = new Map();
   ADJ_SPEC.set(adj, spec);
+  // ★ PLAN §1 #71. **구운 조율로** 하한을 재서 같이 들고 다닌다.
+  //   `fastest` 는 비용이 실거리 그대로라 하한이 1 이다 — 방향 계수만 남는다.
+  //   압력 계수가 음수면 하한을 자료 없이 못 묶으므로 0(= 다익스트라)으로 떨어뜨린다.
+  ADJ_MIN_FACTOR.set(adj, !pressureIsSane(tuning) ? 0
+    : mode === "fastest" ? Math.min(1, minDirectionFactor())
+      : minCostFactor(tuning, minDirectionFactor()));
   const index = edgeIndex(graph);
   for (const e of graph.edges) {
     if (e.a === e.b) continue;
