@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-10-03T22:36:03+09:00",
- "commit": "92f066f",
+ "sealed_at": "2026-10-03T23:52:32+09:00",
+ "commit": "01aaa96",
  "tool": "5f27595a0393a7d6",
  "tools": {
   "tools/deadcheck.py": "d206e63334eeca39",
@@ -11,8 +11,8 @@
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "d1c7c2bf5fcfc133",
-  "docs/DECISIONS.md": "6a6177a8964800ff",
+  "docs/MASTER.md": "8c70d42352f76077",
+  "docs/DECISIONS.md": "b55e83a7cffb3cb7",
   "docs/PLAN.md": "5f17915f82f8288e",
   "README.md": "0c3f1beca81a4ed0"
  },
@@ -845,7 +845,7 @@
    "title": "12-7b. 배포가 여섯에서 하나가 된 이유 (2026-09-23)"
   },
   "MASTER/12-7a": {
-   "h": "38febc8be89d3ec0",
+   "h": "6f195f0176d4ce6d",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-7a. 내비 빌드"
@@ -1007,7 +1007,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "80d9dc4839904f23",
+   "h": "c76b310f71df2e15",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -9514,6 +9514,30 @@
    "doc": "docs/DECISIONS.md",
    "title": "377-5. `dev` 에 열려 있던 다섯 — 넷은 이미 고쳐졌고 하나는 오탐이다"
   },
+  "DECISIONS/378": {
+   "h": "b49e0ea094405883",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "378. 카나리아의 **가정이 죽었다** — 같은 배치가 그 전제를 지웠다"
+  },
+  "DECISIONS/378-1": {
+   "h": "2b12239466cb19f3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "378-1. 릴리즈가 멈춘 자리"
+  },
+  "DECISIONS/378-2": {
+   "h": "18f66ad25a56e223",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "378-2. 그 전제를 **이 배치가** 지웠다"
+  },
+  "DECISIONS/378-3": {
+   "h": "2ac7373571fc9c8d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "378-3. 고침 — 선언과 양성 대조로 가른다"
+  },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
    "state": "none",
@@ -9870,7 +9894,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2210 passed, 1 warning in 515.86s (0:08:35)",
+   "tail": "2211 passed, 1 warning in 364.36s (0:06:04)",
    "red": []
   },
   "probe/deadcheck": {

@@ -217,6 +217,18 @@ def _security_gaps() -> list[str]:
     return bad
 
 
+#: 워크플로(`.github/workflows/*.yml`)가 부르는 Secret 의 수. `GITHUB_TOKEN` 은
+#: GitHub 이 자동으로 주므로 **안 센다**.
+#:
+#: ★ **0 이 답이다** (2026-10-03 · DECISIONS §378). §366 이 고아
+#:   `infra/matching.ts` 를 철거하면서 Mapbox 소비자가 사라졌고, `deploy.yml` 의
+#:   `secrets.MAPBOX_TOKEN` 두 줄도 같이 빠졌다. 지도 주소는 Secrets 가 아니라
+#:   **Variables** 다(§343-3) — 공개돼도 손해가 없다.
+#: ★ 이 수가 움직이면 운다. **늘면** 등록 여부를 보고, **줄면** 왜 줄었는지를
+#:   여기 적는다. 「0 보다 크냐」로 두면 0 이 답인 날 영원히 빨갛다.
+WF_SECRETS = 0
+
+
 def _secret_gaps() -> list[str]:
     """워크플로가 부르는 `secrets.X` 중 **등록 안 된 것**을 돌려준다.
 
@@ -243,10 +255,32 @@ def _secret_gaps() -> list[str]:
                     continue
                 want.setdefault(name, []).append(f"{p.name}:{i}")
 
+    # ★ 0건이 청결인지 죽음인지 가른다(HANDOFF 원칙 ④).
+    #
+    # ★ 2026-10-03 (DECISIONS §378). 종전에는 `if not want:` 가 **무조건** 울고
+    #   「deploy.yml 은 최소 MAPBOX_TOKEN 을 부른다」고 적었다. 그 전제를
+    #   §366 이 지웠다 — 고아 `infra/matching.ts` 를 철거하면서 Mapbox 소비자가
+    #   사라졌고 `deploy.yml` 의 `secrets.MAPBOX_TOKEN` 두 줄도 같이 빠졌다.
+    #   **0 이 이제 정답이다.** 프로브가 죽은 것이 아니라 **카나리아의 가정이
+    #   죽었다.** 그 자리에서 릴리즈가 멈췄다.
+    #
+    # ★ 그래서 둘로 가른다 —
+    #     ① 선언 `WF_SECRETS` 와 실측이 같은가   (수가 움직이면 운다)
+    #     ② 세는 기계가 살아 있는가             (합성 글로 양성 대조)
+    #   「0 보다 크냐」로는 둘 중 **어느 것도** 못 가린다. 0 이 답인 날
+    #   영원히 울고, 세는 기계가 죽어도 1건만 있으면 조용하다.
+    probe = re.findall(r"secrets\.([A-Z_][A-Z0-9_]*)",
+                       "env:\n  X: ${{ secrets.FL_PROBE_CANARY }}\n")
+    if probe != ["FL_PROBE_CANARY"]:
+        return ["Secret 프로브가 **합성 대조를 못 잡는다** — 정규식이 죽었다"
+                "\n      ★ 실측이 0 인 것과 세는 기계가 죽은 것은 다른 사실이다"]
+    if len(want) != WF_SECRETS:
+        return [f"워크플로가 부르는 Secret {len(want)}건 — 선언은 {WF_SECRETS} 다"
+                f"\n      ★ 찾은 것: {', '.join(sorted(want)) or '없음'}"
+                "\n      ★ 늘었으면 등록을 확인하고, 줄었으면 **왜 줄었는지를 적고**"
+                "\n        `tools/ruleset_check.py` 의 `WF_SECRETS` 를 고쳐라."]
     if not want:
-        # ★ 0건이 청결인지 죽음인지 가른다(HANDOFF 원칙 ④).
-        return ["워크플로가 부르는 Secret 이 0건이다 — 프로브를 의심하라"
-                "\n      ★ deploy.yml 은 최소 MAPBOX_TOKEN 을 부른다"]
+        return []
 
     try:
         have = {s["name"] for s in _gh(f"repos/{REPO}/actions/secrets")["secrets"]}
