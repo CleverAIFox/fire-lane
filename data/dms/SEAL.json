@@ -1,19 +1,19 @@
 {
- "sealed_at": "2026-10-02T23:15:16+09:00",
- "commit": "bab31d2",
- "tool": "81c32f9dc983d13a",
+ "sealed_at": "2026-10-03T18:45:15+09:00",
+ "commit": "ee07124",
+ "tool": "5e03366841ba29bd",
  "tools": {
-  "tools/deadcheck.py": "a4db7bf393ad64fd",
+  "tools/deadcheck.py": "cf0bc5d6f7961fab",
   "tools/dms.py": "f2ef5dc609a4f045",
   "tools/dupcheck.py": "50e4756f13fd85fe",
   "tools/env_check.py": "9c41c18ab2a68470",
-  "tools/verify.sh": "eb7180d1430824a5"
+  "tools/verify.sh": "3d05e0237bf5634f"
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "d106e02524d0f089",
-  "docs/DECISIONS.md": "89961a7a97162fae",
-  "docs/PLAN.md": "9702d0c14d7d1089",
+  "docs/MASTER.md": "55b78c09ab5b4b62",
+  "docs/DECISIONS.md": "cd0cbe87529e7cc4",
+  "docs/PLAN.md": "b94bf1c6c697c95c",
   "README.md": "3d67fb45e25d8d3a"
  },
  "raw": {
@@ -1005,7 +1005,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "d359d7cc3e284c37",
+   "h": "cabdf6f86dacfd23",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -8888,6 +8888,84 @@
    "doc": "docs/DECISIONS.md",
    "title": "357-2. 「못 켠다」를 빼지 않고 **선언으로 적는다**"
   },
+  "DECISIONS/358": {
+   "h": "7d9f37e92503f88e",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "358. 발행물이 제 결함을 넷 세고 있었는데 묻는 단계가 없었다"
+  },
+  "DECISIONS/358-1": {
+   "h": "5c356315cdba51fb",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "358-1. 고치지 않고 **못을 박는다**"
+  },
+  "DECISIONS/358-2": {
+   "h": "a9a0f861eff50dfb",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "358-2. 막다른 길은 수를 안 문다 — **갈라서 센다**"
+  },
+  "DECISIONS/359": {
+   "h": "67a3245339233821",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "359. 빈 그물 둘 — 그리고 그것을 보는 눈의 우주가 좁았다"
+  },
+  "DECISIONS/359-1": {
+   "h": "4b9e2e40be78cf35",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "359-1. `doc_fsck ⑧` 이 열흘 가까이 `[]` 만 돌려줬다"
+  },
+  "DECISIONS/359-2": {
+   "h": "b7e1091566401f01",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "359-2. ① 프로브의 우주가 **대장 키**뿐이었다"
+  },
+  "DECISIONS/359-3": {
+   "h": "098f333ebc367082",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "359-3. 같은 족이 하나 더 있었다 — 자기검사 넷이 안 불렸다"
+  },
+  "DECISIONS/360": {
+   "h": "1b2dabac9d1736ed",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "360. 느려지는 정규식 둘과, 뜻을 안 말하는 꼴 둘"
+  },
+  "DECISIONS/360-1": {
+   "h": "82da90b586962f20",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "360-1. 되짚기가 지수로 새는 자리 둘"
+  },
+  "DECISIONS/360-2": {
+   "h": "a3c84b9612c4ff7f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "360-2. 꼴이 뜻을 안 말하면 다음 사람도 같은 오해를 한다"
+  },
+  "DECISIONS/360-3": {
+   "h": "09952132d4efbae3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "360-3. 하나는 **남긴다** — `ruleset_check` 의 「평문 기록」"
+  },
+  "DECISIONS/361": {
+   "h": "9a1ef2191dc0790f",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "361. 공터는 설계대로였다 — 틀을 잘못 잡고 결함이라고 했다"
+  },
+  "DECISIONS/361-1": {
+   "h": "5cf531ecd7a9b086",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "361-1. 남은 것은 결함이 아니라 **바닥이 비었다는 것**"
+  },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
    "state": "none",
@@ -9069,7 +9147,7 @@
    "title": "9. 외부 의존"
   },
   "PLAN/10": {
-   "h": "9a130960cd1dbccb",
+   "h": "e01abdd3f82384e0",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "10. 우선순위"
@@ -9250,7 +9328,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2156 passed, 1 warning in 315.10s (0:05:15)",
+   "tail": "2164 passed, 1 warning in 497.06s (0:08:17)",
    "red": []
   },
   "probe/deadcheck": {
