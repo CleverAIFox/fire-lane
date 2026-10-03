@@ -945,6 +945,13 @@ step "내비 무게" uv run python tools/naviweight.py --build
 scope "web/data/* web/fonts/* web/navi/scripts/*"
 step "지도 글자" bash -c 'cd web/navi && npm run -s glyphs -- --check'
 
+# ★ 2026-10-03 (DECISIONS §358). `navi_graph.json` 의 `counts` 가 제 결함을 넷
+#   세고 있었는데 **아무도 안 물었다** — 일방통행 57 중 방향 아는 것 1 · 회전금지
+#   87행 중 5 · 단속 141,556행 중 87,015 미배치. 6족(측정 미결)이다. 발행물이
+#   커밋돼 있으므로 **레이크 없이 돈다** — CI 도 든다.
+scope "web/data/navi_graph.json src/firelane/publish_navi.py tools/*"
+step "내비 그래프 결함" uv run python tools/navicheck.py
+
 # ★ 파일명의 날짜가 자료 기준일인가 내려받은 날인가. `naming` 규약은
 #   "다운로드일이 아니다" 라고 적었는데 `_plausible_date` 는 형식만 본다 —
 #   규약은 있고 강제자가 그 규약을 안 지켰다(원칙 ①·②). 대가가

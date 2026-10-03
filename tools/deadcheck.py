@@ -6,9 +6,11 @@ deadcheck.py — **검사가 죽었는가**를 검사한다.
   검사를 늘리는 것으로는 못 잡는다. 늘린 검사도 같은 병에 걸린다.
   그래서 검사를 **대상으로 삼는** 도구가 하나 필요하다.
 
-프로브 다섯. 전부 정적이고 전부 **세는 것**으로 끝난다.
+프로브 여섯. 전부 정적이고 전부 **세는 것**으로 끝난다.
 
   ① 빈 그물      검사가 만드는 후보 집합이 구조적으로 빌 수 있는가
+     ·(대장)     대장 블록을 0건인 키로 읽는가
+     ·(상수)     ★ 2026-10-03 (§359). 모듈 상수가 **빈 모음**인데 검사가 그것을 도는가
   ② 손목록       코드에 박힌 목록이 데이터 원본보다 좁은가
   ③ 조용한 통과  실패해야 할 자리에서 return / pass / continue 하는가
   ④ 죽은 게이트  CI 스텝이 없는 파일을 조건으로 걸고 있는가
@@ -218,6 +220,42 @@ EXEMPT_EMPTY_NET = {
         "바로 아래 `assert ret` 가 비지 않음을 강제한다. ext 는 datasets 72/72 에 있는 키라 "
         "stem 으로 폐기되는 항목이 들고 올 수 있다",
 }
+
+
+#: ★ 2026-10-03 (DECISIONS §359). 상수 팔의 면제. `"파일::상수"` → 사유.
+EXEMPT_EMPTY_CONST = {
+    "tools/doc_fsck.py::DEFERRED":
+        "비어 있는 것이 **선언**이다 — 네 줄이 전부 해소·이관됐고 그 사유가 소스에 "
+        "주석으로 남아 있다(`test_the_deadline_table_is_empty_on_purpose` 가 그 주석을 "
+        "강제한다). 그리고 0건이 죽음이 아님을 **합성 행으로 울려서** 증명한다 — "
+        "`test_the_deadline_arm_is_still_alive_while_the_table_is_empty` 가 앞·뒤 방향을 "
+        "둘 다 민다. 표를 지우지 않는 이유는 PLAN §13-3 과 같다 — 결함은 다시 자란다",
+    "tests/test_declaration_sync.py::LEDGER_NOT_A_PATH":
+        "**면제표**다 — 비어 있는 것이 「아무것도 면제 안 한다」는 뜻이라 안전한 쪽이다. "
+        "감시 목록(`DEFERRED`)이 비는 것과 방향이 반대다. 그리고 그 표가 죽지 않았는지는 "
+        "`test_ledger_exemptions_are_not_dead` 가 따로 든다 — 면제했는데 실은 안 걸리는 "
+        "것을 지운다(그 상수의 머리말이 그렇게 적는다)",
+}
+
+
+def probe_empty_const(root: Path = ROOT) -> None:
+    """① 둘째 우주 — 모듈 상수가 **빈 모음**인데 검사가 그것을 도는가.
+
+    몸통은 `tools/deadprobes/empty_const.py` 에 있다(§359). 여기 남는 것은
+    **면제 적용과 보고**뿐이다 — 면제표가 프로브 목록 옆에 있어야
+    「면제했는데 실은 안 걸리는 것」을 한눈에 본다.
+    """
+    from deadprobes.empty_const import findings
+    for p, ln, nm, fname in findings(root):
+        try:
+            rel = p.relative_to(root).as_posix()
+        except ValueError:
+            rel = str(p)
+        if f"{rel}::{nm}" in EXEMPT_EMPTY_CONST:
+            continue
+        hit("① 빈 그물(상수)", p, ln,
+            f"`{nm}` 이 **빈 모음**인데 {fname}() 가 그것을 돈다 — "
+            f"이 검사는 아무것도 안 보고 늘 통과한다", "0")
 
 
 def probe_empty_net(root: Path = ROOT) -> None:
@@ -798,6 +836,10 @@ def _scans(t: ast.Module):
 
 PROBES = [
     ("① 빈 그물", probe_empty_net),
+    # ★ 2026-10-03 (§359). ① 의 **둘째 우주**. 대장 키가 아니라 모듈 상수를 본다.
+    #   이름을 가른 이유 — 대조와 천장이 팔마다 하나씩이어야 **한쪽이 죽은 것**을
+    #   본다. 같은 이름이면 `CONTROLS` 가 하나뿐이라 둘째 팔이 조용히 죽는다.
+    ("① 빈 그물(상수)", probe_empty_const),
     ("② 손목록", probe_handlist),
     ("③ 조용한 통과", probe_silent_pass),
     ("④ 죽은 게이트", probe_dead_gate),
@@ -849,6 +891,18 @@ def _fx_empty_net(d: Path) -> None:
         "def check_outputs(led):\n"
         f"    for v in led[{_FX_BLK!r}].values():\n"
         f"        assert v.get({_FX_KEY!r})\n", encoding="utf-8")
+
+
+def _fx_empty_const(d: Path) -> None:
+    """① 둘째 팔 — 빈 상수를 도는 검사. **`doc_fsck.DEFERRED` 의 꼴 그대로다.**"""
+    (d / "tools").mkdir(parents=True)
+    (d / "tools" / "c.py").write_text(
+        "DEFERRED_X = ()\n"
+        "def check_x():\n"
+        "    bad = []\n"
+        "    for due, rel in DEFERRED_X:\n"
+        "        bad.append(due)\n"
+        "    return bad\n", encoding="utf-8")
 
 
 def _fx_handlist(d: Path) -> None:
@@ -933,6 +987,7 @@ def _fx_narrow_scope(d: Path) -> None:
 # 프로브 이름 → (합성 트리를 짓는 함수, **무엇을 거는가**)
 CONTROLS: dict[str, tuple] = {
     "① 빈 그물": (_fx_empty_net, "적재한 블록에 0건인 키로 읽는 검사"),
+    "① 빈 그물(상수)": (_fx_empty_const, "빈 상수를 도는 검사"),
     "② 손목록": (_fx_handlist, "원본의 부분집합을 상수로 박은 목록"),
     "③ 조용한 통과": (_fx_silent_pass, "ImportError→return · assert 삼킴 · 예외→return True"),
     "④ 죽은 게이트": (_fx_dead_gate, "추적 안 되는 경로를 건 CI 스텝"),
@@ -996,6 +1051,7 @@ def positive_control() -> list[str]:
 #   이제 이 수는 「미분류」가 아니라 **「새로 들어온 것」**이다 — 하나라도 오르면 운다.
 CEILING = {
     "① 빈 그물": 0,
+    "① 빈 그물(상수)": 0,
     "② 손목록": 0,
     "③ 조용한 통과": 0,
     "④ 죽은 게이트": 0,

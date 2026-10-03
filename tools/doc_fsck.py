@@ -351,10 +351,25 @@ DEFERRED = (
 )
 
 
-def check_deferred() -> list[str]:
+def check_deferred(rows: tuple = (), _use: bool = False) -> list[str]:
+    """★ 2026-10-03 (DECISIONS §359). `rows` 는 **자기검사용 주입구**다.
+
+    이 함수는 `DEFERRED` 가 빈 동안 2026-09-24 부터 `[]` 만 돌려줬다 —
+    **열흘 가까이 항상 통과하는 검사**였다. 머리말이 바로 그 병을 경고하고
+    있었는데(「해제만 검사하면 항상 통과하는 검사가 된다(§69)」) 정작 자기가
+    걸렸다. 0건이 **청결인지 죽음인지** 가를 길이 없었던 것이다.
+
+    빈 것 자체는 옳다 — 네 줄이 전부 해소·이관됐고 그 사유가 위에 남아 있다.
+    고칠 것은 **0건을 선언으로 만드는 일**이다. PLAN §13-3 이 결함 대장에서
+    같은 판단을 먼저 했다(「비었다고 이 절을 지우지 않는다」).
+
+    그래서 둘을 더한다 —
+      ① `rows` 주입구. 합성 행으로 **울려 보고** 살아 있음을 증명한다
+      ② 세는 쪽(`main`)이 0건을 **찍는다**. 안 보이면 안 읽힌다
+    """
     today = _today()
     bad = []
-    for due, rel, anchor, what in DEFERRED:
+    for due, rel, anchor, what in (rows if _use else DEFERRED):
         p = ROOT / rel
         live = p.exists() and anchor in p.read_text(encoding="utf-8")
         if live and today > due:
@@ -375,7 +390,8 @@ CHECKS = (
     ("⑥ 기획서    고쳤는데 최종 수정일이 그대로인가",
      lambda led: check_docx_revised() + check_docx_ready_for_squash()),
     ("⑦ 명령     문서가 적은 셸 명령 ↔ 룰셋 · 진입점 · tools 실물", lambda led: check_commands()),
-    ("⑧ 기한     미룬 것이 기한 안에 끝났는가 (양방향)", lambda led: check_deferred()),
+    (f"⑧ 기한     미룬 것이 기한 안에 끝났는가 (양방향 · 등재 {len(DEFERRED)}건)",
+     lambda led: check_deferred()),
 )
 
 
