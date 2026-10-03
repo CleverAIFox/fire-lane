@@ -23,6 +23,40 @@ MOVE = box(126.9095, 35.1431, 126.9438, 35.1593)       # view.maxBounds (2026-09
 RD = dict(dtype=str, keep_default_na=False, encoding="utf-8-sig")
 
 
+#: 옛 배포 주소. **본문에서 찾을 글자**이지 주소 검사가 아니다(§360).
+_OLD_PAGES_HOST = re.compile(r"woongtopia\.github\.io")
+
+
+def _deploy_rows(md: str) -> list[str]:
+    """README 의 ``` 울타리 중 **모든 줄이 배포 주소인** 첫 덩이.
+
+    ★ 2026-10-03. 종전에는 `re.search(r"```\\n((?:[^\\n]*cleveraifox[^\\n]*\\n)+)```")`
+      한 줄이었다. 한 줄에 주소가 둘이면 `[^\\n]*` 둘이 자리를 나눠 가질 길이
+      두 가지고, 그것이 `+` 안에 있어 **닫는 울타리가 없을 때 되짚기가 지수로
+      샌다** — 실측 n=6 0.019ms · n=13 1.78ms · n=17 27.7ms (CodeQL
+      `py/polynomial-redos`). README 는 우리가 쓰지만, **느려지는 길이 있는
+      정규식을 시험에 두면 그 시험이 언젠가 시간으로 죽는다.**
+
+      줄로 걷으면 각 줄을 한 번만 본다. 뜻은 같다 — 울타리 안이 전부
+      배포 주소인 덩이를 찾는 것.
+
+    ★ 울타리는 **딱지가 붙은 것(bash 등)까지 전부** 센다. 바닥(세 글자뿐인 줄)
+      만 세면 딱지 붙은 울타리에서 안팎이 뒤집히고, 그 뒤로는 울타리 밖을
+      안이라 읽는다 — 실제로 이 저장소 README 가 그 꼴이라 한 번 걸렸다.
+    """
+    cur: list[str] = []
+    inside = False
+    for ln in md.splitlines():
+        if ln.lstrip().startswith("```"):
+            if inside and cur and all("cleveraifox" in x for x in cur):
+                return cur
+            cur, inside = [], not inside
+            continue
+        if inside:
+            cur.append(ln)
+    return []
+
+
 def _build():
     return pd.read_csv(FX / "navi_build.csv", **RD)
 
@@ -173,7 +207,13 @@ def test_no_doc_sends_people_to_old_pages_domain():
         if rel in allow:
             continue
         try:
-            if "woongtopia.github.io" in p.read_text(encoding="utf-8", errors="ignore"):
+            # ★ 2026-10-03. 종전에는 `"woongtopia.github.io" in <본문>` 이었다.
+            #   **뜻은 「본문에서 이 글자를 찾는다」인데 꼴이 「주소가 이것인가」와
+            #   같아서** CodeQL `py/incomplete-url-substring-sanitization` 이
+            #   물었다. 그 규칙이 가리키는 결함(주소 검사를 부분문자열로 하는 것)이
+            #   여기 있지는 않지만, **꼴이 뜻을 안 말하면 다음 사람도 같은 오해를
+            #   한다.** 찾는 일은 찾는 꼴로 적는다.
+            if _OLD_PAGES_HOST.search(p.read_text(encoding="utf-8", errors="ignore")):
                 hits.append(rel)
         except OSError:
             continue
@@ -206,9 +246,8 @@ def test_the_deployed_surface_table_matches_web():
     import re as _re
 
     md = (ROOT / "README.md").read_text(encoding="utf-8")
-    block = _re.search(r"```\n((?:[^\n]*cleveraifox[^\n]*\n)+)```", md)
-    assert block, "README 의 배포면 표를 못 찾았다 — 표기가 바뀌었으면 이 시험을 고쳐라"
-    rows = [ln for ln in block.group(1).splitlines() if "cleveraifox" in ln]
+    rows = _deploy_rows(md)
+    assert rows, "README 의 배포면 표를 못 찾았다 — 표기가 바뀌었으면 이 시험을 고쳐라"
     assert len(rows) >= 4, f"배포면이 {len(rows)}줄 — 표를 덜 읽었다"
 
     # ★ 리다이렉트가 화면 자리에 있어도 된다 — **배포가 그 자리에 빌드본을
