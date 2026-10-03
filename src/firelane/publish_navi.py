@@ -98,7 +98,7 @@ from shapely.geometry import Point
 #   거기 산다. 이 파일은 그 답을 **칸에 옮기기만** 한다.
 from firelane.cli import no_args
 from firelane.paths import ROOT
-from firelane.publish_rules import _oneway, _turns
+from firelane.publish_rules import oneway, turns
 from firelane.seg.params import NODE_TOL
 
 P = ROOT / "data" / "processed"
@@ -348,7 +348,7 @@ def main() -> None:
     nodes = [[round(p.x, PREC), round(p.y, PREC)] for p in nodes_ll]
 
     # ── 엣지 ─────────────────────────────────────────────────────
-    ow, ow_stat = _oneway(m)
+    ow, ow_stat = oneway(m)
     edges = []
     loops = 0
     for i, (_, row) in enumerate(seg.iterrows()):
@@ -367,7 +367,10 @@ def main() -> None:
         if ow[i]:
             rec["ow"] = ow[i]
         edges.append(rec)
-    turns, tr_stat = _turns(m, nodes_m, [e["a"] for e in edges], [e["b"] for e in edges])
+    # ★ 지역 이름이 함수 이름을 덮지 않게 가른다 — 밑줄을 뗀 뒤 `turns` 가
+    #   둘이 됐고 `ruff F823` 이 그것을 잡았다(§370).
+    turn_list, tr_stat = turns(m, nodes_m, [e["a"] for e in edges],
+                               [e["b"] for e in edges])
     rn = [e.get("road_name") for e in edges]
     park, pk_stat = _parking(rn)
     ecam, ec_stat = _enforce_cam(rn)
@@ -394,7 +397,7 @@ def main() -> None:
                    #   안 적고 산출물이 들게 하는 그 규율이다(§246-2).
                    "oneway_nl": {k: ow_stat[k] for k in
                                  ("nl_twoway", "nl_none", "nl_split", "nl_absent")},
-                   "turn_bans": len(turns),
+                   "turn_bans": len(turn_list),
                    "park_null": pk_stat["null_edges"], "park_zero": pk_stat["zero_edges"],
                    "ecam_null": ec_stat["null_edges"], "ecam_zero": ec_stat["zero_edges"],
                    # ★ **0 이 얼마나 약한가.** 원천에서 도로명이 안 나와 어느 구간에도
@@ -406,7 +409,7 @@ def main() -> None:
         "terrain": _terrain(),
         "nodes": nodes,
         "edges": edges,
-        "turns": [list(t) for t in turns],
+        "turns": [list(t) for t in turn_list],
     }
     txt = json.dumps(out, ensure_ascii=False, separators=(",", ":"))
     W.mkdir(parents=True, exist_ok=True)

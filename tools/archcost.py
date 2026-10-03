@@ -171,7 +171,19 @@ CLUSTERS: list[tuple[str, str, str]] = [
 
 #: 묶음 선언에 안 걸린 파일 수. **0 이 목표이고 지금 0 이다.**
 UNCLUSTERED = 0
-RATCHETS = {"UNCLUSTERED": "down"}
+
+#: 남의 `_` 이름을 꾸러미 **경계를 넘어** import 하는 자리. (§370)
+#: ★ 이력 — 2026-10-03 첫 실측 5. 그중 **둘은 같은 날 §367 이 만든 것**이라
+#:   그 자리에서 공개 이름으로 고쳤다(`publish_rules.oneway` · `.turns`).
+#:   남은 셋(`segments ← seg.geom._dirv · _join · _seal`)은 **판정 폐포 안**이라
+#:   이름을 바꾸면 `code_fingerprint` 가 움직여 `golden` 재잠금이 따라온다 —
+#:   값이 붙은 수선이고, 그래서 **세어서 늘지 않게만** 막는다.
+PRIVATE_CROSS = 3
+
+#: 순환 의존. **0 이고 0 이어야 한다** — 실측 0.
+IMPORT_CYCLES = 0
+
+RATCHETS = {"UNCLUSTERED": "down", "PRIVATE_CROSS": "down", "IMPORT_CYCLES": "down"}
 
 
 def closures() -> tuple[set[Path], set[Path]]:
@@ -222,8 +234,67 @@ def unclustered() -> list[str]:
     return [r["rel"] for r in rows() if not r["pat"]]
 
 
+def _modname(rel: str) -> str:
+    n = rel[:-3].replace("/", ".")
+    return n[:-9] if n.endswith(".__init__") else (n or "__init__")
+
+
+def graph() -> tuple[dict[str, set[str]], list[tuple[str, str, str]]]:
+    """(모듈 → 내부 의존, 경계를 넘는 `_` 이름 목록).
+
+    ★ **결합도와 은닉성은 같은 그래프에서 나온다.** 따로 세면 둘이 갈린다 —
+      한쪽이 모듈을 세는 법을 바꿔도 다른 쪽이 안 따라오는 자리가 생긴다.
+    """
+    import ast
+    mods = {_modname(p.relative_to(SRC).as_posix()): p for p in sorted(SRC.rglob("*.py"))}
+    out: dict[str, set[str]] = {k: set() for k in mods}
+    priv: list[tuple[str, str, str]] = []
+    for name, p in mods.items():
+        tree = ast.parse(p.read_text(encoding="utf-8"))
+        for n in ast.walk(tree):
+            if isinstance(n, ast.ImportFrom) and n.module and n.module.startswith("firelane"):
+                tgt = n.module[len("firelane."):] if n.module != "firelane" else "__init__"
+                if tgt in mods and tgt != name:
+                    out[name].add(tgt)
+                    for al in n.names:
+                        # `__dunder__` 는 파이썬 관용이라 뺀다. `_x` 만 센다
+                        if al.name.startswith("_") and not al.name.startswith("__"):
+                            priv.append((name, tgt, al.name))
+            elif isinstance(n, ast.Import):
+                for al in n.names:
+                    if al.name.startswith("firelane."):
+                        tgt = al.name[len("firelane."):]
+                        if tgt in mods and tgt != name:
+                            out[name].add(tgt)
+    return out, priv
+
+
+def cycles() -> list[list[str]]:
+    """순환 의존. **0 이어야 한다** — 하나 생기면 폐포가 통째로 커진다."""
+    out, _ = graph()
+    found: list[list[str]] = []
+    done: set[str] = set()
+
+    def walk(n: str, path: list[str]) -> None:
+        if n in path:
+            found.append(path[path.index(n):] + [n])
+            return
+        if n in done:
+            return
+        for m in sorted(out.get(n, ())):
+            walk(m, path + [n])
+
+    for n in sorted(out):
+        walk(n, [])
+        done.add(n)
+    return found
+
+
 def ratchet_values() -> dict[str, int]:
-    return {"UNCLUSTERED": len(unclustered())}
+    _, priv = graph()
+    return {"UNCLUSTERED": len(unclustered()),
+            "PRIVATE_CROSS": len(priv),
+            "IMPORT_CYCLES": len(cycles())}
 
 
 def selftest() -> int:
@@ -256,9 +327,23 @@ def selftest() -> int:
     seg, _ = closures()
     if len({p.name for p in seg}) >= len(seg):
         bad.append("폐포에 같은 이름 둘이 없다 — `closures()` 머리말의 사유가 낡았다")
+    # ★ 결합도·은닉성 그래프가 **비면** 두 래칫이 언제나 0 이다
+    dep, priv = graph()
+    if sum(len(v) for v in dep.values()) < 50:
+        bad.append(f"내부 의존 간선 {sum(len(v) for v in dep.values())} — 그래프가 죽었다")
+    if len(dep) != len(rows()):
+        bad.append(f"모듈 {len(dep)} ≠ 파일 {len(rows())} — 세는 단위가 갈렸다")
+    # ★ `__dunder__` 를 은닉성 위반으로 세지 않는가 (반대 방향)
+    import ast as _ast
+    probe = "from firelane.seg.geom import _dirv, __all__, ok\n"
+    got = [a.name for a in _ast.walk(_ast.parse(probe))
+           if isinstance(a, _ast.alias) and a.name.startswith("_")
+           and not a.name.startswith("__")]
+    if got != ["_dirv"]:
+        bad.append(f"`_` 판별이 어긋났다 — {got} (기대 ['_dirv'])")
     for x in bad:
         print(f"  ✗ {x}")
-    print(f"{'✗' if bad else '✓'} 자기검사 판별식 10")
+    print(f"{'✗' if bad else '✓'} 자기검사 판별식 14")
     return 1 if bad else 0
 
 
@@ -301,12 +386,50 @@ def main() -> int:
         for r in sorted(rs, key=lambda x: (x["plan"], -x["lines"])):
             print(f"  {r['lines']:>5} {r['price']:<5} {r['rel']:<34} {r['plan']}")
 
+    # ── 결합도 · 은닉성 · 순환 (§370) ───────────────────────
+    dep, priv = graph()
+    edges = sum(len(v) for v in dep.values())
+    fan_in: dict[str, int] = {}
+    for _a, bs in dep.items():
+        for _b in bs:
+            fan_in[_b] = fan_in.get(_b, 0) + 1
+    print("\n── 결합도 ─────────────────────────────────────────────")
+    print(f"  내부 의존 간선 {edges} · 평균 fan-out {edges / max(1, len(dep)):.2f}"
+          f" · **순환 {len(cycles())}**")
+    print("  fan-out 상위 (많이 안다) — " + " · ".join(
+        f"{k} {len(v)}" for k, v in sorted(dep.items(), key=lambda kv: -len(kv[1]))[:4]))
+    print("  fan-in 상위 (고치면 파급 크다) — " + " · ".join(
+        f"{k} {v}" for k, v in sorted(fan_in.items(), key=lambda kv: -kv[1])[:4]))
+    print("  ★ `segments` 의 fan-out 과 `paths` 의 fan-in 이 높은 것은 **설계다** —")
+    print("    조립부가 부품을 알고, 정본은 많이 불린다. 낮추는 것이 목표가 아니다.")
+
+    print("\n── 은닉성 ─────────────────────────────────────────────")
+    if priv:
+        print(f"  꾸러미 경계를 넘는 `_` 이름 **{len(priv)}** · 래칫 {PRIVATE_CROSS}")
+        for a_, b_, nm in priv:
+            print(f"    {a_}  ←  {b_}.{nm}")
+        print("  ★ **경계를 넘는 이름이 곧 그 모듈의 계약이다.** 넘길 것이면"
+              " 밑줄을 떼고,")
+        print("    안 넘길 것이면 넘기는 쪽을 고친다 — 지금 셋은 판정 폐포 안이라")
+        print("    이름을 바꾸면 `golden` 재잠금이 따라온다(값이 붙은 수선이다).")
+    else:
+        print(f"  꾸러미 경계를 넘는 `_` 이름 0 · 래칫 {PRIVATE_CROSS}")
+
+    rc = 0
+    for name, now in (("PRIVATE_CROSS", len(priv)), ("IMPORT_CYCLES", len(cycles()))):
+        want = globals()[name]
+        if now > want:
+            print(f"\n✗ {name} 실측 {now} > 래칫 {want} — **늘었다**")
+            rc = 1
+
     miss = unclustered()
     if miss:
         print(f"\n✗ 묶음 선언에 안 걸린 파일 {len(miss)}\n  " + "\n  ".join(miss))
         print("  ★ 새 파일이 생기면 **어느 묶음인지 정해야** 한다. 넓은 글로브가")
         print("    받아주면 그 결정이 조용히 미뤄지므로, 안 걸린 수를 래칫이 든다.")
         return 1
+    if rc:
+        return rc
     print(f"\n✓ 묶음 선언에 안 걸린 파일 0 · 래칫 {UNCLUSTERED}")
     print("  ★ 이 도구는 **옮기지 않는다.** 값만 매긴다 — 옮기는 것은 PLAN 이 든다.")
     return 0

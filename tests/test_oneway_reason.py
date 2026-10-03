@@ -3,7 +3,7 @@
 test_oneway_reason.py — **「방향을 모른다」의 사유가 실제로 갈리는가.** (§367)
 
 ── 왜 생겼나 ───────────────────────────────────────────────────
-`publish_rules._oneway` 가 일방통행 57건 중 **1건만** 방향을 정했다. 남은 56건이
+`publish_rules.oneway` 가 일방통행 57건 중 **1건만** 방향을 정했다. 남은 56건이
 왜 모름인지는 **어디에도 없었다** — `stat` 이 `nl_twoway` 하나만 세고, 그 하나도
 「넓게 봐서 반대 방향 둘이 잡힌」 좁은 갈래였다.
 
@@ -22,7 +22,7 @@ test_oneway_reason.py — **「방향을 모른다」의 사유가 실제로 갈
 ★ **사유가 분할인지도 문다.** 넷의 합이 「모름」과 같아야 한다. 안 같으면
   어떤 구간이 어느 칸에도 안 세어지고, 그러면 그 수가 거짓이 된다.
 
-IN    src/firelane/publish_rules.py::_oneway
+IN    src/firelane/publish_rules.py::oneway
 OUT   없음 (검사)
 밖    **방향이 옳은가는 안 본다.** 그것은 실물 대조이고 레이크가 든다.
       **몇 건이어야 하는가도 안 본다** — 래칫(`navicheck`)이 든다.
@@ -59,7 +59,7 @@ def _seg(x0: float, y0: float, x1: float, y1: float) -> LineString:
 
 @pytest.fixture
 def lake(tmp_path, monkeypatch):
-    """`_oneway` 가 읽는 두 파일을 합성으로 깐다. **`P` 를 갈아끼운다.**"""
+    """`oneway` 가 읽는 두 파일을 합성으로 깐다. **`P` 를 갈아끼운다.**"""
     monkeypatch.setattr(PN, "P", tmp_path)
     return tmp_path
 
@@ -84,7 +84,7 @@ FAR = _seg(0, 500, 200, 500)         # 버퍼 밖
 
 def _run(lake: Path) -> dict:
     m = _gdf([SEG])
-    _, stat = PN._oneway(m)
+    _, stat = PN.oneway(m)
     return stat
 
 
@@ -139,7 +139,7 @@ def test_the_reasons_partition_the_unknowns(lake):
     # 첫 구간엔 같은 방향 하나(확정) · 둘째엔 반대 둘(양방향) · 셋째엔 아무것도
     _nodelink(lake, [SAME, _seg(0, 100.5, 200, 100.5), _seg(200, 99.5, 0, 99.5)])
     m = _gdf([SEG, _seg(0, 100, 200, 100), _seg(0, 200, 200, 200)])
-    _, s = PN._oneway(m)
+    _, s = PN.oneway(m)
     unknown = s["oneway"] - s["dir_known"]
     reasons = s["nl_twoway"] + s["nl_none"] + s["nl_split"] + s["nl_absent"]
     assert reasons == unknown, (
@@ -150,6 +150,6 @@ def test_the_reasons_partition_the_unknowns(lake):
 def test_the_stat_declares_all_four_reasons():
     """칸 넷이 **처음부터 0 으로 선언**돼 있는가 — 늦게 생기면 `KeyError` 다."""
     import inspect
-    src = inspect.getsource(PN._oneway)
+    src = inspect.getsource(PN.oneway)
     for k in ("nl_twoway", "nl_none", "nl_split", "nl_absent"):
         assert f'"{k}": 0' in src, f"`{k}` 가 초기 선언에 없다"

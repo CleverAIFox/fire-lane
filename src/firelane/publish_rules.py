@@ -10,8 +10,8 @@ publish_rules.py — **통행 규칙을 그래프 칸으로 옮긴다.** (DECISI
 「무엇을 읽는가」**로 골랐다 — §274 가 `read/` 를 가를 때 세운 그 기준이다.
 
 이 두 묶음만이 **표준노드링크·TURNINFO 를 읽는다.** 나머지(판정색 · 지형 ·
-노드 접합 · 단속 · 카메라)는 안 읽는다. 크기로 갈랐으면 `_turns`(66줄)와
-`_oneway`(60줄)가 다른 파일에 갔을 텐데, 그러면 「표준노드링크 대조 폭을
+노드 접합 · 단속 · 카메라)는 안 읽는다. 크기로 갈랐으면 `turns`(66줄)와
+`oneway`(60줄)가 다른 파일에 갔을 텐데, 그러면 「표준노드링크 대조 폭을
 바꿨다」가 **두 파일을 동시에** 움직인다.
 
 ★ **상수가 같이 간다.** `OW_BUF_M` · `NL_BUF_M` · `NODE_SNAP_M` · `TURN_ANGLE`
@@ -25,6 +25,8 @@ publish_rules.py — **통행 규칙을 그래프 칸으로 옮긴다.** (DECISI
 IN    data/processed/ngii1k_center_5186.gpkg · node_link_5186.gpkg ·
       turn_restriction.csv · node_point_5186.gpkg
 OUT   없다 — 값을 **돌려주기만** 한다. 파일은 `publish_navi` 가 쓴다
+      ★ 공개하는 것은 `oneway()` · `turns()` **둘뿐이다.** 나머지는 `_` 로
+        덮는다 — 꾸러미 경계를 넘는 이름이 곧 그 모듈의 계약이다(§370).
 밖    **경로에서 빼지 않는다.** 규칙은 비용으로 바뀌고 그것은 내비 일이다
       (`web/navi/src/domain/rules.ts` · §215-1). 여기는 **칸만** 채운다.
       **배수도 여기 없다** — 그 수는 내비 쪽 정책이다.
@@ -82,7 +84,7 @@ def _nl_signs(nl: gpd.GeoDataFrame, L, buf: float) -> set[int]:
     return signs
 
 
-def _oneway(m: gpd.GeoDataFrame) -> tuple[list[int], dict]:
+def oneway(m: gpd.GeoDataFrame) -> tuple[list[int], dict]:
     """구간마다 `ow`(0 · 1 · -1 · 2). `m` 은 5186 구간이다.
 
     ★ 2026-10-03 (DECISIONS §367). **「방향을 못 정했다」의 사유를 가른다.**
@@ -144,7 +146,7 @@ def _oneway(m: gpd.GeoDataFrame) -> tuple[list[int], dict]:
 
 
 
-def _turns(m: gpd.GeoDataFrame, nodes_m: list, ea: list, eb: list) -> tuple[list, dict]:
+def turns(m: gpd.GeoDataFrame, nodes_m: list, ea: list, eb: list) -> tuple[list, dict]:
     """TURNINFO 금지 규칙을 그래프 (들어오는 엣지, 노드, 나가는 엣지) 로 옮긴다."""
     import pandas as pd
     stat = {"rules": 0, "mapped": 0}
