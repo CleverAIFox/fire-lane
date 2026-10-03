@@ -6587,14 +6587,15 @@
    "src/firelane/segments.py",
    "tests/test_layering.py",
    "tools/archcost.py",
+   "tools/tidy.py",
    "web/navi/test/layering.test.ts"
   ],
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "fd6055f5937cc495",
-   "f80c072d9095a38e",
-   "d4647237824ca036"
+   "9693a2a649855ba2",
+   "7707049043484744",
+   "27f3b4b428bd80a1"
   ],
   "parts": {
    "src/firelane/pipeline.py": "ac3adc7c6507e2fd",
@@ -6603,10 +6604,11 @@
    "src/firelane/segments.py": "4319b193ac4762f3",
    "tests/test_layering.py": "74ade60328231bcc",
    "tools/archcost.py": "717c48e71c6fff00",
+   "tools/tidy.py": "e3ffa130c52a1e7f",
    "web/navi/test/layering.test.ts": "254709280423ca58",
-   "본문": "ddba830bfd729acc"
+   "본문": "7cb160a9585f3889"
   },
-  "sha": "075d654182cd3f2b"
+  "sha": "bfbc3eb04980053f"
  },
  "DECISIONS/371": {
   "doc": "docs/DECISIONS.md",
