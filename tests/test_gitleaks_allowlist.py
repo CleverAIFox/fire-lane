@@ -237,12 +237,25 @@ def test_the_working_tree_scan_is_wired_into_verify():
         f"{len(idx)}개다 — 하나여야 한다 (DECISIONS §376)")
     i = idx[0]
     body = lines[i] + (lines[i + 1] if lines[i].rstrip().endswith("\\") else "")
-    assert "gitleaks dir" in body, (
-        "그 단계가 `gitleaks dir`(트리)를 안 부른다 — `gitleaks git` 은 이력·범위이고\n"
-        "  이 단계가 맡는 물음(지금 트리에 있나)이 아니다")
-    assert "--redact" in body, (
+    # ★ 2026-10-04 (§381). 종전에는 이 자리에서 `gitleaks dir` 이라는 **글자**를
+    #   찾았다. 그 하위명령은 8.19 에서 생겼고 apt 가 주는 것은 8.16 이라
+    #   사람 기계에서 「unknown command "dir"」로 터졌다. 호출 꼴을
+    #   `tools/treescan.sh` 하나로 모았으므로, 여기서는 **그 문을 부르는지**를
+    #   보고 꼴은 그 파일에 묻는다. 같은 글자를 두 집에 적지 않는다.
+    scan = ROOT / "tools" / "treescan.sh"
+    assert "treescan.sh" in body, (
+        "그 단계가 `tools/treescan.sh` 를 안 부른다 — 트리 전수의 정본이 거기다")
+    assert scan.exists(), "`tools/treescan.sh` 가 없다"
+    src = scan.read_text(encoding="utf-8")
+    assert "--no-git" in src and "dir ." in src, (
+        "`treescan.sh` 가 **트리**를 안 본다 — `gitleaks git` 은 이력·범위이고\n"
+        "  이 문이 맡는 물음(지금 트리에 있나)이 아니다.\n"
+        "  8.19 이상은 `dir`, 그 이전은 `detect --no-git` 이 같은 일을 한다")
+    assert "--redact" in src, (
         "`--redact` 가 없다 — 걸리는 날 값이 화면·로그·`dms` 봉인에 남는다.\n"
         "  그것 자체가 두 번째 유출이다")
+    assert "--exit-code 1" in src, (
+        "걸려도 0 으로 끝나면 단계가 초록이 된다 — 검사가 아니라 장식이다")
     # ★ 창은 **앞 `step` 까지**다. `step()` 이 제 안에서 `SCOPE=""` 로 지우므로
     #   (`local _scope="$SCOPE"; SCOPE=""`), 직전 `step` 이후에 적힌 `scope` 만
     #   이 단계에 걸린다. 「바로 윗 줄」만 보면 `if …; then` 에서 멈춰

@@ -360,6 +360,16 @@ jobs:
       #   레이크 없이 돈다 — 2026-09-28 에 도구가 그 층을 덮어쓴 일이 있었다.
       - name: 실측 층 지문
         run: uv run python tools/fieldseal.py
+      # ★ 2026-10-03 (§379). **자를 의심한다.** 폭을 재는 셋(판정 · widthcross ·
+      #   width_fn)이 전부 같은 표본을 먹는다 — 법선 광선. 그 표본이 틀리면
+      #   셋이 사이좋게 틀린다. 이것은 표본을 안 쓰고 내접원을 재서 둘을 댄다.
+      #   발행본만 읽으므로 레이크 없이 돈다 — 로컬 전용이 아니다.
+      - name: 통과폭 교차대조
+        run: uv run python tools/clearance_cross.py
+      # ★ 2026-10-03 (§380). 판정 상수 열셋이 출처를 못 댄다. 새 상수를 들일 때
+      #   출처를 같이 적게 한다 — 안 적으면 영원히 못 적는다.
+      - name: 판정 상수의 출처
+        run: uv run python tools/constbasis.py
       - name: 기획서 대조
         run: uv run python tools/docx_check.py
       - name: 기획서 개요 층

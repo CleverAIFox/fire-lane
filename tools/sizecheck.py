@@ -264,7 +264,9 @@ EXCEPTIONS: dict[str, int] = {
     #   그 표의 머리말이 「EXEMPT 는 사유를 함께 적는다. 비우는 것이 목표가
     #   아니다」라고 적는다. 사유를 줄이면 다음 사람이 그 면제가 옳은지 알 수가
     #   없고, 표를 쪼개면 「어느 파일에 있나」가 기억거리가 된다(MASTER §18-3).
-    "tests/test_tools_are_wired.py": 705,
+    # ★ 2026-10-04 (DECISIONS §379-9). 705 → 706. `statkit` 면제 **한 줄**이다.
+    #   사유는 한 줄에 눌러 담았다 — 위 §362 의 판단이 그대로 선다.
+    "tests/test_tools_are_wired.py": 706,
     # ★ 2026-10-03 (DECISIONS §372). **새로 넘었다** — 600 상한 밖 615.
     #   늘어난 열다섯 줄은 `_tracked` · `_blame` 이 git 의 실패를 **빈 것으로
     #   바꾸던 자리**를 터뜨리는 것과 그 사유다. 도장의 기반이 **추적되는
@@ -307,7 +309,7 @@ EXCEPTIONS: dict[str, int] = {
     #   비밀값 방어 셋이 다 **변화량**만 봐서 트리에 56일 있던 값을 아무도
     #   못 봤다 — 관문이 **늘어난** 자리이므로 이 파일은 그만큼 는다.
     #   긴 서술은 §376 이 들고 여기 주석은 열세 줄로 줄였다.
-    "tools/verify.sh": 1255,
+    "tools/verify.sh": 1252,
     "src/firelane/segments.py": 780,
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이

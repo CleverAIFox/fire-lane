@@ -3208,7 +3208,12 @@ basemap:
       2026-08-09 부터 평문으로 있었다. §146 이 감수한 것은 **이력**이고
       (web/config.js · web/index.html, 2026-09-13 에 들어냄), 이 줄은
       **작업 트리**였다 — 받는 사람마다 복제본에 같이 간다. 다른 사실이다.
-      그 값은 2026-09-12 이전 커밋에도 남아 있어 재발급 대상이다(SECURITY.md).
+      ★ 2026-10-04 (DECISIONS §381-2). **폐기가 실제로 끝났다.** 종전에 이 자리가
+      「재발급 대상이다」로 적었고 `.env.example` 은 「폐기가 정본이다」로 적어
+      둘이 갈려 있었다. 2026-10-03 에 `.env` 의 값과 추적 파일에 있던 값의
+      해시 앞 여덟 자가 같다는 것이 확인됐다 — 2026-09-22 에 「폐기됐다」고
+      적힌 뒤로도 **같은 키가 살아 있었다**. 열두 날이다. 이력에 남은 값은
+      §146 이 감수한 그대로 둔다 — 이제는 진짜로 죽은 키다.
 
     ★ WMTS 축 순서가 {z}/{y}/{x}다. {z}/{x}/{y}로 쓰면 타일이 어긋난다.
     ★ 인증키 신청서에 WMTS/TMS API + 배경지도 API 체크 필요.
@@ -3600,6 +3605,20 @@ outputs:
       읽어 외부 자료와 댈 뿐이고 판정 지문 밖이다
     - 문턱이 없다. 1판은 분포와 모순만 센다
 
+  clearance_cross:
+    produced_by: tools/clearance_cross.py
+    path: data/processed/clearance_cross.json
+    inputs: [ngii1k, naver_width_2610]
+    consumers: [docs/DECISIONS.md]
+    what: 법선 span 과 내접원 지름의 대조표. 분포 · 넘침 · 역전 · 실측 대조
+    verified: false
+    known_issues:
+    - ★ **판정을 안 바꾼다.** `widthcross` 와 같은 자리다 — 판정이 끝난 것을
+      읽어 기하와 댈 뿐이고 판정 지문 밖이다
+    - 레이크가 필요 없다. `web/data` 발행본만 읽으므로 CI 에서도 돈다
+    - 어느 방법이 옳은지는 안 말한다. 내접원이 진실이라는 근거는 아직
+      네이버 실측 여덟 줄뿐이고 그것도 사람이 화면에서 잰 값이다
+
   ngi_width_check:
     produced_by: src/firelane/seg/width.py (수동 추출)
     path: data/field/ngi_width_05_check.csv
@@ -3614,6 +3633,28 @@ outputs:
     - ★ 파생물이다. field 에 있으나 실측이 아니라 재생성 가능하다.
       DECISIONS 가 근거로 인용하므로 인용이 깨지지 않게 봉인해 둔다
     - 컬럼 w_ngi · lanes · oneway · len_m · lat · lon
+
+  naver_width_2610:
+    produced_by: 사람 (네이버 지도 거리재기)
+    path: data/field/naver_width_2610.csv
+    inputs: []
+    consumers: [tools/clearance_cross.py, docs/DECISIONS.md]
+    what: 노면 폭 실측 11행. 2026-10-03 에 사람이 화면에서 쟀다
+    verified: false
+    known_issues:
+    - ★ **이 층의 첫 실측이다.** §291 이 현장 실측을 안 가기로 정한 뒤
+      `field` 에 남은 것은 파생물 한 장뿐이었다. 이 표는 현장에 간 것이
+      아니라 **항공뷰와 거리뷰에서 잰 값**이고, 그 한계를 `acc_m` 에 적는다
+    - 오차 ±1.0m (입구 측정 한 행만 ±0.5m). 화면에서 손으로 끌어 잰 값이라
+      0.5m 를 맞추라고 쓰면 안 된다. **쓰임은 자릿수 대조다**
+    - spot 칸이 측정이 선 자리다 — mid 는 구간의 보통 단면, off 는 로터리
+      진입부·골목 입구, none 은 구간 미배정. 섞으면 「자가 맞는가」를
+      「측정이 어디였나」가 흔든다
+    - 재취득 불가가 아니다. 같은 화면을 다시 열면 다시 잴 수 있다.
+      그래도 `field` 에 두는 까닭은 **파이프라인이 못 만드는 값**이고
+      §379 의 음성 대조가 이것을 근거로 들기 때문이다
+    - 컬럼 road · addr · seg_uid · spot · lat · lon · w_m · acc_m ·
+      method · obs_date · note
 
 # ── landing 처분 결정 (2026-08-30) ────────────────────────────
 # ★ 판단은 끝났는데 도구가 모르면 검사가 매번 같은 말을 한다.
