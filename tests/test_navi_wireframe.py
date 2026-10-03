@@ -147,11 +147,37 @@ def test_the_dev_bar_is_off_unless_asked():
     `?dev=0` 을 명시하지 않으면 항상 켜졌고, `web/index.html` 의 내비 링크에
     그 인자가 없다. 운전석에서 손이 스치면 ▶ 가 눌려 **모의 주행이 실제 GPS 를
     대체한다** — 화면의 차가 운전자가 아니게 된다.
+
+    ★ 2026-10-04 (§386). 판정이 `domain/handoff.ts` 로 옮겨갔다 — 같은 물음을
+    `App.tsx` 안에서 네 번 따로 읽던 것을 한 자리로 모았다. 그래서 여기서
+    보는 자리도 옮긴다. **같은 글자를 두 집에 적지 않는다.**
+    """
+    hand = (ROOT / "web/navi/src/domain/handoff.ts").read_text(encoding="utf-8")
+    for flag in ("dev", "demo"):
+        m = re.search(rf'get\("{flag}"\)\s*(===|!==)\s*"([01])"', hand)
+        assert m, f"`{flag}` 판정식을 못 찾았다 — 이름이 바뀌었으면 여기도 옮겨라"
+        assert (m.group(1), m.group(2)) == ("===", "1"), (
+            f"`{flag}` 가 `{m.group(1)} \"{m.group(2)}\"` 로 켜진다 — "
+            "켜는 쪽을 명시하게 `=== \"1\"` 이어야 한다.\n"
+            "  기본 켜짐이면 배포본이 시연 막대를 달고 나간다.")
+
+    app = (ROOT / "web/navi/src/App.tsx").read_text(encoding="utf-8")
+    assert "readHandoff(location.search)" in app, (
+        "App 이 지령을 그 자리에서 안 읽는다 — 깃발 판정이 다시 흩어졌다")
+    assert 'get("dev")' not in app and 'get("incident")' not in app, (
+        "App 이 질의 문자열을 **다시 직접** 읽는다. 물음의 집은 `handoff.ts` 다")
+
+
+def test_the_driver_cannot_pick_a_destination_once_dispatched():
+    """★ 2026-10-04 (§382-1 · §386). 이 내비는 **지령을 상속만 받는다.**
+
+    기사가 목적지를 고를 수 있게 두면 지령과 화면이 갈리고, 갈린 둘 중 어느
+    쪽이 기록으로 남는지가 불분명해진다. 화면 셋(지도 찍기 · 검색 · 상단
+    팔기)이 전부 **한 값**을 봐야 한다 — 각자 판단하면 그 셋이 갈린다.
     """
     app = (ROOT / "web/navi/src/App.tsx").read_text(encoding="utf-8")
-    m = re.search(r'get\("dev"\)\s*(===|!==)\s*"([01])"', app)
-    assert m, "시연 막대 판정식을 못 찾았다 — 이름이 바뀌었으면 여기도 옮겨라"
-    assert (m.group(1), m.group(2)) == ("===", "1"), (
-        f"시연 막대가 `dev {m.group(1)} \"{m.group(2)}\"` 로 켜진다 — "
-        "켜는 쪽을 명시하게 `=== \"1\"` 이어야 한다.\n"
-        "  기본 켜짐이면 배포본이 시연 막대를 달고 나간다.")
+    assert "canPickDestination(hand)" in app, (
+        "목적지 선택 가능 여부를 안 묻는다 — 지령이 와도 기사가 다시 찍는다")
+    assert "|| !canPick) return;" in app, "지도 찍기가 그 값을 안 본다"
+    assert '{s.screen === "search" && canPick && (' in app, "검색 화면이 안 닫힌다"
+    assert "armed={armed} onArm={canPick ?" in app, "상단 팔기가 안 닫힌다"

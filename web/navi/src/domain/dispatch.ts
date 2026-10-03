@@ -37,13 +37,22 @@ export function naviBase(view: string | undefined | null): string {
   return view === "ops" ? "./navi/" : "./";
 }
 
-/** 관제 → 내비 주소. 좌표는 6자리로 끊는다(약 11cm — 구간 분해능보다 작다). */
-export function dispatchUrl(view: string | undefined | null, d: Dispatch): string {
+/**
+ * 관제 → 내비 주소. 좌표는 6자리로 끊는다(약 11cm — 구간 분해능보다 작다).
+ *
+ * ★ 2026-10-04 (§386). `demo` 를 붙이면 `?demo=1` 이 따라간다 — **발표용**이고
+ *   내비가 경로 주행으로 돈다. 기본은 꺼짐이다. 켜는 쪽을 명시하지 않으면
+ *   지령 링크가 전부 모의 주행으로 나가고, 그러면 화면의 차가 운전자가
+ *   아니게 된다(§W13-1 이 `?dev` 에서 겪은 그것이다).
+ */
+export function dispatchUrl(view: string | undefined | null, d: Dispatch,
+                            demo = false): string {
   const q = new URLSearchParams({
     incident: `${d.at[0].toFixed(6)},${d.at[1].toFixed(6)}`,
     label: d.label,
     vehicle: d.vehicle,
     station: d.station,
   });
+  if (demo) q.set("demo", "1");
   return `${naviBase(view)}?${q.toString()}`;
 }

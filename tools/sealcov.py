@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-sealcov.py — 봉인이 **코드의 몇 할**을 덮는가. 땅따먹기의 분모.
+sealcov.py — 봉인이 **코드의 몇 할**을 덮는가. 덮임의 분모.
 
     uv run python tools/sealcov.py            덮임
     uv run python tools/sealcov.py --list     아직 아무 절도 안 지목한 파일
@@ -43,8 +43,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 
 #: 어떤 절의 본문도 안 지목한 코드 파일 수가 분모에서 빠진 뒤의 **덮인 수**.
-#: **올라가는 쪽** — 땅따먹기는 늘어나야 한다.
-SEALED_FILES = 352
+#: **올라가는 쪽** — 덮임은 늘어나야 한다.
+SEALED_FILES = 354
 
 RATCHETS = {"SEALED_FILES": "up"}
 
