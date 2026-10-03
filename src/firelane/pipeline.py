@@ -30,7 +30,10 @@ from firelane.stagerun import ENOMEM_RC as INGEST_ENOMEM_RC
 for st in (sys.stdout, sys.stderr):
     try:
         st.reconfigure(encoding="utf-8")
-    except Exception:
+    except Exception:  # noqa: S110, BLE001 — 아래 ★
+        # ★ 삼키는 사유(§371). `normalize_raw` 와 같은 자리이고 같은 사유다 —
+        #   다시 설정할 수 없는 표준출력에서 터뜨리면 파이프라인이 시작도
+        #   못 한다. 출력 인코딩 자체는 `encoding_check` 가 든다.
         pass
 
 

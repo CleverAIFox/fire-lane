@@ -3,24 +3,21 @@
  *
  * ★ **토큰을 저장소에 넣지 마라.** 빌드 시 주입한다.
  *
- *     저장소 루트 .env           MAPBOX_TOKEN=pk....        (.gitignore · 정본)
- *     web/navi/.env.local        VITE_MAPBOX_TOKEN=pk....   (옛 자리 · 호환)
- *     배포                       ${{ secrets.MAPBOX_TOKEN }}
- *   고르는 순서는 vite.config.ts `mapboxToken()` 이 든다.
+ * ── ★ 2026-10-03 — Mapbox 토큰을 걷었다 (DECISIONS §366-2) ──────
+ * 종전에 이 자리가 `MAPBOX_TOKEN` · `MATCHING_ENABLED` 둘을 들었고, 그
+ * 사유를 길게 적었다 — 「토큰이 없어도 앱은 돈다. `MATCHING_ENABLED` 가
+ * false 면 음성 안내를 전부 자체 문구로 낸다」.
  *
- *   2026-09-05 에 Map Matching 대조로 1,301 회를 썼다. 무료 한도가 월
- *   10만이라 여유는 있으나, 개발 중 리로드마다 매칭하면 하루 수천 건이
- *   나간다. **누구 토큰으로 나가는지가 곧 누가 요금을 내는지다** —
- *   그래서 소유자가 바뀌면 환경변수 하나만 갈아끼우게 둔다.
+ * **그 둘을 읽는 파일이 하나였고 그 파일을 아무도 import 하지 않았다**
+ * (`infra/matching.ts` 90줄). 즉 Map Matching 은 **번들에 실린 적이 없다** —
+ * 상용 정합을 안 쓰기로 한 판단(`domain/snap.ts` 머리말 · 브루트포스 2.2ms)
+ * 뒤로 코드만 남은 것이다. 그래서 「없어도 돈다」가 아니라 **늘 없었다.**
  *
- * ★ 토큰이 없어도 앱은 돈다. `MATCHING_ENABLED` 가 false 면 음성 안내를
- *   전부 자체 문구로 낸다. **남는 사람이 토큰 없이 개발할 수 있어야 한다.**
+ * 끌고 있던 것 둘을 같이 걷었다 — `naviweight.ALLOWED` 의 바깥 의존
+ * `api.mapbox.com`(래칫 1 → 0)과 `build-navi` 액션의 **배포 전건**(토큰
+ * 시크릿이 없으면 배포가 죽었다). 대조 능력은 안 잃는다 —
+ * `tools/matchcheck.py` 가 루트 `.env` 의 토큰으로 그대로 든다.
  */
-
-export const MAPBOX_TOKEN: string =
-  (import.meta as { env?: Record<string, string> }).env?.VITE_MAPBOX_TOKEN ?? "";
-
-export const MATCHING_ENABLED = MAPBOX_TOKEN.startsWith("pk.");
 
 /**
  * 중개자 주소. **이것이 있으면 관제와 내비가 다른 기계에서도 이어진다.**

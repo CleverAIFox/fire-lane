@@ -196,6 +196,66 @@ export interface TuningKnobs {
   zoneEach: number;
 }
 
+/**
+ * ── A* 휴리스틱 허용성의 밑동 ──────────────────────────────────
+ *
+ * `graph.ts` 의 A* 는 직선거리를 휴리스틱으로 쓴다. 그것이 admissible 하려면
+ * **비용 ≥ 직선거리 × (최소 배율)** 이어야 하고, `graph.ts` 머리말은 그 최솟값이
+ * 1.0 이라고 **선언만** 하고 있었다 — 강제자가 0 이었다(PLAN §1 #71).
+ *
+ * ★ 실측(2026-10-03 · `test/astar.test.ts`). 지금 값에서는 선언이 맞다 —
+ *   발행 그래프 노드 1,139 에서 무작위 쌍 **255**개를 A* 와 다익스트라로 각각
+ *   풀어 **벌점 비용**을 대 보니 차이 0 이었다. 그런데 `unknown`·`noWidth`·
+ *   `tight` 를 0.2 로 내리고 **옛 휴리스틱**(배율 1)으로 돌리면 쌍 456 중
+ *   **19개에서 A* 가 더 나쁜 답**을 냈고 최대 **+34.94** 였다. 같은 그래프를
+ *   새 휴리스틱(배율 0.2)으로 돌리면 **0** 이다.
+ *   즉 이 성질은 **값에 매달려 있고** 그 값은 「남는 사람이 고치는 자리」다.
+ *
+ * ★ 그래서 휴리스틱이 이 수를 곱한다. 지금은 1.0 이라 **한 글자도 안 달라지고**,
+ *   누가 배수를 1.0 아래로 내리는 날 자동으로 느슨해져 최적해를 지킨다.
+ *
+ * ★ **분모를 손으로 적지 않는다.** `TuningKnobs` 의 모든 칸이 아래 둘 중
+ *   하나에 들어야 하고, 안 들면 `test/astar.test.ts` 가 그 칸 이름을 대며 운다 —
+ *   §370 이 `DOMAIN` ↔ `NOT_DOMAIN` 으로 세운 그 틀이다. 손목록의 결함은
+ *   틀린 항목이 아니라 **빠진 항목**이다.
+ */
+export const MULTIPLIERS = [
+  "unknown", "unknownLenient", "noWidth", "noWidthLenient", "tight", "avoidUncertain",
+] as const;
+
+/**
+ * ★ **배수가 아닌 칸의 목록과 그 사유는 `test/astar.test.ts` 에 있다.**
+ *   `tests/test_layering.py` 의 `NOT_DOMAIN` 이 시험에 사는 것과 같은 자리다 —
+ *   사유는 사람이 읽는 글이고 앱이 받을 이유가 없다. 분류가 **빠지면** 그
+ *   시험이 칸 이름을 대며 운다. 분모는 `TuningKnobs` 에서 **유도**된다.
+ *
+ * ★ **번들 무게 때문이 아니다.** 옮기기 전후를 재 봤고 둘 다 141.61KB 였다 —
+ *   `Record` 리터럴이 소비자 없으면 접힌다. 자리를 옮긴 사유는 **소유**다.
+ */
+/**
+ * 압력 계수가 **음수가 아닌가.** 음수면 「주차 단속이 많은 길이 더 좋다」는
+ * 뜻이고, 그것은 조율이 아니라 결함이다. 그리고 음수면 압력 항의 하한을
+ * 자료 없이는 못 묶으므로 휴리스틱도 못 고친다 — 여기서 거부하는 것이 맞다.
+ */
+export function pressureIsSane(t: TuningKnobs): boolean {
+  return t.parkPer1000 >= 0 && t.ecamPerSite >= 0 && t.speedbumpEach >= 0
+    && t.speedcamEach >= 0 && t.zoneEach >= 0;
+}
+
+/**
+ * 비용/직선거리 의 **하한.** A* 휴리스틱에 곱한다.
+ *
+ * 비용 사슬은 `penalized × avoid × press × direction` 이고 각 항의 최솟값을
+ * 곱한다. `press` 는 `pressureIsSane` 인 동안 1 이다.
+ *
+ * ★ 1 을 넘지 않는다. 배수가 전부 1 이상이면 1 을 쓰는 것이 **가장 센**
+ *   admissible 휴리스틱이고, 그보다 키우면 최적해가 깨진다.
+ */
+export function minCostFactor(t: TuningKnobs = TUNING, dirMin = 1): number {
+  const mults = MULTIPLIERS.map((k) => t[k] as number);
+  return Math.min(1, ...mults, dirMin);
+}
+
 export const TUNING: TuningKnobs = {
   unknown: 2.5,
   unknownLenient: 1.2,

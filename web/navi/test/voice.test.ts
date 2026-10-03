@@ -26,6 +26,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { newMemory, reachOf, resync, step, type VoiceMemory, type VoiceTick }
   from "../src/domain/voice";
+import { fold as foldCv, type CvReading } from "../src/domain/cv";
 import { GATES_MIN_M, type Maneuver } from "../src/domain/turn";
 import type { GraphEdge, RoutePlan, RuleWarning, VerdictStyle }
   from "../src/domain/types";
@@ -250,5 +251,60 @@ describe("내다보는 거리", () => {
 
   it("속도에 비례해 는다", () => {
     expect(reachOf(30)).toBeGreaterThan(reachOf(10));
+  });
+});
+
+// ── 영상이 회전을 밀어내는가 (DECISIONS §363) ───────────────────────
+describe("영상 통과폭", () => {
+  const NOW = 1_800_000_000_000;
+  const view = (o: Partial<CvReading> = {}) =>
+    foldCv([{ t: "cv", seg: "DM-1", passM: 2.1, at: NOW, cam: "C1", conf: 0.9, ...o }],
+           NOW).get("DM-1")!;
+
+  it("★ 막은 측정이 **회전을 밀어낸다** — 회전은 되돌릴 수 있고 후진은 아니다", () => {
+    const t = calm({ m: maneuver(100), distM: 20, cv: { view: view(), blocked: true } });
+    const u = step(t, mem);
+    expect(u?.urgency).toBe("critical");
+    expect(u?.text).toContain("못 지납니다");
+  });
+
+  it("안 막은 측정은 **회전에 진다** — 회전이 먼저 나간다", () => {
+    const t = calm({ m: maneuver(100), distM: 20, cv: { view: view(), blocked: false } });
+    expect(step(t, mem)?.urgency).toBe("turn");
+  });
+
+  it("같은 측정을 두 번 안 말한다", () => {
+    const v = view();
+    expect(step(calm({ cv: { view: v, blocked: true } }), mem)).not.toBeNull();
+    expect(step(calm({ cv: { view: v, blocked: true } }), mem)).toBeNull();
+  });
+
+  it("새 측정이 오면 다시 말한다 — `at` 이 다르다", () => {
+    expect(step(calm({ cv: { view: view(), blocked: true } }), mem)).not.toBeNull();
+    const next = { view: view({ at: NOW + 1_000 }), blocked: true };
+    expect(step(calm({ cv: next }), mem)).not.toBeNull();
+  });
+
+  it("★ 이탈이 여전히 최우선이다 — 영상이 그것을 못 민다", () => {
+    const t = calm({ offRoute: true, cv: { view: view(), blocked: true } });
+    expect(step(t, mem)?.text).toContain("경로를 벗어났습니다");
+  });
+
+  it("★ 영상이 없으면 **오늘과 한 글자도 다르지 않다**", () => {
+    const withCv = calm({ m: maneuver(100), distM: 20, cv: null });
+    const m2 = newMemory();
+    expect(step(withCv, mem)).toEqual(step(calm({ m: maneuver(100), distM: 20 }), m2));
+  });
+
+  it("안 막은 소견은 **규칙과 같은 단**이다 — 회전이 지나간 뒤에 나온다", () => {
+    const t = calm({ cv: { view: view(), blocked: false } });
+    expect(step(t, mem)?.urgency).toBe("rule");
+  });
+
+  it("낡은 측정은 접히지도 않는다 — 훅이 `cv` 를 못 만든다", () => {
+    expect(foldCv(
+      [{ t: "cv", seg: "DM-1", passM: 2.1, at: NOW - 10_000_000, cam: "C1", conf: 0.9 }],
+      NOW,
+    ).size).toBe(0);
   });
 });

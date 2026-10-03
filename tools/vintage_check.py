@@ -126,7 +126,7 @@ def scan(raw: Path) -> list[dict]:
             continue
         try:
             n = nm.parse(p.name, strict=False)
-        except Exception:          # noqa: BLE001  이름이 규약 밖이면 fsck 소관
+        except Exception:      # noqa: BLE001, S112  이름이 규약 밖이면 fsck 소관
             continue
         stem = f"{n.provider}_{n.dataset}"
         if stem not in idx:

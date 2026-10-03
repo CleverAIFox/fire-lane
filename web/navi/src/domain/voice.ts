@@ -10,7 +10,12 @@
  * 내리고 나니 훅에 남은 것은 React 배선뿐이다 — 참조 · 효과 · 속도 평활.
  *
  * ── 우선순위 ────────────────────────────────────────────────────
- *     이탈 > 재동기화 > 회전 > 규칙 > 사정 > 판정
+ *     이탈 > 재동기화 > **영상 통과불가** > 회전 > 규칙 > 사정 > 판정
+ *
+ * ★ 2026-10-03 (DECISIONS §363). **영상이 「못 지난다」고 하면 회전을 밀어낸다.**
+ *   회전을 놓치면 재탐색이고 되돌릴 수 있다. 못 지나는 골목에 들어가면
+ *   소방차가 후진한다 — 되돌리는 값이 다르면 순서도 달라야 한다.
+ *   막지 않은 영상 소견은 **규칙과 같은 단**이다(둘 다 「가 봐야 아는 것」).
  *
  * ★ 규칙이 판정보다 앞이다. **폭은 지나가며 볼 수 있지만 대향차는 들어가
  *   봐야 안다**(§215-1).
@@ -29,6 +34,7 @@
  *     `infra/speech.ts` 의 `RANK` 다 — 여기는 자리마다 이름만 붙인다.
  *     **속도를 재지 않는다.** 훅이 재서 넘긴다.
  */
+import { phrase as cvPhrase, urgencyOf, type CvView } from "./cv";
 import { gateIndex, mergePhrase, type Maneuver } from "./turn";
 import { lookAhead } from "./routeDerive";
 import { nextRule, rulePhrase } from "./rules";
@@ -59,6 +65,12 @@ export interface VoiceTick {
   distM: number | null;
   style: Record<string, VerdictStyle>;
   hazards?: readonly Hazard[];
+  /**
+   * 앞 구간의 영상 소견. **훅이 `cv.fold()` 로 접어서 준다** — 이 파일은
+   * 나이도 신뢰도도 안 센다(§363). `null`·`undefined` 면 영상이 없는 것이고,
+   * 그때 이 함수는 **오늘과 한 글자도 다르지 않다.**
+   */
+  cv?: { view: CvView; blocked: boolean } | null;
 }
 
 /** 틱을 넘어 사는 기억. 훅의 `useRef` 들이다. */
@@ -107,6 +119,24 @@ export function reachOf(speed: number): number {
  * ★ 아무것도 안 말하는 것이 기본이다. 내비는 조용한 것이 정상이고,
  *   말할 때만 말한다.
  */
+/**
+ * 영상 소견 하나를 말로. 이미 말한 측정이면 `null`.
+ *
+ * ★ **같은 측정은 한 번만.** 새 측정이 오면 `at` 이 달라 다시 말한다 —
+ *   열쇠에 시각을 넣는 이유가 그것이다. 구간만 넣으면 그 골목에서 영영
+ *   한 번만 말하고, 차가 빠져 넓어진 것도 안 말한다.
+ */
+function cvSay(cv: { view: CvView; blocked: boolean }, mem: VoiceMemory): Utterance | null {
+  const u = urgencyOf(cv.blocked, cv.view.age);
+  if (!u) return null;
+  const text = cvPhrase(cv.view, cv.blocked);
+  if (!text) return null;
+  const k = `cv:${cv.view.seg}@${cv.view.at}`;
+  if (mem.said.has(k)) return null;
+  mem.said.add(k);
+  return { text, urgency: u === "critical" ? "critical" : "rule" };
+}
+
 export function step(t: VoiceTick, mem: VoiceMemory): Utterance | null {
   if (!t.enabled) return null;
 
@@ -117,6 +147,14 @@ export function step(t: VoiceTick, mem: VoiceMemory): Utterance | null {
     return { text: "경로를 벗어났습니다. 재탐색합니다.", urgency: "critical" };
   }
   mem.wasOff = false;
+
+  // ── 영상이 **막았을 때만** 회전보다 앞이다 (§363) ────────────
+  //   막지 않은 소견은 「가 봐야 아는 것」이라 규칙과 같은 단이고, 아래에서
+  //   회전 뒤에 낸다. 여기서 둘을 같이 내보내면 **회전이 영영 안 나간다.**
+  if (t.cv?.blocked) {
+    const u = cvSay(t.cv, mem);
+    if (u) return u;
+  }
 
   // ── 회전. 문턱이 속도에 비례한다 ─────────────────────────────
   if (t.m && t.distM != null) {
@@ -135,6 +173,12 @@ export function step(t: VoiceTick, mem: VoiceMemory): Utterance | null {
 
   if (!t.plan || t.driven == null) return null;
   const reach = reachOf(t.speed);
+
+  // ── 영상(안 막음). 규칙과 같은 단이다 ────────────────────────
+  if (t.cv && !t.cv.blocked) {
+    const u = cvSay(t.cv, mem);
+    if (u) return u;
+  }
 
   // ── 통행 규칙. 판정보다 앞이다 ───────────────────────────────
   const rule = nextRule(t.plan.rules, t.driven, reach);

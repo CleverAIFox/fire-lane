@@ -43,6 +43,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from firelane import gitq
+
 ROOT = Path(__file__).resolve().parents[1]
 
 #: 이것이 움직이면 **측정 배치**다. 지문 파일이 아니라 파이프라인이 실제로
@@ -179,9 +181,19 @@ def seal_state(tag: str) -> tuple[str, str]:
 
 
 def _diff(rng: list[str]) -> set[str]:
-    r = subprocess.run(["git", "diff", "--name-only", *rng, "--", *WATCH],  # noqa: S603,S607 — PATH 의 git 이다
-                       cwd=ROOT, capture_output=True, text=True, timeout=60, check=False)
-    return {x for x in r.stdout.split() if x}
+    """`WATCH` 중 바뀐 것. **못 물었으면 터진다** — 빈 집합이 아니다.
+
+    ★ 2026-10-03 (DECISIONS §372). 종전에는 rc 를 안 봤다. git 이 못 답하면
+      빈 집합이 되고, 부르는 쪽(`moved`)은 **「비면 배선 배치다」**로 읽는다 —
+      즉 판정 산출물이 움직이는 **측정 배치가 배선 배치로 분류된다.** 그러면
+      재생성 사슬이 안 돌고, 안 돈 채로 봉인이 찍힌다.
+    """
+    sout = gitq.ask(["diff", "--name-only", *rng, "--", *WATCH], cwd=ROOT)
+    if sout is None:
+        raise RuntimeError(
+            f"git diff 가 `{' '.join(rng)}` 를 못 읽었다 — 무엇이 움직였는지"
+            " 모르면 측정 배치인지 배선 배치인지 가를 수 없다(§372)")
+    return {x for x in sout.split() if x}
 
 
 def moved(since: str = "") -> list[str]:

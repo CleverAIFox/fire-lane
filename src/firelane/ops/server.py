@@ -101,7 +101,7 @@ def create_app() -> FastAPI:
                         continue
                     try:
                         await peer.send_text(text)
-                    except Exception:
+                    except Exception:  # noqa: S112, BLE001 — 아래 ★
                         # ★ **한 쪽이 죽어도 나머지는 받는다.** 여기서 터뜨리면
                         #   끊긴 내비 하나가 출동 전체의 통신을 멈춘다. 끊긴
                         #   연결은 제 `finally` 에서 명부를 떠난다.
@@ -121,6 +121,13 @@ def create_app() -> FastAPI:
     @app.websocket("/unit/{uid}")
     async def ws_unit(ws: WebSocket, uid: str) -> None:
         await _serve(ws, "unit", uid)
+
+    # ★ 2026-10-03 (DECISIONS §363). 영상이 재 준 통과폭이 들어오는 문.
+    #   말의 정본은 `web/navi/src/domain/cv.ts` 이고 **여기는 뜻을 안 본다** —
+    #   `/ops` · `/unit` 과 같은 규율이다(머리말 ★).
+    @app.websocket("/cv/{cam}")
+    async def ws_cv(ws: WebSocket, cam: str) -> None:
+        await _serve(ws, "cv", cam)
 
     return app
 

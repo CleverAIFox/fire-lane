@@ -46,6 +46,13 @@ DOMAIN = [
     "seg/params.py", "seg/geom.py", "seg/width.py",
     "seg/roadname.py", "seg/basisno.py", "seg/graph.py",
     "seg/vehicle.py", "seg/scope.py", "seg/centerline_correction.py",
+    # ★ 2026-10-03 (DECISIONS §370-4). `seg/classify.py` 가 **또 빠져 있었다.**
+    #   §303 이 2026-09-29 에 만들고 판정 폐포에 넣었는데 이 목록에는 안 들어왔다 —
+    #   §279-8 이 나흘 전 똑같이 셋을 잡았고, **같은 일이 다시 났다.** 손목록이라
+    #   아무도 안 세는 것이 원인이고, 그래서 아래
+    #   `test_domain_목록이_판정_폐포를_다_덮는다` 가 분모를 **유도**로 바꿨다.
+    #   실측하면 이 파일은 순수하다 — 두 도메인 모듈만 import 하고 I/O 가 0 이다.
+    "seg/classify.py",
     # ★ 2026-10-01 (DECISIONS §342). 중개자의 명부. 소켓도 시계도 몰라야
     #   하고, 그래야 시험이 서버 없이 돈다 — 실제로 `tests/test_ops_roster.py` 의
     #   판별식 열셋이 서버를 안 띄우고 돈다.
@@ -265,3 +272,73 @@ def test_reads_exempt_has_no_ghost():
     """없는 파일을 면제하고 있으면 목록이 낡은 것이다. 양방향이다."""
     ghost = sorted(r for r in READS_EXEMPT if r not in DOMAIN)
     assert not ghost, f"DOMAIN 에 없는 것을 면제한다 — {ghost}"
+
+
+#: `DOMAIN` 이 아닌 것의 사유. **판정 폐포 안인데 순수가 아닌 자리**다.
+#: ★ 빈 사유는 금지다. 그리고 아래 검사가 **양방향**이다 — 깨끗해지면 운다.
+NOT_DOMAIN: dict[str, str] = {
+    "segments.py":
+        "stage 다. 파일을 읽고 쓰고 단계로 돈다 — 계층표의 그 자리이고 "
+        "조립부가 순수할 수는 없다",
+    "segkey.py":
+        "adapter 다. seg_uid 를 만들려면 좌표계와 자리수 규약을 알아야 하고 "
+        "그것은 바깥 약속이다(계층표에 그렇게 적혀 있다)",
+    "seg/report.py":
+        "adapter 다. 하는 일이 **산출물 쓰기**이고 이름이 `seg/` 아래 있을 뿐이다 "
+        "— 이 파일 머리말이 그 사유를 이미 적는다. 옮기는 것은 별건이다",
+    "paths.py":
+        "infra 다. 계층표의 맨 아래이고 **아무도 의존받지 않는다** — 도메인이 "
+        "이것을 모르는 것이 규칙의 내용이다(`FORBIDDEN`)",
+    "guards.py":
+        "infra 다. 직접 호출 경고 · 환경 점검을 들고 `FORBIDDEN` 에 들어 있다 "
+        "— 도메인이 알면 안 되는 쪽이다",
+    "__init__.py":
+        "꾸러미 선언이다. 값을 안 내보내고 import 도 없다 — 순수할 것도 "
+        "안 순수할 것도 없다",
+    "seg/__init__.py":
+        "같은 사유다. 꾸러미 선언이고 비어 있다 — 폐포가 꾸러미를 타고 들어오니 "
+        "여기 뜨는 것이 맞고, 뜨는 것과 순수한 것은 다른 물음이다",
+}
+
+
+def _judgment_closure() -> list[str]:
+    """판정 폐포를 **유도로** 낸다. 손으로 안 적는다."""
+    from firelane.shardseal import code_closure
+    clo = {q.resolve() for q in code_closure("firelane.segments")}
+    return sorted(q.relative_to(PKG).as_posix()
+                  for q in PKG.rglob("*.py") if q.resolve() in clo)
+
+
+def test_domain_목록이_판정_폐포를_다_덮는다():
+    """★ **분모를 유도로 바꾼다.** (DECISIONS §370-4)
+
+    ── 왜 생겼나 ───────────────────────────────────────────────
+    `DOMAIN` 은 손목록이다. §279-8(2026-09-28)이 「판정 모듈 셋이 **조용히
+    빠져 있었다**」를 잡고 사유까지 적었는데, **나흘 뒤 같은 일이 또 났다** —
+    §303 이 `seg/classify.py` 를 만들어 판정 폐포에 넣었고 이 목록에는 안
+    들어왔다. 그 파일은 순수하므로 위반은 아니었지만, **위반이어도 아무도
+    몰랐다.** 손목록의 결함은 틀린 항목이 아니라 **빠진 항목**이다.
+
+    ★ 그래서 분모를 `code_closure("firelane.segments")` 로 **유도한다.**
+      폐포에 새 파일이 들어오면 `DOMAIN` 이든 `NOT_DOMAIN` 이든 **어느
+      한쪽에 적어야** 통과한다 — 결정이 조용히 미뤄지는 길이 닫힌다.
+      `deadcheck` 의 ② 손목록 프로브가 무는 그 병이다.
+
+    ★ **양방향이다.** `NOT_DOMAIN` 이 폐포 밖 파일을 들고 있으면 그것도 운다 —
+      낡은 면제는 사각지대이고, 그 사실을 §259-2 가 이미 적었다.
+    """
+    clo = _judgment_closure()
+    assert len(clo) > 10, f"폐포를 {len(clo)}개밖에 못 셌다 — 분모가 죽었다"
+    miss = [r for r in clo if r not in DOMAIN and r not in NOT_DOMAIN]
+    assert not miss, (
+        "판정 폐포 안인데 `DOMAIN` 도 `NOT_DOMAIN` 도 아닌 파일:\n  "
+        + "\n  ".join(miss)
+        + "\n  ★ 순수하면 `DOMAIN` 에, 아니면 `NOT_DOMAIN` 에 **사유와 함께** 적어라."
+        + "\n    적지 않으면 그 파일은 계층 검사 **밖**에서 산다 — §303 이 만든"
+        + "\n    `seg/classify.py` 가 나흘을 그렇게 살았다(§370-4).")
+    ghost = [r for r in NOT_DOMAIN if r not in clo]
+    assert not ghost, (
+        f"`NOT_DOMAIN` 이 판정 폐포 밖 파일을 든다: {ghost}\n"
+        "  낡은 면제는 사각지대다 — 지워라(§259-2).")
+    thin = [r for r, w in NOT_DOMAIN.items() if len(w.strip()) < 30]
+    assert not thin, f"사유가 너무 짧다 — 왜 순수가 아닌가: {thin}"

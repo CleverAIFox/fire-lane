@@ -18,23 +18,34 @@ datalog.py — 데이터 대장 도구
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
 
+from firelane import gitq
 from firelane.cli import USAGE_EXIT
 from firelane.layerfsck import cmd_fsck  # 사용법 오류 종료코드는 정본 하나다
 from firelane.paths import ROOT
 
 
-def _tracked_paths() -> frozenset[str]:
-    """git 이 추적하는 경로. **추적 밖은 「안 지었다」이고 결함이 아니다**(§290-7)."""
-    r = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
-                       capture_output=True, text=True, check=False, timeout=60)
-    return frozenset(x for x in r.stdout.split("\0") if x)
+def _tracked_paths() -> frozenset[str] | None:
+    """git 이 추적하는 경로. **추적 밖은 「안 지었다」이고 결함이 아니다**(§290-7).
+
+    ★ 2026-10-03 (DECISIONS §372). **못 물었으면 `None` 이다.** 종전에는
+      `check=False` 로 돌리고 `stdout` 을 그대로 갈랐고, 그래서 두 가지가
+      빈 집합으로 뭉개졌다 —
+
+        git 바이너리가 없다      `FileNotFoundError` — `check=False` 는 안 막는다
+        `.git` 이 없다          rc=128, stdout 비어 있음
+
+      빈 집합이면 **모든 산출물이 「추적 밖」**이 되고, 그러면 §290-7 이 세운
+      「대장이 틀린 것」과 「이 기계가 안 지은 것」의 구분이 통째로 사라진다.
+      컨테이너가 바로 그 기계다 — `Dockerfile` 은 git 을 안 깔고 `.git` 도
+      안 담는다. 거기서 이 검사는 **아무것도 못 묻고 전부 초록**이었다.
+    """
+    return gitq.tracked(ROOT)
 
 KST = timezone(timedelta(hours=9))
 SOURCES = ROOT / "sources.yaml"
@@ -128,16 +139,18 @@ def sha256(p, chunk: int = 1 << 20) -> str:
 
 
 def git_state() -> dict:
-    def run(*a):
-        try:
-            return subprocess.check_output(["git", *a], cwd=ROOT,
-                                           text=True, stderr=subprocess.DEVNULL).strip()
-        except Exception:
-            return None
-    dirty = run("status", "--porcelain")
-    return {"sha": run("rev-parse", "--short", "HEAD"),
-            "dirty": bool(dirty),
-            "dirty_files": (dirty.splitlines()[:10] if dirty else [])}
+    """산출물의 재현 기반. **못 물었으면 `dirty` 가 `None`** — `False` 가 아니다.
+
+    ★ 2026-10-03 (DECISIONS §372). 종전에는 `dirty: bool(dirty)` 였다. git 이
+      못 답하면 `None` → `bool(None)` → **`False`**, 즉 「깨끗하다」로 기록됐다.
+      「깨끗함을 확인했다」와 「확인할 수 없었다」가 같은 값이 된 것이고,
+      `git_dirty 인 상태의 산출물은 재현 불가`라는 규율(아래 ★)이 그 기계에서
+      조용히 무력해졌다. **회색은 NULL 이다.**
+    """
+    d = gitq.dirty(ROOT)
+    return {"sha": gitq.head(ROOT),
+            "dirty": None if d is None else bool(d),
+            "dirty_files": (d[:10] if d else [])}
 
 
 def load_sources() -> dict:
@@ -352,15 +365,23 @@ def cmd_check() -> None:
     #   대장이 틀린 것과 이 기계가 안 지은 것은 다른 사실이다. **추적되는 경로가
     #   없으면 대장이 틀린 것이고, 추적 밖이면 안 지은 것이다.** `docseal` 이
     #   같은 규율을 쓴다(§278-10 — 추적 밖은 도장의 기반이 못 된다).
+    #
+    # ★ 2026-10-03 (§372). **못 물었으면 가르지 않는다.** 빈 집합을 받아
+    #   「전부 추적 밖」으로 읽으면 이 구분이 사라진 채 초록이 된다.
     tracked = _tracked_paths()
-    for k, v in out.items():
-        rel = v.get("path", "")
-        if not rel or (ROOT / rel).exists():
-            continue
-        if rel in tracked:
-            print(f"  ! outputs.{k}.path 없음: {rel} — **추적되는데 없다**"); bad += 1
-        else:
-            print(f"  · outputs.{k}.path 아직 안 지었다: {rel} (추적 밖 · 재생성물)")
+    missing = [(k, v.get("path", "")) for k, v in out.items()
+               if v.get("path") and not (ROOT / v["path"]).exists()]
+    if tracked is None and missing:
+        print(f"  ! git 이 추적 목록을 못 줬다 — 없는 산출물 {len(missing)}건을"
+              " **「대장이 틀렸다」와 「안 지었다」로 가를 수 없다**(§372)")
+        for k, rel in missing:
+            print(f"    ? outputs.{k}.path 없음: {rel} (추적 여부 미측정)")
+    else:
+        for k, rel in missing:
+            if rel in (tracked or ()):
+                print(f"  ! outputs.{k}.path 없음: {rel} — **추적되는데 없다**"); bad += 1
+            else:
+                print(f"  · outputs.{k}.path 아직 안 지었다: {rel} (추적 밖 · 재생성물)")
 
     # 4. verified=false 인데 발표에 쓰이는 것 (경고만)
     unver = [k for k, v in out.items() if not v.get("verified")]

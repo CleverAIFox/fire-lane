@@ -96,12 +96,17 @@ def robust_union(geoms, label=""):
     g = g[~shapely.is_empty(g)]
     try:
         return shapely.union_all(g), stage
-    except Exception:
+    except Exception:  # noqa: S110, BLE001 — 아래 ★
+        # ★ 삼키는 사유(§371). GEOS 의 union 은 자기교차 · 미세 조각에서 터진다.
+        #   그때 할 일은 멈추는 것이 **아니라 더 거친 격자로 다시 재는 것**이고
+        #   아래 셋이 그 사다리다. **마지막에 실패하면 터진다** — 아래
+        #   `raise RuntimeError` 가 그 자리이고, 그래서 이 삼킴은
+        #   **조용한 통과가 아니다.**
         pass
     for gs in (1e-4, 1e-3, 1e-2):
         try:
             return shapely.union_all(g, grid_size=gs), f"{stage} + grid_size {gs}"
-        except Exception:
+        except Exception:  # noqa: S112, BLE001 — 위 ★ 의 사다리. 다음 격자를 본다
             continue
     raise RuntimeError(f"{label}: union 실패. 이 소스를 빼고 돌려라")
 

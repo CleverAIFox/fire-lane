@@ -264,7 +264,10 @@ def integrity_report() -> None:
         for rel in led:
             try:
                 n = _nm.parse(rel.rsplit("/", 1)[-1], strict=False)
-            except Exception:
+            except Exception:  # noqa: S112, BLE001 — 이름이 규약 밖이면 fsck 소관(§371)
+                # ★ `vintage_check.py:129` 와 **같은 자리 · 같은 사유**다.
+                #   그쪽은 사유가 적혀 있었고 여기는 없었다 — 같은 패턴이
+                #   두 곳에 있으면 한쪽만 적히는 일이 난다(§371).
                 continue
             stems = e.get("stems") or ([e["stem"]] if e.get("stem") else [])
             if f"{n.provider}_{n.dataset}" in stems:

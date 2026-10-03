@@ -47,8 +47,10 @@ import {
   buildIncidence, extractManeuvers, nextManeuver, mergePhrase,
   type Incidence, type Maneuver,
 } from "../domain/turn";
-import { newMemory, resync, step, type VoiceTick } from "../domain/voice";
+import { newMemory, reachOf, resync, step, type VoiceTick } from "../domain/voice";
 import { type Hazard } from "../domain/context";
+import { cvAhead } from "../domain/reroute";
+import { type CvView } from "../domain/cv";
 import { requiredWidth } from "../domain/vehicle";
 import type {
   NaviGraph, RoutePlan, VehicleSpec, VerdictStyle,
@@ -70,6 +72,17 @@ export interface VoiceInput {
   enabled: boolean;
   /** 경로 위 주변 사정(§216-3) — 과속방지턱 · 단속카메라 · 보호구역 시설 */
   hazards?: readonly Hazard[];
+  /**
+   * 영상이 지금 재 준 통과폭 — **구간별로 접힌 것**(`cv.fold`).
+   *
+   * ★ 이 훅이 **고르는** 자리다. `domain/voice.ts` 의 틱은 「앞 구간 소견」
+   *   하나만 받고, 그 「앞」이 어디까지인가는 **속도에 달려 있다**
+   *   (`reachOf(speed)`) — 속도를 아는 것은 이 훅이다(아래 `speed`).
+   *   고르는 판별식 자체는 `domain/reroute.cvAhead` 가 든다.
+   * ★ 없으면 틱의 `cv` 가 `null` 이고, 그때 음성은 **오늘과 한 글자도
+   *   다르지 않다**(`test/voice.test.ts` 가 그 한 글자를 문다).
+   */
+  cv?: ReadonlyMap<string, CvView> | null;
 }
 
 export interface VoiceState {
@@ -120,9 +133,14 @@ export function useVoice(i: VoiceInput): VoiceState {
 
   // ★ 한 틱의 입력. 아래 두 효과가 **같은 것**을 본다 — 종전에는 각자
   //   `i.*` 를 흩어 읽어서 무엇이 한 틱인지 읽는 사람이 모았어야 했다.
+  // ★ 틱마다 다시 고른다. 접기(`cv.fold`)는 측정이 올 때 한 번이지만 **고르기는
+  //   매 틱**이다 — 차가 가면 「앞」이 바뀌고, 나이도 흐른다.
+  const cv = i.spec
+    ? cvAhead(i.plan, i.cv, driven, reachOf(speed), requiredWidth(i.spec))
+    : null;
   const tick: VoiceTick = {
     enabled: i.enabled, offRoute: i.offRoute, plan: i.plan, driven,
-    speed, m, after, distM, style: i.style, hazards: i.hazards,
+    speed, m, after, distM, style: i.style, hazards: i.hazards, cv,
   };
   const tickRef = useRef(tick);
   tickRef.current = tick;
