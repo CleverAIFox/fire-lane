@@ -535,6 +535,10 @@ step "문서 말투"       uv run python tools/tonecheck.py
 #   자리가 없으면 배치마다 샌다. 실측 29곳 중 여섯은 어떤 셈으로도 안 맞았다.
 scope "docs/* README.md"
 step "문서가 적은 시험 수" uv run python tools/countcheck.py
+# ★ 2026-10-03 (§368). 「디렉 구조를 리팩할 게 있나」를 **값으로** 답한다. 새 소스가
+#   생기면 어느 묶음인지 정해야 하고, 안 정하면 평평한 이름공간이 그대로 큰다.
+scope "src/firelane/*"
+step "구조 묶음 선언"    uv run python tools/archcost.py
 # ★ 2026-09-28 (§279-6). 사유 딸린 면제표는 이미 조여 있었다(빈 사유 0). 남은 빚은
 #   **주석 한 줄짜리 억제**에 몰려 있었다 — 표에 안 들어가고 사유를 안 적어도 되고
 #   아무도 안 세는 자리다. 119 에서 시작해 같은 날 죽은 `noqa` 59개를 지워 57 이다.
