@@ -108,10 +108,22 @@ echo "══ 이 문이 **손도 안 댄 것** — 판단이 먼저다"
 uv run python - <<'PY'
 import sys
 sys.path.insert(0, "tools")
-from fixable import HUMAN_FIRST
+from fixable import HUMAN_FIRST, split_rows
 for t, why in HUMAN_FIRST.items():
     print(f"  · {t}")
     print(f"      {' '.join(why.split())}")
+
+# ★ 2026-10-03 (DECISIONS §374). **문이 돌았는데도 안 덮이는 자리.** 위 목록은
+#   「문이 없는 도구」이고 이것은 「문은 있는데 관문이 **다른 모드**를 본다」다.
+#   그 구별이 어디에도 없어서, 문을 다 돌리고 「방강 0」을 본 뒤 전수 verify 가
+#   발간 일이 났다(§372 의 강제자 지목). 이제 그 사실을 여기서 찍는다.
+rows = split_rows()
+if rows:
+    print()
+    print("══ 문은 **돌았지만** 그 관문은 안 덮는다 — verify 가 따로 들다")
+    for tool, mode, why in rows:
+        print(f"  · {tool}  관문 모드 `{mode}`")
+        print(f"      {' '.join(why.split())}")
 PY
 
 echo

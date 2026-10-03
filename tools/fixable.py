@@ -167,15 +167,92 @@ def undoored() -> list[tuple[str, str]]:
     return [(n, t) for n, t in classify()["기계"] if t not in door]
 
 
+
+# ── 둘째 팔 — **문과 관문이 같은 도구의 다른 모드를 부르는 자리** ────
+#
+# ★ 2026-10-03 (DECISIONS §374). 첫 팔은 「기계인데 문에 **안 걸린** 도구」를
+#   센다. 그런데 **걸려 있는데도 안 덮이는** 자리가 있었다 — `fix.sh` 가
+#   `dms.py --apply`(scan 모드)를 부르고, 관문은 `dms.py verify` 다. 문이
+#   「고칠 것이 없다」고 답한 바로 그때 관문은 **빨갰다.**
+#
+#   실기(2026-10-03): 합본 배치를 만들어 놓고 `fix.sh` 를 다 돌려 「빨강 0」을
+#   보고 보냈다. 전수 verify 를 돌리니 「죽은 강제자 참조」가 빨갰다 —
+#   §367 의 강제자 칸이 §370 의 개명을 안 따라온 것이었다. **문이 그 자리를
+#   볼 수 없다는 사실이 어디에도 안 적혀 있었다.**
+#
+# ★ 이 팔이 미는 수는 「모드를 맞춰라」가 **아니다.** 맞출 수 없는 자리가 있다 —
+#   「`_oneway` 가 어디로 갔나」는 답이 하나가 아니다. 미는 것은
+#   **「안 덮인다는 사실이 적혀 있는가」**이고, 적히면 `fix.sh` 가 그것을 찍는다.
+#: `"도구::관문모드"` → 사유. **적는 순간 `fix.sh` 가 사람에게 찍는다.**
+MODE_SPLIT: dict[str, str] = {
+    "tools/dms.py::verify":
+        "`--apply` 는 `scan` 이 찾는 것(절↔코드 물림 · 크기)을 고친다. `verify` 가 "
+        "찾는 **죽은 강제자 지목**은 「그 함수가 어디로 갔나」이고 답이 하나가 "
+        "아니다 — 옮겼는지 지웠는지 이름만 바뀌었는지는 사람이 안다",
+    "tools/dms.py::delta":
+        "**측정이다.** 강제자가 소급으로 몇 늘었나를 세는 자리라 고칠 것이 없다 — "
+        "수가 늘면 그것은 결함이 아니라 기록이다",
+    "tools/dms.py::ancestry":
+        "봉인 조상 사슬을 본다. 끊기면 고치는 방법은 **봉인을 다시 찍는 것**이고 "
+        "그것은 `HUMAN_FIRST` 의 `docseal`·`golden` 과 같은 사유로 사람이 한다",
+}
+
+
+def _subs(txt: str, kind: str) -> dict[str, set[str]]:
+    """`fix`/`step` 줄에서 (도구 → 그 줄이 쓰는 서브명령 집합)."""
+    out: dict[str, set[str]] = {}
+    for line in re.findall(rf'^\s*{kind}\s+"[^"]+"\s+(.*)$', txt, re.M):
+        tool = tool_of(line)
+        if not tool or not tool.endswith(".py"):
+            continue
+        parts = line.split()
+        try:
+            i = next(i for i, p in enumerate(parts) if tool in p)
+        except StopIteration:
+            continue
+        rest = [p for p in parts[i + 1:] if not p.startswith("-")]
+        out.setdefault(tool, set()).add(rest[0] if rest else "")
+    return out
+
+
+def mode_gaps() -> list[tuple[str, str]]:
+    """**문이 안 덮는 관문 모드** (도구, 모드). 사유가 적힌 것은 빼고 센다."""
+    if not DOOR.is_file():
+        return []
+    doors = _subs(DOOR.read_text(encoding="utf-8"), "fix")
+    gates = _subs(VERIFY.read_text(encoding="utf-8"), "step")
+    out = []
+    for tool, gs in sorted(gates.items()):
+        ds = doors.get(tool)
+        if ds is None:
+            continue                      # 문이 아예 없다 — 첫 팔이 든다
+        for g in sorted(gs):
+            if g in ds:
+                continue
+            if f"{tool}::{g}" in MODE_SPLIT:
+                continue
+            out.append((tool, g))
+    return out
+
+
+def split_rows() -> list[tuple[str, str, str]]:
+    """사유가 적힌 갈림 전수 (도구, 모드, 사유). `fix.sh` 가 이것을 찍는다."""
+    return [(k.split("::")[0], k.split("::")[1], v) for k, v in sorted(MODE_SPLIT.items())]
+
 #: 기계가 고칠 수 있는데 `fix.sh` 가 안 부르는 단계. **0 이 목표다.**
 #: ★ 이력 — 2026-10-03 §362 첫 실측 10 (문을 세우기 전) → 문을 세우고 0.
 UNDOORED = 0
 
-RATCHETS = {"UNDOORED": "down"}
+#: 문이 안 덮는 관문 모드 중 **사유가 안 적힌** 것. **0 이 목표다.**
+#: ★ 이력 — 2026-10-03 §374 첫 실측 3(`dms.py` 의 `verify`·`delta`·`ancestry`),
+#:   셋 다 사유를 적어 0.
+MODE_GAP = 0
+
+RATCHETS = {"UNDOORED": "down", "MODE_GAP": "down"}
 
 
 def ratchet_values() -> dict[str, int]:
-    return {"UNDOORED": len(undoored())}
+    return {"UNDOORED": len(undoored()), "MODE_GAP": len(mode_gaps())}
 
 
 def check() -> int:
@@ -213,8 +290,36 @@ def check() -> int:
     if inert:
         print(f"\n✗ `NO_REPAIR` 가 **깃발도 없는** 도구를 든다 {inert} — 줄을 지워라")
         rc = 1
+    # ── 둘째 팔 (§374) ─────────────────────────────────────────
+    gaps = mode_gaps()
+    if len(gaps) > MODE_GAP:
+        print(f"\n✗ 문이 **안 덮는** 관문 모드 {len(gaps)} > 래칫 {MODE_GAP}")
+        for tool, g in gaps:
+            print(f"    {tool}  관문 모드 `{g or '(기본)'}`")
+        print("\n  문이 그 모드도 부르게 하거나, 부를 수 없으면")
+        print("  `fixable.MODE_SPLIT` 에 **사유와 함께** 적어라 — 그러면 `fix.sh`")
+        print("  가 「이 관문은 문이 안 덮는다」를 사람에게 찍는다.")
+        rc = 1
+    elif len(gaps) < MODE_GAP:
+        print(f"\n✗ 안 덮는 모드 {len(gaps)} < 래칫 {MODE_GAP} — 래칫을 그 수로 내려라")
+        rc = 1
+    dead_split = [k for k in MODE_SPLIT if not (ROOT / k.split("::")[0]).is_file()]
+    if dead_split:
+        print(f"\n✗ `MODE_SPLIT` 이 없는 도구를 든다 {dead_split} — 죽은 선언이다")
+        rc = 1
+    # ★ 반대 방향 — 문이 **실은 덮는** 모드를 「안 덮는다」고 적으면 그 줄이 거짓이다
+    doors = _subs(DOOR.read_text(encoding="utf-8"), "fix") if DOOR.is_file() else {}
+    covered = [k for k in MODE_SPLIT
+               if k.split("::")[1] in doors.get(k.split("::")[0], set())]
+    if covered:
+        print(f"\n✗ `MODE_SPLIT` 이 **문이 덮는** 모드를 든다 {covered} — 줄을 지워라")
+        rc = 1
+
     if rc == 0:
         print(f"\n✓ 기계가 고칠 수 있는 것은 전부 문에 걸려 있다 (사람 {len(c['사람'])})")
+        if MODE_SPLIT:
+            print(f"  ★ 그런데 문이 **안 덮는** 관문 모드가 {len(MODE_SPLIT)} 있다 —"
+                  " 사유는 `MODE_SPLIT` 에 있고 `fix.sh` 가 찍는다")
     return rc
 
 
