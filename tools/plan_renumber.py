@@ -92,6 +92,37 @@ def _is_plan_ref(text: str, m: re.Match, spans: list[tuple[int, int]]) -> bool:
     return text[max(0, m.start() - 3):m.start()] == "§1 "
 
 
+# ★ `### 8-7. 저장소 위생 → §1 #100 · #103` 꼴의 **산 길잡이.**
+#   `→ §1 ` 뒤에 붙은 `#N · #M` 런만 잡는다. 제목 안의 다른 `#N` 은 남의
+#   것일 수 있으므로 런 밖은 안 본다(`§1 #3 (… MASTER §19-5)` 처럼 뒤에
+#   다른 문서가 따라붙는 꼴이 실제로 있다).
+GUIDE = re.compile(r"→ §1 ((?:#\d+(?: · )?)+)")
+
+
+def _guides(text: str) -> list[tuple[int, str, list[int]]]:
+    """`### ` 제목이 **지금 보라고 가리키는** §1 행 번호. (줄번호 · 원문 · 번호들)
+
+    ★ 두 꼴을 **가른다.** 둘 다 PLAN 안에서 `#N` 을 쓰지만 성질이 반대다 —
+
+        `→ **§1 로 접었다**(#96 … #103)`   묘비다. 그 절이 **무엇이 됐는지**의
+                                           영구 기록이고, 행이 닫혀 지워져도
+                                           기록은 그대로 맞다
+        `### 8-7. … → §1 #100 · #103`      **길잡이**다. 「지금 이것을 보라」고
+                                           말한다. 가리키는 행이 없으면 읽는
+                                           사람이 빈손으로 돌아온다
+
+      그래서 이 함수는 `### ` 로 시작하는 줄만 본다. 묘비는 밖이다.
+    """
+    out: list[tuple[int, str, list[int]]] = []
+    for i, ln in enumerate(text.splitlines(), 1):
+        if not ln.startswith("### "):
+            continue
+        m = GUIDE.search(ln)
+        if m:
+            out.append((i, ln.strip(), [int(x) for x in re.findall(r"#(\d+)", m.group(1))]))
+    return out
+
+
 def _canary() -> None:
     """정규식이 살아 있는가. **양성 대조다.**
 
@@ -113,6 +144,20 @@ def _canary() -> None:
     got = [m.group(1) for m in REF.finditer(doc) if _is_plan_ref(doc, m, sp)]
     if got != ["6"]:
         sys.exit(f"★ 남의 표 번호를 가리는 프로브가 죽었다 — {got}(기대 ['6'] · `§1 #6` 하나).")
+
+    # ── 길잡이 프로브. **묘비와 길잡이를 가르는가** ──────────────
+    g = (
+        "## 8. 데이터\n\n"
+        "→ **§1 로 접었다**(#96 · #103).\n\n"
+        "### 8-7. 저장소 위생 → §1 #100 · #103\n"
+        "### 8-9. 딴 것 → §1 #4 (정본은 MASTER §19-5)\n"
+    )
+    got2 = [(ln, ns) for ln, _raw, ns in _guides(g)]
+    if got2 != [(5, [100, 103]), (6, [4])]:
+        sys.exit("★ 길잡이 프로브가 죽었다 — 합성 문자열에서 "
+                 f"{got2} 를 찾았다(기대 [(5, [100, 103]), (6, [4])]).\n"
+                 "  묘비(`§1 로 접었다`)를 같이 집으면 역사를 고치라고 운다.\n"
+                 "  길잡이를 못 집으면 **닫은 행을 가리키는 제목이 영원히 산다.**")
 
 
 def _span(text: str) -> tuple[int, int]:
@@ -205,10 +250,34 @@ def main() -> int:
             print(f"  ✗ 선언에 없는 결번: {shown} — 머리 줄에 더해라")
         return 1
 
+    # ── PLAN **안**의 산 길잡이 — 여기는 빨강이다 ──────────────
+    # ★ 밖의 죽은 인용(아래)과 **성질이 다르다.** 밖은 역사라 고치면 역사를
+    #   고치게 되지만, `### 8-7. … → §1 #103` 은 역사가 아니라 **지금 보라는
+    #   안내**다. #103 이 닫혀 지워졌으면 그 제목은 읽는 사람을 빈 자리로
+    #   보낸다. 그리고 PLAN 은 append-only 가 아니다 — 고칠 수 있고, 줄어야
+    #   한다. 2026-10-03 실측: §8-7 하나가 그 꼴이었고 #103 은 2026-09-28 에
+    #   닫혔다(DECISIONS §278-9 가 닫은 넷 중 하나). 닫은 날 제목을 안 고쳤고
+    #   어떤 검사도 안 울었다 — **밖만 보는 검사가 안을 사각지대로 남겼다.**
+    live = set(nums)
+    lame = [(ln, raw, [n for n in ns if n not in live]) for ln, raw, ns in _guides(text)]
+    lame = [x for x in lame if x[2]]
+    if lame:
+        print("★ PLAN 안의 길잡이가 **없는 행**을 가리킨다\n")
+        for ln, raw, dead in lame:
+            shown = ", ".join(f"#{n}" for n in dead)
+            print(f"  ✗ PLAN:{ln}  {shown} — §1 에 없다")
+            print(f"      {raw[:96]}")
+        print("")
+        print("  그 번호가 닫혀 지워졌으면 **제목에서 뺀다.** 번호가 다 빠지면")
+        print("  그 하위 절은 들 것이 없으므로 절째로 지운다 — 무엇이었는지는")
+        print("  그 절의 `→ **§1 로 접었다**(…)` 묘비가 영구히 든다.")
+        print("  ★ 번호를 **다른 산 행으로 갈아 끼우지 마라.** 가리키던 것이")
+        print("    무엇이었는지부터 `DECISIONS` 에서 찾아라(W3-9 와 같은 병).")
+        return 1
+
     # ── 밖에서 §1 을 가리키는 인용 ───────────────────────────
     # ★ 죽은 인용은 **빨간불이 아니다.** 가리키던 행이 닫혀서 지워진 것이고
     #   그것이 정상 경로다. 세어서 말하기만 한다 — 고치라고 하면 역사를 고치게 된다.
-    live = set(nums)
     outside: dict[str, list[int]] = {}
     for rel in ("docs/DECISIONS.md", "docs/MASTER.md", "sources.yaml"):
         q = ROOT / rel

@@ -70,7 +70,7 @@ def oom_exit(what: str) -> None:
         mi = dict(
             (k.strip(), v.strip())
             for k, v in (ln.split(":", 1)
-                         for ln in Path("/proc/meminfo").read_text().splitlines()
+                         for ln in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines()
                          if ":" in ln))
         print(f"  지금  MemTotal {mi.get('MemTotal', '?')} · "
               f"MemAvailable {mi.get('MemAvailable', '?')}", file=sys.stderr)

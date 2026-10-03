@@ -375,6 +375,17 @@ def raw_print(hits: list[Path]) -> str | None:
     return out
 
 
+def _ident(name: str) -> str:
+    """SQLite 식별자를 여민다 — 쌍따옴표를 **배가**한다. (§371)
+
+    식별자 자리에는 파라미터 바인딩(`?`)을 못 쓴다. SQLite 문법이 값만
+    받으므로 표·열 이름은 질의 문자열에 박아야 하고, 그러면 **여미는 것이
+    유일한 수단**이다. 정상 이름에서는 종전과 **글자 하나까지 같다** —
+    그래서 봉인지가 안 찢어진다.
+    """
+    return '"' + name.replace('"', '""') + '"'
+
+
 def gpkg_print(p: Path) -> str:
     """GeoPackage 의 **내용** 지문. 쓸 때마다 바뀌는 칸을 뺀다.
 
@@ -396,13 +407,18 @@ def gpkg_print(p: Path) -> str:
         for t in tables:
             if t.startswith(("rtree_", "sqlite_")):
                 continue
-            cols = [r[1] for r in con.execute(f'pragma table_info("{t}")')]
+            # ★ 2026-10-03 (§371). 식별자를 **쌍따옴표 배가**로 여민다. 표 이름은
+            #   `sqlite_master` 에서 온 것이라 지금은 얌전하지만, 이름에 `"` 가
+            #   하나 있으면 그대로 질의 밖으로 새어 나간다. 파라미터 바인딩은
+            #   식별자 자리에 못 쓴다(SQLite 문법) — 여미는 것이 유일한 수단이다.
+            qt = _ident(t)
+            cols = [r[1] for r in con.execute(f"pragma table_info({qt})")]
             keep = [c for c in cols if not (t == "gpkg_contents" and c == "last_change")]
-            sel = ", ".join(f'"{c}"' for c in keep)
+            sel = ", ".join(_ident(c) for c in keep)
             try:
-                rows = con.execute(f'select {sel} from "{t}" order by rowid').fetchall()
+                rows = con.execute(f"select {sel} from {qt} order by rowid").fetchall()  # noqa: S608 — 위 ★ 가 식별자를 여민다. 값은 안 끼운다
             except sqlite3.OperationalError:
-                rows = sorted(con.execute(f'select {sel} from "{t}"').fetchall(), key=repr)
+                rows = sorted(con.execute(f"select {sel} from {qt}").fetchall(), key=repr)  # noqa: S608 — 같다
             lines.append(f"{t}\0{keep}\0{rows!r}")
         return _short("\n".join(lines))
     finally:

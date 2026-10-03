@@ -69,18 +69,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
 
+from firelane import gitq, paths
 from firelane import layers as L
 from firelane import ledger as LD
 
 # 대장 조회기는 하나다(firelane.ledger.globs).
 from firelane import ledger as _led
 from firelane import naming as nm
-from firelane import paths
 from firelane import providers as P
 
 ROOT = paths.ROOT
@@ -119,12 +118,14 @@ def walk(base: Path) -> tuple[list[str], list[str]]:
 
 
 def tracked() -> set[str] | None:
-    """git 이 아는 것. git 이 없으면 None — 판정을 건너뛴다."""
-    r = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
-                       capture_output=True, text=True)
-    if r.returncode != 0:
-        return None
-    return {x for x in r.stdout.split("\0") if x}
+    """git 이 아는 것. git 이 없으면 None — 판정을 건너뛴다.
+
+    ★ 2026-10-03 (DECISIONS §372). 이 함수가 **먼저 맞았다** — 넷 중 하나였다.
+      그래서 이것이 정본이 되고, 몸통은 `firelane.gitq` 로 옮겼다. 네 사본이
+      같은 물음에 다르게 답하던 자리를 하나로 모은다.
+    """
+    t = gitq.tracked(ROOT)
+    return None if t is None else set(t)
 
 
 def ignored(rels: list[str]) -> set[str]:
@@ -140,10 +141,15 @@ def ignored(rels: list[str]) -> set[str]:
     #    gitignore 는 추적 대상에 적용되지 않기 때문인데, T2 가 잡으려는
     #    것이 정확히 그 "무시 규칙인데 추적 중" 상태다. 빼면 T2 가 영원히
     #    0건으로 초록불이 된다 — 검사하지 않고 통과하는 형태다.
-    r = subprocess.run(["git", "check-ignore", "--no-index", "--stdin", "-z"],
-                       cwd=ROOT, input="\0".join(rels),
-                       capture_output=True, text=True)
-    return {x for x in r.stdout.split("\0") if x}
+    g = gitq.ignored(rels, ROOT)
+    if g is None:
+        # ★ §372. 못 물었으면 **빈 집합이 아니다.** 빈 집합은 「무시되는 것이
+        #   하나도 없다」는 답이고, 그러면 T2(무시 규칙인데 추적 중)가 0건으로
+        #   조용히 초록이 된다. `tracked()` 와 같은 규율로 터뜨린다.
+        raise RuntimeError(
+            "git 이 무시 목록을 못 줬다 — `.gitignore` 규칙을 재구현하지 않으므로"
+            " 못 물으면 T2 를 말할 수 없다(§372)")
+    return set(g)
 
 
 # ── 저장소 ────────────────────────────────────────────────────

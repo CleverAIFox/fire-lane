@@ -58,6 +58,29 @@ from pathlib import Path
 RELS_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 ET.register_namespace("", RELS_NS)
 
+
+def _xml(blob: bytes):
+    """`.rels` 를 읽는다. **DTD·엔티티가 있으면 거부한다.** (§371)
+
+    ★ `ruff --select S314` 가 「`defusedxml` 을 써라」고 든다. 이 도구가 읽는
+      것은 **우리가 지은 `docs/proposal.docx`** 라 지금은 적대적 입력이
+      아니지만, 그 전제가 코드 어디에도 안 적혀 있었다 — 적혀 있지 않은
+      전제는 **깨져도 아무도 모른다**(이 저장소의 1족).
+
+    ★ `defusedxml` 을 안 넣는다. 의존성 하나를 늘리는 대신 **입력을 좁힌다** —
+      이 저장소의 `.rels` 는 선언 한 줄 + `<Relationships>` 한 묶음이고
+      DTD 도 내부 엔티티도 쓸 자리가 없다. 거부가 곧 명세다.
+      (표준 `ElementTree` 는 외부 엔티티를 애초에 안 당긴다. 남는 구멍은
+       **내부 엔티티 재귀**(billion laughs) 하나이고 아래가 그것을 막는다.)
+    """
+    head = blob[:4096].lower()
+    for bad in (b"<!doctype", b"<!entity"):
+        if bad in head:
+            raise RuntimeError(
+                f"`.rels` 에 {bad.decode()} 가 있다 — 우리가 지은 docx 가 아니다. "
+                "엔티티 폭탄일 수 있어 안 읽는다")
+    return ET.fromstring(blob)  # noqa: S314 — 위에서 DTD·엔티티를 거부한다
+
 ROOT = Path(__file__).resolve().parents[1]
 DOCX = ROOT / "docs/proposal.docx"
 #: 그림 잠금은 **하나**다. `render_figures` 가 `figures`(정본 지문)를 쓰고
@@ -214,7 +237,7 @@ def _prune_media(path: Path) -> None:
     #   내부 구현을 바꾸는 날 이 도구가 조용히 죽는다(4족). 표준 라이브러리로 쓴다.
     body = blobs["word/document.xml"]
     used_ids = {m.group(1).decode() for m in re.finditer(rb'r:(?:embed|link)="([^"]+)"', body)}
-    rels = ET.fromstring(blobs[rels_name])
+    rels = _xml(blobs[rels_name])
     drop_media = set()
     for rel in list(rels):
         target = rel.get("Target", "")

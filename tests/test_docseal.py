@@ -94,6 +94,48 @@ def test_stamping_a_section_that_is_not_a_target_fails(ds):
     assert ds.stamp("없는절/999") == 1
 
 
+def test_stamping_a_section_that_names_an_untracked_file_is_refused(ds, tmp_path, monkeypatch):
+    """★ **`git add` 전에 찍으면 거부한다.** (DECISIONS §372-7)
+
+    이 덫은 **두 번 밟혔다.** 배치 X 가 `tools/deadprobes/empty_const.py` 를
+    만들고 `git add` 전에 찍어 Fox 의 전수 verify 가 거기서 멈췄고, 그 절을
+    쓰던 다음 배치가 `tools/deadprobes/git_empty.py` 로 **같은 자리에서 또**
+    깨졌다. 같은 덫을 두 번 밟으면 사람의 실수가 아니라 구조다.
+
+    왜 깨지나 — `refs()` 는 추적 밖을 지문 기반에서 뺀다(§278-10). 그래서
+    새 파일이 추적 밖인 동안 찍은 도장에는 그 파일이 **안 들어가고**, 커밋이
+    그것을 추적하는 순간 지목이 늘어 도장이 무효가 된다.
+
+    ★ 우주는 `survey` 의 `fs` 와 **같아야 한다** — 본문 전체다. 처음에는
+      `claim()`(강제자 칸을 뺀 산문)으로 지었고, 그러면 §372 의 그 파일이
+      **강제자 칸에만** 있어서 이 관문이 제 사유를 못 봤다.
+    """
+    monkeypatch.setattr(ds, "ROOT", tmp_path)
+    ds._tracked.cache_clear()
+    (tmp_path / "tools").mkdir()
+    new = tmp_path / "tools" / "brand_new.py"
+    new.write_text("# 아직 git 이 모른다\n", encoding="utf-8")
+    old = tmp_path / "tools" / "known.py"
+    old.write_text("# git 이 안다\n", encoding="utf-8")
+    body = "강제자  `tools/brand_new.py` · 산문이 `tools/known.py` 를 주장한다"
+
+    monkeypatch.setattr(ds, "_tracked", lambda: frozenset({"tools/known.py"}))
+    pend = ds._untracked_refs({"DOC/1": body}, ["DOC/1"])
+    assert pend == {"DOC/1": ["tools/brand_new.py"]}, (
+        f"추적 밖 파일을 못 집는다 — {pend}")
+
+    # ★ 반대 방향 — **둘 다 추적되면 아무것도 안 낸다.** 늘 빨간 관문은 꺼진다
+    monkeypatch.setattr(ds, "_tracked",
+                        lambda: frozenset({"tools/known.py", "tools/brand_new.py"}))
+    assert ds._untracked_refs({"DOC/1": body}, ["DOC/1"]) == {}, \
+        "전부 추적되는데도 운다 — 늘 빨간 관문은 사람이 끈다"
+
+    # ★ 디스크에 없는 경로는 **이 관문의 일이 아니다**(`refcheck` 가 든다)
+    body2 = "산문이 `tools/never_existed.py` 를 주장한다"
+    assert ds._untracked_refs({"DOC/2": body2}, ["DOC/2"]) == {}, \
+        "없는 파일을 「추적 밖」으로 센다 — 죽은 참조는 refcheck 소관이다"
+
+
 def test_selftest_is_not_an_empty_net(ds):
     """판별식 자기검사가 실물에서 초록인가 — 빈 그물이면 여기가 유일한 신호다."""
     assert ds.selftest() == 0

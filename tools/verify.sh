@@ -479,6 +479,25 @@ step "pre-commit 전수"  uv run pre-commit run --all-files
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope ".githooks/*"
 step "훅 전역 연결"    bash .githooks/global-chain.sh --check
+# ★ 2026-10-03 (DECISIONS §376). **아무도 트리를 안 봤다.** 비밀값 방어 셋이
+#   다 **변화량**만 봤다(훅=스테이지 · 액션=커밋 범위 · 이 자리=없었다).
+#   그래서 훅보다 먼저 들어온 값은 셋 모두에게 영원히 안 보였고, V-World 키가
+#   `sources.yaml` 에 55일 평문으로 있었다. 자세한 것은 §376.
+# ★ **scope 를 안 적는다.** 선언 없는 단계는 `--since` 가 안 뺀다(`step()` 의
+#   둘째 갈래). 비밀값은 만진 파일과 무관하게 트리에 있거나 없다.
+# ★ `--redact` — 걸리는 날에도 값을 안 찍는다. 화면·로그·`dms` 봉인에 값이
+#   남으면 그 자체가 두 번째 유출이다.
+# ★ gitignore 된 `.env` 는 `.gitleaks.toml` 의 전역 예외가 뺀다. 그 예외의
+#   전제(추적되지 않는다)는 `treecheck` 의 T2 가 든다. `web/key.js` 는 **안
+#   뺐다** — 2026-09-22 에 생성이 멈춘 찌꺼기이고 걸리는 것이 맞는 신호다.
+# ★ `# local-exempt: gitleaks` 를 지웠다 — 이제 로컬에서 돈다. 죽은 면제는
+#   `gate_parity` 가 잡는다.
+if command -v gitleaks >/dev/null 2>&1; then
+    step "비밀값 — 작업 트리 전수" \
+        gitleaks dir . --config .gitleaks.toml --no-banner --redact --exit-code 1
+else
+    note "비밀값 — 작업 트리 전수" "gitleaks 가 없다"
+fi
 # ★ 2026-09-18 (W2). 3족의 클래스 가드. 로컬에만 있는 검사기를 센다.
 #   CI 도 같은 명령을 돈다 — 규칙을 두 곳에 적는 것이 아니라 같은 도구가
 #   같은 나무를 읽으므로 정본은 코드 하나다.
@@ -529,6 +548,21 @@ step "기획서 개요 층"   uv run python tools/docstyle.py
 #   인용 블록은 `<!--voice-ok-->` 로 통과시킨다 — 기존 규약이다(MASTER §0-3).
 scope "docs/* tools/*"
 step "문서 말투"       uv run python tools/tonecheck.py
+# ★ 2026-10-03 (§366-4). 강제자 칸이 **시험 수를 손으로 적은 자리**다. §246-2 가
+#   「정본이 없는 값은 문서에 적지 않는다」로 규칙을 세우고 §364-2 가 그것으로
+#   여섯 자리를 뺐는데, **그 밤에 §363 이 새로 셋을 적었다.** 규칙만 있고 세는
+#   자리가 없으면 배치마다 샌다. 실측 29곳 중 여섯은 어떤 셈으로도 안 맞았다.
+scope "docs/* README.md"
+step "문서가 적은 시험 수" uv run python tools/countcheck.py
+# ★ 2026-10-03 (§368). 「디렉 구조를 리팩할 게 있나」를 **값으로** 답한다. 새 소스가
+#   생기면 어느 묶음인지 정해야 하고, 안 정하면 평평한 이름공간이 그대로 큰다.
+scope "src/firelane/*"
+step "구조 묶음 선언"    uv run python tools/archcost.py
+# ★ 2026-10-03 (§369). `PLAN §1 #140` 의 구멍을 **발행된 판정에서** 센다 —
+#   회색 어휘 다섯이 「대장이 반박했다」를 부를 낱말이 없다. `widthcross` 가
+#   같은 축을 들지만 그쪽은 processed/*.gpkg 를 읽어 CI 에서 건너뛴다.
+scope "data/processed/segments.geojson src/firelane/seg/*"
+step "회색 어휘 구멍"    uv run python tools/greycheck.py
 # ★ 2026-09-28 (§279-6). 사유 딸린 면제표는 이미 조여 있었다(빈 사유 0). 남은 빚은
 #   **주석 한 줄짜리 억제**에 몰려 있었다 — 표에 안 들어가고 사유를 안 적어도 되고
 #   아무도 안 세는 자리다. 119 에서 시작해 같은 날 죽은 `noqa` 59개를 지워 57 이다.
@@ -951,6 +985,13 @@ step "지도 글자" bash -c 'cd web/navi && npm run -s glyphs -- --check'
 #   커밋돼 있으므로 **레이크 없이 돈다** — CI 도 든다.
 scope "web/data/navi_graph.json src/firelane/publish_navi.py tools/*"
 step "내비 그래프 결함" uv run python tools/navicheck.py
+
+# ★ 2026-10-03 (DECISIONS §362). 이 파일은 **수리를 안 한다** — 아래 904줄 규율이
+#   그 사유다. 그런데 수리 문도 없어서 수리가 전부 사람 손으로 흘러갔다(실측:
+#   도구 120개 중 74개가 울기만 한다). `tools/fix.sh` 가 그 문이고, 이 단계는
+#   **그 문이 덜 열렸는가**를 센다 — 기계가 고칠 수 있는데 문에 안 걸린 것.
+scope "tools/*"
+step "수리 문" uv run python tools/fixable.py
 
 # ★ 파일명의 날짜가 자료 기준일인가 내려받은 날인가. `naming` 규약은
 #   "다운로드일이 아니다" 라고 적었는데 `_plausible_date` 는 형식만 본다 —

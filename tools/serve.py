@@ -15,8 +15,9 @@ tools/serve.py — web/ 개발 서버. 캐시를 끈다.
   배포 쪽은 publish_web.py 의 내용 해시 스탬프가 막고, 개발 쪽은 이 서버가 막는다.
 
 사용:
-    uv run python tools/serve.py           # 8000
+    uv run python tools/serve.py           # 8000, **이 기계만**
     uv run python tools/serve.py 8080
+    uv run python tools/serve.py --host 0.0.0.0    # 휴대폰에서 볼 때만
 ════════════════════════════════════════════════════════════════
 
 ★ 2026-09-22. 옛 지도(web/js)를 걷어냈다. 종전에는 `web/index.html` 이 `navi/?view=ops` 로
@@ -104,7 +105,18 @@ def main():
     import argparse
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("port", nargs="?", type=int, default=8000, help="들을 포트")
-    port = ap.parse_args().port
+    # ★ 2026-10-03 (§371). 종전에는 `0.0.0.0` 이 **박혀 있었다** — 들을 주소를
+    #   고를 수가 없었고, 그러면 같은 망의 아무나 `web/data/` 를 읽는다. 거기엔
+    #   판정 산출물과 원천 좌표가 있다(공개 전이다). `ruff --select S104` 가 들었다.
+    #
+    #   **기본을 안으로 돌린다.** 밖에서 보는 일(휴대폰에서 내비 화면을 켜는
+    #   것)은 **있고**, 그래서 능력을 안 없앤다 — 한 칸 뒤로 옮긴다.
+    #   WSL 에서 윈도 브라우저로 `localhost:8000` 은 `127.0.0.1` 로도 열린다
+    #   (WSL2 가 localhost 를 전달한다). 휴대폰만 `--host 0.0.0.0` 이 든다.
+    ap.add_argument("--host", default="127.0.0.1",
+                    help="들을 주소. 기본은 이 기계만. 휴대폰에서 보려면 0.0.0.0")
+    a = ap.parse_args()
+    port, host = a.port, a.host
     if not ROOT.exists():
         raise SystemExit(f"★ {ROOT} 가 없다")
     handler = partial(NoCacheHandler, directory=str(ROOT))
@@ -115,9 +127,14 @@ def main():
     if not DIST.is_dir():
         print("  ★ web/navi/dist 가 없다 — 관제·내비가 빈 화면이다.\n"
               "    cd web/navi && npm run build   (개발은 npm run dev)")
+    if host == "127.0.0.1":
+        print("  ★ 이 기계만 듣는다. 휴대폰·태블릿에서 보려면 `--host 0.0.0.0`")
+    else:
+        print(f"  ★ **{host} 로 듣는다 — 같은 망의 누구나 web/ 을 읽는다.**\n"
+              "    web/data/ 에 판정 산출물과 원천 좌표가 있다. 끝나면 끄라")
     print("  Ctrl+C 로 종료")
     try:
-        ThreadingHTTPServer(("0.0.0.0", port), handler).serve_forever()
+        ThreadingHTTPServer((host, port), handler).serve_forever()
     except KeyboardInterrupt:
         print("\n종료")
 

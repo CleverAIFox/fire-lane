@@ -48,7 +48,11 @@ from firelane.paths import RAW
 for st in (sys.stdout, sys.stderr):
     try:
         st.reconfigure(encoding="utf-8")
-    except Exception:
+    except Exception:  # noqa: S110, BLE001 — 아래 ★
+        # ★ 삼키는 사유(§371). 표준출력이 **다시 설정할 수 없는 꼴**일 때가
+        #   있다 — 파이프로 묶인 자리 · 리다이렉트 · 일부 CI 러너. 그때는
+        #   기본 인코딩으로 그냥 쓰는 것이 맞고, 여기서 터뜨리면 **단계가
+        #   시작도 못 한다.** 인코딩이 틀린 출력은 `encoding_check` 가 따로 든다.
         pass
 
 # 원본 파일명 패턴 → (폴더, 목적지 파일명)

@@ -254,3 +254,53 @@ def test_deploy_and_dry_run_share_one_body() -> None:
         assert "pull_request" in cond, (
             f"{f.name} 의 `{name}` 이 Pages 에 올리는데 PR 을 가르는 `if` 가 없다.\n"
             "  PR 시운전이 진짜로 배포하면 리뷰 중인 가지가 사이트를 덮는다.")
+
+
+def test_the_secret_probe_declares_its_count_and_proves_it_is_alive():
+    """Secret 프로브의 카나리아가 **죽은 가정**에 걸려 있지 않은가. (DECISIONS §378)
+
+    종전 카나리아는 「0건이면 프로브를 의심하라 — deploy.yml 은 최소
+    MAPBOX_TOKEN 을 부른다」였다. §366 이 고아 `infra/matching.ts` 를 철거하면서
+    Mapbox 소비자가 사라졌고 그 두 줄도 같이 빠졌다. **0 이 답이 된 날**
+    카나리아가 영원히 울어 릴리즈가 멈췄다.
+
+    ★ 「0 보다 크냐」는 두 가지를 **둘 다** 못 가린다 —
+        · 0 이 정답인 상태        → 영원히 빨갛다
+        · 세는 기계가 죽은 상태   → 1건만 있으면 조용하다
+      그래서 **선언(`WF_SECRETS`)**과 **합성 양성 대조**로 갈랐다.
+    """
+    import importlib.util
+    import re as _re
+    import sys
+
+    src = (ROOT / "tools" / "ruleset_check.py").read_text(encoding="utf-8")
+    assert "WF_SECRETS" in src, (
+        "`WF_SECRETS` 선언이 없다 — 「0 보다 크냐」로 돌아갔으면 §378 을 다시 읽어라")
+    # ★ 그 문구는 **주석에 역사로 남아 있어도 된다.** 살아 있는 메시지로
+    #   돌아오는 것만 막는다 — 처음 짰을 때 이 시험이 제 사유 주석을 물었다.
+    live = [ln for ln in src.splitlines()
+            if "MAPBOX_TOKEN 을 부른다" in ln and not ln.lstrip().startswith("#")]
+    assert not live, (
+        f"죽은 가정이 **메시지로** 돌아왔다 ({len(live)}줄) — §366 이 그 줄을 지웠다")
+
+    spec = importlib.util.spec_from_file_location(
+        "_rc", ROOT / "tools" / "ruleset_check.py")
+    rc = importlib.util.module_from_spec(spec)
+    # ★ `exec_module` **앞에** 등록한다. `@dataclass` 가 `cls.__module__` 로
+    #   되짚으므로 없으면 AttributeError 다 —
+    #   `tests/test_tools_are_wired.py::test_a_by_path_loader_registers_the_module`
+    #   이 이 줄을 든다(처음 짰을 때 그 관문이 잡았다).
+    sys.modules[spec.name] = rc
+    spec.loader.exec_module(rc)
+
+    # ★ 선언이 실물과 같은가 — 워크플로를 직접 세서 댄다(도구를 안 믿는다)
+    found = set()
+    for p in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        for m in _re.finditer(r"secrets\.([A-Z_][A-Z0-9_]*)",
+                              p.read_text(encoding="utf-8")):
+            if m.group(1) != "GITHUB_TOKEN":
+                found.add(m.group(1))
+    assert len(found) == rc.WF_SECRETS, (
+        f"워크플로의 Secret {sorted(found)} ({len(found)}건)이 선언 "
+        f"{rc.WF_SECRETS} 와 다르다.\n"
+        "  늘었으면 등록을 확인하고, 줄었으면 **왜 줄었는지를 적고** 선언을 고쳐라.")

@@ -98,7 +98,10 @@ def _fingerprint(fn: ast.FunctionDef) -> tuple[str, int] | None:
     #   `--min` 문턱을 정하므로, 같은 것이 문턱에서 갈리면 한 쪽만
     #   잡힌다. 지문과 크기는 같은 것을 봐야 한다.
     size = sum(1 for _ in ast.walk(mod))
-    return hashlib.md5(text.encode()).hexdigest(), size
+    # ★ 2026-10-03 (§371). `usedforsecurity=False` 다 — 이 해시는 **지문**이고
+    #   서명이 아니다. 플래그를 적으면 `S324` 가 저절로 가라앉는다. 억제 주석을
+    #   붙이는 것보다 **코드가 뜻을 말하게** 하는 쪽이 낫다.
+    return hashlib.md5(text.encode(), usedforsecurity=False).hexdigest(), size
 
 
 def sources() -> list[Path]:

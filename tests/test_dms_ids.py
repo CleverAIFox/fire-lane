@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -151,3 +152,50 @@ def test_every_field_in_a_section_is_read():
                                      (2, ""),
                                      (3, "강제자 없음 — 사유: 분류다")]}
     assert m.classify(only_none)[0] == "none", "둘 다 없음인데 배선으로 센다"
+
+
+def test_the_bookmark_has_a_door_that_drops_sections():
+    """★ 북마크에서 **없는 절을 떨어내는 문**이 있는가. (DECISIONS §365)
+
+    위 `test_bookmark_and_seal_use_current_ids` 가 그 어긋남을 울리는데,
+    `dms.py` 에는 `mark`(더하기)만 있었다. 그래서 그 빨강을 받은 사람은
+    **JSON 을 손으로 고치는 수밖에 없었다** — 검사가 가리키는 자리에
+    문이 없으면 빨강은 잔소리가 되고, 잔소리는 꺼진다.
+
+    ★ `--apply` 없이는 **아무것도 안 바꾼다.** 떨어내기 전에 그 절이 왜
+      없어졌는지(지워졌나 · 번호가 바뀌었나)를 사람이 봐야 한다.
+    """
+    d = _dms()
+    assert hasattr(d, "cmd_prune"), "북마크를 떨어낼 문이 없다"
+    before = (ROOT / "data" / "dms" / "BOOKMARK.json").read_text(encoding="utf-8")
+    r = subprocess.run(["uv", "run", "--no-sync", "python", "tools/dms.py", "prune"],
+                       cwd=ROOT, capture_output=True, text=True, timeout=600)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (ROOT / "data" / "dms" / "BOOKMARK.json").read_text(encoding="utf-8") == before, (
+        "`prune` 이 `--apply` 없이 북마크를 건드렸다")
+
+
+def test_the_prune_door_actually_drops_a_phantom():
+    """★ 양성 대조. **없는 절을 심고** 문이 떨어내는가.
+
+    깨끗한 트리에서 「0건이니 통과」는 안 떨어내는 문도 통과시킨다
+    (`test_fix_door` 가 같은 이유로 결함을 심는다).
+    """
+    d = _dms()
+    p = ROOT / "data" / "dms" / "BOOKMARK.json"
+    original = p.read_text(encoding="utf-8")
+    bm = json.loads(original)
+    try:
+        bm["done"] = sorted(set(bm["done"]) | {"PLAN/0-없는절"})
+        p.write_text(json.dumps(bm, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        r = subprocess.run(
+            ["uv", "run", "--no-sync", "python", "tools/dms.py", "prune", "--apply"],
+            cwd=ROOT, capture_output=True, text=True, timeout=600)
+        assert r.returncode == 0, r.stdout + r.stderr
+        assert "PLAN/0-없는절" in r.stdout, f"심은 유령을 못 봤다\n{r.stdout}"
+        assert "PLAN/0-없는절" not in json.loads(p.read_text(encoding="utf-8"))["done"], (
+            "문이 돌았는데 유령이 그대로 남았다")
+        assert d is not None
+    finally:
+        if p.read_text(encoding="utf-8") != original:
+            p.write_text(original, encoding="utf-8")
