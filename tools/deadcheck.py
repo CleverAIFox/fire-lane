@@ -6,13 +6,14 @@ deadcheck.py — **검사가 죽었는가**를 검사한다.
   검사를 늘리는 것으로는 못 잡는다. 늘린 검사도 같은 병에 걸린다.
   그래서 검사를 **대상으로 삼는** 도구가 하나 필요하다.
 
-프로브 여섯. 전부 정적이고 전부 **세는 것**으로 끝난다.
+프로브 일곱. 전부 정적이고 전부 **세는 것**으로 끝난다.
 
   ① 빈 그물      검사가 만드는 후보 집합이 구조적으로 빌 수 있는가
      ·(대장)     대장 블록을 0건인 키로 읽는가
      ·(상수)     ★ 2026-10-03 (§359). 모듈 상수가 **빈 모음**인데 검사가 그것을 도는가
   ② 손목록       코드에 박힌 목록이 데이터 원본보다 좁은가
   ③ 조용한 통과  실패해야 할 자리에서 return / pass / continue 하는가
+     ·(git)      ★ 2026-10-03 (§372). git 이 못 답한 것을 **빈 모음**으로 바꾸는가
   ④ 죽은 게이트  CI 스텝이 없는 파일을 조건으로 걸고 있는가
   ⑤ 좁은 범위    검사 대상 glob 이 실제 파일 집합보다 좁은가
 
@@ -224,6 +225,18 @@ EXEMPT_EMPTY_NET = {
 
 #: ★ 2026-10-03 (DECISIONS §359). 상수 팔의 면제. `"파일::상수"` → 사유.
 EXEMPT_EMPTY_CONST = {
+    # ★ 2026-10-03 (DECISIONS §372-5). 비어 있는 것이 **이 배치가 만든 답**이다.
+    #   §366 이 `web/navi/src/infra/matching.ts` 를 지웠고(고아였다) 그와 함께
+    #   `api.mapbox.com` 이라는 유일한 외부 호스트가 사라졌다. 즉 **허용 호스트가
+    #   0 인 것이 지금의 사실**이고, 그래서 `EXTERNAL = 0` 래칫이 그 수를 든다.
+    #   이 상수가 비어도 검사가 죽지 않는다는 것은 그 래칫이 증명한다 —
+    #   호스트가 하나라도 들어오면 `EXTERNAL` 이 1 이 되어 운다. 표를 안 지우는
+    #   이유는 PLAN §13-3 과 같다: 결함은 다시 자라고, 그때 적을 자리가 있어야 한다.
+    "tools/naviweight.py::ALLOWED":
+        "**0 이 답이다.** §366 이 고아 `infra/matching.ts` 를 철거하면서 유일한 "
+        "외부 호스트(`api.mapbox.com`)가 사라졌다. 이 표의 공백을 지키는 것은 "
+        "`EXTERNAL = 0` 래칫이고, 호스트가 하나라도 들어오면 그쪽이 먼저 운다 — "
+        "표가 비어도 그물은 안 비었다",
     "tools/doc_fsck.py::DEFERRED":
         "비어 있는 것이 **선언**이다 — 네 줄이 전부 해소·이관됐고 그 사유가 소스에 "
         "주석으로 남아 있다(`test_the_deadline_table_is_empty_on_purpose` 가 그 주석을 "
@@ -510,6 +523,31 @@ def probe_silent_pass(root: Path = ROOT) -> None:
                             f"— 대상을 못 찾으면 실패가 아니라 통과다")
 
 
+
+
+# ── ③ 조용한 통과(git) ─────────────────────────────────────────
+def probe_git_empty(root: Path = ROOT) -> None:
+    """③ 둘째 팔 — git 이 못 답한 것을 **빈 모음**으로 바꾸는가. (§372)
+
+    몸통은 `tools/deadprobes/git_empty.py` 에 있다(`empty_const` 와 같은 틀).
+    여기 남는 것은 **면제 적용과 보고**뿐이다.
+
+    ★ 이름을 ③ 과 **가른다.** 같은 이름이면 `CONTROLS` 가 하나뿐이라 둘째
+      팔이 조용히 죽는다 — §359 가 ① 에서 배운 그 교훈이다.
+    """
+    from deadprobes.git_empty import findings
+    for p, ln, fname, what in findings(root):
+        try:
+            rel = p.relative_to(root).as_posix()
+        except ValueError:
+            rel = str(p)
+        if f"{rel}::{fname}" in EXEMPT_SCOPE:
+            continue
+        hit("③ 조용한 통과(git)", p, ln,
+            f"{fname}() 가 {what} — 빈 우주는 **초록**이 된다. "
+            f"`firelane.gitq` 가 `None` 을 준다")
+
+
 # ── ④ 죽은 게이트 ───────────────────────────────────────────────
 # CI 스텝이 `[ -f <경로> ]` 를 조건으로 걸었는데 그 경로가 추적 대상이
 # 아니면, 그 스텝은 CI 에서 한 번도 안 돈다.
@@ -547,6 +585,26 @@ def probe_dead_gate(root: Path = ROOT) -> None:
 #   적는 순간 세어지고 `tests/test_deadcheck_probes.py` 가 죽은 면제를 지운다.
 _PROD_ONLY = "tests 는 **제품 코드가 아니다**"
 EXEMPT_SCOPE = {
+    # ★ 2026-10-03 (DECISIONS §372-5). 셋 다 **`src/firelane` 꾸러미 자신의
+    #   모양**을 재는 자리다. `tools/` · `tests/` 를 더하면 재는 것이 달라진다 —
+    #   폐포도 결합도도 「이 꾸러미가 무엇을 아는가」이고, 도구와 시험이 그
+    #   꾸러미를 import 하는 것은 **소비**이지 꾸러미의 구조가 아니다.
+    "tests/test_layering.py::_judgment_closure":
+        "판정 폐포는 `firelane.segments` 에서 출발한 **`src` 안의 import 폐포**다. "
+        "`tools` · `tests` 를 더하면 폐포가 소비자까지 삼켜 분모가 뜻을 잃는다 — "
+        "그 수(17)는 `test_r3` 가 따로 못박는다",
+    "tools/archcost.py::rows":
+        "꾸러미 **내부** 응집도·이동 비용을 잰다. `tools` 는 꾸러미가 아니라 "
+        "꾸러미의 소비자라, 더하면 「옮기는 데 얼마 드나」가 다른 물음이 된다",
+    "tools/archcost.py::graph":
+        "꾸러미 내부 의존 그래프다 — 결합도·순환·은닉성이 전부 이 그래프에서 "
+        "나온다. 소비자를 더하면 fan-in 이 소비 횟수가 되고 순환 판정이 거짓이 된다",
+    # ★ 2026-10-03 (DECISIONS §372). 이 프로브가 보는 것은 **관문의 우주**다.
+    #   시험이 git 실패를 빈 목록으로 바꾸면 그 시험은 **터진다**(pytest 가
+    #   추적을 찍는다) — 조용하지 않다. 조용해지는 것은 관문뿐이다.
+    "tools/deadprobes/git_empty.py::findings":
+        "관문만 본다. `tests/` 가 git 실패를 삼키면 pytest 가 그 자리에서 터져 "
+        "**시끄럽다** — 이 프로브가 세는 것은 조용히 초록이 되는 자리다",
     # ★ 2026-09-28 (DECISIONS §280-3). 둘 다 **일부러 `src` 만** 본다.
     #   `tools/` 는 바로 위 `_tools()` 가 이미 훑는다 — 넓히면 같은 파일을 두
     #   그물이 세고, 「tools 도구가 안 불린다」가 두 이름으로 두 번 뜬다.
@@ -842,6 +900,10 @@ PROBES = [
     ("① 빈 그물(상수)", probe_empty_const),
     ("② 손목록", probe_handlist),
     ("③ 조용한 통과", probe_silent_pass),
+    # ★ 2026-10-03 (§372). ③ 의 **둘째 팔.** git 이 못 답한 것을 빈 모음으로
+    #   바꾸는 자리를 본다. 이름을 가른 사유는 ① 과 같다 — 대조와 천장이
+    #   팔마다 하나씩이어야 한쪽이 죽은 것을 본다.
+    ("③ 조용한 통과(git)", probe_git_empty),
     ("④ 죽은 게이트", probe_dead_gate),
     ("⑤ 좁은 범위", probe_narrow_scope),
 ]
@@ -985,11 +1047,47 @@ def _fx_narrow_scope(d: Path) -> None:
 
 
 # 프로브 이름 → (합성 트리를 짓는 함수, **무엇을 거는가**)
+
+def _fx_git_empty(d: Path) -> None:
+    """③(git) — git 실패를 빈 모음으로 바꾸는 세 꼴. **형태마다 파일 하나.**"""
+    (d / "tools").mkdir(parents=True)
+    (d / "src").mkdir(parents=True)
+    (d / "tools" / "a.py").write_text(
+        "import subprocess\n"
+        "def tracked():\n"
+        "    try:\n"
+        "        out = subprocess.run(['git', 'ls-files'], check=True).stdout\n"
+        "    except Exception:\n"
+        "        return []\n"
+        "    return out.split()\n", encoding="utf-8")
+    (d / "tools" / "b.py").write_text(
+        "import subprocess\n"
+        "def entries():\n"
+        "    r = subprocess.run(['git', 'ls-files'], capture_output=True)\n"
+        "    if r.returncode != 0:\n"
+        "        return []\n"
+        "    return r.stdout.split()\n", encoding="utf-8")
+    (d / "src" / "c.py").write_text(
+        "import subprocess\n"
+        "def paths():\n"
+        "    r = subprocess.run(['git', 'ls-files'], check=False)\n"
+        "    return frozenset(r.stdout.split())\n", encoding="utf-8")
+    # ★ 음성 대조 — **맞게 쓴 것은 안 울어야 한다**
+    (d / "tools" / "ok.py").write_text(
+        "import subprocess\n"
+        "def good():\n"
+        "    r = subprocess.run(['git', 'ls-files'], capture_output=True)\n"
+        "    if r.returncode != 0:\n"
+        "        return None\n"
+        "    return set(r.stdout.split())\n", encoding="utf-8")
+
+
 CONTROLS: dict[str, tuple] = {
     "① 빈 그물": (_fx_empty_net, "적재한 블록에 0건인 키로 읽는 검사"),
     "① 빈 그물(상수)": (_fx_empty_const, "빈 상수를 도는 검사"),
     "② 손목록": (_fx_handlist, "원본의 부분집합을 상수로 박은 목록"),
     "③ 조용한 통과": (_fx_silent_pass, "ImportError→return · assert 삼킴 · 예외→return True"),
+    "③ 조용한 통과(git)": (_fx_git_empty, "git 실패 → [] · rc!=0 → [] · check 없이 rc 안 봄"),
     "④ 죽은 게이트": (_fx_dead_gate, "추적 안 되는 경로를 건 CI 스텝"),
     "⑤ 좁은 범위": (_fx_narrow_scope, "tests 만 훑는 검사 · tools 를 빠뜨린 검사"),
 }
@@ -1054,6 +1152,7 @@ CEILING = {
     "① 빈 그물(상수)": 0,
     "② 손목록": 0,
     "③ 조용한 통과": 0,
+    "③ 조용한 통과(git)": 0,
     "④ 죽은 게이트": 0,
     "⑤ 좁은 범위": 0,
 }
@@ -1100,7 +1199,7 @@ def main() -> int:
         print(f"  {n:3d}  {f}")
 
     json.dump({"total": len(HITS), "by_probe": per, "hits": HITS},
-              open(ROOT / "REDLIST.json", "w"), ensure_ascii=False, indent=1)
+              open(ROOT / "REDLIST.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(f"\nREDLIST.json 기록 — {len(HITS)}건")
 
     # ★ 양성 대조가 빨가면 **아래의 어떤 수도 못 믿는다.** 관문이든 아니든

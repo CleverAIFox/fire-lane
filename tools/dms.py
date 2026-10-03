@@ -988,11 +988,17 @@ def uncommitted(root: Path = ROOT) -> list[str]:
       빠뜨렸다. 레이크 기계의 verify 는 작업 트리를 보고 41 단계 초록, 봉인도 찍혔다(헤더에 `+미커밋`).
       CI 는 커밋본을 보고 `test_every_required_file_is_reachable_by_rules` 로 빨강. 봉인이 거짓이었다.
     """
-    import subprocess
-    r = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"],
-                       cwd=root, capture_output=True, text=True, check=False)
+    # ★ 2026-10-03 (DECISIONS §372). 종전에는 rc 를 안 봤다. git 이 못 답하면
+    #   stdout 이 비고, 그러면 이 함수가 **「커밋 안 된 것이 없다」**고 답한다 —
+    #   바로 §180-7 이 당한 거짓 봉인과 **같은 거짓**이다. 못 물었으면 터진다.
+    from firelane import gitq
+    sout = gitq.ask(["status", "--porcelain", "--untracked-files=no"], cwd=root)
+    if sout is None:
+        raise RuntimeError(
+            "git 이 상태를 못 줬다 — 봉인의 기준선이 **커밋본**이므로 못 물으면"
+            " 봉인을 찍을 수 없다(§372). 빈 목록은 「깨끗하다」가 아니다")
     out = []
-    for ln in r.stdout.splitlines():
+    for ln in sout.splitlines():
         rel = ln[3:].strip().strip('"')
         if " -> " in rel:
             rel = rel.split(" -> ", 1)[1]

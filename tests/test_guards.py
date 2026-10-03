@@ -100,8 +100,8 @@ def test_lineage_blocks_orphan_derived_output(tmp_path):
     """
     st = {k: "OK" for k in CRITICAL}
     d = _manifest(tmp_path, outputs={"ngii1k": ["ngii1k_5186.gpkg"]}, **st)
-    (d / "ngii1k_5186.gpkg").write_text("new")
-    (d / "ngii1k_xsec_5186.gpkg").write_text("낡음")     # 대장에 없다
+    (d / "ngii1k_5186.gpkg").write_text("new", encoding="utf-8")
+    (d / "ngii1k_xsec_5186.gpkg").write_text("낡음", encoding="utf-8")     # 대장에 없다
     with pytest.raises(GuardFailure, match="xsec"):
         lineage_check(d)
 
@@ -111,8 +111,8 @@ def test_lineage_ok_when_all_outputs_declared(tmp_path):
     d = _manifest(tmp_path,
                   outputs={"ngii1k": ["ngii1k_5186.gpkg", "ngii1k_xsec_5186.gpkg"]},
                   **st)
-    (d / "ngii1k_5186.gpkg").write_text("new")
-    (d / "ngii1k_xsec_5186.gpkg").write_text("new")
+    (d / "ngii1k_5186.gpkg").write_text("new", encoding="utf-8")
+    (d / "ngii1k_xsec_5186.gpkg").write_text("new", encoding="utf-8")
     lineage_check(d)
 
 
@@ -129,7 +129,7 @@ def test_lineage_ignores_outputs_of_failed_key(tmp_path):
     """FAIL 한 key 의 outputs 는 이번 계보로 치지 않는다."""
     st = {k: "OK" for k in CRITICAL}
     d = _manifest(tmp_path, outputs={"cctv": ["cctv_5186.gpkg"]}, **{**st, "cctv": "FAIL"})
-    (d / "cctv_5186.gpkg").write_text("x")
+    (d / "cctv_5186.gpkg").write_text("x", encoding="utf-8")
     with pytest.raises(GuardFailure):
         lineage_check(d)
 
@@ -174,8 +174,8 @@ def test_critical_probe_is_alive():
 def test_quarantine_renames_not_deletes(tmp_path):
     """삭제가 아니라 개명이다. 옛 파일은 진단의 증거다(08-18 실제로 봤다)."""
     for n in ("ngii1k_5186.gpkg", "ngii1k.geojson", "ngii1k_north_5186.gpkg"):
-        (tmp_path / n).write_text("x")
-    (tmp_path / "road_link_5186.gpkg").write_text("keep")
+        (tmp_path / n).write_text("x", encoding="utf-8")
+    (tmp_path / "road_link_5186.gpkg").write_text("keep", encoding="utf-8")
 
     staled = quarantine_stale(tmp_path, "ngii1k", tag="20260818")
 
@@ -187,11 +187,11 @@ def test_quarantine_renames_not_deletes(tmp_path):
 
 def test_quarantine_is_rerunnable(tmp_path):
     """두 번 돌려도 죽지 않는다. 같은 날 두 번 FAIL 날 수 있다."""
-    (tmp_path / "cctv.geojson").write_text("a")
+    (tmp_path / "cctv.geojson").write_text("a", encoding="utf-8")
     quarantine_stale(tmp_path, "cctv", tag="20260818")
-    (tmp_path / "cctv.geojson").write_text("b")
+    (tmp_path / "cctv.geojson").write_text("b", encoding="utf-8")
     quarantine_stale(tmp_path, "cctv", tag="20260818")
-    assert (tmp_path / "cctv.geojson.stale_20260818").read_text() == "b"
+    assert (tmp_path / "cctv.geojson.stale_20260818").read_text(encoding="utf-8") == "b"
 
 
 def test_quarantine_noop_when_nothing(tmp_path):

@@ -455,10 +455,10 @@ def test_master_table_and_spec_agree():
 
 def test_unpinned_installer_and_stray_literal_are_caught(tmp_path, monkeypatch):
     """판 없는 설치 줄 · 목록 밖 literal · 어긋난 consumer 가 각각 잡힌다."""
-    (tmp_path / "Dockerfile").write_text("COPY --from=ghcr.io/astral-sh/uv:9.9.9 /uv /bin/\n")
-    (tmp_path / "setup.sh").write_text("curl -LsSf https://astral.sh/uv/install.sh | sh\n")
-    (tmp_path / "other.yml").write_text("# uv 9.9.9 를 쓴다\n")
-    (tmp_path / "ci.yml").write_text('version: "9.9.8"\n')
+    (tmp_path / "Dockerfile").write_text("COPY --from=ghcr.io/astral-sh/uv:9.9.9 /uv /bin/\n", encoding="utf-8")
+    (tmp_path / "setup.sh").write_text("curl -LsSf https://astral.sh/uv/install.sh | sh\n", encoding="utf-8")
+    (tmp_path / "other.yml").write_text("# uv 9.9.9 를 쓴다\n", encoding="utf-8")
+    (tmp_path / "ci.yml").write_text('version: "9.9.8"\n', encoding="utf-8")
     monkeypatch.setattr(__import__(__name__), "ROOT", tmp_path)
     fact = {"owner": {"file": "Dockerfile", "regex": r"astral-sh/uv:([\w.]+)"},
             "consumers": [{"file": "setup.sh", "has": "astral.sh/uv/{v}/install.sh"},

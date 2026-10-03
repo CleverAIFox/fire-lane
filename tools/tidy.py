@@ -107,7 +107,7 @@ def _ancestors() -> set[int]:
     while pid > 1:
         out.add(pid)
         try:
-            pid = int(Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[1])
+            pid = int(Path(f"/proc/{pid}/stat").read_text(encoding="utf-8").rsplit(")", 1)[1].split()[1])
         except (OSError, ValueError, IndexError):
             break
     return out

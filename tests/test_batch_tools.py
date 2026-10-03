@@ -58,7 +58,7 @@ def _git(cwd: Path, *a: str) -> str:
 
 def _fake(repo: Path, body: str) -> None:
     (repo / "tools").mkdir(exist_ok=True)
-    (repo / "tools" / "fl.sh").write_text(f"#!/usr/bin/env bash\necho {body} \"$@\"\n")
+    (repo / "tools" / "fl.sh").write_text(f"#!/usr/bin/env bash\necho {body} \"$@\"\n", encoding="utf-8")
 
 
 def _world(tmp: Path, seed: str | None):
@@ -66,7 +66,7 @@ def _world(tmp: Path, seed: str | None):
     bare, work, inbox = tmp / "r.git", tmp / "work", tmp / "inbox"
     _git(tmp, "init", "-q", "--bare", str(bare))
     _git(tmp, "clone", "-q", str(bare), str(work))
-    (work / "README").write_text("x\n")
+    (work / "README").write_text("x\n", encoding="utf-8")
     if seed:
         _fake(work, seed)
     _git(work, "add", "-A")
@@ -83,7 +83,7 @@ def _patch(work: Path, body: str, out: Path) -> None:
     _fake(work, body)
     _git(work, "add", "-A")
     _git(work, "commit", "-q", "-m", "patch")
-    out.write_text(_git(work, "format-patch", "-1", "--stdout"))
+    out.write_text(_git(work, "format-patch", "-1", "--stdout"), encoding="utf-8")
     _git(work, "switch", "-q", "-")
 
 
@@ -163,10 +163,10 @@ def test_fl_picks_only_this_batch(tmp_path):
     """2026-09-22 실제 사고 — hathor · thoth 의 패치가 적용 후보에 올라 3단계에서 멈췄다."""
     inbox = tmp_path / "in"
     inbox.mkdir()
-    (inbox / "0001-fix.patch").write_text("From a\nSubject: ours\n")
+    (inbox / "0001-fix.patch").write_text("From a\nSubject: ours\n", encoding="utf-8")
     _zip(inbox / "fire-lane-x.zip", inbox / "0001-fix.patch")
-    (inbox / "D0216.patch").write_text(FOREIGN)
-    (inbox / "thoth-105-fixture-honest.patch").write_text(FOREIGN + "x")
+    (inbox / "D0216.patch").write_text(FOREIGN, encoding="utf-8")
+    (inbox / "thoth-105-fixture-honest.patch").write_text(FOREIGN + "x", encoding="utf-8")
     assert _pick(inbox) == ["0001-fix.patch"]
 
 
@@ -180,10 +180,10 @@ def test_fl_without_zip_takes_only_prefixed_patches(tmp_path):
     """
     inbox = tmp_path / "in"
     inbox.mkdir()
-    (inbox / "fire-lane-0001-a.patch").write_text("From a\n")
-    (inbox / "fire-lane-0002-b.patch").write_text("From b\n")
-    (inbox / "0003-c.patch").write_text("From c\n")   # ← 접두사 없다. 남의 것일 수 있다
-    (inbox / "D0216.patch").write_text(FOREIGN)
+    (inbox / "fire-lane-0001-a.patch").write_text("From a\n", encoding="utf-8")
+    (inbox / "fire-lane-0002-b.patch").write_text("From b\n", encoding="utf-8")
+    (inbox / "0003-c.patch").write_text("From c\n", encoding="utf-8")   # ← 접두사 없다. 남의 것일 수 있다
+    (inbox / "D0216.patch").write_text(FOREIGN, encoding="utf-8")
     assert _pick(inbox) == ["fire-lane-0001-a.patch", "fire-lane-0002-b.patch"]
 
 
@@ -273,14 +273,14 @@ def _resume_world(tmp: Path, main_has_infra: bool):
     """origin 에 main · dev · part/infra, 저장소에 가짜 방송 · 정리, PATH 에 가짜 gh."""
     work, inbox = _world(tmp, seed=None)
     (work / "tools").mkdir(exist_ok=True)
-    (work / "tools" / "merge_batch.sh").write_text("echo MERGE_BATCH \"$@\"\n")
-    (work / "tools" / "branch_tidy.sh").write_text("echo TIDY \"$@\"\n")
-    (work / "tools" / "verify.sh").write_text("exit 0\n")
+    (work / "tools" / "merge_batch.sh").write_text("echo MERGE_BATCH \"$@\"\n", encoding="utf-8")
+    (work / "tools" / "branch_tidy.sh").write_text("echo TIDY \"$@\"\n", encoding="utf-8")
+    (work / "tools" / "verify.sh").write_text("exit 0\n", encoding="utf-8")
     # ★ 2026-09-27 (DECISIONS §273-5). 7b 가 부르는 도구를 합성 트리도 들고 간다.
     #   없으면 fl.sh 가 「스쿼시 뒤 빨간불」로 죽는데, 그것은 **옳은 동작**이다 —
     #   여기서 조용히 건너뛰게 만들면 이 시험이 7b 를 안 보는 시험이 된다(§272).
     (work / "tools" / "after_squash.py").write_text(
-        "import sys; print('열차 뒤 검사 — 합성 트리'); sys.exit(0)\n")
+        "import sys; print('열차 뒤 검사 — 합성 트리'); sys.exit(0)\n", encoding="utf-8")
     _git(work, "add", "-A")
     _git(work, "commit", "-q", "-m", "tools")
     _git(work, "push", "-q", "origin", "HEAD:refs/heads/part/infra", "HEAD:refs/heads/dev")
@@ -289,7 +289,7 @@ def _resume_world(tmp: Path, main_has_infra: bool):
     _git(work, "switch", "-q", "-c", "part/infra", "origin/part/infra")
     bin_ = tmp / "bin"
     bin_.mkdir()
-    (bin_ / "gh").write_text(_FAKE_GH)
+    (bin_ / "gh").write_text(_FAKE_GH, encoding="utf-8")
     (bin_ / "gh").chmod(0o755)
     return work, inbox, bin_
 
@@ -335,8 +335,8 @@ def test_fl_resume_archives_leftover_package(tmp_path):
     """스쿼시 직후 · 포장물을 치우기 전에 끊겼으면 --resume 이 치운다. 남기면 다음 --all 이
     또 집는다. 제목이 머지된 PR 과 같을 때만 이 배치 것으로 본다(독립 검토 2026-09-22)."""
     work, inbox, bin_ = _resume_world(tmp_path, main_has_infra=False)
-    (tmp_path / "0001-fix.patch").write_text("From a\nSubject: ours\n")
-    (tmp_path / "PR_TITLE").write_text("제목\n")                 # 가짜 gh 의 pr view 가 「제목」
+    (tmp_path / "0001-fix.patch").write_text("From a\nSubject: ours\n", encoding="utf-8")
+    (tmp_path / "PR_TITLE").write_text("제목\n", encoding="utf-8")                 # 가짜 gh 의 pr view 가 「제목」
     _zip(inbox / "fire-lane-x.zip", tmp_path / "0001-fix.patch", tmp_path / "PR_TITLE")
     shutil.copy(tmp_path / "0001-fix.patch", inbox / "0001-fix.patch")
     r = _resume(work, inbox, bin_, GH_MERGED="7")
@@ -349,8 +349,8 @@ def test_fl_resume_archives_leftover_package(tmp_path):
 @pytest.mark.skipif(not shutil.which("unzip"), reason="환경skip(도구) — unzip 이 없다(fl.sh 가 쓴다)")
 def test_fl_resume_keeps_other_batch_package(tmp_path):
     work, inbox, bin_ = _resume_world(tmp_path, main_has_infra=False)
-    (tmp_path / "0001-fix.patch").write_text("From a\nSubject: next\n")
-    (tmp_path / "PR_TITLE").write_text("다음 배치\n")
+    (tmp_path / "0001-fix.patch").write_text("From a\nSubject: next\n", encoding="utf-8")
+    (tmp_path / "PR_TITLE").write_text("다음 배치\n", encoding="utf-8")
     _zip(inbox / "fire-lane-y.zip", tmp_path / "0001-fix.patch", tmp_path / "PR_TITLE")
     r = _resume(work, inbox, bin_, GH_MERGED="7")
     assert r.returncode == 0, r.stdout + r.stderr
