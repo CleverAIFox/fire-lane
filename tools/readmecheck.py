@@ -41,8 +41,9 @@ from __future__ import annotations
 
 import argparse
 import re
-import subprocess
 from pathlib import Path
+
+from firelane import gitq
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web"
@@ -57,7 +58,7 @@ EXEMPT_WEB: dict[str, str] = {
 }
 
 
-def web_entries() -> list[str]:
+def web_entries() -> list[str] | None:
     """`web/` 의 **추적된** 최상위 항목. 폴더는 `/` 를 붙인다.
 
     ── 왜 추적된 것만 세나 (2026-09-30 실기) ────────────────────
@@ -71,12 +72,14 @@ def web_entries() -> list[str]:
     ★ 그리고 이 표가 문서로서 설명하려는 것도 **저장소에 있는 것**이다. 굽는
       순간에만 생기는 파일은 그것을 굽는 행(`proposal.html`)이 이미 적는다.
     """
-    out = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z", "web/"],
-                         capture_output=True, text=True)
-    if out.returncode != 0:
-        return []
+    # ★ 2026-10-03 (DECISIONS §372). 종전에는 `rc != 0` 에 `[]` 를 돌려줬다 —
+    #   그러면 「web/ 에 아무것도 없다」가 되고 이 표 검사가 **분모 0 으로
+    #   초록**이 된다. 못 물었으면 `None` 이고, 부르는 쪽이 가른다.
+    stdout = gitq.ask(["-C", str(ROOT), "ls-files", "-z", "web/"])
+    if stdout is None:
+        return None
     top: dict[str, bool] = {}
-    for rel in out.stdout.split("\0"):
+    for rel in stdout.split("\0"):
         if not rel.startswith("web/"):
             continue
         rest = rel[len("web/"):]
@@ -121,6 +124,9 @@ def web_faults() -> list[str]:
         return ["`web/README.md` 가 없다"]
     said = table_names(WEB_DOC.read_text(encoding="utf-8"))
     real = web_entries()
+    if real is None:
+        # ★ §372. 못 물었으면 **0 이라고 말하지 않는다.** 분모 0 은 초록이 된다
+        return ["git 이 `web/` 목록을 못 줬다 — 이 표 검사의 분모가 없다(§372)"]
     bad = []
     for name in real:
         if name in EXEMPT_WEB or name.rstrip("/") in EXEMPT_WEB:
@@ -181,6 +187,8 @@ def step_faults() -> list[str]:
 
 def check() -> list[str]:
     real = web_entries()
+    if real is None:
+        return web_faults()
     print(f"web 최상위 {len(real)}개 · 면제 {len(EXEMPT_WEB)}개 · "
           f"단계 {len(real_steps())}개")
     return web_faults() + step_faults()
@@ -191,8 +199,11 @@ def selftest() -> int:
 
     # ★ 그물이 비지 않았는가 — 양쪽 다 실물을 읽는가
     got = web_entries()
-    if not got:
-        fails.append("`web/` 를 못 읽는다 — git 이 없거나 훑기가 비었다")
+    if got is None:
+        fails.append("git 이 `web/` 목록을 못 줬다 — 못 물은 것이지 0 이 아니다(§372)")
+        got = []
+    elif not got:
+        fails.append("`web/` 가 비었다 — 훑기가 실물과 갈렸다")
     # ★ **생성물을 세면 안 된다.** 기계마다 있고 없다 — 배달 예습(빈 워크트리)에서
     #   이 도구가 거기서 죽었다. 굽는 파일 이름이 목록에 들면 그 관문은 기계마다
     #   다르게 옳다(§319-4 와 같은 결함).

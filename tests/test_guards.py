@@ -100,8 +100,8 @@ def test_lineage_blocks_orphan_derived_output(tmp_path):
     """
     st = {k: "OK" for k in CRITICAL}
     d = _manifest(tmp_path, outputs={"ngii1k": ["ngii1k_5186.gpkg"]}, **st)
-    (d / "ngii1k_5186.gpkg").write_text("new")
-    (d / "ngii1k_xsec_5186.gpkg").write_text("낡음")     # 대장에 없다
+    (d / "ngii1k_5186.gpkg").write_text("new", encoding="utf-8")
+    (d / "ngii1k_xsec_5186.gpkg").write_text("낡음", encoding="utf-8")     # 대장에 없다
     with pytest.raises(GuardFailure, match="xsec"):
         lineage_check(d)
 
@@ -111,8 +111,8 @@ def test_lineage_ok_when_all_outputs_declared(tmp_path):
     d = _manifest(tmp_path,
                   outputs={"ngii1k": ["ngii1k_5186.gpkg", "ngii1k_xsec_5186.gpkg"]},
                   **st)
-    (d / "ngii1k_5186.gpkg").write_text("new")
-    (d / "ngii1k_xsec_5186.gpkg").write_text("new")
+    (d / "ngii1k_5186.gpkg").write_text("new", encoding="utf-8")
+    (d / "ngii1k_xsec_5186.gpkg").write_text("new", encoding="utf-8")
     lineage_check(d)
 
 
@@ -129,7 +129,7 @@ def test_lineage_ignores_outputs_of_failed_key(tmp_path):
     """FAIL 한 key 의 outputs 는 이번 계보로 치지 않는다."""
     st = {k: "OK" for k in CRITICAL}
     d = _manifest(tmp_path, outputs={"cctv": ["cctv_5186.gpkg"]}, **{**st, "cctv": "FAIL"})
-    (d / "cctv_5186.gpkg").write_text("x")
+    (d / "cctv_5186.gpkg").write_text("x", encoding="utf-8")
     with pytest.raises(GuardFailure):
         lineage_check(d)
 
@@ -174,8 +174,8 @@ def test_critical_probe_is_alive():
 def test_quarantine_renames_not_deletes(tmp_path):
     """삭제가 아니라 개명이다. 옛 파일은 진단의 증거다(08-18 실제로 봤다)."""
     for n in ("ngii1k_5186.gpkg", "ngii1k.geojson", "ngii1k_north_5186.gpkg"):
-        (tmp_path / n).write_text("x")
-    (tmp_path / "road_link_5186.gpkg").write_text("keep")
+        (tmp_path / n).write_text("x", encoding="utf-8")
+    (tmp_path / "road_link_5186.gpkg").write_text("keep", encoding="utf-8")
 
     staled = quarantine_stale(tmp_path, "ngii1k", tag="20260818")
 
@@ -187,11 +187,11 @@ def test_quarantine_renames_not_deletes(tmp_path):
 
 def test_quarantine_is_rerunnable(tmp_path):
     """두 번 돌려도 죽지 않는다. 같은 날 두 번 FAIL 날 수 있다."""
-    (tmp_path / "cctv.geojson").write_text("a")
+    (tmp_path / "cctv.geojson").write_text("a", encoding="utf-8")
     quarantine_stale(tmp_path, "cctv", tag="20260818")
-    (tmp_path / "cctv.geojson").write_text("b")
+    (tmp_path / "cctv.geojson").write_text("b", encoding="utf-8")
     quarantine_stale(tmp_path, "cctv", tag="20260818")
-    assert (tmp_path / "cctv.geojson.stale_20260818").read_text() == "b"
+    assert (tmp_path / "cctv.geojson.stale_20260818").read_text(encoding="utf-8") == "b"
 
 
 def test_quarantine_noop_when_nothing(tmp_path):
@@ -2226,6 +2226,54 @@ def test_strict_lint_args_have_one_home():
         "엄격 린트 인자가 두 곳에 있다\n"
         + "\n".join("  · " + b for b in bad)
         + "\n\n  정본은 .ruff-strict.toml 다. 둘 다 @ 로 읽는다.")
+
+
+def test_strict_lint_ignores_carry_a_reason():
+    """**끈 규칙마다 사유가 적혀 있는가.** (§371)
+
+    ★ `.ruff-strict.toml` 머리말은 「끄는 근거를 각각 적는다」고 선언한다.
+      그 선언의 강제자가 **0 이었다.** 선언만 있고 강제자가 없으면 그 선언은
+      다음 사람이 바쁠 때 깨진다 — 이 저장소가 반복해 배운 그 모양이다.
+
+    ★ `S` 를 켜면서 끄는 규칙이 여덟에서 열하나가 됐다. 끈 목록은 **저절로
+      자라는 성질**이 있다: 새 규칙이 빨간불을 내면 고치는 것보다 끄는 것이
+      싸다. 그 길에 사유를 적는 값을 세운다.
+
+    ★ **사유가 옳은가는 안 본다.** 「S101 은 테스트 언어다」가 옳은 판단인지는
+      사람이 본다. 여기 드는 것은 「이름이 주석에 적혀 있는가」 하나다 —
+      적지 않고 끌 수는 없게 만드는 것이 목적이다.
+    """
+    import tomllib
+    cfg = ROOT / ".ruff-strict.toml"
+    txt = cfg.read_text(encoding="utf-8")
+    d = tomllib.loads(txt)
+
+    # 주석 줄만 모은다. 값 줄에 규칙 이름이 있는 것은 **사유가 아니다**
+    prose = "\n".join(ln for ln in txt.splitlines() if ln.lstrip().startswith("#"))
+
+    killed: list[tuple[str, str]] = [
+        (c, "[lint].ignore") for c in d.get("lint", {}).get("ignore") or []]
+    for pat, codes in (d.get("lint", {}).get("per-file-ignores") or {}).items():
+        killed += [(c, f"per-file-ignores[{pat}]") for c in codes]
+
+    assert killed, "끈 규칙이 0 이다 — 이 검사가 빈 그물이다"
+    bad = [f"{c}  ({where}) — 주석에 사유가 없다" for c, where in killed
+           if c not in prose]
+    assert not bad, (
+        ".ruff-strict.toml 이 사유 없이 규칙을 끈다\n"
+        + "\n".join("  · " + b for b in bad)
+        + "\n\n  이 파일 머리말은 「끄는 근거를 각각 적는다」고 선언한다.\n"
+        "  규칙 이름을 주석에 적고 **한 줄로 왜인지** 써라. 못 쓰겠으면\n"
+        "  그 규칙은 끌 것이 아니라 고칠 것이다.")
+
+    # ★ 양성 대조. 없는 규칙을 끼워 넣으면 **반드시** 잡혀야 한다
+    assert "ZZZ999" not in prose, "대조용 이름이 실제로 쓰였다 — 다른 이름을 골라라"
+
+    # ★ 보안 규칙군이 실제로 켜져 있는가. 2026-10-03 에 켰고, 끄는 쪽으로
+    #   되돌리면 평문 키 사고의 교훈이 사라진다(§371).
+    assert "S" in (d.get("lint", {}).get("select") or []), (
+        "보안 규칙군 `S` 가 꺼졌다 — §371 이 스물을 처리하고 켠 자리다.\n"
+        "  되돌릴 사유가 있으면 DECISIONS 에 적고 이 줄을 같이 고쳐라.")
 
 
 def test_generators_end_json_with_newline():

@@ -193,6 +193,20 @@ def check() -> int:
     print(f"일방통행 {c.get('oneway', 0)} · 방향 아는 것 {c.get('oneway_dir_known', 0)}"
           f" · 회전금지 {c.get('turn_bans', 0)}"
           + (f" / 원천 {rows}행" if rows is not None else " / 원천은 레이크에 있다"))
+    # ★ 2026-10-03 (§367). **모름의 사유를 찍는다.** 「56이 모름」만으로는 다음에
+    #   무엇을 고쳐야 하는지 알 수 없다 — 양방향이라 모르는 것(옳다)과 표준노드링크가
+    #   그 골목을 안 드는 것(매칭 범위)과 버퍼 조율은 **다른 일**이다.
+    #   `publish_navi` 가 그 칸을 내기 전에 구운 그래프에는 없다 — 그때는 그렇게 적는다.
+    nl = c.get("oneway_nl")
+    if isinstance(nl, dict):
+        print("  방향 모름의 사유 —"
+              f" 양방향 {nl.get('nl_twoway', 0)}"
+              f" · 링크 없음 {nl.get('nl_none', 0)}"
+              f" · 좁게↔넓게 갈림 {nl.get('nl_split', 0)}"
+              f" · node_link 없음 {nl.get('nl_absent', 0)}")
+    else:
+        print("  방향 모름의 사유 — **아직 모른다.** 이 그래프는 `oneway_nl` 칸이"
+              " 생기기 전에 구워졌다(§367). 다음 발행이 낸다.")
 
     rc = 0
     print()

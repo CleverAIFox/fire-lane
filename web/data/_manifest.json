@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T22:48:17+09:00",
+  "generated_at": "2026-10-03T21:49:24+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
@@ -45,8 +45,8 @@
       "bytes": 78926
     },
     "navi_graph.json": {
-      "sha256": "56a767e612118596a338a191c11e61fca95e77c93f141b150225d7ec59b37eed",
-      "bytes": 583445
+      "sha256": "2f6cb6e1028256fd1ff7cbfd4d75a0c344339728058d023c11ddede346882116",
+      "bytes": 583514
     },
     "poi.geojson": {
       "sha256": "22021841393291d478f11dc0acaf8604d2c70bb784e7fad205530a602f7d04ec",

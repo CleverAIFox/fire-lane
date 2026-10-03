@@ -366,6 +366,12 @@ jobs:
         run: uv run python tools/docstyle.py
       - name: 문서 말투
         run: uv run python tools/tonecheck.py
+      - name: 문서가 적은 시험 수
+        run: uv run python tools/countcheck.py
+      - name: 구조 묶음 선언
+        run: uv run python tools/archcost.py
+      - name: 회색 어휘 구멍
+        run: uv run python tools/greycheck.py
       - name: 사유 없는 억제
         run: uv run python tools/suppress.py
       # ★ 로컬에서는 파이프라인 재실행 **뒤에** 돌아 「새 산출 = golden」을 묻는다. 여기서는
@@ -397,6 +403,10 @@ jobs:
       #   그래서 로컬 전용이 아니라 여기도 든다 — 그 그래프가 발행본이기 때문이다.
       - name: 내비 그래프 결함 (측정 미결 넷)
         run: uv run python tools/navicheck.py
+      # ★ 2026-10-03 (§362). 수리 경로가 있는데 문에 안 걸린 단계가 있는가.
+      #   읽기만 한다 — CI 에서 **고치지 않는다**(쓰고 나서 재면 영영 초록이다).
+      - name: 수리 문 (기계가 고칠 수 있는데 문 밖인 것)
+        run: uv run python tools/fixable.py
       - name: PLAN 번호·참조 정합
         run: uv run python tools/plan_renumber.py
       - name: 문서 제목 무결
@@ -468,10 +478,13 @@ jobs:
         #   릴리즈가 죽을 때까지 아무도 몰랐다 — 이 저장소가 반복해 겪은
         #   "초록불인데 실제로는 안 되는" 그 형태다.
         #
-        # ★ 빌드가 아니라 **타입만** 본다. `vite build` 는 MAPBOX_TOKEN 이
-        #   필요하고 그 시크릿은 배포 환경에만 있다. 이번 사고는 타입
-        #   단계에서 잡혔으므로 게이트는 여기까지가 맞다. 빌드는 배포
-        #   액션이 계속 맡는다(정본을 둘로 만들지 않는다 — R3).
+        # ★ 2026-10-03 (DECISIONS §366-2). **빌드까지 본다.** 종전에 이 자리가
+        #   「빌드가 아니라 타입만 본다 — `vite build` 는 MAPBOX_TOKEN 이
+        #   필요하고 그 시크릿은 배포 환경에만 있다」고 적었다. 그 전제가
+        #   틀렸다 — 토큰을 읽던 파일이 번들에 없었고(아무도 import 안 했다)
+        #   그 관문을 걷자 **빌드가 시크릿 없이 8초에 돈다.** 이 잡이 생긴
+        #   사유가 바로 「타입은 통과했는데 빌드가 main 에서 죽었다」이므로,
+        #   그 사고를 정확히 잡는 단계는 타입이 아니라 **빌드**다.
         #
         # ★ `npm ci` 다. `install` 은 잠금을 갱신할 수 있다.
         #
@@ -491,6 +504,11 @@ jobs:
           #   억제 안 하고 있었고 나머지가 진짜 결함 다섯을 가리고 있었다.
           npm run lint
           npm run typecheck
+          # ★ `build` 가 `tsc -b && vite build` 다 — 위 `typecheck` 와 겹치지만
+          #   겹침이 아니라 **다른 물음**이다. `tsc --noEmit` 은 프로젝트 참조를
+          #   안 타고, `vite build` 는 번들러가 실제로 묶을 수 있는가를 본다
+          #   (maplibre 5→6 이 죽은 자리가 그쪽이다).
+          npm run build
 
       - name: ★ 내비 단위 시험 (위치 추정 · 턴바이턴)
         # ★ 2026-09-22 (§213-3). 화면 검수로는 폐루프가 안 보인다 — 시뮬레이션은

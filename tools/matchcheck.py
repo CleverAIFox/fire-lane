@@ -59,8 +59,13 @@ def match(coords, token, radius=None, timeout=20):
     if radius:
         q["radiuses"] = ";".join([str(radius)] * len(coords))
     url = API + urllib.parse.quote(path) + "?" + urllib.parse.urlencode(q)
+    # ★ 2026-10-03 (§371). `urlopen` 은 `file:` · 사용자 스킴도 연다. 여기 URL 은
+    #   상수 `API` 로 시작하므로 지금은 안전하지만, **그 상수가 언젠가 인자가
+    #   되는 날** 이 줄이 유일한 방벽이다. 믿지 말고 묶는다.
+    if not url.startswith("https://api.mapbox.com/"):
+        return ("BAD_URL", None, 0, url[:60])
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as r:
+        with urllib.request.urlopen(url, timeout=timeout) as r:  # noqa: S310 — 위 ★ 가 스킴을 묶는다
             d = json.loads(r.read().decode())
     except Exception as e:  # noqa: BLE001 — 어떤 실패든 행으로 남긴다
         return ("EXC", None, 0, str(e)[:60])
@@ -105,7 +110,7 @@ def main():
     if a.all:
         pick = list(feats)
     else:
-        rnd = random.Random(SEED)
+        rnd = random.Random(SEED)  # noqa: S311 — 재현용 층화표집이다. 암호가 아니다
         per = max(1, a.n // max(1, len(strata)))
         pick = []
         for k in sorted(strata):

@@ -87,7 +87,7 @@ def _load_links() -> list:
             d = json.load(c.open(encoding="utf-8"))
             if d.get("features"):
                 return d["features"]
-        except Exception:  # noqa: BLE001 — 다음 후보를 본다
+        except Exception:  # noqa: BLE001, S112 — 다음 후보를 본다
             continue
     return []
 

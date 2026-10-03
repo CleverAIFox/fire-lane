@@ -456,7 +456,7 @@ def main() -> int:
 
     print(f"합계 {len(HITS)}건")
     json.dump({"total": len(HITS), "hits": HITS},
-              open(ROOT / "LAKELIST.json", "w"), ensure_ascii=False, indent=1)
+              open(ROOT / "LAKELIST.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print("LAKELIST.json 기록")
 
     if a.selftest:

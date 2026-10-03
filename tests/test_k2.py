@@ -263,7 +263,12 @@ def test_verify_skips_are_real_skips():
                "취입 계약 실물", "대장 스키마↔실물",
                # ★ 2026-09-28 (§289). 파이프라인 산출물(processed/*.gpkg)을 읽는다.
                #   레이크 없는 기계에서는 산출물이 없다 — CI 도 같다.
-               "폭 교차대조"}
+               "폭 교차대조",
+               # ★ 2026-10-03 (DECISIONS §376). 트리 전수는 `gitleaks` 바이너리를
+               #   쓴다 — 없는 기계에서는 `note` 로 **미측정을 센다.** 조용히
+               #   빠지면 「검사했다」와 「검사기가 없었다」가 같은 초록이 된다.
+               #   바이너리 없이도 막히는 한 모양은 `UUID_IN_TRACKED` 가 든다.
+               "비밀값 — 작업 트리 전수"}
     assert set(names) <= allowed, f"생략 사유가 새로 생겼다 — 못 도는 조건인지 보고 여기 적는다: {sorted(set(names) - allowed)}"
     brief = (ROOT / "tools/merge_batch.sh").read_text(encoding="utf-8")
     assert "tools/release_brief.py --base main --md" in brief, "release_brief 가 릴리즈 흐름에서도 빠졌다 — 표가 사라진다"

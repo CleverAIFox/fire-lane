@@ -55,6 +55,8 @@ from pathlib import Path
 
 from docsealfp import FP_METHOD, LEGACY_VIEWS, _generated, claim, digest, parts, view, view_v1
 
+from firelane import gitq
+
 ROOT = Path(__file__).resolve().parents[1]
 SEAL = ROOT / "data" / "golden" / "docseal.json"
 
@@ -139,9 +141,17 @@ def _tracked() -> frozenset[str]:
       매번 바뀌는 것은 그 신호를 0 으로 만든다. 그 자리는 `freshcheck` ·
       `golden` 이 따로 든다.
     """
-    r = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
-                       capture_output=True, text=True, check=False)
-    return frozenset(x for x in r.stdout.split("\0") if x)
+    # ★ 2026-10-03 (DECISIONS §372). 종전에는 `check=False` 로 돌리고 `stdout`
+    #   을 그대로 갈랐다. git 이 없거나 저장소가 아니면 **빈 집합**이 되고,
+    #   그러면 「추적되는 파일이 하나도 없다」가 되어 도장 대상이 0 이 된다 —
+    #   `UNSEALED` 가 0 이고 `무효 0` 인 **빈 그물 초록**이다. 못 물었으면 터진다.
+    t = gitq.tracked(ROOT)
+    if t is None:
+        raise RuntimeError(
+            "git 이 추적 목록을 못 줬다 — 도장의 기반이 **추적되는 파일**이므로"
+            " 못 물으면 이 도구는 아무것도 말할 수 없다(§372).\n"
+            "  git rev-parse --is-inside-work-tree 로 확인하라")
+    return t
 
 
 #: 공식 판 → 그 판의 관점 함수. `why` 가 **저장된 판으로** 조각을 다시 낼 때 쓴다.
@@ -223,7 +233,7 @@ DEFAULT_KIND = "read"
 #: 195가 두 배치째 한 절도 안 움직였고, 아무 관문도 울지 않았다. 세는 자리가
 #: 없으면 안 줄어든다(`sizecheck` 머리말이 같은 것을 적는다).
 #: ★ 새 절을 쓰면 이 수가 는다 — 그것이 빨강이고, 고침은 그 절을 읽고 찍는 것이다.
-UNSEALED = 46
+UNSEALED = 0
 RATCHETS = {"UNSEALED": "down"}
 
 
@@ -240,10 +250,17 @@ def _git_ct(*args: str) -> int:
 
 def _blame(doc: str) -> list[int]:
     """문서 한 장의 **줄마다 마지막으로 바뀐 시각**. 문서당 한 번만 부른다."""
-    r = subprocess.run(["git", "blame", "-t", "--line-porcelain", doc],
-                       cwd=ROOT, capture_output=True, text=True)
+    # ★ 2026-10-03 (DECISIONS §372). `_git_ct` 는 **바로 위에서 rc 를 본다.**
+    #   같은 파일 · 같은 꼴인데 이쪽만 안 봤다 — 쌍둥이 중 한쪽만 적힌 그 모양이다.
+    #   빈 목록이면 모든 줄의 시각이 0 이 되고, 그러면 `moved_after` 가 **전부
+    #   「코드가 절보다 나중」**으로 읽어 읽을 절 목록이 거짓이 된다.
+    sout = gitq.ask(["blame", "-t", "--line-porcelain", doc], cwd=ROOT)
+    if sout is None:
+        raise RuntimeError(
+            f"git blame 이 `{doc}` 을 못 읽었다 — 줄별 시각이 없으면 읽을 절"
+            " 순서를 말할 수 없다(§372)")
     out, cur = [], 0
-    for ln in r.stdout.splitlines():
+    for ln in sout.splitlines():
         if ln.startswith("author-time "):
             cur = int(ln.split()[1])
         elif ln.startswith("\t"):
@@ -429,6 +446,29 @@ def _write(was: dict) -> None:
                     encoding="utf-8")
 
 
+def _untracked_refs(bodies: dict[str, str],
+                    only: list[str]) -> dict[str, list[str]]:
+    """찍으려는 절이 지목하는데 **git 이 아직 모르는** 파일. (§372-7)
+
+    `refs()` 는 추적 밖을 걸러내므로 여기서 그 체를 **거치지 않고** 본다 —
+    절에 적힌 경로가 디스크에 있는데 추적 밖이면 그것이 덫이다.
+
+    ★ 우주는 `survey` 의 `fs` 와 **같아야 한다** — 즉 `claim()` 이 아니라
+      **본문 전체**다(강제자 칸 포함). `claim` 은 「대상인가」를 가르는 체이고
+      지문에 들어가는 파일 목록은 본문 전체에서 온다. 체를 잘못 고르면 이
+      관문이 바로 그 자리를 못 본다 — 실측에서 처음 그렇게 지었고 §372 의
+      `git_empty.py` 가 **강제자 칸에만** 있어 안 걸렸다.
+    """
+    t = _tracked()
+    out: dict[str, list[str]] = {}
+    for s in only:
+        pend = sorted({p for p in PATH.findall(bodies.get(s) or "")
+                       if (ROOT / p).is_file() and p not in t and not _generated(p)})
+        if pend:
+            out[s] = pend
+    return out
+
+
 def stamp(only: list[str] | None, unmoved: bool = False,
           fill: bool = False) -> int:
     """도장을 찍는다. **인자 없이는 안 찍는다.**
@@ -456,6 +496,23 @@ def stamp(only: list[str] | None, unmoved: bool = False,
         if miss:
             for s in miss:
                 print(f"✗ `{s}` 는 도장 대상이 아니다 (wired 이고 코드를 지목해야 한다)")
+            return 1
+        # ★ 2026-10-03 (DECISIONS §372-7). **아직 추적 안 되는 파일을 지목한 절은
+        #   안 찍는다.** `refs()` 는 `_tracked()` 로 걸러므로(§278-10), 새 파일을
+        #   `git add` 하기 **전에** 찍으면 그 파일이 지문에 안 들어간다. 커밋이
+        #   그것을 추적하는 순간 지목이 늘고 도장은 **무효**가 된다 —
+        #   배치 X 가 `tools/deadprobes/empty_const.py` 로 실제로 그렇게 깨졌고,
+        #   그 절(§372)을 쓰던 이 배치가 `git_empty.py` 로 **같은 자리에서 또**
+        #   깨졌다. 같은 덫을 두 번 밟으면 그것은 사람의 실수가 아니라 구조다.
+        if (pend := _untracked_refs(bodies, only)):
+            print("✗ 아직 **추적 안 되는** 파일을 지목하는 절이 있다 — 먼저 `git add` 해라")
+            for s, fs in pend.items():
+                print(f"    {s}")
+                for f in fs:
+                    print(f"      + {f}")
+            print("\n  ★ 지금 찍으면 그 파일이 지문에 안 들어가고, 커밋이 추적하는")
+            print("    순간 **도장이 무효**가 된다(§278-10 이 추적 밖을 기반에서 뺀다).")
+            print("    `git add` 뒤에 다시 찍어라 — 순서가 뜻이다.")
             return 1
         for s in only:
             was[s] = {**now[s], "kind": "read"}

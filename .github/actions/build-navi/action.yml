@@ -18,9 +18,6 @@ name: 내비 빌드
 description: web/navi 를 빌드해 web/navi/dist 에 둔다. Pages 아티팩트에 실린다.
 
 inputs:
-  mapbox-token:
-    description: Mapbox public token. 없으면 스냅(Map Matching)이 죽는다.
-    required: true
   ops-url:
     # ★ 2026-10-01 (DECISIONS §342 · §343). 관제 ↔ 내비 중개자의 주소.
     #   **비어도 빌드는 된다** — 전송이 `BroadcastChannel` 로 떨어지고 그것은
@@ -47,20 +44,18 @@ runs:
     - name: 내비 빌드 (web/navi → web/navi/dist)
       shell: bash
       env:
-        VITE_MAPBOX_TOKEN: ${{ inputs.mapbox-token }}
         VITE_OPS_URL: ${{ inputs.ops-url }}
       run: |
-        # ★ 토큰이 없으면 여기서 죽는다. 종전에는 빈 문자열이 들어가고
-        #   `config.ts` 가 `?? ""` 로 받아 **빌드도 배포도 성공했다.**
-        #   런타임에 Map Matching 만 죽는다 — 초록불인데 실제로는 안 되는,
-        #   이 저장소가 반복해 겪은 그 형태다. 원인 자리에서 죽는 편이 낫다.
-        test -n "$VITE_MAPBOX_TOKEN" || {
-          echo "★ MAPBOX_TOKEN 시크릿이 없다."
-          echo "  Settings > Secrets and variables > Actions > New repository secret"
-          echo "  이름 MAPBOX_TOKEN · 값은 Mapbox 의 pk. 토큰"
-          echo "  ★ 번들에 박히므로 Mapbox 쪽에서 URL 제한을 같이 걸어라."
-          exit 1
-        }
+        # ★ 2026-10-03 (DECISIONS §366-2). **Mapbox 토큰 관문을 걷었다.**
+        #   종전에 이 자리가 `VITE_MAPBOX_TOKEN` 이 비면 **배포를 죽였다.**
+        #   그 사유는 「런타임에 Map Matching 만 죽는다 — 초록불인데 실제로는
+        #   안 되는 그 형태다」였고, 그 판단 자체는 옳았다.
+        #
+        #   틀린 것은 전제다 — 그 토큰을 읽는 파일이 `infra/matching.ts` 하나이고
+        #   **아무도 그 파일을 import 하지 않았다.** 번들에 없는 기능을 위해
+        #   배포가 시크릿 하나를 요구하고 있었고, 그래서 **토큰 없는 사람은
+        #   배포를 못 했다.** 파일을 지우면서 이 관문도 같이 걷는다.
+        #   대조 능력은 `tools/matchcheck.py` 가 그대로 든다(루트 `.env`).
 
         # ★ 2026-10-01 (DECISIONS §343-3). **`ws://` 를 여기서 죽인다.**
         #   Pages 는 https 이고 https 페이지는 평문 `ws://` 연결을 **브라우저가
