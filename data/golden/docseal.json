@@ -5440,23 +5440,25 @@
    "sources.yaml",
    "tests/test_doc_fsck.py",
    "tools/deadcheck.py",
+   "tools/deadprobes/empty_const.py",
    "tools/selftests.py"
   ],
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "5ffe6e14b8d578f4",
-   "76793cd473648c37",
-   "a47e8d2a20f5c65c"
+   "24dab38dca35453f",
+   "569af7c4e2d4df06",
+   "7a8b25fe60f911c3"
   ],
   "parts": {
    "sources.yaml": "d753195daca06a38",
    "tests/test_doc_fsck.py": "1d26d0abd9843639",
    "tools/deadcheck.py": "cf0bc5d6f7961fab",
+   "tools/deadprobes/empty_const.py": "e923bef9a9b8cb28",
    "tools/selftests.py": "c47322590da1c28f",
    "본문": "006e8896431960c2"
   },
-  "sha": "accabc3aac0795d4"
+  "sha": "806138f3ee501d83"
  },
  "DECISIONS/36": {
   "doc": "docs/DECISIONS.md",
