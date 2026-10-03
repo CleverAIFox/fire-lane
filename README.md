@@ -305,7 +305,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 **막힌 구간 하나가 뒤쪽 골목 여러 개를 통째로 끊는다.** 폭 15m 대로라도
 진입로가 막히면 소방차가 못 간다.
 
-★ 474 는 지도의 빨강(`verdict` 191)과 **다른 값이다.** 산출 경로가 다르고
+★ 474 는 지도의 빨강(`verdict` 192)과 **다른 값이다.** 산출 경로가 다르고
 판정에도 반영되지 않는다. 셋의 구분은 `MASTER §3-9` 가 든다.
 
 강제자 없음 — 사유: 도달 불가 조인은 tests/test_reach_overlay.py 가 보고 수 대조는 다음 코드 배치다(DECISIONS §167)
@@ -523,7 +523,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 ★ `통행 불가` 192 은 확정 개수가 아니라 **하한**이다. `width_max_m` 결손
 <!--/gen-->
 675건 중 노면 3.0m 미만인데 도로대장 명목폭이 3.0m 이상이거나 없는 92건은 막을 근거가 하나뿐이라 막지 않는다.
-발표 자료에서 191 을 확정으로 쓰지 않는다.
+발표 자료에서 `blocked` 192 를 확정으로 쓰지 않는다.
 
 ★ **측량과 대조한 정확도**(2026-09-16 · DECISIONS §170-4) — NGII 1:1,000 측량 중심선에 엄격 매칭된
 1,041구간(81%)에서 **통행 가능인데 측량폭 3m 미만 0 · 통행 불가인데 측량폭 6m 이상 0**,
@@ -555,7 +555,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 | 파트 | 브랜치 | 볼 곳 | 문서 |
 |---|---|---|---|
 | GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
-| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 226구간 · `cctv.geojson` | MASTER §10-2(판정 4종 · 색값은 `web/config.js`) |
+| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 225구간 · `cctv.geojson` | MASTER §10-2(판정 4종 · 색값은 `web/config.js`) |
 | Infra · API | `part/infra` | 아직 서버 없음 — 배포는 `.github/workflows/deploy.yml` · 배치는 `tools/fl.sh` | README `## 도구` |
 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
