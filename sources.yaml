@@ -3189,13 +3189,27 @@ pending:
 # ── 배경지도 (다운로드 아님, 런타임 타일) ───────────────────
 basemap:
   provider: V-World
-  key: 95E47552-4B32-36AB-885B-E9DC3FCB5352
+  key: 값을 적지 않는다 — 비배선 상태다 (DECISIONS §376 · 아래 note)
   service_url: 등록 필요 (Netlify 배포 후)
   tiles:
     base: https://api.vworld.kr/req/wmts/1.0.0/{KEY}/Base/{z}/{y}/{x}.png
     satellite: https://api.vworld.kr/req/wmts/1.0.0/{KEY}/Satellite/{z}/{y}/{x}.jpeg
     hybrid: https://api.vworld.kr/req/wmts/1.0.0/{KEY}/Hybrid/{z}/{y}/{x}.png
   note: |
+    ★ 2026-09-22 (§218-6) **이 블록은 현역이 아니다.** 이 배경지도를 쓰던 옛 GIS
+      지도를 걷어냈고 관제 · 내비는 V-World 를 안 부른다 — `.env.example` 이
+      적는 대로 **아무 코드도 안 읽는다**(src · tools · web/navi · 워크플로
+      grep 0건). 그 지도의 키 생성물도 같은 날 멈췄고, 배포가 그것이 남아
+      있으면 실패시키며 `tools/tidy.py` 가 찌꺼기로 지운다.
+      다시 배선하는 날의 틀로 남긴다 — 그때 인증키는 `.env` 의 `VWORLD_KEY`
+      로 들어가고(`.env.example` 의 「브라우저 토큰」 칸) 이 파일에는 안 적는다.
+
+    ★ 2026-10-03 (§376). **인증키 값을 이 줄에서 들어냈다.** 위 `key:` 에
+      2026-08-09 부터 평문으로 있었다. §146 이 감수한 것은 **이력**이고
+      (web/config.js · web/index.html, 2026-09-13 에 들어냄), 이 줄은
+      **작업 트리**였다 — 받는 사람마다 복제본에 같이 간다. 다른 사실이다.
+      그 값은 2026-09-12 이전 커밋에도 남아 있어 재발급 대상이다(SECURITY.md).
+
     ★ WMTS 축 순서가 {z}/{y}/{x}다. {z}/{x}/{y}로 쓰면 타일이 어긋난다.
     ★ 인증키 신청서에 WMTS/TMS API + 배경지도 API 체크 필요.
     ★ 브라우저 호출 시 &domain=등록URL 파라미터 필수. 문자열 정확히 일치해야 함.
