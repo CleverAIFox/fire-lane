@@ -2127,13 +2127,15 @@ JSON 을 `web/data` 에 쓰고 내비 · 관제가 `../data/` 로 읽으므로 *
   없으면 죽는다. 낡은 내비가 올라가면 그것이 `web/data` 와 갈리고,
   갈렸다는 것을 아무도 모른다.
 
-★ Mapbox 토큰은 `secrets.MAPBOX_TOKEN` 이다. **없으면 배포가 멈춘다** —
-  `build-navi` 가 `test -n "$VITE_MAPBOX_TOKEN"` 으로 그 자리에서 죽는다.
-  시운전만 더미 토큰(`pk.dry-run-no-secret`)으로 돈다. 소유자가 바뀌면
-  Secret 하나만 갈아끼운다.
-  2026-09-28 정정 — 종전에 「없어도 배포된다 · `MATCHING_ENABLED` 가 false 로
-  떨어진다」고 적혀 있었다. 그때는 빈 문자열이 들어가 빌드도 배포도 성공했고
-  **낡은 내비가 조용히 올라갔다.** 원인 자리에서 죽는 편이 낫다.
+★ **배포는 Secret 을 하나도 안 쓴다**(2026-10-03 · DECISIONS §378).
+  워크플로가 부르는 것은 GitHub 이 자동으로 주는 `GITHUB_TOKEN` 하나뿐이고,
+  그 수는 `tools/ruleset_check.py` 의 `WF_SECRETS` 가 선언으로 든다. 지도 주소는
+  Secrets 가 아니라 **Variables** 다(§343-3) — 공개돼도 손해가 없다.
+  2026-09-28 ~ 10-03 에는 「Mapbox 토큰은 `secrets.MAPBOX_TOKEN` 이고 없으면
+  배포가 멈춘다」고 적혀 있었다. §366 이 고아 `infra/matching.ts` 를 철거하면서
+  그 토큰을 읽는 유일한 파일이 사라졌고, 배포가 쓰지도 않는 시크릿을 요구하던
+  관문도 같이 걷혔다 — **토큰 없는 사람이 배포를 못 하던 상태**였다.
+  대조 능력은 `tools/matchcheck.py` 가 루트 `.env` 로 그대로 든다.
 
 강제자  `tools/verify.sh` 의 「배포에 내비 빌드」 단계 — 사이트를 짓는 워크플로가 **하나**이고 그것이 `stage-site` → `build-navi` 로 가며 배포 · 시운전 둘 다 같은 본문을 태우는가  ★ 2026-09-19 정정 — 종전엔 「42단계」로 **위치**를 들었다. 앞에 단계 하나만 끼우면 이 칸이 조용히 다른 검사를 가리킨다(PLAN §13 W3-5 와 같은 족). `tests/test_verify_citations.py` 가 위치 인용을 막는다
 
@@ -2920,7 +2922,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,587 전수 · **분모(blank) 0절** · 물림(inherit) 736절.
+★ **강제자 칸의 분모.** 절 1,591 전수 · **분모(blank) 0절** · 물림(inherit) 739절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
