@@ -2228,6 +2228,54 @@ def test_strict_lint_args_have_one_home():
         + "\n\n  정본은 .ruff-strict.toml 다. 둘 다 @ 로 읽는다.")
 
 
+def test_strict_lint_ignores_carry_a_reason():
+    """**끈 규칙마다 사유가 적혀 있는가.** (§371)
+
+    ★ `.ruff-strict.toml` 머리말은 「끄는 근거를 각각 적는다」고 선언한다.
+      그 선언의 강제자가 **0 이었다.** 선언만 있고 강제자가 없으면 그 선언은
+      다음 사람이 바쁠 때 깨진다 — 이 저장소가 반복해 배운 그 모양이다.
+
+    ★ `S` 를 켜면서 끄는 규칙이 여덟에서 열하나가 됐다. 끈 목록은 **저절로
+      자라는 성질**이 있다: 새 규칙이 빨간불을 내면 고치는 것보다 끄는 것이
+      싸다. 그 길에 사유를 적는 값을 세운다.
+
+    ★ **사유가 옳은가는 안 본다.** 「S101 은 테스트 언어다」가 옳은 판단인지는
+      사람이 본다. 여기 드는 것은 「이름이 주석에 적혀 있는가」 하나다 —
+      적지 않고 끌 수는 없게 만드는 것이 목적이다.
+    """
+    import tomllib
+    cfg = ROOT / ".ruff-strict.toml"
+    txt = cfg.read_text(encoding="utf-8")
+    d = tomllib.loads(txt)
+
+    # 주석 줄만 모은다. 값 줄에 규칙 이름이 있는 것은 **사유가 아니다**
+    prose = "\n".join(ln for ln in txt.splitlines() if ln.lstrip().startswith("#"))
+
+    killed: list[tuple[str, str]] = [
+        (c, "[lint].ignore") for c in d.get("lint", {}).get("ignore") or []]
+    for pat, codes in (d.get("lint", {}).get("per-file-ignores") or {}).items():
+        killed += [(c, f"per-file-ignores[{pat}]") for c in codes]
+
+    assert killed, "끈 규칙이 0 이다 — 이 검사가 빈 그물이다"
+    bad = [f"{c}  ({where}) — 주석에 사유가 없다" for c, where in killed
+           if c not in prose]
+    assert not bad, (
+        ".ruff-strict.toml 이 사유 없이 규칙을 끈다\n"
+        + "\n".join("  · " + b for b in bad)
+        + "\n\n  이 파일 머리말은 「끄는 근거를 각각 적는다」고 선언한다.\n"
+        "  규칙 이름을 주석에 적고 **한 줄로 왜인지** 써라. 못 쓰겠으면\n"
+        "  그 규칙은 끌 것이 아니라 고칠 것이다.")
+
+    # ★ 양성 대조. 없는 규칙을 끼워 넣으면 **반드시** 잡혀야 한다
+    assert "ZZZ999" not in prose, "대조용 이름이 실제로 쓰였다 — 다른 이름을 골라라"
+
+    # ★ 보안 규칙군이 실제로 켜져 있는가. 2026-10-03 에 켰고, 끄는 쪽으로
+    #   되돌리면 평문 키 사고의 교훈이 사라진다(§371).
+    assert "S" in (d.get("lint", {}).get("select") or []), (
+        "보안 규칙군 `S` 가 꺼졌다 — §371 이 스물을 처리하고 켠 자리다.\n"
+        "  되돌릴 사유가 있으면 DECISIONS 에 적고 이 줄을 같이 고쳐라.")
+
+
 def test_generators_end_json_with_newline():
     """JSON 을 쓰는 코드가 **개행으로 끝맺는가.**
 

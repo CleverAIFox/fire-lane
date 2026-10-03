@@ -91,7 +91,7 @@ RULES: list[tuple[str, list[str], str]] = [
 # ★ 2026-09-22 (DECISIONS §218-4 · 토트 `sweep.py` 모범). 이 저장소의 도구가 /tmp 에 남기는 것.
 #   `verify.sh` 는 단계마다 로그를, `fl.sh` 는 패치 작업 폴더를 남긴다. 아무도 안 치워서 WSL
 #   /tmp 가 배치마다 불었다. **돌고 있는 배치의 것은 안 지운다** — `pgrep` 으로 살아 있는지 본다.
-TMP = Path("/tmp")
+TMP = Path("/tmp")  # noqa: S108 — //tmp 가 이 도구의 **대상**이다. 임시파일을 짓는 게 아니라 치운다
 TMP_RULES: list[tuple[str, list[str], str]] = [
     ("verify 로그", ["verify.log", "verify-[0-9][0-9]-*.log"],
      "`verify.sh` 단계 로그. 다음 실행이 다시 쓴다"),
@@ -126,7 +126,7 @@ def batch_running() -> bool:
 
 def scan_tmp() -> list[tuple[str, Path, int, str]]:
     if batch_running():
-        print(f"  {col('/tmp 은 건너뛴다 — 배치(fl · verify · merge_batch)가 돌고 있다', 'y')}")
+        print(f"  {col('/tmp 은 건너뛴다 — 배치(fl · verify · merge_batch)가 돌고 있다', 'y')}")  # noqa: S108 — 오탐. 경로가 아니라 **안내문**이다
         return []
     out = []
     for name, globs, why in TMP_RULES:

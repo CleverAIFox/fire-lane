@@ -101,7 +101,7 @@ def create_app() -> FastAPI:
                         continue
                     try:
                         await peer.send_text(text)
-                    except Exception:
+                    except Exception:  # noqa: S112, BLE001 — 아래 ★
                         # ★ **한 쪽이 죽어도 나머지는 받는다.** 여기서 터뜨리면
                         #   끊긴 내비 하나가 출동 전체의 통신을 멈춘다. 끊긴
                         #   연결은 제 `finally` 에서 명부를 떠난다.
