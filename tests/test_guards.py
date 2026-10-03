@@ -1366,7 +1366,7 @@ def test_ci_installs_what_the_tests_import():
 
     ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
     installed: set[str] = set()
-    for m in re.finditer(r"pip install ((?:[\w.\-\[\]]+ ?)+)", ci):
+    for m in re.finditer(r"pip install ([\w.\-\[\] ]*)", ci):  # ★ 2026-10-03 되짚기. 옛 `((?:[\w.\-\[\]]+ ?)+)` 는 토큰과 선택적 공백이 `+` 안에 같이 있어 끊는 길이 여럿이었다 — 실측 n=10 66.5ms · n=14 16.9초 · n=18 안 끝남. 수량자 하나면 갈림이 없다(0.001ms 평평)이고 멈추는 자리도 `.split()` 결과도 같다
         for tok in m.group(1).split():
             if tok.startswith("-") or tok == ".":
                 continue

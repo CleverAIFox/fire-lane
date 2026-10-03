@@ -266,6 +266,35 @@ def test_manual_insertion_instruction_is_gone():
     assert not out, f"안내가 아직 손 작업을 시킨다: {out}"
 
 
+def _old_accepts(s: str) -> bool:
+    """옛 꼴 `^[a-z][a-z0-9_]*(\\.py)?( --?[a-z-]+)*$` 를 **정규식 없이** 받아들인다. (§377)
+
+    옛 꼴을 `re.compile` 해 두면 그 되짚기가 저장소에 그대로 남는다 — CodeQL 이
+    `tests/test_docx_targets.py:282` 에서 high 로 물었다. 대조군은 **언어**가
+    필요한 것이지 **그 엔진**이 필요한 게 아니다.
+
+    ★ 토큰 경계가 공백이고 `[a-z-]` 에 공백이 없다. 그래서 **먼저 쪼갠다** —
+      바깥 `*` 가 사라지므로 되짚기가 생길 자리가 없다.
+    ★ `--?` 가 하이픈을 하나 먹느냐 둘 먹느냐 — **그 갈림이 원래 결함의 씨앗**이다.
+      여기서는 루프 안의 되짚기가 아니라 **분기 둘**로 적는다. 길이에 선형이다.
+      (`--` 한 토큰은 둘째 갈래로만 산다 — 첫 갈래는 `[a-z-]+` 가 빌 수 없어 진다.)
+    """
+    def _body(x: str) -> bool:
+        return bool(x) and all("a" <= c <= "z" or c == "-" for c in x)
+
+    head, *rest = s.split(" ")
+    if not re.fullmatch(r"[a-z][a-z0-9_]*(\.py)?", head):
+        return False
+    for tok in rest:
+        if not tok.startswith("-"):
+            return False
+        if _body(tok[1:]):
+            continue
+        if not (tok[1:2] == "-" and _body(tok[2:])):
+            return False
+    return True
+
+
 def test_tool_token_pattern_is_unchanged():
     """`SKIP` 의 도구 꼴을 **되짚기 안 새게** 고쳤다 — 뜻이 그대로인가. (§360)
 
@@ -275,11 +304,21 @@ def test_tool_token_pattern_is_unchanged():
 
     ★ 뜻이 같다는 것을 말로 적지 않고 **전수로 센다.** 알파벳 다섯(` -ab.`)
       으로 길이 6 까지 전부, 그리고 무작위 60,000개.
+
+    ★ 2026-10-03 (DECISIONS §377). **고친 꼴을 이 시험이 그대로 들고 있었다.**
+      `old` 를 `re.compile` 해 두었고, CodeQL 이 그것을 물었다 —
+
+          tests/test_docx_targets.py:282  high
+          "may cause exponential backtracking on strings starting with
+           'a -' and containing many repetitions of '-- -'"
+
+      §360 이 고친 우주는 **`SKIP` 의 그 한 줄**이었고, 실제 우주는 **이 배치가
+      싣는 모든 정규식**이었다. 대조군을 정규식으로 둘 이유가 없다 — 옛 언어를
+      **손으로 받아들이는 함수**로 적는다. 되짚기가 아니라 **분기 둘**이다.
     """
     import itertools
     import random
 
-    old = re.compile(r"^[a-z][a-z0-9_]*(\.py)?( --?[a-z-]+)*$")
     new = re.compile(r"^[a-z][a-z0-9_]*(\.py)?( -[a-z-]+)*$")
     assert new.pattern in SKIP.pattern, "SKIP 이 더는 이 꼴을 안 쓴다 — 시험을 맞춰라"
 
@@ -287,14 +326,31 @@ def test_tool_token_pattern_is_unchanged():
     for L in range(7):
         for tup in itertools.product(" -ab.", repeat=L):
             s = "d" + "".join(tup)
-            if bool(old.match(s)) != bool(new.match(s)):
+            if _old_accepts(s) != bool(new.match(s)):
                 split.append(s)
     random.seed(7)
     for _ in range(60_000):
         s = "".join(random.choice(" -abz.py_0") for _ in range(random.randint(1, 14)))
-        if bool(old.match(s)) != bool(new.match(s)):
+        if _old_accepts(s) != bool(new.match(s)):
             split.append(s)
     assert not split, f"두 꼴이 갈린다 {split[:5]}"
+
+
+def test_the_retired_pattern_is_not_compiled_anywhere():
+    """★ 음성 대조 — 옛 꼴이 **어디서도 다시 컴파일되지 않는가.** (§377)
+
+    이 시험 파일이 그것을 들고 있다가 CodeQL high 를 받았다. 다시 들어오면
+    여기서 운다 — 사람이 기억할 일로 두지 않는다.
+    """
+    # ★ 바늘을 **조립한다.** 그대로 적으면 이 줄이 제 그물에 걸린다 —
+    #   처음 짰을 때 실제로 347행에서 자기를 물었다.
+    needle = "--?" + "[a-z-]+"
+    src = Path(__file__).read_text(encoding="utf-8")
+    bad = [i for i, ln in enumerate(src.splitlines(), 1)
+           if needle in ln and "re.compile" in ln]
+    assert not bad, (
+        f"{bad} 행이 옛 꼴을 다시 컴파일한다 — `_old_accepts` 를 써라.\n"
+        "  `( --?[a-z-]+)*` 는 `*` 안의 갈림 때문에 되짚기가 샌다(CodeQL high).")
 
 
 def test_the_tool_token_pattern_does_not_blow_up():
