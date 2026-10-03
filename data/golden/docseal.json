@@ -6449,22 +6449,52 @@
  "DECISIONS/366": {
   "doc": "docs/DECISIONS.md",
   "files": [
+   "tools/countcheck.py",
    "tools/matchcheck.py",
-   "tools/naviweight.py"
+   "tools/naviweight.py",
+   "web/navi/test/reroute.test.ts",
+   "web/navi/test/wiring.test.ts"
   ],
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "039e6f0854f9c8f6",
-   "039e6f0854f9c8f6",
-   "039e6f0854f9c8f6"
+   "3ad6e9a3d0d7d178",
+   "080ed5651089a30a",
+   "080ed5651089a30a"
   ],
   "parts": {
+   "tools/countcheck.py": "8f739b6abd5d00a5",
    "tools/matchcheck.py": "e5f450f0e2b3dae3",
    "tools/naviweight.py": "caa739453c26eb8d",
-   "본문": "96960d4ba58bd1bc"
+   "web/navi/test/reroute.test.ts": "67d1cd0d4304437b",
+   "web/navi/test/wiring.test.ts": "fea60abf511cef76",
+   "본문": "1d9fb49f5fe6d8e7"
   },
-  "sha": "039e6f0854f9c8f6"
+  "sha": "3ad6e9a3d0d7d178"
+ },
+ "DECISIONS/367": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "sources.yaml",
+   "src/firelane/publish_navi.py",
+   "tools/navicheck.py",
+   "web/navi/src/domain/rules.ts"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "468f5aa23adeb59a",
+   "468f5aa23adeb59a",
+   "c565a8648891d4d4"
+  ],
+  "parts": {
+   "sources.yaml": "1f51dbbff5df08eb",
+   "src/firelane/publish_navi.py": "47c2ce3892b263ee",
+   "tools/navicheck.py": "a4b0e9c5fe3290ca",
+   "web/navi/src/domain/rules.ts": "b73750a6559d075a",
+   "본문": "c32b01690148fe4f"
+  },
+  "sha": "c565a8648891d4d4"
  },
  "DECISIONS/37": {
   "doc": "docs/DECISIONS.md",
@@ -8154,9 +8184,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "82b0fbce1395c679",
-   "77f2ed2e8e8698b4",
-   "729bdcd7352cacff"
+   "5bad06f1729c715e",
+   "4d5e607cf7c1b6c6",
+   "29a8c9cd15ba249f"
   ],
   "parts": {
    "src/firelane/seg/params.py": "53df7ea2ea107fd6",
@@ -8179,9 +8209,9 @@
    "web/config.js": "ed851b78a3c520eb",
    "web/navi/src/domain/vehicle.ts": "449e1612784f93ec",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "e13a9e1a105f78d9"
+   "본문": "7a9719d47e6ea1da"
   },
-  "sha": "f8929704edcbebfa"
+  "sha": "010e1ee282303fec"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
