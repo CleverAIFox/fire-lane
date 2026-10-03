@@ -48,13 +48,14 @@ clearance_cross.py — 폭을 **재는 방법**이 기하와 맞는가. 자를 �
   늘지 않게 막는다. 고치면 판정이 움직이고 그것은 측정 배치의 일이다.
 
 IN    web/data/road_area.geojson · sidewalk.geojson · segments.geojson
-      data/field/naver_width_2610.csv   (있으면 실측 대조를 같이 낸다)
+      data/field/naver_width_2610.csv   (있으면 **현장 인사이트**를 같이 낸다)
 OUT   data/processed/clearance_cross.json (--json 이면 지정 경로)
 PARAM SPAN_OVERSHOOT · SPAN_INVERSION (래칫. 문턱이 아니라 현재 수다)
 밖    **판정을 안 바꾼다.** `widthcross` 와 같은 자리다 — 판정이 끝난 것을
       읽어 기하와 댈 뿐이고 판정 지문 밖이다.
-      **어느 쪽이 옳은지도 안 말한다.** 내접원이 진실이라는 근거는 아직
-      네이버 실측 여덟 줄뿐이고, 그것도 사람이 화면에서 잰 값이다.
+      **어느 쪽이 옳은지도 안 말한다.** 정량 증인은 **도로대장 명목폭**
+      (`road_bt_m`)이고, 네이버 기록은 **어디를 볼지**만 알려준다 —
+      화면에서 손으로 끌어 잰 값이라 숫자를 기준으로 쓰면 안 된다.
       ★ **레이크가 필요 없다.** 발행본만 읽으므로 CI 에서도 돈다.
 """
 from __future__ import annotations
@@ -142,6 +143,7 @@ def measure(seg_feats: list, lines: list, road_b, carr_b) -> list[dict]:
             "seg_uid": p.get("seg_uid"), "seg_label": p.get("seg_label"),
             "road_name": p.get("road_name"), "verdict": p.get("verdict"),
             "wmin": _num(p.get("width_min_m")),
+            "ledger": _num(p.get("road_bt_m")),
             "length_m": _num(p.get("length_m")),
             "n_sample": p.get("n_sample"),
             "route_usage": p.get("route_usage") or 0,
@@ -223,8 +225,34 @@ def against_field(rows: list[dict]) -> list[dict]:
     return out
 
 
+def against_ledger(rows: list[dict]) -> dict:
+    """**대장 명목폭과 두 방법을 댄다.** 이것이 정량 증인이다.
+
+    ★ `road_bt_m` 은 도로명주소 도로대장의 명목폭이고 발행본에 **결측 0** 으로
+      들어 있다(1,281/1,281). 우리 기하 계산과 **방법이 독립**이다 — 행정이
+      적은 수고 폴리곤을 안 쓴다. 스키마가 「참고용. 판정에는 안 쓴다」라고
+      적은 그대로 판정에 안 들어가므로, 게이트로 오염되지도 않았다.
+
+    ★ 어느 쪽이 옳은지는 **안 말한다.** 대장이 틀린 사례도 실재한다
+      (`필문대로289번길` 은 기하가 틀려 사람이 손으로 보정했다 · §170-2).
+      드는 것은 「둘 중 어느 쪽이 대장에서 덜 멀리 있나」 하나다.
+    """
+    pair = [(r["wmin"], r["c_med"], r["ledger"]) for r in rows
+            if r.get("wmin") is not None and r.get("c_med") is not None
+            and r.get("ledger")]
+    if not pair:
+        return {}
+    return {
+        "짝": len(pair),
+        "wmin ÷ 대장": quartiles([w / g for w, _c, g in pair]),
+        "내접원 ÷ 대장": quartiles([c / g for _w, c, g in pair]),
+        "|wmin ÷ 대장 − 1|": quartiles([abs(w / g - 1) for w, _c, g in pair]),
+        "|내접원 ÷ 대장 − 1|": quartiles([abs(c / g - 1) for _w, c, g in pair]),
+    }
+
+
 def cross(rows: list[dict]) -> dict:
-    """전수 대조. (분포, 넘침, 역전, 실측 대조)"""
+    """전수 대조. (분포, 대장 대조, 넘침, 역전, 네이버 인사이트)"""
     ratio = [r["wmin"] / r["c_med"] for r in rows
              if r.get("wmin") and r.get("c_med")]
     diff = [r["wmin"] - r["c_med"] for r in rows
@@ -234,9 +262,10 @@ def cross(rows: list[dict]) -> dict:
         "표본 간격 m": STEP_M,
         "wmin ÷ 내접원": quartiles(ratio),
         "wmin − 내접원 m": quartiles(diff),
+        "대장 대조": against_ledger(rows),
         "넘침": overshoot(rows),
         "역전": inversion(rows),
-        "실측 대조": against_field(rows),
+        "현장 인사이트": against_field(rows),
     }
 
 
@@ -303,8 +332,27 @@ def show(res: dict, want: dict[str, int]) -> int:
               f"중앙 {q['median']:+6.2f} · 75% {q['q75']:+6.2f}   "
               f"[{q['min']:+.2f} ~ {q['max']:+.2f}]")
 
-    fld = res["실측 대조"]
-    print(f"\n  실측 대조 {len(fld)}건 — 네이버 거리재기 (data/field)")
+    lg = res.get("대장 대조") or {}
+    if lg:
+        print(f"\n  ★ 대장 명목폭과의 대조 — **정량 증인** (짝 {lg['짝']})")
+        for k in ("wmin ÷ 대장", "내접원 ÷ 대장",
+                  "|wmin ÷ 대장 − 1|", "|내접원 ÷ 대장 − 1|"):
+            q = lg[k]
+            print(f"    {k:<20} 25% {q['q25']:5.2f} · 중앙 {q['median']:5.2f} · "
+                  f"75% {q['q75']:5.2f}   [{q['min']:.2f} ~ {q['max']:.2f}]")
+        A, B = lg["|wmin ÷ 대장 − 1|"], lg["|내접원 ÷ 대장 − 1|"]
+        print(f"    → 중앙에서는 **같다** ({A['median']:.2f} 대 {B['median']:.2f}). "
+              f"갈리는 것은 꼬리다 —")
+        print(f"       75%  {A['q75']:.2f} 대 {B['q75']:.2f}   "
+              f"최대  {A['max']:.2f} 대 {B['max']:.2f}")
+        print("       **법선이 더 낫다고도 더 나쁘다고도 말하지 않는다.** 대부분의")
+        print("       구간에서 둘은 같은 값을 내고, 틀리는 자리에서만 법선이 멀리 간다.")
+
+    fld = res["현장 인사이트"]
+    print(f"\n  현장 인사이트 {len(fld)}건 — 네이버 항공뷰·거리뷰 (data/field)")
+    print("    ★ **숫자는 기준이 아니다.** 화면에서 손으로 끌어 잰 값이라 ±1m 다.")
+    print("      이 표가 드는 것은 「그 자리가 어떤 곳인가」다 — 주차 apron ·")
+    print("      로터리 · 보도 · 교차로 조각. 정량 대조는 위 대장 칸이 든다.")
     for f in fld:
         wm = f"{f['wmin']:6.2f}" if f["wmin"] is not None else "     —"
         wr = f"{f['wmin/실측']:5.1f}×" if f["wmin/실측"] else "    —"

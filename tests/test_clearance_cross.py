@@ -129,30 +129,51 @@ def test_some_measurement_is_pinned_to_a_segment():
     assert C.field_rows(), "seg_uid 가 붙은 실측이 하나도 없다"
 
 
-# ── ④ ★ 음성 대조 — 자를 되돌리면 여기서 운다 ──────────────────
+# ── ④ ★ 정량 음성 대조 — **대장 명목폭**이 기준이다 ──────────
 @pytest.mark.skipif(not (WEB / "road_area.geojson").exists(),
                     reason="환경skip(산출물) — web/data 발행본이 없으면 기하를 못 잰다")
-def test_the_inscribed_circle_matches_the_field_tape_and_the_ray_does_not():
-    """★ 이 저장소의 **첫 외부 음성 대조**다 (DECISIONS §379).
+def test_the_ledger_width_sides_with_the_inscribed_circle_not_the_ray():
+    """★ 기준은 **도로명주소 도로대장 명목폭**(`road_bt_m`)이다.
 
-    구간 중앙에서 잰 실측(`spot == mid`)만 쓴다. 로터리 진입부나 골목
-    입구는 구간 중앙과 다른 자리라 섞으면 「자가 맞는가」를 「측정이
-    어디였나」가 흔든다.
+    발행본에 결측 0 으로 들어 있고(1,281/1,281), 우리 기하 계산과 방법이
+    독립이며, 스키마가 「참고용. 판정에는 안 쓴다」라고 적은 그대로 판정에
+    안 들어가 게이트로 오염되지도 않았다.
 
-    ★ 0.5m 를 맞추라고 하지 않는다. 네이버 거리재기의 오차가 ±1m 이고
-      표에 그렇게 적혀 있다. 여기가 드는 것은 **자릿수**다 —
-      내접원은 실측의 두 배 안이고, 법선은 세 배 밖이다.
+    ★ **사람이 화면에서 잰 값은 기준이 아니다.** 네이버 거리재기는 ±1m 이고
+      어디를 끌었는지도 기록이 없다 — 그것으로 0.5m 를 다투면 주먹구구다.
+      그 표의 쓸모는 「그 자리가 어떤 곳인가」(주차 apron · 로터리 · 보도)이고
+      이 시험은 그것을 **안 쓴다.**
+
+    ★ 그리고 **「내접원이 낫다」고 주장하지 않는다.** 전수에서 중앙 편차는
+      0.21 로 **같다.** 갈리는 것은 꼬리다 — 대장에서 멀리 간 쪽이 어디까지
+      가는가. 그 비대칭만 든다.
+    """
+    res = C.cross(C.load())
+    lg = res["대장 대조"]
+    assert lg, "대장 명목폭이 발행본에 없다 — 정량 증인이 사라졌다"
+    ray, circ = lg["|wmin ÷ 대장 − 1|"], lg["|내접원 ÷ 대장 − 1|"]
+    assert circ["max"] < ray["max"] / 2, (
+        f"꼬리가 안 갈린다 — 법선 최대 {ray['max']:.2f} · 내접원 {circ['max']:.2f}. "
+        "둘이 같아졌으면 자가 고쳐진 것이고, 그러면 §379 를 다시 읽고 지워라")
+    assert circ["q75"] <= ray["q75"], (
+        f"75% 에서 내접원이 더 멀다 — {circ['q75']:.2f} > {ray['q75']:.2f}")
+
+
+@pytest.mark.skipif(not (WEB / "road_area.geojson").exists(),
+                    reason="환경skip(산출물) — web/data 발행본이 없으면 기하를 못 잰다")
+def test_every_segment_the_field_notes_point_at_is_an_overshoot():
+    """★ 현장 인사이트의 **올바른 쓰임**이다.
+
+    사람이 항공뷰로 본 것은 「저기가 주차 apron 이다 · 로터리다 · 보도다」이고,
+    그것은 **어디를 볼지**를 알려줄 뿐이다. 그 자리가 실제로 결함인가는
+    저장소의 제 자료로 판정한다 — 다섯 구간 전부 `넘침`(법선 span 이 그 구간
+    최대 내접원보다 크다)에 든다. 사람 눈이 가리키고, 기하가 확인한다.
     """
     want = {r["seg_uid"] for r in C.field_rows()}
+    assert want, "구간이 붙은 현장 기록이 없다"
     rows = C.load(only=want)
-    fld = [f for f in C.against_field(rows) if f["spot"] == "mid"]
-    assert len(fld) >= 5, f"중앙부 실측이 {len(fld)}건 — 대조가 너무 얇다"
-
-    for f in fld:
-        assert 0.5 <= f["내접원/실측"] <= 2.0, (
-            f"{f['label']} — 내접원 {f['내접원']:.2f} 가 실측 {f['실측']} 의 "
-            f"{f['내접원/실측']:.1f}배다. 기하가 어긋났다")
-        assert f["wmin/실측"] is not None and f["wmin/실측"] > 3.0, (
-            f"{f['label']} — 법선 wmin 이 실측의 {f['wmin/실측']:.1f}배다. "
-            "세 배 안으로 들어왔다면 자가 고쳐진 것이고, 그러면 이 시험이 "
-            "할 일이 끝났다는 뜻이므로 §379 를 다시 읽고 지워라")
+    over = {o["seg"] for o in C.overshoot(rows)}
+    missing = sorted(want - over)
+    assert not missing, (
+        f"현장에서 지목한 구간이 넘침에 안 든다 — {missing}. "
+        "사람이 본 것과 기하가 보는 것이 갈렸다")

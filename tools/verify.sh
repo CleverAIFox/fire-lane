@@ -802,6 +802,12 @@ scope "src/firelane/seg/width.py tools/clearance_cross.py data/field/*"
 step "통과폭 교차대조" uv run python tools/clearance_cross.py
 scope "src/firelane/seg/params.py tools/constbasis.py"
 step "판정 상수의 출처" uv run python tools/constbasis.py
+scope "web/config.js tools/colorsim.py"
+step "판정 색의 구별" uv run python tools/colorsim.py
+scope "docs/*.md tools/sealcov.py"
+step "봉인 덮임" uv run python tools/sealcov.py
+scope "src/**/*.py tools/**/*.py tests/**/*.py tools/redoscheck.py"
+step "되짚기 폭발 구조" uv run python tools/redoscheck.py
 
 # ★ 2026-09-29 (DECISIONS §304). 공개본만 읽으므로 CI 도 이것을 돈다 — ci-exempt 아님
 scope "src/firelane/seg/classify.py tools/verdictsim.py"

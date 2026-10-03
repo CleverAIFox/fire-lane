@@ -370,6 +370,15 @@ jobs:
       #   출처를 같이 적게 한다 — 안 적으면 영원히 못 적는다.
       - name: 판정 상수의 출처
         run: uv run python tools/constbasis.py
+      # ★ 2026-10-04 (§383). 바탕 대비는 쟀는데 **집합 안의 구별**은 안 쟀다.
+      - name: 판정 색의 구별
+        run: uv run python tools/colorsim.py
+      # ★ 2026-10-04 (§384). `docseal` 은 절을 세고 이것은 **코드 파일**을 센다.
+      - name: 봉인 덮임
+        run: uv run python tools/sealcov.py
+      # ★ 2026-10-04 (§385). §377 이 손으로 넷을 고치고 도구를 빚으로 남겼다.
+      - name: 되짚기 폭발 구조
+        run: uv run python tools/redoscheck.py
       - name: 기획서 대조
         run: uv run python tools/docx_check.py
       - name: 기획서 개요 층

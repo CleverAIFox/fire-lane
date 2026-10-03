@@ -309,7 +309,8 @@ EXCEPTIONS: dict[str, int] = {
     #   비밀값 방어 셋이 다 **변화량**만 봐서 트리에 56일 있던 값을 아무도
     #   못 봤다 — 관문이 **늘어난** 자리이므로 이 파일은 그만큼 는다.
     #   긴 서술은 §376 이 들고 여기 주석은 열세 줄로 줄였다.
-    "tools/verify.sh": 1252,
+    # ★ 2026-10-04 (DECISIONS §383). 1252 → 1254. 관문 한 단계(`scope` + `step`)다.
+    "tools/verify.sh": 1258,
     "src/firelane/segments.py": 780,
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이
