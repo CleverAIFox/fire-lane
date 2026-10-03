@@ -23243,7 +23243,7 @@ tests/test_batch_tools.py  (6) · (4) · (2)   같은 파일을 가리키는 셋
 강제자  `web/navi/test/rulesens.test.ts`(단조 · 끄면 갈리는가 · 빼지 않는가 ·
 합성 양성 대조 — **수를 박지 않고 방향을 박는다**) ·
 `tests/test_oneway_reason.py`(사유 넷이 **분할**인가 · 갈래마다 합성 한 건) ·
-`src/firelane/publish_navi.py::_oneway`(사유 칸 넷) · `tools/navicheck.py`
+`src/firelane/publish_rules.py::oneway`(사유 칸 넷) · `tools/navicheck.py`
 (사유를 찍는다 · `oneway_nl` 이 없는 옛 그래프를 그렇게 적는다) ·
 `src/firelane/publish_rules.py`(통행 규칙 둘이 사는 집).
 하위 넷이 이 칸을 물려받는다

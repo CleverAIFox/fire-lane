@@ -6492,9 +6492,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "144d68158cfd9979",
-   "8a280318dda068a8",
-   "de58847f78698187"
+   "7bec4ffbf1796384",
+   "187ae74a02f117db",
+   "912d37a742396bfb"
   ],
   "parts": {
    "sources.yaml": "1f51dbbff5df08eb",
@@ -6504,9 +6504,9 @@
    "tools/navicheck.py": "a4b0e9c5fe3290ca",
    "web/navi/src/domain/rules.ts": "b73750a6559d075a",
    "web/navi/test/rulesens.test.ts": "6e453afe309b8df8",
-   "본문": "5727187a14e78c3b"
+   "본문": "22754f31672e969f"
   },
-  "sha": "65f71773242c491e"
+  "sha": "378482b460ae9c5b"
  },
  "DECISIONS/368": {
   "doc": "docs/DECISIONS.md",
