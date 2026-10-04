@@ -294,22 +294,40 @@ process.stdout.write(JSON.stringify(runCases(vehicle, payload)));
 """
 
 
-#: `esbuild` — `node` 가 `.ts` 를 못 먹는 기계의 우회로.
+#: 타입을 떼는 도구. **`node` 가 `.ts` 를 못 먹는 기계의 우회로다.**
 #: ★ 2026-09-25. `node v22.22.1` 에서 `ERR_NO_TYPESCRIPT` 로 죽었다. 같은
 #:   22.22.x 인데 **TypeScript 지원 없이 빌드된 바이너리**가 있다 — 버전으로
-#:   판단할 수 없다. `esbuild` 는 `web/navi` 의 vite 가 이미 품고 있어 새
-#:   의존성이 아니다(`uv lock` 도 `npm i` 도 필요 없다).
-ESBUILD = NAVI / "node_modules" / ".bin" / "esbuild"
+#:   판단할 수 없다.
+#: ★ 2026-10-04 (DECISIONS §387). 종전에는 `esbuild` 를 썼고 사유가 「`web/navi`
+#:   의 vite 가 이미 품고 있어 새 의존성이 아니다」였다. **그 전제가 죽었다** —
+#:   vite 8 이 번들러를 rolldown 으로 갈아타면서 `esbuild` 가 `node_modules`
+#:   에서 사라졌다. 봇 PR(#268)이 그 바꿈을 들여왔고 아무도 안 울었다.
+#:   이제 **`typescript` 자신**에게 시킨다. 그것은 `tsc`·`tsserver` 로 쓰이는
+#:   직접 의존이라 번들러를 갈아타도 안 사라진다 — 사라지면 타입 검사가 먼저 죽고,
+#:   그러면 이 우회로가 없는 것이 문제가 아니다.
+TS_PKG = NAVI / "node_modules" / "typescript"
+
+#: `typescript` 에게 한 파일의 타입만 떼게 하는 한 줄. 번들링을 안 한다 —
+#: import 는 그대로 두고 `node` 가 풀게 둔다(상대 경로가 `.ts` 그대로이면
+#: 안 풀리므로 `_GLUE` 가 이미 절대 URI 로 넘긴다).
+_TRANSPILE = """
+const ts = require(%s);
+const fs = require("node:fs");
+const src = fs.readFileSync(%s, "utf8");
+const out = ts.transpileModule(src, { compilerOptions: {
+  target: "esnext", module: "esnext", verbatimModuleSyntax: false } });
+fs.writeFileSync(%s, out.outputText);
+"""
 
 
 def _strip_types(src: pathlib.Path, out: pathlib.Path) -> bool:
-    """`esbuild` 로 타입만 떼어 `.mjs` 로 낸다. 없으면 False."""
-    if not ESBUILD.exists():
+    """`typescript` 로 타입만 떼어 `.mjs` 로 낸다. 없으면 False."""
+    if not TS_PKG.is_dir():
         return False
-    r = subprocess.run(
-        [str(ESBUILD), str(src), "--format=esm", "--platform=node",
-         f"--outfile={out}", "--log-level=error"],
-        cwd=NAVI, capture_output=True, text=True, timeout=120)
+    code = _TRANSPILE % (json.dumps(str(TS_PKG)), json.dumps(str(src)),
+                         json.dumps(str(out)))
+    r = subprocess.run(["node", "-e", code], cwd=NAVI,
+                       capture_output=True, text=True, timeout=120)
     return r.returncode == 0 and out.exists()
 
 
@@ -331,7 +349,7 @@ def _ts(payload: dict) -> list:
         if last.returncode == 0:
             return json.loads(last.stdout)
 
-    # ③ node 가 TS 를 통째로 모르는 기계 — esbuild 로 먼저 떼어 낸다.
+    # ③ node 가 TS 를 통째로 모르는 기계 — `typescript` 로 먼저 떼어 낸다.
     with tempfile.TemporaryDirectory() as d:
         impl, runner = Path(d) / "v.mjs", Path(d) / "r.mjs"
         if _strip_types(IMPL, impl) and _strip_types(RUNNER, runner):
@@ -345,7 +363,9 @@ def _ts(payload: dict) -> list:
     raise AssertionError(
         "TS 판을 부를 수 없다. **skip 하지 않는다** — 부를 수 없으면 대조가 없고,\n"
         "  대조 없는 초록은 이 시험이 막으려는 것 그 자체다.\n"
-        f"  esbuild {'있다' if ESBUILD.exists() else '없다'}: {ESBUILD}\n"
+        f"  typescript {'있다' if TS_PKG.is_dir() else '없다'}: {TS_PKG}\n"
+        "  ★ 없으면 `web/navi` 에서 `npm ci` 를 먼저 돌려라. 이 우회로는 번들러가\n"
+        "    아니라 `typescript` 자신에게 시킨다 — 번들러를 갈아타도 안 사라진다.\n"
         f"  rc={last.returncode}\n{last.stderr[-2000:]}")
 
 

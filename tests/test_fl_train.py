@@ -39,6 +39,13 @@ def _nocomment(src: str) -> str:
 # ── §295 · 열차가 「했다」고 주장하지 말고 재는가 ────────────────
 
 
+def _relock_chain(src: str) -> str:
+    """4b 가 사슬을 돌리고 지문을 잠그는 자리 — 커밋을 앉히기 **전**까지."""
+    i = src.index('tools/remeasure.py')
+    j = src.index('git diff --quiet -- data/golden', i)
+    return src[i:j]
+
+
 def _relock_block(src: str) -> str:
     """4b 재잠금이 커밋을 앉히는 자리."""
     i = src.index('git add data/golden data/processed web/data')
@@ -70,6 +77,26 @@ def test_재잠금은_uv_lock_도_함께_앉힌다():
     body = _nocomment(_relock_block(_fl()))
     assert "git add uv.lock" in body, (
         "`uv.lock` 을 안 올린다 — 지문이 그것을 물고 있어 따로 앉으면 CI 가 죽는다")
+
+
+def test_재잠금은_깃발이_아니라_지문에게_잠겼는지_묻는다():
+    """★ 실기 1회 (§388). 이 자리가 `--measured` 가 붙었는지만 보고
+
+    `RELOCK_DONE=1` 을 세워 `golden.py lock` 을 건너뛰었다. 그런데
+    `remeasure.py` 는 산출물이 안 움직이면 사슬을 거절하고 **0 으로**
+    돌아선다 — 깃발만 서고 아무도 안 잠갔다. §262 가 PR 산문에서
+    걷어낸 판단이 명령줄 깃발로 되살아난 것이다.
+
+    잠그기로 들어선 갈래 안에서는 **지문에게 다시 물어야** 한다.
+    """
+    body = _nocomment(_relock_chain(_fl()))
+    assert "RELOCK_DONE" not in body, (
+        "`RELOCK_DONE` 이 되살았다 — 잠겼는지를 깃발로 판단하면 안 된다")
+    assert "golden.py stale" in body, (
+        "사슬 뒤에 지문을 다시 안 묻는다 — 사슬이 거절했을 때를 못 잡는다")
+    assert body.index("remeasure.py") < body.index("golden.py stale"), (
+        "사슬보다 먼저 묻는다 — 사슬이 잠갔는지를 재려면 그 뒤여야 한다")
+    assert "golden.py lock" in body, "낡았을 때 잠그는 자리가 없다"
 
 
 def test_초록_뒤_더러운_트리로는_push_하지_않는다():

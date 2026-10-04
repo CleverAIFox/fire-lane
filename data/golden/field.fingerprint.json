@@ -1,6 +1,11 @@
 {
  "what": "data/field 무결성 지문 — 재취득 불가 층. tools/fieldseal.py 가 쓴다",
  "files": {
+  "naver_width_2610.csv": {
+   "sha256": "ce7130212f456fcc361787502c841b190917384f26e43dca4787db5b534ca3ba",
+   "bytes": 1964,
+   "lines": 12
+  },
   "ngi_width_05_check.csv": {
    "sha256": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "bytes": 2320,

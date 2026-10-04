@@ -1,18 +1,18 @@
 {
- "sealed_at": "2026-10-03T23:52:32+09:00",
- "commit": "01aaa96",
- "tool": "5f27595a0393a7d6",
+ "sealed_at": "2026-10-04T18:30:19+09:00",
+ "commit": "6566c5f",
+ "tool": "8acfd1d34ac0a8fc",
  "tools": {
   "tools/deadcheck.py": "d206e63334eeca39",
   "tools/dms.py": "3c18638be9e87015",
   "tools/dupcheck.py": "144a2716fa56ff3e",
   "tools/env_check.py": "9c41c18ab2a68470",
-  "tools/verify.sh": "e648869913a1a9ee"
+  "tools/verify.sh": "770896992299d81b"
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "8c70d42352f76077",
-  "docs/DECISIONS.md": "b55e83a7cffb3cb7",
+  "docs/MASTER.md": "43ce71ce50f606a0",
+  "docs/DECISIONS.md": "80991c8262d860d6",
   "docs/PLAN.md": "5f17915f82f8288e",
   "README.md": "0c3f1beca81a4ed0"
  },
@@ -249,11 +249,12 @@
   ]
  },
  "code": {
-  "sha256": "bd09086123787dae",
+  "sha256": "230132934acfe282",
   "files": {
+   "data/field/naver_width_2610.csv": "ce7130212f456fcc361787502c841b190917384f26e43dca4787db5b534ca3ba",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "pyproject.toml": "8fcce06301260d06fe7a2d2cf5663295b4d60219dc7e11c4a8bb8788bed1bd36",
-   "sources.yaml": "a9b065e79edf1e16ca092e6bc0bb3e7833a1fa00a4304d7867ab0956d33cac3a",
+   "sources.yaml": "a742ff3411c477d107b1b2f8506616f29bcd46df5440de1107433a8899dadd77",
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d16004113ef6e158febf3069febd5b43064abe2ffd93623481aa241272e5b627",
@@ -336,7 +337,7 @@
    "src/firelane/transition.py": "36db27bf5fd3f1d3851ac28de06a72bbd74ad19c9824d3edf0270d86807d78cb",
    "src/firelane/vehiclecard.py": "1a69f1a6ac07899b6d93ade8954efea2fce791c179d44490640b838dca2584e8",
    "src/firelane/webmanifest.py": "6d769b7864376a9d8ae02867c9ab955e0bf2a9545c759543e520d6367ac8f542",
-   "uv.lock": "de4396b3cb124984d2a008bcec51a93868c51d32a278b0a6d42bc12bd91f8124"
+   "uv.lock": "17146f0696d7b30ee9cf8c917c4a9ac54707fee95c830b7dcb4ccde6afef891b"
   }
  },
  "sections": {
@@ -724,6 +725,12 @@
    "doc": "docs/MASTER.md",
    "title": "11-2a. 여유폭 — 색과 수, 그리고 빨강의 사유 (2026-09-23 · DECISIONS §220)"
   },
+  "MASTER/11-2b": {
+   "h": "5d6a928f5b7292bf",
+   "state": "wired",
+   "doc": "docs/MASTER.md",
+   "title": "11-2b. 지령 상속과 URL 깃발 (2026-10-04 · DECISIONS §382-1 · §386)"
+  },
   "MASTER/11-3": {
    "h": "d77c87559e29c9b9",
    "state": "wired",
@@ -929,7 +936,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER/14-4": {
-   "h": "607d4f3e4f9623ca",
+   "h": "31c80e5fbe0bdd82",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -1007,7 +1014,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "c76b310f71df2e15",
+   "h": "f7a3973a07308858",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -3119,7 +3126,7 @@
    "title": "145. 환경 설정을 `.env` 로 모은다 — 셸이 이긴다"
   },
   "DECISIONS/146": {
-   "h": "cf03ff64f545f08e",
+   "h": "106ff19c1a720ea9",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "146. V-World 키는 숨길 수 없다 — 옮기는 목적이 다르다"
@@ -7319,7 +7326,7 @@
    "title": "287-3. 남은 분모를 숨기지 않는다"
   },
   "DECISIONS/288": {
-   "h": "4a005f4da031f5a0",
+   "h": "e76d841e0b566e07",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "288. 재취득 불가 층이 우연에 기대고 있었다"
@@ -9419,7 +9426,7 @@
    "title": "375-5. `clear` 465 는 **안 고쳤다**"
   },
   "DECISIONS/376": {
-   "h": "372e1764c4c38005",
+   "h": "a3080ab23ac1f5d5",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "376. 비밀값 방어 셋이 다 **변화량**만 봤다 — 「지금 트리에 있나」를 보는 자리가 없었다"
@@ -9537,6 +9544,312 @@
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "378-3. 고침 — 선언과 양성 대조로 가른다"
+  },
+  "DECISIONS/379": {
+   "h": "38b6ef1b54254a48",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "379. **자가 틀렸다** — 폭을 재는 셋이 같은 표본을 먹고 있었다"
+  },
+  "DECISIONS/379-1": {
+   "h": "62ef8b6339ec1978",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-1. 열 배"
+  },
+  "DECISIONS/379-2": {
+   "h": "e386d85683baa778",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-2. 폴리곤을 의심했고, 틀렸다"
+  },
+  "DECISIONS/379-3": {
+   "h": "8b47f73fe6974774",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-3. 보조정리 하나로 문턱 없이 센다"
+  },
+  "DECISIONS/379-4": {
+   "h": "419d9a2d84716293",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-4. 새는 자리는 네 모양이고 뿌리는 하나다"
+  },
+  "DECISIONS/379-5": {
+   "h": "ce0f72d270549337",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-5. 답이 저장소에 이미 있었다"
+  },
+  "DECISIONS/379-6": {
+   "h": "ece4e63017014560",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-6. 폭이 라우팅의 **1차 문**이다"
+  },
+  "DECISIONS/379-7": {
+   "h": "69d22db31e753509",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-7. 정량 증인은 **대장**이고, 사람 눈은 **어디를 볼지**만 말한다"
+  },
+  "DECISIONS/379-7a": {
+   "h": "5dffcd7798ee2106",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-7a. 그러면 네이버 열한 줄은 무엇인가"
+  },
+  "DECISIONS/379-8": {
+   "h": "31d64090e0b46af9",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-8. 안 한 것"
+  },
+  "DECISIONS/379-9": {
+   "h": "db0517e9fa2017dc",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "379-9. 새 증인이 **옛 증인을 베꼈다** — `dupcheck` 가 물었다"
+  },
+  "DECISIONS/380": {
+   "h": "b570508ef227ae2f",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "380. 판정 상수 **열셋이 출처를 못 댄다**"
+  },
+  "DECISIONS/380-1": {
+   "h": "137099699c602676",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "380-1. 같은 모양이 셋"
+  },
+  "DECISIONS/380-2": {
+   "h": "45d3f80d60105c3b",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "380-2. 어떤 수는 출처를 들고 어떤 수는 안 든다"
+  },
+  "DECISIONS/380-3": {
+   "h": "8a6ab9379f8855ab",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "380-3. 상수의 집은 읽기만 한다"
+  },
+  "DECISIONS/381": {
+   "h": "31cc1b2cbe726319",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "381. 트리 전수가 **사람 기계에서 터졌다** — 호출 꼴이 버전에 매달려 있었다"
+  },
+  "DECISIONS/381-1": {
+   "h": "f479543b2a0faaa3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "381-1. `unknown command \"dir\"`"
+  },
+  "DECISIONS/381-2": {
+   "h": "ee7023a1202155cf",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "381-2. 「폐기됐습니다」가 열두 날 동안 사실이 아니었다"
+  },
+  "DECISIONS/382": {
+   "h": "f85a328cd5f26ac1",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "382. 내비는 **지령을 상속만 받는다** · 화면은 **덜 보여준다**"
+  },
+  "DECISIONS/382-1": {
+   "h": "c1a26791b80f2e94",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "382-1. 목적지를 내비에서 찍지 않는다"
+  },
+  "DECISIONS/382-2": {
+   "h": "a5bc4e8ce3994e34",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "382-2. 화면이 한 번에 너무 많이 말한다"
+  },
+  "DECISIONS/382-3": {
+   "h": "99904a0ec0b4d7ed",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "382-3. 판정 4색이 색약에서 안 갈린다"
+  },
+  "DECISIONS/382-4": {
+   "h": "c8cdc77a209336a2",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "382-4. 공터가 검정으로 나간다"
+  },
+  "DECISIONS/383": {
+   "h": "1c32eda0ad9a5434",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "383. 바탕 대비는 쟀는데 **집합 안의 구별**은 안 쟀다"
+  },
+  "DECISIONS/383-1": {
+   "h": "62e5e9b8ca9f7fe3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "383-1. `web/config.js` 가 적은 근거"
+  },
+  "DECISIONS/383-2": {
+   "h": "bb70ce752cd6cc1b",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "383-2. 재니 색상은 넉넉하고 **밝기가 붙어 있다**"
+  },
+  "DECISIONS/383-3": {
+   "h": "026ecbffcf9b2968",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "383-3. 래칫은 둘, 문턱은 없다"
+  },
+  "DECISIONS/384": {
+   "h": "f4229d50b60030ae",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "384. 절을 세고 있었는데 묻고 싶은 것은 **파일**이었다"
+  },
+  "DECISIONS/384-1": {
+   "h": "83d2ec49fec5a4ba",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "384-1. 두 수가 같은 말을 하는 줄 알았다"
+  },
+  "DECISIONS/384-2": {
+   "h": "0c096e6f756d823e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "384-2. 「감사됨」을 어떻게 정의했나"
+  },
+  "DECISIONS/384-3": {
+   "h": "3262ed1fb710ae1d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "384-3. 실측 — 땅의 절반 넘는 빈 곳이 **화면 쪽**이다"
+  },
+  "DECISIONS/385": {
+   "h": "c5d6dea23baea9a9",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "385. §377 이 남긴 빚 — 정규식을 **구조로** 센다"
+  },
+  "DECISIONS/385-1": {
+   "h": "57405f8cdb05eb51",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "385-1. 시간으로 판정하지 않는다"
+  },
+  "DECISIONS/385-2": {
+   "h": "e4430c49ac58bd51",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "385-2. 모호한 꼴과 아닌 꼴"
+  },
+  "DECISIONS/386": {
+   "h": "5fcb1761edfc6a4f",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "386. 지령을 읽는 자리가 **없었다** — 네 번 따로 읽고 있었다"
+  },
+  "DECISIONS/386-1": {
+   "h": "bc0107843c791073",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "386-1. 상속은 이미 있었고, 막는 쪽이 없었다"
+  },
+  "DECISIONS/386-2": {
+   "h": "70fb3776c9955c7c",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "386-2. 네 번 읽으면 물음이 사라진다"
+  },
+  "DECISIONS/386-3": {
+   "h": "33dbd6e25c1f312e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "386-3. 발표용은 **버튼을 따로 둔다**"
+  },
+  "DECISIONS/387": {
+   "h": "2c6b84f1075fe1d0",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "387. 우회로의 **전제가 죽었다** — vite 가 번들러를 갈아탔다"
+  },
+  "DECISIONS/387-1": {
+   "h": "b1ec10e11c0549c5",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "387-1. 같은 22.22.x 인데 한 쪽만 터진다"
+  },
+  "DECISIONS/387-2": {
+   "h": "08e1d5bfe42e9cd5",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "387-2. 고침 — 번들러가 아니라 `typescript` 에게 시킨다"
+  },
+  "DECISIONS/388": {
+   "h": "99867fb1d4f1b407",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "388. 걷어낸 판단이 **깃발로** 되살아났다"
+  },
+  "DECISIONS/388-1": {
+   "h": "f1b60987e75b5657",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "388-1. 어떻게 보였나"
+  },
+  "DECISIONS/388-2": {
+   "h": "7bff8fdd81ac5a57",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "388-2. 고침 — 갈래 안에서 지문에게 다시 묻는다"
+  },
+  "DECISIONS/388-3": {
+   "h": "9485fa8dc0c2a948",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "388-3. 배우는 것"
+  },
+  "DECISIONS/389": {
+   "h": "aed3560acbdd244b",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "389. 호출 꼴을 맞추자 범위가 틀린 것이 보였다"
+  },
+  "DECISIONS/389-1": {
+   "h": "40b7b8eb140630ed",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "389-1. 짐작 둘이 틀렸다"
+  },
+  "DECISIONS/389-2": {
+   "h": "00172f1eae948f7e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "389-2. 범위의 정본은 git 이다"
+  },
+  "DECISIONS/389-3": {
+   "h": "3d9d7321cfcba6f5",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "389-3. 관문이 셋을 셌으면 셋이 어디인지도 말해야 한다"
+  },
+  "DECISIONS/389-4": {
+   "h": "655fdd50f05dedc6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "389-4. 자기검사가 바이너리 없이 양방향으로 돈다"
+  },
+  "DECISIONS/389-5": {
+   "h": "8fe758affa93b0f0",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "389-5. §376 의 한 줄을 정정한다 — `web/key.js`"
   },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
@@ -9889,12 +10202,12 @@
  },
  "denominator": 0,
  "dead_refs": 0,
- "dup_groups": 5,
+ "dup_groups": 6,
  "enforcers": {
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2211 passed, 1 warning in 364.36s (0:06:04)",
+   "tail": "2283 passed, 1 warning in 448.10s (0:07:28)",
    "red": []
   },
   "probe/deadcheck": {

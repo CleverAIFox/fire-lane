@@ -165,6 +165,14 @@ def check() -> list[tuple[str, str, str]]:
             #   어휘는 짧게 두고 늘리지 않는다.
             if Path(m).stem in ("x", "xxx", "yyy", "zzz", "foo", "bar", "baz"):
                 continue
+            # ★ 2026-10-04 (§390-4). **아직 안 지은 것**은 죽은 참조가 아니다.
+            #   `(미구현)` 을 붙인 자리는 PLAN 이 「지을 것」으로 든 것이고,
+            #   그 표기 자체가 기록이다 — `(삭제됨)` 과 같은 방식이고
+            #   `tests/test_guards.py` 가 같은 어휘를 쓴다. 둘이 갈리면 안 된다.
+            if any(f"{m}`(미구현)" in ln or f"{m} (미구현)" in ln
+                   or f"{m}`(미구현" in ln for ln in _txt.splitlines()
+                   if m in ln):
+                continue
             out.append((WARN, doc.name, f"{m} — 없다"))
 
     # ⑨ ★ 코드가 하드코딩한 raw 경로 — 대장을 안 거치는 것들

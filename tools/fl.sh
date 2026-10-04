@@ -501,9 +501,15 @@ for p in sorted(code_closure("firelane.ingest")): print(p.relative_to(ROOT).as_p
     uv run python tools/remeasure.py --tag "${MEASURED:-}" --since "origin/$BASE" \
         || die "측정 배치다 — 위 안내를 끝까지 읽어라." \
                "  받아들이겠다면 $FL_CMD $BR $MODE --measured=20260930-covrate · 산문을 고쳤으면 --resume"
-    [ -z "$MEASURED" ] || RELOCK_DONE=1
-    [ "${RELOCK_DONE:-0}" = 1 ] || uv run python tools/golden.py lock \
-        || die "golden 재잠금이 실패했다"
+    # ★ 2026-10-04 (DECISIONS §388 · 실기 1회). 종전에는 `--measured` 가 붙었으면
+    #   **사슬이 잠갔다고 믿고** `lock` 을 건너뛰었다. `remeasure.py` 는 산출물이 안
+    #   움직이면 사슬을 거절하고 0 으로 돌아서므로 깃발만 서고 아무도 안 잠갔다.
+    #   깃발에 묻지 않는다 — 지문에게 다시 묻는다. 두 길이 같은 문으로 나간다.
+    if uv run --no-sync python tools/golden.py stale >/dev/null 2>&1; then
+        ok "잠금이 최신이다 — 사슬이 잠갔거나 애초에 안 낡았다"
+    else
+        uv run python tools/golden.py lock || die "golden 재잠금이 실패했다"
+    fi
     if git diff --quiet -- data/golden data/processed web/data; then
         warn "재잠금할 것이 없었다 — 지문도 산출물도 이미 같다"
     else
