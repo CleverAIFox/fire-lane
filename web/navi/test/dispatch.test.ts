@@ -75,3 +75,23 @@ describe("내비를 여는 자리", () => {
     expect(naviBase("ops")).not.toBe(naviBase(undefined));
   });
 });
+
+describe("시연용 지령 (§386)", () => {
+  const d = { at: [126.92, 35.15] as [number, number], label: "지산동",
+              vehicle: "p1", station: "지산" };
+
+  it("기본은 꺼져 있다 — 켜는 쪽을 명시한다", () => {
+    expect(dispatchUrl("ops", d)).not.toContain("demo");
+  });
+
+  it("켜면 demo=1 이 따라간다", () => {
+    expect(dispatchUrl("ops", d, true)).toContain("demo=1");
+  });
+
+  it("켜도 나머지 지령은 그대로다", () => {
+    const a = new URL(dispatchUrl("ops", d, true), "https://x/");
+    expect(a.searchParams.get("incident")).toBe("126.920000,35.150000");
+    expect(a.searchParams.get("vehicle")).toBe("p1");
+    expect(a.searchParams.get("station")).toBe("지산");
+  });
+});

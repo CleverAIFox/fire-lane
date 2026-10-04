@@ -238,12 +238,17 @@ export default function OpsApp() {
   // ★ 2026-10-02 (§351). 종전에 `./?incident=…` 였고 **관제가 한 장 더 열렸다** —
   //   배포에서 관제는 루트에 앉아 있고 `./` 는 지금 있는 자리다. 자리를 고르는
   //   판단은 `domain/dispatch` 가 들고, 여기는 부르기만 한다(§336).
-  const dispatchUrl = incident && vehicle && station
-    ? mkDispatchUrl(window.__FL_VIEW, {
-        at: incident.point, label: incident.label,
-        vehicle: vehicle.id, station: station.name,
-      })
+  const dispatchArgs = incident && vehicle && station
+    ? { at: incident.point, label: incident.label,
+        vehicle: vehicle.id, station: station.name }
     : null;
+  const dispatchUrl = dispatchArgs
+    ? mkDispatchUrl(window.__FL_VIEW, dispatchArgs) : null;
+  // ★ 2026-10-04 (§386). 발표용. 같은 지령으로 열되 `?demo=1` 이 붙어 경로
+  //   주행으로 돈다. **버튼을 따로 둔다** — 한 버튼에 토글을 달면 눌린 상태로
+  //   실제 출동에 쓰이고, 그러면 화면의 차가 운전자가 아니게 된다.
+  const demoUrl = dispatchArgs
+    ? mkDispatchUrl(window.__FL_VIEW, dispatchArgs, true) : null;
 
   const waiting = ops.feed.filter((f) => !f.ackedAt).length;
   const live = units.filter((u) => !unitStale(u, now)).length;
@@ -369,8 +374,16 @@ export default function OpsApp() {
                     style={{ ...cta, opacity: dispatchUrl && plan?.plan ? 1 : .35 }}>
               출동 지령 — 내비 열기 »
             </button>
+            <button disabled={!demoUrl || !plan?.plan}
+                    onClick={() => demoUrl && window.open(demoUrl, "_blank")}
+                    style={{ ...cta, marginTop: 6, background: "transparent",
+                             color: D.sub, border: `1px solid ${D.line}`,
+                             opacity: demoUrl && plan?.plan ? 1 : .35 }}>
+              시연용으로 열기 — 경로 주행
+            </button>
             <div style={{ fontSize: 10.5, color: D.sub, marginTop: 6, lineHeight: 1.5 }}>
               새 탭에 내비가 사건 · 차종 · 센터를 채운 채 열린다. 위치 · 공유가 이 화면으로 온다(같은 브라우저 탭끼리 — 서버 아님).
+              기사는 목적지를 고르지 않는다 — 지령이 온 내비는 검색과 지도 찍기가 닫힌다.
             </div>
           </Sec>
         </aside>

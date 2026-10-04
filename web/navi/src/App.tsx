@@ -56,6 +56,7 @@ import { ShareChip } from "./ui/ShareChip";
 import { Legend } from "./ui/Legend";
 import { DevBar } from "./ui/DevBar";
 import { SearchPanel } from "./ui/SearchPanel";
+import { canPickDestination, readHandoff } from "./domain/handoff";
 import { PlanHeader, TimeBox } from "./ui/Sheet";
 import { DispatchPanel, type StationOpt } from "./ui/DispatchPanel";
 import { VehiclePicker } from "./ui/VehiclePicker";
@@ -109,7 +110,23 @@ export default function App() {
   //   시연 막대를 달고 나갔다. 운전석에서 손이 스치면 ▶ 가 눌리고 **모의 주행이 실제
   //   GPS 를 대체한다**(useNavigation 이 replay 소스로 갈아탄다). 화면의 차가
   //   운전자가 아니게 된다. 켜는 쪽을 명시하게 뒤집는다.
-  const dev = useMemo(() => new URLSearchParams(location.search).get("dev") === "1", []);
+  // ★ 2026-10-04 (§386). 종전에는 `new URLSearchParams(location.search)` 가 이
+  //   파일 안에서만 **네 번** 따로 불렸다(사건 · 차종 · 센터 · dev). 「지령이
+  //   왔는가」를 물으려면 그 넷을 다 봐야 했고, 그래서 아무도 안 물었다.
+  const hand = useMemo(() => readHandoff(location.search), []);
+  const dev = hand.dev;
+  /** 관제가 지령을 줬으면 기사는 목적지를 **안 고른다**(§382-1). */
+  const canPick = canPickDestination(hand);
+
+  // ★ `?demo=1` — 발표용. 경로 주행으로 바꾼다. 폐루프 검수는 `gpsSim` 이
+  //   정본이고(§213-3) 이것은 **보여주기 전용**이라 기본값을 안 바꾼다.
+  // ★ 의존에 `n` 전체가 아니라 **그 설정자 하나**를 넣는다. `useState` 의
+  //   설정자는 안정적이라 이 효과가 한 번만 돌고, 억제를 안 써도 된다 —
+  //   억제는 검사를 끄는 것이고 끈 이유는 영영 안 지워진다(§suppress).
+  const setPosMode = n.setPosMode;
+  useEffect(() => {
+    if (hand.demo) setPosMode("route");
+  }, [hand.demo, setPosMode]);
 
   const spec = fleet.spec ?? n.data?.spec ?? EMPTY_SPEC;
   // ★ 2026-09-28 (§279-4). `?? {}` 가 매 렌더 **새 객체**를 만들어 아래 두
@@ -143,26 +160,21 @@ export default function App() {
 
   // ── 사건 위치 — URL 로 받을 수 있다 (접수 시스템이 붙을 자리) ─────
   useEffect(() => {
-    if (!n.data || incident) return;
-    const q = new URLSearchParams(location.search);
-    const at = q.get("incident");
-    if (!at) return;
-    const [lon, lat] = at.split(",").map(Number);
-    if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+    if (!n.data || incident || !hand.incident) return;
+    const [lon, lat] = hand.incident;
     if (n.setDestAt(lon, lat)) {
-      setIncident({ point: [lon, lat], label: q.get("label") ?? "접수 위치",
-                    sub: q.get("sub"), at: new Date() });
+      setIncident({ point: [lon, lat], label: hand.label ?? "접수 위치",
+                    sub: hand.sub, at: new Date() });
     }
   }, [n.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 관제의 출동 지령 — 차종 · 센터도 URL 로 온다 (§214-3) ─────────
   useEffect(() => {
-    const q = new URLSearchParams(location.search);
-    const v = q.get("vehicle");
+    const v = hand.vehicle;
     if (v && fleet.fleet?.vehicles.some((x) => x.id === v)) fleet.select(v);
   }, [fleet.fleet]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const st = new URLSearchParams(location.search).get("station");
+    const st = hand.station;
     if (!st || !stations.length) return;
     const hit = stations.find((x) => x.name === st || x.name.includes(st));
     if (hit) { setStationId(hit.id); n.setOriginAt(hit.point[0], hit.point[1]); }
@@ -178,7 +190,9 @@ export default function App() {
   }, [n, style]);
 
   const onMapClick = useCallback((lon: number, lat: number) => {
-    if (s.screen !== "dispatch" || armed !== "dest") return;
+    // ★ 지령이 왔으면 기사가 목적지를 **못 찍는다**(§382-1). 화면 셋이 전부
+    //   `canPick` 하나를 본다 — 각자 판단하면 갈린다.
+    if (s.screen !== "dispatch" || armed !== "dest" || !canPick) return;
     const r = n.snapAt(lon, lat);
     if (!r) { n.setDestAt(lon, lat); return; }   // 스코프 밖 안내는 훅이 낸다
     if (n.setDestAt(lon, lat)) {
@@ -186,7 +200,7 @@ export default function App() {
                     sub: "지도 선택", at: new Date() });
       setArmed(null);
     }
-  }, [s.screen, armed, n]);
+  }, [s.screen, armed, n, canPick]);
 
   // ── 01 → 02: 차량을 고른 **뒤** 렌더에서 경로를 낸다 ──────────────
   // ★ 고른 차의 제원이 인접리스트에 반영되는 것은 다음 렌더다. 같은 클릭
@@ -438,14 +452,14 @@ export default function App() {
           }}
           incidentLabel={incident?.label ?? null} incidentSub={incident?.sub ?? null}
           incidentAt={incidentText}
-          armed={armed} onArm={setArmed}
-          onSearch={() => s.open("search")}
+          armed={armed} onArm={canPick ? setArmed : () => {}}
+          onSearch={canPick ? () => s.open("search") : () => {}}
           onSwap={() => n.swap()}
           canNext={!!incident && !!n.origin}
           onNext={() => s.open("vehicle")} />
       )}
 
-      {s.screen === "search" && (
+      {s.screen === "search" && canPick && (
         <SearchPanel open onOpen={() => {}} onClose={() => s.open("dispatch")}
                      onQuery={query} verdictOf={verdictOf}
                      onPick={(h) => {

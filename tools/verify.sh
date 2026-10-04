@@ -479,22 +479,12 @@ step "pre-commit 전수"  uv run pre-commit run --all-files
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope ".githooks/*"
 step "훅 전역 연결"    bash .githooks/global-chain.sh --check
-# ★ 2026-10-03 (DECISIONS §376). **아무도 트리를 안 봤다.** 비밀값 방어 셋이
-#   다 **변화량**만 봤다(훅=스테이지 · 액션=커밋 범위 · 이 자리=없었다).
-#   그래서 훅보다 먼저 들어온 값은 셋 모두에게 영원히 안 보였고, V-World 키가
-#   `sources.yaml` 에 55일 평문으로 있었다. 자세한 것은 §376.
-# ★ **scope 를 안 적는다.** 선언 없는 단계는 `--since` 가 안 뺀다(`step()` 의
-#   둘째 갈래). 비밀값은 만진 파일과 무관하게 트리에 있거나 없다.
-# ★ `--redact` — 걸리는 날에도 값을 안 찍는다. 화면·로그·`dms` 봉인에 값이
-#   남으면 그 자체가 두 번째 유출이다.
-# ★ gitignore 된 `.env` 는 `.gitleaks.toml` 의 전역 예외가 뺀다. 그 예외의
-#   전제(추적되지 않는다)는 `treecheck` 의 T2 가 든다. `web/key.js` 는 **안
-#   뺐다** — 2026-09-22 에 생성이 멈춘 찌꺼기이고 걸리는 것이 맞는 신호다.
-# ★ `# local-exempt: gitleaks` 를 지웠다 — 이제 로컬에서 돈다. 죽은 면제는
-#   `gate_parity` 가 잡는다.
-if command -v gitleaks >/dev/null 2>&1; then
-    step "비밀값 — 작업 트리 전수" \
-        gitleaks dir . --config .gitleaks.toml --no-banner --redact --exit-code 1
+# ★ 2026-10-03 (§376) 트리 전수. 2026-10-04 (§381) 호출을 `tools/treescan.sh`
+#   하나로 모았다 — `gitleaks dir` 이 8.19 부터고 apt 판은 8.16 이라 사람
+#   기계에서 빨간불이 났다. 사유와 버전 분기는 그 파일 머리말에 있다.
+# ★ **scope 를 안 적는다.** 비밀값은 만진 파일과 무관하게 트리에 있거나 없다.
+if bash tools/treescan.sh --available; then
+    step "비밀값 — 작업 트리 전수" bash tools/treescan.sh
 else
     note "비밀값 — 작업 트리 전수" "gitleaks 가 없다"
 fi
@@ -807,6 +797,18 @@ else
     step "폭 교차대조"   uv run python tools/widthcross.py
 fi
 
+# ★ 2026-10-03 (§379 · §380). 아래 둘은 법선 표본을 안 쓴다 — 사유는 머리말에.
+scope "src/firelane/seg/width.py tools/clearance_cross.py data/field/*"
+step "통과폭 교차대조" uv run python tools/clearance_cross.py
+scope "src/firelane/seg/params.py tools/constbasis.py"
+step "판정 상수의 출처" uv run python tools/constbasis.py
+scope "web/config.js tools/colorsim.py"
+step "판정 색의 구별" uv run python tools/colorsim.py
+scope "docs/*.md tools/sealcov.py"
+step "봉인 덮임" uv run python tools/sealcov.py
+scope "src/**/*.py tools/**/*.py tests/**/*.py tools/redoscheck.py"
+step "되짚기 폭발 구조" uv run python tools/redoscheck.py
+
 # ★ 2026-09-29 (DECISIONS §304). 공개본만 읽으므로 CI 도 이것을 돈다 — ci-exempt 아님
 scope "src/firelane/seg/classify.py tools/verdictsim.py"
 step "판정 재현"      uv run python tools/verdictsim.py
@@ -1068,8 +1070,9 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   여유가 0.1%p 아래로 얇아지는 것은 정상이다 — 시험을 빼면 그 자리에서 우는 것이
 #   래칫의 뜻이다.
 # ★ 이력 (사유·실측은 DECISIONS 가 든다) — 09-20 W10 23→24 · 09-23 §223-2 27→28 ·
-#   09-25 §258 28→32 · 09-27 §260 32→33 · 09-28 §290 33→34 · 09-29 34→35 · 09-30 §318 35→36.
-COV_MIN=36
+#   09-25 §258 28→32 · 09-27 §260 32→33 · 09-28 §290 33→34 · 09-29 34→35 · 09-30 §318 35→36 ·
+#   10-04 §379 36→37 (실측 37.07% · 새 도구 둘과 그 시험이 들어왔다).
+COV_MIN=37
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."
