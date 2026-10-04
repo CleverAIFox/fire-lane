@@ -383,6 +383,8 @@ jobs:
         run: uv run python tools/docx_check.py
       - name: 기획서 개요 층
         run: uv run python tools/docstyle.py
+      - name: PLAN 의 이력 빚
+        run: uv run python tools/planwork.py
       - name: 문서 말투
         run: uv run python tools/tonecheck.py
       - name: 문서가 적은 시험 수

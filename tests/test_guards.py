@@ -939,9 +939,15 @@ def test_tools_declared_in_docs_exist():
             # ★ `(삭제됨)` 이 붙은 줄은 회고다. 08-18 에 지운 일회성 패처를
             #   "이래서 지웠다" 로 인용하는 자리라 파일이 없는 것이 옳다.
             #   `<!--stale-ok-->` 와 같은 방식 — 표기하는 행위가 곧 기록이다.
-            for m in re.findall(r"tools/([\w_]+\.(?:py|sh|mjs))`?\s*(\(삭제됨\))?", ln):
-                name, retired = m
-                if retired or (ROOT / "tools" / name).exists():
+            # ★ 2026-10-04 (§390-4). 이 검사의 메시지는 세 길을 말하는데
+            #   **코드는 둘만 받고 있었다** — `(삭제됨)` 과 실재. 「'미구현' 을
+            #   명시하라」고 적으면서 그 표기를 안 받았다. 관문의 말과 행동이
+            #   달랐고, 말을 참으로 만들었다. `(미구현)` 은 **아직 안 지은 것**
+            #   이고 `(삭제됨)` 은 **지웠던 것**이다. 둘은 다른 사실이다.
+            for m in re.findall(
+                    r"tools/([\w_]+\.(?:py|sh|mjs))`?\s*(\(삭제됨\)|\(미구현\))?", ln):
+                name, marked = m
+                if marked or (ROOT / "tools" / name).exists():
                     continue
                 missing.append(f"{rel}:{i}  tools/{name}")
     assert not missing, (

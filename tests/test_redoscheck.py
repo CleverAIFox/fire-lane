@@ -96,3 +96,48 @@ def test_the_denominator_is_not_empty():
 
 def test_the_tool_passes_its_own_selftest():
     assert R.selftest() == 0
+
+# ── §392 · 먹는 것이 겹치는 선택 ──────────────────────────────
+
+#: CodeQL 이 든 그 줄. 이 파일 자신이 쓰던 꼴이다.
+_CODEQL_68 = r"\[(?:\\.|[^\]])*\]"
+#: 고친 꼴 — 역슬래시가 `\\.` 한 길로만 간다.
+_CODEQL_FIX = r"\[(?:\\.|[^\]\\])*\]"
+
+
+def test_the_line_codeql_found_in_this_very_tool_is_caught():
+    r"""되짚기를 재는 도구가 **제 되짚기**를 품고 있었다. (DECISIONS §392)
+
+    `_ALT` 는 역참조라 **글자가 같은** 선택만 봤다. 이것은 글자가 다른데
+    `\\.` 과 `[^\]]` 가 **역슬래시를 둘 다 먹는다** — 그래서 안 보였다.
+    """
+    assert R.shapes(_CODEQL_68), "CodeQL 이 든 꼴을 이 도구가 못 잡는다"
+
+
+def test_the_fix_is_not_caught():
+    assert not R.shapes(_CODEQL_FIX), "고친 꼴을 아직 잡는다 — 오탐이다"
+
+
+def test_branches_that_part_at_the_second_atom_are_left_alone():
+    r"""첫 글자만 보면 오탐이 난다 — `-a\\s+` 와 `-f\\s+` 는 갈린다."""
+    assert not R.shapes(r"git\s+tag\s+(?:-a\s+|-f\s+)*x")
+
+
+def test_dot_does_not_eat_a_newline():
+    r"""`.` 을 「전부」로 두면 `(?:.|\n)*?` 가 걸린다 — 그 둘은 갈린다."""
+    assert not R.shapes(r'"""(?:.|\n)*?"""')
+
+
+def test_an_escape_is_not_its_letter():
+    r"""`\\n` 은 글자 `n` 이 아니다. 그대로 읽으면 `.` 과 겹친다고 센다."""
+    import redoscheck as _R
+    assert _R._first_set(r"\n") == (False, {"\n"})
+
+
+def test_a_prefix_branch_is_caught():
+    assert R.shapes(r"(a|ab)+"), "앞머리가 겹치는 선택을 안 잡는다"
+
+
+def test_disjoint_branches_are_left_alone():
+    assert not R.shapes(r"(cat|dog)+")
+    assert not R.shapes(r"(\d+|[a-z]+)*")
