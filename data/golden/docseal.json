@@ -7086,16 +7086,16 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "44e212bc57e84797",
-   "44e212bc57e84797",
-   "8ca775c980fba8c2"
+   "93666bebb2c98c38",
+   "93666bebb2c98c38",
+   "1b9de8d00b8f0f60"
   ],
   "parts": {
    "tests/test_redoscheck.py": "76c5ac7ad217f350",
-   "tools/redoscheck.py": "f3a00df4844c6c99",
+   "tools/redoscheck.py": "07b534c70620d5c1",
    "본문": "ef9eb0428c498831"
   },
-  "sha": "8ca775c980fba8c2"
+  "sha": "1b9de8d00b8f0f60"
  },
  "DECISIONS/40": {
   "doc": "docs/DECISIONS.md",
