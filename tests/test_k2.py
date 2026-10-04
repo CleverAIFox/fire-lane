@@ -160,7 +160,7 @@ def _ask_in_pty(tmp_path, garbage: bytes, answer: bytes, slow: float = 0.5) -> s
         os.execvp("bash", ["bash", str(sh)])
     if garbage:
         os.write(fd, garbage)          # gh --watch 가 남긴 터미널 응답을 흉내 낸다 — 사람이 치기 전에 버퍼에 있다
-    # ★ 2026-10-04 실측 (DECISIONS §394). 종전에는 `time.sleep(0.9)` 뒤에
+    # ★ 2026-10-04 실측 (DECISIONS §395). 종전에는 `time.sleep(0.9)` 뒤에
     #   답을 밀어 넣었다 — 자식의 `sleep 0.5` 가 먼저 끝나 `flush_tty` 가
     #   돌 것이라는 **시계 가정**이다. 기계가 바쁘면 그 순서가 뒤집힌다:
     #   답이 먼저 버퍼에 들어가고 `flush_tty` 가 그것을 비워 버려서
@@ -203,7 +203,7 @@ def test_merge_batch_ask_survives_terminal_replies(tmp_path):
     assert _ask_in_pty(tmp_path, OSC, b"y\n") == "YES", "줄바꿈 없는 응답 조각이 y 에 붙어 판정을 깬다"
     assert _ask_in_pty(tmp_path, OSC, b"n\n") == "NO", "n 을 y 로 읽는다"
     assert _ask_in_pty(tmp_path, b"", b"\n") == "NO", "빈 답을 y 로 읽는다"
-    # ★ 2026-10-04 (DECISIONS §394). **느린 기계를 여기서 흉내 낸다.**
+    # ★ 2026-10-04 (DECISIONS §395). **느린 기계를 여기서 흉내 낸다.**
     #   옛 판은 `자식이 ask 에 닿기까지 1.5s` 에서 매달렸다(실측). 깜빡이를
     #   고치고 나서 그 자리를 안 재면, 다음에 누가 `time.sleep` 으로
     #   되돌려도 평소에는 아무도 모른다 — 바쁜 날에만 운다.

@@ -10007,12 +10007,6 @@
    "doc": "docs/PLAN.md",
    "title": "8-1. processed 계층 포맷 전환 → §1 #96"
   },
-  "PLAN/8-2": {
-   "h": "242910e4fa19714b",
-   "state": "inherit",
-   "doc": "docs/PLAN.md",
-   "title": "8-2. 클라우드 적재 → §1 #97"
-  },
   "PLAN/8-6": {
    "h": "82447461ced8813e",
    "state": "inherit",
