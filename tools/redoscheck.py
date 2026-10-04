@@ -140,8 +140,11 @@ def _first_set(branch: str) -> tuple[bool, set[str]] | None:
         neg = inner.startswith("^")
         if neg:
             inner = inner[1:]
-        if "-" in inner[1:-1] or any(c in inner for c in "wWdDsS") and "\\" in inner:
-            return None                         # 범위 · 군이 섞이면 모른다
+        # ★ 범위(`a-z`)나 군(`\\w` 류)이 섞이면 **모른다**. 종전에 `or` 와 `and` 를
+        #   괄호 없이 섞어 적었고 엄격 린트(`--select B,RUF,…`)가 그것을 들었다 —
+        #   평이한 `ruff` 는 안 울어서 로컬에서 안 보였다. 뜻도 같이 좁혔다.
+        if "-" in inner[1:-1] or any(f"\\{c}" in inner for c in "wWdDsS"):
+            return None
         chars = set()
         i = 0
         while i < len(inner):
