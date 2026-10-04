@@ -274,6 +274,35 @@ def test_the_working_tree_scan_is_wired_into_verify():
         "gitleaks 가 없는 기계에서 **미측정을 세는** `note` 갈래가 없다.\n"
         "  조용히 빠지면 「검사했다」와 「검사기가 없었다」가 같은 초록이 된다 — 회색 = NULL")
 
+def test_the_tree_scan_asks_git_what_travels_with_a_clone():
+    """범위를 **열거하지 않고 git 에게 묻는가.** (DECISIONS §389)
+
+    §381 이 호출 꼴을 맞추자 셋이 걸렸고 **셋 다 오탐**이었다 — `.venv` 의 남의
+    패키지 둘과 `tests/__pycache__` 의 바이트코드 하나다. `--no-git` 은
+    `.gitignore` 를 안 보므로 범위가 「디스크에 있는 것 전부」로 넓어졌고,
+    §376 이 든 물음은 **「복제하면 같이 가나」**였다.
+
+    ★ 경로 목록을 설정에도 여기에도 **열거하지 않는다.** 열거하면 새 무시 자리가
+      생길 때마다 낡고, 낡은 목록이 오탐을 다시 낳는다. 묻는 쪽은 안 낡는다.
+    """
+    src = (ROOT / "tools" / "treescan.sh").read_text(encoding="utf-8")
+    toml = (ROOT / ".gitleaks.toml").read_text(encoding="utf-8")
+    assert "check-ignore" in src, (
+        "`treescan.sh` 가 git 에게 무시 여부를 안 묻는다 — 그러면 범위가\n"
+        "  「디스크 전부」이고 `.venv` · `__pycache__` 가 영원히 빨갛다(§389)")
+    for enumerated in (".venv", "__pycache__"):
+        assert enumerated not in toml, (
+            f"`{enumerated}` 를 설정에 열거했다 — 목록은 낡는다. git 에게 물어라")
+    assert "report-format json" in src and "report-path" in src, (
+        "보고서를 안 받는다 — 요약만 보면 **어디가 걸렸는지 사람에게 조사를\n"
+        "  미루는 것**이고, 미룬 조사는 미뤄진다(§290-2)")
+    assert "SHOW = (" in src, (
+        "찍을 칸을 **허용 목록**으로 안 정했다. 금지 목록은 넷째 칸이 들어오는 날\n"
+        "  새는 쪽으로 틀린다 — 셋만 이름으로 꺼내면 그 길이 없다")
+    assert "returncode not in (0, 1)" in src, (
+        "git 에게 못 물었을 때 **빈 집합으로 바꾸는** 갈래가 열려 있다 —\n"
+        "  우주가 0 이 되면 오탐이 그대로 남고, 전부 무시면 진짜가 조용해진다(§372)")
+
 
 # ── 7 · 전역 경로 예외가 좁은가 ────────────────────────────────
 def test_the_global_path_allowlist_is_only_gitignored_files():
@@ -293,7 +322,7 @@ def test_the_global_path_allowlist_is_only_gitignored_files():
     #   **없는 것이 정상인 상태가 아니다** — 그래서 단정으로 바꿨다.
     assert glob_als, (
         "전역 경로 예외가 없다. 트리 전수(`gitleaks dir`)는 디스크를 훑으므로\n"
-        "  `.env` · `web/key.js` 가 걸려 **제 기계에서 영원히 빨갛다** —\n"
+        "  `.env` 가 걸려 **제 기계에서 영원히 빨갛다** —\n"
         "  그러면 사람이 그 단계를 끈다(§73). 지웠다면 트리 전수도 같이 지웠는지 보라")
     gi = (ROOT / ".gitignore").read_text(encoding="utf-8")
     ignored_pats = {ln.strip().lstrip("/") for ln in gi.splitlines()
