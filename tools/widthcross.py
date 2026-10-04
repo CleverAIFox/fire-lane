@@ -64,9 +64,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import sys
 from pathlib import Path
+
+# ★ 사분위와 결측 읽기의 집은 `tools/statkit.py` 하나다(§379-9).
+#   종전에는 이 둘이 `clearance_cross` 와 글자까지 같았다 — 2족이다.
+from statkit import num as _num
+from statkit import quartiles
 
 # ★ `clear` 의 문턱은 **판정기가 정본이다**(`seg/params.py`). 여기서 수를 적으면
 #   같은 사실이 두 집에 살고, 그 둘은 반드시 갈린다(2족).
@@ -87,17 +91,6 @@ SOURCES: dict[str, tuple[str, bool]] = {
 #: **이것은 문턱이 아니라 표기 단위다** — 모순 판정이 표기 오차에 걸리지
 #: 않게 하는 값이고, 「얼마나 다르면 이상한가」와는 다른 축이다.
 ROUNDING_M = 0.5
-
-
-def _num(v) -> float | None:
-    """수로 읽는다. 결측 · 빈칸 · NaN 은 전부 None 이다. **0 은 수다.**"""
-    if v is None or v == "":
-        return None
-    try:
-        f = float(v)
-    except (TypeError, ValueError):
-        return None
-    return None if math.isnan(f) else f
 
 
 def contradictions(row: dict) -> list[str]:
@@ -215,23 +208,6 @@ def overclaim(rows: list[dict], floor: float) -> list[dict]:
                     "why": f"clear 인데 대장 명목폭 {bt:.1f} < {floor:.1f}",
                     "증거": evidence(r)})
     return out
-
-
-def quartiles(xs: list[float]) -> dict[str, float]:
-    """사분위. numpy 를 안 쓴다 — 이 도구는 표를 읽을 뿐이고 의존을 안 늘린다."""
-    if not xs:
-        return {}
-    s = sorted(xs)
-
-    def q(p: float) -> float:
-        if len(s) == 1:
-            return s[0]
-        i = p * (len(s) - 1)
-        lo, hi = int(i), min(int(i) + 1, len(s) - 1)
-        return s[lo] + (s[hi] - s[lo]) * (i - lo)
-
-    return {"n": len(s), "min": s[0], "q25": q(.25), "median": q(.5),
-            "q75": q(.75), "max": s[-1]}
 
 
 #: 대 볼 쌍. **방법이 독립인 짝을 먼저 둔다** — 그것이 이 도구의 이유다.
