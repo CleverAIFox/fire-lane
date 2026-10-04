@@ -533,6 +533,10 @@ step "기획서 대조"     uv run python tools/docx_check.py
 #   지도를 편별로 선언한다.
 scope "docs/*"
 step "기획서 개요 층"   uv run python tools/docstyle.py
+# ★ 2026-10-04 (§390). `PLAN` 이 빚 목록인지 이력 창고인지. 세 자리가 주석으로만
+#   「PLAN 은 줄어야 한다」고 적고 있었다 — 강제자가 없으면 장식이다(MASTER §17).
+#   재는 것은 **행 수가 아니라 이력 사본**이다. 새 일은 늘어야 한다.
+step "PLAN 의 이력 빚"  uv run python tools/planwork.py
 # ★ 2026-09-28 (§278-2). 문서 넷과 리드미 셋에 비속어·은어·대화체가 남는 길이
 #   열려 있었다. 사람이 읽고 지우는 방식은 한 번 지나가면 다시 쌓인다.
 #   인용 블록은 `<!--voice-ok-->` 로 통과시킨다 — 기존 규약이다(MASTER §0-3).

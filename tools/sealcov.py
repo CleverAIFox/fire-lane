@@ -44,7 +44,7 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 
 #: 어떤 절의 본문도 안 지목한 코드 파일 수가 분모에서 빠진 뒤의 **덮인 수**.
 #: **올라가는 쪽** — 덮임은 늘어나야 한다.
-SEALED_FILES = 355
+SEALED_FILES = 356
 
 RATCHETS = {"SEALED_FILES": "up"}
 
