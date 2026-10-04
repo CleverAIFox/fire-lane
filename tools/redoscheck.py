@@ -65,11 +65,17 @@ RATCHETS = {"REDOS_SHAPES": "down"}
 #   허용했더니 멀쩡한 표 파서 둘이 걸렸다.
 _GROUP_Q = re.compile(r"\((\?:)?([^()]*)\)([+*])")
 #: 수량자가 붙은 원자 하나 — 문자군 · 이스케이프군 · 점.
-_ATOM_Q = re.compile(r"^(?:\[(?:\\.|[^\]])*\]|\\[wWdDsS]|\.)[+*]")
+_ATOM_Q = re.compile(r"^(?:\[(?:\\.|[^\]\\])*\]|\\[wWdDsS]|\.)[+*]")
 #: 선택이어서 **건너뛸 수 있는** 조각.
-_OPTIONAL = re.compile(r"^(?:\[(?:\\.|[^\]])*\]|\\[wWdDsS]|\\.|[^\\\[\]])[?*]")
+_OPTIONAL = re.compile(r"^(?:\[(?:\\.|[^\]\\])*\]|\\[wWdDsS]|\\.|[^\\\[\]])[?*]")
 #: ③ 겹치는 선택 — 같은 글자로 시작하는 선택지가 반복된다.
 _ALT = re.compile(r"\(([^()|]{1,8})\|\1[^()]*\)[+*]")
+#: ④ **먹는 것이 겹치는** 선택. 글자는 달라도 같은 한 글자를 둘 다 먹을 수 있다.
+# ★ 2026-10-04 (§392). CodeQL 이 이 파일의 68 · 70 행을 들었다 —
+#   `(?:\\.|[^\]])*` 다. `\\.` 는 역슬래시+아무거나, `[^\]]` 는 `]` 빼고 전부라
+#   **역슬래시를 둘 다 먹는다.** `_ALT` 는 역참조(`\1`)라 **글자가 같은** 선택만
+#   보고 이것을 못 봤다 — 되짚기를 재는 도구가 제 되짚기를 못 본 자리다.
+_QGROUP = re.compile(r"\((\?:)?([^()]*\|[^()]*)\)[+*]")
 
 
 def _ambiguous(body: str) -> bool:
@@ -97,6 +103,143 @@ def _ambiguous(body: str) -> bool:
     return True
 
 
+def _first_set(branch: str) -> tuple[bool, set[str]] | None:
+    """그 가지가 **처음 먹을 수 있는 글자**. `(부정인가, 글자들)`.
+
+    모르면 `None` 을 돌려준다 — **모른다는 「없다」가 아니다.** 빈 집합으로
+    바꾸면 겹침이 0 으로 나오고 그 순간 이 판별식이 빈 그물이 된다(§372).
+    """
+    if not branch:
+        return None
+    if branch[0] == "\\" and len(branch) > 1:
+        c = branch[1]
+        if c in "wWdDsS":                       # `\w` 류는 넓다 — 모른다고 한다
+            return None
+        if c == "\\":                           # `\\` 는 역슬래시 **하나**를 먹는다
+            return (False, {"\\"})
+        # ★ `\n` 은 글자 `n` 이 아니다. 그대로 읽었더니 `(?:.|\n)*?` 가
+        #   「`.` 과 `n` 이 겹친다」로 걸렸다 — 오탐이다.
+        return (False, {{"n": "\n", "t": "\t", "r": "\r", "f": "\f",
+                         "v": "\v", "0": "\0"}.get(c, c)})
+    if branch[0] == "[":
+        # ★ **이스케이프된 `]` 는 끝이 아니다.** `find` 로 찾았더니 `[^\]]` 의
+        #   안쪽을 `^\` 로 읽어 부정 집합이 통째로 틀렸고, 그래서 68행이
+        #   안 잡혔다 — 고치는 패치가 제 판별식에서 같은 실수를 했다.
+        i, end = (2 if branch[1:2] == "^" else 1), -1
+        while i < len(branch):
+            if branch[i] == "\\":
+                i += 2
+                continue
+            if branch[i] == "]":
+                end = i
+                break
+            i += 1
+        if end < 0:
+            return None
+        inner = branch[1:end]
+        neg = inner.startswith("^")
+        if neg:
+            inner = inner[1:]
+        if "-" in inner[1:-1] or any(c in inner for c in "wWdDsS") and "\\" in inner:
+            return None                         # 범위 · 군이 섞이면 모른다
+        chars = set()
+        i = 0
+        while i < len(inner):
+            if inner[i] == "\\" and i + 1 < len(inner):
+                chars.add(inner[i + 1]); i += 2
+            else:
+                chars.add(inner[i]); i += 1
+        return (neg, chars)
+    if branch[0] == ".":
+        # ★ 점은 **모르는 것이 아니라 거의 전부**다. 「모른다」로 두면 `\\.` 가 든
+        #   가지가 통째로 판정 불가가 되어 68 · 70 행이 다시 빠진다 — 한 번 그랬다.
+        # ★ 그런데 **줄바꿈은 안 먹는다**(DOTALL 이 아니면). 전부로 뒀더니
+        #   `(?:.|\n)*?` 가 걸렸다 — 그 둘은 갈린다.
+        return (True, {"\n"})
+    return (False, {branch[0]})
+
+
+def _overlaps(a: tuple[bool, set[str]], b: tuple[bool, set[str]]) -> bool:
+    """두 첫 글자 집합이 **같은 글자를 먹을 수 있는가.**"""
+    na, sa = a
+    nb, sb = b
+    if not na and not nb:
+        return bool(sa & sb)
+    if na and nb:
+        return True                             # 둘 다 부정이면 거의 언제나 겹친다
+    pos, neg = (sa, sb) if not na else (sb, sa)
+    return bool(pos - neg)
+
+
+def _atoms(branch: str) -> list[tuple[bool, set[str]]] | None:
+    r"""가지를 **원자 차례**로 쪼갠다. 뒤에 붙은 수량자는 떼고 바탕만 본다.
+
+    ★ 첫 글자만 보면 안 된다. `(?:-a\s+|-f\s+)*` 는 둘 다 `-` 로 시작하지만
+      **둘째 자리에서 갈린다** — 한 입력을 두 갈래로 나눌 수 없다. 첫 글자만
+      보던 판이 이것을 오탐으로 들었고, 그러면 아무도 안 읽는다(§73).
+    """
+    out, i = [], 0
+    while i < len(branch) and len(out) < 8:
+        if branch[i] == "\\" and i + 1 < len(branch):
+            piece, i = branch[i:i + 2], i + 2
+        elif branch[i] == "[":
+            j, end = (i + 2 if branch[i + 1:i + 2] == "^" else i + 1), -1
+            while j < len(branch):
+                if branch[j] == "\\":
+                    j += 2
+                    continue
+                if branch[j] == "]":
+                    end = j
+                    break
+                j += 1
+            if end < 0:
+                return None
+            piece, i = branch[i:end + 1], end + 1
+        elif branch[i] in "()?":
+            return None                         # 묶음이 중첩됐다 — 모른다
+        else:
+            piece, i = branch[i], i + 1
+        if i < len(branch) and branch[i] in "+*?{":
+            while i < len(branch) and branch[i] not in "\\[":
+                if branch[i] in "+*?":
+                    i += 1
+                elif branch[i] == "{":
+                    k = branch.find("}", i)
+                    if k < 0:
+                        return None
+                    i = k + 1
+                else:
+                    break
+        got = _first_set(piece)
+        if got is None:
+            return None
+        out.append(got)
+    return out or None
+
+
+def _branch_overlap(a: str, b: str) -> bool:
+    """두 가지가 **같은 글자열을 먹을 수 있는가.**
+
+    자리마다 집합이 겹쳐야 한다 — 한 자리라도 어긋나면 그 가지들은 갈린다.
+    짧은 쪽이 끝나면 그것이 긴 쪽의 앞머리이므로 길이가 달라져 **나눌 수 있다.**
+    """
+    xa, xb = _atoms(a), _atoms(b)
+    if not xa or not xb:
+        return False                            # 모르면 안 든다 — 오탐이 더 비싸다
+    return all(_overlaps(xa[i], xb[i]) for i in range(min(len(xa), len(xb))))
+
+
+def _alt_overlap(pat: str) -> bool:
+    """수량자가 붙은 묶음 안의 선택지 중 **먹는 것이 겹치는** 짝이 있나."""
+    for m in _QGROUP.finditer(pat):
+        branches = m.group(2).split("|")
+        for i in range(len(branches)):
+            for j in range(i + 1, len(branches)):
+                if _branch_overlap(branches[i], branches[j]):
+                    return True
+    return False
+
+
 def shapes(pat: str) -> list[str]:
     """그 패턴이 가진 폭발 가능 모양. 없으면 빈 목록."""
     out = []
@@ -106,6 +249,8 @@ def shapes(pat: str) -> list[str]:
             break
     if _ALT.search(pat):
         out.append("겹치는 선택")
+    elif _alt_overlap(pat):
+        out.append("먹는 것이 겹치는 선택")
     return out
 
 
