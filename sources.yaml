@@ -3637,7 +3637,9 @@ outputs:
   naver_width_2610:
     produced_by: 사람 (네이버 지도 거리재기)
     path: data/field/naver_width_2610.csv
-    inputs: []
+    # ★ 폭 값은 사람이 화면에서 쟀지만 `seg_uid` 와 좌표는 `segments` 에서 왔다.
+    #   구간이 바뀌면 이 표의 배정이 낡는다 — 그래서 상류다.
+    inputs: [segments]
     consumers: [tools/clearance_cross.py, docs/DECISIONS.md]
     what: 노면 폭 실측 11행. 2026-10-03 에 사람이 화면에서 쟀다
     verified: false
