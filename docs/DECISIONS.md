@@ -17010,7 +17010,7 @@ CI `if:` 6 · `# ci-exempt:` 12 · 면제표 94항목, **사유가 빈 것 0**. 
 
 > 2026-09-28
 
-강제자  `tools/ci_wait.sh`(`blocking` · `unresolved` · `required_of` · `open_runs`) · `tests/test_batch_tools.py`. 하위 1이 이 칸을 물려받는다
+강제자  `tools/ci_wait.sh`(`blocking` · `unsettled` · `required_of` · `settled_runs` — 2026-10-06 에 교집합이 차집합으로 뒤집히며 이름이 바뀌었다. DECISIONS §403) · `tests/test_batch_tools.py`. 하위 1이 이 칸을 물려받는다
 
 ### 282-1. 초록이라 말하고 스쿼시가 거부됐다
 
@@ -26655,7 +26655,7 @@ Zd 가 `raw_only` PDF 셋을 대장에 올렸다. 그 셋은 열 계약을 가�
 
 강제자  `tools/inbox_fl.sh`(되감아 보는 판별) ·
 `tests/test_batch_tools.py`(`test_bootstrap_survives_its_own_batch_being_merged`).
-하위 다섯이 이 칸을 물려받는다 — `402-5` 만 문서 행이라 코드 강제자가 없다
+하위 다섯이 이 칸을 물려받는다 — 마지막 하위절만 문서 행이라 코드 강제자가 없다
 배운 것  **「안 붙는다」와 「이미 들어 있다」는 같은 실패로 온다.** 가르지 않으면
 일을 끝낸 배치가 자기 자리에서 길을 막는다.
 
