@@ -3129,15 +3129,15 @@ datasets:
   roadtraffic_act:
     feeds: []
     feeds_note: '[]'
-    stem: moleg_roadtraffic-act
+    stem: moleg_roadtraffic_act
     ext: [pdf]
     kind: raw_only
     scope: kr
     updated: '2026-07-01'
     authority: 법제처 국가법령정보센터 (법률 제21246호 · 2025-12-30 일부개정)
     files:
-      - moleg/moleg_roadtraffic-act_kr_20260701_a29.pdf
-      - moleg/moleg_roadtraffic-act_kr_20260701_a30.pdf
+      - moleg/moleg_roadtraffic_act_kr_20260701_a29.pdf
+      - moleg/moleg_roadtraffic_act_kr_20260701_a30.pdf
     what: |
       도로교통법 제29조(긴급자동차의 우선 통행) · 제30조(긴급자동차에 대한 특례)
       현행 시행본 — 시행 2026-07-01. 조문 하나에 파일 하나다(`_a29` · `_a30`).
@@ -3161,14 +3161,14 @@ datasets:
   hydrantdevice_rule:
     feeds: []
     feeds_note: '[]'
-    stem: moleg_hydrantdevice-rule
+    stem: moleg_hydrantdevice_rule
     ext: [pdf]
     kind: raw_only
     scope: kr
     updated: '2022-05-23'
     authority: 법제처 국가법령정보센터 (소방청예규 제64호 · 화재대응조사과)
     files:
-      - moleg/moleg_hydrantdevice-rule_kr_20220523.pdf
+      - moleg/moleg_hydrantdevice_rule_kr_20220523.pdf
     what: |
       「비상소화장치의 설치 및 관리 기준」 전문 11개조 — 시행 2022-05-23
     feeds_why: |
