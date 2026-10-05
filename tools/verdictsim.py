@@ -85,6 +85,33 @@ def _gap(p: dict) -> float | None:
 NO_WORD = "(어휘 없음)"
 
 
+# ── 모르는 값을 어느 쪽으로 읽는가  (DECISIONS §396 · PLAN #149) ──────────
+#
+# ★ 2026-10-05 실측. 돌연변이 관문이 `verdictsim` 에서 생존 넷을 냈고 **셋이
+#   같은 모양**이었다 — `(X or 0)`. 그 꼴은 **「없다」와 「0」을 같은 것으로**
+#   읽는다. 여기서는 둘 다 우연히 맞는 답을 냈지만, 맞는 이유가 적혀 있지
+#   않으면 다음 사람이 `or 0` 을 `or 999` 로 바꿔도 아무도 안 운다. 실제로
+#   돌연변이 셋이 그 자리에서 살아남았다.
+#
+# ★ 두 방향이 다르고, 다른 이유가 있다.
+#
+#     주장을 **들 때**     모르면 **안 든다**. 「어긋난다」는 적극적 주장이고
+#                          근거가 없으면 못 한다 (§392 와 같은 규율)
+#     clear 를 **줄 때**   모르면 **안 준다**. 통행 가능 선언은 안전 주장이고
+#                          「표본이 몇 개인지 모른다」는 「충분하다」가 아니다
+#
+#   한 줄로 적으면 — **모르는 값은 한 번도 유리하게 쓰이지 않는다.**
+
+def _claims_at_least(v: float | None, threshold: float) -> bool:
+    """`v` 가 문턱 이상이라고 **주장할 수 있는가.** 모르면 거짓이다."""
+    return v is not None and v >= threshold
+
+
+def _fewer_than(v: float | None, threshold: float) -> bool:
+    """표본이 문턱 미만인가. **모르면 참** — 모르는 것은 충분하다는 뜻이 아니다."""
+    return v is None or v < threshold
+
+
 def _veto_clear(test: Callable[[dict], bool]) -> Hook:
     """`clear` 만 거부하는 후보를 만든다.
 
@@ -129,13 +156,13 @@ CANDIDATES: dict[str, dict] = {
         "왜": "우리가 대장보다 clear 문턱만큼 더 넓다고 주장한다. 대장이 좁은지가 "
               "아니라 **둘이 어긋나는지**를 본다 — §299 의 바닥이 놓치는 축이다.",
         "근거": "DECISIONS §307",
-        "hook": _veto_clear(lambda p: (_gap(p) or 0) >= CLEAR_M),
+        "hook": _veto_clear(lambda p: _claims_at_least(_gap(p), CLEAR_M)),
     },
     "clear-samples-3": {
         "왜": "clear 를 표본 2개로 낸다. `verdict()` 는 「표본 1개로는 안 준다」까지만 "
               "막는다. DM02825·DM02647 사고는 둘 다 표본이 얇았다.",
         "근거": "seg/geom.py verdict() 주석 · DECISIONS §245",
-        "hook": _veto_clear(lambda p: (p["n_sample"] or 0) < 3),
+        "hook": _veto_clear(lambda p: _fewer_than(p["n_sample"], 3)),
     },
 }
 
@@ -260,9 +287,29 @@ def selftest() -> int:
         if "§" not in cand["근거"]:
             fails.append(f"{nm} 에 § 근거가 없다 — 문턱을 발명한 것이다")
 
+    # ⑥ 모르는 값을 **한 번도 유리하게** 안 쓰는가
+    #    ★ 돌연변이 셋이 이 자리에서 살아남았다(§396). `(X or 0)` 은 「없다」와
+    #      「0」을 같은 것으로 읽었고, 맞는 답이 나오는 이유가 어디에도 없었다.
+    if _claims_at_least(None, 7.0):
+        fails.append("모르는 어긋남으로 「어긋난다」를 주장한다")
+    if not _claims_at_least(7.0, 7.0) or _claims_at_least(6.9, 7.0):
+        fails.append("문턱 판단이 경계에서 틀렸다")
+    if not _fewer_than(None, 3):
+        fails.append("표본 수를 모르는데 **충분하다**고 읽는다 — clear 가 나간다")
+    if _fewer_than(3, 3) or not _fewer_than(2, 3):
+        fails.append("표본 문턱이 경계에서 틀렸다")
+
+    # ⑦ 그 정책이 후보에 **실제로 꽂혀 있는가** — 함수만 맞고 안 쓰면 소용없다
+    blind = dict(row, n_sample=None)
+    if measure([blind], CANDIDATES["clear-samples-3"]["hook"])["이동"] != 1:
+        fails.append("표본 수가 없는 clear 를 `clear-samples-3` 이 안 내렸다")
+    nogap = dict(row, road_bt_m=None)
+    if measure([nogap], CANDIDATES["clear-gap-clear"]["hook"])["이동"] != 0:
+        fails.append("대장이 없는데 `clear-gap-clear` 가 어긋남을 주장했다")
+
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 5")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 7")
     return 1 if fails else 0
 
 

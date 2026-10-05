@@ -246,6 +246,15 @@ step() {                      # step "이름" "명령..."
     printf '\r%s   [%2d/%2d]  %s%s\033[K\n' "$D" "$IDX" "$TOTAL" "$(hms $e)" "$Z"
     out=$(cat "$tmp"); rm -f "$tmp"
     SECS+=("$e")
+    # ★ 한글 이름은 전부 `_` 가 되어 서로 겹친다. 단계 번호를 앞에 붙인다.
+    _flog="/tmp/verify-$(printf '%02d' "$IDX")-$(printf '%s' "$name" \
+               | tr -c 'A-Za-z0-9' '_' | cut -c1-24).log"
+    # ★ 2026-10-05 (DECISIONS §396 · PLAN #155). `FL_VERIFY_KEEP_LOGS=1` 이면
+    #   **초록 단계도** 전문을 남긴다. `deliver.py pack` 이 pytest 를 따로 한 번
+    #   더 돌리고 있었는데 — verify 안에서 이미 돈 그것이다 — 전문이 없어서
+    #   다시 돌릴 수밖에 없었다. 기본은 꺼짐이다: 평소 실행이 99개 파일을
+    #   /tmp 에 흘리면 그것대로 쓰레기다.
+    [ "${FL_VERIFY_KEEP_LOGS:-0}" = 1 ] && printf '%s\n' "$out" > "$_flog"
     if [ $rc -eq 0 ]; then
         printf '%s   OK%s  %s\n' "$G" "$Z" "$(printf '%s' "$out" | tail -1)"
         NAMES+=("$name"); RESULTS+=("OK"); NOTES+=("$(printf '%s' "$out" | tail -1)")
@@ -256,8 +265,6 @@ step() {                      # step "이름" "명령..."
         #   `jijeok` 의 진짜 사유를 못 봐서 전량(20분)을 **다섯 번** 돌렸다.
         #   실패한 단계를 다시 돌려야만 사유를 볼 수 있는 보고는
         #   보고가 아니다 — 그것이 이 저장소의 진짜 병목이었다.
-        # ★ 한글 이름은 전부 `_` 가 되어 서로 겹친다. 단계 번호를 앞에 붙인다.
-        _flog="/tmp/verify-$(printf '%02d' "$IDX")-$(printf '%s' "$name"                | tr -c 'A-Za-z0-9' '_' | cut -c1-24).log"
         printf '%s\n' "$out" > "$_flog"
         printf '%s' "$out" | tail -15 | sed 's/^/     /'
         printf '%s     전문 %s%s\n' "$D" "$_flog" "$Z"

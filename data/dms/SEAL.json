@@ -1,20 +1,20 @@
 {
- "sealed_at": "2026-10-04T18:30:19+09:00",
- "commit": "6566c5f",
- "tool": "8acfd1d34ac0a8fc",
+ "sealed_at": "2026-10-05T14:38:58+09:00",
+ "commit": "3ad7fa2",
+ "tool": "7013fa316801b8d7",
  "tools": {
   "tools/deadcheck.py": "d206e63334eeca39",
   "tools/dms.py": "3c18638be9e87015",
   "tools/dupcheck.py": "144a2716fa56ff3e",
   "tools/env_check.py": "9c41c18ab2a68470",
-  "tools/verify.sh": "770896992299d81b"
+  "tools/verify.sh": "0e5a9bf582d39d49"
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "43ce71ce50f606a0",
-  "docs/DECISIONS.md": "80991c8262d860d6",
-  "docs/PLAN.md": "5f17915f82f8288e",
-  "README.md": "0c3f1beca81a4ed0"
+  "docs/MASTER.md": "5c55c933eb85d66a",
+  "docs/DECISIONS.md": "928c5493e5eb353c",
+  "docs/PLAN.md": "cb8055b1e1d54422",
+  "README.md": "554ee9488a380e92"
  },
  "raw": {
   "gjcity_road_facility": [
@@ -249,12 +249,12 @@
   ]
  },
  "code": {
-  "sha256": "230132934acfe282",
+  "sha256": "370a7136813a8398",
   "files": {
    "data/field/naver_width_2610.csv": "ce7130212f456fcc361787502c841b190917384f26e43dca4787db5b534ca3ba",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "pyproject.toml": "8fcce06301260d06fe7a2d2cf5663295b4d60219dc7e11c4a8bb8788bed1bd36",
-   "sources.yaml": "a742ff3411c477d107b1b2f8506616f29bcd46df5440de1107433a8899dadd77",
+   "sources.yaml": "3dde04b576ecab2b1befaca8fd2c53240084012d3597a658061d4ec15a015a02",
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d16004113ef6e158febf3069febd5b43064abe2ffd93623481aa241272e5b627",
@@ -330,7 +330,7 @@
    "src/firelane/seg/width.py": "b3378500fe8c835927901c704207bad8b57f467aa2cb70258a6c17f2950ffe15",
    "src/firelane/segkey.py": "29d7175dfa7e81e115da1588cb56dd0e0830e65defb996328b771e9258e980ef",
    "src/firelane/segments.py": "4319b193ac4762f3b7bee14158685bd8625523afc343c73bb69d7a62a3a9dec5",
-   "src/firelane/shardseal.py": "9b35725328d040d0c3de5192e72e7448104ac769ca48b6813512eb3610dfad58",
+   "src/firelane/shardseal.py": "a16d2f72b81414bba2a1700001be81809b03d7eede230f5e127a3dfda74b96c2",
    "src/firelane/skeleton.py": "36ab78145348825d45d0ec464a13297f966bb3caec2c8180199c8cf1c2c40e09",
    "src/firelane/stagerun.py": "239db3dc4af5a7ee76dcdab8e4b4c585c47b4d0f72abd3eeda7c93c6d1f68349",
    "src/firelane/terrain.py": "a26f255d0955715dce31e37279fd36d16c6e24e98c82346946858df007fa29a1",
@@ -564,7 +564,7 @@
    "title": "6-1. 확보"
   },
   "MASTER/6-2": {
-   "h": "5ba962f4ea1a84e7",
+   "h": "abed0399d40e7571",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-2. 데이터 보관"
@@ -726,7 +726,7 @@
    "title": "11-2a. 여유폭 — 색과 수, 그리고 빨강의 사유 (2026-09-23 · DECISIONS §220)"
   },
   "MASTER/11-2b": {
-   "h": "5d6a928f5b7292bf",
+   "h": "6a75abf34dd6ed53",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "11-2b. 지령 상속과 URL 깃발 (2026-10-04 · DECISIONS §382-1 · §386)"
@@ -1014,7 +1014,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "f7a3973a07308858",
+   "h": "5efa9111096a05f8",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -1362,7 +1362,7 @@
    "title": "7. `tools/nfa_out_20260818.py` (삭제됨)"
   },
   "DECISIONS/8": {
-   "h": "68e902207fddb934",
+   "h": "a79b40b75db2207b",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "8. `tools/stale_guard_20260818.py` (삭제됨)"
@@ -1410,7 +1410,7 @@
    "title": "15. `blocked` 를 두 근거 합치로 확정한다 (63 → 159)"
   },
   "DECISIONS/16": {
-   "h": "f81ad8be3fa6c369",
+   "h": "5d763a20a1a30d56",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "16. gpkg 에 옛 레이어가 남아 하류가 옛 데이터를 읽었다"
@@ -1902,7 +1902,7 @@
    "title": "71. 검사는 두 판을 보고 산출은 한 판이었다"
   },
   "DECISIONS/72": {
-   "h": "27bb9a446f7d14f9",
+   "h": "de1915ffbd34cf9f",
    "state": "none",
    "doc": "docs/DECISIONS.md",
    "title": "72. 외부 회신을 전건으로 두고 있었다"
@@ -7692,7 +7692,7 @@
    "title": "303-3. 판정 폐포가 16 → 17 이 됐다 — 면적이 는 것이 아니다"
   },
   "DECISIONS/304": {
-   "h": "e2779911905dfe8c",
+   "h": "5964e55e813cfe39",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "304. 규칙 변경을 배달 전에 재는 도구 — 반년 미결의 원인은 게으름이 아니라 「못 쟀다」였다"
@@ -9851,6 +9851,234 @@
    "doc": "docs/DECISIONS.md",
    "title": "389-5. §376 의 한 줄을 정정한다 — `web/key.js`"
   },
+  "DECISIONS/390": {
+   "h": "702c661c89401ac7",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "390. 「PLAN 은 줄어야 한다」에 강제자가 없었다"
+  },
+  "DECISIONS/390-1": {
+   "h": "4f5e9e1afd51a026",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "390-1. 무엇을 재면 안 되는가"
+  },
+  "DECISIONS/390-2": {
+   "h": "894625b9b2e97f04",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "390-2. 재는 것은 **이력 사본**이다"
+  },
+  "DECISIONS/390-3": {
+   "h": "97f2f6d30b915eb2",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "390-3. 빚을 갚았다 — 그리고 도구가 갚았다"
+  },
+  "DECISIONS/390-4": {
+   "h": "2b2babc96c771291",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "390-4. 관문의 말과 행동이 달랐다 — 세 길 중 하나가 말뿐이었다"
+  },
+  "DECISIONS/391": {
+   "h": "c5154ad3498f3cf5",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "391. 제출본의 수가 데이터에서 안 흐른다 — 8%"
+  },
+  "DECISIONS/391-1": {
+   "h": "d55c0c9b3ce02960",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "391-1. 분모"
+  },
+  "DECISIONS/391-2": {
+   "h": "b15342e36bea77af",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "391-2. 쓸 수 있는데 안 쓰는 축"
+  },
+  "DECISIONS/391-3": {
+   "h": "6c5d22c446686b6a",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "391-3. 근접값 사후 대조는 **쓸 수 없다**"
+  },
+  "DECISIONS/392": {
+   "h": "69fc318da750acad",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "392. 되짚기를 재는 도구가 **제 되짚기**를 품고 있었다"
+  },
+  "DECISIONS/392-1": {
+   "h": "e9c607ca7e0929b7",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "392-1. 왜 이 도구가 제 몸을 못 봤나"
+  },
+  "DECISIONS/392-2": {
+   "h": "2dfb87d9573559ec",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "392-2. 고침 — 글자가 아니라 **먹는 것**으로 본다"
+  },
+  "DECISIONS/392-3": {
+   "h": "06edc4bd9952ff80",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "392-3. 고치면서 **같은 자리에서 네 번 틀렸다**"
+  },
+  "DECISIONS/392-4": {
+   "h": "60be22b4f4773952",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "392-4. CodeQL 과 이 도구는 **다른 물음**이다"
+  },
+  "DECISIONS/393": {
+   "h": "d8960321ce1c87a3",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "393. §386 이 막으려던 것을 §386 이 안 막았다 — 버튼은 그대로 그려졌다"
+  },
+  "DECISIONS/393-1": {
+   "h": "83288a4711007205",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "393-1. 실측 — 운전석에 말없이 씹는 버튼이 둘, 안 묶인 것이 하나"
+  },
+  "DECISIONS/393-2": {
+   "h": "df780174c65f5781",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "393-2. 고침은 묶는 쪽이 아니라 모양 쪽이다"
+  },
+  "DECISIONS/393-3": {
+   "h": "aeed3049e60549f2",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "393-3. 묶인 버튼을 못 만드는 것이 낫다"
+  },
+  "DECISIONS/393-4": {
+   "h": "5d9204c30e4c5c75",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "393-4. 시험이 값과 모양을 같이 본다"
+  },
+  "DECISIONS/393-5": {
+   "h": "d5a67c5e4071a3d6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "393-5. 강제자가 틀린 모양을 **단언**하고 있었다"
+  },
+  "DECISIONS/394": {
+   "h": "9180b5b811786e79",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "394. PLAN 을 111행에서 90행으로 — **무엇을 일로 닫고 무엇을 합쳤나**"
+  },
+  "DECISIONS/394-1": {
+   "h": "a00c13244c4ac736",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "394-1. 사람이 닫은 것 — 전제가 사라졌거나 못 받는다"
+  },
+  "DECISIONS/394-2": {
+   "h": "f8845889bf8638f3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "394-2. 일로 닫은 것 — 재서 답이 나왔다"
+  },
+  "DECISIONS/394-3": {
+   "h": "36ad2da3338bb4cf",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "394-3. 합친 것 — 같은 사실의 다른 얼굴"
+  },
+  "DECISIONS/395": {
+   "h": "fae80538c6ea0ccc",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "395. 같은 트리에서 한 번 통과하고 한 번 실패했다 — 시험이 시계를 재고 있었다"
+  },
+  "DECISIONS/395-1": {
+   "h": "681680d0788e64c5",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "395-1. 실측 — 한 트리, 두 답"
+  },
+  "DECISIONS/395-2": {
+   "h": "d313dfeb682ce029",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "395-2. 왜 느리면 깨지나"
+  },
+  "DECISIONS/395-3": {
+   "h": "1a94d79d9d0ff39a",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "395-3. 시계가 아니라 신호를 기다린다"
+  },
+  "DECISIONS/396": {
+   "h": "276ea46c8dd2a34a",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "396. 관문 빚 넷 — 손으로 치던 것, 네 번 돌던 것, 안 붙들려 있던 것"
+  },
+  "DECISIONS/396-1": {
+   "h": "69ecc3b4b0b3b80d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "396-1. `fl.sh` 를 사람이 하루에 세 번 깔았다"
+  },
+  "DECISIONS/396-2": {
+   "h": "87d08b94b9f87b51",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "396-2. `--measured` 안내가 붙이는 조건을 안 적었다"
+  },
+  "DECISIONS/396-3": {
+   "h": "f2cfa7be4482fc0e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "396-3. `deliver.py pack` 이 같은 전수를 **네 번** 돌렸다"
+  },
+  "DECISIONS/396-4": {
+   "h": "fc884cd59c6bb910",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "396-4. 돌연변이 관문 — **재기는 했고 도구는 아직 안 실었다**"
+  },
+  "DECISIONS/396-5": {
+   "h": "392c26a3b9bd061f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "396-5. `verdictsim` 의 생존 넷 중 **셋이 같은 한 줄**이었다"
+  },
+  "DECISIONS/396-6": {
+   "h": "1c359f5411bbfb22",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "396-6. 제공기관 목록이 아직 **세 벌**이다"
+  },
+  "DECISIONS/396-6b": {
+   "h": "c3638ef2df3e79c0",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "396-6b. 봉인 「사라짐 240」을 분해했다 — 썩은 것이 아니라 **범위를 좁힌 자국**이다"
+  },
+  "DECISIONS/396-7": {
+   "h": "664c498417da117f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "396-7. 산문 한 줄이 샤드 45개를 찢었다 — **같은 족 네 번째**"
+  },
+  "DECISIONS/396-8": {
+   "h": "eb0fe95d0bb18fe4",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "396-8. 찢긴 봉인 45개를 **다시 빌드 없이** 옮겼다"
+  },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
    "state": "none",
@@ -9870,10 +10098,10 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN/1": {
-   "h": "bc77bf56561acf4a",
+   "h": "6494f5e397647caa",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "1. 남은 일 — 96행"
+   "title": "1. 남은 일 — 88행"
   },
   "PLAN/1-23": {
    "h": "45f802835c7c288a",
@@ -9996,7 +10224,7 @@
    "title": "7-5. 소화전 → §1 #95"
   },
   "PLAN/8": {
-   "h": "8b46953a0e6a3dfd",
+   "h": "493e7d5127d88522",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "8. 데이터 관리 · 인프라"
@@ -10007,12 +10235,6 @@
    "doc": "docs/PLAN.md",
    "title": "8-1. processed 계층 포맷 전환 → §1 #96"
   },
-  "PLAN/8-2": {
-   "h": "242910e4fa19714b",
-   "state": "inherit",
-   "doc": "docs/PLAN.md",
-   "title": "8-2. 클라우드 적재 → §1 #97"
-  },
   "PLAN/8-6": {
    "h": "82447461ced8813e",
    "state": "inherit",
@@ -10020,7 +10242,7 @@
    "title": "8-6. 대장 · 매니페스트 격차 → §1 #101 · #102"
   },
   "PLAN/9": {
-   "h": "6600565c8dd047d4",
+   "h": "cec1524a8ef1fdb4",
    "state": "none",
    "doc": "docs/PLAN.md",
    "title": "9. 외부 의존"
@@ -10122,7 +10344,7 @@
    "title": "파이프라인"
   },
   "README/도구": {
-   "h": "cd9de4f6dd9adfc2",
+   "h": "dd134b7b99c5c292",
    "state": "wired",
    "doc": "README.md",
    "title": "도구"
@@ -10207,7 +10429,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2283 passed, 1 warning in 448.10s (0:07:28)",
+   "tail": "2301 passed, 1 warning in 477.88s (0:07:57)",
    "red": []
   },
   "probe/deadcheck": {

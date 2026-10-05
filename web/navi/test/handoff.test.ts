@@ -5,7 +5,18 @@
  *   고를 수 있게 두면 지령과 화면이 갈린다.
  */
 import { describe, expect, it } from "vitest";
-import { canPickDestination, readHandoff } from "../src/domain/handoff";
+import { canPickDestination, editHands, readHandoff } from "../src/domain/handoff";
+
+/** ★ `node:fs` 를 안 쓴다 — `wiring.test.ts` 와 같은 이유로 vite 가 준다. */
+const SRC: Record<string, string> = import.meta.glob(
+  "../src/**/*.tsx", { query: "?raw", import: "default", eager: true },
+);
+
+function src(tail: string): string {
+  const k = Object.keys(SRC).find((x) => x.endsWith(tail));
+  if (!k) throw new Error(`소스를 못 찾았다: ${tail}`);
+  return SRC[k];
+}
 
 describe("관제 지령 읽기", () => {
   it("사건 좌표가 오면 상속으로 본다", () => {
@@ -69,5 +80,60 @@ describe("목적지 선택 가능 여부", () => {
 
   it("지령이 없으면 고를 수 있다 — 훈련과 점검이 그 길이다", () => {
     expect(canPickDestination(readHandoff(""))).toBe(true);
+  });
+});
+
+/**
+ * ── 바꾸는 손  (DECISIONS §393) ────────────────────────────────
+ *
+ * ★ 2026-10-04 실측. `canPickDestination` 은 서 있었는데 `App.tsx` 가 그것을
+ *   **핸들러에만** 걸었다 — `onArm={canPick ? setArmed : () => {}}`. 버튼은
+ *   그대로 그려졌고, 지령이 온 운전석 화면에서 「위치 변경」과 「지도에서
+ *   직접 선택」이 말없이 씹혔다(족1). 그리고 `onSwap` 에는 **조건이 아예
+ *   없어서** 출발·도착이 실제로 뒤집혔다.
+ *
+ * ★ 그래서 여기가 묻는 것은 두 가지다 — ① 묶음이 통째로 `null` 이 되는가
+ *   ② **그 모양이 되돌아올 수 없는가**. ②가 없으면 다음 손이 늘 때 또
+ *   하나를 묶는 걸 잊는다.
+ */
+describe("바꾸는 손", () => {
+  const HANDS = { onStation: () => {}, onArm: () => {}, onSearch: () => {}, onSwap: () => {} };
+
+  it("지령이 왔으면 손이 통째로 없다 — 빈 함수가 아니라 null 이다", () => {
+    expect(editHands(readHandoff("?incident=126.92,35.15"), HANDS)).toBeNull();
+  });
+
+  it("지령이 없으면 넘긴 묶음을 그대로 돌려준다", () => {
+    expect(editHands(readHandoff(""), HANDS)).toBe(HANDS);
+  });
+
+  it("출발 센터도 같은 문이다 — 목적지만 고정하면 화면이 지령과 갈린다", () => {
+    expect(editHands(readHandoff("?incident=126.92,35.15&station=지산"), HANDS)).toBeNull();
+  });
+
+  // ★ 여기부터는 **모양**을 본다. 값이 아니라 소스다.
+  it("DispatchPanel 은 바꾸는 손을 낱개로 안 받는다", () => {
+    const s = src("ui/DispatchPanel.tsx");
+    const props = s.slice(s.indexOf("interface Props"), s.indexOf("export function DispatchPanel"));
+    for (const name of ["onStation", "onArm", "onSearch", "onSwap"]) {
+      expect(props, `Props 가 ${name} 를 낱개로 받으면 하나를 묶는 걸 잊는다`)
+        .not.toContain(name);
+    }
+    expect(props).toContain("edit: EditHands | null");
+  });
+
+  it("App 은 그 묶음을 editHands 를 거쳐서만 넘긴다", () => {
+    const s = src("App.tsx");
+    expect(s).toContain("edit={editHands(hand,");
+    // 빈 함수로 묶는 옛 모양이 되살아나면 운다.
+    // ★ **한 줄 안에서만** 본다. `[^}]*` 로 두면 줄을 넘어 파일 저쪽의
+    //   아무 빈 함수에나 걸린다 — 처음 쓴 판이 실제로 그랬다.
+    // ★ 주석 줄은 코드가 아니다 — 옛 모양을 **적어 둔 설명**이 제 시험에
+    //   걸렸다(첫 판이 그랬다). 설명을 지우면 왜 묶였는지가 사라진다.
+    const bad = s.split("\n")
+      .filter((ln) => !/^\s*(\/\/|\*|\/\*)/.test(ln))
+      .filter((ln) => /canPick\s*\?.*\(\s*\)\s*=>\s*\{\s*\}/.test(ln));
+    expect(bad, "`canPick ? f : () => {}` 는 버튼을 그려 놓고 손만 묶는 모양이다")
+      .toEqual([]);
   });
 });

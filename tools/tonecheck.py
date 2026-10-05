@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-tonecheck.py — 문서와 주석의 **말투**. 비속어 · 은어 · 대화체가 새는가.  (DECISIONS §278)
+tonecheck.py — 문서와 주석의 **말투**. `FAMILIES` 가 드는 족이 새는가.  (DECISIONS §278)
 
     uv run python tools/tonecheck.py            검사 (종료코드 = 건수)
     uv run python tools/tonecheck.py --list     무엇을 어디까지 보는지
@@ -32,6 +32,7 @@ PARAM FAMILIES · EXEMPT
 from __future__ import annotations
 
 import argparse
+import pathlib
 import re
 import sys
 from pathlib import Path
@@ -57,6 +58,17 @@ FAMILIES: dict[str, tuple[str, tuple[str, ...]]] = {
         "우리 둘이 대화에서 쓰는 말이다. 다음 사람은 그 말을 모른다 — 뜻을 적는다.",
         (r"땅따먹기", r"꼬라지", r"삽질", r"뻘짓", r"노가다", r"뇌피셜",
          r"후려치", r"막장", r"깽판", r"존버", r"현타", r"킹받", r"쌉[가-힣]"),
+    ),
+    # ★ 2026-10-05 신설 (DECISIONS §396 · PLAN #148). 기관·조직 이름을 줄여
+    #   쓰면 밖에서 읽는 사람이 **무엇인지 모른다.** 기획서는 밖으로 나가고,
+    #   이 저장소는 취업 포트폴리오다 — 줄임말 하나가 「이 사람은 누구 소속이었나」를
+    #   통째로 가린다. 사람이 「광인사라고 쓰지 마라」로 정했다(2026-10-04).
+    #   ★ 표에 **정식 이름을 같이** 둔다. 「쓰지 마라」만 적으면 다음 사람이
+    #     무엇으로 바꿀지 모르고, 모르면 또 줄여 쓴다.
+    "약칭": (
+        "기관 이름을 줄여 쓰면 밖에서 읽는 사람이 무엇인지 모른다. "
+        "정식 이름으로 적는다 — 광인사 → 광주 인공지능사관학교.",
+        (r"광인사",),
     ),
     "대화체": (
         "채팅 흔적이다. 문서는 대화록이 아니다.",
@@ -199,6 +211,9 @@ def selftest() -> int:
             bad.append(f"`{fam}` 을 심었는데 안 운다 — 빈 그물이다")
     if scan([("x.md", "멀쩡한 문장이다. 판정은 폭으로 한다.")]):
         bad.append("멀쩡한 문장에 운다")
+    # ★ 초록 안내가 **족 목록에서 유도되는가.** 손으로 적으면 족이 늘 때 낡는다.
+    if '" · ".join(FAMILIES)' not in pathlib.Path(__file__).read_text(encoding="utf-8"):
+        bad.append("초록 안내가 족 이름을 손으로 든다 — 족이 늘면 낡는다")
     if not exempt("tools/tonecheck.py"):
         bad.append("면제가 안 먹는다 — 목록 파일 자신이 걸린다")
     if exempt("docs/MASTER.md"):
@@ -230,7 +245,10 @@ def main(argv: list[str] | None = None) -> int:
     bad = scan()
     if not bad:
         n = len(targets())
-        print(f"✓ 말투 — {n}개 파일에서 비속어 · 은어 · 대화체 0건")
+        # ★ 2026-10-05 (§396). 종전에는 족 이름 셋을 **손으로** 적었다.
+        #   약칭 축을 늘리자마자 그 줄이 낡았다 — 늘린 사람이 안내를
+        #   고쳐야 하는 구조 자체가 드리프트 원인이다(§73 과 같은 꼴).
+        print(f"✓ 말투 — {n}개 파일에서 " + " · ".join(FAMILIES) + " 0건")
         return 0
     print(f"✗ 말투 {len(bad)}건 — **정본 문서는 밖으로 나간다**")
     for b in bad:

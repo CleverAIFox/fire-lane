@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import ast
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -129,3 +130,57 @@ def test_a_delivery_without_a_contract_is_refused_not_warned():
     assert "warn " not in tail, "경고로 넘긴다 — 경고는 곧 안 읽히는 줄이 된다"
     # ★ 반대 방향. 있을 때는 **대조**해야 한다 — 죽는 것만 보면 초록도 못 간다.
     assert "tools/expectcheck.py" in blk, "있을 때 아무도 안 댄다"
+
+
+# ── pack 이 같은 전수를 네 번 돌고 있었다  (DECISIONS §396 · PLAN #155) ──
+
+def test_verify_keeps_green_logs_only_when_asked(tmp_path):
+    """`FL_VERIFY_KEEP_LOGS=1` 이면 초록 단계도 전문을 남긴다. 기본은 안 남긴다.
+
+    ★ 기본을 켜면 평소 실행이 /tmp 에 99개를 흘린다 — 그것대로 쓰레기다.
+    """
+    s = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
+    assert '[ "${FL_VERIFY_KEEP_LOGS:-0}" = 1 ]' in s, "깃발이 없다"
+    # 전문 경로를 **한 번만** 짓는다 — 두 벌이면 초록·빨강이 다른 이름으로 간다
+    assert s.count('_flog="/tmp/verify-') == 1, "전문 경로가 두 벌이다"
+
+
+def test_pack_reads_the_pytest_log_instead_of_running_it_again():
+    """★ 실측 — pack 한 번에 전수 pytest 가 **네 번** 돌았다.
+
+        따로        밑동 한 번 · 얹은 뒤 한 번
+        verify 안   밑동 verify 안에 한 번 · 얹은 뒤 verify 안에 한 번
+
+    사용자 기계에서 pytest 7분40초 · verify 14분43초다 — 둘을 두 번씩이면
+    45분이 넘는다. 10분 상한에 걸린 것은 **한 가지가 느려서가 아니라 같은
+    것을 네 번 돌려서**였다. 이제 verify 가 남긴 전문을 읽는다.
+    """
+    d = (ROOT / "tools/deliver.py").read_text(encoding="utf-8")
+    code = "\n".join(l for l in d.splitlines() if not l.lstrip().startswith("#"))
+    assert "_pytest_log()" in code, "전문을 안 찾는다"
+    assert '"FL_VERIFY_KEEP_LOGS": "1"' in code, "verify 에 전문을 남기라고 안 한다"
+    assert "old.unlink(missing_ok=True)" in code, (
+        "옛 전문을 안 지운다 — 지난 실행의 pytest 를 이번 것으로 읽는다")
+    # 순서: verify(기준선) 가 pytest 채집보다 **먼저** 와야 전문이 있다
+    i_sweep = code.index("base_sweep = _sweep_red")
+    i_red = code.index("base_red = _redlist")
+    assert i_sweep < i_red, "기준선 pytest 가 verify 보다 먼저다 — 전문이 없다"
+
+
+def test_the_pytest_scanner_is_pure_and_bites():
+    """채집 판별식을 **꺼냈다**(§17-0) — 합성 입력으로 재고, 안 걸리는 것도 댄다."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_dlv", ROOT / "tools/deliver.py")
+    m = importlib.util.module_from_spec(spec)
+    # ★ `@dataclass` 가 `cls.__module__` 로 되짚는다 — 없으면 터진다(지연 신관).
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    red, tail = m._scan_pytest(
+        "FAILED tests/test_a.py::test_x - boom\n"
+        "FAILED tests/test_b.py::test_y\n"
+        "2 failed, 9 passed in 3.1s\n", 1)
+    assert red == {"tests/test_a.py::test_x", "tests/test_b.py::test_y"}
+    assert "2 failed" in tail
+    red2, tail2 = m._scan_pytest("2291 passed, 1 warning in 457.32s\n", 0)
+    assert red2 == set() and "2291 passed" in tail2, "초록을 빨강으로 읽는다"
+    assert m._scan_pytest("", 7)[1] == "rc=7", "요약이 없으면 종료코드를 든다"
