@@ -91,7 +91,7 @@ export const STATUS: Record<StatusKey, StatusSpec> = {
     label: "안전 경로 안내중", eta: "value", route: "solid" },
   fast: { wf: ["03B"], tone: "yellow", tag: "안전 경로 안내",
     label: "빠른 경로 안내중", eta: "value", route: "solid" },
-  approach: { wf: ["05"], tone: "green", tag: "폭 기준 추천", label: "목적지 도착",
+  approach: { wf: ["05"], tone: "green", tag: "안전 경로", label: "목적지 도착",
     title: "최종 접근 지점", sub: "차량 진입 가능 구간 종료", icon: "P",
     eta: "none", route: "solid", noRemain: true },
   reroute: { wf: ["06"], tone: "cyan", tag: "경로 이탈", label: "새 경로 확인 중",

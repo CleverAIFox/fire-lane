@@ -1,5 +1,14 @@
 /**
- * ui/RouteCompare.tsx — 경로 비교.  (와이어프레임 02 · 2026-09-21)
+ * ui/RouteCompare.tsx — **경로 설명.** 고르는 판이 아니다.  (DECISIONS §400)
+ *
+ * ★ 2026-10-05. 종전 이름은 「경로 비교」였고 기사가 둘 중 하나를 **골랐다.**
+ *   사람이 그 전제를 잘랐다 — 「내비가 스스로 고를 수 있는건 없다」. 경로는
+ *   관제가 정해서 지령에 실어 보내고, 이 판은 **왜 이 길인지**를 보인다.
+ *   둘을 나란히 그리는 것은 비교가 아니라 설명이다. `onSelect` 를 지웠다.
+ *
+ * ★ 「폭 기준」을 **안전**으로 고쳐 부른다. 그래서 하단 고지가 더 중요해졌다 —
+ *   안 지우고 **「폭으로만 본 안전이다」**로 다시 적었다. 이름이 세질수록
+ *   한계를 더 적는다.
  *
  * ★ "빠른 경로" 는 **폭 위험을 감수한 최단**이지 아무 데나 최단이 아니다.
  *   `buildAdjacency(..., "fastest")` 가 `blocked` 와 필요폭 미만은 여전히
@@ -24,7 +33,7 @@
  */
 import type { CSSProperties } from "react";
 import { C, F, fmtDur } from "./tokens";
-import { Cta, Ghost, Sheet } from "./Sheet";
+import { Cta, Sheet } from "./Sheet";
 import { clearanceBand, fmtClearance } from "../domain/clearance";
 import { SAME_ROUTE_TITLE } from "../domain/compare";
 import { CLEARANCE_SCALE } from "./clearanceMeaning";
@@ -60,41 +69,45 @@ interface Props {
    * 이것이 false 면 빠른 경로 자체를 못 낸 것이다 — 다른 말을 한다.
    */
   same: boolean;
-  selected: "safe" | "fast";
-  onSelect: (k: "safe" | "fast") => void;
+  /** 관제가 정한 경로. **기사는 못 바꾼다.** */
+  chosen: "safe" | "fast";
+  /** 그 값이 지령에서 왔는가. 거짓이면 기본값이고 화면이 그렇게 적는다. */
+  fromOrder: boolean;
   onConfirm: () => void;
-  onChangeVehicle?: () => void;
 }
 
-export function RouteCompare(p: Props) {
+export function RouteBrief(p: Props) {
   if (p.same) return <SameRoute {...p} />;
   return (
     <Sheet wf="02" footer={
-      <div style={{ display: "flex", gap: 10 }}>
-        {p.onChangeVehicle && <Ghost onClick={p.onChangeVehicle}>차량 변경</Ghost>}
-        <div style={{ flex: 1 }}><Cta onClick={p.onConfirm}>안내 시작</Cta></div>
-      </div>
+      <Cta onClick={p.onConfirm}>안내 시작</Cta>
     }>
-      <div style={{ fontSize: 22, fontWeight: 800 }}>추천 경로를 선택하세요</div>
+      <div style={{ fontSize: 22, fontWeight: 800 }}>
+        {p.chosen === "safe" ? "안전 경로로 간다" : "빠른 경로로 간다"}
+      </div>
       <div style={{ fontSize: 13, color: C.panelSub, marginTop: 4 }}>
-        도착 시간과 폭 판정 결과를 비교합니다.
+        {p.fromOrder
+          ? "관제가 정한 경로다. 아래는 다른 경로와의 차이다."
+          : "지령에 경로 지정이 없어 안전으로 간다 — 기본값이고 지시가 아니다."}
       </div>
 
-      <Card o={p.safe} k="safe" on={p.selected === "safe"} onPick={p.onSelect}
-            accent={C.toneGreen} chip="추천" title="폭 기준 추천" />
+      <Card o={p.safe} on={p.chosen === "safe"}
+            accent={C.toneGreen} chip={p.chosen === "safe" ? "지령" : "안 간다"}
+            title="안전 경로" />
       {p.fast ? (
-        <Card o={p.fast} k="fast" on={p.selected === "fast"} onPick={p.onSelect}
+        <Card o={p.fast} on={p.chosen === "fast"}
               accent={C.toneYellow}
-              chip={p.fast.deltaSec < -1 ? `${fmtDur(-p.fast.deltaSec)} 빠름` : "같음"}
+              chip={p.chosen === "fast" ? "지령"
+                : p.fast.deltaSec < -1 ? `${fmtDur(-p.fast.deltaSec)} 빠름` : "같음"}
               title="빠른 경로" />
       ) : (
         <div style={{ ...note, marginTop: 12 }}>
-          이 차종 · 이 조건에서 둘째 경로가 서지 않았다 — 폭 기준 추천 하나로 안내한다.
+          이 차종 · 이 조건에서 둘째 경로가 서지 않았다 — 안전 경로 하나로 안내한다.
         </div>
       )}
 
       <div style={{ fontSize: 11, color: C.panelSub, marginTop: 12, lineHeight: 1.5 }}>
-        폭 기준 판정 · 회전 및 높이 미반영 · 실시간 주정차 미반영 ·
+        <b>폭으로만 본 안전이다</b> — 회전 및 높이 미반영 · 실시간 주정차 미반영 ·
         일방통행은 방향을 대부분 몰라 양쪽 다 불리하게 계산
       </div>
     </Sheet>
@@ -105,21 +118,18 @@ export function RouteCompare(p: Props) {
  * 안전 경로 = 빠른 경로일 때의 화면.  (멘토링 §219 → DECISIONS §220)
  *
  * ★ 고르게 하지 않는다. 고를 것이 없다 — 라디오 두 개를 두면 같은 줄을 두 번 읽힌다.
- *   그대로 「안내 시작」 으로 간다. 선택 상태(`selected`)는 안 건드린다.
+ *   그대로 「안내 시작」 으로 간다. (2026-10-05 이후로는 **다를 때도** 안 고른다.)
  */
 function SameRoute(p: Props) {
   const o = p.safe;
   const margin = o.minWidthM != null ? o.minWidthM - o.requiredM : null;
   return (
     <Sheet wf="02" footer={
-      <div style={{ display: "flex", gap: 10 }}>
-        {p.onChangeVehicle && <Ghost onClick={p.onChangeVehicle}>차량 변경</Ghost>}
-        <div style={{ flex: 1 }}><Cta onClick={p.onConfirm}>안내 시작</Cta></div>
-      </div>
+      <Cta onClick={p.onConfirm}>안내 시작</Cta>
     }>
       <div style={{ fontSize: 22, fontWeight: 800 }}>{SAME_ROUTE_TITLE}</div>
       <div style={{ fontSize: 13, color: C.panelSub, marginTop: 4 }}>
-        폭 기준 추천과 최단 경로가 같은 길이다 — 고를 것이 없다.
+        안전 경로와 최단 경로가 같은 길이다.
       </div>
 
       <div style={{ ...card, cursor: "default", borderColor: C.toneGreen }}>
@@ -143,7 +153,7 @@ function SameRoute(p: Props) {
       </div>
 
       <div style={{ fontSize: 11, color: C.panelSub, marginTop: 12, lineHeight: 1.5 }}>
-        폭 기준 판정 · 회전 및 높이 미반영 · 실시간 주정차 미반영 ·
+        <b>폭으로만 본 안전이다</b> — 회전 및 높이 미반영 · 실시간 주정차 미반영 ·
         일방통행은 방향을 대부분 몰라 양쪽 다 불리하게 계산
       </div>
     </Sheet>
@@ -157,7 +167,7 @@ function Diff({ o }: { o: RouteOption }) {
       <Row k="길이" v={`${(o.lengthM / 1000).toFixed(2)}km`} />
       <Row k="통행 불가 경유" v={`${o.blockedCount}곳`} warn={o.blockedCount > 0} />
       <Row k="규칙 경고" v={`${o.ruleCount}건`} warn={o.ruleCount > 0} />
-      <Row k="폭 기준 확인 구간"
+      <Row k="폭 확인 필요 구간"
            v={o.uncertainCount ? `${o.uncertainCount}개 · ${Math.round(o.uncertainM)}m` : "0개"} />
     </>
   );
@@ -176,20 +186,24 @@ function ClearanceRow({ m }: { m: number | null }) {
   );
 }
 
-function Card({ o, k, on, onPick, accent, chip, title }: {
-  o: RouteOption; k: "safe" | "fast"; on: boolean; onPick: (k: "safe" | "fast") => void;
+/**
+ * 경로 한 장. **누를 수 없다.**
+ *
+ * ★ 2026-10-05 (§400). 종전에는 `<button onClick>` 이었다. 고르는 손이
+ *   없어졌으므로 **`div` 로 바꿨다** — 누를 수 있는 모양으로 두면 언젠가
+ *   누가 `onClick` 을 단다. 라디오 점도 뺐다.
+ */
+function Card({ o, on, accent, chip, title }: {
+  o: RouteOption; on: boolean;
   accent: string; chip: string; title: string;
 }) {
   const margin = o.minWidthM != null ? o.minWidthM - o.requiredM : null;
-  const ink = k === "safe" ? C.safeInk : "#c2570c";
+  const ink = on ? C.safeInk : "#c2570c";
   return (
-    <button onClick={() => onPick(k)}
-            style={{ ...card, borderColor: on ? accent : C.sheetLine,
-                     boxShadow: on ? `0 0 0 3px ${accent}66` : "0 1px 3px rgba(0,0,0,.06)" }}>
+    <div style={{ ...card, cursor: "default", borderColor: on ? accent : C.sheetLine,
+                  opacity: on ? 1 : .72,
+                  boxShadow: on ? `0 0 0 3px ${accent}66` : "0 1px 3px rgba(0,0,0,.06)" }}>
       <div style={{ ...band, background: on ? accent : `${accent}55` }}>
-        <span style={{ ...radio, borderColor: C.panelInk, background: "#fff" }}>
-          {on && <span style={radioDot} />}
-        </span>
         <b style={{ fontSize: 17 }}>{title}</b>
         <span style={{ flex: 1 }} />
         <span style={chipS}>{chip}</span>
@@ -205,9 +219,9 @@ function Card({ o, k, on, onPick, accent, chip, title }: {
         <ClearanceRow m={margin} />
         <Row k="통행 규칙" v={o.rules ?? "없음"} warn={!!o.rules} />
         {o.around && <Row k="경로 주변" v={o.around} />}
-        <div style={{ ...note, background: k === "safe" ? "#f0fdf4" : "#fffbeb" }}>{o.note}</div>
+        <div style={{ ...note, background: on ? "#f0fdf4" : "#fffbeb" }}>{o.note}</div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -228,10 +242,6 @@ const card: CSSProperties = {
 const band: CSSProperties = {
   display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", color: C.toneInk,
 };
-const radio: CSSProperties = {
-  width: 18, height: 18, borderRadius: 999, border: "2px solid", display: "grid", placeItems: "center",
-};
-const radioDot: CSSProperties = { width: 8, height: 8, borderRadius: 999, background: C.panelInk };
 const chipS: CSSProperties = {
   borderRadius: 8, padding: "3px 9px", fontSize: 12, fontWeight: 800, color: C.toneInk,
   background: "#fff",

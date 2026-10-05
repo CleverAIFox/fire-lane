@@ -5,12 +5,15 @@
  *   고를 수 있게 두면 지령과 화면이 갈린다.
  */
 import { describe, expect, it } from "vitest";
-import { canPickDestination, editHands, readHandoff } from "../src/domain/handoff";
+import { readHandoff, routeOf } from "../src/domain/handoff";
 
 /** ★ `node:fs` 를 안 쓴다 — `wiring.test.ts` 와 같은 이유로 vite 가 준다. */
-const SRC: Record<string, string> = import.meta.glob(
-  "../src/**/*.tsx", { query: "?raw", import: "default", eager: true },
-);
+const SRC: Record<string, string> = {
+  ...import.meta.glob("../src/**/*.tsx", { query: "?raw", import: "default", eager: true }),
+  // ★ 2026-10-05 (§400). `.ts` 도 넣는다 — 화면 갈래(`app/useScreens.ts`)가
+  //   거기 살고, `.tsx` 만 보던 그물에는 **안 걸렸다.**
+  ...import.meta.glob("../src/**/*.ts", { query: "?raw", import: "default", eager: true }),
+} as Record<string, string>;
 
 function src(tail: string): string {
   const k = Object.keys(SRC).find((x) => x.endsWith(tail));
@@ -73,67 +76,77 @@ describe("깃발은 켜는 쪽을 명시한다", () => {
   });
 });
 
-describe("목적지 선택 가능 여부", () => {
-  it("지령이 왔으면 기사는 못 고른다", () => {
-    expect(canPickDestination(readHandoff("?incident=126.92,35.15"))).toBe(false);
+describe("경로 모드 — 관제가 정한다", () => {
+  it("지령이 준 값을 그대로 쓴다", () => {
+    expect(routeOf(readHandoff("?incident=126.92,35.15&route=fast")))
+      .toEqual({ mode: "fast", fromOrder: true });
   });
 
-  it("지령이 없으면 고를 수 있다 — 훈련과 점검이 그 길이다", () => {
-    expect(canPickDestination(readHandoff(""))).toBe(true);
+  it("지령에 없으면 안전이되 **지시가 아니라고** 적는다", () => {
+    expect(routeOf(readHandoff("?incident=126.92,35.15")))
+      .toEqual({ mode: "safe", fromOrder: false });
+  });
+
+  it("어휘 밖은 없는 것이다 — 오타를 지시로 읽지 않는다", () => {
+    expect(readHandoff("?route=빠름").route).toBeNull();
+    expect(readHandoff("?route=FAST").route).toBeNull();
   });
 });
 
 /**
- * ── 바꾸는 손  (DECISIONS §393) ────────────────────────────────
+ * ── 운전석은 **아무것도 안 고른다**  (DECISIONS §400) ──────────
  *
- * ★ 2026-10-04 실측. `canPickDestination` 은 서 있었는데 `App.tsx` 가 그것을
- *   **핸들러에만** 걸었다 — `onArm={canPick ? setArmed : () => {}}`. 버튼은
- *   그대로 그려졌고, 지령이 온 운전석 화면에서 「위치 변경」과 「지도에서
- *   직접 선택」이 말없이 씹혔다(족1). 그리고 `onSwap` 에는 **조건이 아예
- *   없어서** 출발·도착이 실제로 뒤집혔다.
+ * ★ 2026-10-05. 종전에 이 자리에는 `canPickDestination` · `editHands` 가 있었다 —
+ *   「기사가 고를 수 있는 경우」를 전제로 손을 열어 두는 문이다. 사람이 그
+ *   전제를 잘랐다: 「내비가 스스로 고를 수 있는건 없다」. 카카오택시 기사는
+ *   손님도 목적지도 경로도 안 고른다.
  *
- * ★ 그래서 여기가 묻는 것은 두 가지다 — ① 묶음이 통째로 `null` 이 되는가
- *   ② **그 모양이 되돌아올 수 없는가**. ②가 없으면 다음 손이 늘 때 또
- *   하나를 묶는 걸 잊는다.
+ * ★ 그래서 여기가 묻는 것은 「지령이 왔을 때 묶이는가」가 아니라
+ *   **「손이 아예 없는가」**다. 조건부로 묶는 것은 조건이 틀리면 열리지만,
+ *   없는 것은 틀릴 조건이 없다.
  */
-describe("바꾸는 손", () => {
-  const HANDS = { onStation: () => {}, onArm: () => {}, onSearch: () => {}, onSwap: () => {} };
-
-  it("지령이 왔으면 손이 통째로 없다 — 빈 함수가 아니라 null 이다", () => {
-    expect(editHands(readHandoff("?incident=126.92,35.15"), HANDS)).toBeNull();
-  });
-
-  it("지령이 없으면 넘긴 묶음을 그대로 돌려준다", () => {
-    expect(editHands(readHandoff(""), HANDS)).toBe(HANDS);
-  });
-
-  it("출발 센터도 같은 문이다 — 목적지만 고정하면 화면이 지령과 갈린다", () => {
-    expect(editHands(readHandoff("?incident=126.92,35.15&station=지산"), HANDS)).toBeNull();
-  });
-
-  // ★ 여기부터는 **모양**을 본다. 값이 아니라 소스다.
-  it("DispatchPanel 은 바꾸는 손을 낱개로 안 받는다", () => {
-    const s = src("ui/DispatchPanel.tsx");
-    const props = s.slice(s.indexOf("interface Props"), s.indexOf("export function DispatchPanel"));
-    for (const name of ["onStation", "onArm", "onSearch", "onSwap"]) {
-      expect(props, `Props 가 ${name} 를 낱개로 받으면 하나를 묶는 걸 잊는다`)
-        .not.toContain(name);
+describe("운전석에 바꾸는 손이 0 인가", () => {
+  it("고르는 화면이 셋 다 없다", () => {
+    const names = Object.keys(SRC).map((k) => k.split("/").pop());
+    for (const gone of ["DispatchPanel.tsx", "SearchPanel.tsx", "VehiclePicker.tsx"]) {
+      expect(names, `${gone} 가 살아 있으면 고르는 화면이 돌아온 것이다`)
+        .not.toContain(gone);
     }
-    expect(props).toContain("edit: EditHands | null");
   });
 
-  it("App 은 그 묶음을 editHands 를 거쳐서만 넘긴다", () => {
-    const s = src("App.tsx");
-    expect(s).toContain("edit={editHands(hand,");
-    // 빈 함수로 묶는 옛 모양이 되살아나면 운다.
-    // ★ **한 줄 안에서만** 본다. `[^}]*` 로 두면 줄을 넘어 파일 저쪽의
-    //   아무 빈 함수에나 걸린다 — 처음 쓴 판이 실제로 그랬다.
-    // ★ 주석 줄은 코드가 아니다 — 옛 모양을 **적어 둔 설명**이 제 시험에
-    //   걸렸다(첫 판이 그랬다). 설명을 지우면 왜 묶였는지가 사라진다.
-    const bad = s.split("\n")
-      .filter((ln) => !/^\s*(\/\/|\*|\/\*)/.test(ln))
-      .filter((ln) => /canPick\s*\?.*\(\s*\)\s*=>\s*\{\s*\}/.test(ln));
-    expect(bad, "`canPick ? f : () => {}` 는 버튼을 그려 놓고 손만 묶는 모양이다")
-      .toEqual([]);
+  it("화면 갈래에 고르는 자리가 없다", () => {
+    const s = src("app/useScreens.ts");
+    expect(s).toContain('"wait" | "brief" | "drive"');
+    for (const gone of ["dispatch", "search", "vehicle", "compare"]) {
+      expect(s, `화면 ${gone} 는 고르는 자리였다`).not.toContain(`"${gone}"`);
+    }
+  });
+
+  it("경로 설명 판은 고르는 손을 **받지도 않는다**", () => {
+    const s = src("ui/RouteCompare.tsx");
+    const props = s.slice(s.indexOf("interface Props"), s.indexOf("export function RouteBrief"));
+    for (const hand of ["onSelect", "onPick", "onChangeVehicle"]) {
+      expect(props, `${hand} 를 받으면 언젠가 누가 넘긴다`).not.toContain(hand);
+    }
+  });
+
+  it("App 에 기사 손이 없다", () => {
+    const code = src("App.tsx").split("\n")
+      .filter((ln) => !/^\s*(\/\/|\*|\/\*)/.test(ln)).join("\n");
+    for (const hand of ["setArmed", "onSelect="]) {
+      expect(code, `${hand} 는 기사가 고르는 손이다`).not.toContain(hand);
+    }
+    // ★ 목적지와 차량을 **놓는** 자리는 남는다 — 지령을 적용하는 기계 손이다.
+    //   그러나 **각각 한 번뿐**이어야 한다. 둘이면 하나는 사람이 부른다.
+    for (const once of ["fleet.select(", "n.setDestAt("]) {
+      expect(code.split(once).length - 1,
+             `${once} 가 둘 이상이면 하나는 기사 손이다`).toBe(1);
+    }
+  });
+
+  it("주행 중 경로 전환도 없다", () => {
+    const code = src("App.tsx").split("\n")
+      .filter((ln) => !/^\s*(\/\/|\*|\/\*)/.test(ln)).join("\n");
+    expect(code).toContain("onSwitchRoute={undefined}");
   });
 });

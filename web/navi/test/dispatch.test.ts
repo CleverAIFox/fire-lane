@@ -21,6 +21,8 @@ const D = {
   label: "동명동 123-4",
   vehicle: "pumper",
   station: "동부119안전센터",
+  // ★ 2026-10-05 (§400). 경로도 관제가 정해서 싣는다 — 내비는 안 고른다.
+  route: "safe" as const,
 };
 
 describe("내비를 여는 자리", () => {
@@ -52,7 +54,7 @@ describe("내비를 여는 자리", () => {
     expect(dispatchUrl(undefined, D)).not.toContain("view=");
   });
 
-  it("네 칸을 전부 넘긴다 — 하나라도 빠지면 내비가 되묻는다", () => {
+  it("다섯 칸을 전부 넘긴다 — 하나라도 빠지면 내비가 되묻는다", () => {
     const u = new URLSearchParams(dispatchUrl("ops", D).split("?")[1]);
     expect(u.get("incident")).toBe("126.912346,35.149877");
     expect(u.get("label")).toBe(D.label);
@@ -78,7 +80,7 @@ describe("내비를 여는 자리", () => {
 
 describe("시연용 지령 (§386)", () => {
   const d = { at: [126.92, 35.15] as [number, number], label: "지산동",
-              vehicle: "p1", station: "지산" };
+              vehicle: "p1", station: "지산", route: "fast" as const };
 
   it("기본은 꺼져 있다 — 켜는 쪽을 명시한다", () => {
     expect(dispatchUrl("ops", d)).not.toContain("demo");
