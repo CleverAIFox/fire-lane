@@ -244,6 +244,13 @@ DOC_KEYS = frozenset({
     "feeds", "feeds_note", "feeds_why", "used_for", "note", "authority",
     "what", "what_fix", "read_note",
     "schema",        # AUTO — ledger_schema.py 가 raw 에서 뽑는다. raw 칸이 이미 잰다
+    # ★ 2026-10-05 (DECISIONS §396-7). **같은 족 네 번째다.** §166-3(전역 칸) ·
+    #   §216-1(자기 항목) · §243(전역 칸의 산문)이 같은 사고를 세 번 고쳤는데
+    #   `caveats` 는 목록에 없었다. `layers.golden.caveats` 의 **한 줄**을
+    #   고치자 45샤드가 전부 찢어졌다 — PLAN 행 참조 하나를 바로잡은 줄이다.
+    #   목록을 손으로 적는 한 다음 칸이 또 빠진다. 그래서 아래 시험이
+    #   **대장에 실재하는 산문 칸 전부**를 훑어 빠진 것을 찾는다.
+    "caveats",
 })
 
 
@@ -291,9 +298,16 @@ def _cfg_print_v1(cfg: dict, key: str) -> str:
     return _print(_raw_glob(cfg), _own(cfg, key))
 
 
+def _cfg_print_v3(cfg: dict, key: str) -> str:
+    """2026-09-24~10-05 판 — `caveats` 를 산문으로 안 봤다."""
+    keys = DOC_KEYS - {"caveats"}
+    return _print({k: jsonkeys.drop(cfg.get(k), keys) for k in INGEST_GLOBAL},
+                  jsonkeys.drop(_own(cfg, key), keys))
+
+
 #: 옛 판 지문. 만나면 **다시 빌드 없이** 받고 새 판으로 고쳐 적는다.
 #: ★ 줄이 늘 때마다 「한 번 지나면 안 찢어진다」가 한 세대 더 보장된다.
-LEGACY_PRINTS = (_cfg_print_v2, _cfg_print_v1)
+LEGACY_PRINTS = (_cfg_print_v3, _cfg_print_v2, _cfg_print_v1)
 
 
 def cfg_print_legacy(cfg: dict, key: str) -> str:

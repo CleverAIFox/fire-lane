@@ -89,3 +89,26 @@ export function readHandoff(search: string): Handoff {
 export function canPickDestination(h: Handoff): boolean {
   return !h.inherited;
 }
+
+/**
+ * 바꾸는 손을 **들려줄 것인가**. 들려주지 않으면 `null` 이다.
+ *
+ * ★ 2026-10-04. 왜 함수가 따로 생겼나 — 종전 `App.tsx` 는
+ *   `onArm={canPick ? setArmed : () => {}}` 꼴이었다. **손만 묶이고 버튼은
+ *   그대로 그려졌다.** 지령이 온 운전석 화면에 말없이 씹는 버튼이 둘
+ *   (「위치 변경」 · 「지도에서 직접 선택」), 그리고 **아예 안 묶인 것이 하나**
+ *   (「⇅ 출발·도착 바꾸기」 — `onSwap` 에는 조건이 없었다) 있었다.
+ *   누르면 되는 줄 아는 버튼이 말없이 씹는 것은 족1(무음 통과)이고,
+ *   세 번째는 지령 받은 내비에서 출발·도착을 실제로 뒤집었다.
+ *
+ * ★ `null` 이 답이면 **그릴 손 자체가 없다.** 「그려 놓고 묶는」 모양이
+ *   만들어지지 않는다 — 목줄은 틀린 걸 잡는 것이 아니라 틀린 모양이
+ *   존재할 수 없게 하는 것이다.
+ *
+ * ★ 출발 센터도 같은 문에 둔다. 「목적지만 고정」으로 가르면 기사가 센터를
+ *   바꿔 지령과 화면이 갈리고, **갈리는 자리를 둘로 늘리면** 이 모듈이
+ *   없애려던 그것(세 곳이 각자 판단한다)이 되돌아온다.
+ */
+export function editHands<T>(h: Handoff, hands: T): T | null {
+  return canPickDestination(h) ? hands : null;
+}

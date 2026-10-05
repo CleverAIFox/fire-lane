@@ -297,8 +297,11 @@ def dryrun(branch: str, rng: str, patches: list[Path],
         # ★ **기준선을 먼저 잰다.** 워크트리·심(shim)·레이크 부재가 만드는 빨간불은
         #   배치의 죄가 아니고, 이름으로 면제하면 도장 찍기다. 밑동에서 이미 빨간
         #   것을 빼고 **이 배치가 새로 빨갛게 만든 것**만 센다.
-        base_red = _redlist(wt, env) if tests else (set(), "skipped")
+        # ★ 2026-10-05 (§396). **순서를 뒤집었다** — verify 가 먼저다. verify 안에
+        #   pytest 가 있고 그 전문을 남기므로, 뒤이은 `_redlist` 가 그것을 읽는다.
+        #   종전 순서로는 같은 전수 pytest 가 pack 한 번에 **네 번** 돌았다.
         base_sweep = _sweep_red(wt, env)
+        base_red = _redlist(wt, env) if tests else (set(), "skipped")
         for p in patches:
             ok, how = _apply(wt, p)
             print(f"  {p.name:<38} {how.splitlines()[0]}")
@@ -344,18 +347,51 @@ def _sweep(wt: Path, env: dict) -> tuple[set[str], dict[str, str]]:
     ★ 걷는 판별식은 `delivercheck.sweep_verdict` 다 — 순수해서 시험이 부른다.
       여기 있는 것은 **돌리는 일**뿐이다.
     """
-    rc, out = _run(["bash", "tools/verify.sh"], cwd=wt, env=env, timeout=3600)
+    # ★ 2026-10-05 (§396). 옛 전문을 **먼저 지운다.** 남겨 두면 뒤의 `_redlist` 가
+    #   지난 실행의 pytest 를 이번 것으로 읽는다 — 틀린 초록은 빨강보다 나쁘다.
+    for old in Path(tempfile.gettempdir()).glob("verify-*-pytest.log"):
+        old.unlink(missing_ok=True)
+    rc, out = _run(["bash", "tools/verify.sh"], cwd=wt,
+                   env={**env, "FL_VERIFY_KEEP_LOGS": "1"}, timeout=3600)
     return sweep_verdict(rc, out)
 
 
-def _redlist(wt: Path, env: dict) -> tuple[set[str], str]:
-    """빨간 노드 id 와 요약 한 줄. 판정이 아니라 **채집**이다."""
-    rc, out = _run([str(_py()), "-m", "pytest", "-q", "-p", "no:randomly"],
-                   cwd=wt, env=env, timeout=1800)
+def _scan_pytest(out: str, rc: int | str) -> tuple[set[str], str]:
+    """pytest 출력 한 덩어리에서 빨간 id 와 요약 한 줄. **순수하다** — 시험이 부른다."""
     red = {l.split()[1] for l in out.splitlines()
            if l.startswith("FAILED") and len(l.split()) > 1}
     tail = [l for l in out.splitlines() if re.search(r"\d+ (passed|failed)", l)]
     return red, (tail[-1] if tail else f"rc={rc}")
+
+
+def _pytest_log() -> Path | None:
+    """`verify.sh` 가 남긴 pytest 단계 전문. 없으면 `None`.
+
+    ★ 2026-10-05 (DECISIONS §396 · PLAN #155). 종전에는 pack 이 pytest 를
+      **따로 두 번** 더 돌렸다 — 밑동 한 번, 얹은 뒤 한 번. 그 둘은 `verify.sh`
+      안에서 이미 돈 것과 같은 실행이다. 그래서 pack 한 번에 전수 pytest 가
+      **네 번** 돌았고(사용자 기계 7분40초 × 4), 거기에 전수 verify 둘이 더
+      붙어 **45분**이 넘었다. 10분 상한에 걸린 것은 한 가지가 느려서가 아니라
+      같은 것을 네 번 돌려서였다.
+    """
+    hits = sorted(Path(tempfile.gettempdir()).glob("verify-*-pytest.log"))
+    return hits[-1] if hits else None
+
+
+def _redlist(wt: Path, env: dict) -> tuple[set[str], str]:
+    """빨간 노드 id 와 요약 한 줄. 판정이 아니라 **채집**이다.
+
+    ★ `verify.sh` 가 **방금** 남긴 전문이 있으면 그것을 읽는다. 없으면 돈다 —
+      전문이 없다는 것은 그 verify 가 안 돌았거나 `FL_VERIFY_KEEP_LOGS` 가
+      꺼진 것이고, **못 읽었으면 재는 쪽이 맞다.** 안 재고 「없다」로 적으면
+      그것이 §273-8 이 금한 그 꼴이다.
+    """
+    log = _pytest_log()
+    if log is not None:
+        return _scan_pytest(log.read_text(encoding="utf-8", errors="replace"), "log")
+    rc, out = _run([str(_py()), "-m", "pytest", "-q", "-p", "no:randomly"],
+                   cwd=wt, env=env, timeout=1800)
+    return _scan_pytest(out, rc)
 
 
 # ── ③ EXPECT ────────────────────────────────────────────────────

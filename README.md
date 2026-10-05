@@ -229,6 +229,9 @@ uv run python tools/toolindex.py --check   모든 도구가 제 이름을 대는
   `/mnt/c/Users/Fox/Downloads` 에 떨어진다 — `.env` 의 `$FIRE_LANE_INBOX` 를 쓴다.
   INBOX 의 `fl.sh` 는 `tools/inbox_fl.sh` 사본이고, 진짜 도구는 **패치 안(없으면
   origin/part/infra)의 `tools/fl.sh`** 다(DECISIONS §214-1).
+  ★ 그 사본은 **도구가 스스로 깐다** — 저장소 판과 다르면 덮는다(DECISIONS §396-1).
+    손으로 `cp` 하던 자리이고, 손 사본은 사라지기보다 **낡는 것**이 더 나빴다.
+    처음 한 번만 사람이 깐다: `cp tools/inbox_fl.sh "$FIRE_LANE_INBOX/fl.sh"`.
 ★ 배치 끝의 두 단계 — 10 가지 정리(`branch_tidy.sh --auto --close-bots` · 봇 PR 을 사유 댓글과 닫는다) ·
   11 위생(`tidy.py --yes` · `janitor.sh`). 사람이 기억해서 치던 것이다(DECISIONS §217-4).
 ★ 중간에 끊겼으면 `--resume`. 어디까지 됐는지는 GitHub PR 상태로 가린다 — feat PR 이

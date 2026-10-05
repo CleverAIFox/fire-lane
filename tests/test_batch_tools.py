@@ -741,3 +741,64 @@ def test_ci_wait_separates_red_from_not_mergeable():
         "릴리즈가 멈춘다. 필수 검사 목록과의 교집합으로 본다")
     body = src[src.index("wait_ci() {"):src.index("selftest() {")]
     assert "blocking " in body, "`wait_ci` 가 초록 직전에 미해결 필수 검사를 안 묻는다"
+
+
+# ── 부트스트랩 자기 설치  (DECISIONS §396 · PLAN #153) ────────────────
+
+def _install_block() -> str:
+    """`fl.sh` 의 자기 설치 구간을 **그대로** 꺼낸다 — 베낀 사본을 재면 갈린다."""
+    s = (T / "fl.sh").read_text(encoding="utf-8")
+    assert "# >>> bootstrap-install" in s and "# <<< bootstrap-install" in s, (
+        "fl.sh 에 자기 설치 구간 표지가 없다")
+    return s.split("# >>> bootstrap-install", 1)[1].split("# <<< bootstrap-install", 1)[0]
+
+
+def _run_install(tmp_path: Path, inbox_exists: bool, seed: str | None) -> Path:
+    """가짜 저장소 · 가짜 INBOX 에서 그 구간만 돌린다."""
+    repo = tmp_path / "repo"
+    (repo / "tools").mkdir(parents=True)
+    (repo / "tools/inbox_fl.sh").write_text("#!/usr/bin/env bash\n저장소판\n", encoding="utf-8")
+    inbox = tmp_path / "inbox"
+    if inbox_exists:
+        inbox.mkdir()
+        if seed is not None:
+            (inbox / "fl.sh").write_text(seed, encoding="utf-8")
+    sh = tmp_path / "run.sh"
+    sh.write_text(f'set -uo pipefail\nIN="{inbox}"\ncd "{repo}"\n' + _install_block(),
+                  encoding="utf-8")
+    # ★ 시한 없이 자식을 기다리면 빨강이 무한 대기가 된다(§284-5).
+    r = subprocess.run(["bash", str(sh)], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stdout + r.stderr
+    return inbox / "fl.sh"
+
+
+def test_fl_installs_the_bootstrap_into_the_inbox(tmp_path):
+    """★ INBOX 를 비우면 `fl.sh` 가 같이 사라졌고 사람이 `cp` 를 하루에 세 번 쳤다.
+
+    손으로 치는 사본은 **낡기도 한다** — 저장소 판이 바뀌어도 INBOX 판은 그대로다.
+    그래서 「없으면 깐다」가 아니라 **「다르면 덮는다」**를 잰다.
+    """
+    gone = _run_install(tmp_path, inbox_exists=True, seed=None)
+    assert gone.read_text(encoding="utf-8") == "#!/usr/bin/env bash\n저장소판\n", "없을 때 안 깐다"
+
+    stale = _run_install(tmp_path / "b", inbox_exists=True, seed="옛판\n")
+    assert stale.read_text(encoding="utf-8") == "#!/usr/bin/env bash\n저장소판\n", "낡은 사본을 안 덮는다"
+
+
+def test_fl_does_not_die_when_the_inbox_is_unwritable(tmp_path):
+    """★ 이 줄은 **편의**다. 쓰기가 막혔다고 배치를 막으면 고치려고 만든 것이 막는다."""
+    assert not _run_install(tmp_path, inbox_exists=False, seed=None).exists(), (
+        "INBOX 가 없는데 만들었다 — 남의 경로에 파일을 쓴다")
+
+
+def test_the_measured_hint_says_when_not_to_use_it():
+    """★ §332 의 규율 — 도구가 보여주는 값은 그 도구의 관문을 통과해야 한다.
+
+    `--measured` 안내가 **붙이는 조건**을 안 적으면, 읽는 사람은 그것을
+    「막혔을 때 뚫는 깃발」로 읽는다. DECISIONS §388 이 그렇게 났다.
+    """
+    s = (T / "fl.sh").read_text(encoding="utf-8")
+    hint = [ln for ln in s.splitlines() if "--measured=20260930-covrate" in ln]
+    assert hint, "안내가 사라졌다"
+    assert "실제로 움직였을 때만" in s, "붙이는 조건을 안 적는다"
+    assert "§388" in s, "그 믿음이 무엇을 냈는지 안 가리킨다"

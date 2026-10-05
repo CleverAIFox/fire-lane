@@ -743,7 +743,7 @@ layers:
     what: 대장에 없는 파일. 삭제하지 않고 격리한다
     caveats:
       - 격리는 판단 보류지 폐기가 아니다. 재생성 불가라 백업 대상이다
-      - 2026-08-24 현재 연속지적도 970MB 가 여기 있다(PLAN #20 편입 대기)
+      - 2026-08-24 현재 연속지적도 970MB 가 여기 있다(격리 층 폐지는 PLAN §1 #55)
 
   golden:
     base: repo
@@ -769,7 +769,7 @@ layers:
     naming: '^\d{8}-[a-z0-9-]+/'
     what: 봉인 스냅샷. 실행 간 판정 전이를 대조한다
     caveats:
-      - 전량 복사라 스냅샷마다 segments.geojson 1MB 가 들어간다(PLAN §1 #32)
+      - 전량 복사라 스냅샷마다 segments.geojson 1MB 가 들어간다 — 드는 행이 없다
       - 2026-08-26 등재. golden 과 함께 선언 밖에 있었다
   web:
     base: repo
@@ -3528,7 +3528,7 @@ outputs:
     # ★ 2026-09-06. 또 하나. `publish_navi` 가 내비용 그래프를 낸다 —
     #   같은 병이 두 번째다(손대장이라 읽는 쪽이 늘어도 아무도 안 적는다).
     - src/firelane/publish_navi.py
-    # ★ 2026-09-25 (PLAN §1 #91 · #120). 평가지표 산출기와 그 게이트.
+    # ★ 2026-09-25 (PLAN §1 #94 · #120). 평가지표 산출기와 그 게이트.
     - tools/evalgate.py
     - tools/evalgen.py
     - tests/test_evalgen.py
@@ -3692,7 +3692,7 @@ outputs:
     consumers: [tests/test_evalgen.py]
     what: 평가지표 E-1 · E-3 과 #120 시나리오 역산. 재현성 게이트 보고를 함께 든다
     note: |
-      ★ PLAN §1 #91. **지표는 값이 아니라 실행이다** — 터미널에만 있는 숫자는
+      ★ PLAN §1 #94. **지표는 값이 아니라 실행이다** — 터미널에만 있는 숫자는
         소실된다. 문서에 손으로 옮겨 적힌 값 대신 이 파일이 정본이다.
       ★ 칸 이름은 봉인 `meta.json` 과 맞췄다(`as_of` · `git_sha` · `tally` ·
         `sha256` · `known_limits`). `tools/baseline.py` 의 `FILES` 에 이 이름을

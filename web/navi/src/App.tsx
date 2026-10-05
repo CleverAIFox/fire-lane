@@ -56,7 +56,7 @@ import { ShareChip } from "./ui/ShareChip";
 import { Legend } from "./ui/Legend";
 import { DevBar } from "./ui/DevBar";
 import { SearchPanel } from "./ui/SearchPanel";
-import { canPickDestination, readHandoff } from "./domain/handoff";
+import { canPickDestination, editHands, readHandoff } from "./domain/handoff";
 import { PlanHeader, TimeBox } from "./ui/Sheet";
 import { DispatchPanel, type StationOpt } from "./ui/DispatchPanel";
 import { VehiclePicker } from "./ui/VehiclePicker";
@@ -445,16 +445,22 @@ export default function App() {
 
       {(s.screen === "dispatch" || s.screen === "search") && (
         <DispatchPanel station={station} stations={stations}
-          onStation={(id) => {
-            setStationId(id);
-            const x = stations.find((y) => y.id === id);
-            if (x) n.setOriginAt(x.point[0], x.point[1]);
-          }}
           incidentLabel={incident?.label ?? null} incidentSub={incident?.sub ?? null}
           incidentAt={incidentText}
-          armed={armed} onArm={canPick ? setArmed : () => {}}
-          onSearch={canPick ? () => s.open("search") : () => {}}
-          onSwap={() => n.swap()}
+          armed={armed}
+          // ★ 2026-10-04 (§393). 넷을 **한 묶음으로** 넘긴다. 종전에는 핸들러마다
+          //   `canPick ? f : () => {}` 를 달았고, `onSwap` 에는 그것조차 없었다.
+          //   `null` 이면 판이 버튼을 안 그린다 — 그려 놓고 묶는 모양이 없다.
+          edit={editHands(hand, {
+            onStation: (id: string) => {
+              setStationId(id);
+              const x = stations.find((y) => y.id === id);
+              if (x) n.setOriginAt(x.point[0], x.point[1]);
+            },
+            onArm: setArmed,
+            onSearch: () => s.open("search"),
+            onSwap: () => n.swap(),
+          })}
           canNext={!!incident && !!n.origin}
           onNext={() => s.open("vehicle")} />
       )}
