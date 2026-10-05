@@ -169,6 +169,24 @@ if [ "$MODE" = "--pick" ]; then          # 시험 · 점검용 — 무엇을 집
 fi
 
 command -v gh >/dev/null || die "gh 가 없다"
+
+# ★ 2026-10-05 (DECISIONS §396 · PLAN #153). 부트스트랩을 **스스로 깐다.**
+#   INBOX 의 `fl.sh` 는 `tools/inbox_fl.sh` 의 사본인데 INBOX 를 비우면 같이
+#   사라졌고, 그때마다 사람이 `cp` 를 손으로 쳤다 — 하루에 세 번 쳤다.
+#   손으로 치는 사본은 **낡는다**: 저장소 판이 바뀌어도 INBOX 판은 그대로다.
+#   여기서 내용을 대고 다르면 덮는다. 쓰기가 막히면 **죽지 않는다** —
+#   이 줄은 편의이고, 배치를 막을 이유가 못 된다.
+# >>> bootstrap-install
+if [ -f tools/inbox_fl.sh ] && [ -d "$IN" ]; then
+    if ! cmp -s tools/inbox_fl.sh "$IN/fl.sh" 2>/dev/null; then
+        if cp tools/inbox_fl.sh "$IN/fl.sh" 2>/dev/null; then
+            printf '\033[90m   부트스트랩을 INBOX 에 깔았다 — %s/fl.sh\033[0m\n' "$IN"
+        else
+            printf '\033[33m   ! INBOX 에 fl.sh 를 못 깔았다 (쓰기 권한) — 계속한다\033[0m\n'
+        fi
+    fi
+fi
+# <<< bootstrap-install
 ok "$(pwd) · INBOX=$IN"
 
 # ── --undo ────────────────────────────────────────────────────
@@ -500,7 +518,10 @@ for p in sorted(code_closure("firelane.ingest")): print(p.relative_to(ROOT).as_p
     #   받아적기만 뺀다. 사슬은 여기 없다. 셸에 적은 순서는 시험이 못 든다.
     uv run python tools/remeasure.py --tag "${MEASURED:-}" --since "origin/$BASE" \
         || die "측정 배치다 — 위 안내를 끝까지 읽어라." \
-               "  받아들이겠다면 $FL_CMD $BR $MODE --measured=20260930-covrate · 산문을 고쳤으면 --resume"
+               "  받아들이겠다면 $FL_CMD $BR $MODE --measured=20260930-covrate · 산문을 고쳤으면 --resume" \
+               "  ★ --measured 는 판정 산출물이 **실제로 움직였을 때만** 붙인다." \
+               "    안 움직였으면 이 배치는 측정 배치가 아니고, 그 깃발은 아무것도" \
+               "    안 잠근다 — 그 믿음이 DECISIONS §388 의 방아쇠였다."
     # ★ 2026-10-04 (DECISIONS §388 · 실기 1회). 종전에는 `--measured` 가 붙었으면
     #   **사슬이 잠갔다고 믿고** `lock` 을 건너뛰었다. `remeasure.py` 는 산출물이 안
     #   움직이면 사슬을 거절하고 0 으로 돌아서므로 깃발만 서고 아무도 안 잠갔다.

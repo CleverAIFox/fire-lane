@@ -44,7 +44,8 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 
 #: 어떤 절의 본문도 안 지목한 코드 파일 수가 분모에서 빠진 뒤의 **덮인 수**.
 #: **올라가는 쪽** — 덮임은 늘어나야 한다.
-SEALED_FILES = 356
+# ★ 2026-10-05. 360 → 359. `tools/mutate.py` 를 이 배치에서 뺐다 — §396-4 가 지목하던 파일 하나가 같이 빠졌다
+SEALED_FILES = 359
 
 RATCHETS = {"SEALED_FILES": "up"}
 

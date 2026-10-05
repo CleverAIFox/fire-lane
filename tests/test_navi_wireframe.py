@@ -169,15 +169,35 @@ def test_the_dev_bar_is_off_unless_asked():
 
 
 def test_the_driver_cannot_pick_a_destination_once_dispatched():
-    """★ 2026-10-04 (§382-1 · §386). 이 내비는 **지령을 상속만 받는다.**
+    """★ 2026-10-04 (§382-1 · §386 · §393). 이 내비는 **지령을 상속만 받는다.**
 
     기사가 목적지를 고를 수 있게 두면 지령과 화면이 갈리고, 갈린 둘 중 어느
-    쪽이 기록으로 남는지가 불분명해진다. 화면 셋(지도 찍기 · 검색 · 상단
-    팔기)이 전부 **한 값**을 봐야 한다 — 각자 판단하면 그 셋이 갈린다.
+    쪽이 기록으로 남는지가 불분명해진다.
+
+    ★ **이 시험이 결함을 못 박고 있었다**(§393). 마지막 줄이
+      `onArm={canPick ? …` 를 찾고 그것을 「상단 팔기가 닫혔다」라고 불렀다.
+      그 꼴은 **손만 묶고 버튼은 그대로 그리는** 모양이고, 운전석에서 누르면
+      말없이 씹혔다. 그리고 `onSwap` 은 **이 시험이 아예 안 봤다** — 조건이
+      없어서 지령 받은 내비에서 출발·도착이 실제로 뒤집혔다.
+
+      강제자가 틀린 모양을 단언하면 그 관문은 **지키는 것이 아니라 가둔다.**
+      고치려는 사람이 먼저 이 시험을 깨야 하기 때문이다.
     """
     app = (ROOT / "web/navi/src/App.tsx").read_text(encoding="utf-8")
     assert "canPickDestination(hand)" in app, (
         "목적지 선택 가능 여부를 안 묻는다 — 지령이 와도 기사가 다시 찍는다")
     assert "|| !canPick) return;" in app, "지도 찍기가 그 값을 안 본다"
     assert '{s.screen === "search" && canPick && (' in app, "검색 화면이 안 닫힌다"
-    assert "armed={armed} onArm={canPick ?" in app, "상단 팔기가 안 닫힌다"
+    # ★ 바꾸는 손 넷을 **한 묶음으로** 넘기고, 지령이면 그 묶음이 `null` 이다.
+    #   낱개로 넘기면 하나를 빠뜨리고, 빠뜨린 것이 `onSwap` 이었다.
+    assert "edit={editHands(hand," in app, "바꾸는 손이 한 문을 안 지난다"
+    panel = (ROOT / "web/navi/src/ui/DispatchPanel.tsx").read_text(encoding="utf-8")
+    props = panel.split("interface Props", 1)[1].split("export function DispatchPanel", 1)[0]
+    for name in ("onStation", "onArm", "onSearch", "onSwap"):
+        assert name not in props, f"판이 {name} 를 낱개로 받는다 — 하나를 묶는 걸 잊는다"
+    assert "edit: EditHands | null" in props, "판이 그 묶음을 안 받는다"
+    # ★ 묶는 것과 **안 그리는 것**은 다르다. 빈 함수로 묶으면 버튼이 남는다.
+    live = [ln for ln in app.splitlines()
+            if not ln.lstrip().startswith(("//", "*", "/*"))
+            and "canPick ?" in ln and "() => {}" in ln]
+    assert not live, f"버튼을 그려 놓고 손만 묶는다 — {live}"

@@ -122,26 +122,18 @@ def _reap(pid: int, timeout: float) -> bool:
     return True
 
 
-def _ask_in_pty(tmp_path, garbage: bytes, answer: bytes) -> str:
+def _read_until(fd: int, needle: bytes, timeout: float) -> bytes:
+    """가상 터미널에서 `needle` 이 나올 때까지 읽는다. 시한을 넘기면 읽은 만큼 낸다.
+
+    ★ 시계로 기다리지 않는 이유는 `_ask_in_pty` 안에 적었다.
+    """
     import os
-    import pty
     import select
     import time
 
-    sh = tmp_path / "ask.sh"
-    sh.write_text("set -uo pipefail\n" + _tty_block() + "\nsleep 0.5\nif ask '진행?'; then echo RESULT=YES; else echo RESULT=NO; fi\n",
-                  encoding="utf-8")
-    pid, fd = pty.fork()
-    if pid == 0:  # 자식 — 가상 터미널이 표준입력이다
-        os.execvp("bash", ["bash", str(sh)])
-    time.sleep(0.1)
-    if garbage:
-        os.write(fd, garbage)          # gh --watch 가 남긴 터미널 응답을 흉내 낸다 — 사람이 치기 전에 버퍼에 있다
-    time.sleep(0.9)
-    os.write(fd, answer)
-    out, end = b"", time.time() + 5
-    while time.time() < end:
-        r, _, _ = select.select([fd], [], [], 0.2)
+    out, end = b"", time.time() + timeout
+    while needle not in out and time.time() < end:
+        r, _, _ = select.select([fd], [], [], 0.1)
         if not r:
             continue
         try:
@@ -151,6 +143,40 @@ def _ask_in_pty(tmp_path, garbage: bytes, answer: bytes) -> str:
         if not d:
             break
         out += d
+    return out
+
+
+def _ask_in_pty(tmp_path, garbage: bytes, answer: bytes, slow: float = 0.5) -> str:
+    """`slow` 는 자식이 `ask` 에 닿기까지 걸리는 시간이다 — **느린 기계를 흉내 낸다.**"""
+    import os
+    import pty
+
+    sh = tmp_path / "ask.sh"
+    sh.write_text("set -uo pipefail\n" + _tty_block() + f"\nsleep {slow}\n"
+                  "if ask '진행?'; then echo RESULT=YES; else echo RESULT=NO; fi\n",
+                  encoding="utf-8")
+    pid, fd = pty.fork()
+    if pid == 0:  # 자식 — 가상 터미널이 표준입력이다
+        os.execvp("bash", ["bash", str(sh)])
+    if garbage:
+        os.write(fd, garbage)          # gh --watch 가 남긴 터미널 응답을 흉내 낸다 — 사람이 치기 전에 버퍼에 있다
+    # ★ 2026-10-04 실측 (DECISIONS §395). 종전에는 `time.sleep(0.9)` 뒤에
+    #   답을 밀어 넣었다 — 자식의 `sleep 0.5` 가 먼저 끝나 `flush_tty` 가
+    #   돌 것이라는 **시계 가정**이다. 기계가 바쁘면 그 순서가 뒤집힌다:
+    #   답이 먼저 버퍼에 들어가고 `flush_tty` 가 그것을 비워 버려서
+    #   `read` 가 영영 안 끝난다. 같은 트리에서 verify 는 통과하고 봉인은
+    #   실패했다(pytest 7분40초 → 13분54초 · 거의 두 배 느린 자리).
+    #
+    #   **시계가 아니라 신호를 기다린다.** 프롬프트는 `flush_tty` 가
+    #   돌아온 **뒤에만** 찍힌다 — 그것을 보고 나서 답을 넣으면 기계
+    #   속도와 무관하다. 깜빡이는 시험은 빨강보다 나쁘다. 빨강은 고치지만
+    #   깜빡이는 「또 그거네」가 된다.
+    out = _read_until(fd, b"[y/N]", timeout=20.0)
+    assert b"[y/N]" in out, f"20초 안에 프롬프트가 안 떴다 — 자식이 멈췄다: {out!r}"
+    os.write(fd, answer)
+    # ★ 답이 나오면 바로 끝낸다. 종전에는 **무조건 5초**를 기다렸다 —
+    #   호출 넷이면 20초다. 기다리는 시간은 깜빡일 틈이기도 하다.
+    out += _read_until(fd, b"RESULT=", timeout=10.0)
     # ★ 2026-09-28 실측 (§284-5). 종전에는 `os.waitpid(pid, 0)` 이었다.
     #   **시간 제한이 없다.** 자식 bash 가 안 죽으면 영원히 기다린다.
     #   Fox 의 기계에서 실제로 났다 — `merge_batch --release` 의
@@ -177,6 +203,12 @@ def test_merge_batch_ask_survives_terminal_replies(tmp_path):
     assert _ask_in_pty(tmp_path, OSC, b"y\n") == "YES", "줄바꿈 없는 응답 조각이 y 에 붙어 판정을 깬다"
     assert _ask_in_pty(tmp_path, OSC, b"n\n") == "NO", "n 을 y 로 읽는다"
     assert _ask_in_pty(tmp_path, b"", b"\n") == "NO", "빈 답을 y 로 읽는다"
+    # ★ 2026-10-04 (DECISIONS §395). **느린 기계를 여기서 흉내 낸다.**
+    #   옛 판은 `자식이 ask 에 닿기까지 1.5s` 에서 매달렸다(실측). 깜빡이를
+    #   고치고 나서 그 자리를 안 재면, 다음에 누가 `time.sleep` 으로
+    #   되돌려도 평소에는 아무도 모른다 — 바쁜 날에만 운다.
+    assert _ask_in_pty(tmp_path, OSC, b"y\n", slow=2.0) == "YES", (
+        "자식이 느리면 답이 `flush_tty` 에 먹힌다 — 시계로 기다리고 있다")
 
 
 def test_merge_batch_ask_reads_piped_answers(tmp_path):
