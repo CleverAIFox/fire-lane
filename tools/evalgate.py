@@ -44,6 +44,7 @@ PARAM --baseline · --data · --json
       **곡률을 통행 가능 대조에 안 넣는다** — `turn_radius_verified` 와
       `wheelbase_verified` 가 둘 다 false 인 동안 곡률은 `edge_cost` 에 들지
       않는다. 켜지는 날 게이트가 그 사실을 알리고 멈춘다(`spec_guard`).
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

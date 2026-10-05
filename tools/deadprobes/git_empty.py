@@ -29,6 +29,7 @@ OUT   결함 (`hit` 으로 올린다)
       `ruleset_check._repo_slug` 의 `if url:` · `layerfsck._cfg` 의
       **rc=1 이 「미설정」이라는 답**).
       **`None` 은 결함이 아니다.** 그것이 옳은 답이다 — 「못 물었다」다.
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

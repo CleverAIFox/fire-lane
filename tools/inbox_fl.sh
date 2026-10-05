@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # tools/inbox_fl.sh — **INBOX 에 `fl.sh` 라는 이름으로 두는 부트스트랩.**  (DECISIONS §214-1)
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all
 #

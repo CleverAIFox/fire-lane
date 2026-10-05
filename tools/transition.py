@@ -15,6 +15,7 @@ IN    data/processed/segments.geojson · data/baseline/<태그>/segments.geojson
       (--to-skeleton) data/desk/r1/skeleton_5186.gpkg — `tools/skeleton_compare.py` 가 먼저 돈다
 OUT   data/desk/r2/transition_<태그>.csv · summary.json (재생성물 · gitignore)
 PARAM firelane.transition 의 상수(STEP · MATCH_R · MATCH_ANGLE · MIN_SHARE · FALLBACK_R)
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

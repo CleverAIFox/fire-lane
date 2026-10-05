@@ -571,7 +571,7 @@ layers:
     regenerable: false
     # ★ 손으로 고치지 마라. `providers.pattern()` 이 만드는 값이고
     #   `test_naming_regex_is_generated_not_handwritten` 이 대조한다.
-    naming: '^(eais|gjbg|gjcity|its|juso|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/'
+    naming: '^(eais|gjbg|gjcity|its|juso|moleg|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/'
     what: 받은 그대로. 인코딩조차 고치지 않는다
     depth: 2
     # ★ provider 폴더의 정본. 2026-08-27 까지 이 목록이 네 곳에 있었다 —
@@ -610,6 +610,13 @@ layers:
         #   맞아도 제공기관 폴더를 모르면 건너뛴다 — 2026-09-03 에
         #   nfa_* 15개가 전부 "대장에 없다" 로 걸렀다. 대장에 있었는데도.
         #   ★ 등재 순서가 있다 — 제공기관이 먼저고 datasets 가 나중이다.
+      moleg:
+        org: 법제처 국가법령정보센터
+        state: active
+        # ★ 2026-10-05 신설 (DECISIONS §397). 법령 · 행정규칙 원문 PDF 가 여기로
+        #   들어온다. **소방청예규도 여기다** — 폴더는 「누가 썼나」가 아니라
+        #   「어디서 받았나」로 가른다(MASTER §18-2a).
+        # ★ 이 한 줄이 종전에는 샤드 72개를 전부 찢었다. §397 이 그것을 고쳤다.
       nsdi:
         org: 국가공간정보포털
         state: active
@@ -658,7 +665,7 @@ layers:
     #     네 곳에 있었고 세 곳에서 달랐다(§18-2a). raw 와 **같은 생성기**를
     #     탄다 — providers.pattern_file() 이 만들고
     #     test_provider_registry 가 대조한다.
-    naming: '^(eais|gjbg|gjcity|its|juso|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}(?:_[a-z0-9-]+)?\.'
+    naming: '^(eais|gjbg|gjcity|its|juso|moleg|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}(?:_[a-z0-9-]+)?\.'
     encoding: utf-8
     # ★ 2026-08-31. status 는 통제 어휘다 — layers.implemented() 가
     #   "미구현" 하나만 본다. 한 번 "미배선" 으로 바꿨다가 되돌렸다.
@@ -3097,6 +3104,80 @@ datasets:
     feeds_why: |
       미투입 — CCTV 가 없는 구간의 경로 가중치를 추정할 재료(PLAN 「CCTV 없는 구간의 경로 가중치」).
       ★ 동 단위 통계라 구간 단위 가중치로는 거칠다 — 동명동 안에서는 상수다. 스케일 · 사전분포 재료로 쓴다.
+  nfa_rapidresponse:
+    feeds: []
+    feeds_note: '[]'
+    stem: nfa_rapidresponse
+    ext: [pdf]
+    kind: raw_only
+    scope: kr
+    updated: '2025-04-29'
+    authority: 소방청 화재대응조사과 (보도자료 · 044-205-7474)
+    files:
+      - nfa/nfa_rapidresponse_kr_20250429.pdf
+    what: |
+      2025 소방청 보도자료 — 119패스 전국 확대 · 현장 도착 7분 기준 ·
+      2024 도착률 69.2 / 80.84 / 58.13% · 진입장애지역 1,009 → 969 → 920
+    feeds_why: |
+      미투입 — **행정 목표를 드는 외부 문서**다. 「소방차 진입도로 유효 폭 4미터
+      이상 확보」가 여기서 나온다.
+      ★ 그 4m 를 판정 문턱으로 쓰지 않는다. **확보 목표**이지 물리적 통과 가능
+        폭이 아니다 — 둘을 섞는 것이 §81 의 함정이고, 우리 문턱 `TRUCK = 3.0`
+        은 차량 제원에서 나온다(MASTER §16-2).
+      ★ 쓸 자리 둘 — ① 우리 회색이 행정 목표 대비 어디쯤인가의 대조축
+        ② 진입장애지역 추세(1,009 → 920)가 우리 blocked 192 와 같은 축인지.
+  roadtraffic_act:
+    feeds: []
+    feeds_note: '[]'
+    stem: moleg_roadtraffic_act
+    ext: [pdf]
+    kind: raw_only
+    scope: kr
+    updated: '2026-07-01'
+    authority: 법제처 국가법령정보센터 (법률 제21246호 · 2025-12-30 일부개정)
+    files:
+      - moleg/moleg_roadtraffic_act_kr_20260701_a29.pdf
+      - moleg/moleg_roadtraffic_act_kr_20260701_a30.pdf
+    what: |
+      도로교통법 제29조(긴급자동차의 우선 통행) · 제30조(긴급자동차에 대한 특례)
+      현행 시행본 — 시행 2026-07-01. 조문 하나에 파일 하나다(`_a29` · `_a30`).
+      ★ **제30조만 읽었다.** 제29조 본문은 아직 안 읽었고, 그래서 아래
+        `feeds_why` 는 제30조에서만 나온 것을 적는다
+    feeds_why: |
+      미투입 — **그래프 방향성(PLAN #1)의 법적 근거다.**
+      ★ 제30조는 긴급자동차에 **열두 호**를 적용하지 않는다. 그중 4~12호는
+        「제2조제22호 **가목부터 다목까지**」에만 — 소방차는 가목이라 전부 해당된다.
+        면제되는 것 중 우리에 닿는 것 — 4호 제5조 **신호위반** · 5호 제13조제1항
+        **보도침범** · 6호 제13조제3항 **중앙선 침범** · 7호 제18조 **횡단 등의 금지**.
+      ★ **일방통행 역주행을 직접 적는 호는 없다.** 4호의 문언은 「제5조에 따른
+        **신호위반**」인데 제5조의 제목은 「신호 **또는 지시**에 따를 의무」다.
+        일방통행은 안전표지에 의한 **지시**이지 신호가 아니다 — 문언상 포함이
+        불분명하고, 이 문서로는 안 닫힌다. 짐작해서 적지 않는다.
+      ★ 확실한 것은 **중앙선 침범이 면제**라는 것이다. 양방향 도로에서 중앙선을
+        넘는 것은 닫혔고, 일방통행로 역주행만 남는다.
+      ★ **「본래의 긴급한 용도로 운행 중일 때만 면제」라는 조건을 어디가 거는지
+        이 문서로는 못 적는다.** 제30조 본문에 그 문구가 없다. 제29조 또는
+        제2조제22호 쪽으로 보이는데 둘 다 안 떴다 — **떠서 적는다.**
+  hydrantdevice_rule:
+    feeds: []
+    feeds_note: '[]'
+    stem: moleg_hydrantdevice_rule
+    ext: [pdf]
+    kind: raw_only
+    scope: kr
+    updated: '2022-05-23'
+    authority: 법제처 국가법령정보센터 (소방청예규 제64호 · 화재대응조사과)
+    files:
+      - moleg/moleg_hydrantdevice_rule_kr_20220523.pdf
+    what: |
+      「비상소화장치의 설치 및 관리 기준」 전문 11개조 — 시행 2022-05-23
+    feeds_why: |
+      미투입 — `spotaddr_geom` 의 **비상소화장치 1건**이 무엇인지를 드는 문서다.
+      ★ 제1조 — 「화재초기 **지역주민이 활용하여** 화재를 진압하는 시설」. 소방차가
+        쓰는 것이 아니라 **주민이 소방차 도착 전에** 쓴다.
+      ★ 제7조③ — 소방호스 최소 45m. 장치에서 45m 안이 사정권이다.
+      ★ **설치 대상 지역 기준은 이 예규에 없다**(소방기본법 제10조 소관). 그 조문을
+        떠야 「소방차 진입 곤란」과 묶을 수 있다 — 안 뜬 것을 떴다고 적지 않는다.
 raw_only:
   ortho:
     what: 항공정사영상 2025 (도엽 35616037/038/047/048). 지상표본거리 25cm

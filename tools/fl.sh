@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # tools/fl.sh — fire-lane 배치를 **명령 하나로.** 적용 → 전수 verify → PR → 머지 → 방송 → 정리
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   bash "$FIRE_LANE_INBOX/fl.sh" <브랜치> --all     ← 평소. INBOX 의 부트스트랩이 이 파일을 부른다
 #   bash tools/fl.sh <브랜치>              적용 + 전수 verify 까지 (멈춘다)

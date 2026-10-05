@@ -52,6 +52,7 @@ MASTER §18-12 는 이 도구를 **이름까지 적어놓고** 있었다.
 IN    $FIRE_LANE_DATA/landing · sources.yaml
 OUT   $FIRE_LANE_DATA/raw · _quarantine · data/_acquire.json (sha 대장 · 커밋한다)
 PARAM 없음
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

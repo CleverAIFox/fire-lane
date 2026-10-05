@@ -40,6 +40,7 @@ IN    $FIRE_LANE_DATA/../jijeok_width.gpkg   (jijeok_probe.py --save)
 OUT   web/review.html
 PARAM 아래 상수
 ════════════════════════════════════════════════════════════════
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

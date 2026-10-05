@@ -880,6 +880,22 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --ratchet
 scope "tools/* tests/*"
 step "강제자 범위 선언" uv run python tools/scopedecl.py
 
+# ★ 2026-10-05 (DECISIONS §398). 도구 138개의 **부류**. 관문은 verify · CI 가
+#   부르는가로 **도출**하고, 나머지만 머리말이 선언한다. 도출과 선언이 어긋나면
+#   운다 — 도출이 이기지 않는다.
+step "도구 부류" uv run python tools/toolclass.py
+
+# ★ 2026-10-05 (DECISIONS §398-5). 돌연변이 관문은 **단계로 안 돈다** — 과녁
+#   스물넷을 네 번씩 흔들면 도구마다 자기검사를 다시 돌려야 해서 분 단위다.
+#   여기서 도는 것은 자기검사 하나이고(`selftests.py` 가 모은다) 수는 대장이
+#   든다.
+# ★ 그런데 **면제는 안 붙인다.** 처음에 `# ci-exempt: tools/mutate.py` 를 적었고
+#   `gate_parity` 가 「죽은 면제」로 물었다 — 그 선언의 뜻은 「verify 는 부르는데
+#   CI 가 안 부른다」이고 이 도구는 verify 도 안 부른다. 읽어 보니 면제 자체가
+#   필요 없었다: `mutate.ratchet_values()` 는 **대장을 읽기만** 하고(지문 대조)
+#   흔들지 않는다. 어디서나 잴 수 있으므로 래칫이 그냥 든다. 대장이 낡으면
+#   「다시 재야 한다」로 빨갛고, 그것이 옳은 빨강이다.
+
 # ★ 2026-10-02 (DECISIONS §352). 도구 목록의 정본은 **도구 자신**이다. 종전 강제자는
 #   「파일 이름이 README 문자열 안에 있는가」만 봐서 설명이 틀려도 초록이었고,
 #   그 요구가 README 에 240줄짜리 목록 넷을 길렀다.

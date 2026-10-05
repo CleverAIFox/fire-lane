@@ -780,12 +780,12 @@ data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취
       read/__init__.py  `kind` → 갈래 함수 표 **정본** (READERS · 15항목)
       read/ctx.py       갈래가 받는 한 덩이 (대장 항목 · 실물 · save 주입)
       read/_io.py       연장 넷 + 좌표계 · 절단 상자
-      read/shapefile.py zip 안 SHP · 도엽 묶음 · NGI 혼재      13개(18%)
-      read/delimited.py CSV · `|` 구분 텍스트 · 좌표 없는 표   29개(40%)
+      read/shapefile.py zip 안 SHP · 도엽 묶음 · NGI 혼재      13개(17%)
+      read/delimited.py CSV · `|` 구분 텍스트 · 좌표 없는 표   29개(39%)
       read/jsondoc.py   표준데이터 · 건축행정시스템 JSON        3개( 4%)
       read/dbf.py       회전제한 (지오메트리 없음)              1개( 1%)
-      read/passthrough.py  읽지 않는다. 존재만 기록            26개(36%)
-data/processed/    대장 72종
+      read/passthrough.py  읽지 않는다. 존재만 기록            29개(39%)
+data/processed/    대장 75종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     판정 임계값 정본 (web/config.js 는 표시용 사본)
@@ -946,7 +946,7 @@ tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기�
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
 <!--gen: datasets-->
-대장은 `sources.yaml` 하나다. `datasets` 72종 · `retired` 4종.
+대장은 `sources.yaml` 하나다. `datasets` 75종 · `retired` 4종.
 <!--/gen-->
 ★ `datasets` 종수는 `tools/docgen.py` 가 대장에서 받아 **채운다** — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `retired` 종수는 대조만 한다(§246 밖 ②). `norm` 이관은 14종이다.
 
@@ -957,9 +957,9 @@ tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기�
 ```
 landing      SSD · 다운로드 원본. 규칙 없음. 백업 제외
 raw          SSD · 제공기관 폴더. 절대 수정하지 않는다
-             ★ 2026-10-05 (DECISIONS §396-6). **수를 안 적는다** — 종전 「12폴더」가
-               제공기관 하나(`moleg`)를 더하자 낡았다. 정본은 `sources.yaml` 의
-               `layers.raw.providers` 하나다(§246-2 의 규약)
+             ★ 2026-10-05 (DECISIONS §396-6). **수를 안 적는다** — 종전에 수를 박아
+               두었고 제공기관 하나(`moleg`)를 더하자 낡았다. 정본은 `sources.yaml`
+               의 `layers.raw.providers` 하나다(§246-2 의 규약)
 norm         파일명·인코딩·확장자만 통일. 값은 안 바꾼다. 텍스트 14종 이관 완료(08-31)
 interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
@@ -2472,7 +2472,7 @@ uv run python tools/baseline.py diff 20260824-pre-nreg
 
 ## 14. 실행
 
-강제자 없음 — 사유: 절 머리말이다. 명령 하나하나는 하위 넷이 들고, 문서에 적힌 명령이 실재하는지는 `tools/doc_fsck.py::check_commands` 가 본다
+강제자 없음 — 사유: 절 머리말이다. 명령 하나하나는 하위 다섯이 들고, 문서에 적힌 명령이 실재하는지는 `tools/doc_fsck.py::check_commands` 가 본다
 
 ### 14-1. 받자마자 한 번
 
@@ -2553,7 +2553,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 
 <!--gen: sealable-->
 ★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15` · `#68` → `DECISIONS
-  §160~161`). `SEAL.json` 이 소스 71종의 raw sha256 을 갖고, `dms.py rawdiff`
+  §160~161`). `SEAL.json` 이 소스 74종의 raw sha256 을 갖고, `dms.py rawdiff`
   가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — **한 자릿수 분이 1분 밑으로** 준다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
   끄는 것과 같다.
@@ -2653,6 +2653,27 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
 `tools/serve.py` 로 직접 확인한다(레이어가 올랐는지는 `npm run test` 의 style 시험이 먼저 본다).
 
 강제자  `tools/verify.sh`
+
+### 14-4c. 시험이 **도구를 붙들고 있는가**
+
+`tools/mutate.py` 가 과녁을 **도출한다** — 「관문이면서 래칫을 든 `.py`」
+스물넷이고 목록을 손으로 안 적는다. 도구 소스를 한 줄씩 바꿔 심고 그 도구의
+`--selftest` 가 우는지 본다.
+
+    돌연변이 96 · 생존 67 · 붙잡이 0 인 과녁 0
+
+수는 `data/golden/mutation.json` 이 들고 `ratchet.py` 가 댄다 — 생존은 내려가는
+쪽, 흔든 수는 올라가는 쪽이다. 둘을 같이 봐야 한다: 그물이 줄면 생존도 줄기
+때문이다.
+
+★ **생존이 곧 결함은 아니다.** 정렬 키처럼 행동을 안 바꾸는 자리의 생존은
+  정상이고, 가르는 것은 사람이다. 이 수가 드는 것은 「그물이 줄었는가」다.
+
+★ **흔드는 동안 다른 관문을 같이 돌리지 않는다.** 과녁을 제자리에서 바꿔 쓰고
+  되돌리므로, 그 창 안에 다른 검사를 돌리면 흔들린 사본을 읽는다.
+
+★ 단계로는 **안 돈다.** 분 단위라 `verify.sh` 에 못 건다 — 대장을 읽어 대는
+  것은 「래칫 정합」이 한다.
 
 ### 14-4a. 사람이 부르는 나머지 도구
 
@@ -2962,7 +2983,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,680 전수 · **분모(blank) 0절** · 물림(inherit) 809절.
+★ **강제자 칸의 분모.** 절 1,701 전수 · **분모(blank) 0절** · 물림(inherit) 827절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

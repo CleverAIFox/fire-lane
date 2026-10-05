@@ -80,7 +80,6 @@ EXEMPT = {
     "ledger_feeds": "`feeds` 산문 → 리스트 이관. `--apply` 가 `sources.yaml` 을 "
                     "고친다. 사람이 확인하고 친다(`ledger_stem` 과 같은 꼴)",
     "serve": "개발 서버. **끝나지 않는 프로세스**라 관문에 걸 수 없다",
-    "intake": "Downloads → landing 게이트",
     "docx_fix": "기획서를 실제로 고친다. 사람이 확인하고 친다",
     # ★ 2026-09-30 (§319). `baseline` 을 면제에서 뺐다 — `tools/remeasure.py` 의
     #   재생성 사슬이 부른다. 「사람이 시점을 정한다」는 여전히 맞지만, 그 시점은

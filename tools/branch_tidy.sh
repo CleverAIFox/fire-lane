@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # tools/branch_tidy.sh — 가지 · PR 정리.  (DECISIONS §214-1)
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   bash tools/branch_tidy.sh              대화형 — 열린 PR 닫기 · 원격 가지 · 로컬 가지 (단계마다 y/N)
 #   bash tools/branch_tidy.sh --auto       비대화 — fl.sh 가 배치 끝에 부른다

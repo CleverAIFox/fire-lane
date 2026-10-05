@@ -28,6 +28,7 @@ PARAM firelane.skeleton 의 상수(COVER_D · GAP · MATCH_* · NGII_N · CLASS_
 
 ★ 판 2 (2026-09-18). 거리 분류 A ≤1.5 · B ~5 · C ~15 · D 를 칸(dist_class)으로 낸다. §184 판단 기준
   「C 중 needs_cv · unknown ≥ 20 이면 교체」 를 이 도구가 직접 센다 — 미리보기 스크립트의 분류를 코드로 옮겼다.
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

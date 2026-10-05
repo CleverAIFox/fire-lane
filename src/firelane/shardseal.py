@@ -233,6 +233,27 @@ def code_print(start: str = "firelane.ingest") -> str:
 #   ingest 가 새 최상위 키를 읽기 시작하면 test_ingest_global_keys_are_declared 가 운다.
 INGEST_GLOBAL = ("target_area", "bbox_4326", "standard_crs", "scopes", "layers", "raw_only")
 
+# ★ 2026-10-05 (DECISIONS §397). 전역 칸 **안에서** ingest 가 안 읽는 하위 칸.
+#   §166-3 이 최상위 키를 좁혔고, 여기는 그 한 겹 아래다. 「산출에 닿는 것만
+#   잰다」는 같은 규율이고, 적는 쪽은 **빼는 목록**이다 — 모르는 칸은 여전히
+#   잰다(틀리면 한 번 더 빌드할 뿐이고, 반대로 틀리면 낡은 산출물을 재사용한다).
+#
+#   ★ **사유 없이 못 적는다.** `tests/test_shardseal.py` 가 AST 로 되묻는다 —
+#     폐포 어느 파일도 그 이름을 안 쥐는가. 쥐면 운다.
+INGEST_GLOBAL_SKIP: dict[str, frozenset[str]] = {
+    # `layers.raw.providers` 는 제공기관 **어휘**다. 읽는 곳은
+    # `normalize_raw.py`(raw → norm) 하나이고 그 파일은 ingest 폐포 안에 없다.
+    # 폐포 27개 어느 파일에도 `providers` 라는 글자가 없다.
+    # 그런데 제공기관 하나를 더하면 **72/72 가 찢어졌다**(2026-10-05 실측) —
+    # 산출에 한 바이트도 안 닿는 값이 전수 재빌드를 시킨다. §345 와 같은 병이고
+    # (「폐포가 의도보다 넓었다」) 거기서는 잠금 파일이었다.
+    # `layers.*.naming` 은 **파일 이름 규칙**이다. 읽는 곳은 `scan_data` ·
+    # `lakecheck` · `datalog` 이고 전부 폐포 밖이다 — ingest 는 대장이 적은
+    # `files:` 경로를 그대로 열지, 이름을 패턴으로 고르지 않는다. 제공기관
+    # 하나를 더하면 이 정규식의 교대열도 같이 늘어 **또 전수를 찢는다.**
+    "layers": frozenset({"providers", "naming"}),
+}
+
 
 # ★ 2026-09-22 (DECISIONS §216-1). 자기 항목에서도 **산출에 안 닿는 서술 칸**은 뺀다.
 #   종전에는 항목 전체를 쟀고, `feeds` 에 소비자 한 줄(`publish_navi.py`)을 적은 것만으로
@@ -280,8 +301,14 @@ def _own(cfg: dict, key: str) -> object:
     return cfg.get("datasets", {}).get(key)
 
 
+def _no_skip(k: str, v):
+    """그 전역 키에서 **ingest 가 안 읽는 하위 칸**을 뺀다(`INGEST_GLOBAL_SKIP`)."""
+    drop = INGEST_GLOBAL_SKIP.get(k)
+    return v if not drop else jsonkeys.drop(v, drop)
+
+
 def cfg_print(cfg: dict, key: str) -> str:
-    return _print({k: _no_docs(cfg.get(k)) for k in INGEST_GLOBAL},
+    return _print({k: _no_skip(k, _no_docs(cfg.get(k))) for k in INGEST_GLOBAL},
                   _no_docs(_own(cfg, key)))
 
 
@@ -298,6 +325,12 @@ def _cfg_print_v1(cfg: dict, key: str) -> str:
     return _print(_raw_glob(cfg), _own(cfg, key))
 
 
+def _cfg_print_v4(cfg: dict, key: str) -> str:
+    """2026-10-05 판 — 전역 칸의 하위를 하나도 안 뺐다."""
+    return _print({k: _no_docs(cfg.get(k)) for k in INGEST_GLOBAL},
+                  _no_docs(_own(cfg, key)))
+
+
 def _cfg_print_v3(cfg: dict, key: str) -> str:
     """2026-09-24~10-05 판 — `caveats` 를 산문으로 안 봤다."""
     keys = DOC_KEYS - {"caveats"}
@@ -307,7 +340,7 @@ def _cfg_print_v3(cfg: dict, key: str) -> str:
 
 #: 옛 판 지문. 만나면 **다시 빌드 없이** 받고 새 판으로 고쳐 적는다.
 #: ★ 줄이 늘 때마다 「한 번 지나면 안 찢어진다」가 한 세대 더 보장된다.
-LEGACY_PRINTS = (_cfg_print_v3, _cfg_print_v2, _cfg_print_v1)
+LEGACY_PRINTS = (_cfg_print_v4, _cfg_print_v3, _cfg_print_v2, _cfg_print_v1)
 
 
 def cfg_print_legacy(cfg: dict, key: str) -> str:

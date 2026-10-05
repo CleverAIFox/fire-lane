@@ -55,6 +55,7 @@ IN    data/processed/segments.geojson · (선택) processed/ngii1k_xsec_5186.gpk
       sources.yaml 의 vehicle_spec
 OUT   없음 (표). --csv 를 주면 data/interim/corner_probe.csv
 PARAM DEG_STRAIGHT · SAMPLE_M
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

@@ -38,6 +38,7 @@ PARAM 없음
 밖    **`sweep` · `pytest` 는 안 댄다** — 산문 요약이라 기계가 댈 것이 없다.
       그 둘은 `verify.sh` 가 이 기계에서 다시 전수로 돈다(5단계).
       **`EXPECT` 를 고치지 않는다.** 고치는 것은 주장을 되살리는 것이다.
+부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 """
 from __future__ import annotations
 

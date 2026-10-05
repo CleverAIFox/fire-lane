@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # tools/fix.sh — **수리 문.** 기계적으로 답이 하나인 것만 고친다.
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   bash tools/fix.sh            고친다
 #   bash tools/fix.sh --dry      무엇을 돌지만 보여준다
