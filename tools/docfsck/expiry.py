@@ -3,6 +3,7 @@
 IN    docs/* · tools/* 의 한시 표기(배너 · TODO)
 OUT   결함 문장 목록 (비면 통과)
 밖    기한 **안**에 끝났는가는 `check_deferred`(⑧) 가 든다. 여기는 지난 것만 본다.
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

@@ -28,6 +28,7 @@ ITS 소통정보 API 가 있고, 그것이 덮는 범위가 우리 통행가능 
 IN    data/processed/node_link.geojson (또는 gpkg) · web/data/segments.geojson
 OUT   stdout · --write 로 CSV
 PARAM --tol 25 · --write
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

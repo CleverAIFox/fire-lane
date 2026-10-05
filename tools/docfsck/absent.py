@@ -4,6 +4,7 @@ IN    sources.yaml 의 `absent` 선언 · 그 선언이 지목한 실물
 OUT   결함 문장 목록 (비면 통과)
 밖    「있다」고 적은 값이 실제로 있는가는 안 본다 — 그것은 `check_schema` 다.
       값이 **옳은가**도 안 본다. 여기서 묻는 것은 「없다고 했는데 있나」 하나다.
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

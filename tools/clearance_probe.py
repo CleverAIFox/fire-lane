@@ -50,6 +50,7 @@ wmin 은 멀쩡한데 wmax 만 273구간에서 죽는 이유가 이것으로 설
     uv run python tools/clearance_probe.py --step 1.0 --radius 3.0
     uv run python tools/clearance_probe.py --only DM01611 DM01498
 ════════════════════════════════════════════════════════════════
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

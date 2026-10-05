@@ -26,9 +26,12 @@ plan_renumber.py — `PLAN §1` 행 번호의 **정합 검사기.** 더는 당�
   종전 규약(2026-09-13 「슬롯을 안 남기기로 했으므로 당기는 것이 맞다」)은
   **인용이 PLAN 안에만 있다는 전제**에서 나왔고 그 전제가 틀렸다.
 
-★ 지워진 번호를 가리키는 인용은 **고치지 않는다.** 그것은 역사이고,
-  가리키던 행이 무엇이었는지는 `DECISIONS §N` 이 안다. 이 도구는 세기만 한다 —
-  모르는 것을 아는 척하지 않는다(HANDOFF 원칙 ⑥).
+★ **2026-10-05 — 「역사다」를 지웠다**(DECISIONS §398-7). 종전에 이 자리에는
+  「지워진 번호를 가리키는 인용은 고치지 않는다. 그것은 역사다」가 있었고,
+  그 한 줄이 성질이 반대인 둘을 덮고 있었다. `#43(닫힘) 에서 옮겼다` 는
+  서술이라 맞지만 `인자 대조 축은 #133 이 든다` 는 **지금 틀린 문장**이다.
+  죽은 번호는 그 자리에 `(닫힘)` 을 달아 **죽었다고 적는다.** 맨몸으로 남은
+  것은 `OUTSIDE_LEADS` 래칫이 든다 — 「안 고친다」가 아니라 0 이다.
 
 IN    docs/PLAN.md · docs/DECISIONS.md · docs/MASTER.md · sources.yaml
 OUT   없다 (검사 전용)
@@ -97,6 +100,53 @@ def _is_plan_ref(text: str, m: re.Match, spans: list[tuple[int, int]]) -> bool:
 #   것일 수 있으므로 런 밖은 안 본다(`§1 #3 (… MASTER §19-5)` 처럼 뒤에
 #   다른 문서가 따라붙는 꼴이 실제로 있다).
 GUIDE = re.compile(r"→ §1 ((?:#\d+(?: · )?)+)")
+
+# ★ 2026-10-05 (DECISIONS §398-7). **밖에도 같은 가름을 쓴다.**
+#   종전에 밖의 인용은 전부 「안 고친다(역사다)」 한 줄로 끝났다. 읽으면
+#   그 안에 성질이 반대인 둘이 섞여 있다 — 위 `_guides` 가 PLAN **안**에서
+#   이미 가르고 있는 그 둘이다.
+#
+#       `PLAN #43(닫힘) 에서 옮겼다`            묘비. 그 일이 **있었다**는
+#                                              서술이고 행이 지워져도 맞다
+#       `인자 대조 축은 PLAN §1 #133 이 든다`   길잡이. **지금 그 행이 든다**는
+#                                              주장이고, 행이 없으면 틀렸다
+#
+#   밖이라서 안 고치는 것이 아니다. **묘비라서** 안 고치는 것이고, 길잡이는
+#   밖에 있어도 고쳐야 한다. 「역사다」는 그 둘을 덮어서 뒤쪽을 숨겼다.
+#: 죽은 번호 **뒤에** 오는 표시. 이것이 있으면 묘비, 없으면 길잡이다.
+#
+# ★ 가름을 **문장의 말씨로 추측하지 않는다.** 첫 판이 그랬다 — 「든다 · 옮긴다」
+#   를 길잡이로, 「옮겼다 · 적었다」를 묘비로 읽는 어휘 스무 낱말이었다.
+#   돌려 보니 19곳을 집었고 그중 절반이 묘비였다(`#28 에 등재했다` 가 같은 줄의
+#   「쓸 수 있다」 때문에 길잡이가 됐다). 말씨 분류기는 이 저장소가 쓸 물건이
+#   아니다 — **표시를 요구하는 쪽이 맞다.** 글 쓰는 사람이 그 자리에서 알고 있다.
+#   ③ `닫힘` 과 `결번` 만 받았더니 산문 네 곳이 걸렸다 — 「그 행은 닫혀
+#      결번이다」가 **줄바꿈에서 갈렸다.** 산문은 접힌다. 활용형 `닫혀` 를
+#      같이 받는다(이 말은 다른 뜻이 없다).
+CLOSED = ("닫힘", "결번", "닫혀")
+
+
+def _outside_kind(raw: str, _dead: list[int]) -> str:
+    """인용 한 줄이 `묘비` 인가 `길잡이` 인가. **표시로만 가른다.**
+
+    그 줄이 「이 번호는 죽었다」고 **말하는가** 하나만 본다 — `닫힘` 또는
+    `결번`. 맨몸이면 길잡이다. 읽는 사람은 산 행인 줄 알고 찾아가서 빈손으로
+    온다.
+
+    ★ 표시 자리를 번호 **바로 뒤**로 묶지 않았다. 두 번 좁혔다가 둘 다 틀렸다 —
+      ① 바로 뒤로 묶으면 `넷(#8 · #74 · #92 · #103)` 을 `#8(닫힘) · #74(닫힘) …`
+         로 적게 된다. 그 꼴은 사람이 안 쓰고, 안 쓰는 꼴을 요구하는 관문은
+         우회당한다(§214-1 과 같은 병).
+      ② 번호 **뒤 40자** 로 늘려도 `닫힘   PLAN §1 #43 · #44` 가 걸렸다 —
+         닫힘 표 머리글은 표시가 번호 **앞**에 온다. 실물에 그 꼴이 셋 있었다.
+      그래서 줄 전체를 본다. 느슨하지만 래칫이 0 이라 느슨함이 숨을 데가 없다.
+    """
+    return "묘비" if any(w in raw for w in CLOSED) else "길잡이"
+
+
+#: 밖에서 없는 §1 행을 **맨몸으로** 가리키는 자리 수. **내려가는 쪽으로만.**
+OUTSIDE_LEADS = 0
+RATCHETS = {"OUTSIDE_LEADS": "down"}
 
 
 def _guides(text: str) -> list[tuple[int, str, list[int]]]:
@@ -179,12 +229,69 @@ def _rows(text: str) -> list[int]:
     return [int(m.group(2)) for m in ROW.finditer(text[s:e])]
 
 
+def _live_rows() -> set[int]:
+    return set(_rows(PLAN.read_text(encoding="utf-8")))
+
+
+
+def selftest() -> int:
+    """판별식이 살아 있나. **`_canary` 를 품는다** — 둘이 같은 일이다.
+
+    ★ 2026-10-05 (DECISIONS §398-6). 이 도구에는 `--selftest` 가 없었다.
+      돌연변이 관문이 그것을 붙잡이로 쓰는데, 붙잡이가 없으니 흔든 넷이
+      **전부 생존**으로 집계됐다 — 「시험이 안 잡는다」가 아니라 **아무것도
+      안 돌렸다**였다. 수가 거짓말을 한 자리다(족 6).
+    """
+    fails: list[str] = []
+    _canary()
+
+    # ★ 가름 — 표시가 있으면 묘비, 없으면 길잡이. 네 갈래를 민다
+    cases = [
+        ("인자 대조 축은 `PLAN §1 #133` 이 든다.", [133], "길잡이"),
+        ("`PLAN #43(닫힘)` 에서 옮겼다.", [43], "묘비"),
+        ("닫힘   PLAN §1 #43 · #44", [43, 44], "묘비"),
+        ("넷(#8 · #74 · #92 · #103 — 전부 결번)", [8, 74], "묘비"),
+        ("그 행은 닫혀 결번이다 — `PLAN #137`", [137], "묘비"),
+    ]
+    for raw, dead, want in cases:
+        got = _outside_kind(raw, dead)
+        if got != want:
+            fails.append(f"가름이 틀렸다 — {raw[:34]!r} 를 {got} 로 봤다(기대 {want})")
+
+    # ★ 빈 그물 — 표시 어휘가 비면 **무엇이든 길잡이**가 되어 전수가 빨개진다.
+    #   그 반대(전수 초록)가 더 위험하므로 어휘에 `닫힘` 이 있는지부터 든다
+    if "닫힘" not in CLOSED:
+        fails.append("표시 어휘에 `닫힘` 이 없다")
+
+    live = _live_rows()
+    if len(live) < 50:
+        fails.append(f"산 행을 {len(live)}개만 읽었다 — 표 수집이 좁다")
+    if 1 in live and 156 not in live and max(live, default=0) < 100:
+        fails.append("행 번호가 100 밑에서 끊긴다 — 범위가 §1 을 다 안 덮는다")
+
+    # ★ 래칫이 0 을 **내지 않는다** — 수집이 비면 터져야 한다
+    try:
+        v = ratchet_values()
+    except RuntimeError:
+        v = None
+    if v is None or "OUTSIDE_LEADS" not in v:
+        fails.append("래칫 값을 못 냈다")
+
+    for f in fails:
+        print(f"  ✗ {f}")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 9")
+    return 1 if fails else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     # ★ `--apply` 를 받되 **거부한다.** 조용히 빼면 손에 익은 사람이 옛 명령을
     #   치고 아무 일도 안 일어난 것으로 읽는다. 왜 없어졌는지를 화면이 말해야 한다.
     ap.add_argument("--apply", action="store_true", help="(폐지됨 — 사유를 출력한다)")
+    ap.add_argument("--selftest", action="store_true", help="★ 판별식이 살아 있나")
     a = ap.parse_args()
+    if a.selftest:
+        return selftest()
 
     _canary()
     text = PLAN.read_text(encoding="utf-8")
@@ -275,31 +382,95 @@ def main() -> int:
         print("    무엇이었는지부터 `DECISIONS` 에서 찾아라(W3-9 와 같은 병).")
         return 1
 
-    # ── 밖에서 §1 을 가리키는 인용 ───────────────────────────
-    # ★ 죽은 인용은 **빨간불이 아니다.** 가리키던 행이 닫혀서 지워진 것이고
-    #   그것이 정상 경로다. 세어서 말하기만 한다 — 고치라고 하면 역사를 고치게 된다.
-    outside: dict[str, list[int]] = {}
-    for rel in ("docs/DECISIONS.md", "docs/MASTER.md", "sources.yaml"):
-        q = ROOT / rel
-        if not q.is_file():
-            continue
-        cites = [int(n) for n in re.findall(r"PLAN[^\n]{0,14}?#(\d+)\b",
-                                            q.read_text(encoding="utf-8"))]
-        outside[rel] = sorted({n for n in cites if n not in live})
-
     print(f"✓ 행 {len(nums)}개 · 번호 {min(nums)}..{max(nums)} · 중복 0 · 오름차순")
     if gaps:
         head = ", ".join("#" + str(g) for g in gaps[:12])
         more = f" … {len(gaps) - 12}개 더" if len(gaps) > 12 else ""
         print(f"  결번 {len(gaps)}개 — {head}{more}")
         print("    ★ 결번은 정상이다. 번호는 영구 식별자이고 다시 쓰지 않는다.")
-    tot = sum(len(v) for v in outside.values())
-    if tot:
-        print(f"  밖에서 지워진 행을 가리키는 인용 {tot}곳 — **안 고친다**(역사다)")
-        for rel, ns in outside.items():
-            if ns:
-                print(f"    {rel:20} {', '.join('#' + str(n) for n in ns)}")
+
+    # ── 밖에서 §1 을 가리키는 인용 — **묘비와 길잡이를 가른다** ────
+    tomb, lead = 0, []
+    for rel, kind, ln, raw, dead in outside_cites(live):
+        if kind == "묘비":
+            tomb += 1
+        else:
+            lead.append((rel, ln, raw, dead))
+    if tomb:
+        print(f"  밖의 **묘비** {tomb}곳 — 지난 일을 적은 서술이다. 안 고친다")
+    if lead:
+        print(f"\n★ 밖의 **길잡이** {len(lead)}곳이 없는 행을 가리킨다 — 고친다\n")
+        for rel, ln, raw, dead in lead:
+            shown = ", ".join(f"#{n}" for n in dead)
+            print(f"  ✗ {rel}:{ln}  {shown} — §1 에 없다")
+            print(f"      {raw.strip()[:92]}")
+        print("\n  읽는 사람은 산 행인 줄 알고 찾아간다. 둘 중 하나를 해라 —")
+        print("    서술이면  그 줄에 `(닫힘)` 을 적는다")
+        print("    주장이면  무엇이 드는지 다시 적는다 — 산 행 · 강제자 파일 · 「없다」")
+        print("  ★ 번호만 지우지 마라. 문장이 들던 주장이 남는다.")
+        return len(lead)
     return 0
+
+
+#: 묘비 꼴. `→ **§1 로 접었다**(#96 … #103)` 은 그 절이 **무엇이 됐는지**의
+#: 영구 기록이고, 행이 닫혀 지워져도 기록은 그대로 맞다(`_guides` 머리말).
+TOMBSTONE = "§1 로 접었다"
+
+
+def _plan_outside(live: set[int]) -> list[tuple[int, str, list[int]]]:
+    """**PLAN 자신의 §1 밖 산문**이 가리키는 죽은 행.
+
+    ★ 2026-10-05 (DECISIONS §398-7). 사각지대가 하나 더 있었다. 안쪽 검사
+      (`_guides`)는 `### ` **제목만** 보고, 밖 검사는 `PLAN #N` 꼴만 본다.
+      PLAN 산문은 자기 표를 `#32` 로 맨몸 인용하므로 **둘 다 안 걸린다.**
+      실측에서 §10 이 「기한을 박는 자리는 `#4` 와 `#32` 뿐이다」로 결번을
+      가리키고 있었다 — 읽는 사람을 빈 자리로 보낸다.
+    """
+    txt = PLAN.read_text(encoding="utf-8")
+    a, b = _span(txt)
+    spans = _foreign(txt)
+    out: list[tuple[int, str, list[int]]] = []
+    for i, raw in enumerate(txt.splitlines(), 1):
+        pos = sum(len(x) + 1 for x in txt.splitlines()[:i - 1])
+        if a <= pos < b or TOMBSTONE in raw:
+            continue
+        if any(x <= pos < y for x, y in spans):
+            continue
+        dead = sorted({int(m.group(1)) for m in REF.finditer(raw)
+                       if int(m.group(1)) not in live})
+        if dead:
+            out.append((i, raw, dead))
+    return out
+
+
+def outside_cites(live: set[int]) -> list[tuple[str, str, int, str, list[int]]]:
+    """밖에서 지워진 §1 행을 가리키는 인용. `(파일 · 부류 · 줄 · 원문 · 번호)`.
+
+    ★ **다른 도구가 부르는 자리다**(`ratchet.py` 가 길잡이 수를 든다).
+    ★ `docs/PLAN.md` 도 「밖」이다 — §1 표 **밖의 산문**은 자기 표를 인용하는
+      쪽이고, 제목만 보는 안쪽 검사가 그것을 안 본다.
+    """
+    out: list[tuple[str, str, int, str, list[int]]] = [
+        ("docs/PLAN.md", _outside_kind(raw, dead), ln, raw, dead)
+        for ln, raw, dead in _plan_outside(live)]
+    for rel in ("docs/DECISIONS.md", "docs/MASTER.md", "sources.yaml"):
+        q = ROOT / rel
+        if not q.is_file():
+            continue
+        for i, raw in enumerate(q.read_text(encoding="utf-8").splitlines(), 1):
+            dead = sorted({int(n) for n in re.findall(r"PLAN[^\n]{0,14}?#(\d+)\b", raw)
+                           if int(n) not in live})
+            if dead:
+                out.append((rel, _outside_kind(raw, dead), i, raw, dead))
+    return out
+
+
+def ratchet_values() -> dict[str, int]:
+    """밖의 **길잡이** 수. 묘비는 안 센다 — 서술은 빚이 아니다."""
+    live = _live_rows()
+    if not live:
+        raise RuntimeError("PLAN §1 에서 행을 하나도 못 읽었다 — 수집이 죽었다")
+    return {"OUTSIDE_LEADS": sum(1 for c in outside_cites(live) if c[1] == "길잡이")}
 
 
 if __name__ == "__main__":

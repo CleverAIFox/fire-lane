@@ -25,6 +25,7 @@ codepatch.py — 파이썬 소스 **멱등 편집기**. `docpatch` 의 코드판
     p.add_flag("--check", "상태만 본다")       # argparse 에 넣는다
     p.route_flag("check", "return check()")   # parse_args 뒤에 분기
     p.commit(apply=True)
+부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 """
 from __future__ import annotations
 

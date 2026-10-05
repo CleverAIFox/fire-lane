@@ -70,6 +70,7 @@ IN    $FIRE_LANE_DATA/_quarantine/nsdi/AL_D002_*.zip  (또는 raw/nsdi/)
 OUT   없음. 화면 표만. --save 를 주면 $FIRE_LANE_DATA/../jijeok_width.gpkg
 PARAM 아래 상수
 ════════════════════════════════════════════════════════════════
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

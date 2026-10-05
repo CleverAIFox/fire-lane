@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # ci_wait.sh — PR 검사가 끝날 때까지 **조용히** 기다린다. (DECISIONS §278-6)
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   bash tools/ci_wait.sh <PR번호>        0 초록 · 1 빨강 · 2 못 읽음(시간 초과 포함)
 #   bash tools/ci_wait.sh --selftest      ★ 판별식이 살아 있나

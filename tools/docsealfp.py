@@ -20,6 +20,7 @@ PARAM LIST_VIEW · FP_METHOD
 밖    **판정을 안 한다.** 유·무효를 정하는 것은 `docseal.valid` 이고 여기서는
       지문만 낸다. 어느 절이 어느 파일을 지목하는가(`refs`)도 저 파일이 든다.
       생성물인지 아닌지의 정본도 여기가 아니라 `firelane.generated.REGISTRY` 다.
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

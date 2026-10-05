@@ -20,6 +20,7 @@ OUT   SVG 문자열
 PARAM COLOR · LABEL
 밖    **배치는 안 본다** — 넘침 · 겹침은 `tools/svg_fit.py` 가 `svg()` 안에서
       든다. **기획서에 넣지 않는다** — `tools/docx_figs.py --sync` 가 넣는다.
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

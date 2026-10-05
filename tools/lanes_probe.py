@@ -40,6 +40,7 @@ IN    data/processed/node_link_5186.gpkg
       data/processed/segments_5186.gpkg
 OUT   없음. --save 를 주면 $FIRE_LANE_DATA/interim/lanes_join.csv
 ════════════════════════════════════════════════════════════════
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

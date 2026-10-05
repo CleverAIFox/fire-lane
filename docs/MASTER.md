@@ -780,12 +780,12 @@ data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취
       read/__init__.py  `kind` → 갈래 함수 표 **정본** (READERS · 15항목)
       read/ctx.py       갈래가 받는 한 덩이 (대장 항목 · 실물 · save 주입)
       read/_io.py       연장 넷 + 좌표계 · 절단 상자
-      read/shapefile.py zip 안 SHP · 도엽 묶음 · NGI 혼재      13개(18%)
-      read/delimited.py CSV · `|` 구분 텍스트 · 좌표 없는 표   29개(40%)
+      read/shapefile.py zip 안 SHP · 도엽 묶음 · NGI 혼재      13개(17%)
+      read/delimited.py CSV · `|` 구분 텍스트 · 좌표 없는 표   29개(39%)
       read/jsondoc.py   표준데이터 · 건축행정시스템 JSON        3개( 4%)
       read/dbf.py       회전제한 (지오메트리 없음)              1개( 1%)
-      read/passthrough.py  읽지 않는다. 존재만 기록            26개(36%)
-data/processed/    대장 72종
+      read/passthrough.py  읽지 않는다. 존재만 기록            29개(39%)
+data/processed/    대장 75종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     판정 임계값 정본 (web/config.js 는 표시용 사본)
@@ -2962,7 +2962,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,685 전수 · **분모(blank) 0절** · 물림(inherit) 813절.
+★ **강제자 칸의 분모.** 절 1,700 전수 · **분모(blank) 0절** · 물림(inherit) 826절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

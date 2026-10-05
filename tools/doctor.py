@@ -36,6 +36,7 @@ FL_DATA_MIGRATION — git 밖 실물과 원자적으로 움직인다
 IN    $FIRE_LANE_DATA · $FIRE_LANE_INBOX · sources.yaml
 OUT   없음 (진단 전용)
 PARAM 없음
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # tools/merge_batch.sh — 배치 PR 머지 → 파트 동기화 → (선택) 릴리즈
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   bash tools/merge_batch.sh              A  part/infra → dev 머지 · part/* 동기화
 #   bash tools/merge_batch.sh --release    A + B  dev → main 릴리즈 · 흡수 · 동기화

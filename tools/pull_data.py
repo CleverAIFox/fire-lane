@@ -52,6 +52,7 @@ pull_data.py — 반입 체인 단일 트리거. **Downloads 에서 processed �
 IN    FIRE_LANE_INBOX (없으면 자동탐색) · FIRE_LANE_DATA
 OUT   landing · raw · norm · (--all 이면 processed · web)
 ════════════════════════════════════════════════════════════════
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

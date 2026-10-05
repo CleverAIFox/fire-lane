@@ -23,6 +23,7 @@ tools/kpi.py — 이 프로젝트가 무엇을 막는지 숫자로 낸다.
 IN    web/data/segments.geojson · seg/params.py (STATIONS · NODE_TOL)
 OUT   stdout · --csv
 PARAM --need 3.0 · --station · --csv
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 
