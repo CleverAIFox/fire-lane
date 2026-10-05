@@ -54,6 +54,7 @@ raw 에 편입되지 않았고 아무 도구도 그 사실을 몰랐다.** 대�
 IN    $FIRE_LANE_INBOX (기본값 자동탐색) · sources.yaml
 OUT   $FIRE_LANE_DATA/landing · data/_intake.json (커밋한다)
 PARAM 없음
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 
@@ -185,14 +186,117 @@ def _stem_of(rel: str) -> str:
     return _re.sub(rf"_(?:{toks})?_?\d{{4,8}}.*$", "", stem).rstrip("_")
 
 
+
+# ── ④ 본문 ────────────────────────────────────────────────────
+# ★ 2026-10-05 (DECISIONS §399). 단서 ①~③ 은 전부 **파일 이름**을 본다.
+#   그런데 브라우저가 떨구는 이름은 `★(4.29. 즉시 보도자료) 119패스 전국
+#   확대…` 꼴이고 거기엔 문서번호도 stem 도 취득 규칙도 없다. 2026-10-05 에
+#   자료 넷이 그 꼴로 와서 전부 「사람이 정한다」로 떨어졌다.
+#   **이름이 아무 말도 안 하면 내용을 연다.**
+#: 1등이 최소 이만큼은 맞아야 한다.
+BODY_MIN_HITS = 2
+#: 1등과 2등의 차이가 이보다 작으면 **모른다**.
+BODY_MARGIN = 2
+#: 본문을 몇 쪽까지 읽는가. 법령 인쇄본은 발 밑 URL 이 마지막 쪽에 있다.
+BODY_PAGES = 3
+#: 점수에 안 넣는 낱말. 대장 **전체**에 흔해서 구별을 못 한다.
+BODY_STOP = frozenset({"미투입", "현행", "시행", "전국", "자료", "기준", "제작",
+                       "대상", "지역", "확대", "발표", "대책", "우리", "그것",
+                       "국가법령정보센터", "법제처", "소방청", "pdf"})
+_BODY_TOKEN = re.compile(r"[가-힣A-Za-z][가-힣A-Za-z0-9]{1,}")
+_JONO = re.compile(r"joNo=0*(\d+)")
+
+
+def body_text(path: Path, pages: int = BODY_PAGES) -> str:
+    """앞 `pages` 쪽의 글자. 못 읽으면 빈 문자열 — **터지지 않는다.**
+
+    ★ 여기서 예외를 올리면 다운로드 폴더에 PDF 아닌 것이 하나만 있어도 취입
+      전체가 멈춘다. 못 읽는 것은 「모른다」로 가야 하고 그것이 안전한 쪽이다.
+    """
+    if path.suffix.lower() != ".pdf":
+        return ""
+    try:
+        import pypdf
+
+        r = pypdf.PdfReader(str(path))
+        return "\n".join(q.extract_text() or "" for q in r.pages[:pages])
+    except Exception:
+        return ""
+
+
+def _body_tokens(s: str) -> set[str]:
+    return {t for t in _BODY_TOKEN.findall(s or "") if t not in BODY_STOP}
+
+
+def body_marks(ds: dict) -> dict[str, set[str]]:
+    """대장 키 → **구별 낱말.** 둘 이상에 나오는 낱말은 뺀다.
+
+    ★ 목록을 손으로 안 적는다. 대장이 자라면 다시 계산된다 — 그리고 **다른
+      항목과 겹치는 낱말은 구별을 못 하므로** 자동으로 빠진다.
+    """
+    own = {k: _body_tokens(f"{(v or {}).get('what', '')}\n"
+                           f"{(v or {}).get('authority', '')}")
+           for k, v in ds.items()}
+    seen: dict[str, int] = {}
+    for toks in own.values():
+        for t in toks:
+            seen[t] = seen.get(t, 0) + 1
+    return {k: {t for t in toks if seen[t] == 1} for k, toks in own.items()}
+
+
+def body_match(body: str, ds: dict) -> tuple[str | None, str]:
+    """본문 → `(대장 키, 사유)`. 애매하면 `(None, 사유)`.
+
+    ★ **애매하면 안 고른다.** 틀린 이름으로 landing 에 넣는 것이 안 넣는
+      것보다 나쁘다 — landing 은 raw 의 상류다.
+    """
+    got = _body_tokens(body)
+    if not got:
+        return None, "본문을 못 읽었다 (PDF 가 아니거나 글자가 없다)"
+    board = sorted(((len(v & got), k) for k, v in body_marks(ds).items()),
+                   reverse=True)
+    if not board:
+        return None, "대장이 비었다"
+    top, key = board[0]
+    runner = board[1][0] if len(board) > 1 else 0
+    if top < BODY_MIN_HITS:
+        return None, f"본문 점수가 {top} — 바닥 {BODY_MIN_HITS} 에 못 미친다"
+    if top - runner < BODY_MARGIN:
+        return None, (f"본문 1등 {key} {top} · 2등 {board[1][1]} {runner} — "
+                      f"벌어짐 {BODY_MARGIN} 에 못 미친다")
+    return key, f"본문 낱말이 대장 {key} 와 {top}개 맞는다 (2등 {runner})"
+
+
+def body_file_of(body: str, entry: dict) -> tuple[str | None, str]:
+    """그 항목이 파일 여럿을 선언했을 때 **어느 것인가.**
+
+    ★ 조문 둘을 선언한 법령은 **점수가 같다** — 같은 인쇄본이라 낱말이 같다.
+      가르는 것은 인쇄 URL 의 `joNo` 하나뿐이고, 그것이 없으면 안 고른다.
+    """
+    files = list((entry or {}).get("files") or [])
+    if len(files) == 1:
+        return files[0], "선언 파일이 하나다"
+    if not files:
+        return None, "대장이 `files` 를 안 적는다"
+    m = _JONO.search(body)
+    if m:
+        want = f"_a{int(m.group(1))}."
+        hit = [f for f in files if want in f]
+        if len(hit) == 1:
+            return hit[0], f"인쇄 URL 의 joNo 가 제{int(m.group(1))}조다"
+    return None, f"선언 파일이 {len(files)}개인데 어느 것인지 못 가른다"
+
+
 def propose(src: Path, ds: dict) -> dict:
     """정규명 후보를 낸다. **채택하지 않는다.**
 
     단서를 넷 본다. 강한 순서다 —
       ① KFS 문서번호   대장 본문에 그대로 적혀 있다. 제일 확실하다
-      ② 취득 규칙      `normalize_raw.RULES` 가 배치할 수 있는가
       ③ 대장 stem      파일명이 이미 정규명인가
-      ④ 없음           사람이 정한다
+      ② 취득 규칙      `normalize_raw.RULES` 가 배치할 수 있는가
+      ④ **본문**       앞 셋이 전부 **파일 이름**을 본다. 이름이 아무 말도
+                       안 하면(브라우저가 붙인 이름) 내용을 연다 (§399)
+      없으면           사람이 정한다
 
     ★ 2026-09-03. ③을 신설했다. **`intake` 가 대장 `stem` 을 안 봤다.**
       2026-08-31 에 `file`/`files` 를 37종에서 빼고 `stem`+`ext` 로 뒤집었는데
@@ -261,6 +365,17 @@ def propose(src: Path, ds: dict) -> dict:
                 out["why"].append(
                     f"취득 규칙은 {placed} 로 배치하는데 대장 항목이 없다 — "
                     "stem 이 맞는지 확인하라")
+
+    # ④ 본문 — 이름이 아무 말도 안 할 때만 연다
+    if out["matched_key"] is None:
+        key, why = body_match(body_text(src), ds)
+        out["why"].append(why)
+        if key:
+            rel, why2 = body_file_of(body_text(src), ds.get(key) or {})
+            out["why"].append(why2)
+            if rel:
+                out["matched_key"] = key
+                out["suggest"] = rel
 
     if out["matched_key"] is None:
         slug = nm.slugify(stem)
