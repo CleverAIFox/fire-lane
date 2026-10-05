@@ -139,6 +139,62 @@ def test_legacy_seal_is_accepted_and_restamped(shard):
     assert rec["seal"]["cfg"] == shardseal.cfg_print(cfg, "road"), "새 판으로 고쳐 적지 않았다"
 
 
+def test_every_prose_field_in_the_ledger_is_declared_as_prose():
+    """★ 2026-10-05 (DECISIONS §396-7). **같은 족 네 번째다.**
+
+    §166-3(전역 칸) · §216-1(자기 항목) · §243(전역 칸의 산문)이 같은 사고를
+    세 번 고쳤는데 `caveats` 는 `DOC_KEYS` 에 없었다. `layers.golden.caveats`
+    한 줄 — PLAN 행 참조를 바로잡은 줄이다 — 을 고치자 **45샤드가 전부
+    찢어졌다.** 8GB 기계에서 `ngii_road` 재빌드는 거의 반드시 OOM 이다.
+
+    목록을 **손으로 적는 한 다음 칸이 또 빠진다.** 그래서 여기가 대장에
+    실재하는 산문스러운 칸을 훑어 선언 밖인 것을 찾는다 — 도구가 늘 때마다
+    빠지는 목록을 세 번 고친 이 저장소가 배운 그 꼴이다(§285-2 · §286).
+
+    밖 — **무엇이 산문인가를 기계가 정하지 않는다.** 이름으로 후보를 내고,
+         사람이 `DOC_KEYS` 나 `KNOWN_SUBSTANTIVE` 에 적는다.
+    """
+    from firelane import ledger
+    cfg = ledger.load_sources()
+
+    #: 이름은 산문처럼 보이지만 **실질**이다 — 고치면 산출이 바뀐다.
+    KNOWN_SUBSTANTIVE = {"description"}
+
+    SUSPECT = ("caveat", "note", "why", "what", "comment", "desc", "remark")
+    found: set[str] = set()
+
+    def walk(v):
+        if isinstance(v, dict):
+            for k, sub in v.items():
+                if isinstance(k, str) and any(s in k.lower() for s in SUSPECT):
+                    found.add(k)
+                walk(sub)
+        elif isinstance(v, list):
+            for x in v:
+                walk(x)
+
+    for k in shardseal.INGEST_GLOBAL:
+        walk(cfg.get(k))
+    walk(cfg.get("datasets"))
+    gap = sorted(found - set(shardseal.DOC_KEYS) - KNOWN_SUBSTANTIVE)
+    assert not gap, (
+        "대장에 산문 칸이 있는데 `DOC_KEYS` 에 없다 — 그 칸 한 줄이 45샤드를 찢는다:\n"
+        + "\n".join(f"    {g}" for g in gap)
+        + "\n  실질이면 `KNOWN_SUBSTANTIVE` 에 사유와 함께 적어라.")
+    assert found, "후보를 하나도 못 찾았다 — 그물이 비었다"
+
+
+def test_a_caveat_does_not_tear_every_shard(shard):
+    """`caveats` 한 줄을 고쳐도 안 찢어진다 — 그리고 실질 변화는 여전히 잡는다."""
+    base = {**CFG, "layers": {"golden": {"caveats": ["옛 줄"], "base": "repo"}}}
+    prose = {**CFG, "layers": {"golden": {"caveats": ["새 줄"], "base": "repo"}}}
+    real = {**CFG, "layers": {"golden": {"caveats": ["옛 줄"], "base": "data"}}}
+    assert shardseal.cfg_print(prose, "road") == shardseal.cfg_print(base, "road"), \
+        "caveats 가 지문을 움직인다"
+    assert shardseal.cfg_print(real, "road") != shardseal.cfg_print(base, "road"), \
+        "전역 칸의 **실질** 변화를 안 잡는다"
+
+
 def test_committed_manifest_uses_new_cfg_print():
     """커밋된 대장의 봉인지가 새 판 지문이다 — 옛 판이면 서술 칸 한 줄에 다시 찢어진다."""
     import json

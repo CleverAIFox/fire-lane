@@ -380,3 +380,51 @@ def test_the_abolished_layer_is_not_a_target():
 
     for name in ABOLISHED:
         assert name not in LAYERS, f"폐지층 {name} 이 목표 층 목록에 있다"
+
+
+# ── 제공기관 목록이 **세 벌**이다  (DECISIONS §396) ──────────────────
+
+def test_the_provider_list_is_one_truth_and_two_checked_copies():
+    """`providers` 키 ↔ `layers.raw.naming` ↔ `layers.norm.naming` 의 교대열.
+
+    ★ 2026-10-05 실측. 제공기관 하나(`moleg`)를 더하려니 **세 자리**를 고쳐야
+      했다 — 대장의 `providers` 딕트와 명명 정규식 둘. 2족(정본이 둘)이고,
+      MASTER §18-2a 가 「이 목록이 한때 **다섯 벌**이었고 값이 갈렸다」(§73)를
+      이미 적어 둔 바로 그 목록이다.
+
+    ★ 정규식을 유도로 바꾸지 않는다 — 그것은 **데이터**라 읽는 쪽이 지어야
+      하고, 지금 읽는 쪽이 여럿이다. 대신 **갈리면 우는 자리**를 만든다.
+      사본을 없애는 것이 제일 좋지만, 없애기 전까지는 묶어 두는 것이 맞다.
+    """
+    # ★ 대장은 **한 문으로** 읽는다(`test_lake::test_ledger_is_loaded_through_one_door`).
+    #   `yaml.safe_load` 를 직접 부르면 대장을 여는 자리가 하나 늘고, 그 자리는
+    #   정규화를 안 거친다 — 늘어난 자리는 조용히 갈린다.
+    from firelane import ledger
+    y = ledger.load_sources()
+    truth = set(y["layers"]["raw"]["providers"])
+    for layer in ("raw", "norm"):
+        pat = y["layers"][layer]["naming"]
+        m = re.search(r"\^\(([a-z|]+)\)/", pat)
+        assert m, f"layers.{layer}.naming 에 제공기관 교대열이 없다: {pat}"
+        got = set(m.group(1).split("|"))
+        assert got == truth, (
+            f"layers.{layer}.naming 의 제공기관이 대장과 다르다\n"
+            f"  정규식에만: {sorted(got - truth)}\n"
+            f"  대장에만  : {sorted(truth - got)}")
+
+
+def test_pdf_only_datasets_say_why_they_are_not_fed():
+    """`kind: raw_only` 인 PDF 는 **왜 안 쓰는지**를 적는다.
+
+    ★ 적지 않으면 「언젠가 쓸 것」으로 남고, 그 상태는 폐기 후보와 구분이 안 된다.
+      `donggu_statbook` 이 세운 선례다.
+    """
+    # ★ 대장은 **한 문으로** 읽는다(`test_lake::test_ledger_is_loaded_through_one_door`).
+    #   `yaml.safe_load` 를 직접 부르면 대장을 여는 자리가 하나 늘고, 그 자리는
+    #   정규화를 안 거친다 — 늘어난 자리는 조용히 갈린다.
+    from firelane import ledger
+    y = ledger.load_sources()
+    bad = [k for k, v in y["datasets"].items()
+           if isinstance(v, dict) and v.get("kind") == "raw_only"
+           and "pdf" in (v.get("ext") or []) and not (v.get("feeds_why") or "").strip()]
+    assert not bad, f"PDF 인데 미투입 사유가 없다: {bad}"
