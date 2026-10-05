@@ -306,7 +306,7 @@ EXCEPTIONS: dict[str, int] = {
     #   없고, 표를 쪼개면 「어느 파일에 있나」가 기억거리가 된다(MASTER §18-3).
     # ★ 2026-10-04 (DECISIONS §379-9). 705 → 706. `statkit` 면제 **한 줄**이다.
     #   사유는 한 줄에 눌러 담았다 — 위 §362 의 판단이 그대로 선다.
-    "tests/test_tools_are_wired.py": 705,
+    "tests/test_tools_are_wired.py": 704,
     # ★ 2026-10-03 (DECISIONS §372). **새로 넘었다** — 600 상한 밖 615.
     #   늘어난 열다섯 줄은 `_tracked` · `_blame` 이 git 의 실패를 **빈 것으로
     #   바꾸던 자리**를 터뜨리는 것과 그 사유다. 도장의 기반이 **추적되는
