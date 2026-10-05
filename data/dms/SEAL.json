@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-10-06T00:20:02+09:00",
- "commit": "26c00e5",
+ "sealed_at": "2026-10-06T00:40:52+09:00",
+ "commit": "edb8f20",
  "tool": "a519fa93775b44db",
  "tools": {
   "tools/deadcheck.py": "d00b6c98773fa5a8",
@@ -10565,7 +10565,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2341 passed, 1 warning in 880.34s (0:14:40)",
+   "tail": "2341 passed, 1 warning in 459.93s (0:07:39)",
    "red": []
   },
   "probe/deadcheck": {
