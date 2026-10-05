@@ -297,7 +297,7 @@ if uv run python tools/dms.py seal --quick; then
                 git switch -q part/infra
                 warn "봉인 PR #$spr 은 초록인데 **밑동이 머지를 안 받았다** — PR 과 가지를 남긴다.
   대개 필수 검사가 아직 결론이 안 났다. 사람이 보고 정한다:
-    gh pr checks $spr -R $REPO --watch
+    bash tools/ci_wait.sh $spr $REPO
     gh pr merge $spr -R $REPO --squash --delete-branch
   릴리즈는 계속한다 — 봉인은 기준선이지 관문이 아니다(§207-2 · §403-3)."
             fi

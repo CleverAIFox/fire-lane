@@ -113,11 +113,9 @@ def test_bootstrap_applies_patch_on_top_of_repo_version(tmp_path):
 @pytest.mark.skipif(not shutil.which("git"), reason="환경skip(도구) — git 이 없다")
 def test_bootstrap_survives_its_own_batch_being_merged(tmp_path):
     """★ 2026-10-06 실제 사고 (DECISIONS §402). 배치 Ze 가 `tools/fl.sh` 를 고쳤고,
-    머지된 **뒤에** 열차를 다시 불렀다. zip 은 INBOX 에 그대로 있고 씨앗
-    (origin/part/infra)은 이미 그 변경을 품어서, 같은 패치가 안 붙어 `exit 1` 이 났다.
-
-    **배치 도구를 고치는 배치가 머지 직후 자기 열차를 막았다.** 되감아 보면
-    「이미 들어 있다」는 「안 붙는다」가 아니다 — 씨앗 그대로 간다.
+    머지된 **뒤에** 열차를 다시 불렀다. 씨앗(origin/part/infra)이 이미 그 변경을
+    품었는데 zip 은 INBOX 에 남아 있어 `exit 1` 이 났다 — **배치 도구를 고치는
+    배치가 머지 직후 자기 열차를 막았다.** 되감아 보면 「이미 들어 있다」가 갈린다.
     """
     work, inbox = _world(tmp_path, seed="OLD")
     _patch(work, "MERGED", inbox / "0001-fix.patch")
@@ -748,9 +746,11 @@ def test_ci_wait_separates_red_from_not_mergeable():
 
     배치 D 에서 이 도구가 「초록 3 · 빨강 0」을 찍고 스쿼시가 거부됐다 —
     같은 SHA 에 `contract-shared` 가 둘이었고 하나가 결론이 없었다.
+
+    ★ 2026-10-06 (DECISIONS §403). 실행이 아예 없으면 교집합이 빈다 — **차집합**으로 뒤집었다.
     """
     src = (T / "ci_wait.sh").read_text(encoding="utf-8")
-    for fn in ("unresolved()", "required_of()", "open_runs()", "blocking()"):
+    for fn in ("unsettled()", "required_of()", "settled_runs()", "blocking()"):
         assert fn in src, f"{fn} 이 없다 — 필수 검사 미해결을 못 본다"
     # ★ `mergeStateStatus` 하나만 보면 승인 대기(main)에서 영원히 멈춘다.
     #   **주석은 걷는다** — 「왜 그것을 안 쓰는가」를 적은 줄까지 위반으로 세면
