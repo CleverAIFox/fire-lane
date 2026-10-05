@@ -111,6 +111,26 @@ def test_bootstrap_applies_patch_on_top_of_repo_version(tmp_path):
 
 
 @pytest.mark.skipif(not shutil.which("git"), reason="환경skip(도구) — git 이 없다")
+def test_bootstrap_survives_its_own_batch_being_merged(tmp_path):
+    """★ 2026-10-06 실제 사고 (DECISIONS §402). 배치 Ze 가 `tools/fl.sh` 를 고쳤고,
+    머지된 **뒤에** 열차를 다시 불렀다. zip 은 INBOX 에 그대로 있고 씨앗
+    (origin/part/infra)은 이미 그 변경을 품어서, 같은 패치가 안 붙어 `exit 1` 이 났다.
+
+    **배치 도구를 고치는 배치가 머지 직후 자기 열차를 막았다.** 되감아 보면
+    「이미 들어 있다」는 「안 붙는다」가 아니다 — 씨앗 그대로 간다.
+    """
+    work, inbox = _world(tmp_path, seed="OLD")
+    _patch(work, "MERGED", inbox / "0001-fix.patch")
+    # 스쿼시 머지를 흉내 낸다 — 원격 씨앗이 패치의 결과가 된다
+    _git(work, "push", "-q", "-f", "origin", "tmp-patch:refs/heads/part/infra")
+    _git(work, "fetch", "-q", "origin")
+    r = _run(inbox, work)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "MERGED feat/x --all" in r.stdout, r.stdout + r.stderr
+    assert "씨앗에 이미 있다" in r.stdout, r.stdout
+
+
+@pytest.mark.skipif(not shutil.which("git"), reason="환경skip(도구) — git 이 없다")
 def test_bootstrap_falls_back_to_repo_version(tmp_path):
     work, inbox = _world(tmp_path, seed="OLD")
     r = _run(inbox, work)
