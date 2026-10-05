@@ -23,6 +23,9 @@ intake = importlib.util.module_from_spec(_spec)
 # ★ `exec_module` **앞**이다 — `@dataclass` 가 `cls.__module__` 로 되짚는다
 sys.modules[_spec.name] = intake
 _spec.loader.exec_module(intake)
+# ★ 단서 ④ 는 꾸러미로 떨어져 나갔다(§401). 시험은 **도구를 통해** 부른다 —
+#   도구가 그것을 안 쓰게 되면 여기도 같이 죽어야 한다.
+assert intake.body_match is not None
 
 DS = {
     "roadtraffic_act": {
@@ -46,7 +49,8 @@ DS = {
 
 def test_marks_drop_words_that_two_entries_share():
     """구별 낱말은 **그 항목에만** 있는 것이다 — 공유 낱말은 구별을 못 한다."""
-    m = intake.body_marks(DS)
+    from firelane.intake_body import body_marks
+    m = body_marks(DS)
     assert "국가법령정보센터" not in m["roadtraffic_act"]   # BODY_STOP 이기도 하다
     assert "도로교통법" in m["roadtraffic_act"]
     assert "비상소화장치" in m["hydrantdevice_rule"]
@@ -153,3 +157,64 @@ def test_a_batch_zip_in_the_inbox_is_never_matched(tmp_path, monkeypatch):
     out = intake.propose(src, DS)
     assert out["matched_key"] is None
     assert out["suggest"] is None
+
+
+# ── 방아쇠는 대장이다  (DECISIONS §401) ────────────────────────
+#
+# ★ 사람이 실물로 잡았다 — 다운로드 폴더에 배치 zip · 남의 패치 · 채용공고가
+#   같이 사는데 도구가 그 전부에 대고 「대장에 항목을 만들어라」라고 말했다.
+#   「이상한거 까지 다 들어갔잖아」. 방향이 반대였다.
+LEDGER = {
+    "roadtraffic_act": {
+        "what": "도로교통법 긴급자동차 특례 조문", "authority": "국가법령정보센터",
+        "files": ["moleg/moleg_roadtraffic-act_kr_20260701_a29.pdf",
+                  "moleg/moleg_roadtraffic-act_kr_20260701_a30.pdf"],
+    },
+    "gone": {"status": "missing", "missing_why": "상폐", "what": "없다",
+             "files": ["x/y.pdf"]},
+}
+
+
+def test_the_trigger_is_the_ledger_not_the_folder(monkeypatch, tmp_path):
+    """결손이 0 이면 다운로드 폴더를 **열지도 않는다.**"""
+    raw = tmp_path / "raw"
+    (raw / "moleg").mkdir(parents=True)
+    for n in ("a29", "a30"):
+        (raw / "moleg" / f"moleg_roadtraffic-act_kr_20260701_{n}.pdf").write_bytes(b"x")
+    monkeypatch.setattr(intake, "RAW", raw, raising=False)
+    import firelane.paths as fp
+    monkeypatch.setattr(fp, "RAW", raw)
+    assert intake.waiting(LEDGER) == []
+
+
+def test_a_retired_entry_is_not_waiting(monkeypatch, tmp_path):
+    raw = tmp_path / "raw"; raw.mkdir()
+    import firelane.paths as fp
+    monkeypatch.setattr(fp, "RAW", raw)
+    assert "gone" not in {k for k, _ in intake.waiting(LEDGER)}
+
+
+def test_a_person_can_override_the_guess_by_number(tmp_path, monkeypatch):
+    """`--assign N=조각` — 대장이 이름을 아는데 추측기와 싸울 이유가 없다."""
+    box = tmp_path / "inbox"; box.mkdir()
+    for n in ("법령 _ 국가법령정보센터.pdf", "인쇄 _ 국가법령정보센터.pdf"):
+        (box / n).write_bytes(b"%PDF")
+    raw = tmp_path / "raw"; raw.mkdir()
+    import firelane.paths as fp
+    monkeypatch.setattr(fp, "RAW", raw)
+    monkeypatch.setattr(intake, "body_text", lambda p, pages=3: "")
+    want = intake.waiting(LEDGER)
+    a29 = intake._match_one(box, LEDGER, *want[0], ["1=법령 _"])
+    assert a29 is not None and a29.name.startswith("법령")
+
+
+def test_an_ambiguous_fragment_picks_nothing(tmp_path, monkeypatch):
+    box = tmp_path / "inbox"; box.mkdir()
+    for n in ("국가법령 1.pdf", "국가법령 2.pdf"):
+        (box / n).write_bytes(b"%PDF")
+    raw = tmp_path / "raw"; raw.mkdir()
+    import firelane.paths as fp
+    monkeypatch.setattr(fp, "RAW", raw)
+    monkeypatch.setattr(intake, "body_text", lambda p, pages=3: "")
+    want = intake.waiting(LEDGER)
+    assert intake._match_one(box, LEDGER, *want[0], ["1=국가법령"]) is None
