@@ -1,19 +1,19 @@
 {
- "sealed_at": "2026-10-06T00:40:52+09:00",
- "commit": "edb8f20",
- "tool": "a519fa93775b44db",
+ "sealed_at": "2026-10-06T11:24:27+09:00",
+ "commit": "e88536f",
+ "tool": "516f98b4903b2c11",
  "tools": {
   "tools/deadcheck.py": "d00b6c98773fa5a8",
   "tools/dms.py": "3c18638be9e87015",
   "tools/dupcheck.py": "144a2716fa56ff3e",
   "tools/env_check.py": "9c41c18ab2a68470",
-  "tools/verify.sh": "00d37bc25c2f3d2c"
+  "tools/verify.sh": "6399d78304d7d18f"
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "b85ed5755c38087b",
-  "docs/DECISIONS.md": "285177c3b1d4d969",
-  "docs/PLAN.md": "fe7188613199516d",
+  "docs/MASTER.md": "13908be175819d6b",
+  "docs/DECISIONS.md": "d796ffa45e936599",
+  "docs/PLAN.md": "0b70fff6f8fa465d",
   "README.md": "fc96d0a06b2c4b65"
  },
  "raw": {
@@ -259,7 +259,7 @@
   ]
  },
  "code": {
-  "sha256": "68814bbc6755f75d",
+  "sha256": "96074467553955a0",
   "files": {
    "data/field/naver_width_2610.csv": "ce7130212f456fcc361787502c841b190917384f26e43dca4787db5b534ca3ba",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
@@ -282,6 +282,7 @@
    "src/firelane/guards.py": "ee3f442a9e4fc3c5f0c3b882ee2a95fb6a9118b7211e6be54625874d56129c11",
    "src/firelane/hashing.py": "cba3052b673d71c98022bc745a03493b0e743bb7db6d48eb057fba0782d7249c",
    "src/firelane/ingest.py": "a4a97a2c1dc0c9d47da4577ff99268f22d7188a92ab823ffbfdd890f6f1acef8",
+   "src/firelane/intake_body.py": "8fc239ceb962fbd0c8f3dc95c7229c13d34daa6357a6dacae94600848a2240f9",
    "src/firelane/intake_rules.py": "4549ade9c9036da5900aba73955c97578058770a88f3f75fa7c5e1b31360019d",
    "src/firelane/inventory.py": "6160b286c9c9dfa0b35ed19221321c09b93ad956145c3e9b7d6252ab487c7ff7",
    "src/firelane/jsonkeys.py": "2fddd96a3ead64f68e2b5204dc00785bc86584171b470c375cd516a013a5c515",
@@ -736,7 +737,7 @@
    "title": "11-2a. 여유폭 — 색과 수, 그리고 빨강의 사유 (2026-09-23 · DECISIONS §220)"
   },
   "MASTER/11-2b": {
-   "h": "6a75abf34dd6ed53",
+   "h": "9e1877af923ce0cb",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "11-2b. 지령 상속과 URL 깃발 (2026-10-04 · DECISIONS §382-1 · §386)"
@@ -946,7 +947,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER/14-4": {
-   "h": "991bcd0e8f6edbeb",
+   "h": "f3e7de7cdaf0d10e",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -1030,7 +1031,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "d71e450fbca26e6e",
+   "h": "75c2ddd609242374",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -7156,7 +7157,7 @@
    "title": "281-2. 741줄이 됐다 — 약속한 자리에서 쪼갠다"
   },
   "DECISIONS/282": {
-   "h": "0154b30d0cd06c54",
+   "h": "b5fc470489155f22",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "282. 「빨강이 없다」와 「밑동이 받아준다」는 다르다"
@@ -9952,7 +9953,7 @@
    "title": "392-4. CodeQL 과 이 도구는 **다른 물음**이다"
   },
   "DECISIONS/393": {
-   "h": "d8960321ce1c87a3",
+   "h": "e5de0c0c13a39f4a",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "393. §386 이 막으려던 것을 §386 이 안 막았다 — 버튼은 그대로 그려졌다"
@@ -10215,6 +10216,162 @@
    "doc": "docs/DECISIONS.md",
    "title": "399-5. 같은 표기를 두 관문이 **반대로** 요구하고 있었다"
   },
+  "DECISIONS/400": {
+   "h": "84db5c3096010a0e",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "400. 내비가 **고를 수 있는 것이 넷**이었다 — 하나도 있으면 안 됐다"
+  },
+  "DECISIONS/400-1": {
+   "h": "c9f174612bb152ce",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "400-1. 사람이 자른 전제"
+  },
+  "DECISIONS/400-2": {
+   "h": "c70b103da6bb338e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "400-2. 세어 보니 넷이었다"
+  },
+  "DECISIONS/400-3": {
+   "h": "da25da63652f4080",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "400-3. 문을 넓히는 대신 문과 손을 같이 지웠다"
+  },
+  "DECISIONS/400-4": {
+   "h": "3cc2201347656251",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "400-4. 관문은 「묶였는가」가 아니라 「없는가」를 묻는다"
+  },
+  "DECISIONS/400-5": {
+   "h": "91250fa965981614",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "400-5. 「폭 기준」을 **안전**으로 고쳐 부른다"
+  },
+  "DECISIONS/401": {
+   "h": "cd15943d1cc0dc6c",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "401. 취입기가 **사람의 폴더 전부**를 제 일거리로 봤다"
+  },
+  "DECISIONS/401-1": {
+   "h": "8a9ebc2d2313df34",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "401-1. 사람이 본 것"
+  },
+  "DECISIONS/401-2": {
+   "h": "f0164dca39393f01",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "401-2. 방아쇠를 뒤집었다"
+  },
+  "DECISIONS/401-3": {
+   "h": "679023238210276b",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "401-3. 사슬이 끊겨 있던 자리"
+  },
+  "DECISIONS/401-4": {
+   "h": "0a65ebc30ed58bee",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "401-4. 사람이 추측기를 **이긴다**"
+  },
+  "DECISIONS/402": {
+   "h": "5347fb228bc052f5",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "402. 배치 도구를 고친 배치가 **머지된 뒤 자기 열차를 막았다**"
+  },
+  "DECISIONS/402-1": {
+   "h": "dab377a2027d1ea5",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "402-1. 무엇이 멈췄나"
+  },
+  "DECISIONS/402-2": {
+   "h": "03c8a758ee3c741f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "402-2. 씨앗이 결과를 품은 뒤"
+  },
+  "DECISIONS/402-3": {
+   "h": "c7363eec148da4ea",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "402-3. 되감아 보면 갈린다"
+  },
+  "DECISIONS/402-4": {
+   "h": "ed15b342579bec84",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "402-4. 왜 되감기가 안전한가"
+  },
+  "DECISIONS/402-5": {
+   "h": "333ddb4601581ecd",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "402-5. 옮긴 것을 줄인 것으로 세면 안 된다 — `PLAN #143`"
+  },
+  "DECISIONS/403": {
+   "h": "e426cd5d23faa612",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "403. 열차가 **시작도 안 한 검사**를 「대기 0」으로 읽었다"
+  },
+  "DECISIONS/403-1": {
+   "h": "53c384af19811f95",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "403-1. 두 번 같은 자리에서 멈췄다"
+  },
+  "DECISIONS/403-2": {
+   "h": "1fa6182d00f421a6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "403-2. §282-1 이 한 겹 얕았다"
+  },
+  "DECISIONS/403-3": {
+   "h": "84f85bce1f1e106a",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "403-3. 봉인 PR 의 **초록 갈래만** `die` 였다"
+  },
+  "DECISIONS/403-4": {
+   "h": "b05512da4f13eeee",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "403-4. 이 `die` 가 고리를 만들었다"
+  },
+  "DECISIONS/404": {
+   "h": "8b71837bfed2050f",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "404. 배치 계획서가 **대화에만** 살아서 엿새 만에 사라졌다"
+  },
+  "DECISIONS/404-1": {
+   "h": "94d0a2c209f3e205",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "404-1. 같은 절 옆에서 같은 결함이 다시 났다"
+  },
+  "DECISIONS/404-2": {
+   "h": "71c59a3a8a805064",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "404-2. 할당량은 성질을 깨뜨린다"
+  },
+  "DECISIONS/404-3": {
+   "h": "efad693502492f19",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "404-3. 판 수가 비용이고 행 수는 공짜다"
+  },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
    "state": "none",
@@ -10234,7 +10391,7 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN/1": {
-   "h": "be95aaaf48db8566",
+   "h": "4a55fc4f4d689950",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "1. 남은 일 — 87행"
@@ -10384,10 +10541,16 @@
    "title": "9. 외부 의존"
   },
   "PLAN/10": {
-   "h": "2a098a7602c901be",
+   "h": "d11fd4c000cda43e",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "10. 우선순위"
+  },
+  "PLAN/10-1": {
+   "h": "45ed0325e9b00fce",
+   "state": "wired",
+   "doc": "docs/PLAN.md",
+   "title": "10-1. 배치 순서 — 어느 판이 무엇을 드나"
   },
   "PLAN/11": {
    "h": "31b77140c0ebc680",
@@ -10565,7 +10728,7 @@
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2341 passed, 1 warning in 459.93s (0:07:39)",
+   "tail": "2348 passed, 1 warning in 462.46s (0:07:42)",
    "red": []
   },
   "probe/deadcheck": {
