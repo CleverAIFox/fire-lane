@@ -366,3 +366,33 @@ def test_raw_only_is_true_to_the_lake():
         + "\n\n  ingest 가 실제로 읽고 있다면 kind 를 고쳐라"
           "\n  (csv_table · shp_zip 등). raw_only 는 형식이 정규화"
           "\n  불가일 때만 쓴다 — 소비자가 없는 것은 feeds 가 든다.")
+
+
+def test_awaiting_buys_a_warning_only_with_a_written_reason():
+    """선언만 하고 실물이 아직 없을 때, **사유를 적어야** 경고로 내려간다 (DECISIONS §424).
+
+    같은 사실을 `acquire.py` 는 「★ 결손 — 대장에 있는데 파일이 없다」 **경고**로
+    부르고 `refcheck.py` 는 **실패**로 불렀다. 족 3(관문이 갈림)이다. 대장이
+    먼저 자리를 만들어야 `intake` 가 반입하는데, 그 사이를 실패로 두면 **대장을
+    먼저 적을 수가 없다.**
+
+    침묵에는 값을 안 치른다 — `awaiting` 이 비면 그대로 실패다.
+    """
+    import importlib.util
+
+    import yaml
+
+    spec = importlib.util.spec_from_file_location(
+        "refcheck_t", ROOT / "tools" / "refcheck.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
+    spec.loader.exec_module(m)
+
+    src = (ROOT / "tools" / "refcheck.py").read_text(encoding="utf-8")
+    assert 'e.get("awaiting")' in src, "사유 칸을 안 본다"
+    assert "if why:" in src and "else:" in src, "사유가 없을 때 실패로 안 떨어진다"
+
+    y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8")) or {}
+    blank = [k for k, e in (y.get("datasets") or {}).items()
+             if "awaiting" in e and not str(e.get("awaiting") or "").strip()]
+    assert not blank, f"`awaiting` 을 빈 값으로 적었다 — 사유 없는 침묵이다: {blank}"

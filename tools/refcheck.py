@@ -96,8 +96,18 @@ def check() -> list[tuple[str, str, str]]:
                    if any(c in pat for c in "*?[") else
                    [r for r in led if r == pat])
             if not hit:
-                out.append((FAIL, f"datasets.{k}.file",
-                            f"{pat} — raw 대장에 0건"))
+                # ★ 2026-10-06 (DECISIONS §424). 같은 사실을 `acquire.py` 는
+                #   「★ 결손 — 대장에 있는데 파일이 없다」 **경고**로 부르고
+                #   여기는 **실패**로 불렀다. 족 3(관문이 갈림)이다.
+                #   대장이 **사유를 적으면** 경고로 내린다 — 사유가 없으면
+                #   그대로 실패다. 침묵에는 값을 안 치른다.
+                why = (e.get("awaiting") or "").strip()
+                if why:
+                    out.append((WARN, f"datasets.{k}.file",
+                                f"{pat} — 아직 raw 에 없다: {why}"))
+                else:
+                    out.append((FAIL, f"datasets.{k}.file",
+                                f"{pat} — raw 대장에 0건"))
 
     # ⑤ outputs.inputs → datasets 키
     outs = d.get("outputs") or {}

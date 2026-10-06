@@ -843,6 +843,7 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: vworld_uq153
+    awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [zip]
     kind: raw_only
     scope: kr
@@ -875,6 +876,7 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: vworld_uq164
+    awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [zip]
     kind: raw_only
     scope: jngj
@@ -905,6 +907,7 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: bldghub_road
+    awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [csv]
     kind: raw_only
     scope: jngj-dongmyeong
