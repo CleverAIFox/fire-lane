@@ -7431,9 +7431,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2f67ce99ba03d49e",
-   "365f0f3321fe142a",
-   "b867abdcf2c51baf"
+   "3ab7bc7e3fe48e71",
+   "0286cfe6f039e28d",
+   "1795a23f0a376b80"
   ],
   "parts": {
    "src/firelane/seg/vehicle.py": "cc2539cd5357f5a4",
@@ -7441,9 +7441,9 @@
    "tools/route_probe.py": "03d54a6056e2818a",
    "web/navi/src/domain/vehicle.ts": "5fada2911d0cbec0",
    "web/navi/test/clearance.test.ts": "0d77d867d854b30e",
-   "본문": "3c752e4720700170"
+   "본문": "0712c07e0206b099"
   },
-  "sha": "06a4b8de74423e83"
+  "sha": "a88c7c84e054dd38"
  },
  "DECISIONS/410": {
   "doc": "docs/DECISIONS.md",
