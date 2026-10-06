@@ -125,13 +125,15 @@ def test_survivors_held_by_a_ratchet_are_told_apart():
 
     실물이 아니라 **합성 입력**으로 양방향을 민다(§230).
     """
-    synth = {"도구별": [{"도구": "sealcov", "생존": ["52: 363 → 364", "57: 1 → 2"]}]}
+    ln = M._ratchet_line("sealcov", "SEALED_FILES")
+    synth = {"도구별": [{"도구": "sealcov",
+                       "생존": [f"{ln}: 363 → 364", f"{ln + 900}: 1 → 2"]}]}
     held, rest = M.sort_survivors(synth)
     assert [t for t, _, _ in held] == ["sealcov"], f"래칫 상수를 안 가린다: {held}"
     assert held[0][2] == "SEALED_FILES", f"래칫 이름을 틀리게 읽는다: {held[0][2]}"
     assert len(rest) == 1, f"래칫이 아닌 생존을 래칫으로 센다: {rest}"
     # ★ 반대 방향 — 래칫 키가 아닌 이름은 안 든다
-    synth2 = {"도구별": [{"도구": "sealcov", "생존": ["57: 1 → 2"]}]}
+    synth2 = {"도구별": [{"도구": "sealcov", "생존": [f"{ln + 900}: 1 → 2"]}]}
     assert not M.sort_survivors(synth2)[0], "래칫이 아닌 것을 래칫으로 든다"
 
 

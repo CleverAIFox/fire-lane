@@ -289,6 +289,20 @@ def shake(tool: str, cap: int = MAX_PER_TOOL, deep: bool = False) -> dict:
             "지문": hashlib.sha256(orig.encode()).hexdigest()[:12]}
 
 
+def _ratchet_line(tool: str, name: str) -> int:
+    """`tools/<tool>.py` 에서 `name` 을 대입하는 **모듈 수준 줄 번호**.
+
+    ★ 2026-10-06. 판별식이 줄 번호를 박고 있었다(`52: 363 → 364`). 그 파일에
+      주석 세 줄을 더하자 합성 입력이 **빈 결과**를 냈고 판별식이 거짓으로
+      울었다 — 재는 자가 재는 대상의 줄 수에 매달려 있었다.
+    """
+    for node in ast.parse((TOOLS / f"{tool}.py").read_text(encoding="utf-8")).body:
+        if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) \
+                and node.targets[0].id == name:
+            return node.lineno
+    raise RuntimeError(f"{tool}.py 에 {name} 대입이 없다")
+
+
 def sort_survivors(d: dict) -> tuple[list[tuple[str, str, str]], list[tuple[str, str]]]:
     """생존을 **래칫이 드는 것**과 **아직 안 가른 것**으로 나눈다.
 
@@ -352,7 +366,9 @@ def selftest() -> int:
     fails: list[str] = []
     # ★ 2026-10-06 (DECISIONS §410). 생존 가름 — **양방향**으로 민다.
     #   실물로만 재면 「언제나 래칫」과 「언제나 안 가름」을 못 가른다(§230).
-    _synth = {"도구별": [{"도구": "sealcov", "생존": ["52: 363 → 364", "57: 1 → 2"]}]}
+    _ln = _ratchet_line("sealcov", "SEALED_FILES")
+    _synth = {"도구별": [{"도구": "sealcov",
+                        "생존": [f"{_ln}: 363 → 364", f"{_ln + 900}: 1 → 2"]}]}
     _held, _rest = sort_survivors(_synth)
     if [t for t, _, _ in _held] != ["sealcov"] or len(_held) != 1:
         fails.append(f"래칫 상수 생존을 안 가린다 — 든 것 {_held}")
