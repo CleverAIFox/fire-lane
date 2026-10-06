@@ -132,6 +132,11 @@ pick_patches() {                        # pick_patches <INBOX> <WORK> → WORK �
         for f in "$work"/z/*.patch; do [ -e "$f" ] || continue
             h=$(sha256sum "$f" | cut -c1-16); seen="$seen$h "; cp -f "$f" "$work/"; done
         for f in "$work"/z/PR_*; do [ -e "$f" ] && cp -f "$f" "$work/"; done
+        # ★ 2026-10-06 (DECISIONS §408). `EXPECT` 를 **안 꺼내고 있었다.** 4c 는
+        #   `$IN/EXPECT`(INBOX 바닥)를 보는데, zip 만 두면 거기 없다. 평소 절차가
+        #   zip 을 INBOX 에 풀어서 **우연히** 있었을 뿐이다 — 안 풀면 「계약 없는
+        #   배달」로 죽었다. 꺼내는 목록에 넣는다.
+        [ -e "$work/z/EXPECT" ] && cp -f "$work/z/EXPECT" "$work/"
     fi
     for f in "$in"/*.patch; do
         [ -e "$f" ] || continue
@@ -571,9 +576,13 @@ fi
 #
 # ★ **전수 verify 앞에 둔다.** 28분을 기다린 뒤에 「배달 기계는 이 다섯 축을
 #   증명하지 않았다」를 읽으면 늦다. 어긋남도 여기서 먼저 죽는 것이 싸다.
-if [ -f "$IN/EXPECT" ]; then
+# ★ 2026-10-06 (DECISIONS §408). **`$WORK` 를 먼저 본다.** zip 에서 꺼낸 것이
+#   거기 있고, INBOX 바닥은 사람이 푼 경우에만 있다. 둘 다 없으면 계약이 없다.
+EXPECT_F=""
+for _e in "$WORK/EXPECT" "$IN/EXPECT"; do [ -f "$_e" ] && { EXPECT_F="$_e"; break; }; done
+if [ -n "$EXPECT_F" ]; then
     step "4c. 계약 대조 — 배달물의 EXPECT"
-    uv run --no-sync python tools/expectcheck.py "$IN/EXPECT" \
+    uv run --no-sync python tools/expectcheck.py "$EXPECT_F" \
         || die "배달 계약과 이 기계의 실측이 어긋난다." \
                "  ★ EXPECT 를 고치지 마라 — 고치는 것은 주장을 되살리는 것이다." \
                "  되돌리려면:  $FL_CMD $BR --undo"

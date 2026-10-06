@@ -241,7 +241,7 @@ export default function App() {
   const hud = useHudData({
     spec, style, plan: n.plan, fastPlan: n.fastPlan,
     current: n.current, driven: guiding || arrived ? n.driven : null,
-    lenient: n.lenient, offRoute: n.offRoute,
+    offRoute: n.offRoute,
     maneuver: v.maneuver, maneuverDistM: v.distM, maneuverText: v.banner,
   });
 
@@ -521,7 +521,6 @@ export default function App() {
           posMode={n.posMode} setPosMode={n.setPosMode}
           onTeleport={guiding && n.simSpeed > 0 ? () => n.teleport(200) : undefined}
           jumps={n.jumpSeq} lastJumpM={n.lastJumpM}
-          lenient={n.lenient} setLenient={n.setLenient}
           firstPerson={firstPerson} setFirstPerson={setFirstPerson}
           onBottleneck={guiding && n.plan ? () => {
             // ★ 2026-09-22 (§214-2). 「제일 좁은 구간」 을 열었더니 그것이 **센터의 유일한

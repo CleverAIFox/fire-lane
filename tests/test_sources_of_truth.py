@@ -138,6 +138,20 @@ SPEC: dict[str, dict] = {
         "pins": [{"find": "--cov-fail-under=", "regex": r"--cov-fail-under=(\d+)"}],
         "code_only": True,
     },
+    # ★ 2026-10-06 (DECISIONS §406 · PLAN #152). 사람 기계는 apt 의 8.16, CI 는
+    #   직접 내려받은 8.28 이었다 — **같은 트리를 서로 다른 규칙 엔진이 봤다.**
+    #   이제 판이 한 자리에 있고 그 도구가 스스로 깐다.
+    "gitleaks": {
+        "what": "비밀값 엔진 판 — 사람과 CI 가 같은 규칙으로 봐야 한다",
+        "owner": {"file": "tools/treescan.sh", "regex": r"^GITLEAKS_VER=([\d.]+)\s*$"},
+        "consumers": [
+            {"file": ".github/workflows/secret-scan.yml", "ref": "treescan.sh --install"},
+        ],
+        "scan": [".github/**/*"],
+        "pins": [{"find": "gitleaks/releases/download/v",
+                  "regex": r"gitleaks/releases/download/v([\d.]+)"}],
+        "code_only": True,
+    },
     "truck_m": {
         "what": "통과 하한(m) — 판정 임계",
         "owner": {"file": "src/firelane/seg/params.py", "regex": r"^TRUCK\s*=\s*([\d.]+)"},
@@ -405,7 +419,7 @@ def test_fact_consumers_follow_owner(name: str):
 
 def test_the_spec_covers_the_declared_facts():
     """빈 그물 금지 — 맡은 사실이 목록에서 빠지면 검사도 조용히 빠진다."""
-    need = {"uv", "node", "python", "pytest", "coverage_floor",
+    need = {"uv", "node", "python", "pytest", "coverage_floor", "gitleaks",
             "truck_m", "park_m", "cctv_range_m", "code_owner", "font_stack"}
     assert need <= set(SPEC), f"빠진 사실: {sorted(need - set(SPEC))}"
 

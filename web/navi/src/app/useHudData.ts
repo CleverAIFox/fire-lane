@@ -33,7 +33,6 @@ import type { TurnKind } from "../domain/turn";
  */
 export interface HudData {
   vehicleKind: string;
-  safeMode: boolean;
   offRoute: boolean;
   turnKind: TurnKind | null;
   turnText: string | null;
@@ -65,7 +64,6 @@ export interface HudInput {
   current: SnapResult | null;
   /** 경로 시작부터 온 거리(m). 위치 추정기가 낸다(§213-2). 안내 전이면 null */
   driven: number | null;
-  lenient: boolean;
   offRoute: boolean;
   /** useVoice 가 낸 다음 회전. 화면과 음성이 같은 것을 본다 */
   maneuver: Maneuver | null;
@@ -92,7 +90,6 @@ export function buildHudData(i: HudInput): HudData | null {
 
   return {
     vehicleKind: spec.kind ?? "소방차",
-    safeMode: !i.lenient,
     offRoute: i.offRoute,
 
     turnKind: i.maneuver?.kind ?? null,
@@ -129,7 +126,7 @@ export function useHudData(i: HudInput): HudData | null {
   // ★ `i` 자체는 매 렌더 새 객체라 의존으로 쓸 수 없다. 쓰는 필드를 개별로 건다.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- i 는 매 렌더 새 객체다
   return useMemo(() => buildHudData(i), [
-    i.plan, i.fastPlan, i.current, i.driven, i.lenient, i.offRoute,
+    i.plan, i.fastPlan, i.current, i.driven, i.offRoute,
     i.spec, i.style, i.maneuver, i.maneuverDistM, i.maneuverText,
   ]);
 }

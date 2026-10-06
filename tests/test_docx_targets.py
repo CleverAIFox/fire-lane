@@ -378,3 +378,40 @@ def test_the_tool_token_pattern_does_not_blow_up():
     slow = ms(400)
     assert slow < max(fast * 20, 50.0), (
         f"네 배 길어졌는데 {fast:.3f}ms → {slow:.3f}ms — 아직 되짚기가 샌다")
+
+
+# ── 제출본의 수가 데이터에서 안 흐른다 (DECISIONS §409 · PLAN #156) ──
+def test_the_proposal_census_is_reproducible():
+    """★ 2026-10-06. §391 이 2026-10-04 에 같은 것을 재고 **재는 코드를 안 남겼다.**
+    그 절 머리가 「측정을 다시 뜨는 길은 이 절이 적는다」고 적어 두고 결과만
+    적었다 — 5족(생성물인데 생성기가 없다). 그래서 다시 재니 수가 안 맞았다.
+
+    이 시험이 묻는 것은 **수의 값이 아니라 재는 길이 살아 있는가**다.
+    """
+    m = _check_mod()
+    d = m.census(ROOT / "docs" / "proposal.docx")
+    for k in ("칸", "접은 칸", "수", "접은 수", "서로 다른 값",
+              "무는 자리", "접고 무는 자리", "관문 축"):
+        assert k in d, f"인구조사가 `{k}` 를 안 낸다"
+    assert d["수"] > 500, f"수를 {d['수']}개밖에 못 셌다 — 추출기가 죽었다"
+    assert d["접은 수"] <= d["수"], "접은 쪽이 더 많다 — 접는 규칙이 거꾸로다"
+    assert 0 < d["접고 무는 자리"] <= d["무는 자리"], \
+        "관문이 무는 자리가 0 이거나 접으면 늘었다"
+
+
+def test_the_total_length_axis_actually_bites():
+    """★ 2026-10-06. `_canon()` 이 `총연장` 을 내는데 `audit()` 가 **안 썼다.**
+    머리말은 2026-09-22 부터 「총연장을 댄다」고 적고 있었다 — 사문이었다.
+
+    합성 문서로 양방향을 민다. 실물에는 그 수가 **0회** 나오므로, 실물만
+    보면 이 축이 살았는지 죽었는지 영원히 모른다(§230 의 빈 그물).
+    """
+    m = _check_mod()
+    c = m._canon()
+    want = c.get("총연장")
+    assert want, "정본에 총연장이 없다 — 이 시험이 빈 그물이다"
+    km = float(want) / 1000
+    good = [("P1", f"총연장 {km:.1f}km 이다")]
+    bad = [("P1", f"총연장 {km + 9:.1f}km 이다")]
+    assert not m._bite_total(good, want), "맞는 총연장을 어긋남으로 잡는다"
+    assert m._bite_total(bad, want), "틀린 총연장을 안 잡는다 — 축이 사문이다"

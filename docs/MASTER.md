@@ -68,7 +68,7 @@
 ★ **문서명이 없는 `§N` 은 MASTER 를 가리킨다.** 다른 문서를 가리킬 때는
 `PLAN §4-5` · `DECISIONS §86` 처럼 앞에 문서명을 적는다. 대외 제출본은
 `기획서 §9` 로 적는다 — 기획서도 자기 `§1~§13` 체계를 갖는다. PLAN §1 표의
-행은 절이 아니므로 ``PLAN #16`` 이 아니라 **`PLAN #16`** 이다.
+행은 절이 아니므로 ``PLAN #16``(결번) 이 아니라 **`PLAN #16`** 이다.
 
 ★ **번호는 자산이다.** `§11` · `§18-1` · `§18-5` · `§18-12` · `§19` 는
 코드 주석과 대장에서 60곳 넘게 인용된다. 절을 폐기할 때도 번호는 남기고
@@ -891,7 +891,7 @@ src/firelane/publish_navi.py  내비 그래프 · publish_fleet 차종 · destin
 강제자  `tools/skeleton_compare.py` · `tests/test_r1.py`(뼈대 후보 대조표). 보류를 풀지 말지는 `PLAN §1` 이 들고 이 칸은 대조가 재현되는가만 든다
 
 판정 구간은 도로명주소 `road_link` 를 노딩해 만든다(§3-2). 그 선은 주소 관리용이라 측량 위치가 아니고,
-폭은 NGII 1:1,000 도로경계에서 재므로 **뼈대와 폭 원천이 다른 측량 위에 있다**(§173-7 · PLAN #51).
+폭은 NGII 1:1,000 도로경계에서 재므로 **뼈대와 폭 원천이 다른 측량 위에 있다**(§173-7). 뼈대를 그 측량으로 다시 세우는 일은 안 한다 — 1,166/1,281 이 이미 그 소스다(DECISIONS §412-1 · PLAN #51 은 **닫힘**).
 2026-09-18 측정을 마쳤고 **교체를 보류했다.** 판정은 한 번도 안 움직였다(§189-5).
 
 ```
@@ -2997,7 +2997,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,728 전수 · **분모(blank) 0절** · 물림(inherit) 848절.
+★ **강제자 칸의 분모.** 절 1,761 전수 · **분모(blank) 0절** · 물림(inherit) 873절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3050,6 +3050,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 | `python` | `.python-version` | `Dockerfile` 베이스 이미지 · `pyproject.toml` requires-python · CI 둘이 파일을 읽는다 | `tests/test_sources_of_truth.py` |
 | `pytest` | `pyproject.toml` | `uv.lock` 의 잠긴 판(하한 이상) | `tests/test_sources_of_truth.py` |
 | `coverage_floor` | `tools/verify.sh` | 같은 파일의 명령줄이 변수를 읽는다 · `tests/test_verify_citations.py` | `tests/test_sources_of_truth.py` |
+| `gitleaks` | `tools/treescan.sh` | 그 도구가 **스스로 깐다** · CI 는 `--install` 만 부른다 | `tests/test_sources_of_truth.py` |
 | `truck_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/figures/value.py` · `tests/test_declaration_sync.py` · 문구 넷(`seg/geom.py` · `seg/report.py` · `seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `park_m` | `src/firelane/seg/params.py` | `tools/figures/value.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/figures/value.py` · 문구 둘(`seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
