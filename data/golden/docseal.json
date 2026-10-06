@@ -7527,6 +7527,46 @@
   },
   "sha": "5b03327a09231c08"
  },
+ "DECISIONS/417": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/seg/report.py",
+   "tests/test_seg_width.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "c71244013eb443a2",
+   "94cacf4ab8c41e38",
+   "7385a6ef772e6933"
+  ],
+  "parts": {
+   "src/firelane/seg/report.py": "3e091b0934cc9dea",
+   "tests/test_seg_width.py": "cd8058e4bc4c0919",
+   "본문": "77fb36d05e107817"
+  },
+  "sha": "90bed04195dd2997"
+ },
+ "DECISIONS/418": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/ngii1k.py",
+   "tests/test_guards.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "a9633ce4b362e3b1",
+   "4769b4b9ec67b70c",
+   "d2ed72c85eabcf8a"
+  ],
+  "parts": {
+   "src/firelane/ngii1k.py": "00503be717a3a707",
+   "tests/test_guards.py": "25d7f4922f9f079f",
+   "본문": "b0a689ed9dbdd3d4"
+  },
+  "sha": "5582cbe0f22c3b8b"
+ },
  "DECISIONS/42": {
   "doc": "docs/DECISIONS.md",
   "files": [
@@ -7542,6 +7582,62 @@
    "본문": "f9713021c0e999b3"
   },
   "sha": "db726d589997e534"
+ },
+ "DECISIONS/420": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/normalize_raw.py",
+   "src/firelane/pipeline.py",
+   "src/firelane/publish_navi.py",
+   "src/firelane/publish_web.py",
+   "tests/test_sealcov.py",
+   "tools/sealcov.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "b6d498499f26969c",
+   "e67539583417059e",
+   "ab32e5943c98c8a5"
+  ],
+  "parts": {
+   "src/firelane/normalize_raw.py": "6b396e56424cfcc8",
+   "src/firelane/pipeline.py": "ac3adc7c6507e2fd",
+   "src/firelane/publish_navi.py": "717ab28ecfbdd5be",
+   "src/firelane/publish_web.py": "5894dc9ddb5382b6",
+   "tests/test_sealcov.py": "b9cda0bc664d2090",
+   "tools/sealcov.py": "8b967d39eaa2b4c9",
+   "본문": "9da72d463628c81f"
+  },
+  "sha": "d33aeaba7413614e"
+ },
+ "DECISIONS/421": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "sources.yaml",
+   "tests/test_batch_tools.py",
+   "tests/test_guards.py",
+   "tools/docgen.py",
+   "tools/docseal.py",
+   "tools/sizecheck.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "c83e6abe7cdabb9d",
+   "85b542e50042739f",
+   "5a6da35b3e7b6cda"
+  ],
+  "parts": {
+   "sources.yaml": "e84a3006a7f7ffda",
+   "tests/test_batch_tools.py": "8ed51f94a1e1218a",
+   "tests/test_guards.py": "4a78afd2d1dc2354",
+   "tools/docgen.py": "19ce07b33b311e95",
+   "tools/docseal.py": "1a5254b5d096be15",
+   "tools/sizecheck.py": "b9f7b3f7b374d04f",
+   "본문": "c37fe149920645cd"
+  },
+  "sha": "cdf96e241e845251"
  },
  "DECISIONS/43": {
   "doc": "docs/DECISIONS.md",
