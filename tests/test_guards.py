@@ -2499,3 +2499,51 @@ def test_retired_glob_never_claims_an_active_file(tmp_path, monkeypatch):
     hit = [n for n in active if n in ret]
     assert not hit, f"활성 파일을 폐기로 읽는다 — {hit}"
     assert "eais_bldg_ledger_jngj-donggu_20260817.csv" in ret, "폐기 판정 자체가 죽었다"
+
+
+# ── 모름 정책 (DECISIONS §407 · PLAN #147) ─────────────────────
+def test_unknown_is_never_cheaper_than_known():
+    """★ 2026-10-06. 라우터의 「모름」 정책이 코드에 선언된 적이 없었고, 재 보니
+    **어기고 있었다** — `tight` 1.8 인데 `unknown_lenient` 가 1.2 였다.
+    연결성 모드에서 라우터가 **잰 구간보다 모르는 구간을 먼저 골랐다.**
+
+    §396-5 가 `verdictsim` 에서 이름 붙인 그 족이다 — 「모르는 값은 한 번도
+    유리하게 쓰이지 않는다」. 같은 규율이 라우터에는 안 걸려 있었다.
+    """
+    from firelane.seg.vehicle import unknown_is_never_cheaper
+    bad = unknown_is_never_cheaper()
+    assert not bad, "모름 정책을 어겼다:\n  " + "\n  ".join(bad)
+
+
+def test_the_unknown_policy_judge_bites():
+    """★ 빈 그물인가 — 실물이 0 이므로 **합성 조율**로 양방향을 민다(§230)."""
+    import dataclasses
+
+    from firelane.seg.vehicle import TUNING, unknown_is_never_cheaper
+    broken = dataclasses.replace(TUNING, unknown_lenient=1.0)
+    assert unknown_is_never_cheaper(broken), "모름이 서행보다 싼 조율을 통과시킨다"
+    flat = dataclasses.replace(TUNING, unknown_lenient=TUNING.tight)
+    assert not unknown_is_never_cheaper(flat), \
+        "같은 값을 위반으로 센다 — 묶는 것은 순서이지 간격이 아니다"
+
+
+def test_the_two_runtimes_declare_the_same_knobs():
+    """파이썬과 TS 의 **노브 값**이 같은가. 한쪽만 고치면 라우터가 갈린다.
+
+    ★ 두 벌인 것이 결함이 아니다 — 두 런타임이 각자 돈다. 결함은 **갈리는
+      것**이고, 갈리면 사람이 제 기계에서 본 경로를 설명 못 한다.
+    """
+    import re
+
+    from firelane.seg.vehicle import TUNING
+    ts = (ROOT / "web/navi/src/domain/vehicle.ts").read_text(encoding="utf-8")
+    body = ts.split("export const TUNING: TuningKnobs = {", 1)[1].split("};", 1)[0]
+    got = {k: float(v) for k, v in re.findall(r"^\s*(\w+):\s*([\d.]+),", body, re.M)}
+    pairs = {"unknown": "unknown", "unknownLenient": "unknown_lenient",
+             "noWidth": "no_width", "noWidthLenient": "no_width_lenient",
+             "tightMarginM": "tight_margin_m", "tight": "tight",
+             "avoidUncertain": "avoid_uncertain"}
+    bad = [f"{a}={got[a]} ↔ {b}={getattr(TUNING, b)}"
+           for a, b in pairs.items() if a in got and got[a] != getattr(TUNING, b)]
+    assert not bad, "두 런타임의 조율이 갈렸다:\n  " + "\n  ".join(bad)
+    assert set(pairs) <= set(got), f"TS 에서 못 읽은 노브: {sorted(set(pairs) - set(got))}"

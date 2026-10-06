@@ -11,7 +11,10 @@
  *   번호순으로 넘겨 본다. GPS 약함 · 통신 끊김 · 서버 오류 · 데이터 지연은
  *   **신호가 없어 여기서만 나온다** — 상단바가 「시연」 표지를 단다.
  *
- * ★ `lenient`(안전/연결성)는 디버그 플래그가 아니라 **제품 기능**이다.
+ * ★ 2026-10-06 (DECISIONS §407). 「안전/연결성」 토글을 **지웠다.** §400 이
+ *   운전석에서 고를 수 있는 것을 전부 지웠는데 이 하나가 남아 있었다 —
+ *   그리고 그것이 고르던 것은 **모름을 싸게 칠지 말지**였다. 지금은 정책
+ *   하나다(`unknownIsNeverCheaper`). 경로의 성질은 지령이 정한다.
  *
  * ★ 2026-09-22 (§213-3) 위치원 토글 · 순간이동. 기본이 「GPS 흉내」 다 —
  *   1Hz · σ5m · 40초마다 8초 음영. 「경로」 는 정답 점이 경로를 따라 걷는 것이라
@@ -32,8 +35,6 @@ interface Props {
   onTeleport?: () => void;
   jumps: number;
   lastJumpM: number;
-  lenient: boolean;
-  setLenient: (v: boolean) => void;
   firstPerson: boolean;
   setFirstPerson: (v: boolean) => void;
   onBottleneck?: () => void;
@@ -92,9 +93,6 @@ export function DevBar(p: Props) {
           </B>
         </>
       )}
-      <B on={p.lenient} onClick={() => p.setLenient(!p.lenient)}>
-        {p.lenient ? "연결성" : "안전"}
-      </B>
       {p.guiding && (
         <B on={p.firstPerson} onClick={() => p.setFirstPerson(!p.firstPerson)}>
           {p.firstPerson ? "1인칭" : "탐색"}

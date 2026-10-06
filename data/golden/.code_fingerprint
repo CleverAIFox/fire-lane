@@ -1,5 +1,5 @@
 {
- "all": "d301a1e28b397dbd",
+ "all": "47909fd11c1a487d",
  "method": "tokens-v1",
  "files": {
   "src/firelane/__init__.py": "fa4d63348469",
@@ -15,7 +15,7 @@
   "src/firelane/seg/report.py": "fd94973fb96e",
   "src/firelane/seg/roadname.py": "4c4783f885b2",
   "src/firelane/seg/scope.py": "aa259e21a13b",
-  "src/firelane/seg/vehicle.py": "d5336cdf70b4",
+  "src/firelane/seg/vehicle.py": "8101e465fbcb",
   "src/firelane/seg/width.py": "6ddd2451ec31",
   "src/firelane/segkey.py": "124ae16c3004",
   "src/firelane/segments.py": "2b2dd9cfe609",

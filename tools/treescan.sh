@@ -4,6 +4,8 @@
 #   bash tools/treescan.sh              훑는다 (0 깨끗 · 1 걸림 · 2 못 훑음)
 #   bash tools/treescan.sh --available  훑을 수 있나만 본다 (0/2)
 #   bash tools/treescan.sh --selftest   판별식이 살아 있나
+#   bash tools/treescan.sh --install    박힌 엔진 판을 깐다 (이미 있으면 아무것도 안 한다)
+#   bash tools/treescan.sh --engine     지금 쓰는 엔진의 판을 찍는다
 #
 # ── 왜 생겼나 (DECISIONS §376 · §381 · §389) ───────────────────
 # §376 이 트리 전수를 세웠다. 비밀값 방어 셋이 전부 **변화량**만 봐서
@@ -41,11 +43,61 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-have() { command -v gitleaks >/dev/null 2>&1; }
+# ── 엔진 판 ────────────────────────────────────────────────────
+# ★ 2026-10-06 (DECISIONS §406 · PLAN #152). **이 줄이 gitleaks 엔진 판의 정본이다.**
+#   §381 이 호출 꼴을 버전에 맞췄다 — 적응이지 통일이 아니었다. 그래서 사람 기계는
+#   8.16(`apt`)으로, CI 는 8.28(직접 내려받기)로 **같은 트리를 서로 다른 규칙
+#   엔진이 봤다.** 규칙이 다르면 한쪽이 놓친 것을 다른 쪽이 잡고, 그 차이는
+#   「CI 에서만 나는 빨강」으로 나타난다 — 사람이 제 기계에서 재현을 못 한다.
+#
+# ★ 고침은 **박힌 판을 스스로 깔게** 하는 것이다. §396-1 이 부트스트랩에 쓴 그
+#   논리다 — 손으로 깐 사본은 낡고, 낡은 것은 틀린 것보다 오래 산다.
+#   `apt` 판을 쓰지 않는다. 배포판이 주는 판은 우리가 못 고른다.
+GITLEAKS_VER=8.28.0
+#: 내려받은 엔진이 사는 자리. `.gitignore` 가 든다 — 저장소에 안 들어간다.
+GL_DIR=".cache/gitleaks/$GITLEAKS_VER"
+GL="$GL_DIR/gitleaks"
+
+#: 지금 쓰는 엔진의 판. 못 읽으면 빈 문자열 — **터지지 않는다.**
+engine_ver() { "$1" version 2>/dev/null | tr -d 'v' | tr -d '\r' | head -1; }
+
+#: 박힌 판을 깐다. **이미 있으면 아무것도 안 한다.**
+#  ★ 망에 못 닿아도 **안 죽는다.** 편의가 배치를 막으면 고치려고 만든 것이
+#    막는 것이 된다(§396-1 이 같은 줄을 적는다). 못 깔면 PATH 판으로 간다.
+install_pinned() {
+    [ -x "$GL" ] && return 0
+    command -v curl >/dev/null 2>&1 || return 1
+    local os arch tgz
+    case "$(uname -s)" in Linux) os=linux ;; Darwin) os=darwin ;; *) return 1 ;; esac
+    case "$(uname -m)" in x86_64|amd64) arch=x64 ;; arm64|aarch64) arch=arm64 ;; *) return 1 ;; esac
+    tgz="$(mktemp)"
+    curl -sSfL -o "$tgz" \
+      "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VER}/gitleaks_${GITLEAKS_VER}_${os}_${arch}.tar.gz" \
+      || { rm -f "$tgz"; return 1; }
+    mkdir -p "$GL_DIR"
+    tar -xzf "$tgz" -C "$GL_DIR" gitleaks || { rm -f "$tgz"; return 1; }
+    rm -f "$tgz"
+    [ -x "$GL" ]
+}
+
+#: 어느 바이너리로 돌 것인가. 박힌 판 → (못 깔면) PATH 판 → 없다.
+#  ★ PATH 판으로 떨어지면 **그 사실을 찍는다.** 조용히 다른 엔진으로 도는 것이
+#    바로 이 절이 고치려는 결함이다 — 소리 없는 차이는 못 고친다.
+resolve() {
+    install_pinned && { GL="$PWD/$GL"; return 0; }
+    command -v gitleaks >/dev/null 2>&1 || return 1
+    GL="$(command -v gitleaks)"
+    local v; v="$(engine_ver "$GL")"
+    echo "  ! 박힌 엔진 $GITLEAKS_VER 을 못 깔았다 — PATH 판 ${v:-판 모름} 으로 돈다."
+    echo "    같은 트리를 다른 규칙 엔진이 본다(PLAN #152). 망이 되면 다시 돌려라."
+    return 0
+}
+
+have() { resolve; }
 # 하위명령이 있는가. `--help` 로 묻는다 — 버전 문자열을 파싱하면 배포판마다 갈린다.
-has_sub() { gitleaks "$1" --help >/dev/null 2>&1; }
+has_sub() { "$GL" "$1" --help >/dev/null 2>&1; }
 # 깃발이 있는가. 8.16 에 없는 것을 주면 그 자체로 빨간불이 난다.
-has_flag() { gitleaks "$1" --help 2>&1 | grep -q -- "$2"; }
+has_flag() { "$GL" "$1" --help 2>&1 | grep -q -- "$2"; }
 
 # ★ **부르는 꼴의 정본.** 자기검사와 본 경로가 같은 인자를 쓰게 한다 —
 #   둘이 갈리면 자기검사만 통과하고 진짜 호출이 터진다(§381 이 그 모양이다).
@@ -112,6 +164,17 @@ sys.exit(1)
 PY
 
 case "${1:-}" in
+--install)
+    if install_pinned; then echo "✓ gitleaks $GITLEAKS_VER — $GL"; exit 0; fi
+    echo "★ gitleaks $GITLEAKS_VER 을 못 깔았다 (망 · curl · tar 중 하나)"; exit 2
+    ;;
+--engine)
+    # ★ 「어느 엔진으로 도나」를 **사람이 볼 수 있게** 한다. 조용한 차이는 못 고친다.
+    resolve || { echo "gitleaks 가 없다"; exit 2; }
+    printf '박힘 %s · 실물 %s · %s\n' "$GITLEAKS_VER" "$(engine_ver "$GL")" "$GL"
+    [ "$(engine_ver "$GL")" = "$GITLEAKS_VER" ] || exit 1
+    exit 0
+    ;;
 --available)
     have || exit 2
     exit 0
@@ -162,12 +225,15 @@ esac
 
 have || { echo "gitleaks 가 없다"; exit 2; }
 pick || { echo "gitleaks 가 dir · detect 둘 다 모른다 — 버전이 너무 낡았다"; exit 2; }
+# ★ 어느 엔진으로 돌았는지 **한 줄 남긴다**. 로그를 뒤에 읽는 사람이 「CI 와 같은
+#   규칙이었나」를 물을 수 있어야 한다 — 그 물음에 답이 없던 것이 PLAN #152 다.
+echo "  엔진 $(engine_ver "$GL") (박힘 $GITLEAKS_VER)"
 
 REPORT="$(mktemp)"
 trap 'rm -f "$REPORT"' EXIT
 # ★ `--exit-code 1` 은 그대로 둔다 — gitleaks 가 **걸렸다고 말하는 것**과
 #   이 문이 **그것을 받아들이는 것**은 다른 판단이다. 2 이상은 못 훑은 것이다.
-gitleaks "${SUB[@]}" "${ARGS[@]}" --report-format json --report-path "$REPORT"
+"$GL" "${SUB[@]}" "${ARGS[@]}" --report-format json --report-path "$REPORT"
 RC=$?
 [ "$RC" -le 1 ] || { echo "gitleaks 가 $RC 로 끝났다 — 못 훑었다"; exit 2; }
 [ -s "$REPORT" ] || { echo "✓ 비밀값 — 걸린 것이 없다"; exit 0; }
