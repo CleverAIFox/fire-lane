@@ -265,6 +265,10 @@ SPEC: dict[str, dict] = {
         "owner": {"file": "tools/svg_fit.py", "regex": r'^FONT = "([^"]+)"'},
         "consumers": [
             {"file": "web/navi/src/ui/tokens.ts", "has": 'family: "{v}"'},
+            # ★ 2026-10-06 (§425). 화면은 **와꾸가 들고 생성물이 물려받는다** —
+            #   둘 다 적는다. 와꾸만 적으면 생성물이 낡아도 조용하고, 생성물만
+            #   적으면 손으로 고치는 자리가 목록 밖이라 `exclusive` 가 운다.
+            {"file": "web/proposal.template.html", "has": "{v}"},
             {"file": "web/proposal.html", "has": "{v}"},
         ],
         "scan": ["web/navi/src/**/*.ts", "web/navi/src/**/*.tsx", "web/*.html",

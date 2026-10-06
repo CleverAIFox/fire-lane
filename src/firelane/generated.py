@@ -147,6 +147,10 @@ class Family:
 GEN_ROOTS: tuple[str, ...] = (
     "web/data", "data/processed", "data/dms", "data/golden", "data/baseline",
     "docs/figures", "web/workflow.html", "docs/proposal.docx",
+    # ★ 2026-10-06 (§425). 종전 `web/proposal.html` 은 PDF 뷰어 **와꾸**였고
+    #   생성물이 아니었다. 이제 정본 `docs/proposal.md` 에서 굽는다 — 루트에
+    #   안 넣으면 `proposal-page` 가족의 그물이 비어 재현 검사가 조용히 빠진다.
+    "web/proposal.html",
 )
 
 FAMILIES: tuple[Family, ...] = (
@@ -201,9 +205,19 @@ FAMILIES: tuple[Family, ...] = (
            ("tools/stage_pages.py",)),
     Family("proposal-numbers", ("docs/proposal.docx",),
            # ★ 대외 제출본이라 생성물이 아니다. 판정 숫자만 docx_fix 가 제자리에서 고친다
+           # ★ 2026-10-06 (DECISIONS §425). **은퇴 예정이다.** 내용 정본이
+           #   `docs/proposal.md` 로 옮겨졌고 화면은 아래 가족이 굽는다. 이 가족은
+           #   docx 제출본이 살아 있는 동안만 남는다 — 둘을 **한 판에** 들어내면
+           #   참조 25곳이 같이 흔들린다.
            "tools/docx_fix.py",
            ("uv run python tools/docx_check.py",),
-           ("web/proposal.html", "tools/stage_pages.py")),
+           ("docs/proposal.md",)),
+    # ★ 2026-10-06 (DECISIONS §425 · PLAN #142). 기획서 화면은 **생성물**이다.
+    #   정본 `docs/proposal.md` → 와꾸 `web/proposal.template.html` → 이 파일.
+    #   종전 소유자는 `stage_pages.py` 였고 그때의 화면은 PDF 뷰어 껍데기였다.
+    Family("proposal-page", ("web/proposal.html",), "tools/build_proposal.py",
+           ("uv run python tools/build_proposal.py --check",),
+           ("tools/stage_pages.py",)),
 )
 
 

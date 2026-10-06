@@ -18,7 +18,9 @@
 | `404.html` | 오타 난 주소가 흰 화면이 되지 않게(§313). `naviweight` 가 존재를 든다 |
 | `config.js` | **파이프라인 설정**이다. `publish_navi.py` 가 판정색 · 지형을, `publish_fleet.py` 가 편성을 정규식으로 읽는다. 화면은 이 파일을 직접 안 싣는다 |
 | `assets/vehicles/profiles.json` | 차종 치수 정본. `publish_fleet.py` 가 회전반경을 읽는다 |
-| `proposal.html` | 기획서 뷰어. **PDF 를 띄운다**(2026-09-24 · DECISIONS §231) — `tools/proposal_pdf.py` 가 `docs/proposal.docx` 를 구워 `proposal.pdf` 를 내고, 쪽수 · 본문 · 판정 수치 · 그림 수를 대조해야 배포된다. `.docx` 원본도 같이 옮겨 내려받기로 남긴다 |
+| `proposal.html` | 기획서 **화면**이고 **생성물**이다(2026-10-06 · DECISIONS §425) — 정본은 `docs/proposal.md` 고 `tools/build_proposal.py` 가 아래 와꾸로 굽는다. **손으로 고치지 말 것.** `--check` 가 정본 지문과 제목 · 표 · 그림 수를 대조하고, 로컬에서는 경고 · 배포 경로에서는 막는다. 화면 머리의 내려받기 두 줄은 **제출본**(`proposal.pdf` · `proposal.docx`)으로 간다 — 둘 다 `.gitignore` 이고 배포 직전에 `tools/proposal_pdf.py` · `tools/stage_pages.py` 가 만든다(DECISIONS §231) |
+| `proposal.template.html` | 그 화면의 **와꾸**. 내용은 한 글자도 없고 자리표시자 일곱을 든다. **손으로 고치는 것은 이 파일이다** — 스타일을 고치는 손과 조립(`build_proposal.py`)을 고치는 손을 가른다 |
+| `proposal/fig/` | 기획서 그림 24장. 상류 `docs/proposal.docx` 에서 `tools/migrate_proposal.py` 가 **한 번** 꺼냈다 — 글(`docs/proposal.md`)과 같이 들어온 같은 반입물이라 같이 커밋한다 |
 | `workflow.html` | 협업 방침. `tools/render_workflow.py` 가 `playbook.html`(틀)로 만든다 |
 | `playbook.html` | 위의 틀. 배포에는 안 싣는다 |
 
