@@ -212,7 +212,11 @@ def test_no_fifth_doc():
     #   2026-08-26 에 기각·정정한 옛 판정을 그대로 들고 있었다.
     #   한 항목이 두 곳에 있으면 한쪽만 고치는 날이 온다 — 그날이 왔다.
     #   `glob` → `rglob` 으로 하위 폴더까지 본다.
-    allowed = {"MASTER.md", "PLAN.md", "DECISIONS.md"}
+    # ★ 2026-10-06 (§425). `proposal.md` 는 **다섯 번째 축이 아니다** — 세 시제
+    #   밖의 **대외 제출용 내용 정본**이고, 넷 표(README · MASTER · PLAN)가 그
+    #   자리를 적는다. 화면 `web/proposal.html` 이 이것을 굽는다. 글을 저장소
+    #   밖(.docx)에 두면 아무 검사도 못 들기에 안으로 들였다.
+    allowed = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.md"}
     extra = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "docs").rglob("*.md")
                    if p.name not in allowed or p.parent != ROOT / "docs")
     assert not extra, (
