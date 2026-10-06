@@ -20,11 +20,17 @@ docx_check.py — 기획서가 산출물과 어긋나지 않는가.
 정본은 `data/golden/segments.fingerprint.json` 이다. 문서에 적힌 판정
 숫자가 그것과 다르면 **산출물이 옳다**(MASTER §0-3).
 
-    구간 수 · 판정 4종 · 총연장 · 폐기된 경로·기술명
+    ①~④    구간 수 · 판정 4종 · 총연장 · 캡션 · 폐기된 경로·기술명
     ⑤ 정방향  `docx_fix` 규칙이 아직 바꿀 것이 있는가 — 있으면 기획서가 산출물보다 낡았다
     ⑥ 역방향  규칙의 **닻**이 문서에 남았는가 — 찾을 것도 바꾼 결과도 없으면 배선이 떨어졌다
     ⑦ 참조    기획서가 드는 저장소 경로 · 파일 이름이 실재하는가
     ⑧ 긴 칸   표 칸이 250자를 넘는 수 · 최장 길이가 래칫 위로 자라지 않는가
+
+★ 2026-10-06 (DECISIONS §409 · PLAN #156). **머리말이 거짓이었다** — 위 줄이
+  「총연장」을 댄다고 적는데 `audit()` 가 `_canon()['총연장']` 을 **한 번도 안
+  썼다.** 2026-09-22 부터 사문이었다. 축을 실제로 물리고(②b), 이 도구가 **무는
+  비율을 스스로 세게** 했다(`--census`). §391 이 같은 수를 손으로 재고 재는
+  길을 안 남겨서 다시 재니 안 맞았다 — 재는 길은 코드로 둔다.
 
 ★ 2026-09-22 (PLAN §13 W4-2 닫힘 · DECISIONS §217-5) — ⑤⑥⑦ 을 더했다. 종전엔 ①~④ 만 봐서
   「회색」 문단의 1,101 세대 수치 열한 자리가 **초록으로 통과했다**(구간 수 · 판정 4종만 봤다).
@@ -112,6 +118,33 @@ def _canon() -> dict[str, int | float]:
     }
 
 
+#: 「총연장 58.3km」 꼴. `km` 과 `m` 둘 다 받는다.
+TOTAL_RE = re.compile(r"총\s*연장\s*(?:은|이|:)?\s*(?:약\s*)?([\d,]+(?:\.\d+)?)\s*(km|m)\b")
+
+
+def _bite_total(cells: list[tuple[str, str]], want: float | None) -> list[str]:
+    """총연장이 **적혀 있는데 다른가.** 안 적힌 것은 어긋남이 아니다.
+
+    ★ 함수로 떼어 둔 이유는 하나다 — **실물에 이 수가 0회 나온다.** 실물만
+      보면 이 축이 살았는지 죽었는지 영원히 모르고, 그것이 2026-09-22 부터
+      이 축을 사문으로 둔 이유다(§409). 합성 입력으로 양방향을 밀 수 있어야 한다.
+    """
+    if not want:
+        return []
+    want_km = round(float(want) / 1000, 1)
+    out: list[str] = []
+    for where, txt in cells:
+        for m in TOTAL_RE.finditer(txt):
+            raw = float(m.group(1).replace(",", ""))
+            val_km = raw if m.group(2) == "km" else raw / 1000
+            if abs(val_km - want_km) > 0.05:
+                out.append(
+                    f"  [{where}] 총연장 {m.group(1)}{m.group(2)}"
+                    f" → **{want_km}km ({float(want):,.1f}m)**\n"
+                    f"      …{txt.strip()[:70]}…")
+    return out
+
+
 def audit(p: Path) -> list[str]:
     cells = _load_docx(p)
     if not cells:
@@ -151,6 +184,14 @@ def audit(p: Path) -> list[str]:
                     bad.append(
                         f"  [{where}] {label} {m.group(1)} → **{want}**\n"
                         f"      …{txt.strip()[:70]}…")
+
+    # ── 2b · 총연장 ──
+    # ★ 2026-10-06 (DECISIONS §409 · PLAN #156). **머리말이 거짓이었다.**
+    #   「구간 수 · 판정 4종 · 총연장」을 댄다고 적어 놓고 `_canon()` 이 내는
+    #   `총연장` 을 `audit()` 가 **한 번도 안 썼다.** 정본은 58,308.7m 이고
+    #   기획서에 그 수는 **0회** 나온다 — 적혀 있지 않은 것은 어긋남이 아니므로
+    #   이 축은 「있는데 다른가」만 묻는다(§95 가 `docnum_check` 에 세운 그 갈래).
+    bad += _bite_total(cells, c.get("총연장"))
 
     # ── 3 · 그림 캡션 ──
     # ★ 그림은 이미지라 기계가 못 본다. 그러나 **캡션은 텍스트다.**
@@ -250,10 +291,76 @@ LONG_MAX_N = 6
 LONG_MAX_LEN = 1380
 
 
+#: 수 토큰. `1,281` · `58308.7` · `3.0` 을 한 덩이로 센다.
+NUM = re.compile(r"\d[\d,.]*")
+
+
+def census(p: Path) -> dict:
+    """기획서의 수가 **몇 개이고 그중 몇 개를 관문이 무는가.**
+
+    ★ 2026-10-06 (DECISIONS §409 · PLAN #156). §391 이 2026-10-04 에 같은 것을
+      쟀는데 **재는 코드를 안 남겼다.** 그 절 머리가 「측정을 다시 뜨는 길은 이
+      절이 적는다」고 적어 두고 결과만 적었다 — 5족(생성물인데 생성기가 없다)
+      이고, 그래서 오늘 다시 재니 수가 안 맞았다. 재는 길을 **코드로** 둔다.
+
+    ★ **같은 단락이 일곱 번 복사돼 있다.** 그 복사본의 수까지 세면 관문이 무는
+      비율이 부풀어 보인다 — 접은 수를 같이 낸다. 접는 것이 옳은 분모다.
+    """
+    cells = _load_docx(p)
+    seen: set[str] = set()
+    folded: list[tuple[str, str]] = []
+    for where, txt in cells:
+        key = txt.strip()
+        if key in seen:
+            continue
+        seen.add(key)
+        folded.append((where, txt))
+
+    def toks(rows: list[tuple[str, str]]) -> list[str]:
+        return [m.group(0) for _, t in rows for m in NUM.finditer(t)]
+
+    # 관문이 무는 자리 — ①구간 수 ②판정 4종 ③총연장. `audit()` 와 **같은 정규식**이다.
+    c = _canon()
+    def bitten(rows: list[tuple[str, str]]) -> int:
+        n = 0
+        for _, t in rows:
+            n += len(re.findall(r"(?:\d{1,2},?\d{3})\s*(?:구간|산출단위|세그먼트)"
+                                r"|(?:구간|산출단위|세그먼트)\s*(?:\d{1,2},?\d{3})", t))
+            for label in ("통행 불가", "통행 가능", "판정 보류", "영상판정 불가"):
+                n += len(re.findall(rf"{label}\s*\d{{2,4}}", t))
+            n += len(re.findall(r"총\s*연장\s*(?:은|이|:)?\s*(?:약\s*)?[\d,.]+\s*(?:km|m)\b", t))
+        return n
+
+    all_t, fold_t = toks(cells), toks(folded)
+    return {
+        "칸": len(cells), "접은 칸": len(folded),
+        "수": len(all_t), "접은 수": len(fold_t),
+        "서로 다른 값": len({t.rstrip(".,") for t in all_t}),
+        "무는 자리": bitten(cells), "접고 무는 자리": bitten(folded),
+        "관문 축": sum(1 for k, v in c.items() if v is not None),
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--census", action="store_true",
+                    help="기획서의 수를 세고 관문이 무는 비율을 낸다 (PLAN #156)")
     a = ap.parse_args()
+
+    if a.census:
+        for q in sorted((ROOT / "docs").glob("*.docx")):
+            d = census(q)
+            print(f"── {q.name}")
+            print(f"   칸 {d['칸']:,} (같은 글 접으면 {d['접은 칸']:,})")
+            print(f"   수 {d['수']:,} · 서로 다른 값 {d['서로 다른 값']:,}")
+            pct = 100 * d["무는 자리"] / max(d["수"], 1)
+            fpct = 100 * d["접고 무는 자리"] / max(d["접은 수"], 1)
+            print(f"   관문이 무는 자리 {d['무는 자리']} / {d['수']:,} = {pct:.1f}%")
+            print(f"   같은 글을 접으면  {d['접고 무는 자리']} / {d['접은 수']:,} = {fpct:.1f}%")
+            print(f"   무는 축 {d['관문 축']}개 — 구간 수 · 판정 4종 · 총연장")
+            print("   ★ 접은 쪽이 옳은 분모다. 같은 단락의 복사본을 세면 비율이 부푼다.")
+        return 0
 
     docs = sorted((ROOT / "docs").glob("*.docx"))
     if not docs:

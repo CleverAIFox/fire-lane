@@ -108,7 +108,13 @@ SURVIVORS = 67
 MUTANTS = 96
 #: 붙잡이가 **0 인 과녁** 수. 흔들어도 못 재는 자리다 — 내려가는 쪽으로만.
 UNCATCHABLE = 0
-RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down"}
+#: 생존 중 **래칫이 드는 것.** 이 문이 안 붙들 뿐 다른 문이 붙든다 — 올라가는
+#: 쪽으로만. 줄면 래칫 선언이 사라졌다는 뜻이고 그건 나쁜 쪽이다.
+RATCHET_HELD = 20
+#: 생존 중 **아직 아무도 안 가른 것.** 내려가는 쪽으로만.
+UNSORTED = 47
+RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
+            "RATCHET_HELD": "up", "UNSORTED": "down"}
 
 _HARMLESS = "\n# mutation-probe — 무해 돌연변이. 행동을 안 바꾼다.\n"
 
@@ -283,6 +289,47 @@ def shake(tool: str, cap: int = MAX_PER_TOOL, deep: bool = False) -> dict:
             "지문": hashlib.sha256(orig.encode()).hexdigest()[:12]}
 
 
+def sort_survivors(d: dict) -> tuple[list[tuple[str, str, str]], list[tuple[str, str]]]:
+    """생존을 **래칫이 드는 것**과 **아직 안 가른 것**으로 나눈다.
+
+    ★ 2026-10-06 (DECISIONS §410 · PLAN 「생존 분류」). 생존 67 을 한 수로 내면
+      「시험이 안 붙든 자리가 67」로 읽힌다. **틀린 읽기다** — 그중 스물은
+      **래칫 상수**이고, 그 수를 흔들면 `tools/ratchet.py` 가 선언과 실측이
+      갈렸다고 운다. 이 도구가 돌리는 것은 **그 도구의 시험**뿐이라 그 문을
+      못 본다.
+
+      즉 생존은 「아무도 안 붙든다」가 아니라 **「이 문이 안 붙든다」**를 센다.
+      그 둘을 안 가르면, 래칫을 하나 달 때마다 생존이 늘어 **좋은 일이 나쁜
+      수로 보인다**(2026-10-05 에 `plan_renumber` 에서 실제로 그랬다).
+
+    ★ 가름은 **추측이 아니라 읽기**다. 모듈 수준 대입의 이름이 그 도구의
+      `RATCHETS` 키에 있으면 래칫 상수다 — 이름을 AST 로 읽는다.
+    """
+    held: list[tuple[str, str, str]] = []
+    rest: list[tuple[str, str]] = []
+    for r in d["도구별"]:
+        src = (TOOLS / f"{r['도구']}.py").read_text(encoding="utf-8")
+        names: dict[int, str] = {}
+        try:
+            for node in ast.parse(src).body:
+                if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
+                    names[node.lineno] = node.targets[0].id
+                elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                    names[node.lineno] = node.target.id
+        except SyntaxError:
+            pass
+        keys = set(re.findall(r'"(\w+)"', (re.search(
+            r"^RATCHETS\s*[:=].*?\{(.*?)\}", src, re.S | re.M) or
+            type("", (), {"group": lambda *_: ""})()).group(1)))
+        for w in r["생존"]:
+            nm = names.get(int(w.split(":")[0]))
+            if nm and nm in keys:
+                held.append((r["도구"], w, nm))
+            else:
+                rest.append((r["도구"], w))
+    return held, rest
+
+
 def ratchet_values() -> dict[str, int]:
     """대장을 읽는다. 없거나 **낡았으면 재는 쪽이 맞다** — 0 을 내지 않는다."""
     if not LEDGER.exists():
@@ -294,13 +341,26 @@ def ratchet_values() -> dict[str, int]:
                              .read_text(encoding="utf-8").encode()).hexdigest()[:12]
         if now != r["지문"]:
             raise RuntimeError(f"{r['도구']}.py 가 잰 뒤로 바뀌었다 — 다시 재야 한다")
+    held, rest = sort_survivors(d)
     return {"SURVIVORS": d["생존"], "MUTANTS": d["돌연변이"],
-            "UNCATCHABLE": sum(1 for r in d["도구별"] if r["붙잡이"] == 0)}
+            "UNCATCHABLE": sum(1 for r in d["도구별"] if r["붙잡이"] == 0),
+            "RATCHET_HELD": len(held), "UNSORTED": len(rest)}
 
 
 # ── ④ 자기검사 ──────────────────────────────────────────────────
 def selftest() -> int:
     fails: list[str] = []
+    # ★ 2026-10-06 (DECISIONS §410). 생존 가름 — **양방향**으로 민다.
+    #   실물로만 재면 「언제나 래칫」과 「언제나 안 가름」을 못 가른다(§230).
+    _synth = {"도구별": [{"도구": "sealcov", "생존": ["52: 363 → 364", "57: 1 → 2"]}]}
+    _held, _rest = sort_survivors(_synth)
+    if [t for t, _, _ in _held] != ["sealcov"] or len(_held) != 1:
+        fails.append(f"래칫 상수 생존을 안 가린다 — 든 것 {_held}")
+    if len(_rest) != 1:
+        fails.append(f"래칫이 아닌 생존을 래칫으로 센다 — 남은 것 {_rest}")
+    if _held and _held[0][2] != "SEALED_FILES":
+        fails.append(f"래칫 이름을 틀리게 읽는다 — {_held[0][2] if _held else None}")
+
     src = "def f(a, b):\n    if a >= 3 and not b:\n        return True\n    return False\n"
     got = {w.split(": ", 1)[1] for w, _ in mutants(src)}
     for want in (">= → >", "and → or", "not 제거", "True → False",
@@ -357,9 +417,27 @@ def main() -> int:
     ap.add_argument("--deep", action="store_true",
                     help="시험 파일까지 붙잡이로 (실측 한 시간 넘음 · 기본 꺼짐)")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--classify", action="store_true",
+                    help="생존을 래칫이 드는 것과 아직 안 가른 것으로 나눈다")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
+
+    if a.classify:
+        # ★ 2026-10-06 (DECISIONS §410). 생존을 **가른다** — 세는 것이 아니라.
+        if not LEDGER.exists():
+            print("data/golden/mutation.json 이 없다 — `--write` 가 만든다")
+            return 2
+        d = json.loads(LEDGER.read_text(encoding="utf-8"))
+        held, rest = sort_survivors(d)
+        print(f"생존 {d['생존']} = 래칫이 든다 {len(held)} + 아직 안 가름 {len(rest)}")
+        print("\n── 래칫이 든다 — 이 문이 아니라 `tools/ratchet.py` 가 붙든다")
+        for t, w, nm in held:
+            print(f"  {t:16} {w:22} ← {nm}")
+        print("\n── 아직 안 가름 — 사람이 하나씩 봐야 한다")
+        for t, w in rest:
+            print(f"  {t:16} {w}")
+        return 0
 
     names = [a.tool] if a.tool else targets()
     rows = [shake(n, a.max, a.deep) for n in names]

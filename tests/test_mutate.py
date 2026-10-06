@@ -105,9 +105,34 @@ def test_the_ledger_refuses_to_answer_when_stale(tmp_path, monkeypatch):
 
 
 def test_the_ratchet_is_two_way():
-    """생존만 잠그면 그물이 줄 때 같이 줄어 좋아 보인다 — 분모도 잠근다."""
+    """생존만 잠그면 그물이 줄 때 같이 줄어 좋아 보인다 — 분모도 잠근다.
+
+    ★ 2026-10-06 (DECISIONS §410). 가름 둘이 늘었다. `RATCHET_HELD` 가
+      **올라가는 쪽**인 것이 뒤집힌 것처럼 보이지만 아니다 — 래칫을 하나 더
+      다는 것이 좋은 일이고 그때 이 수가 오른다.
+    """
     assert M.RATCHETS == {"SURVIVORS": "down", "MUTANTS": "up",
-                          "UNCATCHABLE": "down"}
+                          "UNCATCHABLE": "down",
+                          "RATCHET_HELD": "up", "UNSORTED": "down"}
+
+
+def test_survivors_held_by_a_ratchet_are_told_apart():
+    """★ 2026-10-06 (DECISIONS §410). 생존 중 **래칫 상수**를 가른다.
+
+    그 수를 흔들면 그 도구의 시험은 조용하고 `tools/ratchet.py` 가 운다.
+    이 도구는 그 도구의 시험만 돌리므로 그 문을 못 본다 — **「안 붙들린다」와
+    「이 문이 안 붙든다」는 다르다.**
+
+    실물이 아니라 **합성 입력**으로 양방향을 민다(§230).
+    """
+    synth = {"도구별": [{"도구": "sealcov", "생존": ["52: 363 → 364", "57: 1 → 2"]}]}
+    held, rest = M.sort_survivors(synth)
+    assert [t for t, _, _ in held] == ["sealcov"], f"래칫 상수를 안 가린다: {held}"
+    assert held[0][2] == "SEALED_FILES", f"래칫 이름을 틀리게 읽는다: {held[0][2]}"
+    assert len(rest) == 1, f"래칫이 아닌 생존을 래칫으로 센다: {rest}"
+    # ★ 반대 방향 — 래칫 키가 아닌 이름은 안 든다
+    synth2 = {"도구별": [{"도구": "sealcov", "생존": ["57: 1 → 2"]}]}
+    assert not M.sort_survivors(synth2)[0], "래칫이 아닌 것을 래칫으로 든다"
 
 
 def test_shaking_restores_the_original(tmp_path, monkeypatch):
