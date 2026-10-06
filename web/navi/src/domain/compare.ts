@@ -61,7 +61,7 @@ export interface RouteStats {
   blockedCount: number;
   /** 통행 규칙 경고 수(역주행 · 방향 미확인 일방통행 · 회전 금지 · 급회전) */
   ruleCount: number;
-  /** 폭 기준 확인 필요(판정 보류 · 영상판정 불가) 구간 수와 실거리 */
+  /** 폭 확인 필요(판정 보류 · 영상판정 불가) 구간 수와 실거리 */
   uncertainCount: number;
   uncertainM: number;
   /** 경로에서 가장 좁은 최소 유효폭. 폭을 아는 구간이 없으면 null */

@@ -63,13 +63,18 @@ def test_unknown_turn_never_gets_a_number():
 
 
 def test_picker_takes_the_number_only_from_fleet():
-    s = (NAVI / "ui" / "VehiclePicker.tsx").read_text(encoding="utf-8")
+    """★ 2026-10-05 (DECISIONS §400). 보는 곳이 `ui/VehiclePicker.tsx` 에서
+    `OpsApp.tsx` 로 옮겼다 — 차량을 **관제가** 고르기 때문이다. 결정이
+    옮겨가면 그 결정에 붙은 숫자와 한계 문구도 같이 옮겨가야 하고, 이 시험이
+    그것을 든다(화면만 지우면 고지가 조용히 사라진다).
+    """
+    s = (NAVI / "OpsApp.tsx").read_text(encoding="utf-8")
     code = re.sub(r"/\*.*?\*/|//[^\n]*", "", s, flags=re.S)
     assert "turn_radius_ref_m" in code, "차량 선택이 turn_radius_ref_m 을 안 읽는다"
     assert not re.search(r"\b\d{1,2}\.\d\s*m\b", code), (
         "차량 선택 코드에 회전반경 숫자가 박혀 있다 — 숫자는 fleet.json 에서만 온다")
     for need in ("참고", "판정에 반영하지 않으며"):
-        assert need in code, f"차량 선택에서 「{need}」 가 사라졌다(§86-5 · §212)"
+        assert need in code, f"관제의 차량 선택에서 「{need}」 가 사라졌다(§86-5 · §212)"
 
 
 def test_judgment_never_reads_the_reference_radius():

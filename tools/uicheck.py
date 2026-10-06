@@ -82,7 +82,10 @@ FLAG = "__FL_VIEW"
 #: 화면 → 그 화면**만** 쓰는 부품. 한쪽이 남의 것을 쓰면 두 화면이 섞이는 중이다.
 #: ★ 목록이 아니라 **경계**다. 새 부품은 여기 안 적어도 되고, 적힌 것이 넘어가면 운다.
 EXCLUSIVE = {
-    "App.tsx": ("NaviMap", "SearchPanel", "DevBar"),
+    # ★ 2026-10-05 (DECISIONS §400). `SearchPanel` → `WaitPanel`.
+    #   목적지 검색은 운전석에서 **사라졌다** — 관제가 정한다. 그 자리에
+    #   선 것이 대기 화면이고, 경계로서 같은 일을 한다(관제가 쓰면 운다).
+    "App.tsx": ("NaviMap", "WaitPanel", "DevBar"),
     "OpsApp.tsx": ("OpsMap", "SegCard"),
 }
 
