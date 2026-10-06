@@ -121,9 +121,14 @@ def test_a_delivery_without_a_contract_is_refused_not_warned():
 
     ★ 손으로 **쓴** `EXPECT` 는 이미 막혀 있었다(`expectcheck` 가 「읽을 줄이
       없다」로 rc 1). 구멍은 「쓴 것」이 아니라 **「없는 것」**이었다.
+
+    ★ 2026-10-06 (DECISIONS §408). 닻이 바뀌었다 — 4c 가 `$WORK` 를 먼저 보고
+      없으면 INBOX 를 보므로 조건이 `[ -n "$EXPECT_F" ]` 다. **묻는 것은 그대로다.**
     """
     sh = (ROOT / "tools" / "fl.sh").read_text(encoding="utf-8")
-    i = sh.index('if [ -f "$IN/EXPECT" ]; then')
+    assert 'for _e in "$WORK/EXPECT" "$IN/EXPECT"' in sh, (
+        "계약을 찾는 자리가 둘이 아니다 — zip 에서 꺼낸 것과 사람이 푼 것 둘 다 본다")
+    i = sh.index('if [ -n "$EXPECT_F" ]; then')
     blk = sh[i:sh.index("# ══ 5.", i)]
     tail = blk[blk.index("else"):]
     assert "die " in tail, "EXPECT 가 없어도 배치가 계속된다 — 계약 없는 배달이 통과한다"
