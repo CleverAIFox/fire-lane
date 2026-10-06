@@ -1286,4 +1286,5 @@ fi
 printf '  %s아직 사람이 봐야 하는 것 하나:%s\n' "$Y" "$Z"
 printf '    uv run python tools/serve.py\n'
 printf '    %sWebGL 렌더링은 스크립트가 못 본다. 지도가 실제로 그려지는지,%s\n' "$D" "$Z"
-printf '    %s판정 색·표지판·미니맵·검색이 눈으로 멀쩡한지 확인할 것.%s\n\n' "$D" "$Z"
+printf '    %s내비 — 판정 색·표지판·미니맵이 눈으로 멀쩡한지.%s\n' "$D" "$Z"
+printf '    %s관제(?view=ops) — 목적지 검색·이력 패널.%s\n\n' "$D" "$Z"

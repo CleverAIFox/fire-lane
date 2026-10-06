@@ -259,6 +259,39 @@ def test_tidy_auto_never_closes_or_deletes_remote():
     assert "merged_by_content" in s
 
 
+def test_security_bot_prs_are_judged_by_body_not_title():
+    """보안 봇 PR 을 **제목**으로 가르지 않는다 (§415).
+
+    Dependabot 보안 PR 의 제목은 판 올리기와 글자 하나 다르지 않다 —
+    「build(deps): bump source-map-js from 1.2.1 to 1.2.2 in /web/navi」.
+    종전 가드가 `*[Ss]ecurity*` 를 제목에서 찾다가 못 찾았고, 그 PR 은 다음 줄의
+    `base != part/infra` 에 걸려 닫혔다. 경보 #11(CVSS 8.7 High)이 그렇게 살아남았다.
+    보안 PR 본문에는 자문(GHSA · CVE)이 **항상** 실린다 — 거기를 본다.
+    """
+    s = (T / "branch_tidy.sh").read_text(encoding="utf-8")
+
+    assert "is_security()" in s, "보안 판별이 함수로 없다"
+    body_line = next(l for l in s.splitlines() if "--json body" in l)
+    assert "gh pr view" in body_line, "본문을 안 읽는다 — 제목만 보면 §415 가 되돌아온다"
+    assert "GHSA-" in s and "CVE-" in s, "자문 식별자를 안 찾는다"
+
+    # ★ 제목으로 가르던 판이 되돌아오지 않는다
+    assert "*[Ss]ecurity*" not in s, "제목으로 보안을 가르는 줄이 남아 있다(§415)"
+
+    # ★ 못 읽으면 보안으로 친다 — 모를 때 닫는 쪽이 아니라 두는 쪽
+    fn = s[s.index("is_security()") : s.index("# ── 1. 열린 PR")]
+    assert fn.count("return 0") >= 2, "본문을 못 읽을 때 보안으로 치지 않는다"
+
+    # ★ 보안 가드가 `base != part/infra` 보다 **앞**이어야 한다.
+    #   기본 가지가 dev 라 순서가 뒤집히면 그 줄이 먼저 닫는다.
+    assert s.index("if is_security") < s.index('[ "$base" != "part/infra" ]'), (
+        "보안 가드가 흐름 밖 판정보다 뒤에 있다 — 기본 가지(dev)로 온 보안 PR 이 닫힌다"
+    )
+
+    # ★ 남긴 보안 PR 은 조용히 넘어가지 않는다
+    assert "SECPR" in s and "WARN=1" in s, "남긴 보안 PR 이 경고로 안 올라온다"
+
+
 def test_lake_disposition_knows_our_patch_zip():
     # ★ 경로를 건드리지 않고 도구 파일을 모듈로 읽는다(test_layering — 경로 조작 금지)
     import importlib.util
@@ -848,3 +881,23 @@ def test_the_measured_hint_says_when_not_to_use_it():
     assert hint, "안내가 사라졌다"
     assert "실제로 움직였을 때만" in s, "붙이는 조건을 안 적는다"
     assert "§388" in s, "그 믿음이 무엇을 냈는지 안 가리킨다"
+
+
+def test_the_human_check_line_separates_navi_from_ops():
+    """`verify.sh` 가 사람에게 넘기는 마지막 줄이 **없는 기능**을 가리키지 않는다 (§416).
+
+    §400 이 내비에서 `SearchPanel.tsx` 를 지웠는데 안내 문구에 「검색」이 남아
+    사용자가 「왜 아직 검색이 붙어 있냐」를 물었다. 100단계를 돌고 **사람에게
+    건네는 한 줄**이라 죽은 참조의 값이 비싸다 — 사람이 없는 것을 찾는다.
+
+    검색은 관제(`?view=ops`)에 **있어야 한다.** 그래서 지우는 것이 아니라 가른다.
+    """
+    s = (T / "verify.sh").read_text(encoding="utf-8")
+    block = [l for l in s.splitlines() if "눈으로" in l or "?view=ops" in l]
+    assert block, "사람 확인 안내가 없다"
+    navi = [l for l in block if "내비" in l]
+    ops = [l for l in block if "관제" in l]
+    assert navi and ops, f"내비와 관제를 안 가른다: {block}"
+    assert all("검색" not in l for l in navi), (
+        "내비 줄이 검색을 가리킨다 — 내비에는 없다(§416)")
+    assert any("검색" in l for l in ops), "관제 줄에 검색이 없다 — 거기엔 있다"

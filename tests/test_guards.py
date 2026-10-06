@@ -2589,3 +2589,38 @@ def test_the_dem_extract_refuses_anything_but_exactly_one_image(tmp_path):
                 zf.writestr(n, b"x")
         with pytest.raises(RuntimeError, match="정확히 하나"), _dem_image(z):
             pass
+
+
+def test_sheet_pick_refuses_to_guess_between_equal_candidates(tmp_path, monkeypatch):
+    """도엽 고르기가 **동률에서 멈춘다** (DECISIONS §418).
+
+    `collect()` 한 줄은 「같은 도엽은 최신 연도만 남긴다」였는데 연도를 못 읽는다 —
+    `YEAR` 는 `_20201231` 꼴을 찾고 V-WORLD 도엽명은 `356161916.zip` 이라 날짜가
+    없어 SHP 74 · NGI 143 이 **전부 year=0** 이다. 실제 선택은 뒤의 tie-break
+    `kind == "SHP"` 가 혼자 했고 지금은 그 답이 우연히 맞다(SHP 2026 · NGI 2021).
+
+    우연이 깨지는 날은 같은 종류가 둘 올 때다 — 국토정보플랫폼 NGI 2026 판을
+    받아 넣으면 기존 NGI(2021)와 동률이 되고 `rglob` 순서가 지형을 정한다.
+    그때 조용히 고르면 **어제와 다른 폭이 나오는데 아무도 모른다.**
+    """
+    import pytest
+
+    from firelane import ngii1k
+
+    # 같은 종류 둘 — 고를 규칙이 없다
+    same = tmp_path / "same"
+    (same / "sub").mkdir(parents=True)
+    (same / "356161916.ngi").write_text("x", encoding="utf-8")
+    (same / "sub" / "356161916.ngi").write_text("y", encoding="utf-8")
+    monkeypatch.setattr(ngii1k, "WORK", same / "_work")
+    with pytest.raises(RuntimeError, match="고를 규칙이 없다"):
+        ngii1k.collect(same)
+
+    # 종류가 다르면 SHP 가 이긴다 — 종전 동작 그대로다
+    mixed = tmp_path / "mixed"
+    mixed.mkdir()
+    (mixed / "356161916.ngi").write_text("x", encoding="utf-8")
+    (mixed / "356161916.shp").write_text("y", encoding="utf-8")
+    monkeypatch.setattr(ngii1k, "WORK", mixed / "_work")
+    got = ngii1k.collect(mixed)
+    assert got["356161916"][1] == "SHP", "혼합에서 SHP 우선이 깨졌다"
