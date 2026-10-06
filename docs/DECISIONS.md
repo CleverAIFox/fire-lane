@@ -26924,7 +26924,7 @@ PLAN §10 이 2026-09-30 에 이렇게 들어왔다(§331) —
 
 강제자  `tools/treescan.sh`(`GITLEAKS_VER` 정본 · `install_pinned` ·
 `resolve` · `--install` · `--engine`) · `tests/test_sources_of_truth.py`
-(`SPEC["gitleaks"]` — 정본↔따르는 곳 양방향) · `docs/MASTER.md` §17-1 표 ·
+(gitleaks 항목 — 정본↔따르는 곳 양방향) · `docs/MASTER.md` §17-1 표 ·
 `.github/workflows/secret-scan.yml`(판을 안 적고 도구를 부른다).
 하위 셋이 이 칸을 물려받는다
 유병률  **1회** — 2026-10-04. §381 이 호출 꼴을 맞추자 트리 전수가 사람 기계에서

@@ -7407,17 +7407,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "700369f86c2649b4",
-   "f754a2cf222bc244",
-   "e2fcda87b814bbad"
+   "6a966c784522bd2b",
+   "41d8a72c4f558668",
+   "43d252720e939b35"
   ],
   "parts": {
    "tests/test_gitleaks_allowlist.py": "44647ad51c56d48c",
    "tests/test_sources_of_truth.py": "1afecc94aa1131ce",
    "tools/treescan.sh": "49ca728c9ef7e4c7",
-   "본문": "80429eb8828438d6"
+   "본문": "96a0b5a85af08d0a"
   },
-  "sha": "b2569d1cfbb0a9b9"
+  "sha": "1e17174fd94c194c"
  },
  "DECISIONS/407": {
   "doc": "docs/DECISIONS.md",
