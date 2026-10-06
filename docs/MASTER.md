@@ -10,7 +10,7 @@
 > | `docs/PLAN.md` | 미래 | 남은 일 · 미결정 · 담당 공백 · 결함 대장 |
 > | **`docs/MASTER.md`** | **현재** | **판정 · 데이터 · 용어 · UI 계약 · 운영 (이 문서)** |
 > | `docs/DECISIONS.md` | 과거 | 왜 그렇게 됐나 (append-only) |
-> | `docs/proposal.docx` | — | 대외 제출용. 시제 규칙 밖 |
+> | `docs/proposal.md` | — | 대외 제출용 **내용 정본**. 시제 규칙 밖. 화면 `web/proposal.html` 은 생성물이다 |
 >
 > 문서 넷은 병렬 축이 아니라 한 항목의 **생애주기**다.
 > 데이터 정본만 `sources.yaml` 이 따로 든다(기계가 읽는다).
@@ -3004,7 +3004,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,808 전수 · **분모(blank) 0절** · 물림(inherit) 906절.
+★ **강제자 칸의 분모.** 절 1,816 전수 · **분모(blank) 0절** · 물림(inherit) 913절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->

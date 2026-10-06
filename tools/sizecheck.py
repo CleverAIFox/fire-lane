@@ -353,7 +353,10 @@ EXCEPTIONS: dict[str, int] = {
     #   없고, 표를 쪼개면 「어느 파일에 있나」가 기억거리가 된다(MASTER §18-3).
     # ★ 2026-10-04 (DECISIONS §379-9). 705 → 706. `statkit` 면제 **한 줄**이다.
     #   사유는 한 줄에 눌러 담았다 — 위 §362 의 판단이 그대로 선다.
-    "tests/test_tools_are_wired.py": 704,
+    # ★ 2026-10-06 (DECISIONS §425). 704 → 711. 면제 하나 — 한 번 쓰는 **이사**
+    #   도구(`migrate_proposal`)다. 사유가 길다: 자동으로 돌면 사람이 정본(md)에서
+    #   고친 것을 옛 docx 로 되돌린다. 면제는 사유가 짧으면 다음 사람이 못 지운다.
+    "tests/test_tools_are_wired.py": 711,
     # ★ 2026-10-03 (DECISIONS §372). **새로 넘었다** — 600 상한 밖 615.
     #   늘어난 열다섯 줄은 `_tracked` · `_blame` 이 git 의 실패를 **빈 것으로
     #   바꾸던 자리**를 터뜨리는 것과 그 사유다. 도장의 기반이 **추적되는
@@ -406,7 +409,11 @@ EXCEPTIONS: dict[str, int] = {
     # ★ 2026-10-06 (DECISIONS §416). 1289 → 1290. 사람 확인 안내가 **없는 기능**을
     #   가리키고 있었다 — §400 이 내비에서 검색을 지웠는데 문구에 남아 사용자가
     #   「왜 아직 검색이 붙어 있냐」를 물었다. 내비와 관제를 두 줄로 가른다.
-    "tools/verify.sh": 1290,
+    # ★ 2026-10-06 (DECISIONS §425). 1290 → 1297. 기획서 화면 단계 하나다 —
+    #   정본 `docs/proposal.md` → 와꾸 → `web/proposal.html` 이 같은가.
+    #   옛 둘(`docx_check` · `docstyle`)을 **같이 둔다**: docx 제출본이 살아 있는
+    #   동안은 그쪽도 물어야 하고, 참조 25곳을 한 판에 흔들지 않는다.
+    "tools/verify.sh": 1297,
     "src/firelane/segments.py": 780,
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이

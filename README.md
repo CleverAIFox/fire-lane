@@ -29,7 +29,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 | [`docs/PLAN.md`](docs/PLAN.md) | 미래 | 남은 일 · 미결정 · 담당 공백 · 결함 대장 |
 | [`docs/MASTER.md`](docs/MASTER.md) | 현재 | 판정 · 데이터 · 용어 · UI 계약 · 운영 |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 과거 | 왜 그렇게 됐나 (append-only) |
-| `docs/proposal.docx` | — | 대외 제출용. 시제 규칙 밖 |
+| `docs/proposal.md` | — | 대외 제출용 **내용 정본**. 시제 규칙 밖. 화면 `web/proposal.html` 은 생성물이다 |
 
 **한 항목은 한 문서에만 산다.** 두 곳에 있으면 한쪽만 고치는 날이 온다.
 남은 일의 정본은 **수용 조건**으로 갈린다 — 판정을 움직이는 일은 `PLAN §1`,
