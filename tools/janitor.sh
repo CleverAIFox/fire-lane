@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # tools/janitor.sh — 청소 도구 셋의 **입구 하나.** 읽기만 한다.
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   bash tools/janitor.sh            층별 건수를 한 표로
 #   bash tools/janitor.sh --verbose  각 도구의 출력을 그대로

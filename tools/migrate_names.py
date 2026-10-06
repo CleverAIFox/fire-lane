@@ -47,6 +47,7 @@ FL_DATA_MIGRATION — git 밖 실물과 원자적으로 움직인다
 IN    $FIRE_LANE_DATA/raw · data/_acquire.json · sources.yaml
 OUT   위 셋 · data/_migrate_journal.json
 PARAM 없음
+부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 """
 from __future__ import annotations
 

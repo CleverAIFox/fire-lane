@@ -18,18 +18,26 @@
  *   `__FL_VIEW` 를 보는데, dev 에는 그 표시가 없으므로 **쿼리를 비우는 것**이
  *   곧 내비다. `view=navi` 를 붙이면 「ops 가 아닌 값」이라는 우연에 기대게 된다.
  *
- * IN    화면 표시(`__FL_VIEW`) · 사건 좌표 · 이름 · 차종 · 센터
+ * IN    화면 표시(`__FL_VIEW`) · 사건 좌표 · 이름 · 차종 · 센터 · 경로 모드
  * OUT   문자열 주소 (순수)
  * 밖    **열지 않는다.** `window.open` 은 부르는 쪽 일이다 — 그래야 시험이
  *       브라우저 없이 이 판단만 잰다. **주소가 실재하는지도 안 본다**(배포 소관).
  */
+import type { RouteMode } from "./handoff";
 
-/** 출동 지령 한 건. 좌표는 `[lon, lat]`. */
+/**
+ * 출동 지령 한 건. 좌표는 `[lon, lat]`.
+ *
+ * ★ 2026-10-05 (DECISIONS §400). `route` 가 생겼다. 내비는 **아무것도 안
+ *   고른다** — 차량도 경로도 관제가 정해서 여기 싣는다. 이 칸이 비면 내비는
+ *   안전으로 가되 화면이 「지령에 없다」고 적는다.
+ */
 export interface Dispatch {
   at: [number, number];
   label: string;
   vehicle: string;
   station: string;
+  route: RouteMode;
 }
 
 /** 내비가 사는 자리. `__FL_VIEW` 가 `"ops"` 면 배포 루트의 관제다. */
@@ -52,6 +60,7 @@ export function dispatchUrl(view: string | undefined | null, d: Dispatch,
     label: d.label,
     vehicle: d.vehicle,
     station: d.station,
+    route: d.route,
   });
   if (demo) q.set("demo", "1");
   return `${naviBase(view)}?${q.toString()}`;

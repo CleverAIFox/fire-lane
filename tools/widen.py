@@ -15,6 +15,7 @@ widen.py — 검사 범위를 **원본 유도**로 넓혔을 때 무엇이 새�
   W6  절 참조 검사        하위절 3개 이상 절  →  전 절
 
 OUT  표준출력 — 축별 신규 빨간불 수. REDLIST 에 더할 예상치다.
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

@@ -38,7 +38,7 @@ export function routeOption(
   const tail = access?.alt
     ? ` 차량은 사건 지점 약 ${Math.round(access.walkM)}m(직선) 앞 대체 접근 지점까지 갑니다.` : "";
   return {
-    title: rec ? "폭 기준 추천" : "빠른 경로", recommended: rec, sec, lengthM: st.lengthM,
+    title: rec ? "안전 경로" : "빠른 경로", recommended: rec, sec, lengthM: st.lengthM,
     uncertainCount: st.uncertainCount,
     uncertainM: st.uncertainM,
     minWidthM: st.minWidthM,

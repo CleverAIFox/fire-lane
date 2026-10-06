@@ -139,6 +139,54 @@ def test_legacy_seal_is_accepted_and_restamped(shard):
     assert rec["seal"]["cfg"] == shardseal.cfg_print(cfg, "road"), "새 판으로 고쳐 적지 않았다"
 
 
+def test_skipped_global_subkeys_are_really_unread(capsys):
+    """★ 2026-10-05 (DECISIONS §397). `INGEST_GLOBAL_SKIP` 은 **사유로 적지만
+    참인지는 기계가 묻는다** — 폐포 어느 파일도 그 이름을 안 쥐는가.
+
+    쥐는데 빼면 **낡은 산출물을 재사용한다.** 그 방향이 반대 방향보다 비싸다
+    (반대는 한 번 더 빌드할 뿐이다 · §216-1 이 적은 그 비대칭).
+    """
+    import ast
+    names: set[str] = set()
+    for f in shardseal.code_closure():
+        # ★ 선언한 파일 자신은 뺀다 — `INGEST_GLOBAL_SKIP` 이 그 이름을 **적는**
+        #   자리이고, 안 빼면 무엇을 선언하든 제 선언에 걸린다.
+        #   `tools/tonecheck.py` 가 제 낱말 목록을 면제하는 것과 같은 자리다.
+        if f.name == "shardseal.py":
+            continue
+        src = f.read_text(encoding="utf-8")
+        for n in ast.walk(ast.parse(src)):
+            if isinstance(n, ast.Constant) and isinstance(n.value, str):
+                names.add(n.value)
+            elif isinstance(n, ast.Attribute):
+                names.add(n.attr)
+    bad = sorted({s for subs in shardseal.INGEST_GLOBAL_SKIP.values() for s in subs} & names)
+    assert not bad, (
+        f"폐포가 쥐는 이름을 cfg 에서 뺐다: {bad}\n"
+        "  빼면 그 값이 바뀌어도 안 찢어지고, 낡은 산출물을 재사용한다.")
+    # ★ 빈 그물 — 훑는 눈이 죽으면 무엇을 빼도 통과한다
+    assert "layers" in names or "datasets" in names, "이름 수집이 아무것도 못 찾았다"
+
+
+def test_skipping_a_subkey_actually_stops_the_tear():
+    """판별식을 **꺼냈다**(§17-0) — 뺀 칸은 안 찢고, 안 뺀 칸은 여전히 찢는다."""
+    base = {**CFG, "layers": {"raw": {"providers": {"a": 1}, "base": "data"}}}
+    more = {**CFG, "layers": {"raw": {"providers": {"a": 1, "b": 2}, "base": "data"}}}
+    moved = {**CFG, "layers": {"raw": {"providers": {"a": 1}, "base": "repo"}}}
+    assert shardseal.cfg_print(more, "road") == shardseal.cfg_print(base, "road"), \
+        "제공기관을 더했는데 찢는다 — 산출에 안 닿는 값이다"
+    assert shardseal.cfg_print(moved, "road") != shardseal.cfg_print(base, "road"), \
+        "계층의 **실질** 변화를 안 잡는다"
+
+
+def test_the_old_print_is_kept_so_seals_migrate_without_a_rebuild():
+    """옛 판을 지우면 그날 **45샤드가 전부 다시 빌드된다** — 8GB 기계에서 OOM 이다."""
+    assert shardseal._cfg_print_v4 in shardseal.LEGACY_PRINTS
+    base = {**CFG, "layers": {"raw": {"providers": {"a": 1}, "base": "data"}}}
+    assert shardseal._cfg_print_v4(base, "road") != shardseal.cfg_print(base, "road"), \
+        "옛 판과 새 판이 같다 — 옛 판 선언이 죽었다"
+
+
 def test_every_prose_field_in_the_ledger_is_declared_as_prose():
     """★ 2026-10-05 (DECISIONS §396-7). **같은 족 네 번째다.**
 

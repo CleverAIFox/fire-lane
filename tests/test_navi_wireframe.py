@@ -37,6 +37,13 @@ WIREFRAME = {
     "18", "19", "20", "21", "23",
 }
 
+#: 와이어프레임에 있었으나 **그 화면이 없어진** 장. 사유를 적는다 — 번호를
+#: 그냥 지우면 「왜 없어졌나」가 사라지고, 다음 사람이 다시 그린다.
+RETIRED_WF = {
+    "01": "출동 차량 선택 — 기사가 차를 고르는 화면이었다. 차량은 관제가 "
+          "정해서 지령에 싣는다(DECISIONS §400). 화면째 지웠다",
+}
+
 #: 신호가 없어 시연 막대가 넣는 상태. 늘면 여기와 status.ts 를 같이 고친다
 #: ★ 2026-09-24 (PLAN §13 W13-2). `gpsWeak` 를 뺐다 — **신호가 생겼다.**
 #:   `Fix.accuracy` 를 뚫고 `gps.ts` 가 `coords.accuracy` 를 넘기며
@@ -71,11 +78,17 @@ def _code_wf() -> set[str]:
 def test_every_wireframe_screen_has_a_home():
     got = _code_wf()
     assert got, "코드에서 와이어프레임 번호를 하나도 못 찾았다 — 추출이 죽었다"
-    missing = sorted(WIREFRAME - got)
+    missing = sorted(WIREFRAME - got - set(RETIRED_WF))
     extra = sorted(got - WIREFRAME)
     assert not missing, (
         f"와이어프레임에 있는데 코드에 자리가 없는 장: {missing}\n"
         "  패널이면 `data-wf=\"번호\"`, 주행 상태면 `domain/status.ts` 의 `wf: [...]` 에 적는다.")
+    # ★ 폐지한 장이 **되살아나면** 운다. 사유를 적어 지웠는데 코드가 다시
+    #   그리면 그 사유가 거짓이 된 것이고, 사람이 둘 중 하나를 골라야 한다.
+    back = sorted(set(RETIRED_WF) & got)
+    assert not back, (
+        f"폐지한 장이 코드에 돌아왔다: {back}\n"
+        + "\n".join(f"  {k} — {RETIRED_WF[k]}" for k in back))
     assert not extra, (
         f"와이어프레임 09-21 판에 없는 번호를 코드가 쓴다: {extra}\n"
         "  오타이거나 폐기된 장이다. 새 판이 왔으면 이 파일의 `WIREFRAME` 부터 고친다.")
@@ -168,36 +181,37 @@ def test_the_dev_bar_is_off_unless_asked():
         "App 이 질의 문자열을 **다시 직접** 읽는다. 물음의 집은 `handoff.ts` 다")
 
 
-def test_the_driver_cannot_pick_a_destination_once_dispatched():
-    """★ 2026-10-04 (§382-1 · §386 · §393). 이 내비는 **지령을 상속만 받는다.**
+def test_the_driver_picks_nothing_at_all():
+    """★ 2026-10-05 (DECISIONS §400). 이 내비는 **완전히 수동이다.**
 
-    기사가 목적지를 고를 수 있게 두면 지령과 화면이 갈리고, 갈린 둘 중 어느
-    쪽이 기록으로 남는지가 불분명해진다.
+    종전 이름은 `…cannot_pick_a_destination_once_dispatched` 였고 「지령이
+    **왔으면** 못 고른다」를 물었다. 그 물음은 「지령이 없으면 고른다」를
+    품는다 — 사람이 그 전제를 잘랐다. 그래서 묻는 것이 바뀌었다:
+    **묶였는가가 아니라 없는가.** 조건부로 묶는 것은 조건이 틀리면 열리고,
+    없는 것은 틀릴 조건이 없다.
 
-    ★ **이 시험이 결함을 못 박고 있었다**(§393). 마지막 줄이
-      `onArm={canPick ? …` 를 찾고 그것을 「상단 팔기가 닫혔다」라고 불렀다.
-      그 꼴은 **손만 묶고 버튼은 그대로 그리는** 모양이고, 운전석에서 누르면
-      말없이 씹혔다. 그리고 `onSwap` 은 **이 시험이 아예 안 봤다** — 조건이
-      없어서 지령 받은 내비에서 출발·도착이 실제로 뒤집혔다.
-
-      강제자가 틀린 모양을 단언하면 그 관문은 **지키는 것이 아니라 가둔다.**
-      고치려는 사람이 먼저 이 시험을 깨야 하기 때문이다.
+    ★ 이 시험은 두 번 제가 결함을 못 박았다 — §393 에서는 「손만 묶는 모양」을
+      옳다고 단언했고, 그 전에는 `onSwap` 을 아예 안 봤다. **강제자가 틀린
+      모양을 단언하면 그 관문은 지키는 것이 아니라 가둔다.**
     """
     app = (ROOT / "web/navi/src/App.tsx").read_text(encoding="utf-8")
-    assert "canPickDestination(hand)" in app, (
-        "목적지 선택 가능 여부를 안 묻는다 — 지령이 와도 기사가 다시 찍는다")
-    assert "|| !canPick) return;" in app, "지도 찍기가 그 값을 안 본다"
-    assert '{s.screen === "search" && canPick && (' in app, "검색 화면이 안 닫힌다"
-    # ★ 바꾸는 손 넷을 **한 묶음으로** 넘기고, 지령이면 그 묶음이 `null` 이다.
-    #   낱개로 넘기면 하나를 빠뜨리고, 빠뜨린 것이 `onSwap` 이었다.
-    assert "edit={editHands(hand," in app, "바꾸는 손이 한 문을 안 지난다"
-    panel = (ROOT / "web/navi/src/ui/DispatchPanel.tsx").read_text(encoding="utf-8")
-    props = panel.split("interface Props", 1)[1].split("export function DispatchPanel", 1)[0]
-    for name in ("onStation", "onArm", "onSearch", "onSwap"):
-        assert name not in props, f"판이 {name} 를 낱개로 받는다 — 하나를 묶는 걸 잊는다"
-    assert "edit: EditHands | null" in props, "판이 그 묶음을 안 받는다"
-    # ★ 묶는 것과 **안 그리는 것**은 다르다. 빈 함수로 묶으면 버튼이 남는다.
-    live = [ln for ln in app.splitlines()
-            if not ln.lstrip().startswith(("//", "*", "/*"))
-            and "canPick ?" in ln and "() => {}" in ln]
-    assert not live, f"버튼을 그려 놓고 손만 묶는다 — {live}"
+    code = "\n".join(ln for ln in app.splitlines()
+                     if not ln.lstrip().startswith(("//", "*", "/*")))
+
+    for gone in ("DispatchPanel.tsx", "SearchPanel.tsx", "VehiclePicker.tsx"):
+        assert not (SRC / "ui" / gone).exists(), f"{gone} 가 살아 있다 — 고르는 화면이 돌아왔다"
+
+    for gone in ("canPickDestination", "editHands", "setArmed"):
+        assert gone not in code, f"{gone} 는 「고를 수 있는 경우」를 전제한다"
+
+    scr = (SRC / "app" / "useScreens.ts").read_text(encoding="utf-8")
+    assert '"wait" | "brief" | "drive"' in scr, "화면 갈래가 셋이 아니다"
+    for gone in ("dispatch", "search", "vehicle", "compare"):
+        assert f'"{gone}"' not in scr, f"화면 {gone} 는 고르는 자리였다"
+
+    # ★ 목적지와 차량을 **놓는** 자리는 남되 각각 하나다 — 기계가 지령을
+    #   적용하는 손이고, 둘이 되는 순간 하나는 사람이 부르는 것이다.
+    for once in ("n.setDestAt(", "fleet.select("):
+        assert code.count(once) == 1, f"{once} 가 {code.count(once)}곳이다 — 하나여야 한다"
+
+    assert "onSwitchRoute={undefined}" in code, "주행 중에 경로를 바꿀 수 있다"

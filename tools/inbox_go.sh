@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # tools/inbox_go.sh — **INBOX 에 `go.sh` 라는 이름으로 두는 한 줄 진입점.**  (DECISIONS §256)
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   cd ~/projects/fire-lane && bash tools/inbox_go.sh     ← 저장소에 들어온 뒤로는 이 한 줄
 #   bash "$FIRE_LANE_INBOX/go.sh"                         ← 아직 안 들어왔을 때(zip 안 사본)

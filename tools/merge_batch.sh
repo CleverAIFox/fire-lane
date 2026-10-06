@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # tools/merge_batch.sh — 배치 PR 머지 → 파트 동기화 → (선택) 릴리즈
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   bash tools/merge_batch.sh              A  part/infra → dev 머지 · part/* 동기화
 #   bash tools/merge_batch.sh --release    A + B  dev → main 릴리즈 · 흡수 · 동기화
@@ -280,13 +281,26 @@ if uv run python tools/dms.py seal --quick; then
         [ -n "$spr" ] || die "봉인 PR 번호를 못 읽었다"
         if ( wait_checks "$spr" ); then wrc=0; else wrc=$?; fi
         if [ "$wrc" = 0 ]; then
-            gh pr merge "$spr" -R "$REPO" --squash --delete-branch >/dev/null \
-                || die "봉인 PR #$spr 을 스쿼시하지 못했다"
-            git switch -q part/infra
-            git fetch -q origin
-            git merge -q --ff-only origin/part/infra || die "봉인 스쿼시 뒤 part/infra 를 못 당겼다"
-            git branch -q -D "$sb" 2>/dev/null || true
-            ok "봉인 갱신 · PR #$spr · part/infra $(git rev-parse --short origin/part/infra)"
+            # ★ 2026-10-06 (DECISIONS §403-3). **여기만 `die` 였다.** 위 주석이 세 번
+            #   적은 「봉인은 기준선이지 관문이 아니다」(§207-2)를 빨강 갈래와 미상
+            #   갈래는 지키는데, **내용이 확실히 좋은 초록 갈래**가 릴리즈 전체를
+            #   죽이고 있었다. 2026-10-06 에 그 자리에서 죽었다 — 필수 검사가 아직
+            #   안 생긴 것을 초록으로 읽어(§403-1) 밑동이 머지를 거부했다.
+            #   미상 갈래와 같은 모양으로 내린다: **PR 과 가지를 남기고** 말하고 간다.
+            if gh pr merge "$spr" -R "$REPO" --squash --delete-branch >/dev/null 2>&1; then
+                git switch -q part/infra
+                git fetch -q origin
+                git merge -q --ff-only origin/part/infra || die "봉인 스쿼시 뒤 part/infra 를 못 당겼다"
+                git branch -q -D "$sb" 2>/dev/null || true
+                ok "봉인 갱신 · PR #$spr · part/infra $(git rev-parse --short origin/part/infra)"
+            else
+                git switch -q part/infra
+                warn "봉인 PR #$spr 은 초록인데 **밑동이 머지를 안 받았다** — PR 과 가지를 남긴다.
+  대개 필수 검사가 아직 결론이 안 났다. 사람이 보고 정한다:
+    bash tools/ci_wait.sh $spr $REPO
+    gh pr merge $spr -R $REPO --squash --delete-branch
+  릴리즈는 계속한다 — 봉인은 기준선이지 관문이 아니다(§207-2 · §403-3)."
+            fi
         elif [ "$wrc" = 2 ]; then
             # ★ 2026-09-24 (DECISIONS §225-1). **모르면 안 지운다.** 종전에는 여기서
             #   PR 을 닫고 가지를 지웠는데, 2026-09-23 에 그 「빨강」이 GitHub 의

@@ -12,6 +12,7 @@ matchcheck.py — Mapbox Map Matching 커버리지 배치 검증
 
 ★ 아무것도 안 바꾼다. 읽고 표를 낼 뿐이라 golden 지문에 영향이 없다.
   (tools/ 의 대조 도구들과 같은 성격 — MASTER §14-5)
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

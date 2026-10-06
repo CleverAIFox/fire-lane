@@ -46,6 +46,7 @@ landing 에 갇히게 됐다.
 IN    sources.yaml
 OUT   sources.yaml
 PARAM 없음
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

@@ -35,6 +35,7 @@ IN    gh api repos/:owner/:repo/rulesets · repos/:owner/:repo(`security_and_ana
       repos/:owner/:repo/collaborators · .github/workflows/*.yml · 아래 EXPECT · SECURITY
 OUT   없음 (검사). 어긋나면 종료코드 1
 PARAM 없음
+부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 """
 from __future__ import annotations
 

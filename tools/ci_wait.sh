@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # ci_wait.sh — PR 검사가 끝날 때까지 **조용히** 기다린다. (DECISIONS §278-6)
+# 부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 #
 #   bash tools/ci_wait.sh <PR번호>        0 초록 · 1 빨강 · 2 못 읽음(시간 초과 포함)
 #   bash tools/ci_wait.sh --selftest      ★ 판별식이 살아 있나
@@ -75,15 +76,30 @@ rows() { printf '%s\n' "$1" | awk -F'\t' 'NF>=2' ; }
 #   결론 없는 필수 검사가 남아 있으면 그것은 초록이 아니라 **아직 대기**다 —
 #   대개 도는 중이고 기다리면 풀린다. 안 풀리면 시간 초과가 2(모름)로 낸다.
 #
+# ★ 2026-10-06 (DECISIONS §403). **한 겹이 모자랐다.** 위 고침은 「생겼는데 결론이
+#   없는 실행」을 잡는다. 그날 막힌 것은 그 앞 단계였다 — `contract` 실행이
+#   **아직 만들어지지도 않았다.** 결론 없는 실행이 하나도 없으니 교집합이 비고,
+#   보이는 것(12초에 끝난 `secret-scan`)이 전부 초록이라 초록이라 말했다.
+#   스쿼시가 또 `the base branch policy prohibits the merge` 로 거부됐다 —
+#   §282-1 과 **같은 증상이 한 겹 더 이른 자리에서** 났다.
+#
+#   교집합을 **차집합**으로 바꾼다. 필수 중 결론이 난 것을 빼고 남는 것이 막는
+#   것이다 — 그러면 「없는 실행」도 자동으로 남는다. 안 생긴 것을 세려고 목록을
+#   더 만들지 않는다. **없는 것을 세는 유일한 방법은 있는 것을 빼는 것이다.**
+#
 #   ★ 「승인이 없어 BLOCKED」와 섞지 않는다. `mergeStateStatus` 하나만 보면
 #     `main` 처럼 승인 1 이 필요한 가지에서 영원히 기다린다(릴리즈가 멈춘다).
 #     **검사 쪽만** 본다 — 필수 검사 목록과 결론 없는 실행의 교집합.
-unresolved() {          # unresolved <필수목록> <결론없는목록> → 교집합
-    local req=$1 open=$2
-    [ -n "$req" ] && [ -n "$open" ] || return 0
-    printf '%s\n' "$open" | sort -u | while read -r n; do
+#   ★ **차집합이다, 교집합이 아니다**(§403). 필수 목록에서 결론 난 것을 뺀다.
+#     그러면 두 가지가 함께 남는다 — 결론 없는 실행(§282-1)과 **아예 없는 실행**.
+#   ★ 필수 목록을 못 읽으면 **아무것도 안 막는다.** 모르는 것을 근거로 멈추면
+#     룰셋이 없는 가지에서 영원히 기다린다.
+unsettled() {           # unsettled <필수목록> <결론난목록> → 차집합
+    local req=$1 done_=$2
+    [ -n "$req" ] || return 0
+    printf '%s\n' "$req" | sort -u | while read -r n; do
         [ -n "$n" ] || continue
-        printf '%s\n' "$req" | grep -qxF "$n" && printf '%s\n' "$n"
+        printf '%s\n' "$done_" | grep -qxF "$n" || printf '%s\n' "$n"
     done
 }
 
@@ -94,19 +110,21 @@ required_of() {         # required_of <REPO> <base가지> → 필수 검사 이�
               |.parameters.required_status_checks[].context]|.[]' 2>/dev/null
 }
 
-open_runs() {           # open_runs <REPO> <PR> → 결론이 없는 check-run 이름들
+#   ★ `생략`(skipped)도 결론이다 — 조건으로 건너뛴 작업은 GitHub 이 충족으로
+#     본다. 여기서 안 세면 건너뛰는 검사가 있는 가지가 영원히 기다린다.
+settled_runs() {        # settled_runs <REPO> <PR> → 결론이 **난** check-run 이름들
     local repo=$1 n=$2 sha
     sha=$(gh pr view "$n" -R "$repo" --json headRefOid --jq .headRefOid 2>/dev/null) || return 0
     [ -n "$sha" ] || return 0
     gh api "repos/$repo/commits/$sha/check-runs" --paginate \
-       --jq '.check_runs[]|select(.conclusion==null)|.name' 2>/dev/null
+       --jq '.check_runs[]|select(.conclusion!=null)|.name' 2>/dev/null
 }
 
 blocking() {            # blocking <REPO> <PR> → 아직 결론 없는 **필수** 검사
     local repo=$1 n=$2 base
     base=$(gh pr view "$n" -R "$repo" --json baseRefName --jq .baseRefName 2>/dev/null) || return 0
     [ -n "$base" ] || return 0
-    unresolved "$(required_of "$repo" "$base")" "$(open_runs "$repo" "$n")"
+    unsettled "$(required_of "$repo" "$base")" "$(settled_runs "$repo" "$n")"
 }
 
 # ★ 한 번 물은 결과를 어떻게 읽는가. **순수 함수** — 합성 입력으로 부를 수 있다.
@@ -158,7 +176,7 @@ wait_ci() {                     # wait_ci <PR> <REPO> → 0 · 1 · 2
     done
     printf '  ! PR #%s 검사가 %s초 안에 안 끝났다 — **빨간불이 아니라 모름이다.**\n' "$n" "$CI_WAIT_MAX"
     miss=$(blocking "$repo" "$n")
-    [ -n "$miss" ] && printf '    결론 없는 필수 검사: %s\n      같은 이름이 두 번 돈 것일 수 있다(push · pull_request).\n      한쪽을 다시 돌려라:  gh run rerun <id> -R %s\n' \
+    [ -n "$miss" ] && printf '    결론이 안 난 필수 검사: %s\n      셋 중 하나다 — 아직 도는 중 · 같은 이름이 두 번 돌아(push · pull_request) 한쪽이 안 끝났다 · **아예 안 생겼다.**\n      어느 쪽인지 보고 한쪽을 다시 돌려라:  gh pr checks <PR> -R %s\n' \
         "$(printf '%s' "$miss" | tr '\n' ' ')" "$repo"
     return 2
 }
@@ -178,15 +196,15 @@ selftest() {
         || bad+=("503 을 **빨강으로 읽는다** — §225-1 이 PR 을 지운 그 결함이다")
     ( verdict 1 "could not resolve host" ); [ $? = 2 ] || bad+=("이름 풀이 실패를 빨강으로 읽는다")
     unreadable "$red" && bad+=("평범한 빨강을 «못 읽음» 으로 읽는다 — 그러면 빨강이 통과한다")
-    # ★ §282-1. 필수 검사 ∩ 결론 없는 검사.
-    [ "$(unresolved $'contract-shared\nsecret-scan' $'contract-shared')" = "contract-shared" ] \
+    # ★ §282-1 · §403. 필수 − 결론 난 것.
+    [ "$(unsettled $'contract-shared\nsecret-scan' $'secret-scan')" = "contract-shared" ] \
         || bad+=("결론 없는 **필수** 검사를 안 잡는다 — 배치 D 를 세운 그 자리다")
-    [ -z "$(unresolved $'contract-shared' $'dry')" ] \
-        || bad+=("필수가 아닌 검사를 막는 것으로 본다 — 그러면 영원히 기다린다")
-    [ -z "$(unresolved "" $'contract-shared')" ] \
+    [ "$(unsettled $'contract-shared' "")" = "contract-shared" ] \
+        || bad+=("**아예 안 생긴** 필수 검사를 안 잡는다 — 봉인 PR #297 을 세운 그 자리다")
+    [ -z "$(unsettled $'contract-shared' $'contract-shared\ndry')" ] \
+        || bad+=("필수가 다 끝났는데 막는 것으로 본다 — 그러면 영원히 기다린다")
+    [ -z "$(unsettled "" $'contract-shared')" ] \
         || bad+=("필수 목록을 못 읽었는데 막는 것으로 본다 — 모르면 안 막는다")
-    [ -z "$(unresolved $'contract-shared' "")" ] \
-        || bad+=("결론 없는 것이 없는데 막는 것으로 본다")
     # ★ §335. **줄이 0개인 것은 빨강이 아니다.** 2026-09-30 에 배치 O 의 6단계가
     #   여기서 죽었다 — 푸시 직후 `gh pr checks` 가 1 로 나가며 줄을 0개 냈다.
     ( verdict 1 "no checks reported on the 'feat/x' branch" ); [ $? = 3 ] \
@@ -201,7 +219,7 @@ selftest() {
     if [ ${#bad[@]} -gt 0 ]; then
         printf '★ 자기검사 실패\n'; printf '  %s\n' "${bad[@]}"; return 1
     fi
-    printf '✓ ci_wait — 초록 · 대기 · 빨강 · 조회실패 · 시간초과 · 결론없는 필수검사 · **아직 안 뜬 검사**를 다 가른다\n'
+    printf '✓ ci_wait — 초록 · 대기 · 빨강 · 조회실패 · 시간초과 · 결론 안 난 필수검사(**없는 것까지**) · 아직 안 뜬 검사를 다 가른다\n'
 }
 
 case "${1:-}" in
