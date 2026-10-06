@@ -188,6 +188,32 @@ def test_fl_picks_only_this_batch(tmp_path):
     assert _pick(inbox) == ["0001-fix.patch"]
 
 
+@pytest.mark.skipif(not shutil.which("unzip"), reason="환경skip(도구) — unzip 이 없다(fl.sh 가 쓴다)")
+def test_fl_takes_the_contract_out_of_the_zip(tmp_path):
+    """★ 2026-10-06 실제 사고 (DECISIONS §408). `EXPECT` 를 zip 에서 **안 꺼냈다.**
+    4c 가 INBOX 바닥을 보는데, 평소 절차가 zip 을 INBOX 에 풀어서 **우연히**
+    거기 있었을 뿐이다. 「zip 하나만 두라」고 한 날 「계약 없는 배달」로 죽었다.
+    """
+    inbox = tmp_path / "in"
+    inbox.mkdir()
+    (inbox / "fire-lane-0001-fix.patch").write_text("From a\nSubject: ours\n", encoding="utf-8")
+    (inbox / "EXPECT").write_text("base.sha=deadbeef\npatches=1\n", encoding="utf-8")
+    _zip(inbox / "fire-lane-x.zip", inbox / "fire-lane-0001-fix.patch", inbox / "EXPECT")
+    (inbox / "EXPECT").unlink()          # ★ zip 만 남긴 상태가 그날의 INBOX 다
+    work = tmp_path / "work"
+    src = (T / "fl.sh").read_text(encoding="utf-8")
+    body = src.split("pick_patches() {", 1)[1].split("\n}\n", 1)[0]
+    sh = tmp_path / "run.sh"
+    sh.write_text("set -uo pipefail\ndie() { echo \"$*\"; exit 1; }\nD=; Z=\n"
+                  "pick_patches() {" + body + "\n}\n"
+                  f'pick_patches "{inbox}" "{work}"\n', encoding="utf-8")
+    r = subprocess.run(["bash", str(sh)], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (work / "EXPECT").exists(), (
+        "zip 안의 EXPECT 를 안 꺼냈다 — 4c 가 「계약 없는 배달」로 죽는다\n"
+        + r.stdout + r.stderr)
+
+
 def test_fl_without_zip_takes_only_prefixed_patches(tmp_path):
     """zip 없이 낱개로 풀린 패치는 **`fire-lane-` 접두사가 붙은 것만** 집는다.
 

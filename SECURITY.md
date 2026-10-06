@@ -43,7 +43,7 @@
 | 막는 것 | 어디서 |
 |---|---|
 | 커밋 전 비밀값 탐지 | `.gitleaks.toml` · `tools/commit_policy.py` (pre-commit · CI) |
-| **지금 작업 트리에 비밀값이 있나** | `tools/verify.sh` 「비밀값 — 작업 트리 전수」 (`gitleaks dir`) |
+| **지금 작업 트리에 비밀값이 있나** | `tools/verify.sh` 「비밀값 — 작업 트리 전수」 (`tools/treescan.sh` — 엔진 판은 그 파일의 `GITLEAKS_VER` 이 든다) |
 | 추적되는 파일의 UUID 꼴 값 (바이너리 없이) | `tests/test_gitleaks_allowlist.py` `UUID_IN_TRACKED = 0` |
 | 환경변수 선언 ↔ 실물 대조 · **읽는 자리 하나** | `tools/env_check.py` · `src/firelane/paths.py` |
 | 키를 품은 생성물이 트리에 남는 것 | `web/key.js` 는 2026-09-22 에 생성이 멈췄고 `deploy.yml` 이 **남아 있으면 실패**시킨다 · `tools/tidy.py` 가 지운다 |

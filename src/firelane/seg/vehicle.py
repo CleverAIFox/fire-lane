@@ -240,15 +240,50 @@ class Tuning:
     """
 
     unknown: float = 2.5           # 판정이 모른다 — 보수
-    unknown_lenient: float = 1.2   # 판정이 모른다 — 연결성 확인용
+    unknown_lenient: float = 1.8   # 판정이 모른다 — 연결성 확인용 (= tight 바닥)
     no_width: float = 3.0          # 판정 어휘조차 없다 — 보수
-    no_width_lenient: float = 1.5
+    no_width_lenient: float = 2.5  # 어휘조차 없다 — 모름보다 싸면 안 된다
     tight_margin_m: float = 0.5    # 이 여유 미만이면 서행으로 본다
     tight: float = 1.8
     avoid_uncertain: float = 2.0   # TS 전용(adjacency.ts). 여기서는 안 쓴다
 
 
 TUNING = Tuning()
+
+
+def unknown_is_never_cheaper(t: Tuning = TUNING) -> list[str]:
+    """**모르는 값은 아는 값보다 싸지 않다.** 어기면 어긴 자리를 돌려준다.
+
+    ★ 2026-10-06 (DECISIONS §407 · PLAN #147). 라우터의 「모름」 정책이 코드에
+      선언된 적이 없었다. 재 보니 **어기고 있었다** —
+
+          tight            1.8   폭을 **재서** 여유가 0.5m 미만인 구간
+          unknown_lenient  1.2   폭을 **모르는** 구간
+
+      연결성 모드에서 라우터는 **잰 구간보다 모르는 구간을 먼저 골랐다.**
+      §396-5 가 `verdictsim` 에서 이름 붙인 그 족이다 — 「모르는 값은 한 번도
+      유리하게 쓰이지 않는다」. 같은 규율이 라우터에는 안 걸려 있었다.
+
+    ★ 바닥은 **지어낸 수가 아니다.** 이미 표에 있는 값을 쓴다 —
+      모름은 「잰 것 중 제일 비싼 것」(`tight`)보다 싸지 않고, 어휘조차 없는
+      쪽은 「모름」(`unknown`)보다 싸지 않다. 새 임의 상수를 안 만든다.
+
+    ★ 막는 것과 비싸게 치는 것은 다르다. 이 규율은 **순서**만 묶는다 —
+      모름을 `inf` 로 만들면 그래프가 끊기고 경로가 아예 안 나온다.
+    """
+    bad: list[str] = []
+    if t.unknown_lenient < t.tight:
+        bad.append(f"unknown_lenient {t.unknown_lenient} < tight {t.tight} — "
+                   "모르는 구간이 잰 구간보다 싸다")
+    if t.unknown < t.tight:
+        bad.append(f"unknown {t.unknown} < tight {t.tight}")
+    if t.no_width_lenient < t.unknown_lenient:
+        bad.append(f"no_width_lenient {t.no_width_lenient} < "
+                   f"unknown_lenient {t.unknown_lenient} — "
+                   "어휘조차 없는 쪽이 모름보다 싸다")
+    if t.no_width < t.unknown:
+        bad.append(f"no_width {t.no_width} < unknown {t.unknown}")
+    return bad
 
 
 def edge_cost(length_m: float,

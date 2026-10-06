@@ -38,6 +38,8 @@ data/processed/_lineage.json
 
 # ── 작업 잔해 ──────────────────────────────────────────────
 .work/
+# 박힌 gitleaks 엔진. `tools/treescan.sh` 가 스스로 깐다 (DECISIONS §406)
+.cache/
 data/desk/
 # ★ tools/jijeok_review.py 가 만드는 대조 페이지. 생성물이라 커밋하지 않는다.
 web/review.html
