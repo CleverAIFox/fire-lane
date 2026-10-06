@@ -41,6 +41,7 @@ import sys
 from pathlib import Path
 
 # 대장 조회기는 하나다(firelane.ledger.globs).
+from firelane import lake as _lake
 from firelane import ledger as _led
 from firelane import providers
 from firelane.paths import RAW
@@ -326,13 +327,15 @@ RULES: list[tuple[str, str, str]] = [
 #
 #   대장에서 유도한다. 대장의 `file` 이 정본이고, 그것은 개명과 함께 움직인다.
 def _required() -> list[str]:
+    """대장이 요구하는 실물 파일 목록. **삼키지 않고 비면 터진다**(§420-7)."""
     import yaml
 
     from firelane.paths import ROOT as _R
+    src = _R / "sources.yaml"
     try:
-        d = yaml.safe_load((_R / "sources.yaml").read_text(encoding="utf-8")) or {}
-    except OSError:
-        return []
+        d = yaml.safe_load(src.read_text(encoding="utf-8")) or {}
+    except OSError as e:
+        raise RuntimeError(f"대장을 못 읽었다 — {src} ({e}) (§420-7)") from e
     out = []
     for e in (d.get("datasets") or {}).values():
         if e.get("kind") in (None, "raw_only"):
@@ -348,6 +351,8 @@ def _required() -> list[str]:
             if any(c in pat for c in "*?["):
                 continue
             out.append(pat)
+    if not out:
+        raise RuntimeError("필수 파일이 0건이다 — 수집이 죽었다(§420-7)")
     return sorted(set(out))
 
 
@@ -459,7 +464,7 @@ def _entry_for(rel: str) -> dict | None:
     return entry_of(rel)[1] or None
 
 
-def main():
+def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("src", nargs="?", help="다운로드 폴더")
     ap.add_argument("--move", action="store_true", help="복사 대신 이동")
@@ -471,7 +476,7 @@ def main():
     src = Path(a.src).expanduser() if a.src else find_downloads()
     if not src or not src.is_dir():
         print("다운로드 폴더를 찾지 못했다. 경로를 직접 넘길 것")
-        return
+        return 2
     print(f"원본  {src}")
     print(f"대상  {RAW}\n")
 
@@ -565,6 +570,7 @@ def main():
     unmatched = [f.name for f in files
                  if not any(f.name == o for o, _, _ in done)
                  and not any(f.name == o for o, _ in skip)]
+    stray: list[str] = []          # ★ `if` 밖이다 — 아래 종료코드가 읽는다
     if unmatched:
         # ★ 2026-09-17 (DECISIONS §180). 종전에는 landing 보류분까지 "규칙에 없는 파일" 로 냈다 —
         #   처분 목록(`landing_disposition`)을 안 읽어서, 사유가 적힌 파일과 정체 모를 파일이 한 줄에 섞였다.
@@ -576,7 +582,7 @@ def main():
         known = {u: next(((pat, act, why) for pat, act, why in disp if fnmatch.fnmatchcase(u, pat)), None)
                  for u in unmatched}
         held = [(u, d) for u, d in known.items() if d]
-        stray = [u for u, d in known.items() if not d]
+        stray[:] = [u for u, d in known.items() if not d]
         if held:
             print(f"\n  처분이 적힌 파일 {len(held)}건 (건너뜀 — landing_disposition)")
             for u, (_, act, why) in held[:12]:
@@ -589,25 +595,31 @@ def main():
     if a.in_place:
         print("\n제자리 정리 완료. 파일명·확장자가 규칙에 맞다.")
         print(f"작업용 사본을 만들려면:  python -m firelane.normalize_raw {src}")
-        return
+        rc, say = _lake.raw_verdict(stray, [])
+        for s in say:
+            print(f"\n★ {s}")
+        return rc
 
     print("\n[필수 파일 점검]")
     miss = []
-    for r in _required():
+    req = _required()
+    for r in req:
         ok = (RAW / r).exists()
         print(f"  {'OK  ' if ok else '★없음'} {r}")
         if not ok:
             miss.append(r)
-    if miss:
-        print(f"\n  {len(miss)}건 부족. sources.yaml 의 url 로 재취득할 것")
-    else:
-        print("\n  전부 확보. python -m firelane.ingest 로 진행")
+    rc, say = _lake.raw_verdict(stray, miss)
+    if not miss:        # ★ 몇 건을 봤는지 적는다 — 0건 점검과 구별이 안 된다
+        print(f"\n  필수 {len(req)}건 전부 확보. python -m firelane.ingest 로 진행")
+    for s in say:
+        print(f"\n★ {s}")
 
     if RAW.is_dir():
         n = sum(1 for _ in RAW.rglob("*") if _.is_file())
         sz = sum(f.stat().st_size for f in RAW.rglob("*") if f.is_file()) / 1e9
         print(f"\ndata/raw  {n}개 파일 · {sz:.2f} GB")
+    return rc
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -437,7 +437,7 @@ def test_every_read_is_produced_by_an_earlier_step():
     지난 실행의 산출물을 읽어 조용히 돈다. 2026-08-17 의 1093 이 그것이었다.
     """
     m = _steps()
-    made = [m.RAW]
+    made = [m.RAW, *m.REPO_INPUTS]
     for s in m.STEPS:
         for r in s.consumes:
             if (s.name, r.name) in BACKWARD:
@@ -447,6 +447,30 @@ def test_every_read_is_produced_by_an_earlier_step():
                 "  선언이 틀렸거나 STEPS 순서가 틀렸다.\n"
                 "  알려진 후진 의존이면 BACKWARD 에 **사유와 해소 조건**을 적어라.")
         made += list(s.produces)
+
+
+def test_repo_inputs_are_tracked_and_actually_read():
+    """`REPO_INPUTS` 는 **양방향**이다 — 실물이 있고, 누군가 읽어야 한다.
+
+    ★ 2026-10-06 (§420-4). 이 목록은 「앞 단계가 안 만든다」를 면제한다. 면제는
+      반드시 역방향 검사를 끼고 산다(§69) — 아니면 안 읽는 파일 한 줄이 영구히
+      남아 **다음에 진짜 구멍이 생겼을 때 같은 이름으로 조용히 면제된다.**
+      `BACKWARD` 가 `test_backward_entries_are_still_real` 을 끼고 사는 것과 같다.
+    """
+    import subprocess
+    m = _steps()
+    assert m.REPO_INPUTS, "REPO_INPUTS 가 비었다 — 빈 목록이면 이 검사가 아무것도 안 든다"
+    read = {r for s in m.STEPS for r in s.consumes}
+    for q in m.REPO_INPUTS:
+        assert q.is_file(), f"{q} 가 없다 — REPO_INPUTS 는 실물을 든다"
+        rel = q.relative_to(m.ROOT).as_posix()
+        r = subprocess.run(["git", "ls-files", "--error-unmatch", rel],
+                           cwd=m.ROOT, capture_output=True, text=True, timeout=60)
+        assert r.returncode == 0, (
+            f"{rel} 이 git 추적 파일이 아니다 — 생성물이면 그것을 내는 단계를 "
+            "선언해야 하고 REPO_INPUTS 가 아니다")
+        assert any(m.matches(x, q) for x in read), (
+            f"{rel} 을 어느 단계도 안 읽는다 — 목록이 낡았다. 그 줄을 지워라")
 
 
 def test_backward_entries_are_still_real():
@@ -2624,3 +2648,65 @@ def test_sheet_pick_refuses_to_guess_between_equal_candidates(tmp_path, monkeypa
     monkeypatch.setattr(ngii1k, "WORK", mixed / "_work")
     got = ngii1k.collect(mixed)
     assert got["356161916"][1] == "SHP", "혼합에서 SHP 우선이 깨졌다"
+
+
+# ── §420-5 · §420-7. **봤는데 안 고친 것들의 판별식** ────────────
+# ★ 2026-10-06. 이 셋이 왜 여기 있나 — §420 이 결함 넷을 **보고 기록만 했다**.
+#   「고치는 일은 PLAN 이 든다」고 적었는데 **PLAN 에 그 행이 없었다.** 들지 않은
+#   빚은 영영 안 갚는다. 고치면서 판별식을 같이 꺼냈다: 실물로만 재면 「지금
+#   초록인가」밖에 못 묻고, 상한을 1000 으로 올려도 통과한다(§17-0).
+
+
+def test_web_size_verdict_bites_at_the_boundary():
+    """상한이 **경계에서** 운다. 그리고 상한 자체가 정본에서 온다."""
+    m = _steps()
+    assert m.web_size_verdict(m.WEB_MAX_MB - 0.1) == [], "상한 밑인데 운다"
+    over = m.web_size_verdict(m.WEB_MAX_MB)
+    assert len(over) == 1, "경계에서 안 문다 — `>` 와 `>=` 를 섞었다"
+    assert str(m.WEB_MAX_MB) in over[0], "할 말에 상한이 없다 — 사람이 무엇을 넘었는지 모른다"
+    assert m.web_size_verdict(m.WEB_MAX_MB * 10), "한참 넘었는데 안 문다"
+
+
+def test_verify_returns_what_it_found_instead_of_printing_it():
+    """`verify()` 가 **반환형을 갖는다.** 종전에는 상태를 문자열로만 냈다(§415 와 같은 족)."""
+    m = _steps()
+    assert m.verify.__annotations__.get("return") == "list[str]", (
+        "`verify()` 가 반환형을 안 적었다 — 상태를 문자열로 내면 호출부가 버린다")
+    src = (ROOT / "src" / "firelane" / "pipeline.py").read_text(encoding="utf-8")
+    assert "bad = verify() + verify_ingest() + verify_schema()" in src, (
+        "`main()` 이 `verify()` 의 결과를 `bad` 에 안 더한다 — "
+        "반환형만 있고 아무도 안 읽으면 종전과 같다")
+
+
+def test_raw_verdict_splits_on_whether_something_was_declared():
+    """선언이 없는 것만 실패다. **결손은 상태이지 결함이 아니다**(§424)."""
+    # 집은 `firelane.lake` 다 — 처분 선언을 읽는 `disposition()` 바로 위에 산다(§426-4)
+    from firelane.lake import raw_verdict
+
+    assert raw_verdict([], []) == (0, []), "아무 일도 없는데 운다"
+    rc, say = raw_verdict([], ["safety_x.csv"])
+    assert rc == 0 and say, "결손을 실패로 올렸다 — §424 가 상태라고 정했다"
+    rc, say = raw_verdict(["모르는파일.csv"], [])
+    assert rc == 1 and say, "선언 없는 파일이 종료코드를 안 가른다 — 3주를 잃은 그 구조다"
+    rc, _ = raw_verdict(["a"], ["b"])
+    assert rc == 1, "둘이 같이 있으면 실패가 이긴다"
+    # ★ `normalize_raw` 가 그 집을 **부르는가** — 제 자리에 사본을 두면 갈린다
+    src = (ROOT / "src" / "firelane" / "normalize_raw.py").read_text(encoding="utf-8")
+    assert "_lake.raw_verdict(" in src, "부르지 않는다 — 판정이 두 집이 됐다"
+    assert "def raw_verdict" not in src, "사본을 다시 만들었다"
+
+
+def test_required_does_not_swallow_an_unreadable_ledger():
+    """대장을 못 읽으면 **터진다.** 빈 목록은 「전부 확보」를 통과시킨다(§420-7)."""
+    import importlib.util
+    import sys as _sys
+    spec = importlib.util.spec_from_file_location(
+        "normraw_t2", ROOT / "src" / "firelane" / "normalize_raw.py")
+    nr = importlib.util.module_from_spec(spec)
+    _sys.modules[spec.name] = nr
+    spec.loader.exec_module(nr)
+
+    src = (ROOT / "src" / "firelane" / "normalize_raw.py").read_text(encoding="utf-8")
+    assert "except OSError:\n        return []" not in src, (
+        "대장 읽기 실패를 삼킨다 — 아무것도 안 본 상태가 「전부 확보」로 보고된다")
+    assert nr._required(), "필수 목록이 비었다 — 수집이 죽었으면 터져야 한다"
