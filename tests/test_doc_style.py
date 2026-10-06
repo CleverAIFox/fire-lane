@@ -48,7 +48,8 @@ DOCS = [ROOT / "README.md", ROOT / "docs/MASTER.md",
         ROOT / ".github/pull_request_template.md"]
 NUMBERED_DOCS = [ROOT / "docs/MASTER.md", ROOT / "docs/PLAN.md",
                  ROOT / "docs/DECISIONS.md"]
-ALLOW = "<!--voice-ok-->"
+#: 접두다 — 사유를 붙인 `<!--voice-ok 사유-->` 도 받는다(DECISIONS §399-5).
+ALLOW = "<!--voice-ok"
 
 
 def _lines(p: Path) -> list[tuple[int, str]]:
@@ -147,7 +148,7 @@ def test_docs_are_plain_third_person():
         "MASTER §0 — 평어체 3인칭. 경어·명령형·1인칭을 쓰지 않는다.\n"
         f"위반 {len(bad)}건\n" + "\n".join(bad[:40])
         + ("\n  …" if len(bad) > 40 else "")
-        + f"\n\n의도적 인용이면 줄 끝에 {ALLOW} 를 붙인다.")
+        + f"\n\n의도적 인용이면 줄 끝에 {ALLOW} 사유--> 를 붙인다.")
 
 
 # 18-3b 처럼 하위 절에 글자를 붙이는 표기를 허용한다(§18-1a · §18-2a).

@@ -76,6 +76,7 @@ PARAM LAKE_ONLY · FORBIDDEN · FAIL_LINE (전부 `delivercheck`)
 
       **저장소 안에서 `pack` 을 돌리지 않는다** — 밑동을 제가 정하는 셈이라
       예습이 거짓이 된다. `origin` 에서 읽는 것이 ① 의 뜻이다.
+부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
 """
 from __future__ import annotations
 

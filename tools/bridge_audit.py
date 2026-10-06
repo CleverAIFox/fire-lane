@@ -29,6 +29,7 @@ tools/bridge_audit.py — 끊기면 뒤가 통째로 막히는 구간을 찾는�
 IN    web/data/segments.geojson · src/firelane/seg/params.py (STATIONS · NODE_TOL)
 OUT   stdout (표) · --csv 로 파일
 PARAM --min-lost 5 · --csv
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

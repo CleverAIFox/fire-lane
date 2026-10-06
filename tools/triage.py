@@ -47,6 +47,7 @@ zip·tif·hwp 는 sha 와 크기만 본다. 열지 않는다.
 IN    sources.yaml · data/_acquire.json · $FIRE_LANE_DATA · Downloads
 OUT   없음
 PARAM 없음
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

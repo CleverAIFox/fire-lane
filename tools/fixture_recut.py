@@ -38,6 +38,7 @@ PARAM CUTS
       원본의 참은 파이프라인 계약 시험과 `golden` 이 든다. 그리고 여기서 뗀
       사본을 **쓰는 쪽의 규칙**(범위 판정)도 안 본다 — `tests/test_dest_scope.py`
       소관이다.
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

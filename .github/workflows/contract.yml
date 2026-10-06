@@ -306,6 +306,12 @@ jobs:
       - name: ★ 강제자 범위 선언 (메타 가드)
         run: uv run python tools/scopedecl.py
 
+      # ★ 2026-10-05 (DECISIONS §398). 도구가 **왜 있는지**를 가른다. 관문은
+      #   도출하고(verify.sh · 이 파일이 부르는가) 나머지만 머리말에 적는다.
+      #   추적 파일만 읽으므로 레이크 없이 돈다.
+      - name: ★ 도구 부류 (메타 가드)
+        run: uv run python tools/toolclass.py
+
       # ★ 2026-10-02 (DECISIONS §352). 도구가 제 이름·설명을 제 머리말에 대는가.
       #   목록의 정본이 문서에서 도구 자신으로 옮겨진 자리다.
       - name: ★ 도구 색인 (정본은 도구 자신)

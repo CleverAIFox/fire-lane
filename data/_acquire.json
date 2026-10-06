@@ -319,7 +319,23 @@
   "juso/juso_navijibun_jngj-dongmyeong_20260831.txt": {
    "sha256": "2ec3b3efd7dfe043b77731306760538264356555b87efd019defe73a55519aaf",
    "bytes": 224623
+  },
+  "moleg/moleg_hydrantdevice_rule_kr_20220523.pdf": {
+   "sha256": "198ff0f8eeef7ad2ffbe9a9685917945c583d040756a7a2b61336e95161739ab",
+   "bytes": 206272
+  },
+  "moleg/moleg_roadtraffic_act_kr_20260701_a29.pdf": {
+   "sha256": "8270f09d7c2e7831c4423e0a06bc45ee21eafae8effc9461437665284ada9e04",
+   "bytes": 119128
+  },
+  "moleg/moleg_roadtraffic_act_kr_20260701_a30.pdf": {
+   "sha256": "0ac1b3aa68d7013a7fff72a476e392bf30b7aa048f4a846b7dc2580ca0f92767",
+   "bytes": 130017
+  },
+  "nfa/nfa_rapidresponse_kr_20250429.pdf": {
+   "sha256": "e21395c9b4496ef919ed402ad07aed1d00ec5320a8bc1c7a3eed5c3c8d46a1b0",
+   "bytes": 1553062
   }
  },
- "at": "2026-09-18T18:23:41+09:00"
+ "at": "2026-10-05T23:23:03+09:00"
 }

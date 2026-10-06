@@ -332,7 +332,7 @@ uv run python tools/pull_data.py --yes --all 위 + 파이프라인 + golden
 ```
 
 ★ 이 절이 계층 표 · 게이트 · 제공기관 폴더를 따로 들고 있었고, 제공기관을
-**12폴더라 적고 이름은 열 개만** 나열하고 있었다(`mois` · `gjbg` 누락).
+**폴더 수를 적고 이름은 열 개만** 나열하고 있었다(`mois` · `gjbg` 누락).
 사본은 이렇게 낡는다(DECISIONS §162-4).
 
 강제자 없음 — 사유: 입구 명령이다. 게이트 강제자는 MASTER §18-11 이 든다
@@ -501,7 +501,7 @@ web/
 도달 불가    447         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       58,308.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 72종 · `retired` 4종
+대장        `datasets` 75종 · `retired` 4종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
             edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)

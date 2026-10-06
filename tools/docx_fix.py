@@ -21,6 +21,7 @@ PARAM --write 없이는 아무것도 쓰지 않는다
 
 ★ **2026-09-30 (DECISIONS §333). 고친 뒤 스스로 대조한다** — `--write` 가
   끝나면 `unreachable()` 이 찾는 쪽을 직접 부른다. 사유는 그 절이 든다.
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 

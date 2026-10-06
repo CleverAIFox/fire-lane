@@ -585,6 +585,16 @@ def probe_dead_gate(root: Path = ROOT) -> None:
 #   적는 순간 세어지고 `tests/test_deadcheck_probes.py` 가 죽은 면제를 지운다.
 _PROD_ONLY = "tests 는 **제품 코드가 아니다**"
 EXEMPT_SCOPE = {
+    # ★ 2026-10-05 (DECISIONS §398-4 · §398-2). 둘 다 **묻는 대상이 그 디렉터리
+    #   자체**다. 넓히면 묻는 것이 달라진다.
+    "tools/mutate.py::catchers":
+        "붙잡이는 **시험**이다 — 도구를 흔들었을 때 우는 자리를 찾는 것이고, "
+        "`src` · `tools` 는 흔드는 **대상**이지 붙잡이가 아니다. 과녁은 바로 "
+        "위 `targets()` 가 `toolclass` 에서 도출한다",
+    "tools/toolclass.py::tools":
+        "묻는 것이 「**도구**가 어느 부류인가」다. `src` 는 꾸러미이고 `tests` 는 "
+        "강제자라 부류 어휘(관문·조사·절차·생산)가 성립하지 않는다 — 넓히면 "
+        "수가 커지고 뜻이 사라진다",
     # ★ 2026-10-03 (DECISIONS §372-5). 셋 다 **`src/firelane` 꾸러미 자신의
     #   모양**을 재는 자리다. `tools/` · `tests/` 를 더하면 재는 것이 달라진다 —
     #   폐포도 결합도도 「이 꾸러미가 무엇을 아는가」이고, 도구와 시험이 그

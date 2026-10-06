@@ -41,7 +41,6 @@ import { useShare } from "./app/useShare";
 import { useOpsUplink, type UnitSnapshot } from "./app/useOpsUplink";
 import { compareKind, compareMarks, sameRoute } from "./domain/compare";
 import { cumulative, pointAlong } from "./domain/geo";
-import { preparePois, searchPois, type PoiHit } from "./domain/search";
 import { requiredWidth } from "./domain/vehicle";
 import { STATUS, deriveStatus, type StatusKey } from "./domain/status";
 import type { LngLat } from "./domain/geo";
@@ -55,12 +54,10 @@ import { StatusCard } from "./ui/StatusCard";
 import { ShareChip } from "./ui/ShareChip";
 import { Legend } from "./ui/Legend";
 import { DevBar } from "./ui/DevBar";
-import { SearchPanel } from "./ui/SearchPanel";
-import { canPickDestination, editHands, readHandoff } from "./domain/handoff";
+import { readHandoff, routeOf } from "./domain/handoff";
 import { PlanHeader, TimeBox } from "./ui/Sheet";
-import { DispatchPanel, type StationOpt } from "./ui/DispatchPanel";
-import { VehiclePicker } from "./ui/VehiclePicker";
-import { RouteCompare } from "./ui/RouteCompare";
+import { RouteBrief } from "./ui/RouteCompare";
+import { WaitPanel } from "./ui/WaitPanel";
 import { routeOption } from "./ui/routeOption";
 import { Center, SMOKE_CSS, shell, toast, vehChip } from "./ui/appShell";
 import { BottleneckPanel } from "./ui/BottleneckPanel";
@@ -80,8 +77,14 @@ const BLOCKED_SHOW_MS = 1800;
 
 interface Incident { point: LngLat; label: string; sub: string | null; at: Date }
 
+/**
+ * 출발 센터 한 줄. ★ 2026-10-05 (§400) `ui/DispatchPanel` 에 있던 것을 옮겼다 —
+ * 그 판이 지워졌고 쓰는 곳은 여기 하나다.
+ */
+interface StationOpt { id: string; name: string; addr: string }
+
 export default function App() {
-  const s = useScreens("dispatch");
+  const s = useScreens("wait");
   const fleet = useFleet();
   const n = useNavigation(fleet.spec);
   const now = useNow();
@@ -90,13 +93,11 @@ export default function App() {
   const up = useOpsUplink(snap);
   const share = useShare(up);
 
-  const [choice, setChoice] = useState<"safe" | "fast">("safe");
   const [voice, setVoice] = useState(true);
   const [firstPerson, setFirstPerson] = useState(true);
   const [tint, setTint] = useState(false);
   const [cmd, setCmd] = useState<{ n: number; kind: "in" | "out" | "north" | "focus"; at?: LngLat } | null>(null);
   const [injected, setInjected] = useState<StatusKey | null>(null);
-  const [armed, setArmed] = useState<"origin" | "dest" | null>(null);
   const [stationId, setStationId] = useState<string | null>(null);
   const [incident, setIncident] = useState<Incident | null>(null);
   const [bnOpen, setBnOpen] = useState(false);
@@ -115,8 +116,9 @@ export default function App() {
   //   왔는가」를 물으려면 그 넷을 다 봐야 했고, 그래서 아무도 안 물었다.
   const hand = useMemo(() => readHandoff(location.search), []);
   const dev = hand.dev;
-  /** 관제가 지령을 줬으면 기사는 목적지를 **안 고른다**(§382-1). */
-  const canPick = canPickDestination(hand);
+  // ★ 경로는 **관제가 정한다.** 기사 손이 없으므로 상태도 없다(§400).
+  const order = routeOf(hand);
+  const choice = order.mode;
 
   // ★ `?demo=1` — 발표용. 경로 주행으로 바꾼다. 폐루프 검수는 `gpsSim` 이
   //   정본이고(§213-3) 이것은 **보여주기 전용**이라 기본값을 안 바꾼다.
@@ -158,7 +160,11 @@ export default function App() {
     n.setOriginAt(station.point[0], station.point[1]);
   }, [station, n.origin, n.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── 사건 위치 — URL 로 받을 수 있다 (접수 시스템이 붙을 자리) ─────
+  // ── 사건 위치 — **지령으로만 온다** (§400) ────────────────────
+  // ★ 2026-10-05. 종전 주석은 「URL 로 **받을 수 있다**」였고 검색·지도
+  //   선택이라는 다른 길이 둘 더 있었다. 그 둘을 지웠으므로 이것이
+  //   유일한 길이다 — `n.setDestAt` 을 부르는 자리가 파일에 하나뿐이고,
+  //   시험이 그 수를 센다.
   useEffect(() => {
     if (!n.data || incident || !hand.incident) return;
     const [lon, lat] = hand.incident;
@@ -180,35 +186,26 @@ export default function App() {
     if (hit) { setStationId(hit.id); n.setOriginAt(hit.point[0], hit.point[1]); }
   }, [stations.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const pois = useMemo(() => (n.data ? preparePois(n.data.dest) : []), [n.data]);
-  const query = useCallback((q: string) => searchPois(pois, q), [pois]);
-  const verdictOf = useCallback((h: PoiHit) => {
-    const r = n.snapAt(h.point[0], h.point[1]);
-    if (!r) return null;
-    const st = style[r.verdict];
-    return st ? { color: st.color, label: st.label } : null;
-  }, [n, style]);
-
-  const onMapClick = useCallback((lon: number, lat: number) => {
-    // ★ 지령이 왔으면 기사가 목적지를 **못 찍는다**(§382-1). 화면 셋이 전부
-    //   `canPick` 하나를 본다 — 각자 판단하면 갈린다.
-    if (s.screen !== "dispatch" || armed !== "dest" || !canPick) return;
-    const r = n.snapAt(lon, lat);
-    if (!r) { n.setDestAt(lon, lat); return; }   // 스코프 밖 안내는 훅이 낸다
-    if (n.setDestAt(lon, lat)) {
-      setIncident({ point: [lon, lat], label: r.seg_label ?? "지도에서 고른 지점",
-                    sub: "지도 선택", at: new Date() });
-      setArmed(null);
-    }
-  }, [s.screen, armed, n, canPick]);
+  // ★ 2026-10-05 (§400). **운전석에서 지도를 찍어도 아무 일도 안 난다.**
+  //   종전에는 `armed === "dest"` 일 때 목적지가 바뀌었다. 목적지는 관제가
+  //   정하므로 그 손을 들어냈다 — 핸들러를 묶는 대신 **없앴다.**
+  const onMapClick = useCallback(() => {}, []);
 
   // ── 01 → 02: 차량을 고른 **뒤** 렌더에서 경로를 낸다 ──────────────
   // ★ 고른 차의 제원이 인접리스트에 반영되는 것은 다음 렌더다. 같은 클릭
   //   안에서 부르면 옛 차의 경로가 난다.
   useEffect(() => {
     if (!wantRoute) return;
-    if (n.computeRoutes()) { setChoice("safe"); s.open("compare"); }
+    if (n.computeRoutes()) s.open("brief");
   }, [wantRoute]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ★ 2026-10-05 (§400). 종전에는 **차량 화면의 확인 버튼**이 이 수를 올렸다.
+  //   그 화면이 없어졌으므로 **지령이 다 차면 기계가 올린다** — 사건 · 출발 ·
+  //   차량 셋이 서면 경로를 내고 설명 화면으로 간다. 기사가 누를 것은 없다.
+  useEffect(() => {
+    if (s.screen !== "wait" || !incident || !n.origin || !fleet.spec) return;
+    setWantRoute((x) => x + 1);
+  }, [s.screen, incident, n.origin, fleet.spec]);
 
   // ── 경로 비교 카드 ────────────────────────────────────────────
   // ★ 2026-09-23 (§220). 「같다」 를 여기서 판단해 **화면에 그대로 넘긴다.** 종전엔
@@ -375,7 +372,7 @@ export default function App() {
   };
   // 02 — 공통 구간 · 확인 필요 표지
   const notes: MapNote[] = useMemo(() => {
-    if (s.screen !== "compare" || !n.plan || !n.fastPlan || sameRoute(n.plan, n.fastPlan)) return [];
+    if (s.screen !== "brief" || !n.plan || !n.fastPlan || sameRoute(n.plan, n.fastPlan)) return [];
     const base = choice === "safe" ? n.plan : n.fastPlan;
     const other = choice === "safe" ? n.fastPlan : n.plan;
     const m = compareMarks(base, other);
@@ -411,8 +408,8 @@ export default function App() {
     if (blockTimer.current) { clearTimeout(blockTimer.current); blockTimer.current = 0; }
     n.reset(); share.reset();
     setIncident(null); setInjected(null); setBnOpen(false); setBnForced(null);
-    setDetourAt(null); setBlockedPending(false); setChoice("safe");
-    s.open("dispatch");
+    setDetourAt(null); setBlockedPending(false);
+    s.open("wait");
   };
 
   if (n.fatal) return <Center>★ {n.fatal}</Center>;
@@ -425,7 +422,7 @@ export default function App() {
     <div style={shell}>
       <style>{"@keyframes flspin{to{transform:rotate(360deg)}}" + SMOKE_CSS}</style>
       <NaviMap view={n.data.view} terrain={n.data.graph.terrain} live={n.live}
-               plan={n.plan} altPlan={s.screen === "compare" ? (compare?.fast ? otherPlan(n, choice) : null) : null}
+               plan={n.plan} altPlan={s.screen === "brief" ? (compare?.fast ? otherPlan(n, choice) : null) : null}
                style={style} look={st.route && !s.planning ? st.route : "solid"}
                blockedEdges={blockedEdges} marks={marks} finalLeg={finalLeg}
                mode={s.planning ? "plan" : "drive"} firstPerson={firstPerson}
@@ -433,66 +430,31 @@ export default function App() {
                onMapClick={onMapClick}
                onUserPan={() => setFirstPerson(false)} />
 
-      {/* ══ 00 · 01 · 02 — 출동 전 ══════════════════════════════ */}
+      {/* ══ 대기 · 설명 — 출동 전 ═══════════════════════════════ */}
       {s.planning && (
         <PlanHeader
-          title={s.screen === "vehicle" ? "출동 차량 선택"
-            : s.screen === "compare" ? "경로 비교" : "출동 정보 입력"}
-          right={s.screen === "compare"
+          title={s.screen === "brief" ? "출동 경로" : "출동 대기"}
+          right={s.screen === "brief"
             ? <span style={vehChip}><Truck /> {vehicleKind}</span>
             : <TimeBox now={nowText} incident={incidentText} />} />
       )}
 
-      {(s.screen === "dispatch" || s.screen === "search") && (
-        <DispatchPanel station={station} stations={stations}
-          incidentLabel={incident?.label ?? null} incidentSub={incident?.sub ?? null}
-          incidentAt={incidentText}
-          armed={armed}
-          // ★ 2026-10-04 (§393). 넷을 **한 묶음으로** 넘긴다. 종전에는 핸들러마다
-          //   `canPick ? f : () => {}` 를 달았고, `onSwap` 에는 그것조차 없었다.
-          //   `null` 이면 판이 버튼을 안 그린다 — 그려 놓고 묶는 모양이 없다.
-          edit={editHands(hand, {
-            onStation: (id: string) => {
-              setStationId(id);
-              const x = stations.find((y) => y.id === id);
-              if (x) n.setOriginAt(x.point[0], x.point[1]);
-            },
-            onArm: setArmed,
-            onSearch: () => s.open("search"),
-            onSwap: () => n.swap(),
-          })}
-          canNext={!!incident && !!n.origin}
-          onNext={() => s.open("vehicle")} />
+      {s.screen === "wait" && (
+        <WaitPanel station={station?.name ?? null}
+                   vehicle={fleet.fleet ? vehicleKind : null}
+                   incident={incident?.label ?? null} />
       )}
 
-      {s.screen === "search" && canPick && (
-        <SearchPanel open onOpen={() => {}} onClose={() => s.open("dispatch")}
-                     onQuery={query} verdictOf={verdictOf}
-                     onPick={(h) => {
-                       if (n.setDestAt(h.point[0], h.point[1])) {
-                         setIncident({ point: h.point, label: h.name, sub: h.addr || null, at: new Date() });
-                       }
-                       s.open("dispatch");
-                     }} />
+      {s.screen === "brief" && compare && (
+        <RouteBrief safe={compare.safe} fast={compare.fast} same={compare.same}
+                    chosen={choice} fromOrder={order.fromOrder}
+                    onConfirm={() => {
+                      n.choose(choice);
+                      n.start(); setFirstPerson(true);
+                      s.open("drive");
+                    }} />
       )}
 
-      {s.screen === "vehicle" && fleet.fleet && (
-        <VehiclePicker vehicles={fleet.fleet.vehicles}
-                       selected={fleet.vehicleId ?? fleet.fleet.default}
-                       onSelect={fleet.select}
-                       onConfirm={() => setWantRoute((x) => x + 1)} />
-      )}
-
-      {s.screen === "compare" && compare && (
-        <RouteCompare safe={compare.safe} fast={compare.fast} same={compare.same}
-                      selected={choice} onSelect={setChoice}
-                      onChangeVehicle={fleet.fleet ? () => s.open("vehicle") : undefined}
-                      onConfirm={() => {
-                        n.choose(choice);
-                        n.start(); setFirstPerson(true);
-                        s.open("drive");
-                      }} />
-      )}
 
       {/* ══ 03 ~ 23 — 주행 ══════════════════════════════════════ */}
       {!s.planning && hud && (
@@ -512,10 +474,10 @@ export default function App() {
                   injected={injected != null}
                   voiceOn={v.available ? voice : null}
                   onToggleVoice={() => setVoice((x) => !x)}
-                  onSwitchRoute={n.fastPlan ? () => {
-                    n.choose("fast");   // plan ↔ fastPlan 을 맞바꾼다
-                    setChoice((c) => (c === "safe" ? "fast" : "safe"));
-                  } : undefined} />
+                  /* ★ 2026-10-05 (§400). 「경로 전환」을 **지웠다.** 주행 중에
+                     기사가 경로를 바꾸면 그 순간 수동이 아니다 — 바꾸는 것은
+                     관제가 새 지령을 보내는 것이다. */
+                  onSwitchRoute={undefined} />
           <MapControls onCompass={() => setCmd((c) => ({ n: (c?.n ?? 0) + 1, kind: "north" }))}
                        onLocate={() => setFirstPerson(true)}
                        onZoomIn={() => setCmd((c) => ({ n: (c?.n ?? 0) + 1, kind: "in" }))}
@@ -547,8 +509,8 @@ export default function App() {
       )}
 
       {notice && <div style={toast}>{notice}</div>}
-      {s.screen === "vehicle" && n.noRoute && (
-        <div style={toast}>{vehicleKind} · 요구 폭 {need.toFixed(1)}m 를 만족하는 경로가 없다 — 다른 접근 지점이 필요하다</div>
+      {s.screen === "wait" && n.noRoute && (
+        <div style={toast}>{vehicleKind} · 요구 폭 {need.toFixed(1)}m 를 만족하는 경로가 없다 — 관제가 다른 접근 지점을 정해야 한다</div>
       )}
 
       {dev && (

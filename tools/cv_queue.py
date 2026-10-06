@@ -48,6 +48,7 @@ PARAM NARROW · WIDE
       **CV 를 실제로 붙이지도 않는다** — 순서만 낸다. 붙이는 것은 #3 이다.
       그리고 **CCTV 가 없는 구간은 안 센다**(`cv_feasible`) — 순서를 매겨도
       붙일 수 없는 자리라서, 세면 큐가 거짓으로 길어진다.
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 

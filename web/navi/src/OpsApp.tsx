@@ -60,6 +60,7 @@ import {
 import { buildAdjacency, findRouteBetween, nearestNode, snapToEdge } from "./domain/graph";
 import { ruleSummary } from "./domain/rules";
 import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
+import type { RouteMode } from "./domain/handoff";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
 import { travelSeconds } from "./domain/speed";
@@ -90,6 +91,9 @@ export default function OpsApp() {
   const [fatal, setFatal] = useState<string | null>(null);
   const fleet = useFleet();
   const [incident, setIncident] = useState<Incident | null>(null);
+  // ★ 2026-10-05 (DECISIONS §400). 경로 모드는 **관제가 정한다.** 내비에는
+  //   고르는 손이 없다 — 지령에 실어 보낸다.
+  const [route, setRoute] = useState<RouteMode>("safe");
   const [picking, setPicking] = useState(false);
   const [stationId, setStationId] = useState<string>("0");
   const [layers, setLayers] = useState<OpsLayers>({
@@ -240,7 +244,7 @@ export default function OpsApp() {
   //   판단은 `domain/dispatch` 가 들고, 여기는 부르기만 한다(§336).
   const dispatchArgs = incident && vehicle && station
     ? { at: incident.point, label: incident.label,
-        vehicle: vehicle.id, station: station.name }
+        vehicle: vehicle.id, station: station.name, route }
     : null;
   const dispatchUrl = dispatchArgs
     ? mkDispatchUrl(window.__FL_VIEW, dispatchArgs) : null;
@@ -326,11 +330,43 @@ export default function OpsApp() {
                       <b style={{ fontSize: 13 }}>{displayName(v.label)}</b>
                       <span style={{ display: "block", fontSize: 10, color: D.sub }}>{(v.station ?? "").replace(/119안전센터|119구조대/, "")}</span>
                     </span>
-                    <b style={{ fontSize: 12, color: on ? D.accent : D.sub }}>{v.required_width_m.toFixed(1)}m</b>
+                    {/* ★ 2026-10-05 (DECISIONS §400). 차량 선택이 운전석에서
+                        여기로 왔다. **회전반경 참고값과 그 한계도 같이 온다** —
+                        결정이 옮겨가면 그 결정에 붙은 설명도 옮겨가야 한다.
+                        숫자는 `fleet.json` 에서만 온다(§212). */}
+                    <span style={{ fontSize: 11, color: D.sub, textAlign: "right",
+                                   lineHeight: 1.4 }}>
+                      <b style={{ fontSize: 12, color: on ? D.accent : D.sub }}>
+                        {v.required_width_m.toFixed(1)}m
+                      </b><br />
+                      {v.turn_radius_ref_m != null
+                        ? <>회전 {v.turn_radius_ref_m.toFixed(1)}m <span style={{ opacity: .8 }}>
+                            {v.spec_complete ? "코너 점검" : "참고"}</span></>
+                        : <>회전 {v.turn_grade ?? "미판정"}</>}
+                    </span>
                   </button>
                 );
               })}
             </div>
+            <div style={{ fontSize: 10, color: D.sub, lineHeight: 1.5, marginTop: 6 }}>
+              현재 경로 판정에는 전폭만 반영됩니다. 회전 반경은 제원표 참고값(미검증)으로
+              판정에 반영하지 않으며, 제원표에 해당 차량 값이 없으면 등급으로 표시합니다.
+            </div>
+
+            <label style={lab}>경로 — 관제가 정한다</label>
+            <div style={{ display: "flex", gap: 6 }}>
+              {([["safe", "안전", "폭으로 본 안전 — 확인 필요 구간을 피한다"],
+                 ["fast", "빠른", "도착이 빠르다 — 폭 신뢰도가 낮은 구간을 지날 수 있다"]] as const)
+                .map(([m, ko, why]) => (
+                  <button key={m} onClick={() => setRoute(m)} title={why}
+                          style={{ ...vehRow, flex: 1, justifyContent: "center",
+                                   borderColor: route === m ? D.accent : D.line,
+                                   background: route === m ? "#0c2a3f" : "transparent" }}>
+                    <b style={{ fontSize: 13, color: route === m ? D.accent : D.sub }}>{ko}</b>
+                  </button>
+                ))}
+            </div>
+
             {incident && plan && (
               <div style={{ ...card, borderColor: plan.plan ? (plan.alt ? D.warn : D.ok) : D.danger }}>
                 {plan.plan ? (

@@ -54,6 +54,7 @@ raw 에 편입되지 않았고 아무 도구도 그 사실을 몰랐다.** 대�
 IN    $FIRE_LANE_INBOX (기본값 자동탐색) · sources.yaml
 OUT   $FIRE_LANE_DATA/landing · data/_intake.json (커밋한다)
 PARAM 없음
+부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 
@@ -76,6 +77,7 @@ KST = timezone(timedelta(hours=9))
 LEDGER = ROOT / "data" / "_intake.json"
 
 # JUNK 정본은 firelane.intake_rules 다. 여기서 재정의하지 않는다.
+from firelane.intake_body import body_file_of, body_match, body_text
 from firelane.intake_rules import JUNK
 
 # ★ inbox() 는 `firelane.paths` 로 옮겼다(2026-08-26). 경로 정본은 거기다 —
@@ -185,14 +187,17 @@ def _stem_of(rel: str) -> str:
     return _re.sub(rf"_(?:{toks})?_?\d{{4,8}}.*$", "", stem).rstrip("_")
 
 
+
 def propose(src: Path, ds: dict) -> dict:
     """정규명 후보를 낸다. **채택하지 않는다.**
 
     단서를 넷 본다. 강한 순서다 —
       ① KFS 문서번호   대장 본문에 그대로 적혀 있다. 제일 확실하다
-      ② 취득 규칙      `normalize_raw.RULES` 가 배치할 수 있는가
       ③ 대장 stem      파일명이 이미 정규명인가
-      ④ 없음           사람이 정한다
+      ② 취득 규칙      `normalize_raw.RULES` 가 배치할 수 있는가
+      ④ **본문**       앞 셋이 전부 **파일 이름**을 본다. 이름이 아무 말도
+                       안 하면(브라우저가 붙인 이름) 내용을 연다 (§399)
+      없으면           사람이 정한다
 
     ★ 2026-09-03. ③을 신설했다. **`intake` 가 대장 `stem` 을 안 봤다.**
       2026-08-31 에 `file`/`files` 를 37종에서 빼고 `stem`+`ext` 로 뒤집었는데
@@ -262,6 +267,17 @@ def propose(src: Path, ds: dict) -> dict:
                     f"취득 규칙은 {placed} 로 배치하는데 대장 항목이 없다 — "
                     "stem 이 맞는지 확인하라")
 
+    # ④ 본문 — 이름이 아무 말도 안 할 때만 연다
+    if out["matched_key"] is None:
+        key, why = body_match(body_text(src), ds)
+        out["why"].append(why)
+        if key:
+            rel, why2 = body_file_of(body_text(src), ds.get(key) or {})
+            out["why"].append(why2)
+            if rel:
+                out["matched_key"] = key
+                out["suggest"] = rel
+
     if out["matched_key"] is None:
         slug = nm.slugify(stem)
         out["why"].append(
@@ -297,33 +313,132 @@ def cmd_observe(inb: Path) -> int:
     return 0
 
 
-def cmd_plan(inb: Path) -> int:
+def waiting(ds: dict) -> list[tuple[str, str]]:
+    """**방아쇠.** 대장이 선언했는데 raw 에 없는 `(키, 상대경로)`.
+
+    ★ 2026-10-05 (DECISIONS §401). 이 도구는 **다운로드 폴더 전부**를 제
+      일거리로 봤다. 사람의 폴더에 배치 zip · 채용공고 · 남의 패치가 같이
+      사는데, 그 전부에 대고 「대장에 항목을 만들어라」라고 말했다 —
+
+          「이상한거 까지 다 들어갔잖아」
+
+      방향이 반대였다. **대장이 기다리는 자리가 방아쇠다.** 결손이 0 이면
+      이 도구는 다운로드 폴더를 **열지도 않는다.** 그러면 안 건드리는 것이
+      규칙이 아니라 **구조**가 된다 — 규칙은 잊히고 구조는 안 잊힌다.
+    """
+    from firelane.paths import RAW
+
+    have = {q.relative_to(RAW).as_posix()
+            for q in RAW.rglob("*") if q.is_file()} if RAW.is_dir() else set()
+    out = []
+    for key in sorted(ds):
+        e = ds[key] or {}
+        if e.get("status") == "missing":
+            continue
+        for rel in e.get("files") or []:
+            if rel not in have:
+                out.append((key, rel))
+    return out
+
+
+def _match_one(inb: Path, ds: dict, key: str, rel: str,
+               assign: list[str] | None) -> Path | None:
+    """그 자리에 올 다운로드 하나. 못 고르면 `None`. **사람이 이긴다.**
+
+    ★ `--assign N=조각` 은 번호로 찍는다. 번호는 `--plan` 이 매긴 순서다 —
+      대장은 파일 이름을 이미 정확히 적고 있고, 모르는 것은 「이 다운로드가
+      그중 어느 것이냐」 하나뿐이며 그것은 사람이 안다.
+    """
+    want = waiting(ds)
+    files = [q for q in sorted(inb.iterdir())
+             if q.is_file() and not JUNK.search(q.name)] if inb.is_dir() else []
+    for a in assign or []:
+        i, _, frag = a.partition("=")
+        if not i.strip().isdigit() or not frag:
+            continue
+        k = int(i) - 1
+        if 0 <= k < len(want) and want[k] == (key, rel):
+            hit = [q for q in files if frag in q.name]
+            return hit[0] if len(hit) == 1 else None
+    for q in files:
+        if body_match(body_text(q), ds)[0] != key:
+            continue
+        if body_file_of(body_text(q), ds.get(key) or {})[0] == rel:
+            return q
+    return None
+
+
+def cmd_plan(inb: Path, assign: list[str] | None = None) -> int:
+    """대장이 기다리는 자리마다 **어느 다운로드가 그것인가.**
+
+    ★ 사람이 번호로 찍을 수 있다 — `--assign 1=인쇄`. 대장은 파일 이름을
+      이미 정확히 적고 있고, 모르는 것은 「이 다운로드가 그중 어느 것이냐」
+      하나뿐이며 **그것은 사람이 안다.** 추측기와 싸우게 만들지 않는다.
+    """
     ds = sources_index()
-    known = ledger_shas()
-    n = 0
-    for p in sorted(inb.iterdir()):
-        if not p.is_file() or JUNK.search(p.name):
-            continue
-        if sha256(p) in known:
-            continue
-        n += 1
-        pr = propose(p, ds)
-        print(f"\n── {p.name}")
-        if pr["doc_no"]:
-            print(f"   문서번호   {pr['doc_no']}")
-        print(f"   대장 매칭   {pr['matched_key'] or '★ 없음 — 신규 항목이다'}")
-        print(f"   제안 경로   {pr['suggest'] or '★ 사람이 정한다'}")
-        for w in pr["why"]:
-            print(f"   근거       {w}")
-        if pr["matched_key"] is None:
-            print("   ★ 대장에 없는 문서다. 편입 전에 datasets 또는 retired 에\n"
-                  "     항목을 만든다. 안 열어보고 두면 3개월 뒤 또 받는다(§18-3c).")
-    if not n:
-        print("신규 없음.")
+    want = waiting(ds)
+    if not want:
+        print("대장이 기다리는 자리가 없다 — 결손 0. 볼 것이 없다.")
+        return 0
+
+    files = [q for q in sorted(inb.iterdir())
+             if q.is_file() and not JUNK.search(q.name)]
+    picked: dict[int, Path] = {}
+    for a in assign or []:
+        i, _, frag = a.partition("=")
+        if not frag or not i.strip().isdigit():
+            print(f"★ --assign 꼴이 아니다: {a!r} — `--assign 1=인쇄` 처럼 적는다")
+            return 2
+        k = int(i) - 1
+        hit = [q for q in files if frag in q.name]
+        if k < 0 or k >= len(want):
+            print(f"★ 자리 {i} 가 없다 — 지금 {len(want)}개다")
+            return 2
+        if len(hit) != 1:
+            print(f"★ {frag!r} 가 {len(hit)}개 걸린다 — 더 길게 적어라")
+            return 2
+        picked[k] = hit[0]
+
+    print(f"대장이 기다리는 자리 {len(want)}\n")
+    for k, (key, rel) in enumerate(want, 1):
+        src = picked.get(k - 1)
+        why = "사람이 찍었다(--assign)"
+        if src is None:
+            for q in files:
+                if q in picked.values():
+                    continue
+                got, w = body_match(body_text(q), ds)
+                if got != key:
+                    continue
+                r2, w2 = body_file_of(body_text(q), ds[key] or {})
+                if r2 == rel:
+                    src, why = q, f"{w} · {w2}"
+                    break
+        print(f"  [{k}] {key}")
+        print(f"      자리  {rel}")
+        print(f"      파일  {src.name[:60] if src else '★ 못 찾았다'}")
+        hint = f"본문으로 못 가른다 — `--assign {k}=<이름 조각>` 으로 찍어라"
+        print(f"      근거  {why if src else hint}")
+    n = sum(1 for k in range(len(want)) if k in picked) + \
+        sum(1 for k, (key, rel) in enumerate(want)
+            if k not in picked and _auto(files, picked, ds, key, rel))
+    print(f"\n  찾은 것 {n} / {len(want)}")
+    print("  ★ 다운로드 폴더의 나머지는 **안 본다** — 대장이 안 기다리는 것이다.")
     return 0
 
 
-def cmd_stage(inb: Path, *, apply: bool, force: bool = False) -> int:
+def _auto(files, picked, ds, key, rel) -> bool:
+    for q in files:
+        if q in picked.values():
+            continue
+        if body_match(body_text(q), ds)[0] == key \
+           and body_file_of(body_text(q), ds[key] or {})[0] == rel:
+            return True
+    return False
+
+
+def cmd_stage(inb: Path, *, apply: bool, force: bool = False,
+              assign: list[str] | None = None) -> int:
     """다운로드 → landing. **원본은 지우지 않는다.**
 
     ★ 관문 둘을 통과해야 한다 —
@@ -342,42 +457,36 @@ def cmd_stage(inb: Path, *, apply: bool, force: bool = False) -> int:
     require_lake(need=("raw",))
     ds = sources_index()
     L = load_ledger()
-    known = {v["sha256"] for v in L["files"].values()}
     LANDING.mkdir(parents=True, exist_ok=True)
     moved = skipped = 0
-    for p in sorted(inb.iterdir()):
-        if not p.is_file() or JUNK.search(p.name):
-            continue
-        s = sha256(p)
-        if s in known:
+
+    # ★ 2026-10-05 (DECISIONS §401). **대장이 기다리는 자리만 돈다.** 종전에는
+    #   다운로드 폴더를 훑어 매칭되는 것을 복사했고, 그래서 사람의 폴더에 있는
+    #   남의 파일까지 한 줄씩 「대장에 없다」로 찍었다.
+    # ★ 그리고 **대장이 적은 이름으로** 복사한다. 종전에는 `LANDING / p.name`
+    #   이라 브라우저가 붙인 이름이 그대로 올라갔고, 그러면 `acquire --stage`
+    #   가 또 못 맞춘다 — 사슬이 거기서 끊겨 있었다. 원본명은 대장이 든다.
+    for key, rel in waiting(ds):
+        src = _match_one(inb, ds, key, rel, assign)
+        if src is None:
             skipped += 1
             continue
-        rk = retired_hit(p.name)
-        if rk:
-            # ★ 판단이 끝난 것이다. 다시 묻지 않는다.
-            print(f"건너뜀  {p.name}\n"
-                  f"        폐기 대장 `{rk}` 에 있다. 편입하지 않는다")
-            skipped += 1
-            continue
-        if not force and propose(p, ds)["matched_key"] is None:
-            print(f"건너뜀  {p.name}\n"
-                  f"        대장에 없다. 먼저 datasets 또는 retired 에 적어라"
-                  f"(§18-3c). 정말 올리려면 --force")
-            skipped += 1
-            continue
-        dst = LANDING / p.name          # ★ landing 은 원본명 그대로다
+        s = sha256(src)
+        dst = LANDING / Path(rel).name
         if dst.exists() and sha256(dst) == s:
             skipped += 1
             continue
-        print(f"{'복사' if apply else '복사예정'}  {p.name}  → {dst}")
+        print(f"{'복사' if apply else '복사예정'}  {src.name}\n"
+              f"        → {dst.name}   ({key})")
         if apply:
-            shutil.copyfile(p, dst)
+            shutil.copyfile(src, dst)
             if sha256(dst) != s:
                 print("  ★ 복사 후 sha 불일치. 중단한다.")
                 return 1
-            L["files"][p.name] = {
-                "sha256": s, "bytes": p.stat().st_size,
-                "origin_name": p.name,
+            L["files"][dst.name] = {
+                "sha256": s, "bytes": src.stat().st_size,
+                "origin_name": src.name,
+                "dataset": key,
                 "seen_at": datetime.now(KST).isoformat(timespec="seconds"),
                 "from": str(inb),
             }
@@ -425,7 +534,9 @@ def cmd_audit() -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--plan", action="store_true", help="정규명 후보 + 대장 매칭")
+    ap.add_argument("--plan", action="store_true", help="대장 결손 ↔ 다운로드 (아무것도 안 옮긴다)")
+    ap.add_argument("--assign", action="append", metavar="N=조각",
+                    help="자리 N 에 이름 조각이 맞는 파일을 찍는다")
     ap.add_argument("--stage", action="store_true", help="다운로드 → landing")
     ap.add_argument("--audit", action="store_true", help="raw·대장 문법 심사")
     ap.add_argument("--yes", action="store_true", help="실제로 복사한다")
@@ -436,9 +547,9 @@ def main() -> int:
         return cmd_audit()
     inb = inbox()
     if a.plan:
-        return cmd_plan(inb)
+        return cmd_plan(inb, a.assign)
     if a.stage:
-        return cmd_stage(inb, apply=a.yes, force=a.force)
+        return cmd_stage(inb, apply=a.yes, force=a.force, assign=a.assign)
     return cmd_observe(inb)
 
 

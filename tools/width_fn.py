@@ -48,6 +48,7 @@ IN    data/processed/width_samples.csv   (segments 단계 산출)
       web/data/segments.geojson
 OUT   없음. --save 를 주면 data/processed/width_fn.csv
 ════════════════════════════════════════════════════════════════
+부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
 from __future__ import annotations
 
