@@ -41,6 +41,7 @@ PARAM 줌 단계 · exaggeration 기본 1.0
 """
 from __future__ import annotations
 
+import contextlib
 import json
 import shutil
 import tempfile
@@ -179,15 +180,52 @@ def build_terrain_tiles(up, tr, src_crs):
     return count
 
 
+@contextlib.contextmanager
+def _dem_image(archive: Path):
+    """ZIP 안의 **유일한 IMG** 를 임시 파일 하나로 꺼낸다. 쓰고 나면 지운다.
+
+    ★ 2026-10-06 (DECISIONS §413). 종전에는 이랬다 —
+
+          zipfile.ZipFile(dem_zip).extractall(td)
+          img = str(next(Path(td).rglob("*.img")))
+
+      고친 이유는 **경로 순회가 아니다.** 처음에 그렇게 적으려다 재 봤더니
+      CPython 의 `extractall` 은 `../` 와 선행 `/` 를 **이미 벗겨낸다** —
+      합성 압축물로 확인했다. 흔히 듣는 말이라 그대로 믿을 뻔했다.
+
+      진짜 이유는 `next(rglob(...))` 쪽이다. **IMG 가 둘이면 어느 것을 읽는지가
+      파일 시스템 순서에 달린다** — 아무 말 없이 하나를 고르고, 다음 사람이
+      DEM 을 바꿔도 수가 안 움직이는 날이 온다. 그 조용함이 제일 나쁘다.
+      여기서는 **정확히 하나**를 요구하고, 아니면 멈춘다.
+
+    ★ 덤으로 둘 — 압축물 전체를 안 풀어 쓰는 바이트가 줄고, 웅토피아 팀이
+      적어 둔 Windows ACL 문제(「폴더는 만들지만 그 아래 ZIP 디렉터리를 못
+      만든다」)를 비켜간다. 그쪽 `terrain.py` 에서 가져온 모양이다.
+    """
+    tmp = tempfile.NamedTemporaryFile(suffix=".img", delete=False)
+    path = Path(tmp.name)
+    try:
+        with zipfile.ZipFile(archive) as z:
+            imgs = [m for m in z.infolist()
+                    if not m.is_dir() and Path(m.filename).suffix.lower() == ".img"]
+            if len(imgs) != 1:
+                raise RuntimeError(
+                    f"DEM 압축물에 IMG 가 {len(imgs)}개다 — 정확히 하나여야 한다: {archive}")
+            with tmp, z.open(imgs[0]) as src:
+                shutil.copyfileobj(src, tmp)
+        yield path
+    finally:
+        tmp.close()
+        path.unlink(missing_ok=True)
+
+
 def main():
     dem_zip = _dem_zip()
 
     scope = gpd.read_file(OUT / "segments_5186.gpkg").to_crs(5179)
     minx, miny, maxx, maxy = scope.total_bounds
     pad = 200
-    with tempfile.TemporaryDirectory() as td:
-        zipfile.ZipFile(dem_zip).extractall(td)
-        img = str(next(Path(td).rglob("*.img")))
+    with _dem_image(dem_zip) as img:
         with rasterio.open(img) as r:
             win = from_bounds(minx - pad, miny - pad, maxx + pad, maxy + pad,
                               r.transform).round_offsets().round_lengths()

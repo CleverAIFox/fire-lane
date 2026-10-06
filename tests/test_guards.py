@@ -2547,3 +2547,45 @@ def test_the_two_runtimes_declare_the_same_knobs():
            for a, b in pairs.items() if a in got and got[a] != getattr(TUNING, b)]
     assert not bad, "두 런타임의 조율이 갈렸다:\n  " + "\n  ".join(bad)
     assert set(pairs) <= set(got), f"TS 에서 못 읽은 노브: {sorted(set(pairs) - set(got))}"
+
+
+# ── DEM 압축물 (DECISIONS §413) ────────────────────────────────
+def test_the_dem_extract_never_uses_a_name_from_the_archive(tmp_path):
+    """압축물 안의 **이름을 쓰지 않고** 바이트만 옮기는가.
+
+    ★ 2026-10-06 (DECISIONS §413). 이 시험을 「zip-slip 을 막는다」로 적으려다
+      재 봤더니 **CPython 의 `extractall` 이 이미 `../` 를 벗겨낸다.** 그러니
+      이 단정이 지키는 것은 경로 순회가 아니라 **쓰는 자리가 하나**라는 사실이다.
+      묻는 것을 정확히 적는다 — 안 그러면 다음 사람이 없는 공로를 믿는다.
+    """
+    import zipfile
+
+    from firelane.terrain import _dem_image
+    z = tmp_path / "dem.zip"
+    outside = tmp_path / "밖에_쓰였다.img"
+    with zipfile.ZipFile(z, "w") as zf:
+        zf.writestr("../../밖에_쓰였다.img", b"PAYLOAD")
+    with _dem_image(z) as img:
+        assert img.read_bytes() == b"PAYLOAD", "항목을 못 읽었다"
+        assert img.parent != tmp_path, "압축물 이름을 써서 자리를 정했다"
+    assert not outside.exists(), "압축물 안의 경로가 바깥에 파일을 만들었다 — zip-slip"
+    assert not img.exists(), "쓰고 나서 안 지웠다"
+
+
+def test_the_dem_extract_refuses_anything_but_exactly_one_image(tmp_path):
+    """**정확히 하나여야 한다.** 둘이면 어느 것을 읽었는지가 조용히 갈린다 —
+    DEM 이 바뀌어도 수가 안 움직이는 것이 제일 나쁜 꼴이다.
+    """
+    import zipfile
+
+    import pytest
+
+    from firelane.terrain import _dem_image
+    for names in ([], ["a.img", "b.img"]):
+        z = tmp_path / f"{len(names)}.zip"
+        with zipfile.ZipFile(z, "w") as zf:
+            zf.writestr("읽지마.txt", b"x")
+            for n in names:
+                zf.writestr(n, b"x")
+        with pytest.raises(RuntimeError, match="정확히 하나"), _dem_image(z):
+            pass
