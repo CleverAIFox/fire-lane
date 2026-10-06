@@ -6969,17 +6969,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "abb8d5b05a2b8560",
-   "8dc5bbddfc8e615c",
-   "ee01865b3fe2a998"
+   "24006907cfdea932",
+   "3ed32ba3302b54f3",
+   "274f6e5951912b3c"
   ],
   "parts": {
    "tests/test_sealcov.py": "b9cda0bc664d2090",
    "tools/docseal.py": "1a5254b5d096be15",
-   "tools/sealcov.py": "b42d0f7dd3ef1e52",
+   "tools/sealcov.py": "b4d0f12a3a350d4d",
    "본문": "45e08e29ce58f22f"
   },
-  "sha": "d9348aeb23c09924"
+  "sha": "8da50df7a8f48202"
  },
  "DECISIONS/387": {
   "doc": "docs/DECISIONS.md",
@@ -7359,17 +7359,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "1c6d784dbfe2f01f",
-   "abaaed6bfff7e9b4",
-   "abaaed6bfff7e9b4"
+   "f6c96dacfe3a4cae",
+   "9bff76fa800bf1a9",
+   "9bff76fa800bf1a9"
   ],
   "parts": {
    "tools/ci_wait.sh": "9a1b6d534a0da3d4",
    "tools/merge_batch.sh": "278887c7a074869e",
-   "tools/sealcov.py": "b42d0f7dd3ef1e52",
+   "tools/sealcov.py": "b4d0f12a3a350d4d",
    "본문": "2f1b8eec2630db22"
   },
-  "sha": "1c6d784dbfe2f01f"
+  "sha": "f6c96dacfe3a4cae"
  },
  "DECISIONS/405": {
   "doc": "docs/DECISIONS.md",
@@ -7464,6 +7464,68 @@
    "본문": "f32414b97c52571d"
   },
   "sha": "6cb05bfeefa5905d"
+ },
+ "DECISIONS/411": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tests/test_guards.py",
+   "tools/docseal.py",
+   "tools/sealcov.py",
+   "web/navi/src/domain/access.ts",
+   "web/navi/src/domain/clearance.ts",
+   "web/navi/src/domain/compare.ts",
+   "web/navi/src/domain/context.ts",
+   "web/navi/src/domain/edgeSnap.ts",
+   "web/navi/src/domain/egobox.ts",
+   "web/navi/src/domain/fleetName.ts",
+   "web/navi/src/domain/geo.ts",
+   "web/navi/src/domain/graph.ts",
+   "web/navi/src/domain/pressure.ts",
+   "web/navi/src/domain/progress.ts",
+   "web/navi/src/domain/reroute.ts",
+   "web/navi/src/domain/routeDerive.ts",
+   "web/navi/src/domain/routeSolve.ts",
+   "web/navi/src/domain/search.ts",
+   "web/navi/src/domain/speed.ts",
+   "web/navi/src/domain/status.ts",
+   "web/navi/src/domain/turn.ts",
+   "web/navi/src/domain/turning.ts",
+   "web/navi/src/domain/types.ts"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "5e45496feff67bcf",
+   "5e45496feff67bcf",
+   "45e77967778f897c"
+  ],
+  "parts": {
+   "tests/test_guards.py": "a0f62c0f2df7ada4",
+   "tools/docseal.py": "1a5254b5d096be15",
+   "tools/sealcov.py": "b4d0f12a3a350d4d",
+   "web/navi/src/domain/access.ts": "0db1b16110639db4",
+   "web/navi/src/domain/clearance.ts": "a7c42f7588db4a34",
+   "web/navi/src/domain/compare.ts": "38d7cc32abb19e6d",
+   "web/navi/src/domain/context.ts": "f47a07a273a151a5",
+   "web/navi/src/domain/edgeSnap.ts": "07ed2984b3021cf2",
+   "web/navi/src/domain/egobox.ts": "e963b91dba61cc0d",
+   "web/navi/src/domain/fleetName.ts": "7489ff4253178ab8",
+   "web/navi/src/domain/geo.ts": "a24a3b7a252a4dc9",
+   "web/navi/src/domain/graph.ts": "c989a246704a1a31",
+   "web/navi/src/domain/pressure.ts": "77a5d4c8aaaa973c",
+   "web/navi/src/domain/progress.ts": "1c7934136d49bf5f",
+   "web/navi/src/domain/reroute.ts": "bc9558508f1dc03b",
+   "web/navi/src/domain/routeDerive.ts": "2686c46a3427c9a8",
+   "web/navi/src/domain/routeSolve.ts": "ac65493b27faceba",
+   "web/navi/src/domain/search.ts": "643aa43c20d44d73",
+   "web/navi/src/domain/speed.ts": "32dae6b7bf7b8aa0",
+   "web/navi/src/domain/status.ts": "eb0ad8b53cf9adea",
+   "web/navi/src/domain/turn.ts": "c5d070170aa40bee",
+   "web/navi/src/domain/turning.ts": "81cb6ce98af88d9f",
+   "web/navi/src/domain/types.ts": "6db255a7a1ca18f4",
+   "본문": "30da263036ef8c13"
+  },
+  "sha": "45e77967778f897c"
  },
  "DECISIONS/42": {
   "doc": "docs/DECISIONS.md",
@@ -9124,9 +9186,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "68a26a6792590def",
-   "c1b2d9d952c2f5d3",
-   "e75e6d088675ab64"
+   "f1ac4d724d981ca7",
+   "9ea64d8fa474f54a",
+   "e49f872c9b784451"
   ],
   "parts": {
    "src/firelane/seg/params.py": "53df7ea2ea107fd6",
@@ -9150,9 +9212,9 @@
    "web/config.js": "ed851b78a3c520eb",
    "web/navi/src/domain/vehicle.ts": "5fada2911d0cbec0",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "b186e0978fd685dc"
+   "본문": "2a89ce511db79ba5"
   },
-  "sha": "95b4bdfbae2050b1"
+  "sha": "09646cc8474fc73d"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",

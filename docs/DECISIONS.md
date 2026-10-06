@@ -27179,3 +27179,78 @@ PLAN §10 이 2026-09-30 에 이렇게 들어왔다(§331) —
 그 47 은 영원히 「생존 67」 안에 숨는다.
 
 ★ 이것이 §405 와 같은 모양이다 — **기계는 빈 자리를 세고 가름은 사람이 한다.**
+
+## 411. 내비 도메인 스무 파일이 **한 번도 안 읽힌 채** 판단을 들고 있었다
+
+> 2026-10-06
+
+강제자  이 절의 본문이 스무 파일을 **이름으로 지목한다** —
+`web/navi/src/domain/access.ts` · `clearance.ts` · `compare.ts` ·
+`context.ts` · `edgeSnap.ts` · `egobox.ts` · `fleetName.ts` · `geo.ts` ·
+`graph.ts` · `pressure.ts` · `progress.ts` · `reroute.ts` ·
+`routeDerive.ts` · `routeSolve.ts` · `search.ts` · `speed.ts` ·
+`status.ts` · `turn.ts` · `turning.ts` · `types.ts`.
+`tools/sealcov.py` 가 그 덮임을 세고 `tools/docseal.py` 가 **코드가 움직이면
+이 절의 도장을 무효로 만든다**.
+하위 셋이 이 칸을 물려받는다
+유병률  **1회** — 2026-10-06. 사람이 「봉인 다 땅따먹었냐」고 물어 세어 보니
+덮임이 363/492 였고, **안 쳐다본 129칸 중 과반이 화면 쪽**이었다. 그 안에
+경로를 고르는 판단이 들어 있다.
+배운 것  **도장은 「누가 지킨다」가 아니라 「사람이 읽었다」를 뜻한다.**
+
+### 411-1. 왜 화면 쪽이 제일 늦게 읽혔나
+
+판정 폐포(`src/firelane/seg/`)는 산출물을 움직이므로 절마다 지목이 붙었다.
+화면은 **산출물을 안 바꾼다** — 그래서 「틀려도 숫자가 안 움직인다」로 밀렸다.
+
+그 전제가 틀린 것이 §407 에서 드러났다. 라우터가 **잰 구간보다 모르는 구간을
+먼저 고르고** 있었는데, 그것은 산출물에 한 바이트도 안 닿고 **기사가 가는 길만
+바꾼다.** 화면이 틀리면 수는 멀쩡하고 소방차가 다른 길로 간다.
+
+### 411-2. 스무 파일이 각자 무엇을 정하나
+
+읽고 적는다. 한 줄씩이고, **그 줄이 틀리면 도장이 거짓**이 된다.
+
+| 파일 | 무엇을 정하나 |
+|---|---|
+| `web/navi/src/domain/geo.ts` | 좌표 · 각도 · 거리. React·MapLibre·fetch 를 모른다 |
+| `web/navi/src/domain/types.ts` | 계층이 함께 보는 타입. **정본은 파이썬 쪽**이고 여기는 사본이다 |
+| `web/navi/src/domain/graph.ts` | A*. 경로 계산의 한 문이다 |
+| `web/navi/src/domain/routeSolve.ts` | 「출발점 · 도착점」을 경로 한 벌로 푼다 |
+| `web/navi/src/domain/routeDerive.ts` | 이미 나온 경로에서 값을 읽는다 |
+| `web/navi/src/domain/edgeSnap.ts` | 좌표를 **통행가능 구간 위**로 투영한다 |
+| `web/navi/src/domain/clearance.ts` | 여유폭 = 최소 유효폭 − 요구폭 |
+| `web/navi/src/domain/turning.ts` | 코너를 이 차가 돌 수 있는가 — **제원 완성 차종만** 본다 |
+| `web/navi/src/domain/turn.ts` | 교차로 회전 판정과 안내 문구. 회전각은 자료가 아니라 계산이다 |
+| `web/navi/src/domain/speed.ts` | 구간별 주행 속도 추정 |
+| `web/navi/src/domain/progress.ts` | GPS 로 경로 위 어디쯤인지 추정한다 — 턴바이턴의 입력 |
+| `web/navi/src/domain/reroute.ts` | 영상이 길을 막았을 때 **다시 낼 것인가** |
+| `web/navi/src/domain/pressure.ts` | 받아 두고 경로 비용에 못 닿던 자료를 엣지에 붙인다 |
+| `web/navi/src/domain/context.ts` | 경로 **주변 사정**을 경로 위 거리로 옮긴다. 판정과 무관하다 |
+| `web/navi/src/domain/access.ts` | 차가 못 들어갈 때 **어디에 댈 것인가** |
+| `web/navi/src/domain/compare.ts` | 두 경로가 같은가 · 비교 수치 |
+| `web/navi/src/domain/search.ts` | 목적지 검색. 색인은 `dest.geojson` |
+| `web/navi/src/domain/status.ts` | 주행 화면의 상태 한 자리 |
+| `web/navi/src/domain/fleetName.ts` | 차종 이름 · 그림 종류 · 센터 이름 |
+| `web/navi/src/domain/egobox.ts` | 자차를 **실측 크기 상자**로 놓는다 |
+
+★ 셋이 **판단을 든다** — `graph`(어느 길) · `clearance`(지날 수 있나) ·
+  `turning`(돌 수 있나). 나머지 열일곱은 그 셋의 입력이거나 표시다.
+  §407 이 고친 자리가 그 셋 중 하나의 입력(`vehicle.ts` 의 조율)이었다.
+
+★ `types.ts` 는 **사본**이다. 정본이 `publish_navi.py` 쪽이므로, 이 파일만
+  고치면 두 벌이 갈린다 — 그 갈림을 `tests/test_guards.py` 의 두 런타임 대조가
+  2026-10-06 부터 조율 쪽에서 든다(§407).
+
+### 411-3. 이 절이 지키는 것은 **읽었다는 사실 하나**다
+
+`tools/sealcov.py` 가 제 머리말에 적는다 — 「**절이 옳은가는 안 본다.** 덮임
+하나를 든다」. 즉 이 절은 스무 파일이 **옳다**고 말하지 않는다. 사람이 한 번
+열어 보고 각자 무엇을 정하는지 적었다고 말한다.
+
+★ 그 구분이 §403-3 에서 값을 치렀다 — §207 이 「봉인 실패는 `warn` 이다」를
+  적고 **도장까지 찍혀 있었는데** 코드가 어기고 있었다. 도장은 글과 코드를
+  같이 읽은 표지이지 **글이 옳다는 보증이 아니다.**
+
+★ 그래서 이 절은 한 줄씩만 적는다. 길게 적으면 그 줄이 코드보다 먼저 낡고,
+  낡은 긴 글은 **읽히지 않는 채로 도장만 유효**해진다.
