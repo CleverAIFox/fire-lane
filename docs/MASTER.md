@@ -2997,7 +2997,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,728 전수 · **분모(blank) 0절** · 물림(inherit) 848절.
+★ **강제자 칸의 분모.** 절 1,744 전수 · **분모(blank) 0절** · 물림(inherit) 860절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3050,6 +3050,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 | `python` | `.python-version` | `Dockerfile` 베이스 이미지 · `pyproject.toml` requires-python · CI 둘이 파일을 읽는다 | `tests/test_sources_of_truth.py` |
 | `pytest` | `pyproject.toml` | `uv.lock` 의 잠긴 판(하한 이상) | `tests/test_sources_of_truth.py` |
 | `coverage_floor` | `tools/verify.sh` | 같은 파일의 명령줄이 변수를 읽는다 · `tests/test_verify_citations.py` | `tests/test_sources_of_truth.py` |
+| `gitleaks` | `tools/treescan.sh` | 그 도구가 **스스로 깐다** · CI 는 `--install` 만 부른다 | `tests/test_sources_of_truth.py` |
 | `truck_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/figures/value.py` · `tests/test_declaration_sync.py` · 문구 넷(`seg/geom.py` · `seg/report.py` · `seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `park_m` | `src/firelane/seg/params.py` | `tools/figures/value.py` · `tests/test_declaration_sync.py` | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |
 | `cctv_range_m` | `src/firelane/seg/params.py` | `web/config.js` 문구 · `tools/figures/value.py` · 문구 둘(`seg/vehicle.py` · `segments.py`) | `tests/test_sources_of_truth.py` · `tests/test_declaration_sync.py` |

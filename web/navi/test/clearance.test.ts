@@ -11,7 +11,7 @@ import {
   CLEARANCE_BAND_ORDER, CLEARANCE_WIDE_M, clearanceBand, clearanceCounts, clearanceM,
   edgeClearance, fmtClearance,
 } from "../src/domain/clearance";
-import { TUNING, edgeCost, requiredWidth } from "../src/domain/vehicle";
+import { TUNING, edgeCost, requiredWidth, unknownIsNeverCheaper } from "../src/domain/vehicle";
 import { CLEARANCE_SCALE, segmentReason, widthLine } from "../src/ui/clearanceMeaning";
 import { GRAY_REASON } from "../src/ui/verdictMeaning";
 import {
@@ -230,4 +230,37 @@ test("경로 비교 수치 — 길이 · 통행 불가 경유 · 규칙 경고",
     ok(st.minWidthM === (w.length ? Math.min(...w) : null), "최소 유효폭이 안 맞는다");
   }
   ok(checked > 0, "경로가 하나도 안 섰다");
+});
+
+// ── 모름 정책 (DECISIONS §407 · PLAN #147) ─────────────────────
+// ★ 2026-10-06. 라우터의 「모름」 정책이 코드에 선언된 적이 없었고, 재 보니
+//   **어기고 있었다** — `tight` 1.8 인데 `unknownLenient` 가 1.2 였다.
+//   연결성 모드에서 라우터가 **잰 구간보다 모르는 구간을 먼저 골랐다.**
+
+test("모르는 값은 아는 값보다 싸지 않다", () => {
+  const bad = unknownIsNeverCheaper();
+  ok(bad.length === 0, `모름 정책을 어겼다:\n  ${bad.join("\n  ")}`);
+});
+
+test("그 판정기가 빈 그물이 아니다", () => {
+  // ★ 실물이 0 이므로 **합성 입력**으로 양방향을 민다(§230).
+  const broken = { ...TUNING, unknownLenient: 1.0 };
+  ok(unknownIsNeverCheaper(broken).length > 0,
+     "모름이 서행보다 싼 조율을 통과시킨다 — 그물이 비었다");
+  const flat = { ...TUNING, unknownLenient: TUNING.tight };
+  ok(unknownIsNeverCheaper(flat).length === 0,
+     "같은 값을 위반으로 센다 — 묶는 것은 순서이지 간격이 아니다");
+});
+
+test("모름은 막지 않는다 — 비싸게 칠 뿐이다", () => {
+  // ★ 순서를 묶었다고 모름을 `Infinity` 로 만들면 그래프가 끊긴다.
+  const s = specOf(fleet.default);
+  for (const lenient of [false, true]) {
+    for (const v of ["unknown", "needs_cv", null] as const) {
+      const c = edgeCost(s, 40, null, v, null, lenient);
+      ok(Number.isFinite(c), `모름(${v} · lenient=${lenient})을 막았다 — 그래프가 끊긴다`);
+    }
+  }
+  ok(!Number.isFinite(edgeCost(s, 40, null, "blocked", null, true)),
+     "`blocked` 는 어느 모드에서도 막혀야 한다 — 그것만 판정이 확정이다");
 });

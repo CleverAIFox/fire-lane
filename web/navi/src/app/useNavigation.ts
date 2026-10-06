@@ -116,7 +116,10 @@ export function useNavigation(
   const [plan, setPlan] = useState<RoutePlan | null>(null);
   const [fastPlan, setFastPlan] = useState<RoutePlan | null>(null);
   const [offRoute, setOffRoute] = useState(false);
-  const [lenient, setLenient] = useState(false);
+  // ★ 2026-10-06 (DECISIONS §407). 종전에는 운전석 토글이 이 값을 뒤집었다.
+  //   §400 이 고르는 손을 전부 지웠고 이것만 남아 있었다. 정책은 **하나**다 —
+  //   모르는 구간을 싸게 치지 않는다(`unknownIsNeverCheaper`).
+  const lenient = false;
   const [simSpeed, setSimSpeed] = useState(0);
   /** 이탈을 감지하고 새 경로를 내는 중 (와이어프레임 06) */
   const [rerouting, setRerouting] = useState(false);
@@ -569,7 +572,7 @@ export function useNavigation(
   return {
     phase, fatal, notice, data, live, gpsAccM,
     current, origin, dest, plan, fastPlan, offRoute,
-    lenient, setLenient, simSpeed, setSimSpeed,
+    simSpeed, setSimSpeed,
     rerouting, noRoute, blocked, remainM, cvBlock, cvNow,
     driven, jumpSeq, lastJumpM, posMode, setPosMode, teleport, access, pickDetourable,
     pick, snapAt, recompute, choose, start, reset,

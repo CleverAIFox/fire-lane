@@ -256,11 +256,44 @@ export function minCostFactor(t: TuningKnobs = TUNING, dirMin = 1): number {
   return Math.min(1, ...mults, dirMin);
 }
 
+/**
+ * **모르는 값은 아는 값보다 싸지 않다.** 어기면 어긴 자리를 돌려준다.
+ *
+ * ★ 2026-10-06 (DECISIONS §407 · PLAN #147). 라우터의 「모름」 정책이 코드에
+ *   선언된 적이 없었고, 재 보니 **어기고 있었다.** §396-5 가 `verdictsim` 에서
+ *   이름 붙인 규율(「모르는 값은 한 번도 유리하게 쓰이지 않는다」)이 라우터에는
+ *   안 걸려 있었다.
+ *
+ * ★ 막는 것과 비싸게 치는 것은 다르다. 이 규율은 **순서**만 묶는다 — 모름을
+ *   `Infinity` 로 만들면 그래프가 끊겨 경로가 아예 안 나온다.
+ *
+ * ★ 파이썬 쪽 정본은 `seg/vehicle.py` 의 `unknown_is_never_cheaper` 다.
+ *   두 벌인 것이 아니라 **두 런타임에 같은 규율을 건다** — 노브 대장이
+ *   양쪽에 있으므로 규율도 양쪽에 있어야 한쪽만 느슨해지지 않는다.
+ */
+export function unknownIsNeverCheaper(t: TuningKnobs = TUNING): string[] {
+  const bad: string[] = [];
+  if (t.unknownLenient < t.tight) {
+    bad.push(`unknownLenient ${t.unknownLenient} < tight ${t.tight} — 모르는 구간이 잰 구간보다 싸다`);
+  }
+  if (t.unknown < t.tight) bad.push(`unknown ${t.unknown} < tight ${t.tight}`);
+  if (t.noWidthLenient < t.unknownLenient) {
+    bad.push(`noWidthLenient ${t.noWidthLenient} < unknownLenient ${t.unknownLenient} — 어휘조차 없는 쪽이 모름보다 싸다`);
+  }
+  if (t.noWidth < t.unknown) bad.push(`noWidth ${t.noWidth} < unknown ${t.unknown}`);
+  return bad;
+}
+
 export const TUNING: TuningKnobs = {
   unknown: 2.5,
-  unknownLenient: 1.2,
+  // ★ 2026-10-06 (DECISIONS §407 · PLAN #147). 1.2 → 1.8 · 1.5 → 2.5.
+  //   **모르는 값이 아는 값보다 쌌다** — `tight`(폭을 재서 여유 0.5m 미만)가
+  //   1.8 인데 `unknownLenient`(폭을 아예 모름)가 1.2 였다. 연결성 모드에서
+  //   라우터가 **잰 구간보다 모르는 구간을 먼저 골랐다.**
+  //   바닥은 지어낸 수가 아니라 이미 표에 있는 값이다 — `unknownIsNeverCheaper`.
+  unknownLenient: 1.8,
   noWidth: 3.0,
-  noWidthLenient: 1.5,
+  noWidthLenient: 2.5,
   tightMarginM: 0.5,
   tight: 1.8,
   avoidUncertain: 2.0,
