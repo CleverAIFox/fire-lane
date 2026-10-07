@@ -26,7 +26,7 @@
  * 사용자 지적 — 「관제는 출동자 시점이 아니라 **관제 센터에서 보는 느낌**이어야 한다」.
  * 종전 화면은 내비와 같은 밝은 바탕 · 비스듬한 3D · 왼쪽 긴 패널이라 운전석을 옮겨 놓은
  * 모양이었다. 상황실 벽 화면의 문법으로 바꾼다 —
- *     상단 상황판   시계 · 접수 · 출동 중 · 미확인 공유 · **실측 도착 중앙값**(119 이력)
+ *     상단 상황판   **접수 후 경과** · 출동 중 · 미확인 공유(가장 오래된 것) · 시계 (§414)
  *     좌           접수 · 지령(차종 목록 = 요구폭)
  *     중앙          북쪽 위 지도 · 어두운 바탕에 판정 4색 · 범례와 레이어는 지도 위
  *                   ★ 2026-09-29 (§311) 기본이 **3D 건물**(피치 45°)이다. 층수가 진입
@@ -45,12 +45,14 @@
  *     `ui/SegCard.tsx`      구간 카드 한 장
  *     `ui/tokens.ts`        시각 문자열 — `App.tsx` 와 **글자까지 같던** hhmm 을 한자리로
  *     `domain/fleetName.ts` 센터 이름 줄이기 — 같은 이유
+ *     `ui/OpsHistory.tsx`   출동 이력 요약 — 2026-10-06 (§414). 기본으로 안 편다
  *
  *   남은 것은 **배선**이다 — 적재 · 내비 링크 · 검색 · 도달 가능 · 미리보기 경로, 그리고
  *   그 값을 어느 조각에 넘길지.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OpsMap, type OpsLayers } from "./components/OpsMap";
+import { OpsHistory } from "./ui/OpsHistory";
 import { useFleet } from "./app/useFleet";
 import { loadAll, loadHistory, type Bundle } from "./infra/dataSource";
 import { openLink, newId, type Link } from "./infra/opsLink";
@@ -75,7 +77,7 @@ import { fmtDur, fmtSec, hhmm, hhmmss } from "./ui/tokens";
 import { GRAY_REASON, VERDICT_MEANING, VERDICT_ORDER } from "./ui/verdictMeaning";
 import { CLEARANCE_FORMULA, CLEARANCE_SCALE } from "./ui/clearanceMeaning";
 import { VehicleArt } from "./ui/VehicleArt";
-import { Center, Row, Sec, Tile } from "./ui/OpsBits";
+import { Center, Sec, Tile } from "./ui/OpsBits";
 import { SegCard } from "./ui/SegCard";
 import {
   ackBtn, body, btnSm, card, chip, clock, colL, colR, cta, D, dot, feedRow, input, lab,
@@ -91,6 +93,7 @@ export default function OpsApp() {
   const [fatal, setFatal] = useState<string | null>(null);
   const fleet = useFleet();
   const [incident, setIncident] = useState<Incident | null>(null);
+  const [histOpen, setHistOpen] = useState(false);
   // ★ 2026-10-05 (DECISIONS §400). 경로 모드는 **관제가 정한다.** 내비에는
   //   고르는 손이 없다 — 지령에 실어 보낸다.
   const [route, setRoute] = useState<RouteMode>("safe");
@@ -255,9 +258,17 @@ export default function OpsApp() {
     ? mkDispatchUrl(window.__FL_VIEW, dispatchArgs, true) : null;
 
   const waiting = ops.feed.filter((f) => !f.ackedAt).length;
+  // ★ §414. 「미확인 2건」은 **언제부터 2건인지**를 안 말한다 — 2분 된 둘과 20분
+  //   된 둘은 같은 수가 아니다. 가장 오래된 것의 나이를 같이 든다.
+  const oldestWait = ops.feed.reduce<number | null>(
+    (old, f) => (f.ackedAt ? old : Math.max(old ?? 0, now - f.at)), null);
   const live = units.filter((u) => !unitStale(u, now)).length;
   const hs = history?.summary;
   const myCenter = station ? hs?.by_center[`${station.name.replace(/119안전센터$/, "")}119안전센터`] : undefined;
+  const elapsedS = incident ? (now - incident.at.getTime()) / 1000 : null;
+  // ★ 문턱을 **지어내지 않는다.** 근거 있는 시간은 우리가 잰 실측 도착 중앙값
+  //   하나이고 그것을 넘으면 빨강이다 (§414 · MASTER §2-2 는 시간이 아니라 폭을 든다).
+  const medianS = myCenter?.median_s ?? hs?.resp_median_s ?? null;
 
   return (
     <div style={shell}>
@@ -268,12 +279,16 @@ export default function OpsApp() {
           <span style={{ fontSize: 12, color: D.sub, whiteSpace: "nowrap" }}>동부소방서 관할 · 동명동 · 도면 기반 1차 판정</span>
         </div>
         <div style={{ flex: 1 }} />
-        <Tile k="접수" v={incident ? "1건" : "0건"} tone={incident ? "danger" : undefined} />
+        {/* ★ 2026-10-06 (DECISIONS §414). 첫 칸이 **경과 시간**이다 — 상황판에
+            시계만 있고 「접수한 지 몇 분」이 없었다. 비교값은 밑줄로 내린다. */}
+        <Tile k="접수 후 경과" v={incident ? fmtDur(elapsedS ?? 0) : "—"}
+              sub={incident ? `실측 중앙 ${fmtSec(medianS)}` : "접수 없음"}
+              tone={!incident ? undefined
+                    : elapsedS != null && medianS != null && elapsedS > medianS ? "danger" : "warn"} />
         <Tile k="출동 중" v={`${live}대`} tone={live ? "ok" : undefined} />
-        <Tile k="미확인 공유" v={`${waiting}건`} tone={waiting ? "warn" : undefined} />
-        <Tile k={`실측 도착 중앙값${myCenter ? ` · ${station?.name.replace(/119안전센터$/, "")}` : ""}`}
-              v={fmtSec(myCenter?.median_s ?? hs?.resp_median_s ?? null)}
-              sub={myCenter ? `${myCenter.n}건` : hs ? `${hs.resp_n}건` : "이력 없음"} />
+        <Tile k="미확인 공유" v={`${waiting}건`}
+              sub={oldestWait == null ? undefined : `가장 오래된 것 ${fmtDur(oldestWait / 1000)}`}
+              tone={waiting ? "warn" : undefined} />
         <div style={clock}>{hhmmss(new Date(now))}</div>
       </header>
 
@@ -595,18 +610,7 @@ export default function OpsApp() {
               <div style={{ fontSize: 12, color: D.sub }}>지도에서 도로를 누르면 여유폭 · 사유 · 판정 근거 · 단속 이력이 뜬다.</div>
             </Sec>
           )}
-          {hs && (
-            <Sec title="출동 이력 요약 (실측)">
-              {Object.entries(hs.by_center).filter(([, v]) => v.n >= 5).map(([k, v]) => (
-                <Row key={k} k={`${k.replace(/119안전센터|119구조대/, (m) => (m.includes("구조") ? " 구조대" : ""))} · ${v.n}건`}
-                     v={`${fmtSec(v.median_s)}${v.straight_kmh ? ` · 직선 ${v.straight_kmh}km/h` : ""}`} />
-              ))}
-              <Row k={`동구 화재 · ${hs.fire_donggu.n}건`} v={fmtSec(hs.fire_donggu.median_s)} />
-              <div style={{ fontSize: 10.5, color: D.sub, marginTop: 6, lineHeight: 1.5 }}>
-                출동 지령 → 현장 도착. 직선 km/h 는 센터~지점 직선거리 ÷ 시간(실제 주행 속도의 하한).
-              </div>
-            </Sec>
-          )}
+          {hs && <OpsHistory hs={hs} open={histOpen} onToggle={() => setHistOpen((x) => !x)} />}
         </aside>
       </div>
     </div>

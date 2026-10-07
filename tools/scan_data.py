@@ -272,7 +272,14 @@ def main() -> int:
                 missing.append((key, pat))
         print()
         for key, pat in missing:
-            print(f"  ★ 결손 {key:20s} {pat}")
+            # ★ 2026-10-07 (§427). `awaiting` 을 아는 자가 셋째다 — 같은 상태를
+            #   세 자리가 저마다 다른 이름으로 불렀다. 여기는 관문이 아니라
+            #   조사 도구지만 **사람이 읽는 글자**가 갈리면 그것도 족 2 다.
+            why = str((ds.get(key) or {}).get("awaiting") or "").strip()
+            if why:
+                print(f"  · 유예 {key:20s} {pat}\n          {why[:72]}")
+            else:
+                print(f"  ★ 결손 {key:20s} {pat}")
         orphan = sorted(rawset - claimed)
         print(f"\n  격리 대상(대장에 없는 raw 파일) {len(orphan)}건")
         for o in orphan[:40 if not a.full else len(orphan)]:

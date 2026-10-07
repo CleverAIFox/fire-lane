@@ -540,6 +540,13 @@ step "기획서 대조"     uv run python tools/docx_check.py
 #   지도를 편별로 선언한다.
 scope "docs/*"
 step "기획서 개요 층"   uv run python tools/docstyle.py
+# ★ 2026-10-06 (DECISIONS §425 · PLAN #142). 내용 정본이 `docs/proposal.md` 로
+#   옮겨졌다. 화면은 **생성물**이고 이 단계가 「커밋된 것이 정본과 같은가」를 댄다.
+#   종료 코드 3 은 「지금은 통과, 배포는 막힌다」 — `CI=true` 면 2 로 올라간다.
+#   ★ 위 둘(`docx_check` · `docstyle`)을 **아직 안 뺀다.** docx 제출본이 살아
+#     있는 동안은 그쪽도 물어야 한다 — 참조 25곳을 한 판에 흔들지 않는다.
+scope "docs/proposal.md web/proposal.template.html web/proposal.html tools/build_proposal.py tools/proposal_source.py"
+step "기획서 화면"     uv run python tools/build_proposal.py --check
 # ★ 2026-10-04 (§390). `PLAN` 이 빚 목록인지 이력 창고인지. 세 자리가 주석으로만
 #   「PLAN 은 줄어야 한다」고 적고 있었다 — 강제자가 없으면 장식이다(MASTER §17).
 #   재는 것은 **행 수가 아니라 이력 사본**이다. 새 일은 늘어야 한다.
@@ -1286,4 +1293,5 @@ fi
 printf '  %s아직 사람이 봐야 하는 것 하나:%s\n' "$Y" "$Z"
 printf '    uv run python tools/serve.py\n'
 printf '    %sWebGL 렌더링은 스크립트가 못 본다. 지도가 실제로 그려지는지,%s\n' "$D" "$Z"
-printf '    %s판정 색·표지판·미니맵·검색이 눈으로 멀쩡한지 확인할 것.%s\n\n' "$D" "$Z"
+printf '    %s내비 — 판정 색·표지판·미니맵이 눈으로 멀쩡한지.%s\n' "$D" "$Z"
+printf '    %s관제(?view=ops) — 목적지 검색·이력 패널.%s\n\n' "$D" "$Z"

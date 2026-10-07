@@ -335,7 +335,27 @@
   "nfa/nfa_rapidresponse_kr_20250429.pdf": {
    "sha256": "e21395c9b4496ef919ed402ad07aed1d00ec5320a8bc1c7a3eed5c3c8d46a1b0",
    "bytes": 1553062
+  },
+  "eais/eais_roadledger_dm_jngj-dongmyeong_20260801.csv": {
+   "sha256": "44a79e4f75cfdb00b9b69d30e02bbe8077dde985fcf29c5c19331547450ac6b2",
+   "bytes": 4974
+  },
+  "juso/juso_adrdc_kr_20260801.zip": {
+   "sha256": "cf1176363dc8995a0187859cf5f8b217e1efa575000e60ffe9488d8663515a5a",
+   "bytes": 28639882
+  },
+  "nfa/nfa_bldgcomm_guide_kr_20231231.pdf": {
+   "sha256": "6a314d8943cba67244ffc7d862d409a28d4be2cd9b59086f9100a8923dd84c18",
+   "bytes": 5363907
+  },
+  "vworld/vworld_uq153_kr_20261001.zip": {
+   "sha256": "d43eb5155ada0fb913b0bbe882642cc14de9cfd0c953aa1d0b4b077755cb49da",
+   "bytes": 52383515
+  },
+  "vworld/vworld_uq164_jngj_20260915.zip": {
+   "sha256": "78356e48898fb18bfa24fe06aaedba54e0c906c9fbbfc9aeda8de6039fad5d57",
+   "bytes": 905642
   }
  },
- "at": "2026-10-05T23:23:03+09:00"
+ "at": "2026-10-08T01:47:52+09:00"
 }

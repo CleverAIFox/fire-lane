@@ -104,8 +104,13 @@
 #   자산이 아니라 데이터라 GIS 팀이 함께 든다. 개인이 아니라 팀 핸들로
 #   두는 이유는 소유자가 이탈하면 그 줄이 죽기 때문이다.
 /web/assets/vehicles/    @CleverAIFox
-# 기획서 뷰어. 정본은 docs/proposal.docx 이고 이 화면은 그것을 그린다.
+# 기획서 화면. 정본은 `docs/proposal.md` 이고 **와꾸 + 생성물** 둘이 짝이다 —
+# 손으로 고치는 것은 와꾸, `tools/build_proposal.py` 가 굽는 것이 생성물이다(§425).
+/web/proposal.template.html @CleverAIFox
 /web/proposal.html       @CleverAIFox
+# 기획서 그림 24장. 상류 .docx 에서 `tools/migrate_proposal.py` 가 한 번 꺼냈다 —
+# 글(`docs/proposal.md`)과 같이 들어온 **같은 반입물**이라 같이 커밋한다.
+/web/proposal/fig/       @CleverAIFox           # !strict
 /web/data/               @CleverAIFox
 
 

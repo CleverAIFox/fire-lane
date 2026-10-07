@@ -166,9 +166,30 @@ def stage(src: Path) -> Path:
 
 # ── 도엽 수집 ─────────────────────────────────────────────────
 def collect(src: Path) -> dict:
-    """도엽번호 → (연도, 종류, 경로). 같은 도엽은 최신 연도만 남긴다."""
+    """도엽번호 → (연도, 종류, 경로). 같은 도엽은 **SHP 우선**으로 하나만 남긴다.
+
+    ★ 2026-10-06 (DECISIONS §418). 종전 한 줄은 「같은 도엽은 **최신 연도**만
+      남긴다」였다. **연도를 못 읽는다.** `YEAR` 는 `_20201231` 꼴을 찾는데
+      V-WORLD 도엽명은 `356161916.zip` 이라 날짜가 없다 — SHP 74장 · NGI 143장
+      **전부 `year=0`** 이다. 실제 선택은 뒤의 tie-break `kind == "SHP"` 가 혼자
+      하고 있었고, 지금 데이터에서는 그 답이 **우연히** 맞다:
+
+          SHP  356161916.zip   2026-01-29      ← 겹치는 57장은 이쪽이 이긴다
+          NGI  356161916.ngi   2021-06-09
+
+      NGI 만 있는 86장(동명동 스코프 안 12장 — 356160983~988 · 993~998)은
+      2021년 판으로 들어간다. 그 사실이 대장에 없었다.
+
+    ★ **우연을 관문으로 바꾼다.** `(연도, SHP 여부)` 가 같은 후보가 둘 이상이면
+      죽는다. 국토정보플랫폼에서 NGI 2026 판을 받아 넣으면 기존 NGI(2021)와
+      동률이 되고, 그때 판을 정하는 것은 `rglob` 스캔 순서다 — 아무도 모르게
+      어제와 다른 지형으로 폭이 나온다. 연도를 읽게 고치는 것이 정답이지만
+      그것은 선택을 바꾸므로 재잠금이다. 여기서는 **모호하면 멈춘다.**
+    """
     stage(src)
     best: dict[str, tuple] = {}
+    # 도엽 → 같은 등급으로 겹친 후보들. 하나면 정상이고 둘부터 모호하다.
+    tied: dict[str, list[Path]] = {}
     _dirs = [x for x in (src if isinstance(src, (list, tuple)) else [src])
              if Path(x).is_dir()]
     roots = [WORK] + [Path(x) for x in _dirs]
@@ -186,8 +207,24 @@ def collect(src: Path) -> dict:
             kind = "NGI" if f.suffix == ".ngi" else "SHP"
             cur = best.get(sheet)
             # 같은 도엽·같은 연도면 SHP 를 쓴다. GDAL 이 읽으니 파싱 오차가 없다.
-            if cur is None or (year, kind == "SHP") > (cur[0], cur[1] == "SHP"):
+            rank = (year, kind == "SHP")
+            if cur is None or rank > (cur[0], cur[1] == "SHP"):
                 best[sheet] = (year, kind, f)
+                tied[sheet] = [f]
+            elif rank == (cur[0], cur[1] == "SHP"):
+                tied[sheet].append(f)
+    # ★ 모호하면 멈춘다(§418). 고르는 규칙이 답을 못 내는데 아무거나 고르면
+    #   어제와 다른 지형으로 폭이 나오고 아무도 그 사실을 모른다.
+    _amb = {s: v for s, v in tied.items() if len(v) > 1}
+    if _amb:
+        _lines = "\n".join(
+            f"    {s}  " + " · ".join(str(p) for p in sorted(v)[:4])
+            for s, v in sorted(_amb.items())[:10])
+        raise RuntimeError(
+            f"도엽 {len(_amb)}장이 **같은 등급의 후보 둘 이상**을 갖는다 — 어느 판을 쓸지 "
+            f"고를 규칙이 없다(§418).\n{_lines}\n"
+            "  파일명에 `_YYYYMMDD` 를 넣어 연도를 읽히게 하거나, 쓰지 않을 판을 "
+            "landing 으로 되돌려라.")
     return best
 
 

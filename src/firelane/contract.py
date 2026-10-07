@@ -308,6 +308,15 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
     if e.get("status") == "missing":
         r.add(WARN, f"결손 선언됨 — {e.get('missing_why', '사유 미기재')}")
         return r
+    # ★ 2026-10-07 (§427). `awaiting` — **아직 안 들어왔다.** §424 가 이 어휘를
+    #   만들고 `refcheck.py` **하나만** 고쳐서 이 자리가 머지를 막았다. 규율은
+    #   저쪽과 글자까지 같다: 사유를 적으면 경고, 비면 실패.
+    if (why := str(e.get("awaiting") or "").strip()):
+        r.add(WARN, f"아직 raw 에 없다 — {why}")
+        return r
+    if "awaiting" in e:
+        r.add(FAIL, "`awaiting` 칸이 비었다 — 사유 없는 유예는 받지 않는다(§424)")
+        return r
     if not c:
         r.add(WARN, "contract 블록 없음 — 검사할 수 없다")
         return r
@@ -435,10 +444,13 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
 #:   대장에 올렸다. **PDF 는 열 계약을 가질 수 없다** — 무계약 39 중 **11이
 #:   PDF** 이고 그 열하나가 이 수의 바닥이다. 바닥을 안 적으면 「39를 0으로
 #:   줄여라」가 영영 못 갚는 빚으로 읽힌다. 갚을 수 있는 몫은 **28**이다.
-NO_CONTRACT_RATCHET = 39
-#: 실측 2026-09-28. `crs_native` 를 적은 것 35종. 좌표가 없는 갈래
-#: (`csv_table` · `raw_only`)는 적을 근거가 없으므로 전수는 목표가 아니다.
-CRS_DECLARED_RATCHET = 35
+#: ★ 2026-10-07 (DECISIONS §429). 39 → 40. 소방청 「건축위원회(심의) 표준
+#:   가이드라인 2023.12」을 정보공개청구로 받아 올렸다. **PDF 는 열 계약을 가질 수
+#:   없다** — 바닥이 11 → **12** 가 됐고 갚을 수 있는 몫은 그대로 28 이다.
+NO_CONTRACT_RATCHET = 40
+#: 실측 2026-09-28. `crs_native` 35종. 좌표가 없는 갈래는 적을 근거가 없다 — 전수는 목표가 아니다.
+#: ★ 2026-10-06 (§419). 35 → 37. V-World SHP 둘 — `raw_only` 라도 `.prj` 에 근거가 있으면 적는다.
+CRS_DECLARED_RATCHET = 37
 
 # ── 실물 갈래의 래칫 ──────────────────────────────────────────
 #: 실측 2026-10-05, 레이크 있는 기계(Zd 전수 verify [64/99]). **75종 · 실패 8 · 경고 54.**
@@ -460,7 +472,16 @@ REAL_FAIL_RATCHET = 8
 #:   각각 「contract 블록 없음」 경고를 낸다. **같은 원인이 래칫 둘을 움직이는데
 #:   하나만 적었다** — `NO_CONTRACT_RATCHET` 만 올려서 레이크 있는 기계가
 #:   「이 배치가 늘렸다」로 빨갰다. 셋은 바닥이다(위 머리말).
-REAL_WARN_RATCHET = 54
+#: ★ 2026-10-07 — 54 → 59 (DECISIONS §427 · §428 · §429). 다섯이 움직인다 —
+#:     `vworld_uq153` · `vworld_uq164` · `eais_roadledger_dm`  실패 → 경고 (§427)
+#:     `juso_adrdc`                                           새 항목 · awaiting (§428)
+#:     `nfa_bldgcomm_guide`                                   새 항목 · 무계약 PDF (§429)
+#:   즉 실패 11 → **8**(= `REAL_FAIL_RATCHET`) · 경고 54 → **59**.
+#:   ★ 같은 원인이 래칫 둘을 움직이므로 둘을 같이 적는다(바로 위 §398-8 이 하나만
+#:     적어 당한 그것). 그리고 **항목을 더할 때마다 이 수를 다시 센다** — 처음에
+#:     57 로 적고 `juso_adrdc` 를 더하면서 안 고쳤다가 §429 에서 같이 잡았다.
+#:   ★ **반입되면 내려간다.** `awaiting` 을 지우는 판이 이 수를 조인다.
+REAL_WARN_RATCHET = 59
 
 
 def real_verdict(nf: int, nw: int) -> tuple[int, list[str]]:

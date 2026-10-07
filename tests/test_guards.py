@@ -437,7 +437,7 @@ def test_every_read_is_produced_by_an_earlier_step():
     지난 실행의 산출물을 읽어 조용히 돈다. 2026-08-17 의 1093 이 그것이었다.
     """
     m = _steps()
-    made = [m.RAW]
+    made = [m.RAW, *m.REPO_INPUTS]
     for s in m.STEPS:
         for r in s.consumes:
             if (s.name, r.name) in BACKWARD:
@@ -447,6 +447,30 @@ def test_every_read_is_produced_by_an_earlier_step():
                 "  선언이 틀렸거나 STEPS 순서가 틀렸다.\n"
                 "  알려진 후진 의존이면 BACKWARD 에 **사유와 해소 조건**을 적어라.")
         made += list(s.produces)
+
+
+def test_repo_inputs_are_tracked_and_actually_read():
+    """`REPO_INPUTS` 는 **양방향**이다 — 실물이 있고, 누군가 읽어야 한다.
+
+    ★ 2026-10-06 (§420-4). 이 목록은 「앞 단계가 안 만든다」를 면제한다. 면제는
+      반드시 역방향 검사를 끼고 산다(§69) — 아니면 안 읽는 파일 한 줄이 영구히
+      남아 **다음에 진짜 구멍이 생겼을 때 같은 이름으로 조용히 면제된다.**
+      `BACKWARD` 가 `test_backward_entries_are_still_real` 을 끼고 사는 것과 같다.
+    """
+    import subprocess
+    m = _steps()
+    assert m.REPO_INPUTS, "REPO_INPUTS 가 비었다 — 빈 목록이면 이 검사가 아무것도 안 든다"
+    read = {r for s in m.STEPS for r in s.consumes}
+    for q in m.REPO_INPUTS:
+        assert q.is_file(), f"{q} 가 없다 — REPO_INPUTS 는 실물을 든다"
+        rel = q.relative_to(m.ROOT).as_posix()
+        r = subprocess.run(["git", "ls-files", "--error-unmatch", rel],
+                           cwd=m.ROOT, capture_output=True, text=True, timeout=60)
+        assert r.returncode == 0, (
+            f"{rel} 이 git 추적 파일이 아니다 — 생성물이면 그것을 내는 단계를 "
+            "선언해야 하고 REPO_INPUTS 가 아니다")
+        assert any(m.matches(x, q) for x in read), (
+            f"{rel} 을 어느 단계도 안 읽는다 — 목록이 낡았다. 그 줄을 지워라")
 
 
 def test_backward_entries_are_still_real():
@@ -2547,3 +2571,142 @@ def test_the_two_runtimes_declare_the_same_knobs():
            for a, b in pairs.items() if a in got and got[a] != getattr(TUNING, b)]
     assert not bad, "두 런타임의 조율이 갈렸다:\n  " + "\n  ".join(bad)
     assert set(pairs) <= set(got), f"TS 에서 못 읽은 노브: {sorted(set(pairs) - set(got))}"
+
+
+# ── DEM 압축물 (DECISIONS §413) ────────────────────────────────
+def test_the_dem_extract_never_uses_a_name_from_the_archive(tmp_path):
+    """압축물 안의 **이름을 쓰지 않고** 바이트만 옮기는가.
+
+    ★ 2026-10-06 (DECISIONS §413). 이 시험을 「zip-slip 을 막는다」로 적으려다
+      재 봤더니 **CPython 의 `extractall` 이 이미 `../` 를 벗겨낸다.** 그러니
+      이 단정이 지키는 것은 경로 순회가 아니라 **쓰는 자리가 하나**라는 사실이다.
+      묻는 것을 정확히 적는다 — 안 그러면 다음 사람이 없는 공로를 믿는다.
+    """
+    import zipfile
+
+    from firelane.terrain import _dem_image
+    z = tmp_path / "dem.zip"
+    outside = tmp_path / "밖에_쓰였다.img"
+    with zipfile.ZipFile(z, "w") as zf:
+        zf.writestr("../../밖에_쓰였다.img", b"PAYLOAD")
+    with _dem_image(z) as img:
+        assert img.read_bytes() == b"PAYLOAD", "항목을 못 읽었다"
+        assert img.parent != tmp_path, "압축물 이름을 써서 자리를 정했다"
+    assert not outside.exists(), "압축물 안의 경로가 바깥에 파일을 만들었다 — zip-slip"
+    assert not img.exists(), "쓰고 나서 안 지웠다"
+
+
+def test_the_dem_extract_refuses_anything_but_exactly_one_image(tmp_path):
+    """**정확히 하나여야 한다.** 둘이면 어느 것을 읽었는지가 조용히 갈린다 —
+    DEM 이 바뀌어도 수가 안 움직이는 것이 제일 나쁜 꼴이다.
+    """
+    import zipfile
+
+    import pytest
+
+    from firelane.terrain import _dem_image
+    for names in ([], ["a.img", "b.img"]):
+        z = tmp_path / f"{len(names)}.zip"
+        with zipfile.ZipFile(z, "w") as zf:
+            zf.writestr("읽지마.txt", b"x")
+            for n in names:
+                zf.writestr(n, b"x")
+        with pytest.raises(RuntimeError, match="정확히 하나"), _dem_image(z):
+            pass
+
+
+def test_sheet_pick_refuses_to_guess_between_equal_candidates(tmp_path, monkeypatch):
+    """도엽 고르기가 **동률에서 멈춘다** (DECISIONS §418).
+
+    `collect()` 한 줄은 「같은 도엽은 최신 연도만 남긴다」였는데 연도를 못 읽는다 —
+    `YEAR` 는 `_20201231` 꼴을 찾고 V-WORLD 도엽명은 `356161916.zip` 이라 날짜가
+    없어 SHP 74 · NGI 143 이 **전부 year=0** 이다. 실제 선택은 뒤의 tie-break
+    `kind == "SHP"` 가 혼자 했고 지금은 그 답이 우연히 맞다(SHP 2026 · NGI 2021).
+
+    우연이 깨지는 날은 같은 종류가 둘 올 때다 — 국토정보플랫폼 NGI 2026 판을
+    받아 넣으면 기존 NGI(2021)와 동률이 되고 `rglob` 순서가 지형을 정한다.
+    그때 조용히 고르면 **어제와 다른 폭이 나오는데 아무도 모른다.**
+    """
+    import pytest
+
+    from firelane import ngii1k
+
+    # 같은 종류 둘 — 고를 규칙이 없다
+    same = tmp_path / "same"
+    (same / "sub").mkdir(parents=True)
+    (same / "356161916.ngi").write_text("x", encoding="utf-8")
+    (same / "sub" / "356161916.ngi").write_text("y", encoding="utf-8")
+    monkeypatch.setattr(ngii1k, "WORK", same / "_work")
+    with pytest.raises(RuntimeError, match="고를 규칙이 없다"):
+        ngii1k.collect(same)
+
+    # 종류가 다르면 SHP 가 이긴다 — 종전 동작 그대로다
+    mixed = tmp_path / "mixed"
+    mixed.mkdir()
+    (mixed / "356161916.ngi").write_text("x", encoding="utf-8")
+    (mixed / "356161916.shp").write_text("y", encoding="utf-8")
+    monkeypatch.setattr(ngii1k, "WORK", mixed / "_work")
+    got = ngii1k.collect(mixed)
+    assert got["356161916"][1] == "SHP", "혼합에서 SHP 우선이 깨졌다"
+
+
+# ── §420-5 · §420-7. **봤는데 안 고친 것들의 판별식** ────────────
+# ★ 2026-10-06. 이 셋이 왜 여기 있나 — §420 이 결함 넷을 **보고 기록만 했다**.
+#   「고치는 일은 PLAN 이 든다」고 적었는데 **PLAN 에 그 행이 없었다.** 들지 않은
+#   빚은 영영 안 갚는다. 고치면서 판별식을 같이 꺼냈다: 실물로만 재면 「지금
+#   초록인가」밖에 못 묻고, 상한을 1000 으로 올려도 통과한다(§17-0).
+
+
+def test_web_size_verdict_bites_at_the_boundary():
+    """상한이 **경계에서** 운다. 그리고 상한 자체가 정본에서 온다."""
+    m = _steps()
+    assert m.web_size_verdict(m.WEB_MAX_MB - 0.1) == [], "상한 밑인데 운다"
+    over = m.web_size_verdict(m.WEB_MAX_MB)
+    assert len(over) == 1, "경계에서 안 문다 — `>` 와 `>=` 를 섞었다"
+    assert str(m.WEB_MAX_MB) in over[0], "할 말에 상한이 없다 — 사람이 무엇을 넘었는지 모른다"
+    assert m.web_size_verdict(m.WEB_MAX_MB * 10), "한참 넘었는데 안 문다"
+
+
+def test_verify_returns_what_it_found_instead_of_printing_it():
+    """`verify()` 가 **반환형을 갖는다.** 종전에는 상태를 문자열로만 냈다(§415 와 같은 족)."""
+    m = _steps()
+    assert m.verify.__annotations__.get("return") == "list[str]", (
+        "`verify()` 가 반환형을 안 적었다 — 상태를 문자열로 내면 호출부가 버린다")
+    src = (ROOT / "src" / "firelane" / "pipeline.py").read_text(encoding="utf-8")
+    assert "bad = verify() + verify_ingest() + verify_schema()" in src, (
+        "`main()` 이 `verify()` 의 결과를 `bad` 에 안 더한다 — "
+        "반환형만 있고 아무도 안 읽으면 종전과 같다")
+
+
+def test_raw_verdict_splits_on_whether_something_was_declared():
+    """선언이 없는 것만 실패다. **결손은 상태이지 결함이 아니다**(§424)."""
+    # 집은 `firelane.lake` 다 — 처분 선언을 읽는 `disposition()` 바로 위에 산다(§426-4)
+    from firelane.lake import raw_verdict
+
+    assert raw_verdict([], []) == (0, []), "아무 일도 없는데 운다"
+    rc, say = raw_verdict([], ["safety_x.csv"])
+    assert rc == 0 and say, "결손을 실패로 올렸다 — §424 가 상태라고 정했다"
+    rc, say = raw_verdict(["모르는파일.csv"], [])
+    assert rc == 1 and say, "선언 없는 파일이 종료코드를 안 가른다 — 3주를 잃은 그 구조다"
+    rc, _ = raw_verdict(["a"], ["b"])
+    assert rc == 1, "둘이 같이 있으면 실패가 이긴다"
+    # ★ `normalize_raw` 가 그 집을 **부르는가** — 제 자리에 사본을 두면 갈린다
+    src = (ROOT / "src" / "firelane" / "normalize_raw.py").read_text(encoding="utf-8")
+    assert "_lake.raw_verdict(" in src, "부르지 않는다 — 판정이 두 집이 됐다"
+    assert "def raw_verdict" not in src, "사본을 다시 만들었다"
+
+
+def test_required_does_not_swallow_an_unreadable_ledger():
+    """대장을 못 읽으면 **터진다.** 빈 목록은 「전부 확보」를 통과시킨다(§420-7)."""
+    import importlib.util
+    import sys as _sys
+    spec = importlib.util.spec_from_file_location(
+        "normraw_t2", ROOT / "src" / "firelane" / "normalize_raw.py")
+    nr = importlib.util.module_from_spec(spec)
+    _sys.modules[spec.name] = nr
+    spec.loader.exec_module(nr)
+
+    src = (ROOT / "src" / "firelane" / "normalize_raw.py").read_text(encoding="utf-8")
+    assert "except OSError:\n        return []" not in src, (
+        "대장 읽기 실패를 삼킨다 — 아무것도 안 본 상태가 「전부 확보」로 보고된다")
+    assert nr._required(), "필수 목록이 비었다 — 수집이 죽었으면 터져야 한다"

@@ -356,7 +356,47 @@
    "origin_name": "관리카드_지산2호_.pdf",
    "seen_at": "2026-09-17T12:33:50+09:00",
    "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "eais_roadledger_dm_jngj-dongmyeong_20260801.csv": {
+   "sha256": "44a79e4f75cfdb00b9b69d30e02bbe8077dde985fcf29c5c19331547450ac6b2",
+   "bytes": 4974,
+   "origin_name": "15. 도로대장_20261006153718.csv",
+   "dataset": "eais_roadledger_dm",
+   "seen_at": "2026-10-08T01:43:14+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "juso_adrdc_kr_20260801.zip": {
+   "sha256": "cf1176363dc8995a0187859cf5f8b217e1efa575000e60ffe9488d8663515a5a",
+   "bytes": 28639882,
+   "origin_name": "202608_상세주소DB_전체분.zip",
+   "dataset": "juso_adrdc",
+   "seen_at": "2026-10-08T01:43:16+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "nfa_bldgcomm_guide_kr_20231231.pdf": {
+   "sha256": "6a314d8943cba67244ffc7d862d409a28d4be2cd9b59086f9100a8923dd84c18",
+   "bytes": 5363907,
+   "origin_name": "건축위원회(심의) 표준 가이드라인.pdf",
+   "dataset": "nfa_bldgcomm_guide",
+   "seen_at": "2026-10-08T01:43:17+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "vworld_uq153_kr_20261001.zip": {
+   "sha256": "d43eb5155ada0fb913b0bbe882642cc14de9cfd0c953aa1d0b4b077755cb49da",
+   "bytes": 52383515,
+   "origin_name": "C_UQ153.zip",
+   "dataset": "vworld_uq153",
+   "seen_at": "2026-10-08T01:43:19+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
+  },
+  "vworld_uq164_jngj_20260915.zip": {
+   "sha256": "78356e48898fb18bfa24fe06aaedba54e0c906c9fbbfc9aeda8de6039fad5d57",
+   "bytes": 905642,
+   "origin_name": "LSMD_CONT_UQ164_5174_전남광주통합특별시.zip",
+   "dataset": "vworld_uq164",
+   "seen_at": "2026-10-08T01:43:20+09:00",
+   "from": "/mnt/c/Users/Fox/Downloads"
   }
  },
- "at": "2026-09-17T13:50:42+09:00"
+ "at": "2026-10-08T01:43:20+09:00"
 }

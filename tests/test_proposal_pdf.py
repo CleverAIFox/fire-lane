@@ -86,18 +86,27 @@ def test_selftest_passes():
     assert r.returncode == 0, r.stdout + r.stderr
 
 
-def test_viewer_points_at_the_pdf_and_keeps_a_fallback():
-    """뷰어가 PDF 를 가리키고, 없을 때 내려받기 안내로 바뀌는가."""
+def test_the_page_offers_the_pdf_as_a_download_not_as_the_body():
+    """제출본 두 벌로 가는 길이 화면에 있는가. **품는 것이 아니라 가리킨다.**
+
+    ★ 2026-10-06 (§425). 종전 이 시험은 「뷰어가 PDF 를 품었나」를 물었다 —
+      그때는 화면이 PDF 틀 하나였기 때문이다. 이제 화면이 **글을 직접 든다**
+      (정본 `docs/proposal.md` → `tools/build_proposal.py`). 그래서 묻는 것이
+      바뀐다: PDF 는 사라진 것이 아니라 **제출용 내려받기**로 남았고, 그 길이
+      끊기면 사람이 제출본을 못 받는다. 물음을 지우지 않고 **옮겼다.**
+    """
     import re as _re
     raw = (ROOT / "web" / "proposal.html").read_text(encoding="utf-8")
     # ★ **주석을 뺀 뒤에 본다.** 이 파일 자신의 `<!-- … docx-preview … -->` 이력을
     #   배선으로 읽으면 안 된다 — `test_tools_are_wired` 가 2026-09-20 에 배운 것.
     html = _re.sub(r"<!--.*?-->", "", raw, flags=_re.S)
-    assert "./proposal.pdf" in html, "뷰어가 PDF 를 안 가리킨다"
+    for href in ("./proposal.pdf", "./proposal.docx"):
+        assert f'href="{href}"' in html, f"제출본 {href} 로 가는 길이 화면에 없다"
     assert "docx-preview" not in html, (
         "브라우저 .docx 렌더러가 되살아났다 — 글꼴·그림이 받는 기계에 의존한다")
-    assert "fallback" in html and "./proposal.docx" in html, (
-        "PDF 가 없을 때의 길이 없다 — 로컬에 변환기가 없으면 빈 화면이 된다")
+    assert "<iframe" not in html, (
+        "화면이 다시 틀을 품었다 — 글은 이 화면 안에 있어야 하고 그래야 "
+        "검사(`build_proposal.py --check`)가 내용을 들 수 있다")
 
 
 def test_pdf_is_not_committed():
