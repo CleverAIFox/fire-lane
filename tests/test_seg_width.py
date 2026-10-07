@@ -210,3 +210,24 @@ def test_width_source_priority_has_one_home():
         "폭 소스 우선순위가 `seg/params.py::WIDTH_SRCS` 밖에서 또 쓰였다:\n  "
         + "\n  ".join(bad)
         + "\n  순서가 곧 규칙이다 — 두 벌이면 한쪽만 고치는 날이 온다(결정 63).")
+
+
+def test_width_diagnosis_selects_by_width_not_by_verdict():
+    """「폭 미산출 진단」이 **폭으로** 고른다 (DECISIONS §417).
+
+    종전 선택자는 `g.unknown_reason == "width"` 였다. 이름은 폭인데 **고르는 기준이
+    판정**이라, 폭이 안 나왔는데 대장폭으로 `blocked` 가 난 구간은 진단에서 통째로
+    빠졌다. 발행본으로 재면 종전 기준은 **0구간**이고 새 기준은 2구간이다 —
+    `DM03310` · `DM03311`(동계로15번길). 둘은 전체에서 유일하게 `n_try=0` 으로
+    **트랜섹트를 한 발도 안 쐈는데** 어느 자리에도 그 사실이 안 적혔다.
+
+    진단이 0건을 보고 「이상 없음」을 찍는 것이 제일 나쁜 꼴이다.
+    """
+    src = (ROOT / "src" / "firelane" / "seg" / "report.py").read_text(encoding="utf-8")
+    # 주석이 아니라 **선택자 줄** 하나를 본다 — 옛 기준은 주석에 역사로 남아 있다
+    pick = [ln.strip() for ln in src.splitlines()
+            if ln.strip().startswith("_w = g[")]
+    assert len(pick) == 1, f"폭 진단 선택자가 하나가 아니다: {pick}"
+    assert "width_min_m.isna()" in pick[0], (
+        f"진단이 폭으로 안 고른다 — blocked 가 빠진다(§417): {pick[0]}")
+    assert "n_try == 0" in src, "한 발도 안 쏜 구간을 따로 세지 않는다"

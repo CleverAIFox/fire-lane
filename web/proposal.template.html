@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{title}</title>
+<!--
+  ★ 이것은 **와꾸**다. 내용은 한 글자도 없다 — `docs/proposal.md` 가 정본이고
+    `tools/build_proposal.py` 가 아래 자리표시자 일곱을 채워 `web/proposal.html`
+    을 굽는다. 손으로 고치는 것은 **이 파일**이고 생성물이 아니다.
+
+  ★ 왜 와꾸를 렌더러 밖으로 뺐나 — 토트는 HTML 와꾸를 `html.js` 안에 문자열로
+    들고 있어서 스타일 한 줄을 고치려면 조립 코드를 열어야 했다. 하토르는
+    `proposal.template.html` 로 뗐고 그쪽이 맞다: **와꾸를 고치는 손과 조립을
+    고치는 손이 다르다.**
+
+  자리표시자 일곱 — 하나라도 없으면 굽는 쪽이 터진다
+    title · stamp · built · tabs · toc · panes · script
+
+  ★ 이 주석에 자리표시자를 **중괄호째 적지 않는다.** 처음에 적었더니 굽는 쪽의
+    `replace` 가 주석까지 채워서 **표 56이 112, 그림 24가 48** 로 나왔다.
+    완전성 자가 그것을 잡았다 — 바이트 대조였으면 「커밋된 것과 재생성 결과가
+    같이 틀려서」 영원히 조용했을 자리다.
+-->
+<!-- ★ 글꼴 스택의 정본은 `tools/svg_fit.py` 의 FONT 하나다(MASTER §17-1).
+     여기서 다른 글꼴을 고르면 그림과 화면이 갈린다 — 처음 판은 Google Fonts 에서
+     딴 글꼴을 들고 왔고 `test_sources_of_truth` 가 그것을 물었다. 내려받는 자리도
+     종전 뷰어가 쓰던 jsdelivr 그대로 둔다 — 새 바깥집을 안 만든다. -->
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --ink:#1e293b; --dim:#64748b; --line:#e2e8f0;
+    --head:#0f172a; --accent:#e8562f; --soft:#f8fafc; --code:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.78 Pretendard, system-ui, sans-serif;
+    letter-spacing:-.011em; -webkit-font-smoothing:antialiased;
+  }
+  code,pre{font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:.88em; letter-spacing:0}
+  code{background:var(--code); padding:.1em .35em; border-radius:3px}
+
+  /* ── 머리 ── */
+  header{border-bottom:1px solid var(--line); padding:26px 0 18px}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+  h1.doc{margin:0; font-size:30px; font-weight:700; color:var(--head);
+    letter-spacing:-.02em}
+  .meta{margin-top:8px; color:var(--dim); font-size:12.5px}
+  .meta b{color:var(--ink); font-weight:600}
+  .dl a{color:var(--accent); text-decoration:none; font-weight:600}
+  .dl a:hover{text-decoration:underline}
+  .stamp{font-family:ui-monospace,monospace; font-size:11px; color:var(--dim)}
+
+  /* ── 칸(탭) — CSS 라디오. 자바스크립트가 없어도 선다 ── */
+  .tabs{display:flex; gap:4px; margin-top:18px; flex-wrap:wrap}
+  .tabs label{padding:8px 16px; border:1px solid var(--line); border-bottom:none;
+    border-radius:7px 7px 0 0; cursor:pointer; font-size:13.5px; font-weight:600;
+    color:var(--dim); background:var(--soft)}
+  input[name=pane]{position:absolute; opacity:0; pointer-events:none}
+  .pane{display:none}
+
+  /* ── 본문 ── */
+  main{display:grid; grid-template-columns:260px minmax(0,1fr); gap:38px;
+    max-width:1180px; margin:0 auto; padding:26px 24px 80px}
+  nav{position:sticky; top:18px; align-self:start; max-height:88vh; overflow:auto;
+    font-size:13px; border-left:2px solid var(--line); padding-left:14px}
+  nav a{display:block; color:var(--dim); text-decoration:none; padding:3px 0}
+  nav a:hover{color:var(--accent)}
+  nav .d3{font-weight:600; color:var(--ink); margin-top:10px}
+  nav .d4{padding-left:12px; font-size:12.5px}
+
+  article h2{font-size:23px; font-weight:700; color:var(--head);
+    margin:46px 0 14px; padding-bottom:9px; border-bottom:2px solid var(--head)}
+  article h3{font-size:18.5px; font-weight:700; color:var(--head); margin:38px 0 12px}
+  article h4{font-size:15.5px; font-weight:600; color:var(--head); margin:26px 0 9px}
+  article h5{font-size:14px; font-weight:600; color:var(--dim); margin:18px 0 7px}
+  article p{margin:0 0 11px}
+  article img{max-width:100%; height:auto; display:block; margin:16px auto;
+    border:1px solid var(--line); border-radius:5px}
+
+  table{border-collapse:collapse; width:100%; margin:16px 0; font-size:13.3px}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left;
+    vertical-align:top}
+  th{background:var(--soft); font-weight:600; color:var(--head)}
+  tbody tr:nth-child(even){background:#fcfdfe}
+
+  footer{border-top:1px solid var(--line); padding:20px 0 40px; color:var(--dim);
+    font-size:12px}
+
+  @media print{
+    nav,.tabs,header .meta{display:none}
+    .pane{display:block !important}
+    article h2{page-break-before:always}
+    main{display:block; padding:0}
+  }
+  @media (max-width:900px){
+    main{grid-template-columns:1fr} nav{display:none}
+  }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1 class="doc">{title}</h1>
+  <div class="meta">
+    정본 <b>docs/proposal.md</b> · 이 화면은 <b>생성물</b>이다 — 손으로 고치지 않는다.
+    <span class="stamp">{stamp}</span> · 구운 날 {built}
+  </div>
+  <!-- ★ 2026-10-06 (§425). 종전 이 화면은 PDF 를 품은 **뷰어**였다. 이제 글을
+       직접 들으므로 PDF · DOCX 는 **제출용 내려받기**로 남는다 — `stage_pages.py`
+       가 배포 때 둘을 같이 올린다. 로컬 트리에는 없는 것이 정상이다(.gitignore). -->
+  <div class="meta dl">제출본 내려받기 ·
+    <a href="./proposal.pdf">PDF</a> · <a href="./proposal.docx">DOCX</a>
+  </div>
+  <div class="tabs">{tabs}</div>
+</div></header>
+
+<main>
+  <nav>{toc}</nav>
+  <article>{panes}</article>
+</main>
+
+<footer><div class="wrap">
+  Fire-Lane · 소방차 진입 가능 경로 판정 지원 시스템 ·
+  이 문서가 드는 수치의 정본은 <code>data/golden/segments.fingerprint.json</code> 이다.
+</div></footer>
+{script}
+</body>
+</html>

@@ -65,3 +65,37 @@ def test_limits_live_only_in_sizecheck() -> None:
     for rel in ("tools/verify.sh", ".github/workflows/contract.yml"):
         body = (ROOT / rel).read_text(encoding="utf-8")
         assert "tools/sizecheck.py\n" in body, f"{rel} 가 sizecheck 를 인자 없이 부르지 않는다"
+
+
+def test_the_report_counts_what_it_says_it_counts() -> None:
+    """**보고하는 수도 판정이다.**  (§428-5)
+
+    ★ 2026-10-07. 돌연변이 장부가 이 파일에서 생존 하나를 더 냈다 — `>` → `>=`
+      둘이 보고 쪽(`--table` 줄 고르기 · 성공 줄의 「넘는 파일 N」)에 있었고
+      **아무 시험도 그 수를 안 봤다.** 판정은 `judge()` 가 하므로 산출물은 안 틀리지만,
+      사람은 그 수를 읽고 「예외가 몇이고 넘는 것이 몇인가」를 판단한다.
+      안 물으면 그 줄은 조용히 거짓이 된다 — 래칫을 올리는 대신 **그물을 넓혔다.**
+
+    밖  **줄 수가 옳은가는 안 본다**(`test_count_matches_wc` 가 든다).
+        여기가 드는 것은 「세는 조건이 상한과 같은가」 하나다.
+    """
+    # 합성으로 경계를 민다 — 상한과 **같은** 줄 수는 넘는 것이 아니다
+    lim = sc.LIMITS["code"]
+    probe = {"a.py": lim - 1, "b.py": lim, "c.py": lim + 1}
+    over = sum(1 for r, n in probe.items() if n > sc.LIMITS[sc.kind(r)])
+    assert over == 1, (
+        f"상한과 같은 줄 수를 「넘었다」로 센다 — {over} (기대 1). "
+        "`>` 와 `>=` 를 섞으면 보고가 거짓이 된다")
+
+    # 실물 — 성공 줄의 「넘는 파일 N」이 예외 목록의 크기와 맞는가
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "sizecheck.py")],
+                       capture_output=True, text=True, cwd=ROOT, timeout=300)
+    assert r.returncode == 0, r.stdout + r.stderr
+    import re as _re
+    mm = _re.search(r"예외 (\d+)개가 기록과 같다 \(넘는 파일 (\d+)\)", r.stdout)
+    assert mm, f"성공 줄의 꼴이 바뀌었다 — 그물이 비었다:\n{r.stdout}"
+    exc, over = int(mm.group(1)), int(mm.group(2))
+    assert exc == len(sc.EXCEPTIONS), f"예외 수 {exc} ≠ 실제 {len(sc.EXCEPTIONS)}"
+    assert over == exc, (
+        f"「넘는 파일」 {over} 이 예외 {exc} 과 다르다 — 예외가 아닌데 넘는 파일이 "
+        "있거나, 예외인데 이미 상한 아래로 내려온 것이 있다. 둘 다 사람이 본다")

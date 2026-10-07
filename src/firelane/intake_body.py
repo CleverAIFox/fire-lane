@@ -104,11 +104,18 @@ def body_file_of(body: str, entry: dict) -> tuple[str | None, str]:
     ★ 조문 둘을 선언한 법령은 **점수가 같다** — 같은 인쇄본이라 낱말이 같다.
       가르는 것은 인쇄 URL 의 `joNo` 하나뿐이고, 그것이 없으면 안 고른다.
     """
-    files = list((entry or {}).get("files") or [])
+    from firelane import ledger as _led
+
+    # ★ 2026-10-07 (DECISIONS §430). 종전에는 `entry.get("files")` 를 **직접**
+    #   읽었다. 2026-08-31 에 대장을 `stem`+`ext` 로 뒤집으면서(PLAN #46)
+    #   `files` 는 **글롭 예외 열넷**만 남았는데 이 소비자가 이관에서 빠졌다 —
+    #   나머지 **예순여섯 종이 "대장이 파일을 안 적는다"** 로 떨어졌다.
+    #   정본 접근자는 `ledger.globs()` 하나다. 그것만 쓴다.
+    files = list(_led.globs(entry or {}))
     if len(files) == 1:
         return files[0], "선언 파일이 하나다"
     if not files:
-        return None, "대장이 `files` 를 안 적는다"
+        return None, "대장이 파일을 안 선언한다"
     m = _JONO.search(body)
     if m:
         want = f"_a{int(m.group(1))}."

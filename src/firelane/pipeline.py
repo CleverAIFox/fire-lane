@@ -80,6 +80,11 @@ def matches(path: Path, decl: Path) -> bool:
     return path == decl
 
 
+#: 읽기만 하고 **절대 안 만드는** 저장소 추적 입력 — 앞 단계 산출도 `RAW` 도 아닌
+#: **셋째 갈래**다. `BACKWARD` 는 틀린 집이고(해소 조건이 없다), 양방향 검사가
+#: `tests/test_guards.py` 에 있다. 왜 필요했는지는 §426-3.
+REPO_INPUTS: tuple[Path, ...] = (ROOT / "web" / "config.js",)   # 판정 색·과장 배수의 정본
+
 P = PROCESSED
 # ★ 2026-09-03. 선언을 실물에 맞췄다. 종전에는 STEPS 가 실제 산출물의
 #   부분집합이었고, 그래서 이 파일 머리말이 약속한 셋(writes 충돌 ·
@@ -104,7 +109,11 @@ STEPS = [
                  P / "turn_restriction.csv",
                  # ★ 2026-09-22 (§216-3). publish_context · publish_navi 가 이름으로 읽는다
                  P / "speedbump.csv", P / "speed_cam.csv", P / "nfa_dispatch_119.csv",
-                 P / "nfa_rescue.csv", P / "nfa_fire_incident.csv", P / "parking_enforce.csv")),
+                 P / "nfa_rescue.csv", P / "nfa_fire_incident.csv", P / "parking_enforce.csv",
+                 # ★ 2026-10-06 (§426-2). **내는 쪽도 빠져 있었다.** 읽는 쪽에
+                 #   적자마자 `test_every_read_is_produced_by_an_earlier_step` 이
+                 #   이 줄을 요구했다 — 한쪽만 적으면 다른 검사가 대신 운다.
+                 P / "enforce_cam.csv")),
     Step("segments", "segments", "노딩 → 폭 → 판정",
          P / "segments.geojson",
          reads=(P / "ngii1k_5186.gpkg", P / "ngii1k_center_5186.gpkg",
@@ -201,7 +210,11 @@ STEPS = [
                 P / "speedbump.csv", P / "speed_cam.csv",
                 P / "child_zone_std_5186.gpkg", P / "senior_zone_std_5186.gpkg",
                 P / "nfa_dispatch_119.csv", P / "nfa_rescue.csv", P / "nfa_fire_incident.csv",
-                P / "parking_enforce.csv"),
+                P / "parking_enforce.csv",
+                # ★ 2026-10-06 (§420-4 · §426-2). **선언 밖에 살던 둘.** 이름으로
+                #   읽는데 이 표에 0회였다 — 원본이 바뀌어도 안 잡혔다. 바로 위
+                #   `parking_enforce.csv` 는 적혀 있었고 **하나만 빠졌다**(§243).
+                P / "enforce_cam.csv", ROOT / "web" / "config.js"),
          # ★ web/data/_manifest.json 은 publish 가 마지막에 쓰는 계보다.
          #   종전에는 tools/web_manifest.py 를 사람이 따로 돌려야 했고
          #   아무도 안 돌렸다(2026-08-22 CI 가 처음 잡음).
@@ -381,16 +394,31 @@ def verify_schema() -> list[str]:
     return out
 
 
-def verify():
-    """산출물이 기대값과 맞는지 본다."""
+def web_size_verdict(mb: float) -> list[str]:
+    """`web/data` 크기 판정. 순수 함수 — 시험이 합성 수로 경계를 민다(§426-4).
+
+    실물을 훑으면 「지금 초록인가」만 묻고 상한을 1000 으로 올려도 통과한다(§17-0).
+    """
+    if mb >= WEB_MAX_MB:
+        return [f"web/data {mb:.1f}MB — CI 상한 {WEB_MAX_MB}MB 를 넘었다. CI 가 막는다"]
+    return []
+
+
+def verify() -> list[str]:
+    """산출물이 기대값과 맞는지 본다. **깨진 것을 돌려준다**(§426-1 · §415 족).
+
+    ★ **기대 불일치는 여기서 안 센다** — 그것은 「예보와 실제의 대조」이고 사람이
+      읽는 수다(§13-5 규칙 2). 여기는 기계적으로 답이 하나인 것만 든다.
+    """
     import json
+    bad: list[str] = []
     p = WEB / "segments.schema.json"
     if not p.exists():
-        return
+        return bad
     E = expect()
     if not E:
         print("\n  ! golden 지문 없음 — 판정 검증 생략. tools/golden.py lock")
-        return
+        return bad
     s = json.loads(p.read_text(encoding="utf-8"))
     n = s.get("count")
     ok = n == E["segments"]
@@ -420,8 +448,11 @@ def verify():
         #   40 인데 여기만 60 이었다(PLAN #12 에서 60→40 으로 내리면서 누락).
         #   40~60 구간에서 파이프라인은 초록불이고 CI 만 빨간불이 된다 —
         #   "로컬에서는 되는데 CI 가 막는다" 가 정확히 이런 자리에서 나온다.
-        warn = "" if mb < WEB_MAX_MB else c(f"  ★ CI 상한 {WEB_MAX_MB}MB 초과", "31")
+        over = web_size_verdict(mb)
+        warn = c(f"  ★ CI 상한 {WEB_MAX_MB}MB 초과", "31") if over else ""
         print(f"  web/data {mb:.0f} MB{warn}")
+        bad += over
+    return bad
 
 
 def main():
@@ -581,8 +612,7 @@ def main():
             print(c("\n★ 계약 테스트 실패. 머지하지 말 것.", "31"))
             sys.exit(1)
 
-    verify()
-    bad = verify_ingest() + verify_schema()
+    bad = verify() + verify_ingest() + verify_schema()
     print(f"\n총 {time.time()-t0:.1f}s")
     if bad:
         print(c("\n★ 계약 위반 — 산출물을 믿지 마라", "31"))

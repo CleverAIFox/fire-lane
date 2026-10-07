@@ -29,7 +29,7 @@ PLAN(미래)  →  도래  →  MASTER(현재)  →  회고  →  DECISIONS(과�
 | [`docs/PLAN.md`](docs/PLAN.md) | 미래 | 남은 일 · 미결정 · 담당 공백 · 결함 대장 |
 | [`docs/MASTER.md`](docs/MASTER.md) | 현재 | 판정 · 데이터 · 용어 · UI 계약 · 운영 |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | 과거 | 왜 그렇게 됐나 (append-only) |
-| `docs/proposal.docx` | — | 대외 제출용. 시제 규칙 밖 |
+| `docs/proposal.md` | — | 대외 제출용 **내용 정본**. 시제 규칙 밖. 화면 `web/proposal.html` 은 생성물이다 |
 
 **한 항목은 한 문서에만 산다.** 두 곳에 있으면 한쪽만 고치는 날이 온다.
 남은 일의 정본은 **수용 조건**으로 갈린다 — 판정을 움직이는 일은 `PLAN §1`,
@@ -501,7 +501,7 @@ web/
 도달 불가    447         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       58,308.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 75종 · `retired` 4종
+대장        `datasets` 80종 · `retired` 4종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
             edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)

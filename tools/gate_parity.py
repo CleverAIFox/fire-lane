@@ -171,10 +171,18 @@ def tokens(text: str) -> set[str]:
     return out
 
 
+#: ★ 2026-10-06 (§425). `scope "a.py b.py"` 는 **그 단계가 덮는 파일**이다 —
+#:   부르는 줄이 아니다. 이것을 호출로 세면 라이브러리가 「로컬 전용 검사기」가
+#:   되고 CI 에 넣을 수도 면제할 수도 없다(`tools/proposal_source.py` 가 그랬다).
+#:   `tools/toolclass.py` 의 같은 자리와 **한날 같이 고쳤다** — 둘이 같은 글을
+#:   같은 뜻으로 읽어야 한다. 실측: 이 줄에만 나오는 검사기는 그 하나였다.
+_SCOPE = re.compile(r"^\s*scope\s+.*$", re.M)
+
+
 def _verify_src() -> str:
     raw = (ROOT / "tools" / "verify.sh").read_text(encoding="utf-8")
     mark = "# ── 결과"          # 「── 결과」
-    return raw[: raw.index(mark)] if mark in raw else raw
+    return _SCOPE.sub("", raw[: raw.index(mark)] if mark in raw else raw)
 
 
 def local_tokens() -> set[str]:

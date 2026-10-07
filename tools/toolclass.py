@@ -88,9 +88,18 @@ def _code(src: str) -> str:
     return "\n".join(ln for ln in src.split("\n") if not ln.lstrip().startswith("#"))
 
 
+#: ★ `scope "a.py b.py"` 는 **그 단계가 덮는 파일**을 적는 줄이다 — 부르는 줄이
+#:   아니다. 이것을 호출로 읽으면 라이브러리가 관문이 된다. 실제로 그랬다:
+#:   `tools/proposal_source.py` 는 굽는 쪽이 `import` 하는 읽기 한 집인데
+#:   `scope` 에 이름이 적혔다는 이유로 관문으로 도출돼 「조사」 선언과 어긋났다.
+#:   §279-1 · §398-3 ③ 과 **같은 병의 세 번째 꼴** — 경로 필터는 방아쇠지 호출이
+#:   아니다. 실측에서 이 줄에만 나오는 도구는 그 하나였다(scope 줄 79개 중).
+_SCOPE = re.compile(r"^\s*scope\s+.*$", re.M)
+
+
 def _callers() -> str:
-    """관문 여부를 묻는 자리 — `verify.sh` 와 워크플로. **주석은 뺀다.**"""
-    out = [_code(VERIFY.read_text(encoding="utf-8"))] if VERIFY.exists() else []
+    """관문 여부를 묻는 자리 — `verify.sh` 와 워크플로. **주석 · `scope` 는 뺀다.**"""
+    out = [_SCOPE.sub("", _code(VERIFY.read_text(encoding="utf-8")))] if VERIFY.exists() else []
     if FLOWS.is_dir():
         out += [_code(f.read_text(encoding="utf-8")) for f in sorted(FLOWS.glob("*.yml"))]
     return "\n".join(out)
@@ -172,6 +181,10 @@ def selftest() -> int:
         fails.append("주석을 호출로 읽는다 — §279-1 과 같은 병이다")
     if "tools/y.py" not in _code("# 주석\nstep a uv run python tools/y.py\n"):
         fails.append("주석을 빼면서 진짜 호출까지 지운다")
+    if "tools/z.py" in _SCOPE.sub("", _code('scope "tools/z.py tools/w.py"\n')):
+        fails.append("`scope` 를 호출로 읽는다 — 라이브러리가 관문이 된다")
+    if "tools/y.py" not in _SCOPE.sub("", _code('scope "tools/z.py"\nstep a python tools/y.py\n')):
+        fails.append("`scope` 를 지우면서 다음 줄의 진짜 호출까지 지운다")
 
     # ★ 빈 그물 — 어휘가 비면 무엇을 적어도 통과한다
     if not VOCAB or "관문" not in VOCAB:
@@ -179,7 +192,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 10")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 12")
     return 1 if fails else 0
 
 

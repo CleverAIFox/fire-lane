@@ -119,6 +119,28 @@ def retired_reasons(y: dict) -> dict[str, str]:
     return out
 
 
+def raw_verdict(stray: list[str], miss: list[str]) -> tuple[int, list[str]]:
+    """`(종료코드, 할 말)`. 순수 함수다 — 시험이 합성 목록으로 민다(§426-4).
+
+    가르는 기준은 **선언이 있나**다(§424 와 같은 규율) — 선언 없는 파일은 **실패**,
+    결손은 경고, `landing_disposition` 에 처분이 적힌 것은 건너뜀. 종전에는
+    `normalize_raw.main()` 이 아무것도 돌려주지 않아 **무엇을 보고했든 0** 이었고,
+    그 파일 주석이 kfs 2종이 3주 동안 안 보인 이유를 그렇게 진단해 놓고도 구조를
+    그대로 뒀다(§420-7).
+
+    ★ 왜 이 파일인가 — 처분 선언을 읽는 자리가 `disposition()` 이고 그것이 바로
+      아래 있다. **선언을 읽는 집과 선언으로 판정하는 집을 가르지 않는다.**
+    """
+    say: list[str] = []
+    if miss:
+        say.append(f"{len(miss)}건 부족 — 결손은 상태이지 결함이 아니다(§424). "
+                   "sources.yaml 의 url 로 재취득할 것")
+    if stray:
+        say.append(f"규칙에도 처분 목록에도 없는 파일 {len(stray)}건 — 종료 1. "
+                   "`sources.yaml` 의 `landing_disposition` 이 사유를 받는다(§69)")
+    return (1 if stray else 0), say
+
+
 def disposition(y: dict) -> list[tuple[str, str, str]]:
     """landing 처분 — (이름 · 글롭, action, 사유 첫 줄). 사유 없는 항목은 처분이 아니다."""
     out = []

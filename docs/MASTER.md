@@ -10,7 +10,7 @@
 > | `docs/PLAN.md` | 미래 | 남은 일 · 미결정 · 담당 공백 · 결함 대장 |
 > | **`docs/MASTER.md`** | **현재** | **판정 · 데이터 · 용어 · UI 계약 · 운영 (이 문서)** |
 > | `docs/DECISIONS.md` | 과거 | 왜 그렇게 됐나 (append-only) |
-> | `docs/proposal.docx` | — | 대외 제출용. 시제 규칙 밖 |
+> | `docs/proposal.md` | — | 대외 제출용 **내용 정본**. 시제 규칙 밖. 화면 `web/proposal.html` 은 생성물이다 |
 >
 > 문서 넷은 병렬 축이 아니라 한 항목의 **생애주기**다.
 > 데이터 정본만 `sources.yaml` 이 따로 든다(기계가 읽는다).
@@ -764,8 +764,15 @@ wmax-survey    25% +1.32 · 중앙 +2.10 · 75% +3.90
 
 종전에는 `baseline.py` 에 박힌 2026-08-13 자 손제작 표를 매 봉인에 썼다.
 기존 세 벌(절대편차 합 7.24m)은 그 판이다. <!--stale-ok--> 셋 중
-`20260814-ngii-ngi20` 은 구 원본 소실로 재생성 불가라 **고쳐 쓰지 않고 둔다** —
+`20260814-ngii-ngi20` 은 **손제작 표로 뜬 판**이라 고쳐 쓰지 않고 둔다 —
 `diff` 가 그 판을 대조하면 손제작 판이라고 함께 찍는다.
+
+★ 2026-10-06 (DECISIONS §422). 종전에 여기와 아래 표가 「구 원본 소실 · 재생성
+  **불가**」라고 적었다. **틀렸다.** 구 원본이 `retired/ngii/` 에 살아 있다 —
+  `ngii_map1k_gj3561609*_20201231.ngi` 와 당시 기본도 `gj037 · 038 · 047 · 048`.
+  `baseline.py diff` 가 실제로 돈다. **재생성은 가능하다.** 그래도 다시 뜨지
+  않는 이유는 소실이 아니라 **그 판이 손제작 표를 썼기 때문**이다 —
+  다시 떠도 같은 손제작 표가 들어간다.
 **봉인이 산출물을 따라가지 못하면 봉인은 대조 수단이 아니다.**
 
 강제자 — `tests/test_reproducibility.py::test_baseline_copies_nfa_compare_not_a_handmade_table`
@@ -785,7 +792,7 @@ data/raw/          저장소 밖 · sources.yaml 의 provider + scope 로 재취
       read/jsondoc.py   표준데이터 · 건축행정시스템 JSON        3개( 4%)
       read/dbf.py       회전제한 (지오메트리 없음)              1개( 1%)
       read/passthrough.py  읽지 않는다. 존재만 기록            29개(39%)
-data/processed/    대장 75종
+data/processed/    대장 78종
                    EPSG:5186(계산) / 4326(표출)
   ↓ src/firelane/segments.py          조립부. 계산은 seg/ 가 한다
       seg/params.py     판정 임계값 정본 (web/config.js 는 표시용 사본)
@@ -946,7 +953,7 @@ tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기�
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
 <!--gen: datasets-->
-대장은 `sources.yaml` 하나다. `datasets` 75종 · `retired` 4종.
+대장은 `sources.yaml` 하나다. `datasets` 80종 · `retired` 4종.
 <!--/gen-->
 ★ `datasets` 종수는 `tools/docgen.py` 가 대장에서 받아 **채운다** — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `retired` 종수는 대조만 한다(§246 밖 ②). `norm` 이관은 14종이다.
 
@@ -2456,7 +2463,7 @@ git config --global core.precomposeunicode true
 
 | 태그 | 무엇 | 판정 |
 |---|---|---|
-| `20260814-ngii-ngi20` | 구 원본(국토정보플랫폼 NGI 20도엽)으로 낸 마지막 산출 | 재생성 불가 — 구 원본이 레이크 밖 스냅숏에서 나왔다. 재생성 여부 확인 중(DECISIONS §173-5) |
+| `20260814-ngii-ngi20` | 구 원본(국토정보플랫폼 NGI 20도엽)으로 낸 마지막 산출 | 재생성 **가능** — 구 원본이 `retired/ngii/` 에 있다(2026-10-06 실측 · §422). 다시 뜨지 않는 이유는 손제작 표다 |
 | `20260818-pre-btfix` | `ROAD_BT` 예외를 CCTV 강등보다 앞세우기 직전 | 재생성 가능 |
 | `20260824-pre-nreg` | `verdict` 가 시도표본 대신 정규표본을 받도록 고치기 직전 | 재생성 가능 |
 | `20260918-pre-r3` | R3 뼈대 교체(`road_link` → NGII 1:1,000 측량 중심선) 판정 직전 | 재생성 가능 |
@@ -2567,7 +2574,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 
 <!--gen: sealable-->
 ★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15` · `#68` → `DECISIONS
-  §160~161`). `SEAL.json` 이 소스 74종의 raw sha256 을 갖고, `dms.py rawdiff`
+  §160~161`). `SEAL.json` 이 소스 79종의 raw sha256 을 갖고, `dms.py rawdiff`
   가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — **한 자릿수 분이 1분 밑으로** 준다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
   끄는 것과 같다.
@@ -2997,7 +3004,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,761 전수 · **분모(blank) 0절** · 물림(inherit) 873절.
+★ **강제자 칸의 분모.** 절 1,846 전수 · **분모(blank) 0절** · 물림(inherit) 938절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3298,6 +3305,7 @@ outputs:
 | `verified` | 미검증 값이 검증된 값처럼 쓰인다 |
 | `feeds` | 못 채우면 raw 에 둘 이유가 없다(R4). 안 치운 소스가 쌓인다 |
 | `license` | 발표·공개 때 막힌다 |
+| `awaiting` | **선택.** 선언은 했고 실물이 아직 raw 에 없을 때 그 사유를 적는다. 적으면 `refcheck` 가 경고로 내리고, **없거나 비면 실패**다(DECISIONS §424) |
 
 칸의 값 규칙은 여기 한 곳에만 적는다. 대장 주석으로 칸마다 되풀이하지 않는다 — 값만 적는다.
 
