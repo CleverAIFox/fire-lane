@@ -308,6 +308,15 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
     if e.get("status") == "missing":
         r.add(WARN, f"결손 선언됨 — {e.get('missing_why', '사유 미기재')}")
         return r
+    # ★ 2026-10-07 (§427). `awaiting` — **아직 안 들어왔다.** §424 가 이 어휘를
+    #   만들고 `refcheck.py` **하나만** 고쳐서 이 자리가 머지를 막았다. 규율은
+    #   저쪽과 글자까지 같다: 사유를 적으면 경고, 비면 실패.
+    if (why := str(e.get("awaiting") or "").strip()):
+        r.add(WARN, f"아직 raw 에 없다 — {why}")
+        return r
+    if "awaiting" in e:
+        r.add(FAIL, "`awaiting` 칸이 비었다 — 사유 없는 유예는 받지 않는다(§424)")
+        return r
     if not c:
         r.add(WARN, "contract 블록 없음 — 검사할 수 없다")
         return r
@@ -460,7 +469,10 @@ REAL_FAIL_RATCHET = 8
 #:   각각 「contract 블록 없음」 경고를 낸다. **같은 원인이 래칫 둘을 움직이는데
 #:   하나만 적었다** — `NO_CONTRACT_RATCHET` 만 올려서 레이크 있는 기계가
 #:   「이 배치가 늘렸다」로 빨갰다. 셋은 바닥이다(위 머리말).
-REAL_WARN_RATCHET = 54
+#: ★ 2026-10-07 — 54 → 57 (DECISIONS §427). `awaiting` 셋이 **실패에서 경고로**
+#:   내려왔다 — 실패 11 → 8 · 경고 54 → 57. 같은 원인이 래칫 둘을 움직이므로 둘을
+#:   같이 적는다(바로 위 §398-8 이 하나만 적어 당한 그것). **반입되면 내려간다.**
+REAL_WARN_RATCHET = 57
 
 
 def real_verdict(nf: int, nw: int) -> tuple[int, list[str]]:

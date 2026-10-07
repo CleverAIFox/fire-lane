@@ -396,3 +396,77 @@ def test_awaiting_buys_a_warning_only_with_a_written_reason():
     blank = [k for k, e in (y.get("datasets") or {}).items()
              if "awaiting" in e and not str(e.get("awaiting") or "").strip()]
     assert not blank, f"`awaiting` 을 빈 값으로 적었다 — 사유 없는 침묵이다: {blank}"
+
+
+def test_every_judge_of_a_missing_dataset_file_knows_awaiting():
+    """`awaiting` 을 아는 자가 **하나뿐이면 다음 관문이 또 실패를 낸다.**  (§427)
+
+    ★ 2026-10-07 실기 사고. 위 시험(§424)이 `refcheck.py` **하나만** 봤다. 같은 상태를
+      `src/firelane/contract.py` 는 모른 채 「파일 없음」 **실패**를 냈고, 레이크 있는
+      기계에서 「실패 11 — 기록 8 보다 늘었다」로 **머지를 막았다.**
+      §424 가 고치려던 족 3(관문이 갈림)을 §424 자신이 다시 저지른 것이다.
+
+    ★ 그래서 이 시험은 **인스턴스가 아니라 족을 든다.** 목록을 손으로 적지 않고
+      도출한다 — 「`datasets` 항목의 글롭을 풀어 **부재를 판정**하는 자리」가 범위다.
+      계층(`layers`)의 부재는 다른 사실이라 `awaiting` 이 안 붙는다(`doctor` ·
+      `treecheck` 는 계층을 보고 항목 `e` 를 안 넘긴다 — 그래서 안 걸린다).
+
+    밖  **어떻게 부르는지는 안 본다.** 경고로 내리든 글자를 어떻게 적든 사람 몫이고,
+        여기가 드는 것은 「그 칸을 **읽기는 하는가**」 하나다.
+    """
+    import re as _re
+
+    #: 부재를 말하는 글. 이 중 하나를 적으면서 `awaiting` 을 모르면 그 자리가 갈린다.
+    absent = ("파일 없음", "raw 대장에 0건", "대장에 있는데 파일이 없다")
+    #: 항목을 넘겨 글롭을 푸는 꼴. `globs(e` · `paths_of(e` — 계층은 이름을 넘긴다.
+    entry = _re.compile(r"\b(?:globs|paths_of)\s*\(\s*e\b")
+
+    scan = [q for d in ("src", "tools") for q in sorted((ROOT / d).rglob("*.py"))
+            if "__pycache__" not in q.parts]
+    judges, blind = [], []
+    for q in scan:
+        src = q.read_text(encoding="utf-8", errors="replace")
+        if not entry.search(src) or not any(a in src for a in absent):
+            continue
+        rel = q.relative_to(ROOT).as_posix()
+        judges.append(rel)
+        if "awaiting" not in src:
+            blind.append(rel)
+
+    assert judges, ("부재를 판정하는 자리를 하나도 못 찾았다 — 그물이 비었다. "
+                    "문구가 바뀌었으면 `absent` 를 고쳐라")
+    assert "src/firelane/contract.py" in judges and "tools/refcheck.py" in judges, (
+        f"아는 둘을 못 잡는다 — 판별식이 죽었다: {judges}")
+    assert not blind, (
+        "`datasets` 부재를 판정하면서 `awaiting` 을 안 읽는다:\n  " + "\n  ".join(blind)
+        + "\n\n  선언된 유예는 **경고**다(§424). 사유가 비면 실패다.\n"
+          "  이 칸을 아는 자가 하나뿐이면 다음 관문이 또 실패를 낸다 — 2026-10-07 에 그랬다.")
+
+
+def test_contract_turns_a_declared_wait_into_a_warning():
+    """합성 항목으로 **세 갈래를 민다** — 실물도 레이크도 없이.  (§427)
+
+    ★ 왜 합성인가. 이 판정은 레이크 있는 기계에서만 도는데, 그 기계에서 「지금
+      초록인가」만 보면 **갈래가 죽었는지 청결한지 못 가른다**(§17-0). 그래서
+      판정기를 직접 문다.
+    """
+    import importlib
+    import tempfile
+
+    C = importlib.import_module("firelane.contract")
+    base = {"kind": "raw_only", "stem": "zz_probe", "ext": ["zip"],
+            "contract": {"rows": 1}}
+    with tempfile.TemporaryDirectory() as td:
+        raw = Path(td)                      # 비었다 — 어떤 글롭도 안 맞는다
+
+        r = C.check_one("probe", {**base, "awaiting": "2026-10-07 — intake 를 아직 안 탔다"},
+                        raw, None)
+        txt = " · ".join(m for _l, m in r.lines)
+        assert r.worst == C.WARN, f"사유를 적었는데 {r.worst} 다 — {txt}"
+        assert "아직 raw 에 없다" in txt, f"경고로 안 내린다 — {txt}"
+
+        r = C.check_one("probe", {**base, "awaiting": "   "}, raw, None)
+        assert r.worst == C.FAIL, "빈 사유를 받아준다 — 침묵에는 값을 안 치른다"
+
+        r = C.check_one("probe", dict(base), raw, None)
+        assert r.worst == C.FAIL, "선언도 실물도 없는데 안 운다 — 그물이 비었다"
