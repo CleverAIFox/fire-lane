@@ -326,6 +326,8 @@ def waiting(ds: dict) -> list[tuple[str, str]]:
       이 도구는 다운로드 폴더를 **열지도 않는다.** 그러면 안 건드리는 것이
       규칙이 아니라 **구조**가 된다 — 규칙은 잊히고 구조는 안 잊힌다.
     """
+    from fnmatch import fnmatch
+
     from firelane.paths import RAW
 
     have = {q.relative_to(RAW).as_posix()
@@ -335,9 +337,15 @@ def waiting(ds: dict) -> list[tuple[str, str]]:
         e = ds[key] or {}
         if e.get("status") == "missing":
             continue
-        for rel in e.get("files") or []:
-            if rel not in have:
-                out.append((key, rel))
+        # ★ 2026-10-07 (DECISIONS §430). 두 군데를 고쳤다.
+        #   ① `e.get("files")` → `_led.globs(e)`. **대장 여든 중 예순여섯이
+        #      `stem`+`ext` 식**이라 종전 코드에는 **자리가 아예 안 생겼다** —
+        #      「대장이 기다리는 자리」가 방아쇠인데 방아쇠가 안 당겨졌다.
+        #   ② `rel not in have` 는 **글롭을 문자열 그대로** 비교했다.
+        #      `ngii1k` 는 실물 둘이 있는데 영구히 「못 찾았다」로 떴다.
+        for pat in _led.globs(e):
+            if not any(fnmatch(h, pat) for h in have):
+                out.append((key, pat))
     return out
 
 
@@ -472,7 +480,20 @@ def cmd_stage(inb: Path, *, apply: bool, force: bool = False,
             skipped += 1
             continue
         s = sha256(src)
-        dst = LANDING / Path(rel).name
+        # ★ 2026-10-07 (DECISIONS §430). `rel` 은 **글롭**이다. 종전 코드가
+        #   `Path(rel).name` 을 그대로 썼기 때문에 `ngii1k` 를 반입하면
+        #   `vworld_map1k*_jngj-donggu_20260307.zip` — **이름에 `*` 가 박힌
+        #   파일**이 landing 에 생길 참이었다. 터지지 않은 이유는 위 두 결함이
+        #   그 자리까지 못 가게 막고 있었기 때문이다.
+        #   `rel` 하나가 **「없음 판정」과 「목적지 이름」 두 일**을 했다. 가른다 —
+        #   없음은 대장이 판정하고, **이름은 `normalize_raw.RULES` 가 든다.**
+        if not (dest := _by_rules(src.name) or (rel if "*" not in rel else "")):
+            print(f"  ★ {src.name}: 목적지 이름을 못 정한다 — 대장은 글롭 "
+                  f"{rel} 만 적고 `normalize_raw.RULES` 도 이 이름을 모른다.\n"
+                  f"     규칙을 먼저 적어라 (src/firelane/normalize_raw.py)")
+            skipped += 1
+            continue
+        dst = LANDING / Path(dest).name
         if dst.exists() and sha256(dst) == s:
             skipped += 1
             continue

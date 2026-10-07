@@ -954,6 +954,8 @@ datasets:
     kind: raw_only
     scope: kr
     updated: '2026-08'               # 전체분 회차. 제공처가 월까지만 준다
+    files:
+      - juso/juso_adrdc_kr_20260801.zip   # 회차 202608 · 일은 01(명명 규칙)
     authority: 행정안전부 주소정보누리집 (상세주소DB 전체분)
     origin_name: 202608_상세주소DB_전체분.zip
     encoding: cp949                  # ★ 실측 — utf-8 은 디코드 실패
@@ -989,6 +991,8 @@ datasets:
     kind: raw_only
     scope: jngj-dongmyeong
     updated: '2026-08'               # 제공처 공시가 **월까지만** 준다. 없는 날짜를 짓지 않는다
+    files:
+      - eais/eais_roadledger_dm_jngj-dongmyeong_20260801.csv
     notified: '2026-03-27'           # ★ 실측 — `도로지정일` · `생성일자` 둘의 최댓값이 같다
     authority: 국토교통부 (건축데이터 개방 포털)
     origin_name: 15. 도로대장_20261006153718.csv

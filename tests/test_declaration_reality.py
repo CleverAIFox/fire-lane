@@ -417,7 +417,11 @@ def test_every_judge_of_a_missing_dataset_file_knows_awaiting():
     import re as _re
 
     #: 부재를 말하는 글. 이 중 하나를 적으면서 `awaiting` 을 모르면 그 자리가 갈린다.
-    absent = ("파일 없음", "raw 대장에 0건", "대장에 있는데 파일이 없다")
+    absent = ("파일 없음", "raw 대장에 0건", "대장에 있는데 파일이 없다",
+              # ★ 2026-10-08 (§430-6). `prep` 은 **「raw 에 없다」**라고 쓴다.
+              #   낱말 하나가 달라서 그물 밖이었다 — 문구로 고르는 한 또 샌다.
+              #   그래서 아래에 **아는 자 넷을 이름으로 못 박는다**(PLAN #161).
+              "대장에 있는데 raw 에 없다")
     #: 항목을 넘겨 글롭을 푸는 꼴. `globs(e` · `paths_of(e` — 계층은 이름을 넘긴다.
     entry = _re.compile(r"\b(?:globs|paths_of)\s*\(\s*e\b")
 
@@ -435,8 +439,10 @@ def test_every_judge_of_a_missing_dataset_file_knows_awaiting():
 
     assert judges, ("부재를 판정하는 자리를 하나도 못 찾았다 — 그물이 비었다. "
                     "문구가 바뀌었으면 `absent` 를 고쳐라")
-    assert "src/firelane/contract.py" in judges and "tools/refcheck.py" in judges, (
-        f"아는 둘을 못 잡는다 — 판별식이 죽었다: {judges}")
+    must = ("src/firelane/contract.py", "tools/refcheck.py", "src/firelane/prep.py")
+    missed = [m for m in must if m not in judges]
+    assert not missed, (
+        f"아는 자를 못 잡는다 — 판별식이 죽었다. 빠진 것 {missed} · 잡은 것 {judges}")
     assert not blind, (
         "`datasets` 부재를 판정하면서 `awaiting` 을 안 읽는다:\n  " + "\n  ".join(blind)
         + "\n\n  선언된 유예는 **경고**다(§424). 사유가 비면 실패다.\n"

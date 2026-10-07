@@ -105,10 +105,18 @@ def test_a_single_declared_file_needs_no_article_number():
     assert "하나" in why
 
 
-def test_an_entry_without_files_is_not_guessed():
+def test_an_entry_that_declares_nothing_is_not_guessed():
+    """아무것도 선언 안 한 항목은 **추측하지 않는다.**
+
+    ★ 2026-10-07 (DECISIONS §430). 이름과 메시지에서 `files` 를 뺐다.
+      `files` 는 2026-08-31 뒤로 **선언 수단 하나일 뿐**이고(`stem`+`ext` 가
+      정본이다), 그 낱말로 못 박으면 **`stem` 식 예순여섯 종이 "선언 없음"
+      으로 떨어지는 그 결함**을 시험이 지켜 주는 꼴이 된다. 실제로 그랬다.
+      `stem` 식이 집히는지는 `tests/test_ledger_accessor.py` 가 든다.
+    """
     rel, why = intake.body_file_of("아무 글자", {"what": "무엇"})
     assert rel is None
-    assert "files" in why
+    assert "안 선언" in why
 
 
 @pytest.mark.parametrize("name", ["x.zip", "x.csv", "x.hwp"])

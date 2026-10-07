@@ -133,6 +133,12 @@ def _targets() -> list[tuple[str, str, dict]]:
     """
     out = []
     for key, e in (_sources().get("datasets") or {}).items():
+        # ★ 2026-10-08 (DECISIONS §430-6). `awaiting` 은 「선언했고 실물은
+        #   아직」이다(§424). 전처리 대상으로 세면 **반입 전에 `--max 0` 이
+        #   영영 빨갛고**, 빨간 게이트는 아무도 안 본다. 이 자리가 그 칸을
+        #   아는 **다섯째**다 — §427 의 가드가 문구 하나 차이로 못 잡았다.
+        if str((e or {}).get("awaiting") or "").strip():
+            continue                       # 대장에 있는데 raw 에 없다 — 유예다
         conv = _converter(e)
         exts = {CONVERTERS[conv][0]} if conv else TEXT_EXT
         files = _led.globs(e)
