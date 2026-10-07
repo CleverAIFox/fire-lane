@@ -154,6 +154,17 @@ RULES: list[tuple[str, str, str]] = [
     (r"표제부_(\d{8})\d{6}\.json$",
      "eais", "eais_bldgledger_dm_jngj-dongmyeong_{0}.json"),
 
+    # ── 2026-10-07 (§428). 대장에 자리는 있고 **이름 규칙이 없어** 반입이 안 섰다 ──
+    # ★ **파일명 날짜 = 대장 `updated`.** 반입 시각은 `data/_intake.json` 이 든다.
+    #   `표제부_` 가 앞 8자리를 쓰는 것은 그 항목의 `updated` 가 내려받은 날이어서다.
+    # ★ `lsmd_…_5174_` 의 5174 는 **좌표계 코드**다(prj 실측). 지역명이 아니다.
+    (r"^c_uq153\.zip$", "vworld", "vworld_uq153_kr_20261001.zip"),
+    (r"^lsmd_cont_uq164_5174_.*\.zip$", "vworld", "vworld_uq164_jngj_20260915.zip"),
+    (r"^15\.\s*도로대장_\d{14}\.csv$",      # `15. ` 은 포털의 목록 번호다
+     "eais", "eais_roadledger_dm_jngj-dongmyeong_20260801.csv"),
+    (r"^(\d{6})_상세주소db_전체분\.zip$",     # 앞 6자리가 회차(YYYYMM) · 일은 01
+     "juso", "juso_adrdc_kr_{0}01.zip"),
+
     # 전국 어린이보호구역 표준데이터. updated 는 레코드의 데이터기준일자
     # 최댓값 2026-07-28 이다. 파일명에는 날짜가 없다.
     (r"^전국어린이보호구역표준데이터\.json$",

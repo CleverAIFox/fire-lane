@@ -142,6 +142,38 @@ def test_a_table_source_needs_no_crs():
     assert not warn, f"표 소스에 좌표계를 요구했다 — {warn}"
 
 
+def test_crs_native_is_written_as_a_bare_code():
+    """`crs_native` 표기가 **한 꼴인가.**  (§428)
+
+    ★ `ledger.crs_of()` 머리말이 *「대장은 `crs_native: 5186` 으로 **정수**를
+      적는다」*고 못 박는데, 실측하면 `EPSG:` 접두를 쓴 것이 **일곱**이었다.
+      그 함수가 둘 다 받아 정규화하므로 런타임은 안 깨졌고, 그래서 **아무도 안
+      물었다** — 조용한 어긋남이고 족 2 다. 그중 둘은 §419 가 새로 만든 것이다.
+
+    ★ 왜 접두 없는 쪽이 정본인가 — `MASTER §18-3a` 의 예시가 그렇고, 수가 많다
+      (30 대 7). 그리고 `crs_of()` 가 **붙이는** 쪽으로 정규화한다: 대장이 이미
+      붙여 두면 그 함수가 할 일이 없어지고, 하는 일이 없는 정규화는 다음 사람이
+      지운다.
+    """
+    #: ★ **면제가 아니라 등록이다.** 이 둘은 커밋된 샤드 봉인지가 그 글자를
+    #:   해시했고, 고치면 `test_committed_manifest_uses_new_cfg_print` 가 찢어진다.
+    #:   다시 빌드 없이는 못 넘긴다 — **`PLAN #158` 이 해소를 든다.**
+    #:   `BACKWARD` 와 같은 규율이다: 사유와 **해소 조건**을 같이 적는다.
+    SEALED = {"child_zone_std", "senior_zone_std"}
+    bad = [f"{k}: {e['crs_native']!r}" for k, e in _ds().items()
+           if k not in SEALED and (e or {}).get("crs_native") is not None
+           and str(e["crs_native"]).upper().startswith("EPSG:")]
+    # ★ 역방향 — 해소됐는데 목록이 남으면 다음 어긋남이 조용히 면제된다(§69)
+    stale = sorted(k for k in SEALED
+                   if not str((_ds().get(k) or {}).get("crs_native", "")).upper().startswith("EPSG:"))
+    assert not stale, (f"`SEALED` 가 이미 고쳐진 것을 든다 — {stale}. 그 줄을 지우고 "
+                       "`PLAN #158` 을 닫아라")
+    assert not bad, (
+        "`crs_native` 에 `EPSG:` 접두를 적었다 — 정본은 맨 코드다:\n  "
+        + "\n  ".join(bad)
+        + "\n  붙이는 일은 `ledger.crs_of()` 가 한다. 대장은 사실만 적는다.")
+
+
 # ── ④ 래칫이 실물과 같은가 ──────────────────────────────────────
 def test_ratchets_match_the_ledger():
     _b, _w, n, crs = contract.declared_issues(_ds())

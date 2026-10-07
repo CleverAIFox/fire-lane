@@ -847,10 +847,12 @@ datasets:
     ext: [zip]
     kind: raw_only
     scope: kr
-    updated: '2026-10-01'
+    updated: '2026-10-01'            # 제공처가 「이 날짜로 갱신」이라 찍은 날
+    notified: '2026-08-30'           # ★ 실측 — dbf `CREATE_DAT` 최댓값(63,391/66,067 채워짐)
     authority: 국토교통부 공간정보 오픈플랫폼 (V-World)
     origin_name: C_UQ153.zip
-    crs_native: EPSG:5174
+    crs_native: 5174                 # prj 실측 — Korean 1985 / Modified Central Belt
+    encoding: cp949                  # ★ cpg 가 **없다**. utf-8 은 0바이트에서 디코드 실패
     what: |
       도시계획시설 — 공원 · 녹지 · 광장 · 공공공지. 전국 면.
       동명동 bbox 안 25면 — 유원지 658,385 m2 · 기타 공원시설 465,491 ·
@@ -880,10 +882,13 @@ datasets:
     ext: [zip]
     kind: raw_only
     scope: jngj
-    updated: '2026-09-15'
+    updated: '2026-09-15'            # 제공처가 찍은 갱신일
+    notified: '2026-08-06'           # ★ 실측 — dbf `NTFDATE` 최댓값(524/2,063 채워짐)
+    survey_year: '2026-09'           # ★ zip 안 파일명 `…_202609` = 기준 연월
     authority: 국토교통부 공간정보 오픈플랫폼 (V-World)
     origin_name: LSMD_CONT_UQ164_5174_전남광주통합특별시.zip
-    crs_native: EPSG:5174
+    crs_native: 5174                 # prj 실측. **파일명의 5174 는 좌표계 코드다** — 지역명이 아니다
+    encoding: cp949                  # cpg 가 `EUC-KR` 로 명시한다
     what: |
       도시계획시설 — 학교 · 청사 · 문화체육 · 사회복지. 전남광주 면 2,063.
       동명동 bbox 안 18면 — 국립아시아문화전당 120,182 m2 · 율곡초등학교 ·
@@ -902,19 +907,56 @@ datasets:
       rows: 2063
       required_cols: [MNUM, ALIAS, NTFDATE, COL_ADM_SE]
 
-  bldghub_road:
+  juso_adrdc:
     feeds:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
-    stem: bldghub_road
+    stem: juso_adrdc
+    awaiting: '2026-10-07 — 실물이 레이크 `landing` 에 2026-09-10 부터 앉아 있다. 대장에 자리가 없어 `acquire` 가 가져갈 근거가 없었다(DECISIONS §428)'
+    ext: [zip]
+    kind: raw_only
+    scope: kr
+    updated: '2026-08'               # 전체분 회차. 제공처가 월까지만 준다
+    authority: 행정안전부 주소정보누리집 (상세주소DB 전체분)
+    origin_name: 202608_상세주소DB_전체분.zip
+    encoding: cp949                  # ★ 실측 — utf-8 은 디코드 실패
+    what: |
+      상세주소(동·층·호) 전국 전체분. 17파일 묶음 — 시도별 `adrdc_*.txt` 16 + 가이드 PDF.
+      우리가 쓰는 것은 `adrdc_jeonnamgwangju.txt` 하나다(17.2 MB · 184,783행 · 16칸 · `|` 구분).
+      ★ 실측 — 동구(시군구 12210) 12,630행 · 건물 1,435동 · 그중 동명동(1221010800) 1,410행 · 129동.
+    feeds_why: |
+      ★ 미투입이다. 쓸 곳은 `#60`(CCTV 없는 구간의 가중치)이고 **주소가 아니라 세대밀도**다
+        — 좌표가 없고 조인 키는 `건물관리번호`(25자) 하나이며 위치는 `juso_bldg_geom` 이 준다.
+    used_for: |
+      ★ 전건은 `#57` 이 적는다 — `juso_bldg_geom` 과 `건물관리번호` 조인 검증,
+        그리고 MASTER §4 소방서 20구간 **3,452세대** 재현.
+      ★ **커밋된 `web/data/buildings.geojson` 으로는 그 조인을 못 한다.** 그 칸의
+        `BUL_MAN_NO` 는 25자 키가 아니라 정수 20~38,762 다(DECISIONS §320 이 쟀다).
+        조인 상대는 레이크의 `juso_bldg_geom` 이다.
+    note: |
+      ★ 키의 앞 10자가 **구 행정구역코드**다 — 동명동이 `2911010800`(광주 동구)인데
+        같은 행의 법정동코드 칸은 `1221010800`(전남광주 동구)이다. 건물관리번호는
+        발급 시점 코드로 **고정**되고 행정구역 칸만 갱신됐다. 코드로 거르면 틀린다.
+      ★ 건축Hub 도로관리대장도 `관리시군구코드` 가 구 코드 `29110` 이다. 같은 함정이다.
+    contract:
+      rows: 184783
+      required_cols: []
+
+  eais_roadledger_dm:
+    feeds:
+      - src/firelane/normalize_raw.py
+    feeds_note: '[]'
+    stem: eais_roadledger_dm
     awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [csv]
     kind: raw_only
     scope: jngj-dongmyeong
-    updated: '2026-10-06'
+    updated: '2026-08'               # 제공처 공시가 **월까지만** 준다. 없는 날짜를 짓지 않는다
+    notified: '2026-03-27'           # ★ 실측 — `도로지정일` · `생성일자` 둘의 최댓값이 같다
     authority: 국토교통부 (건축데이터 개방 포털)
     origin_name: 15. 도로대장_20261006153718.csv
-    encoding: utf-8
+    encoding: utf-8-sig              # ★ BOM 이 있다. `utf-8` 로 적으면 첫 칸이 `\ufeff대지위치` 가 되어
+                                     #   `required_cols` 의 `대지위치` 와 안 맞는다 — 선언이 거짓이었다
     what: |
       「건축법」 제45조제3항 도로관리대장의 공개판. 동명동 29행.
       도로지정일 2015-07-15 ~ 2026-03-27 · 도로길이합계 · 도로너비합계 · 도로면적합계.
@@ -933,7 +975,7 @@ datasets:
         것이 그 때문으로 보인다.
       ★ 같은 지번이 2행 있다(176-4 — 2018년 지정과 2022년 지정).
     contract:
-      encoding: utf-8
+      encoding: utf-8-sig
       rows: 29
       required_cols: [대지위치, 도로지정일, 도로길이합계, 도로너비합계, 도로면적합계]
 
@@ -966,7 +1008,7 @@ datasets:
       TL_SPOT_CNTC        건물↔도로 접속선   15,518 (CNT_DST_LN 중앙 7.6m · 최대 402.5m)
     scope: jngj
     updated: '2026-08-01'
-    crs_native: EPSG:5179
+    crs_native: 5179
     what: |
       도로명주소 건물 도형 전체분 — 건물 15,518 · 출입구 17,069 ·
       접속선 15,518 (TL_SGCO_RNADR_MST · TL_SPBD_ENTRC · TL_SPOT_CNTC)
@@ -999,7 +1041,7 @@ datasets:
       TL_SPBD_ENTRC_DONG  동 출입구 점          939
     scope: jngj
     updated: '2026-08-01'
-    crs_native: EPSG:5179
+    crs_native: 5179
     what: 건물군 내 동 도형 8,221 · 동 출입구 939
     feeds_why: 아직 배선하지 않았다. 아파트 단지 내부 진입 판정에 쓸 후보다.
 
@@ -1027,7 +1069,7 @@ datasets:
       TL_SPOT_SUBWAY*     지하철역 6 · 출입구 26
     scope: jngj
     updated: '2026-08-01'
-    crs_native: EPSG:5179
+    crs_native: 5179
     what: |
       기타자료 — 터널 10 · 고가 4 · 교량 36 · 공원 34 · 하천 27 ·
       지하철역 6 · 지하철출입구 26
@@ -2891,7 +2933,9 @@ datasets:
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
       - src/firelane/publish_context.py
-    crs_native: EPSG:4326
+    crs_native: EPSG:4326           # ★ 2026-10-07. 접두 없는 꼴이 정본인데 **여기 둘만 안 고쳤다**(§428-4) —
+                                      #   커밋된 샤드 봉인지가 이 글자를 해시했고, 고치면 찢어진다.
+                                      #   다시 빌드 없이 못 넘긴다 — 다음 **ingest 돌리는 판**이 같이 고친다(PLAN #158)
     stem:       mois_child_zone_std
     ext:        [json]
     scope:      kr
@@ -2927,7 +2971,9 @@ datasets:
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
       - src/firelane/publish_context.py
-    crs_native: EPSG:4326
+    crs_native: EPSG:4326           # ★ 2026-10-07. 접두 없는 꼴이 정본인데 **여기 둘만 안 고쳤다**(§428-4) —
+                                      #   커밋된 샤드 봉인지가 이 글자를 해시했고, 고치면 찢어진다.
+                                      #   다시 빌드 없이 못 넘긴다 — 다음 **ingest 돌리는 판**이 같이 고친다(PLAN #158)
     stem:       mois_senior_zone_std
     ext:        [json]
     scope:      kr
