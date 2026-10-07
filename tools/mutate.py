@@ -117,7 +117,7 @@ TIMEOUT = 180
 #     그것을 적는다. 수를 받아적는 대신 구조를 고치는 길은 **`PLAN #159`** 가 든다.
 #   ★ `tests/test_sizecheck.py` 에 보고 수를 묻는 시험을 같이 넣었다 — 장부는 그것을
 #     **안 센다**(지문이 도구 파일 하나다). 그 간극도 #159 가 든다.
-SURVIVORS = 68
+SURVIVORS = 67
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 MUTANTS = 96
 #: 붙잡이가 **0 인 과녁** 수. 흔들어도 못 재는 자리다 — 내려가는 쪽으로만.
@@ -130,7 +130,7 @@ RATCHET_HELD = 20
 #   표본이 다른 돌연변이를 집었고 새로 집힌 것이 래칫 상수가 아니다(비교 연산자).
 #   §398-8 이 적은 그대로 **둘을 같이 적는다**: 같은 원인이 래칫 둘을 움직이는데
 #   하나만 적으면 다른 기계에서만 빨갛다.
-UNSORTED = 48
+UNSORTED = 47
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
             "RATCHET_HELD": "up", "UNSORTED": "down"}
 
@@ -195,6 +195,33 @@ def mutants(src: str) -> list[tuple[str, str]]:
 
 
 # ── ② 붙잡이 도출 ───────────────────────────────────────────────
+def named_tests(tool: str) -> list[Path]:
+    """그 도구 **이름을 적은** 시험 파일. `catchers` 와 지문이 **같은 자**를 본다.
+
+    ★ 2026-10-08 (DECISIONS §431 · PLAN #159). 종전에는 이 도출이 `catchers()`
+      안에 **파묻혀** 있었고 `--deep` 일 때만 돌았다. 그래서 장부의 신선도
+      지문이 도구 파일 하나였다 — **시험을 지워도 「잡는다」가 그대로 남았다.**
+      그쪽이 위험하다. 같은 자를 두 곳이 봐야 둘이 안 갈린다(족 2).
+    """
+    return sorted(q for q in TESTS.glob("test_*.py")
+                  if re.search(rf"\b{re.escape(tool)}\b",
+                               q.read_text(encoding="utf-8", errors="replace")))
+
+
+def catch_print(tool: str) -> str:
+    """**붙잡이의 지문.** 도구 + 그 도구를 적은 시험 전부.
+
+    ★ 시험 파일이 바뀌면 **그 도구만** 낡는다 — `--write --stale` 이 그것만
+      다시 잰다. 도구 파일만 해시하면 시험을 더해도 장부가 안 낡고, 지워도
+      안 낡는다. 「시험이 붙든다」는 주장을 **시험 없이** 하는 꼴이다.
+    """
+    h = hashlib.sha256((TOOLS / f"{tool}.py").read_bytes())
+    for q in named_tests(tool):
+        h.update(q.relative_to(ROOT).as_posix().encode())
+        h.update(q.read_bytes())
+    return h.hexdigest()[:12]
+
+
 def catchers(tool: str, deep: bool = False) -> list[list[str]]:
     """그 도구를 붙드는 명령들. **열거하지 않고 도출한다.**
 
@@ -210,9 +237,7 @@ def catchers(tool: str, deep: bool = False) -> list[list[str]]:
         got.append([sys.executable, f"tools/{tool}.py", "--selftest"])
     if not deep:
         return got
-    named = sorted(p for p in TESTS.glob("test_*.py")
-                   if re.search(rf"\b{re.escape(tool)}\b",
-                                p.read_text(encoding="utf-8", errors="replace")))
+    named = named_tests(tool)
     if named:
         got.append([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:randomly",
                     *[str(p.relative_to(ROOT)) for p in named]])
@@ -304,7 +329,7 @@ def shake(tool: str, cap: int = MAX_PER_TOOL, deep: bool = False) -> dict:
     return {"도구": tool, "돌연변이": len(muts), "전수": len(mutants(orig)),
             "생존": survived,
             "못 쟀다": unmeasured, "붙잡이": len(keep), "뺀 붙잡이": dropped,
-            "지문": hashlib.sha256(orig.encode()).hexdigest()[:12]}
+            "지문": catch_print(tool)}
 
 
 def _ratchet_line(tool: str, name: str) -> int:
@@ -368,11 +393,11 @@ def ratchet_values() -> dict[str, int]:
         raise RuntimeError("data/golden/mutation.json 이 없다 — "
                            "`mutate.py --write` 가 만든다 (느리다)")
     d = json.loads(LEDGER.read_text(encoding="utf-8"))
-    for r in d["도구별"]:
-        now = hashlib.sha256((TOOLS / f"{r['도구']}.py")
-                             .read_text(encoding="utf-8").encode()).hexdigest()[:12]
-        if now != r["지문"]:
-            raise RuntimeError(f"{r['도구']}.py 가 잰 뒤로 바뀌었다 — 다시 재야 한다")
+    stale = [r["도구"] for r in d["도구별"] if catch_print(r["도구"]) != r["지문"]]
+    if stale:
+        raise RuntimeError(
+            f"{len(stale)}개가 잰 뒤로 바뀌었다 — {', '.join(stale[:6])}. "
+            "`uv run python tools/mutate.py --write --stale` 로 그것만 다시 재라")
     held, rest = sort_survivors(d)
     return {"SURVIVORS": d["생존"], "MUTANTS": d["돌연변이"],
             "UNCATCHABLE": sum(1 for r in d["도구별"] if r["붙잡이"] == 0),
@@ -394,6 +419,43 @@ def selftest() -> int:
         fails.append(f"래칫이 아닌 생존을 래칫으로 센다 — 남은 것 {_rest}")
     if _held and _held[0][2] != "SEALED_FILES":
         fails.append(f"래칫 이름을 틀리게 읽는다 — {_held[0][2] if _held else None}")
+
+    # ★ 2026-10-08 (DECISIONS §431 · PLAN #159). 지문이 **시험에 반응하나.**
+    #   안 하면 「시험이 붙든다」를 시험 없이 주장한다.
+    #   ★ 과녁 **첫째**를 쓰면 안 된다 — `archcost` 는 그 이름을 적은 시험이
+    #     없다(실측 2026-10-08). 시험이 있는 첫 과녁을 고르고, 하나도 없으면
+    #     그때 운다. 「없는 것」과 「못 고른 것」은 다른 사실이다(족 6).
+    _t, _q = "", []
+    for _c in targets():
+        if (_q := named_tests(_c)):
+            _t = _c
+            break
+    if not _t:
+        fails.append("과녁 중 이름이 적힌 시험을 가진 것이 하나도 없다 — 지문의 전제가 깨졌다")
+    else:
+        _was = catch_print(_t)
+        _f = _q[0]
+        _orig = _f.read_bytes()
+        try:
+            _f.write_bytes(_orig + b"\n# \xec\xa7\x80\xeb\xac\xb8 \xec\xb9\xb4\xeb\x82\x98\xeb\xa6\xac\xec\x95\x84\n")
+            if catch_print(_t) == _was:
+                fails.append(f"시험 파일을 고쳤는데 {_t} 의 지문이 안 바뀐다 — "
+                             "장부가 안 낡는다(#159 ①)")
+        finally:
+            _f.write_bytes(_orig)
+        if catch_print(_t) != _was:
+            fails.append("되돌렸는데 지문이 안 돌아온다 — 지문이 결정적이지 않다")
+
+    # ★ 2026-10-08. `--tool X --write` 가 **남의 행을 지우지 않나.** 합성 장부로 민다.
+    _keep = {"a": {"도구": "a", "돌연변이": 3, "생존": ["x"], "붙잡이": 1},
+             "b": {"도구": "b", "돌연변이": 5, "생존": [], "붙잡이": 1}}
+    _new = [{"도구": "b", "돌연변이": 7, "생존": ["y", "z"], "붙잡이": 2}]
+    _m = dict(_keep); _m.update({r["도구"]: r for r in _new})
+    _rows = [_m[k] for k in sorted(_m)]
+    if [r["도구"] for r in _rows] != ["a", "b"]:
+        fails.append(f"한 도구를 적었는데 남의 행이 사라진다 — {[r['도구'] for r in _rows]}")
+    if sum(r["돌연변이"] for r in _rows) != 10 or sum(len(r["생존"]) for r in _rows) != 3:
+        fails.append("합친 총계가 틀리다 — 분모가 거짓말을 한다")
 
     src = "def f(a, b):\n    if a >= 3 and not b:\n        return True\n    return False\n"
     got = {w.split(": ", 1)[1] for w, _ in mutants(src)}
@@ -438,7 +500,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 12")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 17")
     return 1 if fails else 0
 
 
@@ -451,6 +513,8 @@ def main() -> int:
     ap.add_argument("--deep", action="store_true",
                     help="시험 파일까지 붙잡이로 (실측 한 시간 넘음 · 기본 꺼짐)")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--stale", action="store_true",
+                    help="장부가 낡은 도구만 (지문이 어긋난 것)")
     ap.add_argument("--classify", action="store_true",
                     help="생존을 래칫이 드는 것과 아직 안 가른 것으로 나눈다")
     a = ap.parse_args()
@@ -474,6 +538,15 @@ def main() -> int:
         return 0
 
     names = [a.tool] if a.tool else targets()
+    if a.stale:
+        old = (json.loads(LEDGER.read_text(encoding="utf-8")).get("도구별", [])
+               if LEDGER.exists() else [])
+        fresh = {r["도구"] for r in old if catch_print(r["도구"]) == r["지문"]}
+        names = [n for n in names if n not in fresh]
+        if not names:
+            print("낡은 도구가 없다 — 다시 잴 것이 없다")
+            return 0
+        print(f"낡음 {len(names)} — {', '.join(names)}")
     rows = [shake(n, a.max, a.deep) for n in names]
     tot_m = sum(r["돌연변이"] for r in rows)
     tot_s = sum(len(r["생존"]) for r in rows)
@@ -490,11 +563,26 @@ def main() -> int:
     print("★ **생존이 나쁘다고 말하지 않는다.** 정렬 키처럼 행동을 안 바꾸는"
           " 자리의 생존은 정상이다 — 가르는 것은 사람이다.")
     if a.write:
+        # ★ 2026-10-08 (DECISIONS §431 · PLAN #159). **합친다.** 종전에는 이 자리가
+        #   `rows` 를 그대로 적었고, `--tool sealcov --write` 한 번에 장부가
+        #   96 → 4 · 생존 68 → 2 로 **쪼그라들었다.** 재지도 않은 도구 스물셋이
+        #   조용히 사라지고 `ratchet_values()` 는 그 수를 그대로 냈다 — 관문이
+        #   제 분모를 잃은 것을 아무도 몰랐다.
+        keep = {r["도구"]: r for r in
+                (json.loads(LEDGER.read_text(encoding="utf-8")).get("도구별", [])
+                 if LEDGER.exists() else [])}
+        keep.update({r["도구"]: r for r in rows})
+        merged = [keep[k] for k in sorted(keep)]
+        gone = sorted(set(keep) - set(targets()))
+        if gone:
+            print(f"★ 과녁 밖인데 장부에 남은 도구 {len(gone)} — {', '.join(gone)}")
         LEDGER.parent.mkdir(parents=True, exist_ok=True)
         LEDGER.write_text(json.dumps(
-            {"돌연변이": tot_m, "생존": tot_s, "도구별": rows},
+            {"돌연변이": sum(r["돌연변이"] for r in merged),
+             "생존": sum(len(r["생존"]) for r in merged), "도구별": merged},
             ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-        print(f"→ {LEDGER.relative_to(ROOT)}")
+        print(f"→ {LEDGER.relative_to(ROOT)}  도구 {len(merged)}"
+              f"{f' (이번에 잰 것 {len(rows)})' if len(rows) != len(merged) else ''}")
     return 0
 
 

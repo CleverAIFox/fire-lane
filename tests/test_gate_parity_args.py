@@ -3,7 +3,7 @@
 ── 왜 생겼나 ───────────────────────────────────────────────────
 ★ 2026-09-22 (DECISIONS §218-5). `gate_parity.py` 는 검사기 **이름**(파일)을 맞춘다. 같은 날
   미선언 로컬 전용 11 중 열을 contract.yml 로 옮기면서 인자가 두 곳에 적히게 됐다 —
-  `dupcheck --min 40 --max 1` 이 대표다. 2026-09-18 에 `gate_parity --max 19` 가 정확히 이
+  `dupcheck --min 40 --max 0`(2026-10-08 까지 `--max 1`) 이 대표다. 2026-09-18 에 `gate_parity --max 19` 가 정확히 이
   모양으로 갈려 **로컬 초록 · CI 빨강**이 났다(W3-11). 이름이 같고 인자가 다르면 같은 검사가
   아니다 — 그러면 관문 동등은 이름만 동등하다.
 
@@ -41,7 +41,7 @@ def _calls(path: Path) -> dict[str, set[str]]:
 def test_parser_is_not_an_empty_net() -> None:
     """★ 빈 그물인가. 추출기가 죽으면 아래가 조용히 통과한다."""
     v, c = _calls(VERIFY), _calls(CI)
-    assert "--min 40 --max 1" in v.get("tools/dupcheck.py", set()), "verify.sh 의 dupcheck 인자를 못 읽었다"
+    assert "--min 40 --max 0" in v.get("tools/dupcheck.py", set()), "verify.sh 의 dupcheck 인자를 못 읽었다"
     assert len(set(v) & set(c)) >= 15, f"공통 검사기를 {len(set(v) & set(c))}개만 찾았다 — 추출기가 죽었다"
 
 

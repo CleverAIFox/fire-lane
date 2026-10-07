@@ -49,7 +49,10 @@ def test_the_skeleton_switch_stays_out_of_the_judgment_closure():
     #   폐포는 「판정을 만지면 재잠금이 따라오는 파일들」이라 이 이사는 수를
     #   하나 늘린다. 줄이려면 `verdict()` 를 `classify.py` 로 합쳐야 하는데
     #   그러면 `geom.verdict()` 를 보는 기존 시험 스물여섯이 함께 이사한다.
-    assert n == 17, f"판정 폐포가 {n}이다 — 17 이어야 한다(DECISIONS §266 · §303)"
+    # ★ 2026-10-08 (DECISIONS §431 · PLAN #47). 17 → 18. `seg/unionfind.py` 가
+    #   들어왔다. 위 §303 과 같은 이사이고, 같은 이유로 수가 하나 는다.
+    assert n == 18, \
+        f"판정 폐포가 {n}이다 — 18 이어야 한다(DECISIONS §266 · §303 · §431)"
 
     import importlib.util
     import sys as _sys

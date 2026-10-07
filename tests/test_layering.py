@@ -57,11 +57,20 @@ DOMAIN = [
     #   하고, 그래야 시험이 서버 없이 돈다 — 실제로 `tests/test_ops_roster.py` 의
     #   판별식 열셋이 서버를 안 띄우고 돈다.
     "ops/roster.py",
+    # ★ 2026-10-08 (DECISIONS §431 · PLAN #47). `dupcheck` 의 마지막 사본군이던
+    #   `find` ×4 를 여기로 뺐다. 표준 라이브러리도 안 쓰는 다섯 줄이라 순수하고,
+    #   **묶는 로직은 안 따라왔다** — 그것을 합치면 `seg_uid` 가 움직인다(§144).
+    "seg/unionfind.py",
 ]
 
 # domain 이 절대 import 하면 안 되는 것
 FORBIDDEN = {"firelane.paths", "firelane.guards", "firelane.lineage",
-             "firelane.pipeline", "firelane.contract", "firelane.datalog"}
+             "firelane.pipeline", "firelane.contract", "firelane.datalog",
+             # ★ 2026-10-08 (DECISIONS §431 · PLAN #157). `pipeline` 에서
+             #   「산출물이 기대와 맞는가」 다섯이 나온 파일이다. 도메인이
+             #   이것을 들면 **판정이 제 채점표를 읽는다** — `pipeline` 을
+             #   금지한 이유가 그대로 옮겨온다.
+             "firelane.expectation"}
 
 
 def _imports(path: Path) -> set[str]:

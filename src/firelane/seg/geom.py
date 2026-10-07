@@ -13,12 +13,15 @@ seg/geom.py — 폐포 없는 순수 함수.
 """
 from __future__ import annotations
 
+from functools import partial as _partial
+
 import numpy as np
 import shapely
 from shapely.geometry import LineString, Point
 from shapely.ops import unary_union
 
 from firelane.seg.params import NODE_TOL, PARK, TRUCK
+from firelane.seg.unionfind import find as _uf_find
 
 
 def _seal(polys):
@@ -166,11 +169,9 @@ def snap_groups(pts, tol: float = NODE_TOL) -> list[int]:
 
     par = list(range(len(pts)))
 
-    def find(i: int) -> int:
-        while par[i] != i:
-            par[i] = par[par[i]]
-            i = par[i]
-        return i
+    # ★ 2026-10-08 (PLAN #47). 네 곳이 공유하던 다섯 줄 — 정본은 하나다.
+    #   **묶는 로직은 안 합친다** — 넷이 서로 다르고 합치면 `seg_uid` 가 움직인다.
+    find = _partial(_uf_find, par)
 
     tree = STRtree(pts)
     for i, pt in enumerate(pts):

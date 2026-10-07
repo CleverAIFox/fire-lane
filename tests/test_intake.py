@@ -23,9 +23,15 @@ intake = importlib.util.module_from_spec(_spec)
 # ★ `exec_module` **앞**이다 — `@dataclass` 가 `cls.__module__` 로 되짚는다
 sys.modules[_spec.name] = intake
 _spec.loader.exec_module(intake)
-# ★ 단서 ④ 는 꾸러미로 떨어져 나갔다(§401). 시험은 **도구를 통해** 부른다 —
-#   도구가 그것을 안 쓰게 되면 여기도 같이 죽어야 한다.
-assert intake.body_match is not None
+# ★ 2026-10-08 (DECISIONS §431 · PLAN #157). 단서 ①②③ 이 `intake_name` 으로,
+#   ④ 는 그 앞서 `intake_body` 로 떨어져 나갔다. **갈아끼우는 자리가 거기다** —
+#   `propose()` 가 제 모듈 전역에서 `body_text` 를 찾으므로 `intake` 쪽을
+#   패치하면 아무 일도 안 일어난다. 조용히 통과하는 시험이 제일 나쁘다.
+from firelane import intake_name as iname
+
+assert iname.body_match is not None
+assert intake.propose is iname.propose, \
+    "도구가 `propose` 를 제 것으로 다시 정의했다 — 정본이 둘이다"
 
 DS = {
     "roadtraffic_act": {
@@ -58,13 +64,13 @@ def test_marks_drop_words_that_two_entries_share():
 
 
 def test_a_clear_body_picks_its_entry():
-    key, why = intake.body_match("비상소화장치 설치 및 관리 예규", DS)
+    key, why = iname.body_match("비상소화장치 설치 및 관리 예규", DS)
     assert key == "hydrantdevice_rule"
     assert "맞는다" in why
 
 
 def test_one_matching_word_is_not_a_match():
-    key, why = intake.body_match("비상소화장치", DS)
+    key, why = iname.body_match("비상소화장치", DS)
     assert key is None
     assert "바닥" in why
 
@@ -73,12 +79,12 @@ def test_a_body_that_fits_two_entries_is_refused():
     """1등과 2등이 붙어 있으면 **안 고른다** — 반반 맞히지 않는다."""
     ds = {"a": {"what": "소화전 배치 지도", "files": ["x/a.pdf"]},
           "b": {"what": "소화전 배치 지도", "files": ["x/b.pdf"]}}
-    key, why = intake.body_match("소화전 배치 지도", ds)
+    key, why = iname.body_match("소화전 배치 지도", ds)
     assert key is None
 
 
 def test_an_empty_body_is_not_a_match():
-    key, why = intake.body_match("", DS)
+    key, why = iname.body_match("", DS)
     assert key is None
     assert "못 읽었다" in why
 
@@ -86,21 +92,21 @@ def test_an_empty_body_is_not_a_match():
 def test_two_articles_of_one_law_are_split_by_the_printed_url():
     """같은 법령 인쇄본 둘은 점수가 같다 — **조 번호만이 가른다.**"""
     e = DS["roadtraffic_act"]
-    a30, why = intake.body_file_of("… lsBdyPrint.do?efYd=20260701&joNo=0030", e)
+    a30, why = iname.body_file_of("… lsBdyPrint.do?efYd=20260701&joNo=0030", e)
     assert a30.endswith("_a30.pdf")
     assert "제30조" in why
-    a29, _ = intake.body_file_of("… joNo=0029", e)
+    a29, _ = iname.body_file_of("… joNo=0029", e)
     assert a29.endswith("_a29.pdf")
 
 
 def test_without_an_article_number_neither_file_is_chosen():
-    rel, why = intake.body_file_of("도로교통법 긴급자동차 특례", DS["roadtraffic_act"])
+    rel, why = iname.body_file_of("도로교통법 긴급자동차 특례", DS["roadtraffic_act"])
     assert rel is None
     assert "못 가른다" in why
 
 
 def test_a_single_declared_file_needs_no_article_number():
-    rel, why = intake.body_file_of("아무 글자", DS["hydrantdevice_rule"])
+    rel, why = iname.body_file_of("아무 글자", DS["hydrantdevice_rule"])
     assert rel.endswith("hydrantdevice-rule_kr_20220523.pdf")
     assert "하나" in why
 
@@ -114,7 +120,7 @@ def test_an_entry_that_declares_nothing_is_not_guessed():
       으로 떨어지는 그 결함**을 시험이 지켜 주는 꼴이 된다. 실제로 그랬다.
       `stem` 식이 집히는지는 `tests/test_ledger_accessor.py` 가 든다.
     """
-    rel, why = intake.body_file_of("아무 글자", {"what": "무엇"})
+    rel, why = iname.body_file_of("아무 글자", {"what": "무엇"})
     assert rel is None
     assert "안 선언" in why
 
@@ -123,46 +129,46 @@ def test_an_entry_that_declares_nothing_is_not_guessed():
 def test_body_text_refuses_everything_that_is_not_a_pdf(tmp_path, name):
     p = tmp_path / name
     p.write_bytes(b"\x00\x01")
-    assert intake.body_text(p) == ""
+    assert iname.body_text(p) == ""
 
 
 def test_a_broken_pdf_does_not_stop_the_intake(tmp_path):
     """못 읽는 파일 하나가 취입 전체를 멈추면 안 된다."""
     p = tmp_path / "broken.pdf"
     p.write_bytes(b"not really a pdf")
-    assert intake.body_text(p) == ""
+    assert iname.body_text(p) == ""
 
 
 def test_the_body_clue_only_runs_when_the_name_said_nothing(tmp_path, monkeypatch):
     """단서 ④ 는 **마지막**이다 — 이름으로 맞은 것을 본문이 덮지 않는다."""
     called = []
-    monkeypatch.setattr(intake, "body_text",
+    monkeypatch.setattr(iname, "body_text",
                         lambda p, pages=3: called.append(p) or "")
     ds = {"nfa_rapidresponse": {"stem": "nfa_rapidresponse", "provider": "nfa",
                                 "what": "119패스", "files": ["nfa/x.pdf"]}}
     src = tmp_path / "nfa_rapidresponse_kr_20250429.pdf"
     src.write_bytes(b"%PDF")
-    out = intake.propose(src, ds)
+    out = iname.propose(src, ds)
     assert out["matched_key"] == "nfa_rapidresponse"
     assert called == []
 
 
 def test_a_browser_named_file_reaches_the_body_clue(tmp_path, monkeypatch):
-    monkeypatch.setattr(intake, "body_text",
+    monkeypatch.setattr(iname, "body_text",
                         lambda p, pages=3: "비상소화장치 설치 및 관리 예규")
     src = tmp_path / "행정규칙 인쇄 _ 국가법령정보센터.pdf"
     src.write_bytes(b"%PDF")
-    out = intake.propose(src, DS)
+    out = iname.propose(src, DS)
     assert out["matched_key"] == "hydrantdevice_rule"
     assert out["suggest"].endswith("hydrantdevice-rule_kr_20220523.pdf")
 
 
 def test_a_batch_zip_in_the_inbox_is_never_matched(tmp_path, monkeypatch):
     """배치 zip 은 글자가 0 이라 본문 단서에서도 안 걸린다."""
-    monkeypatch.setattr(intake, "body_text", lambda p, pages=3: "")
+    monkeypatch.setattr(iname, "body_text", lambda p, pages=3: "")
     src = tmp_path / "fire-lane-batch-1005ze.zip"
     src.write_bytes(b"PK")
-    out = intake.propose(src, DS)
+    out = iname.propose(src, DS)
     assert out["matched_key"] is None
     assert out["suggest"] is None
 
@@ -210,7 +216,7 @@ def test_a_person_can_override_the_guess_by_number(tmp_path, monkeypatch):
     raw = tmp_path / "raw"; raw.mkdir()
     import firelane.paths as fp
     monkeypatch.setattr(fp, "RAW", raw)
-    monkeypatch.setattr(intake, "body_text", lambda p, pages=3: "")
+    monkeypatch.setattr(iname, "body_text", lambda p, pages=3: "")
     want = intake.waiting(LEDGER)
     a29 = intake._match_one(box, LEDGER, *want[0], ["1=법령 _"])
     assert a29 is not None and a29.name.startswith("법령")
@@ -223,7 +229,7 @@ def test_an_ambiguous_fragment_picks_nothing(tmp_path, monkeypatch):
     raw = tmp_path / "raw"; raw.mkdir()
     import firelane.paths as fp
     monkeypatch.setattr(fp, "RAW", raw)
-    monkeypatch.setattr(intake, "body_text", lambda p, pages=3: "")
+    monkeypatch.setattr(iname, "body_text", lambda p, pages=3: "")
     want = intake.waiting(LEDGER)
     assert intake._match_one(box, LEDGER, *want[0], ["1=국가법령"]) is None
 

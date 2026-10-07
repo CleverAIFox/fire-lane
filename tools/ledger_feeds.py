@@ -30,7 +30,7 @@ FL_DATA_MIGRATION — git 밖 실물과 원자적으로 움직인다
   "노딩 입력", "guards CRITICAL" 은 자동으로 못 얻는 판단이다.
 
 ── grade ──────────────────────────────────────────────────────
-`firelane.ledger.grade()` 가 `feeds` 를 보고 자동 산출한다.
+`firelane.ledger_check.grade()` 가 `feeds` 를 보고 자동 산출한다.
 
     active      feeds 있음 · kind != raw_only
     reference   feeds 있음 · raw_only

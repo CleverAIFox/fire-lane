@@ -227,57 +227,11 @@ def code_print(start: str = "firelane.ingest") -> str:
     return _short("\n".join(lines))
 
 
-# ★ 2026-09-16. cfg 칸의 전역은 **ingest 산출에 닿는 최상위 키만**이다. 종전에는
-#   datasets 밖 전부였고, `outputs.<x>.consumers` 에 테스트 파일 한 줄을 적는 것만으로
-#   40 샤드가 찢어질 뻔했다 — 이 기계에서 그것은 OOM 이다(DECISIONS §166-3).
-#   ingest 가 새 최상위 키를 읽기 시작하면 test_ingest_global_keys_are_declared 가 운다.
-INGEST_GLOBAL = ("target_area", "bbox_4326", "standard_crs", "scopes", "layers", "raw_only")
-
-# ★ 2026-10-05 (DECISIONS §397). 전역 칸 **안에서** ingest 가 안 읽는 하위 칸.
-#   §166-3 이 최상위 키를 좁혔고, 여기는 그 한 겹 아래다. 「산출에 닿는 것만
-#   잰다」는 같은 규율이고, 적는 쪽은 **빼는 목록**이다 — 모르는 칸은 여전히
-#   잰다(틀리면 한 번 더 빌드할 뿐이고, 반대로 틀리면 낡은 산출물을 재사용한다).
-#
-#   ★ **사유 없이 못 적는다.** `tests/test_shardseal.py` 가 AST 로 되묻는다 —
-#     폐포 어느 파일도 그 이름을 안 쥐는가. 쥐면 운다.
-INGEST_GLOBAL_SKIP: dict[str, frozenset[str]] = {
-    # `layers.raw.providers` 는 제공기관 **어휘**다. 읽는 곳은
-    # `normalize_raw.py`(raw → norm) 하나이고 그 파일은 ingest 폐포 안에 없다.
-    # 폐포 27개 어느 파일에도 `providers` 라는 글자가 없다.
-    # 그런데 제공기관 하나를 더하면 **72/72 가 찢어졌다**(2026-10-05 실측) —
-    # 산출에 한 바이트도 안 닿는 값이 전수 재빌드를 시킨다. §345 와 같은 병이고
-    # (「폐포가 의도보다 넓었다」) 거기서는 잠금 파일이었다.
-    # `layers.*.naming` 은 **파일 이름 규칙**이다. 읽는 곳은 `scan_data` ·
-    # `lakecheck` · `datalog` 이고 전부 폐포 밖이다 — ingest 는 대장이 적은
-    # `files:` 경로를 그대로 열지, 이름을 패턴으로 고르지 않는다. 제공기관
-    # 하나를 더하면 이 정규식의 교대열도 같이 늘어 **또 전수를 찢는다.**
-    "layers": frozenset({"providers", "naming"}),
-}
-
-
-# ★ 2026-09-22 (DECISIONS §216-1). 자기 항목에서도 **산출에 안 닿는 서술 칸**은 뺀다.
-#   종전에는 항목 전체를 쟀고, `feeds` 에 소비자 한 줄(`publish_navi.py`)을 적은 것만으로
-#   ngii1k · node_link · node_point · turn_restriction 넷이 찢어져 다시 빌드됐다. 그중
-#   turn_restriction 이 실패해 verify 가 빨개졌다 — 전역 칸에서 §166-3 이 막은 사고가
-#   자기 항목 칸에서 그대로 났다. 목록은 **빼는 쪽**으로 둔다: 모르는 칸은 여전히 잰다
-#   (틀리면 한 번 더 빌드할 뿐이고, 반대로 틀리면 낡은 산출물을 재사용한다).
-DOC_KEYS = frozenset({
-    "feeds", "feeds_note", "feeds_why", "used_for", "note", "authority",
-    "what", "what_fix", "read_note",
-    "schema",        # AUTO — ledger_schema.py 가 raw 에서 뽑는다. raw 칸이 이미 잰다
-    # ★ 2026-10-05 (DECISIONS §396-7). **같은 족 네 번째다.** §166-3(전역 칸) ·
-    #   §216-1(자기 항목) · §243(전역 칸의 산문)이 같은 사고를 세 번 고쳤는데
-    #   `caveats` 는 목록에 없었다. `layers.golden.caveats` 의 **한 줄**을
-    #   고치자 45샤드가 전부 찢어졌다 — PLAN 행 참조 하나를 바로잡은 줄이다.
-    #   목록을 손으로 적는 한 다음 칸이 또 빠진다. 그래서 아래 시험이
-    #   **대장에 실재하는 산문 칸 전부**를 훑어 빠진 것을 찾는다.
-    "caveats",
-    # ★ 2026-10-06 (DECISIONS §423). **같은 족 다섯 번째다.** 「언제 잰 자료인가」를
-    #   물어볼 칸이 없어 `survey_year` · `notified` 를 만들었더니 `ngii1k` 샤드가
-    #   바로 찢어졌다. 둘 다 **ingest 가 안 읽는다** — 사람이 읽는 메타다.
-    #   위 ★ 가 적은 예언이 한 배치 만에 맞았다.
-    "survey_year", "notified",
-})
+# ★ 2026-10-08 (DECISIONS §431). 「어느 칸이 산출에 닿나」는 선언 다섯이
+#   `firelane/sealkeys.py` 로 나갔다. 사유가 산문이라 이 파일을 668 → 734 로
+#   밀었고(상한 600 · 예외 668), **사유를 깎는 것은 이 저장소가 안 하는 일**이다.
+#   그리고 물음이 다르다 — 여기는 **지문을 뜨는 기계**고, 그쪽은 **무엇을 재나**다.
+from firelane.sealkeys import DOC_KEYS, INGEST_GLOBAL, INGEST_GLOBAL_SKIP
 
 
 def _no_docs(v):

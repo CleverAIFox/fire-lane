@@ -2427,7 +2427,7 @@ CODEOWNERS 는 "누가 봐야 하는가"를 정하고, 계약 테스트는 "무�
 
 `web/data` 는 **40MB 상한**이다. 세 곳이 같은 값을 본다 —
 `.github/workflows/contract.yml` · `tools/commit_policy.py` ·
-`pipeline.WEB_MAX_MB`. 현재값은 `tools/web_manifest.py` 가 낸다 — 문서에 적지 않는다. 세는 방법이 셋이라(추적 파일 합 · `du` · 계보) 값을 적으면 어느 것과도 안 맞는다.
+`expectation.WEB_MAX_MB`. 현재값은 `tools/web_manifest.py` 가 낸다 — 문서에 적지 않는다. 세는 방법이 셋이라(추적 파일 합 · `du` · 계보) 값을 적으면 어느 것과도 안 맞는다.
 강제자 — `tests/test_guards.py::test_webdata_limit_is_one_number`
 
 ### 12-11. 한글 파일명
@@ -3004,7 +3004,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,846 전수 · **분모(blank) 0절** · 물림(inherit) 938절.
+★ **강제자 칸의 분모.** 절 1,865 전수 · **분모(blank) 0절** · 물림(inherit) 955절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3236,7 +3236,7 @@ gjcity/gjcity_streetlight_jngj-donggu_20250731.csv
 **금지** — 한글, 공백, 대문자, `final`, `최종`, `수정본`, `real_final2`.
 `_r{rev}` 가 있는데 `final` 을 쓰면 어느 쪽이 최신인지 모른다.
 
-강제자  `tests/test_normalize_rules.py`(norm 이름 규칙 토큰) · `tools/refcheck.py`(`dataset_key` 가 대장 키와 문자열까지 같은가) · `uv run python -m firelane.ledger`(대장 필드 검사)
+강제자  `tests/test_normalize_rules.py`(norm 이름 규칙 토큰) · `tools/refcheck.py`(`dataset_key` 가 대장 키와 문자열까지 같은가) · `uv run python -m firelane.ledger_check`(대장 필드 검사)
 
 ### 18-2c. 확장자 정규화
 
@@ -3292,7 +3292,7 @@ outputs:
       - 폭 실측 검증 0건. 소방서 7구간 대조는 게이트로 썼으므로 검증이 아니다
 ```
 
-강제자  `uv run python -m firelane.ledger`(대장 필드 검사) · `tools/ledger_fields.py --check`(별칭 이관 유지) · `tests/test_sources_of_truth.py`(손대장이 둘이 되는 것을 막는다 — 같은 사실이 목록 밖에 literal 로 살면 운다)
+강제자  `uv run python -m firelane.ledger_check`(대장 필드 검사) · `tools/ledger_fields.py --check`(별칭 이관 유지) · `tests/test_sources_of_truth.py`(손대장이 둘이 되는 것을 막는다 — 같은 사실이 목록 밖에 literal 로 살면 운다)
 
 ### 18-3a. 필드의 의무
 
@@ -3771,7 +3771,7 @@ scope:     광주 동구 74도엽       # 공간 범위 + 건수
 crs:       5186                 # ★ 선언 근거를 함께. prj/xml 명시 vs 추정
 ```
 
-강제자  `uv run python -m firelane.ledger`(대장 필드 검사 — 어느 칸이 필수인가) · `tools/vintage_check.py --max 0`(`vintage` 정합) · `tools/ledger_schema.py --check`(실물에서 뽑은 스키마)
+강제자  `uv run python -m firelane.ledger_check`(대장 필드 검사 — 어느 칸이 필수인가) · `tools/vintage_check.py --max 0`(`vintage` 정합) · `tools/ledger_schema.py --check`(실물에서 뽑은 스키마)
 
 ---
 

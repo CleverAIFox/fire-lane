@@ -326,3 +326,35 @@ def test_the_navi_lock_stamp_is_not_inside_what_npm_ci_deletes():
     ign = (ROOT / ".gitignore").read_text(encoding="utf-8")
     assert rel in ign, (
         f"`{rel}` 이 gitignore 밖이다 — 기계마다 다른 값이 커밋된다")
+
+
+# ── 쉘 환경이 시험에 새지 않는가 (PLAN #151 · DECISIONS §431) ──
+def test_every_known_env_name_is_either_cleared_or_kept_with_a_reason():
+    """**양방향이다.** 새 환경변수가 생기면 둘 중 하나에 들어가야 한다.
+
+    ★ `conftest` 가 비우는 목록은 `env_check.SWITCHES | RETIRED` 에서
+      **유도한다.** 그래서 이 시험이 묻는 것은 「`env_check` 가 아는 이름이
+      전부 분류되는가」다 — 손목록을 두 벌 만들면 그것이 족 2 다.
+    """
+    import env_check as ec
+
+    known = set(ec.SETTINGS) | set(ec.SWITCHES) | set(ec.RETIRED)
+    assert len(known) > 8, f"아는 이름이 {len(known)}개뿐 — 정본이 죽었다"
+    cleared = set(ec.SWITCHES) | set(ec.RETIRED)
+    kept = set(ec.SETTINGS)
+    assert not (cleared & kept), f"같은 이름을 비우고 또 지킨다: {sorted(cleared & kept)}"
+    assert known == cleared | kept, (
+        f"분류 밖 이름: {sorted(known - cleared - kept)}\n"
+        "  스위치면 `SWITCHES`, 설정이면 `SETTINGS` 에 적어라. 분류 밖은 "
+        "비우지도 지키지도 않는다 — 그러면 쉘이 조용히 이긴다.")
+
+
+def test_the_fixture_actually_clears_a_switch(monkeypatch):
+    """★ 카나리아. 픽스처가 **실제로** 비우는가 — autouse 는 조용히 죽는다."""
+    import os
+
+    import env_check as ec
+
+    sw = sorted(ec.SWITCHES)[0]
+    assert sw not in os.environ, (
+        f"{sw} 가 아직 환경에 있다 — `_shell_switches_do_not_leak` 이 안 돌았다")

@@ -566,7 +566,7 @@ def test_segment_fields_are_internally_consistent(seg):
 def test_schema_layers_differ_only_by_declaration():
     """`processed` 와 `web` 스키마의 필드 집합 차이가 **선언과 정확히 같은가.**
 
-    ★ 2026-09-17 (DECISIONS §171-4). `pipeline.verify_schema` 는 계층마다
+    ★ 2026-09-17 (DECISIONS §171-4). `expectation.verify_schema` 는 계층마다
       *스키마 == 자기 산출물* 만 본다. 두 계층을 서로 대조하는 곳이 없었다
       (PLAN `계층 간 스키마 드리프트`). 그래서 processed 에 필드가 생기고
       publish 가 조용히 떨어뜨려도, web 에만 필드가 생겨도 초록이었다.

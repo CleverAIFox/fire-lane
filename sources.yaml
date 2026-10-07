@@ -3766,7 +3766,9 @@ outputs:
     what: segments.geojson 의 컬럼 계약. 표출이 읽기 전에 구조를 못박는다
     consumers:
     - src/firelane/publish_web.py
-    - src/firelane/pipeline.py
+    # ★ 2026-10-08 (DECISIONS §431-6). `pipeline.py` → `expectation.py`.
+    #   「산출물이 기대와 맞는가」 다섯이 거기로 나갔고 **읽는 자도 같이 갔다.**
+    - src/firelane/expectation.py
     - src/firelane/webmanifest.py
     - tools/baseline.py
     - tools/release_brief.py
@@ -3818,7 +3820,9 @@ outputs:
     # ★ 2026-09-03. 셋을 더했다. `test_declaration_reality` 가 실물에서
     #   찾아냈다 — 손대장이라 읽는 쪽이 늘어도 아무도 안 적었다.
     - src/firelane/guards.py
-    - src/firelane/pipeline.py
+    # ★ 2026-10-08 (DECISIONS §431-6). `pipeline.py` → `expectation.py`.
+    #   「산출물이 기대와 맞는가」 다섯이 거기로 나갔고 **읽는 자도 같이 갔다.**
+    - src/firelane/expectation.py
     - tools/width_fn.py
     # ★ 2026-09-06. 또 하나. `publish_navi` 가 내비용 그래프를 낸다 —
     #   같은 병이 두 번째다(손대장이라 읽는 쪽이 늘어도 아무도 안 적는다).

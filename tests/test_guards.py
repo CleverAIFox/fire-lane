@@ -580,7 +580,7 @@ def test_webdata_limit_is_one_number():
     """
     import re
 
-    from firelane.pipeline import WEB_MAX_MB
+    from firelane.expectation import WEB_MAX_MB  # ← pipeline (§431 · PLAN #157)
 
     ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
     m = re.search(r'SIZE"?\s*-ge\s*(\d+)', ci) or re.search(r'-ge\s*"?(\d+)"?', ci)
@@ -593,7 +593,7 @@ def test_webdata_limit_is_one_number():
     pol_mb = int(m2.group(1))
 
     assert WEB_MAX_MB == ci_mb == pol_mb, (
-        f"web/data 상한이 갈렸다 — pipeline {WEB_MAX_MB} · "
+        f"web/data 상한이 갈렸다 — expectation {WEB_MAX_MB} · "
         f"contract.yml {ci_mb} · commit_policy {pol_mb}")
 
 
@@ -2659,7 +2659,7 @@ def test_sheet_pick_refuses_to_guess_between_equal_candidates(tmp_path, monkeypa
 
 def test_web_size_verdict_bites_at_the_boundary():
     """상한이 **경계에서** 운다. 그리고 상한 자체가 정본에서 온다."""
-    m = _steps()
+    from firelane import expectation as m
     assert m.web_size_verdict(m.WEB_MAX_MB - 0.1) == [], "상한 밑인데 운다"
     over = m.web_size_verdict(m.WEB_MAX_MB)
     assert len(over) == 1, "경계에서 안 문다 — `>` 와 `>=` 를 섞었다"
@@ -2669,7 +2669,7 @@ def test_web_size_verdict_bites_at_the_boundary():
 
 def test_verify_returns_what_it_found_instead_of_printing_it():
     """`verify()` 가 **반환형을 갖는다.** 종전에는 상태를 문자열로만 냈다(§415 와 같은 족)."""
-    m = _steps()
+    from firelane import expectation as m
     assert m.verify.__annotations__.get("return") == "list[str]", (
         "`verify()` 가 반환형을 안 적었다 — 상태를 문자열로 내면 호출부가 버린다")
     src = (ROOT / "src" / "firelane" / "pipeline.py").read_text(encoding="utf-8")

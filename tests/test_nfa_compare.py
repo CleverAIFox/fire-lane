@@ -83,16 +83,24 @@ def test_the_ledger_parsers_stay_out_of_the_judgment_closure():
 
 
 def test_the_closure_does_not_quietly_grow():
-    """래칫. 17에서 늘면 **무엇이 왜 들어왔는지** 적게 만든다."""
+    """래칫. 18에서 늘면 **무엇이 왜 들어왔는지** 적게 만든다.
+
+    ★ 2026-10-08 (DECISIONS §431 · PLAN #47). 17 → **18**. `seg/unionfind.py` 가
+      들어왔다. §303 과 **같은 이사**다 — 판정 면적이 는 것이 아니고, 네 곳에
+      흩어져 있던 `find` 다섯 줄이 폐포 안의 새 파일로 모였다. 셋은 폐포 밖
+      파일(`publish_navi` · `bridge_audit` · `kpi`)이라 그쪽에서 보면 **줄었다.**
+      값은 안 움직인다(`tests/test_unionfind.py` 가 400판으로 든다) — 움직이는
+      것은 **지문**이고, 그래서 이 판에 `golden.py lock` 이 한 번 따라온다.
+    """
     from firelane.shardseal import code_closure
 
     n = len(code_closure("firelane.segments"))
-    assert n <= 17, (
-        f"판정 폐포가 {n}파일이다 — 기록은 17이다.\n"
+    assert n <= 18, (
+        f"판정 폐포가 {n}파일이다 — 기록은 18이다.\n"
         "  폐포가 늘면 그 파일을 고칠 때마다 판정 재실행과 재잠금이 따라온다.\n"
         "  정말 판정에 기여하는 파일이면 이 수를 올리고 사유를 적어라.")
     assert n >= 15, (
-        f"폐포가 {n}파일로 줄었다 — 기록 17보다 작다. 좋은 일일 수 있지만\n"
+        f"폐포가 {n}파일로 줄었다 — 기록 18보다 작다. 좋은 일일 수 있지만\n"
         "  **판정 코드가 빠져나간 것**일 수도 있다. 수를 내리고 무엇이 왜 빠졌는지 적어라.")
 
 

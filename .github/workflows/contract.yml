@@ -349,7 +349,7 @@ jobs:
       # ★ 인자는 verify.sh 와 **글자까지 같다** — `tests/test_gate_parity_args.py` 가 대조한다.
       #   인자가 갈리면 같은 검사기를 다른 문턱으로 도는 것이고, 그것은 관문 동등이 아니다.
       - name: 대장 필드 검사
-        run: uv run python -m firelane.ledger
+        run: uv run python -m firelane.ledger_check
       - name: 대장 별칭 이관 유지
         run: uv run python tools/ledger_fields.py --check
       # ── 2026-09-28 (DECISIONS §285). 문서가 관문이라 이름까지 적어 둔 것이
@@ -415,7 +415,7 @@ jobs:
       - name: golden 게이트 해제 경로
         run: uv run python tools/golden.py selftest
       - name: 사본군 (래칫)
-        run: uv run python tools/dupcheck.py --min 40 --max 1
+        run: uv run python tools/dupcheck.py --min 40 --max 0
       - name: 파일 길이 래칫 (양방향)
         run: uv run python tools/sizecheck.py
       # ★ `--write` 를 CI 에서 안 돈다 — 쓰고 나서 재면 영영 초록이다(§309).

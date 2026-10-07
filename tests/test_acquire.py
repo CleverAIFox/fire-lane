@@ -23,6 +23,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+from firelane import acquire_rules as ar
+
 ROOT = Path(__file__).resolve().parents[1]
 
 _spec = importlib.util.spec_from_file_location("acquire", ROOT / "tools/acquire.py")
@@ -41,7 +43,7 @@ def test_the_declared_files_cover_every_derived_path():
     from firelane import ledger
 
     bad = {k: s for k, v in ledger.load_sources()["datasets"].items()
-           if (s := acquire.stale_files_decl(v or {}))}
+           if (s := ar.stale_files_decl(v or {}))}
     assert not bad, (
         "`files:` 가 낡았다 — 파생이 그 글롭 밖 경로를 낸다:\n  "
         + "\n  ".join(f"{k}: {v}" for k, v in bad.items()))
@@ -51,6 +53,6 @@ def test_a_source_that_declares_many_vintages_is_not_derived():
     """★ `vintages`(복수)는 「판이 여럿」이라는 선언이다 — 파생하면 **나머지를 잃는다.**"""
     e = {"stem": "x_y", "ext": ["csv"], "scope": "kr", "updated": "2025-02-26",
          "vintages": ["2024-01-08", "2025-02-26"]}
-    assert acquire._derive_files(e) == [], "판이 여럿인데 하나로 파생했다"
-    assert acquire._derive_files({k: v for k, v in e.items() if k != "vintages"}), \
+    assert ar.derive_files(e) == [], "판이 여럿인데 하나로 파생했다"
+    assert ar.derive_files({k: v for k, v in e.items() if k != "vintages"}), \
         "★ 반대 방향 — `vintages` 가 없으면 파생해야 한다"

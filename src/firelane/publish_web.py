@@ -362,7 +362,7 @@ def main():
     #
     # `test_schema_matches_data` 는 `>=`(부분집합)만 봐서 못 잡았다.
     # MASTER §18-5 R7 은 "컬럼 집합 == 스키마 키 집합" 검사를 넣겠다고
-    # 적어놓고 안 넣었다. `pipeline.verify()` 가 이제 그것을 본다.
+    # 적어놓고 안 넣었다. `expectation.verify()` 가 이제 그것을 본다.
     _sch = json.loads((P/"segments.schema.json").read_text(encoding="utf-8"))
     _pub = set(_cols) | {"seg_no"} | ({"z"} if "z" in _seg.columns else set())
     _dropped = sorted(k for k in _sch["fields"] if k not in _pub)
