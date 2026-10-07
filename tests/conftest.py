@@ -25,3 +25,18 @@ def pytest_runtest_makereport(item, call):
     if why:
         rep.outcome = "failed"
         rep.longrepr = f"skip 정책 위반(tests/skip_policy.py) — {why}\n  skip 사유: {reason}"
+
+
+# ── 차량 제원 주입 (PLAN #122 · DECISIONS §431) ────────────────
+# ★ 도메인(`seg/vehicle.py`)이 더는 대장을 직접 안 읽는다. 진입점이 주입하고,
+#   시험에서는 여기가 그 진입점이다. 안 넣으면 `V.WIDTH` 가 전부 죽는다.
+# ★ **대장이 비어 있어도 조용히 넘어간다** — 제원이 없다는 사실 자체를 보는
+#   시험(`SpecMissing`)이 따로 있고, 그것까지 막으면 그 시험이 죽는다.
+@pytest.fixture(autouse=True, scope="session")
+def _vehicle_spec_injected():
+    from firelane import ledger as _led
+    from firelane.seg import vehicle as _V
+    try:
+        _V.use(_led.vehicle_spec())
+    except _V.SpecMissing:
+        pass

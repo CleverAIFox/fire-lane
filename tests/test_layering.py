@@ -234,24 +234,55 @@ def test_순환_의존이_없다():
 # ★ 금지는 import 가 아니라 **행위**다. 도메인은 파일을 안 읽는다 — 값은
 #   인자로 받는다. TS 쪽이 이미 그 모양이다(`domain/vehicle.ts` 는 `spec` 을
 #   받는다).
+def _code(src: str) -> str:
+    """주석과 **문자열 리터럴**을 지운 소스. 자리는 그대로 둔다.
+
+    ★ 2026-10-08 (DECISIONS §431). 이 판별식들은 **글자로** 센다. 그래서
+      「종전에는 `Path(__file__).resolve().parents[3]` 로 읽었다」라고 적은
+      **설명 주석 한 줄**이 그 파일을 영원히 위반으로 만든다 — 고쳤는데도.
+
+      같은 병의 네 번째다: §398-3(`# ci-exempt:` 주석) · §425-6(`scope` 줄) ·
+      §430-4(래칫이 제 설명문을 셌다). 그때마다 **그 자리만** 고쳤다.
+      여기서는 줄 단위가 아니라 **토큰 단위**로 지운다 — 여러 줄 문자열도
+      먹으므로 머리말 안의 코드 예시가 더는 안 걸린다.
+    """
+    import io
+    import tokenize
+
+    rows = src.splitlines(keepends=True)
+
+    def blank(start: tuple[int, int], end: tuple[int, int]) -> None:
+        (r1, c1), (r2, c2) = start, end
+        for r in range(r1, r2 + 1):
+            line = rows[r - 1]
+            s = c1 if r == r1 else 0
+            e = c2 if r == r2 else len(line.rstrip("\n"))
+            rows[r - 1] = line[:s] + " " * max(0, e - s) + line[e:]
+
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(src).readline):
+            if tok.type in (tokenize.COMMENT, tokenize.STRING):
+                blank(tok.start, tok.end)
+    except (tokenize.TokenError, IndentationError):
+        return src          # ★ 못 읽으면 **안 봐준다** — 원문 그대로 본다
+    return "".join(rows)
+
+
 _OWN_ROOT = re.compile(r"Path\(__file__\)\.resolve\(\)\.parents\[")
 # ★ 읽기 호출만 본다. 파서 이름()은 안 적는다 — 「대장 직접 로드」
 #   래칫이 **글자로** 세는 탐지기라 이 파일이 그 목록에 들어가 버린다.
 _READS = re.compile(r"\.read_text\(|\.read_bytes\(|\bopen\(")
 
 #: 사유를 적으면 면제. **빈 사유는 금지**이고, 깨끗해지면 「낡았다」로 운다.
-READS_EXEMPT: dict[str, str] = {
-    "seg/vehicle.py":
-        "sources.yaml 의 vehicle_spec 을 직접 읽고 전역에 캐시한다. 고치는 법은 "
-        "정해져 있다 — 읽는 쪽을 인프라로 올리고 도메인은 주입받는다. `spec()` 이 "
-        "전역 캐시이고 `__getattr__` 으로 `V.WIDTH` 까지 이어서 호출부 넷과 "
-        "파이프라인을 같이 건드린다. 재잠금 1회가 붙어 배치를 따로 잡는다(PLAN #122)",
-}
+#: ★ 2026-10-08 (DECISIONS §431). **비었다.** `seg/vehicle.py` 를 고쳤다 —
+#:   도메인이 더는 파일을 안 읽고 `use()` 로 주입받는다(PLAN #122 닫힘).
+#:   비어 있는 것이 정상이고, 채우려면 **사유를 적어야** 한다.
+READS_EXEMPT: dict[str, str] = {}
 
 
 @pytest.mark.parametrize("rel", DOMAIN)
 def test_domain_모듈은_저장소를_직접_안_읽는다(rel):
-    src = (PKG / rel).read_text(encoding="utf-8")
+    src = _code((PKG / rel).read_text(encoding="utf-8"))
     bad = []
     if _OWN_ROOT.search(src):
         bad.append("제 루트를 손수 계산한다 (`parents[...]`)")
@@ -342,3 +373,23 @@ def test_domain_목록이_판정_폐포를_다_덮는다():
         "  낡은 면제는 사각지대다 — 지워라(§259-2).")
     thin = [r for r, w in NOT_DOMAIN.items() if len(w.strip()) < 30]
     assert not thin, f"사유가 너무 짧다 — 왜 순수가 아닌가: {thin}"
+
+
+def test_the_reader_detector_does_not_read_its_own_explanation():
+    """★ **카나리아.** 주석·머리말 속 코드 예시는 위반이 아니다.  (DECISIONS §431)
+
+    고친 모듈은 「종전에는 `parents[3]` 으로 읽었다」를 머리말에 들고 있다.
+    그것이 위반으로 잡히면 이 판별식은 **제 설명문을 세는** 것이다 —
+    §398-3 · §425-6 · §430-4 에 이은 네 번째가 된다.
+    """
+    src = '''"""머리말 — 종전에는 Path(__file__).resolve().parents[3] 로 읽었다."""
+# 주석에서도 p.read_text() 를 말할 수 있다
+X = 1
+'''
+    out = _code(src)
+    assert not _OWN_ROOT.search(out), "머리말의 코드 예시를 셌다"
+    assert not _READS.search(out), "주석의 읽기 언급을 셌다"
+    # ★ 반대 방향 — 진짜 코드는 여전히 잡는다
+    assert _READS.search(_code("v = p.read_text()\n")), "진짜 읽기를 놓친다"
+    assert _OWN_ROOT.search(_code("R = Path(__file__).resolve().parents[3]\n")), \
+        "진짜 루트 계산을 놓친다"

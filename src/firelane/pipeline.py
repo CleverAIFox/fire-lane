@@ -479,6 +479,24 @@ def main():
                     help="계보 기록을 지우고 시작한다 (교착 탈출구)")
     a = ap.parse_args()
 
+    # ★ 2026-10-08 (PLAN #122 · DECISIONS §431). **여기가 합성 루트다.**
+    #   `fire-lane = firelane.pipeline:main` 이고, 도메인(`seg/vehicle.py`)은
+    #   대장을 직접 안 읽는다 — 읽는 것은 인프라의 일이고 주입은 진입점의 일이다.
+    #
+    #   ★ **`segments.py` 에 넣으면 안 된다.** 이 파일 위쪽이 적어 뒀듯
+    #     「판정 지문 = `firelane.segments` import 닫힘」이고, 거기에 `ledger` 가
+    #     들어오면 **대장을 고칠 때마다 판정 지문이 더러워진다.** 그 폐포를
+    #     21 → 17 로 줄인 결정을 되돌리는 꼴이다.
+    #
+    #   ★ 없으면 **안 죽는다.** 제원이 없는 것은 `segments` 가 이미 다루는
+    #     사실이고(경로만 건너뛴다), 여기서 죽이면 발행까지 못 간다.
+    from firelane import ledger as _led
+    from firelane.seg import vehicle as _V
+    try:
+        _V.use(_led.vehicle_spec())
+    except _V.SpecMissing:
+        pass
+
     if a.reset_lineage:
         # ★ 명시적 탈출구. 지금까지는 _lineage.json 을 손으로 rm 하는 것이
         #   유일한 방법이었고 문서에도 없었다. 몰래 지우는 것보다 로그에

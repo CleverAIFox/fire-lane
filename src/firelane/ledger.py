@@ -400,6 +400,19 @@ def provider_of(e: dict) -> str | None:
     return None
 
 
+def vehicle_spec() -> dict:
+    """대장의 `vehicle_spec` 블록. **읽는 것은 인프라의 일이다.**  (PLAN #122)
+
+    ★ 2026-10-08 (DECISIONS §431). 종전에는 `seg/vehicle.py` 가 제 루트를
+      손수 계산해 직접 읽었다 — 도메인이 파일을 읽은 것이다(§279-8).
+      여기로 올리고 도메인은 `vehicle.use()` 로 받는다.
+
+    ★ 비었는지 · 칸이 모자라는지는 **안 본다.** 무엇이 필요한가는
+      도메인이 알고 `vehicle.NEED` 가 든다. 여기는 건네줄 뿐이다.
+    """
+    return (load_sources() or {}).get("vehicle_spec") or {}
+
+
 def globs(e: dict) -> list[str]:
     """대장 항목 → raw 상대 글롭 패턴 목록. 없으면 빈 리스트.
 
