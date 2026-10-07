@@ -3341,6 +3341,10 @@ datasets:
     feeds_note: '[]'
     stem: moleg_roadtraffic_act
     ext: [pdf]
+    # ★ 2026-10-08 (DECISIONS §431). 조문 하나에 파일 하나다. `parts` 를 적어야
+    #   파생이 둘을 다 만든다 — 안 적으면 `_a29`·`_a30` 이 「대장에 없다」로,
+    #   파생이 지은 `..._20260701.pdf` 는 「결손」으로 **양쪽에** 뜬다.
+    parts: [a29, a30]
     kind: raw_only
     scope: kr
     updated: '2026-07-01'

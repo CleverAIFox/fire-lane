@@ -160,18 +160,26 @@ def dataset_globs() -> dict[str, list[str]]:
       **선언은 갱신됐는데 읽는 쪽이 안 따라간** 것이고, 오늘 반복된
       바로 그 형태다.
 
-    ★ `ext` 가 있으면 그것으로 파생한다. `files` 를 손으로 고치고
-      `ext` 를 잊는 일이 없도록, 재료가 있으면 재료가 이긴다.
+    ★ 2026-10-08 (DECISIONS §431). **순서를 뒤집었다.** 종전 주석은
+      「재료가 있으면 재료가 이긴다」였는데, 같은 저장소의
+      `ledger.globs()` 는 정반대로 「`files` 는 stem 으로 표현할 수 **없는**
+      항목만 남는 명시적 글롭 예외」라고 적고 있었다 — **정본이 둘이고
+      서로 반대였다.**
+
+      실측이 갈랐다. 어긋나는 셋 중 **둘에서 파생이 파일을 잃는다** —
+      `parking_enforce` 의 2024판, `roadtraffic_act` 의 `_a29`·`_a30`.
+      잃은 파일은 「대장에 없다」로 판단 대기에 뜨고, 동시에 파생이 만든
+      없는 이름이 「결손」으로 뜬다. **같은 파일이 양쪽에 있었다.**
+
+      그래서 `ledger.globs()` 쪽으로 통일한다 — **`files` 가 있으면 정본**이고
+      파생은 그것이 없을 때만. 「`files` 가 낡는다」는 종전의 걱정은
+      우선순위가 아니라 **가드**가 든다(`test_acquire.py` · 어긋남 0).
     """
     out: dict[str, list[str]] = {}
     for k, v in _yaml().get("datasets", {}).items():
         v = v or {}
-        derived = _derive_files(v)
-        if derived:
-            out[k] = derived
-            continue
         fs = v.get("files") or ([v["file"]] if v.get("file") else [])
-        out[k] = [str(x) for x in fs]
+        out[k] = [str(x) for x in fs] or _derive_files(v)
     return out
 
 
@@ -197,6 +205,12 @@ def _derive_files(e: dict) -> list[str]:
     #   판이 늘어나므로 목록을 손으로 유지하는 편이 더 나쁘다.
     if not re.fullmatch(r"\d{8}", vt):
         return []
+    # ★ 2026-10-08 (DECISIONS §431). `vintages`(복수)는 **「판이 여럿」이라는
+    #   선언**이다. 그런데도 `updated` 하나로 파생하면 **나머지 판을 전부
+    #   잃는다** — `parking_enforce` 의 2024판이 그렇게 고아가 됐다.
+    #   바로 위 주석이 이미 적고 있다: 「판이 여럿인 소스는 글롭이 정답이다」.
+    if e.get("vintages"):
+        return []
     parts = e.get("parts") or [None]
     out = []
     for st in stems:
@@ -206,6 +220,26 @@ def _derive_files(e: dict) -> list[str]:
                 bits = [str(st), str(scope), vt] + ([str(pt)] if pt else [])
                 out.append(f"{prov}/{'_'.join(bits)}.{x}")
     return sorted(set(out))
+
+
+def stale_files_decl(e: dict) -> list[str]:
+    """`files:` 가 **낡았나.**  (DECISIONS §431)
+
+    `files` 를 정본으로 올렸으니(`dataset_globs`) 그것이 낡으면 조용히 파일을
+    잃는다. 종전 주석이 걱정한 것이 바로 그것이고, 종전 답은 **우선순위**였다 —
+    그런데 그 답이 `parking_enforce` 2024판과 `_a29`·`_a30` 을 잃게 만들었다.
+
+    답은 우선순위가 아니라 **대조**다. 파생이 `files` 글롭 **밖**의 경로를 내면
+    `files` 가 그 판을 모르는 것이다. 문자열이 같은지는 안 본다 —
+    `ngii1k` 처럼 글롭 하나가 파생 둘을 덮는 것은 **같은 주장의 다른 꼴**이다.
+    """
+    from fnmatch import fnmatch
+
+    e = e or {}
+    fs = [str(x) for x in (e.get("files") or ([e["file"]] if e.get("file") else []))]
+    if not fs:
+        return []
+    return [x for x in _derive_files(e) if not any(fnmatch(x, g) for g in fs)]
 
 
 def retired_names() -> dict[str, str]:
