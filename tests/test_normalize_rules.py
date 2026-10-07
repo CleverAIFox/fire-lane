@@ -273,3 +273,47 @@ def test_general_rule_accepts_every_scope_alias():
         f"일반 규칙이 못 받는 스코프 별칭 — {', '.join(bad)}\n"
         "  normalize_raw.main() 의 문자 클래스를 넓혀라.\n"
         "  대장 scopes 가 정본이고 정규식이 그것을 따라간다.")
+
+
+def test_the_four_new_sources_get_placed_by_name():
+    """§428 이 더한 이름 규칙 넷이 **실물 이름을 받는가.**
+
+    ★ 2026-10-07 실기 사고. §419 가 대장에 자리 셋을 만들고 **이름 규칙을 안 짰다.**
+      그래서 `intake` 가 「규칙에도 처분 목록에도 없는 파일」로 셋을 건너뛰었고,
+      사람은 「반입을 돌렸는데 0건」을 보았다 — 대장은 기다리는데 길이 없었다.
+
+    ★ 기대 이름을 **여기 박는다.** 규칙만 보면 「걸리기는 하는가」밖에 못 묻고,
+      엉뚱한 폴더·엉뚱한 날짜로 가도 통과한다. 판정은 `(폴더, 이름)` 쌍이다.
+    """
+    import re
+
+    from firelane import providers
+    from firelane.normalize_raw import passthrough_rules
+
+    want = {
+        "C_UQ153.zip":
+            ("vworld", "vworld_uq153_kr_20261001.zip"),
+        "LSMD_CONT_UQ164_5174_전남광주통합특별시.zip":
+            ("vworld", "vworld_uq164_jngj_20260915.zip"),
+        "15. 도로대장_20261006153718.csv":
+            ("eais", "eais_roadledger_dm_jngj-dongmyeong_20260801.csv"),
+        "202608_상세주소DB_전체분.zip":
+            ("juso", "juso_adrdc_kr_20260801.zip"),
+        "건축위원회(심의) 표준 가이드라인.pdf":
+            ("nfa", "nfa_bldgcomm_guide_kr_20231231.pdf"),
+    }
+    rules = passthrough_rules(providers.all())
+    bad = []
+    for src, (folder, dst) in want.items():
+        got = None
+        for pat, fold, tmpl in rules:
+            m = re.search(pat, src.lower())
+            if m:
+                got = (fold, src if tmpl is None else
+                       (tmpl.format(*m.groups()) if m.groups() else tmpl))
+                break
+        if got != (folder, dst):
+            bad.append(f"{src}\n      기대 {folder}/{dst}\n      실제 {got}")
+    assert not bad, ("새 원천의 이름 규칙이 어긋난다:\n    " + "\n    ".join(bad)
+                     + "\n  대장에 자리를 만들면서 **이름 규칙을 같이 짠다** — "
+                       "자리만 만들면 반입이 영영 안 선다(§428).")

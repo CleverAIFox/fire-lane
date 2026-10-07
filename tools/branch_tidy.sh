@@ -88,6 +88,22 @@ merged_by_content() {
 #   묶음(geo · dev-tools · rest)이 「밀렸다」로 닫혔다. 끝의 판(숫자 · 해시)만 떼어낸다.
 bot_group() { printf '%s' "$1" | sed -E 's/-[0-9a-f]{6,}$//; s/-v?[0-9][0-9.]*$//'; }
 
+# ★ 2026-10-06 (DECISIONS §415). **제목이 아니라 본문**을 본다.
+#   Dependabot 보안 PR 의 제목은 판 올리기와 **글자 하나 다르지 않다** —
+#   「build(deps): bump source-map-js from 1.2.1 to 1.2.2 in /web/navi」.
+#   본문에만 자문(`GHSA-…` · `CVE-…`)이 실린다. 거기를 본다.
+#   ★ 본문을 **못 읽으면 보안으로 친다.** 모를 때는 닫는 쪽이 아니라 두는 쪽이다 —
+#     닫은 것은 사람이 되살려야 하고, 둔 것은 다음 판에서 그냥 닫으면 된다.
+is_security() {
+  local n=$1 body
+  body=$(gh pr view "$n" -R "$REPO" --json body -q .body 2>/dev/null) || return 0
+  [ -n "$body" ] || return 0
+  case "$body" in
+    *GHSA-*|*CVE-*|*"Dependabot alert"*|*"Vulnerabilit"*|*"vulnerabilit"*) return 0 ;;
+  esac
+  return 1
+}
+
 # ── 1. 열린 PR ──────────────────────────────────────────────────
 say "1. 열린 PR"
 CLOSE=()
@@ -122,13 +138,18 @@ else
       grp=$(bot_group "$head")
       [ -z "${NEWEST[$grp]:-}" ] || [ "$n" -gt "${NEWEST[$grp]}" ] && NEWEST[$grp]=$n
     done
-    VAC=()
+    VAC=(); SECPR=()
     for l in "${PRS[@]:-}"; do
       IFS=$'\t' read -r n head base who title <<<"$l"
       case "$who" in *dependabot*) ;; *) continue ;; esac
       why=""
-      # ★ 보안 업데이트는 target-branch 를 무시하고 기본 가지로 온다(dependabot 규칙) — 닫지 않는다
-      case "$title" in *"[security]"*|*[Ss]ecurity*) echo "   봇 보안  #$n  $title  — 닫지 않는다(기본 가지로 오는 것이 정상)"; continue ;; esac
+      # ★ 보안 업데이트는 target-branch 를 무시하고 **기본 가지**로 온다(dependabot 규칙).
+      #   이 저장소의 기본 가지는 `dev` 라 아래 `base != part/infra` 에 걸린다 —
+      #   그래서 이 가드가 **먼저** 와야 한다. 2026-10-06 에 제목으로 보던 판이
+      #   #301(source-map-js · CVSS 8.7 High)을 「흐름 밖(base=dev)」 으로 닫았다(§415).
+      if is_security "$n"; then
+        echo "   봇 보안  #$n  $title  — 닫지 않는다(기본 가지로 오는 것이 정상)"; SECPR+=("$n"); continue
+      fi
       [ "$base" != "part/infra" ] && why="흐름 밖(base=$base) — target-branch 는 part/infra 다"
       g=$(bot_group "$head")
       [ -z "$why" ] && [ "${NEWEST[$g]}" != "$n" ] && why="같은 묶음의 새 PR #${NEWEST[$g]} 에 밀렸다"
@@ -140,6 +161,15 @@ else
         --comment "청소 — $why (DECISIONS §218-4). diff 는 INBOX/_applied/deps-$n.patch 에 보관했다." \
         && { echo "   ✓ 봇 #$n 닫음 — $why"; VAC+=("$n"); } || echo "   ! #$n 닫기 실패 — 계속한다"
     done
+    # ★ 남긴 보안 PR 은 **조용히 넘어가면 안 된다.** 안 닫은 것만으로는 부족하다 —
+    #   #301 은 닫히기 전에도 나흘을 아무도 안 봤다. 경고로 올려 열차가 끝까지
+    #   「처리 안 됨」 을 들고 있게 한다(§415).
+    if [ ${#SECPR[@]} -gt 0 ]; then
+      printf '   ★ 보안 봇 PR %d 건이 열려 있다 — 사람이 처리해라: %s\n' \
+        "${#SECPR[@]}" "$(printf '#%s ' "${SECPR[@]}")"
+      echo "     의존성 판을 feat 배치로 올리고 그 PR 을 닫는다(DECISIONS §212-3)."
+      WARN=1
+    fi
     mapfile -t CLOSE < <(printf '%s\n' "${CLOSE[@]}" | grep -vxF -f <(printf '%s\n' "${BOTPR[@]}") || true)
   fi
   if [ ${#CLOSE[@]} -eq 0 ] || [ -z "${CLOSE[0]:-}" ]; then echo "   열린 PR 없음(사람 것)"

@@ -68,7 +68,15 @@ def diagnostics(g, *, old_snap: bool = False):
 
     # ── 폭 미산출 진단 ───────────────────────────────────────
     # STEP 4-1. 사유별 분포를 보고 원인을 특정한다. 추정 금지.
-    _w = g[g.unknown_reason == "width"]
+    #
+    # ★ 2026-10-06 (DECISIONS §417). 종전에는 `unknown_reason == "width"` 로 골랐다.
+    #   이름은 「폭 미산출」인데 **고르는 기준이 판정**이라, 폭이 안 나왔는데 대장폭으로
+    #   `blocked` 가 난 구간은 **진단에서 통째로 빠졌다.** 그렇게 빠진 둘이
+    #   `DM03310` · `DM03311`(동계로15번길 · 5.1m · 6.7m) 이고, 전체에서 유일하게
+    #   `n_try=0` — **트랜섹트를 한 발도 안 쐈다** — 인데도 아무 자리에도 안 적혔다.
+    #   길이 10m 미만 49구간 중 47은 폭이 나오므로 길이 탓도 아니다.
+    #   **폭을 진단하려면 폭으로 골라야 한다.**
+    _w = g[g.width_min_m.isna()]
     print(f"\n[폭 미산출 진단] {len(_w)}구간")
     if len(_w):
         print(_w.width_fail.fillna("(none)").value_counts().to_string())
@@ -76,8 +84,17 @@ def diagnostics(g, *, old_snap: bool = False):
         print(_w.groupby(_w.width_fail.fillna("(none)")).length_m
               .agg(["count", "median", "max"]).round(1).to_string())
         print("\n전체 목록")
-        print(_w[["seg_id", "road_name", "length_m", "in_emd", "width_fail"]]
+        print(_w[["seg_id", "road_name", "length_m", "in_emd",
+                  "verdict", "n_try", "width_fail"]]
               .sort_values(["width_fail", "length_m"]).to_string(index=False))
+        # ★ 한 발도 안 쏜 구간은 따로 센다. 「재 봤는데 안 나왔다」와
+        #   「잴 생각조차 안 했다」는 다른 결함이고 고치는 자리도 다르다.
+        _never = _w[_w.n_try == 0]
+        if len(_never):
+            print(f"\n  ★ 트랜섹트를 **한 발도 안 쏜** 구간 {len(_never)} — "
+                  f"표본 전부가 교차부에 걸렸거나 중심선이 도로면 밖이다")
+            print(_never[["seg_id", "road_name", "length_m", "road_bt_m",
+                          "verdict", "width_fail"]].to_string(index=False))
     _mg = g[g.merged_n > 1]
     print(f"\n[병합 단위] {len(_mg)}개 · 흡수된 엣지 합 {int(_mg.merged_n.sum())}")
     if len(_mg):

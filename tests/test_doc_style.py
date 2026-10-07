@@ -327,7 +327,10 @@ def test_recent_decisions_name_their_enforcer():
 # ── docs/ 에 사는 것 (2026-09-23) ──────────────────────────────
 DOCS_DIR = ROOT / "docs"
 # 문서는 넷이다. 루트 `README.md` 가 다섯째이고 그것은 이 폴더 밖에 산다.
-ALLOWED_DOCS = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.docx"}
+# ★ 2026-10-06 (DECISIONS §425). `proposal.md` 를 더했다. **다섯째가 아니다** —
+#   넷째 슬롯의 **형식이 바뀌는 중**이고, 두 꼴이 같이 사는 것은 옛 다섯(도구)이
+#   은퇴할 때까지다. docx 가 사라지면 이 집합도 넷으로 돌아간다.
+ALLOWED_DOCS = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.md", "proposal.docx"}
 # 그림은 문서가 아니라 `render_figures` 의 생성물이다.
 FIGURES_DIR = "figures"
 ALLOWED_FIGURES = {".lock.json"}                 # 그 밖에는 `*.svg` 만
