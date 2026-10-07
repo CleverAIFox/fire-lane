@@ -164,6 +164,9 @@ RULES: list[tuple[str, str, str]] = [
      "eais", "eais_roadledger_dm_jngj-dongmyeong_20260801.csv"),
     (r"^(\d{6})_상세주소db_전체분\.zip$",     # 앞 6자리가 회차(YYYYMM) · 일은 01
      "juso", "juso_adrdc_kr_{0}01.zip"),
+    # 정보공개청구로 받은 규격 원문. 괄호를 이스케이프한다 — 받은 이름 그대로다.
+    (r"^건축위원회\(심의\) 표준 가이드라인\.pdf$",
+     "nfa", "nfa_bldgcomm_guide_kr_20231231.pdf"),
 
     # 전국 어린이보호구역 표준데이터. updated 는 레코드의 데이터기준일자
     # 최댓값 2026-07-28 이다. 파일명에는 날짜가 없다.

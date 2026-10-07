@@ -299,6 +299,8 @@ def test_the_four_new_sources_get_placed_by_name():
             ("eais", "eais_roadledger_dm_jngj-dongmyeong_20260801.csv"),
         "202608_상세주소DB_전체분.zip":
             ("juso", "juso_adrdc_kr_20260801.zip"),
+        "건축위원회(심의) 표준 가이드라인.pdf":
+            ("nfa", "nfa_bldgcomm_guide_kr_20231231.pdf"),
     }
     rules = passthrough_rules(providers.all())
     bad = []

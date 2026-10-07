@@ -447,7 +447,9 @@ EXCEPTIONS: dict[str, int] = {
     #   하나가 곧 원천 하나다. 산문은 두 번 깎았다(642 → 636) — 남은 셋은 다음
     #   사람이 반드시 틀릴 자리다(파일명 날짜의 뜻 · `5174` 가 좌표계라는 것 ·
     #   `15. ` 의 정체). 규칙 여섯 줄은 기능이다.
-    "src/firelane/normalize_raw.py": 636,
+    # ★ 2026-10-07 (DECISIONS §429). 636 → 639. 원천 다섯째(소방청 규격 원문)의
+    #   이름 규칙 세 줄이다 — 줄 하나가 곧 원천 하나다.
+    "src/firelane/normalize_raw.py": 639,
     # ★ 2026-10-06 (DECISIONS §426). `src/firelane/pipeline.py` 를 **새로** 든다.
     #   598 → 628. 이 파일은 상한 2줄 아래에서 살고 있었고, §426 이 **기능을** 더했다 —
     #   `verify()` 가 반환형을 갖고(종전에는 상태를 문자열로만 냈다 · §415 족),
@@ -468,7 +470,10 @@ EXCEPTIONS: dict[str, int] = {
     #     넘친다. 쪼갤 자리도 분명하다: `real_verdict` · `declared_issues` ·
     #     `ratchet_values` 가 「수를 세고 래칫과 댄다」 한 묶음이다.
     #     **PLAN §1 #157 이 둘을 같이 든다.**
-    "src/firelane/contract.py": 612,
+    # ★ 2026-10-07 (DECISIONS §429). 612 → 621. 래칫 둘의 사유 아홉 줄 —
+    #   `REAL_WARN_RATCHET` 이 **다섯 항목이 움직인 내역**을 표로 들고
+    #   `NO_CONTRACT_RATCHET` 이 PDF 바닥 11 → 12 를 적는다. 수만 적으면 못 읽는다.
+    "src/firelane/contract.py": 621,
     # ★ 2026-09-24. 프런트가 래칫에 처음 들어왔다. **오늘 수 그대로** 박는다 —
     #   래칫의 값어치는 「지금보다 나빠지지 않는다」이지 「지금이 옳다」가 아니다.
     #   셋 다 쪼갤 자리가 있고 그것은 `PLAN §1` 이 든다(#130).

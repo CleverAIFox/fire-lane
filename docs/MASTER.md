@@ -953,7 +953,7 @@ tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기�
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
 <!--gen: datasets-->
-대장은 `sources.yaml` 하나다. `datasets` 79종 · `retired` 4종.
+대장은 `sources.yaml` 하나다. `datasets` 80종 · `retired` 4종.
 <!--/gen-->
 ★ `datasets` 종수는 `tools/docgen.py` 가 대장에서 받아 **채운다** — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `retired` 종수는 대조만 한다(§246 밖 ②). `norm` 이관은 14종이다.
 
@@ -2574,7 +2574,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 
 <!--gen: sealable-->
 ★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15` · `#68` → `DECISIONS
-  §160~161`). `SEAL.json` 이 소스 78종의 raw sha256 을 갖고, `dms.py rawdiff`
+  §160~161`). `SEAL.json` 이 소스 79종의 raw sha256 을 갖고, `dms.py rawdiff`
   가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — **한 자릿수 분이 1분 밑으로** 준다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
   끄는 것과 같다.
@@ -3004,7 +3004,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,833 전수 · **분모(blank) 0절** · 물림(inherit) 927절.
+★ **강제자 칸의 분모.** 절 1,837 전수 · **분모(blank) 0절** · 물림(inherit) 930절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
