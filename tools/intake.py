@@ -349,6 +349,56 @@ def waiting(ds: dict) -> list[tuple[str, str]]:
     return out
 
 
+def _fits(suggest: str | None, pat: str) -> bool:
+    """제안 경로가 그 자리의 글롭에 맞나. 자리는 글롭일 수도 구체 경로일 수도 있다."""
+    from fnmatch import fnmatch
+
+    if not suggest:
+        return False
+    return (fnmatch(suggest, pat)
+            or fnmatch(Path(suggest).name, Path(pat).name))
+
+
+#: 파일 하나의 `propose()` 결과. **자리와 무관**하므로 파일당 한 번만 센다.
+#: ★ 없으면 자리 × 파일 만큼 PDF 를 다시 연다 — 자리 82 · 파일 7 이면 574번이다.
+_PROPOSED: dict[tuple[str, int, int], dict] = {}
+
+
+def _proposal(q: Path, ds: dict) -> dict:
+    st = q.stat()
+    k = (str(q), st.st_size, int(st.st_mtime))
+    if k not in _PROPOSED:
+        _PROPOSED[k] = propose(q, ds)
+    return _PROPOSED[k]
+
+
+def _pick(files: list[Path], ds: dict, key: str, pat: str,
+          taken: tuple[Path, ...] = ()) -> tuple[Path | None, str]:
+    """그 자리에 올 다운로드 하나 — **단서 넷을 전부 쓴다.**  (DECISIONS §431)
+
+    ★ 종전에는 `cmd_plan` · `_auto` · `_match_one` 셋이 **각자** 고르면서
+      단서 ④(본문)만 봤다. 그런데 `body_text` 는 **PDF 가 아니면 빈 문자열**을
+      돌려준다(`test_body_text_refuses_everything_that_is_not_a_pdf`) — zip 과
+      csv 는 읽을 본문이 없어 **영영 못 맞춘다.**
+
+      2026-10-08 실측 — 자리 다섯 중 PDF 하나만 자동으로 붙었고 넷은
+      사람이 `--assign` 으로 찍었다. 그런데 **`normalize_raw.RULES` 가 그 넷의
+      이름을 전부 알고 있었다.** `propose()` 가 그 규칙을 단서 ②로 쓰는데
+      이 세 자리가 `propose()` 를 **안 불렀다.**
+
+    ★ 셋을 여기 하나로 합친다 — 같은 질문에 답이 셋이면 반드시 갈린다.
+    """
+    for q in files:
+        if q in taken:
+            continue
+        got = _proposal(q, ds)
+        if got["matched_key"] != key:
+            continue
+        if _fits(got["suggest"], pat):
+            return q, " · ".join(got["why"][-2:]) or "대장 매칭"
+    return None, ""
+
+
 def _match_one(inb: Path, ds: dict, key: str, rel: str,
                assign: list[str] | None) -> Path | None:
     """그 자리에 올 다운로드 하나. 못 고르면 `None`. **사람이 이긴다.**
@@ -368,12 +418,7 @@ def _match_one(inb: Path, ds: dict, key: str, rel: str,
         if 0 <= k < len(want) and want[k] == (key, rel):
             hit = [q for q in files if frag in q.name]
             return hit[0] if len(hit) == 1 else None
-    for q in files:
-        if body_match(body_text(q), ds)[0] != key:
-            continue
-        if body_file_of(body_text(q), ds.get(key) or {})[0] == rel:
-            return q
-    return None
+    return _pick(files, ds, key, rel)[0]
 
 
 def cmd_plan(inb: Path, assign: list[str] | None = None) -> int:
@@ -412,16 +457,8 @@ def cmd_plan(inb: Path, assign: list[str] | None = None) -> int:
         src = picked.get(k - 1)
         why = "사람이 찍었다(--assign)"
         if src is None:
-            for q in files:
-                if q in picked.values():
-                    continue
-                got, w = body_match(body_text(q), ds)
-                if got != key:
-                    continue
-                r2, w2 = body_file_of(body_text(q), ds[key] or {})
-                if r2 == rel:
-                    src, why = q, f"{w} · {w2}"
-                    break
+            src, why = _pick(files, ds, key, rel, tuple(picked.values()))
+            why = why or "본문으로 못 가른다"
         print(f"  [{k}] {key}")
         print(f"      자리  {rel}")
         print(f"      파일  {src.name[:60] if src else '★ 못 찾았다'}")
@@ -436,13 +473,7 @@ def cmd_plan(inb: Path, assign: list[str] | None = None) -> int:
 
 
 def _auto(files, picked, ds, key, rel) -> bool:
-    for q in files:
-        if q in picked.values():
-            continue
-        if body_match(body_text(q), ds)[0] == key \
-           and body_file_of(body_text(q), ds[key] or {})[0] == rel:
-            return True
-    return False
+    return _pick(files, ds, key, rel, tuple(picked.values()))[0] is not None
 
 
 def cmd_stage(inb: Path, *, apply: bool, force: bool = False,

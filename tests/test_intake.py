@@ -226,3 +226,47 @@ def test_an_ambiguous_fragment_picks_nothing(tmp_path, monkeypatch):
     monkeypatch.setattr(intake, "body_text", lambda p, pages=3: "")
     want = intake.waiting(LEDGER)
     assert intake._match_one(box, LEDGER, *want[0], ["1=국가법령"]) is None
+
+
+# ── 단서 넷을 전부 쓴다 (DECISIONS §431) ────────────────────────
+def test_the_planner_uses_the_naming_rules_not_only_the_body(tmp_path, monkeypatch):
+    """★ **사람이 `--assign` 을 네 번 친 자리.**  (DECISIONS §431)
+
+    `body_text` 는 PDF 가 아니면 빈 문자열이다. 그래서 자리 고르기가 단서 ④만
+    쓰면 **zip · csv 는 영영 못 맞춘다** — `normalize_raw.RULES` 가 그 이름을
+    전부 알고 있는데도. 2026-10-08 실측에서 다섯 중 PDF 하나만 붙었다.
+    """
+    import firelane.paths as fp
+
+    (raw := tmp_path / "raw").mkdir()
+    monkeypatch.setattr(fp, "RAW", raw)
+    inb = tmp_path / "dl"; inb.mkdir()
+    for n in ("C_UQ153.zip", "LSMD_CONT_UQ164_5174_전남광주통합특별시.zip",
+              "15. 도로대장_20261006153718.csv", "202608_상세주소DB_전체분.zip"):
+        (inb / n).write_bytes(b"PK\x03\x04")
+
+    ds = intake.sources_index()
+    files = sorted(q for q in inb.iterdir())
+    for key, want in (("vworld_uq153", "C_UQ153.zip"),
+                      ("vworld_uq164", "LSMD_CONT_UQ164_5174_전남광주통합특별시.zip"),
+                      ("eais_roadledger_dm", "15. 도로대장_20261006153718.csv"),
+                      ("juso_adrdc", "202608_상세주소DB_전체분.zip")):
+        pat = intake._led.globs(ds[key])[0]
+        got, why = intake._pick(files, ds, key, pat)
+        assert got is not None and got.name == want, f"{key}: {got} ({why})"
+        assert "규칙" in why or "stem" in why, f"{key}: 본문으로 맞췄다 — {why}"
+
+
+def test_a_download_the_ledger_does_not_wait_for_is_not_picked(tmp_path, monkeypatch):
+    """★ 반대 방향. 대장이 안 기다리는 파일은 **안 집는다**(§401)."""
+    import firelane.paths as fp
+
+    (raw := tmp_path / "raw").mkdir()
+    monkeypatch.setattr(fp, "RAW", raw)
+    inb = tmp_path / "dl"; inb.mkdir()
+    (inb / "채용공고.pdf").write_bytes(b"%PDF-1.4\n")
+    (inb / "fire-lane-batch-1008zj.zip").write_bytes(b"PK\x03\x04")
+    ds = intake.sources_index()
+    files = sorted(q for q in inb.iterdir())
+    got, _ = intake._pick(files, ds, "vworld_uq153", "**/vworld_uq153_*")
+    assert got is None, f"남의 파일을 집었다 — {got}"
