@@ -185,9 +185,9 @@ def selftest() -> int:
     #   docx 가 은퇴하면 이 대조가 사라지고 `SLOT` 만 남는다(§440).
     try:
         import docx_figs  # noqa: PLC0415  은퇴 전까지만 있는 짝이다
-    except Exception:                       # noqa: BLE001 — 은퇴하면 없는 것이 정상이다
-        pass
-    else:
+    except ImportError:
+        docx_figs = None   # type: ignore[assignment]  은퇴하면 없는 것이 정상이다
+    if docx_figs is not None:
         for name, n in SLOT.items():
             want = (docx_figs.PLACE.get(name) or {}).get("fig")
             if want is not None and want != n:
