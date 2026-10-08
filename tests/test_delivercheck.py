@@ -300,3 +300,55 @@ def test_a_green_sweep_is_empty_even_when_the_body_is_noisy():
     """초록인데 몸통에 `✗` 가 있어도 **축은 0** 이다."""
     green = REAL_OUT.split("══")[0] + "\n  19분02초 · 통과 101 · 실패 0 · 생략 0\n\n"
     assert D.sweep_verdict(0, green)[0] == set()
+
+
+# ── 자기검사를 뗀 뒤의 배선 (2026-10-08 · DECISIONS §436-6) ────────
+# ★ `deliver.py` 가 상한에 붙어 살아 자기검사를 `tools/delivertest.py` 로 뗐다.
+#   뗀 순간 **`--selftest` 가 아무것도 안 불러도 조용하다** — 지연 임포트라
+#   임포트 시점에 안 터지고, 플래그를 안 쓰는 경로는 전부 멀쩡하다.
+#   그 조용함을 이 셋이 깬다.
+# ★ 경로는 **한 줄 리터럴**이다(위 꼬리와 같은 사유 — 배선 탐지가 줄 단위다).
+_tspec = importlib.util.spec_from_file_location("delivertest", ROOT / "tools/delivertest.py")
+
+
+def _delivertest():
+    assert _tspec and _tspec.loader
+    m = importlib.util.module_from_spec(_tspec)
+    sys.modules[_tspec.name] = m
+    _tspec.loader.exec_module(m)
+    return m
+
+
+def test_the_split_selftest_is_still_reachable():
+    """`deliver.py --selftest` 가 **떼낸 파일에 닿는가.**"""
+    src = (ROOT / "tools/deliver.py").read_text(encoding="utf-8")
+    assert "from delivertest import selftest" in src, (
+        "`deliver.py` 가 떼낸 자기검사를 안 부른다 — `--selftest` 가 빈 깡통이 된다")
+    assert "def selftest(" in (ROOT / "tools/delivertest.py").read_text(encoding="utf-8")
+
+
+def test_the_selftest_counts_its_own_arms_from_source():
+    """판별식 수는 **소스에서** 센다 — 손으로 적으면 팔을 더해도 안 따라온다."""
+    m = _delivertest()
+    import inspect
+
+    src = inspect.getsource(m.selftest)
+    arms = src.count("bad.append(")
+    assert arms >= 29, f"판별식이 {arms}개로 줄었다 — 팔을 지웠나"
+    # ★ 셈을 **다른 꼴로 바꾸면 계수기가 눈을 감는다.** `bad += [...]` 로 줄을
+    #   줄이면 수가 조용히 내려간다 — 이 판에서 실제로 그렇게 했다.
+    # ★ 그물을 **리터럴 목록으로 좁힌다.** `bad += zip_items_broken()` 은 팔이
+    #   아니라 **남의 판별식 결과를 합치는 줄**이고, 그것까지 막으면 멀쩡한
+    #   줄에 우는 검사가 된다 — 거짓 경보는 검사를 끄게 만든다.
+    assert "bad += [" not in src, (
+        "판별식을 `bad.append` 가 아닌 꼴로 적었다 — `arms` 가 그것을 못 센다.\n"
+        "  줄이 길면 파일을 쪼개라. 셈의 꼴은 바꾸지 않는다(DECISIONS §436-6)")
+
+
+def test_the_relock_exemption_matches_real_pytest_ids():
+    """★ 면제가 **실물 id** 에 걸리는가. 함수 이름만 적으면 죽은 그물이다."""
+    for name in D.RELOCK_TESTS:
+        nid = f"tests/test_x.py::{name}[some/param.json]"
+        assert D.func_name(nid) == name, f"{nid} 에서 이름을 못 뽑는다"
+    assert D.func_name("tests/a.py::test_b") == "test_b"
+    assert D.func_name("test_c") == "test_c"

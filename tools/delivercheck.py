@@ -81,6 +81,45 @@ RELOCK_AXES = {
         "`golden.py stale` 이 rc 로 말할 때만 받는다 — 사람이 적는 값이 아니다",
     "커밋된 web/data 가 최신인가":
         "재잠금은 상류를 다시 돌리므로 커밋본이 그 뒤에 온다. 같은 실행에서 커밋된다",
+    # ★ 2026-10-08 (DECISIONS §436-6). **축 둘로는 모자랐다.** 종전 둘은 「지문이
+    #   움직였다」와 「커밋본이 낡았다」만 받는다. 판정 **값**이 움직이는 배치에서는
+    #   그 값에서 유도되는 수가 전부 재잠금 전에 어긋난다 — 선언은 재잠금 뒤의 값이고
+    #   실측은 재잠금 전의 값이다. 그 사이의 빨강은 결함이 아니라 **순서**다.
+    #
+    #   ★ §290-1 이 적은 그대로다 — 「관문을 붙이는 배치는 구조적으로 예습을 통과할
+    #     수 없었다. 그러면 사람은 예습을 건너뛰고, 건너뛴 예습이 빨간 채로 내보냈다.」
+    #     재잠금 배치도 같은 자리에 있었다. 끄는 쪽이 아니라 **받는 쪽**으로 고친다.
+    #
+    #   ★ 넓은 축인 것을 숨기지 않는다. 「래칫 정합」은 래칫 **전부**를 덮으므로,
+    #     이 배치와 무관한 래칫이 깨져도 여기서는 안 운다. 그것을 받는 근거는
+    #     **받는 쪽의 전수 verify 가 재잠금 뒤에 돈다**는 사실 하나다 — 열차는
+    #     적용 → 재잠금 → 전수 순서이고, 진짜 관문은 거기다. 여기는 예습이다.
+    "래칫 정합":
+        "판정 값에서 유도되는 래칫은 재잠금 뒤에야 선언과 같아진다. 열차는 "
+        "적용 → 재잠금 → 전수 순서이므로 받는 쪽에서는 재잠금 뒤에 이 축이 돈다",
+    "발행 판정 계약":
+        "발행된 판정에서 세는 축이다. 재잠금 전에는 커밋된 공개본이 옛 값이라 "
+        "선언과 어긋난다 — 같은 실행에서 공개본이 다시 나고 그 뒤에 맞는다",
+}
+
+#: 재잠금이 선언된 배치에서 **빨간 것이 결과인** 시험. 사유를 함께 든다.
+#: ★ 2026-10-08 (DECISIONS §436-6). `diff_sweep` 에만 있던 면제를 시험 쪽에도 둔다 —
+#:   스윕과 시험이 같은 사실을 양쪽에서 보는데 한쪽만 받아주면 배달이 못 선다.
+RELOCK_TESTS = {
+    "test_every_reason_is_reproduced":
+        "공개본을 `classify()` 로 되먹여 댄다. 규칙을 고치면 공개본도 함께 다시 나는데 "
+        "그 재생은 재잠금이 한다 — 재잠금 전에는 **한쪽만 움직인 상태**가 정상이다",
+    "test_every_verdict_is_reproduced":
+        "위와 같은 자리. 판정 열을 되먹여 댄다",
+    "test_unknown_reason_counts_match_the_fingerprint":
+        "문서가 적은 사유 수를 golden 지문과 댄다. 지문은 재잠금이 다시 쓴다 — "
+        "문서는 재잠금 뒤의 수를 적어야 하고, 그 사이에는 어긋나 보인다",
+    "test_the_real_tree_is_at_its_ratchets":
+        "위 「래칫 정합」 축의 pytest 쪽 짝이다. 같은 사실을 두 번 본다",
+    "test_schema_verdict_rule_matches_code":
+        "발행 스키마의 `verdict_rule` 을 `seg/geom.VERDICT_RULE` 과 댄다. 그 스키마는 "
+        "`seg/report.py` 가 **낳는 것**이라 재잠금 전에는 옛 규칙표를 든다 — "
+        "매개변수가 스키마 파일 둘이므로 이 이름 하나가 둘을 받는다",
 }
 
 
@@ -166,14 +205,40 @@ def diff_sweep(base: set[str], after: set[str], wt: Path,
     return " · ".join(bits)
 
 
+def func_name(nodeid: str) -> str:
+    """pytest id 에서 **함수 이름**만. `RELOCK_TESTS` 가 그 이름으로 선언한다.
+
+    ★ 2026-10-08 (DECISIONS §436-6). 처음에 `RELOCK_TESTS` 를 함수 이름으로
+      적고 **실물 id 집합에서 그대로 뺐다.** pytest 는 `tests/x.py::name[매개]`
+      로 적으므로 그 차집합은 **한 번도 아무것도 안 뺐다** — 선언이 죽은
+      그물이었다. 자기검사는 내가 **함수 이름을 먹였기 때문에** 통과했다.
+      그물의 범위가 곧 그물의 뜻이다: 검사에 먹이는 꼴이 실물과 달라지면
+      그 검사는 제 그물을 재는 게 아니라 **내 손을** 잰다.
+
+    ★ 매개변수를 떼는 것은 의도다. 하나의 시험이 입력 여럿을 도는 것이고,
+      선언은 **그 시험**에 걸린다. 파일 경로가 매개변수인 자리가 있어
+      (`[data/processed/segments.schema.json]`) 꼬리까지 적으면 선언이
+      부서지기 쉽다. 부분 문자열은 쓰지 않는다 — 이름은 **정확히** 맞춘다.
+    """
+    return nodeid.rsplit("::", 1)[-1].split("[", 1)[0]
+
+
 def diff_tests(base: tuple[set[str], str], after: tuple[set[str], str],
-               wt: Path) -> str:
-    fresh = new_red(base[0], after[0], wt, "시험")
+               wt: Path, relock: bool = False) -> str:
+    # ★ 2026-10-08 (DECISIONS §436-6). 스윕과 같은 규율이다 — `golden.py stale` 의
+    #   rc 가 참일 때만 받는다. 사람이 「재잠금 배치니까요」라고 적어서 넘기는 것이
+    #   아니다. 면제는 넓히면 사각지대가 되므로 `func_name()` 이 정확히 맞춘다.
+    held = {n for n in after[0] if func_name(n) in RELOCK_TESTS}
+    after_set = after[0] - held if relock else after[0]
+    fresh = new_red(base[0], after_set, wt, "시험")
     bits = [after[1], f"새 빨간불 {len(fresh)}"]
     if base[0]:
         bits.append(f"밑동에서 이미 빨감 {len(base[0])}")
     if fixed := sorted(base[0] - after[0]):
         bits.append(f"이 배치가 고침 {len(fixed)}")
+    if relock and held:
+        bits.append(f"재잠금 선언으로 받은 시험 {len(held)}"
+                    f"({' · '.join(sorted(held))})")
     return " · ".join(bits)
 
 
