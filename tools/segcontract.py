@@ -182,6 +182,15 @@ def selftest() -> int:
             bad.append(f"구간을 {f['segments']}개밖에 못 읽었다 — 수집기를 의심하라")
         if not ROADNAME.match("필문대로205번길"):
             bad.append("실물 이름 꼴을 정규식이 거부한다")
+        # ★ **래칫 선언이 실측과 같은가.** 자기검사가 이것을 안 보면 상수를 흔들어도
+        #   이 문이 안 운다 — `tools/mutate.py` 의 기본 붙잡이가 `--selftest` 하나이고
+        #   (`catchers()` 머리말 — `--deep` 은 한 시간이 안 끝난다), pytest 쪽 시험은
+        #   장부가 안 센다. 그래서 **문을 여기 둔다.** 첫 측정에서 `WIDTH_OUT_OF_RANGE`
+        #   를 0 → 1 로 흔든 돌연변이가 살아남았고, 그 자리를 이 줄이 닫는다.
+        got = ratchet_values()
+        want = {k: globals()[k] for k in RATCHETS}
+        if got != want:
+            bad.append(f"래칫 선언이 실측과 다르다 — 실측 {got} · 선언 {want}")
     for x in bad:
         print(f"  ✗ {x}")
     # 합성 구간 5 + 8 + 4 = 17 · 그중 위반 3 + 2 + 2 = 7 · 실물 판별식 둘
