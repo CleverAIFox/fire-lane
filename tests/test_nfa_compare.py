@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
 
 import geopandas as gpd
@@ -102,6 +103,38 @@ def test_the_closure_does_not_quietly_grow():
     assert n >= 15, (
         f"폐포가 {n}파일로 줄었다 — 기록 18보다 작다. 좋은 일일 수 있지만\n"
         "  **판정 코드가 빠져나간 것**일 수도 있다. 수를 내리고 무엇이 왜 빠졌는지 적어라.")
+
+
+def test_the_feeder_constants_live_outside_the_judgment_closure():
+    """★ 분모 둘이 **겹치지 않는가.**  (2026-10-08 · DECISIONS §435 · PLAN #70)
+
+    `tools/constbasis.py` 가 상수의 출처를 센다. 분모가 둘이다 — `seg/params.py`
+    (코드로 판정에 닿는다 · 폐포 안)와 `FEEDERS`(자료로 닿는다 · 폐포 밖).
+    겹치면 같은 수를 두 래칫이 세고, 한쪽이 줄고 한쪽이 늘 때 **조용히 상쇄된다.**
+
+    ★ **양방향이다.** `FEEDERS` 의 파일이 폐포로 들어오면 그 파일은 이제 코드로
+      닿는 것이고 `PARAMS` 쪽 물음이 된다 — 그때 이 검사가 울어 옮기게 한다.
+    """
+    import importlib.util
+
+    from firelane.shardseal import code_closure
+
+    spec = importlib.util.spec_from_file_location(
+        "_constbasis_for_test", ROOT / "tools" / "constbasis.py")
+    cb = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = cb              # ★ exec_module 앞이다
+    spec.loader.exec_module(cb)
+
+    assert cb.FEEDERS, "FEEDERS 가 비었다 — 분모가 비면 이 검사가 아무것도 안 든다"
+    clo = {p.relative_to(ROOT).as_posix() for p in code_closure("firelane.segments")}
+    assert cb.PARAMS.relative_to(ROOT).as_posix() in clo, (
+        "`seg/params.py` 가 판정 폐포 안이 아니다 — 두 분모의 경계가 바뀌었다.\n"
+        "  `constbasis` 의 머리말이 그 경계를 적는다. 거기부터 고쳐라.")
+    both = sorted(set(cb.FEEDERS) & clo)
+    assert not both, (
+        f"`constbasis.FEEDERS` 가 판정 폐포 안의 파일을 든다 — {both}\n"
+        "  폐포에 들어왔으면 **코드로** 닿는 것이다. `FEEDERS` 에서 떼고\n"
+        "  `CONST_NO_BASIS_FEEDER` 를 그만큼 내려라 — 안 떼면 두 래칫이 같은 수를 센다.")
 
 
 def test_the_report_module_no_longer_reaches_the_ledger():
