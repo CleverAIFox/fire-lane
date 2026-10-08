@@ -4828,25 +4828,25 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "00159de7148561b6",
-   "342c0434b50a91f4",
-   "3ca414a1d3429c2d",
-   "3e80c75850f0f11f",
-   "3f75f5c3656c354f",
-   "6f7f1c2d3272fd64",
-   "70069b8bfba69f8c",
-   "eceee3ce883638b9"
+   "223d68c69bd750b3",
+   "39f613536b826633",
+   "5497a207fafa249e",
+   "7cf037a616e1f9dc",
+   "8f2b4556ee057eb4",
+   "912c64b48485dc50",
+   "adaa04190b28adc3",
+   "f49881a61e589adb"
   ],
   "parts": {
    ".github/workflows/contract.yml": "1b4e69702a5fc712",
    "tests/test_selftests_are_run.py": "8bc453245c88b9ca",
    "tools/gate_parity.py": "acf8ab4f170670a3",
    "tools/scopedecl.py": "47eedbb1750d3191",
-   "tools/selftests.py": "b1c3274bdc03f8ac",
+   "tools/selftests.py": "2c0efed22ca7174b",
    "tools/verify.sh": "ef5d82df94567954",
    "본문": "ff5aadecef90b8c6"
   },
-  "sha": "6f7f1c2d3272fd64"
+  "sha": "223d68c69bd750b3"
  },
  "DECISIONS/287": {
   "doc": "docs/DECISIONS.md",
@@ -6422,20 +6422,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2c7d7174d436381a",
-   "6bef595d0ae832cc",
-   "b6c346ad91b4ae6d",
-   "f0a3a96b6c249153"
+   "03e99cde95a47a38",
+   "22b83ac9d400adaf",
+   "46ba3fc13fc06ce8",
+   "f52d152a8f8b8e85"
   ],
   "parts": {
    "sources.yaml": "71005a52bab457d8",
    "tests/test_doc_fsck.py": "1d26d0abd9843639",
    "tools/deadcheck.py": "510d7d352c6dc5b4",
    "tools/deadprobes/empty_const.py": "826b3daaf8b26607",
-   "tools/selftests.py": "b1c3274bdc03f8ac",
+   "tools/selftests.py": "2c0efed22ca7174b",
    "본문": "006e8896431960c2"
   },
-  "sha": "2c7d7174d436381a"
+  "sha": "03e99cde95a47a38"
  },
  "DECISIONS/36": {
   "doc": "docs/DECISIONS.md",
@@ -8490,18 +8490,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "23cad5c076822044",
-   "c9d126ef64e4ad82"
+   "d98dffd112115390",
+   "ef51530c979c114c"
   ],
   "parts": {
    "tests/test_delivercheck.py": "00db78f950bd2aa6",
    "tools/delivercheck.py": "f514477506206eb3",
    "tools/delivertest.py": "cc43b533a61d0914",
    "tools/planwork.py": "9e3c4ca1b566853e",
-   "tools/selftests.py": "b1c3274bdc03f8ac",
-   "본문": "b1b6bf164fe80310"
+   "tools/selftests.py": "2c0efed22ca7174b",
+   "본문": "dd5a8e240b88bb00"
   },
-  "sha": "c9d126ef64e4ad82"
+  "sha": "ef51530c979c114c"
  },
  "DECISIONS/45": {
   "doc": "docs/DECISIONS.md",
