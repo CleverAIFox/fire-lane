@@ -95,6 +95,8 @@ def targets() -> list[str]:
 #:   상한을 두고 **상한을 적는 쪽**을 골랐다. 전수인 척하지 않는다.
 MAX_PER_TOOL = 4
 
+import mutate_guard as _guard
+
 #: 한 돌연변이에 주는 시간. 넘기면 **생존이 아니라 「못 쟀다」**다.
 TIMEOUT = 180
 
@@ -103,21 +105,10 @@ TIMEOUT = 180
 #:   `plan_renumber.py` 가 `OUTSIDE_LEADS` 래칫을 달면서 「관문 ∧ 래칫」 조건에
 #:   들어왔다. 그 도구에서 흔든 넷 중 **셋이 살았다.** 생존이 올랐지만 그물이
 #:   같이 커졌다(92 → 96) — 비율이 아니라 둘을 같이 봐야 하는 이유다.
-# ★ 2026-10-07 — 67 → 68 (DECISIONS §428-5). **느슨해지는 쪽이라 손으로 적는다.**
-#   `tools/sizecheck.py` 에 §427·§428 의 예외 사유가 들어가며 줄이 밀렸고, 과녁
-#   표본(`--max`)이 다른 돌연변이를 집었다. 새로 집힌 넷 중 셋은 **붙잡이가
-#   구조적으로 닿지 못하는 자리**다 —
-#     594: `if __name__ == "__main__"` 를 뒤집는다. 뒤집히면 스크립트가 아무 일도
-#          안 하고 종료 0 이라 `--selftest` 가 초록으로 본다. **자기검사로는 영원히
-#          못 잡는다** — 밖에서 돌려 출력을 보는 자만 잡는다
-#     579 · 591: `main()` 의 **보고** 경로다(`--table` 줄 고르기 · 「넘는 파일 N」).
-#          `--selftest` 는 `main()` 의 그 뒤를 안 탄다
-#   ★ 기본 붙잡이가 `--selftest` 하나인 것은 설계다(`catchers()` 머리말 — `--deep`
-#     은 한 시간이 넘어 안 끝난다). 그래서 이 수는 **약한 측정**이고 `전수` 칸이
-#     그것을 적는다. 수를 받아적는 대신 구조를 고치는 길은 `PLAN #159`(닫힘 — §431-10)
-#     가 들었다 — 지금 남은 약함은 빚이 아니라 선언이다(§286).
-#   ★ `tests/test_sizecheck.py` 에 보고 수를 묻는 시험을 같이 넣었다 — 장부는 그것을
-#     **안 센다**(지문이 도구 파일 하나다). 그 간극도 #159 가 든다.
+# ★ 2026-10-07 — 67 → 68 (DECISIONS §428-5). 느슨해지는 쪽이라 손으로 적었다 —
+#   표본이 다른 돌연변이를 집었고 새로 집힌 셋은 **붙잡이가 구조적으로 닿지
+#   못하는 자리**(`__main__` 뒤집기 · `main()` 의 보고 경로 둘)다. 자리마다의
+#   사유와 「기본 붙잡이가 자기검사 하나인 것은 설계다」는 §428-5 가 든다.
 # ★ 2026-10-08 — 67 → 70 (DECISIONS §435). **느슨해지는 쪽이라 손으로 적는다.**
 #   과녁 24 → 25(`tools/segcontract.py` 가 「관문 ∧ 래칫」에 들어왔다) · 그물 96 → 100.
 #   새 생존 셋은 전부 `main()` 의 보고 경로이거나 CLI 가드다 — §428-5 의 579·591 과
@@ -272,6 +263,8 @@ def live_catchers(tool: str, deep: bool = False) -> tuple[list[list[str]], list[
     """
     path = TOOLS / f"{tool}.py"
     orig = path.read_text(encoding="utf-8")
+    _guard.install()
+    _guard.hold(path, orig)
     keep, dropped = [], []
     try:
         for c in catchers(tool, deep):
@@ -288,6 +281,7 @@ def live_catchers(tool: str, deep: bool = False) -> tuple[list[list[str]], list[
                 dropped.append(f"{tag} — 주석 한 줄에도 운다(내용 지문)")
     finally:
         path.write_text(orig, encoding="utf-8")
+        _guard.release(path)
     return keep, dropped
 
 
@@ -305,13 +299,18 @@ def pick(muts: list[tuple[str, str]], cap: int) -> list[tuple[str, str]]:
 
 
 # ★ **흔드는 동안 트리는 거짓말을 한다**(DECISIONS §398-6). 과녁을 제자리에서
-#   바꿔 쓰고 `finally` 로 되돌린다 — 되돌리기는 보장되지만 **그 창 안에**
+#   바꿔 쓰고 `finally` 로 되돌린다. ★ 2026-10-08 (§435) 정정 — `finally` 는
+#   **신호에는 안 돈다.** 시간 상한으로 끊긴 실행이 `sealcov.py` 에 흔든 사본을
+#   남겼고, 그 뒤 측정 전부가 거짓이 됐다. `tools/mutate_guard.py` 가 나가는 길
+#   전부에 복원을 건다. 되돌리기는 그래서 보장되지만 **그 창 안에**
 #   다른 관문을 돌리면 그 관문이 흔들린 사본을 읽는다. 실측: 이 배치에서
 #   `docseal stamp` 를 같이 돌렸다가 도장 열다섯이 흔들린 `docseal.py` 의
 #   지문을 박았고, 복원된 뒤 전부 무효가 됐다. **같이 돌리지 마라.**
 def shake(tool: str, cap: int = MAX_PER_TOOL, deep: bool = False) -> dict:
     path = TOOLS / f"{tool}.py"
     orig = path.read_text(encoding="utf-8")
+    _guard.install()
+    _guard.hold(path, orig)
     keep, dropped = live_catchers(tool, deep)
     muts = pick(mutants(orig), cap)
     survived: list[str] = []
@@ -336,6 +335,7 @@ def shake(tool: str, cap: int = MAX_PER_TOOL, deep: bool = False) -> dict:
                 survived.append(what)
     finally:
         path.write_text(orig, encoding="utf-8")
+        _guard.release(path)
     return {"도구": tool, "돌연변이": len(muts), "전수": len(mutants(orig)),
             "생존": survived,
             "못 쟀다": unmeasured, "붙잡이": len(keep), "뺀 붙잡이": dropped,
