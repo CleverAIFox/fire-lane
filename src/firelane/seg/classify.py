@@ -60,14 +60,20 @@ VERDICTS = ("blocked", "clear", "needs_cv", "unknown")
 INTERIM = ("fragment",)
 
 #: `unknown_reason` 어휘. 스키마가 이 순서로 서술한다.
-REASONS = ("no_cctv_narrow", "no_cctv_thin", "no_cctv_band",
+#: ★ 2026-10-08 (DECISIONS §436 · PLAN #140). **여섯째가 늘었다.**
+#:   앞 다섯은 전부 「폭이 어떠하다」 또는 「표본이 얇다」를 말한다. 폭도 표본도
+#:   충분한데 **대장이 반박해** 확정을 못 주는 자리를 부를 낱말이 없었고, 그래서
+#:   화면이 그 구간을 「표본이 하나라서」(`no_cctv_single`)라고 **거짓으로** 설명했다.
+#:   빈칸은 「모른다」를 말하지만 틀린 낱말은 **아는 척한다**(§369).
+REASONS = ("ledger_disputes",
+           "no_cctv_narrow", "no_cctv_thin", "no_cctv_band",
            "no_cctv_single", "width")
 
 #: `VERDICT_RULE` 중 **이 함수가** 실행하는 줄의 번호. 전부다.
 #: 강제자 `tests/test_classify.py::test_covers_every_declared_rule` 가
 #: `VERDICT_RULE` 의 길이와 이것을 댄다 — 규칙을 한 줄 더 적고 여기
 #: 구현을 안 하면 운다.
-IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6)
+IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7)
 
 #: 대장폭이 판정에 드는 문턱. `VERDICT_RULE[1]` 의 숫자다.
 #: ★ 이름을 준 이유 — 종전에는 `main()` 안에서 `TRUCK` 을 그대로 썼고,
@@ -137,8 +143,27 @@ def classify(
     #   "no_cctv" 하나였다. 화면에서 한 덩어리로 보이지만 안에 성격이 다른
     #   넷이 있다. 판정은 전부 정당했고(오분류 0건) 화면이 「왜 회색인가」를
     #   설명하지 못한 것이었다. 색도 판정도 안 바뀌고 툴팁만 정확해진다.
+    # ── VERDICT_RULE[7] · 대장이 반박하면 회색, 사유는 그 반박이다 ────
+    # ★ 2026-10-08 (DECISIONS §436 · PLAN #140). **CCTV 관문보다 앞이다.**
+    #   「대장이 반박한다」는 카메라 유무와 **무관한 사유**다. 뒤에 두면
+    #   `no_cctv_single` 이 먼저 걸려 거짓 낱말이 계속 이긴다 — `greycheck` 가
+    #   그 분기를 「거짓」으로 세고 있었고, 그 수가 이 줄의 근거다.
+    #
+    # ★ **판정은 안 움직인다.** 조건에 맞는 구간은 공개본 1,281 중 아홉이고
+    #   여덟이 `clear`(여기 안 온다) · 하나가 이미 `unknown` 이다. `needs_cv`
+    #   중 이 조건에 맞는 것은 **0 이다** — 그래서 이 줄이 강등시키는 구간이 없다.
+    #   그 하나(`DM02946`)의 사유가 `no_cctv_single` 에서 이 낱말로 바뀐다.
+    #
+    # ★ 두 근거가 **반대로** 말할 때만 걸린다. 노면 실측은 clear 문턱을 넘고
+    #   대장 명목폭은 차단 문턱 미만이다 — §3-3 이 「두 근거가 독립으로 일치할
+    #   때만 확정한다」고 적었고, 여기는 그 거울이다: **어긋나면 확정하지 않는다.**
     reason = None
-    if v == "needs_cv" and cctv_dist > CCTV_RANGE:
+    if (v == "needs_cv"
+            and wmin is not None and wmin >= CLEAR_M
+            and road_bt is not None and road_bt < LEDGER_BLOCK_M):
+        reason = "ledger_disputes"
+        v = "unknown"
+    elif v == "needs_cv" and cctv_dist > CCTV_RANGE:
         if wmin is None:
             reason = "width"
         elif wmin >= CLEAR_M:

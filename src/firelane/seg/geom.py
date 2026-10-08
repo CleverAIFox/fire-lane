@@ -51,6 +51,15 @@ VERDICT_RULE = (
     #   `no_cctv` 로 분기하는 소비자는 399건 중 0행을 받는다.
     "needs_cv 인데 CCTV 25m 밖 -> unknown "
     "(reason=no_cctv_narrow|no_cctv_thin|no_cctv_band|no_cctv_single). 영상판정 불가",
+    # ★ 2026-10-08 (DECISIONS §436 · PLAN #140). 일곱째 — 대장이 실측을 반박하면
+    #   확정하지 않는다. §3-3 의 거울이다: 두 근거가 독립으로 **일치**할 때만
+    #   확정하고, **어긋나면** 확정하지 않는다. CCTV 관문보다 앞이다.
+    # ★ 꼴을 지킨다 — 「조건 -> 판정 (사유). 말」. 처음에 산문으로 적었더니
+    #   `figures/structure.py::_verdict_rules` 의 파서가 그 줄을 흘렸고,
+    #   그 도구가 **여덟 중 일곱만 읽었다**고 울었다. 그 울음이 이 줄의 꼴을
+    #   정했다 — 그물을 넓히는 쪽이 아니라 선언을 꼴에 맞추는 쪽이다.
+    "needs_cv 인데 wmin >= 7.0 + ROAD_BT < 3.0 -> unknown "
+    "(reason=ledger_disputes). 대장이 반박한다",
 )
 """판정 규칙의 문언 정본.
 

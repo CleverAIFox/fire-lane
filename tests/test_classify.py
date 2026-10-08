@@ -97,8 +97,51 @@ def test_vocabulary_matches_the_schema_enum():
     """산출물 스키마가 열거하는 판정 어휘와 같다. fragment 는 안 나간다."""
     assert set(VERDICTS) == {"blocked", "clear", "needs_cv", "unknown"}
     assert "fragment" not in VERDICTS
-    assert set(REASONS) == {"no_cctv_narrow", "no_cctv_thin", "no_cctv_band",
+    assert set(REASONS) == {"ledger_disputes",
+                            "no_cctv_narrow", "no_cctv_thin", "no_cctv_band",
                             "no_cctv_single", "width"}
+
+
+# ── VERDICT_RULE[7] · 대장이 반박하면 회색 ──────────────────────
+# ★ 2026-10-08 (DECISIONS §436 · PLAN #140). §3-3 의 **거울**이다 — 두 근거가
+#   독립으로 일치할 때만 확정하고, 어긋나면 확정하지 않는다.
+
+def test_the_ledger_disputing_the_survey_turns_grey():
+    """노면은 clear 문턱 이상, 대장은 차단 문턱 미만 — **CCTV 와 무관하다.**
+
+    ★ `nreg=1` 이라야 `verdict()` 가 needs_cv 를 낸다. 표본이 넉넉하면 clear 로
+      확정되고 사유 분기에 **안 온다** — 공개본의 후보 여덟이 그 꼴이고,
+      그래서 이 판이 판정을 한 건도 안 움직인다.
+    """
+    assert c(wmin=9.0, wmax=None, nreg=1, road_bt=2.0, cctv_dist=3.0) \
+        == ("unknown", "ledger_disputes")
+    assert c(wmin=9.0, wmax=None, nreg=1, road_bt=2.0, cctv_dist=99.0) \
+        == ("unknown", "ledger_disputes")
+
+
+def test_the_new_word_does_not_eat_the_old_branches():
+    """대장이 **반박하지 않으면** 옛 분기 그대로다."""
+    assert c(wmin=9.0, wmax=None, nreg=1, road_bt=8.0, cctv_dist=99.0) \
+        == ("unknown", "no_cctv_single")
+    # 대장 칸이 비면 반박할 자가 없다
+    assert c(wmin=9.0, wmax=None, nreg=1, road_bt=None, cctv_dist=99.0) \
+        == ("unknown", "no_cctv_single")
+    # 표본이 넉넉하면 clear 로 확정된다 — 사유 분기에 오지 않는다
+    assert c(wmin=9.0, wmax=None, nreg=9, road_bt=2.0, cctv_dist=99.0) == ("clear", None)
+    # 노면이 clear 문턱 미만이면 반박이 아니라 **일치**다 — blocked 쪽 규칙이 든다
+    assert c(wmin=2.0, wmax=None, nreg=9, road_bt=2.0, cctv_dist=99.0)[0] == "blocked"
+
+
+def test_the_dispute_branch_runs_before_the_camera_gate():
+    """**순서가 뜻이다.** 뒤에 두면 거짓 낱말이 계속 이긴다 — `greycheck` 가 센 그것."""
+    import inspect
+
+    from firelane.seg import classify as C
+
+    src = inspect.getsource(C.classify)
+    assert src.index("ledger_disputes") < src.index("cctv_dist > CCTV_RANGE"), (
+        "`ledger_disputes` 분기가 CCTV 관문보다 뒤에 있다 — 그러면 "
+        "`no_cctv_single` 이 먼저 걸려 이 낱말이 영영 안 붙는다")
 
 
 # ── VERDICT_RULE[1] · 대장폭에 의한 확정 ────────────────────────

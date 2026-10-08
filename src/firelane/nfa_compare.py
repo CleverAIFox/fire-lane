@@ -181,9 +181,9 @@ def main() -> None:
     ★ 직전 단계가 방금 낸 파일을 읽는다 — STEPS 순서가 segments → nfa_compare
       이므로 지난 실행 것을 읽을 수 없다(`test_every_read_is_produced_by_an_earlier_step`).
 
-    ★ 종전에 `segments.main()` 이 넘긴 `g` 에는 `width_fail` 칸이 있었고
-      gpkg 에는 없다(`write_outputs` 가 떨군다). 이 대조는 그 칸을 안 읽으므로
-      차이가 없다 — 읽는 칸은 `geometry` · `width_min_m` · `verdict` 셋뿐이고
+    ★ 2026-10-08 (DECISIONS §436 · PLAN #104) 정정. `width_fail` 은 이제 gpkg 에도
+      **있다** — `write_outputs` 가 더 이상 떨구지 않는다. 이 대조에는 차이가
+      없다: 읽는 칸은 `geometry` · `width_min_m` · `verdict` 셋뿐이고
       `tests/test_nfa_compare.py` 가 그 셋의 왕복 등가를 본다.
     """
     src = OUT / "segments_5186.gpkg"
