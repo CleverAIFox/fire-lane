@@ -260,7 +260,41 @@ def split() -> list[str]:
 
     # ㉤ 문서가 적은 마커가 실제로 그려지는가 (§337)
     bad += marker_faults()
+
+    # ㉥ 강조가 **색을 안 쓴다** (§441)
+    bad += emphasis_uses_no_color()
     return bad
+
+
+#: 색 리터럴. `#rgb` · `#rrggbb` · `rgb(` · `hsl(`.
+COLOR_LIT = re.compile(r"#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(")
+
+
+def emphasis_uses_no_color() -> list[str]:
+    """**강조는 색 채널을 안 쓴다.**  (2026-10-09 · DECISIONS §441)
+
+    ── 왜 세나 ────────────────────────────────────────────────
+    관제의 **색 채널은 판정 넷이 이미 다 먹었다**(통행 가능 · 확인 필요 · 통행
+    불가 · 미측정). 「이 칸을 봐라」를 색으로 하면 다섯째 색이 생기고, 그 순간
+    판정 넷의 뜻이 흐려진다. 교안이 그 자리에서 쓰는 채널을 명시한다 —
+    『3 Theoretical issue 3』 p.25 Note 3, **강조는 휘도 대비로 한다.**
+
+    ★ 그래서 `ui/motion.ts` 에는 **투명도와 시간만** 있어야 한다. 한 줄 넣기는
+      쉽고(`color: "#f00"`) 지운 사람은 없다 — 그래서 센다.
+    ★ **빈 그물을 막는다** — 파일이 없거나 비면 통과가 아니라 실패다.
+    """
+    f = SRC / "ui" / "motion.ts"
+    if not f.is_file():
+        return ["`ui/motion.ts` 가 없다 — 강조 채널 선언이 사라졌다(§441)"]
+    src = f.read_text(encoding="utf-8")
+    if "flpulse" not in src:
+        return ["`ui/motion.ts` 에 맥박 선언이 없다 — 빈 그물이다"]
+    body = re.sub(r"/\*.*?\*/|//[^\n]*", "", src, flags=re.S)
+    hits = sorted(set(COLOR_LIT.findall(body)))
+    if hits:
+        return [f"`ui/motion.ts` 가 색을 쓴다 — {hits}\n"
+                "       강조는 휘도와 움직임으로 한다. 색 채널은 판정 넷의 것이다(§441)"]
+    return []
 
 
 # ── ② 빌드본 ────────────────────────────────────────────────────
@@ -397,7 +431,25 @@ def selftest() -> int:
     if not [s for s in ("streetlight-dot", "lightpole")
             if s not in {i for v in per.values() for i in v}]:
         fails.append("걷어낸 가로등 층이 아직 코드에 있다 — 주입 판별식이 헛돈다")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 19")
+    # ★ 2026-10-09 (§441). 강조 채널 문을 **양방향**으로 민다. 실물로만 재면
+    #   「언제나 통과」와 「실제로 깨끗함」을 못 가른다(§230).
+    f = SRC / "ui" / "motion.ts"
+    if emphasis_uses_no_color():
+        fails.append("지금 트리에서 강조 채널 문이 운다 — 실물이 이미 색을 쓴다")
+    real = f.read_text(encoding="utf-8") if f.is_file() else None
+    try:
+        if real is not None:
+            f.write_text(real + '\nconst _probe = "#ff0000";\n', encoding="utf-8")
+            if not emphasis_uses_no_color():
+                fails.append("`motion.ts` 에 색을 심었는데 안 운다 — 그물이 샌다")
+            f.write_text('// 머리말뿐\n', encoding="utf-8")
+            if not emphasis_uses_no_color():
+                fails.append("맥박 선언이 없는데 통과한다 — 빈 그물을 안 막는다")
+    finally:
+        if real is not None:
+            f.write_text(real, encoding="utf-8")
+
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 21")
     return 1 if fails else 0
 
 
