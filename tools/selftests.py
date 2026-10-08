@@ -107,6 +107,16 @@ def _run(p: Path) -> tuple[Path, int, str]:
     return p, r.returncode, (r.stdout + r.stderr).strip()
 
 
+def _dirty() -> str:
+    """`git status --porcelain`. 못 물으면 빈 글 — **없는 것을 깨끗함으로 안 센다**."""
+    try:
+        r = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT, check=False,
+                           capture_output=True, text=True, timeout=60)
+    except Exception:
+        return ""
+    return r.stdout if r.returncode == 0 else ""
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--list", action="store_true")
@@ -128,8 +138,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     print(f"── 자기검사 {len(run)}개 (건너뜀 {len(skipped)})")
+    # ★ 2026-10-09 (DECISIONS §443-6). **자기검사는 트리를 안 흔든다.**
+    #   하룻밤에 두 번 같은 실수를 했다 — 판별식을 밀려고 실물 파일을 고쳤다
+    #   되돌리는 꼴이다. 되돌려도 **그 사이**가 있다. 위 `ThreadPoolExecutor`
+    #   가 도구를 **동시에** 돌리므로 그 사이에 남이 그 파일을 읽고, 배달
+    #   기계는 「추적 파일에 변경이 있다」를 본다.
+    #   ★ 기억으로 막는 규율은 두 번째에 깨진다. 그래서 **센다.**
+    was = _dirty()
     with ThreadPoolExecutor(max_workers=WORKERS) as ex:
         res = list(ex.map(_run, run))
+    now = _dirty()
     bad = []
     for p, rc, out in sorted(res, key=lambda x: x[0].name):
         rel = p.relative_to(ROOT).as_posix()
@@ -142,6 +160,14 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"      {line}")
     for p in skipped:
         print(f"  · {p.relative_to(ROOT).as_posix()} 건너뜀 — {SKIP[p.stem]}")
+    if was != now:
+        moved = sorted(set(now.splitlines()) ^ set(was.splitlines()))
+        print("\n★ **자기검사가 트리를 흔들었다** — 돌기 전과 뒤가 다르다")
+        for x in moved[:12]:
+            print(f"      {x}")
+        print("   자기검사는 **읽기만** 한다. 판별식을 순수 함수로 떼고 합성 입력으로 밀어라 —")
+        print("   되돌리더라도 그 사이에 남이 그 파일을 읽는다(동시에 돈다).")
+        return 1 + len(bad)
     if bad:
         print(f"\n★ 자기검사 {len(bad)}개가 빨갛다 — {', '.join(bad)}")
         print("  자기검사가 빨갛다는 것은 **그 도구의 판정을 믿을 수 없다**는 뜻이다.")

@@ -108,7 +108,7 @@ def rows() -> list[tuple[str, int, int]]:
 WAITING = "⏳"
 
 
-def waiting_without_arrival() -> list[str]:
+def waiting_faults(text: str) -> list[str]:
     """`⏳` 인데 **전건**과 **도착 조건**을 안 적은 행.  (2026-10-09 · DECISIONS §443)
 
     ── 왜 세나 ────────────────────────────────────────────────
@@ -125,7 +125,7 @@ def waiting_without_arrival() -> list[str]:
     ★ **「못 닫는다」와 「무엇이 오면 닫힌다」는 다르다.** 앞은 포기고 뒤는 대기다.
     """
     out = []
-    for ln in _section_one(PLAN.read_text(encoding="utf-8")):
+    for ln in _section_one(text):
         m = _ROW.match(ln)
         if m is None or f"| {WAITING} |" not in ln:
             continue
@@ -133,6 +133,16 @@ def waiting_without_arrival() -> list[str]:
         if miss:
             out.append(f"#{m.group(1)}: {' · '.join(miss)} 을 안 적었다")
     return out
+
+
+def waiting_without_arrival() -> list[str]:
+    """실물을 **읽기만** 해서 `waiting_faults` 에 넘긴다.
+
+    ★ 2026-10-09 (§443-6). 판별식을 순수로 뗀다 — 자기검사가 실물 PLAN 을
+      고쳤다 되돌리는 꼴이었고, 그 사이 트리가 더럽다. `selftests.py` 가 그
+      자리를 본다.
+    """
+    return waiting_faults(PLAN.read_text(encoding="utf-8"))
 
 
 def ratchet_values() -> dict[str, int]:
@@ -174,16 +184,19 @@ def _selftest() -> int:
         return 1
     # ★ 2026-10-09 (§443). 대기 행 문을 **양방향**으로 민다. 실물로만 재면
     #   「언제나 초록」과 「실제로 다 적혔다」를 못 가른다(§230).
-    got = waiting_without_arrival()
-    if got:
-        bad.append(f"지금 트리에 도착 조건 없는 대기 행이 있다 — {got}")
-    real = PLAN.read_text(encoding="utf-8")
-    try:
-        PLAN.write_text(real.replace("전건 — 영상 담당의 모듈.", "x"), encoding="utf-8")
-        if not waiting_without_arrival():
-            bad.append("대기 행에서 전건을 뗐는데 안 운다 — 그물이 샌다")
-    finally:
-        PLAN.write_text(real, encoding="utf-8")
+    #   ★ **합성으로 민다 — 실물을 안 고친다**(§443-6).
+    if waiting_without_arrival():
+        bad.append("지금 트리에 도착 조건 없는 대기 행이 있다")
+    head = "## 1. 남은 일\n\n| # | 일 | 상태 | 메모 |\n| --- | --- | --- | --- |\n"
+    ok = head + f"| 9 | 제목 | {WAITING} | 전건 — 남. **도착 조건** — 오면 닫는다 |\n"
+    if waiting_faults(ok):
+        bad.append("둘 다 적힌 대기 행에서 운다 — 거짓 경보")
+    if waiting_faults(head + "| 9 | 제목 | 🟡 | 아무것도 안 적었다 |\n"):
+        bad.append("대기가 아닌 행에 도착 조건을 물린다")
+    for miss, why in ((f"| 9 | 제목 | {WAITING} | **도착 조건** — 오면 닫는다 |\n", "전건"),
+                      (f"| 9 | 제목 | {WAITING} | 전건 — 남 |\n", "도착 조건")):
+        if not waiting_faults(head + miss):
+            bad.append(f"대기 행에서 「{why}」 를 뺐는데 안 운다 — 그물이 샌다")
     if bad:
         print("★ 자기검사 실패")
         for x in bad:
