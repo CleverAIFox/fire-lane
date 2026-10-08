@@ -71,8 +71,15 @@ VERDICT_RULE = (
 
 ★ 2026-09-29 정정 (DECISIONS §303). 종전에 「마지막 줄만 `segments.py` 가
 CCTV 거리로 적용한다」고 적혀 있었다. **둘이었다** — `[1]`(대장폭 확정)도
-`segments.py` 안이었다. 지금은 일곱 줄 전부 `seg/classify.py` 가 실행하고
+`segments.py` 안이었다. 지금은 **전부** `seg/classify.py` 가 실행하고
 `verdict()` 는 그중 다섯(`[0]` · `[2]`~`[5]`)의 순수 분기다. 강제자 — `tests/test_declaration_sync.py`
+
+★ 2026-10-08 (DECISIONS §436-8). 이 자리에 **「일곱 줄 전부」**라고 수가 적혀
+있었다. 줄이 여덟이 되자 그 수가 거짓이 됐고 **아무 관문도 안 울었다** — 어느
+도구도 산문의 수를 안 센다. 그래서 수를 **지웠다.** 몇 줄인가는
+`classify.IMPLEMENTS` 가 선언하고 `tests/test_classify.py::
+test_covers_every_declared_rule` 이 `len(VERDICT_RULE)` 과 댄다 — 기계가 드는
+수를 산문이 베껴 적으면 사본이 둘이 되고, 갈리는 쪽은 늘 산문이다.
 """
 
 
