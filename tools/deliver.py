@@ -100,6 +100,7 @@ from delivercheck import (
     diff_sweep,
     diff_tests,
     forbidden,
+    lonely_tests,
     sweep_verdict,
     tails,
     zip_items,
@@ -445,7 +446,11 @@ def cmd_pack(a) -> int:
         p.rename(p.with_name(PATCH_PREFIX + p.name))
     ps = sorted(out.glob(f"{PATCH_PREFIX}0*.patch"))
     names = [p.name for p in ps]
+    # ★ 2026-10-08 (DECISIONS §439 · PLAN #138). **「외로운 시험」을 같이 센다.**
+    #   시험만 든 커밋이 중간에 있으면 그 지점은 혼자 초록일 수 없다 — 예습은
+    #   마지막 상태만 보므로 그것을 못 봤다(§258-13 의 사고).
     for label, bad in (("이름 충돌", collide(names)), ("같은 꼬리", tails(names)),
+                       ("외로운 시험", lonely_tests(ps)),
                        ("금지 문자열", forbidden(ps))):
         if bad:
             print(f"★ {label} — 배달하지 않는다\n  " + "\n  ".join(bad)); return 1

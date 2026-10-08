@@ -352,3 +352,51 @@ def test_the_relock_exemption_matches_real_pytest_ids():
         assert D.func_name(nid) == name, f"{nid} 에서 이름을 못 뽑는다"
     assert D.func_name("tests/a.py::test_b") == "test_b"
     assert D.func_name("test_c") == "test_c"
+
+
+# ── 외로운 시험 (2026-10-08 · DECISIONS §439 · PLAN #138) ─────────
+def _patch(tmp, name, *paths):
+    q = tmp / name
+    q.write_text("".join(f"--- a/{x}\n+++ b/{x}\n" for x in paths), encoding="utf-8")
+    return q
+
+
+def test_a_test_only_commit_in_the_middle_is_refused(tmp_path):
+    """★ §258-13 의 사고 — 시험이 앞 커밋, 구현이 뒤 커밋.
+
+    앞 커밋만 실기에 얹히면 `DID NOT RAISE` 가 난다. 예습은 **마지막 상태**만
+    보므로 그 지점을 아무도 서 보지 않는다.
+    """
+    lonely = _patch(tmp_path, "0001-t.patch", "tests/test_x.py")
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    bad = D.lonely_tests([lonely, impl])
+    assert bad and "tests/test_x.py" in bad[0], bad
+
+
+def test_a_commit_that_brings_its_implementation_is_accepted(tmp_path):
+    """짝이 있으면 그 지점은 혼자 초록이다 — 넓은 문이 되지 않게 민다."""
+    paired = _patch(tmp_path, "0001-tp.patch", "tests/test_y.py", "src/firelane/y.py")
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    assert not D.lonely_tests([paired, impl])
+
+
+def test_the_last_patch_is_not_asked(tmp_path):
+    """마지막 지점은 예습이 **이미 전수로** 본다 — 두 번 세지 않는다."""
+    impl = _patch(tmp_path, "0001-i.patch", "tools/z.py")
+    tail = _patch(tmp_path, "0002-t.patch", "tests/test_z.py")
+    assert not D.lonely_tests([impl, tail])
+    assert not D.lonely_tests([tail]), "패치가 하나면 그것이 마지막이다"
+
+
+def test_docs_do_not_count_as_the_implementation(tmp_path):
+    """★ 문서·산출물은 시험을 초록으로 만들지 않는다 — **여전히 외롭다.**"""
+    withdocs = _patch(tmp_path, "0001-td.patch", "tests/test_x.py",
+                      "docs/DECISIONS.md", "data/golden/x.json")
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    assert D.lonely_tests([withdocs, impl])
+
+
+def test_paths_come_from_the_diff_header_only(tmp_path):
+    """`git` 을 안 묻는다 — 워크트리·인덱스 없이 파일 하나로 답이 난다."""
+    q = _patch(tmp_path, "0001-x.patch", "a/b.py", "c/d.py")
+    assert D.patch_paths(q) == ["a/b.py", "c/d.py"]

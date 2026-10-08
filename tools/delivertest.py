@@ -51,7 +51,9 @@ from delivercheck import (
     excused,
     forbidden,
     func_name,
+    lonely_tests,
     new_red,
+    patch_paths,
     tails,
     zip_items_broken,
 )
@@ -137,6 +139,30 @@ def selftest() -> int:
             bad.append("재잠금이 아닌데 재잠금 축을 받아준다 — 도장 찍기다")
         except SystemExit:
             pass
+        # ★ 2026-10-08 (DECISIONS §439 · PLAN #138). **외로운 시험**을 민다.
+        #   합성 패치 넷으로 네 갈래를 본다 — 시험만(중간) · 시험+구현 ·
+        #   시험만인데 마지막 · 구현만. 넷을 다 안 밀면 그물이 한쪽으로 쏠린다.
+        def patch(td2, name, *paths):
+            q = Path(td2) / name
+            q.write_text("".join(f"--- a/{x}\n+++ b/{x}\n" for x in paths),
+                         encoding="utf-8")
+            return q
+
+        lonely = patch(td, "0001-t.patch", "tests/test_x.py")
+        paired = patch(td, "0002-tp.patch", "tests/test_y.py", "src/firelane/y.py")
+        impl = patch(td, "0003-i.patch", "tools/z.py")
+        tail = patch(td, "0004-t2.patch", "tests/test_z.py")
+        if patch_paths(lonely) != ["tests/test_x.py"]:
+            bad.append("패치에서 경로를 못 뽑는다")
+        if not lonely_tests([lonely, impl]):
+            bad.append("시험만 든 중간 커밋을 안 잡는다 — §258-13 이 그 사고다")
+        if lonely_tests([paired, impl]):
+            bad.append("구현이 같이 든 커밋에 운다 — 짝이 있으면 혼자 초록이다")
+        if lonely_tests([impl, tail]):
+            bad.append("**마지막** 시험 커밋에 운다 — 그 지점은 예습이 이미 본다")
+        if lonely_tests([lonely]):
+            bad.append("패치가 하나인데 운다 — 그것이 마지막이다")
+
         # ★ 2026-10-08 (DECISIONS §436-6). 시험 쪽도 **양방향으로** 민다. 먹이는
         #   것은 **실물 pytest id** 다 — 함수 이름만 먹이면 검사가 내 손을 잰다.
         tn, X = next(iter(RELOCK_TESTS)), "tests/test_x.py::"

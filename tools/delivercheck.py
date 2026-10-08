@@ -227,6 +227,58 @@ def diff_sweep(base: set[str], after: set[str], wt: Path,
     return " · ".join(bits)
 
 
+#: 패치가 **시험만** 건드렸는가를 볼 때 「구현」으로 세는 자리.
+#: ★ `docs/` · `data/` 는 넣지 않는다 — 문서와 산출물은 시험을 초록으로 만드는
+#:   구현이 아니다. 시험이 그 둘만 짝으로 달고 오면 **여전히 외로운 시험**이다.
+IMPL_DIRS = ("src/", "tools/", "web/", ".github/")
+
+
+def patch_paths(patch: Path) -> list[str]:
+    """패치가 건드린 저장소 경로. `git` 없이 **diff 머리글만** 읽는다.
+
+    ★ `git apply --numstat` 를 안 쓴다 — 그것은 워크트리와 인덱스를 묻고,
+      이 물음은 **파일 하나만 읽으면 답이 나온다.** 외부 상태를 안 묻는 판별식이
+      더 적은 자리에서 돈다(§286 의 「값을 못 치르는 관문은 안 돈다」).
+    """
+    out: list[str] = []
+    for line in patch.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("+++ b/"):
+            out.append(line[6:].strip())
+        elif line.startswith("--- a/") and line[6:].strip() not in out:
+            out.append(line[6:].strip())     # 지운 파일은 `+++` 가 `/dev/null`
+    return sorted(set(out))
+
+
+def lonely_tests(patches: list[Path]) -> list[str]:
+    """★ **시험만 든 커밋이 중간에 있는가.**  (DECISIONS §439 · PLAN #138)
+
+    §258-13 의 사고 — `git add tests/` 로 담아 **시험은 앞 커밋 · 구현은 뒤
+    커밋**이 됐다. 앞 커밋만 실기에 얹히자 `DID NOT RAISE` 와 죽은 절 참조
+    28건으로 울었다. **마지막 상태만 초록인지 보는 예습은 그것을 못 본다.**
+
+    ★ 비싼 쪽(커밋마다 전수 pytest)을 안 고른 이유 — 커밋 수 × 8분이고,
+      **값을 못 치르는 관문은 안 돈다**(§286). 이 물음은 **정적으로** 답이
+      나온다: 시험을 건드리고 구현을 안 건드린 패치가 **마지막이 아니면**
+      그 지점은 혼자 초록일 수 없다.
+
+    ★ **마지막 패치는 뺀다.** 마지막 지점의 초록은 예습이 이미 전수로 본다 —
+      거기서 또 묻는 것은 같은 사실을 두 번 세는 일이다.
+
+    ★ 거짓 경보를 아는 채로 둔다 — 시험만 고치는 정당한 커밋(오타 · 이름)이
+      중간에 있으면 걸린다. 그때는 **커밋을 합치거나 순서를 바꾸는 것**이
+      답이고, 그것이 `#138` 이 요구한 규율이다.
+    """
+    bad = []
+    for p in patches[:-1]:                        # 마지막은 뺀다
+        paths = patch_paths(p)
+        tests = [x for x in paths if x.startswith("tests/")]
+        impl = [x for x in paths if x.startswith(IMPL_DIRS)]
+        if tests and not impl:
+            bad.append(f"{p.name}  시험 {len(tests)}개만 든다 — "
+                       f"이 지점은 혼자 초록일 수 없다 ({', '.join(tests[:3])})")
+    return bad
+
+
 def func_name(nodeid: str) -> str:
     """pytest id 에서 **함수 이름**만. `RELOCK_TESTS` 가 그 이름으로 선언한다.
 
