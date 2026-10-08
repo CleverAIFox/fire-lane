@@ -249,6 +249,22 @@ def patch_paths(patch: Path) -> list[str]:
     return sorted(set(out))
 
 
+def test_body(patch: Path) -> str:
+    """패치에서 **`tests/` 파일에 더해진 줄**만 이어 붙인다.  (§443-7)
+
+    ★ 「그 시험이 무엇을 이름으로 드는가」를 묻는 자리라, 시험이 **쓴 글**만
+      봐야 한다. 문서·대장이 같은 커밋에 있다고 그 글까지 세면 문서가 도구
+      이름을 적는 것만으로 걸린다.
+    """
+    out, intest = [], False
+    for line in patch.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("+++ b/"):
+            intest = line[6:].strip().startswith("tests/")
+        elif intest and line.startswith("+") and not line.startswith("+++"):
+            out.append(line[1:])
+    return "\n".join(out)
+
+
 def lonely_tests(patches: list[Path]) -> list[str]:
     """★ **시험만 든 커밋이 중간에 있는가.**  (DECISIONS §439 · PLAN #138)
 
@@ -282,8 +298,14 @@ def lonely_tests(patches: list[Path]) -> list[str]:
         # ★ §258-13 의 사고를 다시 읽으면 가르는 축이 보인다 — 그 시험이
         #   **뒤에 오는 커밋이 만드는 것**을 물었다. 그래서 좁힌다: 이 시험이
         #   이름으로 드는 파일을 **뒤 패치가 건드리면** 그때만 외롭다.
+        # ★ 2026-10-09 (DECISIONS §443-7). **시험이 든 줄만 본다.** 종전에는
+        #   패치 **전문**을 댔고, 그러면 같은 커밋의 `docs/` 가 어떤 도구를
+        #   언급하기만 해도 걸렸다 — 실제로 걸렸다(§442 커밋의 DECISIONS 가
+        #   `tools/selftests.py` 를 들었고 그 파일은 뒤 커밋에 온다).
+        #   문서는 **시험을 초록으로 만들지 않는다**(§439-3 이 이미 적은 축인데
+        #   그 축이 분모에만 적용되고 **본문 읽기에는 안 적용되고 있었다**).
         named = set()
-        body = cur.read_text(encoding="utf-8", errors="replace")
+        body = test_body(cur)
         for later in patches[i + 1:]:
             for q in patch_paths(later):
                 if q.startswith(IMPL_DIRS) and q in body:

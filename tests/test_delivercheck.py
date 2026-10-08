@@ -356,9 +356,18 @@ def test_the_relock_exemption_matches_real_pytest_ids():
 
 # ── 외로운 시험 (2026-10-08 · DECISIONS §439 · PLAN #138) ─────────
 def _patch(tmp, name, *paths, names=()):
+    """★ 2026-10-09 (§443-7). `names` 를 **첫 파일의 헌크 안**에 넣는다.
+    종전에는 패치 **맨 뒤**에 붙였고, 그러면 `lonely_tests` 가 시험이 든 줄만
+    보도록 좁힌 뒤로는 그 줄이 **마지막 파일**(문서)의 것이 된다. 먹이는 꼴이
+    실물과 달라지면 그 검사는 제 그물이 아니라 **내 손**을 잰다(§436-6).
+    """
     q = tmp / name
-    body = "".join(f"--- a/{x}\n+++ b/{x}\n" for x in paths)
-    q.write_text(body + "".join(f"+# {n}\n" for n in names), encoding="utf-8")
+    out = []
+    for i, x in enumerate(paths):
+        out.append(f"--- a/{x}\n+++ b/{x}\n")
+        if i == 0:
+            out += [f"+# {n}\n" for n in names]
+    q.write_text("".join(out), encoding="utf-8")
     return q
 
 
@@ -409,6 +418,27 @@ def test_docs_do_not_count_as_the_implementation(tmp_path):
                       names=("tools/z.py",))
     impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
     assert D.lonely_tests([withdocs, impl]), "문서를 구현으로 센다"
+
+
+def test_only_the_lines_added_to_tests_name_the_implementation(tmp_path):
+    """★ 2026-10-09 (§443-7). **문서가 든 이름은 시험이 든 것이 아니다.**
+
+    종전에는 패치 **전문**을 댔고, 그래서 같은 커밋의 `docs/` 가 어떤 도구를
+    언급하기만 해도 외로운 시험으로 걸렸다 — 실제로 걸렸다(§442 커밋).
+    「문서는 시험을 초록으로 만들지 않는다」(§439-3)는 축이 **분모에만**
+    적용되고 본문 읽기에는 안 적용되고 있었다.
+    """
+    q = tmp_path / "0001-td.patch"
+    q.write_text("--- a/tests/test_v.py\n+++ b/tests/test_v.py\n+def test_v(): pass\n"
+                 "--- a/docs/DECISIONS.md\n+++ b/docs/DECISIONS.md\n"
+                 "+tools/z.py 를 고쳤다\n", encoding="utf-8")
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    assert "tools/z.py" not in D.test_body(q), "문서 줄을 시험 본문으로 읽는다"
+    assert not D.lonely_tests([q, impl]), "문서가 든 이름을 시험이 든 것으로 센다"
+    # ★ 반대 방향 — 시험이 **직접** 들면 여전히 잡는다
+    named = _patch(tmp_path, "0003-t.patch", "tests/test_x.py", names=("tools/z.py",))
+    assert "tools/z.py" in D.test_body(named)
+    assert D.lonely_tests([named, impl]), "좁히다가 그물이 비었다"
 
 
 def test_paths_come_from_the_diff_header_only(tmp_path):

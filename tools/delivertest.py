@@ -55,6 +55,7 @@ from delivercheck import (
     new_red,
     patch_paths,
     tails,
+    test_body,
     zip_items_broken,
 )
 
@@ -166,6 +167,19 @@ def selftest() -> int:
             bad.append("**마지막** 시험 커밋에 운다 — 그 지점은 예습이 이미 본다")
         if lonely_tests([lonely]):
             bad.append("패치가 하나인데 운다 — 그것이 마지막이다")
+        # ★ 2026-10-09 (§443-7). **문서가 든 이름은 안 센다.** 종전에는 패치
+        #   전문을 댔고, 같은 커밋의 `docs/` 가 도구 이름을 적기만 해도 걸렸다.
+        #   문서는 시험을 초록으로 만들지 않는다(§439-3 이 분모에만 적용하던 축).
+        q = Path(td) / "0006-td.patch"
+        q.write_text("--- a/tests/test_v.py\n+++ b/tests/test_v.py\n+def test_v(): pass\n"
+                     "--- a/docs/DECISIONS.md\n+++ b/docs/DECISIONS.md\n"
+                     "+tools/z.py 를 고쳤다\n", encoding="utf-8")
+        if lonely_tests([q, impl]):
+            bad.append("문서가 이름을 든 것을 **시험이 든 것**으로 센다 — 그물이 넓다")
+        if "tools/z.py" not in test_body(lonely):
+            bad.append("시험이 든 이름을 못 읽는다 — 좁히다가 그물이 비었다")
+        if "tools/z.py" in test_body(q):
+            bad.append("문서 줄을 시험 본문으로 읽는다")
 
         # ★ 2026-10-08 (DECISIONS §436-6). 시험 쪽도 **양방향으로** 민다. 먹이는
         #   것은 **실물 pytest id** 다 — 함수 이름만 먹이면 검사가 내 손을 잰다.
