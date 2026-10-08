@@ -6557,19 +6557,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "c73b423249134e6c",
-   "96ade4b5723aaf3b",
-   "8efdb87b148cf917"
+   "5d8fd4be5524cc6c",
+   "6cbd7f0b77c7f1e6",
+   "5f6792eba6b6bd08"
   ],
   "parts": {
    "src/firelane/pipeline.py": "260d17abbedd59c9",
    "src/firelane/publish_web.py": "0c8cd8c9e38a69ea",
-   "tests/test_declaration_reality.py": "5914ba748581d671",
+   "tests/test_declaration_reality.py": "24d0c665fcb1a8ba",
    "tools/archcost.py": "717c48e71c6fff00",
    "tools/verify.sh": "acfc8025288d6bec",
    "본문": "65e854009d5665e2"
   },
-  "sha": "0cfd88b23d526648"
+  "sha": "0f3fb41dd6e3afb8"
  },
  "DECISIONS/369": {
   "doc": "docs/DECISIONS.md",
@@ -7977,9 +7977,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "5f7c1bf325e3f9f4",
-   "5f7c1bf325e3f9f4",
-   "fdf7c26f4af65b14"
+   "a629c254c94729fc",
+   "79539b2e8bb77e68",
+   "d7da9a63e8f449f7"
   ],
   "parts": {
    "sources.yaml": "1f51dbbff5df08eb",
@@ -7993,9 +7993,31 @@
    "tests/test_crs_gate.py": "bd112844c9755a01",
    "tools/sealcov.py": "76c362413c9aef29",
    "tools/sizecheck.py": "a9270a1bee600eee",
-   "본문": "1a1e7d6c67ab8c79"
+   "본문": "63151b0ef84e2973"
   },
-  "sha": "fdf7c26f4af65b14"
+  "sha": "7672651052821b75"
+ },
+ "DECISIONS/434": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "data/_prep.json",
+   "sources.yaml",
+   "tests/test_declaration_reality.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "fcf9312912d1665f",
+   "fcf9312912d1665f",
+   "5758796218f2c8bb"
+  ],
+  "parts": {
+   "data/_prep.json": "fdf2d149606e013e",
+   "sources.yaml": "0d73c980532b0ca6",
+   "tests/test_declaration_reality.py": "66eb82b80f871a6d",
+   "본문": "30c1ca1ad974ebb2"
+  },
+  "sha": "5758796218f2c8bb"
  },
  "DECISIONS/45": {
   "doc": "docs/DECISIONS.md",
@@ -9622,9 +9644,9 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "83d34693af607d3d",
-   "c04464d57406b41f",
-   "932ef6ab0965358f"
+   "31a400806b1865d7",
+   "3d2658f96c96e363",
+   "e54250c979029b67"
   ],
   "parts": {
    "src/firelane/seg/params.py": "53df7ea2ea107fd6",
@@ -9648,9 +9670,9 @@
    "web/config.js": "ed851b78a3c520eb",
    "web/navi/src/domain/vehicle.ts": "5fada2911d0cbec0",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "0308f4d182aa30c2"
+   "본문": "8f3840f31d19025b"
   },
-  "sha": "bbe2d66c5bd2b55d"
+  "sha": "0000183d7010a399"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
