@@ -7,6 +7,7 @@ UI(web/navi — 내비 · 관제 ?view=ops)가 의존해도 되는 것만 여기
 깨지면: GIS 쪽이 UI를 말없이 부순 것이다. 머지하기 전에 UI 담당과 합의할 것.
 """
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -198,6 +199,82 @@ def test_navi_data_files_exist():
     assert not miss, f"내비가 읽는데 web/data 에 없다: {miss}"
 
 
+# ── 발행 필드 ↔ 화면이 읽는 속성 ───────────────────────────────
+# ★ 2026-10-08 (DECISIONS §435). `navi_reads()` 는 **파일 이름**까지만 본다.
+#   필드는 아무도 안 봤고, 그래서 `destinations.py` 머리말이 9개월째
+#   「`search.ts` 가 옛 필드만 읽어도 돈다」고 적고 있었다. **거짓이다** —
+#   `preparePois` 는 여섯을 다 읽고, `src` 가 없으면 전부 `store` 로 떨어져
+#   `SRC_RANK` 정렬이 무너지며(법원을 치면 앞 김밥집이 먼저 뜬다), `name` 이
+#   없으면 그 피처를 **통째로 버린다**(`if (!p.name) continue`).
+#   「선택이다」라고 적힌 필드를 누군가 발행에서 빼는 날 검색이 조용히 망가진다.
+#
+#   ★ 유도다, 목록이 아니다. 하드코딩한 `need` 와 비교하는 선례
+#     (`test_contract.py` 의 segments 속성 검사)는 **같은 사실을 두 곳이 든다** —
+#     TS 를 고치면 그 목록이 낡는다. 여기서는 TS 에서 뽑는다.
+
+NAVI_SRC = WEBDIR / "navi" / "src"
+
+
+def _ts_no_comments(p) -> str:
+    src = re.sub(r"/\*.*?\*/", "", p.read_text(encoding="utf-8"), flags=re.DOTALL)
+    return re.sub(r"^\s*//.*$", "", src, flags=re.MULTILINE)
+
+
+def _fn_body(src: str, fn: str) -> str:
+    """`function <fn>(` 의 본문. 중괄호를 센다.
+
+    ★ 파일 전체를 훑으면 **다른 `p`** 를 먹는다 — 같은 파일의 `searchPois` 가
+      `Poi` 객체를 `p` 로 받고 그 객체에는 `cho`(계산값)가 있다. 실제로 첫
+      시도가 `cho` 를 「발행에서 빠진 필드」로 올렸다. 함수로 가둔다.
+    """
+    i = src.index(f"function {fn}(")
+    j = src.index("{", i)
+    d = 0
+    for k in range(j, len(src)):
+        d += (src[k] == "{") - (src[k] == "}")
+        if d == 0:
+            return src[j:k + 1]
+    raise AssertionError(f"{fn} 의 중괄호가 안 닫힌다 — 추출기를 의심하라")
+
+
+def _props_read(body: str) -> set[str]:
+    """`f.properties` 를 받은 식별자에 걸린 속성 접근."""
+    out: set[str] = set()
+    for h in set(re.findall(r"\b(\w+)\s*=\s*[^;\n]*\.properties", body)):
+        out |= set(re.findall(rf"\b{h}\s*(?:\?\.|\.)\s*(\w+)", body))
+        out |= set(re.findall(rf"\b{h}\s*\[\s*[\"'](\w+)[\"']\s*\]", body))
+    return out
+
+
+def test_dest_publishes_every_property_the_search_reads():
+    """★ `dest.geojson` 의 필드 집합 ⊇ `search.ts` 가 읽는 속성. **유도 대 유도.**"""
+    from firelane import destinations as D
+
+    src = _ts_no_comments(NAVI_SRC / "domain" / "search.ts")
+    body = _fn_body(src, "preparePois")
+    read = _props_read(body)
+
+    # ★ 빈 그물 — 추출기가 조용히 0을 내면 이 검사가 언제나 초록이다.
+    assert {"name", "src"} <= read, (
+        f"추출기가 `name` · `src` 를 못 찾았다 — 읽은 것은 {sorted(read)}.\n"
+        "  `preparePois` 가 속성을 받는 방식이 바뀌었으면 추출기를 고쳐라.")
+    # ★ 본문 밖에 `.properties` 결속이 또 있으면 이 검사의 **범위가 틀린 것**이다.
+    outside = set(re.findall(r"\b(\w+)\s*=\s*[^;\n]*\.properties", src.replace(body, "")))
+    assert not outside, (
+        f"`search.ts` 의 `preparePois` 밖에서 properties 를 받는다 — {sorted(outside)}.\n"
+        "  소비자가 둘이 됐으면 이 검사도 그 둘을 봐야 한다.")
+
+    pub = set(D.COLS) - {"geometry"}
+    assert read <= pub, (
+        f"화면이 읽는데 `dest.geojson` 이 안 내는 속성 — {sorted(read - pub)}\n"
+        "  `destinations.COLS` 에 더하거나 `search.ts` 에서 그 읽기를 지워라.")
+    # ★ 반대 방향. 안 읽는 필드를 내는 것은 고아고, 그것이 걷힐 때 함께 걷혀야 한다.
+    assert not (pub - read), (
+        f"발행하는데 화면이 안 읽는 속성 — {sorted(pub - read)}\n"
+        "  쓰는 데가 더 있으면(관제 · 보고서) 이 검사가 그쪽도 봐야 한다.\n"
+        "  없으면 `destinations.COLS` 에서 지워라 — 안 읽는 칸은 1,836행에 실려 나간다.")
+
+
 # ── ETL 스크립트 계약 ────────────────────────────────────────
 # ★ 같은 회귀가 세 번 반복됐다. 스크립트가 paths.py 를 안 쓰고 자체 RAW 를 정의하면
 #   FIRE_LANE_RAW 환경변수가 무시되고 원본을 못 찾는다(전부 MISSING).
@@ -238,8 +315,8 @@ def test_optional_layers_not_silently_empty(seg):
 # ── seg_uid ──────────────────────────────────────────────────
 # seg_id 는 실행마다 갈린다(1266→1087 때 전부 밀렸다). 외부(실측 DB·영상판정·
 # 향후 DB PK)가 붙을 키는 seg_uid 하나뿐이므로 형식과 유일성을 계약으로 고정한다.
-import re
-
+# ★ 2026-10-08. `import re` 가 이 자리에 있었다. 머리로 올렸다 — 위쪽에 쓰는
+#   함수가 생겨 **정의 시점에는 없고 호출 시점에는 있는** 이름이 됐다.
 SEG_UID_RE = re.compile(r"^[A-Z]{2}-\d{6}-\d{6}-[0-9A-Z]{4}$")
 
 

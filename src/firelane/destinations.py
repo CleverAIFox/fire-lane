@@ -10,7 +10,14 @@ PARAM 열 번호 — 내비게이션용DB 활용방법 붙임 1 · 2 (DECISIONS 
   `poi.geojson` 상가 2,077 만 색인이라 법원 · 구청 · 학교 · 아파트 · 주소가 안 나왔다.
 
 ★ 스키마는 `poi.geojson` 과 같다(name · cat · sub · addr) + `alt`(지번) · `src`(원천).
-  `search.ts` 가 옛 필드만 읽어도 돈다.
+  ★ 2026-10-08 (DECISIONS §435) 정정. 이 자리가 「`search.ts` 가 옛 필드만
+    읽어도 돈다」고 적고 있었다. **거짓이다** — 여섯을 다 읽고, 둘은 **필수**다.
+      `name`  없으면 그 피처를 통째로 버린다 (`if (!p.name) continue`)
+      `src`   없으면 전부 `store` 로 떨어져 `SRC_RANK` 정렬이 무너진다
+    「선택」이라고 적힌 칸은 빼도 된다고 읽힌다. 그래서 그 주장을 지우고
+    **기계가 대조한다** — `tests/test_contract.py::
+    test_dest_publishes_every_property_the_search_reads` 가 `COLS` 와
+    `preparePois` 를 **양쪽에서 유도해** 댄다(양방향이다).
 
 ★ 좌표 규칙 — 출입구(c25 · c26) → 없으면 건물중심점(c23 · c24) → 둘 다 없으면 **뺀다**.
   비공개 · 공개제한 건물은 좌표가 빈 값으로 온다. 빼는 수를 돌려준다 — 조용히 줄지 않는다.
