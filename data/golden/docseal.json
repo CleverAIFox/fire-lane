@@ -5429,21 +5429,21 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "9770352c5c09ed1c",
-   "ba68dc17c9299585",
-   "c8c3742491378d98",
-   "e74b7e5ef93088a9"
+   "00eeb8917861c763",
+   "a5de23c4fd71a651",
+   "a916a7d60bced6cd",
+   "cea068ba35927fd0"
   ],
   "parts": {
    "tests/test_uicheck.py": "e3f7237c990e31e3",
    "tools/mergecheck.py": "10f4a6c5846d66ee",
    "tools/pr_body_check.py": "6d15a32cb264f6d5",
    "tools/serve.py": "704693153e2a2f72",
-   "tools/uicheck.py": "304fa4b2a77a57f0",
+   "tools/uicheck.py": "4cf15a37fd7d9561",
    "tools/verify.sh": "57704340a65e3f73",
    "본문": "9a6d41dfdf6947e4"
   },
-  "sha": "ba68dc17c9299585"
+  "sha": "a916a7d60bced6cd"
  },
  "DECISIONS/311": {
   "doc": "docs/DECISIONS.md",
@@ -5481,20 +5481,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "289353e7d4b815a4",
-   "47e84fd535bdff72",
-   "8eba3d41175db126",
-   "e6d7e45657b080a9"
+   "0b302801e05a6aab",
+   "23ff7df2fc8d0c85",
+   "a420380cccba9008",
+   "e3a32407145dab39"
   ],
   "parts": {
    "tests/test_naviweight.py": "28cbf23ec42a8c5e",
    "tools/naviweight.py": "e767878ddc244526",
-   "tools/uicheck.py": "304fa4b2a77a57f0",
+   "tools/uicheck.py": "4cf15a37fd7d9561",
    "tools/verify.sh": "60e13bfd6b926ed5",
    "web/navi/scripts/glyphs.mjs": "c28ef924361fcdc5",
    "본문": "81b1ddcaf779d7d4"
   },
-  "sha": "e6d7e45657b080a9"
+  "sha": "e3a32407145dab39"
  },
  "DECISIONS/313": {
   "doc": "docs/DECISIONS.md",
@@ -8438,8 +8438,8 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "5e99714314cfda0c",
-   "d0c1bbaef145958c"
+   "0535e7b5b05b29c4",
+   "68a445ee015580c5"
   ],
   "parts": {
    "tests/test_fleet_turn_radius.py": "1d7017490fa0869b",
@@ -8447,12 +8447,12 @@
    "tools/mutate.py": "026426d9a6712147",
    "tools/naviweight.py": "e767878ddc244526",
    "tools/sealcov.py": "12a9a57792506df4",
-   "tools/uicheck.py": "304fa4b2a77a57f0",
+   "tools/uicheck.py": "4cf15a37fd7d9561",
    "web/navi/src/ui/Manual.tsx": "8767e7180e46d943",
    "web/navi/src/ui/motion.ts": "c255a146f282b512",
-   "본문": "8d9fac412b8c47b5"
+   "본문": "465212800dbc60ea"
   },
-  "sha": "d0c1bbaef145958c"
+  "sha": "0535e7b5b05b29c4"
  },
  "DECISIONS/45": {
   "doc": "docs/DECISIONS.md",

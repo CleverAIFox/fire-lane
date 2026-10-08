@@ -270,7 +270,7 @@ def split() -> list[str]:
 COLOR_LIT = re.compile(r"#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(")
 
 
-def emphasis_uses_no_color() -> list[str]:
+def emphasis_faults(src: str | None) -> list[str]:
     """**강조는 색 채널을 안 쓴다.**  (2026-10-09 · DECISIONS §441)
 
     ── 왜 세나 ────────────────────────────────────────────────
@@ -283,10 +283,8 @@ def emphasis_uses_no_color() -> list[str]:
       쉽고(`color: "#f00"`) 지운 사람은 없다 — 그래서 센다.
     ★ **빈 그물을 막는다** — 파일이 없거나 비면 통과가 아니라 실패다.
     """
-    f = SRC / "ui" / "motion.ts"
-    if not f.is_file():
+    if src is None:
         return ["`ui/motion.ts` 가 없다 — 강조 채널 선언이 사라졌다(§441)"]
-    src = f.read_text(encoding="utf-8")
     if "flpulse" not in src:
         return ["`ui/motion.ts` 에 맥박 선언이 없다 — 빈 그물이다"]
     body = re.sub(r"/\*.*?\*/|//[^\n]*", "", src, flags=re.S)
@@ -295,6 +293,19 @@ def emphasis_uses_no_color() -> list[str]:
         return [f"`ui/motion.ts` 가 색을 쓴다 — {hits}\n"
                 "       강조는 휘도와 움직임으로 한다. 색 채널은 판정 넷의 것이다(§441)"]
     return []
+
+
+def emphasis_uses_no_color() -> list[str]:
+    """실물을 읽어 `emphasis_faults` 에 넘긴다. **읽기만 한다.**
+
+    ★ 2026-10-09. 판별식을 순수 함수로 뗐다 — 자기검사가 **실물 파일을 고쳤다가
+      되돌리는** 꼴이었고, 그러면 그 짧은 사이에 트리가 더럽다. `selftests.py`
+      는 도구를 여럿 돌리고 배달 기계는 「추적 파일에 변경이 있다」를 본다 —
+      흔드는 쪽과 재는 쪽이 겹치면 안 된다(§398-6 과 같은 규율).
+      이 저장소의 표준 꼴이기도 하다: `judge()` 가 순수라 시험이 합성으로 부른다.
+    """
+    f = SRC / "ui" / "motion.ts"
+    return emphasis_faults(f.read_text(encoding="utf-8") if f.is_file() else None)
 
 
 # ── ② 빌드본 ────────────────────────────────────────────────────
@@ -433,21 +444,23 @@ def selftest() -> int:
         fails.append("걷어낸 가로등 층이 아직 코드에 있다 — 주입 판별식이 헛돈다")
     # ★ 2026-10-09 (§441). 강조 채널 문을 **양방향**으로 민다. 실물로만 재면
     #   「언제나 통과」와 「실제로 깨끗함」을 못 가른다(§230).
-    f = SRC / "ui" / "motion.ts"
+    #   ★ **합성으로 민다 — 실물을 안 고친다.** 고쳤다 되돌리면 그 사이 트리가
+    #     더럽고, 배달 기계가 그것을 본다.
     if emphasis_uses_no_color():
         fails.append("지금 트리에서 강조 채널 문이 운다 — 실물이 이미 색을 쓴다")
-    real = f.read_text(encoding="utf-8") if f.is_file() else None
-    try:
-        if real is not None:
-            f.write_text(real + '\nconst _probe = "#ff0000";\n', encoding="utf-8")
-            if not emphasis_uses_no_color():
-                fails.append("`motion.ts` 에 색을 심었는데 안 운다 — 그물이 샌다")
-            f.write_text('// 머리말뿐\n', encoding="utf-8")
-            if not emphasis_uses_no_color():
-                fails.append("맥박 선언이 없는데 통과한다 — 빈 그물을 안 막는다")
-    finally:
-        if real is not None:
-            f.write_text(real, encoding="utf-8")
+    ok = "@keyframes flpulse{0%{opacity:1}}"
+    if emphasis_faults(ok):
+        fails.append("색 없는 선언에서 운다 — 거짓 경보")
+    if not emphasis_faults(ok + '\nconst p = "#ff0000";'):
+        fails.append("색을 심었는데 안 운다 — 그물이 샌다")
+    if not emphasis_faults(ok + "\nconst p = rgba(1,2,3,.4);"):
+        fails.append("`rgba(` 를 색으로 안 센다")
+    if not emphasis_faults("// 머리말뿐"):
+        fails.append("맥박 선언이 없는데 통과한다 — 빈 그물을 안 막는다")
+    if not emphasis_faults(None):
+        fails.append("파일이 없는데 통과한다")
+    if emphasis_faults(ok + "\n// 주석 속 #ff0000 은 색이 아니다"):
+        fails.append("주석 속 색을 센다 — 주석은 설명이다")
 
     print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 21")
     return 1 if fails else 0
