@@ -1,6 +1,6 @@
 """
 test_unusedcheck.py — 「미활용」이 **0 으로 갈 수 있는 수인가.**
-(DECISIONS §317 · `tools/unusedcheck.py` · `firelane.ledger.grade`)
+(DECISIONS §317 · `tools/unusedcheck.py` · `firelane.ledger_check.grade`)
 
 ── 왜 이 파일이 생겼나 (2026-09-30) ────────────────────────────
 「미활용 25」가 한 달 동안 25 였다. 대장 검사는 그 수를 **찍기만** 했고 목표가
@@ -27,7 +27,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from firelane import ledger
+# ★ 2026-10-08 (DECISIONS §431 · PLAN #157). 활용도 등급은 `ledger` 에서
+#   `ledger_check` 로 나갔다 — 「선언을 읽는 집」과 「선언으로 판정하는 집」을
+#   가른다. `ledger.py` 가 633줄로 상한을 넘은 것이 계기였다.
+from firelane import ledger_check as lgc
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -48,16 +51,17 @@ UC = _load("unusedcheck")
 
 def test_raw_only_with_no_feeds_is_reference_not_unused():
     """★ 실기의 그 결함. 「원본만 보관」은 `feeds` 가 **없는 것이 정상**이다."""
-    assert ledger.grade({"kind": "raw_only"}) == "reference"
-    assert ledger.grade({"kind": "raw_only", "feeds": []}) == "reference"
-    assert ledger.grade({"kind": "raw_only", "feeds": None}) == "reference"
+    assert lgc.grade({"kind": "raw_only"}) == "reference"
+    assert lgc.grade({"kind": "raw_only", "feeds": []}) == "reference"
+    assert lgc.grade({"kind": "raw_only", "feeds": None}) == "reference"
     # ★ 반대 방향. `raw_only` 가 아니고 feeds 도 없으면 여전히 미배선이다.
-    assert ledger.grade({"kind": "csv_table", "feeds": []}) == "unused"
+    assert lgc.grade({"kind": "csv_table", "feeds": []}) == "unused"
 
 
 def test_the_warning_in_the_code_is_now_the_code():
     """★ 주석이 경고를 적고 코드 순서가 그것을 어기던 자리. 순서를 시험이 든다."""
-    src = (ROOT / "src" / "firelane" / "ledger.py").read_text(encoding="utf-8")
+    # ★ 2026-10-08 (§431 · PLAN #157). `ledger.py` → `ledger_check.py`.
+    src = (ROOT / "src" / "firelane" / "ledger_check.py").read_text(encoding="utf-8")
     body = src[src.index("def grade("):src.index("def check_entry(")]
     assert body.index('"raw_only"') < body.index("if not feeds"), (
         "`raw_only` 갈래가 `if not feeds` 보다 뒤에 있다 — 아홉이 다시 뒤집힌다")
@@ -66,26 +70,26 @@ def test_the_warning_in_the_code_is_now_the_code():
 # ── ② 영구 참조와 미배선 (§317 ②③) ────────────────────────────
 
 def test_permanent_reference_is_not_counted_as_pending():
-    for w in ledger.REFERENCE_WHY:
-        assert ledger.grade({"kind": "csv_table", "feeds": [], "feeds_why": f"{w} — 사유"}) \
+    for w in lgc.REFERENCE_WHY:
+        assert lgc.grade({"kind": "csv_table", "feeds": [], "feeds_why": f"{w} — 사유"}) \
             == "reference", f"「{w}」을 미배선으로 센다 — 그 수는 0 이 못 된다"
-    for w in ledger.PENDING_WHY:
-        assert ledger.grade({"kind": "csv_table", "feeds": [], "feeds_why": f"{w} — 사유"}) \
+    for w in lgc.PENDING_WHY:
+        assert lgc.grade({"kind": "csv_table", "feeds": [], "feeds_why": f"{w} — 사유"}) \
             == "unused", f"「{w}」을 영구 참조로 센다 — 내릴 대상이 사라진다"
 
 
 def test_the_token_is_read_from_the_first_line_only():
-    assert ledger.why_token({"feeds_why": "★ 미투입 — 후보다"}) == "미투입"
-    assert ledger.why_token({"feeds_why": "쓸 데가 없다\n참조용으로 볼 수도"}) is None, (
+    assert lgc.why_token({"feeds_why": "★ 미투입 — 후보다"}) == "미투입"
+    assert lgc.why_token({"feeds_why": "쓸 데가 없다\n참조용으로 볼 수도"}) is None, (
         "첫 줄 밖의 낱말을 집는다 — 본문에 우연히 든 것까지 선언으로 읽는다")
-    assert ledger.why_token({}) is None
-    assert ledger.why_token({"feeds_why": ["목록이다"]}) is None, "산문이 아닌 값에서 죽는다"
+    assert lgc.why_token({}) is None
+    assert lgc.why_token({"feeds_why": ["목록이다"]}) is None, "산문이 아닌 값에서 죽는다"
 
 
 def test_the_rename_only_feed_still_does_not_count_as_a_consumer():
     """`normalize_raw` 는 배치기다 — 이름표만 붙는 것은 아무도 안 읽는 것과 같다(§243)."""
-    e = {"kind": "csv_table", "feeds": sorted(ledger.RENAME_ONLY)}
-    assert ledger.grade(e) == "unused"
+    e = {"kind": "csv_table", "feeds": sorted(lgc.RENAME_ONLY)}
+    assert lgc.grade(e) == "unused"
 
 
 # ── ③ 실물 (래칫) ──────────────────────────────────────────────
@@ -94,7 +98,7 @@ def test_every_pending_entry_declares_its_word():
     bad = UC.undeclared()
     assert not bad, (
         f"선언 낱말 없는 미배선 {len(bad)}건 — {sorted(bad)}\n"
-        f"  {' · '.join(ledger.REFERENCE_WHY + ledger.PENDING_WHY)} 중 하나로 시작해라.\n"
+        f"  {' · '.join(lgc.REFERENCE_WHY + lgc.PENDING_WHY)} 중 하나로 시작해라.\n"
         "  산문으로 흐리면 영구 참조와 미배선이 한 수에 섞이고, 섞인 수는 0 으로 못 간다.")
 
 

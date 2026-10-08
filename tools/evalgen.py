@@ -75,8 +75,14 @@ import route_probe
 from localgeo import MX, MY
 from shapely.geometry import LineString
 
+from firelane import ledger as _led
 from firelane.hashing import sha256 as _sha256
 from firelane.seg import vehicle as V
+
+# ★ 2026-10-08 (PLAN #122). 도메인은 대장을 직접 안 읽는다 — **진입점이**
+#   주입한다. 안 부르면 `V.spec()` 이 `SpecMissing` 으로 죽는다(조용히
+#   기본값으로 도는 것보다 낫다 · DECISIONS §431).
+V.use(_led.vehicle_spec())
 from firelane.seg.params import NODE_TOL, STATIONS
 
 KST = timezone(timedelta(hours=9))

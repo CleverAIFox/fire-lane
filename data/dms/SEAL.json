@@ -1,19 +1,19 @@
 {
- "sealed_at": "2026-10-08T02:56:52+09:00",
- "commit": "6f3dd31",
- "tool": "c1f7c80c7bbb9a56",
+ "sealed_at": "2026-10-08T20:14:03+09:00",
+ "commit": "b152750",
+ "tool": "c26ec14a74003e2d",
  "tools": {
-  "tools/deadcheck.py": "d00b6c98773fa5a8",
-  "tools/dms.py": "67f9c37dbfc4f6b2",
+  "tools/deadcheck.py": "cd21bc48a9bb4418",
+  "tools/dms.py": "27ee106515d99824",
   "tools/dupcheck.py": "144a2716fa56ff3e",
   "tools/env_check.py": "9c41c18ab2a68470",
-  "tools/verify.sh": "d64eedc285c9082d"
+  "tools/verify.sh": "6dc2ff853c72492f"
  },
  "scope": "pytest+프로브",
  "docs": {
-  "docs/MASTER.md": "5ede352891e427f5",
-  "docs/DECISIONS.md": "f77025a7e5c28f18",
-  "docs/PLAN.md": "e56ddeb291de82ad",
+  "docs/MASTER.md": "688aab9db13ff20f",
+  "docs/DECISIONS.md": "38340ea2b93fbed2",
+  "docs/PLAN.md": "565b23a03987cdd7",
   "README.md": "28d88639cc2d03e5"
  },
  "raw": {
@@ -274,40 +274,46 @@
   ]
  },
  "code": {
-  "sha256": "75761613025ad63f",
+  "sha256": "813b15ffe010b4fa",
   "files": {
    "data/field/naver_width_2610.csv": "ce7130212f456fcc361787502c841b190917384f26e43dca4787db5b534ca3ba",
    "data/field/ngi_width_05_check.csv": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "pyproject.toml": "8fcce06301260d06fe7a2d2cf5663295b4d60219dc7e11c4a8bb8788bed1bd36",
-   "sources.yaml": "31160c69d1d896df6cdab5b791744672ca87a63f145b4208e0f4317945cee7ad",
+   "sources.yaml": "959c0aab69ba238a183f5fce09c6b421a74d6419360191b192b592b2104e7f3f",
    "src/contracts/SURFACE.sha256": "f5edf61248ae45cfd110edf947f349fb1df4b6a637c8d67c441002db6d5c3ec6",
    "src/contracts/__init__.py": "6831ba89b43d1cd685d6db60ddfb0bb4b9e8a2d01c64251556ab3cfe5c0c23b6",
    "src/contracts/vision.py": "d16004113ef6e158febf3069febd5b43064abe2ffd93623481aa241272e5b627",
    "src/firelane/README.md": "7bae90e8b433f36209f4e472275c181f226dae63664943fcc39304c53795b484",
    "src/firelane/__init__.py": "0bd7b7a56b6a73f056247deff02bd4ed15d198551ad8a053cf57eb439fd8ef03",
+   "src/firelane/acquire_rules.py": "e7183c20969bea4d26b5fd6743a688f008cd4de084cc9ee90b04ea1dbdaed2a8",
    "src/firelane/cli.py": "2318e9c9b664c1ad06f271c26d0cb34906e9b8bc30597293de0466d215366644",
    "src/firelane/console.py": "5cd87db3b9a951e1de622681cc7fc8a673311dacffe9bb6c1cb0a14b1abe0972",
-   "src/firelane/contract.py": "297e3fadaeccc323f6c260408f2e0e4973dc8fb89da08d7ce994510fd9cfdae6",
-   "src/firelane/datalog.py": "9fe7502cc050fa9b7e929f2b10dc04c67bb8a837ddb7e3ca19f7901aa79f8ff1",
-   "src/firelane/destinations.py": "917b7457b2ebba71c8ac9962aab45517a50ed92953a3d78b1649809c7a1e26b6",
+   "src/firelane/contract.py": "4f264993fd0b4d5dfa3c3e41498fe1a5a8d170806c5d22598fb84bee1e0a2616",
+   "src/firelane/contract_crs.py": "b909495eada4fecb86d379b41bdb5f763ad69fa6f63d2e9019a7d47376daf74e",
+   "src/firelane/contract_verdict.py": "51b1a7a8418e1219bfc781aa98012abe1ba72b9436d1e86cdbf90508f1f8ae91",
+   "src/firelane/datalog.py": "5367aefa41252bd2ad9f5b0c4eae6185f13e4bcb129744872a8f879412eae399",
+   "src/firelane/destinations.py": "2cd0e062b1cf674d1d24f50493025beb26ae40d0a79c7e9304413a86ac75746c",
    "src/firelane/display_scope.py": "fea3548a8873197ffd7aa29c692b6215553d557c04dc533cad05e0a883a1378a",
    "src/firelane/encoding.py": "c2b6eef43d7023e88934b8d76ef0767380540af3802b5e93ffa3797dc9d95ebe",
+   "src/firelane/expectation.py": "a54d89f0bdd1a075397f4a1364b88ee4f961fa103d0e5e84f0525eaa445016b1",
    "src/firelane/generated.py": "4ad027ee89c0bfe7208507f88676dfbb3d9276467b2bacd0b69060e790ca3675",
    "src/firelane/gitq.py": "a7738c6058f2a511e47141121b547544edd54a38c2bec714dcaa5c61ee641b77",
    "src/firelane/guards.py": "ee3f442a9e4fc3c5f0c3b882ee2a95fb6a9118b7211e6be54625874d56129c11",
    "src/firelane/hashing.py": "cba3052b673d71c98022bc745a03493b0e743bb7db6d48eb057fba0782d7249c",
-   "src/firelane/ingest.py": "df4fb83503742d419fd02a54b37481e7de4c034c50a6539037b5c3ae1e4a5130",
+   "src/firelane/ingest.py": "08486b16ae6ba6931a541f90db57e24a866711cc975f71f7d70983fbde544799",
    "src/firelane/intake_body.py": "ce254a82163561dbbe673b58cb3102cbb2e365227c1738da11a1b36a12ffab5d",
+   "src/firelane/intake_name.py": "5c2b6092699eb2557ed2df42ebfc189876ca0b542d240fcaa1d0ae16d98231db",
    "src/firelane/intake_rules.py": "4549ade9c9036da5900aba73955c97578058770a88f3f75fa7c5e1b31360019d",
    "src/firelane/inventory.py": "6160b286c9c9dfa0b35ed19221321c09b93ad956145c3e9b7d6252ab487c7ff7",
    "src/firelane/jsonkeys.py": "2fddd96a3ead64f68e2b5204dc00785bc86584171b470c375cd516a013a5c515",
    "src/firelane/kinds.py": "4a8c6d4a809f82fe9834f0c71bd54a4fd6128534a987fabeea754d701379095e",
-   "src/firelane/krgis/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-   "src/firelane/krgis/crs.py": "be16192dfc798f4870567bc0ed93de30398fdbf02cb821d6bd93205ad024e9de",
+   "src/firelane/krgis/__init__.py": "c56df753647fe91e5ed0337c0f80bce2bc575dadf93366c7482f915a442a6847",
+   "src/firelane/krgis/crs.py": "7e2e58549bdf6e4b84fa23e73214e0f2cc249e6722db20950dce49b38ee5c20b",
    "src/firelane/lake.py": "d01639024c9f3c634e946389e7fbf142ad23026beb6073c4955f269b3e8cc614",
    "src/firelane/layerfsck.py": "ee58d6990654f39f23789f2108499e7faee33065f90de48d24b06231c5468846",
    "src/firelane/layers.py": "0fd51d80eda725222dd24dc36ba5df30eee12438276c567541d4be4d4f23baf1",
-   "src/firelane/ledger.py": "7af038c380744015566db7cc4dda29c25f12a42be05663863030eb69afc0573d",
+   "src/firelane/ledger.py": "1ac0752eb81e95b2c3cb08c4afd3fe67b73ae2647166ef66fbc2c25be0d5b334",
+   "src/firelane/ledger_check.py": "bfcda34ea65df9b63ce918c562b94322d8d0748d30d2e7a4bdedb89620cbd247",
    "src/firelane/lineage.py": "87d8b3b112520b7f8e3c04fbd8fcfbb9cfa805a234ee56373a550142901ffa72",
    "src/firelane/manifest.py": "b75106fde403b60230f1560acc60f730d0c52e32d8f5788e6269b247c08c7d31",
    "src/firelane/mercator.py": "8932ab6bd44d3f4046a7458b412fa5a615c20533a737aa5c7625f7ce2d151adc",
@@ -315,24 +321,25 @@
    "src/firelane/nfa_compare.py": "58463764498437ed0725027779319f36e0fa0cdb5bd304f92eb50ebf7c5c6567",
    "src/firelane/ngi.py": "67854d6acabafaf330f2e725955653393ef357781eea35fdd1aaa3bf9533def5",
    "src/firelane/ngii1k.py": "00503be717a3a70715b5ad68a8f497bf21fb3d3c09eaecde35624b10afda6b75",
-   "src/firelane/normalize_raw.py": "b52ea58a94cf12a2f718b405fa6a311a37dd9ed4ed6a489a5921b815dda4d8e1",
+   "src/firelane/normalize_raw.py": "2ba5a6360849497992fa9f809d03a8382c63bd4de6064aa21117df69d626a5c3",
    "src/firelane/ops/__init__.py": "6dd20ca39e4364fc28d94eb8475d6faaf8ea8b876212e8b5e85580decd7e428d",
    "src/firelane/ops/__main__.py": "ff6a4937be0d207cd1360975f0ed45ca5d0cc9166dc1d334d6c2e8de287cb413",
    "src/firelane/ops/roster.py": "fd77a5ab59b79632d0ee8f360b82cb0ceab9ba0cdbc709c17ef9cde147d1a817",
    "src/firelane/ops/server.py": "cf65a75414ed6c9ed6e9b45ebc476be5eec427aab4b349e9305107596f3db716",
-   "src/firelane/ortho.py": "b742ce578934445398e41cc5b52130e3d7bb359038fa82adb5f1d43cc5ec551b",
+   "src/firelane/ortho.py": "97dff73394bfdd10aedbd4f698a66a3e25d2a57ea30e68d12b460b3b2cf4a900",
    "src/firelane/paths.py": "97d29a35d7e5a97a1b3cc776d3f7a44d2c5f5a2d82cd59666295f1f6b224eff9",
-   "src/firelane/pipeline.py": "2d24106fef2b45fc17b4569f28f3072adc3b47e6684bcafaa0c8b3cf446b1069",
-   "src/firelane/prep.py": "3e1ed48da184edc23184585041864474c4d1af7c9b14a3a16b2a6e87d4669e25",
+   "src/firelane/pipeline.py": "69959483fff9e05ffdd85a107c00f4e70267f0e43f6a16505689984c27802dda",
+   "src/firelane/prep.py": "9bb5c48b53094f543cad7ba7f6e4a5ecb1d4dca91e2e7911d046fd251db25de5",
    "src/firelane/probe.py": "7214dc82d956de4c5df10d0cfcfb086d821654b8f7ed83d2d1840a080c2b2a9c",
    "src/firelane/providers.py": "a0e284b584c9a3afcfc188de9e7d1e5cbb86c69cdebf0f2052a0325e1b44001f",
    "src/firelane/publish_basemap.py": "757b912b94c7d1deab98857080f8baf2abf37e1cbc156e33302fe268dc79af9b",
    "src/firelane/publish_context.py": "74c27c7e9e14febf85cddbf494ade4f85b3668d2945a1d968f19e669309afd19",
    "src/firelane/publish_fleet.py": "250a8bc0cde6d33b5b8af8e10953c223742a457de94ef636637b08fdae437323",
-   "src/firelane/publish_navi.py": "717ab28ecfbdd5be2ab12d34fc09491a6ad31a4824a5df7b1f460892be5dcc6b",
+   "src/firelane/publish_navi.py": "3c8689ebc3ce0ec211f586de478435a685c4cae7440bc6bf52024d009d77e6f7",
    "src/firelane/publish_rules.py": "11c320459d80623c37296b37e36623b636ad6339199d468cf7b0672ee8a741dc",
-   "src/firelane/publish_web.py": "5894dc9ddb5382b61c63bf3695e86bc0505e7b841a6f30d2d06cce3b3272d3c3",
+   "src/firelane/publish_web.py": "6e31a5e5dcabe63ac61cb1e52719209b879c29b182242e92643b9299967d52b9",
    "src/firelane/quiet_gdal.py": "41381bb7a3e462e28ab6b2dc3cc40506c5276426d64e298b3b485a15b3d26be4",
+   "src/firelane/rawcache.py": "4b5b4c8107b2c78d673c6a1882f0bd061b43fc648bf1538316b35a800467f01b",
    "src/firelane/read/__init__.py": "3ec06df2a7b6dd93535a508d6e76607e701fe2162810a4d326440c1ee6992aed",
    "src/firelane/read/_io.py": "0cfa97e5692767dc6811a8741d65b71532c38598394900f3822d94bfb86a55bf",
    "src/firelane/read/ctx.py": "3e81f811ee2c4aac5eccd897054ae909daa1d1b98398195eba22214daf8c8d9a",
@@ -342,21 +349,23 @@
    "src/firelane/read/passthrough.py": "09ee8e952cea9e260635c4108acf8777b0ebef782881e61774a6262ac672e57c",
    "src/firelane/read/shapefile.py": "853016732e807b074c64af1ea62ef4bda5d635f63d7ab3edc79a21339affc460",
    "src/firelane/scope.py": "81451ac9f7380aecde569634f810ae7cd64eb3db4acf02e7ee4fb651891fef4d",
-   "src/firelane/seg/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "src/firelane/sealkeys.py": "40b410a26d40cce9d573b02c2239310f33d908db32b907baf239bafba47c334d",
+   "src/firelane/seg/__init__.py": "f76c5b7c42148f7fc02e09e8c54e3a8094a4cdbfb106b22024bd3717e9417dd6",
    "src/firelane/seg/basisno.py": "63888caad2f6a64b570acbe186c31850f0989ef7fc8a69c039ce641616803791",
    "src/firelane/seg/centerline_correction.py": "e99223898e4e6ba9b27cdb69a61a88be4dc16b9acbf0635836a06154c602b2c9",
    "src/firelane/seg/classify.py": "87fa6d405e951e5c6a27e2f21231b9cf497b064af41c838b538d2c7272d0aabc",
-   "src/firelane/seg/geom.py": "86ed79144ea05e84b7ebe941dd8af1dcb0e6a17670ac9d2d998f03b993d07bd7",
+   "src/firelane/seg/geom.py": "2180d1b95d055bd9f6b34b5b6bfe8f6a4b3400d88ac0755c8ba07ab72d8e0ce8",
    "src/firelane/seg/graph.py": "6241f24c342add89fcbdf8f96784821eb5caa88071df410a71790f3ffa02b237",
    "src/firelane/seg/params.py": "53df7ea2ea107fd6515ab48645636e512f1f906e77b997e9b36273c4bc08b899",
    "src/firelane/seg/report.py": "3e091b0934cc9deaebfa41e94cf92ad456f8d245954a00fa67449569eb468e2c",
    "src/firelane/seg/roadname.py": "91223b7f9f2444cd07251da7ca9fd80ebbabb535167fded94453d912629234d8",
    "src/firelane/seg/scope.py": "e4309accf1a317ea426a6ea4f8d71d3e5b61937d6e5f1ff6b3ec5d3b32aac596",
-   "src/firelane/seg/vehicle.py": "cc2539cd5357f5a43c4ca3b55987fe8cfb95d82b6116668791e9f9cce7189e8d",
+   "src/firelane/seg/unionfind.py": "7eb0f32599cfe25fcd0ae2e95a05158f9d2dfef956e14fc64649f7f446be96e7",
+   "src/firelane/seg/vehicle.py": "3ffcb79d60666d7593ba8fb7c56790af24cd5c5c4a48a4cd98318124701fe5f5",
    "src/firelane/seg/width.py": "b3378500fe8c835927901c704207bad8b57f467aa2cb70258a6c17f2950ffe15",
    "src/firelane/segkey.py": "29d7175dfa7e81e115da1588cb56dd0e0830e65defb996328b771e9258e980ef",
    "src/firelane/segments.py": "4319b193ac4762f3b7bee14158685bd8625523afc343c73bb69d7a62a3a9dec5",
-   "src/firelane/shardseal.py": "56f3efe3602f40a4f7f015b9e6158c9c3777a76d7aefe854c968f7c007bc0345",
+   "src/firelane/shardseal.py": "a2867cbec73406830315095cb2c72a74f844747d5498e2a58d9878865b80ce6d",
    "src/firelane/skeleton.py": "36ab78145348825d45d0ec464a13297f966bb3caec2c8180199c8cf1c2c40e09",
    "src/firelane/stagerun.py": "239db3dc4af5a7ee76dcdab8e4b4c585c47b4d0f72abd3eeda7c93c6d1f68349",
    "src/firelane/terrain.py": "9e2e947b6cf5da9ef70e30d7e9f51cbd5135b842776a381493dce8d173303663",
@@ -584,7 +593,7 @@
    "title": "6. 데이터 현황"
   },
   "MASTER/6-1": {
-   "h": "04b3ae436150bd19",
+   "h": "4a9d14c7c6a1a86f",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "6-1. 확보"
@@ -920,7 +929,7 @@
    "title": "12-9. 락이 3중인 이유"
   },
   "MASTER/12-10": {
-   "h": "40e3f4b6d94802d5",
+   "h": "039592512ecf380e",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "12-10. 데이터를 저장소에 넣는 기준"
@@ -962,7 +971,7 @@
    "title": "14-3. 원본을 새로 받으면"
   },
   "MASTER/14-4": {
-   "h": "232c98bc47aed817",
+   "h": "3e95207fe8dcf920",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "14-4. 검사"
@@ -1046,7 +1055,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "bae4c5c2a53c953e",
+   "h": "1632733e1eefbfc2",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -1100,7 +1109,7 @@
    "title": "18-2a. raw"
   },
   "MASTER/18-2b": {
-   "h": "341a92e284239a22",
+   "h": "9020c6305945c4dd",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-2b. norm 이후 — 여기서 규칙을 강제한다"
@@ -1112,7 +1121,7 @@
    "title": "18-2c. 확장자 정규화"
   },
   "MASTER/18-3": {
-   "h": "c87f74773422b494",
+   "h": "b16f547d693dc20f",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3. 대장 — `sources.yaml` 하나"
@@ -1130,13 +1139,13 @@
    "title": "18-3b. 계약 — 사람을 언제 부르는가"
   },
   "MASTER/18-3c": {
-   "h": "d15a003f671d5e21",
+   "h": "dbf74c757d39c109",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-3c. retired — 폐기 기록"
   },
   "MASTER/18-4": {
-   "h": "9feb4f4d300123ca",
+   "h": "e3d6b5835f1182ac",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-4. 매니페스트 — 사람이 안 쓰고 파이프라인이 쓴다"
@@ -1208,7 +1217,7 @@
    "title": "CRS 검증 3단계"
   },
   "MASTER/18-12": {
-   "h": "745d6dbff53cbae2",
+   "h": "bc9a70065839c5fb",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "18-12. 대장 메타 항목"
@@ -1352,7 +1361,7 @@
    "title": "0. 이 파일이 생긴 이유"
   },
   "DECISIONS/1": {
-   "h": "f725cb3f619dbb2d",
+   "h": "714f5df1798904c1",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "1. `tools/ledger_20260817.py` (삭제됨)"
@@ -1364,7 +1373,7 @@
    "title": "2. `tools/rules_20260817.py` (삭제됨)"
   },
   "DECISIONS/3": {
-   "h": "87740f929b70323b",
+   "h": "e8e1b5e79c9bf340",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "3. `tools/fix3_20260817.py` (삭제됨)"
@@ -3068,7 +3077,7 @@
    "title": "130. prep.source_path()` 가 죽은 코드다"
   },
   "DECISIONS/131": {
-   "h": "270c0a7ba7e54071",
+   "h": "e054704f311f5505",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "131. feeds` 산문"
@@ -3224,7 +3233,7 @@
    "title": "156. GPS → 구간 스냅 함수"
   },
   "DECISIONS/157": {
-   "h": "2fd54b0ce8e9fb3a",
+   "h": "aca44f1fcd7a07c1",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "157. React 내비 뼈대"
@@ -6296,7 +6305,7 @@
    "title": "252. 노드 접합이 두 곳에 있었고 **규칙이 달랐다**"
   },
   "DECISIONS/252-1": {
-   "h": "52eb461d4d1de0dc",
+   "h": "062b9180b900bc81",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "252-1. 추론으로 합치지 않았다"
@@ -9644,7 +9653,7 @@
    "title": "379-9. 새 증인이 **옛 증인을 베꼈다** — `dupcheck` 가 물었다"
   },
   "DECISIONS/380": {
-   "h": "b570508ef227ae2f",
+   "h": "9bd04f1050eb7782",
    "state": "wired",
    "doc": "docs/DECISIONS.md",
    "title": "380. 판정 상수 **열셋이 출처를 못 댄다**"
@@ -11012,7 +11021,7 @@
    "title": "428-4. `crs_native` 표기가 **일곱 번** 갈렸다"
   },
   "DECISIONS/428-5": {
-   "h": "f4d94f9a0f883968",
+   "h": "74ee8c10c908d02b",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "428-5. 돌연변이 장부가 **시험을 안 센다** — 수 둘을 손으로 올렸다"
@@ -11095,6 +11104,312 @@
    "doc": "docs/DECISIONS.md",
    "title": "430-5. 순서 — **반입이 머지 앞이다**"
   },
+  "DECISIONS/431": {
+   "h": "0735eddc880d5d7d",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "431. 검사와 도구가 **제 측정과 제 환경을 못 믿었다** — 그리고 상한에 붙어 살던 파일 다섯"
+  },
+  "DECISIONS/431-1": {
+   "h": "2ab6a9542a828ea3",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-1. 배달기가 **흐르는 출력 전체**에서 `✗` 를 줍고 있었다"
+  },
+  "DECISIONS/431-2": {
+   "h": "5633b49d034ccbf5",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-2. `intake --plan` 이 **이름을 아는 자를 안 불렀다**"
+  },
+  "DECISIONS/431-3": {
+   "h": "49967bd735a72268",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-3. 파생기가 둘인데 **한쪽만 파일 우선**이었다"
+  },
+  "DECISIONS/431-4": {
+   "h": "2003d921076687f4",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-4. 도메인이 **파일을 읽고 있었다** — 그리고 가드가 제 설명문을 셌다"
+  },
+  "DECISIONS/431-5": {
+   "h": "9c1ef5d1f638eaec",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-5. `dupcheck` 의 **마지막 사본군** — `find` ×4"
+  },
+  "DECISIONS/431-6": {
+   "h": "73a16d462415b251",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-6. **상한에 붙어 살던 파일 다섯** — 한 판에 전부 넘쳤다"
+  },
+  "DECISIONS/431-7": {
+   "h": "4e6e8d0f9055c246",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-7. 쪼개는 값이 **0 인 판**이었다 — 봉인 코드 지문이 이미 움직였다"
+  },
+  "DECISIONS/431-8": {
+   "h": "21699fc092f7ab45",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-8. `#161` 은 **탐지로 못 닫는다** — 측정하고 처방을 바꿨다"
+  },
+  "DECISIONS/431-9": {
+   "h": "efa07ce7e9b5670f",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-9. 시험이 **쉘을 안 비웠다** — 스위치만 비운다"
+  },
+  "DECISIONS/431-10": {
+   "h": "8162cabaa3c60d83",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-10. 장부가 **제 분모를 잃는 길**이 열려 있었다"
+  },
+  "DECISIONS/431-11": {
+   "h": "3ccdd9a8ccbb424b",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "431-11. 봉인 열쇠의 그물이 **낱말**이었다 — 다섯 번 샜다"
+  },
+  "DECISIONS/432": {
+   "h": "beaceeb2ab4cce1f",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "432. 검사·도구 기반 **스물일곱을 읽었다** — 부류 선언이 뜻을 잃어 있었다"
+  },
+  "DECISIONS/432-1": {
+   "h": "7ea0b92e2abd452a",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "432-1. 찾은 결함 — **부류 선언이 진입점 아닌 파일에 붙어 있다**"
+  },
+  "DECISIONS/432-2": {
+   "h": "d3b4408bf0d5561c",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "432-2. 도구 열다섯 — 무엇을 하는 자들인가"
+  },
+  "DECISIONS/432-3": {
+   "h": "ee5241e189f95138",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "432-3. 시험 일곱 — 무엇을 붙드는 자들인가"
+  },
+  "DECISIONS/432-4": {
+   "h": "83d845442a923561",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "432-4. 내비 시험 둘 · 기반 셋"
+  },
+  "DECISIONS/432-5": {
+   "h": "d5a98d167c26da21",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "432-5. 도장 아흔하나를 다시 찍었다 — **무엇을 보고 찍었나**"
+  },
+  "DECISIONS/432-6": {
+   "h": "6af4111f033d44aa",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "432-6. 읽고도 **안 고친 것** — 들어 둔다"
+  },
+  "DECISIONS/433": {
+   "h": "e05968b7bcd30c39",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "433. 배달물이 **돌아왔다** — 지운 유예 뒤에 실패 하나가 숨어 있었다"
+  },
+  "DECISIONS/433-1": {
+   "h": "1c2c300fb365730e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "433-1. `conftest` 가 **중첩 pytest** 를 죽였다"
+  },
+  "DECISIONS/433-2": {
+   "h": "d40ad95d012bc13e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "433-2. `awaiting` 을 지우자 **실패가 늘었다** — 그 수를 안 받아적었다"
+  },
+  "DECISIONS/433-3": {
+   "h": "348b0c2b96969e87",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "433-3. 읽으니 **자료가 아니라 탐지가 틀렸다**"
+  },
+  "DECISIONS/433-4": {
+   "h": "1e9fc10c4627dca6",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "433-4. 지문기 **둘이 같은 물음에 다른 답**을 냈다"
+  },
+  "DECISIONS/433-5": {
+   "h": "d5a246941b47ff41",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "433-5. 0바이트 `__init__.py` 둘 — 하나는 **판정 폐포 안**이었다"
+  },
+  "DECISIONS/433-6": {
+   "h": "ab327f835e1fe7bd",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "433-6. 또 **상한에 붙어 살던 둘** — 예외 표에서 두 줄을 더 지웠다"
+  },
+  "DECISIONS/433-7": {
+   "h": "d6830442c058e67b",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "433-7. 도장 서른다섯을 다시 찍었다 — **무엇을 보고 찍었나**"
+  },
+  "DECISIONS/433-8": {
+   "h": "47c9402731ff6ac0",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "433-8. 기준점이 **세 집**에 살았다"
+  },
+  "DECISIONS/434": {
+   "h": "8b59dc2dc0f10a09",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "434. 관문 둘이 같은 물음에 **다른 답**을 했다 — 유예가 그 모순을 가리고 있었다"
+  },
+  "DECISIONS/434-1": {
+   "h": "f71855813b2f9b7c",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "434-1. 유예를 떼자 전처리 대상이 하나 늘었다"
+  },
+  "DECISIONS/434-2": {
+   "h": "f790a6a29b6b6ee4",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "434-2. 등재했더니 **다른 관문이 울었다** — 그것이 진짜 결함이다"
+  },
+  "DECISIONS/434-3": {
+   "h": "1309d6db2d5bcc39",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "434-3. 경계를 **한 곳에만 적지 않는다**"
+  },
+  "DECISIONS/434-4": {
+   "h": "9b03ed45ce2a2733",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "434-4. 대상 집합과 등재 목록을 **대조하는 자**를 둔다"
+  },
+  "DECISIONS/435": {
+   "h": "a2173a2ed1a2a78f",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "435. 산문이 **들지도 않는 강제자를 증인으로 세웠다** — 그리고 재 보니 전제가 셋 틀렸다"
+  },
+  "DECISIONS/435-1": {
+   "h": "b5d2fd9f9bb2a5b8",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-1. 「후진 의존이다」가 **아흐레 전에 죽었는데** 산문 둘에 살아 있었다"
+  },
+  "DECISIONS/435-2": {
+   "h": "97e211a42b0f80b1",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-2. **가드가 제 정정문을 셌다** — 여섯 번째, 그리고 처음 같은 판에서"
+  },
+  "DECISIONS/435-3": {
+   "h": "b0e50de6645b254d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-3. `awaiting` 을 뗀 판이 **전처리 대상을 하나 늘렸다**"
+  },
+  "DECISIONS/435-4": {
+   "h": "c24ce2f69a491411",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-4. 발행 선언이 「옛 필드만 읽어도 돈다」고 적었다 — **둘은 필수다**"
+  },
+  "DECISIONS/435-5": {
+   "h": "1f9957b6cee55e28",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-5. `#99` — 손으로 쌓인 것은 쓰기가 아니라 **준비**였다"
+  },
+  "DECISIONS/435-6": {
+   "h": "56e870295b1aa4c1",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-6. `#101` — 칸 셋을 재 보니 셋 다 이미 있거나 **두 주인이 된다**"
+  },
+  "DECISIONS/435-7": {
+   "h": "24a545979f7beae8",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-7. `#102` — 기준이 틀렸다는 증거가 **대장 안에** 있었다"
+  },
+  "DECISIONS/435-8": {
+   "h": "54ee09a7ecb93283",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-8. `#70` — 판정 상수의 집이 **하나가 아니었다**"
+  },
+  "DECISIONS/435-9": {
+   "h": "fadce73f99ebfea5",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-9. `#104` — 계약 셋 중 둘은 0 이고 셋째는 **사유를 알면서 안 싣는다**"
+  },
+  "DECISIONS/435-10": {
+   "h": "9999bf13ea4ce768",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-10. 라벨은 있고 **문맥 패턴이 없으면 검사하는 척한다**"
+  },
+  "DECISIONS/435-11": {
+   "h": "fac0983ea473391a",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-11. 쪼갠 자리 둘 · 올린 예외 하나"
+  },
+  "DECISIONS/435-12": {
+   "h": "de8f4b4f80844b1d",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-12. `#140` — 낱말 하나와 **자리 하나**로 좁혔다"
+  },
+  "DECISIONS/435-13": {
+   "h": "6266e1c9ef92f727",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-13. 몸통 **서른여섯**을 읽었다 — `src/firelane` 전부"
+  },
+  "DECISIONS/435-14": {
+   "h": "8d1f86c0e57cf3a0",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-14. 도장 **일흔넷**을 다시 찍었다 — 무엇을 보고 찍었나"
+  },
+  "DECISIONS/435-15": {
+   "h": "79a39b12908353c1",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-15. 돌연변이 장부 — **받아적기 전에 잡을 수 있는 것은 잡았다**"
+  },
+  "DECISIONS/435-16": {
+   "h": "b01634c7fb94a7f1",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-16. `finally` 는 **신호에는 안 돈다** — 흔든 사본이 트리에 남았다"
+  },
+  "DECISIONS/435-17": {
+   "h": "ffbb27cc39adb9ef",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "435-17. 우리말 수 어휘가 **열둘에서 멈춰 있었다**"
+  },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
    "state": "none",
@@ -11114,10 +11429,10 @@
    "title": "0-2. 상태 표기"
   },
   "PLAN/1": {
-   "h": "ab971a23a9dc7b2c",
+   "h": "5abeab133aac3328",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "1. 남은 일 — 79행"
+   "title": "1. 남은 일 — 76행"
   },
   "PLAN/1-23": {
    "h": "45f802835c7c288a",
@@ -11446,12 +11761,12 @@
  },
  "denominator": 0,
  "dead_refs": 0,
- "dup_groups": 6,
+ "dup_groups": 5,
  "enforcers": {
   "pytest": {
    "rc": 0,
    "state": "OK",
-   "tail": "2386 passed, 1 warning in 450.27s (0:07:30)",
+   "tail": "2461 passed, 1 warning in 516.61s (0:08:36)",
    "red": []
   },
   "probe/deadcheck": {

@@ -306,7 +306,7 @@ def cmd_check() -> None:
     #     ledger.REQUIRED   what · scope · updated · kind · schema · feeds
     #     datalog.need_ds   what · crs_native · license · vintage
     #
-    #   겹치는 것이 `what` 하나뿐이다. 그래서 `ledger.check_all()` 은
+    #   겹치는 것이 `what` 하나뿐이다. 그래서 `ledger_check.check_all()` 은
     #   통과하는데 `datalog check` 는 158건을 냈다. 내역은 이렇다 —
     #
     #     vintage      0/61   `updated` 로 통합이 끝났다(ledger_fields.py:17).
@@ -338,7 +338,9 @@ def cmd_check() -> None:
     from firelane import ledger as _L
 
     for k, v in ds.items():
-        for iss in _L.check_entry(k, v):
+        # ★ 2026-10-08 (DECISIONS §431-6). `ledger` → `ledger_check`.
+        from firelane import ledger_check as _LC
+        for iss in _LC.check_entry(k, v):
             if iss.level == _L.FAIL:
                 print(f"  ! datasets.{k}: {iss.msg}"); bad += 1
     for k, v in out.items():

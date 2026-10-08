@@ -30,13 +30,26 @@ constbasis.py — 판정 상수가 **어디서 왔는지** 댈 수 있는가.
   드는 것은 「댈 수 있는가」 하나다. 근거를 붙이는 것은 판정을 안 바꾸고,
   값을 고치는 것은 판정을 바꾼다 — 둘은 다른 배치다.
 
-IN    src/firelane/seg/params.py   (**읽기만 한다** — 판정 지문을 안 건드린다)
+── 집이 **둘**이다 (2026-10-08 · DECISIONS §435 · PLAN #70) ──────
+종전 분모는 `seg/params.py` 하나였고, 머리말이 그것을 「판정 상수의 집」이라
+불렀다. **그 집 밖에도 판정을 움직이는 수가 산다.** `skeleton.py` 의 다섯
+(`COVER_D` · `GAP` · `MATCH_R` · `MATCH_ANGLE` · `MATCH_SHARE`)이 어느 엣지를
+만들고 어느 구간이 어느 엣지에 붙는지를 정한다 — 그러면 `seg_uid` 가 움직이고
+판정도 움직인다. 코드 폐포 밖인 것은 **일부러** 그렇게 한 것이고(`segments.py`
+가 그 한 줄을 적는다 — 뼈대 상수를 고칠 때마다 판정 게이트가 울지 않게),
+그 대가로 **아무도 안 세는 수가 됐다.**
+
+그래서 분모를 둘로 적는다 — `PARAMS`(코드로 닿는다) · `FEEDERS`(자료로 닿는다).
+래칫도 둘이다. **합치지 않는다** — 합치면 한쪽이 줄고 한쪽이 늘 때 조용히
+상쇄된다.
+
+IN    PARAMS + FEEDERS (**읽기만 한다** — 판정 지문을 안 건드린다. import 도 없다)
 OUT   없음 (검사)
-PARAM CONST_NO_BASIS (래칫. 문턱이 아니라 지금 수다)
-밖    **판정 상수의 집 밖은 안 본다.** `publish_web.py` 의 층고 3.3 처럼
+PARAM CONST_NO_BASIS · CONST_NO_BASIS_FEEDER (래칫. 문턱이 아니라 지금 수다)
+밖    **판정에 안 닿는 상수는 안 본다.** `publish_web.py` 의 층고 3.3 처럼
       표출 전용 상수는 여기 분모가 아니다 — 그것은 판정에 안 들고,
       이 도구가 드는 물음은 「판정을 떠받치는 수의 출처」다.
-      그 셋 밖의 맨숫자를 세는 일은 `widen.py` 가 따로 든다.
+      그 밖의 맨숫자를 세는 일은 `widen.py` 가 따로 든다.
 """
 from __future__ import annotations
 
@@ -46,7 +59,16 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+#: 판정 상수의 집 — **코드로** 닿는다. 판정 지문(`firelane.segments` import 닫힘) 안이다.
 PARAMS = ROOT / "src" / "firelane" / "seg" / "params.py"
+
+#: 판정에 **자료로** 닿는 상수의 집. 코드 폐포 **밖**인 파일이다 — 사유를 같이 적는다.
+#: ★ 폐포 안으로 들어온 파일은 여기 있으면 안 된다. 그러면 같은 수를 두 래칫이
+#:   센다. 경계는 `tests/test_shardseal.py` 가 되묻는다.
+FEEDERS: dict[str, str] = {
+    "src/firelane/skeleton.py":
+        "뼈대 상수가 어느 엣지를 만들고 어느 구간이 어디에 붙나를 정한다 — seg_uid 가 움직인다",
+}
 
 #: 근거 표지 넷. 하나라도 걸리면 「댈 수 있다」로 센다.
 BASIS = re.compile(
@@ -59,8 +81,11 @@ BASIS = re.compile(
 #: 출처를 못 대는 판정 상수 수. **문턱이 아니라 지금 수다.**
 #: 줄이는 길은 둘 — 근거를 적거나(판정 불변), 값을 재서 고치거나(측정 배치).
 CONST_NO_BASIS = 13
+#: 같은 수, `FEEDERS` 쪽. **2026-10-08 첫 실측 7** — 종전에는 분모 밖이라 0 으로
+#: 보였다. 이 수가 0 에서 7 로 뛴 것은 느슨해진 것이 아니라 **처음 센 것**이다.
+CONST_NO_BASIS_FEEDER = 7
 
-RATCHETS = {"CONST_NO_BASIS": "down"}
+RATCHETS = {"CONST_NO_BASIS": "down", "CONST_NO_BASIS_FEEDER": "down"}
 
 #: `= ` 뒤가 수 하나인 줄만 본다. 표·튜플·문자열은 상수가 아니라 자료다.
 _ASSIGN = re.compile(r"^([A-Z_][A-Z0-9_]*)\s*=\s*(-?\d+(?:\.\d+)?)\s*(#.*)?$")
@@ -91,6 +116,17 @@ def ungrounded(rows: list[dict]) -> list[dict]:
     return [r for r in rows if not r["basis"]]
 
 
+def feeder_rows() -> list[tuple[str, dict]]:
+    """`FEEDERS` 전부의 상수. 파일이 없으면 `RuntimeError` — 선언이 낡은 것이다."""
+    out = []
+    for rel in sorted(FEEDERS):
+        q = ROOT / rel
+        if not q.exists():
+            raise RuntimeError(f"{rel} 이 없다 — FEEDERS 선언이 낡았다")
+        out += [(rel, r) for r in scan(q.read_text(encoding="utf-8"))]
+    return out
+
+
 def ratchet_values() -> dict[str, int]:
     """래칫 이름 → 지금 실측값. 파일이 없으면 `RuntimeError`.
 
@@ -99,7 +135,10 @@ def ratchet_values() -> dict[str, int]:
     """
     if not PARAMS.exists():
         raise RuntimeError(f"{PARAMS} 가 없다 — 판정 상수의 집이다")
-    return {"CONST_NO_BASIS": len(ungrounded(scan(PARAMS.read_text(encoding="utf-8"))))}
+    return {
+        "CONST_NO_BASIS": len(ungrounded(scan(PARAMS.read_text(encoding="utf-8")))),
+        "CONST_NO_BASIS_FEEDER": sum(1 for _, r in feeder_rows() if not r["basis"]),
+    }
 
 
 def show(rows: list[dict], only_bad: bool) -> int:
@@ -114,18 +153,39 @@ def show(rows: list[dict], only_bad: bool) -> int:
         mark = "  " if r["basis"] else "✗ "
         print(f"   {mark}{r['name']:<16} {r['value']:>8}   {r['note'][:58]}")
 
+    # ── 자료로 닿는 집 ─────────────────────────────────────────
+    frows = feeder_rows()
+    fbad = [(rel, r) for rel, r in frows if not r["basis"]]
+    print(f"\n── 판정에 **자료로** 닿는 상수  (코드 폐포 밖 · {len(FEEDERS)}개 파일)")
+    print(f"   수치 상수 {len(frows)} · 댈 수 있음 {len(frows) - len(fbad)} · "
+          f"**못 댐 {len(fbad)}** · 래칫 {CONST_NO_BASIS_FEEDER}\n")
+    for rel, why in sorted(FEEDERS.items()):
+        print(f"   {rel} — {why}")
+    print()
+    for rel, r in frows:
+        if only_bad and r["basis"]:
+            continue
+        mark = "  " if r["basis"] else "✗ "
+        # ★ 파일 이름을 같이 낸다 — `FEEDERS` 가 둘 이상이 되면 상수 이름만으로는
+        #   어느 집인지 모른다.
+        print(f"   {mark}{r['name']:<16} {r['value']:>8}   {Path(rel).name:<14}"
+              f" {r['note'][:44]}")
+
     print("\n★ **값이 옳은가는 안 본다.** 드는 것은 「어디서 왔는지 댈 수 있는가」다.")
     print("  근거를 적는 것은 판정을 안 바꾸고, 값을 고치는 것은 바꾼다.")
 
-    if len(bad) > CONST_NO_BASIS:
-        print(f"\n✗ 못 대는 상수 {len(bad)} > 래칫 {CONST_NO_BASIS} — **늘었다.**")
-        print("  새 상수를 들일 때 출처를 같이 적어라. 안 적으면 영원히 못 적는다.")
-        return 1
-    if len(bad) < CONST_NO_BASIS:
-        print(f"\n✗ 못 대는 상수 {len(bad)} < 래칫 {CONST_NO_BASIS} — "
-              "**래칫을 그 수로 내려라.** 안 내리면 다시 는다.")
-        return 1
-    return 0
+    rc = 0
+    for label, got, cap in (("판정 상수", len(bad), CONST_NO_BASIS),
+                            ("자료로 닿는 상수", len(fbad), CONST_NO_BASIS_FEEDER)):
+        if got > cap:
+            print(f"\n✗ {label} 못 댐 {got} > 래칫 {cap} — **늘었다.**")
+            print("  새 상수를 들일 때 출처를 같이 적어라. 안 적으면 영원히 못 적는다.")
+            rc = 1
+        elif got < cap:
+            print(f"\n✗ {label} 못 댐 {got} < 래칫 {cap} — "
+                  "**래칫을 그 수로 내려라.** 안 내리면 다시 는다.")
+            rc = 1
+    return rc
 
 
 def selftest() -> int:
@@ -160,10 +220,26 @@ def selftest() -> int:
     if len(scan("K = -1\nL = 7\n")) != 2:
         bad.append("음수나 정수를 상수로 안 센다")
 
+    # ★ 2026-10-08. `FEEDERS` 가 **선언이지 장식이 아닌가.**
+    if not FEEDERS:
+        bad.append("FEEDERS 가 비었다 — 분모가 비면 두 번째 래칫이 언제나 0 이다")
+    for rel, why in FEEDERS.items():
+        if not (ROOT / rel).exists():
+            bad.append(f"FEEDERS 가 없는 파일을 든다: {rel}")
+        if len(why.strip()) < 20:
+            bad.append(f"FEEDERS[{rel}] 의 사유가 너무 짧다 — 사유 없이 못 적는다")
+    try:
+        n = sum(1 for _, r in feeder_rows())
+    except RuntimeError as e:
+        bad.append(str(e))
+    else:
+        if n < 3:
+            bad.append(f"FEEDERS 에서 상수를 {n}개밖에 읽었다 — 그물을 의심하라")
+
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad))
         return 1
-    print("✓ 자기검사 — 근거 표지 넷 · 정책 문장 거부 · 이어진 주석 · 자료 제외")
+    print("✓ 자기검사 — 근거 표지 넷 · 정책 문장 거부 · 이어진 주석 · 자료 제외 · FEEDERS 실재")
     return 0
 
 

@@ -300,10 +300,13 @@ def test_discrete_ratchets_fail_when_slack() -> None:
     dup = ROOT / "tools" / "dupcheck.py"
     base = [sys.executable, str(dup), "--min", "40"]
 
-    tight = subprocess.run([*base, "--max", "1"], capture_output=True,
+    # ★ 2026-10-08 (DECISIONS §431 · PLAN #47). 상한 1 → **0**. 마지막 사본군이던
+    #   `find` ×4 를 `seg/unionfind.py` 로 뺐다. 이 자리는 「지금 상한이 딱 맞나」를
+    #   묻는 곳이므로 상한을 조일 때 **여기도 같이** 조여야 한다.
+    tight = subprocess.run([*base, "--max", "0"], capture_output=True,
                            text=True, cwd=ROOT, timeout=300)
     assert tight.returncode == 0, (
-        "`dupcheck --min 40 --max 1` 이 빨갛다 — 사본군이 움직였다.\n"
+        "`dupcheck --min 40 --max 0` 이 빨갛다 — 사본군이 움직였다.\n"
         + tight.stdout[-800:])
 
     slack = subprocess.run([*base, "--max", "9"], capture_output=True,

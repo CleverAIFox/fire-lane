@@ -466,7 +466,7 @@ def _asserts(x: ast.AST) -> bool:
 #   몸통에 assert(또는 assert 류 호출)가 있으면, 끝이든 중간이든 운다.
 #   (d) `check_*`/`verify_*`/`is_ok*` 가 예외 자리에서 `return True` 도 같은 병이다.
 def probe_silent_pass(root: Path = ROOT) -> None:
-    # ★ 2026-09-22 (W10-1). src 도 본다 — `datalog.cmd_check` · `ledger.check_entry` 도
+    # ★ 2026-09-22 (W10-1). src 도 본다 — `datalog.cmd_check` · `ledger_check.check_entry` 도
     #   검사다. 종전에는 tests·tools 만 돌았고 ⑤ 가 그것을 이 도구 자신에게서 잡았다.
     for p in sorted((root / "tests").rglob("*.py")) + sorted((root / "tools").rglob("*.py")) \
             + sorted((root / "src").rglob("*.py")):
@@ -587,10 +587,10 @@ _PROD_ONLY = "tests 는 **제품 코드가 아니다**"
 EXEMPT_SCOPE = {
     # ★ 2026-10-05 (DECISIONS §398-4 · §398-2). 둘 다 **묻는 대상이 그 디렉터리
     #   자체**다. 넓히면 묻는 것이 달라진다.
-    "tools/mutate.py::catchers":
+    "tools/mutate.py::named_tests":          # ← `catchers` (DECISIONS §431-10)
         "붙잡이는 **시험**이다 — 도구를 흔들었을 때 우는 자리를 찾는 것이고, "
-        "`src` · `tools` 는 흔드는 **대상**이지 붙잡이가 아니다. 과녁은 바로 "
-        "위 `targets()` 가 `toolclass` 에서 도출한다",
+        "`src` · `tools` 는 흔드는 **대상**이지 붙잡이가 아니다. 과녁은 "
+        "`targets()` 가 `toolclass` 에서 도출한다",
     "tools/toolclass.py::tools":
         "묻는 것이 「**도구**가 어느 부류인가」다. `src` 는 꾸러미이고 `tests` 는 "
         "강제자라 부류 어휘(관문·조사·절차·생산)가 성립하지 않는다 — 넓히면 "

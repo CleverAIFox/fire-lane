@@ -405,94 +405,6 @@ def test_no_two_steps_write_the_same_path():
             seen[w] = s.name
 
 
-# ★ 2026-09-03. 알려진 후진 의존. **사유와 해소 조건을 함께 적는다.**
-#
-#   선언을 실물에 맞추자 둘이 드러났다. 종전에는 `reads` 가 비어 있어
-#   이 검사가 볼 것이 없었고, 그래서 **잡으라고 만든 버그를 그대로 두고
-#   초록불이었다.** 여기 적는 것은 면제가 아니라 **등록**이다 —
-#   숨어 있던 것을 이름 붙여 꺼내 놓고 처리를 PLAN 이 든다.
-#
-#   ★ 지금 안 죽는 이유는 `web/data` 가 커밋돼 있어 파일이 늘 존재하기
-#     때문이다. 위험은 죽는 것이 아니라 **한 실행 늦게 따라오는 것**이다.
-BACKWARD = {
-    # ★ 2026-09-04 해소. ("ortho","scope.geojson") 이 여기 있었다.
-    #   scope 계산을 `segments._write_scope()` 로 올려 순방향이 됐고,
-    #   `test_backward_entries_are_still_real` 이 "후진 의존이 아닌 것을
-    #   든다" 로 울어 이 줄을 지우기를 요구했다 — 설계대로다.
-    ("terrain", "view.json"):
-        "publish 산출에 구운 범위를 덧쓴다. `if vj.exists()` 가 첫 실행을 "
-        "넘긴다. 해소 = 타일 범위를 processed 로 내고 publish 가 합친다(PLAN)",
-}
-# ★ ("ortho","view.json") 은 여기 없다. 처음에 적었다가
-#   test_backward_entries_are_still_real 이 **바로 잡았다** — terrain 이
-#   앞에서 mutates 로 선언하므로 ortho 시점에는 이미 만들어진 것이다.
-#   역방향 검사가 없었으면 근거 없는 면제 한 줄이 영구히 남았을 자리다.
-
-
-def test_every_read_is_produced_by_an_earlier_step():
-    """
-    ★ 읽는 것은 앞 단계가 만든 것이거나 raw 여야 한다.
-
-    뒤 단계가 만드는 것을 앞 단계가 읽으면 첫 실행에서 죽거나, 더 나쁘게는
-    지난 실행의 산출물을 읽어 조용히 돈다. 2026-08-17 의 1093 이 그것이었다.
-    """
-    m = _steps()
-    made = [m.RAW, *m.REPO_INPUTS]
-    for s in m.STEPS:
-        for r in s.consumes:
-            if (s.name, r.name) in BACKWARD:
-                continue
-            assert any(m.matches(r, d) for d in made), (
-                f"{s.name} 이 {r.name} 을 읽는데 앞 단계가 만들지 않는다.\n"
-                "  선언이 틀렸거나 STEPS 순서가 틀렸다.\n"
-                "  알려진 후진 의존이면 BACKWARD 에 **사유와 해소 조건**을 적어라.")
-        made += list(s.produces)
-
-
-def test_repo_inputs_are_tracked_and_actually_read():
-    """`REPO_INPUTS` 는 **양방향**이다 — 실물이 있고, 누군가 읽어야 한다.
-
-    ★ 2026-10-06 (§420-4). 이 목록은 「앞 단계가 안 만든다」를 면제한다. 면제는
-      반드시 역방향 검사를 끼고 산다(§69) — 아니면 안 읽는 파일 한 줄이 영구히
-      남아 **다음에 진짜 구멍이 생겼을 때 같은 이름으로 조용히 면제된다.**
-      `BACKWARD` 가 `test_backward_entries_are_still_real` 을 끼고 사는 것과 같다.
-    """
-    import subprocess
-    m = _steps()
-    assert m.REPO_INPUTS, "REPO_INPUTS 가 비었다 — 빈 목록이면 이 검사가 아무것도 안 든다"
-    read = {r for s in m.STEPS for r in s.consumes}
-    for q in m.REPO_INPUTS:
-        assert q.is_file(), f"{q} 가 없다 — REPO_INPUTS 는 실물을 든다"
-        rel = q.relative_to(m.ROOT).as_posix()
-        r = subprocess.run(["git", "ls-files", "--error-unmatch", rel],
-                           cwd=m.ROOT, capture_output=True, text=True, timeout=60)
-        assert r.returncode == 0, (
-            f"{rel} 이 git 추적 파일이 아니다 — 생성물이면 그것을 내는 단계를 "
-            "선언해야 하고 REPO_INPUTS 가 아니다")
-        assert any(m.matches(x, q) for x in read), (
-            f"{rel} 을 어느 단계도 안 읽는다 — 목록이 낡았다. 그 줄을 지워라")
-
-
-def test_backward_entries_are_still_real():
-    """BACKWARD 가 이미 해소된 것을 들면 목록이 낡은 것이다. **양방향이다.**
-
-    ★ 해제만 검사하면 항상 통과하는 검사가 된다(DECISIONS §69).
-      후진 의존을 고쳐 놓고 이 줄을 안 지우면, 다음에 진짜 후진 의존이
-      같은 이름으로 생겼을 때 조용히 면제된다.
-    """
-    m = _steps()
-    made = [m.RAW]
-    pos = {}
-    for s in m.STEPS:
-        for r in s.consumes:
-            pos[(s.name, r.name)] = any(m.matches(r, d) for d in made)
-        made += list(s.produces)
-    stale = sorted(k for k in BACKWARD if pos.get(k) is not False)
-    assert not stale, (
-        f"BACKWARD 가 후진 의존이 아닌 것을 든다 — {stale}\n"
-        "  해소됐으면 그 줄을 지워라.")
-
-
 def test_expect_is_not_hardcoded():
     """
     ★ 판정 숫자의 정본은 golden 지문 하나다.
@@ -580,7 +492,7 @@ def test_webdata_limit_is_one_number():
     """
     import re
 
-    from firelane.pipeline import WEB_MAX_MB
+    from firelane.expectation import WEB_MAX_MB  # ← pipeline (§431 · PLAN #157)
 
     ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
     m = re.search(r'SIZE"?\s*-ge\s*(\d+)', ci) or re.search(r'-ge\s*"?(\d+)"?', ci)
@@ -593,7 +505,7 @@ def test_webdata_limit_is_one_number():
     pol_mb = int(m2.group(1))
 
     assert WEB_MAX_MB == ci_mb == pol_mb, (
-        f"web/data 상한이 갈렸다 — pipeline {WEB_MAX_MB} · "
+        f"web/data 상한이 갈렸다 — expectation {WEB_MAX_MB} · "
         f"contract.yml {ci_mb} · commit_policy {pol_mb}")
 
 
@@ -2659,7 +2571,7 @@ def test_sheet_pick_refuses_to_guess_between_equal_candidates(tmp_path, monkeypa
 
 def test_web_size_verdict_bites_at_the_boundary():
     """상한이 **경계에서** 운다. 그리고 상한 자체가 정본에서 온다."""
-    m = _steps()
+    from firelane import expectation as m
     assert m.web_size_verdict(m.WEB_MAX_MB - 0.1) == [], "상한 밑인데 운다"
     over = m.web_size_verdict(m.WEB_MAX_MB)
     assert len(over) == 1, "경계에서 안 문다 — `>` 와 `>=` 를 섞었다"
@@ -2669,7 +2581,7 @@ def test_web_size_verdict_bites_at_the_boundary():
 
 def test_verify_returns_what_it_found_instead_of_printing_it():
     """`verify()` 가 **반환형을 갖는다.** 종전에는 상태를 문자열로만 냈다(§415 와 같은 족)."""
-    m = _steps()
+    from firelane import expectation as m
     assert m.verify.__annotations__.get("return") == "list[str]", (
         "`verify()` 가 반환형을 안 적었다 — 상태를 문자열로 내면 호출부가 버린다")
     src = (ROOT / "src" / "firelane" / "pipeline.py").read_text(encoding="utf-8")

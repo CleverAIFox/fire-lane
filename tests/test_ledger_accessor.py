@@ -30,10 +30,13 @@ from firelane.intake_body import body_file_of
 
 ROOT = Path(__file__).resolve().parents[1]
 
-#: 아직 `globs()` 를 안 거치는 소비자. **줄여야 할 빚이다.**
-#: `triage` 3 · `lakecheck` 2 · `acquire` 1 · `sweep` 1
-DIRECT_READER_FILES = 4
-DIRECT_READER_SITES = 7
+#: 아직 정본 접근자를 안 거치는 소비자. **줄여야 할 빚이다.**
+#: `triage` 3 · `lakecheck` 2 · `sweep` 1
+#: ★ 2026-10-08 (DECISIONS §431). `acquire` 둘이 빠졌다 — 4파일 7자리 → 3파일 6자리.
+#:   「선언만 읽는다」는 요구가 생겨 `ledger.files_decl()` 을 세웠고, 유도로
+#:   내려가는 `globs()` 와 쓰임이 갈린다. 남은 셋도 둘 중 하나로 간다.
+DIRECT_READER_FILES = 3
+DIRECT_READER_SITES = 6
 
 #: 대장 항목을 받는 이름. 이 저장소가 `e` · `v` · `entry` 로 쓴다.
 _DIRECT = re.compile(r'\b(?:e|v|entry)\b[^\n]{0,12}\.get\(\s*"files"\s*\)')
@@ -112,7 +115,7 @@ def test_the_two_derivers_agree_on_every_dataset() -> None:
     """**파생기가 둘이다.** 둘 다 모든 항목에 답해야 사슬이 안 끊긴다.
 
     `ledger.globs()`          느슨한 글롭 — 「있나 없나」를 판정한다 (intake)
-    `acquire._derive_files()` 정확한 경로 — 「어디에 둘까」를 정한다 (acquire)
+    `acquire_rules.derive_files()` 정확한 경로 — 「어디에 둘까」를 정한다 (acquire)
 
     ★ 2026-10-07. `juso_adrdc` · `eais_roadledger_dm` 이 `updated: '2026-08'`
       이라 뒤엣것만 빈 목록을 냈다. intake 는 자리를 만드는데 acquire 는 그
@@ -122,11 +125,11 @@ def test_the_two_derivers_agree_on_every_dataset() -> None:
       **파일명에서 읽는 값**이다. 처음에 그 칸을 썼다가 `ledger_fields
       --check` 에 물렸다.
     """
-    from acquire import _derive_files
+    from firelane.acquire_rules import derive_files
 
     ds = ledger.load_sources()["datasets"]
     mute = sorted(k for k, v in ds.items()
-                  if not (_derive_files(v or {})
+                  if not (derive_files(v or {})
                           or (v or {}).get("files") or (v or {}).get("file")))
     assert mute == [], (
         f"{len(mute)}종을 `acquire` 가 어디에 둘지 못 정한다 — 반입이 거기서 "
