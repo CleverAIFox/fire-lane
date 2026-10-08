@@ -1,5 +1,5 @@
 {
- "all": "6e54b16d2f44d391",
+ "all": "a9c223f931829dd2",
  "method": "tokens-v1",
  "files": {
   "src/firelane/__init__.py": "fa4d63348469",
@@ -9,16 +9,17 @@
   "src/firelane/seg/basisno.py": "51254c6082dd",
   "src/firelane/seg/centerline_correction.py": "719d38b39380",
   "src/firelane/seg/classify.py": "87b70216cc18",
-  "src/firelane/seg/geom.py": "38141ea8f917",
+  "src/firelane/seg/geom.py": "0fa63b9981c1",
   "src/firelane/seg/graph.py": "cfa89d4e21dc",
   "src/firelane/seg/params.py": "1ca66afa919d",
   "src/firelane/seg/report.py": "edc536b497ef",
   "src/firelane/seg/roadname.py": "4c4783f885b2",
   "src/firelane/seg/scope.py": "aa259e21a13b",
-  "src/firelane/seg/vehicle.py": "8101e465fbcb",
+  "src/firelane/seg/unionfind.py": "930354391743",
+  "src/firelane/seg/vehicle.py": "5b19a8a81f2e",
   "src/firelane/seg/width.py": "6ddd2451ec31",
   "src/firelane/segkey.py": "124ae16c3004",
   "src/firelane/segments.py": "2b2dd9cfe609",
-  "uv.lock": "2e8d4dfb878d4e9e"
+  "uv.lock": "f953ac4adf84bae8"
  }
 }
