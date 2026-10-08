@@ -88,7 +88,7 @@ export function RouteBrief(p: Props) {
       <div style={{ fontSize: 13, color: C.panelSub, marginTop: 4 }}>
         {p.fromOrder
           ? "관제가 정한 경로다. 아래는 다른 경로와의 차이다."
-          : "지령에 경로 지정이 없어 안전으로 간다 — 기본값이고 지시가 아니다."}
+          : "지령에 경로 지정이 없어 안전으로 간다."}
       </div>
 
       <Card o={p.safe} on={p.chosen === "safe"}
@@ -107,8 +107,7 @@ export function RouteBrief(p: Props) {
       )}
 
       <div style={{ fontSize: 11, color: C.panelSub, marginTop: 12, lineHeight: 1.5 }}>
-        <b>폭으로만 본 안전이다</b> — 회전 및 높이 미반영 · 실시간 주정차 미반영 ·
-        일방통행은 방향을 대부분 몰라 양쪽 다 불리하게 계산
+        <b>폭으로만 본 안전이다</b>
       </div>
     </Sheet>
   );
@@ -153,8 +152,7 @@ function SameRoute(p: Props) {
       </div>
 
       <div style={{ fontSize: 11, color: C.panelSub, marginTop: 12, lineHeight: 1.5 }}>
-        <b>폭으로만 본 안전이다</b> — 회전 및 높이 미반영 · 실시간 주정차 미반영 ·
-        일방통행은 방향을 대부분 몰라 양쪽 다 불리하게 계산
+        <b>폭으로만 본 안전이다</b>
       </div>
     </Sheet>
   );

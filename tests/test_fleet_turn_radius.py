@@ -73,8 +73,16 @@ def test_picker_takes_the_number_only_from_fleet():
     assert "turn_radius_ref_m" in code, "차량 선택이 turn_radius_ref_m 을 안 읽는다"
     assert not re.search(r"\b\d{1,2}\.\d\s*m\b", code), (
         "차량 선택 코드에 회전반경 숫자가 박혀 있다 — 숫자는 fleet.json 에서만 온다")
-    for need in ("참고", "판정에 반영하지 않으며"):
-        assert need in code, f"관제의 차량 선택에서 「{need}」 가 사라졌다(§86-5 · §212)"
+    # ★ 2026-10-09 (DECISIONS §441). 한계 문구가 `ui/Manual.tsx` 로 **옮겼다.**
+    #   행이 화면의 설명을 전부 걷으라고 했고, 걷되 사용 설명서로 보냈다.
+    #   이 시험의 뜻은 「화면만 지우면 고지가 조용히 사라진다」이고 그 뜻은
+    #   그대로다 — **묻는 자리만 따라 옮긴다.** 그리고 「닿을 수 있는가」를
+    #   같이 묻는다: 옮긴 곳이 화면에서 안 열리면 사라진 것과 같다.
+    man = (NAVI / "ui" / "Manual.tsx").read_text(encoding="utf-8")
+    for need in ("참고", "판정에 반영하지 않"):
+        assert need in man, f"「읽는 법」에서 「{need}」 가 사라졌다(§86-5 · §212 · §441)"
+    for need in ("<ManualButton", "<ManualSheet"):
+        assert need in code, f"관제가 `{need}` 를 안 띄운다 — 고지가 안 열린다(§441)"
 
 
 def test_judgment_never_reads_the_reference_radius():
