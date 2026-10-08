@@ -386,7 +386,9 @@ EXCEPTIONS: dict[str, int] = {
     #     (§359 의 `empty_const.py` · §372 의 `git_empty.py`) 두 번 다
     #     **사람의 전수 verify 가** 그것을 잡았다. 찍는 순서가 뜻을 바꾸는
     #     자리라 사유를 길게 적었다 — 짧게 적으면 다음 사람이 걸쇠를 뺀다.
-    "tools/docseal.py": 655,
+    #   ★ 2026-10-08 (DECISIONS §437-4). 655 → **643.** 678 이 됐고 올리지 않고
+    #     **옮겼다** — 옛 공식 셋이 `tools/docsealfp.py` 한 집에 모였다.
+    "tools/docseal.py": 643,
     "tools/ledger_schema.py": 629,
     # ★ 2026-10-03 (DECISIONS §358). 1207 → 1214. 「내비 그래프 결함」 한 단계.
     #   발행물이 제 결함을 넷 세고 있는데 묻는 단계가 없었다 — 단계 하나와

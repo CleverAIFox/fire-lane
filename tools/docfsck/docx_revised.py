@@ -5,7 +5,7 @@ OUT   결함 문장 목록 (비면 통과)
 밖    기획서 **내용**이 산출물과 맞는가는 `tools/docx_check.py` 소관이다.
       **스쿼시 뒤의 다른 검사들은 안 본다** — 열차가 만드는 상태를 통틀어 다시
       보는 것은 `tools/fl.sh` 의 「7b. 열차 뒤 검사」 소관이다.
-부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
+부류  몸통   진입점이 아니다 — 부르는 쪽이 부류를 든다  (DECISIONS §437)
 """
 from __future__ import annotations
 

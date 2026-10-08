@@ -593,7 +593,7 @@ EXEMPT_SCOPE = {
         "`targets()` 가 `toolclass` 에서 도출한다",
     "tools/toolclass.py::tools":
         "묻는 것이 「**도구**가 어느 부류인가」다. `src` 는 꾸러미이고 `tests` 는 "
-        "강제자라 부류 어휘(관문·조사·절차·생산)가 성립하지 않는다 — 넓히면 "
+        "강제자라 부류 어휘(`toolclass.VOCAB` 다섯)가 성립하지 않는다 — 넓히면 "
         "수가 커지고 뜻이 사라진다",
     # ★ 2026-10-03 (DECISIONS §372-5). 셋 다 **`src/firelane` 꾸러미 자신의
     #   모양**을 재는 자리다. `tools/` · `tests/` 를 더하면 재는 것이 달라진다 —

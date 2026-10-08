@@ -20,7 +20,7 @@ PARAM LIST_VIEW · FP_METHOD
 밖    **판정을 안 한다.** 유·무효를 정하는 것은 `docseal.valid` 이고 여기서는
       지문만 낸다. 어느 절이 어느 파일을 지목하는가(`refs`)도 저 파일이 든다.
       생성물인지 아닌지의 정본도 여기가 아니라 `firelane.generated.REGISTRY` 다.
-부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
+부류  몸통   진입점이 아니다 — 부르는 쪽이 부류를 든다  (DECISIONS §437)
 """
 from __future__ import annotations
 
@@ -28,6 +28,8 @@ import functools
 import hashlib
 import re
 from pathlib import Path
+
+from firelane import gitq
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -165,6 +167,23 @@ def view_v1(path: str, raw: bytes, others: list[str], text: str = "") -> bytes:
 
 #: 옛 관점 판들. **새것이 앞이다.** `docseal.survey` 가 `legacy` 지문을 여기서 낸다.
 LEGACY_VIEWS = (view_v1,)
+
+
+# ── 경로 공식 (2026-10-08 · DECISIONS §437-4 · PLAN #163) ─────────
+#: 절 본문에서 코드 쪽을 뽑는 정규식. 백틱 안의 **경로꼴**만 본다.
+#: ★ 머리가 `[\w]` 였다 — `.devcontainer/` · `.githooks/` · `.github/**` 를
+#:   **한 번도 못 읽었다.** 그 파일들은 `tools/sealcov.py` 의 분모에 있는데
+#:   덮을 길이 없었다(족 5 · 파이프라인 단절). 점을 머리에 허용한다.
+#: ★ **이 파일에 산다.** 본문 판 · 관점 판에 이어 경로 판이 셋째 축이고,
+#:   세 축의 옛 공식이 한 집에 있어야 다음 사람이 「무엇이 바뀌면 무엇이
+#:   죽나」를 한 자리에서 읽는다. `docseal` 은 재수출로 그대로 쓴다.
+PATH = re.compile(r"`([.\w][\w./-]*\.(?:py|sh|ts|tsx|js|mjs|json|ya?ml))(?:::[\w.]+)?`")
+
+#: 옛 경로 공식. 파일 집합이 지문의 기반이므로 공식을 바꾸면 도장이 전부
+#: 죽는다 — 이 장치가 없으면 한 줄 고침에 **120절이 무효**가 되고 그중 29절은
+#: 코드가 안 바뀐 채 **공식 변경만으로** 죽는다. 다시 찍으면 도장 찍기다(§272).
+PATH_V1 = re.compile(r"`([\w][\w./-]*\.(?:py|sh|ts|tsx|js|mjs|json|ya?ml))(?:::[\w.]+)?`")
+LEGACY_PATHS = (PATH_V1,)
 
 
 def view(path: str, raw: bytes, others: list[str], text: str = "") -> bytes:
@@ -306,3 +325,35 @@ def _looks_like_field(line: str, dms) -> bool:
     """그 줄이 **정말 강제자 칸인가.** 산문과 가르는 둘째 물음(§348-4)."""
     rest = dms.FIELD.sub("", line).strip()
     return "`" in rest or rest.startswith(("없음", "—", "-", "("))
+
+
+# ── 추적 목록 (2026-10-08 · DECISIONS §437-4 로 이사) ──────────────
+@functools.lru_cache(maxsize=1)
+def _tracked() -> frozenset[str]:
+    """git 이 추적하는 파일. **추적 밖은 도장의 기반이 못 된다.**
+
+    ★ 2026-09-28 (DECISIONS §278-10). 세 절이 `data/processed/*.json` 을 물고
+      있었다 — `.gitignore:28` 로 추적 밖이고 **파이프라인이 돌 때마다 내용이
+      바뀌는 생성물**이다. 그 절들의 도장은 찍은 다음 날이면 무효였고, 앞으로도
+      영원히 그렇다. 「확인한 뒤로 안 바뀌었다」는 주장이 성립할 수가 없다.
+
+    ★ 지목 자체는 정당하다 — 절이 그 산출을 근거로 말할 수 있다. 다만 **도장의
+      기반**은 사람이 다시 읽어야 할 만큼 의미 있게 바뀌는 것이어야 하고,
+      매번 바뀌는 것은 그 신호를 0 으로 만든다. 그 자리는 `freshcheck` ·
+      `golden` 이 따로 든다.
+    """
+    # ★ 2026-10-03 (DECISIONS §372). 종전에는 `check=False` 로 돌리고 `stdout`
+    #   을 그대로 갈랐다. git 이 없거나 저장소가 아니면 **빈 집합**이 되고,
+    #   그러면 「추적되는 파일이 하나도 없다」가 되어 도장 대상이 0 이 된다 —
+    #   `UNSEALED` 가 0 이고 `무효 0` 인 **빈 그물 초록**이다. 못 물었으면 터진다.
+    t = gitq.tracked(ROOT)
+    if t is None:
+        raise RuntimeError(
+            "git 이 추적 목록을 못 줬다 — 도장의 기반이 **추적되는 파일**이므로"
+            " 못 물으면 이 도구는 아무것도 말할 수 없다(§372).\n"
+            "  git rev-parse --is-inside-work-tree 로 확인하라")
+    return t
+
+
+#: 공식 판 → 그 판의 관점 함수. `why` 가 **저장된 판으로** 조각을 다시 낼 때 쓴다.
+FP_VIEWS = {"view-v1": view_v1, FP_METHOD: view}
