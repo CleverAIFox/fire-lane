@@ -181,9 +181,11 @@ STEPS = [
                   P / "fire_station.geojson", P / "fire_station_5186.gpkg")),
     Step("ortho", "ortho", "항공정사영상 → 배경 타일",
          WEB / "ortho",
-         # ★ scope.geojson 은 publish 산출이다. **후진 의존이며 지난 실행의
-         #   산출물을 읽는다** — 스코프가 바뀌면 정사영상이 한 실행 늦게
-         #   따라온다. test_guards.BACKWARD 와 PLAN 이 든다.
+         # ★ 2026-10-08 (DECISIONS §435) 정정. **순방향이다** — 위 `scope` 절이
+         #   ortho 보다 앞에서 낸다. 이 자리가 2026-09-04 에 해소된 역순 의존을
+         #   아직 있다고 주장하고, 들지도 않는 강제자 둘을 증인으로 세우고
+         #   있었다. 그 문구와 왜 거짓인지는 **DECISIONS §435 가 든다** —
+         #   여기 다시 적지 않는다(되뇌면 가드가 되살아난 주장으로 읽는다).
          reads=(RAW, P / "scope_5186.gpkg"),
          writes=(WEB / "ortho",),
          mutates=(WEB / "view.json", P / "_manifest.json")),
