@@ -167,6 +167,71 @@ def test_authority_names_institution_and_route():
     _ratchet("authority 규칙 위반", len(bad), MAX_AUTHORITY_BAD, bad)
 
 
+# ── 폐기 사유에 좌표가 들어가면 조인 키를 같이 적는다 ──────────────────
+# ★ 2026-10-08 (DECISIONS §435 · PLAN #102). 기준 「좌표 없음 + 소비자 0곳」이
+#   **틀렸다.** 좌표 보유는 **레이어의 조건이지 테이블의 조건이 아니다** — 조인
+#   키가 있고 필요한 것이 세는 값이면 좌표 없이도 쓴다.
+#
+#   ★ 저장소가 스스로 뒤집은 기록이 있다. `building_ledger` 가 그 기준으로
+#     나갔다가 후속 `bldg_ledger_dm` 으로 돌아왔고, 그 항목이 「바뀐 것은
+#     상황이다」라고 적었다. **바뀐 것은 기준이었다.** 같은 논리를 활성
+#     `juso_adrdc` 의 `feeds_why` 가 이미 문장으로 적고 있었다 —
+#     「주소가 아니라 세대밀도다 … 위치는 juso_bldg_geom 이 준다」.
+#
+#   그래서 사유가 좌표를 말하면 `join_key` 를 **같이 적게** 한다. 그러면
+#   「좌표가 없다」로 끝나지 않고 「그래서 폐기 근거는 무엇인가」를 적게 된다.
+#   **양방향이다** — 칸만 있고 사유가 좌표를 안 말하면 그 칸이 낡은 것이다.
+_COORD = re.compile(r"좌표(가 )?없|좌표 없음")
+
+
+def coord_without_join_key(y: dict) -> list[str]:
+    """사유가 좌표를 드는데 `join_key` 가 없는 폐기 항목."""
+    out = []
+    for k, e in (y.get("retired") or {}).items():
+        e = e or {}
+        text = f"{e.get('what', '')}\n{e.get('reason', '')}"
+        if _COORD.search(text) and not (e.get("join_key") or {}).get("col"):
+            out.append(f"retired.{k}: 사유가 좌표를 드는데 join_key 가 없다")
+    return out
+
+
+def stale_join_key(y: dict) -> list[str]:
+    """`join_key` 는 있는데 사유가 좌표를 안 드는 폐기 항목 — 칸이 낡았다."""
+    out = []
+    for k, e in (y.get("retired") or {}).items():
+        e = e or {}
+        jk = e.get("join_key") or {}
+        if not jk.get("col"):
+            continue
+        if not _COORD.search(f"{e.get('what', '')}\n{e.get('reason', '')}"):
+            out.append(f"retired.{k}: join_key 는 있는데 사유가 좌표를 안 든다")
+        elif len(str(jk.get("why") or "").strip()) < 30:
+            out.append(f"retired.{k}: join_key.why 가 비거나 너무 짧다 — 사유 없이 못 적는다")
+    return out
+
+
+def test_retiring_for_missing_coordinates_names_the_join_key():
+    """좌표를 폐기 사유로 들면 조인 키를 같이 적는다. **양방향이다.**"""
+    y = ledger.load()
+    assert y.get("retired"), "폐기 블록이 비었다 — 그물이 비면 이 검사가 언제나 초록이다"
+    bad = coord_without_join_key(y) + stale_join_key(y)
+    assert not bad, (
+        "\n".join(f"  {b}" for b in bad)
+        + "\n\n  ★ 좌표 보유는 **레이어의 조건이지 테이블의 조건이 아니다.**"
+        "\n    조인 키가 있고 세는 값만 필요하면 좌표 없이도 쓴다 — `building_ledger`"
+        "\n    가 그 기준으로 나갔다가 돌아온 항목이다(DECISIONS §435 · PLAN #102)."
+        "\n    `join_key: {col: …, why: …}` 를 적어라. `why` 는 「그래서 폐기 근거는"
+        "\n    무엇인가」를 답해야 한다.")
+    # ★ 빈 그물 — 정규식이 조용히 아무것도 안 잡으면 위 검사가 늘 통과한다.
+    assert _COORD.search("좌표 없음") and _COORD.search("좌표가 없다"), \
+        "좌표 그물이 망가졌다"
+    hits = [k for k, e in (y["retired"] or {}).items()
+            if _COORD.search(f"{(e or {}).get('what', '')}\n{(e or {}).get('reason', '')}")]
+    assert len(hits) >= 2, (
+        f"좌표를 사유로 드는 폐기 항목을 {len(hits)}개밖에 못 찾았다 — 그물을 의심하라. "
+        "항목이 정말 줄었으면 이 하한을 내려라")
+
+
 def test_ratchet_probes_are_alive():
     """카나리아 — 판별식 넷이 **합성 입력에서** 운다."""
     y = {"retired": {"g": {"stem": "safety_firestation"},
@@ -183,6 +248,24 @@ def test_ratchet_probes_are_alive():
             ("src/firelane/ledger.py", 'yaml.safe_load(open("sources.yaml")) ; y["retired"]')]
     assert ledger_loaders(srcs) == ["tools/a.py"], "대장 로드 판별식이 죽었다"
     assert owner_block_readers(srcs) == ["tools/b.py"], "주인 블록 판별식이 죽었다"
+    # ★ 2026-10-08 (DECISIONS §435 · PLAN #102). 조인 키 판별식 둘도 합성에서 운다.
+    jk = {"retired": {
+        # 사유가 좌표를 드는데 칸이 없다
+        "a": {"what": "좌표 없음", "reason": "소비자 0곳"},
+        # 칸이 있고 사유도 좌표를 든다 — 통과
+        "b": {"what": "좌표가 없다", "reason": "소비자 0곳",
+              "join_key": {"col": "지번", "why": "지번으로 `building` 폴리곤에 붙는다 — 위치는 그쪽이 준다. 그래서 폐기 근거는 소비자 0곳 하나다"}},
+        # 칸만 있고 사유는 좌표를 안 든다 — 낡았다
+        "c": {"what": "판 교체", "reason": "후속이 들어왔다",
+              "join_key": {"col": "지번", "why": "지번으로 `building` 폴리곤에 붙는다 — 위치는 그쪽이 준다. 그래서 폐기 근거는 소비자 0곳 하나다"}},
+        # 칸은 있는데 사유 설명이 없다
+        "d": {"what": "좌표 없음", "reason": "소비자 0곳", "join_key": {"col": "지번", "why": "짧다"}},
+    }}
+    assert coord_without_join_key(jk) == [
+        "retired.a: 사유가 좌표를 드는데 join_key 가 없다"], \
+        f"좌표↔조인키 판별식이 죽었다: {coord_without_join_key(jk)}"
+    assert [x.split(":")[0] for x in stale_join_key(jk)] == ["retired.c", "retired.d"], \
+        f"낡은 조인키 판별식이 죽었다: {stale_join_key(jk)}"
 
 
 def test_prose_is_not_a_copy(tmp_path):
