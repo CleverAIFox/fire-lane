@@ -26,13 +26,36 @@ def _git(*args: str, timeout: int = 10) -> tuple[int, str]:
     return r.returncode, r.stdout.strip()
 
 
+def covers() -> list[Path]:
+    """표지 날짜를 드는 기획서 전부.
+
+    ★ 2026-10-09 (§440-8). 종전에는 `docs/*.docx` **하나**였다. §425 가 정본을
+      `docs/proposal.md` 로 옮겼는데 **이 그물은 안 따라갔다** — 실측하니 md 표지가
+      `2026. 10. 01.` 에 멈춰 여드레 낡아 있었고 아무도 안 울었다. 사람이 읽는
+      화면(`web/proposal.html`)이 그 줄을 그대로 띄우므로 **낡은 날짜가 밖으로
+      나간다.** §440-5 가 숫자에서 같은 구멍을 메웠고 이쪽은 날짜다.
+    ★ docx 가 은퇴하면 이 목록은 md 하나가 된다 — 목록이라 그때 줄만 준다.
+    """
+    out = sorted((ROOT / "docs").glob("*.docx"))
+    md = ROOT / "docs" / "proposal.md"
+    if md.is_file():
+        out.append(md)
+    return out
+
+
 def _cover_dates(f: Path) -> tuple[list[str], str | None]:
-    """표지 앞 40단락의 날짜 표기와, 못 읽었으면 그 사유."""
-    try:
-        import docx as _dx
-        txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
-    except Exception as e:
-        return [], f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"
+    """표지 앞머리의 날짜 표기와, 못 읽었으면 그 사유."""
+    if f.suffix == ".md":
+        try:
+            txt = "\n".join(f.read_text(encoding="utf-8").splitlines()[:40])
+        except Exception as e:
+            return [], f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"
+    else:
+        try:
+            import docx as _dx
+            txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
+        except Exception as e:
+            return [], f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"
     return re.findall(r"20\d\d\.\s*\d{1,2}\.\s*\d{1,2}", txt), None
 
 
@@ -69,10 +92,13 @@ def check_docx_ready_for_squash(bases: tuple[str, ...] = BASES) -> list[str]:
     ★ `base` 를 못 읽으면 **재지 않는다.** 얕은 클론 · 원격 없는 사본에서
       거짓으로 빨개지는 것이 진짜 경보를 죽인다(§18-13 · ⑥ 머리말과 같은 규율).
     """
-    docs = list(ROOT.glob("docs/*.docx"))
-    if not docs:
-        return []
-    f = docs[0]
+    out: list[str] = []
+    for f in covers():
+        out += _ready_one(f, bases)
+    return out
+
+
+def _ready_one(f: Path, bases: tuple[str, ...]) -> list[str]:
     rel = f.relative_to(ROOT).as_posix()
 
     # ★ 스쿼시가 일어나는 곳이 기준이다 — `feat` → `part/infra` 다. `dev` 를 기준으로
@@ -132,10 +158,6 @@ def check_docx_revised() -> list[str]:
       **검사 하나가 자기 전제를 선언하면 나머지를 같이 뺄 필요가 없다.**
     """
     import subprocess
-    docs = list(ROOT.glob("docs/*.docx"))
-    if not docs:
-        return []
-    f = docs[0]
     # ★ 전제 선언. 못 재는 것을 못 잰다고 말한다 — 조용히 통과하지도, 거짓으로
     #   빨개지지도 않는다.
     # ★ 2026-09-24 (§239). `sh.returncode` 를 안 봤다. 판별이 실패하면 stdout 이
@@ -145,13 +167,21 @@ def check_docx_revised() -> list[str]:
         sh = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
                             cwd=ROOT, capture_output=True, text=True, timeout=10)
     except Exception as e:
-        return [f"{f.name} — 얕은 저장소인지 판별하지 못했다: {type(e).__name__}: {e}"]
+        return [f"얕은 저장소인지 판별하지 못했다: {type(e).__name__}: {e}"]
     if sh.returncode != 0:
-        return [f"{f.name} — 얕은 저장소 판별 실패(rc={sh.returncode}): "
+        return [f"얕은 저장소 판별 실패(rc={sh.returncode}): "
                 f"{sh.stderr.strip()[:120]}. 못 잰 것을 통과로 세지 않는다"]
     if sh.stdout.strip() == "true":
         print("   (건너뜀 — 얕은 저장소라 마지막 수정 커밋일을 못 잰다)")
         return []
+    out: list[str] = []
+    for f in covers():
+        out += _revised_one(f)
+    return out
+
+
+def _revised_one(f: Path) -> list[str]:
+    import subprocess
     try:
         r = subprocess.run(
             ["git", "log", "-1", "--format=%ad", "--date=short", "--", str(f)],
@@ -165,15 +195,12 @@ def check_docx_revised() -> list[str]:
                 f"{type(e).__name__}: {e}"]
     if not last:
         return []
-    try:
-        import docx as _dx
-        txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
-    except Exception as e:
-        # ★ 2026-09-22 (W10-1 · deadcheck ③). `python-docx` 는 선언된 의존성이다
-        #   (pyproject). 그것이 없거나 기획서가 안 열리면 표지를 못 읽은 것이지
-        #   표지가 맞는 것이 아니다 — 종전 `return []` 은 그 둘을 같게 읽었다.
-        return [f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"]
-    shown = re.findall(r"20\d\d\.\s*\d{1,2}\.\s*\d{1,2}", txt)
+    # ★ 2026-09-22 (W10-1 · deadcheck ③). 표지를 못 읽은 것과 표지가 맞는 것은
+    #   다르다 — 종전 `return []` 은 그 둘을 같게 읽었다. `_cover_dates` 가
+    #   사유를 들고 온다(2026-10-09 · md 와 docx 를 같이 읽는다).
+    shown, why = _cover_dates(f)
+    if why:
+        return [why]
     if not shown:
         return [f"{f.name} 표지에 날짜가 없다. 작성일과 최종 수정일을 적어라"]
     norm = {re.sub(r"[.\s]", "", s) for s in shown}
