@@ -843,7 +843,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: vworld_uq153
-    awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [zip]
     kind: raw_only
     scope: kr
@@ -878,7 +877,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: vworld_uq164
-    awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [zip]
     kind: raw_only
     scope: jngj
@@ -912,7 +910,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: nfa_bldgcomm_guide
-    awaiting: '2026-10-07 — 정보공개청구로 받았다(DECISIONS §429). `intake` · `acquire` 를 아직 안 탔다'
     ext: [pdf]
     kind: raw_only
     scope: kr
@@ -949,7 +946,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: juso_adrdc
-    awaiting: '2026-10-07 — 실물이 레이크 `landing` 에 2026-09-10 부터 앉아 있다. 대장에 자리가 없어 `acquire` 가 가져갈 근거가 없었다(DECISIONS §428)'
     ext: [zip]
     kind: raw_only
     scope: kr
@@ -986,7 +982,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: eais_roadledger_dm
-    awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [csv]
     kind: raw_only
     scope: jngj-dongmyeong
@@ -3341,6 +3336,10 @@ datasets:
     feeds_note: '[]'
     stem: moleg_roadtraffic_act
     ext: [pdf]
+    # ★ 2026-10-08 (DECISIONS §431). 조문 하나에 파일 하나다. `parts` 를 적어야
+    #   파생이 둘을 다 만든다 — 안 적으면 `_a29`·`_a30` 이 「대장에 없다」로,
+    #   파생이 지은 `..._20260701.pdf` 는 「결손」으로 **양쪽에** 뜬다.
+    parts: [a29, a30]
     kind: raw_only
     scope: kr
     updated: '2026-07-01'
@@ -3521,6 +3520,13 @@ retired:
     sha256:
       juso/juso_building_db_jngj_20260731.zip: 3d6dc01f6cb1bf8a95cff3c5d956dd2d5a87b37647ffb80f621848e5ab4efad9
     what:      도로명주소 건물DB 전남광주 전체분(2026-07 판) — 동명동 2,078행을 잘라 쓰던 원본. 좌표 없음
+    # ★ 2026-10-08 (DECISIONS §435 · PLAN #102). 좌표 없음을 사유로 들면 조인 키를 같이 적는다.
+    join_key:
+      col: 건물관리번호(25자)
+      why: |
+        좌표가 없어도 이것으로 `juso_bldg_geom` 에 붙는다. 그래서 **좌표 없음은 폐기 근거가 아니다** —
+        근거는 「같은 2,078행을 좌표까지 들고 오는 후속이 들어왔다」 하나이고 그것은 그대로 유효하다.
+        ★ 지우지도 않는다. 전남광주 전역 판은 이 zip 이 유일본이다(§173-1).
     reason: |
       내비게이션용DB `navi_build` 가 같은 동명동 2,078행을 출입구 · 중심점 좌표까지 들고 반입됐다(DECISIONS §179 · §181).
       소비자 0곳 — 붙들던 사유 "좌표가 없다 — 내비게이션용DB 승인 대기" 가 풀렸다(사용자 2026-09-17).
@@ -3534,7 +3540,21 @@ retired:
       - eais/eais_bldg_ledger_jngj-donggu_20260817.csv
     sha256:
       eais/eais_bldg_ledger_jngj-donggu_20260817.csv: b502e2c0071a400e46ea23eb1e7436d4eae57537783ea0db34787176de579e4a
-    what:      건축물대장 표제부. 높이·주용도·주차대수·사용승인일
+    what:      건축물대장 표제부. 높이·주용도·주차대수·사용승인일. 좌표 없음
+    # ★ 2026-10-08 (DECISIONS §435 · PLAN #102). **이 항목이 기준이 틀렸다는 증거다.**
+    #   「좌표 없음 + 소비자 0곳」으로 나갔는데, 이 표가 주는 것은 전부 **세는 값**
+    #   (높이 · 주차대수 · 세대 · 가구 · 면적)이고 위치는 지번 조인으로 온다.
+    #   그래서 2026-09-07 에 저장소가 **스스로 뒤집었다** — 후속 `bldg_ledger_dm` 이
+    #   「폐기 사유는 소비자 0곳이었고 그 판단은 틀리지 않았다. 바뀐 것은 상황이다」를
+    #   적는다. 바뀐 것은 상황이 아니라 **기준이었다.** 좌표 보유는 레이어의 조건이지
+    #   테이블의 조건이 아니고, 그 사실을 `juso_adrdc` 의 `feeds_why` 가 같은 문장으로
+    #   이미 적고 있었다.
+    join_key:
+      col: 대지위치(지번)
+      why: |
+        지번으로 `jijeok` · `building` 폴리곤에 붙는다 — 위치는 그쪽이 준다.
+        필요한 것은 세는 값뿐이라 **좌표 없음은 폐기 근거가 될 수 없었다.**
+        유효한 근거는 「소비자 0곳」 하나이고, 소비자가 생기자(β 점유위험도 #60) 복귀했다.
     reason:    높이·주차대수만 있고 건물 형상은 building 이 이미 낸다. 11.3MB 소비자 0곳
     at:        2026-08-31
     # ★ 2026-09-07. 후속의 stem 을 `eais_bldgledger_dm` 으로 **일부러
@@ -3762,7 +3782,9 @@ outputs:
     what: segments.geojson 의 컬럼 계약. 표출이 읽기 전에 구조를 못박는다
     consumers:
     - src/firelane/publish_web.py
-    - src/firelane/pipeline.py
+    # ★ 2026-10-08 (DECISIONS §431-6). `pipeline.py` → `expectation.py`.
+    #   「산출물이 기대와 맞는가」 다섯이 거기로 나갔고 **읽는 자도 같이 갔다.**
+    - src/firelane/expectation.py
     - src/firelane/webmanifest.py
     - tools/baseline.py
     - tools/release_brief.py
@@ -3814,7 +3836,9 @@ outputs:
     # ★ 2026-09-03. 셋을 더했다. `test_declaration_reality` 가 실물에서
     #   찾아냈다 — 손대장이라 읽는 쪽이 늘어도 아무도 안 적었다.
     - src/firelane/guards.py
-    - src/firelane/pipeline.py
+    # ★ 2026-10-08 (DECISIONS §431-6). `pipeline.py` → `expectation.py`.
+    #   「산출물이 기대와 맞는가」 다섯이 거기로 나갔고 **읽는 자도 같이 갔다.**
+    - src/firelane/expectation.py
     - tools/width_fn.py
     # ★ 2026-09-06. 또 하나. `publish_navi` 가 내비용 그래프를 낸다 —
     #   같은 병이 두 번째다(손대장이라 읽는 쪽이 늘어도 아무도 안 적는다).

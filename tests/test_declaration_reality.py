@@ -368,6 +368,107 @@ def test_raw_only_is_true_to_the_lake():
           "\n  불가일 때만 쓴다 — 소비자가 없는 것은 feeds 가 든다.")
 
 
+def _prep_module():
+    """`prep` 을 **절대경로로** 연다 — 이 시험이 `sys.path` 에 기대지 않게."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "firelane.prep", ROOT / "src/firelane/prep.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_prep_and_raw_only_draw_the_same_boundary():
+    """★ **두 관문이 같은 경계를 보는가.**  (2026-10-08 · DECISIONS §434)
+
+    위 `test_raw_only_is_true_to_the_lake` 는 「`raw_only` 인데 norm 에 실물이
+    있으면 선언이 거짓이다」를 들고, 면제하는 것은 **변환 산출 하나**다
+    (`norm_convert` 를 선언한 항목의 `.csv`).
+
+    `prep` 의 대상 고르기가 그 경계를 **안 보고 있었다.** 둘 다 적용하면
+    모순이다 — prep 이 norm 을 만들고, 그 norm 이 있다는 사실이 같은 항목의
+    `raw_only` 선언을 거짓으로 만든다. 족 3(관문이 갈림)이고, `awaiting` 이
+    그 모순을 가리고 있었다: §433 이 유예 다섯 줄을 지우자 드러났다.
+
+    ★ **이 시험은 위 시험의 짝이다.** 위는 레이크(norm 디렉터리)를 보고
+      레이크 없는 기계에서 건너뛴다. 이쪽은 **선언만** 보므로 CI 에서 돈다 —
+      같은 경계를 두 쪽에서 묻는다.
+    """
+    import yaml
+
+    prep = _prep_module()
+    led = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8")) or {}
+    ds = led.get("datasets") or {}
+    assert ds, "대장이 비었다 — 분모가 비면 이 검사가 언제나 초록이다"
+
+    bad = []
+    for key, rel, e in prep._targets():
+        e = e or {}
+        if e.get("kind") != "raw_only":
+            continue
+        if not e.get("norm_convert"):
+            bad.append(f"  {key}: raw_only 인데 norm_convert 가 없고 prep 대상이다 ({rel})")
+    assert not bad, (
+        "prep 이 `raw_only` 를 전처리 대상으로 센다 — 위 시험과 **어긋난다.**\n"
+        + "\n".join(bad)
+        + "\n\n  prep 이 만든 norm 파일은 그 항목의 `raw_only` 선언을 거짓으로 만든다."
+          "\n  `prep._targets()` 가 `raw_only`(변환 선언 없는 것)를 건너뛰어야 한다.")
+
+    # ★ **빈 그물을 막는다.** 분모에 raw_only 가 하나도 없으면 이 검사가
+    #   아무것도 안 든다. 대장에 raw_only 가 서른넷 있고, 그중 플레인 텍스트를
+    #   선언한 것이 하나다(2026-10-08 실측) — 그 하나가 이 검사의 대상이다.
+    n_raw = sum(1 for e in ds.values() if (e or {}).get("kind") == "raw_only")
+    assert n_raw >= 10, (
+        f"대장의 `raw_only` 가 {n_raw}종이다 — 실측 34 보다 크게 줄었다. "
+        "정말 줄었으면 이 하한을 내려라")
+    # ★ 그리고 **면제가 실재하는가.** `norm_convert` 를 든 raw_only 가 없으면
+    #   위 시험의 면제 갈래가 죽은 코드이고, 그러면 이 검사의 조건도 뜻이 없다.
+    conv = [k for k, e in ds.items()
+            if (e or {}).get("kind") == "raw_only" and (e or {}).get("norm_convert")]
+    assert conv, (
+        "`norm_convert` 를 든 `raw_only` 가 하나도 없다 — 위 시험의 면제 갈래가 "
+        "죽었다. 면제를 지울지 이 검사를 고칠지 사람이 정해야 한다")
+
+
+def test_every_declared_prep_target_is_registered():
+    """★ 대장이 전처리 대상으로 **선언한** 파일이 `_prep.json` 에 있는가.
+
+    ── 왜 생겼나 (2026-10-08 · DECISIONS §434) ──────────────────
+    `awaiting` 다섯 줄을 지운 판(§433)이 **전처리 대상을 하나 늘렸다.** 그 칸을
+    아는 자가 다섯이고 `prep` 의 대상 고르기가 다섯째다 — `awaiting` 이 있으면
+    건너뛴다. 칸을 떼자 한 항목이 대상으로 **승격**됐고 `data/_prep.json` 에
+    없어서 「미등록」으로 떨어졌다.
+
+    ★ 앞의 넷(`contract` · `contract_verdict` · `scan_data` · `refcheck`)은
+      **수**만 움직여서 사람이 재서 보낸 수로 맞출 수 있었다. 다섯째는
+      **파일 목록**을 움직였고, 그것을 보는 자가 레이크 붙은 기계의 한
+      단계뿐이었다 — 전수 뒤에야 울었다.
+
+    ★ 레이크 없이 돈다. `sources.yaml` 과 `data/_prep.json` **둘 다 커밋된
+      파일**이고 이 검사가 묻는 것은 선언 ↔ 선언이다. 레이크가 없으면 글롭은
+      0 으로 풀려 리터럴 경로만 덮는다 — 그 한계를 R23 대로 여기 적는다.
+      그날 터진 그 파일은 리터럴이라 이 검사가 **1초 안에** 잡는다.
+    """
+    import json as _json
+
+    prep = _prep_module()
+    state = ROOT / "data" / "_prep.json"
+    assert state.is_file(), f"{state} 가 없다 — 커밋돼 있어야 한다"
+    known = set(_json.loads(state.read_text(encoding="utf-8")).get("files") or {})
+    assert known, "`_prep.json` 이 비었다 — 분모가 비면 이 검사가 언제나 초록이다"
+
+    want = {rel for _k, rel, _e in prep._targets()}
+    assert want, "전처리 대상을 하나도 못 찾았다 — 그물이 비었다"
+    miss = sorted(want - known)
+    assert not miss, (
+        f"대장이 전처리 대상으로 선언했는데 `_prep.json` 에 없다 — {miss}\n"
+        "  `uv run python -m firelane.prep --apply` 를 돌리고 `data/_prep.json` 을 커밋해라.\n"
+        "  ★ `awaiting` 을 뗀 판이라면 그것이 원인이다 — 그 칸을 아는 자가 다섯이고\n"
+        "    `prep._targets()` 가 그중 하나다. 칸을 떼면 그 항목이 **대상으로 승격**된다.\n"
+        "  ★ `raw_only` 라면 애초에 대상이 아니다 — 바로 위 시험이 그 경계를 든다.")
+
+
 def test_awaiting_buys_a_warning_only_with_a_written_reason():
     """선언만 하고 실물이 아직 없을 때, **사유를 적어야** 경고로 내려간다 (DECISIONS §424).
 

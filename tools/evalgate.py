@@ -59,8 +59,14 @@ from pathlib import Path
 import baseline
 import golden
 
+from firelane import ledger as _led
 from firelane import paths as _p
 from firelane.seg import vehicle as V
+
+# ★ 2026-10-08 (PLAN #122). 도메인은 대장을 직접 안 읽는다 — **진입점이**
+#   주입한다. 안 부르면 `V.spec()` 이 `SpecMissing` 으로 죽는다(조용히
+#   기본값으로 도는 것보다 낫다 · DECISIONS §431).
+V.use(_led.vehicle_spec())
 
 #: 판정 정본 파일 이름. 봉인에도 현재 산출물에도 같은 이름으로 있다.
 SEG_NAME = "segments.geojson"

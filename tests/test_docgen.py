@@ -230,7 +230,7 @@ def test_the_command_line_returns_nonzero_when_a_block_is_wrong(tmp_path: Path):
     """`--check` 가 **종료코드로** 말하는가. 관문에 걸리는 것은 rc 다.
 
     ★ 판정 함수가 어긋남을 세는 것과 명령이 rc≠0 을 내는 것은 다른 일이다.
-      이 저장소는 그 둘이 끊긴 도구를 겪었다 — `python -m firelane.ledger` 는
+      이 저장소는 그 둘이 끊긴 도구를 겪었다 — `python -m firelane.ledger_check` 는
       FAIL 9 로 rc 1 을 내고 있었는데 `verify` · CI · 시험 어디에도 없어서
       초록이었다(DECISIONS §182-2).
 

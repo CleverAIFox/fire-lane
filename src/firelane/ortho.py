@@ -6,9 +6,15 @@ ortho.py — 항공정사영상을 지오레퍼런싱해 배경 타일로 굽는
 IN    $FIRE_LANE_DATA/raw/ngii/ngii_ortho_*.tif + .xml  (도엽 4장)
 OUT   web/data/ortho/**  (배경 타일)
       ★ web/data/view.json 에 orthoBounds 를 덧쓴다 · _manifest.json 에 기록
-IN2   processed/scope_5186.gpkg  ★ publish 산출을 읽는다. **후진 의존이다** —
-      스코프가 바뀌면 정사영상이 한 실행 늦게 따라온다
-      (tests/test_guards.py::BACKWARD · PLAN)
+IN2   processed/scope_5186.gpkg  ★ **순방향이다.** `display_scope` 단계가
+      ortho 보다 앞에서 낸다 — STEPS 순서는 segments(회랑) → scope →
+      ortho · publish 다. `sources.yaml` `outputs.scope` 와 아래 본문이
+      같이 적는다.
+      ★ 2026-10-08 정정. 이 줄이 2026-09-04 에 해소된 역순 의존을 **아직
+        있다고** 주장하고 있었다. 무엇이 적혀 있었고 왜 거짓인지는
+        **DECISIONS §435 가 든다** — 여기 다시 적지 않는다. 산문이 그
+        주장을 되뇌면 `test_prose_may_not_claim_a_backward_dependency_
+        the_list_does_not_hold` 가 되살아난 주장으로 읽는다.
       processed/_manifest.json 의 ortho 절
 PARAM 도엽 격자 역산 상수(EPSG:5186 TM 중부원점)
 

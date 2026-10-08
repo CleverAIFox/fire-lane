@@ -46,7 +46,7 @@ import shapely
 import yaml
 from shapely import make_valid
 
-from firelane import ledger, manifest, prep, read
+from firelane import kinds, ledger, manifest, prep, read
 
 # ★ 좌표계 · 절단 상자 · 읽기 연장의 정본은 `read._io` 다. 여기 두면
 #   `read` 가 `ingest` 를 도로 임포트해 고리가 돈다(DECISIONS §274-4).
@@ -175,8 +175,8 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     #   실전에서 5종이 경고를 냈고 그중 4종이 오탐이었다.
     #   **매번 뜨는 경고는 아무도 안 읽는다** — 그러면 진짜 하나를 놓친다.
     #   `hits[0]` 만 쓰는 kind 에서만 말한다.
-    SINGLE_PICK = ledger.SINGLE_PICK      # 정본은 ledger. 사본을 두지 않는다
-    if len(hits) > 1 and e["kind"] in SINGLE_PICK:
+    # ★ 정본은 `firelane.kinds` 다. `ledger.SINGLE_PICK` 재수출은 §431 이 지웠다.
+    if len(hits) > 1 and e["kind"] in kinds.SINGLE_PICK:
         rest = ", ".join(x.name for x in hits[1:])
         print(f"  ★ {key}: 대장 glob 이 {len(hits)}개를 잡는데 "
               f"kind={e['kind']} 는 하나만 쓴다 → {src.name}")

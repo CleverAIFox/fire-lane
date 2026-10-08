@@ -245,3 +245,58 @@ def test_디렉터리는_안_넣는다(tmp_path):
     z = _stage(tmp_path)
     (tmp_path / "하위폴더").mkdir()
     assert "하위폴더" not in [f.name for f in D.zip_items(tmp_path, z)]
+
+
+# ── ⑦ 축 목록은 **verify.sh 가 선언한 것**이다 (DECISIONS §431) ──────
+#: 2026-10-07~08 배달을 **세 번** 막은 실물 꼴. 도구가 제 몸통에서 찍는 `✗` 줄이
+#: 요약 밖에 있는데 종전 파서가 그것을 축으로 셌다.
+REAL_OUT = """\
+── norm 계보 재현
+   실패
+  미등록  eais/eais_roadledger_dm_jngj-dongmyeong_20260801.csv
+✗ 상한 0 을 넘었다 (37). 늘었다.
+
+── 레이크 관문
+   실패
+       ✗ 주인없음  landing/juso_adrdc_kr_20260801.zip
+
+══════════════════════════════════════════════
+  19분13초 · 통과 99 · 실패 2 · 생략 0
+
+  실패 2
+    ✗ 레이크 관문                        관문 닫힘 — 아무것도 움직이지 않는다 (5)
+    ✗ 문서 정합 도장                     docseal.py stamp --only DECISIONS/401
+
+  통과 99 — 전부 보려면 --table
+"""
+
+
+def test_a_cross_printed_inside_a_step_is_not_an_axis():
+    """★ **이 판에서 세 번 물린 자리.**  (DECISIONS §431)
+
+    `✗ 상한 0 을 넘었다 (37). 늘었다.` 는 `firelane.prep` 이 제 안에서 찍는 줄이다.
+    축이 아니다. 그런데 **수가 이름에 들어 있어** 37 → 36 으로 좋아져도
+    「처음 보는 축」이 되고, 그러면 「이 배치가 새로 빨갛게 만들었다」가 된다.
+    """
+    red, _ = D.sweep_verdict(1, REAL_OUT)
+    assert red == {"레이크 관문", "문서 정합 도장"}, red
+    assert not any("상한" in x for x in red), f"도구가 찍은 줄을 축으로 셌다 — {red}"
+    assert not any("주인없음" in x for x in red), red
+
+
+def test_the_declared_count_and_the_parsed_count_must_agree():
+    """★ **카나리아.** 수가 둘이다 — 합계 줄과 우리가 주운 수. 어긋나면 운다.
+
+    파서가 낡아 조용히 덜 세는 것이 **제일 나쁘다** — 빨간 채로 나간다.
+    """
+    # ★ **합계 줄**을 고친다 — 그쪽이 `verify.sh` 가 센 수다. 블록만 고치면
+    #   두 수가 여전히 같아서 대조가 안 선다(이 시험을 처음 쓸 때 그렇게 틀렸다).
+    lying = REAL_OUT.replace("· 실패 2 ·", "· 실패 9 ·")
+    red, _ = D.sweep_verdict(1, lying)
+    assert any("거짓말" in x for x in red), f"선언 9 ≠ 읽은 2 인데 조용하다 — {red}"
+
+
+def test_a_green_sweep_is_empty_even_when_the_body_is_noisy():
+    """초록인데 몸통에 `✗` 가 있어도 **축은 0** 이다."""
+    green = REAL_OUT.split("══")[0] + "\n  19분02초 · 통과 101 · 실패 0 · 생략 0\n\n"
+    assert D.sweep_verdict(0, green)[0] == set()

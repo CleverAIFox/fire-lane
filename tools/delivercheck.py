@@ -54,6 +54,16 @@ ANSI = re.compile(r"\x1b\[[0-9;]*m")
 #:   「새 빨간불」이 생겼다.** 빠지는 쪽이 더 나쁘다 — 빨간 축을 **조용히 떨군다.**
 #: ★ 그래서 끝맺음을 **줄 안으로 가둔다**(`[ \t]`). `$` 는 `re.M` 에서 줄 끝이다.
 FAIL_LINE = re.compile(r"^[ \t]+✗[ \t]+(.+?)(?:[ \t]{2,}.*)?$", re.M)
+#: ★ 2026-10-08 (DECISIONS §431). **요약 블록만 본다.** `verify.sh` 는 끝에
+#:   `  실패 N` 을 찍고 그 아래 `    ✗ <축>` 을 단계 수만큼 쓴 뒤 **빈 줄**로 닫는다.
+#:   종전에는 출력 전체에서 `✗` 를 주웠다 — 도구가 제 안에서 찍는
+#:   `✗ 상한 0 을 넘었다 (37). 늘었다.` 같은 줄이 **축 이름으로 둔갑**했고,
+#:   수가 37 → 36 으로 좋아져도 **다른 축**이라 「새 빨간불」이 됐다.
+#:   이번 판에서만 세 번 배달을 막았다.
+SUMMARY_BLOCK = re.compile(
+    r"^[ \t]*실패[ \t]+\d+[ \t]*$\n(.*?)(?=^[ \t]*$|\Z)", re.M | re.S)
+#: 합계 줄 — `  19분13초 · 통과 99 · 실패 2 · 생략 0`. **수를 따로 든다.**
+TOTALS = re.compile(r"·[ \t]*통과[ \t]+(\d+)[ \t]*·[ \t]*실패[ \t]+(\d+)[ \t]*·[ \t]*생략[ \t]+(\d+)")
 #: `verify.sh` 의 `note()` 가 찍는 두 줄 — `── <이름>` 다음 줄이 `생략  <사유>`.
 SKIP_LINE = re.compile(r"^── (.+?)\s*\n\s+생략\s+(.+?)\s*$", re.M)
 
@@ -97,10 +107,26 @@ def sweep_verdict(rc: int, out: str) -> tuple[set[str], dict[str, str]]:
       **덮개가 선언된 생략**뿐이다 — 그래도 이 배치가 증명한 것은 아니다.
     """
     out = ANSI.sub("", out)
-    names = set(FAIL_LINE.findall(out))
-    if rc and not names:
-        # ★ 죽었는데 이름을 못 읽었다. **0건으로 세면 빈 그물이다.**
+
+    # ★ 2026-10-08 (DECISIONS §431). **축 목록은 `verify.sh` 가 선언한 것이지
+    #   도구가 찍은 것이 아니다.** 요약 블록 안에서만 줍는다.
+    blocks = SUMMARY_BLOCK.findall(out)
+    names = {n for b in blocks for n in FAIL_LINE.findall(b)}
+
+    # ★ 수가 둘이다 — 합계 줄이 든 수와 우리가 주운 수. **대조한다.**
+    #   어긋나면 파서가 거짓말하는 것이고, 그것은 조용히 지나가면 안 된다.
+    if tot := TOTALS.search(out):
+        declared = int(tot.group(2))
+        if declared and not blocks:
+            names.add(f"★ `verify.sh` 가 실패 {declared} 을 선언했는데 "
+                      "요약 블록을 못 읽었다 — delivercheck 의 파서가 낡았다")
+        elif declared != len(names):
+            names.add(f"★ 선언된 실패 {declared} 과 읽은 축 {len(names)} 이 다르다 — "
+                      "delivercheck 의 파서가 거짓말한다")
+    elif rc and not names:
+        # ★ 죽었는데 이름도 합계도 못 읽었다. **0건으로 세면 빈 그물이다.**
         names.add(f"verify.sh 가 rc={rc} 로 죽었는데 요약을 못 읽었다 — {out.strip()[-300:]}")
+
     return names, dict(SKIP_LINE.findall(out))
 
 

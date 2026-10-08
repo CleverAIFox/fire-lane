@@ -60,7 +60,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import shutil
 import sys
 from datetime import datetime, timedelta, timezone
@@ -77,7 +76,6 @@ KST = timezone(timedelta(hours=9))
 LEDGER = ROOT / "data" / "_intake.json"
 
 # JUNK 정본은 firelane.intake_rules 다. 여기서 재정의하지 않는다.
-from firelane.intake_body import body_file_of, body_match, body_text
 from firelane.intake_rules import JUNK
 
 # ★ inbox() 는 `firelane.paths` 로 옮겼다(2026-08-26). 경로 정본은 거기다 —
@@ -143,146 +141,10 @@ def retired_hit(name: str) -> str | None:
 
 
 # ── 원본명 → 정규명 제안 ──────────────────────────────────────
-DOC_NO = re.compile(r"(KFS-\d-\d{4}-\d{4}(?:-\d{2})?)", re.IGNORECASE)
-
-
-def _by_rules(name: str) -> str | None:
-    """`normalize_raw.RULES` 가 이 원본명을 배치할 수 있나 → raw 상대경로.
-
-    ★ 2026-08-27 신설. 종전에는 **KFS 문서번호로만** 매칭했다. 그래서
-      문서번호가 없는 일반 데이터가 전부 "대장에 없다" 로 막혔다 —
-      `전남광주통합특별시 동구_불법 주정차 단속현황_20240108.csv` 가
-      그랬다. `enforcement` 는 대장에 있고 RULES 도 이 이름을 잡는데,
-      `propose()` 가 RULES 를 안 봐서 난 오탐이다.
-
-      **관문은 정확해야 한다.** 정상 파일을 막으면 사람이 `--force` 를
-      습관처럼 쓰게 되고, 그러면 관문이 없는 것과 같아진다.
-    """
-    import re as _re
-
-    from firelane.normalize_raw import RULES
-    # ★ 2026-09-07. `normalize_raw.main()` 은 `low = f.name.lower()` 로
-    #   매칭한다. 여기가 원본 그대로 매칭해서 **대문자가 든 파일명만**
-    #   관문에 막혔다(건물DB · CCTV정보 · GJBG_LSI…). 08-24 KFS 사고의
-    #   거울상이다 — 그때는 규칙이 대문자였고 이번엔 매칭이 소문자를
-    #   안 했다. 두 곳이 같은 방식으로 매칭해야 한다.
-    low = name.lower()
-    for pat, folder, tmpl in RULES:
-        m = _re.search(pat, low)
-        if not m:
-            continue
-        return f"{folder}/{tmpl.format(*m.groups()) if tmpl else name}"
-    return None
-
-
-def _stem_of(rel: str) -> str:
-    """raw 상대경로 → provider_dataset. 스코프·날짜 뒤를 떨어낸다."""
-    import re as _re
-
-    from firelane import scope as sc
-    stem = rel.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-    toks = "|".join(_re.escape(x) for x in
-                    sorted(list(sc.spec()) + list(sc.LEGACY),
-                           key=len, reverse=True))
-    return _re.sub(rf"_(?:{toks})?_?\d{{4,8}}.*$", "", stem).rstrip("_")
-
-
-
-def propose(src: Path, ds: dict) -> dict:
-    """정규명 후보를 낸다. **채택하지 않는다.**
-
-    단서를 넷 본다. 강한 순서다 —
-      ① KFS 문서번호   대장 본문에 그대로 적혀 있다. 제일 확실하다
-      ③ 대장 stem      파일명이 이미 정규명인가
-      ② 취득 규칙      `normalize_raw.RULES` 가 배치할 수 있는가
-      ④ **본문**       앞 셋이 전부 **파일 이름**을 본다. 이름이 아무 말도
-                       안 하면(브라우저가 붙인 이름) 내용을 연다 (§399)
-      없으면           사람이 정한다
-
-    ★ 2026-09-03. ③을 신설했다. **`intake` 가 대장 `stem` 을 안 봤다.**
-      2026-08-31 에 `file`/`files` 를 37종에서 빼고 `stem`+`ext` 로 뒤집었는데
-      (PLAN #46) 이 소비자가 이관에서 빠졌다 — `scan_data §4` 와 같은 자리다.
-
-      그래서 파일명이 대장 규칙(`<stem>_<scope>_<날짜>.<ext>`)과 완전히
-      일치해도 "대장에 없다" 로 걸렀다. 2026-09-03 에 `nfa_*` 15개가
-      전부 그렇게 막혔다. 대장에 등재돼 있었는데도.
-
-      ★ `RULES` 는 **취득처가 준 이름**을 다루는 규칙이고, `stem` 은
-        **우리가 정한 이름**이다. 둘은 다른 단계라 ②로는 못 잡는다.
-    """
-    stem, ext = nm.split_ext(src.name)
-    out = {"origin_name": src.name, "ext": ext, "doc_no": None,
-           "matched_key": None, "suggest": None, "why": []}
-
-    m = DOC_NO.search(stem)
-    if m:
-        out["doc_no"] = m.group(1).upper()
-
-    # ① 문서번호
-    if out["doc_no"]:
-        for k, v in ds.items():
-            blob = json.dumps(v, ensure_ascii=False, default=str)
-            if out["doc_no"] in blob.upper():
-                out["matched_key"] = k
-                pat = v.get("file", "")
-                base = pat.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-                if "*" not in base:
-                    out["suggest"] = f"{pat.split('/')[0]}/{base}.{ext}"
-                    out["why"].append(
-                        f"문서번호 {out['doc_no']} 가 대장 {k} 에 있다")
-                break
-
-    # ③ 대장 stem — 파일명이 이미 정규명인 경우
-    #    ★ ②보다 먼저 본다. 이미 우리 규칙으로 지은 이름이면 RULES 를
-    #      거칠 이유가 없고, RULES 가 옛 이름을 만들어 오히려 어긋난다.
-    if out["matched_key"] is None:
-        for k, v in ds.items():
-            st = (v or {}).get("stem")
-            if st and stem.startswith(f"{st}_"):
-                out["matched_key"] = k
-                org = (v or {}).get("provider") or st.split("_", 1)[0]
-                out["suggest"] = f"{org}/{src.name}"
-                out["why"].append(f"파일명이 대장 {k} 의 stem 으로 시작한다")
-                break
-
-    # ② 취득 규칙 — 규칙이 배치할 수 있으면 그 결과로 대장 항목을 찾는다
-    if out["matched_key"] is None:
-        placed = _by_rules(src.name)
-        if placed:
-            out["suggest"] = placed
-            # ★ RULES 는 **옛 이름**을 만든다(`..._dongu_...`). 그대로
-            #   stem 을 조회하면 어긋난다. `normalize_raw` 가 그러듯
-            #   여기서도 파서를 거쳐 provider_dataset 만 뽑는다.
-            pstem = _stem_of(placed)
-            for k, v in ds.items():
-                st = v.get("stem") or ""
-                stems = v.get("stems") or ([st] if st else [])
-                if pstem in stems:
-                    out["matched_key"] = k
-                    out["why"].append(
-                        f"취득 규칙이 {placed} 로 배치한다 → 대장 {k}")
-                    break
-            else:
-                out["why"].append(
-                    f"취득 규칙은 {placed} 로 배치하는데 대장 항목이 없다 — "
-                    "stem 이 맞는지 확인하라")
-
-    # ④ 본문 — 이름이 아무 말도 안 할 때만 연다
-    if out["matched_key"] is None:
-        key, why = body_match(body_text(src), ds)
-        out["why"].append(why)
-        if key:
-            rel, why2 = body_file_of(body_text(src), ds.get(key) or {})
-            out["why"].append(why2)
-            if rel:
-                out["matched_key"] = key
-                out["suggest"] = rel
-
-    if out["matched_key"] is None:
-        slug = nm.slugify(stem)
-        out["why"].append(
-            f"대장 매칭 실패. 후보 토큰 — {slug!r} (사람이 정한다)")
-    return out
+# ★ 2026-10-08 (DECISIONS §431 · PLAN #157). `firelane/intake_name.py` 로
+#   떼어 냈다. 2026-10-05 에 **본문 단서**를 뗀 것과 같은 수술이다 —
+#   그때 656 → 내려왔고, §430 의 `_pick` 통합이 다시 609 로 올렸다.
+from firelane.intake_name import propose, rule_path
 
 
 # ── 명령 ──────────────────────────────────────────────────────
@@ -349,6 +211,56 @@ def waiting(ds: dict) -> list[tuple[str, str]]:
     return out
 
 
+def _fits(suggest: str | None, pat: str) -> bool:
+    """제안 경로가 그 자리의 글롭에 맞나. 자리는 글롭일 수도 구체 경로일 수도 있다."""
+    from fnmatch import fnmatch
+
+    if not suggest:
+        return False
+    return (fnmatch(suggest, pat)
+            or fnmatch(Path(suggest).name, Path(pat).name))
+
+
+#: 파일 하나의 `propose()` 결과. **자리와 무관**하므로 파일당 한 번만 센다.
+#: ★ 없으면 자리 × 파일 만큼 PDF 를 다시 연다 — 자리 82 · 파일 7 이면 574번이다.
+_PROPOSED: dict[tuple[str, int, int], dict] = {}
+
+
+def _proposal(q: Path, ds: dict) -> dict:
+    st = q.stat()
+    k = (str(q), st.st_size, int(st.st_mtime))
+    if k not in _PROPOSED:
+        _PROPOSED[k] = propose(q, ds)
+    return _PROPOSED[k]
+
+
+def _pick(files: list[Path], ds: dict, key: str, pat: str,
+          taken: tuple[Path, ...] = ()) -> tuple[Path | None, str]:
+    """그 자리에 올 다운로드 하나 — **단서 넷을 전부 쓴다.**  (DECISIONS §431)
+
+    ★ 종전에는 `cmd_plan` · `_auto` · `_match_one` 셋이 **각자** 고르면서
+      단서 ④(본문)만 봤다. 그런데 `body_text` 는 **PDF 가 아니면 빈 문자열**을
+      돌려준다(`test_body_text_refuses_everything_that_is_not_a_pdf`) — zip 과
+      csv 는 읽을 본문이 없어 **영영 못 맞춘다.**
+
+      2026-10-08 실측 — 자리 다섯 중 PDF 하나만 자동으로 붙었고 넷은
+      사람이 `--assign` 으로 찍었다. 그런데 **`normalize_raw.RULES` 가 그 넷의
+      이름을 전부 알고 있었다.** `propose()` 가 그 규칙을 단서 ②로 쓰는데
+      이 세 자리가 `propose()` 를 **안 불렀다.**
+
+    ★ 셋을 여기 하나로 합친다 — 같은 질문에 답이 셋이면 반드시 갈린다.
+    """
+    for q in files:
+        if q in taken:
+            continue
+        got = _proposal(q, ds)
+        if got["matched_key"] != key:
+            continue
+        if _fits(got["suggest"], pat):
+            return q, " · ".join(got["why"][-2:]) or "대장 매칭"
+    return None, ""
+
+
 def _match_one(inb: Path, ds: dict, key: str, rel: str,
                assign: list[str] | None) -> Path | None:
     """그 자리에 올 다운로드 하나. 못 고르면 `None`. **사람이 이긴다.**
@@ -368,12 +280,7 @@ def _match_one(inb: Path, ds: dict, key: str, rel: str,
         if 0 <= k < len(want) and want[k] == (key, rel):
             hit = [q for q in files if frag in q.name]
             return hit[0] if len(hit) == 1 else None
-    for q in files:
-        if body_match(body_text(q), ds)[0] != key:
-            continue
-        if body_file_of(body_text(q), ds.get(key) or {})[0] == rel:
-            return q
-    return None
+    return _pick(files, ds, key, rel)[0]
 
 
 def cmd_plan(inb: Path, assign: list[str] | None = None) -> int:
@@ -412,16 +319,8 @@ def cmd_plan(inb: Path, assign: list[str] | None = None) -> int:
         src = picked.get(k - 1)
         why = "사람이 찍었다(--assign)"
         if src is None:
-            for q in files:
-                if q in picked.values():
-                    continue
-                got, w = body_match(body_text(q), ds)
-                if got != key:
-                    continue
-                r2, w2 = body_file_of(body_text(q), ds[key] or {})
-                if r2 == rel:
-                    src, why = q, f"{w} · {w2}"
-                    break
+            src, why = _pick(files, ds, key, rel, tuple(picked.values()))
+            why = why or "본문으로 못 가른다"
         print(f"  [{k}] {key}")
         print(f"      자리  {rel}")
         print(f"      파일  {src.name[:60] if src else '★ 못 찾았다'}")
@@ -436,13 +335,7 @@ def cmd_plan(inb: Path, assign: list[str] | None = None) -> int:
 
 
 def _auto(files, picked, ds, key, rel) -> bool:
-    for q in files:
-        if q in picked.values():
-            continue
-        if body_match(body_text(q), ds)[0] == key \
-           and body_file_of(body_text(q), ds[key] or {})[0] == rel:
-            return True
-    return False
+    return _pick(files, ds, key, rel, tuple(picked.values()))[0] is not None
 
 
 def cmd_stage(inb: Path, *, apply: bool, force: bool = False,
@@ -487,7 +380,7 @@ def cmd_stage(inb: Path, *, apply: bool, force: bool = False,
         #   그 자리까지 못 가게 막고 있었기 때문이다.
         #   `rel` 하나가 **「없음 판정」과 「목적지 이름」 두 일**을 했다. 가른다 —
         #   없음은 대장이 판정하고, **이름은 `normalize_raw.RULES` 가 든다.**
-        if not (dest := _by_rules(src.name) or (rel if "*" not in rel else "")):
+        if not (dest := rule_path(src.name) or (rel if "*" not in rel else "")):
             print(f"  ★ {src.name}: 목적지 이름을 못 정한다 — 대장은 글롭 "
                   f"{rel} 만 적고 `normalize_raw.RULES` 도 이 이름을 모른다.\n"
                   f"     규칙을 먼저 적어라 (src/firelane/normalize_raw.py)")
