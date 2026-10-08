@@ -181,7 +181,7 @@ def retired_names(y: dict) -> dict[str, str]:
             continue
         if v.get("origin_name"):
             out[str(v["origin_name"])] = k
-        for f in ([v["file"]] if v.get("file") else []) + (v.get("files") or []):
+        for f in ledger.files_decl(v):  # DECISIONS §438
             out[Path(str(f)).name] = k
         if v.get("stem"):
             out[f"stem::{v['stem']}"] = k

@@ -140,7 +140,7 @@ def l2(D: Path, y: dict) -> None:
             continue
         if v.get("stem"):
             ok.add(v["stem"])
-        for f in ([v["file"]] if v.get("file") else []) + (v.get("files") or []):
+        for f in ledger.files_decl(v):  # DECISIONS §438
             ok.add(Path(str(f)).name)
 
     for p in sorted(q.rglob("*")):
@@ -330,7 +330,7 @@ def l7(D: Path, y: dict) -> None:
             continue
         known |= {str(s).lower() for s in (v.get("stems") or [])}
         # `files` 는 글롭이다 — 파일명 부분만 떼어 아래 fnmatch 가 쓴다
-        globs.update(Path(str(f)).name.lower() for f in (v.get("files") or []))
+        globs.update(Path(str(f)).name.lower() for f in ledger.files_decl(v))  # DECISIONS §438
     # 은퇴도 선언이다 — 「모른다」가 아니라 「사유와 함께 안 쓴다」다
     for k, v in (y.get("retired") or {}).items():
         known.add(str((v or {}).get("stem") or k).lower() if isinstance(v, dict) else k.lower())
