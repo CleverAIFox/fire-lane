@@ -269,13 +269,29 @@ def lonely_tests(patches: list[Path]) -> list[str]:
       답이고, 그것이 `#138` 이 요구한 규율이다.
     """
     bad = []
-    for p in patches[:-1]:                        # 마지막은 뺀다
-        paths = patch_paths(p)
+    for i, cur in enumerate(patches[:-1]):        # 마지막은 뺀다
+        paths = patch_paths(cur)
         tests = [x for x in paths if x.startswith("tests/")]
-        impl = [x for x in paths if x.startswith(IMPL_DIRS)]
-        if tests and not impl:
-            bad.append(f"{p.name}  시험 {len(tests)}개만 든다 — "
-                       f"이 지점은 혼자 초록일 수 없다 ({', '.join(tests[:3])})")
+        if not tests or [x for x in paths if x.startswith(IMPL_DIRS)]:
+            continue
+        # ★ 시험만 들었다고 다 외로운 것이 아니다. **이미 있는 코드를 시험하는
+        #   커밋은 혼자 초록이다** — 이 문을 처음 세운 날 제 더미에서 그런 커밋
+        #   하나를 잡았고(`tests/test_figure_ink.py`, 그림 코드는 앞 커밋에 이미
+        #   있었다) 그것이 거짓 경보였다. 문을 세운 자가 첫 손님이 됐다.
+        #
+        # ★ §258-13 의 사고를 다시 읽으면 가르는 축이 보인다 — 그 시험이
+        #   **뒤에 오는 커밋이 만드는 것**을 물었다. 그래서 좁힌다: 이 시험이
+        #   이름으로 드는 파일을 **뒤 패치가 건드리면** 그때만 외롭다.
+        named = set()
+        body = cur.read_text(encoding="utf-8", errors="replace")
+        for later in patches[i + 1:]:
+            for q in patch_paths(later):
+                if q.startswith(IMPL_DIRS) and q in body:
+                    named.add(q)
+        if named:
+            bad.append(f"{cur.name}  시험 {len(tests)}개만 들었는데 그 시험이 드는 "
+                       f"{', '.join(sorted(named)[:3])} 가 **뒤 커밋에 온다** — "
+                       "이 지점은 혼자 초록일 수 없다")
     return bad
 
 

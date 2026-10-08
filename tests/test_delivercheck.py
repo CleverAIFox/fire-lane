@@ -355,9 +355,10 @@ def test_the_relock_exemption_matches_real_pytest_ids():
 
 
 # ── 외로운 시험 (2026-10-08 · DECISIONS §439 · PLAN #138) ─────────
-def _patch(tmp, name, *paths):
+def _patch(tmp, name, *paths, names=()):
     q = tmp / name
-    q.write_text("".join(f"--- a/{x}\n+++ b/{x}\n" for x in paths), encoding="utf-8")
+    body = "".join(f"--- a/{x}\n+++ b/{x}\n" for x in paths)
+    q.write_text(body + "".join(f"+# {n}\n" for n in names), encoding="utf-8")
     return q
 
 
@@ -367,10 +368,23 @@ def test_a_test_only_commit_in_the_middle_is_refused(tmp_path):
     앞 커밋만 실기에 얹히면 `DID NOT RAISE` 가 난다. 예습은 **마지막 상태**만
     보므로 그 지점을 아무도 서 보지 않는다.
     """
-    lonely = _patch(tmp_path, "0001-t.patch", "tests/test_x.py")
+    lonely = _patch(tmp_path, "0001-t.patch", "tests/test_x.py", names=("tools/z.py",))
     impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
     bad = D.lonely_tests([lonely, impl])
-    assert bad and "tests/test_x.py" in bad[0], bad
+    assert bad and "tools/z.py" in bad[0], bad
+
+
+def test_a_test_for_code_that_is_already_there_is_accepted(tmp_path):
+    """★ **이미 있는 코드를 시험하는 커밋은 혼자 초록이다.**
+
+    이 문을 세운 날 제 더미에서 그런 커밋 하나를 잡았다 —
+    `tests/test_figure_ink.py` 는 **앞 커밋에 이미 있는** 그림 코드를 시험한다.
+    문을 세운 자가 첫 손님이 됐고, 그래서 규칙을 좁혔다: 그 시험이 **이름으로
+    드는 파일을 뒤 패치가 건드릴 때만** 외롭다(§258-13 의 실제 꼴이다).
+    """
+    settled = _patch(tmp_path, "0001-t.patch", "tests/test_w.py", names=("tools/w.py",))
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    assert not D.lonely_tests([settled, impl])
 
 
 def test_a_commit_that_brings_its_implementation_is_accepted(tmp_path):
@@ -391,9 +405,10 @@ def test_the_last_patch_is_not_asked(tmp_path):
 def test_docs_do_not_count_as_the_implementation(tmp_path):
     """★ 문서·산출물은 시험을 초록으로 만들지 않는다 — **여전히 외롭다.**"""
     withdocs = _patch(tmp_path, "0001-td.patch", "tests/test_x.py",
-                      "docs/DECISIONS.md", "data/golden/x.json")
+                      "docs/DECISIONS.md", "data/golden/x.json",
+                      names=("tools/z.py",))
     impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
-    assert D.lonely_tests([withdocs, impl])
+    assert D.lonely_tests([withdocs, impl]), "문서를 구현으로 센다"
 
 
 def test_paths_come_from_the_diff_header_only(tmp_path):

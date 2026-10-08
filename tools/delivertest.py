@@ -142,20 +142,24 @@ def selftest() -> int:
         # ★ 2026-10-08 (DECISIONS §439 · PLAN #138). **외로운 시험**을 민다.
         #   합성 패치 넷으로 네 갈래를 본다 — 시험만(중간) · 시험+구현 ·
         #   시험만인데 마지막 · 구현만. 넷을 다 안 밀면 그물이 한쪽으로 쏠린다.
-        def patch(td2, name, *paths):
+        def patch(td2, name, *paths, names=()):
             q = Path(td2) / name
-            q.write_text("".join(f"--- a/{x}\n+++ b/{x}\n" for x in paths),
-                         encoding="utf-8")
+            body = "".join(f"--- a/{x}\n+++ b/{x}\n" for x in paths)
+            q.write_text(body + "".join(f"+# {n}\n" for n in names), encoding="utf-8")
             return q
 
-        lonely = patch(td, "0001-t.patch", "tests/test_x.py")
+        lonely = patch(td, "0001-t.patch", "tests/test_x.py", names=("tools/z.py",))
         paired = patch(td, "0002-tp.patch", "tests/test_y.py", "src/firelane/y.py")
         impl = patch(td, "0003-i.patch", "tools/z.py")
-        tail = patch(td, "0004-t2.patch", "tests/test_z.py")
+        tail = patch(td, "0004-t2.patch", "tests/test_z.py", names=("tools/z.py",))
+        # ★ 이미 있는 코드를 시험하는 커밋 — 뒤 패치가 그것을 안 건드린다
+        settled = patch(td, "0005-t3.patch", "tests/test_w.py", names=("tools/w.py",))
         if patch_paths(lonely) != ["tests/test_x.py"]:
             bad.append("패치에서 경로를 못 뽑는다")
         if not lonely_tests([lonely, impl]):
-            bad.append("시험만 든 중간 커밋을 안 잡는다 — §258-13 이 그 사고다")
+            bad.append("시험이 드는 것이 뒤 커밋에 오는데 안 잡는다 — §258-13")
+        if lonely_tests([settled, impl]):
+            bad.append("**이미 있는 코드**를 시험하는 커밋에 운다 — 혼자 초록이다")
         if lonely_tests([paired, impl]):
             bad.append("구현이 같이 든 커밋에 운다 — 짝이 있으면 혼자 초록이다")
         if lonely_tests([impl, tail]):
