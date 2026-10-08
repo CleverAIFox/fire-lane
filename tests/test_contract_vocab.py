@@ -186,7 +186,8 @@ def test_ratchets_match_the_ledger():
 
 def test_the_declared_mode_needs_no_lake():
     """★ 이 갈래가 CI 에 붙는 근거다. 레이크를 안 읽는가."""
-    src = (ROOT / "src" / "firelane" / "contract.py").read_text(encoding="utf-8")
+    # ★ 2026-10-08 (§431 · PLAN #157). `contract.py` → `contract_verdict.py`.
+    src = (ROOT / "src" / "firelane" / "contract_verdict.py").read_text(encoding="utf-8")
     body = src.split("def declared_issues")[1].split("\ndef ")[0]
     for forbidden in ("RAW", "paths_of", "read_csv", "zip_names", "decode_ok"):
         assert forbidden not in body, (

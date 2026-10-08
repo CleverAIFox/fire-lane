@@ -23,7 +23,7 @@ unusedcheck.py — **미배선 자료가 몇이고, 늘지 않는가.** 래칫.
   초록으로 위장한다**(`sizecheck` 머리말이 적은 그 병).
 
 ★ 어휘는 새로 만들지 않았다. `feeds_why` 에 사람이 이미 쓰던 표기를 선언으로
-  올렸고(`firelane.ledger.REFERENCE_WHY` · `PENDING_WHY`), 그것이 정본이다.
+  올렸고(`firelane.ledger_check.REFERENCE_WHY` · `PENDING_WHY`), 그것이 정본이다.
 
 IN    sources.yaml (`firelane.ledger` 를 통해서만 읽는다)
 OUT   표준출력 (판정)
@@ -40,6 +40,7 @@ import sys
 from pathlib import Path
 
 from firelane import ledger
+from firelane import ledger_check as lgc
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -61,7 +62,7 @@ def pending() -> dict[str, str]:
     out: dict[str, str] = {}
     for k, e in (ledger.load().get("datasets") or {}).items():
         e = e or {}
-        if ledger.grade(e) != "unused":
+        if lgc.grade(e) != "unused":
             continue
         w = str(e.get("feeds_why") or "").lstrip("★ *·\n").split("\n", 1)[0]
         out[k] = w or "— 사유 없음"
@@ -73,7 +74,7 @@ def undeclared() -> dict[str, str]:
     out: dict[str, str] = {}
     for k, e in (ledger.load().get("datasets") or {}).items():
         e = e or {}
-        if ledger.grade(e) == "unused" and ledger.why_token(e) is None:
+        if lgc.grade(e) == "unused" and lgc.why_token(e) is None:
             out[k] = str(e.get("feeds_why") or "")[:60] or "(없음)"
     return out
 
@@ -81,7 +82,7 @@ def undeclared() -> dict[str, str]:
 def check() -> int:
     got = pending()
     bad = undeclared()
-    tally = ledger.summary()
+    tally = lgc.summary()
     print(f"활용도 — {tally}")
     print(f"\n미배선 {len(got)} · 래칫 {PENDING_MAX}")
     for k, w in got.items():
@@ -92,7 +93,7 @@ def check() -> int:
         print(f"\n✗ 선언 낱말이 없는 항목 {len(bad)}")
         for k, w in bad.items():
             print(f"    {k} — {w}")
-        print(f"  `feeds_why` 는 {' · '.join(ledger.REFERENCE_WHY + ledger.PENDING_WHY)}")
+        print(f"  `feeds_why` 는 {' · '.join(lgc.REFERENCE_WHY + lgc.PENDING_WHY)}")
         print("  중 하나로 시작한다. 산문으로 흐리면 영구 참조와 미배선이 한 수에 섞인다.")
         rc = 1
     if len(got) > PENDING_MAX:
@@ -126,13 +127,13 @@ def selftest() -> int:
          "선언 낱말 없는 산문을 등급에 반영한다 — 낱말은 등급이 아니라 검사가 든다"),
     )
     for e, want, why in cases:
-        if ledger.grade(e) != want:
-            fails.append(f"{why} (실측 {ledger.grade(e)})")
+        if lgc.grade(e) != want:
+            fails.append(f"{why} (실측 {lgc.grade(e)})")
 
     # ★ 낱말 판별식. `★` 장식을 건너뛰는가 · 본문의 우연한 낱말을 안 집는가.
-    if ledger.why_token({"feeds_why": "★ 미투입 — 후보다"}) != "미투입":
+    if lgc.why_token({"feeds_why": "★ 미투입 — 후보다"}) != "미투입":
         fails.append("`★` 장식 뒤의 낱말을 못 읽는다")
-    if ledger.why_token({"feeds_why": "쓸 데가 없다\\n참조용으로 볼 수도"}) is not None:
+    if lgc.why_token({"feeds_why": "쓸 데가 없다\\n참조용으로 볼 수도"}) is not None:
         fails.append("첫 줄 밖의 낱말을 집는다 — 본문에 우연히 든 것까지 선언으로 읽는다")
 
     # ★ 반대 방향. 래칫이 실물과 같은가는 `check()` 가 들고, 여기서는

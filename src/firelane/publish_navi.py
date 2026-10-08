@@ -89,6 +89,7 @@ from __future__ import annotations
 import json
 import math
 import re
+from functools import partial as _partial
 
 import geopandas as gpd
 from shapely.geometry import Point
@@ -100,6 +101,7 @@ from firelane.cli import no_args
 from firelane.paths import ROOT
 from firelane.publish_rules import oneway, turns
 from firelane.seg.params import NODE_TOL
+from firelane.seg.unionfind import find as _uf_find
 
 P = ROOT / "data" / "processed"
 W = ROOT / "web" / "data"
@@ -304,11 +306,9 @@ def main() -> None:
     # graph.py 는 STRtree 를 쓴다. 여기는 2,202 점이라 격자로 충분하다.
     parent: dict[int, int] = {i: i for i in range(len(ends))}
 
-    def find(i: int) -> int:
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
+    # ★ 2026-10-08 (PLAN #47). 네 곳이 공유하던 다섯 줄 — 정본은 하나다.
+    #   **묶는 로직은 안 합친다** — 넷이 서로 다르고 합치면 `seg_uid` 가 움직인다.
+    find = _partial(_uf_find, parent)
 
     cells: dict[tuple[int, int], list[int]] = {}
     for i, (x, y) in enumerate(ends):

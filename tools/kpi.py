@@ -35,7 +35,10 @@ import math
 import statistics as st
 import sys
 from collections import defaultdict
+from functools import partial as _partial
 from pathlib import Path
+
+from firelane.seg.unionfind import find as _uf_find
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -63,11 +66,9 @@ def _node_index(feats: list, tol: float):
         ends.append((c[-1][0] * MX, c[-1][1] * MY))
     parent = list(range(len(ends)))
 
-    def find(i: int) -> int:
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
+    # ★ 2026-10-08 (PLAN #47). 네 곳이 공유하던 다섯 줄 — 정본은 하나다.
+    #   **묶는 로직은 안 합친다** — 넷이 서로 다르고 합치면 `seg_uid` 가 움직인다.
+    find = _partial(_uf_find, parent)
 
     cells: dict = defaultdict(list)
     for i, (x, y) in enumerate(ends):

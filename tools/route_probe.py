@@ -56,9 +56,15 @@ import networkx as nx
 import numpy as np
 from shapely.geometry import Point
 
+from firelane import ledger as _led
 from firelane.console import col
 from firelane.paths import PROCESSED
 from firelane.seg import vehicle as V
+
+# ★ 2026-10-08 (PLAN #122). 도메인은 대장을 직접 안 읽는다 — **진입점이**
+#   주입한다. 안 부르면 `V.spec()` 이 `SpecMissing` 으로 죽는다(조용히
+#   기본값으로 도는 것보다 낫다 · DECISIONS §431).
+V.use(_led.vehicle_spec())
 
 # 119안전센터. graph.py 의 STATIONS 와 같은 정본을 쓴다.
 from firelane.seg.graph import STATIONS

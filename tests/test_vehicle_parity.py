@@ -391,9 +391,16 @@ def _run() -> tuple[list[dict], list, list]:
 
 @pytest.fixture(autouse=True)
 def _restore_spec():
-    """`V._S` 를 격자용으로 갈아끼우므로 시험마다 되돌린다."""
+    """`V._S` 를 격자용으로 갈아끼우므로 시험마다 되돌린다.
+
+    ★ 2026-10-08 (PLAN #122). **`None` 으로 되돌리면 안 된다.** 종전에는
+      `spec()` 이 비면 대장을 게으르게 다시 읽었지만, 이제 도메인은 읽지
+      않는다 — 비워 두면 **뒤에 오는 시험이 `SpecMissing` 으로 죽는다.**
+      주입 전 값으로 되돌린다.
+    """
+    before = V._S
     yield
-    V._S = None
+    V._S = before
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -521,7 +528,10 @@ def test_a_verified_flag_without_its_value_is_where_the_two_split():
         "  ★ 한쪽을 고쳤으면 이 시험의 머리말도 같이 고쳐라 — 이것이 그 불일치의 기록이다.")
 
     # ── 덫. 값 없이 플래그만 올리는 날 여기서 운다 ──────────────
-    led = V._spec()                       # 대장 원본. 캐시를 안 건드린다
+    # ★ 2026-10-08 (PLAN #122). 대장을 읽는 자가 인프라로 올라갔다 —
+    #   도메인에는 `_spec()` 이 없다. 같은 값을 `ledger` 에서 받는다.
+    from firelane import ledger as _led
+    led = _led.vehicle_spec()             # 대장 원본. 주입값을 안 건드린다
     pub = ROOT / "web" / "data" / "vehicle_spec.json"
     # ★ 2026-09-25. 종전에는 `if not pub.exists(): return` 이었고 `deadcheck ③`
     #   (조용한 통과)이 그것을 물었다 — **대상을 못 찾으면 실패가 아니라 통과**다.

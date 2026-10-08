@@ -140,6 +140,23 @@ def _targets() -> list[tuple[str, str, dict]]:
         if str((e or {}).get("awaiting") or "").strip():
             continue                       # 대장에 있는데 raw 에 없다 — 유예다
         conv = _converter(e)
+        # ★ 2026-10-08 (DECISIONS §434). **`raw_only` 는 norm 에 실물을 두지
+        #   않는다.** `test_declaration_reality.test_raw_only_is_true_to_the_lake`
+        #   가 「`raw_only` 인데 norm 에 실물이 있으면 선언이 거짓이다」를 들고,
+        #   그 시험이 면제하는 것은 **변환 산출 하나**다(`norm_convert` 를 선언한
+        #   항목의 `.csv`). 이 자리가 그 경계를 안 보고 있었다 — 두 관문이 같은
+        #   물음에 **다른 답**을 했고(족 3) `awaiting` 이 그 모순을 가리고 있었다.
+        #
+        #   §433 이 유예 다섯 줄을 지우자 `eais_roadledger_dm`(`raw_only` · `.csv`)
+        #   이 대상으로 승격돼 norm 파일이 생겼고, 그 파일이 있다는 사실이 같은
+        #   항목의 `raw_only` 선언을 거짓으로 만들었다. 실측 — `raw_only` 34종 중
+        #   플레인 텍스트를 선언한 것은 **그 하나뿐**이고, `_prep.json` 의 기존
+        #   `raw_only` 행 넷은 전부 `norm_convert` 를 든다.
+        #
+        #   ★ 경계를 **한 곳에만** 적지 않는다. 둘이 어긋나면 우는 판별식이
+        #     `tests/test_declaration_reality.py` 에 있다 — 이 줄을 지우면 거기서 운다.
+        if (e or {}).get("kind") == "raw_only" and not conv:
+            continue                       # 형식 정규화 대상이 아니다
         exts = {CONVERTERS[conv][0]} if conv else TEXT_EXT
         files = _led.globs(e)
         for pat in files:

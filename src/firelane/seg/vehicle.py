@@ -66,50 +66,53 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from pathlib import Path
-
-import yaml
 
 from firelane.seg.params import OFFTRACK_MIN
 
-_ROOT = Path(__file__).resolve().parents[3]
-
 
 class SpecMissing(RuntimeError):
-    """차량 제원이 대장에 없다."""
+    """차량 제원이 없다 — 대장에 없거나, 아직 주입되지 않았다."""
 
 
-def _spec() -> dict:
-    """`sources.yaml` 의 `vehicle_spec` 을 읽는다.
+#: 제원에 반드시 있어야 하는 칸. **무엇이 필요한가는 도메인이 안다.**
+NEED = ("width_m", "length_m", "wheelbase_m", "turn_radius_m",
+        "clearance_m", "source")
 
-    ★ 기본값을 두지 않는다. 없으면 죽는다.
-      기본값을 두면 아무도 안 채우고, 그 값이 판정에 들어간다.
-      `feeds` 21종이 비어 있던 것과 같은 이유다 — 규칙만 있고
-      강제가 없으면 안 채운다.
+_S: dict | None = None
+
+
+def use(d: dict | None) -> None:
+    """제원을 **주입한다.**  (DECISIONS §431 · PLAN #122)
+
+    ★ 2026-10-08. 종전에는 이 모듈이 `Path(__file__).resolve().parents[3]` 로
+      **제 루트를 손수 계산해** `sources.yaml` 을 직접 읽었다. import 가 없어
+      계층 검사가 조용했고 `PLAN #122` 가 두 달 그것을 들고 있었다(§279-8).
+
+      §279-8 이 고치는 법을 이미 적어 뒀다 — **「금지는 import 가 아니라
+      행위다. 도메인은 파일을 안 읽는다. 값은 인자로 받는다. TS 쪽이 이미
+      그 모양이다(`domain/vehicle.ts` 는 `spec` 을 받는다).」**
+
+    ★ 기본값을 두지 않는다. 없으면 죽는다. 기본값을 두면 아무도 안 채우고
+      그 값이 판정에 들어간다 — `feeds` 21종이 비어 있던 것과 같은 이유다.
     """
-    p = _ROOT / "sources.yaml"
-    d = (yaml.safe_load(p.read_text(encoding="utf-8")) or {}).get("vehicle_spec")
+    global _S
     if not d:
         raise SpecMissing(
             "sources.yaml 에 vehicle_spec 이 없다.\n"
             "  차량 제원은 판정을 바꾸므로 출처와 함께 대장에 적어야 한다.\n"
             "  출처 후보: 소방청 소방력 기준에 관한 규칙 · 제조사 제원표 ·\n"
             "            D-30 동부소방서 인터뷰(보유 차종)")
-    need = ("width_m", "length_m", "wheelbase_m", "turn_radius_m",
-            "clearance_m", "source")
-    miss = [k for k in need if d.get(k) in (None, "")]
-    if miss:
+    if miss := [k for k in NEED if d.get(k) in (None, "")]:
         raise SpecMissing(f"vehicle_spec 에 {miss} 가 비었다. source 도 필수다.")
-    return d
-
-
-_S = None
+    _S = dict(d)
 
 
 def spec() -> dict:
-    global _S
     if _S is None:
-        _S = _spec()
+        raise SpecMissing(
+            "차량 제원이 주입되지 않았다.\n"
+            "  진입점이 `vehicle.use(ledger.load_sources().get(\"vehicle_spec\"))` 를\n"
+            "  먼저 불러야 한다 — 도메인은 대장을 직접 안 읽는다(PLAN #122).")
     return _S
 
 

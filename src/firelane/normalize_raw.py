@@ -103,7 +103,7 @@ def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
       구분자라서다. 하이픈은 처음부터 허용이었고 이 정규식만 몰랐다.
       **대장이 정본인데 코드가 더 좁았다.**
 
-    ★ 2026-09-17. 날짜 뒤 `_<part>` 도 받는다. 대장 `parts` 와 `acquire._derive_files` 는
+    ★ 2026-09-17. 날짜 뒤 `_<part>` 도 받는다. 대장 `parts` 와 `acquire_rules.derive_files` 는
       `<stem>_<scope>_<날짜>_<part>` 를 만들고 `naming.check` 도 통과시키는데 이 정규식만
       날짜로 끝나야 했다 — 같은 형태의 세 번째다(하이픈 · json). 관리카드가 처음 걸렸다.
     """

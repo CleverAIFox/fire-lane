@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from firelane import shardseal
+from firelane import sealkeys, shardseal
 from firelane.guards import quarantine_stale
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -139,6 +139,26 @@ def test_legacy_seal_is_accepted_and_restamped(shard):
     assert rec["seal"]["cfg"] == shardseal.cfg_print(cfg, "road"), "새 판으로 고쳐 적지 않았다"
 
 
+def _declaring_files(*names: str) -> set[str]:
+    """그 이름을 **모듈 수준에서 대입하는** 폐포 파일. 선언하는 집은 제 선언에 안 걸린다.
+
+    ★ 2026-10-08 (DECISIONS §431). 종전에는 `if f.name == "shardseal.py"` 였다 —
+      **파일명을 손으로 적은 인스턴스 가드**다(PLAN §13-4). 선언이 `sealkeys.py`
+      로 이사한 순간 그 가드가 제 선언을 세며 울었다. 「가드가 제 설명문을 센다」
+      족의 **다섯 번째**이고, 이번엔 **어디에 적혔나를 유도**해서 닫는다.
+    """
+    import ast
+    want, out = set(names), set()
+    for f in shardseal.code_closure():
+        for n in ast.walk(ast.parse(f.read_text(encoding="utf-8"))):
+            tgt = ([n.target] if isinstance(n, ast.AnnAssign) else
+                   list(n.targets) if isinstance(n, ast.Assign) else [])
+            if any(isinstance(x, ast.Name) and x.id in want for x in tgt):
+                out.add(f.name)
+    assert out, f"{sorted(want)} 를 대입하는 폐포 파일이 없다 — 유도가 죽었다"
+    return out
+
+
 def test_skipped_global_subkeys_are_really_unread(capsys):
     """★ 2026-10-05 (DECISIONS §397). `INGEST_GLOBAL_SKIP` 은 **사유로 적지만
     참인지는 기계가 묻는다** — 폐포 어느 파일도 그 이름을 안 쥐는가.
@@ -148,11 +168,12 @@ def test_skipped_global_subkeys_are_really_unread(capsys):
     """
     import ast
     names: set[str] = set()
+    mine = _declaring_files("INGEST_GLOBAL_SKIP", "DOC_KEYS", "NOT_DOC_KEYS",
+                            "NOT_INGEST_GLOBAL", "INGEST_GLOBAL")
     for f in shardseal.code_closure():
-        # ★ 선언한 파일 자신은 뺀다 — `INGEST_GLOBAL_SKIP` 이 그 이름을 **적는**
-        #   자리이고, 안 빼면 무엇을 선언하든 제 선언에 걸린다.
-        #   `tools/tonecheck.py` 가 제 낱말 목록을 면제하는 것과 같은 자리다.
-        if f.name == "shardseal.py":
+        # ★ 선언한 파일 자신은 뺀다 — 그 이름을 **적는** 자리이고, 안 빼면
+        #   무엇을 선언하든 제 선언에 걸린다. 어느 파일인지는 **유도한다.**
+        if f.name in mine:
             continue
         src = f.read_text(encoding="utf-8")
         for n in ast.walk(ast.parse(src)):
@@ -205,31 +226,61 @@ def test_every_prose_field_in_the_ledger_is_declared_as_prose():
     from firelane import ledger
     cfg = ledger.load_sources()
 
-    #: 이름은 산문처럼 보이지만 **실질**이다 — 고치면 산출이 바뀐다.
-    KNOWN_SUBSTANTIVE = {"description"}
+    # ★ 2026-10-08 (DECISIONS §431). **그물을 낱말에서 구조로 바꿨다.**
+    #   종전 그물은 `caveat|note|why|what|comment|desc|remark` 를 품은 이름만
+    #   후보로 냈고, **`survey_year` 는 그 중 아무것도 안 품었다** — §423 이
+    #   그것을 만들자 `ngii1k` 샤드가 바로 찢어졌다(같은 족 다섯 번째).
+    #
+    #       후보 = 값이 **글자**인 칸  −  폐포가 `x["k"]` · `x.get("k")` 로 읽는 칸
+    #
+    #   ★ 모든 문자열 리터럴을 세면 **이 그물이 제 선언을 센다** — `sealkeys.py`
+    #     가 폐포 안이라 `DOC_KEYS` 의 이름들이 거기 글자로 있다. 그래서
+    #     **첨자·`.get()` 자리**만 읽는다(§398-3 · §425-6 · §430-4 · §431-4 족).
+    import ast as _ast
 
-    SUSPECT = ("caveat", "note", "why", "what", "comment", "desc", "remark")
-    found: set[str] = set()
+    read: set[str] = set()
+    for q in shardseal.code_closure():
+        for n in _ast.walk(_ast.parse(q.read_text(encoding="utf-8"))):
+            if isinstance(n, _ast.Subscript) and isinstance(n.slice, _ast.Constant):
+                read.add(n.slice.value)
+            elif (isinstance(n, _ast.Call) and isinstance(n.func, _ast.Attribute)
+                  and n.func.attr in ("get", "pop") and n.args
+                  and isinstance(n.args[0], _ast.Constant)):
+                read.add(n.args[0].value)
+    assert "kind" in read, "탐지가 죽었다 — 폐포가 `kind` 조차 안 읽는다고 말한다"
 
-    def walk(v):
+    strfields: set[str] = set()
+
+    def walk(v, top=False):
         if isinstance(v, dict):
             for k, sub in v.items():
-                if isinstance(k, str) and any(s in k.lower() for s in SUSPECT):
-                    found.add(k)
+                # 대장 **키 이름**은 칸이 아니다 — 한 겹 아래부터 본다
+                if not top and isinstance(k, str) and isinstance(sub, str):
+                    strfields.add(k)
                 walk(sub)
         elif isinstance(v, list):
             for x in v:
                 walk(x)
 
     for k in shardseal.INGEST_GLOBAL:
-        walk(cfg.get(k))
-    walk(cfg.get("datasets"))
-    gap = sorted(found - set(shardseal.DOC_KEYS) - KNOWN_SUBSTANTIVE)
-    assert not gap, (
-        "대장에 산문 칸이 있는데 `DOC_KEYS` 에 없다 — 그 칸 한 줄이 45샤드를 찢는다:\n"
-        + "\n".join(f"    {g}" for g in gap)
-        + "\n  실질이면 `KNOWN_SUBSTANTIVE` 에 사유와 함께 적어라.")
+        walk({k: cfg.get(k)}, top=True)
+    walk(cfg.get("datasets"), top=True)
+    assert len(strfields) > 20, f"글자값 칸을 {len(strfields)}개만 찾았다 — 그물이 비었다"
+
+    found = {k for k in strfields if k not in read}
     assert found, "후보를 하나도 못 찾았다 — 그물이 비었다"
+    gap = sorted(found - set(sealkeys.DOC_KEYS) - set(sealkeys.NOT_DOC_KEYS))
+    assert not gap, (
+        "폐포가 안 읽는 글자 칸인데 어느 쪽에도 안 적혔다 — 그 칸 한 줄이 45샤드를 찢는다:\n"
+        + "\n".join(f"    {g}" for g in gap)
+        + "\n  산문이면 `shardseal.DOC_KEYS` 에, **실질이면** `NOT_DOC_KEYS` 에"
+        + "\n  사유와 함께 적어라. 적지 않으면 그 칸은 분류 **밖**에서 산다.")
+    ghost = sorted(set(sealkeys.NOT_DOC_KEYS) - strfields)
+    assert not ghost, (
+        f"`NOT_DOC_KEYS` 가 대장에 없는 칸을 든다: {ghost}\n"
+        "  낡은 면제는 사각지대다 — 지워라(§259-2).")
+    thin = [k for k, w in sealkeys.NOT_DOC_KEYS.items() if len(w.strip()) < 15]
+    assert not thin, f"사유가 빈약하다: {thin}"
 
 
 def test_a_caveat_does_not_tear_every_shard(shard):
@@ -464,5 +515,19 @@ def test_ingest_global_keys_are_declared():
                 read.add(n.args[0].value)
     used = (read & top) - {"datasets", "outputs"}
     assert "layers" in used or "raw_only" in used, "탐지가 아무것도 못 찾았다 — 카나리아가 죽었다"
-    missing = used - set(shardseal.INGEST_GLOBAL)
-    assert not missing, f"ingest 가 읽는 전역 키가 cfg 칸에 없다: {sorted(missing)} — 바뀌어도 샤드가 안 찢어진다"
+    # ★ 2026-10-08 (DECISIONS §431 · PLAN #122). **양방향으로 받는다.**
+    #   폐포가 글자로 쥐는 것과 ingest 가 산출에 쓰는 것은 다르다 —
+    #   `vehicle_spec` 은 접근자가 `ledger.py` 에 살아서 보이는 것뿐이고,
+    #   재면 제원 한 줄에 45샤드가 찢어진다(8GB 기계에서 OOM).
+    #   그래서 **사유와 함께 선언하면** 받고, 안 적으면 운다.
+    skip = set(sealkeys.NOT_INGEST_GLOBAL)
+    missing = used - set(shardseal.INGEST_GLOBAL) - skip
+    assert not missing, (
+        f"ingest 가 읽는 전역 키가 cfg 칸에 없다: {sorted(missing)} — 바뀌어도 샤드가 안 찢어진다.\n"
+        "  산출에 안 닿으면 `sealkeys.NOT_INGEST_GLOBAL` 에 **사유와 함께** 적어라.")
+    ghost = sorted(skip - used)
+    assert not ghost, (
+        f"`NOT_INGEST_GLOBAL` 이 폐포가 안 쥐는 이름을 든다: {ghost}\n"
+        "  낡은 면제는 사각지대다 — 지워라(§259-2).")
+    thin = [k for k, w in sealkeys.NOT_INGEST_GLOBAL.items() if len(w.strip()) < 20]
+    assert not thin, f"사유가 빈약하다: {thin}"

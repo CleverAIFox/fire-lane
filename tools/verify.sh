@@ -571,6 +571,12 @@ step "구조 묶음 선언"    uv run python tools/archcost.py
 #   같은 축을 들지만 그쪽은 processed/*.gpkg 를 읽어 CI 에서 건너뛴다.
 scope "data/processed/segments.geojson src/firelane/seg/*"
 step "회색 어휘 구멍"    uv run python tools/greycheck.py
+# ★ 2026-10-08 (DECISIONS §435 · PLAN #104). 발행된 판정이 제 계약을 지키는가 —
+#   폭 상한 · 도로명 꼴 · **조용한 결측**. 앞 둘은 0 이고 그 0 을 지킨다.
+#   셋째가 2 다 — `blocked` 인데 폭이 비었고 사유 칸이 없다. 파이프라인은
+#   사유를 아는데(`all_xsec`) 표준출력에만 찍고 산출물에 안 넣는다.
+scope "data/processed/segments.geojson src/firelane/seg/params.py"
+step "발행 판정 계약"    uv run python tools/segcontract.py
 # ★ 2026-09-28 (§279-6). 사유 딸린 면제표는 이미 조여 있었다(빈 사유 0). 남은 빚은
 #   **주석 한 줄짜리 억제**에 몰려 있었다 — 표에 안 들어가고 사유를 안 적어도 되고
 #   아무도 안 세는 자리다. 119 에서 시작해 같은 날 죽은 `noqa` 59개를 지워 57 이다.
@@ -596,11 +602,11 @@ scope "docs/* tools/*"
 step "기획서 그림 ↔ 정본" uv run python tools/docx_figs.py --check
 # ★ 2026-09-17 (DECISIONS §180-9). `흡수 대상`(release_brief 한 줄)을 뺐다. 검사가 아니라 보고였고 매 실행 "생략" 으로
 #   찍혀 생략 칸을 채웠다 — 진짜 생략(npm 없음 · --fast)이 그 옆에 묻힌다. 표는 릴리즈 PR 본문에서 쓰인다(merge_batch --release).
-# ★ 2026-09-17 (DECISIONS §182-2 · G-14). 대장 필드 검사를 아무도 안 불렀다. `python -m firelane.ledger` 는
+# ★ 2026-09-17 (DECISIONS §182-2 · G-14). 대장 필드 검사를 아무도 안 불렀다. `python -m firelane.ledger_check` 는
 #   FAIL 9 로 종료코드 1 을 내고 있었는데 verify · 테스트 · CI 어디에도 없어서 초록이었다.
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "sources.yaml src/* tools/*"
-step "대장 필드 검사"   uv run python -m firelane.ledger
+step "대장 필드 검사"   uv run python -m firelane.ledger_check
 # ★ 2026-10-02 (DECISIONS §349). 대장은 같은 사실을 두 벌로 든다 — `contract`(규범) ·
 #   `schema`(실측). 갈라 둔 이유는 옳은데(합치면 실물이 바뀔 때 약속이 같이 바뀌어
 #   아무도 못 알아챈다) **둘을 대 보는 자리가 없었다.** 레이크를 안 읽으므로 CI 도 돈다 —
@@ -959,7 +965,7 @@ step "봉인 조상" uv run python tools/dms.py ancestry
 #   것이 아니라 **지금 값에서 시작해 내리는 것**이 일이다(env_check 선례).
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "src/* tools/* tests/*"
-step "사본군" uv run python tools/dupcheck.py --min 40 --max 1
+step "사본군" uv run python tools/dupcheck.py --min 40 --max 0
 
 # ★ 2026-09-22 (DECISIONS §218-5 · 하토르 check_file_size.py 모범). 파일 길이 **양방향** 래칫.
 #   상한(코드 600 · 시험 700)을 넘는 것은 `EXCEPTIONS` 에 오늘 줄 수로 박혀 있고, 늘면
@@ -1110,7 +1116,8 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   셋이 빠지면서 **안 덮이던 코드가 같이 빠졌고**, 취입·도구분류 시험 스물넷이
 #   들어왔다. 덮임이 는 것이 아니라 **분모가 준 몫도 있다** — 둘을 안 가르면
 #   다음에 화면을 지울 때 또 올라간다).
-COV_MIN=38
+#   10-08 §435 38→39 (실측 39.06%)
+COV_MIN=39
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."
