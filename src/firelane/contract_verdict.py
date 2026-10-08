@@ -68,7 +68,22 @@ REAL_FAIL_RATCHET = 8
 #:     적어 당한 그것). 그리고 **항목을 더할 때마다 이 수를 다시 센다** — 처음에
 #:     57 로 적고 `juso_adrdc` 를 더하면서 안 고쳤다가 §429 에서 같이 잡았다.
 #:   ★ **반입되면 내려간다.** `awaiting` 을 지우는 판이 이 수를 조인다.
-REAL_WARN_RATCHET = 59
+#:
+#: ★ 2026-10-08 (DECISIONS §433). 59 → **57.** 그 판이 왔다 — 다섯이 전부
+#:   반입됐고 `awaiting` 다섯 줄을 지웠다. 사람이 **재서** 보낸 수로 갈랐다 —
+#:
+#:     vworld_uq153        awaiting → `.prj` 7변수 경고   ±0
+#:     vworld_uq164        awaiting → 없음                −1
+#:     juso_adrdc          awaiting → 없음                −1
+#:     nfa_bldgcomm_guide  awaiting → 무계약 PDF 경고      ±0
+#:     eais_roadledger_dm  awaiting → 컬럼 추가 경고       ±0
+#:
+#: ★ **실패는 안 움직인다(8 그대로).** 지우자마자 실측은 9 였다 —
+#:   `vworld_uq153` 이 「선언 5174 인데 `.prj` 는 …」로 떨어졌다. 읽어 보니
+#:   `.prj` 가 **스스로 5174 라고 적고** 다른 것은 `TOWGS84` 하나였다.
+#:   관문이 옳은 선언을 틀렸다고 운 것이고, 그것을 고쳤다(`_datum_shift_only`).
+#:   **실패 9 를 받아적었으면 그 결함이 래칫 안에 숨었다.**
+REAL_WARN_RATCHET = 57
 
 
 def real_verdict(nf: int, nw: int) -> tuple[int, list[str]]:

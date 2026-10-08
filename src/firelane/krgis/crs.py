@@ -54,6 +54,12 @@ CRS_WGS84 = "EPSG:4326"   # 웹 표출 / GeoJSON 표준
 #     - X가 8자리             → 3857
 # ─────────────────────────────────────────────────────────────
 
+#: 위 지문표의 **기준점**. 광주 동구 동명동.
+#: ★ 2026-10-08 (DECISIONS §433). 같은 수가 위 주석과 `__main__` 에 **두 벌**로
+#:   있었다. 한 벌은 사람이 읽고 한 벌은 기계가 쓰는데, 고칠 때 한쪽만 고치면
+#:   표가 거짓이 된다 — 이 저장소가 반복해서 당한 꼴이다(§232 족).
+REF_WGS84 = (126.9245, 35.1490)
+
 CANDIDATES = [
     "EPSG:4326", "EPSG:5179", "EPSG:5186", "EPSG:5187",
     "EPSG:5185", "EPSG:5188", "EPSG:5181", "EPSG:5174",
@@ -128,7 +134,7 @@ if __name__ == "__main__":
     print("=== 좌표계 지문 (동명동 기준) ===")
     for code in CANDIDATES:
         tf = Transformer.from_crs(CRS_WGS84, code, always_xy=True)
-        x, y = tf.transform(126.9245, 35.1490)
+        x, y = tf.transform(*REF_WGS84)
         print(f"  {code:<12} X={x:>14,.1f}  Y={y:>14,.1f}")
 
     print("\n=== probe 테스트: (193120.3, 283627.8) ===")

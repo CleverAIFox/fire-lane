@@ -88,10 +88,11 @@ import sys
 import zipfile
 from pathlib import Path
 
+# ★ 2026-10-08 (DECISIONS §433). 어휘가 `contract_crs` 로 내려갔다 — 이 파일이
+#   그 파일을 들이므로 거꾸로 들이면 순환이다. 정본은 하나이고 여기는 읽는다.
+from firelane.contract_crs import FAIL, OK, WARN
 from firelane.encoding import CANDIDATES_REPORT
 from firelane.paths import ROOT
-
-OK, WARN, FAIL = "OK", "경고", "★실패"
 
 
 class Report:
@@ -197,101 +198,12 @@ def schema_failures(schema, d) -> list[str]:
         return out
 
 
-# ── 좌표계 대조 — MASTER §18-3 의 「CRS 변경 → ★중단」 (2026-09-28) ──
-# ★ 이 관문은 **선언만 있고 구현이 없었다.** `krgis/crs.py` 는 자기 래퍼 셋을
-#   지우면서 그 근거로 「contract.py 가 선언과 실물을 대조하며」 를 들었고,
-#   `contract.py` 머리말은 「선언 CRS 와 실물 .prj 대조」 를 적어 두었다.
-#   **둘이 서로를 가리키고 실제로 하는 쪽이 없었다**(§284-2).
-#
-# ★ 두 판정을 나눈다. `krgis` 의 첫 원칙이 「추측하지 말고 측정한다」다 —
-#     ① 선언 ↔ `.prj`      메타데이터끼리. 국내 SHP 는 이것이 없거나 틀리다
-#     ② 선언 ↔ 좌표 실측    좌표 한 점을 후보 전부로 역변환해 본다
-#   ②가 ①보다 세다. `.prj` 가 틀렸을 때 ①만 있으면 틀린 것끼리 맞는다.
-#
-# ★ **②의 한계를 적어 둔다.** 좌표 실측은 bbox 안에 떨어지는가로 본다.
-#   `5181`(중부 y+50만) 과 `5174`(보정중부 Bessel) 는 지상 300m 차이라
-#   광주 bbox 안에 나란히 떨어진다 — **좌표만으로는 못 가른다.** 실측으로
-#   확인했고 그 쌍이 유일하다. 그래서 ②는 그 경우 경고를 내고 ①에게
-#   넘긴다. 둘이 서로의 사각지대를 덮는다.
-#
-# ★ 순수 함수로 둔다. 레이크가 없는 곳에서도 **판정 자체**는 시험할 수 있어야
-#   한다 — 합성 `.prj` 와 합성 좌표로 문다(`tests/test_crs_gate.py`).
-#: `.prj` → EPSG 되찾기 문턱. **기본값 70 으로는 안 된다.**
-#: ★ 실측 2026-09-28. 실물 `.prj` 는 GDAL 이 쓴 WKT1 이고, 그 글을 다시
-#:   읽으면 `to_epsg()` 가 한국 좌표계 전부에서 `None` 을 낸다 —
-#:   5186 · 5181 · 5174 · 5179 · 5187 다. 문턱을 25 로 내리면 전부 되찾는다.
-#:   이것을 안 쓰면 **옳은 `.prj` 를 틀렸다고 우는 관문**이 되고, 그러면
-#:   사람이 관문을 끈다. 우는 관문은 없는 관문보다 나쁘다.
-EPSG_CONFIDENCE = 25
-
-
-def prj_verdict(declared: str, prj_text: str) -> tuple[str, str] | None:
-    """선언 좌표계 ↔ 실물 `.prj`. (수준, 메시지) 또는 None(일치)."""
-    from pyproj import CRS as _CRS
-    from pyproj.exceptions import CRSError as _CRSError
-
-    if not declared:
-        return None
-    if not (prj_text or "").strip():
-        return (WARN, "`.prj` 가 없다 — 선언을 믿고 간다. 국내 SHP 의 흔한 꼴이다")
-    try:
-        want, got = _CRS.from_user_input(declared), _CRS.from_wkt(prj_text)
-    except (_CRSError, ValueError) as ex:
-        return (WARN, f"`.prj` 를 못 읽었다 — {type(ex).__name__}")
-    w_epsg = want.to_epsg(min_confidence=EPSG_CONFIDENCE)
-    g_epsg = got.to_epsg(min_confidence=EPSG_CONFIDENCE)
-    if w_epsg is not None and w_epsg == g_epsg:
-        return None
-    if want.equals(got, ignore_axis_order=True):
-        return None
-    return (FAIL, f"좌표계 선언 {declared} 인데 `.prj` 는 "
-                  f"{f'EPSG:{g_epsg}' if g_epsg else got.name} 다")
-
-
-def coord_verdict(declared: str, x: float, y: float) -> tuple[str, str] | None:
-    """★ **측정한다.** 좌표 한 점이 선언 좌표계로 광주 안에 떨어지나."""
-    from firelane.krgis.crs import offset_between, probe_crs
-
-    if not declared:
-        return None
-    hits = [r.epsg for r in probe_crs(x, y) if r.inside_target]
-    if not hits:
-        return (WARN, f"좌표 ({x:,.1f}, {y:,.1f}) 가 어느 후보로도 광주 안에 "
-                      f"안 떨어진다 — 대상 지역 밖 데이터일 수 있다")
-    if declared in hits:
-        # ★ 실측 2026-09-28. 후보가 둘 이상 맞는 경우는 **정확히 하나** —
-        #   `5181`(중부 y+50만) 과 `5174`(보정중부 Bessel) 쌍이다. 둘은
-        #   지상 300m 차이라 광주 bbox 안에 나란히 떨어진다. 나머지 아홉은
-        #   전부 후보 하나만 맞는다. 그래서 이 경고는 **위험한 그 쌍에서만**
-        #   울고 잡음이 없다. 좌표로는 여기까지고, 가르는 것은 `.prj` 다.
-        if len(hits) > 1:
-            return (WARN, f"좌표만으로는 {' · '.join(hits)} 를 못 가른다 "
-                          f"(지상 {offset_between(x, y, *hits[:2]):,.0f}m 차이) — "
-                          f"`.prj` 가 판정한다. 선언은 {declared}")
-        return None
-    try:
-        gap = offset_between(x, y, declared, hits[0])
-    except Exception:
-        gap = float("nan")
-    return (FAIL, f"좌표계 선언 {declared} 인데 실측은 {' · '.join(hits[:3])} 다 — "
-                  f"{gap:,.0f}m 어긋난다")
-
-
-def prj_in(path: Path, layer: str | None = None) -> str:
-    """zip 또는 폴더에서 `.prj` 글을 꺼낸다. 없으면 빈 글."""
-    if path.suffix.lower() == ".zip":
-        try:
-            with zipfile.ZipFile(path) as z:
-                prjs = [n for n in z.namelist() if n.lower().endswith(".prj")]
-                if layer:
-                    stem = Path(layer).stem.lower()
-                    prjs = [n for n in prjs
-                            if Path(n).stem.lower() == stem] or prjs
-                return z.read(prjs[0]).decode("utf-8", "replace") if prjs else ""
-        except (zipfile.BadZipFile, KeyError, OSError):
-            return ""
-    sib = path.with_suffix(".prj")
-    return sib.read_text(encoding="utf-8", errors="replace") if sib.is_file() else ""
+# ── 좌표계 대조 — MASTER §18-3 의 「CRS 변경 → ★중단」 ─────────
+# ★ 2026-10-08 (DECISIONS §433). `firelane/contract_crs.py` 로 떼어 냈다.
+#   `_datum_shift_only` 가 들어오며 606 으로 상한을 넘었고, 이 묶음은
+#   「선언 좌표계가 실물과 맞는가」 한 물음이라 혼자 선다 —
+#   `tests/test_crs_gate.py` 가 이미 그것을 한 묶음으로 물고 있었다.
+from firelane.contract_crs import coord_verdict, prj_in, prj_verdict
 
 
 def zip_names(path: Path) -> list[str]:

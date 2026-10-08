@@ -80,14 +80,26 @@ def logic_print(p: Path) -> str:
 
     ★ 2026-09-16. 바이트로 재면 머리말 한 줄에 40 샤드가 전부 찢어지고, 이 기계에서는
       그것이 곧 `ngii_road` OOM 이다. 산출물을 바꿀 수 있는 것은 로직뿐이다.
+
+    ★ 2026-10-08 (DECISIONS §433). **그 사유를 이 함수가 어기고 있었다.**
+      몸통이 비면 `[ast.Pass()]` 로 채우는데, **원래 빈 파일은 `body=[]`** 라
+      채워지지 않았다. 그래서 0바이트 `__init__.py` 에 머리말을 다는 순간
+      `Module(body=[])` → `Module(body=[Pass()])` 로 덤프가 갈리고 **샤드가
+      전부 찢어진다** — 막으려던 바로 그 사고다. 실측으로 잡았다:
+      `golden.logic_text` 는 둘 다 `''` 로 「같다」고 말하는데 여기는 「다르다」고
+      말했다. **같은 물음에 두 지문기가 다른 답**이고 그것이 족 3 이다.
+      이제 **빈 몸통도 똑같이** `[Pass()]` 로 맞춘다.
     """
     tree = ast.parse(p.read_text(encoding="utf-8"))
     for node in ast.walk(tree):
         body = getattr(node, "body", None)
-        if (isinstance(body, list) and body and isinstance(body[0], ast.Expr)
+        if not isinstance(body, list):
+            continue
+        if (body and isinstance(body[0], ast.Expr)
                 and isinstance(getattr(body[0], "value", None), ast.Constant)
                 and isinstance(body[0].value.value, str)):
-            node.body = body[1:] or [ast.Pass()]
+            body = body[1:]
+        node.body = body or [ast.Pass()]
     return _short(ast.dump(tree, include_attributes=False))
 
 
@@ -308,77 +320,9 @@ def cfg_print_legacy(cfg: dict, key: str) -> str:
 
 
 # ── raw 지문 기억표 ────────────────────────────────────────────
-# ★ 2026-09-23 (DECISIONS §224-2). **봉인지가 빌드만 아끼고 판정은 안 아꼈다.**
-#   `check()` 는 봉인이 맞든 틀리든 `raw_print(hits)` 를 부르고, 그것이 그 소스의
-#   원천 파일을 **통째로 다시 읽어** 해시했다. `[SEALED] 다시 빌드하지 않는다` 를
-#   찍기 위해 raw 2.5GB 를 읽은 것이다. 2026-09-23 에 8GB WSL 이 거기서
-#   `Errno 12` 로 죽었다 — 봉인은 일치했는데 죽었다.
-#
-#   봉인지의 값어치는 **「판정이 빌드보다 싸다」** 에 있다. 판정 비용이 원천
-#   크기에 비례하면 그 값어치가 없다. 같은 병을 ①(--split)으로 한 번,
-#   ②(샤드 봉인)로 한 번 막았는데 **판정 경로만 남아 있었다.**
-#
-# ★ 열쇠는 `(크기, mtime_ns)` 다. `data/raw` 는 **불변**이 이 저장소의 원칙 1
-#   이고(ingest.py 머리말) 어떤 코드도 거기에 쓰지 않는다. 그러므로 크기와
-#   수정 시각이 같으면 내용이 같다 — 사람이 일부러 바이트를 바꾸면서 둘 다
-#   맞추지 않는 한. 그 경우까지 잡는 것은 `tools/acquire.py` 의 원천 대장
-#   (raw 전수 sha256)이 맡는다. **여기는 봉인 판정이지 위변조 감사가 아니다.**
-#
-# ★ 하나라도 어긋나면 **그 파일만** 다시 읽는다. 캐시 전체를 버리지 않는다.
-# ★ 캐시가 없거나 깨졌으면 그냥 전부 읽는다 — 판정은 같고 느릴 뿐이다.
-#   **캐시는 답을 바꾸지 않는다.** 답을 바꾸면 그것은 캐시가 아니라 우회다.
-_RAWCACHE: dict[str, list] | None = None
-
-
-def _rawcache_file() -> Path:
-    from firelane.paths import PROCESSED
-
-    return PROCESSED / ".rawprint.json"
-
-
-def _rawcache() -> dict[str, list]:
-    global _RAWCACHE
-    if _RAWCACHE is None:
-        try:
-            got = json.loads(_rawcache_file().read_text(encoding="utf-8"))
-            _RAWCACHE = got if isinstance(got, dict) else {}
-        except (OSError, ValueError):
-            _RAWCACHE = {}
-    return _RAWCACHE
-
-
-def _rawcache_save() -> None:
-    if _RAWCACHE is None:
-        return
-    f = _rawcache_file()
-    try:
-        f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text(json.dumps(_RAWCACHE, sort_keys=True) + "\n", encoding="utf-8")
-    except OSError:
-        pass                    # 못 써도 판정은 옳다. 다음 실행이 느릴 뿐이다
-
-
-def raw_one(p: Path) -> str:
-    """파일 하나의 raw 지문(16자). `(크기, mtime_ns)` 가 같으면 안 읽는다."""
-    st = p.stat()
-    key = str(p.resolve())
-    hit = _rawcache().get(key)
-    if (isinstance(hit, list) and len(hit) == 3
-            and hit[0] == st.st_size and hit[1] == st.st_mtime_ns):
-        return str(hit[2])
-    got = sha256(p)[:16]
-    _rawcache()[key] = [st.st_size, st.st_mtime_ns, got]
-    return got
-
-
-def raw_print(hits: list[Path]) -> str | None:
-    if not hits or not all(Path(h).is_file() for h in hits):
-        return None
-    before = dict(_rawcache())
-    out = ",".join(raw_one(Path(h)) for h in sorted(hits))
-    if _rawcache() != before:
-        _rawcache_save()
-    return out
+# ★ 2026-10-08 (DECISIONS §433). `firelane/rawcache.py` 로 떼어 냈다 —
+#   제 구분선을 가진 독립 묶음이고, 부르는 쪽이 이 파일 안에만 있었다.
+from firelane.rawcache import raw_print
 
 
 def _ident(name: str) -> str:

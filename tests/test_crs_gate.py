@@ -23,7 +23,7 @@ test_crs_gate.py — **MASTER §18-3 의 「CRS 변경 → ★중단」 관문�
   실물 대조는 못 돌리지만 **판정 자체**는 합성 입력으로 물릴 수 있다.
   레이크가 붙은 곳에서 처음 도는 날 시끄러울 것이고, 그것이 목적이다.
 
-IN    firelane.contract(`prj_verdict` · `coord_verdict` · `prj_in`)
+IN    firelane.contract_crs(`prj_verdict` · `coord_verdict` · `prj_in`)
 OUT   없음 (검사)
 PARAM 없음
 밖    **실물 raw 는 안 읽는다.** 광주 원본이 실제로 어느 좌표계인지는 레이크가
@@ -40,7 +40,9 @@ from firelane.contract import FAIL, WARN, coord_verdict, prj_in, prj_verdict
 
 #: 동명동 한 점을 각 좌표계로 옮긴 값. `krgis/crs.py` 머리말의 지문표와 같다.
 #: ★ 값을 손으로 적지 않는다 — 옮겨 적으면 그것이 낡을 자리다.
-DONGMYEONG_4326 = (126.9245, 35.1490)
+#: ★ 2026-10-08 (DECISIONS §433). **적고 있었다.** 같은 수가 `crs.py` 주석 ·
+#:   `crs.py::__main__` · 여기 **세 벌**이었다. 정본을 하나 두고 읽는다.
+from firelane.krgis.crs import REF_WGS84 as DONGMYEONG_4326
 
 
 def at(epsg: str) -> tuple[float, float]:
@@ -84,6 +86,68 @@ def test_the_same_crs_written_differently_still_passes():
     from pyproj import CRS
     assert prj_verdict("EPSG:5186",
                        CRS.from_epsg(5186).to_wkt(version="WKT1_GDAL")) is None
+
+
+# ── ①′ datum 변환만 더 적은 `.prj` ────────────────────────────
+#: `vworld_uq153` 의 실물 `.prj` 그대로. **AUTHORITY 가 5174 라고 적고 있다.**
+#: ★ 2026-10-08 실측(DECISIONS §433). 투영 변수는 선언과 글자까지 같고 다른 것은
+#:   `TOWGS84` 하나뿐인데, 그 항이 `to_epsg()` 를 모든 신뢰도에서 `None` 으로
+#:   만들고 `equals()` 를 거짓으로 만들어 **옳은 선언이 실패로 울었다.**
+UQ153_PRJ = (
+    'PROJCS["Korean 1985 / Modified Central Belt", GEOGCS["Korean 1985", '
+    'DATUM["Korean Datum 1985", SPHEROID["Bessel 1841", 6377397.155, 299.1528128, '
+    'AUTHORITY["EPSG","7004"]], TOWGS84[-115.8, 474.99, 674.11, 1.16, -2.31, -1.63, 6.43], '
+    'AUTHORITY["EPSG","6162"]], PRIMEM["Greenwich", 0.0, AUTHORITY["EPSG","8901"]], '
+    'UNIT["degree", 0.017453292519943295], AXIS["Geodetic longitude", EAST], '
+    'AXIS["Geodetic latitude", NORTH], AUTHORITY["EPSG","4162"]], '
+    'PROJECTION["Transverse_Mercator"], PARAMETER["central_meridian", 127.00289027777775], '
+    'PARAMETER["latitude_of_origin", 38.0], PARAMETER["scale_factor", 1.0], '
+    'PARAMETER["false_easting", 200000.0], PARAMETER["false_northing", 500000.0], '
+    'UNIT["m", 1.0], AXIS["Easting", EAST], AXIS["Northing", NORTH], '
+    'AUTHORITY["EPSG","5174"]]'
+)
+
+
+def test_a_prj_that_only_adds_a_datum_shift_is_a_warning_with_the_distance():
+    """같은 좌표계 + 명시 7변수 → **경고**다. 그리고 **몇 m 인지 적는다.**
+
+    ★ 실패로 내면 옳은 선언이 운다. 통과로 내면 재투영이 갈려도 조용하다.
+      둘 다 틀렸고, 답은 「경고 + 잰 수」다 — `krgis` 의 첫 원칙이 그것이다.
+    """
+    got = prj_verdict("EPSG:5174", UQ153_PRJ)
+    assert got is not None, "7변수를 더 적은 `.prj` 를 조용히 통과시킨다"
+    lvl, msg = got
+    assert lvl == WARN, f"옳은 선언을 {lvl} 로 낸다 — 관문이 오탐한다: {msg}"
+    assert "7변수" in msg and "m" in msg, f"몇 m 인지 안 적는다 — {msg}"
+
+
+def test_the_same_prj_without_the_shift_passes():
+    """★ 대조군. 7변수만 빼면 그냥 통과해야 한다 — 그 항이 유일한 차이다."""
+    import re as _re
+    bare = _re.sub(r",\s*TOWGS84\[[^\]]*\]", "", UQ153_PRJ)
+    assert prj_verdict("EPSG:5174", bare) is None
+
+
+def test_a_real_mismatch_still_fails_even_with_a_datum_shift():
+    """★ **카나리아.** 새 갈래가 진짜 어긋남까지 삼키면 관문이 죽는다."""
+    got = prj_verdict("EPSG:5186", UQ153_PRJ)
+    assert got is not None and got[0] == FAIL, (
+        f"선언 5186 · 실물 5174 인데 {got} 를 낸다 — 관문이 죽었다")
+
+
+def test_the_shift_tolerance_matches_the_node_tolerance():
+    """상한의 **근거가 살아 있는가.** 두 집에 같은 수를 두되 어긋나면 운다.
+
+    ★ `DATUM_SHIFT_TOL_M` 은 「그래프를 못 움직이는 크기」이고 그 정의가
+      `seg/params.NODE_TOL`(끝점을 한 노드로 묶는 거리)다. import 로 묶지
+      않은 이유는 `contract` 가 판정 상수에 매이면 상수를 고칠 때 관문이
+      같이 흔들리기 때문이다 — 대신 여기가 **대조한다.**
+    """
+    from firelane.contract_crs import DATUM_SHIFT_TOL_M
+    from firelane.seg.params import NODE_TOL
+    assert DATUM_SHIFT_TOL_M == NODE_TOL, (
+        f"상한 {DATUM_SHIFT_TOL_M} 이 `NODE_TOL` {NODE_TOL} 과 갈렸다 — "
+        "둘 중 하나를 고쳤으면 사유를 적고 다른 쪽도 고쳐라")
 
 
 # ── ② 선언 ↔ 좌표 실측 ─────────────────────────────────────────

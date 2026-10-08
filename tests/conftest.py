@@ -5,7 +5,9 @@
 """
 from __future__ import annotations
 
+import functools
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -40,6 +42,27 @@ def pytest_runtest_makereport(item, call):
 #: ★ 아직 안 한 것 — 「어느 변수가 실제로 결과를 바꾸나」는 **안 쟀다.**
 #:   변수마다 전수 pytest 는 열 개에 80분이다(PLAN #151 이 적은 수).
 #:   그래서 **구조로** 자른다: 스위치는 정의상 동작을 바꾸므로 전부 비운다.
+@functools.lru_cache(maxsize=1)
+def _switch_names() -> frozenset[str]:
+    """비울 이름. **정본은 `tools/env_check.py`** 이고 여기서 다시 안 적는다.
+
+    ★ 경로로 연다 — `sys.path` 에 `tools` 가 있는지는 부르는 쪽 사정이고,
+      conftest 는 그것을 가정할 수 없다(위 머리말의 사고).
+    ★ 비면 **죽는다.** 조용히 아무것도 안 비우면 이 픽스처는 없는 것과 같고,
+      그러면 「환경을 비웠다」가 거짓이 된다.
+    """
+    import importlib.util
+    import sys as _sys
+    src = Path(__file__).resolve().parents[1] / "tools" / "env_check.py"
+    spec = importlib.util.spec_from_file_location("_env_check_for_conftest", src)
+    m = importlib.util.module_from_spec(spec)
+    _sys.modules[spec.name] = m      # ★ `exec_module` **앞**이다 (§283 · 등록 규칙)
+    spec.loader.exec_module(m)
+    got = frozenset(m.SWITCHES) | frozenset(m.RETIRED)
+    assert got, f"{src} 에서 비울 이름을 하나도 못 읽었다 — 이름이 바뀌었다"
+    return got
+
+
 @pytest.fixture(autouse=True)
 def _shell_switches_do_not_leak(monkeypatch):
     """쉘에 켜 둔 스위치가 시험 결과를 바꾸지 못하게 한다.
@@ -47,9 +70,16 @@ def _shell_switches_do_not_leak(monkeypatch):
     ★ 2026-10-08. 종전에 `conftest` 는 skip 정책만 걸었다. `FIRE_LANE_NO_MERGE`
       하나가 켜져 있으면 병합을 건너뛴 산출로 판정이 돌고, 그래도 **초록으로
       보인다** — 새는 환경은 「덜 재고 통과」를 만든다.
+
+    ★ 2026-10-08 실기. `import env_check` 로 적었다가 **중첩 pytest 를 죽였다.**
+      `test_skip_policy` 는 임시 디렉터리에 합성 시험을 만들어 pytest 를 다시
+      띄우는데 그 실행의 `PYTHONPATH` 는 `tests` + `src` 뿐이다 — `tools` 가
+      없다. conftest 가 통째로 `ModuleNotFoundError` 로 죽어 「1 failed,
+      1 skipped, 1 error」가 와야 할 자리에 「3 errors」가 왔다.
+      **conftest 는 `sys.path` 에 기대면 안 된다** — 제 위치에서 절대경로로
+      연다. `test_intake` · `test_acquire` 가 도구를 여는 그 꼴이다.
     """
-    import env_check as _ec
-    for k in sorted(_ec.SWITCHES | _ec.RETIRED):
+    for k in sorted(_switch_names()):
         monkeypatch.delenv(k, raising=False)
 
 

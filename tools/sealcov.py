@@ -58,7 +58,10 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #     선두 `.` 을 못 읽어 `.devcontainer/` · `.githooks/` 는 **덮일 수 없다** —
 #     분모에 앉아 있는데 길이 없다. 고치면 **지문 공식이 바뀌어 120절이**
 #     **무효**가 되므로 이 판에서 안 고쳤다. `PLAN #163` 이 든다.
-SEALED_FILES = 426
+#   ★ 2026-10-08 (DECISIONS §433). 426 → **430.** 새 집 둘(`contract_crs` ·
+#     `rawcache`)과 머리말을 받은 0바이트 둘(`seg/__init__` · `krgis/__init__`)이다.
+#     분모도 506 → 508 로 는다 — 새 집 둘이 거기 들어간다.
+SEALED_FILES = 430
 
 RATCHETS = {"SEALED_FILES": "up"}
 

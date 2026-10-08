@@ -843,7 +843,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: vworld_uq153
-    awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [zip]
     kind: raw_only
     scope: kr
@@ -878,7 +877,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: vworld_uq164
-    awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [zip]
     kind: raw_only
     scope: jngj
@@ -912,7 +910,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: nfa_bldgcomm_guide
-    awaiting: '2026-10-07 — 정보공개청구로 받았다(DECISIONS §429). `intake` · `acquire` 를 아직 안 탔다'
     ext: [pdf]
     kind: raw_only
     scope: kr
@@ -949,7 +946,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: juso_adrdc
-    awaiting: '2026-10-07 — 실물이 레이크 `landing` 에 2026-09-10 부터 앉아 있다. 대장에 자리가 없어 `acquire` 가 가져갈 근거가 없었다(DECISIONS §428)'
     ext: [zip]
     kind: raw_only
     scope: kr
@@ -986,7 +982,6 @@ datasets:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
     stem: eais_roadledger_dm
-    awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(DECISIONS §419). `intake` · `acquire` 를 아직 안 탔다 — 대장이 먼저 자리를 만들어야 반입이 선다'
     ext: [csv]
     kind: raw_only
     scope: jngj-dongmyeong
