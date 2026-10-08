@@ -100,6 +100,24 @@ RELOCK_AXES = {
     "발행 판정 계약":
         "발행된 판정에서 세는 축이다. 재잠금 전에는 커밋된 공개본이 옛 값이라 "
         "선언과 어긋난다 — 같은 실행에서 공개본이 다시 나고 그 뒤에 맞는다",
+    # ★ 2026-10-08 (DECISIONS §436-13). 넷으로도 **모자랐다.** 첫 재잠금 배치를
+    #   예습에 걸어보니 축 다섯이 새로 빨갰고 **셋이 재잠금 때문**이었다. 둘은
+    #   진짜 결함이었다(기획서 표지 날짜 · `web/proposal.html`) — 그 둘을 고쳤다.
+    #   선언은 **겪은 만큼만** 넓힌다: 안 겪은 축을 미리 적으면 그것이 사각지대다.
+    #
+    #   ★ 아래 셋은 **넓은 축**이고, 받는 근거는 각각 **더 좁게 세는 짝**이 있다는
+    #     것이다. 짝이 없으면 안 받는다 — 「문서 숫자 대조」의 필드표 감사는 짝이
+    #     없어서 `tests/test_doc_numbers.py` 에 **먼저 만들고** 나서 받았다.
+    "pytest":
+        "재잠금 대기 시험이 빨갛다. 이 축은 넓지만 **같은 실행의 `diff_tests` 가 "
+        "시험 id 를 정확히 세고** `RELOCK_TESTS` 에 없는 빨강은 거기서 운다",
+    "문서 숫자 대조":
+        "문서가 적은 수를 golden·발행물과 댄다. 문서는 **재잠금 뒤의 수**를 적으므로 "
+        "그 사이 어긋난다(§436-7). 좁은 짝 — `test_unknown_reason_counts_match_the_"
+        "fingerprint` 와 `test_the_field_table_names_exactly_the_published_fields`",
+    "판정 재현":
+        "공개본을 `classify()` 로 되먹여 1,281건을 전부 댄다. 사유 한 칸이라도 "
+        "움직이면 재잠금 전에는 깨진다 — 좁은 짝은 `test_every_reason_is_reproduced`",
 }
 
 #: 재잠금이 선언된 배치에서 **빨간 것이 결과인** 시험. 사유를 함께 든다.
@@ -116,6 +134,10 @@ RELOCK_TESTS = {
         "문서는 재잠금 뒤의 수를 적어야 하고, 그 사이에는 어긋나 보인다",
     "test_the_real_tree_is_at_its_ratchets":
         "위 「래칫 정합」 축의 pytest 쪽 짝이다. 같은 사실을 두 번 본다",
+    "test_the_field_table_names_exactly_the_published_fields":
+        "MASTER §11 필드표 ↔ 발행된 속성. 칸을 하나 실으면 표가 **앞서 가고** "
+        "산출물은 재잠금에서 따라온다. 이 시험은 그 면제를 받으려고 §436-13 에서 "
+        "새로 세웠다 — 종전에는 `docnum_check.main()` 안에만 있어 **CLI 에서만** 울었다",
     "test_schema_verdict_rule_matches_code":
         "발행 스키마의 `verdict_rule` 을 `seg/geom.VERDICT_RULE` 과 댄다. 그 스키마는 "
         "`seg/report.py` 가 **낳는 것**이라 재잠금 전에는 옛 규칙표를 든다 — "

@@ -149,3 +149,44 @@ def test_the_full_rerun_time_has_one_voice():
         "폐기된 전량 재실행 시간 285초(샤드 봉인 전)가 현재형에 남아 있다:\n  "
         + "\n  ".join(bad) + "\n"
         "  회고로 인용하는 줄이면 줄 끝에 " + ALLOW + " 를 붙여라.")
+
+
+# ── 필드표 ↔ 발행 필드 (2026-10-08 · DECISIONS §436-13) ───────────
+# ★ 이 대조는 `tools/docnum_check.py` 의 `main()` **안에만** 있었다 — 위 시험
+#   다섯은 지문의 수만 본다. 그래서 「문서 숫자 대조」 축이 **CLI 에서만** 빨갛고
+#   pytest 는 조용했다(족 3 · 관문이 갈림). 재잠금 판에서 그 축을 면제하면
+#   **아무도 안 세는 자리**가 되므로, 면제 전에 세는 자를 세운다.
+# ★ 경로를 **한 줄 리터럴**로 적는다 — `test_tools_are_wired` 의 배선 탐지가
+#   줄 단위다(§276-1 꼬리).
+_dnspec = __import__("importlib.util", fromlist=["util"]).spec_from_file_location("docnum_check", ROOT / "tools/docnum_check.py")
+
+WEB_SEG = ROOT / "web/data/segments.geojson"
+
+
+def _docnum():
+    import importlib.util
+    import sys
+
+    assert _dnspec and _dnspec.loader
+    m = importlib.util.module_from_spec(_dnspec)
+    sys.modules[_dnspec.name] = m
+    _dnspec.loader.exec_module(m)
+    return m
+
+
+def test_the_field_table_names_exactly_the_published_fields():
+    """MASTER §11 필드표 **=** 발행된 속성. 양방향이다 — 둘 다 결함이다.
+
+    표에만 있으면 **없는 칸을 설명**하고, 산출물에만 있으면 **설명 없는 칸**이
+    나간다. 앞은 읽는 사람을 속이고 뒤는 침묵한다.
+    """
+    D = _docnum()
+    doc = D.doc_fields((ROOT / "docs/MASTER.md").read_text(encoding="utf-8"))
+    assert doc, "§11 `### 데이터 필드` 표를 못 찾았다 — 수집이 죽으면 빈 그물이다"
+    real = set(json.loads(WEB_SEG.read_text(encoding="utf-8"))
+               ["features"][0]["properties"])
+    assert doc == real, (
+        f"표에만 있다 {sorted(doc - real)}\n"
+        f"  산출물에만 있다 {sorted(real - doc)}\n"
+        "  ★ 산출물이 정본이다. 재잠금 전이라면 표가 **앞서 있는 것**이고 "
+        "`tools/delivercheck.py` 의 `RELOCK_TESTS` 가 이 이름을 든다")
