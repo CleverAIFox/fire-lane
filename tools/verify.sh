@@ -571,6 +571,12 @@ step "구조 묶음 선언"    uv run python tools/archcost.py
 #   같은 축을 들지만 그쪽은 processed/*.gpkg 를 읽어 CI 에서 건너뛴다.
 scope "data/processed/segments.geojson src/firelane/seg/*"
 step "회색 어휘 구멍"    uv run python tools/greycheck.py
+# ★ 2026-10-08 (DECISIONS §435 · PLAN #104). 발행된 판정이 제 계약을 지키는가 —
+#   폭 상한 · 도로명 꼴 · **조용한 결측**. 앞 둘은 0 이고 그 0 을 지킨다.
+#   셋째가 2 다 — `blocked` 인데 폭이 비었고 사유 칸이 없다. 파이프라인은
+#   사유를 아는데(`all_xsec`) 표준출력에만 찍고 산출물에 안 넣는다.
+scope "data/processed/segments.geojson src/firelane/seg/params.py"
+step "발행 판정 계약"    uv run python tools/segcontract.py
 # ★ 2026-09-28 (§279-6). 사유 딸린 면제표는 이미 조여 있었다(빈 사유 0). 남은 빚은
 #   **주석 한 줄짜리 억제**에 몰려 있었다 — 표에 안 들어가고 사유를 안 적어도 되고
 #   아무도 안 세는 자리다. 119 에서 시작해 같은 날 죽은 `noqa` 59개를 지워 57 이다.
@@ -1110,7 +1116,8 @@ step "PLAN 번호·참조 정합" uv run python tools/plan_renumber.py
 #   셋이 빠지면서 **안 덮이던 코드가 같이 빠졌고**, 취입·도구분류 시험 스물넷이
 #   들어왔다. 덮임이 는 것이 아니라 **분모가 준 몫도 있다** — 둘을 안 가르면
 #   다음에 화면을 지울 때 또 올라간다).
-COV_MIN=38
+#   10-08 §435 38→39 (실측 39.06%)
+COV_MIN=39
 step "커버리지 래칫" bash -c '
     if [ ! -f .coverage ]; then
         echo "★ .coverage 가 없다 — 4단계 pytest 가 안 돌았다(--only 로 뺐는가)."
