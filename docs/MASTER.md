@@ -975,6 +975,15 @@ interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
 field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급. 저장소 안
 retired      SSD · 은퇴본(=아카이브). 대장 retired 가 파일 이름 · sha 로 주인이다
+             ★ **은퇴 근거는 셋뿐이고 목록은 닫혀 있다**(DECISIONS §442 · 전수 넷 재훑기).
+               ① 후속이 같은 행을 더 들고 왔다  ② 유일본이라 보존한다
+               ③ 소비자 0곳 — **되돌아올 수 있는 근거다.** 무엇이 생기면 돌아오는지
+                  같이 적는다. 안 적으면 다음 사람이 영구히 죽은 것으로 읽는다
+               「좌표가 없다」는 **목록 밖이다** — 좌표 보유는 레이어의 조건이지
+               테이블의 조건이다. 사유가 좌표를 들면 `join_key` 를 같이 적는다(§435)
+               강제자 — `tests/test_lake.py`
+                 `::test_retiring_for_missing_coordinates_names_the_join_key`
+                 `::test_consumer_zero_names_what_brings_it_back`
 _quarantine  ★ 폐지(2026-09-17). 안의 것은 retired 로 옮겼다. 되살아나면 `레이크 관문` 이 운다
 web/data     표출용. 커밋한다
 data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
@@ -3008,7 +3017,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,948 전수 · **분모(blank) 0절** · 물림(inherit) 1,029절.
+★ **강제자 칸의 분모.** 절 1,954 전수 · **분모(blank) 0절** · 물림(inherit) 1,034절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
