@@ -128,12 +128,20 @@ def fig_unknown() -> str:
     g = _golden()
     rs = g["unknown_reason"]
     tot = sum(rs.values())
+    # ★ 2026-10-08 (DECISIONS §436-8). 이 표에 `ledger_disputes` 가 없으면
+    #   `ko.get(k, k)` 가 **영어 키를 그대로 그린다** — 한글 라벨 넷 사이에
+    #   `ledger_disputes` 가 끼어 그림만 보면 빠뜨린 것인지 뜻인지 모른다.
     ko = {"no_cctv_band": "대역 밖", "no_cctv_thin": "폭 부족",
-          "no_cctv_narrow": "각도 부족", "no_cctv_single": "단일 관측"}
+          "no_cctv_narrow": "각도 부족", "no_cctv_single": "단일 관측",
+          "ledger_disputes": "대장 반박", "width": "폭 산출 불가"}
+    # ★ 머리말이 **「영상판정 불가」였다.** 그 말은 `no_cctv_*` 넷만 참이고
+    #   `ledger_disputes` 는 카메라와 무관하다 — 낱말이 늘자 머리말이 거짓이
+    #   됐다. 둘째 줄의 「0이다」도 손으로 적은 수였다. 수는 정본에서 읽는다.
     body = [f'<text x="12" y="30" font-size="15" font-weight="700" '
-            f'fill="#0f172a">영상판정 불가 {tot}구간의 사유</text>',
-            '<text x="12" y="50" font-size="11" fill="#64748b">'
-            '정본 data/golden — 전부 CCTV 사각이며 폭 산출 불가는 0이다</text>']
+            f'fill="#0f172a">회색(unknown) {tot}구간의 사유</text>',
+            f'<text x="12" y="50" font-size="11" fill="#64748b">'
+            f'정본 data/golden — {len(rs)}가지 · 폭 산출 불가 '
+            f'{rs.get("width", 0)}</text>']
     x = 80   # ★ 2026-09-22 (DECISIONS §218-6) 60 이면 「각도 부족」이 막대에 닿는다
     for i, (k, c) in enumerate(sorted(rs.items(), key=lambda kv: -kv[1])):
         wd = round(560 * c / tot, 1)
@@ -143,6 +151,8 @@ def fig_unknown() -> str:
                     f'fill="#0f172a">{c}</text>')
         body.append(f'<text x="12" y="{100 + i * 44}" font-size="11" '
                     f'fill="#475569">{ko.get(k, k)}</text>')
-    return svg_fit.svg("".join(body), h=80 + 4 * 44 + 16)
+    # ★ 높이에 `4` 가 박혀 있었다. 사유가 다섯이 되면 다섯째 막대가 **판 밖에서
+    #   그려진다** — SVG 는 안 운다. 넷이던 동안은 보이지 않던 결함이다.
+    return svg_fit.svg("".join(body), h=80 + len(rs) * 44 + 16)
 
 

@@ -308,14 +308,20 @@ def fig_verdict_flow() -> str:
                  f'{n:,}구간 · {n / G["n"] * 100:.0f}%</text>']
         x += 176
     y += 58
+    # ★ 2026-10-08 (DECISIONS §436). 종전 머리말은 「영상판정 불가 … 넷으로 갈라
+    #   적는다」였다. 둘이 틀렸다 — `width`(폭 산출 불가)는 **영상판정 불가가
+    #   아니고**, 사유는 이제 넷이 아니다(`ledger_disputes` 가 늘었다). 손으로
+    #   적은 수는 늘어난 것을 모른다. 수를 `why` 에서 읽으면 저절로 따라온다.
     body.append(f'<text x="14" y="{y}" font-size="11" font-weight="700" fill="#0f172a">'
-                f'영상판정 불가 {cnt["unknown"]:,}의 사유 — 넷으로 갈라 적는다</text>')
+                f'회색(unknown) {cnt["unknown"]:,}구간의 사유 — '
+                f'{len(why)}가지로 갈라 적는다</text>')
     y += 18
-    x = 14
-    for k, n in sorted(why.items(), key=lambda kv: -kv[1]):
-        body.append(f'<text x="{x}" y="{y}" font-size="10" fill="#64748b">'
-                    f'{k} {n}</text>')
-        x += 176
+    # ★ 가로로만 늘어놓으면 **다섯째부터 판 밖으로 나간다**(폭 720, 칸 176).
+    #   사유가 넷이던 동안은 안 보였다. 넷씩 줄을 바꾼다.
+    for i, (k, n) in enumerate(sorted(why.items(), key=lambda kv: -kv[1])):
+        body.append(f'<text x="{14 + 176 * (i % 4)}" y="{y + 15 * (i // 4)}" '
+                    f'font-size="10" fill="#64748b">{k} {n}</text>')
+    y += 15 * ((len(why) - 1) // 4)
     return svg_fit.svg("".join(body), h=y + 16)
 
 
