@@ -678,7 +678,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 소방서 7구간은 "기존 행정자료와 대체로 일치한다"는 정합성 근거로는 유효하지만
 "우리가 옳다"는 증거로는 쓸 수 없다.
 
-강제자  `tests/test_measurements.py`(오염 칸 — `nfa_compare_abs_dev` 를 적합에 쓴 지표로 표시하고 그것을 통과 조건으로 쓰면 운다) · `tests/test_docx_targets.py`(기획서에서 이 대조를 「검증」으로 부르는 것을 막는다)
+강제자  `tests/test_measurements.py`(오염 칸 — `nfa_compare_abs_dev` 를 적합에 쓴 지표로 표시하고 그것을 통과 조건으로 쓰면 운다) · `tools/proposalcheck.py`(기획서가 드는 폐기 어휘 · 참조)
 
 ### 4-1a. 폭 교차대조 —— 방법이 독립인 증인 둘
 
@@ -1163,10 +1163,10 @@ ngii1k_light   11,439점                        측량 폴 위치. 구분만 있
   **인용한 사본은 막지 않는다** — 이 절 자신이 그 상태다. 넓게 적어 두면 막힌다고
   믿게 되고, 믿는 만큼 안 본다
 
-팀 구성(5인 1조 · 기획 · 조사 · 실측 · UI)은 기획서(`docs/proposal.docx` 표0)가 정본이다.
+팀 구성(5인 1조 · 기획 · 조사 · 실측 · UI)은 기획서(`docs/proposal.md` 표0)가 정본이다.
 **팀 구성과 저장소 소유는 다른 축이다** — 기획서의 다인 서술과 CODEOWNERS 의 1인 소유는
 모순이 아니다. 기획서 표0 은 그 구절(「아래 역할은 기획 당시 기준이며, 저장소 코드 소유 · 리뷰는
-2026-09-09 부터 1인 단독」)을 `tools/docx_fix.py` 규칙으로 든다(2026-09-22 · DECISIONS §217-5).
+2026-09-09 부터 1인 단독」)을 기획서 본문이 든다(2026-09-22 · DECISIONS §217-5 · 2026-10-09 · §444 — 그 규칙표는 docx 와 함께 은퇴했다).
 
 파트 브랜치와 통합 담당은 §12 · §12-8c 가 든다. 파이프라인은 `FIRE_LANE_DATA` 가 가리키는
 기계에서 돌고, CI 는 데이터를 만들지 않는다(§12-7 · §14-7).
@@ -1371,7 +1371,7 @@ CCTV 밖이면 `unknown`(`no_cctv_band` 183)으로 내려간다(§2-1). 기획�
 > 이전에 쓰던 "노면폭 하한 / 담~담 상한"은 **최소 폭 / 최대 폭**으로 통일했다.
 > 문서·UI·발표 자료 전부 이 표기를 쓴다.
 
-강제자 없음 — 사유: `§3-4` 로 위임하는 용어 절이다. 두 폭이 실제로 둘인지는 `tests/test_seg_width.py` 가, 표기 통일(최소 폭 / 최대 폭)은 `tools/docx_check.py` 의 용어 대조가 든다
+강제자 없음 — 사유: `§3-4` 로 위임하는 용어 절이다. 두 폭이 실제로 둘인지는 `tests/test_seg_width.py` 가, 표기 통일(최소 폭 / 최대 폭)은 `tools/proposalcheck.py` 의 폐기 어휘 대조가 든다
 
 ### 10-5. 소방 동선 (`route_usage`)
 
@@ -1595,7 +1595,7 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `seg_no` | 도로명 안에서의 구간 순번. **표기 전용.** 노딩이 바뀌면 밀린다 |
 | `verdict` | 판정 4종 |
 | `width_min_m` | **최소 폭.** 포장 노면만. 선 굵기가 이 값 |
-| `width_max_m` | **최대 폭.** 벽에서 벽까지. 절반 가까이 결손이고 대로일수록 많다(값 있는 수는 기획서 표17 에 `docx_fix` 가 센다) |
+| `width_max_m` | **최대 폭.** 벽에서 벽까지. 절반 가까이 결손이고 대로일수록 많다(값 있는 수는 기획서 표17 이 든다 — 낡으면 `docnum_check` 가 운다) |
 | `length_m` | 수평거리. 경사 보정 전 |
 | `run_length_m` | 같은 판정이 이어지는 총 길이 |
 | `nfa_designated` | 소방청 지정 기준(연속 100m) 충족 |
@@ -2084,7 +2084,7 @@ fix:  버그
 | `contract.yml` | **PR** — `main` · `dev` · `part/**` · `feat/**` / **push** — `main` · `dev` · `part/**` | 계약·위생·문서 검사. 깨지면 머지 차단. ★ `feat/**` 는 PR 만 — 열차가 언제나 PR 을 거치므로 푸시 실행은 같은 트리를 두 번 세는 일이었다(DECISIONS §344). `part/**` 는 직접 커밋이 룰셋을 우회하므로 push 를 남긴다 |
 | `secret-scan.yml` | **전 브랜치** push · PR | 자격증명이 올라가는 것을 막는다. 브랜치 목록이 없는 유일한 검사다 |
 | `image.yml` | `Dockerfile` · `pyproject.toml` · `uv.lock` · 자기 자신 변경 | ETL 이미지를 짓고 그 안에서 import 를 세운다. **CI 전용**(로컬에 docker 가 없다) |
-| `배포` (`deploy.yml`) — **push** | `main` 의 `web/**` · `docs/MASTER.md` · `docs/proposal.docx` · `render_workflow.py` · `stage_pages.py` · `build-navi`/`stage-site` 액션 · 자기 자신 | `contract` 게이트를 지난 뒤 `stage-site` 로 짓고 `web/` **전체**를 Pages 에 올린다 |
+| `배포` (`deploy.yml`) — **push** | `main` 의 `web/**` · `docs/MASTER.md` · `docs/proposal.md` · `build_proposal.py` · `proposal_source.py` · `render_workflow.py` · `stage_pages.py` · `build-navi`/`stage-site` 액션 · 자기 자신 | `contract` 게이트를 지난 뒤 `stage-site` 로 짓고 `web/` **전체**를 Pages 에 올린다 |
 | `배포` (`deploy.yml`) — **pull_request** | main · dev · part/** 로 가는 PR (`.github/**` · `web/**` · MASTER · 기획서 · 렌더 · 준비 도구) | **시운전.** 같은 본문을 태우되 업로드 · 배포를 안 한다 — 배포가 깨진 것을 main 전에 본다(DECISIONS §217-5 · 옛 PLAN W3-15) |
 
 ★ **`협업 방침 배포` 는 생성물을 커밋하지 않는다.** 종전에는 봇이
@@ -2445,7 +2445,7 @@ CODEOWNERS 는 "누가 봐야 하는가"를 정하고, 계약 테스트는 "무�
 
 ### 12-11. 한글 파일명
 
-`docs/proposal.docx` 가 윈도우/리눅스를 오가면서 삭제 + 미추적으로
+한글 이름을 단 기획서 파일이 윈도우/리눅스를 오가면서 삭제 + 미추적으로
 갈린 적이 있다. git 이 한글 파일명을 escape 로 저장하는데 두 OS 의 정규화
 방식이 다르기 때문이다.
 
@@ -2457,9 +2457,9 @@ git config --global core.precomposeunicode true
 `git status` 에 `#Uae30#Ud68d...` 같은 것이 뜨면 이 설정이 안 된 것이다.
 **앞으로 새로 만드는 파일은 영문 파일명을 쓴다.**
 
-★ 2026-09-02. 이 규칙의 **유일한 예외였던 기획서를 `proposal.docx` 로**
+★ 2026-09-02. 이 규칙의 **유일한 예외였던 기획서를 영문 이름으로**
 바꿨다. zip 으로 옮길 때마다 `#Uae30#Ud68d...` 로 깨졌고, 배포 URL 에서도
-같은 문제가 난다. 규칙을 적어놓고 정작 그 규칙을 어기는 파일 하나가
+같은 문제가 난다. (그 파일은 2026-10-09 에 은퇴했고 정본은 `docs/proposal.md` 다.) 규칙을 적어놓고 정작 그 규칙을 어기는 파일 하나가
 남아 있으면 다음 사람이 그것을 근거로 한글 파일명을 또 만든다.
 
 강제자  `tools/encoding_check.py`(인코딩·개행) · `tools/treecheck.py --repo`(git 도 gitignore 도 모르는 파일). 「앞으로 새 파일은 영문 이름」은 규약이고 그것을 세는 검사는 없다
@@ -2721,7 +2721,6 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
     intake.py        받은 것을 landing 으로 들인다
     triage.py        받은 더미를 분류한다
     docpatch.py      마크다운 문서(주로 PLAN)의 절을 멱등 교체한다
-    docx_fix.py      docx 위생
 
 ### 14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다
 
@@ -2731,8 +2730,8 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
                      (`DECISIONS §88-5` · §12-1b)
     encoding_check   UTF-8 · LF · 개행
     treecheck        트리 구조
-    docx_check       기획서 숫자 ↔ 대장
-    docx_figs        기획서 그림 ↔ 정본. `--sync` 가 docx 안 이미지를 교체한다
+    proposalcheck    기획서 정본 ↔ 실물 (총연장 · 캡션 · 폐기 어휘 · 참조 · 긴 칸)
+    htmlfigs         기획서 그림 ↔ 정본. `--sync` 가 화면 자리에 굽는다
     docnum_check     문서 숫자 ↔ 실물
     ledger_stem      대장 stem 이관 · 무손실 증명
     ledger_fields    대장 별칭 필드 통합
@@ -2831,25 +2830,31 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 발표·제출에서 무엇을 말할 수 있고 무엇을 말할 수 없는가를 정한다.
 기획서 자체의 갱신 대상은 PLAN §12 가 든다.
 
-★ **기획서는 손으로 고치지 않는다.** 숫자와 문단은 `tools/docx_fix.py`, 그림은
-`tools/docx_figs.py --sync` 가 넣는다. 정본에서 나온 것을 사람이 옮겨 붙이는 자리는
-남기지 않는다 — 그 자리는 매번 미뤄져서 제출본만 옛 값을 든 채 남는다(DECISIONS §221-1).
-`tools/docx_figs.py` 의 `PLACE` 가 「어느 생성 그림이 기획서 몇 번 그림인가」의 정본이고,
-기획서에 자리가 없는 그림은 사유를 적어 `internal` 로 선언한다.
+★ **기획서 정본은 `docs/proposal.md` 하나다**(2026-10-06 · DECISIONS §425 ·
+2026-10-09 · §444). 사람이 글을 쓰고, 화면(`web/proposal.html`)은
+`tools/build_proposal.py` 가 구워 **커밋되는 생성물**이다. 그림 다섯(생성 그림)은
+`tools/htmlfigs.py --sync` 가 화면 자리에 바로 굽고, 그 `SLOT` 이 「어느 생성 그림이
+기획서 몇 번 그림인가」의 정본이다. 기획서에 자리가 없는 그림은 사유를 적어
+`internal` 로 선언한다.
 
-★ **고친 뒤의 확인도 사람에게 안 남긴다**(2026-09-30 · DECISIONS §333). 종전에
-`docx_fix --write` 의 마지막 줄은 안내문 한 줄로 끝났고, 그래서
-찾는 쪽이 고치는 쪽보다 넓은 것을 아무도 몰랐다(POC 문장 7곳 대 6곳). 지금은
-`--write` 가 `docx_check.audit()` 을 직접 불러 남은 것을 이름으로 내고 1 로 죽는다 —
-**위 문단의 원칙이 「고치는 것」에서 「끝났는지 아는 것」까지 간 것**이다.
+★ **`.docx` 와 `.pdf` 는 은퇴했다**(2026-10-09 · DECISIONS §444 · PLAN #142 닫힘).
+종전에는 `.docx` 제출본이 있었고 배포 화면은 그것을 구운 `.pdf` 였다(§231). 정본이 md 로 옮겨진 뒤 **그 둘은 사본이었고**,
+사본을 검사하던 도구 다섯(`docx_check` · `docx_fix` · `docxrules` · `docx_figs` ·
+`docstyle`)과 PDF 를 굽던 `proposal_pdf` 가 같이 갔다. 사본이 맞으면 정본이
+틀려도 초록이었던 자리다.
 
-★ **배포 화면은 PDF 다**(2026-09-24 · DECISIONS §231). `tools/proposal_pdf.py` 가
-`docs/proposal.docx` 를 구워 `web/proposal.pdf` 를 내고, 쪽수 · 본문 한글 줄 수 ·
-판정 수치 · 그림 수 · 북마크 다섯을 대조해야 배포된다. 종전에는 브라우저가 `.docx` 를 직접
-그렸는데 **글꼴 치환과 그림 배치가 기계마다 달라 제출본과 화면이 갈렸다.**
-PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
+★ **글을 고치는 도구를 두지 않는다.** `docx_fix` 가 있던 사유는 docx 가
+바이너리라 사람이 diff 로 검토할 수 없다는 것이었다(R9 의 반대 경우). md 는
+diff 가 되므로 그 사유가 사라졌다 — 숫자가 낡으면 **검사가 울고 사람이 고친다.**
+다만 **표지 날짜**는 받아 적는 한 값이라
+`tools/build_proposal.py --touch <YYYY-MM-DD> --write` 가 옮긴다.
 
-강제자  `tools/docx_check.py`(기획서 ↔ 산출 대조) · `tools/docx_figs.py --check`(그림 ↔ 정본 · `PLACE` 가 「어느 생성 그림이 기획서 몇 번인가」의 정본) · `tests/test_docx_targets.py`(양방향 · 손으로 넣으라는 안내가 남아 있지 않은가)
+여덜 축이 어디로 갔는지는 `tools/proposalcheck.py` 머리말이 든다 — 수는
+`docnum_check`(판정 4종 · 회색 사유 다섯과 그 **가짓수 낱말**), 참조 · 폐기 어휘 ·
+캡션 · 긴 칸은 `proposalcheck`, 그림은 `htmlfigs --check`, 화면은
+`build_proposal --check`, 표지 날짜는 `doc_fsck ⑥`.
+
+강제자  `tools/proposalcheck.py`(기획서 정본 ↔ 실물) · `tools/docnum_check.py`(수) · `tools/htmlfigs.py --check`(그림 ↔ 정본 · `SLOT` 이 자리의 정본) · `tools/build_proposal.py --check`(화면 ↔ 정본)
 
 ### 15-1. 말할 수 있는 것
 
@@ -3017,7 +3022,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,962 전수 · **분모(blank) 0절** · 물림(inherit) 1,041절.
+★ **강제자 칸의 분모.** 절 1,971 전수 · **분모(blank) 0절** · 물림(inherit) 1,049절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
