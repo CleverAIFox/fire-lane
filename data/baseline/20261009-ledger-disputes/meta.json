@@ -1,0 +1,47 @@
+{
+  "tag": "20261009-ledger-disputes",
+  "frozen_at": "2026-10-09T12:18:52+09:00",
+  "git_sha": "116b334f4804f855988b2cfbff1f5f56f093409c",
+  "note": "",
+  "tally": {
+    "n": 1281,
+    "verdict": {
+      "clear": 464,
+      "needs_cv": 225,
+      "blocked": 192,
+      "unknown": 400
+    },
+    "unknown_reason": {
+      "no_cctv_band": 183,
+      "no_cctv_thin": 142,
+      "no_cctv_narrow": 63,
+      "no_cctv_single": 11,
+      "ledger_disputes": 1
+    },
+    "width_src": {
+      "ngii1k": 1162,
+      "silpok": 116,
+      "ngii": 1,
+      "null": 2
+    },
+    "length_total_m": 58309,
+    "in_emd": 416,
+    "route_usage_pos": 580,
+    "nfa_designated": 183,
+    "width_verified": 0
+  },
+  "expect_snapshot": "EXPECT = {\n}",
+  "sha256": {
+    "segments.geojson": "75a074705db0be9ff3ebbc7d1542e6182c813a3e005dbe4ef4a876ef8595a5ab",
+    "segments.schema.json": "3a9ef4cbf0df80b3c8ab876509ebe7fb2ab84ba26e7eda449967946bbfd57c5e",
+    "_manifest.json": "733fb82107a20f4100fd8563f4894ea67df3ab8eee67d7814e60c35aa834b6e3",
+    "seg_uid_map.csv": "446ee06255fe2d5e62d0ba309038a9ff01316b998bfbab01df35a506ae9a6f75",
+    "eval.json": "f99f7ceba46fbb038211014f85bd19ca5504cf2c1a33cf602b18a99268c1165e",
+    "nfa_compare.json": "d776d35934f20c389aa1d9af45232ca64ea72a7a3f653b2fb7e8db79aeb4998b"
+  },
+  "why": "구 원본(국토정보플랫폼 NGI 20도엽 2020·2022)이 2026-08-15 전량 재취득으로 소실됐다. 이 산출물은 재생성 불가다.",
+  "known_limits": [
+    "width_verified 전건 false. 레이저 실측 전이다",
+    "nfa_compare 는 검증이 아니라 적합(fit)이다"
+  ]
+}

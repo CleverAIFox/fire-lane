@@ -8,9 +8,10 @@
    "unknown": 400
   },
   "unknown_reason": {
+   "ledger_disputes": 1,
    "no_cctv_band": 183,
    "no_cctv_narrow": 63,
-   "no_cctv_single": 12,
+   "no_cctv_single": 11,
    "no_cctv_thin": 142
   },
   "width_src": {
@@ -6902,7 +6903,7 @@
    "width_min_m": 16.44,
    "width_max_m": 27.25,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv_single",
+   "unknown_reason": "ledger_disputes",
    "length_m": 1.4,
    "route_usage": 2
   },

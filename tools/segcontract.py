@@ -64,7 +64,7 @@ ROADNAME_OFF_RULE = 0
 #:   아니라 **재잠금 뒤의 미래**였고, 래칫의 뜻은 「선언이 지금 실측과 같다」다.
 #:   미래를 적으면 그 하루 동안 관문이 거짓으로 빨갛고, 그 빨강을 면제로
 #:   덮으면 면제가 쌓인다. 미래는 코드가 아니라 **이 주석이 든다.**
-SILENT_MISSING = 2
+SILENT_MISSING = 0
 
 RATCHETS = {"WIDTH_OUT_OF_RANGE": "down", "ROADNAME_OFF_RULE": "down",
             "SILENT_MISSING": "down"}
