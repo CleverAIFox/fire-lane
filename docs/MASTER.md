@@ -3441,8 +3441,13 @@ uv run python -m firelane.lake gate      이동 · 삭제 전 관문. 막히면 
   | 어떤 임계로 나왔나 | `sources.yaml` + 봉인 `cfg` 칸(`cfg_print` · `sealkeys.INGEST_GLOBAL`) | 정본이 둘이 된다. 임계의 정본은 대장이고 봉인이 이미 그것을 잰다 |
   | 커밋 안 한 채 돌렸나 | `data/_runlog.json`(`datalog.git_state`) | **이미 해 봤고 되돌렸다** — §280-1 에서 `datalog.cmd_record` 가 git 기록을 이 파일에 덮어써 `datasets` 와 봉인 45개를 날렸다. 그 사고의 고침이 `_runlog.json` 분리다 |
 
-  ★ 더 있다. `write_stable` 이 시각을 빼고 대조하는 칸은 `STAMP_KEYS =
-  ("generated_at",)` 하나다. 매 실행 흔들리는 값을 더하면 **매 실행 쓰고**
+  ★ 더 있다. `write_stable` 이 시각을 빼고 대조하는 칸은 `STAMP_KEYS` 가
+  든다 — 2026-10-09 에 **넷**이 됐다(DECISIONS §445). 종전에 「하나다」라고
+  적혀 있었고 그 하나가 `generated_at` 이었다. 매니페스트 **밖**에서도 같은
+  병이 났기 때문이다: 봉인 셋이 `as_of` · `frozen_at` · `git_sha` 로 매 실행
+  더러워졌고, `git_sha` 는 직전 커밋을 적으므로 **닿을 수 없는 고정점**이었다.
+  수를 여기 적지 않는다 — 세는 것은 `manifest.STAMP_KEYS` 와
+  `tests/test_write_stable.py` 다. 매 실행 흔들리는 값을 더하면 **매 실행 쓰고**
   워킹트리가 더러워지며, `webmanifest.SOURCES` 가 이 파일을 바이트 sha256 으로
   담으므로 web 매니페스트까지 같이 갱신된다. `datasets` 안에 넣으면
   `lineage._manifest_digest` 가 그 블록만 해시하므로 **계보 지문이 매 실행
@@ -3455,7 +3460,9 @@ uv run python -m firelane.lake gate      이동 · 삭제 전 관문. 막히면 
 아예 쓰지 않는다. 시각을 지우는 것이 아니라 **안 바뀌었을 때 갱신하지 않는
 것**이며, 재현성 기록으로는 이쪽이 옳다.
 강제자 — `tests/test_guards.py::test_manifest_write_is_idempotent` ·
-`test_manifest_writers_go_through_write_stable`
+`test_manifest_writers_go_through_write_stable` ·
+`test_no_stamped_json_is_written_directly`(범위를 **도출한다** — 매니페스트
+밖에서 같은 병이 난 뒤로 손목록을 안 쓴다 · DECISIONS §445)
 
 ---
 
