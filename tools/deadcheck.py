@@ -243,6 +243,15 @@ EXEMPT_EMPTY_CONST = {
         "강제한다). 그리고 0건이 죽음이 아님을 **합성 행으로 울려서** 증명한다 — "
         "`test_the_deadline_arm_is_still_alive_while_the_table_is_empty` 가 앞·뒤 방향을 "
         "둘 다 민다. 표를 지우지 않는 이유는 PLAN §13-3 과 같다 — 결함은 다시 자란다",
+    # ★ 2026-10-09 (DECISIONS §444-4). 비어 있는 것이 **이 판이 만든 답**이다 —
+    #   `docs/proposal.docx → web/` 한 줄이 있었고 그 파일이 은퇴했다. 지금 배포에
+    #   올라가는 기획서는 커밋된 `web/proposal.html` 이라 **옮길 것이 없다.**
+    "tools/stage_pages.py::STAGED":
+        "비어 있는 것이 **선언**이다 — 옮길 정본이 0 인 것이 지금의 사실이고, "
+        "`main()` 이 그 공백을 **말한다**(「옮길 정본이 없다 — STAGED 가 비었다」). "
+        "그 말이 사라지지 않는지는 `tests/test_stage_pages.py` 가 들고, 0건이 "
+        "죽음이 아님을 **합성 입력으로 울려서** 증명한다(`staged_faults` 양방향). "
+        "표를 지우지 않는 이유는 PLAN §13-3 과 같다 — 옮길 것은 다시 생긴다",
     "tests/test_declaration_sync.py::LEDGER_NOT_A_PATH":
         "**면제표**다 — 비어 있는 것이 「아무것도 면제 안 한다」는 뜻이라 안전한 쪽이다. "
         "감시 목록(`DEFERRED`)이 비는 것과 방향이 반대다. 그리고 그 표가 죽지 않았는지는 "

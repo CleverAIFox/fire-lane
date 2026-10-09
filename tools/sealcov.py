@@ -72,7 +72,7 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #       아니라 **안 읽은 파일**이 생겨 줄었다면 그것은 결함이다.
 #     ★ 남은 25는 전부 `web/navi/src/ui` · `components` · `src` 다 — `#143`
 #       (관제 화면이 너무 많이 보여준다)이 그 층을 읽는 판에서 같이 간다.
-SEALED_FILES = 489
+SEALED_FILES = 490
 
 RATCHETS = {"SEALED_FILES": "up"}
 
