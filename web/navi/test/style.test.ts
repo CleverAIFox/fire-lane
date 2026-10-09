@@ -16,7 +16,7 @@ import {
 // ★ 2026-09-29 (§311). 관제 전용 층이 `opsLayers.ts` 로 갈라졌다 — 두 화면의 일이 다르다.
 import {
   opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
-  opsClearanceBand, opsClearanceColor,
+  opsClearanceBand, opsClearanceColor, landmarkSource, landmarkLayers,
 } from "../src/components/opsLayers";
 import { CLEARANCE_SCALE } from "../src/ui/clearanceMeaning";
 import { CLEARANCE_WIDE_M, type ClearanceBand } from "../src/domain/clearance";
@@ -42,6 +42,33 @@ test("내비 레이어 — 바탕 · 경로 · 대안 · 표지 · 센터", () =
   check("route", routeLayers(style));
   check("marker", markerLayers());
   check("station", stationLayers());
+  check("landmark", landmarkLayers());
+});
+
+/**
+ * ★ 2026-10-09 (DECISIONS §444 · PLAN #148). 지점 핀은 **발행물에서 온다.**
+ *   옛 발행물에는 `landmarks` 가 없고, 그때 소스를 안 만들면 `addLayer` 가
+ *   없는 소스를 가리켜 **지도 전체가 죽는다**(§217-3 과 같은 조용한 자리).
+ *   그래서 「없음」이 **빈 모음**이 되는지를 여기서 못박는다.
+ */
+test("지점 핀 — 없으면 빈 모음 · 있으면 그 점 (경로 밖)", () => {
+  // ★ `as unknown as` — 소스 규약은 합집합이라(이미지 소스에는 `data` 가 없다)
+  //   한 번에 못 좁힌다. 좁히는 꼴은 `tsc` 가 든다.
+  const empty = landmarkSource(undefined) as unknown as { data: { features: unknown[] } };
+  ok(empty.data.features.length === 0, "옛 발행물에서 핀이 생긴다");
+  ok(landmarkSource([]) !== undefined, "빈 선언에서 소스가 아예 안 선다");
+
+  const one = landmarkSource([{ name: "ㄱ", lng: 126.92, lat: 35.14, note: "ㄴ" }]) as unknown as {
+    data: { features: { properties: { name: string }; geometry: { coordinates: number[] } }[] } };
+  ok(one.data.features.length === 1, "점 하나가 안 들어간다");
+  ok(one.data.features[0].properties.name === "ㄱ", "이름이 안 실린다");
+  ok(one.data.features[0].geometry.coordinates[0] === 126.92, "경도·위도 순서가 뒤집혔다");
+
+  // ★ **판정 4색을 안 쓴다.** 하나라도 쓰면 「통행 가능한 지점」으로 읽힌다.
+  const paints = JSON.stringify(landmarkLayers());
+  for (const [k, v] of Object.entries(style)) {
+    ok(!paints.includes(v.color), `지점 핀이 판정색(${k})을 쓴다`);
+  }
 });
 
 test("관제 레이어 — 판정선 · 이력 · 덧그림 (무효 식이 조용히 빠지던 자리)", () => {

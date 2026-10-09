@@ -22,6 +22,9 @@ interface Props {
 /** components/layers.ts 의 색과 같아야 한다. (2026-09-21 주간 테마로 바꿈) */
 const FEATURES = [
   { color: C.station, label: "119안전센터" },
+  // ★ 2026-10-09 (§444 · #148). 지점 핀 — **판정색을 안 쓴다.** 흰 고리이고
+  //   경로에 안 붙는다. 4색 중 하나를 쓰면 「통행 가능한 지점」으로 읽힌다.
+  { color: "#e2e8f0", label: "지점 (경로 밖)" },
   { color: "#facc15", label: "CCTV" },
   { color: "#ef4444", label: "소화전" },
 ];

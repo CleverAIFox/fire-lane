@@ -11,10 +11,20 @@
  *
  * IN    ui/tokens(색) · domain/types
  * OUT   MapLibre 층 명세
+ * ★ 2026-10-09 (DECISIONS §444 · PLAN #148). **지점 핀이 여기 산다.** 처음에는
+ *   `layers.ts` 에 뒀는데 그 파일이 **진입 청크**에 들어가 무게가 127 → 128KB 로
+ *   늘었다(`naviweight --build` 가 울었다). 핀은 관제만 쓰므로 자리가 여기가
+ *   맞고, 옮기니 무게가 그대로다 — **옳은 자리가 싼 자리였다.**
+ *
  * 밖    **바탕 층은 안 든다** — `layers.ts` 의 `baseLayers` 가 두 화면 공용이다.
  *       **무엇을 보일지 안 고른다** — `OpsMap.tsx` 가 켜고 끈다.
  */
-import type { LayerSpecification } from "maplibre-gl";
+import type { LayerSpecification, StyleSpecification } from "maplibre-gl";
+import type { Landmark } from "../domain/types";
+
+// ★ 지도 글자. `layers.ts` 의 `FONT` 와 **같은 값이어야 한다** —
+//   저장소에서 뽑는 글꼴 이름이고 정본은 `web/navi/scripts/glyphs.mjs` 다.
+const FONT = ["LiberationSans"];
 
 /**
  * 지형지물 마커 · 라벨.
@@ -150,5 +160,55 @@ export function opsOverlayLayers(r14: number, r20: number): LayerSpecification[]
       layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-width": 5, "line-color": "#7c3aed", "line-opacity": .9,
                "line-dasharray": [2, 1] } },
+  ];
+}
+
+/**
+ * 지점 핀의 소스. **좌표는 인자로만 온다** — 이 파일에 점을 적지 않는다.
+ *
+ * ★ 2026-10-09 (DECISIONS §444 · PLAN #148). 옛 발행물에는 `landmarks` 가 없다.
+ *   그때는 **빈 모음**을 낸다 — 레이어는 서고 핀만 없다. 소스를 아예 안 만들면
+ *   `addLayer` 가 없는 소스를 가리켜 지도 전체가 죽는다.
+ */
+export function landmarkSource(lms?: Landmark[]): StyleSpecification["sources"][string] {
+  return {
+    type: "geojson",
+    data: {
+      type: "FeatureCollection",
+      features: (lms ?? []).map((l) => ({
+        type: "Feature" as const,
+        properties: { name: l.name, note: l.note ?? "" },
+        geometry: { type: "Point" as const, coordinates: [l.lng, l.lat] },
+      })),
+    },
+  };
+}
+
+/**
+ * 지점 핀. **안전센터와 같은 층**에 선다(§412-3).
+ *
+ * ★ 판정 4색을 쓰지 않는다. 이 점은 판정 대상이 아니라 **위치**이고, 4색 중
+ *   하나를 쓰면 「이 지점이 통행 가능하다」로 읽힌다. 그래서 테두리만 있는
+ *   흰 고리다 — 색 채널을 안 먹고 휘도로만 선다(교안 p.25 Note 3).
+ * ★ 경로에 안 붙는 점이라 **지도에서도 길과 안 닿게** 생겼다 — 고리이고
+ *   채워진 점이 아니다. 안전센터(채운 점)와 꼴로 갈린다.
+ */
+export function landmarkLayers(): LayerSpecification[] {
+  return [
+    { id: "landmark-ring", type: "circle", source: "landmarks",
+      paint: {
+        "circle-radius": 6.5,
+        "circle-color": "rgba(0,0,0,0)",
+        "circle-stroke-width": 2.5,
+        "circle-stroke-color": "#e2e8f0",
+      } },
+    { id: "lbl-landmark", type: "symbol", source: "landmarks",
+      layout: {
+        "text-field": ["get", "name"],
+        "text-font": FONT, "text-size": 11, "text-offset": [0, 1.2],
+        "text-anchor": "top", "text-allow-overlap": true,
+        "text-pitch-alignment": "viewport",
+      },
+      paint: { "text-color": "#e2e8f0", "text-halo-color": "#0b1220", "text-halo-width": 1.6 } },
   ];
 }

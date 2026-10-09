@@ -442,7 +442,7 @@ export default function OpsApp() {
 
         {/* ══ 중앙 — 지도(북쪽 위 · 평면) ═══════════════════════════ */}
         <main style={mapBox}>
-          <OpsMap view={data.view} terrain={data.graph.terrain} style={style} layers={layers} hidden={hidden}
+          <OpsMap view={data.view} terrain={data.graph.terrain} landmarks={data.graph.landmarks} style={style} layers={layers} hidden={hidden}
                   colorMode={colorMode} requiredM={need} hiddenBands={hiddenBands}
                   reachable={reach} incident={incident?.point ?? null}
                   preview={plan?.plan?.coords ?? null}
