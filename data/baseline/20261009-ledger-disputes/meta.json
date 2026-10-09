@@ -1,7 +1,7 @@
 {
   "tag": "20261009-ledger-disputes",
-  "frozen_at": "2026-10-09T12:49:48+09:00",
-  "git_sha": "14796ce2f023d4b2c6d0ad312e0d7d6b0cd6bf6b",
+  "frozen_at": "2026-10-09T14:30:13+09:00",
+  "git_sha": "676f95c5bf29620699b20b68180903a79833ed07",
   "note": "",
   "tally": {
     "n": 1281,
@@ -36,8 +36,8 @@
     "segments.schema.json": "3a9ef4cbf0df80b3c8ab876509ebe7fb2ab84ba26e7eda449967946bbfd57c5e",
     "_manifest.json": "733fb82107a20f4100fd8563f4894ea67df3ab8eee67d7814e60c35aa834b6e3",
     "seg_uid_map.csv": "446ee06255fe2d5e62d0ba309038a9ff01316b998bfbab01df35a506ae9a6f75",
-    "eval.json": "4aad3daa1a6ce3d34e993960fff825a6a9eb82191bee20da92f1e07c87bc9fb0",
-    "nfa_compare.json": "f0bd982ebeff134b334d5b7bfbc0cbddaaeefaa67d188c121a7c1998ede3ad1c"
+    "eval.json": "e4d91fdf2fef0263222928621d783d932c93814f4e99818fa730a530d4efdc18",
+    "nfa_compare.json": "01037c061c453ed2af7099041ef0ff796eeef27b3e1a9e22c5b6a99257d9505d"
   },
   "why": "구 원본(국토정보플랫폼 NGI 20도엽 2020·2022)이 2026-08-15 전량 재취득으로 소실됐다. 이 산출물은 재생성 불가다.",
   "known_limits": [
