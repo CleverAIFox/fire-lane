@@ -472,11 +472,11 @@ def test_e1_counts_unreachable_separately(tmp_path):
 
 
 # ── 재현성 ────────────────────────────────────────────────────
-# ★ 목록을 여기 또 적지 않는다 — 이 저장소가 **두 벌로 들고 있다가** 봉인이
-#   매 실행 더러워졌다. 정본은 `firelane.hashing` 이다(§445 · 족 2).
-from firelane.hashing import VOLATILE as _V  # noqa: E402 — 사유는 위 두 줄
+# ★ 목록을 여기 또 적지 않는다 — 두 벌로 들고 있다가 봉인이 매 실행 더러워졌다.
+#   정본은 `firelane.manifest.STAMP_KEYS` 다(DECISIONS §445 · 족 2).
+from firelane.manifest import STAMP_KEYS as _SK  # noqa: E402 — 사유는 위 두 줄
 
-VOLATILE = set(_V) & {"as_of", "git_sha"}
+VOLATILE = set(_SK) & {"as_of", "git_sha"}
 
 
 def test_two_runs_agree(tree):

@@ -164,9 +164,9 @@ def nfa_compare(g):
                 "n_road": len(_nfa_rows),
                 "rows": sorted(_nfa_rows, key=lambda x: abs(x["dev_m"])),
             }
-            # ★ 수가 그대로면 안 쓴다 — `as_of` 만 흔들려 봉인이 더러워진다.
-            from firelane.hashing import write_stable as _ws
-            _ws(OUT / "nfa_compare.json", _out)
+            # ★ 수가 그대로면 안 쓴다 — `as_of` 만 흔들려 봉인이 더러워진다(§445).
+            from firelane.manifest import write_stable as _ws
+            _ws(OUT / "nfa_compare.json", _out, tail="\n")
             print(f"  절대편차 합 {_abs}m · {len(_nfa_rows)}구간"
                   f"  → {(OUT / 'nfa_compare.json').name}")
         else:
