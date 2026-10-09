@@ -532,25 +532,27 @@ step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 # ★ 2026-09-02 배선. 오늘 캡션 절까지 붙여놓고 **어디서도 안 부르고
 #   있었다.** 사람이 손으로 칠 때만 도는 도구는 이탈 후 아무도 안 부른다.
 # ★ 2026-09-22 — ⑤⑥ 이 golden · 발행 구간 · 대장을 읽는다(W4-2). 범위를 좁게 두면 조용히 건너뛴다
-scope "docs/* tools/* data/* web/* src/* tests/* .github/* sources.yaml"
-step "기획서 대조"     uv run python tools/docx_check.py
-# ★ 2026-09-28 (§278-3). 기획서 522단락에 `pStyle` 이 하나도 없어 **제목 계층이
-#   사람 눈에만** 있었다 — 63쪽 PDF 의 북마크가 0 이었다. `w:outlineLvl` 만 넣어
-#   서식은 그대로 두고 개요를 만든다. 편마다 장 꼴이 달라(Part II 는 `□` 가 장)
-#   지도를 편별로 선언한다.
-scope "docs/*"
-step "기획서 개요 층"   uv run python tools/docstyle.py
+# ★ 2026-10-09 (DECISIONS §444 · PLAN #142). **`docx_check` · `docstyle` 이
+#   은퇴했다.** 앞의 것은 `docs/proposal.docx` 를 읽었고 정본은 §425 에 md 로
+#   옮겨졌다 — 그때부터 **사본을 검사하고 있었다.** 뒤의 것은 63쪽 PDF 의
+#   북마크 0개가 사유였고, HTML 은 `h1`~`h6` 가 개요다.
+#   여덜 축이 어디로 갔는지는 `tools/proposalcheck.py` 머리말이 든다 —
+#   수는 `docnum_check`, 나머지는 이 단계, 고치는 쪽(⑤)은 **없앴다**(md 는
+#   diff 가 되므로 글을 고치는 도구를 두지 않는다 · R9).
+scope "docs/proposal.md data/* sources.yaml tools/proposalcheck.py"
+step "기획서 정본 대조" uv run python tools/proposalcheck.py
 # ★ 2026-10-06 (DECISIONS §425 · PLAN #142). 내용 정본이 `docs/proposal.md` 로
 #   옮겨졌다. 화면은 **생성물**이고 이 단계가 「커밋된 것이 정본과 같은가」를 댄다.
 #   종료 코드 3 은 「지금은 통과, 배포는 막힌다」 — `CI=true` 면 2 로 올라간다.
-#   ★ 위 둘(`docx_check` · `docstyle`)을 **아직 안 뺀다.** docx 제출본이 살아
-#     있는 동안은 그쪽도 물어야 한다 — 참조 25곳을 한 판에 흔들지 않는다.
+#   ★ 2026-10-09 (§444). 그 둘은 **이 판에서 뺐다.** 「참조 25곳을 한 판에
+#     흔들지 않는다」가 종전 사유였고, 다리(`htmlfigs`)가 놓인 뒤 흔들었다.
 scope "docs/proposal.md web/proposal.template.html web/proposal.html tools/build_proposal.py tools/proposal_source.py"
 step "기획서 화면"     uv run python tools/build_proposal.py --check
 # ★ 2026-10-09 (DECISIONS §440 · PLAN #142). 화면의 그림 스물넷 중 **다섯이
-#   코드가 만드는 것**이고 지금까지 그 다섯은 docx 를 거쳐 왔다. 정본이 md 인데
-#   생성 그림만 사본을 거치는 꼴이라, docx 를 은퇴시키기 전에 **다리를 먼저**
-#   놓는다. 안 놓고 지우면 다섯이 영원히 옛 값으로 굳는다(§236 의 그 자리다).
+#   코드가 만드는 것**이고 종전에 그 다섯은 docx 를 거쳐 왔다. 정본이 md 인데
+#   생성 그림만 사본을 거치는 꼴이라, docx 를 은퇴시키기 전에 다리를 먼저
+#   놓았다. 안 놓고 지우면 다섯이 영원히 옛 값으로 굳는다(§236 의 그 자리다).
+#   ★ 2026-10-09 (§444). docx 가 은퇴했으므로 **이것이 유일한 자리다.**
 scope "tools/htmlfigs.py tools/figures/* tools/render_figures.py web/proposal/fig/*"
 step "기획서 화면 그림" uv run python tools/htmlfigs.py --check
 # ★ 2026-10-04 (§390). `PLAN` 이 빚 목록인지 이력 창고인지. 세 자리가 주석으로만
@@ -604,8 +606,9 @@ scope "docs/* tools/* src/* data/*"
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
 # ★ 2026-09-23 (DECISIONS §221-1). 그림이 저장소에서만 새것이 되는 길을 닫는다 —
 #   기획서가 든 그림도 정본과 같은가. 변환기 없이 도는 검사다(SVG 지문 대조).
-scope "docs/* tools/*"
-step "기획서 그림 ↔ 정본" uv run python tools/docx_figs.py --check
+# ★ 2026-10-09 (§444 · #142). `docx_figs --check` 가 은퇴했다 — 그 축(「기획서가
+#   든 그림이 정본과 같은가」)은 위 「기획서 화면 그림」(`htmlfigs --check`)이
+#   든다. 같은 다섯 그림이고 **이제 자리가 하나뿐**이다.
 # ★ 2026-09-17 (DECISIONS §180-9). `흡수 대상`(release_brief 한 줄)을 뺐다. 검사가 아니라 보고였고 매 실행 "생략" 으로
 #   찍혀 생략 칸을 채웠다 — 진짜 생략(npm 없음 · --fast)이 그 옆에 묻힌다. 표는 릴리즈 PR 본문에서 쓰인다(merge_batch --release).
 # ★ 2026-09-17 (DECISIONS §182-2 · G-14). 대장 필드 검사를 아무도 안 불렀다. `python -m firelane.ledger_check` 는
@@ -613,6 +616,12 @@ step "기획서 그림 ↔ 정본" uv run python tools/docx_figs.py --check
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "sources.yaml src/* tools/*"
 step "대장 필드 검사"   uv run python -m firelane.ledger_check
+# ★ 2026-10-09 (DECISIONS §444 · PLAN #134 ㉠). 칸은 쉰이고 프로브 여덟이 각자
+#   읽는데 **어느 칸을 읽는지 아무도 대조하지 않았다.** 읽는 쪽은 AST 로
+#   도출하고 손으로 적는 것은 「기계가 안 읽는 칸」뿐이다(래칫 · 내려간다).
+#   레이크를 안 읽으므로 CI 도 돈다.
+scope "sources.yaml src/* tools/* tests/*"
+step "대장 칸 독자"     uv run python tools/ledgercols.py
 # ★ 2026-10-02 (DECISIONS §349). 대장은 같은 사실을 두 벌로 든다 — `contract`(규범) ·
 #   `schema`(실측). 갈라 둔 이유는 옳은데(합치면 실물이 바뀔 때 약속이 같이 바뀌어
 #   아무도 못 알아챈다) **둘을 대 보는 자리가 없었다.** 레이크를 안 읽으므로 CI 도 돈다 —
@@ -972,6 +981,16 @@ step "봉인 조상" uv run python tools/dms.py ancestry
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "src/* tools/* tests/*"
 step "사본군" uv run python tools/dupcheck.py --min 40 --max 0
+
+# ★ 2026-10-09 (DECISIONS §444 · PLAN #134 ㉡). **커밋된 사본이 어떻게 생겼는지**를
+#   도구가 든다. 종전에는 `CUTS` 한 줄(동명동 경계)만 선언이 있었고 `n1/` 의 셋은
+#   누가 어떻게 20줄을 떼었는지가 **아무 데도 없었다.** 사본은 원본이 멀어질수록
+#   값이 아니라 **출처**가 자산이다 — 출처가 없으면 다시 뜰 때 사람이 추측한다.
+# ★ 이 자리에서 돌 수 있는 축은 **선언↔파일 목록 양방향** 하나다(레이크 없이 돈다).
+#   `CUTS` 쪽은 원본이 없어 스스로 건너뛰고, 그 대조는 레이크 기계의
+#   `test_dest_scope` 가 든다 — 같은 도구가 양쪽에서 불린다.
+scope "tests/fixtures/* tools/*"
+step "사본 선택 규칙" uv run python tools/fixture_recut.py --check
 
 # ★ 2026-09-22 (DECISIONS §218-5 · 하토르 check_file_size.py 모범). 파일 길이 **양방향** 래칫.
 #   상한(코드 600 · 시험 700)을 넘는 것은 `EXCEPTIONS` 에 오늘 줄 수로 박혀 있고, 늘면

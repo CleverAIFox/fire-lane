@@ -295,10 +295,12 @@ jobs:
         run: uv run python tools/render_figures.py --check
       # ★ 2026-09-23 (DECISIONS §221-1). 기획서가 든 그림도 같은 정본인가.
       #   SVG 지문만 대조하므로 러너에 SVG 변환기가 필요 없다.
-      - name: 기획서 그림 ↔ 정본
-        run: uv run python tools/docx_figs.py --check
       # ★ 2026-10-09 (§440-2). 같은 다섯이 **화면 자리로도** 간다. 이쪽도 SVG 지문
       #   대조라 변환기가 필요 없다 — 로컬에만 붙일 이유가 없다.
+      # ★ 2026-10-09 (§444 · PLAN #142). `docx_check` · `docstyle` · `docx_figs`
+      #   가 은퇴했다. 여덜 축이 어디로 갔는지는 `tools/proposalcheck.py` 머리말이 든다.
+      - name: 기획서 정본 대조
+        run: uv run python tools/proposalcheck.py
       - name: 기획서 화면 그림
         run: uv run python tools/htmlfigs.py --check
       # ★ 2026-10-06 (§425). 기획서 **화면**이 정본과 같은가. 정본(`docs/proposal.md`)
@@ -354,6 +356,9 @@ jobs:
       #   인자가 갈리면 같은 검사기를 다른 문턱으로 도는 것이고, 그것은 관문 동등이 아니다.
       - name: 대장 필드 검사
         run: uv run python -m firelane.ledger_check
+      # ★ 2026-10-09 (§444 · PLAN #134 ㉠). 레이크를 안 읽는다 — 대장과 소스뿐이다.
+      - name: 대장 칸 독자
+        run: uv run python tools/ledgercols.py
       - name: 대장 별칭 이관 유지
         run: uv run python tools/ledger_fields.py --check
       # ── 2026-09-28 (DECISIONS §285). 문서가 관문이라 이름까지 적어 둔 것이
@@ -395,10 +400,6 @@ jobs:
       # ★ 2026-10-04 (§385). §377 이 손으로 넷을 고치고 도구를 빚으로 남겼다.
       - name: 되짚기 폭발 구조
         run: uv run python tools/redoscheck.py
-      - name: 기획서 대조
-        run: uv run python tools/docx_check.py
-      - name: 기획서 개요 층
-        run: uv run python tools/docstyle.py
       - name: PLAN 의 이력 빚
         run: uv run python tools/planwork.py
       - name: 문서 말투
@@ -424,6 +425,10 @@ jobs:
         run: uv run python tools/golden.py selftest
       - name: 사본군 (래칫)
         run: uv run python tools/dupcheck.py --min 40 --max 0
+      # ★ 2026-10-09 (§444 · #134 ㉡). `CUTS` 쪽은 원본이 없어 스스로 건너뛴다.
+      #   여기서 도는 축은 **`n1/` 사본이 전부 선택 규칙을 들고 있는가** 하나다.
+      - name: 사본 선택 규칙
+        run: uv run python tools/fixture_recut.py --check
       - name: 파일 길이 래칫 (양방향)
         run: uv run python tools/sizecheck.py
       # ★ `--write` 를 CI 에서 안 돈다 — 쓰고 나서 재면 영영 초록이다(§309).
