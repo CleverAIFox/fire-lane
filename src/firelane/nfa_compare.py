@@ -147,7 +147,6 @@ def nfa_compare(g):
                 })
 
         if _nfa_rows:
-            import json as _json
             from datetime import datetime as _dt
             from datetime import timedelta as _td
             from datetime import timezone as _tz
@@ -165,9 +164,9 @@ def nfa_compare(g):
                 "n_road": len(_nfa_rows),
                 "rows": sorted(_nfa_rows, key=lambda x: abs(x["dev_m"])),
             }
-            (OUT / "nfa_compare.json").write_text(
-                _json.dumps(_out, ensure_ascii=False, indent=2) + "\n",
-                encoding="utf-8")
+            # ★ 수가 그대로면 안 쓴다 — `as_of` 만 흔들려 봉인이 더러워진다.
+            from firelane.hashing import write_stable as _ws
+            _ws(OUT / "nfa_compare.json", _out)
             print(f"  절대편차 합 {_abs}m · {len(_nfa_rows)}구간"
                   f"  → {(OUT / 'nfa_compare.json').name}")
         else:

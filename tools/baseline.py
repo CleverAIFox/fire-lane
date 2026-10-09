@@ -217,8 +217,11 @@ def cmd_freeze(args) -> int:
             "nfa_compare 는 검증이 아니라 적합(fit)이다",
         ],
     }
-    (dst / "meta.json").write_text(
-        json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    # ★ `frozen_at`·`git_sha` 말고 달라진 것이 없으면 **안 쓴다.** 그 둘은
+    #   매 실행 바뀌고 `git_sha` 는 직전 커밋을 적으므로, 쓰면 커밋할 때마다
+    #   또 달라져 「추적 파일이 더럽다」가 영원히 안 닫힌다.
+    from firelane.hashing import write_stable as _ws
+    _ws(dst / "meta.json", meta)
 
     t = meta["tally"]
     (dst / "README.md").write_text(f"""# 베이스라인 `{args.tag}`
