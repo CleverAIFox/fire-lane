@@ -19,7 +19,7 @@ render_figures.py — 정본에서 그림을 만든다.
 ★ 2026-09-23 (DECISIONS §221-1). 종전에는 여기에 「`.docx` 안 이미지를 코드가
   교체하지는 않는다 — 알리기만 하고 넣는 것은 사람이 한다」 고 적혀 있었다.
   그 결정을 뒤집었다. 이 파일은 **SVG 를 만들고 어긋남을 알리고**,
-  `tools/docx_figs.py --sync` 가 그것을 기획서 안에 **넣는다.**
+  `tools/htmlfigs.py --sync` 가 그것을 기획서 **화면 자리에 굽는다**(§444).
 
 IN    data/golden/segments.fingerprint.json · src/firelane/seg/params.py
 OUT   docs/figures/*.svg · docs/figures/.lock.json
@@ -82,7 +82,7 @@ def main() -> int:
             print("★ 그림이 정본과 어긋난다 — " + " · ".join(drift))
             print("  값이 바뀌었는데 기획서 그림이 옛 값을 그리고 있다.")
             print("  uv run python tools/render_figures.py         다시 만든다")
-            print("  uv run python tools/docx_figs.py --sync       기획서에 넣는다")
+            print("  uv run python tools/htmlfigs.py --sync        기획서 화면에 굽는다")
             # ★ 2026-09-23 (DECISIONS §221-1). 종전에는 여기서 「사람이 넣는다 — 기획서는
             #   대외 제출본이고 생성물이 아니다」 라고 했다. 그 사이 `docx_fix.py` 가 같은
             #   파일의 문단을 기계로 고치고 있었고, 「사람이 넣는다」 는 곧 「안 넣는다」 였다.
@@ -93,7 +93,7 @@ def main() -> int:
         print(f"그림 OK — {len(made)}장 정본과 일치")
         return 0
 
-    # ★ 2026-09-23. 잠금을 **덮어쓰지 않고 합친다.** `docx_figs.py` 가 같은 파일에
+    # ★ 2026-09-23. 잠금을 **덮어쓰지 않고 합친다.** 그림을 앉히는 쪽이 같은 파일에
     #   `placed`(기획서에 박힌 지문)를 쓴다 — 덮어쓰면 그쪽 기록이 매번 사라지고,
     #   그러면 「기획서가 낡았는가」 를 묻는 관문이 조용히 통과한다.
     keep = json.loads(LOCK.read_text(encoding="utf-8")) if LOCK.exists() else {}
@@ -104,7 +104,7 @@ def main() -> int:
         mark = " ★ 바뀜" if k in drift else ""
         print(f"  docs/figures/{k}.svg  {made[k]}{mark}")
     if drift:
-        print("\n★ 바뀐 그림을 기획서에 넣는다:  uv run python tools/docx_figs.py --sync")
+        print("\n★ 바뀐 그림을 화면에 굽는다:  uv run python tools/htmlfigs.py --sync")
     return 0
 
 

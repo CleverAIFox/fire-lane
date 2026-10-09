@@ -108,7 +108,7 @@
 # 손으로 고치는 것은 와꾸, `tools/build_proposal.py` 가 굽는 것이 생성물이다(§425).
 /web/proposal.template.html @CleverAIFox
 /web/proposal.html       @CleverAIFox
-# 기획서 그림 24장. 상류 .docx 에서 `tools/migrate_proposal.py` 가 한 번 꺼냈다 —
+# 기획서 그림 24장. 상류 .docx 에서 **한 번** 꺼냈다(그 이사 도구는 §444 에 은퇴) —
 # 글(`docs/proposal.md`)과 같이 들어온 **같은 반입물**이라 같이 커밋한다.
 /web/proposal/fig/       @CleverAIFox           # !strict
 /web/data/               @CleverAIFox

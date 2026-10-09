@@ -330,7 +330,7 @@ DOCS_DIR = ROOT / "docs"
 # ★ 2026-10-06 (DECISIONS §425). `proposal.md` 를 더했다. **다섯째가 아니다** —
 #   넷째 슬롯의 **형식이 바뀌는 중**이고, 두 꼴이 같이 사는 것은 옛 다섯(도구)이
 #   은퇴할 때까지다. docx 가 사라지면 이 집합도 넷으로 돌아간다.
-ALLOWED_DOCS = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.md", "proposal.docx"}
+ALLOWED_DOCS = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.md"}
 # 그림은 문서가 아니라 `render_figures` 의 생성물이다.
 FIGURES_DIR = "figures"
 ALLOWED_FIGURES = {".lock.json"}                 # 그 밖에는 `*.svg` 만
@@ -340,7 +340,7 @@ def test_docs_dir_holds_only_the_allowed_documents():
     """`docs/` 에는 허용된 문서만 산다 — 2026-09-23 소유자 규칙.
 
     이 저장소의 문서는 **넷**이다 — `MASTER.md`(지금 무엇이 어떤 값인가) ·
-    `PLAN.md`(남은 일) · `DECISIONS.md`(왜 그렇게 했나) · `proposal.docx`
+    `PLAN.md`(남은 일) · `DECISIONS.md`(왜 그렇게 했나) · `proposal.md`
     (제출물). 루트 `README.md` 가 다섯째이고 그것은 이 폴더 밖에 산다.
 
     2026-09-22 에 규율 둘이 문서로 나갔다 — `SOURCES_OF_TRUTH.yaml`(가드 2)과

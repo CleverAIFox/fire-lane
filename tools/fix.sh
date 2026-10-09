@@ -73,7 +73,8 @@ echo
 # ① 코드 · 서식 ────────────────────────────────────────────────
 fix "린트"            uv run ruff check --fix .
 fix "인코딩·개행"      uv run python tools/encoding_check.py --fix
-fix "문서 말투 서식"    uv run python tools/docstyle.py --write
+# ★ 2026-10-09 (§444 · #142). `docstyle --write` 가 은퇴했다 — docx 의 개요
+#   층을 넣는 도구였고 HTML 은 `h1`~`h6` 가 개요다.
 # ★ 수만 빼고 꾸밈말은 남긴다(§366-4). `(15 — 양방향)` 의 「양방향」은 정보다.
 fix "손으로 적은 시험 수" uv run python tools/countcheck.py --fix
 
@@ -88,11 +89,17 @@ fix "죽은 강제자 참조"  uv run python tools/dms.py --apply
 fix "북마크 죽은 절"    uv run python tools/dms.py prune --apply
 
 # ③ 생성물 ← 정본 ─────────────────────────────────────────────
-fix "기획서 그림"      uv run python tools/docx_figs.py --sync
-# ★ 같은 다섯 그림이 **화면 자리로도** 간다(§440 · PLAN #142). 둘을 같이 돌린다 —
-#   docx 가 은퇴하면 위 줄이 지워지고 이 줄만 남는다. 변환기는 같은 하나다.
+# ★ 2026-10-09 (§444 · #142). **그 줄이 지워지고 이 줄만 남았다** — §440 이
+#   적어 둔 그대로다. 생성 그림 다섯이 화면 자리로 바로 간다.
 fix "기획서 화면 그림"  uv run python tools/htmlfigs.py --sync
 fix "문서 생성 블록"    uv run python tools/docgen.py
+# ★ 2026-10-09 (DECISIONS §444 · PLAN #142). **화면을 다시 굽는다.** 정본
+#   `docs/proposal.md` 가 바뀌면 `web/proposal.html` 이 낡고, 그것은 커밋되는
+#   생성물이다 — 기계적으로 답이 하나다. 그림(`htmlfigs`) 뒤에 둔다: 그림을
+#   갈아 끼운 뒤에 구워야 화면이 새 그림을 든다.
+#   ★ `--touch` 는 **안 건다.** 날짜는 「고친 날」이고 그것은 사람이 안다
+#     (`doc_fsck ⑥` 이 안 찍힌 것을 운다).
+fix "기획서 화면"      uv run python tools/build_proposal.py
 
 # ④ 래칫 — **맨 뒤.** 위 수리가 실측값을 바꾼다 ────────────────
 fix "래칫"            uv run python tools/ratchet.py --write

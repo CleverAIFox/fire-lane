@@ -1,10 +1,14 @@
 """`doc_fsck ⑥` — 기획서를 고쳤는데 최종 수정일이 그대로인가.  (§258-19)
 
-IN    docs/proposal.docx · 그 안의 최종 수정일 표기 · git 이력 · origin/dev 의 사본
+IN    docs/proposal.md · 그 안의 최종 수정일 표기 · git 이력 · origin/dev 의 사본
 OUT   결함 문장 목록 (비면 통과)
-밖    기획서 **내용**이 산출물과 맞는가는 `tools/docx_check.py` 소관이다.
+밖    기획서 **내용**이 산출물과 맞는가는 `tools/docnum_check.py`(수) ·
+      `tools/proposalcheck.py`(참조 · 폐기 어휘 · 캡션 · 긴 칸) 소관이다.
       **스쿼시 뒤의 다른 검사들은 안 본다** — 열차가 만드는 상태를 통틀어 다시
       보는 것은 `tools/fl.sh` 의 「7b. 열차 뒤 검사」 소관이다.
+★ 2026-10-09 (DECISIONS §444 · PLAN #142). 파일 이름이 `docx_revised.py` 였다.
+  보던 것이 `docs/proposal.docx` 였고 그 파일이 은퇴했다 — **이름이 사라진
+  형식을 들고 있으면 다음 사람이 없는 파일을 찾는다**(§312 와 같은 교훈).
 부류  몸통   진입점이 아니다 — 부르는 쪽이 부류를 든다  (DECISIONS §437)
 """
 from __future__ import annotations
@@ -34,28 +38,20 @@ def covers() -> list[Path]:
       `2026. 10. 01.` 에 멈춰 여드레 낡아 있었고 아무도 안 울었다. 사람이 읽는
       화면(`web/proposal.html`)이 그 줄을 그대로 띄우므로 **낡은 날짜가 밖으로
       나간다.** §440-5 가 숫자에서 같은 구멍을 메웠고 이쪽은 날짜다.
-    ★ docx 가 은퇴하면 이 목록은 md 하나가 된다 — 목록이라 그때 줄만 준다.
+    ★ 2026-10-09 (§444). **docx 가 은퇴했으므로 md 하나다** — §440-8 이 「그때
+      줄만 준다」고 적어 둔 그대로다. 목록으로 남긴다: 기획서가 둘이 되는
+      날(국문·영문 따위)이 오면 여기 한 줄이다.
     """
-    out = sorted((ROOT / "docs").glob("*.docx"))
     md = ROOT / "docs" / "proposal.md"
-    if md.is_file():
-        out.append(md)
-    return out
+    return [md] if md.is_file() else []
 
 
 def _cover_dates(f: Path) -> tuple[list[str], str | None]:
     """표지 앞머리의 날짜 표기와, 못 읽었으면 그 사유."""
-    if f.suffix == ".md":
-        try:
-            txt = "\n".join(f.read_text(encoding="utf-8").splitlines()[:40])
-        except Exception as e:
-            return [], f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"
-    else:
-        try:
-            import docx as _dx
-            txt = "\n".join(x.text for x in _dx.Document(str(f)).paragraphs[:40])
-        except Exception as e:
-            return [], f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"
+    try:
+        txt = "\n".join(f.read_text(encoding="utf-8").splitlines()[:40])
+    except OSError as e:
+        return [], f"{f.name} 표지를 못 읽었다 — {type(e).__name__}: {e}"
     return re.findall(r"20\d\d\.\s*\d{1,2}\.\s*\d{1,2}", txt), None
 
 
@@ -67,7 +63,7 @@ def _norm(s: str) -> str:
 BASES = ("origin/part/infra", "origin/dev")
 
 
-def check_docx_ready_for_squash(bases: tuple[str, ...] = BASES) -> list[str]:
+def check_ready_for_squash(bases: tuple[str, ...] = BASES) -> list[str]:
     """기획서를 **이 배치에서 고쳤는데** 표지가 오늘 날짜가 아닌가.  (§273-5)
 
     ── 왜 생겼나 (2026-09-27) ──────────────────────────────────
@@ -111,7 +107,7 @@ def _ready_one(f: Path, bases: tuple[str, ...]) -> list[str]:
     #   공통 조상을 못 찾아 죽었고, stderr 가 비어 「판별하지 못했다: .」 라는
     #   사유 없는 빨강이 CI 에 섰다(PR #266).
     #   필요한 것은 이름이 아니라 **공통 조상**이므로 그것으로 고른다.
-    #   바로 위 `check_docx_revised` 가 2026-09-18 에 선언한 전제와 같은 것이고,
+    #   바로 위 `check_revised` 가 2026-09-18 에 선언한 전제와 같은 것이고,
     #   이 팔만 그것을 안 물려받고 있었다.
     base = next((b for b in bases
                  if _git("merge-base", "HEAD", b)[0] == 0), None)
@@ -136,11 +132,11 @@ def _ready_one(f: Path, bases: tuple[str, ...]) -> list[str]:
             f"{' · '.join(shown) or '날짜 없음'} 만 든다.\n"
             f"      ★ 스쿼시가 파일의 커밋 날짜를 머지일로 바꾸므로 지금 초록이어도 "
             f"머지 뒤 ⑥ 이 운다.\n"
-            f"      고치는 법 — uv run python tools/docx_fix.py --touch {today} --write"]
+            f"      고치는 법 — uv run python tools/build_proposal.py --touch {today} --write"]
 
 
 # ── 6. 기획서 최종 수정일 ──────────────────────────────────────
-def check_docx_revised() -> list[str]:
+def check_revised() -> list[str]:
     """기획서를 고쳤는데 표지의 최종 수정일이 그대로인가.
 
     ★ 2026-09-02. 표지가 `2026. 08. 14.` 하나만 들고 있었고 그 뒤로 다섯 번

@@ -14,7 +14,7 @@ after_squash.py — **열차가 만든 상태를 다시 본다.** 스쿼시 뒤�
       ortho.seal.code   `go.sh` 가 파이프라인 **전에** `data/` 를 커밋했다.
                         파이프라인이 뒤에서 그 칸을 다시 내므로 커밋본은
                         구조상 항상 한 칸 뒤처진다
-      doc_fsck ⑥        **스쿼시가** `proposal.docx` 의 마지막 커밋 날짜를
+      doc_fsck ⑥        **스쿼시가** `proposal.md` 의 마지막 커밋 날짜를
                         머지일로 바꾼다. `feat` 에서는 09-24 라 초록이고
                         `part/infra` 로 접히면 09-27 이 되어 표지와 어긋난다
       docseal           봉인 PR 의 것이라 `part/infra` 에는 안 들어갔다 —
@@ -53,7 +53,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CHECKS: dict[str, tuple[tuple[str, ...], str, bool]] = {
     "문서 ↔ 문서": (
         ("python", "tools/doc_fsck.py"),
-        "⑥ 이 `git log -1 -- proposal.docx` 의 저자 날짜를 표지와 견준다. "
+        "⑥ 이 `git log -1 -- proposal.md` 의 저자 날짜를 표지와 견준다. "
         "스쿼시가 그 날짜를 머지일로 바꾼다",
         False),
     "문서 정합 도장": (
@@ -62,7 +62,7 @@ CHECKS: dict[str, tuple[tuple[str, ...], str, bool]] = {
         "않지만 봉인 커밋이 끼면 달라진다",
         False),
     "기획서 대조": (
-        ("python", "tools/docx_check.py"),
+        ("python", "tools/proposalcheck.py"),
         "기획서 수치가 커밋된 산출물과 맞는가. 열차가 산출물을 다시 커밋한다",
         False),
     "web/data 계보": (

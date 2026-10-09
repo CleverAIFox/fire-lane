@@ -31,8 +31,11 @@ EVIDENCE = {
     "W11-1": "tests/test_turn_restriction_filter.py::test_missing_node_point_stops",
     "W3-5": "tests/test_dms_ids.py::test_insert_does_not_shift_others",
     "W3-2": "tests/test_declaration_sync.py::test_master_roles_do_not_copy_codeowners",
-    "W3-3": "tests/test_docx_targets.py::test_docx_check_is_bidirectional",
-    "W4-2": "tests/test_docx_targets.py::test_docx_check_is_bidirectional",
+    # ★ 2026-10-09 (§444 · #142). 종전 증거는 `tests/test_docx_targets.py` 였고
+    #   그 시험과 대상(`docx_check` · `docx_fix`)이 은퇴했다. 같은 물음(기획서
+    #   대조가 **비어 있지 않은가**)을 정본 쪽에서 드는 시험으로 옮겼다.
+    "W3-3": "tests/test_proposalcheck.py::test_every_axis_bites_synthetic_input",
+    "W4-2": "tests/test_proposalcheck.py::test_every_axis_bites_synthetic_input",
     "W3-9": "tests/test_declaration_sync.py::test_sources_plan_row_refs_resolve",
     "W7-3": "tests/test_verify_scope.py::test_scope_declarations_ratchet",
     "W3-15": "tests/test_publish_context.py::test_deploy_uses_drop_list",
@@ -45,7 +48,9 @@ EVIDENCE = {
     "W3-13": "tests/test_generated_registry.py::test_call_site_values_come_from_registry",
     "W10-1": "tests/test_deadcheck_probes.py::test_every_ceiling_is_zero",
     "W5-1": "tests/test_defect_evidence.py::test_evidence_exists_in_tree",
-    "W4-7": "tests/test_docx_targets.py::test_long_cell_ratchet_bites",
+    # ★ 2026-10-09 (§444 · #142). 긴 칸 래칫이 docx 표에서 **md 표로** 옮겨졌다.
+    #   같은 물음이고 실측도 거의 같다(6칸 · 최장 1,376자).
+    "W4-7": "tests/test_proposalcheck.py::test_the_long_cell_ratchet_is_at_the_measured_value",
     "W3-6": "tests/test_golden_fp.py::test_display_only_constants_are_outside_the_judgment_closure",
     # ★ 2026-09-24 (DECISIONS §227). §13 의 **마지막** 행. 증표는 옛 판정을
     #   박제해 경계에서 대조하는 시험이다 — 수용 조건이 「불변 증명」이었으므로

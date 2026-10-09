@@ -430,9 +430,7 @@ tools/
                           (시각 · 코드/설정/원본 봉인 · 파생 · 산출값)
   owned_paths.py          ★ CODEOWNERS 를 소유권·검사강도의 정본으로 읽는다
   pr_body_check.py        PR 본문이 템플릿을 실제로 채웠는가
-  docx_check.py           기획서 ↔ 산출물 숫자·폐기 용어 대조
-  docx_fix.py             기획서 낡은 숫자·용어 자동 교정 (--write)
-  docstyle.py             ★ 기획서에 개요 층이 있는가 — 없으면 목차도 PDF 북마크도 안 생긴다 (--write)
+  proposalcheck.py        ★ 기획서 정본(docs/proposal.md) ↔ 실물 — 총연장 · 캡션 · 폐기 어휘 · 참조 · 긴 칸
   tonecheck.py            ★ 문서 넷 + 리드미의 말투 — 비속어 · 은어 · 대화체 (`<!--voice-ok-->` 면 통과)
   suppress.py             ★ 사유 없이 검사를 끄는 주석 — noqa · type:ignore · eslint-disable · 문서 표기. 양방향 래칫
   doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
@@ -448,11 +446,11 @@ tools/
   ledger_fields.py        대장 별칭 필드 통합
   ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
   render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
-  stage_pages.py          ★ 배포 준비 한 곳 — docs/proposal.docx → web/
+  stage_pages.py          ★ 배포 준비 한 곳 — 배포에 안 싣는 것을 web/ 에서 뺀다
   svg_fit.py              ★ 손으로 좌표 박은 SVG 가 화면·도형을 넘는가 — rect · circle · 라벨 폭
   localgeo.py             ★ 동명동 국소 평면 근사 — 좌표 상수의 집. kpi · bridge_audit · its_linkmap 이 읽는다
   render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 대조. 그리는 함수는 tools/figures/ 패키지 (배치는 svg_fit 이 본다)
-  docx_figs.py            ★ 그 그림을 기획서 안에 넣는다 — --sync 가 교체 · --check 는 변환기 없이 대조
+  htmlfigs.py             ★ 그 그림을 기획서 화면 자리에 바로 굽는다 — --sync 가 교체 · --check 는 변환기 없이 대조
   release_brief.py        ★ 이 PR 이 무엇을 흡수하나 — 판정·계보·대장·계약
   ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
   ledger_feeds.py         feeds 산문 → 소비자 리스트
@@ -572,7 +570,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 관제        cleveraifox.github.io/fire-lane/               사건 접수 · 출동 지령 · 판정 지도 · 실시간 공유 확인
 내비        cleveraifox.github.io/fire-lane/navi/          출동 경로 안내. web/data 를 그대로 읽는다
 협업 방침    cleveraifox.github.io/fire-lane/workflow.html   MASTER §12 생성물
-기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.docx 를 구운 PDF. 굽고 나서 넷을 대조한다(§231)
+기획서       cleveraifox.github.io/fire-lane/proposal.html   docs/proposal.md 를 구운 화면. 커밋되는 생성물이다(§425 · §444)
 ```
 
 강제자  `tests/test_n1.py::test_no_doc_sends_people_to_old_pages_domain` — 옛 조직 주소(이관 전 배포)로 보내지 않는다(DECISIONS §181-6)

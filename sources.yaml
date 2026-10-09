@@ -1348,7 +1348,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1393,7 +1392,6 @@ datasets:
       - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1505,7 +1503,6 @@ datasets:
       - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/jijeok_probe.py
       - tools/kpi.py
@@ -1603,7 +1600,6 @@ datasets:
       - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1657,7 +1653,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/lanes_probe.py
@@ -1724,7 +1719,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1763,8 +1757,6 @@ datasets:
       - tools/corner_probe.py
       - tools/desk_check.py
       - tools/docnum_check.py
-      - tools/docx_figs.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/render_figures.py
@@ -1813,7 +1805,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1894,7 +1885,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1940,7 +1930,6 @@ datasets:
       - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1981,7 +1970,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py

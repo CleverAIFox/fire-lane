@@ -566,7 +566,7 @@ def selftest() -> int:
     """판별식이 **빈 그물이 아닌가.**"""
     bad = []
     rows = _sections()
-    if len(rows) < 500:
+    if len(rows) < 501:
         bad.append(f"절을 {len(rows)}개밖에 못 셌다")
     if not refs("본문에 `tools/docseal.py` 가 있다"):
         bad.append("백틱 경로를 못 뽑는다")
