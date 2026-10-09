@@ -190,3 +190,31 @@ def test_the_field_table_names_exactly_the_published_fields():
         f"  산출물에만 있다 {sorted(real - doc)}\n"
         "  ★ 산출물이 정본이다. 재잠금 전이라면 표가 **앞서 있는 것**이고 "
         "`tools/delivercheck.py` 의 `RELOCK_TESTS` 가 이 이름을 든다")
+
+
+# ── 회색 사유의 가짓수 **낱말** (2026-10-09 · DECISIONS §444 · PLAN #142) ──
+# ★ 종전에 기획서의 그 문장을 보던 것은 `docx_check` 의 ⑤ 정방향(= `docx_fix`
+#   규칙)뿐이고, 그것이 읽는 것은 `docs/proposal.docx` 였다. 정본이 md 로
+#   옮겨진 뒤(§425) **정본의 그 문장은 아무도 안 봤다** — 그래서 `ledger_disputes`
+#   가 다섯째 사유로 선 날 문장은 「네 가지」로 거짓이 됐고, 운 것은 사본을
+#   보던 검사였다. docx 가 은퇴하면 그 울음도 같이 사라지므로 **먼저 세운다.**
+def test_the_grey_reason_word_count_is_watched():
+    """합성 입력 — 수사 낱말이 실물과 어긋나면 운다. 양방향."""
+    D = _docnum()
+    ok = "- GRAY 400구간의 사유는 다섯 가지이며 폭 산출 불가는 0건이다."
+    assert not D.gray_kind_faults(ok, 5), "맞는 문장에서 운다"
+    assert D.gray_kind_faults(ok, 4), "다섯을 넷이라고 해도 안 운다"
+    assert D.gray_kind_faults(ok, 6), "다섯을 여섯이라고 해도 안 운다"
+    # ★ **문장이 없으면 운다.** 지우면 조용해지는 축은 없는 축이다(1족).
+    assert D.gray_kind_faults("아무 말도 없다", 5), "닻이 사라졌는데 조용하다"
+    # ★ 수사는 **한글**이다. 숫자로 적은 것도 어긋남이다 — 문서 서식이 한글이다
+    assert D.gray_kind_faults("- GRAY 400구간의 사유는 5 가지다.", 5), "숫자 수사를 통과시킨다"
+
+
+def test_the_real_proposal_states_the_right_number_of_grey_reasons():
+    """실물 — 기획서의 그 문장이 **지금 산출물**의 사유 종수를 든다."""
+    D = _docnum()
+    n = sum(1 for k in D.counts() if k.startswith("ur_"))
+    assert n >= 4, f"회색 사유를 {n}종 셌다 — 수집기를 의심하라"
+    bad = D.gray_kind_faults((ROOT / "docs/proposal.md").read_text(encoding="utf-8"), n)
+    assert not bad, "\n".join(bad)

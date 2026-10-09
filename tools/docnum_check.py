@@ -179,6 +179,59 @@ def verdicts() -> dict[str, int]:
     return t
 
 
+#: 「사유는 **다섯** 가지」 — 수사를 한글로 적는 자리. 열까지만 든다.
+#: ★ 2026-10-09 (§444 · #142). 이 한 낱말이 2026-10-09 에 거짓이 됐다 —
+#:   `ledger_disputes` 가 다섯째 사유로 섰는데 문장은 「네 가지」였다. 수는
+#:   `docnum_check` 가 보고 **낱말은 아무도 안 봤다.** 수사도 수다.
+NUMWORD = {1: "한", 2: "두", 3: "세", 4: "네", 5: "다섯",
+           6: "여섯", 7: "일곱", 8: "여덟", 9: "아홉", 10: "열"}
+#: 그 문장의 닻. 수사 자리만 빼고 그대로 문다.
+GRAY_KINDS = re.compile(r"GRAY\s*[\d,]+구간의 사유는\s*(\S+?)\s*가지")
+
+
+def gray_kind_faults(txt: str, n: int) -> list[str]:
+    """회색 사유의 **가짓수 낱말**이 실물과 같은가. 순수 함수다.
+
+    ★ 닻이 없으면 운다. 문장을 지우면 이 축이 **조용히** 사라지고, 그러면
+      다음 사유가 생겨도 아무 데서도 안 운다(1족 · 무음 통과).
+    """
+    want = NUMWORD.get(n, str(n))
+    got = GRAY_KINDS.findall(txt)
+    if not got:
+        return ["회색 사유 가짓수 — 그 문장을 못 찾았다. 닻이 낡았거나 문장이 지워졌다 "
+                "(`GRAY N구간의 사유는 … 가지`)"]
+    return [f"회색 사유 가짓수 `{g}` → **{want}** (실물 {n}종)"
+            for g in got if g != want]
+
+
+#: 판정 지문. **회색 사유의 정본은 여기다.**
+#: ★ 2026-10-09 (DECISIONS §444-5). 처음 판은 `SEG`(`data/processed/segments.geojson`)
+#:   를 세었다. 그 파일은 **재생성물인데 우연히 추적돼 있고** 마지막 커밋이
+#:   §308~§320 판이다 — 즉 CI 가 읽는 것은 **두 판 묵은 사진**이고, 그 사이
+#:   §436 이 다섯째 사유를 만들었다. 수가 우연히 안 바뀐 축들은 그 사실을
+#:   숨겼고, 사유별로 세는 순간 드러났다.
+#: ★ `golden` 은 **측정 배치마다 다시 잠긴다**(`golden.py lock` · 재잠금 사슬).
+#:   판정 수의 정본이 거기라는 것은 MASTER §0-3 이 든다 — 같은 자리에서 읽는다.
+GOLDEN_FP = ROOT / "data" / "golden" / "segments.fingerprint.json"
+
+
+def _reasons() -> dict[str, int]:
+    """회색 사유 → 구간 수. **판정 지문에서 읽는다.**
+
+    ★ 지문이 없거나 그 칸이 없으면 **빈 표가 아니라 죽는다** — 빈 표를 내면
+      「사유가 0종」이 되고 기획서의 「다섯 가지」가 조용히 통과한다(1족).
+    """
+    if not GOLDEN_FP.is_file():
+        raise SystemExit(f"★ {GOLDEN_FP} 가 없다 — 판정 지문을 먼저 잠가라"
+                         " (uv run python tools/golden.py lock)")
+    ur = json.loads(GOLDEN_FP.read_text(encoding="utf-8")).get("L1", {}).get(
+        "unknown_reason")
+    if not ur:
+        raise SystemExit("★ 판정 지문에 `unknown_reason` 칸이 없다 —"
+                         " 옛 판 지문이다. 다시 잠가라")
+    return {str(k): int(v) for k, v in ur.items()}
+
+
 def counts() -> dict[str, int]:
     P = [f["properties"] for f in json.loads(SEG.read_text(encoding="utf-8"))["features"]]
     return {
@@ -188,6 +241,15 @@ def counts() -> dict[str, int]:
         #   유효범위 밖으로 세어져 451 을 449 로 냈다(DECISIONS §170-5). 결손은 None 뿐이다.
         "cctv_in": sum(1 for p in P if p["cctv_dist_m"] is not None and p["cctv_dist_m"] <= 25),
         "nfa": sum(1 for p in P if p.get("nfa_designated")),
+        # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). **회색의 사유별 수.**
+        #   종전에 이 다섯을 보던 것은 `docx_check` 의 ⑤ 정방향(= `docx_fix`
+        #   규칙)뿐이었고, 그것은 `docs/proposal.docx` 를 읽었다 — 정본이 md 로
+        #   옮겨진 뒤로 **정본의 그 문장은 아무도 안 봤다.** 2026-10-09 에
+        #   `ledger_disputes` 가 다섯째 사유로 서면서 그 문장이 「네 가지」로
+        #   거짓이 됐고, 그것을 운 것은 사본을 보던 검사였다.
+        #   ★ 사유 어휘의 정본은 `segments.py` 다. 여기서 이름을 안 적고
+        #     **실물에 있는 것을 센다** — 새 사유가 생기면 칸이 저절로 생긴다.
+        **{f"ur_{k}": v for k, v in _reasons().items()},
         # 채택 소스가 구간의 절반도 못 덮은 것. D-25 실측 1순위이고
         # MASTER §7 과 PLAN §1 #65 가 같은 숫자를 말해야 한다.
         "cov_thin": sum(1 for p in P
@@ -316,6 +378,11 @@ def main() -> int:
         ("docs/proposal.md", c["needs_cv"], "needs_cv"),
         ("docs/proposal.md", c["blocked"], "blocked"),
         ("docs/proposal.md", c["unknown"], "unknown"),
+        # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). 회색 **사유별** 수 — 실물에
+        #   있는 사유마다 한 줄이 저절로 선다. 기획서가 그 다섯을 한 문장에
+        #   나열하므로 하나만 낡아도 그 문장 전체가 거짓이 된다.
+        *[("docs/proposal.md", v, f"회색 사유 {k[3:]}")
+          for k, v in sorted(c.items()) if k.startswith("ur_")],
         # ★ PLAN 도 본다. 08-18 에 PLAN 만 1,087 로 남아 있었다.
         ("docs/PLAN.md", c["n"], "세그먼트 수"),
         ("docs/PLAN.md", c["unknown"], "unknown"),
@@ -361,6 +428,10 @@ def main() -> int:
         "대장 datasets 종수": r"`datasets` (\d+)종",
         "대장 retired 종수": r"`retired` (\d+)종",
         "norm 이관 종수": r"텍스트 \*{0,2}(\d+)종 이관",
+        # ★ 2026-10-09 (§444 · #142). `no_cctv_band 183(…` 꼴. 사유 이름이
+        #   앵커라 **산문 어디든** 걸리고, 수만 다르면 운다.
+        **{f"회색 사유 {k[3:]}": rf"{k[3:]}\s+(\d[\d,]*)"
+           for k in c if k.startswith("ur_")},
     }
 
     for rel, want, label in RULES:
@@ -389,6 +460,12 @@ def main() -> int:
            "소화전 지상식": c.get("hyd_up", 0),
            "소화전 지하식": c.get("hyd_dn", 0),
            "소화전 합": c.get("hyd_sum", 0)}
+    # ── 1b. 회색 사유의 가짓수 **낱말** ────────────────────────
+    nkind = sum(1 for k in c if k.startswith("ur_"))
+    for m in gray_kind_faults(read("docs/proposal.md"), nkind):
+        print(f"! docs/proposal.md {m}")
+        bad += 1
+
     for m in retired_clashes(cur, RETIRED):
         print(f"! {m}")
         bad += 1
