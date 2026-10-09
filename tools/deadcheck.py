@@ -432,7 +432,7 @@ def probe_handlist(root: Path = ROOT) -> None:
 #
 # ★ 2026-09-22 (PLAN §13 W10-1 · 전수 분류). (a) 의 「조용함」을 조였다 — 두 가지.
 #   · `pass` 는 빠져나가지 않는다. **다음 문장으로 떨어진다.** 함수의 마지막
-#     문장인 `try` 에서만 `pass` 가 곧 통과다. `doc_fsck.check_docx_revised()` 의
+#     문장인 `try` 에서만 `pass` 가 곧 통과다. `doc_fsck.check_revised()` 의
 #     얕은 저장소 탐지(`except: pass` 뒤에 `git log` 이 이어진다)가 그 오검이었다.
 #   · `return [f"...못 쟀다"]` 는 조용하지 않다. **말하는 반환**이다. 빈 값
 #     (`None` · `[]` · `()` · `{}` · `""` · `False` · `0`)을 돌려줄 때만 조용하다.
@@ -597,6 +597,11 @@ EXEMPT_SCOPE = {
         "붙잡이는 **시험**이다 — 도구를 흔들었을 때 우는 자리를 찾는 것이고, "
         "`src` · `tools` 는 흔드는 **대상**이지 붙잡이가 아니다. 과녁은 "
         "`targets()` 가 `toolclass` 에서 도출한다",
+    # ★ 2026-10-09 (DECISIONS §444 · PLAN #134 ㉡). 묻는 대상이 **그 디렉터리
+    #   하나**다 — 「`tests/fixtures/n1/` 에 있는 사본이 전부 선택 규칙을 드는가」.
+    "tools/fixture_recut.py::n1_files":
+        "`UNCUT` 선언의 짝은 `tests/fixtures/n1/` **한 폴더**다. `src` · `tools` 를 "
+        "더하면 소스 코드가 「사본인데 규칙이 없다」로 뜨고, 그 오탐이 본문을 덮는다",
     "tools/toolclass.py::tools":
         "묻는 것이 「**도구**가 어느 부류인가」다. `src` 는 꾸러미이고 `tests` 는 "
         "강제자라 부류 어휘(`toolclass.VOCAB` 다섯)가 성립하지 않는다 — 넓히면 "
