@@ -35,7 +35,11 @@ def test_the_denominator_is_hand_written_code_only():
 #: ★ 0 이 목표다. `PLAN #165` 가 그 길을 든다 — `covered()` 가 칸을 빼면
 #:   덮임이 489 → 450 으로 내려가고, 그것은 래칫의 오르는 쪽을 거스르는
 #:   큰 이사라 **그 판을 따로 받는다.**
-ENFORCER_INFLATION = 38
+#: ★ 2026-10-09 (DECISIONS §444) **38 → 37.** 내려가는 쪽이고 사유는 **파일이
+#:   은퇴한 것**이다 — docx·pdf 를 들어내며 지운 열 중 하나가 강제자 칸만으로
+#:   덮여 있었다. 「읽지 않고 칸에만 적은」 것이 하나 줄었다는 뜻이고, 그것이
+#:   줄어드는 것은 이 래칫이 바라는 방향이다.
+ENFORCER_INFLATION = 37
 
 
 def test_the_tool_counts_itself():
