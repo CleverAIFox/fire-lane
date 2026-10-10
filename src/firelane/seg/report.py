@@ -135,6 +135,10 @@ def write_outputs(g):
     g.to_crs(CRS_W).to_file(OUT / "segments.geojson", driver="GeoJSON")
     h = hashlib.sha256((OUT / "segments.geojson").read_bytes()).hexdigest()
     (OUT / "segments.schema.json").write_text(json.dumps({
+        # ★ 2026-10-10 (DECISIONS §455 · PLAN #4 ④). 이 최상위 한 줄이 미검증
+        #   선언의 **유일한 자리**다. 종전에는 피처마다 같은 `false` 가 1,281개
+        #   더 있었다 — 선언은 한 번이면 되고, 칸으로 두면 「켜질 수 있는 것」
+        #   처럼 읽힌다. MASTER §15-3 이 이 줄을 인용한다.
         "crs": CRS_W, "sha256": h, "count": len(g), "width_verified": False,
         "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
         "fields": {
@@ -176,7 +180,6 @@ def write_outputs(g):
             "light_count": "int|null 반경 50m 가로등 수. 지번 단위 집계라 근사다",
             "width_max_m": "float|null 담~담(상한). building 트랜섹트. 대로는 null(건물이 40m 밖)",
             "verdict": "clear|needs_cv|blocked|unknown",
-            "width_verified": "bool",
             "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
             "inherited": "bool 사용하지 않는다. 항상 false",
             "merged_n": "★ processed 전용(web 미발행) int 이 산출단위가 묶은 그래프 엣지 수. 1 이면 병합 없음",

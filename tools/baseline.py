@@ -146,7 +146,9 @@ def tally(rows) -> dict:
         "in_emd": sum(1 for p in P if p.get("in_emd")),
         "route_usage_pos": sum(1 for p in P if p.get("route_usage")),
         "nfa_designated": sum(1 for p in P if p.get("nfa_designated")),
-        "width_verified": sum(1 for p in P if p.get("width_verified")),
+        # ★ 2026-10-10 (DECISIONS §455 · PLAN #4 ④). `width_verified` 피처 칸이
+        #   없어졌다. 세던 수는 **영원히 0** 이었고, 미검증 선언은 스키마
+        #   최상위가 든다 — 아래 `known_limits` 의 문장이 그것을 말한다.
     }
 
 

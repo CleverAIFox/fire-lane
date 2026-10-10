@@ -144,6 +144,14 @@ RELOCK_TESTS = {
         "`test_the_real_proposal_states_the_right_number_of_grey_reasons` 이고, "
         "이 시험은 「문서 숫자 대조」 축이 **CLI 에서만** 울던 것을 §452 에서 "
         "pytest 로 옮긴 자리다",
+    "test_segment_fields_are_internally_consistent":
+        "`cv_feasible` 를 `cctv_dist_m` 와 댄다. `CCTV_RANGE` 를 움직인 판에서는 "
+        "**공개본이 옛 상수로 찍힌 상태**라 60구간이 어긋나 보인다 — 같은 실행에서 "
+        "공개본이 다시 나고 그 뒤에 맞는다(§455)",
+    "test_the_schema_declares_width_is_unverified":
+        "스키마 최상위의 미검증 선언과 `fields` 에 피처 칸이 없는가를 본다. "
+        "스키마는 `seg/report.py` 가 **낳는 것**이라 재잠금 전에는 옛 `fields` 를 "
+        "든다 — 표가 앞서 있는 것이고 산출물이 따라온다(§455 · PLAN #4 ④)",
     "test_schema_verdict_rule_matches_code":
         "발행 스키마의 `verdict_rule` 을 `seg/geom.VERDICT_RULE` 과 댄다. 그 스키마는 "
         "`seg/report.py` 가 **낳는 것**이라 재잠금 전에는 옛 규칙표를 든다 — "

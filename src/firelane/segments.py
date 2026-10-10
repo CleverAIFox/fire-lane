@@ -660,7 +660,11 @@ def main():
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
                         verdict=v, unknown_reason=reason,
                         cctv_dist_m=d_cctv, cv_feasible=bool(cv_ok),
-                        width_verified=False, midpoint_fallback=fb, inherited=False,
+                        # ★ 2026-10-10 (DECISIONS §455 · PLAN #4 ④). `width_verified`
+                        #   피처 칸을 **안 만든다** — 1,281행 전부 `false` 였고
+                        #   켜질 길이 없었다(폭 교차대조는 검증이지 실측이 아니다).
+                        #   미검증 선언은 **스키마 최상위 한 줄**이 든다.
+                        midpoint_fallback=fb, inherited=False,
                         width_src=wsrc,
                         width_disagree_m=wdis,
                         width_fail=wfail,   # 발행한다 (DECISIONS §436-3)
