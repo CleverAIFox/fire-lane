@@ -67,8 +67,18 @@ on:
   #   ★ required check 는 **PR 머리에서** 평가된다 — 관문이 안 약해진다.
   #     로컬 verify 와 CI 가 같은 것을 드는지는 `관문 동등`(미선언 CI 전용 0)이
   #     따로 든다.
+  # ★ 2026-10-10 (DECISIONS §457). **`main` 을 뺐다.** 종전에 main 푸시는 이
+  #   트리거와 `deploy.yml` 의 `gate`(`uses:`) 양쪽으로 깨워져 shared 86단계 +
+  #   strict 7단계가 **두 벌** 돌았다(pytest 9분33초 ×2).
+  #   **두 벌로 얻는 것이 없다** — 같은 커밋 · 같은 러너 · 같은 환경이라 나오는
+  #   정보가 0 이고, 흔들리는 시험이 한쪽에서만 터지면 같은 커밋에 빨강 하나
+  #   초록 하나가 남아 「이 커밋이 초록이었나」를 못 답한다. **판정을 흐린다.**
+  #   main 은 `deploy.yml` 의 `gate` 가 **전건에서** 부르므로(그 파일의 push
+  #   `paths:` 를 같이 뺐다) 검사가 줄지 않고 1회로 준다.
+  #   ★ 되돌릴 조건 — `deploy.yml` 이 main 푸시 **전건**에서 `gate` 를 부르지
+  #     않게 되면 이 줄에 `main` 을 되돌린다. 그때 main 이 무검사로 열린다.
   push:
-    branches: [main, dev, 'part/**']
+    branches: [dev, 'part/**']
   pull_request:
     branches: [main, dev, 'part/**', 'feat/**']
     # ★ edited 가 없으면 본문을 고쳐도 검사가 다시 돌지 않는다.

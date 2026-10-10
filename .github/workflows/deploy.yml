@@ -46,32 +46,18 @@
 name: 배포
 
 on:
+  # ★ 2026-10-10 (DECISIONS §457). push 쪽 `paths:` 를 **뺐다.** `contract.yml` 이
+  #   main 푸시를 제 트리거에서 내놓았으므로(그 파일의 ★) 이제 **main 전건에서
+  #   이 `gate` 가 유일한 contract 실행**이다. `paths:` 를 두면 그 밖의 main
+  #   푸시가 **아무 검사도 안 받는다** — 그것이 검사 삭제다.
+  #   종전 목록이 적었던 것은 「무엇이 바뀌면 다시 올리는가」였고, 이제 답은
+  #   「main 에 올라온 것 전부」다. 올리는 것은 언제나 `web/` 전체다(§12-7).
+  #   대가 — 비웹 변경에서도 재배포한다. 내용이 같으면 같은 것을 다시 올리고
+  #   `concurrency: pages`(cancel-in-progress: false)가 직렬화하므로 해롭지 않다.
+  #   ★ PR 쪽 `paths:` 는 **그대로 둔다** — 그쪽은 시운전(dry)이고 `contract` 가
+  #     PR 트리거를 제 손으로 들고 있어 겹치지 않는다.
   push:
     branches: [main]
-    # ★ 여기 적힌 것은 **「무엇이 바뀌면 다시 올리는가」** 다. 무엇을 올리는지가
-    #   아니다 — 올리는 것은 언제나 `web/` 전체다(§12-7).
-    # ★ `web/data` 를 빼지 마라. 서버가 없다. 파이프라인이 정적 JSON 을
-    #   `web/data` 에 쓰고 내비 · 관제가 `../data/` 로 읽으므로, **데이터를
-    #   갱신하는 길은 재배포 하나뿐이다.** 빼면 코드만 새것이고 화면은 옛
-    #   판정을 든다.
-    # ★ 공유 액션(`build-navi` · `stage-site`)을 넣는다. 그것이 깨지면 배포가
-    #   죽는데, 고쳐도 `paths` 에 없으면 **빨간 채로 남는다** — 09-15 에 셋이
-    #   다섯 시간 그 상태였다.
-    paths:
-      - 'web/**'
-      - 'docs/MASTER.md'
-      # ★ 2026-10-09 (§444 · PLAN #142). 기획서 docx 와 그것을 PDF 로 굽던
-      #   도구가 은퇴했다. 기획서 정본은 `docs/proposal.md` 이고 화면은
-      #   `web/proposal.html`(`build_proposal.py` 산출물 · 커밋한다)이다.
-      - 'docs/proposal.md'
-      - 'web/proposal.template.html'
-      - 'tools/build_proposal.py'
-      - 'tools/proposal_source.py'
-      - 'tools/render_workflow.py'
-      - 'tools/stage_pages.py'
-      - '.github/actions/build-navi/action.yml'
-      - '.github/actions/stage-site/action.yml'
-      - '.github/workflows/deploy.yml'
   pull_request:
     # ★ 시운전은 범위를 넓게 잡는다. 올리지 않으므로 값이 CI 시간뿐이고,
     #   배포를 깨뜨리는 변경은 `.github/**` 어디서든 나온다.

@@ -539,13 +539,39 @@ def test_ci_watches_the_working_branch():
     ci_lists = lists(ci)
     pg_b = set().union(*lists(pages)) if lists(pages) else set()
     assert ci_lists, "contract.yml 에 branches 선언이 없다"
+
+    # ★ 2026-10-10 (DECISIONS §457). **두 번째 경로를 가르친다.** 종전에 이
+    #   가드는 「contract 의 각 트리거가 배포 브랜치를 보는가」만 물었다. 그런데
+    #   `deploy.yml` 의 `gate` 가 `uses: ./.github/workflows/contract.yml` 로
+    #   contract 를 **그대로 부르므로**, 그 경로로도 검사가 선다. 종전에는 main 이
+    #   양쪽에 다 있어서 **같은 검사가 두 벌 돌았고**(§456-4 ①) 그것을 닫으려면
+    #   이 가드가 둘째 경로를 알아야 한다.
+    # ★ **느슨하게 하는 것이 아니다.** 둘째 경로를 인정하는 조건을 기계가 센다 —
+    #   셋 다 참이어야 하고, 하나라도 깨지면 그 브랜치가 무검사로 열린다.
+    #     ⓐ deploy 가 그 브랜치를 push 로 본다
+    #     ⓑ deploy 의 push 에 `paths:` 가 **없다**  (있으면 그 밖이 무검사다)
+    #     ⓒ `gate` 가 contract 를 `uses:` 로 부르고, push 에서 건너뛰지 않는다
+    import yaml as _yaml  # noqa: PLC0415  이 시험 하나만 쓴다
+    _pg = _yaml.safe_load(pages)
+    _on = _pg.get(True) or _pg.get("on") or {}
+    _push = _on.get("push") or {}
+    _gate = (_pg.get("jobs") or {}).get("gate") or {}
+    gated = (set(_push.get("branches") or ())
+             if not _push.get("paths")
+             and str(_gate.get("uses", "")).endswith("workflows/contract.yml")
+             and "pull_request" in str(_gate.get("if", ""))
+             else set())
+
     for i, b in enumerate(ci_lists):
-        missing = pg_b - b
+        missing = pg_b - b - gated
         assert not missing, (
             f"배포는 {sorted(pg_b)} 에서 도는데 contract.yml 의 트리거 "
             f"{i + 1}번은 {sorted(b)} 만 본다.\n"
             f"  검사를 비껴가는 브랜치: {sorted(missing)}\n"
-            "  deploy.yml 이 배포·시운전하는 브랜치는 push · pull_request 양쪽에서 봐야 한다.")
+            f"  `gate` 가 덮는 브랜치: {sorted(gated) or '없다'}\n"
+            "  deploy.yml 이 배포·시운전하는 브랜치는 push · pull_request 양쪽에서\n"
+            "  보거나, deploy 의 `gate` 가 **paths 없이** 그 브랜치 전건에서\n"
+            "  contract 를 불러야 한다.")
 
 
 def test_docs_point_at_the_real_package():
