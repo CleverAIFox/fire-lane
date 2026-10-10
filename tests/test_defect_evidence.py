@@ -37,7 +37,12 @@ EVIDENCE = {
     "W3-3": "tests/test_proposalcheck.py::test_every_axis_bites_synthetic_input",
     "W4-2": "tests/test_proposalcheck.py::test_every_axis_bites_synthetic_input",
     "W3-9": "tests/test_declaration_sync.py::test_sources_plan_row_refs_resolve",
-    "W7-3": "tests/test_verify_scope.py::test_scope_declarations_ratchet",
+    # ★ 2026-10-10 (DECISIONS §457-6). 종전 증표는 `test_scope_declarations_ratchet`
+    #   였다. 그 시험은 **손으로 적은 `SCOPE_FLOOR = 33`** 을 들었고 실측 82 보다
+    #   49 뒤처져 있었다 — 증표가 있는데 아무것도 안 지켰다. 바닥을 래칫
+    #   (`scopedecl.VERIFY_NO_SCOPE`)으로 옮기고, 증표를 그 수를 **대는** 시험으로
+    #   바꿨다. 같은 닫힘의 증표이고 더 강한 자다.
+    "W7-3": "tests/test_verify_scope.py::test_the_two_scope_counters_agree",
     "W3-15": "tests/test_publish_context.py::test_deploy_uses_drop_list",
     "W3-18": "tests/test_ci_env.py::test_devcontainer_env_notice_is_conditional",
     "W8-1": "tests/test_defect_evidence.py::test_navi_toolchain_is_vite8_and_vitest",

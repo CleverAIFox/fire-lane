@@ -598,6 +598,15 @@ MASTER §4-1 이 그 사고다).
 **`Zr` 포팅**  `#40` RN · `#41` ITS. 맨 뒤 — 화면과 안내가 굳은 뒤라야 두 번 안 옮긴다.
 
 **`Zs` 잔여**  열일곱 행. 전부 선언 · 봉인 · 대장이고 수를 안 움직인다.
+★ **하나는 수를 움직인다** — `Zk'` 이 켠 `treecheck` D7 이 잡은 `data/retired/`
+  (실측 192MB · ngii 54파일 · 스무 날 넘게 미선언). `sources.yaml` 의 `layers` 에
+  그 층을 선언하면 **ingest 폐포가 갈린다**(`sealkeys.INGEST_GLOBAL` 에 `layers` 가
+  있다 · 실측 `ngii1k` cfg `ef0b1744` ↔ `0cede70a`) → **45샤드 전량 재빌드**이고
+  8GB 기계에서 `ngii_road` 는 거의 반드시 OOM 이다(DECISIONS §457-2).
+  그래서 이 판이 받는다 — 선언 · `paths.RETIRED` · `layers.BIND` ·
+  `lake.LAYERS` → `layers.lake_layers()` 도출 · `.gitignore` 한 줄을 **한 번에**
+  넣고 재빌드를 한 번만 치른다. 예보 — 판정 불변(층 선언은 판정에 안 닿는다) ·
+  `D7` 1건 → 0 · `test_shardseal` 의 cfg 45건 재날인.
 
 강제자  `tools/plan_renumber.py`(각 판이 드는 행이 실재하는가) · `tests/test_declaration_sync.py`(§1 · §13 행 대조). 한 판이 끝나면 그 판의 블록을 지운다 — 남은 일만 든다
 

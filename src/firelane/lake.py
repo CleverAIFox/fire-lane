@@ -34,11 +34,10 @@ lake.py — 레이크 해석기. **대장 + 디스크 → 파일마다 주인 ·
 ★ 2026-09-17 (§176). 폐지층이 막는 쪽으로 옮겼다. `_quarantine` 을 비운 뒤 누가
   다시 쓰면(acquire `--quarantine` 은 아직 그 자리에 쓴다 — PLAN #56) verify 가 운다.
 
-★ 2026-10-10 (DECISIONS §457) — 층 목록을 **대장에서 도출한다**(`_lake_layers()`).
-  종전에 이 자리는 손으로 적은 `LAYERS` 다섯이었고 「대장 `layers` 에 retired 가
-  들어가는 것은 레이크를 세운 뒤다 — 그때 이 상수를 대장에서 읽도록 바꾼다」고
-  미뤄 뒀다. **그 조건이 충족됐고**(레이크가 서 있다 · 실측 89파일) 그 사이
-  상수와 대장이 **갈려 있었다** — 여기는 `retired` 를 들고 대장은 안 들었다.
+★ 층 목록 `LAYERS` 는 §173-2 목표 구조다. 대장 `layers` 에 retired 가 들어가는
+  것은 **측정 배치**의 일이다(DECISIONS §457-2) — 그 선언이 ingest 폐포를 가르고
+  45샤드를 찢는다. 지금은 상수와 대장이 **갈려 있고**(여기는 retired 를 들고
+  대장은 안 든다) 그 사실을 `tests/test_layers.py` 가 선언으로 든다.
 ★ sha 는 여기서 재지 않는다. 3.7GB 를 매 해석마다 읽지 않는다. 사본 판정은
   계획 단계가 레이크 기계에서 한 번 잰다.
 
@@ -60,11 +59,20 @@ from firelane import ledger, paths
 
 # ★ 2026-10-10 (DECISIONS §457-2). 손으로 적은 다섯이었고 대장과 **갈려 있었다.**
 #   도출로 바꿨다 — `base: data` 인 계층 − 폐지층.
-#: ★ 2026-10-10 (DECISIONS §457-2). `connected()` 와 `_lake_layers()` 를
-#:   `firelane/layers.py` 로 **옮겼다** — 이 파일이 상한 600 을 넘었고, 둘 다
-#:   「계층 선언이 이 기계에서 무엇인가」라 그쪽이 집이다. 여기서는 위임한다.
+#: ★ 2026-10-10 (DECISIONS §457-1). `connected()` 는 `firelane/layers.py` 가
+#:   든다 — `tools/treecheck.py` 와 `firelane/layerfsck.py` 가 같이 쓰므로 집이
+#:   하나여야 한다. 여기서는 위임한다.
 connected = _L.lake_connected
-_lake_layers = _L.lake_layers
+
+#: ★ 2026-10-10 (DECISIONS §457-2). 이 다섯을 **도출로 바꾸려다 되돌렸다.**
+#:   도출의 전제는 `sources.yaml` 의 `layers` 에 `retired` 가 서는 것인데,
+#:   `sealkeys.INGEST_GLOBAL` 에 `layers` 가 있어서 **층 하나가 ingest 폐포를
+#:   가른다** — 실측으로 `ngii1k` 의 cfg 지문이 `ef0b1744` ↔ `0cede70a` 로 갈렸다.
+#:   45샤드가 전부 재빌드되고 8GB 기계에서 `ngii_road` 는 거의 반드시 OOM 이다
+#:   (§216-1 · §243 · §396-7 — 세 번 겪었다).
+#:   그래서 선언은 **측정 배치**가 받는다(PLAN §10-4 `Zs`) — 그 판이 재빌드와
+#:   예보 대조를 같이 한다. 그때 이 상수가 `layers.lake_layers()` 로 간다.
+LAYERS = ("landing", "raw", "norm", "retired", "interim")   # §173-2
 
 
 ABOLISHED = ("_quarantine",)                                # §173-2 — retired 로 흡수
@@ -239,7 +247,7 @@ def resolve(y: dict, root: Path, prep: dict | None = None) -> list[Row]:
         if not layer:
             rows.append(Row(rel, "", "선언밖", note="레이크 루트 파일"))
             continue
-        if layer not in _lake_layers() and layer not in ABOLISHED:
+        if layer not in LAYERS and layer not in ABOLISHED:
             rows.append(Row(rel, layer, "선언밖", note=f"선언되지 않은 폴더 `{layer}`"))
             continue
         if ledger.is_acquisition_meta(rel):

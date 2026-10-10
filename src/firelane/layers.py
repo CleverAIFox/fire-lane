@@ -42,7 +42,6 @@ BIND = {
     "landing": "LANDING",
     "raw": "RAW",
     "norm": "NORM",
-    "retired": "RETIRED",
     "interim": "INTERIM",
     "processed": "PROCESSED",
     "field": "FIELD",
@@ -126,23 +125,9 @@ def implemented(name: str) -> bool:
     return policy(name).get("status") != "미구현"
 
 # ── 레이크 대 기계 ────────────────────────────────────────────
-#: `pre-commit` 과 달리 여기는 **선언 대 실물**이다. 아래 둘은 2026-10-10 에
-#: `firelane/lake.py` 에서 옮겨 왔다(DECISIONS §457-2) — 그 파일이 상한 600 을
-#: 넘었고, 둘 다 「계층 선언이 이 기계에서 무엇인가」라 이쪽이 집이다.
-ABOLISHED_SUBS = ("_quarantine",)
-
-
-def lake_layers() -> tuple[str, ...]:
-    """레이크 쪽 층. **선언에서 도출한다** — `base: data` 인 계층 − 폐지층.
-
-    ★ 종전에 `firelane/lake.py` 가 손으로 적은 다섯(`LAYERS`)을 들었고 대장과
-      **갈려 있었다** — 그쪽은 `retired` 를 들고 대장은 안 들었다.
-    """
-    return tuple(n for n in names()
-                 if policy(n).get("base") == "data"
-                 and str(policy(n).get("sub")) not in ABOLISHED_SUBS)
-
-
+#: 2026-10-10 에 `firelane/lake.py` 에서 옮겨 왔다(DECISIONS §457-1) —
+#: `tools/treecheck.py` 와 `firelane/layerfsck.py` 가 같이 쓰므로 집이 하나여야
+#: 하고, 「계층 선언이 이 기계에서 무엇인가」라 이쪽이 그 집이다.
 def lake_connected() -> tuple[bool, str]:
     """레이크가 이 기계에 붙어 있는가. **획득 대장에서 도출한다.** (붙었나, 사유)
 

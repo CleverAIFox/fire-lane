@@ -37,7 +37,6 @@ data/raw/
 #   디렉터리 자신이고, 다섯 층 아래에 커밋할 것이 없다(추적 0건 실측).
 data/landing/
 data/norm/
-data/retired/
 data/_quarantine/
 
 # ── processed ──────────────────────────────────────────────
