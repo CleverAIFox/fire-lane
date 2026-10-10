@@ -32813,9 +32813,9 @@ CCTV 25m 안 451         →  19m 안 451  ✗  라벨만 바뀌어 출처가 �
 raw 지문 — 를 적고 있었고, 닫은 `#15` 는 CCTV 유효거리다. **다른 일이다.**
 
 ```
-docs/DECISIONS.md  「`PLAN #15` 가 그 일감이다」        ingest 를 한 프로세스로 돈다
-docs/DECISIONS.md  「docs/PLAN.md #15」                재실행하면 통과하는 실패
-docs/DECISIONS.md  「`PLAN #15` 에서 옮겼다」           WSL2 6GB · geopandas
+docs/DECISIONS.md  「`PLAN #15`(결번) 가 그 일감이다」   ingest 를 한 프로세스로 돈다
+docs/DECISIONS.md  「docs/PLAN.md #15(결번)」           재실행하면 통과하는 실패
+docs/DECISIONS.md  「`PLAN #15`(결번) 에서 옮겼다」      WSL2 6GB · geopandas
 docs/MASTER.md     「raw 지문으로 전량을 생략한다」      SEAL.json
 ```
 
@@ -32825,7 +32825,7 @@ docs/MASTER.md     「raw 지문으로 전량을 생략한다」      SEAL.json
 
 ★ 이 자리에 강제자를 새로 두지 않는다. 「묘비가 가리키는 행이 그 묘비가 적은
   일인가」를 재려면 **글의 뜻을 읽어야 하고**, 그 말씨 분류기는 이 파일 위쪽이
-  이미 기각했다(§452 · PLAN #56). 대신 **행이 닫힐 때마다 이 래칫이 묻는다** —
+  이미 기각했다(§452 · PLAN #56(결번)). 대신 **행이 닫힐 때마다 이 래칫이 묻는다** —
   닫는 쪽이 치르는 비용이고, 그것이 맞는 자리다.
 
 ### 455-8. 사유 주석 넷이 **파일 상한을 밀었다**
