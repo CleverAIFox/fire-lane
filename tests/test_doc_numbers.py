@@ -218,3 +218,46 @@ def test_the_real_proposal_states_the_right_number_of_grey_reasons():
     assert n >= 4, f"회색 사유를 {n}종 셌다 — 수집기를 의심하라"
     bad = D.gray_kind_faults((ROOT / "docs/proposal.md").read_text(encoding="utf-8"), n)
     assert not bad, "\n".join(bad)
+
+
+# ── 문서가 적어야 하는 수 (2026-10-10 · DECISIONS §452 · PLAN #56) ──────
+# ★ 이 축도 `docnum_check.main()` **안에만** 있었다 — 바로 위 필드표가 §436-13
+#   에서 같은 사유로 나왔는데 **옆칸은 그대로 뒀다.** 한 판에서 둘을 다 안 옮긴
+#   것이 2026-10-10 에 값을 치렀다: `#34` 가 README 를 줄이자 규칙 여섯이
+#   **주장 없는 파일**을 가리켰고 전수 pytest 는 초록이었다.
+_drspec = __import__("importlib.util", fromlist=["util"]).spec_from_file_location("docnumrules", ROOT / "tools/docnumrules.py")
+
+
+def _docnumrules():
+    import importlib.util
+    import sys
+
+    assert _drspec and _drspec.loader
+    m = importlib.util.module_from_spec(_drspec)
+    sys.modules[_drspec.name] = m
+    _drspec.loader.exec_module(m)
+    return m
+
+
+def test_every_declared_number_is_in_its_document():
+    """실물 — 선언 표의 모든 (파일 · 라벨)이 지금 산출물의 수를 든다.
+
+    ★ 재잠금 전에는 빨갛다 — `tools/delivercheck.py` 의 `RELOCK_TESTS` 가 이
+      이름을 든다. 문서는 **재잠금 뒤의 수**를 적는다.
+    """
+    R, D = _docnumrules(), _docnum()
+    cache: dict[str, str] = {}
+
+    def read(rel: str) -> str:
+        return cache.setdefault(rel, (ROOT / rel).read_text(encoding="utf-8"))
+
+    bad = R.present_faults(D.counts(), read)
+    assert not bad, "문서가 적은 수가 산출물과 다르다:\n  " + "\n  ".join(bad)
+
+
+def test_that_axis_bites_a_moved_claim():
+    """★ 카나리아 — 주장이 사라진 파일을 가리키면 운다. `#34` 가 겪은 그 자리다."""
+    R, D = _docnumrules(), _docnum()
+    bad = R.present_faults(D.counts(), lambda rel: "숫자가 하나도 없는 글")
+    assert bad, "주장이 없는데 조용하다 — 빈 그물이다"
+    assert any("패턴이 낡았다" in m for m in bad), bad

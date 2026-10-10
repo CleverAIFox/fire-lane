@@ -138,6 +138,12 @@ RELOCK_TESTS = {
         "MASTER §11 필드표 ↔ 발행된 속성. 칸을 하나 실으면 표가 **앞서 가고** "
         "산출물은 재잠금에서 따라온다. 이 시험은 그 면제를 받으려고 §436-13 에서 "
         "새로 세웠다 — 종전에는 `docnum_check.main()` 안에만 있어 **CLI 에서만** 울었다",
+    "test_every_declared_number_is_in_its_document":
+        "선언 표의 모든 (파일 · 라벨)이 지금 산출물의 수를 드는가. 문서는 **재잠금 "
+        "뒤의 수**를 적으므로 그 사이 어긋난다 — 좁은 짝은 "
+        "`test_the_real_proposal_states_the_right_number_of_grey_reasons` 이고, "
+        "이 시험은 「문서 숫자 대조」 축이 **CLI 에서만** 울던 것을 §452 에서 "
+        "pytest 로 옮긴 자리다",
     "test_schema_verdict_rule_matches_code":
         "발행 스키마의 `verdict_rule` 을 `seg/geom.VERDICT_RULE` 과 댄다. 그 스키마는 "
         "`seg/report.py` 가 **낳는 것**이라 재잠금 전에는 옛 규칙표를 든다 — "

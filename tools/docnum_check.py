@@ -47,6 +47,7 @@ import sys
 from pathlib import Path
 
 # ★ 선언 표 둘은 옆집에 산다 — 값만 있는 것은 값만 있는 파일에(§449-2).
+from docnumrules import present_faults
 from docnumtable import CONTEXT, RETIRED
 
 from firelane.cli import no_args
@@ -57,6 +58,9 @@ WEB = ROOT / "web/data/segments.geojson"
 #: 설명문의 **정본**. 산출물이 들고 다닌다(MASTER §11 · DECISIONS §449).
 SCHEMA_WEB = WEB.parent / "segments.schema.json"
 NFA = ROOT / "data/processed/nfa_compare.json"
+#: 도달 가능의 **정본**. 구간 파일에는 그 칸이 없다 — 망 위의 성질이라
+#: `publish_web` 이 경로 파일에 쓴다(MASTER §3-11 · DECISIONS §167).
+ROUTE = ROOT / "web/data/route_vehicle.json"
 
 ALLOW = "<!--stale-ok-->"
 
@@ -194,7 +198,22 @@ def counts() -> dict[str, int]:
         "cov_thin": sum(1 for p in P
                         if p.get("width_cov") is not None and p["width_cov"] < 0.5),
         **ledger_counts(),
+        **reach_counts(),
     }
+
+
+def reach_counts() -> dict[str, int]:
+    """도달 가능 — **발행된 경로 파일**에서 센다.
+
+    ★ 2026-10-10 (DECISIONS §452 · PLAN #56 ② 닫힘). 이 축이 2026-09-16 에
+      빠져 있는 것을 알고도 「다음 코드 배치」로 넘겼고(DECISIONS §167),
+      그 사이 문서 **세 곳**이 834 를 들었다. 실측은 833 이다.
+      강제자 없이 적힌 수는 반드시 낡는다 — 그 사이가 24일이었다.
+    """
+    if not ROUTE.is_file():
+        return {}
+    d = json.loads(ROUTE.read_text(encoding="utf-8"))
+    return {"reach": sum(1 for v in d.values() if v.get("reachable"))}
 
 
 def ledger_counts() -> dict[str, int]:
@@ -222,7 +241,10 @@ def ledger_counts() -> dict[str, int]:
     y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
     out = {
         "ds": len(y.get("datasets") or {}),
-        "retired": len(y.get("retired") or {}),
+        # ★ 2026-10-10 (DECISIONS §452). 칸 이름이 `retired` 였다. `tests/test_lake.py`
+        #   의 「주인 블록 직접 해석」 정규식은 `get("retired"` 를 보므로, **센 값을
+        #   꺼내는 쪽**까지 대장 블록을 읽는 것으로 세진다. 이 사전은 대장이 아니다.
+        "ds_retired": len(y.get("retired") or {}),
         "migrated": len(prep.migrated()),
     }
     # ★ 마운트가 끊기면 `rglob` 이 예외를 던진다(DECISIONS §104).
@@ -239,11 +261,6 @@ def ledger_counts() -> dict[str, int]:
                 "water": up + dn + n.get("저수조", 0) + n.get("급수탑", 0)
                          + n.get("비상소화장치", 0)}
     return out
-
-
-def fmt(n: int) -> tuple[str, ...]:
-    """1101 을 문서가 쓰는 두 표기로 — `1101` 과 `1,101`."""
-    return (str(n), f"{n:,}")
 
 
 def live_lines(rel: str, text: str) -> list[tuple[int, str]]:
@@ -342,6 +359,7 @@ def doc_fields(text: str) -> set[str]:
     return out
 
 
+
 def selftest() -> int:
     """판별식은 **옆집**에 산다 — `tools/docnumtest.py`(§449-2)."""
     from docnumtest import selftest as _s  # noqa: PLC0415  맞물림을 끊는다
@@ -359,104 +377,10 @@ def main() -> int:
     def read(rel: str) -> str:
         return cache.setdefault(rel, (ROOT / rel).read_text(encoding="utf-8"))
 
-    # ── 1. PRESENT ────────────────────────────────────────────
-    RULES = [
-        ("README.md", c["n"], "세그먼트 수"),
-        ("README.md", c["clear"], "clear"),
-        ("README.md", c["needs_cv"], "needs_cv"),
-        ("README.md", c["blocked"], "blocked"),
-        ("README.md", c["unknown"], "unknown"),
-        ("README.md", c["in_emd"], "동명동 구간"),
-        ("docs/MASTER.md", c["n"], "세그먼트 수"),
-        ("docs/MASTER.md", c["clear"], "clear"),
-        ("docs/MASTER.md", c["needs_cv"], "needs_cv"),
-        ("docs/MASTER.md", c["blocked"], "blocked"),
-        ("docs/MASTER.md", c["unknown"], "unknown"),
-        ("docs/MASTER.md", c["cctv_in"], "CCTV 유효범위 안"),
-        ("docs/MASTER.md", c["nfa"], "소방청 지정 기준 충족"),
-        # ★ 2026-10-09 (DECISIONS §440 · PLAN #142). **기획서를 여기 넣었다.**
-        #   종전에는 `tools/docx_check.py` 가 `docs/proposal.docx` 를 읽어 같은
-        #   축을 봤다. 정본이 `.md` 로 옮겨진 뒤로 그 도구는 **사본을 검사하고
-        #   있었다** — 정본이 틀려도 사본이 맞으면 초록이다. 기획서는 문서 넷 중
-        #   **유일하게 외부가 읽는 것**이라 어긋나면 비용이 가장 크다.
-        ("docs/proposal.md", c["n"], "세그먼트 수"),
-        ("docs/proposal.md", c["clear"], "clear"),
-        ("docs/proposal.md", c["needs_cv"], "needs_cv"),
-        ("docs/proposal.md", c["blocked"], "blocked"),
-        ("docs/proposal.md", c["unknown"], "unknown"),
-        # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). 회색 **사유별** 수 — 실물에
-        #   있는 사유마다 한 줄이 저절로 선다. 기획서가 그 다섯을 한 문장에
-        #   나열하므로 하나만 낡아도 그 문장 전체가 거짓이 된다.
-        *[("docs/proposal.md", v, f"회색 사유 {k[3:]}")
-          for k, v in sorted(c.items()) if k.startswith("ur_")],
-        # ★ PLAN 도 본다. 08-18 에 PLAN 만 1,087 로 남아 있었다.
-        ("docs/PLAN.md", c["n"], "세그먼트 수"),
-        ("docs/PLAN.md", c["unknown"], "unknown"),
-        # ★ 2026-08-31. 대장·실물 계열. 위 판정 수와 달리 **사람이 손으로
-        #   적던 자리**이고 그래서 실제로 여러 번 틀렸다.
-        ("docs/MASTER.md", c.get("hyd_up", 0), "소화전 지상식"),
-        ("docs/MASTER.md", c.get("hyd_dn", 0), "소화전 지하식"),
-        ("docs/MASTER.md", c.get("hyd_sum", 0), "소화전 합"),
-        ("docs/MASTER.md", c.get("water", 0), "소방용수시설 총계"),
-        ("sources.yaml", c.get("hyd_up", 0), "소화전 지상식"),
-        ("sources.yaml", c.get("hyd_dn", 0), "소화전 지하식"),
-        ("sources.yaml", c.get("hyd_sum", 0), "소화전 합"),
-        # ★ 2026-08-31. 대장 규모. MASTER 가 세 곳에서 낡아 있었다 —
-        #   `datasets 36종 · retired 8종`(실제 41 · 10) · `대장 36종`.
-        #   사람이 손으로 세는 숫자는 반드시 낡는다.
-        ("docs/MASTER.md", c.get("ds", 0), "대장 datasets 종수"),
-        ("docs/MASTER.md", c.get("retired", 0), "대장 retired 종수"),
-        ("docs/MASTER.md", c.get("migrated", 0), "norm 이관 종수"),
-        # ★ 2026-09-02. README 가 빠져 있었다. 저장소를 clone 한 사람이
-        #   **처음 보는 파일**인데 `대장 36종`(실물 43)이 살아 있었다.
-        #   README 도 `\`datasets\` N종` 서식으로 맞췄으므로 같은 문맥
-        #   패턴이 그대로 걸린다.
-        ("README.md", c.get("ds", 0), "대장 datasets 종수"),
-        ("README.md", c.get("retired", 0), "대장 retired 종수"),
-    ]
-    # ★ 2026-09-02. 종전에는 **정답이 파일 어딘가에 있나**만 봤다.
-    #   그래서 라벨 옆에 오답이 붙어 있어도 통과했다 — MASTER 가
-    #   `datasets 41종`(실물 43)인 채로 초록불이었고, 그 절은 바로 위에
-    #   "이 세 숫자는 docnum_check 가 대장에서 세어 대조한다 — 손으로
-    #   적으면 낡는다" 고 적고 있었다. `docx_check` 의 `1,102` 와 같은
-    #   형태다(DECISIONS §95).
-    #
-    #   라벨 옆의 수를 직접 읽어 비교한다. 문맥 패턴이 없는 항목은
-    #   종전대로 존재 대조로 둔다 — 넓히다 오탐이 나면 사람이 검사를 끈다.
-    # 라벨 → 그 수가 실제로 적히는 자리. 여기 있는 것만 문맥 대조한다.
-    # ★ 2026-10-08 (DECISIONS §435). 「norm 이관 종수」가 여기 **없었다.** 라벨은
-    #   `RULES` 에 9월부터 있었는데 문맥 패턴이 없어 존재 대조로 떨어졌고,
-    #   MASTER 어디든 `14` 라는 수가 있으면 통과했다 — `datasets 41종` 이 초록불로
-    #   살아 있던 바로 그 꼴이다(위 ★). 문맥 패턴 없는 라벨은 **검사하는 척**한다.
-    #   세 자리(§18 계층 표 · 레이크 절 · 대장 규모 절)가 전부 「텍스트 N종 이관」
-    #   서식이라 패턴 하나가 셋을 다 읽는다.
-    CONTEXT_PAT = {
-        "대장 datasets 종수": r"`datasets` (\d+)종",
-        "대장 retired 종수": r"`retired` (\d+)종",
-        "norm 이관 종수": r"텍스트 \*{0,2}(\d+)종 이관",
-        # ★ 2026-10-09 (§444 · #142). `no_cctv_band 183(…` 꼴. 사유 이름이
-        #   앵커라 **산문 어디든** 걸리고, 수만 다르면 운다.
-        **{f"회색 사유 {k[3:]}": rf"{k[3:]}\s+(\d[\d,]*)"
-           for k in c if k.startswith("ur_")},
-    }
-
-    for rel, want, label in RULES:
-        pat = CONTEXT_PAT.get(label)
-        txt = read(rel)
-        if pat:
-            got = [int(g.replace(",", "")) for g in re.findall(pat, txt)]
-            wrong = [g for g in got if g != want]
-            if wrong:
-                print(f"! {rel:16s} {label} {wrong} → {want}")
-                bad += 1
-                continue
-            if not got:
-                print(f"! {rel:16s} {label} 서술을 못 찾았다 — 패턴이 낡았다")
-                bad += 1
-            continue
-        if not any(t in read(rel) for t in fmt(want)):
-            print(f"! {rel:16s} {label} {want} 없음")
-            bad += 1
+    # ── 1. PRESENT — 자리는 `present_faults` 하나다(§452) ─────
+    for msg in present_faults(c, read):
+        print(f"! {msg}")
+        bad += 1
 
     # ── 2. RETIRED ────────────────────────────────────────────
     cur = {"세그먼트 수": c["n"], "unknown(회색)": c["unknown"],
