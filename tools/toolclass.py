@@ -58,10 +58,20 @@ VOCAB: dict[str, str] = {
     "조사": "사람이 손으로 돌린다. 수를 내고 멈춘다",
     "절차": "배치 · 위생. **산출물에 안 닿는다** — 우리 일하는 방식 때문에 있다",
     "생산": "산출물을 만든다. 파이프라인 · 발행 · 그림 · 문서 생성",
+    # ★ 2026-10-08 (DECISIONS §437 · PLAN #162) 다섯째. 진입점이 아닌 파일 —
+    #   `main()` 도 `__main__` 도 argparse 도 없고 경로로 불리는 자리도 없다.
+    #   **부를 수 없는 것에 부류를 묻는 것이 틀렸다**: 실측 열셋이 그 자리이고
+    #   전부 「생산」이라 적혀 있었는데 그중 둘은 바로 아랫줄에서 「검사가
+    #   아니다」라고 적는다. 강제된 낱말은 뜻을 못 갖는다.
+    "몸통": "진입점이 **아니다.** 부류는 부르는 쪽에서 물려받는다",
 }
 DECLARABLE = tuple(k for k in VOCAB if k != "관문")
 
-#: 선언이 없는 **비관문** 도구 수. **내려가는 쪽으로만.**
+#: 선언이 없는 **진입점** 수. **내려가는 쪽으로만.**
+#: ★ 2026-10-08 (DECISIONS §437 · PLAN #162) **분모가 바뀌었다.** 종전 분모는
+#:   `tools/*` 전부(145)였고 그 안에 부를 수 없는 몸통 열셋이 있었다. 이제
+#:   분모는 **진입점**이고, 몸통은 `부류 몸통` 하나만 적는다 — 양방향이다:
+#:   진입점이 「몸통」이라 적으면 울고, 몸통이 다른 낱말을 적으면 운다.
 UNDECLARED = 0
 RATCHETS = {"UNDECLARED": "down"}
 
@@ -105,6 +115,41 @@ def _callers() -> str:
     return "\n".join(out)
 
 
+#: 진입점의 표식. **주석을 뺀 코드에서** 찾는다 — 주석 속 `main()` 은 호출이
+#: 아니다(§398-3 ③ 과 같은 규율).
+_MAIN = re.compile(r"^def main\(", re.M)
+#: `main()` 밖의 진입 표식. 글자로 찾는다 — AST 로 가도 답이 같고 더 느리다.
+_ENTRY_WORDS = ("__main__", "argparse")
+
+
+def entry(p: Path, callers: str) -> tuple[bool, str]:
+    """진입점인가 — **그리고 무엇이 그렇게 말하나.**
+
+    ★ 2026-10-08 (DECISIONS §437 · PLAN #162). 근거를 같이 내는 이유 — 「진입점이
+      아니다」는 **부정**이고, 부정은 근거 없이 적으면 검증이 안 된다. 표가
+      그 낱말을 찍는다(`--table`).
+
+    둘 중 하나면 진입점이다 —
+      ① 스스로 돈다        `main()` · `__main__` · argparse (셸은 `#!`)
+      ② 경로로 불린다      verify.sh · CI 가 그 경로를 적는다
+    """
+    src = p.read_text(encoding="utf-8", errors="replace")
+    # ★ 자기검사가 **ROOT 밖 임시 파일**을 먹인다 — 그 자리에서 터지면 검사가
+    #   제 그물을 못 민다. 저장소 안일 때만 경로 절을 본다.
+    rel = p.relative_to(ROOT).as_posix() if p.is_relative_to(ROOT) else p.name
+    if rel in callers:
+        return True, "경로로 불린다"
+    if p.suffix == ".sh":
+        return (True, "#!") if src.startswith("#!") else (False, "")
+    c = _code(src)
+    if _MAIN.search(c):
+        return True, "main()"
+    for word in _ENTRY_WORDS:
+        if word in c:
+            return True, word
+    return False, ""
+
+
 def declared(p: Path) -> str | None:
     """머리말의 `부류` 선언. 없으면 `None`, 어휘 밖이면 그 낱말 그대로."""
     m = _DECL.search(p.read_text(encoding="utf-8", errors="replace"))
@@ -112,14 +157,20 @@ def declared(p: Path) -> str | None:
 
 
 def classify() -> dict[str, dict]:
-    """도구 → `{부류, 도출, 선언}`. **다른 도구가 부르는 자리다.**"""
+    """도구 → `{부류, 도출, 선언, 진입점, 근거}`. **다른 도구가 부르는 자리다.**
+
+    ★ 반환 꼴을 넓히기만 한다 — `mutate.targets()` 가 `부류` 를 읽고 과녁을
+      고른다(§398). 칸을 빼면 그 도출이 조용히 바뀐다.
+    """
     text = _callers()
     out: dict[str, dict] = {}
     for p in tools():
         rel = p.relative_to(ROOT).as_posix()
         gate = rel in text or p.name == VERIFY.name
         dec = declared(p)
-        out[rel] = {"부류": "관문" if gate else dec, "도출": gate, "선언": dec}
+        ent, why = entry(p, text)
+        out[rel] = {"부류": "관문" if gate else dec, "도출": gate, "선언": dec,
+                    "진입점": ent or gate, "근거": why or ("verify" if gate else "")}
     return out
 
 
@@ -135,6 +186,18 @@ def judge(rows: dict[str, dict]) -> tuple[list[str], list[str]]:
                        "— 둘 중 하나가 틀렸다. 도출이 이기지 않는다")
         elif not gate and dec == "관문":
             bad.append(f"{rel}  「관문」이라 적었는데 verify · CI 어디서도 안 부른다")
+        # ★ 2026-10-08 (DECISIONS §437 · PLAN #162). **양방향이다.** 분모를
+        #   진입점으로 좁히면 몸통에 남은 옛 선언이 조용해진다 — 그 침묵을
+        #   아래 둘이 깬다. 좁히는 쪽만 넣으면 좁힌 다음날 선언이 다시 썩는다.
+        elif r["진입점"] and dec == "몸통":
+            bad.append(f"{rel}  「몸통」이라 적었는데 **진입점이다** "
+                       f"({r['근거']}) — 스스로 돌거나 경로로 불린다")
+        elif not r["진입점"] and dec not in (None, "몸통"):
+            bad.append(f"{rel}  진입점이 아닌데 「{dec}」 라고 적었다 — "
+                       "부를 수 없는 파일의 부류는 **부르는 쪽에서 물려받는다.** "
+                       "`부류  몸통` 으로 적어라")
+        elif not r["진입점"] and dec is None:
+            bad.append(f"{rel}  진입점이 아닌데 선언이 없다 — `부류  몸통` 을 적어라")
         elif not gate and dec is None:
             none.append(rel)
     return bad, none
@@ -159,22 +222,56 @@ def selftest() -> int:
         fails.append("전부 관문이다 — 도출이 늘 참이면 가르는 것이 없다")
 
     # ★ 판별식을 **꺼냈다**(§17-0) — 합성 행으로 네 갈래를 민다
+    # ★ 2026-10-08 (DECISIONS §437 · PLAN #162) 셋이 늘었다 — 분모를 좁히면
+    #   **좁힌 쪽의 침묵**이 새 위험이다. `f`·`g` 가 그 침묵을 민다.
+    def row(dec, gate, ent, why=""):
+        return {"선언": dec, "도출": gate, "부류": "관문" if gate else dec,
+                "진입점": ent or gate, "근거": why}
+
     probe = {
-        "a": {"선언": "없는낱말", "도출": False, "부류": None},
-        "b": {"선언": "절차", "도출": True, "부류": "관문"},
-        "c": {"선언": "관문", "도출": False, "부류": "관문"},
-        "d": {"선언": None, "도출": False, "부류": None},
-        "e": {"선언": "조사", "도출": False, "부류": "조사"},
+        "a": row("없는낱말", False, True),
+        "b": row("절차", True, True),
+        "c": row("관문", False, True),
+        "d": row(None, False, True),
+        "e": row("조사", False, True),
+        "f": row("몸통", False, True, "main()"),   # 진입점인데 몸통이라 적었다
+        "g": row("생산", False, False),            # 몸통인데 다른 낱말을 적었다
+        "h": row(None, False, False),              # 몸통인데 아무 말도 없다
+        "i": row("몸통", False, False),            # 멀쩡한 몸통
     }
     bad, none = judge(probe)
-    want = {"a": "어휘 밖", "b": "둘 중 하나가 틀렸다", "c": "안 부른다"}
+    want = {"a": "어휘 밖", "b": "둘 중 하나가 틀렸다", "c": "안 부른다",
+            "f": "진입점이다", "g": "물려받는다", "h": "선언이 없다"}
     for k, frag in want.items():
         if not any(h.startswith(k) and frag in h for h in bad):
             fails.append(f"합성 {k} 를 안 문다 — {frag}")
     if none != ["d"]:
         fails.append(f"선언 없음이 ['d'] 가 아니다 — {none}")
-    if any(h.startswith("e") for h in bad):
-        fails.append("멀쩡한 선언에 운다")
+    for ok in ("e", "i"):
+        if any(h.startswith(ok) for h in bad):
+            fails.append(f"멀쩡한 선언 {ok} 에 운다")
+
+    # ★ 진입점 도출도 **양방향으로** 민다. 「스스로 돈다」와 「경로로 불린다」
+    #   둘을 각각 보고, 아무것도 없는 몸통은 거짓이어야 한다.
+    import tempfile  # noqa: PLC0415  자기검사 전용
+
+    with tempfile.TemporaryDirectory() as d:
+        q = Path(d) / "probe.py"
+        for src, want_e in (("def main():\n    pass\n", True),
+                            ("if __name__ == '__main__':\n    pass\n", True),
+                            ("import argparse\n", True),
+                            ("# def main():  주석이다\n", False),
+                            ("X = 1\n", False)):
+            q.write_text(src, encoding="utf-8")
+            got, _ = entry(q, "")
+            if got is not want_e:
+                fails.append(f"진입점 도출이 틀렸다 — {src!r} → {got}")
+        # ★ 「경로로 불린다」 절 — 같은 몸통이 부르는 쪽에 적히면 진입점이다
+        q.write_text("X = 1\n", encoding="utf-8")
+        if entry(q, "step a uv run python probe.py") != (True, "경로로 불린다"):
+            fails.append("경로로 불리는 몸통을 진입점으로 안 본다")
+        if entry(q, "step a uv run python other.py")[0]:
+            fails.append("안 불리는 몸통을 진입점으로 본다 — 절이 늘 참이다")
 
     # ★ **언급은 호출이 아니다** — 주석 한 줄이 도구를 관문으로 만들면 안 된다
     if "tools/x.py" in _code("# ci-exempt: tools/x.py 사유\nstep a uv run python tools/y.py\n"):

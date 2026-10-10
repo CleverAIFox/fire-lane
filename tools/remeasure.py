@@ -270,6 +270,14 @@ def run(tag: str, since: str = "") -> int:
 
     before = tally("HEAD")
     seal_before: dict[str, str] = {}
+    # ★ 2026-10-09 (DECISIONS §444 · 실기). **몇 번째 도장인가를 센다.**
+    #   종전에는 `--force` 가 붙었는지로 첫 도장과 두 번째를 갈랐다. 그런데
+    #   바로 아래 `resume` 갈래가 **첫 도장에도 `--force` 를 붙인다** — 그러면
+    #   첫 도장이 두 번째로 읽혀 `seal_before` 가 영영 비고, 사슬이 끝에서
+    #   「지문을 못 읽었다」로 죽는다. 이어 도는 측정 배치는 그 길로만 간다.
+    #   ★ §329 가 같은 메시지로 한 번 죽었고 그때 원인은 **읽는 열쇠 이름**이었다.
+    #     같은 말이 다른 원인에서 두 번 났다 — 가르는 것은 세는 수다.
+    stamps = 0
     for name, argv in CHAIN:
         cmd = [a.replace("{tag}", tag) for a in argv]
         # ★ 이어 도는 경우에는 첫 봉인도 덮어쓴다. 잰 뒤에 붙인다 — 늘 붙이면
@@ -285,8 +293,14 @@ def run(tag: str, since: str = "") -> int:
         # ★ 봉인 두 번 사이에 **잰다.** 두 번째가 무엇을 덮었는지 모르면 그것은
         #   도장 찍기다(§272 · §319-5).
         if cmd[:2] == ["tools/baseline.py", "freeze"]:
+            stamps += 1
             now = seal_digests(tag)
-            if "--force" not in cmd:
+            if stamps == 1:
+                # ★ 비었는지는 **여기서 안 판정한다.** 두 번째 도장 자리의
+                #   `prove_only_eval_moved` 가 그것을 든다 — 재는 자리가 둘이면
+                #   둘이 갈린다. 그리고 이 자리는 `_run` 을 흉내로 바꿔 미는
+                #   시험도 지나므로, 여기서 죽이면 그 시험이 **두 번째 도장을
+                #   아예 못 본다**(실측 2026-10-09).
                 seal_before = now
             elif bad := (prove_only_eval_moved(seal_before, now,
                                                resume=(state == "resume"))

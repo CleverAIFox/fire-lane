@@ -62,7 +62,7 @@ from pathlib import Path
 import yaml
 
 from firelane import encoding as enc
-from firelane import paths
+from firelane import ledger, paths
 
 ROOT = paths.ROOT
 ACQ = ROOT / "data" / "_acquire.json"
@@ -127,7 +127,7 @@ def retired() -> dict[str, tuple[str, str]]:
     for k, v in (cfg().get("retired") or {}).items():
         v = v or {}
         why = str(v.get("reason") or v.get("what") or k).strip().splitlines()[0]
-        for f in ([v["file"]] if v.get("file") else []) + list(v.get("files") or []):
+        for f in ledger.files_decl(v):  # DECISIONS §438
             out[Path(str(f)).name] = (k, why)
     return out
 
@@ -294,7 +294,7 @@ def triage(p: Path, *, DS: dict, ACQ_: dict, raw_sha: dict) -> dict:
         cand = None
         for k in same_size:
             for _dk, e in DS.items():
-                for pat in (e.get("files") or []):
+                for pat in ledger.files_decl(e):  # DECISIONS §438
                     if str(pat).endswith(Path(k).name):
                         cand = e
         #  ★ 두 번 읽는다. 1차는 선언 없이 헤더만 얻고, 그것으로 대장
@@ -393,7 +393,7 @@ def main() -> int:
             if not e:
                 print(f"! 대장에 없는 키: {key}", file=sys.stderr)
                 continue
-            for pat in (e.get("files") or []):
+            for pat in ledger.files_decl(e):  # DECISIONS §438
                 hits = sorted(paths.RAW.glob(pat)) if paths else []
                 for h in hits:
                     if h.suffix.lower() in TEXT:

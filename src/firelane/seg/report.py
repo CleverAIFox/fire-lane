@@ -123,8 +123,13 @@ def diagnostics(g, *, old_snap: bool = False):
 def write_outputs(g):
     """gpkg · geojson · schema 를 쓰고 sha 를 돌려준다."""
 
-    # 진단 컬럼은 산출물에 넣지 않는다. 스키마·sha 를 바꾸면 안 된다.
-    g = g.drop(columns=["width_fail"])
+    # ★ 2026-10-08 (DECISIONS §436 · PLAN #104). **`width_fail` 을 싣는다.**
+    #   종전에는 「진단 컬럼은 산출물에 넣지 않는다」로 떨궜다. 그 결과 폭이 빈
+    #   구간 둘(`all_xsec` — 트랜섹트가 전부 교차부에 걸렸다)이 **사유 없이**
+    #   출하됐다. 파이프라인은 왜인지 **알면서** 표준출력에만 찍었고, 화면과
+    #   보고서는 「폭 미상 통행불가」로만 봤다 — 물을 자리가 없었다.
+    #   `unknown_reason` 은 `unknown` 전용이라 `blocked` 를 담지 못한다.
+    #   강제자 `tools/segcontract.py` 의 `SILENT_MISSING` 래칫이 그 수를 든다.
 
     g.to_file(OUT / "segments_5186.gpkg", driver="GPKG", layer="segments")
     g.to_crs(CRS_W).to_file(OUT / "segments.geojson", driver="GeoJSON")
@@ -138,6 +143,10 @@ def write_outputs(g):
             "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
             "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
             "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",
+            "width_fail": ("null|all_xsec|… 폭을 못 낸 사유. **`unknown_reason` 과 "
+                           "다른 축이다** — 저쪽은 회색의 사유이고 이쪽은 폭이 빈 "
+                           "사유다. `blocked` 인데 폭이 비는 자리를 설명하는 유일한 "
+                           "칸이다(DECISIONS §436 · PLAN #104)"),
             "road_name": "str|null 도로명. 겹침길이 최대 매칭",
             # ★ 2026-08-23 추가. seg_label 은 2026-08-21 에 만들고 08-22 에
             #   툴팁 정본으로 승격시켰는데 스키마에 없었다(R7 위반).
@@ -189,8 +198,8 @@ def write_outputs(g):
             #   옛 어휘를 그대로 적고 있었다(R7 위반). UI 가 이 표를 보고
             #   분기하면 없는 키로 분기한다 — web/config.js 의 reason 표는
             #   이미 넷을 갖고 있어 화면은 멀쩡했고, 그래서 아무도 몰랐다.
-            "unknown_reason": ("null|no_cctv_narrow|no_cctv_thin|no_cctv_band"
-                               "|no_cctv_single|width — 회색(unknown)이 된 이유. "
+            "unknown_reason": ("null|ledger_disputes|no_cctv_narrow|no_cctv_thin"
+                               "|no_cctv_band|no_cctv_single|width — 회색(unknown)이 된 이유. "
                                "narrow=노면·대장폭 둘 다 3m 미만이나 담~담은 여유 있음 / "
                                "thin=노면만 3m 미만(근거 하나) / "
                                "band=3~7m 대역, 주정차로 갈림 / "

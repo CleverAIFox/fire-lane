@@ -40,6 +40,8 @@ IN    data/processed/segments.geojson · route_vehicle.csv · _manifest.json
       data/golden/segments.fingerprint.json · data/baseline/<태그>/segments.geojson
       seg/params.py (STATIONS · NODE_TOL) · sources.yaml (vehicle_spec)
 OUT   data/processed/eval.json · 표준출력
+      ★ 2026-10-09. 들여쓰기가 1 → 2 다. `manifest.write_stable` 하나로
+        모았고(§445) 그쪽이 2 다 — **수는 안 바뀐다**
 PARAM --baseline · --out · --scenarios · --data · RATIO_MIN · 분모(노드)
 밖    **게이트를 여기서 판정하지 않는다.** 셋은 `tools/evalgate.py` 가 든다.
       **표본 설계를 안 정한다** — 층화 · 표본 수 · 시드 · E-1 분모(건물이냐
@@ -56,7 +58,6 @@ from __future__ import annotations
 
 import argparse
 import collections
-import json
 import math
 import statistics as st
 import sys
@@ -77,6 +78,7 @@ from shapely.geometry import LineString
 
 from firelane import ledger as _led
 from firelane.hashing import sha256 as _sha256
+from firelane.manifest import write_stable as _ws
 from firelane.seg import vehicle as V
 
 # ★ 2026-10-08 (PLAN #122). 도메인은 대장을 직접 안 읽는다 — **진입점이**
@@ -521,7 +523,9 @@ def main(argv: list[str] | None = None) -> int:
 
     out = Path(a.out) if a.out else (proc / "eval.json")
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    # ★ 수가 그대로면 **안 쓴다** — `as_of`·`git_sha` 만 흔들려 추적 파일이
+    #   더러워지는 것을 막는다(firelane.hashing.write_stable 의 사유).
+    _ws(out, doc, tail="\n")
     _print(doc)
     if a.scenarios:
         _table(doc)

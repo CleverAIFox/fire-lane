@@ -76,14 +76,39 @@ def targets() -> list[str]:
     """
     import toolclass
     rows = toolclass.classify()
+    # ★ **같은 목록에서 낸다.** `glob` 으로 따로 훑으면 `deadcheck ⑤`(좁은 범위)가
+    #   울고, 그 말이 맞다 — 목록이 둘이면 둘이 갈린다(족 2). `toolclass` 가
+    #   도구의 정본 목록이다.
+    body = {rel: (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+            for rel in rows if rel.endswith(".py")}
+    decl = {Path(rel).stem for rel, src in body.items() if "RATCHETS" in src}
     out = []
     for rel, r in rows.items():
         p = ROOT / rel
         if r["부류"] != "관문" or p.suffix != ".py":
             continue
-        if "RATCHETS" in p.read_text(encoding="utf-8", errors="replace"):
+        src = body[rel]
+        if "RATCHETS" in src or _imports_ratchet(src, decl):
             out.append(p.stem)
     return sorted(out)
+
+
+#: `from <표> import …` — 선언을 옆집에 둔 도구를 찾는다.
+_IMPORT = re.compile(r"^from\s+([A-Za-z_][\w]*)\s+import\s", re.M)
+
+
+def _imports_ratchet(src: str, decl: set[str]) -> bool:
+    """**선언을 옆집에 둔 관문도 과녁이다.**  (2026-10-09 · DECISIONS §440-10)
+
+    ★ 과녁의 뜻은 「관문이면서 무엇을 지키는지 **수로 적힌** 도구」다. 그 수가
+      같은 파일에 있어야 한다는 뜻이 아니었는데, 판별식이 `"RATCHETS" in src`
+      하나뿐이라 **그렇게 읽혔다.**
+    ★ 실측 — `sizecheck` 의 예외 표를 `sizetable` 로 뗐더니(§440-3) 그 도구가
+      **과녁에서 조용히 빠졌다.** 여전히 관문이고 여전히 그 수를 지키는데
+      아무도 안 흔든다. 쪼개는 일이 돌연변이 덮임을 깎는 쪽으로 돌아간다 —
+      쪼개는 것은 이 저장소가 **권하는** 일이므로 그 길에 구멍을 두면 안 된다.
+    """
+    return any(m in decl for m in _IMPORT.findall(src))
 
 #: 한 도구에서 흔들 **최대 수**. 전수가 아니다 — 그래서 `MUTANTS` 래칫이
 #: 분모를 잠근다.
@@ -114,14 +139,14 @@ TIMEOUT = 180
 #   새 생존 셋은 전부 `main()` 의 보고 경로이거나 CLI 가드다 — §428-5 의 579·591 과
 #   **같은 자리**다. 잡을 수 있던 하나(래칫 상수)는 `segcontract.selftest()` 에 문을
 #   달아 **잡았다.** 서술·음성 대조와 「구조를 고치는 행은 없다」는 §435 가 든다.
-SURVIVORS = 70
+SURVIVORS = 65   # ★ 2026-10-08 (DECISIONS §438-6) 68·20·48 — 둘을 잡았다
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 MUTANTS = 100
 #: 붙잡이가 **0 인 과녁** 수. 흔들어도 못 재는 자리다 — 내려가는 쪽으로만.
 UNCATCHABLE = 0
 #: 생존 중 **래칫이 드는 것.** 이 문이 안 붙들 뿐 다른 문이 붙든다 — 올라가는
 #: 쪽으로만. 줄면 래칫 선언이 사라졌다는 뜻이고 그건 나쁜 쪽이다.
-RATCHET_HELD = 20
+RATCHET_HELD = 20   # ★ 2026-10-08 (§438-6) 21 → 20 — **잡아서 줄었다**
 #: 생존 중 **아직 아무도 안 가른 것.** 내려가는 쪽으로만.
 # ★ 2026-10-07 — 47 → 48 (DECISIONS §428-5). **SURVIVORS 와 같은 원인이다** —
 #   표본이 다른 돌연변이를 집었고 새로 집힌 것이 래칫 상수가 아니다(비교 연산자).
@@ -131,7 +156,7 @@ RATCHET_HELD = 20
 #   새로 산 생존 셋이 전부 래칫 상수가 아니다(`main()` 보고 경로 둘 · CLI 가드 하나).
 #   §398-8 의 규율대로 **둘을 같이 적는다**: 같은 원인이 래칫 둘을 움직이는데
 #   하나만 적으면 다른 기계에서만 빨갛다.
-UNSORTED = 50
+UNSORTED = 45
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
             "RATCHET_HELD": "up", "UNSORTED": "down"}
 
@@ -456,6 +481,20 @@ def selftest() -> int:
         if catch_print(_t) != _was:
             fails.append("되돌렸는데 지문이 안 돌아온다 — 지문이 결정적이지 않다")
 
+    # ★ 2026-10-09 (§440-10). **선언을 옆집에 둔 관문도 과녁인가** — 양방향.
+    if not _imports_ratchet("from sizetable import EXCEPTIONS\n", {"sizetable"}):
+        fails.append("옆집 선언을 import 하는데 과녁으로 안 센다")
+    if _imports_ratchet("from json import loads\n", {"sizetable"}):
+        fails.append("선언 안 든 모듈을 import 해도 과녁으로 센다 — 그물이 샌다")
+    if "sizecheck" not in targets():
+        fails.append("sizecheck 가 과녁에 없다 — 표를 뗀 관문이 조용히 빠진다")
+
+    # ★ 2026-10-09 (§440-10). 과녁 **밖** 줄이 지워지나. 합성으로 민다.
+    _k = {"sealcov": {"도구": "sealcov"}, "없는도구": {"도구": "없는도구"}}
+    _g = sorted(set(_k) - set(targets()))
+    if _g != ["없는도구"]:
+        fails.append(f"과녁 밖 가림이 틀리다 — {_g}")
+
     # ★ 2026-10-08. `--tool X --write` 가 **남의 행을 지우지 않나.** 합성 장부로 민다.
     _keep = {"a": {"도구": "a", "돌연변이": 3, "생존": ["x"], "붙잡이": 1},
              "b": {"도구": "b", "돌연변이": 5, "생존": [], "붙잡이": 1}}
@@ -510,7 +549,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 17")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 21")
     return 1 if fails else 0
 
 
@@ -582,10 +621,19 @@ def main() -> int:
                 (json.loads(LEDGER.read_text(encoding="utf-8")).get("도구별", [])
                  if LEDGER.exists() else [])}
         keep.update({r["도구"]: r for r in rows})
-        merged = [keep[k] for k in sorted(keep)]
+        # ★ 2026-10-09 (DECISIONS §440-10). **과녁 밖은 뺀다.** 종전에는 적어
+        #   두기만 했고, 그러면 `ratchet_values()` 가 그 줄의 지문을 영영 대다가
+        #   「잰 뒤로 바뀌었다」로 **영구히 빨개진다** — `--stale` 은 과녁만 다시
+        #   재므로 그 줄을 영원히 못 고친다. 실측에서 `sizecheck` 가 그 자리에
+        #   빠졌다. 위 2026-10-08 문단이 막으려던 것은 **재지도 않고 사라지는**
+        #   것이고, 과녁에서 빠진 줄은 그것과 다르다 — 분모가 준 것이 아니라
+        #   분모의 자격이 없어진 것이다. 그래서 지우되 **소리 내어** 지운다.
         gone = sorted(set(keep) - set(targets()))
+        for k in gone:
+            del keep[k]
+        merged = [keep[k] for k in sorted(keep)]
         if gone:
-            print(f"★ 과녁 밖인데 장부에 남은 도구 {len(gone)} — {', '.join(gone)}")
+            print(f"★ 과녁 밖이라 장부에서 뺀 도구 {len(gone)} — {', '.join(gone)}")
         LEDGER.parent.mkdir(parents=True, exist_ok=True)
         LEDGER.write_text(json.dumps(
             {"돌연변이": sum(r["돌연변이"] for r in merged),

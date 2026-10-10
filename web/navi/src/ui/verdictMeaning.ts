@@ -31,6 +31,13 @@ export const VERDICT_MEANING: Record<string, string> = {
  * `short` 는 범례 · 요약용, `long` 은 구간 카드용이다.
  */
 export const GRAY_REASON: Record<string, { short: string; long: string }> = {
+  // ★ 2026-10-08 (DECISIONS §436 · PLAN #140). 대장이 실측을 **반박**하는 자리.
+  //   종전에는 이 구간이 `no_cctv_single` 로 떨어져 화면이 「표본이 하나라서」라고
+  //   말했다 — 사유가 틀렸다. 빈칸은 「모른다」를 말하지만 틀린 낱말은 아는 척한다.
+  ledger_disputes: {
+    short: "측량과 대장이 어긋남",
+    long: "노면 실측은 넓게 나왔는데 도로대장 명목폭은 소방차 기준폭 미만이다 — 두 근거가 반대로 말한다. 어느 쪽이 맞는지 정하기 전에는 통과를 확정하지 않는다",
+  },
   no_cctv_band: {
     short: "폭 애매 · 주정차에 달림",
     long: "CCTV 없음 · 폭이 기준폭 이상이지만 양쪽 주정차를 감안한 폭에는 못 미친다 — 주정차가 있으면 막히고 없으면 지난다. 영상판정의 본래 대상인데 볼 카메라가 없다",

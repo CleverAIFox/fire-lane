@@ -232,6 +232,49 @@ def test_retiring_for_missing_coordinates_names_the_join_key():
         "항목이 정말 줄었으면 이 하한을 내려라")
 
 
+# ── 「소비자 0곳」은 **되돌아올 수 있는 근거**다 ───────────────────────
+# ★ 2026-10-09 (DECISIONS §442 · PLAN #102 닫힘). §435 가 「좌표 없음」 쪽을
+#   막았고, 남은 전수 넷을 훑다가 **다른 모양이 보였다.**
+#
+#   `building_ledger` 는 「소비자 0곳」으로 나갔다가 소비자가 생기자 돌아왔다.
+#   그 항목이 스스로 적는다 — 「소비자가 생기자(β 점유위험도 #60) 복귀했다」.
+#   즉 **「소비자 0곳」은 사실이지 종결이 아니다.** 상황이 바뀌면 뒤집힌다.
+#
+#   ★ 그러면 적어야 할 것은 「지금 소비자가 없다」가 아니라 **「무엇이 생기면
+#     돌아오는가」**다. 그것을 안 적으면 다음 사람은 그 항목이 **영구히 죽은
+#     것**으로 읽고 찾아보지도 않는다 — 실제로 한 번 그랬다.
+_ZERO = re.compile(r"소비자\s*0\s*곳|소비자가? ?없")
+_BACK = re.compile(r"복귀|돌아왔|되살|생기면|생기자|필요해지면|쓸 일이 생기")
+
+
+def consumer_zero_without_return(y: dict) -> list[str]:
+    """「소비자 0곳」을 근거로 들면서 **되돌아오는 조건**을 안 적은 폐기 항목."""
+    out = []
+    for k, e in (y.get("retired") or {}).items():
+        e = e or {}
+        text = "\n".join(str(v) for v in e.values())
+        if _ZERO.search(text) and not _BACK.search(text):
+            out.append(f"retired.{k}: 「소비자 0곳」을 들면서 돌아오는 조건을 안 적었다")
+    return out
+
+
+def test_consumer_zero_names_what_brings_it_back():
+    """**전수를 훑는다.** 넷 중 하나가 이 모양이고, 그 하나가 이미 돌아왔다."""
+    y = ledger.load()
+    assert y.get("retired"), "폐기 블록이 비었다 — 그물이 비면 이 검사가 언제나 초록이다"
+    bad = consumer_zero_without_return(y)
+    assert not bad, (
+        "\n".join(f"  {b}" for b in bad)
+        + "\n\n  ★ 「소비자 0곳」은 **사실이지 종결이 아니다.** 상황이 바뀌면 뒤집힌다 —"
+        "\n    `building_ledger` 가 그 기준으로 나갔다가 돌아온 항목이다."
+        "\n    「무엇이 생기면 돌아오는가」를 같이 적어라(DECISIONS §442 · PLAN #102).")
+    # ★ 빈 그물 — 그물이 아무것도 안 잡으면 위 검사가 늘 통과한다
+    assert _ZERO.search("소비자 0곳") and _BACK.search("복귀했다"), "그물이 망가졌다"
+    hits = [k for k, e in (y["retired"] or {}).items()
+            if _ZERO.search("\n".join(str(v) for v in (e or {}).values()))]
+    assert hits, "「소비자 0곳」을 드는 항목이 하나도 없다 — 그물을 의심하라"
+
+
 def test_ratchet_probes_are_alive():
     """카나리아 — 판별식 넷이 **합성 입력에서** 운다."""
     y = {"retired": {"g": {"stem": "safety_firestation"},
@@ -248,6 +291,15 @@ def test_ratchet_probes_are_alive():
             ("src/firelane/ledger.py", 'yaml.safe_load(open("sources.yaml")) ; y["retired"]')]
     assert ledger_loaders(srcs) == ["tools/a.py"], "대장 로드 판별식이 죽었다"
     assert owner_block_readers(srcs) == ["tools/b.py"], "주인 블록 판별식이 죽었다"
+    # ★ 2026-10-09 (§442 · #102). 합성으로 **양방향** — 조건을 적은 것은 통과,
+    #   안 적은 것은 운다. 실물 넷으로만 재면 「언제나 초록」과 구별이 안 된다.
+    z = {"retired": {
+        "a": {"reason": "11.3MB 소비자 0곳"},
+        "b": {"reason": "소비자 0곳", "join_key": {"why": "소비자가 생기자 복귀했다"}},
+        "c": {"reason": "후속이 같은 행을 좌표까지 들고 왔다"}}}
+    assert consumer_zero_without_return(z) == [
+        "retired.a: 「소비자 0곳」을 들면서 돌아오는 조건을 안 적었다"], \
+        "소비자 0곳 판별식이 죽었다"
     # ★ 2026-10-08 (DECISIONS §435 · PLAN #102). 조인 키 판별식 둘도 합성에서 운다.
     jk = {"retired": {
         # 사유가 좌표를 드는데 칸이 없다

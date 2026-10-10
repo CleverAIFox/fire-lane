@@ -52,7 +52,6 @@
   .meta b{color:var(--ink); font-weight:600}
   .dl a{color:var(--accent); text-decoration:none; font-weight:600}
   .dl a:hover{text-decoration:underline}
-  .stamp{font-family:ui-monospace,monospace; font-size:11px; color:var(--dim)}
 
   /* ── 칸(탭) — CSS 라디오. 자바스크립트가 없어도 선다 ── */
   .tabs{display:flex; gap:4px; margin-top:18px; flex-wrap:wrap}
@@ -104,10 +103,12 @@
 <body>
 <header><div class="wrap">
   <h1 class="doc">{title}</h1>
-  <div class="meta">
-    정본 <b>docs/proposal.md</b> · 이 화면은 <b>생성물</b>이다 — 손으로 고치지 않는다.
-    <span class="stamp">{stamp}</span> · 구운 날 {built}
-  </div>
+  <!-- ★ 2026-10-09 (§440-8). 여기 있던 「정본 docs/proposal.md · 이 화면은
+       생성물이다 · sha256:… · 구운 날」 한 줄을 **지웠다.** 이 화면을 읽는
+       사람은 심사위원이고, 그에게 정본이 어디 있고 누가 굽는지는 **일이 아니다.**
+       날짜는 표지(`docs/proposal.md` 의 「작성 … · 최종 수정 …」)가 이미 든다.
+       지문은 아무도 안 읽었다 — `build_proposal --check` 는 화면을 **다시 구워**
+       통째로 대므로 심은 지문이 말해 주는 것이 없었다. -->
   <!-- ★ 2026-10-06 (§425). 종전 이 화면은 PDF 를 품은 **뷰어**였다. 이제 글을
        직접 들으므로 PDF · DOCX 는 **제출용 내려받기**로 남는다 — `stage_pages.py`
        가 배포 때 둘을 같이 올린다. 로컬 트리에는 없는 것이 정상이다(.gitignore). -->

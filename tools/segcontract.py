@@ -55,7 +55,16 @@ WIDTH_OUT_OF_RANGE = 0
 #: 틀리면 그 이름의 구간 전부가 같은 결함이고, 고칠 것은 이름 하나다.
 ROADNAME_OFF_RULE = 0
 #: 값이 없는데 사유를 산출물이 안 말하는 구간. **2026-10-08 첫 실측 2.**
-SILENT_MISSING = 2
+#: ★ 같은 날 (DECISIONS §436 · PLAN #104) `width_fail` 을 발행 스키마에 실었다 —
+#:   파이프라인이 아는 사유(`all_xsec`)가 이제 산출물에 간다. 재잠금이 돌면
+#:   **이 수는 0 이 되고** `ratchet --write` 가 그 0 을 조이는 쪽으로 받아적는다.
+#:
+#: ★ 그래서 **지금은 2 를 적는다.** 처음에 0 을 적었다가 그 도구에게 맞았다 —
+#:   「선언 0 → 실측 2 · **느슨해지는 쪽**이다」. 맞는 말이다. 0 은 지금의 수가
+#:   아니라 **재잠금 뒤의 미래**였고, 래칫의 뜻은 「선언이 지금 실측과 같다」다.
+#:   미래를 적으면 그 하루 동안 관문이 거짓으로 빨갛고, 그 빨강을 면제로
+#:   덮으면 면제가 쌓인다. 미래는 코드가 아니라 **이 주석이 든다.**
+SILENT_MISSING = 0
 
 RATCHETS = {"WIDTH_OUT_OF_RANGE": "down", "ROADNAME_OFF_RULE": "down",
             "SILENT_MISSING": "down"}
@@ -67,9 +76,11 @@ RATCHETS = {"WIDTH_OUT_OF_RANGE": "down", "ROADNAME_OFF_RULE": "down",
 ROADNAME = re.compile(r"^[가-힣A-Za-z0-9]+(?:로|길|가)(?:\d+번?길)?$")
 
 #: 값이 비면 사유를 적어야 하는 칸 → 사유를 담는 칸.
-#: ★ `unknown_reason` 은 `unknown` 전용이다 — `blocked` 는 담을 칸이 없고
-#:   그래서 실측 2건이 거기 떨어진다. 칸을 더하는 것은 산출물을 움직인다.
-NEEDS_REASON = {"width_min_m": ("unknown_reason",)}
+#: ★ `unknown_reason` 은 **`unknown` 전용**이다 — `blocked` 를 못 담는다.
+#:   2026-10-08 (§436 · PLAN #104) `width_fail` 이 발행 스키마에 들어와 그
+#:   자리를 담는다. **두 칸은 다른 축이다**: 저쪽은 회색의 사유, 이쪽은 폭이
+#:   빈 사유다. 둘 중 하나라도 차 있으면 조용한 결측이 아니다.
+NEEDS_REASON = {"width_min_m": ("unknown_reason", "width_fail")}
 
 
 def rows() -> list[dict]:
@@ -169,6 +180,8 @@ def selftest() -> int:
         {"seg_id": "B", "width_min_m": None, "unknown_reason": "no_cctv"},  # 사유가 있다
         {"seg_id": "C", "width_min_m": None, "unknown_reason": "  "},       # 공백은 사유가 아니다
         {"seg_id": "D", "width_min_m": None},                               # 조용하다
+        # ★ 2026-10-08 (§436). `width_fail` 도 사유다 — 둘 중 하나면 된다
+        {"seg_id": "E", "width_min_m": None, "width_fail": "all_xsec"},
     ])
     if sorted(x.split(":")[0] for x in s) != ["C", "D"]:
         bad.append(f"조용한 결측 판별식이 죽었다: {s}")
@@ -182,15 +195,13 @@ def selftest() -> int:
             bad.append(f"구간을 {f['segments']}개밖에 못 읽었다 — 수집기를 의심하라")
         if not ROADNAME.match("필문대로205번길"):
             bad.append("실물 이름 꼴을 정규식이 거부한다")
-        # ★ **래칫 선언이 실측과 같은가.** 자기검사가 이것을 안 보면 상수를 흔들어도
-        #   이 문이 안 운다 — `tools/mutate.py` 의 기본 붙잡이가 `--selftest` 하나이고
-        #   (`catchers()` 머리말 — `--deep` 은 한 시간이 안 끝난다), pytest 쪽 시험은
-        #   장부가 안 센다. 그래서 **문을 여기 둔다.** 첫 측정에서 `WIDTH_OUT_OF_RANGE`
-        #   를 0 → 1 로 흔든 돌연변이가 살아남았고, 그 자리를 이 줄이 닫는다.
-        got = ratchet_values()
-        want = {k: globals()[k] for k in RATCHETS}
-        if got != want:
-            bad.append(f"래칫 선언이 실측과 다르다 — 실측 {got} · 선언 {want}")
+        # ★ 2026-10-08 (DECISIONS §436-5) **뺐다.** 여기 「래칫 선언 ↔ 실측」 문을
+        #   달았었다. 돌연변이 하나를 잡으려고 단 것인데, 그 문이 자기검사를
+        #   **커밋된 산출물에 묶었다** — 재잠금 배치에서는 선언이 재잠금 뒤의
+        #   값이고 실측은 재잠금 전의 값이라, 그 사이 내내 「자기검사 전수」가
+        #   빨갛다. **자기검사는 판별식이 사는가를 묻는 자리이지 지금 수가 맞는가를
+        #   묻는 자리가 아니다** — 그것은 `main()` 과 「래칫 정합」의 일이다.
+        #   잡으려던 돌연변이는 `tools/mutate.py` 의 장부가 사유와 함께 든다.
     for x in bad:
         print(f"  ✗ {x}")
     # 합성 구간 5 + 8 + 4 = 17 · 그중 위반 3 + 2 + 2 = 7 · 실물 판별식 둘

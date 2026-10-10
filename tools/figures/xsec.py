@@ -8,7 +8,7 @@ IN    figures 공용(`__init__`)이 읽는 정본
 OUT   SVG 문자열
 PARAM 없음
 밖    배치(넘침 · 겹침)는 `tools/svg_fit.py` 가 든다.
-부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
+부류  몸통   진입점이 아니다 — 부르는 쪽이 부류를 든다  (DECISIONS §437)
 """
 from __future__ import annotations
 
