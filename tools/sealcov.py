@@ -61,7 +61,7 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #   ★ 2026-10-08 (DECISIONS §433). 426 → **430.** 새 집 둘(`contract_crs` ·
 #     `rawcache`)과 머리말을 받은 0바이트 둘(`seg/__init__` · `krgis/__init__`)이다.
 #     분모도 506 → 508 로 는다 — 새 집 둘이 거기 들어간다.
-SEALED_FILES = 469
+SEALED_FILES = 495
 
 RATCHETS = {"SEALED_FILES": "up"}
 
@@ -75,11 +75,42 @@ def denominator() -> tuple[str, ...]:
 
 @functools.lru_cache(maxsize=1)
 def covered() -> frozenset[str]:
-    """어떤 절의 **본문**이 지목한 파일. 강제자 칸은 `body(strip=True)` 가 뺀다."""
+    """어떤 절의 **본문**이 지목한 파일.
+
+    ★ 2026-10-08 (DECISIONS §438-6 · PLAN #165). 종전 이 한 줄은 「강제자 칸은
+      `body(strip=True)` 가 뺀다」고 적었다. **거짓이다** — `strip` 은 끝의 빈
+      줄을 떼는 깃발이고(§273-10 의 `_body_v1`) 강제자 칸과 아무 상관이 없다.
+      실측: 강제자 칸이 경로를 적는 절 778 중 **761 에서 그 글자가 본문 안에
+      있다.** 그러니 칸에 적힌 도구가 **읽힌 것으로 세어진다.**
+
+    ★ 아무도 안 울었다. 그 전제를 지킨다는 시험은 「덮임 < 분모 × 0.95」라는
+      **비율**을 봤고, 비율은 전제를 안 묻는다. 오늘 `#154` 가 덮임을 95.1% 로
+      올리자 그 줄이 **좋은 일에** 울었다 — 그때 읽고 알았다.
+
+    ★ **이 판은 수를 안 바꾼다.** 고치면 덮임이 489 → 450 으로 내려가고 그것은
+      래칫의 「오르는 쪽」을 거스르는 큰 이사다. 부풀림 39 를
+      `tests/test_sealcov.py` 가 **래칫으로 들고** `PLAN #165` 가 닫는다 —
+      수를 아는 채로 두는 쪽이 모르고 초록인 쪽보다 낫다(§286).
+    """
     rows = D._sections()
     out: set[str] = set()
     for i in range(len(rows)):
         out.update(D.refs(D.body(rows, i)))
+    return frozenset(out)
+
+
+def prose_only() -> frozenset[str]:
+    """**산문만**이 지목한 파일 — 강제자 칸을 뺀다. `covered()` 의 짝이다.
+
+    ★ 칸 글자를 본문에서 빼고 다시 긁는다. 칸을 **따로 긁어 차집합**하는 쪽은
+      안 쓴다 — 같은 파일을 산문과 칸이 둘 다 적은 절이 있고, 그 파일은
+      **산문이 들었으므로** 산문 쪽에 남아야 한다.
+    """
+    rows = D._sections()
+    out: set[str] = set()
+    for i, r in enumerate(rows):
+        b, f = D.body(rows, i), (r.get("field") or "")
+        out.update(D.refs(b.replace(f, " ") if f and f in b else b))
     return frozenset(out)
 
 
@@ -165,6 +196,30 @@ def selftest() -> int:
     # 덮인 것 중 하나는 실제로 추적되는 파일이어야 한다.
     if s["덮임"] and not (set(denominator()) & covered()):
         bad.append("덮였다는데 교집합이 비었다")
+
+    # ── 아래 둘은 **돌연변이 측정이 시킨 문**이다 (DECISIONS §438-6)
+    # ★ `붙잡이` 가 이 도구에서 **자기검사 하나**다(§435 가 그 약함을 선언했다).
+    #   그래서 pytest 에 시험을 세워도 돌연변이는 안 죽는다 — 문은 **여기** 달아야
+    #   한다. §435-9 가 `segcontract` 에 같은 문을 달았고 같은 사유다.
+    if ratchet_values()["SEALED_FILES"] != SEALED_FILES:
+        bad.append(f"래칫 선언 {SEALED_FILES} ≠ 실측 "
+                   f"{ratchet_values()['SEALED_FILES']} — 선언이 낡았다")
+
+    # ★ 찍는 백분율은 **찍는 두 수에서 유도된다.** `cov/den*100` 의 `100` 을
+    #   흔들어도 아무도 안 울었다 — 사람이 읽는 유일한 수가 그것이고, 1% 틀린
+    #   백분율은 「넘었다」와 「안 넘었다」를 뒤집는다(이 절의 사고가 그 자리다).
+    import contextlib  # noqa: PLC0415  자기검사 전용
+    import io  # noqa: PLC0415  자기검사 전용
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        show(s, listing=False)
+    shown = buf.getvalue()
+    want = s["덮임"] / s["분모"] * 100 if s["분모"] else 0.0
+    if f"({want:.1f}%)" not in shown:
+        bad.append(f"찍힌 백분율이 {want:.1f}% 가 아니다 — 두 수와 유도가 갈렸다")
+    if f"**{s['덮임']} / {s['분모']}**" not in shown:
+        bad.append("두 수를 그대로 안 찍는다")
 
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad))

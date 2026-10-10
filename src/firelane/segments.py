@@ -663,7 +663,7 @@ def main():
                         width_verified=False, midpoint_fallback=fb, inherited=False,
                         width_src=wsrc,
                         width_disagree_m=wdis,
-                        width_fail=wfail,          # ★ 진단용. 저장 전 drop
+                        width_fail=wfail,   # 발행한다 (DECISIONS §436-3)
                         road_name=_road_nm, road_side=_road_side, road_bt_m=_road_bt,
                         seg_label=(_bnx.label(_road_nm, g) if _bnx else _road_nm),
                         light_count=(int(_light.intersects(g.buffer(50)).sum())

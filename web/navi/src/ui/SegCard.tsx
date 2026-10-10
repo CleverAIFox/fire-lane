@@ -83,9 +83,8 @@ export function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
       ) : null}
       <Row k="길이" v={e.length_m != null ? `${Math.round(e.length_m)}m` : "—"} />
       <Row k="선택 센터에서" v={reachable == null ? "—" : reachable ? "도달 가능" : "도달 불가"} warn={reachable === false} />
-      <div style={{ fontSize: 11, color: D.sub, marginTop: 8, lineHeight: 1.5 }}>
-        폭은 도면 기반 미검증 값이다. 실시간 주정차 · 공사 · 회전 · 높이는 반영하지 않는다.
-      </div>
+      {/* ★ 2026-10-09 (§441). 한계 문장이 여기 있었다 — `ui/Manual.tsx` 의
+          「반영하지 않는 것」으로 옮겼다. **지운 것이 아니다.** */}
     </div>
   );
 }

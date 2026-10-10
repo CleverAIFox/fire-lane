@@ -115,7 +115,7 @@ export function TopBar(p: TopBarProps) {
             <span style={{ ...tag, background: tagBg }}>{s.tag}</span>
           )}
           <span style={chip}><Truck /> {p.vehicleKind}</span>
-          {p.injected && <span style={injected} title="이 상태는 신호가 아니라 시연 막대가 넣었다">시연</span>}
+          {p.injected && <span style={injected}>시연</span>}
         </div>
         {s.caution ? (
           <div style={{ fontSize: 13, fontWeight: 700, color: C.toneInk, marginTop: 6 }}>

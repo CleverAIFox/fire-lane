@@ -55,9 +55,12 @@ SEG = ROOT / "data" / "processed" / "segments.geojson"
 
 #: 사유를 못 적는 후보. **0 이 목표다** — 어휘 하나가 늘면 둘 다 0 이 된다.
 #: ★ 이력 — 2026-10-03 §369 첫 실측 3 (없음) · 5 (거짓).
-GREY_NOWORD = 3
+#: ★ 2026-10-08 (DECISIONS §436 · PLAN #140 닫힘) 둘 다 **0.** 예언이 맞았다 —
+#:   낱말 하나(`ledger_disputes`)를 `no_cctv_*` **앞에** 두자 후보 여덟이 전부
+#:   그 낱말로 갔다. 0 에서 다시 오르면 **어휘가 또 모자란 것**이다.
+GREY_NOWORD = 0
 #: 사유가 **틀리게** 붙는 후보. 없음보다 나쁘다.
-GREY_WRONGWORD = 5
+GREY_WRONGWORD = 0
 
 RATCHETS = {"GREY_NOWORD": "down", "GREY_WRONGWORD": "down"}
 
@@ -75,7 +78,8 @@ def rows() -> list[dict]:
     return [f["properties"] for f in g["features"]]
 
 
-def word_for(p: dict, truck: float, clear_m: float, cctv_range: float) -> str:
+def word_for(p: dict, truck: float, clear_m: float, cctv_range: float,
+             ledger_block: float) -> str:
     """이 구간을 **회색으로 내린다면** 지금 규칙이 줄 낱말.
 
     `seg/classify.classify` 의 분기를 그대로 따른다 — 그 함수를 못 부르는
@@ -84,9 +88,18 @@ def word_for(p: dict, truck: float, clear_m: float, cctv_range: float) -> str:
 
     ★ 분기 순서가 뜻이다. `no_cctv_single` 이 **먼저** 걸리므로, 어휘를
       늘릴 때 새 낱말을 그 앞에 두지 않으면 **거짓 낱말이 계속 이긴다.**
+
+    ★ 2026-10-08 (DECISIONS §436 · PLAN #140 닫힘). `ledger_disputes` 가
+      들어왔고 **CCTV 관문보다 앞이다** — 대장의 반박은 카메라와 무관하다.
+      `classify()` 가 같은 자리에 같은 조건을 둔다. 두 분기가 갈리면
+      이 도구가 재는 수가 거짓이 되므로, `tests/test_greycheck.py` 가
+      **두 함수를 같은 입력에 먹여** 댄다.
     """
-    far = (p.get("cctv_dist_m") if p.get("cctv_dist_m") is not None else 1e9) > cctv_range
     wmin = p.get("width_min_m")
+    if (wmin is not None and wmin >= clear_m
+            and p.get("road_bt_m") is not None and p["road_bt_m"] < ledger_block):
+        return "ledger_disputes"
+    far = (p.get("cctv_dist_m") if p.get("cctv_dist_m") is not None else 1e9) > cctv_range
     if not far:
         # CCTV 안이다 — 넷이 다 안 걸린다. 그리고 폭을 알므로 `width` 도 아니다
         return "없음" if wmin is not None else "width"
@@ -105,7 +118,8 @@ def findings() -> dict:
     clear = [p for p in P if p.get("verdict") == "clear"]
     cand = [p for p in clear
             if p.get("road_bt_m") is not None and p["road_bt_m"] < ledger_block]
-    tagged = [(p, word_for(p, truck, clear_m, cctv_range)) for p in cand]
+    tagged = [(p, word_for(p, truck, clear_m, cctv_range, ledger_block))
+              for p in cand]
     return {
         "segments": len(P),
         "clear": len(clear),
@@ -127,11 +141,17 @@ def ratchet_values() -> dict[str, int]:
 def selftest() -> int:
     """★ 합성 구간으로 **분기마다** 민다. 실물이 0 이 되는 날에도 산다."""
     bad = []
-    truck, clear_m, cctv = 3.0, 7.0, 25.0
+    truck, clear_m, cctv, block = 3.0, 7.0, 25.0, 3.0
     cases = [
-        # CCTV 안 · 폭 안다 → **없음**. 이것이 #140 이 말한 구멍이다
-        ({"cctv_dist_m": 3.0, "width_min_m": 7.85}, "없음"),
-        # CCTV 밖 · 폭이 clear 문턱 이상 → `no_cctv_single` 이 **거짓으로** 붙는다
+        # ★ 2026-10-08 (§436). 대장이 반박하면 **CCTV 와 무관하게** 새 낱말이다.
+        #   종전에는 이 둘이 「없음」과 「거짓:no_cctv_single」로 떨어졌다 —
+        #   그 둘이 `#140` 이 말한 구멍의 실물이고, 이제 닫혔다.
+        ({"cctv_dist_m": 3.0, "width_min_m": 7.85, "road_bt_m": 2.0}, "ledger_disputes"),
+        ({"cctv_dist_m": 76.8, "width_min_m": 9.13, "road_bt_m": 2.0}, "ledger_disputes"),
+        # 대장이 **반박하지 않으면** 옛 분기 그대로다 — 새 낱말이 다 먹지 않는다
+        ({"cctv_dist_m": 3.0, "width_min_m": 7.85, "road_bt_m": 8.0}, "없음"),
+        ({"cctv_dist_m": 76.8, "width_min_m": 9.13, "road_bt_m": 8.0}, "거짓:no_cctv_single"),
+        # 대장 칸이 비면 반박할 자가 없다
         ({"cctv_dist_m": 76.8, "width_min_m": 9.13}, "거짓:no_cctv_single"),
         # CCTV 밖 · 폭이 좁다 → 참인 낱말
         ({"cctv_dist_m": 50.0, "width_min_m": 2.4}, "no_cctv_narrow/thin"),
@@ -144,7 +164,7 @@ def selftest() -> int:
         ({"cctv_dist_m": None, "width_min_m": 9.0}, "거짓:no_cctv_single"),
     ]
     for p, want in cases:
-        got = word_for(p, truck, clear_m, cctv)
+        got = word_for(p, truck, clear_m, cctv, block)
         if got != want:
             bad.append(f"{p} → {got!r} (기대 {want!r})")
     # ★ 빈 그물 — 실물에서 후보를 0개 찾으면 래칫이 늘 0 이다

@@ -2020,6 +2020,12 @@ def test_manifest_writers_go_through_write_stable():
 
     ★ 한 곳만 직접 쓰면 그 파일만 churn 이 남고, 그 자리가 다시
       `git checkout` 을 막는다. **정본이 둘이면 반드시 어긋난다.**
+
+    ★ 2026-10-09 (DECISIONS §445). 이 넷은 **손목록으로 남긴다** — 묻는 것이
+      「이 넷이 통로를 쓰나」(양성 확인)이고 `MASTER §18-4` 가 그 넷을
+      이름으로 든다. 「통로를 **벗어난 자리가 없나**」(음성 확인)는 범위를
+      도출해야 하고, 그것은 아래 `test_no_stamped_json_is_written_directly`
+      가 든다 — 봉인 셋이 이 목록에 없어서 **문이 있는데 안 울었다.**
     """
     bad = []
     for rel in ("ingest.py", "terrain.py", "ortho.py", "webmanifest.py"):
@@ -2031,6 +2037,110 @@ def test_manifest_writers_go_through_write_stable():
             if "_manifest" in code and ".write_text(" in code:
                 bad.append(f"  {rel}: 매니페스트를 직접 쓴다 — {ln.strip()[:60]}")
     assert not bad, ("매니페스트 쓰기가 통로를 벗어났다.\n" + "\n".join(bad))
+
+
+# ── 도장 칸을 든 JSON (2026-10-09 · DECISIONS §445) ───────────
+#: `manifest.STAMP_KEYS` 를 베끼지 않는다 — 아래가 그것을 import 해서 쓴다.
+
+
+def _stamped_direct_writes(root: Path) -> list[str]:
+    """도장 칸을 든 **사전**을 `write_stable` 없이 직접 쓰는 자리.
+
+    ★ **낱말로 세지 않는다.** `"as_of"` 가 주석이나 머리말에 있는 것은 쓰기가
+      아니다 — 그래서 `ast` 로 ① 도장 칸을 든 사전 리터럴이 어느 이름에
+      붙었나 ② 그 이름(또는 사전 리터럴)이 `json.dumps` 를 거쳐
+      `write_text` 로 가나, 둘을 잇는다.
+
+    ★ 오탐 하나를 일부러 비킨다 — `ortho.py` 가 `view.json` 을 직접 쓰는
+      자리는 **도장 칸이 없는 사전**이라 안 걸린다. 파일 단위로 세면 그것이
+      걸리고, 걸리는 쪽이 틀렸다.
+    """
+    import ast as _ast
+
+    from firelane.manifest import STAMP_KEYS
+
+    keys = set(STAMP_KEYS)
+
+    def dkeys(node) -> set[str]:
+        if not isinstance(node, _ast.Dict):
+            return set()
+        return {k.value for k in node.keys
+                if isinstance(k, _ast.Constant) and isinstance(k.value, str)}
+
+    out: list[str] = []
+    for p in sorted([*root.glob("src/firelane/**/*.py"), *root.glob("tools/**/*.py")]):
+        try:
+            tree = _ast.parse(p.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        stamped = {t.id for n in _ast.walk(tree) if isinstance(n, _ast.Assign)
+                   and dkeys(n.value) & keys
+                   for t in n.targets if isinstance(t, _ast.Name)}
+        for n in _ast.walk(tree):
+            if not (isinstance(n, _ast.Call) and isinstance(n.func, _ast.Attribute)
+                    and n.func.attr == "write_text"):
+                continue
+            for d in _ast.walk(n):
+                if (isinstance(d, _ast.Call) and isinstance(d.func, _ast.Attribute)
+                        and d.func.attr == "dumps" and d.args):
+                    a = d.args[0]
+                    if (isinstance(a, _ast.Name) and a.id in stamped) or (dkeys(a) & keys):
+                        out.append(f"{p.relative_to(root).as_posix()}:{n.lineno}")
+    return out
+
+
+def test_no_stamped_json_is_written_directly():
+    """실물 — 도장 칸을 든 JSON 이 **전부** 같은 통로를 지나는가.
+
+    ★ 왜 손목록을 지웠나 — 바로 위 시험이 범위를 넷(`ingest` · `terrain` ·
+      `ortho` · `webmanifest`)으로 손으로 적고 있었다. 봉인 셋을 쓰는
+      `baseline` · `evalgen` · `nfa_compare` 는 그 목록에 없었고, 그래서
+      **문이 있는데 안 울었다** — `deadcheck ②`(손목록)와 `⑤`(좁은 범위)가
+      한 자리에 있는 꼴이고, 이 저장소가 세 번 배운 자리다(§285-2 · §284-4 ·
+      §286). 목록을 손으로 적으면 **자리가 늘 때마다 빠진다.**
+
+    ★ 실측 2026-10-09 — 고치기 **전** 3건, **후** 0건. 0건은 청결이다.
+    """
+    bad = _stamped_direct_writes(ROOT)
+    assert not bad, (
+        "도장 칸(`as_of` · `frozen_at` · `git_sha` · `generated_at`)을 든 JSON 을\n"
+        "**직접** 쓴다 — 매 실행 그 칸만 바뀌어 추적 파일이 더러워진다.\n  "
+        + "\n  ".join(bad)
+        + "\n\n  `firelane.manifest.write_stable(path, obj, tail=\"\\n\")` 로 보내라.\n"
+          "  `git_sha` 는 **직전 커밋**을 적으므로 커밋하면 또 바뀐다 —\n"
+          "  닿을 수 없는 고정점이 되고 열차가 영영 안 닫힌다(DECISIONS §445).")
+
+
+def test_that_axis_bites_synthetic_input(tmp_path):
+    """★ 카나리아 — 합성 결함을 넣어 **우는 것을 본다.** 안 울면 이 축은
+    장식이고, 위 시험의 0건은 「없다」가 아니라 「안 봤다」가 된다."""
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "src" / "firelane").mkdir(parents=True)
+    (tmp_path / "tools" / "bad.py").write_text(
+        'import json\n'
+        'def f(p):\n'
+        '    doc = {"as_of": "x", "n": 1}\n'
+        '    p.write_text(json.dumps(doc), encoding="utf-8")\n',
+        encoding="utf-8")
+    assert _stamped_direct_writes(tmp_path), "합성 결함을 안 운다 — 그물이 비었다"
+
+    # ★ 정상 입력에서는 조용하다. 도장 칸이 **없는** 사전은 직접 써도 된다.
+    (tmp_path / "tools" / "bad.py").write_text(
+        'import json\n'
+        'def f(p):\n'
+        '    doc = {"n": 1}\n'
+        '    p.write_text(json.dumps(doc), encoding="utf-8")\n',
+        encoding="utf-8")
+    assert not _stamped_direct_writes(tmp_path), "도장 칸 없는 사전에 운다 — 오탐"
+
+    # ★ 낱말이 아니라 문법으로 센다. 주석 속 칸 이름은 쓰기가 아니다.
+    (tmp_path / "tools" / "bad.py").write_text(
+        'import json\n'
+        'def f(p):\n'
+        '    # as_of 는 여기서 안 쓴다\n'
+        '    p.write_text(json.dumps({"n": 1}), encoding="utf-8")\n',
+        encoding="utf-8")
+    assert not _stamped_direct_writes(tmp_path), "주석을 쓰기로 센다 — §444-1 과 같은 병"
 
 
 def test_ingest_keeps_manifest_keys_it_does_not_own():

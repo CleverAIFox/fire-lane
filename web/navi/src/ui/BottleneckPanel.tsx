@@ -114,11 +114,9 @@ export function BottleneckPanel(d: Props) {
         <Line k="주차 차량" v="미반영" note="CCTV 영상 판정 전" />
         {/* ★ `d.park ? … : "없음"` 이었다. 그러면 **모르는 것이 「없음」 으로 찍힌다** —
             0 은 세었고 없는 것이고 `null` 은 안 세어진 것이다. `countText` 가 그것을 가른다. */}
-        <Line k="불법주정차 단속 이력" v={countText(d.park, "건")}
-              note="이 도로명 전체 · 2022-01~2025-02 — 지금 주차가 아니다" />
-        <Line k="단속 카메라" v={countText(d.ecam, "지점")}
-              note="이 도로명 전체 · 0 은 「도로명이 붙은 지점 중 없다」다" />
-        <Line k="회전 · 높이" v="미반영" note="회전반경은 참고값 · 판정 안 함" />
+        <Line k="불법주정차 단속 이력" v={countText(d.park, "건")} />
+        <Line k="단속 카메라" v={countText(d.ecam, "지점")} />
+        <Line k="회전 · 높이" v="미반영" />
       </Section>
 
       <Section title="판정 근거">
@@ -135,11 +133,7 @@ export function BottleneckPanel(d: Props) {
         )}
       </Section>
 
-      <div style={honest}>
-        실시간 주정차 · 공사 · 이동 장애물은 반영되지 않았습니다.<br />
-        폭은 도면 기반 미검증 값이며, 회전 및 높이 통과 여부는 판정하지 않습니다.
-      </div>
-
+      {/* ★ 2026-10-09 (§441). 「정직 문단」이 여기 있었다 — `ui/Manual.tsx` 로 옮겼다. */}
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button onClick={d.onShare} style={ghost}>관제에 공유</button>
         <button onClick={d.onReport} style={cta}>통행 불가 신고 »</button>
@@ -211,9 +205,6 @@ const tile: CSSProperties = { background: "#f8fafc", borderRadius: 10, padding: 
 const why: CSSProperties = {
   marginTop: 10, border: "1.5px solid", borderRadius: 10, padding: "9px 11px",
   fontSize: 12, lineHeight: 1.5, background: "#f8fafc",
-};
-const honest: CSSProperties = {
-  marginTop: 12, fontSize: 11, color: C.panelSub, lineHeight: 1.5,
 };
 const x: CSSProperties = {
   background: "none", border: "none", fontSize: 20, cursor: "pointer", color: C.panelSub,

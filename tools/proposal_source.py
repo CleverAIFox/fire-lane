@@ -38,7 +38,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MD = ROOT / "docs" / "proposal.md"
 
-#: 생성물에 심는 지문의 접두. 검사가 이 꼴로 찾는다.
+#: 사람이 보는 보고(`--main`)에만 쓰는 접두. **생성물에 안 심는다.**
+#: ★ 2026-10-09 (§440-8). 종전 주석은 「검사가 이 꼴로 찾는다」였고 **거짓이었다**
+#:   — 찾는 쪽이 없다. 화면에 심어 두고 아무도 안 읽었으므로 심는 쪽을 지웠다.
+#:   `build_proposal --check` 는 화면을 **다시 구워** 통째로 대고, 그 대조가
+#:   지문보다 넓다.
 FINGERPRINT = "firelane-proposal-sha256:"
 
 HEAD = re.compile(r"^(#{1,5})\s+(.+?)\s*$", re.M)

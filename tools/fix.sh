@@ -89,6 +89,9 @@ fix "북마크 죽은 절"    uv run python tools/dms.py prune --apply
 
 # ③ 생성물 ← 정본 ─────────────────────────────────────────────
 fix "기획서 그림"      uv run python tools/docx_figs.py --sync
+# ★ 같은 다섯 그림이 **화면 자리로도** 간다(§440 · PLAN #142). 둘을 같이 돌린다 —
+#   docx 가 은퇴하면 위 줄이 지워지고 이 줄만 남는다. 변환기는 같은 하나다.
+fix "기획서 화면 그림"  uv run python tools/htmlfigs.py --sync
 fix "문서 생성 블록"    uv run python tools/docgen.py
 
 # ④ 래칫 — **맨 뒤.** 위 수리가 실측값을 바꾼다 ────────────────

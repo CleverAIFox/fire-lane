@@ -18,6 +18,7 @@
  * 밖    무엇을 보일지 고르지 않는다. 고르는 것은 `OpsApp.tsx` 다.
  */
 import { D, secBox, tile, shell } from "./opsTheme";
+import { emphasis } from "./motion";
 
 export function Row({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
   return (
@@ -38,12 +39,23 @@ export function Sec({ title, children }: { title: string; children: React.ReactN
   );
 }
 
-export function Tile({ k, v, sub, tone }: { k: string; v: string; sub?: string; tone?: "ok" | "warn" | "danger" }) {
+/**
+ * 상황판 한 칸.
+ *
+ * ★ 2026-10-09 (§441). `urgent` 를 받는다 — **색이 아니라 휘도**로 강조한다.
+ *   `tone` 은 이미 색을 고르고 있고 그 색은 판정 넷과 같은 채널이다. 「급하다」를
+ *   색으로 또 말하면 다섯째 색이 생긴다. 사유는 `ui/motion.ts` 머리말이 든다.
+ */
+export function Tile({ k, v, sub, tone, urgent }: {
+  k: string; v: string; sub?: string; tone?: "ok" | "warn" | "danger"; urgent?: boolean;
+}) {
   const c = tone === "ok" ? D.ok : tone === "warn" ? D.warn : tone === "danger" ? D.danger : D.ink;
+  const em = emphasis(!!urgent);
   return (
     <div style={tile}>
       <div style={{ fontSize: 10.5, color: D.sub, whiteSpace: "nowrap" }}>{k}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, lineHeight: 1.15 }}>
+      <div className={em.className}
+           style={{ fontSize: 18, fontWeight: 800, color: c, lineHeight: 1.15, ...em.style }}>
         {v}{sub && <span style={{ fontSize: 10.5, color: D.sub, fontWeight: 600 }}> {sub}</span>}
       </div>
     </div>

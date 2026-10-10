@@ -30,13 +30,20 @@ from firelane.intake_body import body_file_of
 
 ROOT = Path(__file__).resolve().parents[1]
 
-#: 아직 정본 접근자를 안 거치는 소비자. **줄여야 할 빚이다.**
-#: `triage` 3 · `lakecheck` 2 · `sweep` 1
+#: 아직 정본 접근자를 안 거치는 소비자. **줄여야 할 빚이었고 0 이 됐다.**
 #: ★ 2026-10-08 (DECISIONS §431). `acquire` 둘이 빠졌다 — 4파일 7자리 → 3파일 6자리.
 #:   「선언만 읽는다」는 요구가 생겨 `ledger.files_decl()` 을 세웠고, 유도로
-#:   내려가는 `globs()` 와 쓰임이 갈린다. 남은 셋도 둘 중 하나로 간다.
-DIRECT_READER_FILES = 3
-DIRECT_READER_SITES = 6
+#:   내려가는 `globs()` 와 쓰임이 갈린다.
+#: ★ 같은 날 (DECISIONS §438 · PLAN #160 닫힘) 남은 여섯이 **전부** 그 접근자로
+#:   갔다 — `triage` 3 · `lakecheck` 2 · `sweep` 1. 셋 다 **선언만** 묻는 자리라
+#:   `files_decl()` 이 맞고 `globs()` 가 아니다: 이 셋은 「사람이 뭐라고 적었나」를
+#:   보고 실물과 댄다. `globs()` 는 선언이 없으면 `stem` 에서 만들어 주므로
+#:   그 자리에서 쓰면 **양쪽이 같은 값이 되어 대조가 공집합을 낸다**(§431).
+#: ★ **0 은 「없다」가 아니라 「다시 나면 운다」는 뜻이다.** 0 에서 오르면 누군가
+#:   접근자를 비껴간 것이다 — 그 자리는 대장 80 중 66 이 `stem` 식이라
+#:   **안 보이는 파일을 조용히 놓친다**(§430-2 가 그 꼴을 적었다).
+DIRECT_READER_FILES = 0
+DIRECT_READER_SITES = 0
 
 #: 대장 항목을 받는 이름. 이 저장소가 `e` · `v` · `entry` 로 쓴다.
 _DIRECT = re.compile(r'\b(?:e|v|entry)\b[^\n]{0,12}\.get\(\s*"files"\s*\)')
@@ -140,8 +147,17 @@ def test_the_two_derivers_agree_on_every_dataset() -> None:
 def test_direct_ledger_files_readers_do_not_grow() -> None:
     """`globs()` 를 안 거치는 자가 **늘지 않는다.**
 
-    ★ 이 수는 목표가 아니라 **빚**이다. 줄면 이 상수를 내린다.
+    ★ 이 수는 목표가 아니라 **빚**이었고 2026-10-08 에 **0 이 됐다**(§438).
+
+    ★ **0 이 되면 빈 그물이 새 위험이다.** 정규식이 죽어도 0 이 나오고 그 0 은
+      초록이다. 그래서 아래가 **합성 위반으로 그물이 살아 있는지 먼저 민다** —
+      §69 가 적은 「검사가 항상 통과하는 검사가 되는 자리」다.
     """
+    pos = 'for f in (e.get("files") or []):'
+    assert _DIRECT.findall(_code(pos)), (
+        "합성 위반을 못 잡는다 — 정규식이 죽었고 0 은 **거짓 초록**이다")
+    neg = 'for f in cfg.get("files_v2"):'
+    assert not _DIRECT.findall(_code(neg)), "엉뚱한 글자를 위반으로 센다"
     found = _direct_readers()
     sites = sum(found.values())
     assert (len(found), sites) == (DIRECT_READER_FILES, DIRECT_READER_SITES), (

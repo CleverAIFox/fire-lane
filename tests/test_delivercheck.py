@@ -300,3 +300,148 @@ def test_a_green_sweep_is_empty_even_when_the_body_is_noisy():
     """초록인데 몸통에 `✗` 가 있어도 **축은 0** 이다."""
     green = REAL_OUT.split("══")[0] + "\n  19분02초 · 통과 101 · 실패 0 · 생략 0\n\n"
     assert D.sweep_verdict(0, green)[0] == set()
+
+
+# ── 자기검사를 뗀 뒤의 배선 (2026-10-08 · DECISIONS §436-6) ────────
+# ★ `deliver.py` 가 상한에 붙어 살아 자기검사를 `tools/delivertest.py` 로 뗐다.
+#   뗀 순간 **`--selftest` 가 아무것도 안 불러도 조용하다** — 지연 임포트라
+#   임포트 시점에 안 터지고, 플래그를 안 쓰는 경로는 전부 멀쩡하다.
+#   그 조용함을 이 셋이 깬다.
+# ★ 경로는 **한 줄 리터럴**이다(위 꼬리와 같은 사유 — 배선 탐지가 줄 단위다).
+_tspec = importlib.util.spec_from_file_location("delivertest", ROOT / "tools/delivertest.py")
+
+
+def _delivertest():
+    assert _tspec and _tspec.loader
+    m = importlib.util.module_from_spec(_tspec)
+    sys.modules[_tspec.name] = m
+    _tspec.loader.exec_module(m)
+    return m
+
+
+def test_the_split_selftest_is_still_reachable():
+    """`deliver.py --selftest` 가 **떼낸 파일에 닿는가.**"""
+    src = (ROOT / "tools/deliver.py").read_text(encoding="utf-8")
+    assert "from delivertest import selftest" in src, (
+        "`deliver.py` 가 떼낸 자기검사를 안 부른다 — `--selftest` 가 빈 깡통이 된다")
+    assert "def selftest(" in (ROOT / "tools/delivertest.py").read_text(encoding="utf-8")
+
+
+def test_the_selftest_counts_its_own_arms_from_source():
+    """판별식 수는 **소스에서** 센다 — 손으로 적으면 팔을 더해도 안 따라온다."""
+    m = _delivertest()
+    import inspect
+
+    src = inspect.getsource(m.selftest)
+    arms = src.count("bad.append(")
+    assert arms >= 29, f"판별식이 {arms}개로 줄었다 — 팔을 지웠나"
+    # ★ 셈을 **다른 꼴로 바꾸면 계수기가 눈을 감는다.** `bad += [...]` 로 줄을
+    #   줄이면 수가 조용히 내려간다 — 이 판에서 실제로 그렇게 했다.
+    # ★ 그물을 **리터럴 목록으로 좁힌다.** `bad += zip_items_broken()` 은 팔이
+    #   아니라 **남의 판별식 결과를 합치는 줄**이고, 그것까지 막으면 멀쩡한
+    #   줄에 우는 검사가 된다 — 거짓 경보는 검사를 끄게 만든다.
+    assert "bad += [" not in src, (
+        "판별식을 `bad.append` 가 아닌 꼴로 적었다 — `arms` 가 그것을 못 센다.\n"
+        "  줄이 길면 파일을 쪼개라. 셈의 꼴은 바꾸지 않는다(DECISIONS §436-6)")
+
+
+def test_the_relock_exemption_matches_real_pytest_ids():
+    """★ 면제가 **실물 id** 에 걸리는가. 함수 이름만 적으면 죽은 그물이다."""
+    for name in D.RELOCK_TESTS:
+        nid = f"tests/test_x.py::{name}[some/param.json]"
+        assert D.func_name(nid) == name, f"{nid} 에서 이름을 못 뽑는다"
+    assert D.func_name("tests/a.py::test_b") == "test_b"
+    assert D.func_name("test_c") == "test_c"
+
+
+# ── 외로운 시험 (2026-10-08 · DECISIONS §439 · PLAN #138) ─────────
+def _patch(tmp, name, *paths, names=()):
+    """★ 2026-10-09 (§443-7). `names` 를 **첫 파일의 헌크 안**에 넣는다.
+    종전에는 패치 **맨 뒤**에 붙였고, 그러면 `lonely_tests` 가 시험이 든 줄만
+    보도록 좁힌 뒤로는 그 줄이 **마지막 파일**(문서)의 것이 된다. 먹이는 꼴이
+    실물과 달라지면 그 검사는 제 그물이 아니라 **내 손**을 잰다(§436-6).
+    """
+    q = tmp / name
+    out = []
+    for i, x in enumerate(paths):
+        out.append(f"--- a/{x}\n+++ b/{x}\n")
+        if i == 0:
+            out += [f"+# {n}\n" for n in names]
+    q.write_text("".join(out), encoding="utf-8")
+    return q
+
+
+def test_a_test_only_commit_in_the_middle_is_refused(tmp_path):
+    """★ §258-13 의 사고 — 시험이 앞 커밋, 구현이 뒤 커밋.
+
+    앞 커밋만 실기에 얹히면 `DID NOT RAISE` 가 난다. 예습은 **마지막 상태**만
+    보므로 그 지점을 아무도 서 보지 않는다.
+    """
+    lonely = _patch(tmp_path, "0001-t.patch", "tests/test_x.py", names=("tools/z.py",))
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    bad = D.lonely_tests([lonely, impl])
+    assert bad and "tools/z.py" in bad[0], bad
+
+
+def test_a_test_for_code_that_is_already_there_is_accepted(tmp_path):
+    """★ **이미 있는 코드를 시험하는 커밋은 혼자 초록이다.**
+
+    이 문을 세운 날 제 더미에서 그런 커밋 하나를 잡았다 —
+    `tests/test_figure_ink.py` 는 **앞 커밋에 이미 있는** 그림 코드를 시험한다.
+    문을 세운 자가 첫 손님이 됐고, 그래서 규칙을 좁혔다: 그 시험이 **이름으로
+    드는 파일을 뒤 패치가 건드릴 때만** 외롭다(§258-13 의 실제 꼴이다).
+    """
+    settled = _patch(tmp_path, "0001-t.patch", "tests/test_w.py", names=("tools/w.py",))
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    assert not D.lonely_tests([settled, impl])
+
+
+def test_a_commit_that_brings_its_implementation_is_accepted(tmp_path):
+    """짝이 있으면 그 지점은 혼자 초록이다 — 넓은 문이 되지 않게 민다."""
+    paired = _patch(tmp_path, "0001-tp.patch", "tests/test_y.py", "src/firelane/y.py")
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    assert not D.lonely_tests([paired, impl])
+
+
+def test_the_last_patch_is_not_asked(tmp_path):
+    """마지막 지점은 예습이 **이미 전수로** 본다 — 두 번 세지 않는다."""
+    impl = _patch(tmp_path, "0001-i.patch", "tools/z.py")
+    tail = _patch(tmp_path, "0002-t.patch", "tests/test_z.py")
+    assert not D.lonely_tests([impl, tail])
+    assert not D.lonely_tests([tail]), "패치가 하나면 그것이 마지막이다"
+
+
+def test_docs_do_not_count_as_the_implementation(tmp_path):
+    """★ 문서·산출물은 시험을 초록으로 만들지 않는다 — **여전히 외롭다.**"""
+    withdocs = _patch(tmp_path, "0001-td.patch", "tests/test_x.py",
+                      "docs/DECISIONS.md", "data/golden/x.json",
+                      names=("tools/z.py",))
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    assert D.lonely_tests([withdocs, impl]), "문서를 구현으로 센다"
+
+
+def test_only_the_lines_added_to_tests_name_the_implementation(tmp_path):
+    """★ 2026-10-09 (§443-7). **문서가 든 이름은 시험이 든 것이 아니다.**
+
+    종전에는 패치 **전문**을 댔고, 그래서 같은 커밋의 `docs/` 가 어떤 도구를
+    언급하기만 해도 외로운 시험으로 걸렸다 — 실제로 걸렸다(§442 커밋).
+    「문서는 시험을 초록으로 만들지 않는다」(§439-3)는 축이 **분모에만**
+    적용되고 본문 읽기에는 안 적용되고 있었다.
+    """
+    q = tmp_path / "0001-td.patch"
+    q.write_text("--- a/tests/test_v.py\n+++ b/tests/test_v.py\n+def test_v(): pass\n"
+                 "--- a/docs/DECISIONS.md\n+++ b/docs/DECISIONS.md\n"
+                 "+tools/z.py 를 고쳤다\n", encoding="utf-8")
+    impl = _patch(tmp_path, "0002-i.patch", "tools/z.py")
+    assert "tools/z.py" not in D.test_body(q), "문서 줄을 시험 본문으로 읽는다"
+    assert not D.lonely_tests([q, impl]), "문서가 든 이름을 시험이 든 것으로 센다"
+    # ★ 반대 방향 — 시험이 **직접** 들면 여전히 잡는다
+    named = _patch(tmp_path, "0003-t.patch", "tests/test_x.py", names=("tools/z.py",))
+    assert "tools/z.py" in D.test_body(named)
+    assert D.lonely_tests([named, impl]), "좁히다가 그물이 비었다"
+
+
+def test_paths_come_from_the_diff_header_only(tmp_path):
+    """`git` 을 안 묻는다 — 워크트리·인덱스 없이 파일 하나로 답이 난다."""
+    q = _patch(tmp_path, "0001-x.patch", "a/b.py", "c/d.py")
+    assert D.patch_paths(q) == ["a/b.py", "c/d.py"]

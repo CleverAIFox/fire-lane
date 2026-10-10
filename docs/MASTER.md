@@ -156,14 +156,17 @@ CCTV 25m 안     451  (35.2%)
 
 ### 2-1. `unknown` 400 의 사유
 
-폭 산출 불가는 **0** 이다. 회색은 한 가지 뜻만 갖는다 — 카메라가 없어 못 본다.
+폭 산출 불가는 **0** 이다. ★ 2026-10-08 (DECISIONS §436-1) 종전 이 자리는
+「회색은 한 가지 뜻만 갖는다 — 카메라가 없어 못 본다」고 적었다. 그 말이
+**틀렸다.** 카메라와 무관한 사유가 하나 있다 — 두 원천이 반대로 말하는 자리다.
 
 | 사유 | 구간 | 뜻 |
 |---|---:|---|
 | `no_cctv_band` | 183 | 3~7m 대역. 주정차 여부로 갈리는데 CCTV 25m 밖 |
 | `no_cctv_thin` | 142 | 노면 3m 미만 · 도로대장폭은 3m 이상 — 근거가 하나뿐 |
 | `no_cctv_narrow` | 63 | 노면도 도로대장도 3m 미만이나 벽 사이는 여유 있음 |
-| `no_cctv_single` | 12 | 7m 이상이나 표본 부족으로 통과 확정 보류 |
+| `no_cctv_single` | 11 | 7m 이상이나 표본 부족으로 통과 확정 보류 |
+| `ledger_disputes` | 1 | 노면은 통과인데 도로대장이 반박한다. **카메라와 무관하다** |
 
 **색은 4종 고정이다.** 사유는 회색의 하위 구분이지 다섯 번째 색이 아니다.
 범례에 별도 줄로 올리지 않는다 — 색이 5종으로 보이고 합계도 안 맞아 보인다.
@@ -972,6 +975,15 @@ interim      탐색·대조 산출물. 대장에 없고 지워도 된다
 processed    저장소 안. 4개만 커밋하고 나머지는 재생성
 field        실측 원자료. ★ 재생성 불가. raw 와 같은 등급. 저장소 안
 retired      SSD · 은퇴본(=아카이브). 대장 retired 가 파일 이름 · sha 로 주인이다
+             ★ **은퇴 근거는 셋뿐이고 목록은 닫혀 있다**(DECISIONS §442 · 전수 넷 재훑기).
+               ① 후속이 같은 행을 더 들고 왔다  ② 유일본이라 보존한다
+               ③ 소비자 0곳 — **되돌아올 수 있는 근거다.** 무엇이 생기면 돌아오는지
+                  같이 적는다. 안 적으면 다음 사람이 영구히 죽은 것으로 읽는다
+               「좌표가 없다」는 **목록 밖이다** — 좌표 보유는 레이어의 조건이지
+               테이블의 조건이다. 사유가 좌표를 들면 `join_key` 를 같이 적는다(§435)
+               강제자 — `tests/test_lake.py`
+                 `::test_retiring_for_missing_coordinates_names_the_join_key`
+                 `::test_consumer_zero_names_what_brings_it_back`
 _quarantine  ★ 폐지(2026-09-17). 안의 것은 retired 로 옮겼다. 되살아나면 `레이크 관문` 이 운다
 web/data     표출용. 커밋한다
 data/baseline  ★ 예외. 원본이 소실돼 재생성 불가가 된 산출물만 봉인
@@ -1589,7 +1601,8 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `nfa_designated` | 소방청 지정 기준(연속 100m) 충족 |
 | `cctv_dist_m` | 가장 가까운 CCTV 까지 거리 |
 | `cv_feasible` | CCTV 25m 이내인가 |
-| `unknown_reason` | 회색의 하위 구분. `no_cctv_band` · `no_cctv_thin` · `no_cctv_narrow` · `no_cctv_single` · null |
+| `unknown_reason` | 회색의 하위 구분. `ledger_disputes` · `no_cctv_band` · `no_cctv_thin` · `no_cctv_narrow` · `no_cctv_single` · null. ★ `unknown` **전용**이다 — `blocked` 의 결손 사유는 담지 못하고 그 자리는 `width_fail` 이 든다(DECISIONS §436-3) |
+| `width_fail` | **폭을 못 낸 사유.** `all_xsec`(법선이 전부 평면교차부에 걸려 한 발도 못 쐈다) 등. `unknown_reason` 과 **다른 축**이다 — 저쪽은 회색의 사유, 이쪽은 폭이 빈 사유다(DECISIONS §436-3) |
 | `route_usage` | 최단경로 사용횟수. **통행 가능성이 아니다**(§3-10) |
 | `width_src` | 채택 소스. `ngii1k` · `ngii` · `silpok` 중 하나. 구간 단위 단일 소스 |
 | `width_disagree_m` | 소스 간 최대−최소. **우리 방법 셋끼리만** 잰다 — 같은 자로 세 번 잰 값이다(§4-1a) |
@@ -2842,7 +2855,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 
 ```
 1,281구간 전수 판정과 그 근거
-판정 불가의 사유를 네 가지로 갈라 적었다는 것
+판정 불가의 사유를 다섯 가지로 갈라 적었다는 것
 골목의 65%에 영상판정을 적용할 수 없다는 인프라 사실
 소방용수 654 중 표준데이터 좌표가 있는 것은 동구 445 · 스코프 안 157 이라는 분모 공백
 현행 내비게이션 대비 개선(평가지표 E-1 · E-2 — `tools/evalgen.py` 가 산출한다)
@@ -3004,7 +3017,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,897 전수 · **분모(blank) 0절** · 물림(inherit) 984절.
+★ **강제자 칸의 분모.** 절 1,962 전수 · **분모(blank) 0절** · 물림(inherit) 1,041절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3428,8 +3441,13 @@ uv run python -m firelane.lake gate      이동 · 삭제 전 관문. 막히면 
   | 어떤 임계로 나왔나 | `sources.yaml` + 봉인 `cfg` 칸(`cfg_print` · `sealkeys.INGEST_GLOBAL`) | 정본이 둘이 된다. 임계의 정본은 대장이고 봉인이 이미 그것을 잰다 |
   | 커밋 안 한 채 돌렸나 | `data/_runlog.json`(`datalog.git_state`) | **이미 해 봤고 되돌렸다** — §280-1 에서 `datalog.cmd_record` 가 git 기록을 이 파일에 덮어써 `datasets` 와 봉인 45개를 날렸다. 그 사고의 고침이 `_runlog.json` 분리다 |
 
-  ★ 더 있다. `write_stable` 이 시각을 빼고 대조하는 칸은 `STAMP_KEYS =
-  ("generated_at",)` 하나다. 매 실행 흔들리는 값을 더하면 **매 실행 쓰고**
+  ★ 더 있다. `write_stable` 이 시각을 빼고 대조하는 칸은 `STAMP_KEYS` 가
+  든다 — 2026-10-09 에 **넷**이 됐다(DECISIONS §445). 종전에 「하나다」라고
+  적혀 있었고 그 하나가 `generated_at` 이었다. 매니페스트 **밖**에서도 같은
+  병이 났기 때문이다: 봉인 셋이 `as_of` · `frozen_at` · `git_sha` 로 매 실행
+  더러워졌고, `git_sha` 는 직전 커밋을 적으므로 **닿을 수 없는 고정점**이었다.
+  수를 여기 적지 않는다 — 세는 것은 `manifest.STAMP_KEYS` 와
+  `tests/test_write_stable.py` 다. 매 실행 흔들리는 값을 더하면 **매 실행 쓰고**
   워킹트리가 더러워지며, `webmanifest.SOURCES` 가 이 파일을 바이트 sha256 으로
   담으므로 web 매니페스트까지 같이 갱신된다. `datasets` 안에 넣으면
   `lineage._manifest_digest` 가 그 블록만 해시하므로 **계보 지문이 매 실행
@@ -3442,7 +3460,9 @@ uv run python -m firelane.lake gate      이동 · 삭제 전 관문. 막히면 
 아예 쓰지 않는다. 시각을 지우는 것이 아니라 **안 바뀌었을 때 갱신하지 않는
 것**이며, 재현성 기록으로는 이쪽이 옳다.
 강제자 — `tests/test_guards.py::test_manifest_write_is_idempotent` ·
-`test_manifest_writers_go_through_write_stable`
+`test_manifest_writers_go_through_write_stable` ·
+`test_no_stamped_json_is_written_directly`(범위를 **도출한다** — 매니페스트
+밖에서 같은 병이 난 뒤로 손목록을 안 쓴다 · DECISIONS §445)
 
 ---
 

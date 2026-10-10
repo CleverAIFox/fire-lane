@@ -156,7 +156,10 @@ def test_writing_several_values_in_one_file_does_not_shift(tmp_path: Path, monke
 def test_the_real_tools_declare_ratchets():
     """실물 트리에서 래칫을 실제로 찾는다 — 0개면 「전부 맞다」가 거짓말이다."""
     names = {p.name for p, _ in RT.owners()}
-    for want in ("scopedecl.py", "suppress.py", "sizecheck.py"):
+    # ★ 2026-10-09 (DECISIONS §440-3). `sizecheck.py` → `sizetable.py`. 예외
+    #   표를 떼면서 `RATCHETS` 선언도 **표를 따라갔다** — `ratchet.py` 는 선언한
+    #   **그 파일에** 수를 고쳐 적으므로 둘이 갈리면 `--write` 가 쓸 자리를 잃는다.
+    for want in ("scopedecl.py", "suppress.py", "sizetable.py"):
         assert want in names, f"{want} 가 `RATCHETS` 를 안 선언한다"
 
 

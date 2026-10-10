@@ -51,6 +51,15 @@ VERDICT_RULE = (
     #   `no_cctv` 로 분기하는 소비자는 399건 중 0행을 받는다.
     "needs_cv 인데 CCTV 25m 밖 -> unknown "
     "(reason=no_cctv_narrow|no_cctv_thin|no_cctv_band|no_cctv_single). 영상판정 불가",
+    # ★ 2026-10-08 (DECISIONS §436 · PLAN #140). 일곱째 — 대장이 실측을 반박하면
+    #   확정하지 않는다. §3-3 의 거울이다: 두 근거가 독립으로 **일치**할 때만
+    #   확정하고, **어긋나면** 확정하지 않는다. CCTV 관문보다 앞이다.
+    # ★ 꼴을 지킨다 — 「조건 -> 판정 (사유). 말」. 처음에 산문으로 적었더니
+    #   `figures/structure.py::_verdict_rules` 의 파서가 그 줄을 흘렸고,
+    #   그 도구가 **여덟 중 일곱만 읽었다**고 울었다. 그 울음이 이 줄의 꼴을
+    #   정했다 — 그물을 넓히는 쪽이 아니라 선언을 꼴에 맞추는 쪽이다.
+    "needs_cv 인데 wmin >= 7.0 + ROAD_BT < 3.0 -> unknown "
+    "(reason=ledger_disputes). 대장이 반박한다",
 )
 """판정 규칙의 문언 정본.
 
@@ -62,8 +71,15 @@ VERDICT_RULE = (
 
 ★ 2026-09-29 정정 (DECISIONS §303). 종전에 「마지막 줄만 `segments.py` 가
 CCTV 거리로 적용한다」고 적혀 있었다. **둘이었다** — `[1]`(대장폭 확정)도
-`segments.py` 안이었다. 지금은 일곱 줄 전부 `seg/classify.py` 가 실행하고
+`segments.py` 안이었다. 지금은 **전부** `seg/classify.py` 가 실행하고
 `verdict()` 는 그중 다섯(`[0]` · `[2]`~`[5]`)의 순수 분기다. 강제자 — `tests/test_declaration_sync.py`
+
+★ 2026-10-08 (DECISIONS §436-8). 이 자리에 **「일곱 줄 전부」**라고 수가 적혀
+있었다. 줄이 여덟이 되자 그 수가 거짓이 됐고 **아무 관문도 안 울었다** — 어느
+도구도 산문의 수를 안 센다. 그래서 수를 **지웠다.** 몇 줄인가는
+`classify.IMPLEMENTS` 가 선언하고 `tests/test_classify.py::
+test_covers_every_declared_rule` 이 `len(VERDICT_RULE)` 과 댄다 — 기계가 드는
+수를 산문이 베껴 적으면 사본이 둘이 되고, 갈리는 쪽은 늘 산문이다.
 """
 
 

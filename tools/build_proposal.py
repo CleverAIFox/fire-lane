@@ -44,7 +44,6 @@ PARAM 없음
 from __future__ import annotations
 
 import argparse
-import datetime as _dt
 import html
 import re
 import sys
@@ -60,7 +59,7 @@ OUT = ROOT / "web" / "proposal.html"
 
 #: 와꾸가 반드시 들어야 하는 자리. 하나라도 없으면 **터진다** — 조용히
 #: 반쪽짜리를 굽느니 안 굽는 쪽이 낫다.
-SLOTS = ("title", "stamp", "built", "tabs", "toc", "panes", "script")
+SLOTS = ("title", "tabs", "toc", "panes", "script")
 
 #: 와꾸가 제 몫으로 더하는 제목 수. 완전성 자가 이것을 알고 뺀다.
 FRAME_HEADS = 0
@@ -198,10 +197,6 @@ def build() -> str:
     out = tpl
     for name, value in (
         ("title", html.escape(title)),
-        ("stamp", PS.FINGERPRINT + PS.fingerprint()),
-        # ★ `date.today()` 가 아니다 — `.ruff-strict.toml` 의 DTZ011 이 문다.
-        #   저장소 관례는 `now(UTC).astimezone()` 이다(`guards.py` · `ingest.py`).
-        ("built", _dt.datetime.now(_dt.UTC).astimezone().date().isoformat()),
         ("tabs", "".join(tabs)),
         ("toc", nav),
         ("panes", "".join(bodies)),
@@ -275,10 +270,10 @@ def main(argv=None) -> int:
         print("✗ web/proposal.html 이 없다 — 구운 적이 없다")
         return 2
     cur = OUT.read_text(encoding="utf-8")
-    # ★ 구운 날짜 한 줄은 대조에서 뺀다. 그 줄 때문에 **날마다 빨개지면**
-    #   사람이 이 관문을 끈다 — 오탐이 본문을 덮는다(§18-13).
-    norm = lambda s: re.sub(r"구운 날 \d{4}-\d{2}-\d{2}", "구운 날 —", s)
-    if norm(cur) != norm(made):
+    # ★ 2026-10-09 (§440-8). 종전에는 「구운 날」 한 줄을 대조에서 빼는 정규화가
+    #   있었다. 그 줄을 **화면에서 지웠으므로** 뺄 것이 없다 — 날마다 바뀌는
+    #   자리가 없어졌고, 그래서 대조가 **통째로** 산다.
+    if cur != made:
         print("✗ web/proposal.html 이 정본과 다르다 — `uv run python tools/build_proposal.py`")
         # ★ 환경변수의 **유일한 독자는 `paths.py`** 다(§222-3). `env_check` 가
         #   「paths.py 밖에서 os.environ 금지」를 문법으로 강제한다 — 첫 판이

@@ -44,6 +44,8 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from firelane import gitq
+
 ROOT = Path(__file__).resolve().parents[1]
 TIMEOUT = 120
 WORKERS = 6
@@ -107,6 +109,17 @@ def _run(p: Path) -> tuple[Path, int, str]:
     return p, r.returncode, (r.stdout + r.stderr).strip()
 
 
+def _dirty() -> list[str] | None:
+    """더러운 파일 목록. **못 물으면 `None`** — 빈 목록과 다른 사실이다.
+
+    ★ `firelane.gitq` 를 쓴다. 처음에는 여기서 `subprocess` 를 직접 부르고
+      실패를 `""` 로 바꿨는데, `deadcheck ③`(조용한 통과)이 그 자리를 잡았다 —
+      **빈 우주가 초록이 된다**(§372). 회색 = NULL 은 판정에서만이 아니라
+      도구에서도 지킨다.
+    """
+    return gitq.dirty(ROOT)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--list", action="store_true")
@@ -128,8 +141,18 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     print(f"── 자기검사 {len(run)}개 (건너뜀 {len(skipped)})")
+    # ★ 2026-10-09 (DECISIONS §443-6). **자기검사는 트리를 안 흔든다.**
+    #   하룻밤에 두 번 같은 실수를 했다 — 판별식을 밀려고 실물 파일을 고쳤다
+    #   되돌리는 꼴이다. 되돌려도 **그 사이**가 있다. 위 `ThreadPoolExecutor`
+    #   가 도구를 **동시에** 돌리므로 그 사이에 남이 그 파일을 읽고, 배달
+    #   기계는 「추적 파일에 변경이 있다」를 본다.
+    #   ★ 기억으로 막는 규율은 두 번째에 깨진다. 그래서 **센다.**
+    was = _dirty()
     with ThreadPoolExecutor(max_workers=WORKERS) as ex:
         res = list(ex.map(_run, run))
+    now = _dirty()
+    if was is None or now is None:
+        print("   (트리 대조 건너뜀 — git 에게 못 물었다. **깨끗하다는 뜻이 아니다**)")
     bad = []
     for p, rc, out in sorted(res, key=lambda x: x[0].name):
         rel = p.relative_to(ROOT).as_posix()
@@ -142,6 +165,14 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"      {line}")
     for p in skipped:
         print(f"  · {p.relative_to(ROOT).as_posix()} 건너뜀 — {SKIP[p.stem]}")
+    if was is not None and now is not None and was != now:
+        moved = sorted(set(now) ^ set(was))
+        print("\n★ **자기검사가 트리를 흔들었다** — 돌기 전과 뒤가 다르다")
+        for x in moved[:12]:
+            print(f"      {x}")
+        print("   자기검사는 **읽기만** 한다. 판별식을 순수 함수로 떼고 합성 입력으로 밀어라 —")
+        print("   되돌리더라도 그 사이에 남이 그 파일을 읽는다(동시에 돈다).")
+        return 1 + len(bad)
     if bad:
         print(f"\n★ 자기검사 {len(bad)}개가 빨갛다 — {', '.join(bad)}")
         print("  자기검사가 빨갛다는 것은 **그 도구의 판정을 믿을 수 없다**는 뜻이다.")
