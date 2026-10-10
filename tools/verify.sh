@@ -908,6 +908,13 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --ratchet
 scope "tools/* tests/*"
 step "강제자 범위 선언" uv run python tools/scopedecl.py
 
+# ★ 2026-10-09 (DECISIONS §445 · PLAN #56 ① 닫힘). 위 단계가 「강제자가 **어디까지**
+#   보는가」를 물으면, 이 단계는 「그 강제자가 **합성 결함으로 울어 본 적 있는가**」를
+#   묻는다. 판별식과 `deadcheck` 프로브로 안 둔 사유는 `tools/canary.py` 머리말이
+#   든다 — 여기 옮겨 적지 않는다(§445 · 족 2).
+scope "tools/* tests/*"
+step "카나리아" uv run python tools/canary.py
+
 # ★ 2026-10-05 (DECISIONS §398). 도구 138개의 **부류**. 관문은 verify · CI 가
 #   부르는가로 **도출**하고, 나머지만 머리말이 선언한다. 도출과 선언이 어긋나면
 #   운다 — 도출이 이기지 않는다.
