@@ -12337,22 +12337,22 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3345de84dd9b898d",
-   "7350acc57acdd5bb",
-   "7eae3f757bb4324d",
-   "a9f519025ba17362"
+   "367af2dcf908fc9f",
+   "4aee4f7179c7fad5",
+   "51ebbd61b1846613",
+   "feb32977702859bc"
   ],
   "parts": {
    "sources.yaml": "240e629db351ad4c",
    "tests/test_declaration_sync.py": "32b6a4408180f43d",
-   "tests/test_verify_scope.py": "574ab31ada4cfe79",
+   "tests/test_verify_scope.py": "86cff8a0cf2c0d82",
    "tools/fix.sh": "7f938285bab7c4f6",
    "tools/plan_renumber.py": "9a107f7f20b64e95",
    "tools/tidy.py": "e3ffa130c52a1e7f",
    "tools/widthcross.py": "86222258e4d521eb",
-   "본문": "c1c2fa0013b1b1fb"
+   "본문": "d8837686593e6c09"
   },
-  "sha": "a9f519025ba17362"
+  "sha": "51ebbd61b1846613"
  },
  "PLAN/10-1": {
   "doc": "docs/PLAN.md",
@@ -12403,21 +12403,25 @@
  "PLAN/10-3": {
   "doc": "docs/PLAN.md",
   "files": [
+   "tests/test_verify_scope.py",
    "tools/fix.sh",
    "tools/plan_renumber.py"
   ],
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "92fa644e7c7dec26",
-   "cdd9cb944dd053f4"
+   "0b36bd84981f2060",
+   "590af8105b2923e0",
+   "907072d1f209231b",
+   "e76c7f74f64c22a6"
   ],
   "parts": {
+   "tests/test_verify_scope.py": "86cff8a0cf2c0d82",
    "tools/fix.sh": "7f938285bab7c4f6",
    "tools/plan_renumber.py": "9a107f7f20b64e95",
-   "본문": "0f4b7c53ced18eb6"
+   "본문": "e7e09252abbf8d0b"
   },
-  "sha": "cdd9cb944dd053f4"
+  "sha": "907072d1f209231b"
  },
  "PLAN/10-4": {
   "doc": "docs/PLAN.md",
