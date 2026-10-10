@@ -75,6 +75,19 @@ def code_closure(start: str = "firelane.ingest") -> list[Path]:
     return sorted(set(seen.values()))
 
 
+#: **「이 문자열 문장이 docstring 인가」의 정본.** 두 로직 지문기가 같이 든다.
+#:
+#: ★ 2026-10-10 (DECISIONS §451 · PLAN #164 닫힘). 종전에 `logic_print` 는
+#:   **몸통을 가진 모든 노드**의 첫 문자열을 걷고 `golden.logic_text` 는 이 넷만
+#:   걷었다. `if` 몸통 첫 줄의 맨 문자열이 한쪽에는 로직이고 다른 쪽에는 주석이다 —
+#:   **같은 물음에 다른 답**이고 그것이 족 3 이다. 좁은 쪽으로 합쳤다.
+#: ★ 합쳐도 **지문이 한 글자도 안 움직인다.** 실측 — 추적 `.py` 390개 전부에서
+#:   두 규칙의 답이 같았다(그런 맨 문자열이 0건). 그래서 재잠금을 기다릴 일이
+#:   아니었다. 「봉인에 박혀 있어 못 합친다」는 **재 보기 전의 짐작**이었다.
+#: ★ 판별은 `ast.get_docstring` 이 든다 — 손으로 다시 짜지 않는다(족 4).
+DOC_OWNERS = (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+
+
 def logic_print(p: Path) -> str:
     """파일의 **로직** 지문. 주석 · docstring 을 뺀 AST 로 잰다.
 
@@ -89,15 +102,17 @@ def logic_print(p: Path) -> str:
       `golden.logic_text` 는 둘 다 `''` 로 「같다」고 말하는데 여기는 「다르다」고
       말했다. **같은 물음에 두 지문기가 다른 답**이고 그것이 족 3 이다.
       이제 **빈 몸통도 똑같이** `[Pass()]` 로 맞춘다.
+
+    ★ 2026-10-10 (DECISIONS §451 · PLAN #164 닫힘). 「무엇이 docstring 인가」는
+      이제 `DOC_OWNERS` 하나가 든다. 종전에는 이 함수가 제 규칙을 따로 들고
+      있었고 그것이 `golden.logic_text` 보다 **넓었다.**
     """
     tree = ast.parse(p.read_text(encoding="utf-8"))
     for node in ast.walk(tree):
         body = getattr(node, "body", None)
         if not isinstance(body, list):
             continue
-        if (body and isinstance(body[0], ast.Expr)
-                and isinstance(getattr(body[0], "value", None), ast.Constant)
-                and isinstance(body[0].value.value, str)):
+        if isinstance(node, DOC_OWNERS) and ast.get_docstring(node) is not None:
             body = body[1:]
         node.body = body or [ast.Pass()]
     return _short(ast.dump(tree, include_attributes=False))
