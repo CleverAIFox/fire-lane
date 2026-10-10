@@ -72,7 +72,7 @@ def disposed(y: dict) -> list[str]:
       이 검사 전체를 끌 수 있다. 사유를 강제하면 그것을 적는 순간
       사람 눈에 띈다 — 이름만 적어 입을 막는 길을 닫는다.
     """
-    d = (y.get("landing_disposition") or {}).get("items") or []
+    d = ledger.disposed(y)      # ★ 읽는 자리는 하나다 (PLAN #55 ① · §453)
     return [str(it["file"]) for it in d
             if isinstance(it, dict) and it.get("file")
             and str(it.get("why") or "").strip()]
@@ -135,7 +135,7 @@ def l2(D: Path, y: dict) -> None:
     raw = {p.name: p for p in (D / "raw").rglob("*") if p.is_file()}
     # 대장이 격리를 정당화하는 근거 — retired 의 stem · file · files
     ok: set[str] = set()
-    for v in (y.get("retired") or {}).values():
+    for v in ledger.retired(y).values():
         if not isinstance(v, dict):
             continue
         if v.get("stem"):
@@ -332,7 +332,7 @@ def l7(D: Path, y: dict) -> None:
         # `files` 는 글롭이다 — 파일명 부분만 떼어 아래 fnmatch 가 쓴다
         globs.update(Path(str(f)).name.lower() for f in ledger.files_decl(v))  # DECISIONS §438
     # 은퇴도 선언이다 — 「모른다」가 아니라 「사유와 함께 안 쓴다」다
-    for k, v in (y.get("retired") or {}).items():
+    for k, v in ledger.retired(y).items():
         known.add(str((v or {}).get("stem") or k).lower() if isinstance(v, dict) else k.lower())
     # ★ landing 처분도 선언이다. `202608_상세주소DB_전체분.zip` 은 2026-08-30 에
     #   `landing_disposition` 으로 판단이 끝났는데(승인 계열 · 우선순위 낮음)

@@ -288,6 +288,28 @@ def absence(e: dict | None) -> tuple[str, str]:
     return "none", ""
 
 
+def retired(y: dict | None = None) -> dict:
+    """폐기 블록. **읽는 자리는 여기 하나다**(2026-10-10 · PLAN #55 ① · §453).
+
+    ★ `load_sources` 와 같은 사유다 — 열한 파일이 `y.get("retired")` 를 저마다
+      읽었고 `or {}` 가 있는 쪽과 없는 쪽이 갈려 있었다. 빈 블록에서 한쪽은
+      `{}` 를, 다른 쪽은 `None` 을 낸다.
+    ★ 인자를 받는 이유 — 부르는 쪽이 이미 대장을 읽었으면 두 번 읽지 않는다.
+      합성 대장을 넣는 시험도 같은 문을 쓴다.
+    """
+    return (y if y is not None else load_sources()).get("retired") or {}
+
+
+def disposed(y: dict | None = None) -> list:
+    """`landing_disposition.items`. 위와 같은 사유 — 파일 없는 기각 기록이다.
+
+    ★ **`retired` 와 다른 블록이다.** 저쪽은 파일이 있는 보관본이고 이쪽은
+      파일이 없는 처분 기록이다(MASTER §18-3c). 한 함수로 합치지 않는다.
+    """
+    d = (y if y is not None else load_sources()).get("landing_disposition") or {}
+    return d.get("items") or []
+
+
 def is_acquisition_meta(p) -> bool:
     """취득 기록인가. `prep` 과 `ingest` 가 **같은 규칙**을 봐야 한다.
 

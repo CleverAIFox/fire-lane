@@ -47,6 +47,17 @@ NOT_INGEST_GLOBAL: dict[str, str] = {
     # 기계에서 `ngii_road` 재빌드는 거의 반드시 OOM 이다(§216-1 · §243 · §396-7).
     # 제원이 바뀐 것은 `golden.py check` 가 든다 — 산출이 달라지므로 거기서 운다.
     "vehicle_spec": "판정만 쓴다. 접근자가 ledger 에 살아서 글자만 보인다",
+    # ★ 2026-10-10 (DECISIONS §453 · PLAN #55 ①). `vehicle_spec` 과 **같은 자리**다 —
+    #   접근자 `ledger.retired()` · `ledger.disposed()` 를 `ledger.py` 에 세우자
+    #   폐포에 글자가 보였다. 읽는 쪽은 `lakecheck`(격리가 되살아났나) ·
+    #   `intake`(판단이 끝난 원본을 다시 묻지 않는다) · `doctor`(처분이 끝난 것을
+    #   「대기 중」으로 세지 않는다) 셋이고 **전부 폐포 밖**이다.
+    #   ingest 는 `datasets` 를 읽고 폐기 항목은 투입하지 않는다 — 폐기 한 줄에
+    #   72샤드가 찢어지면 8GB 기계에서 `ngii_road` 는 거의 반드시 OOM 이다.
+    #   ★ 폐기가 **실물을 움직이면** 그것은 `raw` 칸이 잡는다. 이 두 블록은
+    #     「무엇을 안 쓰기로 했나」의 기록이고 산출에 한 바이트도 안 닿는다.
+    "retired": "폐기 기록이다. 읽는 셋이 전부 폐포 밖이고 ingest 는 datasets 만 투입한다",
+    "landing_disposition": "파일 없는 처분 기록이다. 위와 같은 사유 — 산출에 안 닿는다",
 }
 
 # ★ 2026-10-05 (DECISIONS §397). 전역 칸 **안에서** ingest 가 안 읽는 하위 칸.

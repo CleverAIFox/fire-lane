@@ -65,8 +65,6 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import yaml
-
 from firelane import ledger as _led
 from firelane import naming as nm
 from firelane.paths import LANDING, ROOT
@@ -103,9 +101,8 @@ def ledger_shas() -> set[str]:
 
 
 def sources_index() -> dict[str, dict]:
-    f = ROOT / "sources.yaml"
-    d = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
-    return d.get("datasets", {})
+    # ★ 2026-10-10 (PLAN #55 ① · §453). 읽는 자리는 `ledger` 하나다.
+    return _led.load_sources().get("datasets") or {}
 
 
 def _retired() -> dict:
@@ -116,10 +113,11 @@ def _retired() -> dict:
       `--force` 를 쓰게 되고, 그 순간 관문이 죽는다 — 같은 파일 123행이
       "관문은 정확해야 한다. 정상 파일을 막으면 사람이 --force 를 쓴다"
       고 스스로 적어놓은 그 자리다.
+
+    ★ 2026-10-10 (PLAN #55 ① · §453). 블록을 직접 읽던 것을 `ledger.retired()`
+      로 돌렸다 — 열한 파일이 저마다 읽었고 `or {}` 가 갈려 있었다.
     """
-    f = ROOT / "sources.yaml"
-    d = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
-    return d.get("retired", {}) or {}
+    return _led.retired()
 
 
 def retired_hit(name: str) -> str | None:
