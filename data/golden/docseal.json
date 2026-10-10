@@ -8892,6 +8892,26 @@
   },
   "sha": "a761ef2dd19489c8"
  },
+ "DECISIONS/454": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/publish_web.py",
+   "src/firelane/seg/params.py",
+   "tools/plan_renumber.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "3a54ef55d06a1792"
+  ],
+  "parts": {
+   "src/firelane/publish_web.py": "7630afd044e6c2d2",
+   "src/firelane/seg/params.py": "53df7ea2ea107fd6",
+   "tools/plan_renumber.py": "9a107f7f20b64e95",
+   "본문": "eb538a0f46e486d9"
+  },
+  "sha": "3a54ef55d06a1792"
+ },
  "DECISIONS/46": {
   "doc": "docs/DECISIONS.md",
   "files": [
@@ -10549,14 +10569,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3156660f924e44ab",
-   "57bcd0f93d06d363",
-   "64995657cbbe39ec",
-   "6af54382839afbb2",
-   "8315c6142b33fd96",
-   "86ebf6237db11164",
-   "ba983d736eb048da",
-   "fece93755c481e79"
+   "014794043999cdc1",
+   "08a81f723e1c96ec",
+   "2f6304265a152eb2",
+   "60eb65f91b89a4b3",
+   "70f597a20e38fad9",
+   "aa7007416ffc8086",
+   "d8fed80b0b1ad84b",
+   "df52cff148652716"
   ],
   "parts": {
    ".devcontainer/devcontainer.json": "8263815938062a90",
@@ -10582,9 +10602,9 @@
    "web/config.js": "23bfa37126ca4405",
    "web/navi/src/domain/vehicle.ts": "5fada2911d0cbec0",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "6d8fb5ce2dd588b8"
+   "본문": "ea45a53693de7fed"
   },
-  "sha": "8315c6142b33fd96"
+  "sha": "aa7007416ffc8086"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -12158,19 +12178,19 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "4b384e1cb2919dc3",
-   "7bc396dc72747c8b",
-   "bd6c3b13b9dadf0a",
-   "e6f0a42d30271170"
+   "1469c064d8c5ffa0",
+   "326b16698e7d5c1e",
+   "aeff30c1bdeda3f4",
+   "e3967ed516ea4202"
   ],
   "parts": {
    "tests/test_declaration_sync.py": "32b6a4408180f43d",
    "tools/plan_renumber.py": "9a107f7f20b64e95",
    "tools/tidy.py": "e3ffa130c52a1e7f",
    "tools/widthcross.py": "86222258e4d521eb",
-   "본문": "21901a164ac045b2"
+   "본문": "431cbaa20cd8804f"
   },
-  "sha": "4b384e1cb2919dc3"
+  "sha": "e3967ed516ea4202"
  },
  "PLAN/10-1": {
   "doc": "docs/PLAN.md",
