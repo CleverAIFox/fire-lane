@@ -133,7 +133,8 @@ export function BottleneckPanel(d: Props) {
         )}
       </Section>
 
-      {/* ★ 2026-10-09 (§441). 「정직 문단」이 여기 있었다 — `ui/Manual.tsx` 로 옮겼다. */}
+      {/* ★ 2026-10-09 (§445). 「정직 문단」이 여기 있었다 — **화면에 없다.**
+          집은 `MASTER §15-4`(판정이 안 보는 것)다. */}
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button onClick={d.onShare} style={ghost}>관제에 공유</button>
         <button onClick={d.onReport} style={cta}>통행 불가 신고 »</button>

@@ -22,7 +22,8 @@ import type { GraphEdge, VehicleSpec } from "../domain/types";
 import { GRAY_REASON } from "./verdictMeaning";
 
 /** 화면이 「무엇을 보여주는가」 를 한 줄로 말할 때 쓰는 정의. 그대로 찍는다 */
-export const CLEARANCE_FORMULA = "여유폭 = 최소 유효폭 − 요구폭(전폭 + 필요 여유)";
+// ★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). `CLEARANCE_FORMULA` 를 **지웠다** —
+//   화면에 뺄셈 식을 띄우던 한 줄이다. 식의 집은 `MASTER §2` 다.
 
 /** 여유폭 4단(+ 폭 미상)의 색과 이름. 범례와 지도가 같은 것을 읽는다 */
 export const CLEARANCE_SCALE: Record<ClearanceBand, { short: string; label: string; color: string }> = {

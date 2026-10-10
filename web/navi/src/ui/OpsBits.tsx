@@ -17,7 +17,8 @@
  * OUT   조각 넷
  * 밖    무엇을 보일지 고르지 않는다. 고르는 것은 `OpsApp.tsx` 다.
  */
-import { D, secBox, tile, shell } from "./opsTheme";
+import { D, LAYER, secBox, tile, shell } from "./opsTheme";
+import type { Tier } from "./opsTheme";
 import { emphasis } from "./motion";
 
 export function Row({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
@@ -30,10 +31,14 @@ export function Row({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
   );
 }
 
-export function Sec({ title, children }: { title: string; children: React.ReactNode }) {
+export function Sec({ title, children, tier = "pick" }: {
+  title: string; children: React.ReactNode; tier?: Tier;
+}) {
+  // ★ 2026-10-09 (§445 · #143). 층은 **휘도**다 — 사유는 `opsTheme.LAYER` 가 든다.
   return (
-    <section style={secBox}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, letterSpacing: .6, marginBottom: 8 }}>{title}</div>
+    <section style={{ ...secBox, ...LAYER[tier] }}>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .6, marginBottom: 8,
+                    color: tier === "idle" ? "#55657e" : tier === "act" ? D.ink : D.sub }}>{title}</div>
       {children}
     </section>
   );
@@ -51,9 +56,12 @@ export function Tile({ k, v, sub, tone, urgent }: {
 }) {
   const c = tone === "ok" ? D.ok : tone === "warn" ? D.warn : tone === "danger" ? D.danger : D.ink;
   const em = emphasis(!!urgent);
+  // ★ 2026-10-09 (§445 · #143). 색이 안 붙은 칸은 **쉬는 칸**이다 — 평시에
+  //   셋이 다 0 이고 같은 밝기로 자리를 먹었다. 휘도를 내려 무게를 뺀다.
+  const tier: Tier = tone ? "pick" : "idle";
   return (
-    <div style={tile}>
-      <div style={{ fontSize: 10.5, color: D.sub, whiteSpace: "nowrap" }}>{k}</div>
+    <div style={{ ...tile, ...LAYER[tier] }}>
+      <div style={{ fontSize: 10.5, color: tier === "idle" ? "#55657e" : D.sub, whiteSpace: "nowrap" }}>{k}</div>
       <div className={em.className}
            style={{ fontSize: 18, fontWeight: 800, color: c, lineHeight: 1.15, ...em.style }}>
         {v}{sub && <span style={{ fontSize: 10.5, color: D.sub, fontWeight: 600 }}> {sub}</span>}

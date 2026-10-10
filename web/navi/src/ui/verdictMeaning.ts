@@ -13,12 +13,10 @@
  */
 export const VERDICT_ORDER = ["clear", "needs_cv", "blocked", "unknown"] as const;
 
-export const VERDICT_MEANING: Record<string, string> = {
-  clear: "영상판정 없이 통행 가능",
-  blocked: "영상판정 없이 통행 불가",
-  unknown: "영상판정 불가 — CCTV 25m 밖",
-  needs_cv: "영상판정 대상 — 판정 뒤 초록 또는 빨강",
-};
+// ★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). `VERDICT_MEANING` 을 **지웠다.**
+//   범례에 색마다 한 줄 설명을 달던 표다(4색 × 한 줄). 라벨이 이미 그 말을
+//   한다(`web/config.js` — 통행 가능 · 확인 필요 · 통행 불가 · 영상판정 불가)
+//   — 같은 말을 두 번 하는 자리였고, 출동 중 화면에서 읽을 거리는 탐색 시간이다.
 
 /**
  * 회색이 **왜** 회색인가.  (DECISIONS §215-2)

@@ -141,20 +141,19 @@ def test_the_two_honest_lines_moved_and_are_still_reachable():
     ★ 글자를 그대로 대지 않는다. 옮기면서 세 곳에 조금씩 다르던 문장을 하나로
       합쳤다(족 2). 그래서 **낱말**로 댄다 — 무엇을 안 보는지가 남았는가.
     """
-    man = (SRC / "ui" / "Manual.tsx").read_text(encoding="utf-8")
+    # ★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). 집이 **문서**다 —
+    #   화면 → 시트 → `MASTER §15-4`. 뜻은 하나도 안 바뀌었다.
+    doc = (ROOT / "docs" / "MASTER.md").read_text(encoding="utf-8")
+    sec = doc[doc.index("### 15-4."):doc.index("### 15-3.")]
     for need in ("실시간 주정차", "공사", "회전", "높이", "미검증"):
-        assert need in man, (
-            f"「읽는 법」에서 「{need}」 가 사라졌다.\n"
-            "  판정이 무엇을 안 보는지 남기는 자리다(DECISIONS §86-5 · §441).")
+        assert need in sec, (
+            f"MASTER §15-4 에서 「{need}」 가 사라졌다.\n"
+            "  판정이 무엇을 안 보는지 남기는 자리다(DECISIONS §86-5 · §445).")
+    # ★ **화면에는 없어야 한다.** 옮겼다고 적고 양쪽에 두면 §441 의 그 병(정본이 둘)이다.
     for app in ("OpsApp.tsx", "App.tsx"):
         src = (SRC / app).read_text(encoding="utf-8")
-        if "<ManualSheet" not in src:
-            continue
-        assert "<ManualButton" in src, f"{app} 가 시트만 두고 **여는 단추가 없다**(§441-3)"
-        break
-    else:
-        raise AssertionError("어느 화면도 「읽는 법」을 안 띄운다 — 옮긴 고지가 안 열린다(§441-3)")
-
+        assert "ManualSheet" not in src and "ManualButton" not in src, (
+            f"{app} 가 「읽는 법」을 다시 띄운다 — 매뉴얼은 화면에 안 둔다(§445)")
 
 def test_the_injected_badge_reads_the_fact_not_the_table():
     """★ 2026-09-24 (PLAN §13 W13-3). 「시연」 표지가 **정적 표**를 보고 있었다.
