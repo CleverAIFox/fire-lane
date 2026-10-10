@@ -49,14 +49,13 @@ VERDICT_RULE = (
     #   no_cctv_narrow · _thin · _band · _single) 같은 스키마의 `unknown_reason`
     #   필드 서술은 넷을 옳게 적고 있었다. 한 파일이 두 곳에서 다르게 말했다.
     #   `no_cctv` 로 분기하는 소비자는 399건 중 0행을 받는다.
-    # ★ 2026-10-10 (DECISIONS §455-9). 종전 이 줄은 「CCTV **25m** 밖」이었다.
-    #   `CCTV_RANGE` 가 19.0 으로 내려가자 이 문장이 **거짓**이 됐고, 그 거짓이
-    #   발행 스키마(`web/data/segments.schema.json`)와 기획서 그림까지 갔다.
-    #   **규칙 문언에 값을 적지 않는다** — 값은 `seg/params.py` 가 들고 이 줄은
-    #   그 이름을 든다. f-string 으로 끼우는 길은 막혀 있다:
-    #   `figures/structure.py::_verdict_rules` 가 이 상수를 **AST 리터럴**로
-    #   읽으므로(일부러 임포트를 안 한다) f-string 이면 그 도구가 못 읽는다.
-    "needs_cv 인데 CCTV 유효범위(CCTV_RANGE) 밖 -> unknown "
+    # ★ 2026-10-10 (DECISIONS §455-9). `CCTV_RANGE` 25.0 → 19.0 과 **같이** 고친다.
+    #   값이 문장 안에 있는 것은 사본이지만 **지키는 자가 있다** —
+    #   `tests/test_schema_self_consistent.py::test_the_numbers_in_the_rules_come_
+    #   from_the_constants`(R7)가 「문언이 든 수 ⊇ {TRUCK, TRUCK+2*PARK, CCTV_RANGE}」
+    #   를 강제한다. 상수만 내리면 그 자가 운다 — 실제로 울어서 이 줄을 찾았다.
+    #   값을 빼는 길은 막혀 있다: 빼면 그 자가 「상수가 안 보인다」로 운다.
+    "needs_cv 인데 CCTV 19m 밖 -> unknown "
     "(reason=no_cctv_narrow|no_cctv_thin|no_cctv_band|no_cctv_single). 영상판정 불가",
     # ★ 2026-10-08 (DECISIONS §436 · PLAN #140). 일곱째 — 대장이 실측을 반박하면
     #   확정하지 않는다. §3-3 의 거울이다: 두 근거가 독립으로 **일치**할 때만

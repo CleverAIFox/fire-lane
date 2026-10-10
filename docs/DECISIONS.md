@@ -32852,18 +32852,41 @@ docs/figures/verdict_flow.svg   그림 14                기획서에 실린다
 tests/test_contract.py          규칙 여덟 줄 주석       시험이 적어둔 사본
 ```
 
+★ **자 넷이 이 상수를 붙잡고 있었다.** 25.0 → 19.0 하나가 넷을 동시에 울렸다 —
+  그 넷이 이 판에서 고친 자리의 목록이다.
+
+```
+test_the_numbers_in_the_rules_come_from_the_constants   규칙 문언 ⊇ 상수      R7
+test_the_constants_did_not_move_while_the_switches_did  카나리아 — 손으로 고친다
+test_fact_consumers_follow_owner[cctv_range_m]          사실 소비자 둘이 갈렸다
+tools/render_figures.py --check                         그림이 옛 값을 그린다
+```
+
+  카나리아는 **자동으로 안 따라온다** — 그것이 그 시험의 일이다(「스위치를
+  옮기면서 숫자를 건드리지 않았는가」). 손으로 고치면서 사유를 적는 자리다.
+  사실 소비자 둘은 `src/firelane/seg/vehicle.py`(지난 일을 적은 산문) 과
+  `src/firelane/segments.py`(머리말 `PARAM` 줄)였다. 앞쪽은 **지난 값을 지우지
+  않고** 지금 값을 나란히 적었다 — 그 문장은 2026-09-29 의 기록이다.
+
 값이 문장 안에 박혀 있으니 **상수를 내리면 넷이 동시에 거짓**이 된다.
 `CCTV_RANGE` 를 19.0 으로 내린 것이 그 넷을 거짓으로 만들었고, 그중 하나는
 우리가 외부에 내보내는 스키마다.
 
-★ **규칙 문언에 값을 적지 않는다.** 값은 `src/firelane/seg/params.py` 가 들고
-  규칙은 그 **이름**을 든다 — 「CCTV 유효범위(`CCTV_RANGE`) 밖」. 규칙은 값이
-  무엇이든 참이다.
+★ **처음에 값을 뺐다 — 그것이 틀렸다.** 「규칙 문언에 값을 적지 않는다」로
+  고쳐 「CCTV 유효범위(`CCTV_RANGE`) 밖」을 넣었더니
+  `tests/test_schema_self_consistent.py::test_the_numbers_in_the_rules_come_from_the_constants`
+  가 **「규칙 문언에 상수가 안 보인다: [19.0]」** 로 울었다. 그 시험(R7)은
+  반대를 강제한다 — 문언이 든 수가 `{TRUCK, TRUCK+2*PARK, CCTV_RANGE}` 를
+  **덮어야** 한다. 사본을 금지하는 대신 **사본에 자를 붙인 설계**다.
 
-★ f-string 으로 값을 끼우는 길은 **막혀 있다.** `tools/figures/structure.py` 의
-  `_verdict_rules()` 가 이 상수를 **AST 리터럴**로 읽는다 — 일부러 임포트를 안
-  한다(「도구가 파이프라인에 안 붙는다」). f-string 이면 그 도구가 못 읽는다.
-  그래서 끼우지 않고 **뺐다.** 읽는 쪽이 둘이면 쓰는 쪽이 양보한다.
+★ 그 설계가 맞다. 값이 문언에 있으면 상수를 내리는 순간 그 자가 울어서
+  문언을 찾게 한다 — **실제로 그렇게 이 줄을 찾았다.** 값을 빼면 그 울음도
+  사라지고, 그러면 문언이 조용히 낡는 자리로 돌아간다. 그래서 「CCTV 19m 밖」
+  으로 **값을 고쳤다.**
+
+★ 「말하기 전에 그 파일을 연다」를 또 어겼다. `tests/test_schema_self_consistent.py`
+  를 안 열고 「사본이니 빼야 한다」로 결론했다. **사본인지 묻기 전에 그 사본을
+  지키는 자가 있는지 묻는다.**
 
 ★ 같은 줄의 `3.0` · `7.0` 은 **안 건드렸다** — 사유: 이번에 움직인 값이
   아니고, 그 둘은 `TRUCK` 과 `TRUCK + 2*PARK` 로 **지금 값이 맞다**. 같은 족이긴

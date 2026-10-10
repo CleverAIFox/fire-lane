@@ -124,6 +124,10 @@ RELOCK_AXES = {
 #: ★ 2026-10-08 (DECISIONS §436-6). `diff_sweep` 에만 있던 면제를 시험 쪽에도 둔다 —
 #:   스윕과 시험이 같은 사실을 양쪽에서 보는데 한쪽만 받아주면 배달이 못 선다.
 RELOCK_TESTS = {
+    "test_schema_params_match_params_module":
+        "발행 스키마의 `params` 블록 ↔ `seg/params.py`. 상수를 내리면 모듈이 "
+        "**앞서 가고** 스키마는 재잠금에서 따라온다 — `seg/report.py` 가 낳는다. "
+        "★ 2026-10-10 (§455-1) `CCTV_RANGE` 25.0 → 19.0 에서 처음 울었다",
     "test_every_reason_is_reproduced":
         "공개본을 `classify()` 로 되먹여 댄다. 규칙을 고치면 공개본도 함께 다시 나는데 "
         "그 재생은 재잠금이 한다 — 재잠금 전에는 **한쪽만 움직인 상태**가 정상이다",
