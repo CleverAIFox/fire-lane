@@ -7836,7 +7836,7 @@ sha 는 달지 않았다. 샌드박스에 격리 파일이 없다. 이름 · sha
 G-9 도 닫았다. §171-1 본문의 한 줄이 줄머리에서 `강제자(` 로 시작해 `dms` 가 산문을 강제자 칸으로 읽었고,
 그 칸이 지운 테스트를 가리켜 봉인마다 "죽은 참조 1" 이 찍혔다. 어순을 바꿨다. 파서 쪽 카나리아는 K 가 단다.
 
-강제자  `tests/test_lake.py::test_ledger_is_loaded_through_one_door` · `::test_file_owners_are_resolved_in_one_place` · `::test_authority_names_institution_and_route` · 카나리아 `::test_ratchet_probes_are_alive`
+강제자  `tests/test_lake.py::test_ledger_is_loaded_through_one_door` · `::test_file_owners_are_resolved_in_one_place` · `::test_authority_entries_name_their_institution`(칸 없음) · `::test_authority_entries_name_the_route_they_came_by` · 카나리아 `::test_ratchet_probes_are_alive`
 
 ## 175. K1 — 건너뛴 것은 통과가 아니다: skip 을 넷으로 가르고 분류 밖은 실패로 바꿨다
 
@@ -8085,7 +8085,7 @@ EDA v2(2026-09-17 16:12 — 레이크 밖 유일본 73 포함 · 좌표 진단)�
 
 §177-1 이 "받은 경로 미기록" 으로 적은 `parking_enforce` 는 공공데이터포털에서 받았다(사용자 확인). `authority` 괄호를 고쳤다.
 
-강제자  `tests/test_lake.py::test_authority_names_institution_and_route`
+강제자  `tests/test_lake.py::test_authority_entries_name_their_institution`(칸 없음) · `::test_authority_entries_name_the_route_they_came_by`
 
 ## 179. L2d — landing 7건을 처음 열었다: 목적지 검색 재료 둘을 반입하고, 셋은 상폐했다
 
@@ -8450,7 +8450,7 @@ geopandas 가 빈 도형 의미를 바꾸며 매 실행 경고했다. 뜻은 "�
 옮기고 sha 를 대장 retired 에 적는다 — 전남광주 전역 건물 주소 테이블의 유일본이라 지우지 않는다(§173-1). normalize_raw 규칙과
 테스트 표본을 내렸다. datasets 73 → 72 · retired 3 → 4 · authority 래칫 63 → 62.
 
-강제자  `tools/docnum_check.py`(datasets 72 · retired 4) · `tests/test_lake.py::test_authority_names_institution_and_route` · `tests/test_normalize_rules.py::test_rules_do_not_reimport_retired_files`
+강제자  `tools/docnum_check.py`(datasets 72 · retired 4) · `tests/test_lake.py::test_authority_entries_name_their_institution`(칸 없음) · `::test_authority_entries_name_the_route_they_came_by` · `tests/test_normalize_rules.py::test_rules_do_not_reimport_retired_files`
 
 ## 184. R1 — 판정 뼈대 후보를 옆에 세우고 현행 구간과 대조한다 (판정 불변)
 
@@ -27692,7 +27692,7 @@ SHP 74장이 1:5,000 부모 `3561609` 대를 흘려서 NGI 로 메운다(대장 
 
 > 2026-10-06
 
-강제자  `tests/test_lake.py::test_authority_names_institution_and_route` ·
+강제자  `tests/test_lake.py::test_authority_entries_name_their_institution`(칸 없음) · `::test_authority_entries_name_the_route_they_came_by` ·
 `tests/test_sources_of_truth.py`(대장 항목의 필수 칸).
 하위 넷이 이 칸을 물려받는다
 유병률  한 번
@@ -32547,3 +32547,84 @@ refcheck _gone      섰다      tools/refcheck.py (종전 · 당시 · 옛 을 �
 ★ PLAN §13-1 이 적은 그 자리다 — 「그 42건의 유일한 목록이 **저장소 밖**에
   있었다. `git clone` 만으로 계획을 가질 수 없으면 그것은 5족이다」. 이 행의
   ②가 **같은 꼴로 남아 있었다.** 이제 열 전부가 저장소 안에서 답을 가진다.
+
+## 453. 대장을 읽는 문을 하나로 · 래칫 하나를 **둘로** · 배치 표가 지난 일을 들고 낡았다
+
+> 2026-10-10
+
+강제자  `src/firelane/ledger.py` `retired()` · `disposed()` ·
+        `tests/test_lake.py`(래칫 넷 — 대장 직접 로드 37 · 주인 블록 8 ·
+        authority 칸 없음 45 · 받은 경로 없음 17 · 가름이 전수인가 ·
+        개인 경유 상한 0) · `tools/plan_renumber.py`
+        **하위 셋**이 이 칸을 물려받는다
+유병률  **3회** — 「같은 블록을 여러 파일이 저마다 읽고 `or {}` 가 갈린다」
+        (§173-4 `load_sources` · §431 `vehicle_spec` · 이 판 `retired`)
+
+2026-10-10. `#55` ①② 를 닫는다. 행은 ③④⑤ 로 남는다 — 레이크가 전건이다.
+
+### 453-1. 「다음은 lakecheck · doctor · intake」를 실제로 옮겼다
+
+`#55` ①은 **배치마다 내리는 행**이다. 2026-09-17 에 래칫 둘을 박고(§174)
+그 뒤로 `acquire` 하나만 옮겼다(§180). 행이 「다음은 셋」이라고 적어 뒀고
+그 셋을 옮겼다.
+
+```
+대장 직접 로드        39 → 37    doctor 가 세 번 · intake 가 두 번 저마다 열고 있었다
+주인 블록 직접 해석    11 →  8    lakecheck 3곳 · doctor · intake
+```
+
+`src/firelane/ledger.py` 에 문 둘을 새로 세웠다 — `retired()` · `disposed()`.
+`load_sources` 와 같은 사유다: 열한 파일이 `y.get("retired")` 를 저마다 읽었고
+**`or {}` 가 있는 쪽과 없는 쪽이 갈려** 있었다. 빈 블록에서 한쪽은 `{}` 를
+다른 쪽은 `None` 을 낸다.
+
+★ **두 블록을 한 함수로 합치지 않았다.** `retired` 는 파일이 있는 보관본이고
+  `landing_disposition` 은 파일이 없는 처분 기록이다(MASTER §18-3c). 묻는 것이
+  다르면 문도 다르다.
+
+★ `doctor` 에서 `import yaml` 과 `YAML` 상수가 **죽었다.** 지웠다 — 쓰지 않는
+  import 가 남으면 「이 파일이 대장을 직접 읽는다」로 계속 세진다.
+
+### 453-2. 래칫 하나가 **고칠 수 있는 쪽을 고칠 수 없는 쪽에 숨기고** 있었다
+
+`authority` 위반은 62 하나였다. 실측하면 성질이 다른 둘이다 —
+
+```
+칸 없음          45    받은 경로를 아무도 모른다. 짐작해 적으면 거짓이 된다
+받은 경로 없음    17    기관은 적혀 있고 괄호 꼴만 안 맞는다. 문서 작업으로 내려간다
+개인 경유          0    상한이 0 이다. 받아적을 수가 아니다
+```
+
+합쳐 두면 둘째를 17 에서 0 으로 내려도 **수가 62 에서 45 로 떨어질 때까지
+아무 일도 안 일어난 것처럼 보인다.** 더 나쁜 것은 반대다 — 첫째가 하나 늘고
+둘째가 하나 줄면 **합이 안 움직인다.** 두 축이 한 수에 살면 서로를 가린다.
+
+★ 가름은 **낱말로 하지 않는다.** 판별은 `tests/test_lake.py` 의 `authority_bad`
+  하나가 하고 가름은 그
+  함수가 내는 세 문구를 키로 쓴다. 문구가 바뀌면
+  `test_the_split_covers_every_verdict` 가 운다 — 가름이 전수인지를 **합으로**
+  대 보므로 한 갈래가 새면 그 수가 아무 래칫에도 안 든다는 것이 드러난다.
+
+★ 「개인 경유」는 래칫이 아니라 **상한 0** 이다. MASTER §18-3a 가 금지라고
+  적은 것에 래칫을 주면 그 금지가 「지금 몇 건인가」가 된다.
+
+### 453-3. 배치 표가 **지난 일**을 들고 낡았다 — 신설 사유가 뒤집혔다
+
+`PLAN §10-1` 은 2026-10-06 에 「계획이 저장소에 없다」로 섰다(§404). 그런데
+적은 것이 **지난 판의 목록**이었다. Zc~Zi 를 적고 그 뒤로 **열 판을 안 적었고**,
+적어 둔 Zh·Zi 의 내용은 실제로 다른 판이 들었다 — `#143` · `#145` · `#148` ·
+`#154` 는 Zh 가 아니라 Zu·Zv·Zw 가 닫았다.
+
+★ **지난 일을 PLAN 에 적으면 낡는다.** PLAN §0-3 이 이미 적은 규율이고,
+  그 규율을 §10-1 자신이 어겼다. 이제 이 표는 **아직 안 온 판**만 든다.
+
+★ **판 이름은 저장소에 안 남는다.** 가지는 머지하면 사라지고 머지 커밋은
+  「Merge pull request #NNN」뿐이다. 그래서 「Zt 가 무엇을 들었나」는 재현되지
+  않는다 — 재현되지 않는 수를 문서에 안 적는 것(MASTER §21-1)과 같은 자리이고,
+  그래서 그 목록을 **되살리지 않고 지웠다.** 닫힌 행이 어느 판에서 닫혔는지는
+  DECISIONS 절이 든다.
+
+★ 남은 판을 번호로 묶지 않고 **전건으로** 묶었다 — 재잠금 · 레이크 · 측정 ·
+  인터뷰 · 화면 다섯이고, 무엇이 먼저 풀릴지는 우리가 안 정한다. 실측하면
+  「지금 돌 수 있는」 묶음은 **화면 하나**다. 배선 · 정본화 · 문서 결함은
+  바닥이 보인다 — §13 이 2행이고 그 둘이 레이크와 재잠금이다.

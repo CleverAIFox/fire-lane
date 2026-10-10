@@ -3080,7 +3080,7 @@ CCTV 29지점 · 1,281구간)이고 출동 중 읽을 거리는 탐색 시간이
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,023 전수 · **분모(blank) 0절** · 물림(inherit) 1,090절.
+★ **강제자 칸의 분모.** 절 2,027 전수 · **분모(blank) 0절** · 물림(inherit) 1,093절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3392,7 +3392,7 @@ outputs:
 
 근거는 DECISIONS §173-3. 2026-09-17 기준 `authority` 칸이 있는 소스 21종 중 규칙에 맞는 것은 3종이다.
 
-강제자 — `tests/test_lake.py::test_authority_names_institution_and_route` (래칫 — 위반 수가 상한과 같아야 한다)
+강제자 — `tests/test_lake.py::test_authority_entries_name_their_institution`(칸 없음 래칫) · `::test_authority_entries_name_the_route_they_came_by`(받은 경로 래칫) · `::test_no_authority_goes_through_a_person`(상한 0) · `::test_the_split_covers_every_verdict`(가름이 전수인가). ★ 2026-10-10 (DECISIONS §453 · PLAN #55 ②) 래칫 하나(62)를 **둘로 갈랐다** — 고칠 수 있는 쪽(괄호 꼴 17)이 고칠 수 없는 쪽(칸 없음 45)에 숨고 있었다
 
 ★ `juso` 전자지도는 도로명주소법 시행령 제46조 **심사 승인** 데이터다 —
 승인 당사자의 사용과 제3자 재배포는 다르다. 퍼블릭 버킷·공개 저장소에
