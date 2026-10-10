@@ -4187,8 +4187,8 @@ camelCase 로 바꾸고(`turnRadiusM`) 접미를 떼어(`turn_radius`) 찾았는
 ★ **추론을 넓히지 않는다.** 넓히면 오탐이 늘고 사람이 검사를 끈다. 목록을
 적고, 목록에 없으면 통과시키되 **목록이 낡았는지는 다른 검사가 본다.**
 
-강제자  `tools/docx_check.py` (어휘 확장 + 캡션 절)
-재현    `uv run python tools/docx_check.py`
+강제자  `tools/docx_check.py` (어휘 확장 + 캡션 절)  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
+재현    `uv run python tools/docx_check.py`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
 ---
 
@@ -4204,7 +4204,7 @@ camelCase 로 바꾸고(`turnRadiusM`) 접미를 떼어(`turn_radius`) 찾았는
 둘 다 "예정" 이라 실물이 없었고, **그래서 아무도 어긋난 줄 몰랐다.** 실물이
 없는 것끼리는 대조할 상대가 없어 낡음이 조용하다.
 
-강제자  `tools/docx_check.py`(기획서 ↔ MASTER 대조가 이 어긋남을 잡았다) · `tests/test_docx_targets.py::test_docx_check_is_bidirectional`. 하위 넷이 이 칸을 물려받는다
+강제자  `tools/docx_check.py`(기획서 ↔ MASTER 대조가 이 어긋남을 잡았다) · `tests/test_docx_targets.py::test_docx_check_is_bidirectional`. 하위 넷이 이 칸을 물려받는다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
 ### 93-1. 왜 기획서 쪽인가
 
@@ -4265,8 +4265,8 @@ ALB · 타깃 그룹 · IAM 역할 다섯을 알아야 고칠 수 있고, EC2 + 
   MASTER §12-1c). 두 디렉터리도 저장소에 없다. 확인을 받아야 한다는 판단은
   그대로 서지만 **소유 구조를 근거로 들 수 없다.**
 
-강제자  `tools/docx_check.py` 캡션 절 (CAPTION_STALE)
-재현    `uv run python tools/docx_check.py`
+강제자  `tools/docx_check.py` 캡션 절 (CAPTION_STALE)  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
+재현    `uv run python tools/docx_check.py`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
 ---
 
@@ -4366,7 +4366,7 @@ ALB · 타깃 그룹 · IAM 역할 다섯을 알아야 고칠 수 있고, EC2 + 
 
 > 2026-09-02
 
-`tools/docx_check.py` 에 그림 캡션 절을 붙였다. 그날 그것으로 기획서의
+`tools/docx_check.py` 에 그림 캡션 절을 붙였다. 그날 그것으로 기획서의  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 `1,102` 셋과 낡은 캡션 둘을 잡았다. 그런데 **그 도구는 `verify.sh` 에도
 CI 에도 테스트에도 걸려 있지 않았다.**
 
@@ -4452,7 +4452,7 @@ turningRadius) · `§92`(구간 ↔ 산출단위) · 이것. **검사가 실물�
 **숫자를 손으로 적으면 낡는다** — `MASTER §6` 이 그 문장을 적어놓고도
 낡았던 것과 같다(§95).
 
-강제자  `tools/refcheck.py` · `tools/docx_check.py`
+강제자  `tools/refcheck.py` · `tools/docx_check.py`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 재현    `bash tools/verify.sh`
 
 ---
@@ -4527,7 +4527,7 @@ turningRadius) · `§92`(구간 ↔ 산출단위) · 이것. **검사가 실물�
 `web/proposal.html` 이 `./proposal.docx` 를 부르는데 그 파일은 `docs/` 에
 있다. **로컬에서도 배포에서도 404 였다** — Pages 는 `web/` 만 올린다.
 
-정본은 `docs/proposal.docx` 이고 사본을 커밋하지 않는다. `stage_pages.py`
+정본은 `docs/proposal.docx` 이고 사본을 커밋하지 않는다. `stage_pages.py`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 가 배포 직전에 옮긴다(R2).
 
 ★ **준비를 워크플로마다 인라인으로 쓰지 않는다.** 지금 셋이 같은 `web/` 을
@@ -4541,7 +4541,7 @@ Pages 는 저장소당 사이트 하나라 어느 워크플로가 돌든 `web/` 
 
 기획서를 고쳤는데 아무 워크플로도 안 돌면 뷰어가 낡은 파일을 보여준다 —
 `pages` 는 `web/**`, `협업 방침` 은 `docs/MASTER.md` 만 보므로
-`docs/proposal.docx` 변경은 어디에도 안 걸렸다. `기획서 배포` 를 따로 둔다.
+`docs/proposal.docx` 변경은 어디에도 안 걸렸다. `기획서 배포` 를 따로 둔다.  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
 ### 99-3. 변환을 두지 않는다
 
@@ -12154,7 +12154,7 @@ datasets 가 13종이고, 좁은 관문은 FAIL 을 조용히 통과시킨다(10
 
 이 배치가 §17-1(정본 표)과 측정 대장을 각각 `docs/SOURCES_OF_TRUTH.yaml` · `docs/MEASUREMENTS.yaml` 이라는 **새 문서**로 냈고 규칙 위반이라 둘 다 지웠다.
 문서는 `docs/MASTER.md` · `docs/PLAN.md` · 문서는 `docs/MASTER.md` · `docs/PLAN.md` ·
-`docs/DECISIONS.md` · `docs/proposal.docx` 넷이고 그 밖에는 `README.md` 만 둔다.
+`docs/DECISIONS.md` · `docs/proposal.docx` 넷이고 그 밖에는 `README.md` 만 둔다.  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
 <!--voice-ok-->
 > 문서는 PLAN, DECISIONS, MASTER 에다가 proposal(기획서)만 하라고 했는데 잡다한 문서 뭐야.
@@ -12182,7 +12182,7 @@ datasets 가 13종이고, 좁은 관문은 FAIL 을 조용히 통과시킨다(10
 
     닫힘   PLAN §1 #43 · #44
 
-강제자  `tests/test_docx_targets.py`(그림 선언 · 기획서 대조 · 변환기 없이 도는가) ·
+강제자  `tests/test_docx_targets.py`(그림 선언 · 기획서 대조 · 변환기 없이 도는가) ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 `tests/test_batch_tools.py::test_bot_prs_do_not_block_a_batch` · `tools/verify.sh` 「기획서 그림 ↔ 정본」. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
 
 배운 것  「사람이 넣는다」 는 규율이 아니라 **미룸의 다른 이름**이다. 같은 파일을 기계가
@@ -12200,7 +12200,7 @@ datasets 가 13종이고, 좁은 관문은 FAIL 을 조용히 통과시킨다(10
 
 틀린 이유 둘 —
 
-  ① **기획서는 이미 기계가 고친다.** `tools/docx_fix.py` 가 문단을 넣고 표를 고치고 표지
+  ① **기획서는 이미 기계가 고친다.** `tools/docx_fix.py` 가 문단을 넣고 표를 고치고 표지  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
      날짜를 만진다(§203). 「생성물이 아니다」 는 그때 이미 사실이 아니었고, 같은 파일에
      규칙이 둘이었다 — 글자는 기계가, 그림은 사람이.
   ② **사람이 넣는 일은 매번 미뤄진다.** §218 배치가 그림 넷을 다시 그렸고 그림은 저장소
@@ -13073,7 +13073,7 @@ W6-1 의 수용 조건은 「불변」이 아니라 **「불변 증명」**이�
 
 > 2026-09-24
 
-강제자  `tools/proposal_pdf.py`(쪽수 · 본문 한글 줄 · 판정 수치 · 그림 수) · `tests/test_proposal_pdf.py`(여덟 — 네 갈래가 전부 우는가). 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+강제자  `tools/proposal_pdf.py`(쪽수 · 본문 한글 줄 · 판정 수치 · 그림 수) · `tests/test_proposal_pdf.py`(여덟 — 네 갈래가 전부 우는가). 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
 `web/proposal.html` 이 `.docx` 를 브라우저에서 `docx-preview` 로 그렸다.
 그 선택의 근거가 이렇게 적혀 있었다 —
@@ -13112,7 +13112,7 @@ W6-1 의 수용 조건은 「불변」이 아니라 **「불변 증명」**이�
   나간다 — 그래서 굽기 전에 막는다. CI 액션이 `fonts-noto-cjk` 를 깐다.
 
 ★ 판정 수치는 `docx_check._canon()` 을 **불러서** 쓴다. `golden` 지문이 정본이고
-  이 도구에 숫자를 적지 않는다 — `tests/test_proposal_pdf.py` 가 그 도구 코드에
+  이 도구에 숫자를 적지 않는다 — `tests/test_proposal_pdf.py` 가 그 도구 코드에  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
   판정 수치 literal 이 있으면 운다(`selftest()` 의 합성 픽스처는 뺀다).
 
 ### 231-2. 로컬은 최선, CI 는 필수
@@ -13128,7 +13128,7 @@ PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어�
 ### 231-3. 고치면서 잡은 것 셋
 
     ① `tests/test_tools_are_wired.py::call_sites` 가 `f.endswith(name)` 로
-       호출자에서 파일을 뺐다. **`tests/test_proposal_pdf.py` 가
+       호출자에서 파일을 뺐다. **`tests/test_proposal_pdf.py` 가  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
        `proposal_pdf.py` 로 끝나므로 그 도구의 시험이 통째로 빠졌고**,
        도구가 제 시험 하나로만 배선돼 있으면 「아무 데서도 안 부른다」가 났다.
        빼야 하는 것은 **도구 자신**이지 이름이 그것으로 끝나는 파일이 아니다.
@@ -13417,7 +13417,7 @@ PDF 가 없으면 **내려받기 안내로 바뀐다**(`HEAD` 로 먼저 물어�
 
 > 2026-09-24
 
-강제자  `tests/test_docx_targets.py`(열 — 지목 · **수** · 빈 그물 프로브) · `tools/docx_fix.py --touch` · `tools/doc_fsck.py` ⑥. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+강제자  `tests/test_docx_targets.py`(열 — 지목 · **수** · 빈 그물 프로브) · `tools/docx_fix.py --touch` · `tools/doc_fsck.py` ⑥. 하위 셋은 이 결정의 조각이고 위 강제자가 결정 전체를 든다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
 `PLAN §12`(기획서 갱신 대상) 넷을 닫으려고 문서를 뒤졌더니 **둘은 이미
 닫혀 있었다.**
@@ -13951,7 +13951,7 @@ V-World 는 일곱 자리에서 현재형이고(2026-09-22 에 걷혔다), 배�
 
 > 2026-09-24
 
-강제자  `tests/test_layering.py::test_the_import_collector_reads_from_x_import_y` · `web/navi/test/layering.test.ts` · `tools/sizecheck.py`(프런트 포함) · `tests/test_docref.py`(문서별 하한) · `tools/docx_fix.py`(삽입 목록 ↔ 치환 규칙). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다
+강제자  `tests/test_layering.py::test_the_import_collector_reads_from_x_import_y` · `web/navi/test/layering.test.ts` · `tools/sizecheck.py`(프런트 포함) · `tests/test_docref.py`(문서별 하한) · `tools/docx_fix.py`(삽입 목록 ↔ 치환 규칙). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
 §243 의 감사가 닫히자 주인이 물었다 — **「PLAN 이 1,500행이 말이 되냐」.**
 그 물음이 이 배치를 열었고, 답은 문서 문제가 아니었다.
@@ -14769,7 +14769,7 @@ blocked 191). 빨간 것은 전부 주변이고, 그중 **넷이 이 배치가 �
 ★ **skip 으로 넘기지 않았다.** 부를 수 없으면 대조가 없고, 대조 없는 초록이
   이 시험이 막으려는 것 그 자체다(§248).
 
-★ 남은 셋은 이 배치 것이 아니다 — `web/proposal.pdf` 미생성(`tools/proposal_pdf.py`
+★ 남은 셋은 이 배치 것이 아니다 — `web/proposal.pdf` 미생성(`tools/proposal_pdf.py`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
   가 만든다) · 레이크의 대장 밖 원본 둘. 사람이 판단할 자리라 손대지 않았다.
 
 ## 258. 남은 셋은 사람이 판단할 자리가 아니었다 — 셋 다 검사의 범위가 좁았다
@@ -16507,7 +16507,7 @@ GPS 가 **없는** 경우는 이미 막혀 있었다. 데스크톱 · 권한 거
 
 > 2026-09-28
 
-강제자  `tools/docstyle.py` · `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/proposal_pdf.py`(`BOOKMARKS_MIN`) · `tools/docx_figs.py`(`SOURCELESS_MAX`) · `tools/ci_wait.sh` · `tests/test_docstyle.py` · `tests/test_figure_fit.py` · `tests/test_batch_tools.py`. 하위 11이 이 칸을 물려받는다
+강제자  `tools/docstyle.py` · `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/proposal_pdf.py`(`BOOKMARKS_MIN`) · `tools/docx_figs.py`(`SOURCELESS_MAX`) · `tools/ci_wait.sh` · `tests/test_docstyle.py` · `tests/test_figure_fit.py` · `tests/test_batch_tools.py`. 하위 11이 이 칸을 물려받는다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
 문서 넷 중 `proposal.docx` 만 **저장소 밖으로 나간다.** 그런데 이 문서에 걸린
 검사는 「숫자가 산출물과 맞는가」(`docx_check`)와 「그림이 정본과 같은가」
@@ -16545,7 +16545,7 @@ GPS 가 **없는** 경우는 이미 막혀 있었다. 데스크톱 · 권한 거
   지워서 못 봤다. **네 번 다 「돌려 보니 틀렸다」로 잡혔다** — 처음부터 실물에
   대고 만들지 않으면 판별식은 늘 이렇게 어긋난다.
 
-### 278-3. 기획서에 개요 층이 없었다 — `tools/docstyle.py`
+### 278-3. 기획서에 개요 층이 없었다 — `tools/docstyle.py`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
     본문 단락 중 `pStyle` 이 붙은 것      0개
     `styles.xml` 의 Heading 1~6 선언      있다 (아무도 안 쓴다)
@@ -16759,7 +16759,7 @@ CI `if:` 6 · `# ci-exempt:` 12 · 면제표 94항목, **사유가 빈 것 0**. 
 
 ★ **그리고 그 여섯 중 하나는 애초에 CI 에서 안 돌고 있었다.** `gate_parity` 가
   워크플로의 `paths:` 목록을 **호출로 셌다** — `deploy.yml` 의 `paths:` 에
-  `tools/proposal_pdf.py` 가 적혀 있다는 이유로 「CI 가 그 검사기를 돈다」고
+  `tools/proposal_pdf.py` 가 적혀 있다는 이유로 「CI 가 그 검사기를 돈다」고  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
   읽었다. 경로 필터는 방아쇠지 호출이 아니다.
 
 ★ **틀리는 방향이 나쁘다.** CI 쪽이 부풀면 「로컬 전용」 차집합이 줄어서
@@ -20594,11 +20594,11 @@ WSL 에는 애초에 GPS 가 없다.
 ## 333. 고치는 도구가 끝을 사람에게 물었고, 찾는 쪽이 더 넓었다
 
 > 2026-09-30
-강제자  `tools/docx_fix.py::unreachable`(고친 뒤 `docx_check.audit()` 을 직접
+강제자  `tools/docx_fix.py::unreachable`(고친 뒤 `docx_check.audit()` 을 직접  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 부른다 · 남으면 종료코드 1) · 같은 파일 `main()` 의 마지막 판정.
 하위 둘이 이 칸을 물려받는다
 배운 것  **고치는 도구가 제 일이 끝났는지를 사람에게 묻고 있었다.**
-`--write` 의 마지막 줄이 「`tools/docx_check.py` 로 대조해라」였다. <!--voice-ok-->
+`--write` 의 마지막 줄이 「`tools/docx_check.py` 로 대조해라」였다. <!--voice-ok-->  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 사람에게
 남긴 일은 사람이 안 한다(§334 가 같은 형태를 다른 자리에서 만났다).
 
@@ -20707,7 +20707,7 @@ PLAN #34(닫힘 · §450) 가 2026-09-17 에 「리드미 셋이 실물과 어�
       리드미 대조
 
 빈 워크트리(`/tmp/fl-dryrun`)에는 **생성물이 없다.** `web/proposal.docx` ·
-`web/proposal.pdf` 는 `tools/proposal_pdf.py` 가 굽는 추적 밖 파일이고, 그
+`web/proposal.pdf` 는 `tools/proposal_pdf.py` 가 굽는 추적 밖 파일이고, 그  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 둘을 `EXEMPT_WEB` 에 사유와 함께 적어 뒀더니 거기서 **「죽은 면제」로 울었다.**
 
 ★ **이 배치가 담은 §319-4 가 바로 그 결함이다** — 「추적되지 않는 경로를 영향
@@ -21974,7 +21974,7 @@ GitHub 이 공짜로 주는 두 겹은 켜 본 적이 없다. 공개 저장소�
 #5  tests/test_naviweight.py Incomplete URL substring sanitization
 #4  tests/test_n1.py         Incomplete URL substring sanitization
 #2  tests/test_n1.py         Inefficient regular expression
-#1  tests/test_docx_targets.py Inefficient regular expression
+#1  tests/test_docx_targets.py Inefficient regular expression  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 ```
 
 ★ `#3` — `print(f"  ✗ {b}")` 의 `b` 가 `_secret_gaps()` 에서 온다. 그 함수의 머리말이
@@ -22313,7 +22313,7 @@ shp · 중첩 shp). 갈래로 쪼개면 「이 소스를 어떻게 읽나」가 
 > 2026-10-02
 강제자  `tests/test_doc_fsck.py::test_the_squash_arm_declines_to_measure_without_a_common_ancestor`
 (조상 없는 ref 를 주입해 「재지 않는다」를 보고 · 프로브가 도는지까지 가른다 —
-빈 그물 방지) · `tools/docfsck/docx_revised.py` 의 기준 선택.
+빈 그물 방지) · `tools/docfsck/docx_revised.py` 의 기준 선택.  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 하위 둘이 이 칸을 물려받는다
 배운 것  **전제는 함수마다 다시 선언해야 하고, 그것을 물려주는 기계가 없다.**
 같은 파일 · 같은 모듈 · 서른 줄 아래인데도 안 물려받았다.
@@ -22322,7 +22322,7 @@ shp · 중첩 shp). 갈래로 쪼개면 「이 소스를 어떻게 읽나」가 
 
 ```
 ★  ⑥ 기획서    고쳤는데 최종 수정일이 그대로인가
-      docs/proposal.docx 이 origin/part/infra 와 다른지 판별하지 못했다: .
+      docs/proposal.docx 이 origin/part/infra 와 다른지 판별하지 못했다: .  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 ```
 
 ★ **사유 칸이 비어 있다.** `git diff base...HEAD` 가 공통 조상을 못 찾아 죽었고
@@ -22335,7 +22335,7 @@ check_docx_revised          2026-09-18  얕은 저장소를 선언하고 건너�
 check_docx_ready_for_squash 2026-09-27  같은 전제를 선언 안 했다
 ```
 
-`tools/docfsck/docx_revised.py` 의 6b 기준 선택이 본 것은 **이름이 있는가**
+`tools/docfsck/docx_revised.py` 의 6b 기준 선택이 본 것은 **이름이 있는가**  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 (`rev-parse --verify`)였다.
 `actions/checkout@v4` 는 `fetch-depth: 1` 이라 `origin/part/infra` 라는 **ref 는
 있고 커밋이 없다.** 그래서 선택을 통과한 뒤 `base...HEAD` 에서 죽었다.
@@ -22351,7 +22351,7 @@ base = next((b for b in bases
              if _git("merge-base", "HEAD", b)[0] == 0), None)
 ```
 
-`tools/docfsck/docx_revised.py` 가 쓸 것이 `base...HEAD` 의 조상이므로
+`tools/docfsck/docx_revised.py` 가 쓸 것이 `base...HEAD` 의 조상이므로  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 **쓸 것을 그대로 묻는다.** 「얕은가」를
 따로 묻는 길도 있지만, 얕지 않은 사본에 그 ref 만 없는 경우도 같이 막힌다 —
 묻는 축이 하나 적다.
@@ -22631,7 +22631,7 @@ tools/verdict_tally.py              지금 돌리면 통과한다
 ## 360. 느려지는 정규식 둘과, 뜻을 안 말하는 꼴 둘
 
 > 2026-10-03
-강제자  `tests/test_docx_targets.py::test_tool_token_pattern_is_unchanged`
+강제자  `tests/test_docx_targets.py::test_tool_token_pattern_is_unchanged`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 (전수 19,531 + 무작위 60,000 동등성) · 같은 파일의
 `test_the_tool_token_pattern_does_not_blow_up`(길이 네 배에 시간이 선형인가) ·
 `tests/test_n1.py::_deploy_rows`. 하위 셋이 이 칸을 물려받는다
@@ -22643,7 +22643,7 @@ CodeQL 이 다섯을 들었다. 넷을 고치고 하나를 남겼다.
 ### 360-1. 되짚기가 지수로 새는 자리 둘
 
 ```
-tests/test_docx_targets.py   ( --?[a-z-]+)*$
+tests/test_docx_targets.py   ( --?[a-z-]+)*$  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
     둘째 `-` 가 **이미 `[a-z-]` 안에 있다.** ` --a` 를 `-`+`-a` 로도
     `--`+`a` 로도 끊을 수 있고, 그 갈림이 `*` 안에 있다.
     실측  n=8 0.05ms · n=16 11.9ms · n=20 226ms · n=22 839ms
@@ -24615,7 +24615,7 @@ web/key.js           같은 날 생성이 멈췄다. `deploy.yml` 은 그 파일
 
 > 2026-10-03
 
-강제자  `tests/test_docx_targets.py`(`_old_accepts` — 대조군을 정규식이 아니라
+강제자  `tests/test_docx_targets.py`(`_old_accepts` — 대조군을 정규식이 아니라  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 **함수**로 둔다 · `test_the_retired_pattern_is_not_compiled_anywhere`) ·
 `tests/test_guards.py`(`pip install` 캡처를 수량자 하나로).
 하위 다섯이 이 칸을 물려받는다
@@ -24628,7 +24628,7 @@ web/key.js           같은 날 생성이 멈췄다. `deploy.yml` 은 그 파일
 설정 문제로 보였고 **후보 셋을 적었는데 셋 다 틀렸다** — 실물은 발견이었다.
 
 ```
-tests/test_docx_targets.py:282   high
+tests/test_docx_targets.py:282   high  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 "may cause exponential backtracking on strings starting with 'a -'
  and containing many repetitions of '-- -'"
 ```
@@ -24647,7 +24647,7 @@ tests/test_docx_targets.py:282   high
 ★ **고침은 이 배치가 아니라 앞선 배치(PR #276)가 실었다.** `#274` 를 막고 있었기
   때문에 번호 없는 수리 배치로 먼저 보냈다 — 이 밑동의 다음 절 번호가 §362 인데
   그 번호대를 이 배치가 쓰므로 거기서는 절을 못 썼다. 고친 자리는 둘이다 —
-  `tests/test_docx_targets.py` 의 대조군과 `tests/test_guards.py` 의 `pip install`
+  `tests/test_docx_targets.py` 의 대조군과 `tests/test_guards.py` 의 `pip install`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
   캡처. 이 절이 그 사유의 정본이다.
 
 ★ **대조군은 언어가 필요한 것이지 그 엔진이 필요한 게 아니다.** 옛 꼴을
@@ -25635,7 +25635,7 @@ PLAN 에 있는 것은 사본이고, 사본은 갈린다.
 수 토큰 1,212개 · 서로 다른 값 293개
 ```
 
-`tools/docx_check.py` 가 이름으로 드는 축은 넷이다 — `clear` · `needs_cv` ·
+`tools/docx_check.py` 가 이름으로 드는 축은 넷이다 — `clear` · `needs_cv` ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 `blocked` · `unknown`. 여기에 구간 수를 더해 다섯이다.
 
 ```
@@ -27104,8 +27104,8 @@ PLAN §10 이 2026-09-30 에 이렇게 들어왔다(§331) —
 
 > 2026-10-06
 
-강제자  `tools/docx_check.py`(`census` · `_bite_total` · `TOTAL_RE` ·
-`--census`) · `tests/test_docx_targets.py`(인구조사가 살아 있는가 ·
+강제자  `tools/docx_check.py`(`census` · `_bite_total` · `TOTAL_RE` ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
+`--census`) · `tests/test_docx_targets.py`(인구조사가 살아 있는가 ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 총연장 축이 **실제로 무는가** — 합성 양방향).
 하위 셋이 이 칸을 물려받는다
 유병률  **2회** — ① 2026-09-24 `PLAN §12` 가 「숫자가 아닌 것은 대조 대상이
@@ -27121,7 +27121,7 @@ PLAN §10 이 2026-09-30 에 이렇게 들어왔다(§331) —
     §391 (2026-10-04)   수 토큰 1,212 · 서로 다른 값 293
     오늘  (2026-10-06)   수 토큰 1,319 · 서로 다른 값 222
 
-그 사이 `docs/proposal.docx` 는 **한 번도 안 바뀌었다**(마지막 커밋이 §391 보다
+그 사이 `docs/proposal.docx` 는 **한 번도 안 바뀌었다**(마지막 커밋이 §391 보다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 앞선다). 즉 문서가 움직인 것이 아니라 **세는 자가 달랐다.** 어느 쪽이 옳은지는
 판정할 수 없다 — §391 의 자가 없기 때문이다.
 
@@ -28202,7 +28202,7 @@ awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(§419).
 > 2026-10-06
 
 강제자  `tools/build_proposal.py --check`(verify.sh 「기획서 화면」) ·
-`tools/migrate_proposal.py`(이사의 완전성) · `src/firelane/generated.py`
+`tools/migrate_proposal.py`(이사의 완전성) · `src/firelane/generated.py`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 (`proposal-page` 가족).
 하위 일곱이 이 칸을 물려받는다
 유병률  한 번
@@ -28231,7 +28231,7 @@ awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(§419).
 
 ### 425-2. 이사를 **증명했다** — 「옮겼다」는 주장이 아니라 수다
 
-`docs/proposal.docx` 는 **스타일이 하나도 없었다**(649 문단 전부 `style=None`).
+`docs/proposal.docx` 는 **스타일이 하나도 없었다**(649 문단 전부 `style=None`).  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 제목 계층이 사람 눈에만 있었고, 그런 문서를 유도로 옮기면 조용히 잃는다.
 
 ```
@@ -28286,7 +28286,7 @@ awaiting: '2026-10-06 — EDA 로 쓸모를 먼저 쟀다(§419).
 (`stage_pages.py` → `build_proposal.py`) — 종전 화면은 PDF 뷰어 껍데기였다.
 
 PDF 는 **안 뺐다.** 제출본으로 남고 화면 머리에 내려받기 두 줄(PDF · DOCX)로
-간다. `tests/test_proposal_pdf.py` 의 물음도 **지우지 않고 옮겼다** —
+간다. `tests/test_proposal_pdf.py` 의 물음도 **지우지 않고 옮겼다** —  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 「뷰어가 PDF 를 품었나」 → 「화면이 PDF 로 가는 길을 들고 있나」 + 「다시 틀을
 품지 않았나(`<iframe>` 금지)」. 물음을 지우면 제출본으로 가는 길이 끊겨도
 조용하다.
@@ -30806,8 +30806,8 @@ PLAN `#138`(닫힘 — §439) 이 적은 처방은 「패치를 하나씩 누적
         `tools/docnum_check.py` `RULES` 의 `docs/proposal.md` 다섯 ·
         `tools/delivercheck.py` `lonely_tests`(좁힌 판정) ·
         `tools/delivertest.py` 판별식 **37** ·
-        `tools/docfsck/docx_revised.py` `covers()`(두 팔이 md 도 본다) ·
-        `tools/docx_fix.py` `touch_md()`(648 → 239) · `tools/docxrules.py`(표 셋) ·
+        `tools/docfsck/docx_revised.py` `covers()`(두 팔이 md 도 본다) ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
+        `tools/docx_fix.py` `touch_md()`(648 → 239) · `tools/docxrules.py`(표 셋) ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
         `web/proposal.template.html`(머리 한 줄을 지웠다) ·
         `tools/mutate.py` `_imports_ratchet()` · 과녁 밖 줄을 **지우는** 네 줄
         **하위 열**이 이 칸을 물려받는다
@@ -30826,7 +30826,7 @@ PLAN `#138`(닫힘 — §439) 이 적은 처방은 「패치를 하나씩 누적
 > 「pdf도 필요없음 그냥 html만 있으면 언제든지 pdf 변환하면 되는거고」
 
 ★ 그래서 셋이 아니라 **하나**다. `docs/proposal.md` 가 정본, `web/proposal.html`
-  이 내보내는 꼴, **PDF 는 그때 굽는다.** `docs/proposal.docx` 와
+  이 내보내는 꼴, **PDF 는 그때 굽는다.** `docs/proposal.docx` 와  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
   `web/proposal.pdf` 둘 다 은퇴 대상이 됐다.
 
 ★ 이 결정은 §425 가 세운 파이프라인을 **쓰는** 결정이다. 정본을 md 로 옮긴 판이
@@ -30837,7 +30837,7 @@ PLAN `#138`(닫힘 — §439) 이 적은 처방은 「패치를 하나씩 누적
 지우려고 길을 따라가 보니 이렇게 돌고 있었다 —
 
 ```
-figures/*.py → SVG → docx_figs --sync → docs/proposal.docx → (사람) → fig??.png
+figures/*.py → SVG → docx_figs --sync → docs/proposal.docx → (사람) → fig??.png  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 ```
 
 ★ **정본이 md 인데 생성 그림은 docx 가 지나는 자리였다.** 화면이 드는 그림
@@ -30912,7 +30912,7 @@ figures/*.py → SVG → docx_figs --sync → docs/proposal.docx → (사람) �
 
 ### 440-5. 기획서 산문의 판정 수 다섯이 **그물 밖이었다**
 
-`docx_check` 가 `docs/proposal.docx` 의 숫자를 물고, `docnum_check` 가
+`docx_check` 가 `docs/proposal.docx` 의 숫자를 물고, `docnum_check` 가  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 README · MASTER · PLAN · DECISIONS 를 물었다. 그런데 **새 정본
 `docs/proposal.md` 는 둘 다 안 봤다.** §425 가 정본을 옮길 때 숫자 그물을 같이
 옮기지 않았다.
@@ -30969,11 +30969,11 @@ docstyle 개요 층                 **필요 없다**           사라진다
 | `tools/sizecheck.py` | 12 | 예외 **표를 떼냈다**(→ `tools/sizetable.py`). 600 → 171 | 맞다 — `measure` · `judge` · `kind` · `count_lines` · 자기검사가 **한 줄도 안 바뀌었다.** 상한 · 양방향 · 분모도 그대로다. 절들이 드는 이름 `sizecheck.EXCEPTIONS` 도 **그대로 풀린다**(`sizecheck` 가 import 한다) |
 | `tools/sealcov.py` · `tools/scopedecl.py` | 16 | **래칫 수만** 움직였다(489 → 491 · 68 → 69) | 맞다 — 둘 다 이 판이 넓힌 결과를 받아적은 수이고 판정 로직은 안 건드렸다. 수를 드는 절은 §432 · §435 이고 둘 다 「지금보다 나빠지지 않는다」를 든다 |
 | `tools/delivercheck.py` · `tests/test_delivercheck.py` · `tools/delivertest.py` | 5 | `lonely_tests` 판정을 **좁혔다**(440-4) | 맞다 — 다섯 절이 드는 축은 꼬리 충돌 · 재잠금 면제 · 파일 쪼갬이고 그 셋은 안 건드렸다. 좁힌 문의 정본은 §439 이고 이 절이 그 위에 적는다 |
-| `tools/docx_fix.py` | 4 | 표 셋을 **떼냈다**(648 → 239) · `touch_md` 하나가 늘었다 · 「밖」 칸을 고쳐 적었다(440-9) | 맞다 — 규칙 **내용**이 한 줄도 안 바뀌었고 `fx.rules()` · `fx.inserts()` 도 그대로 풀린다. 넘은 경계는 절이 아니라 머리말이고 그것을 같이 고쳤다 |
-| `tools/docfsck/docx_revised.py` | 2 | 두 팔이 `docs/proposal.md` 도 본다 — 그물을 **넓혔다**(440-8) | 맞다 — §355 가 든 것은 「공통 조상으로 고른다」이고 그 판정은 그대로다. 넓힌 쪽은 대상 목록 하나다 |
+| `tools/docx_fix.py` | 4 | 표 셋을 **떼냈다**(648 → 239) · `touch_md` 하나가 늘었다 · 「밖」 칸을 고쳐 적었다(440-9) | 맞다 — 규칙 **내용**이 한 줄도 안 바뀌었고 `fx.rules()` · `fx.inserts()` 도 그대로 풀린다. 넘은 경계는 절이 아니라 머리말이고 그것을 같이 고쳤다 |  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
+| `tools/docfsck/docx_revised.py` | 2 | 두 팔이 `docs/proposal.md` 도 본다 — 그물을 **넓혔다**(440-8) | 맞다 — §355 가 든 것은 「공통 조상으로 고른다」이고 그 판정은 그대로다. 넓힌 쪽은 대상 목록 하나다 |  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 | `tools/build_proposal.py` | 1 | 자리 둘(`stamp` · `built`)을 지우고 **정규화도 지웠다** — 대조가 넓어졌다 | 맞다 — §432 가 드는 것은 완전성 바닥(`FLOOR_*`)이고 안 건드렸다 |
 | `tools/proposal_source.py` | 2 | **주석만** 고쳤다 — 거짓이던 「검사가 이 꼴로 찾는다」 | 맞다 — 코드가 안 바뀌었다 |
-| `tools/docxrules.py` · `tools/sizetable.py` | 1 | 절이 **새로 지목한다**(새 파일) | 맞다 — 지목이 늘었을 뿐이고, 늘어난 쪽은 봉인이 넓어지는 쪽이다 |
+| `tools/docxrules.py` · `tools/sizetable.py` | 1 | 절이 **새로 지목한다**(새 파일) | 맞다 — 지목이 늘었을 뿐이고, 늘어난 쪽은 봉인이 넓어지는 쪽이다 |  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 | `tools/fix.sh` · `tools/verify.sh` · `.github/workflows/contract.yml` | 8 | 단계 **하나가 늘었다**(「기획서 화면 그림」) — 수리 문 · 검사 문 · CI 셋 다에 | 맞다 — 절들이 드는 규약은 「기계가 고칠 수 있으면 문에 걸린다」이고 늘어난 단계가 그 규약을 **지킨 결과**다 |
 | `tools/mutate.py` | 9 | 과녁 판별을 **넓히고**(`_imports_ratchet`) 과녁 밖 줄을 **지우게** 했다 · 문 넷(440-10) | 맞다 — 아홉 절이 드는 축은 흔들기 연산자 · 상한 · 붙잡이 도출 · 생존 가름이고 그 넷은 안 건드렸다. 움직인 것은 **과녁 목록**이고, 실측으로 25 그대로(`sizecheck` 복귀) |
 | `tools/sizetable.py` | 1 | 예외 한 줄을 **지우고**(`docx_fix`) 한 줄을 **더했다**(`mutate` 644) | 맞다 — 표만 움직였다. 지운 쪽은 상한 아래로 내려온 것이고, 더한 쪽은 `#166` 이 든다 |
@@ -31031,7 +31031,7 @@ firelane-proposal-sha256:f79e7e…c8803c · 구운 날 2026-10-07
 #### 그런데 그 날짜가 **여드레 낡아 있었다**
 
 ```
-docs/proposal.docx   최종 수정 2026. 10. 09.   ← ⑥ 이 본다
+docs/proposal.docx   최종 수정 2026. 10. 09.   ← ⑥ 이 본다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 docs/proposal.md     최종 수정 2026. 10. 01.   ← 아무도 안 본다  (화면에 뜨는 쪽)
 ```
 
@@ -31052,7 +31052,7 @@ docx_fix --touch     docx 만 → `touch_md()` 로 md 도 **같은 규칙 둘**�
 
 ### 440-9. 같은 날 **두 번째** 파일이 제 표에 밀려 상한을 넘었다
 
-`touch_md()` 스물여섯 줄을 넣자 `tools/docx_fix.py` 가 622 → **648**. 래칫이
+`touch_md()` 스물여섯 줄을 넣자 `tools/docx_fix.py` 가 622 → **648**. 래칫이  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 「느슨해지는 쪽」으로 울었고, 그 자리에는 2026-09-30 의 선언이 있었다 —
 
 > 「**안 쪼갠다** — 둘로 가르면 새 규칙을 어느 파일에 적을지가 또 하나의
@@ -31060,7 +31060,7 @@ docx_fix --touch     docx 만 → `touch_md()` 로 md 도 **같은 규칙 둘**�
 
 ★ **그 사유를 안 밟는 쪽으로 갈랐다.** §333 이 두려워한 것은 규칙이 **두 집에
   나뉘는 것**이다. 그래서 표 셋(`derived` · `rules` · `inserts`)을
-  `tools/docxrules.py` 로 **전부** 보내고 고치는 쪽에는 규칙을 **한 줄도 안
+  `tools/docxrules.py` 로 **전부** 보내고 고치는 쪽에는 규칙을 **한 줄도 안  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
   남겼다.** 「어디 적나」의 답이 하나다 — 648 → **239**, 표 445.
 
 ★ `touch_rules` 만 고치는 쪽에 남는다. 그것은 **표가 아니라** 그날 인자로
@@ -31580,7 +31580,7 @@ PLAN 71행
 결함 둘을 냈다 — 이어 도는 측정 배치가 멈추는 자리(444-6)와 관문 분류가 갈리는
 자리(444-7).
 
-★ **이 판의 사유 한 줄** — §425 가 정본을 `docs/proposal.docx` 에서
+★ **이 판의 사유 한 줄** — §425 가 정본을 `docs/proposal.docx` 에서  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 `docs/proposal.md` 로 옮겼다. 그런데 **그 docx 를 읽는 검사 다섯이 그대로
 남았다.** 즉 기획서는 그날부터 **사본을 검사받았고**, 정본이 틀려도 사본이
 맞으면 초록이었다. §440 이 다리(`htmlfigs`)를 놓으며 「둘을 한 판에 들어내면
@@ -31671,12 +31671,12 @@ PLAN 71행
   되므로 그 사유가 사라졌다. 숫자가 낡으면 **검사가 울고 사람이 고친다.**
 
 ★ 지운 것 — 도구 일곱(`docx_check` · `docx_fix` · `docxrules` · `docx_figs` ·
-  `docstyle` · `proposal_pdf` · `migrate_proposal`) · 시험 셋 · `docs/proposal.docx` ·
+  `docstyle` · `proposal_pdf` · `migrate_proposal`) · 시험 셋 · `docs/proposal.docx` ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
   배포의 PDF 변환기 단계(libreoffice-writer · fonts-noto-cjk · poppler-utils) ·
   `stage_pages` 의 옮기기 한 줄 · 화면 머리의 내려받기 두 줄.
 
 ★ `migrate_proposal` 은 **제 은퇴 조건을 스스로 적어 두었다** — 「옮기고 나면
-  정본이 md 다. 이사가 끝나면 `docs/proposal.docx` 와 함께 은퇴한다」. 그 조건이
+  정본이 md 다. 이사가 끝나면 `docs/proposal.docx` 와 함께 은퇴한다」. 그 조건이  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
   이 판에서 성립했다.
 
 ★ **내려받기 두 줄을 왜 지우는가** — 심사위원이 누를 자리인데 PDF·DOCX 가
