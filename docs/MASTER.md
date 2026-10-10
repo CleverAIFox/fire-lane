@@ -3044,7 +3044,7 @@ CCTV 29지점 · 1,281구간)이고 출동 중 읽을 거리는 탐색 시간이
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,984 전수 · **분모(blank) 0절** · 물림(inherit) 1,060절.
+★ **강제자 칸의 분모.** 절 1,998 전수 · **분모(blank) 0절** · 물림(inherit) 1,071절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4358,3 +4358,138 @@ uv run python tools/dms.py seal --log /tmp/verify.log
 빠지고, 빠진 것은 낡는다.**
 
 강제자  `tools/dms.py --selftest` — 닫힌 선언 카나리아 둘
+
+## 22. 코드 지도 — 화면 층
+
+화면은 **네 층**이고 파일마다 그 층의 일만 한다(`web/navi/src/App.tsx` 의
+머리말이 그 넷을 든다). 이 절은 그 층에 사는 파일이 **무엇을 들고 무엇을
+안 드는지**를 적는다 — 다음 사람이 고칠 자리를 찾을 때 읽는 지도이고,
+「누가 지킨다」가 아니라 「무엇이 들어 있다」를 적는다.
+
+```
+domain/   계산 (순수)    좌표 · 제원 · 비용 · A* · 스냅 · 회전 · 속도 · 상태표
+infra/    바깥 세계      fetch · 측위 · 음성 · 지도 SDK
+app/      배선           훅. 계산과 바깥을 잇는다
+ui/       그리기         상태를 모른다. 받은 것을 그린다
+```
+
+강제자  `tools/sealcov.py`(이 절이 지목한 파일을 센다 · `SEALED_FILES` 올라가는 쪽) ·
+        `web/navi/eslint.config.js`(훅 규칙) · `web/navi/test/*`(층마다의 판별식)
+        **하위 넷**이 이 칸을 물려받는다
+
+### 22-1. 진입과 배선
+
+| 파일 | 무엇을 드나 | 안 드는 것 |
+| --- | --- | --- |
+| `web/navi/src/main.tsx` | 진입점. **관제가 루트(`/`) · 내비가 `/navi/`** 다. 쿼리스트링은 주소가 아니라서(남에게 보낼 링크도 북마크도 못 된다) 배포가 루트에 관제를 앉힌다 | 어느 화면이 무엇을 그리는지 |
+| `web/navi/src/App.tsx` | 내비 화면의 훅을 **잇기만** 한다 | 계산도 그림도 여기서 하지 않는다 |
+| `web/navi/src/config.ts` | 바깥에서 **주입되는 값 한 자리**. 토큰을 저장소에 넣지 않는다 | 기본값으로 비밀을 들지 않는다 |
+| `web/navi/src/vite-env.d.ts` | 번들러가 주는 타입 선언 한 줄 | 코드가 아니다 |
+| `web/navi/eslint.config.js` | React 훅 규칙을 **실제로 돌린다**. 이 파일이 생기기 전까지 저장소에 eslint 가 하나도 없는데 `eslint-disable` 주석이 스물여덟 개 있었다 — **있지도 않은 검사를 끄고 있었다** | 서식은 안 본다(그쪽은 `ruff` 와 `tsc`) |
+
+### 22-2. 지도와 계산
+
+| 파일 | 무엇을 드나 | 안 드는 것 |
+| --- | --- | --- |
+| `web/navi/src/components/OpsMap.tsx` | 관제 지도. 내비 지도와 **같은 바탕**을 쓰고 그 위에 관제가 보는 것을 얹는다 | 판정 4색을 정의하지 않는다(정본은 `web/config.js`) |
+| `web/navi/src/components/opsLayers.ts` | **관제 전용 층.** `layers.ts` 가 상한을 치면서 **화면 경계**로 갈랐다 — 「두 화면의 일이 다르다」가 코드에도 선 자리다 | 내비가 쓰는 층은 안 든다 |
+| `web/navi/src/domain/serviceArea.ts` | 측위가 **우리 데이터 범위 안인가.** 범위 밖은 「GPS 가 안 잡힌다」와 다른 상태다 | 범위 밖일 때 무엇을 할지는 훅이 정한다 |
+
+### 22-3. 그리는 조각 — `ui/`
+
+★ 이 층의 규율 하나 — **상태를 모른다.** 받은 것을 그린다. 그래서 한 컴포넌트가
+열여덟 장의 화면을 맡을 수 있다(`TopBar`).
+
+| 파일 | 무엇을 드나 |
+| --- | --- |
+| `web/navi/src/ui/TopBar.tsx` | 통일 상단바. `domain/status.ts` 의 표 한 줄을 받아 그린다 — **열여덟 장이 이 컴포넌트 하나**다 |
+| `web/navi/src/ui/appShell.tsx` | 내비 화면의 바탕 · 알림 토스트 · 사건 지점 연기. 배선 파일에 섞여 있던 **모양**을 떼어 낸 자리다 |
+| `web/navi/src/ui/MapControls.tsx` | 좌측 세로 조작(나침반 · 현위치 · 확대 · 축소 · 레이어). **지도 인스턴스를 모른다** — 1인칭 카메라가 매 프레임 줌을 덮으므로 콜백만 부른다 |
+| `web/navi/src/ui/RemainPill.tsx` | 하단 「N분 남음 · x.x km」. 경로가 안 선 상태에서는 **수를 비운다** — 옛 경로의 남은 시간은 거짓 숫자다 |
+| `web/navi/src/ui/StatusCard.tsx` | 우측 상태 카드. **시간이 걸리는 상태만** 띄운다 — 나머지까지 띄우면 골목에서 지도를 가린다 |
+| `web/navi/src/ui/ShareChip.tsx` | 관제 공유 상태칩. 상단바 바로 아래 **가운데** — 오른쪽에 두면 병목 시트와 재탐색 카드가 같은 자리를 쓴다 |
+| `web/navi/src/ui/BottleneckPanel.tsx` | 병목 구간 상세(유효폭 · 요구폭 · 여유폭 · 길이 · 사유 · 근거). 「측정 신뢰도」는 `width_cov` 다 |
+| `web/navi/src/ui/SegCard.tsx` | 관제가 도로 하나를 눌렀을 때의 구간 카드. 여유폭을 **수로** 내고 사유를 한 줄 단다 — 넉넉하면 그 칸이 통째로 빠진다 |
+| `web/navi/src/ui/OpsBits.tsx` | 관제의 되풀이 조각 넷(`Row` · `Sec` · `Tile` · `Center`). 층(`LAYER`)을 받아 **휘도로** 무게를 가른다 |
+| `web/navi/src/ui/Legend.tsx` | 내비 지도 범례. 색은 `navi_graph.json.style` 이 주는 것을 그대로 쓴다 |
+| `web/navi/src/ui/VehicleArt.tsx` | 차종 옆모습. **우리가 그린 단순 도형**이고 실제 차량·제조사·도색을 본뜨지 않는다. 치수를 그림에서 읽지 않는다 |
+| `web/navi/src/ui/TurnArrow.tsx` | 회전 아이콘. 각이 아니라 **어휘**를 받는다 — 각을 어휘로 바꾸는 판단은 `domain/turn.ts` 가 이미 했다 |
+| `web/navi/src/ui/icons.tsx` | 작은 아이콘. **이모지를 안 쓴다** — 글꼴이 없는 단말에서 네모로 나온다 |
+| `web/navi/src/ui/DevBar.tsx` | 개발·시연 조작. 와이어프레임에 없는 것이라 **빼면 화면이 와이어프레임 그대로**가 되게 갈라 뒀다 |
+| `web/navi/src/ui/verdictMeaning.ts` | 판정 4색이 **무엇을 뜻하는가**, 사람 말로. 색은 여기 없다 |
+| `web/navi/src/ui/clearanceMeaning.ts` | 여유폭의 **색과 말**. 수는 `domain/clearance.ts` 가 낸다 |
+| `web/navi/src/ui/routeOption.ts` | 경로 하나를 **비교 카드 한 장**으로 접는다. 훅도 상태도 안 쓴다 |
+
+### 22-4. 화면 시험 — 무엇을 묻나
+
+★ 아홉 모두 **순수 입력**으로 민다. 브라우저가 있어야 도는 것은 배선 한 줄만
+확인하고 멈춘다 — 안 그러면 CI 에서 조용히 건너뛰고, 건너뛴 검사는 없는
+검사다.
+
+| 파일 | 무엇을 묻나 |
+| --- | --- |
+| `web/navi/test/status.test.ts` | 화면 상태가 **신호대로 갈리는가.** 한 줄이 열여덟 장을 가르는데 시험이 없었다 |
+| `web/navi/test/speech.test.ts` | 안내가 **급한 순서로** 나가는가 |
+| `web/navi/test/progress.test.ts` | 위치 추정과 턴바이턴의 **폐루프.** 입력은 GPS 흉내다 — 정답 점을 넣으면 추정기가 틀려도 통과한다 |
+| `web/navi/test/pointRoute.test.ts` | 출발·도착을 **구간에 투영**하는가. 노드에 붙이면 20m 가 1,172m 로 안내된다 |
+| `web/navi/test/turning.test.ts` | 좁은 코너를 **막지 않고** 비용·경고로 다루는가 — 제원이 선 차종에게만 |
+| `web/navi/test/egobox.test.ts` | 자차 상자가 **실측 크기**인가. 틀리면 화면 전체가 거짓말이 된다 |
+| `web/navi/test/contact.test.ts` | 접지 그림자가 **건물과 한 몸으로** 움직이는가 |
+| `web/navi/test/serviceArea.test.ts` | 측위가 데이터 범위 밖인가 — **「안내할 수 있는가」 하나**만 본다 |
+| `web/navi/test/vehicleParity.ts` | 차량 통과 규칙의 **파이썬 판과 TS 판이 같은 답을 내는가.** 두 구현이 사는 한 이 격자가 유일한 동치 증거다(`PLAN #126`) |
+
+## 23. 코드 지도 — 가장자리와 검사
+
+§22 가 화면이면 이 절은 **파이프라인의 가장자리**와 그것을 지키는 검사다.
+가운데(취입 · 폭 · 판정 · 발행)는 §18 과 §4 가 이미 든다.
+
+강제자  `tools/sealcov.py`(이 절이 지목한 파일을 센다 · `ENFORCER_INFLATION` 내려가는 쪽) ·
+        `tests/test_cli_surface.py`(표면의 거절) · `tests/test_scopedecl.py`(빈 그물)
+        **하위 셋**이 이 칸을 물려받는다
+
+### 23-1. 가장자리 — `src/firelane`
+
+| 파일 | 무엇을 드나 |
+| --- | --- |
+| `src/firelane/cli.py` | **명령줄 표면의 관문.** 인자를 거절하는 일만 한다 — 모르는 깃발을 주면 백열여덟 중 스물다섯이 조용히 삼켰다 |
+| `src/firelane/datalog.py` | 데이터 대장 도구. 파이프라인 끝에서 매니페스트를 갱신한다 |
+| `src/firelane/guards.py` | 파이프라인 **방어 로직의 정본.** 계보 검사를 단독으로도 돌린다 |
+| `src/firelane/layerfsck.py` | `sources.yaml` 의 **계층 선언**과 디스크·git·기계 설정을 댄다. 부르는 자리는 `datalog` 하나다 |
+| `src/firelane/publish_fleet.py` | 관내 차종과 제원을 내비가 먹을 꼴로 낸다 |
+| `src/firelane/quiet_gdal.py` | GDAL 의 **알려진 무해 잡음만** 걷는다. 모르는 경고는 그대로 둔다 |
+| `src/firelane/read/__init__.py` | `kind` 별 **읽기의 정본.** 취입 한 함수에 있던 갈래 열둘을 여기로 뗐다 |
+| `src/firelane/seg/basisno.py` | 구간 라벨을 **도로명주소 기초번호**로 만든다 |
+
+### 23-2. 가장자리 — `tools`
+
+| 파일 | 무엇을 드나 |
+| --- | --- |
+| `tools/after_squash.py` | **열차가 만든 상태를 다시 본다.** 스쿼시 뒤의 강제자다 |
+| `tools/branch_tidy.sh` | 가지와 PR 정리. **산출물에 안 닿는다** |
+| `tools/cv_queue.py` | 영상판정을 **어느 구간부터** 붙일지 순서만 정한다. 판정은 안 한다 |
+
+### 23-3. 검사 — 무엇을 묻나
+
+★ 열여섯을 묻는 것으로 묶으면 **넷**이다 — ① 두 구현이 같은 답을 내는가
+② 표면이 거절하는가 ③ 갈래를 전부 태우는가 ④ 비싼 일을 두 번 안 하는가.
+겹치는 자리는 없다.
+
+| 파일 | 무엇을 묻나 |
+| --- | --- |
+| `tests/test_acquire.py` | **두 파생기가 같은 답을 내는가** |
+| `tests/test_snap_groups.py` | 노드 접합이 **한 곳에서** 일어나는가 — 그리고 그 한 곳이 옳은가 |
+| `tests/test_provider_registry.py` | provider 목록의 **사본을 금지한다** |
+| `tests/test_read_dispatch.py` | `kind` → 갈래 배선이 **선언과 맞는가** |
+| `tests/test_cli_surface.py` | 모든 CLI 가 **모르는 인자를 거절하는가** |
+| `tests/test_scopedecl.py` | 메타 강제자가 **빈 그물이 아닌가** |
+| `tests/test_lineage_branches.py` | 계보 검증의 가지 셋을 **전부 태운다** |
+| `tests/test_dms_ancestry.py` | 조상 판정이 **네 모양을 다 가르는가** |
+| `tests/test_write_route.py` | 2차 경로가 **막힌 길을 안 쓰는가** — 소스 글자가 아니라 산출물로 본다 |
+| `tests/test_relock_decision.py` | 재잠금이 필요한가를 **지문이** 답하는가 — 사람의 산문이 아니라 |
+| `tests/test_fleet_profiles.py` | 차량 제원 배선이 **조용히 기준차로 떨어지지 않는가** |
+| `tests/test_tile_zoom_agreement.py` | **굽는 줌과 읽는 줌이 같은가** |
+| `tests/test_figure_fit.py` | 그림 라벨이 **폭까지** 화면·박스 안에 드는가 |
+| `tests/test_sweep_bookmark.py` | 레이크 지문 **북마크**가 낡은 것을 재사용하지 않는가 |
+| `tests/test_lakecheck_l3.py` | L3 이 **레이크를 전부 해시하지 않는지** — 판정이 아니라 **비용**을 잰다 |
+| `tests/test_refcheck_paths.py` | 경로 표기 검사가 **무엇을 넘기는가** |
+
