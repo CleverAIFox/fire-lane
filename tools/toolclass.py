@@ -123,8 +123,24 @@ _SCOPE = re.compile(r"^\s*scope\s+.*$", re.M)
 _YAML_PATH = re.compile(r"^\s*-\s*(['\"])[\w./*{}-]+\1\s*$", re.M)
 
 
+#: `pre-commit run --all-files` 를 돌리는 자리인가. 돌리면 그 설정의 훅 `entry` 가
+#: **그 자리에서 실제로 도는 호출**이다.
+_PRECOMMIT_RUN = re.compile(r"pre-commit\s+run\s+--all-files")
+_PRECOMMIT_CFG = ROOT / ".pre-commit-config.yaml"
+
+
 def _callers() -> str:
-    """관문 여부를 묻는 자리 — `verify.sh` 와 워크플로. **주석 · `scope` 는 뺀다.**"""
+    """관문 여부를 묻는 자리 — `verify.sh` 와 워크플로. **주석 · `scope` 는 뺀다.**
+
+    ★ 2026-10-10 (DECISIONS §457). `.pre-commit-config.yaml` 을 **조건부로** 더한다 —
+      부르는 쪽 글에 `pre-commit run --all-files` 가 있을 때만. 그 설정의 훅은
+      그 명령으로 **실제로 돌고**, 그러면 그 `entry` 의 도구는 관문이다.
+    ★ 종전에 이 자리가 없어서 훅만으로 도는 도구가 「선언 없는 비관문」으로
+      세어졌다 — `tools/encoding_check.py` 가 워크플로 단계에서 걷히자마자 그
+      꼴이 됐다. 그 단계는 **같은 명령의 사본**이었다(§456-4 ⑤).
+    ★ `tools/gate_parity.py` 의 `_hook_tokens()` 와 **같은 물음이고 같은 조건**이다.
+      이 파일 위쪽이 적어둔 그대로 — 「둘이 같은 글을 같은 뜻으로 읽어야 한다」.
+    """
     out = [_SCOPE.sub("", _code(VERIFY.read_text(encoding="utf-8")))] if VERIFY.exists() else []
     if FLOWS.is_dir():
         out += [_YAML_PATH.sub("", _code(f.read_text(encoding="utf-8")))
@@ -132,6 +148,8 @@ def _callers() -> str:
     if ACTS.is_dir():
         out += [_YAML_PATH.sub("", _code(f.read_text(encoding="utf-8")))
                 for f in sorted(ACTS.glob("*/action.yml"))]
+    if _PRECOMMIT_CFG.exists() and _PRECOMMIT_RUN.search("\n".join(out)):
+        out.append(_code(_PRECOMMIT_CFG.read_text(encoding="utf-8")))
     return "\n".join(out)
 
 

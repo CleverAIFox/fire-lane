@@ -124,3 +124,43 @@ def of(kind: str) -> list[str]:
 def implemented(name: str) -> bool:
     """`status: 미구현` 이 아니면 구현된 것으로 본다."""
     return policy(name).get("status") != "미구현"
+
+# ── 레이크 대 기계 ────────────────────────────────────────────
+#: `pre-commit` 과 달리 여기는 **선언 대 실물**이다. 아래 둘은 2026-10-10 에
+#: `firelane/lake.py` 에서 옮겨 왔다(DECISIONS §457-2) — 그 파일이 상한 600 을
+#: 넘었고, 둘 다 「계층 선언이 이 기계에서 무엇인가」라 이쪽이 집이다.
+ABOLISHED_SUBS = ("_quarantine",)
+
+
+def lake_layers() -> tuple[str, ...]:
+    """레이크 쪽 층. **선언에서 도출한다** — `base: data` 인 계층 − 폐지층.
+
+    ★ 종전에 `firelane/lake.py` 가 손으로 적은 다섯(`LAYERS`)을 들었고 대장과
+      **갈려 있었다** — 그쪽은 `retired` 를 들고 대장은 안 들었다.
+    """
+    return tuple(n for n in names()
+                 if policy(n).get("base") == "data"
+                 and str(policy(n).get("sub")) not in ABOLISHED_SUBS)
+
+
+def lake_connected() -> tuple[bool, str]:
+    """레이크가 이 기계에 붙어 있는가. **획득 대장에서 도출한다.** (붙었나, 사유)
+
+    대장(`data/_acquire.json`)이 적은 파일 중 디스크에 **하나라도** 있으면 붙은
+    것이다. 이 자가 **「결함 0」과 「못 쟀음」을 가른다** — 그 구별이 없어서
+    `tools/treecheck.py` 의 D 축 열 개가 죽어 있었다(DECISIONS §457-1).
+
+    ★ 환경변수(`FIRE_LANE_DATA`)도 `data/` 폴더 존재도 판별식이 **못 된다** —
+      레이크를 저장소 안 `data/raw` 에 두는 기계에서 앞은 `None` 이고,
+      `data/golden` 이 커밋돼 있어 뒤는 CI 에도 참이다. 대장이 적은 실물이
+      그 둘을 다 피하는 유일한 자다.
+    """
+    import json  # noqa: PLC0415  이 함수 하나만 쓴다 — 모듈 적재를 안 무겁게 한다
+    acq = paths.ROOT / "data" / "_acquire.json"
+    if not acq.exists():
+        return False, "획득 대장이 없다"
+    led = json.loads(acq.read_text(encoding="utf-8")).get("files") or {}
+    if not led:
+        return False, "획득 대장이 비었다"
+    n = sum(1 for rel in led if (paths.RAW / rel).exists())
+    return n > 0, f"대장 {len(led)}건 중 디스크에 {n}건"

@@ -188,21 +188,54 @@ def test_code_scope_covers_everything_that_moves_output() -> None:
             "  안 돌고 초록이 뜬다. 봉인 code 는 uv.lock 까지, cfg 는 대장까지 센다.")
 
 
-#: 영향 범위 선언 수의 **바닥**. 올리기만 한다(래칫). 옛 PLAN §13 W7-3 이 대장 행으로 들던 것을
-#: 수로 옮겼다 — 래칫은 결함이 아니라 숫자다(DECISIONS §217-5). 2026-09-22 에 23 → 33.
-#: ★ 같은 날 33 → 31. 선언을 지운 것이 아니라 **단계가 없어졌다** — 옛 지도 철거로
-#:   「JS 문법·순환·import」 · 「JS 부팅 스모크」가 도구째 빠졌다(선언 둘).
-#: ★ 2026-09-22 (DECISIONS §218-5) 31 → 33. 「의존성 선언↔import (deptry)」 · 「파일 길이 래칫」이
-#:   선언을 들고 들어왔다.
-SCOPE_FLOOR = 33
+#: ★ 2026-10-10 (DECISIONS §457). 여기 있던 **손으로 적은** `SCOPE_FLOOR = 33` 을
+#:   지웠다. 실측이 82 가 될 때까지 **49 뒤처져 있었고**, 그 사이 선언이 썩어도
+#:   안 울었다. 손으로 적은 바닥은 그 자체가 낡는다(이 저장소가 세 번 겪었다 —
+#:   23 → 33 → 31 → 33 이 전부 사람이 옮긴 수다).
+#:   바닥의 집은 이제 `tools/scopedecl.py` 의 `RATCHETS["VERIFY_NO_SCOPE"]` 이고
+#:   `ratchet.py --write` 가 **조이는 쪽으로만** 움직인다. 세는 양도 바꿨다 —
+#:   「선언이 몇인가」가 아니라 **「미선언이 몇인가」**다. 미선언 단계는 영향 범위를
+#:   아무도 모르는 상태이고, 그 수가 늘면 운다.
+#: ★ 이 시험이 남아서 묻는 것은 **다른 물음**이다 — 아래 ★.
 
 
-def test_scope_declarations_ratchet() -> None:
-    """선언이 바닥 밑으로 내려가지 않는가. ★ `pytest` · `커버리지 래칫` 은 안전망이라 늘 미선언이다."""
+def test_the_two_scope_counters_agree() -> None:
+    """선언 수를 재는 **두 자가 같은 답을 내는가.**
+
+    ★ 2026-10-10 (DECISIONS §457). `verify.sh --scope-list` 는 셸이 제 단계를
+      돌며 세고, `scopedecl.verify_scope_counts()` 는 그 파일을 **밖에서 읽어**
+      센다. 둘이 갈리면 래칫이 재는 수가 실물과 다르다는 뜻이고, 그때
+      `VERIFY_NO_SCOPE` 는 **아무것도 안 지킨다.**
+
+    ★ 이 저장소가 그 족을 여러 번 겪었다 — 「자가 틀리면 그 수는 수가 아니다」.
+      래칫을 믿으려면 그 수를 내는 자를 따로 대야 한다.
+    """
     import re
+
+    import scopedecl
     r = subprocess.run(["bash", str(VERIFY), "--scope-list"],
                        capture_output=True, text=True, cwd=ROOT, timeout=120)
     m = re.search(r"선언 (\d+) · 미선언 (\d+) · 단계 (\d+)", r.stdout)
     assert m, "--scope-list 가 합계 줄을 안 낸다"
-    n = int(m.group(1))
-    assert n >= SCOPE_FLOOR, f"영향 범위 선언 {n} < 바닥 {SCOPE_FLOOR} — 선언을 지웠거나 단계가 빠졌다"
+    shell = (int(m.group(1)), int(m.group(2)))
+    direct = scopedecl.verify_scope_counts()
+    assert shell == direct, (
+        f"두 자가 다른 답을 낸다 — `--scope-list` {shell} vs "
+        f"`scopedecl.verify_scope_counts()` {direct}\n"
+        "  래칫 `VERIFY_NO_SCOPE` 가 뒤쪽 수를 쓴다. 갈리면 그 래칫은 아무것도\n"
+        "  안 지킨다. 두 파서 중 어느 쪽이 틀렸는지 읽어라.")
+    assert sum(shell) == int(m.group(3)), (
+        f"선언 {shell[0]} + 미선언 {shell[1]} 이 단계 {m.group(3)} 과 안 맞는다")
+
+    # ★ 카나리아 — 합성 결함을 **양쪽으로** 민다(§445 의 정의).
+    #   이것이 없으면 파서가 늘 `(0, 0)` 을 내도 위 대조가 통과한다.
+    _one = 'scope "src/*"\nstep "가" uv run x\n'
+    _bare = 'step "나" uv run y\n'
+    assert scopedecl.verify_scope_counts(_one) == (1, 0), "선언을 못 센다"
+    assert scopedecl.verify_scope_counts(_bare) == (0, 1), "미선언을 못 센다"
+    assert scopedecl.verify_scope_counts(_one + _bare) == (1, 1), "둘을 못 가른다"
+    # ★ 선언은 **한 단계에만** 걸린다 — verify.sh 의 `step()` 이 그렇게 돈다.
+    assert scopedecl.verify_scope_counts(_one + _bare + _bare) == (1, 2), \
+        "선언이 다음 단계로 새고 있다"
+    assert not scopedecl.verify_scope_counts("")[0], "빈 글에서 선언을 센다"
+    assert not scopedecl.verify_scope_counts("")[1], "빈 글에서 미선언을 센다"

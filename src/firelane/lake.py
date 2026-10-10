@@ -58,46 +58,13 @@ from pathlib import Path
 from firelane import layers as _L
 from firelane import ledger, paths
 
-
-# ★ 2026-10-10 (DECISIONS §457). 손으로 적은 다섯이었다. `layers` 선언에
-#   `retired` 가 들어오면서 이 상수가 **대장과 갈릴 수 있는 사본**이 됐고,
-#   실제로 2026-09~10 내내 **갈려 있었다** — 여기는 retired 를 들고 대장은
-#   안 들었다. 위 주석이 「그때 이 상수를 대장에서 읽도록 바꾼다」고 적어둔
-#   그 자리다. 조건(「레이크를 세운 뒤」)이 충족됐으므로 도출로 바꾼다.
-#   레이크 쪽 층 = `base: data` 인 계층 − 폐지층.
-def connected() -> tuple[bool, str]:
-    """레이크가 이 기계에 붙어 있는가. **획득 대장에서 도출한다.** (붙었나, 사유)
-
-    대장(`data/_acquire.json`)이 적은 파일 중 디스크에 **하나라도** 있으면
-    붙은 것이다. 0 건이면 레이크 없는 기계다.
-
-    ★ 2026-10-10 (DECISIONS §457). **「결함 0」과 「못 쟀음」을 가르는 자다.**
-      레이크 없는 기계에서 「`required` 인데 없다」는 참이지만 결함이 아니다 —
-      그 구별이 없어서 `treecheck` 는 `--repo` 로 굳어 **D 축 열 개가 죽고**,
-      `layerfsck` ① 은 거짓 어긋남을 냈다. 둘이 같은 물음을 저마다 풀던 자리라
-      집을 하나로 둔다(`tools/treecheck.py` 와 `firelane/layerfsck.py` 가 쓴다).
-
-    ★ 환경변수(`FIRE_LANE_DATA`)는 판별식이 못 된다 — 레이크를 **저장소 안
-      `data/raw` 에 두는 기계**가 있어서 그때 `paths.DATA` 가 `None` 이다.
-      `data/` 폴더 존재도 못 쓴다 — `data/golden` · `data/baseline` 이 커밋돼
-      있어 CI 에도 있다. 대장이 적은 실물이 **그 둘을 다 피하는 유일한 자**다.
-    """
-    import json as _json
-    acq = paths.ROOT / "data" / "_acquire.json"
-    if not acq.exists():
-        return False, "획득 대장이 없다"
-    led = _json.loads(acq.read_text(encoding="utf-8")).get("files") or {}
-    if not led:
-        return False, "획득 대장이 비었다"
-    n = sum(1 for rel in led if (paths.RAW / rel).exists())
-    return n > 0, f"대장 {len(led)}건 중 디스크에 {n}건"
-
-
-def _lake_layers() -> tuple[str, ...]:
-    """레이크 쪽 층. **대장에서 도출한다** — `base: data` 인 계층 − 폐지층."""
-    return tuple(n for n in _L.names()
-                 if _L.policy(n).get("base") == "data"
-                 and str(_L.policy(n).get("sub")) not in ABOLISHED)
+# ★ 2026-10-10 (DECISIONS §457-2). 손으로 적은 다섯이었고 대장과 **갈려 있었다.**
+#   도출로 바꿨다 — `base: data` 인 계층 − 폐지층.
+#: ★ 2026-10-10 (DECISIONS §457-2). `connected()` 와 `_lake_layers()` 를
+#:   `firelane/layers.py` 로 **옮겼다** — 이 파일이 상한 600 을 넘었고, 둘 다
+#:   「계층 선언이 이 기계에서 무엇인가」라 그쪽이 집이다. 여기서는 위임한다.
+connected = _L.lake_connected
+_lake_layers = _L.lake_layers
 
 
 ABOLISHED = ("_quarantine",)                                # §173-2 — retired 로 흡수

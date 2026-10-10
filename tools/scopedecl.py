@@ -132,13 +132,58 @@ SELFTEST_MIN = 75
 
 #: `tools/ratchet.py` 가 이 둘을 **조이는 쪽으로만** 고쳐 적는다(§309).
 #: 사람이 위 두 수를 받아적지 않는다 — 판정은 여전히 `judge()` 가 한다.
-RATCHETS = {"NO_DECL": "down", "SELFTEST_MIN": "up"}
+#: `tools/verify.sh` 의 단계 중 **영향 범위를 선언하지 않은** 수. 줄어드는 쪽으로만.
+#: ★ 2026-10-10 (DECISIONS §457) 신설 — 종전에 이 수를 지키던 것은
+#:   `tests/test_verify_scope.py` 의 손으로 적은 `SCOPE_FLOOR = 33` 이었고
+#:   실측이 82(선언) 가 될 때까지 **49 뒤처져 있었다.** 손으로 적은 바닥은
+#:   그 자체가 낡는다. 실측 22.
+VERIFY_NO_SCOPE = 22
+
+RATCHETS = {"NO_DECL": "down", "SELFTEST_MIN": "up",
+            "VERIFY_NO_SCOPE": "down"}
+
+
+def verify_scope_counts(src: str | None = None) -> tuple[int, int]:
+    """`tools/verify.sh` 의 (범위 선언한 단계, 안 한 단계).
+
+    ★ `src` 를 주면 **그 글을 센다** — 판별식이 순수해지고, 시험이 합성 결함을
+      양쪽으로 밀 수 있다(§441-5 와 같은 모양 · 카나리아의 전제다).
+
+    ★ 2026-10-10 (DECISIONS §457). **같은 물음의 다른 매체다.** 이 파일의
+      `NO_DECL` 은 「강제자 머리에 `밖` 칸이 있는가」를 세는데, `verify.sh` 의
+      단계도 강제자이고 그 매체에서는 선언이 `scope "패턴 …"` 한 줄이다.
+      선언이 없는 단계는 `--since` 에서 **늘 돈다** — 안전한 기본값이지만,
+      선언이 없는 쪽은 영향 범위를 **아무도 모르는** 상태이기도 하다.
+
+    ★ 왜 래칫이 필요했나 — 종전에 이 수를 지키던 것은
+      `tests/test_verify_scope.py` 의 **손으로 적은** `SCOPE_FLOOR = 33` 이었고,
+      실측이 82 가 될 때까지 **49 뒤처져 있었다.** 손으로 적은 바닥은 선언이
+      썩어도 안 울었다. 래칫으로 옮기면 `ratchet.py --write` 가 조인다.
+
+    ★ `--scope-list` 를 부르지 않는다 — 하위 프로세스는 느리고, `ratchet_values()`
+      가 죽으면 이 도구가 통째로 죽는다(이 파일 머리말의 「빈 그물」과 같은 자리).
+      파일을 **그대로 읽어** 센다.
+    """
+    if src is None:
+        src = (ROOT / "tools" / "verify.sh").read_text(encoding="utf-8")
+    declared = undeclared = 0
+    pending = False
+    for ln in src.splitlines():
+        if re.match(r"^\s*scope\s+\S", ln):
+            pending = True
+            continue
+        if re.match(r'^\s*step\s+"', ln):
+            declared += pending
+            undeclared += not pending
+            pending = False
+    return declared, undeclared
 
 
 def ratchet_values() -> dict[str, int]:
     """래칫 이름 → 지금 실측값. **판정은 안 한다**(`judge()` 소관)."""
     _, missing, st, _ = measure()
-    return {"NO_DECL": len(missing), "SELFTEST_MIN": len(st)}
+    return {"NO_DECL": len(missing), "SELFTEST_MIN": len(st),
+            "VERIFY_NO_SCOPE": verify_scope_counts()[1]}
 
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)

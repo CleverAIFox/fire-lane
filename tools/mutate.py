@@ -132,7 +132,7 @@ TIMEOUT = 180
 #   ★ **잡을 수 있던 둘은 잡았다** — `alive()` 의 경계 `<= 0` 을 `<= 1` 로 민
 #     돌연변이가 살아 있었고(자기검사가 0 과 「충분히 큼」만 봤다) **1 을 보는
 #     문**을 달아 둘 다 죽였다. 새 자기검사가 그 자리다.
-SURVIVORS = 76
+SURVIVORS = 75
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 MUTANTS = 120
 #: 붙잡이가 **0 인 과녁** 수. 흔들어도 못 재는 자리다 — 내려가는 쪽으로만.
@@ -159,7 +159,7 @@ RATCHET_HELD = 23   # ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
 # ★ 2026-10-10 — 50 → 53 (같은 판). **SURVIVORS 와 같은 원인이다** — §398-8 의
 #   규율대로 둘을 같이 적는다. 새로 산 셋이 전부 래칫 상수가 아니다
 #   (`__main__` 가드 · WCAG 상수 · 비교 연산자).
-UNSORTED = 53
+UNSORTED = 52
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
             "RATCHET_HELD": "up", "UNSORTED": "down"}
 
