@@ -6390,7 +6390,7 @@ uv run python -m firelane.ingest --only jijeok
 
 전량이 20분 → 4분이 됐다. ★ 다만 **OOM 이 사라진 것이 아니라 `ngii_road`
 로 옮겨갔다.** 근본은 `ingest` 가 그때 66종을 한 프로세스로 돈 것이고(지금 대장 72종 · `on_demand` 하나를 빼면 71)
-`PLAN #15` 가 그 일감이다.
+`PLAN #15`(결번 · 당시 번호다) 가 그 일감이었다.
 
 강제자  `tests/test_guards.py::test_unconsumed_sources_are_on_demand`
 
@@ -6415,7 +6415,7 @@ uv run python -m firelane.ingest --only jijeok
 
 ```
 src/firelane/pipeline.py:462   2026-09-03 에 jijeok OOM 으로
-docs/PLAN.md #15               재실행하면 통과하는 실패
+docs/PLAN.md #15(결번)         재실행하면 통과하는 실패
 ```
 
 열하루 전 기록을 **둘 다 안 읽었다.** `grep -rn jijeok` 한 줄이면 첫 시도에
@@ -6506,7 +6506,7 @@ docs/PLAN.md #15               재실행하면 통과하는 실패
 
 > 2026-09-15 · 오창준
 
-★ `PLAN #15` 에서 옮겼다. **글자는 안 바꿨다.**
+★ `PLAN #15`(결번) 에서 옮겼다. **글자는 안 바꿨다.**
 
 WSL2 6GB(물리 8GB). 66종을 **한 프로세스**로 돌아 RSS 가 단조증가한다 — `geopandas` 가 놓은 메모리를 OS 에 안 돌려준다. **재실행하면 통과하는 실패**라 빨간불이 무작위로 뜬다. ★ 2026-09-14 실측. `jijeok`(1.0GB · 630만 행)을 `on_demand` 로 빼니 전량이 20분 → 4분이 됐고 OOM 이 `ngii_road` 로 **옮겨갔다**. 하나씩 빼는 것은 답이 아니다. `ingest --only <키>` 가 이미 되므로 무거운 소스를 자식 프로세스로 돌려 종료 시 OS 가 회수하게 한다. 껍데기 30줄. ★ 같이 넣을 것 — `SEAL` 에 raw 지문. 입력이 봉인과 같으면 파이프라인을 **근거 있게** 생략한다. 지금 `--fast` 는 근거 없이 전부/전무로 건너뛰고, 그 로그로 봉인하면 반쪽 증표가 된다. ★ 이 행에 "재실행하면 통과하는 실패" 가 처음부터 적혀 있었는데 2026-09-14 에 그것을 못 보고 `.work` 오염 · stdin 누락으로 두 번 오진했다. PLAN 을 안 열었다
 
