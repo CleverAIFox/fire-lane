@@ -38,8 +38,6 @@ def test_the_denominator_is_hand_written_code_only():
 #: ★ 2026-10-09 (DECISIONS §444) **38 → 37.** 내려가는 쪽이고 사유는 **파일이
 #:   은퇴한 것**이다 — docx·pdf 를 들어내며 지운 열 중 하나가 강제자 칸만으로
 #:   덮여 있었다. 「읽지 않고 칸에만 적은」 것이 하나 줄었다는 뜻이고, 그것이
-#:   줄어드는 것은 이 래칫이 바라는 방향이다.
-ENFORCER_INFLATION = 37
 
 
 def test_the_tool_counts_itself():
@@ -83,17 +81,26 @@ def test_the_enforcer_column_inflation_is_measured_not_assumed():
     ★ 그래서 묻는 것을 바꿨다: 부풀림을 **세고 그 수가 늘지 않는가.**
       0 이 목표이고 `PLAN #165` 가 그 길을 든다. 수를 아는 채로 두는 쪽이
       모르고 초록인 쪽보다 낫다(§286).
+
+    ★ 2026-10-10 (DECISIONS §446 · PLAN #165 닫힘). 그 길을 갔다 — 세는 법에서
+      칸을 빼고(495 → 458) 그 짝으로 빈 곳 61 을 `MASTER §22` · `§23` 이
+      산문으로 덮었다(458 → 519 = 분모). **부풀림이 0 이고 빈 곳도 0 이다.**
+      그러니 이제 이 시험이 묻는 것은 「0 인가」이고, **0 이 청결인지 죽음인지**
+      를 같이 가른다 — 분모가 살아 있어야 0 이 뜻을 갖는다(§230).
     """
     den = set(S.denominator())
-    cov, prose = S.covered() & den, S.prose_only() & den
+    assert den, "분모가 비었다 — 0 이 청결이 아니라 죽음이다"
+    cov, prose = S.body_refs() & den, S.covered() & den
     assert prose <= cov, "산문만이 본문 전체보다 많다 — 칸 빼기가 글자를 더 지웠다"
-    assert (len(cov) - len(prose)) == ENFORCER_INFLATION, (
-        f"강제자 칸만으로 덮인 파일이 {len(cov) - len(prose)}개 — 기록은 "
-        f"{ENFORCER_INFLATION}개다. 늘었으면 절을 **읽지 않고 칸에만 적었다**")
-    assert S.survey()["빈 곳"], "빈 곳이 0 이다 — 분모나 집합이 샜다"
+    assert len(S.inflation()) == S.ENFORCER_INFLATION, (
+        f"강제자 칸만으로 덮인 파일이 {len(S.inflation())}개 — 기록은 "
+        f"{S.ENFORCER_INFLATION}개다. 늘었으면 절을 **읽지 않고 칸에만 적었다**")
+    assert not S.survey()["빈 곳"], (
+        f"빈 곳이 {len(S.survey()['빈 곳'])}개로 늘었다 — 파일이 늘었으면 그 파일을 "
+        "`MASTER §22` · `§23` 이 **읽고 적어야** 한다")
 
 
-def test_the_uncovered_side_is_mostly_the_web_client():
+def test_every_file_is_read_by_some_section():
     """★ 실측. 빈 곳에서 `web/navi` 가 **제일 큰 묶음**이다 — 문서가 파이썬 쪽만 봤다.
 
     ★ 2026-10-06 (DECISIONS §411). 종전 단정은 「빈 곳의 40% 이상」이었다.
@@ -104,13 +111,17 @@ def test_the_uncovered_side_is_mostly_the_web_client():
       묻는 것은 그대로 둔다: **빈 곳이 아직 화면 쪽에 몰려 있는가.** 임의의
       비율 대신 **묶음 순위**로 묻는다 — 다 읽으면 그때 이 단정이 자연스럽게
       풀린다(`web/navi` 가 1위에서 내려간다).
+
+    ★ 2026-10-10 (DECISIONS §446). **그 단정이 자연스럽게 풀렸다** — `MASTER §22`
+      가 화면 층을 읽어 `web/navi` 가 1위에서 내려갔고, 빈 곳이 통째로 0 이
+      됐다. 묻는 것을 한 칸 올린다: **덮임이 분모와 같은가.** 비율이 아니라
+      등식이라 고쳐도 안 울고, 파일이 하나 늘면 그날 운다.
     """
     s = S.survey()
-    navi = sum(n for k, n in s["묶음별 빈 곳"].items() if k.startswith("web/navi"))
-    other = sum(n for k, n in s["묶음별 빈 곳"].items() if not k.startswith("web/navi"))
-    assert navi * 2 >= other, (
-        f"web/navi 가 빈 곳의 {navi}/{len(s['빈 곳'])} — 분포가 바뀌었으면 "
-        "§384 를 다시 읽어라")
+    assert s["덮임"] == s["분모"], (
+        f"덮임 {s['덮임']} ≠ 분모 {s['분모']} — 새 파일 {len(s['빈 곳'])}개를 "
+        "아무 절도 안 읽었다. `MASTER §22`(화면) · `§23`(가장자리·검사) 가 그 집이다")
+    assert not s["묶음별 빈 곳"], "빈 곳이 0 인데 묶음이 남았다 — 집계가 갈렸다"
 
 
 def test_the_tool_passes_its_own_selftest():
