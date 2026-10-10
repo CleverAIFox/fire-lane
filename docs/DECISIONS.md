@@ -32902,3 +32902,149 @@ tools/render_figures.py --check                         그림이 옛 값을 그
   `tools/delivercheck.py` 의 `RELOCK_TESTS` 에 벌써 등재돼 있었는데 그것을 안
   읽고 같은 칸을 또 만들었다 — `ruff` 의 `F601`(중복 키)이 잡았다. 「말하기 전에
   그 파일을 연다」를 또 어겼고, 이번에는 **자가 먼저 일했다.**
+
+---
+
+## 456. 「105 가 전부 필요한가」를 쟀다 — **빼야 할 것은 검사가 아니고, 안 도는 열 축이 있다**
+
+> 2026-10-10
+
+강제자  `tools/gate_parity.py`(로컬↔CI 가 같은 검사기를 보는가 — **횟수는 못 본다**) ·
+        `tests/test_guards.py::test_local_verify_covers_ci` ·
+        `tools/deadcheck.py --ratchet`
+        **하위 여섯**이 이 칸을 물려받는다
+유병률  **5회** — 「선언은 섰는데 부르는 자리가 없다」
+        (§243-2 유령 소비자 열하나 · §243-6 검사가 제 눈 밖에 둔 자리 둘 ·
+        §436-6 재잠금 면제가 죽은 그물 · §445 통로를 지키는 문의 범위 ·
+        이 절의 `treecheck` 열 축)
+
+주인이 물었다 — 「그니까 그 105 검사는 전부 필요한게 맞다는거야?」
+**안 쟀었다.** 재고 적는다. 두 물음으로 훑었다 — ⓐ 무엇을 묻는가 ⓑ 그 물음을
+다른 단계가 이미 묻는가.
+
+### 456-1. 먼저 — ⓐ 가 **도구 단위로만** 선언돼 있다
+
+`tools/toolindex.py` 가 도구마다 「무엇을 묻는가」 한 줄을 제 머리말에서 받아
+강제한다. 좋은 설계인데 **단계 단위가 아니다.**
+
+```
+[84] 화면 분리     uicheck.py --split  ┐  같은 한 줄을 든다
+[86] 화면 빌드본   uicheck.py --build  ┘  「사람 눈이 마지막 관문이던 자리를…」
+[88] 내비 의존     naviweight.py       ┐  같은 한 줄
+[89] 내비 무게     naviweight.py --build ┘
+[49] golden 판정 불변      golden.py check    ┐ 같은 한 줄
+[50] golden 게이트 해제    golden.py selftest ┘
+```
+
+하위명령이 다르면 **묻는 것이 다른데**, 그 차이를 적은 자리가 없다. 단계 이름이
+유일한 힌트다. ⓑ 를 기계로 묻지 못하는 첫째 이유다.
+
+### 456-2. `treecheck` 의 **열 축(D0~D9)이 어디서도 안 돈다**
+
+```
+tools/verify.sh            treecheck.py --repo
+.github/workflows/contract.yml  treecheck.py --repo
+그 밖에 부르는 자리         없다
+check_lake 를 거치는 시험   없다
+```
+
+`main()` 이 `both = not (a.repo or a.lake)` 로 갈리고 `--repo` 면 `check_lake()`
+가 안 돈다. **선언된 축 열 개가 전수 verify 에서도 CI 에서도 한 번도 실행되지
+않는다.** 「검사가 죽었는가」(`deadcheck --ratchet`)는 천장을 세고 **부르는
+자리가 없는 축**은 안 본다.
+
+★ **그중 D8 은 `--lake` 로 돌려도 도달 불가다.** `required: true` 인 계층은
+  `raw` 하나인데(실측), D8 앞에 `if offline or not paths.RAW.is_dir(): return out`
+  가 있다. **D8 이 울 유일한 조건에서 그 앞 줄이 먼저 돌려보낸다.** 「required
+  인데 없다」를 지금 실제로 묻는 것은 `tools/refcheck.py` 의 ⑧ 하나다.
+
+★ 이것이 「105 가 전부 필요한가」의 진짜 답이다 — **필요한데 안 돌고 있는 것이
+  먼저다.** 빼는 쪽을 보러 갔다가 **안 도는 쪽**을 찾았다.
+
+### 456-3. 가드가 **묘비를 먹고 초록**이었다
+
+`tests/test_guards.py::test_local_verify_covers_ci` 가
+`assert "CI 환경 재현" in vs` 를 든다. 그 단계는 **2026-09-18 (W2) 에 지워졌고**,
+그 문자열이 지금 `tools/verify.sh` 에 남은 자리는 **삭제를 적은 주석 한 줄**이다.
+
+```
+tools/verify.sh   # ★ 2026-09-18 (W2) 삭제 — 「CI 환경 재현」. 존재하지 않는 CI 를 검사했다.
+```
+
+**지웠다는 기록이 그 가드를 먹이고 있다.** 문자열로 단계 존재를 묻는 가드는
+주석과 단계를 못 가른다. 같은 파일의 4번 자리 주석도 아직 「아래 'CI 환경 재현'
+은 모듈을 가린 **다른 환경**이라 그것은 남긴다」고 말한다 — 가리키는 단계가 없다.
+
+### 456-4. **의미 없이 반복**하는 자리 — 재어 보니 여섯이다
+
+★ 전부 **같은 커밋 · 같은 환경**에서 두 번 이상 도는 것이고, 환경이 다른
+  재실행은 제외했다(그것은 다른 물음이다).
+
+```
+① contract.yml 전체가 **main 푸시에서 2회**
+   제 트리거(push: [main])와 deploy.yml 의 gate(uses:)가 양쪽에서 깨운다.
+   concurrency group 이 `contract-${{ github.workflow }}-${{ github.ref }}` 인데
+   재사용 호출에서 `github.workflow` 는 **호출자 이름**이라 group 이 갈려
+   서로 안 죽인다. shared 86단계 + strict 7단계가 통째로 두 번
+② secret-scan.yml  concurrency 블록이 **아예 없다**(워크플로 넷 중 유일).
+   PR 열린 브랜치에 푸시하면 gitleaks + treescan 넷이 두 벌
+③ image.yml       group 에 `github.ref` 를 쓰는데 push 는 `refs/heads/...`,
+   PR 은 `refs/pull/N/merge` 라 갈린다. GDAL apt + uv sync 가 두 번
+④ pytest 부분집합 넷  test_ownership · test_contract · test_doc_style+
+   test_reproducibility · test_guards+test_declaration_sync — 넷 다
+   `pytest tests/ -q` 의 **진부분집합**이고 `addopts` 도 마커도 없다. 같은 러너
+⑤ encoding_check.py  CI 단계와 pre-commit 훅이 **같은 명령**을 같은 job 에서
+   두 번. 그 도구에 범위 인자가 없어 같은 집합을 본다
+⑥ node --check       CI 단계와 pre-commit `js-syntax` 훅이 같은 집합.
+   `.pre-commit-config.yaml` 이 그 자리에서 **스스로 중복이라고 적는다**
+```
+
+★ **①은 저장소가 기전을 이미 안다.** `deploy.yml` 이 `gate` 위에 적어뒀다 —
+  「PR 에서는 안 부른다. contract 는 PR 트리거를 자기가 들고 있어서 여기서 또
+  부르면 같은 검사가 두 번 돈다」. **PR 쪽을 그 논거로 닫고 push 쪽에는 안
+  썼다.** §344 가 손으로 「한 배치에서 10번」을 센 것도 같은 기전이다.
+
+### 456-5. 합칠 수 있는 쌍은 **하나뿐**이다
+
+```
+tools/refcheck.py 의 ②  (outputs.*.path → 실물, WARN)
+  ⊂ tools/treecheck.py 의 T6
+같은 파일 · 같은 키 · 같은 ROOT · 같은 술어 · 같은 등급. T6 이 「path 선언
+자체가 없다」를 더 든다 — 정본은 T6 쪽이다
+```
+
+겹쳐 보이던 셋은 전부 **조건부**였고 기각했다.
+
+```
+refcheck ③④ ⊂ doc_fsck ②   오늘 53건 전부 겹치나, 접두 어휘(REPO_DIRS)와
+                             PATH_EXEMPT 가 다른 파일에 사는 가변 그물이다.
+                             선언 하나가 data/processed/… 로 바뀌면 깨진다
+refcheck ⑧ ⊂ lakecheck      required 가 raw 하나라서 성립한다. interim·landing
+                             에 붙으면 lakecheck 는 `continue` 로 조용히 넘긴다
+lakecheck L1 ⊂ treecheck D2∪D3∪D4   코드상 성립하나 **D 축이 안 돈다**(456-2)
+```
+
+★ **「지금 겹친다」는 「합쳐도 된다」가 아니다.** 겹침이 두 그물의 **현재 값**에
+  기대고 있으면 값이 바뀌는 순간 구멍이 된다. 합치는 근거는 **술어의 포함**이어야
+  하고 실측의 일치가 아니다. 그것이 이 감사가 넷 중 하나만 통과시킨 이유다.
+
+★ `§234-3` 이 넷의 **스캔을 한 번으로 합치는 안**을 이미 기각해뒀다(비용 논거 —
+  「넷을 합쳐 5초 미만」). 이 감사는 비용이 아니라 **판정의 중복**을 쟀고, 결론이
+  같은 쪽으로 나왔다.
+
+### 456-6. 중복을 **세는 자가 없다**
+
+`tools/gate_parity.py` 가 「로컬 관문과 CI 가 같은 것을 보는가」를 묻는데
+자료형이 `set[str]` 이다. `ci_tokens()` 가 워크플로 전부를 읽어 합집합을
+만들므로 **횟수는 판정에 닿기 전에 접힌다.**
+
+```
+S1·S2·S4·S5 를 지워도   출력이 한 글자도 안 바뀐다 (전수가 토큰을 유지한다)
+같은 pytest 를 열 개 더 붙여도   안 바뀐다
+①(contract 2회)도 안 보인다 — deploy_gaps() 는 「배포인데 needs: 가 없다」만
+묻고, 그 게이트가 **이미 돈 것인가**는 묻지 않는다
+```
+
+★ 머리말이 그 한계를 스스로 적어 뒀다 — 「단계 **이름**이 아니라 **검사기**를
+  맞춘다」. 이름을 버리는 설계라 **step 을 단위로 세는 축이 애초에 없다.**
+  그래서 ①②③ 이 남았고, §344 는 사람이 손으로 셌다.
