@@ -398,7 +398,7 @@ def test_verdict_matches_rules_for_every_segment():
       4. wmin >= 7.0 · 정규표본 1개        needs_cv  DM02825 사고 방어
       5. wmin 있음                         needs_cv
       6. 그 외                             unknown
-      7. needs_cv 인데 CCTV 25m 밖         unknown
+      7. needs_cv 인데 CCTV 유효범위 밖       unknown
 
     ★ 이 테스트가 깨지면 둘 중 하나다. 규칙을 고쳤는데 여기를 안 고쳤거나,
       산출물이 규칙을 안 따르거나. 어느 쪽이든 멈추고 봐야 한다.

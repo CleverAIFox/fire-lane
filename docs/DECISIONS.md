@@ -32698,7 +32698,7 @@ W13-3  `<= 1` + `errors="coerce"` — **한 줄**이다
 강제자  `tests/test_contract.py::test_the_schema_declares_width_is_unverified`(발행
         필드가 사라졌는데 스키마 선언이 남았는가) · `tools/docnum_check.py`(대외
         수치가 산출물과 같은가) · `tools/delivercheck.py` 의 `RELOCK_TESTS`
-        **하위 여덟**이 이 칸을 물려받는다
+        **하위 아홉**이 이 칸을 물려받는다
 유병률  **4회** — 「수를 적어 두고 그 수가 어디서 왔는지 안 적는다」
         (§170 흡수-2 · §243-5 집계가 산문을 이기던 자리 · §436-1 회색의 뜻 ·
         이 판의 25m 라벨)
@@ -32838,3 +32838,44 @@ docs/MASTER.md     「raw 지문으로 전량을 생략한다」      SEAL.json
   민다. 선례가 거꾸로다 — `tools/deadcheck.py` 1266 → 1272 는 **사유를 안 깎고**
   상한을 올렸다. 저쪽은 사유가 그 도구의 판별 근거라 그 파일에 살아야 했고,
   이쪽은 아니다. **어느 쪽인지 묻는 것이 자다.**
+
+### 455-9. 발행 스키마가 **상수의 사본을 문장 속에** 들고 있었다
+
+그림 `docs/figures/verdict_flow.svg` 에 `25m` 하나가 남아 있었다. 쫓아가니
+생성기가 아니라 `src/firelane/seg/geom.py` 의 `VERDICT_RULE` 이었다 — 판정
+규칙의 **문언 정본**이고, 그 일곱째 줄이 「needs_cv 인데 CCTV **25m** 밖」이었다.
+
+```
+src/firelane/seg/geom.py        VERDICT_RULE[6]        정본 문언
+web/data/segments.schema.json   verdict_rule           **발행된다**
+docs/figures/verdict_flow.svg   그림 14                기획서에 실린다
+tests/test_contract.py          규칙 여덟 줄 주석       시험이 적어둔 사본
+```
+
+값이 문장 안에 박혀 있으니 **상수를 내리면 넷이 동시에 거짓**이 된다.
+`CCTV_RANGE` 를 19.0 으로 내린 것이 그 넷을 거짓으로 만들었고, 그중 하나는
+우리가 외부에 내보내는 스키마다.
+
+★ **규칙 문언에 값을 적지 않는다.** 값은 `src/firelane/seg/params.py` 가 들고
+  규칙은 그 **이름**을 든다 — 「CCTV 유효범위(`CCTV_RANGE`) 밖」. 규칙은 값이
+  무엇이든 참이다.
+
+★ f-string 으로 값을 끼우는 길은 **막혀 있다.** `tools/figures/structure.py` 의
+  `_verdict_rules()` 가 이 상수를 **AST 리터럴**로 읽는다 — 일부러 임포트를 안
+  한다(「도구가 파이프라인에 안 붙는다」). f-string 이면 그 도구가 못 읽는다.
+  그래서 끼우지 않고 **뺐다.** 읽는 쪽이 둘이면 쓰는 쪽이 양보한다.
+
+★ 같은 줄의 `3.0` · `7.0` 은 **안 건드렸다** — 사유: 이번에 움직인 값이
+  아니고, 그 둘은 `TRUCK` 과 `TRUCK + 2*PARK` 로 **지금 값이 맞다**. 같은 족이긴
+  하나 고치면 발행 문언이 또 바뀌고 얻는 것이 없다. ★ 되돌릴 조건 — `TRUCK` 이나
+  `PARK` 가 움직일 때. 그 판이 이 줄을 같이 본다.
+
+★ **그림이 먼저 울었다.** `tools/render_figures.py --check` 가 「값이 바뀌었는데
+  기획서 그림이 옛 값을 그리고 있다」고 집었고, 같은 때 `tools/htmlfigs.py --check`
+  는 **초록**이었다. 뒤쪽은 「구운 사본이 그림과 같은가」만 보고 「그림이 값과
+  같은가」를 안 본다. 둘을 다 돌아야 한다 — `tools/verify.sh` 는 둘 다 든다.
+
+★ **면제 자리는 이미 있었다.** `test_schema_verdict_rule_matches_code` 가
+  `tools/delivercheck.py` 의 `RELOCK_TESTS` 에 벌써 등재돼 있었는데 그것을 안
+  읽고 같은 칸을 또 만들었다 — `ruff` 의 `F601`(중복 키)이 잡았다. 「말하기 전에
+  그 파일을 연다」를 또 어겼고, 이번에는 **자가 먼저 일했다.**
