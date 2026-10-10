@@ -26,9 +26,19 @@ diff 가 났고, `verify.sh` 를 한 번 돌릴 때마다 워킹트리가 더러
 ★ 시각을 지우지 않는다. 지우면 "언제 만들어진 기록인가"를 잃는다.
   **바뀌지 않았을 때 갱신하지 않을 뿐이다.**
 
-IN    기존 매니페스트 파일(있으면)
-OUT   같은 파일. 내용이 같으면 손대지 않는다
-PARAM STAMP_KEYS
+★ 2026-10-09 (DECISIONS §445). **봉인 셋이 같은 병으로 열차를 세웠다** —
+  `data/baseline/<태그>/{meta,eval,nfa_compare}.json` 이 매 실행 `as_of` ·
+  `frozen_at` · `git_sha` 만 바뀌어 「전수는 초록인데 추적 파일이 더럽다」가
+  났다. `git_sha` 는 **직전 커밋**을 적으므로 커밋하면 또 바뀐다 —
+  **닿을 수 없는 고정점**이고, 몇 번을 돌려도 안 닫힌다.
+  두 번째 구현을 만들 자리가 아니다(족 2). 키를 넷으로 넓히고 끝개행만
+  인자로 받는다 — 매니페스트는 끝개행이 없고 봉인은 있다.
+
+IN    기존 파일(있으면)
+OUT   같은 파일. 시각·커밋을 뺀 내용이 같으면 손대지 않는다
+PARAM STAMP_KEYS · tail
+밖    **무엇이 내용인가는 안 정한다** — 시각과 커밋만 뺀다. 수가 옳은가는
+      산출한 쪽이 든다.
 """
 from __future__ import annotations
 
@@ -36,8 +46,17 @@ import json
 from pathlib import Path
 from typing import Any
 
-# 이 키들은 "언제" 를 담을 뿐 내용이 아니다. 같은지 비교할 때 제외한다.
-STAMP_KEYS = ("generated_at",)
+# 이 키들은 "언제" 와 "어느 커밋" 을 담을 뿐 내용이 아니다. 비교할 때 제외한다.
+# ★ 2026-10-09. 하나에서 넷으로. `as_of`(지표·대조) · `frozen_at`(봉인) ·
+#   `git_sha`(봉인 · 지표)가 같은 성질이고, **그 셋이 봉인 셋을 영구히**
+#   **더럽게 만들고 있었다**(DECISIONS §445).
+# ★ 넓히는 것이 **가릴 수 있는 자리**가 하나 있다 — `_borrow_stamps` 는
+#   중첩을 따라가므로, 어느 매니페스트가 이 이름을 **내용으로** 들면 그
+#   변화를 조용히 빌려 온다. 실측(2026-10-09): `web/data` ·
+#   `data/processed` 의 `_manifest.json` 키 317종 중 `as_of` · `frozen_at` ·
+#   `git_sha` 는 **0종**이다. 생기면 울어야 하므로 그 실측을
+#   `tests/test_write_stable.py` 가 든다.
+STAMP_KEYS = ("generated_at", "as_of", "frozen_at", "git_sha")
 
 
 def _borrow_stamps(new: Any, old: Any, keys: tuple[str, ...]) -> Any:
@@ -55,7 +74,8 @@ def _borrow_stamps(new: Any, old: Any, keys: tuple[str, ...]) -> Any:
 
 
 def write_stable(path: Path, obj: dict, *,
-                 keys: tuple[str, ...] = STAMP_KEYS) -> bool:
+                 keys: tuple[str, ...] = STAMP_KEYS,
+                 tail: str = "") -> bool:
     """시각을 뺀 내용이 같으면 쓰지 않는다. 썼으면 True.
 
     ★ mtime 도 안 건드린다. 안 쓰는 것이 곧 "안 바뀌었다" 의 표현이다.
@@ -70,7 +90,9 @@ def write_stable(path: Path, obj: dict, *,
       실측 diff 는 `generated_at` 한 줄뿐인데 비교는 계속 실패하는, 눈으로는
       안 보이는 자리였다. 직렬화도 한 번만 한다 — 쓸 때 이 문자열을 그대로 쓴다.
     """
-    text = json.dumps(obj, ensure_ascii=False, indent=2)
+    # ★ `tail` 은 끝개행이다. 매니페스트는 안 붙이고(종전 그대로) 봉인 셋은
+    #   붙인다 — 그 차이를 뭉개면 두 쪽 중 하나가 매 실행 한 바이트 다르다.
+    text = json.dumps(obj, ensure_ascii=False, indent=2) + tail
     if path.exists():
         try:
             old = json.loads(path.read_text(encoding="utf-8"))

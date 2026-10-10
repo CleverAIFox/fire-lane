@@ -147,7 +147,6 @@ def nfa_compare(g):
                 })
 
         if _nfa_rows:
-            import json as _json
             from datetime import datetime as _dt
             from datetime import timedelta as _td
             from datetime import timezone as _tz
@@ -165,9 +164,9 @@ def nfa_compare(g):
                 "n_road": len(_nfa_rows),
                 "rows": sorted(_nfa_rows, key=lambda x: abs(x["dev_m"])),
             }
-            (OUT / "nfa_compare.json").write_text(
-                _json.dumps(_out, ensure_ascii=False, indent=2) + "\n",
-                encoding="utf-8")
+            # ★ 수가 그대로면 안 쓴다 — `as_of` 만 흔들려 봉인이 더러워진다(§445).
+            from firelane.manifest import write_stable as _ws
+            _ws(OUT / "nfa_compare.json", _out, tail="\n")
             print(f"  절대편차 합 {_abs}m · {len(_nfa_rows)}구간"
                   f"  → {(OUT / 'nfa_compare.json').name}")
         else:
@@ -181,9 +180,9 @@ def main() -> None:
     ★ 직전 단계가 방금 낸 파일을 읽는다 — STEPS 순서가 segments → nfa_compare
       이므로 지난 실행 것을 읽을 수 없다(`test_every_read_is_produced_by_an_earlier_step`).
 
-    ★ 종전에 `segments.main()` 이 넘긴 `g` 에는 `width_fail` 칸이 있었고
-      gpkg 에는 없다(`write_outputs` 가 떨군다). 이 대조는 그 칸을 안 읽으므로
-      차이가 없다 — 읽는 칸은 `geometry` · `width_min_m` · `verdict` 셋뿐이고
+    ★ 2026-10-08 (DECISIONS §436 · PLAN #104) 정정. `width_fail` 은 이제 gpkg 에도
+      **있다** — `write_outputs` 가 더 이상 떨구지 않는다. 이 대조에는 차이가
+      없다: 읽는 칸은 `geometry` · `width_min_m` · `verdict` 셋뿐이고
       `tests/test_nfa_compare.py` 가 그 셋의 왕복 등가를 본다.
     """
     src = OUT / "segments_5186.gpkg"

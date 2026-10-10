@@ -111,7 +111,7 @@ export interface GraphEdge {
   n_sample?: number | null;
   /** 가장 가까운 CCTV 까지 거리(m). 25m 넘으면 영상판정이 성립 안 한다 */
   cctv_dist_m?: number | null;
-  /** 왜 회색인가. no_cctv_band · no_cctv_thin · no_cctv_narrow · no_cctv_single */
+  /** 왜 회색인가. ledger_disputes · no_cctv_band · no_cctv_thin · no_cctv_narrow · no_cctv_single */
   unknown_reason?: string | null;
   /**
    * 도로대장 폭(m). `width_min_m` 이 없을 때 속도 추정이 이것으로 떨어진다.

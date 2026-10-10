@@ -585,6 +585,12 @@ def probe_dead_gate(root: Path = ROOT) -> None:
 #   적는 순간 세어지고 `tests/test_deadcheck_probes.py` 가 죽은 면제를 지운다.
 _PROD_ONLY = "tests 는 **제품 코드가 아니다**"
 EXEMPT_SCOPE = {
+    # ★ 2026-10-10 (§445 · PLAN #56 ③). 이 축이 묻는 것은 「**생산 코드**가 도장
+    #   키를 가진 사전을 직접 파일로 쓰는가」다. 시험은 그 결함을 **일부러 심어**
+    #   축이 무는지 보는 자리이므로 과녁이 아니다 — `tests` 를 넣으면 같은 파일의
+    #   카나리아가 심은 합성 결함이 결함으로 세진다.
+    "tests/test_guards.py::_stamped_direct_writes":
+        _PROD_ONLY + " — 합성 결함을 심는 카나리아가 과녁에 들면 축이 자기를 잡는다",
     # ★ 2026-10-05 (DECISIONS §398-4 · §398-2). 둘 다 **묻는 대상이 그 디렉터리
     #   자체**다. 넓히면 묻는 것이 달라진다.
     "tools/mutate.py::named_tests":          # ← `catchers` (DECISIONS §431-10)
@@ -593,7 +599,7 @@ EXEMPT_SCOPE = {
         "`targets()` 가 `toolclass` 에서 도출한다",
     "tools/toolclass.py::tools":
         "묻는 것이 「**도구**가 어느 부류인가」다. `src` 는 꾸러미이고 `tests` 는 "
-        "강제자라 부류 어휘(관문·조사·절차·생산)가 성립하지 않는다 — 넓히면 "
+        "강제자라 부류 어휘(`toolclass.VOCAB` 다섯)가 성립하지 않는다 — 넓히면 "
         "수가 커지고 뜻이 사라진다",
     # ★ 2026-10-03 (DECISIONS §372-5). 셋 다 **`src/firelane` 꾸러미 자신의
     #   모양**을 재는 자리다. `tools/` · `tests/` 를 더하면 재는 것이 달라진다 —

@@ -62,7 +62,10 @@ from firelane.generated import for_role
 #   그쪽은 「쓸까 말까」를 정하고 이쪽은 「왜 바뀌었나」를 말한다. 같은
 #   상수를 두 물음이 쓰는 것이라 정본화하면 한쪽 변경이 다른 쪽 판정을
 #   조용히 움직인다. 대신 `tests/test_freshcheck.py` 가 둘이 같은지를 든다.
-NONDET = frozenset({"generated_at"})
+# ★ 2026-10-09 (DECISIONS §445). 하나에서 넷으로 — 봉인 셋이 `as_of` ·
+#   `frozen_at` · `git_sha` 로 매 실행 더러워져 열차가 안 닫혔다. 위
+#   문단대로 **짝을 같이** 넓힌다. 한쪽만 넓히면 그 시험이 운다.
+NONDET = frozenset({"generated_at", "as_of", "frozen_at", "git_sha"})
 
 DERIVED_BLOCKS = frozenset({"source"})
 DERIVED_KEYS = frozenset({"sha256", "bytes"})

@@ -60,3 +60,37 @@ def test_an_indented_line_is_not_a_declaration():
     assert T._DECL.search("    부류  조사   설명이다\n") is None
     assert T._DECL.match("부류  조사\n")
     assert T._DECL.search("# 부류  절차\n"), "셸의 주석 선언을 못 읽는다"
+
+
+# ── 분모가 진입점인가 (2026-10-08 · DECISIONS §437 · PLAN #162) ────
+def test_the_denominator_is_entry_points_not_every_file():
+    """★ **몸통은 분모 밖이다.** 부를 수 없는 파일에 부류를 묻는 것이 틀렸다.
+
+    종전 분모는 `tools/*` 전부였고 그 안에 몸통 열셋이 있었다. `UNDECLARED = 0`
+    래칫이 그 열셋에 **낱말을 적게 만들었고**, 그 낱말은 뜻이 없었다 — 열셋이
+    전부 「생산」인데 둘은 바로 아랫줄에서 「검사가 아니다」라고 적는다.
+    """
+    rows = T.classify()
+    bodies = {k for k, r in rows.items() if not r["진입점"]}
+    assert bodies, "몸통이 하나도 없다 — 도출이 늘 참이면 좁힌 것이 아니다"
+    assert all(rows[k]["선언"] == "몸통" for k in bodies), (
+        "몸통인데 다른 낱말을 적은 것 "
+        f"{sorted(k for k in bodies if rows[k]['선언'] != '몸통')}")
+    # ★ 분모가 **전부**가 되면 좁힌 뜻이 사라진다
+    assert len(bodies) < len(rows), "전부 몸통이다 — 진입점 도출이 늘 거짓이다"
+
+
+def test_an_entry_point_may_not_call_itself_a_body():
+    """양방향 — 좁히는 쪽만 넣으면 좁힌 다음날 선언이 다시 썩는다."""
+    rows = T.classify()
+    liars = [k for k, r in rows.items() if r["진입점"] and r["선언"] == "몸통"]
+    assert not liars, f"진입점인데 「몸통」이라 적었다 — {liars}"
+
+
+def test_every_body_names_why_it_is_not_an_entry_point():
+    """진입점은 **근거**를 든다. 부정은 근거 없이 적으면 검증이 안 된다."""
+    rows = T.classify()
+    ent = {k: r for k, r in rows.items() if r["진입점"]}
+    assert ent, "진입점이 하나도 없다"
+    naked = [k for k, r in ent.items() if not r["근거"]]
+    assert not naked, f"진입점인데 근거가 비었다 — {naked}"

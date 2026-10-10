@@ -306,6 +306,16 @@ def main() -> int:
         ("docs/MASTER.md", c["unknown"], "unknown"),
         ("docs/MASTER.md", c["cctv_in"], "CCTV 유효범위 안"),
         ("docs/MASTER.md", c["nfa"], "소방청 지정 기준 충족"),
+        # ★ 2026-10-09 (DECISIONS §440 · PLAN #142). **기획서를 여기 넣었다.**
+        #   종전에는 `tools/docx_check.py` 가 `docs/proposal.docx` 를 읽어 같은
+        #   축을 봤다. 정본이 `.md` 로 옮겨진 뒤로 그 도구는 **사본을 검사하고
+        #   있었다** — 정본이 틀려도 사본이 맞으면 초록이다. 기획서는 문서 넷 중
+        #   **유일하게 외부가 읽는 것**이라 어긋나면 비용이 가장 크다.
+        ("docs/proposal.md", c["n"], "세그먼트 수"),
+        ("docs/proposal.md", c["clear"], "clear"),
+        ("docs/proposal.md", c["needs_cv"], "needs_cv"),
+        ("docs/proposal.md", c["blocked"], "blocked"),
+        ("docs/proposal.md", c["unknown"], "unknown"),
         # ★ PLAN 도 본다. 08-18 에 PLAN 만 1,087 로 남아 있었다.
         ("docs/PLAN.md", c["n"], "세그먼트 수"),
         ("docs/PLAN.md", c["unknown"], "unknown"),

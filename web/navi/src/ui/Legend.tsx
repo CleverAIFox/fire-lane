@@ -50,9 +50,11 @@ export function Legend({ style, open }: Props) {
       ))}
       <div style={{ ...head, marginTop: 10 }}>지형지물</div>
       {FEATURES.map((f) => <Row key={f.label} color={f.color} label={f.label} />)}
-      {/* ★ 이 한 줄을 지우지 마라. 지도가 보여주는 색이 확정 판정처럼
-          읽히는 것을 막는 유일한 장치다. */}
-      <div style={note}>도면 기반 1차 판정 · 폭 미검증</div>
+      {/* ★ 2026-10-09 (§441). 여기 「도면 기반 1차 판정 · 폭 미검증」 한 줄이
+          있었고 그 위에 **「이 한 줄을 지우지 마라」**고 적혀 있었다. 행이 화면의
+          설명을 전부 걷으라고 했고, 그 줄의 사유(색이 확정 판정처럼 읽히는 것을
+          막는다)는 **없어진 것이 아니라 `ui/Manual.tsx` 의 「판정 네 색」 마지막
+          줄로 옮겼다.** 「유일한 장치」가 아니게 만든 다음에 걷었다. */}
     </div>
   );
 }
@@ -79,8 +81,4 @@ const panel: React.CSSProperties = {
 };
 const head: React.CSSProperties = {
   fontSize: F.tiny, opacity: .55, marginBottom: 4, fontWeight: 700,
-};
-const note: React.CSSProperties = {
-  marginTop: 10, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,.1)",
-  fontSize: F.tiny, opacity: .5, lineHeight: 1.4,
 };

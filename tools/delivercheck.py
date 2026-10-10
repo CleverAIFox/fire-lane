@@ -16,7 +16,7 @@ IN    패치 파일 이름 목록 · 패치 본문 · 배달 디렉터리
 OUT   결함 문장 목록 (비면 통과)
 밖    **패치가 붙는지는 안 본다** — 그것은 워크트리를 떠야 알고 `deliver.dryrun` 이 든다.
       **본문의 내용이 옳은지도 안 본다** — 템플릿을 채웠는가만 `pr_body_check` 에 묻는다.
-부류  절차   배치를 옮기고 기계를 치운다. **산출물에 안 닿는다**  (DECISIONS §398)
+부류  몸통   진입점이 아니다 — 부르는 쪽이 부류를 든다  (DECISIONS §437)
 """
 from __future__ import annotations
 
@@ -81,6 +81,67 @@ RELOCK_AXES = {
         "`golden.py stale` 이 rc 로 말할 때만 받는다 — 사람이 적는 값이 아니다",
     "커밋된 web/data 가 최신인가":
         "재잠금은 상류를 다시 돌리므로 커밋본이 그 뒤에 온다. 같은 실행에서 커밋된다",
+    # ★ 2026-10-08 (DECISIONS §436-6). **축 둘로는 모자랐다.** 종전 둘은 「지문이
+    #   움직였다」와 「커밋본이 낡았다」만 받는다. 판정 **값**이 움직이는 배치에서는
+    #   그 값에서 유도되는 수가 전부 재잠금 전에 어긋난다 — 선언은 재잠금 뒤의 값이고
+    #   실측은 재잠금 전의 값이다. 그 사이의 빨강은 결함이 아니라 **순서**다.
+    #
+    #   ★ §290-1 이 적은 그대로다 — 「관문을 붙이는 배치는 구조적으로 예습을 통과할
+    #     수 없었다. 그러면 사람은 예습을 건너뛰고, 건너뛴 예습이 빨간 채로 내보냈다.」
+    #     재잠금 배치도 같은 자리에 있었다. 끄는 쪽이 아니라 **받는 쪽**으로 고친다.
+    #
+    #   ★ 넓은 축인 것을 숨기지 않는다. 「래칫 정합」은 래칫 **전부**를 덮으므로,
+    #     이 배치와 무관한 래칫이 깨져도 여기서는 안 운다. 그것을 받는 근거는
+    #     **받는 쪽의 전수 verify 가 재잠금 뒤에 돈다**는 사실 하나다 — 열차는
+    #     적용 → 재잠금 → 전수 순서이고, 진짜 관문은 거기다. 여기는 예습이다.
+    "래칫 정합":
+        "판정 값에서 유도되는 래칫은 재잠금 뒤에야 선언과 같아진다. 열차는 "
+        "적용 → 재잠금 → 전수 순서이므로 받는 쪽에서는 재잠금 뒤에 이 축이 돈다",
+    "발행 판정 계약":
+        "발행된 판정에서 세는 축이다. 재잠금 전에는 커밋된 공개본이 옛 값이라 "
+        "선언과 어긋난다 — 같은 실행에서 공개본이 다시 나고 그 뒤에 맞는다",
+    # ★ 2026-10-08 (DECISIONS §436-13). 넷으로도 **모자랐다.** 첫 재잠금 배치를
+    #   예습에 걸어보니 축 다섯이 새로 빨갰고 **셋이 재잠금 때문**이었다. 둘은
+    #   진짜 결함이었다(기획서 표지 날짜 · `web/proposal.html`) — 그 둘을 고쳤다.
+    #   선언은 **겪은 만큼만** 넓힌다: 안 겪은 축을 미리 적으면 그것이 사각지대다.
+    #
+    #   ★ 아래 셋은 **넓은 축**이고, 받는 근거는 각각 **더 좁게 세는 짝**이 있다는
+    #     것이다. 짝이 없으면 안 받는다 — 「문서 숫자 대조」의 필드표 감사는 짝이
+    #     없어서 `tests/test_doc_numbers.py` 에 **먼저 만들고** 나서 받았다.
+    "pytest":
+        "재잠금 대기 시험이 빨갛다. 이 축은 넓지만 **같은 실행의 `diff_tests` 가 "
+        "시험 id 를 정확히 세고** `RELOCK_TESTS` 에 없는 빨강은 거기서 운다",
+    "문서 숫자 대조":
+        "문서가 적은 수를 golden·발행물과 댄다. 문서는 **재잠금 뒤의 수**를 적으므로 "
+        "그 사이 어긋난다(§436-7). 좁은 짝 — `test_unknown_reason_counts_match_the_"
+        "fingerprint` 와 `test_the_field_table_names_exactly_the_published_fields`",
+    "판정 재현":
+        "공개본을 `classify()` 로 되먹여 1,281건을 전부 댄다. 사유 한 칸이라도 "
+        "움직이면 재잠금 전에는 깨진다 — 좁은 짝은 `test_every_reason_is_reproduced`",
+}
+
+#: 재잠금이 선언된 배치에서 **빨간 것이 결과인** 시험. 사유를 함께 든다.
+#: ★ 2026-10-08 (DECISIONS §436-6). `diff_sweep` 에만 있던 면제를 시험 쪽에도 둔다 —
+#:   스윕과 시험이 같은 사실을 양쪽에서 보는데 한쪽만 받아주면 배달이 못 선다.
+RELOCK_TESTS = {
+    "test_every_reason_is_reproduced":
+        "공개본을 `classify()` 로 되먹여 댄다. 규칙을 고치면 공개본도 함께 다시 나는데 "
+        "그 재생은 재잠금이 한다 — 재잠금 전에는 **한쪽만 움직인 상태**가 정상이다",
+    "test_every_verdict_is_reproduced":
+        "위와 같은 자리. 판정 열을 되먹여 댄다",
+    "test_unknown_reason_counts_match_the_fingerprint":
+        "문서가 적은 사유 수를 golden 지문과 댄다. 지문은 재잠금이 다시 쓴다 — "
+        "문서는 재잠금 뒤의 수를 적어야 하고, 그 사이에는 어긋나 보인다",
+    "test_the_real_tree_is_at_its_ratchets":
+        "위 「래칫 정합」 축의 pytest 쪽 짝이다. 같은 사실을 두 번 본다",
+    "test_the_field_table_names_exactly_the_published_fields":
+        "MASTER §11 필드표 ↔ 발행된 속성. 칸을 하나 실으면 표가 **앞서 가고** "
+        "산출물은 재잠금에서 따라온다. 이 시험은 그 면제를 받으려고 §436-13 에서 "
+        "새로 세웠다 — 종전에는 `docnum_check.main()` 안에만 있어 **CLI 에서만** 울었다",
+    "test_schema_verdict_rule_matches_code":
+        "발행 스키마의 `verdict_rule` 을 `seg/geom.VERDICT_RULE` 과 댄다. 그 스키마는 "
+        "`seg/report.py` 가 **낳는 것**이라 재잠금 전에는 옛 규칙표를 든다 — "
+        "매개변수가 스키마 파일 둘이므로 이 이름 하나가 둘을 받는다",
 }
 
 
@@ -166,14 +227,130 @@ def diff_sweep(base: set[str], after: set[str], wt: Path,
     return " · ".join(bits)
 
 
+#: 패치가 **시험만** 건드렸는가를 볼 때 「구현」으로 세는 자리.
+#: ★ `docs/` · `data/` 는 넣지 않는다 — 문서와 산출물은 시험을 초록으로 만드는
+#:   구현이 아니다. 시험이 그 둘만 짝으로 달고 오면 **여전히 외로운 시험**이다.
+IMPL_DIRS = ("src/", "tools/", "web/", ".github/")
+
+
+def patch_paths(patch: Path) -> list[str]:
+    """패치가 건드린 저장소 경로. `git` 없이 **diff 머리글만** 읽는다.
+
+    ★ `git apply --numstat` 를 안 쓴다 — 그것은 워크트리와 인덱스를 묻고,
+      이 물음은 **파일 하나만 읽으면 답이 나온다.** 외부 상태를 안 묻는 판별식이
+      더 적은 자리에서 돈다(§286 의 「값을 못 치르는 관문은 안 돈다」).
+    """
+    out: list[str] = []
+    for line in patch.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("+++ b/"):
+            out.append(line[6:].strip())
+        elif line.startswith("--- a/") and line[6:].strip() not in out:
+            out.append(line[6:].strip())     # 지운 파일은 `+++` 가 `/dev/null`
+    return sorted(set(out))
+
+
+def test_body(patch: Path) -> str:
+    """패치에서 **`tests/` 파일에 더해진 줄**만 이어 붙인다.  (§443-7)
+
+    ★ 「그 시험이 무엇을 이름으로 드는가」를 묻는 자리라, 시험이 **쓴 글**만
+      봐야 한다. 문서·대장이 같은 커밋에 있다고 그 글까지 세면 문서가 도구
+      이름을 적는 것만으로 걸린다.
+    """
+    out, intest = [], False
+    for line in patch.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("+++ b/"):
+            intest = line[6:].strip().startswith("tests/")
+        elif intest and line.startswith("+") and not line.startswith("+++"):
+            out.append(line[1:])
+    return "\n".join(out)
+
+
+def lonely_tests(patches: list[Path]) -> list[str]:
+    """★ **시험만 든 커밋이 중간에 있는가.**  (DECISIONS §439 · PLAN #138)
+
+    §258-13 의 사고 — `git add tests/` 로 담아 **시험은 앞 커밋 · 구현은 뒤
+    커밋**이 됐다. 앞 커밋만 실기에 얹히자 `DID NOT RAISE` 와 죽은 절 참조
+    28건으로 울었다. **마지막 상태만 초록인지 보는 예습은 그것을 못 본다.**
+
+    ★ 비싼 쪽(커밋마다 전수 pytest)을 안 고른 이유 — 커밋 수 × 8분이고,
+      **값을 못 치르는 관문은 안 돈다**(§286). 이 물음은 **정적으로** 답이
+      나온다: 시험을 건드리고 구현을 안 건드린 패치가 **마지막이 아니면**
+      그 지점은 혼자 초록일 수 없다.
+
+    ★ **마지막 패치는 뺀다.** 마지막 지점의 초록은 예습이 이미 전수로 본다 —
+      거기서 또 묻는 것은 같은 사실을 두 번 세는 일이다.
+
+    ★ 거짓 경보를 아는 채로 둔다 — 시험만 고치는 정당한 커밋(오타 · 이름)이
+      중간에 있으면 걸린다. 그때는 **커밋을 합치거나 순서를 바꾸는 것**이
+      답이고, 그것이 `#138` 이 요구한 규율이다.
+    """
+    bad = []
+    for i, cur in enumerate(patches[:-1]):        # 마지막은 뺀다
+        paths = patch_paths(cur)
+        tests = [x for x in paths if x.startswith("tests/")]
+        if not tests or [x for x in paths if x.startswith(IMPL_DIRS)]:
+            continue
+        # ★ 시험만 들었다고 다 외로운 것이 아니다. **이미 있는 코드를 시험하는
+        #   커밋은 혼자 초록이다** — 이 문을 처음 세운 날 제 더미에서 그런 커밋
+        #   하나를 잡았고(`tests/test_figure_ink.py`, 그림 코드는 앞 커밋에 이미
+        #   있었다) 그것이 거짓 경보였다. 문을 세운 자가 첫 손님이 됐다.
+        #
+        # ★ §258-13 의 사고를 다시 읽으면 가르는 축이 보인다 — 그 시험이
+        #   **뒤에 오는 커밋이 만드는 것**을 물었다. 그래서 좁힌다: 이 시험이
+        #   이름으로 드는 파일을 **뒤 패치가 건드리면** 그때만 외롭다.
+        # ★ 2026-10-09 (DECISIONS §443-7). **시험이 든 줄만 본다.** 종전에는
+        #   패치 **전문**을 댔고, 그러면 같은 커밋의 `docs/` 가 어떤 도구를
+        #   언급하기만 해도 걸렸다 — 실제로 걸렸다(§442 커밋의 DECISIONS 가
+        #   `tools/selftests.py` 를 들었고 그 파일은 뒤 커밋에 온다).
+        #   문서는 **시험을 초록으로 만들지 않는다**(§439-3 이 이미 적은 축인데
+        #   그 축이 분모에만 적용되고 **본문 읽기에는 안 적용되고 있었다**).
+        named = set()
+        body = test_body(cur)
+        for later in patches[i + 1:]:
+            for q in patch_paths(later):
+                if q.startswith(IMPL_DIRS) and q in body:
+                    named.add(q)
+        if named:
+            bad.append(f"{cur.name}  시험 {len(tests)}개만 들었는데 그 시험이 드는 "
+                       f"{', '.join(sorted(named)[:3])} 가 **뒤 커밋에 온다** — "
+                       "이 지점은 혼자 초록일 수 없다")
+    return bad
+
+
+def func_name(nodeid: str) -> str:
+    """pytest id 에서 **함수 이름**만. `RELOCK_TESTS` 가 그 이름으로 선언한다.
+
+    ★ 2026-10-08 (DECISIONS §436-6). 처음에 `RELOCK_TESTS` 를 함수 이름으로
+      적고 **실물 id 집합에서 그대로 뺐다.** pytest 는 `tests/x.py::name[매개]`
+      로 적으므로 그 차집합은 **한 번도 아무것도 안 뺐다** — 선언이 죽은
+      그물이었다. 자기검사는 내가 **함수 이름을 먹였기 때문에** 통과했다.
+      그물의 범위가 곧 그물의 뜻이다: 검사에 먹이는 꼴이 실물과 달라지면
+      그 검사는 제 그물을 재는 게 아니라 **내 손을** 잰다.
+
+    ★ 매개변수를 떼는 것은 의도다. 하나의 시험이 입력 여럿을 도는 것이고,
+      선언은 **그 시험**에 걸린다. 파일 경로가 매개변수인 자리가 있어
+      (`[data/processed/segments.schema.json]`) 꼬리까지 적으면 선언이
+      부서지기 쉽다. 부분 문자열은 쓰지 않는다 — 이름은 **정확히** 맞춘다.
+    """
+    return nodeid.rsplit("::", 1)[-1].split("[", 1)[0]
+
+
 def diff_tests(base: tuple[set[str], str], after: tuple[set[str], str],
-               wt: Path) -> str:
-    fresh = new_red(base[0], after[0], wt, "시험")
+               wt: Path, relock: bool = False) -> str:
+    # ★ 2026-10-08 (DECISIONS §436-6). 스윕과 같은 규율이다 — `golden.py stale` 의
+    #   rc 가 참일 때만 받는다. 사람이 「재잠금 배치니까요」라고 적어서 넘기는 것이
+    #   아니다. 면제는 넓히면 사각지대가 되므로 `func_name()` 이 정확히 맞춘다.
+    held = {n for n in after[0] if func_name(n) in RELOCK_TESTS}
+    after_set = after[0] - held if relock else after[0]
+    fresh = new_red(base[0], after_set, wt, "시험")
     bits = [after[1], f"새 빨간불 {len(fresh)}"]
     if base[0]:
         bits.append(f"밑동에서 이미 빨감 {len(base[0])}")
     if fixed := sorted(base[0] - after[0]):
         bits.append(f"이 배치가 고침 {len(fixed)}")
+    if relock and held:
+        bits.append(f"재잠금 선언으로 받은 시험 {len(held)}"
+                    f"({' · '.join(sorted(held))})")
     return " · ".join(bits)
 
 

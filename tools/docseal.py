@@ -53,15 +53,25 @@ import subprocess
 import sys
 from pathlib import Path
 
-from docsealfp import FP_METHOD, LEGACY_VIEWS, _generated, claim, digest, parts, view, view_v1
+from docsealfp import (
+    FP_METHOD,
+    LEGACY_PATHS,
+    LEGACY_VIEWS,
+    PATH,
+    _generated,
+    _tracked,
+    claim,
+    digest,
+    parts,
+    view,
+    view_v1,
+)
 
 from firelane import gitq
 
 ROOT = Path(__file__).resolve().parents[1]
 SEAL = ROOT / "data" / "golden" / "docseal.json"
 
-#: 절 본문에서 코드 쪽을 뽑는 정규식. 백틱 안의 **경로꼴**만 본다.
-PATH = re.compile(r"`([\w][\w./-]*\.(?:py|sh|ts|tsx|js|mjs|json|ya?ml))(?:::[\w.]+)?`")
 
 
 @functools.lru_cache(maxsize=1)
@@ -81,12 +91,11 @@ def _sections() -> list[dict]:
 
 
 def _body_v1(rows: list[dict], i: int) -> str:
-    """2026-09-27 이전 판 — 끝의 빈 줄을 안 뗐다. 만나면 받고 새 판으로 고쳐 적는다."""
+    """2026-09-27 이전 판 — 끝의 빈 줄을 안 뗐다(§273-10). 만나면 받는다."""
     return body(rows, i, strip=False)
 
 
-#: 옛 판 본문 잘라내기. 줄이 늘 때마다 「한 번 지나면 안 흔들린다」가 한 세대 더 간다.
-LEGACY_BODIES = (_body_v1,)
+LEGACY_BODIES = (_body_v1,)   #: 옛 본문 공식. 축 셋 중 첫째다
 
 
 def body(rows: list[dict], i: int, strip: bool = True) -> str:
@@ -113,8 +122,8 @@ def body(rows: list[dict], i: int, strip: bool = True) -> str:
     return out.rstrip() if strip else out
 
 
-def refs(text: str) -> list[str]:
-    """그 절이 지목한 **실재하는** 파일. 없는 것은 `tools/refcheck.py` 가 본다."""
+def refs(text: str, rx: re.Pattern[str] | None = None) -> list[str]:
+    """지목한 **실재하는** 파일. `rx` 는 옛 공식으로 다시 긁는다(§437-4)."""
     # ★ 도장 파일 자신은 뺀다. 안 빼면 그 파일을 지목한 절이 **찍는 순간 무효**가
     #   된다 — 찍기가 도장 파일을 바꾸고 그 변경이 그 절의 코드 쪽이기 때문이다.
     #   §265 에서 실제로 무한 루프가 났다.
@@ -122,36 +131,11 @@ def refs(text: str) -> list[str]:
         me = SEAL.relative_to(ROOT).as_posix()
     except ValueError:       # 도장 파일이 저장소 밖(시험 · 임시 경로)이면 뺄 것이 없다
         me = ""
-    return sorted({p for p in PATH.findall(text)
+    return sorted({p for p in (rx or PATH).findall(text)
                    if p != me and (ROOT / p).is_file()
                    and p in _tracked() and not _generated(p)})
 
 
-@functools.lru_cache(maxsize=1)
-def _tracked() -> frozenset[str]:
-    """git 이 추적하는 파일. **추적 밖은 도장의 기반이 못 된다.**
-
-    ★ 2026-09-28 (DECISIONS §278-10). 세 절이 `data/processed/*.json` 을 물고
-      있었다 — `.gitignore:28` 로 추적 밖이고 **파이프라인이 돌 때마다 내용이
-      바뀌는 생성물**이다. 그 절들의 도장은 찍은 다음 날이면 무효였고, 앞으로도
-      영원히 그렇다. 「확인한 뒤로 안 바뀌었다」는 주장이 성립할 수가 없다.
-
-    ★ 지목 자체는 정당하다 — 절이 그 산출을 근거로 말할 수 있다. 다만 **도장의
-      기반**은 사람이 다시 읽어야 할 만큼 의미 있게 바뀌는 것이어야 하고,
-      매번 바뀌는 것은 그 신호를 0 으로 만든다. 그 자리는 `freshcheck` ·
-      `golden` 이 따로 든다.
-    """
-    # ★ 2026-10-03 (DECISIONS §372). 종전에는 `check=False` 로 돌리고 `stdout`
-    #   을 그대로 갈랐다. git 이 없거나 저장소가 아니면 **빈 집합**이 되고,
-    #   그러면 「추적되는 파일이 하나도 없다」가 되어 도장 대상이 0 이 된다 —
-    #   `UNSEALED` 가 0 이고 `무효 0` 인 **빈 그물 초록**이다. 못 물었으면 터진다.
-    t = gitq.tracked(ROOT)
-    if t is None:
-        raise RuntimeError(
-            "git 이 추적 목록을 못 줬다 — 도장의 기반이 **추적되는 파일**이므로"
-            " 못 물으면 이 도구는 아무것도 말할 수 없다(§372).\n"
-            "  git rev-parse --is-inside-work-tree 로 확인하라")
-    return t
 
 
 #: 공식 판 → 그 판의 관점 함수. `why` 가 **저장된 판으로** 조각을 다시 낼 때 쓴다.
@@ -323,7 +307,9 @@ def survey() -> tuple[dict, dict, dict]:
         #   §298 과 같은 수술 — 도장의 기반이 못 되는 것을 기반에서 뺀다.
         if not refs(claim(t, _dms())):
             continue
-        fs = refs(t + " " + (r.get("field") or ""))
+        whole = t + " " + (r.get("field") or "")
+        fs = refs(whole)
+        fs_olds = [o for o in (refs(whole, rx) for rx in LEGACY_PATHS) if o and o != fs]
         if not fs:
             continue                      # 코드를 안 가리키는 절은 도장 대상이 아니다
         # ★ 2026-09-29 (§297-2). `fp` 를 **찍는 모든 도장에 박는다.** 종전에는 상수만
@@ -339,10 +325,12 @@ def survey() -> tuple[dict, dict, dict]:
                         #   본문 판 × 관점 판을 곱해 전부 낸다 — 어느 조합으로 찍혔든
                         #   **내용이 그대로면** 받는다. 내용이 움직이면 모든 조합이
                         #   같이 움직여 여전히 죽는다.
-                        "legacy": [digest(b, fs, vf)
-                                   for b in [t] + [f(rows, i) for f in LEGACY_BODIES]
-                                   for vf in LEGACY_VIEWS]
-                        + [digest(f(rows, i), fs) for f in LEGACY_BODIES]}
+                        # ★ 2026-10-08 (§437-4) **셋째 축** — 경로 공식.
+                        "legacy": sorted({
+                            d for f_s in [fs, *fs_olds]
+                            for b in [t] + [f(rows, i) for f in LEGACY_BODIES]
+                            for d in [digest(b, f_s), *(digest(b, f_s, vf)
+                                                        for vf in LEGACY_VIEWS)]})}
         bodies[r["id"]] = t
     was = json.loads(SEAL.read_text(encoding="utf-8")) if SEAL.is_file() else {}
     return now, was, bodies

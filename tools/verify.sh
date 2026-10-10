@@ -547,6 +547,12 @@ step "기획서 개요 층"   uv run python tools/docstyle.py
 #     있는 동안은 그쪽도 물어야 한다 — 참조 25곳을 한 판에 흔들지 않는다.
 scope "docs/proposal.md web/proposal.template.html web/proposal.html tools/build_proposal.py tools/proposal_source.py"
 step "기획서 화면"     uv run python tools/build_proposal.py --check
+# ★ 2026-10-09 (DECISIONS §440 · PLAN #142). 화면의 그림 스물넷 중 **다섯이
+#   코드가 만드는 것**이고 지금까지 그 다섯은 docx 를 거쳐 왔다. 정본이 md 인데
+#   생성 그림만 사본을 거치는 꼴이라, docx 를 은퇴시키기 전에 **다리를 먼저**
+#   놓는다. 안 놓고 지우면 다섯이 영원히 옛 값으로 굳는다(§236 의 그 자리다).
+scope "tools/htmlfigs.py tools/figures/* tools/render_figures.py web/proposal/fig/*"
+step "기획서 화면 그림" uv run python tools/htmlfigs.py --check
 # ★ 2026-10-04 (§390). `PLAN` 이 빚 목록인지 이력 창고인지. 세 자리가 주석으로만
 #   「PLAN 은 줄어야 한다」고 적고 있었다 — 강제자가 없으면 장식이다(MASTER §17).
 #   재는 것은 **행 수가 아니라 이력 사본**이다. 새 일은 늘어야 한다.

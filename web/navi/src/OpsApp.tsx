@@ -53,6 +53,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OpsMap, type OpsLayers } from "./components/OpsMap";
 import { OpsHistory } from "./ui/OpsHistory";
+import { ManualButton, ManualSheet } from "./ui/Manual";
+import { MOTION_CSS } from "./ui/motion";
 import { useFleet } from "./app/useFleet";
 import { loadAll, loadHistory, type Bundle } from "./infra/dataSource";
 import { openLink, newId, type Link } from "./infra/opsLink";
@@ -98,6 +100,7 @@ export default function OpsApp() {
   //   고르는 손이 없다 — 지령에 실어 보낸다.
   const [route, setRoute] = useState<RouteMode>("safe");
   const [picking, setPicking] = useState(false);
+  const [manual, setManual] = useState(false);
   const [stationId, setStationId] = useState<string>("0");
   const [layers, setLayers] = useState<OpsLayers>({
     // ★ 2026-09-29 (DECISIONS §311). `bldg` 기본을 켠다 — 종전 `false`.
@@ -272,11 +275,14 @@ export default function OpsApp() {
 
   return (
     <div style={shell}>
+      <style>{MOTION_CSS}</style>
+      <ManualSheet open={manual} onClose={() => setManual(false)} />
       {/* ══ 상단 상황판 ══════════════════════════════════════════ */}
       <header style={top}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
           <b style={{ fontSize: 18, letterSpacing: -.3 }}>FireLane 종합상황실</b>
-          <span style={{ fontSize: 12, color: D.sub, whiteSpace: "nowrap" }}>동부소방서 관할 · 동명동 · 도면 기반 1차 판정</span>
+          <span style={{ fontSize: 12, color: D.sub, whiteSpace: "nowrap" }}>동부소방서 관할 · 동명동</span>
+          <ManualButton onClick={() => setManual(true)} />
         </div>
         <div style={{ flex: 1 }} />
         {/* ★ 2026-10-06 (DECISIONS §414). 첫 칸이 **경과 시간**이다 — 상황판에
@@ -284,11 +290,13 @@ export default function OpsApp() {
         <Tile k="접수 후 경과" v={incident ? fmtDur(elapsedS ?? 0) : "—"}
               sub={incident ? `실측 중앙 ${fmtSec(medianS)}` : "접수 없음"}
               tone={!incident ? undefined
-                    : elapsedS != null && medianS != null && elapsedS > medianS ? "danger" : "warn"} />
+                    : elapsedS != null && medianS != null && elapsedS > medianS ? "danger" : "warn"}
+              urgent={!!incident && elapsedS != null && medianS != null && elapsedS > medianS} />
         <Tile k="출동 중" v={`${live}대`} tone={live ? "ok" : undefined} />
         <Tile k="미확인 공유" v={`${waiting}건`}
               sub={oldestWait == null ? undefined : `가장 오래된 것 ${fmtDur(oldestWait / 1000)}`}
-              tone={waiting ? "warn" : undefined} />
+              tone={waiting ? "warn" : undefined}
+              urgent={!!waiting} />
         <div style={clock}>{hhmmss(new Date(now))}</div>
       </header>
 
@@ -363,10 +371,7 @@ export default function OpsApp() {
                 );
               })}
             </div>
-            <div style={{ fontSize: 10, color: D.sub, lineHeight: 1.5, marginTop: 6 }}>
-              현재 경로 판정에는 전폭만 반영됩니다. 회전 반경은 제원표 참고값(미검증)으로
-              판정에 반영하지 않으며, 제원표에 해당 차량 값이 없으면 등급으로 표시합니다.
-            </div>
+            {/* ★ §441. 회전반경 한계 문단 → `ui/Manual.tsx` */}
 
             <label style={lab}>경로 — 관제가 정한다</label>
             <div style={{ display: "flex", gap: 6 }}>
@@ -391,7 +396,7 @@ export default function OpsApp() {
                     </div>
                     {myCenter?.median_s != null && (
                       <div style={{ fontSize: 11, color: D.sub, marginTop: 2 }}>
-                        같은 센터 실제 출동→도착 중앙값 {fmtSec(myCenter.median_s)} — 내비 속도표는 미검증이다
+                        같은 센터 실제 출동→도착 중앙값 {fmtSec(myCenter.median_s)}
                       </div>
                     )}
                     {/* ★ §220 — 경로의 **가장 좁은 곳의 여유폭**. 관제가 지령 전에 보는 수다 */}
@@ -432,10 +437,6 @@ export default function OpsApp() {
                              opacity: demoUrl && plan?.plan ? 1 : .35 }}>
               시연용으로 열기 — 경로 주행
             </button>
-            <div style={{ fontSize: 10.5, color: D.sub, marginTop: 6, lineHeight: 1.5 }}>
-              새 탭에 내비가 사건 · 차종 · 센터를 채운 채 열린다. 위치 · 공유가 이 화면으로 온다(같은 브라우저 탭끼리 — 서버 아님).
-              기사는 목적지를 고르지 않는다 — 지령이 온 내비는 검색과 지도 찍기가 닫힌다.
-            </div>
           </Sec>
         </aside>
 
@@ -453,7 +454,7 @@ export default function OpsApp() {
             {/* ★ 범례 접기. 지도를 가리는 것이 범례이므로 지도를 보려면 접혀야 한다. */}
             <button onClick={() => setLegendOpen((v) => !v)} style={legendHead}
                     aria-expanded={legendOpen}
-                    title={legendOpen ? "범례를 접는다 (지도가 넓어진다)" : "범례를 편다"}>
+                    title={legendOpen ? "범례 접기" : "범례 펴기"}>
               <span style={{ flex: 1, textAlign: "left" }}>범례 · 레이어</span>
               <span aria-hidden>{legendOpen ? "▾" : "▸"}</span>
             </button>
@@ -473,7 +474,7 @@ export default function OpsApp() {
             </div>
             {colorMode === "verdict" ? (
               <>
-                <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, marginBottom: 4 }}>판정 (CV = 영상판정) · <span style={{ fontWeight: 600 }}>줄을 누르면 그 색만 지도에서 뺀다</span></div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: D.sub, marginBottom: 4 }}>판정 (CV = 영상판정)</div>
                 {VERDICT_ORDER.filter((k) => style[k]).map((k) => {
                   const off = hidden.has(k);
                   return (
@@ -507,7 +508,6 @@ export default function OpsApp() {
               <>
                 <div style={{ fontSize: 11, fontWeight: 800, color: D.accent, marginBottom: 1 }}>
                   여유폭 · {displayName(vehicle?.label ?? "기준 차량")}
-                  <span style={{ fontWeight: 600, color: D.sub }}> · 줄을 누르면 그 색만 지도에서 뺀다</span>
                 </div>
                 <div style={{ fontSize: 10.5, color: D.sub, marginBottom: 4 }}>
                   {CLEARANCE_FORMULA} = {need.toFixed(1)}m
@@ -549,7 +549,7 @@ export default function OpsApp() {
               </div>
             )}
             <div style={{ fontSize: 10.5, color: D.sub, marginTop: 4 }}>
-              닿는 구간 {reach?.size ?? 0} / {data.graph.edges.length} · 굵기 = 최소 유효폭 · 전 구간 현장 미검증
+              닿는 구간 {reach?.size ?? 0} / {data.graph.edges.length} · 굵기 = 최소 유효폭
             </div>
             </>}
           </div>
@@ -559,7 +559,7 @@ export default function OpsApp() {
         <aside style={colR}>
           <Sec title={`차량 상태판 · 연결 ${units.length}`}>
             {link.current?.available === false && (
-              <div style={{ fontSize: 12, color: D.warn }}>이 브라우저는 탭 연결을 못 한다</div>
+              <div style={{ fontSize: 12, color: D.warn }}>탭 연결 안 됨</div>
             )}
             {units.length === 0 && (
               <div style={{ fontSize: 12, color: D.sub }}>연결된 내비가 없다 — 「출동 지령」 으로 연다.</div>
@@ -607,7 +607,7 @@ export default function OpsApp() {
                      vehicle={displayName(vehicle?.label ?? "기준 차량")} onClose={() => setSeg(null)} />
           ) : (
             <Sec title="구간 정보">
-              <div style={{ fontSize: 12, color: D.sub }}>지도에서 도로를 누르면 여유폭 · 사유 · 판정 근거 · 단속 이력이 뜬다.</div>
+              <div style={{ fontSize: 12, color: D.sub }}>지도에서 도로를 누른다.</div>
             </Sec>
           )}
           {hs && <OpsHistory hs={hs} open={histOpen} onToggle={() => setHistOpen((x) => !x)} />}
