@@ -520,41 +520,25 @@ MASTER §4-1 이 그 사고다).
         단계 105** 를 실측과 대조한다) · `tests/test_verify_scope.py`
         **하위 하나**가 이 칸을 물려받는다
 
-### 10-3. `Zk'` 의 할 일 **열** — 순서는 아래대로다
+### 10-3. `Zk'` 의 **남은 할 일 셋** — 열 중 일곱은 닫혔다
 
 ★ 전부 DECISIONS §456 의 실측이다. 각 줄이 **무엇이 지금 틀렸는지**를 들고,
   고치는 모양은 그 절이 든다.
 
-    ① **안 도는 축을 켠다**  `treecheck` 의 D0~D9 가 어디서도 안 돈다 —
-       verify 와 CI 가 둘 다 `--repo`, `--lake` 를 넘기는 자리 0, `check_lake`
-       를 거치는 시험 0. ★ 켜면 **처음 운다.** 무엇이 울지는 레이크가 붙은
-       기계가 돌려야 알고, 그 결함은 `Zs` 가 받는다(§10-1)
-    ② **D8 의 도달 불가를 고친다**  `required` 계층이 `raw` 하나인데 D8 앞 줄이
-       바로 그 경우에 먼저 돌려보낸다. `--lake` 로도 못 닿는다
-    ③ **묘비를 먹는 가드**  `test_local_verify_covers_ci` 가 `"CI 환경 재현"` 을
-       `verify.sh` 문자열로 찾는데 그 자리는 **삭제를 적은 주석**이다.
-       단계 목록을 산문이 아니라 `step` 선언에서 받게 한다
-    ④ **concurrency 셋**  `contract.yml` 이 main 푸시에서 2회(group 의
-       `github.workflow` 가 호출자 이름이다) · `secret-scan.yml` 은 블록이
-       **아예 없다** · `image.yml` 은 push 와 PR 의 `github.ref` 가 갈린다
-    ⑤ **pytest 부분집합 넷**  `test_ownership` · `test_contract` ·
-       `test_doc_style`+`test_reproducibility` · `test_guards`+`test_declaration_sync`
-       가 전부 `pytest tests/ -q` 의 진부분집합이고 같은 러너다
-    ⑥ **훅 중복 둘**  `encoding_check.py`(CI 단계 + 훅이 같은 명령 · 범위 인자
-       없음) · `node --check`(pre-commit 설정이 스스로 중복이라고 적는다)
+★ **2026-10-11 — ①②③④⑤⑥⑩ 이 닫혔다**(DECISIONS §457). 남은 것은 **⑦⑧⑨** 다.
+  그 셋만 아래에 남기고 닫힌 일곱은 지웠다 — 이 절도 빚 목록이다.
+
+
     ⑦ **합칠 쌍 하나**  `refcheck` ② ⊂ `treecheck` T6. 정본은 T6 쪽이다
     ⑧ **중복을 세는 자**  `gate_parity` 가 `set[str]` 합집합이라 횟수가 판정에
        닿기 전에 접힌다 — 부분집합 넷을 지워도 출력이 안 바뀐다. 세는 축이
        없으면 ④ 가 또 생긴다
     ⑨ **단계가 무엇을 묻는지 선언한다**  `toolindex` 는 **도구 단위**다. 같은
        도구의 다른 하위명령인 단계 여섯 쌍이 같은 한 줄을 든다
-    ⑩ **`fl.sh` 가 `--since` 를 넘긴다** + `SCOPE_FLOOR` 33 → 82 실측 ·
-       `RATCHETS` 편입 · 미선언 23 을 래칫으로 못박음(늘면 운다)
 
-    ★ **④⑤⑥ 은 verify 로 증명되지 않는다.** 「main 푸시에서 한 번만 도는가」는
-      푸시한 뒤에만 보인다. 그래서 그 수용 조건은 **다음 머지에서 사람이 센다** —
-      ⑧ 이 서면 그다음부터 기계가 센다. 짜는 쪽이 예보를 적고(「지금 2회 →
-      1회」) 돌리는 쪽이 댄다. 측정 판과 같은 규율이다
+    ★ **닫힌 ④⑤⑥ 은 verify 로 증명되지 않았다.** 「main 푸시에서 한 번만 도는가」는
+      푸시한 뒤에만 보인다 — 예보를 PR 본문에 적었고 **다음 머지에서 사람이 센다.**
+      ⑧ 이 서면 그다음부터 기계가 센다. 그것이 ⑧ 을 남긴 사유다.
     배관     이미 깔려 있었다 — `verify.sh` 에 `--since=<ref>` 와 단계별 `scope`
              선언. 실측 **선언 82 · 미선언 22 · 단계 104**(`--scope-list`)
     단절     부르는 자리가 **하나도 없었다** — 선언 82개가 한 번도 일한 적이 없다.
@@ -567,7 +551,7 @@ MASTER §4-1 이 그 사고다).
     안 건드린다 docseal · dms · canary · scopedecl — 표준이 없다.
              **pytest 전수도 안 건드린다** — 미선언 안전망이고 그대로 둔다
 
-강제자  `tools/plan_renumber.py`(이 판이 드는 행이 실재하는가) · `tools/verify.sh --scope-list`(선언 82 · 미선언 23 · 단계 105 를 이 절이 적은 수와 대조한다). ★ ④⑤⑥ 은 **푸시한 뒤에만** 보이므로 그 수용 조건은 다음 머지에서 사람이 센다
+강제자  `tools/plan_renumber.py`(이 판이 드는 행이 실재하는가) · `tools/verify.sh --scope-list`(선언 82 · 미선언 22 · 단계 104 를 이 절이 적은 수와 대조한다) · `tests/test_verify_scope.py::test_the_two_scope_counters_agree`(그 수를 재는 두 자가 같은 답을 내는가). ★ 닫힌 ④⑤⑥ 은 **푸시한 뒤에만** 보이므로 그 수용 조건은 다음 머지에서 사람이 센다
 
 ### 10-4. 그 밖 판의 첫 수
 
