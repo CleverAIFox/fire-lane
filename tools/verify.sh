@@ -459,13 +459,18 @@ step "의존성 선언↔import (deptry)" uv run --no-sync --with deptry==0.25.1
 scope ".github/* pyproject.toml uv.lock"
 step "워크플로 린트"    uv run actionlint
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
-step "인코딩·개행"      uv run python tools/encoding_check.py
 # ★ 2026-09-18 (W1). 로컬 훅과 CI 가 이 한 파일을 읽는다 — 정본이 하나다.
 #   `.ruff-strict.toml` 과 같은 모양이고, 그것이 5a 의 교훈이다.
-# ★ 위 `인코딩·개행` 을 안 지운다. 표준 훅은 BOM · CRLF 만 도맡았고
-#   나머지 둘(비UTF-8 · 끝개행)은 대입물이 없다. `end-of-file-fixer` 는 더
-#   엄걱해서 추적 파일 15개를 고치고, 그중 `web/workflow.html` 은 생성기와
-#   무한 왔부에 들어간다(.pre-commit-config.yaml 의 ★★).
+# ★ 2026-10-10 (DECISIONS §457). 바로 위에 있던 `인코딩·개행` 단계를 **지웠다**
+#   (실측 2초). `.pre-commit-config.yaml` 의 `encoding-check` 훅이 `always_run`
+#   으로 **같은 명령**(`uv run python tools/encoding_check.py`)을 돌리므로 이
+#   단계와 아래 전수가 같은 job 에서 같은 집합을 두 번 봤다.
+#   ★ 종전 주석은 「위 `인코딩·개행` 을 안 지운다 — 표준 훅은 BOM · CRLF 만
+#     도맡고 나머지 둘(비UTF-8 · 끝개행)은 대입물이 없다」였다. 그 말은
+#     **검사기를 왜 두는가**의 사유이고 **왜 두 번 부르는가**의 사유가 아니다 —
+#     그 검사기는 이 저장소 고유 훅으로 그대로 돈다. 사유를 안 깎고 호출만 줄였다.
+#   ★ `gate_parity` 는 이제 훅 설정을 **양쪽에서** 센다 — `pre-commit run
+#     --all-files` 가 그 글에 있을 때만. 그래서 한쪽만 보는 것으로 안 운다.
 step "pre-commit 전수"  uv run pre-commit run --all-files
 # ★ 2026-09-18 (W1). 전역 훅이 이 저장소를 이어서 부르는가.
 #   `.pre-commit-config.yaml` 이 있어도 전역 훅이 그것을 안 부르면

@@ -186,7 +186,8 @@ def _verify_src() -> str:
 
 
 def local_tokens() -> set[str]:
-    return tokens(_nocomment(_verify_src()))
+    src = _nocomment(_verify_src())
+    return tokens(src) | _hook_tokens(src)
 
 
 def exemptions() -> dict[str, str]:
@@ -249,10 +250,33 @@ def _no_path_filters(text: str) -> str:
     return "".join(out)
 
 
+#: `pre-commit run --all-files` 를 돌리는가. 돌리면 그 설정의 훅이 **그 자리에서
+#: 실제로 도는 검사기**다.
+_PRECOMMIT_RUN = re.compile(r"pre-commit\s+run\s+--all-files")
+_PRECOMMIT_CFG = ROOT / ".pre-commit-config.yaml"
+
+
+def _hook_tokens(src: str) -> set[str]:
+    """`.pre-commit-config.yaml` 의 검사기. **그 쪽이 훅을 돌릴 때만** 센다.
+
+    ★ 2026-10-10 (DECISIONS §457). 이 자리가 없어서 **훅이 든 검사기가 양쪽
+      목록에 안 보였다.** 그래서 CI 쪽에 세어지려면 같은 명령을 워크플로 단계로
+      **한 번 더** 적어야 했고, 그 사본이 §456-4 ⑤⑥ 의 중복이다 —
+      `tools/encoding_check.py` 와 `node --check` 가 같은 job 에서 두 번 돌았다.
+    ★ **조건을 센다.** `pre-commit run --all-files` 가 그 쪽 글에 있어야 한다.
+      그 줄이 사라지면 이 토큰도 같이 사라져 한쪽만 보는 것으로 운다 —
+      선언이 아니라 **실제로 도는가**를 묻는다.
+    """
+    if not _PRECOMMIT_CFG.exists() or not _PRECOMMIT_RUN.search(src):
+        return set()
+    return tokens(_nocomment(_PRECOMMIT_CFG.read_text(encoding="utf-8")))
+
+
 def ci_tokens() -> set[str]:
     out: set[str] = set()
     for p in sorted(WF.glob("*.yml")) + sorted(ACT.rglob("*.yml")):
-        out |= tokens(_no_path_filters(_nocomment(p.read_text(encoding="utf-8"))))
+        src = _no_path_filters(_nocomment(p.read_text(encoding="utf-8")))
+        out |= tokens(src) | _hook_tokens(src)
     return out
 
 
