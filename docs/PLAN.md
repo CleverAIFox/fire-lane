@@ -563,7 +563,7 @@ MASTER §4-1 이 그 사고다).
                `tools/fix.sh` 가 그 자리고, 그 문이 안내한다(DECISIONS §457-6)
     지키는 자 `SCOPE_FLOOR = 33` 이 실측 82 보다 **49 뒤처져 있었다.**
              래칫(`scopedecl.VERIFY_NO_SCOPE`)으로 옮겼다 — 세는 양도 「미선언이
-             몇인가」로 바꿨고, 두 자를 대는 시험이 그 수를 지킨다(§457-6)
+             몇인가」로 바꿨고, 두 자를 대는 시험이 그 수를 지킨다(DECISIONS §457-6)
     안 건드린다 docseal · dms · canary · scopedecl — 표준이 없다.
              **pytest 전수도 안 건드린다** — 미선언 안전망이고 그대로 둔다
 
