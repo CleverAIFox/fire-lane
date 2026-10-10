@@ -346,9 +346,75 @@ def _say(res: Result) -> None:
         print(f"    ✗ {d}")
 
 
+def selftest() -> int:
+    """★ 판별식이 살아 있나. **합성 문서로만 민다** — 실물을 안 건드린다.
+
+    ★ 2026-10-10 (DECISIONS §445-2 와 같은 자리). 이 도구가 **과녁에 새로
+      들어왔다** — `#166` 이 지문 범위를 넓히며 「선언을 옆집에서 함수 안으로
+      끌어오는 꼴」을 보게 됐고, 이 도구가 바로 그 꼴이었다. 그런데 자기검사가
+      없어 **흔들어도 못 재는 과녁**(`UNCATCHABLE`)이 됐다. 재는 자리가 없는
+      강제자는 §445 가 내내 적은 그 병이라 여기서 끊는다.
+
+    밖    **실물 수가 옳은가는 안 본다** — 그것은 `truth()` 와 `alive()` 가
+          실물에서 들고 `tests/test_repo_numbers.py` 가 같이 묻는다.
+    """
+    bad: list[str] = []
+    doc = "<!--gen: plan_open -->\n## 1. 남은 일 — 3행\n<!--/gen-->\n"
+    want = {a: 1 for a in AXES} | {"plan_open": 7}
+
+    # ★ 정상 입력 — 블록을 채운다. **구조 결함은 증분으로 본다** — 합성 문서는
+    #   축 하나만 들므로 「이 축에 블록이 한 곳도 없다」가 늘 따라온다. 그 바탕을
+    #   빼고 **늘어난 것**만 결함으로 센다.
+    res = apply_all({"a.md": doc}, want)
+    base = len(res.broken)
+    if "## 1. 남은 일 — 7행" not in res.texts["a.md"]:
+        bad.append("블록을 안 채운다")
+    if res.seen.get("plan_open") != 1:
+        bad.append("채운 건수를 안 센다")
+    # ★ 합성 결함 ① 낡은 값이면 **운다**
+    if not res.drift:
+        bad.append("낡은 값을 안 운다 — 3행이 7행으로 바뀌었는데 조용하다")
+    # ★ 합성 결함 ② 이미 맞으면 **안 운다**(그래야 「고칠 것이 없다」가 참이다)
+    if apply_all({"a.md": res.texts["a.md"]}, want).drift:
+        bad.append("이미 맞는데 운다 — 매 배치 문서가 더러워진다")
+    # ★ 합성 결함 ③ 안 닫은 블록은 **구조 결함**이다
+    if len(apply_all({"a.md": "<!--gen: plan_open -->\n## 1. 남은 일 — 3행\n"},
+                     want).broken) <= base:
+        bad.append("안 닫은 블록을 안 운다 — 그 뒤 문서 전체가 블록 안이 된다")
+    # ★ 합성 결함 ④ 모르는 축 이름
+    if len(apply_all({"a.md": doc + "<!--gen: 없는축 -->\n<!--/gen-->\n"},
+                     want).broken) <= base:
+        bad.append("없는 축 이름을 안 운다")
+    # ★ 읽는 쪽 — 시험과 같은 문을 쓴다
+    if claims("plan_open", "## 1. 남은 일 — 1,234행") != [1234]:
+        bad.append("천 단위 쉼표를 못 읽는다")
+    if render(1234) != "1,234":
+        bad.append("천 단위 쉼표를 안 적는다")
+    # ★ 정본이 살아 있나 — **양방향**
+    ok = {a: 9_999 for a in AXES} | {"datasets": 80, "sealable": 79}
+    if alive(ok):
+        bad.append(f"멀쩡한 축에 운다 — {alive(ok)}")
+    if not alive({a: 0 for a in AXES}):
+        bad.append("전부 0 인데 안 운다 — 조용한 거짓이 그대로 문서에 들어간다")
+    # ★ 경계를 못 박는다. 문이 `<= 0` 인지 `<= 1` 인지를 **1 로** 가른다 —
+    #   안 박으면 그 자리를 흔들어도 안 죽고, 경계가 조용히 한 칸 올라간다.
+    one = ok | dict.fromkeys(
+        ("plan_open", "cov_min", "v_clear", "v_needs_cv", "v_blocked", "v_unknown"), 1)
+    if alive(one):
+        bad.append(f"1 인데 운다 — 경계가 0 이 아니라 1 에 걸렸다: {alive(one)}")
+    if not alive({}):
+        bad.append("축이 통째로 없는데 안 운다")
+
+    for x in bad:
+        print(f"  ✗ {x}")
+    print(f"{'✗' if bad else '✓'} 자기검사 — 채움 · 낡음 · 멱등 · 구조 · 읽기 · 정본 아홉")
+    return 1 if bad else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="문서 생성 블록 ↔ 실물")
     ap.add_argument("--check", action="store_true", help="대조만 — 고치지 않는다")
+    ap.add_argument("--selftest", action="store_true", help="★ 판별식이 살아 있나")
     ap.add_argument("--list", action="store_true", help="축 · 실물 값 · 블록 수")
     # ★ **문서를 어디서 읽나만 바꾼다.** 실물(대장 · `dms.scan()`)은 언제나 이
     #   저장소다 — 그래서 복사한 트리에 틀린 값을 심어 「이 도구가 무는가」를
@@ -357,6 +423,8 @@ def main() -> int:
     ap.add_argument("--root", type=Path, default=ROOT,
                     help="문서를 읽고 쓸 트리 (기본: 이 저장소)")
     a = ap.parse_args()
+    if a.selftest:
+        return selftest()
 
     want = truth()
     dead = alive(want)

@@ -100,13 +100,129 @@ OPS_FNS = ("baseLayers", "hillshadeLayer", "opsHistoryLayers", "opsSegLayers",
 #   baseLayers 9 + markerLayers 6 + stationLayers 2 = 17.
 SHARED_LAYERS = 12
 
+#: 화면에 뜨는 **한글 글자 수**. 내려가는 쪽이다.
+#:
+#: ★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). 그 행의 자가 **틀려 있었다** —
+#:   `web/navi/src/ui` 폴더의 **줄 수**(22파일 2,061줄)를 들었다. 그런데 행이
+#:   묻던 것은 「관제 화면이 너무 많이 보여준다」이고, 행을 쓴 사람의 뜻은
+#:   **「쓸데없는 텍스트가 많다」**였다. 그래픽·레이아웃 코드는 분모가 아니고
+#:   (그쪽은 많아도 된다 — 위계를 주는 일이다) 파일마다의 길이는 `sizecheck` 가
+#:   이미 든다. 즉 **폴더 합계 줄 수를 세는 관문은 없었고**, 없는 자로 적힌 수는
+#:   래칫이 아니라 메모였다. 그래서 자를 바꿨다.
+#: ★ 세는 것 — 주석을 뺀 소스의 **문자열 리터럴 중 한글이 든 것**의 글자 수.
+#:   한글을 조건으로 거는 이유는 그것이 **사람에게 읽히는 말**의 표식이기
+#:   때문이다(class 이름 · id · 색 코드는 안 걸린다).
+#: ★ 실측 — §441 이 「읽는 법」 시트를 만들며 ui 가 3,992자였고, §445 가 그
+#:   시트를 걷고 색마다의 한 줄 설명과 뺄셈 식을 지워 **2,877자**가 됐다.
+#:   늘면 운다 — 「패널에 문장을 달았다」가 그 뜻이다.
+#: 밖  **무엇이 쓸데없는 말인가는 안 고른다** — 그것은 사람이 본다. 여기는 양만 센다.
+# ★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). 2877 → **3867. 자를 고쳤다.**
+#   종전 자는 `ui/` 의 **문자열 리터럴**만 셌다 — 관제 본체(`OpsApp.tsx`)가 범위
+#   밖이었고 JSX 텍스트는 아예 안 세어서, 설명을 걷어도 수가 안 움직였다.
+#   새 자는 `web/navi/src` 전부에서 **주석을 뗀 한글 글자**다. 단위가 달라졌으므로
+#   두 수를 비교하지 마라. 같은 자로 재면 이 판에서 **4694 → 3867**(827자 · 17.6%)
+#   줄었다 — 화면 안 사용설명서 한 장과 범례의 설명 두 덩이다.
+UI_TEXT = 3867
+
 #: `tools/ratchet.py` 가 **줄었을 때만** 이 수를 고쳐 적는다(§309).
-RATCHETS = {"SHARED_LAYERS": "down"}
+RATCHETS = {"SHARED_LAYERS": "down", "UI_TEXT": "down"}
+
+_HANGUL = re.compile(r"[가-힣]")
+
+
+def screen_text(src: str) -> str:
+    """그 소스가 **사람에게 내는 말**. 주석을 떼고 남은 한글이다.
+
+    ★ 주석을 먼저 떼지 않으면 사유를 길게 적을수록 수가 늘어난다 — 그러면
+      이 래칫이 「주석을 줄여라」가 되고, 그것은 이 저장소가 바라는 것의 반대다.
+
+    ★ 2026-10-09 정정 (DECISIONS §445 · PLAN #143). 종전에는 **문자열
+      리터럴만** 집었다. 화면 말의 과반은 JSX 텍스트 노드라 그 자가 **본 것을
+      안 세고 있었다** — 관제 범례에서 설명 두 덩이를 걷었는데 수가 **한 글자도
+      안 움직였다.** 자가 틀리면 그 수는 수가 아니다(§436-8 과 같은 자리).
+      그래서 **문법을 덜 따지고 글자를 센다**: 주석을 떼고 남은 한글 전부.
+      코드 식별자는 ASCII 라 안 걸리고, JSX 텍스트도 문자열도 다 걸린다.
+    """
+    src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
+    src = re.sub(r"^\s*//.*$", "", src, flags=re.M)
+    return "".join(_HANGUL.findall(src))
+
+
+def ui_text_chars(root: Path = SRC) -> int:
+    """화면이 내는 한글 글자 수. **한 곳에서만 센다.**
+
+    ★ 범위가 `ui/` 하나가 아니다 — 관제 화면 본체(`OpsApp.tsx`)와 지도 조각
+      (`components/`)이 밖이었고, 사람이 가리킨 것은 **관제**였다. 화면이 말을
+      내는 자리는 `web/navi/src` 전부다.
+    """
+    n = 0
+    for p in sorted(root.rglob("*.ts*")):
+        if p.name.endswith(".d.ts"):
+            continue
+        n += len(screen_text(p.read_text(encoding="utf-8")))
+    return n
+
+
+#: 층의 집. `LAYER` 선언이 여기 산다 — 값이 아니라 **순서**를 본다.
+_THEME = SRC / "ui" / "opsTheme.ts"
+_LAYER_BLOCK = re.compile(r"export const LAYER = \{(.*?)\n\} as const;", re.S)
+_LAYER_ROW = re.compile(r"(\w+):\s*\{[^}]*background:\s*(\"#[0-9a-fA-F]{6}\"|D\.\w+)")
+#: `D` 토큰 표 — `D.card` 꼴을 풀려면 값을 알아야 한다. **베끼지 않는다.**
+_D_BLOCK = re.compile(r"export const D = \{(.*?)\n\};", re.S)
+_D_ROW = re.compile(r"(\w+):\s*\"(#[0-9a-fA-F]{6})\"")
+
+
+def _lum(hex6: str) -> float:
+    """WCAG 상대휘도. **색이 아니라 밝기**를 재는 자다."""
+    def ch(v: float) -> float:
+        v /= 255
+        return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+    r, g, b = (int(hex6[i:i + 2], 16) for i in (1, 3, 5))
+    return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
+
+
+def layers_declared(txt: str) -> list[tuple[str, str]]:
+    """선언된 (층 이름, 배경색). 블록이 없으면 **빈 목록**이다.
+
+    ★ `D.card` 꼴을 **같은 파일의 `D` 표에서 푼다.** 값을 여기 베끼면 토큰을
+      고칠 때 이 자가 따라오지 않는다(족 2).
+    """
+    m = _LAYER_BLOCK.search(txt)
+    if not m:
+        return []
+    dm = _D_BLOCK.search(txt)
+    tok = dict(_D_ROW.findall(dm.group(1))) if dm else {}
+    out = []
+    for name, raw in _LAYER_ROW.findall(m.group(1)):
+        v = raw.strip('"') if raw.startswith('"') else tok.get(raw.split(".", 1)[1], "")
+        if v:
+            out.append((name, v))
+    return out
+
+
+def tier_faults(rows: list[tuple[str, str]], order: tuple[str, ...] = ("act", "pick", "idle")) -> list[str]:
+    """층의 **휘도가 선언한 순서대로 내려가는가.** 순수 함수다.
+
+    ★ 왜 순서만 보나 — 값은 디자인이고 사람이 고른다. 기계가 지킬 수 있는 것은
+      「`act` 가 `pick` 보다 밝고 `pick` 이 `idle` 보다 밝다」 하나이고, 그것이
+      깨지면 **계층이 거꾸로 읽힌다.** 교안 p.25 Note 3 이 말하는 것이 그 순서다.
+    """
+    got = dict(rows)
+    if len(rows) != len(order) or set(got) != set(order):
+        return [f"`LAYER` 선언이 {sorted(got)} 다 — {list(order)} 셋이어야 한다 "
+                "(블록이 사라지면 이 축이 조용히 통과한다)"]
+    lums = [(k, _lum(got[k])) for k in order]
+    bad = []
+    for (a, la), (b, lb) in zip(lums, lums[1:], strict=False):
+        if la <= lb:
+            bad.append(f"`{a}`({la:.4f}) 가 `{b}`({lb:.4f}) 보다 안 밝다 — "
+                       "계층이 거꾸로 읽힌다(DECISIONS §445)")
+    return bad
 
 
 def ratchet_values() -> dict[str, int]:
-    """공유 층의 지금 수. **판정은 `split()` 소관**이다."""
-    return {"SHARED_LAYERS": len(shared_layers())}
+    """공유 층의 지금 수 · 화면 글자 수. **판정은 `split()` 소관**이다."""
+    return {"SHARED_LAYERS": len(shared_layers()), "UI_TEXT": ui_text_chars()}
 
 
 # ── ① 소스 ──────────────────────────────────────────────────────
@@ -214,6 +330,19 @@ def marker_faults() -> list[str]:
 def split() -> list[str]:
     """빨간불 사유들. 비면 초록."""
     bad = []
+
+    # ㉧ 화면 글자 수 — **양방향**. 늘면 「패널에 문장을 달았다」이고,
+    #   줄면 기록을 내려야 한다(안 내리면 다시 늘어도 안 운다 · §445).
+    now = ui_text_chars()
+    if now > UI_TEXT:
+        bad.append(f"화면 글자 {now}자 > 기록 {UI_TEXT}자 — 패널에 설명이 다시 "
+                   "들어왔다. 한계·뜻의 집은 `MASTER §15-4` 다")
+    elif now < UI_TEXT:
+        bad.append(f"화면 글자 {now}자 < 기록 {UI_TEXT}자 — 줄었다. "
+                   f"`tools/uicheck.py` 의 `UI_TEXT` 를 {now} 으로 내려라")
+
+    # ㉨ 층의 휘도 순서 (§445 · #143) — 값은 사람이 고르고 **순서는 기계가 든다**
+    bad += tier_faults(layers_declared(_THEME.read_text(encoding="utf-8")))
 
     # ㉠ 전환 자체가 살아 있는가
     main = (SRC / "main.tsx").read_text(encoding="utf-8")
@@ -383,87 +512,13 @@ def build() -> list[str]:
 
 # ── 자기검사 ────────────────────────────────────────────────────
 def selftest() -> int:
-    """★ 「0건이 청결인가 죽음인가」(§230). 판별식이 두 결함을 실제로 가르는가."""
-    fails = []
-    per = layer_ids()
-    if not per:
-        fails.append("층을 하나도 못 읽었다 — 빈 그물이다")
-    if "baseLayers" not in per:
-        fails.append("`baseLayers` 를 못 찾았다 — 공유 층 계산이 0 이 된다")
-    # ★ 파일이 갈라져도 그물이 덮는가. 한 파일만 읽으면 여기서 걸린다(§311).
-    for fn in NAVI_FNS + OPS_FNS:
-        if fn not in per:
-            fails.append(f"`{fn}` 을 못 찾았다 — 층 명세 파일이 갈라졌는데 "
-                         "`LAYER_FILES` 에 안 넣었을 수 있다")
-    for f in LAYER_FILES:
-        if not (SRC / "components" / f).is_file():
-            fails.append(f"`{f}` 가 없다 — 선언이 낡았다")
+    """판별식은 **옆집**에 산다 — `tools/uichecktest.py`.
 
-    sh = shared_layers()
-    if not sh:
-        fails.append("공유 층이 0 이다 — 두 지도가 `baseLayers` 를 같이 부르는데 0 일 수 없다")
-    # ★ 주행에도 값이 있어 **남긴** 것들. 이것이 사라지면 세는 법이 틀린 것이다.
-    for want in ("bg", "seg-road", "lbl-road", "hydrant"):
-        if want not in sh:
-            fails.append(f"공유 층에 `{want}` 가 없다 — 세는 법이 틀렸다")
-    # ★ 반대 방향 — 끈 것이 공유에 남아 있으면 빼기가 안 먹은 것이다(§311).
-    off = set(navi_off())
-    if not off:
-        fails.append("`NAVI_OFF` 를 못 읽었다 — 빼기가 통째로 안 먹는다")
-    for gone in ("lbl-poi", "lbl-bldg", "seg-tint"):
-        if gone in sh:
-            fails.append(f"`{gone}` 가 아직 공유다 — 내비가 그것을 안 끈다")
-        if gone not in off:
-            fails.append(f"`{gone}` 가 `NAVI_OFF` 에서 빠졌다 — 주행 예산이 헐거워졌다")
-
-    # 배타 판별식이 **거짓을 거짓이라 하는가**
-    if _uses("OpsApp.tsx", "NaviMap"):
-        fails.append("관제가 내비 지도를 쓴다고 나온다 — 실물과 다르면 판별식이 틀렸다")
-    if not _uses("App.tsx", "NaviMap"):
-        fails.append("내비가 `<NaviMap>` 을 안 쓴다고 나온다 — 판별식이 못 찾는다")
-
-    # 신선도 판별식이 **반대 방향도 잡는가**
-    if _newest(SRC) <= 0:
-        fails.append("소스 시각을 못 읽는다 — 신선도 판정이 늘 통과한다")
-
-    for f in fails:
-        print(f"  ✗ {f}")
-    # ★ ③ 마커 대조 (§337). **문서를 읽기는 하는가** — 못 읽으면 언제나 초록이다.
-    said = documented_markers()
-    if not said:
-        fails.append(f"`MASTER {MARKER_SEC.strip('# .')}` 의 마커 표를 못 읽는다 — 빈 그물이다")
-    # ★ 칸을 가르는가. 둘째 칸이 층이고 넷째 칸의 백틱은 **함수 이름**이다 —
-    #   안 가르면 `hydrantIcon()` 이 층으로 세어져 영원히 빨갛다.
-    if any(s.endswith("()") for s in said):
-        fails.append(f"표의 함수 이름을 층으로 센다 — {[s for s in said if s.endswith('()')]}")
-    if "hydrant" not in said:
-        fails.append("표에서 `hydrant` 를 못 찾는다 — 둘째 칸을 안 읽고 있다")
-    # ★ 반대 방향 — 없는 층을 적으면 정말 우는가
-    if not [s for s in ("streetlight-dot", "lightpole")
-            if s not in {i for v in per.values() for i in v}]:
-        fails.append("걷어낸 가로등 층이 아직 코드에 있다 — 주입 판별식이 헛돈다")
-    # ★ 2026-10-09 (§441). 강조 채널 문을 **양방향**으로 민다. 실물로만 재면
-    #   「언제나 통과」와 「실제로 깨끗함」을 못 가른다(§230).
-    #   ★ **합성으로 민다 — 실물을 안 고친다.** 고쳤다 되돌리면 그 사이 트리가
-    #     더럽고, 배달 기계가 그것을 본다.
-    if emphasis_uses_no_color():
-        fails.append("지금 트리에서 강조 채널 문이 운다 — 실물이 이미 색을 쓴다")
-    ok = "@keyframes flpulse{0%{opacity:1}}"
-    if emphasis_faults(ok):
-        fails.append("색 없는 선언에서 운다 — 거짓 경보")
-    if not emphasis_faults(ok + '\nconst p = "#ff0000";'):
-        fails.append("색을 심었는데 안 운다 — 그물이 샌다")
-    if not emphasis_faults(ok + "\nconst p = rgba(1,2,3,.4);"):
-        fails.append("`rgba(` 를 색으로 안 센다")
-    if not emphasis_faults("// 머리말뿐"):
-        fails.append("맥박 선언이 없는데 통과한다 — 빈 그물을 안 막는다")
-    if not emphasis_faults(None):
-        fails.append("파일이 없는데 통과한다")
-    if emphasis_faults(ok + "\n// 주석 속 #ff0000 은 색이 아니다"):
-        fails.append("주석 속 색을 센다 — 주석은 설명이다")
-
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 21")
-    return 1 if fails else 0
+    ★ 함수 안에서 끌어온다. 위에서 끌어오면 `uichecktest → uicheck → uichecktest`
+      로 맞물린다(§445-1 에서 `mutate` 가 한 것과 같다).
+    """
+    from uichecktest import selftest as _s  # noqa: PLC0415  맞물림을 끊는다
+    return _s()
 
 
 def main() -> int:
@@ -478,7 +533,8 @@ def main() -> int:
     bad: list[str] = []
     if a.split or not a.build:
         sh = shared_layers()
-        print(f"화면 분리 — 공유 지도 층 {len(sh)} · 래칫 {SHARED_LAYERS}")
+        print(f"화면 분리 — 공유 지도 층 {len(sh)} · 래칫 {SHARED_LAYERS}"
+              f" · 화면 글자 {ui_text_chars()}자 · 래칫 {UI_TEXT}자")
         bad += split()
     if a.build:
         print(f"빌드본 — {DIST.relative_to(ROOT)}")
