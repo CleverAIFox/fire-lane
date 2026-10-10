@@ -37,7 +37,7 @@ export function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
   const s = style[e.verdict];
   const c = edgeClearance(e, spec);
   const why = segmentReason(e, spec);
-  const cctvOk = e.cctv_dist_m != null && e.cctv_dist_m <= 25;
+  const cctvOk = e.cctv_dist_m != null && e.cctv_dist_m <= 19;
   const gray = grayReason(e);
   return (
     <div style={{ ...secBox }}>
@@ -67,7 +67,7 @@ export function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
         </b>
       </div>
       <Row k="측정 신뢰도 · 폭 표본" v={`${e.width_cov != null ? Math.round(e.width_cov * 100) + "%" : "—"} · ${e.n_sample ?? "—"}개`} />
-      <Row k="가까운 CCTV" v={e.cctv_dist_m != null ? `${Math.round(e.cctv_dist_m)}m ${cctvOk ? "(영상판정 가능)" : "(25m 밖)"}` : "—"} />
+      <Row k="가까운 CCTV" v={e.cctv_dist_m != null ? `${Math.round(e.cctv_dist_m)}m ${cctvOk ? "(영상판정 가능)" : "(19m 밖)"}` : "—"} />
       {gray && (
         <div style={{ fontSize: 12, background: "#0f172a", border: `1px solid ${D.line}`, borderRadius: 8, padding: "7px 9px", marginTop: 6, lineHeight: 1.5 }}>
           <b>회색 사유 — {gray.short}</b><br />{gray.long}

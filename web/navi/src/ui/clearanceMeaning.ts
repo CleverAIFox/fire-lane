@@ -98,7 +98,7 @@ export function segmentReason(
   if (e.verdict === "unknown") {
     const g = e.unknown_reason ? GRAY_REASON[e.unknown_reason] : null;
     return {
-      head: `영상판정 불가 — ${g?.short ?? e.unknown_reason ?? "CCTV 25m 밖"}`,
+      head: `영상판정 불가 — ${g?.short ?? e.unknown_reason ?? "CCTV 19m 밖"}`,
       detail,
       action: c.band === "neg"
         ? "도면상 요구폭 미만 — 진입 전 현장 확인이 필요하다"

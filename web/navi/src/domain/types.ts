@@ -109,7 +109,7 @@ export interface GraphEdge {
   width_cov?: number | null;
   /** 폭 표본 수. 1이면 `verdict()` 가 통과 확정을 보류한다 */
   n_sample?: number | null;
-  /** 가장 가까운 CCTV 까지 거리(m). 25m 넘으면 영상판정이 성립 안 한다 */
+  /** 가장 가까운 CCTV 까지 거리(m). 19m 넘으면 영상판정이 성립 안 한다 */
   cctv_dist_m?: number | null;
   /** 왜 회색인가. ledger_disputes · no_cctv_band · no_cctv_thin · no_cctv_narrow · no_cctv_single */
   unknown_reason?: string | null;

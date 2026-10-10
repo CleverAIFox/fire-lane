@@ -168,7 +168,7 @@ export interface StatusSignals {
   remainM: number | null;
   /**
    * 지금 구간이 **CCTV 로 검증되지 않는** 좁은 구간인가.
-   * `unknown` 은 전부 CCTV 25m 밖이다(layers.ts · `unknown` 354).
+   * `unknown` 은 전부 CCTV 19m 밖이다(layers.ts · `unknown` 354).
    */
   onUnverified: boolean;
   /** 시연 막대가 넣은 상태. 있으면 이긴다 */
@@ -185,8 +185,9 @@ export interface StatusSignals {
  *
  * ★ 근거 — 판정 폭 하한이 3.0m 이고 구간 길이 중앙이 30m 대다. 25m 는
  *   **구간 하나를 통째로 헷갈릴 수 있는 크기**이며, 그 정도면 회전 안내가
- *   엉뚱한 교차로에서 나간다. `CCTV_RANGE`(25m)와 우연히 같은 수이지만
- *   출처가 다르다 — 둘을 한 상수로 묶지 않는다.
+ *   엉뚱한 교차로에서 나간다. 2026-10-10 까지 `CCTV_RANGE` 와 우연히 같은
+ *   수였고 그쪽이 19m 로 내려가 갈라졌다 — 애초에 출처가 달랐다. 그래서
+ *   둘을 한 상수로 묶지 않는다.
  * ★ 이 값은 **근거 있는 어림**이지 실측이 아니다. 실주행 로그가 생기면
  *   분포를 보고 다시 정한다(PLAN §13 W13-2).
  */

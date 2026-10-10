@@ -6,7 +6,7 @@
  *
  *     판정 4색            구간 색. 정본(`style`) 그대로 — 음영이 아니라 원색. 폭에 비례해 굵다
  *     도달 불가 겹침       고른 센터 · 차종 기준으로 닿지 않는 구간을 회색 사선으로
- *     CCTV 25m 반경       영상판정이 성립하는 범위(`seg/params.py` CCTV_RANGE 와 같은 수)
+ *     CCTV 19m 반경       영상판정이 성립하는 범위(`seg/params.py` CCTV_RANGE 와 같은 수)
  *     정사영상 25cm        로컬 타일(`web/data/ortho`). 키가 필요 없다
  *     출동 미리보기        센터 → 사건 지점 경로(파랑) · 대체 접근 지점이면 도보 점선
  *     출동 중인 차         내비 탭이 보내는 위치 · 경로 · 상태(`opsProtocol`)
@@ -14,7 +14,7 @@
  *
  * ★ 판정색을 여기서 만들지 않는다. `style` 은 `navi_graph.json.style` 이고 그 정본은
  *   `web/config.js` 다.
- * ★ 25m 는 **표시용 사본**이다 — 정본은 `seg/params.py` 의 CCTV_RANGE 다. 레거시 지도
+ * ★ 19m 는 **표시용 사본**이다 — 정본은 `seg/params.py` 의 CCTV_RANGE 다. 레거시 지도
  *   (`web/config.js` markers[].cover.radius)도 같은 수를 따로 들고 있다.
  */
 import { useEffect, useRef } from "react";
@@ -47,7 +47,7 @@ maplibregl.setWorkerUrl(workerUrl);
  */
 
 /** CCTV 영상판정 유효 반경(m). 정본은 seg/params.py CCTV_RANGE — 표시용 사본 */
-const CCTV_RANGE_M = 25;
+const CCTV_RANGE_M = 19;
 
 export interface OpsLayers {
   ortho: boolean;

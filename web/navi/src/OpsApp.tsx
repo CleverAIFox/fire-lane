@@ -511,7 +511,7 @@ export default function OpsApp() {
               ["reach", `도달 불가 사선 · ${displayName(vehicle?.label ?? "기준 차량")}`],
               ["history", "출동 이력 · 실제 도착 시간"],
               ["context", "과속방지턱 · 카메라 · 보호구역"],
-              ["cctvCov", "CCTV 영상판정 반경 25m"],
+              ["cctvCov", "CCTV 영상판정 반경 19m"],
               ["ortho", "항공정사영상 25cm"],
               ["bldg", "3D 건물(비스듬히)"],
               ["terrain", "지형(음영 · 3D 에서 지면 휨)"],
