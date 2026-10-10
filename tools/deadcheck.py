@@ -602,10 +602,25 @@ EXEMPT_SCOPE = {
         _PROD_ONLY + " — 합성 결함을 심는 카나리아가 과녁에 들면 축이 자기를 잡는다",
     # ★ 2026-10-05 (DECISIONS §398-4 · §398-2). 둘 다 **묻는 대상이 그 디렉터리
     #   자체**다. 넓히면 묻는 것이 달라진다.
-    "tools/mutate.py::named_tests":          # ← `catchers` (DECISIONS §431-10)
+    # ★ 2026-10-09. `mutate.py` 를 쪼개며 이 함수가 `mutatescope.py` 로 갔다.
+    #   키가 깨진 것은 **옳다** — 면제는 자리에 붙는 것이고 자리가 바뀌면 다시
+    #   물어야 한다(§444-8 과 같은 자리). 이 프로브가 그 깨짐을 잡았다.
+    "tools/mutatescope.py::named_tests":     # ← `catchers` (DECISIONS §431-10)
         "붙잡이는 **시험**이다 — 도구를 흔들었을 때 우는 자리를 찾는 것이고, "
         "`src` · `tools` 는 흔드는 **대상**이지 붙잡이가 아니다. 과녁은 "
         "`targets()` 가 `toolclass` 에서 도출한다",
+    # ★ 2026-10-09 (DECISIONS §445 · PLAN #56 ① 닫힘). 카나리아 관문은 **두 자리를
+    #   따로** 본다 — 「무엇이 도구인가」는 `tools/` 가 정본이고, 「누가 그 도구를
+    #   미는가」는 `tests/` 가 정본이다. 섞으면 분모가 두 번 세진다.
+    "tools/canary.py::tool_names":
+        "도구의 **이름표**를 뜨는 자리다. `src` 는 꾸러미이고 `tests` 는 미는 쪽이라 "
+        "둘 다 도구가 아니다 — 넓히면 분모가 「제 자신을 미는 도구」까지 센다",
+    "tools/canary.py::findings":
+        "카나리아는 **시험**이 든다. 도구 쪽 자기검사는 `mutate` 가 흔들어서 재므로 "
+        "여기서 또 세면 같은 사실을 두 벌로 든다(족 2)",
+    "tools/canary.py::denominator":
+        "분모는 `findings` 와 **같은 자리**를 세야 한다. 한쪽만 넓히면 비율이 "
+        "조용히 거짓이 된다 — 분모와 분자가 갈리는 꼴이 §437 이었다",
     # ★ 2026-10-09 (DECISIONS §444 · PLAN #134 ㉡). 묻는 대상이 **그 디렉터리
     #   하나**다 — 「`tests/fixtures/n1/` 에 있는 사본이 전부 선택 규칙을 드는가」.
     "tools/fixture_recut.py::n1_files":
