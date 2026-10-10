@@ -58,7 +58,9 @@ treecheck.py — 저장소 루트부터 레이크까지 **전수 스캔**해서 
     D8  required 계층 부재
     D9  유령 provider (active 인데 대장이 안 쓴다)
 
-D0·D1·D5·D6·D9 는 레이크 없이도 돈다(`_acquire.json` 만 본다).
+D0·D1·D5·D6·D8·D9 는 레이크 없이도 돈다(`_acquire.json` 과 계층 선언만
+본다). D8 은 2026-10-10 까지 조기 반환 뒤에 있어 **어느 모드로도 안 돌았다**
+(DECISIONS §456-2).
 
 IN    저장소 트리 · sources.yaml · .gitignore · CODEOWNERS · $FIRE_LANE_DATA
 OUT   없음 (판정 전용). 종료코드 1 = 결함
@@ -74,6 +76,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from firelane import gitq, paths
+from firelane import lake as _lake
 from firelane import layers as L
 from firelane import ledger as LD
 
@@ -242,6 +245,15 @@ def ledger_files() -> set[str]:
     return set(json.loads(ACQ.read_text(encoding="utf-8"))["files"])
 
 
+def lake_connected() -> tuple[bool, str]:
+    """레이크가 붙어 있는가. **정본은 `firelane.lake.connected()` 하나다.**
+
+    ★ 2026-10-10 (DECISIONS §457). 여기에 같은 판별식을 따로 두면 `layerfsck`
+      쪽과 갈린다 — 그것이 이 판이 고치는 족이다(정본이 둘).
+    """
+    return _lake.connected()
+
+
 def check_names(rels: set[str], *, src: str) -> list[F]:
     out = []
     for rel in sorted(rels):
@@ -288,6 +300,21 @@ def check_lake(*, offline: bool) -> list[F]:
 
     led = ledger_files()
     out += check_names(led, src="대장")
+
+    # ★ 2026-10-10 (DECISIONS §456-2). D8 은 **레이크를 안 걷는다** — `required`
+    #   로 선언한 계층이 디렉터리인가만 본다. 종전에 이 검사가 아래 조기 반환
+    #   **뒤**에 있었고, `required` 가 붙은 계층은 `raw` 하나다. 즉 **D8 이 울
+    #   유일한 조건(raw 가 없다)에서 그 조기 반환이 먼저 돌려보냈다** — `--lake`
+    #   로 돌려도 도달하지 못하는 사문이었다. 위로 올렸다.
+    # ★ 단 **레이크가 붙은 기계에서만 묻는다.** 안 붙었으면 「required 가 없다」는
+    #   참이지만 결함이 아니다 — 그것이 CI 를 영원히 빨갛게 했던 자리다.
+    connected, _why = lake_connected()
+    if connected:
+        for name in L.names():
+            if L.policy(name).get("required") and not L.path(name).is_dir():
+                out.append(F("D8", BAD, f"{name} → {L.path(name)}",
+                             "required 인데 없다"))
+
     if offline or not paths.RAW.is_dir():
         return out
 
@@ -314,21 +341,21 @@ def check_lake(*, offline: bool) -> list[F]:
     for p in sorted(P.active() - top):
         out.append(F("D4", WARN, f"raw/{p}/", "active 인데 폴더가 없다"))
 
-    for name in L.names():
-        if L.policy(name).get("required") and not L.path(name).is_dir():
-            out.append(F("D8", BAD, f"{name} → {L.path(name)}",
-                         "required 인데 없다"))
     if paths.DATA and paths.DATA.is_dir():
         roots = {L.path(n).name for n in L.names()}
         for x in sorted(paths.DATA.iterdir()):
             if x.name.startswith("."):
                 continue
+            # ★ 2026-10-10 (DECISIONS §457). 종전에 이 자리는 `$FIRE_LANE_DATA/…`
+            #   **글자 그대로** 찍었다. 그 환경변수는 `paths.env` 가 들고 **사람의
+            #   쉘에는 없어서**, 찍힌 글자를 붙여넣으면 `/retired` 가 된다 —
+            #   2026-10-10 에 실제로 그렇게 두 번 헛돌았다. 실경로를 찍는다.
             if x.is_file():
-                out.append(F("D7", BAD, f"$FIRE_LANE_DATA/{x.name}",
+                out.append(F("D7", BAD, str(x),
                              "계층 밖 파일. 2026-08-24 에 SSD 루트로 11.7MB 가"
                              " 샌 것과 같은 형태다 — interim 으로 옮긴다"))
             elif x.name not in roots:
-                out.append(F("D7", WARN, f"$FIRE_LANE_DATA/{x.name}/",
+                out.append(F("D7", WARN, f"{x}/",
                              "선언되지 않은 최상위 폴더"))
     return out
 
@@ -382,8 +409,14 @@ def main() -> int:
     lf, ld = walk(paths.RAW)
     print("═══ 전수 스캔 ═══")
     print(f"저장소   파일 {len(rf)} · 폴더 {len(rd)}")
+    _conn, _why = lake_connected()
     print(f"레이크   파일 {len(lf)} · 폴더 {len(ld)}"
-          + ("   (미연결)" if not paths.RAW.is_dir() else ""))
+          + ("" if _conn else "   (미연결)"))
+    # ★ 2026-10-10 (DECISIONS §457). **결함 0 과 못 쟀음을 가른다.** 레이크가
+    #   안 붙은 기계에서 D1~D8 은 조용하고, 그 조용함을 초록으로 읽으면 안 된다.
+    if not _conn and (both or a.lake):
+        print(f"         ★ D1~D8 은 **안 쟀다** — 레이크 미연결({_why}).\n"
+              "           D0 · D9 와 대장 쪽 D1 · D5 · D6 만 돌았다")
     print(f"대장     datasets {len(LD.load().get('datasets') or {})} · "
           f"실물 {len(ledger_files())}")
     print(f"지문     {snapshot()}\n")

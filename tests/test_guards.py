@@ -717,14 +717,29 @@ def test_local_verify_covers_ci():
       `golden` 을 돌지만 CI 는 못 돈다 — raw 2.5GB 가 저장소에 없다.
       로컬이 CI 보다 **더** 보는 것은 정상이다.
     """
-    ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
-    vs = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
+    # ★ 2026-10-10 (DECISIONS §457). **주석을 뺀 뒤에 센다.** 종전에는 두 파일의
+    #   전문을 문자열로 훑었고, 그래서 **지웠다고 적은 주석이 그 단계를 있는
+    #   것으로 세게** 했다. 아래 삭제 사례가 실제로 그 함정에 걸려 있었다.
+    def _live(text: str, hash_comment: bool) -> str:
+        out = []
+        for ln in text.splitlines():
+            t = ln.lstrip()
+            if hash_comment and t.startswith("#"):
+                continue
+            out.append(ln.split(" #", 1)[0] if hash_comment else ln)
+        return "\n".join(out)
 
-    # ★ 2026-08-23 추가. 검사 목록이 같아도 **환경**이 다르면 결과가 갈린다.
-    #   로컬은 uv sync 로 전부 깔려 있고 CI 는 최소한만 깐다.
-    #   `verify.sh` 가 그 환경을 흉내내지 않으면 로컬 초록불이 보증이 안 된다.
-    assert "CI 환경 재현" in vs, \
-        "verify.sh 가 CI 의 좁은 환경을 재현하지 않는다 — 로컬 초록불이 보증이 아니다"
+    ci = _live((ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8"), True)
+    vs = _live((ROOT / "tools/verify.sh").read_text(encoding="utf-8"), True)
+
+    # ★ 2026-10-10 (DECISIONS §457) — 「CI 환경 재현」 단정을 **지웠다.**
+    #   종전에 이 자리는 `assert "CI 환경 재현" in vs` 였다. 그 단계는 2026-09-18
+    #   (W2) 에 **전제가 틀려서** 지워졌다 — CI 는 `pip install` 로 최소만 까는 것이
+    #   아니라 로컬과 같은 `uv sync --frozen --all-extras` 를 쓰고, 가렸던 일곱이
+    #   전부 코어 의존성이었다. 즉 **재현할 좁은 환경이 없다.**
+    #   그런데 단정은 남았고, `verify.sh` 에 그 글자가 남은 자리는 **삭제를 적은
+    #   주석 한 줄**이라 **묘비를 먹고 초록**이었다. 묻는 물음이 없어진 단정이므로
+    #   고치지 않고 지운다 — 되살릴 조건은 CI 와 로컬의 의존성 설치가 **갈릴 때**다.
 
     # ★ 2026-09-22. `js_graph_check` · `web_boot_check` 를 뺐다 — 옛 지도와 함께 지웠다.
     tools = ("commit_policy", "encoding_check", "docnum_check", "web_manifest")

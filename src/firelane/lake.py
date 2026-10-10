@@ -34,9 +34,11 @@ lake.py — 레이크 해석기. **대장 + 디스크 → 파일마다 주인 ·
 ★ 2026-09-17 (§176). 폐지층이 막는 쪽으로 옮겼다. `_quarantine` 을 비운 뒤 누가
   다시 쓰면(acquire `--quarantine` 은 아직 그 자리에 쓴다 — PLAN #56) verify 가 운다.
 
-★ 층 목록 `LAYERS` 는 §173-2 목표 구조다. 대장 `layers` 에 retired 가 들어가는
-  것은 레이크를 세운 뒤다(PLAN 「대장 · SSD 디렉토리 구조와 해석기 하나」) —
-  그때 이 상수를 대장에서 읽도록 바꾼다.
+★ 2026-10-10 (DECISIONS §457) — 층 목록을 **대장에서 도출한다**(`_lake_layers()`).
+  종전에 이 자리는 손으로 적은 `LAYERS` 다섯이었고 「대장 `layers` 에 retired 가
+  들어가는 것은 레이크를 세운 뒤다 — 그때 이 상수를 대장에서 읽도록 바꾼다」고
+  미뤄 뒀다. **그 조건이 충족됐고**(레이크가 서 있다 · 실측 89파일) 그 사이
+  상수와 대장이 **갈려 있었다** — 여기는 `retired` 를 들고 대장은 안 들었다.
 ★ sha 는 여기서 재지 않는다. 3.7GB 를 매 해석마다 읽지 않는다. 사본 판정은
   계획 단계가 레이크 기계에서 한 번 잰다.
 
@@ -53,9 +55,51 @@ from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from firelane import layers as _L
 from firelane import ledger, paths
 
-LAYERS = ("landing", "raw", "norm", "retired", "interim")   # §173-2
+
+# ★ 2026-10-10 (DECISIONS §457). 손으로 적은 다섯이었다. `layers` 선언에
+#   `retired` 가 들어오면서 이 상수가 **대장과 갈릴 수 있는 사본**이 됐고,
+#   실제로 2026-09~10 내내 **갈려 있었다** — 여기는 retired 를 들고 대장은
+#   안 들었다. 위 주석이 「그때 이 상수를 대장에서 읽도록 바꾼다」고 적어둔
+#   그 자리다. 조건(「레이크를 세운 뒤」)이 충족됐으므로 도출로 바꾼다.
+#   레이크 쪽 층 = `base: data` 인 계층 − 폐지층.
+def connected() -> tuple[bool, str]:
+    """레이크가 이 기계에 붙어 있는가. **획득 대장에서 도출한다.** (붙었나, 사유)
+
+    대장(`data/_acquire.json`)이 적은 파일 중 디스크에 **하나라도** 있으면
+    붙은 것이다. 0 건이면 레이크 없는 기계다.
+
+    ★ 2026-10-10 (DECISIONS §457). **「결함 0」과 「못 쟀음」을 가르는 자다.**
+      레이크 없는 기계에서 「`required` 인데 없다」는 참이지만 결함이 아니다 —
+      그 구별이 없어서 `treecheck` 는 `--repo` 로 굳어 **D 축 열 개가 죽고**,
+      `layerfsck` ① 은 거짓 어긋남을 냈다. 둘이 같은 물음을 저마다 풀던 자리라
+      집을 하나로 둔다(`tools/treecheck.py` 와 `firelane/layerfsck.py` 가 쓴다).
+
+    ★ 환경변수(`FIRE_LANE_DATA`)는 판별식이 못 된다 — 레이크를 **저장소 안
+      `data/raw` 에 두는 기계**가 있어서 그때 `paths.DATA` 가 `None` 이다.
+      `data/` 폴더 존재도 못 쓴다 — `data/golden` · `data/baseline` 이 커밋돼
+      있어 CI 에도 있다. 대장이 적은 실물이 **그 둘을 다 피하는 유일한 자**다.
+    """
+    import json as _json
+    acq = paths.ROOT / "data" / "_acquire.json"
+    if not acq.exists():
+        return False, "획득 대장이 없다"
+    led = _json.loads(acq.read_text(encoding="utf-8")).get("files") or {}
+    if not led:
+        return False, "획득 대장이 비었다"
+    n = sum(1 for rel in led if (paths.RAW / rel).exists())
+    return n > 0, f"대장 {len(led)}건 중 디스크에 {n}건"
+
+
+def _lake_layers() -> tuple[str, ...]:
+    """레이크 쪽 층. **대장에서 도출한다** — `base: data` 인 계층 − 폐지층."""
+    return tuple(n for n in _L.names()
+                 if _L.policy(n).get("base") == "data"
+                 and str(_L.policy(n).get("sub")) not in ABOLISHED)
+
+
 ABOLISHED = ("_quarantine",)                                # §173-2 — retired 로 흡수
 RECORD_NAMES = ("QUARANTINE.md",)
 STATES = ("정상", "자리틀림", "주인없음", "두주인", "결손", "선언밖", "폐지층", "기록")
@@ -228,7 +272,7 @@ def resolve(y: dict, root: Path, prep: dict | None = None) -> list[Row]:
         if not layer:
             rows.append(Row(rel, "", "선언밖", note="레이크 루트 파일"))
             continue
-        if layer not in LAYERS and layer not in ABOLISHED:
+        if layer not in _lake_layers() and layer not in ABOLISHED:
             rows.append(Row(rel, layer, "선언밖", note=f"선언되지 않은 폴더 `{layer}`"))
             continue
         if ledger.is_acquisition_meta(rel):

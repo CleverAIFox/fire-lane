@@ -42,6 +42,7 @@ BIND = {
     "landing": "LANDING",
     "raw": "RAW",
     "norm": "NORM",
+    "retired": "RETIRED",
     "interim": "INTERIM",
     "processed": "PROCESSED",
     "field": "FIELD",

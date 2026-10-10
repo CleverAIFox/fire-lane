@@ -635,7 +635,10 @@ step "미배선 자료"     uv run python tools/unusedcheck.py
 step "선언 ↔ 실물"     uv run python tools/refcheck.py
 # ★ 전수 스캔. `--repo` 는 데이터 레이크 없이 저장소 트리만 본다 —
 #   항목에서 출발하는 검사는 **항목이 없는 것을 영원히 못 본다.**
-step "트리 전수 대조"   uv run python tools/treecheck.py --repo
+# ★ 2026-10-10 (DECISIONS §457). `--repo` 를 뗐다. 그 플래그가 붙어 있는 동안
+#   `check_lake()` 가 안 돌아 **선언된 D 축 열 개가 어디서도 실행되지 않았다.**
+#   레이크 없는 기계는 `lake_connected()` 가 도출로 가려내고 「안 쟀다」를 찍는다.
+step "트리 전수 대조"   uv run python tools/treecheck.py
 scope "web/* data/*"
 step "web/data 계보"    uv run python tools/web_manifest.py --check
 # ★ 2026-09-20 (PLAN §1 #62). 출동 대상지는 동명동 하나다. 이 단계가 생기기
