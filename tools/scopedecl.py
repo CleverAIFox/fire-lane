@@ -90,7 +90,7 @@ MIN_FILES = 3
 GAP_EXEMPT: dict[tuple[str, str, str], str] = {}
 
 # ── ① 래칫. 오늘 값. **내려가는 쪽으로만.**
-NO_DECL = 148
+NO_DECL = 147
 
 # ── ③ 래칫. 오늘 값. **올라가는 쪽으로만.**
 # ★ 2026-09-25. 15 → 16. `tools/cost_inputs.py` 가 `--selftest` 를 갖고 왔다
