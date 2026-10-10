@@ -126,6 +126,12 @@ def selftest() -> int:
     #   관제 범례에서 설명 두 덩이를 걷었는데 수가 한 글자도 안 움직였다.
     if screen_text("<div>통행 가능</div>") != "통행가능":
         fails.append("JSX 텍스트를 안 센다 — 화면 말의 과반이 그 꼴이다")
+    # ★ 2026-10-10 (§448). **줄 끝 주석**도 주석이다. 안 떼면 이 래칫이
+    #   「사유를 줄 끝에 적지 마라」가 된다 — 자가 거꾸로 일한다.
+    if screen_text("const a = 1;  // 성긴 파선"):
+        fails.append("줄 끝 주석을 센다 — 사유를 적을수록 래칫이 는다")
+    if screen_text('const u = "https://ko.example/가";') != "가":
+        fails.append("`https://` 를 주석으로 보고 글자를 버린다")
     if screen_text('// "통행 가능"\n'):
         fails.append("주석 속 말을 센다 — 사유를 길게 적으면 래칫이 는다")
     if screen_text('/* "통행 가능" */\n'):
