@@ -46,11 +46,16 @@ import re
 import sys
 from pathlib import Path
 
+# ★ 선언 표 둘은 옆집에 산다 — 값만 있는 것은 값만 있는 파일에(§449-2).
+from docnumtable import CONTEXT, RETIRED
+
 from firelane.cli import no_args
 
 ROOT = Path(__file__).resolve().parent.parent
 SEG = ROOT / "data/processed/segments.geojson"
 WEB = ROOT / "web/data/segments.geojson"
+#: 설명문의 **정본**. 산출물이 들고 다닌다(MASTER §11 · DECISIONS §449).
+SCHEMA_WEB = WEB.parent / "segments.schema.json"
 NFA = ROOT / "data/processed/nfa_compare.json"
 
 ALLOW = "<!--stale-ok-->"
@@ -72,52 +77,6 @@ HIST: dict[str, list[tuple[str, str]]] = {
 # ── 폐기된 값 ──────────────────────────────────────────────────
 # ★ 산출값이 바뀌면 옛 값을 여기 한 줄 추가한다. 이 도구의 유지보수는
 #   그것이 전부다. 추가를 잊으면 다음 사람이 옛 숫자를 그대로 믿는다.
-RETIRED: dict[str, list[str]] = {
-    "세그먼트 수": ["1087", "1,087", "1091", "1,091", "1093", "1,093",
-                 "1102", "1,102", "1101", "1,101"],
-    # ★ 2026-10-03 (DECISIONS §375). `399` 를 더한다. **현재형 문서 셋이 그 값을
-    #   들고 있었다** — MASTER §2-1 제목 · §9 의 비율 줄 · §2 의 산문. 실물은
-    #   400 이고, 같은 절의 **표는 400 으로 맞게 적혀** 있었다(183+142+63+12).
-    #   즉 제목이 제 표와 어긋나 있었는데 `PRESENT`(「있는가」)는 400 이 다른
-    #   줄에 있어 통과했다 — **「있는지」만 보는 검사의 한계** 그대로다(위 ★).
-    "unknown(회색)": ["396", "429", "352", "354", "399"],
-    # ★ 2026-09-30 (§330). `400` 을 뺐다 — 측정 배치로 **`unknown` 이 400 이 됐다.**
-    #   폐기값이 다른 축의 현재값과 같으면, 판정 넷을 한 줄에 적는 문서가
-    #   그 줄 때문에 빨개진다. 아래 새 판별식이 그 상태를 막는다.
-    "clear": ["392", "443", "386", "397"],
-    # ★ 2026-08-24. 여기 "191" 이 있었는데 그것이 **현재값이 됐다.**
-    #   폐기 목록이 현재값을 폐기라고 적으면 게이트가 반대로 돈다 —
-    #   맞는 숫자를 쓴 문서가 빨간불이 된다. 209 만 남기고 190 을 넣는다.
-    #   ※ 209 → 191 → 190 → 191. 같은 값이 돌아온 첫 사례다.
-    #     RETIRED 는 "지금 값이 아닌 것" 이지 "한때 썼던 것" 이 아니다.
-    # ★ 2026-10-03 (DECISIONS §375). `226` 을 더한다. MASTER §2 · PLAN §1 #3 ·
-    #   최상위 README 셋이 그 값을 들고 있었고 실물은 225 다. 폐기값이 다른 축의
-    #   현재값과 겹치지 않는지 확인했다 — clear 464 · blocked 192 · unknown 400 ·
-    #   전체 1,281 · 영상판정 대상 625 어디에도 226 은 없다.
-    "needs_cv": ["209", "190", "226"],
-    # ★ 2026-09-16 흡수-2. needs_cv 의 옛 값 191 은 넣지 않았다 — 그때 blocked 가 191 이었다.
-    # ★ 2026-10-03 (DECISIONS §375) 정정. **그 사이 blocked 가 192 가 됐다.**
-    #   위 사유가 낡았고, 낡은 채로 191 을 지키는 사이 **현재형 문서 다섯 자리**가
-    #   191 을 들었다(MASTER 셋 · README 둘). 사유가 낡으면 그 사유가 지키는 값도
-    #   같이 낡는다 — 이제 191 을 넣는다.
-    #   ★ `MASTER §3-9` 의 폭 대역 표가 `103 / 191` 로 191 을 **분모**로 쓴다.
-    #     그 줄에는 `CONTEXT` 의 낱말(`blocked` · `통행 불가` · `빨강`)이 하나도
-    #     없어 **안 걸린다.** 문맥을 두고 재고 넣는다.
-    "blocked": ["57", "62", "63", "159", "191"],
-    # ★ 2026-08-23 추가. 실제 nfa_designated 는 158 인데 MASTER §10 이 139,
-    #   PLAN §7-2-4 가 153 으로 적고 있었다. PRESENT 검사는 §2 표에 158 이  ref-ok
-    #   있다는 이유로 통과했다 — "있는지" 만 보는 검사의 한계 그대로다.
-    "소방청 지정": ["139", "153", "158"],
-    # ★ width_cov 0.5 미만은 실측 4 인데 PLAN 두 곳이 69 였다.
-    "width_cov 0.5 미만": ["69"],
-    # ★ 2026-08-31. 대장이 세 곳에서 431+157=588 로 적고 있었다. 실물
-    #   집계표는 418+171=589 다 — **덧셈까지 안 맞았다.** 이 검사가
-    #   `.md` 만 돌아서 대장은 아무도 안 봤다.
-    "소화전 지상식": ["431"],
-    "소화전 지하식": ["157"],
-    "소화전 합": ["588"],
-}
-
 def retired_clashes(cur: dict[str, int], retired: dict[str, list[str]]) -> list[str]:
     """폐기목록이 **지금 값**을 폐기라고 적고 있는가. 같은 축 · 다른 축 둘 다.
 
@@ -140,26 +99,6 @@ def retired_clashes(cur: dict[str, int], retired: dict[str, list[str]]) -> list[
             out.append(f"RETIRED[{label!r}] 의 {x} 가 **다른 축의 현재값**이다 "
                        f"({live[x]}) — 그 줄을 쓴 문서가 빨개진다")
     return out
-
-
-CONTEXT = {
-    "unknown(회색)": ("unknown", "회색", "영상판정 불가"),
-    "clear": ("clear", "통행 가능", "초록"),
-    "needs_cv": ("needs_cv", "판정 보류", "주황"),
-    "blocked": ("blocked", "통행 불가", "빨강"),
-    # 문맥 없이 139·153·69 를 잡으면 무관한 숫자가 무더기로 걸린다.
-    "소방청 지정": ("nfa_designated", "소방청 지정"),
-    "width_cov 0.5 미만": ("width_cov",),
-    # ★ 2026-09-30 (DECISIONS §320). 종전에는 셋 다 문맥에 `소화전` · `hydrant` 를
-    #   두었다. 그러면 **소화전이 나오는 모든 줄**이 세 라벨의 문맥에 다 걸리고,
-    #   폐기값 하나가 다른 축의 현재값과 같은 순간(지하식 폐기값 157 = 발행
-    #   스코프 안 소화전 157) 맞는 문서가 빨개진다. 문맥은 **그 라벨을 가르는
-    #   낱말**이어야 한다 — `지상식` · `지하식` 은 그 자체로 갈라지고, 합은
-    #   집계표 낱말로 가른다.
-    "소화전 지상식": ("지상식",),
-    "소화전 지하식": ("지하식",),
-    "소화전 합": ("소방용수", "소화전 합", "지상식"),
-}
 
 
 def verdicts() -> dict[str, int]:
@@ -323,6 +262,67 @@ def live_lines(rel: str, text: str) -> list[tuple[int, str]]:
             if i not in cut and ALLOW not in s]
 
 
+#: **뒤집힘** 표. (정본에 있는 말, 표에 쓰면 안 되는 말, 왜)
+#: ★ 짧아진 것은 안 센다 — 표는 **짧은 풀이**이고 그것이 그 표의 일이다
+#:   (MASTER §11). 세는 것은 **반대로 적은 것** 하나다. 글자 수나 비율로 재면
+#:   줄일 때마다 울고, 고치면 우는 자는 사람이 끈다(§446-2).
+#: ★ **한 줄뿐이다.** 실제로 갈렸던 자리 하나다 — 지어낸 규칙은 안 넣는다.
+#:   지어낸 규칙은 오탐을 내고, 오탐이 본문을 덮으면 사람이 이 문을 끈다(§18-13).
+#:   새 뒤집힘을 **발견하면** 그때 한 줄과 사유를 같이 적는다(§69).
+CONTRADICT: list[tuple[str, str, str]] = [
+    ("불변이 아니다", "불변", "정본이 「밀린다」고 적은 키를 표가 「불변」이라 부르면 "
+                            "UI 가 그것을 외부 참조로 쓴다 — 2026-10-08 에 실제로 갈려 있었다"),
+]
+
+
+def doc_pairs(text: str) -> list[tuple[str, str]]:
+    """MASTER §11 표의 (필드, 설명) 쌍. 이름만 보는 `doc_fields` 의 짝이다."""
+    m = re.search(r"^### 데이터 필드\s*$", text, re.M)
+    if not m:
+        return []
+    out: list[tuple[str, str]] = []
+    started = False
+    for ln in text[m.end():].splitlines():
+        if ln.startswith("#"):
+            break
+        if ln.startswith("|"):
+            started = True
+            cols = ln.split("|")
+            if len(cols) < 4:
+                continue
+            names = re.findall(r"`([a-z_0-9]+)`", cols[1])
+            if names:
+                out.append((names[0], cols[2].strip()))
+        elif started and not ln.strip():
+            break
+    return out
+
+
+def contradiction_faults(pairs: list[tuple[str, str]], fields: dict[str, str],
+                         rules: list[tuple[str, str, str]] | None = None) -> list[str]:
+    """표가 정본을 **뒤집어** 적은 자리. 순수 함수다.
+
+    ★ 2026-10-10 (DECISIONS §449 · PLAN #101 닫힘). 설명문이 세 곳에 살았고
+      이미 갈려 있었다 — `seg_id` 가 정본에서는 「실행 내 표시용 · 불변이
+      아니다」인데 표에서는 「런 내 **불변**」이었다. 정본을 하나로 적고
+      (산출물이 들고 다니는 스키마) 표는 **짧은 풀이**로 두되, 뒤집힘만 센다.
+
+    밖    **짧아진 것은 안 본다.** 「노면폭(하한)」을 「최소 폭」으로 줄이는 것은
+          이 표의 일이고 결함이 아니다.
+    """
+    rules = CONTRADICT if rules is None else rules
+    flat = lambda s: re.sub(r"[\s*`.·]", "", s)
+    bad = []
+    for f, desc in pairs:
+        src = flat(fields.get(f, ""))
+        if not src:
+            continue
+        for canon, wrong, why in rules:
+            if flat(canon) in src and flat(wrong) in flat(desc) and flat(canon) not in flat(desc):
+                bad.append(f"`{f}` — 정본은 「{canon}」인데 표가 「{wrong}」이라 적는다. {why}")
+    return bad
+
+
 def doc_fields(text: str) -> set[str]:
     """MASTER §11 `### 데이터 필드` 표의 필드명."""
     m = re.search(r"^### 데이터 필드\s*$", text, re.M)
@@ -340,6 +340,12 @@ def doc_fields(text: str) -> set[str]:
         elif started and not ln.strip():
             break
     return out
+
+
+def selftest() -> int:
+    """판별식은 **옆집**에 산다 — `tools/docnumtest.py`(§449-2)."""
+    from docnumtest import selftest as _s  # noqa: PLC0415  맞물림을 끊는다
+    return _s()
 
 
 def main() -> int:
@@ -500,6 +506,19 @@ def main() -> int:
         for f in sorted(real - doc):
             print(f"! MASTER §11      {f} 가 산출물에 있으나 표에 없다")
             bad += 1
+        # ── 3b. 표가 정본을 **뒤집어** 적었나 (§449 · PLAN #101 닫힘) ──
+        # ★ 이름까지만 보던 자리다. 설명문이 세 곳에 살았고 `seg_id` 가 실제로
+        #   갈려 있었다 — 정본은 「불변이 아니다」인데 표는 「런 내 불변」.
+        #   짧아진 것은 안 센다(표의 일이다). **반대로 적은 것만** 센다.
+        _sp = SCHEMA_WEB if SCHEMA_WEB.exists() else None
+        if _sp is not None:
+            # ★ `or {}` 를 안 쓴다 — `fields` 가 빈 사전이면 **조용히 통과**하고
+            #   그것은 「없다」와 구별이 안 된다(`tests/test_k3.py` 가 그 족을 든다).
+            _doc = json.loads(_sp.read_text(encoding="utf-8"))
+            _flds = _doc["fields"] if "fields" in _doc else {}
+            for msg in contradiction_faults(doc_pairs(read("docs/MASTER.md")), _flds):
+                print(f"! MASTER §11      {msg}")
+                bad += 1
 
     # ── 2b. 대장도 본다 ──────────────────────────────────────
     # ★ 2026-08-31 신설. 종전에는 `.md` 셋만 돌았다. 대장은 사람이 손으로
@@ -549,36 +568,6 @@ def main() -> int:
     print(f"문서·EXPECT 일치. segments {c['n']} · clear {c['clear']} · "
           f"needs_cv {c['needs_cv']} · blocked {c['blocked']} · unknown {c['unknown']}")
     return 0
-
-
-def selftest() -> int:
-    """★ **폐기목록이 지금 값을 폐기라고 적는가**를 실제로 가르는가.
-
-    문서도 산출물도 안 읽는다 — 합성 표로 본다. 2026-09-30 실기의 그 모양을
-    그대로 넣는다: `clear` 의 폐기값 400 이 `unknown` 의 현재값이 됐다(§330).
-    """
-    fails = []
-    cur = {"clear": 464, "unknown": 400, "blocked": 192}
-
-    got = retired_clashes(cur, {"clear": ["392", "400"]})
-    if not any("다른 축" in g for g in got):
-        fails.append("**축을 가로지른 충돌을 못 본다** — 2026-09-30 실기가 그것이다")
-
-    got = retired_clashes(cur, {"clear": ["464"]})
-    if not any("현재값" in g and "다른 축" not in g for g in got):
-        fails.append("같은 축의 현재값이 폐기목록에 있는데 못 본다")
-
-    if retired_clashes(cur, {"clear": ["392", "443"]}):
-        fails.append("깨끗한 목록을 충돌로 읽는다 — 이러면 사람이 검사를 끈다")
-
-    # ★ 반대 방향. 실물 목록이 지금 깨끗한가 — 여기서 0 이 아니면 결함이다.
-    if retired_clashes({"clear": 1, "unknown": 2}, {}):
-        fails.append("빈 목록에서 무언가를 낸다 — 빈 그물의 반대쪽")
-
-    for f in fails:
-        print(f"  ✗ {f}")
-    print("✓ 자기검사 통과 · 판별식 4" if not fails else f"✗ {len(fails)}건")
-    return 1 if fails else 0
 
 
 if __name__ == "__main__":
