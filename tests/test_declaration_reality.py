@@ -489,9 +489,15 @@ def test_awaiting_buys_a_warning_only_with_a_written_reason():
     sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
 
+    # ★ 2026-10-10 (DECISIONS §447 · PLAN #161 닫힘). 사유 칸을 읽는 자리가
+    #   `ledger.absence` **하나**가 됐다. 그래서 글자를 찾는 자리도 거기다 —
+    #   부르는 쪽에서 찾으면 다음에 또 쪼갤 때 이 단정이 같이 낡는다.
+    led = (ROOT / "src" / "firelane" / "ledger.py").read_text(encoding="utf-8")
+    assert '"awaiting" in e' in led, "사유 칸의 **존재**를 안 본다"
+    assert 'e.get("awaiting")' in led, "사유 칸의 **값**을 안 본다"
+    assert '"bare"' in led, "사유가 비었을 때의 등급이 없다 — 침묵에 값을 안 치른다"
     src = (ROOT / "tools" / "refcheck.py").read_text(encoding="utf-8")
-    assert 'e.get("awaiting")' in src, "사유 칸을 안 본다"
-    assert "if why:" in src and "else:" in src, "사유가 없을 때 실패로 안 떨어진다"
+    assert "_absence(" in src, "부재 등급을 제 손으로 다시 읽는다"
 
     y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8")) or {}
     blank = [k for k, e in (y.get("datasets") or {}).items()
@@ -535,7 +541,7 @@ def test_every_judge_of_a_missing_dataset_file_knows_awaiting():
             continue
         rel = q.relative_to(ROOT).as_posix()
         judges.append(rel)
-        if "awaiting" not in src:
+        if "_absence(" not in src and "absence(" not in src:
             blind.append(rel)
 
     assert judges, ("부재를 판정하는 자리를 하나도 못 찾았다 — 그물이 비었다. "
@@ -545,9 +551,23 @@ def test_every_judge_of_a_missing_dataset_file_knows_awaiting():
     assert not missed, (
         f"아는 자를 못 잡는다 — 판별식이 죽었다. 빠진 것 {missed} · 잡은 것 {judges}")
     assert not blind, (
-        "`datasets` 부재를 판정하면서 `awaiting` 을 안 읽는다:\n  " + "\n  ".join(blind)
+        "`datasets` 부재를 판정하면서 `ledger.absence` 를 안 부른다:\n  " + "\n  ".join(blind)
         + "\n\n  선언된 유예는 **경고**다(§424). 사유가 비면 실패다.\n"
           "  이 칸을 아는 자가 하나뿐이면 다음 관문이 또 실패를 낸다 — 2026-10-07 에 그랬다.")
+
+    # ★ 2026-10-10 (DECISIONS §447 · PLAN #161 닫힘). **반대 방향**도 든다 —
+    #   그 칸을 **읽는 자리가 하나뿐인가.** 위 단정은 「부르는가」이고 이 단정은
+    #   「딴 데서 또 읽지 않는가」다. 둘이 다 있어야 자리가 하나로 남는다.
+    #   `#161` 이 「가드는 『`awaiting` 글자가 그 파일 밖에 안 나온다』로 둔다」고
+    #   적었고, 글자 하나로 두면 **탐지가 재현된다** — 문구로 고르면 또 샌다.
+    read = _re.compile(r'(?:\.get\(\s*"awaiting"|"awaiting"\s+in\b)')
+    home = "src/firelane/ledger.py"
+    extra = [q.relative_to(ROOT).as_posix() for q in scan
+             if q.relative_to(ROOT).as_posix() != home
+             and read.search(q.read_text(encoding="utf-8", errors="replace"))]
+    assert not extra, (
+        "`awaiting` 칸을 **딴 데서 또 읽는다**:\n  " + "\n  ".join(extra)
+        + f"\n\n  판정처는 `{home}` 의 `absence()` 하나다. 등급을 받아 제 동사로 옮겨라.")
 
 
 def test_contract_turns_a_declared_wait_into_a_warning():

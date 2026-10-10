@@ -53,6 +53,7 @@ import yaml
 
 # 대장 조회기는 하나다(firelane.ledger.globs).
 from firelane import ledger as _led
+from firelane.ledger import absence as _absence
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
@@ -101,8 +102,11 @@ def check() -> list[tuple[str, str, str]]:
                 #   여기는 **실패**로 불렀다. 족 3(관문이 갈림)이다.
                 #   대장이 **사유를 적으면** 경고로 내린다 — 사유가 없으면
                 #   그대로 실패다. 침묵에는 값을 안 치른다.
-                why = (e.get("awaiting") or "").strip()
-                if why:
+                # ★ 2026-10-10 (DECISIONS §447 · PLAN #161 닫힘). 그 등급을
+                #   `ledger.absence` 하나가 낸다 — 이 자리가 **첫 번째**로
+                #   고쳐졌고 나머지 셋이 안 따라와 §427 이 다시 열렸다.
+                lvl, why = _absence(e)
+                if lvl in ("awaiting", "missing"):
                     out.append((WARN, f"datasets.{k}.file",
                                 f"{pat} — 아직 raw 에 없다: {why}"))
                 else:

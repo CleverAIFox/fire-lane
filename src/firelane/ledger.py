@@ -248,6 +248,46 @@ def files_decl(e: dict) -> list[str]:
 META_DIR = "_meta"
 
 
+#: 「대장에 있는데 실물이 없다」의 **등급 네 가지.** 부르는 쪽이 제 동사로 옮긴다.
+#:   none      부재가 아니다 — 실물을 봐도 된다
+#:   missing   **결손을 선언했다**(`status: missing`). 사유가 따라온다
+#:   awaiting  **아직 안 들어왔다**(`awaiting: <사유>`). 유예다
+#:   bare      `awaiting` 칸이 **비었다.** 사유 없는 유예는 받지 않는다(§424)
+ABSENCE = ("none", "missing", "awaiting", "bare")
+
+
+def absence(e: dict | None) -> tuple[str, str]:
+    """대장 항목 하나의 **부재 등급과 사유.** 디스크를 안 본다.
+
+    ── 왜 한 함수인가 (2026-10-10 · DECISIONS §447 · PLAN #161 닫힘) ─
+    같은 상태를 **네 자리**가 저마다 읽고 저마다 다른 이름으로 불렀다 —
+    `contract`(경고/실패) · `refcheck`(경고/실패) · `prep`(건너뜀) ·
+    `scan_data`(「유예」/「★ 결손」). 한 자리를 고치면 나머지가 안 따라와서
+    §424 가 `refcheck` 하나만 고쳤고 그 판이 머지에서 막혔다(§427) ·
+    §430-6 이 `prep` 을 **다섯째**로 찾았다. 고칠 때마다 하나씩 더 나왔다.
+
+    ★ **탐지로는 못 닫는다**(§431-8 이 구조 신호 둘을 짜서 실측했고 하나는
+      `prep` 을 못 잡고 하나는 열다섯을 잡았다). 그래서 판정을 여기 모으고
+      가드를 **「`awaiting` 글자가 이 파일 밖에 안 나온다」**로 둔다 —
+      글자 하나면 탐지가 재현된다.
+
+    ★ `lake` 가 아니라 여기인 이유 — 이 판정은 **대장 항목만** 읽는다.
+      디스크를 보는 모듈에 두면 보는 범위가 넓어 보이고(`lake` 는 대장 +
+      디스크다), 그 파일은 579줄로 상한에 붙어 있다. 행이 적은 이름보다
+      **보는 범위가 좁은 자리**를 골랐다(§445-5 와 같은 가름).
+
+    밖    **실물이 있는지는 안 본다** — 「없다」를 확인하는 것은 부르는 쪽이고
+          이 함수는 「없을 때 그것을 어떻게 부르나」만 답한다.
+    """
+    e = e or {}
+    if e.get("status") == "missing":
+        return "missing", str(e.get("missing_why") or "사유 미기재")
+    if "awaiting" in e:
+        why = str(e.get("awaiting") or "").strip()
+        return ("awaiting", why) if why else ("bare", "")
+    return "none", ""
+
+
 def is_acquisition_meta(p) -> bool:
     """취득 기록인가. `prep` 과 `ingest` 가 **같은 규칙**을 봐야 한다.
 
