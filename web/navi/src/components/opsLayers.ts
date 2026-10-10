@@ -50,6 +50,26 @@ export function opsVerdictColor(col: (k: string) => string): unknown {
     "blocked", col("blocked"), col("unknown")];
 }
 
+/**
+ * 둘째 채널 — 판정마다 **다른 선 패턴.**  (DECISIONS §448 · PLAN #145)
+ *
+ * ★ 색 하나로 넷을 가르고 있었다. 실측에서 `blocked` ↔ `unknown` 의 **정상시야
+ *   휘도비가 1.00** 이다(§383) — 색각 이상이 아니라 **밝기만 보는 상황**(저조도
+ *   벽 화면 · 사진 인쇄 · 흑백 복사)에서 그 둘이 같은 선이 된다.
+ *
+ * ★ 패턴은 **파내는 방식**이다. MapLibre 의 `line-dasharray` 는 자료 기반 식을
+ *   못 받으므로(색처럼 `match` 로 못 쓴다) 판정마다 레이어를 하나씩 더 깔고
+ *   **바탕색으로** 점선을 그어 색 선에 틈을 낸다. 색은 한 글자도 안 바뀐다 —
+ *   `web/config.js` 가 계약 파일이라 색을 건드리면 계약 배치가 된다(#145).
+ *
+ * ★ `clear` 는 **실선**이다. 기준이 하나 있어야 나머지가 「무늬가 있다」로 읽힌다.
+ */
+export const VERDICT_DASH: Record<string, [number, number]> = {
+  needs_cv: [2.4, 1.0],   // 성긴 파선
+  blocked: [0.6, 0.9],    // 촘촘한 점선
+  unknown: [5.0, 1.4],    // 긴 파선
+};
+
 export function opsSegLayers(col: (k: string) => string): LayerSpecification[] {
   const wm = ["min", 12, ["max", 2, ["coalesce", ["get", "width_min_m"], 3]]];
   const W = (add = 0) => ["interpolate", ["linear"], ["zoom"],
@@ -64,6 +84,15 @@ export function opsSegLayers(col: (k: string) => string): LayerSpecification[] {
         "line-width": W(),
         "line-color": opsVerdictColor(col) as never,
       } },
+    // ★ 둘째 채널. 색 선 **위에** 바탕색 점선을 그어 틈을 낸다 — 색이 안 보여도
+    //   무늬로 갈린다. `clear` 는 실선이라 여기 없다(기준).
+    ...Object.entries(VERDICT_DASH).map(([k, dash]) => ({
+      id: `ops-verdict-dash-${k}`, type: "line", source: "segments",
+      filter: ["==", ["get", "verdict"], k] as never,
+      layout: { "line-cap": "butt" },
+      paint: { "line-width": W(), "line-color": "#0b1220",
+               "line-opacity": .9, "line-dasharray": dash },
+    } as LayerSpecification)),
     { id: "ops-unreach", type: "line", source: "segments",
       layout: { "line-cap": "butt", visibility: "none" },
       paint: { "line-width": W(1), "line-color": "#111827",

@@ -17,6 +17,7 @@
  * OUT   조각 넷
  * 밖    무엇을 보일지 고르지 않는다. 고르는 것은 `OpsApp.tsx` 다.
  */
+import { VERDICT_DASH } from "../components/opsLayers";
 import { D, LAYER, secBox, tile, shell } from "./opsTheme";
 import type { Tier } from "./opsTheme";
 import { emphasis } from "./motion";
@@ -72,4 +73,14 @@ export function Tile({ k, v, sub, tone, urgent }: {
 
 export function Center({ children }: { children: React.ReactNode }) {
   return <div style={{ ...shell, display: "grid", placeItems: "center" }}>{children}</div>;
+}
+
+/** 범례 조각 — 판정의 **선 무늬**를 그대로 작은 띠로 보인다(§448 · #145). */
+export function dashSwatch(k: string): string | undefined {
+  const d = VERDICT_DASH[k];
+  if (!d) return undefined;                    // clear 는 실선이 기준이다
+  const [on, off] = d;
+  const px = (v: number) => Math.max(1.5, v * 2.4);
+  return `repeating-linear-gradient(90deg, transparent 0 ${px(on)}px,`
+       + ` rgba(11,18,32,.92) ${px(on)}px ${px(on) + px(off)}px)`;
 }

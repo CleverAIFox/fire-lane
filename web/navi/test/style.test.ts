@@ -15,7 +15,7 @@ import {
 } from "../src/components/layers";
 // ★ 2026-09-29 (§311). 관제 전용 층이 `opsLayers.ts` 로 갈라졌다 — 두 화면의 일이 다르다.
 import {
-  opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
+  VERDICT_DASH, opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
   opsClearanceBand, opsClearanceColor, landmarkSource, landmarkLayers,
 } from "../src/components/opsLayers";
 import { CLEARANCE_SCALE } from "../src/ui/clearanceMeaning";
@@ -73,7 +73,19 @@ test("지점 핀 — 없으면 빈 모음 · 있으면 그 점 (경로 밖)", ()
 
 test("관제 레이어 — 판정선 · 이력 · 덧그림 (무효 식이 조용히 빠지던 자리)", () => {
   const segs = opsSegLayers(() => "#888888");
-  ok(segs.map((l) => l.id).join() === "ops-verdict-case,ops-verdict,ops-unreach,ops-selected", "판정선 넷이 아니다");
+  // ★ 2026-10-10 (DECISIONS §448 · PLAN #145 닫힘). **둘째 채널**이 들어왔다 —
+  //   판정마다 바탕색 점선을 한 겹 더 깐다. 목록을 손으로 적으면 패턴이 늘 때마다
+  //   이 줄이 낡으므로 **선언에서 낸다**(`VERDICT_DASH`). 순서는 그대로 본다 —
+  //   점선이 색 선 **위**가 아니면 무늬가 안 보인다.
+  const dashIds = Object.keys(VERDICT_DASH).map((k) => `ops-verdict-dash-${k}`);
+  ok(segs.map((l) => l.id).join() ===
+     ["ops-verdict-case", "ops-verdict", ...dashIds, "ops-unreach", "ops-selected"].join(),
+     `판정선 차례가 다르다 — ${segs.map((l) => l.id).join()}`);
+  // ★ 넷을 가르는 채널이 **둘**인가. 색 하나면 `blocked` ↔ `unknown` 이 휘도비
+  //   1.00 이라 밝기만 보는 자리에서 같은 선이 된다(§383).
+  const dashes = Object.values(VERDICT_DASH).map((d) => d.join());
+  ok(new Set(dashes).size === dashes.length, "판정 둘이 같은 무늬다 — 채널이 하나로 돌아간다");
+  ok(!("clear" in VERDICT_DASH), "`clear` 에 무늬를 줬다 — 기준이 실선이어야 나머지가 무늬로 읽힌다");
   check("ops-seg", segs);
   check("ops-history", opsHistoryLayers());
   check("ops-overlay", opsOverlayLayers(3, 200));
