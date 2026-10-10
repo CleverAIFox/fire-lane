@@ -618,6 +618,12 @@ EXEMPT_SCOPE = {
     "tools/canary.py::findings":
         "카나리아는 **시험**이 든다. 도구 쪽 자기검사는 `mutate` 가 흔들어서 재므로 "
         "여기서 또 세면 같은 사실을 두 벌로 든다(족 2)",
+    # ★ 2026-10-10 (DECISIONS §449-2). 묻는 것이 「**도구**가 도구를 끌어오나」다.
+    #   `src` 는 꾸러미이고 `tests` 는 미는 쪽이라 둘 다 도구가 아니다 — 넓히면
+    #   꾸러미가 꾸러미를 끌어오는 것이 「도구 배선」으로 세어진다.
+    "tests/test_tools_are_wired.py::imported_by_a_tool":
+        "도구끼리의 배선을 센다. `tools/` 가 도구의 집이고(`toolclass` 가 그 정본을 "
+        "든다) `src` · `tests` 를 더하면 묻는 것이 달라진다",
     "tools/canary.py::denominator":
         "분모는 `findings` 와 **같은 자리**를 세야 한다. 한쪽만 넓히면 비율이 "
         "조용히 거짓이 된다 — 분모와 분자가 갈리는 꼴이 §437 이었다",

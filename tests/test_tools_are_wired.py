@@ -42,22 +42,6 @@ ROOT = Path(__file__).resolve().parents[1]
 #   면제 목록에 남아 있었다. `--check` 로 강제자 승격만 하고 여기서 안 뺐다.
 #   그 상태에서는 verify.sh 배선을 끊어도 우는 곳이 없다. 면제가 사각지대다.
 EXEMPT = {
-    # ★ 2026-10-09 (DECISIONS §440-3 · §440-9). **표만 든 몸통 둘.** 진입점이
-    #   없고 `main()` 도 없다 — 부를 것이 없는 것이지 안 부르는 것이 아니다.
-    #   둘 다 제 표를 든 도구가 상한을 먹어서 떼낸 것이고, 그 도구가 import
-    #   한다. **배선은 그 import 다** — 표가 안 실리면 그쪽이 바로 죽는다.
-    "sizetable": "재는 쪽이 import 하는 **예외 표**다. 진입점이 없다 —\n"
-                 "           표가 안 실리면 재는 쪽이 바로 죽어 배선이 드러난다",
-    # ★ 2026-10-09 (DECISIONS §445 · PLAN #166 닫힘). 자기검사를 떼어 낸 집이다.
-    #   `mutate.py` 가 **함수 안에서** import 하고(맞물림을 끊는다) 그 import 를
-    #   `catch_print` 가 해시한다 — 즉 **장부가 이 파일을 덮는다.** 배선은 그 둘이다.
-    "mutatetest": "`mutate.py --selftest` 가 부르는 **판별식 집**이다. 진입점이\n"
-                  "           없다 — 안 실리면 그 깃발이 바로 죽어 배선이 드러난다",
-    # ★ 2026-10-09 (같은 판). 같은 쪼개기를 **두 번째** 했다 — `uicheck` 가 상한을
-    #   넘었고 자기검사를 뗐다. 배선은 `uicheck.py --selftest` 의 함수 안 import 와
-    #   **그것을 해시하는 장부** 둘이다(`#166` 이 넓힌 바로 그 범위).
-    "uichecktest": "`uicheck.py --selftest` 가 부르는 **판별식 집**이다. 진입점이\n"
-                   "           없다 — 안 실리면 그 깃발이 바로 죽어 배선이 드러난다",
     # ★ 2026-10-08 (§435). 그물을 비우지 않는다 — 자기검사를 「자기검사 전수」가 돌린다.
     "mutate_guard": "**라이브러리**다. `mutate.py` 가 import 한다 — 흔드는 쪽이 없으면\n"
                     "           되돌릴 것도 없다. 자기검사는 「자기검사 전수」가 돌린다",
@@ -286,15 +270,51 @@ def call_sites(name: str, lines: list[tuple[str, int, str]] | None = None,
     return hits
 
 
+def imported_by_a_tool() -> set[str]:
+    """다른 도구가 **끌어오는** 도구의 이름. 그것이 곧 배선이다.
+
+    ★ 2026-10-10 (DECISIONS §449-2 · PLAN #101 과 같은 판). 같은 사유의 면제를
+      **세 번** 손으로 적고 나서 도출로 바꿨다(`sizetable` · `mutatetest` ·
+      `uichecktest`, 그리고 네 번째가 올 뻔했다 — `docnumtest` · `docnumtable`).
+      그 셋이 적은 사유가 글자까지 같았다: 「진입점이 없다 — 안 실리면 재는 쪽이
+      **바로 죽어** 배선이 드러난다」. 같은 문장을 네 번 적으면 그것은 사유가
+      아니라 **규칙**이다(§445-8 이 배운 자리와 같다).
+
+    ★ **문법으로 센다.** 함수 안에서 끌어오는 것도 배선이다 — 이 저장소는
+      맞물림을 끊으려고 일부러 그렇게 한다. 그래서 `mutatescope.imported()` 를
+      그대로 쓴다. 두 번째 import 수집기를 만들지 않는다(족 2 · §445-2).
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "mutatescope_wired", ROOT / "tools" / "mutatescope.py")
+    assert spec and spec.loader
+    ms = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = ms
+    spec.loader.exec_module(ms)
+
+    out: set[str] = set()
+    for q in sorted((ROOT / "tools").glob("*.py")):
+        out |= {n for n in ms.imported(q.read_text(encoding="utf-8", errors="replace"))
+                if n != q.stem and (ROOT / "tools" / f"{n}.py").is_file()}
+    return out
+
+
 def test_every_tool_is_called_somewhere():
     """도구가 어딘가에서 **실행되는가.** 목록에만 있는 것은 배선이 아니다.
 
     ★ 범위는 `.py` 뿐이 아니다. `.sh` · `.mjs` 도 도구다.
+
+    ★ 2026-10-10 (§449-2). 「다른 도구가 끌어온다」를 **도출한다** — 종전에는
+      그 사유를 면제 표에 손으로 적었고 세 줄이 글자까지 같았다.
     """
     lines = _scan()
+    byimport = imported_by_a_tool()
+    assert byimport, "도구가 도구를 끌어오는 자리를 하나도 못 찾았다 — 그물이 비었다"
     bad = [f"  tools/{p.name} 를 아무 데서도 안 부른다"
            for p in _tools()
            if p.stem not in EXEMPT and p.name not in EXEMPT
+           and p.stem not in byimport
            and not call_sites(p.name, lines)]
     assert not bad, (
         "만들어놓고 안 부르는 도구가 있다.\n" + "\n".join(bad)
