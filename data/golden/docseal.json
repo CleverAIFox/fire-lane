@@ -8912,6 +8912,37 @@
   },
   "sha": "3a54ef55d06a1792"
  },
+ "DECISIONS/455": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "src/firelane/publish_web.py",
+   "src/firelane/seg/params.py",
+   "src/firelane/seg/report.py",
+   "src/firelane/segments.py",
+   "tests/test_contract.py",
+   "tools/baseline.py",
+   "tools/delivercheck.py",
+   "tools/docnum_check.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "1571942a2f69af4c",
+   "c381314bdda0e0d0"
+  ],
+  "parts": {
+   "src/firelane/publish_web.py": "bf4d065104fc865a",
+   "src/firelane/seg/params.py": "f9e5782b66c06854",
+   "src/firelane/seg/report.py": "1d19ab034adbd0f1",
+   "src/firelane/segments.py": "3d7d30e9b05099bf",
+   "tests/test_contract.py": "e83a6d63a7c6c3ff",
+   "tools/baseline.py": "056dca56e40da016",
+   "tools/delivercheck.py": "a4e4ce42ae2a37eb",
+   "tools/docnum_check.py": "cd3365959f3e5717",
+   "본문": "cd39cd47bd2e7078"
+  },
+  "sha": "c381314bdda0e0d0"
+ },
  "DECISIONS/46": {
   "doc": "docs/DECISIONS.md",
   "files": [
