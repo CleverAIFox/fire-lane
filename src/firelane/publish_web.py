@@ -81,7 +81,7 @@ def main():
     _seg["seg_no"] = (_seg.sort_values(["road_name", "_oy", "_ox"])
                           .groupby("road_name").cumcount() + 1)
 
-    _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict","width_verified",
+    _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict",
              "midpoint_fallback","inherited","route_usage","length_m",
              "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_cov","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
              "unknown_reason"]
@@ -319,8 +319,17 @@ def main():
     poi = gpd.read_file(P/"poi_store.geojson")
     poi = poi[poi.within(scope4)].copy()
     poi["cat"] = poi["상권업종대분류명"].fillna("기타")
-    poi["층"] = pd.to_numeric(poi["층정보"], errors="coerce")
-    poi = poi[(poi["층"].isna()) | (poi["층"] <= 1)]          # 지상 1층 = 골목에서 보이는 것
+    # ★ 2026-10-10 (DECISIONS §455 · PLAN §13 W13-3 닫힘). 주석은 「지상 1층」인데
+    #   코드는 `<= 1` 이라 **지하와 0층이 통과**했고, `errors="coerce"` 가 `"B1"` 을
+    #   NaN 으로 바꿔 `isna()` 가지로 **그것도 남았다.** 주석이 적은 의도와 코드가
+    #   하는 일이 달랐다 — §418 과 같은 족이다.
+    #   이제 셋을 가른다: **적힌 층이 1 이면 쓴다 · 칸이 비었으면 쓴다 · 그 밖은 뺀다.**
+    #   칸이 빈 것을 남기는 이유 — 층정보 결손이 상가 자료에서 흔하고, 빼면
+    #   간판이 보이는 1층 가게가 **대량으로** 사라진다. 모르는 것은 「모른다」로
+    #   남기고 **아는데 1층이 아닌 것**만 뺀다.
+    _floor = poi["층정보"].astype(str).str.strip()
+    _blank = _floor.isin(("", "nan", "None", "NaN", "-"))
+    poi = poi[_blank | (pd.to_numeric(_floor, errors="coerce") == 1)]
     poi[["상호명", "cat", "상권업종중분류명", "도로명주소", "geometry"]].rename(
         columns={"상호명": "name", "상권업종중분류명": "sub", "도로명주소": "addr"}
     ).to_file(W/"poi.geojson", **PREC)
