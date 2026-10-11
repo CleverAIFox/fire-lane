@@ -136,10 +136,14 @@ EXEMPT: dict[str, str] = {}
 #:     §491    9 → 7     `test_delivery_is_read`(`notice` · `drift` ·
 #:                       `closure_target` — §292 의 판정↔통보 가름) ·
 #:                       `test_defect_evidence`(증표 해석자를 빼서 양방향)
+#:     §492    7 → 4     `test_workflow_html_sync`(`inline` · `as_table` ·
+#:                       `anchor`) · `test_fl_train`(두 번째 봉인 판정) ·
+#:                       `test_workflow_guards`(보안 설정 — **응답을 받게** 고쳐)
 #
-#: ★ 남은 7 은 빚이다. 올라간 판(§486)은 **느슨해진 것이 아니라** 거짓 초록을
+#: ★ 남은 4 는 빚이고 **넷 다 셸·레이크**다 — `serve` · `treescan`+`verify` ·
+#:   `lakecheck` · `after_squash`+`fl`. 합성 저장소나 레이크가 있어야 밀린다. 올라간 판(§486)은 **느슨해진 것이 아니라** 거짓 초록을
 #:   걷은 것이고, 그 둘을 가르는 것이 래칫에 사유를 요구하는 이유다.
-NO_CANARY = 7
+NO_CANARY = 4
 
 RATCHETS = {"NO_CANARY": "down"}
 

@@ -204,3 +204,64 @@ def test_generated_has_components():
     assert not empty, (
         f"data-fill 자리가 비었다 — {', '.join('§' + x for x in empty)}\n"
         "  하네스가 안 돌았거나 그 절이 §12-0 색인 밖이다.")
+
+
+# ── 2026-10-12 (DECISIONS §492) ────────────────────────────────────
+#   §491 이 분모를 바로잡은 뒤 이 파일이 빚에 남았다. 「생성물이 커밋된 것과
+#   같은가」는 바이트로 밀면서, 그 생성물을 **만드는 변환들**(`inline` ·
+#   `as_table` · `anchor`)을 민 자리가 없었다 — 바이트 대조는 **둘이 같이
+#   낡으면** 조용하다(§481 이 기획서에서 적은 그 자리와 같은 꼴이다).
+
+def test_inline_escapes_before_it_marks_up():
+    """★ **순서가 뜻이다.** 이스케이프를 먼저 해야 MASTER 의 `<` 가 태그가
+    안 된다. 뒤집으면 문서가 화면을 깨뜨릴 수 있다."""
+    rw = _mod()
+    assert rw.inline("a < b") == "a &lt; b"
+    assert rw.inline("<script>") == "&lt;script&gt;"
+    # 굵게와 코드는 **태그로** 간다
+    assert rw.inline("**굵게**") == "<b>굵게</b>"
+    assert rw.inline("`코드`") == "<code>코드</code>"
+    # 그런데 코드 안의 꺾쇠는 여전히 글자다
+    assert rw.inline("`<b>`") == "<code>&lt;b&gt;</code>"
+
+
+def test_inline_leaves_plain_text_alone():
+    """★ 음성. 표시가 없는 글은 **그대로**다 — 바꾸면 문서와 화면이 갈린다."""
+    rw = _mod()
+    for s in ("그냥 글", "별표 * 하나", "백틱 ` 하나"):
+        assert rw.inline(s) == s, s
+
+
+def test_as_table_drops_the_separator_row_and_heads_the_first():
+    """★ 구분선(`|---|`)을 행으로 세면 표에 빈 줄이 하나 생기고, 첫 줄을
+    `th` 로 안 세우면 머리가 본문이 된다."""
+    rw = _mod()
+    got = rw.as_table("| 가 | 나 |\n|---|---|\n| 1 | 2 |")
+    assert got.count("<tr>") == 2, got
+    assert "<th>가</th>" in got and "<td>1</td>" in got, got
+    assert "---" not in got, got
+
+
+def test_as_table_marks_up_the_cells():
+    """칸 안의 `**` · 백틱도 태그로 간다 — 안 그러면 화면에 별표가 보인다."""
+    rw = _mod()
+    got = rw.as_table("| **굵게** |\n|---|\n| `코드` |")
+    assert "<th><b>굵게</b></th>" in got, got
+    assert "<td><code>코드</code></td>" in got, got
+
+
+def test_the_anchor_is_made_from_the_real_heading():
+    """★ 앵커를 **실물 제목에서** 만든다 — 손으로 적으면 제목을 바꾼 날
+    링크가 조용히 죽는다."""
+    rw = _mod()
+    a = rw.anchor("12-1")
+    assert a.startswith("#12-1-"), a
+    # 구두점은 빠지고 공백은 하이픈이다
+    assert not any(c in a for c in "`*().,·—:/"), a
+    assert " " not in a, a
+
+
+def test_a_missing_section_gets_an_empty_anchor_not_a_broken_one():
+    """★ 없는 절이면 **빈 글자**다. 「#없는절」을 내면 화면에 죽은 링크가 산다."""
+    rw = _mod()
+    assert rw.anchor("99-99") == ""
