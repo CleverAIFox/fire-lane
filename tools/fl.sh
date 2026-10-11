@@ -513,9 +513,10 @@ for p in sorted(code_closure("firelane.ingest")): print(p.relative_to(ROOT).as_p
         #   가던 이 자리가 `ngii_road` 에서 OOM 으로 죽었고, 그 배치가 바꾼 폐포
         #   셋은 산출물에 안 닿았다. 거절이 남을 때만 전량이다(사유는 그 절).
         warn "ingest 닫힘이 바뀌었다 — 봉인지 code 칸을 먼저 고친다(재빌드 아님)"
-        uv run python -m firelane.ingest --reseal-code | tee /tmp/fl-reseal.out \
+        _rs=$(mktemp)                      # 고정 경로는 두 실행이 겹칠 때 섞인다
+        uv run python -m firelane.ingest --reseal-code | tee "$_rs" \
             || die "재도장이 실패했다 — 재잠금 전에 멈춘다"
-        if grep -q "거절" /tmp/fl-reseal.out; then
+        if grep -q "거절" "$_rs"; then
             warn "거절된 샤드가 있다 — 전량으로 간다(--split)"
             uv run fire-lane --split || die "전량 재실행이 실패했다 — 재잠금 전에 멈춘다"
         else
