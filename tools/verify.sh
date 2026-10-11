@@ -753,10 +753,12 @@ else
             uv run fire-lane --no-test --split
         fi'
     scope "$CODE_SCOPE"
+    # asks: 지금 산출물의 지문이 잠근 정답과 같은가
     step "golden 판정 불변" uv run python tools/golden.py check
     # ★ 게이트가 울고 또 풀리는가. check 가 통과하는 것만으로는
     #   해제 경로가 있는지 알 수 없다(DECISIONS §69).
     scope "$CODE_SCOPE"
+    # asks: 그 게이트가 울고 또 풀리는가 — 통과만으로는 해제 경로를 모른다
     step "golden 게이트 해제 경로" uv run python tools/golden.py selftest
     # ★ 생산자를 돌린 직후에만 알 수 있다. 커밋된 web/data 가 낡아도
     #   web_manifest 는 **있는 것의 해시**를 뜰 뿐이고 golden 은
@@ -796,6 +798,7 @@ fi
 #   `fsck` 는 **레이크가 있어야 통과한다**(층의 실재·백업 대상을 본다.
 #   레이크 없으면 실측 5건 어긋남). 갈래 단위 동등은 PLAN 에 남긴다.
 scope "$CODE_SCOPE sources.yaml"
+# asks: 선언된 계층이 디스크에 실재하는가 — 레이크가 있어야 통과한다
 step "계층 선언↔실물" uv run python -m firelane.datalog fsck
 
 # ★ 2026-09-28 (DECISIONS §285). 문서가 관문이라 이름까지 적어 둔 것들이
@@ -803,14 +806,17 @@ step "계층 선언↔실물" uv run python -m firelane.datalog fsck
 #   때문**이고, 셋을 고치고 나서야 붙는다 — 내역은 §285 에 있다.
 #   **관문은 부를 수 있어야 관문이다.**
 scope "sources.yaml src/firelane/datalog.py src/firelane/ledger.py"
+# asks: 계보 대장의 칸들이 서로 맞는가 — 대장만 본다
 step "계보 대장 정합"   uv run python -m firelane.datalog check
 # ★ 그리는 것 자체가 검사다 — 입력이 대장 밖을 가리키면 여기서 죽는다.
 scope "sources.yaml src/firelane/datalog.py"
+# asks: 대장에서 계보 그림이 생성되는가 — 판정이 아니라 산출이다
 step "계보 그림 생성"   uv run python -m firelane.datalog graph
 # ★ MASTER §18-3b 의 취입 관문. 여기는 **대장 선언만** 본다(무계약 ·
 #   모르는 계약 키 · 미선언 좌표계). 실물 대조는 아래 레이크 갈래다 —
 #   절반이라도 상설인 것이 전체가 안 도는 것보다 세다(§284-3).
 scope "sources.yaml src/firelane/contract.py src/firelane/ledger.py"
+# asks: 대장 선언만 본다 — 무계약 · 모르는 계약 키 · 미선언 좌표계
 step "취입 계약 선언"   uv run python -m firelane.contract --declared
 
 # ★ 2026-09-28 (§286). `--selftest` 26개 중 **16개를 아무도 안 불렀다.** 문
@@ -865,6 +871,7 @@ if [ -z "${FIRE_LANE_DATA:-}${FIRE_LANE_RAW:-}" ] && [ ! -d data/raw/gjcity ]; t
     note "대장 스키마↔실물" "$_why"
 else
     scope "sources.yaml src/firelane/contract.py src/firelane/krgis/crs.py"
+    # asks: 그 계약이 raw 실물과 맞는가 — 레이크가 있어야 돈다
     step "취입 계약 실물"   uv run python -m firelane.contract
     scope "sources.yaml tools/ledger_schema.py"
     step "대장 스키마↔실물" uv run python tools/ledger_schema.py --check
@@ -966,7 +973,9 @@ step "관문 호출 인자" uv run python tools/argcheck.py
 #   `verify.sh` 를 돌리므로(fl.sh 5단계) 이 자리로 충분하다.
 scope "docs/* tests/* tools/* src/*"
 # ci-exempt: tools/dms.py `verify` 는 문서↔트리라 CI 로 갈 수 있으나, 같은 도구의 `delta` 가 봉인 커밋과의 증분·조상을 git 역사로 잰다. CI 클론은 얕다(fetch-depth 1) — 면제가 검사기 단위라 둘을 같이 남긴다
+# asks: 절이 지목한 강제자가 실재하는가
 step "죽은 강제자 참조" uv run python tools/dms.py verify
+# asks: 봉인 뒤 바뀐 절이 강제자를 몇 늘렸나 — 전수가 아니라 증분이다
 step "강제자 소급 증분" uv run python tools/dms.py delta
 # ★ 2026-09-21 (PLAN §13 W11-1 · DECISIONS §210). **봉인이 가리키는 커밋이 이 트리의 조상인가.**
 #   `delta` 는 봉인 **뒤**를 센다. 그런데 봉인이 없는 커밋을 가리키면 `delta` 는
@@ -977,6 +986,7 @@ step "강제자 소급 증분" uv run python tools/dms.py delta
 # ★ 로컬 전용이다. CI 클론은 얕아(`fetch-depth: 1`) 조상을 잴 역사가 없다.
 #   `tools/dms.py` 는 이미 미선언 로컬 전용 목록에 있으므로 관문 동등 래칫은 안 움직인다.
 #   ★ 2026-09-22 (DECISIONS §218-5). 이제 미선언이 아니라 위 `# ci-exempt:` 가 사유와 함께 든다.
+# asks: 봉인한 커밋이 지금 HEAD 의 조상인가 — delta 의 전제다
 step "봉인 조상" uv run python tools/dms.py ancestry
 
 # ★ 2026-09-19 정정 — 실측 **5군**이다(`--min 25` · 함수 13). 종전 이 줄은
@@ -1027,6 +1037,7 @@ step "래칫 정합" uv run python tools/ratchet.py
 #   아니다 — 적으면 **죽은 면제**가 되고, 죽은 면제는 「있다고 적혀 있으면 사람이
 #   안 본다」(그 도구의 말).
 scope "web/navi/src/* tools/*"
+# asks: 소스에서 관제와 내비가 다른 화면인가
 step "화면 분리" uv run python tools/uicheck.py --split
 # ★ 2026-09-29 (§313). **관문이 빌드본을 직접 짓는다.** 종전에는 「빌드본이 없으면
 #   빨간불」로 뒀는데, `web/navi/dist/` 는 `.gitignore` 라 **새 클론이 무조건 빨갛다.**
@@ -1036,6 +1047,7 @@ step "화면 분리" uv run python tools/uicheck.py --split
 scope "web/navi/src/* web/navi/*.ts web/navi/*.json"
 step "내비 빌드" bash -c 'cd web/navi && npm run -s build >/dev/null'
 scope "web/navi/src/* tools/*"   # ★ dist 는 추적 밖이라 --since 가 못 본다(§319-4)
+# asks: 지금 화면이 지금 코드에서 나왔는가 — 빌드본을 본다
 step "화면 빌드본" uv run python tools/uicheck.py --build
 scope "tools/*"
 step "머지 절차" uv run python tools/mergecheck.py
@@ -1045,8 +1057,10 @@ step "머지 절차" uv run python tools/mergecheck.py
 #   판정 한 줄을 고쳐도 4G 로 1.4MB 를 다시 받는다. 둘 다 무게가 아니라 **의존**의
 #   문제라, 이 관문이 재는 것도 바이트가 아니라 「밖에 몇 개 기대는가」다.
 scope "web/navi/src/* web/navi/index.html web/fonts/* tools/*"
+# asks: 내비가 밖에 몇 개 기대는가 — 바이트가 아니라 의존이다
 step "내비 의존" uv run python tools/naviweight.py
 scope "web/navi/src/* tools/*"   # ★ dist 는 추적 밖이라 --since 가 못 본다(§319-4)
+# asks: 빌드본 무게가 래칫 안인가
 step "내비 무게" uv run python tools/naviweight.py --build
 # ★ 글자 파일이 지금 데이터에서 나왔는가. 새 글자가 데이터에 들어오면 운다 —
 #   **글자가 조용히 안 그려지는 것**은 화면에서 제일 알아채기 어려운 결함이다.

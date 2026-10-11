@@ -139,8 +139,65 @@ SELFTEST_MIN = 75
 #:   그 자체가 낡는다. 실측 22.
 VERIFY_NO_SCOPE = 22
 
+#: 같은 검사기를 **두 단계 이상**이 부르는데 그 단계가 「무엇을 묻는지」 안 적은 수.
+#: ★ 2026-10-11 (DECISIONS §456-1 ⑨) 신설. `tools/toolindex.py` 가 「도구마다 제
+#:   설명이 한 벌 있는가」를 드는데 그 단위가 **도구**다. 하위명령이 다르면 묻는
+#:   것이 다른데 그 차이를 적은 자리가 없었고, 단계 이름이 유일한 힌트였다 —
+#:   실측 열넷(검사기 여섯). 선언은 그 단계 **바로 위**에 적는다:
+#:
+#:       # asks: 대장 선언만 본다 — 무계약 · 모르는 계약 키 · 미선언 좌표계
+#:       step "취입 계약 선언"   uv run python -m firelane.contract --declared
+#:
+#:   글자까지 같은 선언 둘은 **선언이 아니다**(베끼면 갈린다 · 2족). 같이 센다.
+STEP_NO_ASK = 0
+
 RATCHETS = {"NO_DECL": "down", "SELFTEST_MIN": "up",
-            "VERIFY_NO_SCOPE": "down"}
+            "VERIFY_NO_SCOPE": "down", "STEP_NO_ASK": "down"}
+
+_ASKS = re.compile(r"^\s*#\s*asks:\s*(\S.*?)\s*$")
+_STEP = re.compile(r'^\s*step\s+"([^"]+)"\s*(.*)$')
+
+
+def step_ask_gaps(src: str | None = None) -> list[str]:
+    """같은 검사기를 여럿이 부르는 단계 가운데 **묻는 것을 안 적은** 자리.
+
+    ★ `src` 를 주면 그 글을 센다 — 순수해야 시험이 합성 결함을 양쪽으로 민다.
+    ★ 검사기 추출은 `tools/gate_parity.py` 의 `tokens()` 하나다. 여기서 또
+      적으면 두 그물이 같은 글을 다르게 읽는다(§425 에서 한 번 겪었다).
+    """
+    import gate_parity as _gp  # noqa: PLC0415  이 함수 하나만 쓴다
+
+    if src is None:
+        src = (ROOT / "tools" / "verify.sh").read_text(encoding="utf-8")
+    rows: list[tuple[str, str, str, set[str]]] = []      # (단계, 명령, 선언, 검사기)
+    ask = ""
+    for ln in src.splitlines():
+        if m := _ASKS.match(ln):
+            ask = m.group(1)
+            continue
+        if m := _STEP.match(ln):
+            cmd = " ".join(m.group(2).split())
+            rows.append((m.group(1), cmd, ask, _gp.tokens(_gp._nocomment(cmd))))
+            ask = ""
+            continue
+        if ln.strip() and not ln.lstrip().startswith("#"):
+            ask = ""
+    share: dict[str, int] = {}
+    for _n, _c, _a, toks in rows:
+        for tk in toks:
+            share[tk] = share.get(tk, 0) + 1
+    seen: dict[str, str] = {}
+    out = []
+    for name, _c, a, toks in rows:
+        if not any(share.get(tk, 0) > 1 for tk in toks):
+            continue
+        if not a:
+            out.append(f"{name} — 묻는 것을 안 적었다")
+        elif a in seen:
+            out.append(f"{name} — 선언이 `{seen[a]}` 과 글자까지 같다")
+        else:
+            seen[a] = name
+    return out
 
 
 def verify_scope_counts(src: str | None = None) -> tuple[int, int]:
@@ -183,7 +240,8 @@ def ratchet_values() -> dict[str, int]:
     """래칫 이름 → 지금 실측값. **판정은 안 한다**(`judge()` 소관)."""
     _, missing, st, _ = measure()
     return {"NO_DECL": len(missing), "SELFTEST_MIN": len(st),
-            "VERIFY_NO_SCOPE": verify_scope_counts()[1]}
+            "VERIFY_NO_SCOPE": verify_scope_counts()[1],
+            "STEP_NO_ASK": len(step_ask_gaps())}
 
 
 DECL_RE = re.compile(r"^\s*밖\s{2,}(\S.*)$", re.M)

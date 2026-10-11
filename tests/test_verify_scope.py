@@ -162,8 +162,13 @@ def test_pipeline_family_shares_one_scope_home() -> None:
     assert src.count("CODE_SCOPE=") == 1, "`CODE_SCOPE` 의 집이 둘 이상이다"
     bad = []
     for name in PIPE_STEPS:
-        m = re.search(rf'^(.*)\n\s*step "{re.escape(name)}"', src, re.M)
-        if not m or 'scope "$CODE_SCOPE"' not in m.group(1):
+        # ★ 2026-10-11 (DECISIONS §456-1 ⑨). **주석 줄은 건너뛴다.** 단계가
+        #   제 물음을 적는 `# asks:` 줄이 그 사이에 들어왔고, 주석 하나가
+        #   끼었다고 범위의 집이 달라지는 것은 아니다. 묻는 것은 「그 단계가
+        #   공용 범위를 쓰는가」이지 「두 줄이 붙어 있는가」가 아니다.
+        m = re.search(rf'^((?:\s*#.*\n)*)(.*)\n(?:\s*#.*\n)*\s*step "{re.escape(name)}"',
+                      src, re.M)
+        if not m or 'scope "$CODE_SCOPE"' not in m.group(2):
             bad.append(f"  {name} — 바로 위 줄이 `scope \"$CODE_SCOPE\"` 가 아니다")
     assert not bad, (
         "파이프라인 계열 단계가 공용 범위를 안 쓴다.\n" + "\n".join(bad)
@@ -239,3 +244,41 @@ def test_the_two_scope_counters_agree() -> None:
         "선언이 다음 단계로 새고 있다"
     assert not scopedecl.verify_scope_counts("")[0], "빈 글에서 선언을 센다"
     assert not scopedecl.verify_scope_counts("")[1], "빈 글에서 미선언을 센다"
+
+
+def test_every_shared_tool_step_says_what_it_asks() -> None:
+    """같은 검사기를 두 단계 이상이 부르면 **그 단계가 제 물음을 적는가.**
+
+    ★ 2026-10-11 (DECISIONS §456-1 ⑨). `tools/toolindex.py` 가 「도구마다 제
+      설명이 한 벌 있는가」를 드는데 그 단위가 **도구**다. 하위명령이 다르면
+      묻는 것이 다른데 그 차이를 적은 자리가 없었다 — 단계 이름이 유일한
+      힌트였고, 그래서 「이 단계가 무엇을 묻나」를 기계가 못 물었다.
+
+    ★ 글자까지 같은 선언 둘은 **선언이 아니다.** 베끼면 갈린다(2족) — 그
+      자리가 바로 `toolindex` 가 「설명이 다른 도구와 글자 그대로 같다」를
+      실패로 두는 사유다.
+    """
+    import scopedecl
+
+    assert not scopedecl.step_ask_gaps(), (
+        "같은 검사기를 부르는 단계가 제 물음을 안 적었다:\n  "
+        + "\n  ".join(scopedecl.step_ask_gaps()))
+
+    # ★ 카나리아 — 합성 결함을 **양쪽으로** 민다(§445 의 정의).
+    _two = ('scope "x"\nstep "가" uv run python tools/golden.py check\n'
+            'scope "x"\nstep "나" uv run python tools/golden.py selftest\n')
+    assert len(scopedecl.step_ask_gaps(_two)) == 2, "선언 없는 둘을 안 센다"
+    _said = ('# asks: 지문이 정답과 같은가\n'
+             'step "가" uv run python tools/golden.py check\n'
+             '# asks: 그 게이트가 또 풀리는가\n'
+             'step "나" uv run python tools/golden.py selftest\n')
+    assert not scopedecl.step_ask_gaps(_said), "적었는데도 센다"
+    _same = _said.replace("그 게이트가 또 풀리는가", "지문이 정답과 같은가")
+    assert scopedecl.step_ask_gaps(_same), "글자까지 같은 선언 둘을 통과시킨다"
+    # ★ 한 단계만 부르는 검사기는 **안 센다** — 그쪽은 `toolindex` 가 든다.
+    _solo = 'step "가" uv run python tools/golden.py check\n'
+    assert not scopedecl.step_ask_gaps(_solo), "혼자 부르는 자리를 센다"
+    # ★ 선언은 **그 단계에만** 걸린다. 사이에 명령이 끼면 끊긴다.
+    _leak = ('# asks: 가\nscope "x"\nstep "가" uv run python tools/golden.py check\n'
+             '# asks: 나\nstep "나" uv run python tools/golden.py selftest\n')
+    assert scopedecl.step_ask_gaps(_leak), "scope 줄을 넘어 선언이 새고 있다"
