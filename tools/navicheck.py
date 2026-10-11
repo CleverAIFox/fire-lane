@@ -156,14 +156,54 @@ def turn_rows() -> int | None:
         return sum(1 for _ in csv.reader(fh)) - 1
 
 
+#: 방향 모름의 사유 칸 → 사람이 읽는 이름. **순서가 찍히는 순서다.**
+NL_KINDS = (("nl_twoway", "양방향"), ("nl_none", "링크 없음"),
+            ("nl_split", "좁게↔넓게 갈림"), ("nl_absent", "node_link 없음"))
+
+
+def nl_reasons(nl: dict) -> str:
+    """방향 모름의 사유 한 줄. **없는 칸은 `?` 다.**
+
+    ★ 2026-10-11 (DECISIONS §467). 종전은 `nl.get(k, 0)` 이었다 — 칸이 빠진
+      그래프에서 **0 이 찍히고** 읽는 사람은 「그 사유가 0건」으로 읽는다.
+      0 은 값이고 「못 쟀다」가 아니다(§466-2 가 폐기값 쪽에서 고친 그 자리).
+    """
+    return " · ".join(f"{ko} {nl[k]:,}" if isinstance(nl.get(k), int) else f"{ko} ?"
+                      for k, ko in NL_KINDS)
+
+
+def _need(c: dict, key: str) -> int:
+    """`counts` 의 칸 하나. **없으면 죽는다.**
+
+    ★ 2026-10-11 (DECISIONS §467). 종전은 `int(c.get(key, 0))` 이었다. 그러면
+      `counts` 블록이 없는 옛 그래프에서 **셋이 전부 0** 이 되고, 셋 중 둘은
+      내려가는 쪽 래칫이라 `--write` 가 0 을 받아적는다 — 그 뒤로 그 관문은
+      무엇이 들어와도 초록이다. **0 은 값이고 「못 쟀다」가 아니다.**
+    """
+    if key not in c:
+        raise RuntimeError(
+            f"그래프의 `counts.{key}` 가 없다 — `publish_navi` 가 그 칸을 내기"
+            " 전에 구운 옛 그래프다. 다시 발행해라(`uv run fire-lane --only publish`)")
+    return int(c[key])
+
+
 def ratchet_values() -> dict[str, int]:
     """래칫 이름 → 지금 실측값. **판정은 안 한다**(`check()` 소관)."""
     g = load()
-    c = g.get("counts") or {}
+    # ★ 2026-10-11 (§467). **빈 그래프에서 0 을 내지 않는다.** 노드가 0 이면
+    #   막다른 끝도 0 이고 스냅 실패도 0 이다 — 그 0 은 「완벽한 그래프」로
+    #   읽히고, 그것이 §372 가 적은 「빈 우주가 초록이 된다」의 이 도구 판이다.
+    if not (g.get("nodes") and g.get("edges")):
+        raise RuntimeError(
+            "그래프에 노드나 엣지가 없다 — **전수 0 은 실측이 아니다.**"
+            " 발행이 끝난 뒤에 재라")
+    c = g.get("counts")
+    if not isinstance(c, dict):
+        raise RuntimeError("그래프에 `counts` 블록이 없다 — 옛 판 그래프다. 다시 발행해라")
     return {
-        "ONEWAY_DIR_UNKNOWN": int(c.get("oneway", 0)) - int(c.get("oneway_dir_known", 0)),
-        "TURN_BANS": int(c.get("turn_bans", 0)),
-        "PARK_UNPLACED": int(c.get("park_unplaced_rows", 0)),
+        "ONEWAY_DIR_UNKNOWN": _need(c, "oneway") - _need(c, "oneway_dir_known"),
+        "TURN_BANS": _need(c, "turn_bans"),
+        "PARK_UNPLACED": _need(c, "park_unplaced_rows"),
         "DEAD_END_NEAR": len(near_pairs(g)),
     }
 
@@ -199,11 +239,7 @@ def check() -> int:
     #   `publish_navi` 가 그 칸을 내기 전에 구운 그래프에는 없다 — 그때는 그렇게 적는다.
     nl = c.get("oneway_nl")
     if isinstance(nl, dict):
-        print("  방향 모름의 사유 —"
-              f" 양방향 {nl.get('nl_twoway', 0)}"
-              f" · 링크 없음 {nl.get('nl_none', 0)}"
-              f" · 좁게↔넓게 갈림 {nl.get('nl_split', 0)}"
-              f" · node_link 없음 {nl.get('nl_absent', 0)}")
+        print("  방향 모름의 사유 — " + nl_reasons(nl))
     else:
         print("  방향 모름의 사유 — **아직 모른다.** 이 그래프는 `oneway_nl` 칸이"
               " 생기기 전에 구워졌다(§367). 다음 발행이 낸다.")
@@ -310,8 +346,11 @@ def selftest() -> int:
                 fails.append("먼 끝을 스냅 실패로 센다 — 문턱이 안 듣는다")
 
             # ④ counts 를 그대로 읽는가. 뺄셈 방향이 맞는가.
+            # ★ 2026-10-11 (§467). 종전에는 노드·엣지를 **빈 배열**로 줬다.
+            #   그 입력이 이제 죽는다 — 그리고 죽는 것이 맞다(아래 ⑥ 가 든다).
             g = fake({"oneway": 10, "oneway_dir_known": 3, "turn_bans": 7,
-                      "park_unplaced_rows": 42}, [], [])
+                      "park_unplaced_rows": 42},
+                     [[126.92, 35.15], [126.93, 35.16]], [{"a": 0, "b": 1}])
             GRAPH.write_text(json.dumps(g) + "\n", encoding="utf-8")
             v = ratchet_values()
             if v["ONEWAY_DIR_UNKNOWN"] != 7:
@@ -326,10 +365,40 @@ def selftest() -> int:
                 fails.append("그래프가 없는데 값을 낸다 — 빈 그물이 초록으로 간다")
             except RuntimeError:
                 pass
+
+            # ⑥ ★ 2026-10-11 (DECISIONS §467). **있지만 비어 있을 때**도 안 낸다.
+            #    노드가 0 이면 막다른 끝도 스냅 실패도 0 이고, 그 0 은 「완벽한
+            #    그래프」로 읽힌다. 파일 유무만 묻던 ⑤ 의 사각지대다.
+            GRAPH = Path(td) / "g.json"
+            for why, g0 in (
+                ("노드·엣지가 빈", fake({"oneway": 1, "oneway_dir_known": 0,
+                                     "turn_bans": 0, "park_unplaced_rows": 0}, [], [])),
+                ("`counts` 블록이 없는",
+                 {"crs": "EPSG:4326", "nodes": [[126.9, 35.1], [126.91, 35.11]],
+                  "edges": [{"a": 0, "b": 1}], "turns": []}),
+                ("`counts` 칸 하나가 빠진",
+                 fake({"oneway": 3, "turn_bans": 0, "park_unplaced_rows": 0},
+                      [[126.9, 35.1], [126.91, 35.11]], [{"a": 0, "b": 1}])),
+            ):
+                GRAPH.write_text(json.dumps(g0) + "\n", encoding="utf-8")
+                try:
+                    v = ratchet_values()
+                    fails.append(f"{why} 그래프에서 값을 낸다 — {v}")
+                except RuntimeError:
+                    pass
     finally:
         GRAPH = keep
 
-    # ⑥ 실물이 0 이 아닌가 — 빈 그물 방지.
+    # ⑦ ★ 2026-10-11 (§467). 사유 칸이 **빠지면 `?`** 를 찍는가. 0 을 찍으면
+    #    읽는 사람이 「그 사유가 0건」으로 읽는다.
+    full = nl_reasons({k: 1 for k, _ in NL_KINDS})
+    if "?" in full or full.count("1") != len(NL_KINDS):
+        fails.append(f"있는 칸을 못 찍는다 — {full}")
+    part = nl_reasons({"nl_twoway": 7})
+    if "양방향 7" not in part or part.count("?") != len(NL_KINDS) - 1:
+        fails.append(f"빠진 칸을 0 으로 찍는다 — {part}")
+
+    # ⑧ 실물이 0 이 아닌가 — 빈 그물 방지.
     try:
         if sum(ratchet_values().values()) <= 0:
             fails.append("실측 합이 0 — 발행물을 못 읽었다")
@@ -338,7 +407,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print("✓ 자기검사 통과 · 판별식 9" if not fails else f"✗ {len(fails)}건")
+    print("✓ 자기검사 통과 · 판별식 14" if not fails else f"✗ {len(fails)}건")
     return 1 if fails else 0
 
 
