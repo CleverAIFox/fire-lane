@@ -63,7 +63,7 @@ TESTS = ROOT / "tests"
 #: ★ 이력 — 2026-10-12 §493 첫 실측 **56**(순수 230 중). 같은 배치에서
 #:   `segkey` · `naming` · `skeleton` · `mercator` · `ledger` 에 시험을 달아
 #:   내렸다.
-SRC_UNTESTED = 2
+SRC_UNTESTED = 1
 
 #: **입출력** 부류에서 시험이 이름을 안 부르는 수. 내려가는 쪽으로만.
 #:
@@ -79,7 +79,7 @@ SRC_UNTESTED = 2
 #:   (`ngii1k.read_sheet` · `terrain.build_terrain_tiles` · `seg/report`).
 #:   그래서 이 수의 뜻은 「여기까지 내려왔다」가 아니라 **「새 입출력 함수를
 #:   시험 없이 들이지 않는다」**다 — 늘면 그 배치가 늘린 것이다.
-SRC_IO_UNTESTED = 26
+SRC_IO_UNTESTED = 20
 
 RATCHETS = {"SRC_UNTESTED": "down", "SRC_IO_UNTESTED": "down"}
 
