@@ -45,15 +45,15 @@ export const MY = 110943;
 
 export type LngLat = [number, number];
 
-/** WGS84 → 로컬 미터. */
-export function toM(p: LngLat): [number, number] {
-  return [p[0] * MX, p[1] * MY];
-}
-
-/** 로컬 미터 → WGS84. */
-export function toLngLat(x: number, y: number): LngLat {
-  return [x / MX, y / MY];
-}
+/*
+ * ★ 2026-10-12 (DECISIONS §482). 여기 `toM` · `toLngLat` 두 개가 있었고
+ *   **`src` 안에 소비자가 없었다.** 그리고 이름이 거짓이었다 — 기준점을
+ *   빼지 않아서 `toM([126.93, 35.15])` 이 「로컬 미터」가 아니라 적도
+ *   원점에서 11,565km 다. 거리·차이를 쓰는 쪽은 상수만 필요해서 아무도
+ *   안 불렀고, 부르는 날이 오면 **그 이름을 믿고 틀린다.** 걷었다.
+ *   `progress.ts` 에 같은 이름의 지역 함수가 있으나 그것은 **경로 위
+ *   누적거리**이고 다른 일감이다.
+ */
 
 /** 두 WGS84 점 사이 거리(m). */
 export function distM(a: LngLat, b: LngLat): number {

@@ -476,6 +476,8 @@ jobs:
       # ★ 소스 축만. 빌드본 무게와 글자 대조는 여기서 내비를 안 지어 못 본다(§312).
       - name: 내비 의존 (출동 중에 끊기는 것)
         run: uv run python tools/naviweight.py
+      - name: 내비 시험 분모 (미는 자가 없는 순수 함수)
+        run: uv run python tools/navicov.py
         env:
           GH_TOKEN: ${{ github.token }}
           CI: "1"

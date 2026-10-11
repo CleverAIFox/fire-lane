@@ -252,9 +252,16 @@ def outside_faults(root: Path = ROOT) -> list[str]:
     """`scopedecl` 이 세는 우주 − 이 러너의 우주 = `OUTSIDE` 인가. **비면 산다.**"""
     import scopedecl  # noqa: PLC0415  맞물림을 끊는다 (scopedecl 은 이 파일을 안 든다)
 
-    td = root / "tools"
-    counted = {p.name for p in sorted(td.iterdir())
-               if p.is_file() and scopedecl.has_selftest(p)}
+    # ★ 2026-10-12 (DECISIONS §482). 종전에는 `tools` 하나만 훑었고
+    #   `deadcheck` ⑤가 그것을 **좁은 범위**로 집었다. 넓혀도 **결과는 같다** —
+    #   `src/firelane` 쪽은 이 러너가 이미 다 모으므로 차집합이 비기 때문이다.
+    #   그래도 넓힌다: 그 쪽 수집이 깨지는 날 이 자가 **그때** 울어야 하고,
+    #   「지금 비어 있으니 안 본다」가 바로 1족(무음 통과)이 자라는 자리다.
+    counted = {q.name
+               for d in (root / "tools", root / "src" / "firelane")
+               if d.is_dir()
+               for q in sorted(d.iterdir())
+               if q.is_file() and scopedecl.has_selftest(q)}
     mine = {p.name for p in tools()}
     gap, listed = counted - mine, set(OUTSIDE)
     bad = []

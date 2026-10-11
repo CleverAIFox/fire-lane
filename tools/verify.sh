@@ -1062,6 +1062,11 @@ step "내비 의존" uv run python tools/naviweight.py
 scope "web/navi/src/* tools/*"   # ★ dist 는 추적 밖이라 --since 가 못 본다(§319-4)
 # asks: 빌드본 무게가 래칫 안인가
 step "내비 무게" uv run python tools/naviweight.py --build
+# ★ 2026-10-12 (DECISIONS §482). 번들에도 §481 의 질문을 한다 — 「미는 자가
+#   없는 것이 몇인가」. `vitest` 가 돈다는 것과 그 함수를 **든다**는 것은 다르다.
+scope "web/navi/src/* web/navi/test/* tools/*"
+# asks: 번들에서 시험이 이름으로도 안 부르는 순수 함수가 몇인가
+step "내비 시험 분모" uv run python tools/navicov.py
 # ★ 글자 파일이 지금 데이터에서 나왔는가. 새 글자가 데이터에 들어오면 운다 —
 #   **글자가 조용히 안 그려지는 것**은 화면에서 제일 알아채기 어려운 결함이다.
 scope "web/data/* web/fonts/* web/navi/scripts/*"
