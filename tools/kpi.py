@@ -39,6 +39,7 @@ from pathlib import Path
 
 import networkx as nx
 
+from firelane import quantile as Q
 from firelane.seg.unionfind import find as _uf_find
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -248,7 +249,7 @@ def main() -> int:
               f"중앙 {st.median(per_route_bad):.0f} · 최대 {max(per_route_bad)}")
     if ratios:
         print(f"  우리 경로 / 그 경로 실거리비       "
-              f"중앙 {st.median(ratios):.2f} · p90 {ratios[int(len(ratios) * .9)]:.2f}")
+              f"중앙 {st.median(ratios):.2f} · p90 {Q.p90(ratios):.2f}")
     print()
     print("  → 시간을 줄이는 앱이 아니라 **못 가는 길로 보내지 않는 앱**이다.")
 

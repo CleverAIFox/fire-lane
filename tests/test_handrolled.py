@@ -114,6 +114,21 @@ SITES: dict[str, dict] = {
                " 를 상태에 넣은 변종이라(§215-1 · §218-2) 범용 구현으로 못 받는다 —"
                " 같은 답을 내는 라이브러리가 애초에 없다",
     },
+    "분위수 손 색인": {
+        # ★ 표식은 **색인 꼴** 이다 — `[int(… .9 …)]`. 정본(`firelane.quantile`)
+        #   머리말도 이 꼴을 글자로 안 적는다(적으면 제 금지를 어긴다 · §469 가
+        #   `localgeo` 에서 같은 값을 치렀다).
+        "mark": r"\[int\([^\]\n]*\.9",
+        "where": "tools/evalgen.py",
+        "moved": True,
+        "dep": "numpy",
+        "why": "같은 분위수를 **네 공식**으로 재고 있었다. `evalgen` · `kpi` 는"
+               " 「n×0.9 의 정수부」로 집어 **n ≤ 10 이면 최댓값**을 「p90」 이라고"
+               " 찍었고(`ratio_max` 바로 옆 칸이다) `publish_context` 는"
+               " 「0.9×(n−1)」로 집어 **n = 2 면 최솟값**을 찍었다."
+               " `numpy.quantile` 이 정본이고 실측으로 `pandas` 와 전부 같다"
+               " (DECISIONS §471)",
+    },
     "글자 폭 어림": {
         "mark": r"def text_extent",
         "where": "tools/svg_fit.py",
@@ -124,6 +139,25 @@ SITES: dict[str, dict] = {
                " 한 폰트로 정확히 재면 그 폰트에서만 맞고 다른 기계에서 넘친다."
                " **보수적인 어림이 목적이고 정확한 측정이 그것을 깨뜨린다**",
     },
+}
+
+
+#: 「가운데 원소를 집는다」 색인 꼴. **중앙값이면 `statistics.median` 이 정본**
+#: 이고, 짝수 길이에서 이 꼴은 가운데 **둘의 평균이 아니라 위쪽**을 낸다.
+MID_INDEX = re.compile(r"\[[^\[\]\n]*//\s*2\s*\]")
+
+#: 그 꼴이 **중앙값이 아닌** 자리 — 파일 → (몇 번 · 사유).
+#:   ★ 수를 같이 적는다. 사유만 적고 수를 안 적으면 같은 파일에 **새 손 중앙값**
+#:     이 서도 조용히 통과한다 — 그것이 §468 · §469 가 치른 값이다.
+MID_OK: dict[str, tuple[int, str]] = {
+    "src/firelane/skeleton.py": (
+        1, "NGII 점열의 **가운데 점**을 골라 거기서 최근접을 묻는다 —"
+           " 표본의 중앙값이 아니라 선 위의 한 점이다"),
+    "tools/baseline.py": (
+        1, "구간 좌표열의 **가운데 좌표**다(스냅 대표점). 수가 아니라 점이고"
+           " 평균을 내면 선 밖으로 나갈 수 있다"),
+    "tools/bridge_audit.py": (
+        1, "같은 것 — 교량 선형의 가운데 좌표를 집는다"),
 }
 
 
@@ -221,6 +255,52 @@ def test_every_declaration_names_a_declared_dependency():
         if not re.search(rf'^\s*"{re.escape(dep)}[>=<\[]', decl, re.M):
             bad.append(f"{name}: `{dep}` 가 `pyproject.toml` 에 없다")
     assert not bad, "\n  ".join(["선언 안 된 의존성을 사유로 든다:", *bad])
+
+
+def mid_faults(files: list[Path], root: Path = ROOT,
+               ok: dict[str, tuple[int, str]] | None = None) -> list[str]:
+    """손 중앙값 색인이 **허용 목록 밖**이거나 **수가 늘었나.** 비면 산다."""
+    ok = MID_OK if ok is None else ok
+    bad = []
+    seen: dict[str, int] = {}
+    for p in files:
+        n = len(MID_INDEX.findall(p.read_text(encoding="utf-8")))
+        if n:
+            seen[p.relative_to(root).as_posix()] = n
+    for f, n in sorted(seen.items()):
+        if f not in ok:
+            bad.append(f"{f}: 가운데 원소를 {n}번 집는다 — 중앙값이면"
+                       " `statistics.median` 이 정본이다(짝수 길이에서 다른 수다)."
+                       " 중앙값이 아니면 `MID_OK` 에 수와 사유를 적어라")
+        elif n != ok[f][0]:
+            bad.append(f"{f}: {ok[f][0]}번으로 적혀 있는데 {n}번이다 —"
+                       " 새로 선 자리가 중앙값인지 보고 수를 고쳐라")
+    for f in sorted(ok):
+        if f not in seen:
+            bad.append(f"{f}: 허용 목록에 있는데 그 꼴이 없다 — 죽은 선언이다(§370)")
+    return bad
+
+
+def test_no_hand_rolled_median_outside_the_allow_list():
+    """★ **자리 하나가 아니라 꼴을 금지한다.** §471 이 손 중앙값 다섯을 옮겼고,
+    다섯을 옮기는 것으로 끝내면 여섯째가 내일 선다 — 분모를 든다."""
+    bad = mid_faults(_files())
+    assert not bad, "\n  ".join(["손으로 센 중앙값:", *bad])
+
+
+def test_the_median_judge_bites_a_planted_fault():
+    """★ 카나리아 — 위 판별식도 양쪽으로 민다."""
+    fs = _files()
+    # ① 허용 목록을 비우면 **셋 다** 걸린다
+    assert len(mid_faults(fs, ok={})) == 3, "허용 목록 밖을 안 댄다"
+    # ② 수를 틀리게 적으면 걸린다
+    one = {"tools/bridge_audit.py": (9, "거짓 수")}
+    assert any("9번으로 적혀 있는데" in b for b in mid_faults(fs, ok=one)), \
+        "수가 틀린 것을 안 댄다"
+    # ③ 없는 파일을 올려 두면 죽은 선언으로 걸린다
+    dead = {**MID_OK, "tools/없다.py": (1, "없다")}
+    assert any("죽은 선언" in b for b in mid_faults(fs, ok=dead)), \
+        "죽은 선언을 안 댄다"
 
 
 def test_every_site_states_a_reason():

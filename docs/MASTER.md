@@ -3107,7 +3107,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,109 전수 · **분모(blank) 0절** · 물림(inherit) 1,155절.
+★ **강제자 칸의 분모.** 절 2,114 전수 · **분모(blank) 0절** · 물림(inherit) 1,159절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4844,6 +4844,8 @@ src/firelane/
   segkey.py               seg_uid + 관측점 방위각
   probe.py                좌표계 역추정 · 그래프 위상 진단
   quiet_gdal.py           GDAL 잡음 억제
+  localplane.py           ★ 동명동 국소 평면 근사 — **좌표 상수의 집**. 조사 도구와 발행이 든다 (DECISIONS §469)
+  quantile.py             ★ 분위수 정본 — 「p90」 의 뜻이 여기 하나다. 공식은 numpy 가 든다 (DECISIONS §471)
   krgis/crs.py            한국 좌표계 판별 · 안전 변환
 ```
 
@@ -4904,7 +4906,8 @@ tools/
   render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
   stage_pages.py          ★ 배포 준비 한 곳 — 배포에 안 싣는 것을 web/ 에서 뺀다
   svg_fit.py              ★ 손으로 좌표 박은 SVG 가 화면·도형을 넘는가 — rect · circle · 라벨 폭
-  localgeo.py             ★ 동명동 국소 평면 근사 — 좌표 상수의 집. kpi · bridge_audit · its_linkmap 이 읽는다
+  localgeo.py             동명동 국소 평면 근사의 **넘김막**. 집은 `src/firelane/localplane.py` 다(DECISIONS §469) — 도구 열하나가 아직 이 이름으로 읽는다
+  statkit.py              대조 표가 같이 쓰는 작은 수 셈(결측 가르기 · 사분위 꼴). **보간 공식은 없다** — `src/firelane/quantile.py` 가 든다(DECISIONS §471)
   render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 대조. 그리는 함수는 tools/figures/ 패키지 (배치는 svg_fit 이 본다)
   htmlfigs.py             ★ 그 그림을 기획서 화면 자리에 바로 굽는다 — --sync 가 교체 · --check 는 변환기 없이 대조
   release_brief.py        ★ 이 PR 이 무엇을 흡수하나 — 판정·계보·대장·계약

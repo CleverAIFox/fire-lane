@@ -51,6 +51,7 @@ import collections
 import json
 import re
 import shutil
+import statistics
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -346,7 +347,7 @@ def cmd_diff(args) -> int:
         d.sort()
         n = len(d)
         print(f"\n  width_min_m 변화 {n}건  "
-              f"중앙 {d[n//2]:+.2f}m · 평균 {sum(d)/n:+.2f}m · "
+              f"중앙 {statistics.median(d):+.2f}m · 평균 {sum(d)/n:+.2f}m · "
               f"|Δ|>1m {sum(1 for x in d if abs(x) > 1)}")
 
     # ★ 소방서 블록보다 **먼저** 부른다. 그 블록은 파일이 없으면 early return 하고,

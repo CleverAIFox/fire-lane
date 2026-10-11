@@ -64,6 +64,7 @@ import argparse
 import csv
 import json
 import math
+import statistics
 import sys
 from pathlib import Path
 
@@ -148,7 +149,7 @@ def measure(seg_feats: list, lines: list, road_b, carr_b) -> list[dict]:
             "n_sample": p.get("n_sample"),
             "route_usage": p.get("route_usage") or 0,
             "c_min": 2 * min(cs), "c_max": 2 * max(cs),
-            "c_med": 2 * sorted(cs)[len(cs) // 2],
+            "c_med": 2 * statistics.median(cs),
         }
         if carr_b is not None:
             cc = clearances(line, carr_b)

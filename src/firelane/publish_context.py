@@ -35,7 +35,7 @@ from datetime import datetime, timedelta, timezone
 import geopandas as gpd
 import pandas as pd
 
-from firelane import localplane
+from firelane import localplane, quantile
 from firelane.cli import no_args
 from firelane.paths import ROOT
 
@@ -188,7 +188,7 @@ def history(fr) -> dict:
     summary = {
         "points": len(feats),
         "resp_median_s": med(all_rs), "resp_n": len(all_rs),
-        "resp_p90_s": int(sorted(all_rs)[int(0.9 * (len(all_rs) - 1))]) if all_rs else None,
+        "resp_p90_s": int(quantile.p90(all_rs)) if all_rs else None,
         "by_center": {k: {"n": len(v), "median_s": med(v), "straight_kmh": kmh(k)}
                       for k, v in sorted(by_center.items())},
         "fire_donggu": {"n": len(fires), "median_s": med(fires)},

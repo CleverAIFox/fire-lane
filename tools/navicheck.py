@@ -55,6 +55,7 @@ from __future__ import annotations
 
 import csv
 import json
+import statistics
 import sys
 from collections import Counter
 from pathlib import Path
@@ -105,17 +106,6 @@ def load() -> dict:
             shown = str(GRAPH)
         raise RuntimeError(f"{shown} 가 없다 — 실측 못 한다")
     return json.loads(GRAPH.read_text(encoding="utf-8"))
-
-
-def _m(a: list[float], b: list[float]) -> float:
-    """두 경위도 사이 거리(m). **정본은 `firelane.localplane` 하나다.**
-
-    ★ 2026-10-11 (DECISIONS §469). 종전에는 여기서 직접 쟀고 **위도에 경도
-      미터(111,320)를 쓰고 있었다** — 정본은 110,574 다. 0.67% 틀린 수이고
-      판정을 안 뒤집으므로 아무도 안 울었다. §239 가 세 도구에서 걷은 그
-      세 줄이 여기로 돌아와 있었다.
-    """
-    return localplane.metres((a[0], a[1]), (b[0], b[1]))
 
 
 def degrees(g: dict) -> Counter:
@@ -319,7 +309,7 @@ def snap_report() -> int:
         dd = sum(1 for i in n if deg[best[i][1]] == 1)
         print(f"{t:>9}m {len(n):>5} {len(n)/max(1,len(de)):>6.1%}   {dd:>5}")
     ds = sorted(best[i][0] for i in de)
-    print(f"\n중앙값 {ds[len(ds)//2]:.1f}m · 최대 {ds[-1]:.0f}m")
+    print(f"\n중앙값 {statistics.median(ds):.1f}m · 최대 {ds[-1]:.0f}m")
     mutual = sum(1 for i in de if deg[best[i][1]] == 1 and best.get(best[i][1], (0, -1))[1] == i)
     print(f"서로를 최근접으로 가리키는 쌍 {mutual//2}쌍  ← 끊긴 길 후보")
     print(f"\n★ {NEAR_M:g}m 안 {len(near_pairs(g))}건이 `DEAD_END_NEAR` 다. 가까운 열 —")
@@ -367,6 +357,18 @@ def selftest() -> int:
             near = near_pairs(load())
             if len(near) != 2:
                 fails.append(f"0.6m 떨어진 끝 쌍을 못 잡는다 — {len(near)}건")
+
+            # ②-1 ★ **동률 가름.** 거리가 같은 두 쌍은 **번호 작은 쪽**이
+            #      먼저다. 안 묶으면 부동소수 순서로 실행마다 뒤집히고,
+            #      사람이 보는 목록이 흔들리면 그 목록을 못 읽는다(§470-2).
+            g = fake({}, [[126.92, 35.15], [126.921, 35.151],
+                          [126.92, 35.15 + d], [126.925, 35.155],
+                          [126.92, 35.15 - d], [126.926, 35.156]],
+                     [{"a": 0, "b": 1}, {"a": 2, "b": 3}, {"a": 4, "b": 5}])
+            GRAPH.write_text(json.dumps(g) + "\n", encoding="utf-8")
+            idx = [(r[1], r[2]) for r in near_pairs(load())]
+            if idx != sorted(idx):
+                fails.append(f"같은 거리의 쌍이 번호순이 아니다 — {idx}")
 
             # ③ ★ 멀면 안 잡는가. 안 그러면 **항상 우는 검사**다.
             g = fake({}, [[126.92, 35.15], [126.921, 35.151],
@@ -420,6 +422,38 @@ def selftest() -> int:
     finally:
         GRAPH = keep
 
+    # ⑥-1 ★ 2026-10-11 (DECISIONS §471). **판정의 종료 수를 든다.** 선언과
+    #      실측이 같으면 0, 갈리면 1 이다. 안 묶으면 그 수를 아무 값으로
+    #      바꿔도 조용하다 — 돌연변이가 `rc = 1` 을 살려 그것을 드러냈다.
+    #      ★ 래칫 값을 **실측으로 맞춰** 재므로 이 판별식은 그 수가 움직여도
+    #        안 낡는다(선언값을 글자로 박으면 다음 발행에 거짓으로 운다).
+    import contextlib
+    import io
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            GRAPH = Path(td) / "g.json"
+            g = fake({"oneway": 10, "oneway_dir_known": 10, "turn_bans": 5,
+                      "park_unplaced_rows": 0},
+                     [[126.92, 35.15], [126.921, 35.151]], [{"a": 0, "b": 1}])
+            GRAPH.write_text(json.dumps(g) + "\n", encoding="utf-8")
+            saved = {k: globals()[k] for k in RATCHETS}
+            try:
+                for k, v in ratchet_values().items():
+                    globals()[k] = v
+                with contextlib.redirect_stdout(io.StringIO()):
+                    same = check()
+                    globals()["TURN_BANS"] = globals()["TURN_BANS"] + 1
+                    moved = check()
+                if same != 0:
+                    fails.append(f"선언과 실측이 같은데 종료 수가 {same} 다")
+                if moved != 1:
+                    fails.append(f"래칫이 갈렸는데 종료 수가 {moved} 다 — 1 이어야 한다")
+            finally:
+                for k, v in saved.items():
+                    globals()[k] = v
+    finally:
+        GRAPH = keep
+
     # ⑦ ★ 2026-10-11 (§467). 사유 칸이 **빠지면 `?`** 를 찍는가. 0 을 찍으면
     #    읽는 사람이 「그 사유가 0건」으로 읽는다.
     full = nl_reasons({k: 1 for k, _ in NL_KINDS})
@@ -438,7 +472,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print("✓ 자기검사 통과 · 판별식 14" if not fails else f"✗ {len(fails)}건")
+    print("✓ 자기검사 통과 · 판별식 17" if not fails else f"✗ {len(fails)}건")
     return 1 if fails else 0
 
 
