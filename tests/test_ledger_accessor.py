@@ -176,3 +176,66 @@ def test_the_counter_does_not_count_its_own_explanation() -> None:
         body = (ROOT / f).read_text(encoding="utf-8")
         assert _DIRECT.search(body), f"{f}: 카나리아의 전제가 사라졌다 — 주석이 바뀌었다"
         assert f not in found, f"{f}: **주석**을 위반으로 세고 있다"
+
+
+# ── 원문 구간 — 시험이 이름을 안 부르고 있었다 (DECISIONS §493) ─
+# ★ `ledger.yaml_span` 은 §205 가 `ledger_feeds` · `ledger_schema` 의 두 벌을
+#   합친 자리다(96노드). 합친 뒤로 **맞는지 물은 자가 없었다** —
+#   `tools/srccov.py` 가 셌다.
+#
+# ★ 왜 원문을 다루는가. `yaml.safe_load` → `dump` 왕복이 주석과 블록
+#   스칼라를 잃는다. 대장은 사람이 읽는 문서다. 그래서 이 함수가 아는 것은
+#   **`sources.yaml` 의 들여쓰기 규약**이고, 그 규약이 이 시험의 과녁이다.
+_SPAN_SRC = """datasets:
+  alpha:
+    file: a/a.csv
+    note: |
+      여러 줄
+      블록 스칼라
+
+    encoding: cp949
+  beta:
+    file: b/b.csv
+  alphabet:
+    file: c/c.csv
+"""
+
+
+def test_yaml_span_keeps_block_scalars_and_blank_lines() -> None:
+    """★ 본체. 블록 스칼라와 **그 안의 빈 줄**이 구간 안에 남는가.
+
+    빈 줄에서 끊으면 `encoding: cp949` 가 구간 밖으로 떨어지고, 그것을
+    고쳐 쓰는 자(`ledger_schema`)가 **옆 항목에 덧쓴다.**
+    """
+    b, e, body = ledger.yaml_span(_SPAN_SRC, "alpha")
+    assert (b, e) != (-1, -1), "있는 키를 못 찾았다"
+    assert _SPAN_SRC[b:e] == body, "낸 자리와 낸 본문이 다르다"
+    assert "블록 스칼라" in body and "\n\n" in body, "블록·빈 줄을 잃었다"
+    assert body.endswith("    encoding: cp949\n"), "빈 줄에서 끊었다"
+    assert "beta" not in body, "다음 항목까지 먹었다"
+
+
+def test_yaml_span_does_not_match_a_longer_key_with_the_same_prefix() -> None:
+    """★ `alpha` 를 찾으며 `alphabet` 을 잡으면 **남의 항목을 고친다**."""
+    _, _, a = ledger.yaml_span(_SPAN_SRC, "alpha")
+    _, _, abc = ledger.yaml_span(_SPAN_SRC, "alphabet")
+    assert "a/a.csv" in a and "c/c.csv" not in a
+    assert "c/c.csv" in abc and "a/a.csv" not in abc
+
+
+def test_yaml_span_is_silent_for_a_key_that_is_not_there() -> None:
+    """★ 음성 — 없으면 `(-1, -1, "")` 이다. 0 을 주면 **머리에 덧쓴다**."""
+    assert ledger.yaml_span(_SPAN_SRC, "zzz") == (-1, -1, "")
+    assert ledger.yaml_span("", "alpha") == (-1, -1, "")
+    # 들여쓰기가 두 칸이 아니면 대장 항목이 아니다
+    assert ledger.yaml_span("alpha:\n  file: a\n", "alpha") == (-1, -1, "")
+
+
+def test_yaml_span_only_sees_a_block_value() -> None:
+    """★ **한 줄 값은 못 본다** — 결함이 아니라 규약이다.
+
+    대장 항목은 언제나 블록이다(`  key:` 다음 줄부터 네 칸). 인라인
+    매핑(`  key: {a: 1}`)으로 적으면 이 자가 「없다」고 답하고, 그래야
+    고쳐 쓰는 자가 **모양을 모르는 줄에 손대지 않는다.**
+    """
+    assert ledger.yaml_span("datasets:\n  alpha: {a: 1}\n", "alpha") == (-1, -1, "")

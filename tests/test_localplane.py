@@ -176,3 +176,64 @@ def test_a_degree_of_latitude_is_not_a_degree_of_longitude():
     # 적도의 경도 1도(111,320)를 위도에 쓰는 것이 §469 가 걷은 실수다
     assert abs(LP.MY - 111_320) > 100, "위도에 적도 경도 미터가 다시 들어왔다"
     assert math.isclose(LP.metres((LP.LON0, LP.LAT0), (LP.LON0, LP.LAT0)), 0.0)
+
+
+# ── 웹 메르카토르 역변환 (DECISIONS §493) ─────────────────────
+# ★ `firelane.mercator.to_lonlat` 를 **시험이 이름으로도 안 불렀다**
+#   (`tools/srccov.py` 가 셌다). §205 가 `ortho` · `terrain` 의 두 벌을
+#   여기로 합친 자이고, 합친 뒤로 맞는지 물은 자가 없었다. 타일 경계를
+#   `view.json` 에 적는 수가 이 함수에서 나온다 — 틀리면 배경과 지형이
+#   **같이** 틀려서 서로 지워진다(§473 이 상수에서 당한 그것이다).
+#
+# ★ 자는 여기서도 `pyproj` 다. 손으로 계산한 기댓값을 안 적는다.
+def test_web_mercator_inverse_matches_pyproj():
+    """★ 본체. EPSG:3857 → EPSG:4326 을 의존성과 대조한다."""
+    T = pytest.importorskip("pyproj").Transformer.from_crs(
+        "EPSG:3857", "EPSG:4326", always_xy=True)
+    from firelane.mercator import to_lonlat
+
+    bad = []
+    for mx, my in ((0.0, 0.0), (14_126_443.0, 4_184_284.0),
+                   (14_000_000.0, 4_200_000.0), (-1_000_000.0, -500_000.0),
+                   (20_037_508.0, 20_048_966.0)):
+        got, want = to_lonlat(mx, my), T.transform(mx, my)
+        if abs(got[0] - want[0]) > 1e-9 or abs(got[1] - want[1]) > 1e-9:
+            bad.append(f"({mx:,.0f}, {my:,.0f}) → {got} ≠ {want}")
+    assert not bad, "\n".join(bad)
+
+
+def test_web_mercator_radius_is_the_sphere_not_the_local_plane():
+    """★ `R` 은 **구 반지름**이다. 국소 평면 상수와 섞이면 안 된다.
+
+    §473 이 고친 `MX` · `MY` 는 위도 35 의 1도 미터이고, 여기 `R` 은
+    적도 반지름이다. 한 수를 다른 자리에 넣는 것이 §469 가 걷은 실수다.
+    """
+    from firelane import mercator as M
+
+    assert M.R == 6378137.0, "WGS84 적도 반지름이 아니다"
+    # 적도 한 바퀴의 절반이 메르카토르 좌표의 끝이다
+    assert abs(M.R * math.pi - 20_037_508.34) < 0.01
+    assert M.R not in (LP.MX, LP.MY)
+
+
+def test_web_mercator_round_trips_through_the_project_centre():
+    """우리 동네 좌표가 **되돌아오는가**. 타일 경계가 이 왕복에 선다."""
+    T = pytest.importorskip("pyproj").Transformer.from_crs(
+        "EPSG:4326", "EPSG:3857", always_xy=True)
+    from firelane.mercator import to_lonlat
+
+    for dlon, dlat in ((0, 0), (SPAN, SPAN), (-SPAN, -SPAN)):
+        lon, lat = LP.LON0 + dlon, LP.LAT0 + dlat
+        back = to_lonlat(*T.transform(lon, lat))
+        assert abs(back[0] - lon) < 1e-9 and abs(back[1] - lat) < 1e-9, \
+            f"({lon}, {lat}) → {back}"
+
+
+def test_the_inverse_is_odd_about_the_equator_and_the_prime_meridian():
+    """★ 부호가 뒤집히면 **반대쪽 반구**가 나온다 — 한 줄로 든다."""
+    from firelane.mercator import to_lonlat
+
+    a = to_lonlat(1_000_000.0, 2_000_000.0)
+    b = to_lonlat(-1_000_000.0, -2_000_000.0)
+    assert abs(a[0] + b[0]) < 1e-12 and abs(a[1] + b[1]) < 1e-12
+    assert to_lonlat(0.0, 0.0) == (0.0, 0.0)

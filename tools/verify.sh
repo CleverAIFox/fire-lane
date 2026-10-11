@@ -1067,6 +1067,9 @@ step "내비 무게" uv run python tools/naviweight.py --build
 scope "web/navi/src/* web/navi/test/* tools/*"
 # asks: 번들에서 시험이 이름으로도 안 부르는 순수 함수가 몇인가
 step "내비 시험 분모" uv run python tools/navicov.py
+scope "src/firelane/* tests/*"
+# asks: 판정 폐포에서 시험이 이름으로도 안 부르는 순수 함수가 몇인가
+step "판정 시험 분모" uv run python tools/srccov.py
 # ★ 글자 파일이 지금 데이터에서 나왔는가. 새 글자가 데이터에 들어오면 운다 —
 #   **글자가 조용히 안 그려지는 것**은 화면에서 제일 알아채기 어려운 결함이다.
 scope "web/data/* web/fonts/* web/navi/scripts/*"

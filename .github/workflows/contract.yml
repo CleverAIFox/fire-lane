@@ -478,6 +478,8 @@ jobs:
         run: uv run python tools/naviweight.py
       - name: 내비 시험 분모 (미는 자가 없는 순수 함수)
         run: uv run python tools/navicov.py
+      - name: 판정 시험 분모 (미는 자가 없는 순수 함수)
+        run: uv run python tools/srccov.py
         env:
           GH_TOKEN: ${{ github.token }}
           CI: "1"

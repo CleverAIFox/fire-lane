@@ -76,21 +76,21 @@ SAMPLES = {
     "관리카드_지산2호_.pdf":
         ("safety", "safety_vehiclecard_jngj-donggu_20260904_jisan2.pdf"),
     "소방펌프차(KFS-1-0073-2025-00).hwp":
-        ("safety", "safety_kfs_pumptruck_20251224.hwp"),
+        ("safety", "safety_kfs_pumptruck_kr_20251224.hwp"),
     "소형사다리차(KFS-1-0030-2025-01).hwp":
-        ("safety", "safety_kfs_ladder_small_20251224.hwp"),
+        ("safety", "safety_kfs_ladder_small_kr_20251224.hwp"),
     "전남광주통합특별시_동구.zip":
         ("juso", "juso_elctrnmap_jngj_20260711.zip"),
     "동구_불법 주정차_20250226.csv":
-        ("gjcity", "gjcity_parking_enforce_dongu_20250226.csv"),
+        ("gjcity", "gjcity_parking_enforce_jngj-donggu_20250226.csv"),
     "동구_불법 주정차 단속현황_20240108.csv":
-        ("gjcity", "gjcity_parking_enforce_dongu_20240108.csv"),
+        ("gjcity", "gjcity_parking_enforce_jngj-donggu_20240108.csv"),
     "동구_가로등현황_20240415.csv":
-        ("gjcity", "gjcity_streetlight_dongu_20240415.csv"),
+        ("gjcity", "gjcity_streetlight_jngj-donggu_20240415.csv"),
     "2MAP1000_SHP_광주_동구.zip":
-        ("vworld", "vworld_map1k_gjdonggu_20260307.zip"),
+        ("vworld", "vworld_map1k_jngj-donggu_20260307.zip"),
     "내역서.csv":
-        ("its", "its_nodelink_changelog_20260812.csv"),
+        ("its", "its_nodelink_changelog_kr_20260812.csv"),
     # ── 2026-09-06 확보분 일곱 ───────────────────────────────
     # ★ 하이픈 스코프가 여기 처음 들어온다. 통과 규칙 사본이 09-03 부터
     #   `[a-z0-9_]` 로 남아 있어 멱등 검사가 이것으로 터졌다.
@@ -317,3 +317,105 @@ def test_the_four_new_sources_get_placed_by_name():
     assert not bad, ("새 원천의 이름 규칙이 어긋난다:\n    " + "\n    ".join(bad)
                      + "\n  대장에 자리를 만들면서 **이름 규칙을 같이 짠다** — "
                        "자리만 만들면 반입이 영영 안 선다(§428).")
+
+
+# ── 템플릿이 **실물과 같은 자리를 말하는가** (DECISIONS §494) ──
+# ★ 이 파일은 2026-08-24 에 「규칙이 대문자라 안 걸렸다」로 태어났고 머리말에
+#   **「측정은 하는데 대조가 없다」**고 적었다. 그런데 바로 그 병이 이 파일에
+#   남아 있었다 — `SAMPLES` 는 **손으로 적은 기댓값**이고, 규칙을 고칠 때
+#   같이 고치니까 둘은 **언제나 맞는다.** 규칙의 사본을 규칙과 대조한 셈이다.
+#
+#   2026-10-12 에 처음 실물과 대조했더니 **템플릿 48 중 24** 가 raw 의 실제
+#   이름과 달랐다. 전부 2026-08~09 의 개명(스코프 별칭·도엽→part)이 규칙에
+#   **안 따라온** 것이다. 다시 받으면 전부 **딴 자리**에 떨어진다 —
+#
+#       vworld_map1k*       대장 글롭이 `_jngj-donggu_` 를 콕 집는다 → 못 집는다
+#                           (폭 주 소스 74+143 도엽이 여기 매달려 있다)
+#       eais_bldg_ledger    대장이 **폐기**한 자산을 다시 끌어온다. 그리고
+#                           폐기 관문은 옛 토큰 때문에 **눈을 감고 있었다**
+#       gjcity_parking      대장이 둘로 쪼갠 자산의 옛 이름. 아무도 안 기다린다
+#
+# ★ 그래서 자를 바꾼다. 기댓값을 손으로 적지 않고 **`data/_acquire.json`**
+#   (raw 실물의 sha 대장)에서 가져온다. 사람이 적는 표는 「제공기관이 주는
+#   이름」(`SAMPLES`) 쪽에만 남는다 — 그것은 밖에서 오는 사실이라 적을 수밖에
+#   없고, 「우리가 두는 자리」는 **실물에서 유도된다.**
+#
+#: 아직 raw 에 없는 자산의 템플릿. **사유 없이 넣지 않는다**(§69).
+#  새 규칙은 받아서 `_acquire.json` 에 등재한 뒤에 둔다 — 못 받은 것을
+#  규칙으로 먼저 적으면 그 규칙이 맞는지 아무도 모른다.
+NOT_IN_RAW_YET: dict[str, str] = {}
+
+
+def _acquired() -> list[str]:
+    import json
+    f = ROOT / "data" / "_acquire.json"
+    return sorted(json.loads(f.read_text(encoding="utf-8"))["files"])
+
+
+def _template_rx(tmpl: str) -> re.Pattern[str]:
+    """`{0}` 자리표를 **무엇이든 하나**로 바꾼 정규식. 템플릿이 낼 수 있는 이름."""
+    return re.compile("^" + "(.+?)".join(
+        re.escape(x) for x in re.split(r"\{\d*\}", tmpl)) + "$")
+
+
+def test_every_rule_places_a_file_where_raw_already_has_one():
+    """★ 본체. 템플릿이 **raw 에 있는 그 이름**을 낼 수 있는가."""
+    raw = _acquired()
+    assert len(raw) > 50, (
+        f"_acquire.json 이 {len(raw)}건만 든다 — 이 검사가 빈 그물이 됐다")
+    bad = []
+    for _pat, folder, tmpl in N.RULES:
+        if tmpl is None or tmpl in NOT_IN_RAW_YET:
+            continue
+        rx = _template_rx(tmpl)
+        if any(p.startswith(folder + "/") and rx.match(p.split("/", 1)[1])
+               for p in raw):
+            continue
+        head = "_".join(tmpl.split("_")[:2])
+        fam = [p for p in raw if p.startswith(f"{folder}/{head}")]
+        bad.append(f"  {folder}/{tmpl}\n      raw 의 같은 족 — {fam[:2] or '없음'}")
+    assert not bad, (
+        "규칙이 두는 자리가 raw 의 실물 이름과 다르다. 다시 받으면 **딴 자리**에 "
+        "떨어지고, 대장 글롭은 그것을 못 집는다.\n" + "\n".join(bad)
+        + "\n  고치는 쪽은 규칙이다 — raw 와 대장이 정본이다(§18-3)."
+        + "\n  아직 못 받은 자산이면 NOT_IN_RAW_YET 에 **사유와 함께** 적어라.")
+
+
+def test_the_comparison_is_not_a_tautology():
+    """★ **카나리아.** 자리표 때문에 아무 이름이나 맞는 것이 아니다.
+
+    `{0}` 을 `(.+?)` 로 바꾸므로, 템플릿이 느슨하면 이 검사는 전부 초록이
+    된다. 합성 위반 둘로 그물이 살아 있는지 민다 — 하나는 스코프가 낡은
+    꼴(실제로 걸렸던 것)이고, 하나는 자리표만 남긴 꼴이다.
+    """
+    raw = _acquired()
+    for bad_tmpl in ("gjcity_parking_enforce_dongu_{0}.csv",
+                     "safety_kfs_pumptruck_20251224.{0}",
+                     "{0}"):
+        rx = _template_rx(bad_tmpl)
+        hits = [p for p in raw if rx.match(p.split("/", 1)[1])]
+        if bad_tmpl == "{0}":
+            assert hits, "`{0}` 단독이 아무것도 안 맞는다 — 정규식이 죽었다"
+        else:
+            assert not hits, f"{bad_tmpl} 를 실물로 센다 — 그물이 너무 느슨하다"
+
+
+def test_no_rule_places_a_file_at_a_legacy_scope_token():
+    """★ 축 하나를 따로 든다 — **옛 스코프 토큰**을 두는 규칙이 없는가.
+
+    위의 실물 대조는 「아직 안 받은 자산」에서 비게 된다. 이 자는 raw 가
+    없어도 돈다 — 토큰 어휘는 `firelane.scope` 가 들고 있다.
+    """
+    from firelane import scope as sc
+
+    bad = []
+    for _pat, folder, tmpl in N.RULES:
+        if tmpl is None:
+            continue
+        for tok in tmpl.rsplit(".", 1)[0].split("_"):
+            if tok in sc.LEGACY:
+                bad.append(f"  {folder}/{tmpl}  — {tok!r} → {sc.LEGACY[tok]!r}")
+    assert not bad, (
+        "규칙이 옛 스코프 토큰 자리에 파일을 둔다.\n" + "\n".join(bad)
+        + "\n  ★ 토큰이 낡으면 **폐기 관문도 눈을 감는다** — 폐기 파일명은"
+        "\n    정규 토큰이라 템플릿 정규식이 안 맞는다(§494 가 그 자리다).")

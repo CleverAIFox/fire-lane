@@ -129,6 +129,80 @@ def test_wildcard_rejected_in_parse():
         nm.parse("safety_kfs_pumptruck_kr_20251224.*")
 
 
+# ── 한글 판별 · 토큰 제안 (DECISIONS §493) ────────────────────
+# ★ `has_hangul` · `slugify` 를 **시험이 이름으로도 안 부르고 있었다**
+#   (`tools/srccov.py` 가 셌다). 둘은 파일명 관문의 입구이고, 느슨해지면
+#   관문이 조용히 통과시킨다.
+def test_decomposed_hangul_is_hangul():
+    """★ NFD(자모 분해)도 한글이다 — 맥OS·일부 zip 이 그렇게 적는다.
+
+    종전에는 `[가-힣]` 로 받은 글자를 그대로 봐서 분해본이 **하나도 안
+    걸렸다.** 문법은 뒤에서 막았지만(아스키만 받는다) 나오는 말이
+    「dataset 이 문법 밖이다」였고, 그 말로는 무엇을 해야 하는지 모른다.
+    """
+    import unicodedata
+
+    nfd = unicodedata.normalize("NFD", "한글")
+    assert len(nfd) == 6, "전제 — NFD 가 실제로 자모로 쪼개졌다"
+    assert nm.has_hangul(nfd), "분해된 한글을 한글로 안 센다"
+    # ★ 관문이 **옳은 말**을 하는가. 아스키 정규식이 뒤에서 막는 것과 다르다
+    with pytest.raises(nm.NameError_, match="한글"):
+        nm.parse(f"safety_{nfd}_jngj_20260101.csv")
+
+
+def test_lone_jamo_counts_as_hangul():
+    """낱자도 한글이다. 자료제공 파일명에 절판 표지로 실제로 들어온다."""
+    for ch in ("ㄱ", "ㅎ", "ㅏ", "ㅣ"):
+        assert nm.has_hangul(f"a{ch}b"), f"{ch!r} 를 한글로 안 센다"
+
+
+def test_the_hangul_ruler_is_one():
+    """★ 한글 자가 **한 벌인가.** 두 벌이면 한쪽만 넓어지는 날이 온다."""
+    for ch in ("가", "힣", "ㄱ", "ㅎ", "ㅏ", "ㅣ"):
+        assert bool(nm._HANGUL.search(ch)) == bool(enc.HANGUL.search(ch)), (
+            f"{ch!r} 를 naming 과 encoding 이 다르게 센다")
+
+
+def test_ascii_is_not_hangul():
+    """★ 음성 — 아스키·한자·전각을 한글로 세면 정상 파일이 막힌다."""
+    for t in ("safety_cctv_jngj", "", "123", "漢字", "ＡＢＣ"):
+        assert not nm.has_hangul(t), f"{t!r} 를 한글로 센다"
+
+
+def test_slugify_suggests_a_token_and_does_not_romanize():
+    """★ 음역하지 않는다 — 머리말이 적은 그 선택을 못박는다.
+
+    `소방펌프차` → `sobangpeompeuca` 가 되면 대장의 `kfs_pumptruck` 과
+    아무 관계 없는 이름이 생긴다. 그래서 **한글을 그대로 둔다**.
+    """
+    assert nm.slugify("소방펌프차 현황(2026)") == "소방펌프차_현황"
+    assert nm.slugify("  Road Ledger v2.1 .csv ") == "road_ledger_v2_1_csv"
+    # NFKC — 전각·동글이숫자를 모은다
+    assert nm.slugify("ＣＣＴＶ") == "cctv"
+    assert nm.slugify("①번") == "1번"
+
+
+def test_slugify_output_is_only_a_proposal():
+    """★ **제안은 문법이 아니다.** 한글이 남은 제안은 그대로 쓰면 막힌다.
+
+    이것이 결함이 아니라 설계다(사람이 정한다 — 머리말). 그러나
+    **자동 채택하는 호출부가 생기면** 그 호출부가 `parse` 에서 운다.
+    그 꼴을 여기 적어 둔다.
+    """
+    tok = nm.slugify("소방펌프차")
+    assert nm.has_hangul(tok), "전제 — 제안에 한글이 남는다"
+    with pytest.raises(nm.NameError_, match="한글"):
+        nm.parse(f"safety_{tok}_kr_20251224.hwp")
+
+
+def test_slugify_never_leaves_edge_underscores():
+    """`_` 로 시작·끝나는 토큰은 `DATASET_RE` 가 막는다. 제안이 만들지 않는다."""
+    for t in ("(2026)", "___", "", " - - ", "...csv"):
+        g = nm.slugify(t)
+        assert g == g.strip("_"), f"{t!r} → {g!r}"
+        assert "__" not in g, f"{t!r} → {g!r}"
+
+
 # ── 확장자 ────────────────────────────────────────────────────
 def test_ext_alias():
     assert nm.normalize_ext("a_b_kr_2020.JPEG") == "a_b_kr_2020.jpg"
@@ -166,6 +240,37 @@ def _w(tmp_path, name, data: bytes):
     p = tmp_path / name
     p.write_bytes(data)
     return p
+
+
+def test_bom_order_puts_utf32_before_utf16():
+    """★ `BOMS` 의 **순서가 판정이다.** 뒤집히면 UTF-32 가 UTF-16 이 된다.
+
+    UTF-32LE 의 BOM 은 `ff fe 00 00` 이고 그 앞 두 바이트가 곧 UTF-16LE
+    의 BOM 이다. `sniff_bom` 은 사전 순서대로 훑으므로 **긴 것이 먼저**
+    있어야 한다. 사전 리터럴을 보기 좋게 다시 늘어놓는 날, 그 한 줄이
+    UTF-32 파일을 UTF-16 으로 읽게 만든다 — 디코드가 **성공**하고
+    (널 바이트가 글자로 섞인다) 아무도 안 운다.
+    """
+    assert enc.sniff_bom(b"\xff\xfe\x00\x00abcd") == "utf-32"
+    assert enc.sniff_bom(b"\x00\x00\xfe\xffabcd") == "utf-32"
+    assert enc.sniff_bom(b"\xff\xfea\x00b\x00") == "utf-16"
+    assert enc.sniff_bom(b"\xfe\xff\x00a\x00b") == "utf-16"
+    assert enc.sniff_bom(b"\xef\xbb\xbf\xec\x9c\x84\xeb\x8f\x84") == "utf-8-sig"
+
+
+def test_sniff_bom_is_silent_without_a_bom():
+    """★ 음성 — BOM 이 없으면 `None` 이다. 추측하지 않는다."""
+    for head in (b"", b"a", b"\xff", b"\x00\x00", b"\xec\x9c\x84",
+                 b"PK\x03\x04", b"%PDF-1.4"):
+        assert enc.sniff_bom(head) is None, f"{head!r} 에 BOM 이 있다고 한다"
+
+
+def test_sniff_bom_names_a_codec_python_knows():
+    """★ 낸 이름을 `detect` 가 **그대로 디코드에 쓴다**. 오타가 있으면 터진다."""
+    import codecs
+
+    for name in set(enc.BOMS.values()):
+        codecs.lookup(name)       # 모르는 이름이면 LookupError
 
 
 def test_utf8_detected(tmp_path):
@@ -406,3 +511,52 @@ def test_observation_mode_keeps_only_non_mutating_steps():
         f"관측 단계 구성이 바뀌었다: {[s.name for s in obs]}")
     for s in obs:
         assert "--yes" not in s.argv(True), f"{s.name} 이 파괴 인자를 받는다"
+
+
+def test_the_syntax_allows_three_vintage_forms_but_the_norm_gate_takes_only_eight():
+    """★ **선언 둘이 다른 수를 말한다** — 적어 두고 실물로 붙든다 (§494-5).
+
+        `firelane.naming` 머리말 ·`VINTAGE_RE`   YYYYMMDD | YYYYMM | YYYY
+        `layers.norm.naming`(`providers.pattern_file`)  `\\d{8}` **만**
+        MASTER §18-2b 의 토큰표                 「**8자리**」
+
+    셋 중 둘이 8 이고 하나가 셋을 받는다. 지금 실물은 **전부 8자리**라
+    (`_acquire.json` 89건 · 대장 글롭 전건) 어긋남이 **잠복**해 있다 —
+    월 단위로만 내는 원천이 처음 오는 날 깨어난다. 실제로 `RULES` 는 그
+    자리를 이미 **01 로 채워서** 8자리를 만든다(`juso_adrdc_kr_{0}01.zip`).
+
+    ★ 여기서 문법을 조이지 않는다. `naming` 이 raw 쪽에서 세 꼴을 받는 것은
+      머리말이 **일부러** 적어 둔 선택이고, 그것을 밤에 혼자 뒤집으면
+      「왜 받게 해 뒀나」가 사라진다. 대신 **두 선언의 차이를 못박는다** —
+      월 단위 원천이 오면 이 시험이 그 자리를 가리킨다.
+    """
+    import re as _re
+
+    from firelane import providers
+
+    # ① 문법은 세 꼴을 받는다
+    for v in ("20260630", "202606", "2026"):
+        assert nm.parse(f"safety_cctv_jngj_{v}.csv").vintage == v
+
+    # ② norm 관문은 8자리만 받는다 — 같은 이름 셋 중 하나만 통과한다
+    rx = _re.compile(providers.pattern_file())
+    passed = [v for v in ("20260630", "202606", "2026")
+              if rx.match(f"safety/safety_cctv_jngj_{v}.csv")]
+    assert passed == ["20260630"], f"관문이 받는 꼴이 바뀌었다 — {passed}"
+
+    # ③ 그래서 지금 실물은 전부 8자리여야 한다. 하나라도 아니면 그 파일이
+    #    문법은 통과하고 **관문에서 막힌다** — 이 차이가 깨어난 순간이다
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    raw = json.loads((root / "data/_acquire.json").read_text(encoding="utf-8"))["files"]
+    assert raw, "실물 목록이 비었다 — 이 검사가 빈 그물이 됐다"
+    short = [p for p in sorted(raw)
+             if not _re.search(r"_\d{8}(?=[._])", p.rsplit("/", 1)[-1])]
+    assert not short, (
+        "vintage 가 8자리가 아닌 실물이 생겼다 — **잠복한 어긋남이 깨어났다**:\n  "
+        + "\n  ".join(short)
+        + "\n  ★ 셋 중 하나를 고쳐야 한다 — 문법을 조이거나(8자리만),"
+        "\n    관문을 넓히거나(`\\d{4,8}`), 반입이 01 로 채우거나."
+        "\n    `RULES` 는 이미 세 번째를 한다(`juso_adrdc_kr_{0}01.zip`).")

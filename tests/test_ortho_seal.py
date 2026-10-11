@@ -86,3 +86,81 @@ def test_hashlib_is_used_not_a_weak_digest():
     src = (ROOT / "src" / "firelane" / "ortho.py").read_text(encoding="utf-8")
     assert "hashlib.sha256()" in src and "md5" not in src
     assert o is not None
+
+
+# ── 도엽 원점 — 시험이 이름을 안 부르고 있었다 (DECISIONS §493) ───
+# ★ `sheet_origin_5186` 은 정사영상 넉 장(1.25GB)이 **지도 위 어디에 놓이는가**를
+#   혼자 정한다. 틀리면 배경이 통째로 몇십 m 밀리고, 타일은 정상으로 보인다 —
+#   배경이 밀렸다는 것은 **다른 레이어와 겹쳐 봐야** 보이고 그것은 사람 눈이다.
+#   §473 이 상수에서 당한 그 꼴이라 자를 밖에서 댄다.
+def _sheet_bounds(key: str):
+    """도엽 bbox 를 5186 으로 옮긴 경계. **함수가 쓰는 것과 같은 길로** 낸다."""
+    import geopandas as gpd
+
+    o = _mod()
+    b = o.SHEET_5179[key]
+    return gpd.GeoSeries.from_wkt(
+        [f"POLYGON(({b[0]} {b[1]},{b[2]} {b[1]},{b[2]} {b[3]},"
+         f"{b[0]} {b[3]},{b[0]} {b[1]}))"],
+        crs=5179).to_crs(o.ORTHO_CRS).total_bounds
+
+
+def test_the_pixel_is_gsd_and_the_image_is_north_up():
+    """화소 크기가 `GSD` 이고 **y 가 음수**다 — 양수면 영상이 뒤집힌다."""
+    o = _mod()
+    a = o.sheet_origin_5186(sorted(o.SHEET_5179)[0], 9232, 11194)
+    assert a.a == o.GSD and a.e == -o.GSD, f"{a.a} · {a.e}"
+    assert a.b == 0 and a.d == 0, "회전·전단이 들어갔다"
+
+
+def test_the_image_centre_is_the_sheet_centre():
+    """★ 본체. 영상이 도엽보다 커도 **가운데가 같다** — 그것이 '사방으로 민다'다.
+
+    수를 손으로 적지 않는다. 도엽 경계에서 **유도한다** — 적으면 그 수가
+    둘째 정의가 되고, 둘이면 어긋난다(§18-3).
+    """
+    o = _mod()
+    bad = []
+    for key in sorted(o.SHEET_5179):
+        box = _sheet_bounds(key)
+        for w, h in ((9232, 11194), (14000, 14000), (9232, 14000)):
+            a = o.sheet_origin_5186(key, w, h)
+            cx = a.c + w * o.GSD / 2
+            cy = a.f - h * o.GSD / 2
+            if abs(cx - (box[0] + box[2]) / 2) > 1e-6 or \
+                    abs(cy - (box[1] + box[3]) / 2) > 1e-6:
+                bad.append(f"{key} {w}x{h}: 중심 ({cx:.3f}, {cy:.3f}) ≠ "
+                           f"({(box[0]+box[2])/2:.3f}, {(box[1]+box[3])/2:.3f})")
+    assert not bad, "영상 중심이 도엽 중심과 다르다 — 배경이 그만큼 밀린다\n  " \
+        + "\n  ".join(bad)
+
+
+def test_an_image_exactly_the_sheet_size_gets_no_padding():
+    """도엽 크기만큼이면 여백이 **0** 이다 — 좌상단이 도엽 경계 그대로다."""
+    o = _mod()
+    key = sorted(o.SHEET_5179)[0]
+    box = _sheet_bounds(key)
+    w = round((box[2] - box[0]) / o.GSD)
+    h = round((box[3] - box[1]) / o.GSD)
+    a = o.sheet_origin_5186(key, w, h)
+    assert abs(a.c - box[0]) < o.GSD, f"{a.c} ≠ {box[0]}"
+    assert abs(a.f - box[3]) < o.GSD, f"{a.f} ≠ {box[3]}"
+
+
+def test_a_bigger_image_pushes_the_origin_outward_by_half_the_surplus():
+    """★ 여백이 **절반**인가. 전부를 한쪽에 주면 영상이 도엽 크기만큼 밀린다."""
+    o = _mod()
+    key = sorted(o.SHEET_5179)[0]
+    a = o.sheet_origin_5186(key, 9232, 11194)
+    b = o.sheet_origin_5186(key, 9232 + 800, 11194 + 800)
+    assert abs((a.c - b.c) - 800 * o.GSD / 2) < 1e-9, "x 여백이 절반이 아니다"
+    assert abs((b.f - a.f) - 800 * o.GSD / 2) < 1e-9, "y 여백이 절반이 아니다"
+
+
+def test_an_unknown_sheet_is_refused_not_guessed():
+    """★ 모르는 도엽에 **원점을 지어주지 않는다.**"""
+    import pytest
+
+    o = _mod()
+    with pytest.raises(KeyError):
+        o.sheet_origin_5186("999", 100, 100)
