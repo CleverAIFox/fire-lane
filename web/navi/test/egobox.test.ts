@@ -14,6 +14,7 @@
 import { test, ok } from "./harness";
 import fleetJson from "../../data/fleet.json";
 import { egoBox, egoFeature } from "../src/domain/egobox";
+import { MX, MY } from "../src/domain/geo";
 import { requiredWidth } from "../src/domain/vehicle";
 import type { Fleet, VehicleSpec } from "../src/domain/types";
 
@@ -27,13 +28,22 @@ const SPEC: VehicleSpec = {
 };
 
 const LON = 126.9266, LAT = 35.1512;
-const R = 6378137;
-const M_LAT = (Math.PI * R) / 180;
-const M_LON = M_LAT * Math.cos((LAT * Math.PI) / 180);
 
-/** 두 꼭짓점 사이 거리(m). 국소 평면 — 차 한 대 크기라 충분하다. */
+/**
+ * 두 꼭짓점 사이 거리(m). 국소 평면 — 차 한 대 크기라 충분하다.
+ *
+ * ★ 2026-10-11 (DECISIONS §473). 이 시험이 **제 상수를 들고 있었다** —
+ *   적도 반지름에서 낸 위도 1도(111,319.5)다. `egobox.ts` 도 같은 수를
+ *   들고 있었으므로 **두 오차가 상쇄돼 「전장 8.00m」 가 통과했다.**
+ *   코드만 정본으로 고치자 그 자리에서 8.054 가 나왔고, 그것이 이 시험이
+ *   **재는 자가 아니라 같은 자였다**는 증거다. 정본을 든다.
+ *
+ * ★ 그러면 이 시험은 「`geo.ts` 의 상수가 맞는가」를 못 묻는다 — 맞다.
+ *   그 물음은 `tests/test_localplane.py` 가 `pyproj` 로 든다. 여기서
+ *   묻는 것은 **「상자가 앱이 쓰는 평면에서 제원 크기인가」**다.
+ */
 function dist(a: [number, number], b: [number, number]): number {
-  const dx = (a[0] - b[0]) * M_LON, dy = (a[1] - b[1]) * M_LAT;
+  const dx = (a[0] - b[0]) * MX, dy = (a[1] - b[1]) * MY;
   return Math.hypot(dx, dy);
 }
 
@@ -68,7 +78,7 @@ test("방위 0 은 북쪽을 향한다 — 앞 중점이 북에 있다", () => {
   const frontY = (b.ring[0][1] + b.ring[1][1]) / 2;
   const backY = (b.ring[2][1] + b.ring[3][1]) / 2;
   ok(frontY > backY, "방위 0 인데 앞이 북쪽이 아니다");
-  ok(Math.abs((frontY - backY) * M_LAT - pump.length_m!) < 0.02, "전장이 안 맞는다");
+  ok(Math.abs((frontY - backY) * MY - pump.length_m!) < 0.02, "전장이 안 맞는다");
 });
 
 test("방위 90 은 동쪽을 향한다", () => {
@@ -76,7 +86,7 @@ test("방위 90 은 동쪽을 향한다", () => {
   const frontX = (b.ring[0][0] + b.ring[1][0]) / 2;
   const backX = (b.ring[2][0] + b.ring[3][0]) / 2;
   ok(frontX > backX, "방위 90 인데 앞이 동쪽이 아니다");
-  ok(Math.abs((frontX - backX) * M_LON - pump.length_m!) < 0.02, "전장이 안 맞는다");
+  ok(Math.abs((frontX - backX) * MX - pump.length_m!) < 0.02, "전장이 안 맞는다");
 });
 
 test("방위를 돌려도 치수는 안 변한다", () => {

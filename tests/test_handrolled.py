@@ -71,7 +71,11 @@ SITES: dict[str, dict] = {
                " (DECISIONS §470-2)",
     },
     "국소 평면 근사": {
-        "mark": r"^MY = 110_574",
+        # ★ 2026-10-11 (DECISIONS §473). 표식이 `^MY = 110_574` 였고 그 수가
+        #   **틀린 수**였다. 표식을 **값이 아니라 이름**으로 바꾼다 — 값에
+        #   걸면 그 값을 고칠 때마다 선언이 낡고, 그러면 사람이 선언을
+        #   고치면서 사유도 같이 지운다.
+        "mark": r"^MY = [\d.]+",
         "where": "src/firelane/localplane.py",
         "moved": False,
         "dep": "pyproj",

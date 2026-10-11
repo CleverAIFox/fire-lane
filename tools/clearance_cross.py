@@ -68,8 +68,9 @@ import statistics
 import sys
 from pathlib import Path
 
-# ★ 좌표 상수의 집은 `tools/localgeo.py` 하나다(§239). 여기 다시 적으면
-#   같은 사실이 두 집에 살고 그 둘은 반드시 갈린다.
+# ★ 좌표 상수의 집은 `src/firelane/localplane.py` 하나다(§239 → §469 → §473).
+#   여기 다시 적으면 같은 사실이 두 집에 살고 그 둘은 반드시 갈린다.
+#   `localgeo` 는 이름만 넘기는 막이다.
 from localgeo import MX, MY
 
 # ★ 사분위와 결측 읽기의 집은 `tools/statkit.py` 하나다(§379-9).
@@ -92,7 +93,16 @@ SPAN_OVERSHOOT = 148
 #: 0 이 아닌 것은 결함이 아니라 **다른 폴리곤에서 왔다는 증거**이고, 이 수는
 #: 그 어긋남의 크기다 — 판정은 `ngii1k`·`ngii`·`실폭도로` 셋을 신뢰도 순으로
 #: 쓰고 여기가 읽는 것은 발행된 `road_area` 하나다. 늘면 둘이 더 갈린 것이다.
-SPAN_INVERSION = 326
+# ★ 2026-10-11 — 326 → **334** (DECISIONS §473). **자를 고쳤다.** 이 도구는
+#   발행물을 `localplane` 의 상수로 평면에 올려 재는데, 그 상수가 틀려 있었다
+#   (위도 1도를 **적도 값**으로 썼다 — 3.3km 에서 11m). 상수를 `pyproj` 실측으로
+#   고치자 내접원이 0.2~0.33% 커지고, 문턱 근처 **여덟 구간**이 역전으로 넘어왔다.
+#   ★ **새로 생긴 어긋남이 아니다** — 옛 자가 못 본 것이다. 올려 적는 것이
+#     맞고, 내리는 길은 폭 산출을 고치는 것이다(측정 배치).
+#   ★ `SPAN_OVERSHOOT` 는 **148 그대로다** — 그쪽은 같은 평면에서 두 수를
+#     서로 대므로 평면 배율이 양쪽에 같이 들어간다. 한쪽만 움직인 것이
+#     이 수가 맞다는 증거다.
+SPAN_INVERSION = 334
 
 RATCHETS = {"SPAN_OVERSHOOT": "down", "SPAN_INVERSION": "down"}
 

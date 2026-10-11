@@ -249,12 +249,36 @@ SPEC: dict[str, dict] = {
         #   정본 110,574 · `publish_context` 110,540 · `navicheck`/`desk_check`
         #   111,320(경도 미터를 위도에 썼다). 0.67% 라 판정이 안 뒤집히고,
         #   그래서 아무도 안 울었다. 안 보는 수는 반드시 갈린다.
-        "owner": {"file": "src/firelane/localplane.py", "regex": r"^MY = ([\d_]+)"},
-        "consumers": [],
-        "scan": ["tools/*.py", "src/firelane/**/*.py"],
+        # ★ 2026-10-11 (DECISIONS §473). 분모가 **파이썬뿐**이었다. 브라우저
+        #   번들이 같은 상수를 **네 벌** 들고 있었고(110,574 · 110,540 ·
+        #   적도 반지름에서 111,319.5 · 111,320) 넷 다 틀렸다. §469 의 문이
+        #   TS 를 안 보고 있었다 — 같은 병의 한 축 더 밖이다.
+        #   ★ 번들은 `src` 를 import 할 수 없으므로 **수가 두 벌인 것은 결정**
+        #     이다. 이 문은 「목록 밖에 또 있나」를 들고, 둘이 같은 수인지는
+        #     `tests/test_localplane.py` 가 `geo.ts` 를 열어 든다.
+        "owner": {"file": "src/firelane/localplane.py", "regex": r"^MY = (\d+)"},
+        "consumers": [{"file": "web/navi/src/domain/geo.ts",
+                       "has": "export const MY = {v};"}],
+        "scan": ["tools/*.py", "src/firelane/**/*.py", "web/navi/src/**/*.ts"],
         "exclusive": True,
         "code_only": True,
         "near": r"MY|위도|lat|dlat",
+    },
+    "local_mx": {
+        "what": "경도 1도의 미터(국소 평면 근사 · 기준점에서). `pyproj` 실측 91,120.151",
+        # ★ 2026-10-11 (DECISIONS §473). 이 수도 **감시 밖**이었다 — §469 가
+        #   `MY` 를 세울 때 `MX` 는 「공식이니 괜찮다」로 뒀다. 그 공식
+        #   (`111,320 × cos`)이 회전타원체를 구로 봐서 0.111% 작았고, 번들은
+        #   그 공식을 **점마다 다시 켜는** 변종까지 들고 있었다.
+        #   사실 하나를 세울 때 그 사실의 **식구**를 같이 보지 않으면 가장
+        #   쉬운 수만 지켜진다 — §469-2 가 적은 그것이 한 번 더 났다.
+        "owner": {"file": "src/firelane/localplane.py", "regex": r"^MX = (\d+)"},
+        "consumers": [{"file": "web/navi/src/domain/geo.ts",
+                       "has": "export const MX = {v};"}],
+        "scan": ["tools/*.py", "src/firelane/**/*.py", "web/navi/src/**/*.ts"],
+        "exclusive": True,
+        "code_only": True,
+        "near": r"MX|경도|lon|dlon",
     },
     "em_narrow": {
         "what": "넓지 않은 글자 한 자의 폭(em 어림). **공백도 이 값이다** — 보수적으로 센다",

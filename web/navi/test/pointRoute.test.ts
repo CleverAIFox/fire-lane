@@ -80,9 +80,14 @@ test("구간 한가운데 → 구간 한가운데 — 짧은 쪽 · 부분 두 �
   ok(ids(p) === "e0,e1" && near(p.lengthM, 90, 1e-6), `${ids(p)} ${p.lengthM}`);
   ok(p.edges.every((e) => e.clip), "두 끝 구간이 다 잘려야 한다");
   // 진행 — 스냅 progress 는 원본 구간 비율이다
-  ok(near(progressAlongRoute(p, { seg_uid: "e0", progress: 0.4 })!, 0, 1e-9), "출발점 진행이 0 이 아니다");
-  ok(near(progressAlongRoute(p, { seg_uid: "e0", progress: 0.7 })!, 30, 1e-9), "첫 구간 진행이 틀렸다");
-  ok(near(progressAlongRoute(p, { seg_uid: "e1", progress: 0.15 })!, 75, 1e-9), "끝 구간 진행이 틀렸다");
+  // ★ 2026-10-11 (DECISIONS §473). 허용폭이 **1e-9** 였고 그것은 옛 평면
+  //   상수에서 우연히 맞던 수다. 이 픽스처는 선언 길이(100m)와 형상 길이
+  //   (0.001도 × MX)가 다르므로 비율 환산에 부동소수 찌꺼기가 남는다 —
+  //   상수를 실측으로 고치자 1.2e-9 가 됐다. **1e-6 은 1마이크로미터**이고,
+  //   이 시험이 묻는 「진행이 30m 인가」에 1e-9 를 요구할 이유가 없었다.
+  ok(near(progressAlongRoute(p, { seg_uid: "e0", progress: 0.4 })!, 0, 1e-6), "출발점 진행이 0 이 아니다");
+  ok(near(progressAlongRoute(p, { seg_uid: "e0", progress: 0.7 })!, 30, 1e-6), "첫 구간 진행이 틀렸다");
+  ok(near(progressAlongRoute(p, { seg_uid: "e1", progress: 0.15 })!, 75, 1e-6), "끝 구간 진행이 틀렸다");
 });
 
 test("같은 구간 안 — 구간을 따라 곧장 (양방향)", () => {
