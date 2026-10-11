@@ -32,9 +32,16 @@ import sys
 from pathlib import Path
 
 import pytest
-import yaml
+
+from firelane import ledger
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# ★ 2026-10-12 (DECISIONS §485). **`yaml` 을 직접 안 들인다.** 실물 대장은
+#   `firelane.ledger.load()` **한 문**으로 읽고(§173-4 ② · `test_lake.py` 가
+#   그 수를 래칫으로 든다), 합성 대장은 **글자로** 본다 — 이 시험이 묻는 것이
+#   「글자를 어떻게 고치나」라서 글자가 더 맞는 자다. 파싱이 성립하는가는
+#   `check()` 가 안에서 파싱하므로 **그것을 불러** 묻는다.
 
 
 @pytest.fixture
@@ -79,6 +86,14 @@ def _led(tmp_path: Path, text: str = LEDGER) -> Path:
     p = tmp_path / "sources.yaml"
     p.write_text(text, encoding="utf-8")
     return p
+
+
+def _body(lf, path: Path, key: str) -> str:
+    """항목 하나의 본문 글자. ★ 그 도구의 `_entry_span` 으로 자른다 —
+    자르는 자를 시험이 다시 적으면 둘이 갈린다(이 저장소의 그 병)."""
+    _st, _en, body = lf._entry_span(path.read_text(encoding="utf-8"), key)
+    assert body, f"`{key}` 항목을 못 찾았다 — 합성 대장이 바뀌었다"
+    return body
 
 
 # ── ① 역방향 관문 — 폐기된 별칭이 되살아났는가 ─────────────────
@@ -144,7 +159,7 @@ def test_the_scan_covers_every_block_that_names_files(lf):
     분모를 넓게 잡으면 그 시험이 거짓으로 울고, 거짓으로 우는 문은
     안 우는 문보다 나쁘다(§473).
     """
-    led = yaml.safe_load(lf.load())
+    led = ledger.load()
     bearing = set()
     for k, v in led.items():
         if not isinstance(v, dict) or not v:
@@ -161,7 +176,7 @@ def test_the_scan_covers_every_block_that_names_files(lf):
 def test_no_scanned_block_is_a_dead_declaration(lf):
     """★ 반대쪽(§370) — `SCAN_BLOCKS` 에 적힌 이름이 실물에 **있는가.**
     없는 이름은 죽은 선언이고, 죽은 선언은 「본다」는 거짓 신호다."""
-    led = yaml.safe_load(lf.load())
+    led = ledger.load()
     dead = [b for b in lf.SCAN_BLOCKS if b not in led]
     assert not dead, f"대장에 없는 블록을 훑는다고 적혀 있다 — {dead}"
 
@@ -179,11 +194,13 @@ def test_planning_changes_nothing(lf, tmp_path, capsys):
 def test_applying_merges_the_aliases(lf, tmp_path):
     p = _led(tmp_path)
     assert lf.run(apply=True, path=p) == 0
-    got = yaml.safe_load(p.read_text(encoding="utf-8"))["datasets"]["alpha_alias"]
-    assert got.get("acquired") == "2026-07-11", f"retrieved 가 안 옮겨졌다 — {got}"
-    assert "retrieved" not in got, "옛 이름이 남았다"
-    assert got.get("what") == "같은 뜻 다른 이름", f"desc 가 안 옮겨졌다 — {got}"
-    assert "desc" not in got, "옛 이름이 남았다"
+    body = _body(lf, p, "alpha_alias")
+    assert "acquired: '2026-07-11'" in body, f"retrieved 가 안 옮겨졌다\n{body}"
+    assert "retrieved:" not in body, "옛 이름이 남았다"
+    assert "what: 같은 뜻 다른 이름" in body, f"desc 가 안 옮겨졌다\n{body}"
+    assert "desc:" not in body, "옛 이름이 남았다"
+    # ★ 고친 글자가 **파싱되는가**는 그 도구의 문으로 묻는다
+    assert lf.check(p) == 0, "이관 뒤 대장이 폐기 별칭을 들고 있다"
 
 
 def test_applying_is_idempotent(lf, tmp_path):
@@ -207,9 +224,13 @@ def test_applying_keeps_the_comments(lf, tmp_path):
 
 
 def test_applying_leaves_parsable_yaml(lf, tmp_path):
+    """★ `run(apply=True)` 는 마지막에 **스스로 파싱해 본다**(즉시 검증).
+    그 자리가 사라지면 깨진 YAML 이 대장에 쓰인다 — 그래서 성공 반환이
+    곧 「파싱된다」이고, `check()` 가 한 번 더 같은 길을 지난다."""
     p = _led(tmp_path)
-    lf.run(apply=True, path=p)
-    assert yaml.safe_load(p.read_text(encoding="utf-8"))["datasets"]
+    assert lf.run(apply=True, path=p) == 0
+    assert lf.check(p) == 0
+    assert "datasets:" in p.read_text(encoding="utf-8")
 
 
 def test_a_missing_updated_is_filled_from_the_file_name(lf, tmp_path):
@@ -218,8 +239,8 @@ def test_a_missing_updated_is_filled_from_the_file_name(lf, tmp_path):
     txt = LEDGER.replace("    updated: '2026-07-11'\n", "", 1)
     p = _led(tmp_path, txt)
     lf.run(apply=True, path=p)
-    got = yaml.safe_load(p.read_text(encoding="utf-8"))["datasets"]["gamma_pure"]
-    assert got.get("updated") == "2026-07-11", f"파일명에서 안 채웠다 — {got}"
+    body = _body(lf, p, "gamma_pure")
+    assert "updated: '2026-07-11'" in body, f"파일명에서 안 채웠다\n{body}"
 
 
 def test_it_does_not_guess_a_date_that_is_not_there(lf, tmp_path):
@@ -228,8 +249,8 @@ def test_it_does_not_guess_a_date_that_is_not_there(lf, tmp_path):
     txt = txt.replace("safety/gamma_20260711.csv", "safety/gamma.csv")
     p = _led(tmp_path, txt)
     lf.run(apply=True, path=p)
-    got = yaml.safe_load(p.read_text(encoding="utf-8"))["datasets"]["gamma_pure"]
-    assert "updated" not in got, f"없는 날짜를 지어냈다 — {got}"
+    body = _body(lf, p, "gamma_pure")
+    assert "updated:" not in body, f"없는 날짜를 지어냈다\n{body}"
 
 
 def test_an_alias_whose_value_differs_is_left_to_a_person(lf, tmp_path, capsys):

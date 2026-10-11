@@ -46,6 +46,7 @@ PARAM NO_CANARY · EXEMPT
 from __future__ import annotations
 
 import ast
+import builtins
 import re
 from pathlib import Path
 
@@ -99,6 +100,70 @@ def touches(src: str, tree: ast.AST, tools: set[str]) -> set[str]:
     return mods & tools
 
 
+#: 내장 함수 이름. **쌍으로 세지 않는다**(§485).
+_BUILTINS = frozenset(dir(builtins))
+
+#: 같은 꼴로 비교하는 연산자. `==` · `is` 와 그 부정.
+_EQ_OPS = (ast.Eq, ast.Is, ast.NotEq, ast.IsNot)
+
+
+#: 「아무것도 안 나왔다」를 뜻하는 상수들. `assert f(…) == []` 꼴이 음성이다.
+_FALSY = frozenset({"[]", "{}", "''", '""', "0", "None", "set()", "()", "0.0",
+                    "False", "frozenset()"})
+
+
+def _is_silent(test: ast.expr) -> bool:
+    """단정 **전체**가 `f(…) == <빈 상수>` 꼴인가."""
+    if not isinstance(test, ast.Compare):
+        return False
+    if not all(isinstance(o, (ast.Eq, ast.Is)) for o in test.ops):
+        return False
+    try:
+        vals = {ast.unparse(x) for x in test.comparators}
+    except Exception:       # noqa: BLE001 — 못 풀면 음성이 아니다
+        return False
+    return bool(vals) and vals <= _FALSY
+
+
+def _classifier(tree: ast.AST) -> set[str]:
+    """**분류기 꼴**로 양방향을 민 이름.
+
+    ── 왜 이 꼴을 따로 세나 (2026-10-12 · DECISIONS §485) ───────
+    판정이 불린이 아니라 **낱말**을 내는 자가 많다(`grade()` → reference ·
+    unused · wired). 그 자를 미는 옳은 꼴은
+
+        assert grade({…}) == "reference"
+        assert grade({…}) == "unused"
+
+    이고, 이것은 **두 갈래를 다 민 것**이다. 그런데 종전 셈은 「`assert not
+    f(…)` 와 그 밖」으로만 갈라서 이 꼴을 **한쪽(양성)으로만** 셌다 —
+    그래서 열한 시험이 「카나리아 없음」으로 세어졌다. 이쪽은 **깎는**
+    방향의 같은 병이다(§436-6).
+
+    ★ 상수 **둘 이상**과 대야 한다. 하나면 한 갈래만 민 것이다.
+    """
+    #: 이름 → {(단정 자리, 댄 값)}. **단정이 둘 이상**이어야 한다 —
+    #: 한 단정 안의 사슬(`a == b == c`)은 한 자리에서 민 것이다.
+    seen: dict[str, set[tuple[int, str]]] = {}
+    for fn in _funcs(tree):
+        for n in ast.walk(fn):
+            if not isinstance(n, ast.Assert):
+                continue
+            for c in ast.walk(n.test):
+                if not isinstance(c, ast.Compare):
+                    continue
+                if not all(isinstance(o, _EQ_OPS) for o in c.ops):
+                    continue
+                called = _called(c.left) - _BUILTINS
+                if not called:
+                    continue
+                for f in called:
+                    for cmpn in c.comparators:
+                        seen.setdefault(f, set()).add((id(n), ast.dump(cmpn)))
+    return {f for f, v in seen.items()
+            if len({val for _, val in v}) >= 2 and len({at for at, _ in v}) >= 2}
+
+
 def pairs(tree: ast.AST) -> tuple[set[str], set[str]]:
     """(**음성**으로 민 이름, **양성**으로 민 이름).
 
@@ -117,6 +182,9 @@ def pairs(tree: ast.AST) -> tuple[set[str], set[str]]:
     """
     neg: set[str] = set()
     pos: set[str] = set()
+    both = _classifier(tree)          # ★ §485 — 분류기 꼴은 양쪽으로 센다
+    neg |= both
+    pos |= both
     for fn in _funcs(tree):
         # ★ 2026-10-12 (DECISIONS §480). 한 함수 안의 **`이름 = f(…)`** 를 모은다.
         #   `assert not 이름` 이 그 이름을 쓰면 **`f` 를 음성으로 민 것**이다.
@@ -139,10 +207,22 @@ def pairs(tree: ast.AST) -> tuple[set[str], set[str]]:
             if isinstance(t, ast.UnaryOp) and isinstance(t.op, ast.Not):
                 neg |= _called(t.operand)
                 neg |= _bound_names(t.operand, bound)
+            elif _is_silent(t):
+                # ★ 2026-10-12 (DECISIONS §485). `assert f(…) == []` 은
+                #   **「조용하다」의 또 한 꼴**이다. 판정이 목록·표·글자를
+                #   내면 불린으로 못 쓰므로 그렇게 적을 수밖에 없다.
+                #   ★ 이 단정은 **음성으로만** 센다 — 양성에도 넣으면 그
+                #     한 줄이 혼자 쌍을 이뤄 거짓으로 초록이 된다.
+                neg |= _called(t.left) - _BUILTINS
+                neg |= _bound_names(t.left, bound)
             else:
                 pos |= _called(t)
                 pos |= _bound_names(t, bound)
-    return neg, pos
+    # ★ 2026-10-12 (DECISIONS §485). **내장 함수를 뺀다.** `len` · `set` ·
+    #   `any` 가 양쪽 꼴에 다 나오므로, 그것만으로 쌍이 성립해 **다섯 시험이
+    #   거짓으로 초록**이었다. 세는 꼴이 실물과 다르면 그 수는 그물이 아니라
+    #   손을 잰다(§436-6) — 이쪽은 **부풀리는** 방향이었다.
+    return neg - _BUILTINS, pos - _BUILTINS
 
 
 def _funcs(tree: ast.AST) -> list[ast.AST]:
@@ -227,7 +307,26 @@ EXEMPT: dict[str, str] = {}
 #   `tools/colorsim.py` 의 판정이 `show()` 의 **찍는 루프 안**에 있어 시험이
 #   부를 수가 없었다. `faults()` 로 빼고 `tests/test_colorsim.py` 가 양방향으로
 #   민다(같은 색 둘 · 밝기만 붙은 쌍). **지적이 맞았던 자리다.**
-NO_CANARY = 29
+# ★ 2026-10-12 — 29 → **16** (DECISIONS §485). **또 코드를 하나도 안 고치고
+#   움직인 수다.** 세는 꼴이 **두 군데**서 실물과 달랐고, 하나는 부풀리고
+#   하나는 깎고 있었다 —
+#
+#     ① 내장 함수로 쌍이 성립했다 (**부풀림**)
+#        `len` · `set` · `any` 가 음성·양성 꼴에 다 나와서, 공유하는 것이
+#        **내장뿐인** 다섯 시험이 거짓으로 초록이었다. 29 → 34.
+#     ② 분류기 꼴을 한쪽으로만 셌다 (**깎음**)
+#        판정이 불린이 아니라 낱말을 내면(`grade()` → reference · unused)
+#        미는 옳은 꼴이 `== "reference"` 와 `== "unused"` 둘이다. 그것이
+#        **두 갈래를 다 민 것**인데 종전 셈은 양성으로만 봤다. 34 → 23.
+#     ③ 「조용하다」의 또 한 꼴을 못 봤다 (**깎음**)
+#        판정이 목록·표·글자를 내면 `assert f(…) == []` 로 쓸 수밖에 없다.
+#        그 꼴을 음성으로 센다 — 단, **그 단정은 음성으로만** 센다(양성에도
+#        넣으면 그 한 줄이 혼자 쌍을 이뤄 거짓으로 초록이 된다). 23 → **16**.
+#
+#   ★ 셋 다 자기검사가 **양방향으로** 든다 — 내장만으로는 쌍이 안 되고,
+#     안쪽 진짜 이름은 세고, 낱말 하나나 한 단정 안의 사슬로는 안 된다.
+#   ★ 남은 16 은 빚이다.
+NO_CANARY = 16
 
 RATCHETS = {"NO_CANARY": "down"}
 
@@ -299,6 +398,46 @@ def selftest() -> int:
     if not touches('p = ROOT / "tools" / "golden.py"',
                    _a.parse('p = 1'), tools):
         bad.append("경로로 집는 꼴을 못 본다")
+    # ★ 2026-10-12 (DECISIONS §485) — **내장 함수로는 쌍이 안 된다**
+    #   ★ 안쪽 이름을 **다르게** 둔다 — 같으면 그 이름으로 쌍이 성립하고
+    #     그것은 옳은 쌍이다. 거짓 쌍은 **공유하는 것이 내장뿐**일 때 생긴다.
+    blt = _a.parse('def t():\n    assert not len(f(1))\n'
+                   'def c():\n    assert len(g(2)) == 3\n')
+    if has_canary(blt):
+        bad.append("`len` 하나로 쌍을 세운다 — 다섯 시험이 그렇게 거짓으로 초록이었다")
+    # ★ 그런데 **그 안의 진짜 이름**은 세어야 한다 — 내장만 빼는 것이다
+    inner = _a.parse('def t():\n    assert not len(f(1))\n'
+                     'def c():\n    assert f(2) == 3\n'
+                     'def d():\n    assert f(3) == 4\n')
+    if not has_canary(inner):
+        bad.append("내장을 빼면서 안쪽 이름까지 버렸다")
+
+    # ★ **분류기 꼴** — 같은 자를 서로 다른 낱말 둘과 댄 것
+    cls2 = _a.parse('def t():\n    assert g(1) == "a"\n'
+                    'def c():\n    assert g(2) == "b"\n')
+    if not has_canary(cls2):
+        bad.append("분류기를 낱말 둘로 밀었는데 안 센다 — 열한 시험이 그렇게 깎였다")
+    cls1 = _a.parse('def t():\n    assert g(1) == "a"\n'
+                    'def c():\n    assert g(2) == "a"\n')
+    if has_canary(cls1):
+        bad.append("같은 낱말만 둘인데 양방향으로 센다 — 한 갈래만 민 것이다")
+    if has_canary(_a.parse('def t():\n    assert g(1) == "a"\n')):
+        bad.append("낱말 하나로 양방향을 센다")
+
+    # ★ 2026-10-12 (§485) — **「조용하다」 꼴**과 그 자기쌍 방어
+    sil = _a.parse('def t():\n    assert f(1) == []\n'
+                   'def c():\n    assert f(2)\n')
+    if not has_canary(sil):
+        bad.append("`assert f(…) == []` 을 음성으로 안 센다 — 목록을 내는 판정이"
+                   " 그렇게 적을 수밖에 없다(일곱 시험이 그 꼴이었다)")
+    alone = _a.parse('def t():\n    assert f(1) == []\n')
+    if has_canary(alone):
+        bad.append("`assert f(…) == []` **한 줄이 혼자 쌍을 이룬다** — 같은 단정을"
+                   " 음성과 양성에 둘 다 넣으면 그 줄 하나로 초록이 된다")
+    chain = _a.parse('def t():\n    assert g(1) == "a" == "b"\n')
+    if has_canary(chain):
+        bad.append("한 단정 안의 사슬을 두 자리로 센다 — 한 자리에서 민 것이다")
+
     # ★ 판정 — 양방향 · 빈 그물
     if not faults(NO_CANARY + 1, denom=98):
         bad.append("늘었는데 안 운다")
@@ -313,7 +452,7 @@ def selftest() -> int:
 
     for x in bad:
         print(f"  ✗ {x}")
-    print(f"{'✗' if bad else '✓'} 자기검사 — 쌍 가름 · 식 안쪽 · **두 줄 꼴** · 함수 경계 · 분모 · 양방향 · 빈 그물")
+    print(f"{'✗' if bad else '✓'} 자기검사 — 쌍 가름 · 식 안쪽 · **두 줄 꼴** · 함수 경계 · **내장 제외** · **분류기 꼴** · 분모 · 양방향 · 빈 그물")
     return 1 if bad else 0
 
 
