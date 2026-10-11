@@ -183,3 +183,68 @@ def test_error_never_points_at_the_step_itself(rig):
         rig.verify(rig.ingest)
     except rig.lg.LineageError as e:
         pytest.fail(f"최상류 단계가 자기를 상류로 가리킨다:\n{e}")
+
+
+# ── 계보 장부를 읽는 두 입 (DECISIONS §496) ───────────────────
+# ★ `guards.manifest_status` · `manifest_outputs` 는 `_manifest.json` 을 읽는
+#   **입**이고, 이 파일이 드는 `verify()` 와 `lineage_check()` 가 그 위에 선다.
+#   `manifest_outputs` 머리말이 그 까닭을 적는다 — 「한 key 가 여러 파일을
+#   낸다. ngii1k 하나가 10개를 만든다. **key 만 보는 검사는 그 10개 중 일부만
+#   갱신된 상태를 통과시킨다.**」 그 입을 미는 자리가 없었다(§496 — `get`
+#   하나 때문에 입출력으로 가려져 있었다).
+def _manifest_dir(tmp_path: Path, datasets: list[dict]) -> Path:
+    d = tmp_path / "processed"
+    d.mkdir()
+    (d / "_manifest.json").write_text(
+        json.dumps({"datasets": datasets}, ensure_ascii=False), encoding="utf-8")
+    return d
+
+
+def test_manifest_status_reads_every_key(tmp_path):
+    """key → status 를 그대로 낸다. 실패도 **적어** 온다 — 거르는 쪽은 부르는 자다."""
+    from firelane.guards import manifest_status
+
+    d = _manifest_dir(tmp_path, [
+        {"key": "a", "status": "OK"},
+        {"key": "b", "status": "FAIL"},
+        {"key": "c", "status": "SKIP"},
+    ])
+    assert manifest_status(d) == {"a": "OK", "b": "FAIL", "c": "SKIP"}
+
+
+def test_a_missing_manifest_is_a_guard_failure_not_an_empty_dict(tmp_path):
+    """★ 장부가 없으면 **운다.** 빈 표를 내면 그 위의 검사가 0건을 돌고 초록이다."""
+    import pytest
+
+    from firelane.guards import GuardFailure, manifest_status
+
+    (tmp_path / "processed").mkdir()
+    with pytest.raises(GuardFailure, match=r"_manifest\.json"):
+        manifest_status(tmp_path / "processed")
+
+
+def test_manifest_outputs_maps_each_file_to_the_key_that_made_it(tmp_path):
+    """★ 본체. **한 key 가 여러 파일**을 낸다 — 파일마다 적는다."""
+    from firelane.guards import manifest_outputs
+
+    d = _manifest_dir(tmp_path, [
+        {"key": "ngii1k", "status": "OK",
+         "outputs": ["ngii1k_5186.gpkg", "ngii1k_walk_5186.gpkg"]},
+        {"key": "cctv", "status": "OK", "outputs": ["cctv_5186.gpkg"]},
+    ])
+    assert manifest_outputs(d) == {
+        "ngii1k_5186.gpkg": "ngii1k", "ngii1k_walk_5186.gpkg": "ngii1k",
+        "cctv_5186.gpkg": "cctv"}
+
+
+def test_a_failed_dataset_contributes_no_outputs(tmp_path):
+    """★ 실패한 key 의 산출물은 **안 센다.** 세면 깨진 파일이 신선하다고 읽힌다."""
+    from firelane.guards import PASS_STATUS, manifest_outputs
+
+    assert set(PASS_STATUS) == {"OK", "SKIP"}, "통과 어휘가 바뀌었다"
+    d = _manifest_dir(tmp_path, [
+        {"key": "a", "status": "FAIL", "outputs": ["a.gpkg"]},
+        {"key": "b", "status": "SKIP", "outputs": ["b.gpkg"]},
+        {"key": "c", "status": "OK", "outputs": None},
+    ])
+    assert manifest_outputs(d) == {"b.gpkg": "b"}

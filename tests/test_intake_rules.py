@@ -560,3 +560,119 @@ def test_the_syntax_allows_three_vintage_forms_but_the_norm_gate_takes_only_eigh
         + "\n  ★ 셋 중 하나를 고쳐야 한다 — 문법을 조이거나(8자리만),"
         "\n    관문을 넓히거나(`\\d{4,8}`), 반입이 01 로 채우거나."
         "\n    `RULES` 는 이미 세 번째를 한다(`juso_adrdc_kr_{0}01.zip`).")
+
+
+# ── 정규명 산출 — 개명 규칙의 정본 (DECISIONS §496) ───────────
+# ★ `naming.canonical` 은 **개명이 무엇으로 갈 것인가**를 혼자 정한다. 그
+#   머리말이 2026-08-26 의 사고를 적는다: 「끝이 날짜면 그 앞이 스코프」라고
+#   **추측**했다가 도엽번호와 관할서 뒤에 스코프를 또 박을 뻔했다 —
+#   30건 중 **22건**이 그 오작동이었고 드라이런이 아니었으면 raw 가 망가졌다.
+#
+# ★ 그런데 `tools/srccov.py` 가 이 함수를 **입출력으로 가르고 있었다** —
+#   `e.get("scope")` 의 `get` 하나 때문이다(§496). 그래서 「안 드는 순수
+#   함수」 목록에 안 뜨고, 아무도 안 밀고 있었다.
+def test_canonical_refuses_to_guess_when_the_ledger_is_silent():
+    """★ 본체. 대장이 안 적으면 **None** 이다 — 2026-08-26 이 그 자리다."""
+    # 도엽이 스코프 자리에 있는데 대장에 `scope` 가 없다 → 손대지 않는다
+    assert nm.canonical("ngii/ngii_basemap_gj9708_20260812.zip", {}) is None
+    # 스코프 토큰이 아예 없는데 대장도 모른다 → 손대지 않는다
+    assert nm.canonical("its/its_nodelink_changelog_20260812.csv", {}) is None
+    # 대장 스코프가 통제 어휘 밖이다 → 손대지 않는다
+    assert nm.canonical("safety/safety_cctv_dongu_20260630.csv",
+                        {"scope": "없는스코프"}) is None
+
+
+def test_canonical_renames_a_legacy_scope_token():
+    """옛 토큰은 대장이 적은 정규 스코프로 간다."""
+    assert nm.canonical("safety/safety_cctv_dongu_20260630.csv",
+                        {"scope": "jngj-donggu"}) == \
+        "safety/safety_cctv_jngj-donggu_20260630.csv"
+
+
+def test_canonical_moves_a_map_sheet_out_of_the_scope_slot():
+    """★ 도엽은 스코프가 아니다 — **vintage 뒤 part** 로 옮긴다."""
+    assert nm.canonical("ngii/ngii_basemap_gj9708_20260812.zip",
+                        {"scope": "jngj-donggu"}) == \
+        "ngii/ngii_basemap_jngj-donggu_20260812_gj9708.zip"
+
+
+def test_canonical_needs_an_authority_before_it_drops_a_word():
+    """★ `gj_dong` 은 **동부소방서**다 — 버리려면 대장이 그것을 받았어야 한다.
+
+    관할기관은 행정구역과 경계가 다르므로 scope 에 적으면 안 된다. 그렇다고
+    낱말을 **조용히 버리면** 그 사실이 저장소에서 사라진다. 그래서
+    `authority:` 가 있어야 버린다 — 없으면 None 이다.
+    """
+    rel = "safety/safety_fire_access_gj_dong_20250731.csv"
+    assert nm.canonical(rel, {"scope": "jngj-donggu"}) is None
+    assert nm.canonical(rel, {"scope": "jngj-donggu",
+                              "authority": "동부소방서"}) == \
+        "safety/safety_fire_access_jngj-donggu_20250731.csv"
+
+
+def test_canonical_inserts_a_missing_scope_and_keeps_the_rest():
+    """스코프가 없으면 vintage 앞에 끼워 넣는다. rev · 확장자는 그대로 간다."""
+    assert nm.canonical("its/its_nodelink_changelog_20260812.csv",
+                        {"scope": "kr"}) == \
+        "its/its_nodelink_changelog_kr_20260812.csv"
+    assert nm.canonical("safety/safety_cctv_dongu_20260630_r2.csv",
+                        {"scope": "jngj-donggu"}) == \
+        "safety/safety_cctv_jngj-donggu_20260630_r2.csv"
+    assert nm.canonical("safety/safety_cctv_dongu_20260630.CSV",
+                        {"scope": "jngj-donggu"}) == \
+        "safety/safety_cctv_jngj-donggu_20260630.csv"
+
+
+def test_canonical_says_nothing_when_the_name_is_already_right():
+    """★ 음성 — 맞는 이름에 **None** 이다. 아니면 개명이 매번 돈다."""
+    for rel in ("safety/safety_cctv_jngj-donggu_20260630.csv",
+                "ngii/ngii_basemap_jngj-donggu_20260812_gj9708.zip",
+                "safety/확장자없음"):
+        assert nm.canonical(rel, {"scope": "jngj-donggu"}) is None, rel
+
+
+def test_the_rules_and_the_real_files_are_already_canonical():
+    """★ **전수 교차 — §494 가 손으로 유도한 그 변환이 여기 있었다.**
+
+    `normalize_raw.RULES` 의 자리표 없는 템플릿과 raw 실물 전건에 대해
+    `canonical` 이 「고칠 것 없다」(None)고 해야 한다. §494 **전에는** 이것이
+    템플릿 스물넷에서 울었을 것이다 — 그 배치가 스크립트로 유도한 답이
+    이 함수의 답과 **같다.** 정본이 둘이면 어긋나는데, 여기서는 둘이
+    같다는 것을 기계가 댄다.
+    """
+    import json
+    from pathlib import Path
+
+    from firelane import ledger as L
+    from firelane import normalize_raw as N
+
+    root = Path(__file__).resolve().parents[1]
+    bystem: dict[str, dict] = {}
+    for e in L.load()["datasets"].values():
+        for st in ([e["stem"]] if e.get("stem") else []) + list(e.get("stems") or []):
+            bystem[str(st)] = e
+
+    def entry_for(name: str):
+        base = name.rsplit(".", 1)[0]
+        c = [s for s in bystem if base == s or base.startswith(s + "_")]
+        return bystem[max(c, key=len)] if c else None
+
+    checked, bad = 0, []
+    for _pat, folder, tmpl in N.RULES:
+        if not tmpl or "{" in tmpl:
+            continue
+        if (e := entry_for(tmpl)) is None:
+            continue
+        checked += 1
+        if (got := nm.canonical(f"{folder}/{tmpl}", e)) is not None:
+            bad.append(f"  규칙 {folder}/{tmpl} → {got}")
+    for p in sorted(json.loads(
+            (root / "data/_acquire.json").read_text(encoding="utf-8"))["files"]):
+        if (e := entry_for(p.split("/", 1)[1])) is None:
+            continue
+        checked += 1
+        if (got := nm.canonical(p, e)) is not None:
+            bad.append(f"  실물 {p} → {got}")
+    assert checked > 80, f"{checked}건만 봤다 — 이 검사가 빈 그물이 됐다"
+    assert not bad, ("정규명 산출기가 고치라는 것이 남아 있다:\n" + "\n".join(bad)
+                     + "\n  ★ 고치는 쪽은 이름이다 — 대장이 정본이다(§18-3).")

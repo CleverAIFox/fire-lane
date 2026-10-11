@@ -281,3 +281,97 @@ def test_the_row_filter_runs_before_the_coordinates_are_parsed(tmp_path):
     g = load_csv_points(p, "경도", "위도", "utf-8",
                         filt=lambda d: d[d["종류"] == "소방"])
     assert g["종류"].tolist() == ["소방"]
+
+
+# ── 갈래 둘이 **대장의 어느 칸을 읽는가** (DECISIONS §496) ────
+# ★ `read_csv_points` · `read_shp_zip` 은 얇은 어댑터다 — 대장 칸을 꺼내
+#   `_io` 의 연장에 넘긴다. 그래서 드는 축이 **「어느 칸을 읽고 기본값이
+#   무엇인가」** 다. 칸 이름이 바뀌면 여기서 죽고(죽는 편이 낫다), 기본값이
+#   바뀌면 **조용히 다른 인코딩으로 읽는다.**
+def test_csv_points_branch_reads_the_declared_columns(tmp_path):
+    """★ `x_col` · `y_col` 을 **대장에서** 가져온다."""
+    from firelane.read._io import BBOX_4326
+    from firelane.read.delimited import read_csv_points
+
+    lon = (BBOX_4326[0] + BBOX_4326[2]) / 2
+    lat = (BBOX_4326[1] + BBOX_4326[3]) / 2
+    p = tmp_path / "a.csv"
+    p.write_text(f"이름,X,Y\n소방서,{lon},{lat}\n", encoding="utf-8")
+    g = read_csv_points(_ctx(e={"x_col": "X", "y_col": "Y"}, src=p))
+    assert len(g) == 1 and g.crs.to_epsg() == 4326
+    assert g["이름"].tolist() == ["소방서"]
+
+
+def test_the_csv_branch_dies_when_the_ledger_does_not_say_which_column(tmp_path):
+    """★ 좌표 칸을 **추측하지 않는다.** 없으면 거기서 죽는다."""
+    import pytest
+
+    from firelane.read.delimited import read_csv_points
+
+    p = tmp_path / "a.csv"
+    p.write_text("이름,X,Y\n가,126.9,35.1\n", encoding="utf-8")
+    with pytest.raises(KeyError):
+        read_csv_points(_ctx(e={"y_col": "Y"}, src=p))
+
+
+def test_the_two_branches_default_to_different_encodings(tmp_path):
+    """★ **기본값이 갈려 있다** — CSV 는 `utf-8`, SHP 는 `cp949`.
+
+    적어 둔다: 원본의 꼴이 다르기 때문이다(공공데이터포털 CSV 는 UTF-8 로
+    내려오는 일이 흔하고, 국내 SHP 의 dbf 는 거의 CP949 다). 한쪽을 다른
+    쪽에 맞추면 **한글이 조용히 깨진다.**
+    """
+    import inspect
+
+    from firelane.read import delimited, shapefile
+
+    assert '"encoding", "utf-8"' in inspect.getsource(delimited.read_csv_points)
+    assert '"encoding", "cp949"' in inspect.getsource(shapefile.read_shp_zip)
+
+
+def _zip_shp(tmp_path, names: list[str]):
+    """합성 shp 묶음 zip. 이름마다 한 벌을 넣는다."""
+    import zipfile
+
+    import geopandas as gpd
+    from shapely.geometry import Point
+
+    sd = tmp_path / "src"
+    sd.mkdir(exist_ok=True)
+    g = gpd.GeoDataFrame({"이름": ["동명로"]}, geometry=[Point(192700, 283600)],
+                         crs=5186)
+    for n in names:
+        g.to_file(sd / f"{n}.shp", encoding="cp949")
+    zp = tmp_path / "pack.zip"
+    with zipfile.ZipFile(zp, "w") as z:
+        for f in sorted(sd.iterdir()):
+            z.write(f, f.name)
+    return zp
+
+
+def test_the_shp_branch_reads_one_layer_and_sets_the_declared_crs(tmp_path):
+    """대장이 적은 좌표계를 **덮어쓴다** — `.prj` 가 틀린 채 배포되기 때문이다."""
+    from firelane.read.shapefile import read_shp_zip
+
+    zp = _zip_shp(tmp_path, ["a"])
+    g = read_shp_zip(_ctx(e={"layer": "*.shp"}, src=zp, crs="EPSG:5186",
+                          tmp=tmp_path / "work"))
+    assert len(g) == 1 and g.crs.to_epsg() == 5186
+    assert g["이름"].tolist() == ["동명로"]
+
+
+def test_a_glob_that_matches_two_shapefiles_is_refused(tmp_path):
+    """★ §181-3 — 글롭이면 **정확히 하나**여야 한다.
+
+    `next()` 로 첫 것을 집으면 둘째 shp 가 생겨도 조용히 하나만 읽는다.
+    민원행정기관 전자지도는 zip 안 한글 파일명이 CP437 로 깨져 이름으로
+    가리킬 수 없고, 그래서 글롭이 쓰인다 — 그 자리가 여기다.
+    """
+    import pytest
+
+    from firelane.read.shapefile import read_shp_zip
+
+    zp = _zip_shp(tmp_path, ["a", "b"])
+    with pytest.raises(ValueError, match="하나여야 한다"):
+        read_shp_zip(_ctx(e={"layer": "*.shp"}, src=zp, crs="EPSG:5186",
+                          tmp=tmp_path / "work"))

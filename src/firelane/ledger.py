@@ -90,6 +90,15 @@ PATHABLE = ("stem", "stems", "files")
 #         넣으면 "하나만 읽는데 files 가 2개다" 를 매번 오탐한다.
 
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+#: 제공처가 **월까지만** 주는 경우. 없는 날짜를 짓지 않는다(§455 회색=NULL).
+#: ★ 2026-10-12 (DECISIONS §496). 종전에는 이 꼴이 전부 경고였다 —
+#:   `juso_adrdc` · `eais_roadledger_dm` 둘이 대장에 **사유까지 적어 두고**
+#:   매 실행 경고를 받고 있었다(「제공처 공시가 월까지만 준다. 없는 날짜를
+#:   짓지 않는다」). 옳은 값에 경고를 내는 검사는 **오탐 공장**이고, 잦은
+#:   오탐은 진짜 경보를 못 믿게 만든다(§18-13).
+#:   그래서 받는다 — 다만 **사유와 함께만**(§69). 사유는 대장 원문의 주석이
+#:   들고, `ledger_check` 가 `yaml_span` 으로 그 블록을 읽어 확인한다.
+DATE_MONTH = re.compile(r"^\d{4}-\d{2}$")
 FORBIDDEN_VALUES = {"TODO", "todo", "TBD", "?", "-", ""}
 
 # ── 계약 어휘 (2026-09-28 · DECISIONS §284-1) ──────────────────
@@ -141,6 +150,17 @@ FAIL, WARN = "FAIL", "WARN"
 def load() -> dict:
     f = paths.ROOT / "sources.yaml"
     return yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+
+
+def raw_text() -> str:
+    """대장 **원문**. `yaml_span` 의 짝이다 — 주석을 보는 검사가 쓴다.
+
+    ★ `yaml.safe_load` 는 주석을 버린다. 대장의 사유는 주석에 살고(§69),
+      그 사유를 확인하는 검사는 원문을 봐야 한다. 읽는 자리는 **여기
+      하나**다 — 대장의 주인이 읽는 법도 들고 있어야 한다(`load_sources`
+      가 다섯 벌이었던 그 자리와 같은 이유).
+    """
+    return (paths.ROOT / "sources.yaml").read_text(encoding="utf-8")
 
 
 # ── 대장 → raw · 단일 조회기 ──────────────────────────────────

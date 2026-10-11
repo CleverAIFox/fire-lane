@@ -67,16 +67,33 @@ SRC_UNTESTED = 2
 
 RATCHETS = {"SRC_UNTESTED": "down"}
 
-#: 몸통에 이 이름이 보이면 **입출력**이다. 호출이든 속성이든 본다.
-IO_NAMES = frozenset({
-    "open", "read_text", "write_text", "read_bytes", "write_bytes",
-    "mkdir", "unlink", "rename", "replace", "iterdir", "glob", "rglob",
-    "exists", "is_dir", "is_file", "stat", "touch", "rmtree", "copy",
-    "copy2", "move", "run", "check_output", "Popen", "urlopen", "get",
-    "post", "read_file", "read_csv", "to_csv", "to_file", "load",
-    "safe_load", "dump", "safe_dump", "ZipFile", "TemporaryDirectory",
-    "NamedTemporaryFile", "connect", "environ", "getenv",
+#: 몸통에 이 **메서드**가 보이면 입출력이다. 파일·프레임에만 있는 이름들이다.
+#:
+#: ★ 2026-10-12 (DECISIONS §496). 여기 `get` 이 있었다. **`dict.get` 이다** —
+#:   그 한 이름이 함수 **예순**을 입출력으로 보냈고(이 저장소는 대장 항목을
+#:   `e.get("scope")` 로 읽는다) 그 예순은 「산출물로 드는 시험이 있을 수
+#:   있다」는 이유로 **안 물렸다.** `naming.canonical`(개명 규칙의 정본)이
+#:   거기 숨어 있었다. 같이 뺀 것 — `copy`(`dict.copy`) · `replace`
+#:   (`str.replace`) · `load`·`dump`(`yaml.safe_load(글자)` 는 파일을 안 연다) ·
+#:   `run`(흔한 함수 이름). 그 넷은 **모듈 이름**으로 다시 잡는다.
+IO_METHODS = frozenset({
+    "read_text", "write_text", "read_bytes", "write_bytes", "mkdir",
+    "unlink", "rename", "iterdir", "glob", "rglob", "exists", "is_dir",
+    "is_file", "stat", "touch", "read_file", "read_csv", "to_csv",
+    "to_file", "check_output", "urlopen", "extractall", "namelist",
 })
+
+#: 몸통이 이 **모듈·자료형**을 들면 입출력이다. 메서드 이름보다 확실하다.
+IO_MODULES = frozenset({
+    "subprocess", "requests", "shutil", "zipfile", "sqlite3", "os",
+    "tempfile", "ZipFile", "TemporaryDirectory", "NamedTemporaryFile",
+    "urlopen", "environ", "getenv", "fiona", "rasterio",
+})
+
+#: 그냥 부르면 파일이 열리는 것.
+IO_CALLS = frozenset({"open"})
+
+IO_NAMES = IO_METHODS | IO_MODULES | IO_CALLS
 
 #: 몸통에 이 이름이 보이면 **진입점**이다.
 CLI_NAMES = frozenset({"ArgumentParser", "argv", "SystemExit", "add_argument"})
@@ -209,6 +226,11 @@ def selftest() -> int:
             "def _숨은것(x):\n    return x\n\n\n"
             "def 파일읽는다(p):\n    return p.read_text()\n\n\n"
             "def cmd_무엇(a):\n    return a\n\n\n"
+            "def 대장을읽는다(e):\n    return e.get('scope')\n\n\n"
+            "def 셸을돈다(cmd):\n    import subprocess\n"
+            "    return subprocess.run(cmd)\n\n\n"
+            "def 글자를푼다(t):\n    import yaml\n"
+            "    return yaml.safe_load(t)\n\n\n"
             "def 진입(a):\n    import argparse\n"
             "    return argparse.ArgumentParser()\n\n\n"
             "class 자료형:\n    def 메서드(self):\n        return 1\n",
@@ -221,21 +243,32 @@ def selftest() -> int:
 
         miss = untested(src, tst)
         got = sorted(n for v in miss.values() for n in v)
-        if got != ["안든다"]:
+        if got != ["글자를푼다", "대장을읽는다", "안든다"]:
             fails.append(f"안 드는 순수 함수를 틀리게 센다 — {got}\n"
-                         "       기대: 안든다 하나(나머지는 부류가 다르거나 든다)")
+                         "       기대: 안든다 · 대장을읽는다 · 글자를푼다")
         # ★ 음성 — 이름을 부르는 것은 **안** 세어야 한다
         if "든다" in got:
             fails.append("시험이 이름을 부르는 함수를 안 드는 것으로 센다")
 
         t = tally(src, tst)
-        if t.get("순수", [0, 0]) != [2, 1]:
-            fails.append(f"순수 분모를 틀리게 센다 — {t.get('순수')} (기대 [2, 1])")
-        if t.get("입출력", [0, 0])[0] != 1:
-            fails.append(f"입출력을 틀리게 가른다 — {t.get('입출력')} (기대 [1, 1])")
+        if t.get("순수", [0, 0]) != [4, 3]:
+            fails.append(f"순수 분모를 틀리게 센다 — {t.get('순수')} (기대 [4, 3])\n"
+                         "       `든다` · `안든다` · **`대장을읽는다`** ·"
+                         " **`글자를푼다`**")
+        if t.get("입출력", [0, 0])[0] != 2:
+            fails.append(f"입출력을 틀리게 가른다 — {t.get('입출력')} (기대 [2, 2])\n"
+                         "       `파일읽는다`(read_text) · `셸을돈다`(subprocess)")
         if t.get("진입점", [0, 0])[0] != 2:
             fails.append(f"진입점을 틀리게 가른다 — {t.get('진입점')} (기대 2건)\n"
                          "       `cmd_무엇`(이름) · `진입`(argparse 를 든다)")
+        # ★ §496 — `dict.get` 은 입출력이 아니다. 한 이름이 예순을 숨겼다
+        got = sorted(n for v in miss.values() for n in v)
+        for n in ("대장을읽는다", "글자를푼다"):
+            if n not in got:
+                fails.append(f"{n!r} 를 입출력으로 가른다 — `dict.get` ·"
+                             " `yaml.safe_load(글자)` 는 파일을 안 연다(§496)")
+        if "셸을돈다" in got:
+            fails.append("`subprocess` 를 드는 함수를 순수로 센다")
         # ★ 밑줄·메서드·`__init__` 은 분모 밖이다
         allnames = {n for rows in functions(src).values() for n, _ in rows}
         for n in ("_숨은것", "메서드", "안세는것"):
@@ -244,12 +277,13 @@ def selftest() -> int:
 
         # ★ 빈 그물 — 시험 묶음이 비면 **전부** 안 드는 것이 되어야 한다
         empty = untested(src, root / "없는곳")
-        if sorted(n for v in empty.values() for n in v) != ["든다", "안든다"]:
+        if sorted(n for v in empty.values() for n in v) != [
+                "글자를푼다", "대장을읽는다", "든다", "안든다"]:
             fails.append("시험이 없는데도 드는 것이 있다고 센다")
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 7")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 10")
     return 1 if fails else 0
 
 
