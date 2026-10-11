@@ -130,6 +130,20 @@ def slow_ones(res: list[tuple[Path, int, str, float]]) -> list[tuple[float, Path
                    if rc != 124 and s >= SLOW_FRAC * TIMEOUT), reverse=True)
 
 
+def green(rc: int) -> bool:
+    """그 종료 수가 **초록인가.** 0 하나다.
+
+    ★ 2026-10-11 (DECISIONS §478-1). 이 한 줄이 보고문 안의 `if rc == 0` 이었고
+      **돌연변이가 `!=` 로 밀어도 조용했다** — 그러면 빨간 자기검사에 ✓ 가
+      붙고 초록에 ✗ 가 붙는다. 보고가 뒤집히는 것은 결함이 없는 것보다 나쁘다.
+      순수 함수로 빼서 판별식이 **양쪽을 민다.**
+
+    ★ 0 만 초록이다. 124(제한 초과)도 1 도 빨강이고, 그 둘을 가르는 것은
+      느린 것 보고의 일이다(`slow_ones` 가 124 를 뺀다).
+    """
+    return rc == 0
+
+
 def _dirty() -> list[str] | None:
     """더러운 파일 목록. **못 물으면 `None`** — 빈 목록과 다른 사실이다.
 
@@ -177,7 +191,7 @@ def main(argv: list[str] | None = None) -> int:
     bad = []
     for p, rc, out, _s in sorted(res, key=lambda x: x[0].name):
         rel = p.relative_to(ROOT).as_posix()
-        if rc == 0:
+        if green(rc):
             print(f"  ✓ {rel}")
         else:
             bad.append(rel)
@@ -208,6 +222,48 @@ def main(argv: list[str] | None = None) -> int:
         return len(bad)
     print(f"\n✓ 자기검사 {len(run)}개 전부 초록 · 건너뜀 {len(skipped)}")
     return 0
+
+
+#: 이 러너의 **우주 밖**에서 도는 자기검사 — 이름 → 어디서 도나.
+#:
+#: ── 왜 적나 (2026-10-11 · DECISIONS §478) ──────────────────────
+#: `tools/scopedecl.py` 의 `SELFTEST_MIN` 은 **76** 을 세고 이 러너는 **70** 을
+#: 모은다. 그 여섯이 안 도는 것이 아니라 **다른 자리에서 돈다** — 그런데 그
+#: 사실을 적은 데가 없어서, 두 수를 나란히 본 사람은 「자기검사 여섯이 죽었다」로
+#: 읽는다. **수가 둘이면 그 차이를 적는다**(§456 이 「105 가 전부 필요한가」에서
+#: 배운 그것이다 — 세는 단위가 다르면 그 단위를 적어야 수가 말이 된다).
+#:
+#: ★ 아래 자기검사가 이 목록이 **정확히** 그 차집합인지 든다 — 일곱째가
+#:   생기면 운다. 고치는 길은 둘이다: 이 러너가 보게 만들거나, 여기 적는다.
+OUTSIDE: dict[str, str] = {
+    # 셸 도구 — 이 러너는 `tools/*.py` 만 모은다(파이썬 하위프로세스로 돈다)
+    "ci_wait.sh": "tests/test_batch_tools.py · tests/test_seal_survives_squash.py",
+    "treescan.sh": "tools/verify.sh · .github/workflows (제 단계로 돈다)",
+    # 깃발 없이 **인자 없으면 자기검사**인 도구 — 제 단계로 돈다
+    "localgeo.py": "tools/verify.sh (제 단계 · 인자 없이 치면 자기검사다)",
+    "svg_fit.py": "tools/verify.sh · .github/workflows (제 단계)",
+    # 옆집 판별식 — 주인의 `--selftest` 가 끌어온다(§445 · §449-2)
+    "docnumtest.py": "tools/docnum_check.py --selftest 가 끌어온다",
+    "uichecktest.py": "tools/uicheck.py --selftest 가 끌어온다",
+}
+
+
+def outside_faults(root: Path = ROOT) -> list[str]:
+    """`scopedecl` 이 세는 우주 − 이 러너의 우주 = `OUTSIDE` 인가. **비면 산다.**"""
+    import scopedecl  # noqa: PLC0415  맞물림을 끊는다 (scopedecl 은 이 파일을 안 든다)
+
+    td = root / "tools"
+    counted = {p.name for p in sorted(td.iterdir())
+               if p.is_file() and scopedecl.has_selftest(p)}
+    mine = {p.name for p in tools()}
+    gap, listed = counted - mine, set(OUTSIDE)
+    bad = []
+    for n in sorted(gap - listed):
+        bad.append(f"{n} — `scopedecl` 은 세는데 이 러너가 안 돌리고 어디서 도는지"
+                   " 적힌 데도 없다. 러너가 보게 하거나 `OUTSIDE` 에 적어라")
+    for n in sorted(listed - gap):
+        bad.append(f"{n} — `OUTSIDE` 에 있는데 차집합에 없다. 죽은 선언이다(§370)")
+    return bad
 
 
 def selftest() -> int:
@@ -246,12 +302,57 @@ def selftest() -> int:
     got = [p.name for _s, p in slow_ones(_fake)]
     if got != ["더느림.py", "느림.py"]:
         bad.append(f"느린 것 고르기가 틀렸다 — {got}")
+    # ── §478-1 · 돌리는 자를 **실제로** 돌려 본다 ─────────────────
+    #   ★ 위 판별식들은 `_fake` 튜플로 `slow_ones` 만 밀었다. 그래서 `_run`
+    #     자신은 **한 번도 안 돌았고**, 돌연변이가 `text=True` 를 `False` 로
+    #     밀어도 조용했다 — 그러면 모든 출력이 바이트가 되고 보고가 깨진다.
+    #     합성 도구 둘(초록 · 빨강)로 양쪽을 민다.
+    with tempfile.TemporaryDirectory() as d:
+        ok_t = Path(d) / "초록.py"
+        ok_t.write_text("import sys\nprint('ok')\nsys.exit(0)\n", encoding="utf-8")
+        ng_t = Path(d) / "빨강.py"
+        ng_t.write_text("import sys\nprint('ng')\nsys.exit(1)\n", encoding="utf-8")
+        gp, grc, gout, gs = _run(ok_t)
+        bp, brc, bout, bs = _run(ng_t)
+        if (grc, brc) != (0, 1):
+            bad.append(f"종료 수를 안 돌려준다 — 초록 {grc} · 빨강 {brc}")
+        if not isinstance(gout, str) or "ok" not in gout:
+            bad.append(f"출력이 글자가 아니다 — {type(gout).__name__} {gout!r:.40}")
+        if "ng" not in bout:
+            bad.append("빨간 도구의 출력을 안 담는다")
+        if not (gs >= 0 and bs >= 0):
+            bad.append(f"걸린 시간이 음수다 — {gs} · {bs}")
+
+    # ── §478-1 · 보고의 초록/빨강을 가르는 자 ─────────────────────
+    if not green(0):
+        bad.append("종료 0 을 빨강으로 센다")
+    if any(green(rc) for rc in (1, 2, 124, -1)):
+        bad.append("0 이 아닌 종료 수를 초록으로 센다")
+
+    # ── §478 · 두 수의 차이가 적혀 있나 ─────────────────────────
+    bad += outside_faults()
+    # ★ **양방향.** 거짓 이름을 심으면 「죽은 선언」으로 울어야 한다.
+    if not any("죽은 선언" in m for m in _fake_outside_faults()):
+        bad.append("`OUTSIDE` 의 죽은 선언을 안 댄다 — 자가 죽었다")
+
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad))
         return 1
     print(f"✓ 자기검사 — 도구 {len(found)}개를 AST 로 모으고 "
-          f"건너뜀 {len(SKIP)}개가 전부 실재한다")
+          f"건너뜀 {len(SKIP)}개가 전부 실재한다 · 우주 밖 {len(OUTSIDE)}개가 "
+          f"`scopedecl` 과 맞는다")
     return 0
+
+
+def _fake_outside_faults() -> list[str]:
+    """★ 카나리아 — `OUTSIDE` 에 없는 이름을 심어 그 자가 우는지 본다."""
+    saved = dict(OUTSIDE)
+    try:
+        OUTSIDE["없는도구.py"] = "없다"
+        return outside_faults()
+    finally:
+        OUTSIDE.clear()
+        OUTSIDE.update(saved)
 
 
 if __name__ == "__main__":
