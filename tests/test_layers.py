@@ -329,11 +329,11 @@ def test_backup_scope_follows_layers():
 #:
 #: 간극을 **데이터로 못 박는다.** 산문으로 적힌 계획을 수로 바꾼다.
 #: 좁히면 여기를 같이 줄인다. 넓히려면 사유를 적어야 한다.
-TARGET_ONLY = {
-    "retired": "§173-2 목표 층. 레이크를 세운 뒤 대장에 들어간다"
-               "(`lake.py` 머리말 · PLAN 「대장 · SSD 디렉토리 구조와 해석기 하나」). "
-               "그때 `LAYERS` 를 대장에서 읽도록 바꾼다",
-}
+#: ★ 2026-10-11 (DECISIONS §460). **비었다.** `retired` 가 대장에 들어오면서
+#:   이 칸의 유일한 항목이 사라졌다 — 그 줄이 적어 둔 「그때 `LAYERS` 를 대장에서
+#:   읽도록 바꾼다」가 그대로 일어났고(`layers.lake_layers()`), 목표와 선언이
+#:   같아졌다. 칸을 지우지 않고 **비워 둔다** — 다음 목표 층이 생기면 여기 적는다.
+TARGET_ONLY: dict[str, str] = {}
 #: 대장에만 있는 층 — **레이크 밖**이라 레이크 해석기가 알 필요가 없다.
 LEDGER_ONLY = {
     "baseline": "저장소 안. 봉인 기준선이다",
@@ -346,11 +346,14 @@ LEDGER_ONLY = {
 
 
 def test_the_gap_between_target_and_ledger_layers_is_declared():
-    """★ 목표 층 목록과 대장 층 선언의 차이가 **선언된 그대로**인가."""
-    from firelane.lake import LAYERS
+    """★ 목표 층 목록과 대장 층 선언의 차이가 **선언된 그대로**인가.
 
+    ★ 2026-10-11 (DECISIONS §460). 목표 목록이 **대장에서 도출된다** —
+      종전의 손으로 적은 `lake.LAYERS` 는 없다. 그래서 「목표에만 있는 층」은
+      도출이 틀렸을 때만 생기고, 지금은 비어 있는 것이 맞다.
+    """
     declared = set(_L().names())
-    target = set(LAYERS)
+    target = set(_L().lake_layers())
 
     only_target = target - declared
     assert only_target == set(TARGET_ONLY), (
@@ -359,12 +362,14 @@ def test_the_gap_between_target_and_ledger_layers_is_declared():
         "  층이 대장으로 들어왔으면 `TARGET_ONLY` 에서 빼라. 새로 생겼으면\n"
         "  **왜 아직 대장에 없는지**를 적어라.")
 
+    assert target, "목표 층이 0개다 — 도출이 죽었다(빈 그물)"
+
     only_ledger = declared - target
     assert only_ledger == set(LEDGER_ONLY), (
         f"대장에만 있는 층이 선언과 다르다 — 실측 {sorted(only_ledger)} · "
         f"선언 {sorted(LEDGER_ONLY)}\n"
         "  레이크 해석기가 모르는 층의 파일은 **미상**이 된다. 레이크 안의\n"
-        "  층이면 `lake.LAYERS` 에 더하고, 저장소 안이면 여기 사유를 적어라.")
+        "  층이면 대장의 `base: data` 로 선언하고, 저장소 안이면 여기 사유를 적어라.")
 
 
 def test_every_gap_entry_carries_a_reason():
@@ -376,10 +381,12 @@ def test_every_gap_entry_carries_a_reason():
 
 def test_the_abolished_layer_is_not_a_target():
     """폐지층이 목표 목록에 남아 있으면 「없앤다」와 「쓴다」가 같은 모양이 된다."""
-    from firelane.lake import ABOLISHED, LAYERS
+    from firelane.lake import ABOLISHED
 
+    target = _L().lake_layers()
+    assert target, "목표 층이 0개다 — 도출이 죽었다(빈 그물)"
     for name in ABOLISHED:
-        assert name not in LAYERS, f"폐지층 {name} 이 목표 층 목록에 있다"
+        assert name not in target, f"폐지층 {name} 이 목표 층 목록에 있다"
 
 
 # ── 제공기관 목록이 **세 벌**이다  (DECISIONS §396) ──────────────────
