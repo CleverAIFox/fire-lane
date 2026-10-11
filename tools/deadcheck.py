@@ -397,6 +397,10 @@ EXEMPT_HANDLIST = {
                 "`datasets.*.feeds` 는 `shardseal.DOC_KEYS` 가 「산출에 안 닿는 칸」으로 분류한 필드고"
                 "(§216-1), 그 한 줄이 관문을 조용히 **좁히면** 거짓 초록이다. 값은 코드에 두고 어긋나면 "
                 "우는 강제자를 뒀다 — `test_guards.py::test_critical_covers_every_dataset_feeding_judgment_code`",
+    # ★ 2026-10-11 (DECISIONS §460). 셋째 줄이 붙어 임계를 넘었다.
+    "NOT_PRODUCERS": "**산출물을 안 만드는 파일**의 목록이고 그 판단은 유도되지 않는다 — "
+                     "「고치면 산출물이 바뀌는가」는 사람이 읽어서 안다(§165-8 · §266 · §460). "
+                     "유도하면 봉인 축이 제 판단을 제 입력에서 가져오게 된다",
 }
 
 

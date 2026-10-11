@@ -249,7 +249,8 @@ def test_resealing_also_refreshes_the_lineage_entry(tmp_path):
     import sys
 
     root = Path(__file__).resolve().parents[1]
-    spec = importlib.util.spec_from_file_location("ss_lin", root / "src/firelane/shardseal.py")
+    # ★ 2026-10-11 (DECISIONS §460). 재도장의 집이 `reseal.py` 다.
+    spec = importlib.util.spec_from_file_location("ss_lin", root / "src/firelane/reseal.py")
     assert spec and spec.loader
     ss = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = ss      # @dataclass 가 되짚는다 (DECISIONS §258-10)
@@ -276,9 +277,14 @@ def test_relineage_is_wired_into_the_reseal_path():
     import ast
 
     root = Path(__file__).resolve().parents[1]
-    src = (root / "src/firelane/shardseal.py").read_text(encoding="utf-8")
-    fn = next(n for n in ast.walk(ast.parse(src))
-              if isinstance(n, ast.FunctionDef) and n.name == "reseal_code_cli")
-    called = {n.func.id for n in ast.walk(fn)
-              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
-    assert "_relineage" in called, "재도장 경로가 계보를 안 갱신한다 — §267 이 그대로 돌아온다"
+    # ★ 2026-10-11 (DECISIONS §460). 재도장의 집이 `reseal.py` 로 갈라졌다 —
+    #   길이 상한이 그 경계를 가리켰고 물음도 둘이다. **문 셋을 다 짚는다.**
+    src = (root / "src/firelane/reseal.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    for name in ("reseal_code_cli", "reseal_cfg_cli"):
+        fn = next(n for n in ast.walk(tree)
+                  if isinstance(n, ast.FunctionDef) and n.name == name)
+        called = {n.func.id for n in ast.walk(fn)
+                  if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+        assert "_relineage" in called, (
+            f"{name} 이 계보를 안 갱신한다 — §267 이 그대로 돌아온다")

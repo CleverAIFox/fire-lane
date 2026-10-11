@@ -31,7 +31,9 @@ OUT   대장 레코드의 `seal` 칸 (ingest 가 쓴다)
 from __future__ import annotations
 
 import ast
+import functools
 import json
+import re
 from pathlib import Path
 
 from firelane import jsonkeys
@@ -127,7 +129,10 @@ def logic_print(p: Path) -> str:
 #   ★ `jsonkeys.py` 는 안 넣는다 — `shardseal` 이 **cfg 지문**을 뜰 때 쓰므로
 #     고치면 봉인 판단 자체가 달라진다. 코드 축에서 빼도 cfg 축으로 찢어지니
 #     빼는 값이 없고, 「산출물을 안 만든다」도 그 파일에는 참이 아니다.
-NOT_PRODUCERS = ("shardseal.py", "stagerun.py")
+#   ★ 2026-10-11 (DECISIONS §460). `reseal.py` 를 같은 사유로 더한다 — 재도장을
+#     **부르는 문**이고 산출물을 한 바이트도 안 만든다. 받아도 되는가의 판단은
+#     이 파일의 `reseal_*` 가 들고 그쪽은 여전히 폐포 안이다.
+NOT_PRODUCERS = ("shardseal.py", "stagerun.py", "reseal.py")
 
 
 def _norm(name: str) -> str:
@@ -293,9 +298,72 @@ def _no_skip(k: str, v):
     return v if not drop else jsonkeys.drop(v, drop)
 
 
+#: 계층 이름을 **선언만** 하는 파일. 모든 이름을 들고 있어 판별에 쓸 수 없다.
+LAYER_DECLARERS = ("paths.py", "layers.py")
+
+
+def _layer_const(name: str) -> str:
+    """계층 이름 → `paths` 상수. **여기서 짓는다.**
+
+    ★ `firelane.layers` 의 `BIND` 를 import 하면 그 파일이 **ingest 폐포에
+      들어오고**, 그러면 `BIND` 한 줄에 전수가 찢어진다. `NOT_PRODUCERS` 로도
+      못 뺀다 — 그 표가 **봉인 판단에 쓰이기** 때문이다(`jsonkeys.py` 를 안 빼는
+      것과 같은 자리). 그래서 규칙만 여기 두고, 둘이 같은지는
+      `tests/test_shardseal.py` 가 **`BIND` 쪽에서** 묻는다.
+    """
+    return name.upper()
+
+
+@functools.lru_cache(maxsize=8)
+def ingest_layer_names(names: tuple[str, ...],
+                       start: str = "firelane.ingest") -> frozenset[str]:
+    """`names` 중 **ingest 산출에 닿는** 계층. 손목록이 아니라 폐포에서 잰다.
+
+    ── 왜 (2026-10-11 · DECISIONS §460) ───────────────────────
+    `layers` 는 전역 칸이라 **계층 하나를 선언하면 45샤드가 전부 찢어진다.**
+    2026-10-10 에 `retired` 를 선언했다가 실측으로 그것을 보고 되돌렸다(§457-2) —
+    8GB 기계에서 `ngii_road` 재빌드는 거의 반드시 OOM 이다.
+
+    판별은 **`paths` 상수**다. 계층의 경로를 푸는 자리만 그 이름을 쥐므로,
+    「계층 이름을 글자로 쥐는가」보다 좁고 정확하다 — 후자는 `ledger.retired()`
+    처럼 **같은 낱말의 다른 것**을 같이 잡는다(그 자리가 실제로 있다).
+
+    ★ 틀리는 방향이 둘이고 값이 다르다 — 쥐는데 빼면 **낡은 산출물을 재사용**하고
+      (조용히 틀린 답), 안 쥐는데 넣으면 한 번 더 빌드한다. 그래서 **모르는 것은
+      넣는다.**
+    ★ 실측(2026-10-11) — 폐포 28개(선언 파일 둘 제외)가 쥐는 상수는
+      `RAW` · `NORM` · `PROCESSED` 셋이다. 나머지 일곱은 `paths.py` 에서만 보인다.
+    """
+    srcs = [p.read_text(encoding="utf-8") for p in code_closure(start)
+            if p.name not in LAYER_DECLARERS]
+    keep = set()
+    for n in names:
+        pat = re.compile(rf"\b{re.escape(_layer_const(n))}\b")
+        if any(pat.search(s) for s in srcs):
+            keep.add(n)
+    return frozenset(keep)
+
+
+def _narrow_layers(glob: dict) -> dict:
+    """전역 칸의 `layers` 를 **ingest 가 닿는 계층만** 남긴다."""
+    v = glob.get("layers")
+    if not isinstance(v, dict):
+        return glob
+    keep = ingest_layer_names(tuple(sorted(v)))
+    return {**glob, "layers": {k: x for k, x in v.items() if k in keep}}
+
+
 def cfg_print(cfg: dict, key: str) -> str:
-    return _print({k: _no_skip(k, _no_docs(cfg.get(k))) for k in INGEST_GLOBAL},
-                  _no_docs(_own(cfg, key)))
+    return _print(_narrow_layers(_glob(cfg)), _no_docs(_own(cfg, key)))
+
+
+def _glob(cfg: dict) -> dict:
+    return {k: _no_skip(k, _no_docs(cfg.get(k))) for k in INGEST_GLOBAL}
+
+
+def _cfg_print_v5(cfg: dict, key: str) -> str:
+    """2026-10-08~10-11 판 — `layers` 를 **계층 단위로 안 갈랐다.**"""
+    return _print(_glob(cfg), _no_docs(_own(cfg, key)))
 
 
 def _cfg_print_v2(cfg: dict, key: str) -> str:
@@ -326,7 +394,8 @@ def _cfg_print_v3(cfg: dict, key: str) -> str:
 
 #: 옛 판 지문. 만나면 **다시 빌드 없이** 받고 새 판으로 고쳐 적는다.
 #: ★ 줄이 늘 때마다 「한 번 지나면 안 찢어진다」가 한 세대 더 보장된다.
-LEGACY_PRINTS = (_cfg_print_v4, _cfg_print_v3, _cfg_print_v2, _cfg_print_v1)
+LEGACY_PRINTS = (_cfg_print_v5, _cfg_print_v4, _cfg_print_v3, _cfg_print_v2,
+                 _cfg_print_v1)
 
 
 def cfg_print_legacy(cfg: dict, key: str) -> str:
@@ -437,143 +506,6 @@ def check(prev: dict | None, cfg: dict, key: str, hits: list[Path], out_dir: Pat
     if out != s["out"]:
         return False, "산출물이 봉인과 다르다"
     return True, "봉인 일치"
-
-
-def reseal_out(records: list[dict], out_dir: Path) -> tuple[list[str], list[str]]:
-    """봉인지가 있는 레코드의 `out` 칸만 지금 실물로 고친다. (고친 key, 못 고친 key).
-
-    ★ 파이프라인 **하류가 ingest 산출물을 덧쓴 뒤**에만 부른다(terrain 의 z).
-      raw · cfg · code 는 건드리지 않는다. 그 셋이 "무엇으로 만들었나" 의 증거이고,
-      이 함수는 "하류가 덧쓴 결과가 지금 실물이다" 만 적는다.
-    ★ 파일이 하나라도 없으면 그 레코드는 안 고친다 — 다음 실행에서 찢어져야 한다.
-    """
-    fixed, missing = [], []
-    for r in records:
-        s = r.get("seal") if isinstance(r, dict) else None
-        if r.get("status") != "OK" or not isinstance(s, dict) or "out" not in s:
-            continue
-        now = out_print(out_dir, list(s["out"]))
-        if now is None:
-            missing.append(r["key"])
-        elif now != s["out"]:
-            s["out"] = now
-            fixed.append(r["key"])
-    return fixed, missing
-
-
-def reseal_code(records: list[dict], cfg: dict, out_dir: Path, code: str,
-                paths_for) -> tuple[list[str], list[str]]:
-    """`code` 칸**만** 지금 코드 지문으로 고친다. (고친 key, 못 고친 key).
-
-    ── 왜 있나 (2026-09-23 · DECISIONS §224-2) ──────────────────────
-    `code` 는 ingest 가 import 하는 firelane 모듈 전부의 로직 지문이다. 이미
-    두 겹으로 좁혀 놨다 — 주석 · docstring 을 뺀 AST 로 재고(`logic_print`),
-    봉인 로직 자신은 아예 뺀다(`NOT_PRODUCERS`, §165-8). 그런데도 **ingest 본체나
-    `guards` 를 한 줄 고치면 65종이 전부 찢어진다.** 산출물을 한 바이트도 바꾸지
-    않는 변경(안내 문구 · 종료코드 · 새 플래그)이어도 그렇다.
-
-    이 8GB 기계에서 전량 재빌드는 `ngii_road` 에서 거의 반드시 죽는다(§165).
-    즉 **ingest 를 고칠 수 없는 구조**였다. 도구를 못 고치면 결함도 못 고친다.
-    좁히는 길(로직 지문 · 제외 목록)은 이미 다 썼으므로, 남은 길은 **사람이
-    판단해서 받아주는 문**이다 — `cfg` 칸의 `cfg_print_legacy`, `out` 칸의
-    `reseal_out` 과 같은 자리.
-
-    ★ 공짜로 열어주지 않는다. 여기서 고치는 것은 **raw 와 out 이 둘 다 봉인과
-      같은** 레코드뿐이다. 그 둘이 같다는 것은 「같은 입력으로 만든 같은
-      산출물이 지금 디스크에 있다」 는 뜻이고, 그러면 코드가 무엇을 하든
-      **이번 판정에 쓰인 결과는 그 산출물**이다.
-    ★ 그래도 **판단은 사람이 한다.** 코드 변경이 산출물을 바꿀 수 있는
-      것이었다면 out 이 이미 달라졌거나, 다음 전량에서 달라진다. 이 함수는
-      「지금 디스크의 산출물이 봉인과 같다」 만 말한다 — `--stamp` 와 같은 급이다.
-    ★ 옛 지문 → 새 지문을 **화면에 찍는다**(호출부). 대장 레코드에 칸을 더하지
-      않는다 — 봉인지는 네 칸이고, 다섯 번째 칸은 다음 사람이 그것도 봉인의
-      일부라고 읽는다. 무엇을 받아줬는지는 DECISIONS 가 든다.
-    """
-    fixed, skipped = [], []
-    for r in records:
-        s = r.get("seal") if isinstance(r, dict) else None
-        if r.get("status") != "OK" or not isinstance(s, dict) \
-                or not all(k in s for k in ("raw", "cfg", "code", "out")):
-            continue
-        key = r["key"]
-        if s["code"] == code:
-            continue                                   # 이미 같다
-        try:
-            hits = paths_for(key, cfg["datasets"][key])
-        except Exception:
-            skipped.append(key); continue
-        if raw_print(hits) != s["raw"] or out_print(out_dir, list(s["out"])) != s["out"]:
-            skipped.append(key); continue              # 입력이나 산출물이 달라졌다 — 다시 빌드해야 한다
-        s["code"] = code
-        fixed.append(key)
-    return fixed, skipped
-
-
-def reseal_out_cli(man_path: Path, out_dir: Path, manifest) -> int:
-    """`ingest --reseal-out` 의 본문. 파이프라인이 terrain 뒤에 부른다."""
-    if not man_path.exists():
-        return 0
-    doc = manifest.read(man_path)
-    fixed, missing = reseal_out(doc.get("datasets", []), out_dir)
-    wrote = manifest.write_stable(man_path, doc)
-    print(f"샤드 봉인지 out 갱신 {len(fixed)}종"
-          + (f" ({', '.join(fixed)})" if fixed else "")
-          + (f" · 산출물 없음 {len(missing)}종: {', '.join(missing)}" if missing else "")
-          + ("" if wrote else " · 대장 불변"))
-    return 0
-
-
-def reseal_code_cli(man_path: Path, cfg: dict, out_dir: Path, code: str,
-                    paths_for, manifest) -> int:
-    """`ingest --reseal-code` 의 본문. 대장을 읽고 고치고 적고 화면에 남긴다.
-
-    ★ ingest 본체가 아니라 여기 산다. 봉인지를 아는 것은 이 모듈이고,
-      ingest 는 그것을 부를 뿐이다 — 봉인 규칙이 두 파일에 흩어지지 않는다.
-    """
-    if not man_path.exists():
-        print("★ _manifest.json 이 없다. 고칠 봉인지가 없다.")
-        return 0
-    doc = manifest.read(man_path)
-    fixed, skipped = reseal_code(doc.get("datasets", []), cfg, out_dir, code, paths_for)
-    wrote = manifest.write_stable(man_path, doc)
-    print(f"샤드 봉인지 code 갱신 {len(fixed)}종 → {code}"
-          + (f"\n  고침  {', '.join(fixed)}" if fixed else "")
-          + (f"\n  거절  {len(skipped)}종 — raw 나 산출물이 봉인과 다르다: "
-             f"{', '.join(skipped)}" if skipped else "")
-          + ("" if wrote else "\n  대장 불변"))
-    if skipped:
-        print("  ★ 거절된 것은 **다시 빌드해야 한다.** 봉인은 그래서 있다.")
-    if wrote:
-        _relineage(man_path)
-    return 0
-
-
-def _relineage(man_path: Path) -> None:
-    """재도장으로 바뀐 대장 해시를 **계보 기록에도** 반영한다.  (DECISIONS §267)
-
-    ★ 2026-09-27 실측. 재도장은 대장을 고치는데 `_lineage.json` 의
-      `ingest.outputs["data/processed/_manifest.json"]` 은 옛 해시를 든 채였다.
-      그래서 바로 다음 `segments` 가 「입력이 바뀌었으니 상류부터 다시 돌려라」로
-      막혔다 — **재도장이 재빌드를 부르는** 자리였고, 그것은 이 도구가 없애려던
-      바로 그 비용이다(DECISIONS §224-2).
-
-    ★ 갱신이 안전한 이유는 재도장의 정의다 — `code` 칸만 고치고 **산출물은 한
-      바이트도 안 건드린다.** 거절된 종은 애초에 안 고쳐지므로 여기 안 온다.
-      바꾸는 것은 대장 한 칸이고, 나머지 계보는 그대로 둔다.
-    """
-    from firelane import lineage
-
-    lin = man_path.parent / lineage.LINEAGE
-    if not lin.exists():
-        return                       # 계보가 없으면 다음 실행이 새로 적는다
-    doc = json.loads(lin.read_text(encoding="utf-8"))
-    key = f"data/processed/{man_path.name}"
-    for step in doc.values():
-        out = (step or {}).get("outputs") or {}
-        if key in out:
-            out[key] = lineage._manifest_digest(man_path)
-    lin.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"  계보 기록의 `{key}` 도 같이 갱신했다 — 재도장이 재빌드를 안 부르게")
 
 
 def _short(text: str) -> str:

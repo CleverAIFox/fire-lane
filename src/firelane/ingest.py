@@ -358,9 +358,13 @@ def main():
                     help="샤드 봉인을 무시하고 전부 다시 빌드한다")
     ap.add_argument("--reseal-out", action="store_true",
                     help="하류가 덧쓴 산출물로 샤드 봉인지의 out 칸만 고친다 (파이프라인이 terrain 뒤에 부른다)")
-    # ★ 2026-09-23 (DECISIONS §224-2a). 사유는 `shardseal.reseal_code` 머리말.
+    # ★ 2026-09-23 (DECISIONS §224-2a). 사유는 `reseal.reseal_code` 머리말.
     ap.add_argument("--reseal-code", action="store_true",
                     help="raw · 산출물이 봉인과 같은 샤드의 code 칸만 지금 코드 지문으로 고친다")
+    # ★ 2026-10-11 (DECISIONS §460). 지문 **판**이 바뀐 뒤 한 번 부른다 —
+    #   받는 규칙은 `shardseal.check()` 와 같은 하나다(옛 판 지문이면 받는다).
+    ap.add_argument("--reseal-cfg", action="store_true",
+                    help="옛 판 지문인 샤드의 cfg 칸만 지금 판으로 고친다 (재빌드 없음)")
     ap.add_argument("--stamp", action="store_true",
                     help="빌드 없이, 지금 산출물에 샤드 봉인지를 붙인다 (사람이 판단해서 부른다)")
     a = ap.parse_args()
@@ -383,7 +387,7 @@ def main():
     # ★ 2026-09-16. 샤드(소스 하나) 봉인 — shardseal.py 머리말. 봉인지 네 칸
     #   (raw · cfg · code · out)이 전부 같으면 다시 빌드하지 않는다. 이 8GB
     #   기계에서 `ngii_road` 는 다시 빌드하면 거의 반드시 죽는다(DECISIONS §165).
-    from firelane import shardseal
+    from firelane import reseal, shardseal
     _code = shardseal.code_print()
     _man0 = OUT / "_manifest.json"
     _prev = {}
@@ -395,10 +399,13 @@ def main():
             _prev = {}
 
     if a.reseal_out:
-        return shardseal.reseal_out_cli(_man0, OUT, manifest)
+        return reseal.reseal_out_cli(_man0, OUT, manifest)
 
     if a.reseal_code:
-        return shardseal.reseal_code_cli(_man0, cfg, OUT, _code, paths_for, manifest)
+        return reseal.reseal_code_cli(_man0, cfg, OUT, _code, paths_for, manifest)
+
+    if a.reseal_cfg:
+        return reseal.reseal_cfg_cli(_man0, cfg, manifest)
 
     if a.stamp:
         # 빌드하지 않는다. 지금 디스크의 산출물이 지금 코드 · raw 로 만든 것이라는

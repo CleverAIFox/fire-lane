@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from firelane import sealkeys, shardseal
+from firelane import reseal, sealkeys, shardseal
 from firelane.guards import quarantine_stale
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -284,10 +284,16 @@ def test_every_prose_field_in_the_ledger_is_declared_as_prose():
 
 
 def test_a_caveat_does_not_tear_every_shard(shard):
-    """`caveats` 한 줄을 고쳐도 안 찢어진다 — 그리고 실질 변화는 여전히 잡는다."""
-    base = {**CFG, "layers": {"golden": {"caveats": ["옛 줄"], "base": "repo"}}}
-    prose = {**CFG, "layers": {"golden": {"caveats": ["새 줄"], "base": "repo"}}}
-    real = {**CFG, "layers": {"golden": {"caveats": ["옛 줄"], "base": "data"}}}
+    """`caveats` 한 줄을 고쳐도 안 찢어진다 — 그리고 실질 변화는 여전히 잡는다.
+
+    ★ 2026-10-11 (DECISIONS §460). 표본이 `golden` 이었는데 그 계층은 이제
+      **ingest 가 안 쥐어서 통째로 빠진다** — 그러면 둘째 단정이 「실질 변화를
+      안 잡는다」를 못 묻는다. 쥐는 계층(`raw`)으로 바꿨다. 표본이 낡으면
+      그 시험은 아무것도 안 지킨다.
+    """
+    base = {**CFG, "layers": {"raw": {"caveats": ["옛 줄"], "base": "repo"}}}
+    prose = {**CFG, "layers": {"raw": {"caveats": ["새 줄"], "base": "repo"}}}
+    real = {**CFG, "layers": {"raw": {"caveats": ["옛 줄"], "base": "data"}}}
     assert shardseal.cfg_print(prose, "road") == shardseal.cfg_print(base, "road"), \
         "caveats 가 지문을 움직인다"
     assert shardseal.cfg_print(real, "road") != shardseal.cfg_print(base, "road"), \
@@ -394,20 +400,20 @@ def test_reseal_out_touches_only_the_out_cell(shard):
     (shard["out"] / "road_5186.gpkg").write_bytes(b"gpkg-with-z")   # 하류가 z 를 덧썼다
     ok, why = shardseal.check(rec, CFG, "road", shard["hits"], shard["out"], "code-v1")
     assert not ok and "산출물이 봉인과 다르다" in why          # 덧쓰기 직후엔 찢어진다
-    fixed, missing = shardseal.reseal_out([rec], shard["out"])
+    fixed, missing = reseal.reseal_out([rec], shard["out"])
     assert fixed == ["road"] and missing == []
     assert {k: v for k, v in rec["seal"].items() if k != "out"} == before, \
         "reseal_out 이 raw · cfg · code 를 건드렸다 — 거짓 봉인 경로다"
     ok, why = shardseal.check(rec, CFG, "road", shard["hits"], shard["out"], "code-v1")
     assert ok, f"out 을 고쳤는데도 찢어진다 — 매 실행 재빌드가 계속된다: {why}"
-    assert shardseal.reseal_out([rec], shard["out"]) == ([], []), "두 번째 호출이 또 고친다 — 멱등이 아니다"
+    assert reseal.reseal_out([rec], shard["out"]) == ([], []), "두 번째 호출이 또 고친다 — 멱등이 아니다"
 
 
 def test_reseal_out_does_not_seal_a_raw_change(shard):
     """out 만 고치므로 raw 가 바뀐 샤드는 여전히 찢어진다 — `--from` 부분 실행의 안전선."""
     rec = shard["rec"]
     shard["hits"][0].write_bytes(b"raw-v2")
-    shardseal.reseal_out([rec], shard["out"])
+    reseal.reseal_out([rec], shard["out"])
     ok, why = shardseal.check(rec, CFG, "road", shard["hits"], shard["out"], "code-v1")
     assert not ok and "raw 가 바뀌었다" in why
 
@@ -416,7 +422,7 @@ def test_reseal_out_skips_missing_and_unsealed(shard, tmp_path):
     rec = shard["rec"]
     (shard["out"] / "road.geojson").unlink()
     plain = {"key": "plain", "status": "OK", "outputs": ["x.gpkg"]}
-    fixed, missing = shardseal.reseal_out([rec, plain], shard["out"])
+    fixed, missing = reseal.reseal_out([rec, plain], shard["out"])
     assert fixed == [] and missing == ["road"]
     assert "seal" not in plain
 
@@ -531,3 +537,81 @@ def test_ingest_global_keys_are_declared():
         "  낡은 면제는 사각지대다 — 지워라(§259-2).")
     thin = [k for k, w in sealkeys.NOT_INGEST_GLOBAL.items() if len(w.strip()) < 20]
     assert not thin, f"사유가 빈약하다: {thin}"
+
+
+# ── 계층 단위 cfg 폐포 (2026-10-11 · DECISIONS §460) ─────────────
+#: 실물 설정. 합성 CFG 로는 「계층 하나를 더하면 어떻게 되나」를 못 묻는다 —
+#: 실측이 들어간 자리라 `sources.yaml` 을 그대로 쓴다.
+def _real_cfg() -> dict:
+    import yaml
+    return yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+
+
+def test_the_layer_probe_agrees_with_the_bind_table():
+    """판별식이 **상수 이름을 제 손으로 짓는다** — `BIND` 와 같은가.
+
+    ★ 2026-10-11 (DECISIONS §460). `shardseal` 이 `firelane.layers` 를 import
+      하면 그 파일이 **ingest 폐포에 들어오고** `BIND` 한 줄에 전수가 찢어진다.
+      `NOT_PRODUCERS` 로도 못 뺀다 — 그 표가 봉인 **판단**에 쓰이기 때문이다.
+      그래서 규칙은 `shardseal` 에 두고 **대조는 이쪽에서** 한다.
+    """
+    from firelane import layers
+
+    bad = {n: c for n, c in layers.BIND.items() if c != shardseal._layer_const(n)}
+    assert not bad, (
+        f"`BIND` 가 판별식과 다른 상수를 든다: {bad}\n"
+        "  판별식(`_layer_const`)을 가르치거나 상수 이름을 맞춰라. 안 맞으면\n"
+        "  그 계층은 **안 쥔 것으로 세어져** 산출이 바뀌어도 안 찢어진다.")
+    assert layers.BIND, "BIND 가 비었다 — 이 대조가 아무것도 안 묻는다"
+
+
+def test_a_layer_ingest_never_writes_does_not_tear_any_shard():
+    """계층 하나를 선언했다고 **45샤드가 찢어지면** 안 된다.  (§457-2 의 그 비용)"""
+    cfg = _real_cfg()
+    key = next(iter(cfg["datasets"]))
+    more = {**cfg, "layers": {**cfg["layers"],
+                              "retired": {"base": "data", "sub": "retired"}}}
+    assert shardseal.cfg_print(more, key) == shardseal.cfg_print(cfg, key), \
+        "ingest 가 안 쓰는 계층을 더했는데 찢는다 — 8GB 기계에서 OOM 이다"
+    # ★ 카나리아 — 옛 판은 **찢었다.** 그것이 2026-10-10 에 되돌린 사유다.
+    assert shardseal._cfg_print_v5(more, key) != shardseal._cfg_print_v5(cfg, key), \
+        "옛 판이 안 찢는다 — 그러면 이 고침의 전제가 거짓이다"
+
+
+def test_a_layer_ingest_does_write_still_tears():
+    """**반대 방향.** 쥐는 계층의 실질 변화를 놓치면 낡은 산출물을 재사용한다."""
+    cfg = _real_cfg()
+    key = next(iter(cfg["datasets"]))
+    moved = {**cfg, "layers": {**cfg["layers"],
+                               "raw": {**cfg["layers"]["raw"], "sub": "raw2"}}}
+    assert shardseal.cfg_print(moved, key) != shardseal.cfg_print(cfg, key), \
+        "`raw` 의 경로가 바뀌었는데 안 찢는다 — 그 방향이 더 비싸다"
+    names = shardseal.ingest_layer_names(tuple(sorted(cfg["layers"])))
+    assert {"raw", "norm", "processed"} <= names, f"폐포가 쥐는 계층을 놓쳤다: {sorted(names)}"
+    assert "golden" not in names, "`paths.py` 에서만 보이는 계층을 쥐었다고 센다"
+
+
+def test_reseal_cfg_takes_a_legacy_print_and_refuses_anything_else():
+    """재도장은 **옛 판 지문일 때만** 받는다. 아무 지문이나 받으면 봉인 해제다."""
+    from firelane import reseal
+
+    cfg = _real_cfg()
+    key = next(iter(cfg["datasets"]))
+    old = {"key": key, "status": "OK",
+           "seal": {"cfg": shardseal._cfg_print_v5(cfg, key), "raw": "r", "code": "c",
+                    "out": {}}}
+    fixed, refused = reseal.reseal_cfg([old], cfg)
+    assert (fixed, refused) == ([key], []), "옛 판 지문을 안 받는다 — 전수가 찢어진다"
+    assert old["seal"]["cfg"] == shardseal.cfg_print(cfg, key), "새 판으로 안 고쳐 적었다"
+    assert reseal.reseal_cfg([old], cfg) == ([], []), "두 번째 호출이 또 고친다 — 멱등이 아니다"
+    junk = {"key": key, "status": "OK",
+            "seal": {"cfg": "deadbeefdeadbeef", "raw": "r", "code": "c", "out": {}}}
+    assert reseal.reseal_cfg([junk], cfg) == ([], [key]), \
+        "아무 지문이나 고쳐 적는다 — 그것은 재도장이 아니라 봉인 해제다"
+
+
+def test_the_reseal_module_makes_no_output():
+    """재도장 문은 **산출물을 안 만든다** — 안 빼면 안내 문구 한 줄에 전수가 찢어진다."""
+    assert "reseal.py" in shardseal.NOT_PRODUCERS
+    assert "reseal.py" in {p.name for p in shardseal.code_closure()}, \
+        "폐포가 `reseal.py` 를 못 찾는다 — 위 제외 대조가 무의미하다"
