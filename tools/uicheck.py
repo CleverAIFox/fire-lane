@@ -66,6 +66,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+import srgb
+
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "web" / "navi" / "src"
 DIST = ROOT / "web" / "navi" / "dist"
@@ -183,12 +185,15 @@ _D_ROW = re.compile(r"(\w+):\s*\"(#[0-9a-fA-F]{6})\"")
 
 
 def _lum(hex6: str) -> float:
-    """WCAG 상대휘도. **색이 아니라 밝기**를 재는 자다."""
-    def ch(v: float) -> float:
-        v /= 255
-        return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
-    r, g, b = (int(hex6[i:i + 2], 16) for i in (1, 3, 5))
-    return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
+    """WCAG 상대휘도. **색이 아니라 밝기**를 재는 자다.
+
+    ★ 2026-10-11 (DECISIONS §474). 여기 sRGB 역감마와 WCAG 가중치가
+      **글자까지 같게** 또 있었다 — `tools/colorsim.py` 에 두 벌, 여기 한 벌.
+      공식의 집은 `tools/srgb.py` 하나다. `tools/mutate.py` 의 생존 목록이
+      이 자리를 이미 가리키고 있었다(「층 공식의 WCAG 역감마 무릎」) —
+      흔들어도 아무도 안 울었고, 그래서 사본인 것도 안 보였다.
+    """
+    return srgb.luminance(srgb.hex_rgb(hex6))
 
 
 def layers_declared(txt: str) -> list[tuple[str, str]]:

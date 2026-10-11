@@ -20,7 +20,14 @@ import type { ContextKind, RoutePlan } from "./types";
 export const NEAR_M: Record<ContextKind, number> = {
   speedbump: 12, speedcam: 25, child_zone: 150, senior_zone: 150,
 };
-const MERGE_M = 60;
+/**
+ * 이보다 가까운 같은 종류의 **사정**은 하나로 묶어 적는다.
+ *
+ * ★ 2026-10-11 (DECISIONS §475). 이름이 `MERGE_M` 이었고 `app/useVoice.ts`
+ *   에 **같은 이름 다른 수**(45 · 회전 문구를 묶는 창)가 있었다. 이름에
+ *   무엇을 묶는지를 넣는다.
+ */
+const HAZARD_MERGE_M = 60;
 
 export interface Hazard {
   kind: ContextKind;
@@ -84,7 +91,7 @@ export function routeHazards(plan: Pick<RoutePlan, "coords">, ctx: GeoJSON.Featu
   const out: Hazard[] = [];
   for (const h of hits) {
     const prev = [...out].reverse().find((x) => x.kind === h.kind);
-    if (prev && h.atM - prev.atM < MERGE_M) continue;
+    if (prev && h.atM - prev.atM < HAZARD_MERGE_M) continue;
     out.push(h);
   }
   return out;

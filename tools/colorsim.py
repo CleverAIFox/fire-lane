@@ -39,10 +39,11 @@ from __future__ import annotations
 
 import argparse
 import itertools
-import math
 import re
 import sys
 from pathlib import Path
+
+import srgb
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -83,42 +84,17 @@ def simulate(rgb: tuple[float, float, float], vision: str) -> tuple[float, ...]:
     return tuple(min(255.0, max(0.0, c)) for c in out)
 
 
-def _lab(rgb: tuple[float, ...]) -> tuple[float, float, float]:
-    """sRGB → CIE L*a*b* (D65). 감마와 백색점은 표준값이다."""
-    def lin(c):
-        c /= 255.0
-        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
-    r, g, b = (lin(c) for c in rgb)
-    x = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047
-    y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 1.00000
-    z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883
-
-    def f(t):
-        return t ** (1 / 3) if t > 0.008856 else 7.787 * t + 16 / 116
-    fx, fy, fz = f(x), f(y), f(z)
-    return 116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)
-
-
-def luminance(rgb: tuple[float, ...]) -> float:
-    """WCAG 상대휘도. 0(검정) ~ 1(흰색)."""
-    def lin(c):
-        c /= 255.0
-        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
-    r, g, b = (lin(c) for c in rgb)
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
-
-
-def lum_ratio(a: tuple[float, ...], b: tuple[float, ...]) -> float:
-    """두 색의 휘도비(≥1). 1.00 이면 **밝기가 같다**."""
-    la, lb = luminance(a) + 0.05, luminance(b) + 0.05
-    return max(la, lb) / min(la, lb)
-
-
-def delta_e(a: tuple[float, ...], b: tuple[float, ...]) -> float:
-    """CIE76 ΔE*ab. 두 색이 **얼마나 다른가**의 표준 거리."""
-    la, aa, ba = _lab(a)
-    lb, ab, bb = _lab(b)
-    return math.sqrt((la - lb) ** 2 + (aa - ab) ** 2 + (ba - bb) ** 2)
+# ★ 2026-10-11 (DECISIONS §474). 아래 넷이 이 파일에 **공식까지** 있었고,
+#   sRGB 역감마는 이 파일 안에서만 **두 벌**이었다(`_lab` 과 `luminance`).
+#   공식의 집은 `tools/srgb.py` 하나다 — 이름은 그대로 두고 넘긴다
+#   (`matrix` · `show` · 시험이 이 이름들을 든다 · §470-1 의 판단과 같다).
+#   실측 — 무작위 2만 쌍에서 휘도 어긋남 **0** · ΔE 1.6e-13 · Lab 1.1e-13 이고
+#   역감마는 0~255 전수에서 **0** 이다. 색각 이상 변환(LMS)은 여기 남는다 —
+#   소비자가 이 파일 하나뿐인 것을 공용 집에 올리지 않는다.
+_lab = srgb.lab
+luminance = srgb.luminance
+lum_ratio = srgb.lum_ratio
+delta_e = srgb.delta_e
 
 
 def colors() -> dict[str, tuple[int, int, int]]:
