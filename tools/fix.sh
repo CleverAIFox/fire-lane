@@ -89,6 +89,13 @@ fix "죽은 강제자 참조"  uv run python tools/dms.py --apply
 fix "북마크 죽은 절"    uv run python tools/dms.py prune --apply
 
 # ③ 생성물 ← 정본 ─────────────────────────────────────────────
+# ★ 2026-10-11 (DECISIONS §468-2). **그림을 먼저 만든다.** 종전에는 이 문이
+#   `htmlfigs --sync`(굽기)만 돌고 `render_figures`(만들기)를 안 돌았다 —
+#   정본 값이 움직이면 SVG 가 낡고, 그 **낡은 SVG 를 화면에 구웠다.**
+#   2026-10-11 전수 verify 에서 「그림이 정본과 어긋난다 — verdict · unknown ·
+#   verdict_flow」가 빨갰고 사람이 둘을 손으로 쳤다. 깃발 없이 고치는 도구라
+#   `fixable` 의 분모 밖이었다(§468-1 이 그 분모를 고쳤다).
+fix "기획서 그림 생성"  uv run python tools/render_figures.py
 # ★ 2026-10-09 (§444 · #142). **그 줄이 지워지고 이 줄만 남았다** — §440 이
 #   적어 둔 그대로다. 생성 그림 다섯이 화면 자리로 바로 간다.
 fix "기획서 화면 그림"  uv run python tools/htmlfigs.py --sync
@@ -97,8 +104,13 @@ fix "문서 생성 블록"    uv run python tools/docgen.py
 #   `docs/proposal.md` 가 바뀌면 `web/proposal.html` 이 낡고, 그것은 커밋되는
 #   생성물이다 — 기계적으로 답이 하나다. 그림(`htmlfigs`) 뒤에 둔다: 그림을
 #   갈아 끼운 뒤에 구워야 화면이 새 그림을 든다.
-#   ★ `--touch` 는 **안 건다.** 날짜는 「고친 날」이고 그것은 사람이 안다
-#     (`doc_fsck ⑥` 이 안 찍힌 것을 운다).
+#   ★ 2026-10-11 (DECISIONS §468-3). 종전에 이 자리는 「`--touch` 는 **안 건다.**
+#     날짜는 「고친 날」이고 그것은 사람이 안다」고 적고 있었다. **그 말이
+#     틀렸다** — `doc_fsck ⑥` 이 그 날짜를 git 과 시각에서 **유도해 명령까지
+#     찍는다.** 선언과 검사가 반대를 말했고, 그래서 사람이 그 명령을 손으로
+#     옮겨 쳤다(2026-10-11 에 두 번). 유도는 `docfsck.revised.squash_day()`
+#     하나이고 `--touch-today` 가 그것을 쓴다. **표지를 옮긴 뒤에 굽는다.**
+fix "기획서 표지 날짜"  uv run python tools/build_proposal.py --touch-today
 fix "기획서 화면"      uv run python tools/build_proposal.py
 
 # ④ 래칫 — **맨 뒤.** 위 수리가 실측값을 바꾼다 ────────────────

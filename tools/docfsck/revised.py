@@ -125,7 +125,7 @@ def _ready_one(f: Path, bases: tuple[str, ...]) -> list[str]:
         return [why]
     # ★ 시간대 없는 `date.today()` 는 CI(`DTZ011`)가 문다. 이 검사의 「오늘」은
     #   **한국 시각의 오늘**이다 — 배치를 그 시각으로 스쿼시하기 때문이다.
-    today = datetime.now(tz=timezone(timedelta(hours=9))).date().isoformat()
+    today = squash_day()
     if _norm(today) in {_norm(s) for s in shown}:
         return []
     return [f"{rel} 을 이 배치에서 고쳤는데(기준 {base}) 표지는 "
@@ -133,6 +133,20 @@ def _ready_one(f: Path, bases: tuple[str, ...]) -> list[str]:
             f"      ★ 스쿼시가 파일의 커밋 날짜를 머지일로 바꾸므로 지금 초록이어도 "
             f"머지 뒤 ⑥ 이 운다.\n"
             f"      고치는 법 — uv run python tools/build_proposal.py --touch {today} --write"]
+
+
+def squash_day() -> str:
+    """이 배치가 스쿼시될 날. **표지가 들어야 하는 날짜의 정본이다.**
+
+    ★ 시간대 없는 `date.today()` 는 CI(`DTZ011`)가 문다. 이 검사의 「오늘」은
+      **한국 시각의 오늘**이다 — 배치를 그 시각으로 스쿼시하기 때문이다.
+
+    ★ 2026-10-11 (DECISIONS §468-3). 함수로 꺼냈다. 종전에는 이 식이 위
+      `check_ready_for_squash` **안**에 있었고, 그래서 `fix.sh` 가 그 날짜를
+      쓰려면 **같은 식을 한 번 더 적어야** 했다. 검사가 유도하는 수를 수리
+      쪽이 다시 유도하면 그 둘이 갈리는 날이 온다(족 2).
+    """
+    return datetime.now(tz=timezone(timedelta(hours=9))).date().isoformat()
 
 
 # ── 6. 기획서 최종 수정일 ──────────────────────────────────────

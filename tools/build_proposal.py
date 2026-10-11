@@ -279,8 +279,24 @@ def main(argv=None) -> int:
     ap.add_argument("--check", action="store_true", help="굽지 않고 댄다")
     ap.add_argument("--touch", metavar="YYYY-MM-DD",
                     help="표지 최종 수정일·수치 기준일을 그날로 옮긴다")
+    # ★ 2026-10-11 (DECISIONS §468-3). 날짜를 **유도해서** 옮긴다. 종전에는
+    #   `fix.sh` 가 이 수리를 안 돌았고 사유가 「날짜는 고친 날이고 그것은 사람이
+    #   안다」였다 — 그런데 `doc_fsck ⑥` 이 그 날짜를 **git 과 시각에서 유도해
+    #   명령까지 찍고 있었다.** 선언과 검사가 반대를 말했고, 그래서 사람이 그
+    #   명령을 손으로 옮겨 쳤다(2026-10-11 에 두 번).
+    #   ★ 유도는 `docfsck.revised.squash_day()` **하나**다. 여기서 다시 적으면
+    #     검사와 수리가 다른 날을 쓰는 날이 온다(족 2).
+    ap.add_argument("--touch-today", action="store_true",
+                    help="그 날짜를 `doc_fsck ⑥` 과 **같은 식**으로 유도해 옮긴다")
     ap.add_argument("--write", action="store_true", help="--touch 와 함께 — 실제로 쓴다")
     a = ap.parse_args(argv)
+
+    if a.touch_today:
+        if a.touch:
+            print("✗ --touch 와 --touch-today 를 같이 줄 수 없다 — 날짜가 둘이다")
+            return 2
+        from docfsck.revised import squash_day
+        a.touch, a.write = squash_day(), True
 
     if a.touch:
         touch(a.touch, a.write)

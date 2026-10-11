@@ -138,7 +138,11 @@ TIMEOUT = 180
 #   고른 돌연변이가 달라져 생존이 넷 늘었다. 넷 다 **래칫 상수와 판정 비교**다
 #   (`RATCHET = 0` · `NO_CANARY = 56` · `> → >=` · `rc = 1`) — 흔들어도 그
 #   도구의 자기검사가 보는 답이 안 바뀌는 자리다. 분모도 같이 늘었다(120 → 124).
-SURVIVORS = 79
+# ★ 2026-10-11 — 79 → 78 (DECISIONS §468). **조이는 쪽이다.** `UNSORTED` 와
+#   같은 원인이다(§398-8 의 규율대로 둘을 같이 적는다) — `fixable._subs` 에
+#   합성 문을 달아 그 자리 하나를 죽였다. `navicheck` 쪽 셋은 §467 이 같은
+#   판에서 죽였고 그 표본은 이미 다시 잰 뒤의 수다.
+SURVIVORS = 78
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 MUTANTS = 124
 #: 붙잡이가 **0 인 과녁** 수. 흔들어도 못 재는 자리다 — 내려가는 쪽으로만.
@@ -168,7 +172,11 @@ RATCHET_HELD = 23   # ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
 # ★ 2026-10-11 — 52 → 56 (DECISIONS §459). **SURVIVORS 와 같은 원인이다** —
 #   §398-8 의 규율대로 둘을 같이 적는다. 넷 다 래칫 상수가 아니거나(`rc = 1` ·
 #   비교 연산자) 이 문이 안 붙드는 자리라 `RATCHET_HELD` 가 안 움직였다(23).
-UNSORTED = 56
+# ★ 2026-10-11 — 56 → 55 (DECISIONS §468). **조이는 쪽이다.** `fixable` 의
+#   서브명령 읽기(`_subs`)에 합성 문을 달아 그 자리 돌연변이를 죽였다 —
+#   `not p.startswith("-")` 의 `not` 을 떼도 안 울고 있었고, 그 함수가
+#   `mode_gaps` 의 분모다. `SURVIVORS` 도 같이 1 내려간다 — 같은 원인이다.
+UNSORTED = 55
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
             "RATCHET_HELD": "up", "UNSORTED": "down"}
 
