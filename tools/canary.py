@@ -96,18 +96,59 @@ def pairs(tree: ast.AST) -> tuple[set[str], set[str]]:
       `assert any("x" in b for b in f(…))`. **식 전체를 훑는다**: 양성 쪽을
       `assert f(…)` 꼴로만 좁히면 실측에서 넷이 빠졌다(세는 꼴이 실물과 달라지면
       그 검사는 제 그물이 아니라 내 손을 잰다 · §436-6).
+
+    ★ 2026-10-12 (DECISIONS §480). **음성 쪽에 같은 구멍이 남아 있었다.**
+      `bad = f(x)` 뒤에 `assert not bad` 로 쓰는 꼴이 실물의 흔한 꼴인데
+      (오류 메시지가 `bad` 를 쓰므로 그렇게 쓸 수밖에 없다) 그 꼴을 안 봤다.
+      §436-6 을 양성 쪽에서만 배우고 **음성 쪽에는 안 적용했다** — 그래서
+      「카나리아 없음」이 거짓으로 부풀어 있었다. 한 함수 안의 지역 묶음을
+      따라간다.
     """
     neg: set[str] = set()
     pos: set[str] = set()
-    for n in ast.walk(tree):
-        if not isinstance(n, ast.Assert):
-            continue
-        t = n.test
-        if isinstance(t, ast.UnaryOp) and isinstance(t.op, ast.Not):
-            neg |= _called(t.operand)
-        else:
-            pos |= _called(t)
+    for fn in _funcs(tree):
+        # ★ 2026-10-12 (DECISIONS §480). 한 함수 안의 **`이름 = f(…)`** 를 모은다.
+        #   `assert not 이름` 이 그 이름을 쓰면 **`f` 를 음성으로 민 것**이다.
+        bound: dict[str, set[str]] = {}
+        for n in ast.walk(fn):
+            if isinstance(n, ast.Assign) and len(n.targets) == 1 \
+                    and isinstance(n.targets[0], ast.Name):
+                got = _called(n.value)
+                if got:
+                    bound.setdefault(n.targets[0].id, set()).update(got)
+            elif isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name) \
+                    and n.value is not None:
+                got = _called(n.value)
+                if got:
+                    bound.setdefault(n.target.id, set()).update(got)
+        for n in ast.walk(fn):
+            if not isinstance(n, ast.Assert):
+                continue
+            t = n.test
+            if isinstance(t, ast.UnaryOp) and isinstance(t.op, ast.Not):
+                neg |= _called(t.operand)
+                neg |= _bound_names(t.operand, bound)
+            else:
+                pos |= _called(t)
+                pos |= _bound_names(t, bound)
     return neg, pos
+
+
+def _funcs(tree: ast.AST) -> list[ast.AST]:
+    """함수 하나하나. **묶음이 함수다** — 묶음을 파일로 하면 다른 시험의 이름이
+    섞이고, 그러면 한 자리에서 민 것을 다른 자리의 증거로 센다."""
+    out = [n for n in ast.walk(tree)
+           if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    return out or [tree]
+
+
+def _bound_names(node: ast.AST, bound: dict[str, set[str]]) -> set[str]:
+    """그 식이 **참조하는 지역 이름**에 묶인 호출들."""
+    out: set[str] = set()
+    for n in ast.walk(node):
+        if isinstance(n, ast.Name) and n.id in bound:
+            out |= bound[n.id]
+    return out
 
 
 def has_canary(tree: ast.AST) -> bool:
@@ -155,12 +196,27 @@ def denominator(root: Path = ROOT) -> int:
 
 
 #: 카나리아를 **못 만드는** 강제자. `"파일::이름"` → 사유.
-#: ★ 비었다. 오늘 57 은 면제가 아니라 **빚**이고 그것은 아래 래칫이 든다.
+#: ★ 비었다. 오늘 29 은 면제가 아니라 **빚**이고 그것은 아래 래칫이 든다.
 #:   면제가 생기면 사유와 함께 여기 한 줄이다(§69).
 EXEMPT: dict[str, str] = {}
 
-#: 카나리아 없는 강제자 수. **내려가는 쪽.** 2026-10-09 실측 57 / 분모 98.
-NO_CANARY = 56
+#: 카나리아 없는 강제자 수. **내려가는 쪽.** 2026-10-12 실측 29 / 분모 104.
+# ★ 2026-10-12 — 56 → **30** (DECISIONS §480). **스물여섯은 거짓이었다.**
+#   코드를 하나도 안 고치고 내려간 수다 — 이 파일의 음성 판별이
+#   `assert not f(…)` **한 줄 꼴만** 보고 있었고, 실물의 흔한 꼴은
+#   `bad = f(…)` 뒤의 `assert not bad` 다(오류 메시지가 `bad` 를 쓰므로
+#   그렇게 쓸 수밖에 없다). §436-6 을 **양성 쪽에서만** 배우고 음성 쪽에는
+#   안 적용한 자리다.
+#   ★ **고친 것은 세는 꼴이고 약해진 것은 없다** — 양성·음성 둘 다 같은
+#     호출이어야 하고, 묶음은 **함수**다(다른 함수의 이름을 제 증거로 안
+#     센다 · 자기검사가 그 셋을 양방향으로 든다).
+#   ★ 남은 30 은 **빚이다.** 거짓으로 부풀어 있던 수를 내렸으니 이제 그
+#     30 이 실제로 민 적 없는 자리다.
+# ★ 2026-10-12 — 30 → **29** (DECISIONS §480-1). 그 빚에서 하나를 갚았다 —
+#   `tools/colorsim.py` 의 판정이 `show()` 의 **찍는 루프 안**에 있어 시험이
+#   부를 수가 없었다. `faults()` 로 빼고 `tests/test_colorsim.py` 가 양방향으로
+#   민다(같은 색 둘 · 밝기만 붙은 쌍). **지적이 맞았던 자리다.**
+NO_CANARY = 29
 
 RATCHETS = {"NO_CANARY": "down"}
 
@@ -208,6 +264,21 @@ def selftest() -> int:
     deep = _a.parse("def t():\n    assert not f(1)\ndef c():\n    assert len(f(2)) == 1\n")
     if not has_canary(deep):
         bad.append("단정 식 안쪽의 호출을 못 본다")
+    # ★ 2026-10-12 (§480). **두 줄 꼴**을 보는가 — 양방향
+    two = _a.parse("def t():\n    bad = f(1)\n    assert not bad\n"
+                   "def c():\n    assert f(2)\n")
+    if not has_canary(two):
+        bad.append("`bad = f(…)` 뒤의 `assert not bad` 를 못 본다")
+    two_one = _a.parse("def t():\n    bad = f(1)\n    assert not bad\n")
+    if has_canary(two_one):
+        bad.append("두 줄 꼴 음성만 있는데 카나리아로 센다")
+    # ★ 묶음이 **함수**다 — 다른 함수의 이름을 끌어오면 안 된다
+    cross = _a.parse("def t():\n    bad = f(1)\n"
+                     "def u():\n    assert not bad\n"
+                     "def c():\n    assert f(2)\n")
+    if has_canary(cross):
+        bad.append("다른 함수에 묶인 이름을 제 증거로 센다")
+
     # ★ 분모 — 도구를 미는 시험만
     tools = tool_names()
     if not tools:
@@ -231,7 +302,7 @@ def selftest() -> int:
 
     for x in bad:
         print(f"  ✗ {x}")
-    print(f"{'✗' if bad else '✓'} 자기검사 — 쌍 가름 · 식 안쪽 · 분모 · 양방향 · 빈 그물")
+    print(f"{'✗' if bad else '✓'} 자기검사 — 쌍 가름 · 식 안쪽 · **두 줄 꼴** · 함수 경계 · 분모 · 양방향 · 빈 그물")
     return 1 if bad else 0
 
 

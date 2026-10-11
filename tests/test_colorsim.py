@@ -96,3 +96,49 @@ def test_two_verdicts_still_share_the_same_lightness():
 
 def test_the_tool_passes_its_own_selftest():
     assert C.selftest() == 0
+
+
+# ── ★ 2026-10-12 (DECISIONS §480-1). **카나리아** ────────────────
+#   `tools/canary.py` 가 이 파일을 「합성 결함을 넣어 우는 것을 본 자리가
+#   없다」로 들고 있었고 **그 지적이 맞았다** — 위 시험들은 변환의 성질을
+#   재지만 **판정**을 한 번도 안 민다(판정이 `show()` 의 찍는 루프 안에
+#   있어서 부를 수가 없었다). `faults()` 로 빼고 양방향으로 민다.
+def test_the_real_four_colors_pass_the_judge():
+    """실물 넷은 **조용하다.** 여기가 빨간불이면 색을 고쳐야 한다는 뜻이다."""
+    assert not C.faults(C.matrix(C.colors())), (
+        "실물 판정 색이 래칫 아래다 — 색을 바꿨으면 래칫을 같이 보라\n  "
+        + "\n  ".join(C.faults(C.matrix(C.colors()))))
+
+
+def test_the_judge_bites_two_identical_colors():
+    """★ **같은 색 둘**을 심으면 운다. ΔE 0 이고 휘도비 1.00 이다."""
+    same = {"a": (26, 150, 96), "b": (26, 150, 96),
+            "c": (224, 53, 38), "d": (110, 120, 138)}
+    bad = C.faults(C.matrix(same))
+    assert bad, "같은 색 둘을 심어도 조용하다 — 자가 죽었다"
+    assert any("a ↔ b" in m for m in bad), f"심은 쌍을 안 짚는다 — {bad[:3]}"
+
+
+def test_the_lightness_axis_can_actually_cry():
+    """★ **밝기 축이 살아 있는가.** (DECISIONS §480-2)
+
+    휘도비는 정의상 **≥ 1** 이므로, 래칫을 `× 100` 으로 적으면 실측 1.0021 이
+    `int()` 로 **100** 이 되고 그 수는 **이 양의 바닥**이다 — 내려갈 자리가
+    없으니 영원히 안 운다. 만분율로 올려 그 축을 살렸다.
+
+    ★ 여기서 드는 것은 「지금 색이 좋은가」가 아니라 **「그 자가 울 수
+      있는가」**다. 바닥에 앉은 래칫은 초록을 주지만 아무것도 안 지킨다.
+    """
+    # ① 바닥이 아니다 — 실측값이 단위의 최솟값보다 크다
+    assert C.COLOR_MIN_LUM > C.LUM_SCALE, (
+        f"래칫 {C.COLOR_MIN_LUM} 이 바닥({C.LUM_SCALE}) 이다 —"
+        " 내려갈 자리가 없으면 안 운다")
+    # ② 조금 나빠진 쌍을 심으면 **운다**
+    worse = [{"pair": "a ↔ b", "vision": "normal", "de": 99.0,
+              "lum": (C.COLOR_MIN_LUM - 5) / C.LUM_SCALE}]
+    bad = C.faults(worse)
+    assert any("휘도비" in m for m in bad), (
+        f"래칫보다 낮은 휘도비를 안 짚는다 — {bad}. 종전 `× 100` 단위에서는"
+        " 이 차이가 정수로 사라져 **영원히 조용했다**")
+    # ③ 그리고 ΔE 는 멀쩡하므로 **색상 축으로는 안 운다** — 두 축이 따로다
+    assert not any("ΔE" in m for m in bad), f"색상 축이 끼어든다 — {bad}"
