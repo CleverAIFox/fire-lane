@@ -41,6 +41,7 @@ import argparse
 import ast
 import subprocess
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -49,6 +50,15 @@ from firelane import gitq
 ROOT = Path(__file__).resolve().parents[1]
 TIMEOUT = 120
 WORKERS = 6
+
+#: 제한의 **몇 할**을 넘으면 말하나. 넘어도 **종료코드는 안 건드린다** —
+#: 동시에 여섯을 돌리므로 벽시계는 그 기계의 부하를 탄다. 판정이 아니라 눈이다.
+#:
+#: ★ 2026-10-11 (DECISIONS §463-5). `sealcov` 가 제한을 넘어 **종료 124** 로
+#:   빨개져서야 느린 것이 보였다. 재 보니 그 전부터 78초였다 — 제한의 65% 를
+#:   쓰고 있었고 **아무도 몰랐다.** 넘는 날과 넘기 전날 사이에 말이 없으면
+#:   그 관문은 늘 「갑자기」 빨개진다.
+SLOW_FRAC = 0.5
 
 #: 레이크가 있어야만 도는 자기검사 → 사유. **사유 없이 늘리지 않는다.**
 #: 죽은 선언(여기 있는데 `--selftest` 가 없는 것)은 아래 자기검사가 잡는다.
@@ -99,14 +109,25 @@ def tools() -> list[Path]:
             if "__pycache__" not in p.parts and _has_selftest(p)]
 
 
-def _run(p: Path) -> tuple[Path, int, str]:
+def _run(p: Path) -> tuple[Path, int, str, float]:
+    t = time.time()
     try:
         r = subprocess.run([sys.executable, str(p), "--selftest"], check=False,
                            capture_output=True, text=True, timeout=TIMEOUT,
                            cwd=ROOT)
     except subprocess.TimeoutExpired:
-        return p, 124, f"★ {TIMEOUT}초 안에 안 끝났다"
-    return p, r.returncode, (r.stdout + r.stderr).strip()
+        return p, 124, f"★ {TIMEOUT}초 안에 안 끝났다", time.time() - t
+    return p, r.returncode, (r.stdout + r.stderr).strip(), time.time() - t
+
+
+def slow_ones(res: list[tuple[Path, int, str, float]]) -> list[tuple[float, Path]]:
+    """제한의 `SLOW_FRAC` 이상을 쓴 것들. 느린 순.
+
+    ★ 제한에 **걸린** 것(124)은 안 센다 — 그쪽은 이미 빨갛고, 여기 또 적으면
+      같은 사실을 두 번 말한다. 여기가 드는 것은 **아직 안 빨간 것**이다.
+    """
+    return sorted(((s, p) for p, rc, _o, s in res
+                   if rc != 124 and s >= SLOW_FRAC * TIMEOUT), reverse=True)
 
 
 def _dirty() -> list[str] | None:
@@ -154,7 +175,7 @@ def main(argv: list[str] | None = None) -> int:
     if was is None or now is None:
         print("   (트리 대조 건너뜀 — git 에게 못 물었다. **깨끗하다는 뜻이 아니다**)")
     bad = []
-    for p, rc, out in sorted(res, key=lambda x: x[0].name):
+    for p, rc, out, _s in sorted(res, key=lambda x: x[0].name):
         rel = p.relative_to(ROOT).as_posix()
         if rc == 0:
             print(f"  ✓ {rel}")
@@ -163,6 +184,14 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  ✗ {rel}  (종료 {rc})")
             for line in out.splitlines()[-6:]:
                 print(f"      {line}")
+    # ★ 2026-10-11 (DECISIONS §463-5). **넘기 전에 말한다.** 판정이 아니다.
+    slow = slow_ones(res)
+    if slow:
+        print(f"\n★ 제한({TIMEOUT}초)의 {SLOW_FRAC:.0%} 를 넘게 쓴 자기검사 {len(slow)}개 — "
+              "**빨개지는 날은 결함이 아니라 제한이 든다**")
+        for s, p in slow:
+            print(f"      {s:6.1f}초  {p.relative_to(ROOT).as_posix()}")
+        print("   벽시계는 부하를 탄다 — 그래서 종료코드는 안 건드린다. 재 보고 가려라.")
     for p in skipped:
         print(f"  · {p.relative_to(ROOT).as_posix()} 건너뜀 — {SKIP[p.stem]}")
     if was is not None and now is not None and was != now:
@@ -207,6 +236,16 @@ def selftest() -> int:
                         encoding="utf-8")
         if not _has_selftest(real):
             bad.append("실제 선언을 못 읽는다 — 수집이 죽었다")
+    # ── §463-5 · 느린 것을 고르는 자가 산다 ──────────────────────
+    if not 0 < SLOW_FRAC < 1:
+        bad.append(f"SLOW_FRAC {SLOW_FRAC} 이 (0,1) 밖이다 — 0 이면 전부, 1 이면 아무것도 안 든다")
+    _c = TIMEOUT * SLOW_FRAC
+    _fake = [(Path("빠름.py"), 0, "", _c - 1), (Path("느림.py"), 0, "", _c + 1),
+             (Path("더느림.py"), 0, "", TIMEOUT - 0.5),
+             (Path("걸림.py"), 124, "", TIMEOUT)]
+    got = [p.name for _s, p in slow_ones(_fake)]
+    if got != ["더느림.py", "느림.py"]:
+        bad.append(f"느린 것 고르기가 틀렸다 — {got}")
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad))
         return 1

@@ -98,6 +98,31 @@ def _body_v1(rows: list[dict], i: int) -> str:
 LEGACY_BODIES = (_body_v1,)   #: 옛 본문 공식. 축 셋 중 첫째다
 
 
+@functools.lru_cache(maxsize=64)
+def _lines_of(path: str, _stamp: tuple[int, int]) -> tuple[str, ...]:
+    """한 문서의 줄. **같은 파일을 절마다 다시 안 읽는다.**
+
+    ★ 2026-10-11 (DECISIONS §463-4). `body()` 가 절마다 문서를 통째로 읽고
+      `splitlines()` 했다. 562절을 훑는 `sealcov --selftest` 에서 그 호출이
+      **4,158번**이고 그것이 78초 중 75초였다 — 그 기계에서는 자기검사
+      제한(120초)을 넘어 **종료 124**로 빨개졌다. 느린 것이 아니라 같은
+      바이트를 4,158번 디코딩한 것이다.
+
+    ★ 열쇠에 `mtime_ns · 크기`를 같이 둔다. 경로만으로 캐시하면 문서를
+      고친 뒤의 호출이 **옛 줄**을 받는다 — 도장이 거짓으로 유효해지는
+      쪽이고, 그쪽은 느린 것보다 나쁘다. 그리고 시험이 `ROOT` 를 tmp 로
+      갈아끼우므로(`test_docseal.py`) 열쇠는 **절대 경로**다.
+    """
+    return tuple(Path(path).read_text(encoding="utf-8").splitlines())
+
+
+def _lines(doc: str) -> tuple[str, ...]:
+    """`ROOT` 기준 문서의 줄. 캐시 열쇠를 여기서 짓는다."""
+    p = ROOT / doc
+    st = p.stat()
+    return _lines_of(str(p), (st.st_mtime_ns, st.st_size))
+
+
 def body(rows: list[dict], i: int, strip: bool = True) -> str:
     """절 본문 — 다음 **같거나 얕은** 깊이의 제목 전까지. 끝의 빈 줄은 뗀다.
     (`strip=False` 가 옛 판 `_body_v1` 이다 — 자르는 규칙은 **한 집에만** 산다.)
@@ -112,7 +137,7 @@ def body(rows: list[dict], i: int, strip: bool = True) -> str:
       끝의 빈 줄은 뜻을 안 바꾸므로 떼는 것이 옳다.
     """
     r = rows[i]
-    lines = (ROOT / r["doc"]).read_text(encoding="utf-8").splitlines()
+    lines = _lines(r["doc"])
     end = len(lines)
     for q in rows[i + 1:]:
         if q["doc"] == r["doc"] and q["depth"] <= r["depth"]:

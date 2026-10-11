@@ -303,3 +303,45 @@ def test_the_invalid_list_is_quiet_when_nothing_is_void(ds, monkeypatch, capsys)
     monkeypatch.setattr(ds, "survey", lambda: (same, dict(same), {"DOC/1": ""}))
     assert ds.check(True) == 0
     assert capsys.readouterr().out.strip() == "", "무효가 없는데 무언가를 낸다"
+
+
+# ── §463-4 · 같은 문서를 절마다 다시 읽지 않는가 ────────────────
+def test_the_body_reader_caches_but_never_serves_a_stale_line(ds, tmp_path, monkeypatch):
+    """★ 2026-10-11 (DECISIONS §463-4). `body()` 가 절마다 문서를 통째로
+    읽었다 — 562절을 훑는 `sealcov --selftest` 에서 4,158번이고 78초 중
+    75초였다. 그 기계에서는 자기검사 제한(120초)을 넘어 종료 124 였다.
+
+    캐시를 달면 **낡은 줄을 내줄** 위험이 생기고, 그쪽은 느린 것보다 나쁘다 —
+    문서를 고쳤는데 도장이 유효하다고 말하게 된다. 그래서 묻는 것은 둘이다.
+    """
+    monkeypatch.setattr(ds, "ROOT", tmp_path)
+    d = tmp_path / "D.md"
+    d.write_text("# 하나\n처음\n\n# 둘\n뒤\n", encoding="utf-8")
+    rows = [{"doc": "D.md", "line": 1, "depth": 1},
+            {"doc": "D.md", "line": 4, "depth": 1}]
+
+    assert ds.body(rows, 0) == "# 하나\n처음"
+
+    # ① 두 번째 호출은 파일을 다시 안 읽는다
+    opened = []
+    real = Path.read_text
+    monkeypatch.setattr(Path, "read_text",
+                        lambda self, *a, **k: (opened.append(self), real(self, *a, **k))[1])
+    assert ds.body(rows, 0) == "# 하나\n처음"
+    assert not opened, f"같은 문서를 또 읽었다 — {opened}"
+
+    # ② 문서가 바뀌면 **바뀐 줄**을 낸다. 캐시가 도장을 거짓으로 살리면 안 된다
+    monkeypatch.undo()
+    monkeypatch.setattr(ds, "ROOT", tmp_path)
+    d.write_text("# 하나\n고쳤다\n\n# 둘\n뒤\n", encoding="utf-8")
+    assert ds.body(rows, 0) == "# 하나\n고쳤다", "낡은 줄을 내줬다 — 도장이 거짓으로 유효해진다"
+
+    # ③ **크기가 같아도** 알아챈다. 길이로만 가르면 한 글자 치환을 놓친다 —
+    #    그리고 도장이 드는 변경은 대개 한 글자다. 시각은 손으로 밀어 둔다
+    #    (같은 틱에 두 번 쓰면 `mtime_ns` 가 같을 수 있다).
+    import os
+    st = d.stat()
+    d.write_text("# 하나\n바꿨다\n\n# 둘\n뒤\n", encoding="utf-8")
+    assert d.stat().st_size == st.st_size, "이 대조는 **같은 크기**를 묻는다"
+    os.utime(d, ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000))
+    assert ds.body(rows, 0) == "# 하나\n바꿨다", "크기가 같으면 못 알아챈다"
