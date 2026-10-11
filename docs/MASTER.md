@@ -897,6 +897,7 @@ src/firelane/probe.py         좌표계 역추정 · 그래프 위상 진단
 src/firelane/quiet_gdal.py    GDAL 잡음 억제. rasterio 보다 먼저 import
 src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 src/firelane/shardseal.py     ingest 샤드(소스 하나) 봉인지. 넷이 같을 때만 재사용
+src/firelane/reseal.py        그 봉인지 **한 칸**을 고쳐 적는 문 셋. 재빌드가 아니다
 src/firelane/lake.py          레이크 해석기. 대장 + 디스크 → 파일마다 한 줄
 src/firelane/ledger.py        대장 항목 스키마 정본 · kinds · scope · naming · providers · encoding 이 각 어휘의 정본
 src/firelane/prep.py          raw → norm. 형식만 통일한다
@@ -3094,7 +3095,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,066 전수 · **분모(blank) 0절** · 물림(inherit) 1,123절.
+★ **강제자 칸의 분모.** 절 2,072 전수 · **분모(blank) 0절** · 물림(inherit) 1,128절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4784,6 +4785,7 @@ src/firelane/
   lineage.py              ★ 계보. 단계별 입출력 지문 대조
   ingest.py               raw → processed
   shardseal.py            ingest 샤드(소스 하나)의 봉인지. 넷이 같을 때만 재사용
+  reseal.py               그 봉인지 한 칸(out · code · cfg)만 고쳐 적는다
   ngii1k.py               수치지형도 도엽 → 레이어별 gpkg
   ngi.py                  NGI/NDA 리더
   guards.py               방어 정본. 낡은 산출물 격리 · 공간 커버리지
