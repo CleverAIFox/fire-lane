@@ -192,7 +192,14 @@ TIMEOUT = 180
 #     합성 트리를 지어야 하는데, 그 트리는 `_klass()` 가 넷을 다 내는 한
 #     만들 수 없다 — 없는 상태를 재현하려고 자를 비틀면 그 문이 무엇을 보는지
 #     흐려진다(§445 가 `canary` 에서 멈춘 것과 같은 자리).
-SURVIVORS = 84
+# ★ 2026-10-12 — 84 → 85 (DECISIONS §489). **UNSORTED 와 같은 원인이다** —
+#   §398-8 의 규율대로 둘을 같이 적는다. 이 판이 `canary` 를 쪼개고
+#   `toolclass` 쪽 시험을 더해 두 도구를 다시 흔들었고, 새로 산 하나가
+#   `toolclass.UNDECLARED` **래칫 상수**다.
+#   ★ 이 도구의 붙잡이는 **제 자기검사 하나**이고 그것은 선언과 실측을 안
+#     댄다 — 그 대조는 `ratchet.py` 와 `tests/test_toolclass.py` 가 든다.
+#     그래서 흔들어도 붙잡이가 조용하다. 가르는 것은 사람이고 여기가 그 가름이다.
+SURVIVORS = 85
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 # ★ 2026-10-11 — 124 → 128 (DECISIONS §478-1). **조이는 쪽이다.** 도구가
 #   31 → 32 로 늘어 흔든 수가 넷 늘었다(`tools/selftests.py`). `SURVIVORS` 가
@@ -224,7 +231,9 @@ RATCHET_HELD = 24   # ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
 #     §478-1  55 → 57   새 도구의 생존 둘
 #     §480    57 → 58
 #     §482    58 → 60   새 관문 `navicov` — 기본값 · 실패 반환값
-UNSORTED = 60
+#     §489    60 → 61   `toolclass.UNDECLARED` — 래칫 **값**이라
+#                       `RATCHET_HELD` 의 가름(표의 이름인가)에 안 걸린다
+UNSORTED = 61
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
             "RATCHET_HELD": "up", "UNSORTED": "down"}
 

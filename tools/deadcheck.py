@@ -616,7 +616,7 @@ EXEMPT_SCOPE = {
     # ★ 2026-10-09 (DECISIONS §445 · PLAN #56 ① 닫힘). 카나리아 관문은 **두 자리를
     #   따로** 본다 — 「무엇이 도구인가」는 `tools/` 가 정본이고, 「누가 그 도구를
     #   미는가」는 `tests/` 가 정본이다. 섞으면 분모가 두 번 세진다.
-    "tools/canary.py::tool_names":
+    "tools/canaryshape.py::tool_names":        # ★ §489 에 `canary` 에서 옮겨 왔다
         "도구의 **이름표**를 뜨는 자리다. `src` 는 꾸러미이고 `tests` 는 미는 쪽이라 "
         "둘 다 도구가 아니다 — 넓히면 분모가 「제 자신을 미는 도구」까지 센다",
     # ★ 2026-10-12 (DECISIONS §488). `scopedecl.has_selftest` 는 **`tools/` 밖을
@@ -626,7 +626,7 @@ EXEMPT_SCOPE = {
         "두 판정의 **공통 정의역**이 `tools/*.py` 하나다 — 한쪽이 그 밖을 "
         "무조건 거짓으로 내므로 넓히면 비교가 성립하지 않는다",
     # ★ 2026-10-12 (DECISIONS §486). 출처가 셋인데 둘은 **직접 경로**로 연다.
-    "tools/canary.py::judge_names":
+    "tools/canaryshape.py::judge_names":
         "허용 집합의 출처가 셋이고(그 시험 파일 · 미는 도구 · 글에 든 `firelane`) "
         "도구 쪽은 **직접 경로로** 연다 — 훑기로 안 보일 뿐 덮여 있다. `tests` 를 "
         "더하면 **남의 시험 함수 이름**이 허용 집합에 들어와 §486 이 막은 그 "
