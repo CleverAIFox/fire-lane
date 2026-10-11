@@ -269,3 +269,37 @@ def test_span_follows_the_same_rule_as_body(ds, tmp_path, monkeypatch):
     assert (a, b) == (0, 6), "얕은 제목 전까지가 아니다"
     assert "딴절" not in ds.body(rows, 0), "옆 절을 삼켰다"
     assert "안쪽" in ds.body(rows, 0), "하위 절을 잘라냈다"
+
+
+# ── §462 · 찍을 것을 **기계가 먹는 출력** ───────────────────────
+
+def test_the_invalid_list_prints_only_section_names(ds, monkeypatch, capsys):
+    """★ 2026-10-11 실기 (DECISIONS §462). 사람 눈용 전문에서 목록을 긁다가 두 번
+    물렸다 — 마지막 줄 힌트가 **셋에서 잘려** 넷째 절이 빠졌고, 들여쓰기를 긁는
+    정규식이 로케일에서 `Invalid collation character` 로 죽어 **빈 목록**이
+    `stamp` 로 넘어갔다. 빈 목록을 받은 `stamp` 는 거절하고, 도장은 하나도 안
+    찍힌 채 그 상태가 커밋됐다.
+
+    그래서 `--only` 에 **그대로 먹일 수 있는** 출력을 둔다. 묻는 것은 둘이다 —
+    절 이름만 나오는가, 그리고 **넷째가 빠지지 않는가.**
+    """
+    void = {f"DOC/{i}": {"files": [], "parts": {}, "sha": "옛"} for i in range(1, 6)}
+    now = {k: {"files": [], "parts": {}, "sha": "새"} for k in void}
+    monkeypatch.setattr(ds, "survey", lambda: (now, void, dict.fromkeys(void, "")))
+
+    assert ds.check(True) == 0, "목록은 판정이 아니다 — rc 로 울면 문이 멈춘다"
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.strip()]
+    assert lines == sorted(void), f"절 이름만 나와야 한다 — {lines}"
+    # ★ 카나리아 — 전문 쪽은 **여전히 사람 눈용**이고 rc 로 운다.
+    assert ds.check(False) == 1, "무효가 있는데 전문이 초록을 낸다"
+    body = capsys.readouterr().out
+    assert "--invalid-list" in body, "넷 이상일 때 기계가 읽는 길을 안 알려준다"
+    assert "2절 더" in body, "힌트가 잘린다는 사실을 안 적는다"
+
+
+def test_the_invalid_list_is_quiet_when_nothing_is_void(ds, monkeypatch, capsys):
+    """비면 **한 줄도** 안 낸다 — 빈 목록을 `stamp` 에 먹이면 그쪽이 거절한다."""
+    same = {"DOC/1": {"files": [], "parts": {}, "sha": "같다"}}
+    monkeypatch.setattr(ds, "survey", lambda: (same, dict(same), {"DOC/1": ""}))
+    assert ds.check(True) == 0
+    assert capsys.readouterr().out.strip() == "", "무효가 없는데 무언가를 낸다"
