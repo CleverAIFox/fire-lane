@@ -63,7 +63,7 @@ TESTS = ROOT / "tests"
 #: ★ 이력 — 2026-10-12 §493 첫 실측 **56**(순수 230 중). 같은 배치에서
 #:   `segkey` · `naming` · `skeleton` · `mercator` · `ledger` 에 시험을 달아
 #:   내렸다.
-SRC_UNTESTED = 19
+SRC_UNTESTED = 2
 
 RATCHETS = {"SRC_UNTESTED": "down"}
 

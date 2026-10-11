@@ -642,3 +642,4 @@ def test_baseline_nfa_delta_matches_by_road():
     assert d["only_old"] == ["나로2번길"] and d["only_new"] == ["다로3번길"]
     row = {r["road"]: r for r in d["rows"]}["가로1번길"]
     assert (row["old_dev_m"], row["new_dev_m"], row["new_n"]) == (-0.5, 0.2, 4)
+

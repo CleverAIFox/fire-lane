@@ -127,3 +127,157 @@ def test_every_family_module_declares_its_scope():
     assert not bad, (
         f"`밖` 칸 없는 갈래 모듈: {bad}\n"
         "  선언이 없으면 다음 사람이 이 모듈에 안 맞는 일을 넣는다")
+
+
+# ── 읽지 않는 갈래 — 이름을 안 부르고 있었다 (§495) ───────────
+# ★ `read_raw_only` 는 데이터셋의 36%(26/72)를 드는 갈래다(§274-3). 일곱 줄
+#   이고 앞으로도 일곱 줄이라고 머리말이 적는데, `tools/srccov.py` 가
+#   「시험이 이름으로도 안 부른다」로 셌다(§493). **가장 많은 소스를 지나는
+#   갈래**를 미는 자리가 없었다 — 이 파일은 배선만 보고 갈래 안은 안 봤다.
+def _ctx(**over):
+    """`Ctx` 한 벌. 이 갈래는 `rec` 하나만 만지므로 나머지는 자리만 채운다."""
+    from pathlib import Path
+
+    from firelane.read.ctx import Ctx
+
+    base = {"key": "dem", "e": {"kind": "raw_only"}, "src": Path("a.zip"),
+            "hits": [Path("a.zip")], "crs": "EPSG:5186", "tmp": Path(),
+            "out": Path(), "rec": {"key": "dem", "status": "OK"},
+            "save": lambda *a, **k: {}}
+    return Ctx(**(base | over))
+
+
+def test_raw_only_is_a_skip_not_a_failure():
+    """★ 본체. **SKIP 이고 FAIL 이 아니다** — 다른 스크립트가 직접 읽는다.
+
+    FAIL 로 적으면 `_manifest.json` 에 실패 26건이 서고, 그 26 이 서면
+    진짜 실패가 안 보인다(§18-13 — 잦은 오탐은 진짜 경보를 죽인다).
+    """
+    from firelane.read.passthrough import read_raw_only
+
+    got = read_raw_only(_ctx())
+    assert got["status"] == "SKIP", got["status"]
+    assert "raw_only" in got["note"]
+
+
+def test_raw_only_claims_no_features_and_no_outputs():
+    """★ 산출을 **빈 것으로** 적는다. 안 적으면 앞 단계의 수가 그대로 남는다."""
+    from firelane.read.passthrough import read_raw_only
+
+    dirty = {"key": "dem", "status": "OK", "features": 12345,
+             "geom": ["LineString"], "outputs": ["processed/옛것.gpkg"]}
+    got = read_raw_only(_ctx(rec=dirty))
+    assert got["features"] == "" and got["geom"] == [] and got["outputs"] == []
+
+
+def test_raw_only_keeps_the_lineage_it_was_handed():
+    """앞서 쌓인 계보 조각(키 · 원본 sha 같은 것)은 **지우지 않는다**."""
+    from firelane.read.passthrough import read_raw_only
+
+    got = read_raw_only(_ctx(rec={"key": "dem", "source_sha256": "abc",
+                                  "status": "OK"}))
+    assert got["key"] == "dem" and got["source_sha256"] == "abc"
+
+
+def test_raw_only_does_not_open_the_file():
+    """★ 머리말의 약속 — 「실물을 열지 않는다」. 없는 경로를 줘도 돈다."""
+    from pathlib import Path
+
+    from firelane.read.passthrough import read_raw_only
+
+    got = read_raw_only(_ctx(src=Path("/없는곳/없는파일.zip"),
+                             hits=[Path("/없는곳/없는파일.zip")]))
+    assert got["status"] == "SKIP"
+
+
+# ── CSV 점 읽기 — 절단 상자가 판정이다 (§495) ─────────────────
+# ★ `read/_io.load_csv_points` 는 좌표 있는 CSV 전부가 지나는 자다. 절단
+#   상자(`BBOX_4326`)가 여기서 걸리고, 그 상자는 **대장이 내준다**(§274-4).
+#   `tools/srccov.py` 가 「시험이 이름으로도 안 부른다」로 셌다(§493).
+def _csv(tmp_path, body: str, enc: str = "utf-8"):
+    p = tmp_path / "pts.csv"
+    p.write_bytes(body.encode(enc))
+    return p
+
+
+def _inside():
+    """대장 상자 **안**의 한 점. 수를 손으로 적지 않는다."""
+    from firelane.read._io import BBOX_4326
+
+    return ((BBOX_4326[0] + BBOX_4326[2]) / 2, (BBOX_4326[1] + BBOX_4326[3]) / 2)
+
+
+def test_csv_points_keeps_what_is_inside_the_ledger_box(tmp_path):
+    """★ 본체. 상자 안은 남고 **밖은 떨어진다.**"""
+    from firelane.read._io import load_csv_points
+
+    lon, lat = _inside()
+    p = _csv(tmp_path, "이름,경도,위도\n"
+             f"안,{lon},{lat}\n"
+             "밖,127.5,36.5\n"
+             "먼곳,0,0\n")
+    g = load_csv_points(p, "경도", "위도", "utf-8")
+    assert g["이름"].tolist() == ["안"], g["이름"].tolist()
+    assert g.crs.to_epsg() == 4326
+
+
+def test_swapped_longitude_and_latitude_silently_yields_nothing(tmp_path):
+    """★ **적어 둔다** — 경위도를 뒤집은 파일은 0건이 되고 **안 운다.**
+
+    위도 35 는 경도 상자(126.9x) 밖이고 경도 126.9 는 위도 상자 밖이다.
+    그래서 뒤집힌 파일은 전부 걸러져 「상자 밖이라 0건」과 구별되지 않는다.
+    원본이 `X좌표=위도` 로 오는 경우가 실제로 있다(`safety_firestation`
+    머리말). 그 꼴을 아는 것은 지금 **사람**이고, 여기 그 사실을 남긴다.
+    """
+    from firelane.read._io import load_csv_points
+
+    lon, lat = _inside()
+    p = _csv(tmp_path, f"이름,경도,위도\n뒤집힘,{lat},{lon}\n")
+    assert len(load_csv_points(p, "경도", "위도", "utf-8")) == 0
+
+
+def test_a_non_numeric_coordinate_is_dropped_not_fatal(tmp_path):
+    """좌표 칸에 글자가 오면 **그 행만** 버린다 — 파일을 통째로 잃지 않는다."""
+    from firelane.read._io import load_csv_points
+
+    lon, lat = _inside()
+    p = _csv(tmp_path, "이름,경도,위도\n"
+             f"좋음,{lon},{lat}\n"
+             "글자,없음,없음\n"
+             f"빈칸,,{lat}\n")
+    g = load_csv_points(p, "경도", "위도", "utf-8")
+    assert g["이름"].tolist() == ["좋음"]
+
+
+def test_other_columns_keep_their_leading_zeros(tmp_path):
+    """★ `dtype=str` 이다. 법정동코드 `0100` 이 `100` 이 되면 조인이 깨진다."""
+    from firelane.read._io import load_csv_points
+
+    lon, lat = _inside()
+    p = _csv(tmp_path, "코드,경도,위도\n"
+             f"0100,{lon},{lat}\n")
+    g = load_csv_points(p, "경도", "위도", "utf-8")
+    assert g["코드"].tolist() == ["0100"], g["코드"].tolist()
+
+
+def test_a_cp949_file_reads_without_being_told(tmp_path):
+    """★ 선언이 틀려도 읽는다 — 같은 데이터셋도 받을 때마다 인코딩이 바뀐다."""
+    from firelane.read._io import load_csv_points
+
+    lon, lat = _inside()
+    p = _csv(tmp_path, f"이름,경도,위도\n소방서,{lon},{lat}\n", enc="cp949")
+    g = load_csv_points(p, "경도", "위도", "utf-8")   # **틀린** 선언을 준다
+    assert g["이름"].tolist() == ["소방서"]
+
+
+def test_the_row_filter_runs_before_the_coordinates_are_parsed(tmp_path):
+    """`filt` 는 **글자 상태**에서 돈다 — 그래서 코드값으로 거를 수 있다."""
+    from firelane.read._io import load_csv_points
+
+    lon, lat = _inside()
+    p = _csv(tmp_path, "종류,경도,위도\n"
+             f"소방,{lon},{lat}\n"
+             f"경찰,{lon},{lat}\n")
+    g = load_csv_points(p, "경도", "위도", "utf-8",
+                        filt=lambda d: d[d["종류"] == "소방"])
+    assert g["종류"].tolist() == ["소방"]

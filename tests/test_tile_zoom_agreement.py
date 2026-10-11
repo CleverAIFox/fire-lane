@@ -193,3 +193,66 @@ def test_the_pad_is_a_distance_not_a_pixel_count():
     assert d.PAD_M > 0
     # 그 미터가 지금 줌에서 백 픽셀 단위로 나온다 — 0 픽셀이면 여백이 없다
     assert d.PAD_M / d.mpp(35.151, d.Z) > 1
+
+
+# ── 지형 업샘플 — 시험이 이름을 안 부르고 있었다 (§495) ───────
+# ★ `terrain.upsample` 은 **DEM 을 타일 격자에 올리는 자**다. 색인이 한 칸
+#   밀리면 음영기복이 그만큼 밀리고, 밀린 음영은 **그럴듯해 보인다** —
+#   언덕이 거기 있나 없나를 눈으로 아는 사람이 없다.
+#   `tools/srccov.py` 가 「시험이 이름으로도 안 부른다」로 셌다(§493).
+def test_upsample_keeps_the_corner_values():
+    """★ 본체. 네 꼭짓값은 **그대로** 남는다 — 이중선형의 정의다."""
+    import numpy as np
+
+    from firelane.terrain import upsample
+
+    a = np.array([[0.0, 1.0], [2.0, 3.0]])
+    u = upsample(a, 2)
+    assert u.shape == (4, 4), u.shape
+    assert u[0, 0] == 0.0 and u[0, -1] == 1.0
+    assert u[-1, 0] == 2.0 and u[-1, -1] == 3.0
+
+
+def test_upsample_by_one_is_the_array_itself():
+    """★ k=1 이 항등이다. 아니면 1배로 부르는 자리가 조용히 값을 바꾼다."""
+    import numpy as np
+
+    from firelane.terrain import upsample
+
+    a = np.array([[0.0, 1.0], [2.0, 3.0]])
+    assert np.array_equal(upsample(a, 1), a)
+
+
+def test_upsample_of_a_ramp_stays_a_ramp():
+    """★ 선형 입력은 **선형**으로 나온다 — 계단이 남으면 보간이 안 된 것이다."""
+    import numpy as np
+
+    from firelane.terrain import upsample
+
+    u = upsample(np.arange(4, dtype=float).reshape(1, 4), 2)[0]
+    d = np.diff(u)
+    assert np.allclose(d, d[0]), u
+    assert u[0] == 0.0 and u[-1] == 3.0
+
+
+def test_upsample_never_invents_a_value_outside_the_input_range():
+    """★ 지형 고도가 입력 범위를 넘으면 **없는 언덕**이 생긴다."""
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    from firelane.terrain import upsample
+
+    a = rng.normal(size=(7, 5)) * 30
+    u = upsample(a, 4)
+    assert u.min() >= a.min() - 1e-9 and u.max() <= a.max() + 1e-9
+    assert u.shape == (28, 20)
+
+
+def test_upsample_of_a_flat_field_is_flat():
+    """★ 음성 — 평지에 기복을 만들지 않는다."""
+    import numpy as np
+
+    from firelane.terrain import upsample
+
+    a = np.full((5, 6), 42.0)
+    assert np.allclose(upsample(a, 3), 42.0)
