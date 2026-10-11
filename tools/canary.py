@@ -133,7 +133,7 @@ EXEMPT: dict[str, str] = {}
 #
 #: ★ 남은 11 은 빚이다. 올라간 판(§486)은 **느슨해진 것이 아니라** 거짓 초록을
 #:   걷은 것이고, 그 둘을 가르는 것이 래칫에 사유를 요구하는 이유다.
-NO_CANARY = 11
+NO_CANARY = 9
 
 RATCHETS = {"NO_CANARY": "down"}
 

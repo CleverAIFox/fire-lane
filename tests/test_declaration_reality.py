@@ -597,3 +597,81 @@ def test_contract_turns_a_declared_wait_into_a_warning():
 
         r = C.check_one("probe", dict(base), raw, None)
         assert r.worst == C.FAIL, "선언도 실물도 없는데 안 운다 — 그물이 비었다"
+
+
+# ── 2026-10-12 (DECISIONS §490) ────────────────────────────────────
+#   §486 이 「표준 라이브러리 이름으로 센 쌍」을 걷자 이 파일이 빚에 드러났다.
+#   그리고 열어 보니 `treecheck.check_names()` — **레이크 파일명 규약의
+#   판정** — 을 미는 자리가 **저장소 어디에도 없었다.** 그 자는 네 갈래로
+#   우는데(깊이 · 등재 안 된 폴더 · 이름 파싱 · 폴더↔provider) 어느 갈래도
+#   돈 적이 없다. 이름 규약이 조용히 느슨해지면 글롭이 빗나가고, 빗나간
+#   글롭은 **자료가 없는 것처럼** 보인다.
+
+def _tree():
+    """`tools/treecheck.py` 를 모듈로 들인다. **레이크를 안 본다.**"""
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location(
+        "_treecheck_probe", ROOT / "tools" / "treecheck.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+#: 규약을 지키는 이름. **등재된 폴더**와 네 필드(provider_dataset_scope_vintage).
+GOOD = "safety/safety_elctrnmap_jngj_20260711.csv"
+
+
+def test_a_conforming_name_is_silent():
+    """★ 음성. 멀쩡한 이름에서 울면 레이크 전체가 빨간불이 된다."""
+    t = _tree()
+    assert t.check_names({GOOD}, src="합성") == [], \
+        [f.why for f in t.check_names({GOOD}, src="합성")]
+    assert t.check_names(set(), src="합성") == [], "빈 집합에서 무언가를 만든다"
+
+
+def test_a_nested_path_is_caught():
+    """★ raw 는 `{provider}/{file}` **2단 고정**이다 — 중첩하면 글롭이
+    조용히 빗나간다."""
+    t = _tree()
+    bad = t.check_names({"safety/sub/safety_elctrnmap_jngj_20260711.csv"}, src="합성")
+    assert [f.axis for f in bad] == ["D5"], [(f.axis, f.why) for f in bad]
+    assert "깊이" in bad[0].why
+
+
+def test_an_unregistered_folder_is_caught():
+    """★ 등재 안 된 폴더 — 올리거나 격리한다. 조용히 두면 출처를 모르는
+    자료가 레이크에 산다."""
+    t = _tree()
+    bad = t.check_names({"없는폴더/safety_elctrnmap_jngj_20260711.csv"}, src="합성")
+    assert [f.axis for f in bad] == ["D1"], [(f.axis, f.why) for f in bad]
+    assert "providers" in bad[0].why, bad[0].why
+
+
+def test_a_name_that_does_not_parse_is_caught():
+    """★ 필드가 모자란 이름 · 기계가 못 읽는 글자. 둘 다 파싱이 잡는다."""
+    t = _tree()
+    short = t.check_names({"safety/safety_x_20260711.csv"}, src="합성")
+    assert [f.axis for f in short] == ["D6"], [(f.axis, f.why) for f in short]
+    hangul = t.check_names({"safety/엉뚱한이름.csv"}, src="합성")
+    assert [f.axis for f in hangul] == ["D6"], [(f.axis, f.why) for f in hangul]
+
+
+def test_a_folder_that_disagrees_with_the_file_name_is_caught():
+    """★ **이중 기록의 값어치가 이 대조 하나다.** 폴더와 파일명이 둘 다
+    provider 를 적는 이유가 서로를 대는 것이고, 그 대조가 죽으면 두 벌을
+    두는 뜻이 없어진다."""
+    t = _tree()
+    bad = t.check_names({"juso/safety_elctrnmap_jngj_20260711.csv"}, src="합성")
+    assert [f.axis for f in bad] == ["D6"], [(f.axis, f.why) for f in bad]
+    assert "juso" in bad[0].why and "safety" in bad[0].why
+
+
+def test_the_report_names_where_it_came_from():
+    """★ `src` 가 그대로 실린다 — 추적 목록과 레이크 실물 중 어느 쪽에서
+    나온 이름인지 모르면 고칠 자리를 못 찾는다."""
+    t = _tree()
+    bad = t.check_names({"없는폴더/x.csv"}, src="레이크")
+    assert bad and bad[0].what.startswith("레이크:"), bad[0].what

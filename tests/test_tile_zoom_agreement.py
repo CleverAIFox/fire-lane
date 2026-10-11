@@ -133,3 +133,63 @@ def test_baked_folders_match_the_declaration():
         f"구운 폴더 {baked} 와 `TILE_Z` {sorted(_tile_z())} 가 다르다.\n"
         "  선언을 고쳤으면 타일도 다시 굽거나 지워라 — 둘이 갈리면\n"
         "  용량 게이트가 빨개졌을 때 정작 줄일 곳을 못 찾는다.")
+
+
+# ── 2026-10-12 (DECISIONS §490) ────────────────────────────────────
+#   §489 가 분모를 바로잡은 뒤 이 파일이 빚에 남았다. 줌 **수**가 갈리는가는
+#   밀면서, 그 줌으로 **픽셀을 내는 식 둘**(`deg2px` · `mpp`)을 민 자리가
+#   없었다 — 수가 맞아도 식이 틀리면 책상검사 그림의 축척이 거짓이 된다.
+
+def _desk():
+    """`tools/desk_check.py` 를 모듈로 들인다. **그림을 안 굽는다.**"""
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location(
+        "_desk_probe", ROOT / "tools" / "desk_check.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_the_pixel_projection_matches_the_web_mercator_definition():
+    """★ 아는 값으로 민다 — z0 에서 세계가 타일 한 장이고 원점이 그 가운데다."""
+    d = _desk()
+    assert d.deg2px(0, 0, 0) == (d.TILE / 2, d.TILE / 2)
+    assert d.deg2px(180, 0, 0)[0] == float(d.TILE)
+    assert d.deg2px(-180, 0, 0)[0] == 0.0
+    # 줌이 하나 오르면 픽셀이 두 배다
+    assert d.deg2px(90, 0, 1)[0] == 2 * d.deg2px(90, 0, 0)[0]
+
+
+def test_the_metres_per_pixel_halves_each_zoom():
+    d = _desk()
+    assert abs(d.mpp(0, 0) - 156543.03392) < 1e-6
+    for z in range(15, 20):
+        assert abs(d.mpp(35.151, z + 1) * 2 - d.mpp(35.151, z)) < 1e-9, z
+    # 위도가 높아지면 한 픽셀이 덮는 거리가 줄어든다
+    assert d.mpp(60, 19) < d.mpp(35.151, 19) < d.mpp(0, 19)
+
+
+def test_the_two_formulas_agree_on_a_hundred_metres():
+    """★ **같은 것을 두 식이 말한다.** 어긋나면 그림의 축척이 거짓이 된다 —
+    `stitch` 는 `deg2px` 로 자르고, 눈금은 `mpp` 로 적는다."""
+    import math
+    d = _desk()
+    lat = 35.151
+    dlon = 100.0 / (111_320 * math.cos(math.radians(lat)))
+    x0, _ = d.deg2px(126.9266, lat, d.Z)
+    x1, _ = d.deg2px(126.9266 + dlon, lat, d.Z)
+    by_px = x1 - x0
+    by_mpp = 100.0 / d.mpp(lat, d.Z)
+    # 두 식의 차가 0.01% 안이다 — 그 밖이면 한쪽이 다른 반지름을 쓴다
+    assert abs(by_px - by_mpp) / by_mpp < 1e-4, (by_px, by_mpp)
+
+
+def test_the_pad_is_a_distance_not_a_pixel_count():
+    """★ 여백이 **미터**다. 픽셀로 적으면 줌을 바꾼 날 여백이 따라 변한다."""
+    d = _desk()
+    assert d.PAD_M > 0
+    # 그 미터가 지금 줌에서 백 픽셀 단위로 나온다 — 0 픽셀이면 여백이 없다
+    assert d.PAD_M / d.mpp(35.151, d.Z) > 1
