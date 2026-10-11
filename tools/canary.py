@@ -52,13 +52,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 #: 경로로 도구를 집는 꼴. `importlib` 로 여는 시험이 이 꼴을 쓴다.
-_BYPATH = (re.compile(r'tools/([\w]+)\.py'),
-           re.compile(r'"tools"\s*/\s*"([\w]+)\.py"'))
+#:
+#: ★ 2026-10-12 (DECISIONS §484). 종전에는 `\.py` 였고 **`.sh` 를 못 봤다.**
+#:   §481 이 그 한계를 적으면서 「아무도 안 미는 관문」 둘을 남겼는데, 그 둘이
+#:   `verify.sh` · `treescan.sh` **둘 다 셸**이었다 — 즉 남은 빚이 전부 이 눈먼
+#:   자리였다. 넓혀서 재니 시험 넷이 분모에 들어왔고(`test_deptry_config` ·
+#:   `test_gitleaks_allowlist` · `test_toolchain_declarations` ·
+#:   `test_verify_evidence`) **넷 다 그 셸을 실제로 읽는다** — 머리말에 이름만
+#:   적은 거짓 양성이 아니다. §481 이 걱정한 쪽은 「푸시로 세는 것」이고,
+#:   그 걱정은 자리마다 열어 보고서야 가라앉는다.
+_EXT = r"(?:py|sh)"
+_BYPATH = (re.compile(rf'tools/([\w]+)\.{_EXT}'),
+           re.compile(rf'"tools"\s*/\s*"([\w]+)\.{_EXT}"'))
 
 
 def tool_names(root: Path = ROOT) -> set[str]:
-    return {p.stem for p in (root / "tools").rglob("*.py")
-            if "__pycache__" not in p.parts}
+    """`tools/` 의 도구 이름. **셸도 도구다**(§484)."""
+    return {p.stem for p in (root / "tools").rglob("*")
+            if p.suffix in (".py", ".sh") and "__pycache__" not in p.parts}
 
 
 def _called(node: ast.AST) -> set[str]:
