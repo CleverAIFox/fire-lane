@@ -32,6 +32,7 @@ import json
 import sys
 
 from figures import LOCK, OUT
+from figures.route import fig_astar
 from figures.structure import fig_boundary, fig_branch, fig_deploy, fig_verdict_flow
 from figures.value import fig_cctv, fig_threshold, fig_unknown, fig_verdict
 from figures.xsec import fig_xsec
@@ -54,6 +55,10 @@ FIGURES = {
     # ★ 2026-09-28 (§281-1). 기획서 [그림 14]. 규칙 문언 · 임계값 · 구간 수
     #   **셋 다 정본에서 읽는다** — 규칙이 바뀌면 그림이 따라 바뀐다.
     "verdict_flow": fig_verdict_flow,
+    # ★ 2026-10-11 (DECISIONS §465 · PLAN §1 #71 닫힘). 발표 논거용 한 장이다.
+    #   값은 `data/golden/astar.json` 에 있고 `web/navi/test/astarbench.test.ts`
+    #   가 발행 그래프에서 재서 적는다 — 이 그림은 그 장부를 그린다.
+    "astar": fig_astar,
 }
 
 

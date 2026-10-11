@@ -3107,7 +3107,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,090 전수 · **분모(blank) 0절** · 물림(inherit) 1,142절.
+★ **강제자 칸의 분모.** 절 2,094 전수 · **분모(blank) 0절** · 물림(inherit) 1,145절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4224,7 +4224,19 @@ BEV 는 디버그 플래그 뒤에 둔다.
 ★ 흐름도의 `A*` 는 **앱 관점**이다. 파이프라인 구현은 Dijkstra 이며
 둘이 모순이 아니다.
 
-강제자  `tests/test_reach_overlay.py` · `tests/test_navi_graph_fresh.py`(앱의 A* 와 파이프라인의 Dijkstra 가 같은 `vehicle.edge_cost` 를 쓰는가) · `web/navi/test/rules.test.ts`
+★ 2026-10-11 (DECISIONS §465 · PLAN #71 닫힘). 위 문단은 2026-08 부터 있었고
+**재 본 적이 없었다.** 이제 쟀다 — 발행 그래프에서 **전개한 상태 수**로, 일감
+둘을 나란히. 벽시계는 안 잰다: 밀리초는 그 기계의 부하를 타고, 같은 입력에
+다른 수가 나오면 근거가 못 된다.
+
+결론은 위 두 문단이 적은 그대로다 — 1→1 에서는 A* 가 덜 열고, 1→전 노드에서는
+다익스트라 **한 번**이 A* 를 목표마다 돌리는 것보다 훨씬 적게 연다.
+
+★ **수는 여기 안 적는다**(§21-0 과 같은 규율). 정본은 `data/golden/astar.json`
+이고 `web/navi/test/astarbench.test.ts` 가 매 실행 다시 재서 대조한다 — 여기
+베끼면 그래프가 바뀌는 날 이 문단만 낡는다. 그림은 `docs/figures/astar.svg` 다.
+
+강제자  `tests/test_reach_overlay.py` · `tests/test_navi_graph_fresh.py`(앱의 A* 와 파이프라인의 Dijkstra 가 같은 `vehicle.edge_cost` 를 쓰는가) · `web/navi/test/rules.test.ts` · `web/navi/test/astarbench.test.ts`(위 수를 **매 실행 다시 재서** `data/golden/astar.json` 과 대조한다) · `tools/figures/route.py` 와 `tests/test_figure_ink.py`(그 장부를 그리고 막대가 값에 비례하는가)
 
 ### 20-5. 앱은 무엇을 받는가 — 엔드포인트
 
