@@ -163,11 +163,29 @@ def _docstring_lines(src: str) -> set[int]:
 _PRINTS = re.compile(r"^\s*(?:printf|echo)\b")
 
 
+#: **선언표**다 — 도구 이름을 적지만 부르지 않는다. 호출자 우주에서 뺀다.
+#:
+#: ★ 2026-10-11 (DECISIONS §470). `tests/test_handrolled.py` 가 「손으로 짠
+#:   자리」의 분모이고, 그 표가 **파일 경로를 값으로** 든다. 그 줄이 호출로
+#:   세어지면 면제된 도구(`kpi` — 부류 조사)가 「이미 불린다」로 읽혀
+#:   `test_exemptions_are_not_dead` 가 거짓으로 운다.
+#: ★ `tests/test_sources_of_truth.py` 가 같은 덫을 **피해서** 설계됐다 —
+#:   그 파일의 `consumers` 가 비어 있는 사유가 거기 적혀 있다. 이쪽은 표의
+#:   본체가 경로라 피할 수 없으므로 **우주에서 빼고 그 사실을 적는다.**
+#: ★ 비면 뺄 것이 없다는 뜻이고, 죽은 선언은 아래 시험이 든다.
+DECLARATION_ONLY: dict[str, str] = {
+    "tests/test_handrolled.py":
+        "손으로 짠 자리의 **선언표**다(PLAN #168 · DECISIONS §470). 자리마다 "
+        "파일 경로를 값으로 들지만 그 도구를 부르지 않는다 — 경로를 적는 것과 "
+        "부르는 것은 다르다",
+}
+
+
 def _scan() -> list[tuple[str, int, str]]:
     """호출자가 될 수 있는 파일들의 **실행되는 줄**만 모은다.
 
     주석 · 독스트링 · 셸 안내문(`printf` · `echo`)은 뺀다. 셋 다 이름을
-    **적을 뿐** 부르지 않는다.
+    **적을 뿐** 부르지 않는다. 선언표(`DECLARATION_ONLY`)도 같은 사유로 뺀다.
     """
     files = [ROOT / r for r in CALLERS]
     for d in (".github/workflows", "tests"):
@@ -175,6 +193,8 @@ def _scan() -> list[tuple[str, int, str]]:
         if base.exists():
             files += [p for p in base.rglob("*")
                       if p.is_file() and p.suffix in (".yml", ".yaml", ".py")]
+    files = [p for p in files
+             if p.is_file() and p.relative_to(ROOT).as_posix() not in DECLARATION_ONLY]
     out = []
     for p in files:
         if not p.is_file():
@@ -207,6 +227,8 @@ def _blanked() -> dict[str, str]:
         if base.exists():
             files += [p for p in base.rglob("*")
                       if p.is_file() and p.suffix in (".yml", ".yaml", ".py")]
+    files = [p for p in files
+             if p.is_file() and p.relative_to(ROOT).as_posix() not in DECLARATION_ONLY]
     for p in files:
         if not p.is_file():
             continue
@@ -345,6 +367,28 @@ def test_exemptions_are_not_dead():
         f"실제로 불리는데 면제 목록에 남아 있다. {len(dead)}건\n" + "\n".join(dead)
         + "\n\n  면제는 **사각지대**다 — 면제된 도구는 배선이 끊겨도 안 운다.\n"
           "  불리게 됐으면 EXEMPT 에서 빼라. 그래야 그 배선을 누가 끊으면 운다.")
+
+
+def test_declaration_only_files_are_alive():
+    """★ 2026-10-11 (DECISIONS §470). **선언표 면제가 아직 필요한가.**
+
+    이 면제는 우주를 좁히므로 사각지대다 — 그 파일이 사라지거나, 더는 도구
+    경로를 안 들면 면제를 지워야 한다. 안 지우면 다음에 그 파일이 **정말로**
+    도구를 부르게 된 날 아무도 안 운다.
+    """
+    bad = []
+    for rel, why in sorted(DECLARATION_ONLY.items()):
+        p = ROOT / rel
+        if not p.is_file():
+            bad.append(f"  {rel:<34} 파일이 없다 — 죽은 면제다")
+            continue
+        if not re.search(r'"tools/[\w/]+\.(?:py|sh|mjs)"', p.read_text(encoding="utf-8")):
+            bad.append(f"  {rel:<34} 도구 경로를 **안 든다** — 면제할 것이 없다")
+        if len(" ".join(why.split())) < 40:
+            bad.append(f"  {rel:<34} 사유가 얇다")
+    assert not bad, ("선언표 면제가 낡았다. "
+                     f"{len(bad)}건\n" + "\n".join(bad)
+                     + "\n\n  면제는 **우주를 좁힌다** — 필요 없어지면 지워라.")
 
 
 def test_exempt_entries_are_real():

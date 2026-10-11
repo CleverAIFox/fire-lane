@@ -3107,7 +3107,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,102 전수 · **분모(blank) 0절** · 물림(inherit) 1,150절.
+★ **강제자 칸의 분모.** 절 2,109 전수 · **분모(blank) 0절** · 물림(inherit) 1,155절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3167,7 +3167,8 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 | `code_owner` | `.github/CODEOWNERS` | `tools/navi_setup.py` 기본값 · `tools/ruleset_check.py` 관리자 · 기본 저장소 · 배치 도구 셋의 `REPO=` | `tests/test_sources_of_truth.py` |
 | `font_stack` | `tools/svg_fit.py` | `web/navi/src/ui/tokens.ts` · `web/proposal.html` | `tests/test_sources_of_truth.py` |
 | `offtrack_min` | `src/firelane/seg/params.py` | `web/navi/src/domain/vehicle.ts` | `tests/test_sources_of_truth.py` |
-| `local_lat0` | `tools/localgeo.py` | 조사 도구 셋이 **import 한다**(사본 없음) | `tests/test_sources_of_truth.py` |
+| `local_lat0` | `src/firelane/localplane.py` | 조사 도구와 발행이 **import 한다**(사본 없음) | `tests/test_sources_of_truth.py` |
+| `local_my` | `src/firelane/localplane.py` | 위도 1도의 미터. **경도 1도(111,320)와 다른 수다** — 2026-10-11 에 저장소가 세 수를 들고 있었다(DECISIONS §469) | `tests/test_sources_of_truth.py` |
 
 ★ **2026-09-23 — 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5).
   ★ 2026-09-28 정정 — 그때 열이었고 지금 **열둘**이다(`offtrack_min` ·

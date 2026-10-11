@@ -222,22 +222,39 @@ SPEC: dict[str, dict] = {
         "near": r"OFFTRACK|내륜차|offtrack|wheelbase",
     },
     "local_lat0": {
-        "what": "국소 평면 근사의 기준 위도(동명동 중심). 조사 도구 셋이 거리를 잰다",
+        "what": "국소 평면 근사의 기준 위도(동명동 중심). 조사 도구와 발행이 거리를 잰다",
         # ★ 2026-09-24 (PLAN §13 W12-1 · DECISIONS §239). 세 도구가 글자까지 같게
         #   박고 있었다. `seg/params.py` 로 안 올린 이유는 그 파일이 **판정 지문**
         #   안이라 상수 하나에 재잠금이 따라오기 때문이다 — 이 값은 판정에 안 든다.
-        "owner": {"file": "tools/localgeo.py", "regex": r"^LAT0 = ([\d.]+)"},
-        # ★ consumers 가 비어 있다 — 셋은 값을 **적지 않고 import 한다.** 사본이
+        # ★ 2026-10-11 (DECISIONS §469). **집이 `src` 로 올라갔고 분모가 넓어졌다.**
+        #   종전 `scan` 이 `tools/*.py` 뿐이어서 `src/firelane/publish_context.py` 의
+        #   사본을 못 봤다 — 그 파일은 정본이 `tools/` 에 있어 **import 할 수도
+        #   없었다**(계층). 정본을 못 쓰게 두면 사본이 생긴다.
+        "owner": {"file": "src/firelane/localplane.py", "regex": r"^LAT0 = ([\d.]+)"},
+        # ★ consumers 가 비어 있다 — 쓰는 쪽은 값을 **적지 않고 import 한다.** 사본이
         #   없으니 대조할 자리도 없다. 여기에 경로를 적으면 그 줄이
         #   `test_tools_are_wired` 에 **호출로** 세어져(경로 리터럴) 면제 셋이
         #   거짓으로 죽는다. 선언표가 배선표로 읽히는 자리다.
-        #   지키는 것은 아래 `exclusive` 다 — `tools/*.py` 어디에도 값이 또
-        #   나오면 운다.
+        #   지키는 것은 아래 `exclusive` 다 — 분모 어디에도 값이 또 나오면 운다.
         "consumers": [],
-        "scan": ["tools/*.py"],
+        "scan": ["tools/*.py", "src/firelane/**/*.py"],
         "exclusive": True,
         "code_only": True,
         "near": r"LAT0|위도|lat",
+    },
+    "local_my": {
+        "what": "위도 1도의 미터(국소 평면 근사). **경도 1도(111,320)와 다른 수다**",
+        # ★ 2026-10-11 (DECISIONS §469). 이 수는 **감시 밖**이었다. `LAT0` 만
+        #   독점을 걸어 두었고, 그 사이 위도 1도가 저장소에서 **세 수**가 됐다 —
+        #   정본 110,574 · `publish_context` 110,540 · `navicheck`/`desk_check`
+        #   111,320(경도 미터를 위도에 썼다). 0.67% 라 판정이 안 뒤집히고,
+        #   그래서 아무도 안 울었다. 안 보는 수는 반드시 갈린다.
+        "owner": {"file": "src/firelane/localplane.py", "regex": r"^MY = ([\d_]+)"},
+        "consumers": [],
+        "scan": ["tools/*.py", "src/firelane/**/*.py"],
+        "exclusive": True,
+        "code_only": True,
+        "near": r"MY|위도|lat|dlat",
     },
     "code_owner": {
         "what": "저장소 단독 소유자(CODEOWNERS 기본 규칙 · 2026-09-09 개인 계정 이관)",

@@ -55,10 +55,13 @@ from __future__ import annotations
 
 import csv
 import json
-import math
 import sys
 from collections import Counter
 from pathlib import Path
+
+import shapely
+
+from firelane import localplane
 
 ROOT = Path(__file__).resolve().parents[1]
 GRAPH = ROOT / "web" / "data" / "navi_graph.json"
@@ -105,10 +108,14 @@ def load() -> dict:
 
 
 def _m(a: list[float], b: list[float]) -> float:
-    """두 경위도 사이 거리(m). 국소 평면 근사 — 이 범위에서 오차가 cm 아래다."""
-    dx = (a[0] - b[0]) * 111_320.0 * math.cos(math.radians(a[1]))
-    dy = (a[1] - b[1]) * 111_320.0
-    return math.hypot(dx, dy)
+    """두 경위도 사이 거리(m). **정본은 `firelane.localplane` 하나다.**
+
+    ★ 2026-10-11 (DECISIONS §469). 종전에는 여기서 직접 쟀고 **위도에 경도
+      미터(111,320)를 쓰고 있었다** — 정본은 110,574 다. 0.67% 틀린 수이고
+      판정을 안 뒤집으므로 아무도 안 울었다. §239 가 세 도구에서 걷은 그
+      세 줄이 여기로 돌아와 있었다.
+    """
+    return localplane.metres((a[0], a[1]), (b[0], b[1]))
 
 
 def degrees(g: dict) -> Counter:
@@ -127,25 +134,54 @@ def dead_ends(g: dict) -> list[int]:
     return [i for i in range(len(g.get("nodes") or [])) if deg[i] == 1]
 
 
+def nearest_other(g: dict) -> dict[int, tuple[float, int]]:
+    """막다른 끝 → (가장 가까운 **다른** 노드까지의 거리, 그 노드). **자가 하나다.**
+
+    ★ 2026-10-11 (DECISIONS §470-2 · PLAN #168). 이 계산이 이 파일에 **두 벌**
+      있었다 — `near_pairs`(문턱 안만 낸다)와 `snap_report`(전 거리를 낸다)가
+      각자 전수 곱을 돌았다. 자가 둘이면 한쪽만 고치는 날이 오고, 그날 두
+      출력이 같은 그래프를 다르게 말한다(2족).
+
+    ★ `shapely.STRtree` 가 든다 — **이미 선언된 의존성**이다. 좌표를 국소 평면
+      미터로 올려 담으므로 트리의 유클리드 거리가 곧 `localplane.metres` 다.
+    ★ `exclusive=True` 가 자기 자신을 뺀다 — 손 판의 `if j == i: continue` 와
+      같은 뜻이고 그 한 줄을 잊는 날이 없다.
+    """
+    nodes = g.get("nodes") or []
+    ends = dead_ends(g)
+    if not ends or len(nodes) < 2:
+        return {}
+    pts = shapely.points([[n[0] * localplane.MX, n[1] * localplane.MY] for n in nodes])
+    tree = shapely.STRtree(pts)
+    out: dict[int, tuple[float, int]] = {}
+    for i in ends:
+        j, d = tree.query_nearest(pts[i], return_distance=True, exclusive=True,
+                                  all_matches=False)
+        if len(j):
+            out[i] = (float(d[0]), int(j[0]))
+    return out
+
+
 def near_pairs(g: dict, limit_m: float = NEAR_M) -> list[tuple[float, int, int]]:
     """막다른 끝 중 `limit_m` 안에 다른 노드가 있는 것. (거리, 끝, 상대).
 
-    ★ 전수 곱(449 × 1,139)이면 51만 번이고 1초 안이다. 격자를 깔면 빨라지지만
-      **빠른 코드와 맞는 코드 중 맞는 쪽을 고른다** — 이 수는 관문이 든다.
+    ★ 2026-10-11 (DECISIONS §470 · PLAN #168). 종전에는 전수 곱(449 × 1,139 =
+      51만)을 손으로 돌았고 머리말이 **「격자를 깔면 빨라지지만 빠른 코드와
+      맞는 코드 중 맞는 쪽을 고른다」**고 적었다. 그 선택지가 둘이 아니다 —
+      `shapely` 는 **이미 선언된 의존성**이고 `STRtree` 는 빠르면서 맞는다.
+      손으로 짠 격자가 아니라 **남이 시험해 둔 격자**를 쓴다(§13 결함 족 4).
+
+    ★ 좌표를 **국소 평면 미터로** 올려 담는다. 그러면 트리의 유클리드 거리가
+      곧 `localplane.metres` 이고, 거리 판별식이 둘이 되지 않는다(§469).
+
+    ★ `exclusive=True` 가 자기 자신을 뺀다. 손 판의 `if j == i: continue` 와
+      같은 뜻이고, 그 한 줄을 잊는 날이 없다.
     """
-    nodes = g.get("nodes") or []
-    out = []
-    for i in dead_ends(g):
-        best = (float("inf"), -1)
-        for j, q in enumerate(nodes):
-            if j == i:
-                continue
-            d = _m(nodes[i], q)
-            if d < best[0]:
-                best = (d, j)
-        if best[0] <= limit_m:
-            out.append((best[0], i, best[1]))
-    return sorted(out)
+    out = [(d, i, j) for i, (d, j) in nearest_other(g).items() if d <= limit_m]
+    # ★ 2026-10-11 (§470). **정렬에 동률 가름을 넣는다.** 손 판과 트리의 거리가
+    #   1.3나노미터 어긋나고(부동소수 순서) 거의 같은 두 쌍에서 **찍히는 순서가
+    #   뒤집혔다.** 사람이 보는 목록이 실행마다 흔들리면 그 목록을 못 읽는다.
+    return sorted(out, key=lambda r: (round(r[0], 6), r[1], r[2]))
 
 
 def turn_rows() -> int | None:
@@ -273,15 +309,9 @@ def snap_report() -> int:
     de = dead_ends(g)
     print(f"막다른 끝 {len(de)} / 노드 {len(nodes)}  ({len(de)/max(1,len(nodes)):.1%})"
           f" · node_tol_m = {g.get('node_tol_m')}")
-    best: dict[int, tuple[float, int]] = {}
-    for i in de:
-        b = (float("inf"), -1)
-        for j, q in enumerate(nodes):
-            if j != i:
-                d = _m(nodes[i], q)
-                if d < b[0]:
-                    b = (d, j)
-        best[i] = b
+    # ★ 2026-10-11 (§470-2). 여기 전수 곱이 **또** 있었다 — `nearest_other` 와
+    #   같은 계산이고 자가 둘이면 한쪽만 고치는 날이 온다.
+    best = nearest_other(g)
     deg = degrees(g)
     print(f"\n{'거리 이하':>10} {'건':>5} {'누적%':>7}   상대도 막다른 끝")
     for t in (0.5, 0.75, 1, 1.5, 2, 3, 5, 10, 20, 50):
@@ -328,7 +358,8 @@ def selftest() -> int:
                 fails.append("고아 노드의 차수가 0 이 아니다")
 
             # ② NEAR_M 안의 이웃을 잡는가. 0.6m 떨어뜨린 끝 둘을 심는다.
-            d = 0.6 / 111_320.0
+            # 위도 쪽으로 0.6m — 정본의 위도 미터로 나눈다
+            d = 0.6 / localplane.MY
             g = fake({}, [[126.92, 35.15], [126.921, 35.151],
                           [126.92, 35.15 + d], [126.925, 35.155]],
                      [{"a": 0, "b": 1}, {"a": 2, "b": 3}])

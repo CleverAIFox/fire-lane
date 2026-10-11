@@ -86,7 +86,12 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #     ★ 2026-10-11 (DECISIONS §465 · PLAN #71 닫힘). 526 → **528 = 분모.** 새 집
 #       둘(`tools/figures/route.py` · `web/navi/test/astarbench.test.ts`)이 들어왔고
 #       `§465` 와 `MASTER §20-4` 가 **산문으로** 그 둘을 지목한다. 분모도 같이 는다.
-SEALED_FILES = 528
+#     ★ 2026-10-11 (DECISIONS §469). 528 → **529 = 분모.** 새 집 하나
+#       (`src/firelane/localplane.py`)가 들어왔고 `§469` 가 **산문으로** 지목한다.
+#     ★ 2026-10-11 (DECISIONS §470 · PLAN #168). 529 → **530 = 분모.** 새 집 하나
+#       (`tests/test_handrolled.py` — 손으로 짠 자리의 분모)가 들어왔고 `§470` 이
+#       **산문으로** 지목한다.
+SEALED_FILES = 530
 
 #: **강제자 칸만으로** 덮인 파일 수. 내려가는 쪽. 2026-10-10 실측 37 → **0**.
 #: 늘면 「산문 없이 칸만 적었다」는 뜻이고 그것은 한 번 속은 자리다(PLAN #165).
