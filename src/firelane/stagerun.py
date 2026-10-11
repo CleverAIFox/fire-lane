@@ -44,18 +44,29 @@ from pathlib import Path
 ENOMEM_RC = 12
 
 
-def run_stage(main) -> None:
-    """단계 모듈의 `main()` 을 돌린다. 메모리 실패만 가로챈다."""
+def is_oom(ex: BaseException) -> bool:
+    """메모리로 죽었나. **판별의 집은 여기 하나다.**
+
+    ★ 2026-10-11 (DECISIONS §461). 부르는 쪽이 둘이 됐다 — 이 껍데기와
+      `ingest` 의 **샤드 루프**다. 그 루프가 `except Exception` 으로 먼저
+      잡아서 이 파일의 처방이 한 번도 안 찍혔고, 사람은 「소스가 실패했다」는
+      거짓 안내를 따라갔다(§224-3 이 고친 그 1족이 다른 길로 돌아왔다).
+      양쪽이 `errno` 를 각자 적으면 다음에 또 갈린다.
+    """
     import errno
 
+    return isinstance(ex, MemoryError) or (
+        isinstance(ex, OSError) and ex.errno == errno.ENOMEM)
+
+
+def run_stage(main) -> None:
+    """단계 모듈의 `main()` 을 돌린다. 메모리 실패만 가로챈다."""
     try:
         main()
-    except MemoryError:
-        oom_exit("MemoryError")
-    except OSError as e:                       # [Errno 12] Cannot allocate memory
-        if e.errno != errno.ENOMEM:
+    except (MemoryError, OSError) as e:        # [Errno 12] Cannot allocate memory
+        if not is_oom(e):
             raise
-        oom_exit(f"OSError [Errno {e.errno}] {e.strerror}")
+        oom_exit(f"{type(e).__name__}: {e}")
 
 
 def oom_exit(what: str) -> None:

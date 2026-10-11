@@ -508,6 +508,15 @@ def main():
                 if _s:
                     r["seal"] = _s
         except Exception as ex:
+            # ★ 2026-10-11 (DECISIONS §461). **메모리로 죽은 것은 소스의 실패가
+            #   아니다.** 아래 격리는 그 산출물을 떼어내는데, 그것이 바로
+            #   `--reseal-code` 가 쓸 증거다 — 격리하면 **복구 수단을 없앤다.**
+            #   그리고 이 `except` 가 먼저 잡아서 `stagerun` 의 처방이 한 번도
+            #   안 찍혔다(실기 2026-10-11 · `ngii_road`). 판별은 그 파일 하나다.
+            from firelane.stagerun import is_oom, oom_exit  # noqa: PLC0415  순환을 끊는다
+
+            if is_oom(ex):
+                oom_exit(f"{type(ex).__name__}: {ex} — 소스 `{key}` (격리하지 않았다)")
             r = {"key": key, "status": "FAIL", "error": f"{type(ex).__name__}: {ex}"}
             # ★ FAIL 이면 이 key 의 기존 산출물을 개명해 하류에서 떼어낸다.
             #   2026-08-17 ngii1k FAIL 때 8/13 gpkg 가 남아 segments 가 그것으로

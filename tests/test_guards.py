@@ -2773,3 +2773,45 @@ def test_required_does_not_swallow_an_unreadable_ledger():
     assert "except OSError:\n        return []" not in src, (
         "대장 읽기 실패를 삼킨다 — 아무것도 안 본 상태가 「전부 확보」로 보고된다")
     assert nr._required(), "필수 목록이 비었다 — 수집이 죽었으면 터져야 한다"
+
+
+# ── §461 · 메모리로 죽은 것을 격리하지 않는가 ───────────────────
+
+def test_the_memory_predicate_has_one_home_and_bites_both_ways():
+    """★ 2026-10-11 (DECISIONS §461). 「메모리로 죽었나」를 두 자리가 각자
+    적으면 다음에 갈린다 — 집은 `stagerun.is_oom` 하나다."""
+    import errno
+
+    from firelane.stagerun import is_oom
+
+    assert is_oom(MemoryError())
+    assert is_oom(OSError(errno.ENOMEM, "Cannot allocate memory"))
+    assert not is_oom(OSError(errno.ENOENT, "No such file"))
+    assert not is_oom(ValueError("기하가 깨졌다"))
+
+
+def test_a_shard_that_died_of_memory_is_not_quarantined():
+    """**격리는 복구 수단을 없앤다.** 2026-10-11 실기 — `ngii_road` 가 OOM 으로
+    죽자 그 산출물 둘이 `.stale_` 로 개명됐고, 그것이 바로 `--reseal-code` 가
+    받을 증거였다. 소스가 실패한 것이 아니라 메모리가 모자란 것이다.
+
+    묻는 것은 **순서**다 — 샤드 루프의 `except` 가 `oom_exit` 를
+    `quarantine_stale` **앞에서** 부르는가.
+    """
+    import ast
+
+    src = (ROOT / "src" / "firelane" / "ingest.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    hits = [h for n in ast.walk(tree) if isinstance(n, ast.Try)
+            for h in n.handlers
+            if "quarantine_stale" in ast.dump(h)]
+    assert hits, "샤드 루프의 격리 자리를 못 찾았다 — 이 대조가 아무것도 안 묻는다"
+    for h in hits:
+        # ★ `ast.walk` 은 **원문 순서가 아니다**(너비 우선) — 줄 번호로 센다.
+        #   처음 판이 그 둘을 헷갈려 통과했다.
+        at = {c.func.id: c.lineno for c in ast.walk(h)
+              if isinstance(c, ast.Call) and isinstance(c.func, ast.Name)}
+        assert "oom_exit" in at, (
+            "메모리로 죽은 것도 격리한다 — 처방을 못 찍고 복구 수단을 없앤다")
+        assert at["oom_exit"] < at["quarantine_stale"], (
+            "격리가 처방보다 먼저다 — 그 순서면 산출물이 이미 개명됐다")

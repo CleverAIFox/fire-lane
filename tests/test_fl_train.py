@@ -157,3 +157,30 @@ def test_챙긴_뒤_BODY_가_남은_자리를_가리킨다():
     body = _nocomment(src[i:j])
     assert 'BODY="$WORK/PR_BODY.md"' in body, (
         "치운 뒤 `$BODY` 를 다시 가리키지 않는다 — 8단계의 대체 본문이 매달린다")
+
+
+# ── §461 · 코드만 바뀐 봉인을 재빌드로 갚지 않는가 ──────────────
+
+def test_닫힘이_바뀌면_재도장을_먼저_한다():
+    """★ 2026-10-11 실기 (DECISIONS §461). 4b 가 곧장 전량 재빌드로 갔고
+    `ngii_road` 가 OOM(Errno 12)으로 죽었다 — 그 배치가 바꾼 폐포 파일 셋은
+    **산출물에 한 바이트도 안 닿았다.** 재빌드할 이유가 애초에 없었다.
+
+    묻는 것은 순서다 — 재도장(`--reseal-code`)이 전량(`fire-lane --split`)보다
+    **앞에** 있는가. 뒤에 있으면 OOM 이 먼저 온다.
+    """
+    src = _nocomment(_fl())
+    i = src.find("firelane.ingest --reseal-code")
+    j = src.find("fire-lane --split")
+    assert i > 0, "4b 가 재도장을 아예 안 부른다 — 코드만 바뀐 봉인을 재빌드로 갚는다"
+    assert j > 0, "전량 재빌드 자리가 없다 — 이 대조가 아무것도 안 묻는다"
+    assert i < j, "전량 재빌드가 재도장보다 먼저다 — OOM 이 먼저 온다"
+
+
+def test_전량으로_가는_조건이_거절_하나뿐인가():
+    """재도장이 **거절**한 샤드가 있을 때만 전량이다. 거절은 「산출물이 봉인과
+    다르다」이고 그것은 정말로 다시 빌드할 자리다."""
+    src = _nocomment(_fl())
+    head = src[src.find("firelane.ingest --reseal-code"):src.find("fire-lane --split")]
+    assert "거절" in head, "거절을 보지 않고 전량으로 간다 — 조건 없는 재빌드다"
+    assert "--from ingest" in src, "거절이 없을 때 이어 도는 자리가 없다"
