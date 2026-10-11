@@ -182,9 +182,6 @@ def pairs(tree: ast.AST) -> tuple[set[str], set[str]]:
     """
     neg: set[str] = set()
     pos: set[str] = set()
-    both = _classifier(tree)          # ★ §485 — 분류기 꼴은 양쪽으로 센다
-    neg |= both
-    pos |= both
     for fn in _funcs(tree):
         # ★ 2026-10-12 (DECISIONS §480). 한 함수 안의 **`이름 = f(…)`** 를 모은다.
         #   `assert not 이름` 이 그 이름을 쓰면 **`f` 를 음성으로 민 것**이다.
@@ -242,9 +239,62 @@ def _bound_names(node: ast.AST, bound: dict[str, set[str]]) -> set[str]:
     return out
 
 
-def has_canary(tree: ast.AST) -> bool:
+def _defs(tree: ast.AST) -> set[str]:
+    """그 트리가 **정의한** 함수 이름."""
+    return {n.name for n in ast.walk(tree)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+
+
+def judge_names(src: str, tree: ast.AST, tools: set[str],
+                root: Path = ROOT) -> set[str]:
+    """이 시험이 **판정으로 부를 수 있는** 이름.
+
+    ── 왜 이 문이 필요한가 (2026-10-12 · DECISIONS §486) ────────
+    §485 가 내장 함수를 쌍에서 뺐다. **그것으로 끝이 아니었다** —
+    `subprocess.run` · `read_text` · `items` · `get` · `search` 같은
+    표준 라이브러리·메서드 이름이 음성 꼴과 양성 꼴에 **둘 다** 나와서
+    아홉 시험이 거짓으로 초록이었다. 내장은 그 족의 한 조각이었다.
+
+    옳은 물음은 「같은 **판정**을 양쪽으로 밀었나」다. 그래서 허용 집합을
+    **이름의 출처**로 만든다 —
+
+        · 그 시험 파일이 정의한 함수 (지역 보조자 · `_run` 따위)
+        · 그 시험이 미는 **도구**의 함수
+        · 그 시험이 글에 든 `firelane.*` 모듈의 함수
+
+    ★ 넓게 잡는다. 좁히면 「정말 판정을 밀었나」까지 가려 해야 하고 그것은
+      정적으로 알 수 없다 — 여기가 막는 것은 **우연한 쌍** 하나다.
+    """
+    out = _defs(tree)
+    for stem in tools:
+        q = root / "tools" / f"{stem}.py"
+        if not q.is_file():
+            continue
+        try:
+            out |= _defs(ast.parse(q.read_text(encoding="utf-8")))
+        except (OSError, SyntaxError):
+            continue
+    fl = root / "src" / "firelane"
+    if fl.is_dir():
+        for q in sorted(fl.rglob("*.py")):
+            if q.stem in src:
+                try:
+                    out |= _defs(ast.parse(q.read_text(encoding="utf-8")))
+                except (OSError, SyntaxError):
+                    continue
+    return out
+
+
+def has_canary(tree: ast.AST, allowed: set[str] | None = None) -> bool:
+    """쌍이 있는가. `allowed` 를 주면 **그 이름들 안에서만** 센다(§486).
+
+    ★ 기본값이 `None` 이다 — 자기검사의 합성 트리는 어디에도 정의가 없는
+      이름(`f` · `g`)을 쓰므로, 거르면 그 판별식들이 전부 죽는다. 실물을
+      세는 자리(`findings`)가 `allowed` 를 준다.
+    """
     neg, pos = pairs(tree)
-    return bool(neg & pos)
+    both = (neg & pos) | _classifier(tree)
+    return bool(both if allowed is None else both & allowed)
 
 
 def findings(root: Path = ROOT) -> list[tuple[Path, int, str, str]]:
@@ -260,7 +310,7 @@ def findings(root: Path = ROOT) -> list[tuple[Path, int, str, str]]:
         except (OSError, SyntaxError):
             continue
         hit = touches(src, tree, tools)
-        if not hit or has_canary(tree):
+        if not hit or has_canary(tree, judge_names(src, tree, hit, root)):
             continue
         out.append((p, 1, p.stem,
                     f"{', '.join(sorted(hit)[:3])} 를 미는데 **합성 결함을 넣어"
@@ -326,7 +376,30 @@ EXEMPT: dict[str, str] = {}
 #   ★ 셋 다 자기검사가 **양방향으로** 든다 — 내장만으로는 쌍이 안 되고,
 #     안쪽 진짜 이름은 세고, 낱말 하나나 한 단정 안의 사슬로는 안 된다.
 #   ★ 남은 16 은 빚이다.
-NO_CANARY = 16
+# ★ 2026-10-12 — 16 → **25** (DECISIONS §486). **올라간다 — 거짓 초록을
+#   걷은 수다.** §485 가 내장 함수를 쌍에서 뺐는데 그것은 그 족의 한 조각이었다:
+#   `subprocess.run` · `read_text` · `read_bytes` · `items` · `get` · `search` ·
+#   `exists` · `startswith` 같은 **표준 라이브러리·메서드 이름**이 음성 꼴과
+#   양성 꼴에 둘 다 나와서 아홉 시험이 거짓으로 초록이었다.
+#
+#   옳은 물음은 「같은 **판정**을 양쪽으로 밀었나」다. 그래서 쌍을 **이름의
+#   출처**로 거른다(`judge_names`) — 그 시험이 정의한 함수 · 그 시험이 미는
+#   도구의 함수 · 글에 든 `firelane.*` 모듈의 함수. 넓게 잡는다: 좁히면
+#   「정말 판정을 밀었나」까지 가려야 하고 그것은 정적으로 알 수 없다.
+#
+#   ★ 이 판에서 **둘을 같이 갚았다** —
+#     `tests/test_commit_policy.py` 는 규칙 여섯을 각각 양쪽으로 밀면서
+#       **그것들을 모으는 자**(`check_paths`)를 안 밀고 있었고, 쌍은
+#       `subprocess.run` 으로 성립해 있었다. 규칙이 다 맞아도 모으는 쪽이
+#       비면 훅은 조용하다. 규칙 여섯을 **하나씩** 섞어 넣어 이름·사유·
+#       파일을 다 말하는지 보고, 자르는 자리의 「외 N건」까지 든다.
+#     `tests/test_cost_inputs.py` 는 도구를 하위프로세스로 **부르기만**
+#       했다. 초록은 「검사했다」가 아니다(§199) — `judge()` 를 합성
+#       입력으로 민다: 빈 발행물 · 0 을 뺀 발행 · 거짓 자기신고 ·
+#       대장 없이 켠 압력 계수, 그리고 **꺼진 계수에는 안 우는가**.
+#   ★ 남은 24 가 **처음으로 뜻이 있는 수다** — 내장도, 라이브러리도,
+#     우연한 메서드도 아닌 **판정 이름으로 센** 빚이다.
+NO_CANARY = 24
 
 RATCHETS = {"NO_CANARY": "down"}
 
@@ -437,6 +510,26 @@ def selftest() -> int:
     chain = _a.parse('def t():\n    assert g(1) == "a" == "b"\n')
     if has_canary(chain):
         bad.append("한 단정 안의 사슬을 두 자리로 센다 — 한 자리에서 민 것이다")
+
+    # ★ 2026-10-12 (§486) — **판정 이름 안에서만** 센다
+    lib = _a.parse('def t():\n    assert not p.read_text()\n'
+                   'def c():\n    assert q.read_text()\n')
+    if has_canary(lib, allowed={"판정"}):
+        bad.append("표준 라이브러리 이름으로 쌍을 세운다 — 아홉 시험이 그렇게"
+                   " 거짓으로 초록이었다")
+    if not has_canary(lib):
+        bad.append("허용 집합을 안 주면 거르지 말아야 한다 — 합성 판별식이 죽는다")
+    mine = _a.parse('def 판정(x):\n    return []\n'
+                    'def t():\n    assert not 판정(1)\n'
+                    'def c():\n    assert 판정(2)\n')
+    if not has_canary(mine, allowed=_defs(mine)):
+        bad.append("그 파일이 정의한 판정으로 민 쌍을 안 센다")
+    # ★ 허용 집합이 **어디서 오는가** — 미는 도구의 함수가 들어야 한다
+    nm = judge_names("import canary", _a.parse("import canary"), {"canary"})
+    if "has_canary" not in nm or "judge_names" not in nm:
+        bad.append("미는 도구의 함수 이름을 허용 집합에 안 넣는다")
+    if judge_names("", _a.parse(""), {"없는도구"}):
+        bad.append("없는 도구에서 이름을 만든다")
 
     # ★ 판정 — 양방향 · 빈 그물
     if not faults(NO_CANARY + 1, denom=98):
