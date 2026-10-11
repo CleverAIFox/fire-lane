@@ -9039,10 +9039,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0205123db49507a3",
-   "5159297c6b52e0f9",
-   "5c65b8a552d93e43",
-   "ec0c21b39a7096cd"
+   "01e166a265aea907",
+   "206840921e6312ce",
+   "48eed17b2066a8ab",
+   "5f6f687495b4e06c",
+   "61c333fac763dc56",
+   "878f8663b6f7e6e0",
+   "bc1fa613ffb30f75",
+   "c51b57fd6b2373ad"
   ],
   "parts": {
    ".pre-commit-config.yaml": "22ef74f56f24de56",
@@ -9055,9 +9059,31 @@
    "tools/scopedecl.py": "f47bf53a95174455",
    "tools/toolclass.py": "251f0a9210cdd5ff",
    "tools/treecheck.py": "3bfc9bc975604f12",
-   "본문": "03a6e17e3ea3f264"
+   "본문": "549cd1ead73cb8b4"
   },
-  "sha": "5159297c6b52e0f9"
+  "sha": "878f8663b6f7e6e0"
+ },
+ "DECISIONS/458": {
+  "doc": "docs/DECISIONS.md",
+  "files": [
+   "tools/delivercheck.py",
+   "tools/dms.py",
+   "tools/fix.sh",
+   "tools/fixable.py"
+  ],
+  "fp": "view-v2",
+  "kind": "read",
+  "legacy": [
+   "116685cb6e1d2433"
+  ],
+  "parts": {
+   "tools/delivercheck.py": "63796be7d7b2a8de",
+   "tools/dms.py": "27ee106515d99824",
+   "tools/fix.sh": "7f938285bab7c4f6",
+   "tools/fixable.py": "266ebf469023763d",
+   "본문": "46eacbb274962db3"
+  },
+  "sha": "116685cb6e1d2433"
  },
  "DECISIONS/46": {
   "doc": "docs/DECISIONS.md",
