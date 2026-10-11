@@ -175,6 +175,44 @@ def _reasons() -> dict[str, int]:
     return {str(k): int(v) for k, v in ur.items()}
 
 
+def shape() -> dict[str, float]:
+    """발행물에서 **유도되는** 수 — CCTV 유효범위와 회색 연장.
+
+    ★ 2026-10-11 (DECISIONS §464 · PLAN #167 닫힘). 이 다섯이 **어느 자도 안
+      보고 있었다.** 2026-10-11 재발행에서 손으로 고친 열세 자리 중 다섯이
+      그랬고, 넷은 라벨(`needs_cv` · 회색 사유)이 있어 울었다. 같은 문단에서
+      **틀린 수와 맞는 수가 섞여** 있었다.
+
+    ★ `cctv_in` 은 발행물의 `cv_feasible` 을 **센다.** 종전에는 여기서
+      `cctv_dist_m <= 25` 를 직접 쟀다 — `CCTV_RANGE` 가 19.0 으로 내려간
+      뒤로 그 자는 **옛 상수로 세고 있었고**, 그러면 문서를 「상수도 아니고
+      산출물도 아닌 수」와 대조한다. 발행물이 이미 그 답을 들고 다닌다
+      (`cv_feasible` = 「유효범위 안인가」). 상수의 사본을 안 만든다(§455-9).
+
+    ★ 백분율은 **소수 한 자리**다. 떼면 64.8 과 65.4 가 같아지고, 그 둘은
+      「골목의 65%」라는 한 문장에서 다른 사실이다.
+
+    ★ 레이크를 안 읽는다 — `verdicts()` 와 같은 사유다(§319). 문서 블록을
+      채우는 데 레이크는 필요 없다.
+    """
+    P = [f["properties"] for f in json.loads(SEG.read_text(encoding="utf-8"))["features"]]
+    n = len(P)
+    if not n:
+        raise SystemExit(f"★ {SEG} 에 구간이 0 이다 — 분모가 비면 백분율이 거짓이 된다")
+    cin = sum(1 for p in P if p.get("cv_feasible"))
+    lu = sum(p["length_m"] for p in P if p["verdict"] == "unknown")
+    lt = sum(p["length_m"] for p in P)
+    return {
+        "cctv_in": cin,
+        "cctv_in_pct": round(cin / n * 100, 1),
+        # ★ 「밖」을 1 − 안 으로 **유도한다.** 따로 세면 결손 처리가 갈리고,
+        #   그날 두 수의 합이 구간 수와 달라진다.
+        "cctv_out_pct": round((n - cin) / n * 100, 1),
+        "v_unknown_m": round(lu),
+        "v_unknown_m_pct": round(lu / lt * 100, 1) if lt else 0.0,
+    }
+
+
 def counts() -> dict[str, int]:
     P = [f["properties"] for f in json.loads(SEG.read_text(encoding="utf-8"))["features"]]
     return {
@@ -182,7 +220,9 @@ def counts() -> dict[str, int]:
         "in_emd": sum(1 for p in P if p["in_emd"]),
         # ★ 2026-09-16. `(d or 9e9)` 는 거리 **0.0** 을 결손으로 읽었다 — 카메라 바로 옆 2구간이
         #   유효범위 밖으로 세어져 451 을 449 로 냈다(DECISIONS §170-5). 결손은 None 뿐이다.
-        "cctv_in": sum(1 for p in P if p["cctv_dist_m"] is not None and p["cctv_dist_m"] <= 25),
+        #   ★ 2026-10-11 (§464-1). 그 판별은 이제 `shape()` 하나에 산다 — 거기서
+        #     발행물의 `cv_feasible` 을 센다. 여기서 또 재면 상수 사본이 돌아온다.
+        "cctv_in": int(shape()["cctv_in"]),
         "nfa": sum(1 for p in P if p.get("nfa_designated")),
         # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). **회색의 사유별 수.**
         #   종전에 이 다섯을 보던 것은 `docx_check` 의 ⑤ 정방향(= `docx_fix`
