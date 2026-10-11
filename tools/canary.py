@@ -160,7 +160,7 @@ def denominator(root: Path = ROOT) -> int:
 EXEMPT: dict[str, str] = {}
 
 #: 카나리아 없는 강제자 수. **내려가는 쪽.** 2026-10-09 실측 57 / 분모 98.
-NO_CANARY = 57
+NO_CANARY = 56
 
 RATCHETS = {"NO_CANARY": "down"}
 
