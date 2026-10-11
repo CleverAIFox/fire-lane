@@ -3107,7 +3107,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,114 전수 · **분모(blank) 0절** · 물림(inherit) 1,159절.
+★ **강제자 칸의 분모.** 절 2,118 전수 · **분모(blank) 0절** · 물림(inherit) 1,162절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3169,6 +3169,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 | `offtrack_min` | `src/firelane/seg/params.py` | `web/navi/src/domain/vehicle.ts` | `tests/test_sources_of_truth.py` |
 | `local_lat0` | `src/firelane/localplane.py` | 조사 도구와 발행이 **import 한다**(사본 없음) | `tests/test_sources_of_truth.py` |
 | `local_my` | `src/firelane/localplane.py` | 위도 1도의 미터. **경도 1도(111,320)와 다른 수다** — 2026-10-11 에 저장소가 세 수를 들고 있었다(DECISIONS §469) | `tests/test_sources_of_truth.py` |
+| `em_narrow` | `src/firelane/emwidth.py` | 넓지 않은 글자 한 자의 폭(em 어림). `svg_fit` 이 **import 한다** — 2026-10-11 까지 그 파일이 수를 들고 있었고 `vehiclecard` 가 **다른 수(0.55)**로 또 짰다(DECISIONS §472 · PLAN #169) | `tests/test_sources_of_truth.py` |
 
 ★ **2026-09-23 — 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5).
   ★ 2026-09-28 정정 — 그때 열이었고 지금 **열둘**이다(`offtrack_min` ·

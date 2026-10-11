@@ -28,6 +28,7 @@ from __future__ import annotations
 import html
 import re
 
+from firelane import emwidth
 from firelane.cli import no_args
 
 W, H = 720, 300
@@ -65,12 +66,19 @@ def _attr(attrs: str, name: str, default: str | None = None) -> str | None:
 
 
 def _em(ch: str) -> float:
-    """글자 한 자의 폭(em). 한글·한자·전각 1.0 · 나머지 0.6 — 어림이다."""
-    o = ord(ch)
-    wide = (0x1100 <= o <= 0x11FF or 0x2E80 <= o <= 0x9FFF
-            or 0xAC00 <= o <= 0xD7AF or 0xF900 <= o <= 0xFAFF
-            or 0xFF00 <= o <= 0xFF60)
-    return 1.0 if wide else 0.6
+    """글자 한 자의 폭(em). **정본은 `firelane.emwidth` 하나다.**
+
+    ★ 2026-10-11 (DECISIONS §472). 구간 다섯과 두 수가 여기 있었다. 같은
+      어림이 `src/firelane/vehiclecard.py` 에 **다른 수로** 또 있었고, 그
+      원인은 §469 · §471 과 같다 — 정본이 `tools/` 에 있으면 `src` 가
+      import 할 수 없다. 집을 `src` 로 올렸다. **값은 안 바뀐다** —
+      실측으로 BMP 전 평면(0x1~0xFFFF)에서 어긋남 0 이다.
+
+    ★ 이름은 `_em` 으로 둔다 — `tools/figures/` 와 카나리아가 이 파일의
+      이름을 든다. 옮기는 판에서 접점까지 바꾸면 무엇이 무엇을 깨뜨렸는지
+      못 가른다(§470-1 이 `kpi._dijkstra` 에서 든 판단과 같다).
+    """
+    return emwidth.em(ch)
 
 
 def text_extent(attrs: str, inner: str) -> tuple[float, float, float, str]:
@@ -101,9 +109,10 @@ def _fits(body: str, w: int, h: int) -> list[str]:
 
     ★ 2026-09-22 (DECISIONS §218-6) 글자는 기준점 한 점만 보았다. 기준점이 안에
       있으면 라벨이 아무리 길어도 통과했다 — 같은 족(1족)이 글자 쪽에서 무음이었다.
-      이제 라벨 폭을 어림해(한글 1.0em · 라틴·숫자 0.6em × font-size, text-anchor
-      반영) viewBox 를 넘는지, 기준점이 든 가장 작은 박스를 가로로 넘는지 본다.
-      어림은 보수적이다(공백도 0.6em) — 넘치면 줄이거나 줄을 나누거나 박스를 넓힌다.
+      이제 라벨 폭을 어림해(`firelane.emwidth` 가 자당 em 을 든다 × font-size,
+      text-anchor 반영) viewBox 를 넘는지, 기준점이 든 가장 작은 박스를 가로로
+      넘는지 본다. 어림은 **보수적**이다(공백도 넓지 않은 쪽 값이다) — 넘치면
+      줄이거나 줄을 나누거나 박스를 넓힌다. **수는 여기 안 적는다**(§472).
 
     ★ 2026-09-24 `<circle>` 도 본다(`_boxes()`). 그 전까지는 원이 검사 밖이었고,
       2026-09-23 에 `fig_cctv` 의 원 그림을 복도로 바꾼 사유가 바로 그것이었다.

@@ -256,6 +256,24 @@ SPEC: dict[str, dict] = {
         "code_only": True,
         "near": r"MY|위도|lat|dlat",
     },
+    "em_narrow": {
+        "what": "넓지 않은 글자 한 자의 폭(em 어림). **공백도 이 값이다** — 보수적으로 센다",
+        # ★ 2026-10-11 (DECISIONS §472). 같은 어림이 `tools/svg_fit.py` 와
+        #   `src/firelane/vehiclecard.py` 에 **다른 수로** 있었고(0.6 · 0.55)
+        #   원인은 §469 · §471 과 같다 — 정본이 `tools/` 에 있어 `src` 가 못 썼다.
+        #   같은 자리에서 세 번째다. 집을 `src` 로 올리고 이 문을 세운다.
+        #   ★ `vehiclecard` 의 0.55 는 **이 판에서 안 바꾼다**(PLAN #169) — 다른
+        #     수라 이 독점 문에 안 걸린다. 걸리는 것은 **0.6 의 새 사본**이다.
+        "owner": {"file": "src/firelane/emwidth.py", "regex": r"^NARROW_EM = ([\d.]+)"},
+        "consumers": [],
+        "scan": ["tools/*.py", "src/firelane/**/*.py"],
+        "exclusive": True,
+        "code_only": True,
+        # ★ 문맥을 **좁게** 잡는다. `폭` 하나로 열면 `ngii1k` 의 「도로폭 <= 0.6」
+        #   (미터다)까지 물고, 그러면 사람이 이 문을 끈다 — 거짓으로 우는 문은
+        #   안 우는 문보다 나쁘다(§435 가 든 그 자리의 반대쪽이다).
+        "near": r"\bem\b|em 어림|글자 폭|NARROW_EM|WIDE_EM",
+    },
     "code_owner": {
         "what": "저장소 단독 소유자(CODEOWNERS 기본 규칙 · 2026-09-09 개인 계정 이관)",
         "owner": {"file": ".github/CODEOWNERS", "regex": r"^\*\s+@(\S+)"},

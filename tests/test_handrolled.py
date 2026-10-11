@@ -129,6 +129,23 @@ SITES: dict[str, dict] = {
                " `numpy.quantile` 이 정본이고 실측으로 `pandas` 와 전부 같다"
                " (DECISIONS §471)",
     },
+    "글자 폭 어림 (관리카드)": {
+        # ★ 2026-10-11 (DECISIONS §472). 이 자리는 **이름이 달라서** §470 의
+        #   훑기에 안 걸렸다 — 표식이 `def text_extent` 였고 이쪽은 `_width` 다.
+        #   같은 일감의 사본은 **정규식이 아니라 사람이** 찾는다. 찾은 것을
+        #   선언에 올리는 것이 이 파일의 일이다.
+        "mark": r"def _width",
+        "where": "src/firelane/vehiclecard.py",
+        "moved": False,
+        "dep": "pillow",
+        "why": "관리카드 PDF 의 **머리글 칸 중심**을 찾는다 — `svg_fit` 과 **다른"
+               " 일감**이다(저쪽은 「넘치는가」라 과대가 안전하고, 이쪽은 중심이라"
+               " 과대·과소가 다 틀린다). 정확한 측정은 PDF 에 심긴 글꼴을 열어야"
+               " 하고 `pypdf` 는 그 폭을 안 준다. ★ 남은 결함 하나 — 구간을 안 보고"
+               " `[가-힣]` 으로만 가르므로 `㎏`·한자·전각을 좁다고 센다. 바꾸면 이"
+               " 모듈의 코드 축이 움직여 norm 을 다시 구워야 하고 원본 PDF 는"
+               " 레이크에 있다 — **PLAN #169** 가 그 재기를 든다",
+    },
     "글자 폭 어림": {
         "mark": r"def text_extent",
         "where": "tools/svg_fit.py",
