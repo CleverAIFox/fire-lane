@@ -4204,7 +4204,7 @@ camelCase 로 바꾸고(`turnRadiusM`) 접미를 떼어(`turn_radius`) 찾았는
 둘 다 "예정" 이라 실물이 없었고, **그래서 아무도 어긋난 줄 몰랐다.** 실물이
 없는 것끼리는 대조할 상대가 없어 낡음이 조용하다.
 
-강제자  `tools/docx_check.py`(기획서 ↔ MASTER 대조가 이 어긋남을 잡았다) · `tests/test_docx_targets.py::test_docx_check_is_bidirectional`. 하위 넷이 이 칸을 물려받는다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
+강제자  없음 — 사유: docx 파이프라인 폐기(2026-10-09 · §444-4)로 이 칸이 들던 검사기와 그 양방향 시험이 같이 지워졌다. 기획서가 HTML 하나라 기획서 ↔ MASTER 대조를 드는 자리가 지금은 없다. 하위 넷이 이 칸을 물려받는다
 
 ### 93-1. 왜 기획서 쪽인가
 
@@ -16507,7 +16507,7 @@ GPS 가 **없는** 경우는 이미 막혀 있었다. 데스크톱 · 권한 거
 
 > 2026-09-28
 
-강제자  `tools/docstyle.py` · `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/proposal_pdf.py`(`BOOKMARKS_MIN`) · `tools/docx_figs.py`(`SOURCELESS_MAX`) · `tools/ci_wait.sh` · `tests/test_docstyle.py` · `tests/test_figure_fit.py` · `tests/test_batch_tools.py`. 하위 11이 이 칸을 물려받는다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
+강제자  `tools/tonecheck.py` · `tools/svg_fit.py`(`_collisions`) · `tools/ci_wait.sh` · `tests/test_figure_fit.py` · `tests/test_batch_tools.py`. ★ docx 파이프라인 폐기(§444-4)로 문체 검사기 하나 · pdf 북마크 하한 · 그림 출처 상한과 그 시험이 이 칸에서 빠졌다. 하위 11이 이 칸을 물려받는다
 
 문서 넷 중 `proposal.docx` 만 **저장소 밖으로 나간다.** 그런데 이 문서에 걸린
 검사는 「숫자가 산출물과 맞는가」(`docx_check`)와 「그림이 정본과 같은가」
@@ -22631,10 +22631,10 @@ tools/verdict_tally.py              지금 돌리면 통과한다
 ## 360. 느려지는 정규식 둘과, 뜻을 안 말하는 꼴 둘
 
 > 2026-10-03
-강제자  `tests/test_docx_targets.py::test_tool_token_pattern_is_unchanged`  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
-(전수 19,531 + 무작위 60,000 동등성) · 같은 파일의
-`test_the_tool_token_pattern_does_not_blow_up`(길이 네 배에 시간이 선형인가) ·
-`tests/test_n1.py::_deploy_rows`. 하위 셋이 이 칸을 물려받는다
+강제자  `tests/test_n1.py::_deploy_rows`. ★ 종전에 이 칸이 들던 도구 토큰
+        정규식 시험 둘(전수 19,531 + 무작위 60,000 동등성 · 길이 네 배에
+        시간이 선형인가)은 docx 파이프라인 폐기(§444-4)로 그 파일과 함께
+        지워졌다. 하위 셋이 이 칸을 물려받는다
 배운 것  **시험 안의 정규식도 코드다.** 느려지는 길이 있으면 그 시험은 언젠가
 시간으로 죽고, 시간으로 죽은 시험은 「느린 기계」로 읽혀서 끄게 된다.
 
@@ -24615,9 +24615,10 @@ web/key.js           같은 날 생성이 멈췄다. `deploy.yml` 은 그 파일
 
 > 2026-10-03
 
-강제자  `tests/test_docx_targets.py`(`_old_accepts` — 대조군을 정규식이 아니라  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
-**함수**로 둔다 · `test_the_retired_pattern_is_not_compiled_anywhere`) ·
-`tests/test_guards.py`(`pip install` 캡처를 수량자 하나로).
+강제자  `tests/test_guards.py`(`pip install` 캡처를 수량자 하나로). ★ 종전에
+        이 칸이 들던 대조군 함수(정규식이 아니라 함수로 둔다)와 「은퇴한
+        정규식이 어디서도 컴파일되지 않는가」 시험은 docx 파이프라인
+        폐기(§444-4)로 그 파일과 함께 지워졌다.
 하위 다섯이 이 칸을 물려받는다
 배운 것  **고치는 쪽이 「덮는 범위」를 안 적으면 그 패치가 같은 결함을
 다시 싣는다.** §360 은 정규식 둘을 고치면서 **제 대조군**을 안 셌다.
@@ -27104,9 +27105,9 @@ PLAN §10 이 2026-09-30 에 이렇게 들어왔다(§331) —
 
 > 2026-10-06
 
-강제자  `tools/docx_check.py`(`census` · `_bite_total` · `TOTAL_RE` ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
-`--census`) · `tests/test_docx_targets.py`(인구조사가 살아 있는가 ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
-총연장 축이 **실제로 무는가** — 합성 양방향).
+강제자  없음 — 사유: docx 파이프라인 폐기(§444-4)로 인구조사 검사기와 그
+        시험이 같이 지워졌다. 총연장 축이 실제로 무는가를 드는 자리가
+        지금은 없다.
 하위 셋이 이 칸을 물려받는다
 유병률  **2회** — ① 2026-09-24 `PLAN §12` 가 「숫자가 아닌 것은 대조 대상이
 아니다」를 스스로 적었다(§243-7). ② 2026-10-06. 그 글이 적은 한계보다 구멍이
@@ -30806,8 +30807,8 @@ PLAN `#138`(닫힘 — §439) 이 적은 처방은 「패치를 하나씩 누적
         `tools/docnum_check.py` `RULES` 의 `docs/proposal.md` 다섯 ·
         `tools/delivercheck.py` `lonely_tests`(좁힌 판정) ·
         `tools/delivertest.py` 판별식 **37** ·
-        `tools/docfsck/docx_revised.py` `covers()`(두 팔이 md 도 본다) ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
-        `tools/docx_fix.py` `touch_md()`(648 → 239) · `tools/docxrules.py`(표 셋) ·  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
+        ★ docx 쪽 셋(두 팔이 md 도 보던 문 · 648 → 239 로 줄인 패처 · 표 셋)은
+        2026-10-09 에 파이프라인과 함께 지워졌다(§444-4) ·
         `web/proposal.template.html`(머리 한 줄을 지웠다) ·
         `tools/mutate.py` `_imports_ratchet()` · 과녁 밖 줄을 **지우는** 네 줄
         **하위 열**이 이 칸을 물려받는다
@@ -31148,9 +31149,8 @@ sizecheck」 — `ratchet_values()` 가 그 줄의 지문을 대다가 「잰 �
 
 > 2026-10-09
 
-강제자  `web/navi/src/ui/Manual.tsx`(`MANUAL` 네 묶음 · **종전 — §445 에서
-        은퇴했다.** 화면 안 사용설명서를 걷고 그 자리를 `MASTER §15-4` 가
-        든다) ·
+강제자  ★ 화면 안 사용설명서는 §445 에서 은퇴했다 — 그 화면과 묶음 넷을
+        걷었고 그 자리를 `MASTER §15-4` 가 든다 ·
         `web/navi/src/ui/motion.ts`(강조 채널 선언) ·
         `tools/uicheck.py` `emphasis_uses_no_color()`(판별식 19 → **21**) ·
         `tests/test_fleet_turn_radius.py` · `tests/test_navi_wireframe.py`
