@@ -83,3 +83,68 @@ def test_the_suppressed_counter_hands_out_a_copy():
     got["없는칸"] = 1
     after = quiet_gdal.suppressed()
     assert after == before, f"밖에서 고친 것이 안으로 들어갔다 — {after}"
+
+
+# ── git 에게 묻고, **못 물었으면 None** (§499) ────────────────
+# ★ `gitq.ignored` 도 같은 규율을 진다 — 위 `git_state` 와 한 축이다.
+#   `tools/treecheck.py` 가 그것으로 「저장소에 있어야 할 것이 없다」와
+#   「무시 규칙이라 없는 것이 맞다」를 가른다. 빈 집합을 내면 그 둘이
+#   섞이고, 그러면 D 축이 §457-1 처럼 죽는다.
+def test_ignored_asks_git_with_no_index_so_tracked_files_are_seen():
+    """★ `--no-index` 가 있어야 **추적 중인 파일**도 보고된다(git 사양).
+
+    무시 규칙인데 추적 중인 상태가 바로 찾으려는 것이라, 빼면 영원히 0건이다.
+    """
+    import inspect
+
+    from firelane import gitq
+
+    src = inspect.getsource(gitq.ignored)
+    assert "--no-index" in src, "추적 중인 파일이 영원히 안 보고된다"
+
+
+def test_ignored_reports_what_the_repo_actually_ignores():
+    """★ 실물로 민다 — `__pycache__` 는 무시되고 `README.md` 는 아니다."""
+    from pathlib import Path
+
+    from firelane import gitq
+
+    root = Path(__file__).resolve().parents[1]
+    got = gitq.ignored(["tests/__pycache__/x.pyc", "README.md"], root)
+    assert got is not None, "git 에 못 물었다 — 이 기계에 저장소가 없다"
+    assert "tests/__pycache__/x.pyc" in got
+    assert "README.md" not in got
+
+
+def test_ignored_treats_no_match_as_an_answer_not_a_failure():
+    """★ `check-ignore` 는 **일치가 없으면 rc=1** 이다 — 실패가 아니다.
+
+    `ask` 로 감싸면 그 1 이 실패로 읽혀 `None`(못 물었음)이 되고, 그러면
+    「무시되는 것이 없다」가 「모른다」로 바뀐다.
+    """
+    from pathlib import Path
+
+    from firelane import gitq
+
+    root = Path(__file__).resolve().parents[1]
+    assert gitq.ignored(["README.md"], root) == frozenset()
+
+
+def test_ignored_on_an_empty_list_answers_without_asking():
+    """빈 목록은 빈 집합이다 — `None` 이 아니다(물을 것이 없는 것은 모름이 아니다)."""
+    from firelane import gitq
+
+    assert gitq.ignored([]) == frozenset()
+
+
+def test_ignored_returns_none_when_git_cannot_be_asked(monkeypatch):
+    """★ 못 물었으면 **None** — 빈 집합과 갈려야 한다(회색=NULL)."""
+    import subprocess
+
+    from firelane import gitq
+
+    def boom(*_a, **_k):
+        raise OSError("git 이 없다")
+
+    monkeypatch.setattr(subprocess, "run", boom)
+    assert gitq.ignored(["a.txt"]) is None

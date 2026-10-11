@@ -248,3 +248,67 @@ def test_a_failed_dataset_contributes_no_outputs(tmp_path):
         {"key": "c", "status": "OK", "outputs": None},
     ])
     assert manifest_outputs(d) == {"b.gpkg": "b"}
+
+
+# ── 데이터셋 하나의 지문 (DECISIONS §499) ────────────────────
+def test_sha_of_a_directory_changes_when_one_sheet_changes(tmp_path):
+    """★ `ingest.sha_of` — **여러 파일이 한 데이터셋**인 경우가 있다.
+
+    도엽 디렉터리(ngii1k)가 그렇다. 도엽 한 장이 빠지거나 연도가 바뀌면
+    **여기서 드러나야 한다** — 이 수가 봉인의 `raw` 칸이고, 안 움직이면
+    바뀐 입력으로 만든 산출물이 「같은 입력」으로 기록된다.
+    """
+    from firelane.ingest import sha_of
+
+    d = tmp_path / "sheets"
+    (d / "sub").mkdir(parents=True)
+    (d / "a.ngi").write_text("A", encoding="utf-8")
+    (d / "sub" / "b.ngi").write_text("B", encoding="utf-8")
+    base = sha_of(d)
+
+    (d / "sub" / "b.ngi").write_text("B2", encoding="utf-8")
+    assert sha_of(d) != base, "내용이 바뀌었는데 지문이 같다"
+
+    (d / "sub" / "b.ngi").write_text("B", encoding="utf-8")
+    assert sha_of(d) == base, "같은 내용에 다른 지문이다 — 재현이 안 된다"
+
+    (d / "c.ngi").write_text("C", encoding="utf-8")
+    assert sha_of(d) != base, "도엽이 늘었는데 지문이 같다"
+
+
+def test_sha_of_a_directory_notices_a_rename(tmp_path):
+    """★ 경로도 지문에 든다 — 이름만 바뀌어도 다른 데이터셋이다(도엽 번호)."""
+    from firelane.ingest import sha_of
+
+    d = tmp_path / "sheets"
+    d.mkdir()
+    (d / "gj037.ngi").write_text("A", encoding="utf-8")
+    before = sha_of(d)
+    (d / "gj037.ngi").rename(d / "gj038.ngi")
+    assert sha_of(d) != before
+
+
+def test_sha_of_ignores_underscore_files_so_our_own_bookkeeping_does_not_count(tmp_path):
+    """★ `_` 로 시작하는 것은 **우리가 쓴 장부**다 — 입력 지문에 들면 안 된다.
+
+    들면 `_manifest.json` 을 쓰는 순간 입력이 바뀌었다고 나오고, 다음 실행이
+    상류 재빌드를 요구한다(§267 이 계보에서 겪은 그 자리).
+    """
+    from firelane.ingest import sha_of
+
+    d = tmp_path / "sheets"
+    d.mkdir()
+    (d / "a.ngi").write_text("A", encoding="utf-8")
+    before = sha_of(d)
+    (d / "_manifest.json").write_text("{}", encoding="utf-8")
+    assert sha_of(d) == before
+
+
+def test_sha_of_a_single_file_is_its_own_hash(tmp_path):
+    """파일 하나면 그 파일의 해시다 — 디렉터리 셈법을 끼우지 않는다."""
+    from firelane.hashing import sha256
+    from firelane.ingest import sha_of
+
+    p = tmp_path / "one.zip"
+    p.write_bytes(b"PK\x03\x04")
+    assert sha_of(p) == sha256(p)

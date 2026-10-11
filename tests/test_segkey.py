@@ -143,3 +143,49 @@ def test_the_bearing_follows_a_bend():
     assert math.isclose(north % 180, 0.0, abs_tol=5.0) or \
         math.isclose(north % 180, 180.0, abs_tol=5.0), north
     assert abs((west - north) % 180) > 45, (west, north)
+
+
+# ── 이력 표 (DECISIONS §499) ─────────────────────────────────
+def test_the_uid_map_is_sorted_and_carries_only_the_declared_columns(tmp_path):
+    """★ `save_uid_map` — 런 간 대조용 이력이다. **정렬**이 그 쓸모다.
+
+    머리말이 「git 에 커밋한다(작다) · 유지율 회귀를 눈으로 잡는다」를 적는다.
+    정렬이 없으면 매 실행 줄 순서가 흔들려 **diff 가 전부 빨강**이 되고,
+    그러면 사람이 그 표를 안 본다.
+    """
+    import geopandas as gpd
+    from shapely.geometry import LineString
+
+    from firelane.segkey import save_uid_map
+
+    g = gpd.GeoDataFrame(
+        {"seg_uid": ["DM-000003-000003-zzzz", "DM-000001-000001-aaaa"],
+         "seg_id": [2, 1], "road_name": ["충장로", "동명로"],
+         "length_m": [12.0, 6.0], "버릴칸": ["x", "y"]},
+        geometry=[LineString([(0, 0), (1, 1)]), LineString([(2, 2), (3, 3)])],
+        crs=5186)
+    out = tmp_path / "hist" / "uid_map.csv"
+    save_uid_map(g, out)
+
+    lines = out.read_text(encoding="utf-8").splitlines()
+    assert lines[0] == "seg_uid,seg_id,road_name,length_m", lines[0]
+    assert lines[1].startswith("DM-000001"), "정렬이 안 됐다"
+    assert "버릴칸" not in lines[0] and "LINESTRING" not in lines[1]
+
+
+def test_the_uid_map_survives_a_frame_that_lacks_a_column(tmp_path):
+    """★ 칸이 없으면 **그 칸만 빠진다** — 죽지 않는다.
+
+    보정 전 프레임에는 `road_name` 이 없을 수 있고, 그때 이력이 안 적히면
+    회귀를 비교할 상대가 사라진다.
+    """
+    import geopandas as gpd
+    from shapely.geometry import LineString
+
+    from firelane.segkey import save_uid_map
+
+    g = gpd.GeoDataFrame({"seg_uid": ["DM-000001-000001-aaaa"]},
+                         geometry=[LineString([(0, 0), (1, 1)])], crs=5186)
+    out = tmp_path / "uid_map.csv"
+    save_uid_map(g, out)
+    assert out.read_text(encoding="utf-8").splitlines()[0] == "seg_uid"

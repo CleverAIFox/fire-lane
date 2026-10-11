@@ -419,3 +419,40 @@ def test_no_rule_places_a_file_at_a_legacy_scope_token():
         "규칙이 옛 스코프 토큰 자리에 파일을 둔다.\n" + "\n".join(bad)
         + "\n  ★ 토큰이 낡으면 **폐기 관문도 눈을 감는다** — 폐기 파일명은"
         "\n    정규 토큰이라 템플릿 정규식이 안 맞는다(§494 가 그 자리다).")
+
+
+# ── 다운로드 폴더 — 정본이 하나다 (DECISIONS §499) ────────────
+def test_find_downloads_defers_to_the_one_door():
+    """★ `normalize_raw.find_downloads` 는 **`paths.inbox()` 를 부른다.**
+
+    2026-09-07 에 여기 있던 사본을 지웠다(PLAN #B3-12). 같은 일을 두 곳이
+    따로 하고 규칙이 **달랐다** —
+
+        paths.inbox()   `FIRE_LANE_INBOX` 를 먼저 보고, 후보가 여럿이면
+                        **파일이 가장 많은** 폴더
+        옛 사본          환경변수를 안 보고 **첫 번째로 찾은** 폴더
+
+    사용자 계정이 둘이면 서로 다른 폴더를 가리킬 수 있었다. 20종을 옮기는
+    경로라 갈리면 되돌리기 번거롭다.
+    """
+    import inspect
+
+    from firelane import normalize_raw as N
+
+    src = inspect.getsource(N.find_downloads)
+    assert "inbox" in src, "정본을 안 부른다 — 사본이 돌아왔다"
+    assert "/mnt/c/Users" not in src and "Downloads" not in src, (
+        "폴더 찾기 규칙이 여기 다시 적혔다")
+
+
+def test_find_downloads_answers_none_when_the_folder_is_absent(monkeypatch, tmp_path):
+    """★ 없으면 **None** 이다 — 없는 폴더를 돌려주면 부르는 쪽이 거기 쓴다."""
+    from firelane import normalize_raw as N
+
+    monkeypatch.setenv("FIRE_LANE_INBOX", str(tmp_path / "없는곳"))
+    assert N.find_downloads() is None
+
+    real = tmp_path / "Downloads"
+    real.mkdir()
+    monkeypatch.setenv("FIRE_LANE_INBOX", str(real))
+    assert N.find_downloads() == real

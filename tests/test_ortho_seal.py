@@ -164,3 +164,35 @@ def test_an_unknown_sheet_is_refused_not_guessed():
     o = _mod()
     with pytest.raises(KeyError):
         o.sheet_origin_5186("999", 100, 100)
+
+
+# ── GDAL 사이드카 (DECISIONS §499) ───────────────────────────
+def test_the_sidecar_scan_is_disabled_by_the_one_setting_that_worked():
+    """★ `quiet_gdal.disable_sidecar_scan` — 2026-08-21 실측의 결론을 못박는다.
+
+    정사영상 TIF 옆에 국토지리정보원 메타 `.xml` 이 있고, GDAL 이 사이드카를
+    찾으려 디렉터리를 훑다 **C 레벨에서 0xa0 에 터진다.** 콜백 안의 예외라
+    파이썬 훅으로는 못 막는다. 여섯 가지를 재서 **하나만** 들었다 —
+    `GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR`.
+
+    ★ 부작용이 있다(`.tfw` 같은 정당한 사이드카도 막힌다). `ortho.py` 는
+      스코프 bbox 로 직접 배치하고 geotransform 을 안 쓰므로 안전하다 —
+      그 전제가 바뀌면 이 자리를 다시 봐야 하고, 그래서 **값**까지 든다.
+    """
+    import os
+
+    from firelane import quiet_gdal
+
+    before = os.environ.get("GDAL_DISABLE_READDIR_ON_OPEN")
+    try:
+        os.environ.pop("GDAL_DISABLE_READDIR_ON_OPEN", None)
+        quiet_gdal.disable_sidecar_scan()
+        assert os.environ["GDAL_DISABLE_READDIR_ON_OPEN"] == "EMPTY_DIR"
+        # ★ 두 번 불러도 같다 — 단계마다 부르는 자리가 있다
+        quiet_gdal.disable_sidecar_scan()
+        assert os.environ["GDAL_DISABLE_READDIR_ON_OPEN"] == "EMPTY_DIR"
+    finally:
+        if before is None:
+            os.environ.pop("GDAL_DISABLE_READDIR_ON_OPEN", None)
+        else:
+            os.environ["GDAL_DISABLE_READDIR_ON_OPEN"] = before
