@@ -375,3 +375,63 @@ def test_a_glob_that_matches_two_shapefiles_is_refused(tmp_path):
     with pytest.raises(ValueError, match="하나여야 한다"):
         read_shp_zip(_ctx(e={"layer": "*.shp"}, src=zp, crs="EPSG:5186",
                           tmp=tmp_path / "work"))
+
+
+# ── 인코딩 되돌림 (DECISIONS §497) ───────────────────────────
+# ★ `read_csv_any` 머리말 — 「같은 데이터셋도 다운로드 시점에 따라 인코딩이
+#   바뀐다. 공공데이터포털 CSV 가 UTF-8 이었다가 CP949 로 내려오는 일이
+#   흔하다」. 그래서 대장 선언을 **먼저 시도하고 실패하면 넘어간다.**
+#   그 되돌림이 없으면 받을 때마다 반입이 죽는다 — 그런데 미는 자리가
+#   없었다(`tools/srccov.py` · §493).
+def test_a_wrong_declared_encoding_still_reads(tmp_path):
+    """★ 본체. CP949 파일을 `utf-8` 로 선언해도 **한글이 깨지지 않고** 읽힌다."""
+    from firelane.read._io import read_csv_any
+
+    p = tmp_path / "a.csv"
+    p.write_bytes("이름,값\n동명로,6\n".encode("cp949"))
+    assert read_csv_any(p, enc="utf-8").columns.tolist() == ["이름", "값"]
+    assert read_csv_any(p).columns.tolist() == ["이름", "값"], "선언 없이도 읽는다"
+
+
+def test_the_declared_encoding_is_tried_first(tmp_path):
+    """선언을 먼저 쓴다 — 아스키 파일은 어느 후보로도 같은 답이다."""
+    from firelane.read._io import read_csv_any
+
+    p = tmp_path / "b.csv"
+    p.write_bytes(b"name,v\na,1\n")
+    for enc in ("cp949", "utf-8", None):
+        assert read_csv_any(p, enc=enc).columns.tolist() == ["name", "v"]
+
+
+def test_extra_arguments_reach_pandas(tmp_path):
+    """`dtype=str` 같은 인자가 **그대로 간다** — 아니면 앞자리 0 이 사라진다."""
+    from firelane.read._io import read_csv_any
+
+    p = tmp_path / "c.csv"
+    p.write_bytes(b"code,v\n0100,1\n")
+    got = read_csv_any(p, enc="utf-8", dtype=str)
+    assert got["code"].tolist() == ["0100"]
+
+
+def test_a_file_no_candidate_can_read_raises_the_last_error(tmp_path):
+    """★ **조용히 빈 표를 내지 않는다.** 전부 실패하면 마지막 오류가 올라온다."""
+    import pytest
+
+    from firelane.read._io import read_csv_any
+
+    p = tmp_path / "d.csv"
+    p.write_bytes(b"\xff\xfe\x00\x00no,v\n")
+    with pytest.raises(UnicodeDecodeError):
+        read_csv_any(p)
+
+
+def test_the_candidate_order_puts_the_self_checking_one_first():
+    """★ 순서가 곧 신뢰도다 — UTF-8 은 자기검증적이고 CP949 는 거의 다 읽는다.
+
+    뒤집으면 **UTF-8 파일이 CP949 로 읽혀** 한자·특수문자로 깨진 글자가
+    조용히 들어온다(`firelane.encoding` 머리말의 그 자리).
+    """
+    from firelane.encoding import CANDIDATES_CSV_READ
+
+    assert CANDIDATES_CSV_READ[:2] == ("utf-8-sig", "utf-8")
+    assert "cp949" in CANDIDATES_CSV_READ[2:]

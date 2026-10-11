@@ -35,7 +35,7 @@ srccov.py — **판정 폐포에서 시험이 안 드는 순수 함수가 몇인
 
 IN    src/firelane/**/*.py · tests/*.py
 OUT   표준출력 (판정)
-PARAM SRC_UNTESTED (래칫)
+PARAM SRC_UNTESTED · SRC_IO_UNTESTED (래칫 둘)
 밖    **시험이 좋은가는 안 본다.** 이름을 부르면 든 것으로 센다 —
       `tools/canary.py` · `tools/navicov.py` 와 같은 한계이고 같은 이유로
       **일부러** 느슨하다.
@@ -65,7 +65,23 @@ TESTS = ROOT / "tests"
 #:   내렸다.
 SRC_UNTESTED = 2
 
-RATCHETS = {"SRC_UNTESTED": "down"}
+#: **입출력** 부류에서 시험이 이름을 안 부르는 수. 내려가는 쪽으로만.
+#:
+#: ★ 2026-10-12 (DECISIONS §497). §493 은 이 부류를 「안 문다」로 뒀다 —
+#:   산출물로 드는 시험이 있을 수 있어서 **결함이라고 단정할 수 없다**는
+#:   이유였고 그것은 지금도 맞다. 그러나 「물지 않는다」와 「세지 않는다」는
+#:   다르다 — §435 · §468 이 다른 축에서 배운 그것이다. 세어 보니 서른이고,
+#:   그중 넷은 **합성 입력으로 밀 수 있는 것**이었다(`read_text_table`
+#:   (c00 이름 규칙 · 법정동코드 절단) · `read_csv_any`(인코딩 되돌림) ·
+#:   `external_targets`(끊긴 마운트) · `lake_connected`(「결함 0」과 「못
+#:   쟀음」의 가름)). 넷을 밀어 26 이 됐다.
+#: ★ **0 으로 안 간다.** 남은 것 중 여럿은 레이크·도엽·PDF 를 열어야 한다
+#:   (`ngii1k.read_sheet` · `terrain.build_terrain_tiles` · `seg/report`).
+#:   그래서 이 수의 뜻은 「여기까지 내려왔다」가 아니라 **「새 입출력 함수를
+#:   시험 없이 들이지 않는다」**다 — 늘면 그 배치가 늘린 것이다.
+SRC_IO_UNTESTED = 26
+
+RATCHETS = {"SRC_UNTESTED": "down", "SRC_IO_UNTESTED": "down"}
 
 #: 몸통에 이 **메서드**가 보이면 입출력이다. 파일·프레임에만 있는 이름들이다.
 #:
@@ -101,7 +117,8 @@ CLI_NAMES = frozenset({"ArgumentParser", "argv", "SystemExit", "add_argument"})
 
 def ratchet_values() -> dict[str, int]:
     """실측. **판정은 `check()` 소관**이다."""
-    return {"SRC_UNTESTED": sum(len(v) for v in untested().values())}
+    return {"SRC_UNTESTED": sum(len(v) for v in untested().values()),
+            "SRC_IO_UNTESTED": tally().get("입출력", [0, 0])[1]}
 
 
 def _names(node: ast.AST) -> set[str]:
@@ -186,11 +203,12 @@ def check(show: bool = False) -> list[str]:
     t = tally()
     for kind in ("순수", "입출력", "진입점"):
         n, gap = t.get(kind, [0, 0])
-        mark = "  ← 문다" if kind == "순수" else ""
+        mark = {"순수": "  ← 문다", "입출력": "  ← 늘면 운다"}.get(kind, "")
         print(f"  {kind:<4} 공개 최상위 {n:>3} · 시험이 이름을 안 부르는 것 {gap:>3}{mark}")
     miss = untested()
     now = sum(len(v) for v in miss.values())
-    print(f"안 드는 순수 함수 {now} · 래칫 {SRC_UNTESTED}")
+    print(f"안 드는 순수 함수 {now} · 래칫 {SRC_UNTESTED}"
+          f"  |  입출력 {t.get('입출력', [0, 0])[1]} · 래칫 {SRC_IO_UNTESTED}")
     if show:
         for rel, names in sorted(miss.items()):
             print(f"    {rel:<24} {len(names):>2}  {' '.join(names)}")
@@ -200,6 +218,16 @@ def check(show: bool = False) -> list[str]:
         bad.append("순수 함수를 하나도 못 찾았다 — 훑기가 비었다(경로나 부류)")
     if not test_text():
         bad.append("시험 묶음이 비었다 — **모든 함수가 안 드는 것으로 세어진다**")
+
+    io_now = t.get("입출력", [0, 0])[1]
+    if io_now > SRC_IO_UNTESTED:
+        bad.append(f"시험이 안 드는 입출력 함수가 {io_now} 로 늘었다 "
+                   f"(래칫 {SRC_IO_UNTESTED})\n"
+                   "       새 입출력 함수에도 **이름으로 부르는** 시험을 달아라 —"
+                   " 임시 폴더로 미는 길이 거의 늘 있다")
+    elif io_now < SRC_IO_UNTESTED:
+        bad.append(f"안 드는 입출력 함수가 {io_now} 로 줄었다 — "
+                   "`uv run python tools/ratchet.py --write` 로 조여라")
 
     if now > SRC_UNTESTED:
         bad.append(f"시험이 안 드는 순수 함수가 {now} 로 늘었다 (래칫 {SRC_UNTESTED})\n"
@@ -269,6 +297,13 @@ def selftest() -> int:
                              " `yaml.safe_load(글자)` 는 파일을 안 연다(§496)")
         if "셸을돈다" in got:
             fails.append("`subprocess` 를 드는 함수를 순수로 센다")
+        # ★ 두 래칫이 **다른 수**를 재는가. 한 실측을 둘에 적으면 둘 다 죽는다
+        vals = {"SRC_UNTESTED": sum(len(v) for v in untested(src, tst).values()),
+                "SRC_IO_UNTESTED": t.get("입출력", [0, 0])[1]}
+        if vals != {"SRC_UNTESTED": 3, "SRC_IO_UNTESTED": 2}:
+            fails.append(f"두 래칫이 같은 수를 잰다 — {vals}\n"
+                         "       기대: 순수 3(안든다·대장을읽는다·글자를푼다) ·"
+                         " 입출력 2(파일읽는다·셸을돈다)")
         # ★ 밑줄·메서드·`__init__` 은 분모 밖이다
         allnames = {n for rows in functions(src).values() for n, _ in rows}
         for n in ("_숨은것", "메서드", "안세는것"):
@@ -283,7 +318,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 10")
+    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 11")
     return 1 if fails else 0
 
 

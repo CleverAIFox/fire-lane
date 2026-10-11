@@ -108,7 +108,7 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #       `tests/test_docpatch.py` · `tests/test_pages_navi.py` ·
 #       `tests/test_build_proposal.py`. **아무도 안 미는 관문** 다섯 중 셋을
 #       갚은 자리이고 `§481` 이 셋을 **산문으로** 지목한다.
-SEALED_FILES = 560
+SEALED_FILES = 561
 
 #: **강제자 칸만으로** 덮인 파일 수. 내려가는 쪽. 2026-10-10 실측 37 → **0**.
 #: 늘면 「산문 없이 칸만 적었다」는 뜻이고 그것은 한 번 속은 자리다(PLAN #165).

@@ -435,3 +435,87 @@ def test_pdf_only_datasets_say_why_they_are_not_fed():
            if isinstance(v, dict) and v.get("kind") == "raw_only"
            and "pdf" in (v.get("ext") or []) and not (v.get("feeds_why") or "").strip()]
     assert not bad, f"PDF 인데 미투입 사유가 없다: {bad}"
+
+
+# ── 마운트가 끊긴 기계 (DECISIONS §497) ──────────────────────
+# ★ 둘은 같은 사실을 다루는 자다 — **계층이 이 기계에 붙어 있는가.**
+#   `tools/srccov.py` 가 둘 다 「시험이 이름으로도 안 부른다」로 셌다(§493).
+#
+#   `datalog.external_targets`   머리말 — 모듈 최상위 상수였을 때 외장 SSD 가
+#       끊기면 `OSError: Errno 19` 로 **모듈을 불러오지도 못했고**, 그날
+#       문서만 고치는 작업까지 `verify.sh` 에서 통째로 막혔다
+#   `layers.lake_connected`      「**결함 0」과 「못 쟀음」을 가른다** — 그
+#       구별이 없어 `treecheck` 의 D 축 열 개가 죽어 있었다(§457-1)
+def test_external_targets_survives_a_broken_mount(monkeypatch):
+    """★ 마운트가 끊기면 **대상이 아닐 뿐 오류가 아니다.**"""
+    from firelane import datalog
+
+    class Dead:
+        def exists(self):
+            raise OSError(19, "No such device")
+
+        @property
+        def parents(self):
+            return ()
+
+    monkeypatch.setattr(datalog, "_RAW", Dead())
+    monkeypatch.setattr(datalog, "_NORM", Dead())
+    monkeypatch.setattr(datalog, "_FIELD", Dead())
+    assert datalog.external_targets() == []
+
+
+def test_external_targets_keeps_only_what_is_outside_the_repo(monkeypatch, tmp_path):
+    """★ 저장소 **안**의 계층은 백업 대상이 아니다 — git 이 이미 든다."""
+    from firelane import datalog
+
+    inside = ROOT / "data" / "raw"
+    outside = tmp_path / "ssd" / "raw"
+    outside.mkdir(parents=True)
+    monkeypatch.setattr(datalog, "_RAW", outside)
+    monkeypatch.setattr(datalog, "_NORM", inside)
+    monkeypatch.setattr(datalog, "_FIELD", tmp_path / "없는곳")
+    assert datalog.external_targets() == [outside]
+
+
+def test_lake_connected_says_no_without_the_acquisition_ledger(monkeypatch, tmp_path):
+    """★ 대장이 없거나 비면 **안 붙은 것**이고, 사유를 같이 낸다.
+
+    사유가 없으면 부르는 쪽이 「결함 0」과 「못 쟀음」을 다시 섞는다.
+    """
+    from firelane import layers, paths
+
+    monkeypatch.setattr(paths, "ROOT", tmp_path)
+    ok, why = layers.lake_connected()
+    assert ok is False and "대장" in why
+
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "_acquire.json").write_text(
+        '{"files": {}}', encoding="utf-8")
+    ok, why = layers.lake_connected()
+    assert ok is False and "비었다" in why
+
+
+def test_lake_connected_is_decided_by_one_real_file(monkeypatch, tmp_path):
+    """★ 대장이 적은 실물이 **하나라도** 있으면 붙은 것이다.
+
+    환경변수도 `data/` 폴더 존재도 판별식이 못 된다 — 전자는 레이크를
+    저장소 안에 둔 기계에서 `None` 이고, 후자는 `data/golden` 이 커밋돼
+    있어 **CI 에서도 참**이다.
+    """
+    from firelane import layers, paths
+
+    raw = tmp_path / "raw"
+    (raw / "safety").mkdir(parents=True)
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "_acquire.json").write_text(
+        '{"files": {"safety/a.csv": {"sha256": "x"}, "safety/b.csv": {}}}',
+        encoding="utf-8")
+    monkeypatch.setattr(paths, "ROOT", tmp_path)
+    monkeypatch.setattr(paths, "RAW", raw)
+
+    ok, why = layers.lake_connected()
+    assert ok is False and "2건 중 디스크에 0건" in why
+
+    (raw / "safety" / "a.csv").write_text("x", encoding="utf-8")
+    ok, why = layers.lake_connected()
+    assert ok is True and "2건 중 디스크에 1건" in why
