@@ -395,10 +395,12 @@ EXEMPT: dict[str, str] = {}
 #:     §487    24 → 17   분모 112 → 101. 경로를 **코드에서만** 찾는다 —
 #:                       머리말에 이름만 적은 열하나가 분모에 있었다
 #:     §487    17 → 16   `test_nfa_compare`(`constbasis.scan` · `ungrounded`)
+#:     §488    16 → 14   `test_selftests_are_run`(두 판정을 합성 파일로) ·
+#:                       `test_fieldseal`(`diff` 를 네 갈래로)
 #
-#: ★ 남은 16 은 빚이다. 올라간 판(§486)은 **느슨해진 것이 아니라** 거짓 초록을
+#: ★ 남은 14 는 빚이다. 올라간 판(§486)은 **느슨해진 것이 아니라** 거짓 초록을
 #:   걷은 것이고, 그 둘을 가르는 것이 래칫에 사유를 요구하는 이유다.
-NO_CANARY = 16
+NO_CANARY = 14
 
 RATCHETS = {"NO_CANARY": "down"}
 

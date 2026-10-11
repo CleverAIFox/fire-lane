@@ -619,6 +619,12 @@ EXEMPT_SCOPE = {
     "tools/canary.py::tool_names":
         "도구의 **이름표**를 뜨는 자리다. `src` 는 꾸러미이고 `tests` 는 미는 쪽이라 "
         "둘 다 도구가 아니다 — 넓히면 분모가 「제 자신을 미는 도구」까지 센다",
+    # ★ 2026-10-12 (DECISIONS §488). `scopedecl.has_selftest` 는 **`tools/` 밖을
+    #   무조건 거짓**으로 낸다(시험은 자기가 곧 자기검사라 세면 수가 부푼다).
+    #   그러니 두 판정을 `src` · `tests` 에서 대면 「어긋난다」가 설계상 쏟아진다.
+    "tests/test_selftests_are_run.py::test_the_two_judges_disagree_only_where_it_is_declared":
+        "두 판정의 **공통 정의역**이 `tools/*.py` 하나다 — 한쪽이 그 밖을 "
+        "무조건 거짓으로 내므로 넓히면 비교가 성립하지 않는다",
     # ★ 2026-10-12 (DECISIONS §486). 출처가 셋인데 둘은 **직접 경로**로 연다.
     "tools/canary.py::judge_names":
         "허용 집합의 출처가 셋이고(그 시험 파일 · 미는 도구 · 글에 든 `firelane`) "
