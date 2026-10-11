@@ -47,7 +47,9 @@ from __future__ import annotations
 
 import ast
 import builtins
+import io
 import re
+import tokenize
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -87,16 +89,50 @@ def _called(node: ast.AST) -> set[str]:
     return out
 
 
+def code_only(src: str) -> str:
+    """주석과 **문서열**을 뺀 글자.
+
+    ── 왜 (2026-10-12 · DECISIONS §487) ────────────────────────
+    경로 꼴(`tools/x.py`)을 글자에서 찾으므로 **머리말에 이름만 적은 것**이
+    푸시로 세어졌다 — 실측 112 중 **열하나**가 그랬다. 그 열하나는 그 도구를
+    부르지도 열지도 않는다. §481 이 「분모를 넓히면 머리말에 이름만 적은 것을
+    푸시로 센다」고 걱정한 바로 그 자리이고, 그 걱정이 **실측으로 참이었다.**
+
+    ★ `naviweight.hosts()` 가 같은 규율을 든다 — 「주석의 주소는 호출이
+      아니다」. 같은 저장소에서 같은 판단을 두 번 하지 않는다.
+    """
+    out: list[str] = []
+    try:
+        toks = list(tokenize.generate_tokens(io.StringIO(src).readline))
+    except (tokenize.TokenError, IndentationError, SyntaxError):
+        return src          # 못 쪼개면 넓은 쪽으로 — 분모를 놓치지 않는다
+    prev: int | None = None
+    for tok in toks:
+        if tok.type == tokenize.COMMENT:
+            continue
+        if tok.type == tokenize.STRING and prev in (
+                None, tokenize.NEWLINE, tokenize.NL, tokenize.INDENT,
+                tokenize.DEDENT):
+            continue        # 문장 자리에 홀로 선 글자 = 문서열
+        out.append(tok.string)
+        prev = tok.type
+    return " ".join(out)
+
+
 def touches(src: str, tree: ast.AST, tools: set[str]) -> set[str]:
-    """그 시험이 미는 **도구 이름.** import 와 경로 둘 다 본다."""
+    """그 시험이 미는 **도구 이름.** import 와 경로 둘 다 본다.
+
+    ★ 경로는 **코드에 적힌 것**만 센다(§487) — 머리말의 이름은 푸시가 아니다.
+    """
     mods: set[str] = set()
     for n in ast.walk(tree):
         if isinstance(n, ast.ImportFrom) and n.module:
             mods.add(n.module.split(".")[0])
         elif isinstance(n, ast.Import):
             mods.update(a.name.split(".")[0] for a in n.names)
+    code = code_only(src)
     for rx in _BYPATH:
-        mods |= set(rx.findall(src))
+        mods |= set(rx.findall(code))
     return mods & tools
 
 
@@ -341,65 +377,28 @@ def denominator(root: Path = ROOT) -> int:
 #:   면제가 생기면 사유와 함께 여기 한 줄이다(§69).
 EXEMPT: dict[str, str] = {}
 
-#: 카나리아 없는 강제자 수. **내려가는 쪽.** 2026-10-12 실측 29 / 분모 104.
-# ★ 2026-10-12 — 56 → **30** (DECISIONS §480). **스물여섯은 거짓이었다.**
-#   코드를 하나도 안 고치고 내려간 수다 — 이 파일의 음성 판별이
-#   `assert not f(…)` **한 줄 꼴만** 보고 있었고, 실물의 흔한 꼴은
-#   `bad = f(…)` 뒤의 `assert not bad` 다(오류 메시지가 `bad` 를 쓰므로
-#   그렇게 쓸 수밖에 없다). §436-6 을 **양성 쪽에서만** 배우고 음성 쪽에는
-#   안 적용한 자리다.
-#   ★ **고친 것은 세는 꼴이고 약해진 것은 없다** — 양성·음성 둘 다 같은
-#     호출이어야 하고, 묶음은 **함수**다(다른 함수의 이름을 제 증거로 안
-#     센다 · 자기검사가 그 셋을 양방향으로 든다).
-#   ★ 남은 30 은 **빚이다.** 거짓으로 부풀어 있던 수를 내렸으니 이제 그
-#     30 이 실제로 민 적 없는 자리다.
-# ★ 2026-10-12 — 30 → **29** (DECISIONS §480-1). 그 빚에서 하나를 갚았다 —
-#   `tools/colorsim.py` 의 판정이 `show()` 의 **찍는 루프 안**에 있어 시험이
-#   부를 수가 없었다. `faults()` 로 빼고 `tests/test_colorsim.py` 가 양방향으로
-#   민다(같은 색 둘 · 밝기만 붙은 쌍). **지적이 맞았던 자리다.**
-# ★ 2026-10-12 — 29 → **16** (DECISIONS §485). **또 코드를 하나도 안 고치고
-#   움직인 수다.** 세는 꼴이 **두 군데**서 실물과 달랐고, 하나는 부풀리고
-#   하나는 깎고 있었다 —
+#: 카나리아 없는 강제자 수. **내려가는 쪽.** 분모는 「도구를 미는 시험」이다.
 #
-#     ① 내장 함수로 쌍이 성립했다 (**부풀림**)
-#        `len` · `set` · `any` 가 음성·양성 꼴에 다 나와서, 공유하는 것이
-#        **내장뿐인** 다섯 시험이 거짓으로 초록이었다. 29 → 34.
-#     ② 분류기 꼴을 한쪽으로만 셌다 (**깎음**)
-#        판정이 불린이 아니라 낱말을 내면(`grade()` → reference · unused)
-#        미는 옳은 꼴이 `== "reference"` 와 `== "unused"` 둘이다. 그것이
-#        **두 갈래를 다 민 것**인데 종전 셈은 양성으로만 봤다. 34 → 23.
-#     ③ 「조용하다」의 또 한 꼴을 못 봤다 (**깎음**)
-#        판정이 목록·표·글자를 내면 `assert f(…) == []` 로 쓸 수밖에 없다.
-#        그 꼴을 음성으로 센다 — 단, **그 단정은 음성으로만** 센다(양성에도
-#        넣으면 그 한 줄이 혼자 쌍을 이뤄 거짓으로 초록이 된다). 23 → **16**.
+#: ★ **이력은 수와 사유 한 줄씩**만 둔다 — 긴 사유는 그 판의 DECISIONS 절에
+#:   있고, 두 벌로 적으면 갈린다. 네 판이 **코드를 거의 안 고치고** 이 수를
+#:   움직였다: 세는 꼴이 실물과 달랐던 것이고, 그 네 번이 다른 자리였다.
 #
-#   ★ 셋 다 자기검사가 **양방향으로** 든다 — 내장만으로는 쌍이 안 되고,
-#     안쪽 진짜 이름은 세고, 낱말 하나나 한 단정 안의 사슬로는 안 된다.
-#   ★ 남은 16 은 빚이다.
-# ★ 2026-10-12 — 16 → **25** (DECISIONS §486). **올라간다 — 거짓 초록을
-#   걷은 수다.** §485 가 내장 함수를 쌍에서 뺐는데 그것은 그 족의 한 조각이었다:
-#   `subprocess.run` · `read_text` · `read_bytes` · `items` · `get` · `search` ·
-#   `exists` · `startswith` 같은 **표준 라이브러리·메서드 이름**이 음성 꼴과
-#   양성 꼴에 둘 다 나와서 아홉 시험이 거짓으로 초록이었다.
+#:     §445    22 → 23   `canary.NO_CANARY` 자체가 래칫에 들어왔다
+#:     §480    56 → 30   음성 쪽 **두 줄 꼴**(`bad = f(x)` · `assert not bad`)
+#:     §480-1  30 → 29   `colorsim.faults()` 를 빼서 갚았다
+#:     §485    29 → 16   **내장 제외**(거짓 초록 다섯) · **분류기 꼴**(열하나) ·
+#:                       **`== []` 꼴**(일곱). 하나는 부풀리고 둘은 깎았다
+#:     §486    16 → 25   **표준 라이브러리 이름**으로 센 쌍 아홉을 걷었다 —
+#:                       쌍을 **이름의 출처**로 거른다(`judge_names`)
+#:     §486    25 → 24   `test_commit_policy`(`check_paths`) ·
+#:                       `test_cost_inputs`(`judge`) 둘을 갚았다
+#:     §487    24 → 17   분모 112 → 101. 경로를 **코드에서만** 찾는다 —
+#:                       머리말에 이름만 적은 열하나가 분모에 있었다
+#:     §487    17 → 16   `test_nfa_compare`(`constbasis.scan` · `ungrounded`)
 #
-#   옳은 물음은 「같은 **판정**을 양쪽으로 밀었나」다. 그래서 쌍을 **이름의
-#   출처**로 거른다(`judge_names`) — 그 시험이 정의한 함수 · 그 시험이 미는
-#   도구의 함수 · 글에 든 `firelane.*` 모듈의 함수. 넓게 잡는다: 좁히면
-#   「정말 판정을 밀었나」까지 가려야 하고 그것은 정적으로 알 수 없다.
-#
-#   ★ 이 판에서 **둘을 같이 갚았다** —
-#     `tests/test_commit_policy.py` 는 규칙 여섯을 각각 양쪽으로 밀면서
-#       **그것들을 모으는 자**(`check_paths`)를 안 밀고 있었고, 쌍은
-#       `subprocess.run` 으로 성립해 있었다. 규칙이 다 맞아도 모으는 쪽이
-#       비면 훅은 조용하다. 규칙 여섯을 **하나씩** 섞어 넣어 이름·사유·
-#       파일을 다 말하는지 보고, 자르는 자리의 「외 N건」까지 든다.
-#     `tests/test_cost_inputs.py` 는 도구를 하위프로세스로 **부르기만**
-#       했다. 초록은 「검사했다」가 아니다(§199) — `judge()` 를 합성
-#       입력으로 민다: 빈 발행물 · 0 을 뺀 발행 · 거짓 자기신고 ·
-#       대장 없이 켠 압력 계수, 그리고 **꺼진 계수에는 안 우는가**.
-#   ★ 남은 24 가 **처음으로 뜻이 있는 수다** — 내장도, 라이브러리도,
-#     우연한 메서드도 아닌 **판정 이름으로 센** 빚이다.
-NO_CANARY = 24
+#: ★ 남은 16 은 빚이다. 올라간 판(§486)은 **느슨해진 것이 아니라** 거짓 초록을
+#:   걷은 것이고, 그 둘을 가르는 것이 래칫에 사유를 요구하는 이유다.
+NO_CANARY = 16
 
 RATCHETS = {"NO_CANARY": "down"}
 
@@ -530,6 +529,21 @@ def selftest() -> int:
         bad.append("미는 도구의 함수 이름을 허용 집합에 안 넣는다")
     if judge_names("", _a.parse(""), {"없는도구"}):
         bad.append("없는 도구에서 이름을 만든다")
+
+    # ★ 2026-10-12 (§487) — **머리말의 이름은 푸시가 아니다**
+    names = {"golden", "verify"}
+    doc = '"""`tools/golden.py` 가 든다."""\nimport json\n'
+    if touches(doc, _a.parse(doc), names):
+        bad.append("문서열에 적힌 도구 이름을 푸시로 센다 — 실측 112 중 열하나가"
+                   " 그 꼴이었다(§481 의 그 걱정이 참이었다)")
+    cmt = "# tools/golden.py 를 쓸 수도 있다\nimport json\n"
+    if touches(cmt, _a.parse(cmt), names):
+        bad.append("주석에 적힌 도구 이름을 푸시로 센다")
+    real = 'p = ROOT / "tools" / "golden.py"\n'
+    if not touches(real, _a.parse(real), names):
+        bad.append("코드의 경로를 푸시로 안 센다 — 분모가 비어 간다")
+    if code_only("x = 1  # tools/verify.sh") != code_only("x = 1"):
+        bad.append("주석을 떼면서 코드를 건드린다")
 
     # ★ 판정 — 양방향 · 빈 그물
     if not faults(NO_CANARY + 1, denom=98):

@@ -250,3 +250,80 @@ def test_the_step_is_wired_into_the_pipeline():
     assert not any(p.name == "nfa_compare.json" for p in seg.produces), (
         "`segments` 가 아직 `nfa_compare.json` 을 낸다고 선언한다 — 이제 안 쓴다.\n"
         "  안 쓰는 산출물을 선언하면 계보 검사가 그것을 기다린다.")
+
+
+# ── 2026-10-12 (DECISIONS §487) ────────────────────────────────────
+#   §486 이 쌍을 판정 이름으로 거른 뒤 이 파일이 빚에 남았다. `constbasis`
+#   를 모듈로 들여 **경계**(두 분모가 겹치나)는 묻는데, 그 도구의 **판정
+#   함수 둘**(`scan` · `ungrounded`)을 합성 글자로 민 자리가 없었다 —
+#   경계가 맞아도 세는 자가 죽으면 「출처 없는 상수 0」이 조용히 나온다.
+
+def _cb():
+    """`tools/constbasis.py` 를 모듈로 들인다."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_constbasis_probe", ROOT / "tools" / "constbasis.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+#: 근거가 **있는** 상수 다섯 — 선언된 네 갈래(문서 · 규격 · 유도 · 실측)를
+#: 하나씩 들고, 규격은 `IEC`(§487 이 더한 것)로 든다.
+GROUNDED = """\
+CCTV_RANGE = 19            # IEC 62676-4:2025 DORI
+MIN_WIDTH = 3.0            # DECISIONS §455
+APPROACH_M = 120           # 30 m × 4 초 (유도)
+SLOPE_MAX = 18             # 국토지리정보원 표준
+MEASURED = 7               # 실측 — 현장에서 쟀다
+"""
+
+#: 근거가 **없는** 상수 둘 — 주석이 비었거나 낱말이 안 든다.
+UNGROUNDED = """\
+MAGIC = 42
+FUDGE = 1.8                # 적당히 골랐다
+"""
+
+
+def test_the_scanner_reads_a_constant_and_its_note():
+    cb = _cb()
+    rows = {r["name"]: r for r in cb.scan(GROUNDED)}
+    assert set(rows) == {"CCTV_RANGE", "MIN_WIDTH", "APPROACH_M", "SLOPE_MAX",
+                         "MEASURED"}, rows
+    assert rows["CCTV_RANGE"]["value"] == "19"
+    assert "DORI" in rows["CCTV_RANGE"]["note"]
+
+
+def test_the_scanner_is_not_an_empty_net():
+    """★ 빈 그물 — 상수를 하나도 못 집으면 「출처 없는 것 0」이 된다."""
+    cb = _cb()
+    assert cb.scan(GROUNDED), "근거 있는 상수 다섯을 하나도 못 집는다"
+    assert cb.scan("") == [], "빈 글자에서 상수를 만든다"
+    # 소문자·식 꼴은 상수가 아니다 — 넓히면 지역변수까지 센다
+    assert cb.scan("x = 1\nA = len(y)\n") == [], "상수가 아닌 것을 집는다"
+
+
+def test_grounded_constants_are_silent():
+    """★ 음성. 네 갈래 근거를 **하나씩** 든다 — 한 꾸러미로 넣으면 하나만
+    인정돼도 초록이고, 그러면 나머지 세 갈래가 죽어도 모른다."""
+    cb = _cb()
+    for line in GROUNDED.strip().splitlines():
+        assert cb.ungrounded(cb.scan(line + "\n")) == [], f"근거를 못 읽는다 — {line}"
+
+
+def test_ungrounded_constants_are_caught():
+    """★ 양성. 주석이 **비어 있어도** 들어야 한다 — 그 도구가 그렇게 적는다."""
+    cb = _cb()
+    got = {r["name"] for r in cb.ungrounded(cb.scan(UNGROUNDED))}
+    assert got == {"MAGIC", "FUDGE"}, f"출처 없는 상수를 놓친다 — {got}"
+
+
+def test_a_note_continued_on_the_next_line_still_counts():
+    """★ 값 옆 한 줄에 못 적은 사유가 **아래 붙는** 꼴. 그 이음을 못 보면
+    사유를 길게 적은 상수가 「근거 없음」으로 뒤집힌다."""
+    cb = _cb()
+    txt = ("THRESHOLD = 7\n"
+           "          # 근거가 길어서 다음 줄에 적는다 — DECISIONS §999\n")
+    assert cb.ungrounded(cb.scan(txt)) == [], "이어진 주석의 근거를 못 읽는다"
