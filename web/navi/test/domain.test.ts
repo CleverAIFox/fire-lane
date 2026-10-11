@@ -5,12 +5,13 @@ import { FL, test, ok } from "./harness";
 import { buildAdjacency, findRoute } from "../src/domain/graph";
 import { alternateAccess, reachable, reachableEdges, MAX_WALK_M } from "../src/domain/access";
 import { compareMarks } from "../src/domain/compare";
-import { displayName, vehicleClass } from "../src/domain/fleetName";
+import { displayName, shortStation, vehicleClass } from "../src/domain/fleetName";
 import {
   asNaviMsg, asOpsMsg, opsAck, opsReduce, OPS_EMPTY, shareState, opsPresent, HB_TTL_MS,
+  unitStale, UNIT_STALE_MS, type Unit,
 } from "../src/domain/opsProtocol";
 import { distM } from "../src/domain/geo";
-import { choOf, isChoQuery, searchPois, type Poi } from "../src/domain/search";
+import { choOf, isChoQuery, preparePois, searchPois, type Poi } from "../src/domain/search";
 
 const { graph, spec } = FL;
 const safe = buildAdjacency(graph, spec, false, "safe");
@@ -190,4 +191,60 @@ test("초성으로 찾는다 — 전부 초성일 때만", () => {
   // ★ 초성 질의가 **이름 말고 다른 칸**을 훑지 않는가. `ㅇㅁㄷ`(읍면동)은
   //   유형 칸에만 있으므로 아무것도 안 나와야 한다 — 문이 넓어지면 여기가 운다.
   ok(searchPois(pois, "ㅇㅁㄷ").length === 0, "초성 질의가 이름 밖을 훑는다");
+});
+
+
+// ── 2026-10-12 (DECISIONS §483) ────────────────────────────────────
+//   `navicov` 가 센 넷을 여기 붙인다 — 이 파일이 이미 그 세 모듈의 **옆
+//   함수들**을 들고 있어서, 새 파일을 세우면 같은 주제가 두 군데로 갈린다.
+
+test("안전센터 이름 줄이기 — 발행물 세 이름이 다 줄고, 빈 이름이 안 나온다", () => {
+  ok(shortStation("동부소방서_광주-지산-119 안전센터") === "지산119안전센터",
+    `줄인 꼴이 틀렸다 — ${shortStation("동부소방서_광주-지산-119 안전센터")}`);
+  // ★ 꼴이 안 맞는 이름은 **그대로 둔다.** 빈 글자를 내면 화면에 이름이 사라진다
+  ok(shortStation("동부소방서") === "동부소방서", "꼴이 다른 이름을 지웠다");
+  ok(shortStation("") === "", "빈 이름에서 던진다");
+  for (const raw of ["동부소방서_광주-지산-119 안전센터", "동부소방서_광주-대인-119 안전센터",
+    "동부소방서"]) {
+    const got = shortStation(raw);
+    ok(got.length > 0, `${raw} 가 빈 글자가 됐다`);
+    ok(!/[-\s]/.test(got), `${raw} → ${got} 에 구분자가 남았다`);
+  }
+});
+
+test("관제 — 소식이 끊긴 차를 **문턱으로** 가른다", () => {
+  const u = { unit: "U1", heardAt: 1_000 } as Unit;
+  ok(!unitStale(u, 1_000), "방금 들은 차를 끊겼다고 한다");
+  ok(!unitStale(u, 1_000 + UNIT_STALE_MS), "문턱 그 자리에서 끊겼다고 한다 — 경계가 포함이다");
+  ok(unitStale(u, 1_000 + UNIT_STALE_MS + 1), "문턱을 넘었는데 살아 있다고 한다");
+  // ★ 시계가 뒤로 갔을 때(음수 경과) 끊겼다고 하지 않는다 — 화면이 깜빡인다
+  ok(!unitStale(u, 500), "시계가 뒤로 가자 끊겼다고 한다");
+  ok(UNIT_STALE_MS > HB_TTL_MS / 10, "문턱이 심장소리보다 터무니없이 짧다");
+});
+
+test("POI 준비 — 점이 아니거나 이름이 없는 것은 **안 싣는다**", () => {
+  const fc = {
+    type: "FeatureCollection",
+    features: [
+      { type: "Feature", properties: { name: "가게", cat: "상점", src: "store" },
+        geometry: { type: "Point", coordinates: [126.9, 35.15] } },
+      // 이름이 없다 — 검색창에 빈 줄이 뜬다
+      { type: "Feature", properties: { cat: "상점" },
+        geometry: { type: "Point", coordinates: [126.9, 35.15] } },
+      // 점이 아니다 — 좌표를 점으로 읽으면 엉뚱한 자리로 간다
+      { type: "Feature", properties: { name: "길" },
+        geometry: { type: "LineString", coordinates: [[126.9, 35.15], [126.91, 35.15]] } },
+      // 모르는 출처는 기본값으로 접는다
+      { type: "Feature", properties: { name: "청사", src: "엉뚱" },
+        geometry: { type: "Point", coordinates: [126.9, 35.15] } },
+    ],
+  } as unknown as GeoJSON.FeatureCollection;
+  const got = preparePois(fc);
+  ok(got.length === 2, `${got.length}건을 실었다 — 기대 2`);
+  ok(got.map((p) => p.name).sort().join() === "가게,청사", "실은 것이 다르다");
+  ok(got.every((p) => ["store", "civil", "build"].includes(p.src)),
+    "선언에 없는 출처가 실렸다");
+  // ★ 빈 자료에서 던지지 않는다
+  ok(preparePois({ type: "FeatureCollection", features: [] } as GeoJSON.FeatureCollection)
+    .length === 0, "빈 자료에서 무언가를 만든다");
 });

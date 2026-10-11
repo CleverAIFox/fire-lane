@@ -64,7 +64,7 @@ NAVI = ROOT / "web" / "navi"
 #: ★ 이력 — 2026-10-12 §482 첫 실측 **40**(순수 함수 149 중). 같은 배치에서
 #:   `geo` 다섯 · `speed` 셋 · `turn` 둘에 시험을 달고 죽은 내보냄 둘을
 #:   걷어 **30** 으로 내렸다.
-NAVI_UNTESTED = 26
+NAVI_UNTESTED = 0
 
 RATCHETS = {"NAVI_UNTESTED": "down"}
 
