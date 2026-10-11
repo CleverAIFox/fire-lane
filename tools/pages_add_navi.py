@@ -40,14 +40,21 @@ ROOT = Path(__file__).resolve().parents[1]
 # ── 배포에 내비 빌드가 얹혀 있는가 ──────────────────────────────
 # ★ 원래 앵커가 한국어 주석(`내비 빌드 (web/navi -> ...)`)이었다. 주석을
 #   다듬는 순간 검사가 죽는다. **동작**을 앵커로 잡는다.
-def check() -> int:
+def check(root: Path = ROOT) -> int:
+    """배포 사슬이 성립하나. **0 이면 성립한다.**
+
+    ★ 2026-10-12 (DECISIONS §481). `root` 를 받는다. 종전에는 모듈의 `ROOT`
+      를 박고 있어서 **합성 트리로 밀 수가 없었다** — 그래서 아래 다섯 갈래가
+      한 번도 안 돌았고, 이 도구를 미는 시험도 자기검사도 없었다.
+      받는 쪽 기본값이 `ROOT` 이므로 **부르는 자리는 안 바뀐다.**
+    """
     # ★ 2026-09-18 (W1). 앵커가 `pages.yml` 에서 `_deploy.yml` 로 갔다.
     # ★ 2026-09-23 (DECISIONS §224). 지금은 `deploy.yml` 이다 — 배포 여섯을
     #   워크플로 **하나**로 합쳤다. 본문이 하나이므로 재사용 워크플로로 뺄
     #   중복 자체가 없어졌다. **동작은 그대로다** — 배포가 내비를 빌드하는가.
     #   본문이 어디 있든 그것을 묻는 것이 이 검사의 뜻이다(위 머리말).
-    wf_dir = ROOT / ".github" / "workflows"
-    site = ROOT / ".github" / "actions" / "stage-site" / "action.yml"
+    wf_dir = root / ".github" / "workflows"
+    site = root / ".github" / "actions" / "stage-site" / "action.yml"
 
     # ★ 파일 이름을 박지 않는다. **사이트를 짓는 워크플로**를 찾는다 —
     #   이름을 박으면 다음에 파일을 옮길 때 검사가 조용히 죽는다.
