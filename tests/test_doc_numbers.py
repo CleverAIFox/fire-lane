@@ -255,6 +255,43 @@ def test_every_declared_number_is_in_its_document():
     assert not bad, "문서가 적은 수가 산출물과 다르다:\n  " + "\n  ".join(bad)
 
 
+def test_every_label_has_a_context_pattern_or_a_reason():
+    """★ 2026-10-11 (DECISIONS §466). 「라벨은 `rules` 에 있는데 문맥 패턴이 없어
+    **존재 대조**로 떨어졌다」가 세 번 났다 — §435(norm 이관) · §452(도달 가능) ·
+    §464(CCTV 유효범위). 세 번 같은 자리면 사람의 실수가 아니라 구조다.
+
+    ★ CLI 도 같은 함수를 민다(§452 가 고친 족 3 을 다시 만들지 않는다).
+    ★ **양방향**이다 — 죽은 면제도 운다. 손목록의 결함은 빠진 항목이고(§370),
+      죽은 항목은 그 손목록이 무엇을 면제하는지 못 읽게 만든다.
+    """
+    R, D = _docnumrules(), _docnum()
+    bad = R.pattern_gaps(D.counts())
+    assert not bad, "\n  ".join(["문맥 패턴 선언이 어긋난다:", *bad])
+
+
+def test_the_pattern_gate_is_not_an_empty_net():
+    """★ 합성으로 민다 — 빠진 라벨 하나를 심으면 그것을 대고 우는가."""
+    R, D = _docnumrules(), _docnum()
+    c = dict(D.counts())
+    real = R.rules
+    try:
+        R.rules = lambda cc: [*real(cc), ("docs/MASTER.md", 1, "없는라벨")]
+        bad = R.pattern_gaps(c)
+    finally:
+        R.rules = real
+    assert any("없는라벨" in m for m in bad), f"빠진 라벨을 안 댄다 — {bad}"
+
+    # 죽은 면제 — 라벨이 없는데 사유가 있으면 운다
+    real_po = R.PRESENCE_ONLY
+    try:
+        R.PRESENCE_ONLY = {**real_po, "사라진라벨": "사유"}
+        bad = R.pattern_gaps(c)
+    finally:
+        R.PRESENCE_ONLY = real_po
+    assert any("사라진라벨" in m and "죽은 면제" in m for m in bad), \
+        f"죽은 면제를 안 댄다 — {bad}"
+
+
 def test_that_axis_bites_a_moved_claim():
     """★ 카나리아 — 주장이 사라진 파일을 가리키면 운다. `#34` 가 겪은 그 자리다."""
     R, D = _docnumrules(), _docnum()

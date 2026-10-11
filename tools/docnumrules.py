@@ -29,18 +29,44 @@ def fmt(n: int) -> tuple[str, ...]:
     return (str(n), f"{n:,}")
 
 
-def present_faults(c: dict[str, int], read) -> list[str]:
-    """문서가 적은 수가 산출물과 같은가.
+#: 문맥 패턴을 **일부러 안 두는** 라벨 → 사유. 사유가 본체다.
+#:
+#: ★ 2026-10-11 (DECISIONS §466). 「라벨은 `RULES` 에 있는데 문맥 패턴이 없어
+#:   **존재 대조**로 떨어졌다」가 **세 번** 났다 — §435(norm 이관) · §452(도달
+#:   가능) · §464(CCTV 유효범위). 세 번 같은 자리면 사람의 실수가 아니라
+#:   구조다. 그래서 **빠진 것을 세는 문**을 단다(`pattern_gaps`).
+#: ★ 손목록의 결함은 틀린 항목이 아니라 **빠진 항목**이다(§370). 그래서
+#:   양방향으로 든다 — 죽은 면제도 운다.
+PRESENCE_ONLY: dict[str, str] = {
+    "세그먼트 수":
+        "이 수가 문서에서 쓰이는 꼴이 맨 `N구간` 이다(`골목 1,281구간` · "
+        "`1,281구간이면`). 그 표기에 문맥 패턴을 걸면 저장소의 **모든 구간 수**를"
+        " 같이 문다(`400구간` · `183구간` · `92건`) — 한 번 오탐이 나면 사람이"
+        " 검사를 끈다(§246-1). 낡은 값이 다시 들어오는 쪽은 `docnumtable.RETIRED`"
+        " 가 **문맥 낱말과 함께** 본다",
+    "clear": "판정 네 수는 `docgen.AXES` 의 `v_clear` 가 **문맥으로** 든다 —"
+             " 여기서 또 패턴을 두면 같은 물음에 두 답이 생긴다(족 2)",
+    "needs_cv": "같은 자리 — `docgen.AXES` 의 `v_needs_cv` 가 든다",
+    "blocked": "같은 자리 — `docgen.AXES` 의 `v_blocked` 가 든다",
+    "unknown": "같은 자리 — `docgen.AXES` 의 `v_unknown` 가 든다",
+}
+
+
+def rules(c: dict[str, int]) -> list[tuple[str, int, str]]:
+    """(파일, 실물, 라벨). **선언 표다** — 판정은 `present_faults` 가 한다.
+
+    ★ 2026-10-11 (§466). `present_faults` **안에** 있던 지역 변수였다. 그러면
+      「어느 라벨에 패턴이 없나」를 묻는 문을 달 수가 없다 — 표를 밖에서 못 본다.
+      §435 · §452 · §464 가 그 사각지대에서 차례로 나왔다.
 
     ★ 2026-10-10 (DECISIONS §452 · PLAN #56 ② 닫힘). 이 축은 `main()` **안에만**
       있었다 — 그래서 CLI 에서만 울고 pytest 는 조용했다(족 3 · 관문이 갈림).
       실제로 당했다: `#34` 가 README 를 줄이면서 이 축의 규칙 여섯이 **주장 없는
       파일**을 가리키게 됐는데, 전수 pytest 는 초록이었다. 2026-10-08 에
       필드표가 같은 사유로 이 자리에서 나갔고(§436-13), 같은 수법으로 옮긴다.
-      **재는 자리는 하나다** — `main()` 도 이 함수를 부른다.
+      **재는 자리는 하나다** — `main()` 과 pytest 가 같은 함수를 민다.
     """
-    out: list[str] = []
-    RULES = [
+    return [
         # ★ 2026-10-10 (DECISIONS §452 · PLAN #56). 넷(`clear` · `blocked` ·
         #   `unknown` · 동명동 구간)을 뺐다. **README 가 그 주장을 더는 안 한다** —
         #   `#34` 가 지금 상태를 `MASTER §24-7` 로 내렸고, 규칙은 주장을 따라간다.
@@ -76,28 +102,42 @@ def present_faults(c: dict[str, int], read) -> list[str]:
         ("docs/PLAN.md", c["unknown"], "unknown"),
         # ★ 2026-08-31. 대장·실물 계열. 위 판정 수와 달리 **사람이 손으로
         #   적던 자리**이고 그래서 실제로 여러 번 틀렸다.
-        ("docs/MASTER.md", c.get("hyd_up", 0), "소화전 지상식"),
-        ("docs/MASTER.md", c.get("hyd_dn", 0), "소화전 지하식"),
-        ("docs/MASTER.md", c.get("hyd_sum", 0), "소화전 합"),
-        ("docs/MASTER.md", c.get("water", 0), "소방용수시설 총계"),
-        ("sources.yaml", c.get("hyd_up", 0), "소화전 지상식"),
-        ("sources.yaml", c.get("hyd_dn", 0), "소화전 지하식"),
-        ("sources.yaml", c.get("hyd_sum", 0), "소화전 합"),
+        # ★ 2026-10-11 (DECISIONS §466-2). **못 잰 값을 0 으로 적어 넣고 있었다.**
+        #   종전은 `c.get("hyd_up", 0)` 이었고, 소화전 수는 레이크의 집계표에서만
+        #   나온다 — 레이크가 없는 기계에서는 넷이 전부 0 이 됐다. 그리고 존재
+        #   대조(`"0" 이 문서에 있나`)는 **어느 문서에서도 통과한다.** 그래서
+        #   패턴이 없는 것도 아무도 몰랐다(§466-1 이 그 다섯을 꺼냈다).
+        #   **0 은 값이고 「못 쟀다」가 아니다**(회색 = NULL). 못 잰 축은 안 든다.
+        *([("docs/MASTER.md", c["hyd_up"], "소화전 지상식"),
+           ("docs/MASTER.md", c["hyd_dn"], "소화전 지하식"),
+           ("docs/MASTER.md", c["hyd_sum"], "소화전 합"),
+           ("docs/MASTER.md", c["water"], "소방용수시설 총계"),
+           ("sources.yaml", c["hyd_up"], "소화전 지상식"),
+           ("sources.yaml", c["hyd_dn"], "소화전 지하식"),
+           ("sources.yaml", c["hyd_sum"], "소화전 합")]
+          if "hyd_up" in c else []),
         # ★ 2026-08-31. 대장 규모. MASTER 가 세 곳에서 낡아 있었다 —
         #   `datasets 36종 · retired 8종`(실제 41 · 10) · `대장 36종`.
         #   사람이 손으로 세는 숫자는 반드시 낡는다.
-        ("docs/MASTER.md", c.get("ds", 0), "대장 datasets 종수"),
-        ("docs/MASTER.md", c.get("ds_retired", 0), "대장 retired 종수"),
-        ("docs/MASTER.md", c.get("migrated", 0), "norm 이관 종수"),
+        #   ★ 이 셋은 대장(`sources.yaml`)에서 나오므로 레이크와 무관하다.
+        ("docs/MASTER.md", c["ds"], "대장 datasets 종수"),
+        ("docs/MASTER.md", c["ds_retired"], "대장 retired 종수"),
+        ("docs/MASTER.md", c["migrated"], "norm 이관 종수"),
         # ★ 2026-09-02 에 README 를 넣었다 — `대장 36종`(실물 43)이 살아 있었다.
         #   ★ 2026-10-10 (DECISIONS §452 · PLAN #56). **뺀다.** `#34` 가 그 줄을
         #     `MASTER §24-3` 으로 내렸고 MASTER 쪽 같은 라벨 둘이 그 줄을 읽는다.
         #     주장이 없는 파일에 문맥 패턴을 걸면 「패턴이 낡았다」로 영영 빨갛다.
         # ★ 2026-10-10 (DECISIONS §452 · PLAN #56). 도달 가능 — 세 곳이 한 수를
         #   든다(§3-11 표 · §24-2 · §24-7). 문맥 패턴이 그 셋을 한 번에 읽는다.
-        ("docs/MASTER.md", c.get("reach", 0), "도달 가능"),
+        #   ★ 발행된 경로 파일이 없으면 못 잰다 — 같은 사유로 안 든다(§466-2).
+        *([("docs/MASTER.md", c["reach"], "도달 가능")] if "reach" in c else []),
     ]
-    # ★ 2026-09-02. 종전에는 **정답이 파일 어딘가에 있나**만 봤다.
+
+
+def context_pat(c: dict[str, int]) -> dict[str, str]:
+    """라벨 → 그 수가 **실제로 적히는 자리**의 정규식. 1번 그룹이 수 하나다.
+
+    ★ 2026-09-02. 종전에는 **정답이 파일 어딘가에 있나**만 봤다.
     #   그래서 라벨 옆에 오답이 붙어 있어도 통과했다 — MASTER 가
     #   `datasets 41종`(실물 43)인 채로 초록불이었고, 그 절은 바로 위에
     #   "이 세 숫자는 docnum_check 가 대장에서 세어 대조한다 — 손으로
@@ -113,7 +153,8 @@ def present_faults(c: dict[str, int], read) -> list[str]:
     #   살아 있던 바로 그 꼴이다(위 ★). 문맥 패턴 없는 라벨은 **검사하는 척**한다.
     #   세 자리(§18 계층 표 · 레이크 절 · 대장 규모 절)가 전부 「텍스트 N종 이관」
     #   서식이라 패턴 하나가 셋을 다 읽는다.
-    CONTEXT_PAT = {
+    """
+    return {
         "대장 datasets 종수": r"`datasets` (\d+)종",
         "대장 retired 종수": r"`retired` (\d+)종",
         "norm 이관 종수": r"텍스트 \*{0,2}(\d+)종 이관",
@@ -132,10 +173,51 @@ def present_faults(c: dict[str, int], read) -> list[str]:
         #   ★ 조사가 붙은 자리는 안 문다 — 「유효범위 안이 **126**」(§7-2 · 폭
         #     3~7m 대역)은 다른 축이고, `안\s+` 이 그 울타리다.
         "CCTV 유효범위 안": r"CCTV 유효범위 안\s+\*{0,2}(\d[\d,]*)",
+        # ★ 2026-10-11 (DECISIONS §466). **같은 사각지대에 남아 있던 다섯.**
+        #   `pattern_gaps` 를 세우자 이 다섯이 한꺼번에 나왔다 — 라벨은 2026-08
+        #   부터 있었고 전부 존재 대조였다. 넓히기 전에 실물을 훑어 **어긋남 0**
+        #   을 확인했다(§375 가 앵커를 넓힐 때 쓴 그 절차다).
+        #   ★ 「소방청 지정 7구간」(DECISIONS)은 **다른 축**이다 — 소방서가 지정한
+        #     7개 도로이고 이 수는 기준을 충족한 구간 수다. 이 라벨은 `MASTER.md`
+        #     만 보므로 그 회고에 안 닿는다.
+        "소방청 지정 기준 충족": r"소방청 지정\s+\*{0,2}(\d[\d,]*)",
+        #   ★ 소화전 셋은 「지상식 418 + 지하식 171 = 589」 한 줄에서 나온다.
+        #     합은 `=` **뒤**를 읽는다 — 앞을 읽으면 418 을 합으로 센다.
+        "소화전 지상식": r"지상식\s*\*{0,2}(\d[\d,]*)",
+        "소화전 지하식": r"지하식\s*\*{0,2}(\d[\d,]*)",
+        "소화전 합": r"지상식[^\n]*?=\s*\*{0,2}(\d[\d,]*)",
+        #   ★ 총계도 `=` 뒤다. 「소방용수시설 총계 589 + 저수조 32 … = 654」 에서
+        #     앞을 읽으면 **589**(소화전 합)가 총계로 세어진다 — 실제로 그 꼴이다.
+        "소방용수시설 총계": r"소방용수시설[^\n]*?=\s*\*{0,2}(\d[\d,]*)",
     }
 
-    for rel, want, label in RULES:
-        pat = CONTEXT_PAT.get(label)
+
+def pattern_gaps(c: dict[str, int]) -> list[str]:
+    """문맥 패턴도 사유도 **없는** 라벨. 비면 산다.
+
+    ★ 2026-10-11 (DECISIONS §466). 이 문이 생긴 사유는 `PRESENCE_ONLY` 머리말에
+      있다 — 같은 결함이 **세 번** 났고 셋 다 「라벨은 있는데 패턴이 없다」였다.
+    ★ **양방향**이다. 죽은 면제(패턴이 생겼는데 사유가 남은 것 · 라벨이 사라졌는데
+      사유가 남은 것)도 운다 — 손목록의 결함은 빠진 항목이고, 죽은 항목은
+      그 손목록이 무엇을 면제하는지 못 읽게 만든다.
+    """
+    labels = {label for _, _, label in rules(c)}
+    pats = set(context_pat(c))
+    out = [f"라벨 `{label}` 에 문맥 패턴이 없다 — `context_pat` 에 넣거나"
+           f" `PRESENCE_ONLY` 에 **사유와 함께** 적어라"
+           for label in sorted(labels - pats - set(PRESENCE_ONLY))]
+    out += [f"`PRESENCE_ONLY` 의 `{k}` 는 **죽은 면제**다 — "
+            + ("그 라벨에 패턴이 생겼다" if k in pats else "그 라벨이 `rules` 에 없다")
+            for k in sorted(PRESENCE_ONLY) if k not in labels or k in pats]
+    return out
+
+
+def present_faults(c: dict[str, int], read) -> list[str]:
+    """문서가 적은 수가 산출물과 같은가. **판정은 여기 하나다.**"""
+    out: list[str] = []
+    pats = context_pat(c)
+    for rel, want, label in rules(c):
+        pat = pats.get(label)
         txt = read(rel)
         if pat:
             got = [int(g.replace(",", "")) for g in re.findall(pat, txt)]

@@ -47,7 +47,7 @@ import sys
 from pathlib import Path
 
 # ★ 선언 표 둘은 옆집에 산다 — 값만 있는 것은 값만 있는 파일에(§449-2).
-from docnumrules import present_faults
+from docnumrules import pattern_gaps, present_faults
 from docnumtable import CONTEXT, RETIRED
 
 from firelane.cli import no_args
@@ -418,6 +418,12 @@ def main() -> int:
         return cache.setdefault(rel, (ROOT / rel).read_text(encoding="utf-8"))
 
     # ── 1. PRESENT — 자리는 `present_faults` 하나다(§452) ─────
+    # ★ 2026-10-11 (DECISIONS §466). **라벨에 문맥 패턴이 있는가를 먼저 묻는다.**
+    #   없으면 그 라벨은 존재 대조로 떨어지고 「검사하는 척」한다 — 그 결함이
+    #   §435 · §452 · §464 로 세 번 났다. 사유 없는 빠짐은 여기서 멈춘다.
+    for msg in pattern_gaps(c):
+        print(f"! {msg}")
+        bad += 1
     for msg in present_faults(c, read):
         print(f"! {msg}")
         bad += 1
@@ -427,9 +433,13 @@ def main() -> int:
            "clear": c["clear"], "needs_cv": c["needs_cv"],
            "blocked": c["blocked"], "소방청 지정": c["nfa"],
            "width_cov 0.5 미만": c["cov_thin"],
-           "소화전 지상식": c.get("hyd_up", 0),
-           "소화전 지하식": c.get("hyd_dn", 0),
-           "소화전 합": c.get("hyd_sum", 0)}
+           # ★ 2026-10-11 (DECISIONS §466-2). `c.get(…, 0)` 이었다. 레이크가
+           #   없는 기계에서 셋이 0 이 되고, 그 0 이 「현재 0」으로 **찍혔다** —
+           #   못 잰 것과 0 은 다른 사실이다. 없으면 칸을 안 만든다: 그러면
+           #   아래가 `'?'` 를 찍는다(회색 = NULL).
+           **{k: c[v] for k, v in (("소화전 지상식", "hyd_up"),
+                                   ("소화전 지하식", "hyd_dn"),
+                                   ("소화전 합", "hyd_sum")) if v in c}}
     # ── 1b. 회색 사유의 가짓수 **낱말** ────────────────────────
     nkind = sum(1 for k in c if k.startswith("ur_"))
     for m in gray_kind_faults(read("docs/proposal.md"), nkind):
