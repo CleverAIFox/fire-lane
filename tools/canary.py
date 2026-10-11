@@ -130,10 +130,16 @@ EXEMPT: dict[str, str] = {}
 #:     §489    14 → 11   **짝 묶음**(`bad, none = judge(…)`)을 보게 했다 —
 #:                       판정이 짝을 내는 꼴 셋이 안 보였다. 그리고
 #:                       `test_toolclass` 가 `judge` 의 **일곱 갈래**를 민다
+#:     §490    11 → 9    `test_tile_zoom_agreement`(머케이터 식 둘을 교차) ·
+#:                       `test_declaration_reality`(`treecheck.check_names` —
+#:                       **저장소 어디에도 미는 자리가 없던** 네 갈래)
+#:     §491    9 → 7     `test_delivery_is_read`(`notice` · `drift` ·
+#:                       `closure_target` — §292 의 판정↔통보 가름) ·
+#:                       `test_defect_evidence`(증표 해석자를 빼서 양방향)
 #
-#: ★ 남은 11 은 빚이다. 올라간 판(§486)은 **느슨해진 것이 아니라** 거짓 초록을
+#: ★ 남은 7 은 빚이다. 올라간 판(§486)은 **느슨해진 것이 아니라** 거짓 초록을
 #:   걷은 것이고, 그 둘을 가르는 것이 래칫에 사유를 요구하는 이유다.
-NO_CANARY = 9
+NO_CANARY = 7
 
 RATCHETS = {"NO_CANARY": "down"}
 
