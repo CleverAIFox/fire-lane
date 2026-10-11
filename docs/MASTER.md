@@ -494,7 +494,7 @@ CCTV 거리 중앙값       38.5 m
 다른 길이 없을 때 그 엣지를 쓴다 — "막힌 길로라도 도달"은 답이 아니다.
 `reachable` 은 **양 끝 노드가 모두 도달 가능할 때만** 참이다.
 
-강제자  `tools/docnumrules.py`(이 수 ↔ 발행된 `web/data/route_vehicle.json` 의 `reachable` · 세 곳을 한 패턴이 읽는다) · `tests/test_doc_numbers.py::test_every_declared_number_is_in_its_document`(그 축의 pytest 쪽 짝 — 종전에는 CLI 에서만 울었다). ★ 2026-09-16 에 「다음 코드 배치에서 한다」고 적고 24일을 뒀고, 그 사이 이 수가 834 로 낡아 있었다(DECISIONS §167 · §452)
+강제자  `tools/docnumrules.py`(이 수 ↔ 발행된 `web/data/route_vehicle.json` 의 `reachable` · 세 곳을 한 패턴이 읽는다) · `tests/test_doc_numbers.py::test_every_declared_number_is_in_its_document`(그 축의 pytest 쪽 짝 — 종전에는 CLI 에서만 울었다). ★ 2026-09-16 에 「다음 코드 배치에서 한다」고 적고 24일을 뒀고, 그 사이 이 수가 834 로 낡아 있었다(DECISIONS §167 · §452) <!--stale-ok-->
 
 ### 3-10. 경로가 둘인 이유
 
@@ -3107,7 +3107,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,142 전수 · **분모(blank) 0절** · 물림(inherit) 1,180절.
+★ **강제자 칸의 분모.** 절 2,146 전수 · **분모(blank) 0절** · 물림(inherit) 1,183절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
