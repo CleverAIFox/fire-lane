@@ -633,3 +633,49 @@ def test_plan_is_idempotent_across_the_move(tmp_path):
         shutil.move(s_, d_)
     again = lake.verify_plan(rows, top, legacy="raw-legacy", repo_tiles=repo, ledger_retired=led)
     assert not again.fails and not again.moves and again.counts["보존"] == 2, again.fails
+
+
+# ── L6 가 **무엇을 세나** (DECISIONS §504) ──────────────────────
+def test_l6_counts_the_relative_path_violations_not_every_file(tmp_path):
+    """★ **세는 꼴이 실물과 달랐다.**
+
+    규칙이 `^(제공기관)/` 꼴이면 **파일명으로는 전건이 위반**이다. 종전 L6 은
+    그 수를 찍어 `retired` 를 「59/59건」이라 했고, 실제 위반은 하나였다 —
+    같은 사실을 `layerfsck` 는 1 로 세었다(두 자가 1 과 59 로 갈렸다).
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "lakecheck", Path(__file__).resolve().parents[1] / "tools/lakecheck.py")
+    LC = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(LC)
+
+    d = tmp_path / "retired"
+    (d / "ngii").mkdir(parents=True)
+    (d / "ngii" / "ngii_basemap_gj037_20260806.zip").write_text("x", encoding="utf-8")
+    (d / "ngii" / "ngii_basemap_gj038_20260807.zip").write_text("x", encoding="utf-8")
+    (d / "QUARANTINE.md").write_text("x", encoding="utf-8")          # ← 유일한 진짜 위반
+    LC.HITS.clear()
+    LC.l6(tmp_path, {"layers": {"retired": {
+        "base": "data", "sub": "retired", "naming": "^(eais|ngii)/"}}})
+    assert len(LC.HITS) == 1, LC.HITS
+    assert "1/3건" in LC.HITS[0]["what"], LC.HITS[0]["what"]
+    assert "QUARANTINE.md" in LC.HITS[0]["detail"], LC.HITS[0]["detail"]
+
+
+def test_l6_is_quiet_when_every_file_sits_under_its_provider(tmp_path):
+    """★ 반대 방향 — 전건이 규칙대로면 조용하다. `raw` 가 그 자리다."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "lakecheck", Path(__file__).resolve().parents[1] / "tools/lakecheck.py")
+    LC = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(LC)
+
+    d = tmp_path / "raw"
+    (d / "ngii").mkdir(parents=True)
+    (d / "ngii" / "a.zip").write_text("x", encoding="utf-8")
+    LC.HITS.clear()
+    LC.l6(tmp_path, {"layers": {"raw": {
+        "base": "data", "sub": "raw", "naming": "^(eais|ngii)/"}}})
+    assert LC.HITS == []

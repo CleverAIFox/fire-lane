@@ -406,8 +406,14 @@ def l6(D: Path, y: dict) -> None:
                 f"규칙 `{rx}`",
                 "규칙 앞에 제공기관 폴더를 넣는다 — raw 규칙과 같은 꼴로")
         elif name_bad:
-            hit("L6", f"{name}: 실물이 규칙을 어긴다 — {len(name_bad)}/{len(files)}건",
-                " · ".join(p.name for p in name_bad[:4]),
+            # ★ 2026-10-12 (DECISIONS §504). **`rel_bad` 를 센다.** 종전에는
+            #   `name_bad` 를 세고 그 이름을 찍었는데, 규칙이 `^(제공기관)/`
+            #   꼴이면 **파일명으로는 전건이 위반**이라 수가 늘 전건이 된다.
+            #   실측 — `retired` 를 「59/59건」이라 찍었고 실제 위반은 하나
+            #   (`QUARANTINE.md`)였다. 같은 사실을 `layerfsck` 는 1 로 세었고
+            #   두 자가 1 과 59 로 갈렸다(§458-1 과 같은 꼴).
+            hit("L6", f"{name}: 실물이 규칙을 어긴다 — {len(rel_bad)}/{len(files)}건",
+                " · ".join(str(p.relative_to(d)) for p in rel_bad[:4]),
                 "파일을 개명하거나 규칙을 실물에 맞춘다")
 
 
