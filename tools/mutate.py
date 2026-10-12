@@ -196,7 +196,9 @@ TIMEOUT = 180
 #   `toolclass.UNDECLARED` **래칫 상수**다. 이 도구의 붙잡이는 **제 자기검사
 #   하나**이고 그것은 선언과 실측을 안 댄다 — 그 대조는 `ratchet.py` 와
 #   `tests/test_toolclass.py` 가 든다. 가르는 것은 사람이고 여기가 그 가름이다.
-SURVIVORS = 88
+# ★ 2026-10-13 — 88 → 89 (§509). 산 하나는 자기검사의 합성 좌표다 — 100 을
+#   101 로 바꿔도 폭 10 띠의 내접원은 10 그대로라 행동이 안 바뀐다.
+SURVIVORS = 89
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 # ★ 2026-10-11 — 124 → 128 (DECISIONS §478-1). **조이는 쪽이다.** 도구가
 #   31 → 32 로 늘어 흔든 수가 넷 늘었다(`tools/selftests.py`). `SURVIVORS` 가
@@ -232,7 +234,8 @@ RATCHET_HELD = 25   # ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
 #                       `RATCHET_HELD` 의 가름(표의 이름인가)에 안 걸린다
 #     §493    61 → 63   새 관문 `srccov` — 기본값 · 실패 반환값.
 #                       `navicov`(§482) 와 **같은 꼴 둘**이다
-UNSORTED = 63
+#     §509    63 → 64   자기검사의 합성 좌표 — 행동을 안 바꾼다
+UNSORTED = 64
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
             "RATCHET_HELD": "up", "UNSORTED": "down"}
 
