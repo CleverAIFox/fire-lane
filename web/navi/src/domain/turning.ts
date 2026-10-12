@@ -34,8 +34,14 @@ export function turnCheckRadius(spec: VehicleSpec): number | null {
   return spec.turn_check_radius_m ?? null;
 }
 
-/** 노드 `n` 에서 엣지 `e` 를 따라 나가는 방향(°) */
-function outBearing(e: GraphEdge, n: number): number | null {
+/**
+ * 노드 `n` 에서 엣지 `e` 를 따라 나가는 방향(°). **`PROBE_M` 만큼 멀리** 본다.
+ *
+ * ★ 2026-10-11 (DECISIONS §475). 이름이 `outBearing` 이었고
+ *   `domain/turn.ts` 에 **같은 이름 다른 측정**이 있었다(그쪽은 첫 두 점의
+ *   접선이고 `null` 을 안 낸다). 이름에 무엇을 재는지를 넣는다.
+ */
+function probeBearing(e: GraphEdge, n: number): number | null {
   const c: LngLat[] = e.a === n ? e.coords : [...e.coords].reverse();
   if (c.length < 2) return null;
   let far = c[1];
@@ -48,8 +54,8 @@ function outBearing(e: GraphEdge, n: number): number | null {
 
 /** 들어온 엣지 → 노드 → 나갈 엣지의 꺾임각(0 = 직진, 180 = 유턴) */
 export function deflection(inE: GraphEdge, n: number, outE: GraphEdge): number | null {
-  const bi = outBearing(inE, n);
-  const bo = outBearing(outE, n);
+  const bi = probeBearing(inE, n);
+  const bo = probeBearing(outE, n);
   if (bi == null || bo == null) return null;
   const heading = (bi + 180) % 360;          // 노드로 들어올 때의 진행 방향
   return Math.abs(angleDelta(heading, bo));

@@ -1,55 +1,46 @@
 #!/usr/bin/env python3
 """
-localgeo.py — 동명동 국소 평면 근사. **좌표 상수의 집이 여기 하나다.**
+localgeo.py — 국소 평면 근사를 **도구 쪽 이름으로 넘긴다.**
 
-── 왜 생겼나 ───────────────────────────────────────────────────
-★ 2026-09-24 (PLAN §13 W12-1 · DECISIONS §239). `tools/kpi.py` ·
-  `tools/bridge_audit.py` · `tools/its_linkmap.py` 가 아래 세 줄을
-  **글자까지 같게** 박고 있었다 —
+★ 2026-10-11 (DECISIONS §469). 정본이 `src/firelane/localplane.py` 로 올라갔다.
+  여기 두면 `src/firelane` 쪽이 계층 때문에 import 할 수 없고, 그래서
+  `publish_context` 가 제 상수를 들고 있었다 — 위도 1도가 저장소에서 세 수가
+  된 뿌리다. **정본을 못 쓰게 두면 사본이 생긴다.**
 
-      LAT0 = 35.151
-      MX = 111320 * math.cos(math.radians(LAT0))
-      MY = 110574
+★ 이 파일은 **이름만 남긴다.** 도구 쪽 소비자 열하나가 `from localgeo import …`
+  를 쓰고 그 줄을 다 고치는 것은 이 판의 일이 아니다(옮기는 판과 고치는 판을
+  섞으면 무엇이 무엇을 깨뜨렸는지 못 가른다).
 
-  셋 다 거리·근접 판정에 쓴다(진입 실패율 KPI · 다리 실측 우선순위 ·
-  ITS 링크 대조). 중심 위도를 바꾸면 **세 도구가 각자 다른 좌표계로 거리를
-  재면서 아무도 안 운다.** 셋 다 배선 면제라 경보도 없다 — 2족(정본이 둘).
-
-★ `src/firelane/seg/params.py` 로 올리지 않았다. 그 파일은 **판정 지문**
-  안이라(`code_closure("firelane.segments")` 22파일) 상수 하나를 더해도
-  코드 지문이 움직이고 재잠금이 따라온다. 이 값은 판정에 안 든다 —
-  조사 도구 셋만 쓴다. **정본을 하나로 만드는 것과 지문을 흔드는 것은
-  다른 일이고, 둘을 섞으면 재잠금이 값싸 보이기 시작한다.**
-
-── 무엇이 아닌가 ───────────────────────────────────────────────
-★ **투영이 아니다.** 제대로 된 변환은 EPSG:5186 이고 `src/firelane` 이 쓴다.
-  여기 있는 것은 **한 동네 크기에서만 성립하는 어림**이다 — 위도 상수
-  하나로 미터를 만들므로, 동명동 밖으로 나가면 오차가 커진다.
+★ 왜 생겼는가 · 왜 `seg/params.py` 가 아닌가 — **그 역사는 정본의 머리말**이
+  든다. 여기 베끼면 그 글이 낡는다(그리고 베낀 상수가 독점 검사를 울린다).
 
 IN    없음 (상수)
 OUT   없음 (상수와 거리 함수)
 PARAM 없음 · 인자 없이 치면 자기검사
-밖    **좌표계 변환은 안 한다.** 5179 ↔ 5186 ↔ 4326 은 `pyproj` 가 하고
-      파이프라인이 든다. 여기서 드는 것은 **4326 두 점 사이 거리** 하나다.
-      그리고 고도·측지선은 안 본다 — 평면 근사다.
+밖    **계산을 안 한다.** 전부 `firelane.localplane` 이 한다.
 """
+
 from __future__ import annotations
 
-import math
-
+# ★ 2026-10-11 (DECISIONS §469). **상수의 집이 `src` 로 올라갔다.** 여기 두면
+#   `src/firelane` 쪽이 계층 때문에 import 할 수 없고, 그래서 `publish_context`
+#   가 제 상수를 들고 있었다(위도 110,540 — 세 번째 값). 정본을 못 쓰게 두면
+#   사본이 생긴다. 이 파일은 **이름만 남겨 넘긴다** — 도구 쪽 소비자 열하나가
+#   `from localgeo import ...` 를 쓰고 그 줄을 다 고치는 것은 이 판의 일이 아니다.
+from firelane import localplane as LP
 from firelane.cli import no_args
+from firelane.localplane import LAT0, MX, MY, metres
 
-#: 동명동 중심 위도. 국소 평면 근사의 기준점이다.
-LAT0 = 35.151
-#: 경도 1도의 미터. 위도에 따라 줄어든다.
-MX = 111320 * math.cos(math.radians(LAT0))
-#: 위도 1도의 미터. 위도에 거의 안 변한다.
-MY = 110574
+__all__ = ["LAT0", "MX", "MY", "meters", "metres"]
 
 
 def meters(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
-    """4326 두 점 사이 거리(m). 국소 평면 근사."""
-    return math.hypot((lon1 - lon2) * MX, (lat1 - lat2) * MY)
+    """4326 두 점 사이 거리(m). 국소 평면 근사.
+
+    ★ 인자 꼴이 평평한 넷이라 정본(`metres`)과 다르다 — 소비자가 이 꼴로
+      부르고 있어 남긴다. 계산은 **정본 하나**가 한다.
+    """
+    return metres((lon1, lat1), (lon2, lat2))
 
 
 def selftest() -> int:
@@ -71,7 +62,12 @@ def selftest() -> int:
     if bad:
         print("★ 국소 평면 근사가 깨졌다 — " + " · ".join(bad))
         return 1
-    print(f"localgeo OK — LAT0 {LAT0} · 경도 1도 {MX:.0f}m · 위도 1도 {MY}m")
+    # ★ 정본과 **같은 수를 쓰는가** — 넘기는 파일이 제 상수를 다시 갖지 않는가
+    if (LAT0, MY) != (LP.LAT0, LP.MY) or abs(MX - LP.MX) > 1e-9:
+        bad.append("상수가 정본과 다르다 — 이 파일은 넘기기만 해야 한다")
+        print("★ " + bad[-1]); return 1
+    print(f"localgeo OK — LAT0 {LAT0} · 경도 1도 {MX:.0f}m · 위도 1도 {MY}m"
+          " (정본 firelane.localplane)")
     return 0
 
 

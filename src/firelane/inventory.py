@@ -331,7 +331,8 @@ def collect(only: str | None = None) -> dict:
     return {"at": _now(), "datasets": inv}
 
 
-def write_block(inv: dict) -> None:
+def write_block(inv: dict, interim: Path | None = None,
+                sources: Path | None = None) -> None:
     """스캔 결과를 `interim` 계층에 쓴다.
 
     ★ 2026-08-26. 종전에는 `sources.yaml` 하단 AUTO 블록을 교체했다.
@@ -340,17 +341,24 @@ def write_block(inv: dict) -> None:
       `interim` 이 제자리다(MASTER §18-1).
 
       대장에는 `at` 과 `path` 만 남긴다. 어디를 보라는 안내다.
+
+    ★ 2026-10-12 (DECISIONS §500). 두 자리가 **박혀 있어서** 이 함수를
+      밀 수가 없었다 — 미는 유일한 길이 **실물 대장을 고쳐 쓰는 것**이다.
+      인자로 받고 기본값을 그대로 둔다(부르는 자리는 안 바뀐다). §481 ·
+      §484 · §486 의 둘 · §491 · §492 와 **같은 수선**이고 여덟째다.
     """
-    out = INTERIM / "inventory.json"
+    interim = INTERIM if interim is None else interim
+    sources = SOURCES if sources is None else sources
+    out = interim / "inventory.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(inv, ensure_ascii=False, indent=1) + "\n",
                    encoding="utf-8")
     print(f"\n→ {out}")
 
-    txt = SOURCES.read_text(encoding="utf-8")
+    txt = sources.read_text(encoding="utf-8")
     txt = re.sub(r"^  at: .*$", f"  at: {inv['at']}", txt, count=1, flags=re.M)
-    SOURCES.write_text(txt, encoding="utf-8")
-    print(f"→ {SOURCES} inventory.at 갱신")
+    sources.write_text(txt, encoding="utf-8")
+    print(f"→ {sources} inventory.at 갱신")
 
 
 if __name__ == "__main__":

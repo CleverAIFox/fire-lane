@@ -98,3 +98,30 @@ def test_the_repo_is_clean_right_now():
     assert not left, (
         "철거 잔재가 남아 있다: " + ", ".join(left) +
         "\n  uv run python tools/sweep.py --sweep --yes")
+
+
+# ── 보존 목적지 — 시험이 이름을 안 부르고 있었다 (DECISIONS §493) ──
+def test_retired_dst_reads_both_spellings_of_the_archive():
+    """★ `lake.retired_dst` — 보조 스크립트가 적은 자리를 `retired/` 로 읽는다.
+
+    §173-1 이 `data/archive` → `data/retired` 로 이름을 바꿨고, 제안을
+    적는 보조 스크립트는 아직 옛 이름을 적을 수 있다. **두 철자를 다
+    받는다** — 한쪽만 받으면 보존 계획이 조용히 비고, 비면 지울 것이
+    「지울 것 없음」으로 보인다.
+    """
+    from firelane import lake
+
+    for old in ("data/archive/", "data/retired/"):
+        assert lake.retired_dst({"dst_or_reason": f"{old}seg/a.gpkg"}) == \
+            "retired/seg/a.gpkg", old
+
+
+def test_retired_dst_refuses_a_destination_outside_the_archive():
+    """★ 엉뚱한 자리를 **조용히 받지 않는다.** 받으면 산출물을 보존으로 옮긴다."""
+    import pytest
+
+    from firelane import lake
+
+    for d in ("data/processed/a.gpkg", "web/data/a.json", "retired/a.gpkg", ""):
+        with pytest.raises(ValueError, match="보존 목적지"):
+            lake.retired_dst({"dst_or_reason": d})

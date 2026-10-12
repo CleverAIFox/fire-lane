@@ -24,7 +24,9 @@ FL_DATA_MIGRATION — git 밖 실물과 원자적으로 움직인다
 
 ── 검사하는 참조 ──────────────────────────────────────────────
     ① 대장 file/files      → raw 실물        (글롭 0건 = 죽음)
-    ② 대장 outputs.path    → processed
+    ② **옮겼다** → `tools/treecheck.py` 의 T6. 같은 파일 · 같은 키 · 같은
+      ROOT · 같은 술어 · 같은 등급이었고 T6 이 「path 선언 자체가 없다」를
+      더 든다 — 정본이 그쪽이다(2026-10-11 · DECISIONS §456-5)
     ③ 대장 outputs.consumers → 저장소 파일
     ④ 대장 produced_by     → 저장소 파일
     ⑤ 대장 outputs.inputs  → datasets 키
@@ -53,6 +55,7 @@ import yaml
 
 # 대장 조회기는 하나다(firelane.ledger.globs).
 from firelane import ledger as _led
+from firelane.ledger import absence as _absence
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
@@ -101,8 +104,11 @@ def check() -> list[tuple[str, str, str]]:
                 #   여기는 **실패**로 불렀다. 족 3(관문이 갈림)이다.
                 #   대장이 **사유를 적으면** 경고로 내린다 — 사유가 없으면
                 #   그대로 실패다. 침묵에는 값을 안 치른다.
-                why = (e.get("awaiting") or "").strip()
-                if why:
+                # ★ 2026-10-10 (DECISIONS §447 · PLAN #161 닫힘). 그 등급을
+                #   `ledger.absence` 하나가 낸다 — 이 자리가 **첫 번째**로
+                #   고쳐졌고 나머지 셋이 안 따라와 §427 이 다시 열렸다.
+                lvl, why = _absence(e)
+                if lvl in ("awaiting", "missing"):
                     out.append((WARN, f"datasets.{k}.file",
                                 f"{pat} — 아직 raw 에 없다: {why}"))
                 else:
@@ -116,11 +122,8 @@ def check() -> list[tuple[str, str, str]]:
             if inp not in ds and inp not in outs:
                 out.append((FAIL, f"outputs.{k}.inputs", f"{inp} — 대장에 없다"))
 
-        # ② path → 실물
-        pth = o.get("path")
-        if pth and not (ROOT / pth).exists():
-            out.append((WARN, f"outputs.{k}.path",
-                        f"{pth} — 없다(재생성 전일 수 있다)"))
+        # ② 는 `treecheck` T6 이 든다. 여기서 같은 것을 또 세지 않는다 —
+        #    같은 판정을 두 자리에서 내면 한쪽을 고칠 때 다른 쪽이 낡는다.
 
         # ③④ consumers · produced_by → 저장소 파일
         for f in ([o.get("produced_by")] if o.get("produced_by") else []) \

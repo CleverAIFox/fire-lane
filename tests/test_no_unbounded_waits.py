@@ -57,7 +57,9 @@ BLOCKING = {
 #:   `subprocess.run` 으로 셌다. 판별식을 고쳐 46 이 됐다. 큰 수가 더
 #:   그럴듯해 보이지만 **틀린 수는 래칫으로 못 쓴다** — 오탐이 섞인 래칫은
 #:   고쳐도 안 줄고, 안 줄면 사람이 그 래칫을 안 믿는다.
-RATCHET = 45
+# ★ 2026-10-09 (DECISIONS §444) 45 → **43.** 조이는 쪽이다 — docx·pdf 를
+#   들어내며 지운 도구 일곱과 시험 셋에 시한 없는 대기가 둘 있었다.
+RATCHET = 43
 
 
 def unbounded(path: Path) -> list[tuple[int, str]]:

@@ -56,8 +56,16 @@ import type {
   NaviGraph, RoutePlan, VehicleSpec, VerdictStyle,
 } from "../domain/types";
 
-/** 이보다 가까운 다음 회전은 묶어서 한 번에 말한다. */
-const MERGE_M = 45;
+/**
+ * 이보다 가까운 다음 **회전**은 묶어서 한 번에 말한다.
+ *
+ * ★ 2026-10-11 (DECISIONS §475). 이름이 `MERGE_M` 이었고
+ *   `domain/context.ts` 에 **같은 이름 다른 수**(60)가 있었다. 저쪽은
+ *   **사정**(과속방지턱 · 카메라)을 묶는 창이고 이쪽은 **회전 문구**다 —
+ *   다른 일감이라 수가 달라도 되지만, 이름이 같으면 한쪽을 고치는 사람이
+ *   다른 쪽도 고친 줄로 안다. 이름에 **무엇을 묶는지**를 넣는다.
+ */
+const TURN_MERGE_M = 45;
 
 export interface VoiceInput {
   graph: NaviGraph | null;
@@ -128,7 +136,7 @@ export function useVoice(i: VoiceInput): VoiceState {
     setSpeed((s) => s * 0.7 + (dm / dt) * 0.3);
   }, [driven]);
 
-  const { m, distM, after } = nextManeuver(maneuvers, driven, MERGE_M);
+  const { m, distM, after } = nextManeuver(maneuvers, driven, TURN_MERGE_M);
   const banner = m ? mergePhrase(m, after, distM) : null;
 
   // ★ 한 틱의 입력. 아래 두 효과가 **같은 것**을 본다 — 종전에는 각자

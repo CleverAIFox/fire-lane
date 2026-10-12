@@ -33,6 +33,16 @@ ledger_cross.py — **약속과 실측이 대장 안에서 서로를 반박하�
     layer_must_exist → layer_used ∈ layers  쓰기로 한 레이어가 실측 목록에 있는가
     contract.encoding = schema.encoding_seen 약속한 인코딩으로 읽혔는가
     contract.rows    ≈ schema.features       약속한 행 수가 실측과 같은가
+    what ⊬ 남의 칸                           산문이 **다른 소스의 칸**을 서술하는가
+
+★ 다섯째 축은 **사람이 쓴 칸**을 본다(2026-10-10 · DECISIONS §452 · PLAN #56 ①).
+  2026-09-17 에 `hydrant_summary` 의 `what` 이 **다른 판의 컬럼 체계**를 서술하고
+  있었다 — `schema` 는 실물을 맞게 들고 있었고 사람이 쓴 칸만 틀렸다(§178-2).
+  그날 「사람이 쓴 칸과 도구가 쓴 칸을 대조하는 검사가 없다」고 적고 24일을 뒀다.
+
+★ **약하다.** 산문의 뜻은 안 본다 — 「이 칸 이름이 남의 것인가」만 본다. 줄여 쓴
+  이름(`지상식` ← `지상식소화전`)은 **못 잡는다.** 넓히려면 말씨를 읽어야 하고
+  그것은 이 저장소가 안 쓰는 물건이다(`plan_renumber` 머리말이 같은 판단을 적는다).
 
 ★ **양쪽이 다 적힌 항목만 센다.** 한쪽이 없으면 할 말이 없다 — 그것은
   `src/firelane/ledger.py` 의 필수 칸 검사가 든다.
@@ -69,6 +79,45 @@ ROOT = Path(__file__).resolve().parents[1]
 #: ★ 실측보다 낮게 둔다 — 못 박으면 항목 하나 지울 때마다 맞는 대장이 빨개진다.
 NET_MIN = 40
 
+#: 산문이 든 이름을 실측 칸과 댈 때의 문턱. **글자 수**다.
+#: ★ 실측으로 골랐다 — 넷이면 오탐 셋(`관할구역` · `안전센터` · `법정동코드`),
+#:   다섯이면 둘, **여섯이면 0**이다. 짧은 이름은 산문의 보통명사와 구별이
+#:   안 된다. 넓히는 쪽은 오탐을 먼저 없앤 뒤에 한다(PLAN §13-4 가 같은 순서).
+NAME_MIN = 6
+
+
+def distinct_cols(d: dict) -> set[str]:
+    """**한 소스만 쓰는 긴 칸 이름.** 산문에 나오면 그 소스의 것이어야 한다.
+
+    ★ `retired` 는 안 본다. 실측으로 확인했다 — 폐기 넷 중 `schema` 를 가진 것이
+      **0건**이고, `ledger_schema.py` 는 활성 소스만 읽는다. §178-2 의 그 칸
+      (`지상식소화전`)도 활성 `hydrant_type` 의 것이다. 안 쓰는 블록을 읽으면
+      「주인 블록 직접 해석」 래칫만 올라간다(`tests/test_lake.py`).
+    ★ 여럿이 쓰는 이름은 뺀다. `소방서` · `위치` · `구분` 은 칸 이름이면서
+      산문의 낱말이고, 그 둘을 가를 수가 없다.
+    """
+    seen: dict[str, int] = {}
+    for e in (d.get("datasets") or {}).values():
+        for c in {str(x) for x in ((e or {}).get("schema") or {}).get("columns") or []}:
+            seen[c] = seen.get(c, 0) + 1
+    return {c for c, n in seen.items() if n == 1 and len(c) >= NAME_MIN}
+
+
+def names(what: str, c: str) -> bool:
+    """산문이 그 칸을 **이름으로** 들었는가.
+
+    ★ 둘러싼 글자가 이름의 일부면 아니다 — `A0` 가 `A0080000` 안에서 걸리던
+      자리다. 낱말 경계를 안 보는 포함 검사는 축을 못 세운다.
+    """
+    for i in range(len(what) - len(c) + 1):
+        if what[i:i + len(c)] != c:
+            continue
+        a, b = i - 1, i + len(c)
+        if (a < 0 or not (what[a].isalnum() or what[a] == "_")) and \
+           (b >= len(what) or not (what[b].isalnum() or what[b] == "_")):
+            return True
+    return False
+
 
 def _stem(s: object) -> str:
     """`TL_SPRD_RW.shp` 와 `TL_SPRD_RW` 는 같은 레이어다."""
@@ -83,6 +132,7 @@ def _enc(s: object) -> str:
 def pairs(d: dict) -> list[tuple[str, str, bool, str]]:
     """대조한 짝 — `(항목, 축, 맞는가, 사연)`. **판정은 안 한다**(`judge` 소관)."""
     out: list[tuple[str, str, bool, str]] = []
+    mine = distinct_cols(d)
     for k, e in sorted((d.get("datasets") or {}).items()):
         con = (e or {}).get("contract") or {}
         sch = (e or {}).get("schema") or {}
@@ -107,6 +157,14 @@ def pairs(d: dict) -> list[tuple[str, str, bool, str]]:
             tol = con.get("rows_tolerance") or 0
             ok = abs(rows - feat) <= tol
             out.append((k, "행수", ok, f"약속 {rows} · 실측 {feat} (허용 ±{tol})"))
+        what, cols = str((e or {}).get("what") or ""), sch.get("columns")
+        # ★ `headerless` 는 뺀다. 그 소스의 실측 칸은 `c00` · `c01` 자리표이고,
+        #   산문은 **실제 필드 이름**을 적어야 한다 — 댈 것이 서로 다른 축이다.
+        if what and cols and not sch.get("headerless"):
+            alien = sorted(c for c in mine - {str(x) for x in cols} if names(what, c))
+            out.append((k, "산문", not alien,
+                        f"`what` 이 남의 칸 {alien} 을 서술한다" if alien
+                        else "`what` 이 남의 칸을 서술하지 않는다"))
     return out
 
 
@@ -140,6 +198,20 @@ def _one(contract: dict, schema: dict) -> dict:
     return {"datasets": {"x": {"contract": contract, "schema": schema}}}
 
 
+def _prose(what: str, *, bare: bool = False) -> bool | None:
+    """합성 대장에서 **산문 축의 답**만 꺼낸다. 축이 안 서면 `None`.
+
+    소스 둘을 세운다 — `owner` 가 `지상식소화전` 을 가지고, `x` 는 안 가진다.
+    §178-2 의 그날 모양이다.
+    """
+    sch = {"columns": ["c00", "c01"], "headerless": True} if bare \
+        else {"columns": ["일반지하식소화전", "데이터기준일자"]}
+    d = {"datasets": {"x": {"what": what, "schema": sch},
+                      "owner": {"schema": {"columns": ["지상식소화전", "연번"]}}}}
+    got = [ok for k, ax, ok, _ in pairs(d) if k == "x" and ax == "산문"]
+    return got[0] if got else None
+
+
 def selftest() -> int:
     """판별식 — 하나라도 틀리면 이 도구가 거짓말을 한다."""
     def g(c: dict, s: dict) -> list[bool]:
@@ -164,8 +236,17 @@ def selftest() -> int:
         ("허용 없으면 정확히 같아야", g({"rows": 100}, {"features": 101}) == [False]),
         ("빈 그물이면 실패", any("빈 그물" in b for b in judge([("x", "칸", True, "")]))),
         ("실물 대장이 빈 그물이 아니다", len(pairs(load_sources())) >= NET_MIN),
-        ("실물 대장에 네 축이 다 있다",
-         {a for _, a, _, _ in pairs(load_sources())} == {"칸", "레이어", "인코딩", "행수"}),
+        ("실물 대장에 다섯 축이 다 있다",
+         {a for _, a, _, _ in pairs(load_sources())}
+         == {"칸", "레이어", "인코딩", "행수", "산문"}),
+        # ★ 산문 축 — 그물이 비면 영원히 초록이다.
+        ("남의 칸 목록이 비지 않았다", len(distinct_cols(load_sources())) > 100),
+        # ★ 합성 결함 — 남의 긴 칸을 산문이 들면 운다. **이 축의 카나리아다.**
+        ("남의 칸을 서술하면 거짓", _prose("지상식소화전 418건") is False),
+        ("제 칸을 서술하면 참", _prose("일반지하식소화전 171건") is True),
+        ("자리표 칸(headerless)은 안 센다", _prose("지상식소화전 418건", bare=True) is None),
+        ("낱말 경계를 본다", not names("A0080000 코드", "A0") and names("A0 코드", "A0")),
+        ("짧은 이름은 안 센다", "위치" not in distinct_cols(load_sources())),
         ("레이크 경로를 안 든다", _no_lake_words()),
     ]
     for what, good in ok:

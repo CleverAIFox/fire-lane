@@ -92,6 +92,7 @@ SKIP = {".ds_store", "thumbs.db", "desktop.ini"}
 from firelane import paths
 from firelane.console import human
 from firelane.hashing import sha256 as _h_sha256
+from firelane.ledger import absence as _absence
 
 
 def sha256(p, chunk: int = 1 << 20) -> str:
@@ -272,11 +273,13 @@ def main() -> int:
                 missing.append((key, pat))
         print()
         for key, pat in missing:
-            # ★ 2026-10-07 (§427). `awaiting` 을 아는 자가 셋째다 — 같은 상태를
-            #   세 자리가 저마다 다른 이름으로 불렀다. 여기는 관문이 아니라
-            #   조사 도구지만 **사람이 읽는 글자**가 갈리면 그것도 족 2 다.
-            why = str((ds.get(key) or {}).get("awaiting") or "").strip()
-            if why:
+            # ★ 2026-10-07 (§427). 같은 상태를 세 자리가 저마다 다른 이름으로
+            #   불렀다. 여기는 관문이 아니라 조사 도구지만 **사람이 읽는
+            #   글자**가 갈리면 그것도 족 2 다.
+            # ★ 2026-10-10 (DECISIONS §447 · PLAN #161 닫힘). 등급을
+            #   `ledger.absence` 하나가 낸다.
+            lvl, why = _absence(ds.get(key))
+            if lvl in ("awaiting", "missing"):
                 print(f"  · 유예 {key:20s} {pat}\n          {why[:72]}")
             else:
                 print(f"  ★ 결손 {key:20s} {pat}")

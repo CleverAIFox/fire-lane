@@ -189,3 +189,30 @@ def test_data_globs_skip_acquisition_sidecars():
         "  `ledger.is_acquisition_meta` 가 거른다 — prep 과 ingest 가\n"
         "  같은 규칙을 봐야 한다. 다른 집합을 보면 한쪽이 안 만든 것을\n"
         "  다른 쪽이 요구한다.")
+
+
+# ── norm 목적지 — 시험이 이름을 안 부르고 있었다 (DECISIONS §493) ──
+def test_dst_rel_changes_only_the_extension_and_only_with_a_converter():
+    """★ `prep.dst_rel` — 변환기가 있으면 `.csv`, 없으면 **그대로**.
+
+    자리(폴더·줄기)를 바꾸면 norm 이 raw 와 짝이 안 맞고, 그러면 `golden`
+    이 비교할 상대를 못 찾는다. 바뀌는 것은 **확장자 하나**다.
+    """
+    from firelane import prep
+
+    conv = sorted(prep.CONVERTERS)[0]
+    assert prep.dst_rel("safety/a_b_kr_20260101.zip", {"norm_convert": conv}) == \
+        "safety/a_b_kr_20260101.csv"
+    for e in ({}, {"norm_convert": None}, {"other": 1}):
+        assert prep.dst_rel("safety/a_b_kr_20260101.zip", e) == \
+            "safety/a_b_kr_20260101.zip", e
+
+
+def test_dst_rel_refuses_a_converter_that_is_not_on_the_table():
+    """★ 모르는 변환기를 **조용히 안 지나친다** — 지나치면 변환 없이 이름만 바뀐다."""
+    import pytest
+
+    from firelane import prep
+
+    with pytest.raises(ValueError, match="변환기 표에 없다"):
+        prep.dst_rel("safety/a_b_kr_20260101.zip", {"norm_convert": "없는변환기"})

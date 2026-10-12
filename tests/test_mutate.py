@@ -143,8 +143,16 @@ def test_shaking_restores_the_original(tmp_path, monkeypatch):
     tools.mkdir()
     src = "#!/usr/bin/env python3\nX = 1\n"
     (tools / "toy.py").write_text(src, encoding="utf-8")
-    monkeypatch.setattr(M, "TOOLS", tools)
-    monkeypatch.setattr(M, "TESTS", tmp_path / "없는곳")
+    # ★ 2026-10-09 (DECISIONS §445). `TOOLS` · `TESTS` 는 `mutatescope` 가
+    #   들고 `mutate` 는 그것을 끌어온 **제 이름**을 갖는다. 흔드는 코드는
+    #   양쪽에 있으므로(`shake` 는 `mutate` · `named_tests` 는 `mutatescope`)
+    #   **쓰는 쪽마다** 갈아야 한다 — 한쪽만 갈면 시험이 실물 `tests/` 를
+    #   훑는다. `mutate` 는 `TESTS` 를 **안 끌어온다**(쓰지 않으므로) —
+    #   그래서 그 이름은 `mutatescope` 에만 있다.
+    import mutatescope as S
+    monkeypatch.setattr(M, "TOOLS", tools)      # `shake` 가 쓴다
+    monkeypatch.setattr(S, "TOOLS", tools)      # `catch_print` 가 쓴다
+    monkeypatch.setattr(S, "TESTS", tmp_path / "없는곳")   # `named_tests` 가 쓴다
     r = M.shake("toy", cap=2)
     assert (tools / "toy.py").read_text(encoding="utf-8") == src, "원본이 안 돌아왔다"
     assert r["붙잡이"] == 0, "자기검사가 없는 도구에 붙잡이가 생겼다"

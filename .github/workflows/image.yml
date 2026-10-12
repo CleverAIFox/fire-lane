@@ -37,8 +37,14 @@ on:
 permissions:
   contents: read
 
+# ★ 2026-10-10 (DECISIONS §457). group 키가 `github.ref` 였다. 그 값은
+#   push 에서 `refs/heads/<가지>` 고 pull_request 에서 `refs/pull/N/merge` 라
+#   **같은 커밋의 두 실행이 서로 다른 group 에 들어갔다** — 취소가 안 걸린다.
+#   가지 이름으로 바꾼다(`head_ref` 는 PR 에서만, 없으면 `ref_name`).
+#   `run:` 밖이라 보간 가드(test_untrusted_context_is_never_interpolated_into_run)
+#   의 과녁이 아니다.
 concurrency:
-  group: image-${{ github.workflow }}-${{ github.ref }}
+  group: image-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:

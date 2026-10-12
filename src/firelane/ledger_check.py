@@ -36,6 +36,7 @@ from firelane.cli import no_args
 from firelane.kinds import NO_SCHEMA_KINDS, SINGLE_PICK, TEXT_KINDS
 from firelane.ledger import (
     DATE,
+    DATE_MONTH,
     FAIL,
     FORBIDDEN_VALUES,
     PATHABLE,
@@ -44,7 +45,25 @@ from firelane.ledger import (
     crs_of,
     globs,
     load,
+    raw_text,
+    yaml_span,
 )
+
+
+def _has_reason(key: str, field: str) -> bool:
+    """대장 원문에서 `key` 블록의 `field:` 줄이 **주석을 달고 있나.**
+
+    ★ 값만 보고는 「알아보고 월로 적었다」와 「그냥 월로 적었다」를 가를 수
+      없다. 주석이 그 가름이고, 그래서 원문을 본다(`yaml_span`).
+    """
+    try:
+        _, _, body = yaml_span(raw_text(), key)
+    except OSError:
+        return False
+    for line in body.splitlines():
+        if line.strip().startswith(f"{field}:") and "#" in line:
+            return bool(line.split("#", 1)[1].strip())
+    return False
 
 
 @dataclass
@@ -168,8 +187,20 @@ def check_entry(key: str, e: dict) -> list[Issue]:
     #   문자열로 눌러서 본다 — 그러면 표기 혼재 자체도 드러난다.
     for f in ("updated",):
         v = e.get(f)
-        if v is not None and not DATE.match(str(v)):
-            out.append(Issue(WARN, key, f"{f} 가 YYYY-MM-DD 가 아니다: {v!r}"))
+        if v is None or DATE.match(str(v)):
+            continue
+        # ★ 2026-10-12 (DECISIONS §496). 월까지만 주는 제공처가 있다. 없는
+        #   날짜를 짓는 것보다 월로 두는 것이 옳고(§455 회색=NULL), 그래서
+        #   받는다 — **사유와 함께만**(§69). 사유는 원문 주석이 든다.
+        if DATE_MONTH.match(str(v)):
+            if _has_reason(key, f):
+                continue
+            out.append(Issue(
+                WARN, key,
+                f"{f} 가 월까지만이다({v!r}). **왜 날이 없는지**를 대장 그 "
+                "줄의 주석에 적어라 — 사유 없는 예외를 금한다(§69)"))
+            continue
+        out.append(Issue(WARN, key, f"{f} 가 YYYY-MM-DD 가 아니다: {v!r}"))
     # acquired 대조는 제거했다. 대장에 없는 필드를 보는 검사는 영원히
     # 통과한다 — 근거 없이 초록불을 켜는 것이 아무 검사도 없는 것보다 나쁘다.
 

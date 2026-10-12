@@ -489,9 +489,15 @@ def test_awaiting_buys_a_warning_only_with_a_written_reason():
     sys.modules[spec.name] = m   # @dataclass 가 되짚는다 (§258-10)
     spec.loader.exec_module(m)
 
+    # ★ 2026-10-10 (DECISIONS §447 · PLAN #161 닫힘). 사유 칸을 읽는 자리가
+    #   `ledger.absence` **하나**가 됐다. 그래서 글자를 찾는 자리도 거기다 —
+    #   부르는 쪽에서 찾으면 다음에 또 쪼갤 때 이 단정이 같이 낡는다.
+    led = (ROOT / "src" / "firelane" / "ledger.py").read_text(encoding="utf-8")
+    assert '"awaiting" in e' in led, "사유 칸의 **존재**를 안 본다"
+    assert 'e.get("awaiting")' in led, "사유 칸의 **값**을 안 본다"
+    assert '"bare"' in led, "사유가 비었을 때의 등급이 없다 — 침묵에 값을 안 치른다"
     src = (ROOT / "tools" / "refcheck.py").read_text(encoding="utf-8")
-    assert 'e.get("awaiting")' in src, "사유 칸을 안 본다"
-    assert "if why:" in src and "else:" in src, "사유가 없을 때 실패로 안 떨어진다"
+    assert "_absence(" in src, "부재 등급을 제 손으로 다시 읽는다"
 
     y = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8")) or {}
     blank = [k for k, e in (y.get("datasets") or {}).items()
@@ -535,7 +541,7 @@ def test_every_judge_of_a_missing_dataset_file_knows_awaiting():
             continue
         rel = q.relative_to(ROOT).as_posix()
         judges.append(rel)
-        if "awaiting" not in src:
+        if "_absence(" not in src and "absence(" not in src:
             blind.append(rel)
 
     assert judges, ("부재를 판정하는 자리를 하나도 못 찾았다 — 그물이 비었다. "
@@ -545,9 +551,23 @@ def test_every_judge_of_a_missing_dataset_file_knows_awaiting():
     assert not missed, (
         f"아는 자를 못 잡는다 — 판별식이 죽었다. 빠진 것 {missed} · 잡은 것 {judges}")
     assert not blind, (
-        "`datasets` 부재를 판정하면서 `awaiting` 을 안 읽는다:\n  " + "\n  ".join(blind)
+        "`datasets` 부재를 판정하면서 `ledger.absence` 를 안 부른다:\n  " + "\n  ".join(blind)
         + "\n\n  선언된 유예는 **경고**다(§424). 사유가 비면 실패다.\n"
           "  이 칸을 아는 자가 하나뿐이면 다음 관문이 또 실패를 낸다 — 2026-10-07 에 그랬다.")
+
+    # ★ 2026-10-10 (DECISIONS §447 · PLAN #161 닫힘). **반대 방향**도 든다 —
+    #   그 칸을 **읽는 자리가 하나뿐인가.** 위 단정은 「부르는가」이고 이 단정은
+    #   「딴 데서 또 읽지 않는가」다. 둘이 다 있어야 자리가 하나로 남는다.
+    #   `#161` 이 「가드는 『`awaiting` 글자가 그 파일 밖에 안 나온다』로 둔다」고
+    #   적었고, 글자 하나로 두면 **탐지가 재현된다** — 문구로 고르면 또 샌다.
+    read = _re.compile(r'(?:\.get\(\s*"awaiting"|"awaiting"\s+in\b)')
+    home = "src/firelane/ledger.py"
+    extra = [q.relative_to(ROOT).as_posix() for q in scan
+             if q.relative_to(ROOT).as_posix() != home
+             and read.search(q.read_text(encoding="utf-8", errors="replace"))]
+    assert not extra, (
+        "`awaiting` 칸을 **딴 데서 또 읽는다**:\n  " + "\n  ".join(extra)
+        + f"\n\n  판정처는 `{home}` 의 `absence()` 하나다. 등급을 받아 제 동사로 옮겨라.")
 
 
 def test_contract_turns_a_declared_wait_into_a_warning():
@@ -577,3 +597,81 @@ def test_contract_turns_a_declared_wait_into_a_warning():
 
         r = C.check_one("probe", dict(base), raw, None)
         assert r.worst == C.FAIL, "선언도 실물도 없는데 안 운다 — 그물이 비었다"
+
+
+# ── 2026-10-12 (DECISIONS §490) ────────────────────────────────────
+#   §486 이 「표준 라이브러리 이름으로 센 쌍」을 걷자 이 파일이 빚에 드러났다.
+#   그리고 열어 보니 `treecheck.check_names()` — **레이크 파일명 규약의
+#   판정** — 을 미는 자리가 **저장소 어디에도 없었다.** 그 자는 네 갈래로
+#   우는데(깊이 · 등재 안 된 폴더 · 이름 파싱 · 폴더↔provider) 어느 갈래도
+#   돈 적이 없다. 이름 규약이 조용히 느슨해지면 글롭이 빗나가고, 빗나간
+#   글롭은 **자료가 없는 것처럼** 보인다.
+
+def _tree():
+    """`tools/treecheck.py` 를 모듈로 들인다. **레이크를 안 본다.**"""
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location(
+        "_treecheck_probe", ROOT / "tools" / "treecheck.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+#: 규약을 지키는 이름. **등재된 폴더**와 네 필드(provider_dataset_scope_vintage).
+GOOD = "safety/safety_elctrnmap_jngj_20260711.csv"
+
+
+def test_a_conforming_name_is_silent():
+    """★ 음성. 멀쩡한 이름에서 울면 레이크 전체가 빨간불이 된다."""
+    t = _tree()
+    assert t.check_names({GOOD}, src="합성") == [], \
+        [f.why for f in t.check_names({GOOD}, src="합성")]
+    assert t.check_names(set(), src="합성") == [], "빈 집합에서 무언가를 만든다"
+
+
+def test_a_nested_path_is_caught():
+    """★ raw 는 `{provider}/{file}` **2단 고정**이다 — 중첩하면 글롭이
+    조용히 빗나간다."""
+    t = _tree()
+    bad = t.check_names({"safety/sub/safety_elctrnmap_jngj_20260711.csv"}, src="합성")
+    assert [f.axis for f in bad] == ["D5"], [(f.axis, f.why) for f in bad]
+    assert "깊이" in bad[0].why
+
+
+def test_an_unregistered_folder_is_caught():
+    """★ 등재 안 된 폴더 — 올리거나 격리한다. 조용히 두면 출처를 모르는
+    자료가 레이크에 산다."""
+    t = _tree()
+    bad = t.check_names({"없는폴더/safety_elctrnmap_jngj_20260711.csv"}, src="합성")
+    assert [f.axis for f in bad] == ["D1"], [(f.axis, f.why) for f in bad]
+    assert "providers" in bad[0].why, bad[0].why
+
+
+def test_a_name_that_does_not_parse_is_caught():
+    """★ 필드가 모자란 이름 · 기계가 못 읽는 글자. 둘 다 파싱이 잡는다."""
+    t = _tree()
+    short = t.check_names({"safety/safety_x_20260711.csv"}, src="합성")
+    assert [f.axis for f in short] == ["D6"], [(f.axis, f.why) for f in short]
+    hangul = t.check_names({"safety/엉뚱한이름.csv"}, src="합성")
+    assert [f.axis for f in hangul] == ["D6"], [(f.axis, f.why) for f in hangul]
+
+
+def test_a_folder_that_disagrees_with_the_file_name_is_caught():
+    """★ **이중 기록의 값어치가 이 대조 하나다.** 폴더와 파일명이 둘 다
+    provider 를 적는 이유가 서로를 대는 것이고, 그 대조가 죽으면 두 벌을
+    두는 뜻이 없어진다."""
+    t = _tree()
+    bad = t.check_names({"juso/safety_elctrnmap_jngj_20260711.csv"}, src="합성")
+    assert [f.axis for f in bad] == ["D6"], [(f.axis, f.why) for f in bad]
+    assert "juso" in bad[0].why and "safety" in bad[0].why
+
+
+def test_the_report_names_where_it_came_from():
+    """★ `src` 가 그대로 실린다 — 추적 목록과 레이크 실물 중 어느 쪽에서
+    나온 이름인지 모르면 고칠 자리를 못 찾는다."""
+    t = _tree()
+    bad = t.check_names({"없는폴더/x.csv"}, src="레이크")
+    assert bad and bad[0].what.startswith("레이크:"), bad[0].what

@@ -109,7 +109,7 @@ export interface GraphEdge {
   width_cov?: number | null;
   /** 폭 표본 수. 1이면 `verdict()` 가 통과 확정을 보류한다 */
   n_sample?: number | null;
-  /** 가장 가까운 CCTV 까지 거리(m). 25m 넘으면 영상판정이 성립 안 한다 */
+  /** 가장 가까운 CCTV 까지 거리(m). 19m 넘으면 영상판정이 성립 안 한다 */
   cctv_dist_m?: number | null;
   /** 왜 회색인가. ledger_disputes · no_cctv_band · no_cctv_thin · no_cctv_narrow · no_cctv_single */
   unknown_reason?: string | null;
@@ -185,6 +185,26 @@ export interface NaviGraph {
   terrain?: { enabled: boolean; exaggeration: number };
   /** 회전 금지 `[들어오는 엣지, 노드, 나가는 엣지, TURN_TYPE]`. 옛 그래프에는 없다 */
   turns?: [number, number, number, number][];
+  /**
+   * 지점 — **경로에 안 붙는 점**. 정본은 `web/config.js` landmarks(§444 · #148).
+   * 옛 그래프에는 없다. 없으면 핀이 없는 것이 정상이다.
+   */
+  landmarks?: Landmark[];
+}
+
+/**
+ * 지도에 위치만 찍는 점.
+ *
+ * ★ 경로가 **안 지난다.** 그래프에 이을 자리가 없는 점이라(최근접 구간이
+ *   100m 넘게 떨어져 있다) 이으면 없는 길을 만드는 것이다 — 위치만 보여준다.
+ *   `route` 칸이 발행에 안 오는 이유가 그것이다(`publish_navi._landmarks` 가
+ *   `route:true` 를 거부한다).
+ */
+export interface Landmark {
+  name: string;
+  lng: number;
+  lat: number;
+  note?: string;
 }
 
 /** 경로가 어기거나 확인이 필요한 통행 규칙 하나(`domain/rules.ts`). */

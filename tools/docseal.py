@@ -98,6 +98,31 @@ def _body_v1(rows: list[dict], i: int) -> str:
 LEGACY_BODIES = (_body_v1,)   #: 옛 본문 공식. 축 셋 중 첫째다
 
 
+@functools.lru_cache(maxsize=64)
+def _lines_of(path: str, _stamp: tuple[int, int]) -> tuple[str, ...]:
+    """한 문서의 줄. **같은 파일을 절마다 다시 안 읽는다.**
+
+    ★ 2026-10-11 (DECISIONS §463-4). `body()` 가 절마다 문서를 통째로 읽고
+      `splitlines()` 했다. 562절을 훑는 `sealcov --selftest` 에서 그 호출이
+      **4,158번**이고 그것이 78초 중 75초였다 — 그 기계에서는 자기검사
+      제한(120초)을 넘어 **종료 124**로 빨개졌다. 느린 것이 아니라 같은
+      바이트를 4,158번 디코딩한 것이다.
+
+    ★ 열쇠에 `mtime_ns · 크기`를 같이 둔다. 경로만으로 캐시하면 문서를
+      고친 뒤의 호출이 **옛 줄**을 받는다 — 도장이 거짓으로 유효해지는
+      쪽이고, 그쪽은 느린 것보다 나쁘다. 그리고 시험이 `ROOT` 를 tmp 로
+      갈아끼우므로(`test_docseal.py`) 열쇠는 **절대 경로**다.
+    """
+    return tuple(Path(path).read_text(encoding="utf-8").splitlines())
+
+
+def _lines(doc: str) -> tuple[str, ...]:
+    """`ROOT` 기준 문서의 줄. 캐시 열쇠를 여기서 짓는다."""
+    p = ROOT / doc
+    st = p.stat()
+    return _lines_of(str(p), (st.st_mtime_ns, st.st_size))
+
+
 def body(rows: list[dict], i: int, strip: bool = True) -> str:
     """절 본문 — 다음 **같거나 얕은** 깊이의 제목 전까지. 끝의 빈 줄은 뗀다.
     (`strip=False` 가 옛 판 `_body_v1` 이다 — 자르는 규칙은 **한 집에만** 산다.)
@@ -112,7 +137,7 @@ def body(rows: list[dict], i: int, strip: bool = True) -> str:
       끝의 빈 줄은 뜻을 안 바꾸므로 떼는 것이 옳다.
     """
     r = rows[i]
-    lines = (ROOT / r["doc"]).read_text(encoding="utf-8").splitlines()
+    lines = _lines(r["doc"])
     end = len(lines)
     for q in rows[i + 1:]:
         if q["doc"] == r["doc"] and q["depth"] <= r["depth"]:
@@ -409,12 +434,29 @@ def queue(limit: int = 30) -> int:
     return 0
 
 
-def check() -> int:
+def check(list_only: bool = False) -> int:
+    """무효가 된 절을 센다. `list_only` 면 **절 이름만** 한 줄에 하나씩 낸다.
+
+    ★ 2026-10-11 (DECISIONS §462). 사람이 읽는 전문에서 그 목록을 **기계가
+      긁어야** 했다. 두 번 물렸다 — 마지막 줄 힌트가 `void[:3]` 에서 잘려
+      넷째 절이 빠졌고, 들여쓰기를 긁는 `grep -E "[A-Za-z가-힣]"` 이 로케일에서
+      `Invalid collation character` 로 죽어 목록이 **빈 채로** `stamp` 에
+      넘어갔다. 빈 목록을 받은 `stamp` 가 거절해서 도장이 하나도 안 찍혔고,
+      그 상태가 커밋됐다.
+    ★ 그래서 **찍을 것을 그대로 먹일 수 있는 출력**을 둔다. 사람 눈용 전문은
+      그대로다 — 둘은 독자가 다르다.
+    """
     now, was, bodies = survey()
     if not now:
+        if list_only:
+            return 1
         print("★ 도장 대상이 0절이다 — 판별식을 의심하라")
         return 1
     void = sorted(k for k, v in now.items() if k in was and not valid(v, was[k]))
+    if list_only:
+        for k in void:
+            print(k)
+        return 0            # 목록은 **판정이 아니다** — 비면 비었다고 답한다
     if not void:
         n = sum(1 for k in now if k in was)
         print(f"✓ 도장 {n}/{len(now)}절 유효 · 무효 0 — 확인한 뒤로 안 바뀌었다")
@@ -425,7 +467,15 @@ def check() -> int:
         for line in why(now[k], was[k], bodies.get(k, "")):
             print(f"        {line}")
     print("\n  절과 코드를 같이 읽고, 여전히 맞으면 다시 찍어라:")
-    print("    uv run python tools/docseal.py stamp --only " + " --only ".join(void[:3]))
+    print("    uv run python tools/docseal.py stamp --only " + " --only ".join(void[:3])
+          + (f"  … 그리고 {len(void) - 3}절 더" if len(void) > 3 else ""))
+    # ★ 2026-10-11 (DECISIONS §462). **잘린다는 사실을 적는다.** 위 한 줄은 셋까지고,
+    #   그것을 그대로 복사하면 넷째부터는 안 찍힌다 — 실제로 그렇게 물렸다.
+    if len(void) > 3:
+        print("  전부 찍으려면 — 목록을 기계가 읽는다:")
+        print("    mapfile -t S < <(uv run python tools/docseal.py check --invalid-list)")
+        print("    A=(); for s in \"${S[@]}\"; do A+=(--only \"$s\"); done")
+        print("    uv run python tools/docseal.py stamp \"${A[@]}\"")
     return 1
 
 
@@ -566,7 +616,7 @@ def selftest() -> int:
     """판별식이 **빈 그물이 아닌가.**"""
     bad = []
     rows = _sections()
-    if len(rows) < 500:
+    if len(rows) < 501:
         bad.append(f"절을 {len(rows)}개밖에 못 셌다")
     if not refs("본문에 `tools/docseal.py` 가 있다"):
         bad.append("백틱 경로를 못 뽑는다")
@@ -629,13 +679,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--parts", action="store_true",
                     help="이미 유효한 도장에 부분 지문을 채운다 (새 확인이 아니다)")
     ap.add_argument("--limit", type=int, default=30, help="queue 가 보여줄 줄 수")
+    # ★ 2026-10-11 (DECISIONS §462). **찍을 것을 그대로 먹이는 출력.** 사람 눈용
+    #   전문에서 목록을 긁다가 두 번 물렸다 — 힌트가 셋에서 잘리고, 들여쓰기를
+    #   긁는 정규식이 로케일에서 죽었다.
+    ap.add_argument("--invalid-list", action="store_true",
+                    help="check — 무효가 된 절 이름만 한 줄에 하나씩 (stamp --only 에 먹인다)")
     ap.add_argument("--selftest", action="store_true", help="판별식 자기검사")
     a = ap.parse_args(argv)
     if a.selftest:
         return selftest()
     if a.cmd == "queue":
         return queue(a.limit)
-    return {"status": status, "check": check}.get(
+    if a.cmd == "check":
+        return check(a.invalid_list)
+    return {"status": status}.get(
         a.cmd, lambda: stamp(a.only, a.unmoved, a.parts))()
 
 

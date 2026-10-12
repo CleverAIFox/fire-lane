@@ -39,6 +39,8 @@ import math
 import sys
 from pathlib import Path
 
+from firelane import localplane
+
 try:
     from PIL import Image, ImageDraw
 except ImportError:
@@ -92,7 +94,9 @@ def render(feat: dict) -> Path | None:
     lats = [c[1] for c in C]
     mid_lat = sum(lats) / len(lats)
     m = mpp(mid_lat, Z)
-    dlat = PAD_M / 111_320
+    # ★ 2026-10-11 (DECISIONS §469). 상수를 손으로 들고 있었고 **위도에 경도
+    #   미터**를 썼다. 정본은 `firelane.localplane` 하나다.
+    dlat = PAD_M / localplane.MY
     dlon = PAD_M / (111_320 * math.cos(math.radians(mid_lat)))
 
     img, ox, oy, miss = stitch(min(lons) - dlon, min(lats) - dlat,

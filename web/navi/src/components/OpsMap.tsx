@@ -6,7 +6,7 @@
  *
  *     판정 4색            구간 색. 정본(`style`) 그대로 — 음영이 아니라 원색. 폭에 비례해 굵다
  *     도달 불가 겹침       고른 센터 · 차종 기준으로 닿지 않는 구간을 회색 사선으로
- *     CCTV 25m 반경       영상판정이 성립하는 범위(`seg/params.py` CCTV_RANGE 와 같은 수)
+ *     CCTV 19m 반경       영상판정이 성립하는 범위(`seg/params.py` CCTV_RANGE 와 같은 수)
  *     정사영상 25cm        로컬 타일(`web/data/ortho`). 키가 필요 없다
  *     출동 미리보기        센터 → 사건 지점 경로(파랑) · 대체 접근 지점이면 도보 점선
  *     출동 중인 차         내비 탭이 보내는 위치 · 경로 · 상태(`opsProtocol`)
@@ -14,7 +14,7 @@
  *
  * ★ 판정색을 여기서 만들지 않는다. `style` 은 `navi_graph.json.style` 이고 그 정본은
  *   `web/config.js` 다.
- * ★ 25m 는 **표시용 사본**이다 — 정본은 `seg/params.py` 의 CCTV_RANGE 다. 레거시 지도
+ * ★ 19m 는 **표시용 사본**이다 — 정본은 `seg/params.py` 의 CCTV_RANGE 다. 레거시 지도
  *   (`web/config.js` markers[].cover.radius)도 같은 수를 따로 들고 있다.
  */
 import { useEffect, useRef } from "react";
@@ -22,7 +22,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { LngLat } from "../domain/geo";
-import type { VerdictStyle, View } from "../domain/types";
+import type { Landmark, VerdictStyle, View } from "../domain/types";
 import type { FeedItem, Unit } from "../domain/opsProtocol";
 import {
   GLYPHS, sources, baseLayers, applyTerrain, markerLayers, stationLayers,
@@ -30,6 +30,7 @@ import {
 } from "./layers";
 import {
   opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
+  landmarkSource, landmarkLayers,
   opsVerdictColor, opsClearanceColor, opsClearanceBand,
 } from "./opsLayers";
 import { CLEARANCE_WIDE_M, type ClearanceBand } from "../domain/clearance";
@@ -46,7 +47,7 @@ maplibregl.setWorkerUrl(workerUrl);
  */
 
 /** CCTV 영상판정 유효 반경(m). 정본은 seg/params.py CCTV_RANGE — 표시용 사본 */
-const CCTV_RANGE_M = 25;
+const CCTV_RANGE_M = 19;
 
 export interface OpsLayers {
   ortho: boolean;
@@ -76,6 +77,11 @@ interface Props {
   view: View;
   /** 지형 — `navi_graph.json.terrain`(정본 config.js) */
   terrain?: { enabled: boolean; exaggeration: number };
+  /**
+   * 지점 — `navi_graph.json.landmarks`(정본 config.js · §444). **경로에 안 붙는다.**
+   * 옛 발행물에는 없다 — 없으면 핀이 없는 것이 정상이다.
+   */
+  landmarks?: Landmark[];
   style: Record<string, VerdictStyle>;
   layers: OpsLayers;
   /**
@@ -194,6 +200,11 @@ export function OpsMap(props: Props) {
 
       for (const L of markerLayers()) m.addLayer(L);
       for (const L of stationLayers()) m.addLayer(L);
+      // ★ 2026-10-09 (§444 · #148). 지점 핀 — **안전센터와 같은 층**이다(§412-3).
+      //   운전석(`NaviMap`)에는 안 둔다. 거기서는 목적지를 고르지 않고, 경로에
+      //   안 붙는 점이 길 위에 겹치면 읽을 것만 는다.
+      m.addSource("landmarks", landmarkSource(P.current.landmarks));
+      for (const L of landmarkLayers()) m.addLayer(L);
       // ★ 글자 색은 글자 레이어가 **생긴 뒤에** 입힌다 — 앞에서 입히면 레이어가 없어 조용히 건너뛴다
       //   (독립 검토 2026-09-22: 어두운 바탕에 밝은 테마 글자가 그대로 남았다)
       //   건물 · 상호 이름은 **흰 알약** 위에 앉으므로 알약을 어둡게 하고 글자는 밝게 둔다

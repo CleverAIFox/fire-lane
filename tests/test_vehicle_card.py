@@ -125,3 +125,45 @@ def test_received_vehicle_cards_match_their_names():
     assert not missing, f"대장 parts 는 적었는데 없다 — {missing} (pull_data --yes 먼저)"
     bad = check(cards, e.get("mismatch") or {})
     assert not bad, "관리카드 이름 ↔ 내용이 어긋난다\n  " + "\n  ".join(bad)
+
+
+# ── 카드 한 장의 CSV (DECISIONS §496) ────────────────────────
+def test_to_csv_bytes_writes_the_declared_header_in_order():
+    """★ 머리 줄이 `HEAD` **그대로**다 — 순서가 바뀌면 열이 밀린다."""
+    from firelane.vehiclecard import HEAD, to_csv_bytes
+
+    text = to_csv_bytes({h: f"v{i}" for i, h in enumerate(HEAD)}).decode("utf-8")
+    head, body, tail = text.split("\n")
+    assert next(csv.reader([head])) == HEAD
+    assert next(csv.reader([body])) == [f"v{i}" for i in range(len(HEAD))]
+    assert tail == "", "끝 개행이 없거나 줄이 더 있다"
+
+
+def test_a_missing_field_becomes_an_empty_cell_not_a_shifted_row():
+    """★ 없는 칸은 **빈 칸**이다. 빼먹으면 뒤의 값이 전부 한 칸 밀린다."""
+    from firelane.vehiclecard import HEAD, to_csv_bytes
+
+    text = to_csv_bytes({HEAD[0]: "지산2호"}).decode("utf-8")
+    row = next(csv.reader([text.split("\n")[1]]))
+    assert len(row) == len(HEAD)
+    assert row[0] == "지산2호" and set(row[1:]) == {""}
+
+
+def test_the_csv_is_utf8_with_unix_newlines():
+    """★ LF 만 쓴다 — norm 계층 규약이고, CRLF 가 섞이면 바이트 대조가 찢어진다."""
+    from firelane.vehiclecard import HEAD, to_csv_bytes
+
+    raw = to_csv_bytes({HEAD[0]: "지산2호"})
+    assert b"\r" not in raw
+    assert raw.decode("utf-8").count("\n") == 2
+    # 한글이 들어간 칸이 깨지지 않는다
+    assert "지산2호" in raw.decode("utf-8")
+
+
+def test_a_value_with_a_comma_stays_one_cell():
+    """쉼표 든 값은 **인용**된다 — 아니면 특기사항 하나가 두 칸이 된다."""
+    from firelane.vehiclecard import HEAD, to_csv_bytes
+
+    text = to_csv_bytes({HEAD[-1]: "사다리, 조명"}).decode("utf-8")
+    row = next(csv.reader([text.split("\n")[1]]))
+    assert len(row) == len(HEAD) and row[-1] == "사다리, 조명"

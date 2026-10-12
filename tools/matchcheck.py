@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import statistics
 import sys
 import time
 import urllib.parse
@@ -164,7 +165,7 @@ def main():
         for k in sorted(g, key=str):
             v = sorted(g[k])
             hi = sum(1 for x in v if x >= 0.5)
-            med = v[len(v) // 2]
+            med = statistics.median(v)
             print(f"  {k!s:>10s}  n={len(v):4d}  중앙 {med:.3f}  "
                   f"conf>=0.5 {hi:4d} ({hi/len(v)*100:3.0f}%)")
 
@@ -176,7 +177,7 @@ def main():
 
     allc = sorted(r["confidence"] or 0.0 for r in rows)
     hi = sum(1 for x in allc if x >= 0.5)
-    print(f"\n전체: n={len(allc)} · 중앙 {allc[len(allc)//2]:.3f} · "
+    print(f"\n전체: n={len(allc)} · 중앙 {statistics.median(allc):.3f} · "
           f"conf>=0.5 {hi} ({hi/len(allc)*100:.0f}%)")
     print(f"→ {a.out} 에 저장. 이 표로 하이브리드 경계를 긋는다")
 

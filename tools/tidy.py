@@ -6,6 +6,7 @@ tidy.py — 푸시·PR·머지 뒤에 남는 로컬 찌꺼기를 정리한다.
     uv run python tools/tidy.py --yes      실제로 지운다
     uv run python tools/tidy.py --only git 브랜치·upstream 만
     uv run python tools/tidy.py --only fs  파일만
+    uv run python tools/tidy.py --restore  격리된 옛 산출물의 이름을 되돌린다
 
 ── 왜 만들었나 ────────────────────────────────────────────────
 찌꺼기가 실제로 사고를 냈다. 셋 다 "조용히 틀린 것이 실행된" 사고다.
@@ -26,9 +27,19 @@ tidy.py — 푸시·PR·머지 뒤에 남는 로컬 찌꺼기를 정리한다.
   `segments.geojson` · `_manifest.json` · `seg_uid_map.csv` 는 커밋 대상이다.
   정리하려면 `fire-lane` 을 다시 돌리는 것이 옳은 방법이다.
 
+── 되돌리기는 왜 **이 도구**에 있나 (2026-10-11 · DECISIONS §463-3) ──
+격리는 `guards.quarantine_stale` 이 한다. 그 역(이름 되돌리기)을 거기 두는
+것이 짝으로는 맞지만, `guards.py` 는 **판정 폐포 안**이라 함수 하나를 더해도
+golden 지문이 움직인다. 되돌리기는 판정이 안 읽는 일이므로 여기 둔다.
+
+★ 왜 필요했나 — 10-11 에 `ortho` 가 메모리로 죽었고, 그 실패가 격리한 옛
+  산출물 둘을 **손으로 `mv`** 해서 되돌렸다. 손으로 치는 복구는 다음에 또
+  손으로 친다. 그리고 그때 파이프라인이 권한 것은 `--yes`(=지우기)였다 —
+  그 말을 따랐으면 되돌릴 것이 없어졌다.
+
 IN    저장소 (git 필요)
-OUT   없음 — 삭제만 한다. `--yes` 없이는 아무것도 지우지 않는다
-PARAM 아래 RULES
+OUT   없음 — 삭제(`--yes`)와 개명 되돌리기(`--restore`). 기본은 아무것도 안 한다
+PARAM 아래 RULES · QUARANTINE
 """
 from __future__ import annotations
 
@@ -44,8 +55,36 @@ from firelane.generated import for_role
 
 ROOT = Path(__file__).resolve().parents[1]
 
+#: 격리 규칙의 이름. `--restore` 는 **이 규칙 하나만** 든다 — 글롭을 두 번
+#: 적으면 한쪽만 고쳐질 자리다. 규칙 표의 이름이 열쇠다.
+QUARANTINE = "격리 산출물"
+
+#: 격리 접미. `guards.quarantine_stale` 이 붙이는 꼴과 **같은 것을 뗀다.**
+STALE = re.compile(r"\.stale_\d{8}$")
 
 
+def restore_stale(root: Path = ROOT) -> tuple[int, list[str]]:
+    """격리된 옛 산출물의 이름을 되돌린다. (되돌린 수, 못 한 사유)
+
+    ★ 지우는 쪽과 달리 `--yes` 를 안 요구한다 — 되돌리기는 **없애는 일이
+      아니다.** 다만 **원래 이름이 이미 있으면 안 덮는다**: 그 자리에 새로
+      빌드된 산출물이 있을 수 있고, 그것을 옛 것으로 덮는 것은 조용히 틀린
+      산출물을 만드는 1족이다.
+    """
+    pats = next(g for n, g, _ in RULES if n == QUARANTINE)
+    done, why = 0, []
+    for pat in pats:
+        for p in sorted(root.glob(pat)):
+            dst = p.with_name(STALE.sub("", p.name))
+            if dst.name == p.name:
+                why.append(f"{p.name} — 접미가 `.stale_YYYYMMDD` 가 아니다")
+                continue
+            if dst.exists():
+                why.append(f"{dst.name} 이 이미 있다 — 안 덮는다. 둘을 보고 골라라")
+                continue
+            p.rename(dst)
+            done += 1
+    return done, why
 
 
 def sh(*args: str) -> list[str] | None:
@@ -69,7 +108,7 @@ RULES: list[tuple[str, list[str], str]] = [
      "§18-5 R8 — 돌리고 지운다. 남아 있으면 `bash apply.sh` 가 옛 것을 돌린다"),
     ("적용 백업", ["_backup_*", "_apply_backup_*"],
      "apply 스크립트가 만든 원복용 사본. 커밋 확인 뒤에는 쓸 일이 없다"),
-    ("격리 산출물", ["data/processed/*.stale_*"],
+    (QUARANTINE, ["data/processed/*.stale_*"],
      "ingest FAIL 때 하류를 막으려고 개명한 것. 재실행하면 다시 생긴다"),
     ("파이프라인 임시", [".work"],
      "압축 해제·도엽 전개용. ngii1k 가 다시 만든다"),
@@ -218,11 +257,32 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--yes", action="store_true", help="실제로 지운다")
     ap.add_argument("--only", choices=["git", "fs"], help="한쪽만")
+    ap.add_argument("--restore", action="store_true",
+                    help="격리된 옛 산출물의 이름을 되돌린다 (지우지 않는다)")
     a = ap.parse_args()
 
     if not (ROOT / ".git").exists():
         print(col("git 저장소가 아니다.", "r"))
         return 1
+
+    # ★ 2026-10-11 (DECISIONS §463-3). 되돌리기와 지우기를 **같이 안 받는다** —
+    #   같은 파일에 반대 두 일을 시키는 호출이고, 어느 쪽이 이겼는지가 순서로
+    #   정해진다. 그런 문은 한 번 속으면 끝이다.
+    if a.restore and a.yes:
+        print(col("✗ --restore 와 --yes 를 같이 줄 수 없다 — 되돌릴 것인가 지울 것인가", "r"))
+        return 2
+    if a.restore:
+        n, why = restore_stale()
+        for w in why:
+            print(f"  {col('못 했다', 'y')}  {w}")
+        if not n and not why:
+            print(col("격리된 것이 없다 — 되돌릴 것이 없다.", "g"))
+            return 0
+        print(col(f"이름을 되돌렸다 · {n}건", "g") if n else col("되돌린 것이 없다.", "y"))
+        if n:
+            print("  봉인지가 코드 때문에만 찢어진 것이면 다시 빌드할 필요가 없다:")
+            print(col("    uv run python -m firelane.ingest --reseal-code", "c"))
+        return 0 if n or not why else 1
 
     do_git = a.only in (None, "git")
     do_fs = a.only in (None, "fs")

@@ -249,7 +249,8 @@ def test_resealing_also_refreshes_the_lineage_entry(tmp_path):
     import sys
 
     root = Path(__file__).resolve().parents[1]
-    spec = importlib.util.spec_from_file_location("ss_lin", root / "src/firelane/shardseal.py")
+    # ★ 2026-10-11 (DECISIONS §460). 재도장의 집이 `reseal.py` 다.
+    spec = importlib.util.spec_from_file_location("ss_lin", root / "src/firelane/reseal.py")
     assert spec and spec.loader
     ss = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = ss      # @dataclass 가 되짚는다 (DECISIONS §258-10)
@@ -276,9 +277,129 @@ def test_relineage_is_wired_into_the_reseal_path():
     import ast
 
     root = Path(__file__).resolve().parents[1]
-    src = (root / "src/firelane/shardseal.py").read_text(encoding="utf-8")
-    fn = next(n for n in ast.walk(ast.parse(src))
-              if isinstance(n, ast.FunctionDef) and n.name == "reseal_code_cli")
-    called = {n.func.id for n in ast.walk(fn)
-              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
-    assert "_relineage" in called, "재도장 경로가 계보를 안 갱신한다 — §267 이 그대로 돌아온다"
+    # ★ 2026-10-11 (DECISIONS §460). 재도장의 집이 `reseal.py` 로 갈라졌다 —
+    #   길이 상한이 그 경계를 가리켰고 물음도 둘이다. **문 셋을 다 짚는다.**
+    src = (root / "src/firelane/reseal.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    for name in ("reseal_code_cli", "reseal_cfg_cli"):
+        fn = next(n for n in ast.walk(tree)
+                  if isinstance(n, ast.FunctionDef) and n.name == name)
+        called = {n.func.id for n in ast.walk(fn)
+                  if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+        assert "_relineage" in called, (
+            f"{name} 이 계보를 안 갱신한다 — §267 이 그대로 돌아온다")
+
+
+# ── 코드 칸만 받아주는 문 (DECISIONS §496) ───────────────────
+# ★ `reseal.reseal_code` 는 **사람이 판단해 받아주는 문**이다(§224-2).
+#   `code` 는 ingest 가 import 하는 모듈 전부의 로직 지문이라, 산출물을 한
+#   바이트도 바꾸지 않는 변경(안내 문구 · 종료코드)에도 65종이 전부 찢어진다.
+#   이 8GB 기계에서 전량 재빌드는 `ngii_road` 에서 거의 반드시 죽으므로,
+#   그 문이 없으면 **ingest 를 고칠 수 없는 구조**가 된다.
+#
+# ★ 그런데 그 문을 미는 자리가 없었다 — `tools/srccov.py` 가 셌다(§493 · §496).
+#   「공짜로 열어주지 않는다」가 이 함수의 약속이고, 그 약속이 이 절의 과녁이다.
+def _reseal_mod():
+    import importlib.util
+    import sys
+
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "rs_code", root / "src/firelane/reseal.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+def _sealed(tmp_path, code: str = "옛코드"):
+    """raw · out 이 **실물과 같은** 레코드 한 벌. 그래야 받아줄 자격이 있다."""
+    from firelane import shardseal as ss
+
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    raw = tmp_path / "raw.csv"
+    raw.write_text("a,b\n1,2\n", encoding="utf-8")
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+    (out / "o.csv").write_text("x\n", encoding="utf-8")
+    seal = {"raw": ss.raw_print([raw]), "cfg": "C", "code": code,
+            "out": ss.out_print(out, ["o.csv"])}
+    rec = {"key": "k", "status": "OK", "seal": seal}
+    cfg = {"datasets": {"k": {"stem": "x"}}}
+    return rec, cfg, out, raw
+
+
+def test_reseal_code_fixes_only_the_code_slot(tmp_path):
+    """★ 본체. `code` 만 바뀌고 나머지 **셋은 그대로**다.
+
+    raw · cfg · out 이 「무엇으로 만들었나」의 증거다. 하나라도 같이 고치면
+    이 문이 봉인을 **지어내는** 자리가 된다.
+    """
+    m = _reseal_mod()
+    rec, cfg, out, raw = _sealed(tmp_path)
+    before = dict(rec["seal"])
+    fixed, skipped = m.reseal_code([rec], cfg, out, "새코드",
+                                   lambda _k, _e: [raw])
+    assert (fixed, skipped) == (["k"], [])
+    assert rec["seal"]["code"] == "새코드"
+    for slot in ("raw", "cfg", "out"):
+        assert rec["seal"][slot] == before[slot], slot
+
+
+def test_reseal_code_refuses_when_the_outputs_moved(tmp_path):
+    """★ 산출물이 달라졌으면 **안 받는다** — 다시 빌드해야 하는 상태다."""
+    m = _reseal_mod()
+    rec, cfg, out, raw = _sealed(tmp_path)
+    (out / "o.csv").write_text("달라졌다\n", encoding="utf-8")
+    fixed, skipped = m.reseal_code([rec], cfg, out, "새코드",
+                                   lambda _k, _e: [raw])
+    assert (fixed, skipped) == ([], ["k"])
+    assert rec["seal"]["code"] == "옛코드", "받아주면 안 되는 것을 받았다"
+
+
+def test_reseal_code_refuses_when_the_inputs_moved(tmp_path):
+    """★ raw 가 달라졌으면 **안 받는다** — 같은 입력이라는 전제가 깨졌다."""
+    m = _reseal_mod()
+    rec, cfg, out, raw = _sealed(tmp_path)
+    raw.write_text("a,b\n9,9\n", encoding="utf-8")
+    assert m.reseal_code([rec], cfg, out, "새코드",
+                         lambda _k, _e: [raw]) == ([], ["k"])
+    assert rec["seal"]["code"] == "옛코드"
+
+
+def test_reseal_code_skips_a_record_whose_paths_cannot_be_resolved(tmp_path):
+    """대장에서 실물을 못 찾으면 건너뜀이다 — **조용히 고치지 않는다.**"""
+    m = _reseal_mod()
+    rec, cfg, out, _raw = _sealed(tmp_path)
+
+    def boom(key, _e):
+        raise KeyError(key)
+
+    assert m.reseal_code([rec], cfg, out, "새코드", boom) == ([], ["k"])
+
+
+def test_reseal_code_ignores_records_it_has_no_business_with(tmp_path):
+    """★ 음성 셋 — 실패한 레코드 · 봉인지가 없는 것 · **이미 같은 것.**
+
+    셋 다 「건너뜀」이 아니라 **아무 말도 안 한다** — 건너뜀은 「받아줄
+    자격이 있었는데 증거가 안 맞았다」는 뜻이고, 그 둘을 섞으면 보고가
+    거짓이 된다.
+    """
+    m = _reseal_mod()
+    rec, cfg, out, raw = _sealed(tmp_path)
+    def paths(_key, _entry):
+        return [raw]
+
+    bad_status = {**rec, "status": "FAIL"}
+    assert m.reseal_code([bad_status], cfg, out, "새코드", paths) == ([], [])
+
+    no_seal = {"key": "k", "status": "OK"}
+    assert m.reseal_code([no_seal], cfg, out, "새코드", paths) == ([], [])
+
+    half = {"key": "k", "status": "OK", "seal": {"raw": "r", "out": {}}}
+    assert m.reseal_code([half], cfg, out, "새코드", paths) == ([], [])
+
+    same, cfg2, out2, raw2 = _sealed(tmp_path / "b", code="새코드")
+    assert m.reseal_code([same], cfg2, out2, "새코드",
+                         lambda _k, _e: [raw2]) == ([], [])

@@ -42,6 +42,8 @@
  *
  * ★ 마커는 전부 `web/data` 의 발행물을 그대로 읽는다. 좌표를 코드에
  *   박지 않는다 — 안전센터 3곳도 `stations.geojson` 이 든다.
+ *   지점 핀도 **같은 규칙**이다 — 그 층은 관제 전용이라
+ *   `components/opsLayers.ts` 가 든다(§444).
  */
 import type { StyleSpecification, LayerSpecification } from "maplibre-gl";
 import type { VerdictStyle } from "../domain/types";

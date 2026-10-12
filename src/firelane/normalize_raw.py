@@ -123,11 +123,11 @@ RULES: list[tuple[str, str, str]] = [
     # (광주 197 · 동구 31 · 데이터기준일자 2024-02-07).
     # 전남 판(jngj_20250917)에는 광주가 0건이라 이것 말고 대안이 없다.
     (r"전국소방용수시설표준데이터\.(csv|json)$",
-     "safety", "safety_hydrant_point_kr_20240207.csv"),
+     "safety", "safety_hydrant_point_jngj_20240207.csv"),
     # 소화전 집계표. 좌표는 없고 총량만 있다. 지상418+지하171 = 589.
     # "588 중 31" 공개율 논거의 분모가 이것이다. 소방차진입불가지역 컬럼도 있다.
     (r"동부소방서.*소화전.?현황",
-     "safety", "safety_hydrant_summary_gj_dong_20250731.csv"),
+     "safety", "safety_hydrant_summary_jngj-donggu_20250731.csv"),
     # 소방서·119안전센터 좌표. X좌표=위도 · Y좌표=경도 (뒤바뀐 이름이 원본 그대로다).
     # 접근 회랑과 D-28 시나리오 출발점이 여기서 나온다.
     #   대인119안전센터 35.1545794 126.9147654
@@ -246,45 +246,45 @@ RULES: list[tuple[str, str, str]] = [
     #   0 이기 때문이다. `tests/test_normalize_rules.py` 가 이제 규칙 전수를
     #   본다 — 대문자 금지 · 대표 파일명 매칭 · 왕복 멱등.
     (r"소방펌프차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
-     "safety", "safety_kfs_pumptruck_20251224.{0}"),
+     "safety", "safety_kfs_pumptruck_kr_20251224.{0}"),
     (r"소형사다리차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
-     "safety", "safety_kfs_ladder_small_20251224.{0}"),
+     "safety", "safety_kfs_ladder_small_kr_20251224.{0}"),
     # ★ 2026-08-24. KFS 5종 추가. 소방청 게시판 파일명은
     #   `75. 기본규격 영문화 소방물탱크차(KFS-1-0075-2025-00).hwpx` 처럼
     #   **번호 접두어**가 붙는다. 차종명만 잡으면 그것까지 함께 걸린다.
     #   규칙은 반드시 소문자로 쓴다 — `low = f.name.lower()` 로 매칭한다.
     (r"소방물탱크차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
-     "safety", "safety_kfs_watertank_20251224.{0}"),
+     "safety", "safety_kfs_watertank_kr_20251224.{0}"),
     (r"소방화학차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
-     "safety", "safety_kfs_chemical_20251224.{0}"),
+     "safety", "safety_kfs_chemical_kr_20251224.{0}"),
     (r"소방굴절차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
-     "safety", "safety_kfs_ladder_articulated_20251224.{0}"),
+     "safety", "safety_kfs_ladder_articulated_kr_20251224.{0}"),
     (r"구조차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
-     "safety", "safety_kfs_rescue_20251224.{0}"),
+     "safety", "safety_kfs_rescue_kr_20251224.{0}"),
     (r"특수구급차[_ ]?\(?kfs.*\.(hwpx?|pdf)$",
-     "safety", "safety_kfs_ambulance_special_20251224.{0}"),
+     "safety", "safety_kfs_ambulance_special_kr_20251224.{0}"),
     (r"소방자동차.*다수공급자.*차종별.*\.(hwpx?|pdf)$",
-     "safety", "safety_mas_vehicle_spec_20241111.{0}"),
+     "safety", "safety_mas_vehicle_spec_kr_20241111.{0}"),
     # ★ 2026-08-24. mas_optional 규칙을 지웠다. 본문 전수 확인 결과
     #   축거·축간거리·회전반경·최소회전반경·전장·전폭·전고가 **전부 0건**
     #   이다. 선택장비 목록이고 차종별 제작규격은 mas_vehicle_spec 이다.
     #   retired 에 사유를 적었으므로 규칙도 같이 내린다 — 대장이 정본이다.
 
-    (r"^내역서\.csv$",       "its", "its_nodelink_changelog_20260812.csv"),
+    (r"^내역서\.csv$",       "its", "its_nodelink_changelog_kr_20260812.csv"),
 
     # ── ngii · 국토정보플랫폼 ────────────────────────────────
     # ★ (B020)(B060)(B080) 접두는 정규식에 넣지 않는다.
     #   브라우저가 괄호를 인코딩해 내려주는 경우가 있다.
-    (r"연속수치지도_(\d{8})(\d{4})\.zip$",      "ngii", "ngii_basemap_gj{1}_{0}.zip"),
-    (r"정사영상_(\d{4})_35616(\d{3})\.tif$",    "ngii", "ngii_ortho_gj{1}_{0}1231.tif"),
-    (r"정사영상메타데이터_\d+35616(\d{3})\.xml$", "ngii", "ngii_ortho_gj{0}_20251231.xml"),
-    (r"공개dem_35616.*\.zip$",                   "ngii", "ngii_dem_gj35616_20251117.zip"),
+    (r"연속수치지도_(\d{8})(\d{4})\.zip$",      "ngii", "ngii_basemap_jngj-donggu_{0}_gj{1}.zip"),
+    (r"정사영상_(\d{4})_35616(\d{3})\.tif$",    "ngii", "ngii_ortho_jngj-donggu_{0}1231_gj{1}.tif"),
+    (r"정사영상메타데이터_\d+35616(\d{3})\.xml$", "ngii", "ngii_ortho_jngj-donggu_20251231_gj{0}.xml"),
+    (r"공개dem_35616.*\.zip$",                   "ngii", "ngii_dem_jngj-donggu_20251117_35616.zip"),
 
     # ── vworld · 브이월드 ────────────────────────────────────
     # ★ ngii 와 폴더를 나눈다. 같은 수치지형도라도 원천이 다르면 폴더가 다르다.
     #   섞으면 어느 판인지 파일명만으로 구분되지 않는다. (2026-08-17)
     # ★ 도엽 zip 74개가 상위 zip 안에 중첩돼 있다. 이중 해제는 ingest 담당.
-    (r"^2map1000_shp_광주_동구\.zip$", "vworld", "vworld_map1k_gjdonggu_20260307.zip"),
+    (r"^2map1000_shp_광주_동구\.zip$", "vworld", "vworld_map1k_jngj-donggu_20260307.zip"),
     # ★ 2026-08-18. 같은 브이월드 동구 상품의 NGI 포맷판을 함께 받는다.
     #   SHP 판(74도엽)은 1:5,000 부모 3561609 대(동명동 북부 12도엽)를 통째로
     #   흘린다. 행정구역 수출이 1:50,000 경계에 걸친 도엽을 빠뜨리는 것으로
@@ -293,11 +293,11 @@ RULES: list[tuple[str, str, str]] = [
     #   그래서 폭 채택이 silpok 폴백으로 몰렸다(ngii1k 885 → 319).
     #   NGI 판에 356160983~988 · 993~998 이 있어 그 띠를 정확히 메운다.
     #   같은 도엽이 양쪽에 있으면 파서가 SHP 를 우선한다(ngii1k.collect).
-    (r"^2map1000_ngi_광주_동구\.zip$", "vworld", "vworld_map1k_ngi_gjdonggu_20260307.zip"),
+    (r"^2map1000_ngi_광주_동구\.zip$", "vworld", "vworld_map1k_ngi_jngj-donggu_20260307.zip"),
 
     # ── safety · 공공데이터포털(안전) ────────────────────────
     (r"^전남광주통합특별시_cctv_(\d{8})\.csv$",     "safety", "safety_cctv_jngj_{0}.csv"),
-    (r"소방통로확보대상.*_(\d{8})\.csv$",           "safety", "safety_fire_access_gj_dong_{0}.csv"),
+    (r"소방통로확보대상.*_(\d{8})\.csv$",           "safety", "safety_fire_access_jngj-donggu_{0}.csv"),
     # ★ 2026-08-24. 폐기 등재분 두 규칙을 지웠다.
     #   `sources.yaml` 의 `retired` 에 사유까지 적어놓고도 정규화기가
     #   계속 raw 로 끌어왔다 — 대장은 "폐기", 규칙은 "편입" 이었다.
@@ -312,15 +312,23 @@ RULES: list[tuple[str, str, str]] = [
     # ── gjcity · 공공데이터포털(광주 동구) ───────────────────
     # ★ enforcement 가 safety 에서 여기로 옮겨왔다.
     #   폴더 = 제공기관 원칙. 불법주정차 단속은 광주 동구가 제공한다.
-    (r"동구_가로등현황_(\d{8})\.csv$",              "gjcity", "gjcity_streetlight_dongu_{0}.csv"),
+    (r"동구_가로등현황_(\d{8})\.csv$",              "gjcity", "gjcity_streetlight_jngj-donggu_{0}.csv"),
     # ★ 2026-08-23. `단속현황` 을 선택으로 바꿨다. 제공기관이 2025-02-26 판부터
     #   그 말을 뺐다 — `동구_불법 주정차_20250226.csv`. 규칙이 안 잡아서
     #   landing 에 2.9MB 가 편입 안 된 채 남아 있었고, 획득 게이트를 만들고
     #   나서야 보였다. 파일명은 제공기관 마음대로 바뀐다는 전제로 써야 한다.
-    (r"동구_불법\s*주정차(?:\s*단속현황)?_(\d{8})\.csv$", "gjcity", "gjcity_parking_enforce_dongu_{0}.csv"),
-    (r"동구_쓰레기통현황_(\d{8})\.csv$",            "gjcity", "gjcity_bin_trash_dongu_{0}.csv"),
-    (r"동구_의류수거함위치_(\d{8})\.csv$",          "gjcity", "gjcity_bin_cloth_dongu_{0}.csv"),
-    (r"동구_주차장정보.*(\d{8})\.csv$",             "gjcity", "gjcity_parking_dongu_{0}.csv"),
+    (r"동구_불법\s*주정차(?:\s*단속현황)?_(\d{8})\.csv$", "gjcity", "gjcity_parking_enforce_jngj-donggu_{0}.csv"),
+    (r"동구_쓰레기통현황_(\d{8})\.csv$",            "gjcity", "gjcity_bin_trash_jngj-donggu_{0}.csv"),
+    (r"동구_의류수거함위치_(\d{8})\.csv$",          "gjcity", "gjcity_bin_cloth_jngj-donggu_{0}.csv"),
+    # ★ 2026-10-12 (DECISIONS §494). `동구_주차장정보` 규칙을 **지웠다.**
+    #   2026-08-28 에 대장이 이 한 벌을 `parking_lot`(노외 103 · 노상 35) 과
+    #   `parking_zone`(규제 구간 22) **둘로** 갈랐다. 템플릿 하나는 파일
+    #   하나를 두는 자리이므로 **둘로 가르는 일을 여기서 할 수 없다.**
+    #   남겨 둔 결과는 `gjcity_parking_dongu_*` — 대장의 어느 항목도 안
+    #   기다리는 자리였고, 다시 받으면 거기 떨어져 아무도 안 집는다.
+    #   ★ 가르는 규칙은 제공기관이 주는 **실물 이름 두 개**를 봐야 쓴다.
+    #     그래서 지금은 「규칙에 없는 파일」로 걸리게 둔다 — 조용히
+    #     엉뚱한 자리에 두는 것보다 낫다. (PLAN §1)
 
     # ── sbiz · 소상공인시장진흥공단 ──────────────────────────
     # ★ 다운로드 사이트가 괄호를 HTML 엔티티로 준다(&#40; &#41;).
@@ -330,7 +338,15 @@ RULES: list[tuple[str, str, str]] = [
     # ── eais · 건축HUB ───────────────────────────────────────
     # ★ 원본이 "03. 표제부_20260817013434.csv" 다. 앞의 03 은 서식 번호이고
     #   뒤 14자리는 다운로드 시각이다. 데이터 기준일이 아니므로 앞 8자리만 쓴다.
-    (r"표제부_(\d{8})\d{6}\.csv$", "eais", "eais_bldg_ledger_gjdonggu_{0}.csv"),
+    # ★ 2026-10-12 (DECISIONS §494). `표제부 .csv` 규칙을 **지웠다.**
+    #   대장 `retired.building_ledger` 가 그 자산을 폐기했다 —
+    #   「높이·주차대수만 있고 건물 형상은 building 이 이미 낸다.
+    #   11.3MB 소비자 0곳」. 활성판은 바로 위의 `.json`(`bldgledger_dm`) 이다.
+    #   ★ 이것이 §242 의 재발이다 — 폐기한 것을 규칙이 다시 끌어왔다.
+    #     그런데 `test_rules_do_not_reimport_retired_files` 가 **못 봤다**:
+    #     폐기 파일명은 `eais_bldg_ledger_jngj-donggu_20260817.csv` 인데
+    #     템플릿은 옛 스코프 토큰 `gjdonggu` 를 들고 있어 정규식이 안 맞았다.
+    #     **스코프 토큰이 낡으면 폐기 관문이 눈을 감는다.**
 ]
 
 # 없으면 파이프라인이 도는 데 지장이 있는 것

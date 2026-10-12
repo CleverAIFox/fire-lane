@@ -51,64 +51,23 @@ from __future__ import annotations
 
 import argparse
 import ast
-import hashlib
 import json
 import re
 import subprocess
 import sys
 from pathlib import Path
 
+# ★ 2026-10-09 (DECISIONS §445 · PLAN #166 닫힘). **과녁과 지문은 옆집에 산다.**
+from mutatescope import (
+    TOOLS,
+    catch_print,
+    named_tests,
+    targets,
+)
+
+# ★ `TOOLS` · `TESTS` 는 `mutatescope` 가 든다 — 두 벌로 적으면 갈린다.
 ROOT = Path(__file__).resolve().parents[1]
-TOOLS = ROOT / "tools"
-TESTS = ROOT / "tests"
 LEDGER = ROOT / "data" / "golden" / "mutation.json"
-
-def targets() -> list[str]:
-    """흔들 도구를 **도출한다** — 손목록을 안 적는다.
-
-    과녁은 **관문이면서 래칫을 든 도구**다. 둘 다 있어야 「흔들면 울어야 할
-    자리」가 되기 때문이다 — 관문이 아니면 울 데가 없고, 래칫이 없으면 그
-    도구가 무엇을 지키는지 수로 안 적힌다.
-
-    ★ 2026-10-05 (DECISIONS §398). 종전에는 이름 셋을 손으로 적었고
-      `deadcheck ②(손목록)` 이 울었다. 목록을 손으로 적으면 도구가 늘 때마다
-      빠진다 — 이 저장소가 세 번 배운 꼴이다(§285-2 · §284-4 · §286).
-    """
-    import toolclass
-    rows = toolclass.classify()
-    # ★ **같은 목록에서 낸다.** `glob` 으로 따로 훑으면 `deadcheck ⑤`(좁은 범위)가
-    #   울고, 그 말이 맞다 — 목록이 둘이면 둘이 갈린다(족 2). `toolclass` 가
-    #   도구의 정본 목록이다.
-    body = {rel: (ROOT / rel).read_text(encoding="utf-8", errors="replace")
-            for rel in rows if rel.endswith(".py")}
-    decl = {Path(rel).stem for rel, src in body.items() if "RATCHETS" in src}
-    out = []
-    for rel, r in rows.items():
-        p = ROOT / rel
-        if r["부류"] != "관문" or p.suffix != ".py":
-            continue
-        src = body[rel]
-        if "RATCHETS" in src or _imports_ratchet(src, decl):
-            out.append(p.stem)
-    return sorted(out)
-
-
-#: `from <표> import …` — 선언을 옆집에 둔 도구를 찾는다.
-_IMPORT = re.compile(r"^from\s+([A-Za-z_][\w]*)\s+import\s", re.M)
-
-
-def _imports_ratchet(src: str, decl: set[str]) -> bool:
-    """**선언을 옆집에 둔 관문도 과녁이다.**  (2026-10-09 · DECISIONS §440-10)
-
-    ★ 과녁의 뜻은 「관문이면서 무엇을 지키는지 **수로 적힌** 도구」다. 그 수가
-      같은 파일에 있어야 한다는 뜻이 아니었는데, 판별식이 `"RATCHETS" in src`
-      하나뿐이라 **그렇게 읽혔다.**
-    ★ 실측 — `sizecheck` 의 예외 표를 `sizetable` 로 뗐더니(§440-3) 그 도구가
-      **과녁에서 조용히 빠졌다.** 여전히 관문이고 여전히 그 수를 지키는데
-      아무도 안 흔든다. 쪼개는 일이 돌연변이 덮임을 깎는 쪽으로 돌아간다 —
-      쪼개는 것은 이 저장소가 **권하는** 일이므로 그 길에 구멍을 두면 안 된다.
-    """
-    return any(m in decl for m in _IMPORT.findall(src))
 
 #: 한 도구에서 흔들 **최대 수**. 전수가 아니다 — 그래서 `MUTANTS` 래칫이
 #: 분모를 잠근다.
@@ -139,24 +98,141 @@ TIMEOUT = 180
 #   새 생존 셋은 전부 `main()` 의 보고 경로이거나 CLI 가드다 — §428-5 의 579·591 과
 #   **같은 자리**다. 잡을 수 있던 하나(래칫 상수)는 `segcontract.selftest()` 에 문을
 #   달아 **잡았다.** 서술·음성 대조와 「구조를 고치는 행은 없다」는 §435 가 든다.
-SURVIVORS = 65   # ★ 2026-10-08 (DECISIONS §438-6) 68·20·48 — 둘을 잡았다
+# ★ 2026-10-09 — 65 → 71 (DECISIONS §444). **느슨해지는 쪽이라 손으로 적는다.**
+#   과녁 26 → 28: 새 관문 둘(`ledgercols` · `proposalcheck`)이 「관문 ∧ 래칫」에
+#   들어왔고, 그물 100 → 112 로 같이 커졌다. 새로 산 여섯을 자리별로 —
+#     `ledgercols` 2    `PROSE_MAX` 래칫 상수 · 자기검사 문의 합성 값(1 → 2)
+#     `proposalcheck` 2 `LONG_CELL` 래칫 상수 · `max(…, default=0)`(빈 표에서
+#                       결과가 같다)
+#     docseal · scopedecl · sealcov 2  그 셋의 코드가 이 판에서 움직여 표본이
+#                       다시 집혔다(래칫 상수 둘 · `lru_cache` 크기 하나)
+#   ★ **잡을 수 있던 하나는 잡았다** — `proposalcheck.long_faults` 의 `>` 를
+#     `>=` 로 바꾼 돌연변이가 살아 있었고(자기검사에 「정상 입력에서 안 운다」
+#     문이 없었다) 그 문을 달아 죽였다. §435 가 `segcontract` 에서 한 것과 같다.
+#   ★ 나머지는 **래칫 상수와 합성 값**이다 — 상수가 곧 기댓값이라 바꾸면 기대도
+#     같이 움직인다(`sizetable.EXCEPTIONS` 와 같은 자리). 가르는 것은 사람이다.
+# ★ 2026-10-09 — 71 → 73 (DECISIONS §445). **느슨해지는 쪽이라 손으로 적는다.**
+#   과녁 28 → **30**: 새 관문 하나(`canary`)가 「관문 ∧ 래칫」에 들어오고, 쪼갠
+#   집 둘(`mutatescope` · `mutatetest`)이 지문 범위에 들어왔다. 그물 112 → 116.
+#   새로 산 둘은 **같은 파일의 두 자리**다 —
+#     `canary` 1  `NO_CANARY` 래칫 상수 → `RATCHET_HELD` 로 간다
+#     `canary` 1  자기검사의 **합성 값**(`faults(0, limit=0, denom=0)` 의 첫 인자).
+#                 분모가 0 이면 그 가지가 먼저 돌아 첫 인자가 무엇이든 운다 —
+#                 그 문이 묻는 것이 **빈 그물**이라 n 은 자리만 채운다
+#   ★ **잡을 수 있는 것이 없다.** 합성 값 쪽에 문을 더 달면 묻는 것이 둘이 되고
+#     (빈 그물 ∧ n 의 효과) 그러면 그 문이 무엇을 보는지가 흐려진다. §444 가
+#     `proposalcheck` 에서 문을 하나 더 달아 잡은 것과 **다른 자리**다 — 그쪽은
+#     정상 입력을 아예 안 보고 있었다.
+# ★ 2026-10-10 — 73 → 76 (같은 판 · §445-9). 과녁이 **하나 더 늘었다**: `docgen`.
+#   `imported()` 를 AST 로 바꾸자 「선언을 **함수 안에서** 옆집에서 끌어온다」가
+#   보이기 시작했고 이 도구가 바로 그 꼴이었다 — `#166` 이 든 구멍의 반대쪽
+#   효과다. 그물 116 → 120.
+#     `docgen` 1   `if __name__ == "__main__":` — 흔들어도 같은 길이다
+#     `uicheck` 2  층 공식의 WCAG 역감마 무릎 · 표 칸 가드의 비교 연산자
+#   ★ **잡을 수 있던 둘은 잡았다** — `alive()` 의 경계 `<= 0` 을 `<= 1` 로 민
+#     돌연변이가 살아 있었고(자기검사가 0 과 「충분히 큼」만 봤다) **1 을 보는
+#     문**을 달아 둘 다 죽였다. 새 자기검사가 그 자리다.
+# ★ 2026-10-11 — 75 → 79 (DECISIONS §459). **UNSORTED 와 같은 원인이다** —
+#   §398-8 의 규율대로 둘을 같이 적는다. 이 판이 `gate_parity` · `scopedecl` ·
+#   `canary` 의 글을 고쳤으므로 `--write --stale` 이 그 셋을 **다시 흔들었고**,
+#   고른 돌연변이가 달라져 생존이 넷 늘었다. 넷 다 **래칫 상수와 판정 비교**다
+#   (`RATCHET = 0` · `NO_CANARY = 56` · `> → >=` · `rc = 1`) — 흔들어도 그
+#   도구의 자기검사가 보는 답이 안 바뀌는 자리다. 분모도 같이 늘었다(120 → 124).
+# ★ 2026-10-11 — 79 → 78 (DECISIONS §468). **조이는 쪽이다.** `UNSORTED` 와
+#   같은 원인이다(§398-8 의 규율대로 둘을 같이 적는다) — `fixable._subs` 에
+#   합성 문을 달아 그 자리 하나를 죽였다. `navicheck` 쪽 셋은 §467 이 같은
+#   판에서 죽였고 그 표본은 이미 다시 잰 뒤의 수다.
+# ★ 2026-10-11 — 78 → 79 (DECISIONS §471). **UNSORTED 와 같은 원인이다** —
+#   §398-8 의 규율대로 둘을 같이 적는다. `navicheck` 가 §470 · §471 로 커져
+#   그물이 138 → 148 이 됐고, 다시 고른 표본에서 **보고문의 자리표시 하나**
+#   (`snap_report` 의 `중앙값 {…:.1f}m`)가 살았다 — 찍는 글자만 바뀌는 자리다.
+#   ★ **그러나 같은 재기가 실재하는 결함 둘을 댔고 둘 다 고쳤다** —
+#     ① `_m` 이 §470 뒤로 **부르는 데가 없었다**(죽은 코드). 지웠다.
+#     ② `check()` 의 종료 수를 **아무것도 안 붙들고 있었다** — `rc = 1` 을
+#        2 로 밀어도 조용했다. 판별식 둘(같으면 0 · 갈리면 1)을 달아 죽였다.
+#     즉 이 +1 은 「느슨해졌다」가 아니라 **표본이 바뀐 자리**이고, 그 재기가
+#     산 것은 그보다 크다. 올려 적는 근거를 이 세 줄로 남긴다.
+# ★ 2026-10-11 — 79 → 78 (DECISIONS §474). **조이는 쪽이다.** `UNSORTED` 와
+#   같은 원인이다(§398-8 의 규율대로 둘을 같이 적는다) — `colorsim` 과
+#   `uicheck` 의 색 공식이 `tools/srgb.py` 로 모이면서 그 둘의 지문이 바뀌고,
+#   다시 고른 표본에서 §471 이 적은 그 자리(보고문 자리표시)가 안 뽑혔다.
+#   ★ **표본이 바뀌어 내려간 것이지 자가 세진 것이 아니다** — 그래서 올릴
+#     때와 같은 무게로 적는다. 실제로 세진 것은 `srgb` 자기검사 쪽이다.
+# ★ 2026-10-11 — 78 → 80 (DECISIONS §478-1). **분모가 늘었다.** 도구 31 → 32 —
+#   `tools/selftests.py` 가 이 장부에 **처음 들어왔고**(그 파일이 `scopedecl` 을
+#   들면서 과녁이 됐다) 흔든 수도 124 → 128 로 같이 늘었다. 그 도구의 생존 둘은
+#   **크기만 바꾸는 자리**다(`TIMEOUT = 120` 의 수 · `return 1 + len(bad)` 의 1 —
+#   0 이 아니면 빨강인 것은 안 바뀐다).
+#   ★ **그리고 같은 재기가 실재하는 결함 둘을 댔고 둘 다 죽였다** —
+#     ① `_run` 이 **한 번도 안 돌고 있었다**(판별식이 `_fake` 튜플로 `slow_ones`
+#        만 밀었다). 그래서 `text=True` 를 `False` 로 밀어도 조용했고, 그러면
+#        모든 출력이 바이트가 되어 보고가 깨진다. 합성 도구 둘로 양쪽을 민다.
+#     ② 보고의 `if rc == 0` 을 `!=` 로 밀어도 조용했다 — 빨간 자기검사에 ✓ 가
+#        붙는다. `green(rc)` 로 빼서 양방향으로 든다.
+#   올리는 근거는 **분모**이고, 내려간 근거는 그 둘이다.
+# ★ 2026-10-12 — 80 → 81 (DECISIONS §480). **UNSORTED 와 같은 원인이다** —
+#   §398-8 의 규율대로 둘을 같이 적는다. 이 판이 `canary` · `colorsim` 을
+#   고쳤으므로 그 둘을 다시 흔들었고, 고른 표본이 달라졌다.
+#   ★ **같은 재기가 실재하는 결함 하나를 댔고 고쳤다** — `colorsim` 의
+#     자기검사에 `* 100` 이 **남아 있었다**(상수의 단위를 만분율로 올리면서
+#     그 줄을 안 고쳤다 · §480-2). 단위를 두 곳에 적으면 반드시 갈리고,
+#     돌연변이가 그 자리를 하루 만에 댔다.
+#   ★ 남은 넷은 **행동을 안 바꾸는 자리**다 — 표의 「… 그 밖 N칸」 자르는 수 ·
+#     자기검사의 온전성 상한 하나 · 빈 그물 가드를 **더 조이는** 쪽 ·
+#     래칫 상수 둘(그 둘은 `RATCHET_HELD` 가 든다 · 23 그대로다).
+# ★ **새 관문 하나가 생존 셋을 데려온다** — 두 번 같은 꼴이 나왔다.
+#     §482  81 → 84   `navicov`   래칫 상수 · `[0, 0]` 기본값 · `return 1`
+#     §493  85 → 88   `srccov`    같은 셋. 자리만 다르다
+#   셋 다 **행동을 안 바꾼다**: 래칫 상수는 `ratchet.py` 가 들고, 기본값은
+#   부류가 **언제나 있어서** 그 가지가 안 돌며, 실패 반환값은 1 이든 2 든
+#   0 이 아니라 관문이 그대로 운다(§459 가 `rc = 1` 에서 적은 그 자리).
+#   ★ 기본값 쪽에 문을 달려면 **부류 하나가 없는** 합성 트리를 지어야 하고,
+#     그 트리는 분류기가 부류를 다 내는 한 만들 수 없다 — 없는 상태를
+#     재현하려고 자를 비틀면 그 문이 무엇을 보는지 흐려진다(§445).
+#   ★ 가름을 자동화할 자리로 보이지만 **지금은 안 한다**: 세 번째가 와서
+#     같은 꼴인지 확인한 뒤가 옳다(「두 번은 우연일 수 있다」).
+# ★ 2026-10-12 — 84 → 85 (DECISIONS §489). `canary` 를 쪼개고 `toolclass`
+#   시험을 더해 두 도구를 다시 흔들었고, 새로 산 하나가
+#   `toolclass.UNDECLARED` **래칫 상수**다. 이 도구의 붙잡이는 **제 자기검사
+#   하나**이고 그것은 선언과 실측을 안 댄다 — 그 대조는 `ratchet.py` 와
+#   `tests/test_toolclass.py` 가 든다. 가르는 것은 사람이고 여기가 그 가름이다.
+SURVIVORS = 88
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
-MUTANTS = 100
+# ★ 2026-10-11 — 124 → 128 (DECISIONS §478-1). **조이는 쪽이다.** 도구가
+#   31 → 32 로 늘어 흔든 수가 넷 늘었다(`tools/selftests.py`). `SURVIVORS` 가
+#   같이 는 근거가 이것이다 — 분모와 분자를 같이 적는다.
+# ★ 2026-10-12 — 128 → 132 (DECISIONS §482). **조이는 쪽이다.** 도구가
+#   32 → 33 으로 늘어 흔든 수가 넷 늘었다(`tools/navicov.py`). `SURVIVORS` 가
+#   같이 는 근거가 이것이다 — 분모와 분자를 같이 적는다.
+MUTANTS = 136
 #: 붙잡이가 **0 인 과녁** 수. 흔들어도 못 재는 자리다 — 내려가는 쪽으로만.
 UNCATCHABLE = 0
 #: 생존 중 **래칫이 드는 것.** 이 문이 안 붙들 뿐 다른 문이 붙든다 — 올라가는
 #: 쪽으로만. 줄면 래칫 선언이 사라졌다는 뜻이고 그건 나쁜 쪽이다.
-RATCHET_HELD = 20   # ★ 2026-10-08 (§438-6) 21 → 20 — **잡아서 줄었다**
+# ★ 2026-10-12 (§482) 23 → 24 — `navicov.NAVI_UNTESTED`. 선언을 흔들면
+#   `ratchet.py` 가 「선언과 실측이 다르다」로 운다. 이 문이 아니라 그 문이 든다.
+RATCHET_HELD = 25   # ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
 #: 생존 중 **아직 아무도 안 가른 것.** 내려가는 쪽으로만.
-# ★ 2026-10-07 — 47 → 48 (DECISIONS §428-5). **SURVIVORS 와 같은 원인이다** —
-#   표본이 다른 돌연변이를 집었고 새로 집힌 것이 래칫 상수가 아니다(비교 연산자).
-#   §398-8 이 적은 그대로 **둘을 같이 적는다**: 같은 원인이 래칫 둘을 움직이는데
-#   하나만 적으면 다른 기계에서만 빨갛다.
-# ★ 2026-10-08 — 47 → 50 (DECISIONS §435). **SURVIVORS 와 같은 원인이다** —
-#   새로 산 생존 셋이 전부 래칫 상수가 아니다(`main()` 보고 경로 둘 · CLI 가드 하나).
-#   §398-8 의 규율대로 **둘을 같이 적는다**: 같은 원인이 래칫 둘을 움직이는데
-#   하나만 적으면 다른 기계에서만 빨갛다.
-UNSORTED = 45
+# ★ **이력은 수와 사유 한 줄씩**만 둔다. 긴 사유는 그 판의 DECISIONS 절에
+#   있고, 여기 두 벌로 적으면 **갈린다**(이 저장소가 다섯 번 겪은 그 병).
+#   규율은 §398-8 — 같은 원인이 래칫 둘을 움직이면 **둘을 같이** 적는다.
+#     §428-5  47 → 48   표본이 다른 자리를 집었다(비교 연산자)
+#     §435    47 → 50   보고 경로 둘 · CLI 가드 하나
+#     §444    45 → 49   여섯 중 래칫 상수 둘은 `RATCHET_HELD` 로 갔다
+#     §445    49 → 50   둘 중 합성 값 하나가 남았다
+#     (같은 판) 50 → 53  `__main__` 가드 · WCAG 상수 · 비교 연산자
+#     §459    52 → 56   `rc = 1` · 비교 연산자. `RATCHET_HELD` 안 움직였다
+#     §468    56 → 55   **조인 쪽** — `fixable._subs` 의 `not` 에 문을 달아 죽였다
+#     §471    55 → 56   보고문의 자리표시 하나
+#     §474    56 → 55   **조인 쪽**
+#     §478-1  55 → 57   새 도구의 생존 둘
+#     §480    57 → 58
+#     §482    58 → 60   새 관문 `navicov` — 기본값 · 실패 반환값
+#     §489    60 → 61   `toolclass.UNDECLARED` — 래칫 **값**이라
+#                       `RATCHET_HELD` 의 가름(표의 이름인가)에 안 걸린다
+#     §493    61 → 63   새 관문 `srccov` — 기본값 · 실패 반환값.
+#                       `navicov`(§482) 와 **같은 꼴 둘**이다
+UNSORTED = 63
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
             "RATCHET_HELD": "up", "UNSORTED": "down"}
 
@@ -221,33 +297,6 @@ def mutants(src: str) -> list[tuple[str, str]]:
 
 
 # ── ② 붙잡이 도출 ───────────────────────────────────────────────
-def named_tests(tool: str) -> list[Path]:
-    """그 도구 **이름을 적은** 시험 파일. `catchers` 와 지문이 **같은 자**를 본다.
-
-    ★ 2026-10-08 (DECISIONS §431 · PLAN #159). 종전에는 이 도출이 `catchers()`
-      안에 **파묻혀** 있었고 `--deep` 일 때만 돌았다. 그래서 장부의 신선도
-      지문이 도구 파일 하나였다 — **시험을 지워도 「잡는다」가 그대로 남았다.**
-      그쪽이 위험하다. 같은 자를 두 곳이 봐야 둘이 안 갈린다(족 2).
-    """
-    return sorted(q for q in TESTS.glob("test_*.py")
-                  if re.search(rf"\b{re.escape(tool)}\b",
-                               q.read_text(encoding="utf-8", errors="replace")))
-
-
-def catch_print(tool: str) -> str:
-    """**붙잡이의 지문.** 도구 + 그 도구를 적은 시험 전부.
-
-    ★ 시험 파일이 바뀌면 **그 도구만** 낡는다 — `--write --stale` 이 그것만
-      다시 잰다. 도구 파일만 해시하면 시험을 더해도 장부가 안 낡고, 지워도
-      안 낡는다. 「시험이 붙든다」는 주장을 **시험 없이** 하는 꼴이다.
-    """
-    h = hashlib.sha256((TOOLS / f"{tool}.py").read_bytes())
-    for q in named_tests(tool):
-        h.update(q.relative_to(ROOT).as_posix().encode())
-        h.update(q.read_bytes())
-    return h.hexdigest()[:12]
-
-
 def catchers(tool: str, deep: bool = False) -> list[list[str]]:
     """그 도구를 붙드는 명령들. **열거하지 않고 도출한다.**
 
@@ -440,117 +489,17 @@ def ratchet_values() -> dict[str, int]:
 
 
 # ── ④ 자기검사 ──────────────────────────────────────────────────
+#: 자기검사는 **옆집에 산다**(2026-10-09 · DECISIONS §445 · PLAN #166 닫힘).
+#:   `catch_print` 가 끌어오는 `tools/` 모듈도 해시하므로 그 파일이 바뀌면
+#:   이 도구의 장부가 낡는다 — 갈라 놓고 지문을 안 넓히면 그것이 §431 의 구멍이다.
+#: ★ **함수 안에서 끌어온다.** 위에서 끌어오면 `mutatetest → mutate → mutatetest`
+#:   로 맞물린다(`sizetable` 이 `sizecheck.measure` 를 그렇게 끌어오는 것과 같다).
+
+
 def selftest() -> int:
-    fails: list[str] = []
-    # ★ 2026-10-06 (DECISIONS §410). 생존 가름 — **양방향**으로 민다.
-    #   실물로만 재면 「언제나 래칫」과 「언제나 안 가름」을 못 가른다(§230).
-    _ln = _ratchet_line("sealcov", "SEALED_FILES")
-    _synth = {"도구별": [{"도구": "sealcov",
-                        "생존": [f"{_ln}: 363 → 364", f"{_ln + 900}: 1 → 2"]}]}
-    _held, _rest = sort_survivors(_synth)
-    if [t for t, _, _ in _held] != ["sealcov"] or len(_held) != 1:
-        fails.append(f"래칫 상수 생존을 안 가린다 — 든 것 {_held}")
-    if len(_rest) != 1:
-        fails.append(f"래칫이 아닌 생존을 래칫으로 센다 — 남은 것 {_rest}")
-    if _held and _held[0][2] != "SEALED_FILES":
-        fails.append(f"래칫 이름을 틀리게 읽는다 — {_held[0][2] if _held else None}")
+    from mutatetest import selftest as _s  # noqa: PLC0415  맞물림을 끊는다
 
-    # ★ 2026-10-08 (DECISIONS §431 · PLAN #159). 지문이 **시험에 반응하나.**
-    #   안 하면 「시험이 붙든다」를 시험 없이 주장한다.
-    #   ★ 과녁 **첫째**를 쓰면 안 된다 — `archcost` 는 그 이름을 적은 시험이
-    #     없다(실측 2026-10-08). 시험이 있는 첫 과녁을 고르고, 하나도 없으면
-    #     그때 운다. 「없는 것」과 「못 고른 것」은 다른 사실이다(족 6).
-    _t, _q = "", []
-    for _c in targets():
-        if (_q := named_tests(_c)):
-            _t = _c
-            break
-    if not _t:
-        fails.append("과녁 중 이름이 적힌 시험을 가진 것이 하나도 없다 — 지문의 전제가 깨졌다")
-    else:
-        _was = catch_print(_t)
-        _f = _q[0]
-        _orig = _f.read_bytes()
-        try:
-            _f.write_bytes(_orig + b"\n# \xec\xa7\x80\xeb\xac\xb8 \xec\xb9\xb4\xeb\x82\x98\xeb\xa6\xac\xec\x95\x84\n")
-            if catch_print(_t) == _was:
-                fails.append(f"시험 파일을 고쳤는데 {_t} 의 지문이 안 바뀐다 — "
-                             "장부가 안 낡는다(#159 ①)")
-        finally:
-            _f.write_bytes(_orig)
-        if catch_print(_t) != _was:
-            fails.append("되돌렸는데 지문이 안 돌아온다 — 지문이 결정적이지 않다")
-
-    # ★ 2026-10-09 (§440-10). **선언을 옆집에 둔 관문도 과녁인가** — 양방향.
-    if not _imports_ratchet("from sizetable import EXCEPTIONS\n", {"sizetable"}):
-        fails.append("옆집 선언을 import 하는데 과녁으로 안 센다")
-    if _imports_ratchet("from json import loads\n", {"sizetable"}):
-        fails.append("선언 안 든 모듈을 import 해도 과녁으로 센다 — 그물이 샌다")
-    if "sizecheck" not in targets():
-        fails.append("sizecheck 가 과녁에 없다 — 표를 뗀 관문이 조용히 빠진다")
-
-    # ★ 2026-10-09 (§440-10). 과녁 **밖** 줄이 지워지나. 합성으로 민다.
-    _k = {"sealcov": {"도구": "sealcov"}, "없는도구": {"도구": "없는도구"}}
-    _g = sorted(set(_k) - set(targets()))
-    if _g != ["없는도구"]:
-        fails.append(f"과녁 밖 가림이 틀리다 — {_g}")
-
-    # ★ 2026-10-08. `--tool X --write` 가 **남의 행을 지우지 않나.** 합성 장부로 민다.
-    _keep = {"a": {"도구": "a", "돌연변이": 3, "생존": ["x"], "붙잡이": 1},
-             "b": {"도구": "b", "돌연변이": 5, "생존": [], "붙잡이": 1}}
-    _new = [{"도구": "b", "돌연변이": 7, "생존": ["y", "z"], "붙잡이": 2}]
-    _m = dict(_keep); _m.update({r["도구"]: r for r in _new})
-    _rows = [_m[k] for k in sorted(_m)]
-    if [r["도구"] for r in _rows] != ["a", "b"]:
-        fails.append(f"한 도구를 적었는데 남의 행이 사라진다 — {[r['도구'] for r in _rows]}")
-    if sum(r["돌연변이"] for r in _rows) != 10 or sum(len(r["생존"]) for r in _rows) != 3:
-        fails.append("합친 총계가 틀리다 — 분모가 거짓말을 한다")
-
-    src = "def f(a, b):\n    if a >= 3 and not b:\n        return True\n    return False\n"
-    got = {w.split(": ", 1)[1] for w, _ in mutants(src)}
-    for want in (">= → >", "and → or", "not 제거", "True → False",
-                 "False → True", "3 → 4"):
-        if want not in got:
-            fails.append(f"흔들기가 「{want}」 를 안 낸다")
-    if any("import" in w for w, _ in mutants(src)):
-        fails.append("이름·import 를 건드린다 — 전부 죽으면 아무것도 안 잰 것이다")
-
-    # ★ 주석이 살아남는가 — `ast.unparse` 로 다시 쓰면 파일 전체가 돌연변이가 된다
-    withdoc = '"""머리말."""\nX = 1  # 꼬리 주석\n'
-    if not all("꼬리 주석" in b and "머리말" in b for _, b in mutants(withdoc)):
-        fails.append("돌연변이가 주석을 날린다 — 변경이 연산자 하나가 아니다")
-
-    # ★ 결정적인가 — 두 번 돌려 같은 순서인가
-    if [w for w, _ in mutants(src)] != [w for w, _ in mutants(src)]:
-        fails.append("같은 입력에 순서가 다르다")
-
-    # ★ 빈 그물 — 못 읽는 소스에 **조용히 0** 을 내면 「흔들었는데 다 죽었다」가 된다
-    if mutants("def (:::") != []:
-        fails.append("문법 오류에 돌연변이를 낸다")
-    if not mutants("if 1 >= 2:\n    pass\n"):
-        fails.append("멀쩡한 소스에 하나도 안 낸다 — 그물이 비었다")
-
-    # ★ 상한이 **고르게** 고르는가 — 앞에서 자르면 머리말만 흔든다
-    ten = [(f"{i}", "") for i in range(10)]
-    got = [w for w, _ in pick(ten, 3)]
-    if got != ["0", "3", "6"]:
-        fails.append(f"상한이 고르게 안 고른다 — {got}")
-    if pick(ten, 0) != ten or pick(ten, 99) != ten:
-        fails.append("상한 0·초과에서 전수를 안 낸다")
-
-    # ★ 붙잡이 도출이 **자기 자신**을 찾는가
-    c = catchers("mutate")
-    if not any("--selftest" in x for x in c):
-        fails.append("제 자기검사를 붙잡이로 안 센다")
-    if any("pytest" in x for x in c):
-        fails.append("기본에 pytest 가 들어갔다 — 실측 한 시간 넘어 안 끝난다")
-    if not any("pytest" in x for x in catchers("mutate", deep=True)):
-        fails.append("--deep 이 시험 파일을 안 집는다 — 깃발이 죽었다")
-
-    for f in fails:
-        print(f"  ✗ {f}")
-    print(f"selftest {'초록' if not fails else f'{len(fails)}건 실패'} · 판별식 21")
-    return 1 if fails else 0
+    return _s()
 
 
 def main() -> int:

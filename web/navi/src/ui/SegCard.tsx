@@ -25,7 +25,7 @@
 import { edgeClearance, fmtClearance } from "../domain/clearance";
 import type { GraphEdge, VehicleSpec, VerdictStyle } from "../domain/types";
 import { CLEARANCE_SCALE, segmentReason } from "./clearanceMeaning";
-import { grayReason, VERDICT_MEANING } from "./verdictMeaning";
+import { grayReason } from "./verdictMeaning";
 import { countText } from "../domain/pressure";
 import { Row } from "./OpsBits";
 import { D, dot, secBox, whyBox } from "./opsTheme";
@@ -37,7 +37,7 @@ export function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
   const s = style[e.verdict];
   const c = edgeClearance(e, spec);
   const why = segmentReason(e, spec);
-  const cctvOk = e.cctv_dist_m != null && e.cctv_dist_m <= 25;
+  const cctvOk = e.cctv_dist_m != null && e.cctv_dist_m <= 19;
   const gray = grayReason(e);
   return (
     <div style={{ ...secBox }}>
@@ -48,7 +48,6 @@ export function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
         <i style={{ ...dot, background: s?.color }} />
         <b>{s?.label ?? e.verdict}</b>
-        <span style={{ fontSize: 11, color: D.sub }}>{VERDICT_MEANING[e.verdict]}</span>
       </div>
       {why && (
         <div style={{ ...whyBox, borderColor: CLEARANCE_SCALE[c.band].color }}>
@@ -68,7 +67,7 @@ export function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
         </b>
       </div>
       <Row k="측정 신뢰도 · 폭 표본" v={`${e.width_cov != null ? Math.round(e.width_cov * 100) + "%" : "—"} · ${e.n_sample ?? "—"}개`} />
-      <Row k="가까운 CCTV" v={e.cctv_dist_m != null ? `${Math.round(e.cctv_dist_m)}m ${cctvOk ? "(영상판정 가능)" : "(25m 밖)"}` : "—"} />
+      <Row k="가까운 CCTV" v={e.cctv_dist_m != null ? `${Math.round(e.cctv_dist_m)}m ${cctvOk ? "(영상판정 가능)" : "(19m 밖)"}` : "—"} />
       {gray && (
         <div style={{ fontSize: 12, background: "#0f172a", border: `1px solid ${D.line}`, borderRadius: 8, padding: "7px 9px", marginTop: 6, lineHeight: 1.5 }}>
           <b>회색 사유 — {gray.short}</b><br />{gray.long}
@@ -83,8 +82,8 @@ export function SegCard({ e, style, spec, reachable, vehicle, onClose }: {
       ) : null}
       <Row k="길이" v={e.length_m != null ? `${Math.round(e.length_m)}m` : "—"} />
       <Row k="선택 센터에서" v={reachable == null ? "—" : reachable ? "도달 가능" : "도달 불가"} warn={reachable === false} />
-      {/* ★ 2026-10-09 (§441). 한계 문장이 여기 있었다 — `ui/Manual.tsx` 의
-          「반영하지 않는 것」으로 옮겼다. **지운 것이 아니다.** */}
+      {/* ★ 2026-10-09 (§445). 한계 문장이 여기 있었다 — **화면에 없다.**
+          §441 이 시트로 옮겼고 행이 그 시트를 걷었다. 집은 `MASTER §15-4` 다. */}
     </div>
   );
 }

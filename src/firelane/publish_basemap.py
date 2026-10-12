@@ -131,8 +131,19 @@ def snap_orient(g, prec: int = PREC):
       앉히면 드라이버의 반올림은 이미 격자 위인 수를 다시 쓸 뿐이다.
 
     ★ 두 발행기가 **같은 문**으로 이것을 한다. 두 벌이면 한 쪽만 고쳐진다.
+
+    ★ 2026-10-12 (DECISIONS §495). **격자 앞에도 유효화가 온다.**
+      `set_precision` 은 **유효한 기하만** 받는다 — 자기교차 폴리곤을 주면
+      `TopologyException: side location conflict` 로 **터진다.** 지적·수치지도
+      원본에 자기교차는 흔하고(`tools/jijeok_probe.py` 는 그래서 `buffer(0)` 을
+      먼저 한다), 한 건만 있어도 발행이 멈춘다. 어느 피처인지도 안 말한다.
+      그래서 `유효화 → 격자 → 유효화` 다. 머리말이 적은 §260 의 순서는
+      그대로다 — **마지막이 격자 뒤의 유효화**이고, 거기가 요점이었다.
+      ★ 유효한 기하에는 `make_valid` 가 **글자 그대로 같은 것**을 돌려준다
+        (WKT 일치 · 아래 시험이 그것을 든다). 그래서 발행물은 안 바뀐다.
     """
-    ps = _polys(shapely.make_valid(shapely.set_precision(g, 10 ** -prec)))
+    ps = _polys(shapely.make_valid(
+        shapely.set_precision(shapely.make_valid(g), 10 ** -prec)))
     if not ps:
         return None
     return rfc7946(ps[0] if len(ps) == 1 else MultiPolygon(ps))

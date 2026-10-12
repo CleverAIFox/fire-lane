@@ -8,7 +8,7 @@ build_proposal.py — 정본 `docs/proposal.md` 를 화면 `web/proposal.html` �
 ── 왜 생겼나 (PLAN #142) ───────────────────────────────────────
 기획서는 문서 넷 중 **유일하게 외부가 읽는 것**인데 `.docx` 손글씨였다. 그래서
 낡았고, 낡은 것을 잡으려고 `docx_check` · `docstyle` · `docx_figs` · `docx_fix` ·
-`proposal_pdf` 다섯이 생겼다 — **다섯 다 「손으로 쓴 것이 틀렸나」를 묻는 도구**다.
+`proposal_pdf`(다섯 다 §444 에 은퇴) 다섯이 생겼다 — **다섯 다 「손으로 쓴 것이 틀렸나」를 묻는 도구**다.
 정본을 md 로 옮기면 그 물음 자체가 없어진다.
 
 토트와 하토르가 **독립으로 같은 결론**에 닿았고 공통부가 여섯이다. 그중 이
@@ -237,10 +237,75 @@ def carried(made: str, md: str) -> list[str]:
     return bad
 
 
+#: 표지 날짜 두 줄. **규칙이 아니라 받아 적는 한 값**이다.
+#: ★ 2026-10-09 (DECISIONS §444 · PLAN #142). `tools/docx_fix.py` 에서 왔다.
+#:   그 도구는 docx 와 함께 은퇴했고, `--touch` 만 여기로 옮겼다 — 날짜는
+#:   사람이 판단할 수가 아니라 **고친 날을 받아 적는 값**이고, 받아 적지
+#:   않으면 `doc_fsck ⑥` 이 운다(2026-10-09 에 여드레 낡아 있었다).
+#: ★ 날짜를 다른 검사의 규칙에 넣지 않는다 — 넣으면 다음 날 그 검사가
+#:   「아직 바꿀 것이 있다」로 **매일** 운다(§218).
+TOUCH = (
+    (r"최종 수정 \d{4}\. \d{2}\. \d{2}\.", "최종 수정 {y}. {m}. {d}."),
+    (r"모든 수치는 \d{4}-\d{2}-\d{2} 기준으로", "모든 수치는 {day} 기준으로"),
+)
+
+
+def touched(src: str, day: str) -> str:
+    """표지 날짜를 그날로 옮긴 본문. **순수 함수**다 — 시험이 합성 입력으로 민다."""
+    y, m, d = day.split("-")
+    out = src
+    for rx, rep in TOUCH:
+        out = re.sub(rx, rep.format(y=y, m=m, d=d, day=day), out)
+    return out
+
+
+def touch(day: str, write: bool) -> int:
+    """`docs/proposal.md` 의 표지 날짜를 옮긴다. 바뀐 줄 수를 낸다."""
+    md = PS.MD   # 읽는 자리의 정본은 `proposal_source` 하나다
+    if not md.is_file():
+        print("  proposal.md 가 없다 — 옮길 표지가 없다")
+        return 0
+    src = md.read_text(encoding="utf-8")
+    out = touched(src, day)
+    n = sum(1 for x, y in zip(src.splitlines(), out.splitlines(), strict=True) if x != y)
+    if write and out != src:
+        md.write_text(out, encoding="utf-8")
+    print(f"  proposal.md  줄 {n}개 {'수정' if write else '수정 예정'}")
+    return n
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true", help="굽지 않고 댄다")
+    ap.add_argument("--touch", metavar="YYYY-MM-DD",
+                    help="표지 최종 수정일·수치 기준일을 그날로 옮긴다")
+    # ★ 2026-10-11 (DECISIONS §468-3). 날짜를 **유도해서** 옮긴다. 종전에는
+    #   `fix.sh` 가 이 수리를 안 돌았고 사유가 「날짜는 고친 날이고 그것은 사람이
+    #   안다」였다 — 그런데 `doc_fsck ⑥` 이 그 날짜를 **git 과 시각에서 유도해
+    #   명령까지 찍고 있었다.** 선언과 검사가 반대를 말했고, 그래서 사람이 그
+    #   명령을 손으로 옮겨 쳤다(2026-10-11 에 두 번).
+    #   ★ 유도는 `docfsck.revised.squash_day()` **하나**다. 여기서 다시 적으면
+    #     검사와 수리가 다른 날을 쓰는 날이 온다(족 2).
+    ap.add_argument("--touch-today", action="store_true",
+                    help="그 날짜를 `doc_fsck ⑥` 과 **같은 식**으로 유도해 옮긴다")
+    ap.add_argument("--write", action="store_true", help="--touch 와 함께 — 실제로 쓴다")
     a = ap.parse_args(argv)
+
+    if a.touch_today:
+        if a.touch:
+            print("✗ --touch 와 --touch-today 를 같이 줄 수 없다 — 날짜가 둘이다")
+            return 2
+        from docfsck.revised import squash_day
+        a.touch, a.write = squash_day(), True
+
+    if a.touch:
+        touch(a.touch, a.write)
+        if not a.write:
+            print("  ★ --write 가 없다. 아무것도 안 썼다.")
+            return 0
+        print("  ★ 표지를 옮겼다 — 화면을 다시 구워라:  "
+              "uv run python tools/build_proposal.py")
+        return 0
 
     try:
         md = PS.source()

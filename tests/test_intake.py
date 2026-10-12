@@ -276,3 +276,74 @@ def test_a_download_the_ledger_does_not_wait_for_is_not_picked(tmp_path, monkeyp
     files = sorted(q for q in inb.iterdir())
     got, _ = intake._pick(files, ds, "vworld_uq153", "**/vworld_uq153_*")
     assert got is None, f"남의 파일을 집었다 — {got}"
+
+
+# ── 이름 둘 — 시험이 이름을 안 부르고 있었다 (DECISIONS §493) ──
+# ★ `tools/srccov.py` 가 `rule_path` · `stem_of` 를 셌다. 둘은 단서 ①② 의
+#   입구이고, 아래 ④ 본문 시험들은 그 둘을 **지나쳐** 간다.
+def test_rule_path_matches_lowercase_like_the_tool_does():
+    """★ 대소문자. 2026-09-07 에 **대문자가 든 파일명만** 관문에 막혔다.
+
+    `normalize_raw.main()` 은 `low = f.name.lower()` 로 맞추는데 여기가
+    원본 그대로 맞춰서 `건물DB` · `CCTV정보` · `GJBG_LSI…` 가 전부
+    「대장에 없다」로 떨어졌다. 두 곳이 **같은 방식**으로 맞춰야 한다.
+    """
+    got = iname.rule_path("CCTV정보_전남광주동구.csv")
+    assert got == "gjcity/gjcity_admin_cctv_jngj-donggu_20200814.csv", got
+    # 소문자 원본도 같은 자리로 간다 — 맞추기가 대소문자에 안 걸린다
+    assert iname.rule_path("cctv정보_전남광주동구.csv") == got
+
+
+def test_rule_path_fills_the_captured_groups():
+    """자리표가 있는 규칙은 **잡은 것을 끼워** 경로를 낸다."""
+    got = iname.rule_path("전남광주통합특별시 동구_불법 주정차 단속현황_20240108.csv")
+    assert got == "gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv", got
+    # 날짜가 바뀌면 자리도 따라 바뀐다 — 고정 문자열이 아니다
+    assert iname.rule_path(
+        "전남광주통합특별시 동구_불법 주정차_20250226.csv") == (
+        "gjcity/gjcity_parking_enforce_jngj-donggu_20250226.csv")
+
+
+def test_rule_path_is_silent_for_a_file_no_rule_claims():
+    """★ 음성 — 규칙이 없으면 `None` 이다. **추측해서 두지 않는다.**"""
+    for n in ("채용공고.pdf", "", "스크린샷 2026-10-12.png", "noname"):
+        assert iname.rule_path(n) is None, f"{n!r} 를 어딘가에 두려 한다"
+
+
+def test_stem_of_strips_the_scope_and_the_vintage():
+    """raw 상대경로 → `provider_dataset`. 대장 `stem` 과 **같은 글자**여야 한다."""
+    for rel, want in (
+            ("safety/safety_cctv_jngj_20260630.csv", "safety_cctv"),
+            ("juso/juso_adrdc_kr_202608.zip", "juso_adrdc"),
+            ("gjcity/gjcity_parking_enforce_jngj-donggu_20240108.csv",
+             "gjcity_parking_enforce"),
+            # 도엽(part)이 뒤에 붙어도 줄기는 같다
+            ("ngii/ngii_basemap_jngj-donggu_20260812_gj9708.zip", "ngii_basemap"),
+            ("ngii/ngii_ortho_jngj-donggu_20251231_gj037.tif", "ngii_ortho"),
+    ):
+        assert iname.stem_of(rel) == want, f"{rel} → {iname.stem_of(rel)!r}"
+
+
+def test_stem_of_agrees_with_the_ledger_for_every_real_file():
+    """★ **실물 전수로 민다.** 대장이 적은 stem 과 어긋나면 반입이 못 짝짓는다.
+
+    손으로 적은 표가 아니라 `data/_acquire.json`(raw 실물) 에서 가져온다 —
+    §494 가 같은 날 두 자리에서 걷은 그 병이다(사본을 사본과 대조한다).
+    """
+    import json
+
+    from firelane import ledger as L
+
+    stems = set()
+    for e in L.load()["datasets"].values():
+        if e.get("stem"):
+            stems.add(str(e["stem"]))
+        stems.update(str(x) for x in (e.get("stems") or []))
+    raw = sorted(json.loads(
+        (ROOT / "data/_acquire.json").read_text(encoding="utf-8"))["files"])
+    assert len(raw) > 50, "실물 목록이 비었다 — 이 검사가 빈 그물이 됐다"
+    bad = [f"  {p} → {iname.stem_of(p)!r}" for p in raw
+           if iname.stem_of(p) not in stems]
+    assert not bad, (
+        "줄기가 대장의 어느 stem 과도 같지 않다 — 반입이 그 파일을 못 짝짓는다.\n"
+        + "\n".join(bad))

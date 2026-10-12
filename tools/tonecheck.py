@@ -15,11 +15,14 @@ tonecheck.py — 문서와 주석의 **말투**. `FAMILIES` 가 드는 족이 �
   `doc_fsck` 는 「가리킨 것이 실재하나」를 묻는다. 둘 다 **뭐라고 적혀 있는지**는
   안 본다. 그래서 새는 것을 아무도 못 봤고, 사람이 우연히 읽어야 알았다.
 
-★ **기획서가 제일 위험하다.** `docs/proposal.docx` 는 문서 넷 중 **유일하게
-  외부가 읽는 것**인데 `docx_check`(숫자)와 `doc_fsck ⑥`(날짜)만 물었다.
-  그래서 여기는 **docx 본문까지** 연다.
+★ **기획서가 제일 위험하다.** 문서 넷 중 **유일하게 외부가 읽는 것**인데
+  수(`docnum_check`)와 날짜(`doc_fsck ⑥`)만 물었다. 그래서 여기는 기획서
+  본문까지 연다.
+  ★ 2026-10-09 (DECISIONS §444 · PLAN #142). 종전에는 `docs/proposal.docx` 를
+    열었다. 정본이 `docs/proposal.md` 로 옮겨졌고(§425) docx 는 은퇴했다 —
+    **아래 `DOCS` 에 md 를 더해 같은 말투 그물을 정본에 씌운다.**
 
-IN    docs/*.md · docs/proposal.docx · README 3종 · src·tools·tests·web 의 주석
+IN    docs/*.md (기획서 정본 포함) · README 3종 · src·tools·tests·web 의 주석
 OUT   결함 목록 (비면 통과) · 종료코드 = 건수
 PARAM FAMILIES · EXEMPT
 밖    **뜻이 옳은가는 안 본다** — 그것은 사람이 읽고 `docseal` 로 찍는다.
@@ -27,7 +30,7 @@ PARAM FAMILIES · EXEMPT
       세면 141건 오탐이 본문을 덮는다(2026-09-28 실측). 사람에 대한 평가는
       낱말로 못 잡는다 — 그것은 리뷰의 일이다.
       **격식 · 종결어미 · 표 형식도 안 본다** — 문서 종류마다 규칙이 달라
-      한 도구가 들면 어느 쪽도 제대로 못 본다. 기획서 구조는 `tools/docstyle.py`.
+      한 도구가 들면 어느 쪽도 제대로 못 본다. 기획서 구조는 `tools/proposalcheck.py` 소관이다(종전 `docstyle` 은 삭제).
 """
 from __future__ import annotations
 
@@ -96,12 +99,14 @@ EXEMPT: dict[str, str] = {
 
 #: 문서 — 정본 넷과 README 셋.
 DOCS = ("docs/MASTER.md", "docs/PLAN.md", "docs/DECISIONS.md",
+        # ★ 2026-10-09 (§444 · #142). 기획서 **정본**이다. 종전에는 아래
+        #   `DOCX` 로 따로 열었고, 그 파일이 은퇴하면서 여기로 들어왔다 —
+        #   같은 그물에 들면 코드 펜스·`voice-ok` 규약이 그대로 적용된다.
+        "docs/proposal.md",
         "README.md", "web/README.md", "src/firelane/README.md")
 #: 주석을 볼 코드 뿌리.
 CODE = ("src", "tools", "tests", "web/navi/src", "web/navi/test")
 CODE_SUFFIX = (".py", ".sh", ".ts", ".tsx", ".js", ".mjs")
-#: 외부가 읽는 문서. **본문을 연다.**
-DOCX = "docs/proposal.docx"
 
 
 def exempt(rel: str) -> bool:
@@ -117,17 +122,6 @@ def _docparse():
     sys.modules[spec.name] = m
     spec.loader.exec_module(m)
     return m
-
-
-def _docx_text(p: Path) -> str:
-    """기획서 본문 + 표. 못 열면 **빈 문자열이 아니라 예외**다 — 조용한 통과 금지."""
-    import docx  # noqa: PLC0415  (선택 의존성)
-    d = docx.Document(str(p))
-    out = [x.text for x in d.paragraphs]
-    for t in d.tables:
-        for r in t.rows:
-            out += [c.text for c in r.cells]
-    return "\n".join(out)
 
 
 def targets() -> list[tuple[str, str]]:
@@ -148,9 +142,6 @@ def targets() -> list[tuple[str, str]]:
         keep |= {i for i, l in enumerate(lines, 1) if ALLOW in l}
         out.append((rel, "\n".join(l if i in keep else ""
                                     for i, l in enumerate(lines, 1))))
-    dp = ROOT / DOCX
-    if dp.is_file():
-        out.append((DOCX, _docx_text(dp)))
     for root in CODE:
         base = ROOT / root
         if not base.is_dir():
@@ -168,7 +159,7 @@ def _allowed_block(lines: list[str]) -> set[int]:
 
     ★ 실측한 규약이다(2026-09-28). `docparse` 는 표시가 **같은 줄에** 있는
       경우만 빼는데, 이 저장소는 표시를 **인용 블록 바로 앞줄**에 단다 —
-      `DECISIONS §236` · `tools/docx_figs.py` 둘 다 그렇다. 규약을 바꾸는 것이
+      `DECISIONS §236` 인용이 그렇다. 규약을 바꾸는 것이
       아니라 **쓰이는 대로 읽는다.** 블록은 빈 줄에서 끝난다.
     """
     out: set[int] = set()
@@ -242,7 +233,7 @@ def main(argv: list[str] | None = None) -> int:
     if a.selftest:
         return selftest()
     if a.list:
-        print(f"  문서 {len(DOCS)} · 기획서 {DOCX} · 코드 뿌리 {len(CODE)}")
+        print(f"  문서 {len(DOCS)}(기획서 정본 포함) · 코드 뿌리 {len(CODE)}")
         for fam, (why, words) in FAMILIES.items():
             print(f"\n  [{fam}] {len(words)}낱말 — {why}")
         print(f"\n  면제 {len(EXEMPT)}")

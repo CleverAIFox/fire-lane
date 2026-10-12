@@ -190,3 +190,111 @@ def test_the_field_table_names_exactly_the_published_fields():
         f"  산출물에만 있다 {sorted(real - doc)}\n"
         "  ★ 산출물이 정본이다. 재잠금 전이라면 표가 **앞서 있는 것**이고 "
         "`tools/delivercheck.py` 의 `RELOCK_TESTS` 가 이 이름을 든다")
+
+
+# ── 회색 사유의 가짓수 **낱말** (2026-10-09 · DECISIONS §444 · PLAN #142) ──
+# ★ 종전에 기획서의 그 문장을 보던 것은 `docx_check` 의 ⑤ 정방향(= `docx_fix`
+#   규칙)뿐이고, 그것이 읽는 것은 `docs/proposal.docx` 였다. 정본이 md 로
+#   옮겨진 뒤(§425) **정본의 그 문장은 아무도 안 봤다** — 그래서 `ledger_disputes`
+#   가 다섯째 사유로 선 날 문장은 「네 가지」로 거짓이 됐고, 운 것은 사본을
+#   보던 검사였다. docx 가 은퇴하면 그 울음도 같이 사라지므로 **먼저 세운다.**
+def test_the_grey_reason_word_count_is_watched():
+    """합성 입력 — 수사 낱말이 실물과 어긋나면 운다. 양방향."""
+    D = _docnum()
+    ok = "- GRAY 400구간의 사유는 다섯 가지이며 폭 산출 불가는 0건이다."
+    assert not D.gray_kind_faults(ok, 5), "맞는 문장에서 운다"
+    assert D.gray_kind_faults(ok, 4), "다섯을 넷이라고 해도 안 운다"
+    assert D.gray_kind_faults(ok, 6), "다섯을 여섯이라고 해도 안 운다"
+    # ★ **문장이 없으면 운다.** 지우면 조용해지는 축은 없는 축이다(1족).
+    assert D.gray_kind_faults("아무 말도 없다", 5), "닻이 사라졌는데 조용하다"
+    # ★ 수사는 **한글**이다. 숫자로 적은 것도 어긋남이다 — 문서 서식이 한글이다
+    assert D.gray_kind_faults("- GRAY 400구간의 사유는 5 가지다.", 5), "숫자 수사를 통과시킨다"
+
+
+def test_the_real_proposal_states_the_right_number_of_grey_reasons():
+    """실물 — 기획서의 그 문장이 **지금 산출물**의 사유 종수를 든다."""
+    D = _docnum()
+    n = sum(1 for k in D.counts() if k.startswith("ur_"))
+    assert n >= 4, f"회색 사유를 {n}종 셌다 — 수집기를 의심하라"
+    bad = D.gray_kind_faults((ROOT / "docs/proposal.md").read_text(encoding="utf-8"), n)
+    assert not bad, "\n".join(bad)
+
+
+# ── 문서가 적어야 하는 수 (2026-10-10 · DECISIONS §452 · PLAN #56) ──────
+# ★ 이 축도 `docnum_check.main()` **안에만** 있었다 — 바로 위 필드표가 §436-13
+#   에서 같은 사유로 나왔는데 **옆칸은 그대로 뒀다.** 한 판에서 둘을 다 안 옮긴
+#   것이 2026-10-10 에 값을 치렀다: `#34` 가 README 를 줄이자 규칙 여섯이
+#   **주장 없는 파일**을 가리켰고 전수 pytest 는 초록이었다.
+_drspec = __import__("importlib.util", fromlist=["util"]).spec_from_file_location("docnumrules", ROOT / "tools/docnumrules.py")
+
+
+def _docnumrules():
+    import importlib.util
+    import sys
+
+    assert _drspec and _drspec.loader
+    m = importlib.util.module_from_spec(_drspec)
+    sys.modules[_drspec.name] = m
+    _drspec.loader.exec_module(m)
+    return m
+
+
+def test_every_declared_number_is_in_its_document():
+    """실물 — 선언 표의 모든 (파일 · 라벨)이 지금 산출물의 수를 든다.
+
+    ★ 재잠금 전에는 빨갛다 — `tools/delivercheck.py` 의 `RELOCK_TESTS` 가 이
+      이름을 든다. 문서는 **재잠금 뒤의 수**를 적는다.
+    """
+    R, D = _docnumrules(), _docnum()
+    cache: dict[str, str] = {}
+
+    def read(rel: str) -> str:
+        return cache.setdefault(rel, (ROOT / rel).read_text(encoding="utf-8"))
+
+    bad = R.present_faults(D.counts(), read)
+    assert not bad, "문서가 적은 수가 산출물과 다르다:\n  " + "\n  ".join(bad)
+
+
+def test_every_label_has_a_context_pattern_or_a_reason():
+    """★ 2026-10-11 (DECISIONS §466). 「라벨은 `rules` 에 있는데 문맥 패턴이 없어
+    **존재 대조**로 떨어졌다」가 세 번 났다 — §435(norm 이관) · §452(도달 가능) ·
+    §464(CCTV 유효범위). 세 번 같은 자리면 사람의 실수가 아니라 구조다.
+
+    ★ CLI 도 같은 함수를 민다(§452 가 고친 족 3 을 다시 만들지 않는다).
+    ★ **양방향**이다 — 죽은 면제도 운다. 손목록의 결함은 빠진 항목이고(§370),
+      죽은 항목은 그 손목록이 무엇을 면제하는지 못 읽게 만든다.
+    """
+    R, D = _docnumrules(), _docnum()
+    bad = R.pattern_gaps(D.counts())
+    assert not bad, "\n  ".join(["문맥 패턴 선언이 어긋난다:", *bad])
+
+
+def test_the_pattern_gate_is_not_an_empty_net():
+    """★ 합성으로 민다 — 빠진 라벨 하나를 심으면 그것을 대고 우는가."""
+    R, D = _docnumrules(), _docnum()
+    c = dict(D.counts())
+    real = R.rules
+    try:
+        R.rules = lambda cc: [*real(cc), ("docs/MASTER.md", 1, "없는라벨")]
+        bad = R.pattern_gaps(c)
+    finally:
+        R.rules = real
+    assert any("없는라벨" in m for m in bad), f"빠진 라벨을 안 댄다 — {bad}"
+
+    # 죽은 면제 — 라벨이 없는데 사유가 있으면 운다
+    real_po = R.PRESENCE_ONLY
+    try:
+        R.PRESENCE_ONLY = {**real_po, "사라진라벨": "사유"}
+        bad = R.pattern_gaps(c)
+    finally:
+        R.PRESENCE_ONLY = real_po
+    assert any("사라진라벨" in m and "죽은 면제" in m for m in bad), \
+        f"죽은 면제를 안 댄다 — {bad}"
+
+
+def test_that_axis_bites_a_moved_claim():
+    """★ 카나리아 — 주장이 사라진 파일을 가리키면 운다. `#34` 가 겪은 그 자리다."""
+    R, D = _docnumrules(), _docnum()
+    bad = R.present_faults(D.counts(), lambda rel: "숫자가 하나도 없는 글")
+    assert bad, "주장이 없는데 조용하다 — 빈 그물이다"
+    assert any("패턴이 낡았다" in m for m in bad), bad

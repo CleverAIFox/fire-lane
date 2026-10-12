@@ -136,3 +136,47 @@ def test_the_selftest_is_alive():
     """도구가 제 판별식을 들고 있다. `tools/selftests.py` 가 이것을 돈다."""
     src = (ROOT / "tools" / "fieldseal.py").read_text(encoding="utf-8")
     assert "--selftest" in src, "판별식이 없다"
+
+
+# ── 2026-10-12 (DECISIONS §488) ────────────────────────────────────
+#   §487 이 분모를 바로잡은 뒤 이 파일이 빚에 남았다. 지문(해시)이 내용을
+#   보는지는 위에서 밀면서, 그 비교를 **사람이 읽는 줄로 바꾸는 자**
+#   (`diff`)를 민 자리가 없었다 — 해시가 맞아도 그 자가 비면 관문이 조용하다.
+
+NOW = {"a.csv": {"sha256": "aa", "lines": 10, "bytes": 100},
+       "b.csv": {"sha256": "bb", "lines": 20, "bytes": 200}}
+
+
+def test_the_diff_is_silent_when_nothing_moved():
+    """★ 음성. 같은 표끼리 울면 사람이 이 관문을 끈다."""
+    assert FS.diff(NOW, NOW) == [], FS.diff(NOW, NOW)
+    assert FS.diff({}, {}) == [], "빈 표끼리 무언가를 만든다"
+
+
+def test_a_vanished_file_is_called_out():
+    """★ **재취득 불가 층**이다 — 사라진 것이 제일 나쁘다."""
+    got = FS.diff({"a.csv": NOW["a.csv"]}, NOW)
+    assert any("사라졌다" in g and "b.csv" in g for g in got), got
+    assert any("되돌려라" in g for g in got), f"무엇을 하라고 안 말한다 — {got}"
+
+
+def test_a_new_file_is_called_out_with_both_ways_to_resolve_it():
+    got = FS.diff(NOW, {"a.csv": NOW["a.csv"]})
+    assert any("새로 생겼다" in g and "b.csv" in g for g in got), got
+    # 실측이면 등재하고 아니면 치운다 — 둘 다 말해야 사람이 고른다
+    assert any("--write" in g for g in got), f"등재하는 길을 안 말한다 — {got}"
+
+
+def test_a_changed_fingerprint_is_called_out_with_the_numbers():
+    was = {**NOW, "b.csv": {"sha256": "cc", "lines": 19, "bytes": 190}}
+    got = FS.diff(NOW, was)
+    assert any("바뀌었다" in g and "b.csv" in g for g in got), got
+    # 전후를 수로 말한다 — 「바뀌었다」만 적으면 무엇이 얼마나인지 모른다
+    assert any("19행" in g and "20행" in g for g in got), f"전후 수가 없다 — {got}"
+
+
+def test_the_diff_does_not_cry_on_a_moved_line_count_alone():
+    """★ 지문이 같으면 행·바이트 기록이 달라도 **안 운다** — 지문이 정본이다.
+    여기가 울면 기록을 다시 쓸 때마다 관문이 빨개지고, 그러면 꺼진다."""
+    was = {**NOW, "b.csv": {"sha256": "bb", "lines": 999, "bytes": 999}}
+    assert FS.diff(NOW, was) == [], FS.diff(NOW, was)

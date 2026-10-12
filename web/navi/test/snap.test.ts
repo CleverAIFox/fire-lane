@@ -17,16 +17,23 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { LAT0, LON0, MX, MY } from "../src/domain/geo";
 import {
   SNAP_KNOBS, createTracker, prepare, snap, type SnapSegment,
 } from "../src/domain/snap";
 
-/** 동명동 한가운데. 여기서 남북·동서로 두 길을 긋는다. */
-const LON0 = 126.925;
-const LAT0 = 35.151;
-/** 위도 1도 ≈ 111km · 이 위도에서 경도 1도 ≈ 91km (localgeo 와 같은 근사) */
-const DLAT = 1 / 111_000;
-const DLON = 1 / 91_000;
+/**
+ * 1m 에 해당하는 위도·경도. **`domain/geo` 의 정본에서 낸다.**
+ *
+ * ★ 2026-10-12 (DECISIONS §482). 종전에는 `1/111_000` · `1/91_000` 을 손으로
+ *   적고 주석에 「localgeo 와 같은 근사」라고 달아 두었다. 같지 않았다 —
+ *   §473 이 정본을 110,943 · 91,120 으로 고친 뒤로 이 파일이 **다섯째 벌**로
+ *   남았다. 오차 자체는 0.13%(20m 에서 2.6cm)라 판정을 안 바꿨지만, 틀린
+ *   주석이 「여기는 정본을 따른다」고 말하는 것이 결함이다 — 다음에 상수를
+ *   고치는 사람이 이 파일을 안 열어도 된다고 믿는다.
+ */
+const DLAT = 1 / MY;
+const DLON = 1 / MX;
 
 function seg(uid: string, coords: [number, number][]): SnapSegment {
   return { seg_uid: uid, verdict: "clear", width_min_m: 5, coords } as SnapSegment;
@@ -36,6 +43,9 @@ function seg(uid: string, coords: [number, number][]): SnapSegment {
 const NS = seg("NS", [[LON0, LAT0 - 60 * DLAT], [LON0, LAT0 + 60 * DLAT]]);
 const NS_EAST = seg("NS_EAST",
   [[LON0 + 20 * DLON, LAT0 - 60 * DLAT], [LON0 + 20 * DLON, LAT0 + 60 * DLAT]]);
+/** 60m 동쪽의 세 번째 평행 길. **할인을 이길 수 있는** 거리에 둔다(§482). */
+const NS_FAR = seg("NS_FAR",
+  [[LON0 + 60 * DLON, LAT0 - 60 * DLAT], [LON0 + 60 * DLON, LAT0 + 60 * DLAT]]);
 /** 같은 자리를 **동서로** 지나는 길. 거리로는 비기고 방위각이 가른다. */
 const EW = seg("EW", [[LON0 - 60 * DLON, LAT0], [LON0 + 60 * DLON, LAT0]]);
 
@@ -104,9 +114,45 @@ describe("④ 활성 경로 — 경로 위를 달리면 옆 골목에 안 붙는
   it("경로가 서쪽 길이면 거기 붙는다", () => {
     expect(snap(mid, LAT0, P, { onRoute: new Set(["NS"]) })?.seg_uid).toBe("NS");
   });
-  it("★ **진짜로 벗어나면 할인을 이긴다** — 아니면 이탈을 영영 못 본다", () => {
-    const off = snap(LON0 + 60 * DLON, LAT0, P, { onRoute: new Set(["NS"]) });
-    expect(off?.seg_uid).not.toBe("NS");
+  /**
+   * ★ 2026-10-12 (DECISIONS §482). 여기 이런 시험이 있었다 —
+   *
+   *       60m 동쪽에 세우고 `seg_uid` 가 "NS" 가 **아니어야** 한다
+   *       (제목: 「진짜로 벗어나면 할인을 이긴다 — 아니면 이탈을 영영 못 본다」)
+   *
+   *   **그 시험은 아무것도 안 밀고 있었다.** 비용이 `거리 - 할인` 이라
+   *   20m 간격 평행한 두 길에서는 두 비용이 **모든 거리에서 정확히 같다**
+   *   (서쪽 d-20 · 동쪽 d-20). 비기면 목록 순서가 이겨서 "NS" 가 나온다 —
+   *   500m 밖에서도 그렇다. 그런데 그 시험이 **초록이었다.** 이 파일이 쓰던
+   *   손으로 적은 `DLON = 1/91_000` 이 60m 를 60.079m 로 만들어 **8cm 로
+   *   비김을 깨고** 있었다. 상수를 정본으로 바꾸자 비겼고 빨간불이 났다.
+   *
+   *   §473 의 `egobox.test.ts` 와 **같은 꼴**이다 — 시험이 제 상수를 들고
+   *   있어서 오차가 서로 지웠다. 그래서 둘을 나눠 적는다: 실제로 이기는
+   *   조건 하나와, **못 이기는 자리** 하나.
+   */
+  it("★ 다른 길이 **할인보다 더 가까우면** 거기 붙는다", () => {
+    // 60m 동쪽에 세 번째 길. 41m 부터 그 길까지 거리가 `d - routeM` 보다 작다
+    const Q = prepare([NS, NS_EAST, NS_FAR]);
+    expect(snap(LON0 + 30 * DLON, LAT0, Q, { onRoute: new Set(["NS"]) })?.seg_uid)
+      .toBe("NS");
+    expect(snap(LON0 + 41 * DLON, LAT0, Q, { onRoute: new Set(["NS"]) })?.seg_uid)
+      .toBe("NS_FAR");
+  });
+
+  it("★ **간격이 할인 이하인 평행한 두 길에서는 영영 안 떨어진다** — 한계다", () => {
+    // 측정해서 적는다. 느슨한 것을 받아적는 것이 아니라, 이 수를 고치는
+    // 사람이 **무엇이 바뀌는지** 알게 적는다 — 할인을 20 아래로 내리면
+    // 여기가 울고, 그때 `routeM` 의 머리말을 다시 읽어야 한다.
+    for (const d of [25, 60, 200, 500]) {
+      expect(snap(LON0 + d * DLON, LAT0, P, { onRoute: new Set(["NS"]) })?.seg_uid)
+        .toBe("NS");
+    }
+    // ★ 그래도 **확신은 잃는다** — 25m(`offroadM`) 밖이면 믿지 말라고 말한다.
+    //   화면의 이탈 경고가 이 신호가 아니라 `progress.ts` 의 횡거리 누적을
+    //   드는 이유다.
+    expect(snap(LON0 + 60 * DLON, LAT0, P, { onRoute: new Set(["NS"]) })?.confident)
+      .toBe(false);
   });
   it("신호를 끄면 경로를 안 본다", () => {
     const k = { ...SNAP_KNOBS, routeM: 0 };

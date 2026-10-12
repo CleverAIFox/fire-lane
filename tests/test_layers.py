@@ -329,11 +329,11 @@ def test_backup_scope_follows_layers():
 #:
 #: 간극을 **데이터로 못 박는다.** 산문으로 적힌 계획을 수로 바꾼다.
 #: 좁히면 여기를 같이 줄인다. 넓히려면 사유를 적어야 한다.
-TARGET_ONLY = {
-    "retired": "§173-2 목표 층. 레이크를 세운 뒤 대장에 들어간다"
-               "(`lake.py` 머리말 · PLAN 「대장 · SSD 디렉토리 구조와 해석기 하나」). "
-               "그때 `LAYERS` 를 대장에서 읽도록 바꾼다",
-}
+#: ★ 2026-10-11 (DECISIONS §460). **비었다.** `retired` 가 대장에 들어오면서
+#:   이 칸의 유일한 항목이 사라졌다 — 그 줄이 적어 둔 「그때 `LAYERS` 를 대장에서
+#:   읽도록 바꾼다」가 그대로 일어났고(`layers.lake_layers()`), 목표와 선언이
+#:   같아졌다. 칸을 지우지 않고 **비워 둔다** — 다음 목표 층이 생기면 여기 적는다.
+TARGET_ONLY: dict[str, str] = {}
 #: 대장에만 있는 층 — **레이크 밖**이라 레이크 해석기가 알 필요가 없다.
 LEDGER_ONLY = {
     "baseline": "저장소 안. 봉인 기준선이다",
@@ -346,11 +346,14 @@ LEDGER_ONLY = {
 
 
 def test_the_gap_between_target_and_ledger_layers_is_declared():
-    """★ 목표 층 목록과 대장 층 선언의 차이가 **선언된 그대로**인가."""
-    from firelane.lake import LAYERS
+    """★ 목표 층 목록과 대장 층 선언의 차이가 **선언된 그대로**인가.
 
+    ★ 2026-10-11 (DECISIONS §460). 목표 목록이 **대장에서 도출된다** —
+      종전의 손으로 적은 `lake.LAYERS` 는 없다. 그래서 「목표에만 있는 층」은
+      도출이 틀렸을 때만 생기고, 지금은 비어 있는 것이 맞다.
+    """
     declared = set(_L().names())
-    target = set(LAYERS)
+    target = set(_L().lake_layers())
 
     only_target = target - declared
     assert only_target == set(TARGET_ONLY), (
@@ -359,12 +362,14 @@ def test_the_gap_between_target_and_ledger_layers_is_declared():
         "  층이 대장으로 들어왔으면 `TARGET_ONLY` 에서 빼라. 새로 생겼으면\n"
         "  **왜 아직 대장에 없는지**를 적어라.")
 
+    assert target, "목표 층이 0개다 — 도출이 죽었다(빈 그물)"
+
     only_ledger = declared - target
     assert only_ledger == set(LEDGER_ONLY), (
         f"대장에만 있는 층이 선언과 다르다 — 실측 {sorted(only_ledger)} · "
         f"선언 {sorted(LEDGER_ONLY)}\n"
         "  레이크 해석기가 모르는 층의 파일은 **미상**이 된다. 레이크 안의\n"
-        "  층이면 `lake.LAYERS` 에 더하고, 저장소 안이면 여기 사유를 적어라.")
+        "  층이면 대장의 `base: data` 로 선언하고, 저장소 안이면 여기 사유를 적어라.")
 
 
 def test_every_gap_entry_carries_a_reason():
@@ -376,10 +381,12 @@ def test_every_gap_entry_carries_a_reason():
 
 def test_the_abolished_layer_is_not_a_target():
     """폐지층이 목표 목록에 남아 있으면 「없앤다」와 「쓴다」가 같은 모양이 된다."""
-    from firelane.lake import ABOLISHED, LAYERS
+    from firelane.lake import ABOLISHED
 
+    target = _L().lake_layers()
+    assert target, "목표 층이 0개다 — 도출이 죽었다(빈 그물)"
     for name in ABOLISHED:
-        assert name not in LAYERS, f"폐지층 {name} 이 목표 층 목록에 있다"
+        assert name not in target, f"폐지층 {name} 이 목표 층 목록에 있다"
 
 
 # ── 제공기관 목록이 **세 벌**이다  (DECISIONS §396) ──────────────────
@@ -428,3 +435,87 @@ def test_pdf_only_datasets_say_why_they_are_not_fed():
            if isinstance(v, dict) and v.get("kind") == "raw_only"
            and "pdf" in (v.get("ext") or []) and not (v.get("feeds_why") or "").strip()]
     assert not bad, f"PDF 인데 미투입 사유가 없다: {bad}"
+
+
+# ── 마운트가 끊긴 기계 (DECISIONS §497) ──────────────────────
+# ★ 둘은 같은 사실을 다루는 자다 — **계층이 이 기계에 붙어 있는가.**
+#   `tools/srccov.py` 가 둘 다 「시험이 이름으로도 안 부른다」로 셌다(§493).
+#
+#   `datalog.external_targets`   머리말 — 모듈 최상위 상수였을 때 외장 SSD 가
+#       끊기면 `OSError: Errno 19` 로 **모듈을 불러오지도 못했고**, 그날
+#       문서만 고치는 작업까지 `verify.sh` 에서 통째로 막혔다
+#   `layers.lake_connected`      「**결함 0」과 「못 쟀음」을 가른다** — 그
+#       구별이 없어 `treecheck` 의 D 축 열 개가 죽어 있었다(§457-1)
+def test_external_targets_survives_a_broken_mount(monkeypatch):
+    """★ 마운트가 끊기면 **대상이 아닐 뿐 오류가 아니다.**"""
+    from firelane import datalog
+
+    class Dead:
+        def exists(self):
+            raise OSError(19, "No such device")
+
+        @property
+        def parents(self):
+            return ()
+
+    monkeypatch.setattr(datalog, "_RAW", Dead())
+    monkeypatch.setattr(datalog, "_NORM", Dead())
+    monkeypatch.setattr(datalog, "_FIELD", Dead())
+    assert datalog.external_targets() == []
+
+
+def test_external_targets_keeps_only_what_is_outside_the_repo(monkeypatch, tmp_path):
+    """★ 저장소 **안**의 계층은 백업 대상이 아니다 — git 이 이미 든다."""
+    from firelane import datalog
+
+    inside = ROOT / "data" / "raw"
+    outside = tmp_path / "ssd" / "raw"
+    outside.mkdir(parents=True)
+    monkeypatch.setattr(datalog, "_RAW", outside)
+    monkeypatch.setattr(datalog, "_NORM", inside)
+    monkeypatch.setattr(datalog, "_FIELD", tmp_path / "없는곳")
+    assert datalog.external_targets() == [outside]
+
+
+def test_lake_connected_says_no_without_the_acquisition_ledger(monkeypatch, tmp_path):
+    """★ 대장이 없거나 비면 **안 붙은 것**이고, 사유를 같이 낸다.
+
+    사유가 없으면 부르는 쪽이 「결함 0」과 「못 쟀음」을 다시 섞는다.
+    """
+    from firelane import layers, paths
+
+    monkeypatch.setattr(paths, "ROOT", tmp_path)
+    ok, why = layers.lake_connected()
+    assert ok is False and "대장" in why
+
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "_acquire.json").write_text(
+        '{"files": {}}', encoding="utf-8")
+    ok, why = layers.lake_connected()
+    assert ok is False and "비었다" in why
+
+
+def test_lake_connected_is_decided_by_one_real_file(monkeypatch, tmp_path):
+    """★ 대장이 적은 실물이 **하나라도** 있으면 붙은 것이다.
+
+    환경변수도 `data/` 폴더 존재도 판별식이 못 된다 — 전자는 레이크를
+    저장소 안에 둔 기계에서 `None` 이고, 후자는 `data/golden` 이 커밋돼
+    있어 **CI 에서도 참**이다.
+    """
+    from firelane import layers, paths
+
+    raw = tmp_path / "raw"
+    (raw / "safety").mkdir(parents=True)
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "_acquire.json").write_text(
+        '{"files": {"safety/a.csv": {"sha256": "x"}, "safety/b.csv": {}}}',
+        encoding="utf-8")
+    monkeypatch.setattr(paths, "ROOT", tmp_path)
+    monkeypatch.setattr(paths, "RAW", raw)
+
+    ok, why = layers.lake_connected()
+    assert ok is False and "2건 중 디스크에 0건" in why
+
+    (raw / "safety" / "a.csv").write_text("x", encoding="utf-8")
+    ok, why = layers.lake_connected()
+    assert ok is True and "2건 중 디스크에 1건" in why

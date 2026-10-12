@@ -26,9 +26,30 @@ import 하므로 샤드 봉인은 움직인다 — 그쪽은 `--reseal-code` 가
 ★ 값의 정본은 이 파일의 `ENOMEM_RC` 하나다. `ingest` 가 내고 `pipeline` 이
   읽는다. 양쪽에 숫자를 박으면 그것이 곧 갈린다(MASTER §18-3).
 
-IN    단계 모듈의 `main()`
+── 왜 껍데기가 **밖**에서 씌워지나 (2026-10-11 · DECISIONS §463-1) ──
+처음에는 단계 모듈 제 `__main__` 이 `run_stage(main)` 을 부르게 했다. 그런데
+그렇게 하면 **그 모듈이 이 파일을 import 한다.** `code_closure` 는 `ast.walk`
+라서 `if __name__` 안의 import 도 센다 — 그 한 줄이 `segments` 의 판정 폐포를
+늘리고 golden 지문을 움직인다. 이 파일 머리말이 처음부터 경계한 그 자리다.
+
+그래서 **일곱 단계 중 하나(`ingest`)만** 껍데기를 썼다. 그 결과가 2026-10-11
+실측이다 — `ortho` 가 TIF 넉 장(1.25GB)을 해시하다 ENOMEM 으로 죽었고,
+파이썬 역추적이 그대로 나오고, 파이프라인은 그것을 **보통 실패**로 읽어
+`tidy.py --yes` 를 권했다(§463-3 이 그 안내를 든다).
+
+고치는 자리는 단계가 아니라 **부르는 쪽**이다. 파이프라인이
+
+    python -m firelane.stagerun <단계> [깃발...]
+
+로 부르면 껍데기는 일곱 단계 전부를 덮고, **단계 모듈은 한 줄도 안 바뀐다** —
+폐포도 봉인도 안 움직인다.
+
+IN    단계 모듈 이름 (`sys.argv[1]`)
 OUT   없음 (종료코드 — 정상은 `main()` 이 정한 대로, 메모리 실패는 12)
-PARAM 없음
+PARAM 단계 모듈 이름 하나. 뒤따르는 깃발은 **그 단계에 그대로 넘긴다**
+밖    **깃발이 옳은가는 안 본다.** 모르는 깃발 거절은 단계 자신이 부르는
+      `src/firelane/guards.py` 의 `warn_direct_call` 소관이다(§283-2) —
+      여기서 한 번 더 들면 `ingest` 의 `--keep-work` 가 거절된다
 """
 from __future__ import annotations
 
@@ -44,18 +65,29 @@ from pathlib import Path
 ENOMEM_RC = 12
 
 
-def run_stage(main) -> None:
-    """단계 모듈의 `main()` 을 돌린다. 메모리 실패만 가로챈다."""
+def is_oom(ex: BaseException) -> bool:
+    """메모리로 죽었나. **판별의 집은 여기 하나다.**
+
+    ★ 2026-10-11 (DECISIONS §461). 부르는 쪽이 둘이 됐다 — 이 껍데기와
+      `ingest` 의 **샤드 루프**다. 그 루프가 `except Exception` 으로 먼저
+      잡아서 이 파일의 처방이 한 번도 안 찍혔고, 사람은 「소스가 실패했다」는
+      거짓 안내를 따라갔다(§224-3 이 고친 그 1족이 다른 길로 돌아왔다).
+      양쪽이 `errno` 를 각자 적으면 다음에 또 갈린다.
+    """
     import errno
 
+    return isinstance(ex, MemoryError) or (
+        isinstance(ex, OSError) and ex.errno == errno.ENOMEM)
+
+
+def run_stage(main) -> None:
+    """단계 모듈의 `main()` 을 돌린다. 메모리 실패만 가로챈다."""
     try:
         main()
-    except MemoryError:
-        oom_exit("MemoryError")
-    except OSError as e:                       # [Errno 12] Cannot allocate memory
-        if e.errno != errno.ENOMEM:
+    except (MemoryError, OSError) as e:        # [Errno 12] Cannot allocate memory
+        if not is_oom(e):
             raise
-        oom_exit(f"OSError [Errno {e.errno}] {e.strerror}")
+        oom_exit(f"{type(e).__name__}: {e}")
 
 
 def oom_exit(what: str) -> None:
@@ -85,3 +117,47 @@ def oom_exit(what: str) -> None:
     print("    소스마다 자식 프로세스로 돌려 메모리를 반납할 수도 있다:", file=sys.stderr)
     print("      uv run fire-lane --from ingest --split", file=sys.stderr)
     sys.exit(ENOMEM_RC)
+
+
+def stage_main(module: str):
+    """단계 모듈의 `main`. **없으면 거기서 운다** — 조용히 0 으로 안 나간다."""
+    import importlib
+
+    try:
+        mod = importlib.import_module(f"firelane.{module}")
+    except ModuleNotFoundError as e:
+        # ★ **그 모듈이 없을 때만** 받는다. 단계가 제 의존을 못 찾은 것이라면
+        #   그것은 사용법 문제가 아니라 환경 문제이고, 삼키면 1족이 된다.
+        if e.name != f"firelane.{module}":
+            raise
+        print(f"✗ firelane.{module} 이 없다 — 단계 이름이 아니다", file=sys.stderr)
+        print("  단계 목록:  uv run fire-lane --help", file=sys.stderr)
+        sys.exit(2)
+    fn = getattr(mod, "main", None)
+    if fn is None:
+        print(f"✗ firelane.{module} 에 main() 이 없다 — 단계가 아니다", file=sys.stderr)
+        sys.exit(2)
+    return fn
+
+
+def main() -> None:
+    """`python -m firelane.stagerun <단계> [깃발...]`"""
+    rest = sys.argv[1:]
+    if not rest or rest[0].startswith("-"):
+        # ★ 역추적을 토하지 않고 사용법으로 거절한다 — `test_cli_surface` 가 드는 축이다
+        print((__doc__ or "").strip(), file=sys.stderr)
+        sys.exit(2)
+    name, flags = rest[0], rest[1:]
+    # 단계가 보는 인자는 **제 것뿐**이다. 제 이름이 argv[0] 에 와야
+    # `warn_direct_call` 과 단계의 argparse 가 같은 것을 본다.
+    sys.argv = [f"firelane.{name}", *flags]
+    fn = stage_main(name)
+    from firelane.guards import warn_direct_call
+
+    # `doc` 을 안 넘긴다 — 위 머리말의 「밖」이 그 사유다
+    warn_direct_call(f"firelane.{name}")
+    run_stage(fn)
+
+
+if __name__ == "__main__":
+    main()

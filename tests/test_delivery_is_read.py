@@ -189,3 +189,87 @@ def test_the_pytest_scanner_is_pure_and_bites():
     red2, tail2 = m._scan_pytest("2291 passed, 1 warning in 457.32s\n", 0)
     assert red2 == set() and "2291 passed" in tail2, "초록을 빨강으로 읽는다"
     assert m._scan_pytest("", 7)[1] == "rc=7", "요약이 없으면 종료코드를 든다"
+
+
+# ── 2026-10-12 (DECISIONS §491) ────────────────────────────────────
+#   §490 이 분모를 바로잡은 뒤 이 파일이 빚에 남았다. 「EXPECT 를 읽는가」는
+#   글자로 밀면서, 그 읽은 것을 **판단하는 함수들**(`drift` · `notice` ·
+#   `closure_target`)을 민 자리가 없었다 — §292 가 그 둘을 **판정에서 통보로**
+#   옮긴 자리이고, 그 가름이 깨지면 거짓 빨간불이 배달을 막는다.
+
+def _ec():
+    """`tools/expectcheck.py` 를 모듈로 들인다. **배달을 안 한다.**"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_expectcheck_probe", ROOT / "tools" / "expectcheck.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+WANT = {"closure.ingest": "same:aaa", "closure.segments": "moved:bbb->ccc",
+        "webdata": "unchanged", "golden.relock": "no",
+        "unexercised": "2:레이크 · 브라우저"}
+GOT = {"closure.ingest": "aaa", "closure.segments": "ccc",
+       "golden.stale": "no", "webdata": "unchanged"}
+
+
+def test_the_closure_target_reads_the_fingerprint_after_the_arrow():
+    """★ `same:abc` 와 `moved:abc->def` 에서 **붙은 뒤**를 꺼낸다 —
+    앞을 꺼내면 옮긴 배달이 영원히 어긋난 것으로 보인다."""
+    ec = _ec()
+    assert ec.closure_target("same:aaa") == "aaa"
+    assert ec.closure_target("moved:bbb->ccc") == "ccc"
+    assert ec.closure_target("  ccc  ") == "ccc"
+
+
+def test_drift_is_silent_when_the_machines_agree():
+    """★ 음성. 같은 값에서 울면 §292 가 겪은 **첫 실기의 거짓 빨간불**이다."""
+    ec = _ec()
+    assert ec.drift(WANT, GOT) == [], ec.drift(WANT, GOT)
+    # 칸이 아예 없으면 댈 것이 없다 — 옛 판 EXPECT 에서 터지지 않는다
+    assert ec.drift({}, GOT) == []
+
+
+def test_drift_reports_a_moved_closure_with_the_reason():
+    """★ 양성 — 그러나 **통보**다. 지문에 `uv.lock` 이 들어 있어 기계가
+    다르면 달라지는 것이 정상이고, 그 사유를 줄에 적어야 사람이 안 막는다."""
+    ec = _ec()
+    out = ec.drift(WANT, {**GOT, "closure.segments": "zzz"})
+    assert any("closure.segments" in o for o in out), out
+    assert any("uv.lock" in o for o in out), f"왜 다를 수 있는지 안 적는다 — {out}"
+
+
+def test_drift_reports_dirty_webdata_and_names_who_judges_it():
+    ec = _ec()
+    out = ec.drift(WANT, {**GOT, "webdata": "changed"})
+    assert any("webdata" in o for o in out), out
+    # 판정하는 자를 지목한다 — 안 지목하면 관문이 둘이 된다(3족)
+    assert any("web/data" in o for o in out), out
+
+
+def test_notice_reads_the_axes_the_delivery_did_not_prove():
+    ec = _ec()
+    out = ec.notice(WANT)
+    assert any("2" in o for o in out), out
+    assert any("레이크" in o for o in out) and any("브라우저" in o for o in out), out
+
+
+def test_notice_calls_out_an_expect_from_an_older_packer():
+    """★ `unexercised` 칸이 **없는** EXPECT — 옛 판으로 싼 배달이다.
+    조용히 넘기면 「증명하지 않은 축」이 0 으로 읽힌다."""
+    ec = _ec()
+    out = ec.notice({k: v for k, v in WANT.items() if k != "unexercised"})
+    assert any("옛 판" in o for o in out), out
+
+
+def test_the_relock_promise_is_a_judgement_not_a_notice():
+    """★ `golden.stale` 은 **판정**이다 — 재잠금이 안 돌았으면 다음 실행부터
+    계속 울고 그 빨간불이 습관이 된다(§69). 통보 쪽에 있으면 안 된다."""
+    ec = _ec()
+    assert "golden.stale" not in "\n".join(ec.drift(WANT, GOT))
+    src = (ROOT / "tools" / "expectcheck.py").read_text(encoding="utf-8")
+    i, j = src.index("def disagreements("), src.index("def check(")
+    assert "golden.stale" in src[i:j], "재잠금 판정이 `disagreements` 밖으로 나갔다"

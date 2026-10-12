@@ -109,7 +109,7 @@ def _feat(uid: str, seg_id: str, coords: list, verdict: str, wmin: float | None,
             "length_m": length, "route_usage": usage,
             "cv_feasible": cv, "cctv_dist_m": 10.0 if cv else 90.0,
             "seg_label": label or seg_id, "road_name": "합성로",
-            "in_emd": True, "nfa_designated": False, "width_verified": False,
+            "in_emd": True, "nfa_designated": False,
         },
         "geometry": {"type": "LineString", "coordinates": coords},
     }

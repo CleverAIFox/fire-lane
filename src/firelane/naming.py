@@ -123,7 +123,10 @@ def normalize_ext(name: str) -> str:
 
 
 # ── 원본명 → 정규 줄기 ────────────────────────────────────────
-_HANGUL = re.compile(r"[가-힣]")
+# ★ 자모까지 본다. `firelane.encoding.HANGUL` 과 **같은 자**다 —
+#   한 저장소에 한글 자가 두 벌이면 한쪽만 넓어지는 날이 온다.
+#   낱자(`ㄱ` · `ㅏ`)는 자료제공 파일명에 절판 표지로 실제로 들어온다.
+_HANGUL = re.compile(r"[가-힣ㄱ-ㅎㅏ-ㅣ\u1100-\u11ff]")
 
 
 def slugify(text: str) -> str:
@@ -140,7 +143,20 @@ def slugify(text: str) -> str:
 
 
 def has_hangul(text: str) -> bool:
-    return bool(_HANGUL.search(text))
+    """한글이 섞였나. **NFC 로 모아서 본다.**
+
+    ★ 2026-10-12 (DECISIONS §493). 종전에는 받은 글자를 그대로 봤다.
+      맥OS 와 일부 zip 은 한글을 **NFD(자모 분해)**로 적는다 —
+      `한글` 이 `ᄒ`+`ᅡ`+`ᆫ`+… 여섯 글자이고 `[가-힣]` 에 하나도 안
+      걸린다. 그래서 분해본 파일명은 **이 관문을 그냥 지나갔다.**
+
+      문법 자체는 뚫리지 않았다 — `dataset` · `provider` · `part` 의
+      정규식이 전부 아스키만 받아 뒤에서 막혔다. 막힌 것은 **진단**이다.
+      「파일명에 한글이 있다 → origin_name 에 보존하라」가 나올 자리에
+      「dataset 이 문법 밖이다」가 나왔고, 그 말로는 무엇을 해야 하는지
+      알 수 없다. **관문이 옳은 말을 하는 것도 관문의 일이다.**
+    """
+    return bool(_HANGUL.search(unicodedata.normalize("NFC", text)))
 
 
 # ── 파싱 ──────────────────────────────────────────────────────

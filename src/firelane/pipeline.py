@@ -406,7 +406,15 @@ def main():
                 _extra.append("--split")
         # ★ 2026-08-31. `FIRE_LANE_STAGE` 로 "파이프라인이 부른 것" 을 표시한다.
         #   단계 모듈이 이 값을 보고 직접 호출 경고를 낸다(guards.warn_direct_call).
-        r = subprocess.run([sys.executable, "-m", f"firelane.{s.module}", *_extra],
+        # ★ 2026-10-11 (DECISIONS §463-1). 단계를 **껍데기로 감싸 부른다.**
+        #   종전에는 `-m firelane.<단계>` 였고, 메모리 실패를 가로채는 껍데기는
+        #   `ingest` **하나만** 제 `__main__` 에서 썼다. 그래서 10-11 에 `ortho` 가
+        #   ENOMEM 으로 죽었을 때 역추적이 그대로 나왔고 처방이 한 줄도 안 떴다.
+        #   껍데기를 단계 모듈에 넣으면 그 모듈이 `stagerun` 을 import 하게 되고,
+        #   `segments` 의 판정 폐포가 늘어 golden 지문이 움직인다 — 그래서
+        #   **부르는 쪽**에서 씌운다. 단계 모듈은 한 줄도 안 바뀐다.
+        r = subprocess.run([sys.executable, "-m", "firelane.stagerun",
+                            s.module, *_extra],
                            cwd=ROOT,
                            env={**os.environ, "FIRE_LANE_STAGE": s.name})
         if not r.returncode and s.name == "terrain":
@@ -414,7 +422,11 @@ def main():
             #   `out` 칸만 새 실물로 고친다. raw · cfg · code 는 ingest 시점 값을 둔다 —
             #   그래야 `--from` 으로 일부만 돌려도 옛 산출물이 거짓 봉인되지 않는다.
             #   안 하면 다음 실행에서 네 샤드가 찢어지고, 다시 빌드되고, 또 덧써진다.
-            r = subprocess.run([sys.executable, "-m", "firelane.ingest", "--reseal-out"],
+            # ★ 2026-10-11 (§463-1). 여기도 껍데기를 거친다 — 이 호출은 샤드
+            #   산출물을 **전수 해시**한다. 메모리로 죽기 좋은 자리이고, 죽으면
+            #   처방이 떠야 하는 자리다.
+            r = subprocess.run([sys.executable, "-m", "firelane.stagerun",
+                                "ingest", "--reseal-out"],
                                cwd=ROOT, env={**os.environ, "FIRE_LANE_STAGE": "terrain"})
         if r.returncode:
             print(col(f"\n★ {name} 실패. 여기서 멈춘다.", "r"))
@@ -424,28 +436,43 @@ def main():
             #   를 내놓았다 — 안내가 거짓이었고 사람이 그 말을 따라 헛돌았다.
             #   이 저장소가 가장 싫어하는 1족이다(MASTER §17).
             # ★ 종료코드로 가른다. 출력을 파싱하면 문구를 다듬는 순간 죽는다.
-            if s.module == "ingest" and r.returncode in (INGEST_ENOMEM_RC, 137):
-                print(col("  ★ 메모리로 죽었다 — 소스가 실패한 것이 아니다."
-                        " `--retry-failed` 는 할 일이 없다고 답한다.", "r"))
+            # ★ 2026-10-11 (DECISIONS §463-2). **단계를 안 묻는다.** 종전 조건은
+            #   `s.module == "ingest"` 였고, 그래서 10-11 에 `ortho` 가 ENOMEM 으로
+            #   죽었을 때 이 처방이 한 줄도 안 떴다 — 메모리로 죽은 것을 보통
+            #   실패로 안내했다. 메모리는 단계를 안 가린다.
+            oom = r.returncode in (INGEST_ENOMEM_RC, 137)
+            if oom:
+                print(col(f"  ★ 메모리로 죽었다 — {name} 가 실패한 것이 아니다.", "r"))
                 print(col("    wsl --shutdown          (Windows PowerShell) VM 메모리 반납", "c"))
                 print(col("    ~/.wslconfig            [wsl2] memory=12GB", "c"))
-                print(col("    uv run fire-lane --from ingest --split"
-                        "   소스마다 자식 프로세스 (메모리 반납)", "c"))
-                print(col("  ★ 봉인이 코드 때문에만 찢어졌고 산출물이 그대로라면"
-                        " 다시 빌드할 필요가 없다:", "y"))
-                print(col("    uv run python -m firelane.ingest --reseal-code", "c"))
+                if s.module == "ingest":
+                    print(col("  ★ `--retry-failed` 는 할 일이 없다고 답한다.", "r"))
+                    print(col("    uv run fire-lane --from ingest --split"
+                            "   소스마다 자식 프로세스 (메모리 반납)", "c"))
+                    print(col("  ★ 봉인이 코드 때문에만 찢어졌고 산출물이 그대로라면"
+                            " 다시 빌드할 필요가 없다:", "y"))
+                    print(col("    uv run python -m firelane.ingest --reseal-code", "c"))
             elif s.module == "ingest":
                 # ★ 19종 중 몇 종만 실패했을 것이다. 200초를 다시 태우지 마라.
                 print(col("  실패한 소스만:  uv run python -m firelane.ingest "
                         "--retry-failed", "c"))
             # ★ 2026-09-04. 실패하면 하류를 막으려고 옛 산출물을
-            #   `.stale_<날짜>` 로 격리한다(ingest.py:613). 그것이 남으면
-            #   `data/processed` 에 27MB 씩 쌓이는데 안내가 없어서
+            #   `.stale_<날짜>` 로 격리한다(`ingest.py` 의 격리 분기). 그것이
+            #   남으면 `data/processed` 에 27MB 씩 쌓이는데 안내가 없어서
             #   사람이 알아채지 못했다 — 2026-09-03 에 jijeok OOM 으로
             #   두 개가 남았고 손으로 지웠다.
+            # ★ 2026-10-11 (DECISIONS §463-3). **메모리로 죽었으면 지우라고 안 한다.**
+            #   격리된 `.stale_` 는 쓰레기가 아니라 **복구에 쓸 옛 산출물**이다 —
+            #   `--reseal-code` 가 「산출물이 봉인과 같은가」를 그것으로 묻는다.
+            #   10-11 에 사람이 이 안내를 따랐으면 되돌릴 길이 사라졌다. 메모리
+            #   실패는 산출물이 틀렸다는 증거가 아니므로 **보기만** 권한다.
             print(col("  격리된 옛 산출물이 남았을 수 있다:", "y"))
             print(col("    uv run python tools/tidy.py          무엇이 남았나", "c"))
-            print(col("    uv run python tools/tidy.py --yes    지운다", "c"))
+            if oom:
+                print(col("  ★ 지우지 마라 — 되돌릴 때 쓰는 것이다. 되돌리기:", "y"))
+                print(col("    uv run python tools/tidy.py --restore   이름을 되돌린다", "c"))
+            else:
+                print(col("    uv run python tools/tidy.py --yes    지운다", "c"))
             print(f"  고친 뒤: uv run fire-lane --from {name}")
             sys.exit(1)
         lineage.record(PROCESSED, ROOT, s, expand)
