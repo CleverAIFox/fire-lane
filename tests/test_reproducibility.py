@@ -283,12 +283,16 @@ def test_readme_structure_lists_real_files():
     사라졌는데 README 는 옛 구조를 그대로 적고 있었다. 다음 사람이
     1,168줄짜리 `segments.py` 를 찾다가 429줄을 보고 "뭐가 사라졌지" 한다.
     """
-    rd = (ROOT / "README.md").read_text(encoding="utf-8")
-    block = re.search(r"## 구조\s*\n+```(.*?)```", rd, re.S)
-    assert block, "README 구조 블록을 찾을 수 없다"
+    # ★ 2026-10-10 (DECISIONS §450 · PLAN #34 닫힘). 구조 목록이 `README` 에서
+    #   `MASTER §24-4`~`24-6` 으로 **내려갔다**(루트는 처음 보는 사람 몫만 둔다).
+    #   목록을 읽는 자리도 같이 따라간다 — 안 따라가면 이 시험이 「블록이 없다」로
+    #   울고, 그 빨강은 결함이 아니라 **자리를 안 고친 것**이다.
+    rd = (ROOT / "docs" / "MASTER.md").read_text(encoding="utf-8")
+    blocks = re.findall(r"### 24-[456]\. 구조[^\n]*\n(?:.*?)```(.*?)```", rd, re.S)
+    assert blocks, "MASTER §24-4~24-6 구조 블록을 찾을 수 없다"
 
     missing = []
-    for line in block.group(1).splitlines():
+    for line in "\n".join(blocks).splitlines():
         name = line.strip().split()[0] if line.strip() else ""
         if not name.endswith(".py"):
             continue
@@ -301,11 +305,15 @@ def test_readme_structure_lists_real_files():
 
 
 def test_readme_lists_the_seg_modules():
-    """`seg/` 는 이제 계산의 본체다. README 구조에서 빠지면 안 된다."""
-    rd = (ROOT / "README.md").read_text(encoding="utf-8")
+    """`seg/` 는 계산의 본체다. 구조 목록에서 빠지면 안 된다.
+
+    ★ 2026-10-10 (DECISIONS §450 · PLAN #34 닫힘). 그 목록이 `MASTER §24` 로
+      내려갔다. 묻는 것은 그대로다 — **어디 적혀 있든 빠지면 안 된다.**
+    """
+    rd = (ROOT / "docs" / "MASTER.md").read_text(encoding="utf-8")
     for mod in ("params.py", "graph.py", "width.py", "geom.py",
                 "roadname.py", "report.py"):
-        assert mod in rd, f"README 구조에 seg/{mod} 가 없다"
+        assert mod in rd, f"구조 목록에 seg/{mod} 가 없다"
 
 
 def test_open_questions_live_in_plan_not_master():
@@ -634,3 +642,4 @@ def test_baseline_nfa_delta_matches_by_road():
     assert d["only_old"] == ["나로2번길"] and d["only_new"] == ["다로3번길"]
     row = {r["road"]: r for r in d["rows"]}["가로1번길"]
     assert (row["old_dev_m"], row["new_dev_m"], row["new_n"]) == (-0.5, 0.2, 4)
+

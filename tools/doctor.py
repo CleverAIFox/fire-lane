@@ -46,8 +46,6 @@ import json
 import sys
 from pathlib import Path
 
-import yaml
-
 # 대장 조회기는 하나다(firelane.ledger.globs).
 from firelane import ledger as _led
 
@@ -55,7 +53,6 @@ from firelane import ledger as _led
 DECIDED = ("retired", "ingested", "held", "foreign")
 
 ROOT = Path(__file__).resolve().parents[1]
-YAML = ROOT / "sources.yaml"
 ACQ = ROOT / "data" / "_acquire.json"
 INTAKE = ROOT / "data" / "_intake.json"
 
@@ -163,10 +160,10 @@ def pipeline_report() -> None:
         # ★ 2026-08-30. 처분이 결정된 것은 "대기 중" 이 아니다.
         #   §4-4 의 판단이 HANDOFF 에만 있어 검사가 매번 6건을 세었다.
         #   결정은 sources.yaml.landing_disposition 에 있다.
-        _dy = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
+        # ★ 2026-10-10 (PLAN #55 ① · §453). 읽는 자리는 `ledger` 하나다 —
+        #   종전에는 이 파일이 `sources.yaml` 을 세 번 저마다 열었다.
         _disp = {str(i.get("file")): str(i.get("action"))
-                 for i in ((_dy.get("landing_disposition") or {})
-                           .get("items") or [])}
+                 for i in _led.disposed()}
         # ★ 2026-09-17 (DECISIONS §171-5). `held` · `foreign` 도 처분이다 —
         #   `sweep.held_names` 가 "보류도 처분이다" 로 이미 그렇게 읽는다.
         #   여기만 retired · ingested 둘로 좁혀 판단이 끝난 보류분을 매번
@@ -235,7 +232,7 @@ def integrity_report() -> None:
                      f"   (대장 밖 {len(only_disk)}건)")
 
     # 대장 글롭이 실물을 잡나
-    d = yaml.safe_load(YAML.read_text(encoding="utf-8")) or {}
+    d = _led.load_sources()
     dead = []
     for k, e in (d.get("datasets") or {}).items():
         for pat in _led.globs(e):
@@ -318,9 +315,7 @@ def backup_report() -> None:
         #   검사가 매번 같은 말을 반복했고, 그것이 잘못된 경보다 —
         #   판단이 끝난 사안을 미해결처럼 보이게 한다. 판단은 선언에
         #   올렸다(layers.backup_policy). 검사는 그것을 읽는다.
-        import yaml as _y
-        _d = _y.safe_load(YAML.read_text(encoding="utf-8")) or {}
-        pol = _d.get("backup_policy") or {}
+        pol = _led.load_sources().get("backup_policy") or {}
         if pol.get("state") == "single_copy":
             print(f"{OK} 한 벌 운용 (결정 {pol.get('decided')} · "
                   f"{pol.get('by')})")

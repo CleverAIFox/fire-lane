@@ -3,7 +3,10 @@
  */
 import { FL, test, ok } from "./harness";
 import { buildAdjacency, findRoute } from "../src/domain/graph";
-import { cornerRadiusMax, deflection, tightTurn, TIGHT_TURN_M } from "../src/domain/turning";
+import {
+  cornerRadiusMax, cornerWidth, deflection, MIN_DEFLECTION, tightTurn,
+  TIGHT_TURN_M, turnCheckRadius,
+} from "../src/domain/turning";
 import { routeRuleWarnings } from "../src/domain/rules";
 import type { GraphEdge, NaviGraph, VehicleSpec } from "../src/domain/types";
 
@@ -66,4 +69,34 @@ test("발행 그래프 — 펌프차 · 물탱크차 경로의 경고가 경로�
   }
   ok(seen > 20, `표본 경로 ${seen} — 너무 적다`);
   ok(nTank >= nPump, `물탱크차(11.2m) 경고 ${nTank} < 펌프차(7.3m) ${nPump} — 반경이 클수록 코너가 좁아야 한다`);
+});
+
+
+// ── 2026-10-12 (DECISIONS §483) ────────────────────────────────────
+//   `navicov` 가 이 파일의 둘을 「시험이 이름으로도 안 부른다」로 셌다 —
+//   `turnCheckRadius` · `cornerWidth`. 둘 다 **점검을 켜고 끄는 자리**다.
+
+test("점검 대상인가 — 제원 완성 차종만. 실물 제원은 **아직 아니다**", () => {
+  ok(turnCheckRadius(PUMP) === 7.3, "반경을 든 차의 반경을 못 읽는다");
+  ok(turnCheckRadius(NOCHK) === null, "null 을 수로 바꿔 읽는다");
+  // ★ 실물 `vehicle_spec.json` 에는 그 칸이 없다 — `turn_radius_verified` 가
+  //   false 이고 미검증 값으로 화면이 말하지 않는다(§81 · §86-5). 그래서
+  //   지금 이 점검은 **꺼져 있다.** 결함이 아니라 선언이고, 자료가 오면 켜진다.
+  ok(turnCheckRadius(FL.spec) === null,
+    "실물 제원에 회전반경이 들어왔다 — 그러면 이 점검이 켜지고 경로가 움직인다");
+  ok(tightTurn(L(), FL.spec, 0, 1, 1) === null, "점검 대상이 아닌데 코너를 판정했다");
+});
+
+test("코너 폭 — **벽~벽**을 먼저 쓴다. 최소 폭은 모서리의 폭이 아니다", () => {
+  const mk = (over: Partial<GraphEdge>) => ({
+    seg_uid: "x", verdict: "clear", width_min_m: null, length_m: 10,
+    a: 0, b: 1, coords: [], ...over,
+  } as GraphEdge);
+  ok(cornerWidth(mk({ width_max_m: 8, width_min_m: 3 })) === 8,
+    "최소 폭을 썼다 — 전이 4,472 중 2,038 이 좁은 코너가 됐던 그 꼴이다");
+  ok(cornerWidth(mk({ width_min_m: 3 })) === 3, "벽~벽이 없을 때 최소 폭으로 안 떨어진다");
+  ok(cornerWidth(mk({})) === null, "둘 다 없는데 수를 만든다 — 모르면 말하지 않는다");
+  // ★ `0` 은 **모르는 것이 아니다.** 접으면 폭 0 인 길이 폭 미지로 바뀐다
+  ok(cornerWidth(mk({ width_max_m: 0, width_min_m: 3 })) === 0, "폭 0 을 모름으로 접었다");
+  ok(MIN_DEFLECTION > 0 && MIN_DEFLECTION < 90, "코너 문턱이 말이 안 되는 값이다");
 });

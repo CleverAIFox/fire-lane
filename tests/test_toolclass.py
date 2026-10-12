@@ -94,3 +94,75 @@ def test_every_body_names_why_it_is_not_an_entry_point():
     assert ent, "진입점이 하나도 없다"
     naked = [k for k, r in ent.items() if not r["근거"]]
     assert not naked, f"진입점인데 근거가 비었다 — {naked}"
+
+
+# ── 2026-10-12 (DECISIONS §489) ────────────────────────────────────
+#   §487 이 분모를 바로잡은 뒤 이 파일이 빚에 남았다. `judge()` 를 **실물로**
+#   부르고 「조용하다」만 보고 있었다 — 그 함수에 갈래가 **일곱**인데 어느
+#   갈래도 우는 것을 본 자리가 없었다. 실물이 깨끗하면 일곱이 다 죽어도 초록이다.
+
+def _row(*, 선언=None, 도출=False, 진입점=True, 근거="main()"):
+    return {"부류": 선언 or ("관문" if 도출 else "?"), "선언": 선언,
+            "도출": 도출, "진입점": 진입점, "근거": 근거}
+
+
+def test_a_well_formed_row_is_silent():
+    """★ 음성. 멀쩡한 줄에서 울면 실물이 영원히 빨갛다."""
+    bad, none = T.judge({"tools/a.py": _row(선언="생산")})
+    assert bad == [], bad
+    assert none == [], none
+    # 관문은 선언이 없는 것이 옳다 — 도출이 든다
+    bad, none = T.judge({"tools/b.py": _row(도출=True)})
+    assert bad == [] and none == [], (bad, none)
+    # 몸통은 진입점이 아니어야 한다
+    bad, none = T.judge({"tools/c.py": _row(선언="몸통", 진입점=False)})
+    assert bad == [] and none == [], (bad, none)
+
+
+def test_a_word_outside_the_vocabulary_is_caught():
+    bad, _ = T.judge({"tools/a.py": _row(선언="아무말")})
+    assert any("어휘 밖" in b for b in bad), bad
+    # 어휘 전부를 말해 준다 — 안 말하면 다음 사람이 또 지어낸다
+    assert any(next(iter(T.VOCAB)) in b for b in bad), bad
+
+
+def test_a_gate_that_calls_itself_something_else_is_caught():
+    """★ **도출이 이긴다.** verify · CI 가 부르면 그것은 관문이다."""
+    bad, _ = T.judge({"tools/a.py": _row(선언="조사", 도출=True)})
+    assert any("도출이 이기지 않는다" in b for b in bad), bad
+
+
+def test_calling_yourself_a_gate_without_a_caller_is_caught():
+    """★ 반대쪽 — 적어 놓고 아무도 안 부르면 **죽은 관문**이다."""
+    bad, _ = T.judge({"tools/a.py": _row(선언="관문")})
+    assert any("어디서도 안 부른다" in b for b in bad), bad
+
+
+def test_an_entry_point_calling_itself_a_body_is_caught():
+    """★ §437 이 닫은 자리 — 분모를 진입점으로 좁히면 몸통에 남은 옛 선언이
+    조용해진다. 그 침묵을 이 갈래가 깬다."""
+    bad, _ = T.judge({"tools/a.py": _row(선언="몸통", 근거="경로 호출")})
+    assert any("진입점이다" in b and "경로 호출" in b for b in bad), bad
+
+
+def test_a_non_entry_point_may_only_call_itself_a_body():
+    bad, _ = T.judge({"tools/a.py": _row(선언="생산", 진입점=False)})
+    assert any("물려받는다" in b for b in bad), bad
+
+
+def test_a_non_entry_point_without_a_declaration_is_caught():
+    bad, _ = T.judge({"tools/a.py": _row(진입점=False)})
+    assert any("선언이 없다" in b for b in bad), bad
+
+
+def test_an_undeclared_non_gate_goes_to_the_ratchet_not_to_the_red_list():
+    """★ 그 둘이 **다른 통**이다. 섞으면 래칫이 빨간불과 같이 움직인다."""
+    bad, none = T.judge({"tools/a.py": _row()})
+    assert bad == [], bad
+    assert none == ["tools/a.py"], none
+
+
+def test_the_judge_is_not_an_empty_net():
+    """★ 빈 입력에서 조용한 것은 옳다 — 그러나 실물 분모가 비면 터져야 한다.
+    그 터짐은 `ratchet_values()` 가 든다(0 을 내지 않는다)."""
+    assert T.judge({}) == ([], [])

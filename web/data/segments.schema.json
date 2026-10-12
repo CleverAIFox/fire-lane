@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "89378ed85956715172d22b4407743071aa9abe91100c519bc3bb3d9ecea9510b",
+  "sha256": "e2087f054282a621b31c61f03aefb18debbd0f2e1d50c1c57ec7d335bf26ccde",
   "count": 1281,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
@@ -20,7 +20,6 @@
     "light_count": "int|null 반경 50m 가로등 수. 지번 단위 집계라 근사다",
     "width_max_m": "float|null 담~담(상한). building 트랜섹트. 대로는 null(건물이 40m 밖)",
     "verdict": "clear|needs_cv|blocked|unknown",
-    "width_verified": "bool",
     "midpoint_fallback": "bool 교차로 제외로 샘플 0 → 중점 측정",
     "inherited": "bool 사용하지 않는다. 항상 false",
     "n_sample": "int 정규표본 수(교차로 제외 후). verdict 가 이것을 본다",
@@ -40,7 +39,7 @@
     "truck_width_m": 3.0,
     "park_occupancy_m": 2.0,
     "nfa_run_m": 100.0,
-    "cctv_range_m": 25.0,
+    "cctv_range_m": 19.0,
     "intersection_exclusion_m": 5.0,
     "wmax_cap_m": 60.0,
     "min_seg_len_m": 3.0,
@@ -53,7 +52,7 @@
     "wmin >= 7.0 + 정규표본 1개 -> needs_cv (표본 하나로 clear 를 주지 않는다)",
     "wmin 있음 -> needs_cv (상습주차 여부로 갈림. 영상판정 대상)",
     "그 외 -> unknown (reason=width). 폭 산출 불가",
-    "needs_cv 인데 CCTV 25m 밖 -> unknown (reason=no_cctv_narrow|no_cctv_thin|no_cctv_band|no_cctv_single). 영상판정 불가",
+    "needs_cv 인데 CCTV 19m 밖 -> unknown (reason=no_cctv_narrow|no_cctv_thin|no_cctv_band|no_cctv_single). 영상판정 불가",
     "needs_cv 인데 wmin >= 7.0 + ROAD_BT < 3.0 -> unknown (reason=ledger_disputes). 대장이 반박한다"
   ],
   "scope": "web — 표출용 사본. processed 전용 컬럼은 뺐다",

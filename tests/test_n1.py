@@ -165,9 +165,15 @@ def test_ingest_has_no_shared_extract():
 def test_ledger_layer_is_never_a_lake_layer():
     """§181-5 · G-21 — `layer` 는 zip 안 레이어 이름 칸이다. 레이크 층 이름(raw …)을 적으면
     shp_zip 으로 바꾸는 순간 계약 검사가 `raw 없음` 으로 운다."""
+    from firelane import layers as _layers
+
     y = ledger.load_sources()
+    # ★ 2026-10-11 (DECISIONS §460). 손으로 적은 `lake.LAYERS` 가 없다 — 층 목록은
+    #   대장에서 도출하고 그 집은 `firelane/layers.py` 다(`lake_layers()`).
+    lake_names = _layers.lake_layers()
+    assert lake_names, "레이크 층이 0개다 — 도출이 죽었다(빈 그물)"
     bad = [k for k, e in (y.get("datasets") or {}).items()
-           if str((e or {}).get("layer", "")) in (*lake.LAYERS, *lake.ABOLISHED)]
+           if str((e or {}).get("layer", "")) in (*lake_names, *lake.ABOLISHED)]
     assert not bad, f"layer 칸에 레이크 층 이름 — {bad}"
     assert y["datasets"]["civil_office"]["kind"] == "shp_zip"
 

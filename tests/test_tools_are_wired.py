@@ -3,7 +3,7 @@
 test_tools_are_wired.py — 만들어놓고 안 부르는 도구가 있는가.
 
 ── 왜 생겼나 ───────────────────────────────────────────────────
-2026-09-02. `tools/docx_check.py` 에 캡션 절을 새로 붙였다. 그날 그것으로
+2026-09-02. 당시 `tools/docx_check.py`(삭제)에 캡션 절을 새로 붙였다. 그날 그것으로
 기획서의 `1,102` 셋과 낡은 캡션 둘을 잡았다. 그런데 **그 도구는
 `verify.sh` 에도 CI 에도 테스트에도 걸려 있지 않았다.** 사람이 손으로
 칠 때만 돌았고, 그 사람은 2026-09-03 에 나간다.
@@ -42,24 +42,9 @@ ROOT = Path(__file__).resolve().parents[1]
 #   면제 목록에 남아 있었다. `--check` 로 강제자 승격만 하고 여기서 안 뺐다.
 #   그 상태에서는 verify.sh 배선을 끊어도 우는 곳이 없다. 면제가 사각지대다.
 EXEMPT = {
-    # ★ 2026-10-09 (DECISIONS §440-3 · §440-9). **표만 든 몸통 둘.** 진입점이
-    #   없고 `main()` 도 없다 — 부를 것이 없는 것이지 안 부르는 것이 아니다.
-    #   둘 다 제 표를 든 도구가 상한을 먹어서 떼낸 것이고, 그 도구가 import
-    #   한다. **배선은 그 import 다** — 표가 안 실리면 그쪽이 바로 죽는다.
-    "sizetable": "재는 쪽이 import 하는 **예외 표**다. 진입점이 없다 —\n"
-                 "           표가 안 실리면 재는 쪽이 바로 죽어 배선이 드러난다",
-    "docxrules": "고치는 쪽과 찾는 쪽이 import 하는 **규칙표**다. 진입점이 없다 —\n"
-                 "           표가 안 실리면 그 둘이 바로 죽어 배선이 드러난다",
     # ★ 2026-10-08 (§435). 그물을 비우지 않는다 — 자기검사를 「자기검사 전수」가 돌린다.
     "mutate_guard": "**라이브러리**다. `mutate.py` 가 import 한다 — 흔드는 쪽이 없으면\n"
                     "           되돌릴 것도 없다. 자기검사는 「자기검사 전수」가 돌린다",
-    # ★ 2026-10-06 (DECISIONS §425). **한 번 쓰는 이사 도구**다.
-    #   `docs/proposal.docx` 를 `docs/proposal.md` 로 옮긴 그 한 번을
-    #   증명하는 자이고, 자동으로 돌면 **사람이 md 에서 고친 것을
-    #   docx 로 되돌린다** — 정본이 뒤집히는 꼴이라 절대 배선하지 않는다.
-    #   docx 가 은퇴하면 이 줄과 함께 사라진다.
-    "migrate_proposal": "한 번 쓰는 **이사** 도구다. 자동으로 돌면 사람이 정본(md)에서\n"
-                        "           고친 것을 옛 docx 로 되돌린다. docx 은퇴와 함께 사라진다",
     "fix": "**수리 문**이다(DECISIONS §362). 검사 문(`verify.sh`)이 이것을 부르면\n"
            "           쓰고 나서 재는 꼴이 되어 그 관문이 영영 초록이 된다 — 그 파일이\n"
            "           제 사유를 적는다. 사람이 치고, 친 뒤에 검사 문을 따로 돈다.\n"
@@ -98,7 +83,6 @@ EXEMPT = {
     "ledger_feeds": "`feeds` 산문 → 리스트 이관. `--apply` 가 `sources.yaml` 을 "
                     "고친다. 사람이 확인하고 친다(`ledger_stem` 과 같은 꼴)",
     "serve": "개발 서버. **끝나지 않는 프로세스**라 관문에 걸 수 없다",
-    "docx_fix": "기획서를 실제로 고친다. 사람이 확인하고 친다",
     # ★ 2026-09-30 (§319). `baseline` 을 면제에서 뺐다 — `tools/remeasure.py` 의
     #   재생성 사슬이 부른다. 「사람이 시점을 정한다」는 여전히 맞지만, 그 시점은
     #   이제 `--measured=<태그>` 로 들어오고 **호출은 기계가 한다.**
@@ -179,11 +163,29 @@ def _docstring_lines(src: str) -> set[int]:
 _PRINTS = re.compile(r"^\s*(?:printf|echo)\b")
 
 
+#: **선언표**다 — 도구 이름을 적지만 부르지 않는다. 호출자 우주에서 뺀다.
+#:
+#: ★ 2026-10-11 (DECISIONS §470). `tests/test_handrolled.py` 가 「손으로 짠
+#:   자리」의 분모이고, 그 표가 **파일 경로를 값으로** 든다. 그 줄이 호출로
+#:   세어지면 면제된 도구(`kpi` — 부류 조사)가 「이미 불린다」로 읽혀
+#:   `test_exemptions_are_not_dead` 가 거짓으로 운다.
+#: ★ `tests/test_sources_of_truth.py` 가 같은 덫을 **피해서** 설계됐다 —
+#:   그 파일의 `consumers` 가 비어 있는 사유가 거기 적혀 있다. 이쪽은 표의
+#:   본체가 경로라 피할 수 없으므로 **우주에서 빼고 그 사실을 적는다.**
+#: ★ 비면 뺄 것이 없다는 뜻이고, 죽은 선언은 아래 시험이 든다.
+DECLARATION_ONLY: dict[str, str] = {
+    "tests/test_handrolled.py":
+        "손으로 짠 자리의 **선언표**다(PLAN #168 · DECISIONS §470). 자리마다 "
+        "파일 경로를 값으로 들지만 그 도구를 부르지 않는다 — 경로를 적는 것과 "
+        "부르는 것은 다르다",
+}
+
+
 def _scan() -> list[tuple[str, int, str]]:
     """호출자가 될 수 있는 파일들의 **실행되는 줄**만 모은다.
 
     주석 · 독스트링 · 셸 안내문(`printf` · `echo`)은 뺀다. 셋 다 이름을
-    **적을 뿐** 부르지 않는다.
+    **적을 뿐** 부르지 않는다. 선언표(`DECLARATION_ONLY`)도 같은 사유로 뺀다.
     """
     files = [ROOT / r for r in CALLERS]
     for d in (".github/workflows", "tests"):
@@ -191,6 +193,8 @@ def _scan() -> list[tuple[str, int, str]]:
         if base.exists():
             files += [p for p in base.rglob("*")
                       if p.is_file() and p.suffix in (".yml", ".yaml", ".py")]
+    files = [p for p in files
+             if p.is_file() and p.relative_to(ROOT).as_posix() not in DECLARATION_ONLY]
     out = []
     for p in files:
         if not p.is_file():
@@ -223,6 +227,8 @@ def _blanked() -> dict[str, str]:
         if base.exists():
             files += [p for p in base.rglob("*")
                       if p.is_file() and p.suffix in (".yml", ".yaml", ".py")]
+    files = [p for p in files
+             if p.is_file() and p.relative_to(ROOT).as_posix() not in DECLARATION_ONLY]
     for p in files:
         if not p.is_file():
             continue
@@ -286,15 +292,51 @@ def call_sites(name: str, lines: list[tuple[str, int, str]] | None = None,
     return hits
 
 
+def imported_by_a_tool() -> set[str]:
+    """다른 도구가 **끌어오는** 도구의 이름. 그것이 곧 배선이다.
+
+    ★ 2026-10-10 (DECISIONS §449-2 · PLAN #101 과 같은 판). 같은 사유의 면제를
+      **세 번** 손으로 적고 나서 도출로 바꿨다(`sizetable` · `mutatetest` ·
+      `uichecktest`, 그리고 네 번째가 올 뻔했다 — `docnumtest` · `docnumtable`).
+      그 셋이 적은 사유가 글자까지 같았다: 「진입점이 없다 — 안 실리면 재는 쪽이
+      **바로 죽어** 배선이 드러난다」. 같은 문장을 네 번 적으면 그것은 사유가
+      아니라 **규칙**이다(§445-8 이 배운 자리와 같다).
+
+    ★ **문법으로 센다.** 함수 안에서 끌어오는 것도 배선이다 — 이 저장소는
+      맞물림을 끊으려고 일부러 그렇게 한다. 그래서 `mutatescope.imported()` 를
+      그대로 쓴다. 두 번째 import 수집기를 만들지 않는다(족 2 · §445-2).
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "mutatescope_wired", ROOT / "tools" / "mutatescope.py")
+    assert spec and spec.loader
+    ms = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = ms
+    spec.loader.exec_module(ms)
+
+    out: set[str] = set()
+    for q in sorted((ROOT / "tools").glob("*.py")):
+        out |= {n for n in ms.imported(q.read_text(encoding="utf-8", errors="replace"))
+                if n != q.stem and (ROOT / "tools" / f"{n}.py").is_file()}
+    return out
+
+
 def test_every_tool_is_called_somewhere():
     """도구가 어딘가에서 **실행되는가.** 목록에만 있는 것은 배선이 아니다.
 
     ★ 범위는 `.py` 뿐이 아니다. `.sh` · `.mjs` 도 도구다.
+
+    ★ 2026-10-10 (§449-2). 「다른 도구가 끌어온다」를 **도출한다** — 종전에는
+      그 사유를 면제 표에 손으로 적었고 세 줄이 글자까지 같았다.
     """
     lines = _scan()
+    byimport = imported_by_a_tool()
+    assert byimport, "도구가 도구를 끌어오는 자리를 하나도 못 찾았다 — 그물이 비었다"
     bad = [f"  tools/{p.name} 를 아무 데서도 안 부른다"
            for p in _tools()
            if p.stem not in EXEMPT and p.name not in EXEMPT
+           and p.stem not in byimport
            and not call_sites(p.name, lines)]
     assert not bad, (
         "만들어놓고 안 부르는 도구가 있다.\n" + "\n".join(bad)
@@ -325,6 +367,28 @@ def test_exemptions_are_not_dead():
         f"실제로 불리는데 면제 목록에 남아 있다. {len(dead)}건\n" + "\n".join(dead)
         + "\n\n  면제는 **사각지대**다 — 면제된 도구는 배선이 끊겨도 안 운다.\n"
           "  불리게 됐으면 EXEMPT 에서 빼라. 그래야 그 배선을 누가 끊으면 운다.")
+
+
+def test_declaration_only_files_are_alive():
+    """★ 2026-10-11 (DECISIONS §470). **선언표 면제가 아직 필요한가.**
+
+    이 면제는 우주를 좁히므로 사각지대다 — 그 파일이 사라지거나, 더는 도구
+    경로를 안 들면 면제를 지워야 한다. 안 지우면 다음에 그 파일이 **정말로**
+    도구를 부르게 된 날 아무도 안 운다.
+    """
+    bad = []
+    for rel, why in sorted(DECLARATION_ONLY.items()):
+        p = ROOT / rel
+        if not p.is_file():
+            bad.append(f"  {rel:<34} 파일이 없다 — 죽은 면제다")
+            continue
+        if not re.search(r'"tools/[\w/]+\.(?:py|sh|mjs)"', p.read_text(encoding="utf-8")):
+            bad.append(f"  {rel:<34} 도구 경로를 **안 든다** — 면제할 것이 없다")
+        if len(" ".join(why.split())) < 40:
+            bad.append(f"  {rel:<34} 사유가 얇다")
+    assert not bad, ("선언표 면제가 낡았다. "
+                     f"{len(bad)}건\n" + "\n".join(bad)
+                     + "\n\n  면제는 **우주를 좁힌다** — 필요 없어지면 지워라.")
 
 
 def test_exempt_entries_are_real():

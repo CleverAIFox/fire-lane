@@ -51,6 +51,23 @@ gate_parity.py — **로컬 관문과 CI 가 같은 것을 보는가.** 3족의 
   2026-09-18 에 `verify.sh` 만 고쳐서 **로컬 초록 · CI 빨강**이 났다.
   이제 둘 다 인자 없이 부르고 기본값이 `RATCHET` 이다.
 
+── 무엇을 세나 (2026-10-11 · DECISIONS §456-6) ────────────────
+★ 아래 「무엇을 맞추나」는 **집합**이다. 그래서 「같은 것을 두 번 도는가」가
+  판정에 닿기 전에 접혔다 — 같은 pytest 를 열 개 더 붙여도 출력이 한 글자도
+  안 바뀌었고, §456-4 가 센 중복 여섯을 이 도구가 하나도 못 봤다. 세는 축 둘을
+  더했다.
+
+    DUP_CMD      한 파일 안에서 **글자까지 같은 명령**을 두 번 이상 부르는가
+    DOUBLE_RUN   `workflow_call` 과 제 트리거를 같이 들면서 `concurrency.group`
+                 키가 **부르는 쪽을 안 가르는** 워크플로가 있는가
+
+★ 그 둘의 집은 `tools/gateruns.py` 다 — 묻는 것이 다르면 도구가 다르고
+  (이 파일은 「같은 것을 보는가」, 그쪽은 「몇 번 도는가」), 길이 상한이
+  그 경계를 먼저 가리켰다. 판정은 여전히 이 도구가 찍는다.
+
+★ 세는 단위는 검사기가 아니라 **명령 한 줄**이다. 같은 도구의 다른 하위명령은
+  묻는 것이 다르므로 중복이 아니다(ruff 룰셋 둘 · golden check/selftest).
+
 ── 무엇을 맞추나 ──────────────────────────────────────────────
 단계 **이름**이 아니라 **검사기**를 맞춘다. 이름은 로컬과 CI 가 서로 다르게
 적는다(`인코딩·개행` vs `인코딩·개행` 은 우연히 같지만 `pytest` vs
@@ -103,6 +120,7 @@ RATCHET = 0
 #   있었고 게이트가 없으니 일곱이 되어도 아무도 모른다. 관문 동등은 **양방향**이다 —
 #   한쪽만 보면 반대쪽이 사각지대가 된다(§78 · R23).
 CI_ONLY_RATCHET = 0
+
 
 # `# ci-exempt: <검사기> <사유...>` — 사유는 다섯 글자 이상이어야 한다.
 #   짧은 사유는 사유가 아니다. "필요" 두 글자로 면제받는 길을 막는다.
@@ -186,7 +204,8 @@ def _verify_src() -> str:
 
 
 def local_tokens() -> set[str]:
-    return tokens(_nocomment(_verify_src()))
+    src = _nocomment(_verify_src())
+    return tokens(src) | _hook_tokens(src)
 
 
 def exemptions() -> dict[str, str]:
@@ -249,10 +268,33 @@ def _no_path_filters(text: str) -> str:
     return "".join(out)
 
 
+#: `pre-commit run --all-files` 를 돌리는가. 돌리면 그 설정의 훅이 **그 자리에서
+#: 실제로 도는 검사기**다.
+_PRECOMMIT_RUN = re.compile(r"pre-commit\s+run\s+--all-files")
+_PRECOMMIT_CFG = ROOT / ".pre-commit-config.yaml"
+
+
+def _hook_tokens(src: str) -> set[str]:
+    """`.pre-commit-config.yaml` 의 검사기. **그 쪽이 훅을 돌릴 때만** 센다.
+
+    ★ 2026-10-10 (DECISIONS §457). 이 자리가 없어서 **훅이 든 검사기가 양쪽
+      목록에 안 보였다.** 그래서 CI 쪽에 세어지려면 같은 명령을 워크플로 단계로
+      **한 번 더** 적어야 했고, 그 사본이 §456-4 ⑤⑥ 의 중복이다 —
+      `tools/encoding_check.py` 와 `node --check` 가 같은 job 에서 두 번 돌았다.
+    ★ **조건을 센다.** `pre-commit run --all-files` 가 그 쪽 글에 있어야 한다.
+      그 줄이 사라지면 이 토큰도 같이 사라져 한쪽만 보는 것으로 운다 —
+      선언이 아니라 **실제로 도는가**를 묻는다.
+    """
+    if not _PRECOMMIT_CFG.exists() or not _PRECOMMIT_RUN.search(src):
+        return set()
+    return tokens(_nocomment(_PRECOMMIT_CFG.read_text(encoding="utf-8")))
+
+
 def ci_tokens() -> set[str]:
     out: set[str] = set()
     for p in sorted(WF.glob("*.yml")) + sorted(ACT.rglob("*.yml")):
-        out |= tokens(_no_path_filters(_nocomment(p.read_text(encoding="utf-8"))))
+        src = _no_path_filters(_nocomment(p.read_text(encoding="utf-8")))
+        out |= tokens(src) | _hook_tokens(src)
     return out
 
 
@@ -382,6 +424,25 @@ def report(max_local: int | None) -> int:
         else:
             print(f"✓ 미선언 CI 전용 {len(ci_undeclared)} = 래칫 {CI_ONLY_RATCHET}"
                   f" · 선언된 면제 {len(ci_declared)}")
+
+    # ── 횟수 축 둘 (2026-10-11 · DECISIONS §456-6 ⑧) ──────────────
+    import gateruns as _runs  # noqa: PLC0415  판정 경로에서만 쓴다
+    # ★ 위의 네 판정은 전부 **집합**이라 횟수를 못 본다. 아래 둘이 그 자리다.
+    #   래칫 대조는 `tools/ratchet.py` 가 들고, 여기서는 **빨간불**을 낸다 —
+    #   받아적기와 관문은 다른 일이다.
+    print()
+    for name, got, want, what in (
+            ("같은 명령 두 번", _runs.dup_cmds(), _runs.DUP_CMD,
+             "한 자리에서 글자까지 같은 명령"),
+            ("두 벌 도는 워크플로", _runs.double_runs(), _runs.DOUBLE_RUN,
+             "workflow_call 과 제 트리거를 같이 들면서 group 키가 안 가르는 것")):
+        if len(got) != want:
+            print(f"✗ {name} {len(got)} ≠ 래칫 {want} — {what}")
+            for g in got:
+                print(f"    {g}")
+            rc = 1
+        else:
+            print(f"✓ {name} {len(got)} = 래칫 {want}")
     return rc
 
 
@@ -417,6 +478,22 @@ def selftest() -> int:
         bad.append("면제 파서가 자기 예상 형식을 못 읽는다")
     if EXEMPT_RE.search("# 레이크가 필요해서 ci-exempt 로 뺐다"):
         bad.append("산문 속 `ci-exempt` 를 선언으로 센다 — 형식이 선언을 안 가른다")
+    # ★ 2026-10-11. 횟수 축 둘도 **무는지** 양성·음성으로 본다. 0 을 찍는 축은
+    #   빈 그물과 구별되지 않는다 — 셋 중 둘이 그래서 생겼다(§456-6).
+    import gateruns as _runs  # noqa: PLC0415  프로브에서만 쓴다
+    if not _runs.ci_cmds():
+        bad.append("워크플로에서 명령을 0줄 찾았다 — 횟수 축이 빈 그물이다")
+    if not _runs.local_cmds():
+        bad.append("verify.sh 에서 명령을 0줄 찾았다 — 횟수 축이 빈 그물이다")
+    if not _runs.dup_cmds(local=["uv run python tools/x.py"] * 2, ci=[]):
+        bad.append("같은 명령 둘을 중복으로 안 센다")
+    if _runs.dup_cmds(local=["uv run python tools/x.py", "uv run python tools/x.py --only"], ci=[]):
+        bad.append("하위명령이 다른 둘을 중복으로 센다 — 묻는 것이 다르다")
+    _dbl = "on:\n  workflow_call:\n  push:\n    branches: [dev]\nconcurrency:\n  group: c-${{ github.ref }}\n"
+    if not _runs.double_runs({"probe.yml": _dbl}):
+        bad.append("두 벌 도는 꼴을 안 센다 — group 키가 안 가르는데 조용하다")
+    if _runs.double_runs({"probe.yml": _dbl.replace("github.ref", "github.workflow")}):
+        bad.append("가르는 group 키를 두 벌로 센다 — 고친 자리를 또 울린다")
     if bad:
         print("✗ 프로브 자기검사 실패")
         for b in bad:

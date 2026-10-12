@@ -115,11 +115,20 @@ def test_star_density():
     # ★ 표 줄은 안 센다. `PLAN §1` 은 행이 일흔이 넘는 **목록**이고 그
     #   안의 별표는 각 행의 강조지 절의 강조가 아니다. 절을 쪼개라는
     #   신호로 쓸 수 없는 자리다.
+    # ★ 2026-10-10 (DECISIONS §450 · PLAN #34). **울타리 안도 안 센다.** 사유가
+    #   바로 위 표 줄과 같다 — 디렉터리 목록의 별표는 **그 줄의 주석**이지 절의
+    #   강조가 아니고, 절을 쪼개라는 신호로 못 쓴다. `MASTER §24-5`(`tools/`
+    #   목록)가 스물하나였고 그것을 쪼개면 **목록이 끊긴다** — 규칙이 재려던
+    #   「절이 여러 가지를 한다」와 정반대 방향이다.
+    # ★ 산문은 그대로 센다. 이 완화는 **울타리 안**에만 든다.
+    # ★ 펜스를 **손으로 토글하지 않는다** — `docparse.prose_lines` 가 그 정본이고
+    #   `test_fence_handling_has_exactly_one_home` 이 둘째 집을 금지한다. 처음에
+    #   손으로 짰다가 그 문이 바로 울었다(족 2).
     limit = 8
     bad = []
     for p in NUMBERED_DOCS:
         cur, n = None, 0
-        for line in p.read_text(encoding="utf-8").splitlines():
+        for _no, line in docparse.prose_lines(p):
             if line.startswith(("## ", "### ")):
                 if cur and n > limit:
                     bad.append(f"  {p.name}  §{cur}  ★ {n}개")
@@ -330,7 +339,7 @@ DOCS_DIR = ROOT / "docs"
 # ★ 2026-10-06 (DECISIONS §425). `proposal.md` 를 더했다. **다섯째가 아니다** —
 #   넷째 슬롯의 **형식이 바뀌는 중**이고, 두 꼴이 같이 사는 것은 옛 다섯(도구)이
 #   은퇴할 때까지다. docx 가 사라지면 이 집합도 넷으로 돌아간다.
-ALLOWED_DOCS = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.md", "proposal.docx"}
+ALLOWED_DOCS = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.md"}
 # 그림은 문서가 아니라 `render_figures` 의 생성물이다.
 FIGURES_DIR = "figures"
 ALLOWED_FIGURES = {".lock.json"}                 # 그 밖에는 `*.svg` 만
@@ -340,7 +349,7 @@ def test_docs_dir_holds_only_the_allowed_documents():
     """`docs/` 에는 허용된 문서만 산다 — 2026-09-23 소유자 규칙.
 
     이 저장소의 문서는 **넷**이다 — `MASTER.md`(지금 무엇이 어떤 값인가) ·
-    `PLAN.md`(남은 일) · `DECISIONS.md`(왜 그렇게 했나) · `proposal.docx`
+    `PLAN.md`(남은 일) · `DECISIONS.md`(왜 그렇게 했나) · `proposal.md`
     (제출물). 루트 `README.md` 가 다섯째이고 그것은 이 폴더 밖에 산다.
 
     2026-09-22 에 규율 둘이 문서로 나갔다 — `SOURCES_OF_TRUTH.yaml`(가드 2)과

@@ -73,18 +73,50 @@ def test_import_scanner_is_not_an_empty_net() -> None:
         assert need in tops, f"src·tools 가 {need} 를 import 하는데 못 잡았다 — 스캐너가 죽었다"
 
 
-def test_known_exceptions_are_still_unused() -> None:
-    """면제된 패키지를 **아직 아무도 import 안 하는가.** 하기 시작했으면 면제를 지운다."""
-    tops = _imported_tops()
-    dead = []
-    for dist in DEPTRY["per_rule_ignores"]["DEP002"]:
+def dead_exemptions(ignores: list[str], tops: dict[str, str]) -> list[str]:
+    """면제 목록 중 **이미 쓰이게 된** 것들. 순수 함수.
+
+    ★ 2026-10-12 (DECISIONS §484). 이 판정이 시험 본문의 루프였고, 면제
+      목록이 **지금 0개**라 그 루프가 **한 번도 안 돌았다** — 즉 그 시험은
+      오늘 아무것도 안 민다(「0 이 특별한 수다」가 아래 래칫의 말인데,
+      0 이면 **판정하는 코드도 안 돈다**는 쪽은 아무도 안 봤다).
+      함수로 빼서 합성 목록으로 민다.
+    """
+    out = []
+    for dist in ignores:
         hit = sorted(mod for mod in _modules(dist) if mod in tops)
         if hit:
-            dead.append(f"  {dist} — {hit[0]} 를 {tops[hit[0]]} 가 import 한다")
+            out.append(f"  {dist} — {hit[0]} 를 {tops[hit[0]]} 가 import 한다")
+    return out
+
+
+def test_known_exceptions_are_still_unused() -> None:
+    """면제된 패키지를 **아직 아무도 import 안 하는가.** 하기 시작했으면 면제를 지운다."""
+    dead = dead_exemptions(DEPTRY["per_rule_ignores"]["DEP002"], _imported_tops())
     assert not dead, (
         "쓰이게 된 패키지가 DEP002 면제에 남아 있다.\n" + "\n".join(dead)
         + "\n\n  pyproject.toml `[tool.deptry.per_rule_ignores] DEP002` 에서 지워라.\n"
           "  면제는 사각지대다 — 남겨 두면 그 패키지를 다시 안 쓰게 돼도 아무도 안 운다.")
+
+
+def test_the_judge_bites_an_exemption_that_came_back_to_life() -> None:
+    """★ **카나리아.** 면제가 0 이라 위 시험은 빈 목록을 돈다 — 그 자가
+    **살아 있는가**를 합성 목록으로 묻는다.
+
+    `shapely` 는 `src` 가 실제로 import 한다(위 빈 그물 시험이 그것을
+    못박는다). 그것을 면제 목록에 넣으면 반드시 걸려야 한다.
+    """
+    tops = _imported_tops()
+    assert dead_exemptions(["shapely"], tops), (
+        "쓰이고 있는 패키지를 면제해도 조용하다 — 그 판정이 죽었다")
+    # 이름표 표를 지나는 쪽도 민다 — `PyYAML` → `yaml` 이 그 표에 있다
+    mapped = [d for d in DEPTRY.get("package_module_name_map", {})
+              if _modules(d) & set(tops)]
+    assert mapped, "이름표 표의 어느 항목도 실제 import 와 안 맞는다 — 표가 낡았다"
+    assert dead_exemptions(mapped[:1], tops), "이름표를 지나는 면제는 안 걸린다"
+    # 그리고 **쓰이지 않는 것**은 조용하다 — 양방향이다
+    assert not dead_exemptions(["아무도-안-쓰는-패키지"], tops), \
+        "쓰이지 않는 면제에 운다 — 그러면 사람이 이 관문을 끈다"
 
 
 def test_known_exceptions_name_declared_packages() -> None:

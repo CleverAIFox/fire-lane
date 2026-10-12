@@ -22,12 +22,29 @@ ROOT = Path(__file__).resolve().parents[1]
 # ── 래칫 상한 — 2026-09-17 실측. 줄였으면 여기를 내린다 ─────────────
 MAX_RETIRED_GLOB = 0          # 폐기 항목이 글롭으로 파일을 가리키는 수
 MAX_RETIRED_NO_SHA = 0        # 이름으로는 적었는데 sha 가 없는 폐기 파일 — L2 가 레이크에서 재서 채웠다(§176)
-MAX_LEDGER_LOADERS = 39       # ledger · lake 밖에서 sources.yaml 을 직접 yaml 로 읽는 파일
+MAX_LEDGER_LOADERS = 37       # ledger · lake 밖에서 sources.yaml 을 직접 yaml 로 읽는 파일
 #                               ★ 2026-10-08 (DECISIONS §431 · PLAN #122). 40 → 39 —
 #                               `seg/vehicle.py` 가 빠졌다. **도메인이 파일을 읽고**
 #                               있었고, 읽기를 `ledger.vehicle_spec()` 으로 올렸다.
-MAX_OWNER_BLOCK_READERS = 11  # 2026-09-22 W10-1 이 하나를 뺐다(§217-5) · ledger · lake 밖에서 retired · landing_disposition 블록을 직접 읽는 파일 — K2 가 acquire 를 옮겼다(§180)
-MAX_AUTHORITY_BAD = 62        # authority 칸 규칙(MASTER §18-3a) 위반 datasets · 2026-09-17 juso_building_db retired 로 63 → 62(§183-2)
+#                               ★ 2026-10-10 (DECISIONS §453 · PLAN #55 ①). 39 → 37 —
+#                               `doctor` 가 세 번 · `intake` 가 두 번 저마다 열고
+#                               있었다. 둘 다 `ledger.load_sources()` 로 돌렸다.
+MAX_OWNER_BLOCK_READERS = 8   # 2026-09-22 W10-1 이 하나를 뺐다(§217-5) · ledger · lake 밖에서 retired · landing_disposition 블록을 직접 읽는 파일 — K2 가 acquire 를 옮겼다(§180)
+#                               ★ 2026-10-10 (DECISIONS §453 · PLAN #55 ①). 11 → 8 —
+#                               `lakecheck`(3곳) · `doctor` · `intake` 를 새 문
+#                               `ledger.retired()` · `ledger.disposed()` 로 돌렸다.
+
+# ── authority 래칫 — **둘로 가른다** (2026-10-10 · DECISIONS §453 · PLAN #55 ②) ──
+#   종전에는 62 하나였다. 그 수는 성질이 다른 둘을 합친 것이고, 합쳐 두면
+#   **고칠 수 있는 쪽이 고칠 수 없는 쪽에 숨는다.**
+#
+#     칸 없음         받은 경로를 아무도 모른다. **짐작해 적으면 거짓이 된다** —
+#                     내리는 길은 그 소스를 다시 받아 보거나 사람에게 묻는 것뿐이다
+#     받은 경로 없음   기관은 적혀 있고 괄호 꼴만 안 맞는다. **문서 작업으로 내려간다**
+#
+#   가르고 나면 둘째가 줄어드는 것을 첫째가 못 가린다. 2026-09-17 실측 45 · 17.
+MAX_AUTHORITY_MISSING = 45    # authority 칸이 아예 없는 datasets
+MAX_AUTHORITY_NO_ROUTE = 17   # 기관은 적었으나 받은 경로 괄호가 없는 datasets
 
 
 def _ratchet(name: str, got: int, cap: int, detail: list[str]) -> None:
@@ -161,10 +178,53 @@ def test_file_owners_are_resolved_in_one_place():
     _ratchet("주인 블록 직접 해석", len(bad), MAX_OWNER_BLOCK_READERS, bad)
 
 
-def test_authority_names_institution_and_route():
-    """authority = 기관 + 받은 경로 괄호. 개인 이름 금지(MASTER §18-3a · DECISIONS §173-3)."""
-    bad = authority_bad(ledger.load())
-    _ratchet("authority 규칙 위반", len(bad), MAX_AUTHORITY_BAD, bad)
+def _authority_split(y: dict) -> dict[str, list[str]]:
+    """위반을 **사유별로** 가른다. 판별은 `authority_bad` 하나가 한다(§445).
+
+    ★ 낱말로 가르지 않는다 — `authority_bad` 가 내는 꼬리말이 판별의 출력이고,
+      그것을 다시 파싱하면 자가 둘이 된다. 그래서 그 함수의 **세 갈래 문구**를
+      그대로 키로 쓴다. 문구가 바뀌면 아래 `test_the_split_covers_every_verdict`
+      가 운다.
+    """
+    out: dict[str, list[str]] = {"칸 없음": [], "받은 경로 괄호 없음": [], "개인 경유": []}
+    for b in authority_bad(y):
+        for k in out:
+            if k in b:
+                out[k].append(b)
+                break
+    return out
+
+
+def test_authority_entries_name_their_institution():
+    """★ 칸이 **아예 없는** 쪽. 짐작해 적으면 거짓이 되므로 사람이 내린다."""
+    bad = _authority_split(ledger.load())["칸 없음"]
+    _ratchet("authority 칸 없음", len(bad), MAX_AUTHORITY_MISSING, bad)
+
+
+def test_authority_entries_name_the_route_they_came_by():
+    """★ 괄호 꼴만 안 맞는 쪽. 문서 작업으로 내려간다 — 그래서 따로 센다."""
+    bad = _authority_split(ledger.load())["받은 경로 괄호 없음"]
+    _ratchet("authority 받은 경로 없음", len(bad), MAX_AUTHORITY_NO_ROUTE, bad)
+
+
+def test_no_authority_goes_through_a_person():
+    """개인 경유는 **상한이 0 이다.** 받아적을 수가 아니다(MASTER §18-3a)."""
+    bad = _authority_split(ledger.load())["개인 경유"]
+    assert not bad, "authority 가 개인 이름을 든다:\n" + "\n".join(f"  {b}" for b in bad)
+
+
+def test_the_split_covers_every_verdict():
+    """★ 가름이 **전수**인가. 한 갈래라도 새면 그 수가 아무 래칫에도 안 든다."""
+    y = ledger.load()
+    got, split = authority_bad(y), _authority_split(y)
+    assert sum(len(v) for v in split.values()) == len(got), (
+        f"위반 {len(got)} 중 가른 것 {sum(len(v) for v in split.values())} — "
+        "`authority_bad` 의 문구가 바뀌었다. 가름을 고쳐라")
+    # ★ 합성 — 세 갈래가 각각 제 칸에 든다
+    probe = {"datasets": {"a": {}, "b": {"authority": "동부소방서 (김OO 경유)"},
+                          "c": {"authority": "동부소방서"}}}
+    s = _authority_split(probe)
+    assert [len(s[k]) for k in ("칸 없음", "개인 경유", "받은 경로 괄호 없음")] == [1, 1, 1], s
 
 
 # ── 폐기 사유에 좌표가 들어가면 조인 키를 같이 적는다 ──────────────────

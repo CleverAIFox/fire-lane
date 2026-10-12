@@ -22,7 +22,6 @@ REQUIRED = {
     "width_min_m": (float, int, type(None)),
     "width_max_m": (float, int, type(None)),
     "verdict": str,
-    "width_verified": bool,
     "midpoint_fallback": bool,
     "inherited": bool,
     "route_usage": int,
@@ -399,7 +398,7 @@ def test_verdict_matches_rules_for_every_segment():
       4. wmin >= 7.0 · 정규표본 1개        needs_cv  DM02825 사고 방어
       5. wmin 있음                         needs_cv
       6. 그 외                             unknown
-      7. needs_cv 인데 CCTV 25m 밖         unknown
+      7. needs_cv 인데 CCTV 유효범위 밖       unknown
 
     ★ 이 테스트가 깨지면 둘 중 하나다. 규칙을 고쳤는데 여기를 안 고쳤거나,
       산출물이 규칙을 안 따르거나. 어느 쪽이든 멈추고 봐야 한다.
@@ -634,10 +633,34 @@ def test_segment_fields_are_internally_consistent(seg):
         # 폐기된 필드는 항상 거짓이다
         chk(p.get("inherited") in (False, "false", None),
             "inherited 가 참이다 — 상속은 08-12 에 폐기했다", p)
-        chk(p.get("width_verified") in (False, "false", None),
-            "width_verified 가 참이다 — D-25 실측 전이다", p)
+        # ★ 2026-10-10 (DECISIONS §455 · PLAN #4 ④). 피처 칸이 없어졌다 —
+        #   묻는 자리를 **스키마 최상위**로 옮겼다. 아래
+        #   `test_the_schema_declares_width_is_unverified` 가 든다.
 
     assert not bad, (f"필드 간 모순 {len(bad)}건\n  " + "\n  ".join(bad[:15]))
+
+
+def test_the_schema_declares_width_is_unverified():
+    """★ 미검증 선언이 **스키마 최상위에 한 번** 있는가.  (DECISIONS §455 · PLAN #4 ④)
+
+    종전에는 피처마다 `width_verified: false` 가 1,281개 있었고 이 물음을
+    그쪽에서 봤다. 칸을 지웠으므로 묻는 자리를 옮긴다 — **지우면서 축을 잃지
+    않는다**(§450 이 같은 자리를 지켰다).
+
+    ★ 참이 되는 길이 없다. 폭 교차대조는 **검증이지 실측이 아니고**(DECISIONS §291)
+      켜는 근거는 `D-25` 실측이다. 그래서 이 시험은 「false 인가」를 묻는다.
+    """
+    for rel in ("data/processed/segments.schema.json", "web/data/segments.schema.json"):
+        q = ROOT / rel
+        if not q.is_file():
+            continue
+        s = json.loads(q.read_text(encoding="utf-8"))
+        assert "width_verified" in s, (
+            f"{rel} 최상위에 `width_verified` 선언이 없다 — 미검증을 말하는 자리가 사라졌다")
+        assert s["width_verified"] is False, (
+            f"{rel} 가 폭을 검증됐다고 말한다 — D-25 실측 전이다")
+        assert "width_verified" not in (s.get("fields") or {}), (
+            f"{rel} 의 `fields` 에 `width_verified` 가 남아 있다 — 피처 칸은 지웠다")
 
 
 def test_schema_layers_differ_only_by_declaration():

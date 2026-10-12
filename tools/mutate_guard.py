@@ -146,7 +146,13 @@ def selftest() -> int:
                 if q.read_text(encoding="utf-8") != "x = 9\n":
                     bad.append("하위 프로세스가 흔든 것이 안 보인다")
                 pr.terminate()
-                pr.wait(timeout=20)
+                # ★ 2026-10-12 (DECISIONS §487). 20초였고 **부하에서 깨졌다** —
+                #   `mutate` 가 하위프로세스를 여럿 돌리는 동안 이 자기검사를
+                #   같이 돌리면 「신호에 안 죽었다」로 빨갛게 났다(실측 1회).
+                #   이 자가 묻는 것은 「**죽나**」이고 「20초 안에 죽나」가
+                #   아니다. 상한을 늘리는 것은 느슨해지는 것이 아니다 — 정말
+                #   안 죽으면 여전히 빨갛고, **흔들리는 시험은 꺼진다.**
+                pr.wait(timeout=90)
                 if q.read_text(encoding="utf-8") != "x = 1\n":
                     bad.append("**SIGTERM 에 되돌리지 않았다** — 이 파일의 존재 이유다")
         except subprocess.TimeoutExpired:

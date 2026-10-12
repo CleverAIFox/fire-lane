@@ -304,3 +304,71 @@ def test_the_secret_probe_declares_its_count_and_proves_it_is_alive():
         f"워크플로의 Secret {sorted(found)} ({len(found)}건)이 선언 "
         f"{rc.WF_SECRETS} 와 다르다.\n"
         "  늘었으면 등록을 확인하고, 줄었으면 **왜 줄었는지를 적고** 선언을 고쳐라.")
+
+
+# ── 2026-10-12 (DECISIONS §492) ────────────────────────────────────
+#   §491 이 분모를 바로잡은 뒤 이 파일이 빚에 남았다. 보안 설정 판정
+#   (`_security_gaps`)이 응답을 **제 안에서** 받아 와 합성으로 밀 수가
+#   없었고, 그래서 그 함수가 세게 적어 둔 규율 — **「모르는 것은 빨강이다」** —
+#   이 한 번도 안 돌았다. 응답을 받게 고치고(기본값은 그대로) 네 갈래를 민다.
+
+def _rcmod():
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location(
+        "_rc_probe", ROOT / "tools" / "ruleset_check.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_the_declared_security_settings_are_silent():
+    """★ 음성. 선언대로인 응답에서 울면 실물이 영원히 빨갛다."""
+    rc = _rcmod()
+    got = {k: {"status": v} for k, v in rc.SECURITY.items()}
+    assert rc._security_gaps(got) == [], rc._security_gaps(got)
+
+
+def test_a_setting_that_disagrees_is_called_out_with_both_values():
+    rc = _rcmod()
+    key, want = next(iter(rc.SECURITY.items()))
+    other = "disabled" if want == "enabled" else "enabled"
+    got = {k: {"status": v} for k, v in rc.SECURITY.items()}
+    got[key] = {"status": other}
+    bad = rc._security_gaps(got)
+    assert bad and key in bad[0], bad
+    assert other in bad[0] and want in bad[0], f"전후를 안 적는다 — {bad}"
+
+
+def test_a_missing_field_is_red_not_green():
+    """★ **본체.** 칸이 응답에 없으면 「꺼짐」이 아니라 「못 읽었다」다.
+    둘을 같이 초록으로 보내면 이 검사가 아무것도 안 하는 것과 같다."""
+    rc = _rcmod()
+    key = next(iter(rc.SECURITY))
+    got = {k: {"status": v} for k, v in rc.SECURITY.items() if k != key}
+    bad = rc._security_gaps(got)
+    assert bad and key in bad[0], bad
+    assert "응답에 없다" in bad[0], bad
+
+
+def test_an_empty_response_is_death_not_cleanliness():
+    """★ **0건이 청결인지 죽음인지 가른다.** 여기서는 죽음이다."""
+    rc = _rcmod()
+    # ★ `None` 은 여기서 안 민다 — 그것은 「받아 와라」는 뜻이고 그물을 탄다.
+    for empty in ({}, "문자열", [], 0):
+        bad = rc._security_gaps(empty)
+        assert bad and "하나도 못 읽었다" in bad[0], (empty, bad)
+
+
+def test_every_declared_setting_is_judged():
+    """★ 빈 그물 — 선언 다섯이 **하나씩** 판정에 든다. 하나를 빼먹으면
+    그 칸이 꺼진 날 아무도 안 운다."""
+    rc = _rcmod()
+    assert len(rc.SECURITY) >= 5, rc.SECURITY
+    for key, want in rc.SECURITY.items():
+        got = {k: {"status": v} for k, v in rc.SECURITY.items() if k != key}
+        bad = rc._security_gaps(got)
+        assert any(key in b for b in bad), f"{key} 가 사라졌는데 조용하다"
+        assert want in ("enabled", "disabled"), (key, want)

@@ -90,6 +90,15 @@ PATHABLE = ("stem", "stems", "files")
 #         넣으면 "하나만 읽는데 files 가 2개다" 를 매번 오탐한다.
 
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+#: 제공처가 **월까지만** 주는 경우. 없는 날짜를 짓지 않는다(§455 회색=NULL).
+#: ★ 2026-10-12 (DECISIONS §496). 종전에는 이 꼴이 전부 경고였다 —
+#:   `juso_adrdc` · `eais_roadledger_dm` 둘이 대장에 **사유까지 적어 두고**
+#:   매 실행 경고를 받고 있었다(「제공처 공시가 월까지만 준다. 없는 날짜를
+#:   짓지 않는다」). 옳은 값에 경고를 내는 검사는 **오탐 공장**이고, 잦은
+#:   오탐은 진짜 경보를 못 믿게 만든다(§18-13).
+#:   그래서 받는다 — 다만 **사유와 함께만**(§69). 사유는 대장 원문의 주석이
+#:   들고, `ledger_check` 가 `yaml_span` 으로 그 블록을 읽어 확인한다.
+DATE_MONTH = re.compile(r"^\d{4}-\d{2}$")
 FORBIDDEN_VALUES = {"TODO", "todo", "TBD", "?", "-", ""}
 
 # ── 계약 어휘 (2026-09-28 · DECISIONS §284-1) ──────────────────
@@ -141,6 +150,17 @@ FAIL, WARN = "FAIL", "WARN"
 def load() -> dict:
     f = paths.ROOT / "sources.yaml"
     return yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+
+
+def raw_text() -> str:
+    """대장 **원문**. `yaml_span` 의 짝이다 — 주석을 보는 검사가 쓴다.
+
+    ★ `yaml.safe_load` 는 주석을 버린다. 대장의 사유는 주석에 살고(§69),
+      그 사유를 확인하는 검사는 원문을 봐야 한다. 읽는 자리는 **여기
+      하나**다 — 대장의 주인이 읽는 법도 들고 있어야 한다(`load_sources`
+      가 다섯 벌이었던 그 자리와 같은 이유).
+    """
+    return (paths.ROOT / "sources.yaml").read_text(encoding="utf-8")
 
 
 # ── 대장 → raw · 단일 조회기 ──────────────────────────────────
@@ -246,6 +266,68 @@ def files_decl(e: dict) -> list[str]:
 #   16분 돌다 죽었다. 파일은 레이크 전체에 하나뿐이었지만 고칠 것은
 #   파일이 아니라 글롭이다 — 하나 더 생기는 날 똑같이 터진다.
 META_DIR = "_meta"
+
+
+#: 「대장에 있는데 실물이 없다」의 **등급 네 가지.** 부르는 쪽이 제 동사로 옮긴다.
+#:   none      부재가 아니다 — 실물을 봐도 된다
+#:   missing   **결손을 선언했다**(`status: missing`). 사유가 따라온다
+#:   awaiting  **아직 안 들어왔다**(`awaiting: <사유>`). 유예다
+#:   bare      `awaiting` 칸이 **비었다.** 사유 없는 유예는 받지 않는다(§424)
+ABSENCE = ("none", "missing", "awaiting", "bare")
+
+
+def absence(e: dict | None) -> tuple[str, str]:
+    """대장 항목 하나의 **부재 등급과 사유.** 디스크를 안 본다.
+
+    ── 왜 한 함수인가 (2026-10-10 · DECISIONS §447 · PLAN #161 닫힘) ─
+    같은 상태를 **네 자리**가 저마다 읽고 저마다 다른 이름으로 불렀다 —
+    `contract`(경고/실패) · `refcheck`(경고/실패) · `prep`(건너뜀) ·
+    `scan_data`(「유예」/「★ 결손」). 한 자리를 고치면 나머지가 안 따라와서
+    §424 가 `refcheck` 하나만 고쳤고 그 판이 머지에서 막혔다(§427) ·
+    §430-6 이 `prep` 을 **다섯째**로 찾았다. 고칠 때마다 하나씩 더 나왔다.
+
+    ★ **탐지로는 못 닫는다**(§431-8 이 구조 신호 둘을 짜서 실측했고 하나는
+      `prep` 을 못 잡고 하나는 열다섯을 잡았다). 그래서 판정을 여기 모으고
+      가드를 **「`awaiting` 글자가 이 파일 밖에 안 나온다」**로 둔다 —
+      글자 하나면 탐지가 재현된다.
+
+    ★ `lake` 가 아니라 여기인 이유 — 이 판정은 **대장 항목만** 읽는다.
+      디스크를 보는 모듈에 두면 보는 범위가 넓어 보이고(`lake` 는 대장 +
+      디스크다), 그 파일은 579줄로 상한에 붙어 있다. 행이 적은 이름보다
+      **보는 범위가 좁은 자리**를 골랐다(§445-5 와 같은 가름).
+
+    밖    **실물이 있는지는 안 본다** — 「없다」를 확인하는 것은 부르는 쪽이고
+          이 함수는 「없을 때 그것을 어떻게 부르나」만 답한다.
+    """
+    e = e or {}
+    if e.get("status") == "missing":
+        return "missing", str(e.get("missing_why") or "사유 미기재")
+    if "awaiting" in e:
+        why = str(e.get("awaiting") or "").strip()
+        return ("awaiting", why) if why else ("bare", "")
+    return "none", ""
+
+
+def retired(y: dict | None = None) -> dict:
+    """폐기 블록. **읽는 자리는 여기 하나다**(2026-10-10 · PLAN #55 ① · §453).
+
+    ★ `load_sources` 와 같은 사유다 — 열한 파일이 `y.get("retired")` 를 저마다
+      읽었고 `or {}` 가 있는 쪽과 없는 쪽이 갈려 있었다. 빈 블록에서 한쪽은
+      `{}` 를, 다른 쪽은 `None` 을 낸다.
+    ★ 인자를 받는 이유 — 부르는 쪽이 이미 대장을 읽었으면 두 번 읽지 않는다.
+      합성 대장을 넣는 시험도 같은 문을 쓴다.
+    """
+    return (y if y is not None else load_sources()).get("retired") or {}
+
+
+def disposed(y: dict | None = None) -> list:
+    """`landing_disposition.items`. 위와 같은 사유 — 파일 없는 기각 기록이다.
+
+    ★ **`retired` 와 다른 블록이다.** 저쪽은 파일이 있는 보관본이고 이쪽은
+      파일이 없는 처분 기록이다(MASTER §18-3c). 한 함수로 합치지 않는다.
+    """
+    d = (y if y is not None else load_sources()).get("landing_disposition") or {}
+    return d.get("items") or []
 
 
 def is_acquisition_meta(p) -> bool:

@@ -55,10 +55,14 @@ from __future__ import annotations
 
 import csv
 import json
-import math
+import statistics
 import sys
 from collections import Counter
 from pathlib import Path
+
+import shapely
+
+from firelane import localplane
 
 ROOT = Path(__file__).resolve().parents[1]
 GRAPH = ROOT / "web" / "data" / "navi_graph.json"
@@ -104,13 +108,6 @@ def load() -> dict:
     return json.loads(GRAPH.read_text(encoding="utf-8"))
 
 
-def _m(a: list[float], b: list[float]) -> float:
-    """두 경위도 사이 거리(m). 국소 평면 근사 — 이 범위에서 오차가 cm 아래다."""
-    dx = (a[0] - b[0]) * 111_320.0 * math.cos(math.radians(a[1]))
-    dy = (a[1] - b[1]) * 111_320.0
-    return math.hypot(dx, dy)
-
-
 def degrees(g: dict) -> Counter:
     """노드 번호 → 닿은 엣지 수. `nodes` 가 좌표 배열이라 **인덱스가 번호**다."""
     deg: Counter = Counter()
@@ -127,25 +124,54 @@ def dead_ends(g: dict) -> list[int]:
     return [i for i in range(len(g.get("nodes") or [])) if deg[i] == 1]
 
 
+def nearest_other(g: dict) -> dict[int, tuple[float, int]]:
+    """막다른 끝 → (가장 가까운 **다른** 노드까지의 거리, 그 노드). **자가 하나다.**
+
+    ★ 2026-10-11 (DECISIONS §470-2 · PLAN #168). 이 계산이 이 파일에 **두 벌**
+      있었다 — `near_pairs`(문턱 안만 낸다)와 `snap_report`(전 거리를 낸다)가
+      각자 전수 곱을 돌았다. 자가 둘이면 한쪽만 고치는 날이 오고, 그날 두
+      출력이 같은 그래프를 다르게 말한다(2족).
+
+    ★ `shapely.STRtree` 가 든다 — **이미 선언된 의존성**이다. 좌표를 국소 평면
+      미터로 올려 담으므로 트리의 유클리드 거리가 곧 `localplane.metres` 다.
+    ★ `exclusive=True` 가 자기 자신을 뺀다 — 손 판의 `if j == i: continue` 와
+      같은 뜻이고 그 한 줄을 잊는 날이 없다.
+    """
+    nodes = g.get("nodes") or []
+    ends = dead_ends(g)
+    if not ends or len(nodes) < 2:
+        return {}
+    pts = shapely.points([[n[0] * localplane.MX, n[1] * localplane.MY] for n in nodes])
+    tree = shapely.STRtree(pts)
+    out: dict[int, tuple[float, int]] = {}
+    for i in ends:
+        j, d = tree.query_nearest(pts[i], return_distance=True, exclusive=True,
+                                  all_matches=False)
+        if len(j):
+            out[i] = (float(d[0]), int(j[0]))
+    return out
+
+
 def near_pairs(g: dict, limit_m: float = NEAR_M) -> list[tuple[float, int, int]]:
     """막다른 끝 중 `limit_m` 안에 다른 노드가 있는 것. (거리, 끝, 상대).
 
-    ★ 전수 곱(449 × 1,139)이면 51만 번이고 1초 안이다. 격자를 깔면 빨라지지만
-      **빠른 코드와 맞는 코드 중 맞는 쪽을 고른다** — 이 수는 관문이 든다.
+    ★ 2026-10-11 (DECISIONS §470 · PLAN #168). 종전에는 전수 곱(449 × 1,139 =
+      51만)을 손으로 돌았고 머리말이 **「격자를 깔면 빨라지지만 빠른 코드와
+      맞는 코드 중 맞는 쪽을 고른다」**고 적었다. 그 선택지가 둘이 아니다 —
+      `shapely` 는 **이미 선언된 의존성**이고 `STRtree` 는 빠르면서 맞는다.
+      손으로 짠 격자가 아니라 **남이 시험해 둔 격자**를 쓴다(§13 결함 족 4).
+
+    ★ 좌표를 **국소 평면 미터로** 올려 담는다. 그러면 트리의 유클리드 거리가
+      곧 `localplane.metres` 이고, 거리 판별식이 둘이 되지 않는다(§469).
+
+    ★ `exclusive=True` 가 자기 자신을 뺀다. 손 판의 `if j == i: continue` 와
+      같은 뜻이고, 그 한 줄을 잊는 날이 없다.
     """
-    nodes = g.get("nodes") or []
-    out = []
-    for i in dead_ends(g):
-        best = (float("inf"), -1)
-        for j, q in enumerate(nodes):
-            if j == i:
-                continue
-            d = _m(nodes[i], q)
-            if d < best[0]:
-                best = (d, j)
-        if best[0] <= limit_m:
-            out.append((best[0], i, best[1]))
-    return sorted(out)
+    out = [(d, i, j) for i, (d, j) in nearest_other(g).items() if d <= limit_m]
+    # ★ 2026-10-11 (§470). **정렬에 동률 가름을 넣는다.** 손 판과 트리의 거리가
+    #   1.3나노미터 어긋나고(부동소수 순서) 거의 같은 두 쌍에서 **찍히는 순서가
+    #   뒤집혔다.** 사람이 보는 목록이 실행마다 흔들리면 그 목록을 못 읽는다.
+    return sorted(out, key=lambda r: (round(r[0], 6), r[1], r[2]))
 
 
 def turn_rows() -> int | None:
@@ -156,14 +182,54 @@ def turn_rows() -> int | None:
         return sum(1 for _ in csv.reader(fh)) - 1
 
 
+#: 방향 모름의 사유 칸 → 사람이 읽는 이름. **순서가 찍히는 순서다.**
+NL_KINDS = (("nl_twoway", "양방향"), ("nl_none", "링크 없음"),
+            ("nl_split", "좁게↔넓게 갈림"), ("nl_absent", "node_link 없음"))
+
+
+def nl_reasons(nl: dict) -> str:
+    """방향 모름의 사유 한 줄. **없는 칸은 `?` 다.**
+
+    ★ 2026-10-11 (DECISIONS §467). 종전은 `nl.get(k, 0)` 이었다 — 칸이 빠진
+      그래프에서 **0 이 찍히고** 읽는 사람은 「그 사유가 0건」으로 읽는다.
+      0 은 값이고 「못 쟀다」가 아니다(§466-2 가 폐기값 쪽에서 고친 그 자리).
+    """
+    return " · ".join(f"{ko} {nl[k]:,}" if isinstance(nl.get(k), int) else f"{ko} ?"
+                      for k, ko in NL_KINDS)
+
+
+def _need(c: dict, key: str) -> int:
+    """`counts` 의 칸 하나. **없으면 죽는다.**
+
+    ★ 2026-10-11 (DECISIONS §467). 종전은 `int(c.get(key, 0))` 이었다. 그러면
+      `counts` 블록이 없는 옛 그래프에서 **셋이 전부 0** 이 되고, 셋 중 둘은
+      내려가는 쪽 래칫이라 `--write` 가 0 을 받아적는다 — 그 뒤로 그 관문은
+      무엇이 들어와도 초록이다. **0 은 값이고 「못 쟀다」가 아니다.**
+    """
+    if key not in c:
+        raise RuntimeError(
+            f"그래프의 `counts.{key}` 가 없다 — `publish_navi` 가 그 칸을 내기"
+            " 전에 구운 옛 그래프다. 다시 발행해라(`uv run fire-lane --only publish`)")
+    return int(c[key])
+
+
 def ratchet_values() -> dict[str, int]:
     """래칫 이름 → 지금 실측값. **판정은 안 한다**(`check()` 소관)."""
     g = load()
-    c = g.get("counts") or {}
+    # ★ 2026-10-11 (§467). **빈 그래프에서 0 을 내지 않는다.** 노드가 0 이면
+    #   막다른 끝도 0 이고 스냅 실패도 0 이다 — 그 0 은 「완벽한 그래프」로
+    #   읽히고, 그것이 §372 가 적은 「빈 우주가 초록이 된다」의 이 도구 판이다.
+    if not (g.get("nodes") and g.get("edges")):
+        raise RuntimeError(
+            "그래프에 노드나 엣지가 없다 — **전수 0 은 실측이 아니다.**"
+            " 발행이 끝난 뒤에 재라")
+    c = g.get("counts")
+    if not isinstance(c, dict):
+        raise RuntimeError("그래프에 `counts` 블록이 없다 — 옛 판 그래프다. 다시 발행해라")
     return {
-        "ONEWAY_DIR_UNKNOWN": int(c.get("oneway", 0)) - int(c.get("oneway_dir_known", 0)),
-        "TURN_BANS": int(c.get("turn_bans", 0)),
-        "PARK_UNPLACED": int(c.get("park_unplaced_rows", 0)),
+        "ONEWAY_DIR_UNKNOWN": _need(c, "oneway") - _need(c, "oneway_dir_known"),
+        "TURN_BANS": _need(c, "turn_bans"),
+        "PARK_UNPLACED": _need(c, "park_unplaced_rows"),
         "DEAD_END_NEAR": len(near_pairs(g)),
     }
 
@@ -199,11 +265,7 @@ def check() -> int:
     #   `publish_navi` 가 그 칸을 내기 전에 구운 그래프에는 없다 — 그때는 그렇게 적는다.
     nl = c.get("oneway_nl")
     if isinstance(nl, dict):
-        print("  방향 모름의 사유 —"
-              f" 양방향 {nl.get('nl_twoway', 0)}"
-              f" · 링크 없음 {nl.get('nl_none', 0)}"
-              f" · 좁게↔넓게 갈림 {nl.get('nl_split', 0)}"
-              f" · node_link 없음 {nl.get('nl_absent', 0)}")
+        print("  방향 모름의 사유 — " + nl_reasons(nl))
     else:
         print("  방향 모름의 사유 — **아직 모른다.** 이 그래프는 `oneway_nl` 칸이"
               " 생기기 전에 구워졌다(§367). 다음 발행이 낸다.")
@@ -237,15 +299,9 @@ def snap_report() -> int:
     de = dead_ends(g)
     print(f"막다른 끝 {len(de)} / 노드 {len(nodes)}  ({len(de)/max(1,len(nodes)):.1%})"
           f" · node_tol_m = {g.get('node_tol_m')}")
-    best: dict[int, tuple[float, int]] = {}
-    for i in de:
-        b = (float("inf"), -1)
-        for j, q in enumerate(nodes):
-            if j != i:
-                d = _m(nodes[i], q)
-                if d < b[0]:
-                    b = (d, j)
-        best[i] = b
+    # ★ 2026-10-11 (§470-2). 여기 전수 곱이 **또** 있었다 — `nearest_other` 와
+    #   같은 계산이고 자가 둘이면 한쪽만 고치는 날이 온다.
+    best = nearest_other(g)
     deg = degrees(g)
     print(f"\n{'거리 이하':>10} {'건':>5} {'누적%':>7}   상대도 막다른 끝")
     for t in (0.5, 0.75, 1, 1.5, 2, 3, 5, 10, 20, 50):
@@ -253,7 +309,7 @@ def snap_report() -> int:
         dd = sum(1 for i in n if deg[best[i][1]] == 1)
         print(f"{t:>9}m {len(n):>5} {len(n)/max(1,len(de)):>6.1%}   {dd:>5}")
     ds = sorted(best[i][0] for i in de)
-    print(f"\n중앙값 {ds[len(ds)//2]:.1f}m · 최대 {ds[-1]:.0f}m")
+    print(f"\n중앙값 {statistics.median(ds):.1f}m · 최대 {ds[-1]:.0f}m")
     mutual = sum(1 for i in de if deg[best[i][1]] == 1 and best.get(best[i][1], (0, -1))[1] == i)
     print(f"서로를 최근접으로 가리키는 쌍 {mutual//2}쌍  ← 끊긴 길 후보")
     print(f"\n★ {NEAR_M:g}m 안 {len(near_pairs(g))}건이 `DEAD_END_NEAR` 다. 가까운 열 —")
@@ -292,7 +348,8 @@ def selftest() -> int:
                 fails.append("고아 노드의 차수가 0 이 아니다")
 
             # ② NEAR_M 안의 이웃을 잡는가. 0.6m 떨어뜨린 끝 둘을 심는다.
-            d = 0.6 / 111_320.0
+            # 위도 쪽으로 0.6m — 정본의 위도 미터로 나눈다
+            d = 0.6 / localplane.MY
             g = fake({}, [[126.92, 35.15], [126.921, 35.151],
                           [126.92, 35.15 + d], [126.925, 35.155]],
                      [{"a": 0, "b": 1}, {"a": 2, "b": 3}])
@@ -300,6 +357,18 @@ def selftest() -> int:
             near = near_pairs(load())
             if len(near) != 2:
                 fails.append(f"0.6m 떨어진 끝 쌍을 못 잡는다 — {len(near)}건")
+
+            # ②-1 ★ **동률 가름.** 거리가 같은 두 쌍은 **번호 작은 쪽**이
+            #      먼저다. 안 묶으면 부동소수 순서로 실행마다 뒤집히고,
+            #      사람이 보는 목록이 흔들리면 그 목록을 못 읽는다(§470-2).
+            g = fake({}, [[126.92, 35.15], [126.921, 35.151],
+                          [126.92, 35.15 + d], [126.925, 35.155],
+                          [126.92, 35.15 - d], [126.926, 35.156]],
+                     [{"a": 0, "b": 1}, {"a": 2, "b": 3}, {"a": 4, "b": 5}])
+            GRAPH.write_text(json.dumps(g) + "\n", encoding="utf-8")
+            idx = [(r[1], r[2]) for r in near_pairs(load())]
+            if idx != sorted(idx):
+                fails.append(f"같은 거리의 쌍이 번호순이 아니다 — {idx}")
 
             # ③ ★ 멀면 안 잡는가. 안 그러면 **항상 우는 검사**다.
             g = fake({}, [[126.92, 35.15], [126.921, 35.151],
@@ -310,8 +379,11 @@ def selftest() -> int:
                 fails.append("먼 끝을 스냅 실패로 센다 — 문턱이 안 듣는다")
 
             # ④ counts 를 그대로 읽는가. 뺄셈 방향이 맞는가.
+            # ★ 2026-10-11 (§467). 종전에는 노드·엣지를 **빈 배열**로 줬다.
+            #   그 입력이 이제 죽는다 — 그리고 죽는 것이 맞다(아래 ⑥ 가 든다).
             g = fake({"oneway": 10, "oneway_dir_known": 3, "turn_bans": 7,
-                      "park_unplaced_rows": 42}, [], [])
+                      "park_unplaced_rows": 42},
+                     [[126.92, 35.15], [126.93, 35.16]], [{"a": 0, "b": 1}])
             GRAPH.write_text(json.dumps(g) + "\n", encoding="utf-8")
             v = ratchet_values()
             if v["ONEWAY_DIR_UNKNOWN"] != 7:
@@ -326,10 +398,72 @@ def selftest() -> int:
                 fails.append("그래프가 없는데 값을 낸다 — 빈 그물이 초록으로 간다")
             except RuntimeError:
                 pass
+
+            # ⑥ ★ 2026-10-11 (DECISIONS §467). **있지만 비어 있을 때**도 안 낸다.
+            #    노드가 0 이면 막다른 끝도 스냅 실패도 0 이고, 그 0 은 「완벽한
+            #    그래프」로 읽힌다. 파일 유무만 묻던 ⑤ 의 사각지대다.
+            GRAPH = Path(td) / "g.json"
+            for why, g0 in (
+                ("노드·엣지가 빈", fake({"oneway": 1, "oneway_dir_known": 0,
+                                     "turn_bans": 0, "park_unplaced_rows": 0}, [], [])),
+                ("`counts` 블록이 없는",
+                 {"crs": "EPSG:4326", "nodes": [[126.9, 35.1], [126.91, 35.11]],
+                  "edges": [{"a": 0, "b": 1}], "turns": []}),
+                ("`counts` 칸 하나가 빠진",
+                 fake({"oneway": 3, "turn_bans": 0, "park_unplaced_rows": 0},
+                      [[126.9, 35.1], [126.91, 35.11]], [{"a": 0, "b": 1}])),
+            ):
+                GRAPH.write_text(json.dumps(g0) + "\n", encoding="utf-8")
+                try:
+                    v = ratchet_values()
+                    fails.append(f"{why} 그래프에서 값을 낸다 — {v}")
+                except RuntimeError:
+                    pass
     finally:
         GRAPH = keep
 
-    # ⑥ 실물이 0 이 아닌가 — 빈 그물 방지.
+    # ⑥-1 ★ 2026-10-11 (DECISIONS §471). **판정의 종료 수를 든다.** 선언과
+    #      실측이 같으면 0, 갈리면 1 이다. 안 묶으면 그 수를 아무 값으로
+    #      바꿔도 조용하다 — 돌연변이가 `rc = 1` 을 살려 그것을 드러냈다.
+    #      ★ 래칫 값을 **실측으로 맞춰** 재므로 이 판별식은 그 수가 움직여도
+    #        안 낡는다(선언값을 글자로 박으면 다음 발행에 거짓으로 운다).
+    import contextlib
+    import io
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            GRAPH = Path(td) / "g.json"
+            g = fake({"oneway": 10, "oneway_dir_known": 10, "turn_bans": 5,
+                      "park_unplaced_rows": 0},
+                     [[126.92, 35.15], [126.921, 35.151]], [{"a": 0, "b": 1}])
+            GRAPH.write_text(json.dumps(g) + "\n", encoding="utf-8")
+            saved = {k: globals()[k] for k in RATCHETS}
+            try:
+                for k, v in ratchet_values().items():
+                    globals()[k] = v
+                with contextlib.redirect_stdout(io.StringIO()):
+                    same = check()
+                    globals()["TURN_BANS"] = globals()["TURN_BANS"] + 1
+                    moved = check()
+                if same != 0:
+                    fails.append(f"선언과 실측이 같은데 종료 수가 {same} 다")
+                if moved != 1:
+                    fails.append(f"래칫이 갈렸는데 종료 수가 {moved} 다 — 1 이어야 한다")
+            finally:
+                for k, v in saved.items():
+                    globals()[k] = v
+    finally:
+        GRAPH = keep
+
+    # ⑦ ★ 2026-10-11 (§467). 사유 칸이 **빠지면 `?`** 를 찍는가. 0 을 찍으면
+    #    읽는 사람이 「그 사유가 0건」으로 읽는다.
+    full = nl_reasons({k: 1 for k, _ in NL_KINDS})
+    if "?" in full or full.count("1") != len(NL_KINDS):
+        fails.append(f"있는 칸을 못 찍는다 — {full}")
+    part = nl_reasons({"nl_twoway": 7})
+    if "양방향 7" not in part or part.count("?") != len(NL_KINDS) - 1:
+        fails.append(f"빠진 칸을 0 으로 찍는다 — {part}")
+
+    # ⑧ 실물이 0 이 아닌가 — 빈 그물 방지.
     try:
         if sum(ratchet_values().values()) <= 0:
             fails.append("실측 합이 0 — 발행물을 못 읽었다")
@@ -338,7 +472,7 @@ def selftest() -> int:
 
     for f in fails:
         print(f"  ✗ {f}")
-    print("✓ 자기검사 통과 · 판별식 9" if not fails else f"✗ {len(fails)}건")
+    print("✓ 자기검사 통과 · 판별식 17" if not fails else f"✗ {len(fails)}건")
     return 1 if fails else 0
 
 

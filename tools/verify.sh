@@ -459,13 +459,10 @@ step "의존성 선언↔import (deptry)" uv run --no-sync --with deptry==0.25.1
 scope ".github/* pyproject.toml uv.lock"
 step "워크플로 린트"    uv run actionlint
 step "커밋 정책"        uv run python tools/commit_policy.py --tracked
-step "인코딩·개행"      uv run python tools/encoding_check.py
 # ★ 2026-09-18 (W1). 로컬 훅과 CI 가 이 한 파일을 읽는다 — 정본이 하나다.
 #   `.ruff-strict.toml` 과 같은 모양이고, 그것이 5a 의 교훈이다.
-# ★ 위 `인코딩·개행` 을 안 지운다. 표준 훅은 BOM · CRLF 만 도맡았고
-#   나머지 둘(비UTF-8 · 끝개행)은 대입물이 없다. `end-of-file-fixer` 는 더
-#   엄걱해서 추적 파일 15개를 고치고, 그중 `web/workflow.html` 은 생성기와
-#   무한 왔부에 들어간다(.pre-commit-config.yaml 의 ★★).
+# ★ 2026-10-10 (DECISIONS §457-5). 여기 있던 `인코딩·개행` 단계를 **지웠다** —
+#   아래 전수가 같은 명령을 돌린다(`encoding-check` 훅). 검사기는 안 줄었다.
 step "pre-commit 전수"  uv run pre-commit run --all-files
 # ★ 2026-09-18 (W1). 전역 훅이 이 저장소를 이어서 부르는가.
 #   `.pre-commit-config.yaml` 이 있어도 전역 훅이 그것을 안 부르면
@@ -532,25 +529,27 @@ step "문서 ↔ 문서"     uv run python tools/doc_fsck.py
 # ★ 2026-09-02 배선. 오늘 캡션 절까지 붙여놓고 **어디서도 안 부르고
 #   있었다.** 사람이 손으로 칠 때만 도는 도구는 이탈 후 아무도 안 부른다.
 # ★ 2026-09-22 — ⑤⑥ 이 golden · 발행 구간 · 대장을 읽는다(W4-2). 범위를 좁게 두면 조용히 건너뛴다
-scope "docs/* tools/* data/* web/* src/* tests/* .github/* sources.yaml"
-step "기획서 대조"     uv run python tools/docx_check.py
-# ★ 2026-09-28 (§278-3). 기획서 522단락에 `pStyle` 이 하나도 없어 **제목 계층이
-#   사람 눈에만** 있었다 — 63쪽 PDF 의 북마크가 0 이었다. `w:outlineLvl` 만 넣어
-#   서식은 그대로 두고 개요를 만든다. 편마다 장 꼴이 달라(Part II 는 `□` 가 장)
-#   지도를 편별로 선언한다.
-scope "docs/*"
-step "기획서 개요 층"   uv run python tools/docstyle.py
+# ★ 2026-10-09 (DECISIONS §444 · PLAN #142). **`docx_check` · `docstyle` 이
+#   은퇴했다.** 앞의 것은 `docs/proposal.docx` 를 읽었고 정본은 §425 에 md 로
+#   옮겨졌다 — 그때부터 **사본을 검사하고 있었다.** 뒤의 것은 63쪽 PDF 의
+#   북마크 0개가 사유였고, HTML 은 `h1`~`h6` 가 개요다.
+#   여덜 축이 어디로 갔는지는 `tools/proposalcheck.py` 머리말이 든다 —
+#   수는 `docnum_check`, 나머지는 이 단계, 고치는 쪽(⑤)은 **없앴다**(md 는
+#   diff 가 되므로 글을 고치는 도구를 두지 않는다 · R9).
+scope "docs/proposal.md data/* sources.yaml tools/proposalcheck.py"
+step "기획서 정본 대조" uv run python tools/proposalcheck.py
 # ★ 2026-10-06 (DECISIONS §425 · PLAN #142). 내용 정본이 `docs/proposal.md` 로
 #   옮겨졌다. 화면은 **생성물**이고 이 단계가 「커밋된 것이 정본과 같은가」를 댄다.
 #   종료 코드 3 은 「지금은 통과, 배포는 막힌다」 — `CI=true` 면 2 로 올라간다.
-#   ★ 위 둘(`docx_check` · `docstyle`)을 **아직 안 뺀다.** docx 제출본이 살아
-#     있는 동안은 그쪽도 물어야 한다 — 참조 25곳을 한 판에 흔들지 않는다.
+#   ★ 2026-10-09 (§444). 그 둘은 **이 판에서 뺐다.** 「참조 25곳을 한 판에
+#     흔들지 않는다」가 종전 사유였고, 다리(`htmlfigs`)가 놓인 뒤 흔들었다.
 scope "docs/proposal.md web/proposal.template.html web/proposal.html tools/build_proposal.py tools/proposal_source.py"
 step "기획서 화면"     uv run python tools/build_proposal.py --check
 # ★ 2026-10-09 (DECISIONS §440 · PLAN #142). 화면의 그림 스물넷 중 **다섯이
-#   코드가 만드는 것**이고 지금까지 그 다섯은 docx 를 거쳐 왔다. 정본이 md 인데
-#   생성 그림만 사본을 거치는 꼴이라, docx 를 은퇴시키기 전에 **다리를 먼저**
-#   놓는다. 안 놓고 지우면 다섯이 영원히 옛 값으로 굳는다(§236 의 그 자리다).
+#   코드가 만드는 것**이고 종전에 그 다섯은 docx 를 거쳐 왔다. 정본이 md 인데
+#   생성 그림만 사본을 거치는 꼴이라, docx 를 은퇴시키기 전에 다리를 먼저
+#   놓았다. 안 놓고 지우면 다섯이 영원히 옛 값으로 굳는다(§236 의 그 자리다).
+#   ★ 2026-10-09 (§444). docx 가 은퇴했으므로 **이것이 유일한 자리다.**
 scope "tools/htmlfigs.py tools/figures/* tools/render_figures.py web/proposal/fig/*"
 step "기획서 화면 그림" uv run python tools/htmlfigs.py --check
 # ★ 2026-10-04 (§390). `PLAN` 이 빚 목록인지 이력 창고인지. 세 자리가 주석으로만
@@ -604,8 +603,9 @@ scope "docs/* tools/* src/* data/*"
 step "그림 ↔ 정본"     uv run python tools/render_figures.py --check
 # ★ 2026-09-23 (DECISIONS §221-1). 그림이 저장소에서만 새것이 되는 길을 닫는다 —
 #   기획서가 든 그림도 정본과 같은가. 변환기 없이 도는 검사다(SVG 지문 대조).
-scope "docs/* tools/*"
-step "기획서 그림 ↔ 정본" uv run python tools/docx_figs.py --check
+# ★ 2026-10-09 (§444 · #142). `docx_figs --check` 가 은퇴했다 — 그 축(「기획서가
+#   든 그림이 정본과 같은가」)은 위 「기획서 화면 그림」(`htmlfigs --check`)이
+#   든다. 같은 다섯 그림이고 **이제 자리가 하나뿐**이다.
 # ★ 2026-09-17 (DECISIONS §180-9). `흡수 대상`(release_brief 한 줄)을 뺐다. 검사가 아니라 보고였고 매 실행 "생략" 으로
 #   찍혀 생략 칸을 채웠다 — 진짜 생략(npm 없음 · --fast)이 그 옆에 묻힌다. 표는 릴리즈 PR 본문에서 쓰인다(merge_batch --release).
 # ★ 2026-09-17 (DECISIONS §182-2 · G-14). 대장 필드 검사를 아무도 안 불렀다. `python -m firelane.ledger_check` 는
@@ -613,6 +613,12 @@ step "기획서 그림 ↔ 정본" uv run python tools/docx_figs.py --check
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "sources.yaml src/* tools/*"
 step "대장 필드 검사"   uv run python -m firelane.ledger_check
+# ★ 2026-10-09 (DECISIONS §444 · PLAN #134 ㉠). 칸은 쉰이고 프로브 여덟이 각자
+#   읽는데 **어느 칸을 읽는지 아무도 대조하지 않았다.** 읽는 쪽은 AST 로
+#   도출하고 손으로 적는 것은 「기계가 안 읽는 칸」뿐이다(래칫 · 내려간다).
+#   레이크를 안 읽으므로 CI 도 돈다.
+scope "sources.yaml src/* tools/* tests/*"
+step "대장 칸 독자"     uv run python tools/ledgercols.py
 # ★ 2026-10-02 (DECISIONS §349). 대장은 같은 사실을 두 벌로 든다 — `contract`(규범) ·
 #   `schema`(실측). 갈라 둔 이유는 옳은데(합치면 실물이 바뀔 때 약속이 같이 바뀌어
 #   아무도 못 알아챈다) **둘을 대 보는 자리가 없었다.** 레이크를 안 읽으므로 CI 도 돈다 —
@@ -626,7 +632,10 @@ step "미배선 자료"     uv run python tools/unusedcheck.py
 step "선언 ↔ 실물"     uv run python tools/refcheck.py
 # ★ 전수 스캔. `--repo` 는 데이터 레이크 없이 저장소 트리만 본다 —
 #   항목에서 출발하는 검사는 **항목이 없는 것을 영원히 못 본다.**
-step "트리 전수 대조"   uv run python tools/treecheck.py --repo
+# ★ 2026-10-10 (DECISIONS §457). `--repo` 를 뗐다. 그 플래그가 붙어 있는 동안
+#   `check_lake()` 가 안 돌아 **선언된 D 축 열 개가 어디서도 실행되지 않았다.**
+#   레이크 없는 기계는 `lake_connected()` 가 도출로 가려내고 「안 쟀다」를 찍는다.
+step "트리 전수 대조"   uv run python tools/treecheck.py
 scope "web/* data/*"
 step "web/data 계보"    uv run python tools/web_manifest.py --check
 # ★ 2026-09-20 (PLAN §1 #62). 출동 대상지는 동명동 하나다. 이 단계가 생기기
@@ -744,10 +753,12 @@ else
             uv run fire-lane --no-test --split
         fi'
     scope "$CODE_SCOPE"
+    # asks: 지금 산출물의 지문이 잠근 정답과 같은가
     step "golden 판정 불변" uv run python tools/golden.py check
     # ★ 게이트가 울고 또 풀리는가. check 가 통과하는 것만으로는
     #   해제 경로가 있는지 알 수 없다(DECISIONS §69).
     scope "$CODE_SCOPE"
+    # asks: 그 게이트가 울고 또 풀리는가 — 통과만으로는 해제 경로를 모른다
     step "golden 게이트 해제 경로" uv run python tools/golden.py selftest
     # ★ 생산자를 돌린 직후에만 알 수 있다. 커밋된 web/data 가 낡아도
     #   web_manifest 는 **있는 것의 해시**를 뜰 뿐이고 golden 은
@@ -787,6 +798,7 @@ fi
 #   `fsck` 는 **레이크가 있어야 통과한다**(층의 실재·백업 대상을 본다.
 #   레이크 없으면 실측 5건 어긋남). 갈래 단위 동등은 PLAN 에 남긴다.
 scope "$CODE_SCOPE sources.yaml"
+# asks: 선언된 계층이 디스크에 실재하는가 — 레이크가 있어야 통과한다
 step "계층 선언↔실물" uv run python -m firelane.datalog fsck
 
 # ★ 2026-09-28 (DECISIONS §285). 문서가 관문이라 이름까지 적어 둔 것들이
@@ -794,14 +806,17 @@ step "계층 선언↔실물" uv run python -m firelane.datalog fsck
 #   때문**이고, 셋을 고치고 나서야 붙는다 — 내역은 §285 에 있다.
 #   **관문은 부를 수 있어야 관문이다.**
 scope "sources.yaml src/firelane/datalog.py src/firelane/ledger.py"
+# asks: 계보 대장의 칸들이 서로 맞는가 — 대장만 본다
 step "계보 대장 정합"   uv run python -m firelane.datalog check
 # ★ 그리는 것 자체가 검사다 — 입력이 대장 밖을 가리키면 여기서 죽는다.
 scope "sources.yaml src/firelane/datalog.py"
+# asks: 대장에서 계보 그림이 생성되는가 — 판정이 아니라 산출이다
 step "계보 그림 생성"   uv run python -m firelane.datalog graph
 # ★ MASTER §18-3b 의 취입 관문. 여기는 **대장 선언만** 본다(무계약 ·
 #   모르는 계약 키 · 미선언 좌표계). 실물 대조는 아래 레이크 갈래다 —
 #   절반이라도 상설인 것이 전체가 안 도는 것보다 세다(§284-3).
 scope "sources.yaml src/firelane/contract.py src/firelane/ledger.py"
+# asks: 대장 선언만 본다 — 무계약 · 모르는 계약 키 · 미선언 좌표계
 step "취입 계약 선언"   uv run python -m firelane.contract --declared
 
 # ★ 2026-09-28 (§286). `--selftest` 26개 중 **16개를 아무도 안 불렀다.** 문
@@ -856,6 +871,7 @@ if [ -z "${FIRE_LANE_DATA:-}${FIRE_LANE_RAW:-}" ] && [ ! -d data/raw/gjcity ]; t
     note "대장 스키마↔실물" "$_why"
 else
     scope "sources.yaml src/firelane/contract.py src/firelane/krgis/crs.py"
+    # asks: 그 계약이 raw 실물과 맞는가 — 레이크가 있어야 돈다
     step "취입 계약 실물"   uv run python -m firelane.contract
     scope "sources.yaml tools/ledger_schema.py"
     step "대장 스키마↔실물" uv run python tools/ledger_schema.py --check
@@ -898,6 +914,13 @@ step "검사가 죽었는가" uv run python tools/deadcheck.py --ratchet
 #   이 단계는 래칫이 아니라 **실측**이다(파일 하나 생기면 그날 걸린다).
 scope "tools/* tests/*"
 step "강제자 범위 선언" uv run python tools/scopedecl.py
+
+# ★ 2026-10-09 (DECISIONS §445 · PLAN #56 ① 닫힘). 위 단계가 「강제자가 **어디까지**
+#   보는가」를 물으면, 이 단계는 「그 강제자가 **합성 결함으로 울어 본 적 있는가**」를
+#   묻는다. 판별식과 `deadcheck` 프로브로 안 둔 사유는 `tools/canary.py` 머리말이
+#   든다 — 여기 옮겨 적지 않는다(§445 · 족 2).
+scope "tools/* tests/*"
+step "카나리아" uv run python tools/canary.py
 
 # ★ 2026-10-05 (DECISIONS §398). 도구 138개의 **부류**. 관문은 verify · CI 가
 #   부르는가로 **도출**하고, 나머지만 머리말이 선언한다. 도출과 선언이 어긋나면
@@ -950,7 +973,9 @@ step "관문 호출 인자" uv run python tools/argcheck.py
 #   `verify.sh` 를 돌리므로(fl.sh 5단계) 이 자리로 충분하다.
 scope "docs/* tests/* tools/* src/*"
 # ci-exempt: tools/dms.py `verify` 는 문서↔트리라 CI 로 갈 수 있으나, 같은 도구의 `delta` 가 봉인 커밋과의 증분·조상을 git 역사로 잰다. CI 클론은 얕다(fetch-depth 1) — 면제가 검사기 단위라 둘을 같이 남긴다
+# asks: 절이 지목한 강제자가 실재하는가
 step "죽은 강제자 참조" uv run python tools/dms.py verify
+# asks: 봉인 뒤 바뀐 절이 강제자를 몇 늘렸나 — 전수가 아니라 증분이다
 step "강제자 소급 증분" uv run python tools/dms.py delta
 # ★ 2026-09-21 (PLAN §13 W11-1 · DECISIONS §210). **봉인이 가리키는 커밋이 이 트리의 조상인가.**
 #   `delta` 는 봉인 **뒤**를 센다. 그런데 봉인이 없는 커밋을 가리키면 `delta` 는
@@ -961,6 +986,7 @@ step "강제자 소급 증분" uv run python tools/dms.py delta
 # ★ 로컬 전용이다. CI 클론은 얕아(`fetch-depth: 1`) 조상을 잴 역사가 없다.
 #   `tools/dms.py` 는 이미 미선언 로컬 전용 목록에 있으므로 관문 동등 래칫은 안 움직인다.
 #   ★ 2026-09-22 (DECISIONS §218-5). 이제 미선언이 아니라 위 `# ci-exempt:` 가 사유와 함께 든다.
+# asks: 봉인한 커밋이 지금 HEAD 의 조상인가 — delta 의 전제다
 step "봉인 조상" uv run python tools/dms.py ancestry
 
 # ★ 2026-09-19 정정 — 실측 **5군**이다(`--min 25` · 함수 13). 종전 이 줄은
@@ -972,6 +998,16 @@ step "봉인 조상" uv run python tools/dms.py ancestry
 # ★ 2026-09-22 (DECISIONS §217-5 · 옛 PLAN W7-3) 영향 범위 — 과하게 넓게
 scope "src/* tools/* tests/*"
 step "사본군" uv run python tools/dupcheck.py --min 40 --max 0
+
+# ★ 2026-10-09 (DECISIONS §444 · PLAN #134 ㉡). **커밋된 사본이 어떻게 생겼는지**를
+#   도구가 든다. 종전에는 `CUTS` 한 줄(동명동 경계)만 선언이 있었고 `n1/` 의 셋은
+#   누가 어떻게 20줄을 떼었는지가 **아무 데도 없었다.** 사본은 원본이 멀어질수록
+#   값이 아니라 **출처**가 자산이다 — 출처가 없으면 다시 뜰 때 사람이 추측한다.
+# ★ 이 자리에서 돌 수 있는 축은 **선언↔파일 목록 양방향** 하나다(레이크 없이 돈다).
+#   `CUTS` 쪽은 원본이 없어 스스로 건너뛰고, 그 대조는 레이크 기계의
+#   `test_dest_scope` 가 든다 — 같은 도구가 양쪽에서 불린다.
+scope "tests/fixtures/* tools/*"
+step "사본 선택 규칙" uv run python tools/fixture_recut.py --check
 
 # ★ 2026-09-22 (DECISIONS §218-5 · 하토르 check_file_size.py 모범). 파일 길이 **양방향** 래칫.
 #   상한(코드 600 · 시험 700)을 넘는 것은 `EXCEPTIONS` 에 오늘 줄 수로 박혀 있고, 늘면
@@ -1001,6 +1037,7 @@ step "래칫 정합" uv run python tools/ratchet.py
 #   아니다 — 적으면 **죽은 면제**가 되고, 죽은 면제는 「있다고 적혀 있으면 사람이
 #   안 본다」(그 도구의 말).
 scope "web/navi/src/* tools/*"
+# asks: 소스에서 관제와 내비가 다른 화면인가
 step "화면 분리" uv run python tools/uicheck.py --split
 # ★ 2026-09-29 (§313). **관문이 빌드본을 직접 짓는다.** 종전에는 「빌드본이 없으면
 #   빨간불」로 뒀는데, `web/navi/dist/` 는 `.gitignore` 라 **새 클론이 무조건 빨갛다.**
@@ -1010,6 +1047,7 @@ step "화면 분리" uv run python tools/uicheck.py --split
 scope "web/navi/src/* web/navi/*.ts web/navi/*.json"
 step "내비 빌드" bash -c 'cd web/navi && npm run -s build >/dev/null'
 scope "web/navi/src/* tools/*"   # ★ dist 는 추적 밖이라 --since 가 못 본다(§319-4)
+# asks: 지금 화면이 지금 코드에서 나왔는가 — 빌드본을 본다
 step "화면 빌드본" uv run python tools/uicheck.py --build
 scope "tools/*"
 step "머지 절차" uv run python tools/mergecheck.py
@@ -1019,9 +1057,19 @@ step "머지 절차" uv run python tools/mergecheck.py
 #   판정 한 줄을 고쳐도 4G 로 1.4MB 를 다시 받는다. 둘 다 무게가 아니라 **의존**의
 #   문제라, 이 관문이 재는 것도 바이트가 아니라 「밖에 몇 개 기대는가」다.
 scope "web/navi/src/* web/navi/index.html web/fonts/* tools/*"
+# asks: 내비가 밖에 몇 개 기대는가 — 바이트가 아니라 의존이다
 step "내비 의존" uv run python tools/naviweight.py
 scope "web/navi/src/* tools/*"   # ★ dist 는 추적 밖이라 --since 가 못 본다(§319-4)
+# asks: 빌드본 무게가 래칫 안인가
 step "내비 무게" uv run python tools/naviweight.py --build
+# ★ 2026-10-12 (DECISIONS §482). 번들에도 §481 의 질문을 한다 — 「미는 자가
+#   없는 것이 몇인가」. `vitest` 가 돈다는 것과 그 함수를 **든다**는 것은 다르다.
+scope "web/navi/src/* web/navi/test/* tools/*"
+# asks: 번들에서 시험이 이름으로도 안 부르는 순수 함수가 몇인가
+step "내비 시험 분모" uv run python tools/navicov.py
+scope "src/firelane/* tests/*"
+# asks: 판정 폐포에서 시험이 이름으로도 안 부르는 순수 함수가 몇인가
+step "판정 시험 분모" uv run python tools/srccov.py
 # ★ 글자 파일이 지금 데이터에서 나왔는가. 새 글자가 데이터에 들어오면 운다 —
 #   **글자가 조용히 안 그려지는 것**은 화면에서 제일 알아채기 어려운 결함이다.
 scope "web/data/* web/fonts/* web/navi/scripts/*"

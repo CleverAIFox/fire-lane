@@ -73,7 +73,8 @@ echo
 # ① 코드 · 서식 ────────────────────────────────────────────────
 fix "린트"            uv run ruff check --fix .
 fix "인코딩·개행"      uv run python tools/encoding_check.py --fix
-fix "문서 말투 서식"    uv run python tools/docstyle.py --write
+# ★ 2026-10-09 (§444 · #142). `docstyle --write` 가 은퇴했다 — docx 의 개요
+#   층을 넣는 도구였고 HTML 은 `h1`~`h6` 가 개요다.
 # ★ 수만 빼고 꾸밈말은 남긴다(§366-4). `(15 — 양방향)` 의 「양방향」은 정보다.
 fix "손으로 적은 시험 수" uv run python tools/countcheck.py --fix
 
@@ -88,11 +89,29 @@ fix "죽은 강제자 참조"  uv run python tools/dms.py --apply
 fix "북마크 죽은 절"    uv run python tools/dms.py prune --apply
 
 # ③ 생성물 ← 정본 ─────────────────────────────────────────────
-fix "기획서 그림"      uv run python tools/docx_figs.py --sync
-# ★ 같은 다섯 그림이 **화면 자리로도** 간다(§440 · PLAN #142). 둘을 같이 돌린다 —
-#   docx 가 은퇴하면 위 줄이 지워지고 이 줄만 남는다. 변환기는 같은 하나다.
+# ★ 2026-10-11 (DECISIONS §468-2). **그림을 먼저 만든다.** 종전에는 이 문이
+#   `htmlfigs --sync`(굽기)만 돌고 `render_figures`(만들기)를 안 돌았다 —
+#   정본 값이 움직이면 SVG 가 낡고, 그 **낡은 SVG 를 화면에 구웠다.**
+#   2026-10-11 전수 verify 에서 「그림이 정본과 어긋난다 — verdict · unknown ·
+#   verdict_flow」가 빨갰고 사람이 둘을 손으로 쳤다. 깃발 없이 고치는 도구라
+#   `fixable` 의 분모 밖이었다(§468-1 이 그 분모를 고쳤다).
+fix "기획서 그림 생성"  uv run python tools/render_figures.py
+# ★ 2026-10-09 (§444 · #142). **그 줄이 지워지고 이 줄만 남았다** — §440 이
+#   적어 둔 그대로다. 생성 그림 다섯이 화면 자리로 바로 간다.
 fix "기획서 화면 그림"  uv run python tools/htmlfigs.py --sync
 fix "문서 생성 블록"    uv run python tools/docgen.py
+# ★ 2026-10-09 (DECISIONS §444 · PLAN #142). **화면을 다시 굽는다.** 정본
+#   `docs/proposal.md` 가 바뀌면 `web/proposal.html` 이 낡고, 그것은 커밋되는
+#   생성물이다 — 기계적으로 답이 하나다. 그림(`htmlfigs`) 뒤에 둔다: 그림을
+#   갈아 끼운 뒤에 구워야 화면이 새 그림을 든다.
+#   ★ 2026-10-11 (DECISIONS §468-3). 종전에 이 자리는 「`--touch` 는 **안 건다.**
+#     날짜는 「고친 날」이고 그것은 사람이 안다」고 적고 있었다. **그 말이
+#     틀렸다** — `doc_fsck ⑥` 이 그 날짜를 git 과 시각에서 **유도해 명령까지
+#     찍는다.** 선언과 검사가 반대를 말했고, 그래서 사람이 그 명령을 손으로
+#     옮겨 쳤다(2026-10-11 에 두 번). 유도는 `docfsck.revised.squash_day()`
+#     하나이고 `--touch-today` 가 그것을 쓴다. **표지를 옮긴 뒤에 굽는다.**
+fix "기획서 표지 날짜"  uv run python tools/build_proposal.py --touch-today
+fix "기획서 화면"      uv run python tools/build_proposal.py
 
 # ④ 래칫 — **맨 뒤.** 위 수리가 실측값을 바꾼다 ────────────────
 fix "래칫"            uv run python tools/ratchet.py --write
@@ -136,6 +155,20 @@ if [ "$bad" -gt 0 ]; then
 fi
 echo "  ${Y}★${Z} 이 문은 **재지 않는다.** 이제 검사 문을 돌려라 —"
 echo "        bash tools/verify.sh"
+# ★ 2026-10-10 (DECISIONS §457). 영향 범위 실행을 **여기서** 안내한다.
+#   `verify.sh` 에 `--since=<ref>` 와 단계별 `scope` 선언이 2026-09 부터
+#   있었는데 **부르는 자리가 하나도 없어서** 선언 82개가 한 번도 일하지
+#   않았다(§456-2 의 형제 — 배관은 깔렸고 스위치가 안 켜져 있었다).
+#   ★ `fl.sh --all`(머지 열차)에는 **안 넣는다.** 머지 전 · 야간 · CI 는
+#     늘 전수다. `--since` 는 **고치는 중**에 쓰는 길이고, 이 문이 바로
+#     그 자리다 — 방금 고친 것과 그 하류만 본다.
+#   ★ 기준을 못 찾으면 `verify.sh` 가 **아무것도 건너뛰지 않는다**(그 파일이
+#     그렇게 적혀 있다). 그래서 틀린 기준을 줘도 느슨해지지 않는다.
+_base="$(git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null || true)"
+echo
+echo "  ${D}고친 것만 보려면 (그 하류까지 돈다 · 미선언 단계는 늘 돈다) —${Z}"
+echo "        bash tools/verify.sh --since=${_base:-HEAD~1}"
+echo "  ${D}  머지 전에는 전수로 한 번 더 돌린다. 열차가 그것을 든다.${Z}"
 echo
 echo "  ${D}고친 것이 있으면 커밋에 **왜 움직였는지**를 적어라. 수리는 기계가 했고"
 echo "  그 사유는 사람만 안다.${Z}"

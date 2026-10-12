@@ -61,9 +61,60 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #   ★ 2026-10-08 (DECISIONS §433). 426 → **430.** 새 집 둘(`contract_crs` ·
 #     `rawcache`)과 머리말을 받은 0바이트 둘(`seg/__init__` · `krgis/__init__`)이다.
 #     분모도 506 → 508 로 는다 — 새 집 둘이 거기 들어간다.
-SEALED_FILES = 495
+#   ★ 2026-10-09 (DECISIONS §444 · PLAN #142). 494 → **488.** 내려가는 쪽이고,
+#     사유는 **파일이 은퇴한 것**이다 — docx·pdf 를 들어내며 도구 일곱과 시험
+#     셋이 지워졌고 **그 열 중 여섯이 감사돼 있었다.** 분모도 519 → 513 으로
+#     같이 줄었다 — 실측 덮임률 95.2% → **95.1%** 다. 거의 같다: 지운 것이
+#     분자와 분모에 나란히 들어 있었다는 뜻이고, 그래서 이 하락은 **땅을
+#     잃은 것이 아니다.**
+#     ★ `ratchet --write` 는 이 수를 **안 쓴다** — 느슨해지는 쪽을 자동으로
+#       받아적으면 관문이 죽는다. 사람이 사유를 적고 내린다. 지운 파일이
+#       아니라 **안 읽은 파일**이 생겨 줄었다면 그것은 결함이다.
+#     ★ 남은 25는 전부 `web/navi/src/ui` · `components` · `src` 다 — `#143`
+#       (관제 화면이 너무 많이 보여준다)이 그 층을 읽는 판에서 같이 간다.
+#     ★ 2026-10-09 (DECISIONS §445 · PLAN #143). 490 → 489 → 495. 먼저 손으로
+#       내렸고(`Manual.tsx` 은퇴) 그다음 이 판이 건드린 파일을 절이 지목해 올랐다.
+#     ★ 2026-10-10 (DECISIONS §446 · PLAN #165 · #154 닫힘). 495 → **519 = 분모.**
+#       두 움직임이 **한 판에서 같이** 났다 — ① 세는 법을 고쳐 강제자 칸을
+#       뺐다(495 → 458. 칸은 「누가 지킨다」지 「읽었다」가 아니다) ② 그 짝으로
+#       빈 곳 61 을 `MASTER §22` · `§23` 이 **읽고 적어** 덮었다(458 → 519).
+#       `#165` 가 「안 그러면 수만 내려가고 덮임은 그대로다」라고 미리 적었고
+#       그 둘을 같이 한 판이 이 판이다.
+#     ★ 이제 **분모와 같다.** 파일이 하나 늘면 그날 빨갛다 — 그것이 옳은 빨강이다.
+#     ★ 2026-10-10 (DECISIONS §449-3). 519 → **521.** 쪼개며 생긴 두 집
+#       (`docnumtest` · `docnumtable`)을 `§449` 가 **읽고 적었다.** 분모와 같다.
+#     ★ 2026-10-11 (DECISIONS §465 · PLAN #71 닫힘). 526 → **528 = 분모.** 새 집
+#       둘(`tools/figures/route.py` · `web/navi/test/astarbench.test.ts`)이 들어왔고
+#       `§465` 와 `MASTER §20-4` 가 **산문으로** 그 둘을 지목한다. 분모도 같이 는다.
+#     ★ 2026-10-11 (DECISIONS §469). 528 → **529 = 분모.** 새 집 하나
+#       (`src/firelane/localplane.py`)가 들어왔고 `§469` 가 **산문으로** 지목한다.
+#     ★ 2026-10-11 (DECISIONS §470 · PLAN #168). 529 → **530 = 분모.** 새 집 하나
+#       (`tests/test_handrolled.py` — 손으로 짠 자리의 분모)가 들어왔고 `§470` 이
+#       **산문으로** 지목한다.
+#     ★ 2026-10-11 (DECISIONS §471). 530 → **532 = 분모.** 새 집 둘 —
+#       `src/firelane/quantile.py`(분위수 정본)와 `tests/test_quantile.py`
+#       (그 정본이 pandas 와 같은가 · 옛 손 색인을 심어 자를 민다). `§471` 이
+#       **산문으로** 둘을 지목한다.
+#     ★ 2026-10-11 (DECISIONS §472). 532 → **533 = 분모.** 새 집 하나
+#       (`src/firelane/emwidth.py` — 글자 폭 어림의 집)이 들어왔고 `§472` 가
+#       **산문으로** 지목한다.
+#     ★ 2026-10-11 (DECISIONS §473). 533 → **534 = 분모.** 새 집 하나
+#       (`tests/test_localplane.py` — 국소 평면 상수를 `pyproj` 로 재는 자리)가
+#       들어왔고 `§473` 이 **산문으로** 지목한다.
+#     ★ 2026-10-11 (DECISIONS §474). 534 → **535 = 분모.** 새 집 하나
+#       (`tools/srgb.py` — sRGB 감마·휘도·Lab·ΔE 공식의 집)이 들어왔고
+#       `§474` 가 **산문으로** 지목한다.
+#     ★ 2026-10-12 (DECISIONS §481). 535 → **538 = 분모.** 새 집 셋 —
+#       `tests/test_docpatch.py` · `tests/test_pages_navi.py` ·
+#       `tests/test_build_proposal.py`. **아무도 안 미는 관문** 다섯 중 셋을
+#       갚은 자리이고 `§481` 이 셋을 **산문으로** 지목한다.
+SEALED_FILES = 564
 
-RATCHETS = {"SEALED_FILES": "up"}
+#: **강제자 칸만으로** 덮인 파일 수. 내려가는 쪽. 2026-10-10 실측 37 → **0**.
+#: 늘면 「산문 없이 칸만 적었다」는 뜻이고 그것은 한 번 속은 자리다(PLAN #165).
+ENFORCER_INFLATION = 0
+
+RATCHETS = {"SEALED_FILES": "up", "ENFORCER_INFLATION": "down"}
 
 
 @functools.lru_cache(maxsize=1)
@@ -75,28 +126,22 @@ def denominator() -> tuple[str, ...]:
 
 @functools.lru_cache(maxsize=1)
 def covered() -> frozenset[str]:
-    """어떤 절의 **본문**이 지목한 파일.
+    """어떤 절의 **산문**이 지목한 파일. 강제자 칸은 안 센다.
 
-    ★ 2026-10-08 (DECISIONS §438-6 · PLAN #165). 종전 이 한 줄은 「강제자 칸은
-      `body(strip=True)` 가 뺀다」고 적었다. **거짓이다** — `strip` 은 끝의 빈
-      줄을 떼는 깃발이고(§273-10 의 `_body_v1`) 강제자 칸과 아무 상관이 없다.
-      실측: 강제자 칸이 경로를 적는 절 778 중 **761 에서 그 글자가 본문 안에
-      있다.** 그러니 칸에 적힌 도구가 **읽힌 것으로 세어진다.**
+    ★ 2026-10-10 (DECISIONS §446 · PLAN #165 닫힘). 종전에는 본문 전체를
+      긁었고 **강제자 칸이 본문 안에 있다.** 그래서 칸에 이름이 적힌 도구가
+      「읽고 판단했다」로 세어졌다 — 실측 37 파일이 그 꼴이었다. 칸의 뜻은
+      「누가 지킨다」이고 이 수가 묻는 것은 「누가 **읽었다**」다. 둘은 다르다.
 
-    ★ 아무도 안 울었다. 그 전제를 지킨다는 시험은 「덮임 < 분모 × 0.95」라는
-      **비율**을 봤고, 비율은 전제를 안 묻는다. 오늘 `#154` 가 덮임을 95.1% 로
-      올리자 그 줄이 **좋은 일에** 울었다 — 그때 읽고 알았다.
+    ★ **재는 자리를 하나로 둔다**(§445). 이 함수는 `prose_only()` 를 그대로
+      돌려준다 — 둘을 따로 구현하면 같은 물음에 두 답이 생긴다(족 2).
 
-    ★ **이 판은 수를 안 바꾼다.** 고치면 덮임이 489 → 450 으로 내려가고 그것은
-      래칫의 「오르는 쪽」을 거스르는 큰 이사다. 부풀림 39 를
-      `tests/test_sealcov.py` 가 **래칫으로 들고** `PLAN #165` 가 닫는다 —
-      수를 아는 채로 두는 쪽이 모르고 초록인 쪽보다 낫다(§286).
+    ★ 고치자 덮임이 495 → **458** 로 내려갔다. 래칫의 「오르는 쪽」을 거스르는
+      이사라 `#165` 가 「사유를 적고 한 판을 따로 받는다」고 미리 적어 두었다.
+      그 판이 이 판이고, **짝으로 61 파일을 산문으로 덮는다** — 안 그러면
+      수만 내려가고 읽힌 것은 그대로다.
     """
-    rows = D._sections()
-    out: set[str] = set()
-    for i in range(len(rows)):
-        out.update(D.refs(D.body(rows, i)))
-    return frozenset(out)
+    return prose_only()
 
 
 def prose_only() -> frozenset[str]:
@@ -112,6 +157,31 @@ def prose_only() -> frozenset[str]:
         b, f = D.body(rows, i), (r.get("field") or "")
         out.update(D.refs(b.replace(f, " ") if f and f in b else b))
     return frozenset(out)
+
+
+@functools.lru_cache(maxsize=1)
+def body_refs() -> frozenset[str]:
+    """본문 **전체**(강제자 칸 포함)가 지목한 파일. 부풀림을 재는 데만 쓴다."""
+    rows = D._sections()
+    out: set[str] = set()
+    for i in range(len(rows)):
+        out.update(D.refs(D.body(rows, i)))
+    return frozenset(out)
+
+
+def inflation() -> frozenset[str]:
+    """**강제자 칸만으로** 덮인 파일 — 산문은 그 파일을 한 번도 안 지목했다.
+
+    ★ 2026-10-10 (DECISIONS §446 · PLAN #165 닫힘). 종전에는 이것이 덮임에
+      섞여 있었다. 칸의 뜻은 「누가 지킨다」이고 이 수가 묻는 것은 「누가
+      **읽었다**」다 — 섞으면 읽히지 않은 파일이 감사된 것으로 세어진다.
+      실측 37 이었고 이 판이 **0 으로** 내렸다(§22 · §23 이 산문으로 덮었다).
+
+    ★ **내려가는 쪽.** 늘면 「산문 없이 칸만 적었다」는 뜻이고, 그것은 이
+      저장소가 한 번 속은 자리다.
+    """
+    den = set(denominator())
+    return frozenset((body_refs() & den) - (covered() & den))
 
 
 @functools.lru_cache(maxsize=1)
@@ -138,7 +208,7 @@ def ratchet_values() -> dict[str, int]:
     s = survey()
     if not s["분모"]:
         raise RuntimeError("분모가 0 이다 — 추적 목록을 못 물었다(§372)")
-    return {"SEALED_FILES": s["덮임"]}
+    return {"SEALED_FILES": s["덮임"], "ENFORCER_INFLATION": len(inflation())}
 
 
 def show(s: dict, listing: bool) -> int:

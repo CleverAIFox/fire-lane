@@ -21,7 +21,7 @@
  *       **경계를 만들지도 않는다** — `view.json` 이 정본이고 그것은
  *       `publish_web.py` 가 쓴다. 여기서 상수를 박으면 두 벌이 된다.
  */
-import type { LngLat } from "./geo";
+import { MX, MY, type LngLat } from "./geo";
 
 /**
  * 경계 밖 여유. 이만큼까지는 «안» 으로 본다.
@@ -33,12 +33,10 @@ import type { LngLat } from "./geo";
  */
 export const EDGE_MARGIN_M = 100;
 
-/** 위도 1도 ≈ 111,320m. 경도는 위도에 따라 줄어든다. */
-const LAT_M = 111_320;
-
-function lonM(lat: number): number {
-  return LAT_M * Math.cos((lat * Math.PI) / 180);
-}
+// ★ 2026-10-11 (DECISIONS §473). 여기 「위도 1도 ≈ 111,320m」 라고 적고
+//   그 수를 **위도에** 쓰고 있었다. 111,320 은 **적도의 경도** 1도다 —
+//   위도 1도는 이 위도에서 110,574m 이고 0.67% 틀렸다. §469 가 파이썬 쪽
+//   같은 실수를 고쳤는데 이쪽은 그 판의 문 밖이었다. 정본은 `./geo` 다.
 
 /** 상자 밖으로 얼마나 나갔나(m). 안이면 0. */
 export function metresOutside(
@@ -51,8 +49,8 @@ export function metresOutside(
   if (!box) return 0;
   const [[w, s], [e, n]] = box;
   const [lon, lat] = p;
-  const dLat = Math.max(s - lat, lat - n, 0) * LAT_M;
-  const dLon = Math.max(w - lon, lon - e, 0) * lonM(lat);
+  const dLat = Math.max(s - lat, lat - n, 0) * MY;
+  const dLon = Math.max(w - lon, lon - e, 0) * MX;
   return Math.hypot(dLat, dLon);
 }
 

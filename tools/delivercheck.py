@@ -124,6 +124,10 @@ RELOCK_AXES = {
 #: ★ 2026-10-08 (DECISIONS §436-6). `diff_sweep` 에만 있던 면제를 시험 쪽에도 둔다 —
 #:   스윕과 시험이 같은 사실을 양쪽에서 보는데 한쪽만 받아주면 배달이 못 선다.
 RELOCK_TESTS = {
+    "test_schema_params_match_params_module":
+        "발행 스키마의 `params` 블록 ↔ `seg/params.py`. 상수를 내리면 모듈이 "
+        "**앞서 가고** 스키마는 재잠금에서 따라온다 — `seg/report.py` 가 낳는다. "
+        "★ 2026-10-10 (§455-1) `CCTV_RANGE` 25.0 → 19.0 에서 처음 울었다",
     "test_every_reason_is_reproduced":
         "공개본을 `classify()` 로 되먹여 댄다. 규칙을 고치면 공개본도 함께 다시 나는데 "
         "그 재생은 재잠금이 한다 — 재잠금 전에는 **한쪽만 움직인 상태**가 정상이다",
@@ -138,6 +142,20 @@ RELOCK_TESTS = {
         "MASTER §11 필드표 ↔ 발행된 속성. 칸을 하나 실으면 표가 **앞서 가고** "
         "산출물은 재잠금에서 따라온다. 이 시험은 그 면제를 받으려고 §436-13 에서 "
         "새로 세웠다 — 종전에는 `docnum_check.main()` 안에만 있어 **CLI 에서만** 울었다",
+    "test_every_declared_number_is_in_its_document":
+        "선언 표의 모든 (파일 · 라벨)이 지금 산출물의 수를 드는가. 문서는 **재잠금 "
+        "뒤의 수**를 적으므로 그 사이 어긋난다 — 좁은 짝은 "
+        "`test_the_real_proposal_states_the_right_number_of_grey_reasons` 이고, "
+        "이 시험은 「문서 숫자 대조」 축이 **CLI 에서만** 울던 것을 §452 에서 "
+        "pytest 로 옮긴 자리다",
+    "test_segment_fields_are_internally_consistent":
+        "`cv_feasible` 를 `cctv_dist_m` 와 댄다. `CCTV_RANGE` 를 움직인 판에서는 "
+        "**공개본이 옛 상수로 찍힌 상태**라 60구간이 어긋나 보인다 — 같은 실행에서 "
+        "공개본이 다시 나고 그 뒤에 맞는다(§455)",
+    "test_the_schema_declares_width_is_unverified":
+        "스키마 최상위의 미검증 선언과 `fields` 에 피처 칸이 없는가를 본다. "
+        "스키마는 `seg/report.py` 가 **낳는 것**이라 재잠금 전에는 옛 `fields` 를 "
+        "든다 — 표가 앞서 있는 것이고 산출물이 따라온다(§455 · PLAN #4 ④)",
     "test_schema_verdict_rule_matches_code":
         "발행 스키마의 `verdict_rule` 을 `seg/geom.VERDICT_RULE` 과 댄다. 그 스키마는 "
         "`seg/report.py` 가 **낳는 것**이라 재잠금 전에는 옛 규칙표를 든다 — "
@@ -397,16 +415,42 @@ def collide(names: list[str]) -> list[str]:
     return sorted(k for k, v in seen.items() if v > 1)
 
 
-def tails(names: list[str]) -> list[str]:
-    """번호를 뗀 꼬리가 겹치는가 — 이름이 달라도 같은 커밋이면 두 번 얹는다.
+def tails(paths: list[Path]) -> list[str]:
+    """**같은 커밋이 두 번 들어 있는가.** 증거는 `From <sha>` 다.
 
-    ★ 2026-09-28 (§278-5). 접두사(`fire-lane-`)도 같이 뗀다. 안 떼면 접두사 붙은
-      것과 안 붙은 것이 **다른 꼬리**로 보여 같은 커밋 둘을 못 잡는다.
+    ★ 2026-09-28 (§278-5). 종전에는 **파일 이름의 꼬리**로 판정했다 —
+      번호와 접두사를 떼고 남은 글자가 같으면 같은 커밋으로 봤다.
+
+    ★ 2026-10-12 (DECISIONS §501). **그 자가 틀렸다.** 꼬리는
+      `git format-patch` 가 제목에서 만든 아스키 슬러그이고, 이 저장소의
+      커밋 제목은 **한국어**다 —
+
+          제목이 전부 비아스키        → 꼬리가 **빈다**(`fire-lane-0094-.patch`)
+          제목이 다르고 슬러그가 같다 → `fix-462` 둘이 **다른 커밋**이다
+
+      실측 — 122 커밋을 뜨니 빈 꼬리 **열여섯** · 겹친 슬러그 **둘 쌍**이
+      나왔고 **열여덟 전부 다른 sha** 였다. 참이 하나도 없는 자였고,
+      그래서 **정당한 배달을 막았다.**
+
+      묻는 것은 처음부터 「같은 커밋이 둘이냐」였다. 그 답을 아는 것은
+      **sha** 이고 패치 머리에 적혀 있다. 이름이 아니라 그것을 본다.
+
+    ★ 파일을 못 읽으면 **거부 쪽**으로 센다 — 못 읽은 것을 「다르다」로
+      넘기면 이 자가 조용해진다(모르는 것은 초록이 아니다).
     """
     seen: dict[str, list[str]] = {}
-    for n in names:
-        seen.setdefault(re.sub(r"^(?:[a-z-]+-)?\d+-", "", n), []).append(n)
-    return sorted(f"{k}: {' · '.join(v)}" for k, v in seen.items() if len(v) > 1)
+    for p in paths:
+        p = Path(p)
+        try:
+            head = p.read_text(encoding="utf-8", errors="replace")[:200]
+        except OSError as e:
+            seen.setdefault(f"못 읽었다({e.strerror})", []).append(p.name)
+            continue
+        m = re.match(r"From ([0-9a-f]{7,40}) ", head)
+        key = m.group(1) if m else f"sha 가 없다({p.name})"
+        seen.setdefault(key, []).append(p.name)
+    return sorted(f"{k[:12]}: {' · '.join(v)}"
+                  for k, v in seen.items() if len(v) > 1)
 
 
 def _message_of(p: Path, text: str) -> str:

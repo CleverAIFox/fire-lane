@@ -14,6 +14,7 @@ from firelane.seg.centerline_correction import (
     RoadKey,
     apply_approved_centerline_corrections,
     apply_centerline_correction,
+    centerline_fingerprint,
     centerline_id,
     geometry_sha256,
 )
@@ -202,3 +203,65 @@ def test_fingerprint_still_pins_the_position():
     base = LineString([(0.0, 0.0), (10.0, 0.0), (10.0, 5.0)])
     moved = LineString([(0.0, 0.0), (10.0, 0.002), (10.0, 5.0)])
     assert geometry_sha256(base) != geometry_sha256(moved)
+
+
+# ── 중심선 지문 — 승인 ID 가 그 위에 선다 (DECISIONS §496) ────
+# ★ `centerline_fingerprint` 는 검수·보정이 **함께 쓰는** 지문이고
+#   `centerline_id`(`NC-…`) 가 그 앞 열두 자다. 지문이 흔들리면 **승인
+#   ID 가 옮겨 가고**, 그러면 사람이 승인한 그 선이 어느 것인지 모른다.
+#   머리말이 「격자를 안 건다 … 격자를 걸면 승인 ID 다섯이 전부 바뀐다」를
+#   적는데, 그 약속을 미는 자리가 없었다 — `tools/srccov.py` 가 `row.get`
+#   때문에 입출력으로 가르고 있었다(§496).
+def _fp_row(geometry, **over):
+    base = {"도로명": "동명로", "도로폭": 6.0, "차로수": 2,
+            "포장재질": "아스팔트", "일방통행": "N"}
+    return pd.Series({**base, **over, "geometry": geometry})
+
+
+_FP_A = LineString([(192700, 283600), (192800, 283600)])
+
+
+def test_the_fingerprint_ignores_the_direction_of_the_line():
+    """★ `normalize()` 가 방향을 지운다 — 같은 선을 뒤집어 받아도 같은 ID 다.
+
+    원본이 방향을 바꿔 내려오는 일이 있고, 그때 ID 가 바뀌면 **승인이
+    사라진다.**
+    """
+    rev = LineString(list(_FP_A.coords)[::-1])
+    assert centerline_fingerprint(_fp_row(_FP_A)) == \
+        centerline_fingerprint(_fp_row(rev))
+
+
+def test_every_declared_attribute_moves_the_fingerprint():
+    """★ 다섯 칸이 **전부** 지문에 든다 — 하나라도 안 들면 그 칸이 조용히 바뀐다."""
+    base = centerline_fingerprint(_fp_row(_FP_A))
+    for name, other in (("도로명", "충장로"), ("도로폭", 6.5), ("차로수", 4),
+                        ("포장재질", "콘크리트"), ("일방통행", "Y")):
+        assert centerline_fingerprint(_fp_row(_FP_A, **{name: other})) != base, name
+
+
+def test_the_fingerprint_does_not_snap_to_a_grid():
+    """★ 머리말의 선택을 못박는다 — **격자를 안 건다.**
+
+    0.1mm 차이도 다른 지문이다. 격자를 걸면 승인 ID 다섯이 전부 바뀌고,
+    재승인할 근거 없이 ID 를 옮기지 않는다는 것이 그 선택이다. 원본
+    좌표계가 바뀌는 날 이 시험이 그 자리를 가리킨다.
+    """
+    moved = LineString([(192700.0001, 283600), (192800, 283600)])
+    assert centerline_fingerprint(_fp_row(moved)) != \
+        centerline_fingerprint(_fp_row(_FP_A))
+
+
+def test_the_fingerprint_is_a_full_sha256_in_upper_case():
+    """ID 앞자리를 자르는 쪽이 `centerline_id` 다 — 여기는 **전체**를 낸다."""
+    got = centerline_fingerprint(_fp_row(_FP_A))
+    assert len(got) == 64 and got == got.upper()
+    assert centerline_id(_fp_row(_FP_A)) == f"NC-{got[:12]}"
+
+
+def test_a_blank_attribute_is_stable_and_not_the_word_none():
+    """빈 칸이 `None` 글자로 들어가면 **채워진 칸과 섞인다.**"""
+    a = centerline_fingerprint(_fp_row(_FP_A, 도로명=None))
+    b = centerline_fingerprint(_fp_row(_FP_A, 도로명=None))
+    assert a == b, "같은 입력에 두 지문이 나온다"
+    assert a != centerline_fingerprint(_fp_row(_FP_A, 도로명="None"))

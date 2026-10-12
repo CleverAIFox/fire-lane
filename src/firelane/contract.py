@@ -217,16 +217,18 @@ def zip_names(path: Path) -> list[str]:
 def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
     r = Report(key)
     c = e.get("contract") or {}
-    if e.get("status") == "missing":
-        r.add(WARN, f"결손 선언됨 — {e.get('missing_why', '사유 미기재')}")
+    # ★ 2026-10-10 (DECISIONS §447 · PLAN #161 닫힘). 부재 등급은 `ledger.absence`
+    #   **하나**가 낸다. 종전에는 이 자리가 제 글자로 다시 읽었고, §424 가
+    #   `refcheck` 하나만 고쳐서 이 자리가 머지를 막았다(§427).
+    from firelane.ledger import absence as _absence  # noqa: PLC0415  맞물림을 끊는다
+    lvl, why = _absence(e)
+    if lvl == "missing":
+        r.add(WARN, f"결손 선언됨 — {why}")
         return r
-    # ★ 2026-10-07 (§427). `awaiting` — **아직 안 들어왔다.** §424 가 이 어휘를
-    #   만들고 `refcheck.py` **하나만** 고쳐서 이 자리가 머지를 막았다. 규율은
-    #   저쪽과 글자까지 같다: 사유를 적으면 경고, 비면 실패.
-    if (why := str(e.get("awaiting") or "").strip()):
+    if lvl == "awaiting":
         r.add(WARN, f"아직 raw 에 없다 — {why}")
         return r
-    if "awaiting" in e:
+    if lvl == "bare":
         r.add(FAIL, "`awaiting` 칸이 비었다 — 사유 없는 유예는 받지 않는다(§424)")
         return r
     if not c:

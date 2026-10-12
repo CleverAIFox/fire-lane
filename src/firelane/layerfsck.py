@@ -23,6 +23,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from firelane import lake as _lake
 from firelane import paths
 from firelane.paths import ROOT
 
@@ -48,7 +49,10 @@ def cmd_fsck() -> None:
         mark = "OK  " if p.is_dir() else "없음"
         note = ""
         # ① required — 조용한 폴백을 금지한다
-        if pol["required"] and not p.is_dir():
+        # ★ 2026-10-10 (DECISIONS §457). **레이크가 붙은 기계에서만 묻는다.**
+        #   안 붙었으면 「required 가 없다」는 참이지만 결함이 아니다 — 그 거짓
+        #   어긋남 때문에 이 검사가 레이크 없는 기계에서 늘 빨갰다.
+        if pol["required"] and not p.is_dir() and _lake.connected()[0]:
             bad.append(f"{n}: required 인데 없다 — {p}")
             mark = "★없음"
         if pol.get("status") == "미구현":
@@ -70,8 +74,13 @@ def cmd_fsck() -> None:
             continue
         import re as _re
         pat = _re.compile(pol_rx)
+        # ★ 2026-10-12 (DECISIONS §502). 기록 파일을 뺀다 — 이 모듈이 import 한
+        #   `_lake.RECORD_NAMES` 가 그 정본이고, 같은 모듈의 `rows()` 는 그것을
+        #   「기록」으로 분류한다. 한집은 설명 문서로 받고 한집은 위반으로 세던
+        #   자리다.
         off = [str(q.relative_to(p)) for q in p.rglob("*")
                if q.is_file() and not q.name.startswith("_")
+               and q.name not in _lake.RECORD_NAMES
                and not pat.match(str(q.relative_to(p)))]
         print(f"  {n:11s} 위반 {len(off)}건")
         for q in off[:5]:
@@ -87,7 +96,17 @@ def cmd_fsck() -> None:
             continue                     # 저장소 밖이면 git 이 볼 일이 없다
         # ★ 백업 대상인데 저장소 밖인 계층(raw · quarantine)은 여기 안 온다.
         #   그쪽은 datalog verify 가 sha 로 본다.
-        r = subprocess.run(["git", "check-ignore", "-q", str(rel)],
+        # ★ 2026-10-10 (DECISIONS §457). 종전에는 `check-ignore` 에 **층 경로
+        #   자신**을 넣었다. git 은 디렉터리 전용 패턴(`data/raw/`)을 **실재하는
+        #   디렉터리에만** 적용하므로, 레이크를 저장소 안에 두는 기계에서 그
+        #   폴더가 아직 없으면 **「안 막혔다」로 답했다** — 막혀야 하는데 안
+        #   막힌 것과 폴더가 없어서 못 쟀는 것이 **구별되지 않았다**(족 1).
+        #   실측으로 층 다섯(landing · raw · norm · retired · _quarantine)이
+        #   그 꼴로 거짓 어긋남을 내고 있었다.
+        # ★ 묻는 것을 바로잡는다 — 「이 폴더 **이름**이 무시되는가」가 아니라
+        #   「이 층 **아래 파일**이 무시되는가」다. 안쪽 경로로 물으면 폴더가
+        #   없어도 패턴이 적용된다(실측 — 층 여덟 전부 옳게 답한다).
+        r = subprocess.run(["git", "check-ignore", "-q", str(rel / ".probe")],
                            cwd=ROOT, capture_output=True)
         ignored = (r.returncode == 0)
         # ★ 2026-08-24. 폴더만 보면 안 된다. `.gitignore` 가 폴더를 막고

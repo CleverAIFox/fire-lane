@@ -199,7 +199,7 @@ def test_fl_calls_the_chain_and_keeps_the_judgment_with_the_human():
     assert "tools/remeasure.py" in sh, "`fl.sh` 가 사슬을 안 부른다 — 4b 가 다시 막다른 길이다"
     assert "--measured=" in sh, "사람이 판단을 줄 깃발이 없다"
     # ★ 순서를 셸에 **다시 적지 않았는가.** 적으면 정본이 둘이 되고 갈린다.
-    for t in ("tools/evalgen.py", "tools/baseline.py", "tools/docx_figs.py"):
+    for t in ("tools/evalgen.py", "tools/baseline.py", "tools/htmlfigs.py"):
         assert t not in sh, f"`fl.sh` 가 사슬의 `{t}` 를 직접 부른다 — 순서가 두 집에 산다"
 
 

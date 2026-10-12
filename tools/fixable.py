@@ -55,6 +55,32 @@ DOOR = ROOT / "tools" / "fix.sh"
 #: 수리 깃발로 볼 것. **`--yes` 는 뺀다** — 그것은 확인이지 수리가 아니다.
 REPAIR_FLAGS = ("--write", "--apply", "--fix", "--sync", "--repair", "--relock")
 
+#: **깃발 없이 고치는 도구.** 관문은 `--check` 로 묻고, 맨몸으로 부르면 쓴다.
+#:
+#: ★ 2026-10-11 (DECISIONS §468-1). 분모가 이것을 **안 셌다.** 위 깃발 목록에
+#:   걸리는 도구만 「기계」로 세고 있었고, `render_figures` 처럼 깃발 없이
+#:   고치는 도구는 「없음」으로 떨어졌다 — 그래서 `UNDOORED` 가 **0 인 채로**
+#:   문에 수리 경로 하나가 빠져 있었다. 실기: `fix.sh` 가 `htmlfigs --sync`
+#:   (그림을 화면에 굽는다)는 돌고 `render_figures`(그림을 **만든다**)는 안
+#:   돌아서 **낡은 SVG 를 굽고 있었다.** 2026-10-11 에 사람이 그 둘을 손으로
+#:   쳤다(§468-2).
+NO_FLAG_REPAIR = ("tools/render_figures.py", "tools/docgen.py")
+
+#: `--check` 를 받지만 **맨몸으로는 찍기만** 하는 도구 → 사유.
+#: ★ 분모는 「`--check` 를 받는 단계」이고, 그 하나하나가 위 둘 중 하나에 적혀야
+#:   한다. 안 적힌 것이 있으면 `check_gaps` 가 운다 — **양방향**이다.
+CHECK_ONLY: dict[str, str] = {
+    "tools/argcheck.py":
+        "맨몸으로 부르면 관문이 넘기는 인자를 찍는다. 고칠 자리는 `verify.sh` 의 "
+        "그 줄이고, 인자를 뺄지 도구가 받게 할지는 답이 하나가 아니다",
+    "tools/toolindex.py":
+        "맨몸으로 부르면 도구 색인을 찍는다. 빠진 것은 **머리말 한 줄**이고 "
+        "그것을 쓰는 것은 사람이다 — 기계가 쓰면 그 줄이 아무것도 안 뜻한다",
+    "tools/pages_add_navi.py":
+        "맨몸으로 부르면 배포 워크플로가 내비를 빌드하는지 찍는다. 고칠 자리는 "
+        "`.github/workflows` 이고 그 파일은 사람이 쓴다(룰셋·권한이 걸린다)",
+}
+
 #: 수리 경로가 있지만 **사람이 먼저 판단한다.** 키는 도구 경로, 값은 사유.
 #: ★ 이 표가 「왜 자동화 안 하나」의 정본이다. 비면 그 사유가 사라진다.
 HUMAN_FIRST: dict[str, str] = {
@@ -68,6 +94,11 @@ HUMAN_FIRST: dict[str, str] = {
     "tools/fieldseal.py":
         "실측 층의 무결성 지문이다. 그 도구 머리말이 **「★ 사람이 친다」**고 적는다 — "
         "인용의 밑동이 움직였다는 뜻이라 왜 움직였는지를 같이 적어야 한다",
+    "tools/fixture_recut.py":
+        "두 축의 처방이 **정반대**다. `CUTS` 가 갈리면 `--write` 지만 그 길은 레이크 "
+        "기계에서만 열리고, 갈린 원인이 ㉠ 재현 불가인지 ㉡ 원본 판 변경인지를 "
+        "사람이 먼저 가른다(§258-14). `UNCUT` 이 비면 **적을 것이 규칙**이고 그 규칙은 "
+        "기계가 모른다 — 짐작해 적으면 그 칸이 거짓이 된다",
     "tools/ledger_schema.py":
         "`--apply` 가 **레이크 실물을 읽어** 대장 `schema` 를 갱신한다. 레이크가 있는 "
         "기계에서만 돌고, 대장 값이 바뀌므로 무엇이 바뀌었는지를 사람이 본다",
@@ -154,10 +185,46 @@ def classify() -> dict[str, list[tuple[str, str]]]:
         if not tool or not (ROOT / tool).is_file() or not tool.endswith(".py"):
             out["없음"].append((name, tool or cmd.split()[0]))
             continue
-        if _flags(ROOT / tool) & set(REPAIR_FLAGS):
+        # ★ 2026-10-11 (§468-1). 깃발 없이 고치는 도구도 **기계**다.
+        if (_flags(ROOT / tool) & set(REPAIR_FLAGS)) or tool in NO_FLAG_REPAIR:
             out["기계"].append((name, tool))
         else:
             out["없음"].append((name, tool))
+    return out
+
+
+def check_gaps() -> list[str]:
+    """`--check` 를 받는 도구가 **둘 중 하나에 적혀 있는가.** 비면 산다.
+
+    ★ 2026-10-11 (DECISIONS §468-1). 분모를 「`--check` 를 받는 단계」로 묶는다 —
+      이 저장소의 규약에서 `--check` 는 「검사만 · 고치지 않는다」이고, 그러면
+      **맨몸으로 부를 때 무엇을 하는가**가 반드시 둘 중 하나다. 그 둘을 적게
+      만드는 것이 이 문이고, 적는 순간 「수리 경로가 있는데 문 밖」이 보인다.
+    ★ **양방향**이다 — 죽은 분류(그 도구가 더는 `--check` 를 안 받는데 표에
+      남은 것)도 운다. 손목록의 결함은 빠진 항목이다(§370).
+    """
+    seen: set[str] = set()
+    for _name, cmd in steps():
+        tool = tool_of(cmd)
+        if not tool or not tool.endswith(".py") or not (ROOT / tool).is_file():
+            continue
+        fl = _flags(ROOT / tool)
+        # ★ 수리 깃발이 **있는** 도구는 위 분류가 이미 「기계」로 든다. 분모는
+        #   「`--check` 는 받는데 수리 깃발이 없는」 도구 — 맨몸이 무엇을 하는지
+        #   아무도 안 적은 자리다.
+        if "--check" in fl and not (fl & set(REPAIR_FLAGS)):
+            seen.add(tool)
+    out = [f"`{t}` 는 `--check` 를 받는데 분류가 없다 — 맨몸으로 고치면"
+           f" `NO_FLAG_REPAIR` 에, 찍기만 하면 `CHECK_ONLY` 에 **사유와 함께** 적어라"
+           for t in sorted(seen - set(NO_FLAG_REPAIR) - set(CHECK_ONLY))]
+    out += [f"`CHECK_ONLY` 의 `{t}` 는 **죽은 분류**다 — 그 도구가 관문에서"
+            f" `--check` 로 안 불린다"
+            for t in sorted(set(CHECK_ONLY) - seen)]
+    out += [f"`NO_FLAG_REPAIR` 의 `{t}` 는 **죽은 분류**다 — 그 도구가 관문에서"
+            f" `--check` 로 안 불리거나 이미 수리 깃발을 갖는다"
+            for t in sorted(set(NO_FLAG_REPAIR) - seen)]
+    out += [f"`{t}` 가 두 표에 같이 있다 — 하나만 적어라"
+            for t in sorted(set(NO_FLAG_REPAIR) & set(CHECK_ONLY))]
     return out
 
 
@@ -241,6 +308,10 @@ def split_rows() -> list[tuple[str, str, str]]:
 
 #: 기계가 고칠 수 있는데 `fix.sh` 가 안 부르는 단계. **0 이 목표다.**
 #: ★ 이력 — 2026-10-03 §362 첫 실측 10 (문을 세우기 전) → 문을 세우고 0.
+#: ★ 2026-10-11 (DECISIONS §468). **0 이 거짓이었다.** 분모가 수리 깃발로만
+#:   짜여 있어서 「깃발 없이 고치는 도구」가 밖이었다 — 분모를 고치자 1
+#:   (`render_figures`)이 드러났고, 그 줄을 문에 달아 다시 0 이다.
+#:   **0 을 믿기 전에 분모를 본다.**
 UNDOORED = 0
 
 #: 문이 안 덮는 관문 모드 중 **사유가 안 적힌** 것. **0 이 목표다.**
@@ -278,6 +349,12 @@ def check() -> int:
     elif len(bad) < UNDOORED:
         print(f"\n✗ 문에 안 걸린 단계 {len(bad)} < 래칫 {UNDOORED} — 래칫을 그 수로 내려라")
         print("  uv run python tools/ratchet.py --write")
+        rc = 1
+    # ★ 2026-10-11 (DECISIONS §468-1). **분류부터 묻는다.** 「`--check` 를 받는데
+    #   맨몸이 무엇을 하는지 아무도 안 적은」 도구가 있으면 위 분모가 그 도구를
+    #   「없음」으로 떨어뜨린다 — `UNDOORED` 가 0 인 채로 문이 비는 자리다.
+    for msg in check_gaps():
+        print(f"\n✗ {msg}")
         rc = 1
     dead = [t for t in (*HUMAN_FIRST, *NO_REPAIR) if not (ROOT / t).is_file()]
     if dead:
@@ -341,7 +418,7 @@ def table() -> int:
 def selftest() -> int:
     """★ 합성으로 민다. 실제 저장소 수는 `check()` 가 든다."""
     import tempfile
-    global VERIFY, DOOR
+    global VERIFY, DOOR, CHECK_ONLY, NO_FLAG_REPAIR
     keep_v, keep_d = VERIFY, DOOR
     fails = []
     try:
@@ -386,9 +463,55 @@ def selftest() -> int:
     if not steps():
         fails.append("실물 verify.sh 에서 단계를 하나도 못 읽었다 — 빈 그물이다")
 
+    # ★ 2026-10-11 (§468). **서브명령 읽기.** `mode_gaps` 의 분모가 이 함수고,
+    #   깃발과 서브명령을 섞으면 「문이 안 덮는 모드」가 엉뚱해진다. 돌연변이가
+    #   `not p.startswith("-")` 의 `not` 을 떼도 안 울고 있었다.
+    got = _subs('step "x" uv run python tools/a.py verify --apply\n'
+                'step "y" uv run python tools/a.py --apply\n', "step")
+    if got != {"tools/a.py": {"verify", ""}}:
+        fails.append(f"서브명령과 깃발을 못 가른다 — {got}")
+
+    # ★ 2026-10-11 (DECISIONS §468-1). **분류 문이 무는가.** 합성 `verify.sh` 에
+    #   「`--check` 는 받는데 수리 깃발이 없는」 도구를 심고, 분류가 없으면 울어야
+    #   한다 — 그 자리가 `render_figures` 가 숨어 있던 사각지대다.
+    keep_v2, keep_co, keep_nf = VERIFY, CHECK_ONLY, NO_FLAG_REPAIR
+    with _t.TemporaryDirectory() as td:
+        try:
+            # 두 표를 비우고 **합성 verify.sh 하나**로만 분모를 짓는다 —
+            # 안 비우면 실물 표가 전부 「죽은 분류」로 울어 무엇을 본 것인지 모른다
+            CHECK_ONLY, NO_FLAG_REPAIR = {}, ()
+            tool = Path(td) / "zz.py"
+            tool.write_text('"""머리말."""\nimport argparse\n'
+                            'argparse.ArgumentParser().add_argument("--check")\n',
+                            encoding="utf-8")
+            VERIFY = Path(td) / "verify.sh"
+            VERIFY.write_text(f'step "합성" uv run python {tool} --check\n',
+                              encoding="utf-8")
+            # 합성 도구는 `tools/` 밖이라 `tool_of` 가 못 잡는다 — 그것까지 확인한다
+            if check_gaps():
+                fails.append("저장소 밖 경로를 분모에 넣는다 — `tool_of` 가 느슨해졌다")
+            VERIFY.write_text('step "합성" uv run python tools/zz.py --check\n',
+                              encoding="utf-8")
+            if check_gaps():
+                fails.append("실재하지 않는 도구를 분모에 넣는다")
+            # 실재하는 분류 없는 도구 — `CHECK_ONLY` 에서 하나를 빼서 민다
+            VERIFY.write_text('step "합성" uv run python tools/toolindex.py --check\n',
+                              encoding="utf-8")
+            CHECK_ONLY = {}
+            got = check_gaps()
+            if not any("toolindex" in m and "분류가 없다" in m for m in got):
+                fails.append(f"분류 없는 도구를 안 댄다 — {got}")
+            # 죽은 분류 — 관문에서 안 불리는 도구를 표에 두면 운다
+            CHECK_ONLY = {"tools/toolindex.py": "사유", "tools/sizecheck.py": "사유"}
+            got = check_gaps()
+            if not any("sizecheck" in m and "죽은 분류" in m for m in got):
+                fails.append(f"죽은 분류를 안 댄다 — {got}")
+        finally:
+            VERIFY, CHECK_ONLY, NO_FLAG_REPAIR = keep_v2, keep_co, keep_nf
+
     for f in fails:
         print(f"  ✗ {f}")
-    print("✓ 자기검사 통과 · 판별식 7" if not fails else f"✗ {len(fails)}건")
+    print("✓ 자기검사 통과 · 판별식 12" if not fails else f"✗ {len(fails)}건")
     return 1 if fails else 0
 
 

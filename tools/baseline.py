@@ -51,6 +51,7 @@ import collections
 import json
 import re
 import shutil
+import statistics
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -146,7 +147,9 @@ def tally(rows) -> dict:
         "in_emd": sum(1 for p in P if p.get("in_emd")),
         "route_usage_pos": sum(1 for p in P if p.get("route_usage")),
         "nfa_designated": sum(1 for p in P if p.get("nfa_designated")),
-        "width_verified": sum(1 for p in P if p.get("width_verified")),
+        # ★ 2026-10-10 (DECISIONS §455 · PLAN #4 ④). `width_verified` 피처 칸이
+        #   없어졌다. 세던 수는 **영원히 0** 이었고, 미검증 선언은 스키마
+        #   최상위가 든다 — 아래 `known_limits` 의 문장이 그것을 말한다.
     }
 
 
@@ -344,7 +347,7 @@ def cmd_diff(args) -> int:
         d.sort()
         n = len(d)
         print(f"\n  width_min_m 변화 {n}건  "
-              f"중앙 {d[n//2]:+.2f}m · 평균 {sum(d)/n:+.2f}m · "
+              f"중앙 {statistics.median(d):+.2f}m · 평균 {sum(d)/n:+.2f}m · "
               f"|Δ|>1m {sum(1 for x in d if abs(x) > 1)}")
 
     # ★ 소방서 블록보다 **먼저** 부른다. 그 블록은 파일이 없으면 early return 하고,

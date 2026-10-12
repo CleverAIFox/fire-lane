@@ -12,7 +12,9 @@
  *        「재탐색」 이나 회전 안내를 띄우면 그것이 거짓 화면이다.
  */
 import { test, ok } from "./harness";
-import { deriveStatus, GPS_WEAK_M, STATUS, type StatusSignals } from "../src/domain/status";
+import {
+  deriveStatus, fillText, GPS_WEAK_M, STATUS, type StatusSignals,
+} from "../src/domain/status";
 
 const base: StatusSignals = {
   phase: "guiding", choice: "safe", rerouting: false, noRoute: false,
@@ -69,5 +71,27 @@ test("18장 전부가 표에 있고 와이어프레임 번호를 든다 — 빈 
   ok(keys.length >= 15, `상태가 ${keys.length}개뿐이다`);
   for (const k of keys) {
     ok(STATUS[k as keyof typeof STATUS].wf.length > 0, `${k} 에 wf 번호가 없다`);
+  }
+});
+
+
+// ── 2026-10-12 (DECISIONS §482) ────────────────────────────────────
+test("부제 자리표 — 모르는 자리표는 **그대로 둔다**. 빈칸보다 낫다", () => {
+  ok(fillText("{a} 앞 {b}", { a: "100미터", b: "좌회전" }) === "100미터 앞 좌회전",
+    "채워야 할 것을 안 채운다");
+  // ★ 머리말이 적은 규율. 못 채운 자리를 지우면 「 앞 」 같은 문장이 화면에 뜬다
+  ok(fillText("{a} 앞 {b}", { a: "100미터" }) === "100미터 앞 {b}",
+    "모르는 자리표를 지웠다 — 빈칸이 화면에 남는다");
+  ok(fillText(undefined, { a: "1" }) === undefined, "부제가 없는데 글자를 만든다");
+  ok(fillText("", { a: "1" }) === "", "빈 부제를 바꿨다");
+  ok(fillText("자리표 없음", {}) === "자리표 없음", "자리표가 없는 글을 건드렸다");
+  // ★ 화면의 모든 부제가 이 함수를 지난다 — 자리표 꼴이 선언과 같아야 한다
+  for (const k of Object.keys(STATUS)) {
+    const sub = STATUS[k as keyof typeof STATUS].sub as string | undefined;
+    if (!sub) continue;
+    for (const m of sub.matchAll(/\{(\w+)\}/g)) {
+      ok(fillText(sub, { [m[1]]: "값" })?.includes("값"),
+        `${k} 의 자리표 {${m[1]}} 를 못 채운다`);
+    }
   }
 });

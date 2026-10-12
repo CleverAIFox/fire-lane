@@ -30,15 +30,17 @@ fixture_recut.py — 커밋된 **사본 픽스처**를 산출물에서 다시 �
 ★ 자동으로 안 쓴다. 관문에 `--write` 를 넣으면 갈린 사본이 **조용히** 맞춰지고,
   사본을 두는 값이 0 이 된다. 관문은 `--check` 만 보고, 쓰는 것은 사람이 시킨다.
 
-IN    data/processed/boundary_emd.geojson  (레이크 기계에만 있다)
+IN    data/processed/boundary_emd.geojson  (레이크 기계에만 있다) · tests/fixtures/n1/*
 OUT   tests/fixtures/dongmyeong_boundary.geojson   (`--write` 일 때만)
-PARAM CUTS
+PARAM CUTS · UNCUT
 밖    **직렬화 형식은 안 본다** — 들여쓰기·키 순서가 달라도 의미가 같으면 같다.
+      `UNCUT` 은 **규칙만 든다** — 그 세 장을 다시 뜨지는 않는다(원본이 레이크에
+      있고 꼴이 `Cut` 과 다르다). **사본의 내용이 옳은가**도 안 본다 — 그것은
+      그 사본을 먹는 시험이 든다.
       쓰는 쪽이 파싱해서 비교하므로 그 기준을 따른다. 사본이 **참인가**도 안 본다 — 원본이 맞다고 가정하고 그것에 맞춘다.
       원본의 참은 파이프라인 계약 시험과 `golden` 이 든다. 그리고 여기서 뗀
       사본을 **쓰는 쪽의 규칙**(범위 판정)도 안 본다 — `tests/test_dest_scope.py`
       소관이다.
-부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
 from __future__ import annotations
 
@@ -73,6 +75,45 @@ CUTS: tuple[Cut, ...] = (
         "tests/fixtures/dongmyeong_boundary.geojson",
         "EMD_CD", EMD_CD),
 )
+
+
+#: 사본인데 **이 도구가 못 뜨는 것**과 그 선택 규칙.
+#: ★ 2026-10-09 (DECISIONS §444 · PLAN #134 ㉡). 세 파일이 `CUTS` 밖에 있었고
+#:   **어떻게 잘랐는지가 아무 데도 없었다.** 다시 떠야 할 날이 오면 그때
+#:   사람이 추측한다 — 그것이 사본을 못 믿게 만든다.
+#: ★ 규칙을 여기 적는다. 돌릴 수는 아직 없다(원본이 레이크에 있고 꼴이
+#:   `Cut` 과 다르다) — **못 돌리는 것과 안 적는 것은 다르다.** 적어 두면
+#:   다음 사람이 같은 규칙으로 다시 뜰 수 있고, 아래 문이 **새 사본이
+#:   조용히 들어오는 것**을 막는다.
+UNCUT: dict[str, str] = {
+    "tests/fixtures/n1/civil_office.csv":
+        "`civil_office.geojson` 의 속성만 CSV 로 뗀 것 — 기하를 버리고 열만 남겼다.\n"
+        "        꼴이 바뀌므로 `Cut`(geojson→geojson)으로는 못 뜬다. 65줄.",
+    "tests/fixtures/n1/navi_build.csv":
+        "내비게이션용DB 건물 원본의 **앞 20줄**(머리 포함). 값이 아니라 **꼴**을\n"
+        "        시험하는 사본이라 어느 20줄인지는 상관없다.",
+    "tests/fixtures/n1/navi_jibun.csv":
+        "내비게이션용DB 지번 원본의 **앞 20줄**. 위와 같은 사유.",
+}
+
+
+def uncut_faults(listed: dict[str, str], real: list[str]) -> list[str]:
+    """`n1/` 의 사본이 **전부 규칙을 달고 있는가.** 양방향.  (§444)"""
+    bad = []
+    for rel in sorted(set(real) - set(listed)):
+        bad.append(f"{rel} — 사본인데 **어떻게 잘랐는지**가 없다. "
+                   "`CUTS` 로 뜨거나 `UNCUT` 에 규칙을 적어라")
+    for rel in sorted(set(listed) - set(real)):
+        bad.append(f"{rel} — `UNCUT` 에 있는데 파일이 없다. 선언을 지워라")
+    for rel, why in listed.items():
+        if len(why.strip()) < 30:
+            bad.append(f"{rel} — 규칙이 너무 짧다. 다음 사람이 그걸로 못 뜬다")
+    return bad
+
+
+def n1_files(root: Path = ROOT) -> list[str]:
+    d = root / "tests" / "fixtures" / "n1"
+    return sorted(p.relative_to(root).as_posix() for p in d.glob("*") if p.is_file())
 
 
 def _feats(doc: dict, cut: Cut) -> list:
@@ -211,6 +252,16 @@ def run(write: bool) -> int:
             print(f"    다시 뜨려면:  uv run python {Path(__file__).relative_to(ROOT)} --write")
     if missing == len(CUTS):
         print("  ★ 전부 건너뛰었다 — 이 기계에는 원본이 없다. 레이크 기계에서 돌려라.")
+    # ★ 2026-10-09 (§444 · #134 ㉡). 못 뜨는 사본도 **규칙은 든다.**
+    #   이 축은 레이크가 없어도 돈다 — 파일 목록과 선언만 본다.
+    bad = uncut_faults(UNCUT, n1_files())
+    if bad:
+        print(f"\n★ `n1/` 사본 {len(bad)}건이 선택 규칙을 안 든다")
+        for x in bad:
+            print(f"    {x}")
+        rc = 1
+    else:
+        print(f"  n1 사본 {len(n1_files())}장 — 선택 규칙이 전부 적혀 있다")
     return rc
 
 
@@ -257,6 +308,22 @@ def selftest() -> int:
     # 같은 것을 다르다고 하지 않는다
     if any("갈렸다" in ln for ln in diagnose(base, copy.deepcopy(base), cut)):
         bad.append("같은 문서를 다르다고 한다")
+
+    # ★ `UNCUT` 축의 양방향. **합성 입력으로만 잰다** — 실물 표를 넣으면
+    #   실물이 바뀔 때 이 문이 같이 흔들린다(§398-6).
+    rule = "a" * 40
+    doors = {
+        "선언 없는 사본": ({}, ["tests/fixtures/n1/x.csv"]),
+        "없는 파일 선언": ({"tests/fixtures/n1/x.csv": rule}, []),
+        "규칙이 짧다": ({"tests/fixtures/n1/x.csv": "뗐다"}, ["tests/fixtures/n1/x.csv"]),
+    }
+    for name, (listed, real) in doors.items():
+        if not uncut_faults(listed, real):
+            bad.append(f"`UNCUT` 문이 안 운다 — {name}")
+    if uncut_faults({"tests/fixtures/n1/x.csv": rule}, ["tests/fixtures/n1/x.csv"]):
+        bad.append("`UNCUT` 이 정상 입력에서 운다")
+    if not n1_files():
+        bad.append("`n1/` 에서 파일을 0장 셌다 — 수집기가 죽었다")
 
     if bad:
         print("selftest 빨강")

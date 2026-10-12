@@ -29,13 +29,13 @@ PARAM 좌표 자릿수 PREC · 크기 상한 SIZE_MAX
 from __future__ import annotations
 
 import json
-import math
 import statistics
 from datetime import datetime, timedelta, timezone
 
 import geopandas as gpd
 import pandas as pd
 
+from firelane import localplane, quantile
 from firelane.cli import no_args
 from firelane.paths import ROOT
 
@@ -175,9 +175,10 @@ def history(fr) -> dict:
             if pr["center"] != c or pr["resp_s"] is None:
                 continue
             lon, lat = x["geometry"]["coordinates"]
-            dx = (lon - h.x) * 111_320 * math.cos(math.radians(lat))
-            dy = (lat - h.y) * 110_540
-            v.append(math.hypot(dx, dy) / pr["resp_s"] * 3.6)
+            # ★ 2026-10-11 (DECISIONS §469). 여기 상수가 셋째 판이었다 —
+            #   위도 110,540 (정본 110,574 · `navicheck` 111,320). 정본이 `tools/`
+            #   에 있어 이 파일이 **쓸 수 없었다**. 집이 `src` 로 올라왔다.
+            v.append(localplane.metres((lon, lat), (h.x, h.y)) / pr["resp_s"] * 3.6)
         return round(statistics.median(v), 1) if v else None
 
     def med(xs):
@@ -187,7 +188,7 @@ def history(fr) -> dict:
     summary = {
         "points": len(feats),
         "resp_median_s": med(all_rs), "resp_n": len(all_rs),
-        "resp_p90_s": int(sorted(all_rs)[int(0.9 * (len(all_rs) - 1))]) if all_rs else None,
+        "resp_p90_s": int(quantile.p90(all_rs)) if all_rs else None,
         "by_center": {k: {"n": len(v), "median_s": med(v), "straight_kmh": kmh(k)}
                       for k, v in sorted(by_center.items())},
         "fire_donggu": {"n": len(fires), "median_s": med(fires)},

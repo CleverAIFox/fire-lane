@@ -157,3 +157,94 @@ def test_챙긴_뒤_BODY_가_남은_자리를_가리킨다():
     body = _nocomment(src[i:j])
     assert 'BODY="$WORK/PR_BODY.md"' in body, (
         "치운 뒤 `$BODY` 를 다시 가리키지 않는다 — 8단계의 대체 본문이 매달린다")
+
+
+# ── §461 · 코드만 바뀐 봉인을 재빌드로 갚지 않는가 ──────────────
+
+def test_닫힘이_바뀌면_재도장을_먼저_한다():
+    """★ 2026-10-11 실기 (DECISIONS §461). 4b 가 곧장 전량 재빌드로 갔고
+    `ngii_road` 가 OOM(Errno 12)으로 죽었다 — 그 배치가 바꾼 폐포 파일 셋은
+    **산출물에 한 바이트도 안 닿았다.** 재빌드할 이유가 애초에 없었다.
+
+    묻는 것은 순서다 — 재도장(`--reseal-code`)이 전량(`fire-lane --split`)보다
+    **앞에** 있는가. 뒤에 있으면 OOM 이 먼저 온다.
+    """
+    src = _nocomment(_fl())
+    i = src.find("firelane.ingest --reseal-code")
+    j = src.find("fire-lane --split")
+    assert i > 0, "4b 가 재도장을 아예 안 부른다 — 코드만 바뀐 봉인을 재빌드로 갚는다"
+    assert j > 0, "전량 재빌드 자리가 없다 — 이 대조가 아무것도 안 묻는다"
+    assert i < j, "전량 재빌드가 재도장보다 먼저다 — OOM 이 먼저 온다"
+
+
+def test_전량으로_가는_조건이_거절_하나뿐인가():
+    """재도장이 **거절**한 샤드가 있을 때만 전량이다. 거절은 「산출물이 봉인과
+    다르다」이고 그것은 정말로 다시 빌드할 자리다."""
+    src = _nocomment(_fl())
+    head = src[src.find("firelane.ingest --reseal-code"):src.find("fire-lane --split")]
+    assert "거절" in head, "거절을 보지 않고 전량으로 간다 — 조건 없는 재빌드다"
+    assert "--from ingest" in src, "거절이 없을 때 이어 도는 자리가 없다"
+
+
+# ── 2026-10-12 (DECISIONS §492) ────────────────────────────────────
+#   §491 이 분모를 바로잡은 뒤 이 파일이 빚에 남았다. 「열차가 그 도구를
+#   부르는가」는 글자로 밀면서, 그 도구의 **판정**(`prove_only_eval_moved`)을
+#   민 자리가 없었다 — §272 가 「봉인을 두 번 찍으면 된다」를 막으려고 세운
+#   자이고, 그것이 죽으면 두 번째 도장이 무엇을 덮었는지 아무도 모른다.
+
+def _rm():
+    """`tools/remeasure.py` 를 모듈로 들인다. **봉인을 안 찍는다.**"""
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location(
+        "_remeasure_probe", T / "remeasure.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_only_the_metrics_file_may_move_between_two_seals():
+    """★ 음성 — 지표만 움직였으면 조용하다. 양성 — 그 밖이 움직이면 운다."""
+    rm = _rm()
+    only = rm.RESEAL_ONLY
+    before = {only: "aaa", "golden.json": "ggg", "meta.json": "mmm"}
+    after = {only: "bbb", "golden.json": "ggg", "meta.json": "mmm"}
+    assert rm.prove_only_eval_moved(before, after) == [], \
+        rm.prove_only_eval_moved(before, after)
+    moved = rm.prove_only_eval_moved(before, {**after, "golden.json": "hhh"})
+    assert moved and "golden.json" in moved[0], moved
+    assert "ggg" in moved[0] and "hhh" in moved[0], f"전후를 안 적는다 — {moved}"
+
+
+def test_a_vanished_or_new_fingerprint_is_called_out_by_name():
+    """★ 사라진 것과 새로 생긴 것을 **낱말로** 말한다 — 수만 세면 무엇이
+    움직였는지 모른다."""
+    rm = _rm()
+    only = rm.RESEAL_ONLY
+    gone = rm.prove_only_eval_moved({only: "a", "x": "1"}, {only: "b"})
+    assert gone and "사라졌다" in gone[0], gone
+    new = rm.prove_only_eval_moved({only: "a"}, {only: "b", "y": "2"})
+    assert new and "없었다" in new[0], new
+
+
+def test_an_unreadable_seal_is_a_failure_not_a_pass():
+    """★ **빈 그물 금지.** 지문을 못 읽으면 통과가 아니라 실패다 — 옛 판
+    봉인에서 조용히 넘어가면 두 번째 도장이 무엇을 덮었는지 모른다."""
+    rm = _rm()
+    assert rm.prove_only_eval_moved({}, {"a": "b"}), "빈 before 에서 통과한다"
+    assert rm.prove_only_eval_moved({"a": "b"}, {}), "빈 after 에서 통과한다"
+    assert rm.prove_only_eval_moved({}, {}), "둘 다 비었는데 통과한다"
+
+
+def test_a_metrics_file_that_did_not_move_is_a_failure_unless_resumed():
+    """★ §329 가 고친 자리 — 지표는 결정론이라 **이어 도는 판**에서는 같은
+    값이 정상이다. 「안 움직였으면 실패」를 그대로 두면 되돌아올 길이 막힌다."""
+    rm = _rm()
+    only = rm.RESEAL_ONLY
+    same = {only: "aaa", "x": "1"}
+    stuck = rm.prove_only_eval_moved(same, dict(same))
+    assert stuck and "안 움직였다" in stuck[0], stuck
+    assert rm.prove_only_eval_moved(same, dict(same), resume=True) == [], \
+        "이어 도는 판에서도 막는다 — 첫 실기가 고치려던 그 병이다"

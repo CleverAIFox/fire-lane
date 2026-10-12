@@ -5,36 +5,31 @@ stage_pages.py — 배포 직전에 web/ 을 완성한다.
     uv run python tools/stage_pages.py
     uv run python tools/stage_pages.py --check   빠졌으면 종료코드 1
     uv run python tools/stage_pages.py --deploy  ★ CI 전용 — 배포에 안 실을 파일을 web/ 에서 뺀다
+    uv run python tools/stage_pages.py --selftest ★ 판정기가 살아 있나
 
 ── 왜 생겼나 ───────────────────────────────────────────────────
 2026-09-02. `web/proposal.html` 이 `./proposal.docx` 를 부르는데 그 파일은
-`docs/` 에 있다. **로컬에서도 배포에서도 404 였다** — Pages 는 `web/` 만
-올린다.
+`docs/` 에 있었다 — **로컬에서도 배포에서도 404 였다.** Pages 는 `web/` 만
+올린다. 그래서 정본을 배포 직전에 옮기는 자리가 생겼다.
 
-정본은 `docs/proposal.docx` 다. 사본을 커밋하지 않고 배포 직전에 옮긴다 —
-`workflow.html` 이 `MASTER §12` 에서 생성되는 것과 같은 관계다(R2).
-
-★ 준비를 워크플로마다 인라인으로 쓰지 않는다. 지금 셋이 같은 `web/` 을
-  올리는데(`pages` · `협업 방침` · `기획서`) 준비가 세 벌이면 하나만
-  고치는 날이 온다. 이 파일이 그 한 벌이다.
+★ 2026-10-09 (DECISIONS §444 · PLAN #142). **옮길 것이 없어졌다.** 기획서
+  정본이 `docs/proposal.md` 이고 화면은 `web/proposal.html` 이다 — 그 화면은
+  `build_proposal.py` 가 구워 **커밋되는** 생성물이라 `web/` 안에 이미 있다.
+  `docs/proposal.docx` · `web/proposal.pdf` 는 은퇴했고, PDF 를 굽던
+  `tools/proposal_pdf.py`(삭제)와 그 변환기(libreoffice · noto-cjk · poppler)도
+  같이 갔다. 남은 일은 **배포에서 뺄 것을 빼는 것** 하나다.
+  ★ `STAGED` 를 **표로 남긴다.** 지우면 다음에 옮길 것이 생길 때 자리를
+    다시 만들고, 비었다는 사실도 화면에 안 찍힌다 — 비면 비었다고 말한다.
 
 ★ 2026-09-22. `web/key.js`(V-World 키) 생성을 뺐다. 그 키를 쓰던 것은 옛 GIS 지도
   하나였고 지도를 걷어냈다(관제 화면이 넘겨받았다). 내비 · 관제는 V-World 를 안 부른다 —
   배경은 커밋된 `web/data/ortho` 타일과 Mapbox(빌드 시 `MAPBOX_TOKEN`)다.
 
-★ 2026-09-24 (DECISIONS §231). 기획서 **PDF** 도 여기서 굽는다. 뷰어가
-  `.docx` 를 브라우저에서 그리던 것을 PDF 로 바꿨다 — 글꼴과 그림이 무너졌고,
-  PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
-  굽는 판정은 `tools/proposal_pdf.py` 가 든다(쪽수 · 본문 · 판정 수치 · 그림).
-
-IN    docs/proposal.docx
-OUT   web/proposal.docx · web/proposal.pdf  (둘 다 생성물. .gitignore)
-PARAM --check · --deploy
-밖    **PDF 를 여기서 판정하지 않는다.** 이 파일이 하는 것은 「굽기를 부른다」
-      까지이고, 성한지는 `tools/proposal_pdf.py --check` 가 CI 에서 본다.
-      로컬에 변환기가 없으면 **경고하고 넘어간다** — `serve.py` 로 화면을
-      보려는 사람을 libreoffice 설치 앞에서 막지 않는다. 뷰어는 PDF 가 없으면
-      내려받기 안내로 바뀐다.
+IN    없음 (STAGED 가 비었다)
+OUT   web/ 에서 DEPLOY_DROP 제거  (`--deploy` 이고 CI 일 때만)
+PARAM STAGED · DEPLOY_DROP · --check · --deploy · --selftest
+밖    **화면을 굽지 않는다** — `tools/build_proposal.py` 소관이고 그 산출물은
+      커밋된다. **그림도 안 만진다**(`htmlfigs.py`).
 """
 from __future__ import annotations
 
@@ -48,7 +43,10 @@ from firelane import paths  # ★ import 만으로 .env 를 환경에 얹는다
 ROOT = Path(__file__).resolve().parents[1]
 
 # (정본, 배포 위치). 늘어나면 여기 한 줄이다.
-STAGED = [("docs/proposal.docx", "web/proposal.docx")]
+# ★ 2026-10-09 (§444 · #142). 비었다. `docs/proposal.docx` 한 줄이 있었고
+#   그 파일이 은퇴했다 — 지금 배포에 올라가는 기획서는 커밋된
+#   `web/proposal.html` 이라 옮길 것이 없다.
+STAGED: list[tuple[str, str]] = []
 
 # ★ 2026-09-22 (DECISIONS §216-5) 배포에 **안 싣는** 것. Pages 는 `web/` 을 통째로 올린다.
 #   사용자 지적 — 「플레이북은 협업 방침을 돋보이게 하는 **템플릿**인데 왜 따로 배포하나」.
@@ -58,6 +56,48 @@ STAGED = [("docs/proposal.docx", "web/proposal.docx")]
 #   ★ 로컬에서는 지우지 않는다 — `--deploy` 와 `GITHUB_ACTIONS=true` 둘 다일 때만.
 #     렌더러가 템플릿을 읽어야 하므로 저장소에서 파일을 빼면 안 된다.
 DEPLOY_DROP = ["web/playbook.html", "web/README.md"]
+
+
+def drop_faults(drop: list[str], exists) -> list[str]:
+    """빼라고 적힌 것이 **실재하는가.** 순수 함수다 — `exists` 를 받는다.
+
+    ★ 2026-10-09 (DECISIONS §444). 죽은 항목은 **아무것도 안 하고 조용하다** —
+      파일이 이름을 바꿔 배포에 그대로 올라가도 이 목록은 「뺐다」고 말하지
+      않고, 안 뺐다고도 말하지 않는다(1족 · 무음 통과). 그래서 센다.
+    """
+    return [f"{rel} — 빼라고 적혀 있는데 저장소에 없다. 이름이 바뀌었거나 "
+            "지워졌다. 목록을 고쳐라 — 죽은 항목은 조용하다"
+            for rel in drop if not exists(rel)]
+
+
+def staged_faults(staged: list[tuple[str, str]], exists) -> list[str]:
+    """옮길 정본이 **실재하는가.** 비면 아무 말도 안 한다 — 판정은 `main()` 이 든다."""
+    return [f"{src} — 옮길 정본이 없다" for src, _ in staged if not exists(src)]
+
+
+def selftest() -> int:
+    """★ 판정기가 살아 있나. 합성 입력으로 양방향을 민다."""
+    bad: list[str] = []
+    yes, no = (lambda _r: True), (lambda _r: False)
+    if not drop_faults(["web/없는것.html"], no):
+        bad.append("죽은 `DEPLOY_DROP` 항목을 안 문다")
+    if drop_faults(["web/있는것.html"], yes):
+        bad.append("멀쩡한 항목을 문다")
+    if drop_faults([], no):
+        bad.append("빈 목록에서 운다")
+    if not staged_faults([("docs/없는것.md", "web/x.md")], no):
+        bad.append("없는 정본을 안 문다")
+    if staged_faults([], no):
+        bad.append("빈 `STAGED` 에서 운다")
+    # ★ 실물 — 목록이 둘 다 참인가
+    real = drop_faults(DEPLOY_DROP, lambda rel: (ROOT / rel).exists())
+    real += staged_faults(STAGED, lambda rel: (ROOT / rel).exists())
+    bad += real
+    for x in bad:
+        print(f"  ✗ {x}")
+    print(f"{'✗' if bad else '✓'} 자기검사 — 뺄 것 {len(DEPLOY_DROP)}개 · "
+          f"옮길 것 {len(STAGED)}개 · 양방향")
+    return 1 if bad else 0
 
 
 def _drop_for_deploy() -> None:
@@ -78,7 +118,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="발행 페이지 staging")
     ap.add_argument("--check", action="store_true", help="쓰지 않고 낡았는지만 본다")
     ap.add_argument("--deploy", action="store_true", help="배포본에서 뺄 것을 뺀다")
+    ap.add_argument("--selftest", action="store_true", help="판정기가 살아 있나")
     a = ap.parse_args()
+    if a.selftest:
+        return selftest()
     check = a.check
     if a.deploy:
         _drop_for_deploy()
@@ -101,34 +144,14 @@ def main() -> int:
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
         print(f"  {src_rel} → {dst_rel}  ({dst.stat().st_size // 1024}KB)")
-    bad += _pdf(check)
+    # ★ 빈 표를 **비었다고 말한다.** 종전에는 여기서 `_pdf()` 가 PDF 를 굽고
+    #   판정했다. 둘 다 은퇴했으므로 이 반복문은 0회 돈다 — 아무 말도 안 하면
+    #   「옮겼다」와 「옮길 것이 없다」가 같은 침묵이 된다(1족 · 무음 통과).
+    if not STAGED:
+        print("  옮길 정본이 없다 — STAGED 가 비었다(기획서 화면은 커밋된 생성물이다)")
     if not bad:
         print("배포 준비 OK" if check else "배포 준비 완료")
     return 1 if bad else 0
-
-
-def _pdf(check: bool) -> int:
-    """기획서 PDF. **CI 에서는 필수, 로컬에서는 최선.**
-
-    ★ 판정은 `proposal_pdf` 가 든다 — 여기서 다시 세면 정본이 둘이 된다(§18-3).
-    """
-    import proposal_pdf  # ★ 같은 tools/ 안. 경로 조작을 하지 않는다
-
-    ci = paths.env("GITHUB_ACTIONS") == "true"
-    if not check:
-        if err := proposal_pdf.bake():
-            for e in err:
-                print(("★ 기획서 PDF — " if ci else "! 기획서 PDF 를 못 구웠다 — ") + e)
-            if ci:
-                return 1
-            print("  로컬이라 넘어간다. 뷰어는 내려받기 안내로 바뀐다.")
-            return 0
-    if bad := proposal_pdf.check():
-        for b in bad:
-            print(("★ " if ci else "! ") + b)
-        return 1 if ci else 0
-    print(f"  web/proposal.pdf  {proposal_pdf.pages(proposal_pdf.OUT)}쪽")
-    return 0
 
 
 if __name__ == "__main__":

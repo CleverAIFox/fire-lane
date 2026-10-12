@@ -185,8 +185,14 @@ SECURITY = {
 }
 
 
-def _security_gaps() -> list[str]:
+def _security_gaps(got: dict | None = None) -> list[str]:
     """저장소 보안 설정이 `SECURITY` 선언과 같은가.
+
+    ★ 2026-10-12 (DECISIONS §492). `got` 을 **받는다.** 종전에는 응답을
+      이 안에서 받아 와서 **합성 응답으로 밀 수가 없었고**, 그래서
+      「모르는 것은 빨강이다」라는 이 함수의 규율이 한 번도 안 돌았다
+      (§481 의 `pages_add_navi` · §484 의 `ledger_fields` 와 같은 수선).
+      기본값이 `None` 이라 부르는 자리는 안 바뀐다.
 
     ★ **모르는 것은 빨강이다.** 칸이 응답에 없으면 「꺼짐」이 아니라 「못 읽었다」인데,
       보안 축에서 그 둘을 같이 초록으로 보내면 검사가 아무것도 안 하는 것과 같다.
@@ -196,7 +202,8 @@ def _security_gaps() -> list[str]:
         다른 엔드포인트다 — 응답 꼴을 실물로 확인하기 전에는 안 적는다.
         짐작으로 쓴 보안 검사는 무음 통과 아니면 영구 빨강이고 둘 다 없느니만 못하다.
     """
-    got = (_gh(f"repos/{REPO}") or {}).get("security_and_analysis")
+    if got is None:
+        got = (_gh(f"repos/{REPO}") or {}).get("security_and_analysis")
     if not isinstance(got, dict) or not got:
         return ["보안 설정을 하나도 못 읽었다 — `security_and_analysis` 가 비었다"
                 "\n      ★ 0건이 청결인지 죽음인지 가른다. 여기서는 죽음이다"]

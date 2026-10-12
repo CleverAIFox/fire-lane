@@ -8,7 +8,7 @@ test_figure_xsec.py — [그림 13] 이 **규칙을 그리는가, 폴백을 그�
   제외」로 고쳐졌는데 그림은 안 고쳐졌다 — 캡션과 그림이 서로 다른 모델을
   말한 채 석 주를 서 있었다.
 
-★ 아무것도 안 울었다. `docx_check` 는 캡션 글자를 저장소 어휘와 대조하고
+★ 아무것도 안 울었다. 캡션 대조는 글자를 저장소 어휘와 대보고
   `render_figures --check` 는 지문이 정본과 같은가를 본다. **틀린 그림을
   그대로 두 번 만들면 지문도 같다** — 「재현되는가」와 「맞는가」는 다른
   물음이다(`test_figure_text` 가 2026-09-20 에 같은 것을 배웠다).
@@ -18,7 +18,7 @@ test_figure_xsec.py — [그림 13] 이 **규칙을 그리는가, 폴백을 그�
   믿고, 폴리곤이 아예 없는 교차로에서만 노드 반경으로 폴백한다.
   그림 두 줄이 **같은 길 · 같은 표본**인데 버리는 수가 달라야 그 말이 된다.
 
-IN    tools/render_figures.py · tools/docx_figs.py · src/firelane/seg/params.py
+IN    tools/render_figures.py · tools/htmlfigs.py · src/firelane/seg/params.py
 OUT   없음 (검사)
 밖    **원과 폴리곤의 모양이 실제 교차부와 닮았는가는 안 본다.** 교차부
       실형상은 교차부마다 다르고 정본은 `ngii1k_xsec_5186.gpkg` 다 —
@@ -105,9 +105,9 @@ def test_both_the_rule_and_the_fallback_are_drawn():
 
 
 def test_it_is_placed_at_figure_13():
-    """기획서 자리 선언이 있는가. 없으면 `docx_figs --check` 가 운다."""
-    df = _load("docx_figs")
-    assert df.PLACE["xsec"]["fig"] == 13, df.PLACE["xsec"]
+    """화면 자리 선언이 있는가. 없으면 `htmlfigs --check` 가 운다."""
+    df = _load("htmlfigs")
+    assert df.SLOT["xsec"] == 13, df.SLOT
 
 
 def test_plan_row_is_closed():

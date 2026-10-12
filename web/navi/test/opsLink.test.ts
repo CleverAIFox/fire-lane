@@ -184,3 +184,27 @@ describe("⑤ 재접속 — 출동 중에 끊기면 다시 붙는다", () => {
     expect(FakeWS.made).toHaveLength(1);
   });
 });
+
+// ── 2026-10-12 (DECISIONS §483) ────────────────────────────────────
+describe("탭 id — 관제가 차를 가른다", () => {
+  it("★ 접두를 지키고 **서로 다르다** — 겹치면 두 차가 한 차로 보인다", async () => {
+    const { newId } = await import("../src/infra/opsLink");
+    const ids = new Set<string>();
+    for (let i = 0; i < 2000; i++) {
+      const id = newId("navi");
+      expect(id.startsWith("navi-")).toBe(true);
+      ids.add(id);
+    }
+    // 같은 밀리초에 여러 개를 만들어도 뒤의 다섯 글자가 가른다.
+    // 2,000개에서 겹침이 몇이라도 나오면 그 다섯 글자가 모자란 것이다.
+    expect(ids.size).toBe(2000);
+  });
+
+  it("짧고, 전송이 깨질 글자가 없다", async () => {
+    const { newId } = await import("../src/infra/opsLink");
+    const id = newId("ops");
+    // 관제 화면이 이 id 를 줄에 얹는다 — 공백·따옴표·줄바꿈이 끼면 꼴이 깨진다
+    expect(id).toMatch(/^ops-[0-9a-z]+$/);
+    expect(id.length).toBeLessThan(24);
+  });
+});

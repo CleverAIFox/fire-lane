@@ -32,6 +32,7 @@ from pathlib import Path
 #   `pythonpath = ["tools", "src"]` 가 정본이고 `test_layering` 이 그것을
 #   강제한다 — 시험 파일이 경로를 조작하기 시작하면 다음 시험도 따라 한다.
 import gate_parity
+import scopedecl
 import selftests
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -78,3 +79,71 @@ def test_the_external_samples_live_beside_their_patterns():
             "표본이 다시 딴 곳으로 갔다")
         assert name in gate_parity.tokens(val[1]), (
             f"{name} 의 패턴이 제 표본을 못 잡는다")
+
+
+# ── 2026-10-12 (DECISIONS §488) ────────────────────────────────────
+#   §487 이 분모를 바로잡은 뒤 이 파일이 빚에 남았다. 머리말이 §283-3 을
+#   인용해 **「머리말의 사용 예시를 선언으로 세면 그물에 구멍이 난다」**고
+#   적는데, 그 주장을 미는 자리는 `selftests.selftest() == 0` 한 줄이었다 —
+#   그 안에서 무엇을 보는지는 이 파일 밖이다. 여기서 **합성 파일로** 민다.
+
+#: 삼중 따옴표를 **글자로 만든다** — 합성 파일에 머리말을 넣어야 하는데
+#: 이 파일 안에 그 꼴을 직접 적으면 파이썬이 이 파일의 글자를 닫는다.
+Q = chr(34) * 3
+
+#: 선언한 꼴 — 호출의 인자로 `--selftest` 가 들어간다.
+DECLARED = f"{Q}한 줄.{Q}\nimport argparse\n" \
+    'ap = argparse.ArgumentParser()\nap.add_argument("--selftest")\n'
+
+#: 설명만 적은 꼴 — 머리말에 글자가 있을 뿐이다.
+PROSE = f"{Q}이 도구는 `--selftest` 로 재는 것이 없다. 설명만 적는다.{Q}\nX = 1\n"
+
+#: 함수로 선 꼴 — 최상위 `def selftest(`.
+FUNC = f"{Q}한 줄.{Q}\ndef selftest() -> int:\n    return 0\n"
+
+
+def _tool(tmp_path: Path, body: str, name: str = "합성도구.py") -> Path:
+    """`tools/` 라는 이름의 폴더 아래에 둔다 — `scopedecl` 이 부모 이름을 본다."""
+    d = tmp_path / "tools"
+    d.mkdir(exist_ok=True)
+    q = d / name
+    q.write_text(body, encoding="utf-8")
+    return q
+
+
+def test_a_declared_selftest_counts(tmp_path):
+    """★ 양성. 선언한 것을 못 세면 「자기검사가 사라졌다」를 못 본다."""
+    q = _tool(tmp_path, DECLARED)
+    assert scopedecl.has_selftest(q), "깃발로 선언한 자기검사를 안 센다"
+    assert selftests._has_selftest(q), "깃발로 선언한 자기검사를 안 센다(수집기)"
+
+
+def test_a_selftest_function_counts(tmp_path):
+    """최상위 `def selftest(` 도 **실행되는 자리**다."""
+    assert scopedecl.has_selftest(_tool(tmp_path, FUNC)), \
+        "함수로 선 자기검사를 안 센다"
+
+
+def test_prose_in_the_docstring_does_not_count(tmp_path):
+    """★ **음성.** §278-1 이 실측한 그 결함 — 머리말에 설명만 적어도 하나로
+    세어졌고, 래칫을 그 수로 올렸으면 **진짜 자기검사가 하나 사라져도 안 운다.**"""
+    q = _tool(tmp_path, PROSE)
+    assert not scopedecl.has_selftest(q), "머리말의 글자를 선언으로 센다"
+    assert not selftests._has_selftest(q), "머리말의 글자를 선언으로 센다(수집기)"
+
+
+def test_a_file_outside_tools_does_not_count(tmp_path):
+    """★ `scopedecl` 쪽 규율 — 시험은 자기가 곧 자기검사라 세면 수가 부푼다."""
+    q = tmp_path / "test_합성.py"
+    q.write_text(DECLARED, encoding="utf-8")
+    assert not scopedecl.has_selftest(q), "`tools/` 밖의 파일을 센다"
+
+
+def test_the_two_judges_disagree_only_where_it_is_declared():
+    """★ 두 판정이 **다른 구현**이다. 어긋나는 자리는 `OUTSIDE` 가 적은
+    것뿐이어야 한다 — 어긋남이 선언 밖으로 나가면 §484 의 `outside_faults`
+    가 유령 항목을 내고, 그 유령은 「자기검사가 있다」는 거짓 신호다."""
+    gap = {q.name for q in sorted((ROOT / "tools").glob("*.py"))
+           if scopedecl.has_selftest(q) != selftests._has_selftest(q)}
+    assert gap <= set(selftests.OUTSIDE), (
+        f"선언에 없는 어긋남 — {sorted(gap - set(selftests.OUTSIDE))}")

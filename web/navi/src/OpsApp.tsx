@@ -53,7 +53,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OpsMap, type OpsLayers } from "./components/OpsMap";
 import { OpsHistory } from "./ui/OpsHistory";
-import { ManualButton, ManualSheet } from "./ui/Manual";
 import { MOTION_CSS } from "./ui/motion";
 import { useFleet } from "./app/useFleet";
 import { loadAll, loadHistory, type Bundle } from "./infra/dataSource";
@@ -76,10 +75,10 @@ import { snap as snapOnce, prepare } from "./domain/snap";
 import { distM, type LngLat } from "./domain/geo";
 import type { GraphEdge, HistorySummary } from "./domain/types";
 import { fmtDur, fmtSec, hhmm, hhmmss } from "./ui/tokens";
-import { GRAY_REASON, VERDICT_MEANING, VERDICT_ORDER } from "./ui/verdictMeaning";
-import { CLEARANCE_FORMULA, CLEARANCE_SCALE } from "./ui/clearanceMeaning";
+import { VERDICT_ORDER } from "./ui/verdictMeaning";
+import { CLEARANCE_SCALE } from "./ui/clearanceMeaning";
 import { VehicleArt } from "./ui/VehicleArt";
-import { Center, Sec, Tile } from "./ui/OpsBits";
+import { Center, Sec, Tile, dashSwatch } from "./ui/OpsBits";
 import { SegCard } from "./ui/SegCard";
 import {
   ackBtn, body, btnSm, card, chip, clock, colL, colR, cta, D, dot, feedRow, input, lab,
@@ -100,7 +99,6 @@ export default function OpsApp() {
   //   고르는 손이 없다 — 지령에 실어 보낸다.
   const [route, setRoute] = useState<RouteMode>("safe");
   const [picking, setPicking] = useState(false);
-  const [manual, setManual] = useState(false);
   const [stationId, setStationId] = useState<string>("0");
   const [layers, setLayers] = useState<OpsLayers>({
     // ★ 2026-09-29 (DECISIONS §311). `bldg` 기본을 켠다 — 종전 `false`.
@@ -222,13 +220,6 @@ export default function OpsApp() {
     for (const e of data?.graph.edges ?? []) c[e.verdict] = (c[e.verdict] ?? 0) + 1;
     return c;
   }, [data]);
-  const grayCounts = useMemo(() => {
-    const c: Record<string, number> = {};
-    for (const e of data?.graph.edges ?? []) {
-      if (e.verdict === "unknown") c[e.unknown_reason ?? "width"] = (c[e.unknown_reason ?? "width"] ?? 0) + 1;
-    }
-    return Object.entries(c).sort((a, b) => b[1] - a[1]);
-  }, [data]);
   /** 여유폭 구간별 개수 — 고른 차가 바뀌면 다시 센다(§220) */
   const bandCounts = useMemo(
     () => (data && spec ? clearanceCounts(data.graph.edges, spec)
@@ -276,13 +267,11 @@ export default function OpsApp() {
   return (
     <div style={shell}>
       <style>{MOTION_CSS}</style>
-      <ManualSheet open={manual} onClose={() => setManual(false)} />
       {/* ══ 상단 상황판 ══════════════════════════════════════════ */}
       <header style={top}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
           <b style={{ fontSize: 18, letterSpacing: -.3 }}>FireLane 종합상황실</b>
           <span style={{ fontSize: 12, color: D.sub, whiteSpace: "nowrap" }}>동부소방서 관할 · 동명동</span>
-          <ManualButton onClick={() => setManual(true)} />
         </div>
         <div style={{ flex: 1 }} />
         {/* ★ 2026-10-06 (DECISIONS §414). 첫 칸이 **경과 시간**이다 — 상황판에
@@ -303,7 +292,7 @@ export default function OpsApp() {
       <div style={body}>
         {/* ══ 좌 — 접수 · 지령 ═════════════════════════════════════ */}
         <aside style={colL}>
-          <Sec title="사건 접수">
+          <Sec title="사건 접수" tier={incident ? "pick" : "act"}>
             <div style={{ display: "flex", gap: 6 }}>
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="상호 · 주소 · 건물 · 도로명"
                      style={input} />
@@ -336,7 +325,7 @@ export default function OpsApp() {
             )}
           </Sec>
 
-          <Sec title="출동 지령">
+          <Sec title="출동 지령" tier={incident ? "act" : "idle"}>
             <label style={lab}>출발 센터</label>
             <select value={station?.id ?? ""} onChange={(e) => setStationId(e.target.value)} style={input}>
               {stations.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -371,7 +360,8 @@ export default function OpsApp() {
                 );
               })}
             </div>
-            {/* ★ §441. 회전반경 한계 문단 → `ui/Manual.tsx` */}
+            {/* ★ 2026-10-09 (§445). 회전반경 한계 문단은 **화면에 없다** —
+                `MASTER §15-4` 가 「판정이 안 보는 것」을 든다. */}
 
             <label style={lab}>경로 — 관제가 정한다</label>
             <div style={{ display: "flex", gap: 6 }}>
@@ -442,7 +432,7 @@ export default function OpsApp() {
 
         {/* ══ 중앙 — 지도(북쪽 위 · 평면) ═══════════════════════════ */}
         <main style={mapBox}>
-          <OpsMap view={data.view} terrain={data.graph.terrain} style={style} layers={layers} hidden={hidden}
+          <OpsMap view={data.view} terrain={data.graph.terrain} landmarks={data.graph.landmarks} style={style} layers={layers} hidden={hidden}
                   colorMode={colorMode} requiredM={need} hiddenBands={hiddenBands}
                   reachable={reach} incident={incident?.point ?? null}
                   preview={plan?.plan?.coords ?? null}
@@ -478,39 +468,30 @@ export default function OpsApp() {
                 {VERDICT_ORDER.filter((k) => style[k]).map((k) => {
                   const off = hidden.has(k);
                   return (
-                    <button key={k} style={{ ...legendRow, opacity: off ? .35 : 1 }} title={VERDICT_MEANING[k]}
+                    <button key={k} style={{ ...legendRow, opacity: off ? .35 : 1 }}
                             onClick={() => setHidden((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n; })}>
-                      <i style={{ ...dot, background: style[k].color }} />
+                      {/* ★ 2026-10-10 (§448 · #145). 범례도 **둘째 채널**을 보인다 —
+                          지도는 무늬로 가르는데 범례가 색으로만 가르면 사람이 그
+                          무늬를 어디서도 못 배운다. 무늬는 `VERDICT_DASH` 하나가 든다. */}
+                      <i style={{ ...dot, background: style[k].color,
+                                  borderRadius: 2, height: 4, width: 22,
+                                  backgroundImage: dashSwatch(k) }} />
                       <span style={{ flex: 1, textAlign: "left" }}>{style[k].label}</span>
                       <b>{counts[k] ?? 0}</b>
                     </button>
                   );
                 })}
-                {/* ★ 2026-09-24 (DECISIONS §232). **이 색이 무엇을 말하지 않는가**를 적는다.
-                    판정은 도면에서 잰 **정적 폭 조건**이고 지금 그 골목에 차가 서
-                    있는지는 안 본다 — 초록을 「지금 갈 수 있다」로 읽으면 관제가
-                    화면을 잘못 믿는다. 회색 399가 그 사실을 이미 말하고 있는데
-                    **초록·주황·빨강에는 그 말이 없었다.** */}
-                <div style={{ marginTop: 5, paddingTop: 5, borderTop: `1px solid ${D.line}`,
-                              fontSize: 10.5, color: D.sub, lineHeight: 1.5 }}>
-                  이 색은 <b>도면에서 잰 정적 폭 조건</b>이다. 지금 주차 상태는 안 본다 —
-                  현장 확인은 영상판정(주황)과 CCTV 가 닿는 범위까지다.
-                </div>
-                {grayCounts.length > 0 && !hidden.has("unknown") && (
-                  <div style={{ margin: "0 0 4px 20px", fontSize: 10.5, color: D.sub, lineHeight: 1.55 }}>
-                    {grayCounts.map(([k, n]) => (
-                      <div key={k} style={{ display: "flex" }}><span style={{ flex: 1 }}>└ {GRAY_REASON[k]?.short ?? k}</span><b>{n}</b></div>
-                    ))}
-                  </div>
-                )}
+                {/* ★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). 여기 있던 **설명
+                    두 덩이를 걷었다** — 「이 색이 무엇을 말하지 않는가」(§232)와 회색
+                    사유별 수 넷이다. 앞은 **한계**라 집이 `MASTER §15-4` 이고, 뒤는
+                    **통계**라 출동을 안내하지 않는다. 회색 사유는 구간을 누른 사람에게
+                    `SegCard` 가 그 구간의 것으로 댄다 — 거기가 묻는 자리다.
+                    범례는 색↔뜻만 남는다. */}
               </>
             ) : (
               <>
                 <div style={{ fontSize: 11, fontWeight: 800, color: D.accent, marginBottom: 1 }}>
                   여유폭 · {displayName(vehicle?.label ?? "기준 차량")}
-                </div>
-                <div style={{ fontSize: 10.5, color: D.sub, marginBottom: 4 }}>
-                  {CLEARANCE_FORMULA} = {need.toFixed(1)}m
                 </div>
                 {CLEARANCE_BAND_ORDER.map((k) => {
                   const off = hiddenBands.has(k);
@@ -523,9 +504,6 @@ export default function OpsApp() {
                     </button>
                   );
                 })}
-                <div style={{ fontSize: 10.5, color: D.sub, marginTop: 2, lineHeight: 1.5 }}>
-                  판정은 안 바뀐다 — 같은 구간을 고른 차의 폭으로 다시 칠한 것뿐이다.
-                </div>
               </>
             )}
             <div style={{ borderTop: `1px solid ${D.line}`, margin: "6px 0 4px" }} />
@@ -533,7 +511,7 @@ export default function OpsApp() {
               ["reach", `도달 불가 사선 · ${displayName(vehicle?.label ?? "기준 차량")}`],
               ["history", "출동 이력 · 실제 도착 시간"],
               ["context", "과속방지턱 · 카메라 · 보호구역"],
-              ["cctvCov", "CCTV 영상판정 반경 25m"],
+              ["cctvCov", "CCTV 영상판정 반경 19m"],
               ["ortho", "항공정사영상 25cm"],
               ["bldg", "3D 건물(비스듬히)"],
               ["terrain", "지형(음영 · 3D 에서 지면 휨)"],
@@ -557,7 +535,7 @@ export default function OpsApp() {
 
         {/* ══ 우 — 차량 상태판 · 현장 공유 · 구간 ═══════════════════ */}
         <aside style={colR}>
-          <Sec title={`차량 상태판 · 연결 ${units.length}`}>
+          <Sec title={`차량 상태판 · 연결 ${units.length}`} tier={units.length ? "pick" : "idle"}>
             {link.current?.available === false && (
               <div style={{ fontSize: 12, color: D.warn }}>탭 연결 안 됨</div>
             )}
@@ -584,7 +562,7 @@ export default function OpsApp() {
               );
             })}
           </Sec>
-          <Sec title={`현장 공유${waiting ? ` · 미확인 ${waiting}` : ""}`}>
+          <Sec title={`현장 공유${waiting ? ` · 미확인 ${waiting}` : ""}`} tier={ops.feed.length ? "pick" : "idle"}>
             {ops.feed.length === 0 && <div style={{ fontSize: 12, color: D.sub }}>아직 없다.</div>}
             <div style={{ maxHeight: 260, overflowY: "auto" }}>
               {ops.feed.map((f) => (
@@ -606,7 +584,7 @@ export default function OpsApp() {
             <SegCard e={selEdge} style={style} spec={spec} reachable={reach?.has(selEdge.seg_uid) ?? null}
                      vehicle={displayName(vehicle?.label ?? "기준 차량")} onClose={() => setSeg(null)} />
           ) : (
-            <Sec title="구간 정보">
+            <Sec title="구간 정보" tier="idle">
               <div style={{ fontSize: 12, color: D.sub }}>지도에서 도로를 누른다.</div>
             </Sec>
           )}

@@ -402,3 +402,60 @@ X = 1
     assert _READS.search(_code("v = p.read_text()\n")), "진짜 읽기를 놓친다"
     assert _OWN_ROOT.search(_code("R = Path(__file__).resolve().parents[3]\n")), \
         "진짜 루트 계산을 놓친다"
+
+
+# ── 한 이름에 두 몸 (2026-10-12 · DECISIONS §501-4) ──────────────
+def _rebound(src: str) -> list[str]:
+    """모듈 맨 바깥에서 **같은 이름이 두 번 묶이는가.**
+
+    ★ `@overload` · `@…setter` · `@…register` 는 일부러 겹치는 꼴이라 뺀다.
+      지금 이 저장소에는 하나도 없지만, 생기는 날 이 규칙이 **배우도록**
+      적어둔다 — 모르는 꼴이 나왔다고 규칙을 지우면 그것으로 끝난다.
+    """
+    ok = ("overload", "setter", "getter", "deleter", "register")
+    count: dict[str, int] = {}
+    for n in ast.parse(src).body:
+        if not isinstance(n, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+            continue
+        tags = [ast.unparse(d).rsplit(".", 1)[-1] for d in n.decorator_list]
+        if any(t in ok for t in tags):
+            continue
+        count[n.name] = count.get(n.name, 0) + 1
+    return sorted(k for k, v in count.items() if v > 1)
+
+
+def test_한_이름에_몸이_둘인_모듈이_없다():
+    """★ **조용히 바뀌는 쪽이 위험하다.**  (DECISIONS §501-4)
+
+    `tests/test_delivercheck.py` 에 `_patch` 가 두 벌 있었다 — 위의 것은
+    `From <sha>` 머리를, 아래의 것은 diff 를 만드는 **다른 함수**였다.
+    파이썬은 부르는 때에 이름을 찾으니 **뒤의 것이 이기고**, 위의 것을
+    쓰려던 시험은 조용히 다른 먹이를 먹었다. 판별식이 아니라 먹이가
+    틀렸고, 그래서 **참을 잡고도 통과했다**(§13-4 미는 자 분모).
+
+    ★ ruff `F811` 은 이것을 못 본다 — 첫 이름을 **재정의 전에 쓰면**
+      「안 쓰인 이름의 재정의」가 아니기 때문이다. 실측으로 확인했다.
+      기계가 볼 수 있는 자리가 비어 있었으므로 여기서 본다.
+    """
+    hits = []
+    for p in sorted(list(PKG.rglob("*.py")) + list((ROOT / "tests").rglob("*.py"))
+                    + list((ROOT / "tools").rglob("*.py"))):
+        for name in _rebound(p.read_text(encoding="utf-8")):
+            hits.append(f"{p.relative_to(ROOT)}: {name}")
+    assert not hits, (
+        "한 모듈 안에 같은 이름의 몸이 둘이다:\n  " + "\n  ".join(hits) +
+        "\n  뒤의 것만 산다. 이름을 갈라라."
+    )
+
+
+def test_그_탐지기가_정상_모듈을_안_잡는다():
+    """★ **카나리아.** 안쪽의 같은 이름(메서드·중첩)은 위반이 아니다."""
+    assert _rebound("def a(): pass\ndef b(): pass\n") == []
+    assert _rebound("class A:\n    def f(self): pass\n"
+                    "class B:\n    def f(self): pass\n") == []
+    assert _rebound("def a():\n    def inner(): pass\n"
+                    "def b():\n    def inner(): pass\n") == []
+    assert _rebound("from typing import overload\n@overload\ndef f(x: int): ...\n"
+                    "@overload\ndef f(x: str): ...\n") == []
+    # ★ 반대 방향 — 진짜 겹침은 잡는다
+    assert _rebound("def p(a, b): pass\nx = p(1, 2)\ndef p(a, *b): pass\n") == ["p"]

@@ -37,6 +37,10 @@ from firelane import (
     paths,  # noqa: F401  ★ import 만으로 .env 를 환경에 얹는다
 )
 
+# ★ 「층을 설명하는 사람 문서」의 정본은 `firelane.lake.RECORD_NAMES` 하나다
+#   (DECISIONS §502). 여기 다시 적으면 두 집이 갈린다.
+from firelane.lake import RECORD_NAMES
+
 ROOT = Path(__file__).resolve().parents[1]
 HITS: list[dict] = []
 
@@ -72,7 +76,7 @@ def disposed(y: dict) -> list[str]:
       이 검사 전체를 끌 수 있다. 사유를 강제하면 그것을 적는 순간
       사람 눈에 띈다 — 이름만 적어 입을 막는 길을 닫는다.
     """
-    d = (y.get("landing_disposition") or {}).get("items") or []
+    d = ledger.disposed(y)      # ★ 읽는 자리는 하나다 (PLAN #55 ① · §453)
     return [str(it["file"]) for it in d
             if isinstance(it, dict) and it.get("file")
             and str(it.get("why") or "").strip()]
@@ -135,7 +139,7 @@ def l2(D: Path, y: dict) -> None:
     raw = {p.name: p for p in (D / "raw").rglob("*") if p.is_file()}
     # 대장이 격리를 정당화하는 근거 — retired 의 stem · file · files
     ok: set[str] = set()
-    for v in (y.get("retired") or {}).values():
+    for v in ledger.retired(y).values():
         if not isinstance(v, dict):
             continue
         if v.get("stem"):
@@ -332,7 +336,7 @@ def l7(D: Path, y: dict) -> None:
         # `files` 는 글롭이다 — 파일명 부분만 떼어 아래 fnmatch 가 쓴다
         globs.update(Path(str(f)).name.lower() for f in ledger.files_decl(v))  # DECISIONS §438
     # 은퇴도 선언이다 — 「모른다」가 아니라 「사유와 함께 안 쓴다」다
-    for k, v in (y.get("retired") or {}).items():
+    for k, v in ledger.retired(y).items():
         known.add(str((v or {}).get("stem") or k).lower() if isinstance(v, dict) else k.lower())
     # ★ landing 처분도 선언이다. `202608_상세주소DB_전체분.zip` 은 2026-08-30 에
     #   `landing_disposition` 으로 판단이 끝났는데(승인 계열 · 우선순위 낮음)
@@ -389,7 +393,14 @@ def l6(D: Path, y: dict) -> None:
         if not d.is_dir():
             continue
         pat = re.compile(rx)
-        files = [p for p in d.rglob("*") if p.is_file() and not p.name.startswith("_")]
+        # ★ 2026-10-12 (DECISIONS §502). **기록 파일을 분모에서 뺀다.**
+        #   `data/retired/QUARANTINE.md` 는 데이터가 아니라 「층을 설명하는
+        #   사람 문서」이고 `lake.py` 가 그것을 **이미 선언**해 「기록」으로
+        #   분류한다. 제공기관 폴더가 없어서 이 축이 그것을 **유일한
+        #   위반**으로 셀고 열주 하나를 세우고 있었다.
+        #   선언이 있는데 읽는 자가 하나면 그 선언은 **절반만 산다.**
+        files = [p for p in d.rglob("*") if p.is_file()
+                 and not p.name.startswith("_") and p.name not in RECORD_NAMES]
         rel_bad = [p for p in files if not pat.match(str(p.relative_to(d)))]
         name_bad = [p for p in files if not pat.match(p.name)]
         if not files:
@@ -406,8 +417,14 @@ def l6(D: Path, y: dict) -> None:
                 f"규칙 `{rx}`",
                 "규칙 앞에 제공기관 폴더를 넣는다 — raw 규칙과 같은 꼴로")
         elif name_bad:
-            hit("L6", f"{name}: 실물이 규칙을 어긴다 — {len(name_bad)}/{len(files)}건",
-                " · ".join(p.name for p in name_bad[:4]),
+            # ★ 2026-10-12 (DECISIONS §502). **`rel_bad` 를 센다.** 종전에는
+            #   `name_bad` 를 세고 그 이름을 찍었는데, 규칙이 `^(제공기관)/`
+            #   꼴이면 **파일명으로는 전건이 위반**이라 수가 늘 전건이 된다.
+            #   실측 — `retired` 를 「59/59건」이라 찍었고 실제 위반은 하나
+            #   (`QUARANTINE.md`)였다. 같은 사실을 `layerfsck` 는 1 로 세었고
+            #   두 자가 1 과 59 로 갈렸다(§458-1 과 같은 꼴).
+            hit("L6", f"{name}: 실물이 규칙을 어긴다 — {len(rel_bad)}/{len(files)}건",
+                " · ".join(str(p.relative_to(d)) for p in rel_bad[:4]),
                 "파일을 개명하거나 규칙을 실물에 맞춘다")
 
 

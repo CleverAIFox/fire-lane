@@ -93,9 +93,12 @@ ROLES: frozenset[str] = frozenset(r for g in REGISTRY for r in g.roles)
 #:   가 그 도구의 `OUT` 머리말을 대조한다. 굽기를 멈추면 주장이 죽고 검사가 다시
 #:   운다 — 죽은 강제자 참조를 `dms verify` 가 잡는 것과 같은 규율이다.
 #:   사유 없는 침묵은 만들지 않는다(§69).
-DOC_ABSENT: dict[str, str] = {
-    "web/proposal.pdf": "tools/proposal_pdf.py",
-}
+#:
+#: ★ 2026-10-09 (DECISIONS §444 · PLAN #142). **비었다.** 한 줄이 있었고
+#:   (`web/proposal.pdf` ← `tools/proposal_pdf.py`) 그 둘이 은퇴했다. 표를
+#:   남기는 이유는 위 ★ 와 같다 — 다음에 「없는 것이 정상인 생성물」이
+#:   생기면 여기 한 줄이고, 비었다는 사실도 선언이어야 한다.
+DOC_ABSENT: dict[str, str] = {}
 
 
 def _out_header(tool: Path) -> str:
@@ -146,7 +149,7 @@ class Family:
 # ★ 가족표가 보는 루트. 이 아래 추적 파일은 전부 한 가족에 들어야 한다.
 GEN_ROOTS: tuple[str, ...] = (
     "web/data", "data/processed", "data/dms", "data/golden", "data/baseline",
-    "docs/figures", "web/workflow.html", "docs/proposal.docx",
+    "docs/figures", "web/workflow.html",
     # ★ 2026-10-06 (§425). 종전 `web/proposal.html` 은 PDF 뷰어 **와꾸**였고
     #   생성물이 아니었다. 이제 정본 `docs/proposal.md` 에서 굽는다 — 루트에
     #   안 넣으면 `proposal-page` 가족의 그물이 비어 재현 검사가 조용히 빠진다.
@@ -181,9 +184,11 @@ FAMILIES: tuple[Family, ...] = (
            # ★ 2026-09-24. `docnum_check` 가 여기 있었는데 그 도구는 golden 을
            #   **주석으로만** 든다 — 읽는 것은 `data/processed/segments.geojson` 이다.
            #   실제 독자 둘(`docx_fix.py` · `pipeline.py`)이 빠져 있었다.
-           ("tools/render_figures.py", "tools/docx_check.py", "tools/docx_fix.py",
-            "tools/proposal_pdf.py", "tools/release_brief.py",
-            "src/firelane/pipeline.py")),
+           # ★ 2026-10-09 (§444 · #142). 독자 셋(`docx_check` · `docx_fix` ·
+           #   `proposal_pdf`)이 은퇴했다. 그 자리를 `proposalcheck`(총연장)이
+           #   받는다 — 같은 지문을 읽는다.
+           ("tools/render_figures.py", "tools/proposalcheck.py",
+            "tools/release_brief.py", "src/firelane/pipeline.py")),
     Family("baseline", ("data/baseline/**",),
            # ★ 봉인 사본이다 — 원본이 교체돼 재생성할 수 없다(baseline.py 머리말).
            #   재현 검사가 성립하지 않고 `list` 가 meta.json 을 읽어 집계를 보일 뿐이다.
@@ -198,20 +203,17 @@ FAMILIES: tuple[Family, ...] = (
            ("tools/dms.py",)),
     Family("figures", ("docs/figures/*",), "tools/render_figures.py",
            ("uv run python tools/render_figures.py --check",),
-           # 기획서에 그림을 넣는 것은 사람이다(render_figures 머리말)
-           ("docs/proposal.docx", "tests/test_figure_text.py")),
+           # ★ 2026-10-09 (§444 · #142). 종전 독자는 `docs/proposal.docx` 였다.
+           #   그 그림 다섯이 이제 `tools/htmlfigs.py` 를 거쳐 화면 자리로 바로
+           #   간다 — 사람이 옮겨 붙이는 자리가 없어졌다.
+           ("tools/htmlfigs.py", "tests/test_figure_text.py")),
     Family("workflow", ("web/workflow.html",), "tools/render_workflow.py",
            ("uv run python tools/render_workflow.py --check",),
            ("tools/stage_pages.py",)),
-    Family("proposal-numbers", ("docs/proposal.docx",),
-           # ★ 대외 제출본이라 생성물이 아니다. 판정 숫자만 docx_fix 가 제자리에서 고친다
-           # ★ 2026-10-06 (DECISIONS §425). **은퇴 예정이다.** 내용 정본이
-           #   `docs/proposal.md` 로 옮겨졌고 화면은 아래 가족이 굽는다. 이 가족은
-           #   docx 제출본이 살아 있는 동안만 남는다 — 둘을 **한 판에** 들어내면
-           #   참조 25곳이 같이 흔들린다.
-           "tools/docx_fix.py",
-           ("uv run python tools/docx_check.py",),
-           ("docs/proposal.md",)),
+    # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). `proposal-numbers` 가족이
+    #   사라졌다. §425 가 「docx 제출본이 살아 있는 동안만 남는다 — 둘을 한
+    #   판에 들어내면 참조 25곳이 같이 흔들린다」고 적었고, 다리(`htmlfigs`)가
+    #   놓인 뒤 이 판이 그 25곳을 흔들었다. 수를 보는 자리는 `docnum_check` 다.
     # ★ 2026-10-06 (DECISIONS §425 · PLAN #142). 기획서 화면은 **생성물**이다.
     #   정본 `docs/proposal.md` → 와꾸 `web/proposal.template.html` → 이 파일.
     #   종전 소유자는 `stage_pages.py` 였고 그때의 화면은 PDF 뷰어 껍데기였다.

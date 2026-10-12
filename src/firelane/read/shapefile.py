@@ -70,8 +70,15 @@ def read_shp_zip_multi(c: Ctx):
             raise FileNotFoundError(
                 f"{z.name} 안에 {_want} 계열 shp 가 없다")
         for p in found:
+            # ★ 2026-10-12 (DECISIONS §498). 기본값이 `utf-8` 이었다 —
+            #   **같은 파일종을 읽는 `shp_zip` 은 `cp949`** 다(위 29행).
+            #   국내 shp 의 dbf 는 거의 CP949 이고, `utf-8` 로 읽으면
+            #   `UnicodeDecodeError` 로 **터지거나** 글자가 깨진다.
+            #   지금은 `shp_zip_multi` 세 항목이 전부 `encoding` 을 적고
+            #   있어서 이 기본값이 안 돌지만, 안 적은 항목이 하나 들어오면
+            #   그날 터진다. 두 갈래가 **같은 기본값**을 쓴다.
             parts.append(gpd.read_file(
-                p, bbox=_bb, encoding=e.get("encoding", "utf-8")))
+                p, bbox=_bb, encoding=e.get("encoding", "cp949")))
             _read.append(p.name)
     # ★ 2026-08-31. 종전에는 **zip 하나마다** `len(found) != len(parts)`
     #   를 봤다. `parts` 가 두 뜻으로 쓰이는 것을 못 본 것이다 —

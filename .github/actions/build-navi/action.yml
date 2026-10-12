@@ -130,7 +130,7 @@ runs:
         #   않았다.** 빌드는 내내 성공하고 있었다. 자리가 틀렸을 뿐이다.
         #
         #   ★ 워킹트리를 부수지만 CI 는 일회용이고, 이 뒤 단계는 `web/navi`
-        #     소스를 읽지 않는다(stage_pages 는 docs/proposal.docx 만 만진다).
+        #     소스를 읽지 않는다(stage_pages 는 배포에서 뺄 것만 만진다 · §444).
         cd "$GITHUB_WORKSPACE/web"
         mv navi/dist navi.dist
         rm -rf navi

@@ -194,3 +194,48 @@ def test_등록부를_못_읽으면_조용히_통과하지_않는지_적어둔�
     여기서는 **등록부가 실제로 읽히는지**를 재서 빈 그물을 막는다.
     """
     assert ds._gen_roots(), "등록부를 하나도 못 읽었다 — 이 관문이 죽은 칸이다"
+
+
+# ── ⑥ 2026-10-11 (DECISIONS §477). AST 캐시 ────────────────────
+#   `_tree` 가 본문별로 AST 를 캐시한다. 캐시는 **같은 객체**를 돌려주므로
+#   누가 그 나무를 고치면 다음 소비자가 그것을 본다. 두 가지를 든다 —
+#   ① 캐시가 실제로 듣는가 ② 지문이 캐시 유무에 **안 흔들리는가**.
+def test_같은_본문을_두_번_물으면_같은_나무를_돌려준다(ds):
+    src = "def test_a():\n    pass\n\n\ndef test_b():\n    pass\n"
+    first, second = ds._tree(src), ds._tree(src)
+    assert first is second, "캐시가 안 듣는다 — 같은 본문인데 나무가 둘이다"
+    assert ds._tree("def nope(:") is None, "못 파싱한 것을 나무로 낸다"
+
+
+def test_지문이_캐시_유무에_안_흔들린다(ds):
+    """★ **본체.** 캐시는 속도만 바꾸고 주장을 안 바꿔야 한다."""
+    import ast
+    src = (b"def test_one():\n    assert 1\n\n\n"
+           b"def test_two():\n    assert 2\n")
+    text = "test_one test_two"
+    with_cache = ds.view("tests/test_x.py", src, [], text)
+
+    def nocache(txt):
+        try:
+            return ast.parse(txt)
+        except SyntaxError:
+            return None
+
+    saved, ds._tree = ds._tree, nocache
+    try:
+        without = ds.view("tests/test_x.py", src, [], text)
+    finally:
+        ds._tree = saved
+    assert with_cache == without, "캐시가 지문을 바꿨다 — 속도가 주장을 바꿨다"
+
+
+def test_캐시가_나무를_고치는_소비자를_안_든다(ds):
+    """★ 캐시는 같은 객체를 준다. 소비자가 고치면 **다음 사람이 그것을 본다** —
+    이 파일의 소비자 둘(`_funcs` · `view`)이 읽기만 하는지를 글자로 든다."""
+    import re
+    txt = (ROOT / "tools/docsealfp.py").read_text(encoding="utf-8")
+    # `_tree(...)` 로 받은 이름에 대입하거나 `ast.fix_missing_locations` 류를
+    # 부르는 자리가 없는가. 있으면 캐시를 쓰면 안 된다.
+    bad = [ln.strip() for ln in txt.splitlines()
+           if re.search(r"\btree\.\w+\s*=|fix_missing_locations|NodeTransformer", ln)]
+    assert not bad, f"캐시된 나무를 고치는 자리가 있다 — {bad}"

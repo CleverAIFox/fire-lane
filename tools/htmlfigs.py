@@ -21,17 +21,18 @@ figures/*.py → SVG → docx_figs --sync → docs/proposal.docx → (사람) �
 석 주 동안 그리고 있던 자리와 같다.
 
 ── 무엇을 보는가 ───────────────────────────────────────────────
-`SLOT` 이 든 다섯만. **나머지 열아홉은 안 본다** — 정본이 없는 래스터이고
-그쪽은 `docx_figs.SOURCELESS_MAX` 가 세던 수다(그 수도 §440 이 옮긴다).
+`SLOT` 이 든 다섯의 **내용**만. 나머지 열아홉은 정본이 없는 래스터라 내용을
+못 대지만 **수는 센다** — `SOURCELESS_MAX` 양방향 래칫이고, 2026-10-09 에
+`docx_figs` 에서 이리로 왔다(§444). 세는 자리가 docx 였고 이제 화면 캡션이다.
 
 ★ **비교는 바이트가 아니라 SVG 지문이다.** PNG 는 변환기 판·글꼴·압축에 따라
   바이트가 달라진다. 바이트로 대면 기계가 바뀔 때마다 빨갛고, 그러면 사람이
   검사를 끈다(§411 의 그 교훈). 그래서 **구운 원본 SVG 의 지문**을 잠금 파일에
   적고 그것을 댄다 — `docs/figures/.lock.json` 과 같은 규약이다.
 
-IN    tools/render_figures.FIGURES · web/proposal/fig/*.png · LOCK
+IN    tools/render_figures.FIGURES · web/proposal/fig/*.png · LOCK · docs/proposal.md (캡션)
 OUT   web/proposal/fig/fig??.png · LOCK   (`--sync` 일 때만)
-PARAM SLOT · WIDTH
+PARAM SLOT · WIDTH · SOURCELESS_MAX
 밖    **열아홉 장은 안 본다**(정본이 없다). **md 본문이 그 자리를 가리키는가도
       안 본다** — `tools/build_proposal.py --check` 소관이다. 그림이 **옳은가**도
       안 본다 — 그리는 쪽(`tools/figures/*.py`)과 그 시험이 든다.
@@ -41,6 +42,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -63,6 +65,21 @@ SLOT: dict[str, int] = {
     "cctv": 22,
     "deploy": 24,
 }
+
+#: 정본이 **없는** 그림 수의 상한. 저장소 밖에서 그려 손으로 붙인 래스터들이다.
+#:
+#: ★ 2026-09-28 (DECISIONS §278-4) 21 에서 시작했다. 「모든 그림은 표에 선언돼야
+#:   한다」는 강제가 **코드가 그리는 것**에만 걸렸고, 손으로 붙인 그림은 애초에
+#:   대장 밖이라 아무도 안 봤다 — [그림 8] 이 라벨 둘을 겹쳐 찍은 채 제출본에
+#:   살아 있었다(검사 59개가 전부 초록인 채로). 21 → 20([그림 8] · §278-4)
+#:   → **19**([그림 14] · §281-1).
+#: ★ 2026-10-09 (DECISIONS §444 · PLAN #142). `docx_figs.SOURCELESS_MAX` 에서
+#:   왔다. 이 파일 머리말이 「그 수도 §440 이 옮긴다」고 적어 둔 그 수다 —
+#:   세는 자리가 docx 였고 이제 **화면 캡션**이다. 수는 그대로 19 다.
+SOURCELESS_MAX = 19
+
+#: 캡션 줄. `docs/proposal.md` 가 `[그림 N] …` 꼴로 적는다.
+CAP = re.compile(r"^\[?그림\s*(\d+)\]?")
 
 #: 굽는 가로 픽셀. 화면이 1x 로 띄우고 인쇄가 2x 를 쓰므로 넉넉히 둔다.
 WIDTH = 1600
@@ -113,6 +130,22 @@ def drift() -> list[str]:
     return out
 
 
+def captions(txt: str | None = None) -> set[int]:
+    """기획서 정본이 드는 그림 번호 전부. **없으면 빈 집합이 아니라 예외다.**"""
+    if txt is None:
+        md = ROOT / "docs" / "proposal.md"
+        if not md.is_file():
+            raise SystemExit(f"★ {md} 가 없다 — 기획서 정본이 사라졌다")
+        txt = md.read_text(encoding="utf-8")
+    return {int(m.group(1)) for ln in txt.splitlines()
+            if (m := CAP.match(ln.strip()))}
+
+
+def sourceless(caps: set[int] | None = None) -> list[int]:
+    """캡션에는 있는데 `SLOT` 이 안 대는 그림 번호. **고칠 수 없는 것들이다.**"""
+    return sorted((captions() if caps is None else caps) - set(SLOT.values()))
+
+
 def _converter() -> tuple[str, object] | None:
     for exe, argv in CONVERTERS:
         path = shutil.which(exe)
@@ -161,14 +194,27 @@ def sync() -> int:
     return 0
 
 
+def sourceless_faults(n: int, limit: int = SOURCELESS_MAX) -> list[str]:
+    """양방향 래칫. 줄었는데 기록을 안 내리면 **느슨해진 래칫이 초록으로 위장한다.**"""
+    if n > limit:
+        return [f"정본 없는 그림이 {n} 장 — 기록 {limit} 보다 늘었다. "
+                "저장소 밖에서 그린 그림은 **고칠 수가 없다** — 겹치거나 낡아도 "
+                "다시 그리는 수밖에 없다. `render_figures.FIGURES` 에 그리는 "
+                "함수를 얹고 `SLOT` 에 한 줄을 달아라"]
+    if n < limit:
+        return [f"정본 없는 그림이 {n} 장으로 줄었다 — "
+                f"tools/htmlfigs.py 의 SOURCELESS_MAX 를 {n} 으로 조여라"]
+    return []
+
+
 def check() -> int:
-    bad = drift()
+    bad = drift() + sourceless_faults(len(sourceless()))
     if bad:
         print("★ 기획서 화면의 그림이 정본과 어긋난다\n  " + "\n  ".join(bad))
         print("  uv run python tools/htmlfigs.py --sync")
         return 1
     print(f"기획서 화면 그림 OK — 생성 {len(SLOT)}장이 정본과 같다 "
-          f"(정본 없는 19장은 대상이 아니다)")
+          f"(정본 없는 {SOURCELESS_MAX}장은 대상이 아니고 그 수가 래칫이다)")
     return 0
 
 
@@ -181,17 +227,13 @@ def selftest() -> int:
     if set(got) != set(SLOT):
         bad.append(f"그리는 쪽에 없는 이름이 있다 — {sorted(set(SLOT) - set(got))}")
 
-    # ★ **같은 그림이 두 곳에 가는 동안은 번호가 갈리면 안 된다.**
-    #   docx 가 은퇴하면 이 대조가 사라지고 `SLOT` 만 남는다(§440).
-    try:
-        import docx_figs  # noqa: PLC0415  은퇴 전까지만 있는 짝이다
-    except ImportError:
-        docx_figs = None   # type: ignore[assignment]  은퇴하면 없는 것이 정상이다
-    if docx_figs is not None:
-        for name, n in SLOT.items():
-            want = (docx_figs.PLACE.get(name) or {}).get("fig")
-            if want is not None and want != n:
-                bad.append(f"{name} 의 자리가 갈린다 — 여기 {n} · docx_figs {want}")
+    # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). **그 대조가 사라졌다** —
+    #   §440 이 「docx 가 은퇴하면 이 대조가 사라지고 `SLOT` 만 남는다」고 적어
+    #   둔 그대로다. 같은 그림이 두 곳에 가던 동안은 번호가 갈릴 수 있었고,
+    #   이제 가는 곳이 하나뿐이라 갈릴 자리가 없다.
+    # ★ **자리 번호가 캡션과 같은가**는 아래 `sourceless` 축이 든다 —
+    #   `SLOT` 이 안 대는 번호가 몇 개인지를 세므로, 번호를 잘못 적으면
+    #   그 수가 움직인다.
 
     # ★ 지문이 **내용을 따라 움직이는가.** 안 움직이면 대조가 장식이다.
     if sha("a") == sha("b"):
@@ -214,9 +256,25 @@ def selftest() -> int:
         else:
             LOCK.write_text(real, encoding="utf-8")
 
+    # ★ 정본 없는 그림의 **양방향 래칫**. 합성 입력으로만 민다.
+    if not sourceless_faults(SOURCELESS_MAX + 1):
+        bad.append("정본 없는 그림이 늘었는데 안 운다")
+    if not sourceless_faults(SOURCELESS_MAX - 1):
+        bad.append("정본 없는 그림이 줄었는데 안 운다 — 느슨한 래칫은 지난 기록이다")
+    if sourceless_faults(SOURCELESS_MAX):
+        bad.append("기록과 같은데 운다")
+    # ★ 캡션 파서 — **번호를 못 읽으면 `sourceless` 가 통째로 거짓이 된다.**
+    if captions("[그림 7] 가\n그림 8 나\n본문 그림 이야기\n") != {7, 8}:
+        bad.append("캡션에서 그림 번호를 못 읽는다")
+    if sourceless({*SLOT.values(), 99}) != [99]:
+        bad.append("자리 밖 그림을 못 고른다")
+    if sourceless(set(SLOT.values())) != []:
+        bad.append("자리 안 그림을 정본 없음으로 센다")
+
     for x in bad:
         print(f"  ✗ {x}")
-    print(f"{'✗' if bad else '✓'} 자기검사 — 자리 {len(SLOT)} · 지문 · 음성 대조")
+    print(f"{'✗' if bad else '✓'} 자기검사 — 자리 {len(SLOT)} · 지문 · 음성 대조"
+          f" · 정본 없음 {SOURCELESS_MAX} 양방향")
     return 1 if bad else 0
 
 
@@ -235,3 +293,12 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+#: ★ 래칫을 도구가 스스로 조인다(§309). 선언이 실측과 같은가는 `ratchet.py` 가 본다.
+RATCHETS = {"SOURCELESS_MAX": "down"}
+
+
+def ratchet_values() -> dict[str, int]:
+    """**재기만 한다** — 판정은 `sourceless_faults` 가 든다."""
+    return {"SOURCELESS_MAX": len(sourceless())}

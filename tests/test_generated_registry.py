@@ -220,3 +220,29 @@ def test_no_new_generated_root_list_outside_registry():
     assert not bad, ("생성물 루트 목록을 손으로 들었다 — "
                      "src/firelane/generated.py 에 역할을 더하고 for_role 로 뽑아라\n"
                      + "\n".join(bad))
+
+
+# ── 역할 뽑기 — 시험이 이름을 안 부르고 있었다 (DECISIONS §493) ───
+def test_entries_is_the_one_door_and_it_refuses_an_unknown_role():
+    """★ `generated.entries` — 역할로 뽑는 **그 문**이다.
+
+    호출부가 역할 글자를 오타 내면 `entries()` 가 **빈 묶음**을 주면 안
+    된다. 빈 묶음은 「그 역할인 생성물이 없다」와 구별되지 않고, 그러면
+    봉인·신선도 검사가 **0건을 돌고 초록**이 된다 — 이 저장소가 반복해
+    당한 빈 그물이다(§69).
+    """
+    import pytest
+
+    for role in sorted(G.ROLES):
+        got = G.entries(role)
+        assert got, f"{role!r} 로 뽑은 것이 없다 — 역할 글자가 표와 갈렸다"
+        assert all(role in g.roles for g in got), role
+    with pytest.raises(KeyError, match="모르는 역할"):
+        G.entries("seals")          # 흔한 오타. 조용히 빈 것을 주면 안 된다
+
+
+def test_entries_splits_the_registry_without_losing_anyone():
+    """★ 역할 합집합이 표 전체를 덮는가 — 어느 생성물도 **역할 없이** 안 산다."""
+    seen = {g.path for role in G.ROLES for g in G.entries(role)}
+    assert seen == {g.path for g in G.REGISTRY}, (
+        "역할이 하나도 없는 생성물이 있다 — 그것은 아무 검사도 안 받는다")

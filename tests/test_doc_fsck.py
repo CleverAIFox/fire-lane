@@ -92,7 +92,13 @@ def test_a_generated_path_is_a_claim_not_a_silence():
     """
     from firelane import generated
 
-    assert generated.DOC_ABSENT, "생성물 주장이 비었다 — 그러면 이 시험이 빈 그물이다"
+    # ★ 2026-10-09 (DECISIONS §444). 종전에 이 줄은 `assert generated.DOC_ABSENT`
+    #   였다 — 「비면 이 시험이 빈 그물이다」. 그 표가 이 판에서 **비었다**
+    #   (`web/proposal.pdf` ← `tools/proposal_pdf.py` 한 줄이 은퇴했다).
+    #   ★ 빈 표에서 `assert` 를 그냥 지우면 그때는 **정말** 빈 그물이 된다.
+    #     그래서 아래 합성 주장 둘이 **표가 비어도** 돈다 — 실물이 비었을 때
+    #     그물을 지키는 것은 그 둘이고, 이 줄은 실물이 **다시 찼을 때**
+    #     그 항목이 참인지만 본다.
     for path, tool in generated.DOC_ABSENT.items():
         assert (ROOT / tool).is_file(), f"{tool} 이 없다"
         assert path in generated._out_header(ROOT / tool), (
@@ -343,10 +349,10 @@ def test_proposal_probe_is_alive():
 # ── ⑥b 의 전제 — 공통 조상이 없으면 재지 않는다 (DECISIONS §355) ──────
 #: ⑥b 가 사는 모듈. **`sys.path` 를 안 건드린다** — 위 `doc_fsck` 와 같은 방식이다.
 _spec6 = importlib.util.spec_from_file_location(
-    "docx_revised", ROOT / "tools" / "docfsck" / "docx_revised.py")
-docx_revised = importlib.util.module_from_spec(_spec6)
-sys.modules[_spec6.name] = docx_revised
-_spec6.loader.exec_module(docx_revised)
+    "docfsck_revised", ROOT / "tools" / "docfsck" / "revised.py")
+revised_mod = importlib.util.module_from_spec(_spec6)
+sys.modules[_spec6.name] = revised_mod
+_spec6.loader.exec_module(revised_mod)
 
 
 def _orphan_ref() -> str:
@@ -391,13 +397,13 @@ def test_the_squash_arm_declines_to_measure_without_a_common_ancestor():
     사유 칸이 비어 있다. `git diff base...HEAD` 가 공통 조상을 못 찾아 죽었고
     stderr 가 비었기 때문이다. 종전 기준 선택은 **이름이 있는가**(`rev-parse
     --verify`)만 봤는데, `checkout@v4` 의 얕은 클론에는 **이름은 있고 커밋이
-    없다.** 바로 위 `check_docx_revised` 가 2026-09-18 에 이미 선언한 전제를
+    없다.** 바로 위 `check_revised` 가 2026-09-18 에 이미 선언한 전제를
     이 팔만 안 물려받고 있었다.
     """
-    m = docx_revised
+    m = revised_mod
     ref = _orphan_ref()
     try:
-        assert m.check_docx_ready_for_squash(bases=(ref,)) == [], (
+        assert m.check_ready_for_squash(bases=(ref,)) == [], (
             "공통 조상이 없는 기준으로 쟀다 — 얕은 클론에서 CI 가 사유 없이 빨개진다")
         # ★ 빈 그물이 아니다(MASTER §17-0 ③). 위 통과가 「조상이 없어서」인지
         #   「프로브가 아예 안 돌아서」인지 가른다 — HEAD 는 제 조상이다.

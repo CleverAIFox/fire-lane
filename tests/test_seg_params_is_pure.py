@@ -169,7 +169,10 @@ def test_the_constants_did_not_move_while_the_switches_did():
     """카나리아 — 스위치를 옮기면서 **숫자를 건드리지 않았는가.**"""
     from firelane.seg import params as P
 
-    assert (P.TRUCK, P.PARK, P.NFA_RUN_M, P.CCTV_RANGE) == (3.0, 2.0, 100.0, 25.0)
+    # ★ 2026-10-10 (DECISIONS §455-1). `CCTV_RANGE` 25.0 → 19.0. 카나리아를
+    #   **일부러** 고친 것이다 — 이 수는 자동으로 따라오지 않는다. 그것이 이
+    #   시험의 일이다(「숫자를 건드리지 않았는가」). 근거는 IEC 62676-4 DORI 다.
+    assert (P.TRUCK, P.PARK, P.NFA_RUN_M, P.CCTV_RANGE) == (3.0, 2.0, 100.0, 19.0)
     assert (P.SNAP_TOL, P.SNAP_MAX, P.XSEC_EXCL, P.WMAX_CAP) == (0.5, 6.0, 5.0, 60.0)
     assert (P.MIN_SEG_LEN, P.COV_MIN, P.SNAP_TRUST) == (3.0, 0.5, 2.0)
     assert P.WIDTH_SRCS == ("ngii1k", "ngii", "silpok")

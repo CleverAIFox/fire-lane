@@ -24,10 +24,8 @@
  *   실제보다 넓게 주장한다.
  */
 
+import { MX, MY } from "./geo";
 import type { VehicleSpec } from "./types";
-
-/** 지구 반지름(m). 좌표 변환은 국소 평면 근사로 충분하다 — 차 한 대 크기다. */
-const R = 6378137;
 
 export interface Box {
   /** 시계방향 네 꼭짓점 + 첫 점(닫힘). `[lon, lat]` */
@@ -58,8 +56,11 @@ export function egoBox(spec: VehicleSpec | null | undefined,
   // 국소 평면 → 경위도. 방위각은 **북 기준 시계방향**이므로
   //   동(m) = x·cos(br) + y·sin(br)
   //   북(m) = −x·sin(br) + y·cos(br)
-  const mPerLat = (Math.PI * R) / 180;
-  const mPerLon = mPerLat * Math.cos((lat * Math.PI) / 180);
+  // ★ 2026-10-11 (DECISIONS §473). 종전은 **적도 반지름**(6,378,137m)에서
+  //   위도 1도를 냈다 — 111,319.5m 이고 실측(110,943.3)보다 0.34% 크다.
+  //   10m 차에서 3.4cm 다. 정본을 든다. `lat` 은 안 쓴다(아래 ★).
+  const mPerLat = MY;
+  const mPerLon = MX;
   const ring = corners.map(([x, y]): [number, number] => {
     const east = x * cos + y * sin;
     const north = -x * sin + y * cos;

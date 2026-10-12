@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 import commit_policy as cp  # tools/ — pyproject 의 pytest pythonpath 로 잡힌다
 
-
-@pytest.mark.parametrize("path,rule", [
+#: (경로, 규칙) — 아래 두 시험이 **같은 표**를 쓴다. 두 벌이면 갈린다.
+BANNED = [
     ("data/processed/ngii_road_5186.gpkg.stale_20260821", cp.r_stale),
     ("data/processed/building.geojson", cp.r_processed),
     ("data/processed/enforcement.csv", cp.r_processed),
@@ -27,7 +27,10 @@ import commit_policy as cp  # tools/ — pyproject 의 pytest pythonpath 로 잡
     (".work/12210/TL_SPRD_RW.shp", cp.r_work),
     ("_backup_20260812/data/raw/x", cp.r_work),
     ("data/processed/_lineage.json", cp.r_lineage),
-])
+]
+
+
+@pytest.mark.parametrize("path,rule", BANNED)
 def test_금지_대상을_잡는다(path, rule):
     assert rule(path), f"{path} 를 못 잡는다"
 
@@ -138,3 +141,43 @@ def test_global_chain_rejects_unknown_args():
         "실패는 했는데 **왜** 실패했는지 안 말한다.\n"
         "  전역 훅 미설정과 모르는 인자가 같은 코드로 겹치면 구분이 안 된다.\n"
         f"  지금 출력: {(r.stderr + r.stdout)[:300]}")
+
+
+# ── 2026-10-12 (DECISIONS §486) ────────────────────────────────────
+#   §485 가 분자를 바로잡은 뒤 남은 열여섯 중 하나가 이 파일이었다. 규칙
+#   하나하나는 양쪽으로 밀고 있는데 **그것들을 모으는 자**(`check_paths`)를
+#   미는 자가 없었다 — 규칙이 다 맞아도 모으는 쪽이 비면 훅은 조용하다.
+
+CLEAN = ["data/processed/segments.geojson", "src/firelane/segments.py",
+         ".env.example", ".githooks/pre-commit"]
+
+
+def test_모으는_자가_정상_목록에_조용하다():
+    """★ 음성. 멀쩡한 목록에서 울면 사람이 훅을 끈다."""
+    assert cp.check_paths(CLEAN) == [], cp.check_paths(CLEAN)
+    assert cp.check_paths([]) == [], "빈 목록에 무언가를 만든다"
+
+
+def test_모으는_자가_규칙마다_이름과_사유를_말한다():
+    """★ 양성. **규칙 여섯을 하나씩** 넣는다 — 한 꾸러미로 넣으면 하나만
+    잡혀도 초록이고, 그러면 나머지 다섯이 죽어도 모른다."""
+    for name, fn, why in cp.RULES:
+        # 그 규칙에 걸리는 경로를 위 금지 목록에서 고른다
+        hit = next((path for path, rule in BANNED if rule is fn), None)
+        assert hit, f"{name} 에 걸리는 경로가 위 표에 없다 — 표와 규칙이 갈렸다"
+        bad = cp.check_paths([*CLEAN, hit])
+        assert bad, f"{name} 에 걸리는 {hit} 를 모으는 자가 놓친다"
+        joined = "\n".join(bad)
+        assert name in joined, f"무엇에 걸렸는지 안 말한다 — {joined}"
+        assert why[:12] in joined, f"**왜** 막는지 안 말한다 — {joined}"
+        assert hit in joined, f"어느 파일인지 안 말한다 — {joined}"
+
+
+def test_모으는_자가_많은_것을_잘라도_수를_말한다():
+    """★ 열두 개를 넘기면 자르고 **「외 N건」**을 적는가. 자르면서 수를
+    안 적으면 사람이 「열둘뿐이구나」로 읽는다."""
+    many = [f"data/processed/x{i}.geojson" for i in range(20)]
+    joined = "\n".join(cp.check_paths(many))
+    assert "외 8건" in joined, f"자른 수를 안 말한다 — {joined}"
+    few = "\n".join(cp.check_paths(many[:12]))
+    assert "외" not in few, f"자르지 않았는데 「외」를 적는다 — {few}"

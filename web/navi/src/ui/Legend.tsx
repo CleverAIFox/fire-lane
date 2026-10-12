@@ -11,7 +11,7 @@
  */
 import { C, F, S } from "./tokens";
 import type { VerdictStyle } from "../domain/types";
-import { VERDICT_MEANING, VERDICT_ORDER } from "./verdictMeaning";
+import { VERDICT_ORDER } from "./verdictMeaning";
 
 interface Props {
   style: Record<string, VerdictStyle>;
@@ -22,6 +22,9 @@ interface Props {
 /** components/layers.ts 의 색과 같아야 한다. (2026-09-21 주간 테마로 바꿈) */
 const FEATURES = [
   { color: C.station, label: "119안전센터" },
+  // ★ 2026-10-09 (§444 · #148). 지점 핀 — **판정색을 안 쓴다.** 흰 고리이고
+  //   경로에 안 붙는다. 4색 중 하나를 쓰면 「통행 가능한 지점」으로 읽힌다.
+  { color: "#e2e8f0", label: "지점 (경로 밖)" },
   { color: "#facc15", label: "CCTV" },
   { color: "#ef4444", label: "소화전" },
 ];
@@ -46,15 +49,16 @@ export function Legend({ style, open }: Props) {
       ))}
       <div style={{ ...head, marginTop: 10 }}>구간 판정 (도로 음영)</div>
       {VERDICT_ORDER.filter((k) => style[k]).map((k) => (
-        <Row key={k} color={style[k].color} label={style[k].label} sub={VERDICT_MEANING[k]} />
+        <Row key={k} color={style[k].color} label={style[k].label} />
       ))}
       <div style={{ ...head, marginTop: 10 }}>지형지물</div>
       {FEATURES.map((f) => <Row key={f.label} color={f.color} label={f.label} />)}
-      {/* ★ 2026-10-09 (§441). 여기 「도면 기반 1차 판정 · 폭 미검증」 한 줄이
-          있었고 그 위에 **「이 한 줄을 지우지 마라」**고 적혀 있었다. 행이 화면의
-          설명을 전부 걷으라고 했고, 그 줄의 사유(색이 확정 판정처럼 읽히는 것을
-          막는다)는 **없어진 것이 아니라 `ui/Manual.tsx` 의 「판정 네 색」 마지막
-          줄로 옮겼다.** 「유일한 장치」가 아니게 만든 다음에 걷었다. */}
+      {/* ★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). **설명이 화면에 없다.**
+          §441 이 여기 한 줄을 「읽는 법」 시트로 옮겼고, 행이 그 시트 자체를
+          걷으라고 했다 — 「매뉴얼이 필요한 GUI 는 못 만든 GUI 다」. 관제는
+          **탐색 과제**(소화전 · CCTV · 1,281구간)라 읽을 거리가 탐색 시간을
+          늘린다. 범례는 남는다 — 눈을 살짝 옮겨 찾는 **참조**이고 설명이 아니다.
+          한계(무엇을 안 보는가)의 집은 `MASTER §15-4` 다. */}
     </div>
   );
 }

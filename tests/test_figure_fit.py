@@ -162,7 +162,7 @@ def test_sourceless_figures_match_the_ratchet():
     ★ 양방향이다. 줄었는데 기록을 안 내리면 느슨해진 래칫이 초록으로
       위장한다(`sizecheck` 머리말과 같은 사유).
     """
-    figs = _mod("docx_figs")
+    figs = _mod("htmlfigs")
     n = len(figs.sourceless())
     assert n == figs.SOURCELESS_MAX, (
         f"정본 없는 그림 {n} 장 · 기록 {figs.SOURCELESS_MAX}\n"

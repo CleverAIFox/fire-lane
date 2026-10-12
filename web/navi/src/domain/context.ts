@@ -14,13 +14,20 @@
  *
  * ★ 순수하다. React·MapLibre·fetch 를 모른다.
  */
-import { distM, type LngLat } from "./geo";
+import { distM, MX, MY, type LngLat } from "./geo";
 import type { ContextKind, RoutePlan } from "./types";
 
 export const NEAR_M: Record<ContextKind, number> = {
   speedbump: 12, speedcam: 25, child_zone: 150, senior_zone: 150,
 };
-const MERGE_M = 60;
+/**
+ * 이보다 가까운 같은 종류의 **사정**은 하나로 묶어 적는다.
+ *
+ * ★ 2026-10-11 (DECISIONS §475). 이름이 `MERGE_M` 이었고 `app/useVoice.ts`
+ *   에 **같은 이름 다른 수**(45 · 회전 문구를 묶는 창)가 있었다. 이름에
+ *   무엇을 묶는지를 넣는다.
+ */
+const HAZARD_MERGE_M = 60;
 
 export interface Hazard {
   kind: ContextKind;
@@ -46,7 +53,11 @@ const WORD: Record<ContextKind, string> = {
  */
 export function nearestOnPath(coords: LngLat[], cum: number[], p: LngLat): { s: number; d: number } {
   let best = { s: 0, d: Infinity };
-  const kx = 111_320 * Math.cos((p[1] * Math.PI) / 180), ky = 110_540;
+  // ★ 2026-10-11 (DECISIONS §473). 여기 `kx` 를 점의 위도로 다시 켜고
+  //   `ky` 를 **110,540** 으로 들고 있었다. 둘 다 정본으로 간다 — 이 동네
+  //   3km 에서 위도별 차이는 0.3m 이고, 그 0.3m 때문에 수를 두 벌 두면
+  //   한쪽만 고치는 날이 온다.
+  const kx = MX, ky = MY;
   for (let i = 0; i + 1 < coords.length; i++) {
     const a = coords[i], b = coords[i + 1];
     const ax = (a[0] - p[0]) * kx, ay = (a[1] - p[1]) * ky;
@@ -80,7 +91,7 @@ export function routeHazards(plan: Pick<RoutePlan, "coords">, ctx: GeoJSON.Featu
   const out: Hazard[] = [];
   for (const h of hits) {
     const prev = [...out].reverse().find((x) => x.kind === h.kind);
-    if (prev && h.atM - prev.atM < MERGE_M) continue;
+    if (prev && h.atM - prev.atM < HAZARD_MERGE_M) continue;
     out.push(h);
   }
   return out;

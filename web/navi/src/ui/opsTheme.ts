@@ -51,6 +51,30 @@ export const mapBox: React.CSSProperties = { position: "relative", minWidth: 0 }
 export const secBox: React.CSSProperties = {
   background: D.card, border: `1px solid ${D.line}`, borderRadius: 10, padding: "10px 12px",
 };
+/**
+ * 층 — **휘도로 가른다.**  (DECISIONS §445 · PLAN #143)
+ *
+ * ★ 근거는 교안이다 — 『3 Theoretical issue 3 — Lightness, Brightness, Contrast
+ *   and Constancy』 p.25 Note 3: **강조는 휘도 대비 조절로 한다. 중요치 않은
+ *   것의 대비를 낮추거나 배경을 국소 조절해 중요한 곳의 대비를 올린다.**
+ *
+ * ★ **색으로 안 가른다.** 색 채널은 판정 넷이 이미 다 먹었다(§441-4). 「지금
+ *   여기를 봐라」를 색으로 하면 다섯째 색이 생기고 판정 넷의 뜻이 흐려진다.
+ *
+ * ★ 층은 **상태에 따라 움직인다.** 접수 전에는 「사건 접수」가 `act` 이고,
+ *   접수 뒤에는 「출동 지령」이 `act` 가 된다. 비어 있는 칸은 `idle` 로 내려
+ *   **시각적 무게를 뺀다** — 화면의 4분의 1이 빈 카드로 같은 밝기를 차지하던
+ *   것이 평면으로 읽히던 가장 큰 원인이었다.
+ *
+ * ★ 순서가 **깨지지 못하게** `tools/uicheck.py` 가 상대휘도를 재서 든다
+ *   (`act` > `pick` > `idle`). 값을 손으로 고치면 그 문이 운다.
+ */
+export const LAYER = {
+  act: { background: "#16233c", borderColor: "#31507a" },
+  pick: { background: D.card, borderColor: D.line },
+  idle: { background: "#0b1322", borderColor: "#18233a" },
+} as const;
+export type Tier = keyof typeof LAYER;
 export const whyBox: React.CSSProperties = {
   fontSize: 11.5, background: "#0f172a", border: "1.5px solid", borderRadius: 8,
   padding: "7px 9px", margin: "8px 0 2px", lineHeight: 1.5,

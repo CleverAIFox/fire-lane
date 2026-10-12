@@ -15,7 +15,7 @@ OUT   processed/segments_5186.gpkg · segments.geojson · segments.schema.json
       ★ 2026-09-23 (PLAN §13 W3-6). `scope_5186.gpkg` 는 여기서 안 낸다.
         표출 상수를 판정 지문 밖으로 내려고 `firelane/display_scope.py`
         단계로 옮겼다. 그 단계가 방금 낸 corridor_5186.gpkg 를 읽는다
-PARAM seg/params.py 가 정본. TRUCK=3.0 PARK=2.0 CCTV_RANGE=25.0 등
+PARAM seg/params.py 가 정본. TRUCK=3.0 PARK=2.0 CCTV_RANGE=19.0 등
 
 전제
   ingest.py 가 먼저 돌아야 한다. data/processed 의 road_link / road_rw /
@@ -660,7 +660,7 @@ def main():
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
                         verdict=v, unknown_reason=reason,
                         cctv_dist_m=d_cctv, cv_feasible=bool(cv_ok),
-                        width_verified=False, midpoint_fallback=fb, inherited=False,
+                        midpoint_fallback=fb, inherited=False,  # width_verified 없음: §455-5
                         width_src=wsrc,
                         width_disagree_m=wdis,
                         width_fail=wfail,   # 발행한다 (DECISIONS §436-3)
