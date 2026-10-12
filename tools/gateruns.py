@@ -27,8 +27,8 @@ gateruns.py — **관문이 같은 것을 몇 번 도는가.** 횟수를 보는 
 부류  몸통   진입점이 **아니다.** 부류는 부르는 쪽에서 물려받는다  (DECISIONS §398)
 
 IN    tools/verify.sh · .github/workflows/*.yml · .github/actions/**/*.yml
-OUT   `dup_cmds()` · `double_runs()` · `ratchet_values()` (부르는 쪽이 찍는다)
-PARAM DUP_CMD · DOUBLE_RUN
+OUT   `dup_cmds()` · `double_runs()` · `cross_kills()` · `ratchet_values()` (부르는 쪽이 찍는다)
+PARAM DUP_CMD · DOUBLE_RUN · CROSS_KILL
 밖    **중복이 나쁜가는 안 본다.** 글자까지 같은 명령 둘은 같은 일을 두 번
       하는 것이지만, 그것이 의도된 자리인지는 사람이 본다 — 여기가 드는 것은
       「수가 늘었는가」다. **검사기 이름의 동등**은 `gate_parity` 소관이다.
@@ -62,14 +62,21 @@ DUP_CMD = 0
 #   2026-10-10 에 그 모양으로 셋이 돌았고(§457-3), 그때는 사람이 셌다.
 DOUBLE_RUN = 0
 
+# ★ 형제의 형제 (2026-10-12 · DECISIONS §505). 위 둘은 「두 벌 **도는가**」를
+#   묻는다. 이것은 그 반대다 — 「두 벌이 **서로 죽이는가**」. 한 칸에 모으는
+#   데 성공한 뒤에야 생기는 결함이라 `DOUBLE_RUN` 이 0 인 동안 자랐다.
+CROSS_KILL = 0
+
 #: ★ 이 도구의 래칫 중 **꺼낼 수 있는 것만** 여기 든다. `RATCHET` 과
 #:   `CI_ONLY_RATCHET` 은 `report()` 안에서 인쇄와 함께 계산돼 값만 못 꺼낸다 —
 #:   `tools/ratchet.py` 머리말이 그 사실을 든다.
-RATCHETS = {"DUP_CMD": "down", "DOUBLE_RUN": "down"}
+RATCHETS = {"DUP_CMD": "down", "DOUBLE_RUN": "down", "CROSS_KILL": "down"}
 
 
 def ratchet_values() -> dict[str, int]:
-    return {"DUP_CMD": len(dup_cmds()), "DOUBLE_RUN": len(double_runs())}
+    return {"DUP_CMD": len(dup_cmds()),
+            "DOUBLE_RUN": len(double_runs()),
+            "CROSS_KILL": len(cross_kills())}
 
 
 _STEP_CMD = re.compile(r'^\s*step\s+"[^"]*"\s*(.*)$')
@@ -140,6 +147,42 @@ def double_runs(srcs: dict[str, str] | None = None) -> list[str]:
         if "github.workflow" not in group:
             bad.append(f"{name}: workflow_call + {' · '.join(own)} 인데 "
                        f"group 키가 부르는 쪽을 안 가른다 — {group or '없다'}")
+    return bad
+
+
+def cross_kills(srcs: dict[str, str] | None = None) -> list[str]:
+    """**`push` 판과 `pull_request` 판이 서로를 죽이는가.**
+
+    `concurrency.group` 이 **이벤트를 안 가르면** 같은 커밋의 두 판이 한 칸에
+    들어간다. 늦게 깨어난 쪽이 먼저 돈 쪽을 죽이고, **죽은 판도 그 이름으로
+    보고된다** — required check 면 머지가 막힌다.
+
+    2026-10-12 에 PR #319 가 `gh pr checks` 로 `0 failing` 인데 멈췄다.
+    `image`/`push` 와 `contract-shared`/`push` 둘이 취소돼 있었고, 사람이 그
+    둘을 손으로 다시 돌려서야 풀렸다(DECISIONS §505).
+
+    ★ `github.workflow` 로는 **안 갈린다.** 같은 파일의 두 이벤트라 그 값이
+      같다 — §457 이 넣은 그 키는 *부르는 쪽*을 갈랐지 이벤트를 안 갈랐다.
+    ★ `cancel-in-progress` 가 거짓이면 모아도 안 죽인다 — `deploy.yml` 의
+      `pages` 가 그 자리다. 세지 않는다.
+    """
+    import yaml  # noqa: PLC0415  이 함수 하나만 쓴다
+
+    if srcs is None:
+        srcs = {p.name: p.read_text(encoding="utf-8") for p in sorted(WF.glob("*.yml"))}
+    bad = []
+    for name, raw in sorted(srcs.items()):
+        doc = yaml.safe_load(raw) or {}
+        on = doc.get(True) or doc.get("on") or {}
+        if not isinstance(on, dict) or not {"push", "pull_request"} <= set(on):
+            continue
+        conc = (doc.get("concurrency") or {}) or {}
+        if not conc.get("cancel-in-progress"):
+            continue
+        group = str(conc.get("group") or "")
+        if "github.event_name" not in group:
+            bad.append(f"{name}: push · pull_request 가 **한 칸**에 든다 — "
+                       f"group 키에 github.event_name 이 없다: {group or '없다'}")
     return bad
 
 
