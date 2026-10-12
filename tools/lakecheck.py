@@ -37,6 +37,10 @@ from firelane import (
     paths,  # noqa: F401  ★ import 만으로 .env 를 환경에 얹는다
 )
 
+# ★ 「층을 설명하는 사람 문서」의 정본은 `firelane.lake.RECORD_NAMES` 하나다
+#   (DECISIONS §505). 여기 다시 적으면 두 집이 갈린다.
+from firelane.lake import RECORD_NAMES
+
 ROOT = Path(__file__).resolve().parents[1]
 HITS: list[dict] = []
 
@@ -389,7 +393,14 @@ def l6(D: Path, y: dict) -> None:
         if not d.is_dir():
             continue
         pat = re.compile(rx)
-        files = [p for p in d.rglob("*") if p.is_file() and not p.name.startswith("_")]
+        # ★ 2026-10-12 (DECISIONS §505). **기록 파일을 분모에서 뺀다.**
+        #   `data/retired/QUARANTINE.md` 는 데이터가 아니라 「층을 설명하는
+        #   사람 문서」이고 `lake.py` 가 그것을 **이미 선언**해 「기록」으로
+        #   분류한다. 제공기관 폴더가 없어서 이 축이 그것을 **유일한
+        #   위반**으로 셀고 열주 하나를 세우고 있었다.
+        #   선언이 있는데 읽는 자가 하나면 그 선언은 **절반만 산다.**
+        files = [p for p in d.rglob("*") if p.is_file()
+                 and not p.name.startswith("_") and p.name not in RECORD_NAMES]
         rel_bad = [p for p in files if not pat.match(str(p.relative_to(d)))]
         name_bad = [p for p in files if not pat.match(p.name)]
         if not files:
