@@ -449,7 +449,10 @@ def cmd_pack(a) -> int:
     # ★ 2026-10-08 (DECISIONS §439 · PLAN #138). **「외로운 시험」을 같이 센다.**
     #   시험만 든 커밋이 중간에 있으면 그 지점은 혼자 초록일 수 없다 — 예습은
     #   마지막 상태만 보므로 그것을 못 봤다(§258-13 의 사고).
-    for label, bad in (("이름 충돌", collide(names)), ("같은 꼬리", tails(names)),
+    # ★ 2026-10-12 (DECISIONS §501-7). `tails` 에는 **실물 경로**(`ps`)를 준다 —
+    #   증거가 패치 머리의 `From <sha>` 로 바뀌었으므로 이름만으로는 못 센다.
+    #   `collide` 는 여전히 이름을 센다(묻는 것이 「파일 이름이 겹치냐」다).
+    for label, bad in (("이름 충돌", collide(names)), ("같은 꼬리", tails(ps)),
                        ("외로운 시험", lonely_tests(ps)),
                        ("금지 문자열", forbidden(ps))):
         if bad:
