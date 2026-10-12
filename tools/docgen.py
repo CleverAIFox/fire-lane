@@ -158,7 +158,36 @@ AXES: dict[str, Axis] = {
                       "판정 `blocked` 구간 수"),
     "v_unknown": Axis(re.compile(r"영상판정 불가`?\s*\|?\s*(\d[\d,]*)"),
                       "판정 `unknown` 구간 수"),
+    # ★ 2026-10-11 (DECISIONS §464 · PLAN #167 닫힘). **발행물에서 유도되는
+    #   다섯.** 2026-10-11 재발행에서 손으로 고친 열세 자리 중 다섯이 어느 축에도
+    #   없었다 — 판정 네 수와 회색 사유는 울었고 이 다섯은 조용했다. 같은 문단에서
+    #   틀린 수와 맞는 수가 섞여 있었고, **조용한 것이 맞다는 뜻이 아니다.**
+    #
+    # ★ 앵커를 좁게 잡았다. 실측으로 확인한 것 —
+    #     `CCTV 유효범위 안` + 공백 + 수   → §3-7 한 곳. 「유효범위 안이 **126**」
+    #       (§7-2 · 폭 3~7m 대역)은 **조사가 붙어** 안 걸린다
+    #     `골목의 N%` + `는`/`에`          → 제목 · ★ 줄 · §15-1. 「골목의 48.8%(625구간)」
+    #       은 뒤에 `(` 가 와서 안 걸린다 — 그쪽은 **다른 축**(도면만으로 판정 불가)이다
+    #     `전체 연장의 N%`                 → §3-7 한 곳. DECISIONS 의 E-3 회고는
+    #       「연장 17,168m/58,309m (29.4%)」 꼴이라 이 앵커에 안 걸린다
+    # ★ 백분율은 **소수 한 자리**로 쓴다. 정수로 반올림하면 64.8 과 65.4 가 같아지고,
+    #   그 둘은 「골목의 65%」라는 한 문장에서 다른 사실이다.
+    "cctv_in": Axis(re.compile(r"CCTV 유효범위 안\s+\**([\d,]+)"),
+                    "CCTV 유효범위 안 구간 수 — 발행물의 `cv_feasible`"),
+    "cctv_in_pct": Axis(re.compile(r"CCTV 유효범위 안[^\n]*\((\d+\.\d|\d+)%\)"),
+                        "그 수가 구간 수에서 차지하는 몫 (%)"),
+    "cctv_out_pct": Axis(re.compile(r"골목의\s*(\d+\.\d|\d+)%(?=[에는])"),
+                         "CCTV 유효범위 **밖** 몫 (%) — 100 − 안"),
+    "v_unknown_m": Axis(re.compile(r"영상판정 불가[^\n]*?·\s*([\d,]+)m"),
+                        "판정 `unknown` 구간의 연장 (m)"),
+    "v_unknown_m_pct": Axis(re.compile(r"전체 연장의\s*(\d+\.\d|\d+)%"),
+                            "그 연장이 총연장에서 차지하는 몫 (%)"),
 }
+
+#: 백분율 축. **소수 한 자리로 쓰고 소수 한 자리로 읽는다.**
+#: ★ 이 집합이 곧 「어느 축이 실수인가」의 정본이다 — `render` 와 `claims` 가
+#:   같은 것을 본다. 양쪽에 따로 적으면 쓰는 꼴과 읽는 꼴이 갈린다.
+FLOAT_AXES = frozenset({"cctv_in_pct", "cctv_out_pct", "v_unknown_m_pct"})
 
 OPEN = re.compile(r"^<!--gen:\s*([\w ]+?)\s*-->$")
 CLOSE = re.compile(r"^<!--/gen-->$")
@@ -177,7 +206,7 @@ def _cov_min() -> int:
     return int(m.group(1)) if m else 0
 
 
-def truth() -> dict[str, int]:
+def truth() -> dict[str, float]:
     """축마다의 **실물**. 문서를 한 줄도 안 읽는다 — PLAN §1 표만 예외다.
 
     ★ 대장은 `ledger.load()` 로 읽는다. yaml 로 직접 열면
@@ -207,10 +236,13 @@ def truth() -> dict[str, int]:
         # ★ `docnum_check` 를 부른다. 같은 수를 여기서 또 세면 두 집이 되고,
         #   판정이 움직이는 날 한쪽만 움직인다(2족 · §319).
         **{f"v_{k}": v for k, v in docnum_check.verdicts().items() if k != "n"},
+        # ★ 2026-10-11 (§464). 발행물에서 **유도되는** 다섯. 같은 사유로 여기서
+        #   다시 세지 않는다 — 집은 `docnum_check.shape()` 하나다.
+        **docnum_check.shape(),
     }
 
 
-def alive(want: dict[str, int]) -> list[str]:
+def alive(want: dict[str, float]) -> list[str]:
     """정본이 살아 있는가. 비면 산다.
 
     ★ 값이 0이면 블록이 통째로 거짓이 되고, 그 거짓은 **조용하다** — 도구가
@@ -234,7 +266,12 @@ def alive(want: dict[str, int]) -> list[str]:
         bad.append("`COV_MIN` 을 못 읽었다 — `tools/verify.sh` 의 선언 한 줄이 사라졌다")
     # ★ 판정 네 수의 합이 구간 수여야 한다. 하나라도 0 이면 블록이 통째로
     #   거짓이 되고 그 거짓은 **조용하다** — 도구가 0 을 채우고 검사가 통과시킨다.
-    for a in ("v_clear", "v_needs_cv", "v_blocked", "v_unknown"):
+    # ★ 2026-10-11 (§464). 발행물에서 유도되는 **셈 둘**도 같은 사유로 든다.
+    #   0 이면 「유효범위 안 0구간」 · 「회색 연장 0m」이 되고 그 둘은 이 저장소의
+    #   어느 발행본에도 없는 값이다. 백분율은 안 든다 — 참으로 0 이 될 수 있는
+    #   수에 0 문턱을 걸면 그 문이 거짓을 말하게 된다.
+    for a in ("v_clear", "v_needs_cv", "v_blocked", "v_unknown",
+              "cctv_in", "v_unknown_m"):
         if want.get(a, 0) <= 0:
             bad.append(f"`{a}` 가 0 — 산출물을 못 읽었거나 판정 어휘가 바뀌었다")
     if want["sealable"] > want["datasets"]:
@@ -245,14 +282,24 @@ def alive(want: dict[str, int]) -> list[str]:
     return bad
 
 
-def render(v: int) -> str:
-    """문서에 적히는 꼴. 천 단위 쉼표는 문서 관례다(`절 1,036 전수`)."""
-    return f"{v:,}"
+def render(v: float, axis: str | None = None) -> str:
+    """문서에 적히는 꼴. 천 단위 쉼표는 문서 관례다(`절 1,036 전수`).
+
+    ★ 2026-10-11 (§464-3). 백분율 축은 **소수 한 자리**다. 정수로 쓰면
+      64.8 과 65.4 가 같은 글자가 되고, 그 둘은 한 문장에서 다른 사실이다.
+      어느 축이 실수인가의 정본은 `FLOAT_AXES` 하나다.
+    """
+    return f"{v:,.1f}" if axis in FLOAT_AXES else f"{int(v):,}"
 
 
-def claims(axis: str, text: str) -> list[int]:
-    """`axis` 표기가 이 문자열에서 말하는 수들. 시험과 이 도구가 같은 문을 쓴다."""
-    return [int(m.replace(",", "")) for m in AXES[axis].pat.findall(text)]
+def claims(axis: str, text: str) -> list[float]:
+    """`axis` 표기가 이 문자열에서 말하는 수들. 시험과 이 도구가 같은 문을 쓴다.
+
+    ★ 백분율 축은 실수로 돌려준다 — 정수로 깎으면 「29.5 라 적혀 있는데
+      29 로 읽어 통과」가 된다. 그것이 이 축이 생긴 사유의 반대다.
+    """
+    got = [m.replace(",", "") for m in AXES[axis].pat.findall(text)]
+    return [float(g) for g in got] if axis in FLOAT_AXES else [int(g) for g in got]
 
 
 # ── 블록 ────────────────────────────────────────────────────────
@@ -284,7 +331,7 @@ def _swap(pat: re.Pattern[str], line: str, want: str) -> tuple[str, int, list[st
     return "".join(out), hits, stale
 
 
-def apply_all(texts: dict[str, str], want: dict[str, int]) -> Result:
+def apply_all(texts: dict[str, str], want: dict[str, float]) -> Result:
     """블록을 채운다. **순수 함수**다 — 시험이 합성 문서로 직접 부른다."""
     out: dict[str, str] = {}
     drift: list[str] = []
@@ -311,7 +358,7 @@ def apply_all(texts: dict[str, str], want: dict[str, int]) -> Result:
                 if a not in AXES:
                     broken.append(f"{rel}:{i + 1}  모르는 축 `{a}` — `AXES` 에 없다")
                     continue
-                v = render(want[a])
+                v = render(want[a], a)
                 hits = 0
                 for k in range(i + 1, j):
                     new[k], n, stale = _swap(AXES[a].pat, new[k], v)
@@ -346,9 +393,108 @@ def _say(res: Result) -> None:
         print(f"    ✗ {d}")
 
 
+def selftest() -> int:
+    """★ 판별식이 살아 있나. **합성 문서로만 민다** — 실물을 안 건드린다.
+
+    ★ 2026-10-10 (DECISIONS §445-2 와 같은 자리). 이 도구가 **과녁에 새로
+      들어왔다** — `#166` 이 지문 범위를 넓히며 「선언을 옆집에서 함수 안으로
+      끌어오는 꼴」을 보게 됐고, 이 도구가 바로 그 꼴이었다. 그런데 자기검사가
+      없어 **흔들어도 못 재는 과녁**(`UNCATCHABLE`)이 됐다. 재는 자리가 없는
+      강제자는 §445 가 내내 적은 그 병이라 여기서 끊는다.
+
+    밖    **실물 수가 옳은가는 안 본다** — 그것은 `truth()` 와 `alive()` 가
+          실물에서 들고 `tests/test_repo_numbers.py` 가 같이 묻는다.
+    """
+    bad: list[str] = []
+    doc = "<!--gen: plan_open -->\n## 1. 남은 일 — 3행\n<!--/gen-->\n"
+    want = {a: 1 for a in AXES} | {"plan_open": 7}
+
+    # ★ 정상 입력 — 블록을 채운다. **구조 결함은 증분으로 본다** — 합성 문서는
+    #   축 하나만 들므로 「이 축에 블록이 한 곳도 없다」가 늘 따라온다. 그 바탕을
+    #   빼고 **늘어난 것**만 결함으로 센다.
+    res = apply_all({"a.md": doc}, want)
+    base = len(res.broken)
+    if "## 1. 남은 일 — 7행" not in res.texts["a.md"]:
+        bad.append("블록을 안 채운다")
+    if res.seen.get("plan_open") != 1:
+        bad.append("채운 건수를 안 센다")
+    # ★ 합성 결함 ① 낡은 값이면 **운다**
+    if not res.drift:
+        bad.append("낡은 값을 안 운다 — 3행이 7행으로 바뀌었는데 조용하다")
+    # ★ 합성 결함 ② 이미 맞으면 **안 운다**(그래야 「고칠 것이 없다」가 참이다)
+    if apply_all({"a.md": res.texts["a.md"]}, want).drift:
+        bad.append("이미 맞는데 운다 — 매 배치 문서가 더러워진다")
+    # ★ 합성 결함 ③ 안 닫은 블록은 **구조 결함**이다
+    if len(apply_all({"a.md": "<!--gen: plan_open -->\n## 1. 남은 일 — 3행\n"},
+                     want).broken) <= base:
+        bad.append("안 닫은 블록을 안 운다 — 그 뒤 문서 전체가 블록 안이 된다")
+    # ★ 합성 결함 ④ 모르는 축 이름
+    if len(apply_all({"a.md": doc + "<!--gen: 없는축 -->\n<!--/gen-->\n"},
+                     want).broken) <= base:
+        bad.append("없는 축 이름을 안 운다")
+    # ★ 읽는 쪽 — 시험과 같은 문을 쓴다
+    if claims("plan_open", "## 1. 남은 일 — 1,234행") != [1234]:
+        bad.append("천 단위 쉼표를 못 읽는다")
+    if render(1234) != "1,234":
+        bad.append("천 단위 쉼표를 안 적는다")
+    # ★ 2026-10-11 (§464-3). **백분율 축은 소수 한 자리로 쓰고 소수 한 자리로
+    #   읽는다.** 한쪽만 고치면 쓰는 꼴과 읽는 꼴이 갈려 매 배치 되돌려진다.
+    pct = next(iter(FLOAT_AXES))
+    if render(64.8, pct) != "64.8":
+        bad.append(f"백분율을 정수로 적는다 — {render(64.8, pct)}")
+    if render(64.0, pct) != "64.0":
+        bad.append("소수 자리가 0 이면 떼 버린다 — 64 와 64.0 은 다른 주장이다")
+    if claims("cctv_out_pct", "골목의 64.8%는") != [64.8]:
+        bad.append("백분율을 실수로 안 읽는다 — 29.5 를 29 로 읽으면 통과한다")
+    if claims("cctv_out_pct", "골목의 65%는") != [65.0]:
+        bad.append("소수점 없는 백분율을 못 읽는다")
+    # ★ 울타리 — **조사가 붙거나 괄호가 오면 안 문다.** 실물에 그런 자리가 있다
+    #   (「유효범위 안이 **126**」은 §7-2 의 다른 축 · 「골목의 48.8%(625구간)」는
+    #   도면만으로 판정 불가). 한 번 오탐이 나면 사람이 검사를 끈다.
+    for axis, prose in (("cctv_in", "그중 유효범위 안이 **126**이다"),
+                        ("cctv_out_pct", "골목의 48.8%(625구간)는 도면만으로"),
+                        ("v_unknown_m", "E-3 영상판정 불가 399/1,281 · 연장 17,168m/58,309m"),
+                        ("v_unknown_m_pct", "연장 17,168m/58,309m (29.4%)")):
+        if claims(axis, prose):
+            bad.append(f"{axis} 가 다른 축을 문다 — {prose!r} → {claims(axis, prose)}")
+    # ★ 정본이 살아 있나 — **양방향**
+    ok = {a: 9_999 for a in AXES} | {"datasets": 80, "sealable": 79}
+    if alive(ok):
+        bad.append(f"멀쩡한 축에 운다 — {alive(ok)}")
+    if not alive({a: 0 for a in AXES}):
+        bad.append("전부 0 인데 안 운다 — 조용한 거짓이 그대로 문서에 들어간다")
+    # ★ 경계를 못 박는다. 문이 `<= 0` 인지 `<= 1` 인지를 **1 로** 가른다 —
+    #   안 박으면 그 자리를 흔들어도 안 죽고, 경계가 조용히 한 칸 올라간다.
+    one = ok | dict.fromkeys(
+        ("plan_open", "cov_min", "v_clear", "v_needs_cv", "v_blocked", "v_unknown",
+         "cctv_in", "v_unknown_m"), 1)
+    if alive(one):
+        bad.append(f"1 인데 운다 — 경계가 0 이 아니라 1 에 걸렸다: {alive(one)}")
+    # ★ 2026-10-11 (§464). **바닥이 있는 축의 경계도 못 박는다.** `datasets` 50 ·
+    #   `sections` 500 두 자리는 자기검사가 「0」과 「충분히 큼」만 봤고, 그래서
+    #   그 수를 한 칸 미는 돌연변이가 살아 있었다(§445-9 가 같은 자리를 0/1 에서
+    #   막았다). 문턱은 **그 수에서 울고 그 수+1 에서 안 우는가**로 묶는다.
+    #   ★ `datasets` 를 내릴 때 `sealable` 도 같이 내린다 — 안 내리면 「봉인
+    #     대상이 대장보다 많다」가 먼저 울어 이 문이 무엇을 봤는지 못 가른다.
+    for axis, floor in (("datasets", 50), ("sections", 500)):
+        pin = {"sealable": floor - 1} if axis == "datasets" else {}
+        if not alive(ok | {axis: floor} | pin):
+            bad.append(f"{axis} {floor} 인데 안 운다 — 문턱이 위로 밀렸다")
+        if alive(ok | {axis: floor + 1} | pin):
+            bad.append(f"{axis} {floor + 1} 인데 운다 — 문턱이 아래로 밀렸다")
+    if not alive({}):
+        bad.append("축이 통째로 없는데 안 운다")
+
+    for x in bad:
+        print(f"  ✗ {x}")
+    print(f"{'✗' if bad else '✓'} 자기검사 — 채움 · 낡음 · 멱등 · 구조 · 읽기(백분율 포함) · 울타리 · 정본 아홉")
+    return 1 if bad else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="문서 생성 블록 ↔ 실물")
     ap.add_argument("--check", action="store_true", help="대조만 — 고치지 않는다")
+    ap.add_argument("--selftest", action="store_true", help="★ 판별식이 살아 있나")
     ap.add_argument("--list", action="store_true", help="축 · 실물 값 · 블록 수")
     # ★ **문서를 어디서 읽나만 바꾼다.** 실물(대장 · `dms.scan()`)은 언제나 이
     #   저장소다 — 그래서 복사한 트리에 틀린 값을 심어 「이 도구가 무는가」를
@@ -357,6 +503,8 @@ def main() -> int:
     ap.add_argument("--root", type=Path, default=ROOT,
                     help="문서를 읽고 쓸 트리 (기본: 이 저장소)")
     a = ap.parse_args()
+    if a.selftest:
+        return selftest()
 
     want = truth()
     dead = alive(want)
@@ -371,7 +519,7 @@ def main() -> int:
     if a.list:
         print(f"{'축':10} {'실물':>8}  {'블록':>4}  뜻")
         for name, ax in AXES.items():
-            print(f"{name:10} {render(want[name]):>8}  {res.seen[name]:>4}  {ax.what}")
+            print(f"{name:10} {render(want[name], name):>8}  {res.seen[name]:>4}  {ax.what}")
         _say(res)
         return 0
 
@@ -382,7 +530,7 @@ def main() -> int:
             print("  ★ 손으로 고치지 마라 — `uv run python tools/docgen.py` 가 채운다.")
             return 1
         print(f"✓ 생성 블록 {sum(res.seen.values())}곳이 실물과 같다 · "
-              + " · ".join(f"{k} {render(v)}" for k, v in want.items()))
+              + " · ".join(f"{k} {render(v, k)}" for k, v in want.items()))
         return 0
 
     for rel, text in res.texts.items():

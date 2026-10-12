@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import heapq
 import json
 import math
 import statistics as st
@@ -38,6 +37,9 @@ from collections import defaultdict
 from functools import partial as _partial
 from pathlib import Path
 
+import networkx as nx
+
+from firelane import quantile as Q
 from firelane.seg.unionfind import find as _uf_find
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -86,25 +88,58 @@ def _node_index(feats: list, tol: float):
     return {i: find(i) for i in range(len(ends))}, ends
 
 
-def _dijkstra(g: dict, s: int):
-    d = {s: 0.0}
+def _graph(g: dict) -> nx.MultiGraph:
+    """인접 사전 → `networkx` 다중그래프. **같은 노드쌍에 두 구간**이 있다.
+
+    ★ 2026-10-11 (DECISIONS §470 · PLAN #168). 여기 손으로 짠 Dijkstra 와 경로
+      되짚기가 있었다(heapq · prev 사전 · 역추적 15줄). `networkx` 는 **이미
+      선언된 의존성**이고 `src/firelane/seg/graph.py` 를 포함해 다섯 파일이
+      쓴다 — 같은 일을 손으로 짠 자리였다(§13 결함 족 4).
+    ★ `MultiGraph` 다. 발행 그래프에 **병렬 엣지 7** 이 있고(segments 가 그 수를
+      찍는다) `Graph` 로 받으면 그 둘 중 하나가 조용히 사라진다.
+    """
+    G = nx.MultiGraph()
+    for u, es in g.items():
+        for v, w, i in es:
+            G.add_edge(u, v, key=i, weight=w)
+    return G
+
+
+def _hop_edge(G: nx.MultiGraph, u: int, v: int) -> int:
+    """한 홉의 구간 번호. **가중치가 가장 작은** 엣지, 동률은 번호가 작은 쪽.
+
+    ★ 동률 규칙을 **적는다.** 손 Dijkstra 에서는 힙 순서로 정해졌고 그것은
+      선언이 아니었다 — 같은 입력에 같은 답이 나오는 것이 관문의 전제다.
+    """
+    return min(G[u][v], key=lambda k: (G[u][v][k]["weight"], k))
+
+
+def _dijkstra(g: dict, s: int) -> tuple[dict, dict]:
+    """(거리, 되짚기). **`networkx` 가 푼다** — 인터페이스는 그대로다.
+
+    ★ 2026-10-11 (DECISIONS §470-1 · PLAN #168). 여기 `heapq` 로 짠 Dijkstra 가
+      있었다. `networkx` 는 **이미 선언된 의존성**이고 `src/firelane/seg/graph.py`
+      를 포함해 다섯 파일이 쓴다 — 같은 일을 두 번 짠 자리다(§13 결함 족 4).
+
+    ★ **돌려주는 꼴을 안 바꿨다.** `tools/evalgen.py` 가 이 함수와 `_path` 를
+      그대로 부르고, 그 도구는 레이크가 있어야 돌아서 **이 기계에서 못 댄다** —
+      못 대는 변경을 같이 하지 않는다(옮기는 판과 고치는 판을 섞지 않는다).
+
+    ★ 실측(2026-10-11) — 발행 그래프 두 일감 × 두 출발에서 손 판과
+      **거리 어긋남 0 · 엣지열 어긋남 0**, `kpi.py` 전체 출력 **diff 0**.
+    """
+    G = _graph(g)
+    d, paths = nx.single_source_dijkstra(G, s, weight="weight")
     prev: dict = {}
-    pq = [(0.0, s)]
-    seen: set = set()
-    while pq:
-        c, u = heapq.heappop(pq)
-        if u in seen:
-            continue
-        seen.add(u)
-        for v, w, i in g[u]:
-            if c + w < d.get(v, math.inf):
-                d[v] = c + w
-                prev[v] = (u, i)
-                heapq.heappush(pq, (c + w, v))
+    for nodes in paths.values():
+        for u, v in zip(nodes, nodes[1:], strict=False):
+            if v not in prev:
+                prev[v] = (u, _hop_edge(G, u, v))
     return d, prev
 
 
-def _path(prev: dict, s: int, t: int):
+def _path(prev: dict, s: int, t: int) -> list[int] | None:
+    """되짚기 → 구간 번호 열. 닿지 못하면 `None`."""
     out = []
     cur = t
     while cur != s:
@@ -214,7 +249,7 @@ def main() -> int:
               f"중앙 {st.median(per_route_bad):.0f} · 최대 {max(per_route_bad)}")
     if ratios:
         print(f"  우리 경로 / 그 경로 실거리비       "
-              f"중앙 {st.median(ratios):.2f} · p90 {ratios[int(len(ratios) * .9)]:.2f}")
+              f"중앙 {st.median(ratios):.2f} · p90 {Q.p90(ratios):.2f}")
     print()
     print("  → 시간을 줄이는 앱이 아니라 **못 가는 길로 보내지 않는 앱**이다.")
 

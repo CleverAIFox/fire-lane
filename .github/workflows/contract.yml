@@ -42,8 +42,18 @@ permissions:
 # ★ 2026-09-18 (W1). 배포 넷은 concurrency 가 있는데 contract 만 없었다.
 #   `feat/**` 는 push 와 pull_request 양쪽에 걸려 **같은 커밋을 2회** 돌았다.
 #   진행 중인 실행을 취소해도 안전하다 — 마지막 푸시의 결과만 의미가 있다.
+# ★ 2026-10-10 (DECISIONS §457). group 키가 `github.ref` 였다. 그 값은
+#   push 에서 `refs/heads/<가지>` 고 pull_request 에서 `refs/pull/N/merge` 라
+#   **같은 커밋의 두 실행이 서로 다른 group 에 들어갔다** — 취소가 안 걸린다.
+#   가지 이름으로 바꾼다(`head_ref` 는 PR 에서만, 없으면 `ref_name`).
+#   `run:` 밖이라 보간 가드(test_untrusted_context_is_never_interpolated_into_run)
+#   의 과녁이 아니다.
+# ★ `github.workflow` 는 **남긴다.** 재사용 호출에서 그 값은 **호출자 이름**이라
+#   `deploy.yml` 의 `gate` 가 부른 실행과 이 파일의 직접 실행을 가르는 유일한
+#   값이다. 지우면 둘이 같은 group 에 들어가 **먼저 시작한 쪽이 취소되고**,
+#   그것이 게이트 쪽이면 `needs: gate` 가 실패해 배포가 막힌다.
 concurrency:
-  group: contract-${{ github.workflow }}-${{ github.ref }}
+  group: contract-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 on:
@@ -57,8 +67,18 @@ on:
   #   ★ required check 는 **PR 머리에서** 평가된다 — 관문이 안 약해진다.
   #     로컬 verify 와 CI 가 같은 것을 드는지는 `관문 동등`(미선언 CI 전용 0)이
   #     따로 든다.
+  # ★ 2026-10-10 (DECISIONS §457). **`main` 을 뺐다.** 종전에 main 푸시는 이
+  #   트리거와 `deploy.yml` 의 `gate`(`uses:`) 양쪽으로 깨워져 shared 86단계 +
+  #   strict 7단계가 **두 벌** 돌았다(pytest 9분33초 ×2).
+  #   **두 벌로 얻는 것이 없다** — 같은 커밋 · 같은 러너 · 같은 환경이라 나오는
+  #   정보가 0 이고, 흔들리는 시험이 한쪽에서만 터지면 같은 커밋에 빨강 하나
+  #   초록 하나가 남아 「이 커밋이 초록이었나」를 못 답한다. **판정을 흐린다.**
+  #   main 은 `deploy.yml` 의 `gate` 가 **전건에서** 부르므로(그 파일의 push
+  #   `paths:` 를 같이 뺐다) 검사가 줄지 않고 1회로 준다.
+  #   ★ 되돌릴 조건 — `deploy.yml` 이 main 푸시 **전건**에서 `gate` 를 부르지
+  #     않게 되면 이 줄에 `main` 을 되돌린다. 그때 main 이 무검사로 열린다.
   push:
-    branches: [main, dev, 'part/**']
+    branches: [dev, 'part/**']
   pull_request:
     branches: [main, dev, 'part/**', 'feat/**']
     # ★ edited 가 없으면 본문을 고쳐도 검사가 다시 돌지 않는다.
@@ -243,8 +263,11 @@ jobs:
       - name: 커밋 정책
         run: uv run python tools/commit_policy.py --tracked
 
-      - name: 인코딩·개행
-        run: uv run python tools/encoding_check.py
+      # ★ 2026-10-10 (DECISIONS §457). 여기 있던 `인코딩·개행` 단계를 **지웠다.**
+      #   `.pre-commit-config.yaml` 의 `encoding-check` 훅이 `always_run` ·
+      #   `pass_filenames: false` 로 **같은 명령**을 돌리고, 아래 `pre-commit 전수`
+      #   가 그것을 같은 job 에서 돌린다 — 같은 집합을 두 번 봤다.
+      #   검사기는 그대로 돈다(그 훅은 이 저장소 고유다). 호출만 줄였다.
 
       - name: ★ pre-commit 전수 — 로컬 훅과 **같은 파일**을 읽는다
         # ★ 2026-09-18 (W1). `.pre-commit-config.yaml` 하나를 두 소보자가 읽는다 —
@@ -270,9 +293,15 @@ jobs:
       #   여기 넣었는데 **이 검사는 레이크가 있어야 돈다** — `⑧ layers 선언 →
       #   디렉터리` 가 `data/raw` 를 required 로 요구한다. CI 에는 레이크가 없으므로
       #   구조적으로 영원히 빨강이다(PR #75 에서 실측 · DECISIONS §191-4).
-      #   레이크 없는 모드가 생기기 전까지 로컬 전용이다 — PLAN §13 W3-10.
-      - name: 트리 전수 대조 (저장소만)
-        run: uv run python tools/treecheck.py --repo
+      # ★ 2026-10-10 (DECISIONS §457). 그 뒤 「레이크 없는 모드가 생기기 전까지
+      #   로컬 전용이다 — PLAN §13 W3-10」이라 적혀 있었는데 **`W3-10` 은 PLAN 에
+      #   없는 행이다**(§288 이 이미 정정했고 이 자리는 안 따라왔다). 없는 행을
+      #   받는 곳으로 적었으니 아무도 안 받았고, 그래서 D 축 열 개가 **스무 날 넘게
+      #   죽어 있었다.** 그 모드를 이 판이 지었다 — `treecheck.lake_connected()` 가
+      #   획득 대장에서 **도출**해 가려내므로 `--repo` 가 필요 없다.
+      #   CI 에서는 D0 · D9 와 대장 쪽 D1 · D5 · D6 이 돌고 나머지는 「안 쟀다」로 찍힌다.
+      - name: 트리 전수 대조
+        run: uv run python tools/treecheck.py
       # ★ 워크플로 문법·표현식·셸 인젝션 — PLAN §13 W3-15.
       - name: 워크플로 린트 (actionlint)
         run: uv run actionlint
@@ -295,10 +324,12 @@ jobs:
         run: uv run python tools/render_figures.py --check
       # ★ 2026-09-23 (DECISIONS §221-1). 기획서가 든 그림도 같은 정본인가.
       #   SVG 지문만 대조하므로 러너에 SVG 변환기가 필요 없다.
-      - name: 기획서 그림 ↔ 정본
-        run: uv run python tools/docx_figs.py --check
       # ★ 2026-10-09 (§440-2). 같은 다섯이 **화면 자리로도** 간다. 이쪽도 SVG 지문
       #   대조라 변환기가 필요 없다 — 로컬에만 붙일 이유가 없다.
+      # ★ 2026-10-09 (§444 · PLAN #142). `docx_check` · `docstyle` · `docx_figs`
+      #   가 은퇴했다. 여덜 축이 어디로 갔는지는 `tools/proposalcheck.py` 머리말이 든다.
+      - name: 기획서 정본 대조
+        run: uv run python tools/proposalcheck.py
       - name: 기획서 화면 그림
         run: uv run python tools/htmlfigs.py --check
       # ★ 2026-10-06 (§425). 기획서 **화면**이 정본과 같은가. 정본(`docs/proposal.md`)
@@ -315,6 +346,11 @@ jobs:
       #   족의 일곱 번째를 막는다. 추적 파일만 읽으므로 레이크 없이 돈다.
       - name: ★ 강제자 범위 선언 (메타 가드)
         run: uv run python tools/scopedecl.py
+      # ★ 2026-10-09 (DECISIONS §445 · PLAN #56 ① 닫힘). 위 단계가 「어디까지
+      #   보는가」면 이 단계는 「합성 결함으로 울어 본 적 있는가」다. 추적
+      #   파일만 읽으므로 레이크 없이 돈다 — 그래서 로컬 전용이 아니다.
+      - name: ★ 카나리아 (메타 가드 · 래칫)
+        run: uv run python tools/canary.py
 
       # ★ 2026-10-05 (DECISIONS §398). 도구가 **왜 있는지**를 가른다. 관문은
       #   도출하고(verify.sh · 이 파일이 부르는가) 나머지만 머리말에 적는다.
@@ -354,6 +390,9 @@ jobs:
       #   인자가 갈리면 같은 검사기를 다른 문턱으로 도는 것이고, 그것은 관문 동등이 아니다.
       - name: 대장 필드 검사
         run: uv run python -m firelane.ledger_check
+      # ★ 2026-10-09 (§444 · PLAN #134 ㉠). 레이크를 안 읽는다 — 대장과 소스뿐이다.
+      - name: 대장 칸 독자
+        run: uv run python tools/ledgercols.py
       - name: 대장 별칭 이관 유지
         run: uv run python tools/ledger_fields.py --check
       # ── 2026-09-28 (DECISIONS §285). 문서가 관문이라 이름까지 적어 둔 것이
@@ -395,10 +434,6 @@ jobs:
       # ★ 2026-10-04 (§385). §377 이 손으로 넷을 고치고 도구를 빚으로 남겼다.
       - name: 되짚기 폭발 구조
         run: uv run python tools/redoscheck.py
-      - name: 기획서 대조
-        run: uv run python tools/docx_check.py
-      - name: 기획서 개요 층
-        run: uv run python tools/docstyle.py
       - name: PLAN 의 이력 빚
         run: uv run python tools/planwork.py
       - name: 문서 말투
@@ -424,6 +459,10 @@ jobs:
         run: uv run python tools/golden.py selftest
       - name: 사본군 (래칫)
         run: uv run python tools/dupcheck.py --min 40 --max 0
+      # ★ 2026-10-09 (§444 · #134 ㉡). `CUTS` 쪽은 원본이 없어 스스로 건너뛴다.
+      #   여기서 도는 축은 **`n1/` 사본이 전부 선택 규칙을 들고 있는가** 하나다.
+      - name: 사본 선택 규칙
+        run: uv run python tools/fixture_recut.py --check
       - name: 파일 길이 래칫 (양방향)
         run: uv run python tools/sizecheck.py
       # ★ `--write` 를 CI 에서 안 돈다 — 쓰고 나서 재면 영영 초록이다(§309).
@@ -437,6 +476,10 @@ jobs:
       # ★ 소스 축만. 빌드본 무게와 글자 대조는 여기서 내비를 안 지어 못 본다(§312).
       - name: 내비 의존 (출동 중에 끊기는 것)
         run: uv run python tools/naviweight.py
+      - name: 내비 시험 분모 (미는 자가 없는 순수 함수)
+        run: uv run python tools/navicov.py
+      - name: 판정 시험 분모 (미는 자가 없는 순수 함수)
+        run: uv run python tools/srccov.py
         env:
           GH_TOKEN: ${{ github.token }}
           CI: "1"
@@ -497,10 +540,11 @@ jobs:
       # ★ 2026-09-22. 옛 GIS 지도(web/js)를 걷어냈다. 「JS 부팅 스모크」 · 「JS 모듈 그래프 검사」와
       #   그 도구 둘(web_boot_check.mjs · js_graph_check.mjs)을 함께 지웠다. 남는 web/*.js 는
       #   `web/config.js` 하나다 — 파이프라인이 정규식으로 읽는 설정이라 문법이 깨지면 사람이 헷갈린다.
-      - name: JS 문법 검사 (클래식 스크립트)
-        run: |
-          find web -maxdepth 1 -name '*.js' -print0 \
-            | xargs -0 -r -n1 -I{} sh -c 'node --check "{}" && echo "OK  {}"'
+      # ★ 2026-10-10 (DECISIONS §457). 여기 있던 `JS 문법 검사` 단계를 **지웠다.**
+      #   `.pre-commit-config.yaml` 의 `js-syntax` 훅이 `files: '^web/[^/]+\.js$'`
+      #   로 **같은 집합**을 골라 같은 `node --check` 를 돌리고, 그 설정 파일이
+      #   그 자리에서 **스스로 「contract.yml 「JS 문법 검사」와 같은 대상이다」**
+      #   라고 적고 있었다. 선언된 중복도 중복이다.
 
       - name: 내비 노드 — 배포 액션과 같은 판으로
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
@@ -656,11 +700,21 @@ jobs:
           # shellcheck disable=SC2086
           uv run ruff check $FILES --config .ruff-strict.toml
 
-      - name: 문서 규약 · 재현성
-        run: uv run pytest tests/test_doc_style.py tests/test_reproducibility.py -q
-
-      - name: 방어 로직 · 계보
-        run: uv run pytest tests/test_guards.py tests/test_declaration_sync.py -q
+      # ★ 2026-10-10 (DECISIONS §457). 여기 있던 pytest 단계 **둘을 지웠다** —
+      #   `문서 규약 · 재현성`(test_doc_style · test_reproducibility · 실측 4.6s) 과
+      #   `방어 로직 · 계보`(test_guards · test_declaration_sync · 실측 15.2s).
+      #   넷 다 `contract-shared` 의 `전체 테스트`(`pytest tests/ -q`)의 **진부분
+      #   집합**이고 `addopts` 도 마커도 없다 — 같은 러너 꼴 · 같은 `uv sync
+      #   --frozen --all-extras` 라 **환경도 같다.** 묻는 것이 하나도 더 없었다.
+      # ★ 앞세우는 값도 없다. 이 job 은 `contract-shared` 와 **병렬**로 돌고,
+      #   이 job 의 `if` 가 그 job 의 이벤트 집합의 **부분집합**이다 — 이것이
+      #   도는 모든 때에 저쪽 전수도 같이 돈다.
+      # ★ `contract-shared` 의 `★ 소유권`(1.4s) 과 `계약 테스트 — 파트 경계`(1.7s)
+      #   는 **남긴다.** 둘은 같은 job 의 **앞**에 서서 9분33초짜리 전수보다 먼저
+      #   죽는다 — 합쳐 3초로 사는 빠른 실패고, 그것이 묻는 것이 아니라 **순서**로
+      #   하는 일이다. 지우면 소유권 한 줄 깨진 것을 10분 뒤에 안다.
+      # ★ 되살릴 조건 — 이 job 이 `contract-shared` 가 안 도는 이벤트에서 돌게
+      #   되거나, 그 job 의 전수에서 이 파일들이 빠질 때.
 
       - name: 문서 숫자 대조
         run: |

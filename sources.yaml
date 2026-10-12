@@ -690,6 +690,28 @@ layers:
       - 디렉터리 문제가 아니라 변환 문제다. ingest 입력 경로가 전부 바뀐다
       - 소스 하나씩 옮기고 매 건 golden.py check. migrated 에 키를 쌓는다
 
+  # ★ 2026-10-10 (DECISIONS §457). §173-2 가 목표 구조에 적어둔 층인데
+  #   `layers` 선언이 **없었다** — `firelane/lake.py` 의 `LAYERS` 상수만 들고
+  #   있었고(정본이 둘) 그 둘이 서로 달랐다. 켜둔 `treecheck` D7 이
+  #   「선언되지 않은 최상위 폴더」로 그것을 잡았다(실측 192MB · ngii 54파일).
+  #   §173-2 가 미뤄둔 조건(「레이크를 세운 뒤」)은 충족됐다 — 레이크가 서 있다.
+  retired:
+    base: data
+    sub: retired
+    required: false
+    mutable: false
+    committed: false
+    backup: true
+    regenerable: false
+    naming: '^(eais|gjbg|gjcity|its|juso|moleg|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/'
+    depth: 2
+    what: 은퇴한 원본. 아카이브다 — 지우지 않고 보관한다
+    caveats:
+      - 이름과 sha 로 파일 단위로 든다. 글롭 금지 (§173-2)
+      - raw 와 같은 2단 꼴이다. 은퇴는 옮기는 것이고 이름을 바꾸는 것이 아니다
+      - 대장 retired 블록은 파일을 **raw 상대경로**로 적는다. 그 경로를 raw 에
+        풀어 맞으면 「되살아났다」는 뜻이다(refcheck ⑥ · lakecheck L7)
+
   interim:
     base: data
     sub: interim
@@ -1348,7 +1370,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1393,7 +1414,6 @@ datasets:
       - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1505,7 +1525,6 @@ datasets:
       - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/jijeok_probe.py
       - tools/kpi.py
@@ -1603,7 +1622,6 @@ datasets:
       - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1657,7 +1675,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/lanes_probe.py
@@ -1724,7 +1741,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1763,8 +1779,6 @@ datasets:
       - tools/corner_probe.py
       - tools/desk_check.py
       - tools/docnum_check.py
-      - tools/docx_figs.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/render_figures.py
@@ -1813,7 +1827,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1894,7 +1907,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1940,7 +1952,6 @@ datasets:
       - tools/bridge_audit.py
       - tools/clearance_probe.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py
@@ -1981,7 +1992,6 @@ datasets:
       - tools/baseline.py
       - tools/bridge_audit.py
       - tools/corner_probe.py
-      - tools/docx_fix.py
       - tools/its_linkmap.py
       - tools/kpi.py
       - tools/scopecheck.py

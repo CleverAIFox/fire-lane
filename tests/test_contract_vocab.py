@@ -193,3 +193,56 @@ def test_the_declared_mode_needs_no_lake():
         assert forbidden not in body, (
             f"`declared_issues` 가 {forbidden} 를 쓴다 — 실물을 읽으면 "
             "레이크 없는 CI 에서 돌 수 없다")
+
+
+# ── 전수 갈래의 판정 — 이름을 안 부르고 있었다 (§495) ─────────
+# ★ `contract_verdict.real_verdict` 는 **전수 계약검사의 판정**이다. 래칫 둘을
+#   양방향으로 읽어야 하는 자리인데(늘면 실패 · 줄면 조이라고 말함)
+#   `tools/srccov.py` 가 「시험이 이름으로도 안 부른다」로 셌다(§493).
+def test_real_verdict_fails_when_the_count_grew():
+    """★ 늘면 **이 배치가 늘렸다**. 종료가 1 이어야 관문이 산다."""
+    from firelane.contract_verdict import (
+        REAL_FAIL_RATCHET,
+        REAL_WARN_RATCHET,
+        real_verdict,
+    )
+
+    rc, say = real_verdict(REAL_FAIL_RATCHET + 1, REAL_WARN_RATCHET)
+    assert rc == 1
+    assert any("늘었다" in s for s in say), say
+    rc, say = real_verdict(REAL_FAIL_RATCHET, REAL_WARN_RATCHET + 1)
+    assert rc == 1, "경고 쪽은 안 문다"
+
+
+def test_real_verdict_asks_to_tighten_when_the_count_shrank():
+    """★ 줄면 **조이라고 말한다** — 안 조이면 되돌아간다(래칫의 뜻).
+
+    종료는 0 이다. 줄어든 것은 실패가 아니다.
+    """
+    from firelane.contract_verdict import real_verdict
+
+    rc, say = real_verdict(0, 0)
+    assert rc == 0
+    assert sum("조여라" in s for s in say) == 2, say
+    assert any("REAL_FAIL_RATCHET" in s for s in say), "고칠 상수 이름을 안 말한다"
+
+
+def test_real_verdict_calls_the_standing_count_a_debt():
+    """같으면 초록이지만 **빚이라고 적는다** — 「통과」로만 적으면 잊는다."""
+    from firelane.contract_verdict import (
+        REAL_FAIL_RATCHET,
+        REAL_WARN_RATCHET,
+        real_verdict,
+    )
+
+    rc, say = real_verdict(REAL_FAIL_RATCHET, REAL_WARN_RATCHET)
+    assert rc == 0
+    assert all("빚" in s for s in say), say
+
+
+def test_the_two_ratchets_are_counted_separately():
+    """★ 실패와 경고를 **한 수로 합치지 않는다** — 합치면 한쪽이 가려진다."""
+    from firelane.contract_verdict import real_verdict
+
+    _, say = real_verdict(3, 7)
+    assert any("실패 3" in s for s in say) and any("경고 7" in s for s in say), say

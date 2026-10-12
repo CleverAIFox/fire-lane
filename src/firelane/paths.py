@@ -87,6 +87,12 @@ RAW = Path(_legacy_raw
 # 정규화본. 파일명·인코딩·확장자만 통일한다. 값은 안 바꾼다(MASTER §18-1).
 NORM = (DATA / "norm") if DATA else (ROOT / "data" / "norm")
 
+# 은퇴한 원본. 아카이브다 — 지우지 않고 옮긴다(DECISIONS §173-2 · §457).
+# ★ 2026-10-10. 폴더는 2026-09 부터 있었는데(실측 192MB) `layers` 선언과
+#   이 상수가 **둘 다 없었다** — `firelane/lake.py` 의 `LAYERS` 상수만
+#   들고 있었다. 켜둔 `treecheck` D7 이 「선언되지 않은 최상위 폴더」로 잡았다.
+RETIRED = (DATA / "retired") if DATA else (ROOT / "data" / "retired")
+
 # 다운로드 원본 수집소. 규칙 없음. acquire.py 가 여기서 raw 로 편입한다.
 # ★ 2026-08-24. 종전에는 acquire.py 안에 `RAW.parent / "landing"` 로 있었다.
 #   계층인데 계층 모듈이 모르면 도구마다 자기 자리를 발명한다.

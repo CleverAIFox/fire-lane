@@ -141,3 +141,64 @@ def test_every_branch_records_the_same_steps() -> None:
         elif len(set(sets)) != 1:
             bad.append("  갈래마다 이름이 다르다 — " + " | ".join(str(sorted(s)) for s in sets))
     assert not bad, "행을 안 남기는 갈래가 있다.\n" + "\n".join(bad)
+
+
+# ── 2026-10-12 (DECISIONS §484) ────────────────────────────────────
+#   `canary` 의 분모가 `.sh` 를 보게 넓히면서 이 파일이 분모에 들어왔다.
+#   들어와서 보니 **파서 둘을 미는 자가 없었다** — 위 두 시험이 그것을
+#   쓰면서 「≥3 개 찾았다」로만 온전성을 보고, 파서가 **엉뚱하게 갈라도**
+#   수는 맞을 수 있다.
+
+SHELL = """\
+if [ -n "$X" ]; then
+step "가" true
+elif [ -n "$Y" ]; then
+step "나" true
+else
+note "다" "없다"
+fi
+step "밖" true
+if python - <<'EOF'; then
+step "파이썬" uv run python -c '
+if bad:
+    print(1)
+'
+fi
+"""
+
+
+def test_the_block_parser_splits_on_branches_not_on_python() -> None:
+    """★ **카나리아.** 그 파서가 적은 규율 — 「`; then` 으로 끝나는 줄만.
+    단계 인자 속 파이썬(`if bad:`)을 셸 블록으로 안 읽는다」.
+
+    그 주장을 미는 자가 없었다. `if bad:` 를 블록으로 읽으면 갈래가 하나인
+    블록이 하나 더 생기고, 위 시험이 「else 없는 블록이 단계를 품는다」로
+    **거짓으로** 운다.
+    """
+    blocks = _top_blocks(SHELL)
+    # 셸 블록 둘이다 — 첫째는 if/elif/else 셋, 둘째는 heredoc 을 든 하나
+    assert len(blocks) == 2, f"블록을 {len(blocks)}개로 읽는다 — {blocks}"
+    assert len(blocks[0]) == 3, f"갈래를 {len(blocks[0])}개로 읽는다"
+    assert [sorted(_names("step", b) + _names("note", b)) for b in blocks[0]] \
+        == [["가"], ["나"], ["다"]], blocks[0]
+    # ★ 파이썬의 `if bad:` 가 갈래를 **안** 늘렸다
+    assert len(blocks[1]) == 1, f"파이썬 `if` 를 셸 갈래로 읽는다 — {blocks[1]}"
+
+
+def test_the_block_parser_is_not_an_empty_net() -> None:
+    """★ 반대쪽 — 갈래가 **갈린** 꼴을 주면 그것이 보여야 한다. 안 보이면
+    위 시험이 「무엇에나 통과」가 된다."""
+    uneven = SHELL.replace('step "나" true\n', 'step "나" true\nstep "라" true\n')
+    blocks = [b for b in _top_blocks(uneven) if any(_names("step", br) for br in b)]
+    sets = [frozenset(_names("step", br) + _names("note", br)) for br in blocks[0]]
+    assert len(set(sets)) != 1, "갈래마다 이름이 다른데 같다고 읽는다"
+
+
+def test_the_name_scanner_reads_the_quoted_name_only() -> None:
+    """★ `_names` 가 **인용된 이름**만 집는가. 인자까지 집으면 위
+    「단계 이름이 아닌 생략 행」 판정이 거짓으로 운다."""
+    assert _names("step", 'step "가 나" uv run python x.py "다"') == ["가 나"]
+    assert _names("note", '  note "라" "사유"') == ["라"]
+    # 들여쓰기 없는 주석 줄은 안 집는다 — 줄 머리 규칙이 그것이다
+    assert _names("step", '# step "주석" true') == []
+    assert not _names("step", 'echo step "속" true')

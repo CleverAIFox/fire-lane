@@ -175,3 +175,63 @@ def test_adjacency_applies_pressure_only_on_safe():
     assert 'mode === "safe"' in m.group(1), f"압력이 모드를 안 가른다 — {m.group(1)}"
     assert re.search(r"penalized \* avoid \* press", txt), (
         "압력이 비용에 곱해지지 않는다 — 계산하고 버리는 코드가 됐다")
+
+
+# ── 2026-10-12 (DECISIONS §486) ────────────────────────────────────
+#   §486 이 쌍을 **판정 이름**으로 거르자 이 파일이 빚에 남았다 — 도구를
+#   하위프로세스로 부르기만 하고 그 **판정 함수**(`judge`)를 합성 입력으로
+#   민 자리가 없었다. 초록은 「검사했다」를 뜻하지 않는다(§199).
+
+def test_the_judge_is_silent_on_the_real_bundle():
+    """★ 음성. 실물에서 울면 그 자가 과하거나 발행이 틀렸다 —
+    둘 중 무엇인지는 이 시험이 아니라 사람이 가른다."""
+    ci = _tool()
+    graph = _graph()
+    kn = ci.knobs(ci.VEHICLE.read_text(encoding="utf-8"))
+    bad = ci.judge(graph, kn, ci.ledger_text())
+    assert bad == [], "\n".join(bad)
+
+
+def test_the_judge_bites_an_empty_bundle():
+    """★ **빈 그물.** 구간이 없으면 전부 0 으로 세어져 조용해질 수 있다."""
+    ci = _tool()
+    assert ci.judge({"edges": [], "counts": {}}, {}, ""), "빈 발행물에 조용하다"
+
+
+def test_the_judge_bites_a_suppressed_zero():
+    """★ **0 을 빼서 발행한** 꼴. 받는 쪽에서 결측과 0 이 같은 모습이 된다."""
+    ci = _tool()
+    graph = _graph()
+    field = ci.FIELDS[0][0]
+    broken = {
+        "counts": dict(graph.get("counts", {})),
+        # 그 칸이 **아예 없는** 구간 하나를 섞는다
+        "edges": [{k: v for k, v in e.items() if k != field}
+                  for e in graph["edges"][:3]] + graph["edges"][3:],
+    }
+    bad = ci.judge(broken, {}, "")
+    assert any("칸이 없는 구간" in b for b in bad), f"빠진 칸을 안 짚는다 — {bad}"
+
+
+def test_the_judge_bites_a_lying_self_count():
+    """★ 발행물의 **자기신고**가 실물과 어긋난 꼴. 그 수를 읽는 도구와
+    시험이 다 틀리게 된다."""
+    ci = _tool()
+    graph = _graph()
+    pre = ci.FIELDS[0][1]
+    broken = dict(graph)
+    broken["counts"] = {**graph.get("counts", {}), f"{pre}_null": 999_999}
+    bad = ci.judge(broken, {}, "")
+    assert any("자기신고가 틀렸다" in b for b in bad), f"거짓 신고를 안 짚는다 — {bad}"
+
+
+def test_the_judge_bites_a_knob_turned_on_without_a_measurement_row():
+    """★ 압력 계수를 **대장에 적기 전에** 켠 꼴. 재기 전에 적는 것이
+    가드 6 이고, 재고 나서 적으면 그것은 판정이 아니라 사후 합리화다."""
+    ci = _tool()
+    graph = _graph()
+    bad = ci.judge(graph, {"없는계수": 2.0}, "대장에 그 이름이 없다")
+    assert any("측정 대장에 그 이름이 없다" in b for b in bad), \
+        f"대장 없는 계수를 켰는데 조용하다 — {bad}"
+    # ★ 0 으로 끈 계수는 **안 운다** — 꺼진 것은 선언이 필요 없다
+    assert ci.judge(graph, {"없는계수": 0}, "") == [], "꺼진 계수에 운다"

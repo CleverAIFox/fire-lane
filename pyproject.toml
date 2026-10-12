@@ -31,11 +31,10 @@ dependencies = [
     "PyYAML>=6.0",
     "rasterio>=1.4.4",
     "pillow>=12.3.0",
-    # ★ tools/docx_check.py · docx_fix.py 가 import 한다. 기획서는 문서 넷 중
-    #   유일하게 외부가 읽는데 시제 규칙 밖이라 강제자가 없어 낡았다.
-    #   그 검사가 verify.sh 에서 도므로 코어다 — extras 로 내리면
-    #   "선언은 있고 설치는 없는" 상태가 다시 생긴다.
-    "python-docx>=1.1",
+    # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). `python-docx` 를 **지웠다.**
+    #   읽는 자가 둘(`docx_check` · `docx_fix`)이었고 기획서 정본이 md 로
+    #   옮겨지며 그 둘이 은퇴했다 — 남은 import 는 0 이고 `deptry` 가
+    #   `DEP002`(선언은 있고 쓰는 곳이 없다)로 울었다.
     # ★ 계약 계층. GIS·CV·인프라 세 파트가 모두 import 한다.
     #   src/contracts/ 가 파트 간 유일한 접점이므로 extras 가 아니라 코어다.
     "pydantic>=2.7,<3",
@@ -138,7 +137,7 @@ ignore = [
 # ★ 선언과 import 이름이 다른 것만 적는다. extras 는 로컬에 안 깔려(verify 는
 #   `--dev` 만 깐다) deptry 가 이름을 **추측**한다 — 추측이 틀리면 면제가 헛돈다.
 #   `tests/test_deptry_config.py` 가 면제의 생사를 이 표로 잰다.
-package_module_name_map = { "ruamel-yaml" = "ruamel", "pillow" = "PIL", "PyYAML" = "yaml", "python-docx" = "docx", "actionlint-py" = "actionlint_py", "shellcheck-py" = "shellcheck_py" }
+package_module_name_map = { "ruamel-yaml" = "ruamel", "pillow" = "PIL", "PyYAML" = "yaml", "actionlint-py" = "actionlint_py", "shellcheck-py" = "shellcheck_py" }
 
 [tool.deptry.per_rule_ignores]
 # ★ **알려진 예외 — 래칫이다.** 오늘 실측(deptry 0.25.1 · 2026-09-22) 그대로 적었고

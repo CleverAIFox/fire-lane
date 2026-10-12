@@ -85,6 +85,7 @@ from firelane.seg import vehicle as V
 #   주입한다. 안 부르면 `V.spec()` 이 `SpecMissing` 으로 죽는다(조용히
 #   기본값으로 도는 것보다 낫다 · DECISIONS §431).
 V.use(_led.vehicle_spec())
+from firelane import quantile as Q
 from firelane.seg.params import NODE_TOL, STATIONS
 
 KST = timezone(timedelta(hours=9))
@@ -217,7 +218,7 @@ def e1(per: dict, rows: list[dict], feats, rv) -> dict:
         "entry_fail": fail,
         "entry_fail_pct": _pct(fail, len(rows)),
         "ratio_median": round(st.median(ratios), 3) if ratios else None,
-        "ratio_p90": round(ratios[int(len(ratios) * 0.9)], 3) if ratios else None,
+        "ratio_p90": round(Q.p90(ratios), 3) if ratios else None,
         "ratio_max": round(max(ratios), 3) if ratios else None,
         "over_ratio_min": sum(1 for x in ratios if x > RATIO_MIN),
         "per_station": per,

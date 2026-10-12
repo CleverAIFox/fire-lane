@@ -15,6 +15,7 @@ OUT   없음 (검사)
 """
 from __future__ import annotations
 
+import ast
 import importlib.util
 import subprocess
 import sys
@@ -106,12 +107,48 @@ def test_duplicate_patch_names_are_caught(names, want):
     assert bool(D.collide(names)) is want
 
 
-@pytest.mark.parametrize(("names", "want"), [
-    (["0001-x.patch", "0003-x.patch"], True),
-    (["0001-x.patch", "0002-y.patch"], False),
+def _head_patch(d: Path, name: str, sha: str, subject: str) -> Path:
+    """`git format-patch` **머리**만 흉내낸 패치 한 장.
+
+    ★ 2026-10-12 (DECISIONS §501-4). 처음에 이것을 `_patch` 로 적었고,
+      이 파일 아래쪽(「외로운 시험」)에 **같은 이름의 다른 함수**가 이미
+      있었다. 파이썬은 부르는 때에 이름을 찾으니 **뒤의 것이 이긴다** —
+      내 시험은 `From <sha>` 가 없는 diff 꼴을 먹었고, 그래서 sha 가 같은
+      패치 둘을 넣었는데도 조용했다. 판별식이 아니라 **먹이가 틀렸다**(§436-6).
+      이름을 겹치지 않게 적는다.
+    """
+    p = d / name
+    p.write_text(f"From {sha} Mon Sep 17 00:00:00 2001\n"
+                 f"From: x <x@y>\nSubject: [PATCH] {subject}\n\n---\n",
+                 encoding="utf-8")
+    return p
+
+
+@pytest.mark.parametrize(("shas", "names", "want"), [
+    # 같은 커밋이 두 번 — **잡아야 한다**
+    (("a" * 40, "a" * 40), ("0001-x.patch", "0003-x.patch"), True),
+    # 다른 커밋 — 통과
+    (("a" * 40, "b" * 40), ("0001-x.patch", "0002-y.patch"), False),
+    # ★ §501 — 제목이 전부 한국어면 **꼬리가 빈다.** 다른 커밋이다
+    (("c" * 40, "d" * 40), ("0094-.patch", "0095-.patch"), False),
+    # ★ §501 — 슬러그가 같아도 다른 커밋이다(`fix-462` 둘)
+    (("e" * 40, "f" * 40), ("0084-fix-462.patch", "0085-fix-462.patch"), False),
 ])
-def test_same_tail_different_number_is_caught(names, want):
-    assert bool(D.tails(names)) is want
+def test_the_same_commit_twice_is_caught_by_sha_not_by_filename(
+        tmp_path: Path, shas, names, want):
+    """★ 증거는 `From <sha>` 다.
+
+    §501 까지는 파일 이름의 꼬리로 판정했고, 이 저장소의 한국어 제목에서
+    **참이 하나도 없는 자**였다 — 122 커밋에서 열여덟을 잡고 전부 거짓이었다.
+    """
+    ps = [_head_patch(tmp_path, n, s, f"제목 {i}")
+          for i, (n, s) in enumerate(zip(names, shas, strict=True))]
+    assert bool(D.tails(ps)) is want
+
+
+def test_an_unreadable_patch_counts_as_a_refusal(tmp_path: Path):
+    """★ 못 읽은 것을 「다르다」로 넘기면 이 자가 조용해진다 — 모르는 것은 초록이 아니다."""
+    assert D.tails([tmp_path / "없는것1.patch", tmp_path / "없는것2.patch"])
 
 
 def test_forbidden_strings_are_read_from_the_message_not_the_diff(tmp_path: Path):
@@ -445,3 +482,29 @@ def test_paths_come_from_the_diff_header_only(tmp_path):
     """`git` 을 안 묻는다 — 워크트리·인덱스 없이 파일 하나로 답이 난다."""
     q = _patch(tmp_path, "0001-x.patch", "a/b.py", "c/d.py")
     assert D.patch_paths(q) == ["a/b.py", "c/d.py"]
+
+
+def test_pack_가_tails_에_실물_경로를_준다():
+    """★ 2026-10-12 (DECISIONS §501-7). **먹이는 꼴이 실물과 달랐다.**
+
+    증거를 `From <sha>` 로 바꾼 뒤에도 `deliver.cmd_pack` 은 `tails` 에
+    **파일 이름 목록**(`names`)을 주고 있었다. 123 장이 전부 「못 읽었다」로
+    세어졌고 배달이 또 막혔다 — 이번에는 **옳게** 막혔지만(모르는 것은
+    초록이 아니다), 막힌 이유는 패치가 아니라 **배선**이었다.
+
+    `lonely_tests` · `forbidden` 과 **같은 것**을 받아야 한다. `collide` 만
+    이름을 받는다 — 그 자가 묻는 것이 「파일 이름이 겹치냐」다.
+    """
+    tree = ast.parse((ROOT / "tools/deliver.py").read_text(encoding="utf-8"))
+    args: dict[str, str] = {}
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                and n.func.id in {"tails", "collide", "lonely_tests", "forbidden"}
+                and n.args and isinstance(n.args[0], ast.Name)):
+            args.setdefault(n.func.id, n.args[0].id)
+    assert args.get("tails") == args.get("lonely_tests"), (
+        f"tails 는 실물 경로를 받아야 한다 — 지금 {args}"
+    )
+    assert args.get("collide") != args.get("tails"), (
+        f"collide 는 이름을 센다 — 지금 {args}"
+    )

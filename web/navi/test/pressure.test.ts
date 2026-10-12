@@ -14,7 +14,8 @@
  */
 import { FL, ok, test } from "./harness";
 import {
-  buildHazardIndex, countText, pressureFactor, pressureIsInert, pressureParts,
+  buildHazardIndex, countText, ecamNote, hazardsOf, HAZARD_KINDS,
+  pressureFactor, pressureIsInert, pressureParts,
 } from "../src/domain/pressure";
 import { TUNING } from "../src/domain/vehicle";
 import { buildAdjacency, dirCost } from "../src/domain/adjacency";
@@ -108,4 +109,45 @@ test("주변 사정 색인이 구간에 붙는다 — 붙을 것이 있으면 �
   const idx = buildHazardIndex(FL.graph, ctx as never);
   ok(idx.get(e.seg_uid)!.speedbump >= 1, "구간 좌표 위의 과속방지턱이 안 붙는다");
   ok(idx.size === FL.graph.edges.length, "색인이 구간 전부를 안 든다");
+});
+
+
+// ── 2026-10-12 (DECISIONS §482) ────────────────────────────────────
+//   `navicov` 가 `hazardsOf` · `ecamNote` 를 「시험이 이름으로도 안 부른다」로
+//   셌다. 둘 다 **모르는 것을 0 으로 접지 않는가**의 자리다 — 이 파일의 ②와
+//   같은 주제이고, 그래서 여기 붙인다.
+
+test("사정 조회 — **빈 색인**과 「사정이 하나도 없다」를 가른다", () => {
+  const e = { seg_uid: "X", verdict: "clear", width_min_m: 5, length_m: 10,
+              a: 0, b: 1, coords: [] } as unknown as GraphEdge;
+  // ★ `ctx` 가 없으면 빈 색인이다 — 그때는 **모른다**(undefined)
+  const none = buildHazardIndex({ edges: [e] } as never, null);
+  ok(hazardsOf(none, e) === undefined, "빈 색인이 「0건」이라고 답한다");
+  ok(hazardsOf(null, e) === undefined, "색인이 null 인데 답을 만든다");
+  ok(hazardsOf(undefined, e) === undefined, "색인이 undefined 인데 답을 만든다");
+
+  // ★ 자료가 있고 그 구간에 아무것도 없으면 그것은 **0 넷**이다
+  const ctx = { type: "FeatureCollection", features: [] } as GeoJSON.FeatureCollection;
+  const idx = buildHazardIndex({ edges: [e] } as never, ctx);
+  const got = hazardsOf(idx, e);
+  ok(got !== undefined, "자료가 있는데 모른다고 답한다");
+  for (const k of HAZARD_KINDS) ok(got![k] === 0, `${k} 가 0 이 아니다`);
+
+  // ★ 색인에 없는 구간은 **모른다** — 0 으로 접으면 안 센 구간이 깨끗해 보인다
+  const other = { ...e, seg_uid: "Y" } as GraphEdge;
+  ok(hazardsOf(idx, other) === undefined, "색인에 없는 구간을 0건이라고 답한다");
+});
+
+test("카메라 각주 — 못 붙인 지점이 있을 때만 말한다", () => {
+  ok(ecamNote(null) === undefined, "그래프가 없는데 각주를 만든다");
+  ok(ecamNote(undefined) === undefined, "그래프가 undefined 인데 각주를 만든다");
+  ok(ecamNote({ counts: {} } as never) === undefined, "셈이 없는데 각주를 만든다");
+  ok(ecamNote({ counts: { ecam_unplaced_sites: 0 } } as never) === undefined,
+    "못 붙인 지점이 0 인데 각주를 만든다 — 할 말이 없는 자리다");
+  const note = ecamNote({ counts: { ecam_unplaced_sites: 39 } } as never);
+  ok(note?.includes("39"), `각주에 수가 없다 — ${note}`);
+  // ★ 발행물에서도 말이 되는가. 0 이면 각주가 없는 것이 옳다
+  const real = ecamNote(FL.graph);
+  const n = FL.graph.counts?.ecam_unplaced_sites ?? 0;
+  ok(n > 0 ? !!real : real === undefined, `발행물 ${n}지점인데 각주가 ${real}`);
 });

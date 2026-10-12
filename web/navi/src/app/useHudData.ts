@@ -23,6 +23,7 @@ import type {
   RoutePlan, SnapResult, VehicleSpec, VerdictStyle,
 } from "../domain/types";
 import type { TurnKind } from "../domain/turn";
+import { hhmm } from "../ui/tokens";
 
 /**
  * 주행 화면이 쓰는 파생값.
@@ -100,8 +101,10 @@ export function buildHudData(i: HudInput): HudData | null {
     nextDistM: i.maneuverDistM,
 
     remainM, remainSec,
-    etaText: `${String(eta.getHours()).padStart(2, "0")}:`
-      + `${String(eta.getMinutes()).padStart(2, "0")}`,
+    // ★ 2026-10-11 (DECISIONS §475). 여기 `hh:mm` 서식이 **다섯 번째**로
+    //   손으로 짜여 있었다. §130 이 집을 `ui/tokens.ts` 로 정했는데 `app/`
+    //   계층이 그 집을 안 들어서(그 판 뒤로 두 벌이 더 섰다) 아무도 못 봤다.
+    etaText: hhmm(eta),
 
     currentLabel: i.current?.seg_label,
     currentVerdictLabel: i.current ? style[i.current.verdict]?.label : undefined,

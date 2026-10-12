@@ -183,20 +183,20 @@ def logic_text(src: str) -> str:
       파이썬을 올리거나 기계를 옮기는 순간 **판정이 안 바뀌어도 게이트가 운다** — `--allow-stale` 을 습관으로
       만드는 바로 그 모양이다. `ast.unparse` 도 3.12 에서 갈렸다.
       토큰열은 3.11 · 3.12 · 3.13 이 같다. 3.12 가 f-string 을 쪼갠 토큰(PEP 701)은 원문 조각 하나로 되붙인다.
+
+    ★ 2026-10-10 (DECISIONS §451 · PLAN #164 닫힘). 「무엇이 docstring 인가」는
+      `shardseal.DOC_OWNERS` 가 들고 `SyntaxError` 를 **더는 안 삼킨다** — 안 읽히는
+      파일을 바이트로 해시하면 주석 한 줄에 게이트가 울고 저쪽은 터진다.
     """
     import ast
     import io
     import tokenize
 
-    try:
-        tree = ast.parse(src)
-    except SyntaxError:
-        return src
-    doc = set()
-    for n in ast.walk(tree):
-        if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) \
-                and ast.get_docstring(n) is not None:
-            doc.add((n.body[0].lineno, n.body[0].col_offset))
+    from firelane.shardseal import DOC_OWNERS
+
+    tree = ast.parse(src)
+    doc = {(n.body[0].lineno, n.body[0].col_offset) for n in ast.walk(tree)
+           if isinstance(n, DOC_OWNERS) and ast.get_docstring(n) is not None}
     lines = src.splitlines(keepends=True)
 
     def cut(a: tuple[int, int], b: tuple[int, int]) -> str:

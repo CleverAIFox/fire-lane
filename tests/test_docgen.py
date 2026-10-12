@@ -60,12 +60,26 @@ SYNTH = "\n".join([
     "",
     # ★ 2026-09-30 (§319). 판정 네 수. 산문 서식과 표 칸 서식을 **둘 다** 둔다 —
     #   실물에 둘 다 있고, 한쪽만 두면 다른 쪽이 안 갈려도 여기가 조용하다.
-    "<!--gen: v_clear v_needs_cv v_unknown-->",
-    "판정        통행 가능 8 · 판정 보류 9 · 영상판정 불가 11",
+    "<!--gen: v_clear v_needs_cv-->",
+    "판정        통행 가능 8 · 판정 보류 9",
     "<!--/gen-->",
     "",
     "<!--gen: v_blocked-->",
     "| `blocked` 통행 불가 | 10 | 차가 없어도 통과 불가 |",
+    "<!--/gen-->",
+    "",
+    # ★ 2026-10-11 (§464 · PLAN #167 닫힘). 발행물에서 유도되는 다섯. 백분율
+    #   셋은 **소수 한 자리**로 적히고, 그 자리를 떼면 64.8 과 65.4 가 같아진다.
+    "<!--gen: cctv_in cctv_in_pct-->",
+    "CCTV 유효범위 안      12 / 1,281   (13.0%)",
+    "<!--/gen-->",
+    "",
+    "<!--gen: cctv_out_pct-->",
+    "### 3-7. 골목의 14%는 영상판정이 불가능하다",
+    "<!--/gen-->",
+    "",
+    "<!--gen: v_unknown v_unknown_m v_unknown_m_pct-->",
+    "영상판정 불가          11구간 · 15m   (전체 연장의 16%)",
     "<!--/gen-->",
     "",
 ])
@@ -83,10 +97,14 @@ SYNTH_OUT = "\n".join([
 
 WANT = {"datasets": 72, "sealable": 71, "sections": 1036,
         "inherit": 352, "blank": 0, "plan_open": 108, "cov_min": 32,
-        "v_clear": 465, "v_needs_cv": 226, "v_blocked": 191, "v_unknown": 399}
+        "v_clear": 465, "v_needs_cv": 226, "v_blocked": 191, "v_unknown": 399,
+        # ★ 백분율 셋은 **실수**다. 정수를 주면 `render` 가 `.0` 을 붙이고
+        #   `claims` 가 그것을 다시 실수로 읽는다 — 왕복이 맞아야 멱등이다.
+        "cctv_in": 391, "cctv_in_pct": 30.5, "cctv_out_pct": 69.5,
+        "v_unknown_m": 18367, "v_unknown_m_pct": 31.5}
 
 
-def _one(text: str, want: dict[str, int] | None = None) -> docgen.Result:
+def _one(text: str, want: dict[str, float] | None = None) -> docgen.Result:
     return docgen.apply_all({"x.md": text}, want or WANT)
 
 

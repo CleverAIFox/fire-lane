@@ -133,3 +133,126 @@ def test_baked_folders_match_the_declaration():
         f"구운 폴더 {baked} 와 `TILE_Z` {sorted(_tile_z())} 가 다르다.\n"
         "  선언을 고쳤으면 타일도 다시 굽거나 지워라 — 둘이 갈리면\n"
         "  용량 게이트가 빨개졌을 때 정작 줄일 곳을 못 찾는다.")
+
+
+# ── 2026-10-12 (DECISIONS §490) ────────────────────────────────────
+#   §489 가 분모를 바로잡은 뒤 이 파일이 빚에 남았다. 줌 **수**가 갈리는가는
+#   밀면서, 그 줌으로 **픽셀을 내는 식 둘**(`deg2px` · `mpp`)을 민 자리가
+#   없었다 — 수가 맞아도 식이 틀리면 책상검사 그림의 축척이 거짓이 된다.
+
+def _desk():
+    """`tools/desk_check.py` 를 모듈로 들인다. **그림을 안 굽는다.**"""
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location(
+        "_desk_probe", ROOT / "tools" / "desk_check.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_the_pixel_projection_matches_the_web_mercator_definition():
+    """★ 아는 값으로 민다 — z0 에서 세계가 타일 한 장이고 원점이 그 가운데다."""
+    d = _desk()
+    assert d.deg2px(0, 0, 0) == (d.TILE / 2, d.TILE / 2)
+    assert d.deg2px(180, 0, 0)[0] == float(d.TILE)
+    assert d.deg2px(-180, 0, 0)[0] == 0.0
+    # 줌이 하나 오르면 픽셀이 두 배다
+    assert d.deg2px(90, 0, 1)[0] == 2 * d.deg2px(90, 0, 0)[0]
+
+
+def test_the_metres_per_pixel_halves_each_zoom():
+    d = _desk()
+    assert abs(d.mpp(0, 0) - 156543.03392) < 1e-6
+    for z in range(15, 20):
+        assert abs(d.mpp(35.151, z + 1) * 2 - d.mpp(35.151, z)) < 1e-9, z
+    # 위도가 높아지면 한 픽셀이 덮는 거리가 줄어든다
+    assert d.mpp(60, 19) < d.mpp(35.151, 19) < d.mpp(0, 19)
+
+
+def test_the_two_formulas_agree_on_a_hundred_metres():
+    """★ **같은 것을 두 식이 말한다.** 어긋나면 그림의 축척이 거짓이 된다 —
+    `stitch` 는 `deg2px` 로 자르고, 눈금은 `mpp` 로 적는다."""
+    import math
+    d = _desk()
+    lat = 35.151
+    dlon = 100.0 / (111_320 * math.cos(math.radians(lat)))
+    x0, _ = d.deg2px(126.9266, lat, d.Z)
+    x1, _ = d.deg2px(126.9266 + dlon, lat, d.Z)
+    by_px = x1 - x0
+    by_mpp = 100.0 / d.mpp(lat, d.Z)
+    # 두 식의 차가 0.01% 안이다 — 그 밖이면 한쪽이 다른 반지름을 쓴다
+    assert abs(by_px - by_mpp) / by_mpp < 1e-4, (by_px, by_mpp)
+
+
+def test_the_pad_is_a_distance_not_a_pixel_count():
+    """★ 여백이 **미터**다. 픽셀로 적으면 줌을 바꾼 날 여백이 따라 변한다."""
+    d = _desk()
+    assert d.PAD_M > 0
+    # 그 미터가 지금 줌에서 백 픽셀 단위로 나온다 — 0 픽셀이면 여백이 없다
+    assert d.PAD_M / d.mpp(35.151, d.Z) > 1
+
+
+# ── 지형 업샘플 — 시험이 이름을 안 부르고 있었다 (§495) ───────
+# ★ `terrain.upsample` 은 **DEM 을 타일 격자에 올리는 자**다. 색인이 한 칸
+#   밀리면 음영기복이 그만큼 밀리고, 밀린 음영은 **그럴듯해 보인다** —
+#   언덕이 거기 있나 없나를 눈으로 아는 사람이 없다.
+#   `tools/srccov.py` 가 「시험이 이름으로도 안 부른다」로 셌다(§493).
+def test_upsample_keeps_the_corner_values():
+    """★ 본체. 네 꼭짓값은 **그대로** 남는다 — 이중선형의 정의다."""
+    import numpy as np
+
+    from firelane.terrain import upsample
+
+    a = np.array([[0.0, 1.0], [2.0, 3.0]])
+    u = upsample(a, 2)
+    assert u.shape == (4, 4), u.shape
+    assert u[0, 0] == 0.0 and u[0, -1] == 1.0
+    assert u[-1, 0] == 2.0 and u[-1, -1] == 3.0
+
+
+def test_upsample_by_one_is_the_array_itself():
+    """★ k=1 이 항등이다. 아니면 1배로 부르는 자리가 조용히 값을 바꾼다."""
+    import numpy as np
+
+    from firelane.terrain import upsample
+
+    a = np.array([[0.0, 1.0], [2.0, 3.0]])
+    assert np.array_equal(upsample(a, 1), a)
+
+
+def test_upsample_of_a_ramp_stays_a_ramp():
+    """★ 선형 입력은 **선형**으로 나온다 — 계단이 남으면 보간이 안 된 것이다."""
+    import numpy as np
+
+    from firelane.terrain import upsample
+
+    u = upsample(np.arange(4, dtype=float).reshape(1, 4), 2)[0]
+    d = np.diff(u)
+    assert np.allclose(d, d[0]), u
+    assert u[0] == 0.0 and u[-1] == 3.0
+
+
+def test_upsample_never_invents_a_value_outside_the_input_range():
+    """★ 지형 고도가 입력 범위를 넘으면 **없는 언덕**이 생긴다."""
+    import numpy as np
+
+    rng = np.random.default_rng(0)
+    from firelane.terrain import upsample
+
+    a = rng.normal(size=(7, 5)) * 30
+    u = upsample(a, 4)
+    assert u.min() >= a.min() - 1e-9 and u.max() <= a.max() + 1e-9
+    assert u.shape == (28, 20)
+
+
+def test_upsample_of_a_flat_field_is_flat():
+    """★ 음성 — 평지에 기복을 만들지 않는다."""
+    import numpy as np
+
+    from firelane.terrain import upsample
+
+    a = np.full((5, 6), 42.0)
+    assert np.allclose(upsample(a, 3), 42.0)

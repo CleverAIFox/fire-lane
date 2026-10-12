@@ -18,6 +18,8 @@ golden 지문이 걸려 있다. **새 파일로 내면 기존 열여섯은 한 �
 ── 무엇이 들어가는가 ─────────────────────────────────────────────
   style  {verdict: {color, lightColor, label, desc}}   web/config.js 에서 추출
   terrain {enabled, exaggeration}                     web/config.js 에서 추출(§217-2)
+  landmarks [{name, lng, lat, note}]                  web/config.js 에서 추출(§444)
+                                                      **경로에 안 붙는다** — 위치만 보여준다
   nodes  [[lon, lat], ...]                             접합된 교차점
   edges  [{seg_uid, a, b, verdict, width_min_m, coords, ow?, ...}]
   turns  [[들어오는 엣지, 노드, 나가는 엣지, TURN_TYPE], ...]   회전 금지
@@ -184,6 +186,49 @@ def _terrain() -> dict:
     if not m:
         raise SystemExit("★ web/config.js 에서 terrain.enabled · exaggeration 을 못 읽었다")
     return {"enabled": m.group(1) == "true", "exaggeration": float(m.group(2))}
+
+
+# ★ 2026-10-09 (DECISIONS §444 · PLAN #148). 지점 한 줄. `terrain` 과 같은 수법으로
+#   `web/config.js` 에서 뽑는다 — 좌표를 **두 곳에 적지 않는다.**
+_LM_BLOCK = re.compile(r"landmarks\s*:\s*\[(.*?)\n  \],", re.S)
+_LM_ROW = re.compile(
+    r'\{\s*name\s*:\s*"([^"]+)"\s*,\s*lng\s*:\s*([\d.]+)\s*,\s*lat\s*:\s*([\d.]+)\s*,'
+    r'\s*route\s*:\s*(true|false)\s*,\s*note\s*:\s*"([^"]*)"', re.S)
+
+
+def _landmarks(txt: str | None = None) -> list[dict]:
+    """`web/config.js` 의 `landmarks` — **경로에 안 붙는 점**들.
+
+    ★ 블록이 없으면 **빈 목록이 아니라 죽는다.** 빈 목록을 내면 선언을 지운
+      사람도, 정규식이 낡은 것도 똑같이 조용하다(1족 · 무음 통과). 지점을
+      없애려면 `landmarks: []` 라고 **적어야** 한다.
+    ★ `route:true` 는 아직 못 받는다 — 그래프에 잇는 일은 이 함수가 아니라
+      `segments` 가 한다. 받으면 조용히 「선언했는데 안 이어진 점」이 생긴다.
+    """
+    if txt is None:
+        txt = (ROOT / "web" / "config.js").read_text(encoding="utf-8")
+    blk = _LM_BLOCK.search(txt)
+    if not blk:
+        raise SystemExit(
+            "★ web/config.js 에서 landmarks 블록을 못 찾았다.\n"
+            "  지점을 없애려면 `landmarks: []` 로 **적어라** — 지우면 "
+            "정규식이 낡은 것과 구별이 안 된다.")
+    body = blk.group(1)
+    out = []
+    for m in _LM_ROW.finditer(body):
+        name, lng, lat, route, note = m.groups()
+        if route == "true":
+            raise SystemExit(
+                f"★ `{name}` 이 `route:true` 다 — 이 발행은 그것을 못 든다.\n"
+                "  점을 그래프에 잇는 일은 `segments` 소관이다(§412-3).")
+        out.append({"name": name, "lng": float(lng), "lat": float(lat),
+                    "note": note})
+    want = body.count("{ name:") + body.count("{name:")
+    if len(out) != want:
+        raise SystemExit(
+            f"★ landmarks 줄 {want}개 중 {len(out)}개만 읽혔다 — 서식이 갈렸다.\n"
+            "  `{ name:\"…\", lng:…, lat:…, route:…, note:\"…\" }` 꼴을 지켜라.")
+    return out
 
 
 def _node_key(x: float, y: float, tol: float) -> tuple[int, int]:
@@ -407,6 +452,8 @@ def main() -> None:
                    "ecam_unplaced_sites": ec_stat["sites"] - ec_stat["matched"]},
         "style": style,
         "terrain": _terrain(),
+        # ★ 2026-10-09 (§444 · #148). 경로에 안 붙는 점. 화면이 핀으로 찍는다.
+        "landmarks": _landmarks(),
         "nodes": nodes,
         "edges": edges,
         "turns": [list(t) for t in turn_list],

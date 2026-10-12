@@ -42,11 +42,11 @@ import yaml
 # ★ 2026-09-26 (§258-19 · PLAN #136 닫힘). 프로브 셋을 `tools/docfsck/` 로 내렸다 —
 #   664줄이 상한(600)을 넘었다. **진입점은 여기 하나**이고 `CHECKS` 표도 여기 있다.
 #   「어느 파일에 있나」가 기억거리가 되는 문제(§18-3)는 **프로브 번호가 곧 파일
-#   이름**이라 안 생긴다(③ absent · ⑤ expiry · ⑥ docx_revised).
+#   이름**이라 안 생긴다(③ absent · ⑤ expiry · ⑥ revised).
 from docfsck import _today
 from docfsck.absent import check_absent
-from docfsck.docx_revised import check_docx_ready_for_squash, check_docx_revised
 from docfsck.expiry import check_expiry
+from docfsck.revised import check_ready_for_squash, check_revised
 
 from firelane import generated
 from firelane.cli import no_args
@@ -388,7 +388,7 @@ CHECKS = (
     ("④ 등재     사람이 만드는 계층 ↔ 대장", lambda led: check_field_ledger(led)),
     ("⑤ 만료     한시로 정한 것이 한시로 끝났는가", lambda led: check_expiry()),
     ("⑥ 기획서    고쳤는데 최종 수정일이 그대로인가",
-     lambda led: check_docx_revised() + check_docx_ready_for_squash()),
+     lambda led: check_revised() + check_ready_for_squash()),
     ("⑦ 명령     문서가 적은 셸 명령 ↔ 룰셋 · 진입점 · tools 실물", lambda led: check_commands()),
     (f"⑧ 기한     미룬 것이 기한 안에 끝났는가 (양방향 · 등재 {len(DEFERRED)}건)",
      lambda led: check_deferred()),

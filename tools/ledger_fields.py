@@ -77,8 +77,9 @@ def _iso(v8: str) -> str:
     return f"{v8[:4]}-{v8[4:6]}-{v8[6:8]}"
 
 
-def load() -> str:
-    return YAML.read_text(encoding="utf-8")
+def load(path: Path | None = None) -> str:
+    """대장 글자. ★ 경로를 **받는다** — 합성 대장으로 밀 수 있어야 한다(§484)."""
+    return (path or YAML).read_text(encoding="utf-8")
 
 
 def _entry_span(s: str, key: str) -> tuple[int, int, str]:
@@ -99,8 +100,16 @@ def _drop(body_text: str, field: str) -> str:
         body_text, count=1, flags=re.MULTILINE)
 
 
-def run(*, apply: bool) -> int:
-    s = load()
+def run(*, apply: bool, path: Path | None = None) -> int:
+    """계획을 세우고(`apply=False`) 혹은 글자를 고친다.
+
+    ★ 2026-10-12 (DECISIONS §484). `path` 를 받는다. 종전에는 모듈의
+      `YAML` 을 박고 있어 **합성 대장으로 밀 수가 없었고**, 그래서 안
+      밀었다 — 「밀 수 없게 짜 놓고 안 밀었다」(§471 · §481 의 그 족).
+      기본값이 그대로이므로 부르는 자리는 안 바뀐다.
+    """
+    yml = path or YAML
+    s = load(yml)
     d = yaml.safe_load(s) or {}
     ds = d.get("datasets") or {}
     plan: list[tuple[str, str, str]] = []      # (key, 동작, 설명)
@@ -207,7 +216,7 @@ def run(*, apply: bool) -> int:
             s = s[:st] + new_body + s[en:]
 
     yaml.safe_load(s)          # ★ 즉시 검증
-    YAML.write_text(s, encoding="utf-8")
+    yml.write_text(s, encoding="utf-8")
     print("\n적용 완료 · YAML 파싱 OK")
     return 0
 
@@ -227,15 +236,17 @@ RETIRED_FIELDS = {
 SCAN_BLOCKS = ("datasets", "retired", "outputs", "raw_only")
 
 
-def check() -> int:
+def check(path: Path | None = None) -> int:
     """폐기된 별칭이 되살아났는가. run() 의 역방향이다.
 
     값이 옳은지는 안 본다 — 그것은 datalog fsck 소관이다.
     여기는 **스키마가 되돌아갔는가** 하나만 본다.
+
+    ★ 2026-10-12 (§484). `path` 를 받는 사유는 `run()` 과 같다.
     """
     import yaml
 
-    led = yaml.safe_load(load())
+    led = yaml.safe_load(load(path))
     bad = []
     for blk in SCAN_BLOCKS:
         for key, e in (led.get(blk) or {}).items():

@@ -250,3 +250,78 @@ def test_check_one_actually_calls_both_verdicts():
     body = inspect.getsource(contract.check_one)
     for name in ("prj_verdict", "coord_verdict", "prj_in"):
         assert name in body, f"`check_one` 이 {name} 를 안 부른다 — 관문이 또 장식이다"
+
+
+# ── 어긋남의 크기 — 시험이 이름을 안 부르고 있었다 (DECISIONS §493) ─
+# ★ `krgis.crs.offset_between` 은 「5174인데 5181로 정의했다」 같은 사고의
+#   **크기**를 재는 자다. 이 파일이 드는 관문(「CRS 변경 → ★중단」)이 울 때
+#   사람이 다음으로 묻는 것이 「얼마나 어긋나나」이고, 그 답이 여기서 나온다.
+#   그 수가 틀리면 「몇 m 니까 무시해도 된다」는 **잘못된 안심**이 나온다.
+def _ob():
+    from firelane.krgis.crs import offset_between
+    return offset_between
+
+
+def test_the_same_crs_offsets_by_nothing():
+    """★ 음성. 같은 좌표계를 두 번 주면 0 이다 — 아니면 자 자체가 틀렸다."""
+    ob = _ob()
+    for code in ("EPSG:5186", "EPSG:5174", "EPSG:5179"):
+        assert abs(ob(193120.0, 283628.0, code, code)) < 1e-6, code
+
+
+def test_the_offset_is_symmetric():
+    """어느 쪽을 먼저 적어도 같은 거리다 — 두 수가 나오면 보고가 갈린다."""
+    ob = _ob()
+    a = ob(193120.0, 283628.0, "EPSG:5174", "EPSG:5181")
+    b = ob(193120.0, 283628.0, "EPSG:5181", "EPSG:5174")
+    assert abs(a - b) < 1e-6, f"{a} ≠ {b}"
+
+
+def test_a_false_northing_mistake_measures_exactly_one_hundred_km():
+    """★ **유도된 수로 민다.** 5186 과 5181 은 원점이 같고 y 가산만 다르다.
+
+        EPSG:5186  중부원점 · y+600,000
+        EPSG:5181  중부원점 · y+500,000
+
+    같은 수치를 두 쪽으로 읽으면 정확히 그 **차이(100km)** 만큼 벌어진다.
+    손으로 적은 기댓값이 아니라 두 좌표계 선언의 차이에서 나온 수다.
+    """
+    from pyproj import CRS
+
+    ob = _ob()
+    # ★ `to_dict()` 를 안 쓴다 — proj4 로 내리면 pyproj 가 「정보를 잃는다」고
+    #   경고한다. 투영 매개변수는 **좌표연산에서 직접** 읽는다.
+    def northing(code: str) -> float:
+        op = CRS.from_user_input(code).coordinate_operation
+        return next(x.value for x in op.params if x.name == "False northing")
+
+    fn = [northing(c) for c in ("EPSG:5186", "EPSG:5181")]
+    assert fn == [600000.0, 500000.0], f"가산값 선언이 바뀌었다 — {fn}"
+    got = ob(193120.0, 283628.0, "EPSG:5186", "EPSG:5181")
+    assert abs(got - abs(fn[0] - fn[1])) < 1.0, (
+        f"가산값 차이는 {abs(fn[0]-fn[1]):,} m 인데 {got:,.1f} m 라고 한다")
+
+
+def test_a_bessel_datum_mistake_is_hundreds_of_metres_not_metres():
+    """★ 머리말이 「약 390m」라고 적는 그 족 — **백 m 자리**인가.
+
+    5174(Bessel) 와 5181(GRS80) 은 둘 다 중부원점 y+500,000 이라
+    **가산값은 같고 타원체만 다르다.** 그래서 이 수는 순수한 측지계
+    어긋남이고, 「좌표계를 통일했는데 지도에서 어긋난다」의 원인이다.
+    자릿수가 한 자리라도 틀리면 그것이 「무시해도 된다」로 읽힌다.
+    """
+    ob = _ob()
+    got = ob(193120.0, 283628.0, "EPSG:5174", "EPSG:5181")
+    assert 100.0 < got < 1000.0, f"{got:,.1f} m — 측지계 어긋남의 자릿수가 아니다"
+
+
+def test_a_wrong_zone_is_far_bigger_than_a_wrong_datum():
+    """★ 순서 — **구역을 틀리는 것**이 타원체를 틀리는 것보다 훨씬 크다.
+
+    이 순서가 뒤집히면 분류가 거짓이 된다: 「어긋남이 작으니 타원체
+    문제」라고 읽고 중앙경선을 안 본다.
+    """
+    ob = _ob()
+    datum = ob(193120.0, 283628.0, "EPSG:5174", "EPSG:5181")
+    zone = ob(193120.0, 283628.0, "EPSG:5186", "EPSG:5187")   # 중부 ↔ 동부
+    assert zone > datum * 100, f"구역 {zone:,.0f} m · 타원체 {datum:,.0f} m"

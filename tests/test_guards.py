@@ -539,13 +539,39 @@ def test_ci_watches_the_working_branch():
     ci_lists = lists(ci)
     pg_b = set().union(*lists(pages)) if lists(pages) else set()
     assert ci_lists, "contract.yml 에 branches 선언이 없다"
+
+    # ★ 2026-10-10 (DECISIONS §457). **두 번째 경로를 가르친다.** 종전에 이
+    #   가드는 「contract 의 각 트리거가 배포 브랜치를 보는가」만 물었다. 그런데
+    #   `deploy.yml` 의 `gate` 가 `uses: ./.github/workflows/contract.yml` 로
+    #   contract 를 **그대로 부르므로**, 그 경로로도 검사가 선다. 종전에는 main 이
+    #   양쪽에 다 있어서 **같은 검사가 두 벌 돌았고**(§456-4 ①) 그것을 닫으려면
+    #   이 가드가 둘째 경로를 알아야 한다.
+    # ★ **느슨하게 하는 것이 아니다.** 둘째 경로를 인정하는 조건을 기계가 센다 —
+    #   셋 다 참이어야 하고, 하나라도 깨지면 그 브랜치가 무검사로 열린다.
+    #     ⓐ deploy 가 그 브랜치를 push 로 본다
+    #     ⓑ deploy 의 push 에 `paths:` 가 **없다**  (있으면 그 밖이 무검사다)
+    #     ⓒ `gate` 가 contract 를 `uses:` 로 부르고, push 에서 건너뛰지 않는다
+    import yaml as _yaml  # noqa: PLC0415  이 시험 하나만 쓴다
+    _pg = _yaml.safe_load(pages)
+    _on = _pg.get(True) or _pg.get("on") or {}
+    _push = _on.get("push") or {}
+    _gate = (_pg.get("jobs") or {}).get("gate") or {}
+    gated = (set(_push.get("branches") or ())
+             if not _push.get("paths")
+             and str(_gate.get("uses", "")).endswith("workflows/contract.yml")
+             and "pull_request" in str(_gate.get("if", ""))
+             else set())
+
     for i, b in enumerate(ci_lists):
-        missing = pg_b - b
+        missing = pg_b - b - gated
         assert not missing, (
             f"배포는 {sorted(pg_b)} 에서 도는데 contract.yml 의 트리거 "
             f"{i + 1}번은 {sorted(b)} 만 본다.\n"
             f"  검사를 비껴가는 브랜치: {sorted(missing)}\n"
-            "  deploy.yml 이 배포·시운전하는 브랜치는 push · pull_request 양쪽에서 봐야 한다.")
+            f"  `gate` 가 덮는 브랜치: {sorted(gated) or '없다'}\n"
+            "  deploy.yml 이 배포·시운전하는 브랜치는 push · pull_request 양쪽에서\n"
+            "  보거나, deploy 의 `gate` 가 **paths 없이** 그 브랜치 전건에서\n"
+            "  contract 를 불러야 한다.")
 
 
 def test_docs_point_at_the_real_package():
@@ -717,14 +743,29 @@ def test_local_verify_covers_ci():
       `golden` 을 돌지만 CI 는 못 돈다 — raw 2.5GB 가 저장소에 없다.
       로컬이 CI 보다 **더** 보는 것은 정상이다.
     """
-    ci = (ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8")
-    vs = (ROOT / "tools/verify.sh").read_text(encoding="utf-8")
+    # ★ 2026-10-10 (DECISIONS §457). **주석을 뺀 뒤에 센다.** 종전에는 두 파일의
+    #   전문을 문자열로 훑었고, 그래서 **지웠다고 적은 주석이 그 단계를 있는
+    #   것으로 세게** 했다. 아래 삭제 사례가 실제로 그 함정에 걸려 있었다.
+    def _live(text: str, hash_comment: bool) -> str:
+        out = []
+        for ln in text.splitlines():
+            t = ln.lstrip()
+            if hash_comment and t.startswith("#"):
+                continue
+            out.append(ln.split(" #", 1)[0] if hash_comment else ln)
+        return "\n".join(out)
 
-    # ★ 2026-08-23 추가. 검사 목록이 같아도 **환경**이 다르면 결과가 갈린다.
-    #   로컬은 uv sync 로 전부 깔려 있고 CI 는 최소한만 깐다.
-    #   `verify.sh` 가 그 환경을 흉내내지 않으면 로컬 초록불이 보증이 안 된다.
-    assert "CI 환경 재현" in vs, \
-        "verify.sh 가 CI 의 좁은 환경을 재현하지 않는다 — 로컬 초록불이 보증이 아니다"
+    ci = _live((ROOT / ".github/workflows/contract.yml").read_text(encoding="utf-8"), True)
+    vs = _live((ROOT / "tools/verify.sh").read_text(encoding="utf-8"), True)
+
+    # ★ 2026-10-10 (DECISIONS §457) — 「CI 환경 재현」 단정을 **지웠다.**
+    #   종전에 이 자리는 `assert "CI 환경 재현" in vs` 였다. 그 단계는 2026-09-18
+    #   (W2) 에 **전제가 틀려서** 지워졌다 — CI 는 `pip install` 로 최소만 까는 것이
+    #   아니라 로컬과 같은 `uv sync --frozen --all-extras` 를 쓰고, 가렸던 일곱이
+    #   전부 코어 의존성이었다. 즉 **재현할 좁은 환경이 없다.**
+    #   그런데 단정은 남았고, `verify.sh` 에 그 글자가 남은 자리는 **삭제를 적은
+    #   주석 한 줄**이라 **묘비를 먹고 초록**이었다. 묻는 물음이 없어진 단정이므로
+    #   고치지 않고 지운다 — 되살릴 조건은 CI 와 로컬의 의존성 설치가 **갈릴 때**다.
 
     # ★ 2026-09-22. `js_graph_check` · `web_boot_check` 를 뺐다 — 옛 지도와 함께 지웠다.
     tools = ("commit_policy", "encoding_check", "docnum_check", "web_manifest")
@@ -2732,3 +2773,139 @@ def test_required_does_not_swallow_an_unreadable_ledger():
     assert "except OSError:\n        return []" not in src, (
         "대장 읽기 실패를 삼킨다 — 아무것도 안 본 상태가 「전부 확보」로 보고된다")
     assert nr._required(), "필수 목록이 비었다 — 수집이 죽었으면 터져야 한다"
+
+
+# ── §461 · 메모리로 죽은 것을 격리하지 않는가 ───────────────────
+
+def test_the_memory_predicate_has_one_home_and_bites_both_ways():
+    """★ 2026-10-11 (DECISIONS §461). 「메모리로 죽었나」를 두 자리가 각자
+    적으면 다음에 갈린다 — 집은 `stagerun.is_oom` 하나다."""
+    import errno
+
+    from firelane.stagerun import is_oom
+
+    assert is_oom(MemoryError())
+    assert is_oom(OSError(errno.ENOMEM, "Cannot allocate memory"))
+    assert not is_oom(OSError(errno.ENOENT, "No such file"))
+    assert not is_oom(ValueError("기하가 깨졌다"))
+
+
+def test_a_shard_that_died_of_memory_is_not_quarantined():
+    """**격리는 복구 수단을 없앤다.** 2026-10-11 실기 — `ngii_road` 가 OOM 으로
+    죽자 그 산출물 둘이 `.stale_` 로 개명됐고, 그것이 바로 `--reseal-code` 가
+    받을 증거였다. 소스가 실패한 것이 아니라 메모리가 모자란 것이다.
+
+    묻는 것은 **순서**다 — 샤드 루프의 `except` 가 `oom_exit` 를
+    `quarantine_stale` **앞에서** 부르는가.
+    """
+    import ast
+
+    src = (ROOT / "src" / "firelane" / "ingest.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    hits = [h for n in ast.walk(tree) if isinstance(n, ast.Try)
+            for h in n.handlers
+            if "quarantine_stale" in ast.dump(h)]
+    assert hits, "샤드 루프의 격리 자리를 못 찾았다 — 이 대조가 아무것도 안 묻는다"
+    for h in hits:
+        # ★ `ast.walk` 은 **원문 순서가 아니다**(너비 우선) — 줄 번호로 센다.
+        #   처음 판이 그 둘을 헷갈려 통과했다.
+        at = {c.func.id: c.lineno for c in ast.walk(h)
+              if isinstance(c, ast.Call) and isinstance(c.func, ast.Name)}
+        assert "oom_exit" in at, (
+            "메모리로 죽은 것도 격리한다 — 처방을 못 찍고 복구 수단을 없앤다")
+        assert at["oom_exit"] < at["quarantine_stale"], (
+            "격리가 처방보다 먼저다 — 그 순서면 산출물이 이미 개명됐다")
+
+
+# ── §463 · 메모리로 죽은 단계가 ingest 만이 아니다 ───────────────
+
+def test_every_stage_runs_under_the_memory_shell():
+    """★ 2026-10-11 (DECISIONS §463-1). 일곱 단계 중 **하나만** 껍데기를 썼다.
+
+    그래서 10-11 에 `ortho` 가 TIF 넉 장을 해시하다 ENOMEM 으로 죽었을 때
+    파이썬 역추적이 그대로 나왔고 처방이 한 줄도 안 떴다. 껍데기는 단계
+    모듈이 아니라 **부르는 쪽**이 씌운다 — 단계에 넣으면 그 모듈이
+    `stagerun` 을 import 하게 되고 `segments` 의 판정 폐포가 늘어난다.
+
+    묻는 것은 하나다 — 파이프라인이 단계를 부를 때 `firelane.stagerun` 을
+    거치는가.
+    """
+    import ast
+
+    src = (ROOT / "src" / "firelane" / "pipeline.py").read_text(encoding="utf-8")
+    runs = [n for n in ast.walk(ast.parse(src))
+            if isinstance(n, ast.Call) and "subprocess" in ast.dump(n.func)]
+    assert runs, "파이프라인의 자식 프로세스 호출을 못 찾았다 — 이 대조가 빈다"
+    staged = [n for n in runs if "FIRE_LANE_STAGE" in ast.dump(n)]
+    assert staged, "단계를 부르는 자리를 못 찾았다 — `FIRE_LANE_STAGE` 가 표다"
+    for n in staged:
+        dump = ast.dump(n)
+        assert "firelane.stagerun" in dump, (
+            "단계를 껍데기 없이 부른다 — 메모리로 죽으면 처방이 안 뜬다(§463-1)")
+
+
+def test_the_memory_prescription_does_not_ask_which_stage():
+    """★ 2026-10-11 (DECISIONS §463-2). 종전 조건이 `s.module == "ingest"` 였다.
+
+    메모리는 단계를 안 가린다. `ortho` 가 그 조건 밖에서 죽었고, 사람은
+    「보통 실패」 안내를 받았다. 종료코드로만 가르는가를 본다.
+    """
+    import ast
+
+    src = (ROOT / "src" / "firelane" / "pipeline.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    oom = [n for n in ast.walk(tree)
+           if isinstance(n, ast.Assign) and "INGEST_ENOMEM_RC" in ast.dump(n.value)]
+    assert len(oom) == 1, "OOM 판정을 한 자리에서 안 짓는다 — 갈릴 자리다"
+    assert "ingest" not in ast.dump(oom[0].value), (
+        "OOM 판정이 단계 이름을 묻는다 — `ortho` 가 그 조건 밖에서 죽었다(§463-2)")
+
+
+def test_a_memory_death_is_not_told_to_delete_the_evidence():
+    """★ 2026-10-11 (DECISIONS §463-3). 메모리로 죽은 뒤 `tidy.py --yes` 를
+    권했다 — 격리된 `.stale_` 는 **`--reseal-code` 가 받을 증거**다. 그 말을
+    따랐으면 되돌릴 길이 사라진다.
+
+    OOM 분기에서는 지우기를 권하지 않고 되돌리기를 권하는가.
+    """
+    src = (ROOT / "src" / "firelane" / "pipeline.py").read_text(encoding="utf-8")
+    i = src.index("격리된 옛 산출물이 남았을 수 있다")
+    tail = src[i:src.index("고친 뒤:", i)]
+    assert "--restore" in tail, "메모리 실패에 되돌리기를 안 권한다(§463-3)"
+    yes = tail.index("--yes")
+    restore = tail.index("--restore")
+    assert restore < yes, (
+        "지우기를 먼저 권한다 — OOM 분기가 아래로 갈려 있어야 한다")
+    assert "지우지 마라" in tail, "지우면 안 된다는 말이 없다"
+
+
+def test_restoring_a_quarantined_output_is_a_command_not_a_handmade_mv():
+    """★ 2026-10-11 (DECISIONS §463-3). 10-11 에 손으로 `mv` 해서 되돌렸다.
+    손으로 치는 복구는 다음에도 손으로 친다. 그리고 **원래 이름이 이미
+    있으면 안 덮는다** — 덮으면 옛 산출물이 새것 자리에 조용히 앉는다.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("tidy_t", ROOT / "tools" / "tidy.py")
+    assert spec and spec.loader
+    tidy = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = tidy
+    spec.loader.exec_module(tidy)
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        (root / "data" / "processed").mkdir(parents=True)
+        p = root / "data" / "processed" / "ngii_road_5186.gpkg.stale_20261011"
+        p.write_text("옛 산출물", encoding="utf-8")
+        n, why = tidy.restore_stale(root)
+        assert (n, why) == (1, []), f"되돌리기가 안 됐다 — {n} · {why}"
+        got = root / "data" / "processed" / "ngii_road_5186.gpkg"
+        assert got.read_text(encoding="utf-8") == "옛 산출물"
+
+        # 같은 이름이 이미 있으면 안 덮는다
+        p.write_text("또 격리됐다", encoding="utf-8")
+        n2, why2 = tidy.restore_stale(root)
+        assert n2 == 0 and why2, "이미 있는 이름을 덮었다 — 조용히 틀린 산출물이다"
+        assert got.read_text(encoding="utf-8") == "옛 산출물"

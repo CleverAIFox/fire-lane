@@ -19,6 +19,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { shareState, type ShareKind } from "../domain/opsProtocol";
 import type { OpsUplink } from "./useOpsUplink";
 import type { LngLat } from "../domain/geo";
+// ★ 2026-10-11 (DECISIONS §475). 여기 `hhmm` 이 **넉 달 뒤의 네 번째 사본**
+//   이었다. §130 이 `App.tsx` · `OpsApp.tsx` 의 두 벌을 `ui/tokens.ts` 로
+//   모으고 「형식을 바꿀 일이 오면 한 곳만 고친다」고 적었는데, 그 뒤 이
+//   파일이 같은 일곱 줄을 다시 짰다 — **계층이 정본을 가렸다**(`app/` 은
+//   `ui/` 를 안 들었다). 서식은 순수 함수이고 그 집은 `ui/tokens.ts` 다.
+import { hhmm } from "../ui/tokens";
 
 // ★ 집은 `domain/types.ts` 다(DECISIONS §244). 여기서는 다시 내보낸다.
 import type { ShareInfo, ShareState } from "../domain/types";
@@ -28,9 +34,6 @@ export type { ShareInfo, ShareState, ShareKind };
 const SEND_MS = 1200;
 const ACK_MS = 2600;
 
-function hhmm(d = new Date()): string {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
 
 export function useShare(up?: OpsUplink) {
   const [info, setInfo] = useState<ShareInfo>({
@@ -86,7 +89,7 @@ export function useShare(up?: OpsUplink) {
       }
       setInfo({ state: "awaiting", kind, ackedAt: null, simulated: true });
       timers.current.push(window.setTimeout(() => {
-        setInfo({ state: "acked", kind, ackedAt: hhmm(), simulated: true });
+        setInfo({ state: "acked", kind, ackedAt: hhmm(new Date()), simulated: true });
       }, ACK_MS));
     }, SEND_MS));
   }, [up]);
@@ -96,7 +99,7 @@ export function useShare(up?: OpsUplink) {
     clear();
     live.current = null;
     setInfo({ state, kind: state === "idle" ? null : kind,
-              ackedAt: state === "acked" ? hhmm() : null, simulated: true });
+              ackedAt: state === "acked" ? hhmm(new Date()) : null, simulated: true });
   }, []);
 
   const reset = useCallback(() => { clear(); force("idle"); }, [force]);

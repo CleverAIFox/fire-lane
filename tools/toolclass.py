@@ -51,6 +51,13 @@ ROOT = Path(__file__).resolve().parents[1]
 TOOLS = ROOT / "tools"
 VERIFY = TOOLS / "verify.sh"
 FLOWS = ROOT / ".github" / "workflows"
+# ★ 2026-10-09 (DECISIONS §444 · 실기). **합성 액션도 부르는 자리다.**
+#   `paths:` 를 호출에서 뺀 순간 `render_workflow` · `stage_pages` 둘이 부류를
+#   잃었다 — 둘은 `.github/actions/stage-site/action.yml` 의 `run:` 이 부르는데
+#   이 도구는 그 폴더를 **한 번도 안 읽었다.** 즉 두 관문은 그동안 `paths:`
+#   오탐 덕에 우연히 맞게 분류돼 있었고, 오탐을 고치자 구멍이 드러났다.
+#   `gate_parity` 는 같은 폴더를 이미 읽는다(`ACT`) — 둘이 갈려 있었다(족 3).
+ACTS = ROOT / ".github" / "actions"
 
 #: 부류 어휘. **정본은 여기 하나다** — 머리말은 이 낱말만 쓴다.
 VOCAB: dict[str, str] = {
@@ -105,13 +112,44 @@ def _code(src: str) -> str:
 #:   §279-1 · §398-3 ③ 과 **같은 병의 세 번째 꼴** — 경로 필터는 방아쇠지 호출이
 #:   아니다. 실측에서 이 줄에만 나오는 도구는 그 하나였다(scope 줄 79개 중).
 _SCOPE = re.compile(r"^\s*scope\s+.*$", re.M)
+#: ★ 2026-10-09 (DECISIONS §444 · 실기). 워크플로의 `paths:` 목록도 **같은 꼴**이다 —
+#:   「이 경로가 바뀌면 이 워크플로를 돌린다」이고 「이 도구를 부른다」가 아니다.
+#:   실기: `deploy.yml` 의 `paths:` 에 `tools/proposal_source.py` 를 더했더니
+#:   (그 파일은 `build_proposal` 이 **import** 만 한다 — 경로를 안 적으면 그것만
+#:   고친 PR 이 배포를 안 태운다 · W13-10) 이 도구가 그것을 관문으로 도출해
+#:   「조사」 선언과 어긋났다. `scope` 와 똑같은 오탐이고 사유도 똑같다.
+#: ★ 따옴표에 싸인 **맨 목록 항목**만 지운다 — `- uses: …` · `- name: …` ·
+#:   `run:` 은 그 꼴이 아니라 남는다. 진짜 호출을 지우면 관문이 라이브러리가 된다.
+_YAML_PATH = re.compile(r"^\s*-\s*(['\"])[\w./*{}-]+\1\s*$", re.M)
+
+
+#: `pre-commit run --all-files` 를 돌리는 자리인가. 돌리면 그 설정의 훅 `entry` 가
+#: **그 자리에서 실제로 도는 호출**이다.
+_PRECOMMIT_RUN = re.compile(r"pre-commit\s+run\s+--all-files")
+_PRECOMMIT_CFG = ROOT / ".pre-commit-config.yaml"
 
 
 def _callers() -> str:
-    """관문 여부를 묻는 자리 — `verify.sh` 와 워크플로. **주석 · `scope` 는 뺀다.**"""
+    """관문 여부를 묻는 자리 — `verify.sh` 와 워크플로. **주석 · `scope` 는 뺀다.**
+
+    ★ 2026-10-10 (DECISIONS §457). `.pre-commit-config.yaml` 을 **조건부로** 더한다 —
+      부르는 쪽 글에 `pre-commit run --all-files` 가 있을 때만. 그 설정의 훅은
+      그 명령으로 **실제로 돌고**, 그러면 그 `entry` 의 도구는 관문이다.
+    ★ 종전에 이 자리가 없어서 훅만으로 도는 도구가 「선언 없는 비관문」으로
+      세어졌다 — `tools/encoding_check.py` 가 워크플로 단계에서 걷히자마자 그
+      꼴이 됐다. 그 단계는 **같은 명령의 사본**이었다(§456-4 ⑤).
+    ★ `tools/gate_parity.py` 의 `_hook_tokens()` 와 **같은 물음이고 같은 조건**이다.
+      이 파일 위쪽이 적어둔 그대로 — 「둘이 같은 글을 같은 뜻으로 읽어야 한다」.
+    """
     out = [_SCOPE.sub("", _code(VERIFY.read_text(encoding="utf-8")))] if VERIFY.exists() else []
     if FLOWS.is_dir():
-        out += [_code(f.read_text(encoding="utf-8")) for f in sorted(FLOWS.glob("*.yml"))]
+        out += [_YAML_PATH.sub("", _code(f.read_text(encoding="utf-8")))
+                for f in sorted(FLOWS.glob("*.yml"))]
+    if ACTS.is_dir():
+        out += [_YAML_PATH.sub("", _code(f.read_text(encoding="utf-8")))
+                for f in sorted(ACTS.glob("*/action.yml"))]
+    if _PRECOMMIT_CFG.exists() and _PRECOMMIT_RUN.search("\n".join(out)):
+        out.append(_code(_PRECOMMIT_CFG.read_text(encoding="utf-8")))
     return "\n".join(out)
 
 
@@ -282,6 +320,14 @@ def selftest() -> int:
         fails.append("`scope` 를 호출로 읽는다 — 라이브러리가 관문이 된다")
     if "tools/y.py" not in _SCOPE.sub("", _code('scope "tools/z.py"\nstep a python tools/y.py\n')):
         fails.append("`scope` 를 지우면서 다음 줄의 진짜 호출까지 지운다")
+    # ★ 워크플로 `paths:` 도 같은 꼴이다 — 덮는 범위이지 호출이 아니다(§444).
+    if "tools/z.py" in _YAML_PATH.sub("", "    paths:\n      - 'tools/z.py'\n"):
+        fails.append("`paths:` 항목을 호출로 읽는다 — 라이브러리가 관문이 된다")
+    if "tools/y.py" not in _YAML_PATH.sub(
+            "", "      - 'tools/z.py'\n      - run: python tools/y.py\n"):
+        fails.append("`paths:` 를 지우면서 진짜 호출까지 지운다")
+    if "tools/w.py" not in _YAML_PATH.sub("", "        run: uv run python tools/w.py\n"):
+        fails.append("`run:` 줄을 지운다")
 
     # ★ 빈 그물 — 어휘가 비면 무엇을 적어도 통과한다
     if not VOCAB or "관문" not in VOCAB:

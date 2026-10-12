@@ -87,8 +87,17 @@ const WORD: Record<TurnKind, string> = {
   uturn: "유턴", arrive: "도착",
 };
 
-/** `node` 쪽 끝에서 바깥으로 나가는 방위각. */
-function outBearing(e: GraphEdge, node: number): number {
+/**
+ * `node` 쪽 끝에서 바깥으로 나가는 **첫 두 점의** 방위각.
+ *
+ * ★ 2026-10-11 (DECISIONS §475). 이름이 `outBearing` 이었고
+ *   `domain/turning.ts` 에 **같은 이름 다른 측정**이 있었다 — 저쪽은
+ *   `PROBE_M` 만큼 떨어진 점까지 보고 **잴 수 없으면 `null`** 을 낸다.
+ *   한쪽을 읽은 사람이 다른 쪽을 같은 것으로 읽는다. 이름에 **무엇을
+ *   재는지**를 넣는다(합치지 않는다 — 다른 일감이다. 회전 **문구**는 바로
+ *   앞의 꺾임을 말해야 하고, 코너 **반경**은 잡음에 안 흔들려야 한다).
+ */
+function tangentBearing(e: GraphEdge, node: number): number {
   const c = e.coords;
   return e.a === node
     ? bearing(c[0], c[1])
@@ -123,15 +132,15 @@ export function extractManeuvers(
     // 두 엣지를 잇는 노드. `plan.nodes[i+1]` 이 그것이다.
     const end = plan.nodes[i + 1];
     // 들어올 때의 방위각 = 나가는 방위각의 반대.
-    const inB = (outBearing(cur, end) + 180) % 360;
-    const d = angleDelta(inB, outBearing(nxt, end));
+    const inB = (tangentBearing(cur, end) + 180) % 360;
+    const d = angleDelta(inB, tangentBearing(nxt, end));
 
     // ── ★ 분기를 센다. 여기가 이 함수의 핵심이다 ────────────────
     const alts: number[] = [];
     for (const e of inc.get(end) ?? []) {
       if (e.seg_uid === cur.seg_uid) continue;     // 온 길
       if (!passable(e, needM)) continue;
-      const dd = angleDelta(inB, outBearing(e, end));
+      const dd = angleDelta(inB, tangentBearing(e, end));
       if (Math.abs(dd) > 160) continue;           // 되돌아가기
       alts.push(dd);
     }

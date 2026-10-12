@@ -135,26 +135,32 @@ uv run python tools/docnum_check.py
 
 기준일 2026-09-16(흡수-2 · DECISIONS §170). 산출물 지문 `data/golden/segments.fingerprint.json` 이 정본이다.
 
+★ **이 절의 수는 `CCTV_RANGE = 25.0` 으로 발행된 산출물에서 나왔다.** 2026-10-10
+에 상수가 19.0 으로 내려갔고(§16-1 · DECISIONS §455) **재발행하면 이 절이 움직인다** —
+`needs_cv` 225 → 192 · `unknown` 400 → 433 · 유효범위 안 451 → 391. 발행된 1,281구간에
+두 상수로 `classify()` 를 다시 돌려 **실측한 예보**다. 2026-10-12 에 재발행했고 이 절의 수와 라벨은 19m 산출물에서 왔다 —
+**수와 라벨은 같은 산출물에서 와야 한다.**
+
 <!--gen: v_clear v_needs_cv v_blocked v_unknown-->
 | 판정 | 구간 | 뜻 |
 |---|---:|---|
 | `clear` 통행 가능 | 464 | 양쪽 주차가 있어도 통과. 영상판정 불필요 |
-| `needs_cv` 판정 보류 | 225 | 상습주차 여부로 갈린다. 영상판정 대상 |
+| `needs_cv` 판정 보류 | 192 | 상습주차 여부로 갈린다. 영상판정 대상 |
 | `blocked` 통행 불가 | 192 | 차가 없어도 통과 불가 |
-| `unknown` 영상판정 불가 | 400 | CCTV 25m 밖. 영상판정 자체가 불가능 |
+| `unknown` 영상판정 불가 | 433 | CCTV 19m 밖. 영상판정 자체가 불가능 |
 <!--/gen-->
 
 ```
 세그먼트        1,281
 총연장          58,308.7 m
 동명동 안       416
-CCTV 25m 안     451  (35.2%)
-소방청 지정      183  (연속 100m 이상)
+CCTV 19m 안     391  (30.5%)
+소방청 지정      161  (연속 100m 이상)
 ```
 
 강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다
 
-### 2-1. `unknown` 400 의 사유
+### 2-1. `unknown` 433 의 사유
 
 폭 산출 불가는 **0** 이다. ★ 2026-10-08 (DECISIONS §436-1) 종전 이 자리는
 「회색은 한 가지 뜻만 갖는다 — 카메라가 없어 못 본다」고 적었다. 그 말이
@@ -162,10 +168,10 @@ CCTV 25m 안     451  (35.2%)
 
 | 사유 | 구간 | 뜻 |
 |---|---:|---|
-| `no_cctv_band` | 183 | 3~7m 대역. 주정차 여부로 갈리는데 CCTV 25m 밖 |
-| `no_cctv_thin` | 142 | 노면 3m 미만 · 도로대장폭은 3m 이상 — 근거가 하나뿐 |
-| `no_cctv_narrow` | 63 | 노면도 도로대장도 3m 미만이나 벽 사이는 여유 있음 |
-| `no_cctv_single` | 11 | 7m 이상이나 표본 부족으로 통과 확정 보류 |
+| `no_cctv_band` | 194 | 3~7m 대역. 주정차 여부로 갈리는데 CCTV 19m 밖 |
+| `no_cctv_thin` | 156 | 노면 3m 미만 · 도로대장폭은 3m 이상 — 근거가 하나뿐 |
+| `no_cctv_narrow` | 70 | 노면도 도로대장도 3m 미만이나 벽 사이는 여유 있음 |
+| `no_cctv_single` | 12 | 7m 이상이나 표본 부족으로 통과 확정 보류 |
 | `ledger_disputes` | 1 | 노면은 통과인데 도로대장이 반박한다. **카메라와 무관하다** |
 
 **색은 4종 고정이다.** 사유는 회색의 하위 구분이지 다섯 번째 색이 아니다.
@@ -404,28 +410,39 @@ DECISIONS 소관이다.
 
 강제자  `tests/test_seg_width.py::test_intersection_samples_excluded` · `test_short_fragment_still_measured`(짧은 조각은 제외를 푼다) · `tests/test_guards.py::test_lineage_blocks_orphan_derived_output`(교차부 형상 `ngii1k_xsec` 이 낡으면 폭이 조용히 갈린다)
 
-### 3-7. 골목의 65%는 영상판정이 불가능하다
+<!--gen: cctv_out_pct-->
+### 3-7. 골목의 69.5%는 영상판정이 불가능하다
+<!--/gen-->
 
-CCTV 유효범위를 25m 로 잡으면(초과 시 호모그래피 오차 급증) 이렇게 된다.
+CCTV 유효범위 안인가는 발행물의 `cv_feasible` 이 들고 다닌다 — 그 문턱이
+`CCTV_RANGE` 이고 지금 값과 근거는 이 절 끝이 든다(초과 시 호모그래피 오차 급증).
 
-<!--gen: v_unknown-->
+<!--gen: v_unknown cctv_in cctv_in_pct v_unknown_m v_unknown_m_pct-->
 ```
-CCTV 유효범위 안      451 / 1,281   (35.2%)
+CCTV 유효범위 안      391 / 1,281   (30.5%)
 CCTV 거리 중앙값       38.5 m
 최대                   212 m
-영상판정 불가          400구간 · 17,168m   (전체 연장의 29%)
+영상판정 불가          433구간 · 18,367m   (전체 연장의 31.5%)
 ```
 <!--/gen-->
 
-★ **영상 기반 진입 판정 시스템을 만들어도 골목의 65%에는 적용할 수 없다.
+<!--gen: cctv_out_pct-->
+★ **영상 기반 진입 판정 시스템을 만들어도 골목의 69.5%에는 적용할 수 없다.
 알고리즘의 한계가 아니라 인프라의 한계다.**
+<!--/gen-->
 
 완화 요소 — 영상판정 불가 구간이 담당하는 소방 통행량은 18% 다. 주요 동선에는
 대체로 CCTV 가 있다.
 
-`CCTV_RANGE = 25.0` 의 근거는 §16-1 에 적는다. **실측 전에는 바꾸지 않는다.**
+`CCTV_RANGE = 19.0` 의 근거는 IEC 62676-4:2025 DORI 다(§16-1 · DECISIONS §422-2 · §455).
+**실측이 오면 재유도한다 — 되돌리지 않는다.**
 
-강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다
+★ 2026-10-11 (DECISIONS §464 · PLAN #167 닫힘). 이 절의 수 다섯은 **전부 생성
+블록 안**이다 — 구간 수 · 그 몫 · 밖의 몫 · 회색 연장 · 그 몫. 종전에는 울타리가
+`영상판정 불가` 하나뿐이어서 나머지 넷이 **블록 안에 있으면서 손으로 쓰인 수**였고,
+그래서 아무도 다시 안 봤다. 「안인가」의 정본은 발행물의 `cv_feasible` 이다.
+
+강제자  `tools/docgen.py` 의 다섯 축(`cctv_in` · `cctv_in_pct` · `cctv_out_pct` · `v_unknown_m` · `v_unknown_m_pct`)이 이 절의 수를 **채운다** · `tools/docnumrules.py` 의 문맥 패턴이 「유효범위 안」을 라벨 옆에서 읽는다 · `tests/test_repo_numbers.py`(블록 밖까지 본다). 중앙값 38.5m · 최대 212m · 통행량 18% 는 **대조 도구가 없다**
 
 ### 3-8. 출동은 소방서가 아니라 119안전센터에서 나간다
 
@@ -455,7 +472,7 @@ CCTV 거리 중앙값       38.5 m
 | 도달 불가 | 447 | 구간은 지나갈 수 있어도 안전센터에서 거기까지 길이 끊긴다 | 막힌 엣지를 뺀 Dijkstra |
 
 ```
-도달 가능   834 / 1,281  (65%)   안전센터에서 막힌 길 없이 갈 수 있다 · 도달 불가는 지도 점선
+도달 가능   833 / 1,281  (65%)   안전센터에서 막힌 길 없이 갈 수 있다 · 도달 불가는 지도 점선
 도달 불가   447          (35%)
 경로에 쓰인 구간  706            route_vehicle.csv
 ```
@@ -477,7 +494,7 @@ CCTV 거리 중앙값       38.5 m
 다른 길이 없을 때 그 엣지를 쓴다 — "막힌 길로라도 도달"은 답이 아니다.
 `reachable` 은 **양 끝 노드가 모두 도달 가능할 때만** 참이다.
 
-강제자 없음 — 사유: 도달 가능 수 대조는 다음 코드 배치에서 docnum_check EXPECT 에 넣는다(DECISIONS §167)
+강제자  `tools/docnumrules.py`(이 수 ↔ 발행된 `web/data/route_vehicle.json` 의 `reachable` · 세 곳을 한 패턴이 읽는다) · `tests/test_doc_numbers.py::test_every_declared_number_is_in_its_document`(그 축의 pytest 쪽 짝 — 종전에는 CLI 에서만 울었다). ★ 2026-09-16 에 「다음 코드 배치에서 한다」고 적고 24일을 뒀고, 그 사이 이 수가 834 로 낡아 있었다(DECISIONS §167 · §452) <!--stale-ok-->
 
 ### 3-10. 경로가 둘인 이유
 
@@ -678,7 +695,7 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 소방서 7구간은 "기존 행정자료와 대체로 일치한다"는 정합성 근거로는 유효하지만
 "우리가 옳다"는 증거로는 쓸 수 없다.
 
-강제자  `tests/test_measurements.py`(오염 칸 — `nfa_compare_abs_dev` 를 적합에 쓴 지표로 표시하고 그것을 통과 조건으로 쓰면 운다) · `tests/test_docx_targets.py`(기획서에서 이 대조를 「검증」으로 부르는 것을 막는다)
+강제자  `tests/test_measurements.py`(오염 칸 — `nfa_compare_abs_dev` 를 적합에 쓴 지표로 표시하고 그것을 통과 조건으로 쓰면 운다) · `tools/proposalcheck.py`(기획서가 드는 폐기 어휘 · 참조)
 
 ### 4-1a. 폭 교차대조 —— 방법이 독립인 증인 둘
 
@@ -890,6 +907,7 @@ src/firelane/probe.py         좌표계 역추정 · 그래프 위상 진단
 src/firelane/quiet_gdal.py    GDAL 잡음 억제. rasterio 보다 먼저 import
 src/firelane/krgis/crs.py     한국 좌표계 판별 · 안전 변환
 src/firelane/shardseal.py     ingest 샤드(소스 하나) 봉인지. 넷이 같을 때만 재사용
+src/firelane/reseal.py        그 봉인지 **한 칸**을 고쳐 적는 문 셋. 재빌드가 아니다
 src/firelane/lake.py          레이크 해석기. 대장 + 디스크 → 파일마다 한 줄
 src/firelane/ledger.py        대장 항목 스키마 정본 · kinds · scope · naming · providers · encoding 이 각 어휘의 정본
 src/firelane/prep.py          raw → norm. 형식만 통일한다
@@ -1135,8 +1153,9 @@ ngii1k_light   11,439점                        측량 폴 위치. 구분만 있
 
 - **폭 실측 0건.** `width_verified` 는 전건 `false` 다. 2026-08-06 답사는
   GPS 미기록으로 무효다.
-- **`CCTV_RANGE` 25m 는 미확인 값이다.** 이 값 하나가 243구간의 판정을 가른다(§16-1).
-  §16-1 이 그 근거를 다룬다.
+- **`CCTV_RANGE` 19m 에는 근거가 섰다**(IEC 62676-4 DORI · §16-1 · DECISIONS §455).
+  이 값 하나가 폭 3~7m 대역 **320구간**의 판정을 가르고, 그중 유효범위 안이 **126**이다.
+  60m 로 열면 `unknown` 이 400 → 157 로 바뀐다 — **243구간**이 이 수 하나에 달려 있다.
 - **`width_cov` 0.5 미만 4구간.** 채택 소스가 그 구간의 절반도 못 덮었다는
   뜻이다. 표본 축 소스 혼합을 없앤 대가이며(§3-5), 혼합할 때는 다른 소스 값에
   섞여 보이지 않던 것이다. **폭 교차대조 1순위** — 이 구간들이 측량폭·대장폭과 얼마나 다른지부터 본다(§4-1a).
@@ -1163,10 +1182,10 @@ ngii1k_light   11,439점                        측량 폴 위치. 구분만 있
   **인용한 사본은 막지 않는다** — 이 절 자신이 그 상태다. 넓게 적어 두면 막힌다고
   믿게 되고, 믿는 만큼 안 본다
 
-팀 구성(5인 1조 · 기획 · 조사 · 실측 · UI)은 기획서(`docs/proposal.docx` 표0)가 정본이다.
+팀 구성(5인 1조 · 기획 · 조사 · 실측 · UI)은 기획서(`docs/proposal.md` 표0)가 정본이다.
 **팀 구성과 저장소 소유는 다른 축이다** — 기획서의 다인 서술과 CODEOWNERS 의 1인 소유는
 모순이 아니다. 기획서 표0 은 그 구절(「아래 역할은 기획 당시 기준이며, 저장소 코드 소유 · 리뷰는
-2026-09-09 부터 1인 단독」)을 `tools/docx_fix.py` 규칙으로 든다(2026-09-22 · DECISIONS §217-5).
+2026-09-09 부터 1인 단독」)을 기획서 본문이 든다(2026-09-22 · DECISIONS §217-5 · 2026-10-09 · §444 — 그 규칙표는 docx 와 함께 은퇴했다).
 
 파트 브랜치와 통합 담당은 §12 · §12-8c 가 든다. 파이프라인은 `FIRE_LANE_DATA` 가 가리키는
 기계에서 돌고, CI 는 데이터를 만들지 않는다(§12-7 · §14-7).
@@ -1314,7 +1333,7 @@ ngii1k_light   11,439점                        측량 폴 위치. 구분만 있
 | 초록 | 통행 가능 | 최소 폭 ≥ 7.0m | 양쪽에 주차가 있어도 통과. 영상판정 불필요 |
 | 주황 | **판정 보류** | 그 사이 | **상습주차 여부로 갈린다. 영상판정 대상** |
 | 빨강 | 통행 불가 | 최대 폭 < 3.0m | 중형펌프차 폭 미달. 장애물이 없어도 못 지나간다 |
-| 회색 | 영상판정 불가 | — | CCTV 25m 밖. 카메라가 없어 못 본다 |
+| 회색 | 영상판정 불가 | — | CCTV 유효범위 밖. 카메라가 없어 못 본다 |
 
 주황 225구간이 이 프로젝트의 미완성 부분이며 전체의 17.6% 다. 영상판정이
 붙으면 이 225가 초록·빨강으로 갈린다. 회색 400은 영상판정으로도 안 갈린다 —
@@ -1342,8 +1361,8 @@ CCTV 사각 하나뿐이다. 좁은 쪽을 넓은 이름으로 부르면 현재 
 어긋남이 아니라 표기 차이다. 저장소가 정본이고 대외 문서가 다음 판에서 이 표를 따른다.
 개요서의 "내부 5단계" 는 산출 어휘에 없으므로 인용하지 않는다.
 
-`needs_cv` 는 폭 3.0~7.0m 이면서 CCTV 25m 안인 구간이다. 같은 폭 대역이라도
-CCTV 밖이면 `unknown`(`no_cctv_band` 183)으로 내려간다(§2-1). 기획서의
+`needs_cv` 는 폭 3.0~7.0m 이면서 CCTV 19m 안인 구간이다. 같은 폭 대역이라도
+CCTV 밖이면 `unknown`(`no_cctv_band` 194)으로 내려간다(§2-1). 기획서의
 "needs_cv + CCTV 있음" 서술은 이것과 같은 모델이다.
 
 강제자  `tests/test_contract.py::test_verdict_matches_rules_for_every_segment`
@@ -1354,9 +1373,9 @@ CCTV 밖이면 `unknown`(`no_cctv_band` 183)으로 내려간다(§2-1). 기획�
 이어지는 **연속 구간 전체**의 길이다. 5m짜리 조각 하나로는 지정되지 않는다.
 
 ```
-소방청 지정 기준 충족   183구간
+소방청 지정 기준 충족   161구간
 연속 구간 최장          505.5 m
-구간 길이               중앙 36.3m · 최대 282.1m · 100m 초과 52개
+구간 길이               중앙 36.5m · 최대 993.0m · 100m 초과 64개
 ```
 
 `nfa_designated` 가 참이면 툴팁에 표시된다.
@@ -1371,7 +1390,7 @@ CCTV 밖이면 `unknown`(`no_cctv_band` 183)으로 내려간다(§2-1). 기획�
 > 이전에 쓰던 "노면폭 하한 / 담~담 상한"은 **최소 폭 / 최대 폭**으로 통일했다.
 > 문서·UI·발표 자료 전부 이 표기를 쓴다.
 
-강제자 없음 — 사유: `§3-4` 로 위임하는 용어 절이다. 두 폭이 실제로 둘인지는 `tests/test_seg_width.py` 가, 표기 통일(최소 폭 / 최대 폭)은 `tools/docx_check.py` 의 용어 대조가 든다
+강제자 없음 — 사유: `§3-4` 로 위임하는 용어 절이다. 두 폭이 실제로 둘인지는 `tests/test_seg_width.py` 가, 표기 통일(최소 폭 / 최대 폭)은 `tools/proposalcheck.py` 의 폐기 어휘 대조가 든다
 
 ### 10-5. 소방 동선 (`route_usage`)
 
@@ -1447,6 +1466,30 @@ CCTV 원본은 설치연도별로 행이 쪼개져 있어 좌표로 묶어 지�
 강제자  `web/navi/test/style.test.ts`(마커 스타일) · `tools/web_manifest.py --check`(마커가 읽는 레이어가 커밋본과 같은 계보인가) · `tools/uicheck.py --split`(어느 화면이 어느 층을 그리는가 · ★ 2026-10-01 부터 **위 표의 층 칸이 실제로 그려지는가**까지 — DECISIONS §337. 종전에는 그 대조가 없었고 없는 마커 두 줄이 여드레 살아 있었다). 건수는 발행물 실측이다 — `tools/docnum_check.py` 는 **CCTV 유효범위 안 구간 수(451)만** 대조하고 지점·대수는 안 본다. 그래서 104/312 가 낡은 채 초록이었고(DECISIONS §244), 이번에는 **마커 두 종이 통째로 없는 채** 초록이었다
 
 ---
+
+### 10-8. 적용 원형 — **도구가 파일로 쓰고 사람이 친다**
+
+되돌릴 수 없는 일(`mv` · `rm` · 대장 덮어쓰기)에 쓰는 꼴이다. 도구는 조건을
+다시 재고 **전부 맞을 때만** 명령을 파일로 쓴다. 그 파일을 실행하는 것은
+사람이다.
+
+```
+도구     조건 재검 → 명령을 파일로 쓴다 → 무엇을 왜 하는지 찍는다
+사람     파일을 읽고 → 친다
+```
+
+★ **왜 도구가 직접 안 하나.** 지운 것을 되돌리려면 제공기관에서 다시 받아야
+  하고 어떤 자료는 그 판이 더는 없다. 되돌릴 수 없는 일에 기본값을 주지
+  않는다 — `tools/sweep.py` · `tools/tidy.py` 가 `--yes` 를 요구하는 것이
+  같은 판단이고, `tools/fixable.py` 의 `HUMAN_FIRST` 가 그 둘을 **손도 안 대는**
+  것도 같은 자리다.
+
+★ 2026-10-10 (DECISIONS §452 · PLAN #56 닫힘). 이 말을 `src/firelane/lake.py` 와
+  `DECISIONS §176` 이 **「§10 적용 원형」으로 인용**하고 있었는데 §10 에 그
+  말이 없었다. `tests/test_docref.py` 는 **절이 있는가**만 보므로 절은 살아
+  있고 말은 없는 상태가 통과한다 — 인용되는 말은 인용되는 자리에 선다.
+
+강제자 없음 — 사유: 용어다. 이 꼴을 실제로 지키는지는 `tools/fixable.py` 의 `HUMAN_FIRST` 와 `tests/test_fix_door.py` 가 든다
 
 ## 11. 화면 인수인계 — 내비 · 관제
 
@@ -1588,19 +1631,31 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 ★ 이 표는 `tools/docnum_check.py` 가 `publish_web.py` 산출과 매 실행 대조한다.
 표에만 있고 산출물에 없는 필드는 UI 에서 `undefined` 가 된다.
 
+★ **설명의 정본은 이 표가 아니다**(2026-10-10 · DECISIONS §449 · PLAN #101 닫힘).
+정본은 **산출물이 들고 다니는** `web/data/segments.schema.json` 이고, 그것을 쓰는
+자리는 `src/firelane/seg/report.py` 하나다(web 에만 있는 `seg_no` 는 그 필드를
+만드는 `publish_web.py` 가 든다 — 만드는 자리가 설명도 든다). 여기 적힌 것은
+**짧은 풀이**이고, 짧게 줄이는 것은 사람의 일이라 글자가 같을 수 없다.
+
+    풀이는 된다      「노면폭(하한). 트랜섹트 최솟값」 → 「**최소 폭.** 트랜섹트 최솟값」
+    뒤집으면 안 된다  정본이 「**불변이 아니다**」인데 표가 「불변」이라 적는 것
+
+뒤집힘은 `docnum_check` 가 `CONTRADICT` 표로 든다 — 짧아진 것은 안 세고 **반대로
+적은 것만** 센다. 비율이나 글자 수로 재지 않는다(그런 자는 줄이면 운다 · §446-2).
+
 | 필드 | 설명 |
 |---|---|
 | `seg_uid` | **실행 간 유지되는 키.** 외부에서 구간을 가리킬 때 이것을 쓴다 |
-| `seg_id` | **런 내 불변.** 실행 간 유지되지 않는다. 외부 참조 금지 |
+| `seg_id` | **불변이 아니다.** 실행 내 표시용 일련번호 — 노딩이 바뀌면 전부 밀린다. 외부 참조 금지 |
 | `seg_no` | 도로명 안에서의 구간 순번. **표기 전용.** 노딩이 바뀌면 밀린다 |
 | `verdict` | 판정 4종 |
 | `width_min_m` | **최소 폭.** 포장 노면만. 선 굵기가 이 값 |
-| `width_max_m` | **최대 폭.** 벽에서 벽까지. 절반 가까이 결손이고 대로일수록 많다(값 있는 수는 기획서 표17 에 `docx_fix` 가 센다) |
+| `width_max_m` | **최대 폭.** 벽에서 벽까지. 절반 가까이 결손이고 대로일수록 많다(값 있는 수는 기획서 표17 이 든다 — 낡으면 `docnum_check` 가 운다) |
 | `length_m` | 수평거리. 경사 보정 전 |
 | `run_length_m` | 같은 판정이 이어지는 총 길이 |
 | `nfa_designated` | 소방청 지정 기준(연속 100m) 충족 |
 | `cctv_dist_m` | 가장 가까운 CCTV 까지 거리 |
-| `cv_feasible` | CCTV 25m 이내인가 |
+| `cv_feasible` | CCTV 19m 이내인가 |
 | `unknown_reason` | 회색의 하위 구분. `ledger_disputes` · `no_cctv_band` · `no_cctv_thin` · `no_cctv_narrow` · `no_cctv_single` · null. ★ `unknown` **전용**이다 — `blocked` 의 결손 사유는 담지 못하고 그 자리는 `width_fail` 이 든다(DECISIONS §436-3) |
 | `width_fail` | **폭을 못 낸 사유.** `all_xsec`(법선이 전부 평면교차부에 걸려 한 발도 못 쐈다) 등. `unknown_reason` 과 **다른 축**이다 — 저쪽은 회색의 사유, 이쪽은 폭이 빈 사유다(DECISIONS §436-3) |
 | `route_usage` | 최단경로 사용횟수. **통행 가능성이 아니다**(§3-10) |
@@ -1609,7 +1664,6 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `width_cov` | 채택 소스의 커버율. 낮을수록 교차대조 우선순위가 높다 |
 | `n_sample` | **정규표본 수**(값이 나온 표본). 1이면 `verdict()` 가 통과 확정을 보류한다 |
 | `n_try` | 시도한 표본 수. `n_sample / n_try` 가 곧 커버율이다 |
-| `width_verified` | 현장 실측 완료 여부. **전건 `false` 이고 그대로 남는다** — 실측을 접었으므로(§4-1b) 이 칸을 켜는 근거가 생기지 않는다. 교차대조는 이것을 안 켠다(검증이지 실측이 아니다). 칸을 지우는 것은 발행 스키마를 바꾸므로 측정 배치의 일이고 PLAN 이 그 줄을 든다 |
 | `midpoint_fallback` | 정규표본이 없어 중점 하나로 잰 구간 |
 | `inherited` | 인접 구간 상속 여부. 폐기됐고 항상 `false` |
 | `road_name` | 겹침 길이 최대 매칭 |
@@ -2084,7 +2138,7 @@ fix:  버그
 | `contract.yml` | **PR** — `main` · `dev` · `part/**` · `feat/**` / **push** — `main` · `dev` · `part/**` | 계약·위생·문서 검사. 깨지면 머지 차단. ★ `feat/**` 는 PR 만 — 열차가 언제나 PR 을 거치므로 푸시 실행은 같은 트리를 두 번 세는 일이었다(DECISIONS §344). `part/**` 는 직접 커밋이 룰셋을 우회하므로 push 를 남긴다 |
 | `secret-scan.yml` | **전 브랜치** push · PR | 자격증명이 올라가는 것을 막는다. 브랜치 목록이 없는 유일한 검사다 |
 | `image.yml` | `Dockerfile` · `pyproject.toml` · `uv.lock` · 자기 자신 변경 | ETL 이미지를 짓고 그 안에서 import 를 세운다. **CI 전용**(로컬에 docker 가 없다) |
-| `배포` (`deploy.yml`) — **push** | `main` 의 `web/**` · `docs/MASTER.md` · `docs/proposal.docx` · `render_workflow.py` · `stage_pages.py` · `build-navi`/`stage-site` 액션 · 자기 자신 | `contract` 게이트를 지난 뒤 `stage-site` 로 짓고 `web/` **전체**를 Pages 에 올린다 |
+| `배포` (`deploy.yml`) — **push** | `main` 의 `web/**` · `docs/MASTER.md` · `docs/proposal.md` · `build_proposal.py` · `proposal_source.py` · `render_workflow.py` · `stage_pages.py` · `build-navi`/`stage-site` 액션 · 자기 자신 | `contract` 게이트를 지난 뒤 `stage-site` 로 짓고 `web/` **전체**를 Pages 에 올린다 |
 | `배포` (`deploy.yml`) — **pull_request** | main · dev · part/** 로 가는 PR (`.github/**` · `web/**` · MASTER · 기획서 · 렌더 · 준비 도구) | **시운전.** 같은 본문을 태우되 업로드 · 배포를 안 한다 — 배포가 깨진 것을 main 전에 본다(DECISIONS §217-5 · 옛 PLAN W3-15) |
 
 ★ **`협업 방침 배포` 는 생성물을 커밋하지 않는다.** 종전에는 봇이
@@ -2445,7 +2499,7 @@ CODEOWNERS 는 "누가 봐야 하는가"를 정하고, 계약 테스트는 "무�
 
 ### 12-11. 한글 파일명
 
-`docs/proposal.docx` 가 윈도우/리눅스를 오가면서 삭제 + 미추적으로
+한글 이름을 단 기획서 파일이 윈도우/리눅스를 오가면서 삭제 + 미추적으로
 갈린 적이 있다. git 이 한글 파일명을 escape 로 저장하는데 두 OS 의 정규화
 방식이 다르기 때문이다.
 
@@ -2457,9 +2511,9 @@ git config --global core.precomposeunicode true
 `git status` 에 `#Uae30#Ud68d...` 같은 것이 뜨면 이 설정이 안 된 것이다.
 **앞으로 새로 만드는 파일은 영문 파일명을 쓴다.**
 
-★ 2026-09-02. 이 규칙의 **유일한 예외였던 기획서를 `proposal.docx` 로**
+★ 2026-09-02. 이 규칙의 **유일한 예외였던 기획서를 영문 이름으로**
 바꿨다. zip 으로 옮길 때마다 `#Uae30#Ud68d...` 로 깨졌고, 배포 URL 에서도
-같은 문제가 난다. 규칙을 적어놓고 정작 그 규칙을 어기는 파일 하나가
+같은 문제가 난다. (그 파일은 2026-10-09 에 은퇴했고 정본은 `docs/proposal.md` 다.) 규칙을 적어놓고 정작 그 규칙을 어기는 파일 하나가
 남아 있으면 다음 사람이 그것을 근거로 한글 파일명을 또 만든다.
 
 강제자  `tools/encoding_check.py`(인코딩·개행) · `tools/treecheck.py --repo`(git 도 gitignore 도 모르는 파일). 「앞으로 새 파일은 영문 이름」은 규약이고 그것을 세는 검사는 없다
@@ -2586,7 +2640,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
   봉인용이 아니다. **근거 있는 생략은 아래 raw 지문이 한다.**
 
 <!--gen: sealable-->
-★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15` · `#68` → `DECISIONS
+★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15`(결번) · `#68` → `DECISIONS
   §160~161`). `SEAL.json` 이 소스 79종의 raw sha256 을 갖고, `dms.py rawdiff`
   가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — **한 자릿수 분이 1분 밑으로** 준다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
@@ -2721,7 +2775,6 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
     intake.py        받은 것을 landing 으로 들인다
     triage.py        받은 더미를 분류한다
     docpatch.py      마크다운 문서(주로 PLAN)의 절을 멱등 교체한다
-    docx_fix.py      docx 위생
 
 ### 14-4b. CI 가 알아서 도는 것 — 사람이 부를 일이 없다
 
@@ -2731,8 +2784,8 @@ CI 가 지금 브랜치를 감시하는지도 확인하므로 검사 없이 머�
                      (`DECISIONS §88-5` · §12-1b)
     encoding_check   UTF-8 · LF · 개행
     treecheck        트리 구조
-    docx_check       기획서 숫자 ↔ 대장
-    docx_figs        기획서 그림 ↔ 정본. `--sync` 가 docx 안 이미지를 교체한다
+    proposalcheck    기획서 정본 ↔ 실물 (총연장 · 캡션 · 폐기 어휘 · 참조 · 긴 칸)
+    htmlfigs         기획서 그림 ↔ 정본. `--sync` 가 화면 자리에 굽는다
     docnum_check     문서 숫자 ↔ 실물
     ledger_stem      대장 stem 이관 · 무손실 증명
     ledger_fields    대장 별칭 필드 통합
@@ -2831,36 +2884,44 @@ uv run python -m firelane.ngi FILE.ngi      NGI 도엽 레이어·속성 일람
 발표·제출에서 무엇을 말할 수 있고 무엇을 말할 수 없는가를 정한다.
 기획서 자체의 갱신 대상은 PLAN §12 가 든다.
 
-★ **기획서는 손으로 고치지 않는다.** 숫자와 문단은 `tools/docx_fix.py`, 그림은
-`tools/docx_figs.py --sync` 가 넣는다. 정본에서 나온 것을 사람이 옮겨 붙이는 자리는
-남기지 않는다 — 그 자리는 매번 미뤄져서 제출본만 옛 값을 든 채 남는다(DECISIONS §221-1).
-`tools/docx_figs.py` 의 `PLACE` 가 「어느 생성 그림이 기획서 몇 번 그림인가」의 정본이고,
-기획서에 자리가 없는 그림은 사유를 적어 `internal` 로 선언한다.
+★ **기획서 정본은 `docs/proposal.md` 하나다**(2026-10-06 · DECISIONS §425 ·
+2026-10-09 · §444). 사람이 글을 쓰고, 화면(`web/proposal.html`)은
+`tools/build_proposal.py` 가 구워 **커밋되는 생성물**이다. 그림 다섯(생성 그림)은
+`tools/htmlfigs.py --sync` 가 화면 자리에 바로 굽고, 그 `SLOT` 이 「어느 생성 그림이
+기획서 몇 번 그림인가」의 정본이다. 기획서에 자리가 없는 그림은 사유를 적어
+`internal` 로 선언한다.
 
-★ **고친 뒤의 확인도 사람에게 안 남긴다**(2026-09-30 · DECISIONS §333). 종전에
-`docx_fix --write` 의 마지막 줄은 안내문 한 줄로 끝났고, 그래서
-찾는 쪽이 고치는 쪽보다 넓은 것을 아무도 몰랐다(POC 문장 7곳 대 6곳). 지금은
-`--write` 가 `docx_check.audit()` 을 직접 불러 남은 것을 이름으로 내고 1 로 죽는다 —
-**위 문단의 원칙이 「고치는 것」에서 「끝났는지 아는 것」까지 간 것**이다.
+★ **`.docx` 와 `.pdf` 는 은퇴했다**(2026-10-09 · DECISIONS §444 · PLAN #142 닫힘).
+종전에는 `.docx` 제출본이 있었고 배포 화면은 그것을 구운 `.pdf` 였다(§231). 정본이 md 로 옮겨진 뒤 **그 둘은 사본이었고**,
+사본을 검사하던 도구 다섯(`docx_check` · `docx_fix` · `docxrules` · `docx_figs` ·
+`docstyle`)과 PDF 를 굽던 `proposal_pdf` 가 같이 갔다. 사본이 맞으면 정본이
+틀려도 초록이었던 자리다.
 
-★ **배포 화면은 PDF 다**(2026-09-24 · DECISIONS §231). `tools/proposal_pdf.py` 가
-`docs/proposal.docx` 를 구워 `web/proposal.pdf` 를 내고, 쪽수 · 본문 한글 줄 수 ·
-판정 수치 · 그림 수 · 북마크 다섯을 대조해야 배포된다. 종전에는 브라우저가 `.docx` 를 직접
-그렸는데 **글꼴 치환과 그림 배치가 기계마다 달라 제출본과 화면이 갈렸다.**
-PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
+★ **글을 고치는 도구를 두지 않는다.** `docx_fix` 가 있던 사유는 docx 가
+바이너리라 사람이 diff 로 검토할 수 없다는 것이었다(R9 의 반대 경우). md 는
+diff 가 되므로 그 사유가 사라졌다 — 숫자가 낡으면 **검사가 울고 사람이 고친다.**
+다만 **표지 날짜**는 받아 적는 한 값이라
+`tools/build_proposal.py --touch <YYYY-MM-DD> --write` 가 옮긴다.
 
-강제자  `tools/docx_check.py`(기획서 ↔ 산출 대조) · `tools/docx_figs.py --check`(그림 ↔ 정본 · `PLACE` 가 「어느 생성 그림이 기획서 몇 번인가」의 정본) · `tests/test_docx_targets.py`(양방향 · 손으로 넣으라는 안내가 남아 있지 않은가)
+여덜 축이 어디로 갔는지는 `tools/proposalcheck.py` 머리말이 든다 — 수는
+`docnum_check`(판정 4종 · 회색 사유 다섯과 그 **가짓수 낱말**), 참조 · 폐기 어휘 ·
+캡션 · 긴 칸은 `proposalcheck`, 그림은 `htmlfigs --check`, 화면은
+`build_proposal --check`, 표지 날짜는 `doc_fsck ⑥`.
+
+강제자  `tools/proposalcheck.py`(기획서 정본 ↔ 실물) · `tools/docnum_check.py`(수) · `tools/htmlfigs.py --check`(그림 ↔ 정본 · `SLOT` 이 자리의 정본) · `tools/build_proposal.py --check`(화면 ↔ 정본)
 
 ### 15-1. 말할 수 있는 것
 
+<!--gen: cctv_out_pct-->
 ```
 1,281구간 전수 판정과 그 근거
 판정 불가의 사유를 다섯 가지로 갈라 적었다는 것
-골목의 65%에 영상판정을 적용할 수 없다는 인프라 사실
+골목의 69.5%에 영상판정을 적용할 수 없다는 인프라 사실
 소방용수 654 중 표준데이터 좌표가 있는 것은 동구 445 · 스코프 안 157 이라는 분모 공백
 현행 내비게이션 대비 개선(평가지표 E-1 · E-2 — `tools/evalgen.py` 가 산출한다)
 재현성 — 한 명령 · 지문 대조 · 봉인 베이스라인
 ```
+<!--/gen-->
 
 강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다
 
@@ -2876,6 +2937,28 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 
 강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다
 
+### 15-4. ★ 판정이 **안 보는** 것
+
+★ 2026-10-09 (DECISIONS §445 · PLAN #143 닫힘). **이 목록의 집이 화면이었다.**
+패널마다 한 줄씩 달려 있었고(§441 이 세 곳의 서로 다른 문장을 하나로 합쳤다),
+그 뒤 「읽는 법」 시트 한 장으로 옮겼고, 행이 그 시트까지 걷으라고 했다 —
+**「매뉴얼이 필요한 GUI 는 못 만든 GUI 다」.** 관제는 탐색 과제(소화전 157 ·
+CCTV 29지점 · 1,281구간)이고 출동 중 읽을 거리는 탐색 시간이다.
+
+그래서 집을 여기로 옮긴다. **지운 것이 아니다** — 대외 발언의 규칙이 사는
+자리가 §15 이고, 이 목록은 「무엇을 말하지 않는가」(§15-2)의 짝이다.
+
+| 안 보는 것 | 그래서 |
+|---|---|
+| 실시간 주정차 · 공사 · 이동 장애물 | 관측 수단이 없다. `needs_cv` 는 영상이 답하고 그 영상이 없다 |
+| 회전반경 | 제원표 **참고값**이고 **판정에 반영하지 않는다.** 제원표에 그 차가 없으면 등급으로 적는다(§9) |
+| 높이 통과 여부 | 판정하지 않는다. 전고와 고가 하부고를 같이 들 자료가 없다 |
+| 일방통행 방향 | 57구간 중 **확정 1**이다. 모르는 구간은 양쪽 다 불리하게 계산한다(§4) |
+| 폭의 참 | **미검증**이다(`width_verified: false`). D-25 실측 전이고 그때 판정 일부가 바뀐다 |
+| 동 경계 | 표시용 가정값이다 |
+
+강제자  `tests/test_navi_wireframe.py::test_the_two_honest_lines_moved_and_are_still_reachable`(이 표의 낱말이 사라지지 않는가) · `tests/test_fleet_turn_radius.py::test_picker_takes_the_number_only_from_fleet`(회전반경 줄) · `tools/uicheck.py`(화면에 **설명이 다시 들어오지 않는가** — 상시 표시 글자 수 래칫)
+
 ### 15-3. 수치 표기 원칙
 
 본 프로젝트의 모든 수치는 원본 데이터에서 코드로 재산출한 값이며 한 명령으로
@@ -2885,7 +2968,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 
 지형 표현에 `exaggeration` 을 1.0 이외로 올려 캡처했다면 그 사실을 캡션에 적는다.
 
-강제자  `tests/test_contract.py::test_segment_fields_are_internally_consistent`(`width_verified` 가 참이면 운다 — D-25 실측 전이다) · `tools/docnum_check.py`(대외 수치 재산출 대조). 「exaggeration 을 캡션에 적는다」는 규약이고 검사가 없다
+강제자  `tests/test_contract.py::test_the_schema_declares_width_is_unverified`(스키마 **최상위**의 미검증 선언이 `false` 인가 · `fields` 에 피처 칸이 안 남았는가. ★ 2026-10-10 — 종전에는 피처 1,281개를 봤고 그 칸을 지웠다. **지우면서 축을 옮겼다** · DECISIONS §455 · PLAN #4 ④) · `tools/docnum_check.py`(대외 수치 재산출 대조). 「exaggeration 을 캡션에 적는다」는 규약이고 검사가 없다
 
 ---
 
@@ -2934,7 +3017,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 ### 16-1. `CCTV_RANGE` 는 거리 상수가 아니라 촬영 기하의 함수다
 
 `unknown` 400구간(전체의 31%)의 사유가 전부 CCTV 사각이고, 그 경계가
-`CCTV_RANGE = 25.0` 한 줄이다. 이 값에는 근거가 없다.
+`CCTV_RANGE = 19.0` 한 줄이다. **2026-10-10 까지 이 값에는 근거가 없었다.**
 
 **전제부터 틀려 있다.** 이 상수를 "기존 CCTV 인프라까지의 거리"로 읽어왔는데,
 영상판정은 **직접 삼각대를 세우고 찍는다.** 그러면 유효 범위를 정하는 것은
@@ -2959,10 +3042,17 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 한편 CCTV 최단거리 중앙값은 38.5m 이고, 임계를 60m 로 열면 `unknown` 이
 400 에서 157 로 줄어든다. 이 상수 하나가 243구간의 운명을 쥐고 있다.
 
-★ **그럼에도 실측 전에는 바꾸지 않는다.** 위 계산은 광학 상한이고, 실제로는
+★ **2026-10-10 에 근거가 섰다 — 실측을 접고 표준으로 갔다.** IEC 62676-4:2025 의
+DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** 를 얻었다. 유도식 ·
+오차 예산 · 세 시나리오는 `DECISIONS §422-2`, 적용은 `§455` 다. 상수가 사는 자리는
+`src/firelane/seg/params.py` 하나다.
+
+★ **그래도 아래가 남는다.** 위 계산은 광학 상한이고, 실제로는
 지면 평면 가정 · 세그멘테이션 경계 흔들림 · 캘리브레이션 오차 · 가림이 더 크다.
 **계산으로 예상한 값을 그대로 상수에 박으면 그 순간 근거 없는 상수가 하나 더
-생긴다.** 실측 설계와 촬영 계획은 PLAN §1-23 · §1-24 에 있다.
+생긴다.** 19.0 이 그 함정을 피한 이유는 수가 아니라 **출처**다 — 우리 계산이 아니라
+국제 표준의 등급이고, 최악값을 골라 느슨해지는 쪽을 막았다. 실측 설계와 촬영
+계획은 PLAN §1-23 · §1-24 에 있고, **실측이 오면 19.0 을 재유도한다.**
 
 재현 — 위 공식과 `web/data/cctv.geojson` 의 제원으로 계산한다. 전용 도구는 두지 않는다.
 
@@ -2977,7 +3067,6 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 
 | 상수 | 값 | 상태 |
 |---|---:|---|
-| `CCTV_RANGE` | 25.0 | 243구간의 판정을 가른다. §16-1 |
 | `WMAX_CAP` | 60.0 | 담~담 상한. 근거는 "15m 로 잡으면 대로가 전멸한다" 뿐이다 |
 | `SNAP_MAX` | 6.0 | 눈대중 |
 | `MIN_SEG_LEN` | 3.0 | 눈대중 |
@@ -2987,8 +3076,9 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 계속 돈다**(`seg/width.py` 의 `WidthEngine` 에서 교차 폴리곤이 없을 때의 분기 —
 줄번호는 적지 않는다, 늘 낡는다). 종전에 이 절은 *"해소됐다"* 라고만
 적었고 그 서술이 코드보다 앞서 나갔다. <!--voice-ok--> 근거 없는 상수가 실제
-데이터로 교체된 첫 사례인 것은 맞으나 **교체가 전량은 아니다.** 나머지 넷도
-같은 길을 찾는다.
+데이터로 교체된 첫 사례인 것은 맞으나 **교체가 전량은 아니다.** 나머지 셋도
+같은 길을 찾는다. ★ 2026-10-10 `CCTV_RANGE` 를 이 표에서 걷었다 — 표준에서
+유도해 근거가 섰다(§16-1 · DECISIONS §455). **넷에서 셋으로 줄었다.**
 
 `SNAP_TRUST` · `COV_MIN` 에는 근거가 붙어 있다. **상수만 보면 눈대중처럼
 보이지만 근거가 붙어 있으면 함부로 못 건드린다.**
@@ -3017,7 +3107,7 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 1,962 전수 · **분모(blank) 0절** · 물림(inherit) 1,041절.
+★ **강제자 칸의 분모.** 절 2,240 전수 · **분모(blank) 0절** · 물림(inherit) 1,251절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3077,7 +3167,10 @@ PDF 는 글꼴을 안에 넣으므로 받는 기계와 무관하게 같다.
 | `code_owner` | `.github/CODEOWNERS` | `tools/navi_setup.py` 기본값 · `tools/ruleset_check.py` 관리자 · 기본 저장소 · 배치 도구 셋의 `REPO=` | `tests/test_sources_of_truth.py` |
 | `font_stack` | `tools/svg_fit.py` | `web/navi/src/ui/tokens.ts` · `web/proposal.html` | `tests/test_sources_of_truth.py` |
 | `offtrack_min` | `src/firelane/seg/params.py` | `web/navi/src/domain/vehicle.ts` | `tests/test_sources_of_truth.py` |
-| `local_lat0` | `tools/localgeo.py` | 조사 도구 셋이 **import 한다**(사본 없음) | `tests/test_sources_of_truth.py` |
+| `local_lat0` | `src/firelane/localplane.py` | 조사 도구와 발행이 **import 한다**(사본 없음) | `tests/test_sources_of_truth.py` |
+| `local_my` | `src/firelane/localplane.py` | **위도** 1도의 미터 — `pyproj` 실측 110,943.342 의 정수. `web/navi/src/domain/geo.ts` 가 같은 수를 **번들 쪽에** 든다(import 불가 · 수가 두 벌인 것은 결정이다). ★ 2026-10-11 까지 **110,574** 였고 그것은 **적도**의 자오선 1도다 — 3.3km 에서 11m 틀렸다(DECISIONS §469 → §473) | `tests/test_sources_of_truth.py` · `tests/test_localplane.py` |
+| `local_mx` | `src/firelane/localplane.py` | **경도** 1도의 미터 — `pyproj` 실측 91,120.151 의 정수. ★ 종전은 `111,320 × cos(위도)` = 91,019 로 **0.111% 작았다**(회전타원체를 구로 본다). 번들은 그 공식을 **점마다 다시 켜는** 변종까지 들고 있었다(DECISIONS §473) | `tests/test_sources_of_truth.py` · `tests/test_localplane.py` |
+| `em_narrow` | `src/firelane/emwidth.py` | 넓지 않은 글자 한 자의 폭(em 어림). `svg_fit` 이 **import 한다** — 2026-10-11 까지 그 파일이 수를 들고 있었고 `vehiclecard` 가 **다른 수(0.55)**로 또 짰다(DECISIONS §472 · PLAN #169) | `tests/test_sources_of_truth.py` |
 
 ★ **2026-09-23 — 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5).
   ★ 2026-09-28 정정 — 그때 열이었고 지금 **열둘**이다(`offtrack_min` ·
@@ -3329,7 +3422,7 @@ outputs:
 
 근거는 DECISIONS §173-3. 2026-09-17 기준 `authority` 칸이 있는 소스 21종 중 규칙에 맞는 것은 3종이다.
 
-강제자 — `tests/test_lake.py::test_authority_names_institution_and_route` (래칫 — 위반 수가 상한과 같아야 한다)
+강제자 — `tests/test_lake.py::test_authority_entries_name_their_institution`(칸 없음 래칫) · `::test_authority_entries_name_the_route_they_came_by`(받은 경로 래칫) · `::test_no_authority_goes_through_a_person`(상한 0) · `::test_the_split_covers_every_verdict`(가름이 전수인가). ★ 2026-10-10 (DECISIONS §453 · PLAN #55 ②) 래칫 하나(62)를 **둘로 갈랐다** — 고칠 수 있는 쪽(괄호 꼴 17)이 고칠 수 없는 쪽(칸 없음 45)에 숨고 있었다
 
 ★ `juso` 전자지도는 도로명주소법 시행령 제46조 **심사 승인** 데이터다 —
 승인 당사자의 사용과 제3자 재배포는 다르다. 퍼블릭 버킷·공개 저장소에
@@ -3366,9 +3459,17 @@ CRS 변경               ★ 중단. 무조건
 ★ 2026-10-02 (DECISIONS §349). `contract`(규범)와 `schema`(실측)는 **합치지 않는다** —
 합치면 실물이 바뀔 때 약속이 같이 바뀌어 아무도 못 알아챈다. 그런데 **둘을 대 보는
 자리가 없었다.** 갈라 두기만 하고 대조를 안 하면 두 벌이 조용히 갈린다.
-`tools/ledger_cross.py` 가 **대장 안에서** 넷을 댄다 — `required_cols` ⊆ `columns` ·
-`layer_used` ∈ `layers` · `encoding` = `encoding_seen` · `rows` ≈ `features`.
-2026-10-02 실측 **57쌍**. 레이크를 안 읽으므로 CI 에서도 돈다.
+`tools/ledger_cross.py` 가 **대장 안에서** 다섯을 댄다 — `required_cols` ⊆ `columns` ·
+`layer_used` ∈ `layers` · `encoding` = `encoding_seen` · `rows` ≈ `features` ·
+`what` 이 **남의 칸**을 서술하지 않는가. 2026-10-10 실측 **94쌍**.
+레이크를 안 읽으므로 CI 에서도 돈다.
+
+★ 다섯째는 **사람이 쓴 칸**을 본다(2026-10-10 · DECISIONS §452 · PLAN #56 닫힘).
+  나머지 넷은 둘 다 선언이지만 `what` 은 산문이고, 2026-09-17 에 `hydrant_summary`
+  의 `what` 이 **다른 판의 컬럼 체계**를 서술하고 있었다 — `schema` 는 맞았고
+  사람이 쓴 칸만 틀렸다(§178-2). 약한 대조다: 「이 칸 이름이 남의 것인가」만
+  보고 뜻은 안 본다. 문턱은 **한 소스만 쓰는 여섯 글자 이상**이고, 그보다
+  짧으면 산문의 보통명사와 구별이 안 된다(실측 — 넷이면 오탐 셋, 여섯이면 0).
 
 강제자  `uv run python -m firelane.contract`(대장 `contract:` ↔ raw 실물 · verify 「대장 선언 ↔ raw 실물」 단계) · `tools/ledger_cross.py`(약속 ↔ 실측을 대장 안에서 · verify 「대장 교차 선언」 · CI) · `tests/test_ledger_contract.py`(그 판정의 경계 — 컬럼 소실 · 건수 허용폭 · 스코프 하한)
 
@@ -3430,7 +3531,7 @@ uv run python -m firelane.lake gate      이동 · 삭제 전 관문. 막히면 
 지금 담는 칸은 `key` · `source_files` · `source_sha256` · `resolved` ·
 `source_crs` · `status` · `features` · `geom` · `note` · `outputs` · `seal` 이다.
 
-★ **그 칸 셋은 안 더한다**(2026-10-08 · DECISIONS §435 · PLAN #101). 종전에
+★ **그 칸 셋은 안 더한다**(2026-10-08 · DECISIONS §435 · PLAN #101 닫힘 · §449). 종전에
   이 자리가 `git_dirty` · `input_shas` · `params` 를 「아직 없는 칸」으로 적고
   각각 왜 필요한지를 설명했다. 재 보니 **셋 다 이미 있거나, 더하면 두 주인이
   된다.** 묻는 물음은 그대로 유효하고 답하는 자가 다른 데 있다 —
@@ -3506,7 +3607,7 @@ segments.py — 도로 중심선 + 폭 → 구간 판정
 
 IN    norm/ngii1k_*.gpkg · norm/building_*.gpkg · processed/cctv_5186.gpkg
 OUT   processed/segments_5186.gpkg · processed/segments.geojson
-PARAM TRUCK=3.0 PARK=2.0 CCTV_RANGE=25.0
+PARAM TRUCK=3.0 PARK=2.0 CCTV_RANGE=19.0
 """
 ```
 
@@ -4008,6 +4109,41 @@ BEV 는 디버그 플래그 뒤에 둔다.
 
 강제자  `tests/test_contract_vision.py`(`passable_width_m` 이 「이어지는 빈 구간 중 최장」이라는 정의가 계약에 박혀 있는가 · 합산 구현이 들어오면 `hard >= soft` 가 깨진다). 실제 계산은 CV 파트 코드라 여기서 못 본다
 
+### 19-5a. 관측 신선도 — **판정에 시간 개념이 없다**
+
+★ 2026-10-10 (DECISIONS §455 · PLAN #90 닫힘). **설계를 적고 수는 안 움직인다.**
+
+마지막 관측이 40분 전이면 그 판정으로 소방차를 보낼 수 있나 — **지금 답이 없다.**
+`needs_cv` 구간의 판정은 영상이 「그 순간」 본 것이고, 판정 산출물은 그 순간이
+언제였는지를 **판정에 쓰지 않는다.** 관측 시각 칸은 계약에 이미 있다 —
+`src/contracts/vision.py` 의 `observed_at` 이고, 그 파일이 시간대 없는 값을
+거부하는 사유로 「관측 신선도가 `now - observed_at` 으로 계산된다」를 적는다.
+**계산하는 쪽이 없다.**
+
+방향은 하나다 —
+
+    신뢰도 = f(경과시간, 단속밀도)
+
+    경과시간   now - observed_at. 길어지면 신뢰도가 내려간다
+    단속밀도   그 구간의 주정차 단속 이력. 높으면 **같은 경과시간에 더 빨리** 내려간다
+               (상습주차 구간은 비는 시간이 짧다)
+
+    30분 전 관측 + 상습주차 = 사실상 영상판정 불가
+
+★ **문턱을 여기서 안 정한다.** 「몇 분이면 못 믿나」는 관제가 운용으로 답할
+  물음이고 우리가 정할 문제가 아닐 수 있다 — `D-30` 소방서 인터뷰(`#5`)와 소방본부
+  종합상황실 자문이 「관측되지 않는 구간을 관제에서 어떻게 다루나」를 직접 답한다.
+  숫자를 먼저 박으면 그 답이 왔을 때 **두 번 갈아엎는다**(`D-07` 이 그 자리였다).
+
+★ **그래서 이 절이 드는 것은 셋이다** — ① 축이 없다는 사실 ② 방향 ③ 수를 누가
+  정하는가. 「담당 없음」만 적혀 있던 자리를 이것으로 바꾼다. 수가 들어오면
+  그것은 **새 축이고 측정 배치의 일**이다(PLAN §13-5 규칙 2).
+
+밖    **구현하지 않는다.** 이 절은 설계이고 코드가 없다. 코드가 서면 그 판이
+      이 절을 고친다 — 지금 짜면 문턱을 짐작해 박는 것이 된다.
+
+강제자 없음 — 사유: 설계 선언이다. 구현이 없으므로 셀 것이 없다. `observed_at` 이 계약에 남아 있는가는 `tests/test_contract_vision.py` 가 들고, 문턱이 들어오는 날 그 수의 강제자는 그 판이 세운다
+
 ### 19-6. 캘리브레이션 현황
 
 | | |
@@ -4091,7 +4227,19 @@ BEV 는 디버그 플래그 뒤에 둔다.
 ★ 흐름도의 `A*` 는 **앱 관점**이다. 파이프라인 구현은 Dijkstra 이며
 둘이 모순이 아니다.
 
-강제자  `tests/test_reach_overlay.py` · `tests/test_navi_graph_fresh.py`(앱의 A* 와 파이프라인의 Dijkstra 가 같은 `vehicle.edge_cost` 를 쓰는가) · `web/navi/test/rules.test.ts`
+★ 2026-10-11 (DECISIONS §465 · PLAN #71 닫힘). 위 문단은 2026-08 부터 있었고
+**재 본 적이 없었다.** 이제 쟀다 — 발행 그래프에서 **전개한 상태 수**로, 일감
+둘을 나란히. 벽시계는 안 잰다: 밀리초는 그 기계의 부하를 타고, 같은 입력에
+다른 수가 나오면 근거가 못 된다.
+
+결론은 위 두 문단이 적은 그대로다 — 1→1 에서는 A* 가 덜 열고, 1→전 노드에서는
+다익스트라 **한 번**이 A* 를 목표마다 돌리는 것보다 훨씬 적게 연다.
+
+★ **수는 여기 안 적는다**(§21-0 과 같은 규율). 정본은 `data/golden/astar.json`
+이고 `web/navi/test/astarbench.test.ts` 가 매 실행 다시 재서 대조한다 — 여기
+베끼면 그래프가 바뀌는 날 이 문단만 낡는다. 그림은 `docs/figures/astar.svg` 다.
+
+강제자  `tests/test_reach_overlay.py` · `tests/test_navi_graph_fresh.py`(앱의 A* 와 파이프라인의 Dijkstra 가 같은 `vehicle.edge_cost` 를 쓰는가) · `web/navi/test/rules.test.ts` · `web/navi/test/astarbench.test.ts`(위 수를 **매 실행 다시 재서** `data/golden/astar.json` 과 대조한다) · `tools/figures/route.py` 와 `tests/test_figure_ink.py`(그 장부를 그리고 막대가 값에 비례하는가)
 
 ### 20-5. 앱은 무엇을 받는가 — 엔드포인트
 
@@ -4331,3 +4479,560 @@ uv run python tools/dms.py seal --log /tmp/verify.log
 빠지고, 빠진 것은 낡는다.**
 
 강제자  `tools/dms.py --selftest` — 닫힌 선언 카나리아 둘
+
+### 21-4. 로직 지문기가 **둘**이고 판별은 **하나**다
+
+같은 물음(「주석을 뺀 로직이 같은가」)을 재는 자리가 둘이다.
+
+자리는 `tools/golden.py` 의 `logic_text` 와 `src/firelane/shardseal.py` 의
+`logic_print` 둘이다.
+
+| 자리 | 표현 | 무엇을 지키나 |
+|---|---|---|
+| `golden.logic_text` | 토큰열 | 판정 산출물 재잠금 게이트 |
+| `shardseal.logic_print` | `ast.dump` | ingest 샤드 봉인지의 `code` 칸 |
+
+★ **표현이 둘인 것은 결함이 아니다.** 토큰열은 파이썬 판을 안 타고(§185 ·
+G-24) `ast.dump` 는 탄다 — 그래서 게이트 쪽이 토큰열이다. 반대로 샤드 봉인지는
+한 기계 안에서만 비교되므로 판을 타도 상관없다. **합치면 봉인이 찢어지고 얻는
+것이 없다.**
+
+★ **판별이 둘인 것은 결함이었다.** 「무엇이 docstring 인가」를 두 함수가 따로
+들었고 한쪽이 더 넓었다 — `if` 몸통 첫 줄의 맨 문자열이 한쪽에는 로직이고 다른
+쪽에는 주석이다. 같은 입력에 다른 답을 내는 두 지문기는 **둘 다 못 믿는다.**
+이제 판별은 `shardseal.DOC_OWNERS` 하나가 들고 가려내는 일은
+`ast.get_docstring` 이 한다.
+
+★ 지문 값은 서로 **비교할 수 없다.** 그래서 검사가 보는 것은 「두 지문이 같은가」가
+아니라 **「두 지문이 같다 / 다르다에 합의하는가」**다.
+
+강제자  `tests/test_logic_print.py`(추적 `.py` 전수 × 안 보여야 하는 손질 넷 ·
+        판별이 한 자리인가 · 종전 판별로 되돌린 카나리아 · 안 읽히는 글에서
+        둘 다 터지는가 · 이 시험의 사본이 실물과 같은 일을 하는가)
+
+## 22. 코드 지도 — 화면 층
+
+화면은 **네 층**이고 파일마다 그 층의 일만 한다(`web/navi/src/App.tsx` 의
+머리말이 그 넷을 든다). 이 절은 그 층에 사는 파일이 **무엇을 들고 무엇을
+안 드는지**를 적는다 — 다음 사람이 고칠 자리를 찾을 때 읽는 지도이고,
+「누가 지킨다」가 아니라 「무엇이 들어 있다」를 적는다.
+
+```
+domain/   계산 (순수)    좌표 · 제원 · 비용 · A* · 스냅 · 회전 · 속도 · 상태표
+infra/    바깥 세계      fetch · 측위 · 음성 · 지도 SDK
+app/      배선           훅. 계산과 바깥을 잇는다
+ui/       그리기         상태를 모른다. 받은 것을 그린다
+```
+
+강제자  `tools/sealcov.py`(이 절이 지목한 파일을 센다 · `SEALED_FILES` 올라가는 쪽) ·
+        `web/navi/eslint.config.js`(훅 규칙) · `web/navi/test/*`(층마다의 판별식)
+        **하위 넷**이 이 칸을 물려받는다
+
+### 22-1. 진입과 배선
+
+| 파일 | 무엇을 드나 | 안 드는 것 |
+| --- | --- | --- |
+| `web/navi/src/main.tsx` | 진입점. **관제가 루트(`/`) · 내비가 `/navi/`** 다. 쿼리스트링은 주소가 아니라서(남에게 보낼 링크도 북마크도 못 된다) 배포가 루트에 관제를 앉힌다 | 어느 화면이 무엇을 그리는지 |
+| `web/navi/src/App.tsx` | 내비 화면의 훅을 **잇기만** 한다 | 계산도 그림도 여기서 하지 않는다 |
+| `web/navi/src/config.ts` | 바깥에서 **주입되는 값 한 자리**. 토큰을 저장소에 넣지 않는다 | 기본값으로 비밀을 들지 않는다 |
+| `web/navi/src/vite-env.d.ts` | 번들러가 주는 타입 선언 한 줄 | 코드가 아니다 |
+| `web/navi/eslint.config.js` | React 훅 규칙을 **실제로 돌린다**. 이 파일이 생기기 전까지 저장소에 eslint 가 하나도 없는데 `eslint-disable` 주석이 스물여덟 개 있었다 — **있지도 않은 검사를 끄고 있었다** | 서식은 안 본다(그쪽은 `ruff` 와 `tsc`) |
+
+### 22-2. 지도와 계산
+
+| 파일 | 무엇을 드나 | 안 드는 것 |
+| --- | --- | --- |
+| `web/navi/src/components/OpsMap.tsx` | 관제 지도. 내비 지도와 **같은 바탕**을 쓰고 그 위에 관제가 보는 것을 얹는다 | 판정 4색을 정의하지 않는다(정본은 `web/config.js`) |
+| `web/navi/src/components/opsLayers.ts` | **관제 전용 층.** `layers.ts` 가 상한을 치면서 **화면 경계**로 갈랐다 — 「두 화면의 일이 다르다」가 코드에도 선 자리다 | 내비가 쓰는 층은 안 든다 |
+| `web/navi/src/domain/serviceArea.ts` | 측위가 **우리 데이터 범위 안인가.** 범위 밖은 「GPS 가 안 잡힌다」와 다른 상태다 | 범위 밖일 때 무엇을 할지는 훅이 정한다 |
+
+### 22-3. 그리는 조각 — `ui/`
+
+★ 이 층의 규율 하나 — **상태를 모른다.** 받은 것을 그린다. 그래서 한 컴포넌트가
+열여덟 장의 화면을 맡을 수 있다(`TopBar`).
+
+| 파일 | 무엇을 드나 |
+| --- | --- |
+| `web/navi/src/ui/TopBar.tsx` | 통일 상단바. `domain/status.ts` 의 표 한 줄을 받아 그린다 — **열여덟 장이 이 컴포넌트 하나**다 |
+| `web/navi/src/ui/appShell.tsx` | 내비 화면의 바탕 · 알림 토스트 · 사건 지점 연기. 배선 파일에 섞여 있던 **모양**을 떼어 낸 자리다 |
+| `web/navi/src/ui/MapControls.tsx` | 좌측 세로 조작(나침반 · 현위치 · 확대 · 축소 · 레이어). **지도 인스턴스를 모른다** — 1인칭 카메라가 매 프레임 줌을 덮으므로 콜백만 부른다 |
+| `web/navi/src/ui/RemainPill.tsx` | 하단 「N분 남음 · x.x km」. 경로가 안 선 상태에서는 **수를 비운다** — 옛 경로의 남은 시간은 거짓 숫자다 |
+| `web/navi/src/ui/StatusCard.tsx` | 우측 상태 카드. **시간이 걸리는 상태만** 띄운다 — 나머지까지 띄우면 골목에서 지도를 가린다 |
+| `web/navi/src/ui/ShareChip.tsx` | 관제 공유 상태칩. 상단바 바로 아래 **가운데** — 오른쪽에 두면 병목 시트와 재탐색 카드가 같은 자리를 쓴다 |
+| `web/navi/src/ui/BottleneckPanel.tsx` | 병목 구간 상세(유효폭 · 요구폭 · 여유폭 · 길이 · 사유 · 근거). 「측정 신뢰도」는 `width_cov` 다 |
+| `web/navi/src/ui/SegCard.tsx` | 관제가 도로 하나를 눌렀을 때의 구간 카드. 여유폭을 **수로** 내고 사유를 한 줄 단다 — 넉넉하면 그 칸이 통째로 빠진다 |
+| `web/navi/src/ui/OpsBits.tsx` | 관제의 되풀이 조각 넷(`Row` · `Sec` · `Tile` · `Center`). 층(`LAYER`)을 받아 **휘도로** 무게를 가른다 |
+| `web/navi/src/ui/Legend.tsx` | 내비 지도 범례. 색은 `navi_graph.json.style` 이 주는 것을 그대로 쓴다 |
+| `web/navi/src/ui/VehicleArt.tsx` | 차종 옆모습. **우리가 그린 단순 도형**이고 실제 차량·제조사·도색을 본뜨지 않는다. 치수를 그림에서 읽지 않는다 |
+| `web/navi/src/ui/TurnArrow.tsx` | 회전 아이콘. 각이 아니라 **어휘**를 받는다 — 각을 어휘로 바꾸는 판단은 `domain/turn.ts` 가 이미 했다 |
+| `web/navi/src/ui/icons.tsx` | 작은 아이콘. **이모지를 안 쓴다** — 글꼴이 없는 단말에서 네모로 나온다 |
+| `web/navi/src/ui/DevBar.tsx` | 개발·시연 조작. 와이어프레임에 없는 것이라 **빼면 화면이 와이어프레임 그대로**가 되게 갈라 뒀다 |
+| `web/navi/src/ui/verdictMeaning.ts` | 판정 4색이 **무엇을 뜻하는가**, 사람 말로. 색은 여기 없다 |
+| `web/navi/src/ui/clearanceMeaning.ts` | 여유폭의 **색과 말**. 수는 `domain/clearance.ts` 가 낸다 |
+| `web/navi/src/ui/routeOption.ts` | 경로 하나를 **비교 카드 한 장**으로 접는다. 훅도 상태도 안 쓴다 |
+
+### 22-4. 화면 시험 — 무엇을 묻나
+
+★ **이 표의 전부가** 순수 입력으로 민다. 브라우저가 있어야 도는 것은 배선
+한 줄만 확인하고 멈춘다 — 안 그러면 CI 에서 조용히 건너뛰고, 건너뛴 검사는
+없는 검사다. (★ 2026-10-12 §483. 여기 「아홉 모두」라고 **수가 박혀** 있었고
+표가 열여섯으로 늘면서 낡았다 — 베낀 수는 반드시 낡는다.)
+
+| 파일 | 무엇을 묻나 |
+| --- | --- |
+| `web/navi/test/status.test.ts` | 화면 상태가 **신호대로 갈리는가.** 한 줄이 열여덟 장을 가르는데 시험이 없었다 |
+| `web/navi/test/speech.test.ts` | 안내가 **급한 순서로** 나가는가 |
+| `web/navi/test/progress.test.ts` | 위치 추정과 턴바이턴의 **폐루프.** 입력은 GPS 흉내다 — 정답 점을 넣으면 추정기가 틀려도 통과한다 |
+| `web/navi/test/pointRoute.test.ts` | 출발·도착을 **구간에 투영**하는가. 노드에 붙이면 20m 가 1,172m 로 안내된다 |
+| `web/navi/test/turning.test.ts` | 좁은 코너를 **막지 않고** 비용·경고로 다루는가 — 제원이 선 차종에게만 |
+| `web/navi/test/egobox.test.ts` | 자차 상자가 **실측 크기**인가. 틀리면 화면 전체가 거짓말이 된다 |
+| `web/navi/test/contact.test.ts` | 접지 그림자가 **건물과 한 몸으로** 움직이는가 |
+| `web/navi/test/serviceArea.test.ts` | 측위가 데이터 범위 밖인가 — **「안내할 수 있는가」 하나**만 본다 |
+| `web/navi/test/vehicleParity.ts` | 차량 통과 규칙의 **파이썬 판과 TS 판이 같은 답을 내는가.** 두 구현이 사는 한 이 격자가 유일한 동치 증거다(`PLAN #126`) |
+| `web/navi/test/precomputed.test.ts` | 발행물 **통행 가부**가 파이썬과 같은가. 그 대조가 `useBundle` 의 콘솔에만 살아 있었다(§483) |
+| `web/navi/test/geo.test.ts` | 번들 **전부가 그 위에 서는** 다섯 — 각도 둘 · 누적 · 수선 · 걷기. 상수까지 정본에서 가져온다(§482) |
+| `web/navi/test/speed.test.ts` | 도착 예정 시각이 매달린 **미검증 표**를 읽는 꼴. 값이 아니라 꼴을 문다(§482) |
+| `web/navi/test/routeSolve.test.ts` | 「출발·도착」을 경로 한 벌로 푸는 자 — 대체 접근 · **같은 끝점** · 순수(§482) |
+| `web/navi/test/adjacency.test.ts` | 인접리스트에 **딸린 기억** 셋. 전역이면 옆 것이 앞의 답을 받는다(§483) |
+| `web/navi/test/context.test.ts` | 주변 사정이 경로 위 **어디에** 있는가 · 다음 사정의 창(§483) |
+| `web/navi/test/routeDerive.test.ts` | **하이브리드 경계** — 잃지도 겹치지도 않는가(§483) |
+| `web/navi/test/edgeSnap.test.ts` | 자른 사본 ↔ 원본 **비율**. 둘을 오가는 자가 하나다(§483) |
+| `web/navi/test/dataSource.test.ts` | **없으면 죽는 것**과 없어도 도는 것. `style` 이 없으면 죽는다는 선언을 민다(§483) |
+| `web/navi/test/simulation.test.ts` | 경로를 따라 걷는 점 — **dt 0.1초 자름.** 없으면 시연 중에 점이 날아간다(§483) |
+
+## 23. 코드 지도 — 가장자리와 검사
+
+§22 가 화면이면 이 절은 **파이프라인의 가장자리**와 그것을 지키는 검사다.
+가운데(취입 · 폭 · 판정 · 발행)는 §18 과 §4 가 이미 든다.
+
+강제자  `tools/sealcov.py`(이 절이 지목한 파일을 센다 · `ENFORCER_INFLATION` 내려가는 쪽) ·
+        `tests/test_cli_surface.py`(표면의 거절) · `tests/test_scopedecl.py`(빈 그물)
+        **하위 셋**이 이 칸을 물려받는다
+
+### 23-1. 가장자리 — `src/firelane`
+
+| 파일 | 무엇을 드나 |
+| --- | --- |
+| `src/firelane/cli.py` | **명령줄 표면의 관문.** 인자를 거절하는 일만 한다 — 모르는 깃발을 주면 백열여덟 중 스물다섯이 조용히 삼켰다 |
+| `src/firelane/datalog.py` | 데이터 대장 도구. 파이프라인 끝에서 매니페스트를 갱신한다 |
+| `src/firelane/guards.py` | 파이프라인 **방어 로직의 정본.** 계보 검사를 단독으로도 돌린다 |
+| `src/firelane/layerfsck.py` | `sources.yaml` 의 **계층 선언**과 디스크·git·기계 설정을 댄다. 부르는 자리는 `datalog` 하나다 |
+| `src/firelane/publish_fleet.py` | 관내 차종과 제원을 내비가 먹을 꼴로 낸다 |
+| `src/firelane/quiet_gdal.py` | GDAL 의 **알려진 무해 잡음만** 걷는다. 모르는 경고는 그대로 둔다 |
+| `src/firelane/read/__init__.py` | `kind` 별 **읽기의 정본.** 취입 한 함수에 있던 갈래 열둘을 여기로 뗐다 |
+| `src/firelane/seg/basisno.py` | 구간 라벨을 **도로명주소 기초번호**로 만든다 |
+
+### 23-2. 가장자리 — `tools`
+
+| 파일 | 무엇을 드나 |
+| --- | --- |
+| `tools/after_squash.py` | **열차가 만든 상태를 다시 본다.** 스쿼시 뒤의 강제자다 |
+| `tools/branch_tidy.sh` | 가지와 PR 정리. **산출물에 안 닿는다** |
+| `tools/cv_queue.py` | 영상판정을 **어느 구간부터** 붙일지 순서만 정한다. 판정은 안 한다 |
+
+### 23-3. 검사 — 무엇을 묻나
+
+★ 열여섯을 묻는 것으로 묶으면 **넷**이다 — ① 두 구현이 같은 답을 내는가
+② 표면이 거절하는가 ③ 갈래를 전부 태우는가 ④ 비싼 일을 두 번 안 하는가.
+겹치는 자리는 없다.
+
+| 파일 | 무엇을 묻나 |
+| --- | --- |
+| `tests/test_acquire.py` | **두 파생기가 같은 답을 내는가** |
+| `tests/test_snap_groups.py` | 노드 접합이 **한 곳에서** 일어나는가 — 그리고 그 한 곳이 옳은가 |
+| `tests/test_provider_registry.py` | provider 목록의 **사본을 금지한다** |
+| `tests/test_read_dispatch.py` | `kind` → 갈래 배선이 **선언과 맞는가** |
+| `tests/test_cli_surface.py` | 모든 CLI 가 **모르는 인자를 거절하는가** |
+| `tests/test_scopedecl.py` | 메타 강제자가 **빈 그물이 아닌가** |
+| `tests/test_lineage_branches.py` | 계보 검증의 가지 셋을 **전부 태운다** |
+| `tests/test_dms_ancestry.py` | 조상 판정이 **네 모양을 다 가르는가** |
+| `tests/test_write_route.py` | 2차 경로가 **막힌 길을 안 쓰는가** — 소스 글자가 아니라 산출물로 본다 |
+| `tests/test_relock_decision.py` | 재잠금이 필요한가를 **지문이** 답하는가 — 사람의 산문이 아니라 |
+| `tests/test_fleet_profiles.py` | 차량 제원 배선이 **조용히 기준차로 떨어지지 않는가** |
+| `tests/test_tile_zoom_agreement.py` | **굽는 줌과 읽는 줌이 같은가** |
+| `tests/test_figure_fit.py` | 그림 라벨이 **폭까지** 화면·박스 안에 드는가 |
+| `tests/test_sweep_bookmark.py` | 레이크 지문 **북마크**가 낡은 것을 재사용하지 않는가 |
+| `tests/test_lakecheck_l3.py` | L3 이 **레이크를 전부 해시하지 않는지** — 판정이 아니라 **비용**을 잰다 |
+| `tests/test_refcheck_paths.py` | 경로 표기 검사가 **무엇을 넘기는가** |
+
+## 24. 저장소 안내 — 루트에서 내린 것
+
+★ 2026-10-10 (DECISIONS §450 · PLAN #34 닫힘). `README.md` 는 **clone 한 사람이
+처음 보는 자리**라 넷만 둔다(무엇을 만드나 · 5분 시작 · 어느 파트인가 · 문서는
+어디에). 그 밖의 다섯을 여기로 내렸다 — 글은 그대로이고 **자리만 바뀌었다.**
+
+강제자  `tools/readmecheck.py`(리드미가 적은 목록 ↔ 실물) ·
+        `tools/sealcov.py`(이 절이 지목한 파일을 센다)
+        **하위 둘**이 이 칸을 물려받는다
+
+### 24-1. 도구
+
+**목록의 정본은 도구 자신이다.** 각 도구가 제 머리말 첫 줄에 `<이름> — <한 줄>` 을
+적고 그것이 전부다. 문서는 베끼지 않는다(DECISIONS §352).
+
+```bash
+uv run python tools/toolindex.py           전수 색인 — 이름 · 한 줄
+uv run python tools/toolindex.py --check   모든 도구가 제 이름을 대는가 (verify.sh · CI)
+```
+
+★ 배치는 **한 줄**로 돈다 — `cd ~/projects/fire-lane && bash tools/inbox_go.sh`.
+  그것이 `.env` 적재 · INBOX 최신 zip 찾기·풀기 · 브랜치 이름 · `--relock` 여부를
+  다 판단한다(DECISIONS §256). 직접 부르려면
+  `bash "$FIRE_LANE_INBOX/fl.sh" feat/x --all`.
+  ★ **`~/Downloads` 가 아니다.** WSL 에서 `~` 는 리눅스 홈이고 다운로드는
+  `/mnt/c/Users/Fox/Downloads` 에 떨어진다 — `.env` 의 `$FIRE_LANE_INBOX` 를 쓴다.
+  INBOX 의 `fl.sh` 는 `tools/inbox_fl.sh` 사본이고, 진짜 도구는 **패치 안(없으면
+  origin/part/infra)의 `tools/fl.sh`** 다(DECISIONS §214-1).
+  ★ 그 사본은 **도구가 스스로 깐다** — 저장소 판과 다르면 덮는다(DECISIONS §396-1).
+    손으로 `cp` 하던 자리이고, 손 사본은 사라지기보다 **낡는 것**이 더 나빴다.
+    처음 한 번만 사람이 깐다: `cp tools/inbox_fl.sh "$FIRE_LANE_INBOX/fl.sh"`.
+★ 배치 끝의 두 단계 — 10 가지 정리(`branch_tidy.sh --auto --close-bots` · 봇 PR 을 사유 댓글과 닫는다) ·
+  11 위생(`tidy.py --yes` · `janitor.sh`). 사람이 기억해서 치던 것이다(DECISIONS §217-4).
+★ 중간에 끊겼으면 `--resume`. 어디까지 됐는지는 GitHub PR 상태로 가린다 — feat PR 이
+  열려 있으면 CI 대기부터, 머지됐으면 dev PR · 방송 · 정리부터(DECISIONS §215-3).
+
+★ **도구는 세 갈래다** — 어디에 두느냐가 갈래를 정한다.
+
+    ① 재현 · 자동     verify.sh · CI 가 부른다                      tools/ + 머리말 한 줄 + 배선
+    ② 재현 · 사람     사람이 판단하려고 부른다. 같은 입력이면 같은 출력  tools/ + 머리말 한 줄 +
+                                                                     (배선 또는 EXEMPT 에 사유)
+    ③ 한 번 쓰고 버림  조사 · 이관 · 디버그 스크립트                   **저장소 밖**
+
+  ③ 을 tools/ 에 넣지 않는다. 넣는 순간 ② 처럼 보이고, 아무도 안 고치는 채로 낡는다.
+  ② 로 올릴 값어치가 생기면 **머리말 한 줄**과 배선(또는 사유)을 같이 단다.
+
+강제자  `tests/test_tools_are_wired.py::test_every_tool_declares_its_own_summary`(이름 · 설명이 제 파일에 있는가 — 판정은 `tools/toolindex.py` 가 한다)
+
+#### 대조 도구 — 아무것도 안 바꾼다
+
+이 갈래의 도구는 읽고 표를 내거나 페이지를 만들 뿐이라 `golden` 지문에 영향이 없다.
+
+★ **어느 것이 이 갈래인지는 기계가 안 든다.** `toolindex.py` 색인은 이름과 한 줄만
+낼 뿐 갈래 축이 없고, 머리말에도 갈래 표지가 없다. 지금 그 사실을 아는 유일한
+자리는 `tests/test_tools_are_wired.py::EXEMPT` 의 사유 칸이다(DECISIONS §162-1).
+**측정하고 대조한 뒤에 판정을 바꾼다** — `n=7` 로 방법 하나를 기각했다가
+근거를 다시 쓴 것이 그 교훈이다(DECISIONS).
+
+강제자  `tests/test_tools_are_wired.py::test_every_tool_declares_its_own_summary`
+
+---
+
+
+### 24-2. 판정의 뼈대
+
+```
+TRUCK = 3.0     차량 전폭 2.5 + 미러·조향 여유 0.5
+PARK  = 2.0     주차 1대 노면 점유
+통행 불가   최대 폭(벽~벽) < 3.0
+통행 가능   최소 폭 >= 3.0 + 2 x 2.0 = 7.0      양쪽 주차를 가정한다
+```
+
+근거는 소방청 「2025 화재현장 골든타임 확보 종합대책」이고, 기준 차량 제원은
+소방청 「소방장비 기본규격」 소방펌프차 KFS-1-0073-2025-00 §3.3 이다.
+임계값 정본은 `src/firelane/seg/params.py`, 차량 제원 정본은 `sources.yaml` 의
+`vehicle_spec` 이다. 상세는 `MASTER §2-2` · `§3-13`.
+
+★ **축거는 공식 규격에 없다.** 내륜차 계산에 그것이 필요하므로 지금 값은
+추정이며 `wheelbase_verified: false` 가 그 표시다. **최소회전반경은 근거가
+있다** — 자동차규칙 제9조①의 법정 상한 12m 이고, 상한이지 성능값이 아니므로
+`turn_radius_verified: false` 가 따로 남는다.
+
+강제자  `tests/test_sources_of_truth.py`(`TRUCK`·`PARK` 의 정본이 `seg/params.py` 하나인가 — README 의 값은 사본이다) · `tests/test_seg_geom.py::test_verdict_table` · `tools/docnum_check.py`(README 숫자 대조)
+
+#### 경로가 둘인 이유
+
+```
+route_usage        weight="length"       회랑 산정용. 폭을 모른다
+route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
+```
+
+`access_corridor()` 는 폭 산출보다 먼저 돌기 때문에 거리만 쓸 수 있다.
+★ 그래서 **`route_usage` 는 통행 가능성을 뜻하지 않는다** — 0 초과인 580구간
+중 통과 불가가 40, 폭 3.0m 미만이 167이다.
+
+강제자  `tests/test_guards.py::test_route_usage_is_not_a_passability_claim`. 정본은 `MASTER §3-10` 이고 이 절은 그 사본이다 — 값이 갈리면 `tools/docnum_check.py` 가 운다
+
+#### 도달 가능성은 개별 판정과 다르다
+
+```
+차량 비용 통행 불가   474 / 1,281   폭 · 내륜차 · 회전반경까지 넣으면 못 지나간다
+도달 가능            833 (65%)     안전센터에서 막힌 길 없이 갈 수 있다
+도달 불가            447 (35%)
+```
+
+**막힌 구간 하나가 뒤쪽 골목 여러 개를 통째로 끊는다.** 폭 15m 대로라도
+진입로가 막히면 소방차가 못 간다.
+
+★ 474 는 지도의 빨강(`verdict` 192)과 **다른 값이다.** 산출 경로가 다르고
+판정에도 반영되지 않는다. 셋의 구분은 `MASTER §3-9` 가 든다.
+
+강제자 없음 — 사유: 도달 불가 조인은 tests/test_reach_overlay.py 가 보고 수 대조는 다음 코드 배치다(DECISIONS §167)
+
+---
+
+
+### 24-3. 데이터 계층
+
+정본은 **`MASTER §18`** 이다. 계층 선언은 `sources.yaml` 의 `layers` 블록,
+경로 해석은 `src/firelane/paths.py`, 계층별 책임(획득 · 계약 · 생산 · 재현)은
+`MASTER §5` 머리의 계층별 책임 표가 든다. 여기에는 입구만 적는다.
+
+강제자 없음 — 사유: 정본은 MASTER §18 이고 이 절은 참조만 둔다
+
+#### 게이트
+
+```bash
+uv run python tools/pull_data.py            관측만
+uv run python tools/pull_data.py --yes       반입 · 편입 · norm
+uv run python tools/pull_data.py --yes --all 위 + 파이프라인 + golden
+```
+
+★ 이 절이 계층 표 · 게이트 · 제공기관 폴더를 따로 들고 있었고, 제공기관을
+**폴더 수를 적고 이름은 열 개만** 나열하고 있었다(`mois` · `gjbg` 누락).
+사본은 이렇게 낡는다(DECISIONS §162-4).
+
+강제자 없음 — 사유: 입구 명령이다. 게이트 강제자는 MASTER §18-11 이 든다
+
+---
+
+
+### 24-4. 구조 — 뿌리와 `src/`
+
+★ 2026-10-10 (DECISIONS §450). 한 덩이였던 것을 셋으로 쪼갰다 — 주석 **스물아홉**이
+  한 절에 있었고 그것은 한 번에 못 읽는다(`doc_fsck` 의 ★ 여덟 규칙이 그 자리다).
+  글은 그대로이고 **끊은 자리만** 넣었다.
+
+```
+sources.yaml              데이터 정본. layers · datasets · outputs · retired
+src/contracts/            ★ 파트 간 유일한 접점. 세 파트가 이것만 import 한다
+  vision.py               영상판정 인터페이스 (MASTER §19 의 실행 가능한 사본)
+src/firelane/
+  paths.py                경로 정본. FIRE_LANE_DATA 환경변수
+  layers.py               계층 선언과 경로를 이름으로 묶는다
+  ledger.py               대장 항목 스키마의 정본. 산문을 필드로 읽는다
+  kinds.py                `kind` 분류의 정본. 여섯 곳에 흩어져 있던 것을 모았다
+  scope.py                공간 범위의 통제 어휘. 선언이 정본이다
+  naming.py               raw 파일명 문법의 정본. 파서가 곧 규칙이다
+  providers.py            raw 1단 폴더(제공기관)의 정본
+  encoding.py             인코딩 판별과 정규화. 디코드 성공은 정답이 아니다
+  lake.py                 레이크 해석기. 대장 + 디스크 → 파일마다 한 줄
+  normalize_raw.py        landing → raw 명명규칙 배치
+  prep.py                 raw → norm. 형식만 통일한다. 값은 안 바꾼다
+  contract.py             ★ 대장 ↔ 실물 계약 게이트
+  pipeline.py             단일 진입점. Step 선언(reads/writes/mutates)
+  lineage.py              ★ 계보. 단계별 입출력 지문 대조
+  ingest.py               raw → processed
+  shardseal.py            ingest 샤드(소스 하나)의 봉인지. 넷이 같을 때만 재사용
+  reseal.py               그 봉인지 한 칸(out · code · cfg)만 고쳐 적는다
+  ngii1k.py               수치지형도 도엽 → 레이어별 gpkg
+  ngi.py                  NGI/NDA 리더
+  guards.py               방어 정본. 낡은 산출물 격리 · 공간 커버리지
+  segments.py             조립부. 계산은 seg/ 가 한다
+  skeleton.py             ★ 판정 뼈대 후보(NGII 1:1,000 중심선 하이브리드). 순수 함수 (R1 · DECISIONS §184)
+  transition.py           ★ 옛 구간 → 새 구간 전이표. 1:N · N:1 · 소멸 · 신설 (R2 · §187)
+  seg/
+    params.py             판정 임계값 정본. 표출 상수는 display_scope.py 가 든다(DECISIONS §220)
+    graph.py              노딩 · 최대성분 · 접근 회랑
+    width.py              폭 산출 (WidthEngine)
+    geom.py               verdict · _seal · _join · _dirv (폐포 없는 순수 함수)
+    roadname.py           도로명 되붙이기 (RoadNameIndex)
+    basisno.py            기초구간 → seg_label
+    vehicle.py            차량 제원 · 엣지 비용
+    report.py             소방서 대조 · 진단 · 산출물 기록
+    scope.py              판정 범위 (judgment_scope) — 표출 범위는 판정 지문 밖이다
+    centerline_correction.py  사람이 승인한 중심선 위치 보정. 지문이 안 맞으면 실패한다
+  display_scope.py        ★ 표출 범위 단계 (display_scope · DISPLAY_BUFFER/CLOSE) — 판정 지문 밖 · scope_5186.gpkg
+  terrain.py              공개DEM → Terrain-RGB 타일
+  ortho.py                항공정사영상 → 배경 타일
+  publish_web.py          → web/data
+  publish_navi.py         내비가 먹을 그래프 하나 (navi_graph.json)
+  publish_fleet.py        관내 보유 차종 · 제원 → 내비
+  publish_basemap.py      내비 바탕 면 — 도로면(수치지형도 + 실폭도로) · 보도. 판정과 무관
+  publish_context.py      경로 주변 사정(과속방지턱 · 카메라 · 보호구역) · 119 출동 이력(실제 도착 시간). 판정과 무관
+  destinations.py         내비 목적지 검색 색인. 상가 · 주소/건물 · 관공서
+  vehiclecard.py          소방자동차 관리카드 판독
+  webmanifest.py          web/data 계보. publish 가 직접 쓴다
+  datalog.py              대장 정합성 · 계보 · 영향분석 · 백업 검증
+  inventory.py            원본 레이어·속성 인벤토리 → sources.yaml
+  segkey.py               seg_uid + 관측점 방위각
+  probe.py                좌표계 역추정 · 그래프 위상 진단
+  quiet_gdal.py           GDAL 잡음 억제
+  localplane.py           ★ 동명동 국소 평면 근사 — **좌표 상수의 집**. 조사 도구와 발행이 든다 (DECISIONS §469)
+  quantile.py             ★ 분위수 정본 — 「p90」 의 뜻이 여기 하나다. 공식은 numpy 가 든다 (DECISIONS §471)
+  krgis/crs.py            한국 좌표계 판별 · 안전 변환
+```
+
+### 24-5. 구조 — `tools/`
+
+```
+tools/
+  ship.py                 ★ 내보내기 전 단일 진입점
+  verify.sh               코드가 도는가 — 일괄 검증
+  tidy.py                 머지 후 로컬 찌꺼기
+  acquire.py              landing → raw 획득 게이트 · sha 대조
+  baseline.py             판정 산출물 봉인 · 실행 간 전이 대조
+  remeasure.py            ★ 판정이 움직인 배치의 **재생성 사슬.** 순서가 내용물이다 —
+                          지문 → 봉인 → 지표 → 봉인 → 문서 → 그림 → 래칫. 봉인이
+                          **두 번**인 것은 지표와 봉인이 서로의 앞이기 때문이고
+                          (DECISIONS §319-5), 두 번째가 `eval.json` 말고 아무것도 안
+                          움직였는지 **잰다.** 태그가 없으면 아무것도 안 고치고 멈춘다
+  verdict_tally.py        판정 네 수를 한 줄로. 전후를 **같은 셈**으로 재기 위한 문 하나
+  golden.py               ★ 리팩 전후 산출물 동일 증명. baseline 과 반대 용도
+  scan_data.py            데이터 레이크 구조 점검. 그 도구의 §7(선언 밖 형제)이 레이크 **밖**도 본다
+  docnum_check.py         문서 ↔ 산출물 숫자 · 필드표 대조
+  unusedcheck.py          ★ 미배선 자료 래칫. 「참조용 · 대조용 · 근거 자료」(영구)와
+                          「미투입 · 미배선」(내릴 대상)을 `feeds_why` 첫 낱말로 가른다 —
+                          둘을 한 수로 세니 「미활용 25」가 한 달 동안 25 였다 (§317)
+  navicov.py              ★ 번들에서 **시험이 이름으로도 안 부르는 순수 함수** 래칫.
+                          부류 넷(순수함수 · 순수상수 · 서식 · 리액트)으로 가르고
+                          함수 하나만 문다 — 한 통으로 세면 122 가 나오고 그 안에
+                          「렌더러가 있어야 드는 것」이 섞인다 (§482 · `unusedcheck`
+                          가 25 를 셋으로 쪼갠 §317 과 같은 꼴)
+  srccov.py               ★ `src/firelane`(판정 폐포)에서 **시험이 이름으로도 안
+                          부르는 순수 함수** 래칫. 부류 셋(순수 · 입출력 · 진입점)으로
+                          가르고 순수만 문다 — 첫 실측 56 이고, 첫 하나를 밀자마자
+                          `segkey._road_hash` 머리말이 코드와 **정반대**였다 (§493)
+  actionpin.py            ★ 워크플로 액션이 **떠 있는 태그**가 아니라 커밋 지문으로
+                          도는가 · 모든 작업이 시간 상한을 갖는가. 태그는 옮겨 다니므로
+                          우리가 고친 것 없이 CI 가 다른 코드를 돈다 (W13-6 · §324)
+  docgen.py               ★ 문서의 생성 블록에 실물 값을 **넣는다**. 흐르는 숫자는
+                          문서가 들지 않는다 (DECISIONS §246)
+  plan_renumber.py        PLAN §1 표 번호의 **정합 검사기.** 유일 · 오름차순 · 밖의
+                          죽은 인용. ★ **더는 당기지 않는다** — 번호는 영구
+                          식별자이고 결번은 정상이다 (DECISIONS §205 · §452)
+  commit_policy.py        산출물 · 일회성 스크립트 · 비밀값 차단
+  encoding_check.py       인코딩 · 개행
+  env_check.py            환경변수 선언(.env.example) ↔ 실물 · 단일 독자
+  web_manifest.py         web/data 계보 검사
+  scopecheck.py           ★ 발행 스코프가 출동 대상지(동명동) 밖으로
+                          얼마나 벗어났는가. 래칫 — 지금 값에서 내린다
+  freshcheck.py           ★ 커밋된 생성물이 **왜** 낡았는지를 자리로 말한다
+                          (시각 · 코드/설정/원본 봉인 · 파생 · 산출값)
+  owned_paths.py          ★ CODEOWNERS 를 소유권·검사강도의 정본으로 읽는다
+  pr_body_check.py        PR 본문이 템플릿을 실제로 채웠는가
+  proposalcheck.py        ★ 기획서 정본(docs/proposal.md) ↔ 실물 — 총연장 · 캡션 · 폐기 어휘 · 참조 · 긴 칸
+  tonecheck.py            ★ 문서 넷 + 리드미의 말투 — 비속어 · 은어 · 대화체 (`<!--voice-ok-->` 면 통과)
+  suppress.py             ★ 사유 없이 검사를 끄는 주석 — noqa · type:ignore · eslint-disable · 문서 표기. 양방향 래칫
+  doctor.py               ★ 전 계층 진단 한 명령 — 정체·무결성·백업·할 일
+  intake.py               Downloads → landing 게이트 · 대장 미매칭 차단
+  pull_data.py            ★ 반입 입구. 여덟 단계. 삭제는 검증에 매달려 있다
+  triage.py               받은 더미를 분류한다
+  doc_fsck.py             문서끼리 어긋난 데가 있는가 (여덟)
+  corner_probe.py         코너 꺾임각·반경 — 회전 가능성 대조
+  migrate_names.py        raw 개명 백필 — 실물·sha대장·대장을 원자적으로
+  refcheck.py             선언이 가리키는 것이 실재하는가 · --gc
+  treecheck.py            ★ 전수 스캔 — 항목이 아니라 트리에서 출발한다
+  ledger_stem.py          대장 stem 이관 · 무손실 증명
+  ledger_fields.py        대장 별칭 필드 통합
+  ledger_schema.py        실물에서 스키마 추출 · --check 드리프트
+  render_workflow.py      MASTER §12 → web/workflow.html 자동 생성 (CI 가 배포 때 부른다)
+  stage_pages.py          ★ 배포 준비 한 곳 — 배포에 안 싣는 것을 web/ 에서 뺀다
+  svg_fit.py              ★ 손으로 좌표 박은 SVG 가 화면·도형을 넘는가 — rect · circle · 라벨 폭
+  localgeo.py             동명동 국소 평면 근사의 **넘김막**. 집은 `src/firelane/localplane.py` 다(DECISIONS §469) — 도구 열하나가 아직 이 이름으로 읽는다
+  statkit.py              대조 표가 같이 쓰는 작은 수 셈(결측 가르기 · 사분위 꼴). **보간 공식은 없다** — `src/firelane/quantile.py` 가 든다(DECISIONS §471)
+  srgb.py                 ★ sRGB 역감마 · WCAG 상대휘도 · CIE L*a*b* · ΔE76 의 **공식 한 집**. colorsim · uicheck 가 든다 (DECISIONS §474)
+  render_figures.py       ★ 정본 → docs/figures/*.svg · --check 로 낡음 대조. 그리는 함수는 tools/figures/ 패키지 (배치는 svg_fit 이 본다)
+  htmlfigs.py             ★ 그 그림을 기획서 화면 자리에 바로 굽는다 — --sync 가 교체 · --check 는 변환기 없이 대조
+  release_brief.py        ★ 이 PR 이 무엇을 흡수하나 — 판정·계보·대장·계약
+  ruleset_check.py        GitHub 룰셋 ↔ 문서 방침 대조 (사람이 주기적으로)
+  ledger_feeds.py         feeds 산문 → 소비자 리스트
+  serve.py                배포와 같은 배치로 띄운다 (입구 · navi 빌드 · data)
+  wmax_audit.py           width_max_m 결손이 판정에 미치는 규모
+  desk_check.py           정사영상 위에 구간·폭 렌더
+  skeleton_compare.py     NGII 뼈대 후보 대 현행 구간 대조 (R1)
+  transition.py           옛 구간 → 새 구간 전이표 (R2 · R3 전후)
+  docpatch.py             문서 절 단위 멱등 교체 · 표 행 추가
+     ※ 날짜 붙은 일회성 스크립트는 두지 않는다(MASTER §18-5 R8). CI 가 막는다.
+```
+
+### 24-6. 구조 — `tests/` · `web/`
+
+```
+tests/
+  test_contract.py        파이프라인 ↔ 화면 경계 (web/data 계약)
+  test_guards.py          계보 2층 · 격리 · 커버리지 · 저장소 위생
+  test_seg_geom.py        verdict 단위
+  test_seg_width.py       WidthEngine 단위
+  test_seg_roadname.py    RoadNameIndex 단위
+  test_static.py          정의되지 않은 이름 (실패 경로의 NameError)
+  test_intake_rules.py    명명·스코프·인코딩 규칙 — raw 없이 도는 강제자
+  test_reproducibility.py 재현성 규약 강제 · 문서 ↔ 코드 동기화
+  test_doc_style.py       문서 문체 · 절 번호 · 어휘
+  test_declaration_sync.py ★ 역방향 — 실물이 선언돼 있는가
+  test_ownership.py       ★ 미소유 경로가 없는가. CODEOWNERS 전수 검사
+  test_docref.py          절 참조 무결성 · 하위 절 번호 유일·연속
+  test_workflow_html_sync.py   web/workflow.html ↔ 브랜치·팀·워크플로 대조
+  test_contract_vision.py GIS ↔ CV 경계 (MASTER §19)
+  test_ledger_outputs.py  대장 outputs ↔ 실제 산출물
+  test_place_idempotent.py 지점 집계 멱등성
+web/
+  index.html              관제(navi/?view=ops)로 넘기는 입구
+  navi/                   내비 · 관제 앱 (React + MapLibre · vite 8 · vitest)
+  config.js               파이프라인 설정 — 판정색 · 지형 과장 · 편성
+  data/                   생성물. 손으로 고치지 않는다 — 백엔드와 화면 사이의 계약
+```
+
+강제자 없음 — 사유: 구조 블록의 실재는 test_readme_structure_lists_real_files 가 본다
+
+---
+
+
+### 24-7. 지금 상태
+
+<!--gen: datasets v_clear v_needs_cv v_blocked v_unknown-->
+```
+세그먼트     1,281   (동명동 416 + 119안전센터 접근 회랑 70m + 안전센터 반경 300m)
+판정        통행 가능 464 · 판정 보류 192 · 통행 불가 192 · 영상판정 불가 433
+도달 가능    833 (65%)   119안전센터에서 막힌 길 없이 갈 수 있는 구간
+도달 불가    447         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
+총연장       58,308.7m
+기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
+대장        `datasets` 80종 · `retired` 4종
+web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
+내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
+            edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)
+            vite 8(rolldown) · 지형(Terrain-RGB) 지면 휨 · 모든 레이어를 style-spec 검증기로 본다
+관제        web/navi/?view=ops — 유일한 지도 화면. 옛 GIS 지도(web/js)는 2026-09-22 걷어냈다(DECISIONS §218-1)
+KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 (42%)
+```
+<!--/gen-->
+
+<!--gen: v_unknown-->
+`영상판정 불가` 433 는 전부 CCTV 사각이다. 폭 산출 불가는 0 이다.
+<!--/gen-->
+
+**시간을 줄이는 앱이 아니라 못 가는 길로 보내지 않는 앱이다.** 폭을 모르는
+내비의 최단경로는 세 번 중 한 번 이상 소방차가 못 지나가는 구간을 지난다.
+우리 경로는 그것을 피하면서 실거리가 더 길지 않다 — 중앙값 1.00배.
+숫자는 `uv run python tools/kpi.py` 가 계산 조건과 함께 낸다.
+사유는 `no_cctv_band` 194 · `no_cctv_thin` 156 · `no_cctv_narrow` 70 ·
+`no_cctv_single` 12 · `ledger_disputes` 1 **다섯**으로 갈라 적는다.
+
+<!--gen: v_blocked-->
+★ `통행 불가` 192 은 확정 개수가 아니라 **하한**이다. `width_max_m` 결손
+<!--/gen-->
+675건 중 노면 3.0m 미만인데 도로대장 명목폭이 3.0m 이상이거나 없는 92건은 막을 근거가 하나뿐이라 막지 않는다.
+발표 자료에서 `blocked` 192 를 확정으로 쓰지 않는다.
+
+★ **측량과 대조한 정확도**(2026-09-16 · DECISIONS §170-4) — NGII 1:1,000 측량 중심선에 엄격 매칭된
+1,041구간(81%)에서 **통행 가능인데 측량폭 3m 미만 0 · 통행 불가인데 측량폭 6m 이상 0**,
+노면 최솟폭 대 측량폭 절대편차 중앙 0.31m 다. 매칭 안 된 240구간(대부분 수치지도가 도로로
+안 그린 최협소 골목)은 측량으로 검증되지 않는다 — 정본은 현장 실측이다.
+
+**폭 값은 아직 미검증이다**(`width_verified: false`, 전건). 레이저 실측 후 바뀐다.
+값은 바뀌어도 필드와 `verdict` 어휘는 안 바뀐다. 계약 테스트가 그것을 보장한다.
+
+강제자 없음 — 사유: 수치는 docnum_check 가 segments · 판정 수를 대조하고 도달 가능 수는 다음 코드 배치다. 하위 한 절도 같은 사유다 — 셀 것이 없다
+
+#### 구간 수는 고정값이 아니다
+
+```
+641   동명동만 노딩
+1,266 접근 회랑 포함
+1,101 노드접합 · 산출단위 병합 + 수치지형도 교체   <!--stale-ok-->
+1,281 판정 범위에 119안전센터 반경 300m 추가 · 필문대로289번길 중심선 보정   ← 현재 판정 단위
+```
+
+노딩 규칙이 바뀌면 `seg_id` 가 전부 밀린다. 외부 참조에는 `seg_uid` 를 쓴다.
+중간 단계의 구간 수와 그 사유는 `DECISIONS.md` 가 든다.
+

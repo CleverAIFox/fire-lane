@@ -75,10 +75,25 @@ export {
  * 그래서 엣지별 진행방향(`forward`)을 경로에 실어 보낸다. 거리를 세는
  * 쪽이 전부 이것을 본다 — `progressAlongRoute` · `extractManeuvers`.
  */
+/**
+ * 한 번의 탐색이 **몇 상태를 확정했나.** 비교축이고 경로 결과에는 안 들어간다.
+ *
+ * ★ 2026-10-11 (DECISIONS §465 · PLAN §1 #71 닫힘). 「A* 가 다익스트라보다
+ *   빠른가」를 재는 길이 **코드에 없었다.** `heuristic` 인자는 있었고(그 비교축
+ *   자체가 §373 이 꺼낸 것이다) 「무엇이 달라지나」를 세는 자리가 없었다.
+ *   벽시계로 재면 그 기계의 부하를 타므로 **전개한 상태 수**를 센다 — 같은
+ *   입력에서 같은 수가 나오고, 그래서 그림에 쓸 수 있다.
+ *
+ * ★ 안 넘기면 **한 글자도 안 바뀐다** — `undefined` 면 증가도 초기화도 없다.
+ */
+export type RouteStats = { expanded: number };
+
 export function findRoute(
   graph: NaviGraph, adj: Adjacency,
   startNode: number, goalNode: number, heuristic = true,
+  stats?: RouteStats,
 ): RoutePlan | null {
+  if (stats) stats.expanded = 0;
   if (startNode < 0 || goalNode < 0) return null;
   const goal = graph.nodes[goalNode];
   // ★ PLAN §1 #71. 구운 조율의 하한을 곱한다. 모르는 인접리스트면 0 —
@@ -105,6 +120,7 @@ export function findRoute(
     if (done.has(ck)) continue;
     if (cur.s.n === goalNode) { end = cur.s; break; }
     done.add(ck);
+    if (stats) stats.expanded++;
     const base = g.get(ck) ?? Infinity;
     // ★ 되돌아가기 금지. 들어온 엣지의 반대쪽 노드로 곧장 돌아가는 전이는 안 연다.
     //   상태에 「들어온 엣지」 를 넣는 순간 「옆 구간으로 나갔다가 그대로 돌아오기」 가

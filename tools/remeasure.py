@@ -78,7 +78,9 @@ CHAIN: tuple[tuple[str, list[str]], ...] = (
     ("지표 재산출", ["tools/evalgen.py"]),
     ("봉인에 지표 반영", ["tools/baseline.py", "freeze", "{tag}", "--force"]),
     ("문서 생성 블록", ["tools/docgen.py"]),
-    ("기획서 그림", ["tools/docx_figs.py", "--sync"]),
+    # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). `docx_figs --sync` 였다.
+    #   docx 가 은퇴하고 같은 다섯 그림이 화면 자리로 바로 간다.
+    ("기획서 화면 그림", ["tools/htmlfigs.py", "--sync"]),
     ("래칫 조임", ["tools/ratchet.py", "--write"]),
 )
 

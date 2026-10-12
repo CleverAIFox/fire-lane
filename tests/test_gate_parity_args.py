@@ -65,3 +65,50 @@ def test_allowed_differences_are_alive() -> None:
             if t not in v or t not in c or not (c[t] - v[t])]
     blank = [t for t, why in ALLOWED.items() if len(why.strip()) < 5]
     assert not dead and not blank, f"죽은 면제 {dead} · 사유 없음 {blank}"
+
+
+def test_the_count_axis_sees_the_same_command_twice() -> None:
+    """**횟수 축이 무는가.** 집합은 「두 번 도는가」를 못 본다 (§456-6 ⑧).
+
+    ★ 2026-10-11. `gate_parity` 의 네 판정이 전부 `set[str]` 이라 같은 명령을
+      열 번 더 붙여도 출력이 한 글자도 안 바뀌었다. 그래서 §456-4 가 센
+      중복 여섯을 **이 도구가 하나도 못 봤다.** 세는 단위는 검사기가 아니라
+      명령 한 줄이다 — 같은 도구의 다른 하위명령은 묻는 것이 다르다.
+    """
+    import gateruns as gp
+
+    assert not gp.dup_cmds(), "같은 명령이 두 번 도는 자리가 있다:\n  " + "\n  ".join(gp.dup_cmds())
+    assert gp.local_cmds(), "verify.sh 에서 명령을 0줄 읽었다 — 빈 그물이다"
+    assert gp.ci_cmds(), "워크플로에서 명령을 0줄 읽었다 — 빈 그물이다"
+
+    # ★ 카나리아 — 양쪽으로 민다.
+    _one = "uv run python tools/x.py"
+    assert gp.dup_cmds(local=[_one, _one], ci=[]), "글자까지 같은 둘을 안 센다"
+    assert not gp.dup_cmds(local=[_one, _one + " --only"], ci=[]), \
+        "하위명령이 다른 둘을 중복으로 센다"
+    assert gp.dup_cmds(local=[], ci=[("a.yml", _one), ("a.yml", _one)]), \
+        "같은 워크플로의 둘을 안 센다"
+    assert not gp.dup_cmds(local=[], ci=[("a.yml", _one), ("b.yml", _one)]), \
+        "다른 워크플로의 하나씩을 중복으로 센다 — 일이 둘이다"
+
+
+def test_the_double_run_axis_reads_the_group_key() -> None:
+    """`workflow_call` 과 제 트리거를 같이 든 워크플로가 **한 번만 도는가.**
+
+    ★ 2026-10-10 (DECISIONS §457-3). `contract.yml` 이 제 push 와 `deploy.yml`
+      의 `gate` 양쪽으로 깨워져 같은 커밋에 **두 벌** 돌았다. 접는 자리는
+      `concurrency.group` 하나인데 그 키가 부르는 쪽을 안 갈랐다. 그때는
+      사람이 셌고, 이 축이 그 자리를 기계로 센다.
+    """
+    import gateruns as gp
+
+    assert not gp.double_runs(), "두 벌 도는 워크플로가 있다:\n  " + "\n  ".join(gp.double_runs())
+
+    _head = "on:\n  workflow_call:\n  push:\n    branches: [dev]\n"
+    _loose = _head + "concurrency:\n  group: c-${{ github.ref }}\n"
+    assert gp.double_runs({"probe.yml": _loose}), "안 가르는 group 키를 통과시킨다"
+    assert not gp.double_runs({"probe.yml": _loose.replace("github.ref", "github.workflow")}), \
+        "가르는 group 키를 두 벌로 센다"
+    # ★ 불리기만 하는 본문은 두 벌이 아니다 — 깨우는 쪽이 하나다.
+    assert not gp.double_runs({"probe.yml": "on:\n  workflow_call:\n"}), \
+        "제 트리거가 없는 재사용 본문을 센다"

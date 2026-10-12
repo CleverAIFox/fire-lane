@@ -269,3 +269,79 @@ def test_span_follows_the_same_rule_as_body(ds, tmp_path, monkeypatch):
     assert (a, b) == (0, 6), "얕은 제목 전까지가 아니다"
     assert "딴절" not in ds.body(rows, 0), "옆 절을 삼켰다"
     assert "안쪽" in ds.body(rows, 0), "하위 절을 잘라냈다"
+
+
+# ── §462 · 찍을 것을 **기계가 먹는 출력** ───────────────────────
+
+def test_the_invalid_list_prints_only_section_names(ds, monkeypatch, capsys):
+    """★ 2026-10-11 실기 (DECISIONS §462). 사람 눈용 전문에서 목록을 긁다가 두 번
+    물렸다 — 마지막 줄 힌트가 **셋에서 잘려** 넷째 절이 빠졌고, 들여쓰기를 긁는
+    정규식이 로케일에서 `Invalid collation character` 로 죽어 **빈 목록**이
+    `stamp` 로 넘어갔다. 빈 목록을 받은 `stamp` 는 거절하고, 도장은 하나도 안
+    찍힌 채 그 상태가 커밋됐다.
+
+    그래서 `--only` 에 **그대로 먹일 수 있는** 출력을 둔다. 묻는 것은 둘이다 —
+    절 이름만 나오는가, 그리고 **넷째가 빠지지 않는가.**
+    """
+    void = {f"DOC/{i}": {"files": [], "parts": {}, "sha": "옛"} for i in range(1, 6)}
+    now = {k: {"files": [], "parts": {}, "sha": "새"} for k in void}
+    monkeypatch.setattr(ds, "survey", lambda: (now, void, dict.fromkeys(void, "")))
+
+    assert ds.check(True) == 0, "목록은 판정이 아니다 — rc 로 울면 문이 멈춘다"
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.strip()]
+    assert lines == sorted(void), f"절 이름만 나와야 한다 — {lines}"
+    # ★ 카나리아 — 전문 쪽은 **여전히 사람 눈용**이고 rc 로 운다.
+    assert ds.check(False) == 1, "무효가 있는데 전문이 초록을 낸다"
+    body = capsys.readouterr().out
+    assert "--invalid-list" in body, "넷 이상일 때 기계가 읽는 길을 안 알려준다"
+    assert "2절 더" in body, "힌트가 잘린다는 사실을 안 적는다"
+
+
+def test_the_invalid_list_is_quiet_when_nothing_is_void(ds, monkeypatch, capsys):
+    """비면 **한 줄도** 안 낸다 — 빈 목록을 `stamp` 에 먹이면 그쪽이 거절한다."""
+    same = {"DOC/1": {"files": [], "parts": {}, "sha": "같다"}}
+    monkeypatch.setattr(ds, "survey", lambda: (same, dict(same), {"DOC/1": ""}))
+    assert ds.check(True) == 0
+    assert capsys.readouterr().out.strip() == "", "무효가 없는데 무언가를 낸다"
+
+
+# ── §463-4 · 같은 문서를 절마다 다시 읽지 않는가 ────────────────
+def test_the_body_reader_caches_but_never_serves_a_stale_line(ds, tmp_path, monkeypatch):
+    """★ 2026-10-11 (DECISIONS §463-4). `body()` 가 절마다 문서를 통째로
+    읽었다 — 562절을 훑는 `sealcov --selftest` 에서 4,158번이고 78초 중
+    75초였다. 그 기계에서는 자기검사 제한(120초)을 넘어 종료 124 였다.
+
+    캐시를 달면 **낡은 줄을 내줄** 위험이 생기고, 그쪽은 느린 것보다 나쁘다 —
+    문서를 고쳤는데 도장이 유효하다고 말하게 된다. 그래서 묻는 것은 둘이다.
+    """
+    monkeypatch.setattr(ds, "ROOT", tmp_path)
+    d = tmp_path / "D.md"
+    d.write_text("# 하나\n처음\n\n# 둘\n뒤\n", encoding="utf-8")
+    rows = [{"doc": "D.md", "line": 1, "depth": 1},
+            {"doc": "D.md", "line": 4, "depth": 1}]
+
+    assert ds.body(rows, 0) == "# 하나\n처음"
+
+    # ① 두 번째 호출은 파일을 다시 안 읽는다
+    opened = []
+    real = Path.read_text
+    monkeypatch.setattr(Path, "read_text",
+                        lambda self, *a, **k: (opened.append(self), real(self, *a, **k))[1])
+    assert ds.body(rows, 0) == "# 하나\n처음"
+    assert not opened, f"같은 문서를 또 읽었다 — {opened}"
+
+    # ② 문서가 바뀌면 **바뀐 줄**을 낸다. 캐시가 도장을 거짓으로 살리면 안 된다
+    monkeypatch.undo()
+    monkeypatch.setattr(ds, "ROOT", tmp_path)
+    d.write_text("# 하나\n고쳤다\n\n# 둘\n뒤\n", encoding="utf-8")
+    assert ds.body(rows, 0) == "# 하나\n고쳤다", "낡은 줄을 내줬다 — 도장이 거짓으로 유효해진다"
+
+    # ③ **크기가 같아도** 알아챈다. 길이로만 가르면 한 글자 치환을 놓친다 —
+    #    그리고 도장이 드는 변경은 대개 한 글자다. 시각은 손으로 밀어 둔다
+    #    (같은 틱에 두 번 쓰면 `mtime_ns` 가 같을 수 있다).
+    import os
+    st = d.stat()
+    d.write_text("# 하나\n바꿨다\n\n# 둘\n뒤\n", encoding="utf-8")
+    assert d.stat().st_size == st.st_size, "이 대조는 **같은 크기**를 묻는다"
+    os.utime(d, ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000))
+    assert ds.body(rows, 0) == "# 하나\n바꿨다", "크기가 같으면 못 알아챈다"

@@ -126,12 +126,42 @@ def _blocks(txt: str, keys: list[str]) -> str:
     return "\n".join(out)
 
 
+@functools.lru_cache(maxsize=512)
+def _tree(txt: str):
+    """`txt` 의 AST. **못 파싱하면 `None`** — 빈 나무와 다른 사실이다.
+
+    ── 왜 캐시하나 (2026-10-11 · DECISIONS §477) ──────────────────
+    `survey()` 가 절마다 그 절이 지목한 파일을 보는데, 한 파일을 **여러 절이**
+    지목한다. 그래서 같은 본문이 **3,250번** 파싱됐다 —
+    `docseal --selftest` 18.57초 중 `builtins.compile` 이 **10.94초(59%)**다.
+
+    ★ §463-4 와 **같은 병의 다음 축**이다. 거기서는 절마다 문서를 통째로
+      **읽었고**(562절 × 4,158회), 여기서는 절마다 소스를 통째로 **파싱한다.**
+      한 축을 고치면 다음 축이 보이는 것이 아니라, **같은 축을 두 번 보지
+      않으면 안 보인다.**
+
+    ★ 열쇠가 **본문 자체**다. 경로가 아니다 — 같은 본문의 다른 경로는 같은
+      나무이고, `view()` 가 이미 본문을 손에 들고 있어 경로를 다시 안 든다.
+      파이썬이 `str` 의 해시를 처음 한 번만 세므로 같은 객체의 재조회는
+      상수다.
+
+    ★ **돌려준 나무를 고치지 않는다.** 캐시가 같은 객체를 돌려주므로 한 쪽이
+      고치면 다른 쪽이 그것을 본다. 여기 소비자 둘은 다 읽기만 한다
+      (`tests/test_docseal_view.py` 의 ⑥ 셋이 그 불변을 든다 — 캐시가 듣는가 ·
+      지문이 캐시 유무에 안 흔들리는가 · 나무를 고치는 자리가 없는가).
+    """
+    import ast as _ast
+    try:
+        return _ast.parse(txt)
+    except SyntaxError:
+        return None
+
+
 def _funcs(txt: str, names: list[str]) -> str:
     """시험 함수 `names` 의 본문만 남긴다. 못 파싱하면 파일 전체를 돌려준다."""
     import ast as _ast
-    try:
-        tree = _ast.parse(txt)
-    except SyntaxError:
+    tree = _tree(txt)
+    if tree is None:
         return txt
     lines = txt.splitlines()
     out = []
@@ -228,9 +258,8 @@ def view(path: str, raw: bytes, others: list[str], text: str = "") -> bytes:
     # ── 시험 파일 · 절이 이름을 든 시험 함수 ────────────────────
     if _is_test(path):
         import ast as _ast
-        try:
-            tree = _ast.parse(txt)
-        except SyntaxError:
+        tree = _tree(txt)
+        if tree is None:
             return raw
         have = sorted(n.name for n in tree.body
                       if isinstance(n, (_ast.FunctionDef, _ast.AsyncFunctionDef))

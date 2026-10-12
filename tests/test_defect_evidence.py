@@ -31,10 +31,18 @@ EVIDENCE = {
     "W11-1": "tests/test_turn_restriction_filter.py::test_missing_node_point_stops",
     "W3-5": "tests/test_dms_ids.py::test_insert_does_not_shift_others",
     "W3-2": "tests/test_declaration_sync.py::test_master_roles_do_not_copy_codeowners",
-    "W3-3": "tests/test_docx_targets.py::test_docx_check_is_bidirectional",
-    "W4-2": "tests/test_docx_targets.py::test_docx_check_is_bidirectional",
+    # ★ 2026-10-09 (§444 · #142). 종전 증거는 `tests/test_docx_targets.py` 였고
+    #   그 시험과 대상(`docx_check` · `docx_fix`)이 은퇴했다. 같은 물음(기획서
+    #   대조가 **비어 있지 않은가**)을 정본 쪽에서 드는 시험으로 옮겼다.
+    "W3-3": "tests/test_proposalcheck.py::test_every_axis_bites_synthetic_input",
+    "W4-2": "tests/test_proposalcheck.py::test_every_axis_bites_synthetic_input",
     "W3-9": "tests/test_declaration_sync.py::test_sources_plan_row_refs_resolve",
-    "W7-3": "tests/test_verify_scope.py::test_scope_declarations_ratchet",
+    # ★ 2026-10-10 (DECISIONS §457-6). 종전 증표는 `test_scope_declarations_ratchet`
+    #   였다. 그 시험은 **손으로 적은 `SCOPE_FLOOR = 33`** 을 들었고 실측 82 보다
+    #   49 뒤처져 있었다 — 증표가 있는데 아무것도 안 지켰다. 바닥을 래칫
+    #   (`scopedecl.VERIFY_NO_SCOPE`)으로 옮기고, 증표를 그 수를 **대는** 시험으로
+    #   바꿨다. 같은 닫힘의 증표이고 더 강한 자다.
+    "W7-3": "tests/test_verify_scope.py::test_the_two_scope_counters_agree",
     "W3-15": "tests/test_publish_context.py::test_deploy_uses_drop_list",
     "W3-18": "tests/test_ci_env.py::test_devcontainer_env_notice_is_conditional",
     "W8-1": "tests/test_defect_evidence.py::test_navi_toolchain_is_vite8_and_vitest",
@@ -45,7 +53,9 @@ EVIDENCE = {
     "W3-13": "tests/test_generated_registry.py::test_call_site_values_come_from_registry",
     "W10-1": "tests/test_deadcheck_probes.py::test_every_ceiling_is_zero",
     "W5-1": "tests/test_defect_evidence.py::test_evidence_exists_in_tree",
-    "W4-7": "tests/test_docx_targets.py::test_long_cell_ratchet_bites",
+    # ★ 2026-10-09 (§444 · #142). 긴 칸 래칫이 docx 표에서 **md 표로** 옮겨졌다.
+    #   같은 물음이고 실측도 거의 같다(6칸 · 최장 1,376자).
+    "W4-7": "tests/test_proposalcheck.py::test_the_long_cell_ratchet_is_at_the_measured_value",
     "W3-6": "tests/test_golden_fp.py::test_display_only_constants_are_outside_the_judgment_closure",
     # ★ 2026-09-24 (DECISIONS §227). §13 의 **마지막** 행. 증표는 옛 판정을
     #   박제해 경계에서 대조하는 시험이다 — 수용 조건이 「불변 증명」이었으므로
@@ -80,19 +90,45 @@ def _open_ids() -> set[str]:
     return set(re.findall(r"^\| (W\d+-\d+) \|", sec, re.M))
 
 
-def test_evidence_exists_in_tree():
+def missing_evidence(evidence: dict[str, str], root: Path = ROOT) -> list[str]:
+    """증표 중 트리에 **없는** 것. 순수 함수.
+
+    ★ 2026-10-12 (DECISIONS §491). 종전에는 이 셈이 시험 본문에 있었다 —
+      **합성 등록부로 밀 수가 없었고**, 그래서 「무엇에나 통과한다」와
+      구별이 안 됐다. 이 자가 죽으면 떨어진 배치가 조용히 「닫힘」으로
+      남는다. 그것이 이 파일의 존재 이유다.
+    """
     missing = []
-    for wid, node in EVIDENCE.items():
-        f, fn = node.split("::")
-        p = ROOT / f
-        if not p.is_file():
+    for wid, node in evidence.items():
+        f, _, fn = node.partition("::")
+        q = root / f
+        if not q.is_file():
             missing.append(f"{wid}: {f} 가 없다")
             continue
-        names = {n.name for n in ast.walk(ast.parse(p.read_text(encoding="utf-8")))
+        names = {n.name for n in ast.walk(ast.parse(q.read_text(encoding="utf-8")))
                  if isinstance(n, ast.FunctionDef)}
         if fn not in names:
             missing.append(f"{wid}: {node} 가 없다")
+    return missing
+
+
+def test_evidence_exists_in_tree():
+    missing = missing_evidence(EVIDENCE)
     assert not missing, "닫힘의 증표가 트리에 없다 — 그 배치가 떨어졌다:\n  " + "\n  ".join(missing)
+
+
+def test_the_evidence_check_bites_a_missing_file_and_a_missing_node():
+    """★ **카나리아.** 합성 등록부 둘로 민다 — 파일이 없는 것과, 파일은
+    있는데 그 노드가 없는 것. 둘은 다른 고장이다: 앞은 배치가 떨어진 것이고
+    뒤는 시험 이름이 바뀐 것이다."""
+    gone = missing_evidence({"W0-1": "tests/없는파일.py::test_x"})
+    assert gone and "없는파일.py 가 없다" in gone[0], gone
+    renamed = missing_evidence({"W0-2": "tests/test_defect_evidence.py::test_없는이름"})
+    assert renamed and "test_없는이름" in renamed[0], renamed
+    # ★ 음성 — 실재하는 노드는 조용하다(위 시험이 실물로 그것을 또 든다)
+    assert missing_evidence(
+        {"W0-3": "tests/test_defect_evidence.py::test_evidence_exists_in_tree"}) == []
+    assert missing_evidence({}) == [], "빈 등록부에서 무언가를 만든다"
 
 
 def test_no_closed_row_lingers_in_the_table():

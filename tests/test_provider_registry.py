@@ -122,3 +122,41 @@ def test_reserved_providers_document_why():
             f"{name} 은 reserved 인데 사유 주석이 없다. "
             "reserved 는 '폴더가 없어야 한다' 는 뜻이고, 왜 등재만 해 두는지"
             "가 없으면 다음 사람이 폴더를 다시 만든다")
+
+
+# ── norm 파일명 꼴 — 시험이 이름을 안 부르고 있었다 (DECISIONS §493) ─
+def test_pattern_file_accepts_every_real_raw_name():
+    """★ `pattern_file()` 은 `layers.norm.naming` 의 값을 **만든다.**
+
+    그 값이 실물을 거부하면 norm 계층 선언이 제 파일을 위반으로 센다.
+    기댓값을 손으로 적지 않고 `data/_acquire.json`(raw 실물)에서 가져온다.
+
+    ★ 이 자리가 까다로운 이유는 **dataset 에 언더스코어가 있다**는 것이다
+      (`kfs_pumptruck` · `parking_enforce` · `bldg_ledger`). 왼쪽부터 세면
+      필드 경계를 못 찾고, 그래서 꼴이 `\\w+` 의 되돌림에 기대고 있다.
+      되돌림이 끊기는 날 여기가 운다.
+    """
+    import json
+    import re as _re
+
+    raw = sorted(json.loads(
+        (ROOT / "data/_acquire.json").read_text(encoding="utf-8"))["files"])
+    assert len(raw) > 50, "실물 목록이 비었다 — 이 검사가 빈 그물이 됐다"
+    rx = _re.compile(P.pattern_file())
+    bad = [p for p in raw if not rx.match(p)]
+    assert not bad, (
+        "norm 파일명 꼴이 실물 이름을 거부한다:\n  " + "\n  ".join(bad)
+        + "\n  ★ 고치는 쪽은 꼴이다 — 문법 정본은 `firelane.naming` 이다.")
+
+
+def test_pattern_file_still_refuses_what_it_is_there_to_refuse():
+    """★ 음성 — 아무 경로나 받으면 그 선언은 없는 것과 같다."""
+    import re as _re
+
+    rx = _re.compile(P.pattern_file())
+    for bad in ("safety/safety_cctv_jngj.csv",            # vintage 없음
+                "safety/safety_cctv_20260630.csv",        # 스코프 없음
+                "없는기관/safety_cctv_jngj_20260630.csv",   # 선언 밖 폴더
+                "safety_cctv_jngj_20260630.csv",          # 폴더 없음
+                "safety/Safety_CCTV_jngj_20260630.csv"):  # 대문자
+        assert not rx.match(bad), f"{bad!r} 를 받는다 — 꼴이 열렸다"

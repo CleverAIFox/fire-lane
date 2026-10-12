@@ -44,7 +44,7 @@ export interface BottleneckData {
   samples: number | null;
   verdictLabel: string;
   verdictColor: string;
-  /** 가장 가까운 CCTV 까지 거리(m). 25m 넘으면 영상판정이 성립 안 한다 */
+  /** 가장 가까운 CCTV 까지 거리(m). 19m 넘으면 영상판정이 성립 안 한다 */
   cctvDistM: number | null;
   /** 회색이면 왜 회색인가(§215-2). 아니면 null */
   grayReason: string | null;
@@ -82,7 +82,7 @@ export function BottleneckPanel(d: Props) {
   //   멘토링(§219)이 「색과 수로」 라고 한 자리다. 판정은 안 바뀐다.
   const margin = d.widthM != null ? d.widthM - d.requiredM : null;
   const band = CLEARANCE_SCALE[clearanceBand(margin)];
-  const cctvOk = d.cctvDistM != null && d.cctvDistM <= 25;
+  const cctvOk = d.cctvDistM != null && d.cctvDistM <= 19;
   return (
     <div style={panel} data-wf="04">
       <button onClick={d.onToggle} style={collapse} aria-label="접기">›</button>
@@ -124,7 +124,7 @@ export function BottleneckPanel(d: Props) {
         <Line k="폭 표본" v={d.samples != null ? `${d.samples}개` : "—"}
               note={d.samples === 1 ? "표본 하나 — 통과 확정 보류" : undefined} />
         <Line k="가까운 CCTV" v={d.cctvDistM != null ? `${Math.round(d.cctvDistM)}m` : "—"}
-              note={cctvOk ? "영상 판정 가능 거리" : "25m 밖 — 영상 판정 불가"} />
+              note={cctvOk ? "영상 판정 가능 거리" : "19m 밖 — 영상 판정 불가"} />
         <Line k="판정" v={d.verdictLabel} color={d.verdictColor} />
         {d.grayReason && (
           <div style={{ fontSize: 11, color: C.panelInk, padding: "6px 0", lineHeight: 1.5 }}>
@@ -133,7 +133,8 @@ export function BottleneckPanel(d: Props) {
         )}
       </Section>
 
-      {/* ★ 2026-10-09 (§441). 「정직 문단」이 여기 있었다 — `ui/Manual.tsx` 로 옮겼다. */}
+      {/* ★ 2026-10-09 (§445). 「정직 문단」이 여기 있었다 — **화면에 없다.**
+          집은 `MASTER §15-4`(판정이 안 보는 것)다. */}
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <button onClick={d.onShare} style={ghost}>관제에 공유</button>
         <button onClick={d.onReport} style={cta}>통행 불가 신고 »</button>

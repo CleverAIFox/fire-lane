@@ -193,3 +193,76 @@ def test_r1_does_not_touch_judgment_fingerprint_files():
     for rel in ("src/firelane/seg/width.py", "src/firelane/seg/report.py", "src/firelane/seg/params.py"):
         src = (root / rel).read_text(encoding="utf-8")
         assert "skeleton" not in src, f"{rel} 가 skeleton 을 참조한다 — R3 전에는 배선하지 않는다(§184)"
+
+
+# ── 문턱 둘 — 시험이 이름을 안 부르고 있었다 (DECISIONS §493) ──
+# ★ `tools/srccov.py` 가 `angle_diff` · `far_limit` 를 셌다. 둘은 **문턱이
+#   박힌 순수 함수**이고 위에서 쓰는 자(`suspect` · 쌍선 판정)는 그 문턱을
+#   **값으로** 지나간다. 그러면 문턱이 움직여도 위의 시험이 조용하다.
+def test_angle_diff_folds_so_a_reversed_line_is_the_same_road():
+    """★ **접는 자**다 — 역주행은 0 이다. 회전각 자가 아니다.
+
+    `MATCH_ANGLE`(25) · `PAIR_ANGLE`(15) 를 넘기는 자가 이것이고, 둘 다
+    「같은 도로인가」를 묻는다. 접지 않으면 **맞물린 차선이 서로 다른
+    도로**가 되어 `fallback` 이 엣지를 다시 깔고 쌍선 판정이 꺼진다.
+    """
+    assert S.angle_diff(0, 180) == 0.0
+    assert S.angle_diff(90, 270) == 0.0
+    assert S.angle_diff(0, 90) == 90.0, "직각이 접기의 천장이다"
+
+
+def test_angle_diff_crosses_zero_without_counting_the_long_way():
+    """359→1 을 358 로 세면 같은 도로가 다른 도로가 된다."""
+    assert abs(S.angle_diff(10, 350) - 20.0) < 1e-9
+    assert abs(S.angle_diff(350, 10) - 20.0) < 1e-9
+    assert abs(S.angle_diff(-10, 10) - 20.0) < 1e-9
+
+
+def test_angle_diff_stays_inside_zero_to_ninety():
+    """★ 치역을 1도 눈금으로 두 바퀴 민다 — 넘으면 문턱 비교가 뒤집힌다."""
+    for a in range(-360, 361, 1):
+        for b in (0, 37, 180, 181, 359):
+            d = S.angle_diff(float(a), float(b))
+            assert 0.0 <= d <= 90.0 + 1e-9, f"({a}, {b}) → {d}"
+            assert abs(d - S.angle_diff(float(b), float(a))) < 1e-9, "대칭이 아니다"
+
+
+def test_far_limit_falls_back_to_the_floor_when_the_width_is_unknown():
+    """폭을 모르면 바닥(`FAR_M`)이다. **회색을 넓게 읽지 않는다**(§455 회색=NULL)."""
+    import numpy as np
+
+    for w in (None, float("nan"), np.nan):
+        assert S.far_limit(w) == S.FAR_M, f"{w!r} 에 바닥을 안 준다"
+    # 폭이 바닥의 두 배 아래면 바닥이 이긴다 — 좁은 길에서 문턱이 더 좁아지지 않는다
+    for w in (0, 1.0, 4.0, 6.0):
+        assert S.far_limit(w) == S.FAR_M, f"폭 {w} 에서 문턱이 바닥 아래로 내려갔다"
+
+
+def test_far_limit_grows_with_the_road_so_a_trunk_is_not_called_misplaced():
+    """★ 넓은 간선은 **차로 안에서도** 중심선과 벌어진다 — 그만큼 빼준다."""
+    assert abs(S.far_limit(13.9) - 6.95) < 1e-9
+    assert abs(S.far_limit(20.0) - 10.0) < 1e-9
+    # 단조 — 넓어지는데 문턱이 줄면 넓은 길이 더 쉽게 의심된다
+    prev = 0.0
+    for w in [x / 2 for x in range(0, 61)]:
+        now = S.far_limit(w)
+        assert now >= prev - 1e-12, f"폭 {w} 에서 문턱이 줄었다"
+        prev = now
+
+
+def test_the_real_case_that_set_this_threshold_reproduces():
+    """★ **실물 하나로 못박는다** — 2026-09-17 r_eda2 동계천로.
+
+    `width_min_m` 0.97m 로 `needs_cv` 가 붙은 구간인데, 10.1m 옆의 NGII
+    도로폭이 13.9m 였다. 「폭불일치」 하나로는 약하다(최소 통과폭 대
+    대표 폭이라 골목마다 2m 넘게 벌어진다) — **엉뚱한 자리에서 쟀다**
+    쪽 증거가 「멀리」다. 그 둘이 같이 서는 것이 이 자리의 과녁이다.
+    """
+    row = {"cover": 0.9, "ngii_med": 10.1, "ngii_w": 13.9,
+           "width_min_m": 0.97, "edge_width": 13.9}
+    assert S.suspect(row) == "폭불일치·멀리"
+    # ★ 문턱 **아래**는 「멀리」가 아니다. 6.0 < far_limit(13.9)=6.95
+    assert S.suspect({**row, "ngii_med": 6.0}) == "폭불일치"
+    # ★ 15m 를 넘으면 「멀리」가 아니라 **「측량밖」**이다 — 그 자리에
+    #   측량 중심선이 없다는 뜻이지 옆에 섰다는 증거가 아니다
+    assert S.suspect({**row, "ngii_med": 16.0}) == "폭불일치·측량밖"

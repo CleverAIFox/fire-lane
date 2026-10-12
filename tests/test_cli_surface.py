@@ -365,3 +365,122 @@ def test_the_static_arm_catches_what_the_dynamic_arm_missed(tmp_path):
         '    ap.add_argument("원본", type=Path)\n'
         "    src = ap.parse_args().원본\n", encoding="utf-8")
     assert argv_index_hits(ok) == [], "고친 꼴을 결함으로 센다"
+
+
+# ── 거절하는 **입** 과 단계 진입점 (§495) ─────────────────────
+# ★ 이 파일이 드는 것은 「모르는 것을 거절하는가」이고, **거절하는 입**이
+#   `firelane.cli.reject` 다. 그 입과 단계 진입점(`stagerun`) 을
+#   `tools/srccov.py` 가 「시험이 이름으로도 안 부른다」로 셌다(§493) —
+#   25개 결함을 고친 자리의 **공통 출구**를 아무도 안 밀고 있었다.
+def test_reject_exits_two_and_says_why(capsys):
+    """★ 종료 **2** 다. 0 이면 부른 쪽이 「돌았다」고 믿는다(이 파일의 과녁)."""
+    import pytest
+
+    from firelane.cli import USAGE_EXIT, reject
+
+    with pytest.raises(SystemExit) as e:
+        reject("모르는 깃발이다", doc="첫 줄이다\n\n둘째 단락", usage="tool --flag")
+    assert e.value.code == USAGE_EXIT == 2
+    out = capsys.readouterr().out
+    assert "모르는 깃발이다" in out, out
+    assert "tool --flag" in out, "사용법을 안 냈다"
+    assert "첫 줄이다" in out, "머리말 첫 줄을 안 냈다"
+
+
+def test_reject_does_not_raise_a_traceback(capsys):
+    """★ 역추적이 아니라 **말**을 낸다 — 25개 중 넷이 역추적을 토했다."""
+    import pytest
+
+    from firelane.cli import reject
+
+    with pytest.raises(SystemExit):
+        reject("까닭")
+    out = capsys.readouterr().out
+    assert "Traceback" not in out and out.startswith("✗ "), out
+
+
+def test_stage_main_refuses_a_name_that_is_not_a_stage(capsys):
+    """★ 단계 이름이 아니면 **거기서 운다** — 조용히 0 으로 안 나간다."""
+    import pytest
+
+    from firelane.stagerun import stage_main
+
+    with pytest.raises(SystemExit) as e:
+        stage_main("없는단계이름")
+    assert e.value.code == 2
+    err = capsys.readouterr().err
+    assert "없는단계이름" in err and "단계 이름이 아니다" in err, err
+
+
+def test_stage_main_does_not_swallow_a_missing_dependency(monkeypatch):
+    """★ **그 모듈이 없을 때만** 받는다. 단계가 제 의존을 못 찾은 것은 환경
+    문제이고, 삼키면 「단계 이름이 아니다」로 바뀌어 1족이 된다.
+    """
+    import importlib
+
+    import pytest
+
+    from firelane import stagerun
+
+    def boom(name: str):
+        raise ModuleNotFoundError("No module named 'rasterio'", name="rasterio")
+
+    monkeypatch.setattr(importlib, "import_module", boom)
+    with pytest.raises(ModuleNotFoundError, match="rasterio"):
+        stagerun.stage_main("terrain")
+
+
+def test_stage_main_refuses_a_module_without_a_main(monkeypatch, capsys):
+    """모듈은 있는데 `main()` 이 없으면 그것도 단계가 아니다."""
+    import importlib
+    import types
+
+    import pytest
+
+    from firelane import stagerun
+
+    monkeypatch.setattr(importlib, "import_module",
+                        lambda name: types.ModuleType("빈모듈"))
+    with pytest.raises(SystemExit) as e:
+        stagerun.stage_main("prep")
+    assert e.value.code == 2
+    assert "main() 이 없다" in capsys.readouterr().err
+
+
+def test_run_stage_only_catches_the_memory_failure():
+    """★ 메모리 실패만 가로챈다. 나머지를 삼키면 **실패가 성공으로** 보인다."""
+    import pytest
+
+    from firelane.stagerun import run_stage
+
+    def ok():
+        ok.ran = True
+
+    ok.ran = False
+    run_stage(ok)
+    assert ok.ran
+
+    def bad():
+        raise ValueError("대장이 틀렸다")
+
+    with pytest.raises(ValueError, match="대장이 틀렸다"):
+        run_stage(bad)
+
+
+def test_run_stage_turns_an_out_of_memory_into_a_named_exit(capsys):
+    """메모리 부족은 **이름 있는 종료**로 바꾼다 — 역추적은 원인을 안 말한다."""
+    import pytest
+
+    from firelane.stagerun import is_oom, run_stage
+
+    err = OSError(12, "Cannot allocate memory")
+    assert is_oom(err), "전제 — 이 오류가 OOM 으로 읽힌다"
+
+    def oom():
+        raise err
+
+    with pytest.raises(SystemExit) as e:
+        run_stage(oom)
+    assert e.value.code != 0
+    said = capsys.readouterr()
+    assert "Cannot allocate memory" in (said.out + said.err)

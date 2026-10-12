@@ -128,7 +128,11 @@ def test_counts_are_stated_not_assumed(rows):
     """
     c = collections.Counter(p["verdict"] for p in rows)
     assert len(rows) == 1281
-    assert dict(c) == {"clear": 464, "needs_cv": 225, "blocked": 192, "unknown": 400}
+    # ★ 2026-10-12. CCTV_RANGE 25.0 → 19.0 재발행(§455-1 · #15). 이 네 수는
+    #   **재잠금과 함께 고치는 값**이고 그것이 이 시험의 docstring 이 적은 바다.
+    #   ★ §479 예보는 「재발행이 **닫는** 빨강」만 셌다 — 옛 수를 박아 둔
+    #     자리는 재발행이 **연다**. 그 족을 안 센 것이 예보의 구멍이었다.
+    assert dict(c) == {"clear": 464, "needs_cv": 192, "blocked": 192, "unknown": 433}
 
 
 # ── 이름과 실물 (DECISIONS §320) ────────────────────────────────
