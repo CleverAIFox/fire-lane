@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-10-09T17:12:52+09:00",
+  "generated_at": "2026-10-12T12:20:46+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
-      "sha256": "75a074705db0be9ff3ebbc7d1542e6182c813a3e005dbe4ef4a876ef8595a5ab",
-      "bytes": 1275701
+      "sha256": "1c6d985c80b0c1cb47de2e3c4526179e573cde7ff12c3815c81139d06c2327ae",
+      "bytes": 1244048
     },
     "segments.schema.json": {
-      "sha256": "3a9ef4cbf0df80b3c8ab876509ebe7fb2ab84ba26e7eda449967946bbfd57c5e",
-      "bytes": 5953
+      "sha256": "5180e68e1ec69e7a0949d318123b40aea9aa15d210ee4902b68c55693cdea424",
+      "bytes": 5923
     },
     "_manifest.json": {
-      "sha256": "66ce74c4f3976edd4f4cd1881da9bd6ff9ab7b0847fd566f9c7a3c7c2c58363c",
+      "sha256": "ccb7033ea9652c003b189a4bbec35e3446840184b23499c3ba14e9bdbc5328d9",
       "bytes": 103058
     }
   },
@@ -29,8 +29,8 @@
       "bytes": 28956
     },
     "dest.geojson": {
-      "sha256": "c75723c8e324a0e1808c18d723d342db75900ed57306419dd7a36ca35eb195e2",
-      "bytes": 519880
+      "sha256": "081a5abd16a8807a83eb74ee24f6fa7c48c33f3533abf19afd76375d2e0e6a06",
+      "bytes": 451740
     },
     "fleet.json": {
       "sha256": "8c88a7c7e3c9693d1852e8c88365444e3c0cb5eb2b08bc9dd373812db8cbafb2",
@@ -45,28 +45,28 @@
       "bytes": 78926
     },
     "navi_graph.json": {
-      "sha256": "4e175b2a480a79cba12a2a75a31156b54bab02f72f3f601cb349539d60344492",
-      "bytes": 583515
+      "sha256": "8736a0f7e0295eb20c8562220ef8a2cb6693cd8204158e09bfac538656b023b7",
+      "bytes": 584030
     },
     "poi.geojson": {
-      "sha256": "22021841393291d478f11dc0acaf8604d2c70bb784e7fad205530a602f7d04ec",
-      "bytes": 532114
+      "sha256": "28899afae2566960a3909bb1dd6fa80b5c5871109de06c96e77b21375422f159",
+      "bytes": 245968
     },
     "road_area.geojson": {
-      "sha256": "83d945acf787cc139503185a99d25d75273f3b76eeabb5cef4965711aba4bfb5",
-      "bytes": 457832
+      "sha256": "7a085fb2805cbd585e3bf385517d839644f15714d8d8698e04dadee2dfc44494",
+      "bytes": 458598
     },
     "route_vehicle.json": {
       "sha256": "f7df5af746f481890f4d18de54a218f7445f484641dffac8a80ec28b69ad00dc",
       "bytes": 96670
     },
     "segments.geojson": {
-      "sha256": "62b80472876a9e406c61cc3e5f18f6794462acc29ec65a030aa9d784cc1fd3a3",
-      "bytes": 1077595
+      "sha256": "deb6d2c79dfd87ddf0f321c39f30f44ec17bc294a43e19b56319eeb082ea2aad",
+      "bytes": 1045942
     },
     "segments.schema.json": {
-      "sha256": "b564b808a74a3b02e693c856681bd4fb795e1f3bd25b274ae9687d3d8627eb48",
-      "bytes": 5748
+      "sha256": "bd24108eaa2d90f8aeaa6cf8218ef28d8b582fb1c52f5f03140b73b75e683dca",
+      "bytes": 5718
     },
     "sidewalk.geojson": {
       "sha256": "c561e0d6ae5bdc689d6d7bd5b9938067229baa4dd4a7910f90ed8483b421f804",
@@ -81,7 +81,7 @@
       "bytes": 350
     },
     "view.json": {
-      "sha256": "e4146780f1546d36cb8aa180891106abc4e2de122be5f861266c33dd82b16035",
+      "sha256": "0581059e1246ca1731a557d3c412cf2bc744b657f9fb55b8a1cdb50754ac9ba4",
       "bytes": 582
     }
   },
@@ -120,5 +120,5 @@
     }
   },
   "tiles_digest": "ca2ce50bd36477e1",
-  "total_mb": 33.22
+  "total_mb": 32.83
 }
