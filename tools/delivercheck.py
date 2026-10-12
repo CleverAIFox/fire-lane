@@ -415,16 +415,42 @@ def collide(names: list[str]) -> list[str]:
     return sorted(k for k, v in seen.items() if v > 1)
 
 
-def tails(names: list[str]) -> list[str]:
-    """번호를 뗀 꼬리가 겹치는가 — 이름이 달라도 같은 커밋이면 두 번 얹는다.
+def tails(paths: list[Path]) -> list[str]:
+    """**같은 커밋이 두 번 들어 있는가.** 증거는 `From <sha>` 다.
 
-    ★ 2026-09-28 (§278-5). 접두사(`fire-lane-`)도 같이 뗀다. 안 떼면 접두사 붙은
-      것과 안 붙은 것이 **다른 꼬리**로 보여 같은 커밋 둘을 못 잡는다.
+    ★ 2026-09-28 (§278-5). 종전에는 **파일 이름의 꼬리**로 판정했다 —
+      번호와 접두사를 떼고 남은 글자가 같으면 같은 커밋으로 봤다.
+
+    ★ 2026-10-12 (DECISIONS §501). **그 자가 틀렸다.** 꼬리는
+      `git format-patch` 가 제목에서 만든 아스키 슬러그이고, 이 저장소의
+      커밋 제목은 **한국어**다 —
+
+          제목이 전부 비아스키        → 꼬리가 **빈다**(`fire-lane-0094-.patch`)
+          제목이 다르고 슬러그가 같다 → `fix-462` 둘이 **다른 커밋**이다
+
+      실측 — 122 커밋을 뜨니 빈 꼬리 **열여섯** · 겹친 슬러그 **둘 쌍**이
+      나왔고 **열여덟 전부 다른 sha** 였다. 참이 하나도 없는 자였고,
+      그래서 **정당한 배달을 막았다.**
+
+      묻는 것은 처음부터 「같은 커밋이 둘이냐」였다. 그 답을 아는 것은
+      **sha** 이고 패치 머리에 적혀 있다. 이름이 아니라 그것을 본다.
+
+    ★ 파일을 못 읽으면 **거부 쪽**으로 센다 — 못 읽은 것을 「다르다」로
+      넘기면 이 자가 조용해진다(모르는 것은 초록이 아니다).
     """
     seen: dict[str, list[str]] = {}
-    for n in names:
-        seen.setdefault(re.sub(r"^(?:[a-z-]+-)?\d+-", "", n), []).append(n)
-    return sorted(f"{k}: {' · '.join(v)}" for k, v in seen.items() if len(v) > 1)
+    for p in paths:
+        p = Path(p)
+        try:
+            head = p.read_text(encoding="utf-8", errors="replace")[:200]
+        except OSError as e:
+            seen.setdefault(f"못 읽었다({e.strerror})", []).append(p.name)
+            continue
+        m = re.match(r"From ([0-9a-f]{7,40}) ", head)
+        key = m.group(1) if m else f"sha 가 없다({p.name})"
+        seen.setdefault(key, []).append(p.name)
+    return sorted(f"{k[:12]}: {' · '.join(v)}"
+                  for k, v in seen.items() if len(v) > 1)
 
 
 def _message_of(p: Path, text: str) -> str:

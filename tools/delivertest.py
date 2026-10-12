@@ -67,15 +67,41 @@ def selftest() -> int:
         bad.append("이름 충돌을 못 잡는다")
     if collide(["0001-a.patch", "0002-b.patch"]):
         bad.append("멀쩡한 이름에 운다")
-    # ★ §278-5. 접두사가 붙어도 같은 꼬리를 잡는가. 안 떼면 무음으로 통과한다.
-    if not tails([f"{PATCH_PREFIX}0001-x.patch", f"{PATCH_PREFIX}0003-x.patch"]):
-        bad.append("접두사 붙은 같은 꼬리를 안 잡는다")
-    if tails([f"{PATCH_PREFIX}0001-x.patch", f"{PATCH_PREFIX}0002-y.patch"]):
-        bad.append("접두사 붙은 다른 꼬리를 잡는다")
-    if not tails(["0001-x.patch", "0003-x.patch"]):
-        bad.append("번호만 다른 같은 꼬리를 못 잡는다")
-    if tails(["0001-x.patch", "0002-y.patch"]):
-        bad.append("멀쩡한 꼬리에 운다")
+    # ★ §501. 증거는 **`From <sha>`** 다 — 이름의 꼬리가 아니다. 네 갈래를 민다.
+    import tempfile as _tmp
+
+    with _tmp.TemporaryDirectory() as _d:
+        _p = Path(_d)
+
+        def _patch(name: str, sha: str, subject: str) -> Path:
+            q = _p / name
+            q.write_text(f"From {sha} Mon Sep 17 00:00:00 2001\n"
+                         f"From: x <x@y>\nSubject: [PATCH] {subject}\n\n---\n",
+                         encoding="utf-8")
+            return q
+
+        same = [_patch(f"{PATCH_PREFIX}0001-x.patch", "a" * 40, "가"),
+                _patch(f"{PATCH_PREFIX}0003-x.patch", "a" * 40, "가")]
+        if not tails(same):
+            bad.append("같은 sha 를 두 번 얹는 것을 안 잡는다")
+        diff = [_patch(f"{PATCH_PREFIX}0001-y.patch", "a" * 40, "가"),
+                _patch(f"{PATCH_PREFIX}0002-z.patch", "b" * 40, "나")]
+        if tails(diff):
+            bad.append("다른 sha 인데 잡는다")
+        # ★ 이 저장소의 실물 꼴 — 제목이 전부 한국어라 **꼬리가 빈다**
+        empty = [_patch(f"{PATCH_PREFIX}0094-.patch", "c" * 40, "한국어 제목"),
+                 _patch(f"{PATCH_PREFIX}0095-.patch", "d" * 40, "다른 한국어")]
+        if tails(empty):
+            bad.append("빈 꼬리를 같은 커밋으로 센다 — §501 이 고친 그 자리다")
+        # ★ 슬러그가 같아도 다른 커밋이면 통과해야 한다(`fix-462` 둘)
+        slug = [_patch(f"{PATCH_PREFIX}0084-fix-462.patch", "e" * 40, "fix 462 가"),
+                _patch(f"{PATCH_PREFIX}0085-fix-462.patch", "f" * 40, "fix 462 나")]
+        if tails(slug):
+            bad.append("같은 슬러그를 같은 커밋으로 센다")
+        # ★ sha 를 못 읽는 것은 **거부 쪽**이다 — 모르는 것은 초록이 아니다
+        junk = [_p / "없는것1.patch", _p / "없는것2.patch"]
+        if not tails(junk):
+            bad.append("못 읽은 패치를 조용히 통과시킨다")
     if not parse(render({"a": "1"})) == {"a": "1"}:
         bad.append("EXPECT 를 적고 되읽지 못한다")
     if parse(render({"a": "1"})).get("#"):

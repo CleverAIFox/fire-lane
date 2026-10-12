@@ -106,12 +106,48 @@ def test_duplicate_patch_names_are_caught(names, want):
     assert bool(D.collide(names)) is want
 
 
-@pytest.mark.parametrize(("names", "want"), [
-    (["0001-x.patch", "0003-x.patch"], True),
-    (["0001-x.patch", "0002-y.patch"], False),
+def _head_patch(d: Path, name: str, sha: str, subject: str) -> Path:
+    """`git format-patch` **머리**만 흉내낸 패치 한 장.
+
+    ★ 2026-10-12 (DECISIONS §501-4). 처음에 이것을 `_patch` 로 적었고,
+      이 파일 아래쪽(「외로운 시험」)에 **같은 이름의 다른 함수**가 이미
+      있었다. 파이썬은 부르는 때에 이름을 찾으니 **뒤의 것이 이긴다** —
+      내 시험은 `From <sha>` 가 없는 diff 꼴을 먹었고, 그래서 sha 가 같은
+      패치 둘을 넣었는데도 조용했다. 판별식이 아니라 **먹이가 틀렸다**(§436-6).
+      이름을 겹치지 않게 적는다.
+    """
+    p = d / name
+    p.write_text(f"From {sha} Mon Sep 17 00:00:00 2001\n"
+                 f"From: x <x@y>\nSubject: [PATCH] {subject}\n\n---\n",
+                 encoding="utf-8")
+    return p
+
+
+@pytest.mark.parametrize(("shas", "names", "want"), [
+    # 같은 커밋이 두 번 — **잡아야 한다**
+    (("a" * 40, "a" * 40), ("0001-x.patch", "0003-x.patch"), True),
+    # 다른 커밋 — 통과
+    (("a" * 40, "b" * 40), ("0001-x.patch", "0002-y.patch"), False),
+    # ★ §501 — 제목이 전부 한국어면 **꼬리가 빈다.** 다른 커밋이다
+    (("c" * 40, "d" * 40), ("0094-.patch", "0095-.patch"), False),
+    # ★ §501 — 슬러그가 같아도 다른 커밋이다(`fix-462` 둘)
+    (("e" * 40, "f" * 40), ("0084-fix-462.patch", "0085-fix-462.patch"), False),
 ])
-def test_same_tail_different_number_is_caught(names, want):
-    assert bool(D.tails(names)) is want
+def test_the_same_commit_twice_is_caught_by_sha_not_by_filename(
+        tmp_path: Path, shas, names, want):
+    """★ 증거는 `From <sha>` 다.
+
+    §501 까지는 파일 이름의 꼬리로 판정했고, 이 저장소의 한국어 제목에서
+    **참이 하나도 없는 자**였다 — 122 커밋에서 열여덟을 잡고 전부 거짓이었다.
+    """
+    ps = [_head_patch(tmp_path, n, s, f"제목 {i}")
+          for i, (n, s) in enumerate(zip(names, shas, strict=True))]
+    assert bool(D.tails(ps)) is want
+
+
+def test_an_unreadable_patch_counts_as_a_refusal(tmp_path: Path):
+    """★ 못 읽은 것을 「다르다」로 넘기면 이 자가 조용해진다 — 모르는 것은 초록이 아니다."""
+    assert D.tails([tmp_path / "없는것1.patch", tmp_path / "없는것2.patch"])
 
 
 def test_forbidden_strings_are_read_from_the_message_not_the_diff(tmp_path: Path):
