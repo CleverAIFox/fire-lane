@@ -62,22 +62,33 @@ def _layer(tmp: pathlib.Path, *rels: str) -> None:
         f.write_text("x", encoding="utf-8")
 
 
+def _hits(lc, tmp: pathlib.Path, *rels: str) -> list[dict]:
+    """층을 깔고 L6 을 한 번 돌려 **울음 목록**을 낸다.
+
+    ★ 판정을 돌리는 자리를 하나로 둔다 — 그래야 같은 판별식을
+      `assert not _hits(…)`(정상)와 `assert _hits(…)`(합성) 둘로 밀 수 있다.
+      `l6` 는 값을 안 내고 `HITS` 에 쌓으므로 그 꼴을 여기서 만든다
+      (`tools/canary.py` 의 정의 — 이름이 아니라 **문법**으로 센다).
+    """
+    _layer(tmp, *rels)
+    lc.HITS.clear()
+    lc.l6(tmp, POL)
+    return list(lc.HITS)
+
+
 # ── 분자 — 상대경로로 센다 (§504) ───────────────────────────────────
 def test_l6_counts_the_relative_path_violations_not_every_file(lc, tmp_path):
     """★ **세는 꼴이 실물과 달랐다.** 위반 하나를 「전건」이라 찍던 자리다."""
-    _layer(tmp_path, "ngii/ngii_basemap_gj037_20260806.zip",
-           "ngii/ngii_basemap_gj038_20260807.zip", "strays.zip")
-    lc.l6(tmp_path, POL)
-    assert len(lc.HITS) == 1, lc.HITS
-    assert "1/3건" in lc.HITS[0]["what"], lc.HITS[0]["what"]
-    assert "strays.zip" in lc.HITS[0]["detail"], lc.HITS[0]["detail"]
+    hits = _hits(lc, tmp_path, "ngii/ngii_basemap_gj037_20260806.zip",
+                 "ngii/ngii_basemap_gj038_20260807.zip", "strays.zip")
+    assert len(hits) == 1, hits
+    assert "1/3건" in hits[0]["what"], hits[0]["what"]
+    assert "strays.zip" in hits[0]["detail"], hits[0]["detail"]
 
 
 def test_l6_is_quiet_when_every_file_sits_under_its_provider(lc, tmp_path):
     """★ 반대 방향 — 전건이 규칙대로면 조용하다."""
-    _layer(tmp_path, "ngii/a.zip", "eais/b.csv")
-    lc.l6(tmp_path, POL)
-    assert lc.HITS == [], lc.HITS
+    assert not _hits(lc, tmp_path, "ngii/a.zip", "eais/b.csv")
 
 
 # ── 분모 — 기록 파일을 뺀다 (§505) ──────────────────────────────────
@@ -88,9 +99,7 @@ def test_a_record_file_is_not_a_naming_violation(lc, tmp_path):
     이 시험이 그것까지 같이 본다.
     """
     assert lake.RECORD_NAMES, "선언이 비면 이 시험은 아무것도 안 본다"
-    _layer(tmp_path, "ngii/a.zip", *lake.RECORD_NAMES)
-    lc.l6(tmp_path, POL)
-    assert lc.HITS == [], lc.HITS
+    assert not _hits(lc, tmp_path, "ngii/a.zip", *lake.RECORD_NAMES)
 
 
 def test_the_record_file_keeps_its_declared_name():
