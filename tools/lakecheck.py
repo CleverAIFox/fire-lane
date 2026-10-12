@@ -38,7 +38,7 @@ from firelane import (
 )
 
 # ★ 「층을 설명하는 사람 문서」의 정본은 `firelane.lake.RECORD_NAMES` 하나다
-#   (DECISIONS §505). 여기 다시 적으면 두 집이 갈린다.
+#   (DECISIONS §502). 여기 다시 적으면 두 집이 갈린다.
 from firelane.lake import RECORD_NAMES
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -393,7 +393,7 @@ def l6(D: Path, y: dict) -> None:
         if not d.is_dir():
             continue
         pat = re.compile(rx)
-        # ★ 2026-10-12 (DECISIONS §505). **기록 파일을 분모에서 뺀다.**
+        # ★ 2026-10-12 (DECISIONS §502). **기록 파일을 분모에서 뺀다.**
         #   `data/retired/QUARANTINE.md` 는 데이터가 아니라 「층을 설명하는
         #   사람 문서」이고 `lake.py` 가 그것을 **이미 선언**해 「기록」으로
         #   분류한다. 제공기관 폴더가 없어서 이 축이 그것을 **유일한
@@ -417,7 +417,7 @@ def l6(D: Path, y: dict) -> None:
                 f"규칙 `{rx}`",
                 "규칙 앞에 제공기관 폴더를 넣는다 — raw 규칙과 같은 꼴로")
         elif name_bad:
-            # ★ 2026-10-12 (DECISIONS §504). **`rel_bad` 를 센다.** 종전에는
+            # ★ 2026-10-12 (DECISIONS §502). **`rel_bad` 를 센다.** 종전에는
             #   `name_bad` 를 세고 그 이름을 찍었는데, 규칙이 `^(제공기관)/`
             #   꼴이면 **파일명으로는 전건이 위반**이라 수가 늘 전건이 된다.
             #   실측 — `retired` 를 「59/59건」이라 찍었고 실제 위반은 하나

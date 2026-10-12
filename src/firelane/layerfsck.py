@@ -74,7 +74,7 @@ def cmd_fsck() -> None:
             continue
         import re as _re
         pat = _re.compile(pol_rx)
-        # ★ 2026-10-12 (DECISIONS §505). 기록 파일을 뺀다 — 이 모듈이 import 한
+        # ★ 2026-10-12 (DECISIONS §502). 기록 파일을 뺀다 — 이 모듈이 import 한
         #   `_lake.RECORD_NAMES` 가 그 정본이고, 같은 모듈의 `rows()` 는 그것을
         #   「기록」으로 분류한다. 한집은 설명 문서로 받고 한집은 위반으로 세던
         #   자리다.

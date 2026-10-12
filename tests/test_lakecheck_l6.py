@@ -1,14 +1,14 @@
-"""`lakecheck L6`(명명규칙) 이 **무엇을 세고 무엇을 빼는지** 잰다.  (§504 · §505)
+"""`lakecheck L6`(명명규칙) 이 **무엇을 세고 무엇을 빼는지** 잰다.  (§502 · §502)
 
 ★ 왜 이 파일이 따로 있나 (2026-10-12). L6 이 한 판에 두 번 틀렸고 **틀린 꼴이
   둘 다 「세는 쪽」**이었다 —
 
-    ① 분자가 틀렸다 (§504)
+    ① 분자가 틀렸다 (§502)
        규칙이 `^(제공기관)/` 꼴이면 **파일명만으로는 전건이 위반**이다. L6 은
        그 `name_bad` 를 찍어 `retired` 를 「59/59건」이라 했고 실제 위반은
        하나였다. 같은 사실을 `layerfsck` 는 1 로 세었다 — 두 자가 1 과 59 로
        갈렸다(§458-1 과 같은 꼴).
-    ② 분모가 틀렸다 (§505)
+    ② 분모가 틀렸다 (§502)
        `data/retired/QUARANTINE.md` 는 데이터가 아니라 **층을 설명하는 사람
        문서**고, `firelane.lake.RECORD_NAMES` 가 그것을 **이미 선언**하며
        `lake.rows()` 는 「기록」으로 분류한다. L6 과 `layerfsck` 는 그 선언을
@@ -76,7 +76,7 @@ def _hits(lc, tmp: pathlib.Path, *rels: str) -> list[dict]:
     return list(lc.HITS)
 
 
-# ── 분자 — 상대경로로 센다 (§504) ───────────────────────────────────
+# ── 분자 — 상대경로로 센다 (§502) ───────────────────────────────────
 def test_l6_counts_the_relative_path_violations_not_every_file(lc, tmp_path):
     """★ **세는 꼴이 실물과 달랐다.** 위반 하나를 「전건」이라 찍던 자리다."""
     hits = _hits(lc, tmp_path, "ngii/ngii_basemap_gj037_20260806.zip",
@@ -91,7 +91,7 @@ def test_l6_is_quiet_when_every_file_sits_under_its_provider(lc, tmp_path):
     assert not _hits(lc, tmp_path, "ngii/a.zip", "eais/b.csv")
 
 
-# ── 분모 — 기록 파일을 뺀다 (§505) ──────────────────────────────────
+# ── 분모 — 기록 파일을 뺀다 (§502) ──────────────────────────────────
 def test_a_record_file_is_not_a_naming_violation(lc, tmp_path):
     """★ **선언은 이미 있었다.** `RECORD_NAMES` 를 돌면서 본다.
 
@@ -119,7 +119,7 @@ def test_the_record_file_keeps_its_declared_name():
 
 
 def test_both_readers_read_the_one_declaration(lc):
-    """★ 두 집이 **같은 선언**을 읽는가 — 베껴 적으면 또 갈린다(§505 · §474)."""
+    """★ 두 집이 **같은 선언**을 읽는가 — 베껴 적으면 또 갈린다(§502 · §474)."""
     for rel in ("tools/lakecheck.py", "src/firelane/layerfsck.py"):
         src = (ROOT / rel).read_text(encoding="utf-8")
         assert "RECORD_NAMES" in src, f"{rel} 가 선언을 안 읽는다"
