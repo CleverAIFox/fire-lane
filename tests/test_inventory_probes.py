@@ -213,3 +213,41 @@ def test_probe_ngi_dir_samples_a_few_sheets_and_merges_layers(tmp_path):
     lay = got["layers"]["A0020000"]
     assert lay["sheets"] == inv.NGI_SAMPLE and lay["n_sample"] == inv.NGI_SAMPLE
     assert lay["geom_type"] == "LINESTRING"
+
+
+# ── 적는 자 (DECISIONS §500) ─────────────────────────────────
+def test_write_block_puts_the_scan_in_interim_and_only_a_pointer_in_the_ledger(
+        tmp_path):
+    """★ 2026-08-26 의 수선을 못박는다 — **스캔 결과는 `interim` 이 제자리다.**
+
+    종전에는 `sources.yaml` 하단 AUTO 블록을 교체했고, 그 블록 하나가 대장
+    2,986줄 중 **1,434줄**이었다. 사람이 쓰는 선언과 도구가 만드는 사실이
+    한 파일에 섞여 있었다. 대장에는 `at` 만 남는다 — 어디를 보라는 안내다.
+    """
+    led = tmp_path / "sources.yaml"
+    led.write_text("datasets:\n  a:\n    kind: csv_table\n"
+                   "inventory:\n  at: 옛시각\n  path: interim/inventory.json\n",
+                   encoding="utf-8")
+    interim = tmp_path / "interim"
+    inv.write_block({"at": "2026-10-12T00:00:00+09:00", "datasets": {"a": {"x": 1}}},
+                    interim=interim, sources=led)
+
+    got = json.loads((interim / "inventory.json").read_text(encoding="utf-8"))
+    assert got["datasets"]["a"] == {"x": 1}
+
+    text = led.read_text(encoding="utf-8")
+    assert "  at: 2026-10-12T00:00:00+09:00" in text, "대장의 시각이 안 갱신됐다"
+    assert "datasets" in text and "x: 1" not in text, (
+        "스캔 결과가 대장에 들어갔다 — 그것이 2026-08-26 에 걷은 것이다")
+
+
+def test_write_block_touches_exactly_one_line_of_the_ledger(tmp_path):
+    """★ `count=1` 이다 — 다른 `at:` 줄까지 고치면 **남의 칸을 덮는다.**"""
+    led = tmp_path / "sources.yaml"
+    led.write_text("inventory:\n  at: 옛시각\nretired:\n  b:\n    at: 지난기록\n",
+                   encoding="utf-8")
+    inv.write_block({"at": "새시각", "datasets": {}},
+                    interim=tmp_path / "i", sources=led)
+    text = led.read_text(encoding="utf-8")
+    assert "  at: 새시각" in text and "    at: 지난기록" in text, text
+    assert text.count("새시각") == 1

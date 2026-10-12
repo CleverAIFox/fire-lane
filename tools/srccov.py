@@ -79,7 +79,7 @@ SRC_UNTESTED = 1
 #:   (`ngii1k.read_sheet` · `terrain.build_terrain_tiles` · `seg/report`).
 #:   그래서 이 수의 뜻은 「여기까지 내려왔다」가 아니라 **「새 입출력 함수를
 #:   시험 없이 들이지 않는다」**다 — 늘면 그 배치가 늘린 것이다.
-SRC_IO_UNTESTED = 8
+SRC_IO_UNTESTED = 7
 
 RATCHETS = {"SRC_UNTESTED": "down", "SRC_IO_UNTESTED": "down"}
 
