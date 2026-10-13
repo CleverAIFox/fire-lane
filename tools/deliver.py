@@ -191,6 +191,18 @@ def remote_tip(branch: str, fetch: bool = True) -> tuple[str, str]:
 
 
 # ── ② 얹힘 ──────────────────────────────────────────────────────
+def _reset(wt: Path) -> str:
+    """추적 파일을 밑동으로 되돌린다. 돌려주는 것은 **아직 더러운 것**이다(비면 깨끗).
+
+    ★ 2026-10-13 (DECISIONS §508). 기준선을 재는 `verify.sh` 가 생성물을 다시
+      쓰고 `web/data` · `data/processed` 만 되돌린다. `docs/` 가 남는다.
+    ★ 추적 파일만 본다. 안 추적되는 찌꺼기는 패치를 막지 않는다.
+    """
+    _run(["git", "checkout", "--", "."], cwd=wt)
+    _, dirty = _run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=wt)
+    return dirty.strip()
+
+
 def _apply(wt: Path, patch: Path) -> tuple[bool, str]:
     """받는 쪽 `go.sh` 와 **같은 순서** — 3way → 내용 기반. 다르면 이 예습이 거짓이다."""
     body, diff = wt / ".fl-body", wt / ".fl-diff"
@@ -296,6 +308,19 @@ def dryrun(branch: str, rng: str, patches: list[Path],
         #   종전 순서로는 같은 전수 pytest 가 pack 한 번에 **네 번** 돌았다.
         base_sweep = _sweep_red(wt, env)
         base_red = _redlist(wt, env) if tests else (set(), "skipped")
+        # ★ 2026-10-13 (DECISIONS §508). **기준선을 잰 자리를 치운다.**
+        #   위 둘은 `verify.sh` 를 **그대로** 돌린다(흉내내지 않는 것이 ②′ 의 값이다).
+        #   그런데 그 자가 생성물을 다시 쓰고, verify 는 끝에 `web/data` ·
+        #   `data/processed` 만 커밋본으로 되돌린다 — `docs/` 는 안 되돌린다.
+        #   그래서 `docs/proposal.md` 가 `--touch-today` 로 옮겨진 채 남았고,
+        #   **그 위에** 패치를 얹으니 밑동을 기대한 헝크가 안 붙었다. 2026-10-13
+        #   에 배치 1014 가 거기서 섰다 — 패치는 **깨끗한 밑동에 붙는 것**이
+        #   맞는데 「원격 팁에 안 붙는다」고 찍혔다. 거짓말하는 빨강이다.
+        #   재는 일과 얹는 일 사이에 나무를 밑동으로 되돌린다.
+        dirty = _reset(wt)
+        if dirty:
+            raise SystemExit("★ 기준선을 잰 뒤 나무가 안 치워진다 — 얹기 전에 멈춘다\n"
+                             + dirty)
         for p in patches:
             ok, how = _apply(wt, p)
             print(f"  {p.name:<38} {how.splitlines()[0]}")

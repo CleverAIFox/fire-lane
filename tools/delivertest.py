@@ -34,10 +34,11 @@ from __future__ import annotations
 
 import inspect
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
-from deliver import PATCH_PREFIX, ROOT, parse, render
+from deliver import PATCH_PREFIX, ROOT, _reset, parse, render
 from delivercheck import (
     BODY_CHECK,
     FORBIDDEN,
@@ -239,6 +240,26 @@ def selftest() -> int:
             new_red(set(), {frag}, Path(td), "시험")   # 레이크 없음 → 면제가 맞다
         except SystemExit:
             bad.append("레이크 없는 자리에서 레이크 전용 빨간불에 운다")
+
+    # ★ 2026-10-13 (§508). **기준선을 잰 자리를 치우는가.** 안 치우면 그 위에
+    #   얹은 패치가 「밑동에 안 붙는다」로 찍히고, 그 빨강은 거짓이다.
+    with tempfile.TemporaryDirectory() as td:
+        r = Path(td)
+        for c in (["init", "-q", "-b", "m"], ["config", "user.email", "d@d"],
+                  ["config", "user.name", "d"]):
+            subprocess.run(["git", *c], cwd=r, capture_output=True, check=False)
+        (r / "a.md").write_text("밑동\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=r, capture_output=True, check=False)
+        subprocess.run(["git", "commit", "-qm", "x"], cwd=r, capture_output=True, check=False)
+        (r / "a.md").write_text("재는 자가 다시 썼다\n", encoding="utf-8")
+        (r / "junk.tmp").write_text("찌꺼기\n", encoding="utf-8")
+        left = _reset(r)
+        if left:
+            bad.append(f"기준선 뒤 나무를 안 치운다 — 남은 것: {left}")
+        if (r / "a.md").read_text(encoding="utf-8") != "밑동\n":
+            bad.append("되돌렸다면서 추적 파일이 밑동과 다르다")
+        if not (r / "junk.tmp").exists():
+            bad.append("안 추적되는 찌꺼기까지 지운다 — 거기까지가 이 함수의 일이 아니다")
 
     # ★ 꼴의 왕복. **`render`·`parse` 가 사는 집이 여기다** — 대조는 저쪽이 한다.
     if parse(render({"a": "1", "b": "x y"})) != {"a": "1", "b": "x y"}:

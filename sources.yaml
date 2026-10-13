@@ -3942,14 +3942,17 @@ outputs:
     path: data/processed/clearance_cross.json
     inputs: [ngii1k, naver_width_2610]
     consumers: [docs/DECISIONS.md]
-    what: 법선 span 과 내접원 지름의 대조표. 분포 · 넘침 · 역전 · 실측 대조
+    what: 법선 span 과 내접원 지름의 대조표. 분포 · 넘침 · 역전 · 실측 대조 ·
+      **중심선 치우침** · **광선 샘**(좌우 분해 — `tools/widthlr.py`)
     verified: false
     known_issues:
     - ★ **판정을 안 바꾼다.** `widthcross` 와 같은 자리다 — 판정이 끝난 것을
       읽어 기하와 댈 뿐이고 판정 지문 밖이다
     - 레이크가 필요 없다. `web/data` 발행본만 읽으므로 CI 에서도 돈다
-    - 어느 방법이 옳은지는 안 말한다. 내접원이 진실이라는 근거는 아직
-      네이버 실측 여덟 줄뿐이고 그것도 사람이 화면에서 잰 값이다
+    - 어느 방법이 옳은지는 안 말한다. **2026-10-13 (§509) 정정** — 「내접원이
+      진실」이 아니다. 중심선이 가운데에서 치우친 구간이 **464(36%)** 이고
+      거기서 내접원은 구조적으로 과소다. 어느 자가 맞는지는 구간의 성질이고
+      그 성질을 세는 축이 `CENTER_OFF` · `RAY_ESCAPE` 둘이다
 
   ngi_width_check:
     produced_by: src/firelane/seg/width.py (수동 추출)

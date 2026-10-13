@@ -120,8 +120,42 @@ export function openLink(onMsg: (data: unknown) => void, who: Who): Link {
   return OPS_URL ? openLinkWs(OPS_URL, who, onMsg) : openLinkChannel(onMsg);
 }
 
-/** 탭마다 다른 짧은 id. 관제가 차를 가른다 */
+/** 한 탭 안의 차례. 36^4 에서 돈다 — 그때는 시각이 이미 움직였다 */
+let SEQ = 0;
+
+/**
+ * 36진 글자를 **정확히** n 개.
+ *
+ * ★ `Math.random().toString(36).slice(2, 2 + n)` 은 n 개를 보장하지 않는다 —
+ *   값이 둥글면 "0.i" 처럼 짧게 나오고 그만큼 자리가 준다. 모자라면 잇는다.
+ */
+function r36(n: number): string {
+  let s = "";
+  while (s.length < n) s += Math.random().toString(36).slice(2);
+  return s.slice(0, n);
+}
+
+/**
+ * 탭마다 다른 짧은 id. 관제가 차를 가른다.
+ *
+ * ★ 2026-10-12 (DECISIONS §506). 종전에는 `시각 4 + 난수 5` 였다. 난수 다섯
+ *   글자는 36^5 = 6,046만이고, 같은 밀리초에 2,000개를 뽑으면 생일 문제로
+ *   **2.4% 가 겹친다**(실측 3,000묶음). `opsLink.test.ts` 는 가짜 타이머를
+ *   쓰므로 `Date.now()` 가 **얼어 있어** 2,000개가 전부 같은 시각 조각을
+ *   쓴다 — 그래서 CI 가 **40판에 한 번** 빨갰다. 2026-10-12 `contract-shared`
+ *   가 `expected 1999 to be 2000` 으로 죽었다.
+ *
+ *   이 파일의 머리말이 이미 그 금칙을 적어 뒀다 — 「매인 시험은 CI 에서
+ *   이따금 빨개진다 — 그런 빨강은 아무도 안 읽는다」. 시험을 2,000 → 200 으로
+ *   낮추는 것은 **느슨해지는 쪽**이라 안 한다. 자를 고친다:
+ *
+ *     차례  한 탭 안의 겹침을 **0 으로** 만든다 — 확률이 아니다
+ *     난수 8  탭끼리의 겹침을 36^8 = 2.8조 로 벌린다
+ *
+ *   길이는 `ops-` + 4 + ≤4 + 8 = 20 자로 상한 24 안이다.
+ */
 export function newId(prefix: string): string {
-  const r = Math.random().toString(36).slice(2, 7);
-  return `${prefix}-${Date.now().toString(36).slice(-4)}${r}`;
+  const t = Date.now().toString(36).slice(-4);
+  const n = (SEQ = (SEQ + 1) % 1679616).toString(36);   // 36^4
+  return `${prefix}-${t}${n}${r36(8)}`;
 }

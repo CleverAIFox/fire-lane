@@ -54,14 +54,16 @@ gate_parity.py — **로컬 관문과 CI 가 같은 것을 보는가.** 3족의 
 ── 무엇을 세나 (2026-10-11 · DECISIONS §456-6) ────────────────
 ★ 아래 「무엇을 맞추나」는 **집합**이다. 그래서 「같은 것을 두 번 도는가」가
   판정에 닿기 전에 접혔다 — 같은 pytest 를 열 개 더 붙여도 출력이 한 글자도
-  안 바뀌었고, §456-4 가 센 중복 여섯을 이 도구가 하나도 못 봤다. 세는 축 둘을
+  안 바뀌었고, §456-4 가 센 중복 여섯을 이 도구가 하나도 못 봤다. 세는 축 셋을
   더했다.
 
     DUP_CMD      한 파일 안에서 **글자까지 같은 명령**을 두 번 이상 부르는가
     DOUBLE_RUN   `workflow_call` 과 제 트리거를 같이 들면서 `concurrency.group`
                  키가 **부르는 쪽을 안 가르는** 워크플로가 있는가
+    CROSS_KILL   `push` 와 `pull_request` 가 **한 칸**에 들어 늦게 깨어난 쪽이
+                 먼저 돈 쪽을 취소하는가 (§505 — 취소된 판도 보고된다)
 
-★ 그 둘의 집은 `tools/gateruns.py` 다 — 묻는 것이 다르면 도구가 다르고
+★ 셋의 집은 `tools/gateruns.py` 다 — 묻는 것이 다르면 도구가 다르고
   (이 파일은 「같은 것을 보는가」, 그쪽은 「몇 번 도는가」), 길이 상한이
   그 경계를 먼저 가리켰다. 판정은 여전히 이 도구가 찍는다.
 
@@ -435,7 +437,9 @@ def report(max_local: int | None) -> int:
             ("같은 명령 두 번", _runs.dup_cmds(), _runs.DUP_CMD,
              "한 자리에서 글자까지 같은 명령"),
             ("두 벌 도는 워크플로", _runs.double_runs(), _runs.DOUBLE_RUN,
-             "workflow_call 과 제 트리거를 같이 들면서 group 키가 안 가르는 것")):
+             "workflow_call 과 제 트리거를 같이 들면서 group 키가 안 가르는 것"),
+            ("서로 죽이는 두 판", _runs.cross_kills(), _runs.CROSS_KILL,
+             "push 와 pull_request 가 한 칸에 들어 늦은 쪽이 먼저 쪽을 취소하는 것")):
         if len(got) != want:
             print(f"✗ {name} {len(got)} ≠ 래칫 {want} — {what}")
             for g in got:
@@ -494,6 +498,17 @@ def selftest() -> int:
         bad.append("두 벌 도는 꼴을 안 센다 — group 키가 안 가르는데 조용하다")
     if _runs.double_runs({"probe.yml": _dbl.replace("github.ref", "github.workflow")}):
         bad.append("가르는 group 키를 두 벌로 센다 — 고친 자리를 또 울린다")
+    # ★ 2026-10-12 (§505). 서로 죽이는 두 판 — 합성 결함 하나와 고친 꼴 둘.
+    _xk = ("on:\n  push:\n    branches: [dev]\n  pull_request:\n"
+           "concurrency:\n  group: c-${{ github.head_ref || github.ref_name }}\n"
+           "  cancel-in-progress: true\n")
+    if not _runs.cross_kills({"probe.yml": _xk}):
+        bad.append("서로 죽이는 두 판을 안 센다 — 이벤트를 안 가르는데 조용하다")
+    if _runs.cross_kills({"probe.yml": _xk.replace("group: c-", "group: c-${{ github.event_name }}-")}):
+        bad.append("이벤트를 가른 group 키를 죽는 꼴로 센다 — 고친 자리를 또 울린다")
+    if _runs.cross_kills({"probe.yml": _xk.replace("cancel-in-progress: true",
+                                                   "cancel-in-progress: false")}):
+        bad.append("안 죽이는 칸(cancel-in-progress 거짓)을 죽는 꼴로 센다 — deploy.yml 의 자리다")
     if bad:
         print("✗ 프로브 자기검사 실패")
         for b in bad:
