@@ -927,6 +927,10 @@ step "카나리아" uv run python tools/canary.py
 #   운다 — 도출이 이기지 않는다.
 step "도구 부류" uv run python tools/toolclass.py
 
+# ★ 2026-10-13 (DECISIONS §513). 머리말에만 적힌 판정을 §509 · §510 이 다시 찾았다
+scope docs/* tools/*
+step "조사 판정의 자리" uv run python tools/probeledger.py
+
 # ★ 2026-10-05 (DECISIONS §398-5). 돌연변이 관문은 **단계로 안 돈다** — 과녁
 #   스물넷을 네 번씩 흔들면 도구마다 자기검사를 다시 돌려야 해서 분 단위다.
 #   여기서 도는 것은 자기검사 하나이고(`selftests.py` 가 모은다) 수는 대장이

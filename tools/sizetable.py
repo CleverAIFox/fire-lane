@@ -171,8 +171,7 @@ EXCEPTIONS: dict[str, int] = {
     #   파서 하나**를 쓰고, 쪼개면 그 파서가 두 벌이 된다.
     # ★ 2026-10-08 (DECISIONS §435). 1756 → 1761. 우리말 수 어휘를 열아홉까지 —
     #   「열다섯」이 밖이라 10 으로 읽혔다. **어휘 표가 늘면 이 파일은 그만큼 는다.**
-    # ★ 2026-10-13 (DECISIONS §511-2) 1,761 → 1,760. `prevfield.py` 로 갈라 냈다
-    "tools/dms.py": 1760,
+    "tools/dms.py": 1760,   # ★ 2026-10-13 (§511-2) 1,761→1,760 · prevfield.py 로 갈랐다
     # ★ 2026-10-03 (DECISIONS §371). **새로 넘었다** — 600 상한 밖 616.
     #   늘어난 21줄은 `_ident`(SQLite 식별자 쌍따옴표 배가)와 그 사유다.
     #   `ruff --select S608` 이 f-string 질의 둘을 들었고, 식별자 자리에는
@@ -503,7 +502,8 @@ EXCEPTIONS: dict[str, int] = {
     #   (「내비 시험 분모」). 안 쪼개는 사유는 위 §390 문단과 같다.
     # ★ 2026-10-12 (DECISIONS §493). 1355 → 1358. 관문 **하나가 늘었다**
     #   (「판정 시험 분모」 · `tools/srccov.py`) — 호출 한 줄과 `scope` · 묻는 말이다.
-    "tools/verify.sh": 1358,
+    # ★ 2026-10-13 (DECISIONS §513). 1358 → 1362. 관문 하나(「조사 판정의 자리」)
+    "tools/verify.sh": 1362,
     "src/firelane/segments.py": 780,
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이
