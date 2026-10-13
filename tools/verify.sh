@@ -928,7 +928,7 @@ step "카나리아" uv run python tools/canary.py
 step "도구 부류" uv run python tools/toolclass.py
 
 # ★ 2026-10-13 (DECISIONS §513). 머리말에만 적힌 판정을 §509 · §510 이 다시 찾았다
-scope docs/* tools/*
+scope "docs/* tools/*"
 step "조사 판정의 자리" uv run python tools/probeledger.py
 
 # ★ 2026-10-05 (DECISIONS §398-5). 돌연변이 관문은 **단계로 안 돈다** — 과녁
