@@ -245,6 +245,8 @@ OUTSIDE: dict[str, str] = {
     # 옆집 판별식 — 주인의 `--selftest` 가 끌어온다(§445 · §449-2)
     "docnumtest.py": "tools/docnum_check.py --selftest 가 끌어온다",
     "uichecktest.py": "tools/uicheck.py --selftest 가 끌어온다",
+    # 진입점 없는 몸통 — pytest 가 **함수를 직접** 부른다(§509)
+    "widthlr.py": "tests/test_widthlr.py::test_the_tool_passes_its_own_selftest",
 }
 
 

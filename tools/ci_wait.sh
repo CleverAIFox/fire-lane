@@ -49,15 +49,67 @@ unreadable() {                  # unreadable <출력>
 }
 
 # `gh pr checks` 는 비대화형에서 탭으로 가른 «이름 상태 시간 URL» 을 낸다.
+# ★ 2026-10-12 (DECISIONS §503). **취소는 실패가 아니다.** concurrency group 이
+#   중복 실행(같은 커밋의 `push` 판)을 죽이는 것이고 그것은 우리가 켠 것이다
+#   (한 커밋 2회 → 1회). 같은 검사가 다른 이벤트에서 초록이면 그 취소 줄은
+#   정보가 **0** 이다. 종전에는 그것을 빨강으로 세어 **정당한 배치가 섰다** —
+#   2026-10-12 PR #319 이 `0 failing` 인 채로 「CI 가 빨갛다」로 멈췄다.
+#   §225-1 이 「빨강」과 「못 읽음」을 가른 그 자리에 **취소**가 남아 있었다.
+#
+# ★ 이름의 이벤트 꼬리를 뗀다 — `gh pr checks` 는 `X (push)` 와
+#   `X (pull_request)` 를 **다른 이름**으로 낸다. 떼야 같은 검사로 묶인다.
+# ★ 같은 이름에 초록도 빨강도 없이 **취소만** 있으면 「안 돌았다」이므로
+#   **대기**로 센다 — 빨강이 아니다. 안 돌아오면 `MAX` 에서 모름(2)으로 나간다.
+#
+# ★ 2026-10-12 정정 (DECISIONS §503 의 ★ 정정). **위 두 줄은 화면을 보고 적었다.**
+#   근거가 `gh pr checks` 의 기계 출력이 아니라 **웹 UI 였다.** UI 는 「Cancelled」
+#   라 쓰고 이름 뒤에 `(push)` 를 붙여 보여 준다 — 그래서 상태 글자가 `cancel`
+#   이고 이름에 꼬리가 있다고 적었다. 그날 그 규칙을 넣고도 열차는 그대로
+#   빨갰고, 뒤에 초록이 된 것은 `verdict` 의 다른 가지였다. **즉 이 규칙이
+#   실물에서 한 번이라도 걸렸다는 증거가 없다.**
+#
+#   그래서 아래 `selftest` 에 프로브를 박았다 — 합성 줄로 **우리 쪽 반**은
+#   증명된다. 증명 안 되는 반은 `gh` 가 무슨 글자를 내는가이고, 그것은
+#   이 저장소 밖이다. 취소가 `fail` 로 오면 **아무 규칙도 못 가른다.**
+#
+#   ★ 그래서 뿌리를 막았다(§505). 워크플로 셋의 `concurrency.group` 에
+#     `github.event_name` 을 넣어 **`push` 판과 `pull_request` 판이 서로를
+#     안 죽이게** 했다. 취소가 안 생기면 취소를 읽을 일도 없다. 아래 규칙은
+#     그물로 남긴다 — 같은 이벤트 안의 취소(새 푸시가 옛 푸시를 죽인다)는
+#     여전히 생긴다.
+_AWK_GROUP='
+function base(s,  n) { n = s; sub(/ \(([a-z_]+)\)$/, "", n); return n }
+NF >= 2 {
+    b = base($1)
+    if      ($2 == "pass")     { pass[b] = 1; np++ }
+    else if ($2 == "fail")     { fail[b] = $0;  nf++ }
+    else if ($2 == "cancel")   { canc[b] = $0 }
+    else if ($2 == "pending")  { npd++ }
+    else if ($2 == "skipping") { nsk++ }
+}
+function lone_cancels(  b, n) {
+    n = 0
+    for (b in canc) if (!(b in pass) && !(b in fail)) n++
+    return n
+}
+'
+
 tally() {                       # tally <출력> → "초록 N · 빨강 N · 대기 N · 생략 N"
-    printf '%s\n' "$1" | awk -F'\t' '
-        NF >= 2 { c[$2]++ }
-        END { printf "초록 %d · 빨강 %d · 대기 %d · 생략 %d",
-                     c["pass"], c["fail"] + c["cancel"],
-                     c["pending"], c["skipping"] }'
+    printf '%s\n' "$1" | awk -F'\t' "$_AWK_GROUP"'
+        END { nc = lone_cancels()
+              printf "초록 %d · 빨강 %d · 대기 %d · 생략 %d%s",
+                     np, nf, npd + nc, nsk,
+                     (nc ? sprintf("  (취소 %d 은 대기로 센다)", nc) : "") }'
 }
 
-reds() { printf '%s\n' "$1" | awk -F'\t' 'NF>=2 && ($2=="fail" || $2=="cancel")' ; }
+reds() { printf '%s\n' "$1" | awk -F'\t' "$_AWK_GROUP"'
+    END { for (b in fail) print fail[b] }' ; }
+
+# ★ 2026-10-12 (§503 정정). **혼자 남은 취소 줄.** `tally` 는 이것을 대장에서
+#   대기로 셌는데 `verdict` 는 안 봤다 — 그래서 화면에는 「빨강 0」이 찍히고
+#   종료코드는 1 이 나갔다. §503 이 **반만** 고친 자리다. 프로브로 못 박았다.
+cancels() { printf '%s\n' "$1" | awk -F'\t' "$_AWK_GROUP"'
+    END { for (b in canc) if (!(b in pass) && !(b in fail)) print canc[b] }' ; }
 
 # ★ 2026-09-30 (DECISIONS §335). **검사 줄이 하나라도 있는가.**
 #   푸시 직후에는 GitHub 이 check-run 을 아직 안 만들고, 그때 `gh pr checks` 는
@@ -141,6 +193,12 @@ verdict() {                     # verdict <gh 종료코드> <출력>
     #   이 파일이 제 머리말에 「안 끝난 것과 빨간 것은 다르다」고 적어 두고도
     #   **catch-all 한 줄이 그것을 뚫고 있었다**(§225-1 · §282-1 과 같은 족).
     [ -z "$(rows "$out")" ] && return 3
+    # ★ 2026-10-12 (§503 정정 · §505). **혼자 남은 취소는 「안 끝났다」다.**
+    #   빨강이 하나도 없고(위에서 걸렀다) 남은 것이 취소뿐이면 그 검사는
+    #   **결론이 없는 것**이지 진 것이 아니다. 여기가 없어서 §503 이 `tally`
+    #   만 고치고 종료코드는 그대로 1 을 냈다 — 화면에 「빨강 0」을 찍으면서.
+    #   기다리다 안 돌아오면 `MAX` 에서 모름(2)으로 나간다. 1 로는 안 나간다.
+    [ -n "$(cancels "$out")" ] && return 3
     return 1
 }
 
@@ -196,6 +254,25 @@ selftest() {
         || bad+=("503 을 **빨강으로 읽는다** — §225-1 이 PR 을 지운 그 결함이다")
     ( verdict 1 "could not resolve host" ); [ $? = 2 ] || bad+=("이름 풀이 실패를 빨강으로 읽는다")
     unreadable "$red" && bad+=("평범한 빨강을 «못 읽음» 으로 읽는다 — 그러면 빨강이 통과한다")
+    # ★ 2026-10-12 (§503 정정). **취소 규칙에 프로브가 없었다.** 규칙만 넣고
+    #   증거를 안 세웠고, 그래서 틀린 주장이 주석에 두 판 남았다. 합성 줄로
+    #   **우리 쪽 반**을 못 박는다 — `gh` 가 내는 글자는 저장소 밖이다.
+    local lone=$'a\tpass\t1s\tu\nb (push)\tcancel\t3s\tu'
+    local both=$'a\tpass\t1s\tu\nb (pull_request)\tpass\t9s\tu\nb (push)\tcancel\t3s\tu'
+    t=$(tally "$lone")
+    [ "$t" = "초록 1 · 빨강 0 · 대기 1 · 생략 0  (취소 1 은 대기로 센다)" ] \
+        || bad+=("혼자 남은 취소를 대기로 안 센다: $t")
+    ( verdict 1 "$lone" ); [ $? = 3 ] || bad+=("혼자 남은 취소를 **빨강으로 읽는다** — PR #319 를 세운 그 자리다")
+    t=$(tally "$both")
+    [ "$t" = "초록 2 · 빨강 0 · 대기 0 · 생략 0" ] \
+        || bad+=("같은 검사가 다른 이벤트에서 초록인데 취소를 또 센다: $t")
+    ( verdict 0 "$both" ); [ $? = 0 ] || bad+=("초록이 있는데 취소 때문에 안 넘어간다")
+    [ -z "$(reds "$lone")" ] || bad+=("취소를 빨강 목록에 넣는다")
+    # ★ **못 가르는 자리를 못 가른다고 적어 둔다.** 취소가 `fail` 로 오면
+    #   우리에게는 평범한 빨강과 **글자가 같다** — 추측으로 흘리면 진짜 빨강이
+    #   통과한다. 그래서 빨강으로 센다. 그 자리를 없애는 것은 §505 다.
+    ( verdict 1 $'a\tpass\t1s\tu\nb (push)\tfail\t3s\tu' ); [ $? = 1 ] \
+        || bad+=("«fail» 로 온 줄을 취소로 **짐작한다** — 그러면 진짜 빨강이 통과한다")
     # ★ §282-1 · §403. 필수 − 결론 난 것.
     [ "$(unsettled $'contract-shared\nsecret-scan' $'secret-scan')" = "contract-shared" ] \
         || bad+=("결론 없는 **필수** 검사를 안 잡는다 — 배치 D 를 세운 그 자리다")
@@ -219,7 +296,7 @@ selftest() {
     if [ ${#bad[@]} -gt 0 ]; then
         printf '★ 자기검사 실패\n'; printf '  %s\n' "${bad[@]}"; return 1
     fi
-    printf '✓ ci_wait — 초록 · 대기 · 빨강 · 조회실패 · 시간초과 · 결론 안 난 필수검사(**없는 것까지**) · 아직 안 뜬 검사를 다 가른다\n'
+    printf '✓ ci_wait — 초록 · 대기 · 빨강 · **취소** · 조회실패 · 시간초과 · 결론 안 난 필수검사(**없는 것까지**) · 아직 안 뜬 검사를 다 가른다\n'
 }
 
 case "${1:-}" in

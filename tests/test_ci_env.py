@@ -48,6 +48,40 @@ def test_ci_installs_from_lock_not_a_handpicked_list():
         + "\n  목록이 둘이면 반드시 어긋난다 — 로컬 283 vs CI 216 (2026-08-24).")
 
 
+def test_no_workflow_wakes_on_an_unfiltered_push() -> None:
+    """**가지 필터 없는 `push` 는 새로 만든 가지의 첫 푸시에도 깨어난다.**
+
+    ★ 2026-10-12 (DECISIONS §504). 새 가지의 첫 푸시는 이벤트가 주는 `before`
+      가 전부 0인 SHA 다. **커밋 범위**로 도는 검사는 그 값으로 범위를 못
+      세운다 — `secret-scan.yml` 의 머리말이 제 범위를 「그 push/PR 의 커밋
+      범위」라고 적어 뒀다.
+
+      봉인 가지(`feat/seal-<sha>`)는 **매 판 새로 만들어 한 번만 미는** 가지라
+      언제나 첫 푸시다. 2026-10-12 에 봉인 PR 셋(#321 12초 · #322 16초 ·
+      #323 18초)이 연달아 죽었고 **봉인이 세 판 연속 part/infra 에 안
+      들어갔다.** 같은 커밋의 `pull_request` 판은 초록이었다 — 범위가
+      base..head 로 서기 때문이다. 필터를 걸어도 그물이 안 준다.
+
+    ★ `tags`/`tags-ignore` 만 있는 것도 필터다. 「아무것도 안 적었다」만 문다.
+    """
+    import yaml
+
+    bad = []
+    for p in WF:
+        on = (yaml.safe_load(p.read_text(encoding="utf-8")) or {})
+        on = on.get(True) or on.get("on") or {}
+        if not isinstance(on, dict) or "push" not in on:
+            continue
+        filt = on["push"] or {}
+        if not isinstance(filt, dict) or not (
+                {"branches", "branches-ignore", "tags", "tags-ignore"} & set(filt)):
+            bad.append(f"  {p.name}: on.push 에 가지 필터가 없다")
+    assert not bad, (
+        "가지 필터 없는 push 가 있다 — **새 가지의 첫 푸시**에도 깨어난다.\n"
+        + "\n".join(bad)
+        + "\n  봉인 가지는 매 판 첫 푸시다(DECISIONS §504).")
+
+
 def test_ci_uses_uv_sync():
     hits = [p.name for p in WF
             if "uv sync" in p.read_text(encoding="utf-8")]

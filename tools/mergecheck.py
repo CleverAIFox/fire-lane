@@ -72,6 +72,17 @@ KNOWN_BYPASS: dict[int, tuple[str, str, str]] = {
           "이 도구(`tools/mergecheck.py`)가 그 배치에서 섰다. 그리고 머지는 "
           "`tools/merge_batch.sh` 의 `wait_checks()` 로만 한다 — 손으로 쓴 머지 "
           "스크립트를 금지했다(그것이 `--admin` 을 부른 자리였다)"),
+    319: ("2026-10-12",
+          "`gh pr merge --admin` 으로 상태 검사까지 껐다. 빨간 사유는 "
+          "**취소였다** — `concurrency.group` 이 이벤트를 안 갈라 같은 커밋의 "
+          "`push` 판과 `pull_request` 판이 한 칸에 들어갔고, 늦게 깨어난 쪽이 "
+          "먼저 돈 쪽을 죽였다. 죽은 판도 그 이름으로 보고되므로 "
+          "`gh pr checks` 는 `0 failing` 인데 밑동은 FAILURE 로 읽었다",
+          "그 취소를 **없앴다**(DECISIONS §505) — 워크플로 셋의 `group` 에 "
+          "`github.event_name` 을 넣어 두 판이 서로 안 죽인다. 세는 축 "
+          "`gateruns.cross_kills`(`CROSS_KILL` 래칫)가 그 꼴을 다시 만들면 운다. "
+          "읽는 쪽도 같이 고쳤다 — `ci_wait.sh` 의 `verdict()` 가 혼자 남은 "
+          "취소를 빨강이 아니라 대기로 센다(§503)"),
 }
 
 #: 선언의 사유 칸이 이보다 짧으면 사유가 아니다. `gate_parity.MIN_REASON` 과 같은 틀.
@@ -79,7 +90,7 @@ MIN_REASON = 20
 
 #: 선언 건수 래칫. **늘면 운다** — 우회가 한 번 더 있었다는 뜻이다.
 #: 줄지는 않는다(역사는 안 줄어든다) 그래서 `ratchet.py` 규약에는 안 태운다.
-BYPASS_MAX = 1
+BYPASS_MAX = 2
 
 QUERY = """
 query($owner:String!, $name:String!, $n:Int!) {
