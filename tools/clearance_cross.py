@@ -28,10 +28,16 @@ clearance_cross.py — 폭을 **재는 방법**이 기하와 맞는가. 자를 �
     clearance(s) = dist( centerline(s), ∂RoadArea )
     통과폭(s)     = 2 · clearance(s)
 
-각도를 안 고른다. 표본 간격이 판정을 안 바꾼다. 상한이 필요 없다 —
-교차로에서 값이 커지는 것은 **거기가 실제로 넓다**는 뜻이지 거짓이 아니다.
+각도를 안 고른다. 표본 간격이 판정을 안 바꾼다.
 
-── 세는 것 둘. 둘 다 문턱이 없다 ───────────────────────────────
+★ **2026-10-13 정정 (DECISIONS §509).** 이 자리에 「상한이 필요 없다 — 교차로
+  에서 값이 커지는 것은 거기가 실제로 넓다는 뜻이지 거짓이 아니다」가 있었다.
+  **반만 맞았다.** 거리변환은 **가장 가까운 경계**를 재므로, 중심선이 길
+  한가운데에 없으면 넓은 쪽을 **아예 안 본다** — 실측 8~9m 인 자리를 2.0m 로
+  냈다. 전수에서 비대칭 20% 초과가 **464구간(36%)**이다. 그래서 좌우를 갈라
+  재는 축 둘을 더했다(`CENTER_OFF` · `RAY_ESCAPE`).
+
+── 세는 것 넷. 전부 문턱이 없다 ───────────────────────────────
 **보조정리.** 폴리곤 안의 점 p 와 임의 방향 u 에 대해, p 를 지나는 현의
 길이는 2·clearance(p) 이상이다. clearance 는 **모든** 방향에 대한 최솟값
 이므로 양쪽 거리가 각각 그 이상이고, 합은 두 배 이상이다. ∎
@@ -43,6 +49,10 @@ clearance_cross.py — 폭을 **재는 방법**이 기하와 맞는가. 자를 �
                                           크다. 「길을 따라 나갔다」의 필요조건
     역전   wmin < 2·min clearance        같은 폴리곤이면 **불가능**하다.
                                           나오면 두 값이 다른 폴리곤에서 왔다
+    치우침 |왼−오| ÷ 폭 중앙 > 0.2        중심선이 길 한가운데에 없다.
+                                          거기서 내접원은 구조적으로 과소다
+    샘     광선이 상한까지 간 표본 > 절반   광장·교차로·로터리. 거기서 법선은
+                                          폭이 아니라 「안 가둬진다」는 라벨이다
 
 ★ 「얼마나 넘치면 이상한가」는 안 정한다. 지금 수를 **래칫**으로 박고
   늘지 않게 막는다. 고치면 판정이 움직이고 그것은 측정 배치의 일이다.
@@ -50,7 +60,8 @@ clearance_cross.py — 폭을 **재는 방법**이 기하와 맞는가. 자를 �
 IN    web/data/road_area.geojson · sidewalk.geojson · segments.geojson
       data/field/naver_width_2610.csv   (있으면 **현장 인사이트**를 같이 낸다)
 OUT   data/processed/clearance_cross.json (--json 이면 지정 경로)
-PARAM SPAN_OVERSHOOT · SPAN_INVERSION (래칫. 문턱이 아니라 현재 수다)
+PARAM SPAN_OVERSHOOT · SPAN_INVERSION · CENTER_OFF · RAY_ESCAPE
+      (래칫 넷. 문턱이 아니라 현재 수다. 광선 상한은 `widthlr` 가 든다)
 밖    **판정을 안 바꾼다.** `widthcross` 와 같은 자리다 — 판정이 끝난 것을
       읽어 기하와 댈 뿐이고 판정 지문 밖이다.
       **어느 쪽이 옳은지도 안 말한다.** 정량 증인은 **도로대장 명목폭**
@@ -72,10 +83,12 @@ from pathlib import Path
 #   여기 다시 적으면 같은 사실이 두 집에 살고 그 둘은 반드시 갈린다.
 #   `localgeo` 는 이름만 넘기는 막이다.
 from localgeo import MX, MY
-
-# ★ 사분위와 결측 읽기의 집은 `tools/statkit.py` 하나다(§379-9).
 from statkit import num as _num
 from statkit import quartiles
+
+# ★ 사분위와 결측 읽기의 집은 `tools/statkit.py` 하나다(§379-9).
+# ★ 좌우 분해의 집은 `tools/widthlr.py` 하나다(§509).
+from widthlr import escaped, lr_profile, off_center
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web" / "data"
@@ -93,18 +106,20 @@ SPAN_OVERSHOOT = 148
 #: 0 이 아닌 것은 결함이 아니라 **다른 폴리곤에서 왔다는 증거**이고, 이 수는
 #: 그 어긋남의 크기다 — 판정은 `ngii1k`·`ngii`·`실폭도로` 셋을 신뢰도 순으로
 #: 쓰고 여기가 읽는 것은 발행된 `road_area` 하나다. 늘면 둘이 더 갈린 것이다.
-# ★ 2026-10-11 — 326 → **334** (DECISIONS §473). **자를 고쳤다.** 이 도구는
-#   발행물을 `localplane` 의 상수로 평면에 올려 재는데, 그 상수가 틀려 있었다
-#   (위도 1도를 **적도 값**으로 썼다 — 3.3km 에서 11m). 상수를 `pyproj` 실측으로
-#   고치자 내접원이 0.2~0.33% 커지고, 문턱 근처 **여덟 구간**이 역전으로 넘어왔다.
-#   ★ **새로 생긴 어긋남이 아니다** — 옛 자가 못 본 것이다. 올려 적는 것이
-#     맞고, 내리는 길은 폭 산출을 고치는 것이다(측정 배치).
-#   ★ `SPAN_OVERSHOOT` 는 **148 그대로다** — 그쪽은 같은 평면에서 두 수를
-#     서로 대므로 평면 배율이 양쪽에 같이 들어간다. 한쪽만 움직인 것이
-#     이 수가 맞다는 증거다.
+# ★ 2026-10-11 — 326 → **334**. 평면 상수를 고치니 옛 자가 못 보던 여덟이
+#   드러났다. `SPAN_OVERSHOOT` 가 148 그대로인 것이 그 증거다(DECISIONS §473).
 SPAN_INVERSION = 334
 
-RATCHETS = {"SPAN_OVERSHOOT": "down", "SPAN_INVERSION": "down"}
+# ★ 2026-10-13 (DECISIONS §509). 이 둘이 없어서 「법선이냐 내접원이냐」를 두 달
+#   물었다. **둘 다 맞고 둘 다 틀렸다** — 중심선이 치우치면 내접원이 구조적으로
+#   과소하고, 광장이 붙으면 법선이 샌다. 어느 자가 맞는지는 **구간의 성질**이다.
+#: 비대칭(|왼−오|÷폭) 중앙이 0.2 를 넘는 구간 수 — 중심선이 가운데에 없다.
+CENTER_OFF = 457
+#: 표본 절반 이상에서 광선이 상한까지 간 구간 수 — 광장·교차로·로터리.
+RAY_ESCAPE = 50
+
+RATCHETS = {"SPAN_OVERSHOOT": "down", "SPAN_INVERSION": "down",
+            "CENTER_OFF": "down", "RAY_ESCAPE": "down"}
 
 
 def _to_m(lon: float, lat: float) -> tuple[float, float]:
@@ -142,8 +157,14 @@ def clearances(line, boundary, step: float = STEP_M) -> list[float]:
     return out or [boundary.distance(Point(line.interpolate(line.length / 2)))]
 
 
-def measure(seg_feats: list, lines: list, road_b, carr_b) -> list[dict]:
-    """구간마다 (wmin, 내접원 최소·최대, 차도 기준 최소)."""
+
+
+def measure(seg_feats: list, lines: list, road_b, carr_b, road=None) -> list[dict]:
+    """구간마다 (wmin, 내접원 최소·최대, 차도 기준 최소, **좌우 분해**).
+
+    ★ `road`(폴리곤)를 주면 좌우 분해까지 싣는다 — 경계만 들고 부르는 시험을
+      안 깨려고 선택이다(DECISIONS §509).
+    """
     rows = []
     for feat, line in zip(seg_feats, lines, strict=True):
         p = feat["properties"]
@@ -164,6 +185,8 @@ def measure(seg_feats: list, lines: list, road_b, carr_b) -> list[dict]:
         if carr_b is not None:
             cc = clearances(line, carr_b)
             row["carr_min"] = 2 * min(cc) if cc else None
+        if road is not None:
+            row.update(lr_profile(line, road))
         rows.append(row)
     return rows
 
@@ -262,6 +285,8 @@ def against_ledger(rows: list[dict]) -> dict:
     }
 
 
+
+
 def cross(rows: list[dict]) -> dict:
     """전수 대조. (분포, 대장 대조, 넘침, 역전, 네이버 인사이트)"""
     ratio = [r["wmin"] / r["c_med"] for r in rows
@@ -277,6 +302,8 @@ def cross(rows: list[dict]) -> dict:
         "넘침": overshoot(rows),
         "역전": inversion(rows),
         "현장 인사이트": against_field(rows),
+        "중심선 치우침": off_center(rows),
+        "광선 샘": escaped(rows),
     }
 
 
@@ -289,7 +316,9 @@ def ratchet_values() -> dict[str, int]:
     """
     res = cross(load())
     return {"SPAN_OVERSHOOT": len(res["넘침"]),
-            "SPAN_INVERSION": len(res["역전"])}
+            "SPAN_INVERSION": len(res["역전"]),
+            "CENTER_OFF": len(res["중심선 치우침"]),
+            "RAY_ESCAPE": len(res["광선 샘"])}
 
 
 def load(only: set[str] | None = None) -> list[dict]:
@@ -327,7 +356,7 @@ def load(only: set[str] | None = None) -> list[dict]:
             continue
         feats.append(it)
         lines.append(line)
-    return measure(feats, lines, ru.boundary, carr_b)
+    return measure(feats, lines, ru.boundary, carr_b, road=ru)
 
 
 def show(res: dict, want: dict[str, int]) -> int:
@@ -395,12 +424,30 @@ def show(res: dict, want: dict[str, int]) -> int:
     if not inv:
         print("    없음")
 
+    off, esc = res["중심선 치우침"], res["광선 샘"]
+    print(f"\n  중심선 치우침 {len(off)}건 · 래칫 {want['CENTER_OFF']}"
+          "   — 거기서 내접원은 **구조적으로 과소**다. 자가 아니라 중심선이다")
+    for b in off[:8]:
+        print(f"    {b['label']:<22} 비대칭 {b['asym']:5.0%} · "
+              f"좌우합 {(b['lr'] or 0):6.2f} · 2×가까운쪽 {(b['narrow'] or 0):6.2f}")
+    if not off:
+        print("    없음")
+
+    print(f"\n  광선 샘 {len(esc)}건 · 래칫 {want['RAY_ESCAPE']}"
+          "   — 광장·교차로·로터리. 거기서 법선은 폭이 아니라 라벨이다")
+    for b in esc[:8]:
+        print(f"    {b['label']:<22} 샘 {b['escape']:4.0%} · "
+              f"법선 {(b['wmin'] or 0):6.2f} · 2×가까운쪽 {(b['narrow'] or 0):6.2f}")
+    if not esc:
+        print("    없음")
+
     print("\n★ 이 표는 **판정을 안 바꾼다.** 어느 쪽이 옳은가도 안 말한다.")
     print("  분포와 보조정리의 필요조건만 센다. 바꾸려면 판정이 움직이고")
     print("  그것은 측정 배치의 일이다(PLAN §13-5 규칙 2).")
 
     rc = 0
-    for name, got in (("SPAN_OVERSHOOT", len(over)), ("SPAN_INVERSION", len(inv))):
+    for name, got in (("SPAN_OVERSHOOT", len(over)), ("SPAN_INVERSION", len(inv)),
+                      ("CENTER_OFF", len(off)), ("RAY_ESCAPE", len(esc))):
         w = want[name]
         if got > w:
             print(f"\n✗ {name} {got} > 래칫 {w} — **늘었다.** 자가 더 틀렸다.")
@@ -469,7 +516,8 @@ def selftest() -> int:
     if quartiles([]):
         bad.append("빈 목록에서 값을 낸다")
 
-    # ⑥ 좌표 상수가 `localgeo` 에서 오는가. 여기 다시 적으면 2족이다.
+    # ⑥ 좌우 분해의 프로브는 `tools/widthlr.py --selftest` 가 든다(§509).
+    # ⑦ 좌표 상수가 `localgeo` 에서 오는가. 여기 다시 적으면 2족이다.
     if not (90_000 < MX < 95_000 and 110_000 < MY < 111_500):
         bad.append(f"좌표 상수가 이상하다 — MX {MX:.0f} · MY {MY}")
     x, y = _to_m(126.92, 35.15)
@@ -479,7 +527,7 @@ def selftest() -> int:
     if bad:
         print("★ 자기검사 실패\n  " + "\n  ".join(bad))
         return 1
-    print("✓ 자기검사 — 내접원 · 보조정리 · 넘침/역전 판별식 · 사분위 · 좌표 상수")
+    print("✓ 자기검사 — 내접원 · 보조정리 · 넘침/역전 · **좌우 분해** · 사분위 · 좌표 상수")
     return 0
 
 
@@ -491,7 +539,8 @@ def main(argv: list[str] | None = None) -> int:
     if a.selftest:
         return selftest()
 
-    want = {"SPAN_OVERSHOOT": SPAN_OVERSHOOT, "SPAN_INVERSION": SPAN_INVERSION}
+    want = {"SPAN_OVERSHOOT": SPAN_OVERSHOOT, "SPAN_INVERSION": SPAN_INVERSION,
+            "CENTER_OFF": CENTER_OFF, "RAY_ESCAPE": RAY_ESCAPE}
     res = cross(load())
     out = a.json or (PROCESSED / "clearance_cross.json")
     out.parent.mkdir(parents=True, exist_ok=True)

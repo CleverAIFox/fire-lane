@@ -43,8 +43,11 @@ permissions:
 #   가지 이름으로 바꾼다(`head_ref` 는 PR 에서만, 없으면 `ref_name`).
 #   `run:` 밖이라 보간 가드(test_untrusted_context_is_never_interpolated_into_run)
 #   의 과녁이 아니다.
+# ★ 2026-10-12 (DECISIONS §505). `github.event_name` 을 더한다 — 사유는
+#   `contract.yml` 의 같은 자리에. 2026-10-12 에 이 파일의 push 판이
+#   PR 판에 죽었고 그 취소가 PR #319 의 머지를 막았다.
 concurrency:
-  group: image-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: image-${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:

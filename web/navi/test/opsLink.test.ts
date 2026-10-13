@@ -195,9 +195,41 @@ describe("탭 id — 관제가 차를 가른다", () => {
       expect(id.startsWith("navi-")).toBe(true);
       ids.add(id);
     }
-    // 같은 밀리초에 여러 개를 만들어도 뒤의 다섯 글자가 가른다.
-    // 2,000개에서 겹침이 몇이라도 나오면 그 다섯 글자가 모자란 것이다.
+    // 같은 밀리초에 여러 개를 만들어도 뒤의 글자들이 가른다.
+    // 2,000개에서 겹침이 몇이라도 나오면 그 글자가 모자란 것이다.
     expect(ids.size).toBe(2000);
+  });
+
+  // ★ 2026-10-12 (DECISIONS §506). **위 시험은 주사위였다.**
+  //   `beforeEach` 가 가짜 타이머를 켜므로 `Date.now()` 가 얼어 있고, 그러면
+  //   2,000개를 가르는 것은 난수뿐이었다 — 다섯 글자로는 **2.4% 가 겹친다.**
+  //   2026-10-12 `contract-shared` 가 `expected 1999 to be 2000` 으로 죽었다.
+  //
+  //   위 시험은 **안 낮췄다**(느슨해지는 쪽이다). 대신 **운을 빼고** 같은 것을
+  //   다시 묻는다 — 난수를 상수로 못 박으면 남는 가름은 차례 하나뿐이다.
+  //   위가 확률로 묻는 것을 이것이 **확정으로** 묻는다.
+  it("★ 난수가 **죽어도** 서로 다르다 — 한 탭 안의 겹침은 운이 아니라 0 이어야 한다", async () => {
+    const { newId } = await import("../src/infra/opsLink");
+    const spy = vi.spyOn(Math, "random").mockReturnValue(0.5);
+    try {
+      const ids = new Set<string>();
+      for (let i = 0; i < 2000; i++) ids.add(newId("navi"));
+      expect(ids.size).toBe(2000);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("난수 글자 수가 **모자라지 않는다** — 둥근 값이 나와도", async () => {
+    const { newId } = await import("../src/infra/opsLink");
+    // Math.random() 이 0.5 면 "0.i" 라 종전 자르기로는 한 글자만 나왔다.
+    const spy = vi.spyOn(Math, "random").mockReturnValue(0.5);
+    try {
+      // `ops-` + 시각 4 + 차례 ≥1 + 난수 8 → 최소 17 자
+      expect(newId("ops").length).toBeGreaterThanOrEqual(17);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("짧고, 전송이 깨질 글자가 없다", async () => {
