@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from shapely.geometry import LineString, Polygon
 
-from firelane.seg.geom import _dirv, _join, _seal, verdict
+from firelane.seg.geom import _dirv, _join, _seal, curvature, verdict
 from firelane.seg.params import NODE_TOL, PARK, TRUCK
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -159,3 +159,28 @@ def test_params_are_not_redefined_in_segments():
     for name in ("TRUCK", "PARK", "NODE_TOL", "COV_MIN", "WMAX_CAP"):
         assert f"\n{name}" not in src.replace(f"\n{name}_", "\n_"), (
             f"{name} 이 segments.py 에서 재정의됐다 — 정본은 seg/params.py")
+
+
+# ── 곡률 (DECISIONS §523-3 에서 `segments.py` 에서 옮겨 왔다) ────
+def test_curvature_is_none_on_a_straight_line():
+    """직선은 곡률반경이 없다 — 0 이 아니라 **None** 이다(회색은 NULL · §3-9)."""
+    assert curvature(LineString([(0, 0), (50, 0), (100, 0)])) is None
+
+
+def test_curvature_measures_a_circle():
+    """반지름 50m 원 위의 세 점이면 50 이 나와야 한다."""
+    import math
+    r = 50.0
+    pts = [(r * math.cos(a), r * math.sin(a))
+           for a in (0.0, 0.4, 0.8)]          # 변 길이 약 20m — 5m 문턱을 넘는다
+    assert curvature(LineString(pts)) == pytest.approx(r, rel=0.02)
+
+
+def test_curvature_ignores_short_sides():
+    """**양쪽 변이 5m 이상인 꺾임만** 본다.
+
+    필터가 없으면 노딩(0.5m 접합)이 만든 정점 배치가 `R=0.2m` 를 낸다
+    (2026-08-23 실측). 아래 꺾임은 변이 1m 라 안 센다.
+    """
+    sharp = LineString([(0, 0), (1, 0), (1, 1)])
+    assert curvature(sharp) is None, "짧은 변 사이의 각을 도로 곡률로 셌다"

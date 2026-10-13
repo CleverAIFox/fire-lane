@@ -13,6 +13,7 @@ seg/geom.py — 폐포 없는 순수 함수.
 """
 from __future__ import annotations
 
+import math
 from functools import partial as _partial
 
 import numpy as np
@@ -204,3 +205,35 @@ def snap_groups(pts, tol: float = NODE_TOL) -> list[int]:
                 if ri != rj:
                     par[max(ri, rj)] = min(ri, rj)
     return [find(i) for i in range(len(pts))]
+
+
+# ★ 2026-10-14 (PLAN #146). `segments.py` 에서 옮겨 왔다. **순수 기하**이고
+# 그 파일의 머리말이 「정본은 seg/ 다」를 적고 있었다. 옮긴 이유는 자리 —
+# `segments.py` 가 예외 상한 780 에 닿아 있어 보도 적재 여덟 줄을 넣을 데가
+# 없었다. **발행기를 판정 폐포로 끌어들이는 쪽은 기각했다**(폐포 18 → 20 ·
+# 바탕지도를 손볼 때마다 재잠금이 붙는다 · DECISIONS §523-3).
+# ★ 이름에서 밑줄을 뗐다 — 비공개 이름이 모듈을 넘으면 `archcost` 가 운다
+#   (`PRIVATE_CROSS`). 부르는 쪽이 둘이다: `segments.py` · `tools/route_probe.py`.
+def curvature(geom):
+    """최소 곡률반경(m). 직선이면 None.
+
+    ★ 양쪽 변이 5m 이상인 꺾임만 본다. 짧은 변 사이의 각은 도로 곡률이
+      아니라 노딩(0.5m 접합)이 만든 정점 배치 노이즈다. 필터 없이 쟀다가
+      `R=0.2m` 가 나왔다(2026-08-23).
+    """
+    co = list(geom.coords) if geom.geom_type == "LineString" \
+        else list(max(geom.geoms, key=lambda q: q.length).coords)
+    best = None
+    for i in range(1, len(co) - 1):
+        (x0, y0), (x1, y1), (x2, y2) = co[i - 1], co[i], co[i + 1]
+        a = math.dist((x0, y0), (x1, y1))
+        b = math.dist((x1, y1), (x2, y2))
+        if a < 5.0 or b < 5.0:
+            continue
+        c = math.dist((x0, y0), (x2, y2))
+        s = abs((x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)) / 2
+        if s < 1e-9:
+            continue
+        r = a * b * c / (4 * s)
+        best = r if best is None else min(best, r)
+    return best

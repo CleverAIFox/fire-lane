@@ -504,7 +504,7 @@ EXCEPTIONS: dict[str, int] = {
     #   (「판정 시험 분모」 · `tools/srccov.py`) — 호출 한 줄과 `scope` · 묻는 말이다.
     # ★ 2026-10-13 (DECISIONS §513). 1358 → 1362. 관문 하나(「조사 판정의 자리」)
     "tools/verify.sh": 1377,   # ★ 2026-10-14 (§520 · §521) 1362→1377 · 단계 둘과 COV_MIN 사유
-    "src/firelane/segments.py": 780,
+    "src/firelane/segments.py": 762,   # ★ 2026-10-14 (§523-3) 780→762 · `_curvature` → `seg/geom.py` · 발행기 호출은 기각(폐포 18→20)
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이
     #   「21+잠금」 이라고 **수를 박아** 두고 있었다(실물 17). 수를 빼고 그 사유를

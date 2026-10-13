@@ -15,11 +15,11 @@ import re
 from pathlib import Path
 
 import pytest
-from shapely.geometry import LineString, MultiPoint, Polygon
+from shapely.geometry import LineString, MultiPoint, Point, Polygon
 from shapely.ops import unary_union
 
 from firelane.seg.params import COV_MIN, ESCAPE_M, RAY_M, SNAP_MAX, WMAX_CAP
-from firelane.seg.width import WidthEngine
+from firelane.seg.width import WidthEngine, carve_walk, walk_spans
 
 ROOT = Path(__file__).resolve().parents[1]
 def road(width_m: float, length: float = 100.0, y0: float = 0.0):
@@ -32,10 +32,16 @@ def road(width_m: float, length: float = 100.0, y0: float = 0.0):
 EMPTY = unary_union([])          # 건물 0건. 운영에서도 None 이 아니라 빈 기하다.
 
 
-def engine(ngii1k=None, ngii=None, rw=None, bld=None, xn=None, xsec=None):
+def engine(ngii1k=None, ngii=None, rw=None, bld=None, xn=None, xsec=None,
+           walk=None):
     return WidthEngine(ngii1k, ngii, rw, EMPTY if bld is None else bld,
                        xn if xn is not None else MultiPoint([(-9999, -9999)]),
-                       xsec)
+                       xsec, walk_u=walk)
+
+
+def band(y0: float, y1: float, length: float = 100.0):
+    """`y0`~`y1` 에 깔린 띠. 보도면 자리에 쓴다."""
+    return Polygon([(-10, y0), (length + 10, y0), (length + 10, y1), (-10, y1)])
 
 
 CENTER = LineString([(0, 0), (100, 0)])
@@ -319,3 +325,106 @@ def test_both_sides_running_off_still_gets_a_number():
     wx = engine(ngii1k=Polygon([(-200, -200), (200, -200), (200, 200), (-200, 200)]))
     wmin, *_ = wx.widths(CENTER)
     assert wmin is None or wmin > 0
+
+
+# ── 보도 차감 (PLAN #146 · DECISIONS §523) ──────────────────────
+def test_sidewalk_is_subtracted_from_the_roadway():
+    """차량이 못 가는 면은 폭이 아니다. 8m 노면 양쪽 1m 보도 → 6m."""
+    wx = engine(ngii1k=road(8.0), walk=unary_union([band(-4, -3), band(3, 4)]))
+    wmin, *_ = wx.widths(CENTER)
+    assert wmin == pytest.approx(6.0, abs=0.1), (
+        f"보도 2m 를 안 깎았다 — {wmin}")
+
+
+def test_without_the_sidewalk_layer_the_number_is_the_old_one():
+    """**기본 경로가 종전이다.** 자료 없는 기계에서 다른 수가 나오지 않는다."""
+    assert engine(ngii1k=road(8.0)).widths(CENTER)[0] == pytest.approx(8.0, abs=0.1)
+
+
+def test_an_escaped_ray_does_not_eat_someone_elses_sidewalk():
+    """**이 판의 머리다.** 샌 광선이 만난 보도는 **남의 도로의** 것이다.
+
+    §512-1 ③ 의 실물 — 필문대로289번길은 2m 안에 보도면이 **하나도 없는데**
+    차감으로 6.14 → 0.70 이 됐다. 광선이 escape 100% 로 본선에 새 나가고,
+    본선의 보도를 깎으면 **샌 쪽이 짧아져 escape 탐지기가 꺼진다.**
+    차감을 escape **뒤에** 두면 그 경로가 막힌다.
+    """
+    wx = engine(ngii1k=_plaza(lane=6.0, plaza=50.0), walk=band(8, 12))
+    wmin, *_ = wx.widths(CENTER)
+    assert wmin == pytest.approx(6.0, abs=0.2), (
+        f"{wmin} 가 나왔다. 차감을 escape **앞에** 두면 샌 쪽이 50 → 8 로 "
+        "짧아져 `max ≥ ESCAPE_M` 이 꺼지고 좌우합 11 이 폭으로 나간다 — "
+        "순서가 규칙이다(DECISIONS §523)")
+
+
+def test_admission_still_uses_the_uncarved_sum():
+    """입장은 **깎지 않은** 합이 정한다 — 차감이 구간 수를 못 움직인다.
+
+    §519 가 `2·min` 으로 한 번 지킨 그 경계다. 깎으면 통과할 표본을 만들어
+    **양방향**으로 민다 — 한쪽만 밀면 빈 그물이 초록이다.
+    """
+    shape = _plaza(lane=6.0, plaza=WMAX_CAP - 2.0)     # 생합 61 ≥ 상한
+    assert engine(ngii1k=shape).widths(CENTER)[0] is None
+    got, *_ = engine(ngii1k=shape, walk=band(50, 55)).widths(CENTER)
+    assert got is None, (
+        f"깎으면 합이 53 이 되어 통과했다 — {got}. 입장 검사가 깎인 수를 봤다")
+
+
+def test_a_point_on_the_sidewalk_is_carved_by_nothing_and_dropped_by_nothing():
+    """재는 점이 보도 위면 **안 깎고, 버리지도 않는다**(§512-1 · §523-2).
+
+    버림의 효과가 64구간 전부에서 0 임을 쟀다. 효과 없는 가드는 다음 사람이
+    무엇을 막는지 모른 채 영영 남는다.
+    """
+    wx = engine(ngii1k=road(8.0), walk=band(-1, 1))
+    wmin, *_ = wx.widths(CENTER)
+    assert wmin == pytest.approx(8.0, abs=0.1), (
+        f"중심선이 보도 위인 표본을 깎거나 버렸다 — {wmin}")
+
+
+def test_carving_never_raises_the_width():
+    """깎기는 **내리는 쪽으로만** 틀린다(MASTER §3-5a)."""
+    for w, (a, b) in ((8.0, (3.0, 4.0)), (12.0, (5.0, 6.0)), (3.0, (1.0, 1.5))):
+        bare = engine(ngii1k=road(w)).widths(CENTER)[0]
+        cut = engine(ngii1k=road(w),
+                     walk=unary_union([band(-b, -a), band(a, b)])).widths(CENTER)[0]
+        assert cut is not None and bare is not None
+        assert cut <= bare + 1e-6, f"깎았는데 폭이 올라갔다 — {bare} → {cut}"
+
+
+def test_a_width_carved_below_the_floor_is_kept_not_dropped():
+    """깎은 합이 0.3 아래여도 **버리지 않는다** — 버리면 입장이 바뀐다(§519).
+
+    그런 표본이 실물에 몇 개인지는 측정 대장 `walk-tiny` 가 든다.
+    """
+    wx = engine(ngii1k=road(8.0),
+                walk=unary_union([band(-4, -0.05), band(0.05, 4)]))
+    wmin, *_ = wx.widths(CENTER)
+    assert wmin is not None and 0 < wmin < 0.3, (
+        f"0.1m 가 나와야 하고 **0 도 None 도 아니어야** 한다 — {wmin}")
+
+
+def test_carve_walk_keeps_only_the_piece_holding_zero():
+    """순수 함수를 직접 민다. 보도 **섬**이 여러 개여도 가까운 턱이 이긴다."""
+    assert carve_walk(10.0, 10.0, []) == (10.0, 10.0)
+    assert carve_walk(5.0, 5.0, [(-1.0, 2.0)]) == (5.0, 5.0)   # 0 을 담았다
+    got = carve_walk(10.0, 10.0, [(-20.0, -18.0), (-8.0, -6.0),
+                                  (3.0, 5.0), (7.0, 9.0)])
+    assert got == (6.0, 3.0), f"가장 가까운 턱이 아니다 — {got}"
+
+
+def test_walk_spans_projects_the_sidewalk_onto_the_ray():
+    """광선 × 보도면 → 1차원 구간. `p` 가 원점이고 **정렬돼** 나온다."""
+    ray = LineString([(0, -10), (0, 10)])
+    p, ux, uy = Point(0, 0), 0.0, 1.0
+    got = walk_spans(ray, unary_union([band(3, 4), band(-6, -5)]), p, ux, uy)
+    assert [(round(a, 3), round(b, 3)) for a, b in got] == [(-6.0, -5.0), (3.0, 4.0)]
+    assert walk_spans(ray, band(40, 41), p, ux, uy) == [], "안 만나는데 구간을 냈다"
+
+
+def test_walk_spans_ignores_a_grazed_curb():
+    """경계를 **스친** 교차는 점이라 폭을 안 깎는다 — `_span` 의 `tangent` 와 같은 자."""
+    ray = LineString([(0, -10), (0, 10)])
+    graze = Polygon([(0, 2), (5, 2), (5, 6), (0, 6)])      # 광선이 모서리에 접한다
+    got = walk_spans(ray, graze, Point(0, 0), 0.0, 1.0)
+    assert all(b - a > 0 for a, b in got), f"길이 0 인 구간을 냈다 — {got}"

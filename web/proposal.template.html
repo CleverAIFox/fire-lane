@@ -101,6 +101,11 @@
 </style>
 </head>
 <body>
+<!-- ★ 2026-10-14 (DECISIONS §526). 라디오는 **여기** 산다 — `<header>` 안이 아니다.
+     칸을 켜는 규칙이 `#tN:checked ~ main #pN` 이고 `~` 는 **뒤 형제**만 본다.
+     `<header>` 안에 두면 `main` 은 input 의 형제가 아니라 header 의 형제라
+     규칙이 아무것도 안 맞고 **네 칸이 전부 꺼진 채** 발행됐다. -->
+{radios}
 <header><div class="wrap">
   <h1 class="doc">{title}</h1>
   <!-- ★ 2026-10-09 (§440-8). 여기 있던 「정본 docs/proposal.md · 이 화면은

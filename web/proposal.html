@@ -101,6 +101,11 @@
 </style>
 </head>
 <body>
+<!-- ★ 2026-10-14 (DECISIONS §526). 라디오는 **여기** 산다 — `<header>` 안이 아니다.
+     칸을 켜는 규칙이 `#tN:checked ~ main #pN` 이고 `~` 는 **뒤 형제**만 본다.
+     `<header>` 안에 두면 `main` 은 input 의 형제가 아니라 header 의 형제라
+     규칙이 아무것도 안 맞고 **네 칸이 전부 꺼진 채** 발행됐다. -->
+<input type="radio" name="pane" id="t0" checked><input type="radio" name="pane" id="t1"><input type="radio" name="pane" id="t2"><input type="radio" name="pane" id="t3">
 <header><div class="wrap">
   <h1 class="doc">Fire-Lane</h1>
   <!-- ★ 2026-10-09 (§440-8). 여기 있던 「정본 docs/proposal.md · 이 화면은
@@ -114,7 +119,7 @@
        배포 때 둘을 올렸다. 둘 다 은퇴했으므로 그 자리는 **404 로 가는 링크**다 —
        심사위원이 누를 자리이므로 빈 링크를 두지 않는다. 인쇄가 필요하면
        브라우저 인쇄로 뜨고, 그 자리를 다시 만들 때는 굽는 도구가 먼저다. -->
-  <div class="tabs"><input type="radio" name="pane" id="t0" checked><label for="t0">표지</label><input type="radio" name="pane" id="t1"><label for="t1">Part I.  프로젝트 제안서</label><input type="radio" name="pane" id="t2"><label for="t2">Part II.  요구사항 분석서</label><input type="radio" name="pane" id="t3"><label for="t3">Part III.  상세 설계서</label></div>
+  <div class="tabs"><label for="t0">표지</label><label for="t1">Part I.  프로젝트 제안서</label><label for="t2">Part II.  요구사항 분석서</label><label for="t3">Part III.  상세 설계서</label></div>
 </div></header>
 
 <main>

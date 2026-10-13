@@ -38,6 +38,48 @@ from firelane.seg.params import (
 )
 
 
+def walk_spans(ray, walk_u, p, ux, uy):
+    """광선이 **보도면과 겹치는** 1차원 구간들. `p` 가 원점이고 `(ux,uy)` 가 +축이다.
+
+    `_span` 이 노면으로 하는 것과 같은 투영이다. 따로 둔 이유는 하나 —
+    노면 교차는 「0 을 담은 조각」 하나를 찾고, 보도 교차는 **전부** 필요하다.
+    """
+    sg = ray.intersection(walk_u)
+    if sg.is_empty:
+        return []
+    if sg.geom_type == "LineString":
+        pcs = [sg]
+    elif hasattr(sg, "geoms"):
+        pcs = [q for q in sg.geoms if q.geom_type == "LineString"]
+    else:
+        return []                                    # 점 교차. 보도 턱을 스쳤다
+    out = []
+    for q in pcs:
+        ss = [(x - p.x) * ux + (y - p.y) * uy for x, y in q.coords]
+        out.append((min(ss), max(ss)))
+    return sorted(out)
+
+
+def carve_walk(left, right, walk_iv):
+    """좌우 거리에서 보도를 깎는다. **0 을 담은 조각 하나만** 남는다.
+
+    ★ 2026-10-14 (DECISIONS §523-2). 재는 점이 **보도 위**면 안 깎고 그대로
+      돌려준다. 그 표본을 **버리지도 않는다** — §512-1 이 64구간 전부에서
+      버림의 효과가 0 임을 쟀고, 효과 없는 가드는 다음 사람이 무엇을 막는지
+      모른 채 영영 남는다. 중심선이 보도 위인 것은 중심선의 결함이고
+      그 자리는 `PLAN` 이 든다.
+    """
+    lo, hi = -left, right
+    if any(a <= 0.0 <= b for a, b in walk_iv):
+        return left, right
+    for a, b in walk_iv:
+        if b <= 0.0:
+            lo = max(lo, b)              # 왼쪽에서 가장 가까운 보도의 **끝**
+        elif a >= 0.0:
+            hi = min(hi, a)              # 오른쪽에서 가장 가까운 보도의 **시작**
+    return -lo, hi
+
+
 class WidthEngine:
     """폭 산출에 필요한 공간 소스를 한 묶음으로 들고 다닌다.
 
@@ -47,16 +89,21 @@ class WidthEngine:
     bld_u     건물.                담~담(wmax) 측정용
     xn        교차 노드 점집합.     XSEC_EXCL 폴백용
     xsec_poly 평면교차점 실형상.    있으면 이쪽이 우선
+    walk_u    보도면.               노면에서 **깎는다**(§523). 없으면 안 깎는다
     """
 
     def __init__(self, ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
-                 *, mix_src: bool = False, old_snap: bool = False):
+                 *, walk_u=None, mix_src: bool = False, old_snap: bool = False):
         self.ngii1k_u = ngii1k_u
         self.ngii_u = ngii_u
         self.rw_u = rw_u
         self.bld_u = bld_u
         self.xn = xn
         self.xsec_poly = xsec_poly
+        # ★ 2026-10-14 (PLAN #146 · DECISIONS §523). 보도면. **기본이 None** 이고
+        #   그때는 종전과 글자까지 같은 경로다 — 자료가 없는 기계에서 조용히
+        #   다른 수가 나오지 않는다(`segments.py` 가 없으면 운다).
+        self.walk_u = walk_u
         # ★ 2026-09-25 (PLAN §1 #121 · #123). 종전에는 셋 다 `seg/params.py` 의
         #   모듈 전역이었고 그 파일이 `.env` 를 읽었다. 이제 **부르는 쪽이 정한다.**
         #   기본은 전부 꺼짐 — 셋 다 「종전 동작으로 되돌리는」 진단 스위치이고,
@@ -179,6 +226,27 @@ class WidthEngine:
             #   `escape-tiny` 가 든다 — 재기 전에 판정 기준을 적어 뒀다.
             if max(left, right) >= ESCAPE_M:
                 return 2 * min(left, right), None
+            # ★ 2026-10-14 (DECISIONS §523). **보도 차감.** 세 줄 위의 입장
+            #   검사와 바로 위의 escape 검사는 **깎지 않은** 좌우를 본다 —
+            #   순서가 규칙이다.
+            #
+            #   깎고 나서 escape 를 보면 **샌 광선이 안 샌 것처럼 보인다.**
+            #   §512-1 ③ 이 그 사고다 — 필문대로289번길은 2m 안에 보도면이
+            #   하나도 없는데 차감으로 6.14 → 0.70 이 됐다. 그 구간의 광선은
+            #   escape 100% 로 필문대로 **본선**으로 새 나가고, 본선의 보도를
+            #   깎으면 샌 쪽이 짧아져 `max(left,right) ≥ ESCAPE_M` 이 **꺼진다.**
+            #   그러면 `2·min` 대신 깎인 좌우합이 폭으로 나간다.
+            #
+            #   그래서 「보도면을 어느 도로의 것인지 귀속한다」를 **광선으로**
+            #   가른다(§523-1) — 제 도로에 머문 광선이 만난 보도는 제 것이고,
+            #   샌 광선이 만난 보도는 **남의 것이라 안 깎는다.**
+            if self.walk_u is not None and not self.walk_u.is_empty:
+                left, right = carve_walk(
+                    left, right, walk_spans(r, self.walk_u, p, ux, uy))
+                # ★ 깎은 합이 0.3 아래로 떨어져도 **버리지 않는다** — 버리면
+                #   입장이 바뀌고 구간 수가 움직인다(§519 가 `2·min` 에 쓴 그
+                #   사유와 같다). 그 표본 수는 측정 대장 `walk-tiny` 가 든다.
+                return left + right, None
             return s, None
 
         # ── 측정 지점 결정 ──────────────────────────────────

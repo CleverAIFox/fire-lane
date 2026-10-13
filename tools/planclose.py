@@ -51,6 +51,36 @@ _ROW = re.compile(r"^\| (\d+) \|", re.M)
 _BATCH = re.compile(r"^\| `([^`]+)` \|")
 _HASH = re.compile(r"`#(\d+)`")
 
+#: 「드는 행」 칸의 표식. **이 판이 닫겠다고 약속한 행이 아니다.**
+#:
+#: ★ 2026-10-14 (DECISIONS §524). 그 칸이 **두 가지 뜻**을 한 칸에 담고
+#:   있었다 — 「닫을 행」과 「원인·전건으로 **언급만** 하는 행」. 그래서
+#:   `닫는 수` 를 기계가 못 받았고, 판마다 세 보니 세 줄이 어긋났다
+#:   (`Zm` 선언 1 · 살아있는 행 2 · `Zm5` 선언 0 · 1). 셋 다 **정상**이라
+#:   사람은 안 고쳤고, 그 말은 **그 칸이 틀려도 아무도 모른다**는 뜻이다.
+#:   §519 가 한 줄에서 규칙 둘을 가른 것과 같은 자다.
+MENTION = ("언급", "조건부")
+
+
+_HEAD = "| 판 | 성질 | 전건 | 드는 행 | 닫는 수 |"
+
+
+def _table(src: str | None = None) -> list[str]:
+    """배치 표의 **행들**. 끝은 표가 정한다 — 산문 낱말이 아니다.
+
+    ★ 2026-10-14 (DECISIONS §524-1). 종전에는 표의 끝을 그 아래 산문의
+      첫 낱말로 찾았다. 그 산문을 고치자 **파서가 죽었다** — 표를 읽는 자가
+      표 밖의 글자에 매달려 있었다. 표는 `|` 로 시작하지 않는 첫 줄에서
+      끝난다. 그것이 표의 성질이고 산문이 바뀌어도 안 바뀐다.
+    """
+    t = _text(src)
+    out = []
+    for ln in t[t.index(_HEAD):].splitlines():
+        if not ln.startswith("|"):
+            break
+        out.append(ln)
+    return out
+
 
 def _text(src: str | None = None) -> str:
     return PLAN.read_text(encoding="utf-8") if src is None else src
@@ -64,19 +94,71 @@ def open_rows(src: str | None = None) -> set[int]:
     return {int(m.group(1)) for m in _ROW.finditer(t[i:j])}
 
 
+def _rows_marked(cell: str) -> list[tuple[int, str]]:
+    """「드는 행」 칸 → (행 번호, **바로 뒤에 붙은 표식**) 목록.
+
+    표식은 괄호 한 쌍 안에 있고 번호 **직후**에만 붙는다 — 칸 어딘가에 그
+    낱말이 있는 것으로는 안 센다(§317 이 `feeds_why` 첫 줄로 가른 그 자).
+    """
+    out = []
+    for m in _HASH.finditer(cell):
+        tail = cell[m.end():m.end() + 10]
+        out.append((int(m.group(1)), tail if tail.startswith("(") else ""))
+    return out
+
+
 def batches(src: str | None = None) -> dict[str, tuple[set[int], int | None]]:
     """배치 표 → 판 이름: (드는 행, 닫는 수)."""
-    t = _text(src)
-    i = t.index("| 판 | 성질 | 전건 | 드는 행 | 닫는 수 |")
-    j = t.index("**합 ", i)
     out: dict[str, tuple[set[int], int | None]] = {}
-    for ln in t[i:j].splitlines():
+    for ln in _table(src):
         if not (m := _BATCH.match(ln)):
             continue
         col = ln.split("|")
         rows = {int(x) for x in _HASH.findall(col[4])}
         n = col[5].strip()
         out[m.group(1)] = (rows, int(n) if n.isdigit() else None)
+    return out
+
+
+def claims(src: str | None = None) -> dict[str, tuple[int, int]]:
+    """판 이름 → (선언한 닫는 수, **센 수**).
+
+    센 수 = 표식 없는 열린 행 + 이 판에서 **이미 닫은** 행(묘비). 표식이
+    붙은 행(`언급` · `조건부`)은 **약속이 아니라서** 안 센다.
+    """
+    from plan_renumber import CLOSED
+    op, cc = open_rows(src), cannot_close(src)
+    out: dict[str, tuple[int, int]] = {}
+    for ln in _table(src):
+        if not (m := _BATCH.match(ln)):
+            continue
+        col = ln.split("|")
+        n = col[5].strip()
+        got = 0
+        for num, tail in _rows_marked(col[4]):
+            if any(w in tail for w in CLOSED):
+                got += 1                      # 같은 판에서 닫았다 — 약속을 지켰다
+            elif any(w in tail for w in MENTION):
+                continue                      # 언급 · 조건부. 약속이 아니다
+            elif num in op and num not in cc:
+                got += 1
+        out[m.group(1)] = (int(n) if n.isdigit() else 0, got)
+    return out
+
+
+def promised(src: str | None = None) -> set[int]:
+    """어느 판이 **무조건** 닫겠다고 적은 열린 행. 표식이 붙은 것은 빠진다."""
+    from plan_renumber import CLOSED
+    op, cc = open_rows(src), cannot_close(src)
+    out: set[int] = set()
+    for ln in _table(src):
+        if not _BATCH.match(ln):
+            continue
+        for num, tail in _rows_marked(ln.split("|")[4]):
+            if any(w in tail for w in CLOSED + MENTION):
+                continue
+            if num in op and num not in cc:
+                out.add(num)
     return out
 
 
@@ -109,11 +191,8 @@ def ghosts(src: str | None = None) -> set[int]:
       목록을 다시 만들지 않는다(족 2 — 사본이 하나 더 생긴다).
     """
     from plan_renumber import CLOSED
-    t = _text(src)
-    i = t.index("| 판 | 성질 | 전건 | 드는 행 | 닫는 수 |")
-    j = t.index("**합 ", i)
     live: set[int] = set()
-    for ln in t[i:j].splitlines():
+    for ln in _table(src):
         if not _BATCH.match(ln):
             continue
         col = ln.split("|")
@@ -131,6 +210,7 @@ def counts(src: str | None = None) -> dict[str, int]:
     return {"열린": len(open_rows(src)),
             "못 닫는": len(cannot_close(src)),
             "표가 드는 행": len(took & open_rows(src)),
+            "무조건 닫는다": len(promised(src)),
             "닫는 수 선언 합": sum(n or 0 for _, n in b.values())}
 
 
@@ -160,6 +240,29 @@ def selftest() -> int:
         bad.append(f"빠진 행을 못 집는다 — {sorted(orphans(hole))}")
     if counts(synth)["닫는 수 선언 합"] != 3:
         bad.append("닫는 수 합을 잘못 센다")
+    # ★ 표식. 번호 **직후**의 괄호만 표식이고 칸 어딘가의 낱말은 아니다
+    cell = "`#1`(언급) `#2` `#3`(닫힘) 언급"
+    got = [(n, bool(tail)) for n, tail in _rows_marked(cell)]
+    if got != [(1, True), (2, False), (3, True)]:
+        bad.append(f"표식을 잘못 읽는다 — {_rows_marked(cell)}")
+    if "언급" not in _rows_marked(cell)[0][1]:
+        bad.append("표식을 읽었는데 낱말이 안 담겼다 — 어휘로 가를 수 없다")
+    if _rows_marked("`#4` (언급)")[0][1] != "":
+        bad.append("번호와 괄호 사이가 벌어진 것을 표식으로 읽는다")
+    # ★ 선언 ↔ 센 수. 양방향으로 민다
+    if claims(synth) != {"Za": (2, 2), "Zb": (1, 1)}:
+        bad.append(f"선언과 센 수를 잘못 센다 — {claims(synth)}")
+    marked = synth.replace("| `#1` `#2` | 2 |", "| `#1` `#2`(언급) | 2 |")
+    if claims(marked).get("Za") != (2, 1):
+        bad.append("표식을 붙였는데 센 수가 안 줄었다 — 그 가지가 죽었다")
+    if 2 in promised(marked):
+        bad.append("`(언급)` 행을 **약속**으로 센다")
+    if promised(synth) != {1, 2, 9}:
+        bad.append(f"약속한 행을 잘못 센다 — {sorted(promised(synth))}")
+    # ★ §524-1 — 표 **아래 산문**을 고쳐도 같은 수를 읽는가
+    moved = synth.replace("**합 3.**", "손으로 세지 않는다 — 도구가 센다.")
+    if counts(moved) != counts(synth) or claims(moved) != claims(synth):
+        bad.append("표 아래 산문을 고치자 수가 달라졌다 — 파서가 산문에 매달렸다")
     # ★ 겹친 행을 **만들어** 민다 — `orphans()` 가 못 집는 쪽이다
     both = synth.replace("| `#3` 바깥 | 외부다 |", "| `#1` 바깥 | 외부다 |")
     if not (cannot_close(both) & _taken(both)):
@@ -184,7 +287,20 @@ def main() -> int:
     orph, gh = sorted(orphans()), sorted(ghosts())
     print(f"§1 열린 {c['열린']} − 못 닫는 {c['못 닫는']} = {c['열린'] - c['못 닫는']}"
           f"  ·  배치 표가 드는 행 {c['표가 드는 행']}"
+          f"  ·  무조건 닫는다 {c['무조건 닫는다']}"
           f"  ·  닫는 수 선언 합 {c['닫는 수 선언 합']}")
+    if bad := {k: v for k, v in claims().items() if v[0] != v[1]}:
+        print(f"\n✗ **닫는 수가 센 수와 다른 판 {len(bad)}**")
+        for k, (dec, got) in sorted(bad.items()):
+            print(f"    `{k}` 선언 {dec} · 센 수 {got}")
+        print(f"  「드는 행」 칸의 번호 뒤에 {' · '.join(f'({w})' for w in MENTION)} 를")
+        print("  붙이면 **약속이 아니다**로 센다. 닫을 행만 맨번호로 두어라 —")
+        print("  한 칸이 두 뜻을 담으면 그 수가 틀려도 아무도 모른다(DECISIONS §524)")
+        return 1
+    if (une := sorted(set(promised()) ^ (open_rows() - cannot_close()))):
+        print(f"\n  ! **어느 판도 무조건 닫겠다고 안 한 행 {len(une)}** — "
+              f"{' '.join(f'#{n}' for n in une)}")
+        print("    조건부에만 걸려 있다. 조건이 깨지면 그 행을 닫는 판이 없다.")
     if gh:
         print(f"\n  ! 판이 드는데 §1 에 없는 행 {len(gh)} — "
               f"{' '.join(f'#{n}' for n in gh)}")
