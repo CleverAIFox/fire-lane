@@ -27,9 +27,7 @@ from shapely.ops import nearest_points
 
 from firelane.seg.params import (
     COV_MIN,
-    ESCAPE_M,
     MIN_SEG_LEN,
-    RAY_M,
     SNAP_MAX,
     SNAP_TRUST,
     WIDTH_SRCS,
@@ -115,8 +113,7 @@ class WidthEngine:
             교차로에서는 법선이 교차하는 길을 따라 빠져나가 한쪽이 수십 m 가
             된다. 그 표본은 폭이 아니므로 버린다.
             """
-            r = LineString([(p.x-ux*RAY_M, p.y-uy*RAY_M),
-                            (p.x+ux*RAY_M, p.y+uy*RAY_M)])
+            r = LineString([(p.x-ux*60, p.y-uy*60), (p.x+ux*60, p.y+uy*60)])
             sg = r.intersection(poly_u)
             if sg.is_empty:
                 return None, "empty"          # 법선이 이 소스와 아예 안 만난다
@@ -152,17 +149,23 @@ class WidthEngine:
             if run is None:
                 return None, "no_run"         # p 가 이 폴리곤 밖 (snap 실패)
             left, right = -run[0], run[1]
-            # ★ 2026-10-13 (DECISIONS §510). **한쪽이 샜는가.** 종전에는
-            #   `left > WMAX_CAP` 으로 걸렀는데 그 값이 광선 길이와 **같은 60**
-            #   이라 조건이 영원히 거짓이었다 — 「교차로에서 길을 따라 나갔다」를
-            #   막으려던 문이 **한 번도 안 닫혔다.** 실제로 무는 것은 아래 합의
-            #   상한뿐이었고, 그래서 **한쪽 50m + 반대쪽 3m = 53** 이 폭으로
-            #   채택됐다(밤실로4번길 1-11 · 2026-10-03 네이버 실측 5.4m).
-            #   샌 쪽은 이 도로의 반폭이 아니다 — 가까운 쪽만 믿는다.
-            if max(left, right) >= ESCAPE_M:
-                v = 2 * min(left, right)
-            else:
-                v = left + right
+            # ★ 2026-10-13 (DECISIONS §516). **한쪽-샘 문은 이 판에서 안 고친다.**
+            #   §510 이 여기에 `max(left, right) >= ESCAPE_M → 2·min` 을 넣었고
+            #   그것을 **되돌렸다.** 고침이 틀렸기 때문이 아니라 **값 규칙과
+            #   입장 규칙을 한꺼번에** 바꿨기 때문이다 — 종전 코드는 `l+r` 이
+            #   상한을 넘는 표본을 `range` 로 **버렸고**, `2·min` 은 그 표본을
+            #   **통과시킨다.** 그래서 덮임이 올라가고 폭 미산출 집합이 바뀌고
+            #   구간 수가 1,281 → 1,285 로 움직였다(2026-10-13 재잠금).
+            #   예보는 「값만 내려간다」였다 — **예보가 입장을 안 봤다.**
+            #   `RAY_M`(맨숫자 60 의 이름)도 되돌렸다 — 이름 하나가 판정 로직 지문을 움직여
+            #   재잠금을 요구했고, 이 판은 **판정 불변**이라 재잠금이 0 이어야
+            #   한다(`golden.py` 는 토큰열을 해시한다 · 주석은 안 센다).
+            #   아래 `60` 둘과 `WMAX_CAP` 이 **같은 값**이라는 것이 이 결함의
+            #   뿌리이고, 그 이름을 세우는 일은 `Zm2'` 가 한다.
+            #   돌아오는 자리는 `Zm2'` 이고 전건은 MASTER §3-4a 폭의 정의다.
+            if left > WMAX_CAP or right > WMAX_CAP:   # 교차로에서 길을 따라 나갔다
+                return None, "cap"
+            v = left + right
             if not (0.3 < v < WMAX_CAP):
                 return None, "range"          # 0.3m 이하 조각
             return v, None
@@ -220,8 +223,7 @@ class WidthEngine:
 
         # 담~담(상한)은 폭을 채택한 지점과 같은 곳에서 잰다. 다른 지점에서 재면
         # wmin 과 wmax 가 서로 다른 단면을 기술하게 된다.
-        rb = LineString([(P.x-ux*RAY_M, P.y-uy*RAY_M),
-                         (P.x+ux*RAY_M, P.y+uy*RAY_M)])
+        rb = LineString([(P.x-ux*60, P.y-uy*60), (P.x+ux*60, P.y+uy*60)])
         B = None
         sg = rb.intersection(self.bld_u)                    # 담~담 = 상한
         if not sg.is_empty:

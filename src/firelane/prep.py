@@ -67,7 +67,8 @@ STATE = ROOT / "data" / "_prep.json"
 TEXT_EXT = TEXT_EXT_PREP
 
 # 서식 변환기. 대장 `norm_convert` 값 → (받는 확장자, 모듈 경로). 이 표 밖의 값은 실패한다.
-CONVERTERS = {"vehiclecard": (".pdf", "firelane.vehiclecard")}
+CONVERTERS = {"vehiclecard": (".pdf", "firelane.vehiclecard"),
+              "xlsxtable": (".xlsx", "firelane.xlsxtable")}
 
 
 def _converter(e: dict) -> str | None:

@@ -11,13 +11,14 @@ golden 은 "리팩 전후가 같은가"만 본다. 지금 값이 **옳은가**�
 ★ 실제 데이터가 아니라 사각형 도로면을 쓴다. 실측 검증은 D-25 이고,
   여기서 지키는 것은 "규칙이 코드에 살아 있는가"다.
 """
+import re
 from pathlib import Path
 
 import pytest
 from shapely.geometry import LineString, MultiPoint, Polygon
 from shapely.ops import unary_union
 
-from firelane.seg.params import COV_MIN, ESCAPE_M, RAY_M, SNAP_MAX, WMAX_CAP
+from firelane.seg.params import COV_MIN, SNAP_MAX, WMAX_CAP
 from firelane.seg.width import WidthEngine
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -233,7 +234,7 @@ def test_width_diagnosis_selects_by_width_not_by_verdict():
     assert "n_try == 0" in src, "한 발도 안 쏜 구간을 따로 세지 않는다"
 
 
-# ── 한쪽이 샜을 때 (2026-10-13 · DECISIONS §510) ────────────────
+# ── 한쪽이 샜을 때 (2026-10-13 · DECISIONS §510 → §516) ────────
 def _plaza(lane: float, plaza: float):
     """한쪽은 `lane/2` 에서 벽, 반대쪽은 `plaza` 까지 열린 도로면.
 
@@ -244,41 +245,61 @@ def _plaza(lane: float, plaza: float):
     return Polygon([(-10, -h), (110, -h), (110, plaza), (-10, plaza)])
 
 
-def test_one_side_running_off_is_not_half_a_width():
-    """**이 판의 머리다.** 한쪽이 광장으로 새면 좌우합은 폭이 아니다.
+def _ray_m() -> float:
+    """`_span` 이 법선을 좌우로 쏘는 거리. **소스에서 읽는다.**
 
-    종전에는 `left > WMAX_CAP`(=60) 으로 걸렀는데 광선 자체가 60(`RAY_M`)이라
-    그 조건이 **영원히 거짓**이었다 — 문이 한 번도 안 닫혔다. 그래서 한쪽
-    50m + 반대쪽 3m = 53m 가 폭으로 채택됐다.
+    맨숫자이고 이름이 없다 — 이름을 세우면 판정 로직 지문이 움직여 재잠금을
+    요구한다(DECISIONS §516). 그래서 상수를 import 하지 못하고 글자로 집는다.
+    """
+    src = (ROOT / "src/firelane/seg/width.py").read_text(encoding="utf-8")
+    m = re.search(r"r = LineString\(\[\(p\.x-ux\*(\d+(?:\.\d+)?)", src)
+    assert m, "광선 길이를 못 찾았다 — `_span` 의 광선 식이 바뀌었다"
+    return float(m.group(1))
+
+
+def test_the_one_side_gate_is_still_dead():
+    """**알려진 결함의 카나리아.** 이 문은 지금도 못 닫힌다 — 고치면 운다.
+
+    `_span` 이 「교차로에서 길을 따라 나갔다」를 `left > WMAX_CAP` 으로 거르는데
+    광선 길이와 **그 값이 같아서**(둘 다 60) 조건이 영원히 거짓이다. 한쪽
+    거리는 광선 안에 있으므로 광선 길이를 넘을 수 없다.
+
+    ★ **이 시험은 결함을 지키는 것이 아니라 결함이 잊히는 것을 막는다.**
+      §510 이 그 문을 고쳤고 §516 이 그 고침을 **이 판에서 빼냈다** — 값
+      규칙과 **입장 규칙**을 한꺼번에 바꿔 구간 수가 1,281 → 1,285 로
+      움직였기 때문이다. 다시 고치는 자리는 `Zm2'` 이고 전건은 MASTER
+      §3-4a 폭의 정의다. 고치면 아래 단도 같이 빨개지고, 그때 §516 을
+      읽게 된다(DECISIONS §507-1 — 왜 지우지 않고 적는가).
+    """
+    assert WMAX_CAP >= _ray_m(), (
+        f"한쪽-샘 문이 닫힐 수 있게 됐다 — 고쳤다는 뜻이다(광선 {_ray_m()} · "
+        f"문턱 {WMAX_CAP}). DECISIONS §516 을 읽고 **값 규칙과 입장 규칙의 "
+        "예보를 따로** 적었는지 확인해라.")
+
+
+def test_the_measured_baseline_of_a_plaza_edge():
+    """`Zm2'` 의 **예보 기준선.** 지금 코드가 광장 가에서 내는 수다.
+
+    한쪽 3m + 반대쪽 50m 인 합성 광장에서 좌우합 **53.0** 이 그대로 폭이
+    된다. 네이버 실측 5.4m 와 10배 차이다. 이 수가 기준선이고, `Zm2'` 의
+    수용 조건은 「이 수가 6.0 근처로 내려오고 **구간 수는 안 움직인다**」다.
     """
     wx = engine(ngii1k=_plaza(lane=6.0, plaza=50.0))
     wmin, *_ = wx.widths(CENTER)
-    assert wmin == pytest.approx(6.0, abs=0.2), (
-        "샌 쪽을 더해 폭으로 냈다 — 가까운 쪽 × 2 여야 한다")
-    assert wmin < ESCAPE_M, "샌 쪽이 그대로 들어가면 이 수가 20m 를 넘는다"
-
-
-def test_the_escape_gate_is_actually_reachable():
-    """**죽은 문을 되살렸다는 증거.** 문턱이 광선보다 짧아야 닫힐 수 있다."""
-    assert ESCAPE_M < RAY_M, (
-        "문턱이 광선 길이 이상이면 한쪽 거리가 그 값을 넘을 수 없다 — "
-        "조건이 영원히 거짓이고 그것이 2026-10-13 까지의 상태였다")
-    assert ESCAPE_M < WMAX_CAP, "합의 상한보다도 작아야 한쪽 검사가 먼저 문다"
+    assert wmin == pytest.approx(53.0, abs=0.5), (
+        f"기준선이 움직였다 — {wmin}. 코드가 바뀌었으면 §516 의 예보를 "
+        "다시 적어야 한다")
 
 
 def test_a_wide_but_bounded_road_still_uses_the_sum():
     """**대로를 죽이지 않는다.** 양쪽이 다 막혀 있으면 좌우합 그대로다."""
-    wx = engine(ngii1k=road(2 * ESCAPE_M - 2.0))      # 한쪽 19m — 안 샌다
+    wx = engine(ngii1k=road(38.0))
     wmin, *_ = wx.widths(CENTER)
-    assert wmin == pytest.approx(2 * ESCAPE_M - 2.0, abs=0.1)
+    assert wmin == pytest.approx(38.0, abs=0.1)
 
 
 def test_both_sides_running_off_still_gets_a_number():
-    """양쪽이 다 새면 가까운 쪽도 상한이다 — 그래도 **0 을 내지 않는다**.
-
-    0 은 「폭이 없다」가 되고 회색이 숫자로 굳는다. 그 자리를 거르는 것은
-    `clearance_cross` 의 `RAY_ESCAPE` 축이다(§509).
-    """
+    """양쪽이 다 새면 **0 을 내지 않는다** — 0 은 회색이 숫자로 굳는 자리다."""
     wx = engine(ngii1k=Polygon([(-200, -200), (200, -200), (200, 200), (-200, 200)]))
     wmin, *_ = wx.widths(CENTER)
     assert wmin is None or wmin > 0
