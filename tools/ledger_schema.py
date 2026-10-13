@@ -452,6 +452,7 @@ def run(*, apply: bool, check: bool, missing: bool = False) -> int:
     d = yaml.safe_load(s) or {}
     ds = d.get("datasets") or {}
     ok = err = skip = drift = nonsense = 0
+    sick: list[str] = []   # ★ PLAN #171. 센 줄이 이름도 든다 (§389-3 족)
 
     for key, e in ds.items():
         # ★ §182-1. `--missing` — schema 가 이미 있는 항목은 읽지도 쓰지도 않는다.
@@ -476,6 +477,7 @@ def run(*, apply: bool, check: bool, missing: bool = False) -> int:
         for why in unreadable(key, sch, str(e.get("kind") or "")):
             print(f"      ★ {why}")
             nonsense += 1
+            sick.append(key)
 
         if check:
             old = (e.get("schema") or {})
@@ -500,7 +502,8 @@ def run(*, apply: bool, check: bool, missing: bool = False) -> int:
         print("\n적용 · YAML 파싱 OK")
     print(f"\n읽음 {ok} · 실패 {err} · 대상아님 {skip}"
           + (f" · ★ 드리프트 {drift}" if check else "")
-          + (f" · ★ 못 믿을 값 {nonsense}" if nonsense else ""))
+          + (f" · ★ 못 믿을 값 {nonsense} ({' · '.join(dict.fromkeys(sick))})"
+             if nonsense else ""))
     # ★ 2026-10-01 (§339 · §340). **이것은 드리프트가 아니다.** 대장과 실물이
     #   같은데 둘 다 틀린 상태다. 읽는 쪽을 고쳐야 풀리고 그것은 레이크가 있어야
     #   하는 일이라, 이 배치는 **고치지 않고 센다.** 래칫으로 든다.

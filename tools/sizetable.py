@@ -171,7 +171,7 @@ EXCEPTIONS: dict[str, int] = {
     #   파서 하나**를 쓰고, 쪼개면 그 파서가 두 벌이 된다.
     # ★ 2026-10-08 (DECISIONS §435). 1756 → 1761. 우리말 수 어휘를 열아홉까지 —
     #   「열다섯」이 밖이라 10 으로 읽혔다. **어휘 표가 늘면 이 파일은 그만큼 는다.**
-    "tools/dms.py": 1761,
+    "tools/dms.py": 1760,   # ★ 2026-10-13 (§511-2) 1,761→1,760 · prevfield.py 로 갈랐다
     # ★ 2026-10-03 (DECISIONS §371). **새로 넘었다** — 600 상한 밖 616.
     #   늘어난 21줄은 `_ident`(SQLite 식별자 쌍따옴표 배가)와 그 사유다.
     #   `ruff --select S608` 이 f-string 질의 둘을 들었고, 식별자 자리에는
@@ -437,7 +437,7 @@ EXCEPTIONS: dict[str, int] = {
     #   대부분이 **열쇠에 `mtime_ns·크기`를 왜 넣는가**다 — 경로만으로 캐시하면
     #   낡은 줄이 도장을 거짓으로 살린다.
     "tools/docseal.py": 700,
-    "tools/ledger_schema.py": 629,
+    "tools/ledger_schema.py": 632,   # ★ 2026-10-13 (PLAN #171) 629→632 · 센 줄이 이름도 든다
     # ★ 2026-10-03 (DECISIONS §358). 1207 → 1214. 「내비 그래프 결함」 한 단계.
     #   발행물이 제 결함을 넷 세고 있는데 묻는 단계가 없었다 — 단계 하나와
     #   범위 선언, 그리고 **왜 이 관문이 생겼나**를 적은 네 줄이다. 관문 목록은
@@ -502,7 +502,8 @@ EXCEPTIONS: dict[str, int] = {
     #   (「내비 시험 분모」). 안 쪼개는 사유는 위 §390 문단과 같다.
     # ★ 2026-10-12 (DECISIONS §493). 1355 → 1358. 관문 **하나가 늘었다**
     #   (「판정 시험 분모」 · `tools/srccov.py`) — 호출 한 줄과 `scope` · 묻는 말이다.
-    "tools/verify.sh": 1358,
+    # ★ 2026-10-13 (DECISIONS §513). 1358 → 1362. 관문 하나(「조사 판정의 자리」)
+    "tools/verify.sh": 1362,
     "src/firelane/segments.py": 780,
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이

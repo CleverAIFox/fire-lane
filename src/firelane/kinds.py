@@ -66,6 +66,12 @@ class Kind:
     schema     `ledger_schema` 가 무엇으로 읽나. None 이면 schema 선언 면제
     probe      `inventory` 가 실물을 무엇으로 재나
     container  원본이 어떻게 담겨 있나. "dir" 는 도엽 묶음이라 stem 이 여럿 허용
+    exts       **이 갈래로 열 수 있는 확장자.** `None` 은 「안 읽는다」다
+               (`raw_only` 하나). ★ 2026-10-13 (DECISIONS §515) — 이 칸이
+               없어서 `kind: csv_table` + `ext: [xlsx]` 라는 **거짓 선언**이
+               관문 일곱을 다 지났다. xlsx 는 zip 이라 `ledger_schema.probe`
+               가 텍스트로 열면 터지거나, 더 나쁘게 쓰레기 칸 이름을 대장에
+               적는다. 서식은 **변환기**를 지나 표가 된다(`norm_convert`).
     """
 
     text: bool
@@ -74,47 +80,48 @@ class Kind:
     schema: str | None
     probe: str
     container: str = "file"
+    exts: frozenset[str] | None = None
 
 
 KINDS: dict[str, Kind] = {
     # ── 도형 ─────────────────────────────────────────────────
     "shp_zip":       Kind(text=False, geom=True,  single=True,
-                          schema="shp", probe="shp", container="zip"),
+                          schema="shp", probe="shp", container="zip", exts=frozenset({"zip"})),
     "shp_zip_multi": Kind(text=False, geom=True,  single=False,
-                          schema="shp", probe="shp", container="zip"),
+                          schema="shp", probe="shp", container="zip", exts=frozenset({"zip"})),
     "shp_dir":       Kind(text=False, geom=True,  single=False,
-                          schema="shp", probe="ngi_dir", container="dir"),
+                          schema="shp", probe="ngi_dir", container="dir", exts=frozenset({"zip"})),
     # ★ 옛 이름 둘. 파일명·대장에 아직 살아 있어 지우면 깨진다.
     #   `shp_dir` 로 모으는 것은 개명 배치의 일이다(B2-14).
     "ngii1k":        Kind(text=False, geom=True,  single=False,
-                          schema="shp", probe="ngi_dir", container="dir"),
+                          schema="shp", probe="ngi_dir", container="dir", exts=frozenset({"zip"})),
     "ngii_1k":       Kind(text=False, geom=True,  single=False,
-                          schema="shp", probe="ngi_dir", container="dir"),
+                          schema="shp", probe="ngi_dir", container="dir", exts=frozenset({"zip"})),
     # ★ dbf 는 도형이 없다. 회전제한 표다. 그런데 shp 계열 도구로 읽는다.
     "dbf_in_zip":    Kind(text=False, geom=False, single=True,
-                          schema="shp", probe="shp", container="zip"),
+                          schema="shp", probe="shp", container="zip", exts=frozenset({"zip"})),
 
     # ── 표 ───────────────────────────────────────────────────
     "csv_points":       Kind(text=True, geom=True,  single=True,
-                             schema="csv", probe="csv"),
+                             schema="csv", probe="csv", exts=frozenset({"csv"})),
     "csv_point":        Kind(text=True, geom=True,  single=True,
-                             schema="csv", probe="csv"),
+                             schema="csv", probe="csv", exts=frozenset({"csv"})),
     "csv_points_in_zip": Kind(text=True, geom=True, single=True,
-                              schema="csv", probe="csv_in_zip", container="zip"),
+                              schema="csv", probe="csv_in_zip", container="zip", exts=frozenset({"zip"})),
     "csv_table":        Kind(text=True, geom=False, single=True,
-                             schema="csv", probe="csv"),
+                             schema="csv", probe="csv", exts=frozenset({"csv"})),
     # ★ multi 만 hits 전부를 이어붙인다. single 로 두면 "하나만 읽는데
     #   files 가 2개다" 를 매번 오탐한다.
     "csv_table_multi":  Kind(text=True, geom=False, single=False,
-                             schema="csv", probe="csv"),
+                             schema="csv", probe="csv", exts=frozenset({"csv"})),
 
     # ── JSON ─────────────────────────────────────────────────
     # 공공데이터포털 표준데이터. {"fields": [...], "records": [...]}
     "json_points":   Kind(text=True, geom=True,  single=True,
-                          schema="json", probe="json"),
+                          schema="json", probe="json", exts=frozenset({"json"})),
     # 좌표가 없는 JSON 표. 건축물대장 표제부 {"Description":…, "Data":[…]}
     "json_table":    Kind(text=True, geom=False, single=True,
-                          schema="json", probe="json"),
+                          schema="json", probe="json", exts=frozenset({"json"})),
 
     # ── 구분자 텍스트 ────────────────────────────────────────
     # 도로명주소 DB 계열. `|` 구분 · **헤더 없음** · cp949 · zip 안.
@@ -122,7 +129,7 @@ KINDS: dict[str, Kind] = {
     #   컬럼명이 파일에 없고 활용가이드 PDF 에만 있어서 `contract` 에
     #   사람이 적어야 한다 — `ledger_schema` 가 대신 못 읽는다.
     "text_table":    Kind(text=True, geom=False, single=True,
-                          schema="delim", probe="delim", container="zip"),
+                          schema="delim", probe="delim", container="zip", exts=frozenset({"txt"})),
 
     # ── 읽지 않는 것 ─────────────────────────────────────────
     "raw_only":      Kind(text=False, geom=False, single=False,
@@ -139,6 +146,14 @@ def _pick(**kw) -> set[str]:
 # ★ 손으로 나열하지 않는다. 나열하는 순간 사본이 하나 더 생긴다.
 TEXT_KINDS = {k for k, v in KINDS.items() if v.text}
 NO_SCHEMA_KINDS = {k for k, v in KINDS.items() if v.schema is None}
+
+#: **이 저장소가 기계로 읽는 확장자 전부.** 세지 않고 위 표에서 **유도한다** —
+#: 손으로 적으면 그 순간 사본이 하나 더 생긴다(이 파일 머리말의 규율).
+#: ★ 실측 2026-10-13 — 넷이다(csv · zip · json · txt). 대장 83종 중 그 넷으로
+#:   읽는 것이 46종이고 전부 `schema` 를 갖는다(46/46). 나머지 37종은 전부
+#:   `raw_only` 고 `schema` 가 0/37 이다. 이 집합이 다섯째를 받는 날은
+#:   **갈래를 하나 추가하는 날**이고, 그때 위 네 단계를 밟는다.
+READABLE_EXT = frozenset().union(*(v.exts for v in KINDS.values() if v.exts))
 SINGLE_PICK = {k for k, v in KINDS.items() if v.single}
 BUNDLE_KINDS = _pick(container="dir")
 

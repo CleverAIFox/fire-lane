@@ -135,25 +135,29 @@ def test_every_new_decision_states_how_often_the_disease_struck():
 def test_the_prevalence_judge_bites():
     """★ 빈 그물인가 — 실물이 0 이므로 **합성 데이터**로 양방향을 민다(§230)."""
     m = _dms()
+    # ★ 2026-10-13 (DECISIONS §511-2). 이 칸의 **문법**은 `tools/prevfield.py`
+    #   로 갈라졌다. 판정을 찍는 것은 여전히 `dms.prevalence` 이므로 그것을
+    #   부르고, 하한만 **사는 자리에서** 읽는다 — 두 곳에 적으면 갈린다.
+    P = m.pf.PREV_FROM
 
     def sec(num, *lines):
         return {"doc": "docs/DECISIONS.md", "line": 1, "depth": 2,
                 "title": f"{num}. 합성", "body": list(enumerate(lines, 2))}
 
-    assert m.prevalence([sec(m.PREV_FROM, "강제자  `tools/x.py`")]), "빈 칸을 안 잡는다"
-    assert not m.prevalence([sec(m.PREV_FROM, "유병률  **0회** — 아직 안 났다")]), \
+    assert m.prevalence([sec(P, "강제자  `tools/x.py`")]), "빈 칸을 안 잡는다"
+    assert not m.prevalence([sec(P, "유병률  **0회** — 아직 안 났다")]), \
         "`0회` 를 미기재로 센다 — 0 을 적는 것이 이 칸의 쓰임이다"
-    assert not m.prevalence([sec(m.PREV_FROM, "유병률  두 번 — ① 어제 ② 오늘")]), \
+    assert not m.prevalence([sec(P, "유병률  두 번 — ① 어제 ② 오늘")]), \
         "한글 수사를 미기재로 센다"
-    assert m.prevalence([sec(m.PREV_FROM, "유병률  자주 난다")]), \
+    assert m.prevalence([sec(P, "유병률  자주 난다")]), \
         "수가 없는 칸을 통과시킨다"
-    assert not m.prevalence([sec(m.PREV_FROM - 1, "강제자  `tools/x.py`")]), \
-        f"§{m.PREV_FROM} 앞으로 소급한다 — 소급은 거짓 기록을 만든다"
-    assert m.prevalence([sec(m.PREV_FROM, "유병률이 높다는 말이 아니다")]), \
+    assert not m.prevalence([sec(P - 1, "강제자  `tools/x.py`")]), \
+        f"§{P} 앞으로 소급한다 — 소급은 거짓 기록을 만든다"
+    assert m.prevalence([sec(P, "유병률이 높다는 말이 아니다")]), \
         "조사가 붙은 산문을 칸으로 읽는다"
     # ★ `###` 는 부모 칸을 물려받는다 — 하위 절마다 요구하면 사람이 읽을 것이 부푼다
     kid = {"doc": "docs/DECISIONS.md", "line": 1, "depth": 3,
-           "title": f"{m.PREV_FROM}-1. 하위", "body": [(2, "본문")]}
+           "title": f"{P}-1. 하위", "body": [(2, "본문")]}
     assert not m.prevalence([kid]), "하위 절에까지 요구한다"
 
 
