@@ -2,7 +2,12 @@
 """
 mutate_guard.py — **흔든 파일을 반드시 되돌린다.** 신호에도.
 
-부류  절차
+★ 2026-10-14 (DECISIONS §521). 종전에 머리말이 **`부류  절차`** 를 적고
+  있었다. 지금은 `--pending` 이 verify · CI 에서 돌아 **흔들다 죽은 자국**을
+  막으므로 관문이고, **관문의 부류는 적지 않는다** — `toolclass` 가 「누가
+  부르나」로 **도출한다**(`tests/test_toolclass.py::test_gates_are_derived_not_declared`).
+  적으면 그 도출과 선언이 갈린다. 라이브러리 역할은 그대로다 — `mutate.py`
+  가 import 한다.
 
 ── 왜 생겼나 (2026-10-08 · DECISIONS §435) ─────────────────────
 `tools/mutate.py` 는 과녁을 **제자리에서** 바꿔 쓰고 `finally` 로 되돌린다.
@@ -46,18 +51,65 @@ from pathlib import Path
 #: 지금 흔들려 있는 파일 → 원본. **비어 있어야 정상이다.**
 _IN_FLIGHT: dict[Path, str] = {}
 
+#: 맡긴 것을 **디스크에도** 둔다.
+#: ★ 2026-10-14 (DECISIONS §521). 위 머리말이 「`SIGKILL` 은 못 잡는다 …
+#:   그때는 `git status` 에 흔든 파일이 보이고 **그것이 유일한 단서**다」로
+#:   그 구멍을 적어 두고 **아무도 그 단서를 안 읽게** 뒀다. 2026-10-13 에
+#:   `tools/widthcross.py` 가 흔들린 채 남아 그 뒤 전수 verify 가 통째로
+#:   거짓이 됐다 — `OVERCLAIM_SOFT` 32 → 39 가 그 수고, 다음 판이 **제가
+#:   올린 줄 알고** 빨갰다.
+#: ★ 메모리는 `SIGKILL` 에 사라지지만 **파일은 남는다.** 그래서 원본을
+#:   여기 적어 두면 ① 남아 있다는 사실이 신호가 되고 ② 되돌릴 수도 있다.
+#:   `data/interim` 은 gitignore 라 트리를 더럽히지 않는다 — 그러니 **읽는
+#:   관문이 있어야** 신호가 된다(`fl.sh` 1단계 · `verify.sh`).
+HOLD_DIR = Path(__file__).resolve().parent.parent / "data" / "interim" / "_mutate_hold"
+
 #: 되돌린 파일 수. 신호로 되돌린 적이 있으면 0 이 아니다 — 자기검사가 본다.
 restored = 0
 
 
+def _side(path: Path) -> Path:
+    """그 파일의 사이드카 자리. 이름 하나로 정해진다."""
+    return HOLD_DIR / f"{Path(path).name}.orig"
+
+
 def hold(path: Path, original: str) -> None:
-    """흔들기 **전에** 원본을 맡긴다."""
+    """흔들기 **전에** 원본을 맡긴다. 메모리와 **디스크 둘 다**."""
     _IN_FLIGHT[Path(path)] = original
+    try:
+        HOLD_DIR.mkdir(parents=True, exist_ok=True)
+        _side(path).write_text(original, encoding="utf-8")
+    except OSError:
+        # ★ 사이드카를 못 써도 흔들기는 간다 — 메모리 복원이 주 경로다.
+        #   여기서 죽으면 측정이 아예 안 돌고, 그것이 더 나쁘다.
+        pass
 
 
 def release(path: Path) -> None:
     """정상 복원이 끝난 뒤 맡긴 것을 거둔다."""
     _IN_FLIGHT.pop(Path(path), None)
+    _side(path).unlink(missing_ok=True)
+
+
+def pending() -> list[Path]:
+    """**죽은 흔들기가 남긴 사이드카.** 비어 있어야 정상이다. 순수하다."""
+    if not HOLD_DIR.is_dir():
+        return []
+    return sorted(HOLD_DIR.glob("*.orig"))
+
+
+def recover() -> list[str]:
+    """사이드카로 되돌린다. 되돌린 이름을 낸다 — `SIGKILL` 뒤의 길이다."""
+    out = []
+    tools = Path(__file__).resolve().parent
+    for s in pending():
+        tgt = tools / s.name[: -len(".orig")]
+        orig = s.read_text(encoding="utf-8")
+        if tgt.is_file() and tgt.read_text(encoding="utf-8") != orig:
+            tgt.write_text(orig, encoding="utf-8")
+            out.append(tgt.name)
+        s.unlink(missing_ok=True)
+    return out
 
 
 def restore_all() -> int:
@@ -74,6 +126,7 @@ def restore_all() -> int:
             #   나머지를 포기하면 트리에 흔든 사본이 더 남는다.
             pass
         _IN_FLIGHT.pop(p, None)
+        _side(p).unlink(missing_ok=True)
     restored += n
     return n
 
@@ -119,6 +172,25 @@ def selftest() -> int:
         hold(q, "x = 1\n")
         if restore_all() != 0:
             bad.append("안 바뀐 파일을 되돌렸다고 센다")
+
+        # ── 사이드카 — `SIGKILL` 이 메모리를 지워도 **파일은 남는다**
+        #    ★ 2026-10-14 (§521). 실물 과녁 이름으로 민다 — `recover()` 가
+        #      `tools/<이름>` 을 고치므로 아무 이름이나 쓰면 **엉뚱한 도구를
+        #      덮는다.** 이 파일 자신을 쓰고 내용은 안 바꿔 둔다.
+        me = Path(__file__).resolve()
+        hold(me, me.read_text(encoding="utf-8"))
+        if not pending():
+            bad.append("맡겼는데 사이드카가 없다 — SIGKILL 뒤에 단서가 없다")
+        release(me)
+        if pending():
+            bad.append("거뒀는데 사이드카가 남는다 — 다음 실행이 거짓으로 운다")
+        # 되돌리기도 민다 — 내용이 같으면 **안 쓴다**
+        hold(me, me.read_text(encoding="utf-8"))
+        if recover() != []:
+            bad.append("안 바뀐 파일을 되돌렸다고 센다 (사이드카 경로)")
+        if pending():
+            bad.append("`recover()` 가 사이드카를 안 거둔다")
+        _IN_FLIGHT.pop(me, None)
 
         # ── 신호 경로 — 하위 프로세스를 띄워 SIGTERM 으로 끊는다
         # ★ 자리를 **`cwd` 로** 준다. `sys.path` 조작을 코드 문자열에 적으면
@@ -173,5 +245,26 @@ if __name__ == "__main__":
 
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--pending", action="store_true",
+                    help="죽은 흔들기가 남긴 사이드카. 있으면 종료코드 1")
+    ap.add_argument("--recover", action="store_true",
+                    help="사이드카로 되돌린다 (SIGKILL 뒤의 길)")
     a = ap.parse_args()
-    sys.exit(selftest() if a.selftest else 0)
+    if a.selftest:
+        sys.exit(selftest())
+    if a.recover:
+        done = recover()
+        print(f"되돌렸다 {len(done)}" + (f" — {' · '.join(done)}" if done else ""))
+        sys.exit(0)
+    if a.pending:
+        left = pending()
+        if not left:
+            print("✓ 흔들다 죽은 자국 0")
+            sys.exit(0)
+        print(f"✗ **흔들다 죽은 자국 {len(left)}** — "
+              f"{' · '.join(s.name for s in left)}")
+        print("  그 도구가 흔들린 채 남아 있을 수 있다. 남아 있으면 **그 뒤의")
+        print("  모든 측정이 거짓**이다(DECISIONS §435 · §521). 되돌려라 —")
+        print("    uv run python tools/mutate_guard.py --recover")
+        sys.exit(1)
+    sys.exit(0)

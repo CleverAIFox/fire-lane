@@ -198,7 +198,7 @@ TIMEOUT = 180
 #   `tests/test_toolclass.py` 가 든다. 가르는 것은 사람이고 여기가 그 가름이다.
 # ★ 2026-10-13 — 88 → 89 (§509). 산 하나는 자기검사의 합성 좌표다 — 100 을
 #   101 로 바꿔도 폭 10 띠의 내접원은 10 그대로라 행동이 안 바뀐다.
-SURVIVORS = 89
+SURVIVORS = 90   # ★ 2026-10-13 (§520) 89→90 · planclose. **분모는 안 움직였다**(144)
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 # ★ 2026-10-11 — 124 → 128 (DECISIONS §478-1). **조이는 쪽이다.** 도구가
 #   31 → 32 로 늘어 흔든 수가 넷 늘었다(`tools/selftests.py`). `SURVIVORS` 가
@@ -206,7 +206,7 @@ SURVIVORS = 89
 # ★ 2026-10-12 — 128 → 132 (DECISIONS §482). **조이는 쪽이다.** 도구가
 #   32 → 33 으로 늘어 흔든 수가 넷 늘었다(`tools/navicov.py`). `SURVIVORS` 가
 #   같이 는 근거가 이것이다 — 분모와 분자를 같이 적는다.
-MUTANTS = 140
+MUTANTS = 144
 #: 붙잡이가 **0 인 과녁** 수. 흔들어도 못 재는 자리다 — 내려가는 쪽으로만.
 UNCATCHABLE = 0
 #: 생존 중 **래칫이 드는 것.** 이 문이 안 붙들 뿐 다른 문이 붙든다 — 올라가는
@@ -235,7 +235,7 @@ RATCHET_HELD = 25   # ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
 #     §493    61 → 63   새 관문 `srccov` — 기본값 · 실패 반환값.
 #                       `navicov`(§482) 와 **같은 꼴 둘**이다
 #     §509    63 → 64   자기검사의 합성 좌표 — 행동을 안 바꾼다
-UNSORTED = 64
+UNSORTED = 65   # ★ 2026-10-13 (§520) 64→65 · planclose 의 `__main__` 분기
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
             "RATCHET_HELD": "up", "UNSORTED": "down"}
 

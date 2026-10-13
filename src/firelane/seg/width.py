@@ -27,7 +27,9 @@ from shapely.ops import nearest_points
 
 from firelane.seg.params import (
     COV_MIN,
+    ESCAPE_M,
     MIN_SEG_LEN,
+    RAY_M,
     SNAP_MAX,
     SNAP_TRUST,
     WIDTH_SRCS,
@@ -113,7 +115,8 @@ class WidthEngine:
             교차로에서는 법선이 교차하는 길을 따라 빠져나가 한쪽이 수십 m 가
             된다. 그 표본은 폭이 아니므로 버린다.
             """
-            r = LineString([(p.x-ux*60, p.y-uy*60), (p.x+ux*60, p.y+uy*60)])
+            r = LineString([(p.x-ux*RAY_M, p.y-uy*RAY_M),
+                            (p.x+ux*RAY_M, p.y+uy*RAY_M)])
             sg = r.intersection(poly_u)
             if sg.is_empty:
                 return None, "empty"          # 법선이 이 소스와 아예 안 만난다
@@ -149,26 +152,34 @@ class WidthEngine:
             if run is None:
                 return None, "no_run"         # p 가 이 폴리곤 밖 (snap 실패)
             left, right = -run[0], run[1]
-            # ★ 2026-10-13 (DECISIONS §516). **한쪽-샘 문은 이 판에서 안 고친다.**
-            #   §510 이 여기에 `max(left, right) >= ESCAPE_M → 2·min` 을 넣었고
-            #   그것을 **되돌렸다.** 고침이 틀렸기 때문이 아니라 **값 규칙과
-            #   입장 규칙을 한꺼번에** 바꿨기 때문이다 — 종전 코드는 `l+r` 이
-            #   상한을 넘는 표본을 `range` 로 **버렸고**, `2·min` 은 그 표본을
-            #   **통과시킨다.** 그래서 덮임이 올라가고 폭 미산출 집합이 바뀌고
-            #   구간 수가 1,281 → 1,285 로 움직였다(2026-10-13 재잠금).
-            #   예보는 「값만 내려간다」였다 — **예보가 입장을 안 봤다.**
-            #   `RAY_M`(맨숫자 60 의 이름)도 되돌렸다 — 이름 하나가 판정 로직 지문을 움직여
-            #   재잠금을 요구했고, 이 판은 **판정 불변**이라 재잠금이 0 이어야
-            #   한다(`golden.py` 는 토큰열을 해시한다 · 주석은 안 센다).
-            #   아래 `60` 둘과 `WMAX_CAP` 이 **같은 값**이라는 것이 이 결함의
-            #   뿌리이고, 그 이름을 세우는 일은 `Zm2'` 가 한다.
-            #   돌아오는 자리는 `Zm2'` 이고 전건은 MASTER §3-4a 폭의 정의다.
-            if left > WMAX_CAP or right > WMAX_CAP:   # 교차로에서 길을 따라 나갔다
-                return None, "cap"
-            v = left + right
-            if not (0.3 < v < WMAX_CAP):
-                return None, "range"          # 0.3m 이하 조각
-            return v, None
+            # ★ 2026-10-13 (DECISIONS §519). **값 규칙만 고친다.**
+            #   §510 이 이 자리를 한 번 고쳤다가 §516 이 빼냈다. 빼낸 이유는
+            #   고침이 **값 규칙과 입장 규칙을 한꺼번에** 바꿨기 때문이다 —
+            #   `2·min` 을 `range` 검사에 먹이면 종전에 버려지던 표본
+            #   (`l+r ≥ 60`)이 통과하고, 그러면 덮임 → 소스 채택 → 폭 미산출
+            #   집합 → 병합 → **구간 수**가 움직인다(실측 1,281 → 1,285).
+            #
+            #   그래서 **입장은 좌우합이 정한다.** 아래 `range` 검사가 보는
+            #   것은 `l+r` 이고 그것이 종전 코드와 **글자까지 같은 조건**이다.
+            #   값만 그 뒤에 고른다 — 입장과 값을 **다른 줄**에 둔다.
+            #
+            #   ★ 죽은 `cap` 분기를 지웠다. `left` 는 광선 길이(`RAY_M`)를
+            #     넘을 수 없고 문턱이 `WMAX_CAP` 이라 **둘이 같은 60.0** 이고
+            #     그래서 그 조건은 **한 줄도 실행된
+            #     적이 없다**(§510 이 그것을 쟀다). 지우는 것이 입장을 안
+            #     바꾼다 — 참이 된 적이 없는 조건이다.
+            s = left + right
+            if not (0.3 < s < WMAX_CAP):
+                return None, "range"      # 입장 규칙 — 종전과 같다
+            # 한쪽이 광장·교차로로 샜으면 그 쪽은 이 도로의 반폭이 아니다.
+            # ★ `2·min ≤ l+r` 이므로 폭은 **올라가지 않는다** — 틀려도
+            #   안전한 쪽으로만 틀린다(MASTER §3-5a).
+            # ★ `2·min` 이 0.3 이하로 떨어져도 **버리지 않는다.** 버리면
+            #   입장이 바뀌고 구간 수가 움직인다. 그 수가 몇인지는 측정 대장
+            #   `escape-tiny` 가 든다 — 재기 전에 판정 기준을 적어 뒀다.
+            if max(left, right) >= ESCAPE_M:
+                return 2 * min(left, right), None
+            return s, None
 
         # ── 측정 지점 결정 ──────────────────────────────────
         _srcs3 = tuple(zip((self.ngii1k_u, self.ngii_u, self.rw_u),
@@ -223,7 +234,8 @@ class WidthEngine:
 
         # 담~담(상한)은 폭을 채택한 지점과 같은 곳에서 잰다. 다른 지점에서 재면
         # wmin 과 wmax 가 서로 다른 단면을 기술하게 된다.
-        rb = LineString([(P.x-ux*60, P.y-uy*60), (P.x+ux*60, P.y+uy*60)])
+        rb = LineString([(P.x-ux*RAY_M, P.y-uy*RAY_M),
+                         (P.x+ux*RAY_M, P.y+uy*RAY_M)])
         B = None
         sg = rb.intersection(self.bld_u)                    # 담~담 = 상한
         if not sg.is_empty:

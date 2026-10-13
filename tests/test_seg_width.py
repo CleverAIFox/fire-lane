@@ -18,7 +18,7 @@ import pytest
 from shapely.geometry import LineString, MultiPoint, Polygon
 from shapely.ops import unary_union
 
-from firelane.seg.params import COV_MIN, SNAP_MAX, WMAX_CAP
+from firelane.seg.params import COV_MIN, ESCAPE_M, RAY_M, SNAP_MAX, WMAX_CAP
 from firelane.seg.width import WidthEngine
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -191,7 +191,6 @@ def test_width_source_priority_has_one_home():
     ★ 보는 것은 「세 이름이 한 줄에 같이 나오는가」다. 값 하나가 아니라
       **순서**가 사실이므로 SPEC(값 대조)으로는 못 잡는다.
     """
-    import re
 
     from firelane.seg.params import WIDTH_SRCS
 
@@ -234,7 +233,7 @@ def test_width_diagnosis_selects_by_width_not_by_verdict():
     assert "n_try == 0" in src, "한 발도 안 쏜 구간을 따로 세지 않는다"
 
 
-# ── 한쪽이 샜을 때 (2026-10-13 · DECISIONS §510 → §516) ────────
+# ── 한쪽이 샜을 때 (2026-10-13 · DECISIONS §510 → §516 → §519) ──
 def _plaza(lane: float, plaza: float):
     """한쪽은 `lane/2` 에서 벽, 반대쪽은 `plaza` 까지 열린 도로면.
 
@@ -245,57 +244,74 @@ def _plaza(lane: float, plaza: float):
     return Polygon([(-10, -h), (110, -h), (110, plaza), (-10, plaza)])
 
 
-def _ray_m() -> float:
-    """`_span` 이 법선을 좌우로 쏘는 거리. **소스에서 읽는다.**
+def test_one_side_running_off_is_not_half_a_width():
+    """**이 판의 머리다.** 한쪽이 광장으로 새면 좌우합은 폭이 아니다.
 
-    맨숫자이고 이름이 없다 — 이름을 세우면 판정 로직 지문이 움직여 재잠금을
-    요구한다(DECISIONS §516). 그래서 상수를 import 하지 못하고 글자로 집는다.
-    """
-    src = (ROOT / "src/firelane/seg/width.py").read_text(encoding="utf-8")
-    m = re.search(r"r = LineString\(\[\(p\.x-ux\*(\d+(?:\.\d+)?)", src)
-    assert m, "광선 길이를 못 찾았다 — `_span` 의 광선 식이 바뀌었다"
-    return float(m.group(1))
-
-
-def test_the_one_side_gate_is_still_dead():
-    """**알려진 결함의 카나리아.** 이 문은 지금도 못 닫힌다 — 고치면 운다.
-
-    `_span` 이 「교차로에서 길을 따라 나갔다」를 `left > WMAX_CAP` 으로 거르는데
-    광선 길이와 **그 값이 같아서**(둘 다 60) 조건이 영원히 거짓이다. 한쪽
-    거리는 광선 안에 있으므로 광선 길이를 넘을 수 없다.
-
-    ★ **이 시험은 결함을 지키는 것이 아니라 결함이 잊히는 것을 막는다.**
-      §510 이 그 문을 고쳤고 §516 이 그 고침을 **이 판에서 빼냈다** — 값
-      규칙과 **입장 규칙**을 한꺼번에 바꿔 구간 수가 1,281 → 1,285 로
-      움직였기 때문이다. 다시 고치는 자리는 `Zm2'` 이고 전건은 MASTER
-      §3-4a 폭의 정의다. 고치면 아래 단도 같이 빨개지고, 그때 §516 을
-      읽게 된다(DECISIONS §507-1 — 왜 지우지 않고 적는가).
-    """
-    assert WMAX_CAP >= _ray_m(), (
-        f"한쪽-샘 문이 닫힐 수 있게 됐다 — 고쳤다는 뜻이다(광선 {_ray_m()} · "
-        f"문턱 {WMAX_CAP}). DECISIONS §516 을 읽고 **값 규칙과 입장 규칙의 "
-        "예보를 따로** 적었는지 확인해라.")
-
-
-def test_the_measured_baseline_of_a_plaza_edge():
-    """`Zm2'` 의 **예보 기준선.** 지금 코드가 광장 가에서 내는 수다.
-
-    한쪽 3m + 반대쪽 50m 인 합성 광장에서 좌우합 **53.0** 이 그대로 폭이
-    된다. 네이버 실측 5.4m 와 10배 차이다. 이 수가 기준선이고, `Zm2'` 의
-    수용 조건은 「이 수가 6.0 근처로 내려오고 **구간 수는 안 움직인다**」다.
+    §510 이 쟀고 §516 이 한 판 미뤘고 §519 가 **값 규칙만** 고쳐 넣는다.
     """
     wx = engine(ngii1k=_plaza(lane=6.0, plaza=50.0))
     wmin, *_ = wx.widths(CENTER)
-    assert wmin == pytest.approx(53.0, abs=0.5), (
-        f"기준선이 움직였다 — {wmin}. 코드가 바뀌었으면 §516 의 예보를 "
-        "다시 적어야 한다")
+    assert wmin == pytest.approx(6.0, abs=0.2), (
+        "샌 쪽을 더해 폭으로 냈다 — 가까운 쪽 × 2 여야 한다")
+
+
+def test_the_escape_rule_is_reachable():
+    """**죽은 문을 되살렸다는 증거.** 문턱이 광선보다 짧아야 닫힐 수 있다."""
+    assert ESCAPE_M < RAY_M, (
+        "문턱이 광선 길이 이상이면 한쪽 거리가 그 값을 넘을 수 없다 — "
+        "조건이 영원히 거짓이고 그것이 2026-10-13 까지의 상태였다")
+    assert ESCAPE_M < WMAX_CAP, "합의 상한보다도 작아야 한쪽 검사가 먼저 문다"
+
+
+def test_admission_is_decided_by_the_sum_not_by_the_escape_value():
+    """**§519 의 머리.** 입장은 `l+r` 이 정한다 — 값 규칙이 입장을 못 바꾼다.
+
+    §510 의 결함이 이것이었다. `2·min` 을 `range` 검사에 먹이면 `l+r ≥ 60` 인
+    표본이 **통과한다** — 종전에는 버려졌다. 그러면 덮임이 올라가고 구간 수가
+    움직인다(실측 1,281 → 1,285). 아래가 그 경계를 **양방향**으로 민다.
+    """
+    # ① l+r 이 상한을 넘는 표본: 한쪽 3m + 반대쪽 58m → 합 61 ≥ WMAX_CAP
+    #    종전에도 버려졌고 지금도 버려져야 한다. `2·min`(6.0)이 상한 아래라서
+    #    §510 판에서는 **통과했다** — 그것이 구간 수를 움직인 자리다.
+    wide = engine(ngii1k=_plaza(lane=6.0, plaza=WMAX_CAP - 2.0))
+    got, *_ = wide.widths(CENTER)
+    assert got is None, (
+        f"`l+r`({3.0 + WMAX_CAP - 2.0:.1f}) 가 상한을 넘는데 통과시켰다 — {got}. "
+        "값 규칙이 입장을 바꿨다(DECISIONS §519)")
+
+    # ② 합이 상한 아래면 샌 쪽이어도 통과하고 값은 가까운 쪽 × 2 다
+    ok_, *_ = engine(ngii1k=_plaza(lane=6.0, plaza=50.0)).widths(CENTER)
+    assert ok_ == pytest.approx(6.0, abs=0.2)
+
+
+def test_the_value_never_goes_up():
+    """`2·min ≤ l+r` — 구조적으로 보장된다. 틀려도 **안전한 쪽**이다."""
+    for lane, plaza in ((1.5, 40.0), (6.0, 25.0), (12.0, 21.0), (3.0, 19.9)):
+        wx = engine(ngii1k=_plaza(lane=lane, plaza=plaza))
+        got, *_ = wx.widths(CENTER)
+        if got is not None:
+            assert got <= lane / 2.0 + plaza + 1e-6, (
+                f"폭이 좌우합보다 커졌다 — lane {lane} · plaza {plaza} → {got}")
+
+
+def test_a_tiny_near_side_is_kept_not_dropped():
+    """`2·min` 이 0.3 아래로 떨어져도 **버리지 않는다.**
+
+    버리면 입장이 바뀌고 구간 수가 움직인다(§519). 작은 수는 그 구간을
+    `blocked` 로 보내므로 **안전한 쪽**이고, 그런 표본이 실물에 몇 개인지는
+    측정 대장 `escape-tiny` 가 든다 — 재기 전에 판정 기준을 적어 뒀다.
+    """
+    wx = engine(ngii1k=_plaza(lane=0.2, plaza=30.0))   # 가까운 쪽 0.1m
+    got, *_ = wx.widths(CENTER)
+    assert got is None or got < 0.3, (
+        f"가까운 쪽 0.1m 인데 {got} 가 나왔다 — 2·min 을 안 쓴다")
 
 
 def test_a_wide_but_bounded_road_still_uses_the_sum():
     """**대로를 죽이지 않는다.** 양쪽이 다 막혀 있으면 좌우합 그대로다."""
-    wx = engine(ngii1k=road(38.0))
+    wx = engine(ngii1k=road(2 * ESCAPE_M - 2.0))      # 한쪽 19m — 안 샌다
     wmin, *_ = wx.widths(CENTER)
-    assert wmin == pytest.approx(38.0, abs=0.1)
+    assert wmin == pytest.approx(2 * ESCAPE_M - 2.0, abs=0.1)
 
 
 def test_both_sides_running_off_still_gets_a_number():

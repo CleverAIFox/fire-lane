@@ -203,6 +203,35 @@ if [ "$MODE" = "--undo" ]; then
     CUR=$(git rev-parse --abbrev-ref HEAD)
     [ "$CUR" != "$BR" ] || die "$BR 위에 서 있는데 다른 가지로 못 옮겼다." \
         "  git status 로 작업 트리를 먼저 정리해라."
+    # ★ 2026-10-13 (DECISIONS §518). **엎을 때 치운다.** 종전에는 커밋만
+    #   되돌리고 **판정 산출물을 작업 트리에 남겼다** — 4b 가 재잠금한 1,285
+    #   구간이 그대로 남았고, 다음 실행의 1단계가 그것을 보고 「앉힌 뒤 이어라」로
+    #   안내했다. 그대로 따르면 **엎은 판의 산출물이 커밋된다**(2026-10-13 에
+    #   한 걸음 앞에서 멈췄다). 생성물의 정본은 파이프라인이고 엎은 뒤의 정본은
+    #   밑동이다 — 사람이 판단할 것이 없으므로 묻지 않고 되돌린다.
+    #   ★ **추적 생성물만으로는 반쪽이다**(2026-10-14 · §518-2). `data/processed`
+    #     의 `*.gpkg` · `*.geojson` · `*.csv` 는 `.gitignore` 고 추적되는 것은
+    #     예외 **넷**뿐이다(`_manifest.json` · `seg_uid_map.csv` ·
+    #     `segments.geojson` · `segments.schema.json`). `git checkout` 이 그
+    #     넷만 되돌리고 `segments_5186.gpkg` 는 **엎은 판의 1,285구간**으로
+    #     남았다. 그 파일을 `width_cross` 가 읽어 `OVERCLAIM_SOFT` 가 32 → 39
+    #     로 올라갔고, 다음 판이 **제가 올린 줄 알고** 빨갰다.
+    mapfile -t _GEN < <(uv run --no-sync python -m firelane.generated --role fresh 2>/dev/null || true)
+    if [ ${#_GEN[@]} -gt 0 ] && [ -n "$(git status --porcelain --untracked-files=no -- "${_GEN[@]}")" ]; then
+        git checkout -q -- "${_GEN[@]}" && ok "추적 생성물을 밑동으로 되돌렸다: ${_GEN[*]}"
+    fi
+    #   ★ 추적 **밖**의 산출물은 되돌릴 밑동이 없다. **지우지도 않는다** —
+    #     `tools/tidy.py` 머리말이 그 답을 이미 적었다(「`data/processed` 도
+    #     안 지운다 … 정리하려면 `fire-lane` 을 다시 돌리는 것이 옳은 방법이다」).
+    #     여기서 지우면 그 정본이 둘이 된다. 그래서 **말하고 넘긴다** — 그리고
+    #     다음 실행의 1단계가 같은 판별식으로 **막는다**(아래).
+    if ! uv run --no-sync python tools/golden.py check >/dev/null 2>&1; then
+        warn "추적 **밖** 산출물이 지금 코드의 것이 아니다 — `*.gpkg` 는 gitignore 라" \
+             "되돌릴 밑동이 없다. 다시 구워라:" \
+             "    uv run fire-lane --from segments     (약 285초)" \
+             "  ★ 안 구우면 다음 판의 `width_cross` 가 **엎은 판의 폭**을 재고," \
+             "    그 판이 제가 올린 줄 알고 빨개진다(2026-10-13 에 그랬다)."
+    fi
     if git rev-parse -q --verify "$BR" >/dev/null; then
         git branch -D "$BR" && ok "$BR 삭제"
     else
@@ -213,6 +242,17 @@ fi
 
 # ══ 1. 전제 ═══════════════════════════════════════════════════
 step "1. 전제"
+# ★ 2026-10-14 (DECISIONS §521-1). **잘린 목록을 전부로 읽었다.** 아래 세
+#   자리가 `git status --short | head -8` 을 찍었고, 2026-10-13 에 더러운
+#   파일이 **여덟을 넘었는데** 사람이 여덟을 전부로 읽고 그 밖의 파일을
+#   놓쳤다. 세는 것과 보여주는 것을 가른다 — 수는 전부에서 세고, 화면은
+#   여덟까지 보여주고 **나머지가 몇인지 말한다.**
+_DIRTY_N=$(git status --porcelain --untracked-files=no | wc -l)
+_dirty() {
+    git status --short | head -8
+    [ "$_DIRTY_N" -gt 8 ] && echo "  … 그 밖 $((_DIRTY_N - 8))개 (git status --short 로 전부)"
+    return 0
+}
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
     # ★ 2026-09-30 (DECISIONS §331). 종전에는 여기서 그냥 죽었다. 그런데 4b 가
     #   죽으면 **제 산출물을 앉히기 전에** 끝나므로 트리가 반드시 더럽고, 그러면
@@ -220,14 +260,63 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
     #   알아보고 **되돌아올 길을 적는다.** 커밋은 사람이 한다(판정 산출물이다).
     if git status --porcelain --untracked-files=no \
          | grep -qE ' (data/golden|data/processed|web/data)/'; then
-        die "추적 파일에 변경이 있다 — **4b 가 앉히기 전에 멈춘 자국**이다." \
-            "$(git status --short | head -8)" \
-            "  판정 산출물이 나와 있고 커밋이 안 됐다. 앉힌 뒤 이어라 —" \
-            "    git add -A && git commit -m 'seal: 측정 배치 재생성 · 봉인 <태그>'" \
-            "    $FL_CMD $BR $MODE --measured=<태그>" \
-            "  ★ 앉혀도 사슬은 다시 돈다 — remeasure 가 밑동 이후 커밋된 이동까지 본다."
+        # ★ 2026-10-13 (DECISIONS §518). **「앉혀라」와 「버려라」를 가른다.**
+        #   종전에는 「앉힌 뒤 이어라」 하나만 냈고, 그 안내가 **엎은 판의
+        #   산출물을 커밋시키려 했다**(1,285 vs 코드 1,281). 가르는 자는
+        #   **지금 어느 가지에 서 있나**다 — 패치는 4단계에서 `$BR` 위에
+        #   얹히므로, 1단계에서 `$BR` 에 서 있으면 그 산출물은 **이 배치
+        #   코드의 것**이고(4b 가 앉히기 전에 멈췄다), 밑동에 서 있으면
+        #   **얹히기도 전**이라 그 산출물은 **다른 코드의 잔재**다.
+        if [ "$(git rev-parse --abbrev-ref HEAD)" = "$BR" ]; then
+            die "추적 파일에 변경이 있다 — **4b 가 앉히기 전에 멈춘 자국**이다." \
+                "$(_dirty)" \
+                "  판정 산출물이 나와 있고 커밋이 안 됐다. 앉힌 뒤 이어라 —" \
+                "    git add -A && git commit -m 'seal: 측정 배치 재생성 · 봉인 <태그>'" \
+                "    $FL_CMD $BR $MODE --measured=<태그>" \
+                "  ★ 앉혀도 사슬은 다시 돈다 — remeasure 가 밑동 이후 커밋된 이동까지 본다."
+        fi
+        die "추적 파일에 변경이 있다 — **얹히기 전인데 판정 산출물이 나와 있다**." \
+            "$(_dirty)" \
+            "  이 산출물은 **다른 코드의 잔재**다(엎은 판 · 손으로 돌린 파이프라인)." \
+            "  **커밋하지 마라** — 코드와 어긋난 발행물이 된다. 버린다 —" \
+            "    mapfile -t GEN < <(uv run --no-sync python -m firelane.generated --role fresh)" \
+            "    git checkout -- \"\${GEN[@]}\"" \
+            "  ★ 일부러 만든 산출물이면 그것을 **먼저 커밋한 가지**에서 돌려라."
     fi
-    die "추적 파일에 변경이 있다." "$(git status --short | head -8)"
+    die "추적 파일에 변경이 있다 — **$_DIRTY_N 개**." "$(_dirty)"
+fi
+# ★ 2026-10-14 (DECISIONS §521). **흔들다 죽은 자국이 있으면 그 뒤 전부가 거짓이다.**
+#   `mutate` 는 도구를 제자리에서 흔들고 `finally`·신호로 되돌리는데
+#   `SIGKILL` 은 못 잡는다(§435 가 그 구멍을 적고 단서를 「git status」라고
+#   했다). 2026-10-13 에 `tools/widthcross.py` 가 흔들린 채 남아 그 뒤
+#   전수 verify 가 통째로 거짓이 됐다 — `OVERCLAIM_SOFT` 32 → 39.
+#   이제 사이드카가 남으므로 **읽어서 막는다.**
+#   ★ 도구가 없으면 **조용히 넘지 않고 말한다.** 합성 저장소(배치 도구
+#     자기시험)에는 `tools/` 가 거의 비어 있다 — 그때 죽으면 그 시험이
+#     이 검사를 통과할 길이 없다. 「못 봤다」와 「봤고 깨끗하다」는 다른
+#     사실이고, 섞으면 이 관문이 거짓 초록이 된다(족 6).
+if [ ! -f tools/mutate_guard.py ]; then
+    warn "흔들다 죽은 자국을 **못 봤다** — tools/mutate_guard.py 가 없다"
+elif ! uv run --no-sync python tools/mutate_guard.py --pending; then
+    die "흔들다 죽은 자국이 있다 — 되돌리기 전에는 **어떤 수도 믿을 수 없다.**" \
+        "    uv run python tools/mutate_guard.py --recover" \
+        "    git status --short     (흔든 도구가 깨끗해야 한다)"
+fi
+# ★ 2026-10-14 (DECISIONS §518-2). **트리가 깨끗해도 processed 가 남의 것일 수 있다.**
+#   `data/processed/*.gpkg` 는 `.gitignore` 라 `git status` 가 아무 말도 안 한다.
+#   1015 를 엎은 뒤 그 파일이 1,285구간으로 남았고, 1016 의 `width_cross` 가
+#   그것을 읽어 `OVERCLAIM_SOFT` 32 → 39 로 빨갰다 — **그 판이 올린 수가
+#   아니었다.** 밑동에 깨끗하게 서 있으면 잠긴 지문과 산출물이 같아야 한다.
+if [ ! -f tools/golden.py ]; then
+    warn "산출물이 잠긴 코드의 것인지 **못 봤다** — tools/golden.py 가 없다"
+elif ! uv run --no-sync python tools/golden.py check >/dev/null 2>&1; then
+    die "트리는 깨끗한데 **산출물이 잠긴 코드와 다르다.**" \
+        "  `data/processed/*.gpkg` 는 gitignore 라 `git status` 가 안 보여준다 —" \
+        "  엎은 판이나 손으로 돌린 파이프라인의 산출물이 남아 있다는 뜻이다." \
+        "  다시 구워라:" \
+        "    uv run fire-lane --from segments     (약 285초)" \
+        "    uv run python tools/golden.py check  (초록이어야 한다)" \
+        "  ★ 안 구우면 이 판의 폭 교차대조가 **남의 폭**을 재고 이 판이 뒤집어쓴다."
 fi
 gh auth status -h github.com >/dev/null 2>&1 || die "gh 인증이 없다 — gh auth login"
 # ★ workflow 스코프를 **맨 앞에서** 본다. 방송 중간(흡수·동기화의 git push)에서
