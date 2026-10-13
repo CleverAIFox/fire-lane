@@ -27,7 +27,9 @@ from shapely.ops import nearest_points
 
 from firelane.seg.params import (
     COV_MIN,
+    ESCAPE_M,
     MIN_SEG_LEN,
+    RAY_M,
     SNAP_MAX,
     SNAP_TRUST,
     WIDTH_SRCS,
@@ -113,7 +115,8 @@ class WidthEngine:
             교차로에서는 법선이 교차하는 길을 따라 빠져나가 한쪽이 수십 m 가
             된다. 그 표본은 폭이 아니므로 버린다.
             """
-            r = LineString([(p.x-ux*60, p.y-uy*60), (p.x+ux*60, p.y+uy*60)])
+            r = LineString([(p.x-ux*RAY_M, p.y-uy*RAY_M),
+                            (p.x+ux*RAY_M, p.y+uy*RAY_M)])
             sg = r.intersection(poly_u)
             if sg.is_empty:
                 return None, "empty"          # 법선이 이 소스와 아예 안 만난다
@@ -149,9 +152,17 @@ class WidthEngine:
             if run is None:
                 return None, "no_run"         # p 가 이 폴리곤 밖 (snap 실패)
             left, right = -run[0], run[1]
-            if left > WMAX_CAP or right > WMAX_CAP:   # 교차로에서 길을 따라 나갔다
-                return None, "cap"
-            v = left + right
+            # ★ 2026-10-13 (DECISIONS §510). **한쪽이 샜는가.** 종전에는
+            #   `left > WMAX_CAP` 으로 걸렀는데 그 값이 광선 길이와 **같은 60**
+            #   이라 조건이 영원히 거짓이었다 — 「교차로에서 길을 따라 나갔다」를
+            #   막으려던 문이 **한 번도 안 닫혔다.** 실제로 무는 것은 아래 합의
+            #   상한뿐이었고, 그래서 **한쪽 50m + 반대쪽 3m = 53** 이 폭으로
+            #   채택됐다(밤실로4번길 1-11 · 2026-10-03 네이버 실측 5.4m).
+            #   샌 쪽은 이 도로의 반폭이 아니다 — 가까운 쪽만 믿는다.
+            if max(left, right) >= ESCAPE_M:
+                v = 2 * min(left, right)
+            else:
+                v = left + right
             if not (0.3 < v < WMAX_CAP):
                 return None, "range"          # 0.3m 이하 조각
             return v, None
@@ -209,7 +220,8 @@ class WidthEngine:
 
         # 담~담(상한)은 폭을 채택한 지점과 같은 곳에서 잰다. 다른 지점에서 재면
         # wmin 과 wmax 가 서로 다른 단면을 기술하게 된다.
-        rb = LineString([(P.x-ux*60, P.y-uy*60), (P.x+ux*60, P.y+uy*60)])
+        rb = LineString([(P.x-ux*RAY_M, P.y-uy*RAY_M),
+                         (P.x+ux*RAY_M, P.y+uy*RAY_M)])
         B = None
         sg = rb.intersection(self.bld_u)                    # 담~담 = 상한
         if not sg.is_empty:

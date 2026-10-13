@@ -17,7 +17,7 @@ import pytest
 from shapely.geometry import LineString, MultiPoint, Polygon
 from shapely.ops import unary_union
 
-from firelane.seg.params import COV_MIN, SNAP_MAX, WMAX_CAP
+from firelane.seg.params import COV_MIN, ESCAPE_M, RAY_M, SNAP_MAX, WMAX_CAP
 from firelane.seg.width import WidthEngine
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -231,3 +231,54 @@ def test_width_diagnosis_selects_by_width_not_by_verdict():
     assert "width_min_m.isna()" in pick[0], (
         f"진단이 폭으로 안 고른다 — blocked 가 빠진다(§417): {pick[0]}")
     assert "n_try == 0" in src, "한 발도 안 쏜 구간을 따로 세지 않는다"
+
+
+# ── 한쪽이 샜을 때 (2026-10-13 · DECISIONS §510) ────────────────
+def _plaza(lane: float, plaza: float):
+    """한쪽은 `lane/2` 에서 벽, 반대쪽은 `plaza` 까지 열린 도로면.
+
+    실물의 꼴이다 — 밤실로4번길 1-11 은 한쪽이 지산복지회관 앞 포장 광장과
+    연석 없이 이어져 있고, 네이버 실측은 **5.4m** 다(`data/field`).
+    """
+    h = lane / 2.0
+    return Polygon([(-10, -h), (110, -h), (110, plaza), (-10, plaza)])
+
+
+def test_one_side_running_off_is_not_half_a_width():
+    """**이 판의 머리다.** 한쪽이 광장으로 새면 좌우합은 폭이 아니다.
+
+    종전에는 `left > WMAX_CAP`(=60) 으로 걸렀는데 광선 자체가 60(`RAY_M`)이라
+    그 조건이 **영원히 거짓**이었다 — 문이 한 번도 안 닫혔다. 그래서 한쪽
+    50m + 반대쪽 3m = 53m 가 폭으로 채택됐다.
+    """
+    wx = engine(ngii1k=_plaza(lane=6.0, plaza=50.0))
+    wmin, *_ = wx.widths(CENTER)
+    assert wmin == pytest.approx(6.0, abs=0.2), (
+        "샌 쪽을 더해 폭으로 냈다 — 가까운 쪽 × 2 여야 한다")
+    assert wmin < ESCAPE_M, "샌 쪽이 그대로 들어가면 이 수가 20m 를 넘는다"
+
+
+def test_the_escape_gate_is_actually_reachable():
+    """**죽은 문을 되살렸다는 증거.** 문턱이 광선보다 짧아야 닫힐 수 있다."""
+    assert ESCAPE_M < RAY_M, (
+        "문턱이 광선 길이 이상이면 한쪽 거리가 그 값을 넘을 수 없다 — "
+        "조건이 영원히 거짓이고 그것이 2026-10-13 까지의 상태였다")
+    assert ESCAPE_M < WMAX_CAP, "합의 상한보다도 작아야 한쪽 검사가 먼저 문다"
+
+
+def test_a_wide_but_bounded_road_still_uses_the_sum():
+    """**대로를 죽이지 않는다.** 양쪽이 다 막혀 있으면 좌우합 그대로다."""
+    wx = engine(ngii1k=road(2 * ESCAPE_M - 2.0))      # 한쪽 19m — 안 샌다
+    wmin, *_ = wx.widths(CENTER)
+    assert wmin == pytest.approx(2 * ESCAPE_M - 2.0, abs=0.1)
+
+
+def test_both_sides_running_off_still_gets_a_number():
+    """양쪽이 다 새면 가까운 쪽도 상한이다 — 그래도 **0 을 내지 않는다**.
+
+    0 은 「폭이 없다」가 되고 회색이 숫자로 굳는다. 그 자리를 거르는 것은
+    `clearance_cross` 의 `RAY_ESCAPE` 축이다(§509).
+    """
+    wx = engine(ngii1k=Polygon([(-200, -200), (200, -200), (200, 200), (-200, 200)]))
+    wmin, *_ = wx.widths(CENTER)
+    assert wmin is None or wmin > 0
