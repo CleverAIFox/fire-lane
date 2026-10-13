@@ -105,11 +105,16 @@ def grade(entry: dict) -> str:
     if isinstance(feeds, str):
         # 산문이다. 아직 마이그레이션 전이므로 판정을 보류한다.
         return "prose"
-    if entry.get("kind") == "raw_only":
+    if entry.get("kind") == "raw_only" and not entry.get("norm_convert"):
         # 「원본만 보관」은 **왜 여기 있나**의 답이지 소비 여부가 아니다.
         # 이 갈래를 뒤로 미루면 raw_only 열다섯이 미사용으로 뒤집힌다.
         # ★ 2026-09-30 (§317). **위 경고를 이 함수가 어기고 있었다** — `if not
         #   feeds` 가 앞에 있어 feeds 빈 아홉이 뒤집혔다. 글과 코드가 갈렸다.
+        # ★ 2026-10-13 (DECISIONS §515-5). **`norm_convert` 를 든 항목은 뺀다.**
+        #   변환기가 norm 에 `.csv` 를 쓰므로 그 항목은 「원본만 보관」이
+        #   **아니다** — 기계가 읽을 표를 내놓고 있다. 그 셋이 이 갈래에
+        #   섞여 있어서 「미배선」이라고 제 산문에 적은 항목이 `reference`
+        #   로 세어졌다. §243 이 배운 그것 — **집계가 산문을 이겼다.**
         return "reference"
     if not feeds or not set(feeds) - RENAME_ONLY:
         # 이름표만 붙는다 — 아무도 안 읽는 것과 같다. 그중 **영구 참조**는
@@ -149,6 +154,23 @@ def check_entry(key: str, e: dict) -> list[Issue]:
         out.append(Issue(WARN, key,
                          f"좌표가 나오는 갈래({e.get('kind')})인데 crs_native 가 "
                          "없다 — 계보에 빈 좌표계가 박힌다"))
+
+    # ── 갈래가 그 확장자를 읽을 수 있는가 ────────────────────
+    # ★ 2026-10-13 (DECISIONS §515). `kind: csv_table` + `ext: [xlsx]` 라는
+    #   **거짓 선언**이 관문 일곱을 다 지났다. xlsx 는 zip 이라 저 갈래로
+    #   열면 `ledger_schema.probe` 가 터지거나, 더 나쁘게 쓰레기 칸 이름을
+    #   대장에 적는다. 서식은 읽는 형식이 아니라 **변환기를 지나 표가 되는
+    #   것**이다(`raw_only` + `norm_convert`).
+    # ★ `raw_only` 는 `exts` 가 `None` 이다 — 안 읽으므로 무엇이든 받는다.
+    #   정본은 `kinds.KINDS[*].exts` 고 목록을 여기 또 적지 않는다.
+    if _kd and _kd.exts:
+        extra = sorted({str(x).lower().lstrip(".")
+                        for x in (e.get("ext") or [])} - _kd.exts)
+        if extra:
+            out.append(Issue(FAIL, key,
+                             f"갈래 `{e.get('kind')}` 는 {sorted(_kd.exts)} 를 "
+                             f"읽는데 ext 가 {extra} 를 든다 — 서식은 "
+                             "`raw_only` + `norm_convert` 로 간다"))
 
     # ── 실물 경로를 낼 수 있는가 ──────────────────────────────
     # ★ 2026-08-31. `files` 를 REQUIRED 에서 뺐다(#46). 빼기만 하면 경로를

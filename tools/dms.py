@@ -94,22 +94,8 @@ CANON_NONE = "강제자 없음 — 사유:"
 #   「강제자가 있는 절」이 실제보다 적어 보였다. 좁아지는 쪽으로 망가지는 프로브다.
 NONE_ANY = re.compile(r"^(?:없음|없다)")
 
-# ── 유병률 칸 ──────────────────────────────────────────────────
-# ★ 2026-10-06 (DECISIONS §405 · PLAN #150). 관문을 세우는 절이 **그 관문이 막는
-#   병이 몇 번 났는지**를 안 적었다. 안 적으면 그 관문은 **영원히 못 지운다** —
-#   지웠을 때 무엇이 터질지 아무도 모르기 때문이다. 0 이면 0 이라고 적는다.
-#   **0 이라고 적힌 관문이 나중에 지울 수 있는 관문**이다.
-#
-# ★ 새로 만든 어휘가 아니다. §390 · §391 · §392 가 2026-10-04 에 손으로 적었고
-#   그 뒤 열한 절이 안 적었다 — 사람이 기억으로 지키던 규약이다(§390 이 배운 것과
-#   같은 자리: 「규약을 되풀이하는 것은 강제자가 아니다」).
-PREV = re.compile(r"^\s{0,6}(?:[-*>]\s*)?\*{0,2}유병률\*{0,2}(?![가-힣(])")
-#: 그 칸이 적은 **횟수**. `**2회**` · `0 회` · `두 번` 을 다 받는다.
-PREV_N = re.compile(r"\*{0,2}\s*(?:([0-9]+)|(한|하나|두|둘|세|셋|네|넷|다섯|여섯|"
-                    r"일곱|여덟|아홉|열))\s*\*{0,2}\s*(?:회|번)")
-#: **소급하지 않는다.** 이 번호부터 요구한다 — 405절을 소급해 지어내면 그것이
-#: 거짓 기록이다(`tests/test_defect_evidence.py` 가 §217 하한에 쓴 것과 같은 사유).
-PREV_FROM = 405
+# ★ 유병률 칸의 **문법**은 `tools/prevfield.py` 가 든다 (DECISIONS §511-2)
+import prevfield as pf  # noqa: E402  이 파일 머리의 상수 자리를 지켜 여기 둔다
 
 # ── 정밀 프로브 — 1차 소급 192건 중 174가 오탐이었다 ──────────
 EXAMPLE_NAMES = {"xxx", "yyy", "zzz", "foo", "bar", "baz", "name", "test_xxx",
@@ -245,11 +231,14 @@ def field_block(sec: dict, rx: re.Pattern[str]) -> str | None:
 
 
 def prevalence(secs: list[dict] | None = None) -> list[str]:
-    """`PREV_FROM` 이후 DECISIONS 절이 **유병률**을 적었는가.
+    """`pf.PREV_FROM` 이후 DECISIONS 절이 **유병률**을 적었는가.
 
     ★ 묻는 것은 「몇 번 났나」가 아니라 **「몇 번 났는지를 적었나」**다. 수의
       옳고 그름은 기계가 못 본다 — 사람이 적고, 기계는 **빈 자리**를 센다.
       §241 이 「하위 N」에 건 논리와 같다: 선언을 세는 것으로 바꾼다.
+
+    ★ 2026-10-13 (DECISIONS §511). **위 한 줄이 너무 넓었다.** 한 가지는 기계가
+      본다 — 유병률은 역사라서 **근거가 자기보다 앞**에 있어야 한다(`prevfield`).
 
     ★ `0회` 도 선언이다. 오히려 그것이 이 칸의 쓰임이다 — 0 이라고 적힌 관문만
       나중에 **지울 후보**가 된다(`tools/deadcheck.py` 가 그 판단을 든다).
@@ -259,14 +248,19 @@ def prevalence(secs: list[dict] | None = None) -> list[str]:
         if sec["depth"] != 2:
             continue
         m = SEC_NUM.match(sec["title"])
-        if not m or not m.group(1).isdigit() or int(m.group(1)) < PREV_FROM:
+        if not m or not m.group(1).isdigit() or int(m.group(1)) < pf.PREV_FROM:
             continue
         where = f"  docs/DECISIONS.md:{sec['line']}  §{m.group(1)}"
-        blk = field_block(sec, PREV)
+        blk = field_block(sec, pf.PREV)
         if blk is None:
             bad.append(f"{where}  {sec['title'][:46]} — 유병률 칸이 없다")
-        elif not PREV_N.search(PREV.sub("", blk).strip()):
+            continue
+        if not pf.PREV_N.search(pf.PREV.sub("", blk).strip()):
             bad.append(f"{where}  횟수를 못 읽겠다 — {blk[:56]}")
+        if d := pf.fwd_defect(int(m.group(1)), blk):
+            bad.append(f"{where}  {d}")
+    if secs is None and (d := pf.ratchet_defect()):
+        bad.append(d)
     return bad
 
 
@@ -1424,23 +1418,26 @@ def selftest() -> int:
     def _sec(num: int, *lines: str) -> dict:
         return {"doc": "docs/DECISIONS.md", "line": 1, "depth": 2,
                 "title": f"{num}. 합성", "body": list(enumerate(lines, 2))}
-    if prevalence([_sec(PREV_FROM, "강제자  `tools/x.py`")]):
+    if prevalence([_sec(pf.PREV_FROM, "강제자  `tools/x.py`")]):
         pass
     else:
         bad.append("유병률 칸이 없는 새 절을 안 잡는다 — 그물이 비었다")
-    if prevalence([_sec(PREV_FROM, "유병률  **0회** — 아직 안 났다")]):
+    if prevalence([_sec(pf.PREV_FROM, "유병률  **0회** — 아직 안 났다")]):
         bad.append("`0회` 를 미기재로 센다 — 0 을 적는 것이 이 칸의 쓰임이다")
-    if prevalence([_sec(PREV_FROM, "유병률  **2회** — ① 어제 ② 오늘")]):
+    if prevalence([_sec(pf.PREV_FROM, "유병률  **2회** — ① 어제 ② 오늘")]):
         bad.append("숫자 선언을 미기재로 센다")
-    if prevalence([_sec(PREV_FROM, "유병률  두 번 났다 — ① 어제 ② 오늘")]):
+    if prevalence([_sec(pf.PREV_FROM, "유병률  두 번 났다 — ① 어제 ② 오늘")]):
         bad.append("한글 수사 선언을 미기재로 센다")
-    if not prevalence([_sec(PREV_FROM, "유병률  자주 난다")]):
+    if not prevalence([_sec(pf.PREV_FROM, "유병률  자주 난다")]):
         bad.append("수가 없는 유병률 칸을 통과시킨다 — 「적었나」만 보고 수를 안 본다")
-    if prevalence([_sec(PREV_FROM - 1, "강제자  `tools/x.py`")]):
-        bad.append(f"§{PREV_FROM} 앞 절에까지 소급한다 — 소급은 거짓 기록을 만든다")
+    if prevalence([_sec(pf.PREV_FROM - 1, "강제자  `tools/x.py`")]):
+        bad.append(f"§{pf.PREV_FROM} 앞 절에까지 소급한다 — 소급은 거짓 기록을 만든다")
     # ★ 조사가 붙으면 산문이다 — `강제자` 칸이 쓰는 그 규칙과 같아야 한다
-    if not prevalence([_sec(PREV_FROM, "유병률이 높다는 말이 아니다")]):
+    if not prevalence([_sec(pf.PREV_FROM, "유병률이 높다는 말이 아니다")]):
         bad.append("`유병률이` 라는 산문을 칸으로 읽는다")
+    # ★ 2026-10-13 (DECISIONS §511-2). 근거 **방향**의 프로브는
+    #   `prevfield` 가 든다 — 자른 쪽에 프로브를 두면 두 벌이 갈린다
+    bad += pf.selftest()
     # ★ 전문 대조는 무르다. 확실히 죽은 이름을 넣어 프로브가 우는지 본다
     # ★ 이름을 조립한다. 리터럴로 적으면 이 파일 자신이 전문에 걸려 통과한다
     ghost = "test_" + "zq7" + "_absent"
@@ -1744,7 +1741,9 @@ def main() -> int:
         # ★ 2026-10-06 (DECISIONS §405 · PLAN #150). 관문을 세우는 절이 **그 관문이
         #   막는 병이 몇 번 났는지**를 적었는가. 안 적으면 그 관문은 영원히 못 지운다.
         prev = prevalence()
-        print(f"유병률 미기재 {len(prev)}건 (§{PREV_FROM} 이후)")
+        # ★ 2026-10-13 (DECISIONS §511). 이름표가 「미기재」뿐이면 거짓이다 —
+        #   이 칸은 **빈 자리 · 수 없음 · 근거가 뒤를 가리킴** 셋을 센다.
+        print(f"유병률 결함 {len(prev)}건 (§{pf.PREV_FROM} 이후 · 미기재 · 수 없음 · 근거 방향)")
         print("\n".join(prev))
         return min(len(dead) + len(cnt) + len(prev), 255)
 
