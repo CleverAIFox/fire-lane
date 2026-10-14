@@ -12608,10 +12608,12 @@ ingest 가 OOM 으로 죽었는데 파이프라인이 이렇게 찍었다 —
 
 ★ **출력을 파싱하지 않는다.** 문구를 다듬는 순간 검사가 죽는다 —
 `pages_add_navi` 의 앵커가 한국어 주석이었던 것과 같은 자리다. 종료코드로 가른다.
-★ 값의 정본은 `stagerun.ENOMEM_RC` **하나**다. `ingest` 가 내고 `pipeline` 이 읽는다.
+★ 값의 정본은 `ENOMEM_RC` **하나**다. `ingest` 가 내고 `pipeline` 이 읽는다.
+그 집은 처음 `stagerun.py` 였고 2026-10-14 에 `oom.py` 로 내렸다(530-3) —
+`ingest` 가 **CLI 진입점**을 import 하던 거꾸로를 바로잡은 자리다.
 양쪽에 숫자를 박으면 그것이 곧 갈린다(MASTER §18-3).
 
-강제자  `tests/test_guards.py`(안내가 조건을 보고 찍히는가) · `src/firelane/stagerun.py::oom_exit`(메모리 사유일 때만 메모리 처방을 찍는다) · `src/firelane/pipeline.py`(rc 12·137 분기)
+강제자  `tests/test_guards.py`(안내가 조건을 보고 찍히는가) · `src/firelane/oom.py::oom_exit`(메모리 사유일 때만 메모리 처방을 찍는다 — 2026-10-14 에 `stagerun.py` 에서 **내렸다** · DECISIONS 530-3) · `src/firelane/pipeline.py`(rc 12·137 분기)
 
 ### 224-3a. 그 안내문을 `guards.py` 에 뒀다가 **golden 을 찢었다**
 

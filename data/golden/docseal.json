@@ -3069,6 +3069,7 @@
  "DECISIONS/224": {
   "doc": "docs/DECISIONS.md",
   "files": [
+   "src/firelane/oom.py",
    "src/firelane/pipeline.py",
    "src/firelane/stagerun.py",
    "tests/test_declaration_sync.py",
@@ -3088,12 +3089,13 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "03b99eadba367103",
-   "2657168412cd4a46",
-   "2fb462c9ee956da0",
-   "83cba4f9bd45f0dd"
+   "3f20d421eabb1be0",
+   "46c17c98884b310e",
+   "95c1a26b3ef2d647",
+   "9dadc965d12eb5dc"
   ],
   "parts": {
+   "src/firelane/oom.py": "f6d4d0ea9f90db71",
    "src/firelane/pipeline.py": "67366325297b0a36",
    "src/firelane/stagerun.py": "866ccaff4463b717",
    "tests/test_declaration_sync.py": "df267acc6c784262",
@@ -3109,9 +3111,9 @@
    "tools/gate_parity.py": "a7bcd38fa0136a46",
    "web/navi/test/domain.test.ts": "8b4afbda1ac3574c",
    "web/navi/test/style.test.ts": "4e08760a571ec416",
-   "본문": "011609ed7c3ddddd"
+   "본문": "311b0497245620dc"
   },
-  "sha": "83cba4f9bd45f0dd"
+  "sha": "95c1a26b3ef2d647"
  },
  "DECISIONS/224-2": {
   "doc": "docs/DECISIONS.md",
