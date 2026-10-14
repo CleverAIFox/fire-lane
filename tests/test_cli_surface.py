@@ -451,7 +451,7 @@ def test_run_stage_only_catches_the_memory_failure():
     """★ 메모리 실패만 가로챈다. 나머지를 삼키면 **실패가 성공으로** 보인다."""
     import pytest
 
-    from firelane.stagerun import run_stage
+    from firelane.oom import run_stage  # 2026-10-14: 집이 `oom` 이다(530-3)
 
     def ok():
         ok.ran = True
@@ -471,7 +471,7 @@ def test_run_stage_turns_an_out_of_memory_into_a_named_exit(capsys):
     """메모리 부족은 **이름 있는 종료**로 바꾼다 — 역추적은 원인을 안 말한다."""
     import pytest
 
-    from firelane.stagerun import is_oom, run_stage
+    from firelane.oom import is_oom, run_stage  # 2026-10-14 (530-3)
 
     err = OSError(12, "Cannot allocate memory")
     assert is_oom(err), "전제 — 이 오류가 OOM 으로 읽힌다"

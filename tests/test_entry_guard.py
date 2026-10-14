@@ -16,11 +16,14 @@
   꼬리에 있어 **임포트만으로 터졌다.** 최상위에서 `main()`·`sys.exit()` 을
   부르는 것은 같은 병이다.
 
-IN    tools/**/*.py
+IN    src/**/*.py · tools/**/*.py · tests/**/*.py
 OUT   없음 (검사)
 PARAM 없음
 밖    「관문이 **있어야** 하는가」는 안 본다 — 라이브러리 모듈(25개)에는 없고
       그것이 옳다. 있는 것만 꼴을 본다.
+밖    `tools/*.sh` 는 **안 본다.** 셸에는 `__name__` 이 없고 AST 도 없다 —
+      셸의 같은 족(겹따옴표 안의 백틱)은 `tests/test_shell_backticks.py` 가 든다.
+밖    `web/**` 은 **안 본다.** 파이썬이 아니다.
 """
 from __future__ import annotations
 
@@ -34,8 +37,18 @@ FORBIDDEN_TOP_CALLS = ("main", "exit")
 
 
 def _tools() -> list[Path]:
-    out = sorted(ROOT.glob("tools/**/*.py"))
-    assert len(out) > 100, f"도구를 {len(out)}개밖에 못 찾았다 — 자가 눈이 멀었다"
+    """**셋을 다 훑는다** — `src` · `tools` · `tests`.
+
+    ★ 2026-10-14. 처음엔 `tools/` 만 훑었고 `deadcheck` 의 ⑤(좁은 범위)가
+      「`src` · `tests` 의 283개가 대상 밖이다」로 집었다. 맞는 지적이다 —
+      `src/firelane/*.py` 도 `python -m firelane.X` 로 돌고, 그중
+      **`stagerun`** 은 파이프라인이 자식으로 띄우는 길이다. 그 관문이
+      뒤집히면 **단계가 조용히 안 돈다**(DECISIONS 530 이 당한 그 꼴).
+      실측 — `src` 96파일 중 관문 34 · `tools` 152 중 126 · `tests` 187 중 1.
+    """
+    out = sorted(q for d in ("src", "tools", "tests")
+                 for q in ROOT.glob(f"{d}/**/*.py"))
+    assert len(out) > 300, f"파일을 {len(out)}개밖에 못 찾았다 — 자가 눈이 멀었다"
     return out
 
 
@@ -67,7 +80,7 @@ def test_every_entry_guard_compares_with_equality():
             bad.append(f"  {f.relative_to(ROOT)}:{g[1]} — `__name__` 비교가 "
                        f"`{g[0]}` 다. `==` 가 아니면 직접 실행이 **아무것도 "
                        "안 하고 rc=0** 으로 끝난다")
-    assert seen > 100, f"관문을 가진 도구를 {seen}개밖에 못 봤다 — 자가 눈이 멀었다"
+    assert seen > 140, f"관문을 가진 파일을 {seen}개밖에 못 봤다 — 자가 눈이 멀었다"
     assert not bad, ("진입 관문의 비교가 틀렸다\n" + "\n".join(bad))
 
 

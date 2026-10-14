@@ -23,6 +23,7 @@ PARAM SILENCED — **이 축을 아는 도구가 제 래칫을 든다.** 이 저
       그렇다: `canary.NO_CANARY` · `sealcov.SEALED_FILES` · `docseal.UNSEALED` ·
       `navicov.NAVI_UNTESTED` · `toolclass.UNDECLARED`. `ratchet.py` 가 모은다
 밖    **흔드는 일도 재는 일도 안 한다.** 침묵인지만 가른다.
+부류  몸통   진입점이 아니다 — `mutate.py` 가 부르고 부류는 그쪽에서 물려받는다
 """
 from __future__ import annotations
 

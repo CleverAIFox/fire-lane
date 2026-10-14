@@ -2779,10 +2779,10 @@ def test_required_does_not_swallow_an_unreadable_ledger():
 
 def test_the_memory_predicate_has_one_home_and_bites_both_ways():
     """★ 2026-10-11 (DECISIONS §461). 「메모리로 죽었나」를 두 자리가 각자
-    적으면 다음에 갈린다 — 집은 `stagerun.is_oom` 하나다."""
+    적으면 다음에 갈린다 — 집은 `oom.is_oom` 하나다(2026-10-14 · 530-3)."""
     import errno
 
-    from firelane.stagerun import is_oom
+    from firelane.oom import is_oom
 
     assert is_oom(MemoryError())
     assert is_oom(OSError(errno.ENOMEM, "Cannot allocate memory"))

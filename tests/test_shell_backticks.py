@@ -14,12 +14,15 @@
   주석으로 「겹따옴표 안에서 백틱을 쓰지 않는다」를 적어 두었을 뿐이다.
   **사람이 기억으로 지키는 자리는 강제자가 아니다**(§390).
 
-IN    `*.sh` · `.github/**/*.yml`
+IN    `tools/**/*.sh` · `.devcontainer/**/*.sh` · `.githooks/**/*.sh` ·
+      `.github/**/*.yml`
 OUT   위반 줄
 PARAM 없다 — 0 이거나 아니거나다(래칫이 아니다)
 밖    **heredoc 안은 안 본다.** `<<'PY' … PY` 안은 파이썬이고 거기 백틱은
       무해하다. 그 구분을 안 하면 이 검사가 거짓 빨강으로 꺼진다.
       **이스케이프한 백틱**(`\\``)도 안 본다 — 그것은 글자다.
+밖    `tools/*.py` 는 **안 본다.** 파이썬에 백틱은 문법이 아니다 —
+      파이썬 쪽의 같은 족(진입 관문의 꼴)은 `tests/test_entry_guard.py` 가 든다.
 """
 from __future__ import annotations
 
@@ -59,11 +62,17 @@ def _bad(text: str):
     return out
 
 
+#: 셸이 사는 자리 **전부.** 하나라도 빠지면 사람이 그 길로 들어서서 당한다.
+#: ★ 2026-10-14. 처음엔 `tools/*.sh` 만 봤고 `deadcheck` 의 ⑤(좁은 범위)가
+#:   집었다. 맞는 지적이다 — `.devcontainer/setup.sh`(새 기계 세팅) ·
+#:   `.githooks/global-chain.sh`(커밋 때마다 돈다)도 사람이 지나는 길이다.
+_SH_DIRS = ("tools", ".devcontainer", ".githooks")
+
+
 def _targets():
-    for p in sorted(ROOT.glob("tools/*.sh")):
-        yield p
-    for p in sorted(ROOT.glob(".github/**/*.yml")):
-        yield p
+    for d in _SH_DIRS:
+        yield from sorted(ROOT.glob(f"{d}/**/*.sh"))
+    yield from sorted(ROOT.glob(".github/**/*.yml"))
 
 
 def test_no_backtick_inside_double_quotes_in_shell():
