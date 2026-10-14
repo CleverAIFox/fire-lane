@@ -112,6 +112,10 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #       `tools/prevfield.py`(유병률 칸의 문법 · `dms.py` 를 쪼개 나온 자리) ·
 #       `tools/probeledger.py`(조사 판정의 자리). `§511` 과 `§513` 이 둘을
 #       **산문으로** 지목한다.
+#     ★ 2026-10-14 (DECISIONS 532-3). 576 → **576.** 새 집 하나 —
+#       `tools/mutatesilent.py`(붙잡이가 침묵한 것을 판정하고 세는 집 —
+#       `mutate.py` 가 상한 600 에 서 있어 그 축을 옆집으로 내렸다).
+#       `532-3` 이 그것을 **산문으로** 지목한다.
 #     ★ 2026-10-14 (DECISIONS 530-3). 575 → **576.** 새 집 하나 —
 #       `src/firelane/oom.py`(죽는 길의 집 — `stagerun.py` 에 있던 OOM 넷을
 #       내렸다. `ingest` 가 CLI 진입점을 import 하던 거꾸로를 바로잡는다).

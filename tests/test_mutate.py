@@ -111,15 +111,38 @@ def test_the_ratchet_is_two_way():
       **올라가는 쪽**인 것이 뒤집힌 것처럼 보이지만 아니다 — 래칫을 하나 더
       다는 것이 좋은 일이고 그때 이 수가 오른다.
 
-    ★ 2026-10-14 (DECISIONS 532). `SILENCED` 가 늘었다 — **붙잡이가 침묵한**
-      과녁 수다. `UNCATCHABLE`(붙잡이가 0 인 **도구** 수)과 다른 축이고,
-      둘 다 내려가는 쪽이다. 섞으면 「붙잡이를 안 달았다」와 「붙잡이가
-      끊겼다」가 한 수가 된다.
+    ★ 2026-10-14 (DECISIONS 532-3). `SILENCED` 는 **여기 없다** — 옆집
+      `mutatesilent` 가 든다. 그 축을 아는 도구가 제 래칫을 드는 것이 이
+      저장소의 꼴이고(`canary.NO_CANARY` · `sealcov.SEALED_FILES` ·
+      `docseal.UNSEALED` …), `ratchet.py` 가 모은다. 아래에서 **같이** 본다 —
+      옆집에 뒀다는 것이 「아무도 안 든다」가 되면 안 된다.
     """
     assert M.RATCHETS == {"SURVIVORS": "down", "MUTANTS": "up",
                           "UNCATCHABLE": "down",
-                          "RATCHET_HELD": "up", "UNSORTED": "down",
-                          "SILENCED": "down"}
+                          "RATCHET_HELD": "up", "UNSORTED": "down"}
+
+
+def test_the_silence_axis_is_held_next_door():
+    """침묵 축이 **옆집에서** 래칫으로 서 있는가.
+
+    ★ 2026-10-14 (DECISIONS 532-3). `mutate.py` 가 상한 600 에 서 있어 그
+      축을 `mutatesilent` 로 내렸다. 내린 것이 **잃은 것**이 되지 않도록
+      여기서 그 집을 가리킨다 — 「옆집에 있다」는 말은 그 집을 재는 자가
+      있을 때만 참이다(§390).
+    """
+    import mutatesilent as S
+
+    assert S.RATCHETS == {"SILENCED": "down"}, (
+        f"침묵 축의 래칫 방향이 바뀌었다 — {S.RATCHETS}. 침묵은 **늘 수 없다**")
+    assert isinstance(S.SILENCED, int) and S.SILENCED >= 0
+    assert "SILENCED" not in M.RATCHETS, (
+        "두 집이 같은 축을 든다 — 한쪽만 고치면 **갈린다**(MASTER §18-3)")
+    # 판정 자체도 민다 — 침묵이 무엇인지 그 집이 안다
+    assert S.is_silent(0, "", "   \n"), "rc=0 · 공백뿐 → 침묵이어야 한다"
+    assert not S.is_silent(0, "x", ""), "글자가 있으면 침묵이 아니다"
+    assert not S.is_silent(1, "", ""), "rc≠0 은 침묵이 아니라 **빨강**이다"
+    assert S.label(["/abs/path/python3", "tools/x.py", "--selftest"]) == (
+        "python tools/x.py --selftest"), "절대 경로가 장부로 새 나간다"
 
 
 def test_survivors_held_by_a_ratchet_are_told_apart():
