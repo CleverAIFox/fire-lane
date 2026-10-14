@@ -469,7 +469,7 @@ def test_find_downloads_answers_none_when_the_folder_is_absent(monkeypatch, tmp_
     assert N.find_downloads() == real
 
 
-# ── 확장자는 대장에서 유도한다 (DECISIONS §535-4 · §546) ────────
+# ── 확장자는 대장에서 유도한다 (DECISIONS §535-4) ────────
 def test_the_passthrough_extensions_are_derived_from_the_ledger():
     """★ **손목록이 네 번 빠졌던 자리.** 이제 대장이 그 답을 든다.
 

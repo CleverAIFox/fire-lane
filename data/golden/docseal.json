@@ -10662,20 +10662,20 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0e18ab5b56e8eb3e",
-   "8f07932cc67c74a4",
-   "b885358933f0dd4c",
-   "ce2ca2e9ac7e672e"
+   "216baed2c4343e25",
+   "295a214b8832b5c3",
+   "97a01715f9f05e08",
+   "d079d933c08dc13b"
   ],
   "parts": {
    "data/_acquire.json": "d3f1fbaee79d4161",
    "src/firelane/raw_ext.py": "c5e41ebe3dd5c91e",
-   "tests/test_chain_is_alive.py": "b27f1589eb943f59",
+   "tests/test_chain_is_alive.py": "b58dc67d5b59e309",
    "tests/test_intake_rules.py": "5ecec5a3b700e241",
    "tests/test_normalize_rules.py": "d439ba95d8879ded",
    "본문": "8c45dea776c3c437"
   },
-  "sha": "b885358933f0dd4c"
+  "sha": "295a214b8832b5c3"
  },
  "DECISIONS/538": {
   "doc": "docs/DECISIONS.md",

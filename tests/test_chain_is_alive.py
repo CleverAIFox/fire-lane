@@ -25,17 +25,29 @@ PARAM 없음 — 래칫 둘은 `acquire.py` 가 든다(그 축을 아는 도구�
 """
 from __future__ import annotations
 
+import importlib.util
 import sys
 import types
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
 
 
 def _pull():
-    import pull_data
-    return pull_data
+    """`tools/pull_data.py` 를 **경로로** 들인다.
+
+    ★ 2026-10-15. 종전에는 `sys.path` 에 `tools/` 를 꽂았다.
+      `test_layering::test_sys_path_해킹이_없다` 가 그것을 금한다 — 꽂으면
+      그 뒤 모든 시험의 import 가 달라지고, 순서에 따라 결과가 갈린다.
+      `test_acquire.py` 가 쓰는 꼴(`spec_from_file_location`)을 그대로 쓴다.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "pull_data", ROOT / "tools/pull_data.py")
+    assert spec and spec.loader
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
 
 
 def test_no_chain_step_calls_a_retired_flag():
@@ -115,11 +127,7 @@ def test_every_ledger_asset_has_a_way_in():
     ★ 그래서 **수를 늘리는 대신 재는 자를 세운다.** 대장에 자산을 적는 그
       판에서 운다 — 반입을 돌릴 때가 아니라.
     """
-    import sys as _sys
-
-    _sys.path.insert(0, str(ROOT / "src"))
-    from acquire import dataset_globs
-
+    from firelane.acquire_rules import dataset_globs
     from firelane.normalize_raw import passthrough_rules
 
     bad = _no_way_in(passthrough_rules(), dataset_globs())
