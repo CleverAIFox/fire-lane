@@ -400,12 +400,19 @@ def test_prune_needs_verify():
         "  검증 없이 landing 원본을 지우면 되돌릴 데가 없다.")
 
 
-def test_stage_and_quarantine_hang_off_earlier_steps():
-    """편입·격리도 앞 단계에 매달린다. 게이트가 prune 하나만이 아니다."""
+def test_stage_and_verify_hang_off_earlier_steps():
+    """편입·대조도 앞 단계에 매달린다. 게이트가 prune 하나만이 아니다.
+
+    ★ 2026-10-14 (DECISIONS 535). `quarantine` 을 뺐다 — 그 단계는 §173-2 가
+      폐지했고 체인이 안 따라와 **반입이 거기서 반드시 멈췄다.** 이름도
+      같이 바꾼다: 가리키는 쪽이 옛 집을 들면 그것이 다음 사람을 속인다.
+    """
     p = _plan(_pull())
     assert p["stage"].needs == "intake"
     assert p["verify"].needs == "stage"
-    assert p["quarantine"].needs == "stage"
+    assert "quarantine" not in p, (
+        "폐지된 `quarantine` 이 체인에 돌아왔다 — `acquire --quarantine` 은 "
+        "거절만 하고 종료코드 2 로 죽는다(§173-2). 그 물음은 `judge` 가 든다")
 
 
 def test_gate_distinguishes_not_run_from_failed():
@@ -429,7 +436,7 @@ def test_keep_landing_removes_prune_not_the_gate():
     a = types.SimpleNamespace(keep_landing=True, all=False)
     names = {s.name for s in m.steps(a)}
     assert "prune" not in names
-    assert {"verify", "quarantine"} <= names, (
+    assert {"verify", "judge"} <= names, (
         "--keep-landing 이 prune 말고 다른 단계까지 뺐다.")
 
 

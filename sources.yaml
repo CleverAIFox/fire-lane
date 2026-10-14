@@ -598,6 +598,11 @@ layers:
       #   — "reserved 는 등재만. 파일 0건이 정상이고 폴더도 없어야 한다".
       #   반입이 끝나면 active 로 올린다.
       mois:    {org: 행정안전부 공공데이터포털,    state: active}
+      # ★ 2026-10-14 (DECISIONS 535-3). 정보공개청구 회신의 제공기관이다.
+      #   `gjpolice_oneway` 가 대장에 자리를 갖고도 **반입이 안 섰다** —
+      #   stem 접두가 이 어휘에 없으면 `normalize_raw` 의 통과 규칙이 그
+      #   정규명을 못 받는다. 자리와 제공기관은 **같이** 서야 한다.
+      gjpolice: {org: 전남광주통합특별시경찰청 동부경찰서, state: active}
       gjbg:    {org: 전남광주통합특별시 빅데이터 통합플랫폼, state: active}
       nfa:
         org: 소방청

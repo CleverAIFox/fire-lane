@@ -343,7 +343,21 @@ def test_the_four_new_sources_get_placed_by_name():
 #: 아직 raw 에 없는 자산의 템플릿. **사유 없이 넣지 않는다**(§69).
 #  새 규칙은 받아서 `_acquire.json` 에 등재한 뒤에 둔다 — 못 받은 것을
 #  규칙으로 먼저 적으면 그 규칙이 맞는지 아무도 모른다.
-NOT_IN_RAW_YET: dict[str, str] = {}
+#: 규칙은 섰는데 **아직 raw 에 실물이 없는** 것. 이름 → 사유.
+#: ★ 2026-10-14 (DECISIONS 535). **첫 입주자 셋이다.** 세 자산 모두 대장에
+#:   자리가 있고(`[MISSING]` 으로 `ingest` 가 넉 달 찍었다) 이름 규칙이 없어
+#:   반입이 안 섰다. 규칙을 적으면 이 자가 「raw 에 같은 족이 없다」로 우는데,
+#:   그것이 **닭과 달걀**이다 — 반입해야 raw 에 생기고, 규칙이 있어야 반입된다.
+#: ★ **반입되면 여기서 지운다.** 남아 있으면 「아직 못 받았다」가 거짓이 되고,
+#:   그 거짓은 이 자를 그만큼 눈멀게 한다. 지우는 것이 반입의 마지막 걸음이다.
+NOT_IN_RAW_YET: dict[str, str] = {
+    "gjcity_oneway_donggu_jngj-donggu_20261008.xlsx":
+        "동구청 보행교통정책과 일방통행 33구간. 2026-10-13 내려받았고 반입 대기",
+    "gjpolice_oneway_donggu_jngj-donggu_20261012.hwpx":
+        "동부경찰서 교통과 원문 24구간. 같은 날 내려받았고 반입 대기",
+    "safety_dongmyeong_fires_2022_2025_jngj-dongmyeong_20261012.xlsx":
+        "동명동 화재 출동 내역 12건. 같은 날 내려받았고 반입 대기",
+}
 
 
 def _acquired() -> list[str]:

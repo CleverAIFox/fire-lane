@@ -84,7 +84,10 @@ for st in (sys.stdout, sys.stderr):
 # ★ main() 안에 두면 테스트가 베낀다. 실제로 두 벌이 생겼고 한 벌은
 #   `json` 이 빠진 채 굳었다(2026-09-11 B3 에서 발견).
 #   hwp·pdf·ngi·nda 가 없어 왕복 멱등이 거짓이었던 이력도 같은 병이다.
-PASSTHROUGH_EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson|txt"   # txt — 내비게이션용DB 절단본(DECISIONS §179-4)
+PASSTHROUGH_EXT = ("zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson|txt"
+                   "|xlsx?")   # txt — 내비게이션용DB 절단본(§179-4)
+# ★ 2026-10-14 (535-3). `xlsx` 가 **없어** 엑셀 원천 둘이 떨어졌다 — 위가 적은
+#   그 자리의 네 번째다. 자는 `test_chain_is_alive::..._has_a_way_in` 이 든다.
 
 
 def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
@@ -167,6 +170,16 @@ RULES: list[tuple[str, str, str]] = [
     # 정보공개청구로 받은 규격 원문. 괄호를 이스케이프한다 — 받은 이름 그대로다.
     (r"^건축위원회\(심의\) 표준 가이드라인\.pdf$",
      "nfa", "nfa_bldgcomm_guide_kr_20231231.pdf"),
+
+    # ── 2026-10-14 (DECISIONS 535). 위 §428 과 **같은 병이 셋 더** 서 있었다.
+    #   8자리는 대장 `updated` — 파일 수정일(10-13)은 내려받은 날이다.
+    #   `0. ` 은 포털 목록 번호 · `(1)` 은 청구 회신의 사본 번호다.
+    (r"^0\.\s*일방통행로 현황\(공개\)\.xlsx$",
+     "gjcity", "gjcity_oneway_donggu_jngj-donggu_20261008.xlsx"),
+    (r"^동명동 일대 일방통행 지정도로(?: \(\d+\))?\.hwpx$",
+     "gjpolice", "gjpolice_oneway_donggu_jngj-donggu_20261012.hwpx"),
+    (r"^2022년~2025년 동명동 화재 출동 내역\.xlsx$",
+     "safety", "safety_dongmyeong_fires_2022_2025_jngj-dongmyeong_20261012.xlsx"),
 
     # 전국 어린이보호구역 표준데이터. updated 는 레코드의 데이터기준일자
     # 최댓값 2026-07-28 이다. 파일명에는 날짜가 없다.

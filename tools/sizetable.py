@@ -562,7 +562,9 @@ EXCEPTIONS: dict[str, int] = {
     #   이 표의 성질이다(§69) — 다음 사람이 그 규칙을 **다시 짓지 않게** 한다.
     #   ★ 안 쪼갠다: 이 파일은 원천별 규칙 한 줄 + 그 사유가 본체이고, 쪼개면
     #     「어느 원천이 어디로 가나」를 두 파일에서 봐야 한다.
-    "src/firelane/normalize_raw.py": 655,
+    # ★ 2026-10-14 (535 · 535-3). 655 → **668.** 원천 셋의 규칙 여섯 줄과
+    #   `xlsx` 하나 — 줄 하나가 곧 원천 하나다. 자는 535-3 이 세웠다.
+    "src/firelane/normalize_raw.py": 668,
     # ★ 2026-10-08 (DECISIONS §431 · PLAN #157). `src/firelane/pipeline.py` 를
     #   **지운다.** 628 로 들어왔다가 §431 의 제원 주입으로 646 이 됐고, 거기서
     #   「산출물이 기대와 맞는가」 다섯이 `firelane/expectation.py` 로 나갔다 —
@@ -585,8 +587,9 @@ EXCEPTIONS: dict[str, int] = {
     #   것이 곧 「상한에 붙어 사는 파일이 많다」는 그 신호다(위 2026-09-24 문단).
     #   `mutate` 는 침묵 축을 옆집(`mutatesilent`)으로 내리고도 넘었고,
     #   `sizetable` 은 **그 예외를 적는 두 줄 때문에** 넘었다. 사유는 그 절에 있다.
+    #   ★ 2026-10-14 (535). `sizetable` 606 → **609** — 같은 꼴이 또 났다.
     "tools/mutate.py": 616,
-    "tools/sizetable.py": 606,
+    "tools/sizetable.py": 609,
 }
 
 

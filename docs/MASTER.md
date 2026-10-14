@@ -3200,7 +3200,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,330 전수 · **분모(blank) 0절** · 물림(inherit) 1,305절.
+★ **강제자 칸의 분모.** 절 2,334 전수 · **분모(blank) 0절** · 물림(inherit) 1,308절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3932,10 +3932,26 @@ acquire 가 남았으므로 대기로 센다(DECISIONS §171-5).
     uv run python tools/sweep.py                 판정만
     uv run python tools/sweep.py --sweep --yes   근거 있는 것만 지운다
 
-★ **입구는 `tools/pull_data.py` 하나다.** 여덟 단계를 순서대로 돌리고 한
+★ **입구는 `tools/pull_data.py` 하나다.** 일곱 단계를 순서대로 돌리고 한
 단계라도 실패하면 멈춘다. 사람이 순서를 외우면 반드시 빠뜨린다 —
 2026-09-01 에 `acquire` 를 인자 없이 돌려 관측만 하고 편입이 된 줄 알았다
 (DECISIONS §88).
+
+★ **2026-10-14 (DECISIONS 535-2). 여덟 → 일곱.** `quarantine` 을 뺐다 —
+§173-2 가 격리 층을 폐지했는데 **체인이 넉 달 그것을 계속 불렀다.** 그
+도구는 이제 거절만 하며 종료코드 2 로 죽으므로 **반입이 돌 때마다 반드시
+거기서 멈췄고**, 바로 다음 `judge` 가 들던 「결손 3종」이 그만큼 안 보였다.
+**죽은 단계 하나가 맞는 자를 넉 달 가렸다.**
+
+그 사슬을 `tests/test_chain_is_alive.py` 가 끊는다 — 둘을 본다.
+
+    체인이 **폐지된 플래그**를 부르는가   `acquire.RETIRED_FLAGS` 에 댄다
+    대장에 적고 **안 들어온** 자산이 몇   `acquire.LEDGER_MISSING` 래칫
+
+★ 둘째가 **레이크를 안 읽는다.** `acquire.judge()` 는 `RAW` 를 glob 하므로
+레이크 없는 기계와 CI 에서 통째로 침묵한다 — 커밋되는 `data/_acquire.json`
+(sha 대장)으로 같은 수를 내면 어디서나 운다. 자산을 대장에 적는 **그 판에서**
+울고, 반입이 끝나면 그 수를 내려 적는 것이 **마지막 걸음**이다.
 
     uv run python tools/pull_data.py            관측만
     uv run python tools/pull_data.py --yes       반입 · 편입 · norm
