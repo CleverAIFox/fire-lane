@@ -428,9 +428,20 @@ def cmd_prune_landing(dry: bool) -> int:
     if not LANDING.is_dir():
         print(col(f"landing 이 없다: {LANDING}", "y"))
         return 0
+
+    # ★ 2026-10-14 (DECISIONS 536-1). **크기로 먼저 거른다.** 종전에는
+    #   raw 전부를 해시했다 — 91개 3.97 GB 를, landing 에 한두 개 있을 때도.
+    #   내용이 같으면 크기도 같으므로 크기가 안 맞는 raw 파일은 **짝이 될 수
+    #   없다**. 걸러도 답이 안 바뀐다(손실 없는 사전 필터).
+    # ★ 이 자리가 WSL 에서 ENOMEM 으로 죽은 자리다. 느려진 게 아니라
+    #   처음부터 잘못 셌고, 레이크가 커지며 터질 때가 온 것이다.
+    want = {
+        p.stat().st_size for p in LANDING.rglob("*") if p.is_file()
+    }
     raw_sha = {}
     for p in raw_files():
-        raw_sha.setdefault(sha256(p), []).append(p)
+        if p.stat().st_size in want:
+            raw_sha.setdefault(sha256(p), []).append(p)
 
     # ★ 2026-08-23. `--quarantine` 을 먼저 돌리면 격리된 파일이 raw 에서
     #   사라지므로 그 landing 원본이 "짝 없음" 으로 남는다. 실제로 그렇게 됐다 —
@@ -442,7 +453,7 @@ def cmd_prune_landing(dry: bool) -> int:
     q_sha = {}
     if QUARANTINE.is_dir():
         for p in QUARANTINE.rglob("*"):
-            if p.is_file():
+            if p.is_file() and p.stat().st_size in want:
                 q_sha.setdefault(sha256(p), []).append(p)
 
     freed, keep, quarantined = 0, [], []

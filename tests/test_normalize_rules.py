@@ -355,7 +355,7 @@ NOT_IN_RAW_YET: dict[str, str] = {
         "동구청 보행교통정책과 일방통행 33구간. 2026-10-13 내려받았고 반입 대기",
     "gjpolice_oneway_donggu_jngj-donggu_20261012.hwpx":
         "동부경찰서 교통과 원문 24구간. 같은 날 내려받았고 반입 대기",
-    "safety_dongmyeong_fires_2022_2025_jngj-dongmyeong_20261012.xlsx":
+    "safety_dongmyeong_fires_jngj-dongmyeong_20261012.xlsx":
         "동명동 화재 출동 내역 12건. 같은 날 내려받았고 반입 대기",
 }
 

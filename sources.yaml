@@ -3480,7 +3480,12 @@ datasets:
 
   safety_dongmyeong_fires:
     awaiting: 2026-10-13 반입 대기 — 같은 순서다(DECISIONS §515-1). raw 에 들어오면 이 줄을 지운다
-    stem: safety_dongmyeong_fires_2022_2025
+    stem: safety_dongmyeong_fires
+    # ★ 2026-10-14 (DECISIONS 537). 연도 범위를 stem 에서 뺐다. `intake_name.stem_of`
+    #   가 연도 토큰을 제원으로 읽어 떼어내므로 `..._2022_2025` 라고 적으면
+    #   파서가 `safety_dongmyeong_fires` 를 돌려주고 **대장 조회가 어긋난다** —
+    #   그래서 반입이 「대장 항목이 없다」로 멈췄다. 대장에 있었는데도.
+    #   기간은 이름이 아니라 `what` 이 든다. 다른 82종이 전부 그렇다.
     ext: [xlsx]
     feeds_note: 미투입 — **영구 참조**다. 판정에 안 쓴다 — 범위 확인 · 골든타임 초과 사례 · 기획서 근거
     kind: raw_only
