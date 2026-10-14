@@ -226,10 +226,10 @@ if [ "$MODE" = "--undo" ]; then
     #     여기서 지우면 그 정본이 둘이 된다. 그래서 **말하고 넘긴다** — 그리고
     #     다음 실행의 1단계가 같은 판별식으로 **막는다**(아래).
     if ! uv run --no-sync python tools/golden.py check >/dev/null 2>&1; then
-        warn "추적 **밖** 산출물이 지금 코드의 것이 아니다 — `*.gpkg` 는 gitignore 라" \
+        warn "추적 **밖** 산출물이 지금 코드의 것이 아니다 — gpkg 는 gitignore 라" \
              "되돌릴 밑동이 없다. 다시 구워라:" \
              "    uv run fire-lane --from segments     (약 285초)" \
-             "  ★ 안 구우면 다음 판의 `width_cross` 가 **엎은 판의 폭**을 재고," \
+             "  ★ 안 구우면 다음 판의 width_cross 가 **엎은 판의 폭**을 재고," \
              "    그 판이 제가 올린 줄 알고 빨개진다(2026-10-13 에 그랬다)."
     fi
     if git rev-parse -q --verify "$BR" >/dev/null; then
@@ -307,13 +307,23 @@ fi
 #   1015 를 엎은 뒤 그 파일이 1,285구간으로 남았고, 1016 의 `width_cross` 가
 #   그것을 읽어 `OVERCLAIM_SOFT` 32 → 39 로 빨갰다 — **그 판이 올린 수가
 #   아니었다.** 밑동에 깨끗하게 서 있으면 잠긴 지문과 산출물이 같아야 한다.
+# ★ 2026-10-14. 바로 위 §518-2 가 세운 검사를 **두 군데 고친다.** ① 이 메시지에 **백틱**이 있었다 —
+#   큰따옴표 안의 백틱은 셸에서 **명령 치환**이라 `data/processed/*.gpkg` 가
+#   글롭으로 풀려 실행됐고(`bin_cloth_5186.gpkg: Permission denied`)
+#   `git status` 출력이 문장 한가운데 박혀 거절 문구가 통째로 깨졌다.
+#   ② **「트리 깨끗 + 골든 빨강」의 뜻이 둘이었다** — 남의 산출물이 남은 것과
+#   **측정 배치가 산출물을 앉히고 아직 재잠금 전인 것**. `--measured` 는
+#   바로 뒤쪽을 처리하라고 있는 깃발인데 이 검사가 그 앞에서 죽였다.
 if [ ! -f tools/golden.py ]; then
     warn "산출물이 잠긴 코드의 것인지 **못 봤다** — tools/golden.py 가 없다"
+elif [ -n "$MEASURED" ]; then
+    warn "산출물이 잠긴 코드와 다르다 — **--measured 가 붙었으므로 그것이 정상이다**(4b 가 다시 잠근다)"
 elif ! uv run --no-sync python tools/golden.py check >/dev/null 2>&1; then
     die "트리는 깨끗한데 **산출물이 잠긴 코드와 다르다.**" \
-        "  `data/processed/*.gpkg` 는 gitignore 라 `git status` 가 안 보여준다 —" \
+        "  data/processed 의 gpkg 는 gitignore 라 git status 가 안 보여준다 —" \
         "  엎은 판이나 손으로 돌린 파이프라인의 산출물이 남아 있다는 뜻이다." \
-        "  다시 구워라:" \
+        "  측정 배치라서 산출물을 앉힌 것이면 --measured=<태그> 를 붙여라." \
+        "  아니면 다시 구워라:" \
         "    uv run fire-lane --from segments     (약 285초)" \
         "    uv run python tools/golden.py check  (초록이어야 한다)" \
         "  ★ 안 구우면 이 판의 폭 교차대조가 **남의 폭**을 재고 이 판이 뒤집어쓴다."

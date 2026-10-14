@@ -198,7 +198,11 @@ TIMEOUT = 180
 #   `tests/test_toolclass.py` 가 든다. 가르는 것은 사람이고 여기가 그 가름이다.
 # ★ 2026-10-13 — 88 → 89 (§509). 산 하나는 자기검사의 합성 좌표다 — 100 을
 #   101 로 바꿔도 폭 10 띠의 내접원은 10 그대로라 행동이 안 바뀐다.
-SURVIVORS = 90   # ★ 2026-10-13 (§520) 89→90 · planclose. **분모는 안 움직였다**(144)
+# ★ 2026-10-14 (DECISIONS 532) 90→86 — **조이는 쪽이다.** 넷이 생존에서
+#   `SILENCED` 로 옮겨졌다. 넷 다 `__name__ == "__main__"` 의 비교였고
+#   뒤집으면 **붙잡이 자신이 안 돈다** — 생존이 아니라 못 쟀다였다.
+#   분모는 안 움직였다(144).
+SURVIVORS = 86
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 # ★ 2026-10-11 — 124 → 128 (DECISIONS §478-1). **조이는 쪽이다.** 도구가
 #   31 → 32 로 늘어 흔든 수가 넷 늘었다(`tools/selftests.py`). `SURVIVORS` 가
@@ -235,9 +239,21 @@ RATCHET_HELD = 25   # ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
 #     §493    61 → 63   새 관문 `srccov` — 기본값 · 실패 반환값.
 #                       `navicov`(§482) 와 **같은 꼴 둘**이다
 #     §509    63 → 64   자기검사의 합성 좌표 — 행동을 안 바꾼다
-UNSORTED = 65   # ★ 2026-10-13 (§520) 64→65 · planclose 의 `__main__` 분기
+#     532     65 → 61   **조인 쪽** — `__main__` 가드 넷이 `SILENCED` 로 갔다.
+#                       §445 가 「아직 안 가른 것」으로 적은 그 자리다
+UNSORTED = 61
+#: **붙잡이가 침묵한** 과녁 수 — 내려가는 쪽으로만.
+#: ★ 2026-10-14 (DECISIONS 532) 새 축. `UNCATCHABLE` 과 **다른 것**이다 —
+#:   그쪽은 「붙잡이가 0 인 **도구**」 수이고 이쪽은 「붙잡이가 있는데 그 돌연변이
+#:   앞에서 **아무 글자도 안 찍고 rc=0** 으로 끝난 **과녁**」 수다. 종전엔 그것이
+#:   `SURVIVORS` 로 섞여 들어갔다 — 생존이 아니라 **못 쟀다**인데 생존으로 셌다.
+SILENCED = 4   # ★ 2026-10-14 (DECISIONS 532) 초기값은 실측이다 —
+               #   docgen · planclose · ratchet · sizecheck. 넷 다 같은 자리다
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",
-            "RATCHET_HELD": "up", "UNSORTED": "down"}
+            "RATCHET_HELD": "up", "UNSORTED": "down", "SILENCED": "down"}
+
+#: 침묵을 적는 꼬리표. `unmeasured` 문자열이 이것을 들면 `SILENCED` 로 센다.
+SILENT_MARK = "★붙잡이 침묵"
 
 _HARMLESS = "\n# mutation-probe — 무해 돌연변이. 행동을 안 바꾼다.\n"
 
@@ -322,14 +338,32 @@ def catchers(tool: str, deep: bool = False) -> list[list[str]]:
     return got
 
 
-def _run(cmd: list[str]) -> bool:
+class SilentCatcher(RuntimeError):
+    """붙잡이가 **rc=0 인데 한 글자도 안 찍었다** — 돈 것이 아니라 안 돈 것이다.
+
+    ★ 2026-10-14 (DECISIONS 532). `sizecheck.py` 의 `if __name__ == "__main__":`
+      을 `!=` 로 뒤집으면 `tools/sizecheck.py --selftest` 가 **아무것도 안 하고
+      rc=0** 으로 끝난다. 이 도구의 기본 붙잡이가 바로 그 명령이므로,
+      `returncode == 0` 만 보면 **「붙잡이가 통과했다 = 생존」**으로 읽힌다.
+      실제로 그렇게 읽었다. 돌연변이가 **자기 붙잡이를 끊는** 자리라
+      생존·사망 어느 쪽도 아니다 — **못 쟀다**가 참이다.
+      (그 자리는 `tests/test_entry_guard.py` 가 받는다.)
+    """
+
+
+def _run(cmd: list[str], *, strict: bool = True) -> bool:
     """붙잡이를 돌린다. 초록이면 참. 시간 초과는 **거짓이 아니라 예외**다.
 
     ★ 환경을 **안 짓는다** — 부르는 쪽 것을 그대로 물려받는다. `os.environ` 을
       여기서 읽으면 `env_check` 가 운다(독자는 `paths.py` 하나다 · §342-4).
+
+    ★ `strict` 면 **침묵한 통과**도 예외다(`SilentCatcher`). 밑동을 재는
+      `live_catchers` 는 끈다 — 거기서 침묵하는 붙잡이는 애초에 빠진다.
     """
     p = subprocess.run(cmd, cwd=ROOT, capture_output=True,
                        text=True, timeout=TIMEOUT, check=False)
+    if strict and p.returncode == 0 and not (p.stdout + p.stderr).strip():
+        raise SilentCatcher(" ".join(cmd))
     return p.returncode == 0
 
 
@@ -346,11 +380,11 @@ def live_catchers(tool: str, deep: bool = False) -> tuple[list[list[str]], list[
     try:
         for c in catchers(tool, deep):
             tag = " ".join(c[-2:])
-            if not _run(c):
+            if not _run(c, strict=False):
                 dropped.append(f"{tag} — 밑동에서 이미 빨갛다")
                 continue
             path.write_text(orig + _HARMLESS, encoding="utf-8")
-            still = _run(c)
+            still = _run(c, strict=False)
             path.write_text(orig, encoding="utf-8")
             if still:
                 keep.append(c)
@@ -407,6 +441,10 @@ def shake(tool: str, cap: int = MAX_PER_TOOL, deep: bool = False) -> dict:
                 killed = any(not _run(c) for c in keep)
             except subprocess.TimeoutExpired:
                 unmeasured.append(what)
+                continue
+            except SilentCatcher as e:
+                # 붙잡이가 침묵했다 — 생존이 아니라 **못 쟀다**(DECISIONS 532)
+                unmeasured.append(f"{what} {SILENT_MARK}: {e}")
                 continue
             if not killed:
                 survived.append(what)
@@ -488,7 +526,9 @@ def ratchet_values() -> dict[str, int]:
     held, rest = sort_survivors(d)
     return {"SURVIVORS": d["생존"], "MUTANTS": d["돌연변이"],
             "UNCATCHABLE": sum(1 for r in d["도구별"] if r["붙잡이"] == 0),
-            "RATCHET_HELD": len(held), "UNSORTED": len(rest)}
+            "RATCHET_HELD": len(held), "UNSORTED": len(rest),
+            "SILENCED": sum(1 for r in d["도구별"]
+                            for u in r.get("못 쟀다", []) if SILENT_MARK in u)}
 
 
 # ── ④ 자기검사 ──────────────────────────────────────────────────

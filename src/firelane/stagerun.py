@@ -140,6 +140,32 @@ def stage_main(module: str):
     return fn
 
 
+def _inject_vehicle() -> None:
+    """차량 제원을 **이 프로세스에** 주입한다.  (DECISIONS §530)
+
+    ★ 2026-10-14. `pipeline.main()` 이 `vehicle.use(ledger.vehicle_spec())` 를
+      부르는데 단계는 **자식 프로세스**로 돈다(`subprocess.run([… -m
+      firelane.stagerun …])`). 제원은 모듈 전역(`vehicle._S`)이라 **프로세스를
+      못 넘는다.** 그래서 `segments` 가 매 실행 「차량 경로 생략 — 차량 제원이
+      주입되지 않았다」를 찍고 `route_vehicle.csv` 를 **안 다시 썼다.**
+      옛 파일이 그대로 발행돼 관제 화면의 도달 수가 옛 폭으로 서 있었다.
+
+    ★ **없으면 안 죽는다** — 부모가 그렇게 한다(`pipeline.main()` 의 ★).
+      제원이 없는 것은 `segments` 가 이미 다루는 사실이고, 여기서 죽이면
+      제원과 무관한 단계(ingest · terrain …)까지 못 돈다.
+
+    ★ 도메인은 대장을 **직접 안 읽는다**(PLAN #122). 읽는 것은 진입점이고,
+      자식 프로세스에서는 **이 자리가 진입점**이다.
+    """
+    from firelane import ledger as _led
+    from firelane.seg import vehicle as _V
+
+    try:
+        _V.use(_led.vehicle_spec())
+    except _V.SpecMissing:
+        pass
+
+
 def main() -> None:
     """`python -m firelane.stagerun <단계> [깃발...]`"""
     rest = sys.argv[1:]
@@ -151,6 +177,7 @@ def main() -> None:
     # 단계가 보는 인자는 **제 것뿐**이다. 제 이름이 argv[0] 에 와야
     # `warn_direct_call` 과 단계의 argparse 가 같은 것을 본다.
     sys.argv = [f"firelane.{name}", *flags]
+    _inject_vehicle()
     fn = stage_main(name)
     from firelane.guards import warn_direct_call
 

@@ -1,6 +1,6 @@
 {
  "돌연변이": 144,
- "생존": 90,
+ "생존": 86,
  "도구별": [
   {
    "도구": "archcost",
@@ -91,10 +91,10 @@
    "도구": "docgen",
    "돌연변이": 4,
    "전수": 87,
-   "생존": [
-    "555: == → !="
+   "생존": [],
+   "못 쟀다": [
+    "555: == → != ★붙잡이 침묵: /tmp/claude-0/-home-claude/2308ac37-d6c9-592d-bde2-e5f9d9bd881e/scratchpad/repo/fire-lane/.venv/bin/python3 tools/docgen.py --selftest"
    ],
-   "못 쟀다": [],
    "붙잡이": 1,
    "뺀 붙잡이": [],
    "지문": "758dd44bfa32"
@@ -267,14 +267,14 @@
   {
    "도구": "planclose",
    "돌연변이": 4,
-   "전수": 82,
-   "생존": [
-    "328: == → !="
+   "전수": 84,
+   "생존": [],
+   "못 쟀다": [
+    "357: == → != ★붙잡이 침묵: /tmp/claude-0/-home-claude/2308ac37-d6c9-592d-bde2-e5f9d9bd881e/scratchpad/repo/fire-lane/.venv/bin/python3 tools/planclose.py --selftest"
    ],
-   "못 쟀다": [],
    "붙잡이": 1,
    "뺀 붙잡이": [],
-   "지문": "f619929ca114"
+   "지문": "293f514488d3"
   },
   {
    "도구": "planwork",
@@ -318,14 +318,15 @@
    "돌연변이": 4,
    "전수": 96,
    "생존": [
-    "415: == → !=",
     "217: < → <=",
     "201: and → or"
    ],
-   "못 쟀다": [],
+   "못 쟀다": [
+    "415: == → != ★붙잡이 침묵: /tmp/claude-0/-home-claude/2308ac37-d6c9-592d-bde2-e5f9d9bd881e/scratchpad/wt-zl/.venv/bin/python tools/ratchet.py --selftest"
+   ],
    "붙잡이": 1,
    "뺀 붙잡이": [],
-   "지문": "b8464e1950ba"
+   "지문": "c2ab52145ef5"
   },
   {
    "도구": "redoscheck",
@@ -361,12 +362,12 @@
    "돌연변이": 4,
    "전수": 36,
    "생존": [
-    "166: 1 → 2"
+    "172: 1 → 2"
    ],
    "못 쟀다": [],
    "붙잡이": 1,
    "뺀 붙잡이": [],
-   "지문": "5ec1d41deee6"
+   "지문": "c7540f0e91aa"
   },
   {
    "도구": "segcontract",
@@ -397,13 +398,13 @@
    "도구": "sizecheck",
    "돌연변이": 4,
    "전수": 36,
-   "생존": [
-    "170: == → !="
+   "생존": [],
+   "못 쟀다": [
+    "170: == → != ★붙잡이 침묵: /tmp/claude-0/-home-claude/2308ac37-d6c9-592d-bde2-e5f9d9bd881e/scratchpad/repo/fire-lane/.venv/bin/python3 tools/sizecheck.py --selftest"
    ],
-   "못 쟀다": [],
    "붙잡이": 1,
    "뺀 붙잡이": [],
-   "지문": "ba21cac65b0e"
+   "지문": "7a1e9da068c3"
   },
   {
    "도구": "srccov",

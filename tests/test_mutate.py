@@ -110,10 +110,16 @@ def test_the_ratchet_is_two_way():
     ★ 2026-10-06 (DECISIONS §410). 가름 둘이 늘었다. `RATCHET_HELD` 가
       **올라가는 쪽**인 것이 뒤집힌 것처럼 보이지만 아니다 — 래칫을 하나 더
       다는 것이 좋은 일이고 그때 이 수가 오른다.
+
+    ★ 2026-10-14 (DECISIONS 532). `SILENCED` 가 늘었다 — **붙잡이가 침묵한**
+      과녁 수다. `UNCATCHABLE`(붙잡이가 0 인 **도구** 수)과 다른 축이고,
+      둘 다 내려가는 쪽이다. 섞으면 「붙잡이를 안 달았다」와 「붙잡이가
+      끊겼다」가 한 수가 된다.
     """
     assert M.RATCHETS == {"SURVIVORS": "down", "MUTANTS": "up",
                           "UNCATCHABLE": "down",
-                          "RATCHET_HELD": "up", "UNSORTED": "down"}
+                          "RATCHET_HELD": "up", "UNSORTED": "down",
+                          "SILENCED": "down"}
 
 
 def test_survivors_held_by_a_ratchet_are_told_apart():

@@ -27,6 +27,7 @@ import socket
 import sys
 import threading
 import time
+import urllib.error
 import urllib.request
 from collections.abc import Iterator
 from pathlib import Path
@@ -61,18 +62,23 @@ import uvicorn  # noqa: E402 — importorskip 뒤라 올릴 수 없다
 from websockets.sync.client import connect  # noqa: E402 — importorskip 뒤라 올릴 수 없다
 
 from firelane.ops.roster import ROOM, Peer, Roster  # noqa: E402 — importorskip 뒤라 올릴 수 없다
-from firelane.ops.server import create_app  # noqa: E402 — importorskip 뒤라 올릴 수 없다
+from firelane.ops.server import (  # noqa: E402 — importorskip 뒤라 올릴 수 없다
+    ENV_AUTH,
+    ENV_OPEN,
+    QS,
+    create_app,
+)
 
 #: 한 왕복을 기다리는 시한. 넘으면 **빨강이다** — 매달린 시험은 사람이 죽이고,
 #: 죽이면 무엇이 틀렸는지 영영 모른다(§284-5 가 같은 자리에서 배운 것).
 WAIT_S = 5.0
 
-@pytest.fixture
-def base() -> Iterator[str]:
+def _serve(app) -> Iterator[str]:
+    """만들어 둔 앱을 임시 포트에 띄운다. 두 fixture 가 같이 쓴다."""
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]
-    srv = uvicorn.Server(uvicorn.Config(create_app(), log_level="warning"))
+    srv = uvicorn.Server(uvicorn.Config(app, log_level="warning"))
     t = threading.Thread(target=srv.run, kwargs={"sockets": [sock]}, daemon=True)
     t.start()
     deadline = time.monotonic() + 20
@@ -84,6 +90,33 @@ def base() -> Iterator[str]:
     finally:
         srv.should_exit = True
         t.join(timeout=20)
+
+
+@pytest.fixture
+def base(monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
+    """**열린** 중개자. 아래 시험들은 옮기는 일을 보지 인증을 안 본다.
+
+    ★ 2026-10-14 (DECISIONS §527). 열림을 **선언**한다 — 토큰 관문이 선 뒤로
+      선언 없이는 안 뜬다. 그 선언이 여기 적혀 있는 것이 값이다: 이 파일의
+      시험들이 **열린 서버를 본다**는 사실이 숨지 않는다.
+    """
+    monkeypatch.setenv(ENV_OPEN, "1")
+    monkeypatch.setenv(ENV_AUTH, "")
+    yield from _serve(create_app())
+
+
+#: 잠긴 중개자가 쓰는 말. 시험 안에서만 산다.
+TOK = "test-token-0123456789"
+
+
+@pytest.fixture
+def locked(monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
+    """**잠긴** 중개자. 토큰을 요구한다."""
+    monkeypatch.setenv(ENV_AUTH, TOK)
+    monkeypatch.delenv(ENV_OPEN, raising=False)
+    yield from _serve(create_app())
+
+
 
 
 def _get(base: str, path: str) -> dict:
@@ -236,3 +269,82 @@ def test_each_app_has_its_own_roster(base: str) -> None:
         r = Roster()
         r.join(Peer(cid="x", kind="unit", unit="navi-9"))
         assert fresh.state.roster.units() == [], "명부가 공유된다 — create_app 이 무의미하다"
+
+
+# ── 인증 (DECISIONS §527) ──────────────────────────────────────
+#
+# ★ 2026-10-14. 종전에 이 파일은 **옮기는 일만** 봤다. 문이 열려 있다는 사실은
+#   `server.py` 머리말에만 있었고 **머리말은 아무도 안 막는다.** 앞이
+#   `wss://*.cloudfront.net` 로 올라간 뒤로 그것은 선언이 아니라 구멍이다.
+def _ws_tok(base: str, path: str, tok: str | None):
+    url = f"ws://{base}{path}"
+    if tok is not None:
+        url += f"?{QS}={tok}"
+    return connect(url, open_timeout=WAIT_S)
+
+
+def test_a_socket_without_a_token_is_refused(locked: str) -> None:
+    """**이 판의 머리다.** 말 없이 오면 못 들어온다."""
+    with pytest.raises(Exception):  # noqa: B017 — 거절의 꼴은 라이브러리가 정한다
+        with _ws_tok(locked, "/ops", None):
+            pass
+
+
+def test_a_socket_with_a_wrong_token_is_refused(locked: str) -> None:
+    with pytest.raises(Exception):  # noqa: B017 — 거절의 꼴은 라이브러리가 정한다
+        with _ws_tok(locked, "/ops", TOK + "x"):
+            pass
+
+
+def test_a_socket_with_the_token_is_let_in(locked: str) -> None:
+    """**반대 방향.** 맞는 말이면 들어오고 명부에 선다 — 안 그러면 빈 그물이다."""
+    with _ws_tok(locked, "/unit/navi-9", TOK):
+        deadline = time.monotonic() + WAIT_S
+        while time.monotonic() < deadline:
+            got = _get(f"{locked}", f"/units?{QS}={TOK}")
+            if got["units"] == ["navi-9"]:
+                return
+            time.sleep(0.02)
+        pytest.fail(f"맞는 토큰인데 명부에 안 섰다 — {got}")
+
+
+def test_every_door_asks(locked: str) -> None:
+    """문 **셋 다** 묻는다. 하나만 잠그면 나머지로 들어온다."""
+    for path in ("/ops", "/unit/navi-1", "/cv/cam-1"):
+        with pytest.raises(Exception):  # noqa: B017 — 거절의 꼴은 라이브러리가 정한다
+            with _ws_tok(locked, path, None):
+                pass
+
+
+def test_units_is_closed_but_health_is_open(locked: str) -> None:
+    """`/units` 는 **지금 누가 어디 나가 있는지**라 닫고, `/health` 는 연다.
+
+    앞단 상태검사가 토큰을 못 들고 오므로 「살아 있는가」는 열어 둔다 —
+    그것은 비밀이 아니다.
+    """
+    assert _get(locked, "/health") == {"ok": True}
+    with pytest.raises(urllib.error.HTTPError) as e:
+        _get(locked, "/units")
+    assert e.value.code == 401
+    assert _get(locked, f"/units?{QS}={TOK}")["room"] == ROOM
+
+
+def test_the_broker_does_not_stand_up_undeclared(monkeypatch: pytest.MonkeyPatch) -> None:
+    """토큰도 선언도 없으면 **안 뜬다.** 느슨한 쪽이 기본이 아니다."""
+    monkeypatch.setenv(ENV_AUTH, "")
+    monkeypatch.delenv(ENV_OPEN, raising=False)
+    with pytest.raises(RuntimeError) as e:
+        create_app()
+    assert ENV_AUTH in str(e.value) and ENV_OPEN in str(e.value), (
+        "거절 문구가 **두 이름을 다** 대야 한다 — 사람이 어느 쪽을 고를지 모른다")
+
+
+def test_importing_the_module_does_not_need_a_token() -> None:
+    """수입은 조용하다. 우는 자리는 **띄울 때**다.
+
+    `app = create_app()` 을 모듈 전역에 두면 토큰 없는 기계에서 `import` 만
+    해도 쓰러진다 — CLI 표면 검사와 이 파일이 같이 죽는다. PEP 562 로 미뤘다.
+    """
+    import importlib
+    m = importlib.import_module("firelane.ops.server")
+    assert hasattr(m, "create_app"), "수입이 깨졌다"

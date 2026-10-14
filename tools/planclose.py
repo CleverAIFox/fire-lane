@@ -273,6 +273,7 @@ def selftest() -> int:
     c = counts()
     if c["열린"] - c["못 닫는"] != c["표가 드는 행"]:
         bad.append(f"실물 항등식이 어긋난다 — {c}")
+    bad += _block_is_current(c)
     if bad:
         print("★ 자기검사 실패")
         for b in bad:
@@ -280,6 +281,34 @@ def selftest() -> int:
         return 1
     print("selftest 초록")
     return 0
+
+
+#: `§10-1b` 가 세 수를 **글로 적은** 블록. 「손으로 세지 않는다」고 선언한
+#: 자리라 그 수가 낡으면 선언이 거짓이 된다.
+_BLOCK = re.compile(
+    r"열린 (\d+) − 못 닫는 (\d+) = (\d+).*?"
+    r"무조건 닫는다\s+(\d+).*?"
+    r"닫는 수 선언 합\s+(\d+)", re.S)
+
+
+def _block_is_current(c: dict[str, int]) -> list[str]:
+    """`§10-1b` 의 세 수가 **지금 실측과 같은가.**
+
+    ★ 2026-10-14 (DECISIONS 533). 그 절은 「손으로 세지 않는다」고 적어 두고
+      **수는 손으로 적어** 뒀다. `#177` 이 들어오자 다섯 수가 다 틀렸고
+      아무 자도 안 울었다 — §520 이 고친 병의 재발이다. 선언한 자리는
+      **그 선언을 재는 자**가 있어야 선언이다(§390).
+    """
+    m = _BLOCK.search(PLAN.read_text(encoding="utf-8"))
+    if not m:
+        return ["§10-1b 의 세 수 블록을 못 찾았다 — 꼴이 바뀌었으면 이 자도 고쳐라"]
+    want = (c["열린"], c["못 닫는"], c["열린"] - c["못 닫는"],
+            c["무조건 닫는다"], c["닫는 수 선언 합"])
+    got = tuple(int(g) for g in m.groups())
+    if got != want:
+        return [f"§10-1b 의 수가 낡았다 — 적힌 {got} · 실측 {want}. "
+                "그 절은 「손으로 세지 않는다」고 선언한 자리다"]
+    return []
 
 
 def main() -> int:

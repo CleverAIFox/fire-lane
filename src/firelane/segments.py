@@ -151,11 +151,21 @@ def _write_route(g, dst=None) -> None:
 
     from firelane.seg import vehicle
 
+    out = dst or PROCESSED / "route_vehicle.csv"
     try:
         # 제원이 대장에 없으면 여기서 죽는다. 경로만 건너뛰고 나머지는 낸다.
         vehicle.spec()
     except vehicle.SpecMissing as e:
+        # ★ 2026-10-14. 종전엔 그냥 `return` 했다 — **낡은 csv 가 남았다.**
+        #   `evalgate` 의 ③ 이 그것을 집어 「passable 이 edge_cost 와 N건
+        #   갈린다 — 파이프라인을 다시 돌려라」를 울렸는데, 다시 돌아도 이
+        #   분기가 또 생략하니 **그 안내는 막다른 길**이었다(§331 · DECISIONS 530).
+        #   생략은 「안 낸다」이고 「옛것을 그대로 둔다」가 아니다. 지운다 —
+        #   그러면 관문이 「경로 산출물이 없다」로 울고, 그 말은 참이다.
         print(f"  차량 경로 생략 — {e}".split("\n")[0])
+        if out.exists():
+            out.unlink()
+            print(f"  낡은 {out.name} 를 지웠다 — 생략은 옛것을 남기지 않는다")
         return
 
     BIG = 1e7                      # inf 대체. 실제 거리 총합보다 크다
@@ -230,7 +240,7 @@ def _write_route(g, dst=None) -> None:
             for u2, v2 in zip(pp, pp[1:], strict=False):
                 use[P.edges[u2, v2]["seg_id"]] += 1
 
-    dst = dst or PROCESSED / "route_vehicle.csv"
+    dst = out
     n_blk = sum(1 for d in meta.values() if d["blocked"])
     with dst.open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
