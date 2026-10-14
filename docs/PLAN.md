@@ -98,7 +98,7 @@ PLAN 은 빚 목록이다 — **갚은 빚은 목록에 안 남는다.** 슬롯�
 강제자 — `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
 
 <!--gen: plan_open-->
-## 1. 남은 일 — 58행
+## 1. 남은 일 — 59행
 <!--/gen-->
 
 ★ **2026-09-20 신설**(DECISIONS §205). 제목이 수를 든다. §13 이 같은 것을

@@ -93,7 +93,7 @@
    "전수": 87,
    "생존": [],
    "못 쟀다": [
-    "555: == → != ★붙잡이 침묵: /tmp/claude-0/-home-claude/2308ac37-d6c9-592d-bde2-e5f9d9bd881e/scratchpad/repo/fire-lane/.venv/bin/python3 tools/docgen.py --selftest"
+    "555: == → != ★붙잡이 침묵: python tools/docgen.py --selftest"
    ],
    "붙잡이": 1,
    "뺀 붙잡이": [],
@@ -270,7 +270,7 @@
    "전수": 84,
    "생존": [],
    "못 쟀다": [
-    "357: == → != ★붙잡이 침묵: /tmp/claude-0/-home-claude/2308ac37-d6c9-592d-bde2-e5f9d9bd881e/scratchpad/repo/fire-lane/.venv/bin/python3 tools/planclose.py --selftest"
+    "357: == → != ★붙잡이 침묵: python tools/planclose.py --selftest"
    ],
    "붙잡이": 1,
    "뺀 붙잡이": [],
@@ -322,7 +322,7 @@
     "201: and → or"
    ],
    "못 쟀다": [
-    "415: == → != ★붙잡이 침묵: /tmp/claude-0/-home-claude/2308ac37-d6c9-592d-bde2-e5f9d9bd881e/scratchpad/wt-zl/.venv/bin/python tools/ratchet.py --selftest"
+    "415: == → != ★붙잡이 침묵: python tools/ratchet.py --selftest"
    ],
    "붙잡이": 1,
    "뺀 붙잡이": [],
@@ -362,12 +362,12 @@
    "돌연변이": 4,
    "전수": 36,
    "생존": [
-    "172: 1 → 2"
+    "176: 1 → 2"
    ],
    "못 쟀다": [],
    "붙잡이": 1,
    "뺀 붙잡이": [],
-   "지문": "c7540f0e91aa"
+   "지문": "37e1b71e216c"
   },
   {
    "도구": "segcontract",
@@ -400,7 +400,7 @@
    "전수": 36,
    "생존": [],
    "못 쟀다": [
-    "170: == → != ★붙잡이 침묵: /tmp/claude-0/-home-claude/2308ac37-d6c9-592d-bde2-e5f9d9bd881e/scratchpad/repo/fire-lane/.venv/bin/python3 tools/sizecheck.py --selftest"
+    "170: == → != ★붙잡이 침묵: python tools/sizecheck.py --selftest"
    ],
    "붙잡이": 1,
    "뺀 붙잡이": [],

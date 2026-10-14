@@ -132,7 +132,12 @@ def logic_print(p: Path) -> str:
 #   ★ 2026-10-11 (DECISIONS §460). `reseal.py` 를 같은 사유로 더한다 — 재도장을
 #     **부르는 문**이고 산출물을 한 바이트도 안 만든다. 받아도 되는가의 판단은
 #     이 파일의 `reseal_*` 가 들고 그쪽은 여전히 폐포 안이다.
-NOT_PRODUCERS = ("shardseal.py", "stagerun.py", "reseal.py")
+#   ★ 2026-10-14 (DECISIONS 530-3). `oom.py` 를 더한다 — `stagerun.py` 에 있던
+#     OOM 넷(`ENOMEM_RC` · `is_oom` · `run_stage` · `oom_exit`)을 내린 제 집이고,
+#     하는 일은 **죽는 길을 아는 것**뿐이라 산출물에 한 바이트도 기여하지 않는다.
+#     `stagerun.py` 는 이제 폐포에 **없다** — `ingest` 가 CLI 진입점을 안 본다.
+#     목록에 남겨 둔다: 다시 들어오면 그때도 면제여야 한다.
+NOT_PRODUCERS = ("shardseal.py", "stagerun.py", "reseal.py", "oom.py")
 
 
 def _norm(name: str) -> str:

@@ -112,13 +112,17 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #       `tools/prevfield.py`(유병률 칸의 문법 · `dms.py` 를 쪼개 나온 자리) ·
 #       `tools/probeledger.py`(조사 판정의 자리). `§511` 과 `§513` 이 둘을
 #       **산문으로** 지목한다.
+#     ★ 2026-10-14 (DECISIONS 530-3). 575 → **576.** 새 집 하나 —
+#       `src/firelane/oom.py`(죽는 길의 집 — `stagerun.py` 에 있던 OOM 넷을
+#       내렸다. `ingest` 가 CLI 진입점을 import 하던 거꾸로를 바로잡는다).
+#       `530-3` 이 그것을 **산문으로** 지목한다.
 #     ★ 2026-10-14 (DECISIONS 529 · 530 · 532). 572 → **575.** 새 집 **셋** —
 #       `tests/test_entry_guard.py`(도구의 진입 관문이 제 꼴인가 —
 #       `__name__ == "__main__"` 의 비교 노드와 최상위 실행 · `532`) ·
 #       `tests/test_shell_backticks.py`(겹따옴표 안의 백틱 · `529`) ·
 #       `tests/test_stagerun_vehicle.py`(자식 단계의 차량 제원 · `530`).
 #       그 셋을 `529` · `530` · `532` 가 **산문으로** 지목한다.
-SEALED_FILES = 575
+SEALED_FILES = 576
 
 #: **강제자 칸만으로** 덮인 파일 수. 내려가는 쪽. 2026-10-10 실측 37 → **0**.
 #: 늘면 「산문 없이 칸만 적었다」는 뜻이고 그것은 한 번 속은 자리다(PLAN #165).

@@ -26,8 +26,8 @@ from pathlib import Path
 from firelane import lineage
 from firelane.console import col
 from firelane.expectation import verify, verify_ingest, verify_schema
+from firelane.oom import ENOMEM_RC as INGEST_ENOMEM_RC
 from firelane.paths import PROCESSED, RAW, ROOT, WEB
-from firelane.stagerun import ENOMEM_RC as INGEST_ENOMEM_RC
 
 for st in (sys.stdout, sys.stderr):
     try:

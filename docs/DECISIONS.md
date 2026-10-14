@@ -38995,6 +38995,42 @@ found`). 네 자리가 같은 식으로 잘랐다.
   막는 것은 코드가 아니라 **원문**이고 `#30` `#75` `#76` 이 열려 있다.
   없는 수로 판정하지 않는다 — 고치는 것이 틀린 자리가 있다.
 
+### 527-1. 자가 **눈이 먼 것을 코드의 잘못으로 보고했다**
+
+`ruff S105` 가 상수 이름의 `TOKEN` 을 거부해 `ENV_AUTH` 로 돌려 담았다 —
+
+```python
+ENV_AUTH = "FIRE_LANE_OPS_TOKEN"
+ENV_OPEN = "FIRE_LANE_OPS_OPEN"
+...
+if _env(ENV_OPEN).strip() != "1":
+```
+
+그러자 `env_check` 가 울었다 —
+
+```
+✗ .env.example 에 있는데 코드가 안 쓴다
+    FIRE_LANE_OPS_OPEN
+```
+
+**코드는 쓰고 있었다.** 그 자의 `ENV_RE` 는 `os.environ["X"]` ·
+`getenv("X")` · `paths.env|flag|secret("X")` **세 꼴만** 보고
+**상수에 담아 두는 것**을 못 본다. 거짓 보고였고, 그 거짓은
+**세팅을 지우라는 뜻으로** 읽히므로 그 말을 따르면 진짜 결함이 된다.
+
+★ 그 자 머리말이 §189-5 에서 이미 적었다 — 「자리를 하나로 만드는 것의
+  값은 스캐너가 그 자리를 알아야 나온다. 옮기면서 같이 안 옮기면 옮긴
+  만큼 눈이 먼다.」 **그 문장 바로 아래에서 같은 일이 났다.**
+
+★ `FIRE_LANE_OPS_TOKEN` 은 **우연히** 통과했다 — `vite.config.ts` 가
+  리터럴로 쓰기 때문이다. 둘 중 하나만 울었다는 것이 자의 눈이 먼 범위를
+  정확히 가리킨다.
+
+★ **그룹을 열거하지 않는다.** 정규식에 넷째 꼴을 더했는데 읽는 쪽이
+  `m.group(1) or m.group(2) or m.group(3)` 이라 **아무 일도 안 일어났다.**
+  자를 넓히고 읽는 쪽을 안 넓힌 것이다 — `next(g for g in m.groups() if g)`
+  로 **몇 개든** 받게 고쳤다. 같은 병의 작은 판이다.
+
 ## 528. 돌다가 고친 도구가 **열차에 들어올 길이 없었다**
 
 > 2026-10-14
@@ -39183,6 +39219,53 @@ assert 'dst = dst or PROCESSED / "route_vehicle.csv"' in src
 
 **검사를 비판하는 글을 쓰는 것과 검사를 고치는 것은 다른 일이다.**
 
+### 530-3. 고침이 **값을 치른 설계를 되돌렸다** — OOM 넷을 제 집으로
+
+`stagerun.main()` 에 주입을 넣자 `test_shardseal` 이 울었다 —
+
+```
+segments 쪽이 ingest 샤드에 섞였다 — 판정 코드 한 줄에 ingest 전량이 다시 돈다
+```
+
+`ingest` 폐포에 `seg/vehicle.py` · `seg/params.py` · `seg/__init__.py` 가
+들어왔다. 길은 이것이다 —
+
+```
+ingest.py:516   from firelane.stagerun import is_oom, oom_exit   # 순환을 끊는다
+stagerun.py     _inject_vehicle() → from firelane.seg import vehicle
+```
+
+**`ingest` 가 CLI 진입점을 import 하고 있었고**, 그 import 에 붙은 주석이
+「순환을 끊는다」였다 — **순환이 이미 있다는 자백이다.** 거꾸로 선 의존이
+값을 치르는 날이 온 것이다. `seg/vehicle.py` 를 한 줄 고치면 ingest 65종이
+전부 다시 빌드되고, 이 8GB 기계에서 그것은 `ngii_road` 의 `Errno 12` 다
+(§165-8 · §266 이 그 값을 치르고 세운 설계다).
+
+★ **면제가 아니라 방향을 바로잡았다.** `stagerun.py` 를 `NOT_PRODUCERS` 에
+  두는 길이 있었고 그 목록에 이미 있다. 그러나 그 목록의 기준은
+  「고치면 산출물이 바뀌는가」이고 **`seg/vehicle.py` 는 바뀐다.**
+  면제로 덮으면 다음에 더 무거운 것이 같은 문으로 들어온다.
+
+OOM 넷(`ENOMEM_RC` · `is_oom` · `run_stage` · `oom_exit`)을
+`src/firelane/oom.py` 로 내렸다. `ingest` 와 `pipeline` 이 **그쪽을 직접**
+본다 — `stagerun` 이 재수출하지 않는다. 재수출하면 폐포가 그대로다.
+
+```
+폐포            33 → **30**
+seg/ · segments 셋 → **없다**
+stagerun.py     폐포 안 → **밖**
+oom.py          NOT_PRODUCERS 에 넣는다 (죽는 길만 안다)
+```
+
+★ `stagerun.py` 를 `NOT_PRODUCERS` 에 **남겨 둔다.** 지금은 폐포 밖이지만
+  다시 들어오는 날 그때도 면제여야 한다 — 목록은 「면제 대상」이지
+  「폐포 안의 면제 대상」이 아니다.
+
+★ **침묵 메시지가 작업 경로를 장부에 커밋했다.** `SilentCatcher` 에
+  `" ".join(cmd)` 를 넣었더니 `cmd[0]`(`sys.executable`)이 절대 경로라
+  **작업 폴더 이름이 UUID 꼴**이어서 `test_gitleaks_allowlist` 가 4건을 집었다.
+  관문이 정확히 잡았다 — 실행기 이름만 `python` 으로 적는다.
+
 ## 531. 최상위 절 번호를 재는 자가 **넉 달 동안 없었다**
 
 > 2026-10-14
@@ -39358,7 +39441,7 @@ sizecheck  170: == → !=
 래칫 둘을 움직였으니 둘을 같이 적는다.**
 
 ★ 이 판에서 `planclose` 와 `sealcov` 가 한때 **붙잡이 0** 이 됐다 —
-  내가 `#177` 과 새 시험을 더해 그 둘의 자기검사가 **밑동에서 빨개졌기**
+  `#177` 과 새 시험을 더해 그 둘의 자기검사가 **밑동에서 빨개졌기**
   때문이다. 장부는 그것을 「뺀 붙잡이 — 밑동에서 이미 빨갛다」로 정직하게
   적고 `MUTANTS` 를 144 → 136 으로 **내렸다.** 래칫이 `MUTANTS` 를
   「올라가는 쪽으로만」 보므로 그 상태로는 **열차가 못 간다.**

@@ -513,7 +513,7 @@ def main():
             #   `--reseal-code` 가 쓸 증거다 — 격리하면 **복구 수단을 없앤다.**
             #   그리고 이 `except` 가 먼저 잡아서 `stagerun` 의 처방이 한 번도
             #   안 찍혔다(실기 2026-10-11 · `ngii_road`). 판별은 그 파일 하나다.
-            from firelane.stagerun import is_oom, oom_exit  # noqa: PLC0415  순환을 끊는다
+            from firelane.oom import is_oom, oom_exit  # noqa: PLC0415  죽는 길의 집
 
             if is_oom(ex):
                 oom_exit(f"{type(ex).__name__}: {ex} — 소스 `{key}` (격리하지 않았다)")
@@ -657,6 +657,6 @@ if __name__ == "__main__":
 
     warn_direct_call(__name__)
     # ★ 메모리로 죽은 것을 메모리로 죽었다고 말한다(stagerun.py 머리말 · §224-3a).
-    from firelane.stagerun import run_stage
+    from firelane.oom import run_stage
 
     run_stage(main)

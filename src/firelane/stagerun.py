@@ -54,69 +54,11 @@ PARAM 단계 모듈 이름 하나. 뒤따르는 깃발은 **그 단계에 그대
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
-# 단계가 **메모리로** 죽었을 때의 종료코드.
-#
-# 왜 가르나: 종전에는 ingest 가 어떻게 죽었든 1 이었고, 파이프라인이 그것을
-# 「소스가 실패했다」로 읽어 `--retry-failed` 를 찍었다. 그 명령은 "실패한
-# 소스가 없다"를 내놓는다 — **안내가 거짓이었고 사람이 그 말을 따라 헛돌았다.**
-# 137 은 OS 의 OOM killer(SIGKILL)다. 그쪽은 우리가 정하는 값이 아니다.
-ENOMEM_RC = 12
-
-
-def is_oom(ex: BaseException) -> bool:
-    """메모리로 죽었나. **판별의 집은 여기 하나다.**
-
-    ★ 2026-10-11 (DECISIONS §461). 부르는 쪽이 둘이 됐다 — 이 껍데기와
-      `ingest` 의 **샤드 루프**다. 그 루프가 `except Exception` 으로 먼저
-      잡아서 이 파일의 처방이 한 번도 안 찍혔고, 사람은 「소스가 실패했다」는
-      거짓 안내를 따라갔다(§224-3 이 고친 그 1족이 다른 길로 돌아왔다).
-      양쪽이 `errno` 를 각자 적으면 다음에 또 갈린다.
-    """
-    import errno
-
-    return isinstance(ex, MemoryError) or (
-        isinstance(ex, OSError) and ex.errno == errno.ENOMEM)
-
-
-def run_stage(main) -> None:
-    """단계 모듈의 `main()` 을 돌린다. 메모리 실패만 가로챈다."""
-    try:
-        main()
-    except (MemoryError, OSError) as e:        # [Errno 12] Cannot allocate memory
-        if not is_oom(e):
-            raise
-        oom_exit(f"{type(e).__name__}: {e}")
-
-
-def oom_exit(what: str) -> None:
-    """메모리가 모자라 죽었다 — 처방을 찍고 전용 종료코드로 나간다."""
-    import traceback
-
-    traceback.print_exc()
-    print(f"\n★ 메모리가 모자라 죽었다 — {what}", file=sys.stderr)
-    print("  소스가 실패한 것이 **아니다.** `--retry-failed` 는 할 일이 없다고 답한다.",
-          file=sys.stderr)
-    try:                                       # 있으면 숫자를 보여준다. 없어도 죽지 않는다
-        mi = dict(
-            (k.strip(), v.strip())
-            for k, v in (ln.split(":", 1)
-                         for ln in Path("/proc/meminfo").read_text(encoding="utf-8").splitlines()
-                         if ":" in ln))
-        print(f"  지금  MemTotal {mi.get('MemTotal', '?')} · "
-              f"MemAvailable {mi.get('MemAvailable', '?')}", file=sys.stderr)
-    except OSError:
-        pass
-    print("\n  WSL 이면 (Windows PowerShell):", file=sys.stderr)
-    print("    wsl --shutdown                     VM 메모리를 통째로 반납한다", file=sys.stderr)
-    print("    notepad $env:USERPROFILE\\.wslconfig   [wsl2] memory=12GB", file=sys.stderr)
-    print("\n  ★ 코드만 바뀌어 봉인이 찢어진 것이라면 다시 빌드할 필요가 없다 —", file=sys.stderr)
-    print("    raw · 산출물이 봉인과 같은 샤드는 code 칸만 고치면 된다:", file=sys.stderr)
-    print("      uv run python -m firelane.ingest --reseal-code", file=sys.stderr)
-    print("    소스마다 자식 프로세스로 돌려 메모리를 반납할 수도 있다:", file=sys.stderr)
-    print("      uv run fire-lane --from ingest --split", file=sys.stderr)
-    sys.exit(ENOMEM_RC)
+# ★ 2026-10-14 (DECISIONS 530-3). OOM 넷은 `oom.py` 로 내렸다 — `ingest` 가
+#   **CLI 진입점**을 import 하던 거꾸로를 바로잡는다. 여기서 다시 내보내지
+#   않는다: 받는 쪽이 `oom` 을 직접 보게 해야 폐포가 제 꼴이 된다.
+from firelane.oom import run_stage
 
 
 def stage_main(module: str):

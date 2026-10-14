@@ -363,7 +363,11 @@ def _run(cmd: list[str], *, strict: bool = True) -> bool:
     p = subprocess.run(cmd, cwd=ROOT, capture_output=True,
                        text=True, timeout=TIMEOUT, check=False)
     if strict and p.returncode == 0 and not (p.stdout + p.stderr).strip():
-        raise SilentCatcher(" ".join(cmd))
+        # ★ `cmd[0]` 은 `sys.executable` 이고 **절대 경로**다. 그것을 그대로
+        #   적으면 기계마다 다른 경로가 **장부에 커밋된다** — 작업 폴더 이름이
+        #   UUID 꼴이면 `test_gitleaks_allowlist` 가 울고, 울지 않아도 남의
+        #   기계 경로는 장부를 떠돈다. 실행기 이름만 남긴다(DECISIONS 532-3).
+        raise SilentCatcher(" ".join(["python", *cmd[1:]]))
     return p.returncode == 0
 
 
