@@ -3200,7 +3200,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,334 전수 · **분모(blank) 0절** · 물림(inherit) 1,308절.
+★ **강제자 칸의 분모.** 절 2,343 전수 · **분모(blank) 0절** · 물림(inherit) 1,314절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3385,15 +3385,15 @@ uv run python -m firelane.datalog fsck
 사본이고 `firelane.providers.spec()` 이 유일한 조회 경로다 — 이 목록이 한때
 다섯 벌이었고 값이 갈렸다(DECISIONS §73).
 
-```
-juso     도로명주소 안내시스템      its      국가교통정보센터
-ngii     국토지리정보원            vworld   브이월드
-safety   소방청·행정안전부          gjcity   전남광주통합특별시
-sbiz     소상공인시장진흥공단       eais     건축행정시스템 세움터
-nsdi     국가공간정보포털          mois     행정안전부
-gjbg     전남광주통합특별시         nfa      소방청
-         빅데이터 통합플랫폼
-```
+★ **2026-10-14 (DECISIONS 537). 사본을 지웠다.** 여기 열두 종이 적혀 있었고
+실물은 열넷이었다 — `moleg`(§396-6)과 `gjpolice`(§535-3)가 빠졌다. **이 절이
+경고한 바로 그 병이 이 절 안에서 났다.** 수와 목록을 산문이 베끼면 갈리는
+쪽은 늘 산문이다(DECISIONS §436-8 · §246-2). 코드와 이름은 대장이 든다 —
+
+    sources.yaml  layers.raw.providers      (코드 → 기관명 · 상태)
+    firelane.providers.spec()               (유일한 조회 경로)
+    firelane.providers.pattern()            (파일명 정규식의 정본)
+
 
 ★ `ngii` 와 `vworld` 를 나눈다. 같은 수치지형도라도 **원천이 다르면 폴더가
 다르다.** 섞으면 어느 판인지 파일명만으로 구분되지 않는다.

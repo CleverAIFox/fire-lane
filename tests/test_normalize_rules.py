@@ -351,12 +351,9 @@ def test_the_four_new_sources_get_placed_by_name():
 #: ★ **반입되면 여기서 지운다.** 남아 있으면 「아직 못 받았다」가 거짓이 되고,
 #:   그 거짓은 이 자를 그만큼 눈멀게 한다. 지우는 것이 반입의 마지막 걸음이다.
 NOT_IN_RAW_YET: dict[str, str] = {
-    "gjcity_oneway_donggu_jngj-donggu_20261008.xlsx":
-        "동구청 보행교통정책과 일방통행 33구간. 2026-10-13 내려받았고 반입 대기",
-    "gjpolice_oneway_donggu_jngj-donggu_20261012.hwpx":
-        "동부경찰서 교통과 원문 24구간. 같은 날 내려받았고 반입 대기",
-    "safety_dongmyeong_fires_jngj-dongmyeong_20261012.xlsx":
-        "동명동 화재 출동 내역 12건. 같은 날 내려받았고 반입 대기",
+    # ★ 2026-10-15. **비었다.** 2026-10-14 에 셋이 반입돼 `_acquire.json`
+    #   92건에 들었다. 이 표에 남겨 두면 「아직 못 받았다」가 거짓이 되고,
+    #   그 거짓은 이 자를 그만큼 눈멀게 한다 — 지우는 것이 반입의 마지막 걸음이다.
 }
 
 
@@ -470,3 +467,40 @@ def test_find_downloads_answers_none_when_the_folder_is_absent(monkeypatch, tmp_
     real.mkdir()
     monkeypatch.setenv("FIRE_LANE_INBOX", str(real))
     assert N.find_downloads() == real
+
+
+# ── 확장자는 대장에서 유도한다 (DECISIONS §535-4 · §546) ────────
+def test_the_passthrough_extensions_are_derived_from_the_ledger():
+    """★ **손목록이 네 번 빠졌던 자리.** 이제 대장이 그 답을 든다.
+
+    `ledger_ext()` 는 대장이 기다리는 **구체 경로의 꼬리**를 모은다. 그러므로
+    대장이 `ext: [xlsx]` 를 들면 `xlsx` 가 저절로 든다 — 사람이 목록에 한 번
+    더 적을 자리가 없고, 적으면 갈린다.
+    """
+    from firelane.acquire_rules import dataset_globs
+    from firelane.raw_ext import INNER_EXT, ledger_ext
+
+    got = ledger_ext()
+    want = {
+        g.rsplit(".", 1)[-1].lower()
+        for gs in dataset_globs().values()
+        for g in (gs if isinstance(gs, list) else [gs])
+        if "." in str(g or "").rsplit("/", 1)[-1]
+        and not any(c in g.rsplit(".", 1)[-1] for c in "*?[")
+    }
+    missing = want - got
+    assert not missing, f"대장이 쓰는데 유도가 못 낸 확장자: {sorted(missing)}"
+    assert INNER_EXT <= got, "압축 안쪽 넷이 빠졌다"
+
+
+def test_the_extension_alternation_is_the_sorted_ledger_set():
+    """`ext_alt()` 는 `ledger_ext()` 를 정렬해 이은 것 **그대로**여야 한다.
+
+    ★ 둘이 갈리면 규칙 표가 유도와 다른 집합을 쓰게 되고, 그것이 종전에
+      손목록이 하던 일이다.
+    """
+    from firelane.raw_ext import ext_alt, ledger_ext
+
+    assert ext_alt() == "|".join(sorted(ledger_ext()))
+    assert "xlsx" in ext_alt().split("|"), "2026-10-14 에 빠져 반입이 멈춘 그 확장자"
+

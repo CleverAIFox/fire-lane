@@ -56,6 +56,18 @@ def _wire(monkeypatch, tmp: Path, raw: Path, landing: Path) -> list[Path]:
     return seen
 
 
+def _leftovers(tmp: Path, raw: Path, landing: Path, monkeypatch) -> list[str]:
+    """prune 을 돌린 뒤 **landing 에 남은 이름들.**
+
+    ★ 이 자리가 카나리아의 자리다(§445). 같은 함수를 `assert not …`(짝이
+      있으면 비어야 한다)와 `assert …`(짝이 없으면 남아야 한다) 둘로 민다 —
+      「지웠다」만 재면 **아무것도 안 지우는 고장**이 조용히 통과한다.
+    """
+    _wire(monkeypatch, tmp, raw, landing)
+    assert acquire.cmd_prune_landing(dry=False) == 0
+    return sorted(p.name for p in landing.rglob("*") if p.is_file())
+
+
 # ── ① 걸러도 짝을 찾는다 ───────────────────────────────────────
 def test_a_landing_file_whose_twin_is_in_raw_is_removed(tmp_path, monkeypatch):
     """★ 크기 사전 필터가 **진짜 짝을 가리지 않는다.**
@@ -69,9 +81,8 @@ def test_a_landing_file_whose_twin_is_in_raw_is_removed(tmp_path, monkeypatch):
     orig = landing / "0. 일방통행로 현황(공개).xlsx"
     orig.write_bytes(body)
 
-    _wire(monkeypatch, tmp_path, raw, landing)
-    assert acquire.cmd_prune_landing(dry=False) == 0
-    assert not orig.exists(), "내용이 같은 원본인데 안 지웠다"
+    assert not _leftovers(tmp_path, raw, landing, monkeypatch), \
+        "내용이 같은 원본인데 안 지웠다"
 
 
 def test_a_landing_file_with_no_twin_is_kept(tmp_path, monkeypatch):
@@ -81,9 +92,8 @@ def test_a_landing_file_with_no_twin_is_kept(tmp_path, monkeypatch):
     lone = landing / "아직 안 들어간 것.hwpx"
     lone.write_bytes(b"b" * 41)
 
-    _wire(monkeypatch, tmp_path, raw, landing)
-    assert acquire.cmd_prune_landing(dry=False) == 0
-    assert lone.exists(), "짝이 없는데 지웠다 — 유일본을 날렸다"
+    assert _leftovers(tmp_path, raw, landing, monkeypatch) == [lone.name], \
+        "짝이 없는데 지웠다 — 유일본을 날렸다"
 
 
 # ── ② 안 맞는 것은 해시하지 않는다 ─────────────────────────────
@@ -173,7 +183,7 @@ def test_a_hash_that_cannot_back_off_any_further_names_the_machine(tmp_path,
     f = tmp_path / "big.bin"
     f.write_bytes(b"z" * 100)
 
-    def always(p, chunk):  # noqa: ARG001
+    def always(*_a):
         raise OSError(errno.ENOMEM, "Cannot allocate memory")
 
     monkeypatch.setattr(hashing, "_digest", always)
@@ -194,7 +204,7 @@ def test_a_hash_does_not_swallow_other_oserrors(tmp_path, monkeypatch):
     f = tmp_path / "x.bin"
     f.write_bytes(b"z")
 
-    def denied(p, chunk):  # noqa: ARG001
+    def denied(*_a):
         raise OSError(errno.EACCES, "Permission denied")
 
     monkeypatch.setattr(hashing, "_digest", denied)

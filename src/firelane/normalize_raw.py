@@ -80,64 +80,14 @@ for st in (sys.stdout, sys.stderr):
 #
 #   ★ 아홉을 지웠다. 일반 규칙이 전부 덮는다.
 #     남은 줄은 전부 **한글·원본 파일명**을 정규명으로 바꾸는 것들이다.
-#: **압축 안에서 나오는** 확장자. 대장 글롭에 안 적히므로 유도가 못 낸다.
-#: ★ 이 넷은 **자산이 늘어도 안 는다** — `ngi`·`nda` 는 수치지형도가 zip
-#:   안에 담아 오는 꼴이고 `geojson`·`xls` 는 그 안에서 풀려 나온다.
-INNER_EXT = frozenset({"geojson", "nda", "ngi", "xls"})
-
-
-def ledger_ext() -> frozenset[str]:
-    """**대장이 쓰는 확장자.** `files` 글롭의 꼬리에서 유도한다.
-
-    ★ 2026-10-14 (DECISIONS 535-4). 종전에는 이 목록이 **손으로** 적혀 있었고
-      그 상수 주석이 「hwp·pdf·ngi·nda 가 없어 왕복 멱등이 거짓이었던 이력」을
-      적고 있었다. 2026-10-14 에 `xlsx` 가 빠져 **네 번째**가 났다.
-
-      손목록은 자산이 늘 때마다 빠진다. **대장이 이미 그 답을 들고 있다** —
-      `gjcity/..._20261008.xlsx` 라고 적혀 있으면 `xlsx` 는 거기서 나온다.
-      따로 적을 이유가 없고, 적으면 갈린다(§18-3).
-
-    ★ 유도가 못 내는 것만 `INNER_EXT` 가 받는다 — 그 집합은 **자산과 무관**해서
-      자산이 늘어도 안 큰다. 그것이 손목록을 남겨도 되는 유일한 꼴이다.
-
-    ★ `acquire_rules.dataset_globs()` 를 쓴다 — 그것이 「대장이 어떤 파일을
-      기다리는가」의 **정본**이고, `files` 만 읽으면 16개밖에 안 보인다
-      (`stem`·`parts` 에서 유도되는 것이 나머지다).
-    """
-    from firelane.acquire_rules import dataset_globs
-
-    out = set()
-    for gs in dataset_globs().values():
-        for g in (gs if isinstance(gs, list) else [gs]):
-            name = str(g or "").rsplit("/", 1)[-1]
-            if "." not in name:
-                continue
-            ext = name.rsplit(".", 1)[-1].lower()
-            if not any(c in ext for c in "*?["):
-                out.add(ext)
-    return frozenset(out | INNER_EXT)
-
-
-def _ext_alt() -> str:
-    """통과 규칙에 박을 **정규식 교대**. `ledger_ext()` 를 정렬해 잇는다.
-
-    ★ 이름을 `PASSTHROUGH_EXT` 로 유지한다 — 소비자 넷(`normalize_raw` 자신과
-      시험 셋)이 그 이름을 쓰고, 그것이 **정본의 이름**이다. 바뀐 것은
-      「손으로 적는다」에서 「대장에서 유도한다」뿐이다.
-    """
-    return "|".join(sorted(ledger_ext()))
 
 
 def __getattr__(name: str):
-    """`PASSTHROUGH_EXT` 를 **부를 때** 유도한다 (PEP 562).
-
-    ★ 모듈 전역으로 두면 import 시점에 대장을 읽어야 하고, 대장이 없는
-      환경(설치 직후 · 문서 빌드)에서 import 자체가 죽는다. 527 이 같은
-      자리에서 당했다 — `app = create_app()` 이 모듈 꼬리에 있었다.
-    """
-    if name == "PASSTHROUGH_EXT":
-        return _ext_alt()
-    raise AttributeError(name)
+    """부를 때 유도한다 — 전역은 import 가 대장을 읽는다 (PEP 562 · DECISIONS 535-4)."""
+    if name != "PASSTHROUGH_EXT":
+        raise AttributeError(name)
+    from firelane.raw_ext import ext_alt
+    return ext_alt()
 
 
 def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
@@ -160,6 +110,7 @@ def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
       `<stem>_<scope>_<날짜>_<part>` 를 만들고 `naming.check` 도 통과시키는데 이 정규식만
       날짜로 끝나야 했다 — 같은 형태의 세 번째다(하이픈 · json). 관리카드가 처음 걸렸다.
     """
+    from firelane.raw_ext import ext_alt as _ext_alt
     org_list = providers.all() if orgs is None else orgs
     return list(RULES) + [
         (rf"^{o}_[a-z0-9_-]+_\d{{8}}(?:_[a-z0-9-]+)?\.({_ext_alt()})$", o, None)
@@ -221,17 +172,12 @@ RULES: list[tuple[str, str, str]] = [
     (r"^건축위원회\(심의\) 표준 가이드라인\.pdf$",
      "nfa", "nfa_bldgcomm_guide_kr_20231231.pdf"),
 
-    # ── 2026-10-14 (DECISIONS 535). 위 §428 과 **같은 병이 셋 더** 서 있었다.
-    #   8자리는 대장 `updated` — 파일 수정일(10-13)은 내려받은 날이다.
-    #   `0. ` 은 포털 목록 번호 · `(1)` 은 청구 회신의 사본 번호다.
+    # ── 2026-10-14 (DECISIONS 535). §428 과 같은 병이 셋 더 서 있었다.
     (r"^0\.\s*일방통행로 현황\(공개\)\.xlsx$",
      "gjcity", "gjcity_oneway_donggu_jngj-donggu_20261008.xlsx"),
     (r"^동명동 일대 일방통행 지정도로(?: \(\d+\))?\.hwpx$",
      "gjpolice", "gjpolice_oneway_donggu_jngj-donggu_20261012.hwpx"),
-    # ★ 2026-10-14 (DECISIONS 537). 이름에 **연도 범위를 넣지 않는다.**
-    #   `..._2022_2025_...` 로 적었더니 `intake_name.stem_of` 가 연도를
-    #   제원으로 읽어 떼어냈고, 그 stem 으로 대장을 조회하니 「항목이 없다」가
-    #   났다 — 대장에 있었는데도 반입이 거기서 멈췄다. 기간은 `what` 이 든다.
+    # ★ 2026-10-14 (DECISIONS 537). 이름에 연도 범위를 넣지 않는다.
     (r"^2022년~2025년 동명동 화재 출동 내역\.xlsx$",
      "safety", "safety_dongmyeong_fires_jngj-dongmyeong_20261012.xlsx"),
 

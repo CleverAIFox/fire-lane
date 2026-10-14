@@ -571,7 +571,7 @@ layers:
     regenerable: false
     # ★ 손으로 고치지 마라. `providers.pattern()` 이 만드는 값이고
     #   `test_naming_regex_is_generated_not_handwritten` 이 대조한다.
-    naming: '^(eais|gjbg|gjcity|its|juso|moleg|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/'
+    naming: '^(eais|gjbg|gjcity|gjpolice|its|juso|mois|moleg|nfa|ngii|nsdi|safety|sbiz|vworld)/'
     what: 받은 그대로. 인코딩조차 고치지 않는다
     depth: 2
     # ★ provider 폴더의 정본. 2026-08-27 까지 이 목록이 네 곳에 있었다 —
@@ -670,7 +670,7 @@ layers:
     #     네 곳에 있었고 세 곳에서 달랐다(§18-2a). raw 와 **같은 생성기**를
     #     탄다 — providers.pattern_file() 이 만들고
     #     test_provider_registry 가 대조한다.
-    naming: '^(eais|gjbg|gjcity|its|juso|moleg|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}(?:_[a-z0-9-]+)?\.'
+    naming: '^(eais|gjbg|gjcity|gjpolice|its|juso|mois|moleg|nfa|ngii|nsdi|safety|sbiz|vworld)/\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}(?:_[a-z0-9-]+)?\.'
     encoding: utf-8
     # ★ 2026-08-31. status 는 통제 어휘다 — layers.implemented() 가
     #   "미구현" 하나만 본다. 한 번 "미배선" 으로 바꿨다가 되돌렸다.
@@ -708,7 +708,7 @@ layers:
     committed: false
     backup: true
     regenerable: false
-    naming: '^(eais|gjbg|gjcity|its|juso|moleg|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/'
+    naming: '^(eais|gjbg|gjcity|gjpolice|its|juso|mois|moleg|nfa|ngii|nsdi|safety|sbiz|vworld)/'
     depth: 2
     what: 은퇴한 원본. 아카이브다 — 지우지 않고 보관한다
     caveats:

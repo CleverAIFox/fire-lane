@@ -161,7 +161,7 @@ RETIRED_FLAGS: dict[str, str] = {"--quarantine": "DECISIONS §173-2"}
 #: ★ 2026-10-14 (DECISIONS 535-2). `ingest` 가 `[MISSING]` 셋을 넉 달 찍었고
 #:   **그것은 경고일 뿐 아무 관문도 아니었다.** 여기서 수로 든다 — 대장에
 #:   자산을 적는 **그 판에서** 울고, 반입이 끝나면 0 으로 내려간다.
-LEDGER_MISSING = 3
+LEDGER_MISSING = 0
 
 
 def missing_from_register(root: Path | None = None) -> list[tuple[str, str]]:
