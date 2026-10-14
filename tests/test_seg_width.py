@@ -290,6 +290,36 @@ def test_admission_is_decided_by_the_sum_not_by_the_escape_value():
     assert ok_ == pytest.approx(6.0, abs=0.2)
 
 
+def test_a_zero_escape_span_is_missing_not_narrow():
+    """**0 은 「좁다」가 아니라 「못 쟀다」다**(DECISIONS 534).
+
+    ★ 측정 대장 `escape-tiny` 가 **실측으로 났다.** `DM01391`(2순환로 539m)의
+      `width_min_m` 이 **0.00** 으로 발행되고 `segcontract` 의
+      `WIDTH_OUT_OF_RANGE` 가 0 → 1 로 울었다. 대로가 폭 0 일 수 없다.
+
+    꼴은 **중심선이 도로면 경계에 붙은 것**이다 — 한쪽 거리가 0 이면
+    `2·min` 이 0 이고, 입장은 깎지 않은 `l+r`(=50.0)로 이미 통과했다.
+
+    ★ **하한을 세우지 않는다.** 대장이 적은 셋째 규칙(「가까운 쪽의 하한」)은
+      그 구간이 실제 비대칭 골목일 때의 길이고, 2순환로는 `cov 0.408` 의
+      고가·교차로라 지오메트리 결함 쪽이다. 아래 ②가 **하한이 없다는 것**을
+      민다 — 0.2 는 0.3 아래인데 **살아 있어야** 한다.
+    """
+    # ① 중심선이 경계 위 — 한쪽 거리 0 → 표본을 버린다
+    got = engine(ngii1k=_plaza(lane=0.0, plaza=50.0)).widths(CENTER)
+    assert got[0] is None, (
+        f"`2·min` 이 0 인데 {got[0]} 을 폭으로 냈다 — 0 은 수가 아니라 결측이다")
+    assert "escape_zero" in (got[5] or ""), (
+        f"사유가 `escape_zero` 가 아니다 — {got[5]!r}. 사유가 틀리면 "
+        "`width_fail` 집계가 이 자리를 다른 병으로 센다")
+
+    # ② 0.3 **아래**여도 0 이 아니면 산다 — 하한을 안 세웠다는 증거
+    thin, *_ = engine(ngii1k=_plaza(lane=0.2, plaza=50.0)).widths(CENTER)
+    assert thin == pytest.approx(0.2, abs=0.01), (
+        f"0.2 를 버렸다 — {thin}. 그것은 **하한을 세운 것**이고 측정 대장 "
+        "`escape-tiny` 의 ③ 이 그 길을 조건부로만 열어 뒀다(비대칭 골목일 때)")
+
+
 def test_the_value_never_goes_up():
     """`2·min ≤ l+r` — 구조적으로 보장된다. 틀려도 **안전한 쪽**이다."""
     for lane, plaza in ((1.5, 40.0), (6.0, 25.0), (12.0, 21.0), (3.0, 19.9)):
