@@ -320,6 +320,29 @@ def test_a_zero_escape_span_is_missing_not_narrow():
         "`escape-tiny` 의 ③ 이 그 길을 조건부로만 열어 뒀다(비대칭 골목일 때)")
 
 
+def test_rounding_never_turns_a_positive_width_into_zero():
+    """**양수를 0 으로 발행하지 않는다**(DECISIONS 534-1).
+
+    ★ 534 가 「0 은 못 쟀다는 뜻이다」를 세웠고 `segcontract` 의
+      `WIDTH_OUT_OF_RANGE` 가 0 을 불가능한 수로 문다. 그런데 발행 직전의
+      `round(x, 2)` 가 **양수를 0 으로 만들었다** — `DM01391` 표본 110개의
+      최솟값 0.001 이 그 한 번에 0.0 이 됐고, 참인 관문이 거짓을 물었다.
+
+    ★ 하한이 아니다. 0.001 을 **버리지 않고** 자리수만 늘린다 — 버리면
+      입장이 바뀌고 구간 수가 움직인다(519 · 523).
+    """
+    from firelane.seg.width import _round_pos
+
+    assert _round_pos(0.001) > 0, (
+        "0.001 이 0 으로 발행됐다 — 참인 관문(WIDTH_OUT_OF_RANGE)이 거짓을 문다")
+    assert _round_pos(0.0004) > 0, "자리수를 늘려도 0 이 됐다"
+    assert _round_pos(0.613) == 0.61, "평범한 값의 자리수가 바뀌었다"
+    assert _round_pos(39.9123) == 39.91, "평범한 값의 자리수가 바뀌었다"
+    # ★ 반대 방향 — 진짜 0 은 0 이어야 한다. 아니면 결측이 수로 둔갑한다
+    assert _round_pos(0.0) == 0.0, (
+        "진짜 0 을 양수로 만들었다 — 그러면 「못 쟀다」가 「좁다」로 둔갑한다")
+
+
 def test_the_value_never_goes_up():
     """`2·min ≤ l+r` — 구조적으로 보장된다. 틀려도 **안전한 쪽**이다."""
     for lane, plaza in ((1.5, 40.0), (6.0, 25.0), (12.0, 21.0), (3.0, 19.9)):

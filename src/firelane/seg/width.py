@@ -60,6 +60,23 @@ def walk_spans(ray, walk_u, p, ux, uy):
     return sorted(out)
 
 
+def _round_pos(x: float, nd: int = 2) -> float:
+    """폭을 자리수로 줄이되 **양수를 0 으로 만들지 않는다**(DECISIONS 534-1).
+
+    ★ `round(0.001, 2)` 은 `0.0` 이다. 0 은 이 저장소에서 「좁다」가 아니라
+      **「못 쟀다」**의 자리이고(534), `segcontract` 의 `WIDTH_OUT_OF_RANGE`
+      가 0 을 불가능한 수로 문다. 그래서 **참인 관문이 거짓을 물었다** —
+      `DM01391`(2순환로 539m)의 표본 110개 중 최솟값이 0.001 이었고,
+      그 양수가 반올림 한 번에 0 이 됐다.
+
+    ★ 고침은 **하한이 아니다.** 0.001 을 버리지 않는다 — 버리면 입장이
+      바뀌고 구간 수가 움직인다(519 · 523 이 같은 자리에서 쓴 사유).
+      자리수만 늘려 **잰 것을 잰 대로** 적는다.
+    """
+    r = round(x, nd)
+    return r if r > 0 else round(x, 6)
+
+
 def carve_walk(left, right, walk_iv):
     """좌우 거리에서 보도를 깎는다. **0 을 담은 조각 하나만** 남는다.
 
@@ -549,10 +566,10 @@ class WidthEngine:
                         break
         wmin = None
         if _pick is not None:
-            wmin = round(min(_by[_pick]), 2)
+            wmin = _round_pos(min(_by[_pick]))
         elif A:
-            wmin = round(min(A), 2)
-        wmax = round(min(B), 2) if B else None
+            wmin = _round_pos(min(A))
+        wmax = _round_pos(min(B)) if B else None
         # 벽 사이 폭이 도로 폭보다 좁을 수는 없다. 샘플별로는 맞아도
         # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 에 걸린 경우).
         if wmin is not None and wmax is not None and wmax < wmin:

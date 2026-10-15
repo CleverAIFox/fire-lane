@@ -160,3 +160,7 @@ data/dms/round-*.txt
 #   증표인 SEAL.json · RED.txt · BOOKMARK.json 은 커밋한다(위 규칙 참조).
 data/dms/DMS.json
 .coverage
+
+# 배달물. `deliver.py pack` 이 작업트리 뿌리에 떨군다 — 저장소에 들어가면
+# 소유자 관문이 운다(`tests/test_ownership.py`). 2026-10-15 에 한 번 들어갔다.
+fire-lane-*.zip

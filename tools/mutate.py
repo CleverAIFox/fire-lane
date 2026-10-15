@@ -202,7 +202,7 @@ TIMEOUT = 180
 #   101 로 바꿔도 폭 10 띠의 내접원은 10 그대로라 행동이 안 바뀐다.
 # ★ 2026-10-14 (532) 90→86 — **조인 쪽.** `__main__` 가드 넷이 `SILENCED` 로
 #   갔다(붙잡이 자신이 안 도는 자리다). 분모 불변(144).
-SURVIVORS = 86
+SURVIVORS = 85
 #: 흔든 수 — 올라가는 쪽으로만. 분모를 안 잠그면 생존 수는 수가 아니다.
 # ★ 2026-10-11 — 124 → 128 (DECISIONS §478-1). **조이는 쪽이다.** 도구가
 #   31 → 32 로 늘어 흔든 수가 넷 늘었다(`tools/selftests.py`). `SURVIVORS` 가
@@ -241,7 +241,7 @@ RATCHET_HELD = 25   # ★ 2026-10-09 (§445) 22 → 23 — `canary.NO_CANARY`
 #     §509    63 → 64   자기검사의 합성 좌표 — 행동을 안 바꾼다
 #     532     65 → 61   **조인 쪽** — `__main__` 가드 넷이 `SILENCED` 로 갔다.
 #                       §445 가 「아직 안 가른 것」으로 적은 그 자리다
-UNSORTED = 61
+UNSORTED = 60
 #: ★ 침묵한 과녁 수(`SILENCED`)는 **옆집이 든다** — `mutatesilent`. 그 축을
 #:   아는 도구가 제 래칫을 드는 것이 이 저장소의 꼴이다(DECISIONS 532-3).
 RATCHETS = {"SURVIVORS": "down", "MUTANTS": "up", "UNCATCHABLE": "down",

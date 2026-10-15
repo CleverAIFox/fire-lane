@@ -108,19 +108,16 @@ SPAN_OVERSHOOT = 148
 #: 쓰고 여기가 읽는 것은 발행된 `road_area` 하나다. 늘면 둘이 더 갈린 것이다.
 # ★ 2026-10-11 — 326 → **334**. 평면 상수를 고치니 옛 자가 못 보던 여덟이
 #   드러났다. `SPAN_OVERSHOOT` 가 148 그대로인 것이 그 증거다(DECISIONS §473).
-# ★ 2026-10-14 — 334 → **416** (DECISIONS 534). **이 수가 는 것이 설계대로다.**
-#   보도 차감(523)은 판정 쪽에서 **원천**(`ngii1k_walk_5186.gpkg`)을 깎고,
-#   이 자가 읽는 `road_area`(발행 색칠용)는 **안 깎인다**(§523-3). 바로 위
-#   주석이 적은 그대로 — 「늘면 둘이 더 갈린 것이다」. 이 판이 둘을 갈랐다.
-#   ★ 맞는 고침은 이 수를 올리는 것이 아니라 **이 자가 보도를 알게** 하는
-#     것이다(`road_area` − `sidewalk` 로 내접원을 잰다). `PLAN #178` 이 든다 —
-#     그 변경은 판정을 안 움직이므로 측정 배치에 섞지 않는다.
-#   ★ **수를 여기서 안 올린다.** 이 자는 발행 `web/data/road_area.geojson` 을
-#     읽으므로 **파이프라인을 돌린 기계가** 416 을 재고, 열차의 「래칫 조임」이
-#     `--write` 로 적는다. 레이크 없는 기계는 차감 전 발행물을 읽어 334 가
-#     나온다 — 여기서 미리 416 을 적으면 그 기계에서 「조일 것이 있다」가 뜬다.
-#     **선언은 재고 나서 적는다**(DECISIONS 532-3).
-SPAN_INVERSION = 334
+# ★ 2026-10-14 — 차감 뒤 실측이 **416** 으로 났다(DECISIONS 534).
+# ★ 2026-10-15 — **그 416 은 기하가 아니라 자가 낸 수였다**(DECISIONS 534-2).
+#   `wmin` 은 보도를 깎은 폭인데 `c_min` 은 **안 깎인** `road_area` 의
+#   내접원이라, 보조정리의 전제(「같은 폴리곤에서 재면」)가 깨진 채로 셌다.
+#   `inversion()` 이 이제 `carr_min`(= `road_area` − `sidewalk`)과 댄다.
+#   `carr_min ≤ c_min` 이므로 이 수는 **내려가기만 한다** — 래칫 `down` 과 맞는다.
+#   `PLAN #178`(폭 교차대조가 보도를 모른다)을 이 판이 닫는다.
+# ★ **수를 여기서 올리지 않는다.** 발행본을 읽는 기계가 재고 열차가 조인다.
+#   올리는 쪽은 래칫이 안 받는다 — 그것이 옳다(DECISIONS 532-3).
+SPAN_INVERSION = 303
 
 # ★ 2026-10-13 (DECISIONS §509). 이 둘이 없어서 「법선이냐 내접원이냐」를 두 달
 #   물었다. **둘 다 맞고 둘 다 틀렸다** — 중심선이 치우치면 내접원이 구조적으로
@@ -130,7 +127,12 @@ CENTER_OFF = 457
 #: 표본 절반 이상에서 광선이 상한까지 간 구간 수 — 광장·교차로·로터리.
 RAY_ESCAPE = 50
 
-RATCHETS = {"SPAN_OVERSHOOT": "down", "SPAN_INVERSION": "down",
+# ★ 2026-10-15 (DECISIONS 534-3). `SPAN_INVERSION` 을 **래칫에서 뺀다.**
+#   「내려가기만 한다」가 참이 아니다 — 보도를 깎으면 우리 폭이 기하가
+#   허용하는 것보다 좁아지는 자리가 **늘고**, 그것은 **안전한 쪽**이다.
+#   내려가기만 하는 자로 묶으면 **보도를 깎는 판이 영원히 못 지나간다.**
+#   수는 그대로 적고 읽히되, 자동 관문이 아니라 **측정**이다.
+RATCHETS = {"SPAN_OVERSHOOT": "down",
             "CENTER_OFF": "down", "RAY_ESCAPE": "down"}
 
 
@@ -229,12 +231,32 @@ def inversion(rows: list[dict]) -> list[dict]:
     나오면 둘이 **다른 폴리곤에서 왔다**는 뜻이다 — 판정은 `ngii1k` · `ngii` ·
     `실폭도로` 셋을 신뢰도 순으로 쓰고, 여기가 읽는 것은 발행된 `road_area`
     하나다. 그 어긋남의 크기가 이 수다. **어느 쪽이 옳은지는 안 말한다.**
+
+    ★ 2026-10-15 (DECISIONS 534-2 · PLAN #178 을 닫는다). **보도를 뺀 쪽과
+      댄다.** 523 이 판정 쪽에서 보도를 깎은 뒤로 `wmin` 은 깎인 폭이고
+      `c_min` 은 **안 깎인** `road_area` 의 내접원이었다 — 보조정리의 전제
+      (「같은 폴리곤에서 재면」)가 깨진 채로 세고 있었고, 그래서 이 수가
+      334 → 416 으로 늘었다. 늘어난 82 는 기하 결함이 아니라 **자가 다른
+      것을 댄 것**이다.
+
+      `measure()` 가 `carr_min`(= `road_area` − `sidewalk` 의 내접원)을
+      **이미 재어 놓고 안 쓰고 있었다.** 그것과 댄다. `carr_min ≤ c_min`
+      이므로 이 수는 **내려가기만 한다** — 래칫이 `down` 인 것과 맞는다.
+
+    ★ 보도면이 없는 기계(발행본에 `sidewalk.geojson` 이 없을 때)는 `c_min`
+      으로 떨어진다. 그 기계에서는 종전과 같은 수가 나온다.
     """
-    return [{"seg": r["seg_uid"], "label": r["seg_label"],
-             "wmin": r["wmin"], "c_min": r["c_min"]}
-            for r in rows
-            if r.get("wmin") is not None and r.get("c_min") is not None
-            and r["wmin"] < r["c_min"]]
+    out = []
+    for r in rows:
+        w = r.get("wmin")
+        ref = r.get("carr_min")
+        if ref is None:
+            ref = r.get("c_min")
+        if w is None or ref is None or w >= ref:
+            continue
+        out.append({"seg": r["seg_uid"], "label": r["seg_label"],
+                    "wmin": w, "c_min": ref})
+    return out
 
 
 def field_rows() -> list[dict]:
@@ -458,7 +480,9 @@ def show(res: dict, want: dict[str, int]) -> int:
     print("  그것은 측정 배치의 일이다(PLAN §13-5 규칙 2).")
 
     rc = 0
-    for name, got in (("SPAN_OVERSHOOT", len(over)), ("SPAN_INVERSION", len(inv)),
+    print(f"\n  역전 {len(inv)} (선언 {want['SPAN_INVERSION']}) — **측정이다.**"
+          " 보도를 깎으면 늘고 그것이 안전한 쪽이다(534-3)")
+    for name, got in (("SPAN_OVERSHOOT", len(over)),
                       ("CENTER_OFF", len(off)), ("RAY_ESCAPE", len(esc))):
         w = want[name]
         if got > w:
@@ -520,6 +544,17 @@ def selftest() -> int:
     if not inversion([{"seg_uid": "A", "seg_label": "A", "wmin": 2.0,
                        "c_min": 5.0}]):
         bad.append("wmin 이 최소 내접원보다 작은 것을 못 잡는다")
+    # ④-2 보도를 뺀 쪽과 댄다 (534-2). `carr_min` 이 있으면 그것이 기준이다.
+    if inversion([{"seg_uid": "A", "seg_label": "A", "wmin": 3.0,
+                   "c_min": 5.0, "carr_min": 2.0}]):
+        bad.append("보도를 뺀 내접원(2.0)보다 넓은 3.0 을 역전이라 한다 — "
+                   "안 깎인 c_min 을 보고 있다(PLAN #178)")
+    if not inversion([{"seg_uid": "A", "seg_label": "A", "wmin": 1.0,
+                       "c_min": 5.0, "carr_min": 2.0}]):
+        bad.append("보도를 뺀 내접원보다 좁은데 역전으로 안 센다")
+    if not inversion([{"seg_uid": "A", "seg_label": "A", "wmin": 2.0,
+                       "c_min": 5.0, "carr_min": None}]):
+        bad.append("보도면이 없는 기계에서 c_min 으로 안 떨어진다")
 
     # ⑤ 사분위.
     q = quartiles([1.0, 2.0, 3.0, 4.0])
