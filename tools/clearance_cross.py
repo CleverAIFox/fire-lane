@@ -348,9 +348,14 @@ def ratchet_values() -> dict[str, int]:
     「넘침이 없다」는 뜻이고, 그것을 선언에 적으면 래칫이 조용히 최대로
     조여져 다음 실행이 무조건 빨개진다(§313-1 ① 과 같은 족).
     """
+    # ★ 2026-10-16 (DECISIONS 534-3 · 534-4). **`SPAN_INVERSION` 을 안 낸다.**
+    #   534-3 이 그 축을 `RATCHETS` 에서 뺐는데 이 함수는 계속 내고 있었다 —
+    #   그러면 래칫이 「선언에 없는 이름」을 받아 죽는다. 이름이 여기 없는 것이
+    #   **래칫이 아니라는 뜻**이고, 그 축의 수는 `show()` 가 측정으로 든다.
+    #   지우지 않고 자리를 옮긴 것이다 — 수를 같이 지우면 보도 차감이 그 축을
+    #   얼마나 움직였는지 아무도 안 본다.
     res = cross(load())
     return {"SPAN_OVERSHOOT": len(res["넘침"]),
-            "SPAN_INVERSION": len(res["역전"]),
             "CENTER_OFF": len(res["중심선 치우침"]),
             "RAY_ESCAPE": len(res["광선 샘"])}
 

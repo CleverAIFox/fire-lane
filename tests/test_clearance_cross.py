@@ -107,9 +107,17 @@ def test_the_tool_passes_its_own_selftest():
 
 def test_the_ratchets_are_declared_and_named_the_same_as_the_values():
     """선언과 산출의 이름이 갈리면 래칫이 조용히 아무것도 안 본다."""
-    assert set(C.RATCHETS) == {"SPAN_OVERSHOOT", "SPAN_INVERSION",
-                               "CENTER_OFF", "RAY_ESCAPE"}
+    assert set(C.RATCHETS) == {"SPAN_OVERSHOOT", "CENTER_OFF", "RAY_ESCAPE"}
     assert all(d == "down" for d in C.RATCHETS.values())
+    # ★ 2026-10-16 (DECISIONS 534-3 · 534-4). `SPAN_INVERSION` 이 넷째였다.
+    #   그 절이 래칫에서 뺐는데 **이 줄이 옛 넷을 그대로 단언하고 있었다** —
+    #   선언과 시험이 갈린 것이고, 그 갈림을 배달이 잡았다.
+    #   ★ 양쪽으로 민다. 빠진 것은 **래칫**이고 **측정은 남아 있다** — 수를
+    #     같이 지우면 보도 차감이 그 축을 얼마나 움직였는지 아무도 안 본다.
+    assert "SPAN_INVERSION" not in C.RATCHETS, \
+        "내려가기만 하는 자로 되돌아왔다 — 보도를 깎는 판이 영원히 막힌다"
+    assert isinstance(C.SPAN_INVERSION, int), \
+        "래칫에서 뺀 축의 수까지 지웠다 — 그러면 그 축을 아무도 안 본다"
     # ★ 2026-10-13 (§509). 뒤의 둘은 **좌우 분해**가 센다. 그 분해의 집은
     #   `tools/widthlr.py` 이고 이 도구는 그것을 불러 수만 든다 — 이름이
     #   여기 있는 것은 **이 도구의 발행물이 그 수를 싣기 때문**이다.
