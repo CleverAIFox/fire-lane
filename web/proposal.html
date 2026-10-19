@@ -110,6 +110,16 @@
   table{border-collapse:collapse; width:100%; margin:16px 0; font-size:13.3px}
   th,td{border:1px solid var(--line); padding:7px 10px; text-align:left;
     vertical-align:top}
+  /* ★ 2026-10-19. 첫 칸이 **글자 하나씩 세로로** 쪼개졌다. `width:100%` 에
+       자동 레이아웃이면 긴 칸이 폭을 다 가져가고 첫 칸이 0 에 가깝게
+       눌린다. 첫 칸은 거의 전부 짧은 이름표(`프로젝트 주제` ·
+       `REQ-INF-002`)라 줄바꿈을 막고 **내용만큼만** 준다.
+     ★ 회귀가 아니다 — 칸을 켜는 규칙이 없어 이 화면을 **아무도 본 적이
+       없었다**(DECISIONS §539). 켜고 나서 처음 보인 자리다.
+     ★ 실측(헤드리스 1440×900) 첫 칸 줄 수 **3 → 1** · 칸 넘침 없음 ·
+       가로 스크롤 없음. 첫 칸이 긴 표가 생기면 이 줄이 가로로 민다 —
+       그때는 그 표를 보고 정하지, 지금 상한을 지어내지 않는다. */
+  table th:first-child, table td:first-child{white-space:nowrap; width:1%}
   th{background:var(--soft); font-weight:600; color:var(--head)}
   tbody tr:nth-child(even){background:#fcfdfe}
 
