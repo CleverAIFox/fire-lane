@@ -807,6 +807,24 @@ step "7. $BR → $BASE 스쿼시"
 if ! ask "PR #$PR 을 $BASE 에 스쿼시 머지하고 브랜치를 지운다. 진행?"; then
     printf '  멈춤. 나중에:  %s %s --resume\n\n' "$FL_CMD" "$BR"; exit 0
 fi
+# ★ 2026-10-20. **초록 받은 나무를 원격에 적는다 — 머지 전에.**
+#   `refs/pull/N/merge` 의 나무가 **스쿼시 결과의 나무와 같다**(실측 —
+#   base 가 움직여도 같다). 그래서 지금 적어 두면 뒤따르는 CI 셋이
+#   전부 전체 테스트를 건너뛴다 — `part/**` 푸시 · dev PR · main PR.
+#   한 배치에 19분 × 3.
+# ★ `refs/green/*` 는 `refs/heads/` 밖이라 룰셋 셋(`part` · `release` ·
+#   `trunk`, 전부 `target: branch`)이 안 막는다(2026-10-20 확인).
+# ★ **실패해도 안 멈춘다.** 못 적으면 다음 CI 가 다시 잴 뿐이고 그것은
+#   지금과 같다 — 나빠지지 않는다. `|| true` 가 그 뜻이다.
+if git fetch -q origin "refs/pull/$PR/merge" 2>/dev/null; then
+    _gt=$(git rev-parse "FETCH_HEAD^{tree}" 2>/dev/null || true)
+    if [ -n "$_gt" ] && git push -q origin "FETCH_HEAD:refs/green/$_gt" \
+            2>/dev/null; then
+        ok "초록 나무를 적었다 — refs/green/${_gt:0:12}"
+    else
+        printf '  ★ 초록 나무를 못 적었다 — 다음 CI 가 다시 잰다(해롭지 않다)\n'
+    fi
+fi
 gh pr merge "$PR" -R "$GH_REPO" --squash --delete-branch || die "스쿼시 머지 실패"
 git fetch -q --prune origin
 if ! { git switch -q "$BASE" && git merge -q --ff-only "origin/$BASE"; }; then
