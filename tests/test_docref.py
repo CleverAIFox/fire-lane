@@ -230,6 +230,106 @@ def test_subsection_numbers_are_contiguous():
                      + "\n\n  지운 절은 슬롯을 유지한다(MASTER §0).")
 
 
+# ── 3b · **최상위** 절 번호 ──────────────────────────────────────
+#
+# ★ 2026-10-14 (DECISIONS 531). 위 둘은 **하위** 절(`N-M`)만 본다. 연속성은
+#   MASTER 하나만 본다. **최상위 절(`## N.`)을 재는 자가 넉 달 동안 없었다** —
+#   그런데도 DECISIONS 는 0..530 이 빈틈·겹침·역순 없이 서 있었다. 사람이
+#   손으로 지켜 온 불변식이고, 손으로 지키는 것은 언젠가 깨진다.
+#
+#   깨질 자리를 그날 봤다. 배치 둘이 같은 번호 공간을 **동시에** 쓰고 있었고
+#   (한쪽 527~531 · 다른쪽 532~535), 작은 쪽을 늦게 머지하면 파일 안에서
+#   번호가 **역순**이 된다. append-only 역사에서 역순은 「언제 정했나」를
+#   못 읽게 만든다. 깨끗한 지금 세운다 — 더러워진 뒤엔 면제부터 세워야 한다.
+
+
+def _top_sections(p) -> list[tuple[int, int, str]]:
+    """`## N. 제목` 만. (번호, 줄, 제목). 하위 `### N-M.` 과 `### N.` 은 뺀다."""
+    out = []
+    for ln, line in enumerate(p.read_text(encoding="utf-8").split("\n"), 1):
+        m = re.match(r"^## (\d+)\. (.*)$", line)
+        if m:
+            out.append((int(m.group(1)), ln, m.group(2)))
+    return out
+
+
+DOCS_TOP = ("MASTER.md", "PLAN.md", "DECISIONS.md")
+
+
+def test_top_level_section_numbers_are_unique_and_ascending():
+    """최상위 절이 **겹치지 않고 파일 순서대로 커지는가.**
+
+    ★ 오름차순을 따로 보는 이유 — 고유성만 보면 뒤에 작은 번호를 붙여도
+      통과한다. 그런데 이 문서들은 **읽는 순서가 곧 시간 순서**다(DECISIONS
+      는 append-only 역사다). 역순은 「무엇을 먼저 정했나」를 못 읽게 한다.
+    """
+    bad: list[str] = []
+    for name in DOCS_TOP:
+        p = ROOT / "docs" / name
+        tops = _top_sections(p)
+        assert tops, f"{name} 에 `## N. 제목` 꼴 절이 하나도 없다 — 자가 눈이 멀었다"
+        seen: dict[int, int] = {}
+        for num, ln, title in tops:
+            if num in seen:
+                bad.append(f"  {name} §{num} 가 둘 — :{seen[num]} ↔ :{ln} {title[:28]}")
+            seen[num] = ln
+        for (a, la, _), (b, lb, tb) in zip(tops, tops[1:], strict=False):
+            if b <= a:
+                bad.append(f"  {name} :{la} §{a} 뒤에 :{lb} §{b} — "
+                           f"번호가 안 커진다 ({tb[:28]})")
+    assert not bad, (
+        "최상위 절 번호가 어긋난다\n" + "\n".join(bad)
+        + "\n\n  ★ 판 둘이 같은 번호 공간을 나눠 쓰면 **머지 순서대로** 번호를"
+        "\n     매겨야 한다. 늦게 가는 판이 큰 번호를 쓴다.")
+
+
+def test_top_level_section_numbers_have_no_gaps():
+    """최상위 절에 **결번이 없는가.**
+
+    ★ PLAN 은 줄어드는 문서지만 **최상위 절은 장(章)이고 행이 아니다** —
+      닫히는 것은 행이고 장은 안 지워진다. 그래서 여기서도 결번이 없어야 한다.
+      행의 결번은 `결번 대장` 이 따로 든다.
+    """
+    bad: list[str] = []
+    for name in DOCS_TOP:
+        nums = {n for n, _, _ in _top_sections(ROOT / "docs" / name)}
+        gap = [x for x in range(min(nums), max(nums) + 1) if x not in nums]
+        if gap:
+            bad.append(f"  {name}: 결번 {len(gap)}개 — {gap[:12]}")
+    assert not bad, (
+        "최상위 절에 결번이 있다\n" + "\n".join(bad)
+        + "\n\n  건너뛴 번호는 「지운 절」인지 「빠뜨린 절」인지 구별되지 않는다."
+        "\n  지운 절은 슬롯을 유지하고 제목에 그 사실을 적는다(MASTER §0).")
+
+
+def test_the_top_level_probe_bites():
+    """★ 자가 **문다**는 것을 보인다 — 역순·중복·결번 셋을 손으로 만들어 민다.
+
+    실물 문서를 안 건드린다. `_top_sections` 가 돌려준 꼴을 흉내 내는 대신
+    **임시 파일을 세 벌 써서** 같은 함수에 먹인다 — 자와 피검체가 같아야 한다.
+    """
+    import tempfile
+
+    cases = {
+        "역순": "## 3. 가\n\n## 2. 나\n",
+        "중복": "## 3. 가\n\n## 3. 나\n",
+        "결번": "## 1. 가\n\n## 3. 나\n",
+    }
+    with tempfile.TemporaryDirectory() as d:
+        for label, body in cases.items():
+            f = Path(d) / "x.md"
+            f.write_text(body, encoding="utf-8")
+            tops = _top_sections(f)
+            assert len(tops) == 2, f"{label}: 머리를 둘 다 못 읽었다 — {tops}"
+            nums = [n for n, _, _ in tops]
+            if label == "결번":
+                got = [x for x in range(min(nums), max(nums) + 1) if x not in set(nums)]
+                assert got == [2], f"{label}: 결번을 못 봤다 — {got}"
+            else:
+                asc = all(b > a for a, b in zip(nums, nums[1:], strict=False))
+                assert not asc, f"{label}: {nums} 를 오름차순으로 읽었다"
+
+
 # ── 코드 → 문서 방향 ─────────────────────────────────────────────
 #
 # ★ 2026-09-24 (PLAN §13 W12-3 · DECISIONS §239). 위 검사들은 **문서 안의**

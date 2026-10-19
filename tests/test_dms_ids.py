@@ -24,6 +24,16 @@ def _dms():
     return m
 
 
+def _prevfield():
+    """유병률 칸의 **문법 정본**(`tools/prevfield.py`). `dms` 도 이것을 읽는다."""
+    spec = importlib.util.spec_from_file_location(
+        "_prevfield_ids", ROOT / "tools" / "prevfield.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    return m
+
+
 def test_ids_unique_and_titled():
     d = _dms()
     ids = [s["id"] for rel in d.DOCS for s in d.sections(rel)]
@@ -125,7 +135,11 @@ def test_every_new_decision_states_how_often_the_disease_struck():
     m = _dms()
     bad = m.prevalence()
     assert not bad, (
-        f"§{m.PREV_FROM} 이후 절에 유병률 칸이 없다 {len(bad)}건\n"
+        # ★ 2026-10-14 (DECISIONS §524-1 의 그 족). 종전에 `m.PREV_FROM` 을
+        # 읽었고 **그 이름은 `dms` 에 없다** — 빨간불이 나는 순간 거절 문구가
+        # `AttributeError` 로 터져 **무엇이 틀렸는지 한 글자도 안 말했다.**
+        # 정본은 `prevfield.PREV_FROM` 이고 `dms` 도 그것을 통해 읽는다.
+        f"§{_prevfield().PREV_FROM} 이후 절에 유병률 칸이 없다 {len(bad)}건\n"
         + "\n".join(bad[:20])
         + "\n\n  형식:\n"
         "    유병률  **2회** — ① 2026-09-24 … ② 2026-10-04 …\n"

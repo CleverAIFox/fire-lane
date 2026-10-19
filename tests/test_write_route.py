@@ -67,6 +67,19 @@ def _seg(uid: str, sid: str, x0, y0, x1, y1, *, w, verdict) -> dict:
     }
 
 
+def _lane_rows() -> gpd.GeoDataFrame:
+    """`lane` 과 **같은** 합성 길. 픽스처는 산출물을 돌려주므로 입력이 필요한
+    시험(기본 자리 · 생략)이 이것을 쓴다 — 두 벌로 갈리면 한쪽만 고쳐진다."""
+    sx, sy = _station_xy()
+    return gpd.GeoDataFrame([
+        _seg("U-A", "S-A", sx, sy, sx + 40, sy, w=6.0, verdict="clear"),
+        _seg("U-B", "S-B", sx + 40, sy, sx + 80, sy, w=6.0, verdict="clear"),
+        _seg("U-C", "S-C", sx + 40, sy, sx + 40, sy + 40, w=0.4, verdict="blocked"),
+        _seg("U-D", "S-D", sx + 9000, sy + 9000, sx + 9040, sy + 9000,
+             w=6.0, verdict="clear"),
+    ], geometry="geometry", crs=5186)
+
+
 @pytest.fixture
 def lane(tmp_path) -> dict[str, dict]:
     """합성 길. 안전센터에서 뻗은 사슬 하나 + 막힌 가지 + 떨어진 섬.
@@ -75,15 +88,7 @@ def lane(tmp_path) -> dict[str, dict]:
                             └──C── n3        C      막힘 (폭 0.4m)
           (멀리)     n8 ──D── n9             D      섬 — 어디서도 못 닿는다
     """
-    sx, sy = _station_xy()
-    rows = [
-        _seg("U-A", "S-A", sx, sy, sx + 40, sy, w=6.0, verdict="clear"),
-        _seg("U-B", "S-B", sx + 40, sy, sx + 80, sy, w=6.0, verdict="clear"),
-        _seg("U-C", "S-C", sx + 40, sy, sx + 40, sy + 40, w=0.4, verdict="blocked"),
-        _seg("U-D", "S-D", sx + 9000, sy + 9000, sx + 9040, sy + 9000,
-             w=6.0, verdict="clear"),
-    ]
-    g = gpd.GeoDataFrame(rows, geometry="geometry", crs=5186)
+    g = _lane_rows()
     dst = tmp_path / "route_vehicle.csv"
     segments._write_route(g, dst)
     assert dst.exists(), "산출물이 아예 안 나왔다 — 차량 제원을 못 읽었을 수 있다"
@@ -151,11 +156,43 @@ def test_the_seam_does_not_leak_into_the_real_output(tmp_path):
 
     ★ `dst` 를 안 넘기면 `PROCESSED / "route_vehicle.csv"` 여야 한다. 기본값이
       바뀌면 파이프라인이 엉뚱한 데 쓰고 `publish` 가 지난 실행 것을 읽는다.
+
+    ★ 2026-10-14. 종전엔 이것을 **글자로** 봤다 — 원문에서 그 대입문을
+      찾는 `in src` 였다. 이 파일 머리가 비판한 바로 그 꼴이다. 같은 날 그
+      줄을 **행동 그대로** 위로 옮겼더니 거짓 빨강이 났다. 자기 교훈을 자기가
+      어기고 있었으므로 행동으로 본다 — `PROCESSED` 를 옮기고 가 보라고 한다.
     """
     import inspect
 
-    src = inspect.getsource(segments._write_route)
-    assert 'dst = dst or PROCESSED / "route_vehicle.csv"' in src, (
-        "기본 산출 경로가 바뀌었다 — 이음매는 **시험용**이고 기본은 종전 그대로여야 한다.")
+    monkey = tmp_path / "proc"
+    monkey.mkdir()
+    keep = segments.PROCESSED
+    try:
+        segments.PROCESSED = monkey
+        segments._write_route(_lane_rows())                   # dst 를 **안** 넘긴다
+    finally:
+        segments.PROCESSED = keep
+    assert (monkey / "route_vehicle.csv").is_file(), (
+        "`dst` 를 안 넘겼을 때 `PROCESSED / route_vehicle.csv` 에 안 났다 — "
+        f"기본 산출 자리가 바뀌었다. 난 것: {sorted(q.name for q in monkey.iterdir())}")
     sig = inspect.signature(segments._write_route)
     assert sig.parameters["dst"].default is None, "이음매의 기본값은 None 이다"
+
+
+def test_skipping_deletes_the_stale_file(tmp_path, monkeypatch):
+    """**제원이 없으면 생략하고, 낡은 파일을 지운다**(DECISIONS 530).
+
+    ★ 종전엔 그냥 `return` 이라 **옛 csv 가 남았다.** `evalgate` 의 ③ 이
+      「`passable` 이 `edge_cost` 와 N건 갈린다 — 파이프라인을 다시 돌려라」를
+      울렸지만, 다시 돌아도 이 분기가 또 생략하니 그 안내는 막다른 길이었다.
+      생략은 「안 낸다」이고 「옛것을 그대로 둔다」가 아니다.
+    """
+    from firelane.seg import vehicle
+
+    dst = tmp_path / "route_vehicle.csv"
+    dst.write_text("seg_uid,passable\nU-OLD,1\n", encoding="utf-8-sig")
+    monkeypatch.setattr(vehicle, "_S", None)        # 제원을 뺀다
+    segments._write_route(_lane_rows(), dst)
+    assert not dst.exists(), (
+        "생략했는데 **낡은 파일이 남았다** — 다음 관문이 그 옛 숫자를 재고 "
+        "사람에게 「다시 돌려라」를 시킨다. 다시 돌아도 또 생략한다.")

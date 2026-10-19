@@ -67,6 +67,7 @@ from firelane.seg import vehicle as V
 V.use(_led.vehicle_spec())
 
 # 119안전센터. graph.py 의 STATIONS 와 같은 정본을 쓴다.
+from firelane.seg.geom import curvature
 from firelane.seg.graph import STATIONS
 from firelane.seg.params import NODE_TOL
 
@@ -77,29 +78,10 @@ CRS_M = 5186
 
 
 
-def curvature(geom) -> float | None:
-    """구간의 최소 곡률반경(m). 없으면 None(직선).
-
-    ★ 짧은 변 사이의 각은 도로 곡률이 아니라 정점 배치 노이즈다.
-      2026-08-23 에 필터 없이 쟀다가 `R=0.2m` 가 나왔다 — 노딩(0.5m 접합)이
-      만든 꺾임이었다. 양쪽 변이 5m 이상일 때만 본다.
-    """
-    co = list(geom.coords) if geom.geom_type == "LineString" \
-        else list(max(geom.geoms, key=lambda q: q.length).coords)
-    best = None
-    for i in range(1, len(co) - 1):
-        (x0, y0), (x1, y1), (x2, y2) = co[i-1], co[i], co[i+1]
-        a = math.dist((x0, y0), (x1, y1))
-        b = math.dist((x1, y1), (x2, y2))
-        if a < 5.0 or b < 5.0:
-            continue
-        c = math.dist((x0, y0), (x2, y2))
-        s = abs((x1-x0)*(y2-y0) - (x2-x0)*(y1-y0)) / 2
-        if s < 1e-9:
-            continue
-        r = a * b * c / (4 * s)
-        best = r if best is None else min(best, r)
-    return best
+# ★ 2026-10-14 (DECISIONS §523-3). 여기 있던 `curvature` 를 **지우고 위에서
+# 수입한다.** `segments.py` 가 쓰던 것과 **같은 함수**였고(266노드 ×2) 그
+# 사실이 함수 안의 `import math` 한 줄에 가려져 있었다 — 정본을
+# `seg/geom.py` 로 옮기자 `dupcheck` 가 바로 집었다.
 
 
 def build(seg: gpd.GeoDataFrame, lenient: bool) -> tuple[nx.Graph, dict]:

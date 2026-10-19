@@ -3,16 +3,16 @@
   "n": 1281,
   "verdict": {
    "blocked": 192,
-   "clear": 464,
-   "needs_cv": 192,
-   "unknown": 433
+   "clear": 433,
+   "needs_cv": 209,
+   "unknown": 447
   },
   "unknown_reason": {
    "ledger_disputes": 1,
-   "no_cctv_band": 194,
+   "no_cctv_band": 206,
    "no_cctv_narrow": 70,
-   "no_cctv_single": 12,
-   "no_cctv_thin": 156
+   "no_cctv_single": 11,
+   "no_cctv_thin": 159
   },
   "width_src": {
    "ngii": 1,
@@ -96,7 +96,7 @@
   },
   "DM-192003-284192-LPTE": {
    "verdict": "clear",
-   "width_min_m": 12.38,
+   "width_min_m": 8.43,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -222,7 +222,7 @@
   },
   "DM-192074-284328-W4QT": {
    "verdict": "clear",
-   "width_min_m": 28.54,
+   "width_min_m": 25.85,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -249,7 +249,7 @@
   },
   "DM-192079-284183-Y0V6": {
    "verdict": "blocked",
-   "width_min_m": 1.62,
+   "width_min_m": 1.2,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -420,7 +420,7 @@
   },
   "DM-192129-284459-BQT2": {
    "verdict": "unknown",
-   "width_min_m": 6.97,
+   "width_min_m": 5.74,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
@@ -798,7 +798,7 @@
   },
   "DM-192311-284149-W4QT": {
    "verdict": "clear",
-   "width_min_m": 25.03,
+   "width_min_m": 21.96,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -942,7 +942,7 @@
   },
   "DM-192398-284133-66YK": {
    "verdict": "unknown",
-   "width_min_m": 1.98,
+   "width_min_m": 1.17,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
@@ -959,11 +959,11 @@
    "route_usage": 0
   },
   "DM-192402-284287-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 7.45,
+   "verdict": "unknown",
+   "width_min_m": 0.77,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_thin",
    "length_m": 64.6,
    "route_usage": 53
   },
@@ -1166,11 +1166,11 @@
    "route_usage": 0
   },
   "DM-192458-284074-BH1S": {
-   "verdict": "clear",
-   "width_min_m": 7.25,
+   "verdict": "unknown",
+   "width_min_m": 6.56,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 58.3,
    "route_usage": 0
   },
@@ -1212,7 +1212,7 @@
   },
   "DM-192461-284254-JFYG": {
    "verdict": "clear",
-   "width_min_m": 9.14,
+   "width_min_m": 8.28,
    "width_max_m": null,
    "width_src": "silpok",
    "unknown_reason": null,
@@ -1329,7 +1329,7 @@
   },
   "DM-192487-284371-PF48": {
    "verdict": "clear",
-   "width_min_m": 8.79,
+   "width_min_m": 8.58,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1823,9 +1823,9 @@
    "route_usage": 0
   },
   "DM-192655-284231-PF48": {
-   "verdict": "clear",
-   "width_min_m": 22.93,
-   "width_max_m": 48.13,
+   "verdict": "needs_cv",
+   "width_min_m": 3.93,
+   "width_max_m": 3.93,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 9.9,
@@ -2220,7 +2220,7 @@
   },
   "DM-192740-284324-X9DQ": {
    "verdict": "unknown",
-   "width_min_m": 1.92,
+   "width_min_m": 1.1,
    "width_max_m": 4.5,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
@@ -2292,7 +2292,7 @@
   },
   "DM-192752-284217-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 29.63,
+   "width_min_m": 25.62,
    "width_max_m": 34.81,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -2373,7 +2373,7 @@
   },
   "DM-192775-284091-TO49": {
    "verdict": "unknown",
-   "width_min_m": 0.67,
+   "width_min_m": 0.12,
    "width_max_m": 3.18,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
@@ -2409,7 +2409,7 @@
   },
   "DM-192788-284234-52VO": {
    "verdict": "clear",
-   "width_min_m": 27.39,
+   "width_min_m": 17.52,
    "width_max_m": 27.39,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -2525,11 +2525,11 @@
    "route_usage": 57
   },
   "DM-192819-284265-X343": {
-   "verdict": "clear",
-   "width_min_m": 8.5,
+   "verdict": "unknown",
+   "width_min_m": 4.45,
    "width_max_m": 11.12,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 94.3,
    "route_usage": 5
   },
@@ -2652,7 +2652,7 @@
   },
   "DM-192837-283946-JFYG": {
    "verdict": "unknown",
-   "width_min_m": 2.74,
+   "width_min_m": 0.95,
    "width_max_m": 4.39,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
@@ -2967,7 +2967,7 @@
   },
   "DM-192883-283707-W4QT": {
    "verdict": "clear",
-   "width_min_m": 23.82,
+   "width_min_m": 8.49,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3111,7 +3111,7 @@
   },
   "DM-192895-283794-4091": {
    "verdict": "needs_cv",
-   "width_min_m": 4.03,
+   "width_min_m": 4.0,
    "width_max_m": 6.09,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3399,7 +3399,7 @@
   },
   "DM-192929-283712-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.9,
+   "width_min_m": 8.84,
    "width_max_m": 21.5,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3408,7 +3408,7 @@
   },
   "DM-192929-283984-SZY4": {
    "verdict": "needs_cv",
-   "width_min_m": 4.6,
+   "width_min_m": 3.92,
    "width_max_m": 9.57,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3570,7 +3570,7 @@
   },
   "DM-192942-283851-6Z8Q": {
    "verdict": "unknown",
-   "width_min_m": 6.37,
+   "width_min_m": 4.71,
    "width_max_m": 9.17,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
@@ -3597,7 +3597,7 @@
   },
   "DM-192944-283809-4091": {
    "verdict": "unknown",
-   "width_min_m": 3.79,
+   "width_min_m": 3.24,
    "width_max_m": 9.76,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
@@ -3624,7 +3624,7 @@
   },
   "DM-192950-284234-52VO": {
    "verdict": "clear",
-   "width_min_m": 29.85,
+   "width_min_m": 26.15,
    "width_max_m": 32.79,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3921,7 +3921,7 @@
   },
   "DM-192986-284181-5UT1": {
    "verdict": "needs_cv",
-   "width_min_m": 3.74,
+   "width_min_m": 0.73,
    "width_max_m": 4.95,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4056,7 +4056,7 @@
   },
   "DM-193008-283803-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.71,
+   "width_min_m": 18.65,
    "width_max_m": 20.26,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4452,7 +4452,7 @@
   },
   "DM-193070-283921-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.59,
+   "width_min_m": 17.83,
    "width_max_m": 22.04,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4650,7 +4650,7 @@
   },
   "DM-193104-284045-ZM8E": {
    "verdict": "clear",
-   "width_min_m": 18.85,
+   "width_min_m": 15.01,
    "width_max_m": 20.21,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4713,7 +4713,7 @@
   },
   "DM-193120-283544-GO22": {
    "verdict": "clear",
-   "width_min_m": 8.49,
+   "width_min_m": 8.29,
    "width_max_m": 9.85,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4785,7 +4785,7 @@
   },
   "DM-193139-284022-2W3Y": {
    "verdict": "needs_cv",
-   "width_min_m": 6.57,
+   "width_min_m": 5.96,
    "width_max_m": 12.37,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4794,7 +4794,7 @@
   },
   "DM-193141-283638-JFYG": {
    "verdict": "clear",
-   "width_min_m": 9.1,
+   "width_min_m": 7.88,
    "width_max_m": 11.1,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4812,7 +4812,7 @@
   },
   "DM-193148-283927-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.54,
+   "width_min_m": 18.17,
    "width_max_m": 43.48,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4847,11 +4847,11 @@
    "route_usage": 0
   },
   "DM-193152-284042-QNEL": {
-   "verdict": "clear",
-   "width_min_m": 7.34,
+   "verdict": "unknown",
+   "width_min_m": 6.39,
    "width_max_m": 9.7,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 102.0,
    "route_usage": 2
   },
@@ -4938,7 +4938,7 @@
   },
   "DM-193176-283632-JFYG": {
    "verdict": "needs_cv",
-   "width_min_m": 6.33,
+   "width_min_m": 6.21,
    "width_max_m": 10.26,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4974,7 +4974,7 @@
   },
   "DM-193188-284129-4S4P": {
    "verdict": "clear",
-   "width_min_m": 15.58,
+   "width_min_m": 13.63,
    "width_max_m": 18.71,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5055,7 +5055,7 @@
   },
   "DM-193201-283964-6Z8Q": {
    "verdict": "blocked",
-   "width_min_m": 0.75,
+   "width_min_m": 0.6,
    "width_max_m": 2.47,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5081,8 +5081,8 @@
    "route_usage": 10
   },
   "DM-193208-283602-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 16.58,
+   "verdict": "needs_cv",
+   "width_min_m": 6.5,
    "width_max_m": 23.54,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5163,7 +5163,7 @@
   },
   "DM-193231-283324-1GLE": {
    "verdict": "clear",
-   "width_min_m": 12.88,
+   "width_min_m": 8.76,
    "width_max_m": 15.34,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5172,7 +5172,7 @@
   },
   "DM-193233-283909-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 32.5,
+   "width_min_m": 16.69,
    "width_max_m": 33.99,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5217,7 +5217,7 @@
   },
   "DM-193241-283627-JFYG": {
    "verdict": "unknown",
-   "width_min_m": 6.33,
+   "width_min_m": 6.3,
    "width_max_m": 9.73,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
@@ -5307,7 +5307,7 @@
   },
   "DM-193262-283380-1GLE": {
    "verdict": "clear",
-   "width_min_m": 12.9,
+   "width_min_m": 8.88,
    "width_max_m": 13.97,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5325,7 +5325,7 @@
   },
   "DM-193264-283983-6Z8Q": {
    "verdict": "unknown",
-   "width_min_m": 1.94,
+   "width_min_m": 1.88,
    "width_max_m": 3.56,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
@@ -5342,11 +5342,11 @@
    "route_usage": 0
   },
   "DM-193267-283624-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 13.83,
+   "verdict": "unknown",
+   "width_min_m": 6.53,
    "width_max_m": 18.4,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 53.0,
    "route_usage": 12
   },
@@ -5424,7 +5424,7 @@
   },
   "DM-193289-283427-1GLE": {
    "verdict": "clear",
-   "width_min_m": 12.8,
+   "width_min_m": 8.8,
    "width_max_m": 15.64,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5433,7 +5433,7 @@
   },
   "DM-193289-284035-2W3Y": {
    "verdict": "clear",
-   "width_min_m": 9.31,
+   "width_min_m": 8.67,
    "width_max_m": 36.38,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5514,7 +5514,7 @@
   },
   "DM-193298-284055-4S4P": {
    "verdict": "clear",
-   "width_min_m": 16.09,
+   "width_min_m": 14.62,
    "width_max_m": 43.17,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5549,8 +5549,8 @@
    "route_usage": 2
   },
   "DM-193304-283639-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 12.94,
+   "verdict": "needs_cv",
+   "width_min_m": 6.52,
    "width_max_m": 46.5,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5631,7 +5631,7 @@
   },
   "DM-193320-283242-LRZT": {
    "verdict": "clear",
-   "width_min_m": 31.21,
+   "width_min_m": 26.67,
    "width_max_m": 51.85,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5640,7 +5640,7 @@
   },
   "DM-193321-283644-JFYG": {
    "verdict": "needs_cv",
-   "width_min_m": 49.87,
+   "width_min_m": 12.63,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5667,7 +5667,7 @@
   },
   "DM-193325-283336-1GLE": {
    "verdict": "unknown",
-   "width_min_m": 1.78,
+   "width_min_m": 1.03,
    "width_max_m": 4.41,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
@@ -5703,7 +5703,7 @@
   },
   "DM-193329-284061-4S4P": {
    "verdict": "needs_cv",
-   "width_min_m": 6.02,
+   "width_min_m": 5.34,
    "width_max_m": 8.9,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5747,8 +5747,8 @@
    "route_usage": 0
   },
   "DM-193333-283435-GO22": {
-   "verdict": "clear",
-   "width_min_m": 7.16,
+   "verdict": "needs_cv",
+   "width_min_m": 6.0,
    "width_max_m": 9.86,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5756,8 +5756,8 @@
    "route_usage": 36
   },
   "DM-193333-283645-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 13.46,
+   "verdict": "needs_cv",
+   "width_min_m": 5.96,
    "width_max_m": 14.54,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5784,7 +5784,7 @@
   },
   "DM-193337-283274-LRZT": {
    "verdict": "clear",
-   "width_min_m": 31.17,
+   "width_min_m": 27.04,
    "width_max_m": 46.57,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5829,7 +5829,7 @@
   },
   "DM-193341-283261-VXVD": {
    "verdict": "clear",
-   "width_min_m": 52.2,
+   "width_min_m": 27.68,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5855,8 +5855,8 @@
    "route_usage": 0
   },
   "DM-193348-283646-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 13.62,
+   "verdict": "needs_cv",
+   "width_min_m": 6.44,
    "width_max_m": 15.58,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5928,7 +5928,7 @@
   },
   "DM-193355-283451-U9HZ": {
    "verdict": "blocked",
-   "width_min_m": 2.07,
+   "width_min_m": 1.71,
    "width_max_m": 2.85,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6008,11 +6008,11 @@
    "route_usage": 0
   },
   "DM-193365-283644-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 12.33,
+   "verdict": "unknown",
+   "width_min_m": 6.0,
    "width_max_m": 15.06,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 21.9,
    "route_usage": 101
   },
@@ -6036,7 +6036,7 @@
   },
   "DM-193374-283344-LRZT": {
    "verdict": "clear",
-   "width_min_m": 31.27,
+   "width_min_m": 27.08,
    "width_max_m": 46.2,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6080,11 +6080,11 @@
    "route_usage": 6
   },
   "DM-193382-283639-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 12.9,
+   "verdict": "unknown",
+   "width_min_m": 6.0,
    "width_max_m": 19.59,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 13.7,
    "route_usage": 101
   },
@@ -6098,11 +6098,11 @@
    "route_usage": 2
   },
   "DM-193383-283410-GO22": {
-   "verdict": "clear",
-   "width_min_m": 7.06,
+   "verdict": "unknown",
+   "width_min_m": 6.0,
    "width_max_m": 9.92,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 45.6,
    "route_usage": 38
   },
@@ -6153,10 +6153,10 @@
   },
   "DM-193391-283637-JFYG": {
    "verdict": "unknown",
-   "width_min_m": 14.26,
+   "width_min_m": 6.0,
    "width_max_m": 27.1,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv_single",
+   "unknown_reason": "no_cctv_band",
    "length_m": 3.7,
    "route_usage": 101
   },
@@ -6171,7 +6171,7 @@
   },
   "DM-193392-284162-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.75,
+   "width_min_m": 14.15,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6242,11 +6242,11 @@
    "route_usage": 107
   },
   "DM-193407-283634-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 13.03,
+   "verdict": "unknown",
+   "width_min_m": 6.01,
    "width_max_m": 17.52,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 30.5,
    "route_usage": 101
   },
@@ -6332,11 +6332,11 @@
    "route_usage": 2
   },
   "DM-193421-283389-9EAB": {
-   "verdict": "clear",
-   "width_min_m": 7.46,
+   "verdict": "unknown",
+   "width_min_m": 6.09,
    "width_max_m": 8.87,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 41.5,
    "route_usage": 13
   },
@@ -6405,7 +6405,7 @@
   },
   "DM-193430-283449-LRZT": {
    "verdict": "clear",
-   "width_min_m": 34.91,
+   "width_min_m": 27.14,
    "width_max_m": 49.24,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6441,7 +6441,7 @@
   },
   "DM-193433-283831-OKXU": {
    "verdict": "clear",
-   "width_min_m": 9.25,
+   "width_min_m": 8.24,
    "width_max_m": 53.83,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6458,8 +6458,8 @@
    "route_usage": 2
   },
   "DM-193434-283634-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 12.88,
+   "verdict": "needs_cv",
+   "width_min_m": 6.34,
    "width_max_m": 15.88,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6513,7 +6513,7 @@
   },
   "DM-193443-283855-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 26.19,
+   "width_min_m": 23.62,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6531,7 +6531,7 @@
   },
   "DM-193448-283886-C95Z": {
    "verdict": "clear",
-   "width_min_m": 11.46,
+   "width_min_m": 9.38,
    "width_max_m": 44.44,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6541,7 +6541,7 @@
   "DM-193450-283281-VXVD": {
    "verdict": "unknown",
    "width_min_m": 1.5,
-   "width_max_m": 3.12,
+   "width_max_m": 3.11,
    "width_src": "silpok",
    "unknown_reason": "no_cctv_narrow",
    "length_m": 30.6,
@@ -6558,7 +6558,7 @@
   },
   "DM-193450-283667-JFYG": {
    "verdict": "needs_cv",
-   "width_min_m": 1.77,
+   "width_min_m": 1.34,
    "width_max_m": 39.79,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6602,8 +6602,8 @@
    "route_usage": 70
   },
   "DM-193457-283369-9EAB": {
-   "verdict": "clear",
-   "width_min_m": 7.54,
+   "verdict": "needs_cv",
+   "width_min_m": 5.47,
    "width_max_m": 9.26,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6612,7 +6612,7 @@
   },
   "DM-193462-283645-JFYG": {
    "verdict": "clear",
-   "width_min_m": 13.13,
+   "width_min_m": 9.04,
    "width_max_m": 21.69,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6666,7 +6666,7 @@
   },
   "DM-193471-283851-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.61,
+   "width_min_m": 18.01,
    "width_max_m": 21.12,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6692,8 +6692,8 @@
    "route_usage": 0
   },
   "DM-193474-283369-VXVD": {
-   "verdict": "clear",
-   "width_min_m": 7.46,
+   "verdict": "needs_cv",
+   "width_min_m": 2.97,
    "width_max_m": 10.61,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6720,7 +6720,7 @@
   },
   "DM-193478-283369-OQSR": {
    "verdict": "needs_cv",
-   "width_min_m": 6.68,
+   "width_min_m": 6.43,
    "width_max_m": 9.25,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6729,7 +6729,7 @@
   },
   "DM-193478-283534-LRZT": {
    "verdict": "clear",
-   "width_min_m": 37.58,
+   "width_min_m": 27.04,
    "width_max_m": 41.25,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6809,8 +6809,8 @@
    "route_usage": 2
   },
   "DM-193490-283697-O8MY": {
-   "verdict": "clear",
-   "width_min_m": 7.64,
+   "verdict": "needs_cv",
+   "width_min_m": 5.56,
    "width_max_m": 45.19,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6927,7 +6927,7 @@
   },
   "DM-193508-283588-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.47,
+   "width_min_m": 37.65,
    "width_max_m": 42.92,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6954,8 +6954,8 @@
   },
   "DM-193513-283338-9EAB": {
    "verdict": "needs_cv",
-   "width_min_m": 6.7,
-   "width_max_m": 8.45,
+   "width_min_m": 5.81,
+   "width_max_m": 8.2,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 86.5,
@@ -7016,11 +7016,11 @@
    "route_usage": 7
   },
   "DM-193517-283663-JFYG": {
-   "verdict": "clear",
-   "width_min_m": 11.28,
+   "verdict": "unknown",
+   "width_min_m": 6.47,
    "width_max_m": 11.93,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 78.1,
    "route_usage": 107
   },
@@ -7053,7 +7053,7 @@
   },
   "DM-193529-283522-TNWY": {
    "verdict": "unknown",
-   "width_min_m": 2.04,
+   "width_min_m": 1.79,
    "width_max_m": 4.46,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
@@ -7080,7 +7080,7 @@
   },
   "DM-193533-283630-LRZT": {
    "verdict": "clear",
-   "width_min_m": 38.9,
+   "width_min_m": 35.05,
    "width_max_m": 40.96,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7179,7 +7179,7 @@
   },
   "DM-193552-283662-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.76,
+   "width_min_m": 38.19,
    "width_max_m": 41.53,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7278,7 +7278,7 @@
   },
   "DM-193561-283677-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.64,
+   "width_min_m": 38.0,
    "width_max_m": 41.56,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7395,7 +7395,7 @@
   },
   "DM-193576-284251-88WW": {
    "verdict": "needs_cv",
-   "width_min_m": 4.22,
+   "width_min_m": 3.36,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7404,7 +7404,7 @@
   },
   "DM-193577-283706-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.65,
+   "width_min_m": 38.22,
    "width_max_m": 58.95,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7422,7 +7422,7 @@
   },
   "DM-193578-284037-VV63": {
    "verdict": "clear",
-   "width_min_m": 8.1,
+   "width_min_m": 7.76,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7557,7 +7557,7 @@
   },
   "DM-193595-284185-52VO": {
    "verdict": "unknown",
-   "width_min_m": 2.53,
+   "width_min_m": 1.79,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
@@ -7620,7 +7620,7 @@
   },
   "DM-193601-283747-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.29,
+   "width_min_m": 30.07,
    "width_max_m": 40.97,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7728,7 +7728,7 @@
   },
   "DM-193618-283658-U6CJ": {
    "verdict": "needs_cv",
-   "width_min_m": 3.62,
+   "width_min_m": 2.79,
    "width_max_m": 4.42,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7791,7 +7791,7 @@
   },
   "DM-193629-283879-LRZT": {
    "verdict": "unknown",
-   "width_min_m": 2.01,
+   "width_min_m": 0.74,
    "width_max_m": 3.96,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
@@ -7827,7 +7827,7 @@
   },
   "DM-193633-283803-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.46,
+   "width_min_m": 36.92,
    "width_max_m": 44.16,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7989,7 +7989,7 @@
   },
   "DM-193656-283851-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.91,
+   "width_min_m": 37.75,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8061,7 +8061,7 @@
   },
   "DM-193665-283877-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.74,
+   "width_min_m": 37.61,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8187,7 +8187,7 @@
   },
   "DM-193687-283523-TNWY": {
    "verdict": "unknown",
-   "width_min_m": 2.34,
+   "width_min_m": 0.6,
    "width_max_m": 4.99,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
@@ -8250,7 +8250,7 @@
   },
   "DM-193691-283835-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.71,
+   "width_min_m": 15.43,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8358,7 +8358,7 @@
   },
   "DM-193718-284036-LRZT": {
    "verdict": "clear",
-   "width_min_m": 38.85,
+   "width_min_m": 37.9,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8484,7 +8484,7 @@
   },
   "DM-193731-284077-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.28,
+   "width_min_m": 37.95,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8528,11 +8528,11 @@
    "route_usage": 0
   },
   "DM-193737-283303-S9D5": {
-   "verdict": "clear",
-   "width_min_m": 9.69,
+   "verdict": "unknown",
+   "width_min_m": 5.98,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 146.3,
    "route_usage": 0
   },
@@ -8565,7 +8565,7 @@
   },
   "DM-193744-283536-6ZG7": {
    "verdict": "unknown",
-   "width_min_m": 2.4,
+   "width_min_m": 1.74,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
@@ -8718,7 +8718,7 @@
   },
   "DM-193762-283926-2K9Y": {
    "verdict": "clear",
-   "width_min_m": 9.28,
+   "width_min_m": 8.24,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8745,7 +8745,7 @@
   },
   "DM-193765-283448-OQSR": {
    "verdict": "unknown",
-   "width_min_m": 2.15,
+   "width_min_m": 0.29,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
@@ -8861,8 +8861,8 @@
    "route_usage": 0
   },
   "DM-193785-283395-S9D5": {
-   "verdict": "clear",
-   "width_min_m": 8.75,
+   "verdict": "needs_cv",
+   "width_min_m": 6.29,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8925,7 +8925,7 @@
   },
   "DM-193797-283552-6ZG7": {
    "verdict": "blocked",
-   "width_min_m": 1.95,
+   "width_min_m": 0.6,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9024,7 +9024,7 @@
   },
   "DM-193809-283444-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.34,
+   "width_min_m": 8.33,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9033,7 +9033,7 @@
   },
   "DM-193810-283826-6Z8Q": {
    "verdict": "unknown",
-   "width_min_m": 44.35,
+   "width_min_m": 16.24,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_single",
@@ -9123,7 +9123,7 @@
   },
   "DM-193828-283825-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.56,
+   "width_min_m": 17.17,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9132,7 +9132,7 @@
   },
   "DM-193829-283681-1QHK": {
    "verdict": "unknown",
-   "width_min_m": 5.35,
+   "width_min_m": 3.74,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
@@ -9159,7 +9159,7 @@
   },
   "DM-193834-283494-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.21,
+   "width_min_m": 7.91,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9267,7 +9267,7 @@
   },
   "DM-193854-283537-S9D5": {
    "verdict": "clear",
-   "width_min_m": 10.1,
+   "width_min_m": 8.44,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9321,7 +9321,7 @@
   },
   "DM-193867-283575-S9D5": {
    "verdict": "clear",
-   "width_min_m": 8.61,
+   "width_min_m": 7.21,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9348,7 +9348,7 @@
   },
   "DM-193871-283515-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 11.18,
+   "width_min_m": 7.21,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9384,7 +9384,7 @@
   },
   "DM-193879-283609-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.68,
+   "width_min_m": 7.5,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9429,7 +9429,7 @@
   },
   "DM-193888-283638-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.91,
+   "width_min_m": 7.59,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9465,7 +9465,7 @@
   },
   "DM-193897-283672-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.65,
+   "width_min_m": 8.17,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9501,7 +9501,7 @@
   },
   "DM-193905-283717-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.91,
+   "width_min_m": 8.28,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9510,7 +9510,7 @@
   },
   "DM-193905-283924-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.62,
+   "width_min_m": 8.67,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9573,7 +9573,7 @@
   },
   "DM-193914-283682-HJS3": {
    "verdict": "clear",
-   "width_min_m": 18.17,
+   "width_min_m": 12.29,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9708,7 +9708,7 @@
   },
   "DM-193949-283679-HJS3": {
    "verdict": "clear",
-   "width_min_m": 18.6,
+   "width_min_m": 12.56,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9761,8 +9761,8 @@
    "route_usage": 0
   },
   "DM-193966-283492-6ZG7": {
-   "verdict": "clear",
-   "width_min_m": 10.91,
+   "verdict": "needs_cv",
+   "width_min_m": 6.69,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9870,7 +9870,7 @@
   },
   "DM-193995-283676-HJS3": {
    "verdict": "clear",
-   "width_min_m": 18.78,
+   "width_min_m": 13.03,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9906,7 +9906,7 @@
   },
   "DM-194026-283674-HJS3": {
    "verdict": "clear",
-   "width_min_m": 18.59,
+   "width_min_m": 12.98,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9969,7 +9969,7 @@
   },
   "DM-194090-283669-HJS3": {
    "verdict": "clear",
-   "width_min_m": 18.76,
+   "width_min_m": 13.36,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10068,7 +10068,7 @@
   },
   "DM-194158-283664-HJS3": {
    "verdict": "clear",
-   "width_min_m": 19.18,
+   "width_min_m": 12.73,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10113,7 +10113,7 @@
   },
   "DM-194176-283662-HJS3": {
    "verdict": "clear",
-   "width_min_m": 18.99,
+   "width_min_m": 13.21,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10194,7 +10194,7 @@
   },
   "DM-194199-283661-HJS3": {
    "verdict": "clear",
-   "width_min_m": 18.6,
+   "width_min_m": 13.08,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10293,7 +10293,7 @@
   },
   "DM-194226-284009-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 7.67,
+   "width_min_m": 7.03,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10329,7 +10329,7 @@
   },
   "DM-194235-283503-A8GE": {
    "verdict": "needs_cv",
-   "width_min_m": 6.7,
+   "width_min_m": 2.57,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10338,7 +10338,7 @@
   },
   "DM-194236-283658-HJS3": {
    "verdict": "clear",
-   "width_min_m": 18.34,
+   "width_min_m": 12.85,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10365,7 +10365,7 @@
   },
   "DM-194244-283493-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 15.68,
+   "width_min_m": 13.06,
    "width_max_m": null,
    "width_src": "silpok",
    "unknown_reason": null,
@@ -10374,7 +10374,7 @@
   },
   "DM-194246-283514-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 15.61,
+   "width_min_m": 9.44,
    "width_max_m": null,
    "width_src": "silpok",
    "unknown_reason": null,
@@ -10383,7 +10383,7 @@
   },
   "DM-194247-283535-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 14.62,
+   "width_min_m": 9.76,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10401,7 +10401,7 @@
   },
   "DM-194248-283874-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 14.03,
+   "width_min_m": 13.13,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10410,7 +10410,7 @@
   },
   "DM-194249-283477-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 42.27,
+   "width_min_m": 13.96,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10419,7 +10419,7 @@
   },
   "DM-194250-283569-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 14.61,
+   "width_min_m": 9.67,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10428,7 +10428,7 @@
   },
   "DM-194252-283604-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 13.95,
+   "width_min_m": 8.74,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10437,7 +10437,7 @@
   },
   "DM-194254-283640-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 14.4,
+   "width_min_m": 9.22,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10446,7 +10446,7 @@
   },
   "DM-194256-283663-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 18.72,
+   "width_min_m": 13.11,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10455,7 +10455,7 @@
   },
   "DM-194258-283694-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 14.04,
+   "width_min_m": 8.7,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10464,7 +10464,7 @@
   },
   "DM-194261-283745-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 13.6,
+   "width_min_m": 8.79,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10491,7 +10491,7 @@
   },
   "DM-194268-283531-X6GR": {
    "verdict": "unknown",
-   "width_min_m": 5.0,
+   "width_min_m": 4.68,
    "width_max_m": null,
    "width_src": "silpok",
    "unknown_reason": "no_cctv_band",
@@ -10563,7 +10563,7 @@
   },
   "DM-194283-283484-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 10.0,
+   "width_min_m": 7.47,
    "width_max_m": null,
    "width_src": "silpok",
    "unknown_reason": null,
@@ -10698,7 +10698,7 @@
   },
   "DM-194322-283492-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 10.27,
+   "width_min_m": 7.78,
    "width_max_m": null,
    "width_src": "silpok",
    "unknown_reason": null,
@@ -10733,8 +10733,8 @@
    "route_usage": 0
   },
   "DM-194336-283557-X6GR": {
-   "verdict": "clear",
-   "width_min_m": 53.29,
+   "verdict": "needs_cv",
+   "width_min_m": 3.38,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10779,7 +10779,7 @@
   },
   "DM-194347-283496-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 11.2,
+   "width_min_m": 7.63,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10841,8 +10841,8 @@
    "route_usage": 0
   },
   "DM-194359-283571-X6GR": {
-   "verdict": "clear",
-   "width_min_m": 58.19,
+   "verdict": "needs_cv",
+   "width_min_m": 5.01,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10850,8 +10850,8 @@
    "route_usage": 0
   },
   "DM-194362-283514-6ZG7": {
-   "verdict": "clear",
-   "width_min_m": 35.89,
+   "verdict": "needs_cv",
+   "width_min_m": 2.02,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11058,7 +11058,7 @@
   },
   "DM-194415-283512-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 10.85,
+   "width_min_m": 7.27,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11112,7 +11112,7 @@
   },
   "DM-194434-283546-X6GR": {
    "verdict": "needs_cv",
-   "width_min_m": 5.86,
+   "width_min_m": 4.31,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11130,7 +11130,7 @@
   },
   "DM-194438-283535-6ZG7": {
    "verdict": "unknown",
-   "width_min_m": 3.5,
+   "width_min_m": 3.34,
    "width_max_m": null,
    "width_src": "silpok",
    "unknown_reason": "no_cctv_band",
@@ -11256,7 +11256,7 @@
   },
   "DM-194470-283673-SAGS": {
    "verdict": "blocked",
-   "width_min_m": 0.91,
+   "width_min_m": 0.61,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11301,7 +11301,7 @@
   },
   "DM-194481-283560-X6GR": {
    "verdict": "needs_cv",
-   "width_min_m": 6.68,
+   "width_min_m": 5.13,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11310,7 +11310,7 @@
   },
   "DM-194483-283528-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 11.56,
+   "width_min_m": 7.86,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11354,8 +11354,8 @@
    "route_usage": 0
   },
   "DM-194497-283620-X6GR": {
-   "verdict": "clear",
-   "width_min_m": 8.17,
+   "verdict": "needs_cv",
+   "width_min_m": 4.81,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11363,8 +11363,8 @@
    "route_usage": 0
   },
   "DM-194498-283566-X6GR": {
-   "verdict": "clear",
-   "width_min_m": 7.09,
+   "verdict": "needs_cv",
+   "width_min_m": 5.58,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11391,7 +11391,7 @@
   },
   "DM-194515-283539-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 13.5,
+   "width_min_m": 9.15,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11400,7 +11400,7 @@
   },
   "DM-194521-283568-X6GR": {
    "verdict": "clear",
-   "width_min_m": 11.77,
+   "width_min_m": 7.63,
    "width_max_m": null,
    "width_src": "silpok",
    "unknown_reason": null,
@@ -11409,25 +11409,25 @@
   },
   "DM-194528-283278-YQOK": {
    "verdict": "unknown",
-   "width_min_m": 5.02,
+   "width_min_m": 0.001028,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv_band",
+   "unknown_reason": "no_cctv_thin",
    "length_m": 539.0,
    "route_usage": 0
   },
   "DM-194532-283556-YQOK": {
-   "verdict": "clear",
-   "width_min_m": 26.0,
+   "verdict": "unknown",
+   "width_min_m": 1.27,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_thin",
    "length_m": 18.9,
    "route_usage": 0
   },
   "DM-194564-283519-539Z": {
    "verdict": "clear",
-   "width_min_m": 22.78,
+   "width_min_m": 10.24,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11436,7 +11436,7 @@
   },
   "DM-194564-283577-X6GR": {
    "verdict": "unknown",
-   "width_min_m": 6.81,
+   "width_min_m": 5.14,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
@@ -11463,7 +11463,7 @@
   },
   "DM-194580-283573-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 12.03,
+   "width_min_m": 7.58,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -11489,11 +11489,11 @@
    "route_usage": 0
   },
   "DM-194610-283608-X6GR": {
-   "verdict": "clear",
-   "width_min_m": 7.35,
+   "verdict": "unknown",
+   "width_min_m": 5.66,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 40.9,
    "route_usage": 0
   },
@@ -11517,7 +11517,7 @@
   },
   "DM-194662-283619-6ZG7": {
    "verdict": "clear",
-   "width_min_m": 11.91,
+   "width_min_m": 7.59,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,

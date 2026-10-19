@@ -107,8 +107,32 @@ def test_the_published_data_actually_contains_both_shapes():
         "치우쳤는데 좌우합과 2×가까운쪽이 안 벌어진다 — 축이 빈 그물이다"
 
     assert esc["escape"] > 0.5, "광장이 붙은 자리가 안 샌다고 나온다"
-    assert esc["wmin"] and esc["wmin"] > 3 * esc["narrow_med"], \
-        "새는데 법선이 2×가까운쪽과 비슷하다 — 그 자리의 고장이 안 보인다"
+    # ★ 2026-10-19. **종전 단정을 뺀다** — `wmin > 3 × narrow_med` 였다.
+    #   그 꼴이 **전수에서 사라졌다.** `escape > 0.5` 이면서 그 부등식을
+    #   만족하는 구간이 1,281 중 **0개**다(`probe_three_reds.py` 로 셌다).
+    #   이 자리의 수가 `wmin 53.290 → 3.380` 으로 내려갔고 `narrow_med`
+    #   5.861 은 **안 움직였다** — 보도 차감 재잠금이 고친 것이 법선이다.
+    #
+    #   ★ 예시를 갈아 끼울 수가 없다. **갈아 끼울 구간이 없다**는 것이
+    #     이 판의 성과이고, 그 사실을 단정으로 세운다 — 그 꼴이 다시
+    #     생기면 이 시험이 운다.
+    #   ★ 「새는데 고장이 안 보인다」를 묻는 자리는 `inversion()` 이
+    #     받는다(`wmin < carr_min` · 현장 5구간 중 3). 이 파일이 그것을
+    #     다시 묻지 않는다 — `tests/test_clearance_cross.py` 가 든다.
+    leaky = [r for r in C.load()
+             if isinstance(r.get("escape"), (int, float))
+             and isinstance(r.get("wmin"), (int, float))
+             and isinstance(r.get("narrow_med"), (int, float))
+             and r["narrow_med"] > 0
+             and r["escape"] > 0.5
+             and r["wmin"] > 3 * r["narrow_med"]]
+    assert not leaky, (
+        "새면서 법선이 가까운쪽의 3배를 넘는 구간이 다시 생겼다 — "
+        f"{len(leaky)}건 · {sorted(r['seg_uid'] for r in leaky)[:5]}. "
+        "보도 차감 재잠금이 되돌아갔는지 본다(봉인 20261015-width-root-walk)")
+    assert esc["wmin"] and esc["wmin"] < esc["narrow_med"], (
+        f"이 자리의 법선({esc['wmin']})이 가까운쪽({esc['narrow_med']}) 아래로 "
+        "안 내려왔다 — 보도 차감이 안 걸렸다")
 
     # ★ **둘이 다른 축이다** — 하나가 다른 하나를 함의하지 않는다.
     assert C.off_center(rows) and C.escaped(rows)

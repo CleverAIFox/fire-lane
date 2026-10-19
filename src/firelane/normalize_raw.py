@@ -80,11 +80,14 @@ for st in (sys.stdout, sys.stderr):
 #
 #   ★ 아홉을 지웠다. 일반 규칙이 전부 덮는다.
 #     남은 줄은 전부 **한글·원본 파일명**을 정규명으로 바꾸는 것들이다.
-# 통과 규칙의 확장자 화이트리스트. **모듈 전역이다.**
-# ★ main() 안에 두면 테스트가 베낀다. 실제로 두 벌이 생겼고 한 벌은
-#   `json` 이 빠진 채 굳었다(2026-09-11 B3 에서 발견).
-#   hwp·pdf·ngi·nda 가 없어 왕복 멱등이 거짓이었던 이력도 같은 병이다.
-PASSTHROUGH_EXT = "zip|csv|json|tif|xml|hwpx?|pdf|ngi|nda|geojson|txt"   # txt — 내비게이션용DB 절단본(DECISIONS §179-4)
+
+
+def __getattr__(name: str):
+    """부를 때 유도한다 — 전역은 import 가 대장을 읽는다 (PEP 562 · DECISIONS 535-4)."""
+    if name != "PASSTHROUGH_EXT":
+        raise AttributeError(name)
+    from firelane.raw_ext import ext_alt
+    return ext_alt()
 
 
 def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
@@ -107,9 +110,10 @@ def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
       `<stem>_<scope>_<날짜>_<part>` 를 만들고 `naming.check` 도 통과시키는데 이 정규식만
       날짜로 끝나야 했다 — 같은 형태의 세 번째다(하이픈 · json). 관리카드가 처음 걸렸다.
     """
+    from firelane.raw_ext import ext_alt as _ext_alt
     org_list = providers.all() if orgs is None else orgs
     return list(RULES) + [
-        (rf"^{o}_[a-z0-9_-]+_\d{{8}}(?:_[a-z0-9-]+)?\.({PASSTHROUGH_EXT})$", o, None)
+        (rf"^{o}_[a-z0-9_-]+_\d{{8}}(?:_[a-z0-9-]+)?\.({_ext_alt()})$", o, None)
         for o in sorted(org_list)
     ]
 
@@ -167,6 +171,15 @@ RULES: list[tuple[str, str, str]] = [
     # 정보공개청구로 받은 규격 원문. 괄호를 이스케이프한다 — 받은 이름 그대로다.
     (r"^건축위원회\(심의\) 표준 가이드라인\.pdf$",
      "nfa", "nfa_bldgcomm_guide_kr_20231231.pdf"),
+
+    # ── 2026-10-14 (DECISIONS 535). §428 과 같은 병이 셋 더 서 있었다.
+    (r"^0\.\s*일방통행로 현황\(공개\)\.xlsx$",
+     "gjcity", "gjcity_oneway_donggu_jngj-donggu_20261008.xlsx"),
+    (r"^동명동 일대 일방통행 지정도로(?: \(\d+\))?\.hwpx$",
+     "gjpolice", "gjpolice_oneway_donggu_jngj-donggu_20261012.hwpx"),
+    # ★ 2026-10-14 (DECISIONS 537). 이름에 연도 범위를 넣지 않는다.
+    (r"^2022년~2025년 동명동 화재 출동 내역\.xlsx$",
+     "safety", "safety_dongmyeong_fires_jngj-dongmyeong_20261012.xlsx"),
 
     # 전국 어린이보호구역 표준데이터. updated 는 레코드의 데이터기준일자
     # 최댓값 2026-07-28 이다. 파일명에는 날짜가 없다.

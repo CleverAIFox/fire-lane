@@ -27,9 +27,9 @@ class FakeWS {
   close() { this.closed = true; this.readyState = 3; this.onclose?.(); }
 }
 
-async function load(url: string) {
+async function load(url: string, token = "") {
   vi.resetModules();
-  vi.doMock("../src/config", () => ({ OPS_URL: url }));
+  vi.doMock("../src/config", () => ({ OPS_URL: url, OPS_TOKEN: token }));
   return (await import("../src/infra/opsLink")) as typeof import("../src/infra/opsLink");
 }
 
@@ -238,5 +238,33 @@ describe("탭 id — 관제가 차를 가른다", () => {
     // 관제 화면이 이 id 를 줄에 얹는다 — 공백·따옴표·줄바꿈이 끼면 꼴이 깨진다
     expect(id).toMatch(/^ops-[0-9a-z]+$/);
     expect(id.length).toBeLessThan(24);
+  });
+});
+
+// ★ 2026-10-14 (DECISIONS §527). 중개자에 문지기가 섰다. 브라우저 WebSocket 은
+//   헤더를 못 붙이므로 토큰은 **주소의 질의**로 간다 — 그 사실을 여기서 든다.
+describe("④ 토큰 — 문을 여는 말을 어떻게 싣는가", () => {
+  it("토큰이 있으면 질의로 붙인다", async () => {
+    const { openLink } = await load("ws://broker.test", "s3cret");
+    openLink(() => {}, { kind: "ops" });
+    expect(FakeWS.made[0].url).toBe("ws://broker.test/ops?t=s3cret");
+  });
+
+  it("단위도 같은 말을 들고 간다 — 문 하나만 잠그면 나머지로 들어온다", async () => {
+    const { openLink } = await load("ws://broker.test", "s3cret");
+    openLink(() => {}, { kind: "unit", unit: "navi-7" });
+    expect(FakeWS.made[0].url).toBe("ws://broker.test/unit/navi-7?t=s3cret");
+  });
+
+  it("토큰이 비면 **안 붙인다** — 종전 주소 그대로다", async () => {
+    const { openLink } = await load("ws://broker.test", "");
+    openLink(() => {}, { kind: "ops" });
+    expect(FakeWS.made[0].url).toBe("ws://broker.test/ops");
+  });
+
+  it("특수문자를 **감싼다** — 안 감싸면 주소가 깨진다", async () => {
+    const { openLink } = await load("ws://broker.test", "a b&c=d");
+    openLink(() => {}, { kind: "ops" });
+    expect(FakeWS.made[0].url).toBe("ws://broker.test/ops?t=a%20b%26c%3Dd");
   });
 });

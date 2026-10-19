@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-10-14T01:58:15+09:00",
+  "generated_at": "2026-10-16T16:54:13+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
-      "sha256": "1c6d985c80b0c1cb47de2e3c4526179e573cde7ff12c3815c81139d06c2327ae",
-      "bytes": 1244048
+      "sha256": "b82b0151ab9b19ec50f16af71b0a461dc3d450a52649c3c56cf38da0db65d5b5",
+      "bytes": 1244196
     },
     "segments.schema.json": {
-      "sha256": "5180e68e1ec69e7a0949d318123b40aea9aa15d210ee4902b68c55693cdea424",
+      "sha256": "b66c6cde021fd23a572ccadc7fbb59094d42688c15c5ab5d178f51d3d8b59b8f",
       "bytes": 5923
     },
     "_manifest.json": {
-      "sha256": "3167441ef5a74f4f5b941701f81c85ac68a59de94f1e067bf8bebe97f3840cc7",
-      "bytes": 103478
+      "sha256": "1040f548eb00730594d6590db04ef0e88b38bb8299b367e4558f32afb989d22e",
+      "bytes": 104431
     }
   },
   "files": {
@@ -45,8 +45,8 @@
       "bytes": 78926
     },
     "navi_graph.json": {
-      "sha256": "8736a0f7e0295eb20c8562220ef8a2cb6693cd8204158e09bfac538656b023b7",
-      "bytes": 584030
+      "sha256": "dd296484fe33b4458725e6fe36124d30ef081208ca967a5618526577c951147d",
+      "bytes": 584220
     },
     "poi.geojson": {
       "sha256": "28899afae2566960a3909bb1dd6fa80b5c5871109de06c96e77b21375422f159",
@@ -57,15 +57,15 @@
       "bytes": 458598
     },
     "route_vehicle.json": {
-      "sha256": "f7df5af746f481890f4d18de54a218f7445f484641dffac8a80ec28b69ad00dc",
-      "bytes": 96670
+      "sha256": "fc8b6522e0a499cc072cbbe0cb2ac6afbf1d3e8c546693074c860b84542cd10c",
+      "bytes": 96720
     },
     "segments.geojson": {
-      "sha256": "deb6d2c79dfd87ddf0f321c39f30f44ec17bc294a43e19b56319eeb082ea2aad",
-      "bytes": 1045942
+      "sha256": "be701d866b1b661c0136bcd655f5ad0bfd8523958ce87bf31991b8cda2e37076",
+      "bytes": 1046078
     },
     "segments.schema.json": {
-      "sha256": "bd24108eaa2d90f8aeaa6cf8218ef28d8b582fb1c52f5f03140b73b75e683dca",
+      "sha256": "66722049b39fbce911a4c1a8d5af65a8a26b74202dff684f07d2b03065b25908",
       "bytes": 5718
     },
     "sidewalk.geojson": {
@@ -81,7 +81,7 @@
       "bytes": 350
     },
     "view.json": {
-      "sha256": "0581059e1246ca1731a557d3c412cf2bc744b657f9fb55b8a1cdb50754ac9ba4",
+      "sha256": "de589a24a89add850cb354ecadddc16f91da0421a24c1fbdada32f79dc34f408",
       "bytes": 582
     }
   },

@@ -25,6 +25,7 @@ PARAM 없음
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -161,3 +162,52 @@ def test_duplicate_headings_get_distinct_slugs(bp):
     a = bp.slug("같은 제목", seen)
     b = bp.slug("같은 제목", seen)
     assert a != b, f"같은 제목 둘이 같은 닻을 받는다 — {a}"
+
+
+# ── 칸이 실제로 켜지는가 (DECISIONS §526) ──────────────────────
+#
+# ★ 발행물 하나를 **글자로** 민다. 브라우저가 없으면 `display` 를 못 재지만,
+#   칸이 안 켜진 원인은 CSS 가 아니라 **문서 구조**였다 — 그 구조는 글자로 잰다.
+def _built() -> str:
+    """발행된 화면. **주석을 걷고** 준다.
+
+    ★ 2026-10-14. 걷지 않으면 이 검사가 **제 사유를 적은 주석에 걸린다** —
+      그 주석이 `<header>` 라는 글자를 담고 있어서 `index("<header")` 가
+      진짜 태그보다 먼저 거기를 짚었다. 구조를 재는 자는 **태그만** 본다.
+    """
+    t = (ROOT / "web" / "proposal.html").read_text(encoding="utf-8")
+    return re.sub(r"<!--.*?-->", "", t, flags=re.S)
+
+
+def test_the_radios_are_siblings_of_main_not_children_of_header():
+    """`#tN:checked ~ main #pN` 이 맞으려면 input 이 **`main` 의 앞 형제**여야 한다.
+
+    2026-10-14 까지 input 이 `<header>` **안**에 살았다. `~` 는 뒤 형제만 보고
+    `main` 은 input 의 형제가 아니라 header 의 형제라서 **네 칸이 전부 꺼진 채**
+    발행됐다 — 기획서 화면이 목차만 있고 **본문이 통째로 비어 있었다.**
+    심사위원이 볼 화면이고, 아무 관문도 안 울었다.
+    """
+    t = _built()
+    hd, he, mn = t.index("<header"), t.index("</header>"), t.index("<main")
+    first = t.index('<input type="radio" name="pane"')
+    assert not (hd < first < he), (
+        "라디오가 `<header>` 안에 있다 — `~ main` 이 아무것도 안 맞고 "
+        "**모든 칸이 꺼진다**(DECISIONS §526)")
+    assert first < mn, "라디오가 `main` 보다 뒤에 있다 — `~` 는 뒤 형제만 본다"
+
+
+def test_every_pane_has_a_rule_that_turns_it_on():
+    """칸마다 **켜는 규칙이 하나씩** 있는가. 수가 맞아야 한다."""
+    t = _built()
+    panes = t.count('<section class="pane"')
+    assert panes >= 2, f"칸이 {panes}개다 — 굽는 자가 쪼개지 못했다"
+    on = sum(f"#t{k}:checked~main #p{k}{{display:block}}" in t for k in range(panes))
+    assert on == panes, f"칸 {panes}개 중 켜는 규칙이 {on}개다 — 나머지는 영영 안 보인다"
+
+
+def test_exactly_one_radio_starts_checked():
+    """첫 칸 하나만 `checked` — 0이면 빈 화면, 둘이면 뒤엣것만 선다."""
+    t = _built()
+    assert t.count('name="pane"') == t.count('<section class="pane"')
+    assert t.count('name="pane" id="t0" checked') == 1
+    assert t.count(" checked>") == 1, "처음 켜진 칸이 하나가 아니다"
