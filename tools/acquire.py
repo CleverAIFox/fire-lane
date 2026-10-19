@@ -146,6 +146,43 @@ def save_ledger(d: dict) -> None:
 #   주장하나」 한 물음이라 혼자 선다 — 명령 넷은 그것을 **쓰는** 쪽이다.
 from firelane.acquire_rules import dataset_globs, retired_names
 
+#: **폐지된 플래그 → 폐지한 절.** 부르는 쪽이 따라오게 하는 자리다.
+#: ★ 2026-10-14 (DECISIONS 535-2). `--quarantine` 은 §173-2 가 폐지했는데
+#:   `pull_data` 의 체인이 **넉 달 그것을 계속 불렀다.** 이 도구는 거절만 하며
+#:   종료코드 2 로 죽으므로 반입 체인이 **돌 때마다 반드시 거기서 멈췄고**,
+#:   바로 다음 단계 `judge` 가 들던 「결손 3종」이 그만큼 안 보였다.
+#:   **죽은 단계 하나가 맞는 자를 넉 달 가렸다.**
+#:   폐지를 여기 적게 하면 부르는 쪽을 **기계가** 잡는다 —
+#:   `tests/test_intake_rules.py::test_no_chain_step_calls_a_retired_flag`.
+RETIRED_FLAGS: dict[str, str] = {"--quarantine": "DECISIONS §173-2"}
+
+#: 대장이 적은 글롭이 `data/_acquire.json`(커밋되는 sha 대장)의 어느 파일도
+#: 안 집는 수 — **내려가는 쪽으로만.** 레이크 없이도 잰다.
+#: ★ 2026-10-14 (DECISIONS 535-2). `ingest` 가 `[MISSING]` 셋을 넉 달 찍었고
+#:   **그것은 경고일 뿐 아무 관문도 아니었다.** 여기서 수로 든다 — 대장에
+#:   자산을 적는 **그 판에서** 울고, 반입이 끝나면 0 으로 내려간다.
+LEDGER_MISSING = 0
+
+
+def missing_from_register(root: Path | None = None) -> list[tuple[str, str]]:
+    """`_acquire.json` 만으로 센 결손. `judge()` 와 **같은 물음**이고 레이크를 안 읽는다.
+
+    ★ `judge()` 는 `RAW` 를 glob 하므로 레이크가 있는 기계에서만 돈다. 그래서
+      그 자가 **CI 와 레이크 없는 기계에서 통째로 침묵했다.** 커밋되는 sha
+      대장으로 같은 수를 내면 어디서나 울린다.
+    """
+    import fnmatch
+    import json as _json
+
+    r = root or ROOT
+    reg = _json.loads((r / "data/_acquire.json").read_text(encoding="utf-8"))["files"]
+    out = []
+    for k, gs in dataset_globs().items():
+        pats = [g for g in (gs if isinstance(gs, list) else [gs]) if g]
+        if not any(fnmatch.fnmatch(p, pat) for pat in pats for p in reg):
+            out.append((k, pats[0] if pats else "?"))
+    return out
+
 
 def raw_files() -> list[Path]:
     if not RAW.is_dir():
@@ -391,9 +428,20 @@ def cmd_prune_landing(dry: bool) -> int:
     if not LANDING.is_dir():
         print(col(f"landing 이 없다: {LANDING}", "y"))
         return 0
+
+    # ★ 2026-10-14 (DECISIONS 536-1). **크기로 먼저 거른다.** 종전에는
+    #   raw 전부를 해시했다 — 91개 3.97 GB 를, landing 에 한두 개 있을 때도.
+    #   내용이 같으면 크기도 같으므로 크기가 안 맞는 raw 파일은 **짝이 될 수
+    #   없다**. 걸러도 답이 안 바뀐다(손실 없는 사전 필터).
+    # ★ 이 자리가 WSL 에서 ENOMEM 으로 죽은 자리다. 느려진 게 아니라
+    #   처음부터 잘못 셌고, 레이크가 커지며 터질 때가 온 것이다.
+    want = {
+        p.stat().st_size for p in LANDING.rglob("*") if p.is_file()
+    }
     raw_sha = {}
     for p in raw_files():
-        raw_sha.setdefault(sha256(p), []).append(p)
+        if p.stat().st_size in want:
+            raw_sha.setdefault(sha256(p), []).append(p)
 
     # ★ 2026-08-23. `--quarantine` 을 먼저 돌리면 격리된 파일이 raw 에서
     #   사라지므로 그 landing 원본이 "짝 없음" 으로 남는다. 실제로 그렇게 됐다 —
@@ -405,7 +453,7 @@ def cmd_prune_landing(dry: bool) -> int:
     q_sha = {}
     if QUARANTINE.is_dir():
         for p in QUARANTINE.rglob("*"):
-            if p.is_file():
+            if p.is_file() and p.stat().st_size in want:
                 q_sha.setdefault(sha256(p), []).append(p)
 
     freed, keep, quarantined = 0, [], []

@@ -29,22 +29,59 @@ server.py — **관제와 내비 사이를 잇는 중개자.**
 ★ **저장소가 없다.** 출동 이력도 지난 위치도 안 남긴다. `roster.py` 머리말이
   그 이유를 적는다 — 연결이 곧 명부다.
 
-★ **인증이 없다.** 지금 이것은 한 출동을 한 관제가 보는 시연이고, 앞은
-  `*.cloudfront.net` 뒤에 있다. 토큰을 지금 넣으면 발급·갱신·폐기가 같이
-  생기는데 **그것을 쥘 사람이 없다.** 넣을 자리는 `_accept()` 한 곳이다 —
-  그래서 지금 비어 있는 것이 보인다.
+★ **인증은 공유 토큰 하나다**(2026-10-14 · DECISIONS §527). 종전에 이 자리는
+  「인증이 없다 — 한 출동을 한 관제가 보는 시연이고 토큰을 쥘 사람이 없다」
+  였다. **그 가정이 깨졌다** — `web/navi/src/config.ts` 가 앞을
+  `wss://*.cloudfront.net` 으로 적는다. 올라간 순간 URL 만 알면 누구나
+  `/ops` 로 **가짜 출동 지령**을, `/cv/{cam}` 으로 **영상이 잰 통과폭**을
+  밀어 넣고 `/units` 로 지금 누가 어디 나가 있는지 읽는다. 폭을 공공데이터로
+  재겠다는 프로젝트에서 그 수를 아무나 쓸 수 있으면 판정이 무의미해진다.
 
-IN    WebSocket 두 종류 · HTTP 두 개(둘러보기용)
+  발급·갱신·폐기 체계는 **여전히 안 만든다** — 쥘 사람이 없다는 말은 아직
+  맞다. 대신 `.env` 의 `FIRE_LANE_OPS_TOKEN` 하나를 모든 문이 요구한다.
+  약한 자물쇠지만 **열린 문과는 다르다.**
+
+★ **토큰이 없으면 선다 — 조용히 열리지 않는다.** 없이 돌리려면
+  `FIRE_LANE_OPS_OPEN=1` 을 **일부러** 줘야 한다(그러면 뜰 때 운다).
+  느슨한 쪽을 **기본**이 아니라 **선언**으로 만든다 — 종전에는 머리말에만
+  적혀 있었고 머리말은 아무도 안 막는다.
+
+IN    WebSocket 세 종류 · HTTP 두 개(둘러보기용) · FIRE_LANE_OPS_TOKEN
 OUT   옮긴 글자
-밖    규약의 뜻 · 저장 · 인증 (위 ★)
+밖    규약의 뜻 · 저장 · **토큰의 발급·갱신·폐기** (위 ★)
 """
 from __future__ import annotations
 
+import hmac
 import uuid
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+
+from firelane.paths import env as _env
 
 from .roster import ROOM, Peer, Roster
+
+#: 문을 여는 말이 **담긴 환경변수의 이름**. 값이 아니다 — 값은 `.env` 에 있다.
+#: ★ 이름에 `TOKEN` 을 쓰면 ruff S105 가 「하드코딩한 비밀」로 읽는다. 억제하지
+#:   않고 이름을 고쳤다 — 억제는 검사를 끄는 것이고, 끌 이유가 없다.
+ENV_AUTH = "FIRE_LANE_OPS_TOKEN"
+#: 토큰 없이 돌리겠다는 **선언**. 기본값이 아니다.
+ENV_OPEN = "FIRE_LANE_OPS_OPEN"
+#: 토큰을 싣는 질의 이름. URL 에 실어야 브라우저 WebSocket 이 보낼 수 있다 —
+#: 그 API 는 헤더를 못 붙인다.
+QS = "t"
+
+
+def _token() -> str:
+    return _env(ENV_AUTH).strip()
+
+
+def _ok(given: str | None) -> bool:
+    """맞는 말인가. **길이로 새지 않게** 상수시간으로 댄다."""
+    want = _token()
+    if not want:
+        return True                      # 선언하고 연 상태 — `create_app` 이 이미 울었다
+    return bool(given) and hmac.compare_digest(given or "", want)
 
 
 def create_app() -> FastAPI:
@@ -63,6 +100,18 @@ def create_app() -> FastAPI:
         ),
         version="0.1.0",
     )
+    # ★ 2026-10-14 (DECISIONS §527). **토큰이 없으면 여기서 선다.**
+    #   느슨한 쪽을 기본이 아니라 **선언**으로 만든다 — 종전에는 머리말에만
+    #   「인증이 없다」가 적혀 있었고, 머리말은 아무도 안 막는다.
+    if not _token():
+        if _env(ENV_OPEN).strip() != "1":
+            raise RuntimeError(
+                f"★ {ENV_AUTH} 가 비어 있다 — 중개자를 **열린 채로 안 띄운다**.\n"
+                f"  .env 에 한 줄 넣어라:  {ENV_AUTH}=<아무도 모르는 긴 글자>\n"
+                f"  정말 열어야 하면 선언해라:  {ENV_OPEN}=1  (뜰 때 운다)")
+        print(f"★ {ENV_OPEN}=1 — 중개자가 **열려 있다.** 아무나 "
+              "출동 지령과 통과폭을 밀어 넣을 수 있다.")
+
     app.state.roster = Roster()
     app.state.socks = {}      # cid -> WebSocket. 명부를 순수하게 두려고 여기 있다
 
@@ -76,15 +125,23 @@ def create_app() -> FastAPI:
     def health() -> dict[str, bool]:
         return {"ok": True}
 
+    # ★ `/health` 는 연다 — 「살아 있는가」는 비밀이 아니고, 앞단 상태검사가
+    #   토큰을 못 들고 온다. `/units` 는 **지금 누가 어디 나가 있는지**라서 닫는다.
     @app.get("/units", summary="지금 누가 나가 있는가")
-    def units() -> dict[str, object]:
+    def units(t: str | None = None) -> dict[str, object]:
+        if not _ok(t):
+            raise HTTPException(status_code=401, detail=f"{QS} 가 틀렸다")
         r: Roster = app.state.roster
         return {"room": ROOM, "ops": r.ops_present(), "units": r.units()}
 
     # ── 중개 ──────────────────────────────────────────────────
     async def _serve(ws: WebSocket, kind: str, unit: str) -> None:
         """한 연결의 생애. 받은 글자를 **상대편 전부**에게 옮긴다."""
-        # ★ 인증이 들어갈 자리는 여기 하나다(머리말 ★). 지금은 비어 있다.
+        # ★ 인증이 들어갈 자리는 여기 하나다(머리말 ★). 2026-10-14 에 채웠다.
+        #   **받기 전에 본다** — `accept()` 뒤에 보면 그 사이에 글자가 들어온다.
+        if not _ok(ws.query_params.get(QS)):
+            await ws.close(code=1008, reason="auth")     # 1008 = policy violation
+            return
         await ws.accept()
         cid = uuid.uuid4().hex
         me = Peer(cid=cid, kind=kind, unit=unit)
@@ -132,5 +189,13 @@ def create_app() -> FastAPI:
     return app
 
 
-#: uvicorn 이 드는 이름. `firelane.ops.server:app`
-app = create_app()
+# ★ 2026-10-14 (DECISIONS §527). **게으르게 준다.** 종전에는 여기서 바로
+#   `create_app()` 을 불렀는데, 토큰 관문이 선 뒤로는 **수입만 해도 죽는다** —
+#   `import firelane.ops.server` 하는 시험과 CLI 표면 검사가 같이 쓰러진다.
+#   PEP 562 로 미루면 `uvicorn firelane.ops.server:app` 이 **띄울 때** 울고,
+#   수입은 조용하다. 관문은 그대로고 우는 자리만 옳아진다.
+def __getattr__(name: str):
+    """`app` 을 **부를 때** 만든다. uvicorn 이 드는 이름이다."""
+    if name == "app":
+        return create_app()
+    raise AttributeError(name)

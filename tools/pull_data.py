@@ -16,7 +16,6 @@ pull_data.py — 반입 체인 단일 트리거. **Downloads 에서 processed �
     acquire --stage             landing → raw
     acquire --verify            sha 대조
     acquire --prune-landing     중복 원본 정리
-    acquire --quarantine        대장 밖 raw 격리
     prep --apply                raw → norm
 
 ★ `normalize_raw` 를 여기 넣지 않는다. 이름이 정규화처럼 보이지만 실제로는
@@ -134,8 +133,13 @@ def steps(a) -> list[Step]:
                         T("acquire.py") + ["--prune-landing"],
                         needs="verify"))
     out += [
-        Step("quarantine", "대장에 없는 raw 파일 격리",
-             T("acquire.py") + ["--quarantine"], needs="stage"),
+        # ★ 2026-10-14 (DECISIONS 535). `quarantine` 을 **뺐다.** 그 단계는
+        #   §173-2 가 폐지했고 `acquire --quarantine` 은 이제 거절만 한다 —
+        #   종료코드 2 로 죽으므로 **반입 체인이 반드시 거기서 멈췄다.**
+        #   폐지는 그 도구에만 닿았고 **부르는 쪽이 안 따라왔다.**
+        #   그 물음(「대장 밖 raw 가 있는가」)은 바로 아래 `judge` 가 이미
+        #   든다 — `acquire` 를 인수 없이 부르면 세 판정에 그것이 들어 있고
+        #   「대장에 적기 전에는 반입을 멈춘다」를 같은 자리에서 찍는다.
         Step("judge", "세 판정 — 결손이 남았는가",
              T("acquire.py"), mutating=False),
         # ★ confirm=None. `--apply` 가 곧 확인이다. `--yes` 를 안 받는다.

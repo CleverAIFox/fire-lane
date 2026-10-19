@@ -29,8 +29,8 @@
 #   같은 규율이다 — INBOX 에만 사는 스크립트는 버전 관리·시험·리뷰 밖이고
 #   INBOX 를 비우는 순간 사라진다(그날 실제로 사라졌다).
 #
-# IN    $FIRE_LANE_INBOX/fire-lane-*.zip (최신) · $FIRE_LANE_INBOX/fl.sh
-#       $FIRE_LANE_REPO/.env
+# IN    $FIRE_LANE_INBOX/fire-lane-*.zip (최신) · $FIRE_LANE_REPO/.env
+#       $FIRE_LANE_REPO/tools/inbox_{fl,go}.sh — **INBOX 사본의 정본**
 # OUT   없음 (`fl.sh` 가 낸다)
 # PARAM 인자 하나를 주면 그것을 브랜치 이름으로 쓴다. 없으면 PR_TITLE 에서 뽑는다.
 # 밖    배치 내용을 판단하지 않는다 — 적용·검증·PR 은 전부 `tools/fl.sh` 소관이다.
@@ -66,7 +66,18 @@ else
   c 33 "! zip 이 없다 — 풀린 패치를 쓴다"
 fi
 
-[ -f "$INBOX/fl.sh" ] || { c 31 "✗ $INBOX/fl.sh 가 없다 — zip 에 들어 있어야 한다"; exit 1; }
+# ★ 2026-10-13 (DECISIONS §518). **INBOX 사본을 매번 저장소에서 새로 깐다.**
+#   종전에는 `fl.sh` 가 없으면 「zip 에 들어 있어야 한다」로 죽었다. 그 말은
+#   §214-1 **이전**의 꼴이다 — 그 절이 zip 에서 `fl.sh` 를 뺀 뒤로 그 파일은
+#   zip 에 **일부러** 없다. 그래서 INBOX 를 비우면 다시 깔 길이 없었고,
+#   2026-10-13 에 `go.sh: No such file or directory` 로 열차가 섰다.
+#   정본은 저장소에 있고 저장소는 바로 위에서 `cd` 했다 — 물어볼 것이 없다.
+#   ★ 둘 다 **매번** 깐다. 「없으면」으로 두면 낡은 사본이 조용히 남는다.
+for _n in fl go; do
+  _src="$REPO/tools/inbox_$_n.sh"
+  [ -f "$_src" ] || { c 31 "✗ 정본이 없다: $_src"; exit 1; }
+  cmp -s "$_src" "$INBOX/$_n.sh" || { cp -f "$_src" "$INBOX/$_n.sh"; c 90 "· $_n.sh 를 저장소 판으로 깔았다"; }
+done
 
 # ③ 브랜치 — 인자가 없으면 PR_TITLE 에서 뽑는다.
 #    ★ 날짜를 붙인다. 같은 이름을 재사용하면 `fl.sh` 가 이전 가지를 만나 멈춘다.

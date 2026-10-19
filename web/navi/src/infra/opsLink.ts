@@ -17,7 +17,7 @@
  *   (`src/firelane/ops/server.py` 머리말).
  */
 import { OPS_CHANNEL } from "../domain/opsProtocol";
-import { OPS_URL } from "../config";
+import { OPS_TOKEN, OPS_URL } from "../config";
 
 export interface Link {
   send(m: unknown): void;
@@ -38,7 +38,11 @@ export type Who = { kind: "ops" } | { kind: "unit"; unit: string };
 const RETRY_MS = 1000;
 
 function path(who: Who): string {
-  return who.kind === "ops" ? "/ops" : `/unit/${encodeURIComponent(who.unit)}`;
+  const p = who.kind === "ops" ? "/ops" : `/unit/${encodeURIComponent(who.unit)}`;
+  // ★ 2026-10-14 (DECISIONS §527). 토큰은 **주소의 질의**로 간다 — 브라우저
+  //   WebSocket API 는 헤더를 못 붙인다. 비어 있으면 안 붙이고, 그때 서버가
+  //   토큰을 요구하면 1008 로 닫는다. 아래 재접속이 그것을 주소 오류와 같이 다룬다.
+  return OPS_TOKEN ? `${p}?t=${encodeURIComponent(OPS_TOKEN)}` : p;
 }
 
 function openLinkWs(base: string, who: Who, onMsg: (data: unknown) => void): Link {

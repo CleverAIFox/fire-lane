@@ -32,11 +32,30 @@
  *   그것은 같은 브라우저의 탭끼리만 닿는다 — 지금까지의 동작 그대로다.
  *   서버가 없다고 내비가 멈추면 안 된다.
  *
- * ★ **토큰이 아니다.** 주소이고, 공개돼도 손해가 없다 — 그래서 secrets 가
- *   아니라 vars 다. 중개자에 인증이 붙는 날 그 값은 secrets 로 간다.
+ * ★ **주소는 토큰이 아니다.** 공개돼도 손해가 없어 secrets 가 아니라 vars 다.
+ *   토큰은 아래 `OPS_TOKEN` 이 따로 든다(2026-10-14 · DECISIONS §527).
  */
 export const OPS_URL: string =
   (import.meta as { env?: Record<string, string> }).env?.VITE_OPS_URL ?? "";
+
+/**
+ * 중개자 토큰. **문을 여는 말**이고 주소와 다르다 — 공개되면 아무나
+ * 출동 지령과 통과폭을 밀어 넣는다. `secrets` 로 넣는다.
+ * (2026-10-14 · DECISIONS §527 · `src/firelane/ops/server.py`)
+ *
+ *     저장소 루트 .env       FIRE_LANE_OPS_TOKEN=<아무도 모르는 긴 글자>
+ *     배포                   ${{ secrets.FIRE_LANE_OPS_TOKEN }}
+ *
+ * ★ **빌드에 박힌다.** 브라우저 WebSocket 은 헤더를 못 붙이므로 토큰은
+ *   주소의 질의(`?t=`)로 간다. 즉 이것은 **화면을 여는 열쇠**이지 사람을
+ *   가리는 신분이 아니다 — 누가 보냈는지는 여전히 모른다. 그 구분은
+ *   `server.py` 머리말이 「발급·갱신·폐기는 밖」으로 적는다.
+ *
+ * ★ 비어 있으면 화면은 **그대로 돈다.** 서버가 토큰을 요구하면 거절당하고
+ *   `opsLink` 가 1초마다 다시 붙는다 — 주소가 틀렸을 때와 같은 길이다.
+ */
+export const OPS_TOKEN: string =
+  (import.meta as { env?: Record<string, string> }).env?.VITE_OPS_TOKEN ?? "";
 
 /**
  * 주행 속도 가정(m/s).

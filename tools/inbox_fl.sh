@@ -7,6 +7,7 @@
 # 이것은 배치 도구가 아니다. 진짜 도구(`tools/fl.sh`)를 **어느 판으로 돌릴지** 고르고 넘긴다.
 #
 #   1. 저장소의 origin/part/infra 판 tools/fl.sh 를 씨앗으로 깐다 (있으면)
+#   1b. **그 가지($1)에 tools/fl.sh 가 있으면 그것을 씨앗으로 쓴다** (§528)
 #   2. INBOX 의 패치(zip 안 · 밖)가 tools/fl.sh 를 만들거나 고치면 그것을 씨앗 위에 얹는다
 #      — 씨앗에 **이미** 그 변경이 있으면(그 배치가 머지된 뒤다) 안 얹고 넘어간다
 #   3. 그 결과를 실행한다
@@ -15,15 +16,31 @@
 #   돌면 그 배치가 고친 결함이 그 배치를 막는다. 이 파일 자신은 거의 안 바뀌게 짧게 둔다.
 # ★ 저장소 판은 체크아웃이 아니라 `origin/part/infra` 에서 꺼낸다 — 체크아웃은 어느
 #   가지에 서 있는지 모른다.
+# ★ 2026-10-14 (DECISIONS §528). **1b 가 생긴 이유** — 2 는 고침을 **zip 안 패치**로만
+#   받는다. 그런데 열차가 돌다가 그 도구에서 깨지면 사람은 **그 자리에서** 고치고
+#   가지에 앉힌다. 그 고침은 씨앗에도 zip 에도 없어서 열차가 **같은 자리에서 또 죽었다**
+#   (2026-10-14 · 배치 1014 가 세 번). 가지 이름은 `$1` 로 **이미 들어온다** — 머리말이
+#   피한 것은 「어느 가지에 서 있는지 모르는 체크아웃」이지 **이름이 들어온 가지**가 아니다.
 set -euo pipefail
 IN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${FIRE_LANE_REPO:-$HOME/projects/fire-lane}"
 T=$(mktemp -d /tmp/fl-boot.XXXXXX)
 mkdir -p "$T/tools"
-if git -C "$REPO" cat-file -e origin/part/infra:tools/fl.sh 2>/dev/null; then
-  git -C "$REPO" show origin/part/infra:tools/fl.sh > "$T/tools/fl.sh"
+# ★ 씨앗 고르기 — **가지가 먼저다**(§528). `$1` 은 브랜치 이름이고,
+#   깃발(`--all` …)이거나 그 가지에 도구가 없으면 `origin/part/infra` 로 간다.
+SEED=""
+_has() { git -C "$REPO" cat-file -e "$1:tools/fl.sh" 2>/dev/null; }
+case "${1:-}" in
+  ""|-*) ;;
+  *) if _has "$1"; then SEED="$1"; fi ;;
+esac
+if [ -z "$SEED" ] && _has origin/part/infra; then
+  SEED="origin/part/infra"
+fi
+if [ -n "$SEED" ]; then
+  git -C "$REPO" show "$SEED:tools/fl.sh" > "$T/tools/fl.sh"
   chmod +x "$T/tools/fl.sh"   # ★ 저장소 판은 755 다. 안 맞추면 git apply 가 「type 100644, expected 100755」 로 운다
-  SRC="저장소 origin/part/infra"
+  SRC="저장소 $SEED"
 else
   SRC=""
 fi
