@@ -61,6 +61,33 @@
   input[name=pane]{position:absolute; opacity:0; pointer-events:none}
   .pane{display:none}
 
+  /* ★ 2026-10-19. **칸을 켜는 규칙이 없었다.** 아래 본문의 §526 주석이
+       규칙을 `#tN:checked ~ main #pN` 이라고 적어뒀는데 CSS 에 그 줄이
+       없어, `.pane{display:none}` 만 남아 **네 칸이 전부 꺼진 채** 떴다.
+       화면은 하얗고 콘솔은 깨끗하고 관문 셋은 초록이었다 — 아무것도
+       안 깨졌다. 그냥 없었다. 주석이 규칙을 기억하고 실물이 안 들고
+       있는 것은 §534-4(`SPAN_INVERSION`)와 같은 병이다.
+     ★ 넷으로 **열거**한다. 다섯째 Part 가 생기면 이 줄들은 조용히 그
+       칸을 안 켠다 — 그래서 PLAN `proposal-renders` 가 지어진 화면의
+       `.pane` 수와 이 규칙 수를 **센다.** 열거는 세는 관문과 함께만 둔다. */
+  #t0:checked ~ main #p0,
+  #t1:checked ~ main #p1,
+  #t2:checked ~ main #p2,
+  #t3:checked ~ main #p3{display:block}
+
+  /* ★ 보루. 라디오에 `checked` 가 하나도 안 붙어도 첫 칸은 켠다.
+       **빈 화면은 내보내지 않는다.** 위 열거가 빗나가는 날에도 사람은
+       무언가를 본다 — 조용한 하얀 화면보다 낫다. */
+  body:not(:has(input[name=pane]:checked)) #p0{display:block}
+
+  /* ★ 켜진 탭이 어느 것인지 보이게. 안 그러면 네 칸 중 어디에 있는지
+       사람이 못 센다 — 그것도 화면이 거짓말하는 쪽이다. */
+  #t0:checked ~ header label[for=t0],
+  #t1:checked ~ header label[for=t1],
+  #t2:checked ~ header label[for=t2],
+  #t3:checked ~ header label[for=t3]{
+    color:var(--head); background:var(--bg); border-color:var(--dim)}
+
   /* ── 본문 ── */
   main{display:grid; grid-template-columns:260px minmax(0,1fr); gap:38px;
     max-width:1180px; margin:0 auto; padding:26px 24px 80px}

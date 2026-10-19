@@ -54,6 +54,20 @@ fi
 REPO_DIR="${FIRE_LANE_REPO:-$HOME/projects/fire-lane}"     # ★ ~/fire-lane 아니다
 GH_REPO=CleverAIFox/fire-lane
 BASE=part/infra
+
+# ★ 2026-10-19. **초록 받은 나무를 적어둔다.**
+#   강제자는 나무(tree)의 함수다. commit 이 아니다 — 스쿼시는 commit 을
+#   반드시 바꾸고 tree 는 그대로 둔다. 그래서 「같은 commit 인가」로 물으면
+#   스쿼시 뒤 9단 봉인이 **반드시** 전수를 다시 돈다(2026-10-19 실측
+#   19분37초, 그날 네 번째 측정이었다). 여기 적힌 나무를
+#   `dms.py seal --green-note` 가 읽어 근거를 대고 생략한다.
+#   `.git/` 에 둔다 — 추적 파일이 아니고, 가지를 지워도 남는다.
+green_note() {
+    local t
+    t=$(git rev-parse "HEAD^{tree}" 2>/dev/null) || return 0
+    printf '%s\t%s\t%s\n' "$t" "$(date -Iseconds)" "${1:-?}" \
+        >> "$(git rev-parse --git-dir)/fl-green-trees"
+}
 # ★ 2026-09-22 (§214-1). 실행마다 새 자리다. 종전의 고정 경로 `/tmp/fl-patches` 는
 #   verify 안의 pytest(`fl.sh --pick` 시험)가 같은 자리를 비워 **PR_BODY.md 가 7분 뒤
 #   사라졌다**(6단계 FileNotFoundError). 도구와 그 시험이 한 자리를 나눠 쓰면 안 된다.
@@ -786,6 +800,7 @@ if bash tools/ci_wait.sh "$PR" "$GH_REPO"; then :; else
     esac
 fi
 ok "CI 초록"
+green_note "PR #$PR CI 초록"
 
 # ══ 7. 스쿼시 ═════════════════════════════════════════════════
 step "7. $BR → $BASE 스쿼시"
