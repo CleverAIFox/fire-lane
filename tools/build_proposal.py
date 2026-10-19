@@ -59,7 +59,7 @@ OUT = ROOT / "web" / "proposal.html"
 
 #: 와꾸가 반드시 들어야 하는 자리. 하나라도 없으면 **터진다** — 조용히
 #: 반쪽짜리를 굽느니 안 굽는 쪽이 낫다.
-SLOTS = ("title", "tabs", "toc", "panes", "script")
+SLOTS = ("title", "radios", "tabs", "toc", "panes", "script")
 
 #: 와꾸가 제 몫으로 더하는 제목 수. 완전성 자가 이것을 알고 뺀다.
 FRAME_HEADS = 0
@@ -176,11 +176,16 @@ def build() -> str:
     panes, toc = render(md)
     tpl = TPL.read_text(encoding="utf-8")
 
-    tabs, bodies = [], []
+    # ★ 2026-10-14 (DECISIONS §526). 라디오와 이름표를 **가른다.** 종전에는
+    #   둘을 붙여 `<div class="tabs">` 안에 넣었고, 그래서 input 이 `<header>`
+    #   안에 살았다. 아래 CSS 가 `~`(뒤 형제)로 `main` 과 `header` 를 찾는데
+    #   그 자리에서는 **둘 다 형제가 아니다** — 네 칸이 전부 꺼진 채 발행됐다.
+    #   이름표는 `for=` 로 input 을 가리키므로 떨어져 있어도 눌린다.
+    radios, tabs, bodies = [], [], []
     for k, (name, body) in enumerate(panes):
         chk = " checked" if k == 0 else ""
-        tabs.append(f'<input type="radio" name="pane" id="t{k}"{chk}>'
-                    f'<label for="t{k}">{html.escape(name)}</label>')
+        radios.append(f'<input type="radio" name="pane" id="t{k}"{chk}>')
+        tabs.append(f'<label for="t{k}">{html.escape(name)}</label>')
         bodies.append(f'<section class="pane" id="p{k}">{body}</section>')
     # 칸 전환은 CSS 가 한다 — 자바스크립트가 꺼져도 선다
     css = "<style>" + "".join(
@@ -197,6 +202,7 @@ def build() -> str:
     out = tpl
     for name, value in (
         ("title", html.escape(title)),
+        ("radios", "".join(radios)),
         ("tabs", "".join(tabs)),
         ("toc", nav),
         ("panes", "".join(bodies)),

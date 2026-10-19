@@ -571,7 +571,7 @@ layers:
     regenerable: false
     # ★ 손으로 고치지 마라. `providers.pattern()` 이 만드는 값이고
     #   `test_naming_regex_is_generated_not_handwritten` 이 대조한다.
-    naming: '^(eais|gjbg|gjcity|its|juso|moleg|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/'
+    naming: '^(eais|gjbg|gjcity|gjpolice|its|juso|mois|moleg|nfa|ngii|nsdi|safety|sbiz|vworld)/'
     what: 받은 그대로. 인코딩조차 고치지 않는다
     depth: 2
     # ★ provider 폴더의 정본. 2026-08-27 까지 이 목록이 네 곳에 있었다 —
@@ -598,6 +598,11 @@ layers:
       #   — "reserved 는 등재만. 파일 0건이 정상이고 폴더도 없어야 한다".
       #   반입이 끝나면 active 로 올린다.
       mois:    {org: 행정안전부 공공데이터포털,    state: active}
+      # ★ 2026-10-14 (DECISIONS 535-3). 정보공개청구 회신의 제공기관이다.
+      #   `gjpolice_oneway` 가 대장에 자리를 갖고도 **반입이 안 섰다** —
+      #   stem 접두가 이 어휘에 없으면 `normalize_raw` 의 통과 규칙이 그
+      #   정규명을 못 받는다. 자리와 제공기관은 **같이** 서야 한다.
+      gjpolice: {org: 전남광주통합특별시경찰청 동부경찰서, state: active}
       gjbg:    {org: 전남광주통합특별시 빅데이터 통합플랫폼, state: active}
       nfa:
         org: 소방청
@@ -665,7 +670,7 @@ layers:
     #     네 곳에 있었고 세 곳에서 달랐다(§18-2a). raw 와 **같은 생성기**를
     #     탄다 — providers.pattern_file() 이 만들고
     #     test_provider_registry 가 대조한다.
-    naming: '^(eais|gjbg|gjcity|its|juso|moleg|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}(?:_[a-z0-9-]+)?\.'
+    naming: '^(eais|gjbg|gjcity|gjpolice|its|juso|mois|moleg|nfa|ngii|nsdi|safety|sbiz|vworld)/\w+_[a-z0-9-]+_[a-z0-9-]+_\d{8}(?:_[a-z0-9-]+)?\.'
     encoding: utf-8
     # ★ 2026-08-31. status 는 통제 어휘다 — layers.implemented() 가
     #   "미구현" 하나만 본다. 한 번 "미배선" 으로 바꿨다가 되돌렸다.
@@ -703,7 +708,7 @@ layers:
     committed: false
     backup: true
     regenerable: false
-    naming: '^(eais|gjbg|gjcity|its|juso|moleg|mois|nfa|ngii|nsdi|safety|sbiz|vworld)/'
+    naming: '^(eais|gjbg|gjcity|gjpolice|its|juso|mois|moleg|nfa|ngii|nsdi|safety|sbiz|vworld)/'
     depth: 2
     what: 은퇴한 원본. 아카이브다 — 지우지 않고 보관한다
     caveats:
@@ -3475,7 +3480,12 @@ datasets:
 
   safety_dongmyeong_fires:
     awaiting: 2026-10-13 반입 대기 — 같은 순서다(DECISIONS §515-1). raw 에 들어오면 이 줄을 지운다
-    stem: safety_dongmyeong_fires_2022_2025
+    stem: safety_dongmyeong_fires
+    # ★ 2026-10-14 (DECISIONS 537). 연도 범위를 stem 에서 뺐다. `intake_name.stem_of`
+    #   가 연도 토큰을 제원으로 읽어 떼어내므로 `..._2022_2025` 라고 적으면
+    #   파서가 `safety_dongmyeong_fires` 를 돌려주고 **대장 조회가 어긋난다** —
+    #   그래서 반입이 「대장 항목이 없다」로 멈췄다. 대장에 있었는데도.
+    #   기간은 이름이 아니라 `what` 이 든다. 다른 82종이 전부 그렇다.
     ext: [xlsx]
     feeds_note: 미투입 — **영구 참조**다. 판정에 안 쓴다 — 범위 확인 · 골든타임 초과 사례 · 기획서 근거
     kind: raw_only

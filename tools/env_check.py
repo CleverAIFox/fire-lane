@@ -85,9 +85,19 @@ EXEMPT = ("src/firelane/paths.py", "src/firelane/quiet_gdal.py", "tests/",
 #   `guards.py` 가 접근자로 바뀌자 `FIRE_LANE_STAGE` 가 "코드가 안 쓴다"
 #   로 울었다. 자리를 하나로 만드는 것의 값은 스캐너가 그 자리를 알아야
 #   나온다. 옮기면서 같이 안 옮기면 옮긴 만큼 눈이 먼다.
+# ★ 2026-10-14 (DECISIONS 527-1). 넷째 꼴 — **상수에 담아 두는 것.**
+#   `server.py` 가 `ENV_OPEN = "FIRE_LANE_OPS_OPEN"` 으로 적고 `_env(ENV_OPEN)`
+#   으로 불렀더니 위 셋이 **아무것도 못 봤다.** 「예시에 있는데 코드가 안 쓴다」로
+#   울었는데 코드는 쓰고 있었다 — 자가 눈이 먼 것을 **코드의 잘못으로 보고**했다.
+#   그 상수를 만든 것 자체가 쓰려는 뜻이고, 안 쓰면 `ruff` 가 unused 로 든다.
+#   바로 위 §189-5 주석이 적은 그 자리다 — 자리를 하나로 모으는 값은 스캐너가
+#   그 자리를 알아야 나온다. `ruff S105` 때문에 이름에 `TOKEN` 을 못 쓰고
+#   `ENV_AUTH` 로 돌려 담은 것이 계기였다(DECISIONS 527).
 ENV_RE = re.compile(r"""os\.environ(?:\.get)?[\[(]\s*["']([A-Z_]+)["']|"""
                     r"""getenv\(\s*["']([A-Z_]+)["']|"""
-                    r"""paths\.(?:env|flag|secret)\(\s*["']([A-Z_]+)["']""")
+                    r"""paths\.(?:env|flag|secret)\(\s*["']([A-Z_]+)["']|"""
+                    r"""^[A-Z][A-Z0-9_]*\s*(?::\s*str\s*)?=\s*["'](FIRE_LANE_[A-Z0-9_]+)["']""",
+                    re.M)
 
 # ★ 셸의 참조. `$FIRE_LANE_X` · `${FIRE_LANE_X}` · `FIRE_LANE_X=` 세 꼴 전부.
 #   대입도 쓰임으로 센다 — `fl.sh` 는 `.env` 를 읽어 쓰므로 대입이 곧 계약이다.
@@ -133,7 +143,11 @@ def used_keys() -> dict[str, list[str]]:
     out: dict[str, list[str]] = {}
     for p in _py():
         for m in ENV_RE.finditer(p.read_text(encoding="utf-8", errors="replace")):
-            k = m.group(1) or m.group(2) or m.group(3)
+            # ★ 2026-10-14 (DECISIONS 527-1). **그룹을 열거하지 않는다.**
+            #   넷째 꼴을 정규식에 더했는데 여기가 셋까지만 읽어 아무 일도
+            #   안 일어났다 — 자를 넓히고 읽는 쪽을 안 넓힌 것이다.
+            #   `next(filter(None, ...))` 로 **몇 개든** 받는다.
+            k = next((g for g in m.groups() if g), None)
             if k and k.startswith("FIRE_LANE"):
                 out.setdefault(k, []).append(str(p.relative_to(ROOT)))
     for p in _sh():

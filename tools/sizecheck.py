@@ -40,9 +40,17 @@ sizecheck.py — **파일이 얼마나 긴가.** 양방향 래칫이다.
 세고 판정하는 일만 남는다. 올리는 쪽은 안 골랐다 — 「검사기가 제 검사를
 못 지킨다」는 이 파일이 재는 바로 그 병이다.
 
-IN    src/** · tools/** · tests/** · `sizetable.EXCEPTIONS`
+★ 2026-10-15 (DECISIONS §538). **그 표가 둘이 됐다.** `sizetable` 이 609 로
+  제 상한을 넘어 같은 처방을 한 번 더 썼다 — 경로가 `tests/` 로 시작하는
+  예외는 `tools/testsizetable.py` 가 든다. **경계는 이 파일의 `kind()` 와
+  같은 식**이고(`rel.startswith("tests/")`), 그래서 「어디 적나」의 답이 하나다.
+  합치는 자리가 여기인 것은 판정이 표 **하나**를 보기 때문이고, 합침을 저쪽에
+  두면 돌연변이 신선도 지문이 한 칸만 들어가 새 파일을 안 덮는다(§440-10).
+
+IN    src/** · tools/** · tests/** · `sizetable.EXCEPTIONS` ·
+      `testsizetable.EXCEPTIONS`
 OUT   표준출력 (판정)
-PARAM LIMITS   (예외와 래칫 선언은 `tools/sizetable.py`)
+PARAM LIMITS   (예외와 래칫 선언은 `tools/sizetable.py` · `tools/testsizetable.py`)
 """
 from __future__ import annotations
 
@@ -50,7 +58,13 @@ import argparse
 import sys
 from pathlib import Path
 
-from sizetable import EXCEPTIONS
+from sizetable import EXCEPTIONS as CODE_EXCEPTIONS
+from testsizetable import EXCEPTIONS as TEST_EXCEPTIONS
+
+# ★ 2026-10-15 (DECISIONS §538). 표는 둘, 판정이 보는 것은 하나다. 가르는 자는
+#   아래 `kind()` 와 같은 식이라 겹치는 키가 날 수 없다 — 겹치면 그쪽 표에
+#   `tests/` 아닌 줄이 들어온 것이고, 그것은 그 파일 머리말이 금한다.
+EXCEPTIONS = CODE_EXCEPTIONS | TEST_EXCEPTIONS
 
 ROOT = Path(__file__).resolve().parents[1]
 # ★ 2026-09-24 (DECISIONS §244). `web/navi/src` 가 범위 밖이었다. 그래서 상한을

@@ -103,6 +103,19 @@ function mapboxToken(mode: string): string {
  *     3. 저장소 루트 `.env` 의 `FIRE_LANE_OPS_URL`  — **정본**
  * ★ 비어 있어도 된다. 그러면 전송이 `BroadcastChannel` 로 떨어진다.
  */
+/**
+ * 중개자 토큰. 고르는 순서는 주소와 **같다**(바로 위 ★).
+ *
+ * ★ 2026-10-14 (DECISIONS §527). 주소와 달리 **이것은 비밀이다** — 빌드에
+ *   박히므로 공개 저장소의 `vars` 가 아니라 `secrets` 로 넣는다. 비어 있으면
+ *   화면은 그대로 돌고, 서버가 토큰을 요구하면 붙다가 거절당한다.
+ */
+function opsToken(mode: string): string {
+  const navi = loadEnv(mode, HERE, "VITE_");
+  const root = loadEnv(mode, path.resolve(HERE, "..", ".."), "");
+  return navi.VITE_OPS_TOKEN || root.VITE_OPS_TOKEN || root.FIRE_LANE_OPS_TOKEN || "";
+}
+
 function opsUrl(mode: string): string {
   const navi = loadEnv(mode, HERE, "VITE_");
   const root = loadEnv(mode, path.resolve(HERE, "..", ".."), "");
@@ -115,6 +128,7 @@ export default defineConfig(({ mode }) => ({
   define: {
     "import.meta.env.VITE_MAPBOX_TOKEN": JSON.stringify(mapboxToken(mode)),
     "import.meta.env.VITE_OPS_URL": JSON.stringify(opsUrl(mode)),
+    "import.meta.env.VITE_OPS_TOKEN": JSON.stringify(opsToken(mode)),
   },
   build: {
     outDir: "dist", emptyOutDir: true,

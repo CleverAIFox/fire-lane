@@ -59,7 +59,7 @@ from firelane.seg import report as seg_report
 from firelane.seg.basisno import BasisIntervalIndex
 from firelane.seg.centerline_correction import apply_approved_centerline_corrections
 from firelane.seg.classify import classify
-from firelane.seg.geom import _dirv, _join, _seal
+from firelane.seg.geom import _dirv, _join, _seal, curvature
 from firelane.seg.params import (
     CCTV_RANGE,
     EMD_CD,
@@ -151,11 +151,21 @@ def _write_route(g, dst=None) -> None:
 
     from firelane.seg import vehicle
 
+    out = dst or PROCESSED / "route_vehicle.csv"
     try:
         # 제원이 대장에 없으면 여기서 죽는다. 경로만 건너뛰고 나머지는 낸다.
         vehicle.spec()
     except vehicle.SpecMissing as e:
+        # ★ 2026-10-14. 종전엔 그냥 `return` 했다 — **낡은 csv 가 남았다.**
+        #   `evalgate` 의 ③ 이 그것을 집어 「passable 이 edge_cost 와 N건
+        #   갈린다 — 파이프라인을 다시 돌려라」를 울렸는데, 다시 돌아도 이
+        #   분기가 또 생략하니 **그 안내는 막다른 길**이었다(§331 · DECISIONS 530).
+        #   생략은 「안 낸다」이고 「옛것을 그대로 둔다」가 아니다. 지운다 —
+        #   그러면 관문이 「경로 산출물이 없다」로 울고, 그 말은 참이다.
         print(f"  차량 경로 생략 — {e}".split("\n")[0])
+        if out.exists():
+            out.unlink()
+            print(f"  낡은 {out.name} 를 지웠다 — 생략은 옛것을 남기지 않는다")
         return
 
     BIG = 1e7                      # inf 대체. 실제 거리 총합보다 크다
@@ -191,7 +201,7 @@ def _write_route(g, dst=None) -> None:
         w = getattr(r, "width_min_m", None)
         w = None if w is None or (isinstance(w, float) and w != w) else float(w)
         c = vehicle.edge_cost(float(r.length_m), w, r.verdict,
-                              _curvature(geom))
+                              curvature(geom))
         d = {"cost": BIG if c == math.inf else c, "blocked": c == math.inf,
              "seg_id": r.seg_id, "length": float(r.length_m), "a": a, "b": b}
         prev = H.get_edge_data(a, b)
@@ -230,7 +240,7 @@ def _write_route(g, dst=None) -> None:
             for u2, v2 in zip(pp, pp[1:], strict=False):
                 use[P.edges[u2, v2]["seg_id"]] += 1
 
-    dst = dst or PROCESSED / "route_vehicle.csv"
+    dst = out
     n_blk = sum(1 for d in meta.values() if d["blocked"])
     with dst.open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
@@ -253,31 +263,6 @@ def _write_route(g, dst=None) -> None:
     if n_reach < tot:
         print(f"    ★ 도달 불가 {tot - n_reach:,}구간 — 막힌 길을 빼면 끊긴다")
 
-
-def _curvature(geom):
-    """최소 곡률반경(m). 직선이면 None.
-
-    ★ 양쪽 변이 5m 이상인 꺾임만 본다. 짧은 변 사이의 각은 도로 곡률이
-      아니라 노딩(0.5m 접합)이 만든 정점 배치 노이즈다. 필터 없이 쟀다가
-      `R=0.2m` 가 나왔다(2026-08-23).
-    """
-    import math
-    co = list(geom.coords) if geom.geom_type == "LineString" \
-        else list(max(geom.geoms, key=lambda q: q.length).coords)
-    best = None
-    for i in range(1, len(co) - 1):
-        (x0, y0), (x1, y1), (x2, y2) = co[i - 1], co[i], co[i + 1]
-        a = math.dist((x0, y0), (x1, y1))
-        b = math.dist((x1, y1), (x2, y2))
-        if a < 5.0 or b < 5.0:
-            continue
-        c = math.dist((x0, y0), (x2, y2))
-        s = abs((x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)) / 2
-        if s < 1e-9:
-            continue
-        r = a * b * c / (4 * s)
-        best = r if best is None else min(best, r)
-    return best
 
 
 def _write_samples(g) -> None:
@@ -439,14 +424,22 @@ def main():
         print(f"  ! ngii1k_xsec_5186.gpkg 없음 — 반경 {XSEC_EXCL}m 폴백")
 
     # ── 폭 산출 엔진 ─────────────────────────────────────────
-    # 폭 소스 3종 + 건물 + 교차부. 실행 내내 불변이므로 한 번 묶는다.
-    _wx = WidthEngine(ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
+    # 폭 소스 3종 + 건물 + 교차부 + **보도**. 실행 내내 불변이므로 한 번 묶는다.
+    # ★ 보도면(A0033320)을 **여기서** 읽는다 — 발행기(`publish_basemap`)를 부르면
+    #   그 파일이 판정 폐포에 들어와 바탕지도를 손볼 때마다 재잠금이 붙는다.
+    #   **안 봉한다**(깎는 면의 틈을 메우면 차도 진입로가 덮인다) · 없으면 운다
+    #   (PLAN #146 · DECISIONS §523-3).
+    _wp = OUT / "ngii1k_walk_5186.gpkg"
+    if not _wp.exists():
+        sys.exit(f"★ {_wp} 가 없다 — ingest 를 먼저 돌려라. 조용히 안 깎으면 폭이 달라진다")
+    _wg = load("ngii1k_walk")
+    _wg = _wg[_wg.intersects(_clip)]
+    _walk_u = unary_union([shapely.make_valid(q) for q in _wg.geometry])
+    print(f"  보도면 {len(_wg)}면 차감 — 판정 범위 안 {_walk_u.area:,.0f}m²")
+    _wx = WidthEngine(ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly, walk_u=_walk_u,
                       mix_src=_flag("FIRE_LANE_MIX_SRC"),
                       old_snap=_flag("FIRE_LANE_OLD_SNAP"))
     widths = _wx.widths
-
-
-
 
     # 노면 폭 소스(ngii1k · ngii · 실폭)는 판정 범위(동명동 · 회랑 · 안전센터 300m)에서 잰다.
     # ★ 건물 담~담(bld_u)만 동 경계 80m 로 클립돼 있다(§170-3). 그 밖 구간의 width_max_m 결손은
@@ -558,7 +551,6 @@ def main():
     W = {uid: widths(units[uid]["geom"]) for uid in _ink}
     _fail0 = sum(1 for v in W.values() if v[0] is None)
     print(f"  산출범위 단위 {len(_ink)} / 전체 {len(units)} · 폭 미산출 {_fail0}")
-
 
 
     _cos_lim = -np.cos(np.radians(COLLIN_DEG))

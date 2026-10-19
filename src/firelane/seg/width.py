@@ -27,13 +27,74 @@ from shapely.ops import nearest_points
 
 from firelane.seg.params import (
     COV_MIN,
+    ESCAPE_M,
     MIN_SEG_LEN,
+    RAY_M,
     SNAP_MAX,
     SNAP_TRUST,
     WIDTH_SRCS,
     WMAX_CAP,
     XSEC_EXCL,
 )
+
+
+def walk_spans(ray, walk_u, p, ux, uy):
+    """광선이 **보도면과 겹치는** 1차원 구간들. `p` 가 원점이고 `(ux,uy)` 가 +축이다.
+
+    `_span` 이 노면으로 하는 것과 같은 투영이다. 따로 둔 이유는 하나 —
+    노면 교차는 「0 을 담은 조각」 하나를 찾고, 보도 교차는 **전부** 필요하다.
+    """
+    sg = ray.intersection(walk_u)
+    if sg.is_empty:
+        return []
+    if sg.geom_type == "LineString":
+        pcs = [sg]
+    elif hasattr(sg, "geoms"):
+        pcs = [q for q in sg.geoms if q.geom_type == "LineString"]
+    else:
+        return []                                    # 점 교차. 보도 턱을 스쳤다
+    out = []
+    for q in pcs:
+        ss = [(x - p.x) * ux + (y - p.y) * uy for x, y in q.coords]
+        out.append((min(ss), max(ss)))
+    return sorted(out)
+
+
+def _round_pos(x: float, nd: int = 2) -> float:
+    """폭을 자리수로 줄이되 **양수를 0 으로 만들지 않는다**(DECISIONS 534-1).
+
+    ★ `round(0.001, 2)` 은 `0.0` 이다. 0 은 이 저장소에서 「좁다」가 아니라
+      **「못 쟀다」**의 자리이고(534), `segcontract` 의 `WIDTH_OUT_OF_RANGE`
+      가 0 을 불가능한 수로 문다. 그래서 **참인 관문이 거짓을 물었다** —
+      `DM01391`(2순환로 539m)의 표본 110개 중 최솟값이 0.001 이었고,
+      그 양수가 반올림 한 번에 0 이 됐다.
+
+    ★ 고침은 **하한이 아니다.** 0.001 을 버리지 않는다 — 버리면 입장이
+      바뀌고 구간 수가 움직인다(519 · 523 이 같은 자리에서 쓴 사유).
+      자리수만 늘려 **잰 것을 잰 대로** 적는다.
+    """
+    r = round(x, nd)
+    return r if r > 0 else round(x, 6)
+
+
+def carve_walk(left, right, walk_iv):
+    """좌우 거리에서 보도를 깎는다. **0 을 담은 조각 하나만** 남는다.
+
+    ★ 2026-10-14 (DECISIONS §523-2). 재는 점이 **보도 위**면 안 깎고 그대로
+      돌려준다. 그 표본을 **버리지도 않는다** — §512-1 이 64구간 전부에서
+      버림의 효과가 0 임을 쟀고, 효과 없는 가드는 다음 사람이 무엇을 막는지
+      모른 채 영영 남는다. 중심선이 보도 위인 것은 중심선의 결함이고
+      그 자리는 `PLAN` 이 든다.
+    """
+    lo, hi = -left, right
+    if any(a <= 0.0 <= b for a, b in walk_iv):
+        return left, right
+    for a, b in walk_iv:
+        if b <= 0.0:
+            lo = max(lo, b)              # 왼쪽에서 가장 가까운 보도의 **끝**
+        elif a >= 0.0:
+            hi = min(hi, a)              # 오른쪽에서 가장 가까운 보도의 **시작**
+    return -lo, hi
 
 
 class WidthEngine:
@@ -45,16 +106,21 @@ class WidthEngine:
     bld_u     건물.                담~담(wmax) 측정용
     xn        교차 노드 점집합.     XSEC_EXCL 폴백용
     xsec_poly 평면교차점 실형상.    있으면 이쪽이 우선
+    walk_u    보도면.               노면에서 **깎는다**(§523). 없으면 안 깎는다
     """
 
     def __init__(self, ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
-                 *, mix_src: bool = False, old_snap: bool = False):
+                 *, walk_u=None, mix_src: bool = False, old_snap: bool = False):
         self.ngii1k_u = ngii1k_u
         self.ngii_u = ngii_u
         self.rw_u = rw_u
         self.bld_u = bld_u
         self.xn = xn
         self.xsec_poly = xsec_poly
+        # ★ 2026-10-14 (PLAN #146 · DECISIONS §523). 보도면. **기본이 None** 이고
+        #   그때는 종전과 글자까지 같은 경로다 — 자료가 없는 기계에서 조용히
+        #   다른 수가 나오지 않는다(`segments.py` 가 없으면 운다).
+        self.walk_u = walk_u
         # ★ 2026-09-25 (PLAN §1 #121 · #123). 종전에는 셋 다 `seg/params.py` 의
         #   모듈 전역이었고 그 파일이 `.env` 를 읽었다. 이제 **부르는 쪽이 정한다.**
         #   기본은 전부 꺼짐 — 셋 다 「종전 동작으로 되돌리는」 진단 스위치이고,
@@ -113,7 +179,8 @@ class WidthEngine:
             교차로에서는 법선이 교차하는 길을 따라 빠져나가 한쪽이 수십 m 가
             된다. 그 표본은 폭이 아니므로 버린다.
             """
-            r = LineString([(p.x-ux*60, p.y-uy*60), (p.x+ux*60, p.y+uy*60)])
+            r = LineString([(p.x-ux*RAY_M, p.y-uy*RAY_M),
+                            (p.x+ux*RAY_M, p.y+uy*RAY_M)])
             sg = r.intersection(poly_u)
             if sg.is_empty:
                 return None, "empty"          # 법선이 이 소스와 아예 안 만난다
@@ -149,26 +216,73 @@ class WidthEngine:
             if run is None:
                 return None, "no_run"         # p 가 이 폴리곤 밖 (snap 실패)
             left, right = -run[0], run[1]
-            # ★ 2026-10-13 (DECISIONS §516). **한쪽-샘 문은 이 판에서 안 고친다.**
-            #   §510 이 여기에 `max(left, right) >= ESCAPE_M → 2·min` 을 넣었고
-            #   그것을 **되돌렸다.** 고침이 틀렸기 때문이 아니라 **값 규칙과
-            #   입장 규칙을 한꺼번에** 바꿨기 때문이다 — 종전 코드는 `l+r` 이
-            #   상한을 넘는 표본을 `range` 로 **버렸고**, `2·min` 은 그 표본을
-            #   **통과시킨다.** 그래서 덮임이 올라가고 폭 미산출 집합이 바뀌고
-            #   구간 수가 1,281 → 1,285 로 움직였다(2026-10-13 재잠금).
-            #   예보는 「값만 내려간다」였다 — **예보가 입장을 안 봤다.**
-            #   `RAY_M`(맨숫자 60 의 이름)도 되돌렸다 — 이름 하나가 판정 로직 지문을 움직여
-            #   재잠금을 요구했고, 이 판은 **판정 불변**이라 재잠금이 0 이어야
-            #   한다(`golden.py` 는 토큰열을 해시한다 · 주석은 안 센다).
-            #   아래 `60` 둘과 `WMAX_CAP` 이 **같은 값**이라는 것이 이 결함의
-            #   뿌리이고, 그 이름을 세우는 일은 `Zm2'` 가 한다.
-            #   돌아오는 자리는 `Zm2'` 이고 전건은 MASTER §3-4a 폭의 정의다.
-            if left > WMAX_CAP or right > WMAX_CAP:   # 교차로에서 길을 따라 나갔다
-                return None, "cap"
-            v = left + right
-            if not (0.3 < v < WMAX_CAP):
-                return None, "range"          # 0.3m 이하 조각
-            return v, None
+            # ★ 2026-10-13 (DECISIONS §519). **값 규칙만 고친다.**
+            #   §510 이 이 자리를 한 번 고쳤다가 §516 이 빼냈다. 빼낸 이유는
+            #   고침이 **값 규칙과 입장 규칙을 한꺼번에** 바꿨기 때문이다 —
+            #   `2·min` 을 `range` 검사에 먹이면 종전에 버려지던 표본
+            #   (`l+r ≥ 60`)이 통과하고, 그러면 덮임 → 소스 채택 → 폭 미산출
+            #   집합 → 병합 → **구간 수**가 움직인다(실측 1,281 → 1,285).
+            #
+            #   그래서 **입장은 좌우합이 정한다.** 아래 `range` 검사가 보는
+            #   것은 `l+r` 이고 그것이 종전 코드와 **글자까지 같은 조건**이다.
+            #   값만 그 뒤에 고른다 — 입장과 값을 **다른 줄**에 둔다.
+            #
+            #   ★ 죽은 `cap` 분기를 지웠다. `left` 는 광선 길이(`RAY_M`)를
+            #     넘을 수 없고 문턱이 `WMAX_CAP` 이라 **둘이 같은 60.0** 이고
+            #     그래서 그 조건은 **한 줄도 실행된
+            #     적이 없다**(§510 이 그것을 쟀다). 지우는 것이 입장을 안
+            #     바꾼다 — 참이 된 적이 없는 조건이다.
+            s = left + right
+            if not (0.3 < s < WMAX_CAP):
+                return None, "range"      # 입장 규칙 — 종전과 같다
+            # 한쪽이 광장·교차로로 샜으면 그 쪽은 이 도로의 반폭이 아니다.
+            # ★ `2·min ≤ l+r` 이므로 폭은 **올라가지 않는다** — 틀려도
+            #   안전한 쪽으로만 틀린다(MASTER §3-5a).
+            # ★ `2·min` 이 0.3 이하로 떨어져도 **버리지 않는다.** 버리면
+            #   입장이 바뀌고 구간 수가 움직인다. 그 수가 몇인지는 측정 대장
+            #   `escape-tiny` 가 든다 — 재기 전에 판정 기준을 적어 뒀다.
+            #
+            # ★ 2026-10-14 (DECISIONS 534). **그 측정이 났고 0 이 아니었다.**
+            #   `DM01391`(2순환로 539m)의 `width_min_m` 이 **0.00** 으로
+            #   발행됐고 `segcontract` 의 `WIDTH_OUT_OF_RANGE` 가 0 → 1 로
+            #   울었다. 대로가 폭 0 일 수 없다.
+            #
+            #   **고침은 하한이 아니다.** 측정 대장이 적은 셋째 규칙(「가까운
+            #   쪽의 하한」)은 안 세운다 — 그 구간은 `cov 0.408` 이고 2순환로
+            #   고가·교차로라 **지오메트리 결함** 쪽이다(대장의 ③ 가 그때
+            #   `SNAP_TRUST` 로 보내라고 적어 뒀다).
+            #
+            #   가르는 것은 **0 과 좁음이 다른 것**이라는 사실이다 —
+            #   `0.3` 은 「좁다」고 `0` 은 「못 쟀다」다. 0 을 결측으로 돌리면
+            #   입장 규칙을 **안 건드린다**(입장은 깎지 않은 `s` 가 정했고 이미
+            #   통과했다). 구간은 남고 그 표본 하나만 빠진다.
+            if max(left, right) >= ESCAPE_M:
+                v = 2 * min(left, right)
+                if v <= 0:
+                    return None, "escape_zero"   # 수가 아니라 결측이다
+                return v, None
+            # ★ 2026-10-14 (DECISIONS §523). **보도 차감.** 세 줄 위의 입장
+            #   검사와 바로 위의 escape 검사는 **깎지 않은** 좌우를 본다 —
+            #   순서가 규칙이다.
+            #
+            #   깎고 나서 escape 를 보면 **샌 광선이 안 샌 것처럼 보인다.**
+            #   §512-1 ③ 이 그 사고다 — 필문대로289번길은 2m 안에 보도면이
+            #   하나도 없는데 차감으로 6.14 → 0.70 이 됐다. 그 구간의 광선은
+            #   escape 100% 로 필문대로 **본선**으로 새 나가고, 본선의 보도를
+            #   깎으면 샌 쪽이 짧아져 `max(left,right) ≥ ESCAPE_M` 이 **꺼진다.**
+            #   그러면 `2·min` 대신 깎인 좌우합이 폭으로 나간다.
+            #
+            #   그래서 「보도면을 어느 도로의 것인지 귀속한다」를 **광선으로**
+            #   가른다(§523-1) — 제 도로에 머문 광선이 만난 보도는 제 것이고,
+            #   샌 광선이 만난 보도는 **남의 것이라 안 깎는다.**
+            if self.walk_u is not None and not self.walk_u.is_empty:
+                left, right = carve_walk(
+                    left, right, walk_spans(r, self.walk_u, p, ux, uy))
+                # ★ 깎은 합이 0.3 아래로 떨어져도 **버리지 않는다** — 버리면
+                #   입장이 바뀌고 구간 수가 움직인다(§519 가 `2·min` 에 쓴 그
+                #   사유와 같다). 그 표본 수는 측정 대장 `walk-tiny` 가 든다.
+                return left + right, None
+            return s, None
 
         # ── 측정 지점 결정 ──────────────────────────────────
         _srcs3 = tuple(zip((self.ngii1k_u, self.ngii_u, self.rw_u),
@@ -223,7 +337,8 @@ class WidthEngine:
 
         # 담~담(상한)은 폭을 채택한 지점과 같은 곳에서 잰다. 다른 지점에서 재면
         # wmin 과 wmax 가 서로 다른 단면을 기술하게 된다.
-        rb = LineString([(P.x-ux*60, P.y-uy*60), (P.x+ux*60, P.y+uy*60)])
+        rb = LineString([(P.x-ux*RAY_M, P.y-uy*RAY_M),
+                         (P.x+ux*RAY_M, P.y+uy*RAY_M)])
         B = None
         sg = rb.intersection(self.bld_u)                    # 담~담 = 상한
         if not sg.is_empty:
@@ -451,10 +566,10 @@ class WidthEngine:
                         break
         wmin = None
         if _pick is not None:
-            wmin = round(min(_by[_pick]), 2)
+            wmin = _round_pos(min(_by[_pick]))
         elif A:
-            wmin = round(min(A), 2)
-        wmax = round(min(B), 2) if B else None
+            wmin = _round_pos(min(A))
+        wmax = _round_pos(min(B)) if B else None
         # 벽 사이 폭이 도로 폭보다 좁을 수는 없다. 샘플별로는 맞아도
         # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 에 걸린 경우).
         if wmin is not None and wmax is not None and wmax < wmin:

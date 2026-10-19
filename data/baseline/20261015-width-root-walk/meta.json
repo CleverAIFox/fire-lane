@@ -1,0 +1,46 @@
+{
+  "tag": "20261015-width-root-walk",
+  "frozen_at": "2026-10-16T16:54:19+09:00",
+  "git_sha": "262f1c9ee9de13051e61dc02a5ed2291ed178462",
+  "note": "",
+  "tally": {
+    "n": 1281,
+    "verdict": {
+      "clear": 433,
+      "needs_cv": 209,
+      "blocked": 192,
+      "unknown": 447
+    },
+    "unknown_reason": {
+      "no_cctv_band": 206,
+      "no_cctv_thin": 159,
+      "no_cctv_narrow": 70,
+      "no_cctv_single": 11,
+      "ledger_disputes": 1
+    },
+    "width_src": {
+      "ngii1k": 1162,
+      "silpok": 116,
+      "ngii": 1,
+      "null": 2
+    },
+    "length_total_m": 58309,
+    "in_emd": 416,
+    "route_usage_pos": 580,
+    "nfa_designated": 180
+  },
+  "expect_snapshot": "EXPECT = {\n}",
+  "sha256": {
+    "segments.geojson": "b82b0151ab9b19ec50f16af71b0a461dc3d450a52649c3c56cf38da0db65d5b5",
+    "segments.schema.json": "b66c6cde021fd23a572ccadc7fbb59094d42688c15c5ab5d178f51d3d8b59b8f",
+    "_manifest.json": "1040f548eb00730594d6590db04ef0e88b38bb8299b367e4558f32afb989d22e",
+    "seg_uid_map.csv": "446ee06255fe2d5e62d0ba309038a9ff01316b998bfbab01df35a506ae9a6f75",
+    "eval.json": "9d6014c4292d4586ae2a4822d9d4914ef0adc7ee4d4dde3cd2f96126d570fd80",
+    "nfa_compare.json": "2966d0ecfc226baa29d5c25f158d6740fc27f26a566758f3e65b9d91b5118992"
+  },
+  "why": "구 원본(국토정보플랫폼 NGI 20도엽 2020·2022)이 2026-08-15 전량 재취득으로 소실됐다. 이 산출물은 재생성 불가다.",
+  "known_limits": [
+    "width_verified 전건 false. 레이저 실측 전이다",
+    "nfa_compare 는 검증이 아니라 적합(fit)이다"
+  ]
+}

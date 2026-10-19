@@ -355,7 +355,19 @@
   "vworld/vworld_uq164_jngj_20260915.zip": {
    "sha256": "78356e48898fb18bfa24fe06aaedba54e0c906c9fbbfc9aeda8de6039fad5d57",
    "bytes": 905642
+  },
+  "gjcity/gjcity_oneway_donggu_jngj-donggu_20261008.xlsx": {
+   "sha256": "8edbf3c6a1d1ac6cc27e5b5bac1143b851b30a63e2d816046a2697f3c4ed4bd1",
+   "bytes": 13445
+  },
+  "gjpolice/gjpolice_oneway_donggu_jngj-donggu_20261012.hwpx": {
+   "sha256": "d04a337e1fb6bd7be8f4bb19a099ebef98d1719755586dadb5e1f72ce4df81ee",
+   "bytes": 98887
+  },
+  "safety/safety_dongmyeong_fires_jngj-dongmyeong_20261012.xlsx": {
+   "sha256": "052a0d76fba8dc874607771348a25b6b7dec470ca99e2281c9963500e91edb63",
+   "bytes": 14796
   }
  },
- "at": "2026-10-08T01:47:52+09:00"
+ "at": "2026-10-14T21:27:26+09:00"
 }
