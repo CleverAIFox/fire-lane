@@ -253,7 +253,10 @@ fi
 say "A-0. 봉인 — 스쿼시 뒤 part/infra 에서 (PR 로)"
 git switch -q part/infra 2>/dev/null || git switch -q -c part/infra origin/part/infra
 git merge -q --ff-only origin/part/infra || die "로컬 part/infra 가 원격과 갈렸다 — git reset --hard origin/part/infra"
-if uv run python tools/dms.py seal --quick; then
+# ★ 2026-10-19. `--green-note` — 이 나무가 이미 초록이면 전수를 다시
+#   안 돈다. 판단은 `dms` 가 제 손으로 `git rev-parse HEAD^{tree}` 를
+#   재서 한다. 생략한 칸은 `생략` 으로 남아 선언을 닫지 않는다.
+if uv run python tools/dms.py seal --quick --green-note; then
     # ★ 2026-09-21 (DECISIONS §210). 본문을 **템플릿으로** 쓰고, 가지를 만들기 **전에**
     #   로컬에서 관문에 넣어 본다. 처음엔 한 줄로 썼고 CI 의 `pr_body_check.py` 가 25초 만에
     #   빨갰다(PR #141) — 자동 절차가 여는 PR 도 사람이 여는 PR 과 같은 관문을 지난다.
