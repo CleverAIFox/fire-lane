@@ -1,12 +1,12 @@
 {
   "figures": {
-    "astar": "7c13c9cc626fd6ef",
+    "astar": "f46e57ddfbc7171f",
     "boundary": "c2f764ff6aee773f",
     "branch": "3a4efe9dcdce4c4a",
     "cctv": "b242f24bfbab6853",
     "deploy": "8e6ad66e4700f82f",
     "threshold": "3b74745a9acfd68d",
-    "unknown": "aa18ee1c357cdbf9",
+    "unknown": "416bcd35d66073cf",
     "verdict": "eddfad4cdc1370da",
     "verdict_flow": "3b33094682f2ead6",
     "xsec": "09fac9e5365e3b6e"
