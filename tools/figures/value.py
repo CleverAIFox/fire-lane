@@ -144,7 +144,13 @@ def fig_unknown() -> str:
             f'{rs.get("width", 0)}</text>']
     x = 80   # ★ 2026-09-22 (DECISIONS §218-6) 60 이면 「각도 부족」이 막대에 닿는다
     for i, (k, c) in enumerate(sorted(rs.items(), key=lambda kv: -kv[1])):
-        wd = round(560 * c / tot, 1)
+        # ★ 2026-10-16 (DECISIONS §534-5). 자리수가 **1** 이었다. 값 1 짜리
+        #   막대는 길이가 1.25 인데 1.3 으로 올라가 **3.8% 틀어진다** —
+        #   작은 막대일수록 반올림 오차가 비례로 커진다. 분모가 433 이던
+        #   동안은 1.29 → 1.3 이라 0.5% 였고 **운으로** 통과했다. 분모가
+        #   447 로 바뀌자 운이 떨어졌다. SVG 는 소수 자리를 안 가린다 —
+        #   반올림할 이유가 애초에 없었다.
+        wd = round(560 * c / tot, 3)
         body.append(f'<rect x="{x}" y="{80 + i * 44}" width="{wd}" height="28" '
                     f'fill="{COLOR["unknown"]}" rx="3"/>')
         body.append(f'<text x="{x + wd + 8}" y="{100 + i * 44}" font-size="13" '

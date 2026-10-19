@@ -1,6 +1,13 @@
 {
  "nodes": 1139,
  "pairs": 200,
- "one_to_one": {"astar": 37698, "dijkstra": 115367},
- "one_to_all": {"astar_sum": 110156, "dijkstra_sweep": 1264, "goals": 703}
+ "one_to_one": {
+  "astar": 41281,
+  "dijkstra": 113094
+ },
+ "one_to_all": {
+  "astar_sum": 116333,
+  "dijkstra_sweep": 1246,
+  "goals": 692
+ }
 }
