@@ -966,11 +966,67 @@ def _log_is_fresh(log: Path) -> list[str]:
     return newer[:20]
 
 
-def run_enforcers(quick: bool, log: Path | None = None) -> dict[str, dict]:
+# ── 이미 초록이던 나무 ────────────────────────────────────────
+GREEN_NOTE = "fl-green-trees"
+
+
+def _green_skip() -> dict[str, dict] | None:
+    """이 나무가 이미 초록이었나. 그랬으면 전수를 **다시 안 돈다.**
+
+    ★ 2026-10-19. 강제자는 **나무의 함수**다. 같은 tree · 같은 레이크면
+      같은 값이 나온다. 그날 한 배치에서 같은 나무를 네 번 쟀다 —
+      `pack` dryrun 26분42초 · 로컬 `verify.sh` 18분58초 · CI 약 19분 ·
+      9단 봉인 19분37초. 뒤 셋이 새로 알려준 것은 0 비트다.
+    ★ `_log_is_fresh` 는 `HEAD` 로 묻는다. 그 함수 주석이 「mtime 은 내용이
+      안 바뀌어도 잡는다 — '언제 만졌나'가 아니라 '무엇이 다른가'를 묻는
+      것이 맞다」고 적었는데, `HEAD` 도 여전히 **동일성**이고 내용이 아니다.
+      스쿼시는 commit 을 반드시 바꾸고 tree 는 그대로 둔다. 그래서 그 물음은
+      스쿼시 뒤에 **반드시** 거짓이 되고 전수가 **반드시** 다시 돈다.
+    ★ **생략은 통과가 아니다.** 돌려주는 칸은 `생략` 이고 `cmd_seal` 이
+      그것을 `unproven` 으로 센다 — 선언이 잘못 닫히지 않는다(§208-6).
+    ★ 부르는 쪽의 주장을 믿지 않는다. 나무는 여기서 직접 잰다.
+    ★ 적어둔 줄이 없으면 `None` 이다 — **없으면 생략도 없다.** `raw_print`
+      가 같은 자리에 적어둔 규칙이다.
+    """
+    gd = _run(["git", "rev-parse", "--git-dir"], 20)[1]
+    if not gd:
+        return None
+    p = Path(gd)
+    if not p.is_absolute():
+        p = ROOT / p
+    p = p / GREEN_NOTE
+    if not p.exists():
+        return None
+    rc, tree = _run(["git", "rev-parse", "HEAD^{tree}"], 20)
+    if rc != 0 or not tree:
+        return None
+    # ★ 생성물을 뺀 나무가 더러우면 HEAD 의 나무가 지금 나무가 아니다.
+    if tree_is_dirty():
+        return None
+    try:
+        lines = p.read_text(encoding="utf-8", errors="replace").split("\n")
+    except OSError:
+        return None
+    for line in reversed(lines):
+        f = line.split("\t")
+        if len(f) >= 3 and f[0] == tree:
+            print("  이 나무는 이미 초록이었다 — 전수를 다시 안 돈다")
+            print(f"    tree {tree[:12]} · {f[1]} · {f[2]}")
+            return {f"이미-초록/{f[2]}": {
+                "rc": 0, "state": "생략",
+                "tail": f"tree {tree[:12]} 가 {f[1]} 에 초록 — 전수 생략"}}
+    return None
+
+
+def run_enforcers(quick: bool, log: Path | None = None,
+                  green: dict[str, dict] | None = None) -> dict[str, dict]:
     """★ 결과를 **이름별로** 남긴다. 총합만 남기면 어느 것이 빨간지 못 센다."""
     out: dict[str, dict] = {}
 
-    if log is not None:
+    if green is not None:
+        # ★ 이미 초록이던 나무다. 근거는 호출부가 찍었다.
+        out.update(green)
+    elif log is not None:
         # ★ 방금 돌린 `verify.sh` 를 다시 20분 돌리지 않는다. 다만 로그가
         #   **지금 나무보다 나중**이어야 한다. 아니면 봉인이 옛 상태를
         #   증언하게 된다 — 가짜 증표다.
@@ -988,7 +1044,9 @@ def run_enforcers(quick: bool, log: Path | None = None) -> dict[str, dict]:
         rc, txt = _run(["bash", "tools/verify.sh"])
         out.update(_parse_verify(txt, rc))
 
-    for label, cmd in PROBES:
+    # ★ 프로브 셀프테스트도 나무의 함수다 — 생략과 함께 쉰다.
+    #   아래 `core.hooksPath` 는 **기계 상태**라 계속 돈다.
+    for label, cmd in ([] if green is not None else PROBES):
         if not (ROOT / cmd[0]).exists():
             continue
         rc, txt = _run([sys.executable, *cmd], timeout=600)
@@ -1073,7 +1131,7 @@ def uncommitted(root: Path = ROOT) -> list[str]:
 
 
 def cmd_seal(data: dict, quick: bool, allow: list[str],
-             log: Path | None = None) -> int:
+             log: Path | None = None, green_note: bool = False) -> int:
     """★ 분모가 0 이 아니어도 봉인한다. 봉인은 *완료* 가 아니라 *기준선*이다.
     다만 빨간 강제자가 설명 없이 있으면 거부한다 — 그것은 기준선도 아니다."""
     import datetime
@@ -1096,7 +1154,9 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
             print(f"    {f}")
         print("  ★ 커밋하고 verify 부터 다시 돌려라(§180-7)")
         return 1
-    enf = run_enforcers(quick, log)
+    green = _green_skip() if (green_note and log is None) else None
+    scope_over = next(iter(green)) if green else None
+    enf = run_enforcers(quick, log, green)
     red = sorted(k for k, v in enf.items() if v["state"] == "실패")
     for k in sorted(enf):
         v = enf[k]
@@ -1175,7 +1235,7 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
         # ★ 2026-09-25 (§255). **도구 하나씩** 남긴다. `delta` 가 이것으로
         #   축별 무효를 판정한다 — 종전에는 위 한 줄이 봉인 전체를 무효화했다.
         "tools": _tool_prints(),
-        "scope": ("verify.sh 로그" if log else
+        "scope": scope_over or ("verify.sh 로그" if log else
                   "pytest+프로브" if quick else "verify.sh 전 단계"),
         "docs": {rel: _sha((ROOT / rel).read_text(encoding="utf-8"))
                  for rel in DOCS},
@@ -1201,7 +1261,8 @@ def cmd_seal(data: dict, quick: bool, allow: list[str],
     # ★ 2026-09-17 (§180). "죽은 참조" 는 refcheck 의 경로 참조와 이름이 같아 두 숫자가 어긋나 보였다
     print(f"  절 {len(now)} · 분모 {blank} · 죽은 강제자 참조 {rec['dead_refs']} "
           f"· 사본군 {dup}")
-    print(f"  강제자 {len(enf)} 통과"
+    print(f"  강제자 {len(enf)} "
+          + ("생략 — 출처는 위에 찍었다" if scope_over else "통과")
           + (f"  아는 빨강 {len(red)} — {', '.join(red)}" if red else ""))
     print(f"  도구 지문 {rec['tool']}")
     print("★ 이 지점까지 정합한다. 다음부터 `delta` 가 여기 뒤만 센다.")
@@ -1685,6 +1746,9 @@ def main() -> int:
                     help="아는 빨강의 이름. 적는 순간 봉인에 기록된다")
     ap.add_argument("--log", default=None,
                     help="방금 돌린 verify.sh 로그. 20분을 다시 안 쓴다")
+    ap.add_argument("--green-note", action="store_true",
+                    help="이 나무가 이미 초록이면 전수를 생략한다. "
+                         "근거는 .git/fl-green-trees")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
 
@@ -1715,7 +1779,7 @@ def main() -> int:
         return cmd_prune(data, a.apply)
     if a.cmd == "seal":
         return cmd_seal(data, a.quick, a.red or [],
-                        Path(a.log) if a.log else None)
+                        Path(a.log) if a.log else None, a.green_note)
     if a.cmd == "delta":
         return cmd_delta(data)
     if a.cmd == "scan":
