@@ -10732,8 +10732,8 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "03ab16c19b71f801",
-   "fa44c29fd6d7f47d"
+   "94f3ed25e9527eb0",
+   "997c9e4436b5df2a"
   ],
   "parts": {
    "src/firelane/segkey.py": "980c9b789a4ceaf1",
@@ -10751,9 +10751,9 @@
    "tools/fix.sh": "9b0d2c477f10ed7c",
    "tools/sealcov.py": "14603d8421211149",
    "tools/verify.sh": "bcdc72730599da8f",
-   "본문": "bd1ba2b5ed9716d2"
+   "본문": "22015507bec87c12"
   },
-  "sha": "03ab16c19b71f801"
+  "sha": "997c9e4436b5df2a"
  },
  "DECISIONS/57": {
   "doc": "docs/DECISIONS.md",
