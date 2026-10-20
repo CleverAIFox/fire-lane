@@ -296,6 +296,24 @@ if uv run python tools/dms.py seal --quick --green-note; then
                 git merge -q --ff-only origin/part/infra || die "봉인 스쿼시 뒤 part/infra 를 못 당겼다"
                 git branch -q -D "$sb" 2>/dev/null || true
                 ok "봉인 갱신 · PR #$spr · part/infra $(git rev-parse --short origin/part/infra)"
+                # ★ 2026-10-20 (DECISIONS §540). **봉인 뒤 나무도 적는다.**
+                #   §539-4 가 「뒤따르는 셋이 전부 건너뛴다」고 적었는데 거짓이었다 —
+                #   봉인 커밋이 `data/dms/SEAL.json` 을 바꿔 나무가 달라지고, 그 새
+                #   나무는 `refs/green` 에 없다. 실측 — 그 나무 위에서 전체 pytest 가
+                #   **여섯 번** 돌았다(dev · part/cv · part/gis · part/infra 의 푸시와
+                #   PR). 여기서 적으면 그중 다섯이 사라진다.
+                #   ★ 근거는 **방금 받은 초록**이다. 스쿼시 뒤 `origin/part/infra` 의
+                #     나무가 PR #$spr 이 초록을 받은 나무와 같다.
+                #   ★ 실패해도 안 멈춘다 — 못 적으면 뒤 CI 가 다시 잴 뿐이고 그것은
+                #     지금과 같다. 느슨해지는 쪽이 아니다.
+                _gt=$(git rev-parse "origin/part/infra^{tree}" 2>/dev/null || true)
+                if [ -n "$_gt" ] && git push -q origin \
+                        "origin/part/infra:refs/green/$_gt" 2>/dev/null; then
+                    ok "봉인 뒤 초록 나무를 적었다 — refs/green/${_gt:0:12}"
+                else
+                    printf '  ★ 봉인 뒤 나무를 못 적었다 — 뒤 CI 가 다시 잰다(해롭지 않다)\n'
+                fi
+
             else
                 git switch -q part/infra
                 warn "봉인 PR #$spr 은 초록인데 **밑동이 머지를 안 받았다** — PR 과 가지를 남긴다.
