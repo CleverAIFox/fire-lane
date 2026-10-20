@@ -1,6 +1,6 @@
 {
- "sealed_at": "2026-10-20T02:08:57+09:00",
- "commit": "da41b8e",
+ "sealed_at": "2026-10-20T17:18:29+09:00",
+ "commit": "6e3dfa2",
  "tool": "905d4167770105c8",
  "tools": {
   "tools/deadcheck.py": "9e451fee74a1c0c0",
@@ -10,11 +10,11 @@
   "tools/prevfield.py": "d6147516ab85b1b9",
   "tools/verify.sh": "5f12b294159c6f9d"
  },
- "scope": "이미-초록/PR #337 CI 초록",
+ "scope": "이미-초록/PR #341 CI 초록",
  "docs": {
-  "docs/MASTER.md": "f2d65dccd1400295",
-  "docs/DECISIONS.md": "e9919ab0daf2ec93",
-  "docs/PLAN.md": "9c88d6506b351e7d",
+  "docs/MASTER.md": "289cf99672bc414b",
+  "docs/DECISIONS.md": "313a31f1439ebea5",
+  "docs/PLAN.md": "84e3eff4798ae528",
   "README.md": "894325decba007f0"
  },
  "raw": {
@@ -1096,7 +1096,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "56124b833fb00f5c",
+   "h": "c9b45ce9ba14aa2d",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -14188,10 +14188,16 @@
    "title": "539-3. 열거는 **세는 관문**과 함께만 둔다"
   },
   "DECISIONS/539-4": {
-   "h": "b3575584f3af4962",
+   "h": "e46f0f05ffa036eb",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "539-4. CI 를 닫았다 — **권한을 안 올리고**"
+  },
+  "DECISIONS/540": {
+   "h": "a3dc2229852e3962",
+   "state": "none",
+   "doc": "docs/DECISIONS.md",
+   "title": "540. §539-4 가 적은 수가 **틀렸다** — 봉인 커밋이 나무를 바꾼다"
   },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
@@ -14428,7 +14434,7 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN/13-3": {
-   "h": "53d285a7fad26c02",
+   "h": "b8e399782fe89c62",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-3. 남은 결함 5건"
@@ -14516,10 +14522,10 @@
  "dead_refs": 0,
  "dup_groups": 4,
  "enforcers": {
-  "이미-초록/PR #337 CI 초록": {
+  "이미-초록/PR #341 CI 초록": {
    "rc": 0,
    "state": "생략",
-   "tail": "tree 920bd6ce60cf 가 2026-10-20T02:07:57+09:00 에 초록 — 전수 생략"
+   "tail": "tree 0c34daa5b948 가 2026-10-20T14:47:27+09:00 에 초록 — 전수 생략"
   },
   "hook/local-hooksPath": {
    "rc": 0,
