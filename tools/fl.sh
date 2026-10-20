@@ -54,6 +54,20 @@ fi
 REPO_DIR="${FIRE_LANE_REPO:-$HOME/projects/fire-lane}"     # ★ ~/fire-lane 아니다
 GH_REPO=CleverAIFox/fire-lane
 BASE=part/infra
+
+# ★ 2026-10-19. **초록 받은 나무를 적어둔다.**
+#   강제자는 나무(tree)의 함수다. commit 이 아니다 — 스쿼시는 commit 을
+#   반드시 바꾸고 tree 는 그대로 둔다. 그래서 「같은 commit 인가」로 물으면
+#   스쿼시 뒤 9단 봉인이 **반드시** 전수를 다시 돈다(2026-10-19 실측
+#   19분37초, 그날 네 번째 측정이었다). 여기 적힌 나무를
+#   `dms.py seal --green-note` 가 읽어 근거를 대고 생략한다.
+#   `.git/` 에 둔다 — 추적 파일이 아니고, 가지를 지워도 남는다.
+green_note() {
+    local t
+    t=$(git rev-parse "HEAD^{tree}" 2>/dev/null) || return 0
+    printf '%s\t%s\t%s\n' "$t" "$(date -Iseconds)" "${1:-?}" \
+        >> "$(git rev-parse --git-dir)/fl-green-trees"
+}
 # ★ 2026-09-22 (§214-1). 실행마다 새 자리다. 종전의 고정 경로 `/tmp/fl-patches` 는
 #   verify 안의 pytest(`fl.sh --pick` 시험)가 같은 자리를 비워 **PR_BODY.md 가 7분 뒤
 #   사라졌다**(6단계 FileNotFoundError). 도구와 그 시험이 한 자리를 나눠 쓰면 안 된다.
@@ -786,11 +800,30 @@ if bash tools/ci_wait.sh "$PR" "$GH_REPO"; then :; else
     esac
 fi
 ok "CI 초록"
+green_note "PR #$PR CI 초록"
 
 # ══ 7. 스쿼시 ═════════════════════════════════════════════════
 step "7. $BR → $BASE 스쿼시"
 if ! ask "PR #$PR 을 $BASE 에 스쿼시 머지하고 브랜치를 지운다. 진행?"; then
     printf '  멈춤. 나중에:  %s %s --resume\n\n' "$FL_CMD" "$BR"; exit 0
+fi
+# ★ 2026-10-20. **초록 받은 나무를 원격에 적는다 — 머지 전에.**
+#   `refs/pull/N/merge` 의 나무가 **스쿼시 결과의 나무와 같다**(실측 —
+#   base 가 움직여도 같다). 그래서 지금 적어 두면 뒤따르는 CI 셋이
+#   전부 전체 테스트를 건너뛴다 — `part/**` 푸시 · dev PR · main PR.
+#   한 배치에 19분 × 3.
+# ★ `refs/green/*` 는 `refs/heads/` 밖이라 룰셋 셋(`part` · `release` ·
+#   `trunk`, 전부 `target: branch`)이 안 막는다(2026-10-20 확인).
+# ★ **실패해도 안 멈춘다.** 못 적으면 다음 CI 가 다시 잴 뿐이고 그것은
+#   지금과 같다 — 나빠지지 않는다. `|| true` 가 그 뜻이다.
+if git fetch -q origin "refs/pull/$PR/merge" 2>/dev/null; then
+    _gt=$(git rev-parse "FETCH_HEAD^{tree}" 2>/dev/null || true)
+    if [ -n "$_gt" ] && git push -q origin "FETCH_HEAD:refs/green/$_gt" \
+            2>/dev/null; then
+        ok "초록 나무를 적었다 — refs/green/${_gt:0:12}"
+    else
+        printf '  ★ 초록 나무를 못 적었다 — 다음 CI 가 다시 잰다(해롭지 않다)\n'
+    fi
 fi
 gh pr merge "$PR" -R "$GH_REPO" --squash --delete-branch || die "스쿼시 머지 실패"
 git fetch -q --prune origin
