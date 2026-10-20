@@ -1,20 +1,20 @@
 {
- "sealed_at": "2026-10-19T20:39:28+09:00",
- "commit": "b218e3e",
- "tool": "9aa77bbf47e1f357",
+ "sealed_at": "2026-10-20T02:08:57+09:00",
+ "commit": "da41b8e",
+ "tool": "905d4167770105c8",
  "tools": {
   "tools/deadcheck.py": "9e451fee74a1c0c0",
-  "tools/dms.py": "41b08bab71e88404",
+  "tools/dms.py": "1643f9cd38194b2f",
   "tools/dupcheck.py": "144a2716fa56ff3e",
   "tools/env_check.py": "ce89cafc042253f6",
   "tools/prevfield.py": "d6147516ab85b1b9",
   "tools/verify.sh": "5f12b294159c6f9d"
  },
- "scope": "pytest+프로브",
+ "scope": "이미-초록/PR #337 CI 초록",
  "docs": {
-  "docs/MASTER.md": "3ee5c04a86c8b5cd",
-  "docs/DECISIONS.md": "f901ec5b9b9ceb3a",
-  "docs/PLAN.md": "3e95e0089b1d5d16",
+  "docs/MASTER.md": "f2d65dccd1400295",
+  "docs/DECISIONS.md": "e9919ab0daf2ec93",
+  "docs/PLAN.md": "9c88d6506b351e7d",
   "README.md": "894325decba007f0"
  },
  "raw": {
@@ -1096,7 +1096,7 @@
    "title": "16-2. 근거 없는 상수"
   },
   "MASTER/17": {
-   "h": "71e906c8469be104",
+   "h": "56124b833fb00f5c",
    "state": "wired",
    "doc": "docs/MASTER.md",
    "title": "17. 작업 원칙"
@@ -14158,10 +14158,40 @@
    "title": "538-3. 합치는 자리를 **재는 쪽**에 뒀다 — 쪼개는 길에 구멍을 두지 않는다"
   },
   "DECISIONS/538-4": {
-   "h": "c40aa4f146f8f8bb",
+   "h": "a37bb3529d0a4806",
    "state": "inherit",
    "doc": "docs/DECISIONS.md",
    "title": "538-4. 래칫이 **쪼갠 뒤에도 제자리를 찾는가** — 두 파일 다 실측했다"
+  },
+  "DECISIONS/539": {
+   "h": "4289e55f7ad08a14",
+   "state": "wired",
+   "doc": "docs/DECISIONS.md",
+   "title": "539. 선언과 산출이 갈렸는데 **아무것도 안 깨져서** 관문이 전부 초록이었다"
+  },
+  "DECISIONS/539-1": {
+   "h": "0ddc46e56cb68cb0",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "539-1. 동일성으로 묻고 내용이라고 믿었다"
+  },
+  "DECISIONS/539-2": {
+   "h": "ad01daf2b306c957",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "539-2. 같은 나무를 **네 번** 쟀다"
+  },
+  "DECISIONS/539-3": {
+   "h": "3224e486c593a15e",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "539-3. 열거는 **세는 관문**과 함께만 둔다"
+  },
+  "DECISIONS/539-4": {
+   "h": "b3575584f3af4962",
+   "state": "inherit",
+   "doc": "docs/DECISIONS.md",
+   "title": "539-4. CI 를 닫았다 — **권한을 안 올리고**"
   },
   "PLAN/0": {
    "h": "c94dd35df94753d5",
@@ -14386,7 +14416,7 @@
    "title": "13. 결함 대장 — 판정을 안 움직이는 일"
   },
   "PLAN/13-1": {
-   "h": "35cf083bcb326517",
+   "h": "6d7771a7af4a3f1d",
    "state": "wired",
    "doc": "docs/PLAN.md",
    "title": "13-1. 이 절이 생긴 이유"
@@ -14398,10 +14428,10 @@
    "title": "13-2. 족 — 여섯 갈래"
   },
   "PLAN/13-3": {
-   "h": "9aa767d79d59f1ad",
+   "h": "53d285a7fad26c02",
    "state": "wired",
    "doc": "docs/PLAN.md",
-   "title": "13-3. 남은 결함 1건"
+   "title": "13-3. 남은 결함 5건"
   },
   "PLAN/13-4": {
    "h": "c6cda0ff02f45925",
@@ -14486,31 +14516,10 @@
  "dead_refs": 0,
  "dup_groups": 4,
  "enforcers": {
-  "pytest": {
+  "이미-초록/PR #337 CI 초록": {
    "rc": 0,
-   "state": "OK",
-   "tail": "3257 passed, 1 warning in 1177.13s (0:19:37)",
-   "red": []
-  },
-  "probe/deadcheck": {
-   "rc": 0,
-   "state": "OK",
-   "tail": "  ★ 실제 트리의 건수는 여기서 안 본다 — 그것은 `--ratchet` 의 물음이다."
-  },
-  "probe/env_check": {
-   "rc": 0,
-   "state": "OK",
-   "tail": "  · from os import environ   True"
-  },
-  "probe/dms": {
-   "rc": 0,
-   "state": "OK",
-   "tail": "selftest 초록"
-  },
-  "probe/dupcheck": {
-   "rc": 0,
-   "state": "OK",
-   "tail": "selftest 초록"
+   "state": "생략",
+   "tail": "tree 920bd6ce60cf 가 2026-10-20T02:07:57+09:00 에 초록 — 전수 생략"
   },
   "hook/local-hooksPath": {
    "rc": 0,
