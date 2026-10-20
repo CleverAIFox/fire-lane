@@ -2688,17 +2688,17 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "3714d9fe53857523",
-   "476738498030852b",
-   "ae6e58bb5c02fdfa",
-   "fc0c8f39e2c8ea25"
+   "36c1a7ff5e18535b",
+   "3a99f2e53772a695",
+   "c8d3f5dc1f301aba",
+   "db86ef7159ef2e8f"
   ],
   "parts": {
    "tests/test_seal_survives_squash.py": "3a6731011a0b8c9a",
-   "tools/merge_batch.sh": "ff5dbfb600e63a13",
+   "tools/merge_batch.sh": "a2c71a9979023da6",
    "본문": "7717657131203a78"
   },
-  "sha": "476738498030852b"
+  "sha": "3a99f2e53772a695"
  },
  "DECISIONS/208": {
   "doc": "docs/DECISIONS.md",
@@ -7583,16 +7583,16 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "7d9d983bd944d7e9",
-   "ee7e620473c4550a"
+   "a5f54cf69084b0c5",
+   "ab18792e98fec6bc"
   ],
   "parts": {
    "tools/ci_wait.sh": "a56b0e0a18cb820d",
-   "tools/merge_batch.sh": "ff5dbfb600e63a13",
+   "tools/merge_batch.sh": "a2c71a9979023da6",
    "tools/sealcov.py": "d3abd8feb7cfbdc9",
    "본문": "2f1b8eec2630db22"
   },
-  "sha": "7d9d983bd944d7e9"
+  "sha": "a5f54cf69084b0c5"
  },
  "DECISIONS/405": {
   "doc": "docs/DECISIONS.md",
@@ -11669,14 +11669,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "6f5862182bee654b",
-   "7f905b760436d3a6",
-   "88368fa5d3342216",
-   "8c8a15469ab80877",
-   "e39e11733ea59f79",
-   "e53a9be6f890f74e",
-   "e74bfe9a8df6ffdc",
-   "fb652c6e7d418bba"
+   "1d29330db8163921",
+   "26f789ad64a8ee7c",
+   "3518c4458f5952f7",
+   "716054a1563d34cc",
+   "8a9c44822d0647bd",
+   "958590b7b7d63388",
+   "b8807ab8d89d51c1",
+   "d6afc9eeb643b517"
   ],
   "parts": {
    ".github/dependabot.yml": "0f136937128fc0e6",
@@ -11701,7 +11701,7 @@
    "tools/doc_fsck.py": "e41aa4a935e713ce",
    "tools/encoding_check.py": "70dfc34a2191088a",
    "tools/matchcheck.py": "d3d142a6ecd5d584",
-   "tools/merge_batch.sh": "ff5dbfb600e63a13",
+   "tools/merge_batch.sh": "a2c71a9979023da6",
    "tools/owned_paths.py": "151b666e7829822b",
    "tools/render_workflow.py": "2093c77d9d3c7a2a",
    "tools/ruleset_check.py": "f3f21e775d8e743b",
@@ -11710,7 +11710,7 @@
    "tools/web_manifest.py": "0286fb5e3d48b396",
    "본문": "110def2981a11b34"
   },
-  "sha": "88368fa5d3342216"
+  "sha": "26f789ad64a8ee7c"
  },
  "MASTER/12-1": {
   "doc": "docs/MASTER.md",
