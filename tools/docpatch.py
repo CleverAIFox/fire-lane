@@ -120,6 +120,17 @@ def check(doc: Path) -> str:
 # ★ check() 는 문자열을 돌려주고 main 은 그것을 print 만 했다. 중복을
 #   찾아도 종료코드가 0 이라 **게이트에 달아도 안 운다** — "검사가
 #   있는데 안 운다" 의 교과서다(F-142).
+# ★ 2026-10-20 (DECISIONS §541). **그 고침이 반만 들어갔다.** `check_many`
+#   가 1 을 내도록 쓰였고 `main` 도 그것을 `return` 하는데, `__main__` 이
+#   `sys.exit` 없이 불렀다 — 종료코드는 늘 0 이고 verify 의 「문서 제목
+#   무결」 축은 **영원히 초록**이었다. 위 주석이 병을 적어둔 채로 코드가
+#   안 고쳐진 꼴이고, `main() -> None` 이 `int` 를 돌려주는 선언도 거짓인
+#   채였다. **고쳤다고 적는 자리와 고친 자리가 다르다.**
+#   ★ `tests/test_docpatch.py` 에 시험이 **열 개 있었고 전부 통과했다.**
+#     그중 종료코드를 보는 자가 없었다 — 시험의 수는 그물의 넓이가 아니다.
+#   강제자 — tests/test_docpatch.py::test_a_duplicate_title_turns_the_gate_red
+#   ★ 그 시험은 **하위 프로세스**로 종료코드를 센다. 안에서 `check_many`
+#     를 부르면 오늘도 1 이 나와 이 병이 안 잡힌다. 병은 배선에 있었다.
 def check_many(docs: list[Path]) -> int:
     bad = 0
     for d in docs:
@@ -136,7 +147,7 @@ def check_many(docs: list[Path]) -> int:
     return 1 if bad else 0
 
 
-def main() -> None:
+def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -161,7 +172,8 @@ def main() -> None:
         print(append_rows(Path(ns.doc), ns.key, Path(ns.fragment)))
     else:
         return check_many([Path(x) for x in ns.doc])
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -32,7 +32,6 @@ def test_the_empty_table_is_spoken(capsys):
     """★ **빈 표가 말을 한다.** 조용하면 「옮겼다」와 「옮길 것이 없다」가 같아진다."""
     sp = _mod()
     assert sp.STAGED == [], "표가 찼다 — 이 시험과 면제를 같이 고쳐라"
-    assert sp.main.__doc__ is None or True
     sys.argv = ["stage_pages.py", "--check"]
     assert sp.main() == 0
     out = capsys.readouterr().out

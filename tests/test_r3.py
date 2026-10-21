@@ -118,8 +118,18 @@ def test_road_hash_treats_nan_as_no_name_and_keeps_string_results_identical():
     assert _road_hash(float("nan")) == none_tok, "NaN 을 무명으로 안 접는다"
     assert _road_hash(math.nan) == none_tok
     assert _road_hash("") == none_tok, "빈 문자열 처리가 바뀌었다"
+    # ★ 2026-10-21 (1021). 종전은 `… if nm.strip() else True` 였다. 위 네 이름은
+    #   전부 공백이 아니므로 `else True` 가 **한 번도 안 돌았다** — 죽은 가지다.
+    #   `tests/test_test_hygiene.py` 의 전수 그물이 이 자리를 잡았다.
+    # ★ 그 가지는 잡음이 아니라 **안 시험한 의도**였다. 누가 튜플에 `""` 를 넣는
+    #   날 그 단언이 조용히 빈 그물이 된다. 가지를 떼고 의도를 **아래에 제 단언으로**
+    #   세운다. 삼항으로 감싼 단언은 조건이 거짓인 입력에서 **아무것도 안 묻는다.**
     for nm in ("필문대로289번길", "동계천로", " 경양로 ", "2순환로"):
-        assert _road_hash(nm) == _road_hash(nm.strip() or None) if nm.strip() else True
+        assert _road_hash(nm) == _road_hash(nm.strip()), f"공백만 다른 이름이 갈렸다: {nm!r}"
+    # ★ 아래 값들은 **실측했다**(1021). `nm.strip() or None` 의 가정을 산문으로
+    #   믿지 않고 재서 적는다 — 종전 삼항이 믿고 있던 것이 바로 이것이다.
+    for blank in ("",):
+        assert _road_hash(blank) == none_tok, f"공백뿐인 이름을 무명으로 안 접는다: {blank!r}"
     # 서로 다른 이름은 여전히 갈린다
     assert _road_hash("동계천로") != _road_hash("동명로") != none_tok
 

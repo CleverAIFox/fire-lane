@@ -47,7 +47,8 @@ def test_the_digest_moves_when_either_side_moves(ds):
 def test_the_digest_is_order_stable(ds):
     """파일 순서가 바뀌어도 같아야 한다 — 아니면 도장이 이유 없이 무효가 된다."""
     x = ["tools/docseal.py", "tools/dms.py"]
-    assert ds.digest("본문", x) == ds.digest("본문", list(reversed(x))) or True
+    assert ds.digest("본문", x) == ds.digest("본문", list(reversed(x))), \
+        "파일 순서로 지문이 흔들린다 — 도장이 이유 없이 무효가 된다"
     # ★ `refs()` 가 정렬해서 내므로 호출부는 항상 정렬된 목록을 준다. 그 규약을 못박는다.
     got = ds.refs("`tools/dms.py` 와 `tools/docseal.py`")
     assert got == sorted(got), "`refs()` 가 정렬해서 내지 않는다 — 도장이 순서로 흔들린다"
