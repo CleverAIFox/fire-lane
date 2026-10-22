@@ -125,7 +125,7 @@ def write_outputs(g):
 
     # ★ 2026-10-08 (DECISIONS §436 · PLAN #104). **`width_fail` 을 싣는다.**
     #   종전에는 「진단 컬럼은 산출물에 넣지 않는다」로 떨궜다. 그 결과 폭이 빈
-    #   구간 둘(`all_xsec` — 트랜섹트가 전부 교차부에 걸렸다)이 **사유 없이**
+    #   구간 둘(`no_xsec_attempted` — 표본점이 전부 교차부 안이라 한 번도 안 그었다)이 **사유 없이**
     #   출하됐다. 파이프라인은 왜인지 **알면서** 표준출력에만 찍었고, 화면과
     #   보고서는 「폭 미상 통행불가」로만 봤다 — 물을 자리가 없었다.
     #   `unknown_reason` 은 `unknown` 전용이라 `blocked` 를 담지 못한다.
@@ -147,7 +147,7 @@ def write_outputs(g):
             "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
             "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
             "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",
-            "width_fail": ("null|all_xsec|… 폭을 못 낸 사유. **`unknown_reason` 과 "
+            "width_fail": ("null|no_xsec_attempted|… 폭을 못 낸 사유. **`unknown_reason` 과 "
                            "다른 축이다** — 저쪽은 회색의 사유이고 이쪽은 폭이 빈 "
                            "사유다. `blocked` 인데 폭이 비는 자리를 설명하는 유일한 "
                            "칸이다(DECISIONS §436 · PLAN #104)"),

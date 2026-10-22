@@ -481,3 +481,27 @@ def test_walk_spans_ignores_a_grazed_curb():
     graze = Polygon([(0, 2), (5, 2), (5, 6), (0, 6)])      # 광선이 모서리에 접한다
     got = walk_spans(ray, graze, Point(0, 0), 0.0, 1.0)
     assert all(b - a > 0 for a, b in got), f"길이 0 인 구간을 냈다 — {got}"
+
+
+def test_width_fail_names_never_attempted_apart_from_attempted_and_failed():
+    """**`width_fail` 은 「한 번도 안 그었다」와 「그었는데 전부 실패했다」를 가른다**(PLAN §13 W13-31).
+
+    ★ 종전 낱말 `all_xsec` 는 「모든 횡단면이 실패했다」로 읽혔는데 사실은 표본점 전부가 교차부
+      안이라 `measure()` 를 한 번도 안 부른 구간(`n_try == 0`)의 이름이었다. 동계로15번길 둘이
+      그 낱말을 달고 있었다. 둘 다 `blocked` 가 맞다 — 낱말은 판정을 안 움직인다.
+    """
+    from firelane.seg.width import NO_XSEC_ATTEMPTED
+    assert NO_XSEC_ATTEMPTED == "no_xsec_attempted"
+
+    # ① 중심선 전체가 교차부 폴리곤 안 → 한 번도 안 긋는다
+    plaza = Polygon([(-20, -20), (120, -20), (120, 20), (-20, 20)])
+    wmin, _wmax, _fb, _src, _dis, rsn, cov = engine(ngii1k=road(6.0), xsec=plaza).widths(CENTER)
+    assert wmin is None
+    assert rsn == NO_XSEC_ATTEMPTED, f"한 번도 안 그었는데 사유가 {rsn!r} 이다"
+    assert cov[1] == 0, f"n_try 가 {cov[1]} 이다 — 그었다면 「안 그었다」가 거짓이다"
+
+    # ② 그었는데 전부 실패 → 그 사유가 가며 「안 그었다」가 아니다
+    wmin, *_rest = engine(ngii1k=_plaza(lane=0.0, plaza=50.0)).widths(CENTER)
+    rsn2, n_try = _rest[4], _rest[5][1]
+    assert wmin is None and n_try > 0
+    assert rsn2 != NO_XSEC_ATTEMPTED, "그었다가 실패한 구간이 「안 그었다」를 달았다"

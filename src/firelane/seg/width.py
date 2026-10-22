@@ -97,6 +97,10 @@ def carve_walk(left, right, walk_iv):
     return -lo, hi
 
 
+#: `width_fail` 낱말 — 표본점 전부가 교차부 안이라 횡단면을 **한 번도 긋지 않은** 구간(`n_try == 0`).
+NO_XSEC_ATTEMPTED = "no_xsec_attempted"
+
+
 class WidthEngine:
     """폭 산출에 필요한 공간 소스를 한 묶음으로 들고 다닌다.
 
@@ -511,8 +515,11 @@ class WidthEngine:
             _rsn = None
         elif _nc == 0:
             _rsn = "ts_empty"
-        elif _nx_skip == _nc:
-            _rsn = "all_xsec"            # 표본 전부 교차로 5m 안. 잰 적이 없다
+        elif _n_try == 0:
+            # ★ 2026-10-22 (PLAN §13 W13-31). 종전 낱말은 `all_xsec` 였고 「모든 횡단면이 실패했다」로 읽혔다.
+            #   사실은 **한 번도 안 그었다** — 표본점 전부가 교차부 안이라 `measure()` 를 부르지 않았다
+            #   (`_n_try == 0`). 시도하고 실패한 구간의 사유는 아래 갈래(`_whys`)가 따로 든다.
+            _rsn = NO_XSEC_ATTEMPTED
         else:
             _rsn = Counter(_whys).most_common(1)[0][0] if _whys else "unknown"
         # 폴백을 두지 않는다. 정규 샘플(2m 간격)로 한 점도 안 잡히면

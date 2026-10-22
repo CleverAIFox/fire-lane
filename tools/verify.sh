@@ -588,7 +588,7 @@ step "회색 어휘 구멍"    uv run python tools/greycheck.py
 # ★ 2026-10-08 (DECISIONS §435 · PLAN #104). 발행된 판정이 제 계약을 지키는가 —
 #   폭 상한 · 도로명 꼴 · **조용한 결측**. 앞 둘은 0 이고 그 0 을 지킨다.
 #   셋째가 2 다 — `blocked` 인데 폭이 비었고 사유 칸이 없다. 파이프라인은
-#   사유를 아는데(`all_xsec`) 표준출력에만 찍고 산출물에 안 넣는다.
+#   사유를 아는데(`no_xsec_attempted`) 표준출력에만 찍고 산출물에 안 넣는다.
 scope "data/processed/segments.geojson src/firelane/seg/params.py"
 step "발행 판정 계약"    uv run python tools/segcontract.py
 # ★ 2026-09-28 (§279-6). 사유 딸린 면제표는 이미 조여 있었다(빈 사유 0). 남은 빚은

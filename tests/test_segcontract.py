@@ -8,7 +8,7 @@ test_segcontract.py — 발행 판정 계약의 판별식 셋이 **양방향으�
 초록**이라, 셋이 합성 위반에서 우는지를 여기서 묻는다.
 
 ★ 셋째가 제일 중요하다. 앞 둘은 「값이 틀렸다」를 말하고 셋째는 「왜인지를
-  읽는 사람이 알 수 없다」를 말한다. 파이프라인은 사유를 **안다**(`all_xsec`)
+  읽는 사람이 알 수 없다」를 말한다. 파이프라인은 사유를 **안다**(`no_xsec_attempted`)
   그런데 표준출력에만 찍고 산출물에 안 넣는다.
 
 IN    tools/segcontract.py
@@ -115,7 +115,7 @@ def test_the_declared_ratchets_match_the_published_judgment():
 def test_the_two_silent_segments_are_the_transect_shutouts():
     """★ 조용한 결측 2 의 **정체**를 못박는다.
 
-    둘 다 `blocked` 이고 표본을 한 발도 못 쏜 구간이다(`all_xsec`). 사유를
+    둘 다 `blocked` 이고 표본을 한 발도 못 쏜 구간이다(`no_xsec_attempted`). 사유를
     담을 칸이 `unknown_reason` 뿐이고 그것은 `unknown` 전용이라 비어 있다.
     수가 2 에서 움직이면 **다른 것이 섞인 것**이므로 여기서 묻는다.
     """

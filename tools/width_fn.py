@@ -239,6 +239,11 @@ def cmd_aggregators() -> int:
         "하위 5퍼센타일": lambda p: float(np.percentile([w for _, w in p], 5)),
         "연속 4m 의 min": lambda p: opening(p, 4.0),
         "연속 8m 의 min": lambda p: opening(p, 8.0),
+        # ★ PLAN #4. 아래 넷은 「ngii 도로폭은 어떤 대푯값인가」를 가르는 후보다 — 판정 표에도 같이 낸다.
+        "평균": lambda p: float(np.mean([w for _, w in p])),
+        "중앙": lambda p: float(np.median([w for _, w in p])),
+        "p75": lambda p: float(np.percentile([w for _, w in p], 75)),
+        "max": lambda p: max(w for _, w in p),
     }
     clear_m = widthcross.CLEAR_M
     print(f"구간 {len(P)} · 집계를 바꿔 넣은 구간 {len(ok)} · 산출물 폭 그대로 {len(P) - len(ok)}"
@@ -259,7 +264,96 @@ def cmd_aggregators() -> int:
         print(f"{name:16}{statistics.median(dev):>11.2f}m{cnt['clear']:>7}{cnt['needs_cv']:>9}"
               f"{cnt['blocked']:>8}{cnt['unknown']:>8}{flips:>7}{len(up):>9}{soft:>12}")
     print(col("\n★ 판정에 반영하지 않았다. 함수를 바꾸면 재잠금이고 그것은 사람이 고른다.", "d"))
+    return _residual_panel(aggs, ok, S, P, surv)
+
+
+def _rank(a):
+    """평균 순위(동순위는 평균). scipy 없이 센다."""
+    import numpy as np
+    a = np.asarray(a, float)
+    o = np.argsort(a, kind="mergesort")
+    r = np.empty(len(a))
+    sa = a[o]
+    i = 0
+    while i < len(a):
+        j = i
+        while j + 1 < len(a) and sa[j + 1] == sa[i]:
+            j += 1
+        r[o[i:j + 1]] = (i + j) / 2 + 1
+        i = j + 1
+    return r
+
+
+def _spearman(a, b):
+    import numpy as np
+    ra, rb = _rank(a), _rank(b)
+    return float(np.corrcoef(ra, rb)[0, 1])
+
+
+def _wilcoxon_p(res):
+    """부호순위 검정의 양측 p (정규근사 · 동순위 보정 · 0 은 뺀다)."""
+    import math
+
+    import numpy as np
+    d = np.asarray([x for x in res if x != 0.0], float)
+    n = len(d)
+    if n < 10:
+        return float("nan")
+    r = _rank(np.abs(d))
+    w = float(r[d > 0].sum())
+    mu = n * (n + 1) / 4
+    _, cnt = np.unique(np.abs(d), return_counts=True)
+    var = n * (n + 1) * (2 * n + 1) / 24 - float((cnt ** 3 - cnt).sum()) / 48
+    z = (w - mu) / math.sqrt(var)
+    return math.erfc(abs(z) / math.sqrt(2))
+
+
+def _residual_panel(aggs, ok, S, P, surv) -> int:
+    """PLAN #4 — 측량 `도로폭` 이 우리 표본의 **어떤 대푯값**인지 역추정한다. 아무것도 안 쓴다.
+
+    H0: ngii = T(우리 표본). 잔차 = 측량폭 − T(표본).
+      ① 잔차 중앙이 0 인가 — Wilcoxon 부호순위
+      ② 잔차 산포(MAD)가 최소인 T
+      ③ 잔차가 구간 특성과 무상관인가 — 표본 수 · 곡률(굽이도) · 도로위계(도로명 끝글자)와의 스피어만 ρ
+         ★ 핵심은 ③ 이다. 맞는 T 는 잔차에 구조가 안 남는다.
+    ★ 집계를 바꿔 넣은 구간과 측량 짝이 둘 다 있는 구간에만 잰다. 판정 표와 같은 집합이다.
+    """
+    import numpy as np
+
+    uids = [u for u in ok if surv.get(u) is not None]
+    if len(uids) < 30:
+        print(col("측량 짝이 너무 적어 잔차를 못 쟀다", "r"))
+        return 1
+    def hier(name):
+        """도로명 끝글자로 위계를 센다 — 대로 3 · 로 2 · 길/번길 1 · 이름 없음 0."""
+        n = (name or "").strip()
+        if n.endswith("대로"):
+            return 3
+        if n.endswith("길"):
+            return 1
+        return 2 if n.endswith("로") else 0
+    nsamp = np.asarray([len(S[u]) for u in uids], float)
+    sinu = np.asarray([P[u].geometry.length / max(_chord(P[u].geometry), 1e-9) for u in uids], float)
+    hv = np.asarray([hier(P[u].road_name) for u in uids], float)
+    sv = np.asarray([surv[u] for u in uids], float)
+    print(f"\n{col('잔차 = 측량폭 − T(표본)', 'c')}  구간 {len(uids)}  (PLAN #4 · 대푯값 역추정)")
+    print(f"{'T':16}{'잔차 중앙':>9}{'Wilcoxon p':>12}{'MAD':>7}{'ρ(표본수)':>10}{'ρ(굽이도)':>10}{'ρ(위계)':>9}")
+    for name, f in aggs.items():
+        if name.startswith("연속"):
+            continue
+        T = np.asarray([f(S[u]) for u in uids], float)
+        res = sv - T
+        mad = float(np.median(np.abs(res - np.median(res))))
+        print(f"{name:16}{np.median(res):>8.2f}m{_wilcoxon_p(res):>12.3g}{mad:>7.2f}"
+              f"{_spearman(res, nsamp):>10.2f}{_spearman(res, sinu):>10.2f}{_spearman(res, hv):>9.2f}")
+    print(col("★ 아무것도 안 썼다. 집계는 `min` 을 유지한다.", "d"))
     return 0
+
+
+def _chord(g):
+    from shapely.geometry import Point
+    c = list(g.coords) if g.geom_type == "LineString" else list(g.geoms[0].coords)
+    return Point(c[0]).distance(Point(c[-1]))
 
 
 def main() -> int:

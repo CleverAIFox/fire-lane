@@ -645,6 +645,10 @@ route_vehicle.csv  vehicle.edge_cost()   폭 · 내륜차 · 회전반경 반영
 `hydrant_summary`(동부소방서 관내 지역별 소화전 현황)이며, 발표에 쓸 때 함께
 인용한다. **공개 데이터에는 분모가 없다.** 데이터 공백 자체가 결과다.
 
+★ **2026-10-22 — 소화전 매칭 임계는 40m 다**(사람 결정 · DECISIONS §543-3). 소방호스 1본 15m, 통상 3본 45m, 여유를 두고 40m.
+기존 8m 는 폐기했다. `blocked` 192구간 중 94(49%)가 직선 40m 안에 소화전을 둔다(`tools/hydrant_reach.py`) — 직선거리는 호스 길이의 하한이라
+낙관적 상한이고, 소화전은 공개분뿐이다.
+
 강제자 없음 — 사유: 실측 기록이다. 2026-09-17 수는 E2 적용 스크립트가 레이크 산출물에서 쟀다(DECISIONS §171-6)
 
 ### 3-13. 차량 제원
@@ -1743,7 +1747,7 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `cctv_dist_m` | 가장 가까운 CCTV 까지 거리 |
 | `cv_feasible` | CCTV 19m 이내인가 |
 | `unknown_reason` | 회색의 하위 구분. `ledger_disputes` · `no_cctv_band` · `no_cctv_thin` · `no_cctv_narrow` · `no_cctv_single` · null. ★ `unknown` **전용**이다 — `blocked` 의 결손 사유는 담지 못하고 그 자리는 `width_fail` 이 든다(DECISIONS §436-3) |
-| `width_fail` | **폭을 못 낸 사유.** `all_xsec`(법선이 전부 평면교차부에 걸려 한 발도 못 쐈다) 등. `unknown_reason` 과 **다른 축**이다 — 저쪽은 회색의 사유, 이쪽은 폭이 빈 사유다(DECISIONS §436-3) |
+| `width_fail` | **폭을 못 낸 사유.** `no_xsec_attempted`(법선이 전부 평면교차부에 걸려 한 발도 못 쐈다) 등. `unknown_reason` 과 **다른 축**이다 — 저쪽은 회색의 사유, 이쪽은 폭이 빈 사유다(DECISIONS §436-3) |
 | `route_usage` | 최단경로 사용횟수. **통행 가능성이 아니다**(§3-10) |
 | `width_src` | 채택 소스. `ngii1k` · `ngii` · `silpok` 중 하나. 구간 단위 단일 소스 |
 | `width_disagree_m` | 소스 간 최대−최소. **우리 방법 셋끼리만** 잰다 — 같은 자로 세 번 잰 값이다(§4-1a) |
@@ -3200,7 +3204,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,365 전수 · **분모(blank) 0절** · 물림(inherit) 1,332절.
+★ **강제자 칸의 분모.** 절 2,370 전수 · **분모(blank) 0절** · 물림(inherit) 1,336절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3263,7 +3267,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 | `local_lat0` | `src/firelane/localplane.py` | 조사 도구와 발행이 **import 한다**(사본 없음) | `tests/test_sources_of_truth.py` |
 | `local_my` | `src/firelane/localplane.py` | **위도** 1도의 미터 — `pyproj` 실측 110,943.342 의 정수. `web/navi/src/domain/geo.ts` 가 같은 수를 **번들 쪽에** 든다(import 불가 · 수가 두 벌인 것은 결정이다). ★ 2026-10-11 까지 **110,574** 였고 그것은 **적도**의 자오선 1도다 — 3.3km 에서 11m 틀렸다(DECISIONS §469 → §473) | `tests/test_sources_of_truth.py` · `tests/test_localplane.py` |
 | `local_mx` | `src/firelane/localplane.py` | **경도** 1도의 미터 — `pyproj` 실측 91,120.151 의 정수. ★ 종전은 `111,320 × cos(위도)` = 91,019 로 **0.111% 작았다**(회전타원체를 구로 본다). 번들은 그 공식을 **점마다 다시 켜는** 변종까지 들고 있었다(DECISIONS §473) | `tests/test_sources_of_truth.py` · `tests/test_localplane.py` |
-| `em_narrow` | `src/firelane/emwidth.py` | 넓지 않은 글자 한 자의 폭(em 어림). `svg_fit` 이 **import 한다** — 2026-10-11 까지 그 파일이 수를 들고 있었고 `vehiclecard` 가 **다른 수(0.55)**로 또 짰다(DECISIONS §472 · PLAN #169) | `tests/test_sources_of_truth.py` |
+| `em_narrow` | `src/firelane/emwidth.py` | 넓지 않은 글자 한 자의 폭(em 어림). `svg_fit` 이 **import 한다** — 2026-10-11 까지 그 파일이 수를 들고 있었고 `vehiclecard` 가 **다른 수(0.55)**로 또 짰다(DECISIONS §472) — 2026-10-22 정본으로 옮겼다(DECISIONS §543 · PLAN #169(닫힘)) | `tests/test_sources_of_truth.py` |
 
 ★ **2026-09-23 — 사실 전부가 「목록 밖」까지 본다**(DECISIONS §222-5).
   ★ 2026-09-28 정정 — 그때 열이었고 지금 **열둘**이다(`offtrack_min` ·

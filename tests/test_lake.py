@@ -633,3 +633,21 @@ def test_plan_is_idempotent_across_the_move(tmp_path):
         shutil.move(s_, d_)
     again = lake.verify_plan(rows, top, legacy="raw-legacy", repo_tiles=repo, ledger_retired=led)
     assert not again.fails and not again.moves and again.counts["보존"] == 2, again.fails
+
+
+@pytest.mark.skipif(not _lake_attached(), reason="환경skip(레이크) — 레이크가 없다(CI)")
+def test_real_lake_schema_probe_reads_every_shp_layer():
+    """PLAN #171 — 레이크 쪽 못 믿을 값. juso 전자지도 여섯이 도엽 폴더(`12210/`) 아래라 기본명으로 못 열었다(12)."""
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location("lake_ledger_schema", ROOT / "tools" / "ledger_schema.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    d = ledger.load()["datasets"]
+    sick = []
+    for key in ("road_link", "road_rw", "road_intrvl", "boundary_emd", "building", "building_entrance"):
+        got = m.probe(key, d[key]) or {}
+        if got.get("columns_error") or not got.get("columns"):
+            sick.append(f"{key}: {got.get('columns_error') or '칸 없음'}")
+    assert not sick, "레이크 실물에서 못 읽는 레이어 — " + " · ".join(sick)

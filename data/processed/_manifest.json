@@ -34,7 +34,7 @@
       "out": "1423:ac44cf183beed2d9"
     }
   },
-  "generated_at": "2026-10-16T16:49:37.384768+09:00",
+  "generated_at": "2026-10-22T19:47:16.677817+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -3502,6 +3502,19 @@
       }
     },
     {
+      "key": "child_zone_std",
+      "source_files": [
+        "**/mois_child_zone_std_*"
+      ],
+      "source_sha256": "5a9a8d10bf3d17e099f7745c3c6cf9370aba76b483751deb6b4c2acd1ff31f79",
+      "resolved": "mois_child_zone_std_kr_20260728.json",
+      "source_crs": "EPSG:4326",
+      "status": "OK",
+      "features": 18,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
       "columns": [
         "시설종류",
         "대상시설명",
@@ -3518,27 +3531,14 @@
         "제공기관코드",
         "제공기관명"
       ],
-      "features": 18,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
-      "key": "child_zone_std",
       "outputs": [
         "child_zone_std.geojson",
         "child_zone_std_5186.gpkg"
       ],
-      "resolved": "mois_child_zone_std_kr_20260728.json",
-      "source_crs": "EPSG:4326",
-      "source_files": [
-        "**/mois_child_zone_std_*"
-      ],
-      "source_sha256": "5a9a8d10bf3d17e099f7745c3c6cf9370aba76b483751deb6b4c2acd1ff31f79",
-      "status": "OK",
       "seal": {
         "raw": "5a9a8d10bf3d17e0",
-        "cfg": "2e270b50c4a21ecf",
-        "code": "c525a370ad09db08",
+        "cfg": "d0036f960314e272",
+        "code": "21998ed50e784ab1",
         "out": {
           "child_zone_std.geojson": "f96d451f8e1fafe7",
           "child_zone_std_5186.gpkg": "ed2a1c41b3250ac3"
@@ -3546,6 +3546,19 @@
       }
     },
     {
+      "key": "senior_zone_std",
+      "source_files": [
+        "**/mois_senior_zone_std_*"
+      ],
+      "source_sha256": "c10e7ccbaa7c1e98daf2e98a48d1057ed0cb04a786d6737f84385463b52ad017",
+      "resolved": "mois_senior_zone_std_kr_20260619.json",
+      "source_crs": "EPSG:4326",
+      "status": "OK",
+      "features": 14,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
       "columns": [
         "장소유형코드",
         "대상시설명",
@@ -3567,27 +3580,14 @@
         "제공기관코드",
         "제공기관명"
       ],
-      "features": 14,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
-      "key": "senior_zone_std",
       "outputs": [
         "senior_zone_std.geojson",
         "senior_zone_std_5186.gpkg"
       ],
-      "resolved": "mois_senior_zone_std_kr_20260619.json",
-      "source_crs": "EPSG:4326",
-      "source_files": [
-        "**/mois_senior_zone_std_*"
-      ],
-      "source_sha256": "c10e7ccbaa7c1e98daf2e98a48d1057ed0cb04a786d6737f84385463b52ad017",
-      "status": "OK",
       "seal": {
         "raw": "c10e7ccbaa7c1e98",
-        "cfg": "e44230cf51fd3843",
-        "code": "c525a370ad09db08",
+        "cfg": "258f2694941e990a",
+        "code": "21998ed50e784ab1",
         "out": {
           "senior_zone_std.geojson": "21d82148b6330799",
           "senior_zone_std_5186.gpkg": "cdd1374b24b8be74"

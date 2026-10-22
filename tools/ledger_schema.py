@@ -118,6 +118,8 @@ def _csv_header(data: bytes, declared: str | None) -> dict:
 #:   그리고 juso 전자지도 여섯의 `DataSourceError` 는 970MB·1.8GB 실물을 열어야
 #:   풀린다. 그래서 이 배치는 **고치지 않고 센다** — 이 저장소가 「취입 계약 경고
 #:   51 = 래칫 51」로 쓰는 그 방식이다(§13 빚 목록).
+#:   ★ 2026-10-22 정정 — juso 여섯의 원인은 **실물 크기가 아니었다.** 대장이 레이어를 기본명으로 적는데
+#:     zip 은 `12210/` 아래에 둬서 접두 없는 경로가 안 열렸다. `probe()` 가 기본명으로 짝을 찾는다(PLAN #171).
 #: ★ 세는 것과 고치는 것은 다른 일이고, **세는 것이 먼저**다. 지금까지는 드리프트
 #:   0 으로 **조용히 통과**했다 — 빚이 있다는 사실조차 수로 없었다.
 #: ★ 이 수는 `ratchet.py` 가 **줄었을 때만** 고쳐 적는다(§309).
@@ -341,6 +343,13 @@ def probe(key: str, e: dict) -> dict | None:
                     out["columns_error"] = f"{lay} 가 {len(got)}개다 — 하나여야 한다"
                     return out
                 out["layer_glob"], lay = lay, got[0]
+            # ★ 2026-10-22 (PLAN #171). 대장은 레이어를 기본명(`TL_SPRD_MANAGE.shp`)으로 적는데 juso 전자지도
+            #   zip 은 도엽 폴더(`12210/`) 아래에 둔다. 접두 없이 열면 `DataSourceError` 이고, 그것이 못 믿을 값 12 의
+            #   원인이었다 — 큰 실물을 못 연 것이 아니었다. 기본명이 zip 안에 **정확히 하나**일 때만 짝을 지운다.
+            if lay and lay not in names:
+                same = [n for n in names if Path(n).name == lay]
+                if len(same) == 1:
+                    lay = same[0]
             if lay:
                 out["layer_used"] = shown.get(lay, lay)
                 try:

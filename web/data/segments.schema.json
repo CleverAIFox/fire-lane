@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "d60fe8d81fa922f64f993dd6c24487bbd5b1b859f69120890fa4573b1cdfc4fc",
+  "sha256": "ec72a03de903667d085d7f1166c6496e87d7852a6867b82a1f71055c82525e67",
   "count": 1281,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
@@ -10,7 +10,7 @@
     "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
     "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
     "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",
-    "width_fail": "null|all_xsec|… 폭을 못 낸 사유. **`unknown_reason` 과 다른 축이다** — 저쪽은 회색의 사유이고 이쪽은 폭이 빈 사유다. `blocked` 인데 폭이 비는 자리를 설명하는 유일한 칸이다(DECISIONS §436 · PLAN #104)",
+    "width_fail": "null|no_xsec_attempted|… 폭을 못 낸 사유. **`unknown_reason` 과 다른 축이다** — 저쪽은 회색의 사유이고 이쪽은 폭이 빈 사유다. `blocked` 인데 폭이 비는 자리를 설명하는 유일한 칸이다(DECISIONS §436 · PLAN #104)",
     "road_name": "str|null 도로명. 겹침길이 최대 매칭",
     "seg_label": "str|null 구간 라벨. 도로명 + 도로명주소법 기초번호 (예: 필문대로205번길 11-17). road_intrvl 이 정본이고 기초구간을 못 찾으면 도로명만, 도로명도 없으면 null. ★ 화면 표기는 이것을 쓴다 — seg_no 는 정렬 순번이라 노딩이 바뀌면 밀리고 seg_uid 는 사람이 읽을 정보가 없다",
     "z": "float|null 표고(m). ★ 선택 컬럼 — terrain 단계 산출물이라 DEM 없이 돌리면 아예 생기지 않는다. 표현용이며 판정에 쓰지 않는다",

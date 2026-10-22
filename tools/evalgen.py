@@ -44,9 +44,9 @@ OUT   data/processed/eval.json · 표준출력
         모았고(§445) 그쪽이 2 다 — **수는 안 바뀐다**
 PARAM --baseline · --out · --scenarios · --data · RATIO_MIN · 분모(노드)
 밖    **게이트를 여기서 판정하지 않는다.** 셋은 `tools/evalgate.py` 가 든다.
-      **표본 설계를 안 정한다** — 층화 · 표본 수 · 시드 · E-1 분모(건물이냐
-      노드냐)는 PLAN §1 #94 가 미정으로 들고 있다. 여기서는 노드를 분모로 쓰고
-      그 사실을 `eval.json` 에 적을 뿐이며, 정해지면 이 도구가 아니라 #94 가 바꾼다.
+      **표본 설계를 안 정한다** — 시드(19980711)와 E-1 분모(건물)는 사람이 정했다
+      (DECISIONS §543). 다만 **분모 구현이 남았다**(PLAN §13 W13-30) — 그 전까지 여기서는
+      노드를 분모로 쓰고 그 사실을 `eval.json` 에 적는다.
       **E-4 는 안 낸다** — D-25 실측(#4)이 전건이다. 없는 전건을 이 도구가
       대신 정하지 않는다. **E-2 는 경로 탐색의 기울기를 안 정한다** — 그것은
       `edge_cost` 가 들고, 여기서 정하는 것은 「단일 수치로 무엇을 주장하는가」
@@ -92,6 +92,8 @@ KST = timezone(timedelta(hours=9))
 
 #: 역산 문턱. PLAN §1 #120 이 적은 값이다. 여기가 정본이다.
 RATIO_MIN = 1.5
+#: 난수 시드. 평가 표본의 무작위 대조군(층 D)을 뽑을 때 쓴다. 사람이 정했다(PLAN #94 · DECISIONS §543).
+SEED = 19980711
 
 # ── 오류 비대칭 (E-2 · 정본 MASTER §2-1a) ─────────────────────
 # ★ 2026-09-27. #117 이 열려 있던 이유는 자료가 아니라 **선언이 없음**이었다.
@@ -211,7 +213,7 @@ def e1(per: dict, rows: list[dict], feats, rv) -> dict:
     out = {
         "what": "현행 내비게이션(폭 미인지) 대비 개선. d1 제약 없음 · d2 제약 있음",
         "denominator": "node",
-        "unresolved": "PLAN §1 #94 — 분모를 건물로 할지 노드로 할지 미정. 표본 수·시드도 미정",
+        "unresolved": "분모는 건물로 정했으나(DECISIONS §543) 구현 전이다 — PLAN §13 W13-30. 지금 수는 노드 분모다",
         "pairs": len(rows),
         "pairs_with_route": len(ratios),
         "unreachable": len(rows) - len(ratios),
@@ -228,7 +230,7 @@ def e1(per: dict, rows: list[dict], feats, rv) -> dict:
 
 
 def _gaps(per: dict) -> list[dict]:
-    """결손 항. ★ 분모에서 빼지 않고 **따로** 적는다(PLAN §1 #94)."""
+    """결손 항. ★ 분모에서 빼지 않고 **따로** 적는다(DECISIONS §543)."""
     out = []
     for name, s in per.items():
         if s["d1_reach"] and s["d2_reach"] / s["d1_reach"] < 0.05:
@@ -436,6 +438,7 @@ def build(proc: Path, gold: Path, base: Path, tag: str | None) -> tuple[dict, li
             ("segments.fingerprint.json", gold / "segments.fingerprint.json"),
         ) if p.is_file()},
         "params": {
+            "seed": SEED,
             "node_tol_m": NODE_TOL,
             "required_width_m": V.required_width(),
             "ratio_min": RATIO_MIN,
@@ -453,7 +456,7 @@ def build(proc: Path, gold: Path, base: Path, tag: str | None) -> tuple[dict, li
             "E-4(폭 정확도 · #93)는 D-25 실측(#4)이 전건이어서 안 낸다",
             "E-2 의 두 노출은 **주장의 노출**이고 지상진실이 아니다 — "
             "「실제로 못 갔다」는 폭 실측(#4)이 전건이다",
-            "E-1 분모는 노드다. 건물이냐 노드냐는 PLAN §1 #94 가 미정으로 든다",
+            "E-1 분모는 지금 노드다. 건물로 정해졌고(DECISIONS §543) 구현은 PLAN §13 W13-30 이 든다",
             "거리는 국소 평면 근사(localgeo)로 잰다. 투영이 아니다",
             "`node` 는 실행 안에서만 뜻이 있는 번호다. 실행 간 인용은 `dest_lon`·`dest_lat` 로 한다",
         ],

@@ -155,19 +155,9 @@ def test_crs_native_is_written_as_a_bare_code():
       붙여 두면 그 함수가 할 일이 없어지고, 하는 일이 없는 정규화는 다음 사람이
       지운다.
     """
-    #: ★ **면제가 아니라 등록이다.** 이 둘은 커밋된 샤드 봉인지가 그 글자를
-    #:   해시했고, 고치면 `test_committed_manifest_uses_new_cfg_print` 가 찢어진다.
-    #:   다시 빌드 없이는 못 넘긴다 — **`PLAN #158` 이 해소를 든다.**
-    #:   `BACKWARD` 와 같은 규율이다: 사유와 **해소 조건**을 같이 적는다.
-    SEALED = {"child_zone_std", "senior_zone_std"}
     bad = [f"{k}: {e['crs_native']!r}" for k, e in _ds().items()
-           if k not in SEALED and (e or {}).get("crs_native") is not None
+           if (e or {}).get("crs_native") is not None
            and str(e["crs_native"]).upper().startswith("EPSG:")]
-    # ★ 역방향 — 해소됐는데 목록이 남으면 다음 어긋남이 조용히 면제된다(§69)
-    stale = sorted(k for k in SEALED
-                   if not str((_ds().get(k) or {}).get("crs_native", "")).upper().startswith("EPSG:"))
-    assert not stale, (f"`SEALED` 가 이미 고쳐진 것을 든다 — {stale}. 그 줄을 지우고 "
-                       "`PLAN #158` 을 닫아라")
     assert not bad, (
         "`crs_native` 에 `EPSG:` 접두를 적었다 — 정본은 맨 코드다:\n  "
         + "\n  ".join(bad)

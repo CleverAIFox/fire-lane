@@ -67,6 +67,9 @@ EXEMPT = {
     "corner_probe": "코너 기하 조사",
     "transition": "R2 전이표. R3 전후로 사람이 부른다 — `baseline.py diff --transition` 이 같은 모듈을 쓴다(DECISIONS §187)",
     "lanes_probe": "표준노드링크 차로수로 폭 하한 대조",
+    "hydrant_reach": "통행 불가 구간 근처에 소화전이 닿는가(PLAN #95). 사람이 호스 길이 기준을 바꿔 부른다",
+    "unknown_nocctv": "CCTV 미설치로 판정 불가한 구간 목록(PLAN #60). 사람이 답사·설치 후보지를 뽑으려고 부른다",
+    "ortho_register": "정사영상 ↔ 건물 외곽선 등록으로 정합 오차를 아핀으로 읽는다(PLAN #10). 레이크의 TIF 가 필요하고 수 분 걸린다",
     # ── 일회성 이관. 돌리고 나면 no-op 이다(R8).
     "ledger_stem": "대장 stem 이관. 완료",
     "migrate_names": "raw 개명 백필",

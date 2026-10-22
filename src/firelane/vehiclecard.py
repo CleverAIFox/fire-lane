@@ -28,7 +28,9 @@ import re
 import sys
 from pathlib import Path
 
-VERSION = "2026-09-17.1"
+from firelane.emwidth import em
+
+VERSION = "2026-10-22.1"
 
 # 표의 머리글 → CSV 칸 이름. 순서가 곧 CSV 칸 순서다.
 ROW1 = [("차 종", "차종"), ("등 록 일", "등록일"),
@@ -42,11 +44,9 @@ HEAD = ["서식", "쪽", "차명", "등록번호", "소속"] + [c for _, c in RO
        [c for _, c in ROW2] + ["그 밖의 특기사항"]
 
 # 글자 폭 근사(em). 칸 배정에만 쓴다 — 칸 중심 간격이 69pt 라 오차 여유가 크다.
-# ★ 2026-10-11 (DECISIONS §472). **정본은 `firelane.emwidth` 다.** 여기 수는
-#   그것과 다르다(0.55 · `[가-힣]` 하나로 가른다) — `㎏`·한자·전각을 좁다고
-#   센다. 바꾸면 이 모듈의 코드 축이 움직여 `vehicle_spec` norm 을 다시
-#   구워야 하고 원본 관리카드 PDF 는 레이크에 있다. **PLAN #169** 가 든다.
-_HANGUL = re.compile(r"[가-힣]")
+# ★ 2026-10-22 (PLAN #169). **정본 `firelane.emwidth` 로 옮겼다.** 종전 손 판은 `[가-힣]` 하나로 가르고
+#   나머지를 0.55 로 세서 `㎏`·한자·전각을 좁다고 셌다. 레이크의 관리카드 PDF 넷(84칸)을 두 판으로
+#   파싱해 **어긋남 0** 을 보고 옮겼다 — norm CSV 는 바이트 동일하다(DECISIONS §543).
 _ASCII_GAP = re.compile(r"(?<=[A-Za-z0-9-]) (?=[A-Za-z0-9-])")
 
 
@@ -54,8 +54,8 @@ class CardError(ValueError):
     pass
 
 
-def _width(text: str, size: float) -> float:
-    return sum(size * (1.0 if _HANGUL.match(ch) else 0.55) for ch in text)
+def _extent(text: str, size: float) -> float:
+    return sum(size * em(ch) for ch in text)
 
 
 def chunks_of(pdf: Path) -> list[tuple[float, float, float, str]]:
@@ -85,7 +85,7 @@ def _find(chs, label):
 
 
 def _center(c) -> float:
-    return c[1] + _width(c[3], c[2]) / 2
+    return c[1] + _extent(c[3], c[2]) / 2
 
 
 def _row(chs, heads, y_head, y_below):
