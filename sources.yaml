@@ -170,7 +170,7 @@ vehicle_spec:
 
       ★ **스키마 결함이 함께 드러났다.** `vehicle_profiles` 는 차종당 축거
         하나인데 같은 중형펌프차가 섀시 세대로 갈린다. 축거를 확보해도
-        넣을 자리가 없다 — 값보다 스키마가 먼저다(PLAN #26(닫힘)).
+        넣을 자리가 없다 — 값보다 스키마가 먼저다(PLAN 행 26 — 닫힘).
 
       출처 등급 — 섀시 축거는 위키백과·카눈에서 왔고 **정본이 아니다.**
       현대 상용차 카탈로그 또는 이트럭스 제원 DB 로 갈아야 한다.
@@ -2233,7 +2233,7 @@ datasets:
   ngii_road_center:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 본선·측도 분리(#3-1 road_side). 도로대장 부존재의 대안 경로'
+    feeds_note: '미투입 — 본선·측도 분리(road_side · §3-1). 도로대장 부존재의 대안 경로'
     stem: ngii_basemap
     ext: [zip]
     parts: [gj9708, gj9712]
@@ -2257,7 +2257,7 @@ datasets:
   bin_trash:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 고정 장애물 후보(#2). 폭 차감 대상'
+    feeds_note: '미투입 — 고정 장애물 후보(행 2). 폭 차감 대상'
     stem: gjcity_bin_trash
     ext: [csv]
     feeds_why: 미투입 — 노상 적치물 후보
@@ -2282,7 +2282,7 @@ datasets:
   bin_cloth:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — 고정 장애물 후보(#2). 폭 차감 대상'
+    feeds_note: '미투입 — 고정 장애물 후보(행 2). 폭 차감 대상'
     stem: gjcity_bin_cloth
     ext: [csv]
     feeds_why: 미투입 — 노상 적치물 후보
@@ -2335,7 +2335,7 @@ datasets:
       encoding_seen: 'cp949'
   parking_lot:
     feeds: []
-    feeds_note: '미투입 — A* 비용함수 입력(#2). 노외 103 · 노상 35'
+    feeds_note: '미투입 — A* 비용함수 입력(행 2). 노외 103 · 노상 35'
     stem: gjcity_parking_lot
     ext: [csv]
     feeds_why: 미배선 — 합법 주차 공급(역상관 피처). 지오코딩 필요
@@ -2372,7 +2372,7 @@ datasets:
       (「지산동 521-3」)라 못 붙는다 — 그 몫을 `counts.ecam_unplaced_sites` 로 같이 싣는다.
       **행이 아니라 번호(지점)를 센다** — 한 지점이 방향마다 한 행이다(아래 note).
       ★ 그래서 `ecam: 0` 은 「카메라가 없다」가 아니라 「붙은 18지점 중에 없다」다.
-      운영시간은 아직 안 싣는다 — 시간대별 비용은 근거가 없다(PLAN §1 #2).
+      운영시간은 아직 안 싣는다 — 시간대별 비용은 근거가 없다(PLAN §1 행 2(닫힘 · DECISIONS §544)).
     scope: jngj-donggu
     updated: '2026-08-28'
     what: 동구 불법주정차 단속 무인카메라 (57지점 · 방향 65)
@@ -2393,7 +2393,7 @@ datasets:
       encoding_seen: 'utf-8'
   school_zone:
     feeds: []
-    feeds_note: '미투입 — A* 비용함수 입력(#2). 보호구역 32곳'
+    feeds_note: '미투입 — A* 비용함수 입력(행 2). 보호구역 32곳'
     stem: gjcity_school_zone
     ext: [csv]
     feeds_why: 미배선 — 통행 제약. 지오코딩 필요
@@ -2415,7 +2415,7 @@ datasets:
       encoding_seen: 'utf-8'
   parking_zone:
     feeds: []
-    feeds_note: '미투입 — A* 비용함수 입력(#2). 규제 구간'
+    feeds_note: '미투입 — A* 비용함수 입력(행 2). 규제 구간'
     stem: gjcity_parking_zone
     ext: [csv]
     feeds_why: 미배선 — ★ 유효폭이 날짜마다 바뀐다. 지오코딩 필요
@@ -3930,6 +3930,7 @@ outputs:
     consumers:
     - src/firelane/ortho.py
     - src/firelane/publish_web.py
+    - tools/ortho_register.py
     note: |
       표출 스코프. 동명동 경계 60m 버퍼 ∪ 접근 회랑 70m ∪ 안전센터 300m.
       ★ 2026-09-04 신설. 종전에는 publish_web 이 계산해
@@ -3966,7 +3967,7 @@ outputs:
     # ★ 2026-09-06. 또 하나. `publish_navi` 가 내비용 그래프를 낸다 —
     #   같은 병이 두 번째다(손대장이라 읽는 쪽이 늘어도 아무도 안 적는다).
     - src/firelane/publish_navi.py
-    # ★ 2026-09-25 (PLAN §1 #94(닫힘) · #120). 평가지표 산출기와 그 게이트.
+    # ★ 2026-09-25 (PLAN §1 행 94(닫힘) · #120). 평가지표 산출기와 그 게이트.
     - tools/evalgate.py
     - tools/evalgen.py
     - tests/test_evalgen.py
@@ -4119,6 +4120,27 @@ outputs:
     consumers: [tools/docnum_check.py, tools/baseline.py]
     what: 소방서 소방통로 지정구간 대 우리 판정 대조. ★ 게이트로 썼으므로 검증이 아니다(MASTER §15-2)
     verified: false
+  unknown_no_cctv:
+    produced_by: tools/unknown_nocctv.py
+    path: data/processed/unknown_no_cctv.csv
+    inputs: [segments]
+    consumers: []
+    what: CCTV 미설치로 판정 불가한 구간 목록(PLAN #60). 판정을 안 움직이고 답사·설치 후보지를 낸다
+    verified: false
+  hydrant_reach:
+    produced_by: tools/hydrant_reach.py
+    path: data/processed/hydrant_reach.csv
+    inputs: [segments, hydrant_point]
+    consumers: []
+    what: 구간별 가장 가까운 소화전까지 직선거리와 호스 등급(1본 ~15m · 3본 ~45m · 10본 ~140m · DECISIONS §544-7). 판정에 안 넣는다
+    verified: false
+  contact_sheet:
+    produced_by: tools/contact_sheet.py
+    path: data/processed/contact/DM01875.png
+    inputs: [segments, ngii1k, ngii_road, road_rw]
+    consumers: []
+    what: 접촉인화 — 구간 한 장에 폴리곤과 단면을 그린 조사 그림. 사람이 눈으로 본다(구간마다 한 장이 생긴다)
+    verified: false
   route_vehicle:
     produced_by: src/firelane/segments.py
     path: data/processed/route_vehicle.csv
@@ -4133,7 +4155,7 @@ outputs:
     consumers: [tests/test_evalgen.py]
     what: 평가지표 E-1 · E-3 과 #120 시나리오 역산. 재현성 게이트 보고를 함께 든다
     note: |
-      ★ PLAN §1 #94(닫힘). **지표는 값이 아니라 실행이다** — 터미널에만 있는 숫자는
+      ★ PLAN §1 행 94(닫힘). **지표는 값이 아니라 실행이다** — 터미널에만 있는 숫자는
         소실된다. 문서에 손으로 옮겨 적힌 값 대신 이 파일이 정본이다.
       ★ 칸 이름은 봉인 `meta.json` 과 맞췄다(`as_of` · `git_sha` · `tally` ·
         `sha256` · `known_limits`). `tools/baseline.py` 의 `FILES` 에 이 이름을

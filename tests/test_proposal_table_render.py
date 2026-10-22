@@ -59,7 +59,7 @@ def _chrome() -> str | None:
 def _measure(html: str, width: int) -> dict:
     chrome = _chrome()
     if chrome is None:
-        pytest.skip("헤드리스 크롬이 없다 — 표 렌더를 **확인 못 했다**(통과가 아니다)")
+        pytest.skip("환경skip(도구) — 헤드리스 크롬이 없다: 표 렌더를 **확인 못 했다**(통과가 아니다)")
     with tempfile.TemporaryDirectory() as d:
         f = Path(d) / "p.html"
         f.write_text(html.replace("</body>", PROBE + "</body>"), encoding="utf-8")

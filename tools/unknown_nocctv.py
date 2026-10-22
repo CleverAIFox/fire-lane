@@ -59,4 +59,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    from firelane.cli import no_args
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2)
     raise SystemExit(main())
