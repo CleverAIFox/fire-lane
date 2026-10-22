@@ -21,6 +21,7 @@ tools/hydrant_reach.py — 통행 불가 구간 근처에 소화전이 닿는가
 IN    data/processed/segments_5186.gpkg · hydrant_point_5186.gpkg
 OUT   없음 (표준출력)
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
+    밖    **호스가 실제로 깔리는 길이는 안 본다** — 직선거리만 잰다(하한). 담·건물·고저와 소화전의 작동 여부는 모른다.
 """
 from __future__ import annotations
 

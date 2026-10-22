@@ -18,6 +18,7 @@ tools/unknown_nocctv.py — CCTV 미설치로 판정 불가한 구간 목록 (PL
 IN    data/processed/segments_5186.gpkg
 OUT   data/processed/unknown_no_cctv.csv (UTF-8 BOM · 정렬: 사유 → 길이 내림차순)
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
+    밖    **`no_cctv_*` 밖의 `unknown` 사유는 안 센다** — 추정폭·위험도도 안 낸다. 사유별 목록과 수만 낸다.
 """
 from __future__ import annotations
 

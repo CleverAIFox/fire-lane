@@ -34,6 +34,7 @@ tools/contact_sheet.py — 접촉인화: 구간 한 장씩 정사영상 위에 �
 IN    data/processed/{segments_5186,width_samples.csv,ngii1k_5186,ngii_road_5186,road_rw_5186}.gpkg · raw/ngii/ngii_ortho_*.tif
 OUT   data/processed/contact/<seg_id>.png  (gitignore 밖이 아니다 — 그림은 산출물이 아니라 조사 결과다)
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
+    밖    **판정이 맞는가는 안 본다** — 법선을 사람이 눈으로 확인하게 그릴 뿐이다. 영상의 도엽별 위치 오차(최대 ~1.5m)도 안 바로잡는다.
 """
 from __future__ import annotations
 

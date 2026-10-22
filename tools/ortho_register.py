@@ -34,6 +34,7 @@ tools/ortho_register.py — 정사영상을 벡터 지도에 대어 정합 오�
 IN    $FIRE_LANE_DATA/raw/ngii/ngii_ortho_*.tif · data/processed/{scope_5186,building_5186}.gpkg · dem_scope.tif
 OUT   없음 (표준출력)
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
+    밖    **영상을 바로잡지 않는다** — 정합 오차를 읽어 내놓을 뿐 `ortho.py` 를 안 고친다. 건물 외곽선 자체의 절대 오차도 못 잰다.
 """
 from __future__ import annotations
 
@@ -233,7 +234,7 @@ def main() -> int:
     pts = np.c_[d["x"], d["y"]]
     dist = np.hypot(pts[:, None, 0] - pts[None, :, 0], pts[:, None, 1] - pts[None, :, 1])
     nb = (dist < 150) & (dist > 0)
-    mor = lambda e: float(((e - e.mean())[:, None] * (e - e.mean())[None, :] * nb).sum() / nb.sum() / e.var())  # noqa: E731
+    mor = lambda e: float(((e - e.mean())[:, None] * (e - e.mean())[None, :] * nb).sum() / nb.sum() / e.var())  # noqa: E731 — 한 줄 지역 람다, 이 함수 안에서만 쓴다
     null = [mor(ex[rng.permutation(n)]) for _ in range(300)]
     print(f"\n{col('잔차(도엽별 이동 뒤)', 'c')}  RMS {np.sqrt((res ** 2).mean()):.2f}m")
     print(f"  이웃(<150m) 상관  dx {mor(ex):+.2f}  dy {mor(ey):+.2f}   (뒤섞은 영가설 {np.mean(null):+.2f} ± {np.std(null):.2f})")
