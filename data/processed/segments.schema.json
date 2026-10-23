@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "cfddab0b6583a0a2e57abfc90ff56da9fddb530d73645b99a0e77a5f1c565dd6",
+  "sha256": "2e8157915cb5134bd4327a13874bd50f948a9d8bfdbe72cedc4bace31bf567e5",
   "count": 1281,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
@@ -69,6 +69,7 @@
     "그 외 -> unknown (reason=width). 폭 산출 불가",
     "needs_cv 인데 CCTV 19m 밖 -> unknown (reason=no_cctv_narrow|no_cctv_thin|no_cctv_band|no_cctv_single). 영상판정 불가",
     "needs_cv 인데 wmin >= 7.0 + ROAD_BT < 3.0 -> unknown (reason=ledger_disputes). 대장이 반박한다",
-    "clear 인데 소스 무관 최솟값 < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 반박을 못 본 척하지 않는다"
+    "clear 인데 소스 무관 최솟값 < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 반박을 못 본 척하지 않는다",
+    "clear 인데 대칭폭 최솟값(2·min(좌,우)) < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 중심선이 경계에 붙었다"
   ]
 }

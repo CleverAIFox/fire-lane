@@ -317,6 +317,9 @@ def test_reads_exempt_has_no_ghost():
 #: `DOMAIN` 이 아닌 것의 사유. **판정 폐포 안인데 순수가 아닌 자리**다.
 #: ★ 빈 사유는 금지다. 그리고 아래 검사가 **양방향**이다 — 깨끗해지면 운다.
 NOT_DOMAIN: dict[str, str] = {
+    "occ.py":
+        "순수하지 않다 — `load_demand` 가 수요점 CSV 를 읽는다. β 는 **판정에 안 쓴다**(순위용 · `tests/test_occ_pressure.py`)이고 판정 폐포 안에 있는 것은 "
+        "`segments.py` 가 processed 에 싣기 때문이다(DECISIONS §545-4)",
     "segments.py":
         "stage 다. 파일을 읽고 쓰고 단계로 돈다 — 계층표의 그 자리이고 "
         "조립부가 순수할 수는 없다",

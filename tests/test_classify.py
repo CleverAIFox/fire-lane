@@ -99,7 +99,7 @@ def test_vocabulary_matches_the_schema_enum():
     assert "fragment" not in VERDICTS
     assert set(REASONS) == {"ledger_disputes",
                             "no_cctv_narrow", "no_cctv_thin", "no_cctv_band",
-                            "no_cctv_single", "width"}
+                            "no_cctv_single", "needs_survey", "width"}
 
 
 # ── VERDICT_RULE[7] · 대장이 반박하면 회색 ──────────────────────
@@ -225,3 +225,28 @@ def test_constants_come_from_the_single_source():
     assert CLEAR_M == 7.0
     # clear 문턱이 대장 문턱보다 넓다. 같아지면 두 규칙이 구별되지 않는다.
     assert CLEAR_M > LEDGER_BLOCK_M
+
+
+# ── VERDICT_RULE[8] · [9] · 채택에서 밀린 소스 · 대칭폭이 clear 를 반박하면 거둔다 ─────────────
+# ★ 2026-10-23 (DECISIONS §545-3 · §546). 사유 — 측정된 병목을 버리고 통과로 발표하는 것이 이 프로젝트가 낼 수 있는 최악의 오류다.
+#   과소판정은 출동을 늦추지만 과대판정은 소방차를 못 들어가는 길로 보낸다.
+
+CLEAR_ARGS = dict(wmin=9.0, wmax=None, nreg=20, road_bt=8.0, length_m=50.0)
+
+
+def test_rule8_any_source_below_truck_withdraws_clear_by_cctv():
+    from firelane.seg.classify import classify
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0) == ("clear", None)                              # 인자가 없으면 종전과 같다
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wmin_any=2.0) == ("needs_cv", None)             # CCTV 안
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=2.0) == ("unknown", "needs_survey")   # CCTV 밖
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=3.0) == ("clear", None)               # 문턱 이상이면 건드리지 않는다
+
+
+def test_rule9_symmetric_width_below_truck_withdraws_clear_but_nothing_else():
+    from firelane.seg.classify import classify
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wsym=0.152) == ("needs_cv", None)
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wsym=2.9) == ("unknown", "needs_survey")
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wsym=3.0) == ("clear", None)
+    # clear 만 건드린다 — blocked 는 대칭폭이 좁아도 그대로다(전면 도입이 아니다).
+    blocked = classify(wmin=2.0, wmax=2.5, nreg=20, road_bt=2.0, length_m=50.0, cctv_dist=5.0, wsym=0.1)
+    assert blocked[0] == "blocked"

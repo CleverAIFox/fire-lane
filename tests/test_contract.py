@@ -418,7 +418,7 @@ def test_verdict_matches_rules_for_every_segment():
     #   "표본 1개 방어" 18구간이 규칙 위반으로 잡혔다. 판정은 멀쩡했고
     #   검사가 못 읽은 것이었다. 없으면 통과가 아니라 실패해야 한다.
     need = {"width_min_m", "width_max_m", "road_bt_m", "n_sample",
-            "cv_feasible", "verdict"}
+            "cv_feasible", "verdict", "width_min_any_m", "width_min_sym_m"}
     missing = need - set(feats[0]["properties"])
     assert not missing, (
         f"segments.geojson 에 컬럼이 없다: {sorted(missing)}\n"
@@ -447,6 +447,12 @@ def test_verdict_matches_rules_for_every_segment():
 
         if exp == "needs_cv" and not x.get("cv_feasible"):
             exp = "unknown"
+
+        # 규칙 [8] · [9] — 소스 무관 최솟값 · 대칭폭 최솟값이 소방차 폭 미만이면 clear 를 거둔다(2026-10-23).
+        if exp == "clear":
+            _any, _sym = num(x.get("width_min_any_m")), num(x.get("width_min_sym_m"))
+            if (_any is not None and _any < TRUCK) or (_sym is not None and _sym < TRUCK):
+                exp = "needs_cv" if x.get("cv_feasible") else "unknown"
 
         if exp != x["verdict"]:
             bad.append(f"{x.get('seg_id')} {x.get('road_name')}: "

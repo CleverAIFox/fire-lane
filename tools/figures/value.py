@@ -133,7 +133,8 @@ def fig_unknown() -> str:
     #   `ledger_disputes` 가 끼어 그림만 보면 빠뜨린 것인지 뜻인지 모른다.
     ko = {"no_cctv_band": "대역 밖", "no_cctv_thin": "폭 부족",
           "no_cctv_narrow": "각도 부족", "no_cctv_single": "단일 관측",
-          "ledger_disputes": "대장 반박", "width": "폭 산출 불가"}
+          "ledger_disputes": "대장 반박", "needs_survey": "실측 필요",
+          "width": "폭 산출 불가"}
     # ★ 머리말이 **「영상판정 불가」였다.** 그 말은 `no_cctv_*` 넷만 참이고
     #   `ledger_disputes` 는 카메라와 무관하다 — 낱말이 늘자 머리말이 거짓이
     #   됐다. 둘째 줄의 「0이다」도 손으로 적은 수였다. 수는 정본에서 읽는다.

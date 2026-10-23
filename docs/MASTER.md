@@ -144,10 +144,10 @@ uv run python tools/docnum_check.py
 <!--gen: v_clear v_needs_cv v_blocked v_unknown-->
 | 판정 | 구간 | 뜻 |
 |---|---:|---|
-| `clear` 통행 가능 | 423 | 양쪽 주차가 있어도 통과. 영상판정 불필요 |
-| `needs_cv` 판정 보류 | 214 | 상습주차 여부로 갈린다. 영상판정 대상 |
+| `clear` 통행 가능 | 416 | 양쪽 주차가 있어도 통과. 영상판정 불필요 |
+| `needs_cv` 판정 보류 | 218 | 상습주차 여부로 갈린다. 영상판정 대상 |
 | `blocked` 통행 불가 | 192 | 차가 없어도 통과 불가 |
-| `unknown` 영상판정 불가 | 452 | CCTV 19m 밖. 영상판정 자체가 불가능 |
+| `unknown` 영상판정 불가 | 455 | CCTV 19m 밖. 영상판정 자체가 불가능 |
 <!--/gen-->
 
 ```
@@ -155,7 +155,7 @@ uv run python tools/docnum_check.py
 총연장          58,308.7 m
 동명동 안       416
 CCTV 19m 안     391  (30.5%)
-소방청 지정      180  (연속 100m 이상)
+소방청 지정      190  (연속 100m 이상)
 ```
 
 강제자 없음 — 사유: 수치는 흡수-2 실측값이다(DECISIONS §170). 판정 수 · CCTV · 소방청 지정은 docnum_check 가 대조하고 나머지는 대조 도구가 없다
@@ -508,7 +508,7 @@ CCTV 유효범위 안인가는 발행물의 `cv_feasible` 이 들고 다닌다 �
 CCTV 유효범위 안      391 / 1,281   (30.5%)
 CCTV 거리 중앙값       38.5 m
 최대                   212 m
-영상판정 불가          452구간 · 19,326m   (전체 연장의 33.1%)
+영상판정 불가          455구간 · 20,384m   (전체 연장의 35.0%)
 ```
 <!--/gen-->
 
@@ -1463,7 +1463,7 @@ CCTV 밖이면 `unknown`(`no_cctv_band` 206)으로 내려간다(§2-1). 기획�
 이어지는 **연속 구간 전체**의 길이다. 5m짜리 조각 하나로는 지정되지 않는다.
 
 ```
-소방청 지정 기준 충족   180구간
+소방청 지정 기준 충족   190구간
 연속 구간 최장          505.5 m
 구간 길이               중앙 36.5m · 최대 993.0m · 100m 초과 64개
 ```
@@ -1746,7 +1746,14 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `nfa_designated` | 소방청 지정 기준(연속 100m) 충족 |
 | `cctv_dist_m` | 가장 가까운 CCTV 까지 거리 |
 | `cv_feasible` | CCTV 19m 이내인가 |
-| `unknown_reason` | 회색의 하위 구분. `ledger_disputes` · `no_cctv_band` · `no_cctv_thin` · `no_cctv_narrow` · `no_cctv_single` · null. ★ `unknown` **전용**이다 — `blocked` 의 결손 사유는 담지 못하고 그 자리는 `width_fail` 이 든다(DECISIONS §436-3) |
+| `unknown_reason` | 회색의 하위 구분. `ledger_disputes` · `no_cctv_band` · `no_cctv_thin` · `no_cctv_narrow` · `no_cctv_single` · `needs_survey`(채택에서 밀린 소스 · 대칭폭이 소방차 폭 미만을 쟀는데 CCTV 도 없다 — 현장 실측이 필요) · null. ★ `unknown` **전용**이다 — `blocked` 의 결손 사유는 담지 못하고 그 자리는 `width_fail` 이 든다(DECISIONS §436-3) |
+| `width_min_any_m` · `width_min_any_src` · `width_min_any_s_m` | **소스 무관 최솟값**과 그 소스 · 위치. 엔진이 표본마다 재던 세 소스 값에서 뽑는다(채택된 한 줄이 아니다). 기록이다 — 규칙 [8] 이 읽는다(DECISIONS §545-2) |
+| `width_source_conflict_m` | `width_min_m − width_min_any_m`(0.05m 미만은 0). 양수면 채택에서 밀린 표본이 더 좁다 |
+| `width_min_sym_m` | 채택 표본의 대칭폭 `2·min(left, right)` 최솟값. 규칙 [9] 가 clear 만 거둔다(DECISIONS §546-3) |
+| `width_min_sample_idx` · `width_selection_reason` | 발행 `width_min_m` 을 낸 표본의 인덱스와 왜 이 값이 발행됐는지의 한 줄 |
+| `n_poly` | 채택 표본이 걸친 원천 폴리곤 수. 식별자는 덮는 폴리곤 중 목록 순서가 앞선 하나(엔진의 선택이 아니다) |
+| `n_subphys` | 폭 1.0m 미만 유효 표본 수(표시만 · 지우지 않는다) |
+| `occ_pressure` · `occ_pressure_rank` | 점유압력 β — 거주단위/100m(길이 기준)와 폭 밴드 안 순위. **판정선을 못 넘는다.** 동명동 밖은 null(0 이 아니다) · 순위용(DECISIONS §545-4) |
 | `width_fail` | **폭을 못 낸 사유.** `no_xsec_attempted`(법선이 전부 평면교차부에 걸려 한 발도 못 쐈다) 등. `unknown_reason` 과 **다른 축**이다 — 저쪽은 회색의 사유, 이쪽은 폭이 빈 사유다(DECISIONS §436-3) |
 | `route_usage` | 최단경로 사용횟수. **통행 가능성이 아니다**(§3-10) |
 | `width_src` | 채택 소스. `ngii1k` · `ngii` · `silpok` 중 하나. 구간 단위 단일 소스 |
@@ -3207,7 +3214,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,387 전수 · **분모(blank) 0절** · 물림(inherit) 1,351절.
+★ **강제자 칸의 분모.** 절 2,394 전수 · **분모(blank) 0절** · 물림(inherit) 1,357절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4729,6 +4736,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 
 | 파일 | 무엇을 드나 |
 | --- | --- |
+| `src/firelane/occ.py` | 점유압력 β — 수요점으로 구간의 거주단위/100m(길이 기준 · 12m 평평한 끝 버퍼)와 폭 밴드 안 순위를 낸다. **판정선을 못 넘는다**(`classify.py` 가 읽으면 시험이 운다) |
 | `src/firelane/cli.py` | **명령줄 표면의 관문.** 인자를 거절하는 일만 한다 — 모르는 깃발을 주면 백열여덟 중 스물다섯이 조용히 삼켰다 |
 | `src/firelane/datalog.py` | 데이터 대장 도구. 파이프라인 끝에서 매니페스트를 갱신한다 |
 | `src/firelane/guards.py` | 파이프라인 **방어 로직의 정본.** 계보 검사를 단독으로도 돌린다 |
@@ -4746,6 +4754,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/branch_tidy.sh` | 가지와 PR 정리. **산출물에 안 닿는다** |
 | `tools/contact_sheet.py` | 접촉인화 — 구간 한 장에 폴리곤과 단면을 그려 **사람이 눈으로 폭 산출을 확인**한다(`--no-ortho` 는 배경 없이). 아무것도 안 바꾼다 |
 | `tools/cv_queue.py` | 영상판정을 **어느 구간부터** 붙일지 순서만 정한다. 판정은 안 한다 |
+| `tools/occ_pressure.py` | β 의 **수요점**을 건축물대장(레이크)에서 만든다 — 818동·1,794단위 → 좌표에 닿는 774동·1,744단위. 사람이 부른다. 한 지번에 건물관리번호가 여럿이면 첫 매칭 하나(근사) |
 | `tools/fetch_api.py` | 공공데이터포털 표준데이터 API 를 **같은 방법으로 다시 받는** 도구(`FIRE_LANE_DATA_GO_KR_KEY` · 지금은 키가 필요 없다 · PLAN 행 141(닫힘)). 호출은 `--run` 일 때만 |
 
 ### 23-3. 검사 — 무엇을 묻나
@@ -5100,7 +5109,7 @@ web/
 <!--gen: datasets v_clear v_needs_cv v_blocked v_unknown-->
 ```
 세그먼트     1,281   (동명동 416 + 119안전센터 접근 회랑 70m + 안전센터 반경 300m)
-판정        통행 가능 423 · 판정 보류 214 · 통행 불가 192 · 영상판정 불가 452
+판정        통행 가능 416 · 판정 보류 218 · 통행 불가 192 · 영상판정 불가 455
 도달 가능    820 (64%)   119안전센터에서 막힌 길 없이 갈 수 있는 구간
 도달 불가    447         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       58,308.7m
@@ -5116,7 +5125,7 @@ KPI         폭 미인지 내비가 통행불가를 지나는 목적지 299/707 
 <!--/gen-->
 
 <!--gen: v_unknown-->
-`영상판정 불가` 452 는 전부 CCTV 사각이다. 폭 산출 불가는 0 이다.
+`영상판정 불가` 455 는 전부 CCTV 사각이다. 폭 산출 불가는 0 이다.
 <!--/gen-->
 
 **시간을 줄이는 앱이 아니라 못 가는 길로 보내지 않는 앱이다.** 폭을 모르는

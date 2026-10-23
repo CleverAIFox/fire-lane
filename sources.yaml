@@ -4082,7 +4082,9 @@ outputs:
     inputs: [ngii1k, naver_width_2610]
     consumers: [docs/DECISIONS.md]
     what: 법선 span 과 내접원 지름의 대조표. 분포 · 넘침 · 역전 · 실측 대조 ·
-      **중심선 치우침** · **광선 샘**(좌우 분해 — `tools/widthlr.py`)
+      **중심선 치우침** · **광선 샘**(좌우 분해 — `tools/widthlr.py`).
+      ★ 용도(2026-10-23 · DECISIONS §546-4) — **`ecc_m` 의 선행 측정**이다. 「중심선 치우침 457」(`CENTER_OFF`)을 표본 단위 계측 `ecc_m` 이 재현했고
+      그것이 `DM01820` 의 판정 오류(한쪽 7.6cm 인데 clear)로 이어져 규칙 [9] 가 섰다. 「근거 전용 · 판정에 안 닿는다」는 서술은 틀렸다.
     verified: false
     known_issues:
     - ★ **판정을 안 바꾼다.** `widthcross` 와 같은 자리다 — 판정이 끝난 것을

@@ -165,7 +165,7 @@ def write_outputs(g):
             "width_min_sym_m": "float|null 채택 표본의 대칭폭 2·min(left, right) 중 최솟값(m). ★ 판정에 안 쓴다 — 다음 판의 재료다. "
                                "한 폴리곤이 노면과 주차장 포장면을 합쳐 그린 곳(§379)은 좌우가 비대칭이라 이 값이 발행 폭보다 훨씬 좁다",
             "width_min_sample_idx": "int|null 발행 width_min_m 을 낸 표본의 인덱스(그 구간의 width_samples.csv 행 순서, 0 부터)",
-            "n_poly": "int 채택 표본이 걸친 원천 폴리곤 수(ngii1k 행 번호 · ngii ufid · 실폭도로 RW_SN). 하나가 아니면 폴리곤 경계를 넘는 구간이다",
+            "n_poly": "int 채택 표본이 걸친 원천 폴리곤 수(ngii1k 행 번호 · ngii ufid · 실폭도로 RW_SN). ★ 식별자는 측정점을 덮는 폴리곤 중 목록 순서가 앞선 하나다 — 엔진의 선택이 아니다(법선은 합집합 위에서 쏜다). 겹치는 폴리곤에서는 부풀거나 줄 수 있다",
             "width_selection_reason": "str|null 왜 이 폭이 발행됐는지 사람이 읽는 한 줄(채택 소스 · 자격 · 최솟값 표본 · 소스 무관 최솟값과의 차)",
             "n_subphys": "int 물리 불가 유효 표본 수(폭 < 1.0m). 표본은 지우지 않고 width_samples.csv 의 drop 에 subphys 로 표시했다",
             "width_fail": ("null|no_xsec_attempted|… 폭을 못 낸 사유. **`unknown_reason` 과 "

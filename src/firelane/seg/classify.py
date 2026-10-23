@@ -75,7 +75,7 @@ REASONS = ("ledger_disputes",
 #: 강제자 `tests/test_classify.py::test_covers_every_declared_rule` 가
 #: `VERDICT_RULE` 의 길이와 이것을 댄다 — 규칙을 한 줄 더 적고 여기
 #: 구현을 안 하면 운다.
-IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7, 8)
+IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
 #: 대장폭이 판정에 드는 문턱. `VERDICT_RULE[1]` 의 숫자다.
 #: ★ 이름을 준 이유 — 종전에는 `main()` 안에서 `TRUCK` 을 그대로 썼고,
@@ -97,6 +97,7 @@ def classify(
     length_m: float,
     cctv_dist: float,
     wmin_any: float | None = None,
+    wsym: float | None = None,
 ) -> tuple[str, str | None]:
     """구간 하나의 (판정, 회색 사유).
 
@@ -194,6 +195,16 @@ def classify(
     #   CCTV 유효범위 안이면 영상으로 풀 수 있으니 needs_cv, 밖이면 unknown(needs_survey).
     # ★ **이 규칙은 판정을 움직인다**(골든 재잠금은 사람이 한다). clear 만 건드린다 — blocked · needs_cv 는 그대로다.
     if v == "clear" and wmin_any is not None and wmin_any < TRUCK:
+        if cctv_dist <= CCTV_RANGE:
+            v, reason = "needs_cv", None
+        else:
+            v, reason = "unknown", "needs_survey"
+
+    # ── VERDICT_RULE[9] · 중심선이 폴리곤 경계에 붙어 있으면 그 wmin 은 도로 중앙의 폭이 아니다 ──────────────
+    # ★ 2026-10-23 (Zm4). `wsym` 은 채택 표본의 대칭폭 `2·min(left, right)` 중 최솟값이다. **전면 도입이 아니다** — 대칭폭을 판정에 쓰면
+    #   blocked 가 192 → 583 으로 3배가 된다(정상 도로도 중심선이 조금 치우치면 죽는다). `clear` 만 건드리고 3.0 미만인 구간만 내린다.
+    #   DM01820(2순환로 · 대장 35m)은 한쪽이 7.6cm 인데 wmin 이 넓어서 clear 였다. [8] 과 같은 갈래(CCTV 안 → needs_cv · 밖 → needs_survey).
+    if v == "clear" and wsym is not None and wsym < TRUCK:
         if cctv_dist <= CCTV_RANGE:
             v, reason = "needs_cv", None
         else:

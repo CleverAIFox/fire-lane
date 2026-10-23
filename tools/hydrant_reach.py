@@ -2,8 +2,7 @@
 """
 tools/hydrant_reach.py — 통행 불가 구간 근처에 소화전이 닿는가 (PLAN #95)
 
-    uv run python tools/hydrant_reach.py             40m 로 센다
-    uv run python tools/hydrant_reach.py --reach 45  호스 3본 전량(15m x 3)으로 센다
+    uv run python tools/hydrant_reach.py             등급(1본 ~15m · 3본 ~45m · 10본 ~140m)별 구간 수를 세고 hydrant_reach.csv 를 쓴다
 
 ════════════════════════════════════════════════════════════════
 ★ 이 스크립트는 아무것도 안 바꾼다. 읽고 수를 낸다. 판정을 안 움직인다.
@@ -66,4 +65,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    from firelane.cli import no_args
+    no_args(__doc__)          # 모르는 깃발을 조용히 무시하지 않는다 (§283-2) — 등급은 상수이고 인자는 없다
     raise SystemExit(main())

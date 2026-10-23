@@ -151,7 +151,7 @@ CLEAR_M = TRUCK + 2 * PARK
 #:   §308 이 커버율 관문을 켜면서 근거가 얇은 `clear` 가 `needs_cv` 로 갔고,
 #:   그 몫이 이 목록에서도 빠졌다. **한 배치가 두 곳을 조인다.**
 OVERCLAIM_HARD = 5
-OVERCLAIM_SOFT = 28
+OVERCLAIM_SOFT = 27
 
 #: ★ 이 둘을 `ratchet.py` 규약에 태운다(§309). 종전에는 도구가 「그 수로
 #:   내려라」를 찍고 **사람이 받아적었다** — 09-30 실기에서 그 두 줄이 그대로

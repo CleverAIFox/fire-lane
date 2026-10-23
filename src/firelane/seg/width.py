@@ -450,6 +450,12 @@ class WidthEngine:
         def _instr(sc, _res, trusted):
             """표본 한 줄에 **재고도 버리던 것**을 남긴다(Zm3 계측 · 판정에 안 쓴다).
 
+            ★ `w_rule`(채택 소스의 값이 어떻게 정해졌나) — 셋이다:
+              `sum`     `w = left + right`. 한쪽이 20m(`ESCAPE_M`) 미만이고 보도면이 없을 때. **지금은 닿지 않는다**(보도면이 늘 있다).
+              `carve`   `w = left' + right'`. 한쪽이 20m 미만이고 **보도면을 깎은 뒤**의 좌우다(`left'` · `right'` 가 CSV 의 `left_m` · `right_m`).
+              `escape`  한쪽이라도 `ESCAPE_M`(20m) 이상이면 그 쪽은 이 도로의 반폭이 아니라 광장 · 교차로 · 이웃 도로로 **샌 것**이다.
+                        그때 `w = 2 · min(left, right)` 다 — 좌우합이 아니다. 예) DM02081 s=9 L=21.738 R=36.882 → w = 43.476(합 58.62 가 아니다).
+                        **둘 다 20m 를 넘어도 escape 다**(그래서 큰 값이 그대로 나온다). 이 값은 「법선이 도로를 따라 나간」 자리의 표시이기도 하다.
             `v3`  세 소스 각각의 **믿을 만한 값**(WIDTH_SRCS 순서 · 못 쟀거나 snap 이 크면 None). 종전에는 채택된 하나만 남았고
                   나머지 둘은 `_by` 에 들어갔다 사라졌다 — 소스 무관 최솟값은 여기서만 나온다.
             채택 소스의 좌우(`left` · `right` · 규칙 `sum|carve|escape`) · 표본점이 그 폴리곤 안인가(`inside`) · 폴리곤 식별자(`poly`).
@@ -609,6 +615,9 @@ class WidthEngine:
                         break
         wmin = None
         if _pick is not None:
+            # ★ 2026-10-23 (Zm4). 폴리곤 **밖**(`inside = 0`) 표본을 발행에서 빼는 안을 **되돌렸다**(DECISIONS §546-2).
+            #   `inside = 0` 은 「남의 도로」가 아니라 「내가 대표로 고르지 않은 폴리곤」이다 — 빼면 좁은 진짜 값이 사라지고
+            #   `width_min_m` 91건이 전부 **넓은 쪽(완화)** 으로 움직였다. 깃발(`drop = outside`)은 남긴다.
             wmin = _round_pos(min(_by[_pick]))
         elif A:
             wmin = _round_pos(min(A))

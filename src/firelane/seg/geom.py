@@ -69,6 +69,8 @@ VERDICT_RULE = (
     "(reason=ledger_disputes). 대장이 반박한다",
     # ★ 2026-10-23. 여덟째 — 채택에서 밀린 소스가 clear 를 반박하면 clear 를 거둔다. 영상으로 풀 수 없으면 현장에서 재야 안다.
     "clear 인데 소스 무관 최솟값 < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 반박을 못 본 척하지 않는다",
+    # ★ 2026-10-23 (Zm4). 아홉째 — 중심선이 폴리곤 경계에 붙어 있으면 wmin 은 도로 중앙의 폭이 아니다. clear 만 건드린다.
+    "clear 인데 대칭폭 최솟값(2·min(좌,우)) < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 중심선이 경계에 붙었다",
 )
 """판정 규칙의 문언 정본.
 

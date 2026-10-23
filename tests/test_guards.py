@@ -1594,7 +1594,7 @@ def test_sample_writer_uses_a_key_that_survives_merging():
         "seg_id → seg_uid 매핑 없이 쓴다"
     # 집계는 쓴 행 기준이어야 한다
     i = src.index("def _write_samples")
-    body = src[i:i + 2500]
+    body = src[i:src.index("\ndef main", i)]   # 2026-10-23 계측 칸이 늘어 2500자 창을 넘었다 — 함수 끝까지(같은 질문)
     assert "ok += r[" in body, "쓴 행이 아니라 모은 것 전부를 센다"
 
 

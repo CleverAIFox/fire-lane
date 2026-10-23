@@ -390,7 +390,13 @@ def _write_samples(g) -> None:
             _runs = _run_lengths(rows)
             for _k, r in enumerate(rows):
                 # ★ 물리 불가 표본은 지우지 않고 표시만 한다(`SUBPHYS_M` · 구간의 `n_subphys`).
-                _drop = r["drop"] or ("subphys" if r["w"] is not None and r["w"] < SUBPHYS_M else "")
+                # `outside` — 표본점이 채택 소스의 폴리곤 밖. **표시만 한다** — 발행 wmin 에서 빼지 않는다(되돌렸다 · DECISIONS §546-2).
+                _tags = []
+                if r["w"] is not None and r.get("inside") is False:
+                    _tags.append("outside")
+                if r["w"] is not None and r["w"] < SUBPHYS_M:
+                    _tags.append("subphys")
+                _drop = r["drop"] or "|".join(_tags)
                 _l, _rt = r.get("left"), r.get("right")
                 _v3 = r.get("v3") or (None,) * len(WIDTH_SRCS)
                 w.writerow([su, sid, r["s"], "" if r["w"] is None else r["w"],
@@ -760,7 +766,8 @@ def main():
         _wa = width_any(wrows, wmin, wsrc, wcov)       # 소스 무관 최솟값 — 판정 규칙 [8] 이 읽는다
         v, reason = classify(wmin=wmin, wmax=wmax, nreg=wneff,
                              road_bt=_road_bt, length_m=g.length,
-                             cctv_dist=d_cctv, wmin_any=_wa["width_min_any_m"])
+                             cctv_dist=d_cctv, wmin_any=_wa["width_min_any_m"],
+                             wsym=_wa["width_min_sym_m"])
 
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
                         verdict=v, unknown_reason=reason,

@@ -236,7 +236,7 @@ raw + 코드 + 대장이 있으면 결정론적으로 재생성된다. 걸린 �
 | 파트 | 브랜치 | 볼 곳 | 문서 |
 |---|---|---|---|
 | GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
-| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 209구간 · `cctv.geojson` | MASTER §10-2(판정 4종 · 색값은 `web/config.js`) |
+| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 218구간 · `cctv.geojson` | MASTER §10-2(판정 4종 · 색값은 `web/config.js`) |
 | Infra · API | `part/infra` | 아직 서버 없음 — 배포는 `.github/workflows/deploy.yml` · 배치는 `tools/fl.sh` | README `## 도구` |
 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는
