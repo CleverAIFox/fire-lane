@@ -65,7 +65,7 @@ def _again(p: dict) -> tuple[str, str | None]:
     v, reason = classify(
         wmin=p["width_min_m"], wmax=p["width_max_m"], nreg=p["n_sample"],
         road_bt=p["road_bt_m"], length_m=p["length_m"], cctv_dist=p["cctv_dist_m"],
-        wmin_any=p.get("width_min_any_m"), wsym=p.get("width_min_sym_m"),      # 규칙 [8] · [9]
+        wmin_any=p.get("width_min_any_m"), wsym=p.get("width_min_sym_m"), clear_med=p.get("clear_med_m"),      # 규칙 [8] · [9] · [10] · [11]
     )
     return POST.get(v, (v, reason))
 
@@ -139,7 +139,7 @@ def test_counts_are_stated_not_assumed(rows):
     #   고쳤다 — 위 설명문이 적은 그대로다. 움직인 것은 셋이고 `blocked` 는
     #   그대로다: 깎은 폭이 0 이 된 표본이 빠지면서 `clear` 가 `needs_cv` 와
     #   `unknown` 으로 내려갔다.
-    assert dict(c) == {"clear": 362, "needs_cv": 245, "blocked": 192, "unknown": 482}
+    assert dict(c) == {"clear": 290, "needs_cv": 278, "blocked": 192, "unknown": 521}      # 2026-10-23 Zm19: 규칙 [10] 확장 · [11] (DECISIONS §564)
 
 
 # ── 이름과 실물 (DECISIONS §320) ────────────────────────────────

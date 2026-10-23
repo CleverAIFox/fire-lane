@@ -29,17 +29,22 @@ ROOT = Path(__file__).resolve().parent.parent
 NAMES = ("clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov")
 
 
-def test_the_judgment_never_reads_the_inscribed_circle():
+def test_the_judgment_reads_only_the_median_of_the_inscribed_circle():
+    """Zm19(DECISIONS §564) 부터 판정이 내접원을 읽는다 — **중앙값 하나만**이다. `clear_min` · `clear_max` 는 `2·min(좌,우)` 꼴이라
+    중심선 편심에 노출돼 판정에 안 쓴다(제봉로 DM00115: 법선 26.53 · c_med 23.80 · 대장 30.0 으로 셋이 맞는데 c_min 만 1.15).
+    이전 시험(「판정이 `clear_*` 를 읽으면 운다」)은 대표값을 정하기 전의 약속이었고, 사람이 `clear_med_m` 으로 정했다."""
+    cls = (ROOT / "src/firelane/seg/classify.py").read_text(encoding="utf-8")
+    assert "clear_med" in cls, "판정이 clear_med 를 안 읽는다 — 규칙 [10] 확장이 빠졌다"
     for f in ("src/firelane/seg/classify.py", "src/firelane/segments.py", "src/firelane/seg/geom.py"):
         src = (ROOT / f).read_text(encoding="utf-8")
-        for n in NAMES:
-            assert n not in src, f"{f} 가 {n} 를 읽는다 — 대표값을 정하기 전에는 판정선을 못 넘는다(머리말 사유)"
-        assert "firelane.clearance" not in src and "import clearance" not in src, f"{f} 가 clearance 를 끌어온다 — 판정 폐포가 늘어난다"
+        body = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))      # 주석은 이유를 적는다 — 코드만 본다
+        for n in ("clear_min_m", "clear_max_m"):
+            assert n not in body, f"{f} 가 {n} 를 읽는다 — 편심에 노출된 칸이다(위 사유)"
 
 
-def test_clearance_stays_outside_the_judgment_closure():
+def test_clearance_is_now_inside_the_judgment_closure():
     from firelane.shardseal import code_closure
-    assert not any("clearance" in str(x) for x in code_closure("firelane.segments")), "clearance.py 가 판정 폐포 안이다 — 골든 코드 지문이 움직인다"
+    assert any("clearance" in str(x) for x in code_closure("firelane.segments")), "clearance.py 가 폐포 밖이다 — 판정이 그것을 읽는다(§564)"
 
 
 def test_diameter_is_twice_the_distance_to_the_boundary():

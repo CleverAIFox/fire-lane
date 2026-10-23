@@ -46,6 +46,7 @@ from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points, unary_union
 from shapely.strtree import STRtree
 
+from firelane import clearance as _clearance
 from firelane import segkey as _segkey
 from firelane.paths import PROCESSED
 from firelane.paths import env as _env
@@ -524,6 +525,14 @@ def main():
         # 조용히 넘기지 않는다. 없으면 판정 기준이 달라진다.
         print(f"  ! ngii1k_xsec_5186.gpkg 없음 — 반경 {XSEC_EXCL}m 폴백")
 
+    # ── 내접원 칸(`clear_*`) — 규칙 [10] 이 `clear_med_m` 을 읽는다 (Zm19 · DECISIONS §564) ─────────────────────
+    # ★ 종전에는 출판(`publish_web`)이 싣는 web 전용 칸이었다. 판정이 읽게 되면서 **여기서 한 번만** 계산하고 출판은 그대로 싣는다 —
+    #   같은 수를 두 집에서 계산하면 갈리는 쪽이 늘 판정이다(2족). 면은 실폭도로 전체 · 교차부는 `ngii1k_xsec` 전체(출판 때와 같다).
+    _clr_area = _clearance.robust_union(list(rw.geometry))
+    _clr_xsec = None
+    if xsec_poly is not None:
+        _clr_xsec = _clearance.robust_union(list(_xg.geometry))
+
     # ── 폭 산출 엔진 ─────────────────────────────────────────
     # 폭 소스 3종 + 건물 + 교차부 + **보도**. 실행 내내 불변이므로 한 번 묶는다.
     # ★ 보도면(A0033320)을 **여기서** 읽는다 — 발행기(`publish_basemap`)를 부르면
@@ -764,10 +773,11 @@ def main():
         d_cctv = round(g.distance(cctv_u), 1)
         cv_ok = d_cctv <= CCTV_RANGE
         _wa = width_any(wrows, wmin, wsrc, wcov)       # 소스 무관 최솟값 — 판정 규칙 [8] 이 읽는다
+        _cl = _clearance.columns([g], _clr_area, _clr_xsec)[0]       # 내접원 — 규칙 [10] 이 중앙값을 읽는다
         v, reason = classify(wmin=wmin, wmax=wmax, nreg=wneff,
                              road_bt=_road_bt, length_m=g.length,
                              cctv_dist=d_cctv, wmin_any=_wa["width_min_any_m"],
-                             wsym=_wa["width_min_sym_m"])
+                             wsym=_wa["width_min_sym_m"], clear_med=_cl["clear_med_m"])
 
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
                         verdict=v, unknown_reason=reason if v == "unknown" else None,
@@ -776,7 +786,7 @@ def main():
                         midpoint_fallback=fb, inherited=False,  # width_verified 없음: §455-5
                         width_src=wsrc,
                         width_disagree_m=wdis,
-                        **_wa,
+                        **_wa, **_cl,
                         width_fail=wfail,   # 발행한다 (DECISIONS §436-3)
                         road_name=_road_nm, road_side=_road_side, road_bt_m=_road_bt,
                         seg_label=(_bnx.label(_road_nm, g) if _bnx else _road_nm),

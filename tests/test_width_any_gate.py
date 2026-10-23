@@ -58,8 +58,11 @@ def test_demoted_clears_say_why():
     ns = [p for p in feats if p.get("unknown_reason") == "needs_survey"]
     for p in ns:
         assert p["verdict"] == "unknown", p["seg_id"]
+        # 규칙 [8] · [9] · [10] 확장(내접원 중앙값) · [11](폭 급변) — Zm19(DECISIONS §564)
         assert (p["width_min_any_m"] is not None and p["width_min_any_m"] < CLEAR) or \
-            (p["width_min_sym_m"] is not None and p["width_min_sym_m"] < TRUCK), f"{p['seg_id']}: 거둘 사유가 없다"
+            (p["width_min_sym_m"] is not None and p["width_min_sym_m"] < TRUCK) or \
+            (p.get("clear_med_m") is not None and p["clear_med_m"] < CLEAR) or \
+            (p.get("width_max_m") and p["width_min_m"] and p["width_max_m"] / p["width_min_m"] >= 2.5), f"{p['seg_id']}: 거둘 사유가 없다"
         assert not p["cv_feasible"], f"{p['seg_id']}: CCTV 유효범위 안인데 needs_survey 다 — needs_cv 여야 한다"
 
 
@@ -114,4 +117,6 @@ def test_cv_reason_is_only_on_needs_cv_and_unknown_reason_only_on_unknown():
         if p["verdict"] != "needs_cv":
             assert p.get("cv_reason") is None, p["seg_id"]
         if p.get("cv_reason") == "source_conflict":
-            assert p["width_min_any_m"] is not None and p["width_min_any_m"] < CLEAR, p["seg_id"]
+            assert ((p["width_min_any_m"] is not None and p["width_min_any_m"] < CLEAR)
+                    or (p.get("clear_med_m") is not None and p["clear_med_m"] < CLEAR)
+                    or (p.get("width_max_m") and p["width_min_m"] and p["width_max_m"] / p["width_min_m"] >= 2.5)), p["seg_id"]

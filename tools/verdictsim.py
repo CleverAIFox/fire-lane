@@ -132,7 +132,7 @@ def _veto_clear(test: Callable[[dict], bool]) -> Hook:
             wmin=CLEAR_M - 0.01,          # clear 문턱 바로 아래로 낮춰 다시 먹인다
             wmax=p["width_max_m"], nreg=p["n_sample"], road_bt=p["road_bt_m"],
             length_m=p["length_m"], cctv_dist=p["cctv_dist_m"],
-            wmin_any=p.get("width_min_any_m"), wsym=p.get("width_min_sym_m"),
+            wmin_any=p.get("width_min_any_m"), wsym=p.get("width_min_sym_m"), clear_med=p.get("clear_med_m"),
         )
         return v2, (NO_WORD if v2 == "unknown" else None)
     return hook
@@ -179,7 +179,7 @@ def base(p: dict) -> tuple[str, str | None]:
     return classify(
         wmin=p["width_min_m"], wmax=p["width_max_m"], nreg=p["n_sample"],
         road_bt=p["road_bt_m"], length_m=p["length_m"], cctv_dist=p["cctv_dist_m"],
-        wmin_any=p.get("width_min_any_m"), wsym=p.get("width_min_sym_m"),
+        wmin_any=p.get("width_min_any_m"), wsym=p.get("width_min_sym_m"), clear_med=p.get("clear_med_m"),
     )
 
 

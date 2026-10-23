@@ -46,6 +46,8 @@ DOMAIN = [
     "seg/params.py", "seg/geom.py", "seg/width.py",
     "seg/roadname.py", "seg/basisno.py", "seg/graph.py",
     "seg/vehicle.py", "seg/scope.py", "seg/centerline_correction.py",
+    # ★ 2026-10-23 (Zm19 · DECISIONS §564). `clearance.py` 가 판정 폐포로 들어왔다 — 내접원 계산(shapely · numpy 순수 계산)이고 I/O 가 없다.
+    "clearance.py",
     # ★ 2026-10-03 (DECISIONS §370-4). `seg/classify.py` 가 **또 빠져 있었다.**
     #   §303 이 2026-09-29 에 만들고 판정 폐포에 넣었는데 이 목록에는 안 들어왔다 —
     #   §279-8 이 나흘 전 똑같이 셋을 잡았고, **같은 일이 다시 났다.** 손목록이라

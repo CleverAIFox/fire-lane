@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-10-23T21:46:19+09:00",
+  "generated_at": "2026-10-23T23:34:54+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
-      "sha256": "d8d94fde4f8ea9fa601eb1ae85a4bbf1c9b72dfbf6460d82ebcaf48d0129049d",
-      "bytes": 1805861
+      "sha256": "31bba1b1159406e4eeed413d5a2960858f18109f65c7b64cc112f43399db8c8a",
+      "bytes": 1941060
     },
     "segments.schema.json": {
-      "sha256": "29c5608bc4d71d80969a562e826f5f04437c3a1f1090bf4ca0bd131222735e30",
-      "bytes": 9929
+      "sha256": "b9b7661d83a8ae672d87a5a652ad8097f0569bb144c533299bc727ed61029cc9",
+      "bytes": 11192
     },
     "_manifest.json": {
       "sha256": "0099dea92810aed293e449a3dd47492fe5446a33428ca52b6f1d2d52a8eedc7a",
@@ -45,8 +45,8 @@
       "bytes": 78926
     },
     "navi_graph.json": {
-      "sha256": "3a7cd103fc528aee5690c210bf45870454c7c7423da09f31de2b613f0090df70",
-      "bytes": 584748
+      "sha256": "3444ec7950124d0508393bba4f59f184ce42edc7e1981bde428748b1b8ce3c96",
+      "bytes": 585315
     },
     "poi.geojson": {
       "sha256": "28899afae2566960a3909bb1dd6fa80b5c5871109de06c96e77b21375422f159",
@@ -61,12 +61,12 @@
       "bytes": 96720
     },
     "segments.geojson": {
-      "sha256": "ee8d65fde57f9403f1775f3c353b36e5a077e33cbbfebaa8ffd824dc2faadccf",
-      "bytes": 2146576
+      "sha256": "b038379f260a52a47399f34be750817db9be276a0d224b620661aa6751b6b46f",
+      "bytes": 2147572
     },
     "segments.schema.json": {
-      "sha256": "4765dc06b1f7d63cca0d8ba21320388eb88d0015830f99739de18f101c6b65bd",
-      "bytes": 12949
+      "sha256": "4a59208c1b894dd37d23ea5e22ece441a35d21428bb99a863a35b694407d4e69",
+      "bytes": 13333
     },
     "sidewalk.geojson": {
       "sha256": "c561e0d6ae5bdc689d6d7bd5b9938067229baa4dd4a7910f90ed8483b421f804",
@@ -81,7 +81,7 @@
       "bytes": 350
     },
     "view.json": {
-      "sha256": "3da877a84785f191cbd424f1d67a19c701fe50e6c8d11a8ae982711e77f552a3",
+      "sha256": "d436f009eaca98d3bbb6f7deb3ddb193c0def41073eeaaaa93b0af02bbc15f60",
       "bytes": 582
     }
   },

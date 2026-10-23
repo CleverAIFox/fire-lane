@@ -75,7 +75,7 @@ REASONS = ("ledger_disputes",
 #: 강제자 `tests/test_classify.py::test_covers_every_declared_rule` 가
 #: `VERDICT_RULE` 의 길이와 이것을 댄다 — 규칙을 한 줄 더 적고 여기
 #: 구현을 안 하면 운다.
-IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
 #: 대장폭이 판정에 드는 문턱. `VERDICT_RULE[1]` 의 숫자다.
 #: ★ 이름을 준 이유 — 종전에는 `main()` 안에서 `TRUCK` 을 그대로 썼고,
@@ -86,6 +86,12 @@ LEDGER_BLOCK_M = TRUCK
 
 #: clear 문턱. `wmin >= TRUCK + 2*PARK`. 표시용 사본이 `web/config.js` 에 있다.
 CLEAR_M = TRUCK + 2 * PARK
+
+#: 규칙 [11] — 구간 안에서 폭이 이 배수 이상 변하면(`wmax / wmin`) 대표폭이 없다. **유도된 수가 아니다**(2026-10-23 · Zm19 ·
+#: DECISIONS §564). 분포를 보고 정했다: `width_max_m` 이 있는 `clear` 132개의 비 분포는 중앙 1.29 · 75% 1.81 · 90% 2.95 이고, 2.5 는 그
+#: 75% 와 90% 사이의 둥근 수다(2.0 이면 30개 · 3.0 이면 14개가 거둬진다). 사례 DM01576(입구 12.3m · 안쪽 2.4~3.2m)은 3.27 이다.
+#: ★ `width_max_m` 은 1,281 중 606구간에만 있다 — **없는 구간은 이 규칙이 안 걸린다.**
+SPREAD_MAX = 2.5
 
 
 def classify(
@@ -98,6 +104,8 @@ def classify(
     cctv_dist: float,
     wmin_any: float | None = None,
     wsym: float | None = None,
+    clear_med: float | None = None,
+    spread_max: float | None = SPREAD_MAX,
 ) -> tuple[str, str | None]:
     """구간 하나의 (판정, 회색 사유).
 
@@ -220,7 +228,21 @@ def classify(
     #   7.0 은 `clear` 가 하는 주장의 기준선이고 **그 주장을 못 하게 되는 선**이다. 중간값(4 · 5 · 6m)을 쓸 근거가 없다 — clear 416 중 any < 4: 2 · < 5: 7 · < 6: 15 이고
     #   어느 값도 소방 기준이나 측정이 고른 수가 아니다(근거 없는 상수를 더 만들지 않는다 · MASTER §16-2). `PARK`/`TRUCK` 에서 나온 `CLEAR_M` 를 그대로 쓴다.
     # ★ 갈래는 [8] · [9] 와 같다: CCTV 19m 안이면 영상으로 풀 수 있으니 `needs_cv`(사유 `source_conflict`), 밖이면 `unknown`(`needs_survey`).
-    if v == "clear" and wmin_any is not None and wmin_any < CLEAR_M:
+    # ★ 2026-10-23 (Zm19 · DECISIONS §564). **소스에서 축으로 넓혔다**: 내접원 **중앙값**(`clear_med`)이 7.0 미만이어도 거둔다. `clear_min` ·
+    #   대칭폭(`wsym`)은 이 자리에 안 쓴다 — 둘 다 `2·min(좌,우)` 라 중심선 편심에 전부 노출된다(제봉로 DM00115: 법선 26.53 · c_med 23.80 ·
+    #   대장 30.0 으로 셋이 맞는데 c_min 만 1.15). 법선(`wmin`) 자체는 `clear` 의 전제(≥ 7.0)라 이 조건에서 비어 있다. blocked 에는 안 닿는다.
+    if v == "clear" and ((wmin_any is not None and wmin_any < CLEAR_M) or (clear_med is not None and clear_med < CLEAR_M)):
+        if cctv_dist <= CCTV_RANGE:
+            v, reason = "needs_cv", "source_conflict"
+        else:
+            v, reason = "unknown", "needs_survey"
+
+    # ── VERDICT_RULE[11] · 구간 안에서 폭이 `SPREAD_MAX` 배 넘게 변하면 대표폭이 없다 ─────────────────────────────────────────────
+    # ★ 2026-10-23 (Zm19 · DECISIONS §564). DM01576(동명로98번길): 사용자가 네이버 거리재기로 입구 12.3m · 안쪽 2.4~3.2m 를 확인했다. 우리 값은
+    #   wmin 8.1 · wmax 26.48 · 측량 3.9 · 대장 4.0 이고 유효표본 4개뿐이며 앞 6m 는 교차부로 빠졌다. 행선지는 [8]~[10] 과 같다(새 상수 없음).
+    # ★ **`wmax` 가 있는 구간에만 걸린다**(606/1,281). 없으면 건드리지 않는다 — 「없다」를 「균일하다」로 읽지 않는다.
+    if (v == "clear" and spread_max is not None and wmax is not None and wmin is not None
+            and wmin > 0 and wmax / wmin >= spread_max):
         if cctv_dist <= CCTV_RANGE:
             v, reason = "needs_cv", "source_conflict"
         else:

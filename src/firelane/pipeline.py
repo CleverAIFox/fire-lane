@@ -215,8 +215,6 @@ STEPS = [
                 # ★ publish_basemap 의 SOURCES — road_area · sidewalk 의 재료
                 P / "ngii1k_5186.gpkg", P / "road_rw_5186.gpkg",
                 P / "ngii1k_walk_5186.gpkg",
-                # ★ 2026-10-23 (Zm7). 내접원 칸(`clear_*`)의 교차부 제외 — `publish_web` 이 `firelane.clearance` 로 계산한다(판정 폐포 밖).
-                P / "ngii1k_xsec_5186.gpkg",
                 # ★ 2026-10-23 (Zm8). 소방통로확보대상 — `publish_web` 이 `firelane.fireaccess` 로 구간에 싣는다(판정 폐포 밖 · 판정에 안 쓴다).
                 P / "fire_access.csv",
                 # ★ 2026-10-23 (Zm13). 중심선 편심 칸(`ecc_*`)의 재료 — `publish_web` 이 `firelane.eccentricity` 로 구간에 싣는다(판정 안 씀).

@@ -4151,7 +4151,7 @@ outputs:
     produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_xsec_5186.gpkg
     inputs: [ngii1k]
-    consumers: [src/firelane/segments.py, src/firelane/publish_web.py]
+    consumers: [src/firelane/segments.py]
     what: |
       평면교차점 A0080000. 교차부 실제 형상.
       XSEC_EXCL(노드 반경 5m) 눈대중을 대체한다.

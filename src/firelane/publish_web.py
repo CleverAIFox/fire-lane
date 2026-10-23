@@ -81,14 +81,10 @@ def main():
     _seg["seg_no"] = (_seg.sort_values(["road_name", "_oy", "_ox"])
                           .groupby("road_name").cumcount() + 1)
 
-    # ── 내접원(clear_*) — 판정에 안 쓴다 (Zm7 · `firelane.clearance` · DECISIONS §549) ──────────────────
-    # ★ 판정 폐포(`segments.py`) **밖**이라 여기서 싣는다 — 골든 코드 지문을 안 건드린다. `seg_no` 처럼 **web 에만 있는 칸**이다(processed 에는 없다).
-    from firelane import clearance as _clr
-    _cl = _clr.columns(list(_seg.to_crs(5186).geometry),
-                       _clr.robust_union(list(gpd.read_file(P/"road_rw_5186.gpkg").geometry)),
-                       _clr.robust_union(list(gpd.read_file(P/"ngii1k_xsec_5186.gpkg").geometry)))
+    # ── 내접원(clear_*) — Zm19 부터 **판정이 읽는다** (`firelane.segments` 가 계산하고 `seg/classify.py` 규칙 [10] 이 `clear_med_m` 을 읽는다)
+    # ★ 여기서는 다시 계산하지 않는다 — 같은 수를 두 집에서 계산하면 갈리는 쪽이 늘 판정이다. `segments.geojson` 의 칸이 그대로 실려 나간다.
     for _k in ("clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov"):
-        _seg[_k] = [_r[_k] for _r in _cl]
+        assert _k in _seg.columns, f"segments.geojson 에 {_k} 가 없다 — segments 단계를 다시 돌려라"
 
     # ── 중심선 편심(ecc_*) — 판정에 안 쓴다 (Zm13 · `firelane.eccentricity` · DECISIONS §556) ──────────────────
     # ★ `width_samples.csv` 의 `ecc_m` 을 그대로 쓴다(새로 재지 않는다). 임계는 사람이 정한다. 판정 폐포 밖이라 여기서 싣는다(web 에만 있는 칸).
@@ -421,11 +417,6 @@ def main():
                                 "publish 가 만든다. 노딩이 바뀌면 밀린다 — "
                                 "외부 참조는 seg_uid, 화면 표기는 seg_label")
     _sch["fields"].update({
-        "clear_min_m": "float|null 구간의 **최소 내접원 지름**(m) = 2 × 표본점에서 실폭도로 경계까지의 최소 거리. ★ 판정에 안 쓴다. 현장 16점 대조에서 단순 내접원(R=0)이 법선 w 보다 맞았다(DECISIONS §549)",
-        "clear_med_m": "float|null 내접원 지름의 중앙값(m). ★ 대표값으로 min 을 쓸지 med 를 쓸지는 아직 정하지 않았다 — 대표값은 최악 지점을 못 잡는다(동계천로95번길)",
-        "clear_max_m": "float|null 내접원 지름의 최댓값(m). 클립 반경 60m 에서 잘려 최대 120m",
-        "clear_src": "str|null 어느 폴리곤으로 쟀나 — 기본 road_rw. 덮임이 0 이면 null",
-        "clear_cov": "float 실폭도로 면이 표본점을 덮는 비율(0~1). 안 덮는 표본은 min·med·max 에 안 들어간다 — 1 미만이면 폴백이 필요한 구간이다",
     })
     _sch["fields"].update({
         "ecc_rel_med_m": "float|null 표본 |ecc| 의 중앙값 ÷ 반폭(반폭 = width_min_m/2). ★ 길이가 아니라 **무차원 비율**이다(이름은 지시문이 정했다). 0 이면 중심선이 정중앙, 1 이면 도로 한쪽 경계. 중심선 편심 진단 — 판정에 안 쓴다 · 임계는 사람이 정한다(DECISIONS §556)",

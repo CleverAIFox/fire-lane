@@ -216,7 +216,8 @@ def cmd_aggregators() -> int:
     def cls(r, w):
         ns = nz(r.n_sample)
         return classify(wmin=w, wmax=nz(r.width_max_m), nreg=None if ns is None else int(ns),
-                        road_bt=nz(r.road_bt_m), length_m=r.length_m, cctv_dist=r.cctv_dist_m)[0]
+                        road_bt=nz(r.road_bt_m), length_m=r.length_m, cctv_dist=r.cctv_dist_m,
+                        spread_max=None)[0]       # 이 도구는 폭 집계만 바꿔 본다 — 규칙 [11](폭 급변)은 끈다(Zm19)
 
     rows = widthcross._load()
     if rows is None:

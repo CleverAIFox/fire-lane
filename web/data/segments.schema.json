@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "b839e9bdfafe3297d7ef8680ebeaf4842c1d1621cde30355d1abe7b0ce26f98a",
+  "sha256": "b93b525bc00d8d602458e26ce1a37f813b864f79bdf1afd08d9835a195a44ea6",
   "count": 1281,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
@@ -43,13 +43,13 @@
     "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",
     "cv_feasible": "bool CCTV 유효범위(25m) 안. 영상판정 성립 여부",
     "cv_reason": "null|source_conflict — needs_cv 가 된 **이유**(채택 소스는 통과라 말하나 채택에서 밀린 소스가 7.0m 미만을 쟀다 · CCTV 19m 안이라 영상으로 풀 수 있다). ★ `unknown_reason` 과 **다른 칸**이다 — 저쪽은 `unknown` 전용이다",
-    "unknown_reason": "null|ledger_disputes|no_cctv_narrow|no_cctv_thin|no_cctv_band|no_cctv_single|needs_survey|width — 회색(unknown)이 된 이유. needs_survey=채택에서 밀린 소스가 clear 를 반박하나 CCTV 가 없어 현장에서 재야 안다 / narrow=노면·대장폭 둘 다 3m 미만이나 담~담은 여유 있음 / thin=노면만 3m 미만(근거 하나) / band=3~7m 대역, 주정차로 갈림 / single=7m 이상이나 정규표본 1개라 clear 보류 / width=폭 산출 불가(현재 0건)",
-    "seg_no": "int 도로명 안에서의 구간 순번. ★ 표기 전용이고 publish 가 만든다. 노딩이 바뀌면 밀린다 — 외부 참조는 seg_uid, 화면 표기는 seg_label",
-    "clear_min_m": "float|null 구간의 **최소 내접원 지름**(m) = 2 × 표본점에서 실폭도로 경계까지의 최소 거리. ★ 판정에 안 쓴다. 현장 16점 대조에서 단순 내접원(R=0)이 법선 w 보다 맞았다(DECISIONS §549)",
-    "clear_med_m": "float|null 내접원 지름의 중앙값(m). ★ 대표값으로 min 을 쓸지 med 를 쓸지는 아직 정하지 않았다 — 대표값은 최악 지점을 못 잡는다(동계천로95번길)",
-    "clear_max_m": "float|null 내접원 지름의 최댓값(m). 클립 반경 60m 에서 잘려 최대 120m",
+    "clear_min_m": "float|null 구간의 **최소 내접원 지름**(m) = 2 × 표본점에서 실폭도로 경계까지의 최소 거리. ★ **판정에 안 쓴다** — `2·min(좌,우)` 꼴이라 중심선 편심에 노출된다(제봉로 DM00115: c_min 1.15 대 c_med 23.80, DECISIONS §564). 현장 16점 대조에서 단순 내접원(R=0)이 법선 w 보다 맞았다(DECISIONS §549)",
+    "clear_med_m": "float|null 내접원 지름의 중앙값(m). ★ **판정이 읽는다** — 규칙 [10]: clear 인데 이 값이 7.0 미만이면 clear 를 거둔다(DECISIONS §564). 대표값은 최악 지점을 못 잡는다(동계천로95번길)",
+    "clear_max_m": "float|null 내접원 지름의 최댓값(m). 클립 반경 60m 에서 잘려 최대 120m. 판정에 안 쓴다",
     "clear_src": "str|null 어느 폴리곤으로 쟀나 — 기본 road_rw. 덮임이 0 이면 null",
     "clear_cov": "float 실폭도로 면이 표본점을 덮는 비율(0~1). 안 덮는 표본은 min·med·max 에 안 들어간다 — 1 미만이면 폴백이 필요한 구간이다",
+    "unknown_reason": "null|ledger_disputes|no_cctv_narrow|no_cctv_thin|no_cctv_band|no_cctv_single|needs_survey|width — 회색(unknown)이 된 이유. needs_survey=채택에서 밀린 소스가 clear 를 반박하나 CCTV 가 없어 현장에서 재야 안다 / narrow=노면·대장폭 둘 다 3m 미만이나 담~담은 여유 있음 / thin=노면만 3m 미만(근거 하나) / band=3~7m 대역, 주정차로 갈림 / single=7m 이상이나 정규표본 1개라 clear 보류 / width=폭 산출 불가(현재 0건)",
+    "seg_no": "int 도로명 안에서의 구간 순번. ★ 표기 전용이고 publish 가 만든다. 노딩이 바뀌면 밀린다 — 외부 참조는 seg_uid, 화면 표기는 seg_label",
     "ecc_rel_med_m": "float|null 표본 |ecc| 의 중앙값 ÷ 반폭(반폭 = width_min_m/2). ★ 길이가 아니라 **무차원 비율**이다(이름은 지시문이 정했다). 0 이면 중심선이 정중앙, 1 이면 도로 한쪽 경계. 중심선 편심 진단 — 판정에 안 쓴다 · 임계는 사람이 정한다(DECISIONS §556)",
     "ecc_rel_max_m": "float|null 표본 |ecc| 의 최댓값 ÷ 반폭. 무차원 비율. 반폭이 작으면 1 을 넘을 수 있다 — 자르지 않는다",
     "ecc_cov": "float width_samples.csv 의 표본점 중 ecc_m 가 있는 비율(0~1). 교차부 제외 등으로 빈 행이 분모에 든다",
@@ -85,7 +85,8 @@
     "needs_cv 인데 wmin >= 7.0 + ROAD_BT < 3.0 -> unknown (reason=ledger_disputes). 대장이 반박한다",
     "clear 인데 소스 무관 최솟값 < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 반박을 못 본 척하지 않는다",
     "clear 인데 대칭폭 최솟값(2·min(좌,우)) < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 중심선이 경계에 붙었다",
-    "clear 인데 소스 무관 최솟값 < 7.0 -> needs_cv (CCTV 19m 안 · cv_reason=source_conflict) | unknown (reason=needs_survey). clear 의 주장을 못 한다"
+    "clear 인데 소스 무관 최솟값 또는 내접원 중앙값 < 7.0 -> needs_cv (CCTV 19m 안 · cv_reason=source_conflict) | unknown (reason=needs_survey). clear 의 주장을 못 한다",
+    "clear 인데 width_max_m / width_min_m >= 2.5 -> needs_cv (CCTV 19m 안 · cv_reason=source_conflict) | unknown (reason=needs_survey). 대표폭이 없다"
   ],
   "scope": "web — 표출용 사본. processed 전용 컬럼은 뺐다",
   "dropped_from_processed": [

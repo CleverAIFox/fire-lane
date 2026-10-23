@@ -52,8 +52,9 @@ def test_the_skeleton_switch_stays_out_of_the_judgment_closure():
     # ★ 2026-10-08 (DECISIONS §431 · PLAN #47). 17 → 18. `seg/unionfind.py` 가
     #   들어왔다. 위 §303 과 같은 이사이고, 같은 이유로 수가 하나 는다.
     # ★ 2026-10-23 (DECISIONS §545-4). 18 → 19. `occ.py`(점유압력 β · 판정에 기여하지 않는다)가 `segments.py` 의 폐포 안으로 들어왔다.
-    assert n == 19, \
-        f"판정 폐포가 {n}이다 — 19 여야 한다(DECISIONS §266 · §303 · §431 · §545-4)"
+    # ★ 2026-10-23 (DECISIONS §564 · Zm19). 19 → 20. `clearance.py`(내접원 중앙값 — 규칙 [10] 이 읽는다)가 `segments.py` 의 import 로 들어왔다.
+    assert n == 20, \
+        f"판정 폐포가 {n}이다 — 20 이어야 한다(DECISIONS §266 · §303 · §431 · §545-4 · §564)"
 
     import importlib.util
     import sys as _sys

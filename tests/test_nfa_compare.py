@@ -100,8 +100,8 @@ def test_the_closure_does_not_quietly_grow():
     from firelane.shardseal import code_closure
 
     n = len(code_closure("firelane.segments"))
-    assert n <= 19, (
-        f"판정 폐포가 {n}파일이다 — 기록은 19이다.\n"
+    assert n <= 20, (
+        f"판정 폐포가 {n}파일이다 — 기록은 20이다(2026-10-23 Zm19: `clearance.py` 가 들어왔다 · DECISIONS §564).\n"
         "  폐포가 늘면 그 파일을 고칠 때마다 판정 재실행과 재잠금이 따라온다.\n"
         "  정말 판정에 기여하는 파일이면 이 수를 올리고 사유를 적어라.")
     assert n >= 15, (

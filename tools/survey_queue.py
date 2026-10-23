@@ -61,9 +61,9 @@ COLS = ["seg_id", "seg_uid", "사유", "lat", "lon", "무엇을_잴지", "현재
 
 
 def was_clear(p: dict) -> bool:
-    """규칙 [8]~[10] 없이 `classify()` 가 `clear` 를 내는가 — 「`clear` 였다」의 정의(판정 문은 하나)."""
+    """규칙 [8]~[11] 없이 `classify()` 가 `clear` 를 내는가 — 「`clear` 였다」의 정의(판정 문은 하나). [11] 은 `spread_max=None` 으로 끈다."""
     return classify(wmin=p["width_min_m"], wmax=p["width_max_m"], nreg=p["n_sample"], road_bt=p["road_bt_m"],
-                    length_m=p["length_m"], cctv_dist=p["cctv_dist_m"])[0] == "clear"
+                    length_m=p["length_m"], cctv_dist=p["cctv_dist_m"], spread_max=None)[0] == "clear"
 
 
 def reasons_of(p: dict, rows: list[dict]) -> list[str]:

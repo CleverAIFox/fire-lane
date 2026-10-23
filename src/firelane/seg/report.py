@@ -223,6 +223,11 @@ def write_outputs(g):
             #   분기하면 없는 키로 분기한다 — web/config.js 의 reason 표는
             #   이미 넷을 갖고 있어 화면은 멀쩡했고, 그래서 아무도 몰랐다.
             "cv_reason": "null|source_conflict — needs_cv 가 된 **이유**(채택 소스는 통과라 말하나 채택에서 밀린 소스가 7.0m 미만을 쟀다 · CCTV 19m 안이라 영상으로 풀 수 있다). ★ `unknown_reason` 과 **다른 칸**이다 — 저쪽은 `unknown` 전용이다",
+            "clear_min_m": "float|null 구간의 **최소 내접원 지름**(m) = 2 × 표본점에서 실폭도로 경계까지의 최소 거리. ★ **판정에 안 쓴다** — `2·min(좌,우)` 꼴이라 중심선 편심에 노출된다(제봉로 DM00115: c_min 1.15 대 c_med 23.80, DECISIONS §564). 현장 16점 대조에서 단순 내접원(R=0)이 법선 w 보다 맞았다(DECISIONS §549)",
+            "clear_med_m": "float|null 내접원 지름의 중앙값(m). ★ **판정이 읽는다** — 규칙 [10]: clear 인데 이 값이 7.0 미만이면 clear 를 거둔다(DECISIONS §564). 대표값은 최악 지점을 못 잡는다(동계천로95번길)",
+            "clear_max_m": "float|null 내접원 지름의 최댓값(m). 클립 반경 60m 에서 잘려 최대 120m. 판정에 안 쓴다",
+            "clear_src": "str|null 어느 폴리곤으로 쟀나 — 기본 road_rw. 덮임이 0 이면 null",
+            "clear_cov": "float 실폭도로 면이 표본점을 덮는 비율(0~1). 안 덮는 표본은 min·med·max 에 안 들어간다 — 1 미만이면 폴백이 필요한 구간이다",
             "unknown_reason": ("null|ledger_disputes|no_cctv_narrow|no_cctv_thin"
                                "|no_cctv_band|no_cctv_single|needs_survey|width — 회색(unknown)이 된 이유. needs_survey=채택에서 밀린 소스가 clear 를 반박하나 CCTV 가 없어 현장에서 재야 안다 / "
                                "narrow=노면·대장폭 둘 다 3m 미만이나 담~담은 여유 있음 / "

@@ -191,7 +191,8 @@ def test_reason_splits_the_grey(wmin, road_bt, want):
 def test_clear_and_blocked_ignore_the_camera():
     """도면만으로 확정되는 둘은 CCTV 거리에 안 움직인다."""
     for dist in (NEAR, FAR, 9999.0):
-        assert c(wmin=CLEAR_M, wmax=99.0, nreg=9, cctv_dist=dist) == ("clear", None)
+        # wmax 는 폭 급변 규칙 [11](>= 2.5배)에 안 걸리게 7.0 의 2.5배 아래로 둔다(Zm19)
+        assert c(wmin=CLEAR_M, wmax=15.0, nreg=9, cctv_dist=dist) == ("clear", None)
         assert c(wmax=1.0, cctv_dist=dist) == ("blocked", None)
 
 
@@ -266,3 +267,25 @@ def test_rule10_any_source_below_clear_withdraws_the_dual_parking_claim():
     assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=None) == ("clear", None)                        # 값이 없으면 건드리지 않는다
     # clear 만 건드린다 — blocked 는 any 가 7 미만이어도 그대로다.
     assert classify(wmin=2.0, wmax=2.5, nreg=20, road_bt=2.0, length_m=50.0, cctv_dist=5.0, wmin_any=1.0)[0] == "blocked"
+
+
+def test_rule10_extended_to_the_inscribed_median_and_rule11_to_the_spread():
+    """Zm19(DECISIONS §564). [10] 은 소스에서 **축**으로 넓어졌다(내접원 중앙값 `clear_med` 가 7.0 미만이면 거둔다) · [11] 은 폭 급변이다."""
+    from firelane.seg.classify import SPREAD_MAX, classify
+    assert SPREAD_MAX == 2.5
+    # [10] 확장 — 행선지는 기존 규칙대로(CCTV 19m 안 → needs_cv · 밖 → unknown), 새 상수 없음
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, clear_med=6.99) == ("needs_cv", "source_conflict")
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, clear_med=6.99) == ("unknown", "needs_survey")
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, clear_med=7.0) == ("clear", None)                  # 문턱은 포함하지 않는다
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, clear_med=None) == ("clear", None)                 # 값이 없으면 건드리지 않는다
+    # blocked 에는 안 닿는다 — 안전한 주장이다
+    assert classify(wmin=2.0, wmax=2.5, nreg=20, road_bt=2.0, length_m=50.0, cctv_dist=5.0, clear_med=1.0)[0] == "blocked"
+    # [11] — wmax / wmin >= 2.5 (경계 포함)
+    spread = dict(wmin=8.0, nreg=20, road_bt=8.0, length_m=50.0)
+    assert classify(**spread, wmax=20.0, cctv_dist=5.0) == ("needs_cv", "source_conflict")           # 2.5 정확히
+    assert classify(**spread, wmax=19.9, cctv_dist=5.0) == ("clear", None)                           # 2.4875
+    assert classify(**spread, wmax=26.0, cctv_dist=60.0) == ("unknown", "needs_survey")
+    assert classify(**spread, wmax=None, cctv_dist=5.0) == ("clear", None)                           # wmax 없는 구간은 안 걸린다(606/1,281)
+    assert classify(**spread, wmax=26.0, cctv_dist=5.0, spread_max=None) == ("clear", None)          # 도구가 끌 수 있다
+    # DM01576 — wmin 8.1 · wmax 26.48 (비 3.27)
+    assert classify(wmin=8.1, wmax=26.48, nreg=4, road_bt=4.0, length_m=15.9, cctv_dist=4.0)[0] == "needs_cv"

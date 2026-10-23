@@ -34,7 +34,7 @@
       "out": "1423:ac44cf183beed2d9"
     }
   },
-  "generated_at": "2026-10-23T21:41:51.447579+09:00",
+  "generated_at": "2026-10-24T00:00:33.020121+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -156,20 +156,6 @@
         "**/juso_bldggrp_geom_*"
       ],
       "source_sha256": "4867537948920da1a014db26bb614c9190bf1623362ec16f7e4f6deec2f305ed",
-      "status": "SKIP"
-    },
-    {
-      "features": "",
-      "geom": [],
-      "key": "juso_etc_geom",
-      "note": "raw_only — 별도 스크립트가 직접 읽는다",
-      "outputs": [],
-      "resolved": "juso_etc_geom_jngj_20260801.zip",
-      "source_crs": "EPSG:5179",
-      "source_files": [
-        "**/juso_etc_geom_*"
-      ],
-      "source_sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
       "status": "SKIP"
     },
     {
@@ -467,7 +453,7 @@
       "status": "OK",
       "seal": {
         "raw": "574f2d294fa6ff10",
-        "cfg": "2148a968c04011f3",
+        "cfg": "42d9ae6c26b395a6",
         "code": "21998ed50e784ab1",
         "out": {
           "node_link_changelog.csv": "56e7966570ac1746"
@@ -3108,7 +3094,7 @@
       "status": "OK",
       "seal": {
         "raw": "dac553bb5e289ae8",
-        "cfg": "a4ab502898555dfd",
+        "cfg": "d7795e04a908706f",
         "code": "21998ed50e784ab1",
         "out": {
           "gjfire_fleet_dongbu.csv": "8b67a44c8e7ec6f0"
@@ -3139,7 +3125,7 @@
       "status": "OK",
       "seal": {
         "raw": "eb6ffedeb0301d5b",
-        "cfg": "eb5a497cf2d0c8d2",
+        "cfg": "cb34c228fefa3b3b",
         "code": "21998ed50e784ab1",
         "out": {
           "gjfire_district_dongbu.csv": "d1bb848237c0fa6f"
@@ -3919,7 +3905,7 @@
       "status": "OK",
       "seal": {
         "raw": "e3eb7b4178fdbadf",
-        "cfg": "945e695bd9124283",
+        "cfg": "0117b2d28be4c7a1",
         "code": "21998ed50e784ab1",
         "out": {
           "hydrant_type.csv": "ec966b1c3c0fb374"
