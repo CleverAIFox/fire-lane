@@ -154,7 +154,7 @@ EXCEPTIONS: dict[str, int] = {
     # ★ 2026-10-23 (Zm11). test_tools_are_wired 784→791 · test_contract 신규 703(상한 700). **쪼개지 않는다** —
     #   앞의 것은 조사 도구 면제표(EXEMPT)가 곧 이 파일의 본문이라 표를 옮기면 `navi_setup.py` 가 줄을 찾지 못한다.
     #   늘어난 줄은 Zm3~Zm10 의 조사 도구 면제 사유다. 뒤의 것은 web 전용 칸 선언(Zm7 · Zm8)이 3줄 넘겼다.
-    "tests/test_contract.py": 703,
+    "tests/test_contract.py": 704,   # 703→704: Zm13 ecc 칸 선언 한 줄
     "tests/test_tools_are_wired.py": 791,   # ★ 2026-10-14 (§521) 786→784 · 2026-10-23 784→791 (위) · mutate_guard 면제를 지웠다(배선됐다)
 }
 

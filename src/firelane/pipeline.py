@@ -138,6 +138,8 @@ STEPS = [
          writes=(P / "segments.geojson", P / "segments_5186.gpkg",
                  P / "segments.schema.json", P / "corridor_5186.gpkg",
                  P / "seg_uid_map.csv",
+                 # ★ 2026-10-23 (Zm13). 진단 덤프지만 publish 가 `ecc_m` 을 읽는다 — 읽는 쪽만 적으면 §426-2 의 결함이다.
+                 P / "width_samples.csv",
                  P / "route_vehicle.csv")),
     # ★ 2026-09-25 (PLAN §1 #124). `seg/report.py::nfa_compare` 를 자기 단계로
     #   내렸다. 그 안의 `from firelane import ledger` 한 줄이 ledger · naming ·
@@ -217,6 +219,8 @@ STEPS = [
                 P / "ngii1k_xsec_5186.gpkg",
                 # ★ 2026-10-23 (Zm8). 소방통로확보대상 — `publish_web` 이 `firelane.fireaccess` 로 구간에 싣는다(판정 폐포 밖 · 판정에 안 쓴다).
                 P / "fire_access.csv",
+                # ★ 2026-10-23 (Zm13). 중심선 편심 칸(`ecc_*`)의 재료 — `publish_web` 이 `firelane.eccentricity` 로 구간에 싣는다(판정 안 씀).
+                P / "width_samples.csv",
                 P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson",
                 # ★ 2026-09-22 (§215-1). 내비 그래프의 통행 규칙 — 일방통행 · 회전 금지
                 P / "ngii1k_center_5186.gpkg", P / "node_link_5186.gpkg",

@@ -423,7 +423,7 @@ EXCEPTIONS: dict[str, int] = {
     # ★ 2026-10-23 (Zm11). segments.py 772→906 · seg/width.py 신규 652(상한 600). **쪼개지 않는다** — 둘 다 판정 폐포(골든 코드 지문)
     #   안이라 파일을 나누면 지문이 어긋나 골든 재잠금이 따라온다. 늘어난 줄은 Zm3~Zm10 의 칸·계측(width_min_any · β · w_rule 등)이다.
     #   해소 조건 = 사람이 골든을 다시 잠그는 판에 `_curvature` 처럼 로직을 폐포 밖 모듈로 옮긴다.
-    "src/firelane/seg/width.py": 652,
+    "src/firelane/seg/width.py": 655,   # 652→655: Zm12 ④ 주석 3줄(주석만 · 지문 불변)
     "src/firelane/segments.py": 906,   # ★ 2026-10-14 (§523-3 · 530-1) 780→762→772 · 2026-10-23 772→906 (위) · `_curvature` → `seg/geom.py` · 생략이 낡은 csv 를 지운다 (§523-3 · 530-1) 780→762→772 · `_curvature` → `seg/geom.py` · 생략이 낡은 csv 를 지운다
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이
