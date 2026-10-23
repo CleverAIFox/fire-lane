@@ -43,7 +43,7 @@ MAX_OWNER_BLOCK_READERS = 8   # 2026-09-22 W10-1 이 하나를 뺐다(§217-5) �
 #     받은 경로 없음   기관은 적혀 있고 괄호 꼴만 안 맞는다. **문서 작업으로 내려간다**
 #
 #   가르고 나면 둘째가 줄어드는 것을 첫째가 못 가린다. 2026-09-17 실측 45 · 17.
-MAX_AUTHORITY_MISSING = 45    # authority 칸이 아예 없는 datasets
+MAX_AUTHORITY_MISSING = 44    # authority 칸이 아예 없는 datasets
 MAX_AUTHORITY_NO_ROUTE = 17   # 기관은 적었으나 받은 경로 괄호가 없는 datasets
 
 

@@ -120,8 +120,9 @@ def names(what: str, c: str) -> bool:
 
 
 def _stem(s: object) -> str:
-    """`TL_SPRD_RW.shp` 와 `TL_SPRD_RW` 는 같은 레이어다."""
-    return re.sub(r"\.\w+$", "", str(s)).strip()
+    """`TL_SPRD_RW.shp` 와 `TL_SPRD_RW` 는 같은 레이어다. **알려진 확장자만** 접는다 — 이름에 점이 든 레이어
+    (`Total.JUSUBG.20260801.TL_SPOT_TUNNEL.12210`)의 끝 `.12210` 을 확장자로 지우면 `.shp` 를 뗀 짝과 갈린다(Zm18)."""
+    return re.sub(r"\.(?:shp|gpkg|geojson|json|csv)$", "", str(s)).strip()
 
 
 def _enc(s: object) -> str:
@@ -223,6 +224,8 @@ def selftest() -> int:
         ("한쪽만 있으면 안 센다", g({"required_cols": ["a"]}, {}) == []),
         ("레이어 확장자를 접는다",
          g({"layer_must_exist": True}, {"layers": ["A"], "layer_used": "A.shp"}) == [True]),
+        ("점이 든 레이어 이름도 접힌다",
+         g({"layer_must_exist": True}, {"layers": ["T.1.12210"], "layer_used": "T.1.12210.shp"}) == [True]),
         ("레이어가 밖이면 거짓",
          g({"layer_must_exist": True}, {"layers": ["A"], "layer_used": "B.shp"}) == [False]),
         ("약속 안 했으면 레이어를 안 센다",

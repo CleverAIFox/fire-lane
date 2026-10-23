@@ -10,6 +10,7 @@ PARAM SWEEP_GRID · SAME_DIST_P
 밖    **판정을 안 바꾼다. 매칭 규칙(`seg/roadname.py` 의 BAND · MATCH_MIN)도 안 바꾼다** — 판정 폐포 안이다. 이 도구는 그 두 상수를 *잠깐*
       바꿔 써 보고 되돌린다(`_match_all`). 어느 규칙이 옳은가는 안 말한다 — 새로 붙은 쌍의 차이 분포가 기존과 구별되는지만 본다.
       `widthcross.py` 에서 갈라 나왔다(파일 길이 — 그 도구는 대조, 이 도구는 매칭 진단이다).
+부류  조사   `widthcross.py` 가 부르는 라이브러리다. 사람이 `--selftest` 만 직접 부른다
 """
 from __future__ import annotations
 
@@ -161,5 +162,16 @@ def selftest() -> int:
     return 0
 
 
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
+    ap.add_argument("--selftest", action="store_true", help="판별식이 살아 있나")
+    a = ap.parse_args(argv)
+    if a.selftest:
+        return selftest()
+    ap.print_help()
+    return 0
+
+
 if __name__ == "__main__":
-    sys.exit(selftest() if "--selftest" in sys.argv[1:] else (print(__doc__) or 0))
+    sys.exit(main())

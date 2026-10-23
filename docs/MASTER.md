@@ -1064,7 +1064,7 @@ tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기�
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
 <!--gen: datasets-->
-대장은 `sources.yaml` 하나다. `datasets` 87종 · `retired` 4종.
+대장은 `sources.yaml` 하나다. `datasets` 86종 · `retired` 4종.
 <!--/gen-->
 ★ `datasets` 종수는 `tools/docgen.py` 가 대장에서 받아 **채운다** — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `retired` 종수는 대조만 한다(§246 밖 ②). `norm` 은 텍스트 14종 이관 완료다(§123).
 
@@ -2743,7 +2743,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 
 <!--gen: sealable-->
 ★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15`(결번) · `#68` → `DECISIONS
-  §160~161`). `SEAL.json` 이 소스 86종의 raw sha256 을 갖고, `dms.py rawdiff`
+  §160~161`). `SEAL.json` 이 소스 85종의 raw sha256 을 갖고, `dms.py rawdiff`
   가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — **한 자릿수 분이 1분 밑으로** 준다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
   끄는 것과 같다.
@@ -4743,6 +4743,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | --- | --- |
 | `src/firelane/fireaccess.py` | 소방서 소방통로확보대상(`fire_access`)을 구간 칸(`nfa_access_*`)으로 싣는다 — 도로명 **정확 일치** · `len_ratio` 가 매칭 품질. 판정 폐포 밖이고 판정이 안 읽는다. 관문 `tests/test_fire_access_gate.py` 가 `clear` 와의 겹침을 막는다 |
 | `src/firelane/clearance.py` | 구간별 **단순 내접원** 칸(`clear_*`)을 출판 때 싣는다 — 판정 폐포 **밖**이고 판정이 읽으면 시험이 운다(`tests/test_clearance.py`). R 상수가 없다(R 보정은 측정에서 악화됐다) |
+| `src/firelane/structures.py` | 구간 가까이(50m)의 **입체 구조물**(터널 · 고가 · 교량)을 진단 칸(`struct_*`)으로 싣는다 — 판정 폐포 **밖**이고 판정이 읽으면 시험이 운다(`tests/test_structures.py`). 면은 입력 범위 안만 적재돼 있다(DECISIONS §563) |
 | `src/firelane/occ.py` | 점유압력 β — 수요점으로 구간의 거주단위/100m(길이 기준 · 12m 평평한 끝 버퍼)와 폭 밴드 안 순위를 낸다. **판정선을 못 넘는다**(`classify.py` 가 읽으면 시험이 운다) |
 | `src/firelane/cli.py` | **명령줄 표면의 관문.** 인자를 거절하는 일만 한다 — 모르는 깃발을 주면 백열여덟 중 스물다섯이 조용히 삼켰다 |
 | `src/firelane/datalog.py` | 데이터 대장 도구. 파이프라인 끝에서 매니페스트를 갱신한다 |
@@ -5122,7 +5123,7 @@ web/
 도달 불가    447         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       58,308.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 87종 · `retired` 4종
+대장        `datasets` 86종 · `retired` 4종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
             edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)

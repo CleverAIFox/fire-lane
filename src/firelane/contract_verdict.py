@@ -43,10 +43,10 @@ from __future__ import annotations
 #:   없어 그 블록이 한 번도 안 불린다 — 적으면 「선언은 섰는데 부르는 자리가
 #:   없다」가 하나 더 생긴다(§243-2 부터 여섯 번 난 족). 변환기 산출 CSV 의
 #:   열 계약은 그 CSV 가 ingest 에 **배선되는 판**이 적는다.
-NO_CONTRACT_RATCHET = 43
+NO_CONTRACT_RATCHET = 38
 #: 실측 2026-09-28. `crs_native` 35종. 좌표가 없는 갈래는 적을 근거가 없다 — 전수는 목표가 아니다.
 #: ★ 2026-10-06 (§419). 35 → 37. V-World SHP 둘 — `raw_only` 라도 `.prj` 에 근거가 있으면 적는다.
-CRS_DECLARED_RATCHET = 37
+CRS_DECLARED_RATCHET = 40
 
 # ── 실물 갈래의 래칫 ──────────────────────────────────────────
 #: 실측 2026-10-05, 레이크 있는 기계(Zd 전수 verify [64/99]). **75종 · 실패 8 · 경고 54.**
@@ -101,7 +101,7 @@ REAL_FAIL_RATCHET = 8
 #:   더했다. 실측이 다르면 관문이 정확한 수를 찍으니 그 수로 고친다 —
 #:   §429 가 「항목을 더할 때마다 다시 센다」로 적은 그 자리다.
 #: ★ **반입되면 내려간다.** `awaiting` 셋을 지우는 판이 이 수를 조인다.
-REAL_WARN_RATCHET = 60
+REAL_WARN_RATCHET = 59
 
 
 def real_verdict(nf: int, nw: int) -> tuple[int, list[str]]:
