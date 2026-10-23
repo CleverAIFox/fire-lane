@@ -694,7 +694,7 @@ def test_schema_layers_differ_only_by_declaration():
         f"선언 {sorted(dropped)}")
     web_only = wf - pf
     declared = {"seg_no", "z", "clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov",
-                "ecc_rel_med_m", "ecc_rel_max_m", "ecc_cov",
+                "ecc_rel_med_m", "ecc_rel_max_m", "ecc_cov", "struct_kind", "struct_dist_m",
                 "nfa_access_listed", "nfa_access_width", "nfa_access_len_m", "nfa_access_hh",
                 "nfa_access_len_ratio", "nfa_access_loose", "nfa_access_token"}      # Zm7 · Zm8 — publish 가 싣는 web 전용 칸
     assert web_only <= declared and "seg_no" in web_only, (

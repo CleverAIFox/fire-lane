@@ -1064,7 +1064,7 @@ tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기�
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
 <!--gen: datasets-->
-대장은 `sources.yaml` 하나다. `datasets` 83종 · `retired` 4종.
+대장은 `sources.yaml` 하나다. `datasets` 87종 · `retired` 4종.
 <!--/gen-->
 ★ `datasets` 종수는 `tools/docgen.py` 가 대장에서 받아 **채운다** — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `retired` 종수는 대조만 한다(§246 밖 ②). `norm` 은 텍스트 14종 이관 완료다(§123).
 
@@ -1757,6 +1757,7 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `cv_reason` | `needs_cv` 가 된 이유(`source_conflict` — 채택에서 밀린 소스가 7.0m 미만을 쟀다 · CCTV 19m 안). `unknown_reason` 과 **다른 칸**이다 — 저쪽은 `unknown` 전용 |
 | `clear_min_m` · `clear_med_m` · `clear_max_m` · `clear_src` · `clear_cov` | **내접원**(단순 · R=0) 지름의 구간 최소 · 중앙 · 최대와 어느 폴리곤(`road_rw`)으로 쟀나, 그 면이 표본점을 덮는 비율. **web 에만 있고 판정에 안 쓴다** — 대표값(min 대 med)을 아직 안 정했다(DECISIONS §549) |
 | `ecc_rel_med_m` · `ecc_rel_max_m` · `ecc_cov` | **중심선 편심** — 표본 \|ecc\| 의 중앙값·최댓값 ÷ 반폭(`width_min_m/2`), `ecc_m` 가 있는 표본점의 비율. `_m` 이름이지만 **무차원 비율**이다. **web 에만 있고 판정에 안 쓴다** — 임계는 사람이 정한다(DECISIONS §556) |
+| `struct_kind` · `struct_dist_m` | **입체 구조물**(터널 · 고가 · 교량 — 도로명주소 기타자료) 중 반경 50m 안에서 가장 가까운 것의 이름과 거리(m). 입력 범위 안만 적재돼 있어 null 은 「적재된 것 중에는 없다」다. **web 에만 있고 판정에 안 쓴다**(DECISIONS §563) |
 | `nfa_access_listed` · `nfa_access_width` · `nfa_access_len_m` · `nfa_access_hh` · `nfa_access_len_ratio` · `nfa_access_loose` · `nfa_access_token` | **소방서가 지정한 소방통로확보대상**(동부소방서 20구간)과의 도로명 **정확 일치**. 폭은 문자열 그대로, `len_ratio`(우리 연장 합 ÷ 소방서 구간거리)가 매칭 품질을 든다(0.5~2.0 밖이면 `loose`), `token` 은 소방서 지역명 원문. **web 에만 있고 판정에 안 쓴다**(DECISIONS §550) |
 | `width_fail` | **폭을 못 낸 사유.** `no_xsec_attempted`(법선이 전부 평면교차부에 걸려 한 발도 못 쐈다) 등. `unknown_reason` 과 **다른 축**이다 — 저쪽은 회색의 사유, 이쪽은 폭이 빈 사유다(DECISIONS §436-3) |
 | `route_usage` | 최단경로 사용횟수. **통행 가능성이 아니다**(§3-10) |
@@ -2742,7 +2743,7 @@ PLAN 번호·참조 · 커버리지 래칫 · 문서 정합 도장을 밟는다.
 
 <!--gen: sealable-->
 ★ **raw 지문으로 파이프라인 전량을 생략한다**(`PLAN #15`(결번) · `#68` → `DECISIONS
-  §160~161`). `SEAL.json` 이 소스 82종의 raw sha256 을 갖고, `dms.py rawdiff`
+  §160~161`). `SEAL.json` 이 소스 86종의 raw sha256 을 갖고, `dms.py rawdiff`
   가 그것을 실물과 대조한다. 같으면 전량을 안 돈다 — **한 자릿수 분이 1분 밑으로** 준다.
   못 재거나 봉인이 없으면 **안 건너뛴다.** 모를 때 건너뛰는 것은 검사를
   끄는 것과 같다.
@@ -3218,7 +3219,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,503 전수 · **분모(blank) 0절** · 물림(inherit) 1,450절.
+★ **강제자 칸의 분모.** 절 2,509 전수 · **분모(blank) 0절** · 물림(inherit) 1,455절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -5121,7 +5122,7 @@ web/
 도달 불가    447         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       58,308.7m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 83종 · `retired` 4종
+대장        `datasets` 87종 · `retired` 4종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
             edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)

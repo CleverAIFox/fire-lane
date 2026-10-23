@@ -1064,6 +1064,8 @@ datasets:
 
         읽으려면 레이어별로 항목을 나누거나 새 kind 를 만들어야 한다.
         그 판단은 판정 규칙 변경이라 B4 소관이다. 지금은 존재만 기록한다.
+      ★ 2026-10-23 (Zm18). 레이어별 항목으로 **나눴다** — `juso_tunnel` · `juso_overpass` · `juso_bridge` · `juso_river`(각 `shp_zip`).
+        이 항목은 zip 을 가리키는 `raw_only` 로 남는다. 판정에 안 쓴다(진단 칸).
 
         zip 안 레이어 —
       TL_SGCO_RNADR_MST   건물 폴리곤        15,518
@@ -1142,6 +1144,117 @@ datasets:
         단정했는데 동구에 터널 10(지산·산수·지원·소태) · 고가 4(너릿재로·
         제2순환로)가 실재한다. 동명동 안인지는 좌표로 확인해야 하고,
         어느 쪽이든 그 문장은 고쳐야 한다. B4 에서 다룬다.
+  juso_tunnel:
+    feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/publish_web.py
+      - src/firelane/structures.py
+    stem: juso_etc_geom
+    ext: [zip]
+    scope: jngj
+    updated: '2026-08-01'
+    what: 도로명주소 기타자료 — 터널 면 (동구 10)
+    crs_native: 5179
+    kind: shp_zip
+    layer: '*TL_SPOT_TUNNEL*.shp'
+    encoding: cp949
+    feeds_why: |
+      진단 칸으로만 싣는다(Zm18 · DECISIONS §563) — 판정 폐포를 건드리지 않는다. 입체 구조물 50m 안의 구간이 2D 가정(`road_area` 는 평면이라 높이를 모른다)을 깨는지 잰다.
+    note: |
+      ★ `juso_etc_geom` zip 한 장의 레이어 하나다(umbrella 항목 `juso_etc_geom` 은 `raw_only` 로 남아 zip 을 가리킨다). 레이어 TL_SPOT_TUNNEL.
+      ★ .prj 가 zip 에 없다 → `crs_native` 로 5179 를 강제한다(`juso_elctrnmap` 과 같다).
+    contract:
+      encoding: cp949
+      layer_must_exist: true
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['Total.JUSUBG.20260801.TL_SPOT_BRIDGE.12210', 'Total.JUSUBG.20260801.TL_SPOT_OVERPASS.12210', 'Total.JUSUBG.20260801.TL_SPOT_PARK.12210', 'Total.JUSUBG.20260801.TL_SPOT_RIVER_LKE.12210', 'Total.JUSUBG.20260801.TL_SPOT_TUNNEL.12210', 'Total.JUSUBG.20260801.TL_SPRD_UNDGRND.12210', 'Total.JUSUBG.20260801.TL_SPRL_RLWAY.12210', 'Total.JUSUBG.20260801.TL_SPRL_STATN.12210', 'Total.JUSUBG.20260801.TL_SPSB_ENTRC.12210', 'Total.JUSUBG.20260801.TL_SPSB_RLWAY.12210', 'Total.JUSUBG.20260801.TL_SPSB_STATN.12210']
+      layer_glob: '*TL_SPOT_TUNNEL*.shp'
+      layer_used: 'Total.JUSUBG.20260801.TL_SPOT_TUNNEL.12210.shp'
+      columns: ['SIG_CD', 'TUNNEL_SN', 'TUN_KOR_NM', 'OPERT_DE']
+      features: 10
+  juso_overpass:
+    feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/publish_web.py
+      - src/firelane/structures.py
+    stem: juso_etc_geom
+    ext: [zip]
+    scope: jngj
+    updated: '2026-08-01'
+    what: 도로명주소 기타자료 — 고가도로 면 (동구 4 · 너릿재로 · 제2순환로)
+    crs_native: 5179
+    kind: shp_zip
+    layer: '*TL_SPOT_OVERPASS*.shp'
+    encoding: cp949
+    feeds_why: |
+      진단 칸으로만 싣는다(Zm18 · DECISIONS §563) — 판정 폐포를 건드리지 않는다. 입체 구조물 50m 안의 구간이 2D 가정(`road_area` 는 평면이라 높이를 모른다)을 깨는지 잰다.
+    note: |
+      ★ `juso_etc_geom` zip 한 장의 레이어 하나다(umbrella 항목 `juso_etc_geom` 은 `raw_only` 로 남아 zip 을 가리킨다). 레이어 TL_SPOT_OVERPASS.
+      ★ .prj 가 zip 에 없다 → `crs_native` 로 5179 를 강제한다(`juso_elctrnmap` 과 같다).
+    contract:
+      encoding: cp949
+      layer_must_exist: true
+      scope_min: 0    # ★ 0건이 정상 — 고가 4면(너릿재로 2 · 제2순환로 2)이 전부 입력 범위 밖이다(구간망에서 3km 이상 남쪽 · DECISIONS §563-1)
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['Total.JUSUBG.20260801.TL_SPOT_BRIDGE.12210', 'Total.JUSUBG.20260801.TL_SPOT_OVERPASS.12210', 'Total.JUSUBG.20260801.TL_SPOT_PARK.12210', 'Total.JUSUBG.20260801.TL_SPOT_RIVER_LKE.12210', 'Total.JUSUBG.20260801.TL_SPOT_TUNNEL.12210', 'Total.JUSUBG.20260801.TL_SPRD_UNDGRND.12210', 'Total.JUSUBG.20260801.TL_SPRL_RLWAY.12210', 'Total.JUSUBG.20260801.TL_SPRL_STATN.12210', 'Total.JUSUBG.20260801.TL_SPSB_ENTRC.12210', 'Total.JUSUBG.20260801.TL_SPSB_RLWAY.12210', 'Total.JUSUBG.20260801.TL_SPSB_STATN.12210']
+      layer_glob: '*TL_SPOT_OVERPASS*.shp'
+      layer_used: 'Total.JUSUBG.20260801.TL_SPOT_OVERPASS.12210.shp'
+      columns: ['SIG_CD', 'OVE_SN', 'KOR_OVE_NM', 'OPERT_DE']
+      features: 4
+  juso_bridge:
+    feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/publish_web.py
+      - src/firelane/structures.py
+    stem: juso_etc_geom
+    ext: [zip]
+    scope: jngj
+    updated: '2026-08-01'
+    what: 도로명주소 기타자료 — 교량 면 (동구 36)
+    crs_native: 5179
+    kind: shp_zip
+    layer: '*TL_SPOT_BRIDGE*.shp'
+    encoding: cp949
+    feeds_why: |
+      진단 칸으로만 싣는다(Zm18 · DECISIONS §563) — 판정 폐포를 건드리지 않는다. 입체 구조물 50m 안의 구간이 2D 가정(`road_area` 는 평면이라 높이를 모른다)을 깨는지 잰다.
+    note: |
+      ★ `juso_etc_geom` zip 한 장의 레이어 하나다(umbrella 항목 `juso_etc_geom` 은 `raw_only` 로 남아 zip 을 가리킨다). 레이어 TL_SPOT_BRIDGE.
+      ★ .prj 가 zip 에 없다 → `crs_native` 로 5179 를 강제한다(`juso_elctrnmap` 과 같다).
+    contract:
+      encoding: cp949
+      layer_must_exist: true
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['Total.JUSUBG.20260801.TL_SPOT_BRIDGE.12210', 'Total.JUSUBG.20260801.TL_SPOT_OVERPASS.12210', 'Total.JUSUBG.20260801.TL_SPOT_PARK.12210', 'Total.JUSUBG.20260801.TL_SPOT_RIVER_LKE.12210', 'Total.JUSUBG.20260801.TL_SPOT_TUNNEL.12210', 'Total.JUSUBG.20260801.TL_SPRD_UNDGRND.12210', 'Total.JUSUBG.20260801.TL_SPRL_RLWAY.12210', 'Total.JUSUBG.20260801.TL_SPRL_STATN.12210', 'Total.JUSUBG.20260801.TL_SPSB_ENTRC.12210', 'Total.JUSUBG.20260801.TL_SPSB_RLWAY.12210', 'Total.JUSUBG.20260801.TL_SPSB_STATN.12210']
+      layer_glob: '*TL_SPOT_BRIDGE*.shp'
+      layer_used: 'Total.JUSUBG.20260801.TL_SPOT_BRIDGE.12210.shp'
+      columns: ['SIG_CD', 'BRIDGE_SN', 'KOR_BRI_NM', 'OPERT_DE']
+      features: 36
+  juso_river:
+    feeds:
+      - src/firelane/normalize_raw.py
+    stem: juso_etc_geom
+    ext: [zip]
+    scope: jngj
+    updated: '2026-08-01'
+    what: 도로명주소 기타자료 — 하천·호수 면 (동구 27)
+    crs_native: 5179
+    kind: shp_zip
+    layer: '*TL_SPOT_RIVER_LKE*.shp'
+    encoding: cp949
+    feeds_why: |
+      진단 칸으로만 싣는다(Zm18 · DECISIONS §563) — 판정 폐포를 건드리지 않는다. 입체 구조물 50m 안의 구간이 2D 가정(`road_area` 는 평면이라 높이를 모른다)을 깨는지 잰다.
+    note: |
+      ★ `juso_etc_geom` zip 한 장의 레이어 하나다(umbrella 항목 `juso_etc_geom` 은 `raw_only` 로 남아 zip 을 가리킨다). 레이어 TL_SPOT_RIVER_LKE (하천·호수).
+      ★ .prj 가 zip 에 없다 → `crs_native` 로 5179 를 강제한다(`juso_elctrnmap` 과 같다).
+    contract:
+      encoding: cp949
+      layer_must_exist: true
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['Total.JUSUBG.20260801.TL_SPOT_BRIDGE.12210', 'Total.JUSUBG.20260801.TL_SPOT_OVERPASS.12210', 'Total.JUSUBG.20260801.TL_SPOT_PARK.12210', 'Total.JUSUBG.20260801.TL_SPOT_RIVER_LKE.12210', 'Total.JUSUBG.20260801.TL_SPOT_TUNNEL.12210', 'Total.JUSUBG.20260801.TL_SPRD_UNDGRND.12210', 'Total.JUSUBG.20260801.TL_SPRL_RLWAY.12210', 'Total.JUSUBG.20260801.TL_SPRL_STATN.12210', 'Total.JUSUBG.20260801.TL_SPSB_ENTRC.12210', 'Total.JUSUBG.20260801.TL_SPSB_RLWAY.12210', 'Total.JUSUBG.20260801.TL_SPSB_STATN.12210']
+      layer_glob: '*TL_SPOT_RIVER_LKE*.shp'
+      layer_used: 'Total.JUSUBG.20260801.TL_SPOT_RIVER_LKE.12210.shp'
+      columns: ['SIG_CD', 'RIV_LKE_SN', 'KOR_RIV_NM', 'OPERT_DE']
+      features: 27
   kfs_pumptruck:
     feeds:
       - src/firelane/normalize_raw.py
@@ -4035,7 +4148,7 @@ outputs:
     produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_center_5186.gpkg
     inputs: [ngii1k]
-    consumers: [src/firelane/segments.py, tools/skeleton_compare.py]
+    consumers: [src/firelane/segments.py, tools/skeleton_compare.py, tools/widthmatch.py]
     what: |
       도로중심선 A0020000. 측량 성과 도로폭·일방통행·차로수 속성 보유.
       우리 기하 계산과 독립이라 대조 검증에 쓴다(절대편차 중앙 0.32m, n=909).

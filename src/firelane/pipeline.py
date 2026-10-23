@@ -221,6 +221,8 @@ STEPS = [
                 P / "fire_access.csv",
                 # ★ 2026-10-23 (Zm13). 중심선 편심 칸(`ecc_*`)의 재료 — `publish_web` 이 `firelane.eccentricity` 로 구간에 싣는다(판정 안 씀).
                 P / "width_samples.csv",
+                # ★ 2026-10-23 (Zm18). 입체 구조물 면 — `publish_web` 이 `firelane.structures` 로 구간에 싣는다(판정 안 씀).
+                P / "juso_tunnel_5186.gpkg", P / "juso_overpass_5186.gpkg", P / "juso_bridge_5186.gpkg",
                 P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson",
                 # ★ 2026-09-22 (§215-1). 내비 그래프의 통행 규칙 — 일방통행 · 회전 금지
                 P / "ngii1k_center_5186.gpkg", P / "node_link_5186.gpkg",

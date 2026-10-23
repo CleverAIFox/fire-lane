@@ -34,7 +34,7 @@
       "out": "1423:ac44cf183beed2d9"
     }
   },
-  "generated_at": "2026-10-23T00:35:12.932480+09:00",
+  "generated_at": "2026-10-23T21:41:51.447579+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -171,6 +171,140 @@
       ],
       "source_sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
       "status": "SKIP"
+    },
+    {
+      "key": "juso_tunnel",
+      "source_files": [
+        "**/juso_etc_geom_*"
+      ],
+      "source_sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
+      "resolved": "juso_etc_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "OK",
+      "features": 4,
+      "geom": [
+        "Polygon"
+      ],
+      "invalid_fixed": 0,
+      "columns": [
+        "SIG_CD",
+        "TUNNEL_SN",
+        "TUN_KOR_NM",
+        "OPERT_DE"
+      ],
+      "outputs": [
+        "juso_tunnel.geojson",
+        "juso_tunnel_5186.gpkg"
+      ],
+      "seal": {
+        "raw": "bf665b6b74e218b2",
+        "cfg": "631c85c95a399337",
+        "code": "21998ed50e784ab1",
+        "out": {
+          "juso_tunnel.geojson": "dec434f668b369c4",
+          "juso_tunnel_5186.gpkg": "103b694968fbb466"
+        }
+      }
+    },
+    {
+      "columns": [
+        "SIG_CD",
+        "OVE_SN",
+        "KOR_OVE_NM",
+        "OPERT_DE"
+      ],
+      "features": 0,
+      "geom": [],
+      "invalid_fixed": 0,
+      "key": "juso_overpass",
+      "outputs": [
+        "juso_overpass.geojson",
+        "juso_overpass_5186.gpkg"
+      ],
+      "resolved": "juso_etc_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "source_files": [
+        "**/juso_etc_geom_*"
+      ],
+      "source_sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
+      "status": "OK",
+      "seal": {
+        "raw": "bf665b6b74e218b2",
+        "cfg": "57a7f27ff84719bd",
+        "code": "21998ed50e784ab1",
+        "out": {
+          "juso_overpass.geojson": "e175ab2d6c088342",
+          "juso_overpass_5186.gpkg": "c1084c70a381ebcf"
+        }
+      }
+    },
+    {
+      "key": "juso_bridge",
+      "source_files": [
+        "**/juso_etc_geom_*"
+      ],
+      "source_sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
+      "resolved": "juso_etc_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "OK",
+      "features": 7,
+      "geom": [
+        "Polygon"
+      ],
+      "invalid_fixed": 0,
+      "columns": [
+        "SIG_CD",
+        "BRIDGE_SN",
+        "KOR_BRI_NM",
+        "OPERT_DE"
+      ],
+      "outputs": [
+        "juso_bridge.geojson",
+        "juso_bridge_5186.gpkg"
+      ],
+      "seal": {
+        "raw": "bf665b6b74e218b2",
+        "cfg": "f142d42127953329",
+        "code": "21998ed50e784ab1",
+        "out": {
+          "juso_bridge.geojson": "d90c6baeb9d07eb0",
+          "juso_bridge_5186.gpkg": "67680e01caf500d2"
+        }
+      }
+    },
+    {
+      "key": "juso_river",
+      "source_files": [
+        "**/juso_etc_geom_*"
+      ],
+      "source_sha256": "bf665b6b74e218b2312b787ccf91ad40c3fea9f52f9835b155e64562e03cd71b",
+      "resolved": "juso_etc_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "OK",
+      "features": 2,
+      "geom": [
+        "Polygon"
+      ],
+      "invalid_fixed": 0,
+      "columns": [
+        "SIG_CD",
+        "RIV_LKE_SN",
+        "KOR_RIV_NM",
+        "OPERT_DE"
+      ],
+      "outputs": [
+        "juso_river.geojson",
+        "juso_river_5186.gpkg"
+      ],
+      "seal": {
+        "raw": "bf665b6b74e218b2",
+        "cfg": "dc4ea154fd09476e",
+        "code": "21998ed50e784ab1",
+        "out": {
+          "juso_river.geojson": "8d7ce0508456ee43",
+          "juso_river_5186.gpkg": "8cecb8edb3ed8cce"
+        }
+      }
     },
     {
       "features": "",

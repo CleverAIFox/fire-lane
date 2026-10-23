@@ -97,6 +97,14 @@ def main():
     for _k, _v in _ex.items():
         _seg[_k] = _v
 
+    # ── 입체 구조물(struct_*) — 판정에 안 쓴다 (Zm18 · `firelane.structures` · DECISIONS §563) ──────────────────
+    # ★ 면은 도로명주소 기타자료(터널 · 고가 · 교량)다. 판정 폐포 밖이라 여기서 싣는다(web 에만 있는 칸).
+    from firelane import structures as _st
+    _sx = _st.columns(list(_seg.to_crs(5186).geometry),
+                      {_k: list(gpd.read_file(P/f"juso_{_k}_5186.gpkg").geometry) for _k, _ in _st.KINDS})
+    for _k, _v in _sx.items():
+        _seg[_k] = _v
+
     # ── 소방통로확보대상(nfa_access_*) — 판정에 안 쓴다 (Zm8 · `firelane.fireaccess` · DECISIONS §550) ───────────
     # ★ 좌표가 없어 도로명 문자열로 매칭한다. `len_ratio` 가 매칭 품질을 든다. 판정 폐포 밖이라 여기서 싣는다(web 에만 있는 칸).
     from firelane import fireaccess as _fa
@@ -111,7 +119,7 @@ def main():
 
     _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict",
              "midpoint_fallback","inherited","route_usage","length_m",
-             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","clear_min_m","clear_med_m","clear_max_m","clear_src","clear_cov","ecc_rel_med_m","ecc_rel_max_m","ecc_cov","nfa_access_listed","nfa_access_width","nfa_access_len_m","nfa_access_hh","nfa_access_len_ratio","nfa_access_loose","nfa_access_token","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
+             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","clear_min_m","clear_med_m","clear_max_m","clear_src","clear_cov","ecc_rel_med_m","ecc_rel_max_m","ecc_cov","struct_kind","struct_dist_m","nfa_access_listed","nfa_access_width","nfa_access_len_m","nfa_access_hh","nfa_access_len_ratio","nfa_access_loose","nfa_access_token","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
              "unknown_reason"]
     _cols += [c for c in ("z",) if c in _seg.columns]
     _seg[_cols + ["geometry"]].to_file(W/"segments.geojson", **PREC)
@@ -423,6 +431,8 @@ def main():
         "ecc_rel_med_m": "float|null 표본 |ecc| 의 중앙값 ÷ 반폭(반폭 = width_min_m/2). ★ 길이가 아니라 **무차원 비율**이다(이름은 지시문이 정했다). 0 이면 중심선이 정중앙, 1 이면 도로 한쪽 경계. 중심선 편심 진단 — 판정에 안 쓴다 · 임계는 사람이 정한다(DECISIONS §556)",
         "ecc_rel_max_m": "float|null 표본 |ecc| 의 최댓값 ÷ 반폭. 무차원 비율. 반폭이 작으면 1 을 넘을 수 있다 — 자르지 않는다",
         "ecc_cov": "float width_samples.csv 의 표본점 중 ecc_m 가 있는 비율(0~1). 교차부 제외 등으로 빈 행이 분모에 든다",
+        "struct_kind": "str|null 반경 50m 안에서 가장 가까운 **입체 구조물**(터널 · 고가 · 교량 — 도로명주소 기타자료). 입력 범위 안만 적재돼 있다 — null 은 「적재된 것 중에는 없다」다. 판정에 안 쓴다(DECISIONS §563)",
+        "struct_dist_m": "float|null 그 구조물까지의 거리(m). struct_kind 가 null 이면 null",
         "nfa_access_listed": "bool 이 구간의 road_name 이 소방서 소방통로확보대상 지역명에 나타나는가(공백 제거 부분 문자열). ★ 좌표가 없어 도로명 문자열로 맞춘다 — 판정에 안 쓴다",
         "nfa_access_width": "str|null 소방서가 적은 폭(m) — **문자열 그대로**(2.7~3.2 같은 범위가 있다). ★ 구간 대표값이라 우리 wmin(지점 최솟값)과 **직접 비교하지 않는다**",
         "nfa_access_len_m": "float|null 소방서가 적은 구간거리(m). 여러 행이 걸리면 구간거리가 가장 큰 행",
