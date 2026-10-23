@@ -63,6 +63,7 @@ dependencies = [
     #   없는 시험이다.
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
+    "scipy>=1.18.1",
 ]
 
 # ★ 2026-09-20 (W3-1). 여기 있던 `dev` extras 를 지웠다. `[dependency-groups]`

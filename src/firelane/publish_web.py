@@ -3,7 +3,7 @@
 publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내보낸다.
 
 
-IN    processed/*.geojson · processed/segments.schema.json · processed/ngii1k_xsec_5186.gpkg ·
+IN    processed/*.geojson · processed/segments.schema.json · processed/ngii1k_xsec_5186.gpkg · processed/fire_access.csv ·
       processed/route_vehicle.csv · processed/corridor_5186.gpkg ·
       processed/building_5186.gpkg ·
       processed/navi_build.csv · processed/navi_jibun.csv · processed/civil_office.geojson ·
@@ -90,9 +90,21 @@ def main():
     for _k in ("clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov"):
         _seg[_k] = [_r[_k] for _r in _cl]
 
+    # ── 소방통로확보대상(nfa_access_*) — 판정에 안 쓴다 (Zm8 · `firelane.fireaccess` · DECISIONS §550) ───────────
+    # ★ 좌표가 없어 도로명 문자열로 매칭한다. `len_ratio` 가 매칭 품질을 든다. 판정 폐포 밖이라 여기서 싣는다(web 에만 있는 칸).
+    from firelane import fireaccess as _fa
+    _fx = _fa.columns(list(_seg["road_name"]), list(_seg["length_m"]), _fa.load(P/"fire_access.csv"))
+    for _k, _v in _fx.items():
+        _seg[_k] = _v
+    # ★ 형을 바로잡는다. `None` 이 섞인 object 열은 GeoJSON 에 **문자열**('True' · 'False')로 써진다 — 관문이 `is False` 로 비교하면 **조용히 전부 통과**한다.
+    #   nullable 불리언 · 정수로 두면 true · false · null 과 정수로 써진다.
+    import pandas as _pd
+    _seg["nfa_access_loose"] = _pd.array(list(_seg["nfa_access_loose"]), dtype="boolean")
+    _seg["nfa_access_hh"] = _pd.array(list(_seg["nfa_access_hh"]), dtype="Int64")
+
     _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict",
              "midpoint_fallback","inherited","route_usage","length_m",
-             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","clear_min_m","clear_med_m","clear_max_m","clear_src","clear_cov","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
+             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","clear_min_m","clear_med_m","clear_max_m","clear_src","clear_cov","nfa_access_listed","nfa_access_width","nfa_access_len_m","nfa_access_hh","nfa_access_len_ratio","nfa_access_loose","nfa_access_token","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
              "unknown_reason"]
     _cols += [c for c in ("z",) if c in _seg.columns]
     _seg[_cols + ["geometry"]].to_file(W/"segments.geojson", **PREC)
@@ -399,6 +411,15 @@ def main():
         "clear_max_m": "float|null 내접원 지름의 최댓값(m). 클립 반경 60m 에서 잘려 최대 120m",
         "clear_src": "str|null 어느 폴리곤으로 쟀나 — 기본 road_rw. 덮임이 0 이면 null",
         "clear_cov": "float 실폭도로 면이 표본점을 덮는 비율(0~1). 안 덮는 표본은 min·med·max 에 안 들어간다 — 1 미만이면 폴백이 필요한 구간이다",
+    })
+    _sch["fields"].update({
+        "nfa_access_listed": "bool 이 구간의 road_name 이 소방서 소방통로확보대상 지역명에 나타나는가(공백 제거 부분 문자열). ★ 좌표가 없어 도로명 문자열로 맞춘다 — 판정에 안 쓴다",
+        "nfa_access_width": "str|null 소방서가 적은 폭(m) — **문자열 그대로**(2.7~3.2 같은 범위가 있다). ★ 구간 대표값이라 우리 wmin(지점 최솟값)과 **직접 비교하지 않는다**",
+        "nfa_access_len_m": "float|null 소방서가 적은 구간거리(m). 여러 행이 걸리면 구간거리가 가장 큰 행",
+        "nfa_access_hh": "int|null 소방서가 적은 세대수",
+        "nfa_access_len_ratio": "float|null 우리 그 도로명의 연장 합 ÷ 소방서 구간거리. 매칭 품질이다 — 0.5~2.0 밖이면 매칭이 느슨하다(소방서는 간선의 좁은 일부만 지정한다)",
+        "nfa_access_loose": "bool|null len_ratio 가 0.5~2.0 밖이다(매칭이 느슨해 비교가 안 된다). listed 가 false 면 null",
+        "nfa_access_token": "str|null 매칭된 행의 소방서 지역명 **원문**. 매칭은 정확 일치다(본선 경양로는 「경양로 247번길 26」 골목 행에 안 걸린다) — 소방서가 본선을 지정했는지 번길을 지정했는지는 원문을 읽고 사람이 판단한다",
     })
     _sch["scope"] = "web — 표출용 사본. processed 전용 컬럼은 뺐다"
     _sch["dropped_from_processed"] = _dropped

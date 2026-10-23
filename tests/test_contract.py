@@ -693,7 +693,9 @@ def test_schema_layers_differ_only_by_declaration():
         f"processed 전용 필드가 선언과 다르다 — 실제 {sorted(pf - wf)} · "
         f"선언 {sorted(dropped)}")
     web_only = wf - pf
-    declared = {"seg_no", "z", "clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov"}
+    declared = {"seg_no", "z", "clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov",
+                "nfa_access_listed", "nfa_access_width", "nfa_access_len_m", "nfa_access_hh",
+                "nfa_access_len_ratio", "nfa_access_loose", "nfa_access_token"}      # Zm7 · Zm8 — publish 가 싣는 web 전용 칸
     assert web_only <= declared and "seg_no" in web_only, (
         f"web 전용 필드가 선언 밖이다 — {sorted(web_only)}")
     drift = sorted(k for k in pf & wf

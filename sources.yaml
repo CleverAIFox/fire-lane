@@ -2094,11 +2094,12 @@ datasets:
       - src/firelane/normalize_raw.py
       - src/firelane/pipeline.py
       - src/firelane/seg/report.py
+      - src/firelane/fireaccess.py
       - tools/baseline.py
-    feeds_note: '미투입 — 소방통로 지정구간. D-30 인터뷰 대조 항목'
+    feeds_note: '투입 — 소방통로 지정구간을 구간 칸(nfa_access_*)으로 싣고 관문이 읽는다(src/firelane/fireaccess.py · 판정에 안 쓴다)'
     stem: safety_fire_access
     ext: [csv]
-    feeds_why: 미투입 — 소방활동 곤란구역. 진입 판정과 직결인데 배선 안 됨
+    feeds_why: 근거 자료 — 소방활동 곤란구역. 구간 칸(nfa_access_*)과 관문으로 배선했다(2026-10-23 Zm8 · DECISIONS §550). 판정에는 안 쓴다
     updated: '2025-07-31'
     scope: jngj-donggu
     authority: 동부소방서
@@ -2107,6 +2108,11 @@ datasets:
     kind: csv_table
     encoding: cp949
     note: |
+      ★ 투입 (2026-10-23 · Zm8 · DECISIONS §550). 구간에 `nfa_access_listed` · `_width`(**문자열 그대로** — 2.7~3.2 같은 범위가 있다) · `_len_m` · `_hh` · `_len_ratio` ·
+        `_loose` · `_token` 일곱 칸을 싣는다(web 에만 · 판정에 안 쓴다). 매칭 = 우리 road_name 이 지역명(공백 제거)에 부분 문자열로 나타나는가, 여럿이면 구간거리가 가장 큰 행.
+        **한계**: 좌표가 없어 도로명 문자열로만 맞춘다. 소방서는 도로의 **일부 구간만** 지정하므로 `len_ratio`(우리 그 도로명의 연장 합 ÷ 소방서 구간거리)가 매칭 품질을 든다 —
+        0.5~2.0 밖이면 느슨하다(대부분 4~37배). `_token = false` 는 더 긴 이름의 앞부분에 걸린 것(경양로 대로 ↔ 「경양로 247번길」 골목)이라 오탐 가능성이 높다.
+        **소방서 폭은 구간 대표값이고 우리 wmin 은 지점 최솟값이다 — 직접 비교하지 않는다.**
       ★ 이 프로젝트의 사실상 정답 데이터다.
         20구간 / 연장 7,120m / 3,452세대. 구간거리와 폭(m)이 기록돼 있다.
         동명동 2건: 동명로20번길 31(200m, 5m, 400세대) / 동계로9번길 12(220m, 6m, 320세대)
