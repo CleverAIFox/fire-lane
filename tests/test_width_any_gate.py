@@ -32,6 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SEG = ROOT / "data" / "processed" / "segments.geojson"
 SAMPLES = ROOT / "data" / "processed" / "width_samples.csv"
 TRUCK = 3.0
+CLEAR = 7.0            # `clear` = 「양쪽 주차해도 통과」 — 소스 하나라도 이 선 미만이라 말하면 그 주장을 못 한다(규칙 [10])
 
 
 def _need(p: Path):
@@ -39,13 +40,13 @@ def _need(p: Path):
         pytest.skip(f"환경skip(산출물) — {p.name} 이 없다. fire-lane --from segments 가 만든다")
 
 
-def test_no_clear_is_published_when_any_source_measured_below_truck():
+def test_no_clear_is_published_when_any_source_measured_below_clear():
     _need(SEG)
     feats = json.loads(SEG.read_text(encoding="utf-8"))["features"]
     bad = [p for p in (f["properties"] for f in feats)
-           if p["verdict"] == "clear" and p.get("width_min_any_m") is not None and p["width_min_any_m"] < TRUCK]
+           if p["verdict"] == "clear" and p.get("width_min_any_m") is not None and p["width_min_any_m"] < CLEAR]
     assert not bad, (
-        f"소스 무관 최솟값이 {TRUCK}m 미만인데 clear 로 발표된 구간 {len(bad)}:\n  "
+        f"소스 무관 최솟값이 {CLEAR}m 미만인데 clear 로 발표된 구간 {len(bad)}:\n  "
         + "\n  ".join(f"{p['seg_id']} any={p['width_min_any_m']}({p['width_min_any_src']}) 발행={p['width_min_m']} "
                       f"cctv={p['cctv_dist_m']}" for p in bad))
 
@@ -56,7 +57,9 @@ def test_demoted_clears_say_why():
     feats = [f["properties"] for f in json.loads(SEG.read_text(encoding="utf-8"))["features"]]
     ns = [p for p in feats if p.get("unknown_reason") == "needs_survey"]
     for p in ns:
-        assert p["verdict"] == "unknown" and p["width_min_any_m"] is not None and p["width_min_any_m"] < TRUCK, p["seg_id"]
+        assert p["verdict"] == "unknown", p["seg_id"]
+        assert (p["width_min_any_m"] is not None and p["width_min_any_m"] < CLEAR) or \
+            (p["width_min_sym_m"] is not None and p["width_min_sym_m"] < TRUCK), f"{p['seg_id']}: 거둘 사유가 없다"
         assert not p["cv_feasible"], f"{p['seg_id']}: CCTV 유효범위 안인데 needs_survey 다 — needs_cv 여야 한다"
 
 
@@ -99,3 +102,16 @@ def test_every_three_source_value_is_kept_and_any_min_is_their_min():
     hidden = sum(1 for p in feats if p["seg_id"] in lowest and p["width_min_any_m"] is not None
                  and p["width_min_any_m"] < (p["width_min_m"] or 1e9) - 0.05)
     assert hidden > 0, "채택에서 밀린 더 좁은 값이 하나도 없다 — 이 시험이 아무것도 안 잰다"
+
+
+def test_cv_reason_is_only_on_needs_cv_and_unknown_reason_only_on_unknown():
+    """`unknown_reason` 은 unknown 전용이다(스키마). needs_cv 의 이유는 `cv_reason` 이다 — 두 칸을 섞지 않는다."""
+    _need(SEG)
+    feats = [f["properties"] for f in json.loads(SEG.read_text(encoding="utf-8"))["features"]]
+    for p in feats:
+        if p["verdict"] != "unknown":
+            assert p.get("unknown_reason") is None, p["seg_id"]
+        if p["verdict"] != "needs_cv":
+            assert p.get("cv_reason") is None, p["seg_id"]
+        if p.get("cv_reason") == "source_conflict":
+            assert p["width_min_any_m"] is not None and p["width_min_any_m"] < CLEAR, p["seg_id"]

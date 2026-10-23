@@ -237,9 +237,10 @@ CLEAR_ARGS = dict(wmin=9.0, wmax=None, nreg=20, road_bt=8.0, length_m=50.0)
 def test_rule8_any_source_below_truck_withdraws_clear_by_cctv():
     from firelane.seg.classify import classify
     assert classify(**CLEAR_ARGS, cctv_dist=5.0) == ("clear", None)                              # 인자가 없으면 종전과 같다
-    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wmin_any=2.0) == ("needs_cv", None)             # CCTV 안
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wmin_any=2.0) == ("needs_cv", "source_conflict")   # CCTV 안
     assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=2.0) == ("unknown", "needs_survey")   # CCTV 밖
-    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=3.0) == ("clear", None)               # 문턱 이상이면 건드리지 않는다
+    # 3.0 이상 7.0 미만은 규칙 [10] 이 거둔다 — 아래 시험.
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=7.0) == ("clear", None)               # CLEAR_M 이상이면 건드리지 않는다
 
 
 def test_rule9_symmetric_width_below_truck_withdraws_clear_but_nothing_else():
@@ -250,3 +251,18 @@ def test_rule9_symmetric_width_below_truck_withdraws_clear_but_nothing_else():
     # clear 만 건드린다 — blocked 는 대칭폭이 좁아도 그대로다(전면 도입이 아니다).
     blocked = classify(wmin=2.0, wmax=2.5, nreg=20, road_bt=2.0, length_m=50.0, cctv_dist=5.0, wsym=0.1)
     assert blocked[0] == "blocked"
+
+
+def test_rule10_any_source_below_clear_withdraws_the_dual_parking_claim():
+    """`clear` = 「양쪽 주차해도 통과」(CLEAR_M 7.0). 소스 하나가 7.0 미만이라 하면 그 주장을 못 한다 — **어느 폭 축이 맞는지와 무관하다**(Zm6).
+
+    문턱이 3.0(TRUCK)이 아닌 이유: 3.0 은 「소방차가 아예 못 지난다」이고 [8] 이 이미 거뒀다. 중간값(4·5·6m)을 쓸 근거가 없다(각 2·7·15개).
+    """
+    from firelane.seg.classify import CLEAR_M, classify
+    assert CLEAR_M == 7.0
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wmin_any=6.99) == ("needs_cv", "source_conflict")          # CCTV 19m 안
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=6.99) == ("unknown", "needs_survey")             # 밖
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=7.0) == ("clear", None)                         # 문턱은 포함하지 않는다
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=None) == ("clear", None)                        # 값이 없으면 건드리지 않는다
+    # clear 만 건드린다 — blocked 는 any 가 7 미만이어도 그대로다.
+    assert classify(wmin=2.0, wmax=2.5, nreg=20, road_bt=2.0, length_m=50.0, cctv_dist=5.0, wmin_any=1.0)[0] == "blocked"

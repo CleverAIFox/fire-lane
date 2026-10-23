@@ -83,7 +83,7 @@ def main():
 
     _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict",
              "midpoint_fallback","inherited","route_usage","length_m",
-             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
+             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
              "unknown_reason"]
     _cols += [c for c in ("z",) if c in _seg.columns]
     _seg[_cols + ["geometry"]].to_file(W/"segments.geojson", **PREC)

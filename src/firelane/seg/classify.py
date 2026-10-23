@@ -75,7 +75,7 @@ REASONS = ("ledger_disputes",
 #: 강제자 `tests/test_classify.py::test_covers_every_declared_rule` 가
 #: `VERDICT_RULE` 의 길이와 이것을 댄다 — 규칙을 한 줄 더 적고 여기
 #: 구현을 안 하면 운다.
-IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 #: 대장폭이 판정에 드는 문턱. `VERDICT_RULE[1]` 의 숫자다.
 #: ★ 이름을 준 이유 — 종전에는 `main()` 안에서 `TRUCK` 을 그대로 썼고,
@@ -196,7 +196,7 @@ def classify(
     # ★ **이 규칙은 판정을 움직인다**(골든 재잠금은 사람이 한다). clear 만 건드린다 — blocked · needs_cv 는 그대로다.
     if v == "clear" and wmin_any is not None and wmin_any < TRUCK:
         if cctv_dist <= CCTV_RANGE:
-            v, reason = "needs_cv", None
+            v, reason = "needs_cv", "source_conflict"
         else:
             v, reason = "unknown", "needs_survey"
 
@@ -207,6 +207,19 @@ def classify(
     if v == "clear" and wsym is not None and wsym < TRUCK:
         if cctv_dist <= CCTV_RANGE:
             v, reason = "needs_cv", None
+        else:
+            v, reason = "unknown", "needs_survey"
+
+    # ── VERDICT_RULE[10] · 소스 하나라도 CLEAR(7.0) 미만이라 말하면 「양쪽 주차해도 통과」를 주장할 수 없다 ────────────────
+    # ★ 2026-10-23 (Zm6 · DECISIONS §548). `clear` 는 **「양쪽 주차해도 통과」(`CLEAR_M` = TRUCK + 2·PARK = 7.0)라는 주장**이다. 소스 하나가 그 선 미만이라 말하면
+    #   그 주장을 할 수 없다 — **어느 폭 축이 맞는지와 무관하다**(축 논쟁 밖의 규칙이다).
+    # ★ 문턱이 왜 `TRUCK`(3.0)이 아니라 `CLEAR_M`(7.0) 인가: 3.0 은 「소방차가 아예 못 지난다」이고 이미 0개다(규칙 [8] 이 10개를 거뒀다 — 지금 clear 중 any < 3.0 은 0).
+    #   7.0 은 `clear` 가 하는 주장의 기준선이고 **그 주장을 못 하게 되는 선**이다. 중간값(4 · 5 · 6m)을 쓸 근거가 없다 — clear 416 중 any < 4: 2 · < 5: 7 · < 6: 15 이고
+    #   어느 값도 소방 기준이나 측정이 고른 수가 아니다(근거 없는 상수를 더 만들지 않는다 · MASTER §16-2). `PARK`/`TRUCK` 에서 나온 `CLEAR_M` 를 그대로 쓴다.
+    # ★ 갈래는 [8] · [9] 와 같다: CCTV 19m 안이면 영상으로 풀 수 있으니 `needs_cv`(사유 `source_conflict`), 밖이면 `unknown`(`needs_survey`).
+    if v == "clear" and wmin_any is not None and wmin_any < CLEAR_M:
+        if cctv_dist <= CCTV_RANGE:
+            v, reason = "needs_cv", "source_conflict"
         else:
             v, reason = "unknown", "needs_survey"
 

@@ -222,6 +222,7 @@ def write_outputs(g):
             #   옛 어휘를 그대로 적고 있었다(R7 위반). UI 가 이 표를 보고
             #   분기하면 없는 키로 분기한다 — web/config.js 의 reason 표는
             #   이미 넷을 갖고 있어 화면은 멀쩡했고, 그래서 아무도 몰랐다.
+            "cv_reason": "null|source_conflict — needs_cv 가 된 **이유**(채택 소스는 통과라 말하나 채택에서 밀린 소스가 7.0m 미만을 쟀다 · CCTV 19m 안이라 영상으로 풀 수 있다). ★ `unknown_reason` 과 **다른 칸**이다 — 저쪽은 `unknown` 전용이다",
             "unknown_reason": ("null|ledger_disputes|no_cctv_narrow|no_cctv_thin"
                                "|no_cctv_band|no_cctv_single|needs_survey|width — 회색(unknown)이 된 이유. needs_survey=채택에서 밀린 소스가 clear 를 반박하나 CCTV 가 없어 현장에서 재야 안다 / "
                                "narrow=노면·대장폭 둘 다 3m 미만이나 담~담은 여유 있음 / "

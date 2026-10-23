@@ -770,7 +770,8 @@ def main():
                              wsym=_wa["width_min_sym_m"])
 
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
-                        verdict=v, unknown_reason=reason,
+                        verdict=v, unknown_reason=reason if v == "unknown" else None,
+                        cv_reason=reason if v == "needs_cv" else None,
                         cctv_dist_m=d_cctv, cv_feasible=bool(cv_ok),
                         midpoint_fallback=fb, inherited=False,  # width_verified 없음: §455-5
                         width_src=wsrc,

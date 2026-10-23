@@ -451,7 +451,7 @@ def test_verdict_matches_rules_for_every_segment():
         # 규칙 [8] · [9] — 소스 무관 최솟값 · 대칭폭 최솟값이 소방차 폭 미만이면 clear 를 거둔다(2026-10-23).
         if exp == "clear":
             _any, _sym = num(x.get("width_min_any_m")), num(x.get("width_min_sym_m"))
-            if (_any is not None and _any < TRUCK) or (_sym is not None and _sym < TRUCK):
+            if (_any is not None and _any < TRUCK + 2 * PARK) or (_sym is not None and _sym < TRUCK):     # [8] [10] · [9]
                 exp = "needs_cv" if x.get("cv_feasible") else "unknown"
 
         if exp != x["verdict"]:

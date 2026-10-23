@@ -41239,3 +41239,120 @@ ngii1k 0.419 · 3소스 합집합 0.633. 보정이 일하는 것이 아니라 **
 - **판정 축을 안 옮겼다**(`clear_min_m` · `clear_src` 칸도 안 만들었다). `width_min_m` 이 그대로 주축이다. 규칙 [9](clear 일곱 하향)도 **그대로 둔다** — 새 축이 나오지 않았다.
 - 이 안을 다시 열 조건: ① 독립 현장 실측(좌표가 겹치지 않는 지점 열 이상 · 소방서 지리조사부 자료) ② `R` 을 데이터로 정하는 방법(가령 구간별 편심 분포에서) ③ 도로면 소스 선택(실폭도로 단독 · 합집합 · 소스별)이 결과를 뒤집는다는 §547-1 의 사실을 먼저 풀 것.
 - 골든은 잠그지 않았다 — Zm4 의 7개(clear 423 → 416)가 아직 사람의 재잠금을 기다린다.
+
+
+## 548. Zm6 — 소스 하나라도 7.0m 미만이라 말하면 `clear` 를 거둔다 (축 논쟁과 무관하다)
+
+> 2026-10-23
+
+성질 — **판정이 움직인다.** 골든은 잠그지 않았다 — 사람이 Zm4 의 7개와 이 판의 54개를 **한 번에 보고** 잠근다(§548-3 의 합친 전후 목록).
+
+유병률  **1회** — 「**한 축의 논쟁에 묶어 둔 규칙이 축과 무관했다**」(소스 하나가 7.0m 미만이라 말하면 `clear` 를 못 한다는 것은 어느 폭 축이 맞는지와 별개다). 이 절이 처음 센 수다.
+
+강제자 없음 — 사유: 이 절은 이 판의 기록이다. 규칙은 `seg/classify.py` 의 `VERDICT_RULE[10]` 이고 시험은 `tests/test_classify.py::test_rule10_…` ·
+        `tests/test_width_any_gate.py` 가 든다.
+        **하위 넷**이 이 칸을 물려받는다
+
+### 548-1. 규칙 [10] — 근거와 문턱
+
+`clear` 는 **「양쪽 주차해도 통과」(`CLEAR_M` = `TRUCK` + 2·`PARK` = 7.0)라는 주장**이다. 채택에서 밀린 소스 하나가 7.0m 미만이라 말하면 그 주장을 할 수 없다 — 어느 축이 맞는지와 별개다.
+`clear` 416 중 `width_min_any_m < 7.0` 은 **54**(발행 `wmin` − any 차이 중앙 **1.26m**). 좁은 값을 낸 소스는 **실폭도로 37(69%) · ngii 14 · ngii1k 3**.
+**독립 증인**: 54 중 **47** 에서 `any ≤ road_bt_m` — 도로대장이 좁은 쪽에 선다(재현됨).
+
+**문턱이 왜 3.0(`TRUCK`)이 아니라 7.0(`CLEAR_M`)인가.** 3.0 은 「소방차가 아예 못 지난다」이고 이미 **0개**다(규칙 [8] 이 10개를 거뒀고 지금 `clear` 중 `any < 3.0` 은 0). 7.0 은 `clear` 가 하는 주장의 기준선이고
+**그 주장을 못 하게 되는 선**이다. **중간값(4 · 5 · 6m)을 쓸 근거가 없다** — 각각 **2 · 7 · 15** 개이고 어느 값도 소방 기준이나 측정이 고른 수가 아니다. 새 상수를 만들지 않았다(`TRUCK`·`PARK` 에서 나온 `CLEAR_M`).
+
+**처방 — `cv_feasible` 로 가른다.** CCTV 19m 이내(`cv_feasible`) **27개 → `needs_cv`**(새 칸 `cv_reason = source_conflict`), 그 밖 **27개 → `unknown` + `unknown_reason = needs_survey`**(CCTV 19~50m 16 · 50m 초과 11).
+`unknown_reason` 은 **`unknown` 전용**이다(스키마) — `needs_cv` 의 이유는 다른 칸 `cv_reason` 에 둔다. 규칙 [8](`any < 3.0`)의 `needs_cv` 도 같은 사유를 단다.
+
+### 548-2. 철회 하나 — 측정값만 남긴다
+
+앞선 주장 하나를 **철회한다**(`clear` 쪽 표본에서 넓은 값이 선택되는 편향이 있다는 것). 같은 폭 밴드 안에서 다시 재니 차이가 없었다(사용자 전달 측정):
+양수 비율이 `clear` 48% · `needs_cv` 50% · `unknown` 67%(7~10m 밴드)였고, 앞서 본 `clear` 55% 대 `blocked` 22% 는 **폭이 넓을수록 양수 비율이 올라가는 스케일 효과**였다(3~5m 46% → 15m+ 66%).
+**철회 사실과 측정값만 적는다.** 이 규칙 [10] 은 그 주장에 기대지 않는다 — 근거는 §548-1 의 `clear` 의 정의와 독립 증인(대장)이다.
+
+### 548-3. Zm4 의 7개와 합친 변경 — 겹침을 먼저 셌다
+
+Zm4 의 7개(대칭폭 하한)는 **이미 `clear` 에서 내려가 있어** 54개에 들지 않는다(54 는 Zm4 적용 뒤 산출물 기준). 겹침은 그 7개 가운데 규칙 [10] 에도 해당하는 구간 **2**(`DM00945 any 4.709` · `DM02214 any 3.941`)이고
+둘은 어느 규칙으로든 한 번만 움직인다. 골든 잠금본(`clear 423`) 대비 **최종 변경은 7 + 54 = 61 구간**이다(`clear 423 → 362`). 전후 목록은 아래 §548-4 에 두 판을 합쳐 적었다.
+
+
+### 548-4. 골든 잠금본 대비 합친 전후 — Zm4 7 + Zm6 54 = **61구간**
+
+골든 잠금본(`clear 423`)과 지금의 산출물을 구간(`seg_uid`)마다 대어 낸 목록이다(사람이 한 번에 보고 잠그도록 두 판을 합쳤다). **폭 칸(`width_min_m` · `width_max_m` · `width_src`) 변경 0 · 기하 동일.**
+
+```
+잠금본  clear 423 · needs_cv 214 · unknown 452 · blocked 192
+지금    clear 362 · needs_cv 245 · unknown 482 · blocked 192
+변경 61 — clear → needs_cv 31 (규칙 [10] 27 + 규칙 [9] 4) · clear → unknown 30 (규칙 [10] 27 + 규칙 [9] 3)
+```
+`cv_reason = source_conflict` 32(규칙 [10] 27 + 규칙 [8] 의 5). `unknown_reason = needs_survey` 35(규칙 [8] 5 + [9] 3 + [10] 27).
+**골든 재잠금은 사람이 한다.** 이 목록이 그 판단의 자료다. 한 구간이 어느 규칙으로 움직였는지는 `any`(소스 무관 최솟값)와 `sym`(대칭폭)으로 읽는다 — `sym < 3.0` 이면 규칙 [9], 아니면 규칙 [10].
+
+규칙 [9] (Zm4 · 대칭폭 하한) — 7구간
+```
+  DM02214 clear->needs_cv - any=3.941(ngii1k) sym=1.636 pub=15.0 cctv=3.3 대장=15.0 경양로347번길
+  DM00945 clear->needs_cv - any=4.709(ngii1k) sym=1.076 pub=14.96 cctv=11.8 대장=19.0 동계로
+  DM00946 clear->needs_cv - any=7.536(ngii1k) sym=2.256 pub=7.54 cctv=18.2 대장=8.0 경양로305번길
+  DM00253 clear->unknown needs_survey any=7.553(silpok) sym=2.936 pub=13.96 cctv=36.0 대장=12.0 지호로
+  DM00837 clear->needs_cv - any=7.967(ngii1k) sym=2.75 pub=7.97 cctv=7.2 대장=6.0 동계천로95번길
+  DM01637 clear->unknown needs_survey any=8.296(ngii1k) sym=2.68 pub=11.26 cctv=68.3 대장=10.0 준법로
+  DM01820 clear->unknown needs_survey any=14.746(silpok) sym=0.152 pub=16.87 cctv=33.4 대장=35.0 2순환로
+```
+규칙 [10] (Zm6 · any < 7.0) — 54구간
+```
+  DM02835 clear->needs_cv source_conflict any=3.478(ngii) sym=7.096 pub=7.31 cctv=5.2 대장=7.0 필문대로218번길
+  DM00840 clear->needs_cv source_conflict any=3.673(ngii) sym=9.424 pub=9.67 cctv=12.0 대장=9.0 동계로9번길
+  DM03266 clear->unknown needs_survey any=4.208(ngii) sym=6.688 pub=7.57 cctv=30.3 대장=7.0 동명로
+  DM00776 clear->needs_cv source_conflict any=4.662(ngii) sym=5.568 pub=7.57 cctv=12.0 대장=15.0 동계천로
+  DM01392 clear->unknown needs_survey any=4.684(silpok) sym=5.774 pub=10.24 cctv=52.6 대장=8.0 지호로104번길
+  DM02837 clear->needs_cv source_conflict any=4.758(silpok) sym=3.53 pub=11.09 cctv=7.2 대장=7.0 필문대로218번길
+  DM00782 clear->unknown needs_survey any=4.827(silpok) sym=6.736 pub=7.2 cctv=61.4 대장=5.0 경양로
+  DM02465 clear->needs_cv source_conflict any=5.342(ngii) sym=7.384 pub=7.88 cctv=2.3 대장=15.0 동계천로
+  DM00972 clear->needs_cv source_conflict any=5.414(ngii) sym=6.554 pub=7.01 cctv=4.7 대장=7.0 제봉로110번길
+  DM00903 clear->needs_cv source_conflict any=5.5(ngii) sym=3.324 pub=7.02 cctv=4.3 대장=7.0 동명로
+  DM01872 clear->needs_cv source_conflict any=5.608(ngii) sym=6.096 pub=7.08 cctv=10.0 대장=7.0 필문대로
+  DM00868 clear->needs_cv source_conflict any=5.612(silpok) sym=7.31 pub=8.07 cctv=3.0 대장=6.0 동계로12번길
+  DM01805 clear->unknown needs_survey any=5.721(silpok) sym=6.49 pub=8.07 cctv=31.2 대장=6.0 밤실로4번길
+  DM00991 clear->unknown needs_survey any=5.735(ngii) sym=7.858 pub=8.29 cctv=64.7 대장=8.0 장동로
+  DM02836 clear->needs_cv source_conflict any=5.892(silpok) sym=6.798 pub=13.84 cctv=7.2 대장=7.0 필문대로218번길
+  DM00876 clear->unknown needs_survey any=6.01(ngii) sym=7.302 pub=7.8 cctv=28.8 대장=6.0 동계로10번길
+  DM00975 clear->unknown needs_survey any=6.011(ngii) sym=7.49 pub=8.27 cctv=86.1 대장=7.0 제봉로110번길
+  DM01812 clear->needs_cv source_conflict any=6.03(silpok) sym=5.632 pub=7.32 cctv=3.1 대장=3.0 밤실로4번길
+  DM00980 clear->unknown needs_survey any=6.047(silpok) sym=6.732 pub=7.28 cctv=33.6 대장=9.241 장동로
+  DM01957 clear->needs_cv source_conflict any=6.1(silpok) sym=5.384 pub=7.31 cctv=0.8 대장=8.0 금남로169번길
+  DM02922 clear->needs_cv source_conflict any=6.1(silpok) sym=6.922 pub=7.67 cctv=17.6 대장=8.0 금남로169번길
+  DM01869 clear->unknown needs_survey any=6.146(silpok) sym=6.668 pub=8.03 cctv=37.7 대장=8.31 동명로70번길
+  DM00953 clear->needs_cv source_conflict any=6.151(silpok) sym=5.842 pub=7.06 cctv=3.4 대장=8.0 경양로305번길
+  DM02830 clear->unknown needs_survey any=6.16(silpok) sym=6.49 pub=7.76 cctv=62.3 대장=7.0 필문대로218번길
+  DM00122 clear->needs_cv source_conflict any=6.221(silpok) sym=4.916 pub=7.67 cctv=7.7 대장=8.0 제봉로222번길
+  DM01388 clear->unknown needs_survey any=6.3(silpok) sym=5.228 pub=7.42 cctv=42.7 대장=10.0 지호로100번길
+  DM00878 clear->needs_cv source_conflict any=6.314(ngii) sym=5.766 pub=8.76 cctv=10.6 대장=6.0 동계로10번길
+  DM01776 clear->unknown needs_survey any=6.364(silpok) sym=6.166 pub=7.11 cctv=57.4 대장=9.0 밤실로20번길
+  DM01621 clear->unknown needs_survey any=6.399(silpok) sym=5.968 pub=7.21 cctv=31.6 대장=8.0 지산로57번길
+  DM01512 clear->needs_cv source_conflict any=6.415(silpok) sym=5.952 pub=7.15 cctv=0.2 대장=8.0 필문대로205번길
+  DM00833 clear->unknown needs_survey any=6.499(silpok) sym=6.442 pub=7.03 cctv=35.2 대장=7.0 동계로1번길
+  DM00871 clear->needs_cv source_conflict any=6.521(silpok) sym=5.418 pub=7.85 cctv=3.0 대장=2.0 동계로12번길
+  DM00873 clear->unknown needs_survey any=6.525(ngii) sym=13.634 pub=13.63 cctv=39.0 대장=11.0 동명로67번길
+  DM00831 clear->needs_cv source_conflict any=6.539(silpok) sym=6.88 pub=7.15 cctv=5.3 대장=7.0 동계로1번길
+  DM02828 clear->unknown needs_survey any=6.61(silpok) sym=4.612 pub=7.15 cctv=62.3 대장=8.0 필문대로206번길
+  DM00870 clear->needs_cv source_conflict any=6.693(silpok) sym=5.352 pub=9.0 cctv=1.9 대장=6.0 동계로12번길
+  DM00518 clear->unknown needs_survey any=6.729(silpok) sym=6.518 pub=7.59 cctv=27.6 대장=8.0 독립로264번길
+  DM00517 clear->unknown needs_survey any=6.774(silpok) sym=7.638 pub=7.98 cctv=27.6 대장=8.0 독립로264번길
+  DM02313 clear->unknown needs_survey any=6.781(silpok) sym=5.032 pub=7.07 cctv=91.7 대장=7.0 동명로98번길
+  DM03248 clear->needs_cv source_conflict any=6.814(silpok) sym=4.348 pub=8.0 cctv=18.4 대장=8.0 장동로
+  DM00112 clear->needs_cv source_conflict any=6.821(silpok) sym=5.56 pub=7.78 cctv=2.8 대장=10.0 구성로204번길
+  DM00858 clear->unknown needs_survey any=6.865(silpok) sym=6.572 pub=7.04 cctv=44.8 대장=9.0 동계로13번길
+  DM02526 clear->needs_cv source_conflict any=6.872(silpok) sym=6.008 pub=7.03 cctv=0.2 대장=8.0 필문대로206번길
+  DM00640 clear->unknown needs_survey any=6.889(silpok) sym=6.384 pub=7.36 cctv=48.3 대장=7.0 구성로194번길
+  DM00976 clear->unknown needs_survey any=6.905(ngii) sym=4.348 pub=8.0 cctv=63.3 대장=8.0 장동로
+  DM01575 clear->needs_cv source_conflict any=6.921(silpok) sym=5.976 pub=7.24 cctv=1.6 대장=8.0 지산로57번길
+  DM00968 clear->unknown needs_survey any=6.925(silpok) sym=8.052 pub=17.95 cctv=42.2 대장=7.0 제봉로110번길
+  DM01473 clear->needs_cv source_conflict any=6.929(silpok) sym=7.286 pub=8.0 cctv=4.5 대장=8.0 필문대로205번길
+  DM00154 clear->unknown needs_survey any=6.931(silpok) sym=7.428 pub=8.02 cctv=58.0 대장=8.0 구성로204번길
+  DM00274 clear->unknown needs_survey any=6.959(silpok) sym=6.522 pub=7.91 cctv=22.9 대장=7.0 밤실로39번길
+  DM01643 clear->needs_cv source_conflict any=6.96(silpok) sym=6.896 pub=7.42 cctv=0.6 대장=8.0 준법로25번길
+  DM00865 clear->needs_cv source_conflict any=6.996(ngii1k) sym=6.7 pub=7.0 cctv=3.1 대장=6.0 동계천로95번길
+  DM02458 clear->unknown needs_survey any=6.996(ngii1k) sym=3.794 pub=7.0 cctv=51.8 대장=6.0 동계천로95번길
+  DM00651 clear->unknown needs_survey any=6.999(ngii1k) sym=5.94 pub=7.0 cctv=26.8 대장=8.0 동계천로6번길
+```

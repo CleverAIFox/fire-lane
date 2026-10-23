@@ -80,8 +80,10 @@ def test_every_verdict_is_reproduced(rows):
 
 
 def test_every_reason_is_reproduced(rows):
-    bad = [(p["seg_id"], p["unknown_reason"], _again(p)[1])
-           for p in rows if _again(p)[1] != p["unknown_reason"]]
+    """회색 사유(`unknown_reason`)와 needs_cv 의 이유(`cv_reason`)를 **각자의 칸**에서 되풀이해 댄다 — 두 칸을 섞지 않는다(Zm6)."""
+    def pub(p):
+        return p["unknown_reason"] if p["verdict"] == "unknown" else p.get("cv_reason")
+    bad = [(p["seg_id"], pub(p), _again(p)[1]) for p in rows if _again(p)[1] != pub(p)]
     assert not bad, f"회색 사유 {len(bad)}/{len(rows)} 건 불일치. 처음 다섯: {bad[:5]}"
 
 
@@ -137,7 +139,7 @@ def test_counts_are_stated_not_assumed(rows):
     #   고쳤다 — 위 설명문이 적은 그대로다. 움직인 것은 셋이고 `blocked` 는
     #   그대로다: 깎은 폭이 0 이 된 표본이 빠지면서 `clear` 가 `needs_cv` 와
     #   `unknown` 으로 내려갔다.
-    assert dict(c) == {"clear": 416, "needs_cv": 218, "blocked": 192, "unknown": 455}
+    assert dict(c) == {"clear": 362, "needs_cv": 245, "blocked": 192, "unknown": 482}
 
 
 # ── 이름과 실물 (DECISIONS §320) ────────────────────────────────
