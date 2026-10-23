@@ -41722,6 +41722,83 @@ Zm4 의 7개(대칭폭 하한)는 **이미 `clear` 에서 내려가 있어** 54�
 
 고치지 않았다. 아케이드를 도로망에서 가르는 기준이 지금 없다.
 
+## 559. 레이크 미소비 31건과 소화전 반입 — **전제가 사실과 달랐다** (Zm15 · 반입 0 · 판정 변경 0)
+
+> 2026-10-23
+
+유병률  **1회** — 「레이크 36개 중 31개가 등재도 반입도 안 됐다」는 집계가 장부·산출물과 맞지 않았다(아래 표).
+
+강제자 없음 — 사유: 이 절은 대조의 기록이다. 표는 `sources.yaml` 의 `stem`/`stems` 와 레이크 `norm/` 전수에서 다시 뽑을 수 있다. 새로 반입한 것이 없어 시험이 달리지 않았다.
+        **하위 다섯**이 이 칸을 물려받는다
+
+### 559-1. ① 36개 전수 — 등재 **36/36** · processed 산출물 **32/36**
+
+레이크 `norm/` 에 파일 **36개**(4개 폴더가 아니라 11개 하위 폴더). 지시문의 「sources.yaml 등재 0 · processed 에 흔적 5개」는 이 판의 세기와 **맞지 않는다.** 장부의 `stem`/`stems` 로 파일명 접두를 대면 **36개 전부가 `datasets` 에 등재**돼 있고, processed 산출물이 있는 것이 **32개**다. 산출물이 없는 4개는 `gjfire_vehicle_card`(`kind: raw_only` · 차량카드 넷 — 설계상 미투입)다. 이 판은 「등재」를 **파일명의 `stem` 이 장부 키 하나에 닿는가**로 읽었다 — 지시문의 집계가 다른 정의(예: 파일명 통째 일치)였다면 수가 달랐을 수 있으나 이 판은 그 정의를 알지 못한다.
+
+`landing 처분` 칸은 `sources.yaml` 의 `landing_disposition`(landing 30건의 처분 `action`)에 같은 파일명이 있을 때만 채워진다 — 대부분의 norm 파일은 landing 처분 항목이 따로 없다.
+
+| # | 레이크 파일 | 장부 키 | kind | landing 처분 | raw | processed 산출물 |
+|---|---|---|---|---|---|---|
+| 1 | `eais_bldgledger_dm_jngj-dongmyeong_20260906.json` | `bldg_ledger_dm` | json_table | — | 있음 | `bldg_ledger_dm.csv` |
+| 2 | `gjbg_traffic_cam_jngj_20251231.csv` | `speed_cam` | csv_table | — | 있음 | `speed_cam.csv` |
+| 3 | `gjcity_admin_cctv_jngj-donggu_20200814.csv` | `admin_cctv` | csv_table | — | 있음 | `admin_cctv.csv` |
+| 4 | `gjcity_bin_cloth_jngj-donggu_20250214.csv` | `bin_cloth` | csv_points | — | 있음 | `bin_cloth.geojson` · `bin_cloth_5186.gpkg` |
+| 5 | `gjcity_bin_trash_jngj-donggu_20241130.csv` | `bin_trash` | csv_points | — | 있음 | `bin_trash.geojson` · `bin_trash_5186.gpkg` |
+| 6 | `gjcity_enforce_cam_jngj-donggu_20260828.csv` | `enforce_cam` | csv_table | — | 있음 | `enforce_cam.csv` |
+| 7 | `gjcity_parking_enforce_jngj-donggu_20240108.csv` | `parking_enforce` | csv_table_multi | — | 있음 | `parking_enforce.csv` |
+| 8 | `gjcity_parking_enforce_jngj-donggu_20250226.csv` | `parking_enforce` | csv_table_multi | — | 있음 | `parking_enforce.csv` |
+| 9 | `gjcity_parking_lot_jngj-donggu_20260828.csv` | `parking_lot` | csv_table | — | 있음 | `parking_lot.csv` |
+| 10 | `gjcity_parking_std_jngj-donggu_20260811.csv` | `parking_std` | csv_table | — | 있음 | `parking_std.csv` |
+| 11 | `gjcity_parking_zone_jngj-donggu_20260828.csv` | `parking_zone` | csv_table | — | 있음 | `parking_zone.csv` |
+| 12 | `gjcity_school_zone_jngj-donggu_20260828.csv` | `school_zone` | csv_table | — | 있음 | `school_zone.csv` |
+| 13 | `gjcity_speedbump_jngj-donggu_20230405.csv` | `speedbump` | csv_table | — | 있음 | `speedbump.csv` |
+| 14 | `gjcity_streetlight_jngj-donggu_20240415.csv` | `streetlight` | csv_points | — | 있음 | `streetlight.geojson` · `streetlight_5186.gpkg` |
+| 15 | `its_nodelink_changelog_kr_20260812.csv` | `node_link_changelog` | csv_table | — | 있음 | `node_link_changelog.csv` |
+| 16 | `juso_navibuild_jngj-dongmyeong_20260831.txt` | `navi_build` | text_table | — | 있음 | `navi_build.csv` |
+| 17 | `juso_navijibun_jngj-dongmyeong_20260831.txt` | `navi_jibun` | text_table | — | 있음 | `navi_jibun.csv` |
+| 18 | `mois_child_zone_std_kr_20260728.json` | `child_zone_std` | json_points | — | 있음 | `child_zone_std.geojson` · `child_zone_std_5186.gpkg` |
+| 19 | `mois_senior_zone_std_kr_20260619.json` | `senior_zone_std` | json_points | — | 있음 | `senior_zone_std.geojson` · `senior_zone_std_5186.gpkg` |
+| 20 | `nfa_dispatch_119_jngj-dongmyeong_20260903.csv` | `nfa_dispatch_119` | csv_table | — | 있음 | `nfa_dispatch_119.csv` |
+| 21 | `nfa_fire_incident_jngj-donggu_20260903.csv` | `nfa_fire_incident` | csv_table | — | 있음 | `nfa_fire_incident.csv` |
+| 22 | `nfa_rescue_jngj-dongmyeong_20260903.csv` | `nfa_rescue` | csv_table | — | 있음 | `nfa_rescue.csv` |
+| 23 | `nfa_target_building_jngj-dongmyeong_20260903.csv` | `nfa_target_building` | csv_table | — | 있음 | `nfa_target_building.csv` |
+| 24 | `safety_cctv_jngj_20260630.csv` | `cctv` | csv_points | — | 있음 | `cctv.geojson` · `cctv_5186.gpkg` |
+| 25 | `safety_district_jngj-donggu_20250731.csv` | `gjfire_district_dongbu` | csv_table | — | 있음 | `gjfire_district_dongbu.csv` |
+| 26 | `safety_fire_access_jngj-donggu_20250731.csv` | `fire_access` | csv_table | — | 있음 | `fire_access.csv` |
+| 27 | `safety_firestation_kr_20240901.csv` | `fire_station` | csv_points | — | 있음 | `fire_station.geojson` · `fire_station_5186.gpkg` |
+| 28 | `safety_fleet_jngj-donggu_20260514.csv` | `gjfire_fleet_dongbu` | csv_table | — | 있음 | `gjfire_fleet_dongbu.csv` |
+| 29 | `safety_hydrant_point_jngj_20240207.csv` | `hydrant_point` | csv_points | ingested | 있음 | `hydrant_point.geojson` · `hydrant_point_5186.gpkg` |
+| 30 | `safety_hydrant_summary_jngj-donggu_20250731.csv` | `hydrant_summary` | csv_table | — | 있음 | `hydrant_summary.csv` |
+| 31 | `safety_hydrant_type_jngj_20251231.csv` | `hydrant_type` | csv_table | — | 있음 | `hydrant_type.csv` |
+| 32 | `safety_station_jrsdc_jngj_20260429.csv` | `station_jurisdiction` | csv_table | — | 있음 | `station_jurisdiction.csv` |
+| 33 | `safety_vehiclecard_jngj-donggu_20260904_daein11.csv` | `gjfire_vehicle_card` | raw_only | — | 없음 | 없음 |
+| 34 | `safety_vehiclecard_jngj-donggu_20260904_daein5.csv` | `gjfire_vehicle_card` | raw_only | — | 없음 | 없음 |
+| 35 | `safety_vehiclecard_jngj-donggu_20260904_daein6.csv` | `gjfire_vehicle_card` | raw_only | — | 없음 | 없음 |
+| 36 | `safety_vehiclecard_jngj-donggu_20260904_jisan2.csv` | `gjfire_vehicle_card` | raw_only | — | 없음 | 없음 |
+
+### 559-2. ② 소화전 — 이미 반입돼 있다 (다시 태우지 않았다)
+
+`safety_hydrant_point_jngj_20240207.csv` 는 **5,002행**(전부 광주광역시: 광산구 1,630 · 북구 1,088 · 서구 820 · 남구 813 · 동구 651)이고 지시문의 아홉 칸을 모두 가졌다(19칸 중). 장부 `hydrant_point`(`csv_points` · `longitude`/`latitude`)에 등재돼 있고 landing 처분은 `ingested`, raw 에 있으며, processed 에 `hydrant_point.geojson` · `hydrant_point_5186.gpkg` 가 있고 파이프라인(`publish`)이 읽는다. 따라서 **반입을 다시 하지 않았다.**
+
+MASTER §3-12 의 수는 **재현됐다**(`hydrant_point.geojson` 기준): 표준데이터 좌표 **528** · 동구 **445**(북 42 · 남 36 · 서 5) · 동명동 **41**. 한 곳이 다르다 — 스코프 안은 지시문의 **153 이 아니라 157** 이다(MASTER 가 2026-09-17 에 입력 범위를 넓히며 153 → 157 로 고쳤다; 이 판의 재측정도 157). 5,002 → 528 은 장부의 입력 범위 필터(`bbox_4326`)가 한다.
+
+`fcltySeCode` 의 코드값 의미는 **PLAN #112 가 미확인으로 연 채다 — 이 판은 지상/지하로 해석하지 않았다.** 레이크 원본의 값 분포(5,002행): `1`:3,708 · `2`:916 · `6`:277 · `4`:71 · `3`:29 · `5`:1 (값에 뒤 공백이 붙어 있다).
+
+### 559-3. ③ 속도방지턱 · 가로등 · 불법주정차 — 이미 등재·반입돼 있다
+
+- `gjcity_speedbump`(342행): 장부 `speedbump`, `speedbump.csv` 342행.
+- `gjcity_streetlight`(3,805행): 장부 `streetlight`, `streetlight.geojson` **1,848**. 3,805 → 1,848 은 장부 입력 범위(`bbox_4326`) 안의 행 수와 같다(재현).
+- `gjcity_parking_enforce` 두 판: 장부 `parking_enforce`(`csv_table_multi`), `parking_enforce.csv` 141,556행(두 판 85,380 + 56,176).
+- **경고는 이미 장부에 있었고 이 판이 동명동 수를 더했다.** 종전 `note`: 「이것은 주차 실태가 아니라 단속 활동의 분포다 — 14시 36%, 심야 0.8%」(전체). 지시문의 동명동 수를 **재현했다** — 위반장소명에 `동명동` 이 들어간 **8,972건** 중 14시 **4,777건(53%)** · 22~06시 **33건**. 같은 장소명 필터로 전체 141,556건은 14시 51,262(36%) · 22~06시 1,185 이다. 이 수를 `sources.yaml` 의 `parking_enforce.note` 에 한 줄 더했다. **점유 실태가 아니라 단속 순찰 시간이다 — 「걸린 것」을 「있는 것」으로 읽으면 안 된다.** (`장부의 「동명동 12,518 + 3,228행」` 은 다른 필터의 수이고 이 판은 그 필터를 모른다 — 도로명 매칭으로 세면 18,397행이다. 서로 다른 정의이므로 하나로 합치지 않았다.)
+
+### 559-4. ⑤ 시도명 `전남광주통합특별시`
+
+`gjcity_speedbump_jngj-donggu_20230405.csv` 의 `시도명` 은 **342행 전부** `전남광주통합특별시` 다. PLAN #5 가 「2026-07 광주·전남 통합으로 본부 명칭이 바뀌었을 수 있다」고 적어 둔 것이 **데이터에서 확인됐다**(이 파일 한 곳에서). PLAN #5 의 그 행에 한 줄을 더했다. 이것이 **소방본부 명칭이 바뀐 증거는 아니다** — 지자체 시도명이 바뀐 증거이고, 공문 발송 전 기관명 확인이 필요하다는 PLAN 의 요구는 그대로다.
+
+### 559-5. 이 판이 한 일과 안 한 일
+
+한 일: 36개 대조표 · 재현(528/445/41/157, 8,972/4,777/33, 342, 1,848) · `parking_enforce.note` 한 줄 · `speedbump` 시도명 한 줄 · PLAN #5 한 줄. 안 한 일: **landing → acquire → raw 를 다시 태우지 않았다**(이미 반입돼 있어 태울 대상이 없다 — 다시 태우면 같은 파일을 덮어쓴다). 레이크에 새로 들인 것이 없다.
+
 ## 558. Zm11 — PLAN 의 이력 사본을 DECISIONS 로 옮긴다 (판정 · 칸 변경 0)
 
 > 2026-10-23
