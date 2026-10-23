@@ -234,7 +234,7 @@ def selftest() -> int:
     A[28:32, 80:120] = True          # 좁은 목(폭 2m · 길이 20m)
     r = 1.5
     got = opening_edt(A, r, res)
-    n = int(round(r / res))
+    n = round(r / res)
     yy, xx = np.mgrid[-n:n + 1, -n:n + 1]
     ref = binary_opening(A, structure=(yy ** 2 + xx ** 2) <= n * n)
     diff = (got ^ ref).sum() / max(ref.sum(), 1)

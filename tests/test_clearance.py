@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 from shapely.geometry import LineString, box
 
-from firelane.clearance import columns, inscribed, sample_positions
+from firelane.clearance import columns, inscribed, robust_union, sample_positions
 
 ROOT = Path(__file__).resolve().parent.parent
 NAMES = ("clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov")
@@ -63,6 +63,15 @@ def test_uncovered_samples_are_nan_and_only_lower_the_coverage():
 def test_sample_positions_match_the_width_engine():
     assert list(sample_positions(10.0)) == [1.0, 3.0, 5.0, 7.0]       # 양끝 1m 안쪽 · 2m 간격
     assert list(sample_positions(1.0)) == [0.25]                      # 짧으면 양끝 `0.25·길이` 안쪽 한 점(엔진 `_ts` 와 같다)
+
+
+def test_robust_union_repairs_an_invalid_polygon_instead_of_returning_a_wrong_union():
+    """무효 도형(나비매듭)을 그대로 합치면 예외가 아니라 **틀린 답**이 나온다 — `make_valid` 뒤에 합쳐 넓이가 맞아야 한다."""
+    from shapely.geometry import Polygon
+    bowtie = Polygon([(0, 0), (2, 2), (2, 0), (0, 2)])            # 자기교차 — 무효
+    assert not bowtie.is_valid
+    u = robust_union([bowtie, box(10, 0, 12, 2), None])
+    assert u.is_valid and u.area == pytest.approx(2.0 + 4.0)      # 나비매듭 두 삼각형(각 1) + 상자 4, None 은 버린다
 
 
 def test_published_segments_carry_the_columns():

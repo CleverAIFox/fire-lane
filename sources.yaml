@@ -4193,7 +4193,7 @@ outputs:
   survey_queue:
     produced_by: tools/survey_queue.py
     path: data/processed/survey_queue.csv
-    inputs: [segments, width_samples]
+    inputs: [segments]      # width_samples.csv 는 segments 의 derives 다(별도 키가 아니다)
     consumers: []
     what: 다음에 뭘 잴지 정하는 대장 — 사람이 네이버로 재러 갈 때 여는 파일이다(사유 · 좌표 · 순서 · 이미 잰 값). PLAN 에 올리지 않는다. 판정에 안 닿는다
     verified: false

@@ -94,7 +94,7 @@ def _prepare():
             a = r.read(window=Window(ci0, ri0, ci1 - ci0, ri1 - ri0), out_shape=(r.count, oh, ow),
                        resampling=Resampling.average).astype(np.float32)
         wx, wy = tr * (ci0, ri0)
-        ci, ri = int(round((wx - x0) / RES)), int(round((y1 - wy) / RES))
+        ci, ri = round((wx - x0) / RES), round((y1 - wy) / RES)
         g, valid = np.zeros((h, w), np.float32), np.zeros((h, w), bool)
         cs, rs, ce, re = max(ci, 0), max(ri, 0), min(ci + ow, w), min(ri + oh, h)
         g[rs:re, cs:ce] = a[:3].mean(0)[rs - ri:re - ri, cs - ci:ce - ci]

@@ -185,8 +185,9 @@ def base(p: dict) -> tuple[str, str | None]:
 
 def _check_repro(rows: list[dict]) -> None:
     """★ 재현이 안 되면 아무 수도 내지 않는다."""
+    # ★ 이유는 **각자의 칸**이다 — unknown 은 `unknown_reason`, needs_cv 는 `cv_reason`(규칙 [8]~[10]).
     bad = [p["seg_id"] for p in rows
-           if (base(p)[0], base(p)[1]) != (p["verdict"], p["unknown_reason"])]
+           if base(p) != (p["verdict"], p["unknown_reason"] if p["verdict"] == "unknown" else p.get("cv_reason"))]
     if bad:
         raise SystemExit(
             f"★ 재현이 깨졌다 — {len(bad)}/{len(rows)} 건이 공개본과 다르다.\n"

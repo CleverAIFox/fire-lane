@@ -164,3 +164,7 @@ data/dms/DMS.json
 # 배달물. `deliver.py pack` 이 작업트리 뿌리에 떨군다 — 저장소에 들어가면
 # 소유자 관문이 운다(`tests/test_ownership.py`). 2026-10-15 에 한 번 들어갔다.
 fire-lane-*.zip
+
+# Zm11 — 도구가 만드는 시안(contact_sheet)과 로컬 에이전트 설정은 추적하지 않는다
+data/processed/contact/
+.claude/

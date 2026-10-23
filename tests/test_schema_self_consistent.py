@@ -48,7 +48,7 @@ import ast
 import re
 from pathlib import Path
 
-from firelane.seg.classify import REASONS, VERDICTS
+from firelane.seg.classify import REASONS, VERDICTS, classify
 from firelane.seg.geom import VERDICT_RULE
 from firelane.seg.params import CCTV_RANGE, PARK, TRUCK
 
@@ -122,7 +122,10 @@ def test_every_reason_named_in_the_rules_exists():
         for m in re.finditer(r"reason=([a-z_|]+)", r):
             named |= set(m.group(1).split("|"))
     assert named, "규칙이 `reason=` 를 하나도 안 든다 — 이 시험이 빈 그물이다"
-    ghost = sorted(named - set(REASONS))
+    # needs_cv 의 이유(`cv_reason`)는 `unknown_reason` 어휘(REASONS)와 **다른 칸**이다. 이 집합은 실제로 classify 가 내는지 아래에서 댄다.
+    got = classify(wmin=7.5, wmax=8.0, nreg=5, road_bt=6.0, length_m=30.0, cctv_dist=10.0, wmin_any=2.0, wsym=None)
+    assert got == ("needs_cv", "source_conflict"), f"cv_reason 어휘가 달라졌다 — {got}"
+    ghost = sorted(named - set(REASONS) - {got[1]})
     assert not ghost, (
         f"규칙이 드는 사유가 산출물에 없는 값이다: {ghost}\n"
         f"  실재하는 어휘: {list(REASONS)}\n"

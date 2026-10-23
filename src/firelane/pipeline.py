@@ -115,7 +115,12 @@ STEPS = [
                  # ★ 2026-10-06 (§426-2). **내는 쪽도 빠져 있었다.** 읽는 쪽에
                  #   적자마자 `test_every_read_is_produced_by_an_earlier_step` 이
                  #   이 줄을 요구했다 — 한쪽만 적으면 다른 검사가 대신 운다.
-                 P / "enforce_cam.csv")),
+                 P / "enforce_cam.csv",
+                 # ★ 2026-10-23 (Zm11). 소방통로확보대상 표 — 읽는 쪽(publish · Zm8)만 적고 내는 쪽을 안 적었다.
+                 #   같은 §426-2 의 결함이다: 대장 `fire_access` 가 ingest 에서 이 파일을 낸다.
+                 P / "fire_access.csv")),
+    # ★ 2026-10-23. `occ_demand.csv` 는 후진 의존이다 — 레이크의 건축물대장에서 사람이 만들고(`tools/occ_pressure.py`)
+    #   이 단계가 읽는다. 없으면 β 칸이 null 이다. 해소 조건과 사유는 test_backward_dependency.BACKWARD 가 든다.
     Step("segments", "segments", "노딩 → 폭 → 판정",
          P / "segments.geojson",
          reads=(P / "ngii1k_5186.gpkg", P / "ngii1k_center_5186.gpkg",

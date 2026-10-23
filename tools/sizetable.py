@@ -312,7 +312,7 @@ EXCEPTIONS: dict[str, int] = {
     #   대부분이 **열쇠에 `mtime_ns·크기`를 왜 넣는가**다 — 경로만으로 캐시하면
     #   낡은 줄이 도장을 거짓으로 살린다.
     "tools/docseal.py": 700,
-    "tools/ledger_schema.py": 632,   # ★ 2026-10-13 (PLAN #171) 629→632 · 센 줄이 이름도 든다
+    "tools/ledger_schema.py": 641,   # ★ 2026-10-13 (PLAN #171) 629→632 · 2026-10-23 632→641 (Zm11) · 못 쪼갠다: 한 도구의 `probe`·`_nested_layers`·`run`·`selftest` 가 서로 부른다. 늘어난 줄은 2026-10-22 PLAN #171 의 juso 도엽 폴더 처리(`probe`)와 못 믿을 값 이름(`sick`)이다
     # ★ 2026-09-28 (DECISIONS §278-2·3). 1030 → 1041. 「기획서 개요 층」과
     #   「문서 말투」 두 단계와 그 사유다. verify.sh 는 검사의 목록이라 검사가
     #   늘면 는다 — 위 문단들과 같은 이유로 쪼개지 않는다.
@@ -420,7 +420,11 @@ EXCEPTIONS: dict[str, int] = {
     #   (「판정 시험 분모」 · `tools/srccov.py`) — 호출 한 줄과 `scope` · 묻는 말이다.
     # ★ 2026-10-13 (DECISIONS §513). 1358 → 1362. 관문 하나(「조사 판정의 자리」)
     "tools/verify.sh": 1377,   # ★ 2026-10-14 (§520 · §521) 1362→1377 · 단계 둘과 COV_MIN 사유
-    "src/firelane/segments.py": 772,   # ★ 2026-10-14 (§523-3 · 530-1) 780→762→772 · `_curvature` → `seg/geom.py` · 생략이 낡은 csv 를 지운다
+    # ★ 2026-10-23 (Zm11). segments.py 772→906 · seg/width.py 신규 652(상한 600). **쪼개지 않는다** — 둘 다 판정 폐포(골든 코드 지문)
+    #   안이라 파일을 나누면 지문이 어긋나 골든 재잠금이 따라온다. 늘어난 줄은 Zm3~Zm10 의 칸·계측(width_min_any · β · w_rule 등)이다.
+    #   해소 조건 = 사람이 골든을 다시 잠그는 판에 `_curvature` 처럼 로직을 폐포 밖 모듈로 옮긴다.
+    "src/firelane/seg/width.py": 652,
+    "src/firelane/segments.py": 906,   # ★ 2026-10-14 (§523-3 · 530-1) 780→762→772 · 2026-10-23 772→906 (위) · `_curvature` → `seg/geom.py` · 생략이 낡은 csv 를 지운다 (§523-3 · 530-1) 780→762→772 · `_curvature` → `seg/geom.py` · 생략이 낡은 csv 를 지운다
     "tools/render_workflow.py": 635,
     # ★ 2026-09-28 (DECISIONS §292-4 묶음). 613 → 617. `cmd_rescope` 독스트링이
     #   「21+잠금」 이라고 **수를 박아** 두고 있었다(실물 17). 수를 빼고 그 사유를

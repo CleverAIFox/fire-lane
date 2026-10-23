@@ -151,7 +151,11 @@ EXCEPTIONS: dict[str, int] = {
     # ★ 2026-10-11 (DECISIONS §470). 742 → **786.** 호출자 우주에서 **선언표**를
     #   뺀다 — `test_handrolled` 가 도구 경로를 값으로 들면 면제된 `kpi` 가
     #   「이미 불린다」로 읽혀 거짓으로 운다. 그 면제가 아직 필요한가를 묻는 문도 왔다.
-    "tests/test_tools_are_wired.py": 784,   # ★ 2026-10-14 (§521) 786→784 · mutate_guard 면제를 지웠다(배선됐다)
+    # ★ 2026-10-23 (Zm11). test_tools_are_wired 784→791 · test_contract 신규 703(상한 700). **쪼개지 않는다** —
+    #   앞의 것은 조사 도구 면제표(EXEMPT)가 곧 이 파일의 본문이라 표를 옮기면 `navi_setup.py` 가 줄을 찾지 못한다.
+    #   늘어난 줄은 Zm3~Zm10 의 조사 도구 면제 사유다. 뒤의 것은 web 전용 칸 선언(Zm7 · Zm8)이 3줄 넘겼다.
+    "tests/test_contract.py": 703,
+    "tests/test_tools_are_wired.py": 791,   # ★ 2026-10-14 (§521) 786→784 · 2026-10-23 784→791 (위) · mutate_guard 면제를 지웠다(배선됐다)
 }
 
 
