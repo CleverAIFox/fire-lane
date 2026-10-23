@@ -3981,6 +3981,8 @@ outputs:
     - tools/occ_pressure.py
     - tests/test_contract.py
     - tests/test_reach_overlay.py          # 2026-09-16 도달 불가 오버레이 조인 키
+    - tools/survey_queue.py
+    - tools/morph_probe.py
     # ★ 2026-09-03. 셋을 더했다. `test_declaration_reality` 가 실물에서
     #   찾아냈다 — 손대장이라 읽는 쪽이 늘어도 아무도 안 적었다.
     - src/firelane/guards.py
@@ -4052,7 +4054,7 @@ outputs:
     produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_xsec_5186.gpkg
     inputs: [ngii1k]
-    consumers: [src/firelane/segments.py]
+    consumers: [src/firelane/segments.py, src/firelane/publish_web.py]
     what: |
       평면교차점 A0080000. 교차부 실제 형상.
       XSEC_EXCL(노드 반경 5m) 눈대중을 대체한다.
@@ -4122,7 +4124,7 @@ outputs:
     # ★ 폭 값은 사람이 화면에서 쟀지만 `seg_uid` 와 좌표는 `segments` 에서 왔다.
     #   구간이 바뀌면 이 표의 배정이 낡는다 — 그래서 상류다.
     inputs: [segments]
-    consumers: [tools/clearance_cross.py, docs/DECISIONS.md]
+    consumers: [tools/clearance_cross.py, docs/DECISIONS.md, tools/clearance_probe.py]
     what: 노면 폭 실측 11행. 2026-10-03 에 사람이 화면에서 쟀다
     verified: false
     known_issues:
@@ -4187,6 +4189,20 @@ outputs:
     inputs: [bldg_ledger_dm, navi_jibun, navi_build]
     consumers: [src/firelane/segments.py]
     what: 점유압력 β 의 수요점(건축물대장 거주단위 × 좌표) 774동 · 1,744단위. 판정에 안 쓴다 — 순위용 칸의 입력이다
+    verified: false
+  survey_queue:
+    produced_by: tools/survey_queue.py
+    path: data/processed/survey_queue.csv
+    inputs: [segments, width_samples]
+    consumers: []
+    what: 다음에 뭘 잴지 정하는 대장 — 사람이 네이버로 재러 갈 때 여는 파일이다(사유 · 좌표 · 순서 · 이미 잰 값). PLAN 에 올리지 않는다. 판정에 안 닿는다
+    verified: false
+  clearance_probe:
+    produced_by: tools/clearance_probe.py
+    path: data/processed/clearance_probe.csv
+    inputs: [segments, ngii1k, ngii_road, road_rw]
+    consumers: []
+    what: 최대내접원(clearance) 방식 폭 산출 프로토타입의 표 — 참고용이다. 사람이 부를 때만 생긴다(기본 모드). 판정에 안 닿는다
     verified: false
   route_vehicle:
     produced_by: src/firelane/segments.py
