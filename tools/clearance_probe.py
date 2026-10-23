@@ -49,6 +49,7 @@ wmin 은 멀쩡한데 wmax 만 273구간에서 죽는 이유가 이것으로 설
     uv run python tools/clearance_probe.py
     uv run python tools/clearance_probe.py --step 1.0 --radius 3.0
     uv run python tools/clearance_probe.py --only DM01611 DM01498
+    uv run python tools/clearance_probe.py --field              실측 대조(data/field) — 법선 w · 대칭폭 · 내접원(R 여럿)의 로그오차를 같은 자리에서 낸다
 ════════════════════════════════════════════════════════════════
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
 """
@@ -198,6 +199,58 @@ def clearance_profile(line, area_u, step, radius, dx, dy):
     return ts, 2.0 * r, 2.0 * gain
 
 
+def field_check(radii=(0.0, 1.0, 2.5, 5.0, 10.0)):
+    """실측 대조 — **같은 자리에서** 법선 w · 대칭폭 · 내접원(R 별)을 현장값과 댄다. 소스별로 따로 낸다(DECISIONS §547).
+
+    ★ 한계를 숫자로 적는다: `spot=mid` 5줄은 **서로 다른 좌표 3곳 · 길 2개**이고 측선 오차가 ±1.0m 다. 8점은 적고 동일 위치 보장이 없다.
+    ★ `R = 0` 은 단순 내접원(`widthlr` 이 기각한 축)이다. `R > 0` 이 국소 중심축 보정이다 — 둘을 섞지 않는다.
+    """
+    import csv
+    import math
+    import statistics
+
+    import shapely
+    from shapely.geometry import Point
+
+    rows = [r for r in csv.DictReader(open("data/field/naver_width_2610.csv", encoding="utf-8-sig"))
+            if r["spot"] in ("mid", "off") and r["lat"]]
+    pts = gpd.GeoSeries([Point(float(r["lon"]), float(r["lat"])) for r in rows], crs=4326).to_crs(CRS_M)
+    seg = gpd.read_file(PROCESSED / "segments_5186.gpkg").set_index("seg_uid").geometry
+    samp: dict = {}
+    with (PROCESSED / "width_samples.csv").open(encoding="utf-8-sig") as f:
+        for r in csv.DictReader(f):
+            if r["w_m"] and r["left_m"]:
+                samp.setdefault(r["seg_uid"], []).append(r)
+    print(f"실측 {len(rows)}줄 · 서로 다른 좌표 {len({(r['lat'], r['lon']) for r in rows})} · 측선 오차 ±1.0m\n")
+    for label, names in (("3소스 합집합", ("ngii1k", "ngii_road", "road_rw")), ("ngii1k", ("ngii1k",)), ("road_rw", ("road_rw",))):
+        road_u, _ = robust_union([u for u in (load_union(n) for n in names) if u is not None], label)
+        err: dict = {k: [] for k in ("w", "sym", *[f"R{r:g}" for r in radii])}
+        big: dict = {k: 0 for k in err}
+        for r, p in zip(rows, pts, strict=True):
+            obs = float(r["w_m"])
+            vals: dict = {}
+            g, ss = seg.get(r["seg_uid"]), samp.get(r["seg_uid"])
+            if g is not None and ss:
+                s0 = g.project(p)
+                near = min(ss, key=lambda x: abs(float(x["s_m"]) - s0))
+                vals["w"], vals["sym"] = float(near["w_m"]), float(near["sym_w_m"])
+            for rad in radii:
+                dx, dy = (np.array([0.0]), np.array([0.0])) if rad == 0 else disk(rad, 0.25)
+                q = shapely.points(p.x + dx, p.y + dy)
+                ins = shapely.contains(road_u, q)
+                if ins.any():
+                    vals[f"R{rad:g}"] = 2 * float(np.max(shapely.distance(road_u.boundary, q[ins])))
+            for k, v in vals.items():
+                err[k].append((r["spot"], math.log(v / obs)))
+                big[k] += (v / obs > 2 or obs / v > 2)
+        print(f"── 도로면 = {label} ──")
+        for spot in ("mid", "off"):
+            line = "  ".join(
+                f"{k} {statistics.median(abs(e) for sp, e in err[k] if sp == spot):.3f}({sum(1 for sp, e in err[k] if sp == spot and abs(e) > math.log(2))})"
+                for k in err if any(sp == spot for sp, _ in err[k]))
+            print(f"  spot={spot:3s}  |로그오차| 중앙(2배 초과 수)  {line}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--step", type=float, default=2.0, help="중심선 표본 간격 m")
@@ -205,7 +258,10 @@ def main():
     ap.add_argument("--cstep", type=float, default=0.25, help="후보 격자 간격 m")
     ap.add_argument("--only", nargs="*", help="이 seg_id 만")
     ap.add_argument("--limit", type=int, default=0, help="앞에서 N구간만 (시험용)")
+    ap.add_argument("--field", action="store_true", help="실측 대조만 낸다(DECISIONS §547)")
     a = ap.parse_args()
+    if a.field:
+        return field_check()
 
     print("── 소스 적재 ──────────────────────────────────────")
     seg = gpd.read_file(PROCESSED / "segments_5186.gpkg").to_crs(CRS_M)
