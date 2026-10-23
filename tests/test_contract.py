@@ -679,7 +679,8 @@ def test_schema_layers_differ_only_by_declaration():
 
       선언은 둘이다 —
         processed → web 에서 뺀 것   web 스키마의 `dropped_from_processed`
-        web 에만 있는 것             `seg_no`(publish 가 만든다) · `z`(지형 덧쓰기)
+        web 에만 있는 것             `seg_no`(publish 가 만든다) · `z`(지형 덧쓰기) · `clear_*` 다섯(2026-10-23 Zm7 — publish 가 `firelane.clearance` 로
+                                     낸 내접원 칸. 판정 폐포 밖이라 processed 에 없다 · 판정에 안 쓴다)
       공유 필드의 서술도 같아야 한다. publish 는 서술을 복사한다.
     """
     P = ROOT / "data" / "processed" / "segments.schema.json"
@@ -692,7 +693,8 @@ def test_schema_layers_differ_only_by_declaration():
         f"processed 전용 필드가 선언과 다르다 — 실제 {sorted(pf - wf)} · "
         f"선언 {sorted(dropped)}")
     web_only = wf - pf
-    assert web_only <= {"seg_no", "z"} and "seg_no" in web_only, (
+    declared = {"seg_no", "z", "clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov"}
+    assert web_only <= declared and "seg_no" in web_only, (
         f"web 전용 필드가 선언 밖이다 — {sorted(web_only)}")
     drift = sorted(k for k in pf & wf
                    if k != "seg_no" and p["fields"][k] != w["fields"][k])

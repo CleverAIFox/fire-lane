@@ -208,6 +208,8 @@ STEPS = [
                 # ★ publish_basemap 의 SOURCES — road_area · sidewalk 의 재료
                 P / "ngii1k_5186.gpkg", P / "road_rw_5186.gpkg",
                 P / "ngii1k_walk_5186.gpkg",
+                # ★ 2026-10-23 (Zm7). 내접원 칸(`clear_*`)의 교차부 제외 — `publish_web` 이 `firelane.clearance` 로 계산한다(판정 폐포 밖).
+                P / "ngii1k_xsec_5186.gpkg",
                 P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson",
                 # ★ 2026-09-22 (§215-1). 내비 그래프의 통행 규칙 — 일방통행 · 회전 금지
                 P / "ngii1k_center_5186.gpkg", P / "node_link_5186.gpkg",

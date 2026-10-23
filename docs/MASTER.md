@@ -1755,6 +1755,7 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `n_subphys` | 폭 1.0m 미만 유효 표본 수(표시만 · 지우지 않는다) |
 | `occ_pressure` · `occ_pressure_rank` | 점유압력 β — 거주단위/100m(길이 기준)와 폭 밴드 안 순위. **판정선을 못 넘는다.** 동명동 밖은 null(0 이 아니다) · 순위용(DECISIONS §545-4) |
 | `cv_reason` | `needs_cv` 가 된 이유(`source_conflict` — 채택에서 밀린 소스가 7.0m 미만을 쟀다 · CCTV 19m 안). `unknown_reason` 과 **다른 칸**이다 — 저쪽은 `unknown` 전용 |
+| `clear_min_m` · `clear_med_m` · `clear_max_m` · `clear_src` · `clear_cov` | **내접원**(단순 · R=0) 지름의 구간 최소 · 중앙 · 최대와 어느 폴리곤(`road_rw`)으로 쟀나, 그 면이 표본점을 덮는 비율. **web 에만 있고 판정에 안 쓴다** — 대표값(min 대 med)을 아직 안 정했다(DECISIONS §549) |
 | `width_fail` | **폭을 못 낸 사유.** `no_xsec_attempted`(법선이 전부 평면교차부에 걸려 한 발도 못 쐈다) 등. `unknown_reason` 과 **다른 축**이다 — 저쪽은 회색의 사유, 이쪽은 폭이 빈 사유다(DECISIONS §436-3) |
 | `route_usage` | 최단경로 사용횟수. **통행 가능성이 아니다**(§3-10) |
 | `width_src` | 채택 소스. `ngii1k` · `ngii` · `silpok` 중 하나. 구간 단위 단일 소스 |
@@ -3215,7 +3216,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,405 전수 · **분모(blank) 0절** · 물림(inherit) 1,366절.
+★ **강제자 칸의 분모.** 절 2,410 전수 · **분모(blank) 0절** · 물림(inherit) 1,370절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4737,6 +4738,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 
 | 파일 | 무엇을 드나 |
 | --- | --- |
+| `src/firelane/clearance.py` | 구간별 **단순 내접원** 칸(`clear_*`)을 출판 때 싣는다 — 판정 폐포 **밖**이고 판정이 읽으면 시험이 운다(`tests/test_clearance.py`). R 상수가 없다(R 보정은 측정에서 악화됐다) |
 | `src/firelane/occ.py` | 점유압력 β — 수요점으로 구간의 거주단위/100m(길이 기준 · 12m 평평한 끝 버퍼)와 폭 밴드 안 순위를 낸다. **판정선을 못 넘는다**(`classify.py` 가 읽으면 시험이 운다) |
 | `src/firelane/cli.py` | **명령줄 표면의 관문.** 인자를 거절하는 일만 한다 — 모르는 깃발을 주면 백열여덟 중 스물다섯이 조용히 삼켰다 |
 | `src/firelane/datalog.py` | 데이터 대장 도구. 파이프라인 끝에서 매니페스트를 갱신한다 |

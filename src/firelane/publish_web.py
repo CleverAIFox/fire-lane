@@ -3,7 +3,7 @@
 publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내보낸다.
 
 
-IN    processed/*.geojson · processed/segments.schema.json ·
+IN    processed/*.geojson · processed/segments.schema.json · processed/ngii1k_xsec_5186.gpkg ·
       processed/route_vehicle.csv · processed/corridor_5186.gpkg ·
       processed/building_5186.gpkg ·
       processed/navi_build.csv · processed/navi_jibun.csv · processed/civil_office.geojson ·
@@ -81,9 +81,18 @@ def main():
     _seg["seg_no"] = (_seg.sort_values(["road_name", "_oy", "_ox"])
                           .groupby("road_name").cumcount() + 1)
 
+    # ── 내접원(clear_*) — 판정에 안 쓴다 (Zm7 · `firelane.clearance` · DECISIONS §549) ──────────────────
+    # ★ 판정 폐포(`segments.py`) **밖**이라 여기서 싣는다 — 골든 코드 지문을 안 건드린다. `seg_no` 처럼 **web 에만 있는 칸**이다(processed 에는 없다).
+    from firelane import clearance as _clr
+    _cl = _clr.columns(list(_seg.to_crs(5186).geometry),
+                       _clr.robust_union(list(gpd.read_file(P/"road_rw_5186.gpkg").geometry)),
+                       _clr.robust_union(list(gpd.read_file(P/"ngii1k_xsec_5186.gpkg").geometry)))
+    for _k in ("clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov"):
+        _seg[_k] = [_r[_k] for _r in _cl]
+
     _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict",
              "midpoint_fallback","inherited","route_usage","length_m",
-             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
+             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","clear_min_m","clear_med_m","clear_max_m","clear_src","clear_cov","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
              "unknown_reason"]
     _cols += [c for c in ("z",) if c in _seg.columns]
     _seg[_cols + ["geometry"]].to_file(W/"segments.geojson", **PREC)
@@ -384,6 +393,13 @@ def main():
     _sch["fields"]["seg_no"] = ("int 도로명 안에서의 구간 순번. ★ 표기 전용이고 "
                                 "publish 가 만든다. 노딩이 바뀌면 밀린다 — "
                                 "외부 참조는 seg_uid, 화면 표기는 seg_label")
+    _sch["fields"].update({
+        "clear_min_m": "float|null 구간의 **최소 내접원 지름**(m) = 2 × 표본점에서 실폭도로 경계까지의 최소 거리. ★ 판정에 안 쓴다. 현장 16점 대조에서 단순 내접원(R=0)이 법선 w 보다 맞았다(DECISIONS §549)",
+        "clear_med_m": "float|null 내접원 지름의 중앙값(m). ★ 대표값으로 min 을 쓸지 med 를 쓸지는 아직 정하지 않았다 — 대표값은 최악 지점을 못 잡는다(동계천로95번길)",
+        "clear_max_m": "float|null 내접원 지름의 최댓값(m). 클립 반경 60m 에서 잘려 최대 120m",
+        "clear_src": "str|null 어느 폴리곤으로 쟀나 — 기본 road_rw. 덮임이 0 이면 null",
+        "clear_cov": "float 실폭도로 면이 표본점을 덮는 비율(0~1). 안 덮는 표본은 min·med·max 에 안 들어간다 — 1 미만이면 폴백이 필요한 구간이다",
+    })
     _sch["scope"] = "web — 표출용 사본. processed 전용 컬럼은 뺐다"
     _sch["dropped_from_processed"] = _dropped
     (W/"segments.schema.json").write_text(
