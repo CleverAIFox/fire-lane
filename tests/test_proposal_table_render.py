@@ -19,7 +19,6 @@ PARAM 없음
 """
 from __future__ import annotations
 
-import glob
 import json
 import os
 import re
@@ -52,7 +51,7 @@ def _chrome() -> str | None:
     env = os.environ.get("CHROME_BIN")
     if env and Path(env).exists():
         return env
-    hit = sorted(glob.glob(str(Path.home() / ".cache/ms-playwright/chromium-*/chrome-linux*/chrome")))
+    hit = sorted(str(x) for x in (Path.home() / ".cache/ms-playwright").glob("chromium-*/chrome-linux*/chrome"))
     return hit[-1] if hit else shutil.which("chromium") or shutil.which("google-chrome")
 
 
