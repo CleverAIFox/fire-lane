@@ -66,7 +66,7 @@ ROOT = Path(__file__).resolve().parents[1]
 #: ★ 같이 올린 둘은 이 수에 **안 든다** — `gjpolice_oneway` 는 변환기가 없는
 #:   `raw_only`(사람이 읽는 근거 문서), `safety_dongmyeong_fires` 는
 #:   **영구 참조**(판정에 안 쓴다 · `feeds_why` 가 「참조용」)로 선언했다.
-PENDING_MAX = 14
+PENDING_MAX = 13
 
 RATCHETS = {"PENDING_MAX": "down"}
 

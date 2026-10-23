@@ -146,7 +146,28 @@ def write_outputs(g):
             "seg_id": "str, 실행 내 표시용 일련번호. ★불변이 아니다. 노딩 규칙이 바뀌면 번호가 전부 밀린다. 외부 참조 금지",
             "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
             "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
-            "width_disagree_m": "float|null 두 폭 소스의 차이. 실측 우선순위",
+            "width_disagree_m": "float|null ★ 소스 간 최솟값 차이가 **아니다.** 표본 전체 중 값이 가장 좁은 **그 한 표본**에서 "
+                                "세 소스(1:1,000 · 1:5,000 · 실폭도로)가 낸 값 중 둘 이상이 있을 때의 max-min 이다. "
+                                "그 표본에서 한 소스만 쟀으면 null. 그래서 구간 최솟값이 소스마다 11m 갈려도 0.0 일 수 있다 — "
+                                "소스 간 최솟값 차이는 width_source_conflict_m 이다",
+            "width_min_any_m": "float|null 소스 무관 최솟값 — 유효 표본 전체의 최솟값(m). ★ 기록이다, 판정에 안 쓴다. "
+                               "표본마다 채택된 한 소스의 값만 있으므로 세 소스 전부의 최솟값은 아니다",
+            "width_min_any_src": "str|null width_min_any_m 을 낸 소스(ngii1k · ngii · silpok)",
+            "width_min_any_s_m": "float|null width_min_any_m 이 나온 위치(구간 시작에서 m)",
+            "width_source_conflict_m": "float|null width_min_m − width_min_any_m. 0.05m 미만은 0 으로 접는다(소수 2자리 저장의 잡음). "
+                                       "양수면 채택 소스가 더 좁은 표본을 못 봤다는 뜻이다",
+            "occ_pressure": "float|null 점유압력 β — 이 골목 연석에 차가 얼마나 서는가의 **상대 지표**. 거주단위 / 100m(소수 2자리), "
+                            "길이 기준(Σunits / length_m × 100 · 12m 평평한 끝 버퍼). ★ **null 은 0 이 아니다** — 동명동 밖(in_emd=false)은 "
+                            "건축물대장이 없어 잴 수 없다. 0 은 동명동 안인데 수요점이 없다는 뜻이다. 판정에 안 쓴다 · 상업 유입은 안 잡힌다",
+            "occ_pressure_rank": "int|null width_min_m 밴드((0,3] (3,4] (4,5] (5,6] (6,7] (7,∞)) 안에서 occ_pressure 내림차순 순위(동률은 seg_uid 사전순). "
+                                 "occ_pressure 가 null 이거나 0 이면 null. ★ 전체 순위가 아니다 — β 는 폭과 상관이 커서 전체 순위는 폭 순위를 되풀이한다. "
+                                 "unknown 구간의 현장 방문 순서용",
+            "width_min_sym_m": "float|null 채택 표본의 대칭폭 2·min(left, right) 중 최솟값(m). ★ 판정에 안 쓴다 — 다음 판의 재료다. "
+                               "한 폴리곤이 노면과 주차장 포장면을 합쳐 그린 곳(§379)은 좌우가 비대칭이라 이 값이 발행 폭보다 훨씬 좁다",
+            "width_min_sample_idx": "int|null 발행 width_min_m 을 낸 표본의 인덱스(그 구간의 width_samples.csv 행 순서, 0 부터)",
+            "n_poly": "int 채택 표본이 걸친 원천 폴리곤 수(ngii1k 행 번호 · ngii ufid · 실폭도로 RW_SN). 하나가 아니면 폴리곤 경계를 넘는 구간이다",
+            "width_selection_reason": "str|null 왜 이 폭이 발행됐는지 사람이 읽는 한 줄(채택 소스 · 자격 · 최솟값 표본 · 소스 무관 최솟값과의 차)",
+            "n_subphys": "int 물리 불가 유효 표본 수(폭 < 1.0m). 표본은 지우지 않고 width_samples.csv 의 drop 에 subphys 로 표시했다",
             "width_fail": ("null|no_xsec_attempted|… 폭을 못 낸 사유. **`unknown_reason` 과 "
                            "다른 축이다** — 저쪽은 회색의 사유이고 이쪽은 폭이 빈 "
                            "사유다. `blocked` 인데 폭이 비는 자리를 설명하는 유일한 "
@@ -188,8 +209,8 @@ def write_outputs(g):
             "cov_silpok": "★ processed 전용(web 미발행) float|null 정규표본 중 실폭도로가 값을 낸 비율",
             "n_sample": "int 정규표본 수(교차로 제외 후). verdict 가 이것을 본다",
             "n_try": "int 시도한 표본 수. n_sample/n_try 가 곧 커버율이다",
-            "width_cov": "float|null 채택 소스가 이 구간 표본을 덮은 비율. "
-                         "1 미만이면 못 잰 구간이 있다. D-25 실측 우선순위",
+            "width_cov": "float|null 시도한 표본 중 채택 소스가 **믿을 만한 값을 낸 비율**(성공률). ★ 구간 길이를 덮은 비율이 "
+                         "아니다 — 길이가 긴데 표본이 적으면 높게 나올 수 있다. 1 미만이면 못 잰 표본이 있다. D-25 실측 우선순위",
             "merge_why": "★ processed 전용(web 미발행) str|null 병합을 유발한 최초 폭 미산출 사유",
             "route_usage": "int 안전센터 2곳 → 건물출입구 최단경로 사용횟수",
             "length_m": "float 이 구간의 수평거리(m). 경사 보정 전이다. 동명동 평균경사 1.8도 기준 실주행거리는 약 0.05% 길고 최대 9도 구간에서 1.2% 길다. 보정에는 5m DEM 이 필요하다",
@@ -202,7 +223,7 @@ def write_outputs(g):
             #   분기하면 없는 키로 분기한다 — web/config.js 의 reason 표는
             #   이미 넷을 갖고 있어 화면은 멀쩡했고, 그래서 아무도 몰랐다.
             "unknown_reason": ("null|ledger_disputes|no_cctv_narrow|no_cctv_thin"
-                               "|no_cctv_band|no_cctv_single|width — 회색(unknown)이 된 이유. "
+                               "|no_cctv_band|no_cctv_single|needs_survey|width — 회색(unknown)이 된 이유. needs_survey=채택에서 밀린 소스가 clear 를 반박하나 CCTV 가 없어 현장에서 재야 안다 / "
                                "narrow=노면·대장폭 둘 다 3m 미만이나 담~담은 여유 있음 / "
                                "thin=노면만 3m 미만(근거 하나) / "
                                "band=3~7m 대역, 주정차로 갈림 / "

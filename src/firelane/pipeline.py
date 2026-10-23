@@ -124,6 +124,8 @@ STEPS = [
                 P / "node_link_5186.gpkg", P / "cctv_5186.gpkg",
                 P / "streetlight_5186.gpkg", P / "road_intrvl.geojson",
                 P / "fire_station.geojson",
+                # ★ 2026-10-23. 점유압력 β 의 수요점 — 사람이 부르는 `tools/occ_pressure.py` 가 낸다(ALLOW 에 사유). 없으면 β 는 전부 null.
+                P / "occ_demand.csv",
                 P / "_manifest.json"),
          # ★ route_vehicle.csv 가 여기 없어서 publish 가 stale 로 안 잡혔고,
          #   커밋된 web/data/route_vehicle.json 이 이틀 낡은 채 전 게이트를

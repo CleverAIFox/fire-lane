@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-10-22T20:51:14+09:00",
+  "generated_at": "2026-10-23T01:20:11+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
-      "sha256": "2038343fb5e6b4af49be544ed44a582f313fa3b5b9790ef9dfe4d1eb0a958d95",
-      "bytes": 1244808
+      "sha256": "d2e85c8f0b65d017087873c4a9ac610ac891bc6da9e91000024ff15da82cf969",
+      "bytes": 1780653
     },
     "segments.schema.json": {
-      "sha256": "6f721b9aba30aa5ed7d4150e8dd3f292c4d29dd6461005fbe8a07b9abdfb8766",
-      "bytes": 5932
+      "sha256": "3643033bb6aea6b1f0af793c25cfbd96fca089b3078cffeb68cf5b2dae3a9997",
+      "bytes": 9151
     },
     "_manifest.json": {
-      "sha256": "23c283129167495f10b6a9ba1ab4f39d5f2469f5b7bc3b1bf3f958d6b006005c",
+      "sha256": "37e7c1aebbaeee175d9b5a5c287d30566b572dc556fd3ebee9b4cc49ea848528",
       "bytes": 104431
     }
   },
@@ -45,8 +45,8 @@
       "bytes": 78926
     },
     "navi_graph.json": {
-      "sha256": "dd296484fe33b4458725e6fe36124d30ef081208ca967a5618526577c951147d",
-      "bytes": 584220
+      "sha256": "c85b5bc35f93a3ab6c7951261065247a69a132b5300fc007143a87a3af7cbbba",
+      "bytes": 584295
     },
     "poi.geojson": {
       "sha256": "28899afae2566960a3909bb1dd6fa80b5c5871109de06c96e77b21375422f159",
@@ -61,12 +61,12 @@
       "bytes": 96720
     },
     "segments.geojson": {
-      "sha256": "01125923acabf4d2c063150d9da3249aa810031523f2827f46b94270ec2c0453",
-      "bytes": 1046096
+      "sha256": "7cd884a108a10e8a96dbbf86fd7f111cfa196cfbc99a00115e2ee27f723991f9",
+      "bytes": 1581941
     },
     "segments.schema.json": {
-      "sha256": "37809da0506eb12d6d1fe75de05ca0698dac84157d1a3285a8c6978e5b34548e",
-      "bytes": 5727
+      "sha256": "405a112c4fc693c0af1b22903255f71442a99571d885a6d5de1c372f83b13e41",
+      "bytes": 8946
     },
     "sidewalk.geojson": {
       "sha256": "c561e0d6ae5bdc689d6d7bd5b9938067229baa4dd4a7910f90ed8483b421f804",
@@ -81,7 +81,7 @@
       "bytes": 350
     },
     "view.json": {
-      "sha256": "057a1ea7ecc23e8b1c13e9fb65de64fd3b1760f15a1ef4abbdd8453c062ded40",
+      "sha256": "29cbda27138ae14ec618c40e48ea44e2400c62ab39b08c4d32b1da4f39a2ec24",
       "bytes": 582
     }
   },
@@ -120,5 +120,5 @@
     }
   },
   "tiles_digest": "ca2ce50bd36477e1",
-  "total_mb": 32.83
+  "total_mb": 33.37
 }

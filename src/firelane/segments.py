@@ -62,9 +62,11 @@ from firelane.seg.classify import classify
 from firelane.seg.geom import _dirv, _join, _seal, curvature
 from firelane.seg.params import (
     CCTV_RANGE,
+    COV_MIN,
     EMD_CD,
     NFA_RUN_M,
     SNAP_TOL,
+    WIDTH_SRCS,
     XSEC_EXCL,
 )
 from firelane.seg.roadname import RoadNameIndex
@@ -112,6 +114,86 @@ def endpoint_snap(lines, tol=SNAP_TOL):
 # ★ 표본 저장소. seg_uid → [{s, w, src, drop}]
 #   판정과 무관하다. `width_samples.csv` 로만 나간다.
 _SAMPLES: dict[str, list] = {}
+
+#: 표본 폭이 이보다 좁으면 물리적으로 소방차뿐 아니라 사람도 못 지난다 — 폴리곤이 거기서 깨졌다는 신호다.
+#: 표본을 지우지 않고 `drop='subphys'` 로 **표시만** 한다(지우면 「깨졌다」는 사실이 사라진다).
+SUBPHYS_M = 1.0
+#: 소스 간 최솟값 차이가 이보다 작으면 0 으로 접는다 — 소수 2자리 저장의 반올림 잡음이다.
+CONFLICT_FOLD_M = 0.05
+
+
+def width_any(rows: list, wmin: float | None, wsrc: str | None = None, wcov: dict | None = None) -> dict:
+    """폭 계측 칸 — **기록이다. 판정에 안 쓴다.** (Zm3 · 측정된 병목이 버려진 사고)
+
+    구간 폭(`width_min_m`)은 **채택된 소스 하나**의 표본만으로 낸다(결정 63·64 · 구간 단위 소스 채택). 소스를 통일하는 것은
+    옳다 — 축척이 다르면 비교가 안 된다. 다만 엔진은 표본마다 **세 소스를 다 재고** 하나만 `w` 로 남겼고 나머지 둘은 버렸다.
+    그래서 행(`rows`)에 세 소스의 믿을 만한 값(`v3`)을 남기게 했고, 소스 무관 최솟값은 **거기서** 뽑는다
+    (`width_samples.csv` 의 채택 한 줄로 뽑으면 채택 안 된 더 좁은 값을 영원히 못 본다).
+
+    ★ `v3` 는 `_by` 와 같은 기준(믿을 만한 값 — snap 이 `SNAP_TRUST` 이하)이다. 그 밖의 값은 안 본다.
+    ★ `n_subphys` — 물리 불가(`SUBPHYS_M` 미만) **채택** 표본 수. 표본은 지우지 않았다.
+    ★ `width_min_sym_m` — 채택 표본의 대칭폭 `2·min(left, right)` 중 최솟값. 판정에 안 쓴다 — 다음 판의 재료다.
+    """
+    ok = [r for r in rows if r["w"] is not None]
+    n_sub = sum(1 for r in ok if r["w"] < SUBPHYS_M)
+    cand = [(v, WIDTH_SRCS[k], r["s"]) for r in rows for k, v in enumerate(r.get("v3") or ()) if v is not None]
+    syms = [2 * min(r["left"], r["right"]) for r in ok if "left" in r]
+    n_poly = len({r["poly"] for r in ok if r.get("poly")})
+    out = dict(width_min_any_m=None, width_min_any_src=None, width_min_any_s_m=None, width_source_conflict_m=None,
+               n_subphys=n_sub, width_min_sym_m=(round(min(syms), 3) if syms else None),
+               width_min_sample_idx=None, n_poly=n_poly, width_selection_reason=None)
+    if cand:
+        m = min(cand)
+        out.update(width_min_any_m=round(m[0], 3), width_min_any_src=m[1], width_min_any_s_m=m[2])
+        if wmin is not None:
+            d = round(wmin - m[0], 2)
+            out["width_source_conflict_m"] = 0.0 if d < CONFLICT_FOLD_M else d
+    k = WIDTH_SRCS.index(wsrc) if wsrc in WIDTH_SRCS else None
+    if k is not None:
+        pool = [(r["v3"][k], i) for i, r in enumerate(rows) if r.get("v3") and r["v3"][k] is not None]
+        if pool:
+            out["width_min_sample_idx"] = min(pool)[1]
+    # ── 왜 이 값이 발행됐는가 — 사람이 읽는 한 줄 ─────────────────────────
+    if wmin is None:
+        out["width_selection_reason"] = "폭 미산출 — 채택할 표본이 없다(width_fail)"
+        return out
+    why = [f"{wsrc or '혼합'} 채택"]
+    have = [n for k2, n in enumerate(WIDTH_SRCS) if any(r.get("v3") and r["v3"][k2] is not None for r in rows)]
+    if wsrc and have and have[0] != wsrc and wcov:
+        why.append(f"상위 소스 {have[0]} 는 커버율 {wcov.get(have[0])}<{COV_MIN} 로 자격 미달")
+    elif wsrc and wcov and wcov.get(wsrc) is not None:
+        why.append(f"우선순위 최상위 · 커버율 {wcov[wsrc]}")
+    i = out["width_min_sample_idx"]
+    if i is not None:
+        why.append(f"최솟값 {wmin} = 표본 #{i} (s={rows[i]['s']}m)")
+    if out["width_source_conflict_m"]:
+        why.append(f"소스 무관 최솟값 {out['width_min_any_m']}({out['width_min_any_src']} s={out['width_min_any_s_m']}m)가 "
+                   f"{out['width_source_conflict_m']}m 더 좁다 — 채택에서 밀렸다")
+    if n_sub:
+        why.append(f"물리 불가 표본 {n_sub}개")
+    out["width_selection_reason"] = " · ".join(why)
+    return out
+
+
+def _run_lengths(rows: list) -> list:
+    """표본마다 **소스 런**(연속한 같은 채택 소스의 유효 표본)의 길이. 결측 표본은 런을 끊고 자신은 None.
+
+    n=1 런이 43.56 · 29.66m 같은 값을 내는 것은 교차로에서 중심선이 남의 폴리곤을 스친 것이다 — 이 칸이 그것을 가린다.
+    """
+    out: list = [None] * len(rows)
+    i = 0
+    while i < len(rows):
+        if rows[i]["w"] is None:
+            i += 1
+            continue
+        j = i
+        while j + 1 < len(rows) and rows[j + 1]["w"] is not None and rows[j + 1]["src"] == rows[i]["src"]:
+            j += 1
+        for q in range(i, j + 1):
+            out[q] = j - i + 1
+        i = j + 1
+    return out
+
 
 
 def _write_route(g, dst=None) -> None:
@@ -298,14 +380,27 @@ def _write_samples(g) -> None:
     n = ok = 0
     with dst.open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["seg_uid", "seg_id", "s_m", "w_m", "src", "drop"])
+        w.writerow(["seg_uid", "seg_id", "s_m", "w_m", "src", "drop",
+                    "left_m", "right_m", "ecc_m", "sym_w_m", "poly_id", "inside_polygon", "run_src_n", "w_rule",
+                    "w_ngii1k_m", "w_ngii_m", "w_silpok_m"])
         for sid, rows in _SAMPLES.items():
             su = uid_of.get(sid)
             if su is None:
                 continue                      # 병합으로 사라진 단위
-            for r in rows:
+            _runs = _run_lengths(rows)
+            for _k, r in enumerate(rows):
+                # ★ 물리 불가 표본은 지우지 않고 표시만 한다(`SUBPHYS_M` · 구간의 `n_subphys`).
+                _drop = r["drop"] or ("subphys" if r["w"] is not None and r["w"] < SUBPHYS_M else "")
+                _l, _rt = r.get("left"), r.get("right")
+                _v3 = r.get("v3") or (None,) * len(WIDTH_SRCS)
                 w.writerow([su, sid, r["s"], "" if r["w"] is None else r["w"],
-                            r["src"] or "", r["drop"] or ""])
+                            r["src"] or "", _drop,
+                            "" if _l is None else _l, "" if _rt is None else _rt,
+                            "" if _l is None else round((_l - _rt) / 2, 3),
+                            "" if _l is None else round(2 * min(_l, _rt), 3),
+                            r.get("poly") or "", "" if "inside" not in r else int(r["inside"]),
+                            "" if _runs[_k] is None else _runs[_k], r.get("rule") or "",
+                            *["" if v is None else round(v, 3) for v in _v3]])
                 n += 1
                 ok += r["w"] is not None
     # ★ 쓴 것만 센다. 처음엔 `_SAMPLES` 전체를 세서 `0행 (19,393 유효 ·
@@ -436,9 +531,26 @@ def main():
     _wg = _wg[_wg.intersects(_clip)]
     _walk_u = unary_union([shapely.make_valid(q) for q in _wg.geometry])
     print(f"  보도면 {len(_wg)}면 차감 — 판정 범위 안 {_walk_u.area:,.0f}m²")
+    # ── Zm3 계측: 표본이 어느 **원천 폴리곤**에서 나왔는가(`poly_id`) ─────────────────────────────
+    #   합쳐진 면(`*_u`)은 조각을 못 말한다. 식별자 — ngii1k: 행 번호(원천에 키가 없다) · ngii: `ufid` · 실폭도로: `RW_SN`.
+    #   **판정에 안 쓴다.** 색인이 비어도(None) 값은 그대로 나온다.
+    from shapely.strtree import STRtree
+
+    def _pidx(gdf, name, col=None):
+        if gdf is None or not len(gdf):
+            return None
+        sub = gdf[gdf.intersects(_clip)]
+        geoms = list(sub.geometry)
+        if not geoms:
+            return None
+        ids = [f"{name}:{sub[col].iloc[i] if col else sub.index[i]}" for i in range(len(sub))]
+        return (STRtree(geoms), geoms, ids)
+
+    _poly_idx = {"ngii1k": _pidx(ngii1k, "ngii1k"), "ngii": _pidx(ngii, "ngii", "ufid"),
+                 "silpok": _pidx(rw, "rw", "RW_SN")}
     _wx = WidthEngine(ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly, walk_u=_walk_u,
                       mix_src=_flag("FIRE_LANE_MIX_SRC"),
-                      old_snap=_flag("FIRE_LANE_OLD_SNAP"))
+                      old_snap=_flag("FIRE_LANE_OLD_SNAP"), poly_idx=_poly_idx)
     widths = _wx.widths
 
     # 노면 폭 소스(ngii1k · ngii · 실폭)는 판정 범위(동명동 · 회랑 · 안전센터 300m)에서 잰다.
@@ -645,9 +757,10 @@ def main():
         #   이제 `tools/verdictsim.py` 가 공개본만으로 전후를 잰다.
         d_cctv = round(g.distance(cctv_u), 1)
         cv_ok = d_cctv <= CCTV_RANGE
+        _wa = width_any(wrows, wmin, wsrc, wcov)       # 소스 무관 최솟값 — 판정 규칙 [8] 이 읽는다
         v, reason = classify(wmin=wmin, wmax=wmax, nreg=wneff,
                              road_bt=_road_bt, length_m=g.length,
-                             cctv_dist=d_cctv)
+                             cctv_dist=d_cctv, wmin_any=_wa["width_min_any_m"])
 
         rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
                         verdict=v, unknown_reason=reason,
@@ -655,6 +768,7 @@ def main():
                         midpoint_fallback=fb, inherited=False,  # width_verified 없음: §455-5
                         width_src=wsrc,
                         width_disagree_m=wdis,
+                        **_wa,
                         width_fail=wfail,   # 발행한다 (DECISIONS §436-3)
                         road_name=_road_nm, road_side=_road_side, road_bt_m=_road_bt,
                         seg_label=(_bnx.label(_road_nm, g) if _bnx else _road_nm),
@@ -760,6 +874,18 @@ def main():
         _r = widths(_gg)
         _wx.debug = False
         print(f"  → wmin={_r[0]} wmax={_r[1]} src={_r[3]} fail={_r[5]} cov={_r[6]}")
+    # ── 점유압력 β (순위용 · 판정에 안 쓴다 — `firelane.occ`) ────────────────────────────
+    # ★ 수요점(`occ_demand.csv` · `tools/occ_pressure.py`)이 없으면 **전부 null** 이다. 0 으로 채우지 않는다.
+    from firelane.occ import load_demand, occ_columns
+    _dem = load_demand(OUT / "occ_demand.csv")
+    if _dem is None:
+        print("  ! occ_demand.csv 없음 — occ_pressure · occ_pressure_rank 를 결측으로 낸다(`tools/occ_pressure.py`)")
+    _occ, _rk = occ_columns(g, _dem)
+    g["occ_pressure"] = _occ.astype("float64")
+    g["occ_pressure_rank"] = _rk.astype("Int64")
+    # 정수 칸은 None 이 섞이면 float 로 떨어진다(6 → 6.0). 스키마가 int 라 nullable 정수로 되돌린다.
+    for _c in ("width_min_sample_idx", "n_poly", "n_subphys"):
+        g[_c] = g[_c].astype("Int64")
     _write_samples(g)
     _write_route(g)
     seg_report.write_outputs(g)

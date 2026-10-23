@@ -60,6 +60,7 @@ const CONFIG = {
     no_cctv_thin  : "노면 3m 미만 · 대장폭은 3m 이상 — 근거 하나뿐",
     no_cctv_band  : "3~7m 대역 · 주정차 여부로 갈림 · CCTV 19m 밖",
     no_cctv_single: "7m 이상이나 표본 부족으로 통과 확정 보류",
+    needs_survey: "다른 폭 자료가 소방차 폭 미만을 쟀다 · CCTV 도 없어 현장 실측이 필요",
     /* 옛 키. 재발행 전 산출물을 열었을 때를 위해 남긴다. */
     no_cctv: "CCTV 유효범위 19m 밖 · 영상판정 불가",
     width  : "실폭도로·건물 폴리곤 부재 · 폭 산출 불가",

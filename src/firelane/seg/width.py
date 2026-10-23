@@ -114,7 +114,7 @@ class WidthEngine:
     """
 
     def __init__(self, ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
-                 *, walk_u=None, mix_src: bool = False, old_snap: bool = False):
+                 *, walk_u=None, mix_src: bool = False, old_snap: bool = False, poly_idx=None):
         self.ngii1k_u = ngii1k_u
         self.ngii_u = ngii_u
         self.rw_u = rw_u
@@ -132,6 +132,21 @@ class WidthEngine:
         self.mix_src = mix_src      # 구간 폭을 표본 혼합 집합의 최솟값으로(종전)
         self.old_snap = old_snap    # snap 을 소스별이 아닌 종전 방식으로
         self.debug = False          # 표본 단위 덤프. `segments.main()` 이 켰다 끈다
+        # ★ Zm3 (계측기). 소스별 (STRtree, 폴리곤 목록, 식별자 목록). 없으면 poly_id 는 None 이다. **판정에 안 쓴다.**
+        self.poly_idx = poly_idx or {}
+        self._lr = None             # 직전 `_span` 이 쓴 (left, right, 규칙) — 기록 전용
+
+    def _poly_at(self, nm, pt):
+        """이 소스에서 `pt` 를 덮는 **원천 폴리곤의 식별자**. 합쳐진 면(`*_u`)은 어느 조각인지 못 말하므로 따로 든다.
+
+        여럿이 덮으면(겹침) 목록 순서가 앞선 것이다 — 결정적이다. 못 찾으면 None. **판정에 안 쓴다**(Zm3 계측).
+        """
+        ix = self.poly_idx.get(nm)
+        if ix is None or pt is None:
+            return None
+        tree, geoms, ids = ix
+        hit = sorted(int(i) for i in tree.query(pt) if geoms[int(i)].covers(pt))
+        return ids[hit[0]] if hit else None
 
     def measure(self, s, t):
         p0 = s.interpolate(t)
@@ -185,6 +200,7 @@ class WidthEngine:
             """
             r = LineString([(p.x-ux*RAY_M, p.y-uy*RAY_M),
                             (p.x+ux*RAY_M, p.y+uy*RAY_M)])
+            self._lr = None                 # ★ Zm3. 이 호출이 값을 내지 못하면 기록도 없다
             sg = r.intersection(poly_u)
             if sg.is_empty:
                 return None, "empty"          # 법선이 이 소스와 아예 안 만난다
@@ -264,6 +280,7 @@ class WidthEngine:
                 v = 2 * min(left, right)
                 if v <= 0:
                     return None, "escape_zero"   # 수가 아니라 결측이다
+                self._lr = (left, right, "escape")      # w = 2·min — left+right 가 아니다
                 return v, None
             # ★ 2026-10-14 (DECISIONS §523). **보도 차감.** 세 줄 위의 입장
             #   검사와 바로 위의 escape 검사는 **깎지 않은** 좌우를 본다 —
@@ -285,7 +302,9 @@ class WidthEngine:
                 # ★ 깎은 합이 0.3 아래로 떨어져도 **버리지 않는다** — 버리면
                 #   입장이 바뀌고 구간 수가 움직인다(§519 가 `2·min` 에 쓴 그
                 #   사유와 같다). 그 표본 수는 측정 대장 `walk-tiny` 가 든다.
+                self._lr = (left, right, "carve")        # 보도면을 깎은 뒤의 좌우
                 return left + right, None
+            self._lr = (left, right, "sum")
             return s, None
 
         # ── 측정 지점 결정 ──────────────────────────────────
@@ -328,7 +347,7 @@ class WidthEngine:
             # 측정값 자신으로 검증하므로 임계값을 새로 만들지 않는다.
             if (not self.old_snap) and v is not None and sn is not None and sn > v / 2.0:
                 v, c = None, f"snap{sn:.1f}>w/2"
-            res[nm] = (v, c, pt, sn)
+            res[nm] = (v, c, pt, sn, self._lr if v is not None else None)   # 다섯째 = Zm3 기록(left, right, 규칙)
 
         # 세 소스를 다 재고 신뢰도 순으로 채택한다. 좁은 쪽을 고르지 않는다.
         # 실폭도로는 실측 11.8m 인 동계천로에 1.30m 짜리 측구 조각을 그려 놓았고
@@ -428,6 +447,22 @@ class WidthEngine:
             #   클로저로 못 잡는다. `A` 를 직접 센다 — 같은 값이다.
             return ({k: (round(v/_n_try, 3) if _n_try else None)
                      for k, v in _cov.items()}, _n_try, _rows, len(A))
+        def _instr(sc, _res, trusted):
+            """표본 한 줄에 **재고도 버리던 것**을 남긴다(Zm3 계측 · 판정에 안 쓴다).
+
+            `v3`  세 소스 각각의 **믿을 만한 값**(WIDTH_SRCS 순서 · 못 쟀거나 snap 이 크면 None). 종전에는 채택된 하나만 남았고
+                  나머지 둘은 `_by` 에 들어갔다 사라졌다 — 소스 무관 최솟값은 여기서만 나온다.
+            채택 소스의 좌우(`left` · `right` · 규칙 `sum|carve|escape`) · 표본점이 그 폴리곤 안인가(`inside`) · 폴리곤 식별자(`poly`).
+            """
+            v3 = tuple((_res[n][0] if (n in _res and _res[n][0] is not None and trusted(n)) else None)
+                       for n in WIDTH_SRCS)
+            out = {"v3": v3}
+            if sc is not None and sc in _res and len(_res[sc]) > 4 and _res[sc][4] is not None:
+                _l, _r, _rule = _res[sc][4]
+                out.update(left=round(float(_l), 3), right=round(float(_r), 3), rule=_rule,
+                           inside=(_res[sc][3] == 0.0), poly=self._poly_at(sc, _res[sc][2]))
+            return out
+
         for t in _ts:
             _nc += 1
             _pt = s.interpolate(t)
@@ -498,12 +533,12 @@ class WidthEngine:
             if a and (sc is None or _trusted(sc)):
                 A.append(a); S.append(sc); D.append(pr)
                 _rows.append({"s": round(t, 2), "w": round(float(a), 3),
-                              "src": sc, "drop": None})
+                              "src": sc, "drop": None, **_instr(sc, _res, _trusted)})
             else:
                 # 잰 시도는 했는데 값이 안 나온 자리. `w(s)` 의 결측이다 —
                 # 커버율은 이 개수만 세지만 **어디가** 비었는지는 못 준다.
                 _rows.append({"s": round(t, 2), "w": None, "src": None,
-                              "drop": _why or "no_value"})
+                              "drop": _why or "no_value", **_instr(None, _res, _trusted)})
             # ★ pr 은 measure() 가 항상 3-튜플로 준다. strict=True 로
             #   그 계약을 고정한다 — 소스가 늘거나 줄면 여기서 죽어야
             #   조용히 한 소스가 빠지는 일이 없다.
@@ -538,6 +573,7 @@ class WidthEngine:
         # 그것을 채택하면 결정 63(수치지도 주 소스)을 정면으로 뒤집는다.
         # 부분커버 구간은 그 소스가 못 잰 구간을 모르는 채로 판정하는 것이므로
         # width_cov 로 노출해 D-25 실측 우선순위에 쓴다.
+        # ★ width_cov 는 구간 길이의 커버율이 아니라 **시도한 표본 중 채택 소스가 믿을 만한 값을 낸 비율**(성공률)이다.
         _pick = None
         if not self.mix_src:
             # 커버율은 소스를 '고르는' 기준이 아니라 '자격'이다.
@@ -594,7 +630,10 @@ class WidthEngine:
         else:
             _i = A.index(min(A)) if A else None
             wsrc = S[_i] if _i is not None else None
-        # 두 공공 소스가 같은 지점을 얼마나 다르게 기술하는가.
+        # ★ 이 값은 「소스 간 최솟값 차이」가 **아니다.** 표본 전체(A)에서 값이 가장 좁은 **그 한 표본**(`_i`)에서
+        #   세 소스(1k · 5k · 실폭도로)가 낸 값 중 **둘 이상**이 있을 때의 max-min 이다. 그 표본에서 한 소스만 쟀으면 None.
+        #   구간 최솟값이 소스마다 11m 갈려도 0.0 일 수 있고(최솟값 표본이 한 소스만 잰 자리), 반대로 0 인데 1m 넘게 갈리는
+        #   구간도 있다. 소스 간 최솟값 차이는 `segments.width_any` 의 `width_source_conflict_m` 이다.
         # 이 값이 큰 순서가 곧 D-25 실측 우선순위다(§7-2 관측점 선정).
         wdis = None
         if _i is not None:

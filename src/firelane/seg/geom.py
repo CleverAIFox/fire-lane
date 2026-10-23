@@ -67,6 +67,8 @@ VERDICT_RULE = (
     #   정했다 — 그물을 넓히는 쪽이 아니라 선언을 꼴에 맞추는 쪽이다.
     "needs_cv 인데 wmin >= 7.0 + ROAD_BT < 3.0 -> unknown "
     "(reason=ledger_disputes). 대장이 반박한다",
+    # ★ 2026-10-23. 여덟째 — 채택에서 밀린 소스가 clear 를 반박하면 clear 를 거둔다. 영상으로 풀 수 없으면 현장에서 재야 안다.
+    "clear 인데 소스 무관 최솟값 < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 반박을 못 본 척하지 않는다",
 )
 """판정 규칙의 문언 정본.
 

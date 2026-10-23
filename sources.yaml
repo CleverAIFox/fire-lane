@@ -2939,7 +2939,8 @@ datasets:
   bldg_ledger_dm:
     feeds:
       - src/firelane/normalize_raw.py
-    feeds_note: '미투입 — β 점유위험도(#60) · 원룸 판별 · 건물높이 대조축'
+      - tools/occ_pressure.py
+    feeds_note: '미투입 — 파이프라인 밖: 사람이 부르는 tools/occ_pressure.py 가 β 수요점을 만든다(→ occ_demand.csv). 원룸 판별 · 건물높이 대조축은 아직 없다'
     stem:       eais_bldgledger_dm
     ext:        [json]
     scope:      jngj-dongmyeong
@@ -2958,6 +2959,14 @@ datasets:
           단속 이력은 "적발된 것" 만 보는데 이것은 **압력 자체**를 준다.
         ③ 건물높이 523동 — buildings.h(층수 추정)의 실측 대조축.
     note: |
+      ★ **칸 읽는 법 (2026-10-23).** norm JSON 의 **최상위가 dict** 다 — `{Description: 77칸의 한글 뜻, Data: 1,989행}`.
+        **칸 이름은 영문 코드다**(`HH_CNT` 세대수 · `FML_CNT` 가구수 · `HO_CNT` 호수 · `MNO`/`SNO` 지번 본번/부번 ·
+        `INDR_MCNCL_AREA` · `OTDR_MCNCL_AREA` · `INDR_SFPRPL_AREA` · `OTDR_SFPRPL_AREA` 부설주차 면적 넷). 뜻은 `Description` 에 있다.
+      ★ **β 수요점 (tools/occ_pressure.py).** `units = max(HH_CNT, FML_CNT, HO_CNT)` — `HH_CNT` 는 41건뿐이라 단독으로 못 쓴다
+        (FML 901 · HO 19). units == 0 인 동 1,038 을 버리고, 부설주차 면적 넷의 합이 0 인 동만 남긴다 →
+        **818동 · 1,794단위**(좌표 붙이기 전). 좌표에 닿는 것만 β 에 들어간다 → **774동 · 1,744단위**.
+        **좌표 없는 44동은 β 에 안 들어간다.** 대장 전체 1,989동 중 1,911(96%)이 좌표에 닿는다.
+      ★ **근사 — 한 지번에 건물관리번호가 여럿이면 첫 매칭 하나만 썼다**(여럿인 지번 대장 전체 43 · 필터 후 13). 정확한 줄 알면 안 된다.
       ★ 2026-09-24 — 이 항목에 `note:` 가 **두 번** 있었다. YAML 은 뒤엣것만
         남기므로 앞 문단(폐기 → 후속 계보)이 **기계 눈에서 사라져 있었다.**
         사람이 열면 보이고 도구가 읽으면 없는 상태였다. 합친다.
@@ -3221,6 +3230,8 @@ datasets:
       미투입 — 활성 parking_lot(138행 · 11열 · 좌표 없음)의 상위집합이다. 좌표가 있어 교통량 축 ·
       주차 점유 가중에 붙일 수 있다. 2026-09-17 복귀했다(DECISIONS §178-1). 옛 파일명 gjcity_parking_dongu_20260811.
     note: |
+      ★ **실측 (2026-10-23).** 297행 · 좌표 있는 곳 199 · 주차구획수 합 4,870면 — **공급 축** 후보다. ★ **아직 읽는 코드가 없다**
+        (`feeds` 가 비어 있다). 이 항목은 소비 사실이 아니라 측정만 적는다 — 소비자 파일이 생기면 그때 `feeds` 로 올린다.
       ★ updated 는 파일명 날짜(제공일)다. 내용의 데이터기준일자는 2026-04 다.
       ★ 경로 괄호는 표준데이터 형식으로 판단했다. 좌표 없는 행이 98 있다.
     schema:                       # AUTO — ledger_schema.py 가 쓴다
@@ -3230,6 +3241,7 @@ datasets:
     feeds:
       - src/firelane/pipeline.py
       - src/firelane/publish_web.py
+      - tools/occ_pressure.py
     stem: juso_navibuild
     ext: [txt]
     kind: text_table
@@ -3247,6 +3259,8 @@ datasets:
       내비게이션용DB 건물 — 법정동코드 1221010800(동명동) 2078행 · `|` 구분 33열.
       도로명 · 건물번호 · 건물관리번호 · 건물명 · 용도 · 건물중심점 X/Y · 출입구 X/Y (EPSG:5179)
     note: |
+      ★ **헤더 없는 juso 원본이다 — 칸 이름이 `c00`..`c32` 다**(2026-10-23). 뜻은 위치로 읽는다: `c10` 건물관리번호(25자리) ·
+        `c23`/`c24` UTM-K 좌표(**EPSG:5179** · x/y). 대장 1,989동 중 1,911(96%)이 이 좌표에 닿는다. 한 지번에 건물관리번호가 여럿이면 첫 매칭 하나만 쓴다(근사).
       ★ 202608 전체분 7z(4.06GB 해동)에서 match_build_jeonnamgwangju.txt 만 스트림으로 읽어 첫 열(법정동코드)
         == 1221010800 행만 남겼다. 동 이름으로 자르지 않는다 — 목포 동명동이 섞인다(juso_building_db note).
       ★ 동명동으로 자른 이유 — 출동지는 동명동 스코프다. 회랑(안전센터 → 출동지) 때문에 판정 스코프를
@@ -3261,6 +3275,7 @@ datasets:
     feeds:
       - src/firelane/pipeline.py
       - src/firelane/publish_web.py
+      - tools/occ_pressure.py
     stem: juso_navijibun
     ext: [txt]
     kind: text_table
@@ -3276,6 +3291,8 @@ datasets:
     what: |
       내비게이션용DB 지번 매칭 — 동명동 1460행 · `|` 구분 20열. 지번 → 건물관리번호 · 도로명코드
     note: |
+      ★ **헤더 없는 juso 원본이다 — 칸 이름이 `c00`..`c19` 다**(2026-10-23). 뜻은 위치로 읽는다: `c06` 지번 본번 · `c07` 지번 부번 ·
+        `c18` 건물관리번호(25자리). 건축물대장 (MNO, SNO) → (c06, c07) → c18 로 건물에 붙는다. **세 값 모두 `int(float(x))` 로 정규화한다** — 문자열 비교는 '0' 대 '00' 에서 깨진다.
       ★ match_jibun_jeonnamgwangju.txt 에서 navi_build 와 같은 규칙(첫 열 == 1221010800)으로 잘랐다.
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['c00', 'c01', 'c02', 'c03', 'c04', 'c05', 'c06', 'c07', 'c08', 'c09', 'c10', 'c11', 'c12', 'c13', 'c14', 'c15', 'c16', 'c17', 'c18', 'c19']
@@ -3955,6 +3972,7 @@ outputs:
     stable_key: seg_uid
     consumers:
     - src/firelane/publish_web.py
+    - tools/occ_pressure.py
     - tests/test_contract.py
     - tests/test_reach_overlay.py          # 2026-09-16 도달 불가 오버레이 조인 키
     # ★ 2026-09-03. 셋을 더했다. `test_declaration_reality` 가 실물에서
@@ -3972,6 +3990,20 @@ outputs:
     - tools/evalgen.py
     - tests/test_evalgen.py
     what: 구간 단위 통행 판정. verdict 4종 + 폭 + CCTV 가시성
+    note: |
+      ★ 폭 칸 읽는 법 (2026-10-23).
+        `width_min_m` 은 **채택된 소스 하나**의 표본 최솟값이다(구간 단위 소스 채택 · 결정 63·64).
+        `width_min_any_m` · `_src` · `_s_m` 은 **소스 무관** 유효 표본 최솟값과 그 소스·위치다 — 기록이고 판정에 안 쓴다.
+        `width_source_conflict_m` = width_min_m − width_min_any_m (0.05m 미만은 0 으로 접는다). 양수면 채택에서 밀린 표본이 더 좁았다.
+        한계 — 표본마다 채택된 한 소스의 값만 남으므로 세 소스 전부의 최솟값은 아니다.
+        `n_subphys` 는 폭 1.0m 미만 유효 표본 수. 표본은 지우지 않고 `width_samples.csv` 의 `drop` 에 `subphys` 로 표시한다.
+        `width_disagree_m` 은 **소스 간 최솟값 차이가 아니다** — 가장 좁은 그 한 표본에서 세 소스 값 둘 이상이 있을 때의 max-min 이다.
+        `width_cov` 는 구간 길이의 커버율이 아니라 **시도한 표본 중 채택 소스가 믿을 만한 값을 낸 비율**(성공률)이다.
+      ★ `width_samples.csv` 에서 `src` 가 빈 표본(28,525행 중 5,692)은 **둘이다**: `drop = xsec`(교차부 제외 · 4,716 · 시도하지 않았다 · `n_try` 에 안 센다)와
+        시도했으나 실패한 976(`far` = 중심선이 도로면에서 6m 넘게 · `range` = 법선이 도로를 못 가로지름 · `no_value`). `width_cov` 의 분모는 `n_try`(시도한 표본)다.
+        `drop = subphys` 는 폭 1.0m 미만 **유효** 표본의 표시다(값은 그대로 · 지우지 않는다).
+      ★ 계측 칸(2026-10-23 · DECISIONS §545-1): `left_m` · `right_m` · `ecc_m` · `sym_w_m` · `poly_id` · `inside_polygon` · `run_src_n` · `w_rule` · `w_<소스>_m`.
+        `w_m = left_m + right_m`(`w_rule` 이 `carve`·`sum`) 또는 `2·min(left_m, right_m)`(`escape`).
     verified: false
     known_issues:
     - 폭 실측 검증 0건. 소방서 7구간 대조는 학습셋이라 검증이 아니다
@@ -4140,6 +4172,13 @@ outputs:
     inputs: [segments, ngii1k, ngii_road, road_rw]
     consumers: []
     what: 접촉인화 — 구간 한 장에 폴리곤과 단면을 그린 조사 그림. 사람이 눈으로 본다(구간마다 한 장이 생긴다)
+    verified: false
+  occ_demand:
+    produced_by: tools/occ_pressure.py
+    path: data/processed/occ_demand.csv
+    inputs: [bldg_ledger_dm, navi_jibun, navi_build]
+    consumers: [src/firelane/segments.py]
+    what: 점유압력 β 의 수요점(건축물대장 거주단위 × 좌표) 774동 · 1,744단위. 판정에 안 쓴다 — 순위용 칸의 입력이다
     verified: false
   route_vehicle:
     produced_by: src/firelane/segments.py

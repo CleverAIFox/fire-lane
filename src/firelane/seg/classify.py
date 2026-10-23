@@ -65,15 +65,17 @@ INTERIM = ("fragment",)
 #:   충분한데 **대장이 반박해** 확정을 못 주는 자리를 부를 낱말이 없었고, 그래서
 #:   화면이 그 구간을 「표본이 하나라서」(`no_cctv_single`)라고 **거짓으로** 설명했다.
 #:   빈칸은 「모른다」를 말하지만 틀린 낱말은 **아는 척한다**(§369).
+# ★ 2026-10-23. **일곱째 `needs_survey`** — 채택에서 밀린 소스가 clear 를 반박하는데(`width_min_any_m < TRUCK`) 영상으로 풀 수도 없는 자리.
+#   CCTV 가 없으면 「영상 보면 풀린다」(needs_cv)가 **거짓 약속**이다. 그래서 회색이되 사유는 「현장에서 재야 안다」이다.
 REASONS = ("ledger_disputes",
            "no_cctv_narrow", "no_cctv_thin", "no_cctv_band",
-           "no_cctv_single", "width")
+           "no_cctv_single", "needs_survey", "width")
 
 #: `VERDICT_RULE` 중 **이 함수가** 실행하는 줄의 번호. 전부다.
 #: 강제자 `tests/test_classify.py::test_covers_every_declared_rule` 가
 #: `VERDICT_RULE` 의 길이와 이것을 댄다 — 규칙을 한 줄 더 적고 여기
 #: 구현을 안 하면 운다.
-IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7)
+IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7, 8)
 
 #: 대장폭이 판정에 드는 문턱. `VERDICT_RULE[1]` 의 숫자다.
 #: ★ 이름을 준 이유 — 종전에는 `main()` 안에서 `TRUCK` 을 그대로 썼고,
@@ -94,6 +96,7 @@ def classify(
     road_bt: float | None,
     length_m: float,
     cctv_dist: float,
+    wmin_any: float | None = None,
 ) -> tuple[str, str | None]:
     """구간 하나의 (판정, 회색 사유).
 
@@ -183,5 +186,17 @@ def classify(
         # 대장폭에 의한 확정은 위로 올렸다. 여기 남은 unknown 은 대장폭도
         # 없거나 3.0m 이상인 구간이다.
         reason = "width"
+
+    # ── VERDICT_RULE[8] · 채택에서 밀린 소스가 clear 를 반박하면 clear 를 거둔다 ─────────────────
+    # ★ 2026-10-23. `wmin_any` 는 **소스 무관** 최솟값(`width_min_any_m`)이다. 구간 폭(`wmin`)은 채택된 한 소스의 표본만으로
+    #   내므로 다른 소스가 소방차 폭 미만을 쟀어도 clear 가 나갈 수 있었다. 과소판정은 출동을 늦추지만 **과대판정은 소방차를
+    #   못 들어가는 길로 보낸다.** needs_cv 로 보내지 않는다 — CCTV 가 없으면 「영상 보면 풀린다」가 거짓 약속이다.
+    #   CCTV 유효범위 안이면 영상으로 풀 수 있으니 needs_cv, 밖이면 unknown(needs_survey).
+    # ★ **이 규칙은 판정을 움직인다**(골든 재잠금은 사람이 한다). clear 만 건드린다 — blocked · needs_cv 는 그대로다.
+    if v == "clear" and wmin_any is not None and wmin_any < TRUCK:
+        if cctv_dist <= CCTV_RANGE:
+            v, reason = "needs_cv", None
+        else:
+            v, reason = "unknown", "needs_survey"
 
     return v, reason

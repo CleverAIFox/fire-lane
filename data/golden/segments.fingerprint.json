@@ -3,12 +3,13 @@
   "n": 1281,
   "verdict": {
    "blocked": 192,
-   "clear": 433,
-   "needs_cv": 209,
-   "unknown": 447
+   "clear": 423,
+   "needs_cv": 214,
+   "unknown": 452
   },
   "unknown_reason": {
    "ledger_disputes": 1,
+   "needs_survey": 5,
    "no_cctv_band": 206,
    "no_cctv_narrow": 70,
    "no_cctv_single": 11,
@@ -4073,7 +4074,7 @@
    "route_usage": 10
   },
   "DM-193011-283964-SZY4": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.51,
    "width_max_m": 8.55,
    "width_src": "ngii1k",
@@ -5729,7 +5730,7 @@
    "route_usage": 11
   },
   "DM-193330-284144-4S4P": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.69,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -5810,7 +5811,7 @@
    "route_usage": 2
   },
   "DM-193339-284115-4S4P": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.6,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -5846,7 +5847,7 @@
    "route_usage": 6
   },
   "DM-193346-284095-4S4P": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.22,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -5891,7 +5892,7 @@
    "route_usage": 3
   },
   "DM-193352-284082-4S4P": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.46,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -6575,11 +6576,11 @@
    "route_usage": 0
   },
   "DM-193453-283738-367J": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 9.69,
    "width_max_m": 46.93,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 30.8,
    "route_usage": 0
   },
@@ -6773,11 +6774,11 @@
    "route_usage": 8
   },
   "DM-193487-283387-OQSR": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.02,
    "width_max_m": 15.17,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 28.9,
    "route_usage": 3
   },
@@ -6845,11 +6846,11 @@
    "route_usage": 6
   },
   "DM-193497-283392-VXVD": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 13.08,
    "width_max_m": 20.85,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 17.5,
    "route_usage": 1
   },
@@ -6863,11 +6864,11 @@
    "route_usage": 106
   },
   "DM-193500-283412-OQSR": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.83,
    "width_max_m": 15.99,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 27.2,
    "route_usage": 2
   },
@@ -6998,11 +6999,11 @@
    "route_usage": 7
   },
   "DM-193516-283444-OQSR": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.57,
    "width_max_m": 9.29,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 44.9,
    "route_usage": 0
   },
