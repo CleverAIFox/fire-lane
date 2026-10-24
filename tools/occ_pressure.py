@@ -7,7 +7,7 @@ tools/occ_pressure.py — 점유압력 β 의 **수요점**을 만든다 (건축
     uv run python tools/occ_pressure.py --selftest ★ 판별식이 살아 있나
 
 ── 무엇을 하나 ──────────────────────────────────────────────────
-CCTV 없는 구간 447개가 순서 없이 평평하게 쌓여 있다 — 어디부터 현장을 나갈지 모른다. **판정은 안 만들고 순서만 만든다.**
+CCTV 없는 구간 447개(`unknown` 521 중 `no_cctv_*` 사유)가 순서 없이 평평하게 쌓여 있다 — 어디부터 현장을 나갈지 모른다. **판정은 안 만들고 순서만 만든다.**
 β 의 정의와 관문은 `firelane.occ` 가 든다(길이 기준 · `cap_style=2` · 밴드 안 순위 · null 과 0).
 
   레이크  `$FIRE_LANE_DATA/norm/eais/eais_bldgledger_dm_jngj-dongmyeong_20260906.json`  — 최상위가 dict 다.

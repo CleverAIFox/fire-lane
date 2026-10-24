@@ -4,7 +4,7 @@ occ.py — 점유압력 β: 「이 골목 연석에 차가 얼마나 서는가�
 IN    구간(`length_m` · `in_emd` · `width_min_m` · `seg_uid` · 기하) · 수요점(`data/processed/occ_demand.csv`)
 OUT   `occ_pressure` · `occ_pressure_rank` (web/data/segments.geojson 에 출판이 싣는다)
 PARAM `BUFFER_M` · `BAND_EDGES`
-밖    **판정을 만들지 않는다.** 이 칸은 순서만 만든다(CCTV 없는 구간 447 중 어디부터 나갈지). 수요에 **거주 세대만**
+밖    **판정을 만들지 않는다.** 이 칸은 순서만 만든다(CCTV 없는 구간 447 — `unknown` 521 중 `no_cctv_*` 사유 — 중 어디부터 나갈지). 수요에 **거주 세대만**
       잡히고 상업 유입은 안 잡힌다. 건축물대장이 동명동뿐이라 동명동 밖은 **잴 수 없다**(null 이다, 0 이 아니다).
 
 ── 정의 ────────────────────────────────────────────────────────────

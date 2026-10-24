@@ -4243,6 +4243,23 @@ outputs:
     - 컬럼 road · addr · seg_uid · spot · lat · lon · w_m · acc_m ·
       method · obs_date · note
 
+  evalset_2610:
+    produced_by: tools/evalset.py (표를 뽑는다) · 사람 (네 칸을 채운다)
+    path: data/field/evalset_2610.csv
+    inputs: [segments]
+    consumers: [tools/evalset.py]
+    what: 0판 평가셋 55구간(Zm23 · DECISIONS §569). 사람이 전폭 · 최협부 폭 · 최협부 위치 · 특이사항을 채운다. 묶음 정보는 표에 없다
+    verified: false
+    known_issues:
+    - ★ 채워지기 전에는 비어 있다. 채워지면 `tools/fieldseal.py --write` 로 지문을 박는다(사람이 친다 — 도구는 안 한다)
+  evalset_2610_key:
+    produced_by: tools/evalset.py
+    path: data/field/evalset_2610.key.json
+    inputs: [segments]
+    consumers: [tools/evalset.py]
+    what: 평가셋의 묶음 · 체제 · 표시를 봉인한 키. ★ 채점 전에 열지 않는다 — 열면 측정 눈금이 끌린다
+    verified: false
+
 # ── landing 처분 결정 (2026-08-30) ────────────────────────────
 # ★ 판단은 끝났는데 도구가 모르면 검사가 매번 같은 말을 한다.
 #   근거 없이 우는 검사는 진짜 경보를 죽인다 — backup_policy 와 같은 자리.

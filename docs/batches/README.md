@@ -40,3 +40,4 @@ DECISIONS 는 「지시문」을 가리킨다. 지시문 = 사용자가 에이�
 | Zm20 | 요지만 있음 — DECISIONS §565 · §566 | — |
 | Zm21 | 요지만 있음 — DECISIONS §567 | — |
 | Zm22 | 요지만 있음 — DECISIONS §568 | — |
+| Zm23 | 요지만 있음 — DECISIONS §569 | — |

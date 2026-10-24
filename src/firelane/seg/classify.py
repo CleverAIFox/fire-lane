@@ -65,7 +65,8 @@ INTERIM = ("fragment",)
 #:   충분한데 **대장이 반박해** 확정을 못 주는 자리를 부를 낱말이 없었고, 그래서
 #:   화면이 그 구간을 「표본이 하나라서」(`no_cctv_single`)라고 **거짓으로** 설명했다.
 #:   빈칸은 「모른다」를 말하지만 틀린 낱말은 **아는 척한다**(§369).
-# ★ 2026-10-23. **일곱째 `needs_survey`** — 채택에서 밀린 소스가 clear 를 반박하는데(`width_min_any_m < TRUCK`) 영상으로 풀 수도 없는 자리.
+# ★ 2026-10-23. **일곱째 `needs_survey`** — clear 를 반박하는 폭 근거가 있는데 영상으로 풀 수도 없는 자리. 근거는 규칙 [8]~[11] 이다: 소스 무관 최솟값 < 3.0 ·
+#   대칭폭 < 3.0 · (소스 무관 최솟값 또는 내접원 중앙값) < 7.0 · 폭 급변. 발행본 74 중 [8] 의 3.0 미만은 5, [9] 의 3.0 미만도 5 뿐이다(Zm20 N2).
 #   CCTV 가 없으면 「영상 보면 풀린다」(needs_cv)가 **거짓 약속**이다. 그래서 회색이되 사유는 「현장에서 재야 안다」이다.
 REASONS = ("ledger_disputes",
            "no_cctv_narrow", "no_cctv_thin", "no_cctv_band",
@@ -206,7 +207,7 @@ def classify(
     #   CCTV 유효범위 안이면 영상으로 풀 수 있으니 needs_cv, 밖이면 unknown(needs_survey).
     # ★ **이 규칙은 판정을 움직인다**(골든 재잠금은 사람이 한다). clear 만 건드린다 — blocked · needs_cv 는 그대로다.
     # ★ 감사 N7 (Zm20). **[8] ⊂ [10]** — `wmin_any < TRUCK`(3.0) 이면 `wmin_any < CLEAR_M`(7.0) 이고, 두 갈래의 행선지(needs_cv/source_conflict ·
-    #   unknown/needs_survey)가 같다. 그래서 [10] 이 켜진 뒤 [8] 이 혼자 바꾸는 판정은 없다. **코드는 지우지 않는다** — `VERDICT_RULE` 번호와
+    #   unknown/needs_survey)가 같다. 그래서 [10] 이 켜진 뒤 [8] 이 혼자 바꾸는 판정은 없다. (예외 하나 — [8] 과 [9] 가 같이 걸리면 [8] 이 먼저라 `cv_reason` 을 `source_conflict` 로 정한다. 판정은 같다: `tests/test_zm20_leftovers.py`.) **코드는 지우지 않는다** — `VERDICT_RULE` 번호와
     #   `IMPLEMENTS` 가 [8] 을 선언하고, [10] 의 문턱을 올려 정할 때 [8] 이 다시 따로 설 수 있다.
     if v == "clear" and wmin_any is not None and wmin_any < TRUCK:
         if cctv_dist <= CCTV_RANGE:

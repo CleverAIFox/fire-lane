@@ -387,7 +387,7 @@ EXCEPTIONS: dict[str, int] = {
     #   가리키고 있었다 — §400 이 내비에서 검색을 지웠는데 문구에 남아 사용자가
     #   검색이 아직 붙어 있다고 지적했다. 내비와 관제를 두 줄로 가른다.
     # ★ 2026-10-06 (DECISIONS §425). 1290 → 1297. 기획서 화면 단계 하나다 —
-    #   정본 `docs/proposal.md` → 와꾸 → `web/proposal.html` 이 같은가.
+    #   정본 `docs/proposal.md` → 틀 → `web/proposal.html` 이 같은가.
     #   옛 둘(`docx_check` · `docstyle`)을 **같이 둔다**: docx 제출본이 살아 있는
     #   동안은 그쪽도 물어야 하고, 참조 25곳을 한 판에 흔들지 않는다.
     # ★ 2026-10-08 (DECISIONS §435 · PLAN #104). 1297 → 1304. 관문 한 단계

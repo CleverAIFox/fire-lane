@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BATCHES = ROOT / "docs" / "batches"
 README = BATCHES / "README.md"
-FIRST, LAST = 3, 22
+FIRST, LAST = 3, 23
 
 #: 「지시문」을 가리키면서 `docs/batches/` · 「원본 없음」 · 「요지」 중 아무것도 안 적은 DECISIONS 줄 수.
 #: ★ 2026-10-24 (Zm20 · Zm22). **줄이는 쪽으로만 움직인다** — 새 인용은 처음부터 색인을 가리킨다.

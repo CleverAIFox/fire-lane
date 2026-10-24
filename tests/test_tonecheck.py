@@ -75,10 +75,18 @@ def test_colloquial_quotes_are_caught_without_context_words() -> None:
     assert not tc.scan([("src/x.py", "# 「0 보다 크냐」 로 두면 안 된다")])
 
 
-def test_pending_waivers_are_alive_and_few() -> None:
-    """사람이 정하기로 한 면제는 **실재하는 줄**에만 있다. 죽은 면제는 사각지대다."""
+def test_no_waiver_channel_exists() -> None:
+    """면제 통로 자체가 없다 — 구어 인용도 요지화 말고는 길이 없다.  (Zm23)"""
     tc = _tc()
-    text = "\n".join((ROOT / "docs/DECISIONS.md").read_text(encoding="utf-8").splitlines())
-    dead = [w for w in tc.PENDING_HUMAN if w not in text]
-    assert not dead, f"줄이 사라졌는데 면제가 남았다: {dead}"
-    assert len(tc.PENDING_HUMAN) <= 5, "면제를 늘리지 않는다 — 요지화하고 지운다"
+    assert not hasattr(tc, "PENDING_HUMAN"), "사람이 정한다는 면제 통로가 남아 있다"
+    assert tc.scan([("docs/x.md", "> 이건 맞는 방향 아니냐 <!--voice-ok 사람 말 그대로-->")])
+
+
+def test_banned_terms_cannot_come_back() -> None:
+    """금지어 두 표기는 어디서도 못 푼다 — 인용 표지 · 코드 펜스 · 들여쓰기 모두.  합성 문장으로."""
+    tc = _tc()
+    for bad in ("이 틀을 와꾸 라고 부른다", "표기 와꼬 도 막는다"):
+        assert tc.scan([("src/x.py", f"# {bad}")]), bad
+        assert tc.scan([("docs/x.md", f"<!--voice-ok-->\n{bad}")]), bad
+        assert tc.scan([("docs/x.md", f"```\n{bad}\n```")]), bad
+    assert not tc.scan([("src/x.py", "# 이 틀은 구조를 정한다")])

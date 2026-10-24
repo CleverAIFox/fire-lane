@@ -77,6 +77,11 @@ FAMILIES: dict[str, tuple[str, tuple[str, ...]]] = {
          r"[「“\"][^」”\"\n]*(?:충분하냐|보라는 건지 모르겠)",
          r"^\s*>\s.*(?:아니냐|거임|거몰라|뭐야|있냐|없냐|잖아|하냐|했냐|뭐냐|맞냐|거야|거냐|충분하냐)\s*[?.」]*\s*(?:<!--.*-->)?\s*$"),
     ),
+    # ★ 2026-10-24 (Zm23). 사람이 **전부 빼기로** 정한 낱말이다 — 인용 표지로도 못 푼다(`UNEXEMPTABLE`). 틀 · 구조로 쓴다.
+    "금지어": (
+        "내부 은어다. 문서를 읽는 다음 사람은 뜻을 모른다 — 「틀」 또는 「구조」로 쓴다. 인용 표지로도 못 푼다.",
+        (r"와꾸", r"와꼬"),
+    ),
     "은어": (
         "우리 둘이 대화에서 쓰는 말이다. 다음 사람은 그 말을 모른다 — 뜻을 적는다.",
         (r"땅따먹기", r"꼬라지", r"삽질", r"뻘짓", r"노가다", r"뇌피셜",
@@ -102,19 +107,9 @@ FAMILIES: dict[str, tuple[str, tuple[str, ...]]] = {
 #: 정규식 족을 selftest 가 심을 때 쓰는 **실제 문장**(첫 낱말이 정규식이면 그대로 못 심는다).
 SAMPLES: dict[str, str] = {"질책": "사용자가 「이게 뭐냐」를 물었다"}
 
-#: 요청서 표(3절)에 없어 **사람이 고칠지 정한다** — 감사 본문에만 있는 구어 인용 다섯 줄(DECISIONS). 줄 안의 조각으로 면제한다.
-#: ★ 래칫이다 — 늘리지 않는다. 사람이 요지화하면 여기서 지운다. 줄이 사라졌는데 항목이 남으면 `tests/test_tonecheck.py` 가 운다(죽은 면제).
-PENDING_HUMAN: tuple[str, ...] = (
-    "동명동에 있는 모든 점포",
-    "관제·내비 레퍼런스를 보면 필요한 데이터를 알 것",
-    "역사가 아니라 죽으면 삭제해야하는거임",
-    "기획서가 docx · md 두 벌 드는 게 맞냐",
-    "survey2.html` 을 주고",
-)
-
 #: `voice-ok` · 코드 펜스 · 들여쓰기 블록으로 **풀 수 없는** 족. 욕설과 반말 질책은 인용이어도 옮기지 않는다 —
 #: 인용 표시는 은어·약칭 같은 **용어**를 위한 규약이지 사람 말을 그대로 싣는 구멍이 아니다(감사 3절 · Zm20).
-UNEXEMPTABLE = ("비속어", "질책")
+UNEXEMPTABLE = ("비속어", "질책", "금지어")
 
 #: 「이 줄은 일부러 그 말을 인용한다」 표시. **이 저장소에 이미 있는 규약**이고
 #: `MASTER §0-3` 이 선언한다 — 여기서 새 표시를 만들지 않는다. 산문 판정도
@@ -142,8 +137,10 @@ DOCS = ("docs/MASTER.md", "docs/PLAN.md", "docs/DECISIONS.md",
         "docs/proposal.md",
         "README.md", "web/README.md", "src/firelane/README.md")
 #: 주석을 볼 코드 뿌리.
-CODE = ("src", "tools", "tests", "web/navi/src", "web/navi/test")
-CODE_SUFFIX = (".py", ".sh", ".ts", ".tsx", ".js", ".mjs")
+CODE = ("src", "tools", "tests", "web/navi/src", "web/navi/test", ".github")
+CODE_SUFFIX = (".py", ".sh", ".ts", ".tsx", ".js", ".mjs", ".yml", ".html")
+#: ★ 2026-10-24 (Zm23). 배포되는 화면(`web/*.html` · 생성물)과 CI 설정의 주석도 같은 그물이다 — 금지어가 거기 남아 있었다.
+EXTRA_FILES = (".github/CODEOWNERS",)
 
 
 def exempt(rel: str) -> bool:
@@ -192,6 +189,12 @@ def targets() -> list[tuple[str, str]]:
         p = ROOT / rel
         if p.is_file():
             out.append((rel, p.read_text(encoding="utf-8", errors="replace")))
+    for rel in EXTRA_FILES:
+        p = ROOT / rel
+        if p.is_file():
+            out.append((rel, p.read_text(encoding="utf-8", errors="replace")))
+    for p in sorted((ROOT / "web").glob("*.html")):
+        out.append((p.relative_to(ROOT).as_posix(), p.read_text(encoding="utf-8", errors="replace")))
     for root in CODE:
         base = ROOT / root
         if not base.is_dir():
@@ -239,8 +242,6 @@ def scan(items: list[tuple[str, str]] | None = None) -> list[str]:
             for fam, (_why, words) in FAMILIES.items():
                 if fam not in UNEXEMPTABLE and (i in skip or (keep is not None and i not in keep)):
                     continue                    # 용어 족만 인용 표시로 풀린다
-                if fam == "질책" and any(x in line for x in PENDING_HUMAN):
-                    continue
                 for w in words:
                     m = re.search(w, line, re.M)
                     if m:

@@ -124,7 +124,7 @@ CONFLICT_FOLD_M = 0.05
 
 
 def width_any(rows: list, wmin: float | None, wsrc: str | None = None, wcov: dict | None = None) -> dict:
-    """폭 계측 칸 — **기록이다. 판정에 안 쓴다.** (Zm3 · 측정된 병목이 버려진 사고)
+    """폭 계측 칸. **소스 무관 최솟값(`width_min_any_m`)과 대칭폭(`width_min_sym_m`)은 규칙 [8]~[10] 이 읽는다** (Zm3 에서는 기록이었으나 Zm3 · Zm4 · Zm6 에서 판정 입력이 됐다 · 측정된 병목이 버려진 사고)
 
     구간 폭(`width_min_m`)은 **채택된 소스 하나**의 표본만으로 낸다(결정 63·64 · 구간 단위 소스 채택). 소스를 통일하는 것은
     옳다 — 축척이 다르면 비교가 안 된다. 다만 엔진은 표본마다 **세 소스를 다 재고** 하나만 `w` 로 남겼고 나머지 둘은 버렸다.

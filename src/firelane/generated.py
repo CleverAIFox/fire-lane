@@ -150,7 +150,7 @@ class Family:
 GEN_ROOTS: tuple[str, ...] = (
     "web/data", "data/processed", "data/dms", "data/golden", "data/baseline",
     "docs/figures", "web/workflow.html",
-    # ★ 2026-10-06 (§425). 종전 `web/proposal.html` 은 PDF 뷰어 **와꾸**였고
+    # ★ 2026-10-06 (§425). 종전 `web/proposal.html` 은 PDF 뷰어 **틀**이었고
     #   생성물이 아니었다. 이제 정본 `docs/proposal.md` 에서 굽는다 — 루트에
     #   안 넣으면 `proposal-page` 가족의 그물이 비어 재현 검사가 조용히 빠진다.
     "web/proposal.html",
@@ -215,7 +215,7 @@ FAMILIES: tuple[Family, ...] = (
     #   판에 들어내면 참조 25곳이 같이 흔들린다」고 적었고, 다리(`htmlfigs`)가
     #   놓인 뒤 이 판이 그 25곳을 흔들었다. 수를 보는 자리는 `docnum_check` 다.
     # ★ 2026-10-06 (DECISIONS §425 · PLAN #142). 기획서 화면은 **생성물**이다.
-    #   정본 `docs/proposal.md` → 와꾸 `web/proposal.template.html` → 이 파일.
+    #   정본 `docs/proposal.md` → 틀 `web/proposal.template.html` → 이 파일.
     #   종전 소유자는 `stage_pages.py` 였고 그때의 화면은 PDF 뷰어 껍데기였다.
     Family("proposal-page", ("web/proposal.html",), "tools/build_proposal.py",
            ("uv run python tools/build_proposal.py --check",),
