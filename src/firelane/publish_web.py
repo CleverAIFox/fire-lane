@@ -113,7 +113,7 @@ def main():
     _seg["nfa_access_loose"] = _pd.array(list(_seg["nfa_access_loose"]), dtype="boolean")
     _seg["nfa_access_hh"] = _pd.array(list(_seg["nfa_access_hh"]), dtype="Int64")
 
-    _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict",
+    _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_med_m","width_max_m","verdict",
              "midpoint_fallback","inherited","route_usage","length_m",
              "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","clear_min_m","clear_med_m","clear_max_m","clear_src","clear_cov","ecc_rel_med_m","ecc_rel_max_m","ecc_cov","struct_kind","struct_dist_m","nfa_access_listed","nfa_access_width","nfa_access_len_m","nfa_access_hh","nfa_access_len_ratio","nfa_access_loose","nfa_access_token","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
              "unknown_reason"]
@@ -253,7 +253,7 @@ def main():
 
     # ── 마커 3종 ────────────────────────────────────────────────
     # 전부 스코프로 자른다. 자르지 않으면 마스크가 덮은 어두운 영역 위에
-    # 점이 떠서 "저게 뭐냐"는 오해를 부른다. (소화전 18개 중 스코프 밖이 7개였다)
+    # 점이 떠서 무엇인지 알 수 없다는 오해를 부른다. (소화전 18개 중 스코프 밖이 7개였다)
 
     # 소화전. ★ 2026-08-31 실측 — processed 524 · 스코프 안 153 · 동명동 41.
     # 종전 주석의 "공개 31개 · 동명동 1개" 는 소스 교체 전 값이고 9개월 낡았다.
@@ -422,7 +422,7 @@ def main():
         "ecc_cov": "float width_samples.csv 의 표본점 중 ecc_m 가 있는 비율(0~1). 교차부 제외 등으로 빈 행이 분모에 든다",
         "struct_kind": "str|null 반경 50m 안에서 가장 가까운 **입체 구조물**(터널 · 고가 · 교량 — 도로명주소 기타자료). 입력 범위 안만 적재돼 있다 — null 은 「적재된 것 중에는 없다」다. 판정에 안 쓴다(DECISIONS §563)",
         "struct_dist_m": "float|null 그 구조물까지의 거리(m). struct_kind 가 null 이면 null",
-        "nfa_access_listed": "bool 이 구간의 road_name 이 소방서 소방통로확보대상 지역명에 나타나는가(공백 제거 부분 문자열). ★ 좌표가 없어 도로명 문자열로 맞춘다 — 판정에 안 쓴다",
+        "nfa_access_listed": "bool 이 구간의 road_name 이 소방서 소방통로확보대상 지역명에 나타나는가(**정확 일치** — 글자↔숫자 경계의 공백만 허용하고 더 긴 이름의 앞부분은 거른다 · DECISIONS §550-2). ★ 좌표가 없어 도로명 문자열로 맞춘다 — 판정에 안 쓴다",
         "nfa_access_width": "str|null 소방서가 적은 폭(m) — **문자열 그대로**(2.7~3.2 같은 범위가 있다). ★ 구간 대표값이라 우리 wmin(지점 최솟값)과 **직접 비교하지 않는다**",
         "nfa_access_len_m": "float|null 소방서가 적은 구간거리(m). 여러 행이 걸리면 구간거리가 가장 큰 행",
         "nfa_access_hh": "int|null 소방서가 적은 세대수",

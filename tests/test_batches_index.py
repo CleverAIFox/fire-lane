@@ -17,14 +17,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BATCHES = ROOT / "docs" / "batches"
 README = BATCHES / "README.md"
-FIRST, LAST = 3, 20
+FIRST, LAST = 3, 22
 
-#: 「지시문」을 가리키면서 `docs/batches/` 도 「원본 없음」도 안 적은 DECISIONS 줄 수.
-#: ★ 2026-10-24 (Zm20). 규약을 세운 날의 실측이다. **줄이는 쪽으로만 움직인다** — 옛 인용은
-#:   원본이 복원되는 대로 고치고, 새 인용은 처음부터 파일을 가리키거나 없다고 적는다.
-UNCITED = 76
+#: 「지시문」을 가리키면서 `docs/batches/` · 「원본 없음」 · 「요지」 중 아무것도 안 적은 DECISIONS 줄 수.
+#: ★ 2026-10-24 (Zm20 · Zm22). **줄이는 쪽으로만 움직인다** — 새 인용은 처음부터 색인을 가리킨다.
+#:   Zm22 에서 「요지만 있음」이 정상 상태가 되어(원문을 기다리지 않는다) 표 모양이 바뀌었다.
+UNCITED = 77
 
-ROW = re.compile(r"^\|\s*(Zm\d\d)\s*\|\s*(있음|원본 없음)\s*\|\s*(\S.*?)\s*\|\s*$", re.M)
+ROW = re.compile(r"^\|\s*(Zm\d\d)\s*\|\s*(요지만 있음 — DECISIONS (?:§\d+(?: · §\d+)*)|절 없음 — .+?)\s*\|\s*(\S.*?)\s*\|\s*$", re.M)
 
 
 def test_readme_lists_every_batch_once() -> None:
@@ -34,12 +34,29 @@ def test_readme_lists_every_batch_once() -> None:
     assert names == want, f"표가 Zm{FIRST:02d} ~ Zm{LAST:02d} 를 순서대로 한 줄씩 들지 않는다: {names}"
 
 
-def test_table_status_matches_the_files() -> None:
+def test_every_cited_section_exists_in_decisions() -> None:
+    """표가 가리키는 절 번호는 DECISIONS 에 실재한다 — 가리키는 곳이 죽지 않는다."""
+    heads = set(re.findall(r"^## (\d+)\.", (ROOT / "docs" / "DECISIONS.md").read_text(encoding="utf-8"), re.M))
+    missing = []
+    for name, what, _f in ROW.findall(README.read_text(encoding="utf-8")):
+        for n in re.findall(r"§(\d+)", what):
+            if n not in heads:
+                missing.append(f"{name}: §{n}")
+    assert not missing, f"DECISIONS 에 없는 절을 가리킨다: {missing}"
+
+
+def test_a_listed_file_must_exist_and_an_existing_file_must_be_listed() -> None:
+    """원문 칸이 `—` 가 아니면 그 파일이 있어야 하고, 파일이 있으면 표가 가리킨다. 원문이 없는 것이 정상이다."""
+    listed = {}
+    for name, _what, f in ROW.findall(README.read_text(encoding="utf-8")):
+        listed[name] = f
     bad = []
-    for name, status, _file in ROW.findall(README.read_text(encoding="utf-8")):
+    for name, f in listed.items():
         exists = (BATCHES / f"{name}.md").is_file()
-        if exists != (status == "있음"):
-            bad.append(f"{name}: 표 `{status}` · 파일 {'있음' if exists else '없음'}")
+        if f == "—" and exists:
+            bad.append(f"{name}: 파일이 있는데 표가 안 가리킨다")
+        if f != "—" and not exists:
+            bad.append(f"{name}: 표가 {f} 를 가리키는데 파일이 없다")
     assert not bad, "표와 실물이 다르다:\n  " + "\n  ".join(bad)
 
 
@@ -52,7 +69,7 @@ def test_no_stray_batch_files() -> None:
 
 def test_decisions_do_not_cite_the_instruction_without_a_file() -> None:
     n = sum(1 for ln in (ROOT / "docs" / "DECISIONS.md").read_text(encoding="utf-8").splitlines()
-            if "지시문" in ln and "docs/batches/" not in ln and "원본 없음" not in ln)
+            if "지시문" in ln and "docs/batches/" not in ln and "원본 없음" not in ln and "요지" not in ln)
     assert n <= UNCITED, (
         f"파일 없이 「지시문」을 인용한 줄이 {n} 로 늘었다(기록 {UNCITED}) — "
         "`(지시문 docs/batches/Zm19.md)` 로 가리키거나 `(지시문 원본 없음 · Zm19)` 로 없다고 적어라")

@@ -130,7 +130,7 @@ def main() -> int:
     #   blocked(1.04) · blocked(1.19) 세 골목을 가리킨다.
     #
     #   화면에 라벨만 띄우면 사람이 어느 골목인지 못 고른다. 실제로 그래서
-    #   "뭘 보라는 건지 모르겠다" 가 나왔다 — 네이버로 5.6m 를 잰 골목과
+    #   사용자가 무엇을 보라는 것인지 알 수 없다고 지적했다 — 네이버로 5.6m 를 잰 골목과
     #   페이지가 보여준 1.19m 짜리가 서로 달랐다.
     #   `seg_uid` 를 같이 띄우고, 같은 라벨을 쓰는 형제 수도 적는다.
     allseg = gpd.read_file(PROCESSED / "segments_5186.gpkg")
@@ -290,7 +290,7 @@ function go(i) {
   map.setFilter("seg-hi", ["==", "n", d.n]);
   /* ★ "지도에서 보세요" 는 안내가 아니다. 무엇을 보고 무엇을 누르는지
      화면 안에 있어야 한다. 2026-08-23 에 좌표 목록만 주고 넘겨서
-     "뭘 보라는 거냐" 를 들었다. */
+     사용자가 무엇을 보라는 것인지 알 수 없다고 지적했다. */
   const gap = (d.jj - d.ours).toFixed(1);
   document.getElementById("bar").innerHTML =
     `<b>${d.n}/${ITEMS.length} · ${d.label}</b> ` +

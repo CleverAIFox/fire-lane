@@ -1064,8 +1064,8 @@ datasets:
 
         읽으려면 레이어별로 항목을 나누거나 새 kind 를 만들어야 한다.
         그 판단은 판정 규칙 변경이라 B4 소관이다. 지금은 존재만 기록한다.
-      ★ 2026-10-23 (Zm18). 레이어별 항목으로 **나눴다** — `juso_tunnel` · `juso_overpass` · `juso_bridge` · `juso_river`(각 `shp_zip`).
-        이 항목은 zip 을 가리키는 `raw_only` 로 남는다. 판정에 안 쓴다(진단 칸).
+      ★ 2026-10-23 (Zm18). 기타자료 zip(`juso_etc_geom`)은 레이어별 항목으로 **나눴고** 그 항목은 **지웠다** — `juso_tunnel` · `juso_overpass` ·
+        `juso_bridge` · `juso_river`(각 `shp_zip`)가 나눠 쓴다(DECISIONS §563). 이 항목(`juso_bldg_geom`)은 건물 zip 이라 `raw_only` 그대로다. 판정에 안 쓴다(진단 칸).
 
         zip 안 레이어 —
       TL_SGCO_RNADR_MST   건물 폴리곤        15,518
@@ -2196,7 +2196,7 @@ datasets:
     encoding: cp949
     note: |
       ★ 투입 (2026-10-23 · Zm8 · DECISIONS §550). 구간에 `nfa_access_listed` · `_width`(**문자열 그대로** — 2.7~3.2 같은 범위가 있다) · `_len_m` · `_hh` · `_len_ratio` ·
-        `_loose` · `_token` 일곱 칸을 싣는다(web 에만 · 판정에 안 쓴다). 매칭 = 우리 road_name 이 지역명(공백 제거)에 부분 문자열로 나타나는가, 여럿이면 구간거리가 가장 큰 행.
+        `_loose` · `_token` 일곱 칸을 싣는다(web 에만 · 판정에 안 쓴다). 매칭 = 우리 road_name 이 지역명에 **정확 일치**로 나타나는가(글자↔숫자 경계의 공백만 허용 · 부분 문자열이 아니다 — DECISIONS §550-2 가 정정했다), 여럿이면 구간거리가 가장 큰 행.
         **한계**: 좌표가 없어 도로명 문자열로만 맞춘다. 소방서는 도로의 **일부 구간만** 지정하므로 `len_ratio`(우리 그 도로명의 연장 합 ÷ 소방서 구간거리)가 매칭 품질을 든다 —
         0.5~2.0 밖이면 느슨하다(대부분 4~37배). `_token = false` 는 더 긴 이름의 앞부분에 걸린 것(경양로 대로 ↔ 「경양로 247번길」 골목)이라 오탐 가능성이 높다.
         **소방서 폭은 구간 대표값이고 우리 wmin 은 지점 최솟값이다 — 직접 비교하지 않는다.**
@@ -4294,6 +4294,13 @@ outputs:
     inputs: [segments]      # width_samples.csv 는 segments 의 derives 다(별도 키가 아니다)
     consumers: []
     what: 다음에 뭘 잴지 정하는 대장 — 사람이 네이버로 재러 갈 때 여는 파일이다(사유 · 좌표 · 순서 · 이미 잰 값). PLAN 에 올리지 않는다. 판정에 안 닿는다
+    verified: false
+  ledger_cross:
+    produced_by: tools/ledgercross.py
+    path: data/processed/ledger_cross.json
+    inputs: [segments]      # 발행본 segments.geojson 과 segments_5186.gpkg(중앙점). 레이크는 안 읽는다
+    consumers: []
+    what: 도로대장 명목폭(road_bt_m)이 등재 계단값인지, 우리 측정(최솟값 · 중앙값 기준)과 어긋나는 구간이 어디인지(Zm21 · Zm22 · DECISIONS §567 · §568). 판정 폐포 밖이고 사람이 부를 때만 생긴다
     verified: false
   clearance_probe:
     produced_by: tools/clearance_probe.py

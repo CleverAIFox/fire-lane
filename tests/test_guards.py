@@ -1439,7 +1439,7 @@ def test_width_samples_are_kept():
     # ★ 2026-08-24. 종전 `"wcov, wnt, wrows" in s` 는 4-튜플로 늘렸을 때
     #   **부분문자열이라 그냥 통과했다.** 우연히 통과하는 검사는 검사가
     #   아니다. 언패킹 전체를 본다.
-    assert "(wcov, wnt, wrows, wneff) = W[uid]" in s, \
+    assert "(wcov, wnt, wrows, wneff, wmed) = W[uid]" in s, \
         "호출부 언패킹이 _covr() 반환과 다르다"
     assert "width_samples.csv" in s, "표본을 파일로 안 남긴다"
     # 결측도 남겨야 "어디가 비었는지" 를 알 수 있다

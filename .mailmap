@@ -1,0 +1,9 @@
+# 본인 커밋의 표시 이름·메일을 하나로 모은다. (감사 4-4 · Zm22 · DECISIONS §568-4)
+#
+# ★ 이 파일은 로컬 `git log` · `git shortlog` · `git blame` 의 **표시**만 바꾼다.
+#   GitHub 화면의 작성자 표시와 커밋 이력(해시) 자체는 바꾸지 않는다 — 이력 재작성은 하지 않는다.
+#   팀원 커밋은 그들의 것이라 여기서 합치지 않는다.
+CleverAIFox <cleveraifox@gmail.com> CleverFox <cleveraifox@gmail.com>
+CleverAIFox <cleveraifox@gmail.com> Fox <AIMasterFox@gmail.com>
+CleverAIFox <cleveraifox@gmail.com> CleverAIFox <CleverAIFox@gmail.com>
+CleverAIFox <cleveraifox@gmail.com> fire-lane-init <team@fire-lane.local>

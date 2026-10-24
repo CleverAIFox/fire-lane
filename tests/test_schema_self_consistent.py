@@ -55,19 +55,37 @@ from firelane.seg.params import CCTV_RANGE, PARK, TRUCK
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "src" / "firelane" / "seg" / "report.py"
 
-#: 판정에 **드는** 열 → `VERDICT_RULE` 안에서 그 열을 부르는 낱말.
-#:
-#: ★ 손목록이지만 **낡으면 운다** — ④ 가 낱말이 규칙에 실재하는지 보고,
-#:   ① 이 그 열의 서술을 본다. 규칙에서 낱말이 사라지면 ④ 가 울고, 판정에
-#:   드는 열이 새로 생기면 사람이 여기 한 줄을 적어야 한다.
-#:   자동으로 뽑을 수는 없다 — 규칙은 산문이고 열 이름과 낱말이 다르다
-#:   (`ROAD_BT` ↔ `road_bt_m`). 뽑는 척하면 그것이 더 나쁘다.
-JUDGMENT_FIELDS = {
-    "width_min_m": "wmin",
-    "width_max_m": "wmax",
-    "n_sample": "정규표본",
-    "road_bt_m": "ROAD_BT",
-}
+def judgment_fields() -> dict[str, str]:
+    """판정에 **드는** 발행 열 → `classify()` 인자 이름. **`segments.py` 의 호출에서 유도한다.**
+
+    ★ 2026-10-24 (Zm22 · 감사). 종전에는 이것이 **손으로 적은 네 칸**이었고(`width_min_m` · `width_max_m` · `n_sample` ·
+      `road_bt_m`) 규칙 [8]~[11] 이 읽는 `width_min_any_m` · `width_min_sym_m` · `clear_med_m` 와 `cctv_dist_m` · `length_m`
+      을 몰랐다 — 그 열들이 「판정에 안 쓴다」고 적혀 나갔다(9월 `road_bt_m` 사고와 같은 꼴). 이제 `classify(...)` 호출의
+      키워드 인자 값을 `rec[...] = dict(...)` 의 열 이름으로 되짚는다. 새 인자가 생기면 열이 저절로 따라오고,
+      되짚지 못하면 시험이 **운다**(조용히 빠지지 않는다).
+    """
+    src = (ROOT / "src" / "firelane" / "segments.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    call = next((n for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "classify"), None)
+    rec = next((n for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "dict"
+                and any(k.arg == "width_min_m" for k in n.keywords)), None)
+    assert call is not None and rec is not None, "segments.py 에서 classify() 호출이나 rec 행을 못 찾았다 — 유도가 빈 그물이다"
+    by_expr = {ast.unparse(k.value): k.arg for k in rec.keywords if k.arg}
+    out: dict[str, str] = {}
+    for kw in call.keywords:
+        v = kw.value
+        if isinstance(v, ast.Subscript) and isinstance(v.slice, ast.Constant) and isinstance(v.slice.value, str):
+            col = v.slice.value                              # `_wa["width_min_any_m"]` 처럼 열 이름이 적혀 있다
+        else:
+            col = by_expr.get(ast.unparse(v))
+            if col is None:                                   # `g.length` → `round(g.length, 1)` 처럼 감싼 표현
+                col = next((c for e, c in by_expr.items() if ast.unparse(v) in e), None)
+        assert col is not None, f"classify({kw.arg}=…) 의 값 `{ast.unparse(v)}` 이 어느 발행 열인지 되짚지 못했다"
+        out[col] = kw.arg
+    return out
+
+
+JUDGMENT_FIELDS = judgment_fields()
 
 #: 「이 열은 판정 밖이다」로 읽히는 표현. 하나라도 걸리면 ① 이 운다.
 DENIALS = ("판정에는 쓰지 않는다", "판정에 쓰지 않는다", "판정에 안 쓴다",
@@ -174,18 +192,22 @@ def test_the_numbers_in_the_rules_come_from_the_constants():
 
 # ── ④ 반대 방향 — 선언표가 낡지 않았다 ─────────────────────────
 
-def test_the_declared_map_is_not_stale():
-    """★ 이것이 없으면 ① 이 **항상 통과하는 검사**가 된다(§69).
+def test_the_derived_map_covers_every_rule_input_and_only_those():
+    """★ 유도가 손목록 때보다 **더 많이** 잡는다 — 규칙 [8]~[11] 의 입력까지. 그리고 중앙값은 안 든다.
 
-    규칙에서 어떤 열이 빠졌는데 `JUDGMENT_FIELDS` 에 남아 있으면, ① 은 판정에
-    안 드는 열의 서술을 계속 검사한다 — 통과하지만 아무것도 안 지킨다.
+    `classify()` 가 받는 인자(기본값 없는 것 · 호출이 넘기는 것)가 전부 열로 되짚였고, 그 밖의 열(`width_med_m` ·
+    `clear_min_m` · `clear_max_m`)은 판정 입력이 아니다.
     """
-    txt = " ".join(VERDICT_RULE)
-    lost = sorted(f for f, token in JUDGMENT_FIELDS.items() if token not in txt)
-    assert not lost, (
-        f"선언표가 든 열을 규칙이 더는 안 부른다: {lost}\n"
-        "  규칙에서 뺐으면 `JUDGMENT_FIELDS` 에서도 빼고, 그 열의 서술을\n"
-        "  「판정에 쓰지 않는다」로 고쳐라 — 그것이 그때는 사실이다.")
+    import inspect
+
+    params = set(inspect.signature(classify).parameters)
+    passed = set(JUDGMENT_FIELDS.values())
+    assert passed <= params, f"classify() 에 없는 인자를 넘긴다: {sorted(passed - params)}"
+    for col in ("width_min_m", "width_max_m", "n_sample", "road_bt_m",
+                "width_min_any_m", "width_min_sym_m", "clear_med_m", "cctv_dist_m", "length_m"):
+        assert col in JUDGMENT_FIELDS, f"판정이 읽는 {col} 을 유도가 못 잡았다"
+    for col in ("width_med_m", "clear_min_m", "clear_max_m"):
+        assert col not in JUDGMENT_FIELDS, f"{col} 은 판정이 읽지 않는 칸이다 — 읽으면 시험이 울어야 한다"
 
 
 def test_a_denial_is_still_allowed_outside_the_judgment():

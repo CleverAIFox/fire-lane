@@ -64,3 +64,21 @@ def test_voice_ok_still_releases_a_term_family() -> None:
 def test_a_neutral_quote_is_not_a_scolding() -> None:
     tc = _tc()
     assert tc.scan([("docs/x.md", "이 도구가 무엇이냐는 물음에 답한다")]) == []
+
+
+def test_colloquial_quotes_are_caught_without_context_words() -> None:
+    """구어 어미로 끝나는 인용은 문맥어(사용자 · 물었다)가 없어도 문다 — 합성 문장으로(요청서 3절 · Zm22)."""
+    tc = _tc()
+    for line in ("「이 부분은 왜 이렇게 한 거임」", "> 이건 맞는 방향 아니냐", "// 「이거 되는 거 맞냐」", "# 「그게 지금 있냐」"):
+        assert tc.scan([("src/x.py", line)]), line
+    assert not tc.scan([("src/x.py", "# 「법선이냐 내접원이냐」 양자택일을 둔다")])
+    assert not tc.scan([("src/x.py", "# 「0 보다 크냐」 로 두면 안 된다")])
+
+
+def test_pending_waivers_are_alive_and_few() -> None:
+    """사람이 정하기로 한 면제는 **실재하는 줄**에만 있다. 죽은 면제는 사각지대다."""
+    tc = _tc()
+    text = "\n".join((ROOT / "docs/DECISIONS.md").read_text(encoding="utf-8").splitlines())
+    dead = [w for w in tc.PENDING_HUMAN if w not in text]
+    assert not dead, f"줄이 사라졌는데 면제가 남았다: {dead}"
+    assert len(tc.PENDING_HUMAN) <= 5, "면제를 늘리지 않는다 — 요지화하고 지운다"

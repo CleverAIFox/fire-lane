@@ -750,7 +750,7 @@ def main():
         sid = f"DM{i:05d}"
         if uid not in W:
             W[uid] = widths(g)          # 병합으로 범위 안에 들어온 단위
-        wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt, wrows, wneff) = W[uid]
+        wmin, wmax, fb, wsrc, wdis, wfail, (wcov, wnt, wrows, wneff, wmed) = W[uid]
         # ★ 2026-08-23. 표본을 버리지 않고 모은다. `w(s)` 를 함수로 다루려면
         #   `min` 이 아니라 배열이 필요하다. 판정에는 안 쓴다.
         # ★ 2026-08-23 정정. 처음엔 `_SAMPLES[uid]` 로 넣었다가 되돌렸다.
@@ -779,7 +779,7 @@ def main():
                              cctv_dist=d_cctv, wmin_any=_wa["width_min_any_m"],
                              wsym=_wa["width_min_sym_m"], clear_med=_cl["clear_med_m"])
 
-        rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_max_m=wmax,
+        rec[sid] = dict(seg_id=sid, width_min_m=wmin, width_med_m=wmed, width_max_m=wmax,
                         verdict=v, unknown_reason=reason if v == "unknown" else None,
                         cv_reason=reason if v == "needs_cv" else None,
                         cctv_dist_m=d_cctv, cv_feasible=bool(cv_ok),

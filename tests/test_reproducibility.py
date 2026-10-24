@@ -219,7 +219,7 @@ def test_no_fifth_doc():
     allowed = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.md"}
     extra = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "docs").rglob("*.md")
                    if (p.name not in allowed or p.parent != ROOT / "docs")
-                   and p.parent != ROOT / "docs" / "batches")   # 지시문 원본 보관소 — 문서가 아니다(감사 C · Zm20)
+                   and p.parent not in (ROOT / "docs" / "batches", ROOT / "docs" / "audit"))   # 지시문 원본 보관소 — 문서가 아니다(감사 C · Zm20)
     assert not extra, (
         f"다섯 번째 문서: {extra}\n"
         "  MASTER(현재) · PLAN(남은 일) · DECISIONS(왜 그렇게 됐나) 중\n"

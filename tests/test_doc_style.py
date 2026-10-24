@@ -345,6 +345,8 @@ FIGURES_DIR = "figures"
 # ★ 2026-10-24 (감사 C · Zm20). `batches` 는 문서가 아니라 **입력의 보관소**다 — 지시문 원본(`Zm*.md`)과 그 색인(`README.md`).
 #   사람이 복원해 넣는 원문이라 다섯째 문서가 아니다. 규약은 `docs/batches/README.md` 와 `tests/test_batches_index.py`.
 BATCHES_DIR = "batches"
+# ★ 2026-10-24 (Zm22). `audit` 도 입력의 보관소다 — 외부 감사자가 쓴 문서 원문이다. 우리 문서가 아니라서 넷에 안 든다.
+AUDIT_DIR = "audit"
 ALLOWED_FIGURES = {".lock.json"}                 # 그 밖에는 `*.svg` 만
 
 
@@ -371,10 +373,10 @@ def test_docs_dir_holds_only_the_allowed_documents():
     for p in sorted(DOCS_DIR.rglob("*")):
         rel = p.relative_to(DOCS_DIR).as_posix()
         if p.is_dir():
-            if rel not in (FIGURES_DIR, BATCHES_DIR):
-                extra.append(f"docs/{rel}/  — 허용된 폴더는 `figures` · `batches` 둘이다")
+            if rel not in (FIGURES_DIR, BATCHES_DIR, AUDIT_DIR):
+                extra.append(f"docs/{rel}/  — 허용된 폴더는 `figures` · `batches` · `audit` 셋이다")
             continue
-        if p.parent.name == BATCHES_DIR:
+        if p.parent.name in (BATCHES_DIR, AUDIT_DIR):
             continue
         if p.parent == DOCS_DIR:
             if p.name in ALLOWED_DOCS:

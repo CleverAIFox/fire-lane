@@ -98,3 +98,16 @@ def test_real_publication_if_present() -> None:
     res = L.analyse(L.load())
     assert res["counts"]["segments"] == 1281 and res["counts"]["usable"] > 1000
     assert res["steps"]["n_distinct"] >= 10
+
+
+def test_median_basis_changes_only_our_side() -> None:
+    """같은 구간 · 같은 계단에서 우리 폭 칸만 바꾼다 — 대장 쪽 통계는 같다.  (Zm22)"""
+    rows = _rows()
+    for r in rows:
+        r["width_med_m"] = r["width_min_m"] * 1.5
+    res = L.analyse_both(rows)
+    assert set(res) == set(L.KEYS_BOTH)
+    assert res["median_basis"]["params"]["our_width_col"] == "width_med_m"
+    assert res["median_basis"]["steps"]["values"] == res["steps"]["values"]
+    ov = res["contradiction_overlap"]
+    assert ov["both"] + ov["only_min"] == ov["min_basis"] and ov["both"] + ov["only_median"] == ov["median_basis"]

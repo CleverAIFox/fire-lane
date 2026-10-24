@@ -432,7 +432,7 @@ class WidthEngine:
         #     `width_samples.csv` 를 따로 낼 뿐이라 golden 지문이 그대로다.
         _rows = []
 
-        def _covr():
+        def _covr(wmed=None):
             """소스별 커버율. 정규 표본 중 그 소스가 값을 낸 비율.
 
             표본마다 다른 소스가 채택되면 wmin=min(A) 이 소스 혼합 집합에서
@@ -448,8 +448,9 @@ class WidthEngine:
             #   정규 표본 수인데, 호출부가 `_n_try`(시도 수)를 넘기고
             #   있었다. `_n_reg = len(A)` 는 여기보다 아래에서 정의되므로
             #   클로저로 못 잡는다. `A` 를 직접 센다 — 같은 값이다.
+            # ★ 2026-10-24 (Zm22). 다섯째로 구간 폭의 **중앙값**(`width_med_m`)을 낸다.
             return ({k: (round(v/_n_try, 3) if _n_try else None)
-                     for k, v in _cov.items()}, _n_try, _rows, len(A))
+                     for k, v in _cov.items()}, _n_try, _rows, len(A), wmed)
         def _instr(sc, _res, trusted):
             """표본 한 줄에 **재고도 버리던 것**을 남긴다(Zm3 계측 · 판정에 안 쓴다).
 
@@ -624,6 +625,12 @@ class WidthEngine:
             wmin = _round_pos(min(_by[_pick]))
         elif A:
             wmin = _round_pos(min(A))
+        # ★ Zm22 `width_med_m` — `wmin` 과 같은 표본 · 같은 선택, 집계만 median. 판정은 안 읽는다.
+        wmed = None
+        if _pick is not None:
+            wmed = _round_pos(float(np.median(_by[_pick])))
+        elif A:
+            wmed = _round_pos(float(np.median(A)))
         wmax = _round_pos(min(B)) if B else None
         # 벽 사이 폭이 도로 폭보다 좁을 수는 없다. 샘플별로는 맞아도
         # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 에 걸린 경우).
@@ -652,4 +659,4 @@ class WidthEngine:
             _vals = [v for v in D[_i] if v is not None]
             if len(_vals) >= 2:
                 wdis = round(max(_vals) - min(_vals), 2)
-        return wmin, wmax, fb, wsrc, wdis, _rsn, _covr()
+        return wmin, wmax, fb, wsrc, wdis, _rsn, _covr(wmed)

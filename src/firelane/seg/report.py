@@ -145,12 +145,13 @@ def write_outputs(g):
             "seg_uid": "str, 실행 간 유지되는 키. {지역}-{중점X}-{중점Y}-{도로명해시}. 실측·관측점·영상판정·DB PK 는 전부 이 키를 쓴다",
             "seg_id": "str, 실행 내 표시용 일련번호. ★불변이 아니다. 노딩 규칙이 바뀌면 번호가 전부 밀린다. 외부 참조 금지",
             "width_min_m": "float|null 노면폭(하한). 트랜섹트 최솟값",
+            "width_med_m": "float|null 같은 표본의 **중앙값**(m). `width_min_m` 과 같은 표본 · 같은 선택 규칙(채택 소스 하나 · `width_src`)이고 집계만 median 이다. ★ **판정에 안 쓴다** — 판정은 `width_min_m` 만 읽는다. 최솟값 대 대표값을 비교하려는 진단 칸이다(DECISIONS §568-5)",
             "width_src": "null|ngii|silpok 채택된 폭 소스 (결정 63/64)",
             "width_disagree_m": "float|null ★ 소스 간 최솟값 차이가 **아니다.** 표본 전체 중 값이 가장 좁은 **그 한 표본**에서 "
                                 "세 소스(1:1,000 · 1:5,000 · 실폭도로)가 낸 값 중 둘 이상이 있을 때의 max-min 이다. "
                                 "그 표본에서 한 소스만 쟀으면 null. 그래서 구간 최솟값이 소스마다 11m 갈려도 0.0 일 수 있다 — "
                                 "소스 간 최솟값 차이는 width_source_conflict_m 이다",
-            "width_min_any_m": "float|null 소스 무관 최솟값 — 유효 표본 전체의 최솟값(m). ★ 기록이다, 판정에 안 쓴다. "
+            "width_min_any_m": "float|null 소스 무관 최솟값 — 유효 표본 전체의 최솟값(m). ★ **판정이 읽는다** — 규칙 [8](< 3.0) · [10](< 7.0): `clear` 인데 이 값이 선 미만이면 `clear` 를 거둔다(Zm3 · Zm6). "
                                "표본마다 채택된 한 소스의 값만 있으므로 세 소스 전부의 최솟값은 아니다",
             "width_min_any_src": "str|null width_min_any_m 을 낸 소스(ngii1k · ngii · silpok)",
             "width_min_any_s_m": "float|null width_min_any_m 이 나온 위치(구간 시작에서 m)",
@@ -162,7 +163,7 @@ def write_outputs(g):
             "occ_pressure_rank": "int|null width_min_m 밴드((0,3] (3,4] (4,5] (5,6] (6,7] (7,∞)) 안에서 occ_pressure 내림차순 순위(동률은 seg_uid 사전순). "
                                  "occ_pressure 가 null 이거나 0 이면 null. ★ 전체 순위가 아니다 — β 는 폭과 상관이 커서 전체 순위는 폭 순위를 되풀이한다. "
                                  "unknown 구간의 현장 방문 순서용",
-            "width_min_sym_m": "float|null 채택 표본의 대칭폭 2·min(left, right) 중 최솟값(m). ★ 판정에 안 쓴다 — 다음 판의 재료다. "
+            "width_min_sym_m": "float|null 채택 표본의 대칭폭 2·min(left, right) 중 최솟값(m). ★ **판정이 읽는다** — 규칙 [9](< 3.0): `clear` 인데 이 값이 3.0 미만이면 `clear` 를 거둔다(Zm4). "
                                "한 폴리곤이 노면과 주차장 포장면을 합쳐 그린 곳(§379)은 좌우가 비대칭이라 이 값이 발행 폭보다 훨씬 좁다",
             "width_min_sample_idx": "int|null 발행 width_min_m 을 낸 표본의 인덱스(그 구간의 width_samples.csv 행 순서, 0 부터)",
             "n_poly": "int 채택 표본이 걸친 원천 폴리곤 수(ngii1k 행 번호 · ngii ufid · 실폭도로 RW_SN). ★ 식별자는 측정점을 덮는 폴리곤 중 목록 순서가 앞선 하나다 — 엔진의 선택이 아니다(법선은 합집합 위에서 쏜다). 겹치는 폴리곤에서는 부풀거나 줄 수 있다",

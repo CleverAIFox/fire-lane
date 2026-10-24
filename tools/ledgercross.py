@@ -68,6 +68,7 @@ LIST_COLS = ("seg_id", "road_name", "road_bt_m", "width_min_m", "clear_med_m", "
              "ecc_rel_med_m", "length_m", "struct_kind", "nfa_designated", "occ_pressure")
 KEYS = ("steps", "d_distribution", "bands", "by_ledger_value", "contradictions", "groups",
         "quality", "by_road", "extras", "params", "counts")
+KEYS_BOTH = (*KEYS, "median_basis", "contradiction_overlap")
 
 
 def _r(v: float) -> float:
@@ -111,11 +112,14 @@ def _pack(xs: list[float]) -> dict:
     return {k: (v if k == "n" else _r(v)) for k, v in q.items()} if xs else {"n": 0}
 
 
-def analyse(rows: list[dict]) -> dict:
-    """`rows` = 구간 속성 목록(+ `lat` · `lon`). 순수 함수 — 파일을 안 읽는다."""
+def analyse(rows: list[dict], our_col: str = "width_min_m") -> dict:
+    """`rows` = 구간 속성 목록(+ `lat` · `lon`). 순수 함수 — 파일을 안 읽는다.
+
+    `our_col` = 우리 쪽 폭 칸. 기본은 최솟값(`width_min_m`)이고 `width_med_m` 을 주면 같은 표본의 **중앙값** 기준으로 다시 잰다(§568-5).
+    """
     usable, excluded = [], 0
     for r in rows:
-        lg, w = num(r.get("road_bt_m")), num(r.get("width_min_m"))
+        lg, w = num(r.get("road_bt_m")), num(r.get(our_col))
         if lg is None or w is None:
             excluded += 1
             continue
@@ -231,10 +235,23 @@ def analyse(rows: list[dict]) -> dict:
             "occ_pressure_by_verdict": occ,
             "dongyecheon_ledger_15": {"n": len(dgc), "struct_kind": dict(Counter(str(r.get("struct_kind")) for r in dgc))},
         },
-        "params": {"ECC_PCT": ECC_PCT, "GAP_BIG": GAP_BIG, "NORMAL_GAP": NORMAL_GAP, "bands": [b[0] for b in BANDS]},
+        "params": {"ECC_PCT": ECC_PCT, "GAP_BIG": GAP_BIG, "NORMAL_GAP": NORMAL_GAP, "bands": [b[0] for b in BANDS], "our_width_col": our_col},
         "counts": {"segments": len(rows), "usable": n_all, "with_d": n, "non_step": non_step, "excluded": excluded, "clamped": clamped,
                    "normal": len(normal), "contradiction": len(contra)},
     }
+
+
+def analyse_both(rows: list[dict]) -> dict:
+    """최솟값 기준(정본) + 같은 표본의 **중앙값 기준**. 「min 대 대표 비교였다」를 가르는 자다(§568-5)."""
+    res = analyse(rows)
+    med = analyse(rows, our_col="width_med_m")
+    a = {r["seg_id"] for r in res["contradictions"]}
+    b = {r["seg_id"] for r in med["contradictions"]}
+    res["median_basis"] = {k: med[k] for k in ("steps", "d_distribution", "bands", "groups", "counts", "params")}
+    res["median_basis"]["contradiction_ids"] = sorted(b)
+    res["contradiction_overlap"] = {"min_basis": len(a), "median_basis": len(b), "both": len(a & b),
+                                    "only_min": len(a - b), "only_median": len(b - a)}
+    return res
 
 
 def load() -> list[dict]:
@@ -279,6 +296,14 @@ def show(res: dict) -> None:
     for col, q in res["quality"].items():
         print(f"  품질 {col:<24} 모순 {q['contradiction']['median']} (n {q['contradiction']['n']}) · 정상 {q['normal']['median']} (n {q['normal']['n']})")
     print(f"  도로명 2구간 이상: {len(res['by_road'])}종")
+    m = res.get("median_basis")
+    if m:
+        print("── 같은 표본의 중앙값(width_med_m) 기준 ──")
+        md = m["d_distribution"]
+        print(f"  d ±1 {md['within_1']} · ±2 {md['within_2']} · +1 {md['plus1']} 대 −1 {md['minus1']} (비 {md['plus1_over_minus1']})")
+        for k, v in m["bands"].items():
+            print(f"  대장 {k:<6} n={v['n']:<4} 비 중앙 {v.get('median')} · 올림 기준 중앙 {v.get('quantization_baseline', {}).get('median')}")
+        print(f"  모순 |d|≥{GAP_BIG}: {m['groups']['n_contradictions']} (최솟값 기준과 겹침 {res['contradiction_overlap']})")
 
 
 def selftest() -> int:
@@ -314,7 +339,7 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     if a.selftest:
         return selftest()
-    res = analyse(load())
+    res = analyse_both(load())
     show(res)
     if not a.no_write:
         OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
