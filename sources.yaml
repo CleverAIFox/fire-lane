@@ -4032,6 +4032,7 @@ outputs:
     - tools/baseline.py
     - tools/release_brief.py
     - tests/test_contract.py
+    - tests/test_cv_reason_sym_low.py
     note: |
       segments.geojson 의 컬럼 계약. publish 가 web/data 로 사본을 낸다.
       ★ 2026-09-04 등재. `Step('segments').writes` 에는 있었고

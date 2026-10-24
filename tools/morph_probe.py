@@ -29,7 +29,7 @@ IN    web/data/road_area.geojson · data/processed/segments_5186.gpkg · segment
 OUT   없음 (표준출력)
 PARAM 없음
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
-밖    **판정을 안 한다 · 칸을 안 만든다.** opening 이 「통과」의 옳은 정의인지는 안 정한다 — 해상도가 결과를 정하는지(민감도)를 보는 것이 이 판의 일이다. scipy 는 가상환경에만 있다(`uv.lock` 불변 — 골든 코드 지문에 들어 있다).
+밖    **판정을 안 한다 · 칸을 안 만든다.** opening 이 「통과」의 옳은 정의인지는 안 정한다 — 해상도가 결과를 정하는지(민감도)를 보는 것이 이 판의 일이다. scipy 는 dev 그룹에만 있다(감사 N9 · Zm20 에서 core → dev. `uv sync --no-dev` 환경에는 없다 — 이 도구는 조사용이라 dev 환경에서 돈다 · `uv.lock` 이 움직였다 — 골든 코드 지문에 들어 있다).
 """
 from __future__ import annotations
 

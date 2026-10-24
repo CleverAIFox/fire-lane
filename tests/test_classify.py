@@ -246,7 +246,7 @@ def test_rule8_any_source_below_truck_withdraws_clear_by_cctv():
 
 def test_rule9_symmetric_width_below_truck_withdraws_clear_but_nothing_else():
     from firelane.seg.classify import classify
-    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wsym=0.152) == ("needs_cv", None)
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wsym=0.152) == ("needs_cv", "sym_low")
     assert classify(**CLEAR_ARGS, cctv_dist=60.0, wsym=2.9) == ("unknown", "needs_survey")
     assert classify(**CLEAR_ARGS, cctv_dist=60.0, wsym=3.0) == ("clear", None)
     # clear 만 건드린다 — blocked 는 대칭폭이 좁아도 그대로다(전면 도입이 아니다).

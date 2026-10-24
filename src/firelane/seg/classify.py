@@ -220,7 +220,8 @@ def classify(
     #   DM01820(2순환로 · 대장 35m)은 한쪽이 7.6cm 인데 wmin 이 넓어서 clear 였다. [8] 과 같은 갈래(CCTV 안 → needs_cv · 밖 → needs_survey).
     if v == "clear" and wsym is not None and wsym < TRUCK:
         if cctv_dist <= CCTV_RANGE:
-            v, reason = "needs_cv", None
+            # ★ 감사 N6 (Zm20). 이유를 단다 — [8] · [10] · [11] 은 `source_conflict` 를 다는데 [9] 만 비어 있었다.
+            v, reason = "needs_cv", "sym_low"
         else:
             v, reason = "unknown", "needs_survey"
 

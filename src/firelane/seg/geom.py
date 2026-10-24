@@ -70,7 +70,7 @@ VERDICT_RULE = (
     # ★ 2026-10-23. 여덟째 — 채택에서 밀린 소스가 clear 를 반박하면 clear 를 거둔다. 영상으로 풀 수 없으면 현장에서 재야 안다.
     "clear 인데 소스 무관 최솟값 < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 반박을 못 본 척하지 않는다",
     # ★ 2026-10-23 (Zm4). 아홉째 — 중심선이 폴리곤 경계에 붙어 있으면 wmin 은 도로 중앙의 폭이 아니다. clear 만 건드린다.
-    "clear 인데 대칭폭 최솟값(2·min(좌,우)) < 3.0 -> needs_cv (CCTV 19m 안) | unknown (reason=needs_survey). 중심선이 경계에 붙었다",
+    "clear 인데 대칭폭 최솟값(2·min(좌,우)) < 3.0 -> needs_cv (CCTV 19m 안 · cv_reason=sym_low) | unknown (reason=needs_survey). 중심선이 경계에 붙었다",
     # ★ 2026-10-23 (Zm6). 열째 — 소스 하나라도 7.0m 미만이라 말하면 「양쪽 주차해도 통과」(clear)를 주장할 수 없다. 축 논쟁과 무관하다.
     "clear 인데 소스 무관 최솟값 또는 내접원 중앙값 < 7.0 -> needs_cv (CCTV 19m 안 · cv_reason=source_conflict) | unknown (reason=needs_survey). clear 의 주장을 못 한다",
     # ★ 2026-10-23 (Zm19). 열한째 — 구간 안에서 폭이 2.5배 넘게 변하면 대표폭이 없다. width_max_m 이 있는 구간만 걸린다.

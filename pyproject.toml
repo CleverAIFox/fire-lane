@@ -63,7 +63,6 @@ dependencies = [
     #   없는 시험이다.
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
-    "scipy>=1.18.1",
 ]
 
 # ★ 2026-09-20 (W3-1). 여기 있던 `dev` extras 를 지웠다. `[dependency-groups]`
@@ -159,6 +158,10 @@ package_module_name_map = { "ruamel-yaml" = "ruamel", "pillow" = "PIL", "PyYAML"
 #   시작했고, `python-multipart` 는 **중개자가 안 쓴다**(폼 업로드가 없다).
 #   면제는 사각지대다 — 0개가 맞는 상태다.
 DEP002 = []
+# ★ 2026-10-24 (감사 N9 · Zm20). `scipy` 를 dev 로 내렸다 — 조사 도구 둘(`tools/widthmatch.py` · `tools/morph_probe.py`)만 쓰고
+#   둘 다 지연 import 다. deptry 는 `tools/` 를 비-dev 코드로 보므로 DEP004 로 운다. 도구를 dev 환경에서 돈다고 선언하는 면제다.
+#   ★ 래칫이다 — 다른 dev 패키지를 여기 더하지 않는다. `src/` 가 scipy 를 import 하면 이 면제는 거짓이 된다(`test_scipy_is_not_a_core_import`).
+DEP004 = ["scipy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -244,6 +247,9 @@ dev = [
     #   `uvicorn[standard]` 가 이미 끌고 오지만 **여기 적는다** — 시험이
     #   전이 의존성에 매달리면, 그 전이가 끊기는 날 이유 없이 빨개진다.
     "websockets>=15",
+    # ★ 2026-10-24 (감사 N9 · Zm20). **core 에서 dev 로 내렸다.** `src/` 는 scipy 를 import 하지 않는다 — 쓰는 자리는
+    #   조사 도구(`tools/widthmatch.py` · `tools/morph_probe.py`)뿐이고 지연 import 다. 판정 파이프라인이 깔 이유가 없다.
+    "scipy>=1.18.1",
 ]
 
 

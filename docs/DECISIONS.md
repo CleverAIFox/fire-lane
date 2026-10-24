@@ -42335,3 +42335,25 @@ Zm19 커밋(`288171e`) 상태에서 돌렸다. pytest **11 실패**(3,342 통과
 - `docnum_check` 의 회색 사유 대조는 **골든 지문**(`unknown_reason` 의 `needs_survey` 35)을 읽는다. 기획서는 발행본의 74 로 고쳤으므로 **재잠금 전까지 이 관문이 빨강이다**(문서가 옳고 지문이 낡았다).
 - 재잠금은 사람이 한다: `golden.py lock` · `baseline.py freeze <태그>` · `docseal stamp`(`DECISIONS/565` 포함).
 - B(N6 · N9 · 1-3)는 지문을 움직이므로 **이 커밋에 없다** — 별도 커밋이다.
+
+## 566. 지문을 움직이는 셋 — 규칙 [9] 의 이유 · scipy dev 그룹 · L3 정밀도 (Zm20 B · **사람이 잠그기 전**)
+
+> 2026-10-24
+
+유병률  **1회** — 셋 다 감사가 지목했고 서로 독립이다. 공통점은 골든 지문(L2 · L3 · 코드 지문)을 움직인다는 것 하나다.
+
+강제자 `tests/test_cv_reason_sym_low.py` · `tests/test_scipy_dev_group.py` · `tests/test_golden_l3_precision.py` — 고치기 전에 빨강을 확인했다
+        **하위 둘**이 이 칸을 물려받는다
+
+★ **사람이 잠그기 전이다.** 이 커밋은 `golden.py lock` · `baseline.py freeze` · `docseal stamp` 를 하지 않았다. 판정(`verdict`)은 한 구간도 안 움직였다 — 290 · 278 · 192 · 521 그대로다.
+
+### 566-1. N6 — 규칙 [9] 에 `cv_reason = sym_low`
+
+[8] · [10] · [11] 은 `needs_cv` 로 보낼 때 `source_conflict` 를 다는데 [9](대칭폭 < 3.0)만 비어 있었다. `sym_low` 를 단다(`survey_queue` 의 태그와 같은 말). 발행 칸이 바뀐다: `needs_cv` 278 중 `cv_reason` 은 `source_conflict` 65 · **`sym_low` 4** · `None` 209. 골든 **L2 는 `cv_reason` 을 안 담으므로 안 움직이지만**(`FIELDS` 에 없다) 코드 지문이 움직인다. 스키마 · `VERDICT_RULE[9]` 문언 · 시험 둘(`test_classify` · `test_schema_self_consistent`)을 맞췄다.
+
+### 566-2. N9 · 1-3
+
+- **scipy** — core → dev 그룹. `src/` 는 import 하지 않고 조사 도구 둘이 지연 import 한다. `uv.lock` 이 움직인다(코드 지문에 든다). deptry 는 `tools/` 를 비-dev 로 봐서 `DEP004` 로 우므로 `[tool.deptry.per_rule_ignores] DEP004 = ["scipy"]` 면제를 사유와 함께 달았다. 확인: 별도 환경에서 `uv sync --no-dev` → `import scipy` 실패 → `pytest tests/test_classify.py` **26 통과**.
+- **1-3** — `golden.py` 의 L3 호출이 기본 `nd=3`(EPSG:4326 에서 ≈ 100 m 격자)을 썼다. `nd=7`(≈ 1 cm)로 올렸다. 0.0005° 이동은 옛 지문이 같은 값을 냈고 새 지문은 다르다(시험). **L3 는 기하가 안 바뀌어도 값이 달라진다** — 잠글 때 L3 가 움직인 것은 이 호출 탓이지 기하가 아니다.
+
+사람 몫: `golden.py lock` · `baseline.py freeze <태그>` · `docseal stamp`(`DECISIONS/565` · `/566`).
