@@ -214,10 +214,13 @@ def cmd_aggregators() -> int:
         return None if v is None or (isinstance(v, float) and math.isnan(v)) else v
 
     def cls(r, w):
+        # ★ 감사 N4 (Zm20). 판정 입력을 **전부** 넘긴다 — 바꿔 보는 것은 폭 집계 `w` 하나뿐이고 규칙 [8]~[11] 의
+        #   입력은 산출물 그대로다. 안 넘기면 Zm19 이후 재현이 깨져 표가 안 나온다.
         ns = nz(r.n_sample)
         return classify(wmin=w, wmax=nz(r.width_max_m), nreg=None if ns is None else int(ns),
                         road_bt=nz(r.road_bt_m), length_m=r.length_m, cctv_dist=r.cctv_dist_m,
-                        spread_max=None)[0]       # 이 도구는 폭 집계만 바꿔 본다 — 규칙 [11](폭 급변)은 끈다(Zm19)
+                        wmin_any=nz(r.width_min_any_m), wsym=nz(r.width_min_sym_m),
+                        clear_med=nz(r.clear_med_m))[0]
 
     rows = widthcross._load()
     if rows is None:

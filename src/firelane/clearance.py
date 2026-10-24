@@ -1,11 +1,12 @@
 """
-clearance.py — 구간별 **단순 내접원**(clearance, R = 0)을 칸으로 싣는다. **판정에 안 쓴다.** (Zm7 · DECISIONS §549)
+clearance.py — 구간별 **단순 내접원**(clearance, R = 0)을 칸으로 싣는다. **판정은 `clear_med_m` 하나만 읽는다**(규칙 [10]) — `clear_min_m` · `clear_max_m` 는 안 읽는다. (Zm7 · DECISIONS §549 · Zm19 §564)
 
 IN    구간(EPSG:5186 선) · 실폭도로 면(`road_rw`) · 교차부 면(`ngii1k_xsec`)
 OUT   `clear_min_m` · `clear_med_m` · `clear_max_m`(내접원 **지름** = 2 × 점에서 도로 경계까지의 거리) · `clear_src` · `clear_cov`
 PARAM `RAY_M`(국소 클립 반경 — `seg.params`)
-밖    **판정을 안 한다.** `seg/classify.py` 가 이 칸을 읽으면 시험이 운다(`tests/test_clearance.py`). 대표값을 `clear_min_m` 으로 할지 `clear_med_m` 으로 할지도 **아직 정하지 않았다**
-      — 세 값을 다 싣고 사람이 현장 측정을 더 모은 뒤 정한다. 판정 폐포(`segments.py`) 밖이다 — 출판(`publish_web`)이 부른다.
+밖    **판정을 이 파일이 하지는 않는다** — 칸을 내고 `seg/classify.py` 가 읽는다. ★ 2026-10-23 (Zm19 · §564) 이 파일은 **판정 폐포 안**이다(`segments.py` 가 부른다).
+      대표값은 사람이 `clear_med_m` 으로 정했다. `clear_min_m` · `clear_max_m` 를 `classify.py` 가 읽으면 `tests/test_clearance.py` 가 운다 — `2·min(좌,우)` 꼴이라
+      중심선 편심에 노출된다.
 
 ── 왜 단순 내접원인가 ──────────────────────────────────────────
 현장 16점(서로 다른 좌표 10 · 측선 ±1.0m)을 **같은 자리에서** 댔다(`tools/clearance_probe.py --field`). 로그오차 중앙(2배 초과 수):
@@ -73,7 +74,7 @@ def inscribed(line, area_u, xsec_u=None):
 
 
 def columns(lines, area_u, xsec_u=None):
-    """구간 선 목록 → 다섯 칸의 딕셔너리 목록(같은 순서). 판정에 안 쓴다."""
+    """구간 선 목록 → 다섯 칸의 딕셔너리 목록(같은 순서). 이 중 판정이 읽는 것은 `clear_med_m` 하나다."""
     rows = []
     for ln in lines:
         d, cov = inscribed(ln, area_u, xsec_u)

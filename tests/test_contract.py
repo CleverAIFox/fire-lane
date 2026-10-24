@@ -683,7 +683,7 @@ def test_schema_layers_differ_only_by_declaration():
       선언은 둘이다 —
         processed → web 에서 뺀 것   web 스키마의 `dropped_from_processed`
         web 에만 있는 것             `seg_no`(publish 가 만든다) · `z`(지형 덧쓰기) · `clear_*` 다섯(2026-10-23 Zm7 — publish 가 `firelane.clearance` 로
-                                     낸 내접원 칸. 판정 폐포 밖이라 processed 에 없다 · 판정에 안 쓴다)
+                                     낸 내접원 칸. 이 칸들은 publish 가 싣는다 · processed 에 없다 · 판정이 읽는 것은 `clear_med_m` 하나다(Zm19 부터 `clearance.py` 는 판정 폐포 안))
       공유 필드의 서술도 같아야 한다. publish 는 서술을 복사한다.
     """
     P = ROOT / "data" / "processed" / "segments.schema.json"

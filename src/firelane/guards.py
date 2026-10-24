@@ -71,7 +71,7 @@ CRITICAL = (
     "building_entrance",  # 건물 출입구. 접근 회랑의 도착점 — 회랑이 비면 판정 범위가 좁아진다
     "boundary_emd",       # 법정동 경계. 판정 범위(KEEP_BUFFER 50m)의 원점이고 EMD_CD 로 한 행을 고른다
     "fire_station",       # 119안전센터. 판정 범위의 300m 원 · 회랑의 출발점 (DECISIONS §170)
-    "cctv",               # CCTV. needs_cv 판정의 성립 여부(CCTV_RANGE 25m)를 가른다
+    "cctv",               # CCTV. needs_cv 판정의 성립 여부(`CCTV_RANGE`)를 가른다
     "streetlight",        # 가로등. light_count 가 0 으로 떨어지면 조용히 어두운 구간이 된다(2026-08-14)
     # ── 산출 동반 ────────────────────────────────────────────
     "turn_restriction",   # 회전제한. 대장이 `outputs.route_vehicle.inputs` 로 든다 — segments 가 내는 표다.

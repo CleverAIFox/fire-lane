@@ -12201,9 +12201,7 @@ datasets 가 13종이고, 좁은 관문은 FAIL 을 조용히 통과시킨다(10
 교체하지는 않는다. 기획서는 대외 제출본이고 생성물이 아니다. 알리기만 하고 넣는 것은
 사람이 한다」(§110). 이 결정을 **뒤집는다.**
 
-<!--voice-ok-->
-> 미친 기획서가 재생성한 그림을 수동으로 왜 끼워. 그럼 앞으로도 수동으로 끼워야 하는
-> 건데. 도구를 수정하면 되는 거 아니야 — 2026-09-23
+사용자가 2026-09-23 에 재생성한 그림을 수동으로 끼워 넣고 있다고 지적했다. 그러면 앞으로도 수동이어야 하므로 도구를 고치는 것이 맞다는 요지였다.
 
 틀린 이유 둘 —
 
@@ -13962,8 +13960,8 @@ V-World 는 일곱 자리에서 현재형이고(2026-09-22 에 걷혔다), 배�
 
 강제자  `tests/test_layering.py::test_the_import_collector_reads_from_x_import_y` · `web/navi/test/layering.test.ts` · `tools/sizecheck.py`(프런트 포함) · `tests/test_docref.py`(문서별 하한) · `tools/docx_fix.py`(삽입 목록 ↔ 치환 규칙). 하위 다섯은 이 결정의 조각이고 위 강제자가 결정 전체를 든다  <!-- 위 경로 중 docx 파이프라인 것은 2026-10-09 에 폐기됐다 · DECISIONS §444-4 -->
 
-§243 의 감사가 닫히자 주인이 물었다 — **「PLAN 이 1,500행이 말이 되냐」.**
-그 물음이 이 배치를 열었고, 답은 문서 문제가 아니었다.
+§243 의 감사가 닫히자 사용자가 PLAN 이 1,500행인 것이 합당한지 지적했다.
+그 지적이 이 배치를 열었고, 답은 문서 문제가 아니었다.
 
 ### 244-1. §1 이 「남은 일의 정본」이라 적고 빚의 절반만 알았다
 
@@ -15335,7 +15333,7 @@ RFC 7946 §3.1.6 은 외곽 반시계 · 구멍 시계를 요구하는데 발행
 
 강제자  `tests/test_delegation.py` 여섯 · `tests/test_relock_decision.py` 넷. 하위 3이 이 칸을 물려받는다
 
-「지금 고치는 것만 보고 그동안 쌓은 것에 안 붙이는 것 아니냐」는 물음에서 나왔다.
+사용자가 지금 고치는 것에만 붙이고 그동안 쌓은 것에는 안 붙이는 것이 아닌지 지적한 데서 나왔다.
 붙이고는 있었지만 — `snap_orient()` 는 두 발행기가 같이 쓰고 `bldg-contact` 는
 기존 배열·토글·토큰에 들어갔다 — **그 물음이 없었으면 안 봤을 자리**에서 하나
 나왔다.
@@ -15563,7 +15561,7 @@ RFC 7946 §3.1.6 은 외곽 반시계 · 구멍 시계를 요구하는데 발행
 
 강제자  `tests/test_r3.py::test_the_skeleton_switch_stays_out_of_the_judgment_closure`(판정 폐포를 수로 못박고 재유입을 막는다 — 이 배치가 16 으로 내렸고 2026-09-29 에 `seg/classify.py` 가 들어와 **17** 이다 · §303) · `tools/sizecheck.py` · `tools/env_check.py`. 하위 셋이 이 칸을 물려받는다
 
-「폐포는 다 닫았냐」에서 나왔다. 답은 아니었고, 줄일 수 있는 것 둘을 찾아 줄였다.
+사용자가 폐포를 다 닫았는지 확인을 요구한 데서 나왔다. 답은 아니었고, 줄일 수 있는 것 둘을 찾아 줄였다.
 
 | 축 | 전 | 후 | 무엇이 빠졌나 |
 |---|---|---|---|
@@ -27572,7 +27570,7 @@ is_security() {
 강제자  `tests/test_batch_tools.py::test_the_human_check_line_separates_navi_from_ops`
 유병률  한 번
 
-2026-10-06. 사용자 물음 — 「왜 여전히 내비 쪽에 검색 기능이 붙어 있는 거야?」
+2026-10-06. 사용자가 내비 쪽에 검색 기능이 아직 붙어 있다고 지적했다.
 
 코드를 열었다. 없다.
 
@@ -27609,7 +27607,7 @@ web/navi/src/OpsApp.tsx     domain/search 를 import 하는 유일한 파일
 하위 하나이 이 칸을 물려받는다
 유병률  한 번
 
-2026-10-06. 사용자 물음 「도로폭 전부 다 무결 정합 맞냐」를 재다가 나왔다.
+2026-10-06. 사용자가 도로폭 전부의 무결성 · 정합을 확인하라고 요구해 재다가 나왔다.
 발행본 1,281구간 중 `width_min_m` 이 없는 것이 둘인데 **진단 출력은 0건**이다.
 
 ```
@@ -32939,7 +32937,7 @@ tools/render_figures.py --check                         그림이 옛 값을 그
         §436-6 재잠금 면제가 죽은 그물 · §445 통로를 지키는 문의 범위 ·
         이 절의 `treecheck` 열 축)
 
-주인이 물었다 — 「그니까 그 105 검사는 전부 필요한게 맞다는거야?」
+사용자가 105개 검사가 전부 필요한 것이 맞는지 확인을 요구했다.
 **안 쟀었다.** 재고 적는다. 두 물음으로 훑었다 — ⓐ 무엇을 묻는가 ⓑ 그 물음을
 다른 단계가 이미 묻는가.
 
@@ -37352,7 +37350,7 @@ _apply(wt, 패치)   ← **그 더러워진 나무 위에** 얹는다
   일이 아니다 — 프로브가 그 음성 쪽을 든다(지우면 운다).
 ★ 치운 뒤에도 더러우면 **얹지 않고 멈춘다.** 치웠다고 말하고 안 치워진 자리는
   이 절이 고친 것과 같은 종류의 거짓말이다.
-## 509. 「법선이냐 내접원이냐」를 두 달 물었다 — **둘 다 맞고 둘 다 틀렸다**
+## 509. 법선과 내접원 중 어느 쪽이 맞는지를 두 달 따졌다 — **둘 다 맞고 둘 다 틀렸다**
 
 > 2026-10-13
 
@@ -42265,3 +42263,75 @@ Zm19 커밋(`288171e`) 상태에서 돌렸다. pytest **11 실패**(3,342 통과
 - **이 판이 고친 것**: 엄격 린트 1건(`tests/test_proposal_table_render.py` 의 `glob.glob` → `Path.glob` · Zp 판에서 만든 시험이다 — 이번에야 걸렸다).
 - **환경**: `파이프라인 전량` 은 `ortho` 가 **메모리로 죽었다**(「ortho 가 실패한 것이 아니다」) — WSL 메모리 한계다. 고칠 수 없다(`uv run fire-lane --from ortho` 를 메모리가 넉넉한 곳에서).
 - **이전부터 있던 것 · 사람 몫**: pytest 11(`test_clearance_cross` · `test_doc_fsck` · `test_evalgen` 다섯 · `test_fieldseal` · `test_fire_access_gate` · `test_fix_door` · `test_ratchet`) · `평가지표 산출`(`golden.py lock` · `baseline.py freeze`) · `data/field` 지문과 `.bak_enc`(`문서 ↔ 문서` · 실측 층 지문) · `mutate` 낡음 19파일(자기검사 전수 · 래칫 정합) · `문서 정합 도장` · 커버리지 43 < 44 · 내비 단위 시험(vitest 격리 설정 제안) · `fire_access` 관문 9건.
+
+## 565. 감사 수정요청서 적용 — 판정 불변분 (Zm20 · 판정 변경 0 · 임계값 변경 0 · 도장·잠금 없음)
+
+> 2026-10-24
+
+유병률  **1회** — 감사가 한 번에 열두 결함을 지목했다(단수 키 읽기 · 휴리스틱 하한 누락 · 옛 CCTV 25 · 16MiB 지문 · 문구 누락 · 낡은 서술).
+
+강제자 `tests/test_ledger_file_key_reader.py` · `tests/test_cctv_range_single_source.py` · `tests/test_survey_queue_tags.py` · `tests/test_width_fn_reproduces.py` · `tests/test_tonecheck.py` · `tests/test_batches_index.py` · `web/navi/test/astar.test.ts` ⑥ · `web/navi/test/domain.test.ts` — 결함마다 하나씩이고 고치기 전에 빨강을 확인했다
+        **하위 여섯**이 이 칸을 물려받는다
+
+입력은 2026-10-24 수정 요청서다(지시문 원본 없음 · Zm20 — 요청서 원문은 이 세션에 없었고 번호와 한 줄 요약만 받았다. 아래 번호는 그 요약을 따른다). 판정 규칙(`classify.py` 의 로직)과 `seg/params.py` 임계값은 **한 글자도 안 바꿨다.** `golden lock` · `baseline freeze` · `docseal stamp` 는 하지 않았다. 결함마다 그것을 잡는 시험을 먼저 넣어 빨강을 확인하고 고쳤다.
+
+### 565-1. 고친 것과 그것을 잡는 시험
+
+| 번호 | 무엇이었나 | 시험 |
+|---|---|---|
+| 1-4 | `inventory.py` · `intake_name.py` 가 대장 `file` 단수만 읽었다 — `files:` 항목이 「file 미지정」 · 제안 없음으로 빠졌다 | `tests/test_ledger_file_key_reader.py` (셋 · 고치기 전 셋 다 빨강) |
+| 1-5 | `findRouteBetween` 의 휴리스틱 `h` 가 `adjacencyMinFactor` 를 안 곱했다 — 배수가 1.0 미만이면 점 경로가 다익스트라보다 나쁜 답(최대 +34.94) | `web/navi/test/astar.test.ts` ⑥ |
+| 1-6 | CCTV 유효범위 다섯 자리가 옛 25 를 말했다(`publish_web` · `guards` · `figures/value` · `desk_check` · `seg/report`) | `tests/test_cctv_range_single_source.py`. 서술은 `CCTV_RANGE` 에서 만들고 그림은 기본값을 지어내지 않는다. 스키마 재생성 포함 |
+| 1-8 | 계보 지문 `_sha` 가 16MiB 를 넘으면 읽기를 멈췄다 — 실물 `building.geojson`(17.0MB) · `jijeok.geojson`(18.3MB) 이 그 너머였다 | `test_lineage_branches.py::test_fingerprint_sees_a_change_past_the_first_16mib` |
+| N1 | `GRAY_REASON` 에 `needs_survey` 가 없어 발행 그래프 회색 74구간이 문구 없이 나갔다 | `domain.test.ts` — 사유 키 집합이 `web/config.js` 와 같은가(재발행 전 산출물용 옛 키 하나만 예외) |
+| N2 | `needs_survey` 문구가 「소스 최솟값 < 3m」 하나만 말했다 — 발행본 74 중 소스 최솟값 < 3m 은 5, 대칭폭 < 3m 도 5 뿐이다. 규칙 [8]~[11] 전부로 고쳤다(화면 · `config.js` · 스키마 · 기획서 · MASTER) | 위 시험의 키 집합 + `docnum_check` |
+| N3 | `survey_queue` 태그가 [8]~[10] 의 소스 · 대칭 축뿐이었다 — Zm19 가 넓힌 둘로 내려간 구간이 현장 대장에서 빠졌다. `median_low` 116 · `spread_high` 24 를 더했다 | `tests/test_survey_queue_tags.py` |
+| N4 | `width_fn.py --aggregators` 의 `cls` 가 규칙 [8]~[10] 입력을 안 넘기고 [11] 을 껐다 — 재현이 143/1,281 에서 깨져 표가 안 났다 | `tests/test_width_fn_reproduces.py` (실물 재현 + 인자 구조) |
+| N7 | [8] ⊂ [10] 을 `classify.py` 주석에 적었다(코드는 안 지웠다 — `VERDICT_RULE` 번호와 `IMPLEMENTS` 가 [8] 을 선언한다) | 주석이라 코드 지문이 안 움직인다(실측: `classify.py` 지문 동일) |
+| N8 | 「판정에 안 쓴다」 서술 11곳 — `clearance.py` 는 Zm19 부터 판정 폐포 안이고 `clear_med_m` 은 규칙 [10] 이 읽는다. `clearance.py` 3 · `test_clearance.py` 3 · `test_contract.py` 1 · MASTER 2 · `clearance_cross` 2(`road_bt_m` 은 판정에 든다) | 서술이라 시험 없음 — `test_clearance.py` 가 `clear_min`/`clear_max` 를 판정이 못 읽는다는 것은 이미 든다 |
+| N10 | `publish_web` 빈 `update({})` 죽은 코드 · 폐포 래칫 하한 메시지 「기록 19」 → 20 · `fireaccess` 구간거리 0 에서 ZeroDivision(비율 None · loose True) | `test_nfa_compare.py` 둘 · `test_fire_access_gate.py` 하나 |
+| 5-2 | MASTER 의 소방서 대조 블록에 「2026-09-16 판」 | — |
+| 5-3 | 기획서 CCTV 25m 전부(19m) · ⑤ POC 문단 7회 반복 → 1회 | `docnum_check` · 기획서 시험 |
+| 5-4 | 낡은 수: 기획서 GRAY 482 → 521 · needs_survey 35 → 74 · MASTER 2-1 `433` → 521 + `needs_survey` 행 · PLAN #95 소화전 밀도는 Zm19 **이전** 판정 기준임을 적음 · 규칙 [11] 은 `width_max_m` 이 있는 **606/1,281** 에만 걸린다고 명시(`geom.py` · MASTER) | — |
+
+### 565-2. 1-8 의 선택 — **전체 청크 해시**
+
+한계를 MASTER 에 적는 쪽과 전체를 읽는 쪽 중 **전체를 읽는 쪽**을 골랐다. 이유 — ① 한계를 적어도 구멍은 그대로이고 구멍이 있는 파일이 실재한다(둘). ② 비용이 한 번 읽는 값이다(1MiB 청크 · 최대 18MB). ③ 「크기가 같은 채 뒤쪽 바이트만 바뀌면 못 본다」는 계보가 존재하는 이유를 정면으로 깎는다. 결과 — 그 두 파일의 `bytes` 지문 값이 **한 번** 달라진다. 계보 기록(`data/processed/_lineage.json`)은 추적 파일이 아니라 다음 실행이 새 지문을 쓴다.
+
+### 565-3. 3절 문체 요지화 — 고친 줄과 도구 변경
+
+`tools/tonecheck.py` 에 **`질책`** 족을 더했다(사용자가 한 반말 의문 · 질책을 따옴표로 옮긴 줄). `비속어` · `질책` 은 **`UNEXEMPTABLE`** 이다 — `voice-ok` · 코드 펜스 · 4칸 들여쓰기로 풀리지 않는다(용어 족은 그대로 푼다). 범위는 `src` · `tools` · `tests` · `web/navi` 의 `.py` · `.sh` · `.ts` 주석과 docstring 까지이며 이미 `CODE` 가 그것이었다 — 시험(`tests/test_tonecheck.py`)이 못박는다. 새 족이 문 줄은 **15줄**이었고 전부 「사용자가 ~를 지적했다 / 요구했다」 꼴로 요지만 남겼다. (요청서의 「13자리」와 수가 다르다 — 요청서 원문이 없어 자리를 직접 대조하지 못했다. 이 도구가 문 줄이 전부이고, 그 밖에 요청서가 가리킨 자리가 더 있으면 알려 달라.)
+
+고친 줄(고치기 전 줄 번호):
+
+- `docs/MASTER.md:2324` · `docs/DECISIONS.md:12205`(욕설이 든 인용 블록 — `voice-ok` 표시째 걷었다) · `:13965` · `:15338` · `:15566` · `:27575` · `:27612` · `:32942` · `:37355`(제목)
+- `src/firelane/publish_context.py:16` · `tools/axis_gain.py:12` · `tools/sizetable.py:388` · `tests/test_batch_tools.py:890` · `tests/test_embeddable.py:111` · `tests/test_workflow_guards.py:189`
+
+### 565-4. 원본 디렉터리 `docs/batches/` (C)
+
+`docs/batches/` 와 `README.md` 를 세웠다. 파일은 `Zm03.md` ~ `Zm20.md` 이고 **원본은 사용자가 복원해 넣는다** — 에이전트는 쓰지 않는다. 표(README)가 정본이고 현재 열여덟 판이 전부 「원본 없음」이다. DECISIONS 가 「지시문」을 인용할 때는 `(지시문 docs/batches/Zm19.md)` 로 가리키거나 `(지시문 원본 없음 · Zm19)` 로 없다고 적는다. 옛 인용 76줄은 래칫(`tests/test_batches_index.py` · `UNCITED = 76`)이 세며 **내리는 쪽으로만** 움직인다.
+
+### 565-5. N5 는 손대지 않았다 — 동계로9번길 세 구간의 폭 근거 (D)
+
+사용자가 네이버 거리재기로 현장을 확인 중이다. 판정 · 관문 · 문서 어느 쪽도 이 세 구간을 위해 바꾸지 않았다. `test_fire_access_gate::test_no_clear_is_published_on_a_tightly_matched_fire_access_road` 가 이 셋 때문에 빨강이다(Zm19 뒤에도 같다).
+
+| 구간 | 길이 m | 법선 최솟값 `wmin` | 소스 무관 최솟값 | 대칭폭 | 내접원 min · med · max | 대장 `road_bt_m` | 소방서 폭 · `len_ratio` | CCTV 거리 m | 판정 |
+|---|---:|---:|---:|---:|---|---:|---|---:|---|
+| DM00838 | 23.0 | 8.52 | 7.629 | 7.624 | 7.60 · 8.00 · 9.17 | 9.0 | 6 · 1.07 | 8.4 | clear |
+| DM00841 | 16.1 | 9.86 | 9.697 | 9.448 | 7.31 · 7.35 · 7.39 | 9.0 | 6 · 1.07 | 25.7 | clear |
+| DM00843 | 35.6 | 9.97 | 9.869 | 9.146 | 7.20 · 7.26 · 11.66 | 9.0 | 6 · 1.07 | 41.3 | clear |
+
+읽는 법 — 셋 다 모든 근거가 `clear` 문턱(7.0)을 **넘는다.** 가장 가까운 것은 DM00843 의 내접원 중앙값 7.26(여유 0.26)이다. 대장은 9.0 으로 우리 값과 같은 쪽이고, 소방서가 적은 6(구간 대표값)만 다르다. 소방서 폭은 지점 최솟값이 아니라 대표값이라 우리 `wmin` 과 직접 비교하지 않는다(`nfa_access_width` 서술). 매칭은 정확하다(`len_ratio` 1.07 · `loose` False).
+
+선택지 —
+1. **판정 규칙 추가.** 소방서 지정(정확 일치) 구간이면 `clear` 를 주장하지 않고 `needs_cv`/`needs_survey` 로 보낸다. 규칙 하나가 늘고 임계는 안 늘지만 **판정이 움직여** 재잠금 · 기획서 수 · `docnum` 이 따라온다. 소방서의 한 줄(폭 6)을 네 번째 독립 근거로 올리는 일이라, 그 값이 구간 대표값이라는 한계를 규칙이 그대로 떠안는다.
+2. **관문 유지 + 문서 명시.** 판정은 두고 이 세 구간을 「소방서 폭과 어긋나는 알려진 예외」로 MASTER 에 적고, 관문 시험은 예외 목록(구간 id 3개)을 명시해 통과시킨다. 판정은 안 바뀌고 어긋남이 문서에 남는다. 현장 확인이 우리 값을 지지하면 이쪽이 맞다.
+
+현장 확인의 결과가 우리 값(7 이상)이면 2, 소방서 값(6 안팎)이면 1 이 자연스럽다. 결정은 사용자 몫이다.
+
+### 565-6. 이 판이 못 한 것 · 사람 몫
+
+- 요청서 원문이 없어 번호는 요약을 따랐다. 3절 자리 수(13 대 15)와 `test_stage_pages.py:34` 「단언 되살리기」는 원문 없이 확정하지 못했다 — 후자는 지금 그 줄에 죽은 단언이 없다(`or True` 는 `117eb63` 이 이미 걷었다).
+- `docnum_check` 의 회색 사유 대조는 **골든 지문**(`unknown_reason` 의 `needs_survey` 35)을 읽는다. 기획서는 발행본의 74 로 고쳤으므로 **재잠금 전까지 이 관문이 빨강이다**(문서가 옳고 지문이 낡았다).
+- 재잠금은 사람이 한다: `golden.py lock` · `baseline.py freeze <태그>` · `docseal stamp`(`DECISIONS/565` 포함).
+- B(N6 · N9 · 1-3)는 지문을 움직이므로 **이 커밋에 없다** — 별도 커밋이다.

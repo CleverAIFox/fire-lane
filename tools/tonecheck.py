@@ -22,6 +22,10 @@ tonecheck.py — 문서와 주석의 **말투**. `FAMILIES` 가 드는 족이 �
     열었다. 정본이 `docs/proposal.md` 로 옮겨졌고(§425) docx 는 은퇴했다 —
     **아래 `DOCS` 에 md 를 더해 같은 말투 그물을 정본에 씌운다.**
 
+★ 2026-10-24 (감사 3절 · Zm20). **욕설(`비속어`)과 반말 질책(`질책`)은 `voice-ok` · 코드 펜스 · 4칸 들여쓰기로도 못 푼다**(`UNEXEMPTABLE`).
+  인용 표시는 은어 · 약칭 같은 **용어**를 위한 규약이지 사람 말을 그대로 싣는 구멍이 아니다. 코드 주석 · docstring(`.py` · `.sh` · `.ts`)도
+  같은 그물이다 — `CODE` 가 그것이다. 시험은 `tests/test_tonecheck.py`.
+
 IN    docs/*.md (기획서 정본 포함) · README 3종 · src·tools·tests·web 의 주석
 OUT   결함 목록 (비면 통과) · 종료코드 = 건수
 PARAM FAMILIES · EXEMPT
@@ -57,6 +61,15 @@ FAMILIES: dict[str, tuple[str, tuple[str, ...]]] = {
          r"(?<!못 )(?<!에 )미친(?![다지게함])",
          r"빡치", r"개같", r"엿같", r"닥쳐", r"염병", r"개판"),
     ),
+    # ★ 2026-10-24 신설 (감사 3절 · Zm20). 사용자가 한 **반말 질책**을 원문 그대로 옮긴 줄이다. 욕설이 아니어도
+    #   정본에 옮겨 적으면 같은 문제다 — 문서는 밖으로 나가고, 질책은 그날 그 자리의 말이다. 요지로 적는다
+    #   (「사용자가 ~를 지적했다」). 사용자 말을 따옴표로 옮기는 줄(사용자·지시·물었·말했·나왔다가 같은 줄에 있다)에서
+    #   반말 의문·질책 어미(냐 · 잖아 · 거야)로 끝나는 인용을 문다. **`voice-ok` 로 못 푼다**(`UNEXEMPTABLE`).
+    "질책": (
+        "사용자의 반말 질책을 원문 그대로 옮기지 않는다 — 「사용자가 ~를 지적했다」 꼴로 요지를 적는다.",
+        (r"(?:사용자|지시|물었|말했|나왔다|지적)[^\n]{0,80}[「“][^」”\n]*(?:냐|잖아|거야|거지)[?.!]*\s*[」”]",
+         r"[「“][^」”\n]*(?:냐|잖아|거야|거지)[?.!]*\s*[」”][^\n]{0,40}(?:나왔다|물었|말했|지적)"),
+    ),
     "은어": (
         "우리 둘이 대화에서 쓰는 말이다. 다음 사람은 그 말을 모른다 — 뜻을 적는다.",
         (r"땅따먹기", r"꼬라지", r"삽질", r"뻘짓", r"노가다", r"뇌피셜",
@@ -78,6 +91,13 @@ FAMILIES: dict[str, tuple[str, tuple[str, ...]]] = {
         ("ㅋㅋ", "ㅎㅎ", "ㅇㅇ", "ㄱㄱ", "ㅠㅠ", "ㅜㅜ", "ㄷㄷ", "ㅡㅡ", "ㅇㅋ"),
     ),
 }
+
+#: 정규식 족을 selftest 가 심을 때 쓰는 **실제 문장**(첫 낱말이 정규식이면 그대로 못 심는다).
+SAMPLES: dict[str, str] = {"질책": "사용자가 「이게 뭐냐」를 물었다"}
+
+#: `voice-ok` · 코드 펜스 · 들여쓰기 블록으로 **풀 수 없는** 족. 욕설과 반말 질책은 인용이어도 옮기지 않는다 —
+#: 인용 표시는 은어·약칭 같은 **용어**를 위한 규약이지 사람 말을 그대로 싣는 구멍이 아니다(감사 3절 · Zm20).
+UNEXEMPTABLE = ("비속어", "질책")
 
 #: 「이 줄은 일부러 그 말을 인용한다」 표시. **이 저장소에 이미 있는 규약**이고
 #: `MASTER §0-3` 이 선언한다 — 여기서 새 표시를 만들지 않는다. 산문 판정도
@@ -124,24 +144,37 @@ def _docparse():
     return m
 
 
+def _prose_keep(text: str) -> set[int]:
+    """문서에서 **용어 족을 검사할 줄 번호**. 코드 펜스 · 4칸 블록 · `voice-ok` 줄은 뺀다.
+
+    ★ 인용을 위반으로 세면 회고를 못 쓰게 되고, 그러면 사람이 검사를 끈다(docparse 머리말).
+      **표식 줄은 남긴다** — `_allowed_block` 이 인용 블록의 시작을 봐야 뒤따르는 블록을 뺀다.
+      `UNEXEMPTABLE` 족은 이 필터를 안 거친다(`scan`).
+    """
+    keep: set[int] = set()
+    fence = False
+    for i, line in enumerate(text.splitlines(), 1):
+        if line.lstrip().startswith(("```", "~~~")):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        if ALLOW in line:
+            keep.add(i)                 # 표식 줄은 남긴다
+            continue
+        if line.startswith("    ") and line.strip():
+            continue
+        keep.add(i)
+    return keep
+
+
 def targets() -> list[tuple[str, str]]:
-    """(경로, 본문). **무엇을 보는지가 이 함수 하나에 있다.**"""
+    """(경로, 본문). **무엇을 보는지가 이 함수 하나에 있다.** 본문은 **원문 그대로**다 — 거르는 일은 `scan` 이 족마다 한다."""
     out: list[tuple[str, str]] = []
-    dp = _docparse()
     for rel in DOCS:
         p = ROOT / rel
-        if not p.is_file():
-            continue
-        # ★ 코드 펜스 · 4칸 블록 · `voice-ok` 줄을 뺀다 — 인용을 위반으로 세면
-        #   회고를 못 쓰게 되고, 그러면 사람이 검사를 끈다(docparse 머리말).
-        keep = {i for i, _ in dp.prose_lines(p, skip_indented=True, allow=ALLOW)}
-        lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
-        # ★ **표식 줄은 남긴다.** `docparse` 가 그것을 먼저 지우면 `_allowed_block`
-        #   이 인용 블록의 시작을 못 보고, 그러면 표시를 달아도 안 먹는다.
-        #   실제로 그렇게 짰다가 `§236` 인용이 계속 걸렸다.
-        keep |= {i for i, l in enumerate(lines, 1) if ALLOW in l}
-        out.append((rel, "\n".join(l if i in keep else ""
-                                    for i, l in enumerate(lines, 1))))
+        if p.is_file():
+            out.append((rel, p.read_text(encoding="utf-8", errors="replace")))
     for root in CODE:
         base = ROOT / root
         if not base.is_dir():
@@ -184,14 +217,15 @@ def scan(items: list[tuple[str, str]] | None = None) -> list[str]:
             continue
         rows = text.splitlines()
         skip = _allowed_block(rows)
+        keep = _prose_keep(text) if rel.endswith(".md") else None
         for i, line in enumerate(rows, 1):
-            if i in skip:
-                continue
             for fam, (_why, words) in FAMILIES.items():
+                if fam not in UNEXEMPTABLE and (i in skip or (keep is not None and i not in keep)):
+                    continue                    # 용어 족만 인용 표시로 풀린다
                 for w in words:
                     m = re.search(w, line)
                     if m:
-                        bad.append(f"{rel}:{i}  [{fam}] {m.group()}  …{line.strip()[:70]}")
+                        bad.append(f"{rel}:{i}  [{fam}] {m.group()[:24]}  …{line.strip()[:70]}")
     return bad
 
 
@@ -204,9 +238,14 @@ def selftest() -> int:
             continue
         if len(why) < 20:
             bad.append(f"`{fam}` 의 사유가 너무 짧다 — 왜 막는지 못 읽는다")
-        hit = scan([("x.md", f"앞 {words[0]} 뒤")])
+        hit = scan([("x.md", SAMPLES.get(fam, f"앞 {words[0]} 뒤"))])
         if not hit:
             bad.append(f"`{fam}` 을 심었는데 안 운다 — 빈 그물이다")
+    # ★ 욕설 · 질책은 인용 표시로 못 푼다 — 용어 족은 푼다.
+    if not scan([("x.md", "<!--voice-ok-->\n> 앞 씨발 뒤")]):
+        bad.append("`voice-ok` 가 욕설을 통과시킨다 — 인용이어도 옮겨 적지 않는다")
+    if scan([("x.md", "<!--voice-ok-->\n> 앞 땅따먹기 뒤")]):
+        bad.append("`voice-ok` 가 용어 족도 안 푼다 — 규약(MASTER §0-3)이 깨졌다")
     if scan([("x.md", "멀쩡한 문장이다. 판정은 폭으로 한다.")]):
         bad.append("멀쩡한 문장에 운다")
     # ★ 초록 안내가 **족 목록에서 유도되는가.** 손으로 적으면 족이 늘 때 낡는다.

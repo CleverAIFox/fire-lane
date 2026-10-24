@@ -217,7 +217,7 @@ def write_outputs(g):
             "run_length_m": "float|null 같은 판정이 이어지는 연속 구간장(m)",
             "nfa_designated": "bool 소방청 지정 기준(연속 100m 이상) 충족",
             "cctv_dist_m": "float 가장 가까운 CCTV 까지의 거리(m)",
-            "cv_feasible": "bool CCTV 유효범위(25m) 안. 영상판정 성립 여부",
+            "cv_feasible": f"bool CCTV 유효범위({CCTV_RANGE:g}m) 안. 영상판정 성립 여부",
             # ★ 2026-08-23 정정. 08-22 에 no_cctv 를 넷으로 쪼갰는데 스키마는
             #   옛 어휘를 그대로 적고 있었다(R7 위반). UI 가 이 표를 보고
             #   분기하면 없는 키로 분기한다 — web/config.js 의 reason 표는
@@ -229,7 +229,7 @@ def write_outputs(g):
             "clear_src": "str|null 어느 폴리곤으로 쟀나 — 기본 road_rw. 덮임이 0 이면 null",
             "clear_cov": "float 실폭도로 면이 표본점을 덮는 비율(0~1). 안 덮는 표본은 min·med·max 에 안 들어간다 — 1 미만이면 폴백이 필요한 구간이다",
             "unknown_reason": ("null|ledger_disputes|no_cctv_narrow|no_cctv_thin"
-                               "|no_cctv_band|no_cctv_single|needs_survey|width — 회색(unknown)이 된 이유. needs_survey=채택에서 밀린 소스가 clear 를 반박하나 CCTV 가 없어 현장에서 재야 안다 / "
+                               "|no_cctv_band|no_cctv_single|needs_survey|width — 회색(unknown)이 된 이유. needs_survey=규칙 [8]~[11] 중 하나(다른 소스 최솟값 · 대칭폭 · 내접원 중앙값 · 구간 내 폭 급변)가 clear 를 거뒀으나 CCTV 가 없어 현장에서 재야 안다 / "
                                "narrow=노면·대장폭 둘 다 3m 미만이나 담~담은 여유 있음 / "
                                "thin=노면만 3m 미만(근거 하나) / "
                                "band=3~7m 대역, 주정차로 갈림 / "

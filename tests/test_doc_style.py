@@ -342,6 +342,9 @@ DOCS_DIR = ROOT / "docs"
 ALLOWED_DOCS = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.md"}
 # 그림은 문서가 아니라 `render_figures` 의 생성물이다.
 FIGURES_DIR = "figures"
+# ★ 2026-10-24 (감사 C · Zm20). `batches` 는 문서가 아니라 **입력의 보관소**다 — 지시문 원본(`Zm*.md`)과 그 색인(`README.md`).
+#   사람이 복원해 넣는 원문이라 다섯째 문서가 아니다. 규약은 `docs/batches/README.md` 와 `tests/test_batches_index.py`.
+BATCHES_DIR = "batches"
 ALLOWED_FIGURES = {".lock.json"}                 # 그 밖에는 `*.svg` 만
 
 
@@ -368,8 +371,10 @@ def test_docs_dir_holds_only_the_allowed_documents():
     for p in sorted(DOCS_DIR.rglob("*")):
         rel = p.relative_to(DOCS_DIR).as_posix()
         if p.is_dir():
-            if rel != FIGURES_DIR:
-                extra.append(f"docs/{rel}/  — 허용된 폴더는 `figures` 하나다")
+            if rel not in (FIGURES_DIR, BATCHES_DIR):
+                extra.append(f"docs/{rel}/  — 허용된 폴더는 `figures` · `batches` 둘이다")
+            continue
+        if p.parent.name == BATCHES_DIR:
             continue
         if p.parent == DOCS_DIR:
             if p.name in ALLOWED_DOCS:

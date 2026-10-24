@@ -57,7 +57,7 @@ from firelane.seg.params import EMD_CD
 
 # ★ CCTV_RADIUS 는 삭제했다(2026-08-23). 여기서 0회 참조였고, 커버리지
 #   원의 반경 정본은 web/config.js 의 markers[].cover.radius 다.
-#   판정 임계(CCTV_RANGE 25.0)의 정본은 seg/params.py 다. 같은 숫자를
+#   판정 임계(`CCTV_RANGE`)의 정본은 seg/params.py 다. 같은 숫자를
 #   세 곳에 두면 반드시 한 곳만 고치고 잊는다.
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
 # ★ 건물 발행 예산(§181-2). 스코프 판 2.18MB · web/data 32MB / 상한 40MB 에서 잡았다.
@@ -416,8 +416,6 @@ def main():
     _sch["fields"]["seg_no"] = ("int 도로명 안에서의 구간 순번. ★ 표기 전용이고 "
                                 "publish 가 만든다. 노딩이 바뀌면 밀린다 — "
                                 "외부 참조는 seg_uid, 화면 표기는 seg_label")
-    _sch["fields"].update({
-    })
     _sch["fields"].update({
         "ecc_rel_med_m": "float|null 표본 |ecc| 의 중앙값 ÷ 반폭(반폭 = width_min_m/2). ★ 길이가 아니라 **무차원 비율**이다(이름은 지시문이 정했다). 0 이면 중심선이 정중앙, 1 이면 도로 한쪽 경계. 중심선 편심 진단 — 판정에 안 쓴다 · 임계는 사람이 정한다(DECISIONS §556)",
         "ecc_rel_max_m": "float|null 표본 |ecc| 의 최댓값 ÷ 반폭. 무차원 비율. 반폭이 작으면 1 을 넘을 수 있다 — 자르지 않는다",

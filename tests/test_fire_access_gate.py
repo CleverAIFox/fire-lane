@@ -87,3 +87,18 @@ def test_no_clear_is_published_on_a_tightly_matched_fire_access_road():
         f"(정확 일치 · len_ratio 범위 안):\n  "
         + "\n  ".join(f"{p['seg_id']} {p['road_name']} wmin={p['width_min_m']} any={p['width_min_any_m']} clear_min={p['clear_min_m']} "
                       f"소방서폭={p['nfa_access_width']} ratio={p['nfa_access_len_ratio']} 원문={p['nfa_access_token']}" for p in bad))
+
+
+def test_a_zero_length_row_does_not_divide_by_zero() -> None:
+    """소방서 표의 구간거리가 0 이어도 죽지 않는다.  (감사 N10 · Zm20)
+
+    `ratio = total / row["len"]` 이 0 으로 나눠 파이프라인을 세웠다. 비교가 안 되는 줄이므로
+    비율은 `None` 이고 **느슨하다**(`loose = True`) — 「정확 일치」로 읽히면 안 된다.
+    """
+    from firelane import fireaccess as fa
+
+    rows = [dict(text="가나다로", norm="가나다로", len=0.0, width="3.0", hh=1)]
+    got = fa.columns(["가나다로"], [50.0], rows)
+    assert got["nfa_access_listed"] == [True]
+    assert got["nfa_access_len_ratio"] == [None]
+    assert got["nfa_access_loose"] == [True]

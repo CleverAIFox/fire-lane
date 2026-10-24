@@ -105,7 +105,7 @@ def test_the_closure_does_not_quietly_grow():
         "  폐포가 늘면 그 파일을 고칠 때마다 판정 재실행과 재잠금이 따라온다.\n"
         "  정말 판정에 기여하는 파일이면 이 수를 올리고 사유를 적어라.")
     assert n >= 15, (
-        f"폐포가 {n}파일로 줄었다 — 기록 19보다 작다. 좋은 일일 수 있지만\n"
+        f"폐포가 {n}파일로 줄었다 — 기록 20보다 작다. 좋은 일일 수 있지만\n"
         "  **판정 코드가 빠져나간 것**일 수도 있다. 수를 내리고 무엇이 왜 빠졌는지 적어라.")
 
 
@@ -331,3 +331,26 @@ def test_a_note_continued_on_the_next_line_still_counts():
     txt = ("THRESHOLD = 7\n"
            "          # 근거가 길어서 다음 줄에 적는다 — DECISIONS §999\n")
     assert cb.ungrounded(cb.scan(txt)) == [], "이어진 주석의 근거를 못 읽는다"
+
+
+def test_no_empty_schema_update_remains_in_publish_web() -> None:
+    """`_sch["fields"].update({})` 처럼 아무것도 안 하는 호출이 없다.  (감사 N10 · Zm20)"""
+    import re
+
+    src = (ROOT / "src/firelane/publish_web.py").read_text(encoding="utf-8")
+    assert not re.search(r"\.update\(\{\s*\}\)", src), "빈 update({}) 죽은 코드가 남았다"
+
+
+def test_the_closure_ratchet_messages_agree_with_the_bound() -> None:
+    """래칫의 상한 수와 두 메시지가 말하는 「기록」 수가 같다.  (감사 N10 · Zm20)
+
+    Zm19 가 상한을 19 → 20 으로 올리면서 하한 메시지의 「기록 19」를 남겼다.
+    """
+    import re
+
+    src = Path(__file__).read_text(encoding="utf-8")
+    body = src[src.index("def test_the_closure_does_not_quietly_grow"):src.index("def test_the_feeder_constants")]
+    bound = int(re.search(r"assert n <= (\d+)", body).group(1))
+    said = {int(x) for x in re.findall(r"기록은 (\d+)이다|기록 (\d+)보다", body)[0] if x} | \
+           {int(x) for pair in re.findall(r"기록은 (\d+)이다|기록 (\d+)보다", body) for x in pair if x}
+    assert said == {bound}, f"메시지의 기록 수 {sorted(said)} 가 상한 {bound} 와 다르다"

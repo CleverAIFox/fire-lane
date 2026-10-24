@@ -74,7 +74,7 @@ VERDICT_RULE = (
     # ★ 2026-10-23 (Zm6). 열째 — 소스 하나라도 7.0m 미만이라 말하면 「양쪽 주차해도 통과」(clear)를 주장할 수 없다. 축 논쟁과 무관하다.
     "clear 인데 소스 무관 최솟값 또는 내접원 중앙값 < 7.0 -> needs_cv (CCTV 19m 안 · cv_reason=source_conflict) | unknown (reason=needs_survey). clear 의 주장을 못 한다",
     # ★ 2026-10-23 (Zm19). 열한째 — 구간 안에서 폭이 2.5배 넘게 변하면 대표폭이 없다. width_max_m 이 있는 구간만 걸린다.
-    "clear 인데 width_max_m / width_min_m >= 2.5 -> needs_cv (CCTV 19m 안 · cv_reason=source_conflict) | unknown (reason=needs_survey). 대표폭이 없다",
+    "clear 인데 width_max_m / width_min_m >= 2.5 -> needs_cv (CCTV 19m 안 · cv_reason=source_conflict) | unknown (reason=needs_survey). 대표폭이 없다. width_max_m 이 있는 606/1,281 구간에만 적용",
 )
 """판정 규칙의 문언 정본.
 

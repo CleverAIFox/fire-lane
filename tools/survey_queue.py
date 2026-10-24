@@ -13,6 +13,8 @@ tools/survey_queue.py — **다음에 뭘 잴지 정하는 대장**을 낸다 (`
   nfa_access       소방서 지정 구간인데 `clear` 다(정확 일치 · `len_ratio` 0.5~2.0 안 — Zm8 관문이 막는 그것).  → 소방서가 적은 폭과 맞는지 그 자리를 잰다
   source_conflict  `clear` 였다가 **소스 무관 최솟값 < 7.0m**(`CLEAR_M`)라 내려간 구간(규칙 [8] · [10]).      → 좁은 값을 낸 소스가 맞는지 그 지점을 잰다
   sym_low          `clear` 였다가 **대칭폭 < 3.0m**(`TRUCK`)라 내려간 구간(규칙 [9]).                      → 중심선이 경계에 붙은 그 지점의 실폭을 잰다
+  median_low       `clear` 였다가 **내접원 중앙값(`clear_med_m`) < 7.0m**(`CLEAR_M`)라 내려간 구간(규칙 [10] 의 중앙값 축 · Zm19).   → 구간 전체의 실폭을 잰다
+  spread_high      `clear` 였다가 **`width_max_m / width_min_m` ≥ `SPREAD_MAX`**(2.5)라 내려간 구간(규칙 [11] · Zm19).          → 가장 좁은 곳과 넓은 곳을 잰다
   escape_rule      **발행된 최솟값이 `escape` 규칙으로 나왔다**(`width_min_sample_idx` 의 표본이 `w_rule = escape`). 가장 깨진 규칙이다 — 현장 7점에서 배율이 0.32~13.18 로 전부 어긋났다.
   amp_high         단일 소스 구간 안에서 폭이 10m 이상 변한다(유효 표본 3개 이상). 원인 미확인(주차장 · 교차로 · 곡률 기각).  → 그 구간이 도로 면인지 확인한다
   subphys          폭 1.0m 미만 표본이 섞였다(`n_subphys` ≥ 1).                                          → 그 지점이 실제 통로인지 확인한다
@@ -41,7 +43,7 @@ import statistics
 from collections import Counter, defaultdict
 
 from firelane.paths import PROCESSED, ROOT
-from firelane.seg.classify import CLEAR_M, classify
+from firelane.seg.classify import CLEAR_M, SPREAD_MAX, classify
 from firelane.seg.params import TRUCK
 
 AMP_M = 10.0
@@ -51,6 +53,8 @@ TAGS = {
     "nfa_access": "소방서가 적은 폭(지정 구간)과 맞는지 그 자리를 잰다",
     "source_conflict": "좁은 값을 낸 소스가 맞는지 그 지점(소스 무관 최솟값)을 잰다",
     "sym_low": "중심선이 경계에 붙은 그 지점의 실폭을 잰다",
+    "median_low": "내접원 지름 중앙값이 통과 주장 선 미만인 구간 — 구간 전체의 실폭을 잰다",
+    "spread_high": "구간 안 폭이 급변하는 구간 — 가장 좁은 곳과 가장 넓은 곳을 잰다",
     "escape_rule": "escape 규칙으로 나온 발행 최솟값 — 그 지점의 실폭을 잰다",
     "amp_high": "폭이 10m 이상 변하는 구간 — 그 구간이 도로 면인지 확인한다",
     "subphys": "폭 1.0m 미만 표본 지점이 실제 통로인지 확인한다",
@@ -76,6 +80,12 @@ def reasons_of(p: dict, rows: list[dict]) -> list[str]:
         out.append("source_conflict")
     if demoted and p.get("width_min_sym_m") is not None and p["width_min_sym_m"] < TRUCK:
         out.append("sym_low")
+    # ★ 감사 N3 (Zm20). Zm19 가 규칙 [10] 을 중앙값 축으로, [11] 을 폭 급변으로 넓혔다 — 그 두 갈래로 내려간 구간.
+    if demoted and p.get("clear_med_m") is not None and p["clear_med_m"] < CLEAR_M:
+        out.append("median_low")
+    wmx, wmn = p.get("width_max_m"), p.get("width_min_m")
+    if demoted and wmx is not None and wmn is not None and wmn > 0 and wmx / wmn >= SPREAD_MAX:
+        out.append("spread_high")
     i = p.get("width_min_sample_idx")
     if i is not None and 0 <= int(i) < len(rows) and rows[int(i)].get("w_rule") == "escape":
         out.append("escape_rule")

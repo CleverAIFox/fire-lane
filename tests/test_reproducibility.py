@@ -218,7 +218,8 @@ def test_no_fifth_doc():
     #   밖(.docx)에 두면 아무 검사도 못 들기에 안으로 들였다.
     allowed = {"MASTER.md", "PLAN.md", "DECISIONS.md", "proposal.md"}
     extra = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "docs").rglob("*.md")
-                   if p.name not in allowed or p.parent != ROOT / "docs")
+                   if (p.name not in allowed or p.parent != ROOT / "docs")
+                   and p.parent != ROOT / "docs" / "batches")   # 지시문 원본 보관소 — 문서가 아니다(감사 C · Zm20)
     assert not extra, (
         f"다섯 번째 문서: {extra}\n"
         "  MASTER(현재) · PLAN(남은 일) · DECISIONS(왜 그렇게 됐나) 중\n"

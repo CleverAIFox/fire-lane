@@ -248,3 +248,20 @@ test("POI 준비 — 점이 아니거나 이름이 없는 것은 **안 싣는다
   ok(preparePois({ type: "FeatureCollection", features: [] } as GeoJSON.FeatureCollection)
     .length === 0, "빈 자료에서 무언가를 만든다");
 });
+
+test("회색 사유 — GRAY_REASON 과 web/config.js 의 reason 키 집합이 같다 (감사 N1)", async () => {
+  const { GRAY_REASON } = await import("../src/ui/verdictMeaning");
+  // ★ `node:fs` 를 안 쓴다 — vite 가 빌드 시각에 문자열로 준다(dataBase.test 와 같은 이유).
+  const files = import.meta.glob("../../config.js", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
+  const src = Object.values(files)[0] ?? "";
+  const blk = src.slice(src.indexOf("reason: {") + "reason: {".length);
+  const body = blk.slice(0, blk.indexOf("\n  },"));
+  // 옛 키(`no_cctv`)는 재발행 전 산출물용으로 config.js 만 남긴다 — 정본 집합이 아니다
+  const LEGACY = new Set(["no_cctv"]);
+  const cfg = [...body.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/^\s*([a-z_]+)\s*:/gm)]
+    .map((m) => m[1]).filter((k) => !LEGACY.has(k)).sort();
+  const gr = Object.keys(GRAY_REASON).sort();
+  ok(cfg.length > 5, `config.js 에서 사유 키를 못 읽었다 — ${cfg.join(",")}`);
+  ok(JSON.stringify(cfg) === JSON.stringify(gr),
+    `사유 키 집합이 어긋난다 — config.js ${cfg.join(",")} / GRAY_REASON ${gr.join(",")}`);
+});

@@ -79,14 +79,17 @@ class LineageError(RuntimeError):
     """계보 대조 실패. 파이프라인을 여기서 세운다."""
 
 
-def _sha(p: Path, limit: int = 1 << 24) -> str:
+def _sha(p: Path) -> str:
+    """파일 **전체**의 sha256 앞 16자.
+
+    ★ 감사 1-8 (Zm20). 종전에는 16MiB 를 넘으면 읽기를 멈추고 파일 크기만 섞었다.
+      `building.geojson`(17.0MB) · `jijeok.geojson`(18.3MB) 이 그 넘는 쪽이라, 크기가
+      같은 채 뒤쪽이 바뀌면 계보가 못 봤다. 전체 청크 해시로 바꿨다 — 한 번 읽는 값이다.
+    """
     h = hashlib.sha256()
     with p.open("rb") as f:
         while chunk := f.read(1 << 20):
             h.update(chunk)
-            if f.tell() > limit:      # 큰 파일은 앞부분만. 변경 검출에 충분하다
-                h.update(str(p.stat().st_size).encode())
-                break
     return h.hexdigest()[:16]
 
 

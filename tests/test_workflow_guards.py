@@ -186,7 +186,7 @@ def test_untrusted_context_is_never_interpolated_into_run() -> None:
 #   **인스턴스가 아니라 계급을 본다.** 지금 하나인 것을 세는 게 아니라
 #   「다시 갈라지는 것」을 막는다. W1 이 본문 4벌을 봉합했지만 *워크플로가
 #   넷인 것* 자체는 그대로였고, 그래서 이름이 배포 대상을 말하는 것처럼 읽혀
-#   「데이터 배포를 왜 하느냐」 는 물음이 나왔다.
+#   사용자가 데이터 배포를 왜 하는지 지적했다.
 _STAGE = "./.github/actions/stage-site"
 
 

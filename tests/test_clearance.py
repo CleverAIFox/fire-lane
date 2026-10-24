@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
-test_clearance.py — 내접원 칸(`clear_*`)은 **판정선을 못 넘는다.** 계산은 정의대로이고 발행본에 실려 있다. (Zm7 · DECISIONS §549)
+test_clearance.py — 내접원 칸 중 판정이 읽는 것은 **`clear_med_m` 하나**다. 계산은 정의대로이고 발행본에 실려 있다. (Zm7 · DECISIONS §549)
 
 ── 왜 이 시험인가 ──────────────────────────────────────────────
-① **판정선.** `src/firelane/seg/classify.py`(와 `segments.py`)가 `clear_min_m` · `clear_med_m` · `clear_max_m` · `clear_src` · `clear_cov` 를 읽으면 실패한다.
-   사유 — 현장 16점 대조로 축은 단순 내접원(R=0)으로 좁혀졌으나 **대표값을 min 으로 할지 med 로 할지 아직 정하지 않았다.** 동계천로95번길에서 실측 3.2m 인 목을 내접원 대표값이 6.32m(2.0배)로 냈다 —
-   대표값으로는 최악 지점을 못 잡는다. 판정은 사람이 현장 측정을 더 모은 뒤 정한다. 그 전에 판정이 이 칸을 읽으면 정하지 않은 것이 정해진다.
-② **폐포 밖.** `firelane.clearance` 는 판정 폐포(`segments.py` 가 끌어오는 파일) 밖이다 — 골든 코드 지문을 안 건드린다.
+① **판정선.** `src/firelane/seg/classify.py`(와 `segments.py` · `geom.py`)가 `clear_min_m` · `clear_max_m` 를 읽으면 실패한다 — `2·min(좌,우)` 꼴이라 중심선 편심에 노출된다.
+   `clear_med_m` 은 사람이 대표값으로 골라 규칙 [10] 이 읽는다(Zm19 · §564). 처음(Zm7)에는 대표값을 정하기 전이라 다섯 칸 전부를 막았다.
+② **폐포 안.** `firelane.clearance` 는 판정 폐포(`segments.py` 가 끌어오는 파일) **안**이다 — 이 파일이 바뀌면 골든 코드 지문이 움직인다.
 ③ **정의.** 내접원 지름 = 2 × 점에서 도로 경계까지의 거리 · 안 덮이는 표본은 min·med·max 에 안 들어가고 `clear_cov` 로만 남는다.
 
 IN    firelane.clearance · src/firelane/seg/classify.py · src/firelane/segments.py · web/data/segments.geojson
 OUT   없음 (검사)
 PARAM 없음
-밖    **내접원이 참인가는 안 본다** — 합성 기하에서 정의대로 나오는지, 판정이 안 읽는지, 발행본에 실렸는지만 본다.
+밖    **내접원이 참인가는 안 본다** — 합성 기하에서 정의대로 나오는지, 판정이 `clear_med_m` 만 읽는지, 발행본에 실렸는지만 본다.
 """
 from __future__ import annotations
 

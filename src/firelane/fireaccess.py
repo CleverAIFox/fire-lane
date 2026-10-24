@@ -77,8 +77,10 @@ def columns(road_names, lengths, rows: list[dict]) -> dict[str, list]:
             for k, v in zip(NAMES, (False, None, None, None, None, None, None), strict=True):
                 out[k].append(v)
             continue
-        ratio = round(total[rn] / row["len"], 2)
+        # ★ 감사 N10. 표의 구간거리가 0 이면 비교가 안 된다 — 0 으로 나누지 않고 비율은 없음 · 느슨함으로 둔다.
+        ratio = round(total[rn] / row["len"], 2) if row["len"] > 0 else None
+        loose = True if ratio is None else not (RATIO_LO <= ratio <= RATIO_HI)
         for k, v in zip(NAMES, (True, row["width"], row["len"], row["hh"], ratio,
-                                not (RATIO_LO <= ratio <= RATIO_HI), row["text"]), strict=True):
+                                loose, row["text"]), strict=True):
             out[k].append(v)
     return out

@@ -312,3 +312,20 @@ def test_sha_of_a_single_file_is_its_own_hash(tmp_path):
     p = tmp_path / "one.zip"
     p.write_bytes(b"PK\x03\x04")
     assert sha_of(p) == sha256(p)
+
+
+def test_fingerprint_sees_a_change_past_the_first_16mib(tmp_path):
+    """16MiB 뒤의 바이트가 바뀌어도 지문이 달라진다.  (감사 1-8 · Zm20)
+
+    종전 `_sha` 는 16MiB 를 넘으면 읽기를 멈추고 크기만 섞었다 — 실물 `building.geojson`
+    (17.0MB) 이 그 넘는 쪽이었다. 크기가 같은 채 뒤쪽이 바뀌면 계보가 못 본다.
+    """
+    from firelane import lineage
+
+    a = tmp_path / "big.json"
+    blob = bytearray(b"x" * ((1 << 24) + (3 << 20)))
+    a.write_bytes(bytes(blob))
+    before = lineage.fingerprint(a)
+    blob[-5] = ord("y")                       # 크기 그대로, 끝에서 다섯째 바이트만
+    a.write_bytes(bytes(blob))
+    assert lineage.fingerprint(a) != before, "16MiB 뒤의 변경을 못 본다"

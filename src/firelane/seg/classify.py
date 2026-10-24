@@ -205,6 +205,9 @@ def classify(
     #   못 들어가는 길로 보낸다.** needs_cv 로 보내지 않는다 — CCTV 가 없으면 「영상 보면 풀린다」가 거짓 약속이다.
     #   CCTV 유효범위 안이면 영상으로 풀 수 있으니 needs_cv, 밖이면 unknown(needs_survey).
     # ★ **이 규칙은 판정을 움직인다**(골든 재잠금은 사람이 한다). clear 만 건드린다 — blocked · needs_cv 는 그대로다.
+    # ★ 감사 N7 (Zm20). **[8] ⊂ [10]** — `wmin_any < TRUCK`(3.0) 이면 `wmin_any < CLEAR_M`(7.0) 이고, 두 갈래의 행선지(needs_cv/source_conflict ·
+    #   unknown/needs_survey)가 같다. 그래서 [10] 이 켜진 뒤 [8] 이 혼자 바꾸는 판정은 없다. **코드는 지우지 않는다** — `VERDICT_RULE` 번호와
+    #   `IMPLEMENTS` 가 [8] 을 선언하고, [10] 의 문턱을 올려 정할 때 [8] 이 다시 따로 설 수 있다.
     if v == "clear" and wmin_any is not None and wmin_any < TRUCK:
         if cctv_dist <= CCTV_RANGE:
             v, reason = "needs_cv", "source_conflict"
