@@ -4248,7 +4248,7 @@ outputs:
     path: data/field/evalset_2610.csv
     inputs: [segments]
     consumers: [tools/evalset.py]
-    what: 0판 평가셋 55구간(Zm23 · DECISIONS §569). 사람이 전폭 · 최협부 폭 · 최협부 위치 · 특이사항을 채운다. 묶음 정보는 표에 없다
+    what: 평가셋 55구간(Zm23 · DECISIONS §569 · Zm26 에서 다시 뽑았다 · §571). 사람이 전폭 · 최협부 폭 · 최협부 위치 · 특이사항을 채운다 — 채우는 판은 F(도로폭 검증 · DECISIONS §573)다. 묶음 정보는 표에 없다
     verified: false
     known_issues:
     - ★ 채워지기 전에는 비어 있다. 채워지면 `tools/fieldseal.py --write` 로 지문을 박는다(사람이 친다 — 도구는 안 한다)
