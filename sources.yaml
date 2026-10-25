@@ -4368,6 +4368,13 @@ outputs:
     consumers: []
     what: 부트스트랩에서 구간별 뒤집힘 빈도 · 행선 · 가장 가까운 문턱 · 겹침(Zm25 · Zm26 · DECISIONS §570). 사람이 잴 표(data/field/flip_top_2610.csv)의 근거다. 우선순위이지 평가셋이 아니다
     verified: false
+  carve_survey:
+    produced_by: tools/carve_survey.py
+    path: data/processed/carve_survey.json
+    inputs: [segments, ngii1k, ngii_road, road_rw, building, ngii1k_walk, ngii1k_xsec]
+    consumers: []
+    what: 보도 차감(carve)이 실제로 어느 구간에서 폭을 바꿨는지 — 같은 입력으로 WidthEngine 을 보도면 있이 · 없이 두 번 돌린 대조(Zm31 · DECISIONS §576). 재현 관문(발행본 wmin 일치 95% 이상)을 못 넘으면 수를 안 낸다. 판정을 안 바꾼다
+    verified: false
   segid_audit:
     produced_by: tools/segid_audit.py
     path: data/processed/segid_audit.json
