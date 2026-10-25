@@ -4252,6 +4252,34 @@ outputs:
     verified: false
     known_issues:
     - ★ 채워지기 전에는 비어 있다. 채워지면 `tools/fieldseal.py --write` 로 지문을 박는다(사람이 친다 — 도구는 안 한다)
+  evalset_2610_stale_csv:
+    produced_by: tools/evalset.py (옛 표 — 무효)
+    path: data/field/evalset_2610.csv.stale_20261025
+    inputs: []
+    consumers: []
+    what: "★ 무효. 합성 데이터가 실제 평가셋 자리에 박힌 사고의 표(DECISIONS §571). 전부 도로명 「가로」 · 길이 30~36 의 가짜 구간이다. 감사 흔적으로만 남긴다 — 어떤 채점에도 쓰지 않는다"
+    verified: false
+  evalset_2610_stale_key:
+    produced_by: tools/evalset.py (옛 키 — 무효)
+    path: data/field/evalset_2610.key.json.stale_20261025
+    inputs: []
+    consumers: []
+    what: "★ 무효. 위 옛 표의 키(합성 데이터의 묶음). 열지 않았다 — 열 이유가 없다(DECISIONS §571)"
+    verified: false
+  flip_2610:
+    produced_by: tools/sensitivity.py
+    path: data/field/flip_2610.csv
+    inputs: [segments, width_cross]
+    consumers: [tools/sensitivity.py]
+    what: 폭 오차에 판정이 뒤집히는 구간 전체 명단 1,169행(Zm25 · DECISIONS §570). 우선순위이지 평가셋이 아니다 — 평가셋과 합치지 않는다. 사람이 잴 것은 flip_top_2610.csv 다. 구간의 키는 seg_uid 다
+    verified: false
+  flip_top_2610:
+    produced_by: tools/sensitivity.py
+    path: data/field/flip_top_2610.csv
+    inputs: [segments, width_cross]
+    consumers: [tools/sensitivity.py]
+    what: flip_n ≥ 500 인 상위 50구간(Zm26 · DECISIONS §570-5). 사람이 현장에서 잴 표 — 우선순위이지 평가셋이 아니다. F 까지 그대로 둔다(DECISIONS §573)
+    verified: false
   evalset_2610_key:
     produced_by: tools/evalset.py
     path: data/field/evalset_2610.key.json

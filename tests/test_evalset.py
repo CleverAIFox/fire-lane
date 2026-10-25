@@ -133,3 +133,65 @@ def test_main_never_overwrites_an_existing_or_filled_table(tmp_path: Path, monke
     c.write_text(text, encoding="utf-8-sig")
     before = c.read_text(encoding="utf-8-sig")
     assert E.main(["--force"]) == 3 and c.read_text(encoding="utf-8-sig") == before, "채워진 표를 덮어썼다"
+
+
+# ── Zm26 · 유령 55 — 합성 데이터가 실제 평가셋 자리에 박혔던 사고(DECISIONS §571) ─────────────────
+# 원인: `write()` 의 기본 인자 `csv_path=OUT_CSV` 는 **정의 시점**에 묶인다. 위의 시험이 `E.OUT_CSV` 를 tmp 로 바꿔도
+#       `main()` 이 부르는 `write(table, key)` 는 진짜 `data/field/evalset_2610.csv` 로 갔고, 그 자리에 합성 600행에서 뽑은
+#       55구간(도로명 「가로」 · 길이 30~36)이 들어갔다. 「뽑은 seg_id 가 공개본에 있다」는 시험이 없어서 아무도 못 봤다.
+SEG_PUB = ROOT / "web/data/segments.geojson"
+REAL_FILES = (ROOT / "data/field/evalset_2610.csv", ROOT / "data/field/evalset_2610.key.json")
+
+
+def _published() -> dict[str, dict]:
+    if not SEG_PUB.exists():
+        pytest.skip("환경skip(산출물) — web/data/segments.geojson 발행본이 없다")
+    return {f["properties"]["seg_id"]: f["properties"] for f in json.loads(SEG_PUB.read_text(encoding="utf-8"))["features"]}
+
+
+def _table_rows(path: Path) -> list[dict]:
+    import csv
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        return list(csv.DictReader(ln for ln in f if not ln.startswith("#")))
+
+
+def _assert_rows_are_published(table_rows: list[dict], pub: dict[str, dict]) -> None:
+    missing = [r["seg_id"] for r in table_rows if r["seg_id"] not in pub]
+    assert not missing, f"공개본에 없는 seg_id {len(missing)}개: {missing[:5]}"
+    # id 만 맞고 **다른 구간**일 수 있다 — seg_id 는 실행 간 유지되지 않는다(`segments.py` 의 `DM{i:05d}`). 도로명 · 길이로 같은 구간인지 본다.
+    other = [r["seg_id"] for r in table_rows
+             if (pub[r["seg_id"]].get("road_name") or "") != r["도로명"] or abs(pub[r["seg_id"]]["length_m"] - float(r["length_m"])) > 0.05]
+    assert not other, f"seg_id 는 있으나 도로명 · 길이가 공개본과 다른 {len(other)}개(다른 구간): {other[:5]}"
+
+
+def test_the_committed_evalset_rows_are_all_published_segments() -> None:
+    """표에 실린 seg_id 가 **전부 공개본에 있고 같은 구간**이다. 키 파일은 안 연다."""
+    if not REAL_FILES[0].exists():
+        pytest.skip("평가셋이 아직 없다")
+    _assert_rows_are_published(_table_rows(REAL_FILES[0]), _published())
+
+
+def test_a_fresh_draw_from_the_published_file_picks_only_published_ids() -> None:
+    pub = _published()
+    rows, by = E.load()
+    table, key = E.build(rows, by, mids={})
+    _assert_rows_are_published([{**r, "length_m": r["length_m"]} for r in table], pub)
+    assert {s: u for s, u in key["uids"].items()} == {s: pub[s].get("seg_uid") for s in key["uids"]}, "key 의 seg_uid 가 공개본과 다르다"
+    assert set(key["uids"]) == {r["seg_id"] for r in table}
+
+
+def test_main_writes_only_to_the_patched_paths_and_never_to_the_real_ones(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """★ 사고의 재현 — `E.OUT_CSV` 를 바꿔도 `write()` 가 진짜 자리로 가면 합성 데이터가 실제 평가셋을 덮는다."""
+    import hashlib
+
+    def snap() -> list:
+        return [hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None for p in REAL_FILES]
+    before = snap()
+    rows, samples, mids = _data()
+    c, k = tmp_path / "e.csv", tmp_path / "e.key.json"
+    monkeypatch.setattr(E, "OUT_CSV", c)
+    monkeypatch.setattr(E, "OUT_KEY", k)
+    monkeypatch.setattr(E, "load", lambda: (rows, samples))
+    monkeypatch.setattr(E, "_midpoints", lambda: mids)
+    assert E.main([]) == 0 and c.exists() and k.exists()
+    assert snap() == before, "시험이 진짜 data/field/evalset_2610.* 를 덮어썼다"

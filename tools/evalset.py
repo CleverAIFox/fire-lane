@@ -27,7 +27,7 @@ tools/evalset.py — 0판 평가셋을 **뽑는다**(그리고 사람이 채운 
 ★ 시드는 기존 규약이다(`tools/evalgen.py` 의 `SEED`).
 
 ── 표 ────────────────────────────────────────────────────────
-미리 싣는 칸: `seg_id` · `위도` · `경도`(WGS84 · 소수 6자리 — 구간 **중점**) · `도로명` · `length_m`. **우리 측정값 · 대장값 · 판정은 안 싣는다.**
+미리 싣는 칸: `seg_id` · `seg_uid`(안정 키 — Zm27) · `위도` · `경도`(WGS84 · 소수 6자리 — 구간 **중점**) · `도로명` · `length_m`. **우리 측정값 · 대장값 · 판정은 안 싣는다.**
 사람이 채울 칸(넷): `w_full_m`(전폭 — 한쪽 경계에서 반대편 경계까지) · `w_narrow_m`(그 구간에서 가장 좁은 곳의 폭) ·
 `narrow_s_m`(그 최협부가 **구간 시작**에서 몇 m 지점인가 · ±5m 면 충분) · `note`(특이사항 한 줄). `method` 는 도구가 채운다.
 측정 규약은 csv 머리의 `#` 주석에 박는다.
@@ -42,6 +42,7 @@ tools/evalset.py — 0판 평가셋을 **뽑는다**(그리고 사람이 채운 
 ★ 채워지면 `field.fingerprint.json` 에 박는 경로: `uv run python tools/fieldseal.py --write` (사람이 친다 — 이 도구는 안 한다).
 
 IN    web/data/segments.geojson · data/processed/{segments_5186.gpkg,width_samples.csv}
+      (읽는 곳은 이 둘이다 — 레이크도 중간 산출물도 아니다. 유령 55 의 원인은 읽는 곳이 아니라 **쓰는 곳**이었다: DECISIONS §571)
 OUT   data/field/evalset_2610.csv · data/field/evalset_2610.key.json
 PARAM `SIZES` · 시드(`evalgen.SEED`)
 밖    **판정을 안 바꾼다.** 값이 옳은지는 사람이 잰 값이 정한다. 정사영상 자동 측정은 안 한다(타당성만 본다 — DECISIONS §569-8).
@@ -70,7 +71,7 @@ REGIMES = (R.ECC_ONLY, R.ESCAPE_ONLY, R.NONE_, R.BOTH)     # 요청의 순서: �
 SIZES = {"지명": 2, R.ECC_ONLY: 10, R.ESCAPE_ONLY: 8, R.NONE_: 8, R.BOTH: 5, "A 확인": 10, "대조군": 12}
 NAMED = ("DM01876", "DM00562")
 HUMAN_COLS = ("w_full_m", "w_narrow_m", "narrow_s_m", "note")
-COLS = ("seg_id", "위도", "경도", "도로명", "length_m", *HUMAN_COLS, "method")
+COLS = ("seg_id", "seg_uid", "위도", "경도", "도로명", "length_m", *HUMAN_COLS, "method")
 NORMAL_GAP = 1
 
 PROTOCOL = (
@@ -80,6 +81,7 @@ PROTOCOL = (
     "# 3) narrow_s_m = 최협부가 '구간 시작'(표의 위경도가 아니라 seg 시작)에서 대략 몇 m 지점인가. ±5m 면 충분하다",
     "# 4) note = 특이사항 한 줄 (복개천 · 구거 · 아케이드 · 주차 · 공터 등)",
     "# 5) method 칸은 도구가 채운다. 사람이 쓰는 도구는 요청이 정한다",
+    "# 6) 구간의 키는 seg_uid 다(Zm27 · DECISIONS §572). seg_id 는 재발행하면 뒤가 밀리는 순번이라 읽는 사람 편의로만 옆에 둔다 — 두 값이 어긋나면 seg_uid 를 믿는다",
 )
 
 
@@ -168,18 +170,26 @@ def build(rows: list[dict], samples_by: dict[str, list[dict]], seed: int = SEED,
     for s in ids:
         r = by_id[s]
         lat, lon = mids.get(s, (None, None))
-        table.append({"seg_id": s, "위도": "" if lat is None else f"{lat:.6f}", "경도": "" if lon is None else f"{lon:.6f}",
+        table.append({"seg_id": s, "seg_uid": r.get("seg_uid") or "", "위도": "" if lat is None else f"{lat:.6f}", "경도": "" if lon is None else f"{lon:.6f}",
                       "도로명": r.get("road_name") or "", "length_m": r.get("length_m"), "w_full_m": "", "w_narrow_m": "",
                       "narrow_s_m": "", "note": "", "method": ""})
     steps = steps_of([num(r["road_bt_m"]) for r in rows if num(r.get("road_bt_m")) is not None])
     marks = {s: {"regime": regime_of(by_id[s], samples_by.get(s, [])), **marks_of(by_id[s], steps)} for s in ids}
     key = {"seed": seed, "sizes": dict(SIZES if sizes is None else sizes),
            "regime_definition": {"module": "firelane.regime", "ecc_threshold": R.ECC_THRESHOLD, "escape": "w_rule == escape 가 하나 이상"},
-           "groups": groups, "marks": marks, "note": "채점 전에 열지 않는다. 묶음을 보면 측정 눈금이 끌린다."}
+           "groups": groups, "marks": marks,
+           # seg_id 는 실행 간 유지되지 않는다(`segments.py` 의 `DM{i:05d}`). 같은 구간임을 나중에 대조하려고 안정 키를 같이 봉인한다.
+           "uids": {s: by_id[s].get("seg_uid") for s in ids},
+           "note": "채점 전에 열지 않는다. 묶음을 보면 측정 눈금이 끌린다."}
     return table, key
 
 
-def write(table: list[dict], key: dict, csv_path: Path = OUT_CSV, key_path: Path = OUT_KEY) -> None:
+def write(table: list[dict], key: dict, csv_path: Path | None = None, key_path: Path | None = None) -> None:
+    # ★ Zm26 (DECISIONS §571). 기본 인자를 `OUT_CSV` 로 두면 **정의 시점**에 묶여서, 시험이 `E.OUT_CSV` 를 tmp 로 바꿔도
+    #   `main()` 의 `write(table, key)` 는 진짜 `data/field/evalset_2610.*` 로 갔다 — 합성 데이터가 실제 평가셋을 덮은 사고의 원인.
+    #   그래서 **호출 시점**에 모듈 전역을 읽는다.
+    csv_path = OUT_CSV if csv_path is None else csv_path
+    key_path = OUT_KEY if key_path is None else key_path
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     with csv_path.open("w", encoding="utf-8", newline="") as f:           # BOM 없이 · LF (커밋 훅과 같은 꼴)
         f.write("\n".join(PROTOCOL) + "\n")
@@ -206,13 +216,20 @@ def _err(vals: list[float]) -> dict:
 def score(rows: list[dict], samples_by: dict[str, list[dict]], filled: list[dict], key: dict) -> dict:
     """Q1~Q6. `key` 는 호출자가 채점 시점에 연다."""
     by_id = {r["seg_id"]: r for r in rows}
+    by_uid = {r["seg_uid"]: r for r in rows if r.get("seg_uid")}
     grp = {s: g for g, ss in key["groups"].items() for s in ss}
     res: dict = {"Q1": {}, "Q2": {}, "Q3": {}, "Q6": {}}
     e1: dict[str, list[float]] = {}
     e2: dict[str, list[float]] = {}
     e3: dict[str, list[float]] = {}
     for r in filled:
+        # ★ Zm27. 표에 seg_uid 가 있으면 **그것으로** 구간을 찾는다. seg_id 는 재발행하면 밀린다 — 밀렸으면 여기서 멈춘다.
         s = r["seg_id"]
+        if r.get("seg_uid"):
+            if r["seg_uid"] not in by_uid:
+                raise SystemExit(f"★ {s} 의 seg_uid {r['seg_uid']} 가 지금 발행본에 없다 — 재발행으로 구간이 바뀌었다. 채점하지 않는다.")
+            if by_uid[r["seg_uid"]]["seg_id"] != s:
+                raise SystemExit(f"★ {s} 가 지금은 다른 구간이다(seg_uid 가 {by_uid[r['seg_uid']]['seg_id']} 를 가리킨다). 채점하지 않는다.")
         p, g = by_id[s], grp.get(s, "?")
         wf, wn, ns = num(r.get("w_full_m")), num(r.get("w_narrow_m")), num(r.get("narrow_s_m"))
         if wf is not None and p.get("width_med_m") is not None:
