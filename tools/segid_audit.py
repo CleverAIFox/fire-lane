@@ -20,6 +20,7 @@ PARAM 없다
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import subprocess
@@ -111,6 +112,7 @@ def history() -> tuple[list[dict], list[dict], list[dict]]:
 
 
 def main() -> int:
+    argparse.ArgumentParser(description="seg_id 가 판마다 밀리는지 잰다 — 합성 · 이력 · baseline").parse_args()
     cur_feats = json.loads(CUR.read_text(encoding="utf-8"))["features"]
     cur = _map(cur_feats)
     road = {f["properties"]["seg_id"]: f["properties"].get("road_name") for f in cur_feats}
@@ -118,7 +120,7 @@ def main() -> int:
     vs_now, adj, base = history()
     res = {"현재 공개본": {"n": len(cur), "seg_uid 유일": len(set(cur.values())) == len(cur)},
            "합성": syn, "이력(웹 판 vs 지금)": vs_now, "이력(인접 두 판)": adj, "baseline vs 지금": base}
-    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print("합성 — 번호를 다시 매기면 옛 seg_id 가 다른 구간을 가리키는 수")
     for s in syn:
         print(f"  {s['시나리오']:<36} {s['옛 seg_id 가 다른 구간을 가리키는 수']:>5} / {s['남은']} ({s['%']}%)")

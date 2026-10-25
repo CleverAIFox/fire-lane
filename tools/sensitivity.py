@@ -412,7 +412,7 @@ def flip_list(rows: list[dict], base_v: list[str], flips: np.ndarray, dest: np.n
         "tier": tier_n, "tier별 최단 문턱": thr, "tier별 행선": by_to, "겹침": overlap,
         "구간": [{k: v for k, v in r.items() if k != "_j"} for r in recs],
     }
-    FLIP_JSON.write_text(json.dumps(detail, ensure_ascii=False, indent=1), encoding="utf-8")
+    FLIP_JSON.write_text(json.dumps(detail, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return detail
 
 
@@ -457,7 +457,7 @@ def main() -> int:
     res["segments.geojson"] = {"sha256": seg_after, "바이트 동일(실행 전후)": seg_before == seg_after}
     if seg_before != seg_after:
         raise SystemExit("★ segments.geojson 이 바뀌었다")
-    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
     flips = boots["+d · 폭 다섯 열"]["뒤집힌 구간 수"]
     print(json.dumps(res, ensure_ascii=False, indent=1))

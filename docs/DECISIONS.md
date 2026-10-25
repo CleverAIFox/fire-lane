@@ -42677,7 +42677,10 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 > 2026-10-25
 
+유병률  **0회** — 이 절은 관문을 세우지 않는다(조사 기록). 막는 병이 없으므로 지울 후보도 아니다
+
 강제자 없음 — 사유: 조사 기록이다. 수의 정본은 `data/processed/sensitivity.json` · `flip_detail.json` 이고 시험이 그 값을 고정하지 않는다(표본 추출이라 시드로만 재현된다)
+        **하위 6**이 이 칸을 물려받는다
 
 `tools/sensitivity.py`(새 도구 하나 · `params.py` · `classify.py` 불변 — 모듈 전역을 프로세스 안에서만 잠깐 바꿨다 되돌린다). 산출 `data/processed/sensitivity.json` · `data/processed/flip_detail.json` · `data/field/flip_2610.csv`. 재현: 공개본 1,281행을 `classify()` 로 다시 돌려 판정 290/278/192/521 이 1,281/1,281 로 일치해야 수를 낸다. `segments.geojson` 은 실행 전후 바이트 동일(sha256 `8709b73f…`).
 
@@ -42747,6 +42750,8 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 > 2026-10-25
 
+유병률  **1회** — 합성 데이터가 실제 평가셋 55행을 덮어쓴 일 한 번(이 절 자신)
+
 강제자  `tests/test_evalset.py::test_the_committed_evalset_rows_are_all_published_segments` · `tests/test_evalset.py::test_main_writes_only_to_the_patched_paths_and_never_to_the_real_ones`
 
 **사실.** §570 이 「평가셋 55 중 34 의 `seg_id` 가 공개본에 없다」고 적었다. **그 수가 틀렸다 — 55 전부가 가짜였다.** 공개본에서 id 가 맞는 21개도 도로명 · 길이가 전부 달랐다(55행 전부가 도로명 「가로」 · 길이 30~36). `tools/evalset.py` 를 현재 공개본에 다시 돌리면 55행이 전부 공개본에 있는데 커밋된 표와 겹치는 것은 3개뿐이다 — 커밋된 표는 이 코드와 이 데이터로 만들어진 것이 아니다.
@@ -42772,7 +42777,10 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 > 2026-10-25
 
+유병률  **7회** — `seg_id` 가 밀려 다른 구간을 가리킨 자리 일곱(§572-1 이 인접한 두 판의 비교로 센 수 · 2026-08-14 ×3 · 08-17 · 08-18 · 09-16 · 09-17)
+
 강제자  `tests/test_seg_uid_first_class.py` · `tests/test_no_bound_default_writers.py`
+        **하위 5**이 이 칸을 물려받는다
 
 **이 규칙은 새것이 아니다.** MASTER 결정 71·72 와 스키마(`segments.schema.json`)가 이미 「`seg_id` 는 불변이 아니다 · 외부 참조 금지」라고 적고 있다. §569~§571 의 평가셋과 명단이 그것을 `seg_id` 로 가리켰고, 이 판이 그 어긋남을 도구와 시험으로 막는다. `tools/segid_audit.py` · `tools/dm_audit.py` · `tests/test_seg_uid_first_class.py` · `tests/test_no_bound_default_writers.py` 가 새로 들어왔다.
 
@@ -42834,7 +42842,10 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 > 2026-10-25
 
+유병률  **0회** — 판 구조를 바꾼 결정이고 판 배분이 §1 과 어긋나서 난 사고는 기록에 없다
+
 강제자  `tests/test_plan_blocks.py`
+        **하위 3**이 이 칸을 물려받는다
 
 **사람이 정했다.** 종전 구조(§569-3)는 0판(현장 실측)이 A 의 전건이었다. 도로폭 검증을 맨 뒤로 보낸다: 판은 A~F 이고 **A 의 전건은 없음, F 의 전건은 E** 다. PLAN §10-5 의 표와 `tests/test_plan_blocks.py` 를 새 구조로 고쳤다(0판이 표에 다시 들어오면 시험이 빨개진다).
 
@@ -42910,7 +42921,10 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 > 2026-10-25
 
+유병률  **1회** — `_road_hash` 가 공백만인 이름을 따로 센 것(#179 · §574-1)
+
 강제자  `tests/test_segkey.py::test_road_hash_folds_whitespace_only_names_into_the_no_name_token` · `tests/test_seg_roadname.py::test_match_takes_a_per_call_band_and_the_default_still_reads_the_module_constants` · `tests/test_widthcross.py::test_survey_widths_match_at_the_adopted_rate_and_the_new_pairs_are_not_a_different_population`
+        **하위 7**이 이 칸을 물려받는다
 
 **이 판은 재잠금을 치지 않았다.** A 의 네 행이 다 끝난 뒤 한 번에 친다. 이 기계에는 레이크(`data/raw`)가 없어 파이프라인을 다시 돌리지 못했다 — 「판정 변경 0」은 **돌려서 잰 것이 아니라** 고친 자리가 판정 경로를 안 건드린다는 코드 읽기와 발행본 재현(`classify` 1,281/1,281)에 기댄다.
 
@@ -42971,7 +42985,7 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 ### 574-6. F 까지 열어 두는 것
 
-`test_fieldseal`(봉인 지문이 2026-10-04 의 12행 판에 멈춰 있고 실물은 47행) 과 `test_clearance_cross` 의 「어느 그물도 안 드는 자리」 6(적어 둔 2)은 **같은 원인**이다 — `naver_width_2610.csv` 가 2026-10-23 에 12 → 20 → 47행으로 늘었고(Zm7 · Zm8) 지문과 시험의 목록이 따라오지 않았다. **F 까지 열어 둔다.** `data/field/field.fingerprint.json` 은 건드리지 않았고, F 에서 평가셋 · 상위 표가 들어올 때 **한 번에 갱신한다**(PLAN F 행에 적었다).
+`test_fieldseal`(봉인 지문이 2026-10-04 의 12행 판에 멈춰 있고 실물은 47행) 과 `test_clearance_cross` 의 「어느 그물도 안 드는 자리」 6(적어 둔 2)은 **같은 원인**이다 — `naver_width_2610.csv` 가 2026-10-23 에 12 → 20 → 47행으로 늘었고(Zm7 · Zm8) 지문과 시험의 목록이 따라오지 않았다. **F 까지 열어 둔다.** `data/golden/field.fingerprint.json` 은 건드리지 않았고, F 에서 평가셋 · 상위 표가 들어올 때 **한 번에 갱신한다**(PLAN F 행에 적었다).
 
 ### 574-7. 재잠금 대기 상태 (측정한 것)
 
@@ -42982,7 +42996,10 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 > 2026-10-25
 
+유병률  **0회** — 값(`SURVEY_BAND`)을 고친 판이라 막는 병이 없다. 시험은 값과 표본 모집단을 고정할 뿐이다
+
 강제자  `tests/test_widthcross.py::test_the_survey_band_is_three_metres` · `tests/test_widthcross.py::test_survey_widths_match_at_the_chosen_rate_and_the_new_pairs_are_not_a_different_population` · `tests/test_widthcross.py::test_the_old_thirteen_contradictions_are_all_still_there_at_the_chosen_band` · `tests/test_encoding_backup.py`
+        **하위 4**이 이 칸을 물려받는다
 
 ### 575-1. `SURVEY_BAND` 5.0 → 3.0 (`tools/widthcross.py`)
 
@@ -43007,7 +43024,7 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 사람이 지우라고 정했다(원본은 멀쩡하고 차이는 CR 27개뿐 · git 이 한 번도 추적한 적이 없다). 파일을 지웠다.
 
-**원인 도구는 `tools/encoding_check.py --fix` 의 `fix()` 였다.** 고칠 CSV 옆(`data/field/<이름>.csv.bak_enc`)에 원본을 썼다. 사람이 만든 봉인 층에 새 파일이 생겨 `doc_fsck` 의 대장 검사와 `fieldseal` 을 걸었다. 시험을 먼저 넣어 빨강 3건을 확인한 뒤 고쳤다: 백업은 이제 **`paths.INTERIM/encoding_backup/`**(탐색 · 대조 산출물 · 커밋 안 함 · 지워도 되는 층 — 저장소의 기존 임시 계층)으로 가고, 저장소 안 상대 경로를 그대로 둔다. 자리는 **호출 시점에** 읽는다(기본 인자로 묶으면 시험이 못 바꾼다 — §571). `tools/tidy.py` 의 `**/*.bak_enc` 삭제 규칙은 그대로다 — 그 규칙은 이 백업도 지울 수 있다(백업은 지워도 되는 층에 있다).
+**원인 도구는 `tools/encoding_check.py --fix` 의 `fix()` 였다.** 고칠 CSV 옆(`data/field/<이름>.csv.bak_enc`)에 원본을 썼다. 사람이 만든 봉인 층에 새 파일이 생겨 `doc_fsck` 의 대장 검사와 `fieldseal` 을 걸었다. 시험을 먼저 넣어 빨강 3건을 확인한 뒤 고쳤다: 백업은 이제(시험 `tests/test_encoding_backup.py` 가 센다) **`paths.INTERIM/encoding_backup/`**(탐색 · 대조 산출물 · 커밋 안 함 · 지워도 되는 층 — 저장소의 기존 임시 계층)으로 가고, 저장소 안 상대 경로를 그대로 둔다. 자리는 **호출 시점에** 읽는다(기본 인자로 묶으면 시험이 못 바꾼다 — §571). `tools/tidy.py` 의 `**/*.bak_enc` 삭제 규칙은 그대로다 — 그 규칙은 이 백업도 지울 수 있다(백업은 지워도 되는 층에 있다).
 
 ### 575-3. PARK 를 F 의제로 올렸다 — 값은 2.0 그대로
 
@@ -43027,7 +43044,10 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 > 2026-10-25
 
+유병률  **0회** — 근거 기록과 조사 기록이다. 관문을 세우지 않는다
+
 강제자 없음 — 사유: 근거 기록과 조사 기록이다. PARK 는 값이 아니라 주석이 바뀌었고, 조사 수의 정본은 `data/processed/carve_survey.json` 이다(`tools/carve_survey.py` 가 재현 관문을 걸고 수를 낸다)
+        **하위 4**이 이 칸을 물려받는다
 
 ### 576-1. PARK(2.0) 의 근거 — 법정 규격
 
@@ -43093,7 +43113,10 @@ PLAN #4 의 목표 수를 **71.0%**(909쌍 · 띠 3m)로 고쳤다(종전 73.9% 
 
 > 2026-10-25
 
+유병률  **0회** — 조사 기록이다. 표본표 도구의 시험은 결정성과 덮어쓰기 거부를 센다
+
 강제자  `tests/test_sidewalk_probe.py` (표본표 도구) · 나머지는 조사 기록이다 — 수의 정본은 `data/processed/carve_survey.json`
+        **하위 5**이 이 칸을 물려받는다
 
 ### 577-1. 보도 134면이 왜 그것뿐인가 — ㄱ · ㄴ · ㄷ 중 **확정하지 못했다**
 
@@ -43126,6 +43149,7 @@ PLAN #4 의 목표 수를 **71.0%**(909쌍 · 띠 3m)로 고쳤다(종전 73.9% 
 
 `tools/sidewalk_probe.py` → **`data/field/sidewalk_probe_2610.csv`**(20구간 · 평가셋 · flip 표와 별개 · 합치지 않는다 · 봉인하지 않는다).
 
+- **도구와 시험:** 표를 뽑는 도구는 `tools/sidewalk_probe.py` 이고 결정성 · 덮어쓰기 거부는 `tests/test_sidewalk_probe.py` 가 센다.
 - **표본틀:** 재현한 구간 중 보도 폴리곤이 중심선 20m 안에 없는 **1,042구간**에서 `seg_id` 순으로 놓고 `evalgen.SEED` 로 무작위 20개. 칸: `seg_id` · `seg_uid` · 위도 · 경도(구간 중점 · 소수 6자리) · 도로명 · `length_m` · **`sidewalk_present`**(사람이 Y/N/? — 거리뷰로 「보도 · 보행포장이 실제로 있나」만 본다. 폭은 안 잰다) · `note`.
 - **결손률 = Y ÷ (Y + N).** 사람이 채운다. 이 판은 채우지 않았다.
 - **읽는 법의 한계 둘:** ① 표본이 20개라 불확실성이 크다(20 중 6 이면 95% 신뢰구간이 대략 15~52%). 범위로 읽는다. ② 무작위 20개가 **두 모집단을 섞는다** — 20개 중 9개가 보도 폴리곤이 0 인 빈 구역(북 · 서쪽)에, 11개가 그 밖에 있다. 빈 구역은 자료 결손일 가능성이 크고 그 밖은 정말 보도가 없는 길일 수 있다. 하나의 결손률로 합치면 둘 다 흐려진다. 사람이 구역별로 나눠 읽거나 구역별 10개씩 다시 뽑기로 정한다(`K` 는 도구 상수다 — 이 판은 요청대로 단순 무작위로 뽑았다).
@@ -43161,7 +43185,10 @@ PLAN #4 의 목표 수를 **71.0%**(909쌍 · 띠 3m)로 고쳤다(종전 73.9% 
 
 > 2026-10-25
 
+유병률  **0회** — 조사와 처리 순서의 기록이다. 관문을 세우지 않는다
+
 강제자 없음 — 사유: 조사와 처리 순서의 기록이다. 순서는 PLAN §10-5b 에 있고 머지는 사람이 GitHub 에서 한다
+        **하위 4**이 이 칸을 물려받는다
 
 ### 578-1. `pypdf` · `virtualenv` 를 저장소가 쓰는가
 
@@ -43202,3 +43229,22 @@ PLAN #4 의 목표 수를 **71.0%**(909쌍 · 띠 3m)로 고쳤다(종전 73.9% 
   2. **마찰은 주기가 아니라 도장과 흐름이다.** 보안 PR 이 `package-lock.json` · `uv.lock` 을 건드리면 문서 도장(#351 의 `DECISIONS/430`)이 무효가 되는데 봇은 못 찍는다 — 보안 PR 이 올 때마다 사람이 도장을 찍어야 머지된다. 도장이 락 파일에 묶인 절이 몇인지 세어 보고(`tools/docseal.py status`), 그 절이 락 **내용**이 아니라 `package.json` 의 선언을 가리키게 할 수 있는지 본다.
   3. **그룹화:** 보안 갱신도 그룹으로 받을 수 있는 것으로 안다(`groups` 의 `applies-to: security-updates`) — 지금처럼 패키지마다 한 PR 이 열려 PR 이 셋이다. 적용 전 GitHub 문서로 확인한다(이 판은 확인하지 못했다).
   4. **보안 PR 의 처리 규칙을 한 줄로 적는다:** 폐포 안(12 패키지)이면 재잠금과 묶고, 밖이면 곧바로 머지한다 — 이 판의 측정이 그 구분을 가능하게 했다(§578-2).
+
+## 579. 「좁은 범위」 넷과 원격 빨강 22건을 갚았다 · 시험이 추적 파일을 조용히 바꾸는 길 · 덮임 래칫은 실측을 따라간다 (Zm35 · Zm36 · 판정 변경 0 · 발행 수 변경 0 · 판정 폐포 밖)
+
+> 2026-10-25
+
+유병률  **2회** — 시험이 추적 파일을 의도 없이 바꾼 일: 평가셋 55행이 합성 데이터로 덮인 것(§571)과 기획서 표지 날짜 · 래칫 상수가 시험 중에 바뀐 것(이 절)
+
+강제자  `tests/test_no_bound_default_writers.py`(이제 `tests/` 도 훑는다) · `tests/test_ledgercross.py` · `tests/test_regime.py` · `tests/test_scipy_dev_group.py`(셋 다 `tests/pyfiles.py` 로 세 폴더를 훑고 단언이 폴더로 갈린다) · `tests/test_tools_are_wired.py` · `tests/test_handrolled.py`
+
+**결함 상한과 덮임 래칫은 다르다.** 결함 상한(`tools/deadcheck.py` 의 `CEILING` · `tools/constbasis.py` 의 천장)은 올리지 않는다 — 올리면 결함을 받아들이는 것이다. 덮임 · 커버리지류(`tools/sealcov.py` 의 `SEALED_FILES`)는 **실측을 따라간다** — 올라가는 것이 개선이고 선언이 실물을 못 따라오면 그것이 거짓이다. 이 판이 `SEALED_FILES` 를 619 → 636 으로 올렸고(636 / 636), `constbasis` 천장은 11 → 10 으로 **내렸다**. `CEILING` 은 전부 0 그대로다.
+
+**「좁은 범위」 넷.** 훑는 폴더를 `src` 로 좁힌 시험 셋(`ledgercross` · `regime` · `scipy`)이 `deadcheck` ⑤ 에 걸렸다. 훑기는 `tests/pyfiles.py` 의 한 문장으로 `src` · `tools` · `tests` 전부를 하고, 단언 줄이 `startswith("src/")` 로 **의도를 말한다** — 의미는 그대로다(tools · tests 가 그 도구를 쓰는 것은 정상이고 금지는 판정 쪽 하나다). 예외 표(`EXEMPT_SCOPE`)에는 한 줄도 안 더했다. 같은 좁음이 `test_no_bound_default_writers` 에도 있어 넓혔다.
+
+**원격 빨강 22건은 전부 저장소 자체 규약 위반이었다.** 판정 · 수 · 산출물은 움직이지 않았다. 갈래: 모르는 깃발을 받아주는 도구 셋(`argparse` 로 거절) · JSON 끝 개행 6곳 · 손 중앙값 색인(`segid_audit` 는 가운데 항목을 고르는 것이라 `MID_OK` 에 사유와 수를 적었다) · 대장 `consumers` 누락 · 생성물 루트를 손으로 든 곳(`generated.for_role`) · 시험 안의 경로 조작(pytest `pythonpath` 가 이미 준다) · 도구 면제 표(조사 도구 셋을 사유와 함께 더했고, 이제 불리는 `statkit` 을 뺐다) · 물림 선언과 유병률 칸이 빠진 §570~§578 · MASTER 의 생성 수.
+- **PLAN 의 §562-2 · §575-1 · §576 은 절을 안 쓴 것이 아니라 소속을 안 적은 것이다.** 셋 다 DECISIONS 의 절이고 실재한다. 문서명 없는 `§N` 은 PLAN 을 가리키므로 `DECISIONS` 를 앞에 붙였다.
+- **`field.fingerprint.json` 은 F 까지 안 생기는 파일이 아니라 경로를 틀리게 쓴 것이다.** 파일은 `data/golden/` 에 이미 있고(2026-10-04), §574-6 이 `data/field/` 라고 적었다. 경로를 고쳤다 — 지문 파일은 건드리지 않았다.
+- **환경 skip.** `test_evalset` 의 새 skip 은 정책(`환경skip(산출물)`)에 맞았고, 정책 밖이던 것은 Zm26 의 `평가셋이 아직 없다` 하나였다(같은 분류로 고쳤다).
+
+**시험이 추적 파일을 바꾸는 길 — 하나를 찾았다.** `tests/test_fix_door.py::test_the_door_actually_repairs_an_injected_defect` 가 실제 트리에서 수리 문 `tools/fix.sh` 를 **통째로** 돈다. 문은 `build_proposal.py --touch-today`(기획서 표지 날짜 → `docs/proposal.md` · `web/proposal.html`) 와 `ratchet.py --write`(래칫 상수 → `tools/sealcov.py` · `tools/constbasis.py`) 와 `docgen` 등을 돌고, 시험은 `docs/MASTER.md` 하나만 되돌린다. 깨끗한 체크아웃에서 이 시험 하나를 돌려 재현했다: 네 파일(날짜 2 · `CONST_NO_BASIS` 11 → 10 · `SEALED_FILES` 619 → 634)이 바뀌었다. **트리가 이미 문과 어긋나 있으면 시험이 그것을 고쳐 놓는다** — 기본 인자 함정(§572-4)이 아니라 **시험이 쓰기 모드 문을 실제 트리에서 부르는** 꼴이다. 공통 장치는 제안만 했고 넣지 않았다(사람이 정한다): 세션 앞뒤로 추적 파일의 `git diff` 지문을 비교하는 `tests/conftest.py` 훅, 그리고 이 시험을 임시 복사본에서 돌리는 것.

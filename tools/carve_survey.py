@@ -22,6 +22,7 @@ PARAM 가까움 반경 5 · 10 · 20m (보도 폴리곤이 구간 중심선에�
 """
 from __future__ import annotations
 
+import argparse
 import json
 import statistics
 import sys
@@ -232,16 +233,20 @@ def summarize(raw: dict) -> dict:
 
 def main() -> int:
     # 계산이 오래 걸려(약 5분) `--save-raw` 로 구간별 원자료를 저장하고 `--load-raw` 로 다시 읽을 수 있다(요약 로직만 고칠 때).
-    args = sys.argv[1:]
-    raw_path = Path(args[1]) if len(args) == 2 and args[0] in ("--save-raw", "--load-raw") else None
-    if raw_path is not None and args[0] == "--load-raw":
+    ap = argparse.ArgumentParser(description="carve 적용 범위 조사 — 수는 data/processed/carve_survey.json 에 쓴다")
+    g = ap.add_mutually_exclusive_group()
+    g.add_argument("--save-raw", type=Path, metavar="PATH", help="구간별 원자료를 저장한다")
+    g.add_argument("--load-raw", type=Path, metavar="PATH", help="저장한 원자료로 요약만 다시 낸다")
+    args = ap.parse_args()
+    raw_path = args.load_raw or args.save_raw
+    if args.load_raw is not None:
         raw = json.loads(raw_path.read_text(encoding="utf-8"))
     else:
         raw = survey()
         if raw_path is not None:
-            raw_path.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+            raw_path.write_text(json.dumps(raw, ensure_ascii=False) + "\n", encoding="utf-8")
     res = summarize(raw)
-    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    OUT.write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(json.dumps(res, ensure_ascii=False, indent=1))
     return 0
 

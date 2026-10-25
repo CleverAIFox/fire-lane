@@ -15,6 +15,7 @@ PARAM 없다
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import re
@@ -105,6 +106,7 @@ def load_old() -> dict[str, dict[str, dict]]:
 
 
 def main() -> int:
+    argparse.ArgumentParser(description="문서의 DM 번호를 지금 공개본과 대조한다 — 고치지 않는다").parse_args()
     cur, old = load_current(), load_old()
     names = {p["road_name"] for p in cur.values() if p["road_name"]} | {q["road_name"] for m in old.values() for q in m.values() if q["road_name"]}
     road_re = road_regex(names)
@@ -123,7 +125,7 @@ def main() -> int:
             "도로명 대조": tally, "길이 대조": ltally, "어긋남 행": len(bad),
             "어긋남 중 옛 번호판에서는 맥락이 맞는 것": sum(1 for r in bad if r["맥락이 맞는 옛 번호판"]),
             "어긋남 목록": [{k: r[k] for k in ("문서", "줄", "절", "seg_id", "seg_uid", "도로명(지금)", "length_m(지금)", "도로명 대조", "길이 대조", "맥락이 맞는 옛 번호판", "맥락")} for r in bad]}
-    OUT_JSON.write_text(json.dumps(summ, ensure_ascii=False, indent=1), encoding="utf-8")
+    OUT_JSON.write_text(json.dumps(summ, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print({k: v for k, v in summ.items() if k != "어긋남 목록"})
     for r in bad:
         print(f"  {r['문서']}:{r['줄']} {r['절']} {r['seg_id']} 지금 {r['도로명(지금)']} {r['length_m(지금)']}m · 도로명 {r['도로명 대조']} · 길이 {r['길이 대조']}"

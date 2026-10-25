@@ -4152,7 +4152,7 @@ outputs:
     produced_by: src/firelane/ngii1k.py
     path: data/processed/ngii1k_xsec_5186.gpkg
     inputs: [ngii1k]
-    consumers: [src/firelane/segments.py]
+    consumers: [src/firelane/segments.py, tools/carve_survey.py]
     what: |
       평면교차점 A0080000. 교차부 실제 형상.
       XSEC_EXCL(노드 반경 5m) 눈대중을 대체한다.
@@ -4255,14 +4255,14 @@ outputs:
   evalset_2610_stale_csv:
     produced_by: tools/evalset.py (옛 표 — 무효)
     path: data/field/evalset_2610.csv.stale_20261025
-    inputs: []
+    inputs: [segments]      # 도구가 읽는 선언만 적는다 — 이 파일의 실제 입력은 시험의 합성 데이터였다(무효)
     consumers: []
     what: "★ 무효. 합성 데이터가 실제 평가셋 자리에 박힌 사고의 표(DECISIONS §571). 전부 도로명 「가로」 · 길이 30~36 의 가짜 구간이다. 감사 흔적으로만 남긴다 — 어떤 채점에도 쓰지 않는다"
     verified: false
   evalset_2610_stale_key:
     produced_by: tools/evalset.py (옛 키 — 무효)
     path: data/field/evalset_2610.key.json.stale_20261025
-    inputs: []
+    inputs: [segments]      # 도구가 읽는 선언만 적는다 — 이 파일의 실제 입력은 시험의 합성 데이터였다(무효)
     consumers: []
     what: "★ 무효. 위 옛 표의 키(합성 데이터의 묶음). 열지 않았다 — 열 이유가 없다(DECISIONS §571)"
     verified: false

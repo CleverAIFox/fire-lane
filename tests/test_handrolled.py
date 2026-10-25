@@ -211,6 +211,9 @@ MID_OK: dict[str, tuple[int, str]] = {
            " 평균을 내면 선 밖으로 나갈 수 있다"),
     "tools/bridge_audit.py": (
         1, "같은 것 — 교량 선형의 가운데 좌표를 집는다"),
+    "tools/segid_audit.py": (
+        2, "**가운데 구간 · 가운데 도로**를 골라 그것을 뺀다(번호가 밀리는 합성의 시나리오) —"
+           " 표본의 중앙값이 아니라 정렬한 목록 한가운데의 한 항목이다"),
 }
 
 
@@ -344,8 +347,8 @@ def test_no_hand_rolled_median_outside_the_allow_list():
 def test_the_median_judge_bites_a_planted_fault():
     """★ 카나리아 — 위 판별식도 양쪽으로 민다."""
     fs = _files()
-    # ① 허용 목록을 비우면 **셋 다** 걸린다
-    assert len(mid_faults(fs, ok={})) == 3, "허용 목록 밖을 안 댄다"
+    # ① 허용 목록을 비우면 **넷 다** 걸린다
+    assert len(mid_faults(fs, ok={})) == 4, "허용 목록 밖을 안 댄다"
     # ② 수를 틀리게 적으면 걸린다
     one = {"tools/bridge_audit.py": (9, "거짓 수")}
     assert any("9번으로 적혀 있는데" in b for b in mid_faults(fs, ok=one)), \

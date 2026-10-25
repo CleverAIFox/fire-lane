@@ -167,12 +167,16 @@ def _assert_rows_are_published(table_rows: list[dict], pub: dict[str, dict]) -> 
 def test_the_committed_evalset_rows_are_all_published_segments() -> None:
     """표에 실린 seg_id 가 **전부 공개본에 있고 같은 구간**이다. 키 파일은 안 연다."""
     if not REAL_FILES[0].exists():
-        pytest.skip("평가셋이 아직 없다")
+        pytest.skip("환경skip(산출물) — 평가셋 data/field/evalset_2610.csv 가 아직 없다(뽑기 전)")
     _assert_rows_are_published(_table_rows(REAL_FILES[0]), _published())
 
 
 def test_a_fresh_draw_from_the_published_file_picks_only_published_ids() -> None:
     pub = _published()
+    # ★ Zm35. `E.load()` 는 커밋 안 되는 `data/processed/width_samples.csv` 도 읽는다 — 깨끗한 체크아웃(CI)에서는 없어 이 시험이 FileNotFoundError 로 **죽었다**
+    #   (원격에서만 빨강). 환경이 없는 것은 통과도 실패도 아니라 skip 이다.
+    if not E.SAMPLES.exists():
+        pytest.skip("환경skip(산출물) — data/processed/width_samples.csv 가 없다(커밋 안 되는 파일)")
     rows, by = E.load()
     table, key = E.build(rows, by, mids={})
     _assert_rows_are_published([{**r, "length_m": r["length_m"]} for r in table], pub)

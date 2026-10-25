@@ -18,6 +18,8 @@ from pathlib import Path
 
 import pytest
 
+from firelane.generated import for_role
+
 ROOT = Path(__file__).resolve().parents[1]
 PUB = ROOT / "web/data/segments.geojson"
 DM = re.compile(r"\bDM\d{5}\b")
@@ -69,7 +71,8 @@ def test_the_seg_uid_beside_each_seg_id_is_the_published_one() -> None:
 
 def _jsons() -> list[Path]:
     out = []
-    for d in ("data/field", "data/processed", "web/data"):
+    # ★ Zm36. 생성물 루트는 등록부가 든다(`test_generated_registry`) — 여기서 다시 적지 않는다. `data/field` 는 생성물이 아니라 사람의 표 자리라 따로 더한다.
+    for d in ("data/field", *for_role("fresh")):
         out += [p for p in sorted((ROOT / d).glob("*.json")) if p.name not in SKIP_JSON and ".stale" not in p.name and not p.name.endswith(SEALED)]
     return out
 
