@@ -724,6 +724,19 @@ uv run python tools/golden.py lock             # 기준선을 다시 찍는다 (
 uv run python tools/baseline.py freeze A-lock --note "Zm30 · A 재잠금"
 ```
 
+보도 레이어(`A0033320`)가 판정 범위에서 왜 134면뿐인지(DECISIONS §577-1)는 레이크가 있어야 가른다. 아래는 **읽기 전용**이다(출력 디렉터리를 `/tmp` 로 준다 — processed 를 안 덮는다). 명령은 `src/firelane/ngii1k.py` · `ngi.py` 머리말에 적힌 꼴이고 **이 기계에서는 못 돌려 봤다.**
+
+```
+export FIRE_LANE_DATA="<레이크 경로>"
+RAW=$(uv run python -c "from firelane.paths import RAW; print(RAW)")
+# SHP 판(V-WORLD 2026-03 · 74도엽)과 NGI 판(143도엽)을 도엽별로 펴서 레이어 건수를 센다. 보도(A0033320)의 도엽별 건수 · 기하 종류가 본체다.
+uv run python -m firelane.ngii1k "$RAW"/vworld /tmp/ngii1k_probe
+# NGI 판만 따로: 보도 레이어가 어떤 기하(Polygon 인지 LineString 인지)로 오는가
+uv run python -m firelane.ngi .work/ngii1k
+# 적재된 134면(판정 범위 안)이 위 건수의 어느 도엽에서 왔는지 — 위 건수의 합과 processed 의 ngii1k_walk 1,455면을 댄다.
+```
+★ `ngii1k.build()` 는 기하 종류가 `Polygon` 이 아닌 피처를 **조용히 버린다**(전부 사라질 때만 운다). NGI 판 도엽의 보도가 다른 기하로 오면 그 도엽의 보도가 통째로 빠진다 — 위 둘째 명령이 그것을 가른다.
+
 ★ `#173`(도장을 트리에 묶는다)은 이 재잠금과 같이 한다(DECISIONS §574-5). 위 4 의 뒤다.
 
 ---
