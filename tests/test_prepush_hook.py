@@ -29,7 +29,7 @@ def _git(cwd: Path, *args: str, env: dict | None = None) -> subprocess.Completed
 def repo(tmp_path: Path):
     """저장소 + 원격 + **전역 이음**(임시 hooksPath). 훅 본체는 이 저장소의 것을 복사한다."""
     work, remote, glob = tmp_path / "work", tmp_path / "remote.git", tmp_path / "global"
-    subprocess.run(["git", "init", "-q", "--bare", str(remote)], check=True)
+    subprocess.run(["git", "init", "-q", "--bare", str(remote)], check=True, timeout=60)
     work.mkdir()
     glob.mkdir()
     _git(work, "init", "-q", "-b", "part/x")

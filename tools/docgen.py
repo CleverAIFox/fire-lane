@@ -115,17 +115,18 @@ AXES: dict[str, Axis] = {
                   "제 칸도 부모 칸도 없는 절 — `dms.scan()` 의 `blank`"),
     "plan_open": Axis(re.compile(r"^## 1\. 남은 일 — ([\d,]+)행$", re.M),
                       "PLAN §1 표 행 수 — `plan_renumber` 가 세는 것"),
+    # ★ 앵커 뒤에 **줄의 설명 낱말**까지 건다 — DECISIONS 가 옛 블록을 회고로 인용한 줄(`열린 57 − 못 닫는 12 = 45`)을 잡으면 역사를 고치게 된다.
     # ★ 2026-10-25 (Zm39 · DECISIONS §580). PLAN §10-1b 의 **세 수 블록**. 그 절은 「손으로 세지 않는다」고 적어 두고 수를 손으로 적어
     #   세 번 낡았다(§520 · 533 · Zm39). 정본은 `tools/planclose.py::counts()` 하나이고 여기서 다시 세지 않는다 — 앵커는 줄머리 한글 라벨이다.
-    "pc_open": Axis(re.compile(r"^열린 (\d+) − 못 닫는 \d+ = \d+", re.M),
+    "pc_open": Axis(re.compile(r"^열린 (\d+) − 못 닫는 \d+ = \d+\s+어느 판이든", re.M),
                     "PLAN §1 열린 행 — `planclose.counts()` 의 `열린`"),
-    "pc_cannot": Axis(re.compile(r"^열린 \d+ − 못 닫는 (\d+) = \d+", re.M),
+    "pc_cannot": Axis(re.compile(r"^열린 \d+ − 못 닫는 (\d+) = \d+\s+어느 판이든", re.M),
                       "열린 행 중 물리적으로 못 닫는 행 — `planclose.counts()` 의 `못 닫는`"),
-    "pc_gap": Axis(re.compile(r"^열린 \d+ − 못 닫는 \d+ = (\d+)", re.M),
+    "pc_gap": Axis(re.compile(r"^열린 \d+ − 못 닫는 \d+ = (\d+)\s+어느 판이든", re.M),
                    "어느 판이든 들어야 하는 행 — 열린 − 못 닫는"),
-    "pc_promised": Axis(re.compile(r"^무조건 닫는다\s+(\d+)", re.M),
+    "pc_promised": Axis(re.compile(r"^무조건 닫는다\s+(\d+)\s+표식 없이", re.M),
                         "표식 없이 「닫는다」로 적힌 행 — `planclose.counts()` 의 `무조건 닫는다`"),
-    "pc_decl": Axis(re.compile(r"^닫는 수 선언 합\s+(\d+)", re.M),
+    "pc_decl": Axis(re.compile(r"^닫는 수 선언 합\s+(\d+)\s+이미 닫은", re.M),
                     "배치 표 「닫는 수」 칸의 합 — `planclose.counts()` 의 `닫는 수 선언 합`"),
     # ★ 2026-09-25 (§258). 커버리지 래칫. 정본은 `tools/verify.sh` 의 `COV_MIN=`
     #   한 줄이고(`test_coverage_ratchet_has_one_home`), 문서가 그 수를 손으로

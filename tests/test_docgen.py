@@ -82,6 +82,13 @@ SYNTH = "\n".join([
     "영상판정 불가          11구간 · 15m   (전체 연장의 16%)",
     "<!--/gen-->",
     "",
+    # ★ 2026-10-25 (Zm39 · §580). PLAN §10-1b 세 수 블록 — 한 블록에 줄 셋·축 다섯. 앵커가 줄의 **설명 낱말까지** 걸려 있다.
+    "<!--gen: pc_open pc_cannot pc_gap pc_promised pc_decl-->",
+    "열린 6 − 못 닫는 2 = 4      어느 판이든 들어야 하는 행",
+    "무조건 닫는다          3      표식 없이 「닫는다」로 적힌 행",
+    "닫는 수 선언 합        5      이미 닫은 행이 제 판의 수에 남아 있다",
+    "<!--/gen-->",
+    "",
 ])
 
 #: 블록 **밖**에 같은 표기가 있는 문서. 축 하나를 블록으로 덮고 같은 표기를
@@ -101,7 +108,8 @@ WANT = {"datasets": 72, "sealable": 71, "sections": 1036,
         # ★ 백분율 셋은 **실수**다. 정수를 주면 `render` 가 `.0` 을 붙이고
         #   `claims` 가 그것을 다시 실수로 읽는다 — 왕복이 맞아야 멱등이다.
         "cctv_in": 391, "cctv_in_pct": 30.5, "cctv_out_pct": 69.5,
-        "v_unknown_m": 18367, "v_unknown_m_pct": 31.5}
+        "v_unknown_m": 18367, "v_unknown_m_pct": 31.5,
+        "pc_open": 45, "pc_cannot": 7, "pc_gap": 38, "pc_promised": 37, "pc_decl": 47}
 
 
 def _one(text: str, want: dict[str, float] | None = None) -> docgen.Result:
