@@ -79,6 +79,7 @@ from typing import NamedTuple
 import dms
 import docnum_check
 import plan_renumber
+import planclose
 
 from firelane import ledger
 
@@ -114,6 +115,18 @@ AXES: dict[str, Axis] = {
                   "제 칸도 부모 칸도 없는 절 — `dms.scan()` 의 `blank`"),
     "plan_open": Axis(re.compile(r"^## 1\. 남은 일 — ([\d,]+)행$", re.M),
                       "PLAN §1 표 행 수 — `plan_renumber` 가 세는 것"),
+    # ★ 2026-10-25 (Zm39 · DECISIONS §580). PLAN §10-1b 의 **세 수 블록**. 그 절은 「손으로 세지 않는다」고 적어 두고 수를 손으로 적어
+    #   세 번 낡았다(§520 · 533 · Zm39). 정본은 `tools/planclose.py::counts()` 하나이고 여기서 다시 세지 않는다 — 앵커는 줄머리 한글 라벨이다.
+    "pc_open": Axis(re.compile(r"^열린 (\d+) − 못 닫는 \d+ = \d+", re.M),
+                    "PLAN §1 열린 행 — `planclose.counts()` 의 `열린`"),
+    "pc_cannot": Axis(re.compile(r"^열린 \d+ − 못 닫는 (\d+) = \d+", re.M),
+                      "열린 행 중 물리적으로 못 닫는 행 — `planclose.counts()` 의 `못 닫는`"),
+    "pc_gap": Axis(re.compile(r"^열린 \d+ − 못 닫는 \d+ = (\d+)", re.M),
+                   "어느 판이든 들어야 하는 행 — 열린 − 못 닫는"),
+    "pc_promised": Axis(re.compile(r"^무조건 닫는다\s+(\d+)", re.M),
+                        "표식 없이 「닫는다」로 적힌 행 — `planclose.counts()` 의 `무조건 닫는다`"),
+    "pc_decl": Axis(re.compile(r"^닫는 수 선언 합\s+(\d+)", re.M),
+                    "배치 표 「닫는 수」 칸의 합 — `planclose.counts()` 의 `닫는 수 선언 합`"),
     # ★ 2026-09-25 (§258). 커버리지 래칫. 정본은 `tools/verify.sh` 의 `COV_MIN=`
     #   한 줄이고(`test_coverage_ratchet_has_one_home`), 문서가 그 수를 손으로
     #   들면 올릴 때마다 한쪽만 움직인다 — 2026-09-25 에 실제로 그랬다.
@@ -232,6 +245,10 @@ def truth() -> dict[str, float]:
         # ★ 밑줄 이름을 그대로 부른다. 같은 범위를 세는 판별식이 이미 거기
         #   있고, 여기서 다시 쓰면 도구와 검사가 다른 것을 센다(R3).
         "plan_open": len(plan_renumber._rows(plan)),
+        # ★ Zm39. 세 수 블록의 다섯 — 세는 집은 `planclose.counts()` 하나다(R3).
+        **{k: v for k, v in zip(("pc_open", "pc_cannot", "pc_gap", "pc_promised", "pc_decl"),
+                                (lambda c: (c["열린"], c["못 닫는"], c["열린"] - c["못 닫는"], c["무조건 닫는다"], c["닫는 수 선언 합"]))(planclose.counts()),
+                                strict=True)},
         "cov_min": _cov_min(),
         # ★ `docnum_check` 를 부른다. 같은 수를 여기서 또 세면 두 집이 되고,
         #   판정이 움직이는 날 한쪽만 움직인다(2족 · §319).

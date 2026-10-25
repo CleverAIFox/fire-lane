@@ -12,6 +12,10 @@ from zoneinfo import ZoneInfo
 
 import pytest
 import skip_policy as sp
+from tracked_guard import (  # noqa: F401  세션 앞뒤 추적 파일 지문(Zm39 · §580)
+    pytest_sessionfinish,
+    pytest_sessionstart,
+)
 
 
 @pytest.hookimpl(hookwrapper=True)

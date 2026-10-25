@@ -163,11 +163,32 @@ def promised(src: str | None = None) -> set[int]:
 
 
 def cannot_close(src: str | None = None) -> set[int]:
-    """「물리적으로 못 닫는」 표가 든 행. 판에 실리지 않는 것이 정상이다."""
+    """「물리적으로 못 닫는」 표가 든 행. 판에 실리지 않는 것이 정상이다.
+
+    ★ 2026-10-25 (Zm39 · DECISIONS §580). **끝을 표가 정한다.** 종전에는 다음 `---` 까지 읽었고, Zm28 이 그 사이에
+      §10-5(판 배분 표 · 산문)를 끼워 넣자 127줄을 읽어 **남의 표의 `#179` · `#11` · `#17`… 열다섯을 못 닫는 행으로 셌다.**
+      표를 읽는 자가 표 밖의 글자에 매달린 것이다(`_table` 이 §524-1 에서 고친 그 병). 표는 `|` 로 시작하지 않는 첫 줄에서 끝난다.
+    """
     t = _text(src)
     i = t.index("**물리적으로 못 닫는")
-    j = t.index("\n---", i)
-    return {int(x) for x in _HASH.findall(t[i:j])}
+    out: list[str] = []
+    started = False
+    for ln in t[i:].splitlines()[1:]:
+        if ln.startswith("|"):
+            started = True
+            out.append(ln)
+        elif started:
+            break
+    return {int(x) for x in _HASH.findall("\n".join(out))}
+
+
+def stale_cannot_close(src: str | None = None) -> set[int]:
+    """표에 적혔는데 **열린 행이 아닌** 번호 — 닫혔거나 지워진 행의 자국이다. 비면 산다.
+
+    ★ 닫힌 행은 표에서 **지운다**(역사는 DECISIONS 가 든다). 묘비를 달아 남기면 이 표가 「못 닫는 열둘」이라는 손수 센 수와
+      갈리고(Zm39 전에 5개가 그랬다) 항등식의 한 항이 거짓이 된다.
+    """
+    return cannot_close(src) - open_rows(src)
 
 
 def _taken(src: str | None = None) -> set[int]:
@@ -208,7 +229,7 @@ def counts(src: str | None = None) -> dict[str, int]:
     b = batches(src)
     took = _taken(src)
     return {"열린": len(open_rows(src)),
-            "못 닫는": len(cannot_close(src)),
+            "못 닫는": len(cannot_close(src) & open_rows(src)),
             "표가 드는 행": len(took & open_rows(src)),
             "무조건 닫는다": len(promised(src)),
             "닫는 수 선언 합": sum(n or 0 for _, n in b.values())}
@@ -228,6 +249,13 @@ def selftest() -> int:
         bad.append(f"§1 행을 잘못 읽는다 — {sorted(open_rows(synth))}")
     if cannot_close(synth) != {3}:
         bad.append(f"못 닫는 행을 잘못 읽는다 — {sorted(cannot_close(synth))}")
+    # ★ Zm39. 표 **밖** 산문의 `#N` 을 표의 행으로 세지 않는다(종전에는 다음 `---` 까지 읽었다)
+    tail = synth.replace("| `#3` 바깥 | 외부다 |\n", "| `#3` 바깥 | 외부다 |\n\n뒤따르는 산문이 `#99` 를 말한다.\n")
+    if cannot_close(tail) != {3}:
+        bad.append(f"표 밖 산문의 번호를 못 닫는 행으로 센다 — {sorted(cannot_close(tail))}")
+    gone = synth.replace("| `#3` 바깥 | 외부다 |", "| `#3` 바깥 | 외부다 |\n| `#50`(닫힘) 옛 | 지워진 행 |")
+    if stale_cannot_close(gone) != {50} or stale_cannot_close(synth):
+        bad.append(f"표에 남은 닫힌 행의 자국을 잘못 잡는다 — {sorted(stale_cannot_close(gone))}")
     if set(batches(synth)) != {"Za", "Zb"}:
         bad.append(f"배치 표를 잘못 읽는다 — {sorted(batches(synth))}")
     if orphans(synth):
@@ -325,6 +353,10 @@ def main() -> int:
         print(f"  「드는 행」 칸의 번호 뒤에 {' · '.join(f'({w})' for w in MENTION)} 를")
         print("  붙이면 **약속이 아니다**로 센다. 닫을 행만 맨번호로 두어라 —")
         print("  한 칸이 두 뜻을 담으면 그 수가 틀려도 아무도 모른다(DECISIONS §524)")
+        return 1
+    if stale := sorted(stale_cannot_close()):
+        print(f"\n✗ **「못 닫는」 표에 열린 행이 아닌 번호 {len(stale)}** — {' '.join(f'#{n}' for n in stale)}")
+        print("  닫혔거나 지워진 행의 자국이다. 표에서 지워라 — 묘비를 달아 남기면 항등식의 한 항이 거짓이 된다(Zm39 · DECISIONS §580).")
         return 1
     if (une := sorted(set(promised()) ^ (open_rows() - cannot_close()))):
         print(f"\n  ! **어느 판도 무조건 닫겠다고 안 한 행 {len(une)}** — "

@@ -42923,7 +42923,7 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 유병률  **1회** — `_road_hash` 가 공백만인 이름을 따로 센 것(#179 · §574-1)
 
-강제자  `tests/test_segkey.py::test_road_hash_folds_whitespace_only_names_into_the_no_name_token` · `tests/test_seg_roadname.py::test_match_takes_a_per_call_band_and_the_default_still_reads_the_module_constants` · `tests/test_widthcross.py::test_survey_widths_match_at_the_adopted_rate_and_the_new_pairs_are_not_a_different_population`
+강제자  `tests/test_segkey.py::test_road_hash_folds_whitespace_only_names_into_the_no_name_token` · `tests/test_seg_roadname.py::test_match_takes_a_per_call_band_and_the_default_still_reads_the_module_constants` · `tests/test_widthcross.py::test_survey_widths_match_at_the_chosen_rate_and_the_new_pairs_are_not_a_different_population`
         **하위 7**이 이 칸을 물려받는다
 
 **이 판은 재잠금을 치지 않았다.** A 의 네 행이 다 끝난 뒤 한 번에 친다. 이 기계에는 레이크(`data/raw`)가 없어 파이프라인을 다시 돌리지 못했다 — 「판정 변경 0」은 **돌려서 잰 것이 아니라** 고친 자리가 판정 경로를 안 건드린다는 코드 읽기와 발행본 재현(`classify` 1,281/1,281)에 기댄다.
@@ -43248,3 +43248,27 @@ PLAN #4 의 목표 수를 **71.0%**(909쌍 · 띠 3m)로 고쳤다(종전 73.9% 
 - **환경 skip.** `test_evalset` 의 새 skip 은 정책(`환경skip(산출물)`)에 맞았고, 정책 밖이던 것은 Zm26 의 `평가셋이 아직 없다` 하나였다(같은 분류로 고쳤다).
 
 **시험이 추적 파일을 바꾸는 길 — 하나를 찾았다.** `tests/test_fix_door.py::test_the_door_actually_repairs_an_injected_defect` 가 실제 트리에서 수리 문 `tools/fix.sh` 를 **통째로** 돈다. 문은 `build_proposal.py --touch-today`(기획서 표지 날짜 → `docs/proposal.md` · `web/proposal.html`) 와 `ratchet.py --write`(래칫 상수 → `tools/sealcov.py` · `tools/constbasis.py`) 와 `docgen` 등을 돌고, 시험은 `docs/MASTER.md` 하나만 되돌린다. 깨끗한 체크아웃에서 이 시험 하나를 돌려 재현했다: 네 파일(날짜 2 · `CONST_NO_BASIS` 11 → 10 · `SEALED_FILES` 619 → 634)이 바뀌었다. **트리가 이미 문과 어긋나 있으면 시험이 그것을 고쳐 놓는다** — 기본 인자 함정(§572-4)이 아니라 **시험이 쓰기 모드 문을 실제 트리에서 부르는** 꼴이다. 공통 장치는 제안만 했고 넣지 않았다(사람이 정한다): 세션 앞뒤로 추적 파일의 `git diff` 지문을 비교하는 `tests/conftest.py` 훅, 그리고 이 시험을 임시 복사본에서 돌리는 것.
+
+## 580. pre-push 를 넣었다 · 시험의 조용한 쓰기를 한 판으로 막았다 · 41번(자기검사 전수)을 고쳤다 (Zm38 · Zm39 · 판정 변경 0 · 발행 수 변경 0 · 판정 폐포 밖)
+
+> 2026-10-25
+
+유병률  **2회** — 시험이 추적 파일을 의도 없이 바꾼 일: 평가셋 55행(§571)과 수리 문이 기획서 날짜 · 래칫 상수를 바꾼 것(§579)
+
+강제자  `tests/test_prepush_hook.py`(진짜 `git push` 로 훅이 걸리는지) · `tests/test_tracked_guard.py`(세션 앞뒤 지문) · `tests/test_fix_door.py`(문은 격리 복사본에서) · `tools/planclose.py`(`--selftest` — 표 범위 · 묘비 자국) · `tools/plan_renumber.py`(`--selftest` — 두 방법 대조)
+
+**pre-push.** 하루에 푸시 둘이 원격에서 빨갰고 둘 다 로컬 10초 안에 잡히는 것이었다(deadcheck ② 10.7초 · 파일 길이 0.1초). `.githooks/pre-push` 가 푸시 직전에 **지금 초록인** 게이트 일곱(`.githooks/pre-push.gates`: deadcheck · 파일 길이 · sealcov · constbasis · 계보 대장 · docgen · commit_policy)과 추적 파일 변경 감지 둘(시작할 때 더러우면 막는다 — 게이트는 푸시될 커밋이 아니라 작업 트리를 잰다 · 끝났을 때 게이트가 파일을 바꿨으면 막는다)을 돈다. 약 14초이고 끝에 걸린 시간을 찍는다(30초 예산을 넘으면 경고). 빨간 게이트(자기검사 · 실측 층 지문 · golden · docseal 등)는 넣지 않았다 — 푸시가 영원히 막히고 사람이 훅을 지운다. 우회는 `git push --no-verify` 와 `FIRE_LANE_SKIP_PREPUSH=1`(쓰면 경고가 매번 찍힌다). 전역 `core.hooksPath` 는 한 곳만 가리키므로 전역 `~/.githooks/pre-push`(정본 `.githooks/global-pre-push.sh`)가 pre-commit 과 같은 이음으로 저장소 훅을 부른다. **못 보는 것:** 로컬에만 있는 추적 안 된 파일에 기대는 초록(커밋 못 하는 `.stale_*` 를 대장이 선언한 것)은 깨끗한 체크아웃에서만 빨갛다 — CI 몫이다.
+
+**시험의 조용한 쓰기.** `tests/tracked_guard.py` 가 세션 앞뒤로 HEAD 와 다른 추적 파일의 해시를 비교해 바뀐 파일 목록을 내고 세션을 실패시킨다(시험이 초록이어도). 끄는 스위치를 일부러 안 뒀다. 길(기본 인자 · 수리 문 · 생성기)을 가리지 않고 결과를 본다 — 원인이 다른 두 사고를 한 장치가 문다. 함께 `test_fix_door` 가 문을 `git worktree` 의 HEAD 복사본에서 돌게 했다(`.git` 이 이어져 날짜 유도가 돈다 · `UV_NO_SYNC` 로 편집 설치가 복사본으로 옮겨 가지 않게 · `PYTHONPATH` 로 `firelane` 이 복사본 것을 읽게). 훅만 넣으면 이 시험이 매번 빨개지므로 같은 판에 넣었다. **이 시험은 아직 빨갛다** — 문 안의 `ratchet.py --write` 가 느슨해지는 래칫(docseal `UNSEALED` · uicheck `UI_TEXT`)을 거부해 문이 비영 종료한다. 사람이 풀 몫이고 이 시험의 결함이 아니다. `ratchet.py --write` 의 방향 검사는 안 건드렸다.
+
+**`plan_renumber` 의 하한.** `산 행이 50 미만이면 수집이 좁다` 가 지키려던 것은 **표 수집기가 행을 놓치는 것**이다. 그런데 절대수라 일을 할수록(행이 닫힐수록) 깨진다 — 2026-10-22(`e9debfc`)에 51 → 45 로 줄어 그날부터 빨갰다. 같은 문서를 **다른 방법**(끝을 `### ` 가 아니라 다음 `## ` 제목으로 · 첫 칸 공백을 느슨하게)으로 세어 **이름으로 대조**한다. 행이 몇 개든 두 방법이 같은 행을 보면 통과하고, 수집이 비면(0) 따로 운다. 양성 대조를 합성으로 먹인다(`###` 로 쪼개진 표 · `|3|` 꼴). 일을 해도 안 깨지는 이유 — 지키는 것이 개수가 아니라 **두 수집의 일치**다.
+
+`SEALED_FILES` 는 637 → 638 로 올렸다(덮임류는 실측을 따라간다 · §579).
+
+**정정 하나.** Zm36 보정 3 이 더한 `tests/test_investigation_tools_cli.py` 는 도구 목록을 손으로 들었다가 원격 27번(deadcheck ②)에서 울었다 — 지금은 대장에서 유도한다. 이 판의 pre-push 가 그 울음을 푸시 전에 잡는다.
+
+**`planclose`.** 항등식이 어긋난 원인은 숫자가 아니라 **읽는 범위**였다. `cannot_close()` 가 「못 닫는」 표만 읽지 않고 다음 `---` 까지 읽었는데, Zm28 이 그 사이에 §10-5(판 배분 표 · 산문)를 끼워 127줄을 읽었다 — 남의 표의 `#179` · `#11` · `#17`… 열다섯이 「못 닫는 행」으로 세어졌다. 표는 `|` 로 시작하지 않는 첫 줄에서 끝난다(`_table` 이 §524-1 에서 고친 그 병). 고치자 항등식이 닫혔다(열린 45 − 못 닫는 7 = 38 = 배치 표가 드는 행 38).
+- **표에 있던 열린 행이 아닌 다섯.** `#26` · `#33` · `#114` 는 §544 가 닫으며 `(닫힘)` 묘비를 달아 남겼고(`e9debfc`), `#82` 는 영상 담당 몫으로 닫히며 묘비를 달았다(`035b79d`). `#3` 은 `e9debfc` 에서 §1 의 행이 지워졌는데 표의 번호만 남았다. 다섯 다 표에서 지웠다 — 역사는 DECISIONS 가 든다. 다시 남으면 `planclose` 가 운다(`stale_cannot_close`).
+- **「닫는 수가 센 수와 다른 판 넷」(`Zm3` 4 → 1 · `Zm4` 1 → 0 · `Zn` 7 → 5 · `Zs` 17 → 16)은 선언이 틀린 것이 아니었다.** 위 오염된 읽기가 `#11` · `#17` · `#53` · `#77` · `#173` · `#179` 등을 「못 닫는 행」으로 세어 센 수에서 뺀 것이다. 범위를 고치자 넷이 사라졌다 — **선언은 그대로 맞다**(고치지 않았다).
+- **(언급) · (조건부) 와 약속의 가름은 이미 규칙이 있었다**(`MENTION` · `_rows_marked` · `claims` · `promised` — §524). 새 규칙이 필요한 것이 아니라 항등식의 한 항이 오염돼 있었다. 표가 드는 38 중 약속은 37 이고 차 하나가 `#77`(조건부)다 — 이름으로 적혀 있다.
+- **§10-1b 의 세 수 블록은 생성으로 채운다.** `tools/docgen.py` 에 `pc_open` · `pc_cannot` · `pc_gap` · `pc_promised` · `pc_decl` 다섯 축을 더했다(정본은 `planclose.counts()` 하나). 그 절이 「손으로 세지 않는다」고 선언하면서 수를 손으로 적어 세 번 낡았다(§520 · 533 · 이 판).

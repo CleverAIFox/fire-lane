@@ -130,7 +130,7 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #       `tests/test_shell_backticks.py`(겹따옴표 안의 백틱 · `529`) ·
 #       `tests/test_stagerun_vehicle.py`(자식 단계의 차량 제원 · `530`).
 #       그 셋을 `529` · `530` · `532` 가 **산문으로** 지목한다.
-SEALED_FILES = 637
+SEALED_FILES = 638
 
 #: **강제자 칸만으로** 덮인 파일 수. 내려가는 쪽. 2026-10-10 실측 37 → **0**.
 #: 늘면 「산문 없이 칸만 적었다」는 뜻이고 그것은 한 번 속은 자리다(PLAN #165).
