@@ -43236,13 +43236,13 @@ PLAN #4 의 목표 수를 **71.0%**(909쌍 · 띠 3m)로 고쳤다(종전 73.9% 
 
 유병률  **2회** — 시험이 추적 파일을 의도 없이 바꾼 일: 평가셋 55행이 합성 데이터로 덮인 것(§571)과 기획서 표지 날짜 · 래칫 상수가 시험 중에 바뀐 것(이 절)
 
-강제자  `tests/test_no_bound_default_writers.py`(이제 `tests/` 도 훑는다) · `tests/test_ledgercross.py` · `tests/test_regime.py` · `tests/test_scipy_dev_group.py`(셋 다 `tests/pyfiles.py` 로 세 폴더를 훑고 단언이 폴더로 갈린다) · `tests/test_tools_are_wired.py` · `tests/test_handrolled.py`
+강제자  `tests/test_no_bound_default_writers.py`(이제 `tests/` 도 훑는다) · `tests/test_ledgercross.py` · `tests/test_regime.py` · `tests/test_scipy_dev_group.py`(셋 다 `tests/pyfiles.py` 로 세 폴더를 훑고 단언이 폴더로 갈린다) · `tests/test_investigation_tools_cli.py`(조사 도구 셋을 **불러서** 문다) · `tests/test_tools_are_wired.py` · `tests/test_handrolled.py`
 
-**결함 상한과 덮임 래칫은 다르다.** 결함 상한(`tools/deadcheck.py` 의 `CEILING` · `tools/constbasis.py` 의 천장)은 올리지 않는다 — 올리면 결함을 받아들이는 것이다. 덮임 · 커버리지류(`tools/sealcov.py` 의 `SEALED_FILES`)는 **실측을 따라간다** — 올라가는 것이 개선이고 선언이 실물을 못 따라오면 그것이 거짓이다. 이 판이 `SEALED_FILES` 를 619 → 636 으로 올렸고(636 / 636), `constbasis` 천장은 11 → 10 으로 **내렸다**. `CEILING` 은 전부 0 그대로다.
+**결함 상한과 덮임 래칫은 다르다.** 결함 상한(`tools/deadcheck.py` 의 `CEILING` · `tools/constbasis.py` 의 천장)은 올리지 않는다 — 올리면 결함을 받아들이는 것이다. 덮임 · 커버리지류(`tools/sealcov.py` 의 `SEALED_FILES`)는 **실측을 따라간다** — 올라가는 것이 개선이고 선언이 실물을 못 따라오면 그것이 거짓이다. 이 판이 `SEALED_FILES` 를 619 → 637 로 올렸고(637 / 637), `constbasis` 천장은 11 → 10 으로 **내렸다**. `CEILING` 은 전부 0 그대로다.
 
 **「좁은 범위」 넷.** 훑는 폴더를 `src` 로 좁힌 시험 셋(`ledgercross` · `regime` · `scipy`)이 `deadcheck` ⑤ 에 걸렸다. 훑기는 `tests/pyfiles.py` 의 한 문장으로 `src` · `tools` · `tests` 전부를 하고, 단언 줄이 `startswith("src/")` 로 **의도를 말한다** — 의미는 그대로다(tools · tests 가 그 도구를 쓰는 것은 정상이고 금지는 판정 쪽 하나다). 예외 표(`EXEMPT_SCOPE`)에는 한 줄도 안 더했다. 같은 좁음이 `test_no_bound_default_writers` 에도 있어 넓혔다.
 
-**원격 빨강 22건은 전부 저장소 자체 규약 위반이었다.** 판정 · 수 · 산출물은 움직이지 않았다. 갈래: 모르는 깃발을 받아주는 도구 셋(`argparse` 로 거절) · JSON 끝 개행 6곳 · 손 중앙값 색인(`segid_audit` 는 가운데 항목을 고르는 것이라 `MID_OK` 에 사유와 수를 적었다) · 대장 `consumers` 누락 · 생성물 루트를 손으로 든 곳(`generated.for_role`) · 시험 안의 경로 조작(pytest `pythonpath` 가 이미 준다) · 도구 면제 표(조사 도구 셋을 사유와 함께 더했고, 이제 불리는 `statkit` 을 뺐다) · 물림 선언과 유병률 칸이 빠진 §570~§578 · MASTER 의 생성 수.
+**원격 빨강 22건은 전부 저장소 자체 규약 위반이었다.** 판정 · 수 · 산출물은 움직이지 않았다. 갈래: 모르는 깃발을 받아주는 도구 셋(`argparse` 로 거절) · JSON 끝 개행 6곳 · 손 중앙값 색인(`segid_audit` 는 가운데 항목을 고르는 것이라 `MID_OK` 에 사유와 수를 적었다) · 대장 `consumers` 누락 · 생성물 루트를 손으로 든 곳(`generated.for_role`) · 시험 안의 경로 조작(pytest `pythonpath` 가 이미 준다) · 도구 면제 표(조사 도구 셋은 면제를 늘리지 않고 시험이 `--help` 로 부르게 했다 — 면제는 사각지대이고 표 파일이 줄 수 상한에 걸렸다 · 이제 불리는 `statkit` 은 뺐다) · 물림 선언과 유병률 칸이 빠진 §570~§578 · MASTER 의 생성 수.
 - **PLAN 의 §562-2 · §575-1 · §576 은 절을 안 쓴 것이 아니라 소속을 안 적은 것이다.** 셋 다 DECISIONS 의 절이고 실재한다. 문서명 없는 `§N` 은 PLAN 을 가리키므로 `DECISIONS` 를 앞에 붙였다.
 - **`field.fingerprint.json` 은 F 까지 안 생기는 파일이 아니라 경로를 틀리게 쓴 것이다.** 파일은 `data/golden/` 에 이미 있고(2026-10-04), §574-6 이 `data/field/` 라고 적었다. 경로를 고쳤다 — 지문 파일은 건드리지 않았다.
 - **환경 skip.** `test_evalset` 의 새 skip 은 정책(`환경skip(산출물)`)에 맞았고, 정책 밖이던 것은 Zm26 의 `평가셋이 아직 없다` 하나였다(같은 분류로 고쳤다).
