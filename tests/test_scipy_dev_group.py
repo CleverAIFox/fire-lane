@@ -15,6 +15,8 @@ import re
 import tomllib
 from pathlib import Path
 
+import pyfiles
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -33,10 +35,15 @@ def test_scipy_is_declared_in_dev_and_not_in_core() -> None:
 
 
 def test_scipy_is_not_a_core_import() -> None:
-    """`src/` 가 scipy 를 import 하면 deptry 면제(`DEP004`)가 거짓이 된다."""
-    hits = [p.relative_to(ROOT).as_posix() for p in (ROOT / "src").rglob("*.py")
-            if re.search(r"^\s*(?:from|import)\s+scipy\b", p.read_text(encoding="utf-8"), re.M)]
-    assert not hits, f"src 가 scipy 를 import 한다: {hits}"
-    tools = [p.name for p in (ROOT / "tools").glob("*.py")
-             if re.search(r"^\s*(?:from|import)\s+scipy\b", p.read_text(encoding="utf-8"), re.M)]
+    """`src/` 가 scipy 를 import 하면 deptry 면제(`DEP004`)가 거짓이 된다.
+
+    ★ Zm35. 훑기는 src · tools · tests 전부 하고 **단언이 폴더로 갈린다** — `src` 에는 0 이어야 하고(면제가 참인 조건), `tools` 에는 1 이상이어야 한다
+    (`DEP004` 면제는 `deptry src tools` 가 tools 를 비-dev 로 보기 때문이고, tools 에 쓰는 곳이 없으면 그 면제가 빈 그물이다). tests 가 scipy 를 쓰는 것은
+    면제의 근거가 아니라 셈에 안 든다. (종전에는 훑는 폴더를 `src` 와 `tools` 로 따로 적어 각각 좁았다 — deadcheck ⑤.)
+    """
+    hits = [u for u in pyfiles.rel(ROOT, pyfiles.all_py(ROOT))
+            if re.search(r"^\s*(?:from|import)\s+scipy\b", (ROOT / u).read_text(encoding="utf-8"), re.M)]
+    src = [h for h in hits if h.startswith("src/")]
+    assert not src, f"src 가 scipy 를 import 한다: {src}"
+    tools = [h for h in hits if h.startswith("tools/")]
     assert tools, "tools 에도 scipy 를 쓰는 곳이 없다 — 이 시험과 DEP004 면제가 빈 그물이다"

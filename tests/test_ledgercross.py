@@ -13,6 +13,7 @@ import re
 from pathlib import Path
 
 import ledgercross as L
+import pyfiles
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -87,8 +88,10 @@ def test_the_tool_is_outside_the_judgment_closure() -> None:
 
     files = {p.relative_to(ROOT).as_posix() for p in code_closure("firelane.segments")}
     assert "tools/ledgercross.py" not in files
-    users = [p.relative_to(ROOT).as_posix() for p in (ROOT / "src").rglob("*.py")
-             if re.search(r"\bledgercross\b", p.read_text(encoding="utf-8"))]
+    # ★ Zm35. 훑기는 src · tools · tests 전부 하고 **단언이 src 만 본다** — tools · tests 가 이 도구를 부르는 것은 정상이다(도구의 쓰임 · 그 시험).
+    #   금지되는 것은 판정 쪽(src)이 부르는 것 하나다. 훑는 폴더를 src 로 좁히면 좁음이 의도인지 빠뜨림인지 코드에서 안 읽힌다(deadcheck ⑤).
+    users = [u for u in pyfiles.rel(ROOT, pyfiles.all_py(ROOT)) if u.startswith("src/")
+             and re.search(r"\bledgercross\b", (ROOT / u).read_text(encoding="utf-8"))]
     assert not users, f"src 가 이 도구를 부른다 — 폐포가 넓어진다: {users}"
 
 

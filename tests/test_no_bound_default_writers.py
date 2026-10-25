@@ -1,6 +1,6 @@
 """경로를 **기본 인자**로 받아 파일을 **쓰는** 함수가 없다.  (Zm27 · DECISIONS §572)
 
-IN    tools/ · src/ 의 파이썬 소스
+IN    src/ · tools/ · tests/ 의 파이썬 소스
 OUT   없음 (검사)
 PARAM 없음
 밖    읽기만 하는 함수는 안 본다(`root=ROOT` 로 트리를 훑는 프로브 서른 남짓은 틀려도 잘못 **읽을** 뿐이다). `subprocess` 는 안 본다.
@@ -14,12 +14,14 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+import pyfiles
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 WRITES = {"write_text", "write_bytes", "unlink", "rename", "replace", "mkdir", "touch", "to_csv", "to_file", "dump",
           "rmtree", "copy", "copy2", "move", "rmdir", "remove", "symlink_to", "chmod"}
-FILES = sorted(p for d in ("tools", "src") for p in (ROOT / d).rglob("*.py"))
+# ★ Zm35. `tests` 도 훑는다 — 시험 쪽 도우미가 기본 인자 경로에 쓰면 그것이 이 사고(§571)의 원형이다. 종전에는 tools · src 만 훑었다(deadcheck ⑤ 가 못 본 좁음).
+FILES = pyfiles.all_py(ROOT)
 
 
 def _path_names(tree: ast.Module) -> set[str]:
@@ -89,9 +91,7 @@ def test_no_function_writes_through_a_path_bound_at_definition_time(path: Path) 
 
 
 def test_restore_stale_reads_its_root_at_call_time() -> None:
-    import sys
-    sys.path.insert(0, str(ROOT / "tools"))
     import inspect
 
-    import tidy
+    import tidy  # tools/ — pyproject 의 pytest pythonpath 로 잡힌다
     assert inspect.signature(tidy.restore_stale).parameters["root"].default is None, "restore_stale 이 ROOT 를 정의 시점에 묶었다"
