@@ -6,3 +6,4 @@ deadcheck 래칫	uv run python tools/deadcheck.py --ratchet
 계보 대장 정합	uv run python -m firelane.datalog check
 문서 생성 블록	uv run python tools/docgen.py --check
 커밋 정책(추적 전체)	uv run python tools/commit_policy.py --tracked
+카나리아(합성 결함 쌍)	uv run python tools/canary.py

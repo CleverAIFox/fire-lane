@@ -19,8 +19,20 @@ from firelane import ledger
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_flip_table_is_not_in_the_field_layer() -> None:
-    assert not (ROOT / "data" / "field" / "flip_2610.csv").exists(), "계산 산출물이 실측 층에 있다 — data/processed 로 옮긴다"
+#: 실측 층에 있으면 안 되는 **계산 산출물**(사람이 안 채운다). 이름 → 가야 할 층.
+DERIVED_NOT_FIELD = {"flip_2610.csv": "data/processed"}
+
+
+def derived_in(field: Path) -> list[str]:
+    """`field` 안에 있는 계산 산출물의 이름들. 비면 층이 맞다."""
+    return sorted(n for n in DERIVED_NOT_FIELD if (field / n).exists())
+
+
+def test_flip_table_is_not_in_the_field_layer(tmp_path: Path) -> None:
+    assert not derived_in(ROOT / "data" / "field"), "계산 산출물이 실측 층에 있다 — data/processed 로 옮긴다"
+    # ★ 카나리아 — 같은 판별식을 **합성 결함으로 반대쪽에서도** 민다. 늘 비어 있다고 답하는 판별식이면 위가 늘 통과한다.
+    (tmp_path / "flip_2610.csv").write_text("x\n", encoding="utf-8")
+    assert derived_in(tmp_path) == ["flip_2610.csv"], "실측 층에 든 계산 산출물을 못 잡는다"
 
 
 def test_the_tool_writes_the_flip_table_next_to_its_json() -> None:

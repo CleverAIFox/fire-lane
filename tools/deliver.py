@@ -61,7 +61,7 @@ deliver.py — **배달물이 제 밑동을 증명하는가.** 패치 묶음의 
 ⑤ **이름 충돌 · 금지 문자열** — 같은 basename 이 둘이면 거부한다. 커밋
    메시지와 스크립트에 `delivercheck.FORBIDDEN` 의 표식(지금은 autosquash 표식 둘)이
    남아 있으면 거부한다(둘 다 실제로 났다). ★ 공동저자 줄은 금지가 아니다 — AI 협업을
-   커밋 서명으로 공개하기로 했다(DECISIONS §568-3).
+   커밋 서명으로 공개하기로 했다(DECISIONS §568-4).
 
 IN    저장소 · origin/<가지> · 배달 디렉터리
 OUT   배달 디렉터리 (fire-lane-0*.patch · BASE · EXPECT) · 표준출력
