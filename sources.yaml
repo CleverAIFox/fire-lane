@@ -4252,20 +4252,6 @@ outputs:
     verified: false
     known_issues:
     - ★ 채워지기 전에는 비어 있다. 채워지면 `tools/fieldseal.py --write` 로 지문을 박는다(사람이 친다 — 도구는 안 한다)
-  evalset_2610_stale_csv:
-    produced_by: tools/evalset.py (옛 표 — 무효)
-    path: data/field/evalset_2610.csv.stale_20261025
-    inputs: [segments]      # 도구가 읽는 선언만 적는다 — 이 파일의 실제 입력은 시험의 합성 데이터였다(무효)
-    consumers: []
-    what: "★ 무효. 합성 데이터가 실제 평가셋 자리에 박힌 사고의 표(DECISIONS §571). 전부 도로명 「가로」 · 길이 30~36 의 가짜 구간이다. 감사 흔적으로만 남긴다 — 어떤 채점에도 쓰지 않는다"
-    verified: false
-  evalset_2610_stale_key:
-    produced_by: tools/evalset.py (옛 키 — 무효)
-    path: data/field/evalset_2610.key.json.stale_20261025
-    inputs: [segments]      # 도구가 읽는 선언만 적는다 — 이 파일의 실제 입력은 시험의 합성 데이터였다(무효)
-    consumers: []
-    what: "★ 무효. 위 옛 표의 키(합성 데이터의 묶음). 열지 않았다 — 열 이유가 없다(DECISIONS §571)"
-    verified: false
   sidewalk_probe_2610:
     produced_by: tools/sidewalk_probe.py (표를 뽑는다) · 사람 (거리뷰로 두 칸을 채운다)
     path: data/field/sidewalk_probe_2610.csv
