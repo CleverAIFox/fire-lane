@@ -278,6 +278,20 @@ def downstream(names: set[str]) -> list[Step]:
             dirty += list(s.produces)
     return out
 
+def stale_publish_blockers(names: set[str]) -> list[str]:
+    """이 실행이 **`publish` 가 읽을 입력을 낡게 만드는데 그 입력을 다시 만드는 단계는 건너뛰는** 단계들의 이름.
+
+    ★ 2026-10-26 (DECISIONS §587). `--only segments publish` 는 `terrain`(산출물에 고도 `z` 를 덧쓴다)을 건너뛰고도 경고만 하고 진행했다 — `publish` 가 `z` 없는 `web/data` 를
+      **먼저 썼고** 계약 위반은 끝에서야 울었다. 2026-08-18 의 `--only publish` 사고와 같은 길이다. 경고는 사람이 읽을 때만 듣는다 — **쓰기 전에 거절한다.**
+    ★ `publish` 만 돌리는 길은 그대로다: 새로 만드는 것이 없으면 낡을 것도 없다(`downstream` 이 비어 있다).
+    """
+    if "publish" not in names:
+        return []
+    pub = next(s for s in STEPS if s.name == "publish")
+    return [s.name for s in downstream(names)
+            if any(matches(r, p) for r in pub.consumes for p in s.produces)]
+
+
 def check_only():
     from firelane import paths as _paths
 
@@ -384,6 +398,12 @@ def main():
                    if any(r in q.produces for q in steps)]
             print(f"    {s.name:11s} ← {' · '.join(why)}")
         print(col(f"  권장:  --from {min(skipped, key=lambda s: [x.name for x in STEPS].index(s.name)).name}\n", "y"))
+
+    # ★ 경고에서 멈추지 않는다 — `publish` 가 낡은 입력을 읽게 되면 **아무것도 쓰기 전에** 거절한다(§587).
+    if blockers := stale_publish_blockers({s.name for s in steps}):
+        print(col(f"\n★ 거절한다 — `publish` 가 {' · '.join(blockers)} 의 산출물(고도 z · 보기 범위 등)을 낡은 채로 읽게 된다. 아무것도 쓰지 않았다.", "r"))
+        print(col(f"  {' · '.join(blockers)} 를 같이 돌려라:  --from {min(blockers, key=[x.name for x in STEPS].index)}", "c"))
+        sys.exit(1)
 
     print(f"실행 {len(steps)}단계: {' → '.join(s.name for s in steps)}\n")
     t0 = time.time()

@@ -4143,10 +4143,16 @@ outputs:
     path: data/processed/ngii1k_walk_5186.gpkg
     inputs: [ngii1k]
     consumers: [src/firelane/publish_basemap.py]
-    what: 보도 A0033320. 차도폭 분리용
+    what: |
+      보도 A0033320. 차도폭 분리용(`seg/width.py` 가 노면에서 깎는다 — carve).
+      ★ 2026-10-26 (Zm48 · DECISIONS §587). **두 가지 꼴이 한 파일에 든다**(`form` 칸). `polygon` = SHP 판 면 1,455 · `ngi_line_band` = NGI 판 가장자리 선 1,485건을
+      **가까운 도로 중심선의 반대쪽으로 폭만큼** 띠로 바꾼 면(`ngii1k.lines_to_areas`). NGI 판은 보도를 면이 아니라 (가장자리 선 + 폭 속성)으로 싣는다 —
+      종전에는 `build()` 가 선 3,300 중 SHP 가 못 덮는 도엽의 1,998건을 조용히 버렸다.
     verified: false
     known_issues:
-    - 772건이나 구간 커버율 13%. 전면 차감 불가
+    - 면으로 못 바꾼 선은 선언된 버림이다(`ngii1k.DROP_OK`) — NGI 선 중 폭이 없거나 0 인 513건 · SHP 선 216건(폭 속성 없음 · 구간 20m 안 0건). 호출 기록은 `_manifest.json` 의 `dropped`
+    - 띠 복원은 근사다 — 겹치는 도엽 45장에서 SHP 면과 IoU 0.396 · 피복률 0.65(DECISIONS §587). 짝이 되는 반대편 선은 없다
+    - 구간 중심선 20m 안에 보도 폴리곤이 없는 구간은 1,042 → 645(`tools/carve_survey.py` · 재현한 구간 기준)
 
   ngii1k_xsec:
     produced_by: src/firelane/ngii1k.py

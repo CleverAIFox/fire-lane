@@ -158,6 +158,11 @@ def read_ngii1k(c: Ctx):
     if not acc["A0010000"]:
         raise ValueError("도로경계 총 0건 — 레이어 코드/압축 구조 확인")
     rec["sheets"] = per_sheet
+    # ★ 2026-10-26 (DECISIONS §587). NGI 판 보도는 면이 아니라 (가장자리 선 + 폭)이다 — 면(띠)으로 바꿔서 싣는다. 안 바꾸면 `build()` 가 선언된 버림으로 센다.
+    from firelane.ngii1k import lines_to_areas
+    acc["A0033320"], _walk = lines_to_areas(acc["A0033320"], acc["A0020000"])
+    rec["walk_lines"] = _walk
+    print(f"  · 보도 선 → 띠 {_walk['converted']}건({_walk['bands']}면) · 폭 없음 {_walk['no_width']} · SHP 선 {_walk['not_ngi']}")
     outs = []
     made = []
     for lay in want:
@@ -165,6 +170,9 @@ def read_ngii1k(c: Ctx):
         if gg is None:
             continue
         k2 = LAYERS[lay][0]
+        if gg.attrs.get("dropped"):
+            rec.setdefault("dropped", {})[k2] = dict(gg.attrs["dropped"])
+            print(f"  · {k2}: 선언한 버림 {gg.attrs['dropped']}")
         info = save(gg, k2)
         outs += [f"{k2}.geojson", f"{k2}_5186.gpkg"]
         made.append(k2)
