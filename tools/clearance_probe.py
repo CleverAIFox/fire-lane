@@ -300,6 +300,7 @@ def main():
 
         rec = {
             "seg_id": getattr(r, "seg_id", ""),
+            "seg_uid": getattr(r, "seg_uid", ""),           # Zm27 — seg_id 는 재발행하면 밀린다
             "road": getattr(r, "road_name", ""),
             "len_m": round(line.length, 1),
             "n": len(w),
@@ -356,7 +357,7 @@ def main():
                 print(f"  |차이| <  0.3m : {len(sm)}구간 · gain 중앙 {sm.gain_med.median():.2f}m")
                 print("    ★ 앞쪽 gain 이 확연히 크면 탐색 원판이 넓은 데로 샌 것 → radius 축소")
             print(big.nlargest(8, "diff")[
-                ["seg_id", "road", "len_m", "cl_min", "wmin_now",
+                ["seg_id", "seg_uid", "road", "len_m", "cl_min", "wmin_now",
                  "diff", "gain_med", "gain_max"]].to_string(index=False))
 
     # ── 2. 현재 실패한 구간에서 값이 나오나 ────────────────

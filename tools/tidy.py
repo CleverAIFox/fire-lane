@@ -63,7 +63,7 @@ QUARANTINE = "격리 산출물"
 STALE = re.compile(r"\.stale_\d{8}$")
 
 
-def restore_stale(root: Path = ROOT) -> tuple[int, list[str]]:
+def restore_stale(root: Path | None = None) -> tuple[int, list[str]]:
     """격리된 옛 산출물의 이름을 되돌린다. (되돌린 수, 못 한 사유)
 
     ★ 지우는 쪽과 달리 `--yes` 를 안 요구한다 — 되돌리기는 **없애는 일이
@@ -71,6 +71,8 @@ def restore_stale(root: Path = ROOT) -> tuple[int, list[str]]:
       빌드된 산출물이 있을 수 있고, 그것을 옛 것으로 덮는 것은 조용히 틀린
       산출물을 만드는 1족이다.
     """
+    # ★ Zm27 (DECISIONS §572). 기본 인자 `root=ROOT` 는 **정의 시점**에 묶여 시험이 `tidy.ROOT` 를 바꿔도 진짜 저장소의 파일 이름을 바꿨다.
+    root = ROOT if root is None else root
     pats = next(g for n, g, _ in RULES if n == QUARANTINE)
     done, why = 0, []
     for pat in pats:

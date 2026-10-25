@@ -4368,6 +4368,27 @@ outputs:
     consumers: []
     what: 부트스트랩에서 구간별 뒤집힘 빈도 · 행선 · 가장 가까운 문턱 · 겹침(Zm25 · Zm26 · DECISIONS §570). 사람이 잴 표(data/field/flip_top_2610.csv)의 근거다. 우선순위이지 평가셋이 아니다
     verified: false
+  segid_audit:
+    produced_by: tools/segid_audit.py
+    path: data/processed/segid_audit.json
+    inputs: [segments]      # + git 이력 · data/baseline/*/seg_uid_map.csv
+    consumers: []
+    what: seg_id 가 판 사이에 같은 구간을 가리키는지의 합성 · 이력 대조(Zm27 · DECISIONS §572). 읽기만 한다
+    verified: false
+  dm_refs_json:
+    produced_by: tools/dm_audit.py
+    path: data/processed/dm_refs.json
+    inputs: [segments]      # + docs/DECISIONS.md · MASTER.md · PLAN.md · data/baseline/*/seg_uid_map.csv
+    consumers: []
+    what: 문서의 DM 번호가 지금 공개본에서 같은 구간을 가리키는지의 요약과 어긋남 목록(Zm27 · DECISIONS §572). 문서를 고치지 않는다
+    verified: false
+  dm_refs_csv:
+    produced_by: tools/dm_audit.py
+    path: data/processed/dm_refs.csv
+    inputs: [segments]
+    consumers: []
+    what: 문서에 DM 번호가 나온 곳마다 한 행 — seg_uid · 지금의 도로명 · length_m · 맥락 대조(Zm27 · DECISIONS §572). 사람이 보고 고칠지 정한다
+    verified: false
   route_vehicle:
     produced_by: src/firelane/segments.py
     path: data/processed/route_vehicle.csv

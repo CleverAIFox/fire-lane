@@ -63,7 +63,7 @@ NORMAL_GAP = 1        # |d| ≤ 이 값이 정상군
 BANDS = (("1-3", 0.0, 4.0), ("4-9", 4.0, 10.0), ("10-14", 10.0, 15.0), ("15+", 15.0, float("inf")))
 QUALITY = ("width_cov", "n_sample", "n_poly", "width_fail", "width_disagree_m",
            "width_source_conflict_m", "ecc_rel_med_m", "length_m")
-LIST_COLS = ("seg_id", "road_name", "road_bt_m", "width_min_m", "clear_med_m", "verdict", "width_src",
+LIST_COLS = ("seg_id", "seg_uid", "road_name", "road_bt_m", "width_min_m", "clear_med_m", "verdict", "width_src",
              "width_cov", "n_sample", "n_poly", "width_disagree_m", "width_source_conflict_m",
              "ecc_rel_med_m", "length_m", "struct_kind", "nfa_designated", "occ_pressure")
 KEYS = ("steps", "d_distribution", "bands", "by_ledger_value", "contradictions", "groups",
@@ -175,6 +175,12 @@ def analyse(rows: list[dict], our_col: str = "width_min_m") -> dict:
         return row
 
     ids = lambda rs: {r["seg_id"] for r in rs}  # noqa: E731
+    # ★ Zm27 (DECISIONS §572). 번호 목록 옆에 같은 순서의 seg_uid 목록을 둔다 — seg_id 는 재발행하면 뒤가 밀린다.
+    uid_of = {r["seg_id"]: r.get("seg_uid") for r in rows}
+
+    def uids(rs: list[dict]) -> list:
+        return [uid_of[i] for i in sorted(ids(rs))]
+
     g_up = [r for r in contra if r["_d"] > 0]
     g_dn = [r for r in contra if r["_d"] < 0]
     g_ecc = [r for r in contra if ecc_cut is not None and (num(r.get("ecc_rel_med_m")) or -1) > ecc_cut]
@@ -220,9 +226,9 @@ def analyse(rows: list[dict], our_col: str = "width_min_m") -> dict:
         "contradictions": [listing(r) for r in sorted(contra, key=lambda r: (-abs(r["_d"]), r["seg_id"]))],
         "groups": {
             "n_contradictions": len(contra),
-            "ledger_above": {"n": len(g_up), "seg_ids": sorted(ids(g_up))},
-            "ledger_below": {"n": len(g_dn), "seg_ids": sorted(ids(g_dn))},
-            "ecc_high": {"n": len(g_ecc), "seg_ids": sorted(ids(g_ecc)), "threshold": None if ecc_cut is None else _r(ecc_cut),
+            "ledger_above": {"n": len(g_up), "seg_ids": sorted(ids(g_up)), "seg_uids": uids(g_up)},
+            "ledger_below": {"n": len(g_dn), "seg_ids": sorted(ids(g_dn)), "seg_uids": uids(g_dn)},
+            "ecc_high": {"n": len(g_ecc), "seg_ids": sorted(ids(g_ecc)), "seg_uids": uids(g_ecc), "threshold": None if ecc_cut is None else _r(ecc_cut),
                          "percentile": ECC_PCT, "of_normal_n": len(eccs)},
             "overlap": {"ecc_high_and_above": len(ids(g_ecc) & ids(g_up)), "ecc_high_and_below": len(ids(g_ecc) & ids(g_dn)),
                         "ecc_high_only": len(ids(g_ecc) - ids(g_up) - ids(g_dn)),
@@ -249,6 +255,8 @@ def analyse_both(rows: list[dict]) -> dict:
     b = {r["seg_id"] for r in med["contradictions"]}
     res["median_basis"] = {k: med[k] for k in ("steps", "d_distribution", "bands", "groups", "counts", "params")}
     res["median_basis"]["contradiction_ids"] = sorted(b)
+    uid_of = {r["seg_id"]: r.get("seg_uid") for r in rows}
+    res["median_basis"]["contradiction_uids"] = [uid_of[i] for i in sorted(b)]
     res["contradiction_overlap"] = {"min_basis": len(a), "median_basis": len(b), "both": len(a & b),
                                     "only_min": len(a - b), "only_median": len(b - a)}
     return res

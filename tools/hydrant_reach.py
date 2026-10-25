@@ -20,7 +20,7 @@ tools/hydrant_reach.py — 통행 불가 구간 근처에 소화전이 닿는가
 ★ 소화전 좌표는 표준데이터 공개분이다. 비공개분은 없다(MASTER §3-12) — 「안 닿는다」는 「없다」가 아니다.
 
 IN    data/processed/segments_5186.gpkg · hydrant_point_5186.gpkg
-OUT   data/processed/hydrant_reach.csv (seg_id · hydrant_near_m · tier — processed 산출물이라 커밋 안 한다) · 표준출력
+OUT   data/processed/hydrant_reach.csv (seg_id · seg_uid · hydrant_near_m · tier — processed 산출물이라 커밋 안 한다) · 표준출력
 부류  조사   사람이 손으로 돌린다. 수를 내고 멈춘다  (DECISIONS §398)
     밖    **호스가 실제로 깔리는 길이는 안 본다** — 직선거리만 잰다(하한). 담·건물·고저와 소화전의 작동 여부는 모른다.
 """
@@ -44,11 +44,11 @@ def main() -> int:
 
     seg = gpd.read_file(PROCESSED / "segments_5186.gpkg")
     hyd = gpd.read_file(PROCESSED / "hydrant_point_5186.gpkg").to_crs(seg.crs)
-    near = gpd.sjoin_nearest(seg[["seg_id", "verdict", "geometry"]], hyd[["geometry"]],
+    near = gpd.sjoin_nearest(seg[["seg_id", "seg_uid", "verdict", "geometry"]], hyd[["geometry"]],
                              how="left", distance_col="d_m")
-    near = near.groupby("seg_id").agg(verdict=("verdict", "first"), d_m=("d_m", "min"))
+    near = near.groupby("seg_id").agg(seg_uid=("seg_uid", "first"), verdict=("verdict", "first"), d_m=("d_m", "min"))
     near["tier"] = near.d_m.map(tier)
-    out = near.reset_index()[["seg_id", "d_m", "tier"]].rename(columns={"d_m": "hydrant_near_m"})
+    out = near.reset_index()[["seg_id", "seg_uid", "d_m", "tier"]].rename(columns={"d_m": "hydrant_near_m"})
     out["hydrant_near_m"] = out.hydrant_near_m.round(1)
     out.to_csv(PROCESSED / "hydrant_reach.csv", index=False)
     print(f"소화전 {len(hyd)} · 구간 {len(seg)} → data/processed/hydrant_reach.csv\n")
