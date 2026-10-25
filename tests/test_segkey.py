@@ -189,3 +189,20 @@ def test_the_uid_map_survives_a_frame_that_lacks_a_column(tmp_path):
     out = tmp_path / "uid_map.csv"
     save_uid_map(g, out)
     assert out.read_text(encoding="utf-8").splitlines()[0] == "seg_uid"
+
+
+def test_road_hash_folds_whitespace_only_names_into_the_no_name_token():
+    """#179 — 공백뿐인 이름(`"   "` · 탭 · 줄바꿈 · 전각 공백)이 `""` · `None` 과 같은 무명 토큰을 받는다.
+
+    종전: `(road_name or NONAME).strip()` 이라 `"   "` 는 truthy 로 통과한 뒤 `strip()` 에서 빈 문자열이 돼 **무명 토큰이 아닌 제3의 해시**를 받았다.
+    그러면 같은 무명 도로가 입력 경로에 따라 `seg_uid` 꼬리 둘을 가진다. 실 경로는 `skeleton.as_road` 가 먼저 `None` 으로 바꿔 안 닿았지만 보호가 한 자리뿐이었다.
+    실제 도로명(공백이 있어도 글자가 있는 이름)의 해시는 안 바뀐다 — 기존 `seg_uid` 가 갈리지 않는다.
+    """
+    from firelane.segkey import _road_hash
+
+    none_tok = _road_hash(None)
+    for blank in ("", " ", "   ", "\t", "\n", " \t\r\n ", "　", " "):
+        assert _road_hash(blank) == none_tok, f"공백뿐인 이름이 무명으로 안 접힌다: {blank!r}"
+    for nm in ("필문대로289번길", " 경양로 ", "2순환로"):
+        assert _road_hash(nm) != none_tok, f"글자가 있는 이름이 무명으로 접혔다: {nm!r}"
+        assert _road_hash(nm) == _road_hash(nm.strip()), f"바깥 공백이 해시를 갈랐다: {nm!r}"

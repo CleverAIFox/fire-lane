@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import widthcross as W
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -207,3 +208,37 @@ def test_모순에_근거가_붙는다():
     e = r["모순"][0]["증거"]
     assert e["road_name"] == "가로" and e["survey_name"] == "나로"
     assert e["n_sample"] == 3
+
+
+# ── PLAN #4 (Zm29) — 측량폭 매칭률 ───────────────────────────────
+_NEED = [ROOT / "data" / "processed" / n for n in ("segments_5186.gpkg", "ngii1k_center_5186.gpkg")]
+
+
+def test_the_survey_band_is_three_metres():
+    """띠는 3m 다(Zm30 · DECISIONS §575). 5m 는 통계 관행(p ≥ 0.05)의 상한이었으나 새 쌍의 중앙이 단조롭게 밀렸다 — 3m 가 2m 와 같은 중앙(−0.26)에서 멈추는 마지막 자리다."""
+    assert W.SURVEY_BAND == 3.0
+
+
+@pytest.mark.skipif(not all(p.exists() for p in _NEED), reason="환경skip(산출물) — segments_5186.gpkg · ngii1k_center_5186.gpkg 가 없다")
+def test_survey_widths_match_at_the_chosen_rate_and_the_new_pairs_are_not_a_different_population():
+    """매칭 422(32.9%) → 909(71.0%). 새로 붙은 487쌍의 `wmin − survey` 가 기존 422 와 같은 분포다(p ≥ 0.05). 옛 422쌍의 값은 안 바뀐다."""
+    from scipy.stats import mannwhitneyu
+    from statkit import num
+    rows = W._load()
+    paired = {r["seg_uid"]: r for r in rows if num(r["wmin"]) is not None and num(r["survey"]) is not None}
+    assert len(paired) == 909, f"매칭 {len(paired)} — 띠 5m 는 947 · 띠 0.5m 는 422"
+    base = {r["seg_uid"]: r for r in W._load(band=0.5) if num(r["wmin"]) is not None and num(r["survey"]) is not None}
+    assert len(base) == 422
+    assert all(u in paired and num(paired[u]["survey"]) == num(base[u]["survey"]) for u in base), "옛 422쌍의 측량폭이 바뀌었다"
+    d_old = [num(base[u]["wmin"]) - num(base[u]["survey"]) for u in base]
+    d_new = [num(r["wmin"]) - num(r["survey"]) for u, r in paired.items() if u not in base]
+    assert len(d_new) == 487
+    assert mannwhitneyu(d_old, d_new).pvalue >= 0.05
+
+
+@pytest.mark.skipif(not all(p.exists() for p in _NEED), reason="환경skip(산출물) — segments_5186.gpkg · ngii1k_center_5186.gpkg 가 없다")
+def test_the_old_thirteen_contradictions_are_all_still_there_at_the_chosen_band():
+    """띠를 넓혀도 옛 모순 13 은 새 집합에 전부 들어 있다 — 넓힌 띠가 옛 증거를 지우지 않는다."""
+    old = {c["seg"] for c in W.cross(W._load(band=0.5))["모순"]}
+    new = {c["seg"] for c in W.cross(W._load())["모순"]}
+    assert len(old) == 13 and old <= new

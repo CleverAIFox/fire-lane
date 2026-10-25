@@ -98,6 +98,16 @@ SOURCES: dict[str, tuple[str, bool]] = {
 #: 않게 하는 값이고, 「얼마나 다르면 이상한가」와는 다른 축이다.
 ROUNDING_M = 0.5
 
+#: 측량 중심선을 구간에 붙이는 **띠 반폭**(m). 파이프라인의 `seg/roadname.BAND`(0.5m)와 **다른 값이다 — 그것은 안 건드린다.**
+#: ★ 2026-10-25 (PLAN #4 · Zm29 → Zm30 · DECISIONS §574-2 · §575). 구간은 `road_link` 위에 있고 NGII 중심선은 별도 측량이라 0.5m 띠로는
+#:   1,281 중 422(32.9%)만 붙었다. 안 붙은 859 중 744 는 0.5m 안에 붙어 있는데 한 선의 겹침이 50% 에 못 미쳤다(DECISIONS §562-2).
+#:   `tools/widthmatch.py` 의 격자에서 **새로 붙은 쌍의 중앙**이 띠 1 → 2 → 3 → 5 → 10 에서 −0.24 → −0.26 → −0.26 → −0.29 → −0.33 으로 밀린다
+#:   — 넓힐수록 다른 선을 문다. **3m 는 2m 와 같은 중앙(−0.26)에서 멈추는 마지막 자리다**(Zm29 의 5m 는 p ≥ 0.05 의 상한이었으나 이미 −0.29 로 밀렸다).
+#:   3m 에서 매칭은 909(71.0%)이고 새 487쌍의 분포는 기존 422 와 구별되지 않는다(p = 0.534). 옛 422쌍의 측량폭은 하나도 안 바뀐다.
+#:   ★ **PLAN #4 가 목표로 박은 73.9%(5m · 947)에는 2.9%p(38쌍) 못 미친다.** 수를 맞추려고 띠를 되돌리지 않았다 — 목표 수는 사람이 고친다.
+#:   이 상수는 **대조 도구의 매칭**이고 판정에 안 쓴다.
+SURVEY_BAND = 3.0
+
 
 def contradictions(row: dict) -> list[str]:
     """그 구간에서 **논리적으로 불가능한 것**. 문턱이 없다.
@@ -419,8 +429,9 @@ def show(res: dict) -> int:
     return rc
 
 
-def _load() -> list[dict] | None:
-    """산출물에서 구간별 네 값을 모은다. 없으면 None."""
+def _load(band: float | None = None) -> list[dict] | None:
+    """산출물에서 구간별 네 값을 모은다. 없으면 None. `band` 는 측량선을 붙이는 띠 반폭(기본 `SURVEY_BAND`)."""
+    band = SURVEY_BAND if band is None else band
     seg = PROCESSED / "segments_5186.gpkg"
     ctr = PROCESSED / "ngii1k_center_5186.gpkg"
     if not seg.exists():
@@ -464,8 +475,8 @@ def _load() -> list[dict] | None:
     nidx = RoadNameIndex(list(c.geometry), list(c.get("도로명", [""] * len(c))),
                          [""] * len(c), [None] * len(c))
     for row, geom in zip(rows, g.geometry, strict=True):
-        row["survey"] = idx.match(geom)[0]
-        row["survey_name"] = nidx.match(geom)[0]
+        row["survey"] = idx.match(geom, band=band)[0]
+        row["survey_name"] = nidx.match(geom, band=band)[0]
     return rows
 
 

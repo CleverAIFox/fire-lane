@@ -47,8 +47,12 @@ class RoadNameIndex:
         return cls(list(r.geometry), list(r["RN"]),
                    list(r["RDS_DPN_SE"].astype(str)), list(r["ROAD_BT"]))
 
-    def match(self, g):
+    def match(self, g, band: float | None = None, match_min: float | None = None):
         """겹침 길이가 가장 긴 도로선의 (RN, RDS_DPN_SE, ROAD_BT).
+
+        ★ 2026-10-25 (PLAN #4 · Zm29). `band` · `match_min` 을 **호출 쪽이** 고를 수 있다. 안 주면 **호출 시점에** 모듈 상수
+          (`BAND` · `MATCH_MIN`)를 읽는다 — 파이프라인(`segments.py`)은 인자를 안 주므로 **동작이 안 바뀐다.** 측량폭 대조
+          (`tools/widthcross.py`)는 다른 띠를 쓴다: 구간은 `road_link` 위에 있고 NGII 중심선은 별도 측량이라 0.5m 띠로는 붙지 않는다.
 
         세그먼트는 road_link 를 교차점에서 자른 조각이므로 원본 선 위에
         그대로 놓여 있다. 추정할 필요가 없다.
@@ -56,7 +60,7 @@ class RoadNameIndex:
         """
         if self.tree is None:
             return None, None, None
-        band = g.buffer(BAND)
+        band = g.buffer(BAND if band is None else band)
         best, best_len, best_k = None, 0.0, None
         for k in self.tree.query(band):
             ov = self.geo[k].intersection(band)
@@ -64,7 +68,7 @@ class RoadNameIndex:
                 continue
             if ov.length > best_len:
                 best, best_len, best_k = self.nm[k], ov.length, k
-        if best is None or best_len < g.length * MATCH_MIN:
+        if best is None or best_len < g.length * (MATCH_MIN if match_min is None else match_min):
             return None, None, None
         return best, self.dpn[best_k], self.bt[best_k]
 

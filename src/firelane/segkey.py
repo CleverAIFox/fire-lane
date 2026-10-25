@@ -86,9 +86,10 @@ def _road_hash(road_name: str | None) -> str:
       돌리자 무명 엣지 886/6,812 가 생기며 **파이프라인 맨 끝 `attach_seg_uid` 에서 터졌다.**
       문자열이 아니면 전부 무명으로 본다 — 문자열 입력의 결과는 종전과 **완전히 같다**(seg_uid 불변).
     """
-    if not isinstance(road_name, str):
-        road_name = None
-    src = (road_name or "\x00NONAME").strip()
+    # ★ 2026-10-25 (PLAN #179 · Zm29). **먼저 벗기고 나서** 무명을 가른다. 종전 `(road_name or NONAME).strip()` 은 `"   "` 가 truthy 라
+    #   통과한 뒤 빈 문자열로 해시돼 무명 토큰이 아닌 **제3의 꼬리**를 받았다. 글자가 있는 이름은 벗긴 결과가 같으므로 기존 `seg_uid` 는 안 갈린다.
+    name = road_name.strip() if isinstance(road_name, str) else ""
+    src = name or "\x00NONAME"
     h = hashlib.blake2s(src.encode("utf-8"), digest_size=4).digest()
     return _b36(int.from_bytes(h, "big"), HASH_LEN)
 
