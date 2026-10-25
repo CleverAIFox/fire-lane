@@ -674,7 +674,7 @@ DECISIONS §476). 세운 자리에서 닫는 것이 가장 싸고, 그러면 이
 <!--plan-blocks-->
 | 구획 | 이름 | 행 | 전건 | 재잠금 | 성격 |
 |---|---|---|---|---|---|
-| A | 판정 확정 · 재잠금 1회 | 완료 #53 #17 · 남은 #179 #4 #77 #11 #70 #173 · 보류 규칙 [12] | 없음 | 1회 | 판정이 움직인다. **완료(Zm19 · DECISIONS §564)** `#53` 폭 급변 거둠 · `#17` 체제 규칙으로 중앙값 판정 투입 — **`#17` 은 현장 실측 없이 실행됐고 F 에서 사후 검증한다. 그 전까지 `#17` 의 근거는 비어 있다**(DECISIONS §573). **남은 여섯**은 실측이 필요 없다: `#179` `_road_hash` 공백 접기 · `#4` widthcross 매칭 · `#77` 본선·측도 가름 · `#11` 도로경계 폴리곤 밖 · `#70` 근거 없는 상수 셋(판정 상수다 · **셋 중 둘 남음** — `SNAP_MAX` · `WMAX_CAP` 은 레이크 필요 · `MIN_SEG_LEN` 민감도 0 으로 닫음 · `PARK` 법정 규격으로 닫음 · DECISIONS §574-3 · §576) · `#173` 도장을 트리에 묶는다(재잠금과 같이). **보류** 규칙 [12](대장 괴리 · `tools/rule12_sim.py` 가 짜 두고 발행하지 않았다 · DECISIONS §569-5) — 발행 판단은 F 의 채점(Q4) 뒤이고 A 의 닫힘 조건에 들지 않는다 |
+| A | 판정 확정 · 재잠금 1회 | 완료 #53 #17 · 남은 #179 #4 #77 #11 #70 #173 · 보류 규칙 [12] | 없음 | 1회 | 판정이 움직인다. **완료(Zm19 · DECISIONS §564)** `#53` 폭 급변 거둠 · `#17` 체제 규칙으로 중앙값 판정 투입 — **`#17` 은 현장 실측 없이 실행됐고 F 에서 사후 검증한다. 그 전까지 `#17` 의 근거는 비어 있다**(DECISIONS §573). **남은 여섯**은 실측이 필요 없다: `#179` `_road_hash` 공백 접기 · `#4` widthcross 매칭 · `#77` 본선·측도 가름 · `#11` 도로경계 폴리곤 밖 · `#70` 근거 없는 상수 셋(판정 상수다 · **셋 중 둘 남음** — `SNAP_MAX` · `WMAX_CAP` 은 레이크 필요 · `MIN_SEG_LEN` 민감도 0 으로 닫음 · `PARK` 법정 규격으로 닫음 · DECISIONS §574-3 · §576) · `#173` 도장을 트리에 묶는다(재잠금과 같이) · **보안 PR 350(pypdf) · PR 352(virtualenv)는 이 재잠금과 같이 머지한다**(순서는 §10-5b · DECISIONS §578). **보류** 규칙 [12](대장 괴리 · `tools/rule12_sim.py` 가 짜 두고 발행하지 않았다 · DECISIONS §569-5) — 발행 판단은 F 의 채점(Q4) 뒤이고 A 의 닫힘 조건에 들지 않는다 |
 | B | 분모 확정 · 재잠금 2회 | #62 #144 #57 #58 #96 #132 | A | 2회 | 분모가 굳는다 |
 | C | 새 원천 · 판정 불변 | #30 #31 #60 #93 #95 #39 #120 #10 #66 #55 | A | 0 | 새 자료를 들이되 판정을 안 움직인다 |
 | D | 그래프 · 경로 | #1 #18 #19 #72 #75 | B | 0 | 경로 비용 · 방향성 |
@@ -718,7 +718,7 @@ uv run python tools/wmax_audit.py              # 규모 (고치기 전)
 uv run fire-lane --from segments               # 노딩 → 폭 → 판정
 uv run python tools/baseline.py diff pre-A-rest --transition   # 판정이 몇 구간 어디로 움직였나 — 그 수(clear/needs_cv/blocked/unknown 전후)를 보고하고 멈춘다
 
-# 4. 둘이 다 끝난 뒤에만 — A 의 재잠금(사람이 친다)
+# 4. 둘이 다 끝난 뒤에만 — A 의 재잠금(사람이 친다). 보안 PR 350 · PR 352 를 여기서 같이 머지한다 — 순서는 §10-5b
 uv run python tools/golden.py check            # 코드 지문 · 산출물 지문 불일치 목록
 uv run python tools/golden.py lock             # 기준선을 다시 찍는다 (#179 · #4 · #70 의 코드 변경분이 이때 같이 잠긴다)
 uv run python tools/baseline.py freeze A-lock --note "Zm30 · A 재잠금"
@@ -738,6 +738,47 @@ uv run python -m firelane.ngi .work/ngii1k
 ★ `ngii1k.build()` 는 기하 종류가 `Polygon` 이 아닌 피처를 **조용히 버린다**(전부 사라질 때만 운다). NGI 판 도엽의 보도가 다른 기하로 오면 그 도엽의 보도가 통째로 빠진다 — 위 둘째 명령이 그것을 가른다.
 
 ★ `#173`(도장을 트리에 묶는다)은 이 재잠금과 같이 한다(DECISIONS §574-5). 위 4 의 뒤다.
+
+### 10-5b. 보안 PR 셋의 처리 — PR 351 은 지금 · PR 350 · PR 352 는 재잠금과 같이
+
+GitHub Dependabot 보안 PR 셋이다(base 는 모두 `dev`). 머지는 **사람이 GitHub 에서** 한다.
+
+| PR | 바뀌는 것 | 닿는 곳 | 처리 |
+|---|---|---|---|
+| PR 351 | `vitest` 5.0.2 → 5.0.5(+ `@vitest/mocker` · 전이 열 개) · `web/navi/package-lock.json` · `package.json` | 내비 시험 도구(dev) | **지금** — 아래 둘 |
+| PR 350 | `pypdf` 6.19.0 → 6.21.2 · `uv.lock` 4줄 | 관리카드 · 취입 PDF 읽기 | **A 재잠금과 같이** |
+| PR 352 | `virtualenv` 21.14.2 → 21.14.13 · `uv.lock` 4줄 | `pre-commit` 의 간접 의존(dev) | **A 재잠금과 같이** |
+
+**PR 351 — 머지 전에 도장을 다시 찍어야 한다.** PR 의 `contract-shared` 가 실패했다 — 원인은 코드가 아니라 문서 도장이다: `DECISIONS/430` 이 `web/navi/package-lock.json` 에 묶여 있어 그 파일이 바뀌면 도장이 무효가 된다. 그 절의 주장(`source-map-js` 를 `overrides` 로 1.2.2 에 고정)은 PR 뒤의 락에서도 참이다. 봇은 도장을 못 찍으므로 사람이 한다:
+
+```
+uv run python tools/docseal.py stamp --only DECISIONS/430      # 절과 락을 같이 읽고 여전히 맞으면 (사람이 친다)
+```
+
+**PR 351 머지 뒤 pull 하면 확인할 것:**
+
+```
+cd web/navi && npm ci && npx vitest --version      # 5.0.5
+npx vitest run                                     # 시험 파일 39 · 시험 509 통과 (PR 머리에서 머지 전에 미리 돌려 얻은 값)
+cd ../..; git diff --stat <머지 전>..<머지 후> -- uv.lock src data/golden   # 비어 있어야 한다 (PR 은 web/navi 두 파일만 바꾼다)
+uv run python tools/golden.py check                # 코드 지문이 이 PR 때문에 움직이면 안 된다 (web/navi 는 지문 입력이 아니다)
+```
+
+**PR 350 · PR 352 — A 재잠금 때 이 순서로:** PR 머지 → `uv.lock` 변경 확인 → 전체 시험 → `golden.py check` 로 지문 이동 확인 → 재잠금.
+
+```
+# (a) GitHub 에서 PR 350 · PR 352 머지 (사람). base 는 dev — 작업 브랜치로 들이는 길은 사람이 정한다
+# (b) uv.lock 만 바뀌었는지
+git diff --stat <머지 전>..<머지 후>                 # 두 PR 모두 uv.lock 4줄씩이어야 한다
+# (c) 전체 시험
+uv sync --frozen && uv run python -m pytest tests -q
+# (d) 지문 이동 확인 — 이 두 PR 은 코드 지문의 uv.lock 몫을 안 움직인다(DECISIONS §578-2 에서 쟀다). 움직였다면 멈추고 본다
+uv run python tools/golden.py check
+# (e) 레이크 기계에서 — pypdf 6.21.2 가 CMap 처리를 바꿨다. 관리카드 PDF 가 같은 값으로 추출되는지 머지 전 · 후에 대 본다
+uv run python -m firelane.vehiclecard <관리카드.pdf>   # 네 파일 (DECISIONS §578-2)
+# (f) 재잠금
+uv run python tools/golden.py lock
+```
 
 ---
 
