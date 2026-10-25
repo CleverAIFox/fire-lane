@@ -14,9 +14,24 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-TOOLS = ["tools/carve_survey.py", "tools/dm_audit.py", "tools/segid_audit.py"]
+
+
+def _investigation_tools() -> list[str]:
+    """대장에서 **유도한다** — 소비자가 없는 산출물을 내는 도구 중 `argparse` 로 사용법을 내는 것. 손으로 든 목록은 도구가 늘어도 안 따라간다(deadcheck ②)."""
+    out: dict = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))["outputs"]
+    tools = {v["produced_by"] for v in out.values()
+             if isinstance(v, dict) and str(v.get("produced_by", "")).startswith("tools/") and not v.get("consumers")}
+    return sorted(t for t in tools if (ROOT / t).exists() and "argparse" in (ROOT / t).read_text(encoding="utf-8"))
+
+
+TOOLS = _investigation_tools()
+
+
+def test_the_derivation_finds_the_three_tools() -> None:
+    assert {"tools/carve_survey.py", "tools/dm_audit.py", "tools/segid_audit.py"} <= set(TOOLS), TOOLS
 
 
 @pytest.mark.parametrize("tool", TOOLS)
