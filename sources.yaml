@@ -4326,6 +4326,20 @@ outputs:
     consumers: []
     what: 최대내접원(clearance) 방식 폭 산출 프로토타입의 표 — 참고용이다. 사람이 부를 때만 생긴다(기본 모드). 판정에 안 닿는다
     verified: false
+  sensitivity:
+    produced_by: tools/sensitivity.py
+    path: data/processed/sensitivity.json
+    inputs: [segments, width_cross]     # 발행본 + 측량 대조 오차 422개(widthcross 가 다시 낸다)
+    consumers: []
+    what: 폭 오차가 판정을 얼마나 흔드는지의 계수(Zm24 · DECISIONS §570) — 문턱 근처 구간 · CLEAR_M 곡선 · 상수 민감도 · 부트스트랩 · 띠 제외 평가. 시뮬레이션이다. 판정 폐포 밖이고 사람이 부를 때만 생긴다
+    verified: false
+  flip_detail:
+    produced_by: tools/sensitivity.py
+    path: data/processed/flip_detail.json
+    inputs: [segments, width_cross]
+    consumers: []
+    what: 부트스트랩에서 구간별 뒤집힘 빈도 · 행선 · 가장 가까운 문턱 · 겹침(Zm25 · Zm26 · DECISIONS §570). 사람이 잴 표(data/field/flip_top_2610.csv)의 근거다. 우선순위이지 평가셋이 아니다
+    verified: false
   route_vehicle:
     produced_by: src/firelane/segments.py
     path: data/processed/route_vehicle.csv
