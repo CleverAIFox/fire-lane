@@ -8,7 +8,7 @@ sensitivity.py — 폭 오차가 판정을 얼마나 흔드는지 **센다.** �
 IN    data/processed/segments.geojson (판정 입력 전부를 든 열) ·
       `widthcross._load()` 가 다시 낸 측량 대조 오차 422개(§562)
 OUT   data/processed/sensitivity.json · 화면 ·
-      data/field/flip_2610.csv · data/field/flip_top_2610.csv · data/processed/flip_detail.json (Zm25 · Zm26 — 뒤집힘 명단)
+      data/processed/flip_2610.csv · data/processed/flip_detail.json · data/field/flip_top_2610.csv (Zm25 · Zm26 — 뒤집힘 명단)
 PARAM 없다. 문턱은 전부 `seg/classify.py` · `seg/params.py` 에서 온다.
 밖    **판정 폐포 밖이다. 아무것도 발행하지 않는다.**
       `params.py` · `classify.py` 를 고치지 않는다 — 시뮬레이션은 **프로세스 안에서만**
@@ -47,7 +47,8 @@ from firelane.seg.classify import SPREAD_MAX, classify
 ROOT = Path(__file__).resolve().parents[1]
 SEG = ROOT / "data" / "processed" / "segments.geojson"
 OUT = ROOT / "data" / "processed" / "sensitivity.json"
-FLIP_CSV = ROOT / "data" / "field" / "flip_2610.csv"
+# ★ 2026-10-25 (Zm44 · DECISIONS §584). 계산 산출물이라 `data/processed` 다(`flip_detail.json` 과 같은 자리) — 사람이 안 채운다. `flip_top` 만 사람이 재므로 `data/field` 다.
+FLIP_CSV = ROOT / "data" / "processed" / "flip_2610.csv"
 FLIP_TOP_CSV = ROOT / "data" / "field" / "flip_top_2610.csv"
 FLIP_JSON = ROOT / "data" / "processed" / "flip_detail.json"
 EVALSET = ROOT / "data" / "field" / "evalset_2610.csv"     # 표만 읽는다. `.key.json` 은 열지 않는다

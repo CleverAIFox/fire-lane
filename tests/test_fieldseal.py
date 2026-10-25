@@ -180,3 +180,43 @@ def test_the_diff_does_not_cry_on_a_moved_line_count_alone():
     여기가 울면 기록을 다시 쓸 때마다 관문이 빨개지고, 그러면 꺼진다."""
     was = {**NOW, "b.csv": {"sha256": "bb", "lines": 999, "bytes": 999}}
     assert FS.diff(NOW, was) == [], FS.diff(NOW, was)
+
+
+# ── 제외 목록 (Zm44 · DECISIONS §584) ────────────────────────────────
+
+def test_excluded_files_leave_the_seal_but_a_stranger_does_not(tmp_path: Path):
+    """제외 목록의 파일은 대상에서 빠지고, **목록 밖 새 파일은 여전히 걸린다**(빈 그물의 반대쪽)."""
+    m = _fs()
+    for name in (*m.EXCLUDED, "sealed.csv", "stranger.csv"):
+        (tmp_path / name).write_text("x\n", encoding="utf-8")
+    got = m.survey(tmp_path)
+    assert not set(m.EXCLUDED) & set(got), "제외한 파일이 지문 대상에 남았다"
+    assert set(got) == {"sealed.csv", "stranger.csv"}, f"제외 말고 다른 것을 뺐다 — {sorted(got)}"
+    assert any("새로 생겼다  stranger.csv" in ln for ln in m.diff(got, {"sealed.csv": got["sealed.csv"]})), "목록 밖 새 파일을 못 잡는다"
+
+
+def test_the_exclusions_are_the_two_declared_ones_with_reasons():
+    m = _fs()
+    assert set(m.EXCLUDED) == {"evalset_2610.key.json", "sidewalk_probe_2610.csv"}, sorted(m.EXCLUDED)
+    for name, why in m.EXCLUDED.items():
+        assert len(why) >= 30, f"{name}: 사유가 너무 짧다 — 사유가 본체다"
+    assert "비켜간" in m.EXCLUDED["evalset_2610.key.json"], "키를 이 폴더에 두는 것이 공백을 메운 게 아니라는 말이 사유에 없다"
+    assert "§577" in m.EXCLUDED["sidewalk_probe_2610.csv"]
+
+
+def test_an_excluded_file_in_the_old_seal_does_not_cry_vanished(monkeypatch, tmp_path: Path):
+    """옛 지문에 들어 있던 제외 파일이 지금 없어도 「사라졌다」로 울지 않는다 — 제외는 양쪽에서 안 본다."""
+    m = _fs()
+    seal = tmp_path / "seal.json"
+    seal.write_text(json.dumps({"files": {"evalset_2610.key.json": {"sha256": "x", "bytes": 1, "lines": 1},
+                                           "kept.csv": {"sha256": "y", "bytes": 1, "lines": 1}}}), encoding="utf-8")
+    monkeypatch.setattr(m, "SEAL", seal)
+    assert set(m.load()) == {"kept.csv"}
+
+
+def test_nothing_but_the_three_pending_files_is_new_or_changed_in_the_real_layer():
+    """이 판 뒤 실물에서 걸릴 수 있는 것은 `evalset_2610.csv` · `flip_top_2610.csv` · `naver_width_2610.csv` 셋뿐이다 — F 에서 `--write` 를 치면 그 셋이 봉인된다.
+    (부분집합이다 — 봉인한 뒤에는 비어도 맞다. 그 밖의 파일이 걸리면 층에 안 맞는 것이 들어온 것이다.)"""
+    m = _fs()
+    names = {ln.split("  ")[1] for ln in m.diff(m.survey(), m.load())}
+    assert names <= {"evalset_2610.csv", "flip_top_2610.csv", "naver_width_2610.csv"}, sorted(names)

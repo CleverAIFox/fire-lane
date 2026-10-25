@@ -42682,7 +42682,7 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 강제자 없음 — 사유: 조사 기록이다. 수의 정본은 `data/processed/sensitivity.json` · `flip_detail.json` 이고 시험이 그 값을 고정하지 않는다(표본 추출이라 시드로만 재현된다)
         **하위 6**이 이 칸을 물려받는다
 
-`tools/sensitivity.py`(새 도구 하나 · `params.py` · `classify.py` 불변 — 모듈 전역을 프로세스 안에서만 잠깐 바꿨다 되돌린다). 산출 `data/processed/sensitivity.json` · `data/processed/flip_detail.json` · `data/field/flip_2610.csv`. 재현: 공개본 1,281행을 `classify()` 로 다시 돌려 판정 290/278/192/521 이 1,281/1,281 로 일치해야 수를 낸다. `segments.geojson` 은 실행 전후 바이트 동일(sha256 `8709b73f…`).
+`tools/sensitivity.py`(새 도구 하나 · `params.py` · `classify.py` 불변 — 모듈 전역을 프로세스 안에서만 잠깐 바꿨다 되돌린다). 산출 `data/processed/sensitivity.json` · `data/processed/flip_detail.json` · `data/processed/flip_2610.csv`. 재현: 공개본 1,281행을 `classify()` 로 다시 돌려 판정 290/278/192/521 이 1,281/1,281 로 일치해야 수를 낸다. `segments.geojson` 은 실행 전후 바이트 동일(sha256 `8709b73f…`).
 
 ### 570-1. 폭 오차로 뒤집히는 구간 — **회차당 중앙 89** (95% 71~108). 불안정 구간 수가 아니다
 
@@ -42724,7 +42724,7 @@ PLAN §10-5 에 판 배분 표를 박았다 — 0 · A · B · C · D · E · �
 
 ### 570-5. 뒤집힘 명단 — 전체 1,169 · 사람이 잴 것은 상위 50
 
-`data/field/flip_2610.csv`(1,169행 · 전체)와 `data/field/flip_top_2610.csv`(`flip_n ≥ 500` 인 **50행** · **사람이 잴 표**). 「한 번이라도」 명단은 1,281 의 91% 라 변별력이 없고, `flip_n` 정렬이 본체다.
+`data/processed/flip_2610.csv`(1,169행 · 전체)와 `data/field/flip_top_2610.csv`(`flip_n ≥ 500` 인 **50행** · **사람이 잴 표**). 「한 번이라도」 명단은 1,281 의 91% 라 변별력이 없고, `flip_n` 정렬이 본체다.
 
 구획(전체 1,169): 1순위(원래 clear) 235 · 2순위(원래 blocked) 190 · 3순위 744. **상위 50 의 구획: 1순위 30 · 2순위 0 · 3순위 20.** 1순위 30 은 전부 가장 가까운 문턱이 CLEAR_M 이고 행선은 unknown 17 · needs_cv 13. 3순위 20 은 전부 가장 가까운 문턱이 TRUCK 이고 행선이 blocked 다(needs_cv · unknown 에서 blocked 로). 원래 blocked 중 절반 이상의 회차에서 뒤집히는 구간은 없다(2순위의 190 은 전부 5% 미만~50% 미만). 전체 1순위 235 의 가장 가까운 문턱은 CLEAR_M 204 · SPREAD_MAX 14 · CCTV 11 · TRUCK 6, 2순위 190 중 TRUCK 186. 「가장 가까운 문턱」은 원인의 증명이 아니라 현장에서 어디를 볼지의 단서다(`SPREAD_MAX` 는 비라서 wmin 이 `wmax/2.5` 선까지 움직일 거리로 바꿨고, CCTV 거리는 폭 오차가 행선을 가르는 자리라서 싣는다).
 
@@ -43357,3 +43357,26 @@ PLAN #4 의 목표 수를 **71.0%**(909쌍 · 띠 3m)로 고쳤다(종전 73.9% 
 **기획서 그림에 미치는 영향.** `tools/render_figures.py` 가 장부로 그리는 그림은 `astar`(`docs/figures/astar.svg`) 하나다. 새 수로 그리면: 막대의 자(네 막대가 한 자를 쓴다 · 최댓값 = ② 의 A* 합)가 116,333 → 119,690 으로 2.9% 늘어 ① A* 막대는 149.0 → 151.6 으로 길어지고 다익스트라 막대는 408.3 → 391.9 로 짧아지며(`BAR_W` 420), 쓸기 막대는 여전히 거의 안 보인다. **A* 우위가 줄어든다** — 문구가 「A* 가 2.7배 적게 연다」 → 2.6배, 「A* 는 93배 더 연다」 → 96배. 그래프의 축 모양은 그대로이고 자만 움직인다. **기획서 본문이 그 수를 인용한 자리는 없다** — `docs/figures/.lock.json` 의 `placed` 에 `astar` 가 없고(그림은 만들어지지만 기획서에 안 놓인다) `docs/proposal.md` · `web/proposal.html` 에 41,281 · 113,094 · 2.7배 · 93배 가 없다. `MASTER.md` 는 장부와 그림을 **이름으로** 가리킬 뿐 수를 안 적는다(§21-0 규율). 영향은 `astar.svg` 와 `.lock.json` 의 해시 둘이다. 그림은 다시 굽지 않았다 — E 판은 A 뒤다.
 
 **`golden.py lock` 의 대상이 아니다.** `tools/golden.py` 는 `segments.fingerprint.json` · `.code_fingerprint` 를 다루고 `astar.json` 을 갱신하지 않는다. `astar.json` 에는 쓰는 도구도 없다 — 시험의 실패 문구가 그 수를 `data/golden/astar.json` 에 다시 적으라고 안내할 뿐이고 `b218e3e`(재잠금 커밋)가 그렇게 **손으로** 적었다. 그래서 **별도 단계이고 같은 판에서 한다.** 순서(A 재잠금 뒤): ① 파이프라인 재실행으로 게시 그래프가 움직이고 → ② `golden.py lock` · `baseline.py freeze` · `docseal stamp`(사람) → ③ `astarbench` 를 돌려 낸 수를 `data/golden/astar.json` 에 적고 → ④ `render_figures` 로 `astar.svg` · `.lock.json` 을 다시 굽는다(`--check` 의 「그림 ↔ 정본」 게이트가 장부와 그림이 어긋나면 빨갛다 — 둘은 한 커밋이어야 한다). **지금 장부만 새 수로 적으면 헛일이다** — A 재잠금이 게시 그래프를 또 움직여 이 수가 다시 낡는다.
+
+## 584. `data/field` 층 배치를 정리했다 — 정의의 공백은 메우지 않고 적는다 (Zm43 · Zm44 · 판정 변경 0 · 봉인 안 쳤다 · 파일 내용 변경 0)
+
+> 2026-10-25
+
+유병률  **2회** — 도구가 낸 파일이 실측 층(`data/field`)에 들어와 지문을 건 일: `.bak_enc`(§575-2)와 평가셋 · 표본표 · flip 표(이 절)
+
+강제자  `tests/test_field_layout.py`(계산 산출물이 실측 층에 없다 — 옮기기 전에 빨강 셋을 확인했다) · `tests/test_fieldseal.py`(제외 목록 — 든 파일은 빠지고 목록 밖 새 파일은 걸린다) · `tools/fieldseal.py`(`--selftest` 가 같은 양쪽을 민다)
+
+**한 일.** (층 배치를 보는 시험은 `tests/test_field_layout.py` 다 — 도구의 출력 경로 · 대장 경로 · 실물이 같이 `data/processed` 에 있는가.)
+- `flip_2610.csv` 를 `data/field` 에서 `data/processed` 로 옮겼다(내용은 그대로 · 같은 도구의 `flip_detail.json` 곁). `tools/sensitivity.py` 의 출력 경로 · 대장 항목 · DECISIONS 인용 둘을 따라 고쳤다. `layers.processed` 는 커밋하지 않으므로 이 파일은 추적에서 빠진다 — 도구가 시드로 다시 뽑는다. 사람 칸(`w_full_m` 등)은 구조만 `flip_top` 과 같고 안 채운다. 상위 50행 `flip_top_2610.csv` 는 사람이 재므로 `data/field` 에 남는다.
+- `tools/fieldseal.py` 에 **제외 목록**(`EXCLUDED` — 이름과 사유를 코드에 적었다)을 넣었다: `evalset_2610.key.json`(도구가 뽑은 봉인 키 · 실측이 아니다) · `sidewalk_probe_2610.csv`(§577 이 「봉인하지 않는다」고 선언 · 거리뷰 판독이라 실측보다 약한 일회성 결손률 표). 제외는 지문 양쪽에서 빠지고(옛 지문에 있어도 「사라졌다」로 안 운다), **목록 밖 새 파일은 여전히 「새로 생겼다」로 빨개진다.**
+- 디스크에만 있던 `evalset_2610.csv.stale_20261025` · `evalset_2610.key.json.stale_20261025` 를 지웠다(사람이 정했다). 옛 평가셋은 `fad5cd9` 이력에 있다 — 그 판은 §571 이 **가짜로 판정한** 표이고 참고일 뿐 근거로 쓰지 않는다. 키는 열지 않았다.
+- **`fieldseal` 은 8건에서 3건으로 줄었다.** 남는 것은 `evalset_2610.csv` · `flip_top_2610.csv`(둘 다 새로 생겼다) · `naver_width_2610.csv`(12행 → 47행)이다. F 에서 `--write` 를 치면 그 셋만 봉인된다(`ngi_width_05_check.csv` 는 이미 봉인돼 있다). `--write` 는 치지 않았다.
+
+**층 정의의 공백 — 메우지 않았다.** `sources.yaml` 의 `layers` 에는 **「도구가 뽑았으나 재현을 약속하지 않고 커밋하는 것」** 이 없다. `field` 는 「실측 원자료 · 사람이 만드는 유일한 데이터 · 재생성 불가」, `processed` 는 「파이프라인 정본 · 사람이 손으로 만들지 않는다 · 커밋하지 않는다」, `interim` 은 「탐색 산출물 · 지워도 된다」다. 봉인 키(`evalset_2610.key.json`)는 셋 어디에도 안 맞는다 — 실측도 사람이 만든 것도 아니고, 지워도 되는 것이 아니며(채점 전에 얼려 둬야 하고 발행본이 재잠금으로 움직이면 같은 키를 다시 못 만든다), 커밋해야 한다.
+
+**선례가 엇갈린다.**
+- **`.bak_enc`**(§575-2): `encoding_check --fix` 가 `data/field` 에 쓴 백업을 「사람이 만든 봉인 층에 새 파일이 생겼다」로 판정하고 `INTERIM` 으로 보냈다 — 도구가 만든 것은 이 층에서 나간다.
+- **`ngi_width_05_check.csv`**: `fieldseal` 머리말(§291)이 스스로 「실측이 아니라 **파생물**」이라 부르는데 이 층에 남아 있다. 사유는 「손으로 뽑은 표라 파이프라인이 다시 못 만든다」였다 — 도구가 만든 것도 재현이 안 되면 남는다.
+- 이번 다섯은 두 선례 어느 쪽도 명시적으로 따르지 않고 §569 의 「채워지면 `fieldseal --write` 로 박는 경로를 준비했다」만 근거였다.
+
+**`key.json` 을 `field` + 예외로 둔 것은 공백을 메운 것이 아니라 비켜간 것이다.** `field` 에 두는 것은 지문 보호를 받기 위한 **임시 배치**였고, 이 판은 그 보호까지 `EXCLUDED` 로 거둔다 — 그러면 키는 `field` 에 놓여 있으되 `fieldseal` 이 안 지킨다. 즉 지금 이 키를 지키는 것은 git 과 「채점 전에 열지 않는다」는 규칙뿐이다. 새 층이 필요한지(예: 재현을 약속하지 않고 커밋하는 도구 산출물의 층) · `golden` 에 넣을지 · `field` 에 예외로 둘지는 **사람이 나중에 정한다.** 이 판은 정하지 않았다.

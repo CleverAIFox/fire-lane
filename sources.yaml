@@ -4259,13 +4259,6 @@ outputs:
     consumers: [tools/sidewalk_probe.py]
     what: 보도 폴리곤이 20m 안에 없는 구간에서 무작위 20구간(Zm32 · DECISIONS §577). 사람이 거리뷰로 「보도 · 보행포장이 실제로 있나」만 본다(폭은 안 잰다). 자료 결손률의 표본이다. 평가셋 · flip 표와 별개이고 합치지 않는다. 구간의 키는 seg_uid 다
     verified: false
-  flip_2610:
-    produced_by: tools/sensitivity.py
-    path: data/field/flip_2610.csv
-    inputs: [segments, width_cross]
-    consumers: [tools/sensitivity.py]
-    what: 폭 오차에 판정이 뒤집히는 구간 전체 명단 1,169행(Zm25 · DECISIONS §570). 우선순위이지 평가셋이 아니다 — 평가셋과 합치지 않는다. 사람이 잴 것은 flip_top_2610.csv 다. 구간의 키는 seg_uid 다
-    verified: false
   flip_top_2610:
     produced_by: tools/sensitivity.py
     path: data/field/flip_top_2610.csv
@@ -4353,6 +4346,13 @@ outputs:
     inputs: [segments, width_cross]     # 발행본 + 측량 대조 오차 422개(widthcross 가 다시 낸다)
     consumers: []
     what: 폭 오차가 판정을 얼마나 흔드는지의 계수(Zm24 · DECISIONS §570) — 문턱 근처 구간 · CLEAR_M 곡선 · 상수 민감도 · 부트스트랩 · 띠 제외 평가. 시뮬레이션이다. 판정 폐포 밖이고 사람이 부를 때만 생긴다
+    verified: false
+  flip_2610:
+    produced_by: tools/sensitivity.py
+    path: data/processed/flip_2610.csv
+    inputs: [segments, width_cross]
+    consumers: [tools/sensitivity.py]
+    what: 폭 오차에 판정이 뒤집히는 구간 전체 명단 1,169행(Zm25 · DECISIONS §570). 우선순위이지 평가셋이 아니다 — 평가셋과 합치지 않는다. 계산 산출물이라 data/processed 다(Zm44 · §584 — 사람 칸은 구조만 flip_top 과 같고 안 채운다). 사람이 잴 것은 flip_top_2610.csv 다. 구간의 키는 seg_uid 다
     verified: false
   flip_detail:
     produced_by: tools/sensitivity.py
