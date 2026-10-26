@@ -37,8 +37,18 @@ def test_a_run_without_publish_is_not_blocked() -> None:
     assert pipeline.stale_publish_blockers({"ingest", "segments"}) == []
 
 
-def test_main_refuses_before_running_anything(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
-    """실제 `main` 이 단계를 하나도 돌기 전에 끝낸다 — 자식 프로세스를 부르면 시험이 운다."""
+def test_main_refuses_before_running_anything(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture, tmp_path) -> None:
+    """실제 `main` 이 단계를 하나도 돌기 전에 끝낸다 — 자식 프로세스를 부르면 시험이 운다.
+
+    ★ 레이크 유무와 무관하다. `main` 은 raw 검사(`RAW` 에 zip 이 없으면 `ingest` 가 든 실행을 `exit 1`)가 stale 가드보다 **앞**이라, 레이크가 없는 CI 에서는
+      가드에 닿기 전에 raw 검사가 먼저 끝나 메시지가 달랐다(Zm53 의 깨끗한 체크아웃 재현). 그 길로 통과하면 이 시험은 **가드를 시험하지 않는다** — 그래서 임시 raw 폴더에
+      빈 zip 을 두어 raw 검사만 통과시키고 가드가 거절하는 것을 본다. 환경이 없다고 건너뛰지 않는다 — 그러면 CI 에서 가드가 안 시험된다.
+    """
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    (raw / "x.zip").write_bytes(b"")
+    monkeypatch.setattr(pipeline, "RAW", raw)
+
     def boom(*a, **k):
         raise AssertionError("거절해야 하는데 단계를 돌았다")
 
