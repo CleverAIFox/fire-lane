@@ -575,6 +575,7 @@ def main():
     # 도로명. 노딩하면 원본 속성이 끊기므로 중점 최근접으로 되붙인다.
     # seg_id(DM00001)만 보이면 사람이 어느 골목인지 알 수 없다.
     _rnx = RoadNameIndex.from_gdf(road)
+    _wx.attach_carver(ngii_center, _rnx)      # Zm56 · PLAN #77 · DECISIONS §593 — 한 폴리곤에 다른 이름의 중심선이 둘 이상이면 자기 몫에서만 잰다(후보 아니면 현행)
     # 기초구간 — 도로명주소법 기초번호 정본. 없으면 도로명만 라벨로 쓴다.
     _bnx = None
     try:
@@ -585,7 +586,6 @@ def main():
         print(f"[기초번호] 기초구간 {len(_intrvl)}개")
     except Exception as _e:
         print(f"[기초번호] 기초구간을 못 읽었다 — seg_label 은 도로명만: {_e}")
-
 
     if _dups:
         print(f"\n[병렬 엣지 {len(_dups)}] 같은 노드쌍에 두 형상 — 긴 쪽을 버렸다")
@@ -870,7 +870,7 @@ def main():
     save_uid_map(g, OUT / "seg_uid_map.csv")
 
     # ── 소스별 커버율 ────────────────────────────────────────
-    seg_report.diagnostics(g, old_snap=_wx.old_snap)
+    seg_report.diagnostics(g, old_snap=_wx.old_snap, carver=_wx.carver)
 
     _dbg_ids = [x.strip() for x in _env("FIRE_LANE_DEBUG_SEG").split(",") if x.strip()]
     if _dbg_xy := _env("FIRE_LANE_DEBUG_XY").strip():

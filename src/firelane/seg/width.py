@@ -36,28 +36,7 @@ from firelane.seg.params import (
     WMAX_CAP,
     XSEC_EXCL,
 )
-
-
-def walk_spans(ray, walk_u, p, ux, uy):
-    """광선이 **보도면과 겹치는** 1차원 구간들. `p` 가 원점이고 `(ux,uy)` 가 +축이다.
-
-    `_span` 이 노면으로 하는 것과 같은 투영이다. 따로 둔 이유는 하나 —
-    노면 교차는 「0 을 담은 조각」 하나를 찾고, 보도 교차는 **전부** 필요하다.
-    """
-    sg = ray.intersection(walk_u)
-    if sg.is_empty:
-        return []
-    if sg.geom_type == "LineString":
-        pcs = [sg]
-    elif hasattr(sg, "geoms"):
-        pcs = [q for q in sg.geoms if q.geom_type == "LineString"]
-    else:
-        return []                                    # 점 교차. 보도 턱을 스쳤다
-    out = []
-    for q in pcs:
-        ss = [(x - p.x) * ux + (y - p.y) * uy for x, y in q.coords]
-        out.append((min(ss), max(ss)))
-    return sorted(out)
+from firelane.seg.walkcarve import carve_walk, walk_spans
 
 
 def _round_pos(x: float, nd: int = 2) -> float:
@@ -77,26 +56,6 @@ def _round_pos(x: float, nd: int = 2) -> float:
     return r if r > 0 else round(x, 6)
 
 
-def carve_walk(left, right, walk_iv):
-    """좌우 거리에서 보도를 깎는다. **0 을 담은 조각 하나만** 남는다.
-
-    ★ 2026-10-14 (DECISIONS §523-2). 재는 점이 **보도 위**면 안 깎고 그대로
-      돌려준다. 그 표본을 **버리지도 않는다** — §512-1 이 64구간 전부에서
-      버림의 효과가 0 임을 쟀고, 효과 없는 가드는 다음 사람이 무엇을 막는지
-      모른 채 영영 남는다. 중심선이 보도 위인 것은 중심선의 결함이고
-      그 자리는 `PLAN` 이 든다.
-    """
-    lo, hi = -left, right
-    if any(a <= 0.0 <= b for a, b in walk_iv):
-        return left, right
-    for a, b in walk_iv:
-        if b <= 0.0:
-            lo = max(lo, b)              # 왼쪽에서 가장 가까운 보도의 **끝**
-        elif a >= 0.0:
-            hi = min(hi, a)              # 오른쪽에서 가장 가까운 보도의 **시작**
-    return -lo, hi
-
-
 #: `width_fail` 낱말 — 표본점 전부가 교차부 안이라 횡단면을 **한 번도 긋지 않은** 구간(`n_try == 0`).
 NO_XSEC_ATTEMPTED = "no_xsec_attempted"
 
@@ -114,7 +73,7 @@ class WidthEngine:
     """
 
     def __init__(self, ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
-                 *, walk_u=None, mix_src: bool = False, old_snap: bool = False, poly_idx=None):
+                 *, walk_u=None, mix_src: bool = False, old_snap: bool = False, poly_idx=None, carver=None):
         self.ngii1k_u = ngii1k_u
         self.ngii_u = ngii_u
         self.rw_u = rw_u
@@ -134,6 +93,8 @@ class WidthEngine:
         self.debug = False          # 표본 단위 덤프. `segments.main()` 이 켰다 끈다
         # ★ Zm3 (계측기). 소스별 (STRtree, 폴리곤 목록, 식별자 목록). 없으면 poly_id 는 None 이다. **판정에 안 쓴다.**
         self.poly_idx = poly_idx or {}
+        # ★ Zm56 (PLAN #77 · DECISIONS §593). 「자기 몫」 가름. **기본이 None** 이고 그때는 종전과 글자까지 같은 경로다.
+        self.carver = carver
         self._lr = None             # 직전 `_span` 이 쓴 (left, right, 규칙) — 기록 전용
 
     def _poly_at(self, nm, pt):
@@ -398,7 +359,17 @@ class WidthEngine:
                            zip(("1k", "ng", "rw"), WIDTH_SRCS, strict=True))
         return A, B, src, (a_1k, a_ngii, a_rw), why, res
 
+    def attach_carver(self, center, rnx):
+        """가름 규칙을 건다(Zm56 · DECISIONS §593). 중심선이 없으면 안 건다 — 종전 경로."""
+        from firelane.seg.share import ShareCarver
+        return ShareCarver.attach(self, center, rnx)
+
     def widths(self, s):
+        """구간 폭. `carver`(`seg/share.py`)가 있으면 후보일 때만 자기 몫으로 다시 재서 더 좁은 값만 받는다(Zm56 · DECISIONS §593). 없으면 종전 그대로다."""
+        res = self._widths_once(s)
+        return res if self.carver is None else self.carver.refine(self, s, res)
+
+    def _widths_once(self, s):
         A, B, fb = [], [], False
         S, D = [], []
         # 교차로 파편(길이 < MIN_SEG_LEN)은 정의상 전 구간이 교차로 안이다.

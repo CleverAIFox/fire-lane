@@ -38,13 +38,16 @@ OUT = PROCESSED
 CRS_M, CRS_W = "EPSG:5186", "EPSG:4326"
 
 
-def diagnostics(g, *, old_snap: bool = False):
+def diagnostics(g, *, old_snap: bool = False, carver=None):
     """산출물을 사람이 읽을 수 있게 요약한다. 아무것도 바꾸지 않는다.
 
     ★ 2026-09-25 (PLAN §1 #121). `old_snap` 은 종전에 `seg/params.py` 의 모듈
       전역이었다. **출력 한 줄에 쓰려고** 판정 파라미터 정본이 `.env` 를
       읽고 있었다. 부르는 쪽이 넘긴다.
+    ★ Zm56. `carver`(`seg/share.py`)가 있으면 가름 규칙이 어느 갈래로 몇 번 갔는지 한 줄 낸다 — 판정에는 안 쓴다.
     """
+    if carver is not None:
+        print("  [" + carver.report() + "]")
     # 표본 축 소스 혼합이 어디서 얼마나 일어나는지. 채택 규칙(STEP 5-1) 근거.
     _gv = g[g.n_sample > 0]
     print(f"\n[소스 커버율] 표본 있는 단위 {len(_gv)}"
