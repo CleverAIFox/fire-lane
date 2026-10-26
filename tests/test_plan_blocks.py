@@ -117,8 +117,9 @@ def _a_groups() -> dict[str, list[int] | str]:
 def test_a_separates_done_remaining_and_held() -> None:
     g = _a_groups()
     assert g["완료"] == [53, 17], "완료는 #53 #17 이다(Zm19 가 실행했다)"
-    # ★ 2026-10-26 (Zm48 · DECISIONS §587). `#11` 은 코드 변경 없이 닫혔다(폴리곤이 원래 거기를 안 그렸다) — 남은 것은 다섯이다.
-    assert len(g["남은"]) == 5 and sorted(g["남은"]) == [4, 70, 77, 173, 179], "남은 다섯"
+    # ★ 2026-10-26 (Zm48 · DECISIONS §587). `#11` 은 코드 변경 없이 닫혔다(폴리곤이 원래 거기를 안 그렸다).
+    # ★ 2026-10-26 (Zm57 · DECISIONS §594). `#77` 이 닫혔다(가름 규칙이 들어갔고 작동한다 — Zm56) · 남은 몫은 `#180`(B 판). 남은 것은 넷이다.
+    assert len(g["남은"]) == 4 and sorted(g["남은"]) == [4, 70, 173, 179], "남은 넷"
     assert "[12]" in g["보류"], "보류는 규칙 [12] 다"
     assert sorted(g["완료"] + g["남은"]) == sorted(blocks()["A"]["rows"]), "A 의 행이 세 토막과 같다"
 
