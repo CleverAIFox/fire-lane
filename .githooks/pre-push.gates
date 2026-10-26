@@ -7,3 +7,5 @@ deadcheck 래칫	uv run python tools/deadcheck.py --ratchet
 문서 생성 블록	uv run python tools/docgen.py --check
 커밋 정책(추적 전체)	uv run python tools/commit_policy.py --tracked
 카나리아(합성 결함 쌍)	uv run python tools/canary.py
+# ── Zm52 — 사람이 `fieldseal --write` 로 봉인해 지문이 초록이 되어 줄을 풀었다(`tests/test_fieldseal.py::test_when_the_seal_is_green_the_prepush_gate_must_be_on` 이 이 줄이 켜져 있는지 문다 · 0.1초) ──
+봉인 대조(data/field)	uv run python tools/fieldseal.py

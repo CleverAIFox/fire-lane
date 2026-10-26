@@ -214,9 +214,57 @@ def test_an_excluded_file_in_the_old_seal_does_not_cry_vanished(monkeypatch, tmp
     assert set(m.load()) == {"kept.csv"}
 
 
-def test_nothing_but_the_three_pending_files_is_new_or_changed_in_the_real_layer():
-    """이 판 뒤 실물에서 걸릴 수 있는 것은 `evalset_2610.csv` · `flip_top_2610.csv` · `naver_width_2610.csv` 셋뿐이다 — F 에서 `--write` 를 치면 그 셋이 봉인된다.
-    (부분집합이다 — 봉인한 뒤에는 비어도 맞다. 그 밖의 파일이 걸리면 층에 안 맞는 것이 들어온 것이다.)"""
+def test_nothing_but_naver_width_is_pending_in_the_real_layer():
+    """이 판 뒤 실물에서 걸릴 수 있는 것은 `naver_width_2610.csv` 하나뿐이다 — 사람이 `--write` 를 치면 봉인된다(Zm52).
+    (부분집합이다 — 봉인한 뒤에는 비어도 맞다. 빈 양식 둘이 채워지면 이 목록에 더해야 하고, 그것이 「채운 뒤에는 봉인 대상」의 뜻이다.)"""
     m = _fs()
     names = {ln.split("  ")[1] for ln in m.diff(m.survey(), m.load())}
-    assert names <= {"evalset_2610.csv", "flip_top_2610.csv", "naver_width_2610.csv"}, sorted(names)
+    assert names <= {"naver_width_2610.csv"}, sorted(names)
+
+
+# ── 빈 양식 제외 (Zm52 · DECISIONS §590) ────────────────────────────
+
+def _form(m, root: Path, name: str, row: str) -> None:
+    cols = m.BLANK_FORMS[name][1]
+    (root / name).write_text(f"# 머리\n{','.join(('seg_id', *cols))}\n{row}\n", encoding="utf-8")
+
+
+def test_a_blank_form_is_skipped_and_a_filled_one_is_caught(tmp_path: Path):
+    """빈 양식은 안 걸리고, 측정 칸이 **하나라도** 차면 지문 대상이 되어 「새로 생겼다」로 걸린다."""
+    m = _fs()
+    for name, (_why, cols) in m.BLANK_FORMS.items():
+        _form(m, tmp_path, name, "DM1" + "," * len(cols))
+    assert not set(m.BLANK_FORMS) & set(m.survey(tmp_path)), "빈 양식이 지문 대상에 들어왔다"
+    for name, (_why, cols) in m.BLANK_FORMS.items():
+        for k in range(len(cols)):                       # 칸 하나씩 — 어느 칸이든 차면 걸린다
+            cells = [""] * len(cols); cells[k] = "7.5"
+            _form(m, tmp_path, name, ",".join(("DM1", *cells)))
+            assert name in m.survey(tmp_path), f"{name}: {cols[k]} 이 찼는데도 빠져 있다"
+            assert any(f"새로 생겼다  {name}" in ln for ln in m.diff(m.survey(tmp_path), {})), name
+        _form(m, tmp_path, name, "DM1" + "," * len(cols))
+
+
+def test_a_form_we_cannot_read_is_not_skipped(tmp_path: Path):
+    """읽을 수 없거나 측정 칸 머리가 없으면 빈 양식으로 치지 않는다 — 모르면 봉인 쪽이다."""
+    m = _fs()
+    name = "evalset_2610.csv"
+    (tmp_path / name).write_text("# 머리\nseg_id\nDM1\n", encoding="utf-8")
+    assert name in m.survey(tmp_path)
+    (tmp_path / name).write_bytes(b"\xff\xfe\x00bad")
+    assert name in m.survey(tmp_path)
+
+
+def test_the_two_real_forms_are_blank_now_and_declared_with_reasons():
+    m = _fs()
+    assert set(m.BLANK_FORMS) == {"evalset_2610.csv", "flip_top_2610.csv"}, sorted(m.BLANK_FORMS)
+    assert all(len(why) >= 30 for why, _ in m.BLANK_FORMS.values())
+    assert set(m.skipped()) >= set(m.EXCLUDED), "영구 제외가 빠졌다"
+
+
+def test_when_the_seal_is_green_the_prepush_gate_must_be_on():
+    """지문이 실물과 맞는 순간 pre-push 묶음에 `fieldseal` 이 **켜져 있어야** 한다 — 안 켜면 이 층의 어긋남이 로컬에서 안 드러난다(Zm52).
+    지금은 `naver_width_2610.csv` 가 봉인 전이라 빨강이므로 이 시험은 조건이 거짓이다 — 사람이 `--write` 를 치면 이 시험이 줄을 풀라고 운다."""
+    green = bool(FS.load()) and not FS.diff(FS.survey(), FS.load())
+    gates = (ROOT / ".githooks" / "pre-push.gates").read_text(encoding="utf-8").splitlines()
+    on = any(not ln.lstrip().startswith("#") and "tools/fieldseal.py" in ln for ln in gates)
+    assert not green or on, "지문이 초록인데 pre-push.gates 의 fieldseal 줄이 주석이다 — `# ` 를 지워라"
