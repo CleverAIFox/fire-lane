@@ -188,6 +188,20 @@ def test_the_ledger_width_sides_with_the_inscribed_circle_not_the_ray():
         f"75% 에서 내접원이 더 멀다 — {circ['q75']:.2f} > {ray['q75']:.2f}")
 
 
+#: **현장이 지목한 결함 구간**(2026-10-03 항공뷰로 사람이 가리킨 다섯 — 위 설명문의 표). `seg_uid` 로 적는다. 나머지 현장 구간은 「표본 구간」이다 — 무작위 20점 측선과 검증점이 들어 있고 **멀쩡한 구간을 포함한다.**
+#: ★ `data/field/naver_width_2610.csv` 에는 둘을 가르는 **칸이 없다**(`method` 는 전부 `naver_ruler` · `spot` 은 측정이 선 자리 · `note` 는 자유 서술). 그래서 목록으로 적는다 — 새로 사람이 결함이라 가리킨
+#:   구간이 현장 표에 더해지면 **여기에 한 줄 더해야** 진짜 맹점으로 센다(안 더하면 표본으로 읽혀 안 잡혀도 안 운다 — 사람이 정할 일이다. `why_sampled` 같은 칸을 표에 더할지도 사람이 정한다: 표는 봉인돼 있다).
+POINTED = {
+    "DM-193341-283261-VXVD",     # 필문대로289번길 — 입구 실측 2.1m · 발행 27.68m
+    "DM-194249-283477-6ZG7",     # 지호로 71-73 — 로터리 진입부
+    "DM-194336-283557-X6GR",
+    "DM-194359-283571-X6GR",     # 밤실로4번길 — 연석 없는 포장 광장
+    "DM-194362-283514-6ZG7",     # 필로티 주차 진입구 구간
+}
+#: 지목한 구간 중 어느 그물도 안 드는 자리 = **진짜 맹점**. 지금은 둘이고 `overshoot()` 의 결함(`VXVD` — 설명문 ②)과 `6ZG7`(`wmin` 13.96 이 `carr_min` 2.45 보다도 크고 `c_max` 16.93 아래 — 로터리)이다. 줄면 고쳐진 것이고 늘면 진짜 새 맹점이다.
+KNOWN_BLIND = {"DM-193341-283261-VXVD", "DM-194249-283477-6ZG7"}
+
+
 @pytest.mark.skipif(not (WEB / "road_area.geojson").exists(),
                     reason="환경skip(산출물) — web/data 발행본이 없으면 기하를 못 잰다")
 def test_every_segment_the_field_notes_point_at_is_an_overshoot():
@@ -222,22 +236,23 @@ def test_every_segment_the_field_notes_point_at_is_an_overshoot():
     """
     want = {r["seg_uid"] for r in C.field_rows()}
     assert want, "구간이 붙은 현장 기록이 없다"
+    assert POINTED <= want, f"현장이 지목한 구간이 현장 표에서 빠졌다 — {sorted(POINTED - want)}"
     rows = C.load(only=want)
     over = {o["seg"] for o in C.overshoot(rows)}
     inv = {o["seg"] for o in C.inversion(rows)}
     caught = over | inv
-    #: 어느 그물도 안 드는 자리. **지금은 하나이고 그것이 `overshoot()` 의
-    #: 결함이다** — 위 설명문 ②. 이 집합이 줄면 결함이 고쳐진 것이고,
-    #: 늘면 새 자리가 생긴 것이다. 둘 다 사람이 봐야 한다.
-    BLIND = {"DM-193341-283261-VXVD", "DM-194249-283477-6ZG7"}
-    assert caught, (
+    # ★ 두 집합을 가른다(Zm55 · DECISIONS §592). 「지목한 결함 구간」의 맹점은 **진짜 맹점**이라 빨강이고, 「그 밖의 표본 구간」은 멀쩡한 구간을 포함하므로 못 잡아도 정상이다.
+    #   표본을 늘리면 맹점이 느는 구조가 측정을 막았다 — Zm8 이 27행을 더해 맹점이 2 → 6 이 됐고 늘어난 넷은 `wmin` 이 실측과 1.1배 안팎으로 맞는 멀쩡한 구간이었다.
+    pointed_blind = sorted(POINTED - caught)
+    sampled_blind = sorted((want - POINTED) - caught)
+    print(f"\n현장 구간 {len(want)} = 지목 {len(POINTED)} + 표본 {len(want - POINTED)} · 진짜 맹점(지목 중 못 잡은 것) {len(pointed_blind)} · 표본 중 못 잡은 것 {len(sampled_blind)}(정상 — 안 막는다)")
+    assert caught & POINTED, (
         "현장이 지목한 구간이 **어느 그물에도** 안 든다 — 넘침도 역전도 0 이다. "
         "두 판별식이 같이 죽었는지 본다")
-    assert inv, (
-        "역전이 하나도 없다 — 보도 차감이 꺼졌거나 `carr_min` 이 사라졌다"
-        f" (현장 {len(want)}구간 · 넘침 {len(over)} · 역전 {len(inv)})")
-    blind = sorted(want - caught)
-    assert set(blind) == BLIND, (
-        f"어느 그물도 안 드는 자리가 달라졌다 — 지금 {blind} · 적어 둔 것 "
-        f"{sorted(BLIND)}. 줄었으면 `overshoot()` 를 고친 것이니 이 수를 "
-        f"다시 적고, 늘었으면 새 맹점이니 사람이 본다")
+    assert inv & POINTED, (
+        "지목한 구간에 역전이 하나도 없다 — 보도 차감이 꺼졌거나 `carr_min` 이 사라졌다"
+        f" (지목 {len(POINTED)}구간 · 넘침 {len(over & POINTED)} · 역전 {len(inv & POINTED)})")
+    assert set(pointed_blind) == KNOWN_BLIND, (
+        f"지목한 결함 구간 중 어느 그물도 안 드는 자리가 달라졌다 — 지금 {pointed_blind} · 적어 둔 것 "
+        f"{sorted(KNOWN_BLIND)}. 줄었으면 `overshoot()` 를 고친 것이니 이 수를 "
+        f"다시 적고, 늘었으면 **진짜 새 맹점**이니 사람이 본다")

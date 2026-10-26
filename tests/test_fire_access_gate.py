@@ -76,17 +76,63 @@ def test_published_segments_carry_the_fire_access_columns():
     assert all(p["nfa_access_hh"] is None or isinstance(p["nfa_access_hh"], int) for p in feats), "nfa_access_hh 가 정수가 아니다"
 
 
+#: **알려진 예외** — `seg_uid` → 한 줄 이름. ★ `seg_id` 가 아니라 `seg_uid` 로 적는다(`seg_id` 는 판마다 밀린다 · DECISIONS §572).
+#: 목록에 **없는** 새 구간이 걸리면 이 관문은 빨갛다(네 번째가 생기면 운다).
+#:
+#: ★ 2026-10-26 (Zm55 · DECISIONS §591-3 · §592). 동계로9번길 세 구간(소방서 「동명파크맨션 주변 … 12(동명동) 일대」 · 구간거리 220m · 폭 6m · 세대 320)을 예외로 둔다. 두 방향 다 세울 수 없어서다 —
+#:   ① 「폭 때문에 지정됐다」를 세울 수 없다: 소방서 원자료는 6칸(연번 · 지역명 · 구간거리 · 폭 · 세대수 · 기준일)뿐이고 **지정 사유 칸이 없다**.
+#:   ② 「우리가 틀렸다」도 세울 수 없다: `wmin` 8.52~9.97 · 내접원 7.2~8.0(중앙값 7.26~8.00) · 대장 9.0 이 전부 `clear` 문턱 7.0 위이고 소방서의 6 만 외톨이다 — 그리고 6 은 구간 **대표값**이고 우리 `wmin` 은
+#:      지점 **최솟값**이라 다른 물리량이다.
+#:   MASTER §2-2a 의 진입곤란 지정 기준 ②(상습 주·정차 등으로 상시 지장)로 지정됐다면 **정적 폭 판정 `clear` 와 소방서 지정이 동시에 참일 수 있다.** 그 몫은 `needs_cv` 가 본다.
+#:   이 관문은 「둘 중 하나가 틀렸다」를 증명하는 **관문**이 아니라 「지정 ∧ 엄격 매칭 ∧ clear 면 사람이 본다」는 **경보**로 타당하다 — 그래서 관문은 유지하되 사람이 본 세 구간을 명시한다.
+#: **거둘 조건(이 중 하나가 생기면 예외를 지운다):** ⓐ 소방서 자료에 지정 사유 칸이 생겨 사유가 읽힌다 ⓑ 현장 실측(`data/field`)이 이 세 구간에서 7.0 아래를 보인다(그러면 판정을 고친다) ⓒ 소방서 「일대」의 위치가
+#:   좌표로 주어져 세 구간(74.7m · 220m 의 34%)이 일대 밖이라고 확인된다.
+KNOWN_EXCEPTIONS: dict[str, str] = {
+    "DM-193089-284028-D27G": "동계로9번길 DM00838 (23.0m · wmin 8.52)",
+    "DM-193055-284037-D27G": "동계로9번길 DM00841 (16.1m · wmin 9.86)",
+    "DM-193031-284044-D27G": "동계로9번길 DM00843 (35.6m · wmin 9.97)",
+}
+
+
+def violations(feats: list[dict]) -> list[dict]:
+    """엄격 매칭(`loose` 가 False)된 소방서 지정 구간 중 `clear` 로 발표된 것 — **알려진 예외를 뺀다.**"""
+    return [p for p in feats if p["verdict"] == "clear" and p["nfa_access_listed"] and p["nfa_access_loose"] is False
+            and p["seg_uid"] not in KNOWN_EXCEPTIONS]
+
+
 def test_no_clear_is_published_on_a_tightly_matched_fire_access_road():
-    """관문. 걸린 구간 전량을 목록으로 출력한다(느슨한 매칭의 clear 는 경고로만 센다)."""
+    """관문. 걸린 구간 전량을 목록으로 출력한다(느슨한 매칭의 clear 는 경고로만 센다). **알려진 예외 셋은 안 걸린다** — 넷째가 생기면 걸린다."""
     feats = _need()
-    bad = [p for p in feats if p["verdict"] == "clear" and p["nfa_access_listed"] and p["nfa_access_loose"] is False]
+    bad = violations(feats)
     warn = sum(1 for p in feats if p["verdict"] == "clear" and p["nfa_access_listed"] and p["nfa_access_loose"])
     print(f"\n경고(느슨한 매칭 · 막지 않는다): clear {warn}구간")
     assert not bad, (
         f"소방서가 소방통로 확보 대상으로 지정한 구간(len_ratio {RATIO_LO}~{RATIO_HI} 안)을 clear 로 발표했다 — {len(bad)}구간 "
-        f"(정확 일치 · len_ratio 범위 안):\n  "
-        + "\n  ".join(f"{p['seg_id']} {p['road_name']} wmin={p['width_min_m']} any={p['width_min_any_m']} clear_min={p['clear_min_m']} "
+        f"(정확 일치 · len_ratio 범위 안 · 알려진 예외 {len(KNOWN_EXCEPTIONS)}건 제외):\n  "
+        + "\n  ".join(f"{p['seg_id']} {p['seg_uid']} {p['road_name']} wmin={p['width_min_m']} any={p['width_min_any_m']} clear_min={p['clear_min_m']} "
                       f"소방서폭={p['nfa_access_width']} ratio={p['nfa_access_len_ratio']} 원문={p['nfa_access_token']}" for p in bad))
+
+
+def _synth(uid: str, verdict: str = "clear", listed: bool = True, loose: bool | None = False) -> dict:
+    return {"seg_uid": uid, "seg_id": "DM99999", "verdict": verdict, "nfa_access_listed": listed, "nfa_access_loose": loose}
+
+
+def test_the_known_exceptions_are_skipped_and_a_fourth_clear_is_caught():
+    """합성: 예외 셋은 안 걸리고 목록에 없는 넷째는 걸린다 — 그리고 `clear` 가 아니거나 느슨하거나 지정이 아니면 안 걸린다(관문이 다른 것까지 막지 않는다)."""
+    three = [_synth(u) for u in KNOWN_EXCEPTIONS]
+    assert violations(three) == []
+    assert [p["seg_uid"] for p in violations([*three, _synth("DM-000000-000000-ZZZZ")])] == ["DM-000000-000000-ZZZZ"]
+    assert violations([_synth("DM-1", verdict="needs_cv"), _synth("DM-2", loose=True), _synth("DM-3", listed=False)]) == []
+
+
+def test_the_exceptions_are_keyed_by_seg_uid_and_exist_in_the_published_segments():
+    """예외 키가 `seg_uid`(`DM-<x>-<y>-<hash>` 꼴)이고 발행본에 실재한다 — `seg_id`(판마다 밀린다)로 적으면 예외가 다른 구간을 덮는다."""
+    import re
+    feats = _need()
+    uids = {p["seg_uid"] for p in feats}
+    for u in KNOWN_EXCEPTIONS:
+        assert re.fullmatch(r"DM-\d+-\d+-[0-9A-Z]{4}", u), f"seg_uid 꼴이 아니다: {u}"
+        assert u in uids, f"예외 {u} 가 발행본에 없다 — 판이 바뀌었으면 예외를 다시 본다"
 
 
 def test_a_zero_length_row_does_not_divide_by_zero() -> None:
