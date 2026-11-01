@@ -84,7 +84,15 @@ def test_the_ledger_parsers_stay_out_of_the_judgment_closure():
 
 
 def test_the_closure_does_not_quietly_grow():
-    """래칫. 19에서 늘면 **무엇이 왜 들어왔는지** 적게 만든다.
+    """래칫. 22에서 늘면 **무엇이 왜 들어왔는지** 적게 만든다.
+
+    ★ 2026-11-01 (Zm56). 20 → **22**. 둘이 한꺼번에 들어왔고 성격이 다르다.
+      `seg/walkcarve.py` 는 §431 과 같은 이사다 — 판정 면적이 는 것이 아니라
+        `width.py` 가 길이 상한에 걸려 순수 함수 둘을 뺐다. 값도 지문도 그대로다(§523).
+      `seg/share.py` 는 신규다 — #77 가름이 `WidthEngine` 의 입력을 바꾼다.
+        clear 276 → 275 (DM00947) 가 이 파일의 효과다(§594-1 · §588-2 · §593).
+      골든은 이 22파일로 11-01 에 잠겼다(판정 지문 329453589c35656c).
+      실질 증가는 1 이다.
 
     ★ 2026-10-23 (DECISIONS §545-4). 18 → **19**. `occ.py`(점유압력 β)가 들어왔다. **판정에는 기여하지 않는다** — `classify.py` 가 이 칸을 읽으면
       시험이 실패한다(`tests/test_occ_pressure.py`). `segments.py` 가 processed `segments.geojson` 에 싣느라 폐포 안으로 들어왔을 뿐이다.
@@ -100,12 +108,12 @@ def test_the_closure_does_not_quietly_grow():
     from firelane.shardseal import code_closure
 
     n = len(code_closure("firelane.segments"))
-    assert n <= 20, (
-        f"판정 폐포가 {n}파일이다 — 기록은 20이다(2026-10-23 Zm19: `clearance.py` 가 들어왔다 · DECISIONS §564).\n"
+    assert n <= 22, (
+        f"판정 폐포가 {n}파일이다 — 기록은 22이다(2026-11-01 Zm56: `walkcarve.py` · `share.py` 가 들어왔다).\n"
         "  폐포가 늘면 그 파일을 고칠 때마다 판정 재실행과 재잠금이 따라온다.\n"
         "  정말 판정에 기여하는 파일이면 이 수를 올리고 사유를 적어라.")
     assert n >= 15, (
-        f"폐포가 {n}파일로 줄었다 — 기록 20보다 작다. 좋은 일일 수 있지만\n"
+        f"폐포가 {n}파일로 줄었다 — 기록 22보다 작다. 좋은 일일 수 있지만\n"
         "  **판정 코드가 빠져나간 것**일 수도 있다. 수를 내리고 무엇이 왜 빠졌는지 적어라.")
 
 
