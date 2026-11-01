@@ -126,7 +126,9 @@ def test_the_a_check_pool_reproduces_the_median_rule_count() -> None:
     #   이 분모에 처음부터 들지 않았다.
     #   ★ 62 는 설계 목표가 아니다 — PLAN §10-5 A행이 「#17 은 현장 실측 없이 실행됐고 F 에서 사후 검증한다.
     #     그 전까지 #17 의 근거는 비어 있다」(§573). 산출물은 20261101-a-lock 시점에 이미 57 이었다.
-    assert sum(1 for p in rows if E.was_clear_before_median(p)) == 57, "중앙값 규칙이 거두는 57구간이 재현되지 않는다"
+    # ★ 2026-11-02 (#180 · DECISIONS §598). 57 → 58. 가름을 내접원에 붙여 `DM01876` 의 `clear_med_m` 이 25.63 → 2.46 으로 내려갔고 중앙값 규칙이
+    #   그 구간의 clear 를 거둔다(clear → unknown · needs_survey). 「중앙값 규칙 없이는 clear」 풀에 이 하나가 들었다 — 유입은 이 하나뿐이다.
+    assert sum(1 for p in rows if E.was_clear_before_median(p)) == 58, "중앙값 규칙이 거두는 58구간이 재현되지 않는다"
     assert 800 < len(E.normal_group(rows)) < 1000
 
 

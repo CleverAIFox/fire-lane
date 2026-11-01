@@ -773,7 +773,7 @@ def main():
         d_cctv = round(g.distance(cctv_u), 1)
         cv_ok = d_cctv <= CCTV_RANGE
         _wa = width_any(wrows, wmin, wsrc, wcov)       # 소스 무관 최솟값 — 판정 규칙 [8] 이 읽는다
-        _cl = _clearance.columns([g], _clr_area, _clr_xsec)[0]       # 내접원 — 규칙 [10] 이 중앙값을 읽는다
+        _cl = _clearance.columns([g], _clr_area if _wx.carver is None else _wx.carver.clip_area(g, wmin, _clr_area), _clr_xsec)[0]   # 내접원 — 규칙 [10] 이 중앙값을 읽는다 · 가름 몫 안에서(#180)
         v, reason = classify(wmin=wmin, wmax=wmax, nreg=wneff,
                              road_bt=_road_bt, length_m=g.length,
                              cctv_dist=d_cctv, wmin_any=_wa["width_min_any_m"],

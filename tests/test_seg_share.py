@@ -99,3 +99,41 @@ def test_stats_count_every_branch():
     c = ShareCarver(_links(), _ref())
     engine(c).widths(A)
     assert c.stats["carved"] == 1
+
+
+# ── #180 (DECISIONS §596 · §598) — 가름을 내접원에 붙인다 ─────────────────────────────────
+def test_the_inscribed_circle_only_shrinks_inside_the_share():
+    """★ 몫 ⊂ 폴리곤이라 표본점의 내접원 지름은 **줄기만 한다.** 폭 쪽 `test_the_width_only_shrinks` 와 같은 성질이다 — 틀려도 안전한 쪽으로만 틀린다."""
+    import numpy as np
+
+    from firelane import clearance
+    for width in (44.0, 50.0, 58.0):
+        area = strip(width)
+        clipped = ShareCarver(_links(), _ref()).clip_area(A, width, area)
+        assert clipped.area < area.area, width                      # 후보라서 실제로 잘렸다
+        full, _ = clearance.inscribed(A, area)
+        cut, cov = clearance.inscribed(A, clipped)
+        both = ~(np.isnan(full) | np.isnan(cut))
+        assert both.any() and (cut[both] <= full[both] + 1e-9).all(), (width, full[both], cut[both])
+        assert cov <= 1.0
+    # 값으로도 못 박는다: 50m 띠 한가운데 — 종전 내접원 지름 50 · 몫(y<11)으로는 22
+    assert np.nanmedian(clearance.inscribed(A, strip(50.0))[0]) == pytest.approx(50.0, abs=0.1)
+    assert np.nanmedian(clearance.inscribed(A, ShareCarver(_links(), _ref()).clip_area(A, 50.0, strip(50.0)))[0]) == pytest.approx(22.0, abs=0.5)
+
+
+def test_clip_area_leaves_a_non_candidate_untouched():
+    """후보가 아니면(폭이 `CLEAR_M` 미만 · 이웃 도로 없음) 면을 **그대로** 돌려준다 — 종전 경로와 글자까지 같다."""
+    area = strip(50.0)
+    c = ShareCarver(_links(), _ref())
+    assert c.clip_area(A, 5.0, area) is area                       # 폭이 좁다
+    assert c.clip_area(A, None, area) is area                      # 폭이 없다
+    one_road = ShareCarver([(A, "가길", 8.0)], _ref())
+    assert one_road.clip_area(A, 50.0, area) is area               # 이웃이 없다
+
+
+def test_clip_area_does_not_count_the_branch_twice():
+    """`cell()` 은 갈림을 `stats` 에 센다. 내접원 쪽 호출이 폭 쪽이 이미 센 것을 부풀리면 `report()` 의 가름 수가 거짓이 된다."""
+    c = ShareCarver(_links(), _ref())
+    c.clip_area(A, 50.0, strip(50.0))
+    c.clip_area(A, 5.0, strip(50.0))
+    assert dict(c.stats) == {}

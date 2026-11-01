@@ -20,6 +20,7 @@ import shapely
 from shapely.geometry import MultiPoint, Point
 from shapely.strtree import STRtree
 
+from firelane.clearance import robust_union
 from firelane.seg.classify import CLEAR_M
 from firelane.seg.params import CARVE_FLOOR, CARVE_NEAR_M, CARVE_OWN_M, CARVE_RATIO, RAY_M
 
@@ -144,6 +145,22 @@ class ShareCarver:
                 return res
         self.stats["carved"] += 1
         return alt
+
+    def clip_area(self, g, wmin, area_u):
+        """내접원(`clearance`)이 잴 면을 자기 몫으로 자른다 — `area_u ∩ 몫`. 가르지 않으면 `area_u` 를 그대로 돌려준다.
+
+        ★ #180 (DECISIONS §596 · §598). 종전에는 `clearance` 가 가름을 몰라 번길이 본선 폴리곤 안에 있으면 본선 폭이 내접원으로 나갔다(`DM01876` 25.63).
+          몫 ⊂ 면이라 **표본점의 내접원 지름은 줄기만 한다** — 몫 밖 표본점은 덮이지 않아 빠진다(`clear_cov` 가 떨어진다).
+        ★ `cell()` 은 갈림 사유를 `stats` 에 센다. 폭 쪽 `refine()` 이 이미 센 구간을 한 번 더 세지 않도록 호출 전후로 되돌린다.
+        """
+        saved = Counter(self.stats)
+        try:
+            cell = self.cell(g, wmin)
+        finally:
+            self.stats = saved
+        if cell is None:
+            return area_u
+        return robust_union([area_u.intersection(cell)])
 
     def report(self) -> str:
         return "가름 " + " · ".join(f"{k} {v}" for k, v in sorted(self.stats.items()))
