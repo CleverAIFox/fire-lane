@@ -39,7 +39,7 @@ def test_the_skeleton_switch_stays_out_of_the_judgment_closure():
                 for a in n.names}
     assert "firelane.skeleton" not in imports, (
         "`segments.py` 가 다시 `skeleton` 을 든다 — 판정 폐포가 16 → 17 로 는다.\n"
-        "  정말 되살릴 것이면 `tests/test_lake.py` 의 폐포 래칫과 이 시험을 같이 고쳐라.")
+        "  정말 되살릴 것이면 `tests/test_nfa_compare.py` 의 폐포 래칫과 이 시험을 같이 고쳐라.")
 
     from firelane.shardseal import code_closure
     n = len(code_closure("firelane.segments"))

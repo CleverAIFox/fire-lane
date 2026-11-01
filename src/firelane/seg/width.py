@@ -341,8 +341,8 @@ class WidthEngine:
                       if (q.centroid.x-P.x)*ux + (q.centroid.y-P.y)*uy > 0), default=None)
             if s1 is not None and s2 is not None and 0.3 < s1+s2 < WMAX_CAP:
                 B = s1 + s2
-        # 벽 사이 폭은 도로 폭보다 좁을 수 없다. 상한(WMAX_CAP)에 걸려 잘린 경우
-        # 역전이 생기므로 도로 폭으로 끌어올린다.
+        # 벽 사이 폭은 도로 폭보다 좁을 수 없다. 상한(WMAX_CAP) 이상은 잘리지 않고 입장에서
+        # 빠지므로(DECISIONS §597) 표본마다 입장이 달라 역전이 생긴다 — 도로 폭으로 끌어올린다.
         if A is not None and B is not None and B < A:
             B = A
 
@@ -604,7 +604,7 @@ class WidthEngine:
             wmed = _round_pos(float(np.median(A)))
         wmax = _round_pos(min(B)) if B else None
         # 벽 사이 폭이 도로 폭보다 좁을 수는 없다. 샘플별로는 맞아도
-        # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 에 걸린 경우).
+        # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 이상이라 입장에서 빠진 표본이 있는 경우 — DECISIONS §597).
         if wmin is not None and wmax is not None and wmax < wmin:
             wmax = wmin
         # 폴백 표본만으로 나온 값은 신뢰할 수 없다. 긴 구간에서 정규 샘플이
