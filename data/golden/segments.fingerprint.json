@@ -3,13 +3,13 @@
   "n": 1281,
   "verdict": {
    "blocked": 192,
-   "clear": 275,
+   "clear": 274,
    "needs_cv": 283,
-   "unknown": 531
+   "unknown": 532
   },
   "unknown_reason": {
    "ledger_disputes": 1,
-   "needs_survey": 77,
+   "needs_survey": 78,
    "no_cctv_band": 214,
    "no_cctv_narrow": 70,
    "no_cctv_single": 10,
@@ -5829,11 +5829,11 @@
    "route_usage": 2
   },
   "DM-193341-283261-VXVD": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 10.7,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 23.7,
    "route_usage": 0
   },
