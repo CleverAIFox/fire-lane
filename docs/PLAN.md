@@ -705,9 +705,9 @@ uv run python tools/mutate.py --write --stale
 uv run python tools/docseal.py stamp $(uv run python tools/docseal.py check --invalid-list | sed 's/^/--only /')
 ```
 
-**순서가 이렇다:** 1 이 산출물과 문서 숫자를 만든다 → 2 · 3 이 그 산출물을 잠근다 → 4 는 코드가 안 움직인 뒤에 잰다 → 5 는 문서가 더는 안 바뀐 뒤에 찍는다(`docgen` 뒤에 찍어야 도장이 안 깨진다). **친 뒤:** `golden.py check` · `docseal.py check` 가 초록이고 `uv run pytest tests -q` 의 빨강이 위 다섯이 풀리는 것(원격 58 · 63 · 74 · 85 · 89)뿐인지 본다 — 그 뒤 커밋과 푸시는 에이전트가 한다. **이 다섯은 사람만 친다.** 안 끝났으면 중간에서 멈춘다 — 2 와 3 사이가 끊기면 골든만 새것이다.  <!--stale-ok-->
+**순서가 이렇다:** 1 이 산출물과 문서 숫자를 만든다 → 2 · 3 이 그 산출물을 잠근다 → 4 는 코드가 안 움직인 뒤에 잰다 → 5 는 문서가 더는 안 바뀐 뒤에 찍는다(`docgen` 뒤에 찍어야 도장이 안 깨진다). **친 뒤:** `golden.py check` · `docseal.py check` 가 초록이고 `uv run pytest tests -q` 의 빨강이 위 다섯이 풀리는 것(원격 규칙 58·74·85·89 와 래칫 정합 규칙(여섯째))뿐인지 본다 — 그 뒤 커밋과 푸시는 에이전트가 한다. **이 다섯은 사람만 친다.** 안 끝났으면 중간에서 멈춘다 — 2 와 3 사이가 끊기면 골든만 새것이다.
 
-★ **A 의 재잠금은 네 개를 한 묶음으로 친다**(사람이 정했다 · Zm52 — 위 다섯 줄 중 2~5): `golden.py lock` · `baseline.py freeze` · `docseal stamp` · `mutate.py --write --stale`. 넷 다 **사람만** 친다. `mutate` 래칫 26개(`data/golden/mutation.json` 이 잰 뒤로 도구 26개가 바뀌었다 — 장부가 만들어진 10-21 에 0 · Zm19 에 19 · Zm23 에 21 · Zm45 에 26 · DECISIONS §589-3)는 **따로 치지 않는다.** 지금 치면 보도 적재(Zm48) · `#77(닫힘)` 의 코드 변경으로 **또 낡는다**(`#70` 은 코드 변경 없이 닫혔다 — DECISIONS §597) — 그 둘이 끝난 뒤 위 `lock` · `freeze` 와 같은 때에 한 번에 친다. 그때까지 원격 `contract` 의 래칫 정합(63)은 이 26개로 빨갛다(알려진 빨강이다).  <!--stale-ok-->
+★ **A 의 재잠금은 네 개를 한 묶음으로 친다**(사람이 정했다 · Zm52 — 위 다섯 줄 중 2~5): `golden.py lock` · `baseline.py freeze` · `docseal stamp` · `mutate.py --write --stale`. 넷 다 **사람만** 친다. `mutate` 래칫 26개(`data/golden/mutation.json` 이 잰 뒤로 도구 26개가 바뀌었다 — 장부가 만들어진 10-21 에 0 · Zm19 에 19 · Zm23 에 21 · Zm45 에 26 · DECISIONS §589-3)는 **따로 치지 않는다.** 지금 치면 보도 적재(Zm48) · `#77(닫힘)` 의 코드 변경으로 **또 낡는다**(`#70` 은 코드 변경 없이 닫혔다 — DECISIONS §597) — 그 둘이 끝난 뒤 위 `lock` · `freeze` 와 같은 때에 한 번에 친다. 그때까지 원격 `contract` 의 래칫 정합 규칙은 이 26개로 빨갛다(알려진 빨강이다).
 
 보도 레이어(`A0033320`)가 판정 범위에서 왜 134면뿐인지(DECISIONS §577-1)는 레이크가 있어야 가른다. 아래는 **읽기 전용**이다(출력 디렉터리를 `/tmp` 로 준다 — processed 를 안 덮는다). 명령은 `src/firelane/ngii1k.py` · `ngi.py` 머리말에 적힌 꼴이고 **이 기계에서는 못 돌려 봤다.**
 
