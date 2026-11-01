@@ -139,7 +139,7 @@ def test_counts_are_stated_not_assumed(rows):
     #   고쳤다 — 위 설명문이 적은 그대로다. 움직인 것은 셋이고 `blocked` 는
     #   그대로다: 깎은 폭이 0 이 된 표본이 빠지면서 `clear` 가 `needs_cv` 와
     #   `unknown` 으로 내려갔다.
-    assert dict(c) == {"clear": 290, "needs_cv": 278, "blocked": 192, "unknown": 521}      # 2026-10-23 Zm19: 규칙 [10] 확장 · [11] (DECISIONS §564)
+    assert dict(c) == {"clear": 275, "needs_cv": 283, "blocked": 192, "unknown": 531}      # 2026-11-01 A 재잠금 판 (DECISIONS §594-1)
 
 
 # ── 이름과 실물 (DECISIONS §320) ────────────────────────────────
