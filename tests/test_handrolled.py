@@ -172,7 +172,9 @@ SITES: dict[str, dict] = {
         #   훑기에 안 걸렸다 — 표식이 `def text_extent` 였고 이쪽은 `_width` 다.
         #   같은 일감의 사본은 **정규식이 아니라 사람이** 찾는다. 찾은 것을
         #   선언에 올리는 것이 이 파일의 일이다.
-        "mark": r"def _width",
+        # ★ 2026-11-02. `def _width` 는 접두어라 Zm56 이 `seg/width.py` 에 들인 `def _widths_once`(가름 재측정)에도 걸렸다 — 글자 폭 어림이 아니다.
+        #   정의 괄호까지 맞춘다. 사본이 아니라 표식이 넓었던 오탐이다.
+        "mark": r"def _width\(",
         "where": "src/firelane/vehiclecard.py",
         "moved": True,
         "dep": "(정본 `firelane.emwidth`)",

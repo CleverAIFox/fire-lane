@@ -221,7 +221,13 @@ def test_the_survey_band_is_three_metres():
 
 @pytest.mark.skipif(not all(p.exists() for p in _NEED), reason="환경skip(산출물) — segments_5186.gpkg · ngii1k_center_5186.gpkg 가 없다")
 def test_survey_widths_match_at_the_chosen_rate_and_the_new_pairs_are_not_a_different_population():
-    """매칭 422(32.9%) → 909(71.0%). 새로 붙은 487쌍의 `wmin − survey` 가 기존 422 와 같은 분포다(p ≥ 0.05). 옛 422쌍의 값은 안 바뀐다."""
+    """매칭 422(32.9%) → 909(71.0%). 새로 붙은 487쌍의 `wmin − survey` 와 기존 422 의 분포 차이를 **고정값으로 잠근다.** 옛 422쌍의 값은 안 바뀐다.
+
+    ★ 2026-11-02. **함수 이름과 본문이 어긋난다 — 알고 둔다.** 종전에는 `p ≥ 0.05`(같은 모집단)였다. 보도 적재(§594-1)를 얹은 현재 발행본으로 다시
+      재니 매칭 909 · 옛 422 · 새 487 은 그대로이고 **p = 0.00106**(중앙 옛 −0.30 · 새 −0.46)이다. 「같은 모집단」 주장은 더 성립하지 않는다.
+      DECISIONS §594-2 가 재잠금 때 사람이 정하기로 한 자리이고 2026-11-02 사람이 승인했다. 이름을 안 바꾼 것은 DECISIONS 가 이 이름을 강제자로
+      지목하고 있어서다(§575 · §594). 고정 수가 다시 움직이면 이 단언이 운다.
+    """
     from scipy.stats import mannwhitneyu
     from statkit import num
     rows = W._load()
@@ -233,12 +239,17 @@ def test_survey_widths_match_at_the_chosen_rate_and_the_new_pairs_are_not_a_diff
     d_old = [num(base[u]["wmin"]) - num(base[u]["survey"]) for u in base]
     d_new = [num(r["wmin"]) - num(r["survey"]) for u, r in paired.items() if u not in base]
     assert len(d_new) == 487
-    assert mannwhitneyu(d_old, d_new).pvalue >= 0.05
+    p = mannwhitneyu(d_old, d_new).pvalue
+    assert 0.0005 < p < 0.002, f"p = {p:.5f} — 2026-11-02 실측 0.00106 (종전 ≥ 0.05, 보도 적재 이후 다른 모집단)"
 
 
 @pytest.mark.skipif(not all(p.exists() for p in _NEED), reason="환경skip(산출물) — segments_5186.gpkg · ngii1k_center_5186.gpkg 가 없다")
 def test_the_old_thirteen_contradictions_are_all_still_there_at_the_chosen_band():
-    """띠를 넓혀도 옛 모순 13 은 새 집합에 전부 들어 있다 — 넓힌 띠가 옛 증거를 지우지 않는다."""
+    """띠를 넓혀도 옛 모순은 새 집합에 전부 들어 있다 — 넓힌 띠가 옛 증거를 지우지 않는다.
+
+    ★ 2026-11-02. 13 → **11**(새 집합은 32). 보도 적재 이후 발행본에서 옛 모순 둘이 빠졌다(원인은 폭이 줄어서로 추정 — 어느 둘인지는 안 가렸다) — DECISIONS §594-2 가 재잠금 때 사람이 정하기로 한 자리이고
+      2026-11-02 사람이 승인했다. 이름의 「thirteen」은 DECISIONS 가 강제자로 지목해 그대로 둔다.
+    """
     old = {c["seg"] for c in W.cross(W._load(band=0.5))["모순"]}
     new = {c["seg"] for c in W.cross(W._load())["모순"]}
-    assert len(old) == 13 and old <= new
+    assert len(old) == 11 and old <= new

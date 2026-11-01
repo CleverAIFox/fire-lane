@@ -115,7 +115,18 @@ def test_the_a_check_pool_reproduces_the_median_rule_count() -> None:
     if not seg.exists():
         pytest.skip("환경skip(산출물) — web/data/segments.geojson 발행본이 없다")
     rows = [f["properties"] for f in json.loads(seg.read_text(encoding="utf-8"))["features"]]
-    assert sum(1 for p in rows if E.was_clear_before_median(p)) == 62, "중앙값 규칙이 거두는 62구간이 재현되지 않는다"
+    # ★ 2026-11-01 (Zm56). 62 → 57. 보도 적재(§594-1 · 14구간)로 폭이 줄어 다섯이 「중앙값 규칙 없이 clear」에서 빠졌다.
+    #   유입 0 — 보도 차감도 가름도 폭을 줄이기만 하므로 단방향이다.
+    #     DM00095 서석로85번길   width_min 7.22 → 6.09   sym 6.866 → 5.304
+    #     DM00897 동명로20번길         9.33 → 5.53             5.938 → 2.222
+    #     DM00970 제봉로110번길       20.06 → 12.84            7.622 → 2.332
+    #     DM01072 동명로70번길         7.31 → 5.21             5.298 → 0.984
+    #     DM01073 동명로70번길         7.99 → 5.81             4.44  → 0.6
+    #   §594-1 의 clear→needs_cv 5 와 같은 다섯이다. clear→unknown 10 은 폭 산출이 실패해 clear_med_m 이 없어
+    #   이 분모에 처음부터 들지 않았다.
+    #   ★ 62 는 설계 목표가 아니다 — PLAN §10-5 A행이 「#17 은 현장 실측 없이 실행됐고 F 에서 사후 검증한다.
+    #     그 전까지 #17 의 근거는 비어 있다」(§573). 산출물은 20261101-a-lock 시점에 이미 57 이었다.
+    assert sum(1 for p in rows if E.was_clear_before_median(p)) == 57, "중앙값 규칙이 거두는 57구간이 재현되지 않는다"
     assert 800 < len(E.normal_group(rows)) < 1000
 
 
