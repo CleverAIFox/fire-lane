@@ -53,8 +53,14 @@ def test_the_skeleton_switch_stays_out_of_the_judgment_closure():
     #   들어왔다. 위 §303 과 같은 이사이고, 같은 이유로 수가 하나 는다.
     # ★ 2026-10-23 (DECISIONS §545-4). 18 → 19. `occ.py`(점유압력 β · 판정에 기여하지 않는다)가 `segments.py` 의 폐포 안으로 들어왔다.
     # ★ 2026-10-23 (DECISIONS §564 · Zm19). 19 → 20. `clearance.py`(내접원 중앙값 — 규칙 [10] 이 읽는다)가 `segments.py` 의 import 로 들어왔다.
-    assert n == 20, \
-        f"판정 폐포가 {n}이다 — 20 이어야 한다(DECISIONS §266 · §303 · §431 · §545-4 · §564)"
+    # ★ 2026-11-01 (DECISIONS §523 · Zm56). 20 → 21. `seg/walkcarve.py` 가 들어왔다.
+    #   §303 · §431 과 같은 이사다 — `seg/width.py` 가 파일 길이 상한에 걸려
+    #   순수 함수 둘을 뺐고, 동작은 한 글자도 안 바뀌었다.
+    # ★ 2026-11-01 (DECISIONS §588-2 · §593 · Zm56). 21 → 22. `seg/share.py`(#77 가름)가
+    #   들어왔다. 이쪽은 이사가 아니라 신규다 — WidthEngine 의 입력을 바꾼다.
+    #   clear 276 → 275 (DM00947) 가 이 파일의 효과다(§594-1).
+    assert n == 22, \
+        f"판정 폐포가 {n}이다 — 22 이어야 한다(DECISIONS §266 · §303 · §431 · §545-4 · §564 · Zm56)"
 
     import importlib.util
     import sys as _sys
