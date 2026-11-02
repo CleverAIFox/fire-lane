@@ -3108,7 +3108,7 @@ CCTV 29지점 · 1,281구간)이고 출동 중 읽을 거리는 탐색 시간이
 
 지형 표현에 `exaggeration` 을 1.0 이외로 올려 캡처했다면 그 사실을 캡션에 적는다.
 
-강제자  `tests/test_contract.py::test_the_schema_declares_width_is_unverified`(스키마 **최상위**의 미검증 선언이 `false` 인가 · `fields` 에 피처 칸이 안 남았는가. ★ 2026-10-10 — 종전에는 피처 1,281개를 봤고 그 칸을 지웠다. **지우면서 축을 옮겼다** · DECISIONS §455 · PLAN #4 ④) · `tools/docnum_check.py`(대외 수치 재산출 대조). 「exaggeration 을 캡션에 적는다」는 규약이고 검사가 없다
+강제자  `tests/test_contract.py::test_the_schema_declares_width_is_unverified`(스키마 **최상위**의 미검증 선언이 `false` 인가 · `fields` 에 피처 칸이 안 남았는가. ★ 2026-10-10 — 종전에는 피처 1,281개를 봤고 그 칸을 지웠다. **지우면서 축을 옮겼다** · DECISIONS §455 · PLAN #4(닫힘) ④) · `tools/docnum_check.py`(대외 수치 재산출 대조). 「exaggeration 을 캡션에 적는다」는 규약이고 검사가 없다
 
 ---
 
@@ -3247,7 +3247,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,681 전수 · **분모(blank) 0절** · 물림(inherit) 1,589절.
+★ **강제자 칸의 분모.** 절 2,685 전수 · **분모(blank) 0절** · 물림(inherit) 1,592절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
