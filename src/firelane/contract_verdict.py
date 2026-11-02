@@ -101,7 +101,10 @@ REAL_FAIL_RATCHET = 8
 #:   더했다. 실측이 다르면 관문이 정확한 수를 찍으니 그 수로 고친다 —
 #:   §429 가 「항목을 더할 때마다 다시 센다」로 적은 그 자리다.
 #: ★ **반입되면 내려간다.** `awaiting` 셋을 지우는 판이 이 수를 조인다.
-REAL_WARN_RATCHET = 59
+#:
+#: ★ 2026-11-02. 59 → **58.** 실물을 raw 에 넣은 판(`vworld_uq153` 등)이 경고 하나를 걷었다.
+#:   조이는 쪽이라 판정 폐포 밖이고 재잠금이 따라오지 않는다. 실패 쪽(8)은 건드리지 않는다.
+REAL_WARN_RATCHET = 58
 
 
 def real_verdict(nf: int, nw: int) -> tuple[int, list[str]]:

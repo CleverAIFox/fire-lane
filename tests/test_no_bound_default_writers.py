@@ -33,8 +33,8 @@ def _path_names(tree: ast.Module) -> set[str]:
     for n in tree.body:
         if isinstance(n, ast.Assign) and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name):
             u = ast.unparse(n.value)
-            if ("Path(" in u or "__file__" in u or isinstance(n.value, ast.BinOp) and isinstance(n.value.op, ast.Div)
-                    or isinstance(n.value, ast.Name) and n.value.id in env):
+            if ("Path(" in u or "__file__" in u or (isinstance(n.value, ast.BinOp) and isinstance(n.value.op, ast.Div))
+                    or (isinstance(n.value, ast.Name) and n.value.id in env)):
                 env.add(n.targets[0].id)
     return env
 

@@ -50,7 +50,7 @@ HEAD = (
 def draw(frame: list[dict], k: int, seed: int = SEED) -> list[dict]:
     """표본틀에서 `k` 개를 뽑는다. **`seg_id` 순으로 놓고** 시드로 뽑는다 — 판정 · 폭으로 정렬하지 않는다. 틀이 `k` 보다 작으면 틀 전부."""
     ordered = sorted(frame, key=lambda r: r["seg_id"])
-    return random.Random(seed).sample(ordered, min(k, len(ordered)))
+    return random.Random(seed).sample(ordered, min(k, len(ordered)))  # noqa: S311 — 씨앗을 박은 재현용 표집이다. 암호가 아니다
 
 
 def load_frame(path: Path | None = None) -> list[dict]:

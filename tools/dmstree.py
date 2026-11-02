@@ -43,13 +43,13 @@ from __future__ import annotations
 import contextlib
 import io
 import json
-import os
 import re
 import subprocess
 import tempfile
 from pathlib import Path
 
 from firelane import gitq
+from firelane.paths import env as _env
 
 STAMP = "verify-tree"                                  # .git/ 아래 — 추적 파일이 아니다
 _LINE = re.compile(r"^TREE\s+([0-9a-f]{40})\b")
@@ -110,12 +110,17 @@ def _git_dir(root: Path) -> Path | None:
     return p if p.is_absolute() else root / p
 
 
+def _base_env() -> dict[str, str]:
+    """git 이 돌 최소 환경. `os.environ` 은 paths.py 만 읽는다(env_check)."""
+    return {k: v for k in ("PATH", "HOME", "SYSTEMROOT") if (v := _env(k))}
+
+
 def tree_print(root: Path, gen: tuple[str, ...]) -> str | None:
     """작업 트리(추적 파일 · 생성물 뺌)의 트리 객체 해시. 못 재면 `None`."""
     if gitq.ask(["rev-parse", "--verify", "-q", "HEAD"], cwd=root) is None:
         return None
     with tempfile.TemporaryDirectory() as td:
-        env = {**os.environ, "GIT_INDEX_FILE": str(Path(td) / "index")}
+        env = {**_base_env(), "GIT_INDEX_FILE": str(Path(td) / "index")}
 
         def run(*a: str) -> str | None:
             try:
@@ -209,8 +214,7 @@ def cmd_tree(root: Path, gen: tuple[str, ...], args: list[str]) -> int:
 def selftest() -> int:
     """깨끗하면 HEAD^{tree} · 추적 파일을 고치면 달라짐 · 생성물만 고치면 같음 · 도장 뒤 수정은 거절."""
     bad: list[str] = []
-    env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
-           "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+    env = _base_env()
     gen = ("web/data/",)
     with tempfile.TemporaryDirectory() as td:
         r = Path(td)
@@ -224,7 +228,7 @@ def selftest() -> int:
         (r / "a.txt").write_text("a\n", encoding="utf-8")
         (r / "web" / "data" / "g.json").write_text("{}\n", encoding="utf-8")
         sh("add", "-A")
-        sh("-c", "commit.gpgsign=false", "commit", "-qm", "c")
+        sh("-c", "commit.gpgsign=false", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "c")
         head = sh("rev-parse", "HEAD^{tree}")
         if tree_print(r, gen) != head:
             bad.append("깨끗한 트리의 지문이 HEAD^{tree} 와 다르다 — fl-green-trees 와 못 만난다")

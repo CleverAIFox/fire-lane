@@ -208,7 +208,7 @@ def bootstrap(rows: list[dict], base_v: list[str], errs: list[float], n: int, *,
 
     행선 코드는 `ORDER` 의 색인이다. 난수열은 Zm24 와 같으므로 뒤집힘 수도 같다.
     """
-    rng = random.Random(SEED)
+    rng = random.Random(SEED)  # noqa: S311 — 씨앗을 박은 재현용 표집이다. 암호가 아니다
     m = np.zeros((n, len(rows)), dtype=bool)
     dest = np.zeros((n, len(rows)), dtype=np.int8)
     for b in range(n):
@@ -227,7 +227,7 @@ def _ci(x: np.ndarray) -> dict:
 
 def transitions(rows, base_v, errs) -> dict:
     """뒤집힘의 행선 — 풀 전체에서 구간마다 풀에서 하나씩 뽑기를 200번 되풀이해 (전→후) 평균 구간 수를 센다."""
-    rng = random.Random(SEED + 7)
+    rng = random.Random(SEED + 7)  # noqa: S311 — 씨앗을 박은 재현용 표집이다. 암호가 아니다
     tally: dict[str, float] = {}
     k = 200
     for _ in range(k):

@@ -124,7 +124,7 @@ def draw(rows: list[dict], samples_by: dict[str, list[dict]], seed: int = SEED,
          sizes: dict[str, int] | None = None) -> dict[str, list[str]]:
     """묶음 → seg_id 목록. 정렬 키가 판정 · d · 폭이 아니다 — 후보는 `seg_id` 순, 뽑기는 시드."""
     sz = SIZES if sizes is None else sizes
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 — 씨앗을 박은 재현용 표집이다. 암호가 아니다
     by_id = {r["seg_id"]: r for r in sorted(rows, key=lambda r: r["seg_id"])}
     taken: set[str] = set()
     out: dict[str, list[str]] = {}
@@ -165,7 +165,7 @@ def build(rows: list[dict], samples_by: dict[str, list[dict]], seed: int = SEED,
     by_id = {r["seg_id"]: r for r in rows}
     mids = _midpoints() if mids is None else mids
     ids = [s for g in groups.values() for s in g]
-    random.Random(seed + 1).shuffle(ids)
+    random.Random(seed + 1).shuffle(ids)  # noqa: S311 — 씨앗을 박은 재현용 표집이다. 암호가 아니다
     table = []
     for s in ids:
         r = by_id[s]
