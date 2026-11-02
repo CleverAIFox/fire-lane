@@ -192,9 +192,8 @@ _touches() {                  # _touches "패턴 ..."  바뀐 것이 하나라�
     return $rc
 }
 TOTAL=$(grep -oE '^[[:space:]]*step "[^"]*"' "$0" | sed 's/.*step //' | sort -u | wc -l)
-# ★ 2026-09-19. 같은 사고가 **다른 원인으로 재발했다.** 위 2026-09-15 항은
-#   이름 중복을 고쳤는데, 이번에는 `부분 실행` 이 분모에만 있고 실행에는
-#   없었다 — `--only` · `--fast` 에서만 도는 안전장치라 전수 실행에서는
+# ★ 2026-09-19. 같은 사고가 **다른 원인으로 재발했다.** 위 2026-09-15 항은 이름 중복을 고쳤는데,
+#   이번에는 `부분 실행` 이 분모에만 있고 실행에는 없었다 — `--only` · `--fast` 에서만 도는 안전장치라 전수 실행에서는
 #   한 번도 안 돈다. 그래서 전수로 돌려도 끝까지 **[44/45]** 가 찍혔고,
 #   보는 사람은 하나가 빠졌다고 읽는다.
 # ★ 분모는 **이 실행에서 실제로 돌 수 있는 것**이어야 한다. 조건부 단계를
@@ -321,14 +320,14 @@ evidence_check() {
 
 echo
 printf '%s저장소%s  %s\n' "$D" "$Z" "$ROOT"
-# ★ 2026-09-14. HEAD 를 찍는다. `dms.py seal --log` 가 이 줄을 읽어
-#   로그가 지금 나무를 말하는지 판정한다. 종전에는 파일 mtime 으로
-#   봤는데 **내용이 안 바뀌어도 잡혀서** 30분짜리 재실행을 시켰다.
+# ★ 2026-09-14. HEAD 를 찍는다. `dms.py seal --log` 가 이 줄을 읽어 로그가 지금 나무를 말하는지 판정한다.
+#   종전의 파일 mtime 판은 **내용이 안 바뀌어도 잡혀서** 30분짜리 재실행을 시켰다.
 printf 'HEAD    %s%s\n' \
   "$(git rev-parse --short HEAD 2>/dev/null || echo '(git 밖)')" \
   "$(git status --porcelain 2>/dev/null \
        | grep -v '^.. \(web/data/\|data/processed/\|data/dms/\)' \
        | grep -q . && echo ' +미커밋' || true)"
+T0=$(uv run --no-sync python tools/dms.py tree --forget 2>/dev/null)   # ★ §600 시작 지문 · 옛 도장 치움
 printf '%s노드  %s  %s\n' "$D" "$Z" "$(node --version 2>/dev/null || echo '없음')"
 printf '%suv    %s  %s\n\n' "$D" "$Z" "$(uv --version 2>/dev/null || echo '없음')"
 
@@ -1359,6 +1358,7 @@ if [ "$fail" -gt 0 ]; then
     exit 1
 fi
 
+uv run --no-sync python tools/dms.py tree --stamp "$T0" --steps "$IDX" --skipped "$skip" || exit 1   # ★ §600 실패 0 만 여기 온다(부분 실행은 실패)
 # ★ 2026-09-18. 종전에는 `skip` 을 안 보고 무조건 「전부 통과했다」를 찍었다.
 #   `note_hard` 가 덮개 없는 생략을 실패로 올리므로 여기 오는 생략은 전부
 #   "다른 관문이 덮는다" 는 것이지만, **그래도 이 실행이 전수는 아니다.**
