@@ -234,8 +234,10 @@ def _repair_globs(*, apply: bool) -> list[str]:
                     s = s.replace(pat, keep)
                     out.append(f"[{key}] {pat} → {keep}  ({len(got0)}건)")
                     continue
-            pre = os.path.commonprefix(cand_files)
-            suf = os.path.commonprefix([x[::-1] for x in cand_files])[::-1]
+            # ★ 글자 단위가 의도다 — 경로가 아니라 **파일 이름에서 글롭을 만드는** 자리다(`commonpath` 는 폴더만 남긴다).
+            #   만든 글롭이 후보와 정확히 같은 파일을 잡는지는 바로 아래 `got != cand_files` 가 다시 본다.
+            pre = os.path.commonprefix(cand_files)  # noqa: RUF071 — 이름 글롭의 문자열 접두다. 경로 접두가 아니다
+            suf = os.path.commonprefix([x[::-1] for x in cand_files])[::-1]  # noqa: RUF071 — 문자열 접미(뒤집어 접두로)
             cand = (pre + "*" + suf) if len(cand_files) > 1 else cand_files[0]
             if not any(c in pat for c in "*?[") and len(cand_files) == 1:
                 cand = cand_files[0]           # 정확한 이름은 정확하게
