@@ -35,7 +35,14 @@ const mans = extractManeuvers(plan, inc, need);
 /** 선형 참값 → length_m 공간 (시험 비교용 근사) */
 const truthS = (g: number, total: number) => g * (plan.lengthM / total);
 
-interface Run { err: number[]; offs: number; jumps: { at: number; errAfter: number; sameTurn: boolean }[] }
+interface Run { err: number[]; offs: number; jumps: { at: number; errAfter: number; extra: number; sameTurn: boolean }[] }
+
+/** 측위 잡음의 진행 방향 성분(m, 부호 있음) — 참값 점에서 측위 점까지를 그 자리 접선에 투영한다 */
+function alongNoise(f: { lon: number; lat: number }, truth: number): number {
+  const tp = pointAtM(geom, truth);
+  const b = (tp.bearing * Math.PI) / 180;
+  return (f.lon - tp.point[0]) * MX * Math.sin(b) + (f.lat - tp.point[1]) * MY * Math.cos(b);
+}
 
 function drive(opts: Parameters<typeof createReplaySource>[1], hooks?: (t: number, h: ReturnType<typeof createReplaySource>) => void): Run {
   const src = createReplaySource(plan, opts);
@@ -55,7 +62,8 @@ function drive(opts: Parameters<typeof createReplaySource>[1], hooks?: (t: numbe
     if (r.result.jumped) {
       const a = nextManeuver(mans, r.result.s).m;
       const b = nextManeuver(mans, truth).m;
-      run.jumps.push({ at: truth, errAfter: Math.abs(r.result.s - truth), sameTurn: a === b });
+      const extra = Math.abs(r.result.s - truth - alongNoise(f, truth));
+      run.jumps.push({ at: truth, errAfter: Math.abs(r.result.s - truth), extra, sameTurn: a === b });
     }
   }
   return run;
@@ -76,11 +84,22 @@ test("1Hz · σ5m — 중앙 오차 6m · 95% 15m 안, 이탈 오판 0", () => {
   ok(r.offs === 0, `경로 위인데 이탈로 ${r.offs}번 봤다`);
 });
 
+/**
+ * 순간이동 직후 추정이 측위 잡음 말고 **더하는** 오차의 상한(m). 시드 60개 × 순간이동 4번 = 240번을 재서 정했다 —
+ * 최대 1.08m(95분위 0.04m · 시드 5 의 넷은 0.00 · 0.00 · 0.00 · 0.01). 그 두 배.
+ */
+const EXTRA_ERR_MAX_M = 2;
+
 test("음영 8초 → 순간이동을 알아채고 새 자리의 회전을 고른다", () => {
   const r = drive({ sigmaM: 5, shadowEverySec: 25, shadowSec: 8, seed: 5 });
   ok(r.jumps.length >= 1, "음영 뒤 순간이동을 한 번도 못 알아챘다");
   for (const j of r.jumps) {
-    ok(j.errAfter < 15, `이동 직후 오차 ${j.errAfter.toFixed(1)}m (참값 ${j.at.toFixed(0)}m)`);
+    // ★ 2026-11-02 (PLAN #181 · 닫힘). 「오차 < 15m」는 σ(5m)의 3배를 **한 번의 잡음 표본**에 대는 것이었다 —
+    //   표본이 4σ 로 나오고 도로 방위가 그쪽을 향하면 추정이 옳아도 빨갛다. 이 시험이 재려던 것은
+    //   「추정이 측위 잡음보다 **더** 틀리는가」이므로, 순간이동 직후 측위는 새 위치로 받아들여지는 것을 이용해
+    //   오차에서 잡음의 진행 방향 성분을 뺀 값(추가 오차)을 잰다.
+    ok(j.extra < EXTRA_ERR_MAX_M,
+      `이동 직후 추가 오차 ${j.extra.toFixed(2)}m — 잡음 말고 추정이 더한 것 (참값 ${j.at.toFixed(0)}m · 전체 오차 ${j.errAfter.toFixed(1)}m)`);
     ok(j.sameTurn, `이동 직후 다음 회전이 참값과 다르다 (참값 ${j.at.toFixed(0)}m)`);
   }
   const p95 = quantile(r.err, 0.95);
