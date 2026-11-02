@@ -2,12 +2,12 @@
  "nodes": 1139,
  "pairs": 200,
  "one_to_one": {
-  "astar": 41281,
-  "dijkstra": 113094
+  "astar": 45920,
+  "dijkstra": 111916
  },
  "one_to_all": {
-  "astar_sum": 116333,
-  "dijkstra_sweep": 1246,
+  "astar_sum": 126944,
+  "dijkstra_sweep": 1240,
   "goals": 692
  }
 }
