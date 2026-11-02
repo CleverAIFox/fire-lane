@@ -1,14 +1,14 @@
 {
   "figures": {
-    "astar": "f46e57ddfbc7171f",
+    "astar": "68888f120f6d35d6",
     "boundary": "c2f764ff6aee773f",
     "branch": "3a4efe9dcdce4c4a",
     "cctv": "b242f24bfbab6853",
     "deploy": "8e6ad66e4700f82f",
     "threshold": "3b74745a9acfd68d",
-    "unknown": "1000de87aba24245",
-    "verdict": "95d766a54038d60b",
-    "verdict_flow": "b85cc577216dd7a2",
+    "unknown": "73d349db249c9033",
+    "verdict": "608665ddd92ba248",
+    "verdict_flow": "8195f9a4ca38cafd",
     "xsec": "09fac9e5365e3b6e"
   },
   "placed": {
