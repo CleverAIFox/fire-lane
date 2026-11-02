@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 from datetime import date, timedelta
@@ -70,7 +71,10 @@ def test_hook_turns_unclassified_skip_into_failure(tmp_path):
                         "-q", "-rA", str(t)], cwd=tmp_path, env=env, capture_output=True, text=True)
     out = r.stdout + r.stderr
     # 호출 단계 skip 은 failed, 준비 단계 skip(빈 parametrize)은 error 로 나온다 — 둘 다 초록이 아니다
-    assert "1 failed, 1 skipped, 1 error" in out, f"훅이 안 걸렸다 — conftest 가 죽었다\n{out[-1500:]}"
+    # ★ 요약줄은 경고가 끼면 「1 failed, 1 skipped, 1 warning, 1 error」로 갈라진다 — 연속 문자열로 맞추지 않는다.
+    #   훅이 재는 것은 「미분류 skip 을 실패로 바꾸는가」이고 경고 수는 무관하다(경고를 가리지도 않는다).
+    for want in ("1 failed", "1 skipped", "1 error"):
+        assert re.search(rf"(?<!\d){want}\b", out), f"훅이 안 걸렸다 — conftest 가 죽었다 (「{want}」 없음)\n{out[-1500:]}"
     assert "skip 정책 위반" in out
 
 
