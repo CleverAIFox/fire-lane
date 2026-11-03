@@ -44170,3 +44170,42 @@ PLAN §10-5a 의 3 번 줄이 `freeze A-lock` 이었고 **명명 규칙**(`^\d{8
 
 닫는 근거는 「시험이 재려던 것을 실제로 재게 됐다」이지 「문턱을 올렸다」가 아니다. 추정기(`progress.ts`)는 손대지 않았다. 행 삭제 · 결번 대장 · `planclose` 는 `#70` · `#180` · `#179` · `#4` · `#173` 때와 같은 절차다.
 
+
+## 602. 레이크를 잃은 다섯 자료를 `status: missing` 으로 선언했다 — `retired:` 가 아니다 (대장 칸만 · 코드 변경 0 · 래칫 이동 0)
+
+> 2026-11-03
+
+유병률  **1회** — 「레이크를 잃은 자료가 대장에 선언만 남아 결손으로 찍혔다」(2026-10-30 레이크 삭제 뒤 verify 두 칸). 이 절이 처음 센 수다
+
+강제자 없음 — 사유: 대장 데이터 칸만 더했고 코드 · 상수 · 래칫은 안 바꿨다. 칸을 읽는 판정처는 `ledger.absence()` 하나이고 그 가드는 `tests/test_declaration_reality.py` 가 이미 든다 — 이 절이 새로 거는 것은 없다
+        **하위 여섯**이 이 칸을 물려받는다
+
+**사실.** 2026-10-30 에 F드라이브 레이크를 지우면서 다섯 자료의 실물을 잃었고, 2026-11-02 에 **다시 받지 않기로** 했다. `vworld_uq164` · `eais_roadledger_dm` · `nfa_rapidresponse` · `roadtraffic_act` · `hydrantdevice_rule`. 대장은 이 항목들을 선언한 채 실물이 없었다. 이 사실을 대장이 기계가 읽는 꼴로 들게 했다 — 다섯 항목의 머리에 `status: missing` · `missing_why` 두 줄씩. 다른 칸은 한 자도 안 고쳤다.
+
+### 602-1. 왜 `retired:` 가 아닌가
+`docs/MASTER.md:3645` 가 그 블록을 「전부 파일이 있는 보관본이다 — 파일 없는 기각 기록은 대장에 두지 않는다」로 못박았다. 실물이 없는 자료를 거기 넣으면 시험은 통과해도 그 문장이 **거짓**이 된다. 실물이 없는 것은 폐기가 아니라 **부재**이고, 부재의 어휘는 `ledger.ABSENCE` 의 `missing` 이 이미 든다(판정처는 `ledger.absence()` 하나 · §447). 그래서 새 어휘를 만들지 않았고 규약을 지켰다.
+
+### 602-2. 「sha 가 없다」는 틀린 판단이었다
+처음에는 「sha 가 없어서 내린다」로 읽었다. 틀렸다 — `data/_acquire.json` 이 다섯 자료(여섯 파일) 모두의 sha 와 크기를 **들고 있다.** 받았던 사실은 남는다. 내리는 이유는 sha 의 유무가 아니라 **받지 않기로 한 결정**이다. 이 정정은 결론을 바꾸지 않았다 — `retired:` 가 아니라는 근거(602-1)는 sha 가 아니라 「그 칸은 파일 있는 보관본」이라는 규약에 선다. `_acquire.json` 은 받았던 사실의 기록이고 쓰는 자는 `intake --stage` 하나라서 건드리지 않았다.
+
+### 602-3. 건드리지 않은 것
+- `feeds` · `feeds_why` · `contract` — 비우면 `grade()` 가 reference → unused 로 뒤집혀 `PENDING_MAX = 13` 이 금지 방향으로 깨진다. 그대로 뒀다.
+- 어떤 래칫도 올리지 않았다. 이 변경은 어느 래칫도 안 움직인다.
+- `missing_why` 는 모두 채웠다 — 비면 `absence()` 가 「사유 미기재」를 내고 그것이 §424 가 금한 「사유 없는 침묵」이다.
+
+### 602-4. 재취득 경로 — 대장이 든 사실만 적는다
+받지 않기로 했으므로 이것은 **필요해질 때의 길잡이**다. URL 은 대장에 없어 적지 않는다. 받은 뒤 `acquire --verify` 가 대장의 sha256·바이트와 대조해 **동일본인지 즉시 판별**한다. 같지 않으면 제공처가 갱신한 **새 판**이니 새 행으로 세운다.
+
+| 대장 키 | 제공처 | 받는 것 | 대장 파일명 |
+|---|---|---|---|
+| `vworld_uq164` | 국토교통부 공간정보 오픈플랫폼(V-World) | `LSMD_CONT_UQ164_5174_전남광주통합특별시.zip` — 도시계획시설 UQ164 | `vworld/vworld_uq164_jngj_20260915.zip` |
+| `eais_roadledger_dm` | 국토교통부 건축데이터 개방 포털 | 「15. 도로대장」 csv(동명동 29행 · utf-8-sig) | `eais/eais_roadledger_dm_jngj-dongmyeong_20260801.csv` |
+| `nfa_rapidresponse` | 소방청 화재대응조사과 | 2025-04-29 보도자료 PDF(119패스 · 7분 기준) | `nfa/nfa_rapidresponse_kr_20250429.pdf` |
+| `roadtraffic_act` | 법제처 국가법령정보센터 | 도로교통법 제29조 · 제30조, 시행 2026-07-01 — **조문 하나에 파일 하나** | `moleg/moleg_roadtraffic_act_kr_20260701_a29.pdf` · `_a30.pdf` |
+| `hydrantdevice_rule` | 법제처 국가법령정보센터 | 소방청예규 제64호 「비상소화장치의 설치 및 관리 기준」, 시행 2022-05-23 | `moleg/moleg_hydrantdevice_rule_kr_20220523.pdf` |
+
+### 602-5. `moleg` 제공기관을 `reserved` 로 내렸다
+`moleg` 의 자료는 위 `roadtraffic_act` · `hydrantdevice_rule` 둘뿐이고 둘 다 `missing` 이다. `active` 는 「파일 0건이면 결손」이라 `lakecheck` L1 이 실패했다. `reserved` 는 「등재만 · 파일 0건이 정상」(`providers.py`)이다. 다시 받는 날 `active` 로 올린다.
+
+### 602-6. 열린 것 — `PLAN #182`
+`tools/lakecheck.py` · `tools/acquire.py` 의 `judge()` · `missing_from_register()` 는 `absence()` 를 부르지 않는다(grep 0건). `status: missing` 을 모른 채 결손을 계속 찍는다. `tests/test_declaration_reality.py:508` 의 그물이 `globs(e` · `paths_of(e` 꼴만 잡아 `dataset_globs()` 를 쓰는 자리는 밖이다. 고치지 않았다 — 고치면 §447 이 모은 판정처가 여섯째를 얻고 제 판이 필요하다. 한 행(`#182`)으로 세웠다.

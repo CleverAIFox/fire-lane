@@ -98,7 +98,7 @@ PLAN 은 빚 목록이다 — **갚은 빚은 목록에 안 남는다.** 슬롯�
 강제자 — `tests/test_doc_fsck.py::test_plan_status_vocabulary_is_closed`
 
 <!--gen: plan_open-->
-## 1. 남은 일 — 39행
+## 1. 남은 일 — 40행
 <!--/gen-->
 
 ★ **2026-09-20 신설**(DECISIONS §205). 제목이 수를 든다. §13 이 같은 것을
@@ -169,6 +169,7 @@ PLAN 은 빚 목록이다 — **갚은 빚은 목록에 안 남는다.** 슬롯�
 | 132 | 샤드 봉인 재봉인이 전량이라 OOM 위험이 남는다 | 🟡 | **2026-09-25 (DECISIONS §255).** 문서 봉인(`SEAL.json`)은 축별 무효로 갈랐다. **샤드 봉인(`_manifest.json` 의 `seal.code`)은 아직 전량이다.** ★ 경과는 DECISIONS §558-29 가 든다. ★ **이득도 쟀다** — 갈래 다섯 중 `passthrough`(`raw_only`)가 **데이터셋 36%(26/72)를 들면서 코드 7줄**이고 그 7줄은 앞으로도 7줄이다. 축을 가르면 그 26개가 영구히 멈춘다. 축 열둘을 설계할 일이 아니었다. ★ 경과는 DECISIONS §558-30 가 든다. ★ 닫는 법 — 샤드 `seal.code` 를 「공용 폐포 20 + 제 갈래 1」로(지금 25). 갈래별 데이터셋 수는 DECISIONS §274-2 의 표가 들고, 이득 재검은 `axis_gain.py` 가 든다. 이 행이 드는 것은 `seal.code` 다 — cfg 축은 DECISIONS §460 이 갈랐다 | DECISIONS §255 · DECISIONS §274-3 · DECISIONS §274-10 ★ 경과는 DECISIONS §558-31 가 든다. ★ **더 급한 것이 드러났다** — 봉인지가 이미 갈려 있다(43 샤드 `c525a370…` · 재빌드한 2 샤드 `21998ed5…` · 원인은 `uv.lock` 올림으로 읽는다). 다음 전량 `ingest` 는 43 샤드를 한 번에 찢는다 |
 | 144 | 토지이용 면이 없다 — 공터가 검게 그려진다 | 📄 | 주차장 · 광장 · 공원 · 학교를 **지도에서** 메운다. **폭(A족)과 같이 안 닫힌다** — V-World 도시계획시설 둘이 DECISIONS §379-4 의 여덟 자리를 **0/8** 덮는다(DECISIONS §419). 폭 쪽은 `#146`(보도) · 연속지적도 지목 · 최소 표본 가드로 흩어진다. 대장 `vworld_uq153` · `vworld_uq164` 등재 완료(`raw_only`) — **배선이 남았다** |
 | 176 | 중계 토큰을 **배포에 꽂는다** | 🟡 | 코드는 섰다(DECISIONS §527) — 문 셋과 `/units` 가 `FIRE_LANE_OPS_TOKEN` 을 묻고, 토큰도 선언도 없으면 중개자가 **안 뜬다**. 남은 것은 **배포 배선**이다. ★ **도착 조건** — ① GitHub `Settings > Secrets` 에 `FIRE_LANE_OPS_TOKEN` 을 넣는다(주소는 `vars`, 토큰은 `secrets` 다) ② `.github/actions/build-navi/action.yml` 이 그것을 `VITE_OPS_TOKEN` 으로 넘긴다 ③ 중개자를 띄우는 자리(앞단)에 같은 값을 넣는다 ④ 배포본에서 관제·내비가 **실제로 이어지는지** 눈으로 본다 — 틀리면 화면은 멀쩡하고 연결만 조용히 안 된다(DECISIONS §343-3 이 `ws://` 로 당한 그 꼴이다). ★ **토큰은 신분이 아니다** — 누가 보냈는지는 여전히 모른다. 발급·갱신·폐기는 쥘 사람이 생길 때다 | `.github/actions/build-navi/action.yml` · `web/navi/vite.config.ts` |
+| 182 | 부재 판정이 `absence()` 를 안 부르는 자리 셋 — `status: missing` 을 모른 채 결손을 계속 찍는다 | 🟡 | **2026-11-03 (DECISIONS §602).** `tools/lakecheck.py` · `tools/acquire.py` 의 `judge()`(:195) · `missing_from_register()`(:167) 가 `ledger.absence()` 를 안 부른다(grep 0건). 그래서 `sources.yaml` 에 `status: missing` 으로 선언한 다섯(`vworld_uq164` · `eais_roadledger_dm` · `nfa_rapidresponse` · `roadtraffic_act` · `hydrantdevice_rule`)을 verify 의 「레이크 선언↔실물」 쪽 결손으로 계속 센다. ★ **근거** — `tests/test_declaration_reality.py:508` 의 그물이 `\b(?:globs|paths_of)\s*\(\s*e\b` 라 `dataset_globs()` 를 쓰는 자리는 그 밖이다. ★ **고치지 않았다** — 고치면 DECISIONS §447 이 모은 판정처가 여섯째를 얻고 그 그물을 넓히는 제 판이 필요하다. **도착 조건** — 그 판이 서서 세 자리가 `absence()` 를 부르고 그물이 `dataset_globs` 를 잡는다 |
 
 강제자  `tools/verify.sh`
 
@@ -552,7 +553,7 @@ DECISIONS §476). 세운 자리에서 닫는 것이 가장 싸고, 그러면 이
 
 <!--gen: pc_open pc_cannot pc_gap pc_promised pc_decl-->
 ```
-열린 39 − 못 닫는 5 = 34      어느 판이든 들어야 하는 행
+열린 40 − 못 닫는 5 = 35      어느 판이든 들어야 하는 행
 무조건 닫는다          34      표식 없이 「닫는다」로 적힌 행
 닫는 수 선언 합        45      이미 닫은 행이 제 판의 수에 남아 있다
 ```
@@ -672,7 +673,7 @@ DECISIONS §476). 세운 자리에서 닫는 것이 가장 싸고, 그러면 이
 |---|---|---|---|---|---|
 | A | 판정 확정 · 재잠금 1회 | 완료 #53 #17 · 남은 없음 · 보류 규칙 [12] | 없음 | 1회 | 판정이 움직인다. **완료(Zm19 · DECISIONS §564)** `#53` 폭 급변 거둠 · `#17` 체제 규칙으로 중앙값 판정 투입 — **`#17` 은 현장 실측 없이 실행됐고 F 에서 사후 검증한다. 그 전까지 `#17` 의 근거는 비어 있다**(DECISIONS §573). **`#11` 도로경계 폴리곤 밖은 닫혔다**(Zm48 · DECISIONS §587 — 코드 변경 없이). **`#77(닫힘)` 본선·측도 가름은 닫혔다**(Zm56 · DECISIONS §593 — 규칙이 들어갔고 작동한다 · 남은 몫은 `#180`). **남은 것은 없다 — A 판은 닫혔다**(`#173` 이 마지막이었다 · DECISIONS §600). 남았던 넷은 실측이 필요 없었다: `#179` `_road_hash` 공백 접기 · `#4` widthcross 매칭 · `#70` 근거 없는 상수 셋(판정 상수다 · **셋 중 둘 남음** — `SNAP_MAX` · `WMAX_CAP` 은 **이 기계에서 잴 수 있다**(레이크가 `FIRE_LANE_DATA` 로 붙어 있다) · **아직 안 쟀다** · `MIN_SEG_LEN` 민감도 0 으로 닫음 · `PARK` 법정 규격으로 닫음 · DECISIONS §574-3 · DECISIONS §576) · `#173(닫힘)` 도장을 트리에 묶는다(DECISIONS §600 — 재잠금 없이 닫혔다) · **보안 PR 350(pypdf) · PR 352(virtualenv)는 이 재잠금과 같이 머지한다**(순서는 §10-5b · DECISIONS §578). **보류** 규칙 [12](대장 괴리 · `tools/rule12_sim.py` 가 짜 두고 발행하지 않았다 · DECISIONS §569-5) — 발행 판단은 F 의 채점(Q4) 뒤이고 A 의 닫힘 조건에 들지 않는다 |
 | B | 분모 확정 · 재잠금 2회 | #62 #144 #57 #58 #96 #132 | A | 2회 | 분모가 굳는다 |
-| C | 새 원천 · 판정 불변 | #30 #31 #60 #93 #95 #39 #120 #10 #66 #55 | A | 0 | 새 자료를 들이되 판정을 안 움직인다 |
+| C | 새 원천 · 판정 불변 | #30 #31 #60 #93 #95 #39 #120 #10 #66 #55 #182 | A | 0 | 새 자료를 들이되 판정을 안 움직인다 |
 | D | 그래프 · 경로 | #1 #18 #19 #72 #75 | B | 0 | 경로 비용 · 방향성 |
 | E | 화면 · 내비 · 기획서 | #59 #63 #64 #73 #78 #176 #40 #41 #126 | D | 0 | 기획서 숫자 주입은 A 가 끝나 수가 굳은 뒤 |
 | F | 도로폭 검증 · 판정 불변 | — | E | 0 | **판정 불변.** 현장에서 평가셋 55구간(`data/field/evalset_2610.csv`)을 재고 `tools/evalset.py --score` 로 Q1~Q6 을 채점한다. `#17` 을 사후 검증한다(Q1 · Q2 · Q5). 실측 결과는 **한계 · 신뢰도 절(MASTER §7)에 적고 판정을 바꾸지 않는다.** 판정을 바꿔야 할 만큼 심각하면 **E 를 다시 돈다**(F 안에서 바꾸지 않는다 · 재잠금도 F 의 일이 아니다). 옛 0판의 행은 없었다(「행」 칸이 「—」였다). **`data/field` 봉인 계획:** `data/golden/field.fingerprint.json` 은 2026-10-04 의 12행 판에 멈춰 있고 실물 `naver_width_2610.csv` 는 47행이다 — 그 사이는 열어 둔다(`test_fieldseal` · `test_clearance_cross` 의 맹점 6 이 같은 원인 · DECISIONS §574-6). F 에서 평가셋 · 상위 표가 들어올 때 **`tools/fieldseal.py --write` 를 한 번에** 친다(사람이 친다) **PARK:** 근거는 법정 규격으로 섰다(「주차장법 시행규칙」 제3조 제1항 · DECISIONS §576). 2.0 은 법정 **하한**이라 F 의 측정으로 실제 점용이 하한을 넘는지 보강한다(값은 F 에서도 판정 불변이다 — 바꿔야 할 만큼 크면 E 를 다시 돈다) ★ **`tests/test_clearance_cross.py` 의 `POINTED` 목록(지목한 결함 구간 5개를 `seg_uid` 로 든 것)을 없애려면 `data/field/naver_width_2610.csv` 에 `why_sampled`(지목 · 검증 · 무작위) 칸이 필요하다** — 지금 표에는 지목과 표본을 가르는 칸이 없다(DECISIONS §592-2). 표는 `fieldseal` 로 봉인돼 있으므로 그 칸은 **F 에서 사람이 `fieldseal --write` 를 칠 때 같이 더한다**(이 판은 표를 안 건드린다) |

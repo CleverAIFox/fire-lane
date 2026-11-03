@@ -617,7 +617,10 @@ layers:
         #   ★ 등재 순서가 있다 — 제공기관이 먼저고 datasets 가 나중이다.
       moleg:
         org: 법제처 국가법령정보센터
-        state: active
+        state: reserved
+        # ★ 2026-11-03 active → reserved. 이 제공기관 자료는 roadtraffic_act ·
+        #   hydrantdevice_rule 둘뿐이고 둘 다 `status: missing` 이다(DECISIONS §602).
+        #   실물 0건이 정상이다. 다시 받는 날 active 로 올린다.
         # ★ 2026-10-05 신설 (DECISIONS §397). 법령 · 행정규칙 원문 PDF 가 여기로
         #   들어온다. **소방청예규도 여기다** — 폴더는 「누가 썼나」가 아니라
         #   「어디서 받았나」로 가른다(MASTER §18-2a).
@@ -900,6 +903,19 @@ datasets:
       required_cols: [DGM_NM, LCLAS_CL, MLSFC_CL, NTFC_SN]
 
   vworld_uq164:
+    status: missing
+    missing_why: |
+      2026-11-02 — **받지 않기로 했다.** 2026-10-30 에 F드라이브 레이크를 잃었고
+      재취득 경로는 DECISIONS §602 가 든다.
+      대장이 sha256·바이트를 들고 있어 받은 뒤 acquire --verify 로 동일본인지 즉시 판별된다.
+      ★ 받았던 기록은 남는다 — data/_acquire.json 이 vworld/vworld_uq164_jngj_20260915.zip 의
+        sha 78356e48… · 905,642 B 를 들고 있다
+        (2026-10-14 반입 · DECISIONS §433).
+        **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다.
+      ★ retired 로 안 옮긴 사유 — 그 칸은 「받아서 보관 중인 원본」이다
+        (MASTER §18 · docs/MASTER.md:3645). 실물이 없는 것은 **부재**이고
+        부재의 어휘는 ledger.ABSENCE 가 든다.
+      ★ 다시 받는 조건 — 없다. 필요해지면 새 행으로 세운다.
     feeds:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
@@ -1005,6 +1021,18 @@ datasets:
       required_cols: []
 
   eais_roadledger_dm:
+    status: missing
+    missing_why: |
+      2026-11-02 — **받지 않기로 했다.** 2026-10-30 에 F드라이브 레이크를 잃었고
+      재취득 경로는 DECISIONS §602 가 든다.
+      대장이 sha256·바이트를 들고 있어 받은 뒤 acquire --verify 로 동일본인지 즉시 판별된다.
+      ★ 받았던 기록은 남는다 — data/_acquire.json 이 eais/eais_roadledger_dm_jngj-dongmyeong_20260801.csv 의
+        sha 44a79e4f… · 4,974 B 를 들고 있다.
+        **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다.
+      ★ retired 로 안 옮긴 사유 — 그 칸은 「받아서 보관 중인 원본」이다
+        (MASTER §18 · docs/MASTER.md:3645). 실물이 없는 것은 **부재**이고
+        부재의 어휘는 ledger.ABSENCE 가 든다.
+      ★ 다시 받는 조건 — 없다. 필요해지면 새 행으로 세운다.
     feeds:
       - src/firelane/normalize_raw.py
     feeds_note: '[]'
@@ -3446,6 +3474,18 @@ datasets:
       미투입 — CCTV 가 없는 구간의 경로 가중치를 추정할 재료(PLAN 「CCTV 없는 구간의 경로 가중치」).
       ★ 동 단위 통계라 구간 단위 가중치로는 거칠다 — 동명동 안에서는 상수다. 스케일 · 사전분포 재료로 쓴다.
   nfa_rapidresponse:
+    status: missing
+    missing_why: |
+      2026-11-02 — **받지 않기로 했다.** 2026-10-30 에 F드라이브 레이크를 잃었고
+      재취득 경로는 DECISIONS §602 가 든다.
+      대장이 sha256·바이트를 들고 있어 받은 뒤 acquire --verify 로 동일본인지 즉시 판별된다.
+      ★ 받았던 기록은 남는다 — data/_acquire.json 이 nfa/nfa_rapidresponse_kr_20250429.pdf 의
+        sha e21395c9… · 1,553,062 B 를 들고 있다.
+        **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다.
+      ★ retired 로 안 옮긴 사유 — 그 칸은 「받아서 보관 중인 원본」이다
+        (MASTER §18 · docs/MASTER.md:3645). 실물이 없는 것은 **부재**이고
+        부재의 어휘는 ledger.ABSENCE 가 든다.
+      ★ 다시 받는 조건 — 없다. 필요해지면 새 행으로 세운다.
     feeds: []
     feeds_note: '[]'
     stem: nfa_rapidresponse
@@ -3468,6 +3508,18 @@ datasets:
       ★ 쓸 자리 둘 — ① 우리 회색이 행정 목표 대비 어디쯤인가의 대조축
         ② 진입장애지역 추세(1,009 → 920)가 우리 blocked 192 와 같은 축인지.
   roadtraffic_act:
+    status: missing
+    missing_why: |
+      2026-11-02 — **받지 않기로 했다.** 2026-10-30 에 F드라이브 레이크를 잃었고
+      재취득 경로는 DECISIONS §602 가 든다.
+      대장이 sha256·바이트를 들고 있어 받은 뒤 acquire --verify 로 동일본인지 즉시 판별된다.
+      ★ 받았던 기록은 남는다 — data/_acquire.json 이 moleg/moleg_roadtraffic_act_kr_20260701_a29·a30.pdf 의
+        sha 8270f09d… · 0ac1b3aa… · 119,128 B · 130,017 B 를 들고 있다.
+        **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다.
+      ★ retired 로 안 옮긴 사유 — 그 칸은 「받아서 보관 중인 원본」이다
+        (MASTER §18 · docs/MASTER.md:3645). 실물이 없는 것은 **부재**이고
+        부재의 어휘는 ledger.ABSENCE 가 든다.
+      ★ 다시 받는 조건 — 없다. 필요해지면 새 행으로 세운다.
     feeds: []
     feeds_note: '[]'
     stem: moleg_roadtraffic_act
@@ -3511,6 +3563,18 @@ datasets:
         말하고 우리가 묻는 것은 **경로 비용**이다. 역주행이 허용된다는 것과
         역주행이 **싸다**는 것은 다른 말이고, 뒤쪽은 측정이 닫는다.
   hydrantdevice_rule:
+    status: missing
+    missing_why: |
+      2026-11-02 — **받지 않기로 했다.** 2026-10-30 에 F드라이브 레이크를 잃었고
+      재취득 경로는 DECISIONS §602 가 든다.
+      대장이 sha256·바이트를 들고 있어 받은 뒤 acquire --verify 로 동일본인지 즉시 판별된다.
+      ★ 받았던 기록은 남는다 — data/_acquire.json 이 moleg/moleg_hydrantdevice_rule_kr_20220523.pdf 의
+        sha 198ff0f8… · 206,272 B 를 들고 있다.
+        **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다.
+      ★ retired 로 안 옮긴 사유 — 그 칸은 「받아서 보관 중인 원본」이다
+        (MASTER §18 · docs/MASTER.md:3645). 실물이 없는 것은 **부재**이고
+        부재의 어휘는 ledger.ABSENCE 가 든다.
+      ★ 다시 받는 조건 — 없다. 필요해지면 새 행으로 세운다.
     feeds: []
     feeds_note: '[]'
     stem: moleg_hydrantdevice_rule
