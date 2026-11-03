@@ -44726,3 +44726,47 @@ csv 비기하 24개는 shapely · geopandas · pyogrio · pyproj 를 한 번도 
 ### 613-6. 열린 것 — `#62` 는 닫히지 않는다
 - **`PLAN #186`** — 본선 번지 4행은 「번지 위치의 구간만」 매칭하는 것이 정확하다. 번지 → 좌표가 없어 지금은 못 한다. (ii) 의 과대는 이 행이 줄인다.
 - **`#62`** — 분류를 한 곳에 세우는 것(함수 + 발행 칸) · 표출 적용 · 가드 · 문서 축이 남았다. 판정 범위에 안 거므로 재잠금은 없다.
+
+## 614. `#62` — 발행 범위 분류를 한 곳에 세웠다: `scope_tier` 는 구간을 하나도 안 떨구고 이름만 붙인다 (구현 · 판정 변경 0 · 재잠금 없음)
+
+> 2026-11-03
+
+유병률  **0회** — 아직 안 났다. 이 절은 DECISIONS §613 의 정의를 코드로 세운 기록이다
+
+강제자  `tests/test_scope_tier.py` — 발행물의 `scope_tier` 를 정의로 다시 계산해 대고, 네 묶음의 합이 판정이 낸 구간 수와 같은지(하나도 안 떨궜는지), `reference` 가 발행 범위에 안 섞이는지, 매처가 조용히 안 죽었는지(지정 0건이면 운다)를 문다. 괄호 안 맥락 이름 자체시험도 든다
+        **하위 여섯**이 이 칸을 물려받는다
+
+### 614-1. 자리와 이유
+분류 함수는 `src/firelane/scopetier.py` 에 둔다 — `fireaccess.py` · `eccentricity.py` · `structures.py` 와 같은 **발행 계층 보조 칸 모듈** 옆이다. 이유 셋:
+1. **판정 폐포 밖이다.** `golden.judgment_files()` 23파일에 이 모듈이 없다. `seg/report.py` · `seg/scope.py` 는 폐포 안이라 안 된다. 폐포 밖 보장은 시험이 문다(폐포가 이 모듈을 import 하면 운다).
+2. **같은 계열이 이미 `publish_web.py` 에서 `columns()` 로 칸을 싣는 패턴**을 쓴다. 새 길을 안 만들었다.
+3. **새 매처를 안 만들었다.** 지정 여부는 `fireaccess.match`(정확 일치 · 공백 허용 · 부분 문자열 아님)를 소방서 표 행의 **주소부(첫 `(` 앞)로 좁힌 사본**에 그대로 적용한다. 매칭 규칙을 고치는 날 한 곳만 고치면 된다.
+
+### 614-2. 발행 칸 · 스키마 · 계약
+- `publish_web.py` 가 `scope_tier` 를 싣는다(`nfa_access_*` 보정 뒤 · `_cols` 에 등록). 값은 넷 — `target` · `corridor` · `listed` · `reference`. **1,281구간 전부**가 값 하나를 갖는다.
+- `web/data/segments.schema.json` 에 설명을 달았고 `tests/test_contract.py` 의 「web 전용 칸」 선언에 더했다.
+- 발행물 `segments.geojson` 은 이 칸 **하나만** 늘었다 — 이전 발행본과 구간별로 대면 `scope_tier` 말고 달라진 칸이 0, 기하도 같다.
+- 분포는 계산값이다(2026-11-03). `target` 416 · `corridor` 219 · `listed` 119 · `reference` 527. 합 1,281.
+
+### 614-3. 가드 (수를 한 곳에도 안 적었다)
+- ① 모든 구간의 `scope_tier` 가 `in_emd` · `route_usage` · 지정으로 **다시 계산한 값과 같다.** 소방서 표(`fire_access.csv`)가 있으면 정확히 재계산하고, 표가 없는 기계(CI — 표는 추적 파일이 아니다)에서는 발행 칸이 스스로 들고 있는 근거(`nfa_access_token` 의 주소부)로 댄다.
+- ② 네 묶음의 합 == 발행 구간 수 == 판정이 낸 구간 수, `seg_uid` 집합까지 같다.
+- ③ `reference` 가 발행 범위 집계에 안 섞인다 — 집계는 `IN_SCOPE` 하나로 센다.
+- ④ 지정(`listed`)이 0건이면 운다. `listed` 는 항상 동 밖 · 경로 미사용 안에서만 선다.
+- ⑤ 자체시험 — `(구, 지호로)` · `(금남로3가, …)` · `(구, 섬들1길, …)` 같은 괄호 안 맥락 이름이 지정으로 안 잡히고, 주소부의 `지산로 37` 은 잡힌다. 전각 괄호도 주소부 끝이다. 기존 매처가 지호로를 잡는 사실도 같이 적어 두었다.
+- **변이로 확인했다.** 발행물 사본을 일부러 망가뜨리면 두 모드(표 있음 · 없음) 모두에서 다섯 변이를 전부 잡는다 — `target → corridor` · `reference → listed`(근거 없음) · 구간 하나 떨굼 · `target ≠ in_emd` · `listed` 0건.
+
+### 614-4. 문서 축 — 전부 발행물에서 계산한다
+- `docnum_check.scope()` 가 발행물에서 센다(`scope_in` · `scope_out` · `v_blocked_in` · `v_blocked_out`). 발행 전이면 빈 dict 다 — 0 을 문서에 채우지 않는다.
+- `docgen.AXES` 에 같은 이름 네 축을 더하고 MASTER 판정 표 아래에 짝 블록을 세웠다. 2026-11-03 값은 안 754구간 · 밖 527구간, 통행 불가는 발행 범위 안 74 · 그중 밖 **118**.
+- `docs/proposal.md` ⑤ 줄에 「그중 발행 범위 밖 118」을 더했다(`통행 불가 192` 는 그대로 — 빼지 않는다). `docnumrules` 규칙과 문맥 패턴으로 발행물 값과 대조되고, 값이 틀려도(118 → 119) 문장이 사라져도 우는 것을 확인했다. `web/proposal.html` 을 다시 구웠다.
+- `scopecheck.py` 의 세 상한은 1,281 기준이라 그대로 뒀다(밖 67.5% · 68.9% · 54.6%).
+
+### 614-5. 검증 — 판정 불변이다
+`uv run fire-lane --from segments` 가 249초에 끝났다(종료 코드 0). **`golden.py check` 가 L1 · L2 · L3 전부 동일**이다 — 구간 1,281 · `blocked` 192 · `clear` 274 · `needs_cv` 283 · `unknown` 532, 구간별 필드 전부 동일, 기하 동일. 재잠금이 없다. `web_manifest.py --check` 도 초록이고 `web/data` 는 34.2MB(상한 40MB)다.
+**커밋해야 하는 것**(안 하면 CI 가 운다): `web/data/segments.geojson` · `web/data/segments.schema.json` · `web/data/_manifest.json` · `web/data/view.json`(빌드 식별자) · `web/proposal.html`. 앞의 셋이 서로의 sha 를 들어서 한 커밋에 같이 가야 한다(`web_manifest.py --check`).
+
+### 614-6. `#62` 는 닫히지 않는다 — 표출이 남았다
+칸은 실렸지만 **쓰는 쪽이 아직 없다.** 내비(`web/navi/src/components/layers.ts`)가 `segments.geojson` 을 통째로 로드하고 `scope_tier` 로 거르거나 칠하는 곳이 없어서, 화면은 지금도 1,281구간을 똑같이 그린다. 「보여줄 것」을 고르는 것이 이 행의 본래 몫이다. 남은 것:
+- **표출 적용** — 기본으로 `target` · `corridor` · `listed` 를 보여주고 `reference` 는 흐리게 하거나 끈다(켜고 끄는 길은 둔다 — 「막힌 길」이 거기 있다). 판정 · 평가셋은 1,281 그대로다.
+- `PLAN #186`(본선 번지의 과대) · `PLAN #187`(우리 판정 대 외부 지정의 불일치)은 따로 선다.

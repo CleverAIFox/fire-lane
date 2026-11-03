@@ -196,6 +196,20 @@ AXES: dict[str, Axis] = {
                         "판정 `unknown` 구간의 연장 (m)"),
     "v_unknown_m_pct": Axis(re.compile(r"전체 연장의\s*(\d+\.\d|\d+)%"),
                             "그 연장이 총연장에서 차지하는 몫 (%)"),
+    # ★ 2026-11-03 (PLAN #62 · DECISIONS §613). **발행 범위 짝 넷.** 판정 지표(위 네 수)는 1,281 기준 그대로고 이것은 곁에 두는
+    #   짝이다 — 「막힌 길 192 중 발행 범위 밖 N」을 빼지 않으려는 것이다. 세는 집은 `docnum_check.scope()` 하나(발행물의 `scope_tier`)다.
+    # ★ 앵커를 좁게 잡았다 — 낱말 「발행 범위」 + 안 / 밖 + 수. 숫자가 낱말 **앞**에 오는 회고(「118 이 발행 범위 밖」)와
+    #   「N」 자리표시는 안 걸린다. 구간 수 축은 뒤에 `구간` 이 와야 하고, 막힌 길 축은 안 와야 한다(서로 안 겹친다).
+    # ★ `v_blocked_in` 의 앵커를 `통행 불가` 가 아니라 `blocked` 로 잡았다 — `통행 불가 N` 은 `v_blocked`(1,281 기준)의 앵커라 안 / 밖 수가
+    #   그 축으로 읽혀 192 와 대조된다(2026-11-03 실제로 울었다).
+    "scope_in": Axis(re.compile(r"발행 범위 안\s*`?(\d[\d,]*)구간"),
+                     "발행 범위(`scope_tier` ≠ reference) 안의 구간 수 — 발행물 `web/data/segments.geojson`"),
+    "scope_out": Axis(re.compile(r"발행 범위 밖\s*`?(\d[\d,]*)구간"),
+                      "발행 범위 밖(참고) 구간 수"),
+    "v_blocked_in": Axis(re.compile(r"발행 범위 안 `?blocked`?\s*(\d[\d,]*)"),
+                         "발행 범위 안의 `blocked` 구간 수"),
+    "v_blocked_out": Axis(re.compile(r"그중 발행 범위 밖\s*`?(\d[\d,]*)(?!구간|\d)"),
+                          "발행 범위 밖의 `blocked` 구간 수 — 「막힌 길 192 중 N」의 N"),
 }
 
 #: 백분율 축. **소수 한 자리로 쓰고 소수 한 자리로 읽는다.**
@@ -257,6 +271,8 @@ def truth() -> dict[str, float]:
         # ★ 2026-10-11 (§464). 발행물에서 **유도되는** 다섯. 같은 사유로 여기서
         #   다시 세지 않는다 — 집은 `docnum_check.shape()` 하나다.
         **docnum_check.shape(),
+        # ★ 2026-11-03 (PLAN #62). 발행 범위 짝 — 세는 집은 `docnum_check.scope()` 하나(R3). 발행 전이면 비어 `alive` 가 운다.
+        **docnum_check.scope(),
     }
 
 
@@ -289,7 +305,7 @@ def alive(want: dict[str, float]) -> list[str]:
     #   어느 발행본에도 없는 값이다. 백분율은 안 든다 — 참으로 0 이 될 수 있는
     #   수에 0 문턱을 걸면 그 문이 거짓을 말하게 된다.
     for a in ("v_clear", "v_needs_cv", "v_blocked", "v_unknown",
-              "cctv_in", "v_unknown_m"):
+              "cctv_in", "v_unknown_m", "scope_in", "scope_out", "v_blocked_out"):
         if want.get(a, 0) <= 0:
             bad.append(f"`{a}` 가 0 — 산출물을 못 읽었거나 판정 어휘가 바뀌었다")
     if want["sealable"] > want["datasets"]:

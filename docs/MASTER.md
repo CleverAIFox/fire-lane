@@ -150,6 +150,11 @@ uv run python tools/docnum_check.py
 | `unknown` 영상판정 불가 | 532 | CCTV 19m 밖. 영상판정 자체가 불가능 |
 <!--/gen-->
 
+★ **발행 범위는 위 표의 짝이다**(`scope_tier` · DECISIONS §613). 판정은 1,281구간 **전부** 하고 전부 발행한다 — 발행 범위는 구간을 하나도 안 떨구고 이름만 붙인다(`target` · `corridor` · `listed` · `reference`). 위 네 수는 1,281 기준이고, 그것을 발행 범위로 가르면 아래와 같다. 이름이 겹치지 않게 일러 둔다: `통행 불가 192` 의 「하한」은 개수가 확정이 아니라는 뜻이고(§2) 여기 「발행 범위」는 보여줄 구간의 범위다.
+<!--gen: scope_in scope_out v_blocked_in v_blocked_out-->
+발행 범위 안 754구간 · 발행 범위 밖 527구간이다. 통행 불가(`blocked`)는 발행 범위 안 `blocked` 74 이고 그중 발행 범위 밖 118 이다 — 「막힌 길」을 발행 범위 밖이라고 빼지 않는다.
+<!--/gen-->
+
 ```
 세그먼트        1,281
 총연장          58,308.7 m
@@ -1779,6 +1784,7 @@ uv run python tools/serve.py              # 배포와 같은 배치(입구 · na
 | `ecc_rel_med_m` · `ecc_rel_max_m` · `ecc_cov` | **중심선 편심** — 표본 \|ecc\| 의 중앙값·최댓값 ÷ 반폭(`width_min_m/2`), `ecc_m` 가 있는 표본점의 비율. `_m` 이름이지만 **무차원 비율**이다. **web 에만 있고 판정에 안 쓴다** — 임계는 사람이 정한다(DECISIONS §556) |
 | `struct_kind` · `struct_dist_m` | **입체 구조물**(터널 · 고가 · 교량 — 도로명주소 기타자료) 중 반경 50m 안에서 가장 가까운 것의 이름과 거리(m). 입력 범위 안만 적재돼 있어 null 은 「적재된 것 중에는 없다」다. **web 에만 있고 판정에 안 쓴다**(DECISIONS §563) |
 | `nfa_access_listed` · `nfa_access_width` · `nfa_access_len_m` · `nfa_access_hh` · `nfa_access_len_ratio` · `nfa_access_loose` · `nfa_access_token` | **소방서가 지정한 소방통로확보대상**(동부소방서 20구간)과의 도로명 **정확 일치**. 폭은 문자열 그대로, `len_ratio`(우리 연장 합 ÷ 소방서 구간거리)가 매칭 품질을 든다(0.5~2.0 밖이면 `loose`), `token` 은 소방서 지역명 원문. **web 에만 있고 판정에 안 쓴다**(DECISIONS §550) |
+| `scope_tier` | **발행 범위 분류** — `target`(동명동 안) · `corridor`(동 밖 · `route_usage > 0`) · `listed`(동 밖 · `route_usage == 0` · 소방서 표 지역명의 **주소부, 첫 괄호 앞**에 `road_name` 이 통째로 나온다) · `reference`(나머지). **구간을 하나도 안 떨군다** — 1,281구간 전부가 값 하나를 갖고 표출이 이 칸으로 고른다. `reference` 는 발행 범위에 안 든다. 판정에 안 쓴다. `nfa_access_listed`(지역명 어디서든)와 **다른 정의**다 — 괄호 안 설명 「(구, 지호로)」는 지정이 아니다(DECISIONS §613) |
 | `width_fail` | **폭을 못 낸 사유.** `no_xsec_attempted`(법선이 전부 평면교차부에 걸려 한 발도 못 쐈다) 등. `unknown_reason` 과 **다른 축**이다 — 저쪽은 회색의 사유, 이쪽은 폭이 빈 사유다(DECISIONS §436-3) |
 | `route_usage` | 최단경로 사용횟수. **통행 가능성이 아니다**(§3-10) |
 | `width_src` | 채택 소스. `ngii1k` · `ngii` · `silpok` 중 하나. 구간 단위 단일 소스 |
@@ -3249,7 +3255,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,766 전수 · **분모(blank) 0절** · 물림(inherit) 1,659절.
+★ **강제자 칸의 분모.** 절 2,773 전수 · **분모(blank) 0절** · 물림(inherit) 1,665절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4798,6 +4804,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | 파일 | 무엇을 드나 |
 | --- | --- |
 | `src/firelane/fireaccess.py` | 소방서 소방통로확보대상(`fire_access`)을 구간 칸(`nfa_access_*`)으로 싣는다 — 도로명 **정확 일치** · `len_ratio` 가 매칭 품질. 판정 폐포 밖이고 판정이 안 읽는다. 관문 `tests/test_fire_access_gate.py` 가 `clear` 와의 겹침을 막는다 |
+| `src/firelane/scopetier.py` | 구간마다 **발행 범위 분류** `scope_tier` 를 붙인다 — 대상지 · 회랑 · 지정 · 참고. 구간을 안 떨구고 이름만 붙인다. 지정은 `fireaccess.match` 를 소방서 표 **주소부** 행에 적용한다(새 매처 없음). 판정 폐포 밖 |
 | `src/firelane/clearance.py` | 구간별 **단순 내접원** 칸(`clear_*`)을 출판 때 싣는다 — 판정 폐포 **안**이다(Zm19 · §564 — `segments.py` 가 부르고 `clear_med_m` 을 규칙 [10] 이 읽는다). `clear_min_m` · `clear_max_m` 를 판정이 읽으면 시험이 운다(`tests/test_clearance.py`). R 상수가 없다(R 보정은 측정에서 악화됐다) |
 | `src/firelane/structures.py` | 구간 가까이(50m)의 **입체 구조물**(터널 · 고가 · 교량)을 진단 칸(`struct_*`)으로 싣는다 — 판정 폐포 **밖**이고 판정이 읽으면 시험이 운다(`tests/test_structures.py`). 면은 입력 범위 안만 적재돼 있다(DECISIONS §563) |
 | `src/firelane/occ.py` | 점유압력 β — 수요점으로 구간의 거주단위/100m(길이 기준 · 12m 평평한 끝 버퍼)와 폭 밴드 안 순위를 낸다. **판정선을 못 넘는다**(`classify.py` 가 읽으면 시험이 운다) |
