@@ -44193,16 +44193,18 @@ PLAN §10-5a 의 3 번 줄이 `freeze A-lock` 이었고 **명명 규칙**(`^\d{8
 - 어떤 래칫도 올리지 않았다. 이 변경은 어느 래칫도 안 움직인다.
 - `missing_why` 는 모두 채웠다 — 비면 `absence()` 가 「사유 미기재」를 내고 그것이 §424 가 금한 「사유 없는 침묵」이다.
 
-### 602-4. 재취득 경로 — 대장이 든 사실만 적는다
-받지 않기로 했으므로 이것은 **필요해질 때의 길잡이**다. URL 은 대장에 없어 적지 않는다. 받은 뒤 `acquire --verify` 가 대장의 sha256·바이트와 대조해 **동일본인지 즉시 판별**한다. 같지 않으면 제공처가 갱신한 **새 판**이니 새 행으로 세운다.
+### 602-4. 재취득 경로
+받지 않기로 했으므로 이것은 **필요해질 때의 길잡이**다. 이번 다섯에 `juso` 는 없다(`juso_adrdc` 는 2026-11-01 에 받았다).
 
-| 대장 키 | 제공처 | 받는 것 | 대장 파일명 |
-|---|---|---|---|
-| `vworld_uq164` | 국토교통부 공간정보 오픈플랫폼(V-World) | `LSMD_CONT_UQ164_5174_전남광주통합특별시.zip` — 도시계획시설 UQ164 | `vworld/vworld_uq164_jngj_20260915.zip` |
-| `eais_roadledger_dm` | 국토교통부 건축데이터 개방 포털 | 「15. 도로대장」 csv(동명동 29행 · utf-8-sig) | `eais/eais_roadledger_dm_jngj-dongmyeong_20260801.csv` |
-| `nfa_rapidresponse` | 소방청 화재대응조사과 | 2025-04-29 보도자료 PDF(119패스 · 7분 기준) | `nfa/nfa_rapidresponse_kr_20250429.pdf` |
-| `roadtraffic_act` | 법제처 국가법령정보센터 | 도로교통법 제29조 · 제30조, 시행 2026-07-01 — **조문 하나에 파일 하나** | `moleg/moleg_roadtraffic_act_kr_20260701_a29.pdf` · `_a30.pdf` |
-| `hydrantdevice_rule` | 법제처 국가법령정보센터 | 소방청예규 제64호 「비상소화장치의 설치 및 관리 기준」, 시행 2022-05-23 | `moleg/moleg_hydrantdevice_rule_kr_20220523.pdf` |
+| 대장 키 | 경로 |
+|---|---|
+| `vworld_uq164` | vworld.kr → 데이터 → 다운로드 → UQ164 → 광주 동구 |
+| `eais_roadledger_dm` | 건축행정시스템(EAIS) 직접 조회 — 동명동 도로대장 CSV. ★ **정보공개 청구가 아니다.** 그 길은 2026-08-24 에 두 번 부존재로 종결됐다(1차 17337943 · 보도현황 17337939) |
+| `nfa_rapidresponse` | nfa.go.kr 자료실 → 2025-04-29 발행본 |
+| `roadtraffic_act` | law.go.kr → 도로교통법 → 제29조 · 제30조 조문 PDF (둘 다) |
+| `hydrantdevice_rule` | law.go.kr → 「비상소화장치의 설치 및 관리 기준」 |
+
+받은 뒤 `uv run python tools/acquire.py --verify` 로 대장의 sha256·바이트와 대 보면 동일본인지 즉시 갈린다.
 
 ### 602-5. `moleg` 제공기관을 `reserved` 로 내렸다
 `moleg` 의 자료는 위 `roadtraffic_act` · `hydrantdevice_rule` 둘뿐이고 둘 다 `missing` 이다. `active` 는 「파일 0건이면 결손」이라 `lakecheck` L1 이 실패했다. `reserved` 는 「등재만 · 파일 0건이 정상」(`providers.py`)이다. 다시 받는 날 `active` 로 올린다.
