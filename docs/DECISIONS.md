@@ -44424,3 +44424,75 @@ csv 비기하 24개는 shapely · geopandas · pyogrio · pyproj 를 한 번도 
 
 ### 608-3. `RD`(동별출입구)는 어디 있나
 `TL_SPBD_ENTRC` 두 곳(현행 `juso_elctrnmap` · 후보 `juso_bldg_geom`)에는 `RD` 가 **없다**(`RM` · `RS` 뿐). 원천에 없는 것이 아니라 **다른 zip** 이다 — `juso_bldggrp_geom` 의 `TL_SPBD_ENTRC_DONG` 939개가 전부 `ENTRC_SE = RD` 이고(`ENT_MAN_NO` · `BUL_MAN_NO` · `ENTRC_DC` 포함) 동 폴리곤 `TL_SGCO_RNADR_DONG` 8,221개와 짝이다. **동명동 안은 7개**뿐이다. 즉 아파트 동별 출입구가 현행 목적지 집합에서 통째로 빠져 있는 것은 맞지만(어느 원천도 `building_entrance` 에 안 들어온다) 동명동에서 규모는 7개다. `PLAN #58` 의 「동 출입구」 배선이 그것이다.
+
+## 609. `#184` — 보조출입구(`RS`)를 소방차 목적지에 넣었다: verdict 는 안 움직이고 `route_usage` 만 움직인다 (사람 승인 · 실측 · 재잠금 대기)
+
+> 2026-11-03
+
+유병률  **0회** — 아직 안 났다. 이 절은 목적지 집합을 넓힌 첫 판의 실측이다. 판정이 조용히 갈린 사고는 없었다
+
+강제자  `tools/golden.py check` — L2 가 구간마다 `route_usage` 를 비교한다. 재잠금 전에 이 판의 변화(148구간)를 그것이 잡는다
+        **하위 여섯**이 이 칸을 물려받는다
+
+### 609-1. 결정과 근거
+사람이 승인했다: **`RS`(보조출입구)를 소방차 목적지에 넣는다.** 주출입구가 막히면 보조로 들어간다. 소방차 진입로 판정에서 보조출입구를 빼는 것은 보수적인 것이 아니라 틀린 것이다. 실측이 받친다 — `juso_bldg_geom` 의 `TL_SPBD_ENTRC` 는 현행 `juso_elctrnmap` 의 상위집합이라(DECISIONS §604-1) 공통 11,386건(ingest 후)의 좌표 차이는 0m, 속성 불일치는 0이고 추가분 1,351건은 전부 `RS` 다. 그래서 기존 목적지는 안 움직인다.
+`RD`(동별출입구)는 이번에 안 넣었다 — 다른 zip(`juso_bldggrp_geom` 의 `TL_SPBD_ENTRC_DONG` 939 · 동명동 7)이고 `PLAN #58` 의 동 출입구 배선과 같은 물음이다. **보류.**
+
+### 609-2. 규모 (재잠금 전에 쟀다 · 판정은 안 돌렸다)
+| 항목 | 현행 → `RS` 포함 |
+|---|---|
+| 동명동 안 출입구 | 1,313 → 1,413 (+100) |
+| 목적지 노드 | 335 → 338 (+3) |
+| 회랑 | 304엣지 · 11,200m → 304엣지 · 11,200m |
+| 판정 범위 면적 | 168.83ha → 168.83ha |
+| 판정 범위에 드는 그래프 엣지 | 1,363 → 1,363 (새로 듦 0 · 빠짐 0) |
+| `usage` 가 달라진 엣지 | 160 / 3,470 (전부 증가 · 감소 0) |
+
+새 출입구 100개가 거의 기존 노드에 붙어서 목적지 노드는 3개만 는다. 회랑 기하가 그대로라 `judgment_scope` 가 안 변한다.
+
+### 609-3. 전후 판정 — 예상대로다
+격리 worktree(`PYTHONPATH` · 스크래치 `FIRE_LANE_DATA` · raw / norm 읽기 심볼릭 · `data/processed` 전체 복사)에서 `segments.main()` 을 두 번 돌렸다. 기준 실행(현행)은 1분 57초 · 피크 RSS 273MB, `RS` 포함 실행은 2분 7초 · 273MB 다. 기준 실행이 메인 `segments.geojson` 과 같은지 먼저 봤다 — 1,281구간 전부에서 차이는 `z` 열 하나뿐이다(terrain 이 덧쓴 열이고 DECISIONS §603-3 과 같은 규약).
+
+| 칸 | 현행 | `RS` 포함 |
+|---|---|---|
+| `clear` | 274 | 274 |
+| `needs_cv` | 283 | 283 |
+| `blocked` | 192 | 192 |
+| `unknown` | 532 | 532 |
+
+전이표는 네 칸 모두 대각선이고 off-diagonal 은 **0**이다(`blocked→blocked` 192 · `clear→clear` 274 · `needs_cv→needs_cv` 283 · `unknown→unknown` 532). 지오메트리와 폭 등 나머지 칸도 같다. 달라진 것은 `route_usage` 하나뿐이다.
+- 달라진 구간 **148**(증가 148 · 감소 0 · 0→양수 0) · 증가량 합 +216 · 최대 +3.
+- 그 148구간의 verdict 분포는 `clear` 71 · `unknown` 45 · `needs_cv` 29 · `blocked` 3 이다.
+- 경로사용 구간 수는 580 → 580 이다.
+`route_usage` 는 골든 L2 의 비교 필드(`FIELDS`)라서 판정이 안 변해도 재잠금은 필요하다. 내용은 「사용횟수만 늘었다」다.
+
+### 609-4. 메인 적용
+- `sources.yaml` 의 `building_entrance` 를 고쳤다 — `stem: juso_bldg_geom` · `layer: '*TL_SPBD_ENTRC*.shp'` · `updated: '2026-08-01'` · `what` · `note`. `schema` 는 `ledger_schema.py --apply --missing` 로 다시 썼다(실물 17,069건 · 이 항목만 바뀌었다).
+- **cfg 지문 어긋남은 이 샤드 하나뿐이다**(읽기 전용 `shardseal.check` — 48 「봉인 일치」 · 1 「sources.yaml 설정이 바뀌었다」 `building_entrance`). 코드는 안 바꿨으므로 `code` 칸은 그대로이고 **`--reseal-code` 는 필요 없다.**
+- `fire-lane --only ingest --no-test` 로 재적재했다(36.5초). 바뀐 산출물은 `building_entrance` 두 파일(12,737건)과 계보 기록(`_manifest.json` · `_lineage.json` · `.rawprint.json`)뿐이고 재적재 뒤 49개 봉인이 전부 일치한다.
+- `segments.geojson` 은 아직 옛 입력으로 만든 것이다. 재잠금 전에 `segments` 부터 다시 돌려야 한다.
+- ★ 전체 pytest 가 `test_lake.py::test_real_lake_has_no_two_owners` 에서 한 번 울었다 — 같은 zip(`juso_bldg_geom_jngj_20260801.zip`)을 `juso_bldg_geom`(raw_only)과 `building_entrance` 가 함께 주장해 「두주인」이 됐다. 한 원본의 항목이 둘이면 각자 서로 다른 `layer` 를 적어야 공유로 인정된다(`lake._shared`). `juso_bldg_geom` 에 자기 몫(`'*TL_SGCO_RNADR_MST*.shp + *TL_SPOT_CNTC*.shp'`)을 적어 풀었다. 이 항목은 여전히 `raw_only` 라 읽지 않고 미배선에도 안 센다. 선례는 `road_link` / `road_rw` 가 한 stem 을 나눠 쓰는 것이다. 지금 이 어긋남을 **격리 실험은 못 잡았다** — 격리에서는 레이크 관문을 안 돌렸기 때문이다.
+- 관련 검사 150건과 `lakecheck`(0건) · `unusedcheck`(13) · `contract --declared`(무계약 38 · crs 40)가 초록이다.
+
+### 609-5. `#62` 의 분모 — 미리 세었다 (재잠금 뒤에 한 번 더 센다)
+정의는 DECISIONS §544-3 과 같다: 대상지 = `in_emd`, 회랑 = 동 밖이면서 `route_usage > 0`, 참고 = 나머지. 메인 · 격리 기준 · `RS` 포함 세 곳이 같다.
+
+| 묶음 | 현행 | `RS` 포함 |
+|---|---|---|
+| 대상지 | 416 | 416 |
+| 회랑 | 219 | 219 |
+| 참고 | 646 | 646 |
+| 「밖은 경로가 쓰는 것만」(대상지 + 회랑) | **635** | **635** |
+| `nfa_designated` 인 동 밖 · 경로 미사용 추가 | 120 | 120 |
+| 「+소방청지정」 | 755 | 755 |
+
+`PLAN #62` 가 적은 635 는 그대로 재현된다. ★ 「+소방청지정」은 **723 이 재현되지 않는다** — `nfa_designated` 로 세면 755 다(120 추가). 723 은 2026-09-19 에 잰 값이고 그 뒤 구간 수와 지정 표시가 바뀐 듯하나 이 판에서 원인을 가르지 않았다. 어느 쪽이든 `RS` 적용 전후는 같다. 이 판은 `#62` 를 고치지 않았다.
+
+### 609-6. 재잠금 — 사람이 친다 · 열린 것
+선례 순서(DECISIONS §595 · §596 의 재잠금)에 따른 명령은 이렇다.
+1. `uv run fire-lane --from segments` — 새 입력으로 산출물을 다시 만든다(`terrain` 이 `z` 를 다시 덧쓴다).
+2. `uv run python tools/golden.py check` — 달라지는 칸이 `route_usage` 148구간뿐인지 본다(재잠금 전 증거).
+3. 골든 잠금(`tools/golden.py` 의 `lock` 하위 명령).
+4. `uv run python tools/baseline.py freeze 20261103-rs-entrance` — 이름 규칙은 `^\d{8}-[a-z0-9-]+/`.
+5. `uv run python tools/docseal.py stamp --only …` — 무효가 된 절만.
+열린 것: `RD` 포함 여부(`PLAN #58` 의 동 출입구와 한 묶음) · 출입구 없는 건물 72동의 경고 / 대체. 둘은 `PLAN #184` 가 든다.

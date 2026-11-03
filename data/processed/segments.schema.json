@@ -1,6 +1,6 @@
 {
   "crs": "EPSG:4326",
-  "sha256": "0598203bf9d8ef716ef19b0016bd299a00b2bef3de140b0077116b4e16c641a6",
+  "sha256": "48512d45fa5f394d3931016bcdefde87ec85d9d838ffe3b201b9f325eb805551",
   "count": 1281,
   "width_verified": false,
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",

@@ -34,7 +34,7 @@
       "out": "1423:ac44cf183beed2d9"
     }
   },
-  "generated_at": "2026-11-01T20:36:32.652464+09:00",
+  "generated_at": "2026-11-03T18:09:04.412995+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -2577,6 +2577,19 @@
       }
     },
     {
+      "key": "building_entrance",
+      "source_files": [
+        "**/juso_bldg_geom_*"
+      ],
+      "source_sha256": "03808c2a5d858785589e864cc85a275d87656fe07fc6f5875304e4b3924a92cd",
+      "resolved": "juso_bldg_geom_jngj_20260801.zip",
+      "source_crs": "EPSG:5179",
+      "status": "OK",
+      "features": 12737,
+      "geom": [
+        "Point"
+      ],
+      "invalid_fixed": 0,
       "columns": [
         "BUL_MAN_NO",
         "ENTRC_SE",
@@ -2585,30 +2598,17 @@
         "OPERT_DE",
         "SIG_CD"
       ],
-      "features": 11386,
-      "geom": [
-        "Point"
-      ],
-      "invalid_fixed": 0,
-      "key": "building_entrance",
       "outputs": [
         "building_entrance.geojson",
         "building_entrance_5186.gpkg"
       ],
-      "resolved": "juso_elctrnmap_jngj_20260711.zip",
-      "source_crs": "EPSG:5179",
-      "source_files": [
-        "**/juso_elctrnmap_*"
-      ],
-      "source_sha256": "895df207b4159c56ad27bb18a265a6d1121b96493d3d0d16ab5016fcabea2993",
-      "status": "OK",
       "seal": {
-        "raw": "895df207b4159c56",
-        "cfg": "b1ccf9c3b433799d",
+        "raw": "03808c2a5d858785",
+        "cfg": "b6f1fc758889b17d",
         "code": "e6ceb1dd5b430c21",
         "out": {
-          "building_entrance.geojson": "7df75cf8682d3771",
-          "building_entrance_5186.gpkg": "b347c49852a1a9eb"
+          "building_entrance.geojson": "406a7b7b7b1a5fc0",
+          "building_entrance_5186.gpkg": "5dcdf345117dfc71"
         }
       }
     },

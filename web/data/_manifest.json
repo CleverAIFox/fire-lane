@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-11-02T22:35:16+09:00",
+  "generated_at": "2026-11-03T19:26:57+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
-      "sha256": "3b0fb6ddd9e8ccf5a548ffef7fd5ecde1049ac584b255dd8a2f1d313bf5da64e",
+      "sha256": "76109611306ef4b49b77baab7b2060538f97c98450e7b2b43fa8dcbad8a178e8",
       "bytes": 1960907
     },
     "segments.schema.json": {
-      "sha256": "318738fe3c3d37cfff9b6b2b19b0107bf6f3e6d81bf50b5f4767ecb4cff42e43",
+      "sha256": "ceb7a4606a2f8d1502634f262585ce33053c0c69ae436c955dce118dcf26e45c",
       "bytes": 12043
     },
     "_manifest.json": {
-      "sha256": "5f7f9f9d195ccf44aed45ca957516c019c55fb5bb54fed5176c526d1efd2ee40",
+      "sha256": "74fea9a8a6cbab8f544e33a76ed62be351c0f7ae9bfda1ac51a0a2ef1c2a0e20",
       "bytes": 105998
     }
   },
@@ -61,11 +61,11 @@
       "bytes": 96726
     },
     "segments.geojson": {
-      "sha256": "1a442c3cc692056ee4b101b87b329e1a3e73a21992558ecd8404e3ccfbfff80e",
+      "sha256": "7128e435589781c71834926275eec90991d3c2677cc1116418c9f69964632c35",
       "bytes": 2167408
     },
     "segments.schema.json": {
-      "sha256": "142656c50b96c559d7ce2147a5e49b63bc6baab1b2819f2fd5f534a86f238fd7",
+      "sha256": "af560154afffcee0217a9eb9efbfb4d4ff53d9fa28030945061b2d9af7710ef6",
       "bytes": 14286
     },
     "sidewalk.geojson": {
@@ -81,7 +81,7 @@
       "bytes": 350
     },
     "view.json": {
-      "sha256": "507da3da1bb8366ef18a1ea3e5280319d8f4ac590f2ac5493c459638ec8ed06e",
+      "sha256": "79a638f31f7d0e34e4448c3ad87881eb2de0c0899f8b94cecb659ae32bb3c90e",
       "bytes": 582
     }
   },
