@@ -1,5 +1,5 @@
 """
-delimited.py — 구분자 텍스트를 읽는 갈래. CSV 와 `|` 구분 텍스트.  (PLAN §1 #132)
+delimited.py — 구분자 텍스트를 읽는 갈래. CSV 와 `|` 구분 텍스트.  (PLAN §1 #132(닫힘))
 
 IN    좌표 있는 CSV · zip 안 대용량 CSV · 헤더 없는 구분자 텍스트 · 좌표 없는 표
 OUT   GeoDataFrame (좌표 있는 것) 또는 완성된 계보 조각 (표)

@@ -223,7 +223,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
            "source_crs": crs}
     kind = e["kind"]
 
-    # ── 갈래를 부른다.  (PLAN §1 #132 · DECISIONS §274) ──────────
+    # ── 갈래를 부른다.  (PLAN §1 #132(닫힘) · DECISIONS §274) ──────────
     # ★ 종전에는 여기가 `if kind == …` 열두 갈래 389줄이었다. 그 하나가
     #   **72개 데이터셋 전부의 샤드 `seal.code`** 를 들고 있어서 `text_table`
     #   한 줄을 고치면 `raw_only` 26개까지 재도장됐다. 갈래를 `read/` 로 내려

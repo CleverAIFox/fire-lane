@@ -1,5 +1,5 @@
 """
-shapefile.py — SHP 를 읽는 갈래.  (PLAN §1 #132 · DECISIONS §274)
+shapefile.py — SHP 를 읽는 갈래.  (PLAN §1 #132(닫힘) · DECISIONS §274)
 
 IN    zip 안 SHP 한 장 · 도엽 여러 zip · NGI/SHP 혼재 묶음
 OUT   GeoDataFrame (`shp_zip` · `shp_zip_multi`) 또는 완성된 계보 조각 (`ngii1k`)

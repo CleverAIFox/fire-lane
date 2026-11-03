@@ -1,5 +1,5 @@
 """
-jsondoc.py — JSON 문서를 읽는 갈래.  (PLAN §1 #132)
+jsondoc.py — JSON 문서를 읽는 갈래.  (PLAN §1 #132(닫힘))
 
 IN    표준데이터 JSON(`records`) · 건축행정시스템 JSON(`Data`)
 OUT   GeoDataFrame (`json_points`) 또는 완성된 계보 조각 (`json_table`)
