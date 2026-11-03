@@ -44211,3 +44211,41 @@ PLAN §10-5a 의 3 번 줄이 `freeze A-lock` 이었고 **명명 규칙**(`^\d{8
 
 ### 602-6. 열린 것 — `PLAN #182`
 `tools/lakecheck.py` · `tools/acquire.py` 의 `judge()` · `missing_from_register()` 는 `absence()` 를 부르지 않는다(grep 0건). `status: missing` 을 모른 채 결손을 계속 찍는다. `tests/test_declaration_reality.py:508` 의 그물이 `globs(e` · `paths_of(e` 꼴만 잡아 `dataset_globs()` 를 쓰는 자리는 밖이다. 고치지 않았다 — 고치면 §447 이 모은 판정처가 여섯째를 얻고 제 판이 필요하다. 한 행(`#182`)으로 세웠다.
+
+## 603. `#132` — 샤드 `code` 봉인 49종을 받아줬다: `uv.lock` 올림뿐이었고 산출물은 안 변했다 (`--reseal-code` 사람이 침 · 코드 변경 0 · 판정 변경 0)
+
+> 2026-11-03
+
+유병률  **1회** — 「`uv.lock` 올림만으로 샤드 `code` 봉인이 49종 전부 어긋났다」(2026-11-02 dependabot #357 뒤). 이 절이 처음 센 수다
+
+강제자  `tests/test_seal_axes.py::test_reseal_code_fixes_only_the_code_slot` · `::test_reseal_code_refuses_when_the_outputs_moved` — `code` 칸만 고치고, raw 나 산출물이 봉인과 다르면 거절하는지 문다
+        **하위 여섯**이 이 칸을 물려받는다
+
+### 603-1. 무엇이 움직였나
+- 폐포(`firelane.ingest`)는 30파일이다. `142cd5de` 부터 `HEAD` 까지 30파일의 diff 는 **0줄**이다. 움직인 것은 `uv.lock` 이고 그것은 `d5e79eb3`(#357)에서뿐이다.
+- 폐포가 기대는 12패키지 중 셋: numpy 2.5.3 → 2.5.4 · pandas 3.0.6 → 3.1.0 · shapely 2.1.2 → 2.2.0.
+- lock 부분 지문 `a80bae73` → `065247d6` · 샤드 `code` `8d2e6f47` → `e6ceb1dd`. 49 샤드 전부, 사유는 「ingest 코드가 바뀌었다」 하나였고 raw · cfg · out 은 49 모두 봉인과 같았다.
+
+### 603-2. 받아준 근거 — §224-2 가 요구하는 「기계가 잰 증거」
+49 샤드를 샤드마다 따로, 격리해서 현행 코드로 다시 취입하고 저장본과 칸별로 대조했다(geojson · csv 는 바이트, gpkg 는 행수 · 컬럼 · CRS · 지오메트리 WKB · 속성. `gpkg_contents.last_change` 제외).
+- **전수 49/49, 실패 0.** 기하 산출(gpkg) 25 중 산출물 변동 0(`z` 열 제외) · 비기하 24 변동 0.
+- ★ **「49 전부 동일」이 아니다 — 「45 동일 · 4 는 `z` 열만 다름」이 정확하다**(603-3).
+- 45 샤드는 봉인지 raw · cfg · out 이 불변이고 49 모두 `code` 만 움직였다.
+- 사람이 `uv run python -m firelane.ingest --reseal-code` 를 쳤다. 게이트는 raw · 산출물이 봉인과 같은 샤드만 받는다 — 거절 0.
+- 비용(격리 · 샤드별): 총 **199초** · 최장 `ngii1k` 41.8초 · 최대 RSS `poi_store` 370MB · `ngii_road` 13.4초 · 149MB. **OOM 재현 0.**
+
+### 603-3. `z` 네 샤드는 terrain 하류 소관이다
+`building`(14,618행) · `cctv`(679) · `fire_station`(3) · `hydrant_point`(528). 저장본에만 `z` 열이 있다. 행수 · 공통 컬럼의 속성(불일치 0행) · 2D WKB 는 같다. `terrain` 이 ingest 산출물에 `z` 를 덧쓰고 `reseal_out` 이 `out` 칸을 그 결과로 고친다 — 규약이다(§165-6 · 강제자 `tests/test_shardseal.py::test_terrain_mutations_are_declared`). 그래서 이 네 샤드의 `out` 봉인은 재취입본과 다르다.
+⚠ **메인에서 전량 `ingest` 를 돌리면 이 네 샤드의 `z` 가 날아간다.** ingest 산출물에는 `z` 가 없다. 돌렸으면 `terrain` 을 다시 돌려야 한다.
+
+### 603-4. 격리 레시피 · 그리고 첫 시도의 사고
+첫 시도는 `uv run --project <메인> python -m firelane.ingest` 로 worktree 에서 돌렸다. editable 설치가 메인의 `firelane` 을 잡아 **메인의 `data/processed` 에 썼다** — `juso_tunnel` 두 파일과 추적 파일 `_manifest.json`. 비교 자료를 뽑은 뒤 `git checkout` 과 원본 복사로 되돌렸고 해시를 대조했다. 자식 프로세스(`sys.executable -c`)도 같은 길을 탄다.
+정본 레시피: `PYTHONPATH=<worktree>/src`(환경에 넣어 자식이 상속) · `FIRE_LANE_DATA=<스크래치>`(raw · norm 은 레이크 심볼릭 링크로 읽기만) · `FIRE_LANE_RAW` 해제 · worktree 의 `data/processed` 에 `_manifest.json` · `.rawprint.json` · `_lineage.json` 복사 · 실행 전 `paths.ROOT` · `PROCESSED` 가 worktree 인지 **단언** · 전후로 메인 `data/processed` 해시를 떠서 0줄 diff 를 증명한다. 이 길이 기본으로 안 서는 것은 `PLAN #183` 이 든다.
+
+### 603-5. 정정 — 지문 값 둘과 gpkg 시각
+- `21998ed5` 는 10-22(`035b79d0`) 시점의 값이다. 10-26 baseline 에 남은 옛 값이고 현행 저장 지문은 `8d2e6f47` 이었다. `de8ca882` 는 **ortho 축**의 지문이라 이 건과 무관하다. `PLAN #132` 본문에서 둘 다 뺐다.
+- 첫 두 번의 대조(`juso_tunnel` · `ngii_road`)에서 gpkg 를 손으로 sqlite 비교했다. 불필요했다 — §165-8 이 이미 gpkg `out` 을 내용(`last_change` · R-tree 제외)으로 재도록 고쳐 놨고, 오늘 45 샤드의 `out` 이 그대로 일치했다. 「`last_change` 때문에 `out` 이 동일본을 못 알아본다」는 결함이 **아니다.**
+
+### 603-6. 열린 것
+- `PLAN #183` — `PROCESSED` 가 `ROOT` 에 묶여 격리 재취입이 기본으로 불가하다. 레시피가 정본이 되도록 행으로 세웠다.
+- `PLAN #132` 는 **열려 있다.** 봉인지가 갈린 일은 닫혔지만 행의 본래 몫 — `seal.code` 를 「공용 폐포 + 제 갈래」로 가르는 일 — 은 남았다.
