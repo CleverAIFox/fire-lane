@@ -516,8 +516,8 @@ export default function OpsApp() {
               ["context", "과속방지턱 · 카메라 · 보호구역"],
               ["cctvCov", "CCTV 영상판정 반경 19m"],
               ["ortho", "항공정사영상 25cm"],
-              ["bldg", "3D 건물(비스듬히)"],
-              ["terrain", "지형(음영 · 3D 에서 지면 휨)"],
+              ["bldg", "3D 건물"],
+              ["terrain", "지형(음영 · 지면 휨)"],
               ["ref", "발행 범위 밖 구간(흐리게) — 막힌 길 포함"],
             ] as [keyof OpsLayers, string][]).map(([k, t]) => (
               <label key={k} style={toggleRow}>
