@@ -69,6 +69,7 @@ CRITICAL = (
     # ── 판정 재료 ────────────────────────────────────────────
     "building",           # 건물. 담~담 폭(wmax)의 재료
     "building_entrance",  # 건물 출입구. 접근 회랑의 도착점 — 회랑이 비면 판정 범위가 좁아진다
+    "building_connector", # 건물↔도로 접속선. 목적지 노드를 붙이는 길 — 낡으면 목적지가 직선 최근접으로 갈리고 회랑 · 판정 범위가 움직인다(PLAN #58 · DECISIONS §616)
     "boundary_emd",       # 법정동 경계. 판정 범위(KEEP_BUFFER 50m)의 원점이고 EMD_CD 로 한 행을 고른다
     "fire_station",       # 119안전센터. 판정 범위의 300m 원 · 회랑의 출발점 (DECISIONS §170)
     "cctv",               # CCTV. needs_cv 판정의 성립 여부(`CCTV_RANGE`)를 가른다
@@ -102,6 +103,7 @@ REQUIRED_FILES = (
     "ngii_road_5186.gpkg",
     "building_5186.gpkg",
     "building_entrance_5186.gpkg",
+    "building_connector_5186.gpkg",
     "boundary_emd_5186.gpkg",
 )
 

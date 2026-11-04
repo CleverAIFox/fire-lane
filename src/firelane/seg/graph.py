@@ -92,17 +92,66 @@ def build_graph(road, poly, endpoint_snap):
     return G, _dups
 
 
-def access_corridor(G, ent, poly, out_dir: Path | None = None):
+def _connector_ends(conn) -> dict:
+    """`ENT_MAN_NO` → 접속선(`TL_SPOT_CNTC`)의 두 끝점 `[(x, y), (x, y)]`.
+
+    접속선은 출입구에서 도로까지 이은 선이다. 어느 끝이 출입구인지는 호출자가
+    출입구 점과 대 보고 가른다(원천이 끝점 순서를 약속하지 않는다).
+    """
+    out = {}
+    for k, g in zip(conn["ENT_MAN_NO"].astype(str), conn.geometry, strict=True):
+        c = list(g.coords)
+        out[k] = (c[0][:2], c[-1][:2])
+    return out
+
+
+def access_targets(G, ent, poly, conn=None) -> set:
+    """소방차 목적지 노드 집합 — 동명동 안 출입구를 그래프 노드에 붙인 것.
+
+    ★ **붙이는 길이 둘이다 — 혼합이다.** 다음 사람이 「왜 둘이냐」를 묻는다.
+
+      · **접속선이 있는 출입구**(`conn` 에 `ENT_MAN_NO` 가 있는 것 — 오늘은 주출입구
+        `RM` 1,313 전부) → 접속선의 **도로 쪽 끝점**에서 가장 가까운 노드.
+        접속선은 원천(`juso_bldg_geom` 의 `TL_SPOT_CNTC`)이 「이 출입구는 도로의 여기로
+        닿는다」고 **선언한** 것이다.
+      · **접속선이 없는 출입구**(오늘은 보조출입구 `RS` 100 전부 — 원천이 안 준다) →
+        지금까지처럼 출입구 점에서 **직선 최근접 노드**(`np.argmin`).
+
+    ★ 왜 바꿨나(PLAN #58 · DECISIONS §616). 직선 최근접은 출입구를 **다른 도로의 노드에**
+      붙일 수 있다 — 접속선과 비교하면 1,313 중 244(19%)가 다른 노드였다(노드 간 거리 중앙값
+      31.7m · 최대 147.1m). `conn=None` 이면 전부 직선 최근접이다(종전 동작 그대로).
+    ★ 규칙은 **「접속선이 있으면」** 이지 「`RM` 이면」이 아니다 — 원천이 `RS` 에 접속선을
+      주기 시작하면 코드를 안 고쳐도 따라간다. 오늘의 `RM`/`RS` 대응은 데이터의 성질이다.
+    """
+    nodes = list(G.nodes); npts = np.array(nodes)
+    snapn = lambda x, y: nodes[int(np.argmin((npts[:, 0]-x)**2 + (npts[:, 1]-y)**2))]
+    ends = _connector_ends(conn) if conn is not None else {}
+    tg = set()
+    for key, g in zip(ent["ENT_MAN_NO"].astype(str), ent.geometry, strict=True):
+        if not poly.contains(g):
+            continue
+        e = ends.get(key)
+        if e is None:
+            tg.add(snapn(g.x, g.y))
+            continue
+        # 도로 쪽 끝 = 출입구 점에서 먼 끝
+        far = max(e, key=lambda q: (q[0]-g.x)**2 + (q[1]-g.y)**2)
+        tg.add(snapn(far[0], far[1]))
+    return tg
+
+
+def access_corridor(G, ent, poly, out_dir: Path | None = None, conn=None):
     """안전센터 → 건물 출입구 최단경로의 합집합.
 
     출동은 소방서가 아니라 119안전센터에서 나간다. 회랑도 판정 색상을 가져야
     "안전센터에서 오는 길이 어떤 상태인가" 가 보인다.
 
+    `conn` — 건물 접속선(`access_targets` 가 목적지 노드를 고를 때 쓴다). 없으면 종전대로다.
     반환 (corr, use).
     """
     nodes = list(G.nodes); npts = np.array(nodes)
     snapn = lambda x, y: nodes[int(np.argmin((npts[:, 0]-x)**2 + (npts[:, 1]-y)**2))]
-    tgts = {snapn(g.x, g.y) for g in ent[ent.within(poly)].geometry}
+    tgts = access_targets(G, ent, poly, conn)
     use = Counter()
     for lon, lat in STATIONS.values():
         p0 = gpd.GeoSeries([Point(lon, lat)], crs=CRS_W).to_crs(CRS_M).iloc[0]

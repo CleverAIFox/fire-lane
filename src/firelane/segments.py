@@ -471,7 +471,7 @@ def main():
 
     G, _dups = seg_graph.build_graph(road, poly, endpoint_snap)
 
-    corr, use = seg_graph.access_corridor(G, ent, poly, out_dir=OUT)
+    corr, use = seg_graph.access_corridor(G, ent, poly, out_dir=OUT, conn=load("building_connector"))  # §616 필수 — 없으면 멈춘다. 혼합 규칙은 graph.access_targets
 
     # CCTV 유효 범위. needs_cv 구간이 이 안에 없으면 영상판정 자체가 불가능하다.
     cctv = gpd.read_file(OUT/"cctv_5186.gpkg").to_crs(CRS_M)

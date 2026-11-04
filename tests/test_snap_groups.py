@@ -124,3 +124,50 @@ def test_a_two_centimetre_gap_still_joins():
         assert rep[0] == rep[1], (
             f"x={base} 와 x={base + 0.02} 가 다른 노드가 됐다 — 격자 반올림이 돌아왔다.\n"
             "  폭 15m 대로가 「도달 불가」로 나오는 것이 그 증상이다(2026-08-24).")
+
+
+# ── 목적지 노드를 붙이는 길 — 접속선이 있으면 그 끝점, 없으면 직선 최근접 (PLAN #58 · DECISIONS §616) ──
+def _targets_fixture():
+    """노드 둘: A(0,0) · B(30,0). 출입구는 A 에 훨씬 가깝지만 접속선은 B 쪽 도로로 닿는다."""
+    import geopandas as gpd
+    import networkx as nx
+    from shapely.geometry import LineString, box
+
+    G = nx.Graph()
+    G.add_edge((0.0, 0.0), (30.0, 0.0), geom=LineString([(0, 0), (30, 0)]), length=30.0)
+    poly = box(-50, -50, 50, 50)
+    rm, rs, out = Point(2, 5), Point(2, -5), Point(200, 200)
+    ent = gpd.GeoDataFrame({"ENT_MAN_NO": [1, 2, 3], "ENTRC_SE": ["RM", "RS", "RM"]},
+                           geometry=[rm, rs, out], crs=5186)
+    # 접속선 — 끝점 순서를 일부러 뒤집어 준다(원천은 순서를 약속하지 않는다): 도로 쪽 끝이 앞에 온다.
+    conn = gpd.GeoDataFrame({"ENT_MAN_NO": [1, 3]},
+                            geometry=[LineString([(29, 1), (2, 5)]), LineString([(29, 1), (200, 200)])], crs=5186)
+    return G, ent, poly, conn
+
+
+def test_without_connectors_targets_are_the_straight_line_nearest_nodes():
+    from firelane.seg.graph import access_targets
+    G, ent, poly, _ = _targets_fixture()
+    assert access_targets(G, ent, poly, None) == {(0.0, 0.0)}, "conn=None 은 종전(np.argmin)이어야 한다"
+
+
+def test_an_entrance_with_a_connector_goes_to_the_road_end_node():
+    from firelane.seg.graph import access_targets
+    G, ent, poly, conn = _targets_fixture()
+    got = access_targets(G, ent, poly, conn)
+    assert (30.0, 0.0) in got, "접속선이 있는 출입구가 도로 쪽 끝점의 노드(B)에 안 붙었다 — 직선 최근접(A)에 남았다"
+
+
+def test_an_entrance_without_a_connector_keeps_the_straight_line_fallback():
+    """혼합이다 — `RS` 에는 접속선이 없고 종전대로 붙는다. 둘 다 있어야 한다."""
+    from firelane.seg.graph import access_targets
+    G, ent, poly, conn = _targets_fixture()
+    assert access_targets(G, ent, poly, conn) == {(0.0, 0.0), (30.0, 0.0)}, \
+        "RM(접속선→B) 하나와 RS(직선 최근접→A) 하나가 각자 붙어야 한다"
+
+
+def test_entrances_outside_the_polygon_are_not_targets():
+    from firelane.seg.graph import access_targets
+    G, ent, poly, conn = _targets_fixture()
+    # 3번은 poly 밖이다 — 접속선이 있어도 목적지가 아니다. 위 기대값이 둘뿐인 것이 그 증거다.
+    assert len(access_targets(G, ent.iloc[[2]], poly, conn)) == 0

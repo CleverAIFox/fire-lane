@@ -2149,6 +2149,40 @@ datasets:
       layer_used: 'Total.JUSURB.20260801.TL_SPBD_ENTRC.12210.shp'
       columns: ['BUL_MAN_NO', 'ENTRC_SE', 'ENT_MAN_NO', 'EQB_MAN_SN', 'OPERT_DE', 'SIG_CD']
       features: 17069
+  building_connector:
+    feeds:
+      - src/firelane/normalize_raw.py
+      - src/firelane/segments.py
+      - src/firelane/seg/graph.py
+    stem: juso_bldg_geom
+    authority: 행정안전부 도로명주소 (전자지도 건물 도형 · 2026-08-01 승인분)
+    ext: [zip]
+    scope: jngj
+    updated: '2026-08-01'
+    what: 건물 출입구 → 도로 접속선(`TL_SPOT_CNTC`). 소방차 목적지 노드를 붙이는 길
+    crs_native: 5179
+    kind: shp_zip
+    layer: '*TL_SPOT_CNTC*.shp'
+    encoding: cp949
+    note: |
+      ★ 2026-11-04 (PLAN #58 · DECISIONS §616). `building_entrance` 와 **같은 zip**(`juso_bldg_geom`)의 다른 레이어다 — 한 zip 에 항목이
+        둘이면 각자 `layer` 로 가른다(`lake._shared`). 접속선은 출입구에서 도로까지 이은 선이고 `ENT_MAN_NO` 로 출입구와 일대일이다
+        (동명동 `RM` 1,313 전부에 있고 `RS` 100 에는 없다 · 접속선 길이 = `CNT_DST_LN`).
+      ★ **쓰는 길** — `seg/graph.py::access_targets`. 접속선이 있는 출입구는 도로 쪽 끝점의 최근접 노드, 없는 출입구(`RS`)는 종전대로
+        출입구 점의 직선 최근접 노드다 — **혼합이다.** 직선 최근접은 1,313 중 244(19%)를 접속선과 **다른 노드**에 붙였다(노드 간 거리
+        중앙값 31.7m · 최대 147.1m). 접속선은 원천의 선언이다.
+      ★ 이전 판이 이 항목의 사유를 「`navi_build` 가 따로 만드는 1,313개와 같은 일」이라 적었으나 **거짓이다** — `navi_build` 는 내비게이션용DB
+        건물 표(목적지 검색용)이고 접속선을 안 만든다. 1,313 은 `RM` 출입구 수이고 지금까지 붙인 곳은 `seg/graph.py` 의 `np.argmin` 이었다.
+    contract:
+      encoding: cp949
+      layer_must_exist: true
+
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      layers: ['Total.JUSURB.20260801.TL_SGCO_RNADR_MST.12210', 'Total.JUSURB.20260801.TL_SPBD_ENTRC.12210', 'Total.JUSURB.20260801.TL_SPOT_CNTC.12210']
+      layer_glob: '*TL_SPOT_CNTC*.shp'
+      layer_used: 'Total.JUSURB.20260801.TL_SPOT_CNTC.12210.shp'
+      columns: ['BSI_INT_SN', 'CNT_DRC_LN', 'CNT_DST_LN', 'ENT_MAN_NO', 'OPERT_DE', 'RDS_MAN_NO', 'RDS_SIG_CD', 'SIG_CD']
+      features: 15518
   hydrant_point:
     feeds:
       - src/firelane/normalize_raw.py
@@ -4149,7 +4183,7 @@ outputs:
   segments:
     produced_by: src/firelane/segments.py
     path: data/processed/segments.geojson
-    inputs: [ngii1k, ngii_road, road_rw, road_link, building, building_entrance, boundary_emd, cctv, fire_station, node_link, turn_restriction]
+    inputs: [ngii1k, ngii_road, road_rw, road_link, building, building_entrance, building_connector, boundary_emd, cctv, fire_station, node_link, turn_restriction]
     stable_key: seg_uid
     consumers:
     - src/firelane/publish_web.py
