@@ -13571,14 +13571,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "139389f9fc0f8dce",
-   "31451aaf98d7d6a8",
-   "8ff279b43d42a908",
-   "aae3e40ad0ed14b8",
-   "b0fc89d0e11afc53",
-   "be536b65949fe069",
-   "e1d0378790d5a0e5",
-   "f3819165c0f6f2e3"
+   "09a15be6a80db423",
+   "17f182e66fff3b42",
+   "2c624d9c51f3ce02",
+   "2d7db8b0b8ce0b7c",
+   "46366201cefb1c7c",
+   "9eb19992a1725ffe",
+   "b4f73000e598aea9",
+   "fa50d5f2d416656f"
   ],
   "parts": {
    ".devcontainer/devcontainer.json": "8263815938062a90",
@@ -13616,9 +13616,9 @@
    "web/navi/src/domain/geo.ts": "5d85f2b7d3043ea8",
    "web/navi/src/domain/vehicle.ts": "5fada2911d0cbec0",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "3af9fc88541c4637"
+   "본문": "b8e3716febb21c4b"
   },
-  "sha": "8ff279b43d42a908"
+  "sha": "2d7db8b0b8ce0b7c"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
@@ -15235,6 +15235,7 @@
   "doc": "docs/PLAN.md",
   "files": [
    ".github/actions/build-navi/action.yml",
+   "sources.yaml",
    "tests/test_contract.py",
    "tests/test_declaration_sync.py",
    "tests/test_dest_scope.py",
@@ -15255,17 +15256,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "4ed6c2573d6fadac",
-   "53a1a6e06f349884",
-   "6de869ce98bf9f13",
-   "7dbf602d1d43d67d",
-   "879de4b853840524",
-   "89688c4784183839",
-   "ad784d2649bbf1dd",
-   "de28271af29c6e67"
+   "03c4fbb897756202",
+   "10e28253ae1a94ec",
+   "22b08409e3e0071f",
+   "38c00e1789eda049",
+   "4d35d47085e40a77",
+   "b08b3575df4e34a8",
+   "f6f5c0e968972a25",
+   "f80f36cb8a2cc973"
   ],
   "parts": {
    ".github/actions/build-navi/action.yml": "6fb95582b8a083c2",
+   "sources.yaml": "b36c2e5276e86cb1",
    "tests/test_contract.py": "7a44aad104a6abb4",
    "tests/test_declaration_sync.py": "af1783023eb4c010",
    "tests/test_dest_scope.py": "88933b15749877d3",
@@ -15279,12 +15281,12 @@
    "tools/jijeok_probe.py": "7a898e5193f696c4",
    "tools/jijeok_review.py": "9152024cad57ddff",
    "tools/plan_renumber.py": "9cc7d5d82d57a203",
-   "tools/verify.sh": "63ab061b2fb886a9",
+   "tools/verify.sh": "e39ed50f28f66962",
    "web/assets/vehicles/profiles.json": "1348b7791e2e1e9c",
    "web/navi/vite.config.ts": "5c31395ea740c669",
-   "본문": "0a21df41d4983266"
+   "본문": "b106cc0c39e871a8"
   },
-  "sha": "7dbf602d1d43d67d"
+  "sha": "03c4fbb897756202"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
@@ -15332,10 +15334,10 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "31d512a184ef503b",
-   "5aeddb24edbe33ba",
-   "80f25c4247458021",
-   "f9d90efa74e61c86"
+   "00657cb06fc5b578",
+   "4cd70279cb5417da",
+   "d5fd5a5a97af05dc",
+   "f599204aa2fba1ed"
   ],
   "parts": {
    "sources.yaml": "b971589c56ad6df1",
@@ -15352,9 +15354,9 @@
    "tools/whoknows.py": "69c643537039c2f4",
    "tools/widthcross.py": "0320341ec4393edc",
    "web/navi/package-lock.json": "1798253ab41c3491",
-   "본문": "9a474b43fc3c21c3"
+   "본문": "eab7e8db1b55f323"
   },
-  "sha": "80f25c4247458021"
+  "sha": "4cd70279cb5417da"
  },
  "PLAN/10-1": {
   "doc": "docs/PLAN.md",
@@ -15381,16 +15383,16 @@
    "tools/planclose.py"
   ],
   "fp": "view-v2",
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "4e988e13c456a73b",
-   "63465c4bfa41a7c3"
+   "6f079991df1b0dc2",
+   "e843d7476ab89d70"
   ],
   "parts": {
    "tools/planclose.py": "b57e85539007ee27",
-   "본문": "1d04c3c7fda8daa6"
+   "본문": "e0463bcde7bb4788"
   },
-  "sha": "63465c4bfa41a7c3"
+  "sha": "6f079991df1b0dc2"
  },
  "PLAN/10-2": {
   "doc": "docs/PLAN.md",
@@ -15471,18 +15473,18 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "2c99cdeb3f418031",
-   "51b1df41c72decd9",
-   "536fa525d9c16c22",
-   "60f8527e15a8ca84"
+   "03376a5ce9f8a29b",
+   "250efbf446132125",
+   "4b6ff66813ed1c23",
+   "fa2a4a72f6a3f25a"
   ],
   "parts": {
    "tests/test_clearance_cross.py": "b9bcb1ae5b837be0",
    "tests/test_plan_blocks.py": "9704e90048e64095",
    "tools/rule12_sim.py": "e6867096b69379bd",
-   "본문": "70f1ef4eb530db02"
+   "본문": "29875ae545917cad"
   },
-  "sha": "536fa525d9c16c22"
+  "sha": "250efbf446132125"
  },
  "PLAN/12": {
   "doc": "docs/PLAN.md",
