@@ -52,6 +52,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OpsMap, type OpsLayers } from "./components/OpsMap";
+import { parseShowRef } from "./components/opsLayers";
 import { OpsHistory } from "./ui/OpsHistory";
 import { MOTION_CSS } from "./ui/motion";
 import { useFleet } from "./app/useFleet";
@@ -106,6 +107,8 @@ export default function OpsApp() {
     //   못 봤다. 관제는 건물에 몇 층이 사는지를 보는 화면이고(`flo` · 12,663동),
     //   그 수가 진입 판단에 든다. 평면이 필요하면 같은 단추로 끈다.
     ortho: false, reach: true, cctvCov: false, bldg: true, history: false, context: false, terrain: true,
+    // ★ #62. `?ref=0` 이면 시작부터 숨김 — `?terrain=0` 과 같은 꼴(읽기만 · 주소를 다시 안 쓴다)
+    ref: parseShowRef(location.search),
   });
   const [history, setHistory] = useState<{ summary?: HistorySummary } | null>(null);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
@@ -515,6 +518,7 @@ export default function OpsApp() {
               ["ortho", "항공정사영상 25cm"],
               ["bldg", "3D 건물(비스듬히)"],
               ["terrain", "지형(음영 · 3D 에서 지면 휨)"],
+              ["ref", "발행 범위 밖 구간(흐리게) — 막힌 길 포함"],
             ] as [keyof OpsLayers, string][]).map(([k, t]) => (
               <label key={k} style={toggleRow}>
                 <input type="checkbox" checked={layers[k]} onChange={() => setLayers((L) => ({ ...L, [k]: !L[k] }))} />
@@ -527,7 +531,7 @@ export default function OpsApp() {
               </div>
             )}
             <div style={{ fontSize: 10.5, color: D.sub, marginTop: 4 }}>
-              닿는 구간 {reach?.size ?? 0} / {data.graph.edges.length} · 굵기 = 최소 유효폭
+              센터에서 닿는 구간 {reach?.size ?? 0} / 전체 {data.graph.edges.length} · 굵기 = 최소 유효폭
             </div>
             </>}
           </div>

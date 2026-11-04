@@ -70,19 +70,87 @@ export const VERDICT_DASH: Record<string, [number, number]> = {
   unknown: [5.0, 1.4],    // 긴 파선
 };
 
-export function opsSegLayers(col: (k: string) => string): LayerSpecification[] {
+/**
+ * ── ★ 2026-11-04 (PLAN #62 · DECISIONS §614) 발행 범위 밖 구간을 **흐리게** ──────
+ * `scope_tier` 가 `reference` 인 구간(527)은 발행 범위(target · corridor · listed)가
+ * 아니다. **끄지 않는다** — 거기 막힌 길(blocked) 118 개가 있다. 흐리게 보이고,
+ * 끄는 길(`showRef=false` → 0)은 남긴다.
+ *
+ * ★ 레이어를 쪼개지 않는다. 같은 층의 `line-opacity` 만 tier 의 함수로 둔다 —
+ *   쪼개면 클릭 · 호버 · 경로 하이라이트가 두 벌이 된다.
+ * ★ 판정색은 건드리지 않는다(`config.js` 가 계약). 불투명도만 곱한다.
+ * ★ 숨겨도(0) 선은 **눌린다** — 불투명도는 질의를 막지 않는다.
+ * ★ 곱셈이다(절대값이 아니다) — 층마다 기존 불투명도(.55 · .9 · 1)가 달라서,
+ *   절대값을 박으면 테두리가 색선보다 짙어지는 등 층 사이 위계가 깨진다.
+ */
+export const REF_FACTOR = { general: 0.3, blocked: 0.7 } as const;
+
+/** 층별 기존 불투명도. 발행 범위 안(target · corridor · listed)은 이 값 그대로다. */
+export const OPS_SEG_OPACITY = {
+  "ops-verdict-case": 0.55, "ops-verdict": 1,
+  "ops-verdict-dash-needs_cv": 0.9, "ops-verdict-dash-blocked": 0.9, "ops-verdict-dash-unknown": 0.9,
+  "ops-unreach": 0.75,
+  "seg-tint": 0.85,
+} as const;
+
+/** 한 구간의 불투명도. 표현식(`refOpacity`)과 같은 표에서 나온다 — 시험이 이쪽을 든다. */
+export function refOpacityValue(show: boolean, tier: string | null | undefined,
+                                verdict: string | null | undefined, base: number): number {
+  if (tier !== "reference") return base;
+  if (!show) return 0;
+  return base * (verdict === "blocked" ? REF_FACTOR.blocked : REF_FACTOR.general);
+}
+
+/** `line-opacity` 식. `scope_tier` 가 없는 구간(옛 발행물)은 기존값을 받는다. */
+export function refOpacity(show: boolean, base: number): unknown {
+  return ["case", ["==", ["get", "scope_tier"], "reference"],
+    show
+      ? ["match", ["get", "verdict"], "blocked", base * REF_FACTOR.blocked, base * REF_FACTOR.general]
+      : 0,
+    base];
+}
+
+/**
+ * 숨김(`show=false`)일 때만 reference 를 **질의에서 뺀다**. 흐림(`true`)은 보이니까 눌려야 맞다.
+ * 불투명도 0 은 `queryRenderedFeatures` 를 막지 않아서 보이지 않는 선이 눌렸다.
+ * 반환 `null` = 거르지 않는다. 다른 거르기와는 `andFilter` 로 합친다.
+ */
+export function refFilter(show: boolean): unknown[] | null {
+  return show ? null : ["!=", ["get", "scope_tier"], "reference"];
+}
+
+/** 거르기 식을 `all` 로 합친다. 없는 것(null)은 건너뛴다. 다 없으면 null. */
+export function andFilter(...fs: (unknown[] | null)[]): unknown[] | null {
+  const xs = fs.filter((f): f is unknown[] => f !== null);
+  return xs.length === 0 ? null : xs.length === 1 ? xs[0] : ["all", ...xs];
+}
+
+/**
+ * `?ref=0` 이면 reference 를 숨기고 `?ref=1` 이면 흐리게 보인다. **그 밖(없음 · 잘못된 값)은
+ * 기본 = 보임.** `?terrain=0` 과 같은 꼴이되, 모르는 값을 「끔」으로 읽지 않는다 —
+ * 막힌 길을 오타 하나로 지우지 않으려는 쪽이다.
+ * ★ 읽기만 한다(초기값). `?terrain` 도 그렇다 — 토글이 주소를 다시 쓰지 않는다.
+ */
+export function parseShowRef(search: string): boolean {
+  const v = new URLSearchParams(search).get("ref");
+  return v === "0" ? false : true;
+}
+
+export function opsSegLayers(col: (k: string) => string, showRef = true): LayerSpecification[] {
+  const op = (id: keyof typeof OPS_SEG_OPACITY) => refOpacity(showRef, OPS_SEG_OPACITY[id]) as never;
   const wm = ["min", 12, ["max", 2, ["coalesce", ["get", "width_min_m"], 3]]];
   const W = (add = 0) => ["interpolate", ["linear"], ["zoom"],
     14, ["+", add, ["*", 0.25, wm]], 18, ["+", add, ["*", 1.5, wm]]] as never;
   return [
     { id: "ops-verdict-case", type: "line", source: "segments",
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-width": W(2), "line-color": "#1f2937", "line-opacity": .55 } },
+      paint: { "line-width": W(2), "line-color": "#1f2937", "line-opacity": op("ops-verdict-case") } },
     { id: "ops-verdict", type: "line", source: "segments",
       layout: { "line-cap": "round", "line-join": "round" },
       paint: {
         "line-width": W(),
         "line-color": opsVerdictColor(col) as never,
+        "line-opacity": op("ops-verdict"),
       } },
     // ★ 둘째 채널. 색 선 **위에** 바탕색 점선을 그어 틈을 낸다 — 색이 안 보여도
     //   무늬로 갈린다. `clear` 는 실선이라 여기 없다(기준).
@@ -91,12 +159,13 @@ export function opsSegLayers(col: (k: string) => string): LayerSpecification[] {
       filter: ["==", ["get", "verdict"], k] as never,
       layout: { "line-cap": "butt" },
       paint: { "line-width": W(), "line-color": "#0b1220",
-               "line-opacity": .9, "line-dasharray": dash },
+               "line-opacity": op(`ops-verdict-dash-${k}` as keyof typeof OPS_SEG_OPACITY),
+               "line-dasharray": dash },
     } as LayerSpecification)),
     { id: "ops-unreach", type: "line", source: "segments",
       layout: { "line-cap": "butt", visibility: "none" },
       paint: { "line-width": W(1), "line-color": "#111827",
-               "line-opacity": .75, "line-dasharray": [0.6, 0.6] } },
+               "line-opacity": op("ops-unreach"), "line-dasharray": [0.6, 0.6] } },
     { id: "ops-selected", type: "line", source: "segments",
       filter: ["==", ["get", "seg_uid"], ""] as never,
       paint: { "line-width": W(7), "line-color": "#1d4ed8", "line-opacity": .55 } },

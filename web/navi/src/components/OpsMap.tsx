@@ -29,7 +29,7 @@ import {
   cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
 import {
-  opsSegLayers, opsHistoryLayers, opsOverlayLayers, hillshadeLayer,
+  opsSegLayers, opsHistoryLayers, refOpacity, refFilter, andFilter, OPS_SEG_OPACITY, opsOverlayLayers, hillshadeLayer,
   landmarkSource, landmarkLayers,
   opsVerdictColor, opsClearanceColor, opsClearanceBand,
 } from "./opsLayers";
@@ -61,6 +61,8 @@ export interface OpsLayers {
   context: boolean;
   /** 지형 — 음영(평면) + 3D 에서 지면 휨(§217-2) */
   terrain: boolean;
+  /** 발행 범위 밖(scope_tier=reference) 구간을 흐리게 보인다. 끄면 불투명도 0 (#62 · §614) */
+  ref: boolean;
 }
 
 /**
@@ -194,7 +196,7 @@ export function OpsMap(props: Props) {
       m.addLayer({ id: "ortho", type: "raster", source: "ortho",
                    layout: { visibility: "none" }, paint: { "raster-opacity": 1 } }, "seg-road");
 
-      for (const L of opsSegLayers(col)) m.addLayer(L);
+      for (const L of opsSegLayers(col, P.current.layers.ref)) m.addLayer(L);
 
       for (const L of opsOverlayLayers(CCTV_RANGE_M / mpp(14), CCTV_RANGE_M / mpp(20))) m.addLayer(L);
 
@@ -268,6 +270,17 @@ export function OpsMap(props: Props) {
     });
   }, [props.colorMode, props.requiredM, props.style]);  
 
+  // ── 발행 범위 밖(reference) 흐림 · 숨김 ──────────────────────────
+  // ★ 값만 바꾼다. 층 id · 소스 불변. `seg-tint` 는 바탕 층(내비와 공용)이라 층 정의는
+  //   안 건드리고 **여기서만** 덮는다 — 내비의 `seg-tint` 는 그대로다.
+  useEffect(() => {
+    whenReady((m) => {
+      for (const [id, base] of Object.entries(OPS_SEG_OPACITY)) {
+        if (m.getLayer(id)) m.setPaintProperty(id, "line-opacity", refOpacity(P.current.layers.ref, base) as never);
+      }
+    });
+  }, [props.layers.ref]);  
+
   // ── 거르기 · 도달 불가 · 선택 ─────────────────────────────────
   useEffect(() => {
     whenReady((m) => {
@@ -278,16 +291,19 @@ export function OpsMap(props: Props) {
       const key = p.colorMode === "clearance"
         ? opsClearanceBand(p.requiredM, TUNING.tightMarginM, CLEARANCE_WIDE_M)
         : ["get", "verdict"];
-      const f = hid.length ? ["!", ["in", key, ["literal", hid]]] as never : null;
+      // ★ 숨김일 때만 reference 를 질의에서 뺀다(흐림은 보이니까 눌려야 맞다) — `refFilter`
+      const rf = refFilter(p.layers.ref);
+      const f = andFilter(hid.length ? ["!", ["in", key, ["literal", hid]]] : null, rf) as never;
       m.setFilter("ops-verdict", f);
       m.setFilter("ops-verdict-case", f);
       const r = P.current.reachable;
-      m.setFilter("ops-unreach", r ? ["!", ["in", ["get", "seg_uid"], ["literal", [...r]]]] as never : null);
+      m.setFilter("ops-unreach", andFilter(
+        r ? ["!", ["in", ["get", "seg_uid"], ["literal", [...r]]]] : null, rf) as never);
       m.setLayoutProperty("ops-unreach", "visibility", P.current.layers.reach && r ? "visible" : "none");
       m.setFilter("ops-selected", ["==", ["get", "seg_uid"], P.current.selectedSeg ?? ""] as never);
     });
   }, [props.hidden, props.hiddenBands, props.colorMode, props.requiredM,
-      props.reachable, props.selectedSeg, props.layers.reach]);  
+      props.reachable, props.selectedSeg, props.layers.reach, props.layers.ref]);  
 
   // ── 출동 미리보기 ─────────────────────────────────────────────
   useEffect(() => {
