@@ -1084,7 +1084,7 @@ datasets:
     stem: juso_bldg_geom
     ext: [zip]
     kind: raw_only
-    # ★ 2026-11-03 (PLAN #184 · DECISIONS §609). `TL_SPBD_ENTRC` 는 `building_entrance` 가 맡았다. 한 zip 에 항목이 둘이면
+    # ★ 2026-11-03 (PLAN #184(닫힘) · DECISIONS §609). `TL_SPBD_ENTRC` 는 `building_entrance` 가 맡았다. 한 zip 에 항목이 둘이면
     #   각자 `layer` 로 가른다(`lake._shared`) — 이 항목은 나머지 두 레이어(건물 폴리곤 · 접속선)를 든다. 읽지는 않는다(`raw_only`).
     layer: '*TL_SGCO_RNADR_MST*.shp + *TL_SPOT_CNTC*.shp'
     read_note: |
@@ -2132,11 +2132,11 @@ datasets:
     note: |
       동명동 1,413개(주출입구 `RM` 1,313 + 보조출입구 `RS` 100). 도달점을 건물 중심점이 아니라 실제 출입구로 잡을 수 있다.
       D-28 우회비용 비교의 목적지는 이 레이어다.
-      ★ 2026-11-03 (PLAN #184 · DECISIONS §609). 원천을 `juso_elctrnmap` 에서 `juso_bldg_geom` 으로 옮겼다 — 같은 `TL_SPBD_ENTRC` 의
+      ★ 2026-11-03 (PLAN #184(닫힘) · DECISIONS §609). 원천을 `juso_elctrnmap` 에서 `juso_bldg_geom` 으로 옮겼다 — 같은 `TL_SPBD_ENTRC` 의
         상위집합이다(공통 11,386 ingest 건 좌표 차이 0m · 속성 불일치 0 · 추가는 전부 `RS` 보조출입구). 주출입구가 막히면 보조로
         들어가므로 소방차 진입로 판정에서 `RS` 를 빼는 것이 틀린 쪽이다. 판정은 안 움직이고(verdict 전이 0) 구간의 `route_usage` 만
         148구간에서 늘었다.
-      ★ `RD`(동별출입구)는 이 항목에 안 넣었다 — 다른 zip(`juso_bldggrp_geom` 의 `TL_SPBD_ENTRC_DONG` 939 · 동명동 7)이고 `PLAN #58` 의
+      ★ `RD`(동별출입구)는 이 항목에 안 넣었다 — 다른 zip(`juso_bldggrp_geom` 의 `TL_SPBD_ENTRC_DONG` 939 · 동명동 7)이고 `PLAN #58(닫힘)` 의
         동 출입구 배선과 같은 물음이다. **보류.**
 
     contract:
@@ -2165,7 +2165,7 @@ datasets:
     layer: '*TL_SPOT_CNTC*.shp'
     encoding: cp949
     note: |
-      ★ 2026-11-04 (PLAN #58 · DECISIONS §616). `building_entrance` 와 **같은 zip**(`juso_bldg_geom`)의 다른 레이어다 — 한 zip 에 항목이
+      ★ 2026-11-04 (PLAN #58(닫힘) · DECISIONS §616). `building_entrance` 와 **같은 zip**(`juso_bldg_geom`)의 다른 레이어다 — 한 zip 에 항목이
         둘이면 각자 `layer` 로 가른다(`lake._shared`). 접속선은 출입구에서 도로까지 이은 선이고 `ENT_MAN_NO` 로 출입구와 일대일이다
         (동명동 `RM` 1,313 전부에 있고 `RS` 100 에는 없다 · 접속선 길이 = `CNT_DST_LN`).
       ★ **쓰는 길** — `seg/graph.py::access_targets`. 접속선이 있는 출입구는 도로 쪽 끝점의 최근접 노드, 없는 출입구(`RS`)는 종전대로
