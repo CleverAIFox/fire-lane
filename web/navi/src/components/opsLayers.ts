@@ -304,7 +304,7 @@ export function landmarkLayers(): LayerSpecification[] {
       layout: {
         "text-field": ["get", "name"],
         "text-font": FONT, "text-size": 11, "text-offset": [0, 1.2],
-        "text-anchor": "top", "text-allow-overlap": true,
+        "text-anchor": "top", "text-allow-overlap": false, "text-padding": 4,
         "text-pitch-alignment": "viewport",
       },
       paint: { "text-color": "#e2e8f0", "text-halo-color": "#0b1220", "text-halo-width": 1.6 } },

@@ -47,7 +47,7 @@ import type { LiveFix } from "../domain/types";
 import { C, S } from "../ui/tokens";
 import {
   GLYPHS, sources, baseLayers, markerLayers, routeLayers, altRouteLayers, NAVI_OFF,
-  stationLayers, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
+  stationLayers, shortenStationLabels, applyTerrain, chevronImage, cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
 import { dataBase } from "../infra/dataBase";
 
@@ -56,6 +56,8 @@ maplibregl.setWorkerUrl(workerUrl);
 export interface MapMarks {
   origin?: LngLat | null;
   incident?: LngLat | null;
+  /** 사건 핀 아래 알약 — 목적지 이름. 건물 이름 전체(2,106)는 안 켜고 **이것 하나만** 읽힌다(§311) */
+  incidentLabel?: string | null;
   /** 최종 접근 지점(P) — 차량 경로의 끝 */
   approach?: LngLat | null;
   /** P 아래 알약 문구. 대체 접근 지점이면 그렇게 말한다 */
@@ -196,6 +198,7 @@ export function NaviMap(props: Props) {
         },
       });
       for (const L of stationLayers()) m.addLayer(L);
+      shortenStationLabels(m, D);
       // ★ 2026-09-29 (DECISIONS §311). **주행 표출 예산.** 관제는 전부 켜고 내비는
       //   `NAVI_OFF` 를 끈다 — 목록은 `layers.ts` 에 하나로 산다. 시속 60km 로 가는
       //   사람이 건물 이름 12,663과 상가 이름 2,106을 읽지 않는다.
@@ -367,7 +370,9 @@ export function NaviMap(props: Props) {
         else marks.current[k] = new maplibregl.Marker({ element: el(), anchor }).setLngLat(at).addTo(m);
       };
       put("origin", P.current.marks.origin, () => pinEl("출발", C.station), "bottom");
-      put("incident", P.current.marks.incident, incidentEl, "bottom");
+      // 이름이 바뀔 수 있어 매번 새로 만든다(P 와 같다)
+      marks.current.incident?.remove(); marks.current.incident = null;
+      put("incident", P.current.marks.incident, () => incidentEl(P.current.marks.incidentLabel), "bottom");
       // P 는 문구가 바뀔 수 있어 매번 새로 만든다(대체 접근 지점 ↔ 최종 접근 지점)
       marks.current.approach?.remove(); marks.current.approach = null;
       const ap = P.current.marks.approach;
@@ -378,7 +383,7 @@ export function NaviMap(props: Props) {
         }).setLngLat(ap).addTo(m);
       }
     });
-  }, [p.marks.origin, p.marks.incident, p.marks.approach, p.marks.approachLabel]);  
+  }, [p.marks.origin, p.marks.incident, p.marks.incidentLabel, p.marks.approach, p.marks.approachLabel]);  
 
   // ── 알약 표지 (02 — 공통 구간 · 확인 필요) ─────────────────────
   useEffect(() => {
@@ -468,18 +473,32 @@ function pinEl(label: string, color: string): HTMLElement {
   return el;
 }
 /** 사건 지점 — 불 핀 위로 연기가 오른다(와이어프레임 05 · 15 · 23) */
-function incidentEl(): HTMLElement {
+function incidentEl(label?: string | null): HTMLElement {
   const el = document.createElement("div");
-  el.style.cssText = "position:relative;filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))";
+  // ★ `position:relative` 를 걷었다 — 마커 요소는 maplibre 의 `.maplibregl-marker`(absolute)여야 한다. 상대 위치로 덮으면 요소가 화면 폭(100%)이 되어
+  //   `translate(-50%)` 가 핀을 **왼쪽 끝**으로 보냈다(2026-11-04 DOM 실측: 폭 1100 · 핀 x=0).
+  el.style.cssText = "filter:drop-shadow(0 3px 6px rgba(0,0,0,.4))";
   el.innerHTML =
     `<div class="fl-smoke"><i></i><i></i><i></i></div>
      <svg width="54" height="66" viewBox="0 0 50 62" style="position:relative">
        <path d="M25 60 C25 60 4 36 4 23 A21 21 0 0 1 46 23 C46 36 25 60 25 60 Z" fill="#ef2d2d" stroke="#fff" stroke-width="3"/>
        <path d="M25 11 C28 17 33 19 33 26 A8 8 0 0 1 17 26 C17 22 20 20 21 16 C22 20 24 21 25 11 Z" fill="#fff"/>
      </svg>`;
+  if (label) {
+    // 목적지 이름 — 핀 끝 **아래**에 둔다(핀이 건물을 가리지 않게). P 의 알약과 같은 모양 · 길면 말줄임
+    const pill = pillEl(label);
+    pill.style.cssText += ";position:absolute;left:50%;top:100%;translate:-50% 4px";
+    el.appendChild(pill);
+  }
   return el;
 }
 /** 최종 차량 접근 지점 — 파란 P 와 그 아래 흰 알약 */
+function pillEl(label: string): HTMLElement {
+  const d = document.createElement("div");
+  d.style.cssText = "background:#fff;color:#0f172a;border-radius:999px;padding:5px 12px;font:800 13px Pretendard,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)";
+  d.textContent = label;
+  return d;
+}
 function pEl(label: string): HTMLElement {
   const el = document.createElement("div");
   el.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none";
@@ -487,9 +506,8 @@ function pEl(label: string): HTMLElement {
     `<svg width="46" height="46" viewBox="0 0 44 44" style="filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))">
        <circle cx="22" cy="22" r="19" fill="#1d4ed8" stroke="#fff" stroke-width="3"/>
        <text x="22" y="29" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" font-family="Pretendard,sans-serif">P</text>
-     </svg>
-     <div style="background:#fff;color:#0f172a;border-radius:999px;padding:5px 12px;font:800 13px Pretendard,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25)"></div>`;
-  (el.lastElementChild as HTMLElement).textContent = label;
+     </svg>`;
+  el.appendChild(pillEl(label));
   return el;
 }
 /** 02 표지. 공통 구간은 흰 알약, 확인 필요는 주황 글자의 흰 카드 */

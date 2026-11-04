@@ -367,6 +367,7 @@ export default function App() {
   const marks: MapMarks = {
     origin: s.planning ? (n.origin?.point ?? station?.point ?? null) : null,
     incident: incident?.point ?? null,
+    incidentLabel: incident?.label,
     approach: !s.planning ? endPoint : null,
     approachLabel: n.access?.alt ? "대체 접근 지점" : "최종 차량 접근 지점",
   };

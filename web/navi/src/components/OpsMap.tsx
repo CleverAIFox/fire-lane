@@ -25,7 +25,7 @@ import type { LngLat } from "../domain/geo";
 import type { Landmark, VerdictStyle, View } from "../domain/types";
 import type { FeedItem, Unit } from "../domain/opsProtocol";
 import {
-  GLYPHS, sources, baseLayers, applyTerrain, markerLayers, stationLayers,
+  GLYPHS, sources, baseLayers, applyTerrain, markerLayers, stationLayers, shortenStationLabels,
   cctvIcon, hydrantIcon, bumpIcon, camIcon, zoneIcon, pillImage, pillOptions,
 } from "./layers";
 import {
@@ -201,12 +201,14 @@ export function OpsMap(props: Props) {
       for (const L of opsOverlayLayers(CCTV_RANGE_M / mpp(14), CCTV_RANGE_M / mpp(20))) m.addLayer(L);
 
       for (const L of markerLayers()) m.addLayer(L);
-      for (const L of stationLayers()) m.addLayer(L);
       // ★ 2026-10-09 (§444 · #148). 지점 핀 — **안전센터와 같은 층**이다(§412-3).
       //   운전석(`NaviMap`)에는 안 둔다. 거기서는 목적지를 고르지 않고, 경로에
       //   안 붙는 점이 길 위에 겹치면 읽을 것만 는다.
       m.addSource("landmarks", landmarkSource(P.current.landmarks));
       for (const L of landmarkLayers()) m.addLayer(L);
+      // ★ 2026-11-04. 안전센터 층이 **지점 핀 뒤에** 얹힌다 — 나중 층이 먼저 자리를 잡으므로 센터 글자가 앞선다.
+      for (const L of stationLayers()) m.addLayer(L);
+      shortenStationLabels(m, D);
       // ★ 글자 색은 글자 레이어가 **생긴 뒤에** 입힌다 — 앞에서 입히면 레이어가 없어 조용히 건너뛴다
       //   (독립 검토 2026-09-22: 어두운 바탕에 밝은 테마 글자가 그대로 남았다)
       //   건물 · 상호 이름은 **흰 알약** 위에 앉으므로 알약을 어둡게 하고 글자는 밝게 둔다
