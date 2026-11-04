@@ -129,7 +129,10 @@ def history(fr) -> dict:
     feats, by_center, fires = [], {}, []
     d = pd.read_csv(P / "nfa_dispatch_119.csv", dtype=str)
     for r in d.itertuples(index=False):
-        lon, lat = _num(r.DCLR_PSTN_LOT), _num(r.DCLR_PSTN_LAT)
+        # ★ 2026-11-04 (DECISIONS §632). **`LOT`/`LAT`(재해 위치)** 를 쓴다. `DCLR_PSTN_*` 는 **신고자 휴대폰 위치**라 재해 위치에서 중앙 100m ·
+        #   최대 265km 떨어진다 — 종전에 이 칸으로 이력 점과 직선 환산 속도를 냈고, 범위 걸러내기(`_inside`)가 광주 밖 112행을 조용히 뺐다.
+        #   재해 좌표가 없는 행은 신고자 위치로 **대신하지 않고** 뺀다(뜻이 다른 점을 섞지 않는다).
+        lon, lat = _num(r.LOT), _num(r.LAT)
         rs = _resp(_ts(r.DSPT_DRTV_DT), _ts(r.GRNDS_ARVL_DT))
         if lon and lat and _inside(lon, lat, fr):
             feats.append(_pt(lon, lat, {"kind": "dispatch", "yr": int(_num(r.DCLR_YR) or 0),
@@ -172,8 +175,8 @@ def history(fr) -> dict:
         v = []
         for x in feats:
             pr = x["properties"]
-            if pr["center"] != c or pr["resp_s"] is None:
-                continue
+            if pr["kind"] != "dispatch" or pr["center"] != c or pr["resp_s"] is None:
+                continue          # ★ §632 구조 점은 뺀다 — 원천이 그 칸의 뜻을 말하지 않는다. 뜻을 모르는 점으로 낸 속도는 이름을 어떻게 붙여도 뜻이 없다
             lon, lat = x["geometry"]["coordinates"]
             # ★ 2026-10-11 (DECISIONS §469). 여기 상수가 셋째 판이었다 —
             #   위도 110,540 (정본 110,574 · `navicheck` 111,320). 정본이 `tools/`
@@ -192,7 +195,7 @@ def history(fr) -> dict:
         "by_center": {k: {"n": len(v), "median_s": med(v), "straight_kmh": kmh(k)}
                       for k, v in sorted(by_center.items())},
         "fire_donggu": {"n": len(fires), "median_s": med(fires)},
-        "note": "현장 도착 − 출동 지령(초). 신고 · 구조는 동명동 지점, 화재는 동구 전체 요약(좌표 없음)",
+        "note": "현장 도착 − 출동 지령(초). 신고 점은 재해 위치(LAT/LOT), 구조 점은 원천 DCLR_PSTN 칸(의미 미확인 · 사고 지점 지오코딩과 같은 형태). 직선 속도는 신고 점만. 화재는 동구 전체 요약(좌표 없음)",
     }
     return {"type": "FeatureCollection", "name": "history", "summary": summary, "features": feats}
 
