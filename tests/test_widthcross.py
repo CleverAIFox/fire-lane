@@ -221,24 +221,27 @@ def test_the_survey_band_is_three_metres():
 
 @pytest.mark.skipif(not all(p.exists() for p in _NEED), reason="환경skip(산출물) — segments_5186.gpkg · ngii1k_center_5186.gpkg 가 없다")
 def test_survey_widths_match_at_the_chosen_rate_and_the_new_pairs_are_not_a_different_population():
-    """매칭 422(32.9%) → 909(71.0%). 새로 붙은 487쌍의 `wmin − survey` 와 기존 422 의 분포 차이를 **고정값으로 잠근다.** 옛 422쌍의 값은 안 바뀐다.
+    """매칭 422 → 912(70.9%). 새로 붙은 490쌍의 `wmin − survey` 와 기존 422 의 분포 차이를 **고정값으로 잠근다.** 옛 422쌍의 값은 안 바뀐다.
 
     ★ 2026-11-02. **함수 이름과 본문이 어긋난다 — 알고 둔다.** 종전에는 `p ≥ 0.05`(같은 모집단)였다. 보도 적재(§594-1)를 얹은 현재 발행본으로 다시
       재니 매칭 909 · 옛 422 · 새 487 은 그대로이고 **p = 0.00106**(중앙 옛 −0.30 · 새 −0.46)이다. 「같은 모집단」 주장은 더 성립하지 않는다.
       DECISIONS §594-2 가 재잠금 때 사람이 정하기로 한 자리이고 2026-11-02 사람이 승인했다. 이름을 안 바꾼 것은 DECISIONS 가 이 이름을 강제자로
       지목하고 있어서다(§575 · §594). 고정 수가 다시 움직이면 이 단언이 운다.
+
+    ★ 2026-11-04 (DECISIONS §621). 접속선 재판정(DECISIONS §616)으로 구간이 +6 늘어 **매칭 909 → 912 · 새 487 → 490** 이 됐다(옛 422 는 그대로). p = 0.00129(중앙 옛 −0.30 ·
+      새 −0.46)로 범위 안이다 — 모집단 판단은 안 움직였고 분모만 늘었다.
     """
     from scipy.stats import mannwhitneyu
     from statkit import num
     rows = W._load()
     paired = {r["seg_uid"]: r for r in rows if num(r["wmin"]) is not None and num(r["survey"]) is not None}
-    assert len(paired) == 909, f"매칭 {len(paired)} — 띠 5m 는 947 · 띠 0.5m 는 422"
+    assert len(paired) == 912, f"매칭 {len(paired)} — 띠 5m 는 947 · 띠 0.5m 는 422"
     base = {r["seg_uid"]: r for r in W._load(band=0.5) if num(r["wmin"]) is not None and num(r["survey"]) is not None}
     assert len(base) == 422
     assert all(u in paired and num(paired[u]["survey"]) == num(base[u]["survey"]) for u in base), "옛 422쌍의 측량폭이 바뀌었다"
     d_old = [num(base[u]["wmin"]) - num(base[u]["survey"]) for u in base]
     d_new = [num(r["wmin"]) - num(r["survey"]) for u, r in paired.items() if u not in base]
-    assert len(d_new) == 487
+    assert len(d_new) == 490
     p = mannwhitneyu(d_old, d_new).pvalue
     assert 0.0005 < p < 0.002, f"p = {p:.5f} — 2026-11-02 실측 0.00106 (종전 ≥ 0.05, 보도 적재 이후 다른 모집단)"
 

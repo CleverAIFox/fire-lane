@@ -64,18 +64,34 @@ if [ -n "$dirty_before" ]; then
 fi
 
 # 게이트 — `이름<TAB>명령`. 하나가 빨개도 **끝까지 돈다**(한 번에 다 보여야 왕복이 준다).
+# ★ 2026-11-04 (PLAN #185 · DECISIONS §620). **병렬로 띄우고 순서대로 모은다.** 게이트는 서로 독립이고 읽기만 한다 —
+#   직렬 합 약 19초가 가장 긴 하나(`deadcheck` 약 10초)로 줄어든다. 출력 순서는 게이트 파일 순서 그대로다.
+#   **병렬이 이상하면** `FIRE_LANE_PREPUSH_SERIAL=1` 로 종전처럼 한 줄씩 돈다(원인을 가를 때).
 if [ ${#fail[@]} -eq 0 ]; then
+    names=(); outs=(); tdir="$(mktemp -d)"; trap 'rm -f "$out"; rm -rf "$tdir"' EXIT
+    i=0
     while IFS=$'\t' read -r name cmd; do
         case "$name" in ''|'#'*) continue ;; esac
-        s=$(now)
-        if bash -c "$cmd" </dev/null >"$out" 2>&1; then
-            printf '  ✓ %-22s %5.1f초\n' "$name" "$(awk -v a="$s" -v b="$(now)" 'BEGIN { print b - a }')"
+        i=$((i + 1)); names+=("$name"); o="$tdir/$i"
+        run_gate() {   # 결과 — $o(출력) · $o.rc · $o.t(초)
+            local s; s=$(now)
+            bash -c "$cmd" </dev/null >"$o" 2>&1; echo $? >"$o.rc"
+            awk -v a="$s" -v b="$(now)" 'BEGIN { printf "%.1f", b - a }' >"$o.t"
+        }
+        if [ -n "${FIRE_LANE_PREPUSH_SERIAL:-}" ]; then run_gate; else run_gate & fi
+    done < "$gates_file"
+    wait
+    i=0
+    for name in "${names[@]}"; do
+        i=$((i + 1)); o="$tdir/$i"
+        if [ "$(cat "$o.rc")" = "0" ]; then
+            printf '  ✓ %-22s %5.1f초\n' "$name" "$(cat "$o.t")"
         else
-            printf '\033[31m  ✗ %-22s %5.1f초\033[0m\n' "$name" "$(awk -v a="$s" -v b="$(now)" 'BEGIN { print b - a }')"
-            tail -n 12 "$out" | sed 's/^/      /'
+            printf '\033[31m  ✗ %-22s %5.1f초\033[0m\n' "$name" "$(cat "$o.t")"
+            tail -n 12 "$o" | sed 's/^/      /'
             fail+=("$name")
         fi
-    done < "$gates_file"
+    done
 
     # ② 게이트가 추적 파일을 바꾸지 않았는가
     dirty_after="$(git status --porcelain --untracked-files=no)"

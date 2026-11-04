@@ -144,6 +144,7 @@ def save_ledger(d: dict) -> None:
 # ★ 2026-10-08 (DECISIONS §431 · PLAN #157). `firelane/acquire_rules.py` 로
 #   떼어 냈다. 이 파일이 621줄로 상한을 넘었고, 이 덩이는 「대장이 어디를
 #   주장하나」 한 물음이라 혼자 선다 — 명령 넷은 그것을 **쓰는** 쪽이다.
+from firelane import ledger
 from firelane.acquire_rules import dataset_globs, retired_names
 
 #: **폐지된 플래그 → 폐지한 절.** 부르는 쪽이 따라오게 하는 자리다.
@@ -164,6 +165,16 @@ RETIRED_FLAGS: dict[str, str] = {"--quarantine": "DECISIONS §173-2"}
 LEDGER_MISSING = 0
 
 
+def _declared_absent(key: str) -> bool:
+    """대장이 **부재를 선언**했는가(`status: missing` · 사유 있는 `awaiting`). 판정은 `ledger.absence()` 의 것이다.
+
+    ★ 2026-11-04 (PLAN #182 · DECISIONS §620). 선언된 부재를 결손으로 또 세지 않는다 — 사유가 빈 `bare` 는
+      선언이 아니라 침묵이라 결손으로 남는다(`absence` 가 그렇게 가른다).
+    """
+    e = (ledger.load_sources().get("datasets") or {}).get(key)
+    return ledger.absence(e)[0] in ("missing", "awaiting")
+
+
 def missing_from_register(root: Path | None = None) -> list[tuple[str, str]]:
     """`_acquire.json` 만으로 센 결손. `judge()` 와 **같은 물음**이고 레이크를 안 읽는다.
 
@@ -178,6 +189,8 @@ def missing_from_register(root: Path | None = None) -> list[tuple[str, str]]:
     reg = _json.loads((r / "data/_acquire.json").read_text(encoding="utf-8"))["files"]
     out = []
     for k, gs in dataset_globs().items():
+        if _declared_absent(k):
+            continue
         pats = [g for g in (gs if isinstance(gs, list) else [gs]) if g]
         if not any(fnmatch.fnmatch(p, pat) for pat in pats for p in reg):
             out.append((k, pats[0] if pats else "?"))
@@ -208,7 +221,7 @@ def judge() -> tuple[dict, list[str], list[Path]]:
         if hits:
             matched[k] = hits
             claimed.update(hits)
-        else:
+        elif not _declared_absent(k):
             missing.append((k, ", ".join(gs) if isinstance(gs, list) else gs))
     orphan = [p for p in raw_files() if p not in claimed]
     return matched, missing, orphan

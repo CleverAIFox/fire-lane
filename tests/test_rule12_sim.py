@@ -66,6 +66,8 @@ def test_simulation_does_not_change_the_published_counts() -> None:
         pytest.skip("환경skip(산출물) — web/data/segments.geojson 발행본이 없다")
     rows = [f["properties"] for f in json.loads(seg.read_text(encoding="utf-8"))["features"]]
     out = R.report(rows)
-    assert out["before"] == {"blocked": 192, "clear": 274, "needs_cv": 283, "unknown": 532}
+    # ★ 2026-11-04 (DECISIONS §621). 네 수를 손으로 안 적는다 — 골든 지문이 정본이다(재잠금마다 낡던 수).
+    fp = json.loads((ROOT / "data" / "golden" / "segments.fingerprint.json").read_text(encoding="utf-8"))["L1"]
+    assert out["before"] == fp["verdict"]
     assert out["blocked_untouched"] and out["moved"] >= 0
     assert sum(out["after"].values()) == len(rows)

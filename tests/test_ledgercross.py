@@ -99,7 +99,9 @@ def test_real_publication_if_present() -> None:
     if not L.SEG.exists():
         pytest.skip("환경skip(산출물) — web/data/segments.geojson 발행본이 없다")
     res = L.analyse(L.load())
-    assert res["counts"]["segments"] == 1281 and res["counts"]["usable"] > 1000
+    # ★ 2026-11-04 (DECISIONS §621). 구간 수를 손으로 안 적는다 — 골든 지문이 정본이다(재잠금마다 낡던 수).
+    fp = json.loads((ROOT / "data" / "golden" / "segments.fingerprint.json").read_text(encoding="utf-8"))["L1"]
+    assert res["counts"]["segments"] == fp["n"] and res["counts"]["usable"] > 1000
     assert res["steps"]["n_distinct"] >= 10
 
 

@@ -530,7 +530,10 @@ def test_every_judge_of_a_missing_dataset_file_knows_awaiting():
               #   그래서 아래에 **아는 자 넷을 이름으로 못 박는다**(PLAN #161).
               "대장에 있는데 raw 에 없다")
     #: 항목을 넘겨 글롭을 푸는 꼴. `globs(e` · `paths_of(e` — 계층은 이름을 넘긴다.
-    entry = _re.compile(r"\b(?:globs|paths_of)\s*\(\s*e\b")
+    #: ★ 2026-11-04 (PLAN #182 · DECISIONS §620). `dataset_globs(` 도 잡는다 — 그것은 대장 **전체**의 글롭을
+    #:   푸는 꼴이라 항목 `e` 를 안 넘겨서 옛 그물 밖이었고, `acquire.py` 의 `judge()` 가 거기서 선언된 부재를 모른 채
+    #:   결손 다섯을 찍었다.
+    entry = _re.compile(r"\b(?:globs|paths_of)\s*\(\s*e\b|\bdataset_globs\s*\(")
 
     scan = [q for d in ("src", "tools") for q in sorted((ROOT / d).rglob("*.py"))
             if "__pycache__" not in q.parts]
@@ -546,7 +549,7 @@ def test_every_judge_of_a_missing_dataset_file_knows_awaiting():
 
     assert judges, ("부재를 판정하는 자리를 하나도 못 찾았다 — 그물이 비었다. "
                     "문구가 바뀌었으면 `absent` 를 고쳐라")
-    must = ("src/firelane/contract.py", "tools/refcheck.py", "src/firelane/prep.py")
+    must = ("src/firelane/contract.py", "tools/refcheck.py", "src/firelane/prep.py", "tools/acquire.py")
     missed = [m for m in must if m not in judges]
     assert not missed, (
         f"아는 자를 못 잡는다 — 판별식이 죽었다. 빠진 것 {missed} · 잡은 것 {judges}")

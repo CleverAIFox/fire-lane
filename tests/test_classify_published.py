@@ -123,23 +123,19 @@ def test_the_ledger_rule_is_load_bearing(rows):
 
 
 def test_counts_are_stated_not_assumed(rows):
-    """판정 네 갈래의 수를 적어둔다. 바뀌면 운다 — 재잠금과 함께 고칠 값이다.
+    """판정 네 갈래의 수와 구간 수가 **골든 지문과 같다.** 발행본이 낡았든 지문이 낡았든 운다.
 
-    ★ 이 수를 여기 적는 이유는 PR 본문·문서가 매번 이 넷을 인용하는데
-      그 인용이 낡는 것을 아무도 못 봤기 때문이다. 이제 여기가 정본이고
-      `docs/` 는 이것을 베낀다.
+    ★ 이 수를 PR 본문·문서가 매번 인용하는데 인용이 낡는 것을 아무도 못 봤다. 정본은 `data/golden/segments.fingerprint.json`
+      이고 `docs/` 는 그것을 베낀다(`docgen`). 종전에는 여기에도 손으로 적었다 — 아래 주석이 그 경위다.
     """
     c = collections.Counter(p["verdict"] for p in rows)
-    assert len(rows) == 1281
-    # ★ 2026-10-12. CCTV_RANGE 25.0 → 19.0 재발행(§455-1 · #15). 이 네 수는
-    #   **재잠금과 함께 고치는 값**이고 그것이 이 시험의 docstring 이 적은 바다.
-    #   ★ §479 예보는 「재발행이 **닫는** 빨강」만 셌다 — 옛 수를 박아 둔
-    #     자리는 재발행이 **연다**. 그 족을 안 센 것이 예보의 구멍이었다.
-    # ★ 2026-10-16. 보도 차감 재잠금(봉인 `20261015-width-root-walk`)과 함께
-    #   고쳤다 — 위 설명문이 적은 그대로다. 움직인 것은 셋이고 `blocked` 는
-    #   그대로다: 깎은 폭이 0 이 된 표본이 빠지면서 `clear` 가 `needs_cv` 와
-    #   `unknown` 으로 내려갔다.
-    assert dict(c) == {"clear": 274, "needs_cv": 283, "blocked": 192, "unknown": 532}      # 2026-11-02 #180 가름을 내접원에 붙인 판 (DECISIONS §598 · 재잠금 전)
+    # ★ 2026-11-04 (DECISIONS §621). 수를 **손으로 적지 않는다** — 골든 지문(`segments.fingerprint.json` L1)이 정본이다.
+    #   종전에는 `1281` · `{192, 274, 283, 532}` 를 여기 적었고 재잠금마다 손으로 고쳤다(2026-11-04 접속선 재판정이 또 낡게 했다).
+    #   지문은 `golden.py lock`(사람)이 찍고 `golden.py check` 가 발행본과 대므로, 이 시험은 **발행본 == 지문**을 한 번 더 문다 —
+    #   어느 쪽이 낡든 운다. 수 자체의 옳음은 지문의 몫이다.
+    fp = json.loads((Path(__file__).resolve().parents[1] / "data" / "golden" / "segments.fingerprint.json").read_text(encoding="utf-8"))["L1"]
+    assert len(rows) == fp["n"]
+    assert dict(c) == fp["verdict"]
 
 
 # ── 이름과 실물 (DECISIONS §320) ────────────────────────────────
