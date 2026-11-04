@@ -438,7 +438,19 @@
    "hangul_ratio": 0.1001,
    "notes": [],
    "at": "2026-09-17T19:39:54+09:00"
+  },
+  "nfa/nfa_dispatch_119_jngj-dongmyeong_20261104.csv": {
+   "key": "nfa_dispatch_119",
+   "src_sha256": "153a0ddc9d0b1331f7c2152a4be0208a04307ec12c0b64e9e14afb4d3386aea7",
+   "dst_sha256": "39652827fadf0db9be0d9b39c5eed9a96d209f16cf25cc4a63edb0ac7e55f21f",
+   "src_encoding": "utf-8-sig",
+   "src_newline": "crlf",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "hangul_ratio": 0.1303,
+   "notes": [],
+   "at": "2026-11-04T21:24:26+09:00"
   }
  },
- "at": "2026-10-22T19:48:39+09:00"
+ "at": "2026-11-04T21:24:26+09:00"
 }

@@ -34,7 +34,7 @@
       "out": "1423:ac44cf183beed2d9"
     }
   },
-  "generated_at": "2026-11-04T11:51:17.555387+09:00",
+  "generated_at": "2026-11-04T19:28:13.257760+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -3196,11 +3196,11 @@
       "source_files": [
         "**/nfa_dispatch_119_*"
       ],
-      "source_sha256": "740dedf4e0c6f6de0424971e59391c04f6e58d9f37747fa6d822352471950371",
-      "resolved": "nfa_dispatch_119_jngj-dongmyeong_20260903.csv",
+      "source_sha256": "153a0ddc9d0b1331f7c2152a4be0208a04307ec12c0b64e9e14afb4d3386aea7",
+      "resolved": "nfa_dispatch_119_jngj-dongmyeong_20261104.csv",
       "source_crs": "EPSG:4326",
       "status": "OK",
-      "features": 183,
+      "features": 952,
       "geom": [],
       "columns": [
         "DCLR_RCPT_NO",
@@ -3243,11 +3243,11 @@
         "nfa_dispatch_119.csv"
       ],
       "seal": {
-        "raw": "740dedf4e0c6f6de",
-        "cfg": "608d1c47de4cfec7",
+        "raw": "153a0ddc9d0b1331",
+        "cfg": "1fce2c5bb3fe7b83",
         "code": "1e6d680f67b0e520",
         "out": {
-          "nfa_dispatch_119.csv": "740dedf4e0c6f6de"
+          "nfa_dispatch_119.csv": "22dca82de8d7b6af"
         }
       }
     },

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-04T12:10:18+09:00",
+  "generated_at": "2026-11-04T20:58:14+09:00",
   "note": "publish_web.py 산출물. 손으로 고치지 마라 — 다음 실행에 덮어써진다.",
   "source": {
     "segments.geojson": {
@@ -7,11 +7,11 @@
       "bytes": 1971098
     },
     "segments.schema.json": {
-      "sha256": "8158ab801f0bdd4a1c967f88fe968ae4053d3e0b7d65b54d39dc785e67b22fe7",
-      "bytes": 12043
+      "sha256": "91408d9ee07665e3f31cc09710483bf69cb8c9e465de4519b69d84bbc5677309",
+      "bytes": 12090
     },
     "_manifest.json": {
-      "sha256": "e7af32b94fe2d4d3ada819681c88c83e41106d6e849fd95d50213bbca56efa6b",
+      "sha256": "3e1c274370e277e1479e5c964613aaf136e154f84130d4b938eb13058fa9554d",
       "bytes": 106986
     }
   },
@@ -37,8 +37,8 @@
       "bytes": 7787
     },
     "history.geojson": {
-      "sha256": "246d24c787e8546935026fc4201258a56f7f979b956d21b87da5cdf785374f05",
-      "bytes": 64215
+      "sha256": "052df7fec43abd985b959571d659524ce53e817d390fcd4b7896297ff78b06bc",
+      "bytes": 170942
     },
     "hydrants.geojson": {
       "sha256": "4f33f44524373009f1bedf68d825a4e82ee9069e2b99e7dd4204539b200f2f95",
@@ -57,16 +57,16 @@
       "bytes": 458598
     },
     "route_vehicle.json": {
-      "sha256": "e5c70902eb26400dc05685db65bd4817e6cc46f630a571b906483430689c82ce",
-      "bytes": 97179
+      "sha256": "011ac5716f4b7aefc386102e22d3a2570f8336cda24af11d243a379f0a964917",
+      "bytes": 97380
     },
     "segments.geojson": {
       "sha256": "faf8554823a19a2957e97fea8e98062879c2153ea7a29751d3e137215c2b1c7c",
       "bytes": 2211337
     },
     "segments.schema.json": {
-      "sha256": "00117534ef5f6cb04f75989e8272cb22285a069b4a48cf89aafdfe463b1ee585",
-      "bytes": 14906
+      "sha256": "d27bdd9ae594ae5b30956bf864d4ee353b94d3fb4c5c5d28f5e1630db319e7ee",
+      "bytes": 14953
     },
     "sidewalk.geojson": {
       "sha256": "0571f212cccc114b4279a60580a564ab12eadebe06f64a86f84dc3b7894fd1ec",
@@ -120,5 +120,5 @@
     }
   },
   "tiles_digest": "ca2ce50bd36477e1",
-  "total_mb": 34.22
+  "total_mb": 34.33
 }

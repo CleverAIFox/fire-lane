@@ -143,6 +143,9 @@ def write_outputs(g):
         #   더 있었다 — 선언은 한 번이면 되고, 칸으로 두면 「켜질 수 있는 것」
         #   처럼 읽힌다. MASTER §15-3 이 이 줄을 인용한다.
         "crs": CRS_W, "sha256": h, "count": len(g), "width_verified": False,
+        # ★ 2026-11-04 (DECISIONS §628). **선택 컬럼의 유일한 선언 자리다** — 칸 이름 → 그 칸을 내는 단계. 설명 문자열(「선택 컬럼」)은 읽는 사람용이고
+        #   기계는 이 키만 본다. 단계가 `segments` 뒤에 돌았으면 그 칸은 필수다(`expectation.verify_schema`) — 같은 칸이 단계에 따라 선택이고 필수다.
+        "optional_fields": {"z": "terrain"},
         "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
         "fields": {
             "seg_uid": "str, 실행 간 유지되는 키. {지역}-{중점X}-{중점Y}-{도로명해시}. 실측·관측점·영상판정·DB PK 는 전부 이 키를 쓴다",

@@ -56,6 +56,11 @@ def len_status(vals: list[float], now: float) -> str:
     return "일치" if any(abs(v - now) <= LEN_TOL for v in vals) else "어긋남"
 
 
+def _with_uid(text: str, current: dict[str, dict]) -> str:
+    """맥락 속 다른 `DM` 번호 옆에 **지금의** `seg_uid` 를 붙인다 — 번호만 적은 인용은 다음 재발행 뒤에 다른 구간을 가리킨다(DECISIONS §622-1)."""
+    return DM.sub(lambda m: f"{m.group()}[{current[m.group()]['seg_uid']}]" if m.group() in current else m.group(), text)
+
+
 def refs(path: Path, current: dict[str, dict], old: dict[str, dict[str, dict]], road_re: re.Pattern[str]) -> list[dict]:
     out = []
     sec = ""
@@ -72,7 +77,7 @@ def refs(path: Path, current: dict[str, dict], old: dict[str, dict[str, dict]], 
 
             lens = [float(x) for x in LEN.findall(win)]
             p = current.get(sid)
-            row = {"문서": path.name, "줄": n, "절": sec, "seg_id": sid, "맥락": line[max(0, t.start() - 20): t.end() + WINDOW].strip()}
+            row = {"문서": path.name, "줄": n, "절": sec, "seg_id": sid, "맥락": _with_uid(line[max(0, t.start() - 20): t.end() + WINDOW].strip(), current)}
             if p is None:
                 row |= {"seg_uid": "", "도로명(지금)": "", "length_m(지금)": "", "도로명 대조": "번호 없음", "길이 대조": "번호 없음"}
             else:

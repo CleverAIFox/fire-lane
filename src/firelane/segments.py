@@ -302,21 +302,15 @@ def _write_route(g, dst=None) -> None:
     P = H.copy()
     P.remove_edges_from([(u, v) for u, v, d in H.edges(data=True) if d["blocked"]])
 
-    nodes = list(P.nodes)
-    if not nodes:
+    if not P.nodes:
         return
-    import numpy as np
-    # 노드 대표 좌표 — union-find 그룹의 첫 점을 쓴다
-    _xy = {}
-    for i2, pt2 in enumerate(_pts):
-        _xy.setdefault(_rep[i2], (pt2.x, pt2.y))
-    npts = np.array([_xy[n] for n in nodes], dtype=float)
     use = Counter()
     reach = set()
-    for lon, lat in seg_graph.STATIONS.values():
+    for name, (lon, lat) in seg_graph.STATIONS.items():
         pt = gpd.GeoSeries([Point(lon, lat)], crs=CRS_W).to_crs(CRS_M).iloc[0]
-        i = int(np.argmin((npts[:, 0] - pt.x) ** 2 + (npts[:, 1] - pt.y) ** 2))
-        s = nodes[i]
+        if (s := seg_graph.station_node(pt, _ends, meta, _rep)) is None:   # 최근접 노드가 아니라 통행 가능 구간의 끝에 붙인다(#120 · station_node)
+            print(f"    ★ {name} — 닿을 통행 가능 구간이 없다. 도달 0 으로 센다")
+            continue
         paths = nx.single_source_dijkstra_path(P, s, weight="cost")
         reach |= set(paths)
         for pp in paths.values():

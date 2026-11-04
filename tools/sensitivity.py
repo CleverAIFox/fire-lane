@@ -129,8 +129,10 @@ def survey_errors() -> list[float]:
     d = [float(r["wmin"]) - float(r["survey"]) for r in rows
          if r["wmin"] is not None and r["survey"] is not None]
     q = np.percentile(d, [25, 50, 75])
-    if len(d) != 422 or abs(q[1] - (-0.24)) > 0.005:
-        raise SystemExit(f"★ 오차 재현이 §562 와 다르다: n={len(d)} 중앙={q[1]:.3f}. 못 쟀다.")
+    # ★ 2026-11-04 (DECISIONS §623-2). 못 박은 중앙값 −0.24 → **−0.30**. §562 는 `20261026-carve-before` 의 판이었고 보도 차감(`a-lock`, 2026-11-01)이
+    #   `wmin` 을 내려 같은 422쌍의 중앙을 옮겼다. 접속선 재판정(1,281 → 1,287)은 이 422쌍에 새 구간이 없어 무관하다(−0.30 그대로).
+    if len(d) != 422 or abs(q[1] - (-0.30)) > 0.005:
+        raise SystemExit(f"★ 오차 재현이 §562 와 다르다: n={len(d)} 중앙={q[1]:.3f} (못 박은 값 −0.30). 못 쟀다.")
     return d
 
 
@@ -409,7 +411,7 @@ def flip_list(rows: list[dict], base_v: list[str], flips: np.ndarray, dest: np.n
                  "행선": {t: {k: sum(1 for r in top if r["tier"] == t and r["flip_to"] == k) for k in ORDER} for t in (1, 2, 3)},
                  "최단 문턱": {t: {k: sum(1 for r in top if r["tier"] == t and r["thr_name"] == k)
                                for k in ("CLEAR_M", "TRUCK", "SPREAD_MAX", "CCTV")} for t in (1, 2, 3)},
-                 "평가셋과 겹침": sorted(r["seg_id"] for r in top if r["in_evalset"])},
+                 "평가셋과 겹침": sorted(r["seg_uid"] for r in top if r["in_evalset"])},   # seg_uid — 순번은 밀린다(§622-1)
         "tier": tier_n, "tier별 최단 문턱": thr, "tier별 행선": by_to, "겹침": overlap,
         "구간": [{k: v for k, v in r.items() if k != "_j"} for r in recs],
     }

@@ -181,3 +181,26 @@ def access_corridor(G, ent, poly, out_dir: Path | None = None, conn=None):
             out_dir / "corridor_5186.gpkg", driver="GPKG", layer="corridor")
         print(f"접근 회랑 {len(corr)}엣지 / {sum(c['geometry'].length for c in corr):,.0f}m")
     return corr, use
+
+
+def station_node(pt, ends, meta, rep):
+    """119안전센터가 붙을 노드 — **가장 가까운 통행 가능 구간의 가까운 끝**이다. (PLAN #120 · DECISIONS §622-2 · §623)
+
+    ★ 최근접 노드는 막다른 골목 끝일 수 있다. 센터가 닿아야 하는 것은 노드가 아니라 **통행 가능한 길**이다.
+      지산은 센터에서 12.6m 의 간선(폭 6.9m · 통과)이 있었는데 그 끝점이 30m · 112m 라서 24m 의 골목 끝에 져, 도달 노드 3 의
+      컴포넌트에 갇힌 것으로 셌다. 그것은 우리 스냅의 값이었다.
+
+    ends  [(행, 시작 좌표, 끝 좌표)] · meta  seg_id → {"blocked": bool} · rep  끝점마다의 노드 번호(`snap_groups`)
+
+    ★ **통행 가능한 구간이 하나도 없으면 `None`** 이다(예외가 아니다). 센터가 닿을 길이 없다는 것은 오류가 아니라 **사실**이다 — 그 센터는
+      도달 가능 0 으로 센다(부르는 쪽이 건너뛰고 말한다). 예외로 올리면 판정 범위(scope)를 바꾸는 순간 파이프라인 전체가 죽고, 아무 노드나
+      돌려주면 「닿는다」는 거짓이 된다 — 두 길 모두 `unknown` 을 회색으로 남기는 규칙(막힌 길을 빼고 돈다 · `segments._write_route`)과 어긋난다.
+    """
+    from shapely.geometry import Point
+    cand = [(r.geometry.distance(pt), k) for k, (r, _a, _b) in enumerate(ends)
+            if not meta.get(r.seg_id, {"blocked": True})["blocked"]]
+    if not cand:
+        return None
+    k = min(cand)[1]
+    near_a = Point(ends[k][1]).distance(pt) <= Point(ends[k][2]).distance(pt)
+    return rep[2 * k] if near_a else rep[2 * k + 1]

@@ -256,3 +256,13 @@ def test_every_segment_the_field_notes_point_at_is_an_overshoot():
         f"지목한 결함 구간 중 어느 그물도 안 드는 자리가 달라졌다 — 지금 {pointed_blind} · 적어 둔 것 "
         f"{sorted(KNOWN_BLIND)}. 줄었으면 `overshoot()` 를 고친 것이니 이 수를 "
         f"다시 적고, 늘었으면 **진짜 새 맹점**이니 사람이 본다")
+
+
+def test_a_field_row_with_zero_width_is_skipped_not_divided_by(monkeypatch):
+    """★ 실측 폭이 0 인 표 행은 **건너뛴다** — `w <= 0` 이 `w < 0` 이 되면 0 이 통과해 `c_med / w` 가 ZeroDivisionError 로 죽는다(DECISIONS §627)."""
+    monkeypatch.setattr(C, "field_rows", lambda: [{"seg_uid": "U1", "w_m": "0", "spot": "mid"},
+                                                  {"seg_uid": "U2", "w_m": "5", "spot": "mid"}])
+    rows = [{"seg_uid": "U1", "seg_label": "a", "c_med": 4.0, "wmin": 4.0},
+            {"seg_uid": "U2", "seg_label": "b", "c_med": 4.0, "wmin": 4.0}]
+    got = C.against_field(rows)
+    assert [g["seg"] for g in got] == ["U2"], "폭 0 행이 걸러지지 않았다"

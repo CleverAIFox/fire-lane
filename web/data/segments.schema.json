@@ -3,6 +3,9 @@
   "sha256": "dcf7dea84b2a507729d39e4c20085fc7d70250e7c8d73b285411521357f30978",
   "count": 1287,
   "width_verified": false,
+  "optional_fields": {
+    "z": "terrain"
+  },
   "note": "width_* 는 D-25 레이저 실측 전 미검증 값. verdict 문자열만 참조하고 임계값을 하드코딩하지 말 것.",
   "fields": {
     "seg_uid": "str, 실행 간 유지되는 키. {지역}-{중점X}-{중점Y}-{도로명해시}. 실측·관측점·영상판정·DB PK 는 전부 이 키를 쓴다",

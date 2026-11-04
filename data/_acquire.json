@@ -208,10 +208,6 @@
    "sha256": "3c5d91db980d0b896e8f2cfd2b2c51a385e580d40f7b355f6b5b6835509ba623",
    "bytes": 466483
   },
-  "nfa/nfa_dispatch_119_jngj-dongmyeong_20260903.csv": {
-   "sha256": "740dedf4e0c6f6de0424971e59391c04f6e58d9f37747fa6d822352471950371",
-   "bytes": 62671
-  },
   "nfa/nfa_fire_incident_jngj-donggu_20260903.csv": {
    "sha256": "c1f98a86160ef4f7d545d609ac953e33a288ad4d8113e25b45f0371e95f2f621",
    "bytes": 193220
@@ -367,7 +363,11 @@
   "safety/safety_dongmyeong_fires_jngj-dongmyeong_20261012.xlsx": {
    "sha256": "052a0d76fba8dc874607771348a25b6b7dec470ca99e2281c9963500e91edb63",
    "bytes": 14796
+  },
+  "nfa/nfa_dispatch_119_jngj-dongmyeong_20261104.csv": {
+   "sha256": "153a0ddc9d0b1331f7c2152a4be0208a04307ec12c0b64e9e14afb4d3386aea7",
+   "bytes": 334220
   }
  },
- "at": "2026-10-14T21:27:26+09:00"
+ "at": "2026-11-04T19:22:28+09:00"
 }

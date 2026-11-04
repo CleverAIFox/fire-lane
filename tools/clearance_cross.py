@@ -75,13 +75,13 @@ import argparse
 import csv
 import json
 import math
+import re
 import statistics
 import sys
 from pathlib import Path
 
 # ★ 좌표 상수의 집은 `src/firelane/localplane.py` 하나다(§239 → §469 → §473).
-#   여기 다시 적으면 같은 사실이 두 집에 살고 그 둘은 반드시 갈린다.
-#   `localgeo` 는 이름만 넘기는 막이다.
+#   여기 다시 적으면 같은 사실이 두 집에 살고 그 둘은 반드시 갈린다. `localgeo` 는 이름만 넘기는 막이다.
 from localgeo import MX, MY
 from statkit import num as _num
 from statkit import quartiles
@@ -287,7 +287,7 @@ def against_field(rows: list[dict]) -> list[dict]:
             "내접원": r["c_med"], "wmin": r["wmin"],
             "내접원/실측": r["c_med"] / w,
             "wmin/실측": (r["wmin"] / w) if r["wmin"] else None,
-            "note": f.get("note", ""),
+            "note": re.sub(r"\bDM\d{5}\b", f["seg_uid"], f.get("note", "")),   # 순번 → 이 행의 seg_uid (§622-1)
         })
     out.sort(key=lambda d: (d["spot"] != "mid", d["label"]))
     return out

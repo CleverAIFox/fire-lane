@@ -171,3 +171,61 @@ def test_entrances_outside_the_polygon_are_not_targets():
     G, ent, poly, conn = _targets_fixture()
     # 3번은 poly 밖이다 — 접속선이 있어도 목적지가 아니다. 위 기대값이 둘뿐인 것이 그 증거다.
     assert len(access_targets(G, ent.iloc[[2]], poly, conn)) == 0
+
+
+# ── 센터가 붙는 노드 — 가까운 노드가 아니라 가까운 통행 가능 구간의 끝 (PLAN #120 · DECISIONS §623) ──
+def _end(seg_id, coords):
+    from types import SimpleNamespace
+
+    from shapely.geometry import LineString
+    return SimpleNamespace(seg_id=seg_id, geometry=LineString(coords)), coords[0], coords[-1]
+
+
+def _jisan():
+    """지산 사례 — 센터 (0,0). 막다른 골목 끝은 24.2m, 간선은 12.6m 거리지만 끝점이 30.3m · 112m 다."""
+    alley = _end("ALLEY", [(24.2, 0.0), (60.0, -40.0)])          # 시작 끝(24.2m)이 막다른 골목 끝 — 노드 10
+    main = _end("MAIN", [(-27.5, 12.6), (112.0, 12.6)])          # 구간까지 12.6m · 가까운 끝 30.3m — 노드 20
+    return [alley, main], [10, 11, 20, 21]
+
+
+def test_the_station_goes_to_the_open_road_not_to_the_dead_end_node():
+    """★ 지산 사례를 굳힌다. 최근접 노드(24.2m)는 골목 끝이고 센터가 닿아야 하는 것은 통행 가능한 간선이다."""
+    from firelane.seg.graph import station_node
+    ends, rep = _jisan()
+    pt = Point(0, 0)
+    assert Point(ends[0][1]).distance(pt) < Point(ends[1][1]).distance(pt), "전제 — 골목 끝이 간선 끝점보다 가깝다"
+    assert station_node(pt, ends, {"ALLEY": {"blocked": False}, "MAIN": {"blocked": False}}, rep) == 20, \
+        "센터가 간선(12.6m · 통과)이 아니라 24.2m 의 막다른 골목 끝(노드 10)에 붙었다"
+
+
+def test_a_blocked_segment_is_not_a_candidate():
+    """가장 가까워도 막힌 구간이면 후보가 아니다 — 통행 가능 구간만 센다."""
+    from firelane.seg.graph import station_node
+    ends, rep = _jisan()
+    pt = Point(0, 0)
+    assert station_node(pt, ends, {"ALLEY": {"blocked": False}, "MAIN": {"blocked": True}}, rep) == 10, \
+        "간선이 막혔는데 후보에 남았다"
+
+
+def test_a_segment_missing_from_meta_is_treated_as_blocked():
+    """노드가 한 점으로 접힌 구간은 `meta` 에 없다(`a == b`). 없으면 막힌 것으로 본다."""
+    from firelane.seg.graph import station_node
+    ends, rep = _jisan()
+    assert station_node(Point(0, 0), ends, {"ALLEY": {"blocked": False}}, rep) == 10
+
+
+def test_it_picks_the_nearer_end_of_the_chosen_segment():
+    from firelane.seg.graph import station_node
+    ends, rep = _jisan()
+    meta = {"ALLEY": {"blocked": True}, "MAIN": {"blocked": False}}
+    assert station_node(Point(0, 0), ends, meta, rep) == 20, "시작 끝(30.3m)이 가깝다"
+    assert station_node(Point(200, 12.6), ends, meta, rep) == 21, "센터가 반대편이면 끝 쪽 노드(112m 끝)여야 한다"
+
+
+def test_no_passable_segment_means_no_node_not_a_crash():
+    """★ 통행 가능 구간이 하나도 없으면 `None` 이다 — 센터가 닿을 길이 없다는 사실이지 오류가 아니다. 부르는 쪽이 그 센터를 도달 0 으로 센다."""
+    from firelane.seg.graph import station_node
+    ends, rep = _jisan()
+    assert station_node(Point(0, 0), ends, {"ALLEY": {"blocked": True}, "MAIN": {"blocked": True}}, rep) is None
+    assert station_node(Point(0, 0), ends, {}, rep) is None, "meta 가 비어도(전부 접힘) 죽지 않는다"
+    assert station_node(Point(0, 0), [], {}, []) is None, "구간이 없어도 죽지 않는다"
