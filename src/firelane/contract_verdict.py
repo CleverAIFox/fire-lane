@@ -46,7 +46,7 @@ from __future__ import annotations
 NO_CONTRACT_RATCHET = 38
 #: 실측 2026-09-28. `crs_native` 35종. 좌표가 없는 갈래는 적을 근거가 없다 — 전수는 목표가 아니다.
 #: ★ 2026-10-06 (§419). 35 → 37. V-World SHP 둘 — `raw_only` 라도 `.prj` 에 근거가 있으면 적는다.
-CRS_DECLARED_RATCHET = 40
+CRS_DECLARED_RATCHET = 41
 
 # ── 실물 갈래의 래칫 ──────────────────────────────────────────
 #: 실측 2026-10-05, 레이크 있는 기계(Zd 전수 verify [64/99]). **75종 · 실패 8 · 경고 54.**

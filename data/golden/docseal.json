@@ -8071,14 +8071,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "62caee5bd6649b23",
-   "66df280427fd50a5",
-   "b0c57b5400ff867d",
-   "b94494cc5df328c8"
+   "58b37ede9a6636fe",
+   "5acaea76aeb0ad64",
+   "a5ba2be84dbb9812",
+   "c6182fe783a89bc8"
   ],
   "parts": {
    "src/firelane/acquire_rules.py": "e7183c20969bea4d",
-   "src/firelane/contract_verdict.py": "76e46d7f144dda7e",
+   "src/firelane/contract_verdict.py": "26718724fcd995c7",
    "src/firelane/expectation.py": "a54d89f0bdd1a075",
    "src/firelane/intake_name.py": "1171df2fd21e5b6c",
    "src/firelane/ledger_check.py": "951ae20aba8c2f69",
@@ -8092,7 +8092,7 @@
    "tools/sizecheck.py": "37ada738f0c098c4",
    "본문": "c01edb4160f54025"
   },
-  "sha": "62caee5bd6649b23"
+  "sha": "5acaea76aeb0ad64"
  },
  "DECISIONS/432": {
   "doc": "docs/DECISIONS.md",
