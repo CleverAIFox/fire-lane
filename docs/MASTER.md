@@ -3257,7 +3257,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,899 전수 · **분모(blank) 0절** · 물림(inherit) 1,770절.
+★ **강제자 칸의 분모.** 절 2,904 전수 · **분모(blank) 0절** · 물림(inherit) 1,774절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4816,6 +4816,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `src/firelane/guards.py` | 파이프라인 **방어 로직의 정본.** 계보 검사를 단독으로도 돌린다 |
 | `src/firelane/layerfsck.py` | `sources.yaml` 의 **계층 선언**과 디스크·git·기계 설정을 댄다. 부르는 자리는 `datalog` 하나다 |
 | `src/firelane/publish_fleet.py` | 관내 차종과 제원을 내비가 먹을 꼴로 낸다 |
+| `src/firelane/valueprofile.py` | 표 자료(csv)의 **값의 성질**을 재서 대장 `schema.profile` 에 **집계만** 적는다 — 빈 셀 · 공백 문자열 · 좌표 칸의 센티넬(`0.0`) · 텍스트 없음(`미상`) · 좌표 범위. 표본값은 안 적는다. `--check` 는 커밋된 프로필과 실물을 대고 실물 방언이 `none:` 선언 안인지 본다(레이크가 있는 기계에서). 판정 폐포 밖이고 판정이 안 읽는다(DECISIONS §634) |
 | `src/firelane/quiet_gdal.py` | GDAL 의 **알려진 무해 잡음만** 걷는다. 모르는 경고는 그대로 둔다 |
 | `src/firelane/read/__init__.py` | `kind` 별 **읽기의 정본.** 취입 한 함수에 있던 갈래 열둘을 여기로 뗐다 |
 | `src/firelane/seg/basisno.py` | 구간 라벨을 **도로명주소 기초번호**로 만든다 |

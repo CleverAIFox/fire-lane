@@ -380,7 +380,7 @@ def _chain(loose: list, tight: list, err: list, write: bool) -> None:
     print("\n  ── 이 다음 — 사슬을 **이 순서로**(사람이 친다)")
     for i, t in enumerate(steps, 1):
         print(f"     {i}. {t}")
-    print("     ※ 순서 — 래칫 → 변이 장부 → 문서 도장. 새 파일이 있으면 **`git add` 를 날인 앞에** 한다(§278-10).")
+    print("     ※ 순서 — 래칫 → 변이 장부 → 문서 도장. 새 파일이 있으면 **`git add` 를 날인 앞에** 한다(§278-10) · **MASTER §22·§23 등재는 `--write` 가 못 고친다**(`sealcov` 빈 곳 · §636).")
 
 
 def selftest() -> int:
