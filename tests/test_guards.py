@@ -2265,9 +2265,9 @@ def test_verify_covers_every_ci_job():
     assert jobs, "contract.yml 에서 잡을 못 찾았다"
 
     # 잡마다 "이것이 로컬에도 있어야 한다" 는 표식
-    NEEDS = {
-        "contract-strict": "owned_paths.py",
-        "contract-shared": "pytest",
+    NEEDS = {  # ★ 쪼갠 뒤 `contract-shared` 는 **집계**(DECISIONS §633) — 실제 검사는 `-fast` · `-heavy` · `-tests`. 쪼개기 전엔 `j in jobs` 가 거짓이라 안 문다
+        "contract-strict": "owned_paths.py", "contract-shared": "pytest",
+        "contract-fast": "doc_fsck.py", "contract-heavy": "ratchet.py", "contract-tests": "pytest",
     }
     miss = [f"{j} → verify.sh 에 `{k}` 가 없다"
             for j, k in NEEDS.items() if j in jobs and k not in vfy]
