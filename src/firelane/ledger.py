@@ -152,6 +152,11 @@ def load() -> dict:
     return yaml.safe_load(f.read_text(encoding="utf-8")) or {}
 
 
+def parse(text: str) -> dict:
+    """대장 **문자열**을 읽는다(디스크를 안 본다). 글자를 고친 뒤 여전히 대장인지 보는 도구 · 합성 대장을 넣는 시험이 쓴다."""
+    return yaml.safe_load(text) or {}
+
+
 def raw_text() -> str:
     """대장 **원문**. `yaml_span` 의 짝이다 — 주석을 보는 검사가 쓴다.
 
@@ -367,6 +372,94 @@ def bbox_4326() -> tuple[float, float, float, float]:
       쓰려고 문을 늘리지 않는다. 대장의 칸은 대장이 내준다.
     """
     return tuple(load()["bbox_4326"])
+
+
+# ── 값의 성질 — 좌표 칸 · 「없음」 표기 (DECISIONS §631 · §634 · PLAN #193) ───────────────
+#: 좌표의 **뜻**(닫힌 어휘). 역할마다 허용되는 뜻이 정해져 있다 — `site` 는 사건 · 설치 · 시설의 위치, `reporter` 는 신고자 휴대폰,
+#: `unconfirmed` 는 형태로 짐작할 뿐 원천이 말하지 않은 것. ★ 뜻을 모르면 `unconfirmed` 로 **모른다고 적는다**(`nfa_rescue`).
+COORD_ROLES: dict[str, tuple[str, ...]] = {
+    "site": ("재해 위치", "설치 위치", "시설 위치", "도로 중심"),
+    "reporter": ("신고자 휴대폰 위치",),
+    "unconfirmed": ("미확인",),
+}
+#: 「없음」의 꼴(닫힌 어휘 + 센티넬·텍스트 리터럴은 `none:` 이 직접 적는다). 빈 셀 · 공백 문자열은 이름으로 부른다.
+NONE_EMPTY, NONE_BLANK = "빈 셀", "공백"
+TABLE_KINDS = ("csv_table", "csv_table_multi", "json_table")
+#: 좌표로 **읽히는** 칸 이름(추정). 선언이 없는 표가 좌표를 숨기는지 보는 그물이다 — 지번 `LOT`(건축물대장)처럼 오탐은 `coords: {none: 사유}` 로 선언한다.
+COORD_COL = re.compile(r"(^|_)(LOT|LAT|LON|LNG)$|경도|위도|좌표|longitude|latitude|WGS84|^[xy]$", re.I)
+
+
+def coord_columns(e: dict) -> list[str]:
+    """`schema.columns` 중 좌표로 읽히는 칸. 선언이 아니라 **이름에서 짐작한** 것이다."""
+    return [str(c) for c in ((e.get("schema") or {}).get("columns") or []) if COORD_COL.search(str(c))]
+
+
+def coords_decl(e: dict) -> dict | None:
+    """대장 항목의 `coords:` 선언 그대로. 없으면 None. `{none: 사유}` 면 「좌표가 없다」는 **선언**이다."""
+    return (e or {}).get("coords") or None
+
+
+def coords(key: str, role: str, led: dict | None = None, use: str | None = None) -> tuple[str, str]:
+    """`(x칸, y칸)` — **코드가 좌표 칸 이름을 직접 쓰지 않는 유일한 길**(`tests/test_coord_literals.py` 가 문다).
+
+    ★ 선언이 없거나 그 역할이 없으면 `KeyError` — 코드가 제 판단으로 칸을 고르는 길을 닫는다(2026-11-04 `DCLR_PSTN_*` 사고).
+    ★ `use` 를 넘기면 그 칸의 `not_for`(그 뜻으로 쓰면 안 되는 용도)와 대 본다 — 신고자 휴대폰 위치를 `지도 표출` 로 쓰면 `ValueError`.
+    """
+    d = ((led if led is not None else load_sources()).get("datasets") or {}).get(key) or {}
+    c = coords_decl(d) or {}
+    if role not in c or role == "none":
+        raise KeyError(f"대장 `{key}` 에 coords.{role} 선언이 없다 — sources.yaml 에 적는다(DECISIONS §634)")
+    if use and use in (c[role].get("not_for") or []):
+        raise ValueError(f"대장 `{key}` 의 coords.{role}({c[role]['means']})은 `{use}` 에 쓰지 않는다(not_for)")
+    return str(c[role]["x"]), str(c[role]["y"])
+
+
+def coords_problems(key: str, e: dict) -> list[str]:
+    """`coords:` 의 **모양과 거부 조건**. 레이크 없이 돈다(CI · 푸시 전).
+
+    ★ 좌표로 읽히는 칸이 있는 표가 `coords:` 를 안 들면 거부한다 — 「좌표가 없다」(`coords: {none: 사유}`)와 「선언을 안 했다」는 다르다.
+    """
+    if e.get("kind") not in TABLE_KINDS:
+        return []
+    c, cols = coords_decl(e), set(map(str, (e.get("schema") or {}).get("columns") or []))
+    if c is None:
+        return [f"좌표로 읽히는 칸 {coord_columns(e)} 이 있는데 `coords:` 선언이 없다 — 어느 칸이 무엇의 위치인지 적는다 "
+                "(좌표가 아니면 `coords: {none: 사유}`)"] if coord_columns(e) else []
+    if "none" in c:
+        return [] if len(c) == 1 and str(c["none"]).strip() else ["`coords.none` 은 사유 한 줄만 든다"]
+    out = []
+    for role, d in c.items():
+        if role not in COORD_ROLES:
+            out.append(f"coords.{role} — 역할은 {sorted(COORD_ROLES)} 중 하나"); continue
+        if not isinstance(d, dict) or not {"x", "y", "crs", "means"} <= set(d):
+            out.append(f"coords.{role} — x · y · crs · means 가 있어야 한다"); continue
+        if d["means"] not in COORD_ROLES[role]:
+            out.append(f"coords.{role}.means `{d['means']}` — 이 역할의 뜻은 {list(COORD_ROLES[role])}")
+        out += [f"coords.{role}.{a} `{d[a]}` 가 schema.columns 에 없다" for a in ("x", "y") if cols and str(d[a]) not in cols]
+    return out
+
+
+def none_forms(e: dict, col: str) -> set[str]:
+    """`none:` 이 이 칸에 선언한 「없음」의 꼴(빈 셀 · 공백 · 센티넬 · 텍스트). 선언이 없으면 빈 집합."""
+    return {str(f) for f in (((e or {}).get("none") or {}).get(col) or {}).get("forms") or []}
+
+
+def profile_problems(e: dict) -> list[str]:
+    """`schema.profile`(실물이 잰 값 성질)이 `none:`(사람의 선언)보다 넓으면 운다. 레이크 없이 커밋된 프로필로 돈다.
+
+    ① 선언한 칸 — 잰 방언이 선언 안에 있나 ② **공백 문자열이 있는 칸은 반드시 선언**(`notna()` 가 그것을 「있음」으로 센 사고)
+    ③ 좌표 칸이 비었거나 센티넬이면 선언.
+    """
+    pf = ((e.get("schema") or {}).get("profile") or {}).get("cols") or {}
+    xy = {str(d[a]) for r, d in (coords_decl(e) or {}).items() if isinstance(d, dict) for a in ("x", "y") if a in d}
+    out = []
+    for col, st in pf.items():
+        seen = ({NONE_EMPTY} if st.get("empty") else set()) | ({NONE_BLANK} if st.get("ws") else set()) \
+            | set(map(str, st.get("sentinel") or {})) | set(map(str, st.get("text_none") or {}))
+        declared = none_forms(e, col)
+        if (col in (e.get("none") or {}) or col in xy or st.get("ws")) and seen - declared:
+            out.append(f"{col} — 실물 방언 {sorted(seen - declared)} 이 `none:` 선언에 없다 (선언 {sorted(declared)})")
+    return out
 
 
 def crs_of(e: dict) -> str:

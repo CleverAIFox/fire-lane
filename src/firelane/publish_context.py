@@ -35,7 +35,7 @@ from datetime import datetime, timedelta, timezone
 import geopandas as gpd
 import pandas as pd
 
-from firelane import localplane, quantile
+from firelane import ledger, localplane, quantile
 from firelane.cli import no_args
 from firelane.paths import ROOT
 
@@ -104,14 +104,16 @@ def _resp(dispatch: datetime | None, arrive: datetime | None) -> int | None:
 def context(fr) -> dict:
     feats = []
     sb = pd.read_csv(P / "speedbump.csv", dtype=str)
+    bx, by = ledger.coords("speedbump", "site")      # ★ 칸 이름은 대장이 말한다(DECISIONS §634) — 코드가 고르지 않는다
     for r in sb.itertuples(index=False):
-        lon, lat = _num(r.WGS84경도), _num(r.WGS84위도)
+        lon, lat = _num(getattr(r, bx)), _num(getattr(r, by))
         if lon and lat and _inside(lon, lat, fr):
             feats.append(_pt(lon, lat, {"kind": "speedbump",
                                         "h_m": _num(r.과속방지턱높이), "road": r.도로명 or None}))
     sc = pd.read_csv(P / "speed_cam.csv", dtype=str)
+    cx, cy = ledger.coords("speed_cam", "site")
     for r in sc.itertuples(index=False):
-        lon, lat = _num(r.경도), _num(r.위도)
+        lon, lat = _num(getattr(r, cx)), _num(getattr(r, cy))
         if lon and lat and _inside(lon, lat, fr):
             feats.append(_pt(lon, lat, {"kind": "speedcam", "limit": _num(r.제한속도),
                                         "place": r.설치장소 or None}))
@@ -128,11 +130,12 @@ def context(fr) -> dict:
 def history(fr) -> dict:
     feats, by_center, fires = [], {}, []
     d = pd.read_csv(P / "nfa_dispatch_119.csv", dtype=str)
+    dx, dy = ledger.coords("nfa_dispatch_119", "site", use="지도 표출")
     for r in d.itertuples(index=False):
         # ★ 2026-11-04 (DECISIONS §632). **`LOT`/`LAT`(재해 위치)** 를 쓴다. `DCLR_PSTN_*` 는 **신고자 휴대폰 위치**라 재해 위치에서 중앙 100m ·
         #   최대 265km 떨어진다 — 종전에 이 칸으로 이력 점과 직선 환산 속도를 냈고, 범위 걸러내기(`_inside`)가 광주 밖 112행을 조용히 뺐다.
         #   재해 좌표가 없는 행은 신고자 위치로 **대신하지 않고** 뺀다(뜻이 다른 점을 섞지 않는다).
-        lon, lat = _num(r.LOT), _num(r.LAT)
+        lon, lat = _num(getattr(r, dx)), _num(getattr(r, dy))
         rs = _resp(_ts(r.DSPT_DRTV_DT), _ts(r.GRNDS_ARVL_DT))
         if lon and lat and _inside(lon, lat, fr):
             feats.append(_pt(lon, lat, {"kind": "dispatch", "yr": int(_num(r.DCLR_YR) or 0),
@@ -140,8 +143,9 @@ def history(fr) -> dict:
             if rs is not None and r.CNTR_NM:
                 by_center.setdefault(r.CNTR_NM, []).append(rs)
     q = pd.read_csv(P / "nfa_rescue.csv", dtype=str)
+    qx, qy = ledger.coords("nfa_rescue", "unconfirmed")      # 뜻 미확인 — 대장이 그렇게 말한다(§632-1)
     for r in q.itertuples(index=False):
-        lon, lat = _num(r.DCLR_PSTN_LOT), _num(r.DCLR_PSTN_LAT)
+        lon, lat = _num(getattr(r, qx)), _num(getattr(r, qy))
         rs = _resp(_ymdhm(r.DSPT_YMD, r.DSPT_TM), _ymdhm(r.GRNDS_ARVL_YMD, r.GRNDS_ARVL_TM))
         if lon and lat and _inside(lon, lat, fr):
             feats.append(_pt(lon, lat, {"kind": "rescue", "yr": int(_num(r.DCLR_YR) or 0),

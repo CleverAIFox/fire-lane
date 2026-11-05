@@ -54,6 +54,7 @@ from pathlib import Path
 import yaml
 
 from firelane import ledger as _led
+from firelane import valueprofile as _vp
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
@@ -420,8 +421,7 @@ def _q(v) -> str:
 def _fmt(sch: dict) -> str:
     """YAML 블록. 손으로 고치지 말라는 표시를 단다."""
     lines = ["    schema:                       # AUTO — ledger_schema.py 가 쓴다"]
-    # ★ 2026-10-01 (DECISIONS §340). `error` · `columns_error` 를 **뺐다.**
-    #   에러는 **기록할 것이 아니라 고칠 것**이다. 적어 두면 ① 기계 고유 경로가
+    # ★ 2026-10-01 (DECISIONS §340). `error` · `columns_error` 를 **뺐다.** 에러는 **기록할 것이 아니라 고칠 것**이다. 적어 두면 ① 기계 고유 경로가
     #   대장에 박히고(실제로 juso 여섯이 그랬다) ② 다음 실행이 같은 에러를 내므로
     #   **드리프트가 영원히 0** 이다 — 읽기 실패가 「값」이 된다.
     #   에러는 `unreadable()` 이 **매 실행 세고**, `UNREADABLE` 래칫이 든다.
@@ -445,9 +445,8 @@ def _fmt(sch: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-# ★ 2026-09-13. 구현은 `firelane.ledger.yaml_span` 한 곳이다. 여기와
-#   짝 파일이 글자 하나까지 같았다 — `sources.yaml` 의 구조를 아는 것은
-#   `ledger` 소관이고, 두 벌이면 한쪽만 고치는 날이 온다.
+# ★ 2026-09-13. 구현은 `firelane.ledger.yaml_span` 한 곳이다 — `sources.yaml` 의 구조를 아는 것은
+#   `ledger` 소관이고, 두 벌이면 한쪽만 고치는 날이 온다(짝 파일이 글자 하나까지 같았다).
 _span = _led_yaml_span
 
 
@@ -502,7 +501,8 @@ def run(*, apply: bool, check: bool, missing: bool = False) -> int:
             st, en, body = _span(s, key)
             if st < 0:
                 continue
-            nb = _drop_schema(body) + _fmt(sch)
+            pf = (e.get("schema") or {}).get("profile")   # 짝 도구(valueprofile)가 쓴 AUTO 칸은 지우지 않는다
+            nb = _drop_schema(body) + _fmt(sch) + (_vp.fmt(pf) if pf else "")
             s = s[:st] + nb + s[en:]
 
     if apply:

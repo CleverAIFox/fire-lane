@@ -24,3 +24,5 @@ PLAN 이력 빚	uv run python tools/planwork.py
 기획서 정본 대조	uv run python tools/proposalcheck.py
 기획서 화면 ↔ 정본	uv run python tools/build_proposal.py --check
 그림 ↔ 정본	uv run python tools/render_figures.py --check
+# ── PLAN #193 · DECISIONS §634 — 코드가 대장이 지목한 좌표 칸 이름을 직접 쓰지 않는가(AST · src/firelane). pytest 한 파일이라 시작이 약 2초 ──
+좌표 칸 리터럴(대장 coords)	uv run pytest tests/test_coord_literals.py -q -p no:cacheprovider

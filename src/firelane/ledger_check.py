@@ -42,9 +42,11 @@ from firelane.ledger import (
     PATHABLE,
     REQUIRED,
     WARN,
+    coords_problems,
     crs_of,
     globs,
     load,
+    profile_problems,
     raw_text,
     yaml_span,
 )
@@ -154,6 +156,9 @@ def check_entry(key: str, e: dict) -> list[Issue]:
         out.append(Issue(WARN, key,
                          f"좌표가 나오는 갈래({e.get('kind')})인데 crs_native 가 "
                          "없다 — 계보에 빈 좌표계가 박힌다"))
+
+    # ── 값의 성질 (DECISIONS §634) — 좌표로 읽히는 칸이 있는데 `coords:` 가 없으면 거부 · 실물 방언이 `none:` 보다 넓으면 거부 ──
+    out += [Issue(FAIL, key, m) for m in coords_problems(key, e) + profile_problems(e)]
 
     # ── 갈래가 그 확장자를 읽을 수 있는가 ────────────────────
     # ★ 2026-10-13 (DECISIONS §515). `kind: csv_table` + `ext: [xlsx]` 라는

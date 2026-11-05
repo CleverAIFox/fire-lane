@@ -1474,6 +1474,9 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['구분', '노선명', '노드(건)', '링크(건)', '링크연장(km)']
       encoding_seen: 'cp949'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 35
+        cols: {}
   # ── 도로 그래프 뼈대 ─────────────────────────────────────
   # ★ road_link / road_rw 는 juso_road_geom(291MB, 6월) 을 보고 있으나
   #   juso_elctrnmap(7MB, 7월) 의 TL_SPRD_MANAGE / TL_SPRD_RW 와 동일하다.
@@ -2289,6 +2292,9 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['연번', '지역명', '구간거리(m)', '폭(m)', '세대수', '데이터기준일자']
       encoding_seen: 'cp949'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 20
+        cols: {}
   dem_public:
     feeds:
       - src/firelane/normalize_raw.py
@@ -2388,6 +2394,9 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['구분', '계', '주거지역', '상가지역', '고지대', '시장_화재예방강화지구', '소방차진입불가지역', '데이터기준일자']
       encoding_seen: 'cp949'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 5
+        cols: {}
 # ── 파이프라인 미투입 (원본만 보관) ─────────────────────────
     contract:
       encoding: cp949
@@ -2501,6 +2510,9 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['소방서', '안전센터', '소재지도로명주소', '관할구역', '데이터기준일']
       encoding_seen: 'cp949'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 27
+        cols: {}
   parking_lot:
     feeds: []
     feeds_note: '미투입 — A* 비용함수 입력(행 2). 노외 103 · 노상 35'
@@ -2527,6 +2539,12 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['구분', '종류', '연번', '주차장명', '주소', '면적_㎡', '면수', '행정동', '관리주체', '주차요금', '비고']
       encoding_seen: 'utf-8'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 138
+        cols:
+          '면적_㎡': {'empty': 16, 'ws': 0}
+          '관리주체': {'empty': 3, 'ws': 0}
+          '비고': {'empty': 129, 'ws': 0}
   enforce_cam:
     feeds:
       - src/firelane/publish_navi.py
@@ -2559,6 +2577,10 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['번호', '대상명칭', '주소', '평일_운영시간', '주말공휴일_운영시간', '점심시간', '개별적용사항']
       encoding_seen: 'utf-8'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 65
+        cols:
+          '개별적용사항': {'empty': 37, 'ws': 0}
   school_zone:
     feeds: []
     feeds_note: '미투입 — A* 비용함수 입력(행 2). 보호구역 32곳'
@@ -2581,6 +2603,9 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['연번', '학교명', '시설유형', '주소']
       encoding_seen: 'utf-8'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 32
+        cols: {}
   parking_zone:
     feeds: []
     feeds_note: '미투입 — A* 비용함수 입력(행 2). 규제 구간'
@@ -2604,6 +2629,11 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['구분', '도로명', '구간', '연장_m', '내용']
       encoding_seen: 'utf-8'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 22
+        cols:
+          '구간': {'empty': 17, 'ws': 0}
+          '연장_m': {'empty': 18, 'ws': 0}
   jijeok:
     feeds:
       - tools/jijeok_probe.py
@@ -2689,6 +2719,28 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['부서', '계', '펌프차(중형)', '물탱크차(대형)', '화학차', '조연차', '직진형사다리차(53m)', '굴절형사다리차(27m)', '지휘차', '구조차', '구조버스', '구급차', '생활안전차', '소방안전교육차', '순찰차', '행정차', '화물차', '화재조사차', '트레일러', '장비운반차', '진단차']
       encoding_seen: 'utf-8-sig'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 8
+        cols:
+          '펌프차(중형)': {'empty': 4, 'ws': 0}
+          '물탱크차(대형)': {'empty': 6, 'ws': 0}
+          '화학차': {'empty': 6, 'ws': 0}
+          '조연차': {'empty': 6, 'ws': 0}
+          '직진형사다리차(53m)': {'empty': 6, 'ws': 0}
+          '굴절형사다리차(27m)': {'empty': 6, 'ws': 0}
+          '지휘차': {'empty': 6, 'ws': 0}
+          '구조차': {'empty': 6, 'ws': 0}
+          '구조버스': {'empty': 5, 'ws': 0}
+          '구급차': {'empty': 4, 'ws': 0}
+          '생활안전차': {'empty': 4, 'ws': 0}
+          '소방안전교육차': {'empty': 6, 'ws': 0}
+          '순찰차': {'empty': 5, 'ws': 0}
+          '행정차': {'empty': 6, 'ws': 0}
+          '화물차': {'empty': 6, 'ws': 0}
+          '화재조사차': {'empty': 6, 'ws': 0}
+          '트레일러': {'empty': 6, 'ws': 0}
+          '장비운반차': {'empty': 6, 'ws': 0}
+          '진단차': {'empty': 6, 'ws': 0}
   gjfire_district_dongbu:
     feeds: []
     feeds_note: '미투입 — CONFIG.fleetGroups 묶음 근거'
@@ -2715,6 +2767,9 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['구 분', '위 치', '관 할 구 역', '인구', '1인당담당인구', '데이터기준일자']
       encoding_seen: 'utf-8-sig'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 3
+        cols: {}
   gjfire_vehicle_card:
     feeds:
       - src/firelane/normalize_raw.py
@@ -2800,12 +2855,47 @@ datasets:
         2026-11-04 에 952행으로 다시 받았다(2022 122 · 2023 61 · 2024 426 · 2025 343).
       ★ DCLR_PSTN_LAT/LOT 이 0.0 인 행이 있다. 결측을 0 으로 채운 것이므로
         lat > 0 조건이 필수다.
-      ★ 좌표는 신고자 위치(휴대폰)이지 반드시 현장이 아니다.
+      ★ 좌표쌍이 둘이다 — `LOT`/`LAT` 은 재해 위치, `DCLR_PSTN_LOT/LAT` 은 신고자 휴대폰 위치(`coords:` 가 지목한다).
     contract: {encoding: utf-8-sig}
 
+    # ★ 2026-11-05 (DECISIONS §634 · PLAN #193). 좌표쌍이 **둘**이고 뜻이 다르다 — 코드는 칸 이름을 직접 쓰지 않고 `ledger.coords(key, 역할)` 로 받는다.
+    coords:
+      site:     {x: LOT, y: LAT, crs: 4326, means: 재해 위치}
+      reporter: {x: DCLR_PSTN_LOT, y: DCLR_PSTN_LAT, crs: 4326, means: 신고자 휴대폰 위치, not_for: [위치 분석, 지도 표출, 거리 계산]}
+    # ★ 「없음」의 꼴이 **세 가지**이고 연도로 갈린다(§631-3). `notna()` 는 공백 문자열을 「있음」으로 센다 — 시각 칸은 strip 한 뒤 빈 것으로 센다.
+    #   2022 · 2023 은 빈 셀, 2024 · 2025 는 공백 문자열이다(`schema.profile` 의 `by` 가 연도별로 보인다).
+    none:
+      GRNDS_ARVL_DT: {forms: [빈 셀, 공백], by: DCLR_YR}
+      HSPTL_ARVL_DT: {forms: [빈 셀, 공백], by: DCLR_YR}
+      CBK_DT:        {forms: [빈 셀, 공백], by: DCLR_YR}
+      RCPT_END_DT:   {forms: [공백]}
+      RCPT_END_YMD:  {forms: [공백]}
+      RCPT_END_TM:   {forms: [공백]}
+      DCLR_PSTN_LOT: {forms: ["0.0"]}      # 신고자 위치 — 결측을 0 으로 채운 행(2022 · 2023)
+      DCLR_PSTN_LAT: {forms: ["0.0"]}
+      LOT:           {forms: [빈 셀]}
+      LAT:           {forms: [빈 셀]}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['DCLR_RCPT_NO', 'DCLR_DT', 'DCLR_YMD', 'DCLR_TM', 'DCLR_YR', 'DCLR_MM', 'DCLR_DAY', 'DCLR_HR', 'DCLR_MN', 'DCLR_DOW', 'SEASN_NM', 'QTR_NO', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'CTY_FRMVL_SE_NM', 'EMD_SE_NM', 'RCPT_END_DT', 'RCPT_END_YMD', 'RCPT_END_TM', 'OTR_CTPV_DCLR_YN', 'DCLR_PSTN_LOT', 'DCLR_PSTN_LAT', 'DSPT_DRTV_DT', 'GRNDS_ARVL_DT', 'HSPTL_ARVL_DT', 'CBK_DT', 'SITTN_END_DT', 'FRSTN_NM', 'CNTR_NM', 'CLMTY_CTPV_NM', 'CLMTY_SGG_NM', 'CLMTY_EMD_NM', 'LOT', 'LAT']
       encoding_seen: 'utf-8-sig'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 952
+        cols:
+          'SGG_NM': {'empty': 283, 'ws': 0}
+          'EMD_NM': {'empty': 284, 'ws': 0}
+          'CTY_FRMVL_SE_NM': {'empty': 284, 'ws': 0}
+          'EMD_SE_NM': {'empty': 284, 'ws': 0}
+          'RCPT_END_DT': {'empty': 0, 'ws': 1}
+          'RCPT_END_YMD': {'empty': 0, 'ws': 1}
+          'RCPT_END_TM': {'empty': 0, 'ws': 1}
+          'DCLR_PSTN_LOT': {'empty': 0, 'ws': 0, 'sentinel': {'0.0': 37}, 'range': [124.848488, 127.4041]}
+          'DCLR_PSTN_LAT': {'empty': 0, 'ws': 0, 'sentinel': {'0.0': 37}, 'range': [33.474969, 37.5291]}
+          'DSPT_DRTV_DT': {'empty': 42, 'ws': 0}
+          'GRNDS_ARVL_DT': {'empty': 24, 'ws': 70, 'by': {'2022': {'empty': 14}, '2023': {'empty': 10}, '2024': {'ws': 31}, '2025': {'ws': 39}}}
+          'HSPTL_ARVL_DT': {'empty': 94, 'ws': 438, 'by': {'2022': {'empty': 61}, '2023': {'empty': 33}, '2024': {'ws': 239}, '2025': {'ws': 199}}}
+          'CBK_DT': {'empty': 3, 'ws': 10, 'by': {'2022': {'empty': 2}, '2023': {'empty': 1}, '2024': {'ws': 4}, '2025': {'ws': 6}}}
+          'LOT': {'empty': 11, 'ws': 0, 'range': [126.91388, 126.933003]}
+          'LAT': {'empty': 11, 'ws': 0, 'range': [35.145, 35.154962]}
   nfa_rescue:
     feeds:
       - src/firelane/pipeline.py
@@ -2827,9 +2917,36 @@ datasets:
     crs_native: 4326
     contract: {encoding: utf-8-sig}
 
+    # ★ 2026-11-05 (DECISIONS §632-1 · §634). 쌍이 **하나**뿐이고 재해 위치 칸이 없다. 칸 이름은 `DCLR_PSTN`(신고 위치)인데 값은 재해 위치처럼 생겼다
+    #   (동명동 안 99% · 건물 3m 안 83% · 소수 12~14자리 — 휴대폰 칸과 다르다). 원천 활용가이드로 확인하기 전까지 **뜻을 모른다고 적는다.**
+    coords:
+      unconfirmed: {x: DCLR_PSTN_LOT, y: DCLR_PSTN_LAT, crs: 4326, means: 미확인}
+    none:
+      DCLR_PSTN_LOT: {forms: [빈 셀]}
+      DCLR_PSTN_LAT: {forms: [빈 셀]}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['CLMTY_RSCU_RPTP_NO', 'ACDNT_CS_NM', 'PRCS_RSLT_SE_NM', 'DCLR_YMD', 'DCLR_TM', 'DCLR_YR', 'SEASN_NM', 'DCLR_MM', 'DCLR_DAY', 'DCLR_HR', 'DCLR_MN', 'DCLR_DOW', 'DSPT_YMD', 'DSPT_TM', 'DSPT_YR', 'DSPT_MM', 'DSPT_DAY', 'DSPT_HR', 'DSPT_MN', 'GRNDS_ARVL_YMD', 'GRNDS_ARVL_TM', 'GRNDS_ARVL_YR', 'GRNDS_ARVL_MM', 'GRNDS_ARVL_DAY', 'GRNDS_ARVL_HR', 'GRNDS_ARVL_MN', 'RSCU_CMPTN_YMD', 'RSCU_CMPTN_TM', 'RSCU_CMPTN_YR', 'RSCU_CMPTN_MM', 'RSCU_CMPTN_DAY', 'RSCU_CMPTN_HR', 'RSCU_CMPTN_MN', 'CBK_YMD', 'CBK_TM', 'CBK_YR', 'CBK_MM', 'CBK_DAY', 'CBK_HR', 'CBK_MN', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'CTY_FRMVL_SE_NM', 'EMD_SE_NM', 'DCLR_PSTN_LOT', 'DCLR_PSTN_LAT', 'FRSTN_GRNDS_DSTNC', 'ACDNT_PLC_DTL_NM', 'FRSTN_NM', 'CNTR_NM']
       encoding_seen: 'utf-8-sig'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 212
+        cols:
+          'ACDNT_CS_NM': {'empty': 207, 'ws': 0}
+          'GRNDS_ARVL_YMD': {'empty': 3, 'ws': 0}
+          'GRNDS_ARVL_TM': {'empty': 3, 'ws': 0}
+          'GRNDS_ARVL_YR': {'empty': 3, 'ws': 0}
+          'GRNDS_ARVL_MM': {'empty': 3, 'ws': 0}
+          'GRNDS_ARVL_DAY': {'empty': 3, 'ws': 0}
+          'GRNDS_ARVL_HR': {'empty': 3, 'ws': 0}
+          'GRNDS_ARVL_MN': {'empty': 3, 'ws': 0}
+          'RSCU_CMPTN_YMD': {'empty': 22, 'ws': 0}
+          'RSCU_CMPTN_TM': {'empty': 22, 'ws': 0}
+          'RSCU_CMPTN_YR': {'empty': 22, 'ws': 0}
+          'RSCU_CMPTN_MM': {'empty': 22, 'ws': 0}
+          'RSCU_CMPTN_DAY': {'empty': 22, 'ws': 0}
+          'RSCU_CMPTN_HR': {'empty': 22, 'ws': 0}
+          'RSCU_CMPTN_MN': {'empty': 22, 'ws': 0}
+          'DCLR_PSTN_LOT': {'empty': 7, 'ws': 0, 'range': [126.914805, 126.930845]}
+          'DCLR_PSTN_LAT': {'empty': 7, 'ws': 0, 'range': [35.146356, 35.155195]}
   nfa_fire_incident:
     feeds:
       - src/firelane/pipeline.py
@@ -2875,9 +2992,41 @@ datasets:
           같은 플랫폼의 구조 현황에는 EMD_NM 이 있다 — 표마다 다르다
     contract: {encoding: utf-8-sig}
 
+    # ★ 2026-11-05 (DECISIONS §634). 좌표 칸이 **없다**는 선언이다 — 「좌표가 없다」와 「선언을 안 했다」는 다르다. 위치 대신 **거리와 시간이 칸으로 있다**(`#39` 측정이 쓴다).
+    coords:
+      none: '좌표 칸이 없다 — 거리(FRSTN_GRNDS_DSTNC · CNTR_GRNDS_DSTNC · LFDAU_GRNDS_DSTNC)와 시간(DSPT_REQ_HR · DSPT_DT → GRNDS_ARVL_DT)이 칸으로 있다'
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['WRINV_NO', 'FIRE_TYPE_NM', 'BLDG_SRTFRM_NM', 'BLDG_STRCTR_NM', 'BLDG_SRTRF_NM', 'BLDG_RSCU_DNGCT', 'GRND_NOFL', 'UDGD_NOFL', 'BLDG_GFA', 'BTTM_AREA', 'BLDG_STTS_NM', 'SPFPTG_NM', 'SMTPR_LCLSF_NM', 'SMTPR_SCLSF_NM', 'DTH_CNT', 'INJPSN_CNT', 'HNL_DAM_CNT', 'PRPT_DAM_AMT', 'DOW_NM', 'FRSTN_NM', 'CNTR_NM', 'RCPT_DT', 'DSPT_DT', 'GRNDS_ARVL_DT', 'BGNN_POTFR_DT', 'PRFECT_POTFR_DT', 'CBK_DT', 'DSPT_REQ_HR', 'FIRE_SUPESN_HR', 'CTPV_NM', 'SGG_NM', 'FRSTN_GRNDS_DSTNC', 'CNTR_GRNDS_DSTNC', 'LFDAU_GRNDS_DSTNC', 'IGTN_HTSRC_NM', 'IGTN_HTSRC_SCLSF_NM', 'IGTN_DMNT_LCLSF_NM', 'IGTN_DMNT_SCLSF_NM', 'FRST_IGOBJ_LCLSF_NM', 'FRST_IGOBJ_SCLSF_NM', 'IGTN_ISTR_LCLSF_NM', 'IGTN_ISTR_SCLSF_NM', 'CMBS_EXPOBJ_LCLSF_NM', 'CMBS_EXPOBJ_SCLSF_NM', 'FCLT_PLC_LCLSF_NM', 'FCLT_PLC_MCLSF_NM', 'FCLT_PLC_SCLSF_NM', 'IGTN_FLR_NM', 'SO_AREA', 'FIRE_INSRNC_OBLG_TRGT_YN', 'ARSON_MNG_TRGT_YN', 'MUB_YN', 'VHCL_PLC_NM', 'VHCL_IGTN_PSTN_NM', 'FND_FIRE_SE_NM', 'FND_IGTN_PSTN_NM', 'HR_UNIT_ARTMP', 'HR_UNIT_WSPD_INFO', 'WNDRCT_BRNG', 'HR_UNIT_HUM']
       encoding_seen: 'utf-8-sig'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 367
+        cols:
+          'BLDG_SRTFRM_NM': {'empty': 110, 'ws': 0}
+          'BLDG_STRCTR_NM': {'empty': 111, 'ws': 0}
+          'BLDG_SRTRF_NM': {'empty': 112, 'ws': 0}
+          'BLDG_RSCU_DNGCT': {'empty': 120, 'ws': 0}
+          'GRND_NOFL': {'empty': 110, 'ws': 0}
+          'UDGD_NOFL': {'empty': 130, 'ws': 0}
+          'BLDG_GFA': {'empty': 110, 'ws': 0}
+          'BTTM_AREA': {'empty': 110, 'ws': 0}
+          'BLDG_STTS_NM': {'empty': 110, 'ws': 0}
+          'SPFPTG_NM': {'empty': 200, 'ws': 0}
+          'SMTPR_LCLSF_NM': {'empty': 160, 'ws': 0}
+          'SMTPR_SCLSF_NM': {'empty': 160, 'ws': 0}
+          'IGTN_DMNT_LCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 18}}
+          'IGTN_DMNT_SCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 18}}
+          'FRST_IGOBJ_LCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 15}}
+          'FRST_IGOBJ_SCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 15}}
+          'IGTN_ISTR_LCLSF_NM': {'empty': 146, 'ws': 0, 'text_none': {'미상': 9}}
+          'IGTN_ISTR_SCLSF_NM': {'empty': 146, 'ws': 0, 'text_none': {'미상': 9}}
+          'CMBS_EXPOBJ_LCLSF_NM': {'empty': 216, 'ws': 0, 'text_none': {'미상': 2}}
+          'CMBS_EXPOBJ_SCLSF_NM': {'empty': 216, 'ws': 0, 'text_none': {'미상': 2}}
+          'IGTN_FLR_NM': {'empty': 110, 'ws': 0}
+          'SO_AREA': {'empty': 101, 'ws': 0}
+          'VHCL_PLC_NM': {'empty': 322, 'ws': 0}
+          'VHCL_IGTN_PSTN_NM': {'empty': 322, 'ws': 0}
+          'FND_FIRE_SE_NM': {'empty': 363, 'ws': 0}
+          'FND_IGTN_PSTN_NM': {'empty': 363, 'ws': 0}
   nfa_vehicle_spec_2024:
     feeds: []
     feeds_note: '미투입 — vehicle_spec 의 상한 대비 실차 대표값 대조축'
@@ -2998,6 +3147,22 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['BDST_SN', 'FRSTN_NM', 'CNTR_NM', 'TRGTOBJ_NM', 'REG_YMD', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'ADDR', 'BLDG_NM', 'FIRE_INSRNC_JOIN_YMD', 'FIRE_INSRNC_MTRY_YMD', 'FIRE_INSRNC_CO_NM', 'USE_APRV_YMD', 'PBNST_YN', 'CLTPTY_YN', 'ARSON_MNG_TRGT_YN', 'ISF_CHCK_TRGT_YN', 'ISF_CHCK_TRGT_TYPE_NM', 'LGZ_FIRE_WKTRGT_YN', 'FRFGH_FCLT_CPCST_CMCRT_YMD', 'USE_YN', 'FRFGH_MFBIZ_YN']
       encoding_seen: 'utf-8-sig'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 23
+        cols:
+          'BLDG_NM': {'empty': 21, 'ws': 0}
+          'FIRE_INSRNC_JOIN_YMD': {'empty': 20, 'ws': 0}
+          'FIRE_INSRNC_MTRY_YMD': {'empty': 20, 'ws': 0}
+          'FIRE_INSRNC_CO_NM': {'empty': 20, 'ws': 0}
+          'USE_APRV_YMD': {'empty': 11, 'ws': 0}
+          'PBNST_YN': {'empty': 23, 'ws': 0}
+          'CLTPTY_YN': {'empty': 23, 'ws': 0}
+          'ARSON_MNG_TRGT_YN': {'empty': 23, 'ws': 0}
+          'ISF_CHCK_TRGT_YN': {'empty': 17, 'ws': 0}
+          'ISF_CHCK_TRGT_TYPE_NM': {'empty': 17, 'ws': 0}
+          'LGZ_FIRE_WKTRGT_YN': {'empty': 23, 'ws': 0}
+          'FRFGH_FCLT_CPCST_CMCRT_YMD': {'empty': 3, 'ws': 0}
+          'FRFGH_MFBIZ_YN': {'empty': 22, 'ws': 0}
   nfa_spec_chem_gj:
     feeds: []
     feeds_note: '미투입 — 화학차 치수 상한. CONFIG.fleet 의 chem 이 "추정" 이다'
@@ -3164,6 +3329,9 @@ datasets:
       rows: 1989
       required_cols: [PLOT_PSTN, MN_USG_CD_NM, FML_CNT, HH_CNT]
 
+    # ★ 2026-11-05 (DECISIONS §634). `LOT` 은 **지번**(토지 번호)이다 — 좌표가 아니다. 이름이 좌표처럼 생겨 선언 없이는 오탐으로 읽힌다.
+    coords:
+      none: '`LOT` 은 지번이다 — 이 표에 좌표 칸이 없다(위치는 도로명주소로 지오코딩한다)'
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['PLOT_PSTN', 'SGG_CD', 'STDG_CD', 'PLOT_SE_CD', 'MNO', 'SNO', 'BDRG_SN', 'LDGR_SE_CD', 'LDGR_SE_CD_NM', 'LDGR_KIND_CD', 'LDGR_KIND_CD_NM', 'ROAD_NM_PLOT_PSTN', 'BLDG_NM', 'SPAREA_NM', 'BLCK', 'LOT', 'BYLT_CNT', 'NA_ROAD_CD', 'NA_STDG_CD', 'NA_GRND_UDGD_CD', 'NA_MNO', 'NA_SNO', 'DNG_NM', 'MANX_SE_CD', 'MANX_SE_CD_NM', 'SIAR', 'BDAR', 'BDCVRT', 'GFA', 'FART_CMPTTN_GFA', 'FART', 'STRCT_CD', 'STRCT_CD_NM', 'ETC_STRCT', 'MN_USG_CD', 'MN_USG_CD_NM', 'ETC_USG', 'ROOF_CD', 'ROOF_CD_NM', 'ETC_ROOF', 'HH_CNT', 'FML_CNT', 'HG', 'GRND_NOFL', 'UDGD_NOFL', 'PSNGR_ELVTR_CNT', 'EUSE_ELVTR_CNT', 'ANX_BDST_CNT', 'ANX_BDST_AREA', 'TOL_DNG_GFA', 'INDR_MCNCL_CNTOM', 'INDR_MCNCL_AREA', 'OTDR_MCNCL_CNTOM', 'OTDR_MCNCL_AREA', 'INDR_SFPRPL_CNTOM', 'INDR_SFPRPL_AREA', 'OTDR_SFPRPL_CNTOM', 'OTDR_SFPRPL_AREA', 'PRMSN_DAY', 'BGNCST_DAY']
       features: 1989
@@ -3266,9 +3434,18 @@ datasets:
       rows: 342
       required_cols: [WGS84위도, WGS84경도, 설치장소, 과속방지턱형태구분]
 
+    coords:
+      site:     {x: WGS84경도, y: WGS84위도, crs: 4326, means: 설치 위치}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['개방자치단체코드', '관리번호', '과속방지턱관리번호', '도로명', '시도명', '시군구명', '소재지도로명주소', '소재지지번주소', '설치장소', '과속방지턱재료', '과속방지턱형태구분', '과속방지턱높이', '과속방지턱폭', '과속방지턱연장', '도로유형구분', '규격여부', 'WGS84위도', 'WGS84경도', '보차분리여부', '연속형여부', '과속방지턱설치연도', '관리기관명', '관리기관전화번호', '데이터기준일자', '데이터갱신구분', '데이터갱신시점', '최종수정시점']
       encoding_seen: 'cp949'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 342
+        cols:
+          '소재지도로명주소': {'empty': 5, 'ws': 0}
+          'WGS84위도': {'empty': 0, 'ws': 0, 'range': [35.089375, 35.164358]}
+          'WGS84경도': {'empty': 0, 'ws': 0, 'range': [126.393647, 126.962479]}
+          '과속방지턱설치연도': {'empty': 342, 'ws': 0}
   admin_cctv:
     feeds:
       - src/firelane/normalize_raw.py
@@ -3297,9 +3474,20 @@ datasets:
       rows: 81
       required_cols: [WGS84위도, WGS84경도, 설치목적구분, 관리기관명]
 
+    coords:
+      site:     {x: WGS84경도, y: WGS84위도, crs: 4326, means: 설치 위치}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['개방자치단체코드', '관리번호', '관리기관명', '소재지도로명주소', '소재지지번주소', '설치목적구분', '카메라대수', '카메라화소수', '촬영방면정보', '보관일수', '설치연월', '관리기관전화번호', 'WGS84위도', 'WGS84경도', '데이터기준일자', '데이터갱신구분', '데이터갱신시점', '최종수정시점']
       encoding_seen: 'cp949'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 81
+        cols:
+          '카메라화소수': {'empty': 16, 'ws': 0}
+          '촬영방면정보': {'empty': 7, 'ws': 0}
+          '보관일수': {'empty': 61, 'ws': 0}
+          '설치연월': {'empty': 8, 'ws': 0}
+          'WGS84위도': {'empty': 0, 'ws': 0, 'range': [35.091546, 35.164486]}
+          'WGS84경도': {'empty': 0, 'ws': 0, 'range': [126.910396, 126.957169]}
   speed_cam:
     feeds:
       - src/firelane/normalize_raw.py
@@ -3330,9 +3518,17 @@ datasets:
       rows: 510
       required_cols: [위도, 경도, 제한속도, 설치장소, 시군구명]
 
+    coords:
+      site:     {x: 경도, y: 위도, crs: 4326, means: 설치 위치}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['무인교통단속카메라관리번호', '시군구명', '도로노선번호', '도로노선명', '도로노선방향', '위도', '경도', '설치장소', '단속구분', '제한속도', '보호구역구분', '설치년도']
       encoding_seen: 'utf-8-sig'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 510
+        cols:
+          '도로노선번호': {'empty': 510, 'ws': 0}
+          '위도': {'empty': 0, 'ws': 0, 'range': [35.065663, 35.244534]}
+          '경도': {'empty': 0, 'ws': 0, 'range': [126.674157, 126.951103]}
   parking_enforce:
     feeds:
       - src/firelane/pipeline.py
@@ -3370,6 +3566,10 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['위반일자', '위반시간', '위반장소명', '과태료', '비고', '데이터기준일자']
       encoding_seen: 'cp949'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 141556
+        cols:
+          '비고': {'empty': 46451, 'ws': 0}
   hydrant_type:
     feeds: []
     feeds_note: '미투입 — 소방용수 분모(몇 개인가)의 근거'
@@ -3393,6 +3593,9 @@ datasets:
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['연번', '구분', '지상식소화전', '일반지하식소화전', '저수조', '급수탑', '데이터기준일자']
       encoding_seen: 'cp949'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 5
+        cols: {}
   parking_std:
     feeds: []
     feeds_note: '미투입 — 교통량 축 · 주차 점유 가중(좌표 · 구획수)'
@@ -3416,9 +3619,30 @@ datasets:
         (`feeds` 가 비어 있다). 이 항목은 소비 사실이 아니라 측정만 적는다 — 소비자 파일이 생기면 그때 `feeds` 로 올린다.
       ★ updated 는 파일명 날짜(제공일)다. 내용의 데이터기준일자는 2026-04 다.
       ★ 경로 괄호는 표준데이터 형식으로 판단했다. 좌표 없는 행이 98 있다.
+    coords:
+      site:     {x: 경도, y: 위도, crs: 4326, means: 시설 위치}
+    none:
+      경도: {forms: [빈 셀]}      # 297행 중 98행(33%)이 비었다 — 위치 분석은 이 행을 못 쓴다
+      위도: {forms: [빈 셀]}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['주차장관리번호', '주차장명', '주차장구분', '주차장유형', '소재지도로명주소', '소재지지번주소', '주차구획수', '급지구분', '부제시행구분', '운영요일', '평일운영시작시각', '평일운영종료시각', '토요일운영시작시각', '토요일운영종료시각', '공휴일운영시작시각', '공휴일운영종료시각', '요금정보', '주차기본시간', '주차기본요금', '추가단위시간', '추가단위요금', '1일주차권요금적용시간', '1일주차권요금', '월정기권요금', '결제방법', '특기사항', '관리기관명', '전화번호', '위도', '경도', '장애인전용주차구역보유여부', '데이터기준일자']
       encoding_seen: 'utf-8-sig'
+      profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
+        n: 297
+        cols:
+          '소재지도로명주소': {'empty': 140, 'ws': 0}
+          '소재지지번주소': {'empty': 13, 'ws': 0}
+          '주차기본요금': {'empty': 83, 'ws': 0}
+          '추가단위시간': {'empty': 281, 'ws': 0}
+          '추가단위요금': {'empty': 281, 'ws': 0}
+          '1일주차권요금적용시간': {'empty': 281, 'ws': 0}
+          '1일주차권요금': {'empty': 281, 'ws': 0}
+          '월정기권요금': {'empty': 281, 'ws': 0}
+          '결제방법': {'empty': 281, 'ws': 0}
+          '특기사항': {'empty': 296, 'ws': 0}
+          '위도': {'empty': 98, 'ws': 0, 'range': [35.107039, 35.163003]}
+          '경도': {'empty': 98, 'ws': 0, 'range': [126.908975, 126.936721]}
+          '장애인전용주차구역보유여부': {'empty': 297, 'ws': 0}
   navi_build:
     feeds:
       - src/firelane/pipeline.py

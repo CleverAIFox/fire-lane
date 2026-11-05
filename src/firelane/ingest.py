@@ -152,6 +152,8 @@ def paths_for(key: str, e: dict) -> list[Path]:
 
 
 def build(key: str, e: dict, tmp: Path) -> dict:
+    if bad := ledger.coords_problems(key, e):     # ★ 좌표로 읽히는 칸이 있는 표가 `coords:` 를 안 들면 읽지 않는다(DECISIONS §634)
+        raise ValueError(f"{key}: 좌표 선언이 없거나 틀렸다 — " + " · ".join(bad))
     pats = ledger.globs(e)
     hits = paths_for(key, e)
     if not hits:
@@ -172,9 +174,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     #     shp_dir         ngii1k.py 가 묶음 전체를 편다. 여러 개가 정상
     #     raw_only        읽지 않는다. ortho.py 가 4도엽을 직접 읽는다
     #
-    #   실전에서 5종이 경고를 냈고 그중 4종이 오탐이었다.
-    #   **매번 뜨는 경고는 아무도 안 읽는다** — 그러면 진짜 하나를 놓친다.
-    #   `hits[0]` 만 쓰는 kind 에서만 말한다.
+    #   실전에서 5종이 경고를 냈고 그중 4종이 오탐이었다. **매번 뜨는 경고는 아무도 안 읽는다** — 그러면 진짜 하나를 놓친다. `hits[0]` 만 쓰는 kind 에서만 말한다.
     # ★ 정본은 `firelane.kinds` 다. `ledger.SINGLE_PICK` 재수출은 §431 이 지웠다.
     if len(hits) > 1 and e["kind"] in kinds.SINGLE_PICK:
         rest = ", ".join(x.name for x in hits[1:])
