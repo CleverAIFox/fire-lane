@@ -127,6 +127,8 @@ CONTRACT_KEYS: dict[str, tuple[str, str]] = {
     "layer_must_exist": ("zip 안에 layer 가 실제로 있는가", "firelane.contract"),
     "delimiter":        ("구분자. 안 적으면 갈래 기본값", "firelane.ledger"),
     "columns":          ("헤더 없는 원본의 컬럼 이름. 사람이 적는다", "firelane.read.delimited"),
+    "normalize_columns": ("칸 이름을 strip().strip('\"').lower() 로 맞춘다 — 값은 안 건드린다", "firelane.read.extract"),
+    "filter":           ("{column, equals} — 정규화한 칸 이름으로 행을 거른다(전국 원본 → 지역 파생본)", "firelane.read.extract"),
 }
 
 

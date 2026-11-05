@@ -1524,7 +1524,9 @@ datasets:
       layer_must_exist: true
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
-      layer_used: 'TL_SPRD_MANAGE.shp'
+      layer_used: '12210/TL_SPRD_MANAGE.shp'
+      columns: ['ALWNC_DE', 'ALWNC_RESN', 'BSI_INT', 'ENG_RN', 'MVMN_DE', 'MVMN_RESN', 'MVM_RES_CD', 'NTFC_DE', 'OPERT_DE', 'RBP_CN', 'RDS_DPN_SE', 'RDS_MAN_NO', 'REP_CN', 'RN', 'RN_CD', 'ROAD_BT', 'ROAD_LT', 'ROA_CLS_SE', 'SIG_CD', 'WDR_RD_CD']
+      features: 2267
   road_rw:
     feeds:
       - src/firelane/guards.py
@@ -1564,7 +1566,9 @@ datasets:
       layer_must_exist: true
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
-      layer_used: 'TL_SPRD_RW.shp'
+      layer_used: '12210/TL_SPRD_RW.shp'
+      columns: ['OPERT_DE', 'RW_SN', 'SIG_CD']
+      features: 3068
   road_intrvl:
     feeds:
       - src/firelane/guards.py
@@ -1592,7 +1596,9 @@ datasets:
 
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
-      layer_used: 'TL_SPRD_INTRVL.shp'
+      layer_used: '12210/TL_SPRD_INTRVL.shp'
+      columns: ['BSI_INT_SN', 'EVE_BSI_MN', 'EVE_BSI_SL', 'ODD_BSI_MN', 'ODD_BSI_SL', 'OPERT_DE', 'RDS_MAN_NO', 'SIG_CD']
+      features: 18462
   spotaddr_geom:
     feeds:
       - src/firelane/normalize_raw.py
@@ -2062,7 +2068,9 @@ datasets:
       layer_must_exist: true
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
-      layer_used: 'TL_SCCO_EMD.shp'
+      layer_used: '12210/TL_SCCO_EMD.shp'
+      columns: ['EMD_CD', 'EMD_ENG_NM', 'EMD_KOR_NM']
+      features: 34
   building:
     feeds:
       - src/firelane/guards.py
@@ -2104,7 +2112,9 @@ datasets:
       layer_must_exist: true
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       layers: ['TL_KODIS_BAS', 'TL_SCCO_EMD', 'TL_SCCO_LI', 'TL_SCCO_SIG', 'TL_SPBD_BULD', 'TL_SPBD_ENTRC', 'TL_SPBD_EQB', 'TL_SPRD_INTRVL', 'TL_SPRD_MANAGE', 'TL_SPRD_RW']
-      layer_used: 'TL_SPBD_BULD.shp'
+      layer_used: '12210/TL_SPBD_BULD.shp'
+      columns: ['BDTYP_CD', 'BD_MGT_SN', 'BSI_INT_SN', 'BSI_ZON_NO', 'BULD_MNNM', 'BULD_NM', 'BULD_NM_DC', 'BULD_SE_CD', 'BULD_SLNO', 'BUL_DPN_SE', 'BUL_ENG_NM', 'BUL_MAN_NO', 'EMD_CD', 'EQB_MAN_SN', 'GRO_FLO_CO', 'LI_CD', 'LNBR_MNNM', 'LNBR_SLNO', 'MNTN_YN', 'MVMN_DE', 'MVMN_RESN', 'MVM_RES_CD', 'NTFC_DE', 'OPERT_DE', 'POS_BUL_NM', 'RDS_MAN_NO', 'RDS_SIG_CD', 'RN_CD', 'SIG_CD', 'UND_FLO_CO']
+      features: 20434
   building_entrance:
     feeds:
       - src/firelane/guards.py
@@ -2984,6 +2994,13 @@ datasets:
       연도별 동구 3,391 · 6,226 · 7,089 · 8,164 · 7,969 · 7,616 · 7,177.
     kind: csv_table
     encoding: utf-8
+    contract:
+      normalize_columns: lower_strip
+      filter:
+        column: sgg_nm
+        equals: 동구
+      scope_min: 40000
+      required_cols: [sgg_nm, grnds_dstnc, dclr_tm, dspt_tm, grnds_arvl_tm, ptn_cntc_tm]
     coords:
       none: 「좌표 칸이 없다 — 거리를 칸으로 든다(grnds_dstnc)」
     note: |
@@ -3001,6 +3018,9 @@ datasets:
         서부 93 · 광산 48 · 항공구조대 21.
       ★ 2023~2025 는 플랫폼이 제공한다. 구조 현황(nfa_rescue)은 2019~2022 뿐이다.
     verified: false
+    schema:                       # AUTO — ledger_schema.py 가 쓴다
+      columns: ['RLF_RPTP_NO', 'REG_CMPTN_SE_NM', 'PTN_OCRN_TYPE_NM', 'PTN_SYM_SE_NM', 'SRIL_ONCR_NM', 'HRTARST_NM', 'CRDVSC_CRVSSCR_SE_NM', 'TRFC_ACDNT_SE_NM', 'ETC_TRFC_ACDNT_NM', 'ANML_ETC_CLSF_NM', 'ETC_OCRN_TYPE_NM', 'FRSTN_NM', 'CNTR_NM', 'RLF_ACTV_SE_NM', 'HLCPT_PMPBLC_EN_NM', 'DCLR_YMD', 'DCLR_TM', 'DCLR_YR', 'SEASN_NM', 'QTR_NO', 'DCLR_MM', 'DCLR_DAY', 'DCLR_HR', 'DCLR_MN', 'DCLR_DOW', 'DSPT_YMD', 'DSPT_TM', 'DSPT_YR', 'DSPT_MM', 'DSPT_DAY', 'DSPT_HR', 'DSPT_MN', 'GRNDS_ARVL_YMD', 'GRNDS_ARVL_TM', 'GRNDS_ARVL_YR', 'GRNDS_ARVL_MM', 'GRNDS_ARVL_DAY', 'GRNDS_ARVL_HR', 'GRNDS_ARVL_MN', 'PTN_CNTC_YMD', 'PTN_CNTC_TM', 'PTN_CNTC_YR', 'PTN_CNTC_MM', 'PTN_CNTC_DAY', 'PTN_CNTC_HR', 'PTN_CNTC_MN', 'GRNDS_DSTNC', 'GRNDS_DPTRE_YMD', 'GRNDS_DPTRE_TM', 'GRNDS_DPTRE_YR', 'GRNDS_DPTRE_MM', 'GRNDS_DPTRE_DAY', 'GRNDS_DPTRE_HR', 'GRNDS_DPTRE_MN', 'CBK_YMD', 'CBK_TM', 'CBK_YR', 'CBK_MM', 'CBK_DAY', 'CBK_HR', 'CBK_MN', 'TRMN_SE_NM', 'GNDR_NM', 'PTN_CTPV_NM', 'CTPV_NM', 'SGG_NM', 'CTY_FRMVL_SE_NM', 'PTN_CR_NM', 'GRNDS2_DSTNC', 'GRNDS3_DSTNC', 'TRANS_CLSF_NM']
+      encoding_seen: 'utf-8'
   nfa_fire_incident:
     feeds:
       - src/firelane/pipeline.py

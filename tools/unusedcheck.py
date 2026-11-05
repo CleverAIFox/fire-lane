@@ -66,7 +66,12 @@ ROOT = Path(__file__).resolve().parents[1]
 #: ★ 같이 올린 둘은 이 수에 **안 든다** — `gjpolice_oneway` 는 변환기가 없는
 #:   `raw_only`(사람이 읽는 근거 문서), `safety_dongmyeong_fires` 는
 #:   **영구 참조**(판정에 안 쓴다 · `feeds_why` 가 「참조용」)로 선언했다.
-PENDING_MAX = 13
+# ★ 2026-11-05. 13 → 14. `nfa_ems` 반입(C1 · 84f4e45d)으로 미투입 원천이 하나 늘었다.
+#   도구가 잘못 센 것이 아니라 **실제로** 늘었다 — `ratchet.py` 머리말의 가름으로는
+#   정확도가 아니라 **확산**이다. 그래서 받아적는 것이 결함을 덮는 일이 아니다.
+#   갚는 자리는 C2 — cost 의 거리-시간 관계 검증과 발표 논거다(DECISIONS §645-5).
+#   ★ 되돌리는 조건 — `nfa_ems` 에 소비자가 생기면 13 으로 내린다.
+PENDING_MAX = 14
 
 RATCHETS = {"PENDING_MAX": "down"}
 

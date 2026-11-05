@@ -18,6 +18,7 @@ from firelane import ledger
 from firelane.hashing import sha256
 from firelane.read._io import BBOX_4326, CRS_W, load_csv_points, read_csv_any
 from firelane.read.ctx import Ctx
+from firelane.read.extract import declared, read_extracted
 
 
 def read_csv_points(c: Ctx):
@@ -184,6 +185,8 @@ def read_text_table(c: Ctx):
 
 def read_csv_table(c: Ctx):
     """kind "csv_table" 를 읽는다. ingest.build() 에서 그대로 옮겼다."""
+    if declared(c.e):                       # 전국 원본 → 지역 파생본(DECISIONS §646) — hits 전부를 청크로 읽어 거르고 잇는다
+        return read_extracted(c)
     key = c.key
     e = c.e
     src = c.src
@@ -198,6 +201,8 @@ def read_csv_table(c: Ctx):
 
 def read_csv_table_multi(c: Ctx):
     """kind "csv_table_multi" 를 읽는다. ingest.build() 에서 그대로 옮겼다."""
+    if declared(c.e):
+        return read_extracted(c)
     key = c.key
     e = c.e
     hits = c.hits

@@ -176,7 +176,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     #
     #   실전에서 5종이 경고를 냈고 그중 4종이 오탐이었다. **매번 뜨는 경고는 아무도 안 읽는다** — 그러면 진짜 하나를 놓친다. `hits[0]` 만 쓰는 kind 에서만 말한다.
     # ★ 정본은 `firelane.kinds` 다. `ledger.SINGLE_PICK` 재수출은 §431 이 지웠다.
-    if len(hits) > 1 and e["kind"] in kinds.SINGLE_PICK:
+    if len(hits) > 1 and e["kind"] in kinds.SINGLE_PICK and not read.extract.declared(e):
         rest = ", ".join(x.name for x in hits[1:])
         print(f"  ★ {key}: 대장 glob 이 {len(hits)}개를 잡는데 "
               f"kind={e['kind']} 는 하나만 쓴다 → {src.name}")

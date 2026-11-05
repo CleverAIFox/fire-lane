@@ -1,0 +1,215 @@
+"""
+test_extract.py — 전국 원본에서 지역 파생본을 만드는 **추출 단계**.  (DECISIONS §646)
+
+── 이 시험이 무는 것 ──────────────────────────────────────────
+① 대문자 헤더 파일과 소문자 헤더 파일이 **한 결과로 합쳐진다**(`normalize_columns` — 2024 경계에서 칸 이름 케이스가 갈린다. 대문자 필터가 2024 이후를 0행으로 만들어
+   139행을 잃은 사고가 이 시험의 이유다) · 값은 한 글자도 안 바뀐다.
+② `filter` 가 지정한 행만 남기고 · 청크 크기가 결과를 안 바꾸고 · **공백을 걷어야 맞은 행**을 센다.
+③ 계보(`rec["extract"]`)에 입력 파일별 sha · 필터 전 · 후 행 수가 남는다.
+④ **조용히 덜 하지 않는다**: 필터가 0행이면 FAIL · `scope_min` 미달이면 FAIL · 필터 칸 이름이 틀리면 **죽는다** · 선언의 모양이 틀리면 `problems` 가 가린다.
+⑤ 선언이 없으면 종전 경로 그대로다(회귀 없음) · 어휘가 `ledger.CONTRACT_KEYS` 에 있고 `read/extract.py` 가 그 이름을 읽는다.
+
+밖    **실제 전국 파일로는 안 돌렸다**(합성 입력만) · 실제 대장 항목에 키를 안 달았다(대장의 `scope` 를 바꾸지 않는다 — 추출이 선 뒤의 사람 판단).
+"""
+from __future__ import annotations
+
+import hashlib
+import pathlib
+
+import pytest
+
+from firelane import ledger_check
+from firelane.read import extract
+from firelane.read.ctx import Ctx
+from firelane.read.delimited import read_csv_table, read_csv_table_multi
+
+UPPER = "DCLR_YR,CLMTY_EMD_NM,NOTE\n2023,동명동,가\n2023,산수동,나\n2023, 동명동 ,다\n"
+LOWER = 'dclr_yr,clmty_emd_nm,note\n2024,동명동,N/A\n2024,지산동,\n2025,동명동,"  띄어쓰기  "\n'
+CON = {"normalize_columns": "lower_strip", "filter": {"column": "clmty_emd_nm", "equals": "동명동"}}
+
+
+def _ctx(tmp_path, files: dict[str, str | bytes], contract=CON, kind="csv_table", **extra):
+    hits = []
+    for name, body in files.items():
+        p = tmp_path / name
+        p.write_bytes(body if isinstance(body, bytes) else body.encode("utf-8"))
+        hits.append(p)
+    out = tmp_path / "out"
+    out.mkdir(exist_ok=True)
+    e = {"kind": kind, "encoding": "utf-8", "contract": dict(contract), **extra}
+    return Ctx(key="t", e=e, src=hits[0], hits=hits, crs="", tmp=tmp_path, out=out, rec={"key": "t", "ambiguous": ["x"]}, save=lambda *a, **k: {})
+
+
+def _sub(tmp_path, name):
+    d = tmp_path / name
+    d.mkdir()
+    return d
+
+
+def _out(c):
+    import pandas as pd
+    return pd.read_csv(c.out / "t.csv", dtype=str, na_filter=False, encoding="utf-8-sig")
+
+
+# ── ① 케이스가 갈린 파일이 한 결과로 합쳐진다 ──
+def test_upper_and_lower_case_headers_merge_into_one_result(tmp_path):
+    c = _ctx(tmp_path, {"a_2023.csv": UPPER, "b_2024.csv": LOWER})
+    rec = read_csv_table(c)
+    d = _out(c)
+    assert rec["status"] == "OK" and rec["columns"] == ["dclr_yr", "clmty_emd_nm", "note"]
+    assert d["dclr_yr"].tolist() == ["2023", "2023", "2024", "2025"], "대문자 파일의 동명동 둘 + 소문자 파일의 동명동 둘"
+    assert rec["features"] == 4 and "ambiguous" not in rec and rec["resolved"] == "a_2023.csv + b_2024.csv"
+
+
+def test_the_old_uppercase_filter_would_have_lost_the_lowercase_years(tmp_path):
+    """★ 139행 사고의 재현 — 정규화 없이 대문자 칸 이름으로 거르면 소문자 헤더 파일은 **칸이 없어서** 죽는다(0행으로 조용히 통과하지 않는다)."""
+    c = _ctx(tmp_path, {"b_2024.csv": LOWER}, contract={"filter": {"column": "CLMTY_EMD_NM", "equals": "동명동"}})
+    with pytest.raises(ValueError, match="헤더에 없다"):
+        read_csv_table(c)
+
+
+def test_values_are_not_touched_only_column_names(tmp_path):
+    c = _ctx(tmp_path, {"b_2024.csv": LOWER})
+    read_csv_table(c)
+    d = _out(c)
+    assert d["note"].tolist() == ["N/A", "  띄어쓰기  "], "N/A · 안쪽 공백이 원문 그대로다(na_filter=False · strip 은 비교에만)"
+    assert d["clmty_emd_nm"].tolist() == ["동명동", "동명동"]
+
+
+# ── ② 필터 · 청크 · 공백 ──
+def test_the_filter_keeps_only_the_named_rows_and_counts_whitespace_matches(tmp_path):
+    c = _ctx(tmp_path, {"a.csv": UPPER})
+    rec = read_csv_table(c)
+    f = rec["extract"]["files"][0]
+    assert (f["rows_in"], f["rows_out"], f["stripped_matches"]) == (3, 2, 1), "공백을 걷어야 맞은 행(` 동명동 `)을 숨기지 않고 센다"
+    assert _out(c)["note"].tolist() == ["가", "다"]
+    assert _out(c)["clmty_emd_nm"].tolist() == ["동명동", " 동명동 "], "저장값은 공백 그대로"
+
+
+def test_the_chunk_size_does_not_change_the_result(tmp_path, monkeypatch):
+    body = "A,B\n" + "".join(f"{i},{'x' if i % 3 == 0 else 'y'}\n" for i in range(25))
+    flt = {"normalize_columns": "lower_strip", "filter": {"column": "b", "equals": "x"}}
+    big = _ctx(_sub(tmp_path, "big"), {"f.csv": body}, contract=flt)
+    got_big = read_csv_table(big)
+    monkeypatch.setattr(extract, "CHUNK", 4)
+    small = _ctx(_sub(tmp_path, "small"), {"f.csv": body}, contract=flt)
+    got_small = read_csv_table(small)
+    assert got_big["features"] == got_small["features"] == 9
+    assert _out(big).equals(_out(small))
+
+
+def test_a_declared_encoding_is_tried_first_then_the_candidates(tmp_path):
+    cp = UPPER.encode("cp949")
+    c = _ctx(tmp_path, {"a.csv": cp}, encoding="utf-8")
+    assert read_csv_table(c)["features"] == 2, "대장의 encoding 이 틀려도 후보로 넘어간다 — 청크 중간의 디코드 실패도 처음부터 다시"
+
+
+# ── ③ 계보 ──
+def test_the_lineage_names_every_input_file_with_its_hash_and_row_counts(tmp_path):
+    c = _ctx(tmp_path, {"a_2023.csv": UPPER, "b_2024.csv": LOWER})
+    rec = read_csv_table_multi(c)
+    ex = rec["extract"]
+    assert ex["normalize_columns"] == "lower_strip" and ex["filter"] == CON["filter"]
+    assert (ex["rows_in"], ex["rows_out"]) == (6, 4)
+    assert [f["name"] for f in ex["files"]] == ["a_2023.csv", "b_2024.csv"]
+    for f in ex["files"]:
+        assert f["sha256"] == hashlib.sha256(pathlib.Path(tmp_path / f["name"]).read_bytes()).hexdigest()
+    assert rec["source_sha256"] == ",".join(f["sha256"][:16] for f in ex["files"])
+
+
+# ── ④ 조용히 덜 하지 않는다 ──
+def test_a_filter_that_keeps_nothing_is_a_failure_not_a_silent_pass(tmp_path):
+    c = _ctx(tmp_path, {"a.csv": UPPER}, contract={**CON, "filter": {"column": "clmty_emd_nm", "equals": "없는동"}})
+    rec = read_csv_table(c)
+    assert rec["status"] == "FAIL" and rec["features"] == 0 and "scope_min" in rec["error"] and not (c.out / "t.csv").exists()
+
+
+def test_scope_min_is_enforced_after_the_filter(tmp_path):
+    c = _ctx(tmp_path, {"a.csv": UPPER}, contract={**CON, "scope_min": 3})
+    rec = read_csv_table(c)
+    assert rec["status"] == "FAIL" and "3" in rec["error"]
+    ok = _ctx(_sub(tmp_path, "ok"), {"a.csv": UPPER}, contract={**CON, "scope_min": 2})
+    assert read_csv_table(ok)["status"] == "OK"
+
+
+def test_files_with_different_columns_stop_unless_the_ledger_declares_them_optional(tmp_path):
+    other = "dclr_yr,clmty_emd_nm,note,extra\n2024,동명동,x,새칸\n"
+    c = _ctx(tmp_path, {"a.csv": UPPER, "b.csv": other})
+    with pytest.raises(ValueError, match="선언 안 된"):
+        read_csv_table(c)
+    ok = _ctx(_sub(tmp_path, "ok"), {"a.csv": UPPER, "b.csv": other}, contract={**CON, "optional_cols": ["extra"]})
+    rec = read_csv_table(ok)
+    assert rec["columns"][-1] == "extra" and _out(ok)["extra"].tolist() == ["", "", "새칸"], "선언된 결손은 빈 값으로 채운다"
+
+
+def test_normalized_names_that_collide_stop(tmp_path):
+    c = _ctx(tmp_path, {"a.csv": "A,a,B\n1,2,3\n"}, contract={"normalize_columns": "lower_strip"})
+    with pytest.raises(ValueError, match="겹친다"):
+        read_csv_table(c)
+
+
+# ── 선언의 모양 ──
+@pytest.mark.parametrize("contract,kind,schema,needle", [
+    ({"normalize_columns": "upper"}, "csv_table", None, "어휘"),
+    ({"filter": {"column": "a", "equals": "x", "in": ["y"]}}, "csv_table", None, "둘뿐"),
+    ({"filter": {"column": "a"}}, "csv_table", None, "둘뿐"),
+    ({"filter": {"column": "", "equals": "x"}}, "csv_table", None, "비었다"),
+    ({"filter": {"column": "a", "equals": ""}}, "csv_table", None, "equals"),
+    ({"normalize_columns": "lower_strip", "filter": {"column": "CLMTY", "equals": "x"}}, "csv_table", None, "정규화 **뒤**"),
+    ({"filter": {"column": "clmty_emd_nm", "equals": "x"}}, "csv_table", ["A", "B"], "schema.columns"),
+    ({"normalize_columns": "lower_strip"}, "csv_points", None, "안 읽는다"),
+])
+def test_problems_names_a_malformed_declaration(contract, kind, schema, needle):
+    e = {"kind": kind, "contract": contract, **({"schema": {"columns": schema}} if schema else {})}
+    got = extract.problems("t", e)
+    assert any(needle in m for m in got), got
+
+
+def test_a_valid_declaration_has_no_problem_and_the_schema_columns_are_checked_after_normalizing():
+    e = {"kind": "csv_table", "contract": CON, "schema": {"columns": ["DCLR_YR", "CLMTY_EMD_NM"]}}
+    assert extract.problems("t", e) == [] and extract.declared(e)
+    assert extract.problems("t", {"kind": "csv_table", "contract": {"encoding": "utf-8"}}) == [] and not extract.declared({"contract": {}})
+
+
+def test_the_ledger_check_turns_a_bad_declaration_into_a_fail():
+    e = {"kind": "csv_table", "what": "x", "scope": "jngj-dongmyeong", "updated": "2026-11-05", "stem": "t", "ext": ["csv"], "feeds": [], "schema": {"columns": ["A"]},
+         "contract": {"filter": {"column": "typo", "equals": "x"}}}
+    msgs = [i.msg if hasattr(i, "msg") else str(i) for i in ledger_check.check_entry("t", e) if i.level == "FAIL"]
+    assert any("filter.column" in m for m in msgs), msgs
+
+
+# ── ⑤ 회귀 없음 · 어휘 ──
+def test_without_the_keys_the_old_path_is_untouched(tmp_path):
+    c = _ctx(tmp_path, {"a.csv": UPPER}, contract={"encoding": "utf-8"})
+    rec = read_csv_table(c)
+    assert rec["status"] == "OK" and rec["features"] == 3 and "extract" not in rec, "키가 없으면 전부 읽는다 — 종전 그대로"
+    assert rec["columns"] == ["DCLR_YR", "CLMTY_EMD_NM", "NOTE"], "정규화도 안 한다"
+
+
+def test_the_vocabulary_names_the_reading_module():
+    from firelane import ledger
+    assert ledger.CONTRACT_KEYS["normalize_columns"][1] == ledger.CONTRACT_KEYS["filter"][1] == "firelane.read.extract"
+
+
+def test_no_real_ledger_entry_uses_the_keys_yet():
+    """대장의 `scope` 를 바꾸지 않는다 — 추출이 선 뒤의 사람 판단이다. 실제 항목은 이 키를 아직 안 쓰고 선언이 있다면 모양이 맞아야 한다."""
+    from firelane import ledger
+    ds = ledger.load_sources()["datasets"]
+    assert [k for k, e in ds.items() if extract.declared(e)] == []
+    assert all(extract.problems(k, e) == [] for k, e in ds.items())
+
+
+def test_read_extracted_is_the_entry_both_table_kinds_share(tmp_path):
+    """두 표 갈래(`csv_table` · `csv_table_multi`)가 **같은 함수**로 간다 — 갈래 이름이 달라도 결과가 같다."""
+    one = read_csv_table(_ctx(_sub(tmp_path, "one"), {"a.csv": UPPER, "b.csv": LOWER}))
+    two = extract.read_extracted(_ctx(_sub(tmp_path, "two"), {"a.csv": UPPER, "b.csv": LOWER}, kind="csv_table_multi"))
+    assert one["extract"]["rows_out"] == two["extract"]["rows_out"] == 4 and one["columns"] == two["columns"]
+
+
+def test_the_single_pick_rule_does_not_fire_when_the_extraction_reads_every_file():
+    """`csv_table` 은 원래 하나만 읽어서 files 가 여럿이면 `primary` 를 요구한다 — 추출 선언이 있으면 **전부 읽으므로** 그 요구가 틀린 경보다."""
+    base = {"kind": "csv_table", "what": "x", "scope": "jngj-dongmyeong", "updated": "2026-11-05", "stem": "t", "ext": ["csv"], "feeds": [],
+            "schema": {"columns": ["A"]}, "encoding": "utf-8", "files": ["a_2023.csv", "b_2024.csv"]}
+    plain = [i.msg for i in ledger_check.check_entry("t", base) if i.level == "FAIL" and "하나만 읽는데" in i.msg]
+    ext = [i.msg for i in ledger_check.check_entry("t", {**base, "contract": {"normalize_columns": "lower_strip"}}) if i.level == "FAIL" and "하나만 읽는데" in i.msg]
+    assert plain and not ext

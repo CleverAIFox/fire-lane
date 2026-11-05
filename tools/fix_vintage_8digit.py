@@ -32,6 +32,11 @@ fix_vintage_8digit.py — landing 의 연도 vintage(YYYY)를 8자리(YYYY1231)�
 IN    $FIRE_LANE_DATA/landing · sources.yaml
 OUT   같은 둘 (--apply 일 때만)
 PARAM 없음
+부류  생산   파일명과 대장을 고친다 (DECISIONS §398 의 「산출물·대장·그림」 중 대장)
+밖    이름이 **규칙에 맞는지**는 안 본다 — `naming.parse` · `naming.check` 가 묻는다.
+      raw 는 안 건드린다. landing 과 대장 `files:` 줄만 본다.
+      vintage 가 **옳은 날짜인지**도 안 본다 — YYYY 를 YYYY1231 로 늘릴 뿐이고,
+      그 1231 이 데이터 기준일로 맞는지는 사람이 판단한다.
 """
 from __future__ import annotations
 

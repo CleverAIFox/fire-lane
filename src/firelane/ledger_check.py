@@ -33,6 +33,8 @@ from dataclasses import dataclass
 from firelane import naming as nm
 from firelane import scope as sc
 from firelane.cli import no_args
+from firelane.extract_decl import declared as extract_declared
+from firelane.extract_decl import problems as extract_problems
 from firelane.kinds import NO_SCHEMA_KINDS, SINGLE_PICK, TEXT_KINDS
 from firelane.ledger import (
     DATE,
@@ -160,6 +162,9 @@ def check_entry(key: str, e: dict) -> list[Issue]:
     # ── 값의 성질 (DECISIONS §634) — 좌표로 읽히는 칸이 있는데 `coords:` 가 없으면 거부 · 실물 방언이 `none:` 보다 넓으면 거부 ──
     out += [Issue(FAIL, key, m) for m in coords_problems(key, e) + profile_problems(e)]
 
+    # ── 추출 단계 선언(DECISIONS §646) — 오타 하나로 필터가 조용히 안 걸리면 139행 사고의 재발이다 ──
+    out += [Issue(FAIL, key, m) for m in extract_problems(key, e)]
+
     # ── 갈래가 그 확장자를 읽을 수 있는가 ────────────────────
     # ★ 2026-10-13 (DECISIONS §515). `kind: csv_table` + `ext: [xlsx]` 라는
     #   **거짓 선언**이 관문 일곱을 다 지났다. xlsx 는 zip 이라 저 갈래로
@@ -243,7 +248,7 @@ def check_entry(key: str, e: dict) -> list[Issue]:
     for f in (files or []):
         for m in nm.audit_pattern(f):
             out.append(Issue(FAIL, key, m.splitlines()[0]))
-    if e.get("kind") in SINGLE_PICK and files and len(files) > 1:
+    if e.get("kind") in SINGLE_PICK and files and len(files) > 1 and not extract_declared(e):    # 추출 단계는 hits 전부를 읽는다(§646)
         if not e.get("primary"):
             out.append(Issue(
                 FAIL, key,

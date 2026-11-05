@@ -18,6 +18,10 @@ ledger_add_nfa_ems.py — sources.yaml 에 datasets.nfa_ems 를 등재한다.
 IN    sources.yaml
 OUT   sources.yaml (--apply 일 때만)
 PARAM 없음
+부류  생산   대장을 고친다 (DECISIONS §398 의 「산출물·대장·그림」 중 대장)
+밖    레이크를 안 본다 — 파일이 실제로 있는지는 `acquire.py` 의 세 판정이 묻는다.
+      대장 문법·스키마도 안 본다 — `ledger_schema` · `ledger_fields` · `ledger_stem` 의 일이다.
+      이 도구는 **블록 하나를 정해진 자리에 끼워 넣는 것**만 한다.
 """
 from __future__ import annotations
 
