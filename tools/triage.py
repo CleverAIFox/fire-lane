@@ -37,7 +37,7 @@ triage.py — **대장 밖 파일이 무엇인지 내용으로 판정한다.**
     인코딩·개행      firelane.encoding
     컬럼·행수        CSV 헤더 + 행 세기
     데이터기준일자    있으면 판(vintage)의 실제 근거가 된다
-    좌표 범위        x_col·y_col 이 선언된 dataset 만. scope 를 실측한다
+    좌표 범위        coords.site 가 선언된 점 dataset 만. scope 를 실측한다
 
 zip·tif·hwp 는 sha 와 크기만 본다. 열지 않는다.
 
@@ -143,7 +143,7 @@ def probe_csv(p: Path, declared: str | None, entry: dict | None = None) -> dict:
     """헤더·행수·기준일자·좌표범위. 실패해도 죽지 않는다.
 
     ★ 좌표 컬럼을 이름으로 추측하지 않는다. **대장이 정본이다.**
-      `fire_station` 은 `x_col: Y좌표` · `y_col: X좌표` 로 뒤집혀 선언돼
+      `fire_station` 은 `coords.site` 의 `x: Y좌표` · `y: X좌표` 로 뒤집혀 선언돼
       있다 — 원본이 그렇게 들어왔고 prep 은 값을 안 고친다. 이름으로
       추측하면 그 데이터셋에서만 조용히 틀린다.
       선언이 없을 때만 흔한 이름으로 넘겨짚고, 그 사실을 표시한다.
@@ -169,8 +169,7 @@ def probe_csv(p: Path, declared: str | None, entry: dict | None = None) -> dict:
         out["columns"] = [c.strip().lstrip("\ufeff") for c in head]
         n, dates = 0, []
         xi = yi = di = None
-        xn = (entry or {}).get("x_col")
-        yn = (entry or {}).get("y_col")
+        xn, yn = ledger.point_cols(entry or {})
         if xn or yn:
             out["coord_src"] = f"대장 선언 x={xn} y={yn}"
         else:
@@ -298,15 +297,15 @@ def triage(p: Path, *, DS: dict, ACQ_: dict, raw_sha: dict) -> dict:
                     if str(pat).endswith(Path(k).name):
                         cand = e
         #  ★ 두 번 읽는다. 1차는 선언 없이 헤더만 얻고, 그것으로 대장
-        #    항목을 찾은 뒤 2차에서 **그 항목의 encoding·x_col·y_col 로**
+        #    항목을 찾은 뒤 2차에서 **그 항목의 encoding·coords.site 로**
         #    다시 잰다. 한 번만 읽으면 좌표 컬럼을 이름으로 넘겨짚게 되고,
-        #    `fire_station`(x_col: Y좌표)처럼 뒤집힌 선언에서 틀린다.
+        #    `fire_station`(coords.site.x: Y좌표)처럼 뒤집힌 선언에서 틀린다.
         r["probe"] = probe_csv(p, (cand or {}).get("encoding"), cand)
         cols = r["probe"].get("columns") or []
         r["schema_match"] = match_schema(cols, DS)
         if r["schema_match"] and not cand:
             top = DS.get(r["schema_match"][0][0]) or {}
-            if top.get("x_col") or top.get("encoding"):
+            if ledger.point_cols(top)[0] or top.get("encoding"):
                 r["probe"] = probe_csv(p, top.get("encoding"), top)
                 r["schema_match"] = match_schema(
                     r["probe"].get("columns") or [], DS)

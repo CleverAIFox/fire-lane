@@ -375,16 +375,18 @@ def bbox_4326() -> tuple[float, float, float, float]:
 
 
 # ── 값의 성질 — 좌표 칸 · 「없음」 표기 (DECISIONS §631 · §634 · PLAN #193) ───────────────
-#: 좌표의 **뜻**(닫힌 어휘). 역할마다 허용되는 뜻이 정해져 있다 — `site` 는 사건 · 설치 · 시설의 위치, `reporter` 는 신고자 휴대폰,
-#: `unconfirmed` 는 형태로 짐작할 뿐 원천이 말하지 않은 것. ★ 뜻을 모르면 `unconfirmed` 로 **모른다고 적는다**(`nfa_rescue`).
+#: 좌표의 **뜻**(닫힌 어휘). 역할마다 허용되는 뜻이 정해져 있다 — `site` 는 사건 · 설치 · 시설의 위치, `reporter` 는 신고 쪽 위치(신고자 휴대폰 ·
+#: 원천이 「신고위치」라고 부르는 칸), `unconfirmed` 는 원천이 말하지 않은 것. ★ 뜻을 모르면 `unconfirmed` 로 **모른다고 적는다**(지금 쓰는 원천은 없다 — `nfa_rescue` 가 활용가이드로 `reporter` 가 됐다 · DECISIONS §642).
 COORD_ROLES: dict[str, tuple[str, ...]] = {
     "site": ("재해 위치", "설치 위치", "시설 위치", "도로 중심"),
-    "reporter": ("신고자 휴대폰 위치",),
+    "reporter": ("신고자 휴대폰 위치", "신고 위치"),
     "unconfirmed": ("미확인",),
 }
 #: 「없음」의 꼴(닫힌 어휘 + 센티넬·텍스트 리터럴은 `none:` 이 직접 적는다). 빈 셀 · 공백 문자열은 이름으로 부른다.
 NONE_EMPTY, NONE_BLANK = "빈 셀", "공백"
 TABLE_KINDS = ("csv_table", "csv_table_multi", "json_table")
+#: 점 자료 — 읽을 좌표 칸을 **`coords.site` 가 말한다**(종전 `x_col` · `y_col` 을 흡수했다 · DECISIONS §641).
+POINT_KINDS = ("csv_points", "csv_points_in_zip", "json_points")
 #: 좌표로 **읽히는** 칸 이름(추정). 선언이 없는 표가 좌표를 숨기는지 보는 그물이다 — 지번 `LOT`(건축물대장)처럼 오탐은 `coords: {none: 사유}` 로 선언한다.
 COORD_COL = re.compile(r"(^|_)(LOT|LAT|LON|LNG)$|경도|위도|좌표|longitude|latitude|WGS84|^[xy]$", re.I)
 
@@ -399,6 +401,24 @@ def coords_decl(e: dict) -> dict | None:
     return (e or {}).get("coords") or None
 
 
+def coords_in(e: dict, role: str = "site") -> tuple[str, str]:
+    """대장 **항목 하나**에서 `(x칸, y칸)`. 읽는 쪽(`read/*`)이 쓴다 — 선언이 없거나 그 역할이 없으면 `KeyError`(칸을 추측하지 않는다)."""
+    c = coords_decl(e) or {}
+    if role not in c or role == "none":
+        raise KeyError(f"coords.{role} 선언이 없다 — sources.yaml 에 적는다(DECISIONS §634 · §641)")
+    return str(c[role]["x"]), str(c[role]["y"])
+
+
+def point_cols(e: dict) -> tuple[str | None, str | None]:
+    """점 자료의 읽을 칸 — 점 갈래가 아니거나 선언이 없으면 `(None, None)`. 죽지 않는다(검사 쪽이 쓴다)."""
+    if (e or {}).get("kind") not in POINT_KINDS:
+        return None, None
+    try:
+        return coords_in(e)
+    except (KeyError, TypeError):
+        return None, None
+
+
 def coords(key: str, role: str, led: dict | None = None, use: str | None = None) -> tuple[str, str]:
     """`(x칸, y칸)` — **코드가 좌표 칸 이름을 직접 쓰지 않는 유일한 길**(`tests/test_coord_literals.py` 가 문다).
 
@@ -406,12 +426,13 @@ def coords(key: str, role: str, led: dict | None = None, use: str | None = None)
     ★ `use` 를 넘기면 그 칸의 `not_for`(그 뜻으로 쓰면 안 되는 용도)와 대 본다 — 신고자 휴대폰 위치를 `지도 표출` 로 쓰면 `ValueError`.
     """
     d = ((led if led is not None else load_sources()).get("datasets") or {}).get(key) or {}
-    c = coords_decl(d) or {}
-    if role not in c or role == "none":
-        raise KeyError(f"대장 `{key}` 에 coords.{role} 선언이 없다 — sources.yaml 에 적는다(DECISIONS §634)")
-    if use and use in (c[role].get("not_for") or []):
-        raise ValueError(f"대장 `{key}` 의 coords.{role}({c[role]['means']})은 `{use}` 에 쓰지 않는다(not_for)")
-    return str(c[role]["x"]), str(c[role]["y"])
+    try:
+        xy = coords_in(d, role)
+    except KeyError as ex:
+        raise KeyError(f"대장 `{key}` 의 {ex.args[0]}") from None
+    if use and use in ((coords_decl(d) or {})[role].get("not_for") or []):
+        raise ValueError(f"대장 `{key}` 의 coords.{role}({coords_decl(d)[role]['means']})은 `{use}` 에 쓰지 않는다(not_for)")
+    return xy
 
 
 def coords_problems(key: str, e: dict) -> list[str]:
@@ -419,9 +440,12 @@ def coords_problems(key: str, e: dict) -> list[str]:
 
     ★ 좌표로 읽히는 칸이 있는 표가 `coords:` 를 안 들면 거부한다 — 「좌표가 없다」(`coords: {none: 사유}`)와 「선언을 안 했다」는 다르다.
     """
-    if e.get("kind") not in TABLE_KINDS:
+    pt = e.get("kind") in POINT_KINDS
+    if e.get("kind") not in TABLE_KINDS and not pt:
         return []
     c, cols = coords_decl(e), set(map(str, (e.get("schema") or {}).get("columns") or []))
+    if pt and (c is None or "site" not in c or "none" in c):
+        return ["점 자료인데 `coords.site` 가 없다 — 읽을 좌표 칸(`x` · `y` · `crs` · `means`)을 대장이 말한다(종전 `x_col` · `y_col` — DECISIONS §641)"]
     if c is None:
         return [f"좌표로 읽히는 칸 {coord_columns(e)} 이 있는데 `coords:` 선언이 없다 — 어느 칸이 무엇의 위치인지 적는다 "
                 "(좌표가 아니면 `coords: {none: 사유}`)"] if coord_columns(e) else []

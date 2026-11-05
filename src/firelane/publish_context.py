@@ -143,7 +143,7 @@ def history(fr) -> dict:
             if rs is not None and r.CNTR_NM:
                 by_center.setdefault(r.CNTR_NM, []).append(rs)
     q = pd.read_csv(P / "nfa_rescue.csv", dtype=str)
-    qx, qy = ledger.coords("nfa_rescue", "unconfirmed")      # 뜻 미확인 — 대장이 그렇게 말한다(§632-1)
+    qx, qy = ledger.coords("nfa_rescue", "reporter")      # 신고위치 — 칸 이름 + dispatch 실측 교차로 선다(활용가이드 설명은 근거가 못 된다 · §642) · 위치 분석 · 거리 계산에는 안 쓴다
     for r in q.itertuples(index=False):
         lon, lat = _num(getattr(r, qx)), _num(getattr(r, qy))
         rs = _resp(_ymdhm(r.DSPT_YMD, r.DSPT_TM), _ymdhm(r.GRNDS_ARVL_YMD, r.GRNDS_ARVL_TM))
@@ -199,7 +199,7 @@ def history(fr) -> dict:
         "by_center": {k: {"n": len(v), "median_s": med(v), "straight_kmh": kmh(k)}
                       for k, v in sorted(by_center.items())},
         "fire_donggu": {"n": len(fires), "median_s": med(fires)},
-        "note": "현장 도착 − 출동 지령(초). 신고 점은 재해 위치(LAT/LOT), 구조 점은 원천 DCLR_PSTN 칸(의미 미확인 · 사고 지점 지오코딩과 같은 형태). 직선 속도는 신고 점만. 화재는 동구 전체 요약(좌표 없음)",
+        "note": "현장 도착 − 출동 지령(초). 신고 점은 재해 위치(LAT/LOT), 구조 점은 원천이 「신고위치」라 부르는 칸(DCLR_PSTN · 활용가이드의 설명 「신고 내용의 좌표」는 부정확하다 · 분포는 현장처럼 보이나 이유는 미해결). 직선 속도는 신고 점만. 화재는 동구 전체 요약(좌표 없음)",
     }
     return {"type": "FeatureCollection", "name": "history", "summary": summary, "features": feats}
 

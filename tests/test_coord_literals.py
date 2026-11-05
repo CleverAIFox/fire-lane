@@ -13,7 +13,7 @@ test_coord_literals.py — 코드가 **좌표 칸 이름을 직접 쓰지 않는
 
 IN    src/firelane/**/*.py · sources.yaml(`coords:`)
 OUT   없음
-밖    **`tools/` 는 안 본다** · 점 자료(`csv_points` 의 `x_col`/`y_col`)는 아직 `coords:` 로 안 옮겨졌다(PLAN #193 후속) — 그 이름은 이 목록에 없다.
+밖    **`tools/` 는 안 본다.** 점 자료의 읽을 칸은 이제 `coords.site` 가 말하고(종전 `x_col`/`y_col` 을 흡수했다 · DECISIONS §641) 이 시험의 이름 목록에 든다.
 """
 from __future__ import annotations
 

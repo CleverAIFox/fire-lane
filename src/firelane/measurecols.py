@@ -119,7 +119,7 @@ def check_section(num: int, title: str, body: str, ledger: dict) -> list[str]:
             roles = {str(d[a]): (r, d) for r, d in co.items() if isinstance(d, dict) for a in ("x", "y") if a in d}
             if "none" in co:
                 errs.append(f"{tag} — 대장이 「좌표가 없다」고 선언했다({co['none']})")
-            elif c not in roles and c not in (e.get("x_col"), e.get("y_col")):
+            elif c not in roles:
                 errs.append(f"{tag} — `coords:` 가 지목하지 않은 칸이다 — 어느 칸이 무엇의 위치인지 대장에 먼저 적는다")
             elif c in roles and role == "위치":
                 r, d = roles[c]

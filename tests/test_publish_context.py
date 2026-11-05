@@ -131,4 +131,4 @@ def test_straight_speed_comes_from_the_dispatch_points_only(tmp_path, monkeypatc
     kmh = h["summary"]["by_center"]["지산119안전센터"]["straight_kmh"]
     # 신고 점: 센터와 같은 점(0m)·센터에서 약 220m(0.002°) — 구조 점(약 1.1km)이 섞이면 중앙값이 크게 오른다
     assert kmh is not None and kmh < 2.0, f"직선 속도 {kmh}km/h — 구조 점이 섞였다"
-    assert "DCLR_PSTN" in h["summary"]["note"], "구조 점의 좌표 출처 · 미확인을 요약 주석이 말하지 않는다"
+    assert "DCLR_PSTN" in h["summary"]["note"] and "신고위치" in h["summary"]["note"], "구조 점의 좌표 출처(신고위치 · 활용가이드 확정)를 요약 주석이 말하지 않는다"

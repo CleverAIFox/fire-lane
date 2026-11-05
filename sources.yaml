@@ -1717,8 +1717,8 @@ datasets:
     crs_native: 4326
     kind: csv_points
     encoding: cp949
-    x_col: 경도
-    y_col: 위도
+    coords:
+      site: {x: 경도, y: 위도, crs: 4326, means: 설치 위치}
     note: |
       동구 3,805행 / 고유 좌표 264곳. 동명동 159등 / 13곳.
       지번 단위 회로 대표점이라 개별 폴 위치가 아니다.
@@ -1919,8 +1919,8 @@ datasets:
     crs_native: 4326
     kind: csv_points
     encoding: cp949
-    x_col: 경도
-    y_col: 위도
+    coords:
+      site: {x: 경도, y: 위도, crs: 4326, means: 설치 위치}
     note: |
       ★ 설치연도별로 행이 분리되어 있다. 행 수를 개소 수로 세면 안 된다.
         동명동 52행 = 고유 27지점 / 카메라 86대.
@@ -1968,8 +1968,8 @@ datasets:
     crs_native: 4326
     kind: csv_points
     encoding: cp949
-    x_col: Y좌표          # ★ 컬럼명이 반대다. X좌표에 위도, Y좌표에 경도가 들어있음
-    y_col: X좌표
+    coords:
+      site: {x: Y좌표, y: X좌표, crs: 4326, means: 시설 위치}   # ★ 컬럼명이 반대다. X좌표에 위도, Y좌표에 경도가 들어있음
     note: |
       ★ 출동은 소방서가 아니라 119안전센터에서 나간다.
         동명동 관할: 대인119안전센터(35.154579, 126.914765, 동부소방서와 동일 주소)
@@ -2004,8 +2004,8 @@ datasets:
     crs_native: 4326
     kind: csv_points_in_zip
     inner_contains: 광주
-    x_col: 경도
-    y_col: 위도
+    coords:
+      site: {x: 경도, y: 위도, crs: 4326, means: 시설 위치}
     note: |
       건물관리번호로 건물 폴리곤과 조인 가능(구 코드 2911... 유지).
       ★ 행정동명 '동명동'으로 필터하면 목포시 동명동이 섞인다.
@@ -2200,8 +2200,8 @@ datasets:
     crs_native: 4326
     kind: csv_points
     encoding: utf-8
-    x_col: longitude
-    y_col: latitude
+    coords:
+      site: {x: longitude, y: latitude, crs: 4326, means: 설치 위치}
     note: |
       ★★ 2026-08-29 재취득. **종전 파일은 잘려 있었다.**
         포털 CSV 내려받기 상한 50,000 에 걸려 시도 10개만 담겼고
@@ -2223,7 +2223,7 @@ datasets:
         정정 — 동부소방서 관할 654 · API 실측 동구 651.
 
       ★ 컬럼이 **영문**이다(API 응답 원형). 종전 CSV 는 한글이었다.
-        raw 는 받은 그대로 두고 대장이 그 차이를 흡수한다 — x_col: longitude.
+        raw 는 받은 그대로 두고 대장이 그 차이를 흡수한다 — coords.site.x: longitude.
       ★ descLc 8건에 U+FFFD. **포털 원본이 이미 깨져 있다.** 다시 받아도 같다.
         판정에 안 쓰는 컬럼이고 8/95,038칸이다.
       ★ fcltySeCode 에 후행 공백('1 '). 원본 그대로. ingest 에서 strip 한다.
@@ -2451,8 +2451,8 @@ datasets:
       - 위도
       - 경도
       scope_min: 1
-    x_col: 경도
-    y_col: 위도
+    coords:
+      site: {x: 경도, y: 위도, crs: 4326, means: 설치 위치}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['연번', '위치', '개수', '비고', '위도', '경도', '데이터기준일자']
       encoding_seen: 'cp949'
@@ -2476,8 +2476,8 @@ datasets:
       - 위도
       - 경도
       scope_min: 1
-    x_col: 경도
-    y_col: 위도
+    coords:
+      site: {x: 경도, y: 위도, crs: 4326, means: 설치 위치}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['연번', '자치구', '설치지역(동명)', '설치위치(장소)', '위도', '경도', '데이터기준일자']
       encoding_seen: 'cp949'
@@ -2849,6 +2849,7 @@ datasets:
     crs_native: 4326
     note: |
       ★ 원본 4개년 7.33GB(2026-08-11 판). CLMTY_EMD_NM='동명동' 필터본만 반입한다.
+      ★ **2024 경계는 이름만이 아니다**(DECISIONS §643): `DCLR_PSTN_LOT` 의 소수 자릿수가 2022~2023 은 3~4자리(100m 급 반올림) · 2024~2025 는 10자리로 갈린다.
       ★ 2024·2025 는 헤더가 **소문자**다(`dclr_rcpt_no` …). 칸 집합 35개는
         2022·2023 과 똑같다. 대문자 필터가 0행을 낸 것이 옛 PLAN 행(닫힘 · DECISIONS §635) 의
         「2024·2025 는 컬럼명이 달라」였다 — 칸이 아니라 **케이스**다.
@@ -2859,6 +2860,8 @@ datasets:
     contract: {encoding: utf-8-sig}
 
     # ★ 2026-11-05 (DECISIONS §634 · §637). 좌표쌍이 **둘**이고 뜻이 다르다 — 코드는 칸 이름을 직접 쓰지 않고 `ledger.coords(key, 역할)` 로 받는다.
+    # ★ **근거의 등급이 다르다**(§642-1). `reporter` 는 칸 이름(신고위치) + 실측(제주 · 서울까지 퍼진다)이 서고, **`site`(재해 위치)는 분포 추론**이다 — 활용가이드는
+    #   이 칸을 그냥 「위도」 · 「경도」(사전적 정의)라 부르고 **무엇의 좌표인지 문서에 없다**. 동명동 필터 안에서 거의 다(받은 값 940/941)가 동명동 안이라는 근거는 강하나 문서가 아니다.
     coords:
       site:     {x: LOT, y: LAT, crs: 4326, means: 재해 위치}
       reporter: {x: DCLR_PSTN_LOT, y: DCLR_PSTN_LAT, crs: 4326, means: 신고자 휴대폰 위치, not_for: [위치 분석, 지도 표출, 거리 계산]}
@@ -2917,10 +2920,13 @@ datasets:
     crs_native: 4326
     contract: {encoding: utf-8-sig}
 
-    # ★ 2026-11-05 (DECISIONS §632-1 · §634). 쌍이 **하나**뿐이고 재해 위치 칸이 없다. 칸 이름은 `DCLR_PSTN`(신고 위치)인데 값은 재해 위치처럼 생겼다
-    #   (동명동 안 99% · 건물 3m 안 83% · 소수 12~14자리 — 휴대폰 칸과 다르다). 원천 활용가이드로 확인하기 전까지 **뜻을 모른다고 적는다.**
+    # ★ 2026-11-05 (DECISIONS §632-1 · §634 · §642). 원천 활용가이드(column_info · 51칸 전수)가 이 칸을 **「신고위치경도」 · 「신고위치위도」** 라 부르고 설명은
+    #   「신고 내용의 좌표」다. 좌표 칸은 이 둘뿐이다(사고 위치 좌표가 없다 — 사고장소세부명은 텍스트다). ★ **그 설명은 근거가 못 된다 — 부정확하다**: 같은 설명을 쓰는
+    #   `nfa_dispatch_119` 의 같은 칸이 제주(위도 33.475)·서울(37.529)까지 퍼진다 — 「내용」이면 사건 위치여야 한다. `reporter` 는 **칸 이름(신고위치) + dispatch 의 실측
+    #   교차**로 선다. ★ **어긋남이 안 풀렸다**: 이 표의 값은 현장처럼 분포한다(동명동 안 99% · 건물 3m 안 83% · 소수 12~14자리 — 휴대폰 칸과 다르다 · §632-1).
+    #   「구조는 신고자가 현장」은 반증됐고(§641-3) 남은 후보는 「다른 계통」 하나다. 그래서 위치로 쓰지 않는다(not_for).
     coords:
-      unconfirmed: {x: DCLR_PSTN_LOT, y: DCLR_PSTN_LAT, crs: 4326, means: 미확인}
+      reporter: {x: DCLR_PSTN_LOT, y: DCLR_PSTN_LAT, crs: 4326, means: 신고 위치, not_for: [위치 분석, 거리 계산]}
     none:
       DCLR_PSTN_LOT: {forms: [빈 셀]}
       DCLR_PSTN_LAT: {forms: [빈 셀]}
@@ -2963,12 +2969,17 @@ datasets:
     authority: 소방청 소방안전 빅데이터 플랫폼
     updated: '2026-09-03'   # ★ 내려받은 날. 소방안전 빅데이터 플랫폼이
                           #   데이터 기준일을 표기하지 않는다(2026-09-03 확인)
-    what: 전국 화재 현황 2019~2025 → 광주 동구 필터 파생본
+    what: 전국 화재 현황 2019~2025 → 광주 동구 필터 파생본 (★ 실물은 2019~2023 뿐이다 — 2024·2025 행이 없다. 이유 미확인 · DECISIONS §643)
     kind: csv_table
     encoding: utf-8-sig
     note: |
       ★ scope 가 jngj-donggu 다. **EMD_NM 열이 없어 동명동으로 못 좁힌다** —
         SGG_NM 까지가 한계다(60열 전수 확인, 2026-09-03).
+      ★ 2026-11-05 (DECISIONS §635-8 · §643). **`CNTR_GRNDS_DSTNC` 가 정수 km 인 것은 2019~2023 한정이다** — 전국 2019~2025 270,174행 실측에서 2023 까지 정수비율
+        1.0000(고유 59~65), 2024~2025 는 0.23(고유 355~358)이고 분해능이 0.1km 다(동구도 2023 까지 100% · 2024 17.6% · 2025 7.0%). 이 저장소의 파생본은 2019~2023
+        뿐(367행)이라 **전부 정수**였다 — 「회귀 불가」는 그 기간의 성질이지 칸의 성질이 아니다.
+      ★★ **연도 경계(2023/2024)가 칸 이름 케이스와 같다** — `nfa_dispatch_119` 는 2024·2025 가 소문자 헤더이고 이 표도 같은 경계에서 값의 정밀도가 갈린다.
+        **플랫폼이 2024년에 시스템을 바꿨고 이름과 값 정밀도 둘 다 거기서 갈린다.** 이 파생본이 2024·2025 를 잃은 것도 같은 경계 탓일 수 있다(대문자 필터 — 미확인).
     absent:
       DCLR_PSTN_LAT:
         in: 화재 현황 CSV 60열 (2019~2025 전 연도)
@@ -3350,8 +3361,8 @@ datasets:
     authority:  행정안전부 (전국 표준데이터)
     kind:       json_points
     encoding:   utf-8
-    x_col:      경도
-    y_col:      위도
+    coords:
+      site: {x: 경도, y: 위도, crs: 4326, means: 시설 위치}
     what:       전국 어린이보호구역 14,652 → 광주 동구 32 → 스코프 8
     feeds_why: |
       ★ `보호구역도로폭` 이 **행정 고시값**이다. 폭 판정의 외부 대조축이
@@ -3386,8 +3397,8 @@ datasets:
     authority:  행정안전부 (전국 표준데이터)
     kind:       json_points
     encoding:   utf-8
-    x_col:      경도
-    y_col:      위도
+    coords:
+      site: {x: 경도, y: 위도, crs: 4326, means: 시설 위치}
     what:       전국 노인·장애인보호구역 4,120 → 광주 동구 17 → 스코프 10
     feeds_why:  보호구역 제한속도 30km/h. 어린이보호구역과 같은 축이다
     note: |

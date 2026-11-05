@@ -21,7 +21,7 @@ MASTER 18-3 은 게이트를 이렇게 정해 두었다.
 
     ngii1k         kind: shp_dir 인데 ingest 에 분기가 없다      → 실행 중 ValueError
     ngii_road      layer NF_A_A01000 인데 실물은 N3A_A0010000   → 실행 중 파일 없음
-    fire_station   x_col Y좌표 인데 그런 컬럼이 없다             → 실행 중 KeyError
+    fire_station   coords.site.x Y좌표 인데 그런 컬럼이 없다             → 실행 중 KeyError
     hydrant_point  파싱은 됐는데 광주가 0건이라 스코프에서 전멸  → ★ OK 0건 으로 통과
 
 앞의 셋은 시끄럽게 죽어서 그나마 나았다. 넷째가 이 도구를 만든 이유다.
@@ -90,6 +90,7 @@ from pathlib import Path
 
 # ★ 2026-10-08 (DECISIONS §433). 어휘가 `contract_crs` 로 내려갔다 — 이 파일이
 #   그 파일을 들이므로 거꾸로 들이면 순환이다. 정본은 하나이고 여기는 읽는다.
+from firelane import ledger as _led
 from firelane.contract_crs import FAIL, OK, WARN
 from firelane.encoding import CANDIDATES_REPORT
 from firelane.paths import ROOT
@@ -238,7 +239,6 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
     # ★ 2026-08-30. `e.get("file")` 단수를 읽고 있었다. 대장에서 그
     #   필드가 사라지자 42종 전부 "file 선언 없음" 이 됐다 — 계약 검사가
     #   실물을 한 번도 안 보고 끝난다. 조회기는 ledger 하나다.
-    from firelane import ledger as _led
     pats = _led.globs(e)
     if not pats:
         r.add(FAIL, "files 선언 없음")
@@ -313,9 +313,9 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
         #    hydrant_point 0건이 여기서 걸린다.
         scope_n = None
         if smin is not None and bbox:
-            xc, yc = e.get("x_col"), e.get("y_col")
+            xc, yc = _led.point_cols(e)
             if not (xc and yc):
-                r.add(WARN, "scope_min 선언됐으나 x_col/y_col 이 없다")
+                r.add(WARN, "scope_min 선언됐으나 coords.site 가 없다")
             elif xc not in d.columns or yc not in d.columns:
                 r.add(FAIL, f"좌표 컬럼 없음: {xc} / {yc}")
             else:
@@ -331,7 +331,7 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
         # ★ `.prj` 가 없는 표 소스는 이쪽이 유일한 대조다. 한 점만 본다 —
         #   전량을 재는 것은 이 층의 일이 아니고, 좌표계가 파일 안에서
         #   섞이는 경우는 `guards` 가 본다.
-        if declared_crs and (xc := e.get("x_col")) and (yc := e.get("y_col")):
+        if declared_crs and (xc := _led.point_cols(e)[0]) and (yc := _led.point_cols(e)[1]):
             if xc in d.columns and yc in d.columns:
                 _x = pd.to_numeric(d[xc], errors="coerce").dropna()
                 _y = pd.to_numeric(d[yc], errors="coerce").dropna()
@@ -365,7 +365,6 @@ from firelane.contract_verdict import (
 
 
 def cmd_declared(ds: dict) -> int:
-    from firelane import ledger as _led
 
     bad, warn, no_contract, crs_n = declared_issues(ds)
     print(f"── 대장 계약 선언  ({len(ds)}종 · 어휘 {len(_led.CONTRACT_KEYS)}개)")

@@ -28,7 +28,7 @@ def _e(**kw) -> dict:
 def test_the_accessor_returns_the_columns_the_ledger_names():
     assert ledger.coords("nfa_dispatch_119", "site") == ("LOT", "LAT")
     assert ledger.coords("nfa_dispatch_119", "reporter") == ("DCLR_PSTN_LOT", "DCLR_PSTN_LAT")
-    assert ledger.coords("nfa_rescue", "unconfirmed") == ("DCLR_PSTN_LOT", "DCLR_PSTN_LAT")
+    assert ledger.coords("nfa_rescue", "reporter") == ("DCLR_PSTN_LOT", "DCLR_PSTN_LAT")
 
 
 def test_the_accessor_dies_instead_of_guessing():
@@ -52,7 +52,31 @@ def test_a_use_the_ledger_forbids_is_refused():
 def test_a_table_with_coordinate_looking_columns_needs_a_declaration():
     assert any("coords:" in m for m in ledger.coords_problems("t", _e()))
     assert ledger.coords_problems("t", {"kind": "csv_table", "schema": {"columns": ["A", "B"]}}) == []     # 좌표처럼 안 생기면 안 묻는다
-    assert ledger.coords_problems("t", {"kind": "csv_points", "schema": {"columns": COLS}}) == []          # 점 자료는 x_col/y_col 소관
+    assert ledger.coords_problems("t", {"kind": "csv_docs", "schema": {"columns": COLS}}) == []            # 좌표를 안 읽는 갈래는 안 묻는다
+
+
+def test_a_point_source_must_say_which_columns_it_reads():
+    """점 자료의 읽을 칸은 `coords.site` 가 말한다(종전 `x_col` · `y_col` 을 흡수 — DECISIONS §641). 없으면 거부한다."""
+    site = {"x": "LOT", "y": "LAT", "crs": 4326, "means": "설치 위치"}
+    pt = {"kind": "csv_points", "schema": {"columns": COLS}}
+    assert any("coords.site" in m for m in ledger.coords_problems("t", pt))
+    assert any("coords.site" in m for m in ledger.coords_problems("t", {**pt, "coords": {"reporter": site}}))
+    assert any("coords.site" in m for m in ledger.coords_problems("t", {**pt, "coords": {"none": "사유"}})), "점 자료는 좌표 없음이 못 된다"
+    assert ledger.coords_problems("t", {**pt, "coords": {"site": site}}) == []
+    assert ledger.coords_in({"coords": {"site": site}}) == ("LOT", "LAT")
+    with pytest.raises(KeyError):
+        ledger.coords_in({"coords": {"reporter": site}})
+    assert ledger.point_cols({**pt, "coords": {"site": site}}) == ("LOT", "LAT")
+    assert ledger.point_cols(pt) == (None, None) and ledger.point_cols(_e(coords={"site": site})) == (None, None), "표 갈래 · 선언 없음은 죽지 않고 (None, None)"
+
+
+def test_every_real_point_source_declares_site_and_the_old_columns_are_gone():
+    led = ledger.load()["datasets"]
+    pts = {k: e for k, e in led.items() if e.get("kind") in ledger.POINT_KINDS}
+    assert len(pts) >= 9
+    assert all("x_col" not in e and "y_col" not in e for e in led.values()), "정본이 둘이다 — x_col/y_col 이 남았다"
+    assert all(ledger.point_cols(e)[0] for e in pts.values())
+    assert ledger.coords_in(led["fire_station"]) == ("Y좌표", "X좌표"), "컬럼명이 뒤집힌 원천이 그대로 읽힌다"
 
 
 def test_no_coordinates_is_a_declaration_with_a_reason():
@@ -156,3 +180,14 @@ def test_splice_replaces_the_profile_and_touches_nothing_else():
 def test_ingest_refuses_a_coordinate_table_without_a_declaration(tmp_path):
     with pytest.raises(ValueError, match="좌표 선언"):
         ingest.build("t", _e(stem="t", ext=["csv"]), tmp_path)
+
+
+def test_the_rescue_coordinates_are_the_reported_position_by_the_source_guide():
+    """★ 원천 활용가이드(column_info 51칸 전수)가 이 칸을 「신고위치」라 부른다(설명 「신고 내용의 좌표」는 부정확하다 — 근거는 칸 이름 + dispatch 실측 교차 · DECISIONS §642). 사고 위치로 안 쓴다."""
+    r = ledger.load()["datasets"]["nfa_rescue"]
+    c = ledger.coords_decl(r)
+    assert set(c) == {"reporter"} and c["reporter"]["means"] == "신고 위치", "unconfirmed 는 지워졌다"
+    for use in ("위치 분석", "거리 계산"):
+        with pytest.raises(ValueError, match="not_for"):
+            ledger.coords("nfa_rescue", "reporter", use=use)
+    assert ledger.coords("nfa_rescue", "reporter", use="지도 표출") == ("DCLR_PSTN_LOT", "DCLR_PSTN_LAT"), "발행은 「신고위치」 점으로 보인다"

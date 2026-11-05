@@ -681,3 +681,15 @@ def test_the_isolation_recipe_keeps_ingest_out_of_the_main_processed_dir(tmp_pat
     assert r.returncode == 0, f"격리 ingest 가 죽었다:\n{r.stdout[-400:]}\n{r.stderr[-400:]}"
     assert (iso / "data" / "processed" / f"{key}.geojson").is_file(), "격리 트리에 산출이 안 생겼다 — 어디에 썼나"
     assert tree_hash(root / "data" / "processed") == before, "**메인 `data/processed` 가 바뀌었다** — 격리가 샜다"
+
+
+def test_the_legacy_print_before_the_point_columns_moved_into_coords_is_accepted():
+    """★ 점 자료의 좌표 칸이 `x_col` · `y_col` 에서 `coords.site` 로 옮겨졌다(DECISIONS §641). **같은 설정**이라 봉인이 재빌드 없이 새 판으로 고쳐져야 한다."""
+    old = {"datasets": {"s": {"kind": "csv_points", "x_col": "경도", "y_col": "위도", "stem": "s", "ext": ["csv"]}}}
+    new = {"datasets": {"s": {"kind": "csv_points", "stem": "s", "ext": ["csv"],
+                              "coords": {"site": {"x": "경도", "y": "위도", "crs": 4326, "means": "설치 위치"}}}}}
+    assert shardseal.cfg_print(old, "s") != shardseal.cfg_print(new, "s"), "판이 안 바뀌었으면 이 시험이 필요 없다"
+    assert shardseal._cfg_print_v6(new, "s") == shardseal.cfg_print(old, "s")
+    assert shardseal._cfg_print_v6 in shardseal.LEGACY_PRINTS
+    swapped = {"datasets": {"s": {**new["datasets"]["s"], "coords": {"site": {"x": "위도", "y": "경도", "crs": 4326, "means": "설치 위치"}}}}}
+    assert shardseal._cfg_print_v6(swapped, "s") != shardseal.cfg_print(old, "s"), "칸이 **실제로 바뀐** 것은 옛 판으로 못 받는다(재빌드가 맞다)"
