@@ -11,7 +11,7 @@ acquire.py — landing → raw 획득 게이트. **적재한 것을 검증한다
 ── 왜 만들었나 ────────────────────────────────────────────────
 MASTER §18-12 는 이 도구를 **이름까지 적어놓고** 있었다.
 
-    landing (외장 SSD fire-lane-data/)
+    landing ($FIRE_LANE_DATA/landing — 이 기계는 /home/fox/lake/landing)
             ↓  acquire.py stage  — 대장 매칭
     data/raw/<제공기관>/
     data/_quarantine/
