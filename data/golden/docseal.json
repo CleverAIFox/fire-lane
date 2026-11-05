@@ -13755,14 +13755,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "46244032d09c2923",
-   "63d288cddf63951d",
-   "70901064f8f7595e",
-   "8f0d72b13950806c",
-   "9d42eed003a418ed",
-   "b87ed46f58258e2c",
-   "e9141d9c28c03434",
-   "f6feee703145a1c7"
+   "01c36def5b1c22a2",
+   "075cde84ae67756a",
+   "330b9ad2be8d6dbc",
+   "5e3fa19068574c79",
+   "7832a0cb0dbd28ca",
+   "7c90a4758f6ec5a9",
+   "d39dea53ad174965",
+   "e7494057eca275e5"
   ],
   "parts": {
    ".devcontainer/devcontainer.json": "8263815938062a90",
@@ -13800,9 +13800,9 @@
    "web/navi/src/domain/geo.ts": "5d85f2b7d3043ea8",
    "web/navi/src/domain/vehicle.ts": "5fada2911d0cbec0",
    "web/navi/src/ui/tokens.ts": "b5eece8422ad4792",
-   "본문": "46b8e99acf3912b6"
+   "본문": "b4c27772f98159f1"
   },
-  "sha": "f6feee703145a1c7"
+  "sha": "d39dea53ad174965"
  },
  "MASTER/17-0": {
   "doc": "docs/MASTER.md",
