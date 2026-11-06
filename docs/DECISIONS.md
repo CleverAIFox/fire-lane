@@ -47055,3 +47055,42 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 - 판정 · 폐포 · golden 안 건드림. 상한 안 올림. `ruff check --fix` 통과.
 - `sealcov` — 새 시험 하나(`tests/test_plan_tables.py`)를 `tools/finish_656_seal.py` 로 MASTER §23 에 등재했다.
 - 어제부터 느슨한 셋은 그대로다(`mutate` SURVIVORS · UNSORTED · `docseal` UNSEALED). `test_lake` authority 도 같다.
+
+## 657. 전수 pytest 빨강 열셋 — 오늘 만든 것이 아니라 오늘 드러났다 (구조 문제 셋 · 판정 불변 · 코드는 도구 둘과 상수)
+
+> 2026-11-06
+
+유병률  **1회** — 「관문이 도는 시험이 전수가 아니라서 빨강이 쌓인다」. §646~§656 이 하루에 열한 번 푸시됐고 그 사이 `pre-push` 가 초록이었는데 CI 가 빨갰다. 이번에 전수를 한 번 돌려서 열셋이 한꺼번에 나왔다.
+
+강제자  없음 — 사유: 이 절이 적는 것은 **고치는 일이 다음 판**인 구조 문제 셋(①②③)이다. 이 판이 고친 열셋은 각자 제 시험이 이미 든다(아래 657-1)
+        **하위 다섯이 이 칸을 물려받는다**
+
+### 657-1. 열셋은 무엇이었나 — 오늘 만든 것이 아니라 오늘 드러난 것
+전수 `pytest -q` 가 14 failed / 4463 passed 였다. 그중 `test_shardseal` 하나는 `nfa_ems` 재빌드가 시험 도중에 끝나서 난 것이라 이미 초록이었고, 남은 열셋을 처리했다.
+- **고침** — `dms_fix_inherit` argparse(넷) · PLAN 「§646」 소속 · 측정 절 「쓴 칸」 머릿줄 셋(§650 · §652 · §654 — 지시문의 §651 이 아니다) · gitleaks 시험의 경로 목록 둘 · `WF_SECRETS` 0 → 1 · `mutate` 상수 둘(사람의 판단을 적용).
+- **일회용 열둘은 지우는 쪽을 권고**했다(`finish_6xx_seal` 열하나 · `ledger_add_nfa_ems` · `ledger_contract_nfa_ems`). 실물 삭제는 사람이 친다.
+- **멈춤** — `_acquire.json` 의 옛 지역판 이름 넷(657-5).
+- 고치는 길에서 **진짜 결함 하나가 나왔다**: 측정 절의 「쓴 칸」 검사가 `nfa_dispatch_119.DSPT_DRTV_DT`(지령 시각)에 빈 값 42건(2022 3 · 2023 39)이 있는데 대장 `none` 에 선언이 없다고 짚었다. 대장에 선언했다(`cfg_print` 는 안 움직인다).
+
+### 657-2. ① `pre-push` 23게이트가 전수 pytest 를 안 돈다
+열셋 중 대부분은 도구 하나를 만들고 **그 도구를 가리키는 다른 시험**(`test_cli_surface` · `test_tools_are_wired` · `test_guards` · `test_declaration_sync` · `test_measurecols`)이 따로 있다는 것을 아무도 몰랐던 것이다. 각 시험은 제 영역만 보고, 그 영역을 건드린 배치를 알려 주는 것은 전수뿐인데 전수는 CI 에서만 돈다(약 4분 24초).
+- 로컬에서는 **어제 푸시가 초록**이었고 CI 는 빨갰다. 관문(`verify.sh` · `pre-push`)이 도는 것과 CI 가 도는 것이 같지 않다는 사실이 처음부터 적혀 있지 않았다.
+- 고치는 건 다음 판이다. 선택지 — 푸시 직전에 영향 범위 시험만 도는 것(`scope`)과 전수의 간격을 재고, 어긋나는 시험 영역을 `scope` 에 더한다 · 또는 전수를 `pre-push` 가 돌되 느린 것만 병렬로 나눈다.
+
+### 657-3. ② 측정이 빨간 상태에서 래칫을 조이면 가짜로 조여진다 (`mutate` 82 · 57)
+§646(`7a8e2885`)이 `SURVIVORS` 83 → 82 · `UNSORTED` 58 → 57 로 내렸다. 장부(`mutation.json`)는 그때나 지금이나 **83** 이다. 82 가 나오는 조건을 재현했다 — `tools/sealcov.py` 의 자기 시험이 빨간 동안 그 도구의 변이 4개가 전부 「못 쟀다」로 분류되고 그 안의 생존 1 이 빠진다. §646 때 sealcov 는 새 파일을 등재 안 해 빨갰다.
+- 83번째 생존자는 `sealcov.py:186` 의 `lru_cache(maxsize=1)` `1 → 2` 다 — **동작이 같은 등가 변이**다. 시험으로 못 죽이고(㉠), `functools.cache` 로 바꾸면 표본이 옮겨가 `259` 의 `return 1 → 2` 가 대신 산다(㉡ — 되돌렸다).
+- 그래서 상수를 83 · 58 로 **되돌렸다**(사람의 판단 · `tools/mutate.py` 주석). 새 코드(`extract.py` · `extract_decl.py` · `ledger_extract.py`)는 변이 대상이 아니라 새로 생긴 행이 없다.
+- **교훈은 상한이 아니라 절차다.** 래칫이 읽는 측정이 빨간 상태(「못 쟀다」가 분류돼 빠짐)인지 아닌지를 `ratchet --write` 가 조이기 전에 묻지 않는다. 조인 수가 가짜여도 막는 것이 없다.
+
+### 657-4. ③ 일회용 스크립트에 수명이 없다
+`finish_647_seal` ~ `finish_656_seal`(열 개) · `finish_c1_seal` 은 판마다 MASTER §23 의 빈 곳(`sealcov`)을 닫으려고 한 번 돌리고 만 것이다. `ledger_add_nfa_ems` · `ledger_contract_nfa_ems` 도 같다. 이 열셋은 `test_every_tool_is_called_somewhere` 가 「아무 데서도 안 부른다」고 운다 — 그 시험이 일회용을 잡는 것이 아니라 **일회용에 수명을 적는 자리가 없어서 그렇게 보인다.**
+- 같은 날 `fix_vintage_8digit.py` 가 `test_no_source_patching_scripts` 에 걸려 지워졌고, 이 세션이 만든 `ledger_fix_nfa_ems_authority` · `plan_add_196` 도 일회용이라 사람이 지웠다.
+- `finish_655_seal.py:34` ↔ `finish_656_seal.py:34` 는 `dupcheck` 가 197노드 사본군으로 잡았다 — 같은 병이다. 일회용을 지우면 같이 사라진다.
+- 고치는 건 다음 판이다. 선택지 — 도구 머리말에 `수명: 일회` 칸을 두고 `test_every_tool_is_called_somewhere` 가 그 칸이 있는 도구를 면제하되 **문서에 등재된 날 + N일 뒤에 지우라고 울게** 하는 것.
+
+### 657-5. 멈춘 것 — `_acquire.json` 의 옛 지역판 이름 넷
+`test_intake_rules::test_the_rules_and_the_real_files_are_already_canonical` 이 `nfa/nfa_dispatch_119_jngj-dongmyeong_20261104.csv` 등 넷을 `_kr_` 로 고치라고 운다. §646~§649 가 대장 `scope` 를 `kr` 로 올렸고 그 넷은 **전국본이 아니라 지역판**이다.
+- **이름을 `_kr_` 로 바꾸면 안 된다** — sha 가 전국본의 것인 양 보인다.
+- 대장은 이미 그 넷을 `retired`(`nfa_*_derived`)로 **선언했다**(파일 이름 + sha256). 못 하는 것은 코드다: `ledger.entry_of` 가 retired 파일을 **살아 있는 항목**으로 풀어 `canonical` 이 `_kr_` 를 낸다. `tools/migrate_names.py` 가 돌면 그 넷을 개명하고 대장 문자열(`retired` 블록 포함)을 치환한다 — 시험이 우는 것은 그 사고가 나기 전 신호다.
+- 시험을 느슨하게 하지 않았다. 선택지는 보고에 적었다.
