@@ -46597,6 +46597,7 @@ csv 비기하 24개는 shapely · geopandas · pyogrio · pyproj 를 한 번도 
 
 유병률  **1회** — 「집계 관계로만 검증한 비용 모델을 구간에 못 붙인다」. §635 · §644 · §645 가 전부 거리-시간 **집계**였고 좌표가 없었다. 119 신고접수의 재해 좌표(`LOT`/`LAT`)가 처음으로 구간에 붙는다.
 
+쓴 칸    nfa_dispatch_119.LOT/LAT(위치 · 재해 위치 — `coords.site`) · DSPT_DRTV_DT(시각 · 지령 · 없음=빈 셀) · GRNDS_ARVL_DT(시각 · 현장도착 · 없음=빈 셀|공백) · CNTR_NM(센터) · DCLR_YR(판 가르기) — 소요는 칸이 아니라 두 시각의 차다(`tools/cost_vs_dispatch.py::load_rows`). 신고자 좌표(`DCLR_PSTN_*`)는 안 읽었다
 강제자  `tests/test_cost_vs_dispatch.py`(접기 · 스냅 분류 · 계산 소요가 `travelSeconds` 식 · 속도표를 `speed.ts` 에서 읽는다) · `tools/cost_vs_dispatch.py` 가 판정 폐포 밖 읽기 전용(`golden check` 가 대조)
         **하위 열**이 이 칸을 물려받는다
 
@@ -46741,6 +46742,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 유병률  **1회** — 「남은 것은 배선뿐이다」라고 적은 행이 실제로는 칸도 값도 이미 있고 근거만 비어 있었다. PLAN #1 이 그렇게 적은 채 §544-4 이후 한 달을 갔다.
 
+쓴 칸    jijeok.A3/A4(가르기 · 법정동 · 지번 — 필지를 찾는 키 · 같은 키가 둘 이상이면 중심을 안 낸다 · `tools/oneway_match.py::parcel_index`) — 동구청 일방통행 목록(`gjcity_oneway`)과 경찰 문서(`gjpolice_oneway`)는 대장에 칸이 선언돼 있지 않아 머리글 글자로 읽었다(`read_city_rows` · `read_police_rows`)
 강제자  `tests/test_oneway_match.py`(끝점 읽기 · 두 목록 읽기 · 경로 방향 · 분류 문턱 · 방향 계수가 `rules.ts` 와 같고 상수를 거기서 읽는다 · 매칭 사유 · 방향 근거 · 민감도) · `tools/oneway_match.py` 가 읽기 전용(`golden check` 가 대조)
         **하위 아홉**이 이 칸을 물려받는다
 
@@ -46874,6 +46876,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 유병률  **1회** — 「독립 측정이 현장뿐」이라는 판단이 **실측 없이** 선언으로만 서 있었다. §569-7 이 같은 결론을 적었지만 대어 본 적이 없었다.
 
+쓴 칸    없음 — 사유: 대장의 표 칸을 읽지 않았다. 입력은 정사영상 래스터(`ngii_ortho_*.tif`) · 구간 gpkg · `data/field/naver_width_2610.csv` · `evalset_2610.csv`(구간 목록만)이고 앞의 둘은 대장 항목의 칸이 아니다(`tools/ortho_probe.py`)
 강제자  `tests/test_ortho_probe.py`(좌표 변환 · 돌려 오리는 격자 · 도엽 가장자리 건너뜀 · 오차 부호와 분포 — 둘로는 분포를 말하지 않는다) · `tools/ortho_probe.py` 가 읽기 전용(`golden check` 가 대조)
         **하위 일곱**이 이 칸을 물려받는다
 
