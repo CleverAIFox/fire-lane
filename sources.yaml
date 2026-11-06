@@ -2903,6 +2903,7 @@ datasets:
     # ★ 「없음」의 꼴이 **세 가지**이고 연도로 갈린다(§631-3). `notna()` 는 공백 문자열을 「있음」으로 센다 — 시각 칸은 strip 한 뒤 빈 것으로 센다.
     #   2022 · 2023 은 빈 셀, 2024 · 2025 는 공백 문자열이다(`schema.profile` 의 `by` 가 연도별로 보인다).
     none:
+      DSPT_DRTV_DT:  {forms: [빈 셀], by: DCLR_YR}      # 지령 시각 — 2022 3 · 2023 39 · 2024~2025 0 (§650 이 소요를 낼 때 쓴다)
       GRNDS_ARVL_DT: {forms: [빈 셀, 공백], by: DCLR_YR}
       HSPTL_ARVL_DT: {forms: [빈 셀, 공백], by: DCLR_YR}
       CBK_DT:        {forms: [빈 셀, 공백], by: DCLR_YR}
