@@ -4840,24 +4840,12 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/cv_queue.py` | 영상판정을 **어느 구간부터** 붙일지 순서만 정한다. 판정은 안 한다 |
 | `tools/survey_queue.py` | **다음에 뭘 잴지 정하는 대장**(`survey_queue.csv`) — 사유 일곱(소방서 지정 · 소스 충돌 · 대칭폭 · escape · 진폭 · 폭 1m 미만 · 대장 괴리)을 모아 한 줄로, `occ_pressure_rank` 순(null 은 뒤 · 이미 잰 것은 맨 뒤). 사유 정의가 한 곳에만 있고 부를 때마다 사유별 수를 찍는다. **PLAN 에 올리지 않는다 · 판정에 안 닿는다** |
 | `tools/occ_pressure.py` | β 의 **수요점**을 건축물대장(레이크)에서 만든다 — 818동·1,794단위 → 좌표에 닿는 774동·1,744단위. 사람이 부른다. 한 지번에 건물관리번호가 여럿이면 첫 매칭 하나(근사) |
-| `tools/ledger_contract_nfa_ems.py` | **비웠다.** `tools/ledger_extract.py` 를 가리키고 종료 2 로 안내만 한다(§648). 이 도구가 nfa_ems 에 박은 단일 조건 필터가 광주 밖 다섯 광역시를 섞어 406,168행을 냈다(§647). 지우지 않은 까닭 — MASTER 등재 · DECISIONS · 문서 도장 · `finish_647_seal.py` 가 이 경로를 가리킨다 |
-| `tools/finish_647_seal.py` | §647 이 만든 문서 빈 곳을 닫는다 — 이 절의 도구 둘 등재와 `extract` 두 행의 갱신. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/ledger_extract.py` | 대장 `datasets.<키>.contract` 에 **추출 선언**(normalize_columns · filter · scope_min · scope_max)을 텍스트로 넣는 **범용** 도구다 — `--key` · `--normalize` · `--filter COL=VAL`(반복 = AND) · `--one-of COL=A|B`(이름이 바뀐 값 · 다른 조건과 AND) · `--scope-min` · `--scope-max`. 옛 `ledger_contract_nfa_ems` 가 단일 조건을 박아 406,168행을 냈다(§647) · 「동명동」도 세 곳이다(§648). **쓰기 전에 `extract_decl.problems` 에 태워** 잘못된 선언은 안 쓴다 · 같은 선언이면 멱등 · 다른 선언이면 `--replace` 없이는 거절 · 기존 블록에 주석이 있으면 거절한다(텍스트로 다시 쓰면 날아간다) |
-| `tools/finish_648_seal.py` | §648 이 만든 문서 빈 곳을 닫는다 — 이 절의 도구 둘 등재 · `ledger_contract_nfa_ems` 행 갱신 · `extract` 두 행의 갱신. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
-| `tools/finish_649_seal.py` | §649 가 만든 문서 빈 곳을 닫는다 — 이 도구 등재와 `extract_decl` · `ledger_extract` 두 행에 `one_of` 를 더한다. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/cost_vs_dispatch.py` | **`cost` 를 119 출동 실측으로 구간 단위에서 대는 조사 도구**(읽기 전용 · 판정 불변 · DECISIONS §650). 행 → 사건 → 위치로 접고(한 사건의 여러 신고접수는 하나로 · 같은 곳의 다른 날은 따로) `SNAP_TRUST` · `SNAP_MAX` 로 구간에 붙이고, `segments._write_route` 와 같은 그래프에서 센터 → 지점을 `edge_cost` 로 구해 `speed.ts::travelSeconds` 와 같은 식으로 시간을 낸다 — **속도표와 앱의 고정분(`DISPATCH_FIXED_S`)은 `speed.ts` 에서 읽는다(사본 없음) · `edge_cost` 에 속도도 고정분도 없다.** 고정분을 더한 추정과의 치우침도 낸다(§651). 치우침 · 순위상관 · 적합 · 부트스트랩 95% · 선택 편향 · 거리 레버리지 · 막힌 구간 위 지점을 같이 낸다 |
-| `tools/finish_650_seal.py` | §650 이 만든 문서 빈 곳을 닫는다 — 이 절의 도구 둘 · 시험 하나 등재와 MASTER §7-2 의 한계 한 줄. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/oneway_match.py` | **일방통행 두 목록(동구청 표 · 동부경찰서 hwpx)을 우리 구간에 대고 발행 변화를 계산하는 조사 도구**(읽기 전용 · 판정 불변 · DECISIONS §652). 두 목록을 행으로 읽고(병합 머리 3줄은 위치로 건너뛰며 머리글이 바뀌면 죽는다) 끝점 지번을 지적도 필지 중심으로 옮겨 같은 도로명 구간에 댄다 — **붙음 · 부분 · 밖 · 도로명 구간 없음 · 끝점 좌표 없음 · 끝점 지번 없음**을 사유별로 센다. `ow` 가 어떻게 바뀔지를 **계산만** 하고 `navi_graph.json` 을 안 쓴다. `--sensitivity` 는 `rules.ts` 의 역주행 배수(상수를 거기서 읽는다)를 바꿔 센터 → 노드 경로가 얼마나 바뀌나를 낸다 |
-| `tools/finish_652_seal.py` | §652 가 만든 문서 빈 곳을 닫는다 — 이 절의 도구 둘 · 시험 하나 등재와 MASTER §7-2 의 일방통행 방향 한계 한 줄. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
-| `tools/finish_653_seal.py` | §653 이 만든 문서 빈 곳을 닫는다 — 이 도구 · 시험 하나 등재와 일방통행 방향 서술 셋의 정정(방향 확정 1 → 6). `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/ortho_probe.py` | **정사영상으로 도로 폭을 읽을 수 있는가를 재는 조사 도구**(읽기 전용 · 판정 불변 · DECISIONS §654). 지점 · 구간 중점을 구간 방향으로 돌려 오려 1m 격자를 얹은 판독용 이미지를 만들고(**구간 벡터의 가장자리는 안 그린다** — 판독이 벡터에 끌리지 않게) `--montage` 로 여럿을 한 장에 모아 가림을 분류하게 한다. `--compare` 는 사람이 눈가림으로 읽은 값과 `naver_width_2610.csv` 의 오차를 낸다(읽은 값이 없는 지점은 오차를 안 만든다). **이 대조는 판독 대 참값이 아니라 화면 측정끼리의 일치**다 — 참값은 현장 줄자뿐이다 |
-| `tools/finish_654_seal.py` | §654 가 만든 문서 빈 곳을 닫는다 — 이 도구 · 시험 하나 등재와 MASTER §7-2 의 정사영상 판독 한계 한 줄. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
-| `tools/finish_655_seal.py` | §655 가 만든 문서 빈 곳을 닫는다 — 새 시험 하나 등재. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
-| `tools/finish_656_seal.py` | §656 이 만든 문서 빈 곳을 닫는다 — 새 시험 하나 등재. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/fetch_api.py` | 공공데이터포털 표준데이터 API 를 **같은 방법으로 다시 받는** 도구(`FIRE_LANE_DATA_GO_KR_KEY` · 지금은 키가 필요 없다 · PLAN 행 141(닫힘)). 호출은 `--run` 일 때만 |
-| `tools/ledger_add_nfa_ems.py` | 대장에 `datasets.nfa_ems` 를 **텍스트 삽입**으로 등재한다. `yaml.dump` 를 안 쓴다 — 주석이 근거를 드는 대장이라 라운드트립이면 그 근거가 날아간다(`docnum_check.py:528` · `depgroups_check.py:85` 가 같은 이유로 포기했다). 멱등 · 앵커(`nfa_fire_incident:`)를 못 찾으면 자리를 추측하지 않고 실패한다 |
 | `tools/dms_fix_inherit.py` | 부모 칸의 「하위 일곱」 같은 **수 낱말을 판정기가 세는 수로 다시 쓴다.** 수는 `dms.scan()` 의 `inherit` 행을 부모별로 센 것(`inherit_counts` 와 같은 규칙)이라 손으로 세지 않는다 — 손으로 센 수가 §648~§656 에서 여섯 번 틀렸다. **돌린 뒤 늘어난 절을 읽는 것은 사람 몫이다**(판정기가 우는 이유가 그것이다). 기본은 계획만 · `--write` 가 쓴다 |
-| `tools/finish_c1_seal.py` | C1 이 만든 빈 곳 둘을 닫는다 — MASTER §23-2 등재와 `unusedcheck.PENDING_MAX` 13→14. `sealcov` 와 느슨해진 래칫은 `--write` 가 못 고치는 자리인데(§636), **적는 주체가 사람이라는 뜻이지 적는 방법이 손이라는 뜻이 아니다** |
 
 ### 23-3. 검사 — 무엇을 묻나
 
