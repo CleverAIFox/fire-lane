@@ -522,6 +522,7 @@ step "문서 숫자 대조"   uv run python tools/docnum_check.py
 scope "docs/* tools/* sources.yaml"
 step "문서 생성 블록 ↔ 실물" uv run python tools/docgen.py --check
 # ci-exempt: tools/dms_fix_inherit.py 대조만(--check · 안 쓴다) — 하위 절 수가 새 절마다 어긋난다(§648~§656 여섯 번). CI 워크플로가 이 배치의 범위 밖이라 단계를 못 붙였다. 같은 판정은 `tests/test_dms_ids.py` 가 pytest 로 CI 에서 든다
+scope "docs/* tools/*"
 step "하위 절 수 선언 ↔ 실제" uv run python tools/dms_fix_inherit.py --check
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
 #   ⑥ 기획서 수정일 · ⑦ 셸 명령 · ⑧ 기한은 **사람이 손으로 칠 때만**
