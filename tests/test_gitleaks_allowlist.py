@@ -199,8 +199,14 @@ def test_seal_allowlist_does_not_let_tokens_through():
     assert not let, f"봉인 예외가 토큰 모양을 푼다 — {let}. 줄 모양을 다시 좁혀라"
     assert al.get("condition") == "AND", (
         "봉인 예외가 경로 **또는** 줄 모양으로 푼다 — AND 가 아니면 저장소 어디서든 그 줄 모양이 풀린다")
-    assert al.get("paths") == [r"^data/dms/SEAL\.json$"], (
-        f"봉인 예외의 경로가 봉인 하나가 아니다 — {al.get('paths')}")
+    # ★ 2026-11-06. 경로는 **정확히 둘이다** — 지문 장부가 둘(`dms` 봉인 · `docseal`)이다. 느슨하게(`in` · 길이) 안 바꾼다:
+    #   이 시험이 목록을 못 박는 뜻은 「경로가 늘면 **사람이 보게** 한다」이고 그 뜻은 옳다.
+    #   `data/golden/docseal.json` 이 더해진 사유 — §646~§655 가 새 시험 파일을 등재하면서
+    #   `tests/test_ops_token_wiring.py` 의 **파일 이름에 든 `token`** 곁에 지문이 서서 `generic-api-key` 가 물었다.
+    #   값이 아니라 **이름**이 울렸다. docseal 에는 봉인에 없는 맨 지문 줄이 있어 줄 모양도 하나 더 든다(위 `regexes`).
+    #   장부가 셋째로 늘면 여기와 `.gitleaks.toml` 의 경로를 같이 고친다.
+    assert al.get("paths") == [r"^data/dms/SEAL\.json$", r"^data/golden/docseal\.json$"], (
+        f"봉인 예외의 경로가 지문 장부 둘이 아니다 — {al.get('paths')}")
 
 
 def test_seal_file_is_json_the_allowlist_reads():
