@@ -33,14 +33,18 @@ OUT   없다 — 값을 **돌려주기만** 한다. 파일은 `publish_navi` 가
 """
 from __future__ import annotations
 
+import csv
 import math
 
 import geopandas as gpd
 from shapely.geometry import Point
 
 from firelane.paths import ROOT
+from firelane.seg.params import NODE_TOL
 
 P = ROOT / "data" / "processed"
+#: 사람이 확인한 일방통행 방향 표(DECISIONS §653). `ow=2`(방향 모름)인 구간에만 읽는다.
+OW_FIELD = ROOT / "data" / "field" / "oneway_direction_2611.csv"
 
 # 회전 금지 코드. 표준노드링크 구축기준 TURN_TYPE — 011 유턴 · 012 P턴 은 허용이라 뺀다.
 TURN_BAN = {3, 101, 102, 103}
@@ -84,7 +88,31 @@ def _nl_signs(nl: gpd.GeoDataFrame, L, buf: float) -> set[int]:
     return signs
 
 
-def oneway(m: gpd.GeoDataFrame) -> tuple[list[int], dict]:
+def _field_rows(path=None) -> dict[str, dict]:
+    """`use` 가 「적용」인 행만 seg_uid 로. 표가 없으면 빈 사전이다(조용히 안 읽는 것이 아니라 읽을 것이 없는 것 — 호출부가 수를 센다)."""
+    path = path or OW_FIELD
+    if not path.exists():
+        return {}
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        return {r["seg_uid"]: r for r in csv.DictReader(f) if r.get("use") == "적용"}
+
+
+def _field_sign(L, row: dict, tol: float = NODE_TOL) -> int | None:
+    """표의 출발점 → 도착점이 구간 형상의 시작 → 끝과 같으면 +1, 반대면 -1. **두 끝이 다 안 붙으면 None**(낡은 표).
+
+    ★ 부호를 표에 안 적고 **좌표**를 적은 까닭 — 구간이 다시 만들어져 형상 방향이 뒤집히면 표의 부호는 조용히 틀리고
+      틀린 확정은 모름보다 나쁘다(옳은 방향을 벌하고 역주행을 공짜로 만든다). 좌표는 뒤집혀도 맞고, 안 맞으면 알아챈다.
+    """
+    a, b = L.coords[0][:2], L.coords[-1][:2]
+    f, t = (float(row["from_x"]), float(row["from_y"])), (float(row["to_x"]), float(row["to_y"]))
+    if math.dist(a, f) <= tol and math.dist(b, t) <= tol:
+        return 1
+    if math.dist(b, f) <= tol and math.dist(a, t) <= tol:
+        return -1
+    return None
+
+
+def oneway(m: gpd.GeoDataFrame, field_path=None) -> tuple[list[int], dict]:
     """구간마다 `ow`(0 · 1 · -1 · 2). `m` 은 5186 구간이다.
 
     ★ 2026-10-03 (DECISIONS §367). **「방향을 못 정했다」의 사유를 가른다.**
@@ -103,7 +131,8 @@ def oneway(m: gpd.GeoDataFrame) -> tuple[list[int], dict]:
     """
     out = [0] * len(m)
     stat = {"oneway": 0, "dir_known": 0, "nl_twoway": 0,
-            "nl_none": 0, "nl_split": 0, "nl_absent": 0}
+            "nl_none": 0, "nl_split": 0, "nl_absent": 0, "dir_field": 0, "dir_field_stale": 0}
+    why: dict[int, str] = {}       # 모름으로 남은 구간의 사유 — 표가 정하면 그 사유 수에서 뺀다
     src = P / "ngii1k_center_5186.gpkg"
     if not src.exists():
         print("  ! ngii1k_center 없음 — 일방통행 없이 낸다")
@@ -124,6 +153,7 @@ def oneway(m: gpd.GeoDataFrame) -> tuple[list[int], dict]:
         out[i] = 2
         if nl is None:
             stat["nl_absent"] += 1
+            why[i] = "nl_absent"
             continue
         near, wide = _nl_signs(nl, L, NL_BUF_M), _nl_signs(nl, L, 2 * NL_BUF_M)
         # ★ 방향 확정은 **좁게도 넓게도 한 방향**일 때만. 4m 에서 한 방향이던 것이 8m 에서
@@ -134,14 +164,34 @@ def oneway(m: gpd.GeoDataFrame) -> tuple[list[int], dict]:
             stat["dir_known"] += 1
         elif len(wide) == 2:
             stat["nl_twoway"] += 1
+            why[i] = "nl_twoway"
         elif not wide:
             # ★ 넓게 봐도 링크가 없다. **양방향이라서 모르는 것이 아니다** —
             #   그냥 표준노드링크가 그 골목을 안 든다. 간선만 덮기 때문이다
             #   (§1 #31 이 ITS 소통정보에서 같은 것을 쟀다).
             stat["nl_none"] += 1
+            why[i] = "nl_none"
         else:
             # 좁게와 넓게가 갈린다 — 버퍼 조율로 풀릴 수 있는 쪽이다
             stat["nl_split"] += 1
+            why[i] = "nl_split"
+
+    # ── 사람이 확인한 방향 표(§653) — **`ow=2` 인 구간에만**, 표준노드링크가 정한 ±1 과 `ow=0` 은 안 덮는다.
+    #    「우리는 양방향인데 표는 일방」인 충돌은 표에서 `use` 가 「보류(충돌)」라 읽히지 않는다(§652).
+    rows = _field_rows(field_path)
+    if rows and "seg_uid" in m.columns:
+        for i, uid in enumerate(m["seg_uid"]):
+            r = rows.get(uid)
+            if r is None or out[i] != 2:
+                continue
+            sign = _field_sign(_line(m.geometry.iloc[i]), r)
+            if sign is None:
+                stat["dir_field_stale"] += 1       # 낡은 표 — 구간이 바뀌었다. 모름으로 둔다
+                continue
+            out[i] = sign
+            stat["dir_field"] += 1
+            if i in why:
+                stat[why[i]] -= 1                  # 모름의 사유 수는 **남은 모름**의 수다
     return out, stat
 
 

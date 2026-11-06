@@ -10,6 +10,11 @@
    "sha256": "b8ac5e629edca3be17c898b3fc08502da66847fe7227d2342b85d27e157cf274",
    "bytes": 2320,
    "lines": 52
+  },
+  "oneway_direction_2611.csv": {
+   "sha256": "49b59262dbc7fc27eee4d211aa12584df70f6aaa6af0ca73a1c8f8f9551cf2c5",
+   "bytes": 5863,
+   "lines": 15
   }
  }
 }

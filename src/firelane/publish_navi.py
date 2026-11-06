@@ -436,7 +436,8 @@ def main() -> None:
         "crs": "EPSG:4326",
         "node_tol_m": NODE_TOL,
         "counts": {"nodes": len(nodes), "edges": len(edges), "self_loops": loops,
-                   "oneway": ow_stat["oneway"], "oneway_dir_known": ow_stat["dir_known"],
+                   "oneway": ow_stat["oneway"], "oneway_dir_known": ow_stat["dir_known"] + ow_stat["dir_field"],
+                   "oneway_dir_field": ow_stat["dir_field"],      # 그중 사람이 확인한 표(§653)가 정한 수 — 나머지는 표준노드링크
                    # ★ 모름의 **사유별 수**(§367). 화면은 안 쓴다 — `navicheck` 가
                    #   읽어 「방향 모름」 래칫의 분모를 사유별로 가른다. 수를 문서에
                    #   안 적고 산출물이 들게 하는 그 규율이다(§246-2).
@@ -466,13 +467,13 @@ def main() -> None:
     print(f"  navi_graph.json  노드 {len(nodes)} · 엣지 {len(edges)}"
           f" · 자기루프 {loops} · 노드 최대이동 {dmax:.3f}m"
           f" · 판정색 {len(style)}종 · {size / 1024:.0f}KB")
-    print(f"  통행 규칙  일방통행 {ow_stat['oneway']} (방향 확정 {ow_stat['dir_known']})"
+    print(f"  통행 규칙  일방통행 {ow_stat['oneway']} (방향 확정 {ow_stat['dir_known'] + ow_stat['dir_field']} — 표 {ow_stat['dir_field']} · 낡은 표 {ow_stat['dir_field_stale']})"
           f" · 회전 금지 {tr_stat['rules']}건 중 {tr_stat['mapped']} 을 그래프에")
     # ★ 2026-10-03 (§367). **모름의 사유를 가른다.** 종전에는 「양방향 N」 하나만
     #   찍어서, 56건이 왜 모름인지가 어디에도 없었다. 넷으로 가르면 다음에 무엇을
     #   고쳐야 하는지가 한 줄에 나온다 — 매칭 범위(`nl_none`)냐 버퍼 조율
     #   (`nl_split`)이냐 **원래 양방향**(`nl_twoway`)이냐 레이크(`nl_absent`)냐.
-    print(f"    방향 모름 {ow_stat['oneway'] - ow_stat['dir_known']} 의 사유 —"
+    print(f"    방향 모름 {ow_stat['oneway'] - ow_stat['dir_known'] - ow_stat['dir_field']} 의 사유 —"
           f" 양방향 {ow_stat['nl_twoway']}"
           f" · 링크 없음 {ow_stat['nl_none']}"
           f" · 좁게↔넓게 갈림 {ow_stat['nl_split']}"
