@@ -2001,6 +2001,15 @@ git push origin --delete feat/<이름>
 `bypass_actors` 가 뚫었다 — 머지를 admin 이 하므로 자동 삭제도 admin
 권한으로 실행된다. **규칙이 있어도 예외가 있으면 없는 것과 같다**(`DECISIONS §79`).
 
+★ **한시로 낮춘 것 — `FIRE_LANE_OPS_TOKEN` 미등록 · 중개자가 아직 없다.** (2026-11-06 · DECISIONS §655 · §657)
+`tools/ruleset_check.py` 가 「Secret 미등록」으로 rc=1 을 냈고 그 도구가 제시한 길이 「한시로 낮춘 것이면 되돌릴 날과 함께 적어라」였다.
+- **빈 값이 배포본을 깨지 않는다.** 액션이 스스로 「비어도 된다 — 단 주소가 있으면 경고가 찍힌다」로 선언하고(`.github/actions/stage-site/action.yml`),
+  주소(`vars.FIRE_LANE_OPS_URL`)도 비어 있어 경고조차 안 찍힌다. `deploy.yml` 의 `dry` 가 「비어 있으면 탭끼리만 경고를 찍고 통과한다 — 그것이 지금의 사실」을 설계로 적는다(§343-3).
+- ★ 이 토큰은 **설계상 공개된다** — 브라우저 WebSocket 이 헤더를 못 붙여 주소의 `?t=` 로 가고 번들에서 읽힌다. 「화면을 여는 열쇠이지 신분이 아니다」(§655). 등록을 미루는 이유는 비밀 유지가 아니라 **그 열쇠가 열 문이 아직 없다**는 것이다. 주소(`vars.FIRE_LANE_OPS_URL`)가 비어 연결 시도 자체가 없으므로 값을 넣어도 의미 없는 문자열을 번들에 싣는 것뿐이다.
+- ★ §655 가 배선을 먼저 넣었고 중개자가 뒤에 있다 — 그 시차가 이 줄의 정체다.
+- **되돌릴 날 — 중개자를 세우는 날.** 그날 Secret 을 등록하고 이 줄을 지운다. 도구 쪽 거울은 `ruleset_check.UNREGISTERED_OK` 이고 **같이 지운다** —
+  등록됐는데 선언이 남아 있으면(면제가 낡았다) · 워크플로가 더는 안 부르는데 남아 있으면 그 도구가 운다.
+
 강제자  `tools/ruleset_check.py`(GitHub 룰셋 **실물**을 API 로 읽어 이 표와 댄다 — 2026-08-31 에 「승인 1」로 적힌 것이 실물 0 이었다) · `tests/test_workflow_html_sync.py::test_rules_table_agrees_with_ruleset_check` · `test_rules_table_probe_is_alive`
 
 ### 12-1a. 예외와 회수
