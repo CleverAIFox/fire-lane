@@ -1278,6 +1278,7 @@ ngii1k_light   11,439점                        측량 폴 위치. 구분만 있
 - `width_max_m` 이 교차로에서 46~57m 로 샌다. `min(B)` 라 판정 영향은 작지만
   필드 자체는 신뢰할 수 없다.
 - **판정 상수 열여섯이 출처를 못 댄다 — 그중 셋은 값을 움직이면 판정이 움직인다**(DECISIONS §639-2). `WMAX_CAP` 60.0 은 +10% 에서 6구간 · +20% 에서 8구간이, `SNAP_TRUST` 2.0 은 2.0 아래에서, `CORRIDOR_BUFFER` 70.0 은 발행 범위가 758 → 761 로 움직인다(DECISIONS §588-1 · §589 · §629-7) — **민감한데 출처가 없는** 수다. `SNAP_MAX` 는 출처가 없지만 2~50 으로 움직여도 판정 0 이라 다른 칸이다(무관함). 나머지 12(`KEEP_BUFFER` · `SNAP_TOL` · `NODE_TOL` · `XSEC_EXCL` · `COV_MIN` 과 `skeleton.py` 일곱)는 민감도를 잰 글을 **못 찾았다 — 안 쟀다는 증명이 아니다.** 「못 찾았다」와 「안 쟀다」는 다른 말이다.
+- **`cost` 의 절대값은 119 출동 실측과 2배 넘게 어긋난다**(DECISIONS §650 · PLAN #195). 센터에서 지점까지를 `edge_cost` 로 구해 `speed.ts` 의 `travelSeconds` 식으로 낸 주행 시간이 중앙 **180초 안팎**이고 같은 지점의 실제 출동지령 → 현장도착이 **380초 안팎**이다(스냅된 106곳 치우침 중앙 **+208초** [+183, +227] · 스냅 한계 없이 364곳 +227초). **속도 탓인지 고정분 탓인지는 못 가른다** — 지점이 센터에서 1.0~1.4km 에 몰려 있어 이 범위에서는 거리가 시간을 설명하지 못한다(전체 598곳 rho −0.04). 치우침이 거리에 늘지 않아(rho −0.215) 고정분 쪽으로 읽히나 확정이 아니다. **`edge_cost` 에는 속도도 고정분도 없고** 앱의 도착 예정 시각은 주행 시간뿐이라 지령 → 출발 · 현장 접근을 안 든다. 119 신고접수에는 차종이 없어 구급차 · 구조차가 섞이고 좌표는 건물 위치라 스냅 79% 가 6m 밖이다. 스냅된 지점의 **45%(64/141)가 `edge_cost` 가 막은 구간 위**이고 그중 50 은 판정이 「모른다」인 구간을 폭 추정(중앙 1.37m)이 막은 것인데 실제 출동은 거기에 닿았다 — 판정 오류의 증거는 아니고(차종 · 접근로 모호) 현장 확인 대상이다. 판정은 안 움직인다.
 - **현장 접근시간(도착 → 환자 접촉)은 판정 · `cost` 의 입력에 없다.** 구급 현황 7개년 실측에서 중앙 **40초**(25분위 17초)이고 꼬리가 길다 — 상위 10% 114초 · 상위 1% **약 19분**으로 거기서는 주행(중앙 293초)을 압도한다(DECISIONS §645-3 · §645-4). 접근을 가정한 상수를 저장소에서 **못 찾았다**(`ESCAPE_M` 은 보행 거리가 아니라 도로 반폭 문턱이다). 판정은 안 바뀐다 — 한계로만 적는다. 이 값은 센터 단위 구급 자료의 것이라 동명동의 접근시간이 아니다(좌표 칸이 없다 · §645-7).
 - `inherited` 는 더 이상 쓰지 않는다(항상 `false`).
 - `road_side`(`RDS_DPN_SE` 0/1/2)는 **의미 미확정**이다. 폭과의 상관만 확인됐다.
@@ -3259,7 +3260,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,995 전수 · **분모(blank) 0절** · 물림(inherit) 1,852절.
+★ **강제자 칸의 분모.** 절 3,006 전수 · **분모(blank) 0절** · 물림(inherit) 1,862절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -4841,6 +4842,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/ledger_extract.py` | 대장 `datasets.<키>.contract` 에 **추출 선언**(normalize_columns · filter · scope_min · scope_max)을 텍스트로 넣는 **범용** 도구다 — `--key` · `--normalize` · `--filter COL=VAL`(반복 = AND) · `--one-of COL=A|B`(이름이 바뀐 값 · 다른 조건과 AND) · `--scope-min` · `--scope-max`. 옛 `ledger_contract_nfa_ems` 가 단일 조건을 박아 406,168행을 냈다(§647) · 「동명동」도 세 곳이다(§648). **쓰기 전에 `extract_decl.problems` 에 태워** 잘못된 선언은 안 쓴다 · 같은 선언이면 멱등 · 다른 선언이면 `--replace` 없이는 거절 · 기존 블록에 주석이 있으면 거절한다(텍스트로 다시 쓰면 날아간다) |
 | `tools/finish_648_seal.py` | §648 이 만든 문서 빈 곳을 닫는다 — 이 절의 도구 둘 등재 · `ledger_contract_nfa_ems` 행 갱신 · `extract` 두 행의 갱신. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/finish_649_seal.py` | §649 가 만든 문서 빈 곳을 닫는다 — 이 도구 등재와 `extract_decl` · `ledger_extract` 두 행에 `one_of` 를 더한다. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
+| `tools/cost_vs_dispatch.py` | **`cost` 를 119 출동 실측으로 구간 단위에서 대는 조사 도구**(읽기 전용 · 판정 불변 · DECISIONS §650). 행 → 사건 → 위치로 접고(한 사건의 여러 신고접수는 하나로 · 같은 곳의 다른 날은 따로) `SNAP_TRUST` · `SNAP_MAX` 로 구간에 붙이고, `segments._write_route` 와 같은 그래프에서 센터 → 지점을 `edge_cost` 로 구해 `speed.ts::travelSeconds` 와 같은 식으로 시간을 낸다 — **속도표는 `speed.ts` 에서 읽는다(사본 없음) · `edge_cost` 에 속도도 고정분도 없다.** 치우침 · 순위상관 · 적합 · 부트스트랩 95% · 선택 편향 · 거리 레버리지 · 막힌 구간 위 지점을 같이 낸다 |
+| `tools/finish_650_seal.py` | §650 이 만든 문서 빈 곳을 닫는다 — 이 절의 도구 둘 · 시험 하나 등재와 MASTER §7-2 의 한계 한 줄. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/fetch_api.py` | 공공데이터포털 표준데이터 API 를 **같은 방법으로 다시 받는** 도구(`FIRE_LANE_DATA_GO_KR_KEY` · 지금은 키가 필요 없다 · PLAN 행 141(닫힘)). 호출은 `--run` 일 때만 |
 | `tools/ledger_add_nfa_ems.py` | 대장에 `datasets.nfa_ems` 를 **텍스트 삽입**으로 등재한다. `yaml.dump` 를 안 쓴다 — 주석이 근거를 드는 대장이라 라운드트립이면 그 근거가 날아간다(`docnum_check.py:528` · `depgroups_check.py:85` 가 같은 이유로 포기했다). 멱등 · 앵커(`nfa_fire_incident:`)를 못 찾으면 자리를 추측하지 않고 실패한다 |
 | `tools/fix_vintage_8digit.py` | landing 파일명과 대장 `files:` 의 vintage 를 `YYYY1231` 로 맞춘다. `naming` 은 `YYYYMMDD`·`YYYYMM`·`YYYY` 를 받는데 `normalize_raw` 의 provider 규칙이 `\d{8}` 만 받아 7파일이 통째로 안 걸렸다(§646). **정규식을 안 고친 이유** — 8자리 전제가 `ledger_fields.py:25` 의 `updated` 유도에도 박혀 있어 넓히면 그쪽이 조용히 깨진다 |
@@ -4856,6 +4859,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | --- | --- |
 | `tests/test_acquire.py` | **두 파생기가 같은 답을 내는가** |
 | `tests/test_ledger_extract.py` | 범용 추출 선언 도구가 **대장 텍스트를 안전하게 고치는가** — 같은 선언은 멱등 · 다른 선언은 `--replace` 없이 거절 · 주석 있는 블록은 거절 · **잘못된 선언은 파일에 안 쓴다**(정규화 뒤 이름 · schema 에 없는 칸 · 상한 < 하한) |
+| `tests/test_cost_vs_dispatch.py` | 조사 도구의 순수 함수 — 속도표를 **`speed.ts` 에서 읽고 맞는가** · 접기(사건 · 위치 · 센터가 다르면 다른 위치) · 스냅 분류가 두 상수를 닫힌 구간으로 쓰는가 · 계산 소요가 **`travelSeconds` 식**(Σ 길이/속도 × cost/길이)인가 · 막힌 구간은 닿는 끝까지만 |
 | `tests/test_snap_groups.py` | 노드 접합이 **한 곳에서** 일어나는가 — 그리고 그 한 곳이 옳은가 |
 | `tests/test_provider_registry.py` | provider 목록의 **사본을 금지한다** |
 | `tests/test_read_dispatch.py` | `kind` → 갈래 배선이 **선언과 맞는가** |
