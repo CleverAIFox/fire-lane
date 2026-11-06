@@ -673,8 +673,14 @@ def test_the_rules_and_the_real_files_are_already_canonical():
         checked += 1
         if (got := nm.canonical(f"{folder}/{tmpl}", e)) is not None:
             bad.append(f"  규칙 {folder}/{tmpl} → {got}")
+    # ★ 2026-11-06 (DECISIONS §657-5). 폐기로 선언된 이름(`retired.*.files`)은 **살아 있는 항목이 아니다.**
+    #   그 지역판(`nfa_*_jngj-dong*`)은 살아 있는 항목과 stem 이 같아 이름만 보면 그 항목으로 풀리고, 항목의 scope 가
+    #   `kr` 로 올라간 뒤로 「`_kr_` 로 고쳐라」가 나왔다. 고치면 지역판이 전국본 이름을 쓴다 — 그래서 건너뛴다.
+    retired = L.retired_names()
     for p in sorted(json.loads(
             (root / "data/_acquire.json").read_text(encoding="utf-8"))["files"]):
+        if p in retired:
+            continue
         if (e := entry_for(p.split("/", 1)[1])) is None:
             continue
         checked += 1

@@ -299,7 +299,9 @@ def test_entry_of_resolves_every_real_raw_file() -> None:
     raw = sorted(json.loads(
         (ROOT / "data/_acquire.json").read_text(encoding="utf-8"))["files"])
     assert len(raw) > 50, "실물 목록이 비었다 — 이 검사가 빈 그물이 됐다"
-    orphan = [p for p in raw if ledger.entry_of(p)[0] is None]
+    # 폐기로 선언된 이름은 `entry_of` 가 일부러 안 푼다(아래 시험) — 고아가 아니라 **폐기로 아는** 것이다.
+    retired = ledger.retired_names()
+    orphan = [p for p in raw if ledger.entry_of(p)[0] is None and p not in retired]
     assert not orphan, "대장이 모르는 실물:\n  " + "\n  ".join(orphan)
 
 
@@ -320,3 +322,42 @@ def test_retired_sha_collects_every_hash_without_tripping_on_blanks() -> None:
               {"retired": {"a": {"sha256": None}}},
               {"retired": {"a": {"sha256": "글자하나"}}}):
         assert ledger_retired_sha(y) == {}, y
+
+
+# ── 폐기 이름은 살아 있는 항목으로 안 푼다 (DECISIONS §657-5) ─────────────────
+def test_a_retired_name_is_never_resolved_to_a_live_entry() -> None:
+    """★ 폐기된 이름은 stem 이 살아 있는 항목과 같아도 `(None, {})` 이다.
+
+    §646~§649 가 `nfa_*` 넷을 전국본(`scope: kr`)으로 올렸고, 옛 지역판 넷(`…_jngj-dong…`)은 `retired` 로 선언됐다.
+    이름만 보고 풀면 `canonical` 이 그 지역판을 `_kr_` 로 고치라고 한다 — `migrate_names` 가 돌면 실제로 개명하고
+    대장 문자열(`retired` 블록 포함)까지 치환해 **지역판이 전국본 이름을 쓴다**(sha 가 전국본의 것처럼 보인다).
+    """
+    ret = ledger.retired_names()
+    assert len(ret) > 20, "폐기 이름이 비었다 — 이 검사가 빈 그물이다"
+    live = {e["stem"] for e in (ledger.load()["datasets"] or {}).values() if e.get("stem")}
+    # 살아 있는 항목과 stem 이 겹치는 폐기 이름이 실제로 있어야 이 검사가 뭔가를 물고 있다(비어 있으면 전제가 죽은 것)
+    clash = [r for r in sorted(ret) if any(r.rsplit("/", 1)[-1].startswith(s + "_") for s in live)]
+    assert clash, "살아 있는 항목과 stem 이 겹치는 폐기 이름이 없다 — 이 시험의 전제가 사라졌다"
+    for r in clash:
+        assert ledger.entry_of(r) == (None, {}), f"폐기 이름을 살아 있는 항목으로 푼다: {r}"
+        assert ledger.entry_of(r.rsplit("/", 1)[-1]) == (None, {}), f"폴더 없이 와도 같다: {r}"
+
+
+def test_a_name_that_is_not_retired_still_resolves_after_the_skip() -> None:
+    """양성 대조 — 건너뜀이 **너무 넓지** 않다. 폐기가 아닌 같은 stem 의 전국본은 여전히 풀린다."""
+    k, e = ledger.entry_of("nfa/nfa_dispatch_119_kr_20221231.csv")
+    assert k == "nfa_dispatch_119" and e, "폐기가 아닌 이름까지 안 푼다 — 건너뜀이 너무 넓다"
+
+
+def test_migrate_names_never_plans_a_rename_of_a_retired_file() -> None:
+    """★ 결과로 못박는다 — 개명 계획(`migrate_names.plan`)에 폐기 파일이 하나도 없다."""
+    import importlib.util
+    import sys
+
+    spec = importlib.util.spec_from_file_location("_migrate_names_t", ROOT / "tools" / "migrate_names.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    ret = ledger.retired_names()
+    hit = [p["old"] for p in m.plan() if p["old"] in ret]
+    assert not hit, f"개명 계획이 폐기 파일을 든다 — 지역판이 전국본 이름을 쓰게 된다: {hit}"

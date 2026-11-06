@@ -328,6 +328,23 @@ def retired(y: dict | None = None) -> dict:
     return (y if y is not None else load_sources()).get("retired") or {}
 
 
+def retired_names(y: dict | None = None) -> frozenset[str]:
+    """`retired.*.files`(단수 `file` 도) 에 든 raw 상대경로 전부 — **이름 그대로**다(글롭 아님).
+
+    ★ 2026-11-06 (DECISIONS §657-5). `entry_of` 가 이 이름들을 **살아 있는 항목으로 안 풀게** 하려고 있다.
+      폐기된 지역판(`nfa_*_jngj-dong*`)은 살아 있는 항목과 **stem 이 같다** — 이름만 보고 풀면 `scope` 가
+      `kr` 로 올라간 항목의 `canonical` 이 그 파일을 `_kr_` 로 고치라고 한다. `migrate_names` 가 돌면
+      실제로 개명하고 대장 문자열(`retired` 블록 포함)까지 치환한다 — 지역판이 전국본 이름을 쓰게 된다.
+    """
+    out: set[str] = set()
+    for e in retired(y).values():
+        if not isinstance(e, dict):
+            continue
+        fs = e.get("files") or ([e["file"]] if e.get("file") else [])
+        out.update(str(f) for f in fs if f)
+    return frozenset(out)
+
+
 def disposed(y: dict | None = None) -> list:
     """`landing_disposition.items`. 위와 같은 사유 — 파일 없는 기각 기록이다.
 
@@ -529,6 +546,12 @@ def entry_of(rel: str) -> tuple[str | None, dict]:
       이것은 역산이 아니라 파싱이다 — 문법이 `firelane.naming` 에
       정의돼 있고 파서가 하나뿐이다.
     """
+    # ★ 2026-11-06 (DECISIONS §657-5). **폐기된 이름은 살아 있는 항목으로 안 푼다** — 위 `retired_names`.
+    #   (폴더 없이 이름만 와도 같다.) 풀지 않으면 `(None, {})` 이고, 그것은 「대장이 모른다」가 아니라
+    #   「폐기로 안다」다 — 고아 검사는 `retired_names` 를 같이 본다.
+    ret = retired_names()
+    if rel in ret or ("/" not in rel and any(r.endswith("/" + rel) for r in ret)):
+        return None, {}
     idx = stem_index()
     name = rel.rsplit("/", 1)[-1]
     try:
