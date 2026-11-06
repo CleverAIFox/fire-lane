@@ -54,6 +54,8 @@ V.use(_led.vehicle_spec())
 
 SPEED_TS = ROOT / "web" / "navi" / "src" / "domain" / "speed.ts"
 CRS_M = 5186
+# 부트스트랩 시드 — §650 의 구간 [+179, +234] 등이 이 값으로 나왔다. 바꾸면 구간 끝이 움직이니 바꿀 때는 §650·§651 을 같이 다시 쓴다.
+SEED = 0
 
 
 # ── 순수 함수 ───────────────────────────────────────────────────
@@ -128,7 +130,7 @@ def ols(x, y) -> tuple[float, float]:
     return float(a), float(b)
 
 
-def summarize(pred, actual, boot: int = 1000, seed: int = 0) -> dict:
+def summarize(pred, actual, boot: int = 1000, seed: int = SEED) -> dict:
     """계산 소요(pred) 대 실제 소요(actual). 치우침 · 순위상관 · 적합 · 부트스트랩 95% 구간(위치를 다시 뽑는다)."""
     p, a = np.asarray(pred, float), np.asarray(actual, float)
     n = len(p)
