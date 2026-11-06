@@ -4820,8 +4820,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `src/firelane/publish_fleet.py` | 관내 차종과 제원을 내비가 먹을 꼴로 낸다 |
 | `src/firelane/valueprofile.py` | 표 자료(csv)의 **값의 성질**을 재서 대장 `schema.profile` 에 **집계만** 적는다 — 빈 셀 · 공백 문자열 · 좌표 칸의 센티넬(`0.0`) · 텍스트 없음(`미상`) · 좌표 범위. 표본값은 안 적는다. `--check` 는 커밋된 프로필과 실물을 대고 실물 방언이 `none:` 선언 안인지 본다(레이크가 있는 기계에서). 판정 폐포 밖이고 판정이 안 읽는다(DECISIONS §634) |
 | `src/firelane/measurecols.py` | **측정 절의 「쓴 칸」 머릿줄**을 기계가 강제한다 — DECISIONS 의 측정 절(§635 이후)이 읽은 `원천.칸` 을 역할과 함께 적게 하고, ① 칸이 대장에 실재하는가 ② `위치` 역할이 `coords:` 의 `not_for` 에 걸리지 않는가 ③ `시각` · `가르기` 칸이 「없음」을 가지면 `none:` 선언과 메모가 있는가 ④ 본문에서 뽑은 칸이 머릿줄에 다 있는가를 본다. 스크립트를 저장소에 안 들이는 일회성 측정을 선언 칸에 묶는다. 판정 폐포 밖(DECISIONS §637) |
-| `src/firelane/extract_decl.py` | **추출 단계 선언의 모양과 이름** — 대장 `contract` 의 `normalize_columns` · `filter`({column, equals})가 읽는 갈래 · 정규화 뒤 칸 이름 · `schema.columns` 와 맞는지를 레이크 없이 가린다(`ledger_check` 가 부른다). 오타 하나로 필터가 조용히 안 걸리는 것을 막는다(DECISIONS §646) |
-| `src/firelane/read/extract.py` | **전국 원본에서 지역 파생본을 만드는 추출 단계** — `csv_table` · `csv_table_multi` 가 `normalize_columns` · `filter` 를 선언하면 `hits` 전부를 청크로 읽어 칸 이름만 정규화하고(값은 안 건드린다) 거르고 하나로 잇는다. 계보에 입력 파일별 sha · 필터 전 · 후 행 수를 남긴다. 0행 · `scope_min` 미달은 FAIL. 판정 폐포 밖(DECISIONS §646) |
+| `src/firelane/extract_decl.py` | **추출 단계 선언의 모양과 이름** — 대장 `contract` 의 `normalize_columns` · `filter`({column, equals} 하나 또는 그 **목록 = AND**)가 읽는 갈래 · 정규화 뒤 칸 이름 · `schema.columns` 와 맞는지를 레이크 없이 가린다(`ledger_check` 가 부른다). 오타 하나로 필터가 조용히 안 걸리는 것을 막는다(DECISIONS §646) |
+| `src/firelane/read/extract.py` | **전국 원본에서 지역 파생본을 만드는 추출 단계** — `csv_table` · `csv_table_multi` 가 `normalize_columns` · `filter` 를 선언하면 `hits` 전부를 청크로 읽어 칸 이름만 정규화하고(값은 안 건드린다) 거르고 하나로 잇는다. 계보에 입력 파일별 sha · **바이트** · 필터 전 · 후 행 수를 남긴다. 0행 · `scope_min` 미달은 FAIL(★ 하한은 **과다**를 못 잡는다 — 「동구」가 여섯 광역시에 있어 단일 조건이 406,168행을 냈다 · 시도 조건 AND 로 고쳤다 · §647). `paths` · `source_dir`(`ingest --only <키> --extract-from <폴더>` — 전국본을 raw 에 안 올리고 제자리에서 읽는다) · `kept`(원본을 `status: missing` 으로 내린 항목의 지난 계보 · 산출물을 보존). 판정 폐포 밖(DECISIONS §646 · §647) |
 | `src/firelane/quiet_gdal.py` | GDAL 의 **알려진 무해 잡음만** 걷는다. 모르는 경고는 그대로 둔다 |
 | `src/firelane/read/__init__.py` | `kind` 별 **읽기의 정본.** 취입 한 함수에 있던 갈래 열둘을 여기로 뗐다 |
 | `src/firelane/seg/basisno.py` | 구간 라벨을 **도로명주소 기초번호**로 만든다 |
@@ -4836,6 +4836,8 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/cv_queue.py` | 영상판정을 **어느 구간부터** 붙일지 순서만 정한다. 판정은 안 한다 |
 | `tools/survey_queue.py` | **다음에 뭘 잴지 정하는 대장**(`survey_queue.csv`) — 사유 일곱(소방서 지정 · 소스 충돌 · 대칭폭 · escape · 진폭 · 폭 1m 미만 · 대장 괴리)을 모아 한 줄로, `occ_pressure_rank` 순(null 은 뒤 · 이미 잰 것은 맨 뒤). 사유 정의가 한 곳에만 있고 부를 때마다 사유별 수를 찍는다. **PLAN 에 올리지 않는다 · 판정에 안 닿는다** |
 | `tools/occ_pressure.py` | β 의 **수요점**을 건축물대장(레이크)에서 만든다 — 818동·1,794단위 → 좌표에 닿는 774동·1,744단위. 사람이 부른다. 한 지번에 건물관리번호가 여럿이면 첫 매칭 하나(근사) |
+| `tools/ledger_contract_nfa_ems.py` | 대장 `datasets.nfa_ems` 에 `contract` 블록(추출 선언)을 **텍스트 삽입**으로 넣는다(§646). 추출 선언을 든 항목은 `hits` 전부를 읽으므로 `primary` 요구가 사라지고 무계약 래칫이 돌아온다 — 래칫을 올려 덮지 않고 원인을 없앴다. ★ 이 도구가 넣은 `filter` 는 `sgg_nm=동구` **하나**였고 광주 외 다섯 광역시의 동구를 섞었다(406,168행) — §647 이 시도 조건을 더해 고쳤다. 멱등 · 앵커를 못 찾으면 실패한다 |
+| `tools/finish_647_seal.py` | §647 이 만든 문서 빈 곳을 닫는다 — 이 절의 도구 둘 등재와 `extract` 두 행의 갱신. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/fetch_api.py` | 공공데이터포털 표준데이터 API 를 **같은 방법으로 다시 받는** 도구(`FIRE_LANE_DATA_GO_KR_KEY` · 지금은 키가 필요 없다 · PLAN 행 141(닫힘)). 호출은 `--run` 일 때만 |
 | `tools/ledger_add_nfa_ems.py` | 대장에 `datasets.nfa_ems` 를 **텍스트 삽입**으로 등재한다. `yaml.dump` 를 안 쓴다 — 주석이 근거를 드는 대장이라 라운드트립이면 그 근거가 날아간다(`docnum_check.py:528` · `depgroups_check.py:85` 가 같은 이유로 포기했다). 멱등 · 앵커(`nfa_fire_incident:`)를 못 찾으면 자리를 추측하지 않고 실패한다 |
 | `tools/fix_vintage_8digit.py` | landing 파일명과 대장 `files:` 의 vintage 를 `YYYY1231` 로 맞춘다. `naming` 은 `YYYYMMDD`·`YYYYMM`·`YYYY` 를 받는데 `normalize_raw` 의 provider 규칙이 `\d{8}` 만 받아 7파일이 통째로 안 걸렸다(§646). **정규식을 안 고친 이유** — 8자리 전제가 `ledger_fields.py:25` 의 `updated` 유도에도 박혀 있어 넓히면 그쪽이 조용히 깨진다 |

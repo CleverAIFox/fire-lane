@@ -114,7 +114,78 @@ def test_the_lineage_names_every_input_file_with_its_hash_and_row_counts(tmp_pat
     assert [f["name"] for f in ex["files"]] == ["a_2023.csv", "b_2024.csv"]
     for f in ex["files"]:
         assert f["sha256"] == hashlib.sha256(pathlib.Path(tmp_path / f["name"]).read_bytes()).hexdigest()
+        assert f["bytes"] == (tmp_path / f["name"]).stat().st_size, "바이트도 계보에 든다 — 원본을 내린 뒤 acquire --verify 의 짝"
     assert rec["source_sha256"] == ",".join(f["sha256"][:16] for f in ex["files"])
+
+
+# ── 같은 이름이 여러 시도에 있다(동구) — 조건 하나로는 못 가른다 ──
+def test_a_filter_list_keeps_only_rows_matching_every_condition(tmp_path):
+    body = "SGG_NM,CTPV_NM,n\n동구,광주광역시,1\n동구,대구광역시,2\n 동구 ,광주광역시,3\n서구,광주광역시,4\n"
+    flt = [{"column": "sgg_nm", "equals": "동구"}, {"column": "ctpv_nm", "equals": "광주광역시"}]
+    c = _ctx(tmp_path, {"a.csv": body}, contract={"normalize_columns": "lower_strip", "filter": flt})
+    rec = read_csv_table(c)
+    assert _out(c)["n"].tolist() == ["1", "3"], "대구 동구(2)와 광주 서구(4)는 빠진다"
+    assert rec["extract"]["filter"] == flt and rec["extract"]["files"][0]["stripped_matches"] == 1
+
+
+def test_every_condition_of_a_filter_list_is_validated():
+    e = {"kind": "csv_table", "contract": {"filter": [{"column": "a", "equals": "x"}, {"column": "b"}]}}
+    assert any("둘뿐" in m for m in extract.problems("k", e))
+
+
+def test_conditions_accepts_one_dict_or_a_list_and_nothing_is_none():
+    one = {"column": "a", "equals": "x"}
+    assert extract.conditions(one) == [one] and extract.conditions([one, one]) == [one, one] and extract.conditions(None) == []
+
+
+# ── 원본을 내린 항목은 계보를 지키고, 그 폴더에서 읽는 길이 있다(§647) ──
+def test_kept_preserves_the_last_record_only_when_the_raw_is_absent_and_declared_missing(tmp_path):
+    (tmp_path / "t.csv").write_text("x", encoding="utf-8")
+    prev = {"status": "OK", "extract": {"rows_out": 1}, "outputs": ["t.csv"]}
+    e = {"kind": "csv_table", "status": "missing", "missing_why": "받지 않기로 했다", "contract": dict(CON)}
+    assert extract.kept(prev, e, tmp_path, []) is prev
+    assert extract.kept(prev, e, tmp_path, [tmp_path / "a.csv"]) is None, "실물이 있으면 다시 읽는다"
+    assert extract.kept(prev, {**e, "status": "ok"}, tmp_path, []) is None, "missing 을 선언하지 않았으면 MISSING 이 맞다"
+    assert extract.kept({**prev, "outputs": ["gone.csv"]}, e, tmp_path, []) is None, "산출물이 없으면 지난 기록은 거짓이다"
+    assert extract.kept({"status": "OK", "outputs": ["t.csv"]}, e, tmp_path, []) is None, "계보가 없는 기록은 지킬 이유가 없다"
+    assert extract.kept(None, e, tmp_path, []) is None
+
+
+def test_paths_match_the_ledger_names_in_a_flat_folder(tmp_path):
+    for n in ("nfa_ems_kr_2019.csv", "nfa_ems_kr_2020.csv", "other.csv"):
+        (tmp_path / n).write_text("x", encoding="utf-8")
+    e = {"stem": "nfa_ems", "ext": ["csv"], "files": ["nfa/nfa_ems_kr_2019.csv", "nfa/nfa_ems_kr_2020.csv"]}
+    assert [q.name for q in extract.paths(e, tmp_path)] == ["nfa_ems_kr_2019.csv", "nfa_ems_kr_2020.csv"]
+
+
+def test_source_dir_needs_a_folder_and_an_explicit_only(tmp_path):
+    import pytest
+    assert extract.source_dir(str(tmp_path), ["nfa_ems"]) == tmp_path.resolve()
+    with pytest.raises(SystemExit, match="폴더가 아니다"):
+        extract.source_dir(str(tmp_path / "nope"), ["nfa_ems"])
+    with pytest.raises(SystemExit, match="--only"):
+        extract.source_dir(str(tmp_path), None)
+
+
+def test_scope_max_catches_an_overbroad_filter_that_scope_min_lets_through(tmp_path):
+    body = "SGG_NM,CTPV_NM\n" + "동구,광주광역시\n" * 3 + "동구,대구광역시\n" * 9
+    one = {"normalize_columns": "lower_strip", "filter": {"column": "sgg_nm", "equals": "동구"}, "scope_min": 2, "scope_max": 5}
+    c = _ctx(tmp_path, {"a.csv": body}, contract=one)
+    rec = read_csv_table(c)
+    assert rec["status"] == "FAIL" and "scope_max" in rec["error"] and not (c.out / "t.csv").exists(), "12행 > 상한 5 — 하한 2 는 이것을 통과시켰다"
+    both = {**one, "filter": [one["filter"], {"column": "ctpv_nm", "equals": "광주광역시"}]}
+    assert read_csv_table(_ctx(_sub(tmp_path, "ok"), {"a.csv": body}, contract=both))["features"] == 3
+
+
+@pytest.mark.parametrize("bad", [0, -1, True, "9", 1.5])
+def test_scope_max_must_be_a_positive_integer(bad):
+    e = {"kind": "csv_table", "contract": {"filter": {"column": "a", "equals": "x"}, "scope_max": bad}}
+    assert any("scope_max" in m for m in extract.problems("k", e))
+
+
+def test_scope_max_below_scope_min_is_refused():
+    e = {"kind": "csv_table", "contract": {"filter": {"column": "a", "equals": "x"}, "scope_min": 10, "scope_max": 5}}
+    assert any("통과할 수 있는 행" in m for m in extract.problems("k", e))
 
 
 # ── ④ 조용히 덜 하지 않는다 ──
@@ -191,11 +262,11 @@ def test_the_vocabulary_names_the_reading_module():
     assert ledger.CONTRACT_KEYS["normalize_columns"][1] == ledger.CONTRACT_KEYS["filter"][1] == "firelane.read.extract"
 
 
-def test_no_real_ledger_entry_uses_the_keys_yet():
-    """대장의 `scope` 를 바꾸지 않는다 — 추출이 선 뒤의 사람 판단이다. 실제 항목은 이 키를 아직 안 쓰고 선언이 있다면 모양이 맞아야 한다."""
+def test_only_nfa_ems_uses_the_keys_and_its_declaration_is_well_formed():
+    """대장의 `scope` 를 바꾸지 않는다 — 추출이 선 뒤의 사람 판단이다. 이 키를 쓰는 항목은 nfa_ems 하나이고(nfa_fire_incident · nfa_dispatch_119 는 scope 전환 전이다) 모양이 맞아야 한다."""
     from firelane import ledger
     ds = ledger.load_sources()["datasets"]
-    assert [k for k, e in ds.items() if extract.declared(e)] == []
+    assert [k for k, e in ds.items() if extract.declared(e)] == ["nfa_ems"]
     assert all(extract.problems(k, e) == [] for k, e in ds.items())
 
 

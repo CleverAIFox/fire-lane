@@ -2967,6 +2967,18 @@ datasets:
           'DCLR_PSTN_LOT': {'empty': 7, 'ws': 0, 'range': [126.914805, 126.930845]}
           'DCLR_PSTN_LAT': {'empty': 7, 'ws': 0, 'range': [35.146356, 35.155195]}
   nfa_ems:
+    status: missing
+    missing_why: |
+      2026-11-06 — **전국본 7파일 8.4GB 를 쥐지 않기로 했다.** 쓰는 것은 광주 동구 47,632행(약 30MB)이다.
+      ★ 슬라이스의 자리는 **processed** 다(DECISIONS §647 · ㉰). `data/processed/nfa_ems.csv` 를
+        ingest 의 추출 단계(`read/extract.py`)가 낸다 — 층을 새로 만들지 않았다.
+      ★ 재현에 필요한 것은 원본 바이트가 아니라 「무엇을 어떤 조건으로 걸렀나」이고 그것이 둘 있다 —
+        ① 아래 `contract`(normalize_columns · filter) ② `_manifest.json` 의 `extract` 계보
+        (입력 7파일별 sha256 · 바이트 · 전후 행 수). 다시 받으면 `acquire --verify` 가
+        `data/_acquire.json` 의 sha · 바이트로 동일본인지 즉시 가린다.
+      ★ **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다(vworld_uq164 와 같은 꼴).
+      ★ 실물 파일은 지우지 않았다. 선언으로 내렸고 삭제는 사람이 친다. 그 전까지 raw/nfa 에 남는다.
+      ★ 다시 받는 조건 — 슬라이스의 조건(시도 · 시군구)을 바꿀 때 · 새 연도를 더할 때.
     feeds: []
     feeds_why: |
       ★ 미투입이다. 2026-11-05 반입. 쓸 곳은 cost 의 거리-시간 관계 검증과
@@ -2996,10 +3008,13 @@ datasets:
     encoding: utf-8
     contract:
       normalize_columns: lower_strip
+      # ★ 「동구」는 여섯 광역시에 있다(광주 · 대구 · 대전 · 부산 · 울산 · 인천). sgg_nm 하나로 걸렀다가
+      #   406,168행이 나왔다 — 광주는 47,632 다. 시도로 한 번 더 건다(AND).
       filter:
-        column: sgg_nm
-        equals: 동구
+        - {column: sgg_nm, equals: 동구}
+        - {column: ctpv_nm, equals: 광주광역시}
       scope_min: 40000
+      scope_max: 60000          # ★ 하한만으로는 과다를 못 잡는다 — 단일 조건이 406,168행을 냈고 통과했다. 실측 47,632 · 해마다 7천 안팎 늘어난다
       required_cols: [sgg_nm, grnds_dstnc, dclr_tm, dspt_tm, grnds_arvl_tm, ptn_cntc_tm]
     coords:
       none: 「좌표 칸이 없다 — 거리를 칸으로 든다(grnds_dstnc)」

@@ -46395,3 +46395,66 @@ csv 비기하 24개는 shapely · geopandas · pyogrio · pyproj 를 한 번도 
   - **되돌리는 조건:** `nfa_ems` 에 소비자가 생기면 13 으로 내린다.
 - **`tools/` 에 올린 셋을 MASTER §23-2 에 등재했다**(`ledger_add_nfa_ems` · `fix_vintage_8digit` · `finish_c1_seal`). `sealcov`(빈 곳)와 느슨해진 래칫은 `--write` 가 못 고치는 자리다(§636). 적는 주체가 사람이라는 뜻이지 적는 방법이 손이라는 뜻이 아니라서, **`finish_c1_seal.py` 가 그 둘을 넣었다** — MASTER 의 도구 셋 등재와 `PENDING_MAX` 의 값 · 사유 주석. 멱등이고 앵커를 못 찾으면 자리를 추측하지 않고 실패한다.
 - 이 소절은 **사실을 옮겨 적은 것**이다. 래칫 값 · 코드는 이 소절이 안 건드렸다.
+
+
+## 647. 레이크 용량 설계 — 지역 슬라이스는 `processed` 에 두고 전국 원본은 쥐지 않는다 · 추출 필터의 시도 누락을 고쳤다 (판정 불변)
+
+유병률  **2회** — 「쓰지도 않을 전량을 raw 에 통째로 넣는다」. 첫째는 `vworld_uq164` 970MB(받지 않기로 했다 · 2026-11-02), 둘째가 `nfa_ems` 8.4GB(2026-11-05)다. 앞의 판단을 뒤의 반입이 어겼다.
+
+강제자  `tests/test_extract.py`(필터 목록 AND · 계보 바이트 · 실제 대장의 추출 항목 · `kept` · `paths`) · `src/firelane/extract_decl.py`(목록의 모든 조건을 검사) · `sources.yaml` 의 `nfa_ems.missing_why`(사유가 대장에 산다 — 이 소절은 그 근거)
+        **하위 여섯**이 이 칸을 물려받는다
+
+### 647-1. 무엇이 잘못됐나
+`raw` 가 3.7GB → 12.57GB 가 됐다. 쓰는 것은 광주 동구 47,632행이고 나머지는 한 번도 안 읽는다. 이 저장소가 이미 반대 판단을 둘 내려놨다 — `backup_policy`(raw 는 한 벌 · url 로 전량 재취득 가능하고 `_acquire.json` 이 sha 를 든다) · `vworld_uq164`(`status: missing` · 「sha 가 없어서 내리는 것이 아니다 — 받지 않기로 한 것이다」). 970MB 를 그렇게 처리하고 8.4GB 를 통째로 넣은 것이 앞뒤가 안 맞는다.
+**「원본」의 정의도 틀렸다.** 소방청 CSV 는 원천 DB 에서 뽑아 내린 가공본이다(BOM 달린 utf-8-sig · CRLF · 연도마다 다른 칸 이름 케이스). 그것을 불변 원본이라 부르며 전량을 쥐는 것은 형식만 지킨 것이다. 재현에 필요한 것은 원본 바이트가 아니라 「무엇을 어떤 조건으로 걸렀나」다.
+★ `backup_policy.revisit` 의 방아쇠(「raw 5GB 초과」)가 당겨져 있었다. 전국본을 내리면 raw 는 다시 약 4.2GB 로 돌아간다(실물은 사람이 지운 뒤).
+
+### 647-2. 고른 것 — ㉰ `processed`
+슬라이스의 자리는 **`data/processed`** 다. `ingest` 의 추출 단계(`read/extract.py`)가 `processed/nfa_ems.csv` 를 내고 있었다 — **층을 새로 만들지 않았다.** 전국본은 대장에서 `status: missing` 으로 내린다(`vworld_uq164` 와 같은 꼴).
+
+| 안 | 버린 까닭 |
+| --- | --- |
+| ㉮ raw 에 슬라이스를 새 자산으로 | `raw` 의 뜻이 「받은 그대로」다. 우리가 거른 행 집합은 받은 것이 아니다 — 층의 뜻이 깨진다. 거기에 `nfa_*_jngj-donggu` 파생본이 이미 섞여 있어(수동 스크립트의 산물) 그것이 사고(§644-3)의 자리이기도 했다 |
+| ㉯ norm 에 슬라이스를 | 행을 거르는 것은 `prep` 머리말(「형식만 통일 · 값은 안 바꾼다」)의 **경계 밖**이다 — 값은 안 바꾸지만 **집합**을 바꾼다. 경계를 넓히면 `norm` 이 「형식」의 층이 아니게 된다. 게다가 `norm` 은 `regenerable: true` 인데 입력인 raw 가 없으면 재생성이 안 되고, `ingest` 는 `norm` 을 읽지 않는다(`layers.norm` 의 note) |
+| **㉰ processed** | 추출은 **값을 읽어 걸러 내는 일**이고 `ingest` 의 몫이다(`prep` 머리말이 이미 그렇게 적었다). `processed` 는 `regenerable: true` · 「파이프라인 정본」이다. 재생성이 url 재취득에 의존하는 약점은 있지만 **선례가 있고**(`vworld_uq164`) 그 약점을 계보가 메운다 |
+
+★ **㉰ 의 결함을 숨기지 않는다.** (a) 슬라이스가 커밋되지 않는다(`processed` 는 ignore · 예외는 넷뿐) — 잃으면 8.4GB 를 다시 받아야 한다. 계보와 sha 는 `_manifest.json` · `_acquire.json`(둘 다 커밋)에 있어 **무엇을 받아 어떻게 걸렀는지는 안 잃는다**. (b) 재생성이 재취득에 의존한다 — 필요하면 받는다. 고르지 않고 둘을 섞지 않았다 — 슬라이스는 `processed` 에만 있다.
+
+### 647-3. 소급 — 실물로 돌려 본 것
+- **① 추출 단계가 실물에서 돈다.** `ingest --only nfa_ems` · 7파일 21,036,207행 → 47,632행. **최대 메모리 380~844MB · 3~5분 · 종료 0**(OOM 아니다). §646-5 의 미검증 칸을 메웠다.
+- ★ **그런데 처음 돌렸을 때 406,168행이 나왔다 — §646 의 결함이다.** 필터가 `sgg_nm == 동구` 하나였는데 「동구」는 **여섯 광역시**에 있다(광주 47,632 · 대구 138,874 · 대전 99,529 · 부산 48,245 · 울산 43,053 · 인천 28,835). `scope_min: 40000` 이 이것을 못 잡았다(하한만 보니 큰 쪽으로 틀린 것은 통과한다). 139행 사고(§644-3)와 반대 방향의 같은 병이다 — **조용히 다른 행이 들어온다**.
+  - 고침: `filter` 를 `{column, equals}` 하나 **또는 그 목록(모든 조건 AND)** 으로 열었다. `nfa_ems` 는 `sgg_nm=동구 & ctpv_nm=광주광역시`. 선언 검사는 목록의 모든 조건에 적용된다. 연산자는 여전히 `equals` 뿐이다.
+  - 결과가 **대장이 이미 적은 값과 연도별로 전부 같다** — 3,391 · 6,226 · 7,089 · 8,164 · 7,969 · 7,616 · 7,177(합 47,632).
+- **② 계보가 남는다.** `_manifest.json` 의 `extract.files[]` 에 파일별 `sha256` · `rows_in` · `rows_out` · `stripped_matches` 가 있고, **바이트가 없었다 — 더했다**(`bytes`). 일곱 파일의 sha256 · 바이트가 `data/_acquire.json` 과 **전부 일치**한다(대조). 이것이 전국본을 내릴 근거다.
+- **③ 내렸다 — 선언으로.** `nfa_ems` 에 `status: missing` · `missing_why`. **파일은 지우지 않았다**(raw/nfa 에 일곱 개 그대로) — **삭제는 사람이 친다.** `_acquire.json` 의 sha · 바이트는 남는다.
+  - ★ **내리는 순간 계보가 사라지는 구멍이 있었다.** 실물이 없으면 `build()` 가 `MISSING` 레코드를 내고 `_manifest.json` 의 `extract` 와 산출물 항목을 덮어쓴다. `ingest` 에 한 분기를 더했다 — **추출을 선언하고 `missing` 인 항목이 실물도 없으면 지난 `OK` 레코드(계보 · 산출물이 실제로 있을 때만)를 그대로 둔다**(`[KEPT]`). raw 가 빈 레이크를 가리켜 실제로 돌려 매니페스트가 **바이트 단위로 같음**을 확인했다.
+- **④** `acquire --verify`(93개 · 전부 일치) · `ledger_check`(FAIL 0 · WARN 0) · `contract --declared`(✓ · 무계약 38 · 래칫 38) 초록. 래칫은 아래 647-6.
+
+- **④′ 상한이 필요한가 — 필요하다. 「필터 조건이 scope 와 일관한가」는 필요 없다.**
+  - **하한(`scope_min`)은 과소를 잡고 과다는 못 잡는다.** 40000 은 47,632 에도 406,168 에도 통과한다. 선언의 결함이 관문을 지난 사례다. 그래서 추출 전용 `scope_max`(거른 뒤 행 수 상한)를 더했다 — `nfa_ems` 는 60000(실측 47,632 · 해마다 7천 안팎). 단일 조건(406,168)은 이제 FAIL 이고 산출물을 안 쓴다(시험이 재현한다). 어휘 소유자는 `filter` 와 같은 `read.extract` 다.
+  - `contract.rows`(±허용폭)는 못 쓴다 — 그 판정은 **입력 CSV 를 읽어** 센다. 추출 항목에서는 8.4GB 를 통째로 읽는 경로다(어제의 `required_cols` · `scope_min` 선언도 `missing` 이 되기 전에는 그 경로였다). `missing` 선언이 `contract` 의 읽기를 건너뛰게 한 것이 부수 이득이다.
+  - **일관성 검사는 안 만든다.** `scope`(`kr` · `jngj-donggu` …)는 산문 식별자고 컬럼 조건으로 가는 사상이 어디에도 없다. 만들려면 「scope → 조건」 표를 손으로 선언해야 하는데 그것은 필터를 쓴 사람이 같은 믿음으로 같이 쓰는 두 번째 선언이다 — 같은 실수를 두 번 하는 검사다. 상한과 계보(연도별 `rows_out`)가 크기를 묻고, 대장 `what` 의 연도별 건수가 사람의 기대를 든다. **한계:** 상한은 한 자릿수 배로 틀린 것을 잡지 몇 퍼센트 틀린 것은 못 잡는다 — 그것은 연도별 대조(위 47,632 일치)가 했다.
+
+### 647-4. 앞으로 들어올 것 — 처음부터 슬라이스로
+`ingest --only <키> --extract-from <폴더>` 를 더했다. **추출을 선언한 항목에만** 입력을 raw 가 아니라 그 폴더에서 읽는다(이름으로 맞춘다 — `landing/_hold` 는 provider 폴더가 없는 평평한 곳이다). 순서는 이렇다.
+1. 대장에 항목을 `status: missing` 으로 세우고 `contract`(normalize_columns · filter 목록 · scope_min)와 `files` 를 적는다.
+2. `ingest --only <키> --extract-from /…/landing/_hold` — 전국본은 **raw 에 오르지 않고** 제자리에서 읽힌다. 계보(sha · 바이트 · 전후 행 수)가 `_manifest.json` 에 남는다.
+3. sha · 바이트는 `acquire` 가 raw 의 것만 들므로 **계보가 그 자리를 한다** — 다시 받았을 때의 동일본 판별은 계보의 sha 로 한다.
+- **이 판에서 안 한 것:** `_hold/` 의 파일을 raw 로 올리지 않았다 · `nfa_fire_incident`(scope `jngj-donggu`) · `nfa_dispatch_119`(scope `jngj-dongmyeong`)의 scope 전환을 하지 않았다(canonical 이 전국본을 개명하고 glob 이 겹친다 · §646-1). 둘은 `_hold` 에 그대로다. 구조 4개년 · 소방대상물 7개년은 아직 레이크 밖이다. **새 경로를 실제 `_hold` 파일로는 돌리지 않았다** — `--extract-from` 은 `nfa_ems` 를 raw/nfa 에서 읽는 것으로만 전량 검증했고(47,632행 · 위와 같음), 평평한 폴더에서의 경로 해석은 `--check` 로만 봤다.
+
+### 647-5. 남은 것 · 한계
+- **ingest 봉인 87종이 어제 커밋 시점부터 코드 지문과 어긋나 있다.** `ingest` 의 import 폐포에 `read/extract.py` 가 들어 있어 §646 이 코드 지문을 움직였다(봉인 `9b940eba…` 대 지금 `79c54cd7…`). 이 판이 만든 것이 아니고 **고치지도 않았다**(`--reseal-code` 는 판정 폐포를 다시 도장하는 사람의 판단이다). 지금 전체 `ingest` 를 돌리면 샤드가 찢어져 다시 빌드한다 — 8GB 기계의 `ngii_road` 가 OOM 이다. 이 판은 `nfa_ems` 한 건의 봉인만 최종 코드로 적었다.
+- `[KEPT]` 분기의 **판별**(`read/extract.kept`)과 `--extract-from` 의 **이름 맞춤**(`paths`)은 `tests/test_extract.py` 가 문다(실물 있음 · `missing` 아님 · 산출물 없음 · 계보 없음이 각각 None). **`ingest.main` 을 지나는 시험은 여전히 없다** — 한 덩어리라 합성으로 못 문다. 그 몫은 위 실물 시험(빈 raw · 매니페스트 바이트 동일)이 근거다.
+- `ingest.py` 줄 수 상한 662 → 677(`sizetable.EXCEPTIONS`). 확산이다 — 로직은 `read/extract.py` 로 내보내고 부르는 줄만 남겼다.
+- 슬라이스(17MB)는 커밋되지 않는다 — 647-2 (a).
+- **판정 불변.** `golden check` L1 · L2 · L3 OK(구간 1,287 · blocked 193 · clear 275 · needs_cv 283 · unknown 536) · `golden stale` 재잠금 불필요. 판정 폐포는 `firelane.segments` 의 import 닫힘이고 `ingest.py` · `read/extract.py` · `extract_decl.py` · `ledger.py` 는 그 안에 없다(닫힘에서 확인). 상수는 안 건드렸다.
+
+### 647-6. 래칫 — 어제부터 빨갰던 것과 이 판이 만든 것
+이 판을 시작할 때 `ratchet` 는 어제 커밋(`7a8e2885`) 상태에서 **이미 셋이 느슨해져 있었다**(깨끗한 트리에서 확인): `docseal` UNSEALED 0→1 · `mutate` SURVIVORS 82→83 · UNSORTED 57→58. 83 은 그 커밋의 `mutation.json` 이 이미 83 으로 찍고 있고, `unusedcheck.PENDING_MAX` 13→14 의 `14 → 15` 변이가 살아남은 것이다(§646-6). **이 판이 만든 것이 아니라서 안 건드렸다** — 느슨해진 쪽은 `--write` 가 받지 않는다. 사람이 올릴지(확산 · 그 변이를 죽이는 시험을 달지) 가를 일이다.
+이 판이 **새로 만든 것**과 처리:
+- `sizetable` `ingest.py` 662→690 → 로직을 `read/extract.py`(`paths` · `source_dir` · `kept`)로 내보내 **677** 로 줄였다. 못 없앤 15줄은 상한을 677 로 올렸다 — **확산**이다(새 능력). 사유는 `tools/sizetable.py` 의 그 자리와 여기.
+- `srccov` SRC_UNTESTED 1→2 · SRC_IO_UNTESTED 5→6 → `conditions` · `source_dir` 를 이름으로 부르는 시험을 달아 **원인을 없앴다**.
+- `suppress` RATCHET 55→57 → 내가 단 `# noqa: PLC0415` 둘을 import 를 위로 올려 **없앴다**.
+- `sealcov` 빈 곳 1(`tools/ledger_contract_nfa_ems.py` — §646 이 올린 도구) → `tools/finish_647_seal.py` 로 MASTER §23-2 에 등재했다. 덮임 668/668 · 래칫 666→668(**조이는 쪽**).
+- `mutate` 장부는 `sizecheck` 한 도구가 낡아 다시 쟀다(`--write --stale`).
+- 도장: 33절이 무효였고 이 판의 변경 때문이다(`sources.yaml` · `ledger.py` · `sizetable.py` · `ingest.py`가 바뀌었다). 읽은 것 — ingest 를 다루는 §435 · §461(샤드 루프의 OOM 처리) · §634(`build` 의 좌표 선언 거부)는 이 판이 건드린 줄과 겹치지 않는다. `sources.yaml` 에 기대는 절들은 `nfa_ems` 항목 하나만 바뀌었고 그 항목을 말하는 절이 없다. 그래서 다시 찍었다.

@@ -15,6 +15,13 @@ NORMALIZERS = {"lower_strip": lambda c: str(c).strip().strip('"').lower()}
 FILTER_KEYS = {"column", "equals"}
 
 
+def conditions(flt) -> list[dict]:
+    """`filter` 는 {column, equals} 하나이거나 그 목록이다(모두 맞는 행 — AND). 하나로 못 가르는 이름(여러 시도에 같은 「동구」)이 있어서 연다."""
+    if flt is None:
+        return []
+    return list(flt) if isinstance(flt, list) else [flt]
+
+
 def declared(e: dict) -> bool:
     """이 항목이 추출 단계를 쓰는가 — `normalize_columns` 나 `filter` 중 하나라도 적혔다."""
     con = (e or {}).get("contract") or {}
@@ -42,22 +49,30 @@ def problems(key: str, e: dict) -> list[str]:
     if e.get("kind") not in KINDS:
         out.append(f"갈래 `{e.get('kind')}` 는 normalize_columns · filter 를 안 읽는다 — 조용히 안 걸린다(읽는 갈래: {list(KINDS)})")
     mode, flt = con.get("normalize_columns"), con.get("filter")
+    if (hi := con.get("scope_max")) is not None:
+        lo = con.get("scope_min", 1 if flt else 0)
+        if isinstance(hi, bool) or not isinstance(hi, int) or hi < 1:
+            out.append(f"scope_max `{hi!r}` 는 1 이상의 정수다")
+        elif isinstance(lo, int) and hi < lo:
+            out.append(f"scope_max {hi} < scope_min {lo} — 통과할 수 있는 행 수가 없다")
     if mode is not None and mode not in NORMALIZERS:
         out.append(f"normalize_columns `{mode}` — 어휘는 {sorted(NORMALIZERS)}")
     if flt is None:
         return out
-    if not isinstance(flt, dict) or set(flt) != FILTER_KEYS:
-        return out + [f"filter 는 {{column, equals}} 둘뿐이다(다른 연산자는 안 만든다) — 지금 {sorted(flt) if isinstance(flt, dict) else flt!r}"]
-    col, eq = flt["column"], flt["equals"]
-    if not isinstance(col, str) or not col.strip():
-        out.append("filter.column 이 비었다")
-    if eq is None or isinstance(eq, (dict, list, bool)) or str(eq).strip() == "":
-        out.append("filter.equals 는 비지 않은 값 하나다(빈 값으로 거르면 칸이 빈 행을 고른다)")
-    if isinstance(col, str) and col.strip() and mode in NORMALIZERS and NORMALIZERS[mode](col) != col:
-        out.append(f"filter.column `{col}` — 정규화 **뒤** 이름으로 적는다(`{NORMALIZERS[mode](col)}`)")
+    conds = conditions(flt)
+    if not conds or any(not isinstance(f, dict) or set(f) != FILTER_KEYS for f in conds):
+        return out + [f"filter 는 {{column, equals}} 둘뿐이다(다른 연산자는 안 만든다 · 여럿이면 목록 = AND) — 지금 {flt!r}"]
     cols = [str(c) for c in ((e.get("schema") or {}).get("columns") or [])]
-    if cols and isinstance(col, str):
-        have = normalize(cols, mode) if mode in NORMALIZERS else cols
-        if col not in have:
-            out.append(f"filter.column `{col}` 이 schema.columns{' (정규화 뒤)' if mode else ''} 에 없다 — 필터가 조용히 안 걸린다")
+    for f in conds:
+        col, eq = f["column"], f["equals"]
+        if not isinstance(col, str) or not col.strip():
+            out.append("filter.column 이 비었다")
+        if eq is None or isinstance(eq, (dict, list, bool)) or str(eq).strip() == "":
+            out.append("filter.equals 는 비지 않은 값 하나다(빈 값으로 거르면 칸이 빈 행을 고른다)")
+        if isinstance(col, str) and col.strip() and mode in NORMALIZERS and NORMALIZERS[mode](col) != col:
+            out.append(f"filter.column `{col}` — 정규화 **뒤** 이름으로 적는다(`{NORMALIZERS[mode](col)}`)")
+        if cols and isinstance(col, str):
+            have = normalize(cols, mode) if mode in NORMALIZERS else cols
+            if col not in have:
+                out.append(f"filter.column `{col}` 이 schema.columns{' (정규화 뒤)' if mode else ''} 에 없다 — 필터가 조용히 안 걸린다")
     return out

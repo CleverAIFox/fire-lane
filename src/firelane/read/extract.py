@@ -8,7 +8,8 @@ extract.py — 전국 원본에서 **지역 파생본을 만드는 추출 단계
 
 ── 대장의 `contract` 키 둘 ────────────────────────────────────
     normalize_columns: lower_strip      칸 이름을 `strip().strip('"').lower()` 로 맞춘다 — **값은 안 건드린다**
-    filter: {column: clmty_emd_nm, equals: 동명동}     정규화한 **뒤의** 칸 이름으로 적는다 · `equals` 외의 연산은 안 만든다
+    filter: {column: clmty_emd_nm, equals: 동명동}     (목록이면 AND — 「동구」는 여섯 시도에 있다) 정규화한 **뒤의** 칸 이름으로 적는다 · `equals` 외의 연산은 안 만든다
+    scope_max: 60000                    거른 뒤 행 수 **상한**(추출 전용) — 하한은 과소를 잡고 상한은 과다를 잡는다. 「동구」가 여섯 광역시에 있어 단일 조건이 406,168행을 냈고 하한 40000 이 통과시켰다(§647)
     scope_min: 100                      (기존 키) 거른 뒤 행 수 하한 — 필터가 있으면 기본 1(0행은 조용히 통과시키지 않는다)
 
 ★ **여러 파일**(연도별 일곱 등)을 `hits` 전부 읽어 하나로 잇는다. 청크로 읽는다(가장 큰 파일이 3.7GB) — 거른 행만 메모리에 둔다.
@@ -22,10 +23,14 @@ OUT   `<key>.csv`(utf-8-sig) · `rec` 의 계보 조각
 """
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pandas as pd
 
+from firelane import ledger
 from firelane.encoding import CANDIDATES_CSV_READ
-from firelane.extract_decl import KINDS, NORMALIZERS, declared, normalize, problems  # noqa: F401  이 모듈이 다시 내보낸다(읽는 쪽 · 시험)
+from firelane.extract_decl import KINDS, NORMALIZERS, conditions, declared, normalize, problems  # noqa: F401  이 모듈이 다시 내보낸다(읽는 쪽 · 시험)
 from firelane.hashing import sha256
 from firelane.read.ctx import Ctx
 
@@ -38,15 +43,18 @@ def _pass(path, enc, mode, flt):
     for ch in pd.read_csv(path, encoding=enc, dtype=str, chunksize=CHUNK, na_filter=False):
         if cols is None:
             cols = normalize(ch.columns, mode) if mode else [str(c) for c in ch.columns]
-            if flt and flt["column"] not in cols:
-                raise ValueError(f"{path.name}: filter.column `{flt['column']}` 이 헤더에 없다 — 헤더 {cols[:8]}{' …' if len(cols) > 8 else ''}")
+            for f in conditions(flt):
+                if f["column"] not in cols:
+                    raise ValueError(f"{path.name}: filter.column `{f['column']}` 이 헤더에 없다 — 헤더 {cols[:8]}{' …' if len(cols) > 8 else ''}")
         ch.columns = cols
         n_in += len(ch)
         if flt:
-            raw = ch[flt["column"]]
-            eq = str(flt["equals"])
-            hit = raw.str.strip() == eq
-            n_strip += int((hit & (raw != eq)).sum())
+            hit, exact = True, True
+            for f in conditions(flt):
+                raw, eq = ch[f["column"]], str(f["equals"])
+                hit &= raw.str.strip() == eq
+                exact &= raw == eq
+            n_strip += int((hit & ~exact).sum())
             ch = ch[hit]
         if len(ch):
             parts.append(ch)
@@ -65,6 +73,37 @@ def _read_one(path, enc, mode, flt):
     raise last
 
 
+def paths(e: dict, base: Path) -> list[Path]:
+    """`--extract-from` 의 입력. 대장의 이름(glob)을 폴더 하나에서 **이름으로만** 맞춘다 — `landing/_hold` 는 provider 폴더가 없는 평평한 곳이다.
+
+    ★ 추출을 선언한 항목에만 부른다(ingest 가 가른다). 전국본을 raw 에 올리지 않고 제자리에서 읽는 길이다(DECISIONS §647-4).
+    """
+    return sorted({q for pat in ledger.globs(e) for q in base.glob(Path(pat).name) if not ledger.is_acquisition_meta(q)})
+
+
+def source_dir(arg: str, only) -> Path:
+    """`--extract-from` 인자를 폴더로 받는다. `--only` 없이는 안 받는다 — 어느 항목이 그 폴더를 읽는지 지목해야 한다."""
+    d = Path(arg).expanduser().resolve()
+    if not d.is_dir():
+        sys.exit(f"★ --extract-from {d} 가 폴더가 아니다")
+    if not only:
+        sys.exit("★ --extract-from 는 --only 와 같이 쓴다 — 추출을 선언한 항목만 그 폴더를 읽는다")
+    return d
+
+
+def kept(prev: dict | None, e: dict, out: Path, hits) -> dict | None:
+    """**원본을 내린 추출 항목의 지난 기록.** 보존할 때만 그 레코드를, 아니면 None.
+
+    전국본을 `status: missing` 으로 내리면 실물이 없어 `build()` 가 `MISSING` 레코드를 내고, 그것이 `_manifest.json` 의 계보(`extract`)와
+    산출물 항목을 **덮어쓴다** — 원본을 내릴 근거가 그 계보인데 내리는 순간 계보가 사라진다. 산출물이 실물로 있을 때만 보존한다(DECISIONS §647-3).
+    """
+    if hits or ledger.absence(e)[0] != "missing" or not declared(e) or not prev:
+        return None
+    if prev.get("status") != "OK" or not prev.get("extract") or not all((out / o).exists() for o in prev.get("outputs", [])):
+        return None
+    return prev
+
+
 def read_extracted(c: Ctx):
     """`csv_table` · `csv_table_multi` 의 추출 경로 — `hits` 전부를 읽어 거르고 하나로 잇는다."""
     key, e, out, rec = c.key, c.e, c.out, c.rec
@@ -74,6 +113,7 @@ def read_extracted(c: Ctx):
     mode, flt = con.get("normalize_columns"), con.get("filter")
     optional = list(con.get("optional_cols") or [])
     floor = int(con.get("scope_min", 1 if flt else 0))
+    ceil = con.get("scope_max")
     parts, files, ref = [], [], None
     for q in sorted(c.hits):
         d, cols, n_in, n_strip = _read_one(q, e.get("encoding"), mode, flt)
@@ -91,14 +131,19 @@ def read_extracted(c: Ctx):
                     p[x] = ""
         d = d[ref] if list(d.columns) != ref else d
         parts.append(d)
-        files.append({"name": q.name, "sha256": sha256(q), "rows_in": n_in, "rows_out": len(d), "stripped_matches": n_strip})
+        files.append({"name": q.name, "sha256": sha256(q), "bytes": q.stat().st_size, "rows_in": n_in, "rows_out": len(d), "stripped_matches": n_strip})
     df = pd.concat(parts, ignore_index=True)[ref]
     n_in, n_out = sum(f["rows_in"] for f in files), len(df)
     lineage = {"normalize_columns": mode, "filter": flt, "rows_in": n_in, "rows_out": n_out, "files": files}
-    print(f"  · {key}: 파일 {len(files)}개 · {n_in:,}행" + (f" → filter {flt['column']}={flt['equals']} → {n_out:,}행" if flt else " (필터 없음)")
+    print(f"  · {key}: 파일 {len(files)}개 · {n_in:,}행" + (f" → filter {' & '.join(f'{f['column']}={f['equals']}' for f in conditions(flt))} → {n_out:,}행" if flt else " (필터 없음)")
           + (f" · 공백을 걷어야 맞은 행 {sum(f['stripped_matches'] for f in files):,}" if flt and any(f["stripped_matches"] for f in files) else ""))
     rec |= {"source_sha256": ",".join(f["sha256"][:16] for f in files), "resolved": " + ".join(f["name"] for f in files), "extract": lineage}
     rec.pop("ambiguous", None)                 # 여럿을 읽는 것이 정상이다. 모호하지 않다
+    if ceil is not None and n_out > int(ceil):
+        rec |= {"status": "FAIL", "features": n_out, "geom": [], "outputs": [],
+                "error": f"거른 뒤 {n_out:,}행 > scope_max {int(ceil):,}(읽은 {n_in:,}행). 조건이 너무 넓다 — 같은 이름이 다른 지역에도 있나(필터를 AND 로 좁혀라)"}
+        print(f"  ★ {key}: {rec['error']}")
+        return rec
     if n_out < floor:
         rec |= {"status": "FAIL", "features": n_out, "geom": [], "outputs": [],
                 "error": f"거른 뒤 {n_out}행 < scope_min {floor}(읽은 {n_in:,}행). 0행은 조용히 통과시키지 않는다 — 칸 이름 · 값 · 헤더 케이스를 확인하라"}

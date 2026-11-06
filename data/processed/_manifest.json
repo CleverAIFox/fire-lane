@@ -34,7 +34,7 @@
       "out": "1423:ac44cf183beed2d9"
     }
   },
-  "generated_at": "2026-11-04T19:28:13.257760+09:00",
+  "generated_at": "2026-11-06T12:54:32.045369+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -3324,6 +3324,181 @@
         "code": "9b940eba91ef1c4f",
         "out": {
           "nfa_rescue.csv": "66cd210b56f6fb13"
+        }
+      }
+    },
+    {
+      "key": "nfa_ems",
+      "source_files": [
+        "nfa/nfa_ems_kr_20191231.csv",
+        "nfa/nfa_ems_kr_20201231.csv",
+        "nfa/nfa_ems_kr_20211231.csv",
+        "nfa/nfa_ems_kr_20221231.csv",
+        "nfa/nfa_ems_kr_20231231.csv",
+        "nfa/nfa_ems_kr_20241231.csv",
+        "nfa/nfa_ems_kr_20251231.csv"
+      ],
+      "source_sha256": "fb4cb83c4a0774bf,ed40f1659187fc55,3cd517f4bd9e5cbc,6c109005bca544dd,875aed59b24c03eb,55fe3e5de929ba7f,1b20dac7d9f72f8e",
+      "resolved": "nfa_ems_kr_20191231.csv + nfa_ems_kr_20201231.csv + nfa_ems_kr_20211231.csv + nfa_ems_kr_20221231.csv + nfa_ems_kr_20231231.csv + nfa_ems_kr_20241231.csv + nfa_ems_kr_20251231.csv",
+      "source_crs": "",
+      "extract": {
+        "normalize_columns": "lower_strip",
+        "filter": [
+          {
+            "column": "sgg_nm",
+            "equals": "동구"
+          },
+          {
+            "column": "ctpv_nm",
+            "equals": "광주광역시"
+          }
+        ],
+        "rows_in": 21036207,
+        "rows_out": 47632,
+        "files": [
+          {
+            "name": "nfa_ems_kr_20191231.csv",
+            "sha256": "fb4cb83c4a0774bfcee0752b746afa52bc0f94ae3668e92a9ed03613b5cf90f4",
+            "bytes": 511068094,
+            "rows_in": 1464000,
+            "rows_out": 3391,
+            "stripped_matches": 0
+          },
+          {
+            "name": "nfa_ems_kr_20201231.csv",
+            "sha256": "ed40f1659187fc551ab6e57b30fdf94c2030f54b3d67dbc7337f1bf37128de3c",
+            "bytes": 948480888,
+            "rows_in": 2729664,
+            "rows_out": 6226,
+            "stripped_matches": 0
+          },
+          {
+            "name": "nfa_ems_kr_20211231.csv",
+            "sha256": "3cd517f4bd9e5cbc8fd58302d487eda074a36e5ce178578fba75d0fc2cd6260b",
+            "bytes": 1112901660,
+            "rows_in": 3219992,
+            "rows_out": 7089,
+            "stripped_matches": 0
+          },
+          {
+            "name": "nfa_ems_kr_20221231.csv",
+            "sha256": "6c109005bca544dd81863b2842e0dd1fcc325250898dd768ca23880b58a8f77a",
+            "bytes": 1166911378,
+            "rows_in": 3358212,
+            "rows_out": 8164,
+            "stripped_matches": 0
+          },
+          {
+            "name": "nfa_ems_kr_20231231.csv",
+            "sha256": "875aed59b24c03eb109a67ee929921683b90152faf4eef292dd0820336a38317",
+            "bytes": 1226906496,
+            "rows_in": 3536895,
+            "rows_out": 7969,
+            "stripped_matches": 0
+          },
+          {
+            "name": "nfa_ems_kr_20241231.csv",
+            "sha256": "55fe3e5de929ba7f95c26f51f3a1eae5f0a1cd9ab94aa84def7d4818079ca1d5",
+            "bytes": 1843372574,
+            "rows_in": 3394196,
+            "rows_out": 7616,
+            "stripped_matches": 0
+          },
+          {
+            "name": "nfa_ems_kr_20251231.csv",
+            "sha256": "1b20dac7d9f72f8e2901a0f67d340832d57f3c42a4ebde2756207818d775ac58",
+            "bytes": 1800360231,
+            "rows_in": 3333248,
+            "rows_out": 7177,
+            "stripped_matches": 0
+          }
+        ]
+      },
+      "status": "OK",
+      "features": 47632,
+      "geom": [],
+      "columns": [
+        "rlf_rptp_no",
+        "reg_cmptn_se_nm",
+        "ptn_ocrn_type_nm",
+        "ptn_sym_se_nm",
+        "sril_oncr_nm",
+        "hrtarst_nm",
+        "crdvsc_crvsscr_se_nm",
+        "trfc_acdnt_se_nm",
+        "etc_trfc_acdnt_nm",
+        "anml_etc_clsf_nm",
+        "etc_ocrn_type_nm",
+        "frstn_nm",
+        "cntr_nm",
+        "rlf_actv_se_nm",
+        "hlcpt_pmpblc_en_nm",
+        "dclr_ymd",
+        "dclr_tm",
+        "dclr_yr",
+        "seasn_nm",
+        "qtr_no",
+        "dclr_mm",
+        "dclr_day",
+        "dclr_hr",
+        "dclr_mn",
+        "dclr_dow",
+        "dspt_ymd",
+        "dspt_tm",
+        "dspt_yr",
+        "dspt_mm",
+        "dspt_day",
+        "dspt_hr",
+        "dspt_mn",
+        "grnds_arvl_ymd",
+        "grnds_arvl_tm",
+        "grnds_arvl_yr",
+        "grnds_arvl_mm",
+        "grnds_arvl_day",
+        "grnds_arvl_hr",
+        "grnds_arvl_mn",
+        "ptn_cntc_ymd",
+        "ptn_cntc_tm",
+        "ptn_cntc_yr",
+        "ptn_cntc_mm",
+        "ptn_cntc_day",
+        "ptn_cntc_hr",
+        "ptn_cntc_mn",
+        "grnds_dstnc",
+        "grnds_dptre_ymd",
+        "grnds_dptre_tm",
+        "grnds_dptre_yr",
+        "grnds_dptre_mm",
+        "grnds_dptre_day",
+        "grnds_dptre_hr",
+        "grnds_dptre_mn",
+        "cbk_ymd",
+        "cbk_tm",
+        "cbk_yr",
+        "cbk_mm",
+        "cbk_day",
+        "cbk_hr",
+        "cbk_mn",
+        "trmn_se_nm",
+        "gndr_nm",
+        "ptn_ctpv_nm",
+        "ctpv_nm",
+        "sgg_nm",
+        "cty_frmvl_se_nm",
+        "ptn_cr_nm",
+        "grnds2_dstnc",
+        "grnds3_dstnc",
+        "trans_clsf_nm"
+      ],
+      "outputs": [
+        "nfa_ems.csv"
+      ],
+      "seal": {
+        "raw": "fb4cb83c4a0774bf,ed40f1659187fc55,3cd517f4bd9e5cbc,6c109005bca544dd,875aed59b24c03eb,55fe3e5de929ba7f,1b20dac7d9f72f8e",
+        "cfg": "d0fd9252c1ddf202",
+        "code": "4b178d0288a594a4",
+        "out": {
+          "nfa_ems.csv": "0c583f7e47e8c87a"
         }
       }
     },

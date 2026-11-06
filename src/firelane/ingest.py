@@ -128,6 +128,9 @@ def save(gdf: gpd.GeoDataFrame, key: str) -> dict:
             "columns": [c for c in gdf.columns if c != "geometry"]}
 
 
+EXTRACT_FROM: Path | None = None
+
+
 def paths_for(key: str, e: dict) -> list[Path]:
     """이 소스의 실물 경로. **입력 계층을 여기 한 곳에서 가른다.**
 
@@ -143,6 +146,8 @@ def paths_for(key: str, e: dict) -> list[Path]:
     실물이 없으면 거기서 `FileNotFoundError` 로 죽는다. **조용히 raw 로
     떨어지지 않는 것**이 이 함수의 요점이다.
     """
+    if EXTRACT_FROM is not None and read.extract.declared(e):     # raw 에 안 올린 전국본을 제자리에서(§647-4)
+        return read.extract.paths(e, EXTRACT_FROM)
     if key not in prep.migrated():
         return ledger.paths_of(e, RAW)
     rels = [q.relative_to(RAW).as_posix() for q in ledger.paths_of(e, RAW)]
@@ -334,6 +339,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--extract-from", metavar="DIR",
+                    help="추출 선언(contract.filter)을 든 항목의 입력을 raw 가 아니라 이 폴더에서 읽는다 — 전국본을 raw 에 올리지 않는다(§647)")
     # ★ 2026-08-23. 실패한 것만 다시 돌린다.
     #
     #   19종을 한 덩어리로 돌아서 **하나가 FAIL 하면 전체가 무효**였다.
@@ -368,6 +375,9 @@ def main():
     ap.add_argument("--stamp", action="store_true",
                     help="빌드 없이, 지금 산출물에 샤드 봉인지를 붙인다 (사람이 판단해서 부른다)")
     a = ap.parse_args()
+    if a.extract_from:
+        global EXTRACT_FROM
+        EXTRACT_FROM = read.extract.source_dir(a.extract_from, a.only)
 
     if a.retry_failed:
         man0 = OUT / "_manifest.json"
@@ -487,6 +497,11 @@ def main():
             results.append({"key": key, "found": len(hits),
                             "sha256": [sha256(h)[:16] for h in hits]})
             print(f"[{'OK ' if hits else 'MISS'}] {key:20} {len(hits)}개")
+            continue
+        # ★ 원본을 내린 추출 항목은 지난 기록을 둔다(DECISIONS §647-3 · read/extract.kept)
+        if (_k := read.extract.kept(_prev.get(key), e, OUT, paths_for(key, e))):
+            results.append(_k)
+            print(f"[KEPT   ] {key:20} 원본 부재 선언 — 지난 산출물과 계보를 둔다")
             continue
         # ★ 샤드 재사용. 지목(--only)·조회·자식·--rebuild 에서는 안 한다.
         if not (a.only or a.emit_json or a.rebuild):
