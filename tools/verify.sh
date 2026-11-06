@@ -521,10 +521,7 @@ step "문서 숫자 대조"   uv run python tools/docnum_check.py
 # ci-exempt: tools/docgen.py CI 워크플로(.github/**)가 이 배치의 범위 밖이라 단계를 못 붙였다. 같은 판정은 `tests/test_docgen.py` 가 pytest 로 CI 에서 든다 — 관문이 새는 것은 아니고, 단계 배선만 남았다
 scope "docs/* tools/* sources.yaml"
 step "문서 생성 블록 ↔ 실물" uv run python tools/docgen.py --check
-# ★ 2026-11-06. 하위 절 수(부모 칸의 「하위 일곱」)는 새 절마다 어긋난다 — §648~§656 에서 여섯 번 손으로 센 수가 틀렸다.
-#   이 단계는 **대조만** 한다(`--check` · 안 쓴다). 고치는 것은 `tools/dms_fix_inherit.py --write` 이고 그 뒤 늘어난 절을 읽는 것은 사람이다.
-# ci-exempt: tools/dms_fix_inherit.py CI 워크플로(.github/**)가 이 배치의 범위 밖이라 단계를 못 붙였다. 같은 판정은 `tests/test_dms_ids.py` 가 pytest 로 CI 에서 든다 — 관문이 새는 것은 아니고, 단계 배선만 남았다
-scope "docs/* tools/*"
+# ci-exempt: tools/dms_fix_inherit.py 대조만(--check · 안 쓴다) — 하위 절 수가 새 절마다 어긋난다(§648~§656 여섯 번). CI 워크플로가 이 배치의 범위 밖이라 단계를 못 붙였다. 같은 판정은 `tests/test_dms_ids.py` 가 pytest 로 CI 에서 든다
 step "하위 절 수 선언 ↔ 실제" uv run python tools/dms_fix_inherit.py --check
 # ★ 2026-09-03 배선. 여덟 중 다섯만 tests/test_doc_fsck.py 가 걸고 있었고
 #   ⑥ 기획서 수정일 · ⑦ 셸 명령 · ⑧ 기한은 **사람이 손으로 칠 때만**
