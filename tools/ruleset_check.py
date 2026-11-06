@@ -242,6 +242,16 @@ def _security_gaps(got: dict | None = None) -> list[str]:
 #:   이 도구는 워크플로가 **부르는 이름**을 세지 등록 여부를 못 본다.
 WF_SECRETS = 1
 
+#: 워크플로가 부르는데 **등록 안 해도 되는** Secret — 사유와 **되돌릴 날**과 함께. 정본은 `MASTER §12-1`(「한시로 낮춘 것」)이고 이 표는 그 거울이다.
+#: ★ 2026-11-06. 선언은 **열린 구멍**이다 — 그래서 둘을 더 문다: ① 등록됐는데 선언이 남아 있으면 운다(면제가 낡았다) ·
+#:   ② 워크플로가 더는 안 부르는데 선언이 남아 있으면 운다. **되돌릴 날이 오면 이 줄을 지운다**(MASTER 의 같은 줄과 같이).
+UNREGISTERED_OK: dict[str, str] = {
+    "FIRE_LANE_OPS_TOKEN":
+        "중개자가 아직 없다 — 빈 값이 배포본을 안 깬다(`stage-site` 가 「비어도 된다」로 선언 · `deploy.yml` dry 가 탭끼리만 경고하고 통과 · §343-3). "
+        "이 토큰은 설계상 공개된다(`?t=` · 번들에서 읽힘 — 「열쇠이지 신분이 아니다」 §655) — 미루는 이유는 비밀 유지가 아니라 **열 문이 아직 없다**는 것이다. "
+        "되돌릴 날: 중개자를 세우는 날(그날 등록하고 이 줄과 MASTER §12-1 의 같은 줄을 지운다)",
+}
+
 
 def _secret_gaps() -> list[str]:
     """워크플로가 부르는 `secrets.X` 중 **등록 안 된 것**을 돌려준다.
@@ -293,8 +303,10 @@ def _secret_gaps() -> list[str]:
                 f"\n      ★ 찾은 것: {', '.join(sorted(want)) or '없음'}"
                 "\n      ★ 늘었으면 등록을 확인하고, 줄었으면 **왜 줄었는지를 적고**"
                 "\n        `tools/ruleset_check.py` 의 `WF_SECRETS` 를 고쳐라."]
+    stale = [f"선언된 면제 `{n}` 을 워크플로가 더는 안 부른다 — `UNREGISTERED_OK` 와 MASTER §12-1 의 같은 줄을 지워라"
+             for n in sorted(set(UNREGISTERED_OK) - set(want))]
     if not want:
-        return []
+        return stale
 
     try:
         have = {s["name"] for s in _gh(f"repos/{REPO}/actions/secrets")["secrets"]}
@@ -302,11 +314,13 @@ def _secret_gaps() -> list[str]:
         return ["Secret 목록을 못 읽었다 — gh 권한(repo)이 필요하다"
                 "\n      ★ 못 읽은 것을 '없다' 로 적지 않는다"]
 
-    return [f"Secret 미등록: {n}   ← {', '.join(want[n])}"
+    stale += [f"`{n}` 이 등록됐는데 면제 선언이 남아 있다 — 되돌릴 날이 왔다: `UNREGISTERED_OK` 와 MASTER §12-1 의 같은 줄을 지워라"
+              for n in sorted(set(UNREGISTERED_OK) & have)]
+    return stale + [f"Secret 미등록: {n}   ← {', '.join(want[n])}"
             "\n      ★ 참조는 있는데 값이 없으면 **빈 문자열**이 들어간다."
             "\n        워크플로는 초록불이고 배포본만 깨진다."
             f"\n        gh secret set {n} --repo {REPO}"
-            for n in sorted(set(want) - have)]
+            for n in sorted(set(want) - have - set(UNREGISTERED_OK))]
 
 
 def main() -> int:

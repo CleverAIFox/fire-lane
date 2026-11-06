@@ -372,3 +372,34 @@ def test_every_declared_setting_is_judged():
         bad = rc._security_gaps(got)
         assert any(key in b for b in bad), f"{key} 가 사라졌는데 조용하다"
         assert want in ("enabled", "disabled"), (key, want)
+
+
+# ── 한시 면제 `UNREGISTERED_OK` — 열린 구멍이라 양쪽에서 문다 (MASTER §12-1 · DECISIONS §657) ──────
+def _rsc_with(monkeypatch, have: list[str], ok: dict[str, str]):
+    import importlib.util
+    import sys
+
+    spec = importlib.util.spec_from_file_location("_rsc_ok_t", ROOT / "tools" / "ruleset_check.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    monkeypatch.setattr(m, "_gh", lambda path: {"secrets": [{"name": n} for n in have]})
+    monkeypatch.setattr(m, "UNREGISTERED_OK", ok)
+    return m._secret_gaps()
+
+
+def test_a_declared_unregistered_secret_is_quiet_but_an_undeclared_one_is_not(monkeypatch):
+    """선언된 미등록은 조용하고(rc=0), **선언 없는** 미등록은 여전히 운다 — 면제가 전체를 푸는 게 아니다."""
+    ok = {"FIRE_LANE_OPS_TOKEN": "사유 · 되돌릴 날"}
+    assert _rsc_with(monkeypatch, [], ok) == [], "선언된 미등록이 운다 — 면제가 안 읽힌다"
+    got = _rsc_with(monkeypatch, [], {})
+    assert any("Secret 미등록: FIRE_LANE_OPS_TOKEN" in g for g in got), "선언이 없는데 조용하다 — 원래 검사가 죽었다"
+
+
+def test_a_declared_exemption_that_became_registered_or_unused_is_flagged(monkeypatch):
+    """열린 구멍은 **닫힐 때 알려야** 한다 — 등록됐는데 선언이 남았거나, 워크플로가 안 부르는데 남았으면 운다."""
+    ok = {"FIRE_LANE_OPS_TOKEN": "사유 · 되돌릴 날"}
+    got = _rsc_with(monkeypatch, ["FIRE_LANE_OPS_TOKEN"], ok)
+    assert any("등록됐는데 면제 선언이 남아 있다" in g for g in got), got
+    got = _rsc_with(monkeypatch, ["FIRE_LANE_OPS_TOKEN"], {**ok, "FL_NOT_USED_ANYWHERE": "x"})
+    assert any("FL_NOT_USED_ANYWHERE" in g and "안 부른다" in g for g in got), got
