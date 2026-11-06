@@ -4855,7 +4855,6 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/finish_656_seal.py` | §656 이 만든 문서 빈 곳을 닫는다 — 새 시험 하나 등재. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/fetch_api.py` | 공공데이터포털 표준데이터 API 를 **같은 방법으로 다시 받는** 도구(`FIRE_LANE_DATA_GO_KR_KEY` · 지금은 키가 필요 없다 · PLAN 행 141(닫힘)). 호출은 `--run` 일 때만 |
 | `tools/ledger_add_nfa_ems.py` | 대장에 `datasets.nfa_ems` 를 **텍스트 삽입**으로 등재한다. `yaml.dump` 를 안 쓴다 — 주석이 근거를 드는 대장이라 라운드트립이면 그 근거가 날아간다(`docnum_check.py:528` · `depgroups_check.py:85` 가 같은 이유로 포기했다). 멱등 · 앵커(`nfa_fire_incident:`)를 못 찾으면 자리를 추측하지 않고 실패한다 |
-| `tools/fix_vintage_8digit.py` | landing 파일명과 대장 `files:` 의 vintage 를 `YYYY1231` 로 맞춘다. `naming` 은 `YYYYMMDD`·`YYYYMM`·`YYYY` 를 받는데 `normalize_raw` 의 provider 규칙이 `\d{8}` 만 받아 7파일이 통째로 안 걸렸다(§646). **정규식을 안 고친 이유** — 8자리 전제가 `ledger_fields.py:25` 의 `updated` 유도에도 박혀 있어 넓히면 그쪽이 조용히 깨진다 |
 | `tools/finish_c1_seal.py` | C1 이 만든 빈 곳 둘을 닫는다 — MASTER §23-2 등재와 `unusedcheck.PENDING_MAX` 13→14. `sealcov` 와 느슨해진 래칫은 `--write` 가 못 고치는 자리인데(§636), **적는 주체가 사람이라는 뜻이지 적는 방법이 손이라는 뜻이 아니다** |
 
 ### 23-3. 검사 — 무엇을 묻나
