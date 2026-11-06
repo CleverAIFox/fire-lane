@@ -197,6 +197,31 @@ def test_upper_strip_unifies_the_year_boundary_case_to_the_downstream_names(tmp_
     assert any("정규화 **뒤**" in m for m in extract.problems("k", bad)), "필터 칸도 정규화 뒤(대문자)로 적는다"
 
 
+# ── one_of — 이름이 바뀐 값을 조용히 잃지 않는다(§649) ──
+def test_one_of_keeps_rows_under_either_province_name_and_still_requires_the_other_conditions(tmp_path):
+    body = ("CTPV_NM,SGG_NM,n\n광주광역시,동구,1\n전남광주통합특별시,동구,2\n 전남광주통합특별시 ,동구,3\n"
+            "대구광역시,동구,4\n광주광역시,서구,5\n")
+    flt = [{"column": "ctpv_nm", "one_of": ["광주광역시", "전남광주통합특별시"]}, {"column": "sgg_nm", "equals": "동구"}]
+    c = _ctx(tmp_path, {"a.csv": body}, contract={"normalize_columns": "lower_strip", "filter": flt})
+    rec = read_csv_table(c)
+    assert _out(c)["n"].tolist() == ["1", "2", "3"], "새 이름 · 옛 이름 둘 다 오고 대구 동구 · 광주 서구는 빠진다"
+    assert rec["extract"]["files"][0]["stripped_matches"] == 1 and rec["extract"]["filter"] == flt
+    only_old = [{"column": "ctpv_nm", "equals": "광주광역시"}, flt[1]]
+    c2 = _ctx(_sub(tmp_path, "old"), {"a.csv": body}, contract={"normalize_columns": "lower_strip", "filter": only_old})
+    assert read_csv_table(c2)["features"] == 1, "equals 하나로는 새 이름 행을 조용히 잃는다 — one_of 가 필요한 까닭"
+
+
+@pytest.mark.parametrize("bad", [["a"], [], ["a", "a"], ["a", ""], ["a", True], "a|b"])
+def test_one_of_must_be_two_or_more_distinct_nonempty_values(bad):
+    e = {"kind": "csv_table", "contract": {"filter": {"column": "a", "one_of": bad}}}
+    assert any("one_of" in m for m in extract.problems("k", e)), bad
+
+
+def test_a_condition_cannot_mix_equals_and_one_of():
+    e = {"kind": "csv_table", "contract": {"filter": {"column": "a", "equals": "x", "one_of": ["x", "y"]}}}
+    assert any("둘뿐" in m for m in extract.problems("k", e))
+
+
 # ── ④ 조용히 덜 하지 않는다 ──
 def test_a_filter_that_keeps_nothing_is_a_failure_not_a_silent_pass(tmp_path):
     c = _ctx(tmp_path, {"a.csv": UPPER}, contract={**CON, "filter": {"column": "clmty_emd_nm", "equals": "없는동"}})
@@ -272,10 +297,10 @@ def test_the_vocabulary_names_the_reading_module():
 
 
 def test_only_the_extract_entries_use_the_keys_and_every_declaration_is_well_formed():
-    """대장의 `scope` 를 바꾸지 않는다 — 추출이 선 뒤의 사람 판단이다. 이 키를 쓰는 항목은 nfa_ems · nfa_dispatch_119 둘이고(nfa_fire_incident · nfa_rescue 는 scope 전환 전이다) 모양이 맞아야 한다."""
+    """대장의 `scope` 를 바꾸지 않는다 — 추출이 선 뒤의 사람 판단이다. 이 키를 쓰는 항목은 전국 원본에서 거르는 다섯(nfa_ems · nfa_dispatch_119 · nfa_fire_incident · nfa_rescue · nfa_target_building)이고 모양이 맞아야 한다."""
     from firelane import ledger
     ds = ledger.load_sources()["datasets"]
-    assert sorted(k for k, e in ds.items() if extract.declared(e)) == ["nfa_dispatch_119", "nfa_ems"]
+    assert sorted(k for k, e in ds.items() if extract.declared(e)) == ["nfa_dispatch_119", "nfa_ems", "nfa_fire_incident", "nfa_rescue", "nfa_target_building"]
     assert all(extract.problems(k, e) == [] for k, e in ds.items())
 
 

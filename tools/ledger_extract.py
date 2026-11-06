@@ -22,7 +22,7 @@ ledger_extract.py — 대장 `datasets.<키>.contract` 에 **추출 선언**(nor
 
 IN    sources.yaml · 인자
 OUT   sources.yaml (--apply 일 때만)
-PARAM --key · --normalize · --filter(반복) · --scope-min · --scope-max · --replace · --apply
+PARAM --key · --normalize · --filter(반복) · --one-of(반복) · --scope-min · --scope-max · --replace · --apply
 부류  생산   대장을 고친다 (DECISIONS §398 의 「산출물·대장·그림」 중 대장)
 밖    **필터가 실제로 몇 행을 남기는지는 안 본다** — `ingest` 가 돌 때 계보에 남고, 상한·하한은 그때 묻는다.
       `scope` · `files` · `status` 는 안 고친다(그것은 사람의 판단이다 — 전국본을 raw 에 안 두는 것 · scope 전환).
@@ -48,6 +48,10 @@ def _scalar(v) -> str:
     return yaml.safe_dump(v, allow_unicode=True, width=10**6).strip().removesuffix("\n...").strip()
 
 
+def _flow(vs: list) -> str:
+    return "[" + ", ".join(_scalar(v) for v in vs) + "]"
+
+
 def render(con: dict) -> str:
     """contract dict → 4칸 들여쓴 블록 텍스트. 추출 키가 앞에 오고 나머지는 원래 순서로 뒤에 온다."""
     out = ["    contract:"]
@@ -58,10 +62,13 @@ def render(con: dict) -> str:
         if k == "filter":
             conds = extract_decl.conditions(v)
             if len(conds) == 1:
-                out += ["      filter:", f"        column: {_scalar(conds[0]['column'])}", f"        equals: {_scalar(conds[0]['equals'])}"]
+                c0 = conds[0]
+                out += ["      filter:", f"        column: {_scalar(c0['column'])}"]
+                out.append(f"        one_of: {_flow(c0['one_of'])}" if "one_of" in c0 else f"        equals: {_scalar(c0['equals'])}")
             else:
                 out.append("      filter:")
-                out += [f"        - {{column: {_scalar(c['column'])}, equals: {_scalar(c['equals'])}}}" for c in conds]
+                out += [f"        - {{column: {_scalar(c['column'])}, one_of: {_flow(c['one_of'])}}}" if "one_of" in c
+                        else f"        - {{column: {_scalar(c['column'])}, equals: {_scalar(c['equals'])}}}" for c in conds]
         elif isinstance(v, (list, dict)):
             out.append(f"      {k}: {yaml.safe_dump(v, default_flow_style=True, allow_unicode=True, width=10**6).strip()}")
         else:
@@ -106,13 +113,15 @@ def main() -> int:
     ap.add_argument("--key", required=True, help="대장 datasets 의 키")
     ap.add_argument("--normalize", choices=sorted(extract_decl.NORMALIZERS), help="칸 이름 정규화 — 출력 칸 이름이 하류의 이름과 같은 쪽을 고른다")
     ap.add_argument("--filter", action="append", default=[], metavar="COL=VAL", help="반복한다(모두 맞는 행 = AND). 칸 이름은 정규화 **뒤** 꼴")
+    ap.add_argument("--one-of", action="append", default=[], metavar="COL=A|B",
+                    help="한 칸이 이름이 바뀐 값 여럿을 갖는 경우(예: 광주광역시|전남광주통합특별시). 반복한다 · 다른 조건과 AND · 값은 둘 이상")
     ap.add_argument("--scope-min", type=int)
     ap.add_argument("--scope-max", type=int)
     ap.add_argument("--replace", action="store_true", help="이미 다른 추출 선언이 있어도 바꾼다")
     ap.add_argument("--apply", action="store_true")
     a = ap.parse_args()
 
-    if not a.filter:
+    if not a.filter and not a.one_of:
         print("✗ --filter 가 하나도 없다 — 추출은 거르는 일이다", file=sys.stderr)
         return 2
     conds = []
@@ -122,6 +131,13 @@ def main() -> int:
             print(f"✗ --filter `{f}` — COL=VAL 꼴이어야 하고 둘 다 비면 안 된다", file=sys.stderr)
             return 2
         conds.append({"column": col.strip(), "equals": val})
+    for f in a.one_of:
+        col, sep, val = f.partition("=")
+        vs = [v for v in val.split("|")]
+        if not sep or not col.strip() or len(vs) < 2 or any(not v.strip() for v in vs):
+            print(f"✗ --one-of `{f}` — COL=A|B 꼴이어야 하고 값이 둘 이상이며 비면 안 된다", file=sys.stderr)
+            return 2
+        conds.append({"column": col.strip(), "one_of": vs})
     want = {"filter": conds if len(conds) > 1 else conds[0]}
     for k, v in (("normalize_columns", a.normalize), ("scope_min", a.scope_min), ("scope_max", a.scope_max)):
         if v is not None:

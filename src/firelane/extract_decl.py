@@ -16,6 +16,9 @@ KINDS = ("csv_table", "csv_table_multi")
 NORMALIZERS = {"lower_strip": lambda c: str(c).strip().strip('"').lower(),
                "upper_strip": lambda c: str(c).strip().strip('"').upper()}
 FILTER_KEYS = {"column", "equals"}
+#: ★ `one_of` — 한 칸이 **이름이 바뀐 값**을 갖는 경우다. 소방대상물 2024 파일은 같은 광주 동구를 `광주광역시` 와 `전남광주통합특별시` 로 둘 다 적는다(통합 뒤 갱신된 대장 · §649).
+#:   `equals` 하나로 걸면 그 행을 **조용히 잃는다**(139행 사고의 같은 종류 · §644-3). 조건끼리는 여전히 AND 이고 시도 조건을 **빼지** 않는다 — 값 하나가 값 여럿이 될 뿐이다.
+FILTER_KEYS_ONE_OF = {"column", "one_of"}
 
 
 def conditions(flt) -> list[dict]:
@@ -63,14 +66,20 @@ def problems(key: str, e: dict) -> list[str]:
     if flt is None:
         return out
     conds = conditions(flt)
-    if not conds or any(not isinstance(f, dict) or set(f) != FILTER_KEYS for f in conds):
-        return out + [f"filter 는 {{column, equals}} 둘뿐이다(다른 연산자는 안 만든다 · 여럿이면 목록 = AND) — 지금 {flt!r}"]
+    if not conds or any(not isinstance(f, dict) or set(f) not in (FILTER_KEYS, FILTER_KEYS_ONE_OF) for f in conds):
+        return out + [f"filter 는 {{column, equals}} 또는 {{column, one_of}} 둘뿐이다(다른 연산자는 안 만든다 · 여럿이면 목록 = AND) — 지금 {flt!r}"]
     cols = [str(c) for c in ((e.get("schema") or {}).get("columns") or [])]
     for f in conds:
-        col, eq = f["column"], f["equals"]
+        col = f["column"]
         if not isinstance(col, str) or not col.strip():
             out.append("filter.column 이 비었다")
-        if eq is None or isinstance(eq, (dict, list, bool)) or str(eq).strip() == "":
+        if "one_of" in f:
+            vs = f["one_of"]
+            if not isinstance(vs, list) or len(vs) < 2 or any(v is None or isinstance(v, (dict, list, bool)) or str(v).strip() == "" for v in vs):
+                out.append("filter.one_of 는 비지 않은 값 둘 이상의 목록이다(하나면 equals 다 · 빈 값으로 거르면 칸이 빈 행을 고른다)")
+            elif len({str(v) for v in vs}) != len(vs):
+                out.append("filter.one_of 에 같은 값이 겹친다")
+        elif (eq := f["equals"]) is None or isinstance(eq, (dict, list, bool)) or str(eq).strip() == "":
             out.append("filter.equals 는 비지 않은 값 하나다(빈 값으로 거르면 칸이 빈 행을 고른다)")
         if isinstance(col, str) and col.strip() and mode in NORMALIZERS and NORMALIZERS[mode](col) != col:
             out.append(f"filter.column `{col}` — 정규화 **뒤** 이름으로 적는다(`{NORMALIZERS[mode](col)}`)")

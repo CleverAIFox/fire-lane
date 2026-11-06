@@ -110,6 +110,18 @@ def test_an_unknown_key_stops(tmp_path, monkeypatch):
         _run(tmp_path, monkeypatch, HEAD + A, "--key", "nope", "--filter", "SGG_NM=동구")
 
 
+def test_one_of_is_rendered_and_round_trips_through_the_validator(tmp_path, monkeypatch):
+    args = ["--key", "a_src", "--normalize", "upper_strip", "--filter", "SGG_NM=동구", "--one-of", "CTPV_NM=광주광역시|전남광주통합특별시", "--scope-min", "1"]
+    rc, out = _run(tmp_path, monkeypatch, HEAD + A, *args, "--apply")
+    assert rc == 0 and _con(out)["filter"] == [{"column": "SGG_NM", "equals": "동구"},
+                                               {"column": "CTPV_NM", "one_of": ["광주광역시", "전남광주통합특별시"]}]
+
+
+@pytest.mark.parametrize("bad", ["CTPV_NM=광주광역시", "CTPV_NM=a||b", "CTPV_NM", "=a|b"])
+def test_a_malformed_one_of_is_a_usage_error(tmp_path, monkeypatch, bad):
+    assert _run(tmp_path, monkeypatch, HEAD + A, "--key", "a_src", "--one-of", bad, "--apply")[0] == 2
+
+
 def test_render_writes_one_condition_as_a_mapping_and_several_as_a_list():
     one = tool.render({"filter": {"column": "A", "equals": "x"}})
     many = tool.render({"filter": [{"column": "A", "equals": "x"}, {"column": "B", "equals": "y"}], "scope_min": 1})

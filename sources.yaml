@@ -2945,24 +2945,57 @@ datasets:
         기준 차량을 펌프차로 둔 전제를 다시 볼 근거가 여기 있다.
     stem: nfa_rescue
     ext: [csv]
-    scope: jngj-dongmyeong
+    vintages: ['2019-12-31', '2020-12-31', '2021-12-31', '2022-12-31']   # 판이 여럿(§431) · ★ 2023~2025 는 플랫폼에 없다(아래 note)
+    files:                         # ★ 입력은 raw 에 올리지 않는다(`--extract-from` · §648) — `전국 구조 현황.zip` 에서 풀어 이름을 맞춘 네 파일
+      - nfa/nfa_rescue_kr_20191231.csv
+      - nfa/nfa_rescue_kr_20201231.csv
+      - nfa/nfa_rescue_kr_20211231.csv
+      - nfa/nfa_rescue_kr_20221231.csv
+    status: missing
+    missing_why: |
+      2026-11-06 — **전국본 4파일(0.99GB)을 raw 에 올리지 않았다.** 쓰는 것은 광주 동구 동명동 212행이다.
+      ★ 입력은 `전국 구조 현황.zip`(레이크 밖 Downloads · 197MB)에서 풀어 `nfa_rescue_kr_<연도>1231.csv` 로 이름만 맞춘 네 파일이고
+        `ingest --only nfa_rescue --extract-from <그 폴더>` 가 **제자리에서** 읽는다(DECISIONS §649). 계보(입력별 sha256 · 바이트 · 전후 행 수)가 `_manifest.json` 의 `extract` 에 남는다.
+      ★ **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다(nfa_ems · nfa_dispatch_119 · nfa_fire_incident 와 같은 꼴).
+      ★ 옛 동명동본(`raw/nfa/nfa_rescue_jngj-dongmyeong_20260903.csv` · 83,820 B)은 retired 로 **선언**했다 — 새 추출과 접수번호 집합이 같고(212) 한쪽에만 있는 행이 0 이다.
+        값은 옛것이 float 변환 · 앞자리 0 탈락으로 달랐다(§649). 실물은 raw 에 그대로 있고 이동은 사람이 친다. `files` 에는 안 든다.
+    scope: kr
     authority: 소방청 소방안전 빅데이터 플랫폼
-    updated: '2026-09-03'   # ★ 내려받은 날. 소방안전 빅데이터 플랫폼이
+    updated: '2026-11-05'   # ★ 내려받은 날. 소방안전 빅데이터 플랫폼이
                           #   데이터 기준일을 표기하지 않는다(2026-09-03 확인)
-    what: 전국 구조 현황 2019~ → 동명동 필터 파생본
+    what: 전국 구조 현황 2019~2022(2,903,386행 · ★ 2022 는 1~2월뿐이다) → 광주 동구 동명동 212행(연도별 59 · 55 · 94 · 4)
     kind: csv_table
     encoding: utf-8-sig
     crs_native: 4326
     note: |
-      ★ 2026-11-05 (DECISIONS §644-3). **2024 경계를 전제한다** — 플랫폼이 2024년에 시스템을 바꿨고(칸 이름 케이스 · 값 정밀도 · 필터로 잃는 행) 이 파생본은 **2019~2022 에서 끝난다.**
-        그것이 원천의 기간인지 대문자 필터 탓인지 **모른다**(확인 안 했다). 원본을 다시 받으면 헤더 케이스를 정규화하고 연도별 행 수를 원본과 대어 본다.
-    contract: {encoding: utf-8-sig}
+      ★ 2026-11-06 (DECISIONS §649). **기간은 원천의 한계다 — 대문자 필터 탓이 아니다.** 전국 4파일을 헤더 정규화(`upper_strip`)로 전량 읽었다 — 2019 892,665 · 2020 837,618 ·
+        2021 1,054,533 · 2022 118,570행이고 4파일의 51칸이 같다. **2023~2025 는 플랫폼에 없다**(구조 현황은 2022 에서 끝난다 · 구급 현황 `nfa_ems` 는 2025 까지 있다).
+      ★★ **2022 는 1~2월뿐이다.** 40MB 가 앞 셋(290~360MB)의 1/8 인 것은 **잘린 파일이 아니다** — 파일은 마지막 행까지 온전하고(CRLF 로 끝난다) 월별 건수가 `01` 62,656 ·
+        `02` 55,156 · `03` 572 · `04` 69 … `12` 3 이다. 플랫폼이 그만큼만 줬다(3월 이후는 행이 흩어져 있다 — 이유는 모른다). 그래서 **2022 는 연 단위 비교에 못 쓴다** — 동명동도 2022 는 4행뿐이다.
+        2019~2021 만 연 단위다.
+      ★ 동명동은 **세 곳**이다(EMD_NM 만 걸면 광주 동구 212 · 속초 181 · 목포 78 = 471행). 이 표에는 `CLMTY_*`(재난 발생지) 칸이 **없다** — 지역 칸은 `CTPV_NM`/`SGG_NM`/`EMD_NM` 뿐이라
+        세 조건을 AND 로 건다. 119(`nfa_dispatch_119`)와 달리 그 지역이 발생지인지 신고지인지 칸 이름이 말하지 않는다.
+      ★ **2025 보완 후보가 레이크 밖에 있다** — `소방청_구조활동현황_20251231.csv`(59MB · 613,150행 · cp949 · 10칸 · 접수번호 `…R00001` 꼴). 좌표도 도착 시각도 없고 지역이 시 · 구 · 동 문자열이라
+        **같은 자료가 아니다.** 이번에 들이지 않았다.
+    contract:
+      normalize_columns: upper_strip
+      filter:
+        - {column: CTPV_NM, equals: 광주광역시}
+        - {column: SGG_NM, equals: 동구}
+        - {column: EMD_NM, equals: 동명동}
+      scope_min: 150
+      scope_max: 300
+      encoding: utf-8-sig
 
     # ★ 2026-11-05 (DECISIONS §632-1 · §634 · §642). 원천 활용가이드(column_info · 51칸 전수)가 이 칸을 **「신고위치경도」 · 「신고위치위도」** 라 부르고 설명은
     #   「신고 내용의 좌표」다. 좌표 칸은 이 둘뿐이다(사고 위치 좌표가 없다 — 사고장소세부명은 텍스트다). ★ **그 설명은 근거가 못 된다 — 부정확하다**: 같은 설명을 쓰는
     #   `nfa_dispatch_119` 의 같은 칸이 제주(위도 33.475)·서울(37.529)까지 퍼진다 — 「내용」이면 사건 위치여야 한다. `reporter` 는 **칸 이름(신고위치) + dispatch 의 실측
     #   교차**로 선다. ★ **어긋남이 안 풀렸다**: 이 표의 값은 현장처럼 분포한다(동명동 안 99% · 건물 3m 안 83% · 소수 12~14자리 — 휴대폰 칸과 다르다 · §632-1).
     #   「구조는 신고자가 현장」은 반증됐고(§641-3) 남은 후보는 「다른 계통」 하나다. 그래서 위치로 쓰지 않는다(not_for).
+    # ★ 2026-11-06 (DECISIONS §649). 전국 4개년 2,903,386행으로 분포를 다시 쟀다 — **선언은 안 바꿨다.** 소수 자릿수 14(2,168,434) · 13(557,131) · 12(76,856) · 11 이하(8,262) · 빈 칸 92,573(3.2%)이고
+    #   `0.0` 센티널이 없다. 시도 안에서 한 곳에 몰린다(광주 · 서울 · 제주 모두 중앙에서 0.6° 밖이 0.03% 이하 — 119 의 신고자 휴대폰 칸이 4자리로 제주~서울까지 퍼지는 것과 다르다).
+    #   광주 동구 동명동 205점(좌표 있는 행)의 99.5% 가 동명동 bbox 안이다. ★ **그래도 `site` 로 올리지 않는다** — 이 표에는 독립된 재해 위치 칸이 없어 교차할 짝이 없고,
+    #   지역 칸(`EMD_NM`)이 좌표에서 파생됐다면 「동명동 안 99.5%」는 순환이다. 칸 이름은 여전히 신고위치다. 실측만 근거가 되는데(§642) 실측이 못 가른다.
     coords:
       reporter: {x: DCLR_PSTN_LOT, y: DCLR_PSTN_LAT, crs: 4326, means: 신고 위치, not_for: [위치 분석, 거리 계산]}
     none:
@@ -3074,15 +3107,34 @@ datasets:
       ★ 발표 논거로도 쓴다 — 화재 건수 대비 blocked 구간 분포.
     stem: nfa_fire_incident
     ext: [csv]
-    scope: jngj-donggu
+    vintages: ['2019-12-31', '2020-12-31', '2021-12-31', '2022-12-31', '2023-12-31', '2024-12-31', '2025-12-31']   # 판이 여럿(§431)
+    files:                         # ★ 입력은 `landing/_hold` 에 있다 — raw 에 올리지 않는다(`--extract-from` · §648)
+      - nfa/nfa_fire_incident_kr_20191231.csv
+      - nfa/nfa_fire_incident_kr_20201231.csv
+      - nfa/nfa_fire_incident_kr_20211231.csv
+      - nfa/nfa_fire_incident_kr_20221231.csv
+      - nfa/nfa_fire_incident_kr_20231231.csv
+      - nfa/nfa_fire_incident_kr_20241231.csv
+      - nfa/nfa_fire_incident_kr_20251231.csv
+    status: missing
+    missing_why: |
+      2026-11-06 — **전국본 7파일(147MB)을 raw 에 올리지 않았다.** 쓰는 것은 광주 동구 506행이다.
+      ★ 입력은 `landing/_hold` 에 있고 `ingest --only nfa_fire_incident --extract-from <_hold>` 가 **제자리에서** 읽는다(DECISIONS §649).
+        산출은 `data/processed/nfa_fire_incident.csv` 이고 계보(입력 7파일별 sha256 · 바이트 · 전후 행 수)가 `_manifest.json` 의 `extract` 에 남는다.
+      ★ **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다(vworld_uq164 · nfa_ems · nfa_dispatch_119 와 같은 꼴).
+      ★ 옛 파생본(`raw/nfa/nfa_fire_incident_jngj-donggu_20260903.csv` · 367행)은 retired 로 **선언**했다 — 새 추출과 식별번호가 367 겹치고 기존에만 있는 행이 0 이다(§649).
+        실물은 raw 에 그대로 있고 이동은 사람이 친다. `files` 에는 안 든다(들면 `--extract-from` 없는 ingest 가 그 파생본을 입력으로 읽는다).
+    scope: kr
     authority: 소방청 소방안전 빅데이터 플랫폼
-    updated: '2026-09-03'   # ★ 내려받은 날. 소방안전 빅데이터 플랫폼이
+    updated: '2026-11-05'   # ★ 내려받은 날. 소방안전 빅데이터 플랫폼이
                           #   데이터 기준일을 표기하지 않는다(2026-09-03 확인)
-    what: 전국 화재 현황 2019~2025 → 광주 동구 필터 파생본 (★ 실물은 2019~2023 뿐이다 — 대문자 필터가 2024 이후를 0행으로 만들어 139행을 잃었다 · DECISIONS §644-3)
+    what: 전국 화재 현황 2019~2025(270,174행) → 광주 동구 506행(2019~2025 · 99 · 74 · 67 · 61 · 66 · 68 · 71 · ★ 옛 파생본은 2019~2023 뿐이었다 — 대문자 필터가 2024 이후를 0행으로 만들어 139행을 잃었다 · DECISIONS §644-3)
     kind: csv_table
     encoding: utf-8-sig
     note: |
-      ★ scope 가 jngj-donggu 다. **EMD_NM 열이 없어 동명동으로 못 좁힌다** —
+      ★ 2026-11-06 (DECISIONS §649). 전국 원본에서 `ingest` 가 추출한다 — 필터는 **시도 + 시군구 둘**이다(「동구」가 여섯 광역시에 있다 · 시도 없이 시군구만 걸면 4,121행).
+        옛 판은 2019~2023 의 367행이고 대문자 필터가 2024 이후를 0행으로 만들어 139행을 잃었다 — 추출의 `upper_strip` 이 그 경계를 흡수해 506행이다.
+      ★ **EMD_NM 열이 없어 동명동으로 못 좁힌다** —
         SGG_NM 까지가 한계다(60열 전수 확인, 2026-09-03).
       ★ 2026-11-05 (DECISIONS §635-8 · §643). **`CNTR_GRNDS_DSTNC` 가 정수 km 인 것은 2019~2023 한정이다** — 전국 2019~2025 270,174행 실측에서 2023 까지 정수비율
         1.0000(고유 59~65), 2024~2025 는 0.23(고유 355~358)이고 분해능이 0.1km 다(동구도 2023 까지 100% · 2024 17.6% · 2025 7.0%). 이 저장소의 파생본은 2019~2023
@@ -3110,7 +3162,14 @@ datasets:
         note: |
           읍면동 열이 없다. SGG_NM 까지가 한계라 scope 가 jngj-donggu 다.
           같은 플랫폼의 구조 현황에는 EMD_NM 이 있다 — 표마다 다르다
-    contract: {encoding: utf-8-sig}
+    contract:
+      normalize_columns: upper_strip
+      filter:
+        - {column: CTPV_NM, equals: 광주광역시}
+        - {column: SGG_NM, equals: 동구}
+      scope_min: 400
+      scope_max: 700
+      encoding: utf-8-sig
 
     # ★ 2026-11-05 (DECISIONS §634). 좌표 칸이 **없다**는 선언이다 — 「좌표가 없다」와 「선언을 안 했다」는 다르다. 위치 대신 **거리와 시간이 칸으로 있다**(화재 거리-시간 측정이 쓴다(DECISIONS §635)).
     coords:
@@ -3119,34 +3178,35 @@ datasets:
       columns: ['WRINV_NO', 'FIRE_TYPE_NM', 'BLDG_SRTFRM_NM', 'BLDG_STRCTR_NM', 'BLDG_SRTRF_NM', 'BLDG_RSCU_DNGCT', 'GRND_NOFL', 'UDGD_NOFL', 'BLDG_GFA', 'BTTM_AREA', 'BLDG_STTS_NM', 'SPFPTG_NM', 'SMTPR_LCLSF_NM', 'SMTPR_SCLSF_NM', 'DTH_CNT', 'INJPSN_CNT', 'HNL_DAM_CNT', 'PRPT_DAM_AMT', 'DOW_NM', 'FRSTN_NM', 'CNTR_NM', 'RCPT_DT', 'DSPT_DT', 'GRNDS_ARVL_DT', 'BGNN_POTFR_DT', 'PRFECT_POTFR_DT', 'CBK_DT', 'DSPT_REQ_HR', 'FIRE_SUPESN_HR', 'CTPV_NM', 'SGG_NM', 'FRSTN_GRNDS_DSTNC', 'CNTR_GRNDS_DSTNC', 'LFDAU_GRNDS_DSTNC', 'IGTN_HTSRC_NM', 'IGTN_HTSRC_SCLSF_NM', 'IGTN_DMNT_LCLSF_NM', 'IGTN_DMNT_SCLSF_NM', 'FRST_IGOBJ_LCLSF_NM', 'FRST_IGOBJ_SCLSF_NM', 'IGTN_ISTR_LCLSF_NM', 'IGTN_ISTR_SCLSF_NM', 'CMBS_EXPOBJ_LCLSF_NM', 'CMBS_EXPOBJ_SCLSF_NM', 'FCLT_PLC_LCLSF_NM', 'FCLT_PLC_MCLSF_NM', 'FCLT_PLC_SCLSF_NM', 'IGTN_FLR_NM', 'SO_AREA', 'FIRE_INSRNC_OBLG_TRGT_YN', 'ARSON_MNG_TRGT_YN', 'MUB_YN', 'VHCL_PLC_NM', 'VHCL_IGTN_PSTN_NM', 'FND_FIRE_SE_NM', 'FND_IGTN_PSTN_NM', 'HR_UNIT_ARTMP', 'HR_UNIT_WSPD_INFO', 'WNDRCT_BRNG', 'HR_UNIT_HUM']
       encoding_seen: 'utf-8-sig'
       profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
-        n: 367
+        n: 506
         cols:
-          'BLDG_SRTFRM_NM': {'empty': 110, 'ws': 0}
-          'BLDG_STRCTR_NM': {'empty': 111, 'ws': 0}
-          'BLDG_SRTRF_NM': {'empty': 112, 'ws': 0}
-          'BLDG_RSCU_DNGCT': {'empty': 120, 'ws': 0}
-          'GRND_NOFL': {'empty': 110, 'ws': 0}
-          'UDGD_NOFL': {'empty': 130, 'ws': 0}
-          'BLDG_GFA': {'empty': 110, 'ws': 0}
-          'BTTM_AREA': {'empty': 110, 'ws': 0}
-          'BLDG_STTS_NM': {'empty': 110, 'ws': 0}
-          'SPFPTG_NM': {'empty': 200, 'ws': 0}
-          'SMTPR_LCLSF_NM': {'empty': 160, 'ws': 0}
-          'SMTPR_SCLSF_NM': {'empty': 160, 'ws': 0}
-          'IGTN_DMNT_LCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 18}}
-          'IGTN_DMNT_SCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 18}}
-          'FRST_IGOBJ_LCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 15}}
-          'FRST_IGOBJ_SCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 15}}
-          'IGTN_ISTR_LCLSF_NM': {'empty': 146, 'ws': 0, 'text_none': {'미상': 9}}
-          'IGTN_ISTR_SCLSF_NM': {'empty': 146, 'ws': 0, 'text_none': {'미상': 9}}
-          'CMBS_EXPOBJ_LCLSF_NM': {'empty': 216, 'ws': 0, 'text_none': {'미상': 2}}
-          'CMBS_EXPOBJ_SCLSF_NM': {'empty': 216, 'ws': 0, 'text_none': {'미상': 2}}
-          'IGTN_FLR_NM': {'empty': 110, 'ws': 0}
-          'SO_AREA': {'empty': 101, 'ws': 0}
-          'VHCL_PLC_NM': {'empty': 322, 'ws': 0}
-          'VHCL_IGTN_PSTN_NM': {'empty': 322, 'ws': 0}
-          'FND_FIRE_SE_NM': {'empty': 363, 'ws': 0}
-          'FND_IGTN_PSTN_NM': {'empty': 363, 'ws': 0}
+          'BLDG_SRTFRM_NM': {'empty': 136, 'ws': 0}
+          'BLDG_STRCTR_NM': {'empty': 137, 'ws': 0}
+          'BLDG_SRTRF_NM': {'empty': 138, 'ws': 0}
+          'BLDG_RSCU_DNGCT': {'empty': 155, 'ws': 0}
+          'GRND_NOFL': {'empty': 136, 'ws': 0}
+          'UDGD_NOFL': {'empty': 166, 'ws': 0}
+          'BLDG_GFA': {'empty': 136, 'ws': 0}
+          'BTTM_AREA': {'empty': 136, 'ws': 0}
+          'BLDG_STTS_NM': {'empty': 136, 'ws': 0}
+          'SPFPTG_NM': {'empty': 259, 'ws': 0}
+          'SMTPR_LCLSF_NM': {'empty': 225, 'ws': 0}
+          'SMTPR_SCLSF_NM': {'empty': 225, 'ws': 0}
+          'IGTN_HTSRC_SCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 19}}
+          'IGTN_DMNT_LCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 41}}
+          'IGTN_DMNT_SCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 41}}
+          'FRST_IGOBJ_LCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 31}}
+          'FRST_IGOBJ_SCLSF_NM': {'empty': 0, 'ws': 0, 'text_none': {'미상': 31}}
+          'IGTN_ISTR_LCLSF_NM': {'empty': 207, 'ws': 0, 'text_none': {'미상': 11}}
+          'IGTN_ISTR_SCLSF_NM': {'empty': 207, 'ws': 0, 'text_none': {'미상': 11}}
+          'CMBS_EXPOBJ_LCLSF_NM': {'empty': 303, 'ws': 0, 'text_none': {'미상': 6}}
+          'CMBS_EXPOBJ_SCLSF_NM': {'empty': 303, 'ws': 0, 'text_none': {'미상': 6}}
+          'IGTN_FLR_NM': {'empty': 136, 'ws': 0}
+          'SO_AREA': {'empty': 127, 'ws': 0}
+          'VHCL_PLC_NM': {'empty': 446, 'ws': 0}
+          'VHCL_IGTN_PSTN_NM': {'empty': 446, 'ws': 0, 'text_none': {'미상': 1}}
+          'FND_FIRE_SE_NM': {'empty': 501, 'ws': 0}
+          'FND_IGTN_PSTN_NM': {'empty': 501, 'ws': 0}
   nfa_vehicle_spec_2024:
     feeds: []
     feeds_note: '미투입 — vehicle_spec 의 상한 대비 실차 대표값 대조축'
@@ -3245,16 +3305,45 @@ datasets:
       ★ 조인 신뢰도가 낮다는 것을 쓰기 전에 재야 한다.
     stem: nfa_target_building
     ext: [csv]
-    scope: jngj-dongmyeong
+    vintages: ['2019-12-31', '2020-12-31', '2021-12-31', '2022-12-31', '2023-12-31', '2024-12-31', '2025-12-31']   # 판이 여럿(§431)
+    files:                         # ★ 입력은 raw 에 올리지 않는다(`--extract-from` · §648) — `소방청_전국 소방대상물 현황.zip` 에서 풀어 이름을 맞춘 일곱 파일
+      - nfa/nfa_target_building_kr_20191231.csv
+      - nfa/nfa_target_building_kr_20201231.csv
+      - nfa/nfa_target_building_kr_20211231.csv
+      - nfa/nfa_target_building_kr_20221231.csv
+      - nfa/nfa_target_building_kr_20231231.csv
+      - nfa/nfa_target_building_kr_20241231.csv
+      - nfa/nfa_target_building_kr_20251231.csv
+    status: missing
+    missing_why: |
+      2026-11-06 — **전국본 7파일(41MB)을 raw 에 올리지 않았다.** 쓰는 것은 광주 동구 동명동 38행이다.
+      ★ 입력은 `소방청_전국 소방대상물 현황.zip`(레이크 밖 Downloads · 8MB)에서 풀어 `nfa_target_building_kr_<연도>1231.csv` 로 이름만 맞춘 일곱 파일이고
+        `ingest --only nfa_target_building --extract-from <그 폴더>` 가 **제자리에서** 읽는다(DECISIONS §649). 계보(입력별 sha256 · 바이트 · 전후 행 수)가 `_manifest.json` 의 `extract` 에 남는다.
+      ★ **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다.
+      ★ 옛 동명동본(`raw/nfa/nfa_target_building_jngj-dongmyeong_20260903.csv` · 4,755 B · 23행)은 retired 로 **선언**했다 — 같은 자료(23칸이 같다)이고 새 추출이 23행을 전부 든다.
+        실물은 raw 에 그대로 있고 이동은 사람이 친다. `files` 에는 안 든다.
+    scope: kr
     authority: 소방청 소방안전 빅데이터 플랫폼
-    updated: '2026-09-03'   # ★ 내려받은 날. 확보처가 기준일을 표기하지 않는다
-    what: 전국 소방대상물 현황 2019~2025 → 동명동 필터 파생본
+    updated: '2026-11-05'   # ★ 내려받은 날. 확보처가 기준일을 표기하지 않는다
+    what: 전국 소방대상물 현황 2019~2025(186,124행) → 광주 동구 동명동 38행(옛 이름 `광주광역시` 30 + 새 이름 `전남광주통합특별시` 8)
     kind: csv_table
     encoding: utf-8-sig
     note: |
+      ★ 2026-11-06 (DECISIONS §649). **같은 시도가 이름 둘로 온다** — 2024 파일의 동구 동명동 10행 중 8행이 `전남광주통합특별시` 이고 2행만 `광주광역시` 다(통합 뒤 갱신된 대장 ·
+        2019~2023 · 2025 는 옛 이름뿐이다). `CTPV_NM=광주광역시` 만 걸면 **8행을 조용히 잃는다**(139행 사고와 같은 종류 · §644-3) — 필터가 `one_of` 로 둘 다 받는다.
+        다른 원천(화재 · 119 · 구조 · 구급)의 해당 지역 행(동구 · 동명동)에는 새 이름이 없다(전수 확인).
+      ★ **「동명동」이 세 곳이다** — 광주 동구 38 · 속초 20 · 목포 12(EMD_NM 만 걸면 70행). 시도 · 시군구 · 읍면동 셋을 AND 로 건다. 연도별 4 · 3 · 4 · 4 · 8 · 10 · 5(2024 = 2 + 8).
       ★ 원본 전국분 8MB. 광주 동구 EMD 는 계림 · 대인 · 용산 · 산수 · 학 ·
         궁 · 용연 · 지산 · 동명 · 소태 · 장 · 불로 · 월남 · 내남 열넷이다.
-    contract: {encoding: utf-8-sig}
+    contract:
+      normalize_columns: upper_strip
+      filter:
+        - {column: CTPV_NM, one_of: [광주광역시, 전남광주통합특별시]}   # ★ 2024 파일이 같은 광주 동구를 새 이름으로도 적는다(통합 뒤 갱신 · §649)
+        - {column: SGG_NM, equals: 동구}
+        - {column: EMD_NM, equals: 동명동}
+      scope_min: 35
+      scope_max: 60
+      encoding: utf-8-sig
     absent:
       LAT:
         in: 소방대상물 현황 CSV 23열
@@ -3264,25 +3353,37 @@ datasets:
           좌표 열이 없다. ADDR 문자열로만 위치를 안다.
           건물 위치는 buildings.geojson 이 갖고 있으므로 주소로 잇는다.
 
+    # ★ 2026-11-06 (§649). 「없음」의 꼴이 **둘**이다 — 빈 셀과 공백 문자열. 공백은 2024 · 2025 파일에서 온다(2024 경계 — 시스템이 바뀐 해 · §643). `notna()` 는 공백을 「있음」으로 센다.
+    none:
+      FIRE_INSRNC_JOIN_YMD: {forms: [빈 셀, 공백]}
+      FIRE_INSRNC_MTRY_YMD: {forms: [빈 셀, 공백]}
+      USE_APRV_YMD: {forms: [빈 셀, 공백]}
+      PBNST_YN: {forms: [빈 셀, 공백]}
+      CLTPTY_YN: {forms: [빈 셀, 공백]}
+      ARSON_MNG_TRGT_YN: {forms: [빈 셀, 공백]}
+      ISF_CHCK_TRGT_YN: {forms: [빈 셀, 공백]}
+      LGZ_FIRE_WKTRGT_YN: {forms: [빈 셀, 공백]}
+      FRFGH_FCLT_CPCST_CMCRT_YMD: {forms: [빈 셀, 공백]}
+      FRFGH_MFBIZ_YN: {forms: [빈 셀, 공백]}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
       columns: ['BDST_SN', 'FRSTN_NM', 'CNTR_NM', 'TRGTOBJ_NM', 'REG_YMD', 'CTPV_NM', 'SGG_NM', 'EMD_NM', 'ADDR', 'BLDG_NM', 'FIRE_INSRNC_JOIN_YMD', 'FIRE_INSRNC_MTRY_YMD', 'FIRE_INSRNC_CO_NM', 'USE_APRV_YMD', 'PBNST_YN', 'CLTPTY_YN', 'ARSON_MNG_TRGT_YN', 'ISF_CHCK_TRGT_YN', 'ISF_CHCK_TRGT_TYPE_NM', 'LGZ_FIRE_WKTRGT_YN', 'FRFGH_FCLT_CPCST_CMCRT_YMD', 'USE_YN', 'FRFGH_MFBIZ_YN']
       encoding_seen: 'utf-8-sig'
       profile:                    # AUTO — firelane.valueprofile 이 쓴다(집계만 · 표본값 없음)
-        n: 23
+        n: 38
         cols:
-          'BLDG_NM': {'empty': 21, 'ws': 0}
-          'FIRE_INSRNC_JOIN_YMD': {'empty': 20, 'ws': 0}
-          'FIRE_INSRNC_MTRY_YMD': {'empty': 20, 'ws': 0}
-          'FIRE_INSRNC_CO_NM': {'empty': 20, 'ws': 0}
-          'USE_APRV_YMD': {'empty': 11, 'ws': 0}
-          'PBNST_YN': {'empty': 23, 'ws': 0}
-          'CLTPTY_YN': {'empty': 23, 'ws': 0}
-          'ARSON_MNG_TRGT_YN': {'empty': 23, 'ws': 0}
-          'ISF_CHCK_TRGT_YN': {'empty': 17, 'ws': 0}
-          'ISF_CHCK_TRGT_TYPE_NM': {'empty': 17, 'ws': 0}
-          'LGZ_FIRE_WKTRGT_YN': {'empty': 23, 'ws': 0}
-          'FRFGH_FCLT_CPCST_CMCRT_YMD': {'empty': 3, 'ws': 0}
-          'FRFGH_MFBIZ_YN': {'empty': 22, 'ws': 0}
+          'BLDG_NM': {'empty': 28, 'ws': 0}
+          'FIRE_INSRNC_JOIN_YMD': {'empty': 20, 'ws': 7}
+          'FIRE_INSRNC_MTRY_YMD': {'empty': 20, 'ws': 7}
+          'FIRE_INSRNC_CO_NM': {'empty': 27, 'ws': 0}
+          'USE_APRV_YMD': {'empty': 11, 'ws': 4}
+          'PBNST_YN': {'empty': 23, 'ws': 7}
+          'CLTPTY_YN': {'empty': 23, 'ws': 7}
+          'ARSON_MNG_TRGT_YN': {'empty': 23, 'ws': 7}
+          'ISF_CHCK_TRGT_YN': {'empty': 17, 'ws': 6}
+          'ISF_CHCK_TRGT_TYPE_NM': {'empty': 23, 'ws': 0}
+          'LGZ_FIRE_WKTRGT_YN': {'empty': 23, 'ws': 7}
+          'FRFGH_FCLT_CPCST_CMCRT_YMD': {'empty': 3, 'ws': 1}
+          'FRFGH_MFBIZ_YN': {'empty': 22, 'ws': 7}
   nfa_spec_chem_gj:
     feeds: []
     feeds_note: '미투입 — 화학차 치수 상한. CONFIG.fleet 의 chem 이 "추정" 이다'
@@ -4403,6 +4504,65 @@ retired:
       NGI/NDA 텍스트 → 전부 SHP(GDAL 직독), 도로명 빈값 → 채워짐,
       자동차전용 속성 추가. 좌표계는 둘 다 5186 으로 동일.
       전용 파서 src/firelane/ngi.py 가 불필요해진다.
+
+  nfa_dispatch_119_dm_derived:
+    stem:      nfa_dispatch_119
+    files:
+      - nfa/nfa_dispatch_119_jngj-dongmyeong_20261104.csv
+    sha256:
+      nfa/nfa_dispatch_119_jngj-dongmyeong_20261104.csv: 153a0ddc9d0b1331f7c2152a4be0208a04307ec12c0b64e9e14afb4d3386aea7
+    what:      119 신고접수 — 동명동 수동 필터 파생본(952행 · 334,220 B). 전국 4개년에서 사람이 `CLMTY_EMD_NM='동명동'` 으로 걸러 낸 것
+    reason: |
+      전국본 재추출(`nfa_dispatch_119` · 광주 · 동구 · 동명동 세 조건)이 같은 952행을 낸다 — 행 수 · 접수번호 집합 · 칸 이름이 같고 하류 결과(`history.geojson`)가 바이트 동일하다(DECISIONS §648-7).
+      ★ 값은 옛것이 **손상돼 있다** — 2022 · 2023 의 183행이 pandas float 변환을 거쳐 `20220104234328` 이 `…328.0`, `0` 이 `0.0` 이다. 새 쪽이 원문이다.
+      ★ 수동 필터라 재현할 수 없다. 새 쪽은 대장의 `contract.filter` 와 `_manifest.json` 의 계보(입력별 sha256 · 전후 행 수)가 재현을 든다.
+      지우지 않고 보관한다(§173-1) — 이름과 sha 로 든다.
+    at:        2026-11-06
+    successor: nfa_dispatch_119
+
+  nfa_fire_incident_donggu_derived:
+    stem:      nfa_fire_incident
+    files:
+      - nfa/nfa_fire_incident_jngj-donggu_20260903.csv
+    sha256:
+      nfa/nfa_fire_incident_jngj-donggu_20260903.csv: c1f98a86160ef4f7d545d609ac953e33a288ad4d8113e25b45f0371e95f2f621
+    what:      화재 현황 — 동구 수동 필터 파생본(2019~2023 · 367행 · 193,220 B). 전국 7개년에서 대문자 필터로 걸러 낸 것
+    reason: |
+      전국본 재추출(`nfa_fire_incident` · 시도 + 시군구 둘)이 506행을 낸다 — 식별번호가 **367 겹치고 기존에만 있는 행이 0** 이며 새 쪽이 2024 · 2025 의 139행을 더 든다(DECISIONS §649).
+      ★ 옛것이 잃은 139행은 대문자 필터가 2024 이후(소문자 헤더)를 0행으로 만든 탓이다(§644-3). 값도 **손상돼 있다** — pandas float 변환(`6` → `6.0`)과 앞자리 0 탈락(`000190` → `190`)이 1,228칸이다.
+      ★ 수동 필터라 재현할 수 없다. 새 쪽은 대장의 `contract.filter` 와 `_manifest.json` 의 계보가 재현을 든다.
+      지우지 않고 보관한다(§173-1) — 이름과 sha 로 든다.
+    at:        2026-11-06
+    successor: nfa_fire_incident
+  nfa_rescue_dm_derived:
+    stem:      nfa_rescue
+    files:
+      - nfa/nfa_rescue_jngj-dongmyeong_20260903.csv
+    sha256:
+      nfa/nfa_rescue_jngj-dongmyeong_20260903.csv: 66cd210b56f6fb13f4dbd7f26b560e2059936e34f4a06a38a9b3ce820d7363f5
+    what:      구조 현황 — 동명동 수동 필터 파생본(2019~2022 · 212행 · 83,820 B). 전국 4개년에서 사람이 걸러 낸 것
+    reason: |
+      전국본 재추출(`nfa_rescue` · 광주 · 동구 · 동명동 세 조건)이 같은 212행을 낸다 — 접수번호 집합이 같고 **한쪽에만 있는 행이 0**, 연도별 59 · 55 · 94 · 4 가 같다(DECISIONS §649).
+      ★ 값은 옛것이 **손상돼 있다** — pandas float 변환(`20191010` → `20191010.0`)과 앞자리 0 탈락(`011700` → `11700` · `08` → `8`)이 6,116칸이다. 새 쪽이 원문이다.
+      ★ 수동 필터라 재현할 수 없다. 새 쪽은 대장의 `contract.filter` 와 `_manifest.json` 의 계보가 재현을 든다.
+      지우지 않고 보관한다(§173-1) — 이름과 sha 로 든다.
+    at:        2026-11-06
+    successor: nfa_rescue
+
+  nfa_target_building_dm_derived:
+    stem:      nfa_target_building
+    files:
+      - nfa/nfa_target_building_jngj-dongmyeong_20260903.csv
+    sha256:
+      nfa/nfa_target_building_jngj-dongmyeong_20260903.csv: d85ec9f5b7fbdca363c3fb2a569aee5cca8d139169f54f00aee1b8f11f934394
+    what:      소방대상물 현황 — 동명동 수동 필터 파생본(2019~2023 · 23행 · 4,755 B). 전국 7개년에서 사람이 걸러 낸 것
+    reason: |
+      전국본 재추출(`nfa_target_building` · 시도 · 시군구 · 읍면동 AND)이 38행을 낸다 — 같은 자료(23칸이 같다)이고 식별번호(BDST_SN)가 **23 겹치며 기존에만 있는 행이 0** 이다.
+      새 쪽이 2024 · 2025 의 15행(광주광역시 7 + 새 이름 `전남광주통합특별시` 8)을 더 든다(DECISIONS §649). 값은 옛것이 pandas float 변환(`20191101` → `20191101.0`)으로 **손상돼 있다**.
+      ★ 수동 필터라 재현할 수 없다. 새 쪽은 대장의 `contract.filter` 와 `_manifest.json` 의 계보가 재현을 든다.
+      지우지 않고 보관한다(§173-1) — 이름과 sha 로 든다.
+    at:        2026-11-06
+    successor: nfa_target_building
 
 # ===== AUTO: inventory — inventory.py 가 쓴다. 손으로 고치지 말 것 =====
 inventory:

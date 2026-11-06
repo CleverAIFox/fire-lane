@@ -1090,7 +1090,7 @@ tools/transition.py        봉인 ↔ 현재 전이표 · --self 항등 자기�
 소방장비 기본규격 · 소방차량 관리카드(받는 대로 반입 · 4대분).
 
 <!--gen: datasets-->
-대장은 `sources.yaml` 하나다. `datasets` 88종 · `retired` 4종.
+대장은 `sources.yaml` 하나다. `datasets` 88종 · `retired` 8종.
 <!--/gen-->
 ★ `datasets` 종수는 `tools/docgen.py` 가 대장에서 받아 **채운다** — 손으로 적으면 낡는다(08-31 에 실제로 셋 다 낡아 있었다). `retired` 종수는 대조만 한다(§246 밖 ②). `norm` 은 텍스트 14종 이관 완료다(§123).
 
@@ -3259,7 +3259,7 @@ DORI 식별 등급에서 유도하고 최악 화각(103.4°)을 써 **19.0m** �
 반복 사례는 `DECISIONS.md` 가 든다.
 
 <!--gen: sections inherit blank-->
-★ **강제자 칸의 분모.** 절 2,970 전수 · **분모(blank) 0절** · 물림(inherit) 1,830절.
+★ **강제자 칸의 분모.** 절 2,995 전수 · **분모(blank) 0절** · 물림(inherit) 1,852절.
 세 수는 `tools/docgen.py` 가 `dms.scan()` 에서 받아 채운다 — 종전 232 는 그 도구가
 절을 틀리게 세던 때의 수고, 그 뒤 하루에 네 번 낡았다(DECISIONS §246).
 <!--/gen-->
@@ -3654,7 +3654,7 @@ CRS 변경               ★ 중단. 무조건
 ### 18-3c. retired — 폐기 기록
 
 **지운 것도 대장에 남긴다.** 없으면 3개월 뒤에 또 받고 또 조사한다.
-현재 `retired` 4종이 있다(NGI 원본 20도엽 · 기본도 옛 판 · 건축물대장 동구 판 · 도로명주소 건물DB 전남광주 판 — DECISIONS §183-2). 전부 파일이 있는 보관본이다 — 파일 없는 기각 기록은 대장에 두지 않고 `landing_disposition` 과 DECISIONS 가 든다.
+현재 `retired` 8종이 있다(NGI 원본 20도엽 · 기본도 옛 판 · 건축물대장 동구 판 · 도로명주소 건물DB 전남광주 판 · 소방청 수동 파생본 넷(119 · 화재 · 구조 · 소방대상물 · 전국본 재추출로 대체 — DECISIONS §649-2) — DECISIONS §183-2). 전부 파일이 있는 보관본이다 — 파일 없는 기각 기록은 대장에 두지 않고 `landing_disposition` 과 DECISIONS 가 든다.
 
 ```yaml
 retired:
@@ -4820,7 +4820,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `src/firelane/publish_fleet.py` | 관내 차종과 제원을 내비가 먹을 꼴로 낸다 |
 | `src/firelane/valueprofile.py` | 표 자료(csv)의 **값의 성질**을 재서 대장 `schema.profile` 에 **집계만** 적는다 — 빈 셀 · 공백 문자열 · 좌표 칸의 센티넬(`0.0`) · 텍스트 없음(`미상`) · 좌표 범위. 표본값은 안 적는다. `--check` 는 커밋된 프로필과 실물을 대고 실물 방언이 `none:` 선언 안인지 본다(레이크가 있는 기계에서). 판정 폐포 밖이고 판정이 안 읽는다(DECISIONS §634) |
 | `src/firelane/measurecols.py` | **측정 절의 「쓴 칸」 머릿줄**을 기계가 강제한다 — DECISIONS 의 측정 절(§635 이후)이 읽은 `원천.칸` 을 역할과 함께 적게 하고, ① 칸이 대장에 실재하는가 ② `위치` 역할이 `coords:` 의 `not_for` 에 걸리지 않는가 ③ `시각` · `가르기` 칸이 「없음」을 가지면 `none:` 선언과 메모가 있는가 ④ 본문에서 뽑은 칸이 머릿줄에 다 있는가를 본다. 스크립트를 저장소에 안 들이는 일회성 측정을 선언 칸에 묶는다. 판정 폐포 밖(DECISIONS §637) |
-| `src/firelane/extract_decl.py` | **추출 단계 선언의 모양과 이름** — 대장 `contract` 의 `normalize_columns`(`lower_strip` · `upper_strip` — 출력 칸 이름이 하류의 이름과 같은 쪽) · `filter`({column, equals} 하나 또는 그 **목록 = AND**) · `scope_max`(상한)가 읽는 갈래 · 정규화 뒤 칸 이름 · `schema.columns` 와 맞는지를 레이크 없이 가린다(`ledger_check` 가 부른다). 오타 하나로 필터가 조용히 안 걸리는 것을 막는다(DECISIONS §646) |
+| `src/firelane/extract_decl.py` | **추출 단계 선언의 모양과 이름** — 대장 `contract` 의 `normalize_columns`(`lower_strip` · `upper_strip` — 출력 칸 이름이 하류의 이름과 같은 쪽) · `filter`({column, equals} 또는 {column, **one_of**(이름이 바뀐 값 여럿 중 하나 · §649)} 하나 또는 그 **목록 = AND**) · `scope_max`(상한)가 읽는 갈래 · 정규화 뒤 칸 이름 · `schema.columns` 와 맞는지를 레이크 없이 가린다(`ledger_check` 가 부른다). 오타 하나로 필터가 조용히 안 걸리는 것을 막는다(DECISIONS §646) |
 | `src/firelane/read/extract.py` | **전국 원본에서 지역 파생본을 만드는 추출 단계** — `csv_table` · `csv_table_multi` 가 `normalize_columns` · `filter` 를 선언하면 `hits` 전부를 청크로 읽어 칸 이름만 정규화하고(값은 안 건드린다) 거르고 하나로 잇는다. 계보에 입력 파일별 sha · **바이트** · 필터 전 · 후 행 수를 남긴다. 0행 · `scope_min` 미달은 FAIL(★ 하한은 **과다**를 못 잡는다 — 「동구」가 여섯 광역시에 있어 단일 조건이 406,168행을 냈다 · 시도 조건 AND 로 고쳤다 · §647). `paths` · `source_dir`(`ingest --only <키> --extract-from <폴더>` — 전국본을 raw 에 안 올리고 제자리에서 읽는다) · `kept`(원본을 `status: missing` 으로 내린 항목의 지난 계보 · 산출물을 보존). 판정 폐포 밖 · `valueprofile` 이 추출 항목은 슬라이스를 읽는다(DECISIONS §646 · §647 · §648) |
 | `src/firelane/quiet_gdal.py` | GDAL 의 **알려진 무해 잡음만** 걷는다. 모르는 경고는 그대로 둔다 |
 | `src/firelane/read/__init__.py` | `kind` 별 **읽기의 정본.** 취입 한 함수에 있던 갈래 열둘을 여기로 뗐다 |
@@ -4838,8 +4838,9 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/occ_pressure.py` | β 의 **수요점**을 건축물대장(레이크)에서 만든다 — 818동·1,794단위 → 좌표에 닿는 774동·1,744단위. 사람이 부른다. 한 지번에 건물관리번호가 여럿이면 첫 매칭 하나(근사) |
 | `tools/ledger_contract_nfa_ems.py` | **비웠다.** `tools/ledger_extract.py` 를 가리키고 종료 2 로 안내만 한다(§648). 이 도구가 nfa_ems 에 박은 단일 조건 필터가 광주 밖 다섯 광역시를 섞어 406,168행을 냈다(§647). 지우지 않은 까닭 — MASTER 등재 · DECISIONS · 문서 도장 · `finish_647_seal.py` 가 이 경로를 가리킨다 |
 | `tools/finish_647_seal.py` | §647 이 만든 문서 빈 곳을 닫는다 — 이 절의 도구 둘 등재와 `extract` 두 행의 갱신. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
-| `tools/ledger_extract.py` | 대장 `datasets.<키>.contract` 에 **추출 선언**(normalize_columns · filter · scope_min · scope_max)을 텍스트로 넣는 **범용** 도구다 — `--key` · `--normalize` · `--filter COL=VAL`(반복 = AND) · `--scope-min` · `--scope-max`. 옛 `ledger_contract_nfa_ems` 가 단일 조건을 박아 406,168행을 냈다(§647) · 「동명동」도 세 곳이다(§648). **쓰기 전에 `extract_decl.problems` 에 태워** 잘못된 선언은 안 쓴다 · 같은 선언이면 멱등 · 다른 선언이면 `--replace` 없이는 거절 · 기존 블록에 주석이 있으면 거절한다(텍스트로 다시 쓰면 날아간다) |
+| `tools/ledger_extract.py` | 대장 `datasets.<키>.contract` 에 **추출 선언**(normalize_columns · filter · scope_min · scope_max)을 텍스트로 넣는 **범용** 도구다 — `--key` · `--normalize` · `--filter COL=VAL`(반복 = AND) · `--one-of COL=A|B`(이름이 바뀐 값 · 다른 조건과 AND) · `--scope-min` · `--scope-max`. 옛 `ledger_contract_nfa_ems` 가 단일 조건을 박아 406,168행을 냈다(§647) · 「동명동」도 세 곳이다(§648). **쓰기 전에 `extract_decl.problems` 에 태워** 잘못된 선언은 안 쓴다 · 같은 선언이면 멱등 · 다른 선언이면 `--replace` 없이는 거절 · 기존 블록에 주석이 있으면 거절한다(텍스트로 다시 쓰면 날아간다) |
 | `tools/finish_648_seal.py` | §648 이 만든 문서 빈 곳을 닫는다 — 이 절의 도구 둘 등재 · `ledger_contract_nfa_ems` 행 갱신 · `extract` 두 행의 갱신. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
+| `tools/finish_649_seal.py` | §649 가 만든 문서 빈 곳을 닫는다 — 이 도구 등재와 `extract_decl` · `ledger_extract` 두 행에 `one_of` 를 더한다. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/fetch_api.py` | 공공데이터포털 표준데이터 API 를 **같은 방법으로 다시 받는** 도구(`FIRE_LANE_DATA_GO_KR_KEY` · 지금은 키가 필요 없다 · PLAN 행 141(닫힘)). 호출은 `--run` 일 때만 |
 | `tools/ledger_add_nfa_ems.py` | 대장에 `datasets.nfa_ems` 를 **텍스트 삽입**으로 등재한다. `yaml.dump` 를 안 쓴다 — 주석이 근거를 드는 대장이라 라운드트립이면 그 근거가 날아간다(`docnum_check.py:528` · `depgroups_check.py:85` 가 같은 이유로 포기했다). 멱등 · 앵커(`nfa_fire_incident:`)를 못 찾으면 자리를 추측하지 않고 실패한다 |
 | `tools/fix_vintage_8digit.py` | landing 파일명과 대장 `files:` 의 vintage 를 `YYYY1231` 로 맞춘다. `naming` 은 `YYYYMMDD`·`YYYYMM`·`YYYY` 를 받는데 `normalize_raw` 의 provider 규칙이 `\d{8}` 만 받아 7파일이 통째로 안 걸렸다(§646). **정규식을 안 고친 이유** — 8자리 전제가 `ledger_fields.py:25` 의 `updated` 유도에도 박혀 있어 넓히면 그쪽이 조용히 깨진다 |
@@ -5203,7 +5204,7 @@ web/
 도달 불가    468         지도에 점선으로 겹친다 — 판정이 clear 여도 닿지 못한다
 총연장       58,821.5m
 기준        소방청 2025 골든타임 대책 + 2026-08-06 현장 답사 (통과 하한 3.0m)
-대장        `datasets` 88종 · `retired` 4종
+대장        `datasets` 88종 · `retired` 8종
 web/data    지형 22타일 · 정사영상 1,423타일 포함 (크기는 web_manifest 가 낸다)
 내비        web/navi/ — GPS 위치 추정(경로 투영 · 순간이동 재동기화) · A* · 턴바이턴 · 대체 접근 지점
             edge_cost 는 파이썬과 전량 대조 · 단위 시험 web/navi/test (npm run test · vitest)

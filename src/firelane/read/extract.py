@@ -8,7 +8,7 @@ extract.py — 전국 원본에서 **지역 파생본을 만드는 추출 단계
 
 ── 대장의 `contract` 키 둘 ────────────────────────────────────
     normalize_columns: lower_strip      칸 이름을 `strip().strip('"').lower()` 로 맞춘다 — **값은 안 건드린다**
-    filter: {column: clmty_emd_nm, equals: 동명동}     (목록이면 AND — 「동구」는 여섯 시도에 있다) 정규화한 **뒤의** 칸 이름으로 적는다 · `equals` 외의 연산은 안 만든다
+    filter: {column: clmty_emd_nm, equals: 동명동}     (`one_of: [a, b]` 는 값 여럿 중 하나 · 목록이면 AND — 「동구」는 여섯 시도에 있다) 정규화한 **뒤의** 칸 이름으로 적는다 · `equals` · `one_of` 외의 연산은 안 만든다
     scope_max: 60000                    거른 뒤 행 수 **상한**(추출 전용) — 하한은 과소를 잡고 상한은 과다를 잡는다. 「동구」가 여섯 광역시에 있어 단일 조건이 406,168행을 냈고 하한 40000 이 통과시켰다(§647)
     scope_min: 100                      (기존 키) 거른 뒤 행 수 하한 — 필터가 있으면 기본 1(0행은 조용히 통과시키지 않는다)
 
@@ -51,9 +51,10 @@ def _pass(path, enc, mode, flt):
         if flt:
             hit, exact = True, True
             for f in conditions(flt):
-                raw, eq = ch[f["column"]], str(f["equals"])
-                hit &= raw.str.strip() == eq
-                exact &= raw == eq
+                raw = ch[f["column"]]
+                want = [str(v) for v in f["one_of"]] if "one_of" in f else [str(f["equals"])]
+                hit &= raw.str.strip().isin(want)
+                exact &= raw.isin(want)
             n_strip += int((hit & ~exact).sum())
             ch = ch[hit]
         if len(ch):
@@ -135,7 +136,7 @@ def read_extracted(c: Ctx):
     df = pd.concat(parts, ignore_index=True)[ref]
     n_in, n_out = sum(f["rows_in"] for f in files), len(df)
     lineage = {"normalize_columns": mode, "filter": flt, "rows_in": n_in, "rows_out": n_out, "files": files}
-    print(f"  · {key}: 파일 {len(files)}개 · {n_in:,}행" + (f" → filter {' & '.join(f'{f['column']}={f['equals']}' for f in conditions(flt))} → {n_out:,}행" if flt else " (필터 없음)")
+    print(f"  · {key}: 파일 {len(files)}개 · {n_in:,}행" + (f" → filter {' & '.join(f'{f['column']}={"|".join(map(str, f["one_of"])) if "one_of" in f else f["equals"]}' for f in conditions(flt))} → {n_out:,}행" if flt else " (필터 없음)")
           + (f" · 공백을 걷어야 맞은 행 {sum(f['stripped_matches'] for f in files):,}" if flt and any(f["stripped_matches"] for f in files) else ""))
     rec |= {"source_sha256": ",".join(f["sha256"][:16] for f in files), "resolved": " + ".join(f["name"] for f in files), "extract": lineage}
     rec.pop("ambiguous", None)                 # 여럿을 읽는 것이 정상이다. 모호하지 않다
