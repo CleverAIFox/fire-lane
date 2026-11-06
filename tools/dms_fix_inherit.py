@@ -5,6 +5,7 @@
 (`scan()` 의 `inherit` 행을 부모별로 센다)에서 얻는다 — 두 벌로 세지 않는다.
 
     .venv/bin/python tools/dms_fix_inherit.py          # 무엇을 바꿀지 보인다
+    .venv/bin/python tools/dms_fix_inherit.py --check  # 어긋나면 rc 1 (verify.sh) — 안 쓴다
     .venv/bin/python tools/dms_fix_inherit.py --write  # 쓴다
 
 IN    docs/*.md (`dms.DOCS` 가 든 문서) — `dms.scan()` 이 읽는 그대로
@@ -37,6 +38,7 @@ def _dms():
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--write", action="store_true", help="실제로 쓴다(기본은 계획만)")
+    ap.add_argument("--check", action="store_true", help="대조만 — 어긋나면 rc 1 (쓰지 않는다)")
     a = ap.parse_args(argv)
     d = _dms()
     data = d.scan()
@@ -78,7 +80,7 @@ def main(argv: list[str] | None = None) -> int:
             (ROOT / doc).write_text("\n".join(lines), encoding="utf-8")
     elif texts:
         print("계획만 했다. 쓰려면 --write")
-    return 0
+    return 1 if (a.check and texts) else 0
 
 
 def _swap(d, m: re.Match, line: str, w: str, n: int) -> str:
