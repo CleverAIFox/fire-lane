@@ -4756,6 +4756,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `web/navi/src/ui/RemainPill.tsx` | 하단 「N분 남음 · x.x km」. 경로가 안 선 상태에서는 **수를 비운다** — 옛 경로의 남은 시간은 거짓 숫자다 |
 | `web/navi/src/ui/StatusCard.tsx` | 우측 상태 카드. **시간이 걸리는 상태만** 띄운다 — 나머지까지 띄우면 골목에서 지도를 가린다 |
 | `web/navi/src/ui/ShareChip.tsx` | 관제 공유 상태칩. 상단바 바로 아래 **가운데** — 오른쪽에 두면 병목 시트와 재탐색 카드가 같은 자리를 쓴다 |
+| `web/navi/src/ui/deferred.tsx` | **첫 화면에 안 쓰이는 주행 부품을 진입 청크 밖에 둔다**(`React.lazy`). 미룬 것 — `RouteBrief`(`brief` 화면) · `BottleneckPanel` · `ShareChip`(주행 화면) · `DevBar`(`?dev=1`). 진입 청크 래칫(`naviweight` 127KB)이 PR #360 의 배포를 막아 130.56KB → 117.15KB 로 내렸다 — 래칫을 올리지 않았다. **서비스 워커는 첫 방문에서 쓴 것만 캐시하므로** `prefetch()` 가 데이터 도착 직후 유휴 시간에 셋(`DevBar` 제외)을 미리 받는다 — 안 받은 채 통신이 끊기면 주행 화면이 빈다. 폴백은 `null` |
 | `web/navi/src/ui/BottleneckPanel.tsx` | 병목 구간 상세(유효폭 · 요구폭 · 여유폭 · 길이 · 사유 · 근거). 「측정 신뢰도」는 `width_cov` 다 |
 | `web/navi/src/ui/SegCard.tsx` | 관제가 도로 하나를 눌렀을 때의 구간 카드. 여유폭을 **수로** 내고 사유를 한 줄 단다 — 넉넉하면 그 칸이 통째로 빠진다 |
 | `web/navi/src/ui/OpsBits.tsx` | 관제의 되풀이 조각 넷(`Row` · `Sec` · `Tile` · `Center`). 층(`LAYER`)을 받아 **휘도로** 무게를 가른다 |
@@ -4855,6 +4856,7 @@ ui/       그리기         상태를 모른다. 받은 것을 그린다
 | `tools/finish_656_seal.py` | §656 이 만든 문서 빈 곳을 닫는다 — 새 시험 하나 등재. `sealcov` 는 `--write` 가 못 고치는 자리(§636)라 스크립트로 넣는다 |
 | `tools/fetch_api.py` | 공공데이터포털 표준데이터 API 를 **같은 방법으로 다시 받는** 도구(`FIRE_LANE_DATA_GO_KR_KEY` · 지금은 키가 필요 없다 · PLAN 행 141(닫힘)). 호출은 `--run` 일 때만 |
 | `tools/ledger_add_nfa_ems.py` | 대장에 `datasets.nfa_ems` 를 **텍스트 삽입**으로 등재한다. `yaml.dump` 를 안 쓴다 — 주석이 근거를 드는 대장이라 라운드트립이면 그 근거가 날아간다(`docnum_check.py:528` · `depgroups_check.py:85` 가 같은 이유로 포기했다). 멱등 · 앵커(`nfa_fire_incident:`)를 못 찾으면 자리를 추측하지 않고 실패한다 |
+| `tools/dms_fix_inherit.py` | 부모 칸의 「하위 일곱」 같은 **수 낱말을 판정기가 세는 수로 다시 쓴다.** 수는 `dms.scan()` 의 `inherit` 행을 부모별로 센 것(`inherit_counts` 와 같은 규칙)이라 손으로 세지 않는다 — 손으로 센 수가 §648~§656 에서 여섯 번 틀렸다. **돌린 뒤 늘어난 절을 읽는 것은 사람 몫이다**(판정기가 우는 이유가 그것이다). 기본은 계획만 · `--write` 가 쓴다 |
 | `tools/finish_c1_seal.py` | C1 이 만든 빈 곳 둘을 닫는다 — MASTER §23-2 등재와 `unusedcheck.PENDING_MAX` 13→14. `sealcov` 와 느슨해진 래칫은 `--write` 가 못 고치는 자리인데(§636), **적는 주체가 사람이라는 뜻이지 적는 방법이 손이라는 뜻이 아니다** |
 
 ### 23-3. 검사 — 무엇을 묻나

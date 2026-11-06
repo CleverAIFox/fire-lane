@@ -6,6 +6,14 @@
 
     .venv/bin/python tools/dms_fix_inherit.py          # 무엇을 바꿀지 보인다
     .venv/bin/python tools/dms_fix_inherit.py --write  # 쓴다
+
+IN    docs/*.md (`dms.DOCS` 가 든 문서) — `dms.scan()` 이 읽는 그대로
+OUT   그 문서의 부모 칸 한 줄(「하위 일곱」 같은 수 낱말) — `--write` 일 때만
+PARAM 없음
+부류  생산   문서의 줄을 고친다 (DECISIONS §398 의 「산출물·대장·그림」 중 문서) — 새 절을 쓸 때마다 수가 어긋난다(§648~§656 에서 여섯)
+밖    **새 하위 절을 읽었는가는 안 본다.** 수만 맞춘다 — 그 새 절을 사람이 보게 하려고 판정기가
+      우는 것인데, 이 도구가 그 울음을 지운다. 돌린 뒤 늘어난 절을 읽는 것은 사람 몫이다.
+      「하위 N」 줄이 없는 부모는 안 만든다(수 없는 옛 표기는 판정기도 안 센다).
 """
 from __future__ import annotations
 
