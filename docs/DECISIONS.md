@@ -46457,7 +46457,7 @@ csv 비기하 24개는 shapely · geopandas · pyogrio · pyproj 를 한 번도 
 - `sizetable` `ingest.py` 662→690 → 로직을 `read/extract.py`(`paths` · `source_dir` · `kept`)로 내보내 **677** 로 줄였다. 못 없앤 15줄은 상한을 677 로 올렸다 — **확산**이다(새 능력). 사유는 `tools/sizetable.py` 의 그 자리와 여기.
 - `srccov` SRC_UNTESTED 1→2 · SRC_IO_UNTESTED 5→6 → `conditions` · `source_dir` 를 이름으로 부르는 시험을 달아 **원인을 없앴다**.
 - `suppress` RATCHET 55→57 → 새로 단 `# noqa: PLC0415` 둘을 import 를 위로 올려 **없앴다**.
-- `sealcov` 빈 곳 1(`tools/ledger_contract_nfa_ems.py` — §646 이 올린 도구) → `tools/finish_647_seal.py` 로 MASTER §23-2 에 등재했다. 덮임 668/668 · 래칫 666→668(**조이는 쪽**).
+- `sealcov` 빈 곳 1(`tools/ledger_contract_nfa_ems.py` — §646 이 올린 도구) → `tools/finish_647_seal.py`(삭제됨) 로 MASTER §23-2 에 등재했다. 덮임 668/668 · 래칫 666→668(**조이는 쪽**).
 - `mutate` 장부는 `sizecheck` 한 도구가 낡아 다시 쟀다(`--write --stale`).
 - 도장: 33절이 무효였고 이 판의 변경 때문이다(`sources.yaml` · `ledger.py` · `sizetable.py` · `ingest.py`가 바뀌었다). 읽은 것 — ingest 를 다루는 §435 · §461(샤드 루프의 OOM 처리) · §634(`build` 의 좌표 선언 거부)는 이 판이 건드린 줄과 겹치지 않는다. `sources.yaml` 에 기대는 절들은 `nfa_ems` 항목 하나만 바뀌었고 그 항목을 말하는 절이 없다. 그래서 다시 찍었다.
 
@@ -46521,7 +46521,7 @@ csv 비기하 24개는 shapely · geopandas · pyogrio · pyproj 를 한 번도 
 - `test_lake` 「대장 직접 로드」 37 → 38 — 새 도구가 대장 텍스트에서 스니펫을 `yaml.safe_load` 로 읽었다. `ledger.parse`(접근자)로 바꿔 **원인을 없앴다**(상한 안 올림).
 - `toolclass` — 비운 옛 도구의 부류를 「표시」(어휘 밖)로 적었다 → 「절차」로 고쳤다(산출물에 안 닿는다).
 - `test_extract` — 실제 대장에서 추출 키를 쓰는 항목이 둘이 됐다(`nfa_dispatch_119` · `nfa_ems`) — 기대를 고쳤다.
-- `sealcov` 빈 곳 — 새 도구 둘과 새 시험 하나(`tools/ledger_extract.py` · `tools/finish_648_seal.py` · `tests/test_ledger_extract.py`)를 `tools/finish_648_seal.py` 로 MASTER §23 에 등재했다. 덮임 671/671 · 래칫 666→670→**671**(조이는 쪽).
+- `sealcov` 빈 곳 — 새 도구 둘과 새 시험 하나(`tools/ledger_extract.py` · `tools/finish_648_seal.py`(삭제됨) · `tests/test_ledger_extract.py`)를 `tools/finish_648_seal.py`(삭제됨) 로 MASTER §23 에 등재했다. 덮임 671/671 · 래칫 666→670→**671**(조이는 쪽).
 - `mutate` 장부는 `sizecheck` · `sealcov` 한 도구씩 낡아 다시 쟀다(`--write --stale`).
 - 이 판은 상한을 올리지 않았다. `sizetable` · `suppress` · `srccov` 는 움직이지 않았다.
 - **시험은 묶음으로만 돌렸다**(전체는 이 속도로 수 시간이다): 대장 · 계층 · 계약 · 봉인 · 추출 · 취득 · 발행 맥락 · 도구 분류 · 선언 묶음 537건 통과 · 위 `test_lake` 한 건만 어제부터 빨갛다.
@@ -46584,7 +46584,7 @@ csv 비기하 24개는 shapely · geopandas · pyogrio · pyproj 를 한 번도 
 
 ### 649-8. 래칫 · docgen — 어제부터 빨갰던 것과 이 판이 만든 것
 어제(§648)부터 느슨한 셋은 **그대로다** — `mutate` SURVIVORS 82→83 · UNSORTED 57→58(`unusedcheck.PENDING_MAX` 13→14 의 변이 · §647-6) · `docseal` UNSEALED(도장 무효). `test_lake` authority 18 > 17 도 같다. 이 판이 만든 것이 아니라 안 건드렸다. **이 판이 새로 만든 것은 없다** — 상한을 올리지 않았다(`sizetable` · `suppress` · `srccov` 불변).
-- `sealcov` — 새 도구 하나(`tools/finish_649_seal.py`)를 그 스크립트로 MASTER §23-2 에 등재했다. 덮임 672/672 · 래칫 671→**672**(조이는 쪽).
+- `sealcov` — 새 도구 하나(`tools/finish_649_seal.py`(삭제됨))를 그 스크립트로 MASTER §23-2 에 등재했다. 덮임 672/672 · 래칫 671→**672**(조이는 쪽).
 - `mutate` 장부는 `sealcov` 한 도구가 낡아 다시 쟀다(`--write --stale`).
 - **docgen — 바뀐 수는 둘이고 이유는 절 수다.** `sections` 2,970 → **2,995** · `inherit` 1,830 → **1,852**(MASTER 3262행). DECISIONS 절이 늘어서다(§648 의 절 수를 §648 커밋이 못 채웠고 이 판의 §649 가 더했다). 판정 수(`v_clear` 275 · `v_needs_cv` 283 · `v_blocked` 193 · `v_unknown` 536)와 나머지 34곳은 그대로다. 화재 요약 `fire_donggu` 의 수는 문서에 글자로 없어 docgen 축이 아니다.
 - **시험은 묶음으로만 돌렸다**(전체는 이 속도로 수 시간이다 · §648-8): 대장 · 계층 · 계약 · 봉인 · 추출 · 취득 · 발행 맥락 · 도구 분류 · 선언 · docgen · repo_numbers 묶음 593건에서 docgen · repo_numbers 넷이 위 절 수 때문에 빨갰고 docgen 으로 채운 뒤 통과했다. 같은 묶음에서 빨간 것은 `test_lake` authority 한 건(어제부터)뿐이다.
@@ -46669,7 +46669,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 어제부터 느슨한 셋은 **그대로다** — `mutate` SURVIVORS 82→83 · UNSORTED 57→58(`unusedcheck.PENDING_MAX` 13→14 의 변이 · §647-6) · `docseal` UNSEALED(도장 무효). `test_lake` authority 18 > 17 도 같다. 이 판이 만든 것이 아니라 안 건드렸다.
 이 판이 **새로 만든 것**과 처리:
 - `scopedecl` NO_DECL 147 → 148 — 새 조사 도구의 머리말에 `밖` 칸(안 보는 것)이 없었다. 차종 · 접근로 · 속도와 고정분 분리 · 지령 → 도착의 성격을 적어 **원인을 없앴다**(상한 안 올림).
-- `sealcov` — 새 도구 둘 · 새 시험 하나를 `tools/finish_650_seal.py` 로 MASTER §23 에 등재했다. 덮임 675/675 · 래칫 672 → **675**(조이는 쪽).
+- `sealcov` — 새 도구 둘 · 새 시험 하나를 `tools/finish_650_seal.py`(삭제됨) 로 MASTER §23 에 등재했다. 덮임 675/675 · 래칫 672 → **675**(조이는 쪽).
 - `mutate` 장부는 `sealcov` 한 도구가 낡아 다시 쟀다(`--write --stale`).
 - 이 판은 상한을 올리지 않았다(`sizetable` · `suppress` · `srccov` 불변). `ruff check --fix` 를 파일마다 돌렸다.
 - **docgen — 바뀐 수는 다섯이고 이유는 둘이다.** DECISIONS 절이 늘어서 `sections` 2,995 → **3,006** · `inherit` 1,852 → **1,862**(MASTER 분모 줄). PLAN 에 행 #195 가 더해져 `plan_open` 41 → **42**(「남은 일 — 42행」) · `pc_open` 41 → **42** · `pc_gap` 36 → **37**. 판정 수(`v_clear` 275 · `v_needs_cv` 283 · `v_blocked` 193 · `v_unknown` 536)와 나머지 31곳은 그대로다. **발행본(`web/data`)은 안 움직였다** — 읽기 전용 조사라 산출물을 쓰지 않는다.
@@ -46810,7 +46810,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 어제부터 느슨한 셋은 **그대로다** — `mutate` SURVIVORS 82→83 · UNSORTED 57→58 · `docseal` UNSEALED(도장 무효). `test_lake` authority 18 > 17 도 같다. `lakecheck` 합계가 5 → 12 로 늘어난 것은 레이크 밖 `Downloads` 의 구급 현황 7개 csv 가 목록에 오른 것이라(이 판 이전 · 이 판이 건드린 것이 아니다) 안 건드렸다.
 이 판이 **새로 만든 것**과 처리:
 - `test_declaration_reality::test_ledger_consumers_are_complete` — 새 조사 도구가 `jijeok_5186.gpkg` 를 읽는데 대장 `outputs.jijeok_5186.consumers` 가 비어 있었다. 그 칸에 `tools/oneway_match.py` 를 적었다(짝 `jijeok.geojson` 은 소비자 0 그대로).
-- `sealcov` — 새 도구 둘 · 새 시험 하나를 `tools/finish_652_seal.py` 로 MASTER §23 에 등재했다. 덮임 678/678 · 래칫 675 → **678**(조이는 쪽).
+- `sealcov` — 새 도구 둘 · 새 시험 하나를 `tools/finish_652_seal.py`(삭제됨) 로 MASTER §23 에 등재했다. 덮임 678/678 · 래칫 675 → **678**(조이는 쪽).
 - `scopedecl` · `suppress` · `sizecheck` · `uicheck` 는 안 움직였다 — 도구 · 시험 머리에 `밖` 칸을 적었고 `noqa` 를 안 썼으며 상한을 안 올렸다. `ruff check --fix` 통과.
 - 대장: `awaiting` 두 줄을 지우고 `feeds_why` 의 틀린 문장(「배선하면 판정이 움직인다」 — 움직이는 것은 `ow` 와 경로이고 판정 수는 안 움직인다)을 고쳤다. `prep --apply` 가 `data/_prep.json` 을 바꿨다(norm 한 파일 · 병합 범위 기록).
 - **docgen — 바뀐 수는 둘이고 이유는 절 수다.** DECISIONS 절이 늘어서 `sections` 3,014 → **3,024** · `inherit` 1,869 → **1,878**(MASTER 분모 줄). 판정 수(`v_*`) · PLAN 수(행을 고치기만 했다 — `plan_open` 42 그대로) · 나머지는 그대로다.
@@ -46867,7 +46867,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 ### 653-7. 래칫 · docgen — 어제부터 빨갰던 것과 이 판이 만든 것
 어제부터 느슨한 셋은 **그대로다** — `mutate` SURVIVORS 82→83 · UNSORTED 57→58 · `docseal` UNSEALED. `test_lake` authority 18 > 17 도 같다.
-이 판이 **새로 만든 것**과 처리: `navicheck` 방향 미상 **56 → 51**(조이는 쪽 · `ratchet --write`) · `test_ledger_outputs` · `test_declaration_reality` 가 새로 울었다(판독표 소비자를 `publish_rules.py` 만 적었고 `outputs.segments.consumers` 에 새 시험을 적었다) · `astarbench` 두 건(장부를 재서 적었다) · 그림 신선도(다시 만들었다). `fieldseal` 은 사람이 친다. `sealcov` 는 새 도구 · 시험을 `tools/finish_653_seal.py` 로 MASTER §23 에 등재했다(덮임 680/680 · 래칫 678 → **680** 조임). docgen: `sections` 3,024 → **3,032** · `inherit` 1,878 → **1,885**(절이 늘어서) — 판정 수 · PLAN 수(`plan_open` 42)는 그대로다. 상한을 올리지 않았다. 시험은 묶음으로 돌렸다(전체는 수 시간): 파이썬 217건 · 웹 529건 통과 · `test_lake` authority 만 어제부터 빨갛다.
+이 판이 **새로 만든 것**과 처리: `navicheck` 방향 미상 **56 → 51**(조이는 쪽 · `ratchet --write`) · `test_ledger_outputs` · `test_declaration_reality` 가 새로 울었다(판독표 소비자를 `publish_rules.py` 만 적었고 `outputs.segments.consumers` 에 새 시험을 적었다) · `astarbench` 두 건(장부를 재서 적었다) · 그림 신선도(다시 만들었다). `fieldseal` 은 사람이 친다. `sealcov` 는 새 도구 · 시험을 `tools/finish_653_seal.py`(삭제됨) 로 MASTER §23 에 등재했다(덮임 680/680 · 래칫 678 → **680** 조임). docgen: `sections` 3,024 → **3,032** · `inherit` 1,878 → **1,885**(절이 늘어서) — 판정 수 · PLAN 수(`plan_open` 42)는 그대로다. 상한을 올리지 않았다. 시험은 묶음으로 돌렸다(전체는 수 시간): 파이썬 217건 · 웹 529건 통과 · `test_lake` authority 만 어제부터 빨갛다.
 
 
 ## 654. F판 #187 의 현장 측정을 정사영상 판독으로 줄일 수 있는가를 쟀다 — 못 줄인다 · 현장 55구간으로 확정 (측정 기록 · 판정 불변 · 조사 도구 하나)
@@ -46937,7 +46937,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 이 판이 **새로 만든 것**과 처리:
 - `planwork` PLAN_HISTORY 393 → 759 · WORST 291 → 366 — PLAN #187 에 `★ 날짜` 꼴의 경과 서술을 적었다(PLAN 은 그것을 **이력 사본**으로 센다 · 정본은 DECISIONS). 날짜가 붙은 `★` 를 풀고 **결론과 DECISIONS 를 가리키는 서술**로 다시 썼다 — 래칫을 안 올렸다(393 · 291 그대로).
 - `test_declaration_reality` — 새 조사 도구가 `naver_width_2610.csv` · `evalset_2610.csv` 를 읽는데 대장 `consumers` 에 없었다. 둘에 `tools/ortho_probe.py` 를 적었다(평가셋은 **구간 목록만** 읽고 값 칸은 안 읽고 안 채운다 — 그 자리 주석에도 적었다).
-- `sealcov` — 새 도구 둘 · 새 시험 하나를 `tools/finish_654_seal.py` 로 MASTER §23 에 등재했다. 덮임 683/683 · 래칫 680 → **683**(조이는 쪽). MASTER §7-2 에 한계 한 줄을 같은 스크립트로 더했다.
+- `sealcov` — 새 도구 둘 · 새 시험 하나를 `tools/finish_654_seal.py`(삭제됨) 로 MASTER §23 에 등재했다. 덮임 683/683 · 래칫 680 → **683**(조이는 쪽). MASTER §7-2 에 한계 한 줄을 같은 스크립트로 더했다.
 - 상한을 올리지 않았다. `ruff check --fix` 통과. docgen: `sections` 3,032 → **3,040** · `inherit` 1,885 → **1,892**(절이 늘어서 — §653 위에 얹힌 값이다) · 판정 수 · PLAN 수(`plan_open` 42)는 그대로다.
 - 시험은 묶음으로 돌렸다(전체는 수 시간).
 
@@ -47014,7 +47014,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 ### 655-6. 래칫 · docgen
 - 판정 폐포 · golden 안 건드림. `ruff check --fix` 통과. 상한 안 올림.
-- `sealcov` — 새 시험 하나(`tests/test_ops_token_wiring.py`)를 `tools/finish_655_seal.py` 로 MASTER §23-3 에 등재했다.
+- `sealcov` — 새 시험 하나(`tests/test_ops_token_wiring.py`)를 `tools/finish_655_seal.py`(삭제됨) 로 MASTER §23-3 에 등재했다.
 - 어제부터 느슨한 셋은 그대로다(`mutate` SURVIVORS · UNSORTED · `docseal` UNSEALED). `test_lake` authority 도 같다.
 - 시험은 묶음으로 돌렸다(전체는 수 시간).
 
@@ -47053,7 +47053,7 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 ### 656-6. 래칫 · docgen
 - 판정 · 폐포 · golden 안 건드림. 상한 안 올림. `ruff check --fix` 통과.
-- `sealcov` — 새 시험 하나(`tests/test_plan_tables.py`)를 `tools/finish_656_seal.py` 로 MASTER §23 에 등재했다.
+- `sealcov` — 새 시험 하나(`tests/test_plan_tables.py`)를 `tools/finish_656_seal.py`(삭제됨) 로 MASTER §23 에 등재했다.
 - 어제부터 느슨한 셋은 그대로다(`mutate` SURVIVORS · UNSORTED · `docseal` UNSEALED). `test_lake` authority 도 같다.
 
 ## 657. 전수 pytest 빨강 열셋 — 오늘 만든 것이 아니라 오늘 드러났다 (구조 문제 셋 · 판정 불변 · 코드는 도구 둘과 상수)
