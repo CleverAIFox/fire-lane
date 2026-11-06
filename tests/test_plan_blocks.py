@@ -4,7 +4,7 @@
 ① 배분 표의 행 번호 + 외부 회신 + 미배분이 §1 의 행 집합과 **정확히 같다**(빠짐 · 겹침 · 유령 번호 없음)
 ② 전건 관계가 실재하는 구획만 가리키고 **순환하지 않는다**
 ③ 재잠금 횟수가 선언대로다(A 1회 · B 2회 · 나머지 0)
-④ (Zm28) 0판이 없다 · A 의 전건은 없음 · F 의 전건은 E · A 행이 완료/남은/보류를 가른다 · F 행이 「판정 불변」과 「E 를 다시 돈다」를 못 박는다
+④ (Zm28) 0판이 없다 · A 의 전건은 없음 · F 의 전건은 A(§655) · A 행이 완료/남은/보류를 가른다 · F 행이 「판정 불변」과 「E 를 다시 돈다」를 못 박는다
 
 IN    docs/PLAN.md
 OUT   없음 (검사)
@@ -97,8 +97,10 @@ def test_there_is_no_block_zero() -> None:
 def test_the_order_is_a_first_and_f_last() -> None:
     b = blocks()
     assert b["A"]["pre"] == [], "A 의 전건은 없음이다"
-    assert b["F"]["pre"] == ["E"], "F 의 전건은 E 다"
-    assert b["B"]["pre"] == ["A"] and b["C"]["pre"] == ["A"] and b["D"]["pre"] == ["B"] and b["E"]["pre"] == ["D"]
+    # ★ 2026-11-06 (DECISIONS §655). E 의 전건은 D 가 아니라 A 다 — 열두 행 어디도 D 의 산출을 소비하지 않는다.
+    #   F 의 전건은 E 가 아니라 A 다 — F 는 E 의 산출을 읽지 않는다(E 로 돌아가는 길은 전건이 아니라 되돌림이다).
+    assert b["F"]["pre"] == ["A"], "F 의 전건은 A 다"
+    assert b["B"]["pre"] == ["A"] and b["C"]["pre"] == ["A"] and b["D"]["pre"] == ["B"] and b["E"]["pre"] == ["A"]
     # F 는 아무 구획의 전건도 아니다 — 맨 뒤다
     assert not [k for k, v in b.items() if "F" in v["pre"]]
 
