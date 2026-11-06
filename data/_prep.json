@@ -450,7 +450,27 @@
    "hangul_ratio": 0.1303,
    "notes": [],
    "at": "2026-11-04T21:24:26+09:00"
+  },
+  "gjcity/gjcity_oneway_donggu_jngj-donggu_20261008.xlsx": {
+   "key": "gjcity_oneway",
+   "dst": "gjcity/gjcity_oneway_donggu_jngj-donggu_20261008.csv",
+   "src_sha256": "8edbf3c6a1d1ac6cc27e5b5bac1143b851b30a63e2d816046a2697f3c4ed4bd1",
+   "dst_sha256": "5ebc2186829442591aa099931856a0fef86f4c868b06347b23f9c48b382a1272",
+   "converter": "xlsxtable",
+   "converter_version": "2026-10-13.1",
+   "src_encoding": "xlsx",
+   "dst_encoding": "utf-8",
+   "dst_newline": "lf",
+   "sheet": "Sheet1",
+   "sheet_rows": 36,
+   "sheet_cols": 6,
+   "merged": [
+    "A1:A3",
+    "C1:C3",
+    "E1:F2"
+   ],
+   "at": "2026-11-06T15:54:55+09:00"
   }
  },
- "at": "2026-11-04T21:24:26+09:00"
+ "at": "2026-11-06T15:54:55+09:00"
 }

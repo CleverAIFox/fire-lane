@@ -4096,10 +4096,9 @@ datasets:
   #   「지금 실물이 이렇게 생겼다」는 **사실**이고, 손으로 적으면 `--check` 가
   #   대조할 상대가 사라진다(그 도구 머리말).
   gjcity_oneway:
-    awaiting: 2026-10-13 반입 대기 — 선언이 먼저 서고 Fox 의 기계가 intake·acquire 를 돌린다(DECISIONS §515-1). raw 에 들어오면 이 줄을 지우고 `norm_convert` 가 norm CSV 를 굽는다
     stem: gjcity_oneway_donggu
     ext: [xlsx]
-    feeds_note: 미투입 — 일방통행 **방향**을 든다. 배선은 PLAN #1 이 한다
+    feeds_note: 미투입 — 일방통행 **방향의 후보**를 든다. 배선은 PLAN #1 이 한다(DECISIONS §652 — 적용 전 승인 대기)
     kind: raw_only
     norm_convert: xlsxtable      # prep 이 norm 에 같은 이름의 .csv 를 쓴다(값은 글자 그대로)
     scope: jngj-donggu
@@ -4112,8 +4111,10 @@ datasets:
     feeds_why: |
       미배선 — 방향을 채우는 일은 `publish_rules.oneway()` 소관인데
         그 함수가 읽는 `ngii1k_center.일방통행` 은 **여부만** 말하고 방향을 안
-        말한다(`publish_navi.py` 머리말). 이 자료가 **방향**을 든다. 배선은
-        PLAN `#1` 이 드는 판이 한다 — 배선하면 판정이 움직인다.
+        말한다(`publish_navi.py` 머리말). 표준노드링크가 방향을 들지만 골목을 안 든다(방향 확정 1 ·
+        `nl_none` 44). 이 자료가 **방향의 후보**를 든다 — 시점부 → 종점부가 통행 방향이라는 것은 문서에
+        없다. 배선은 PLAN `#1` 이 드는 판이 한다 — **배선하면 `navi_graph` 의 `ow` 와 A* 경로가 움직이고
+        판정 수(`verdict`)는 안 움직인다**(DECISIONS §652).
     used_for: |
       측정 대장 oneway-disclosure 의 회신 자료. 방향 모름(`ow=2`) 56구간 중
       도로명이 이 자료에 있는 것 19(34%)로 기준 「50% 미만이면 현장 표지 확인」에
@@ -4127,9 +4128,15 @@ datasets:
       ★ 끝점이 지번이라 좌표가 없다. 구간 단위로 붙이려면 지번→좌표가 먼저고
         그 자리는 jijeok 이 든다(MASTER §16). 도로명만으로는 못 붙인다 —
         동계천로는 우리 구간이 91개인데 이 자료의 일방 구간은 100m 한 토막이다.
+      ★ 2026-11-06 (DECISIONS §652). 반입 · norm 변환(`xlsxtable` — 병합 머리 3줄은 값 그대로 옮기고 병합 범위 `A1:A3 · C1:C3 · E1:F2` 는 `_prep.json` 이 든다)을 했다.
+        **동명동 끝점이 둘이 아니라 셋이다** — 표 6행 필문대로 670m(지산동 502-1 → 동명동 118-21) · 8행 지산로 305m(지산1동 461-1 → 동명동 125) · 31행 백서로 320m(동명동 140-13 → 장동 86-7).
+      ★ 우리 구간에 댄 결과(`tools/oneway_match.py`): 33행 중 **붙음 3**(표 1행 구성로204번길 · 2행 구성로194번길 · 11행 독립로264번길) · 부분 9(구간의 일부만 우리 안) · 밖 9 ·
+        끝점 좌표 없음 8(지적도에 없음) · 우리 도로명 구간 없음 2 · 끝점 지번 없음 2(교 · 교차로). 방향이 새로 정해질 후보는 `ow=2` 5구간뿐이다.
+      ★ **시점부 → 종점부가 통행 방향인지는 문서에 없다.** 경찰 문서가 방향을 화살표(→)로 적는 행은 42 중 5개이고 나머지는 범위(～)다. 우리 `ow=1` 한 구간(제봉로110번길)과
+        그 곁 세 행이 같은 방향이고(n=1구간), 두 목록이 겹치는 17행은 시점/종점 순서가 전부 같다(뿌리가 같아 독립 근거가 아니다).
+
 
   gjpolice_oneway:
-    awaiting: 2026-10-13 반입 대기 — 같은 순서다(DECISIONS §515-1). 변환기 없는 `raw_only` 라 norm 산출이 없다
     stem: gjpolice_oneway_donggu
     ext: [hwpx]
     kind: raw_only
@@ -4153,6 +4160,8 @@ datasets:
         동구청에만 19 · 경찰에만 10. 끝점이 겹치는 곳의 **거리는 0건 어긋남**이라
         뿌리는 같고 한쪽이 갱신됐다. 통지일은 경찰(10-12)이 동구청(10-08)보다
         나중이다. 어느 쪽이 정본인지는 측정 대장 oneway-two-sources 가 든다.
+      ★ 2026-11-06 (DECISIONS §652). 이 판의 짝짓기(끝점 지번 정규화)로는 끝점쌍이 같은 행이 **17**이다(위 14 와 다르다 — 정규화 차이). 방향을 **화살표(→)**로 적는 행은 42 중
+        5개(38~42행 · 서식이 바뀐 뒤쪽 행)이고 나머지 37행은 범위(～) · 기호 없음이다. 이 문서도 시점 → 종점이 통행 방향이라고는 안 적는다.
 
   safety_dongmyeong_fires:
     awaiting: 2026-10-13 반입 대기 — 같은 순서다(DECISIONS §515-1). raw 에 들어오면 이 줄을 지운다
@@ -4630,12 +4639,13 @@ outputs:
     produced_by: src/firelane/ingest.py
     path: data/processed/jijeok_5186.gpkg
     inputs: [jijeok]
-    consumers: []
+    consumers: [tools/oneway_match.py]
     what: 위와 같은 것의 5186 GeoPackage 판. 공간 질의용
     note: |
       ★ 2026-09-14 등재. `jijeok.geojson` 과 짝이다. ingest 가 같이 낸다.
       ★ 2026-09-24. `jijeok_probe.py` 를 소비자로 적고 있었으나 그 도구는
         이 파일 이름을 한 번도 안 든다. 짝과 같이 소비자 0이다.
+      ★ 2026-11-06 (DECISIONS §652). `tools/oneway_match.py` 가 읽는다 — 일방통행 목록의 끝점 지번(법정동 · 지번)을 필지 중심 좌표로 옮긴다. 짝(`jijeok.geojson`)은 여전히 소비자 0이다.
     verified: false
   segments_schema:
     produced_by: src/firelane/segments.py
