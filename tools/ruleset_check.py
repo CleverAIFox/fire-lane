@@ -234,7 +234,13 @@ def _security_gaps(got: dict | None = None) -> list[str]:
 #:   **Variables** 다(§343-3) — 공개돼도 손해가 없다.
 #: ★ 이 수가 움직이면 운다. **늘면** 등록 여부를 보고, **줄면** 왜 줄었는지를
 #:   여기 적는다. 「0 보다 크냐」로 두면 0 이 답인 날 영원히 빨갛다.
-WF_SECRETS = 0
+#: ★ **2026-11-06. 0 → 1 (DECISIONS §655 · PLAN #176).** 늘었다 — `FIRE_LANE_OPS_TOKEN`.
+#:   중개자(관제 ↔ 내비)의 문을 여는 토큰이고 `deploy.yml` 이 `build-navi` 의 `ops-token` 입력으로 넘긴다.
+#:   §366 이 0 으로 만든 것은 **Mapbox** 소비자가 사라져서였고 그 사유는 그대로 선다 — 이번 것은 새 소비자다.
+#:   주소(`FIRE_LANE_OPS_URL`)는 Variables 에 두고 토큰만 Secrets 로 간다(§343-3 의 구분 그대로).
+#:   §655 가 배선을 넣으면서 이 수를 안 올려 운다. ★ GitHub 에 실제로 등록됐는지는 **사람이 확인한다** —
+#:   이 도구는 워크플로가 **부르는 이름**을 세지 등록 여부를 못 본다.
+WF_SECRETS = 1
 
 
 def _secret_gaps() -> list[str]:
