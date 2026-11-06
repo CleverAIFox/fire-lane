@@ -28,8 +28,8 @@ import sys
 
 import pandas as pd
 
+from firelane import extract_decl, paths
 from firelane import ledger as led
-from firelane import paths
 
 KINDS = ("csv_table", "csv_table_multi")
 SENTINELS = ("0", "0.0")
@@ -65,13 +65,20 @@ def measure(df: pd.DataFrame, none: dict | None = None, xy: set[str] = frozenset
     return {"n": int(len(df)), "cols": cols}
 
 
-def read(e: dict) -> pd.DataFrame:
-    """대장 항목의 표를 **한 글자도 안 고치고** 읽는다(`na_filter=False` — 빈 셀도 공백도 그대로)."""
-    ps = led.paths_of(e, paths.DATA / "raw")
+def read(e: dict, key: str | None = None) -> pd.DataFrame:
+    """대장 항목의 표를 **한 글자도 안 고치고** 읽는다(`na_filter=False` — 빈 셀도 공백도 그대로).
+
+    ★ 추출 선언을 든 항목(§646)은 **슬라이스**(`processed/<키>.csv`)를 읽는다 — 프로필이 설명하는 것은 우리가 쥔 표고, 전국 원본은 raw 에 없다(§647 · §648).
+    """
+    if key and extract_decl.declared(e):
+        ps, enc = [paths.PROCESSED / f"{key}.csv"], "utf-8-sig"
+        ps = [q for q in ps if q.exists()]
+    else:
+        ps, enc = led.paths_of(e, paths.DATA / "raw"), e.get("encoding") or "utf-8"
     if not ps:
         raise FileNotFoundError("실물 없음")
-    return pd.concat([pd.read_csv(p, dtype=str, na_filter=False, low_memory=False, sep=led.delimiter_of(e),
-                                  encoding=e.get("encoding") or "utf-8") for p in ps], ignore_index=True)
+    return pd.concat([pd.read_csv(p, dtype=str, na_filter=False, low_memory=False, sep=led.delimiter_of(e), encoding=enc)
+                      for p in ps], ignore_index=True)
 
 
 def _v(x) -> str:
@@ -106,7 +113,7 @@ def run(*, apply: bool, check: bool, only: str | None = None) -> int:
             continue
         try:
             xy = {str(d[a]) for d in (led.coords_decl(e) or {}).values() if isinstance(d, dict) for a in ("x", "y") if a in d}
-            pf = measure(read(e), e.get("none"), xy)
+            pf = measure(read(e, key), e.get("none"), xy)
         except Exception as ex:                       # 실물이 없는 기계(CI)는 건너뜀이지 초록이 아니다 — 센다
             print(f"  ! {key:24} 못 쟀다 — {type(ex).__name__}: {ex}")
             bad += 1

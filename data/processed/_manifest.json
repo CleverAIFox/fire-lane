@@ -34,7 +34,7 @@
       "out": "1423:ac44cf183beed2d9"
     }
   },
-  "generated_at": "2026-11-06T12:54:32.045369+09:00",
+  "generated_at": "2026-11-06T13:30:58.073269+09:00",
   "bbox_4326": [
     126.907,
     35.14,
@@ -3194,11 +3194,67 @@
     {
       "key": "nfa_dispatch_119",
       "source_files": [
-        "**/nfa_dispatch_119_*"
+        "nfa/nfa_dispatch_119_kr_20221231.csv",
+        "nfa/nfa_dispatch_119_kr_20231231.csv",
+        "nfa/nfa_dispatch_119_kr_20241231.csv",
+        "nfa/nfa_dispatch_119_kr_20251231.csv"
       ],
-      "source_sha256": "153a0ddc9d0b1331f7c2152a4be0208a04307ec12c0b64e9e14afb4d3386aea7",
-      "resolved": "nfa_dispatch_119_jngj-dongmyeong_20261104.csv",
+      "source_sha256": "2a766e46257735bf,f74968b4c23bbba5,8bf89c940bdab002,936133dfab77fc96",
+      "resolved": "nfa_dispatch_119_kr_20221231.csv + nfa_dispatch_119_kr_20231231.csv + nfa_dispatch_119_kr_20241231.csv + nfa_dispatch_119_kr_20251231.csv",
       "source_crs": "EPSG:4326",
+      "extract": {
+        "normalize_columns": "upper_strip",
+        "filter": [
+          {
+            "column": "CLMTY_CTPV_NM",
+            "equals": "광주광역시"
+          },
+          {
+            "column": "CLMTY_SGG_NM",
+            "equals": "동구"
+          },
+          {
+            "column": "CLMTY_EMD_NM",
+            "equals": "동명동"
+          }
+        ],
+        "rows_in": 27732602,
+        "rows_out": 952,
+        "files": [
+          {
+            "name": "nfa_dispatch_119_kr_20221231.csv",
+            "sha256": "2a766e46257735bfc9300acb8b9a093228944d15c98e3424508d56c6d099eb01",
+            "bytes": 1020719592,
+            "rows_in": 4738362,
+            "rows_out": 122,
+            "stripped_matches": 0
+          },
+          {
+            "name": "nfa_dispatch_119_kr_20231231.csv",
+            "sha256": "f74968b4c23bbba512601270940952527df73a019fafe23e7df5b1897209735f",
+            "bytes": 392432132,
+            "rows_in": 1715852,
+            "rows_out": 61,
+            "stripped_matches": 0
+          },
+          {
+            "name": "nfa_dispatch_119_kr_20241231.csv",
+            "sha256": "8bf89c940bdab002fde2dfe112ff31b1dda79cfe8331e5a0aaa73dc8baf96c13",
+            "bytes": 3714290821,
+            "rows_in": 12198533,
+            "rows_out": 426,
+            "stripped_matches": 0
+          },
+          {
+            "name": "nfa_dispatch_119_kr_20251231.csv",
+            "sha256": "936133dfab77fc965ff36e43e7e340ba47aceb18f2a5c7b7df023f9ef1be20b2",
+            "bytes": 2746076175,
+            "rows_in": 9079855,
+            "rows_out": 343,
+            "stripped_matches": 0
+          }
+        ]
+      },
       "status": "OK",
       "features": 952,
       "geom": [],
@@ -3243,11 +3299,11 @@
         "nfa_dispatch_119.csv"
       ],
       "seal": {
-        "raw": "153a0ddc9d0b1331",
-        "cfg": "1fce2c5bb3fe7b83",
-        "code": "9b940eba91ef1c4f",
+        "raw": "2a766e46257735bf,f74968b4c23bbba5,8bf89c940bdab002,936133dfab77fc96",
+        "cfg": "82a09f059b6e9ae7",
+        "code": "953b098dac58b1d2",
         "out": {
-          "nfa_dispatch_119.csv": "22dca82de8d7b6af"
+          "nfa_dispatch_119.csv": "e9300ad45c8be0c6"
         }
       }
     },

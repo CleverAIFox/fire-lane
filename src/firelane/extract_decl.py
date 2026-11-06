@@ -11,7 +11,10 @@ OUT   `declared` · `problems` · `normalize`
 from __future__ import annotations
 
 KINDS = ("csv_table", "csv_table_multi")
-NORMALIZERS = {"lower_strip": lambda c: str(c).strip().strip('"').lower()}
+# ★ 둘이다. **출력 칸 이름이 하류의 이름과 같은 쪽**을 고른다 — `nfa_ems` 는 소비자가 없어 소문자(`lower_strip`) ·
+#   `nfa_dispatch_119` 는 `publish_context`(`r.DSPT_DRTV_DT`) · 대장 `coords` · `schema.columns` 가 전부 대문자라 `upper_strip`(DECISIONS §648).
+NORMALIZERS = {"lower_strip": lambda c: str(c).strip().strip('"').lower(),
+               "upper_strip": lambda c: str(c).strip().strip('"').upper()}
 FILTER_KEYS = {"column", "equals"}
 
 

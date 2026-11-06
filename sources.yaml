@@ -2847,18 +2847,35 @@ datasets:
         중앙 0.32m) 경로 비용에는 그런 축이 없었다.
         DSPT_DRTV_DT → GRNDS_ARVL_DT 가 실제 도달 소요이고
         DCLR_PSTN_LOT/LAT 이 그 지점이다.
+    status: missing
+    missing_why: |
+      2026-11-06 — **전국본 4파일(7.9GB)을 raw 에 올리지 않았다.** 쓰는 것은 광주 동구 동명동 952행이다.
+      ★ 입력은 `landing/_hold` 에 있고 `ingest --only nfa_dispatch_119 --extract-from <_hold>` 가 **제자리에서** 읽는다(DECISIONS §648).
+        산출은 `data/processed/nfa_dispatch_119.csv` 이고 계보(입력 4파일별 sha256 · 바이트 · 전후 행 수)가 `_manifest.json` 의 `extract` 에 남는다.
+      ★ **sha 가 없어서 내리는 것이 아니다** — 받지 않기로 한 것이다(vworld_uq164 · nfa_ems 와 같은 꼴).
+      ★ 옛 동명동본(`raw/nfa/nfa_dispatch_119_jngj-dongmyeong_20261104.csv` · 333KB)은 **지우지 않았다.** 새 추출과 대조한 결과(접수번호 집합 동일 ·
+        값은 183행에서 pandas 의 float 변환으로 달랐다)를 보고 사람이 판단한다. 그 전까지 raw 에 그대로 있고 **`files` 에는 안 든다**(추출의 입력이 아니다 — 들면 `--extract-from` 없이 도는 ingest 가 그 파생본을 입력으로 읽는다).
     stem: nfa_dispatch_119
     ext: [csv]
-    scope: jngj-dongmyeong
+    vintages: ['2022-12-31', '2023-12-31', '2024-12-31', '2025-12-31']   # 판이 여럿 — `updated`(내려받은 날) 하나로 파생하지 않는다(§431)
+    files:                         # ★ 입력은 `landing/_hold` 에 있다 — raw 에 올리지 않는다(`--extract-from`)
+      - nfa/nfa_dispatch_119_kr_20221231.csv
+      - nfa/nfa_dispatch_119_kr_20231231.csv
+      - nfa/nfa_dispatch_119_kr_20241231.csv
+      - nfa/nfa_dispatch_119_kr_20251231.csv
+    scope: kr
     authority: 소방청 소방안전 빅데이터 플랫폼
     updated: '2026-11-04'   # ★ 내려받은 날이다. 소방안전 빅데이터 플랫폼이
                           #   데이터 기준일을 표기하지 않는다(2026-09-03 확인)
-    what: 전국 119 신고접수 현황 2022~2025 → 동명동 필터 파생본
+    what: 전국 119 신고접수 현황 2022~2025(7.9GB · 27,732,602행) → 광주 동구 동명동 952행(재난 발생지 CLMTY_* 기준 · 연도별 122 · 61 · 426 · 343)
     kind: csv_table
     encoding: utf-8-sig
     crs_native: 4326
     note: |
-      ★ 원본 4개년 7.33GB(2026-08-11 판). CLMTY_EMD_NM='동명동' 필터본만 반입한다.
+      ★ 2026-11-06 (DECISIONS §648). **전국 원본에서 `ingest` 가 추출한다**(`contract.filter` · 계보가 `_manifest.json`). 필터는 **셋이다** —
+        「동명동」이 광주 동구 · 속초(1,344) · 목포(318) 셋에 있다(읍면동 이름만 걸면 2,614행이 나온다). `CLMTY_*`(재난 발생지)이고 `EMD_NM`(신고자 쪽)이 아니다.
+      ★ 옛 판은 `CLMTY_EMD_NM='동명동'` 한 조건의 수동 파생본이었다(원본 7.33GB · 2026-08-11 판). 새 추출과 접수번호 집합이 같고(952) 값은 2022·2023 의 183행에서
+        float 변환(`…328.0` · `0.0`)으로 달랐다 — 새 쪽이 원문이다. `none:` 의 `0.0` 센티널이 `0` 이 된 까닭이다.
       ★ **2024 경계는 이름만이 아니다**(DECISIONS §643): `DCLR_PSTN_LOT` 의 소수 자릿수가 2022~2023 은 3~4자리(100m 급 반올림) · 2024~2025 는 10자리로 갈린다.
       ★ 2024·2025 는 헤더가 **소문자**다(`dclr_rcpt_no` …). 칸 집합 35개는
         2022·2023 과 똑같다. 대문자 필터가 0행을 낸 것이 옛 PLAN 행(닫힘 · DECISIONS §635) 의
@@ -2867,7 +2884,15 @@ datasets:
       ★ DCLR_PSTN_LAT/LOT 이 0.0 인 행이 있다. 결측을 0 으로 채운 것이므로
         lat > 0 조건이 필수다.
       ★ 좌표쌍이 둘이다 — `LOT`/`LAT` 은 재해 위치, `DCLR_PSTN_LOT/LAT` 은 신고자 휴대폰 위치(`coords:` 가 지목한다).
-    contract: {encoding: utf-8-sig}
+    contract:
+      normalize_columns: upper_strip
+      filter:
+        - {column: CLMTY_CTPV_NM, equals: 광주광역시}
+        - {column: CLMTY_SGG_NM, equals: 동구}
+        - {column: CLMTY_EMD_NM, equals: 동명동}
+      scope_min: 800
+      scope_max: 1300
+      encoding: utf-8-sig
 
     # ★ 2026-11-05 (DECISIONS §634 · §637). 좌표쌍이 **둘**이고 뜻이 다르다 — 코드는 칸 이름을 직접 쓰지 않고 `ledger.coords(key, 역할)` 로 받는다.
     # ★ **근거의 등급이 다르다**(§642-1). `reporter` 는 칸 이름(신고위치) + 실측(제주 · 서울까지 퍼진다)이 서고, **`site`(재해 위치)는 분포 추론**이다 — 활용가이드는
@@ -2884,8 +2909,8 @@ datasets:
       RCPT_END_DT:   {forms: [공백]}
       RCPT_END_YMD:  {forms: [공백]}
       RCPT_END_TM:   {forms: [공백]}
-      DCLR_PSTN_LOT: {forms: ["0.0"]}      # 신고자 위치 — 결측을 0 으로 채운 행(2022 · 2023)
-      DCLR_PSTN_LAT: {forms: ["0.0"]}
+      DCLR_PSTN_LOT: {forms: ["0"]}      # 신고자 위치 — 결측을 0 으로 채운 행(2022 · 2023). ★ 원문은 `0` 이다 — 옛 파생본의 `0.0` 은 pandas 의 float 변환이었다(§648)
+      DCLR_PSTN_LAT: {forms: ["0"]}
       LOT:           {forms: [빈 셀]}
       LAT:           {forms: [빈 셀]}
     schema:                       # AUTO — ledger_schema.py 가 쓴다
@@ -2901,8 +2926,8 @@ datasets:
           'RCPT_END_DT': {'empty': 0, 'ws': 1}
           'RCPT_END_YMD': {'empty': 0, 'ws': 1}
           'RCPT_END_TM': {'empty': 0, 'ws': 1}
-          'DCLR_PSTN_LOT': {'empty': 0, 'ws': 0, 'sentinel': {'0.0': 37}, 'range': [124.848488, 127.4041]}
-          'DCLR_PSTN_LAT': {'empty': 0, 'ws': 0, 'sentinel': {'0.0': 37}, 'range': [33.474969, 37.5291]}
+          'DCLR_PSTN_LOT': {'empty': 0, 'ws': 0, 'sentinel': {'0': 37}, 'range': [124.848488, 127.4041]}
+          'DCLR_PSTN_LAT': {'empty': 0, 'ws': 0, 'sentinel': {'0': 37}, 'range': [33.474969, 37.5291]}
           'DSPT_DRTV_DT': {'empty': 42, 'ws': 0}
           'GRNDS_ARVL_DT': {'empty': 24, 'ws': 70, 'by': {'2022': {'empty': 14}, '2023': {'empty': 10}, '2024': {'ws': 31}, '2025': {'ws': 39}}}
           'HSPTL_ARVL_DT': {'empty': 94, 'ws': 438, 'by': {'2022': {'empty': 61}, '2023': {'empty': 33}, '2024': {'ws': 239}, '2025': {'ws': 199}}}
@@ -2992,6 +3017,7 @@ datasets:
     scope: kr
     authority: 소방청 소방안전 빅데이터 플랫폼
     updated: '2026-11-05'   # ★ 내려받은 날. 플랫폼이 데이터 기준일을 표기하지 않는다
+    vintages: ['2019-12-31', '2020-12-31', '2021-12-31', '2022-12-31', '2023-12-31', '2024-12-31', '2025-12-31']   # 판이 여럿 — `updated`(내려받은 날) 하나로 파생하지 않는다(§431)
     files:
       - nfa/nfa_ems_kr_20191231.csv
       - nfa/nfa_ems_kr_20201231.csv

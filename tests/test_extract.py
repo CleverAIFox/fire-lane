@@ -188,6 +188,15 @@ def test_scope_max_below_scope_min_is_refused():
     assert any("통과할 수 있는 행" in m for m in extract.problems("k", e))
 
 
+def test_upper_strip_unifies_the_year_boundary_case_to_the_downstream_names(tmp_path):
+    con = {"normalize_columns": "upper_strip", "filter": {"column": "CLMTY_EMD_NM", "equals": "동명동"}}
+    c = _ctx(tmp_path, {"a_2023.csv": UPPER, "b_2024.csv": LOWER}, contract=con)
+    rec = read_csv_table(c)
+    assert rec["columns"] == ["DCLR_YR", "CLMTY_EMD_NM", "NOTE"] and rec["features"] == 4, "하류가 읽는 이름(대문자)으로 나온다"
+    bad = {"kind": "csv_table", "contract": {"normalize_columns": "upper_strip", "filter": {"column": "clmty_emd_nm", "equals": "x"}}}
+    assert any("정규화 **뒤**" in m for m in extract.problems("k", bad)), "필터 칸도 정규화 뒤(대문자)로 적는다"
+
+
 # ── ④ 조용히 덜 하지 않는다 ──
 def test_a_filter_that_keeps_nothing_is_a_failure_not_a_silent_pass(tmp_path):
     c = _ctx(tmp_path, {"a.csv": UPPER}, contract={**CON, "filter": {"column": "clmty_emd_nm", "equals": "없는동"}})
@@ -262,11 +271,11 @@ def test_the_vocabulary_names_the_reading_module():
     assert ledger.CONTRACT_KEYS["normalize_columns"][1] == ledger.CONTRACT_KEYS["filter"][1] == "firelane.read.extract"
 
 
-def test_only_nfa_ems_uses_the_keys_and_its_declaration_is_well_formed():
-    """대장의 `scope` 를 바꾸지 않는다 — 추출이 선 뒤의 사람 판단이다. 이 키를 쓰는 항목은 nfa_ems 하나이고(nfa_fire_incident · nfa_dispatch_119 는 scope 전환 전이다) 모양이 맞아야 한다."""
+def test_only_the_extract_entries_use_the_keys_and_every_declaration_is_well_formed():
+    """대장의 `scope` 를 바꾸지 않는다 — 추출이 선 뒤의 사람 판단이다. 이 키를 쓰는 항목은 nfa_ems · nfa_dispatch_119 둘이고(nfa_fire_incident · nfa_rescue 는 scope 전환 전이다) 모양이 맞아야 한다."""
     from firelane import ledger
     ds = ledger.load_sources()["datasets"]
-    assert [k for k, e in ds.items() if extract.declared(e)] == ["nfa_ems"]
+    assert sorted(k for k, e in ds.items() if extract.declared(e)) == ["nfa_dispatch_119", "nfa_ems"]
     assert all(extract.problems(k, e) == [] for k, e in ds.items())
 
 
