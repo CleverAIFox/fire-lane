@@ -62,7 +62,7 @@ def measure(df: pd.DataFrame, none: dict | None = None, xy: set[str] = frozenset
                     b[str(v)] = {k: n for k, n in one.items() if n}
             d["by"] = b
         cols[str(c)] = {k: v for k, v in d.items() if v or k in ("empty", "ws")}
-    return {"n": int(len(df)), "cols": cols}
+    return {"n": len(df), "cols": cols}
 
 
 def read(e: dict, key: str | None = None) -> pd.DataFrame:

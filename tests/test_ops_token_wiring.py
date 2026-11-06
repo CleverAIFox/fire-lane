@@ -53,7 +53,7 @@ def test_build_navi_hands_it_to_vite_under_the_name_vite_reads() -> None:
     a = _y(BUILD)
     assert "ops-token" in a["inputs"]
     step = next(s for s in a["runs"]["steps"] if "내비 빌드" in str(s.get("name", "")))
-    assert step["env"]["VITE_OPS_TOKEN"] == "${{ inputs.ops-token }}"
+    assert step["env"].get("VITE_OPS_TOKEN") == "${{ inputs.ops-token }}"
     assert "VITE_OPS_TOKEN" in VITE.read_text(encoding="utf-8")
 
 
