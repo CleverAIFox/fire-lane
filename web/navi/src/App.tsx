@@ -30,7 +30,7 @@
  *     `ui/tokens.ts`        hhmm · hhmmss — `OpsApp.tsx` 와 **글자까지 같던** 것
  *     `domain/fleetName.ts` 센터 이름 줄이기 — 같은 이유
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NaviMap, type MapMarks, type MapNote } from "./components/NaviMap";
 import { useNavigation } from "./app/useNavigation";
 import { useVoice } from "./app/useVoice";
@@ -51,16 +51,13 @@ import { TopBar } from "./ui/TopBar";
 import { MapControls } from "./ui/MapControls";
 import { RemainPill } from "./ui/RemainPill";
 import { StatusCard } from "./ui/StatusCard";
-import { ShareChip } from "./ui/ShareChip";
 import { Legend } from "./ui/Legend";
-import { DevBar } from "./ui/DevBar";
 import { readHandoff, routeOf } from "./domain/handoff";
 import { PlanHeader, TimeBox } from "./ui/Sheet";
-import { RouteBrief } from "./ui/RouteCompare";
 import { WaitPanel } from "./ui/WaitPanel";
 import { routeOption } from "./ui/routeOption";
 import { Center, SMOKE_CSS, shell, toast, vehChip } from "./ui/appShell";
-import { BottleneckPanel } from "./ui/BottleneckPanel";
+import { BottleneckPanel, DevBar, RouteBrief, ShareChip, prefetch } from "./ui/deferred";
 import { Truck } from "./ui/icons";
 import { C, hhmm, hhmmss } from "./ui/tokens";
 import { routeHazards } from "./domain/context";
@@ -119,6 +116,9 @@ export default function App() {
   // ★ 경로는 **관제가 정한다.** 기사 손이 없으므로 상태도 없다(§400).
   const order = routeOf(hand);
   const choice = order.mode;
+  // 미룬 주행 부품을 데이터가 온 직후 유휴 시간에 받아 둔다 — 사유는 `ui/deferred.tsx`
+  const ready = n.data != null;
+  useEffect(() => (ready ? prefetch() : undefined), [ready]);
 
   // ★ `?demo=1` — 발표용. 경로 주행으로 바꾼다. 폐루프 검수는 `gpsSim` 이
   //   정본이고(§213-3) 이것은 **보여주기 전용**이라 기본값을 안 바꾼다.
@@ -447,13 +447,13 @@ export default function App() {
       )}
 
       {s.screen === "brief" && compare && (
-        <RouteBrief safe={compare.safe} fast={compare.fast} same={compare.same}
+        <Suspense fallback={null}><RouteBrief safe={compare.safe} fast={compare.fast} same={compare.same}
                     chosen={choice} fromOrder={order.fromOrder}
                     onConfirm={() => {
                       n.choose(choice);
                       n.start(); setFirstPerson(true);
                       s.open("drive");
-                    }} />
+                    }} /></Suspense>
       )}
 
 
@@ -494,7 +494,7 @@ export default function App() {
           {/* ★ 경로가 서지 않은 상태(재탐색 · 서버 오류 · 경로 없음 · 데이터 부족 ·
               통행 불가)와 도착 쪽 상태에서는 병목을 안 띄운다. 없는 경로의 병목이다. */}
           {bottleneck && st.route !== "pending" && !st.icon && statusKey !== "blocked" && (
-            <BottleneckPanel {...bottleneck} open={bnOpen}
+            <Suspense fallback={null}><BottleneckPanel {...bottleneck} open={bnOpen}
                              onToggle={() => setBnOpen((x) => !x)}
                              onShare={() => {
                                // 와이어프레임 18 — 공유하면 카드를 닫고 주행을 이어 간다
@@ -503,9 +503,9 @@ export default function App() {
                                  bottleneckAt);
                                setBnOpen(false);
                              }}
-                             onReport={reportBlocked} />
+                             onReport={reportBlocked} /></Suspense>
           )}
-          <ShareChip info={share.info} onRetry={() => share.share(share.info.kind ?? "bottleneck")} />
+          <Suspense fallback={null}><ShareChip info={share.info} onRetry={() => share.share(share.info.kind ?? "bottleneck")} /></Suspense>
         </>
       )}
 
@@ -515,7 +515,7 @@ export default function App() {
       )}
 
       {dev && (
-        <DevBar
+        <Suspense fallback={null}><DevBar
           hint={`${s.planning ? `화면 ${s.screen}` : `상태 ${st.wf.join("·")}`} · 관제 ${up.present ? "●" : "○"}`}
           guiding={!s.planning}
           simSpeed={n.simSpeed} setSimSpeed={n.setSimSpeed}
@@ -533,7 +533,7 @@ export default function App() {
           onReset={reset}
           injected={injected} setInjected={setInjected}
           failNext={share.failNext} setFailNext={share.setFailNext}
-        />
+        /></Suspense>
       )}
     </div>
   );
