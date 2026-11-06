@@ -39,6 +39,14 @@ def test_the_speed_table_is_read_from_the_ts_source_and_matches_it():
     assert all(kmh > 0 for _, kmh in t)
 
 
+def test_the_fixed_part_is_read_from_the_ts_source_not_copied():
+    text = (ROOT / "web/navi/src/domain/speed.ts").read_text(encoding="utf-8")
+    assert tool.parse_fixed_s(text) > 0 and tool.parse_fixed_s("export const DISPATCH_FIXED_S = 123.5;") == 123.5
+    with pytest.raises(ValueError):
+        tool.parse_fixed_s("const DISPATCH_FIXED_S = 1;")           # export 가 아니면 앱이 안 읽는 값이다
+    assert "DISPATCH_FIXED_S" not in (ROOT / "tools/cost_vs_dispatch.py").read_text(encoding="utf-8").split("def parse_fixed_s")[0].split("import")[-1], "사본 상수가 없다"
+
+
 @pytest.mark.parametrize("bad", ["const X = 1;", "export const SPEED_TABLE: [number, number][] = [[0, 20], [12, 50]];"])
 def test_a_missing_or_unsorted_table_stops(bad):
     with pytest.raises(ValueError):

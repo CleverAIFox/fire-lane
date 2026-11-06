@@ -67,7 +67,7 @@ import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
 import type { RouteMode } from "./domain/handoff";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
-import { travelSeconds } from "./domain/speed";
+import { DISPATCH_FIXED_S, dispatchToArrivalSeconds, travelSeconds } from "./domain/speed";
 import { requiredWidth } from "./domain/vehicle";
 import {
   CLEARANCE_BAND_ORDER, clearanceCounts, fmtClearance,
@@ -384,9 +384,8 @@ export default function OpsApp() {
               <div style={{ ...card, borderColor: plan.plan ? (plan.alt ? D.warn : D.ok) : D.danger }}>
                 {plan.plan ? (
                   <>
-                    <div style={{ fontWeight: 800, fontSize: 18 }}>
-                      {fmtDur(travelSeconds(plan.plan))} <span style={{ fontSize: 13, color: D.sub }}>· {(plan.plan.lengthM / 1000).toFixed(1)}km · 내비 예측</span>
-                    </div>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>{fmtDur(dispatchToArrivalSeconds(plan.plan))} <span style={{ fontSize: 13, color: D.sub }}>· {(plan.plan.lengthM / 1000).toFixed(1)}km · 지령→도착 예측</span></div>
+                    <div style={{ fontSize: 11, color: D.sub, marginTop: 2 }}>주행 {fmtDur(travelSeconds(plan.plan))} + 지령→출발·접근 {fmtDur(DISPATCH_FIXED_S)}</div>
                     {myCenter?.median_s != null && (
                       <div style={{ fontSize: 11, color: D.sub, marginTop: 2 }}>
                         같은 센터 실제 출동→도착 중앙값 {fmtSec(myCenter.median_s)}

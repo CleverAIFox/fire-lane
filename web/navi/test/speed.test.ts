@@ -24,7 +24,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { SPEED_TABLE, remainingSeconds, speedOf, travelSeconds } from "../src/domain/speed";
+import { DISPATCH_FIXED_S, SPEED_TABLE, dispatchToArrivalSeconds, remainingSeconds, speedOf, travelSeconds } from "../src/domain/speed";
 import { classify, round } from "../src/domain/turn";
 import type { GraphEdge, RoutePlan } from "../src/domain/types";
 
@@ -154,6 +154,32 @@ describe("③ 남은 시간", () => {
   it("배수는 남은 시간에도 같은 배로 든다", () => {
     const tight = plan(P.edges, P.lengthM * 1.8);
     expect(remainingSeconds(tight, 200)).toBeCloseTo(remainingSeconds(P, 200) * 1.8, 6);
+  });
+});
+
+describe("③a 지령 → 현장도착 = 고정분 + 주행 (DECISIONS §650)", () => {
+  const P = plan([edge(12, 500), edge(4, 300)]);
+
+  it("★ 고정분은 0 보다 큰 유한한 수다 — 근거는 그 위 주석이 든다", () => {
+    expect(DISPATCH_FIXED_S).toBeGreaterThan(0);
+    expect(Number.isFinite(DISPATCH_FIXED_S)).toBe(true);
+  });
+
+  it("고정분 + 주행 시간이다 — 배수는 주행에만 곱해지고 고정분에는 안 곱해진다", () => {
+    const tight = plan(P.edges, P.lengthM * 1.8);
+    expect(dispatchToArrivalSeconds(P)).toBeCloseTo(DISPATCH_FIXED_S + travelSeconds(P), 9);
+    expect(dispatchToArrivalSeconds(tight)).toBeCloseTo(DISPATCH_FIXED_S + travelSeconds(P) * 1.8, 6);
+  });
+
+  it("★ `travelSeconds` 는 주행 시간 그대로다 — 고정분이 새면 남은 시간이 전체보다 커진다", () => {
+    expect(travelSeconds(P)).toBeCloseTo(500 / KMH(50) + 300 / KMH(30), 6);
+    expect(remainingSeconds(P, 0)).toBeCloseTo(travelSeconds(P), 6);
+    expect(dispatchToArrivalSeconds(P) - travelSeconds(P)).toBeCloseTo(DISPATCH_FIXED_S, 9);
+  });
+
+  it("★ 두 경로의 차이에서 고정분이 지워진다 — 안전/빠른 경로 비교가 안 움직인다", () => {
+    const Q = plan([edge(12, 900)]);
+    expect(dispatchToArrivalSeconds(P) - dispatchToArrivalSeconds(Q)).toBeCloseTo(travelSeconds(P) - travelSeconds(Q), 6);
   });
 });
 

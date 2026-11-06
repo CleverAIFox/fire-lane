@@ -68,6 +68,14 @@ def parse_speed_table(text: str) -> list[tuple[float, float]]:
     return rows
 
 
+def parse_fixed_s(text: str) -> float:
+    """`speed.ts` 의 `DISPATCH_FIXED_S`(지령 → 현장도착 고정분 · 초)를 읽는다 — 사본을 두지 않는다."""
+    m = re.search(r"export\s+const\s+DISPATCH_FIXED_S\s*=\s*([\d.]+)\s*;", text)
+    if not m:
+        raise ValueError("speed.ts 에서 DISPATCH_FIXED_S 를 못 찾았다")
+    return float(m.group(1))
+
+
 def speed_mps(width_m: float | None, road_bt_m: float | None, table: list[tuple[float, float]]) -> float:
     """`speed.ts::speedOf` 와 같다 — `width_min_m ?? road_bt_m ?? 0` 으로 표를 본다. 없으면 맨 아래 칸."""
     w = next((float(x) for x in (width_m, road_bt_m) if x is not None and not (isinstance(x, float) and math.isnan(x))), 0.0)
@@ -230,7 +238,8 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
 
     table = parse_speed_table(SPEED_TS.read_text(encoding="utf-8"))
-    print(f"속도표(speed.ts · 폭 문턱 m → km/h): {[(int(w), int(v)) for w, v in table]} · 고정분 없음 · SNAP_TRUST {SNAP_TRUST} · SNAP_MAX {SNAP_MAX} · NODE_TOL {NODE_TOL}")
+    fixed = parse_fixed_s(SPEED_TS.read_text(encoding="utf-8"))
+    print(f"속도표(speed.ts · 폭 문턱 m → km/h): {[(int(w), int(v)) for w, v in table]} · edge_cost 에는 고정분 없음 · 앱의 지령→도착 고정분 DISPATCH_FIXED_S {fixed:.0f}s(speed.ts) · SNAP_TRUST {SNAP_TRUST} · SNAP_MAX {SNAP_MAX} · NODE_TOL {NODE_TOL}")
 
     # 센터 좌표 — 대장의 안전센터 위치와 맞는가
     fs = gpd.read_file(PROCESSED / "fire_station.geojson").to_crs(CRS_M)
@@ -305,6 +314,14 @@ def main(argv: list[str] | None = None) -> int:
     for v in sorted(use.verdict.unique()):
         sub = use[use.verdict == v]
         print(f"  판정 {v:10} {fmt(summarize(sub.pred_s, sub.resp_s, a.boot))}")
+    # 앱의 지령 → 현장도착 추정(고정분 + 주행)과의 치우침 — 0 에 가까워야 한다
+    bm0 = ok[ok.cost_blocked & ok.pred_mouth_s.notna() & ok.resp_s.notna()]
+    comb = pd.concat([use.assign(p=use.pred_s), bm0.assign(p=bm0.pred_mouth_s)])
+    wide0 = loc[loc.pred_s.notna() & loc.resp_s.notna()]
+    print(f"\n   ── 앱의 지령→도착 추정(주행 + 고정분 {fixed:.0f}s)과의 치우침 ──")
+    for label, p_, r_ in (("스냅된 전체", use.pred_s, use.resp_s), ("합친 표본(막힌 구간 위는 입구까지)", comb.p, comb.resp_s), ("스냅 한계 없이", wide0.pred_s, wide0.resp_s)):
+        sm = summarize(np.asarray(p_) + fixed, r_, a.boot)
+        print(f"   {label:30} n={sm['n']:4d} · 치우침(실제−추정) 중앙 {sm['bias_med']:+.0f}s [{sm['bias_ci'][0]:+.0f},{sm['bias_ci'][1]:+.0f}] · 비 {sm['ratio_med']:.2f} · 실제>추정 {sm['actual_gt_pred'] * 100:.0f}%")
     # 해석에 필요한 점검 — 표본이 치우쳤는가 · 이 범위에서 거리가 시간을 설명할 수 있는가 · 스냅 한계가 결론을 만드는가
     print("\n   ── 점검 ──")
     snapped, failed = loc[loc.snap != "fail"], loc[loc.snap == "fail"]
