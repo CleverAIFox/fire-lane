@@ -615,3 +615,81 @@ def test_the_reseal_module_makes_no_output():
     assert "reseal.py" in shardseal.NOT_PRODUCERS
     assert "reseal.py" in {p.name for p in shardseal.code_closure()}, \
         "폐포가 `reseal.py` 를 못 찾는다 — 위 제외 대조가 무의미하다"
+
+
+# ── 2026-11-04 (PLAN #183 · DECISIONS §620) 격리 재취입 레시피를 시험으로 굳힌다 ───────────────
+def test_the_isolation_recipe_keeps_ingest_out_of_the_main_processed_dir(tmp_path):
+    """`PYTHONPATH` + 스크래치 `FIRE_LANE_DATA` 레시피로 돌린 `ingest --only` 가 **메인 `data/processed` 를 안 건드린다.**
+
+    ★ 2026-11-03 에 `paths.PROCESSED = ROOT/data/processed` 가 고정이라 worktree 에서 `uv run --project <메인>` 으로 돌린 ingest 가
+      **메인에 썼다**(추적 파일 `_manifest.json` 까지). 레시피(DECISIONS §603)는 문서였고 **단언이 없으면 다음 사람이 또 메인을 덮는다.**
+      그래서 이 시험이 레시피를 실행하고 ① 자식이 보는 `ROOT` · `PROCESSED` 가 격리 트리인지 **먼저 단언**하고 ② 메인의 파일 해시가
+      전후로 같은지 문다.
+
+    ★ `PROCESSED` 를 환경변수로 돌리는 길은 아직 없다 — `paths.py` 가 판정 폐포 · 샤드 `code` 봉인 폐포 안이라 고치면 재잠금이다
+      (`PLAN #183`). 이 시험은 **그 전의 안전망**이고 그 길이 서면 레시피 대신 환경변수를 쓰게 바꾼다.
+    밖  레이크(`FIRE_LANE_DATA`)가 없으면 건너뛴다 — 읽을 원본이 없다.
+    """
+    import hashlib
+    import os
+    import shutil
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    import pytest
+
+    root = Path(__file__).resolve().parents[1]
+    lake = os.environ.get("FIRE_LANE_DATA")
+    if not lake or not (Path(lake) / "raw").is_dir():
+        pytest.skip("환경skip(레이크) — 격리 재취입에 읽을 원본이 없다")
+    key = "civil_office"                       # 작고 빨리 끝나는 소스(64행)
+    if not list((Path(lake) / "raw").glob("*/*civil*office*")):
+        pytest.skip(f"환경skip(레이크) — {key} 원본이 레이크에 없다")
+
+    # ── 격리 트리: 코드 · 대장은 복사, 원본은 읽기 심볼릭, 산출은 빈 곳 ──
+    iso = tmp_path / "iso"
+    shutil.copytree(root / "src", iso / "src", ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copy(root / "sources.yaml", iso / "sources.yaml")
+    (iso / "data" / "processed").mkdir(parents=True)
+    for f in ("_manifest.json", ".rawprint.json", "_lineage.json"):
+        if (root / "data" / "processed" / f).is_file():
+            shutil.copy(root / "data" / "processed" / f, iso / "data" / "processed" / f)
+    scratch = tmp_path / "scratch"
+    for d in ("raw", "norm", "interim", "landing", "retired"):
+        (scratch / d).mkdir(parents=True)
+    for layer in ("raw", "norm"):
+        for p in (Path(lake) / layer).iterdir():
+            (scratch / layer / p.name).symlink_to(p)
+
+    env = {k: v for k, v in os.environ.items() if k != "FIRE_LANE_RAW"}      # 폐기 변수는 데이터 경로를 덮는다
+    env.update(PYTHONPATH=str(iso / "src"), FIRE_LANE_DATA=str(scratch))
+
+    # ① 먼저 단언 — 자식이 보는 경로가 격리 트리여야 한다. 아니면 **돌지 않는다**(메인을 덮기 전에 멈춘다).
+    probe = subprocess.run([sys.executable, "-c", "from firelane import paths; print(paths.ROOT); print(paths.PROCESSED)"],
+                           cwd=iso, env=env, capture_output=True, text=True, check=True, timeout=60).stdout.split()
+    assert Path(probe[0]) == iso and Path(probe[1]) == iso / "data" / "processed", (
+        f"격리가 안 됐다 — ROOT {probe[0]} · PROCESSED {probe[1]}. 이대로 돌리면 **메인에 쓴다.**")
+
+    def tree_hash(d: Path) -> dict[str, str]:
+        return {p.relative_to(d).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sorted(d.rglob("*")) if p.is_file()}
+
+    before = tree_hash(root / "data" / "processed")
+    r = subprocess.run([sys.executable, "-m", "firelane.ingest", "--only", key],
+                       cwd=iso, env=env, capture_output=True, text=True, check=False, timeout=300)
+    assert r.returncode == 0, f"격리 ingest 가 죽었다:\n{r.stdout[-400:]}\n{r.stderr[-400:]}"
+    assert (iso / "data" / "processed" / f"{key}.geojson").is_file(), "격리 트리에 산출이 안 생겼다 — 어디에 썼나"
+    assert tree_hash(root / "data" / "processed") == before, "**메인 `data/processed` 가 바뀌었다** — 격리가 샜다"
+
+
+def test_the_legacy_print_before_the_point_columns_moved_into_coords_is_accepted():
+    """★ 점 자료의 좌표 칸이 `x_col` · `y_col` 에서 `coords.site` 로 옮겨졌다(DECISIONS §641). **같은 설정**이라 봉인이 재빌드 없이 새 판으로 고쳐져야 한다."""
+    old = {"datasets": {"s": {"kind": "csv_points", "x_col": "경도", "y_col": "위도", "stem": "s", "ext": ["csv"]}}}
+    new = {"datasets": {"s": {"kind": "csv_points", "stem": "s", "ext": ["csv"],
+                              "coords": {"site": {"x": "경도", "y": "위도", "crs": 4326, "means": "설치 위치"}}}}}
+    assert shardseal.cfg_print(old, "s") != shardseal.cfg_print(new, "s"), "판이 안 바뀌었으면 이 시험이 필요 없다"
+    assert shardseal._cfg_print_v6(new, "s") == shardseal.cfg_print(old, "s")
+    assert shardseal._cfg_print_v6 in shardseal.LEGACY_PRINTS
+    swapped = {"datasets": {"s": {**new["datasets"]["s"], "coords": {"site": {"x": "위도", "y": "경도", "crs": 4326, "means": "설치 위치"}}}}}
+    assert shardseal._cfg_print_v6(swapped, "s") != shardseal.cfg_print(old, "s"), "칸이 **실제로 바뀐** 것은 옛 판으로 못 받는다(재빌드가 맞다)"

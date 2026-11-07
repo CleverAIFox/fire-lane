@@ -508,3 +508,15 @@ def test_pack_가_tails_에_실물_경로를_준다():
     assert args.get("collide") != args.get("tails"), (
         f"collide 는 이름을 센다 — 지금 {args}"
     )
+
+
+def test_deliver_docstring_does_not_claim_the_old_forbidden_list() -> None:
+    """`deliver.py` 머리말이 실제 금지목록을 말한다 — 지금은 공동저자 줄이 금지가 아니다.  (감사 §4 · Zm22)"""
+    import re
+    from pathlib import Path
+
+    src = (Path(__file__).resolve().parents[1] / "tools" / "deliver.py").read_text(encoding="utf-8")
+    head = src.split('"""', 2)[1]
+    item = head[head.index("⑤"):head.index("IN ")]
+    assert "FORBIDDEN" in item, "머리말이 금지목록의 집(delivercheck.FORBIDDEN)을 가리키지 않는다"
+    assert not re.search(r"공동저자 줄이 남아 있으면 거부", item), "낡은 서술이 남았다 — 공동저자 줄은 금지가 아니다"

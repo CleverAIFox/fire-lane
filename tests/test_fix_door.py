@@ -18,10 +18,13 @@ OUT   없음 (검사)
 from __future__ import annotations
 
 import importlib.util
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 DOOR = ROOT / "tools" / "fix.sh"
@@ -32,8 +35,30 @@ sys.modules[_spec.name] = fixable
 _spec.loader.exec_module(fixable)
 
 
-def _run(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["bash", str(DOOR), *args], cwd=ROOT, check=False,
+@pytest.fixture
+def tree(tmp_path: Path):
+    """**격리된 작업 트리** — 문이 쓰는 곳이 이 저장소가 아니라 여기다. (Zm39 · DECISIONS §580)
+
+    ★ 종전에는 `_run` 이 **실제 트리**에서 `tools/fix.sh` 를 통째로 돌렸다. 문은 기획서 표지 날짜(`build_proposal --touch-today`)와
+      래칫 상수(`ratchet.py --write`)까지 고치는데 시험은 `MASTER.md` 하나만 되돌렸다 — 트리가 문과 어긋나 있으면 **시험이 그것을
+      고쳐 놓았다**(2026-10-25 에 `docs/proposal.md` · `web/proposal.html` · `tools/sealcov.py` 가 그렇게 바뀌었다).
+      `git worktree` 는 HEAD 의 추적 파일을 새 디렉터리에 낸다 — `.git` 이 이어져 있어 날짜 유도(git 이력)가 그대로 돈다.
+    """
+    wt = tmp_path / "wt"
+    subprocess.run(["git", "worktree", "add", "-q", "--detach", str(wt), "HEAD"], cwd=ROOT, check=True, capture_output=True, timeout=120)
+    try:
+        yield wt
+    finally:
+        subprocess.run(["git", "worktree", "remove", "--force", str(wt)], cwd=ROOT, check=False, capture_output=True, timeout=120)
+        subprocess.run(["git", "worktree", "prune"], cwd=ROOT, check=False, capture_output=True, timeout=60)
+
+
+def _run(wt: Path, *args: str) -> subprocess.CompletedProcess:
+    """문을 **복사본에서** 돈다. 가상환경은 이 저장소 것을 쓰되(`UV_NO_SYNC` — 동기화하면 편집 설치가 복사본으로 옮겨 간다)
+    `firelane` · `tools` 는 복사본 것이 먼저 잡히게 한다 — 안 그러면 `paths` 가 이 저장소 루트를 읽어 문이 **여기에 쓴다.**"""
+    env = {**os.environ, "UV_NO_SYNC": "1", "UV_PROJECT_ENVIRONMENT": sys.prefix,
+           "PYTHONPATH": os.pathsep.join([str(wt / "src"), str(wt / "tools"), os.environ.get("PYTHONPATH", "")])}
+    return subprocess.run(["bash", str(wt / "tools" / "fix.sh"), *args], cwd=wt, check=False, env=env,
                           capture_output=True, text=True, timeout=900)
 
 
@@ -67,41 +92,34 @@ def test_the_door_does_not_call_a_dead_flag():
             assert tool not in ln, f"{tool} 은 수리 경로가 없다 — 부르지 마라"
 
 
-def test_dry_run_changes_nothing():
-    """`--dry` 가 정말 아무것도 안 건드리는가."""
-    before = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
-                            capture_output=True, text=True, timeout=60, check=True).stdout
-    r = _run("--dry")
+def test_dry_run_changes_nothing(tree: Path):
+    """`--dry` 가 정말 아무것도 안 건드리는가. (복사본의 `git status` 로 잰다)"""
+    before = subprocess.run(["git", "status", "--porcelain"], cwd=tree, capture_output=True, text=True, timeout=60, check=True).stdout
+    r = _run(tree, "--dry")
     assert r.returncode == 0, r.stdout + r.stderr
     assert "아무것도 안 고쳤다" in r.stdout
-    after = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
-                           capture_output=True, text=True, timeout=60, check=True).stdout
+    after = subprocess.run(["git", "status", "--porcelain"], cwd=tree, capture_output=True, text=True, timeout=60, check=True).stdout
     assert before == after, "`--dry` 가 트리를 건드렸다"
 
 
-def test_the_door_actually_repairs_an_injected_defect():
+def test_the_door_actually_repairs_an_injected_defect(tree: Path):
     """★ 양성 대조. **생성 블록을 일부러 틀리고** 문이 되돌리는가.
 
-    고르는 자리가 생성 블록인 이유 — 되돌림이 **바이트 단위로 증명된다.**
-    정본이 실물이라 고친 뒤의 값이 하나뿐이다.
+    고르는 자리가 생성 블록인 이유 — 되돌림이 **바이트 단위로 증명된다.** 정본이 실물이라 고친 뒤의 값이 하나뿐이다.
+    심는 곳은 **복사본의** `MASTER.md` 다 — 이 저장소의 것은 건드리지 않는다(`tests/tracked_guard.py` 가 세션 끝에 그것을 잰다).
     """
-    master = ROOT / "docs" / "MASTER.md"
+    master = tree / "docs" / "MASTER.md"
     original = master.read_text(encoding="utf-8")
     m = re.search(r"절 ([\d,]+) 전수", original)
     assert m, "MASTER 의 생성 블록 표기가 바뀌었다 — 이 시험을 고쳐라"
     broken = original.replace(m.group(0), "절 9,999 전수", 1)
     assert broken != original
 
-    try:
-        master.write_text(broken, encoding="utf-8")
-        r = _run()
-        assert r.returncode == 0, r.stdout + r.stderr
-        assert "9,999" in r.stdout, f"문이 심은 결함을 못 봤다\n{r.stdout}"
-        assert master.read_text(encoding="utf-8") == original, (
-            "문이 돌았는데 파일이 원래대로 안 돌아왔다")
-    finally:
-        if master.read_text(encoding="utf-8") != original:
-            master.write_text(original, encoding="utf-8")
+    master.write_text(broken, encoding="utf-8")
+    r = _run(tree)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "9,999" in r.stdout, f"문이 심은 결함을 못 봤다\n{r.stdout}"
+    assert master.read_text(encoding="utf-8") == original, "문이 돌았는데 파일이 원래대로 안 돌아왔다"
 
 
 def test_every_mechanical_step_is_behind_the_door():

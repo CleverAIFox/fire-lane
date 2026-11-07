@@ -13,7 +13,7 @@
 #   어느 것이 돌든 `web/` 을 통째로 올린다(08-31 부분 배포 사고의 해소책이
 #   그것이었다). 그래서 이름들이 가리킨 것은 **배포 대상이 아니라 촉발
 #   조건**이었는데, 화면에는 「무엇을 배포하는가」 처럼 보였다. 실제로
-#   2026-09-23 에 「데이터 배포를 왜 해야 하느냐」 는 물음이 나왔다 —
+#   2026-09-23 에 사용자가 데이터 배포를 왜 해야 하는지 지적했다 —
 #   **이름이 거짓을 말하면 사람이 구조를 오해한다.**
 #
 #   그리고 촉발 조건은 `paths` 한 블록이면 된다. 워크플로를 가를 이유가
@@ -117,12 +117,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7
         with:
           # ★ 정본은 `.python-version` 하나다 (W3-17). 배포가 게이트와 다른
           #   런타임에서 돌면 초록불이 배포를 보증하지 않는다.
           python-version-file: .python-version
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
           version: "0.12.13"          # ★ 핀. 종전에는 셋 다 "그날의 최신" 이었다
           enable-cache: true
@@ -135,6 +135,7 @@ jobs:
           #   공개돼도 손해가 없다(DECISIONS §343-3). 중개자에 인증이 붙는
           #   날 Secrets 로 옮긴다.
           ops-url: ${{ vars.FIRE_LANE_OPS_URL }}
+          ops-token: ${{ secrets.FIRE_LANE_OPS_TOKEN }}   # ★ 2026-11-06 (DECISIONS §655) — 주소는 vars · 토큰은 secrets
 
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d  # v6
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5
@@ -153,10 +154,10 @@ jobs:
     timeout-minutes: 20      # ★ 상한. 사유는 `contract.yml` 의 `contract-shared` 머리에
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7
         with:
           python-version-file: .python-version
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
           version: "0.12.13"
           enable-cache: true
@@ -167,6 +168,7 @@ jobs:
           # ★ 시운전도 같은 값을 태운다. 비어 있으면 「탭끼리만」 경고가 찍히고
           #   통과한다 — 그것이 지금의 사실이므로 시운전이 거짓을 말하지 않는다.
           ops-url: ${{ vars.FIRE_LANE_OPS_URL }}
+          ops-token: ${{ secrets.FIRE_LANE_OPS_TOKEN }}   # ★ 2026-11-06 (DECISIONS §655) — 주소는 vars · 토큰은 secrets
       - name: 지은 사이트가 배포할 모양인가
         run: |
           set -e

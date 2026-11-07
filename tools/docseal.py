@@ -500,8 +500,8 @@ def _untracked_refs(bodies: dict[str, str],
     t = _tracked()
     out: dict[str, list[str]] = {}
     for s in only:
-        pend = sorted({p for p in PATH.findall(bodies.get(s) or "")
-                       if (ROOT / p).is_file() and p not in t and not _generated(p)})
+        cand = {p for p in PATH.findall(bodies.get(s) or "") if (ROOT / p).is_file() and p not in t and not _generated(p)}
+        pend = sorted(cand - (gitq.ignored(sorted(cand), ROOT) or frozenset()))   # §626 — .gitignore 가 먹는 경로는 영영 추적 안 된다: 덫이 아니다(못 물었으면 안 뺀다)
         if pend:
             out[s] = pend
     return out

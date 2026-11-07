@@ -120,6 +120,10 @@ DOC_KEYS = frozenset({
     #   바로 찢어졌다. 둘 다 **ingest 가 안 읽는다** — 사람이 읽는 메타다.
     #   위 ★ 가 적은 예언이 한 배치 만에 맞았다.
     "survey_year", "notified",
+    # ★ 2026-11-05 (DECISIONS §634 · PLAN #193). **값의 성질 선언**(`coords` · `none` · 그 안의 `by`). ingest 는 이 칸을 **거부 조건**으로만 본다
+    #   (`ledger.coords_problems`) — 값이 산출에 닿지 않는다. 읽는 것은 `publish_*` 의 좌표 접근자뿐이고 그쪽은 `web/data` 바이트 대조가 든다.
+    #   분류하지 않으면 선언 한 줄이 여덟 샤드(`nfa_dispatch_119` · `nfa_rescue` · …)의 봉인을 찢는다.
+    "coords", "none", "by",
 })
 
 

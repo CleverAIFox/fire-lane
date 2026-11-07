@@ -66,6 +66,10 @@ BACKWARD = {
     ("terrain", "view.json"):
         "publish 산출에 구운 범위를 덧쓴다. `if vj.exists()` 가 첫 실행을 "
         "넘긴다. 해소 = 타일 범위를 processed 로 내고 publish 가 합친다(PLAN)",
+    # ★ 2026-10-23. β 의 수요점은 **레이크의 건축물대장**에서 나오고 사람이 부르는 도구(`tools/occ_pressure.py`)가 낸다 — 파이프라인 단계가 아니다.
+    #   `segments` 가 읽되 없으면 β 칸이 전부 null 이다(0 이 아니다). 해소 조건 = 대장이 바뀔 때 사람이 도구를 다시 부른다(자동화는 레이크 접근이 필요해 안 한다).
+    ("segments", "occ_demand.csv"):
+        "수요점은 레이크 대장에서 사람이 만든다(tools/occ_pressure.py). 없으면 occ_pressure · occ_pressure_rank 는 전부 null",
 }
 # ★ ("ortho","view.json") 은 여기 없다. 처음에 적었다가
 #   test_backward_entries_are_still_real 이 **바로 잡았다** — terrain 이

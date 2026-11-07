@@ -127,6 +127,9 @@ CONTRACT_KEYS: dict[str, tuple[str, str]] = {
     "layer_must_exist": ("zip 안에 layer 가 실제로 있는가", "firelane.contract"),
     "delimiter":        ("구분자. 안 적으면 갈래 기본값", "firelane.ledger"),
     "columns":          ("헤더 없는 원본의 컬럼 이름. 사람이 적는다", "firelane.read.delimited"),
+    "normalize_columns": ("칸 이름을 strip().strip('\"').lower() 로 맞춘다 — 값은 안 건드린다", "firelane.read.extract"),
+    "scope_max":        ("거른 뒤 행 수 상한(추출 전용). 하한은 과소를 잡고 상한은 과다를 잡는다", "firelane.read.extract"),
+    "filter":           ("{column, equals} 또는 그 목록(AND) — 정규화한 칸 이름으로 행을 거른다(전국 원본 → 지역 파생본)", "firelane.read.extract"),
 }
 
 
@@ -150,6 +153,11 @@ FAIL, WARN = "FAIL", "WARN"
 def load() -> dict:
     f = paths.ROOT / "sources.yaml"
     return yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+
+
+def parse(text: str) -> dict:
+    """대장 **문자열**을 읽는다(디스크를 안 본다). 글자를 고친 뒤 여전히 대장인지 보는 도구 · 합성 대장을 넣는 시험이 쓴다."""
+    return yaml.safe_load(text) or {}
 
 
 def raw_text() -> str:
@@ -320,6 +328,23 @@ def retired(y: dict | None = None) -> dict:
     return (y if y is not None else load_sources()).get("retired") or {}
 
 
+def retired_names(y: dict | None = None) -> frozenset[str]:
+    """`retired.*.files`(단수 `file` 도) 에 든 raw 상대경로 전부 — **이름 그대로**다(글롭 아님).
+
+    ★ 2026-11-06 (DECISIONS §657-5). `entry_of` 가 이 이름들을 **살아 있는 항목으로 안 풀게** 하려고 있다.
+      폐기된 지역판(`nfa_*_jngj-dong*`)은 살아 있는 항목과 **stem 이 같다** — 이름만 보고 풀면 `scope` 가
+      `kr` 로 올라간 항목의 `canonical` 이 그 파일을 `_kr_` 로 고치라고 한다. `migrate_names` 가 돌면
+      실제로 개명하고 대장 문자열(`retired` 블록 포함)까지 치환한다 — 지역판이 전국본 이름을 쓰게 된다.
+    """
+    out: set[str] = set()
+    for e in retired(y).values():
+        if not isinstance(e, dict):
+            continue
+        fs = e.get("files") or ([e["file"]] if e.get("file") else [])
+        out.update(str(f) for f in fs if f)
+    return frozenset(out)
+
+
 def disposed(y: dict | None = None) -> list:
     """`landing_disposition.items`. 위와 같은 사유 — 파일 없는 기각 기록이다.
 
@@ -369,6 +394,118 @@ def bbox_4326() -> tuple[float, float, float, float]:
     return tuple(load()["bbox_4326"])
 
 
+# ── 값의 성질 — 좌표 칸 · 「없음」 표기 (DECISIONS §631 · §634 · PLAN #193) ───────────────
+#: 좌표의 **뜻**(닫힌 어휘). 역할마다 허용되는 뜻이 정해져 있다 — `site` 는 사건 · 설치 · 시설의 위치, `reporter` 는 신고 쪽 위치(신고자 휴대폰 ·
+#: 원천이 「신고위치」라고 부르는 칸), `unconfirmed` 는 원천이 말하지 않은 것. ★ 뜻을 모르면 `unconfirmed` 로 **모른다고 적는다**(지금 쓰는 원천은 없다 — `nfa_rescue` 가 활용가이드로 `reporter` 가 됐다 · DECISIONS §642).
+COORD_ROLES: dict[str, tuple[str, ...]] = {
+    "site": ("재해 위치", "설치 위치", "시설 위치", "도로 중심"),
+    "reporter": ("신고자 휴대폰 위치", "신고 위치"),
+    "unconfirmed": ("미확인",),
+}
+#: 「없음」의 꼴(닫힌 어휘 + 센티넬·텍스트 리터럴은 `none:` 이 직접 적는다). 빈 셀 · 공백 문자열은 이름으로 부른다.
+NONE_EMPTY, NONE_BLANK = "빈 셀", "공백"
+TABLE_KINDS = ("csv_table", "csv_table_multi", "json_table")
+#: 점 자료 — 읽을 좌표 칸을 **`coords.site` 가 말한다**(종전 `x_col` · `y_col` 을 흡수했다 · DECISIONS §641).
+POINT_KINDS = ("csv_points", "csv_points_in_zip", "json_points")
+#: 좌표로 **읽히는** 칸 이름(추정). 선언이 없는 표가 좌표를 숨기는지 보는 그물이다 — 지번 `LOT`(건축물대장)처럼 오탐은 `coords: {none: 사유}` 로 선언한다.
+COORD_COL = re.compile(r"(^|_)(LOT|LAT|LON|LNG)$|경도|위도|좌표|longitude|latitude|WGS84|^[xy]$", re.I)
+
+
+def coord_columns(e: dict) -> list[str]:
+    """`schema.columns` 중 좌표로 읽히는 칸. 선언이 아니라 **이름에서 짐작한** 것이다."""
+    return [str(c) for c in ((e.get("schema") or {}).get("columns") or []) if COORD_COL.search(str(c))]
+
+
+def coords_decl(e: dict) -> dict | None:
+    """대장 항목의 `coords:` 선언 그대로. 없으면 None. `{none: 사유}` 면 「좌표가 없다」는 **선언**이다."""
+    return (e or {}).get("coords") or None
+
+
+def coords_in(e: dict, role: str = "site") -> tuple[str, str]:
+    """대장 **항목 하나**에서 `(x칸, y칸)`. 읽는 쪽(`read/*`)이 쓴다 — 선언이 없거나 그 역할이 없으면 `KeyError`(칸을 추측하지 않는다)."""
+    c = coords_decl(e) or {}
+    if role not in c or role == "none":
+        raise KeyError(f"coords.{role} 선언이 없다 — sources.yaml 에 적는다(DECISIONS §634 · §641)")
+    return str(c[role]["x"]), str(c[role]["y"])
+
+
+def point_cols(e: dict) -> tuple[str | None, str | None]:
+    """점 자료의 읽을 칸 — 점 갈래가 아니거나 선언이 없으면 `(None, None)`. 죽지 않는다(검사 쪽이 쓴다)."""
+    if (e or {}).get("kind") not in POINT_KINDS:
+        return None, None
+    try:
+        return coords_in(e)
+    except (KeyError, TypeError):
+        return None, None
+
+
+def coords(key: str, role: str, led: dict | None = None, use: str | None = None) -> tuple[str, str]:
+    """`(x칸, y칸)` — **코드가 좌표 칸 이름을 직접 쓰지 않는 유일한 길**(`tests/test_coord_literals.py` 가 문다).
+
+    ★ 선언이 없거나 그 역할이 없으면 `KeyError` — 코드가 제 판단으로 칸을 고르는 길을 닫는다(2026-11-04 `DCLR_PSTN_*` 사고).
+    ★ `use` 를 넘기면 그 칸의 `not_for`(그 뜻으로 쓰면 안 되는 용도)와 대 본다 — 신고자 휴대폰 위치를 `지도 표출` 로 쓰면 `ValueError`.
+    """
+    d = ((led if led is not None else load_sources()).get("datasets") or {}).get(key) or {}
+    try:
+        xy = coords_in(d, role)
+    except KeyError as ex:
+        raise KeyError(f"대장 `{key}` 의 {ex.args[0]}") from None
+    if use and use in ((coords_decl(d) or {})[role].get("not_for") or []):
+        raise ValueError(f"대장 `{key}` 의 coords.{role}({coords_decl(d)[role]['means']})은 `{use}` 에 쓰지 않는다(not_for)")
+    return xy
+
+
+def coords_problems(key: str, e: dict) -> list[str]:
+    """`coords:` 의 **모양과 거부 조건**. 레이크 없이 돈다(CI · 푸시 전).
+
+    ★ 좌표로 읽히는 칸이 있는 표가 `coords:` 를 안 들면 거부한다 — 「좌표가 없다」(`coords: {none: 사유}`)와 「선언을 안 했다」는 다르다.
+    """
+    pt = e.get("kind") in POINT_KINDS
+    if e.get("kind") not in TABLE_KINDS and not pt:
+        return []
+    c, cols = coords_decl(e), set(map(str, (e.get("schema") or {}).get("columns") or []))
+    if pt and (c is None or "site" not in c or "none" in c):
+        return ["점 자료인데 `coords.site` 가 없다 — 읽을 좌표 칸(`x` · `y` · `crs` · `means`)을 대장이 말한다(종전 `x_col` · `y_col` — DECISIONS §641)"]
+    if c is None:
+        return [f"좌표로 읽히는 칸 {coord_columns(e)} 이 있는데 `coords:` 선언이 없다 — 어느 칸이 무엇의 위치인지 적는다 "
+                "(좌표가 아니면 `coords: {none: 사유}`)"] if coord_columns(e) else []
+    if "none" in c:
+        return [] if len(c) == 1 and str(c["none"]).strip() else ["`coords.none` 은 사유 한 줄만 든다"]
+    out = []
+    for role, d in c.items():
+        if role not in COORD_ROLES:
+            out.append(f"coords.{role} — 역할은 {sorted(COORD_ROLES)} 중 하나"); continue
+        if not isinstance(d, dict) or not {"x", "y", "crs", "means"} <= set(d):
+            out.append(f"coords.{role} — x · y · crs · means 가 있어야 한다"); continue
+        if d["means"] not in COORD_ROLES[role]:
+            out.append(f"coords.{role}.means `{d['means']}` — 이 역할의 뜻은 {list(COORD_ROLES[role])}")
+        out += [f"coords.{role}.{a} `{d[a]}` 가 schema.columns 에 없다" for a in ("x", "y") if cols and str(d[a]) not in cols]
+    return out
+
+
+def none_forms(e: dict, col: str) -> set[str]:
+    """`none:` 이 이 칸에 선언한 「없음」의 꼴(빈 셀 · 공백 · 센티넬 · 텍스트). 선언이 없으면 빈 집합."""
+    return {str(f) for f in (((e or {}).get("none") or {}).get(col) or {}).get("forms") or []}
+
+
+def profile_problems(e: dict) -> list[str]:
+    """`schema.profile`(실물이 잰 값 성질)이 `none:`(사람의 선언)보다 넓으면 운다. 레이크 없이 커밋된 프로필로 돈다.
+
+    ① 선언한 칸 — 잰 방언이 선언 안에 있나 ② **공백 문자열이 있는 칸은 반드시 선언**(`notna()` 가 그것을 「있음」으로 센 사고)
+    ③ 좌표 칸이 비었거나 센티넬이면 선언.
+    """
+    pf = ((e.get("schema") or {}).get("profile") or {}).get("cols") or {}
+    xy = {str(d[a]) for r, d in (coords_decl(e) or {}).items() if isinstance(d, dict) for a in ("x", "y") if a in d}
+    out = []
+    for col, st in pf.items():
+        seen = ({NONE_EMPTY} if st.get("empty") else set()) | ({NONE_BLANK} if st.get("ws") else set()) \
+            | set(map(str, st.get("sentinel") or {})) | set(map(str, st.get("text_none") or {}))
+        declared = none_forms(e, col)
+        if (col in (e.get("none") or {}) or col in xy or st.get("ws")) and seen - declared:
+            out.append(f"{col} — 실물 방언 {sorted(seen - declared)} 이 `none:` 선언에 없다 (선언 {sorted(declared)})")
+    return out
+
+
 def crs_of(e: dict) -> str:
     """crs_native → 'EPSG:NNNN'.
 
@@ -409,6 +546,12 @@ def entry_of(rel: str) -> tuple[str | None, dict]:
       이것은 역산이 아니라 파싱이다 — 문법이 `firelane.naming` 에
       정의돼 있고 파서가 하나뿐이다.
     """
+    # ★ 2026-11-06 (DECISIONS §657-5). **폐기된 이름은 살아 있는 항목으로 안 푼다** — 위 `retired_names`.
+    #   (폴더 없이 이름만 와도 같다.) 풀지 않으면 `(None, {})` 이고, 그것은 「대장이 모른다」가 아니라
+    #   「폐기로 안다」다 — 고아 검사는 `retired_names` 를 같이 본다.
+    ret = retired_names()
+    if rel in ret or ("/" not in rel and any(r.endswith("/" + rel) for r in ret)):
+        return None, {}
     idx = stem_index()
     name = rel.rsplit("/", 1)[-1]
     try:

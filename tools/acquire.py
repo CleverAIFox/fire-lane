@@ -11,7 +11,7 @@ acquire.py — landing → raw 획득 게이트. **적재한 것을 검증한다
 ── 왜 만들었나 ────────────────────────────────────────────────
 MASTER §18-12 는 이 도구를 **이름까지 적어놓고** 있었다.
 
-    landing (외장 SSD fire-lane-data/)
+    landing ($FIRE_LANE_DATA/landing — 이 기계는 /home/fox/lake/landing)
             ↓  acquire.py stage  — 대장 매칭
     data/raw/<제공기관>/
     data/_quarantine/
@@ -144,6 +144,7 @@ def save_ledger(d: dict) -> None:
 # ★ 2026-10-08 (DECISIONS §431 · PLAN #157). `firelane/acquire_rules.py` 로
 #   떼어 냈다. 이 파일이 621줄로 상한을 넘었고, 이 덩이는 「대장이 어디를
 #   주장하나」 한 물음이라 혼자 선다 — 명령 넷은 그것을 **쓰는** 쪽이다.
+from firelane import ledger
 from firelane.acquire_rules import dataset_globs, retired_names
 
 #: **폐지된 플래그 → 폐지한 절.** 부르는 쪽이 따라오게 하는 자리다.
@@ -164,6 +165,30 @@ RETIRED_FLAGS: dict[str, str] = {"--quarantine": "DECISIONS §173-2"}
 LEDGER_MISSING = 0
 
 
+def _declared_absent(key: str) -> bool:
+    """대장이 **부재를 선언**했는가(`status: missing` · 사유 있는 `awaiting`). 판정은 `ledger.absence()` 의 것이다.
+
+    ★ 2026-11-04 (PLAN #182 · DECISIONS §620). 선언된 부재를 결손으로 또 세지 않는다 — 사유가 빈 `bare` 는
+      선언이 아니라 침묵이라 결손으로 남는다(`absence` 가 그렇게 가른다).
+    """
+    e = (ledger.load_sources().get("datasets") or {}).get(key)
+    return ledger.absence(e)[0] in ("missing", "awaiting")
+
+
+def _declared_owner(rel: str) -> bool:
+    """대장 경로 `rel` 의 **주인 데이터셋**이 부재를 선언했는가 — 경로 → 데이터셋 역매핑(`dataset_globs` 의 글롭).
+
+    ★ 2026-11-04 (PLAN #182 · DECISIONS §624). `--verify` 의 「사라짐」 루프는 파일 경로만 들고 있어 `_declared_absent` 를 못 불렀다.
+      선언된 부재는 사라짐이 아니라 **declared** 다 — 주인이 선언했으면 파일이 없는 것이 약속이다.
+    """
+    import fnmatch
+    for k, gs in dataset_globs().items():
+        pats = [g for g in (gs if isinstance(gs, list) else [gs]) if g]
+        if any(fnmatch.fnmatch(rel, pat) for pat in pats) and _declared_absent(k):
+            return True
+    return False
+
+
 def missing_from_register(root: Path | None = None) -> list[tuple[str, str]]:
     """`_acquire.json` 만으로 센 결손. `judge()` 와 **같은 물음**이고 레이크를 안 읽는다.
 
@@ -178,6 +203,8 @@ def missing_from_register(root: Path | None = None) -> list[tuple[str, str]]:
     reg = _json.loads((r / "data/_acquire.json").read_text(encoding="utf-8"))["files"]
     out = []
     for k, gs in dataset_globs().items():
+        if _declared_absent(k):
+            continue
         pats = [g for g in (gs if isinstance(gs, list) else [gs]) if g]
         if not any(fnmatch.fnmatch(p, pat) for pat in pats for p in reg):
             out.append((k, pats[0] if pats else "?"))
@@ -208,7 +235,7 @@ def judge() -> tuple[dict, list[str], list[Path]]:
         if hits:
             matched[k] = hits
             claimed.update(hits)
-        else:
+        elif not _declared_absent(k):
             missing.append((k, ", ".join(gs) if isinstance(gs, list) else gs))
     orphan = [p for p in raw_files() if p not in claimed]
     return matched, missing, orphan
@@ -295,9 +322,12 @@ def cmd_verify() -> int:
     # ★ 2026-08-23. 대장에 있는데 raw 에 없는 것을 전부 "사라짐" 으로 봤다.
     #   `--quarantine` 으로 내린 파일이 거기 걸려 **정상 처분이 빨간불**이 됐다.
     #   격리는 소실이 아니라 이동이다. `_quarantine` 에 있으면 그렇게 말한다.
-    gone, moved = [], []
+    gone, moved, declared = [], [], []
     for r in led:
         if (RAW / r).exists():
+            continue
+        if _declared_owner(r):
+            declared.append(r)
             continue
         # ★ 2026-09-17 (§180). 격리 층은 폐지됐다. 옛 격리분이 남은 기계도 있어 둘 다 본다
         (moved if (RETIRED / r).exists() or (QUARANTINE / r).exists() else gone).append(r)
@@ -310,6 +340,8 @@ def cmd_verify() -> int:
         print(f"  {col('retired 로 옮겨짐', 'c')}  {rel}   (대장에서 뺀다)")
     for rel in gone:
         print(f"  {col('사라짐', 'r')}  {rel}")
+    for rel in declared:
+        print(f"  {col('declared', 'c')}  {rel}   (대장이 부재를 선언했다 — 사라짐이 아니다)")
     for rel in new:
         print(f"  {col('대장에 없음', 'y')}  {rel}   (--verify 를 다시 돌리면 기록된다)")
     if not (bad or gone):

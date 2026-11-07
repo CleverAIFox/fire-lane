@@ -177,7 +177,7 @@ def test_a_batch_zip_in_the_inbox_is_never_matched(tmp_path, monkeypatch):
 #
 # ★ 사람이 실물로 잡았다 — 다운로드 폴더에 배치 zip · 남의 패치 · 채용공고가
 #   같이 사는데 도구가 그 전부에 대고 「대장에 항목을 만들어라」라고 말했다.
-#   「이상한거 까지 다 들어갔잖아」. 방향이 반대였다.
+#   사용자가 대장과 상관없는 것까지 들어갔다고 지적했다. 방향이 반대였다.
 LEDGER = {
     "roadtraffic_act": {
         "what": "도로교통법 긴급자동차 특례 조문", "authority": "국가법령정보센터",

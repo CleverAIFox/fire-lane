@@ -37,7 +37,7 @@ from pathlib import Path
 
 import yaml
 
-from firelane import ngi
+from firelane import ledger, ngi
 from firelane.encoding import CANDIDATES_CSV_SCAN
 from firelane.paths import INTERIM, RAW, ROOT
 
@@ -282,11 +282,13 @@ def collect(only: str | None = None) -> dict:
         if only and key != only:
             continue
         kind = meta.get("kind", "")
-        pattern = meta.get("file", "")
-        if not pattern:
+        # ★ 감사 1-4. 단수 `file` 만 읽던 것을 정본 접근자로 — `files:` 로 적은 항목이 빠졌다.
+        patterns = ledger.files_decl(meta)
+        if not patterns:
             inv[key] = {"status": "file 미지정"}
             continue
-        paths = _resolve(pattern)
+        pattern = ", ".join(patterns)
+        paths = sorted({p for pat in patterns for p in _resolve(pat)})
         if not paths:
             # ★ 조용히 넘기지 않는다. 대장에 있는데 원본이 없으면 사고다.
             inv[key] = {"status": "원본 없음", "pattern": pattern}

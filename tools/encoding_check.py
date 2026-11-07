@@ -31,7 +31,7 @@ tools/encoding_check.py — 저장소 텍스트의 인코딩·개행을 검사�
 저장소 밖(.wslconfig 등)은 못 잡는다. 그래서 검사가 따로 필요하다.
 
 ★ data/field 는 실측 원자료다. raw 와 같은 등급이고 재생성이 불가하다.
-  `--fix` 로 고치기 전에 반드시 백업을 남긴다(.bak_enc).
+  `--fix` 로 고치기 전에 반드시 백업을 남긴다(`paths.INTERIM/encoding_backup/` 의 `.bak_enc` — 봉인 층 밖이다 · Zm30).
 """
 from __future__ import annotations
 
@@ -94,9 +94,25 @@ def check(p: Path):
     return bad, b
 
 
+def backup_root() -> Path:
+    """고치기 전 원본 바이트를 두는 자리 — **봉인 층 밖**이다. `paths.INTERIM`(탐색 · 대조 산출물 · 커밋 안 함 · 지워도 되는 층)의 `encoding_backup/`.
+
+    ★ 2026-10-25 (Zm30 · DECISIONS §575). 종전에는 고칠 CSV **옆에**(`data/field/<이름>.csv.bak_enc`) 썼다. `data/field` 는 사람이 만든 봉인 층이라
+      그 옆의 새 파일이 대장 검사(`doc_fsck`)와 봉인 검사(`fieldseal`)를 걸었다. 호출 시점에 읽는다(기본 인자로 묶으면 시험이 못 바꾼다 — §571).
+    """
+    from firelane.paths import INTERIM
+    return INTERIM / "encoding_backup"
+
+
 def fix(p: Path, b: bytes) -> bool:
     if p.suffix == ".csv" and "field" in p.parts:
-        p.with_suffix(p.suffix + ".bak_enc").write_bytes(b)
+        try:
+            rel = p.relative_to(ROOT)
+        except ValueError:
+            rel = Path(p.name)
+        dst = backup_root() / (str(rel) + ".bak_enc")
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(b)
     n = b
     if n.startswith(b"\xef\xbb\xbf"):
         n = n[3:]
@@ -364,7 +380,7 @@ def main() -> int:
             print(f"  ... 외 {len(gen) - 8}건")
 
     if do_fix:
-        print(f"\n고친 파일 {fixed}건. data/field CSV 는 .bak_enc 백업을 남겼다.")
+        print(f"\n고친 파일 {fixed}건. data/field CSV 는 {backup_root()} 에 .bak_enc 백업을 남겼다.")
         left = [p for p, b in hand if "비UTF-8" in b]
         if left:
             print("★ 비UTF-8 은 자동으로 안 고친다. 원본 인코딩을 확인하고 판단할 것:")

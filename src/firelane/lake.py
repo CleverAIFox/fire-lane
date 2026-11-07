@@ -57,6 +57,7 @@ from pathlib import Path
 
 from firelane import layers as _L
 from firelane import ledger, paths
+from firelane.extract_decl import HOLD, held_names
 
 # ★ 2026-10-10 (DECISIONS §457-2). 손으로 적은 다섯이었고 대장과 **갈려 있었다.**
 #   도출로 바꿨다 — `base: data` 인 계층 − 폐지층.
@@ -89,6 +90,7 @@ class Claims:
     retired_globbed: list[str] = field(default_factory=list)      # 글롭으로 가리키는 폐기 키
     disposed: list[str] = field(default_factory=list)             # landing 처분 패턴(사유 있는 것)
     layer: dict[str, str] = field(default_factory=dict)           # 활성 key → 원본 안 레이어
+    held: dict[str, list[str]] = field(default_factory=dict)      # `landing/_hold` 에서 제자리로 읽는 입력: 파일명(패턴) → 키들
 
 
 def _is_glob(p: str) -> bool:
@@ -98,6 +100,7 @@ def _is_glob(p: str) -> bool:
 def claims(y: dict) -> Claims:
     """대장에서 주장을 뽑는다. **패턴 해석은 `ledger.globs` 하나를 쓴다.**"""
     c = Claims()
+    c.held = held_names(y.get("datasets"))
     for k, e in (y.get("datasets") or {}).items():
         c.active[k] = ledger.globs(e or {})
         if (e or {}).get("layer"):
@@ -227,6 +230,7 @@ def resolve(y: dict, root: Path, prep: dict | None = None) -> list[Row]:
                   for k, v in ((prep or {}).get("files") or {}).items()}
     rows: list[Row] = []
     seen_literal: set[str] = set()
+    seen_held: set[tuple[str, str]] = set()
 
     for p in sorted(root.rglob("*")):
         if not p.is_file() or p.is_symlink():
@@ -283,8 +287,13 @@ def resolve(y: dict, root: Path, prep: dict | None = None) -> list[Row]:
                                 note="" if layer == "retired" else "★ 은퇴 사유 없음 — 사람이 정한다"))
         elif layer == "landing":
             hit = [f for f in c.disposed if fnmatch.fnmatchcase(parts[-1], f)]
-            rows.append(Row(rel, layer, "정상" if hit else "주인없음",
-                            tuple(f"landing:{h}" for h in hit)))
+            # ★ `_hold` 의 전국본(§647) — 대장이 이름으로 선언한 입력만 주인이 있다. 그 밖의 이름은 여전히 주인없음이다.
+            hk = [k for pat, ks in c.held.items() if len(parts) == 3 and parts[1] == HOLD
+                  and fnmatch.fnmatchcase(parts[2], pat) for k in ks]
+            seen_held.update((k, parts[2]) for k in hk)
+            rows.append(Row(rel, layer, "정상" if hit or hk else "주인없음",
+                            (*(f"landing:{h}" for h in hit), *(f"datasets:{k}" for k in hk)),
+                            "제자리 입력 — `--extract-from`" if hk else ""))
         else:  # interim — 재생성 가능. 주인이 없어도 된다
             rows.append(Row(rel, layer, "정상", note="재생성 가능"))
 
@@ -292,7 +301,7 @@ def resolve(y: dict, root: Path, prep: dict | None = None) -> list[Row]:
     for tag, table in (("datasets", c.active), ("retired", c.retired)):
         for k, pats in table.items():
             for pat in pats:
-                if not _is_glob(pat) and pat not in seen_literal:
+                if not _is_glob(pat) and pat not in seen_literal and (tag != "datasets" or (k, Path(pat).name) not in seen_held):
                     rows.append(Row(f"?/{pat}", "", "결손", (f"{tag}:{k}",)))
     return rows
 

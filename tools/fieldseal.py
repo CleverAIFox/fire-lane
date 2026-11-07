@@ -53,6 +53,62 @@ ROOT = Path(__file__).resolve().parents[1]
 FIELD = ROOT / "data" / "field"
 SEAL = ROOT / "data" / "golden" / "field.fingerprint.json"
 
+#: 지문에서 **빼는 파일** — 이름 → 사유. 목록 **밖**의 새 파일은 여전히 「새로 생겼다」로 빨개진다(빈 그물의 반대쪽).
+#:
+#: ★ 2026-10-25 (Zm44 · DECISIONS §584). 이 층의 정의는 「실측 원자료 · 사람이 만드는 유일한 데이터 · 재생성 불가」인데 평가셋 · 표본표 도구가
+#:   뽑은 파일이 이 폴더에 같이 있다. 아래 둘은 **정의에 안 맞아서** 뺀다 — 맞는 층이 없다는 것(§584)을 가리는 배치가 아니라 **지문의 뜻을
+#:   지키는 쪽**의 조치다: 지문은 「재취득 불가한 실측」만 든다.
+EXCLUDED: dict[str, str] = {
+    "evalset_2610.key.json":
+        "도구가 뽑은 봉인 키이고 실측이 아니다. 재현을 약속하지 않고 커밋해야 해서 어느 층 정의에도 없다 — 이 폴더에 두는 것은 "
+        "지문 보호를 받기 위한 임시 배치였고, 그 보호는 이 목록이 거두므로 **층 정의의 공백을 메운 것이 아니라 비켜간 것이다**(§584)",
+    "sidewalk_probe_2610.csv":
+        "§577 이 「봉인하지 않는다」고 선언했다. 거리뷰 판독이라 현장 실측보다 약하고, 자료 결손률을 세는 일회성 표다",
+}
+
+#: **빈 양식인 동안만 빼는 파일** — 이름 → (사유, 측정 칸). 측정 칸이 **하나라도 차면** 제외에서 저절로 빠져 「새로 생겼다」로 빨개진다.
+#: 그러면 사람이 `--write` 로 봉인 대상에 올린다 — 손으로 옮길 목록이 없다(옮기는 것을 잊으면 지문이 영영 안 든다는 쪽이 위험이라 이렇게 짰다).
+#:
+#: ★ 2026-10-26 (Zm52 · DECISIONS §590). 사람이 아직 안 채운 양식이 지문에 들면 채우는 순간 지문이 어긋나 **정상 작업이 빨강**이 된다.
+BLANK_FORMS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "evalset_2610.csv": (
+        "사람이 채우기 전의 빈 양식이다(측정 칸 전부 0건). 채운 뒤에는 실측이므로 봉인 대상이 되어야 하고, 칸이 하나라도 차면 이 제외에서 "
+        "저절로 빠져 `--write` 를 기다리는 「새로 생겼다」로 울린다",
+        ("w_full_m", "w_narrow_m", "narrow_s_m", "note", "method")),
+    "flip_top_2610.csv": (
+        "사람이 잴 우선순위 표의 빈 양식이다(측정 칸 전부 0건). 머리말이 이미 「봉인하지 않는다」고 적었으나 채운 뒤에는 실측이므로 "
+        "칸이 하나라도 차면 이 제외에서 저절로 빠져 `--write` 를 기다리는 「새로 생겼다」로 울린다",
+        ("w_full_m", "w_narrow_m", "narrow_s_m", "note", "method")),
+}
+
+
+def is_blank_form(p: Path, cols: tuple[str, ...]) -> bool:
+    """`#` 줄을 뺀 CSV 에서 측정 칸이 **전부 비었나**. 읽을 수 없거나 칸이 없으면 빈 양식이 **아니다**(제외하지 않는다 — 모르면 봉인 쪽)."""
+    import csv
+    try:
+        lines = [ln for ln in p.read_text(encoding="utf-8-sig").splitlines() if not ln.startswith("#")]
+        rows = list(csv.DictReader(lines))
+    except (OSError, UnicodeDecodeError, csv.Error):
+        return False
+    if not rows or not all(c in rows[0] for c in cols):
+        return False
+    return not any((r.get(c) or "").strip() for r in rows for c in cols)
+
+
+def excluded(field: Path, rel: str) -> bool:
+    """이 파일을 지문에서 빼는가 — 영구 제외이거나 빈 양식이다."""
+    if rel in EXCLUDED:
+        return True
+    if rel in BLANK_FORMS:
+        return is_blank_form(field / rel, BLANK_FORMS[rel][1])
+    return False
+
+
+def skipped(field: Path | None = None) -> list[str]:
+    """지금 지문에서 빠져 있는 파일 이름(영구 제외 + 아직 빈 양식)."""
+    field = FIELD if field is None else field
+    return sorted(n for n in (*EXCLUDED, *BLANK_FORMS) if excluded(field, n))
+
 
 def _sha(p: Path) -> str:
     h = hashlib.sha256()
@@ -60,14 +116,17 @@ def _sha(p: Path) -> str:
     return h.hexdigest()
 
 
-def survey() -> dict[str, dict]:
-    """지금 실물. 이름 → {sha256, bytes, lines}."""
+def survey(field: Path | None = None) -> dict[str, dict]:
+    """지금 실물. 이름 → {sha256, bytes, lines}. `EXCLUDED` 는 뺀다."""
+    field = FIELD if field is None else field
     out: dict[str, dict] = {}
-    for p in sorted(FIELD.rglob("*")):
+    for p in sorted(field.rglob("*")):
         if not p.is_file() or p.name.startswith("."):
             continue
+        if excluded(field, p.relative_to(field).as_posix()):
+            continue
         b = p.read_bytes()
-        out[p.relative_to(FIELD).as_posix()] = {
+        out[p.relative_to(field).as_posix()] = {
             "sha256": _sha(p),
             "bytes": len(b),
             # ★ 줄 수를 같이 든다. sha 만 있으면 「무엇이 달라졌나」에
@@ -77,10 +136,12 @@ def survey() -> dict[str, dict]:
     return out
 
 
-def load() -> dict[str, dict]:
+def load(field: Path | None = None) -> dict[str, dict]:
+    field = FIELD if field is None else field
     if not SEAL.is_file():
         return {}
-    return json.loads(SEAL.read_text(encoding="utf-8")).get("files", {})
+    files = json.loads(SEAL.read_text(encoding="utf-8")).get("files", {})
+    return {k: v for k, v in files.items() if not excluded(field, k)}      # 제외한 것은 양쪽에서 안 본다 — 옛 지문에 있어도 「사라졌다」로 울지 않는다
 
 
 def diff(now: dict[str, dict], was: dict[str, dict]) -> list[str]:
@@ -117,7 +178,7 @@ def check() -> int:
         print("  새로 잰 값이면 `--write` 로 지문을 다시 뜨고 **무엇을 언제")
         print("  잰 것인지**를 커밋에 적어라.")
         return 1
-    print(f"✓ `data/field` {len(now)}개 파일이 지문과 같다")
+    print(f"✓ `data/field` {len(now)}개 파일이 지문과 같다" + (f" (지문에서 뺀 {len(skipped())}건: {', '.join(skipped())})" if skipped() else ""))
     return 0
 
 
@@ -132,7 +193,7 @@ def write() -> int:
     SEAL.write_text(json.dumps(
         {"what": "data/field 무결성 지문 — 재취득 불가 층. tools/fieldseal.py 가 쓴다",
          "files": now}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"✓ 지문 {len(now)}개 → {SEAL.relative_to(ROOT)}")
+    print(f"✓ 지문 {len(now)}개 → {SEAL.relative_to(ROOT)}" + (f" (뺀 {len(skipped())}건: {', '.join(skipped())})" if skipped() else ""))
     return 0
 
 
@@ -148,6 +209,34 @@ def selftest() -> int:
         bad.append("사라진 파일을 못 잡는다")
     if not diff({**base, "b.csv": {"sha256": "z", "bytes": 1, "lines": 0}}, base):
         bad.append("새로 생긴 파일을 못 잡는다")
+    # ★ 제외 목록 — 든 파일은 빠지고 **목록 밖 새 파일은 걸린다**(합성 디렉터리로 양쪽을 민다)
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        for nm in (*EXCLUDED, "sealed.csv", "stranger.csv"):
+            (root / nm).write_text("x\n", encoding="utf-8")
+        got = survey(root)
+        if any(k in got for k in EXCLUDED):
+            bad.append("제외 목록의 파일이 지문 대상에 들어왔다")
+        if set(got) != {"sealed.csv", "stranger.csv"}:
+            bad.append(f"제외 말고 다른 것을 뺐다 — {sorted(got)}")
+        if not any("새로 생겼다  stranger.csv" in x for x in diff(got, {"sealed.csv": got["sealed.csv"]})):
+            bad.append("목록 밖 새 파일을 못 잡는다")
+    if not all(len(why) >= 30 for why in EXCLUDED.values()) or not all(len(v[0]) >= 30 for v in BLANK_FORMS.values()):
+        bad.append("제외 사유가 너무 짧다 — 사유가 본체다")
+    # ★ 빈 양식 제외 — 빈 동안은 빠지고 **측정 칸이 하나라도 차면 걸린다**(채우면 지문 대상이 되는 쪽이 이 장치의 뜻이다)
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        for nm, (_why, cols) in BLANK_FORMS.items():
+            head = ",".join(("seg_id", *cols))
+            (root / nm).write_text(f"# 머리\n{head}\nDM1,,,,,\n", encoding="utf-8")
+        if set(BLANK_FORMS) & set(survey(root)):
+            bad.append("빈 양식이 지문 대상에 들어왔다")
+        for nm, (_why, cols) in BLANK_FORMS.items():
+            head = ",".join(("seg_id", *cols))
+            (root / nm).write_text(f"# 머리\n{head}\nDM1,7.5,,,,\n", encoding="utf-8")
+        if set(BLANK_FORMS) - set(survey(root)):
+            bad.append("측정 칸이 찼는데도 지문 대상에서 빠져 있다 — 채운 실측이 봉인 밖에 남는다")
     # ★ 실물에서도 재 본다. **0개를 재면 「전부 같다」가 거짓이 된다** — 그것이
     #   이 팔의 유일한 뜻이다(빈 그물 금지).
     # ★ 2026-09-28 (DECISIONS §291). 하한이 2 였다. 야장 셋을 지운 뒤 이 층에

@@ -65,15 +65,18 @@ INTERIM = ("fragment",)
 #:   충분한데 **대장이 반박해** 확정을 못 주는 자리를 부를 낱말이 없었고, 그래서
 #:   화면이 그 구간을 「표본이 하나라서」(`no_cctv_single`)라고 **거짓으로** 설명했다.
 #:   빈칸은 「모른다」를 말하지만 틀린 낱말은 **아는 척한다**(§369).
+# ★ 2026-10-23. **일곱째 `needs_survey`** — clear 를 반박하는 폭 근거가 있는데 영상으로 풀 수도 없는 자리. 근거는 규칙 [8]~[11] 이다: 소스 무관 최솟값 < 3.0 ·
+#   대칭폭 < 3.0 · (소스 무관 최솟값 또는 내접원 중앙값) < 7.0 · 폭 급변. 발행본 74 중 [8] 의 3.0 미만은 5, [9] 의 3.0 미만도 5 뿐이다(Zm20 N2).
+#   CCTV 가 없으면 「영상 보면 풀린다」(needs_cv)가 **거짓 약속**이다. 그래서 회색이되 사유는 「현장에서 재야 안다」이다.
 REASONS = ("ledger_disputes",
            "no_cctv_narrow", "no_cctv_thin", "no_cctv_band",
-           "no_cctv_single", "width")
+           "no_cctv_single", "needs_survey", "width")
 
 #: `VERDICT_RULE` 중 **이 함수가** 실행하는 줄의 번호. 전부다.
 #: 강제자 `tests/test_classify.py::test_covers_every_declared_rule` 가
 #: `VERDICT_RULE` 의 길이와 이것을 댄다 — 규칙을 한 줄 더 적고 여기
 #: 구현을 안 하면 운다.
-IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7)
+IMPLEMENTS = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
 #: 대장폭이 판정에 드는 문턱. `VERDICT_RULE[1]` 의 숫자다.
 #: ★ 이름을 준 이유 — 종전에는 `main()` 안에서 `TRUCK` 을 그대로 썼고,
@@ -85,6 +88,12 @@ LEDGER_BLOCK_M = TRUCK
 #: clear 문턱. `wmin >= TRUCK + 2*PARK`. 표시용 사본이 `web/config.js` 에 있다.
 CLEAR_M = TRUCK + 2 * PARK
 
+#: 규칙 [11] — 구간 안에서 폭이 이 배수 이상 변하면(`wmax / wmin`) 대표폭이 없다. **유도된 수가 아니다**(2026-10-23 · Zm19 ·
+#: DECISIONS §564). 분포를 보고 정했다: `width_max_m` 이 있는 `clear` 132개의 비 분포는 중앙 1.29 · 75% 1.81 · 90% 2.95 이고, 2.5 는 그
+#: 75% 와 90% 사이의 둥근 수다(2.0 이면 30개 · 3.0 이면 14개가 거둬진다). 사례 DM01576(입구 12.3m · 안쪽 2.4~3.2m)은 3.27 이다.
+#: ★ `width_max_m` 은 1,281 중 606구간에만 있다 — **없는 구간은 이 규칙이 안 걸린다.**
+SPREAD_MAX = 2.5
+
 
 def classify(
     *,
@@ -94,6 +103,10 @@ def classify(
     road_bt: float | None,
     length_m: float,
     cctv_dist: float,
+    wmin_any: float | None = None,
+    wsym: float | None = None,
+    clear_med: float | None = None,
+    spread_max: float | None = SPREAD_MAX,
 ) -> tuple[str, str | None]:
     """구간 하나의 (판정, 회색 사유).
 
@@ -112,6 +125,9 @@ def classify(
 
     # 길이 3m 미만인데 폭을 아예 못 낸 것은 교차로 파편이다. 판정이 아니라
     # **인접 상속 대상**이라는 표시다. 여기서 내는 것은 중간 상태다.
+    # ★ Zm12 ① (DECISIONS §554). 이 관문은 **두 조건이 모두 참일 때만** 건다 — 짧아도 폭이 하나라도 나오면(wmin 이 있으면)
+    #   지나간다. 3m 미만 6개(0.8 ~ 2.6m)가 전부 표본 1개의 wmin 을 가져 이 관문을 지났다. `MIN_SEG_LEN` 을 읽는 곳은
+    #   여기 말고 width.py 의 두 줄(짧은 조각 교차부 제외 해제 · 정규 표본 0개 폴백 불신)과 report.py 의 스키마 한 줄이다.
     if length_m < MIN_SEG_LEN and wmin is None:
         v = "fragment"
 
@@ -183,5 +199,58 @@ def classify(
         # 대장폭에 의한 확정은 위로 올렸다. 여기 남은 unknown 은 대장폭도
         # 없거나 3.0m 이상인 구간이다.
         reason = "width"
+
+    # ── VERDICT_RULE[8] · 채택에서 밀린 소스가 clear 를 반박하면 clear 를 거둔다 ─────────────────
+    # ★ 2026-10-23. `wmin_any` 는 **소스 무관** 최솟값(`width_min_any_m`)이다. 구간 폭(`wmin`)은 채택된 한 소스의 표본만으로
+    #   내므로 다른 소스가 소방차 폭 미만을 쟀어도 clear 가 나갈 수 있었다. 과소판정은 출동을 늦추지만 **과대판정은 소방차를
+    #   못 들어가는 길로 보낸다.** needs_cv 로 보내지 않는다 — CCTV 가 없으면 「영상 보면 풀린다」가 거짓 약속이다.
+    #   CCTV 유효범위 안이면 영상으로 풀 수 있으니 needs_cv, 밖이면 unknown(needs_survey).
+    # ★ **이 규칙은 판정을 움직인다**(골든 재잠금은 사람이 한다). clear 만 건드린다 — blocked · needs_cv 는 그대로다.
+    # ★ 감사 N7 (Zm20). **[8] ⊂ [10]** — `wmin_any < TRUCK`(3.0) 이면 `wmin_any < CLEAR_M`(7.0) 이고, 두 갈래의 행선지(needs_cv/source_conflict ·
+    #   unknown/needs_survey)가 같다. 그래서 [10] 이 켜진 뒤 [8] 이 혼자 바꾸는 판정은 없다. (예외 하나 — [8] 과 [9] 가 같이 걸리면 [8] 이 먼저라 `cv_reason` 을 `source_conflict` 로 정한다. 판정은 같다: `tests/test_zm20_leftovers.py`.) **코드는 지우지 않는다** — `VERDICT_RULE` 번호와
+    #   `IMPLEMENTS` 가 [8] 을 선언하고, [10] 의 문턱을 올려 정할 때 [8] 이 다시 따로 설 수 있다.
+    if v == "clear" and wmin_any is not None and wmin_any < TRUCK:
+        if cctv_dist <= CCTV_RANGE:
+            v, reason = "needs_cv", "source_conflict"
+        else:
+            v, reason = "unknown", "needs_survey"
+
+    # ── VERDICT_RULE[9] · 중심선이 폴리곤 경계에 붙어 있으면 그 wmin 은 도로 중앙의 폭이 아니다 ──────────────
+    # ★ 2026-10-23 (Zm4). `wsym` 은 채택 표본의 대칭폭 `2·min(left, right)` 중 최솟값이다. **전면 도입이 아니다** — 대칭폭을 판정에 쓰면
+    #   blocked 가 192 → 583 으로 3배가 된다(정상 도로도 중심선이 조금 치우치면 죽는다). `clear` 만 건드리고 3.0 미만인 구간만 내린다.
+    #   DM01820(2순환로 · 대장 35m)은 한쪽이 7.6cm 인데 wmin 이 넓어서 clear 였다. [8] 과 같은 갈래(CCTV 안 → needs_cv · 밖 → needs_survey).
+    if v == "clear" and wsym is not None and wsym < TRUCK:
+        if cctv_dist <= CCTV_RANGE:
+            # ★ 감사 N6 (Zm20). 이유를 단다 — [8] · [10] · [11] 은 `source_conflict` 를 다는데 [9] 만 비어 있었다.
+            v, reason = "needs_cv", "sym_low"
+        else:
+            v, reason = "unknown", "needs_survey"
+
+    # ── VERDICT_RULE[10] · 소스 하나라도 CLEAR(7.0) 미만이라 말하면 「양쪽 주차해도 통과」를 주장할 수 없다 ────────────────
+    # ★ 2026-10-23 (Zm6 · DECISIONS §548). `clear` 는 **「양쪽 주차해도 통과」(`CLEAR_M` = TRUCK + 2·PARK = 7.0)라는 주장**이다. 소스 하나가 그 선 미만이라 말하면
+    #   그 주장을 할 수 없다 — **어느 폭 축이 맞는지와 무관하다**(축 논쟁 밖의 규칙이다).
+    # ★ 문턱이 왜 `TRUCK`(3.0)이 아니라 `CLEAR_M`(7.0) 인가: 3.0 은 「소방차가 아예 못 지난다」이고 이미 0개다(규칙 [8] 이 10개를 거뒀다 — 지금 clear 중 any < 3.0 은 0).
+    #   7.0 은 `clear` 가 하는 주장의 기준선이고 **그 주장을 못 하게 되는 선**이다. 중간값(4 · 5 · 6m)을 쓸 근거가 없다 — clear 416 중 any < 4: 2 · < 5: 7 · < 6: 15 이고
+    #   어느 값도 소방 기준이나 측정이 고른 수가 아니다(근거 없는 상수를 더 만들지 않는다 · MASTER §16-2). `PARK`/`TRUCK` 에서 나온 `CLEAR_M` 를 그대로 쓴다.
+    # ★ 갈래는 [8] · [9] 와 같다: CCTV 19m 안이면 영상으로 풀 수 있으니 `needs_cv`(사유 `source_conflict`), 밖이면 `unknown`(`needs_survey`).
+    # ★ 2026-10-23 (Zm19 · DECISIONS §564). **소스에서 축으로 넓혔다**: 내접원 **중앙값**(`clear_med`)이 7.0 미만이어도 거둔다. `clear_min` ·
+    #   대칭폭(`wsym`)은 이 자리에 안 쓴다 — 둘 다 `2·min(좌,우)` 라 중심선 편심에 전부 노출된다(제봉로 DM00115: 법선 26.53 · c_med 23.80 ·
+    #   대장 30.0 으로 셋이 맞는데 c_min 만 1.15). 법선(`wmin`) 자체는 `clear` 의 전제(≥ 7.0)라 이 조건에서 비어 있다. blocked 에는 안 닿는다.
+    if v == "clear" and ((wmin_any is not None and wmin_any < CLEAR_M) or (clear_med is not None and clear_med < CLEAR_M)):
+        if cctv_dist <= CCTV_RANGE:
+            v, reason = "needs_cv", "source_conflict"
+        else:
+            v, reason = "unknown", "needs_survey"
+
+    # ── VERDICT_RULE[11] · 구간 안에서 폭이 `SPREAD_MAX` 배 넘게 변하면 대표폭이 없다 ─────────────────────────────────────────────
+    # ★ 2026-10-23 (Zm19 · DECISIONS §564). DM01576(동명로98번길): 사용자가 네이버 거리재기로 입구 12.3m · 안쪽 2.4~3.2m 를 확인했다. 우리 값은
+    #   wmin 8.1 · wmax 26.48 · 측량 3.9 · 대장 4.0 이고 유효표본 4개뿐이며 앞 6m 는 교차부로 빠졌다. 행선지는 [8]~[10] 과 같다(새 상수 없음).
+    # ★ **`wmax` 가 있는 구간에만 걸린다**(606/1,281). 없으면 건드리지 않는다 — 「없다」를 「균일하다」로 읽지 않는다.
+    if (v == "clear" and spread_max is not None and wmax is not None and wmin is not None
+            and wmin > 0 and wmax / wmin >= spread_max):
+        if cctv_dist <= CCTV_RANGE:
+            v, reason = "needs_cv", "source_conflict"
+        else:
+            v, reason = "unknown", "needs_survey"
 
     return v, reason

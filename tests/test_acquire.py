@@ -117,3 +117,13 @@ def test_the_stem_round_trip_probe_bites():
     blind = {"safety_x": ["**/safety_x_2022_2025_*"]}
     assert not _stem_mismatches(ds, blind), \
         "글롭으로는 못 잰다 — 이 자가 글롭을 받으면 눈이 먼다는 것을 밝힌다"
+
+
+# ── `--verify` 의 「사라짐」 루프가 선언된 부재를 안 센다 (PLAN #191 · DECISIONS §624) ──
+def test_a_file_whose_owner_declared_absence_is_declared_not_gone(monkeypatch):
+    """대장 경로 → 주인 데이터셋 역매핑. 주인이 부재를 선언했으면 파일이 없는 것이 약속이다."""
+    monkeypatch.setattr(acquire, "dataset_globs", lambda: {"gone_ds": ["moleg/x_*.pdf"], "live_ds": ["nfa/y_*.csv"]})
+    monkeypatch.setattr(acquire, "_declared_absent", lambda k: k == "gone_ds")
+    assert acquire._declared_owner("moleg/x_20260701.pdf") is True
+    assert acquire._declared_owner("nfa/y_20260903.csv") is False, "선언 안 한 주인의 파일은 여전히 사라짐이다"
+    assert acquire._declared_owner("eais/z.csv") is False, "주인이 없는 경로는 선언된 부재가 아니다"

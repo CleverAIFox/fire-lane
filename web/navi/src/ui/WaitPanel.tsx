@@ -38,7 +38,7 @@ export function WaitPanel(
       <div style={{ fontSize: 12, color: C.panelSub, marginBottom: 10 }}>
         {ready
           ? "관제가 보낸 지령으로 경로를 낸다."
-          : "관제가 지령을 보내면 여기에 뜬다. 운전석에서 고를 것은 없다."}
+          : "관제가 지령을 보내면 여기에 뜬다."}
       </div>
       <div style={row}><span style={k}>사건</span><span style={v}>{incident ?? "—"}</span></div>
       <div style={row}><span style={k}>출발</span><span style={v}>{station ?? "—"}</span></div>

@@ -15,6 +15,11 @@ inputs:
     description: 중개자 주소(관제 ↔ 내비). 비어도 된다
     required: false
     default: ''
+  ops-token:
+    # ★ 2026-11-06 (DECISIONS §655). 그대로 `build-navi` 로 넘긴다 — 이 액션은 값을 안 본다.
+    description: 중개자 토큰(관제 ↔ 내비). 비어도 된다 — 단 주소가 있으면 경고가 찍힌다
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -33,6 +38,7 @@ runs:
     - uses: ./.github/actions/build-navi
       with:
         ops-url: ${{ inputs.ops-url }}
+        ops-token: ${{ inputs.ops-token }}
 
     # ★ 2026-10-09 (DECISIONS §444 · PLAN #142). 「기획서 PDF 변환기」 단계를
     #   뺐다 — libreoffice-writer · fonts-noto-cjk · poppler-utils 셋을 깔아

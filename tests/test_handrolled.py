@@ -172,17 +172,17 @@ SITES: dict[str, dict] = {
         #   훑기에 안 걸렸다 — 표식이 `def text_extent` 였고 이쪽은 `_width` 다.
         #   같은 일감의 사본은 **정규식이 아니라 사람이** 찾는다. 찾은 것을
         #   선언에 올리는 것이 이 파일의 일이다.
-        "mark": r"def _width",
+        # ★ 2026-11-02. `def _width` 는 접두어라 Zm56 이 `seg/width.py` 에 들인 `def _widths_once`(가름 재측정)에도 걸렸다 — 글자 폭 어림이 아니다.
+        #   정의 괄호까지 맞춘다. 사본이 아니라 표식이 넓었던 오탐이다.
+        "mark": r"def _width\(",
         "where": "src/firelane/vehiclecard.py",
-        "moved": False,
-        "dep": "pillow",
-        "why": "관리카드 PDF 의 **머리글 칸 중심**을 찾는다 — `svg_fit` 과 **다른"
-               " 일감**이다(저쪽은 「넘치는가」라 과대가 안전하고, 이쪽은 중심이라"
-               " 과대·과소가 다 틀린다). 정확한 측정은 PDF 에 심긴 글꼴을 열어야"
-               " 하고 `pypdf` 는 그 폭을 안 준다. ★ 남은 결함 하나 — 구간을 안 보고"
-               " `[가-힣]` 으로만 가르므로 `㎏`·한자·전각을 좁다고 센다. 바꾸면 이"
-               " 모듈의 코드 축이 움직여 norm 을 다시 구워야 하고 원본 PDF 는"
-               " 레이크에 있다 — **PLAN #169** 가 그 재기를 든다",
+        "moved": True,
+        "dep": "(정본 `firelane.emwidth`)",
+        "why": "관리카드 PDF 의 **머리글 칸 중심**을 찾는 폭 어림이었다. 손 판은 `[가-힣]` 하나로"
+               " 가르고 나머지를 0.55 로 세서 `㎏`·한자·전각을 좁다고 셌다. 정본으로 옮겼다 —"
+               " 레이크의 관리카드 PDF 넷(84칸)을 두 판으로 파싱해 **어긋남 0**, norm CSV"
+               " **바이트 동일**이다(PLAN #169 · DECISIONS §543). 칸 중심 간격 69pt 가 예보대로"
+               " 어긋남을 삼켰다",
     },
     "글자 폭 어림": {
         "mark": r"def text_extent",
@@ -213,6 +213,9 @@ MID_OK: dict[str, tuple[int, str]] = {
            " 평균을 내면 선 밖으로 나갈 수 있다"),
     "tools/bridge_audit.py": (
         1, "같은 것 — 교량 선형의 가운데 좌표를 집는다"),
+    "tools/segid_audit.py": (
+        2, "**가운데 구간 · 가운데 도로**를 골라 그것을 뺀다(번호가 밀리는 합성의 시나리오) —"
+           " 표본의 중앙값이 아니라 정렬한 목록 한가운데의 한 항목이다"),
 }
 
 
@@ -346,8 +349,8 @@ def test_no_hand_rolled_median_outside_the_allow_list():
 def test_the_median_judge_bites_a_planted_fault():
     """★ 카나리아 — 위 판별식도 양쪽으로 민다."""
     fs = _files()
-    # ① 허용 목록을 비우면 **셋 다** 걸린다
-    assert len(mid_faults(fs, ok={})) == 3, "허용 목록 밖을 안 댄다"
+    # ① 허용 목록을 비우면 **넷 다** 걸린다
+    assert len(mid_faults(fs, ok={})) == 4, "허용 목록 밖을 안 댄다"
     # ② 수를 틀리게 적으면 걸린다
     one = {"tools/bridge_audit.py": (9, "거짓 수")}
     assert any("9번으로 적혀 있는데" in b for b in mid_faults(fs, ok=one)), \

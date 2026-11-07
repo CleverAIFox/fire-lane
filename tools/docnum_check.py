@@ -213,10 +213,35 @@ def shape() -> dict[str, float]:
     }
 
 
+def scope() -> dict[str, int]:
+    """발행 범위 안 / 밖의 구간 수와 `blocked` 짝. **발행물의 `scope_tier` 에서 센다.**
+
+    ★ 2026-11-03 (PLAN #62 · DECISIONS §613). 판정 지표(274 · 283 · 192 · 532)는 1,281 기준 그대로고, 이것은 **곁에 두는 짝**이다.
+      「막힌 길 192 중 발행 범위 밖 N」을 빼지 않으려는 것이다. 수를 문서에 박지 않고 여기서 센다 — 723 → 755 가 낡은 사연이 박은 수였다.
+    ★ 발행 범위는 `scopetier.IN_SCOPE`(대상지 · 회랑 · 지정) 하나로 센다. `reference` 가 안에 섞이지 않는다.
+    ★ 발행물에 `scope_tier` 가 아직 없으면(발행 전) 빈 dict 다 — 못 쟀다는 뜻이지 0 이 아니다. 0 을 문서에 채우면 거짓이 조용하다.
+    """
+    from firelane import scopetier
+    if not WEB.exists():
+        return {}
+    P = [f["properties"] for f in json.loads(WEB.read_text(encoding="utf-8"))["features"]]
+    if not P or "scope_tier" not in P[0]:
+        return {}
+    inn = [p for p in P if scopetier.in_scope(p["scope_tier"])]
+    out = [p for p in P if not scopetier.in_scope(p["scope_tier"])]
+    return {
+        "scope_in": len(inn),
+        "scope_out": len(out),
+        "v_blocked_in": sum(1 for p in inn if p["verdict"] == "blocked"),
+        "v_blocked_out": sum(1 for p in out if p["verdict"] == "blocked"),
+    }
+
+
 def counts() -> dict[str, int]:
     P = [f["properties"] for f in json.loads(SEG.read_text(encoding="utf-8"))["features"]]
     return {
         **verdicts(),
+        **scope(),
         "in_emd": sum(1 for p in P if p["in_emd"]),
         # ★ 2026-09-16. `(d or 9e9)` 는 거리 **0.0** 을 결손으로 읽었다 — 카메라 바로 옆 2구간이
         #   유효범위 밖으로 세어져 451 을 449 로 냈다(DECISIONS §170-5). 결손은 None 뿐이다.

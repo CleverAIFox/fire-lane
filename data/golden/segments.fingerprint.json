@@ -1,30 +1,31 @@
 {
  "L1": {
-  "n": 1281,
+  "n": 1287,
   "verdict": {
-   "blocked": 192,
-   "clear": 433,
-   "needs_cv": 209,
-   "unknown": 447
+   "blocked": 193,
+   "clear": 275,
+   "needs_cv": 283,
+   "unknown": 536
   },
   "unknown_reason": {
    "ledger_disputes": 1,
-   "no_cctv_band": 206,
+   "needs_survey": 78,
+   "no_cctv_band": 217,
    "no_cctv_narrow": 70,
-   "no_cctv_single": 11,
-   "no_cctv_thin": 159
+   "no_cctv_single": 10,
+   "no_cctv_thin": 160
   },
   "width_src": {
    "ngii": 1,
-   "ngii1k": 1162,
-   "silpok": 116
+   "ngii1k": 1166,
+   "silpok": 118
   },
-  "length_total_m": 58308.7
+  "length_total_m": 58821.5
  },
  "L2": {
   "DM-191931-284253-LPTE": {
    "verdict": "clear",
-   "width_min_m": 12.63,
+   "width_min_m": 8.93,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -60,7 +61,7 @@
   },
   "DM-191963-284226-LPTE": {
    "verdict": "clear",
-   "width_min_m": 11.97,
+   "width_min_m": 8.93,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -122,7 +123,7 @@
    "route_usage": 0
   },
   "DM-192019-284086-4X0Z": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.67,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -131,7 +132,7 @@
    "route_usage": 0
   },
   "DM-192035-284073-4X0Z": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.31,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -159,7 +160,7 @@
   },
   "DM-192046-284189-W4QT": {
    "verdict": "clear",
-   "width_min_m": 11.5,
+   "width_min_m": 10.0,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -167,11 +168,11 @@
    "route_usage": 0
   },
   "DM-192062-284144-LPTE": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.98,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 21.6,
    "route_usage": 0
   },
@@ -204,7 +205,7 @@
   },
   "DM-192072-284215-W4QT": {
    "verdict": "clear",
-   "width_min_m": 10.37,
+   "width_min_m": 8.35,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -222,7 +223,7 @@
   },
   "DM-192074-284328-W4QT": {
    "verdict": "clear",
-   "width_min_m": 25.85,
+   "width_min_m": 17.47,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -266,17 +267,17 @@
    "route_usage": 0
   },
   "DM-192083-284127-LPTE": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.59,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 32.8,
    "route_usage": 0
   },
   "DM-192091-284234-W4QT": {
    "verdict": "clear",
-   "width_min_m": 10.94,
+   "width_min_m": 9.55,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -321,7 +322,7 @@
   },
   "DM-192101-284501-JFYG": {
    "verdict": "clear",
-   "width_min_m": 25.43,
+   "width_min_m": 22.93,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -366,7 +367,7 @@
   },
   "DM-192118-284263-W4QT": {
    "verdict": "clear",
-   "width_min_m": 10.59,
+   "width_min_m": 8.79,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -410,11 +411,11 @@
    "route_usage": 0
   },
   "DM-192128-284417-BQT2": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.0,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 41.3,
    "route_usage": 0
   },
@@ -429,7 +430,7 @@
   },
   "DM-192131-284040-YE20": {
    "verdict": "clear",
-   "width_min_m": 15.06,
+   "width_min_m": 8.59,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -446,7 +447,7 @@
    "route_usage": 0
   },
   "DM-192145-284345-BQT2": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.31,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -464,7 +465,7 @@
    "route_usage": 0
   },
   "DM-192146-284307-5ICV": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.67,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -483,7 +484,7 @@
   },
   "DM-192159-284263-W4QT": {
    "verdict": "clear",
-   "width_min_m": 24.45,
+   "width_min_m": 15.79,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -501,7 +502,7 @@
   },
   "DM-192164-284455-JFYG": {
    "verdict": "clear",
-   "width_min_m": 24.19,
+   "width_min_m": 21.69,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -536,7 +537,7 @@
    "route_usage": 0
   },
   "DM-192180-284348-5ICV": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.42,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -555,7 +556,7 @@
   },
   "DM-192193-284107-YE20": {
    "verdict": "clear",
-   "width_min_m": 14.56,
+   "width_min_m": 9.06,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -564,7 +565,7 @@
   },
   "DM-192193-284237-W4QT": {
    "verdict": "clear",
-   "width_min_m": 24.15,
+   "width_min_m": 16.02,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -609,7 +610,7 @@
   },
   "DM-192213-284415-JFYG": {
    "verdict": "clear",
-   "width_min_m": 24.33,
+   "width_min_m": 21.83,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -654,7 +655,7 @@
   },
   "DM-192234-284206-W4QT": {
    "verdict": "clear",
-   "width_min_m": 26.53,
+   "width_min_m": 16.37,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -681,7 +682,7 @@
   },
   "DM-192247-284165-YE20": {
    "verdict": "clear",
-   "width_min_m": 14.19,
+   "width_min_m": 9.14,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -689,20 +690,20 @@
    "route_usage": 0
   },
   "DM-192252-283989-HBVY": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.36,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 73.4,
    "route_usage": 0
   },
   "DM-192259-284111-ZLSO": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.02,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 92.4,
    "route_usage": 0
   },
@@ -722,11 +723,11 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 41.5,
-   "route_usage": 53
+   "route_usage": 63
   },
   "DM-192279-284364-JFYG": {
    "verdict": "clear",
-   "width_min_m": 17.81,
+   "width_min_m": 15.35,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -734,22 +735,22 @@
    "route_usage": 0
   },
   "DM-192283-284240-CYSW": {
-   "verdict": "clear",
-   "width_min_m": 7.27,
+   "verdict": "needs_cv",
+   "width_min_m": 7.23,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 51.0,
-   "route_usage": 282
+   "route_usage": 283
   },
   "DM-192285-284205-YE20": {
    "verdict": "clear",
-   "width_min_m": 15.1,
+   "width_min_m": 10.3,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 55.8,
-   "route_usage": 282
+   "route_usage": 283
   },
   "DM-192290-283976-HBVY": {
    "verdict": "clear",
@@ -779,11 +780,11 @@
    "route_usage": 0
   },
   "DM-192295-284069-ZLSO": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.98,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 18.3,
    "route_usage": 0
   },
@@ -794,11 +795,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 54.3,
-   "route_usage": 53
+   "route_usage": 63
   },
   "DM-192311-284149-W4QT": {
    "verdict": "clear",
-   "width_min_m": 21.96,
+   "width_min_m": 15.91,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -815,7 +816,7 @@
    "route_usage": 0
   },
   "DM-192319-284042-ZLSO": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.12,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -824,17 +825,17 @@
    "route_usage": 0
   },
   "DM-192327-284208-4W2N": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.03,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 58.3,
-   "route_usage": 282
+   "route_usage": 283
   },
   "DM-192338-284262-YE20": {
    "verdict": "clear",
-   "width_min_m": 14.71,
+   "width_min_m": 9.92,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -857,10 +858,10 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 51.7,
-   "route_usage": 53
+   "route_usage": 63
   },
   "DM-192354-284002-ZLSO": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.21,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -869,7 +870,7 @@
    "route_usage": 0
   },
   "DM-192367-284053-ZLSO": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.78,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -884,25 +885,25 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 40.1,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192370-284175-66YK": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.82,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 50.4,
-   "route_usage": 282
+   "route_usage": 283
   },
   "DM-192377-284099-W4QT": {
    "verdict": "clear",
-   "width_min_m": 24.7,
+   "width_min_m": 16.0,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 50.8,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192383-284226-4W2N": {
    "verdict": "unknown",
@@ -929,7 +930,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 15.2,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192391-284278-4W2N": {
    "verdict": "needs_cv",
@@ -950,11 +951,11 @@
    "route_usage": 0
   },
   "DM-192401-284171-66YK": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.78,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 32.8,
    "route_usage": 0
   },
@@ -965,7 +966,7 @@
    "width_src": "silpok",
    "unknown_reason": "no_cctv_thin",
    "length_m": 64.6,
-   "route_usage": 53
+   "route_usage": 63
   },
   "DM-192404-284149-GM2I": {
    "verdict": "clear",
@@ -974,20 +975,20 @@
    "width_src": "silpok",
    "unknown_reason": null,
    "length_m": 35.6,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192405-283944-ZLSO": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.06,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 102.8,
    "route_usage": 0
   },
   "DM-192405-284332-YE20": {
    "verdict": "clear",
-   "width_min_m": 16.4,
+   "width_min_m": 13.79,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1005,12 +1006,12 @@
   },
   "DM-192416-284070-W4QT": {
    "verdict": "clear",
-   "width_min_m": 25.11,
+   "width_min_m": 16.19,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 47.4,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192419-284030-W4QT": {
    "verdict": "unknown",
@@ -1058,13 +1059,13 @@
    "route_usage": 0
   },
   "DM-192428-284131-GM2I": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.8,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 23.6,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192433-284277-D6CG": {
    "verdict": "unknown",
@@ -1076,11 +1077,11 @@
    "route_usage": 0
   },
   "DM-192436-284285-D6CG": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 9.13,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 5.1,
    "route_usage": 0
   },
@@ -1091,14 +1092,14 @@
    "width_src": "silpok",
    "unknown_reason": null,
    "length_m": 14.1,
-   "route_usage": 53
+   "route_usage": 63
   },
   "DM-192438-284206-66YK": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.57,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 68.6,
    "route_usage": 0
   },
@@ -1127,7 +1128,7 @@
    "width_src": "silpok",
    "unknown_reason": "no_cctv_band",
    "length_m": 26.9,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192446-284360-YE20": {
    "verdict": "blocked",
@@ -1140,7 +1141,7 @@
   },
   "DM-192451-284380-YE20": {
    "verdict": "clear",
-   "width_min_m": 16.93,
+   "width_min_m": 14.38,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1181,7 +1182,7 @@
    "width_src": "silpok",
    "unknown_reason": "no_cctv_band",
    "length_m": 54.8,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192459-284326-D6CG": {
    "verdict": "blocked",
@@ -1203,12 +1204,12 @@
   },
   "DM-192461-284037-W4QT": {
    "verdict": "clear",
-   "width_min_m": 25.0,
+   "width_min_m": 15.95,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 63.2,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192461-284254-JFYG": {
    "verdict": "clear",
@@ -1217,7 +1218,7 @@
    "width_src": "silpok",
    "unknown_reason": null,
    "length_m": 42.3,
-   "route_usage": 53
+   "route_usage": 63
   },
   "DM-192461-284371-PF48": {
    "verdict": "blocked",
@@ -1239,7 +1240,7 @@
   },
   "DM-192463-283928-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 25.11,
+   "width_min_m": 17.0,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1265,11 +1266,11 @@
    "route_usage": 0
   },
   "DM-192469-284237-66YK": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.76,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 20.2,
    "route_usage": 0
   },
@@ -1302,7 +1303,7 @@
   },
   "DM-192482-284412-YE20": {
    "verdict": "clear",
-   "width_min_m": 17.09,
+   "width_min_m": 14.88,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1337,13 +1338,13 @@
    "route_usage": 0
   },
   "DM-192491-284099-BH1S": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.02,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 24.2,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192494-284140-BH1S": {
    "verdict": "blocked",
@@ -1361,7 +1362,7 @@
    "width_src": "silpok",
    "unknown_reason": null,
    "length_m": 48.5,
-   "route_usage": 53
+   "route_usage": 63
   },
   "DM-192496-284345-D6CG": {
    "verdict": "unknown",
@@ -1383,16 +1384,16 @@
   },
   "DM-192505-284003-W4QT": {
    "verdict": "clear",
-   "width_min_m": 25.36,
+   "width_min_m": 16.0,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 48.6,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192506-283970-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 25.0,
+   "width_min_m": 17.0,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1400,13 +1401,13 @@
    "route_usage": 0
   },
   "DM-192508-284113-BH1S": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.04,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 19.4,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192509-284200-GM2I": {
    "verdict": "unknown",
@@ -1451,7 +1452,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 19.6,
-   "route_usage": 49
+   "route_usage": 58
   },
   "DM-192525-284255-JTSZ": {
    "verdict": "blocked",
@@ -1487,7 +1488,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_single",
    "length_m": 2.6,
-   "route_usage": 49
+   "route_usage": 58
   },
   "DM-192530-284308-PF48": {
    "verdict": "blocked",
@@ -1499,13 +1500,13 @@
    "route_usage": 0
   },
   "DM-192532-284132-BH1S": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.16,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 42.9,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192535-284228-JTSZ": {
    "verdict": "clear",
@@ -1532,7 +1533,7 @@
    "width_src": "silpok",
    "unknown_reason": null,
    "length_m": 72.5,
-   "route_usage": 4
+   "route_usage": 5
   },
   "DM-192543-284225-JFYG": {
    "verdict": "unknown",
@@ -1545,7 +1546,7 @@
   },
   "DM-192550-284013-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 25.4,
+   "width_min_m": 16.07,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1559,16 +1560,16 @@
    "width_src": "silpok",
    "unknown_reason": "no_cctv_thin",
    "length_m": 57.1,
-   "route_usage": 49
+   "route_usage": 58
   },
   "DM-192551-283967-W4QT": {
    "verdict": "clear",
-   "width_min_m": 24.59,
+   "width_min_m": 16.12,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 68.4,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192551-284282-JTSZ": {
    "verdict": "blocked",
@@ -1589,13 +1590,13 @@
    "route_usage": 0
   },
   "DM-192557-284151-BH1S": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.26,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 18.7,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192558-284056-X9DQ": {
    "verdict": "blocked",
@@ -1643,7 +1644,7 @@
    "route_usage": 0
   },
   "DM-192574-284270-JTSZ": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.73,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -1658,7 +1659,7 @@
    "width_src": "silpok",
    "unknown_reason": null,
    "length_m": 48.2,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192584-284249-JTSZ": {
    "verdict": "blocked",
@@ -1671,7 +1672,7 @@
   },
   "DM-192587-284050-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 25.3,
+   "width_min_m": 16.0,
    "width_max_m": 25.86,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1680,7 +1681,7 @@
   },
   "DM-192600-283841-N1HO": {
    "verdict": "needs_cv",
-   "width_min_m": 6.01,
+   "width_min_m": 4.8,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1712,7 +1713,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 86.4,
-   "route_usage": 4
+   "route_usage": 5
   },
   "DM-192604-284207-PF48": {
    "verdict": "blocked",
@@ -1725,12 +1726,12 @@
   },
   "DM-192612-283918-W4QT": {
    "verdict": "clear",
-   "width_min_m": 25.25,
+   "width_min_m": 15.91,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 87.7,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192613-283843-N1HO": {
    "verdict": "blocked",
@@ -1752,8 +1753,8 @@
   },
   "DM-192618-284081-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 25.51,
-   "width_max_m": 25.63,
+   "width_min_m": 16.01,
+   "width_max_m": 25.6,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 52.4,
@@ -1761,12 +1762,12 @@
   },
   "DM-192618-284112-JFYG": {
    "verdict": "clear",
-   "width_min_m": 10.35,
+   "width_min_m": 9.24,
    "width_max_m": 13.5,
    "width_src": "silpok",
    "unknown_reason": null,
    "length_m": 44.2,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192619-284247-PF48": {
    "verdict": "clear",
@@ -1784,7 +1785,7 @@
    "width_src": "silpok",
    "unknown_reason": "no_cctv_band",
    "length_m": 117.5,
-   "route_usage": 49
+   "route_usage": 58
   },
   "DM-192625-284036-X9DQ": {
    "verdict": "unknown",
@@ -1797,7 +1798,7 @@
   },
   "DM-192627-283869-N1HO": {
    "verdict": "unknown",
-   "width_min_m": 6.0,
+   "width_min_m": 4.67,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
@@ -1865,11 +1866,11 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 61.0,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192657-284120-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 24.41,
+   "width_min_m": 15.91,
    "width_max_m": 25.83,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -1914,12 +1915,12 @@
   },
   "DM-192664-283878-W4QT": {
    "verdict": "clear",
-   "width_min_m": 24.76,
+   "width_min_m": 17.0,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 42.9,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192667-284182-PF48": {
    "verdict": "unknown",
@@ -1928,14 +1929,14 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 45.0,
-   "route_usage": 3
+   "route_usage": 4
   },
   "DM-192669-283913-0DUE": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.16,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 61.5,
    "route_usage": 0
   },
@@ -1982,7 +1983,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_single",
    "length_m": 2.5,
-   "route_usage": 49
+   "route_usage": 58
   },
   "DM-192678-284250-X9DQ": {
    "verdict": "unknown",
@@ -2000,7 +2001,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 6.8,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192683-284188-PF48": {
    "verdict": "clear",
@@ -2031,8 +2032,8 @@
   },
   "DM-192689-284152-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 24.64,
-   "width_max_m": 24.9,
+   "width_min_m": 13.6,
+   "width_max_m": 24.68,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 30.6,
@@ -2045,7 +2046,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 17.8,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192691-284251-X9DQ": {
    "verdict": "unknown",
@@ -2076,7 +2077,7 @@
   },
   "DM-192692-284317-52VO": {
    "verdict": "clear",
-   "width_min_m": 13.28,
+   "width_min_m": 8.66,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -2084,11 +2085,11 @@
    "route_usage": 0
   },
   "DM-192695-283939-0DUE": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.05,
    "width_max_m": 29.94,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 12.9,
    "route_usage": 0
   },
@@ -2099,16 +2100,25 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 22.0,
-   "route_usage": 3
+   "route_usage": 4
   },
   "DM-192702-284165-X9DQ": {
    "verdict": "unknown",
-   "width_min_m": 24.92,
+   "width_min_m": 14.49,
    "width_max_m": 36.99,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_single",
    "length_m": 7.3,
-   "route_usage": 3
+   "route_usage": 4
+  },
+  "DM-192706-284376-A7M1": {
+   "verdict": "blocked",
+   "width_min_m": 0.82,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 48.5,
+   "route_usage": 0
   },
   "DM-192708-284039-JFYG": {
    "verdict": "clear",
@@ -2117,7 +2127,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 19.4,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192708-284201-X9DQ": {
    "verdict": "unknown",
@@ -2126,7 +2136,7 @@
    "width_src": "silpok",
    "unknown_reason": "no_cctv_band",
    "length_m": 62.3,
-   "route_usage": 49
+   "route_usage": 58
   },
   "DM-192709-284056-JFYG": {
    "verdict": "unknown",
@@ -2144,6 +2154,15 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 56.9,
+   "route_usage": 0
+  },
+  "DM-192714-284404-A7M1": {
+   "verdict": "unknown",
+   "width_min_m": 5.16,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 95.3,
    "route_usage": 0
   },
   "DM-192716-283995-0DUE": {
@@ -2166,7 +2185,7 @@
   },
   "DM-192722-284185-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 24.1,
+   "width_min_m": 16.27,
    "width_max_m": 28.2,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -2180,7 +2199,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 23.4,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192725-284047-JFYG": {
    "verdict": "unknown",
@@ -2207,16 +2226,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 89.4,
-   "route_usage": 4
+   "route_usage": 5
   },
   "DM-192733-283823-W4QT": {
    "verdict": "clear",
-   "width_min_m": 24.27,
+   "width_min_m": 16.69,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 132.6,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192740-284324-X9DQ": {
    "verdict": "unknown",
@@ -2229,12 +2248,12 @@
   },
   "DM-192742-284206-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 27.72,
+   "width_min_m": 14.93,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 11.7,
-   "route_usage": 49
+   "route_usage": 58
   },
   "DM-192743-283742-SLXC": {
    "verdict": "unknown",
@@ -2261,16 +2280,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 28.2,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192744-284271-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.2,
+   "width_min_m": 9.01,
    "width_max_m": 14.67,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 88.3,
-   "route_usage": 47
+   "route_usage": 56
   },
   "DM-192747-284030-JFYG": {
    "verdict": "blocked",
@@ -2292,12 +2311,12 @@
   },
   "DM-192752-284217-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 25.62,
+   "width_min_m": 16.51,
    "width_max_m": 34.81,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 18.1,
-   "route_usage": 47
+   "route_usage": 56
   },
   "DM-192752-284375-X9DQ": {
    "verdict": "blocked",
@@ -2308,27 +2327,36 @@
    "length_m": 38.1,
    "route_usage": 0
   },
+  "DM-192768-284480-X9DQ": {
+   "verdict": "clear",
+   "width_min_m": 16.16,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": null,
+   "length_m": 176.3,
+   "route_usage": 0
+  },
   "DM-192769-284263-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 26.69,
+   "width_min_m": 13.66,
    "width_max_m": 29.85,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 81.1,
-   "route_usage": 47
+   "route_usage": 56
   },
   "DM-192770-283980-JFYG": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 10.71,
    "width_max_m": 12.27,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 49.7,
-   "route_usage": 235
+   "route_usage": 232
   },
   "DM-192770-284385-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 24.88,
+   "width_min_m": 16.16,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -2336,26 +2364,26 @@
    "route_usage": 0
   },
   "DM-192771-284307-X9DQ": {
-   "verdict": "clear",
-   "width_min_m": 25.21,
+   "verdict": "unknown",
+   "width_min_m": 12.61,
    "width_max_m": 34.68,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 8.1,
-   "route_usage": 2
+   "route_usage": 4
   },
   "DM-192771-284320-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 24.13,
+   "width_min_m": 11.84,
    "width_max_m": 26.0,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 17.8,
-   "route_usage": 0
+   "route_usage": 2
   },
   "DM-192771-284353-X9DQ": {
    "verdict": "clear",
-   "width_min_m": 24.7,
+   "width_min_m": 16.17,
    "width_max_m": 26.42,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -2363,11 +2391,11 @@
    "route_usage": 0
   },
   "DM-192775-283773-SLXC": {
-   "verdict": "clear",
-   "width_min_m": 7.22,
+   "verdict": "unknown",
+   "width_min_m": 6.09,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 26.3,
    "route_usage": 0
   },
@@ -2387,7 +2415,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 78.8,
-   "route_usage": 4
+   "route_usage": 5
   },
   "DM-192780-284011-3JSA": {
    "verdict": "needs_cv",
@@ -2396,7 +2424,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 60.6,
-   "route_usage": 61
+   "route_usage": 60
   },
   "DM-192784-284147-Z8KD": {
    "verdict": "unknown",
@@ -2409,16 +2437,25 @@
   },
   "DM-192788-284234-52VO": {
    "verdict": "clear",
-   "width_min_m": 17.52,
-   "width_max_m": 27.39,
+   "width_min_m": 12.75,
+   "width_max_m": 26.44,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 27.3,
-   "route_usage": 42
+   "route_usage": 50
+  },
+  "DM-192788-284409-X9DQ": {
+   "verdict": "unknown",
+   "width_min_m": 1.9,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_thin",
+   "length_m": 46.0,
+   "route_usage": 0
   },
   "DM-192797-283732-SJLN": {
    "verdict": "unknown",
-   "width_min_m": 5.78,
+   "width_min_m": 5.73,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
@@ -2427,12 +2464,12 @@
   },
   "DM-192797-283773-W4QT": {
    "verdict": "clear",
-   "width_min_m": 25.23,
+   "width_min_m": 17.4,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 30.0,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192797-284329-X9DQ": {
    "verdict": "needs_cv",
@@ -2441,7 +2478,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 51.8,
-   "route_usage": 0
+   "route_usage": 2
   },
   "DM-192798-284175-N2AV": {
    "verdict": "needs_cv",
@@ -2451,6 +2488,15 @@
    "unknown_reason": null,
    "length_m": 122.5,
    "route_usage": 3
+  },
+  "DM-192798-284393-72Y1": {
+   "verdict": "unknown",
+   "width_min_m": 5.43,
+   "width_max_m": null,
+   "width_src": "ngii1k",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 55.7,
+   "route_usage": 0
   },
   "DM-192800-283972-JFYG": {
    "verdict": "needs_cv",
@@ -2471,11 +2517,11 @@
    "route_usage": 2
   },
   "DM-192804-283684-SJLN": {
-   "verdict": "clear",
-   "width_min_m": 15.35,
+   "verdict": "unknown",
+   "width_min_m": 6.97,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 56.9,
    "route_usage": 0
   },
@@ -2495,7 +2541,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 51.9,
-   "route_usage": 172
+   "route_usage": 171
   },
   "DM-192812-283805-5592": {
    "verdict": "unknown",
@@ -2513,7 +2559,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 32.3,
-   "route_usage": 12
+   "route_usage": 13
   },
   "DM-192817-284043-3JSA": {
    "verdict": "unknown",
@@ -2522,7 +2568,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 37.4,
-   "route_usage": 57
+   "route_usage": 55
   },
   "DM-192819-284265-X343": {
    "verdict": "unknown",
@@ -2531,7 +2577,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 94.3,
-   "route_usage": 5
+   "route_usage": 6
   },
   "DM-192820-283990-JFYG": {
    "verdict": "needs_cv",
@@ -2541,6 +2587,15 @@
    "unknown_reason": null,
    "length_m": 25.0,
    "route_usage": 6
+  },
+  "DM-192821-284437-72Y1": {
+   "verdict": "unknown",
+   "width_min_m": 5.22,
+   "width_max_m": null,
+   "width_src": "silpok",
+   "unknown_reason": "no_cctv_band",
+   "length_m": 91.0,
+   "route_usage": 0
   },
   "DM-192823-284360-72Y1": {
    "verdict": "needs_cv",
@@ -2576,16 +2631,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 10.0,
-   "route_usage": 12
+   "route_usage": 13
   },
   "DM-192829-284233-52VO": {
-   "verdict": "clear",
-   "width_min_m": 14.01,
+   "verdict": "unknown",
+   "width_min_m": 7.92,
    "width_max_m": 16.1,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 58.2,
-   "route_usage": 39
+   "route_usage": 47
   },
   "DM-192830-283909-JFYG": {
    "verdict": "clear",
@@ -2607,12 +2662,12 @@
   },
   "DM-192834-283744-W4QT": {
    "verdict": "clear",
-   "width_min_m": 24.6,
+   "width_min_m": 17.22,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 64.1,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192834-284059-3JSA": {
    "verdict": "unknown",
@@ -2648,7 +2703,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 13.2,
-   "route_usage": 29
+   "route_usage": 27
   },
   "DM-192837-283946-JFYG": {
    "verdict": "unknown",
@@ -2666,7 +2721,7 @@
    "width_src": "silpok",
    "unknown_reason": null,
    "length_m": 45.9,
-   "route_usage": 0
+   "route_usage": 2
   },
   "DM-192842-284141-N2AV": {
    "verdict": "needs_cv",
@@ -2678,11 +2733,11 @@
    "route_usage": 3
   },
   "DM-192843-283713-SJLN": {
-   "verdict": "clear",
-   "width_min_m": 14.49,
+   "verdict": "unknown",
+   "width_min_m": 6.98,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 39.7,
    "route_usage": 0
   },
@@ -2693,7 +2748,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 41.7,
-   "route_usage": 18
+   "route_usage": 19
   },
   "DM-192845-283780-4091": {
    "verdict": "needs_cv",
@@ -2750,13 +2805,13 @@
    "route_usage": 0
   },
   "DM-192849-283930-N2AV": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.0,
    "width_max_m": 8.67,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 57.5,
-   "route_usage": 68
+   "route_usage": 67
   },
   "DM-192851-283912-JFYG": {
    "verdict": "unknown",
@@ -2792,7 +2847,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 49.9,
-   "route_usage": 9
+   "route_usage": 10
   },
   "DM-192860-284021-3JSA": {
    "verdict": "unknown",
@@ -2828,7 +2883,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 37.6,
-   "route_usage": 5
+   "route_usage": 7
   },
   "DM-192865-283954-3JSA": {
    "verdict": "unknown",
@@ -2837,7 +2892,7 @@
    "width_src": "silpok",
    "unknown_reason": "no_cctv_band",
    "length_m": 28.1,
-   "route_usage": 18
+   "route_usage": 19
   },
   "DM-192865-284285-X343": {
    "verdict": "blocked",
@@ -2849,7 +2904,7 @@
    "route_usage": 2
   },
   "DM-192866-283889-JFYG": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 11.22,
    "width_max_m": 29.3,
    "width_src": "ngii1k",
@@ -2864,7 +2919,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 48.4,
-   "route_usage": 29
+   "route_usage": 27
   },
   "DM-192867-283977-JFYG": {
    "verdict": "unknown",
@@ -2891,25 +2946,25 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_single",
    "length_m": 4.5,
-   "route_usage": 8
+   "route_usage": 9
   },
   "DM-192870-284238-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.16,
+   "width_min_m": 10.07,
    "width_max_m": 16.41,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 25.6,
-   "route_usage": 34
+   "route_usage": 41
   },
   "DM-192870-284303-X343": {
    "verdict": "clear",
-   "width_min_m": 8.34,
+   "width_min_m": 7.6,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 33.4,
-   "route_usage": 5
+   "route_usage": 6
   },
   "DM-192871-284133-N2AV": {
    "verdict": "needs_cv",
@@ -2948,7 +3003,7 @@
    "route_usage": 2
   },
   "DM-192878-284106-N2AV": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.0,
    "width_max_m": 9.11,
    "width_src": "ngii1k",
@@ -2958,7 +3013,7 @@
   },
   "DM-192881-284096-N2AV": {
    "verdict": "needs_cv",
-   "width_min_m": 15.35,
+   "width_min_m": 5.21,
    "width_max_m": 18.52,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -2972,7 +3027,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 60.0,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192883-284160-DX27": {
    "verdict": "blocked",
@@ -3011,13 +3066,13 @@
    "route_usage": 2
   },
   "DM-192887-284307-52VO": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.2,
    "width_max_m": 8.96,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 17.7,
-   "route_usage": 5
+   "route_usage": 6
   },
   "DM-192888-284258-52VO": {
    "verdict": "unknown",
@@ -3048,16 +3103,16 @@
   },
   "DM-192891-284238-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.33,
+   "width_min_m": 10.01,
    "width_max_m": 17.95,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 16.5,
-   "route_usage": 34
+   "route_usage": 41
   },
   "DM-192892-283592-W4QT": {
    "verdict": "clear",
-   "width_min_m": 19.23,
+   "width_min_m": 15.53,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3128,13 +3183,13 @@
    "route_usage": 0
   },
   "DM-192896-284033-N2AV": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.28,
    "width_max_m": 8.78,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 44.9,
-   "route_usage": 26
+   "route_usage": 24
   },
   "DM-192896-284143-DX27": {
    "verdict": "unknown",
@@ -3143,7 +3198,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 54.7,
-   "route_usage": 8
+   "route_usage": 9
   },
   "DM-192898-283876-JFYG": {
    "verdict": "clear",
@@ -3170,7 +3225,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 28.7,
-   "route_usage": 5
+   "route_usage": 6
   },
   "DM-192901-284106-N2AV": {
    "verdict": "needs_cv",
@@ -3182,22 +3237,22 @@
    "route_usage": 2
   },
   "DM-192903-284336-X343": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.51,
    "width_max_m": 24.76,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 59.6,
    "route_usage": 0
   },
   "DM-192904-283663-W4QT": {
    "verdict": "clear",
-   "width_min_m": 27.28,
+   "width_min_m": 19.49,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 54.1,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192904-284058-N2AV": {
    "verdict": "blocked",
@@ -3206,10 +3261,10 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 30.6,
-   "route_usage": 21
+   "route_usage": 19
   },
   "DM-192905-283999-N2AV": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.97,
    "width_max_m": 11.7,
    "width_src": "ngii1k",
@@ -3350,16 +3405,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 36.5,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192922-284236-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.27,
-   "width_max_m": 14.41,
+   "width_min_m": 9.8,
+   "width_max_m": 13.56,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 45.6,
-   "route_usage": 41
+   "route_usage": 49
   },
   "DM-192924-284190-5UT1": {
    "verdict": "unknown",
@@ -3440,7 +3495,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 87.4,
-   "route_usage": 21
+   "route_usage": 19
   },
   "DM-192932-284064-N2AV": {
    "verdict": "needs_cv",
@@ -3449,7 +3504,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 26.6,
-   "route_usage": 21
+   "route_usage": 19
   },
   "DM-192932-284103-DX27": {
    "verdict": "unknown",
@@ -3485,7 +3540,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 59.1,
-   "route_usage": 5
+   "route_usage": 6
   },
   "DM-192934-283637-GO22": {
    "verdict": "needs_cv",
@@ -3521,7 +3576,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 32.0,
-   "route_usage": 9
+   "route_usage": 10
   },
   "DM-192936-283954-YM7N": {
    "verdict": "unknown",
@@ -3539,7 +3594,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 25.4,
-   "route_usage": 18
+   "route_usage": 19
   },
   "DM-192938-284299-F0LS": {
    "verdict": "needs_cv",
@@ -3557,16 +3612,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 53.6,
-   "route_usage": 87
+   "route_usage": 88
   },
   "DM-192941-283655-GO22": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.57,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 7.5,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192942-283851-6Z8Q": {
    "verdict": "unknown",
@@ -3575,7 +3630,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 40.8,
-   "route_usage": 17
+   "route_usage": 16
   },
   "DM-192942-283921-YM7N": {
    "verdict": "unknown",
@@ -3587,11 +3642,11 @@
    "route_usage": 90
   },
   "DM-192943-283576-F9WR": {
-   "verdict": "clear",
-   "width_min_m": 17.95,
+   "verdict": "unknown",
+   "width_min_m": 12.71,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 69.5,
    "route_usage": 0
   },
@@ -3623,29 +3678,29 @@
    "route_usage": 0
   },
   "DM-192950-284234-52VO": {
-   "verdict": "clear",
-   "width_min_m": 26.15,
+   "verdict": "unknown",
+   "width_min_m": 10.35,
    "width_max_m": 32.79,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 9.9,
-   "route_usage": 36
+   "route_usage": 42
   },
   "DM-192951-283979-SZY4": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.03,
    "width_max_m": 10.12,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 11.3,
    "route_usage": 7
   },
   "DM-192951-284133-DX27": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.04,
    "width_max_m": 9.18,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 38.9,
    "route_usage": 0
   },
@@ -3659,11 +3714,11 @@
    "route_usage": 0
   },
   "DM-192953-284155-DX27": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.1,
    "width_max_m": 31.66,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 6.1,
    "route_usage": 4
   },
@@ -3683,11 +3738,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 49.4,
-   "route_usage": 7
+   "route_usage": 9
   },
   "DM-192956-283738-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.49,
+   "width_min_m": 13.25,
    "width_max_m": 21.15,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3695,7 +3750,7 @@
    "route_usage": 0
   },
   "DM-192956-284251-F0LS": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.54,
    "width_max_m": 10.08,
    "width_src": "ngii1k",
@@ -3713,7 +3768,7 @@
    "route_usage": 0
   },
   "DM-192959-284281-F0LS": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.5,
    "width_max_m": 37.65,
    "width_src": "ngii1k",
@@ -3722,22 +3777,22 @@
    "route_usage": 0
   },
   "DM-192960-283644-GO22": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.28,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 37.5,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192962-284064-D27G": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.97,
    "width_max_m": 11.61,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 34.9,
-   "route_usage": 21
+   "route_usage": 19
   },
   "DM-192962-284138-DX27": {
    "verdict": "unknown",
@@ -3749,7 +3804,7 @@
    "route_usage": 2
   },
   "DM-192964-284320-F0LS": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.06,
    "width_max_m": 15.66,
    "width_src": "ngii1k",
@@ -3764,7 +3819,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 57.8,
-   "route_usage": 13
+   "route_usage": 12
   },
   "DM-192968-283711-6Z8Q": {
    "verdict": "unknown",
@@ -3794,8 +3849,8 @@
    "route_usage": 0
   },
   "DM-192969-283750-6Z8Q": {
-   "verdict": "clear",
-   "width_min_m": 20.11,
+   "verdict": "needs_cv",
+   "width_min_m": 13.32,
    "width_max_m": 21.06,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3827,7 +3882,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 44.2,
-   "route_usage": 18
+   "route_usage": 19
   },
   "DM-192970-284287-F0LS": {
    "verdict": "needs_cv",
@@ -3840,12 +3895,12 @@
   },
   "DM-192971-284231-52VO": {
    "verdict": "clear",
-   "width_min_m": 15.17,
+   "width_min_m": 7.7,
    "width_max_m": 16.64,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 33.6,
-   "route_usage": 36
+   "route_usage": 42
   },
   "DM-192972-283877-YM7N": {
    "verdict": "unknown",
@@ -3857,7 +3912,7 @@
    "route_usage": 0
   },
   "DM-192973-283973-SZY4": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.15,
    "width_max_m": 9.46,
    "width_src": "ngii1k",
@@ -3875,22 +3930,22 @@
    "route_usage": 0
   },
   "DM-192975-283795-JFYG": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.57,
    "width_max_m": 11.4,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 52.8,
-   "route_usage": 87
+   "route_usage": 88
   },
   "DM-192977-283842-6Z8Q": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.57,
    "width_max_m": 8.37,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 31.8,
-   "route_usage": 17
+   "route_usage": 16
   },
   "DM-192977-284166-5UT1": {
    "verdict": "needs_cv",
@@ -3912,7 +3967,7 @@
   },
   "DM-192985-283767-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.69,
+   "width_min_m": 13.09,
    "width_max_m": 22.28,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3926,11 +3981,11 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 61.4,
-   "route_usage": 5
+   "route_usage": 7
   },
   "DM-192992-283603-F9WR": {
-   "verdict": "clear",
-   "width_min_m": 20.06,
+   "verdict": "needs_cv",
+   "width_min_m": 12.84,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -3953,19 +4008,19 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 40.2,
-   "route_usage": 47
+   "route_usage": 51
   },
   "DM-192996-284054-D27G": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.64,
    "width_max_m": 11.65,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 36.4,
-   "route_usage": 8
+   "route_usage": 7
   },
   "DM-192996-284100-DX27": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.28,
    "width_max_m": 39.03,
    "width_src": "ngii1k",
@@ -4002,12 +4057,12 @@
   },
   "DM-192998-284224-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.51,
+   "width_min_m": 8.11,
    "width_max_m": 17.95,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 22.3,
-   "route_usage": 36
+   "route_usage": 42
   },
   "DM-193002-283663-GO22": {
    "verdict": "unknown",
@@ -4046,18 +4101,18 @@
    "route_usage": 0
   },
   "DM-193007-283833-6Z8Q": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.02,
    "width_max_m": 11.66,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 30.0,
-   "route_usage": 17
+   "route_usage": 16
   },
   "DM-193008-283803-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.65,
-   "width_max_m": 20.26,
+   "width_min_m": 11.86,
+   "width_max_m": 20.16,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 57.6,
@@ -4073,7 +4128,7 @@
    "route_usage": 10
   },
   "DM-193011-283964-SZY4": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.51,
    "width_max_m": 8.55,
    "width_src": "ngii1k",
@@ -4136,13 +4191,13 @@
    "route_usage": 0
   },
   "DM-193024-283602-GO22": {
-   "verdict": "clear",
-   "width_min_m": 10.01,
+   "verdict": "needs_cv",
+   "width_min_m": 7.95,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 35.4,
-   "route_usage": 46
+   "route_usage": 49
   },
   "DM-193025-283765-367J": {
    "verdict": "needs_cv",
@@ -4151,7 +4206,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 66.0,
-   "route_usage": 76
+   "route_usage": 77
   },
   "DM-193028-284127-DX27": {
    "verdict": "blocked",
@@ -4178,7 +4233,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 19.1,
-   "route_usage": 17
+   "route_usage": 16
   },
   "DM-193031-284044-D27G": {
    "verdict": "clear",
@@ -4187,7 +4242,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 35.6,
-   "route_usage": 8
+   "route_usage": 7
   },
   "DM-193032-283892-YM7N": {
    "verdict": "unknown",
@@ -4209,7 +4264,7 @@
   },
   "DM-193036-283856-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.07,
+   "width_min_m": 11.86,
    "width_max_m": 20.38,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4241,16 +4296,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 73.5,
-   "route_usage": 12
+   "route_usage": 14
   },
   "DM-193044-283584-GO22": {
    "verdict": "clear",
-   "width_min_m": 10.08,
+   "width_min_m": 7.8,
    "width_max_m": 19.06,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 17.7,
-   "route_usage": 46
+   "route_usage": 49
   },
   "DM-193045-283956-SZY4": {
    "verdict": "unknown",
@@ -4289,13 +4344,13 @@
    "route_usage": 0
   },
   "DM-193051-283636-F9WR": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.01,
    "width_max_m": 9.86,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 93.1,
-   "route_usage": 1
+   "route_usage": 2
   },
   "DM-193053-283820-N84A": {
    "verdict": "unknown",
@@ -4304,7 +4359,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 27.0,
-   "route_usage": 17
+   "route_usage": 16
   },
   "DM-193055-284037-D27G": {
    "verdict": "clear",
@@ -4313,16 +4368,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 16.1,
-   "route_usage": 5
+   "route_usage": 4
   },
   "DM-193056-284202-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.31,
-   "width_max_m": 14.55,
+   "width_min_m": 10.0,
+   "width_max_m": 14.4,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 101.8,
-   "route_usage": 36
+   "route_usage": 42
   },
   "DM-193057-284279-B7J3": {
    "verdict": "needs_cv",
@@ -4379,13 +4434,13 @@
    "route_usage": 0
   },
   "DM-193063-283567-GO22": {
-   "verdict": "clear",
-   "width_min_m": 9.91,
+   "verdict": "unknown",
+   "width_min_m": 7.81,
    "width_max_m": 21.46,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 33.6,
-   "route_usage": 46
+   "route_usage": 49
   },
   "DM-193065-284043-D27G": {
    "verdict": "unknown",
@@ -4412,11 +4467,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
    "length_m": 10.2,
-   "route_usage": 2
+   "route_usage": 0
   },
   "DM-193068-283480-U889": {
    "verdict": "clear",
-   "width_min_m": 8.85,
+   "width_min_m": 7.66,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4452,7 +4507,7 @@
   },
   "DM-193070-283921-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 17.83,
+   "width_min_m": 11.93,
    "width_max_m": 22.04,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4469,13 +4524,13 @@
    "route_usage": 4
   },
   "DM-193071-284033-D27G": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.67,
    "width_max_m": 12.28,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 15.7,
-   "route_usage": 5
+   "route_usage": 4
   },
   "DM-193074-284092-DX27": {
    "verdict": "blocked",
@@ -4493,7 +4548,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 19.7,
-   "route_usage": 12
+   "route_usage": 14
   },
   "DM-193078-283701-JFYG": {
    "verdict": "clear",
@@ -4502,7 +4557,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 91.9,
-   "route_usage": 13
+   "route_usage": 14
   },
   "DM-193082-283562-GO22": {
    "verdict": "unknown",
@@ -4538,7 +4593,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 23.0,
-   "route_usage": 5
+   "route_usage": 4
   },
   "DM-193090-283754-367J": {
    "verdict": "unknown",
@@ -4547,11 +4602,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 66.8,
-   "route_usage": 76
+   "route_usage": 77
   },
   "DM-193090-283986-ZM8E": {
    "verdict": "clear",
-   "width_min_m": 17.03,
+   "width_min_m": 10.86,
    "width_max_m": 18.3,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4560,12 +4615,12 @@
   },
   "DM-193092-283542-GO22": {
    "verdict": "clear",
-   "width_min_m": 9.69,
+   "width_min_m": 7.81,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 42.0,
-   "route_usage": 46
+   "route_usage": 49
   },
   "DM-193093-284202-B7J3": {
    "verdict": "unknown",
@@ -4583,7 +4638,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 101.9,
-   "route_usage": 13
+   "route_usage": 15
   },
   "DM-193094-284238-B7J3": {
    "verdict": "needs_cv",
@@ -4601,11 +4656,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 25.9,
-   "route_usage": 12
+   "route_usage": 14
   },
   "DM-193098-284298-ZM8E": {
-   "verdict": "clear",
-   "width_min_m": 14.96,
+   "verdict": "needs_cv",
+   "width_min_m": 12.9,
    "width_max_m": null,
    "width_src": "silpok",
    "unknown_reason": null,
@@ -4619,7 +4674,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 69.0,
-   "route_usage": 17
+   "route_usage": 16
   },
   "DM-193100-284069-DX27": {
    "verdict": "unknown",
@@ -4631,31 +4686,31 @@
    "route_usage": 30
   },
   "DM-193101-283664-F9WR": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.27,
    "width_max_m": 31.41,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 19.6,
-   "route_usage": 2
+   "route_usage": 3
   },
   "DM-193103-283648-GO22": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.0,
    "width_max_m": 10.72,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 31.2,
    "route_usage": 3
   },
   "DM-193104-284045-ZM8E": {
    "verdict": "clear",
-   "width_min_m": 15.01,
+   "width_min_m": 14.78,
    "width_max_m": 20.21,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 42.1,
-   "route_usage": 5
+   "route_usage": 4
   },
   "DM-193107-283871-OKXU": {
    "verdict": "unknown",
@@ -4677,12 +4732,12 @@
   },
   "DM-193112-284077-ZM8E": {
    "verdict": "clear",
-   "width_min_m": 18.83,
+   "width_min_m": 14.98,
    "width_max_m": 19.42,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 22.5,
-   "route_usage": 35
+   "route_usage": 34
   },
   "DM-193113-283579-GO22": {
    "verdict": "blocked",
@@ -4712,40 +4767,40 @@
    "route_usage": 0
   },
   "DM-193120-283544-GO22": {
-   "verdict": "clear",
-   "width_min_m": 8.29,
+   "verdict": "unknown",
+   "width_min_m": 6.91,
    "width_max_m": 9.85,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 34.9,
    "route_usage": 1
   },
   "DM-193120-283933-6Z8Q": {
-   "verdict": "clear",
-   "width_min_m": 19.63,
+   "verdict": "unknown",
+   "width_min_m": 11.99,
    "width_max_m": 47.78,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 42.8,
    "route_usage": 15
   },
   "DM-193120-284168-52VO": {
    "verdict": "clear",
-   "width_min_m": 13.25,
+   "width_min_m": 9.72,
    "width_max_m": 14.33,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 42.3,
-   "route_usage": 84
+   "route_usage": 91
   },
   "DM-193123-284125-ZM8E": {
    "verdict": "clear",
-   "width_min_m": 18.15,
+   "width_min_m": 15.0,
    "width_max_m": 19.27,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 76.0,
-   "route_usage": 48
+   "route_usage": 49
   },
   "DM-193128-283777-367J": {
    "verdict": "needs_cv",
@@ -4763,7 +4818,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 35.6,
-   "route_usage": 0
+   "route_usage": 2
   },
   "DM-193135-283896-OKXU": {
    "verdict": "unknown",
@@ -4793,13 +4848,13 @@
    "route_usage": 0
   },
   "DM-193141-283638-JFYG": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.88,
    "width_max_m": 11.1,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 85.6,
-   "route_usage": 13
+   "route_usage": 14
   },
   "DM-193146-283879-OKXU": {
    "verdict": "unknown",
@@ -4811,11 +4866,11 @@
    "route_usage": 2
   },
   "DM-193148-283927-6Z8Q": {
-   "verdict": "clear",
-   "width_min_m": 18.17,
+   "verdict": "unknown",
+   "width_min_m": 11.99,
    "width_max_m": 43.48,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 15.5,
    "route_usage": 15
   },
@@ -4865,8 +4920,8 @@
    "route_usage": 2
   },
   "DM-193154-283600-GO22": {
-   "verdict": "clear",
-   "width_min_m": 8.0,
+   "verdict": "needs_cv",
+   "width_min_m": 6.99,
    "width_max_m": 9.82,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4880,7 +4935,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 6.8,
-   "route_usage": 2
+   "route_usage": 4
   },
   "DM-193159-283742-367J": {
    "verdict": "unknown",
@@ -4889,7 +4944,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 71.2,
-   "route_usage": 76
+   "route_usage": 77
   },
   "DM-193161-284091-ZM8E": {
    "verdict": "unknown",
@@ -4916,7 +4971,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 71.1,
-   "route_usage": 17
+   "route_usage": 16
   },
   "DM-193170-284079-ZM8E": {
    "verdict": "unknown",
@@ -4925,11 +4980,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 26.4,
-   "route_usage": 4
+   "route_usage": 6
   },
   "DM-193174-283921-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.52,
+   "width_min_m": 11.87,
    "width_max_m": 21.39,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -4973,13 +5028,13 @@
    "route_usage": 2
   },
   "DM-193188-284129-4S4P": {
-   "verdict": "clear",
-   "width_min_m": 13.63,
+   "verdict": "unknown",
+   "width_min_m": 9.69,
    "width_max_m": 18.71,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 115.0,
-   "route_usage": 14
+   "route_usage": 15
   },
   "DM-193189-283705-JFYG": {
    "verdict": "unknown",
@@ -5009,11 +5064,11 @@
    "route_usage": 5
   },
   "DM-193193-284016-2W3Y": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.8,
    "width_max_m": 12.83,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 30.2,
    "route_usage": 2
   },
@@ -5024,7 +5079,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 23.5,
-   "route_usage": 6
+   "route_usage": 8
   },
   "DM-193199-283765-367J": {
    "verdict": "unknown",
@@ -5051,7 +5106,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 195.7,
-   "route_usage": 45
+   "route_usage": 48
   },
   "DM-193201-283964-6Z8Q": {
    "verdict": "blocked",
@@ -5064,21 +5119,21 @@
   },
   "DM-193203-284155-52VO": {
    "verdict": "clear",
-   "width_min_m": 18.51,
+   "width_min_m": 10.57,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 129.4,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193207-284063-QNEL": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.07,
    "width_max_m": 58.74,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 16.9,
-   "route_usage": 10
+   "route_usage": 12
   },
   "DM-193208-283602-JFYG": {
    "verdict": "needs_cv",
@@ -5087,11 +5142,11 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 72.9,
-   "route_usage": 13
+   "route_usage": 14
   },
   "DM-193208-283914-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.34,
+   "width_min_m": 11.69,
    "width_max_m": 21.43,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5141,10 +5196,10 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 35.9,
-   "route_usage": 17
+   "route_usage": 16
   },
   "DM-193227-284015-2W3Y": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.76,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -5153,13 +5208,13 @@
    "route_usage": 6
   },
   "DM-193228-284083-QNEL": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.0,
    "width_max_m": 10.65,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 42.6,
-   "route_usage": 12
+   "route_usage": 13
   },
   "DM-193231-283324-1GLE": {
    "verdict": "clear",
@@ -5180,13 +5235,13 @@
    "route_usage": 17
   },
   "DM-193234-284046-QNEL": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.85,
    "width_max_m": 31.1,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 59.8,
-   "route_usage": 12
+   "route_usage": 13
   },
   "DM-193239-283676-JFYG": {
    "verdict": "unknown",
@@ -5231,7 +5286,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 100.7,
-   "route_usage": 73
+   "route_usage": 74
   },
   "DM-193246-283657-JFYG": {
    "verdict": "unknown",
@@ -5285,7 +5340,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 32.1,
-   "route_usage": 17
+   "route_usage": 16
   },
   "DM-193257-283674-JFYG": {
    "verdict": "unknown",
@@ -5297,13 +5352,13 @@
    "route_usage": 4
   },
   "DM-193257-284023-2W3Y": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.91,
    "width_max_m": 53.53,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 24.7,
-   "route_usage": 12
+   "route_usage": 13
   },
   "DM-193262-283380-1GLE": {
    "verdict": "clear",
@@ -5316,7 +5371,7 @@
   },
   "DM-193263-284084-4S4P": {
    "verdict": "clear",
-   "width_min_m": 17.09,
+   "width_min_m": 10.07,
    "width_max_m": 23.46,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5348,7 +5403,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 53.0,
-   "route_usage": 12
+   "route_usage": 13
   },
   "DM-193268-283683-JFYG": {
    "verdict": "unknown",
@@ -5379,12 +5434,12 @@
   },
   "DM-193280-284159-52VO": {
    "verdict": "clear",
-   "width_min_m": 16.98,
+   "width_min_m": 10.87,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 24.7,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193282-283751-367J": {
    "verdict": "needs_cv",
@@ -5393,7 +5448,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 69.8,
-   "route_usage": 11
+   "route_usage": 10
   },
   "DM-193282-283843-OKXU": {
    "verdict": "unknown",
@@ -5432,13 +5487,13 @@
    "route_usage": 4
   },
   "DM-193289-284035-2W3Y": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.67,
    "width_max_m": 36.38,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 43.1,
-   "route_usage": 9
+   "route_usage": 10
   },
   "DM-193290-284132-52VO": {
    "verdict": "blocked",
@@ -5501,7 +5556,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 18.2,
-   "route_usage": 45
+   "route_usage": 48
   },
   "DM-193296-283988-6Z8Q": {
    "verdict": "unknown",
@@ -5513,8 +5568,8 @@
    "route_usage": 2
   },
   "DM-193298-284055-4S4P": {
-   "verdict": "clear",
-   "width_min_m": 14.62,
+   "verdict": "needs_cv",
+   "width_min_m": 9.94,
    "width_max_m": 43.17,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5532,7 +5587,7 @@
   },
   "DM-193300-283892-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.17,
+   "width_min_m": 11.77,
    "width_max_m": 21.47,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5555,7 +5610,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 27.3,
-   "route_usage": 12
+   "route_usage": 13
   },
   "DM-193306-283778-N84A": {
    "verdict": "needs_cv",
@@ -5567,11 +5622,11 @@
    "route_usage": 6
   },
   "DM-193308-283672-JFYG": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.36,
    "width_max_m": 46.0,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 15.2,
    "route_usage": 78
   },
@@ -5586,12 +5641,12 @@
   },
   "DM-193310-284159-52VO": {
    "verdict": "clear",
-   "width_min_m": 16.66,
+   "width_min_m": 10.31,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 34.6,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193314-283654-JFYG": {
    "verdict": "clear",
@@ -5645,7 +5700,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 8.1,
-   "route_usage": 94
+   "route_usage": 95
   },
   "DM-193322-283550-1GLE": {
    "verdict": "needs_cv",
@@ -5721,16 +5776,16 @@
   },
   "DM-193330-284018-4S4P": {
    "verdict": "clear",
-   "width_min_m": 12.9,
+   "width_min_m": 8.13,
    "width_max_m": 14.96,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 68.0,
-   "route_usage": 11
+   "route_usage": 12
   },
   "DM-193330-284144-4S4P": {
-   "verdict": "clear",
-   "width_min_m": 9.69,
+   "verdict": "needs_cv",
+   "width_min_m": 5.73,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5738,7 +5793,7 @@
    "route_usage": 0
   },
   "DM-193332-284283-8AZD": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 15.0,
    "width_max_m": null,
    "width_src": "silpok",
@@ -5753,7 +5808,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 65.8,
-   "route_usage": 36
+   "route_usage": 39
   },
   "DM-193333-283645-JFYG": {
    "verdict": "needs_cv",
@@ -5762,7 +5817,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 15.5,
-   "route_usage": 101
+   "route_usage": 102
   },
   "DM-193333-284085-4S4P": {
    "verdict": "needs_cv",
@@ -5810,8 +5865,8 @@
    "route_usage": 2
   },
   "DM-193339-284115-4S4P": {
-   "verdict": "clear",
-   "width_min_m": 8.6,
+   "verdict": "needs_cv",
+   "width_min_m": 5.4,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5828,11 +5883,11 @@
    "route_usage": 2
   },
   "DM-193341-283261-VXVD": {
-   "verdict": "clear",
-   "width_min_m": 27.68,
+   "verdict": "unknown",
+   "width_min_m": 10.7,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 23.7,
    "route_usage": 0
   },
@@ -5846,7 +5901,7 @@
    "route_usage": 6
   },
   "DM-193346-284095-4S4P": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.22,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -5861,16 +5916,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 13.7,
-   "route_usage": 101
+   "route_usage": 102
   },
   "DM-193348-284161-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.92,
+   "width_min_m": 10.34,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 41.1,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193351-283495-U9HZ": {
    "verdict": "needs_cv",
@@ -5891,8 +5946,8 @@
    "route_usage": 3
   },
   "DM-193352-284082-4S4P": {
-   "verdict": "clear",
-   "width_min_m": 9.46,
+   "verdict": "needs_cv",
+   "width_min_m": 0.36,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -5915,7 +5970,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 43.2,
-   "route_usage": 87
+   "route_usage": 88
   },
   "DM-193355-283207-G89H": {
    "verdict": "unknown",
@@ -6014,16 +6069,16 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 21.9,
-   "route_usage": 101
+   "route_usage": 102
   },
   "DM-193366-283872-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.34,
+   "width_min_m": 11.56,
    "width_max_m": 20.94,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 15.8,
-   "route_usage": 104
+   "route_usage": 105
   },
   "DM-193372-283478-U9HZ": {
    "verdict": "unknown",
@@ -6045,7 +6100,7 @@
   },
   "DM-193377-284129-C95Z": {
    "verdict": "clear",
-   "width_min_m": 14.92,
+   "width_min_m": 9.89,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6086,7 +6141,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 13.7,
-   "route_usage": 101
+   "route_usage": 102
   },
   "DM-193382-283665-JFYG": {
    "verdict": "unknown",
@@ -6104,7 +6159,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 45.6,
-   "route_usage": 38
+   "route_usage": 41
   },
   "DM-193383-283703-367J": {
    "verdict": "unknown",
@@ -6158,7 +6213,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 3.7,
-   "route_usage": 101
+   "route_usage": 102
   },
   "DM-193392-283612-JFYG": {
    "verdict": "unknown",
@@ -6171,12 +6226,12 @@
   },
   "DM-193392-284162-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.15,
+   "width_min_m": 7.97,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 48.9,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193393-283438-GO22": {
    "verdict": "unknown",
@@ -6189,12 +6244,12 @@
   },
   "DM-193394-283926-4S4P": {
    "verdict": "clear",
-   "width_min_m": 9.5,
+   "width_min_m": 7.37,
    "width_max_m": 14.05,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 155.8,
-   "route_usage": 11
+   "route_usage": 12
   },
   "DM-193395-283814-OKXU": {
    "verdict": "needs_cv",
@@ -6203,7 +6258,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 100.2,
-   "route_usage": 2
+   "route_usage": 1
   },
   "DM-193396-283760-N84A": {
    "verdict": "unknown",
@@ -6234,12 +6289,12 @@
   },
   "DM-193401-283862-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.41,
+   "width_min_m": 11.84,
    "width_max_m": 23.24,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 55.9,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193407-283634-JFYG": {
    "verdict": "unknown",
@@ -6248,7 +6303,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 30.5,
-   "route_usage": 101
+   "route_usage": 102
   },
   "DM-193407-283665-JFYG": {
    "verdict": "blocked",
@@ -6305,8 +6360,8 @@
    "route_usage": 0
   },
   "DM-193413-284008-C95Z": {
-   "verdict": "clear",
-   "width_min_m": 14.67,
+   "verdict": "needs_cv",
+   "width_min_m": 11.85,
    "width_max_m": 33.73,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6342,7 +6397,7 @@
   },
   "DM-193421-284167-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.47,
+   "width_min_m": 7.87,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6383,7 +6438,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 47.0,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193425-284180-54CL": {
    "verdict": "unknown",
@@ -6410,7 +6465,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 112.8,
-   "route_usage": 23
+   "route_usage": 26
   },
   "DM-193431-283721-367J": {
    "verdict": "unknown",
@@ -6440,13 +6495,13 @@
    "route_usage": 2
   },
   "DM-193433-283831-OKXU": {
-   "verdict": "clear",
-   "width_min_m": 8.24,
+   "verdict": "needs_cv",
+   "width_min_m": 5.55,
    "width_max_m": 53.83,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 57.3,
-   "route_usage": 2
+   "route_usage": 1
   },
   "DM-193434-283283-VXVD": {
    "verdict": "clear",
@@ -6464,7 +6519,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 23.6,
-   "route_usage": 101
+   "route_usage": 102
   },
   "DM-193434-284114-MCQE": {
    "verdict": "blocked",
@@ -6473,7 +6528,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 16.7,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193435-283271-VXVD": {
    "verdict": "unknown",
@@ -6494,11 +6549,11 @@
    "route_usage": 0
   },
   "DM-193441-283297-VXVD": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.05,
    "width_max_m": 28.15,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 17.2,
    "route_usage": 2
   },
@@ -6513,12 +6568,12 @@
   },
   "DM-193443-283855-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 23.62,
+   "width_min_m": 18.49,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 30.3,
-   "route_usage": 120
+   "route_usage": 121
   },
   "DM-193445-283184-G89H": {
    "verdict": "blocked",
@@ -6530,11 +6585,11 @@
    "route_usage": 0
   },
   "DM-193448-283886-C95Z": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 9.38,
    "width_max_m": 44.44,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 70.1,
    "route_usage": 0
   },
@@ -6566,8 +6621,8 @@
    "route_usage": 6
   },
   "DM-193450-283779-N84A": {
-   "verdict": "clear",
-   "width_min_m": 9.33,
+   "verdict": "needs_cv",
+   "width_min_m": 5.53,
    "width_max_m": 42.98,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6575,11 +6630,11 @@
    "route_usage": 0
   },
   "DM-193453-283738-367J": {
-   "verdict": "clear",
-   "width_min_m": 9.69,
+   "verdict": "unknown",
+   "width_min_m": 7.5,
    "width_max_m": 46.93,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 30.8,
    "route_usage": 0
   },
@@ -6599,7 +6654,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 38.7,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193457-283369-9EAB": {
    "verdict": "needs_cv",
@@ -6617,16 +6672,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 37.3,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193462-283839-O8MY": {
-   "verdict": "clear",
-   "width_min_m": 8.03,
+   "verdict": "unknown",
+   "width_min_m": 5.84,
    "width_max_m": 54.86,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 29.6,
-   "route_usage": 14
+   "route_usage": 15
   },
   "DM-193464-283227-EB39": {
    "verdict": "unknown",
@@ -6639,7 +6694,7 @@
   },
   "DM-193467-284176-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.54,
+   "width_min_m": 7.74,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6666,7 +6721,7 @@
   },
   "DM-193471-283851-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.01,
+   "width_min_m": 11.29,
    "width_max_m": 21.12,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6701,13 +6756,13 @@
    "route_usage": 15
   },
   "DM-193475-283791-O8MY": {
-   "verdict": "clear",
-   "width_min_m": 7.31,
+   "verdict": "needs_cv",
+   "width_min_m": 5.21,
    "width_max_m": 42.24,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 70.1,
-   "route_usage": 14
+   "route_usage": 15
   },
   "DM-193476-283825-O8MY": {
    "verdict": "unknown",
@@ -6734,7 +6789,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 83.2,
-   "route_usage": 18
+   "route_usage": 21
   },
   "DM-193480-283453-OQSR": {
    "verdict": "unknown",
@@ -6764,8 +6819,8 @@
    "route_usage": 0
   },
   "DM-193486-283751-O8MY": {
-   "verdict": "clear",
-   "width_min_m": 7.99,
+   "verdict": "needs_cv",
+   "width_min_m": 5.81,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6773,17 +6828,17 @@
    "route_usage": 8
   },
   "DM-193487-283387-OQSR": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.02,
    "width_max_m": 15.17,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 28.9,
    "route_usage": 3
   },
   "DM-193488-283917-VV63": {
-   "verdict": "clear",
-   "width_min_m": 13.84,
+   "verdict": "needs_cv",
+   "width_min_m": 8.25,
    "width_max_m": 25.65,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6797,7 +6852,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 27.6,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193490-283404-VXVD": {
    "verdict": "unknown",
@@ -6827,7 +6882,7 @@
    "route_usage": 12
   },
   "DM-193495-283743-LRZT": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.08,
    "width_max_m": 17.34,
    "width_src": "ngii1k",
@@ -6842,20 +6897,20 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 21.0,
-   "route_usage": 6
+   "route_usage": 7
   },
   "DM-193497-283392-VXVD": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 13.08,
    "width_max_m": 20.85,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 17.5,
    "route_usage": 1
   },
   "DM-193497-283849-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.25,
+   "width_min_m": 10.67,
    "width_max_m": 21.01,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -6863,11 +6918,11 @@
    "route_usage": 106
   },
   "DM-193500-283412-OQSR": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.83,
    "width_max_m": 15.99,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 27.2,
    "route_usage": 2
   },
@@ -6932,7 +6987,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 40.1,
-   "route_usage": 13
+   "route_usage": 16
   },
   "DM-193510-283829-6Z8Q": {
    "verdict": "unknown",
@@ -6998,11 +7053,11 @@
    "route_usage": 7
   },
   "DM-193516-283444-OQSR": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.57,
    "width_max_m": 9.29,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 44.9,
    "route_usage": 0
   },
@@ -7013,7 +7068,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 21.8,
-   "route_usage": 7
+   "route_usage": 8
   },
   "DM-193517-283663-JFYG": {
    "verdict": "unknown",
@@ -7022,7 +7077,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 78.1,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193519-283568-TNWY": {
    "verdict": "unknown",
@@ -7035,7 +7090,7 @@
   },
   "DM-193524-283847-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 17.97,
+   "width_min_m": 11.07,
    "width_max_m": 21.18,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7085,11 +7140,11 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 58.1,
-   "route_usage": 17
+   "route_usage": 20
   },
   "DM-193534-284188-52VO": {
    "verdict": "clear",
-   "width_min_m": 14.8,
+   "width_min_m": 8.1,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7097,13 +7152,13 @@
    "route_usage": 0
   },
   "DM-193536-284121-MCQE": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.8,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 68.3,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193540-283880-6Z8Q": {
    "verdict": "blocked",
@@ -7130,7 +7185,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
    "length_m": 31.0,
-   "route_usage": 3
+   "route_usage": 4
   },
   "DM-193545-283388-VXVD": {
    "verdict": "unknown",
@@ -7184,7 +7239,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 14.8,
-   "route_usage": 11
+   "route_usage": 13
   },
   "DM-193552-283795-WQ35": {
    "verdict": "unknown",
@@ -7193,11 +7248,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
    "length_m": 13.2,
-   "route_usage": 2
+   "route_usage": 0
   },
   "DM-193552-283845-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 17.9,
+   "width_min_m": 11.94,
    "width_max_m": 20.36,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7211,10 +7266,10 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 5.1,
-   "route_usage": 3
+   "route_usage": 4
   },
   "DM-193555-283912-VV63": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.31,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -7241,11 +7296,11 @@
    "route_usage": 1
   },
   "DM-193556-284043-KCLM": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.15,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 50.1,
    "route_usage": 0
   },
@@ -7256,11 +7311,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 10.9,
-   "route_usage": 3
+   "route_usage": 4
   },
   "DM-193557-283971-VV63": {
-   "verdict": "clear",
-   "width_min_m": 11.09,
+   "verdict": "needs_cv",
+   "width_min_m": 4.85,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7274,7 +7329,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 28.2,
-   "route_usage": 24
+   "route_usage": 29
   },
   "DM-193561-283677-LRZT": {
    "verdict": "clear",
@@ -7283,7 +7338,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 21.0,
-   "route_usage": 96
+   "route_usage": 95
   },
   "DM-193566-283781-WQ35": {
    "verdict": "unknown",
@@ -7322,8 +7377,8 @@
    "route_usage": 0
   },
   "DM-193567-284195-52VO": {
-   "verdict": "clear",
-   "width_min_m": 14.5,
+   "verdict": "needs_cv",
+   "width_min_m": 4.54,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7346,11 +7401,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
    "length_m": 54.7,
-   "route_usage": 7
+   "route_usage": 6
   },
   "DM-193569-283844-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.32,
+   "width_min_m": 12.0,
    "width_max_m": 20.87,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7377,7 +7432,7 @@
   },
   "DM-193575-283843-6Z8Q": {
    "verdict": "unknown",
-   "width_min_m": 18.98,
+   "width_min_m": 16.88,
    "width_max_m": 23.44,
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_single",
@@ -7391,7 +7446,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 49.2,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193576-284251-88WW": {
    "verdict": "needs_cv",
@@ -7421,29 +7476,29 @@
    "route_usage": 0
   },
   "DM-193578-284037-VV63": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.76,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 18.4,
    "route_usage": 0
   },
   "DM-193578-284130-MCQE": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.95,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 17.6,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193582-283870-6Z8Q": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.96,
    "width_max_m": 10.59,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 57.0,
    "route_usage": 0
   },
@@ -7454,11 +7509,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 33.7,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193583-284197-52VO": {
-   "verdict": "clear",
-   "width_min_m": 14.36,
+   "verdict": "needs_cv",
+   "width_min_m": 4.64,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7526,7 +7581,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 22.6,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193592-284119-MCQE": {
    "verdict": "blocked",
@@ -7538,7 +7593,7 @@
    "route_usage": 0
   },
   "DM-193594-284135-MCQE": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.96,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -7571,7 +7626,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
    "length_m": 66.2,
-   "route_usage": 104
+   "route_usage": 103
   },
   "DM-193597-283883-6Z8Q": {
    "verdict": "unknown",
@@ -7607,7 +7662,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 53.5,
-   "route_usage": 6
+   "route_usage": 7
   },
   "DM-193599-283895-6Z8Q": {
    "verdict": "blocked",
@@ -7620,7 +7675,7 @@
   },
   "DM-193601-283747-LRZT": {
    "verdict": "clear",
-   "width_min_m": 30.07,
+   "width_min_m": 28.46,
    "width_max_m": 40.97,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7664,11 +7719,11 @@
    "route_usage": 0
   },
   "DM-193606-284140-MCQE": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 9.65,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 9.4,
    "route_usage": 0
   },
@@ -7701,12 +7756,12 @@
   },
   "DM-193614-283840-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.98,
+   "width_min_m": 11.74,
    "width_max_m": 21.69,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 75.1,
-   "route_usage": 109
+   "route_usage": 110
   },
   "DM-193616-283463-OQSR": {
    "verdict": "needs_cv",
@@ -7724,7 +7779,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 86.3,
-   "route_usage": 3
+   "route_usage": 4
   },
   "DM-193618-283658-U6CJ": {
    "verdict": "needs_cv",
@@ -7733,14 +7788,14 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 90.1,
-   "route_usage": 18
+   "route_usage": 22
   },
   "DM-193618-284144-MCQE": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 9.6,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 16.1,
    "route_usage": 0
   },
@@ -7760,7 +7815,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 35.4,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193621-283532-TNWY": {
    "verdict": "needs_cv",
@@ -7769,7 +7824,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 29.4,
-   "route_usage": 9
+   "route_usage": 10
   },
   "DM-193622-283441-OQSR": {
    "verdict": "needs_cv",
@@ -7827,7 +7882,7 @@
   },
   "DM-193633-283803-LRZT": {
    "verdict": "clear",
-   "width_min_m": 36.92,
+   "width_min_m": 29.0,
    "width_max_m": 44.16,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -7868,7 +7923,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 89.5,
-   "route_usage": 11
+   "route_usage": 12
   },
   "DM-193640-283741-RXXI": {
    "verdict": "unknown",
@@ -7886,7 +7941,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 38.8,
-   "route_usage": 14
+   "route_usage": 15
   },
   "DM-193642-283461-OQSR": {
    "verdict": "unknown",
@@ -8003,10 +8058,10 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
    "length_m": 55.0,
-   "route_usage": 103
+   "route_usage": 102
   },
   "DM-193657-284158-MCQE": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.94,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -8030,7 +8085,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 56.3,
-   "route_usage": 4
+   "route_usage": 6
   },
   "DM-193659-284077-KCLM": {
    "verdict": "blocked",
@@ -8051,13 +8106,13 @@
    "route_usage": 3
   },
   "DM-193664-283621-U6CJ": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.11,
    "width_max_m": 9.45,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 26.2,
-   "route_usage": 14
+   "route_usage": 15
   },
   "DM-193665-283877-LRZT": {
    "verdict": "clear",
@@ -8087,13 +8142,13 @@
    "route_usage": 2
   },
   "DM-193669-283654-U6CJ": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.1,
    "width_max_m": 26.48,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 15.9,
-   "route_usage": 18
+   "route_usage": 22
   },
   "DM-193671-283987-LRZT": {
    "verdict": "blocked",
@@ -8106,7 +8161,7 @@
   },
   "DM-193672-283898-LRZT": {
    "verdict": "clear",
-   "width_min_m": 38.84,
+   "width_min_m": 27.98,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8114,13 +8169,13 @@
    "route_usage": 0
   },
   "DM-193672-284017-KCLM": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.03,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 75.3,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193673-283601-6ZG7": {
    "verdict": "clear",
@@ -8132,13 +8187,13 @@
    "route_usage": 0
   },
   "DM-193673-283644-U6CJ": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.07,
    "width_max_m": 20.05,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 23.3,
-   "route_usage": 32
+   "route_usage": 37
   },
   "DM-193675-283456-OQSR": {
    "verdict": "unknown",
@@ -8201,11 +8256,11 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_narrow",
    "length_m": 5.8,
-   "route_usage": 107
+   "route_usage": 106
   },
   "DM-193687-283942-LRZT": {
    "verdict": "clear",
-   "width_min_m": 37.61,
+   "width_min_m": 22.51,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8246,16 +8301,16 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_single",
    "length_m": 4.8,
-   "route_usage": 107
+   "route_usage": 106
   },
   "DM-193691-283835-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 15.43,
+   "width_min_m": 9.11,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 79.1,
-   "route_usage": 109
+   "route_usage": 110
   },
   "DM-193691-283882-LRZT": {
    "verdict": "unknown",
@@ -8267,13 +8322,13 @@
    "route_usage": 0
   },
   "DM-193693-283651-A5GM": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.24,
    "width_max_m": 7.82,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 31.3,
-   "route_usage": 32
+   "route_usage": 37
   },
   "DM-193697-283687-U6CJ": {
    "verdict": "unknown",
@@ -8282,7 +8337,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 20.3,
-   "route_usage": 107
+   "route_usage": 106
   },
   "DM-193698-283601-6ZG7": {
    "verdict": "unknown",
@@ -8304,12 +8359,12 @@
   },
   "DM-193703-283992-LRZT": {
    "verdict": "clear",
-   "width_min_m": 39.38,
+   "width_min_m": 22.39,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 30.1,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193704-283670-U6CJ": {
    "verdict": "unknown",
@@ -8358,7 +8413,7 @@
   },
   "DM-193718-284036-LRZT": {
    "verdict": "clear",
-   "width_min_m": 37.9,
+   "width_min_m": 22.25,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -8411,7 +8466,7 @@
    "route_usage": 0
   },
   "DM-193721-283758-U6CJ": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.38,
    "width_max_m": 9.89,
    "width_src": "ngii1k",
@@ -8429,11 +8484,11 @@
    "route_usage": 16
   },
   "DM-193727-283645-A5GM": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.21,
    "width_max_m": 14.05,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 37.7,
    "route_usage": 0
   },
@@ -8444,7 +8499,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 37.9,
-   "route_usage": 32
+   "route_usage": 37
   },
   "DM-193727-283869-LRZT": {
    "verdict": "unknown",
@@ -8474,13 +8529,13 @@
    "route_usage": 2
   },
   "DM-193730-283999-6RMT": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.67,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 45.4,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193731-284077-LRZT": {
    "verdict": "clear",
@@ -8510,11 +8565,11 @@
    "route_usage": 0
   },
   "DM-193736-283757-U6CJ": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.5,
    "width_max_m": 12.44,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 10.1,
    "route_usage": 2
   },
@@ -8547,19 +8602,19 @@
   },
   "DM-193739-283831-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.01,
+   "width_min_m": 11.76,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 16.2,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193741-283568-6ZG7": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 10.67,
    "width_max_m": 53.48,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 15.3,
    "route_usage": 1
   },
@@ -8627,11 +8682,11 @@
    "route_usage": 0
   },
   "DM-193749-283756-U6CJ": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.37,
    "width_max_m": 13.02,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 16.0,
    "route_usage": 2
   },
@@ -8687,7 +8742,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 22.0,
-   "route_usage": 32
+   "route_usage": 37
   },
   "DM-193760-283468-OQSR": {
    "verdict": "unknown",
@@ -8705,16 +8760,16 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 115.5,
-   "route_usage": 107
+   "route_usage": 106
   },
   "DM-193762-283829-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.01,
+   "width_min_m": 11.8,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 29.6,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193762-283926-2K9Y": {
    "verdict": "clear",
@@ -8726,22 +8781,22 @@
    "route_usage": 0
   },
   "DM-193764-283755-U6CJ": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.54,
    "width_max_m": 21.56,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 13.9,
    "route_usage": 2
   },
   "DM-193764-283987-6RMT": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.62,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 28.3,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193765-283448-OQSR": {
    "verdict": "unknown",
@@ -8825,11 +8880,11 @@
    "route_usage": 1
   },
   "DM-193777-283754-U6CJ": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.31,
    "width_max_m": 9.42,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 10.9,
    "route_usage": 2
   },
@@ -8916,12 +8971,12 @@
   },
   "DM-193792-283827-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 19.11,
+   "width_min_m": 7.89,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 30.0,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193797-283552-6ZG7": {
    "verdict": "blocked",
@@ -8966,7 +9021,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_thin",
    "length_m": 70.2,
-   "route_usage": 32
+   "route_usage": 37
   },
   "DM-193804-283466-S9D5": {
    "verdict": "unknown",
@@ -9014,13 +9069,13 @@
    "route_usage": 0
   },
   "DM-193808-283977-6RMT": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.15,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 60.7,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193809-283444-S9D5": {
    "verdict": "clear",
@@ -9038,7 +9093,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_single",
    "length_m": 6.7,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193811-284044-6RMT": {
    "verdict": "unknown",
@@ -9113,22 +9168,22 @@
    "route_usage": 0
   },
   "DM-193823-283750-U6CJ": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.07,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 31.0,
    "route_usage": 2
   },
   "DM-193828-283825-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 17.17,
+   "width_min_m": 7.6,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 29.4,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193829-283681-1QHK": {
    "verdict": "unknown",
@@ -9137,7 +9192,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 24.5,
-   "route_usage": 141
+   "route_usage": 145
   },
   "DM-193832-283525-6ZG7": {
    "verdict": "clear",
@@ -9290,16 +9345,16 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 25.8,
-   "route_usage": 141
+   "route_usage": 145
   },
   "DM-193857-283822-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.83,
+   "width_min_m": 11.01,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 28.2,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193858-283458-RH2F": {
    "verdict": "blocked",
@@ -9365,13 +9420,13 @@
    "route_usage": 0
   },
   "DM-193871-283966-6RMT": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 8.0,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 67.8,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193875-283472-6ZG7": {
    "verdict": "blocked",
@@ -9393,12 +9448,12 @@
   },
   "DM-193879-283821-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.78,
+   "width_min_m": 10.98,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 17.1,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193880-283877-S9D5": {
    "verdict": "blocked",
@@ -9416,7 +9471,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 31.1,
-   "route_usage": 141
+   "route_usage": 145
   },
   "DM-193884-283751-S9D5": {
    "verdict": "unknown",
@@ -9470,16 +9525,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 24.3,
-   "route_usage": 158
+   "route_usage": 162
   },
   "DM-193897-283819-6Z8Q": {
    "verdict": "clear",
-   "width_min_m": 18.95,
+   "width_min_m": 11.11,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 19.5,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193898-283533-MCOP": {
    "verdict": "needs_cv",
@@ -9501,7 +9556,7 @@
   },
   "DM-193905-283717-S9D5": {
    "verdict": "clear",
-   "width_min_m": 8.28,
+   "width_min_m": 8.0,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9510,7 +9565,7 @@
   },
   "DM-193905-283924-S9D5": {
    "verdict": "clear",
-   "width_min_m": 8.67,
+   "width_min_m": 7.62,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9518,17 +9573,17 @@
    "route_usage": 0
   },
   "DM-193906-283857-S9D5": {
-   "verdict": "clear",
-   "width_min_m": 9.69,
+   "verdict": "unknown",
+   "width_min_m": 7.69,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 35.1,
    "route_usage": 0
   },
   "DM-193906-283882-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.8,
+   "width_min_m": 8.24,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9537,7 +9592,7 @@
   },
   "DM-193907-283760-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.82,
+   "width_min_m": 8.15,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9545,8 +9600,8 @@
    "route_usage": 0
   },
   "DM-193907-283829-S9D5": {
-   "verdict": "clear",
-   "width_min_m": 9.75,
+   "verdict": "needs_cv",
+   "width_min_m": 7.79,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -9555,12 +9610,12 @@
   },
   "DM-193908-283794-S9D5": {
    "verdict": "clear",
-   "width_min_m": 21.13,
+   "width_min_m": 16.23,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 48.5,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193911-283658-S9D5": {
    "verdict": "blocked",
@@ -9578,7 +9633,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 26.2,
-   "route_usage": 158
+   "route_usage": 162
   },
   "DM-193920-283596-PKWM": {
    "verdict": "blocked",
@@ -9596,7 +9651,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 30.5,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193922-283769-S9D5": {
    "verdict": "clear",
@@ -9605,7 +9660,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 29.2,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193923-283838-S9D5": {
    "verdict": "unknown",
@@ -9659,7 +9714,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 7.5,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193940-283817-874B": {
    "verdict": "needs_cv",
@@ -9713,16 +9768,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 42.9,
-   "route_usage": 158
+   "route_usage": 162
   },
   "DM-193954-283767-S9D5": {
    "verdict": "clear",
-   "width_min_m": 9.12,
+   "width_min_m": 7.4,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 34.9,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193954-283957-6RMT": {
    "verdict": "clear",
@@ -9731,7 +9786,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 22.1,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193957-283835-S9D5": {
    "verdict": "unknown",
@@ -9785,7 +9840,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 87.4,
-   "route_usage": 107
+   "route_usage": 108
   },
   "DM-193971-283956-6RMT": {
    "verdict": "unknown",
@@ -9794,14 +9849,14 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_single",
    "length_m": 12.6,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193972-283791-HJS3": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 11.26,
    "width_max_m": null,
    "width_src": "silpok",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 51.4,
    "route_usage": 0
   },
@@ -9824,7 +9879,7 @@
    "route_usage": 0
   },
   "DM-193976-283904-874B": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.2,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -9833,7 +9888,7 @@
    "route_usage": 0
   },
   "DM-193977-283939-874B": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 9.62,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -9857,7 +9912,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 15.4,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-193992-284030-6RMT": {
    "verdict": "blocked",
@@ -9875,7 +9930,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 49.0,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194007-283954-6RMT": {
    "verdict": "clear",
@@ -9884,7 +9939,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 28.5,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194017-283649-HJS3": {
    "verdict": "unknown",
@@ -9911,7 +9966,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 12.6,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194028-283629-MCOP": {
    "verdict": "needs_cv",
@@ -9929,7 +9984,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 29.6,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194049-284033-6RMT": {
    "verdict": "unknown",
@@ -9950,13 +10005,13 @@
    "route_usage": 0
   },
   "DM-194066-283952-6RMT": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.94,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 30.7,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194081-283992-6RMT": {
    "verdict": "clear",
@@ -9974,16 +10029,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 115.4,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194096-283951-6RMT": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.04,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 29.5,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194111-283975-6RMT": {
    "verdict": "unknown",
@@ -9995,13 +10050,13 @@
    "route_usage": 0
   },
   "DM-194126-283950-6RMT": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.94,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 30.1,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194140-283988-6RMT": {
    "verdict": "unknown",
@@ -10022,7 +10077,7 @@
    "route_usage": 0
   },
   "DM-194151-283902-FTDK": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.42,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -10073,7 +10128,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 21.7,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194163-283800-FTDK": {
    "verdict": "blocked",
@@ -10118,16 +10173,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 14.1,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194178-283948-6RMT": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.72,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 75.5,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194182-283592-1AOQ": {
    "verdict": "unknown",
@@ -10175,16 +10230,16 @@
    "route_usage": 0
   },
   "DM-194192-284034-1AOQ": {
-   "verdict": "clear",
-   "width_min_m": 14.18,
+   "verdict": "unknown",
+   "width_min_m": 5.86,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 52.7,
    "route_usage": 0
   },
   "DM-194195-283723-AZHT": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.51,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -10199,7 +10254,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 33.3,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194199-283885-1AOQ": {
    "verdict": "needs_cv",
@@ -10220,8 +10275,8 @@
    "route_usage": 0
   },
   "DM-194202-283976-1AOQ": {
-   "verdict": "clear",
-   "width_min_m": 15.14,
+   "verdict": "needs_cv",
+   "width_min_m": 5.64,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
@@ -10284,19 +10339,19 @@
   },
   "DM-194224-283930-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 14.64,
+   "width_min_m": 8.92,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 35.3,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194226-284009-1AOQ": {
-   "verdict": "clear",
-   "width_min_m": 7.03,
+   "verdict": "unknown",
+   "width_min_m": 6.9,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "no_cctv_band",
    "length_m": 69.0,
    "route_usage": 0
   },
@@ -10319,11 +10374,11 @@
    "route_usage": 0
   },
   "DM-194231-283865-22RU": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.91,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 43.1,
    "route_usage": 0
   },
@@ -10343,7 +10398,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 39.1,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194237-283747-AZHT": {
    "verdict": "blocked",
@@ -10356,12 +10411,12 @@
   },
   "DM-194237-283899-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 14.77,
+   "width_min_m": 8.98,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 31.6,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194244-283493-1AOQ": {
    "verdict": "clear",
@@ -10401,19 +10456,19 @@
   },
   "DM-194248-283874-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 13.13,
+   "width_min_m": 9.22,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 21.7,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194249-283477-6ZG7": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 13.96,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 13.3,
    "route_usage": 0
   },
@@ -10451,7 +10506,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 13.7,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194258-283694-1AOQ": {
    "verdict": "clear",
@@ -10469,16 +10524,16 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 52.2,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194262-283818-1AOQ": {
    "verdict": "clear",
-   "width_min_m": 13.69,
+   "width_min_m": 8.62,
    "width_max_m": null,
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 94.9,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194265-283584-1AOQ": {
    "verdict": "unknown",
@@ -10523,7 +10578,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 37.0,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194275-283754-A0DR": {
    "verdict": "clear",
@@ -10532,7 +10587,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 37.9,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194277-283715-1AOQ": {
    "verdict": "unknown",
@@ -10613,7 +10668,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 32.1,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194296-283885-1AOQ": {
    "verdict": "needs_cv",
@@ -10626,10 +10681,10 @@
   },
   "DM-194300-283713-1AOQ": {
    "verdict": "unknown",
-   "width_min_m": 12.8,
+   "width_min_m": 4.58,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": "no_cctv_single",
+   "unknown_reason": "no_cctv_band",
    "length_m": 8.6,
    "route_usage": 0
   },
@@ -10649,7 +10704,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 25.2,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194312-283569-X6GR": {
    "verdict": "blocked",
@@ -10667,7 +10722,7 @@
    "width_src": "ngii1k",
    "unknown_reason": "no_cctv_band",
    "length_m": 24.8,
-   "route_usage": 70
+   "route_usage": 76
   },
   "DM-194317-283638-6CJO": {
    "verdict": "needs_cv",
@@ -10694,7 +10749,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 30.3,
-   "route_usage": 265
+   "route_usage": 270
   },
   "DM-194322-283492-6ZG7": {
    "verdict": "clear",
@@ -10757,7 +10812,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 36.7,
-   "route_usage": 335
+   "route_usage": 346
   },
   "DM-194343-283652-SAGS": {
    "verdict": "blocked",
@@ -10865,7 +10920,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 12.4,
-   "route_usage": 335
+   "route_usage": 346
   },
   "DM-194362-283734-6CJO": {
    "verdict": "unknown",
@@ -10955,7 +11010,7 @@
    "width_src": "ngii1k",
    "unknown_reason": null,
    "length_m": 28.2,
-   "route_usage": 335
+   "route_usage": 346
   },
   "DM-194382-283552-X6GR": {
    "verdict": "unknown",
@@ -10976,11 +11031,11 @@
    "route_usage": 0
   },
   "DM-194390-283582-X6GR": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 8.07,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 21.6,
    "route_usage": 0
   },
@@ -11012,11 +11067,11 @@
    "route_usage": 0
   },
   "DM-194406-283581-X6GR": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 12.13,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 11.9,
    "route_usage": 0
   },
@@ -11084,7 +11139,7 @@
    "route_usage": 0
   },
   "DM-194424-283580-X6GR": {
-   "verdict": "clear",
+   "verdict": "needs_cv",
    "width_min_m": 7.32,
    "width_max_m": null,
    "width_src": "ngii1k",
@@ -11102,11 +11157,11 @@
    "route_usage": 0
   },
   "DM-194428-283727-SAGS": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.11,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 26.5,
    "route_usage": 0
   },
@@ -11336,11 +11391,11 @@
    "route_usage": 0
   },
   "DM-194487-284060-YQOK": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 16.87,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 993.0,
    "route_usage": 0
   },
@@ -11381,11 +11436,11 @@
    "route_usage": 0
   },
   "DM-194505-283501-7WVF": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 7.42,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 61.7,
    "route_usage": 0
   },
@@ -11426,11 +11481,11 @@
    "route_usage": 0
   },
   "DM-194564-283519-539Z": {
-   "verdict": "clear",
+   "verdict": "unknown",
    "width_min_m": 10.24,
    "width_max_m": null,
    "width_src": "ngii1k",
-   "unknown_reason": null,
+   "unknown_reason": "needs_survey",
    "length_m": 89.6,
    "route_usage": 0
   },
@@ -11552,5 +11607,5 @@
    "route_usage": 0
   }
  },
- "L3": "d1306b624e13db3e773fe9075bb6a8bc8c4fdcde3a35873945be6d129672e3d4"
+ "L3": "26f236e1c8b4e6437a6a6484818e92bfa7eba440a77ca670ba228d460df21cd3"
 }

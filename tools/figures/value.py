@@ -76,7 +76,7 @@ def fig_threshold() -> str:
 def fig_cctv() -> str:
     """유효 측정 범위. `CCTV_RANGE` 가 정본이다.
 
-    ★ 2026-09-23. 원(반경 25m) 그림을 **복도** 그림으로 바꿨다. 이유 둘 —
+    ★ 2026-09-23. 원 그림을 **복도** 그림으로 바꿨다. 이유 둘 —
       ① 부제(`정본 …params.py`)가 원에 덮여 있었다. `_fits()` 는 글자↔사각형만 보고
          **원은 안 본다**(PLAN §1 #37 의 「겹침은 못 잡는다」가 실제로 난 자리).
       ② 이 그림이 기획서 [그림 22] 를 대신한다(`tools/docx_figs.py`). 손그림이 담던
@@ -84,7 +84,7 @@ def fig_cctv() -> str:
          안 적는다 — `params.py` 에 없는 값을 그림이 지어내면 그림이 또 하나의 손대장이다.
     """
     p = _params()
-    r = p.get("CCTV_RANGE", 25.0)
+    r = p["CCTV_RANGE"]   # ★ 기본값을 지어내지 않는다 — 못 읽으면 운다 (감사 1-6)
     x0, xm, x1, y, h = 60, 420, 690, 96, 58
     body = [f'<text x="12" y="30" font-size="15" font-weight="700" '
             f'fill="#0f172a">유효 측정 범위 — 카메라에서 {r:g}m</text>',
@@ -133,7 +133,8 @@ def fig_unknown() -> str:
     #   `ledger_disputes` 가 끼어 그림만 보면 빠뜨린 것인지 뜻인지 모른다.
     ko = {"no_cctv_band": "대역 밖", "no_cctv_thin": "폭 부족",
           "no_cctv_narrow": "각도 부족", "no_cctv_single": "단일 관측",
-          "ledger_disputes": "대장 반박", "width": "폭 산출 불가"}
+          "ledger_disputes": "대장 반박", "needs_survey": "실측 필요",
+          "width": "폭 산출 불가"}
     # ★ 머리말이 **「영상판정 불가」였다.** 그 말은 `no_cctv_*` 넷만 참이고
     #   `ledger_disputes` 는 카메라와 무관하다 — 낱말이 늘자 머리말이 거짓이
     #   됐다. 둘째 줄의 「0이다」도 손으로 적은 수였다. 수는 정본에서 읽는다.

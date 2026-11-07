@@ -1,0 +1,47 @@
+{
+  "tag": "20261104-conn-entrance",
+  "frozen_at": "2026-11-04T12:34:28+09:00",
+  "git_sha": "7a0b5b65c6926621000f71f2203ad820b49c5915",
+  "note": "접속선 배선 — 목적지 노드 338→346 · 구간 1281→1287 · 기존 판정 불변",
+  "tally": {
+    "n": 1287,
+    "verdict": {
+      "clear": 275,
+      "needs_cv": 283,
+      "blocked": 193,
+      "unknown": 536
+    },
+    "unknown_reason": {
+      "no_cctv_band": 217,
+      "needs_survey": 78,
+      "no_cctv_thin": 160,
+      "no_cctv_narrow": 70,
+      "no_cctv_single": 10,
+      "ledger_disputes": 1
+    },
+    "width_src": {
+      "ngii1k": 1166,
+      "silpok": 118,
+      "ngii": 1,
+      "null": 2
+    },
+    "length_total_m": 58822,
+    "in_emd": 416,
+    "route_usage_pos": 582,
+    "nfa_designated": 251
+  },
+  "expect_snapshot": "EXPECT = {\n}",
+  "sha256": {
+    "segments.geojson": "fd742e8db96e73498da65f953fb0b623b3fcf8afb9a965ffab3fb586deab5468",
+    "segments.schema.json": "8158ab801f0bdd4a1c967f88fe968ae4053d3e0b7d65b54d39dc785e67b22fe7",
+    "_manifest.json": "e7af32b94fe2d4d3ada819681c88c83e41106d6e849fd95d50213bbca56efa6b",
+    "seg_uid_map.csv": "71e6401b16330b0d0f6781d8411bf0ce76ed81f8a305ce2036e7ee0b22f43c03",
+    "eval.json": "18d9fd7587c08a45e0ca1b297f2cbab769349c1fb53128397db84e4459b31b81",
+    "nfa_compare.json": "cbaa416f701fa4194aa21051a0142f68f29ab78aae79e30faff5a30bbcc7ff3e"
+  },
+  "why": "구 원본(국토정보플랫폼 NGI 20도엽 2020·2022)이 2026-08-15 전량 재취득으로 소실됐다. 이 산출물은 재생성 불가다.",
+  "known_limits": [
+    "width_verified 전건 false. 레이저 실측 전이다",
+    "nfa_compare 는 검증이 아니라 적합(fit)이다"
+  ]
+}

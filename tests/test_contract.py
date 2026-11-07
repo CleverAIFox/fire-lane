@@ -418,7 +418,7 @@ def test_verdict_matches_rules_for_every_segment():
     #   "표본 1개 방어" 18구간이 규칙 위반으로 잡혔다. 판정은 멀쩡했고
     #   검사가 못 읽은 것이었다. 없으면 통과가 아니라 실패해야 한다.
     need = {"width_min_m", "width_max_m", "road_bt_m", "n_sample",
-            "cv_feasible", "verdict"}
+            "cv_feasible", "verdict", "width_min_any_m", "width_min_sym_m"}
     missing = need - set(feats[0]["properties"])
     assert not missing, (
         f"segments.geojson 에 컬럼이 없다: {sorted(missing)}\n"
@@ -447,6 +447,15 @@ def test_verdict_matches_rules_for_every_segment():
 
         if exp == "needs_cv" and not x.get("cv_feasible"):
             exp = "unknown"
+
+        # 규칙 [8] · [9] — 소스 무관 최솟값 · 대칭폭 최솟값이 소방차 폭 미만이면 clear 를 거둔다(2026-10-23).
+        if exp == "clear":
+            _any, _sym = num(x.get("width_min_any_m")), num(x.get("width_min_sym_m"))
+            _med, _wx = num(x.get("clear_med_m")), num(wmax)
+            if ((_any is not None and _any < TRUCK + 2 * PARK) or (_sym is not None and _sym < TRUCK)     # [8] [10] · [9]
+                    or (_med is not None and _med < TRUCK + 2 * PARK)                                      # [10] 확장(Zm19)
+                    or (_wx is not None and wmin and _wx / wmin >= 2.5)):                                  # [11]
+                exp = "needs_cv" if x.get("cv_feasible") else "unknown"
 
         if exp != x["verdict"]:
             bad.append(f"{x.get('seg_id')} {x.get('road_name')}: "
@@ -673,7 +682,8 @@ def test_schema_layers_differ_only_by_declaration():
 
       선언은 둘이다 —
         processed → web 에서 뺀 것   web 스키마의 `dropped_from_processed`
-        web 에만 있는 것             `seg_no`(publish 가 만든다) · `z`(지형 덧쓰기)
+        web 에만 있는 것             `seg_no`(publish 가 만든다) · `z`(지형 덧쓰기) · `clear_*` 다섯(2026-10-23 Zm7 — publish 가 `firelane.clearance` 로
+                                     낸 내접원 칸. 이 칸들은 publish 가 싣는다 · processed 에 없다 · 판정이 읽는 것은 `clear_med_m` 하나다(Zm19 부터 `clearance.py` 는 판정 폐포 안))
       공유 필드의 서술도 같아야 한다. publish 는 서술을 복사한다.
     """
     P = ROOT / "data" / "processed" / "segments.schema.json"
@@ -686,7 +696,11 @@ def test_schema_layers_differ_only_by_declaration():
         f"processed 전용 필드가 선언과 다르다 — 실제 {sorted(pf - wf)} · "
         f"선언 {sorted(dropped)}")
     web_only = wf - pf
-    assert web_only <= {"seg_no", "z"} and "seg_no" in web_only, (
+    declared = {"seg_no", "z", "clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov",
+                "ecc_rel_med_m", "ecc_rel_max_m", "ecc_cov", "struct_kind", "struct_dist_m",
+                "nfa_access_listed", "nfa_access_width", "nfa_access_len_m", "nfa_access_hh",
+                "nfa_access_len_ratio", "nfa_access_loose", "nfa_access_token", "scope_tier"}      # Zm7 · Zm8 · #62 — publish 가 싣는 web 전용 칸
+    assert web_only <= declared and "seg_no" in web_only, (
         f"web 전용 필드가 선언 밖이다 — {sorted(web_only)}")
     drift = sorted(k for k in pf & wf
                    if k != "seg_no" and p["fields"][k] != w["fields"][k])

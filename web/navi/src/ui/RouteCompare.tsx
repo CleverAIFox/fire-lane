@@ -102,7 +102,7 @@ export function RouteBrief(p: Props) {
               title="빠른 경로" />
       ) : (
         <div style={{ ...note, marginTop: 12 }}>
-          이 차종 · 이 조건에서 둘째 경로가 서지 않았다 — 안전 경로 하나로 안내한다.
+          둘째 경로가 서지 않았다 — 안전 경로 하나로 안내한다.
         </div>
       )}
 

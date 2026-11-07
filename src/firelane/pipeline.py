@@ -115,7 +115,12 @@ STEPS = [
                  # ★ 2026-10-06 (§426-2). **내는 쪽도 빠져 있었다.** 읽는 쪽에
                  #   적자마자 `test_every_read_is_produced_by_an_earlier_step` 이
                  #   이 줄을 요구했다 — 한쪽만 적으면 다른 검사가 대신 운다.
-                 P / "enforce_cam.csv")),
+                 P / "enforce_cam.csv",
+                 # ★ 2026-10-23 (Zm11). 소방통로확보대상 표 — 읽는 쪽(publish · Zm8)만 적고 내는 쪽을 안 적었다.
+                 #   같은 §426-2 의 결함이다: 대장 `fire_access` 가 ingest 에서 이 파일을 낸다.
+                 P / "fire_access.csv")),
+    # ★ 2026-10-23. `occ_demand.csv` 는 후진 의존이다 — 레이크의 건축물대장에서 사람이 만들고(`tools/occ_pressure.py`)
+    #   이 단계가 읽는다. 없으면 β 칸이 null 이다. 해소 조건과 사유는 test_backward_dependency.BACKWARD 가 든다.
     Step("segments", "segments", "노딩 → 폭 → 판정",
          P / "segments.geojson",
          reads=(P / "ngii1k_5186.gpkg", P / "ngii1k_center_5186.gpkg",
@@ -124,6 +129,8 @@ STEPS = [
                 P / "node_link_5186.gpkg", P / "cctv_5186.gpkg",
                 P / "streetlight_5186.gpkg", P / "road_intrvl.geojson",
                 P / "fire_station.geojson",
+                # ★ 2026-10-23. 점유압력 β 의 수요점 — 사람이 부르는 `tools/occ_pressure.py` 가 낸다(ALLOW 에 사유). 없으면 β 는 전부 null.
+                P / "occ_demand.csv",
                 P / "_manifest.json"),
          # ★ route_vehicle.csv 가 여기 없어서 publish 가 stale 로 안 잡혔고,
          #   커밋된 web/data/route_vehicle.json 이 이틀 낡은 채 전 게이트를
@@ -131,6 +138,8 @@ STEPS = [
          writes=(P / "segments.geojson", P / "segments_5186.gpkg",
                  P / "segments.schema.json", P / "corridor_5186.gpkg",
                  P / "seg_uid_map.csv",
+                 # ★ 2026-10-23 (Zm13). 진단 덤프지만 publish 가 `ecc_m` 을 읽는다 — 읽는 쪽만 적으면 §426-2 의 결함이다.
+                 P / "width_samples.csv",
                  P / "route_vehicle.csv")),
     # ★ 2026-09-25 (PLAN §1 #124). `seg/report.py::nfa_compare` 를 자기 단계로
     #   내렸다. 그 안의 `from firelane import ledger` 한 줄이 ledger · naming ·
@@ -206,6 +215,12 @@ STEPS = [
                 # ★ publish_basemap 의 SOURCES — road_area · sidewalk 의 재료
                 P / "ngii1k_5186.gpkg", P / "road_rw_5186.gpkg",
                 P / "ngii1k_walk_5186.gpkg",
+                # ★ 2026-10-23 (Zm8). 소방통로확보대상 — `publish_web` 이 `firelane.fireaccess` 로 구간에 싣는다(판정 폐포 밖 · 판정에 안 쓴다).
+                P / "fire_access.csv",
+                # ★ 2026-10-23 (Zm13). 중심선 편심 칸(`ecc_*`)의 재료 — `publish_web` 이 `firelane.eccentricity` 로 구간에 싣는다(판정 안 씀).
+                P / "width_samples.csv",
+                # ★ 2026-10-23 (Zm18). 입체 구조물 면 — `publish_web` 이 `firelane.structures` 로 구간에 싣는다(판정 안 씀).
+                P / "juso_tunnel_5186.gpkg", P / "juso_overpass_5186.gpkg", P / "juso_bridge_5186.gpkg",
                 P / "navi_build.csv", P / "navi_jibun.csv", P / "civil_office.geojson",
                 # ★ 2026-09-22 (§215-1). 내비 그래프의 통행 규칙 — 일방통행 · 회전 금지
                 P / "ngii1k_center_5186.gpkg", P / "node_link_5186.gpkg",
@@ -262,6 +277,20 @@ def downstream(names: set[str]) -> list[Step]:
             out.append(s)
             dirty += list(s.produces)
     return out
+
+def stale_publish_blockers(names: set[str]) -> list[str]:
+    """이 실행이 **`publish` 가 읽을 입력을 낡게 만드는데 그 입력을 다시 만드는 단계는 건너뛰는** 단계들의 이름.
+
+    ★ 2026-10-26 (DECISIONS §587). `--only segments publish` 는 `terrain`(산출물에 고도 `z` 를 덧쓴다)을 건너뛰고도 경고만 하고 진행했다 — `publish` 가 `z` 없는 `web/data` 를
+      **먼저 썼고** 계약 위반은 끝에서야 울었다. 2026-08-18 의 `--only publish` 사고와 같은 길이다. 경고는 사람이 읽을 때만 듣는다 — **쓰기 전에 거절한다.**
+    ★ `publish` 만 돌리는 길은 그대로다: 새로 만드는 것이 없으면 낡을 것도 없다(`downstream` 이 비어 있다).
+    """
+    if "publish" not in names:
+        return []
+    pub = next(s for s in STEPS if s.name == "publish")
+    return [s.name for s in downstream(names)
+            if any(matches(r, p) for r in pub.consumes for p in s.produces)]
+
 
 def check_only():
     from firelane import paths as _paths
@@ -369,6 +398,12 @@ def main():
                    if any(r in q.produces for q in steps)]
             print(f"    {s.name:11s} ← {' · '.join(why)}")
         print(col(f"  권장:  --from {min(skipped, key=lambda s: [x.name for x in STEPS].index(s.name)).name}\n", "y"))
+
+    # ★ 경고에서 멈추지 않는다 — `publish` 가 낡은 입력을 읽게 되면 **아무것도 쓰기 전에** 거절한다(§587).
+    if blockers := stale_publish_blockers({s.name for s in steps}):
+        print(col(f"\n★ 거절한다 — `publish` 가 {' · '.join(blockers)} 의 산출물(고도 z · 보기 범위 등)을 낡은 채로 읽게 된다. 아무것도 쓰지 않았다.", "r"))
+        print(col(f"  {' · '.join(blockers)} 를 같이 돌려라:  --from {min(blockers, key=[x.name for x in STEPS].index)}", "c"))
+        sys.exit(1)
 
     print(f"실행 {len(steps)}단계: {' → '.join(s.name for s in steps)}\n")
     t0 = time.time()

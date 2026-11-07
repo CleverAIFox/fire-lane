@@ -208,10 +208,6 @@
    "sha256": "3c5d91db980d0b896e8f2cfd2b2c51a385e580d40f7b355f6b5b6835509ba623",
    "bytes": 466483
   },
-  "nfa/nfa_dispatch_119_jngj-dongmyeong_20260903.csv": {
-   "sha256": "740dedf4e0c6f6de0424971e59391c04f6e58d9f37747fa6d822352471950371",
-   "bytes": 62671
-  },
   "nfa/nfa_fire_incident_jngj-donggu_20260903.csv": {
    "sha256": "c1f98a86160ef4f7d545d609ac953e33a288ad4d8113e25b45f0371e95f2f621",
    "bytes": 193220
@@ -367,7 +363,39 @@
   "safety/safety_dongmyeong_fires_jngj-dongmyeong_20261012.xlsx": {
    "sha256": "052a0d76fba8dc874607771348a25b6b7dec470ca99e2281c9963500e91edb63",
    "bytes": 14796
+  },
+  "nfa/nfa_dispatch_119_jngj-dongmyeong_20261104.csv": {
+   "sha256": "153a0ddc9d0b1331f7c2152a4be0208a04307ec12c0b64e9e14afb4d3386aea7",
+   "bytes": 334220
+  },
+  "nfa/nfa_ems_kr_20191231.csv": {
+   "sha256": "fb4cb83c4a0774bfcee0752b746afa52bc0f94ae3668e92a9ed03613b5cf90f4",
+   "bytes": 511068094
+  },
+  "nfa/nfa_ems_kr_20201231.csv": {
+   "sha256": "ed40f1659187fc551ab6e57b30fdf94c2030f54b3d67dbc7337f1bf37128de3c",
+   "bytes": 948480888
+  },
+  "nfa/nfa_ems_kr_20211231.csv": {
+   "sha256": "3cd517f4bd9e5cbc8fd58302d487eda074a36e5ce178578fba75d0fc2cd6260b",
+   "bytes": 1112901660
+  },
+  "nfa/nfa_ems_kr_20221231.csv": {
+   "sha256": "6c109005bca544dd81863b2842e0dd1fcc325250898dd768ca23880b58a8f77a",
+   "bytes": 1166911378
+  },
+  "nfa/nfa_ems_kr_20231231.csv": {
+   "sha256": "875aed59b24c03eb109a67ee929921683b90152faf4eef292dd0820336a38317",
+   "bytes": 1226906496
+  },
+  "nfa/nfa_ems_kr_20241231.csv": {
+   "sha256": "55fe3e5de929ba7f95c26f51f3a1eae5f0a1cd9ab94aa84def7d4818079ca1d5",
+   "bytes": 1843372574
+  },
+  "nfa/nfa_ems_kr_20251231.csv": {
+   "sha256": "1b20dac7d9f72f8e2901a0f67d340832d57f3c42a4ebde2756207818d775ac58",
+   "bytes": 1800360231
   }
  },
- "at": "2026-10-14T21:27:26+09:00"
+ "at": "2026-11-05T22:24:33+09:00"
 }

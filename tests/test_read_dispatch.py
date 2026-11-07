@@ -289,7 +289,7 @@ def test_the_row_filter_runs_before_the_coordinates_are_parsed(tmp_path):
 #   무엇인가」** 다. 칸 이름이 바뀌면 여기서 죽고(죽는 편이 낫다), 기본값이
 #   바뀌면 **조용히 다른 인코딩으로 읽는다.**
 def test_csv_points_branch_reads_the_declared_columns(tmp_path):
-    """★ `x_col` · `y_col` 을 **대장에서** 가져온다."""
+    """★ 좌표 칸(`coords.site` 의 `x` · `y`)을 **대장에서** 가져온다."""
     from firelane.read._io import BBOX_4326
     from firelane.read.delimited import read_csv_points
 
@@ -297,7 +297,7 @@ def test_csv_points_branch_reads_the_declared_columns(tmp_path):
     lat = (BBOX_4326[1] + BBOX_4326[3]) / 2
     p = tmp_path / "a.csv"
     p.write_text(f"이름,X,Y\n소방서,{lon},{lat}\n", encoding="utf-8")
-    g = read_csv_points(_ctx(e={"x_col": "X", "y_col": "Y"}, src=p))
+    g = read_csv_points(_ctx(e={"coords": {"site": {"x": "X", "y": "Y", "crs": 4326, "means": "설치 위치"}}}, src=p))
     assert len(g) == 1 and g.crs.to_epsg() == 4326
     assert g["이름"].tolist() == ["소방서"]
 
@@ -311,7 +311,7 @@ def test_the_csv_branch_dies_when_the_ledger_does_not_say_which_column(tmp_path)
     p = tmp_path / "a.csv"
     p.write_text("이름,X,Y\n가,126.9,35.1\n", encoding="utf-8")
     with pytest.raises(KeyError):
-        read_csv_points(_ctx(e={"y_col": "Y"}, src=p))
+        read_csv_points(_ctx(e={"coords": {"reporter": {"x": "X", "y": "Y"}}}, src=p))
 
 
 def test_the_two_branches_default_to_different_encodings(tmp_path):

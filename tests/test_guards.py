@@ -1439,7 +1439,7 @@ def test_width_samples_are_kept():
     # ★ 2026-08-24. 종전 `"wcov, wnt, wrows" in s` 는 4-튜플로 늘렸을 때
     #   **부분문자열이라 그냥 통과했다.** 우연히 통과하는 검사는 검사가
     #   아니다. 언패킹 전체를 본다.
-    assert "(wcov, wnt, wrows, wneff) = W[uid]" in s, \
+    assert "(wcov, wnt, wrows, wneff, wmed) = W[uid]" in s, \
         "호출부 언패킹이 _covr() 반환과 다르다"
     assert "width_samples.csv" in s, "표본을 파일로 안 남긴다"
     # 결측도 남겨야 "어디가 비었는지" 를 알 수 있다
@@ -1594,7 +1594,7 @@ def test_sample_writer_uses_a_key_that_survives_merging():
         "seg_id → seg_uid 매핑 없이 쓴다"
     # 집계는 쓴 행 기준이어야 한다
     i = src.index("def _write_samples")
-    body = src[i:i + 2500]
+    body = src[i:src.index("\ndef main", i)]   # 2026-10-23 계측 칸이 늘어 2500자 창을 넘었다 — 함수 끝까지(같은 질문)
     assert "ok += r[" in body, "쓴 행이 아니라 모은 것 전부를 센다"
 
 
@@ -2265,9 +2265,9 @@ def test_verify_covers_every_ci_job():
     assert jobs, "contract.yml 에서 잡을 못 찾았다"
 
     # 잡마다 "이것이 로컬에도 있어야 한다" 는 표식
-    NEEDS = {
-        "contract-strict": "owned_paths.py",
-        "contract-shared": "pytest",
+    NEEDS = {  # ★ 쪼갠 뒤 `contract-shared` 는 **집계**(DECISIONS §633) — 실제 검사는 `-fast` · `-heavy` · `-tests`. 쪼개기 전엔 `j in jobs` 가 거짓이라 안 문다
+        "contract-strict": "owned_paths.py", "contract-shared": "pytest",
+        "contract-fast": "doc_fsck.py", "contract-heavy": "ratchet.py", "contract-tests": "pytest",
     }
     miss = [f"{j} → verify.sh 에 `{k}` 가 없다"
             for j, k in NEEDS.items() if j in jobs and k not in vfy]

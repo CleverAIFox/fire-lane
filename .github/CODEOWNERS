@@ -104,8 +104,8 @@
 #   자산이 아니라 데이터라 GIS 팀이 함께 든다. 개인이 아니라 팀 핸들로
 #   두는 이유는 소유자가 이탈하면 그 줄이 죽기 때문이다.
 /web/assets/vehicles/    @CleverAIFox
-# 기획서 화면. 정본은 `docs/proposal.md` 이고 **와꾸 + 생성물** 둘이 짝이다 —
-# 손으로 고치는 것은 와꾸, `tools/build_proposal.py` 가 굽는 것이 생성물이다(§425).
+# 기획서 화면. 정본은 `docs/proposal.md` 이고 **틀 + 생성물** 둘이 짝이다 —
+# 손으로 고치는 것은 틀, `tools/build_proposal.py` 가 굽는 것이 생성물이다(§425).
 /web/proposal.template.html @CleverAIFox
 /web/proposal.html       @CleverAIFox
 # 기획서 그림 24장. 상류 .docx 에서 **한 번** 꺼냈다(그 이사 도구는 §444 에 은퇴) —
@@ -172,6 +172,7 @@
 #   `test_every_tracked_file_has_a_named_owner` 가 다음 것을 막는다.
 /docs/                   @CleverAIFox
 /README.md               @CleverAIFox           # !strict
+/.mailmap                @CleverAIFox
 /LICENSE                 @CleverAIFox           # !strict
 /SECURITY.md             @CleverAIFox           # !strict
 /.gitleaks.toml          @CleverAIFox           # !strict

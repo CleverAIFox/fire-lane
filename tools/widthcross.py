@@ -46,6 +46,11 @@ widthcross.py — 폭을 **방법이 다른 원천끼리** 댄다. 오염되지 
   「얼마 이상 다르면 이상한가」는 ①의 분포를 보고 **다음 배치에서** 정한다.
   지금 정하면 그 수는 근거가 없다.
 
+★ 2판 (Zm17 · DECISIONS §562) — 그 다음 배치가 이것이다. 문턱은 **분포에서 뽑는다**: `wmin-survey` 의 사분위범위 바깥(`fences`, 배수 1.5 는
+  Tukey 관행)과 두 공식 자료의 불일치(`official_gap`)를 나란히 낸다. **판정에는 아직 안 쓴다**(`tests/test_widthcross.py` 가 문턱 *상수*
+  — `WALL_K` · `TOL_M` 따위 — 의 재등장을 여전히 막는다; 울타리는 상수가 아니라 실행 때 분포에서 계산된다). 모순은 `triage` 가 접합 인공물 /
+  표본 부족 / 이름 미상 / 실결함 후보로 가른다. 매칭 진단(`widthmatch.py`)은 `--sweep`.
+
 ★ ③ 도 문턱을 발명하지 않는다 (2026-09-29 · DECISIONS §299). `clear` 자신이
   주장하는 값(`TRUCK` · `TRUCK + 2·PARK`)과 대장이 이미 든 명목폭을 대는 것이고,
   두 주장이 동시에 참일 수 없는 경우만 센다. **어느 쪽이 옳은지는 안 말한다.**
@@ -71,6 +76,7 @@ from pathlib import Path
 #   종전에는 이 둘이 `clearance_cross` 와 글자까지 같았다 — 2족이다.
 from statkit import num as _num
 from statkit import quartiles
+from widthmatch import adopt, sweep, unmatched_reasons
 
 # ★ `clear` 의 문턱은 **판정기가 정본이다**(`seg/params.py`). 여기서 수를 적으면
 #   같은 사실이 두 집에 살고, 그 둘은 반드시 갈린다(2족).
@@ -91,6 +97,16 @@ SOURCES: dict[str, tuple[str, bool]] = {
 #: **이것은 문턱이 아니라 표기 단위다** — 모순 판정이 표기 오차에 걸리지
 #: 않게 하는 값이고, 「얼마나 다르면 이상한가」와는 다른 축이다.
 ROUNDING_M = 0.5
+
+#: 측량 중심선을 구간에 붙이는 **띠 반폭**(m). 파이프라인의 `seg/roadname.BAND`(0.5m)와 **다른 값이다 — 그것은 안 건드린다.**
+#: ★ 2026-10-25 (PLAN #4 · Zm29 → Zm30 · DECISIONS §574-2 · §575). 구간은 `road_link` 위에 있고 NGII 중심선은 별도 측량이라 0.5m 띠로는
+#:   1,281 중 422(32.9%)만 붙었다. 안 붙은 859 중 744 는 0.5m 안에 붙어 있는데 한 선의 겹침이 50% 에 못 미쳤다(DECISIONS §562-2).
+#:   `tools/widthmatch.py` 의 격자에서 **새로 붙은 쌍의 중앙**이 띠 1 → 2 → 3 → 5 → 10 에서 −0.24 → −0.26 → −0.26 → −0.29 → −0.33 으로 밀린다
+#:   — 넓힐수록 다른 선을 문다. **3m 는 2m 와 같은 중앙(−0.26)에서 멈추는 마지막 자리다**(Zm29 의 5m 는 p ≥ 0.05 의 상한이었으나 이미 −0.29 로 밀렸다).
+#:   3m 에서 매칭은 909(71.0%)이고 새 487쌍의 분포는 기존 422 와 구별되지 않는다(p = 0.534). 옛 422쌍의 측량폭은 하나도 안 바뀐다.
+#:   ★ **PLAN #4 가 목표로 박은 73.9%(5m · 947)에는 2.9%p(38쌍) 못 미친다.** 수를 맞추려고 띠를 되돌리지 않았다 — 목표 수는 사람이 고친다.
+#:   이 상수는 **대조 도구의 매칭**이고 판정에 안 쓴다.
+SURVEY_BAND = 3.0
 
 
 def contradictions(row: dict) -> list[str]:
@@ -150,8 +166,8 @@ CLEAR_M = TRUCK + 2 * PARK
 #:   두 수 모두 **실측이 내려가서** 조였다. 판정을 안 움직였는데 왜 내려갔나 —
 #:   §308 이 커버율 관문을 켜면서 근거가 얇은 `clear` 가 `needs_cv` 로 갔고,
 #:   그 몫이 이 목록에서도 빠졌다. **한 배치가 두 곳을 조인다.**
-OVERCLAIM_HARD = 7
-OVERCLAIM_SOFT = 30
+OVERCLAIM_HARD = 1
+OVERCLAIM_SOFT = 6
 
 #: ★ 이 둘을 `ratchet.py` 규약에 태운다(§309). 종전에는 도구가 「그 수로
 #:   내려라」를 찍고 **사람이 받아적었다** — 09-30 실기에서 그 두 줄이 그대로
@@ -210,6 +226,79 @@ def overclaim(rows: list[dict], floor: float) -> list[dict]:
     return out
 
 
+# ── 2판 (Zm17 · DECISIONS §562) — 문턱을 분포에서 뽑고, 매칭률과 모순 17건을 가른다 ────────────────────
+#: 바깥값 울타리의 배수. **Tukey(1977) 관행**이다 — 이 데이터에서 도출한 수가 아니다. 울타리의 *위치*(q25 · q75 · IQR)가
+#: 이 데이터의 분포에서 나오고 배수만 관행이다. 아래 두 번째 방식(`official_gap`)이 같은 물음을 배수 없이 대조한다.
+TUKEY_K = 1.5
+
+
+def fences(xs: list[float]) -> dict | None:
+    """분포의 **바깥값 울타리** — `[q25 - K·IQR, q75 + K·IQR]`. 비면 None. 순수."""
+    q = quartiles(xs)
+    if not q:
+        return None
+    iqr = q["q75"] - q["q25"]
+    return {"n": q["n"], "q25": q["q25"], "q75": q["q75"], "iqr": iqr, "k": TUKEY_K,
+            "lo": q["q25"] - TUKEY_K * iqr, "hi": q["q75"] + TUKEY_K * iqr}
+
+
+def official_gap(rows: list[dict]) -> dict | None:
+    """두 번째 방식 — **두 공식 자료가 서로 다른 정도**. `|survey - ledger|` 의 사분위 · 배수가 없다. 순수."""
+    gaps = [abs(a - b) for r in rows
+            if (a := _num(r.get("survey"))) is not None and (b := _num(r.get("ledger"))) is not None]
+    return quartiles(gaps) or None
+
+
+def outside(rows: list[dict], fence: dict, a: str = "wmin", b: str = "survey") -> dict:
+    """`a - b` 가 울타리 바깥인 구간. 아래쪽(우리가 더 좁다)과 위쪽(우리가 더 넓다)을 따로 센다. 순수."""
+    lo, hi = [], []
+    for r in rows:
+        va, vb = _num(r.get(a)), _num(r.get(b))
+        if va is None or vb is None:
+            continue
+        d = va - vb
+        if d < fence["lo"]:
+            lo.append(r.get("seg_uid") or r.get("seg_id"))
+        elif d > fence["hi"]:
+            hi.append(r.get("seg_uid") or r.get("seg_id"))
+    return {"아래(우리가 더 좁다)": len(lo), "위(우리가 더 넓다)": len(hi)}
+
+
+def triage(ev: dict) -> tuple[str, list[str]]:
+    """모순 한 건을 **접합 인공물 / 표본 부족 / 이름 미상 / 실결함 후보** 로 가른다. 근거(`evidence`)만 쓴다. 순수.
+
+    판별 근거(새로 재지 않는다):
+      · 측량선 이름 ≠ 우리 도로명      → **다른 길을 물었다**(접합 인공물). 값을 비교할 자격이 없다
+      · 측량선에 이름이 없다            → 같은 길인지 **알 수 없다**(이름 미상)
+      · 이름이 같고 `n_sample ≤ 2`      → 우리 값이 표본 1~2개에 걸려 있다(표본 부족). 모순이 맞아도 약한 증거다
+      · 이름이 같고 `n_sample ≥ 3`      → 실결함 후보. **후보다 — 확정이 아니다**(측량도 사람이 잰 값이다)
+    `flags` 에는 겹치는 약점(`n≤2`)을 따로 적는다.
+    """
+    rn, sn = ev.get("road_name"), ev.get("survey_name")
+    n = ev.get("n_sample") or 0
+    flags = ["n_sample≤2"] if n <= 2 else []
+    if not sn:
+        return "이름 미상", flags
+    if (rn or "") != sn:
+        return "접합 인공물", flags
+    return ("표본 부족" if n <= 2 else "실결함 후보"), flags
+
+
+def overclaim_profile(over: list[dict]) -> dict:
+    """`clear` 인데 대장이 좁다고 한 구간의 **분포**. 순수."""
+    led, wm, n_small = {}, [], 0
+    for b in over:
+        e = b.get("증거") or {}
+        bt = _num(e.get("ledger"))
+        led[f"{bt:.1f}"] = led.get(f"{bt:.1f}", 0) + 1
+        if (w := _num(e.get("wmin"))) is not None:
+            wm.append(w)
+        if (e.get("n_sample") or 0) <= 2:
+            n_small += 1
+    return {"건수": len(over), "대장 명목폭별": dict(sorted(led.items(), key=lambda t: float(t[0]))),
+            "wmin 사분위": quartiles(wm) or None, "n_sample≤2": n_small}
+
+
 #: 대 볼 쌍. **방법이 독립인 짝을 먼저 둔다** — 그것이 이 도구의 이유다.
 PAIRS = (("wmin", "survey"), ("wmin", "ledger"), ("survey", "ledger"),
          ("wmax", "survey"))
@@ -237,7 +326,27 @@ def cross(rows: list[dict]) -> dict:
         "모순": bad,
         "과대주장 딱딱": overclaim(rows, TRUCK),
         "과대주장 부드러움": overclaim(rows, CLEAR_M),
+        # ── 2판 (Zm17) — 판정에 안 쓴다
+        "문턱(분포 유래)": _thresholds(rows, diffs),
+        "모순 분류": _triaged(bad),
+        "과대주장 부드러움 분포": overclaim_profile(overclaim(rows, CLEAR_M)),
     }
+
+
+def _thresholds(rows: list[dict], diffs: dict[str, list[float]]) -> dict:
+    f = fences(diffs.get("wmin-survey", []))
+    return {"방식1 Tukey 울타리(wmin-survey)": f,
+            "방식1 바깥": outside(rows, f) if f else None,
+            "방식2 두 공식 자료의 불일치 |survey-ledger|": official_gap(rows)}
+
+
+def _triaged(bad: list[dict]) -> dict:
+    out: dict[str, list] = {}
+    for b in bad:
+        label, flags = triage(b.get("증거") or {})
+        out.setdefault(label, []).append({"seg": b["seg"], "flags": flags})
+    return {"건수": {k: len(v) for k, v in out.items()}, "구간": out,
+            "n_sample≤2": sum(1 for b in bad if ((b.get("증거") or {}).get("n_sample") or 0) <= 2)}
 
 
 def show(res: dict) -> int:
@@ -287,6 +396,21 @@ def show(res: dict) -> int:
     if not hard:
         print("      딱딱한 층 없음")
 
+    th = res.get("문턱(분포 유래)") or {}
+    f, o, og = th.get("방식1 Tukey 울타리(wmin-survey)"), th.get("방식1 바깥"), th.get("방식2 두 공식 자료의 불일치 |survey-ledger|")
+    if f:
+        print("\n  문턱 (2판 · 분포 유래 · **판정에 안 쓴다**)")
+        print(f"    방식1 wmin-survey 울타리 [{f['lo']:+.3f}, {f['hi']:+.3f}]  (q25 {f['q25']:+.2f} · q75 {f['q75']:+.2f} · IQR {f['iqr']:.2f} · 배수 {f['k']})"
+              f"  바깥 {o}")
+    if og:
+        print(f"    방식2 |survey-ledger| 25% {og['q25']:.2f} · 중앙 {og['median']:.2f} · 75% {og['q75']:.2f} · 최대 {og['max']:.2f}")
+    tr = res.get("모순 분류") or {}
+    if tr:
+        print(f"    모순 분류 {tr['건수']} · 그중 n_sample≤2 {tr['n_sample≤2']}건")
+    pf = res.get("과대주장 부드러움 분포") or {}
+    if pf:
+        print(f"    부드러움 분포 대장별 {pf['대장 명목폭별']} · n_sample≤2 {pf['n_sample≤2']}건")
+
     print("\n★ 이 표는 **판정을 안 바꾼다.** 어느 원천이 옳은가도 안 본다.")
     print("  ①②는 분포와 논리적 불가능만 센다. ③은 **래칫**이다 — 고치려면 판정이")
     print("  움직이고 그것은 측정 배치의 일이다(PLAN §13-5 규칙 2).")
@@ -305,8 +429,9 @@ def show(res: dict) -> int:
     return rc
 
 
-def _load() -> list[dict] | None:
-    """산출물에서 구간별 네 값을 모은다. 없으면 None."""
+def _load(band: float | None = None) -> list[dict] | None:
+    """산출물에서 구간별 네 값을 모은다. 없으면 None. `band` 는 측량선을 붙이는 띠 반폭(기본 `SURVEY_BAND`)."""
+    band = SURVEY_BAND if band is None else band
     seg = PROCESSED / "segments_5186.gpkg"
     ctr = PROCESSED / "ngii1k_center_5186.gpkg"
     if not seg.exists():
@@ -350,8 +475,8 @@ def _load() -> list[dict] | None:
     nidx = RoadNameIndex(list(c.geometry), list(c.get("도로명", [""] * len(c))),
                          [""] * len(c), [None] * len(c))
     for row, geom in zip(rows, g.geometry, strict=True):
-        row["survey"] = idx.match(geom)[0]
-        row["survey_name"] = nidx.match(geom)[0]
+        row["survey"] = idx.match(geom, band=band)[0]
+        row["survey_name"] = nidx.match(geom, band=band)[0]
     return rows
 
 
@@ -401,6 +526,24 @@ def selftest() -> int:
     if CLEAR_M <= TRUCK:
         bad.append("두 층의 경계가 뒤집혔다 — 부드러운 층이 딱딱한 층을 안 덮는다")
 
+    # ── 2판: 울타리 · 분류 · 분포
+    f = fences([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0])
+    if f is None or abs(f["lo"] - (f["q25"] - 1.5 * f["iqr"])) > 1e-9 or fences([]) is not None:
+        bad.append(f"울타리가 틀렸다 — {f}")
+    o = outside([{"seg_uid": "A", "wmin": 20.0, "survey": 5.0}, {"seg_uid": "B", "wmin": 0.0, "survey": 5.0},
+                 {"seg_uid": "C", "wmin": 5.0, "survey": 5.0}], {"lo": -1.0, "hi": 1.0})
+    if o != {"아래(우리가 더 좁다)": 1, "위(우리가 더 넓다)": 1}:
+        bad.append(f"바깥값 세기가 틀렸다 — {o}")
+    if triage({"road_name": "A", "survey_name": "B", "n_sample": 9})[0] != "접합 인공물":
+        bad.append("이름이 다른 모순을 접합 인공물로 안 가른다")
+    if triage({"road_name": "A", "survey_name": "A", "n_sample": 2})[0] != "표본 부족":
+        bad.append("표본 2개짜리를 표본 부족으로 안 가른다")
+    if triage({"road_name": "A", "survey_name": "A", "n_sample": 3})[0] != "실결함 후보":
+        bad.append("멀쩡한 모순을 실결함 후보로 안 둔다")
+    if triage({"road_name": "A", "survey_name": None, "n_sample": 9})[0] != "이름 미상":
+        bad.append("측량선 이름이 없는 것을 이름 미상으로 안 둔다")
+    if triage({"road_name": "A", "survey_name": "A", "n_sample": None})[0] != "표본 부족":
+        bad.append("n_sample 결측을 표본 부족으로 안 둔다")
     if not any(indep for _w, indep in SOURCES.values()):
         bad.append("독립 원천이 하나도 선언 안 돼 있다 — 이 도구의 이유가 없다")
     if bad:
@@ -416,6 +559,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--json", type=Path, help="표를 이 경로에 쓴다")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--sweep", action="store_true", help="매칭 규칙 격자를 돌린다(느리다 · 2판 · 판정 불변)")
     a = ap.parse_args(argv)
     if a.selftest:
         return selftest()
@@ -426,6 +570,11 @@ def main(argv: list[str] | None = None) -> int:
         print("  파이프라인을 먼저 돌려라. **없는 것은 통과가 아니다.**")
         return 2
     res = cross(rows)
+    res["매칭 진단"] = {"미매칭 사유": unmatched_reasons()}
+    if a.sweep:
+        sw = sweep()
+        res["매칭 진단"]["규칙 격자"] = sw
+        res["매칭 진단"]["채택 후보"] = adopt(sw)
     out = a.json or (PROCESSED / "width_cross.json")
     out.write_text(json.dumps(res, ensure_ascii=False, indent=1) + "\n",
                    encoding="utf-8")

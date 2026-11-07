@@ -13,7 +13,7 @@ PARAM 좌표 자릿수 PREC · 크기 상한 SIZE_MAX
 ── 왜 생겼나 (2026-09-22 · DECISIONS §216-3) ─────────────────────
 받은 72종 중 판정에 들어가는 것이 11종이고, 좌표까지 있는데 **아무도 안 읽는** 것이
 여럿이었다 — 과속방지턱 342 · 단속카메라 510 · 어린이 · 노인보호구역 · 119 신고 183 ·
-구조 212. 사용자 물음 「받은 데이터 다 제대로 활용 중이냐」 에 「아니다」 가 답이었다.
+구조 212. 사용자가 받은 데이터를 다 활용하고 있는지 지적했고 답은 「아니다」 였다.
 
   context.geojson   내비가 경로 위에서 알려 줄 것 — 과속방지턱 · 단속카메라 · 보호구역 시설
   history.geojson   관제가 볼 것 — 신고 · 구조 지점과 **실제 출동→현장 도착 시간**
@@ -35,7 +35,7 @@ from datetime import datetime, timedelta, timezone
 import geopandas as gpd
 import pandas as pd
 
-from firelane import localplane, quantile
+from firelane import ledger, localplane, quantile
 from firelane.cli import no_args
 from firelane.paths import ROOT
 
@@ -104,14 +104,16 @@ def _resp(dispatch: datetime | None, arrive: datetime | None) -> int | None:
 def context(fr) -> dict:
     feats = []
     sb = pd.read_csv(P / "speedbump.csv", dtype=str)
+    bx, by = ledger.coords("speedbump", "site")      # ★ 칸 이름은 대장이 말한다(DECISIONS §634) — 코드가 고르지 않는다
     for r in sb.itertuples(index=False):
-        lon, lat = _num(r.WGS84경도), _num(r.WGS84위도)
+        lon, lat = _num(getattr(r, bx)), _num(getattr(r, by))
         if lon and lat and _inside(lon, lat, fr):
             feats.append(_pt(lon, lat, {"kind": "speedbump",
                                         "h_m": _num(r.과속방지턱높이), "road": r.도로명 or None}))
     sc = pd.read_csv(P / "speed_cam.csv", dtype=str)
+    cx, cy = ledger.coords("speed_cam", "site")
     for r in sc.itertuples(index=False):
-        lon, lat = _num(r.경도), _num(r.위도)
+        lon, lat = _num(getattr(r, cx)), _num(getattr(r, cy))
         if lon and lat and _inside(lon, lat, fr):
             feats.append(_pt(lon, lat, {"kind": "speedcam", "limit": _num(r.제한속도),
                                         "place": r.설치장소 or None}))
@@ -128,8 +130,12 @@ def context(fr) -> dict:
 def history(fr) -> dict:
     feats, by_center, fires = [], {}, []
     d = pd.read_csv(P / "nfa_dispatch_119.csv", dtype=str)
+    dx, dy = ledger.coords("nfa_dispatch_119", "site", use="지도 표출")
     for r in d.itertuples(index=False):
-        lon, lat = _num(r.DCLR_PSTN_LOT), _num(r.DCLR_PSTN_LAT)
+        # ★ 2026-11-04 (DECISIONS §632). **`LOT`/`LAT`(재해 위치)** 를 쓴다. `DCLR_PSTN_*` 는 **신고자 휴대폰 위치**라 재해 위치에서 중앙 100m ·
+        #   최대 265km 떨어진다 — 종전에 이 칸으로 이력 점과 직선 환산 속도를 냈고, 범위 걸러내기(`_inside`)가 광주 밖 112행을 조용히 뺐다.
+        #   재해 좌표가 없는 행은 신고자 위치로 **대신하지 않고** 뺀다(뜻이 다른 점을 섞지 않는다).
+        lon, lat = _num(getattr(r, dx)), _num(getattr(r, dy))
         rs = _resp(_ts(r.DSPT_DRTV_DT), _ts(r.GRNDS_ARVL_DT))
         if lon and lat and _inside(lon, lat, fr):
             feats.append(_pt(lon, lat, {"kind": "dispatch", "yr": int(_num(r.DCLR_YR) or 0),
@@ -137,8 +143,9 @@ def history(fr) -> dict:
             if rs is not None and r.CNTR_NM:
                 by_center.setdefault(r.CNTR_NM, []).append(rs)
     q = pd.read_csv(P / "nfa_rescue.csv", dtype=str)
+    qx, qy = ledger.coords("nfa_rescue", "reporter")      # 신고위치 — 칸 이름 + dispatch 실측 교차로 선다(활용가이드 설명은 근거가 못 된다 · §642) · 위치 분석 · 거리 계산에는 안 쓴다
     for r in q.itertuples(index=False):
-        lon, lat = _num(r.DCLR_PSTN_LOT), _num(r.DCLR_PSTN_LAT)
+        lon, lat = _num(getattr(r, qx)), _num(getattr(r, qy))
         rs = _resp(_ymdhm(r.DSPT_YMD, r.DSPT_TM), _ymdhm(r.GRNDS_ARVL_YMD, r.GRNDS_ARVL_TM))
         if lon and lat and _inside(lon, lat, fr):
             feats.append(_pt(lon, lat, {"kind": "rescue", "yr": int(_num(r.DCLR_YR) or 0),
@@ -172,8 +179,8 @@ def history(fr) -> dict:
         v = []
         for x in feats:
             pr = x["properties"]
-            if pr["center"] != c or pr["resp_s"] is None:
-                continue
+            if pr["kind"] != "dispatch" or pr["center"] != c or pr["resp_s"] is None:
+                continue          # ★ §632 구조 점은 뺀다 — 원천이 그 칸의 뜻을 말하지 않는다. 뜻을 모르는 점으로 낸 속도는 이름을 어떻게 붙여도 뜻이 없다
             lon, lat = x["geometry"]["coordinates"]
             # ★ 2026-10-11 (DECISIONS §469). 여기 상수가 셋째 판이었다 —
             #   위도 110,540 (정본 110,574 · `navicheck` 111,320). 정본이 `tools/`
@@ -192,7 +199,7 @@ def history(fr) -> dict:
         "by_center": {k: {"n": len(v), "median_s": med(v), "straight_kmh": kmh(k)}
                       for k, v in sorted(by_center.items())},
         "fire_donggu": {"n": len(fires), "median_s": med(fires)},
-        "note": "현장 도착 − 출동 지령(초). 신고 · 구조는 동명동 지점, 화재는 동구 전체 요약(좌표 없음)",
+        "note": "현장 도착 − 출동 지령(초). 신고 점은 재해 위치(LAT/LOT), 구조 점은 원천이 「신고위치」라 부르는 칸(DCLR_PSTN · 활용가이드의 설명 「신고 내용의 좌표」는 부정확하다 · 분포는 현장처럼 보이나 이유는 미해결). 직선 속도는 신고 점만. 화재는 동구 전체 요약(좌표 없음)",
     }
     return {"type": "FeatureCollection", "name": "history", "summary": summary, "features": feats}
 

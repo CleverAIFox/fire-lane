@@ -46,6 +46,8 @@ DOMAIN = [
     "seg/params.py", "seg/geom.py", "seg/width.py",
     "seg/roadname.py", "seg/basisno.py", "seg/graph.py",
     "seg/vehicle.py", "seg/scope.py", "seg/centerline_correction.py",
+    # ★ 2026-10-23 (Zm19 · DECISIONS §564). `clearance.py` 가 판정 폐포로 들어왔다 — 내접원 계산(shapely · numpy 순수 계산)이고 I/O 가 없다.
+    "clearance.py",
     # ★ 2026-10-03 (DECISIONS §370-4). `seg/classify.py` 가 **또 빠져 있었다.**
     #   §303 이 2026-09-29 에 만들고 판정 폐포에 넣었는데 이 목록에는 안 들어왔다 —
     #   §279-8 이 나흘 전 똑같이 셋을 잡았고, **같은 일이 다시 났다.** 손목록이라
@@ -61,6 +63,12 @@ DOMAIN = [
     #   `find` ×4 를 여기로 뺐다. 표준 라이브러리도 안 쓰는 다섯 줄이라 순수하고,
     #   **묶는 로직은 안 따라왔다** — 그것을 합치면 `seg_uid` 가 움직인다(§144).
     "seg/unionfind.py",
+    # ★ 2026-11-01 (Zm56). 보도 깎기 두 순수 함수. `seg/width.py` 의 파일 길이
+    #   상한 때문에 옮겼다 — 동작 무변경(DECISIONS §523).
+    "seg/walkcarve.py",
+    # ★ 2026-11-01 (Zm56). #77 가름. `ngii1k_center` 를 도로명으로 묶어 보로노이
+    #   몫으로 폴리곤을 자른다. 판정 규칙이 아니라 입력을 바꾼다(§588-2 · §593).
+    "seg/share.py",
 ]
 
 # domain 이 절대 import 하면 안 되는 것
@@ -317,6 +325,9 @@ def test_reads_exempt_has_no_ghost():
 #: `DOMAIN` 이 아닌 것의 사유. **판정 폐포 안인데 순수가 아닌 자리**다.
 #: ★ 빈 사유는 금지다. 그리고 아래 검사가 **양방향**이다 — 깨끗해지면 운다.
 NOT_DOMAIN: dict[str, str] = {
+    "occ.py":
+        "순수하지 않다 — `load_demand` 가 수요점 CSV 를 읽는다. β 는 **판정에 안 쓴다**(순위용 · `tests/test_occ_pressure.py`)이고 판정 폐포 안에 있는 것은 "
+        "`segments.py` 가 processed 에 싣기 때문이다(DECISIONS §545-4)",
     "segments.py":
         "stage 다. 파일을 읽고 쓰고 단계로 돈다 — 계층표의 그 자리이고 "
         "조립부가 순수할 수는 없다",

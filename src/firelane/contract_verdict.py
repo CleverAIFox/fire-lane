@@ -43,10 +43,10 @@ from __future__ import annotations
 #:   없어 그 블록이 한 번도 안 불린다 — 적으면 「선언은 섰는데 부르는 자리가
 #:   없다」가 하나 더 생긴다(§243-2 부터 여섯 번 난 족). 변환기 산출 CSV 의
 #:   열 계약은 그 CSV 가 ingest 에 **배선되는 판**이 적는다.
-NO_CONTRACT_RATCHET = 43
+NO_CONTRACT_RATCHET = 38
 #: 실측 2026-09-28. `crs_native` 35종. 좌표가 없는 갈래는 적을 근거가 없다 — 전수는 목표가 아니다.
 #: ★ 2026-10-06 (§419). 35 → 37. V-World SHP 둘 — `raw_only` 라도 `.prj` 에 근거가 있으면 적는다.
-CRS_DECLARED_RATCHET = 37
+CRS_DECLARED_RATCHET = 41
 
 # ── 실물 갈래의 래칫 ──────────────────────────────────────────
 #: 실측 2026-10-05, 레이크 있는 기계(Zd 전수 verify [64/99]). **75종 · 실패 8 · 경고 54.**
@@ -63,7 +63,8 @@ CRS_DECLARED_RATCHET = 37
 #:
 #: ★ 래칫은 **목표가 아니다.** 8 과 51 은 갚아야 할 빚이고 PLAN 이 그 줄을 든다.
 #:   줄면 기록을 조이라고 운다 — 느슨해진 래칫은 초록으로 위장한다.
-REAL_FAIL_RATCHET = 8
+#: ★ 2026-11-07 (DECISIONS §657). 8 → **7.** 레이크 기계의 실측이 7 이고 관문이 조이라고 울었다. 조이는 쪽이라 판정 폐포 밖이다. 경고 쪽(58)은 안 건드린다 — 아래.
+REAL_FAIL_RATCHET = 7
 #: ★ 2026-10-05 — 51 → 54 (DECISIONS §398-8). `raw_only` PDF 셋이 대장에 올라
 #:   각각 「contract 블록 없음」 경고를 낸다. **같은 원인이 래칫 둘을 움직이는데
 #:   하나만 적었다** — `NO_CONTRACT_RATCHET` 만 올려서 레이크 있는 기계가
@@ -101,7 +102,13 @@ REAL_FAIL_RATCHET = 8
 #:   더했다. 실측이 다르면 관문이 정확한 수를 찍으니 그 수로 고친다 —
 #:   §429 가 「항목을 더할 때마다 다시 센다」로 적은 그 자리다.
 #: ★ **반입되면 내려간다.** `awaiting` 셋을 지우는 판이 이 수를 조인다.
-REAL_WARN_RATCHET = 60
+#:
+#: ★ 2026-11-02. 59 → **58.** 실물을 raw 에 넣은 판(`vworld_uq153` 등)이 경고 하나를 걷었다.
+#:   조이는 쪽이라 판정 폐포 밖이고 재잠금이 따라오지 않는다. 실패 쪽(8)은 건드리지 않는다.
+#:
+#: ★ 2026-11-07 (DECISIONS §657). **58 을 그대로 둔다 — 실측은 67 이고 관문이 「이 배치가 늘렸다」로 운다.** 내역 아홉은 §657-8 이 든다 —
+#:   이 배치(§647 ~ §649)가 `nfa_*` 다섯을 `status: missing` 으로 내려 5 · §602 의 결손 선언 둘(`eais_roadledger_dm` · `vworld_uq164`) · 11-04 `a5a3467e` 의 `.prj` 없음 둘(`building_connector` · `building_entrance`).
+REAL_WARN_RATCHET = 58
 
 
 def real_verdict(nf: int, nw: int) -> tuple[int, list[str]]:

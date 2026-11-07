@@ -99,7 +99,7 @@ def test_vocabulary_matches_the_schema_enum():
     assert "fragment" not in VERDICTS
     assert set(REASONS) == {"ledger_disputes",
                             "no_cctv_narrow", "no_cctv_thin", "no_cctv_band",
-                            "no_cctv_single", "width"}
+                            "no_cctv_single", "needs_survey", "width"}
 
 
 # ── VERDICT_RULE[7] · 대장이 반박하면 회색 ──────────────────────
@@ -191,7 +191,8 @@ def test_reason_splits_the_grey(wmin, road_bt, want):
 def test_clear_and_blocked_ignore_the_camera():
     """도면만으로 확정되는 둘은 CCTV 거리에 안 움직인다."""
     for dist in (NEAR, FAR, 9999.0):
-        assert c(wmin=CLEAR_M, wmax=99.0, nreg=9, cctv_dist=dist) == ("clear", None)
+        # wmax 는 폭 급변 규칙 [11](>= 2.5배)에 안 걸리게 7.0 의 2.5배 아래로 둔다(Zm19)
+        assert c(wmin=CLEAR_M, wmax=15.0, nreg=9, cctv_dist=dist) == ("clear", None)
         assert c(wmax=1.0, cctv_dist=dist) == ("blocked", None)
 
 
@@ -225,3 +226,66 @@ def test_constants_come_from_the_single_source():
     assert CLEAR_M == 7.0
     # clear 문턱이 대장 문턱보다 넓다. 같아지면 두 규칙이 구별되지 않는다.
     assert CLEAR_M > LEDGER_BLOCK_M
+
+
+# ── VERDICT_RULE[8] · [9] · 채택에서 밀린 소스 · 대칭폭이 clear 를 반박하면 거둔다 ─────────────
+# ★ 2026-10-23 (DECISIONS §545-3 · §546). 사유 — 측정된 병목을 버리고 통과로 발표하는 것이 이 프로젝트가 낼 수 있는 최악의 오류다.
+#   과소판정은 출동을 늦추지만 과대판정은 소방차를 못 들어가는 길로 보낸다.
+
+CLEAR_ARGS = dict(wmin=9.0, wmax=None, nreg=20, road_bt=8.0, length_m=50.0)
+
+
+def test_rule8_any_source_below_truck_withdraws_clear_by_cctv():
+    from firelane.seg.classify import classify
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0) == ("clear", None)                              # 인자가 없으면 종전과 같다
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wmin_any=2.0) == ("needs_cv", "source_conflict")   # CCTV 안
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=2.0) == ("unknown", "needs_survey")   # CCTV 밖
+    # 3.0 이상 7.0 미만은 규칙 [10] 이 거둔다 — 아래 시험.
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=7.0) == ("clear", None)               # CLEAR_M 이상이면 건드리지 않는다
+
+
+def test_rule9_symmetric_width_below_truck_withdraws_clear_but_nothing_else():
+    from firelane.seg.classify import classify
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wsym=0.152) == ("needs_cv", "sym_low")
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wsym=2.9) == ("unknown", "needs_survey")
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wsym=3.0) == ("clear", None)
+    # clear 만 건드린다 — blocked 는 대칭폭이 좁아도 그대로다(전면 도입이 아니다).
+    blocked = classify(wmin=2.0, wmax=2.5, nreg=20, road_bt=2.0, length_m=50.0, cctv_dist=5.0, wsym=0.1)
+    assert blocked[0] == "blocked"
+
+
+def test_rule10_any_source_below_clear_withdraws_the_dual_parking_claim():
+    """`clear` = 「양쪽 주차해도 통과」(CLEAR_M 7.0). 소스 하나가 7.0 미만이라 하면 그 주장을 못 한다 — **어느 폭 축이 맞는지와 무관하다**(Zm6).
+
+    문턱이 3.0(TRUCK)이 아닌 이유: 3.0 은 「소방차가 아예 못 지난다」이고 [8] 이 이미 거뒀다. 중간값(4·5·6m)을 쓸 근거가 없다(각 2·7·15개).
+    """
+    from firelane.seg.classify import CLEAR_M, classify
+    assert CLEAR_M == 7.0
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, wmin_any=6.99) == ("needs_cv", "source_conflict")          # CCTV 19m 안
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=6.99) == ("unknown", "needs_survey")             # 밖
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=7.0) == ("clear", None)                         # 문턱은 포함하지 않는다
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, wmin_any=None) == ("clear", None)                        # 값이 없으면 건드리지 않는다
+    # clear 만 건드린다 — blocked 는 any 가 7 미만이어도 그대로다.
+    assert classify(wmin=2.0, wmax=2.5, nreg=20, road_bt=2.0, length_m=50.0, cctv_dist=5.0, wmin_any=1.0)[0] == "blocked"
+
+
+def test_rule10_extended_to_the_inscribed_median_and_rule11_to_the_spread():
+    """Zm19(DECISIONS §564). [10] 은 소스에서 **축**으로 넓어졌다(내접원 중앙값 `clear_med` 가 7.0 미만이면 거둔다) · [11] 은 폭 급변이다."""
+    from firelane.seg.classify import SPREAD_MAX, classify
+    assert SPREAD_MAX == 2.5
+    # [10] 확장 — 행선지는 기존 규칙대로(CCTV 19m 안 → needs_cv · 밖 → unknown), 새 상수 없음
+    assert classify(**CLEAR_ARGS, cctv_dist=5.0, clear_med=6.99) == ("needs_cv", "source_conflict")
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, clear_med=6.99) == ("unknown", "needs_survey")
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, clear_med=7.0) == ("clear", None)                  # 문턱은 포함하지 않는다
+    assert classify(**CLEAR_ARGS, cctv_dist=60.0, clear_med=None) == ("clear", None)                 # 값이 없으면 건드리지 않는다
+    # blocked 에는 안 닿는다 — 안전한 주장이다
+    assert classify(wmin=2.0, wmax=2.5, nreg=20, road_bt=2.0, length_m=50.0, cctv_dist=5.0, clear_med=1.0)[0] == "blocked"
+    # [11] — wmax / wmin >= 2.5 (경계 포함)
+    spread = dict(wmin=8.0, nreg=20, road_bt=8.0, length_m=50.0)
+    assert classify(**spread, wmax=20.0, cctv_dist=5.0) == ("needs_cv", "source_conflict")           # 2.5 정확히
+    assert classify(**spread, wmax=19.9, cctv_dist=5.0) == ("clear", None)                           # 2.4875
+    assert classify(**spread, wmax=26.0, cctv_dist=60.0) == ("unknown", "needs_survey")
+    assert classify(**spread, wmax=None, cctv_dist=5.0) == ("clear", None)                           # wmax 없는 구간은 안 걸린다(606/1,281)
+    assert classify(**spread, wmax=26.0, cctv_dist=5.0, spread_max=None) == ("clear", None)          # 도구가 끌 수 있다
+    # DM01576 — wmin 8.1 · wmax 26.48 (비 3.27)
+    assert classify(wmin=8.1, wmax=26.48, nreg=4, road_bt=4.0, length_m=15.9, cctv_dist=4.0)[0] == "needs_cv"

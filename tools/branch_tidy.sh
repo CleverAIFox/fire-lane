@@ -7,8 +7,8 @@
 #   bash tools/branch_tidy.sh --keep feat/x   이 가지(와 그 PR)는 건드리지 않는다
 #   bash tools/branch_tidy.sh --auto --close-bots   ★ fl.sh 기본 — 봇(dependabot) PR 은 닫고 가지도 지운다
 #
-# ★ 2026-09-22 (DECISIONS §217-4) `--close-bots`. 사용자 지적 「PR 도 열린 거 닫고 가지 정리도
-#   해야 할 거 아니냐」. 봇 PR 은 흐름(feat → part → dev → main) 밖이라 **그대로 머지할 길이
+# ★ 2026-09-22 (DECISIONS §217-4) `--close-bots`. 사용자가 열린 PR 도 닫고 가지도 정리해야 한다고
+#   지적했다. 봇 PR 은 흐름(feat → part → dev → main) 밖이라 **그대로 머지할 길이
 #   없고**(§212-3), 매 배치 끝에 「열린 PR 5」 경고로 남았다. 봇 것만 자동으로 닫는다 —
 #   사람 PR 은 여전히 대화형에서만 닫는다(남의 작업일 수 있다). 메이저 판은 dependabot 이
 #   이미 안 내고(§215-3), 보안 업데이트는 닫혀도 다음 주기에 다시 온다.

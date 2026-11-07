@@ -75,13 +75,13 @@ import argparse
 import csv
 import json
 import math
+import re
 import statistics
 import sys
 from pathlib import Path
 
 # ★ 좌표 상수의 집은 `src/firelane/localplane.py` 하나다(§239 → §469 → §473).
-#   여기 다시 적으면 같은 사실이 두 집에 살고 그 둘은 반드시 갈린다.
-#   `localgeo` 는 이름만 넘기는 막이다.
+#   여기 다시 적으면 같은 사실이 두 집에 살고 그 둘은 반드시 갈린다. `localgeo` 는 이름만 넘기는 막이다.
 from localgeo import MX, MY
 from statkit import num as _num
 from statkit import quartiles
@@ -101,7 +101,7 @@ STEP_M = 1.0
 
 #: 법선 span 이 그 구간 최대 내접원보다 큰 구간 수. **문턱이 아니라 지금 수다.**
 #: 줄이려면 폭 산출을 고쳐야 하고 그러면 판정이 움직인다 — 측정 배치의 일이다.
-SPAN_OVERSHOOT = 119
+SPAN_OVERSHOOT = 82
 #: `wmin` 이 최소 내접원보다 작은 구간 수. **같은 폴리곤이면 0 이다**(보조정리).
 #: 0 이 아닌 것은 결함이 아니라 **다른 폴리곤에서 왔다는 증거**이고, 이 수는
 #: 그 어긋남의 크기다 — 판정은 `ngii1k`·`ngii`·`실폭도로` 셋을 신뢰도 순으로
@@ -123,7 +123,7 @@ SPAN_INVERSION = 303
 #   물었다. **둘 다 맞고 둘 다 틀렸다** — 중심선이 치우치면 내접원이 구조적으로
 #   과소하고, 광장이 붙으면 법선이 샌다. 어느 자가 맞는지는 **구간의 성질**이다.
 #: 비대칭(|왼−오|÷폭) 중앙이 0.2 를 넘는 구간 수 — 중심선이 가운데에 없다.
-CENTER_OFF = 457
+CENTER_OFF = 459  # ★ 2026-11-04 §618: 459 로 올린다(사람이 친다) — 접속선 §616 이 구간 +6, 둘이 걸렸다(분모가 늘었다). 구간이 안 늘었는데 또 오르면 원인부터 읽는다
 #: 표본 절반 이상에서 광선이 상한까지 간 구간 수 — 광장·교차로·로터리.
 RAY_ESCAPE = 50
 
@@ -287,7 +287,7 @@ def against_field(rows: list[dict]) -> list[dict]:
             "내접원": r["c_med"], "wmin": r["wmin"],
             "내접원/실측": r["c_med"] / w,
             "wmin/실측": (r["wmin"] / w) if r["wmin"] else None,
-            "note": f.get("note", ""),
+            "note": re.sub(r"\bDM\d{5}\b", f["seg_uid"], f.get("note", "")),   # 순번 → 이 행의 seg_uid (§622-1)
         })
     out.sort(key=lambda d: (d["spot"] != "mid", d["label"]))
     return out
@@ -298,8 +298,8 @@ def against_ledger(rows: list[dict]) -> dict:
 
     ★ `road_bt_m` 은 도로명주소 도로대장의 명목폭이고 발행본에 **결측 0** 으로
       들어 있다(1,281/1,281). 우리 기하 계산과 **방법이 독립**이다 — 행정이
-      적은 수고 폴리곤을 안 쓴다. 스키마가 「참고용. 판정에는 안 쓴다」라고
-      적은 그대로 판정에 안 들어가므로, 게이트로 오염되지도 않았다.
+      적은 수고 폴리곤을 안 쓴다. ★ 감사 N8 (Zm20): 스키마가 한때 「참고용」이라 적었으나 `road_bt_m` 은
+      지금 **판정에 든다**(「ROAD_BT < 3.0 -> blocked」). 이 대조는 판정이 아니라 **폭 산출 방법**에서 독립이다.
 
     ★ 어느 쪽이 옳은지는 **안 말한다.** 대장이 틀린 사례도 실재한다
       (`필문대로289번길` 은 기하가 틀려 사람이 손으로 보정했다 · §170-2).
