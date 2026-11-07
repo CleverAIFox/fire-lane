@@ -66,7 +66,8 @@ import { ruleSummary } from "./domain/rules";
 import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
 import type { RouteMode } from "./domain/handoff";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
-import { preparePois, searchPois, type PoiHit } from "./domain/search";
+import { addressLines, asOfDate, preparePois, searchPois, type PoiHit } from "./domain/search";
+import { dataBase } from "./infra/dataBase";
 import { DISPATCH_FIXED_S, dispatchToArrivalSeconds, travelSeconds } from "./domain/speed";
 import { requiredWidth } from "./domain/vehicle";
 import {
@@ -88,7 +89,7 @@ import {
 } from "./ui/opsTheme";
 import { displayName, shortStation, vehicleClass } from "./domain/fleetName";
 
-interface Incident { point: LngLat; label: string; at: Date }
+interface Incident { point: LngLat; label: string; at: Date; /** 도로명 먼저 · 지번 뒤 — 색인에서 고른 접수만 있다 */ address?: string[] }
 
 export default function OpsApp() {
   const [data, setData] = useState<Bundle | null>(null);
@@ -130,6 +131,14 @@ export default function OpsApp() {
   const opsId = useRef(newId("ops")).current;
 
   useEffect(() => { loadAll().then(setData).catch((e) => setFatal(String(e))); }, []);
+  // ★ 진술 1 — 자료 기준일을 화면에 단다. 못 읽으면 칸을 비운다(오늘로 채우지 않는다)
+  const [asOf, setAsOf] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(new URL("_manifest.json", dataBase()).href)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m: { generated_at?: unknown } | null) => setAsOf(asOfDate(m?.generated_at)))
+      .catch(() => setAsOf(null));
+  }, []);
   useEffect(() => { loadHistory().then((h) => setHistory(h as { summary?: HistorySummary } | null)); }, []);
 
   // ── 내비와 잇는다 ─────────────────────────────────────────────
@@ -274,7 +283,9 @@ export default function OpsApp() {
       <header style={top}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
           <b style={{ fontSize: 18, letterSpacing: -.3 }}>FireLane 종합상황실</b>
-          <span style={{ fontSize: 12, color: D.sub, whiteSpace: "nowrap" }}>동부소방서 관할 · 동명동</span>
+          <span style={{ fontSize: 12, color: D.sub, whiteSpace: "nowrap" }}>
+            동부소방서 관할 · 동명동{asOf ? ` · 자료 기준 ${asOf}` : ""}
+          </span>
         </div>
         <div style={{ flex: 1 }} />
         {/* ★ 2026-10-06 (DECISIONS §414). 첫 칸이 **경과 시간**이다 — 상황판에
@@ -308,11 +319,11 @@ export default function OpsApp() {
               <div style={list}>
                 {hits.map((h, i) => (
                   <button key={`${h.name}-${i}`} style={listItem} onClick={() => {
-                    setIncident({ point: h.point, label: h.name, at: new Date() });
+                    setIncident({ point: h.point, label: h.name, at: new Date(), address: addressLines(h) });
                     setQ(""); setFocus({ n: Date.now(), at: h.point, zoom: 17 });
                   }}>
                     <b>{h.name}</b>
-                    <span style={{ display: "block", fontSize: 11, color: D.sub }}>{h.addr || h.cat}</span>
+                    <span style={{ display: "block", fontSize: 11, color: D.sub }}>{addressLines(h).join(" · ") || h.cat}</span>
                   </button>
                 ))}
               </div>
@@ -321,6 +332,12 @@ export default function OpsApp() {
               <div style={{ ...card, borderColor: D.danger }}>
                 <div style={{ fontSize: 11, color: D.danger, fontWeight: 800, letterSpacing: .4 }}>화재 · 접수 {hhmm(incident.at)}</div>
                 <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2 }}>{incident.label}</div>
+                {/* ★ 진술 3 · 4 — 도로명주소가 먼저, 지번은 뒤. 카드 안에 **고정**한다(흐르지 않는다) */}
+                {incident.address?.map((a, i) => (
+                  <div key={a} style={{ fontSize: i === 0 ? 12 : 11, color: D.sub, marginTop: i === 0 ? 2 : 0 }}>
+                    {i === 0 ? a : `지번 ${a}`}
+                  </div>
+                ))}
                 <button onClick={() => setIncident(null)} style={{ ...linkBtn, marginTop: 4 }}>접수 해제</button>
               </div>
             ) : (
