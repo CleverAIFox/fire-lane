@@ -70,7 +70,22 @@ ALIAS = {"retrieved": "acquired", "desc": "what"}
 #   군데면 어느 쪽이 맞는지 다음 사람이 판단해야 한다.
 PROVIDER_HINT = {k: v["org"] for k, v in providers.spec().items()}
 
-DATE8 = re.compile(r"_(\d{8})(?:_|\.)")
+def vintage_of(fn: str) -> str | None:
+    """파일명이 선언한 vintage 토큰(`YYYYMMDD|YYYYMM|YYYY`). 없으면 None.
+
+    ★ 2026-11-07 (#196). 문법이 `naming.VINTAGE_ALT` 한 곳으로 모였으므로
+      **여기도 그 문법을 읽는다.** 종전 정규식(8자리 숫자 걸이)은 파일명 어디서든 8자리 숫자를
+      날짜로 집었다 — vintage 가 `YYYY` 인 이름(`x_kr_2025_35616037.csv`)에서는
+      **뒤따르는 도엽번호를 날짜로 읽는다**(`3561-60-37`). 정규화가 `YYYY` 를
+      통과시키면 그 사고가 열린다. vintage 는 **숫자 토큰 중 첫째**다
+      (도엽번호 · 개정은 그 뒤에 온다 — naming 문법).
+    """
+    from firelane.naming import VINTAGE_TOKEN
+    stem = fn.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    for tok in stem.split("_"):
+        if VINTAGE_TOKEN.fullmatch(tok):
+            return tok
+    return None
 
 
 def _iso(v8: str) -> str:
@@ -132,12 +147,17 @@ def run(*, apply: bool, path: Path | None = None) -> int:
 
         # ── ② updated — 파일명 8자리에서 ──────────────────────
         if "updated" not in e:
-            fn = " ".join(_led.globs(e))
-            m = DATE8.search(fn + ".")
-            if m:
-                plan.append((key, "add", f"updated: '{_iso(m.group(1))}'"))
+            g = _led.globs(e)
+            vt = next((v for v in map(vintage_of, g) if v), None)
+            if vt and len(vt) == 8:
+                plan.append((key, "add", f"updated: '{_iso(vt)}'"))
+            elif vt:
+                # ★ 선언한 방식: **채우지 않는다.** `YYYY1231` 로 메우면 파일명이
+                #   말하지 않은 날이 대장에 ISO 로 박힌다 — 8자리 규칙의 사유 그대로.
+                plan.append((key, "skip", f"updated — vintage {vt} 는 {len(vt)}자리다 "
+                                          "(정밀도가 모자라 채우지 않는다)"))
             else:
-                plan.append((key, "skip", "updated — 파일명에 8자리가 없다"))
+                plan.append((key, "skip", "updated — 파일명에 vintage 가 없다"))
 
         # ── ③ scope — 파일명 토큰에서 · 산문은 매핑 ───────────
         cur = e.get("scope")

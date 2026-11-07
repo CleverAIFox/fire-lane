@@ -504,3 +504,36 @@ def test_the_extension_alternation_is_the_sorted_ledger_set():
     assert ext_alt() == "|".join(sorted(ledger_ext()))
     assert "xlsx" in ext_alt().split("|"), "2026-10-14 에 빠져 반입이 멈춘 그 확장자"
 
+
+
+# ── #196 — vintage 문법은 naming 한 곳에서 읽는다 ─────────────
+def _pass(name: str):
+    """통과 규칙만 본다 — 조립은 한 번이면 된다(`_match` 는 부를 때마다 대장을 읽는다)."""
+    low = name.lower()
+    return next(((f, name) for pat, f, tmpl in _RULES196 if tmpl is None
+                 and re.search(pat, low)), None)
+
+
+_RULES196 = N.passthrough_rules(["safety"])
+
+
+@pytest.mark.parametrize("vt", ["20260630", "202606", "2026"])
+def test_a_canonical_name_passes_for_every_vintage_form(vt):
+    """연도만 적힌 이름도 통과 규칙을 지난다(2026-11-06 의 `YYYY1231` 우회가 이 행이다)."""
+    name = f"safety_cctv_jngj_{vt}.csv"
+    assert _pass(name) == ("safety", name)
+    assert _pass(f"safety_cctv_jngj_{vt}_part1.csv") is not None
+
+
+def test_the_passthrough_rule_reads_the_grammar_from_naming():
+    """정규식 사본이 없다 — 규칙 문자열에 naming 의 문법이 그대로 들어 있다."""
+    from firelane import naming
+    rule = N.passthrough_rules(["safety"])[-1][0]
+    assert naming.VINTAGE_ALT in rule
+    assert r"\d{8})" not in rule.replace(naming.VINTAGE_ALT, "")
+
+
+def test_a_non_vintage_number_is_still_rejected():
+    for bad in ("safety_cctv_jngj_20.csv", "safety_cctv_jngj_12345.csv",
+                "safety_cctv_jngj_2026063.csv"):
+        assert _pass(bad) is None, bad

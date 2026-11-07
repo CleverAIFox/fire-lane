@@ -261,3 +261,43 @@ def test_an_alias_whose_value_differs_is_left_to_a_person(lf, tmp_path, capsys):
     p = _led(tmp_path, txt)
     lf.run(apply=False, path=p)
     assert "손으로 합쳐라" in capsys.readouterr().out, "다른 값을 조용히 합친다"
+
+
+# ── #196 — vintage 가 8자리가 아닐 때 `updated` 는 어떻게 되는가 ──
+# ★ 선언: **채우지 않는다.** `YYYY` 를 `YYYY1231` 로 메우면 파일명이 말하지 않은
+#   날이 ISO 로 대장에 박힌다. 정규화가 `YYYY` 를 통과시키면 이 자리가 열린다.
+@pytest.mark.parametrize("vt", ["2025", "202506"])
+def test_a_short_vintage_does_not_fill_updated(lf, tmp_path, vt):
+    txt = LEDGER.replace("    updated: '2026-07-11'\n", "", 1)
+    txt = txt.replace("safety/gamma_20260711.csv", f"safety/gamma_kr_{vt}.csv")
+    p = _led(tmp_path, txt)
+    lf.run(apply=True, path=p)
+    body = _body(lf, p, "gamma_pure")
+    assert "updated:" not in body, f"{vt} 에서 날짜를 지어냈다\n{body}"
+
+
+def test_a_short_vintage_is_reported_as_skipped_not_silent(lf, tmp_path, capsys):
+    txt = LEDGER.replace("    updated: '2026-07-11'\n", "", 1)
+    txt = txt.replace("safety/gamma_20260711.csv", "safety/gamma_kr_2025.csv")
+    lf.run(apply=False, path=_led(tmp_path, txt))
+    out = capsys.readouterr().out
+    assert "[gamma_pure]" in out and "4자리" in out, f"조용히 건너뛰었다\n{out}"
+
+
+def test_a_sheet_number_after_a_year_is_not_read_as_a_date(lf, tmp_path):
+    """★ 종전 정규식은 8자리 숫자를 어디서든 집었다. `YYYY` vintage 뒤의
+    도엽번호(`35616037`)가 `3561-60-37` 로 읽힌다."""
+    txt = LEDGER.replace("    updated: '2026-07-11'\n", "", 1)
+    txt = txt.replace("safety/gamma_20260711.csv", "safety/gamma_kr_2025_35616037.csv")
+    p = _led(tmp_path, txt)
+    lf.run(apply=True, path=p)
+    assert "updated:" not in _body(lf, p, "gamma_pure")
+
+
+def test_an_eight_digit_vintage_still_fills_next_to_a_part(lf, tmp_path):
+    txt = LEDGER.replace("    updated: '2026-07-11'\n", "", 1)
+    txt = txt.replace("safety/gamma_20260711.csv",
+                      "safety/gamma_kr_20260711_35616037.csv")
+    p = _led(tmp_path, txt)
+    lf.run(apply=True, path=p)
+    assert "updated: '2026-07-11'" in _body(lf, p, "gamma_pure")

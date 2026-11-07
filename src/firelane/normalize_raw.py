@@ -43,6 +43,7 @@ from pathlib import Path
 # 대장 조회기는 하나다(firelane.ledger.globs).
 from firelane import lake as _lake
 from firelane import ledger as _led
+from firelane import naming as _naming
 from firelane import providers
 from firelane.paths import RAW
 
@@ -113,7 +114,8 @@ def passthrough_rules(orgs=None) -> list[tuple[str, str, str]]:
     from firelane.raw_ext import ext_alt as _ext_alt
     org_list = providers.all() if orgs is None else orgs
     return list(RULES) + [
-        (rf"^{o}_[a-z0-9_-]+_\d{{8}}(?:_[a-z0-9-]+)?\.({_ext_alt()})$", o, None)
+        (rf"^{o}_[a-z0-9_-]+_(?:{_naming.VINTAGE_ALT})(?:_[a-z0-9-]+)?\.({_ext_alt()})$",
+         o, None)
         for o in sorted(org_list)
     ]
 
