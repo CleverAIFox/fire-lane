@@ -746,10 +746,10 @@ if ! bash tools/verify.sh; then
         "  되돌리려면:  $FL_CMD $BR --undo"
 fi
 ok "전수 초록"
+uv run --no-sync python tools/dms.py tree --check || die "전수 초록 뒤 트리가 바뀌었다 — 위를 읽어라." "  되돌리려면:  $FL_CMD $BR --undo"   # ★ #173 §600 도장 대조
 
-# ★ §295-2. **검증한 트리와 보내는 트리가 같아야 한다.** verify 는 작업 트리를 보고
-#   6단계는 커밋본을 push 한다 — 갈리면 CI 가 다른 것을 본다. `verify.sh` 가 첫 줄에
-#   찍는 `+미커밋` 을 판정에 쓰는 자리다. 회색은 NULL 이다(§69).
+# ★ §295-2. **검증한 트리와 보내는 트리가 같아야 한다.** verify 는 작업 트리를 보고 6단계는 커밋본을 push 한다 —
+#   갈리면 CI 가 다른 것을 본다. `verify.sh` 가 첫 줄에 찍는 `+미커밋` 을 판정에 쓰는 자리다. 회색은 NULL 이다(§69).
 #   ★ verify 가 쓰는 파일은 전부 무시 대상이고 추적 생성물은 `write_stable` 로 같은
 #     바이트를 낸다 — **초록인데 더러우면 그것이 곧 결함이다.** 근거는 그 절이 든다.
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then

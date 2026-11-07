@@ -1,5 +1,5 @@
 """
-dbf.py — 지오메트리 없는 DBF 를 읽는 갈래. 회전제한 하나뿐이다.  (PLAN §1 #132)
+dbf.py — 지오메트리 없는 DBF 를 읽는 갈래. 회전제한 하나뿐이다.  (PLAN §1 #132(닫힘))
 
 IN    zip 안 DBF · `data/processed/node_point_5186.gpkg` (노드로 한정)
 OUT   완성된 계보 조각 + `data/processed/<key>.csv`

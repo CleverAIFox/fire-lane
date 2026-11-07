@@ -8,8 +8,10 @@
 대상      동명동 + 119안전센터 접근 회랑 + 안전센터 반경 300m
 ```
 
-골목 1,281구간의 실제 통행 가능 폭을 산출해 소방차가 지나갈 수 있는지 판정하고,
+골목 1,287구간의 실제 통행 가능 폭을 산출해 소방차가 지나갈 수 있는지 판정하고,
 **판정할 수 없는 이유까지** 지도에 표시한다.
+
+AI 페어 프로그래밍으로 구현했고, 문제 정의 · 의사결정 · 검증은 본인이 했다. AI 협업은 커밋 서명(`Co-Authored-By`)으로 공개한다.
 
 **관제** https://cleveraifox.github.io/fire-lane/ — 사건 접수 · 출동 지령 · **판정 지도** · 출동 중 차 · 현장 공유 확인
 **내비** https://cleveraifox.github.io/fire-lane/navi/ — 출동 경로 안내 (관제와 같은 브라우저 탭끼리 연결)
@@ -236,7 +238,7 @@ raw + 코드 + 대장이 있으면 결정론적으로 재생성된다. 걸린 �
 | 파트 | 브랜치 | 볼 곳 | 문서 |
 |---|---|---|---|
 | GIS · Web | `part/gis` | `src/firelane/` `data/` `web/` `docs/` | `src/firelane/README.md` |
-| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 209구간 · `cctv.geojson` | MASTER §10-2(판정 4종 · 색값은 `web/config.js`) |
+| Vision · CV | `part/cv` | 아직 코드 없음 — 입력은 `web/data/segments.geojson` 의 `needs_cv` 283구간 · `cctv.geojson` | MASTER §10-2(판정 4종 · 색값은 `web/config.js`) |
 | Infra · API | `part/infra` | 아직 서버 없음 — 배포는 `.github/workflows/deploy.yml` · 배치는 `tools/fl.sh` | README `## 도구` |
 
 **데이터 레이크는 GIS 담당만 필요하다.** CV·Infra 는 git 으로 추적되는

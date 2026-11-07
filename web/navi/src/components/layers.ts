@@ -45,7 +45,8 @@
  *   지점 핀도 **같은 규칙**이다 — 그 층은 관제 전용이라
  *   `components/opsLayers.ts` 가 든다(§444).
  */
-import type { StyleSpecification, LayerSpecification } from "maplibre-gl";
+import type { StyleSpecification, LayerSpecification, Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
+import { shortStation } from "../domain/fleetName";
 import type { VerdictStyle } from "../domain/types";
 import { C, MAP } from "../ui/tokens";
 
@@ -346,7 +347,26 @@ export function markerLayers(): LayerSpecification[] {
  * 안전센터 3곳. **출동 기점이라 항상 보인다.**
  * ★ `kind` 로 안전센터(center)와 소방서(station)를 가른다.
  */
+/** 발행 필드명이 한글 한 칸이다. 정본은 `stations.geojson` 이므로 이름을 안 바꾼다. */
+const STATION_NAME = "소방서 및 안전센터명";
+
+/**
+ * 안전센터 이름을 **화면용으로 줄인다** — `동부소방서_광주-대인-119 안전센터` → `대인119안전센터`.
+ * ★ 2026-11-04. 긴 이름이 줄바꿈에서 깨지고 **소방서(`동부소방서`)와 센터가 같은 좌표**(제봉로 210)라
+ *   두 라벨이 한 자리에 겹쳐 찍혔다. 줄이는 규칙의 집은 `domain/fleetName.ts::shortStation` 하나다 —
+ *   지도 식으로 또 적으면 사본이 둘이 된다. 그래서 받은 데이터에 `short` 칸을 얹어 다시 먹인다.
+ * ★ 실패해도 지도는 산다 — 긴 이름이 그대로 선다(`coalesce`).
+ */
+export function shortenStationLabels(m: MapLibreMap, dataUrl: string): void {
+  fetch(dataUrl + "stations.geojson").then((r) => r.json()).then((fc: GeoJSON.FeatureCollection) => {
+    fc.features.forEach((f) => { f.properties!.short = shortStation(f.properties![STATION_NAME]); });
+    (m.getSource("stations") as GeoJSONSource).setData(fc);
+  });
+}
+
 export function stationLayers(): LayerSpecification[] {
+  // 같은 좌표에 소방서와 센터가 겹친다 — 소방서는 점 **위**, 센터는 **아래**에 둔다
+  const station = ["==", ["get", "kind"], "station"];
   return [
     { id: "station-dot", type: "circle", source: "stations",
       paint: {
@@ -354,13 +374,14 @@ export function stationLayers(): LayerSpecification[] {
         "circle-color": ["case", ["==", ["get", "kind"], "center"], C.station, "#64748b"],
         "circle-stroke-width": 2.5, "circle-stroke-color": "#ffffff",
       } },
+    // ★ 겹침 규칙(2026-11-04) — 겹침 허용을 껐다(`text-allow-overlap` 기본이 false 라 줄을 지웠다 — 종전은 true 였다). 이 층은 **마지막에 얹혀 먼저 자리를 잡으므로**
+    //   안전센터가 다른 글자보다 앞선다. 센터와 소방서는 위 · 아래로 갈라 서로 안 겹친다.
     { id: "lbl-station", type: "symbol", source: "stations",
       layout: {
-        // 발행 필드명이 한글 한 칸이다. 정본은 stations.geojson 이므로 이름을 안 바꾼다.
-        "text-field": ["get", "소방서 및 안전센터명"],
-        "text-font": FONT, "text-size": 12, "text-offset": [0, 1.3],
-        "text-anchor": "top", "text-allow-overlap": true,
-        "text-pitch-alignment": "viewport",
+        "text-field": ["coalesce", ["get", "short"], ["get", STATION_NAME]],
+        "text-font": FONT, "text-size": 12,
+        "text-offset": ["case", station, ["literal", [0, -1.3]], ["literal", [0, 1.3]]] as never,
+        "text-anchor": ["case", station, "bottom", "top"] as never,
       },
       paint: { "text-color": "#1e3a8a", "text-halo-color": "#fff", "text-halo-width": 2 } },
   ];

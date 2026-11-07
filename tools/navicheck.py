@@ -74,7 +74,7 @@ NEAR_M = 1.0
 
 #: 일방통행인데 방향을 못 정한 수. **내린다.**
 #: ★ 이력 — 2026-10-03 §358 첫 실측 56 (oneway 57 · dir_known 1).
-ONEWAY_DIR_UNKNOWN = 56
+ONEWAY_DIR_UNKNOWN = 51
 
 #: 그래프에 앉은 회전금지 수. **올린다.** `turn_restriction.csv` 는 87행이다.
 #: ★ 이력 — 2026-10-03 §358 첫 실측 5.

@@ -43,6 +43,7 @@ PARAM 없음
 from __future__ import annotations
 
 import argparse
+import codecs
 import csv
 import fnmatch
 import io
@@ -54,6 +55,9 @@ from pathlib import Path
 import yaml
 
 from firelane import ledger as _led
+from firelane import paths as _paths
+from firelane import valueprofile as _vp
+from firelane.extract_decl import HOLD, hold_hits
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
@@ -89,7 +93,8 @@ def _decode(b: bytes, declared: str | None) -> tuple[str, str]:
     """
     if declared:
         try:
-            return b.decode(declared), declared
+            # ★ 2026-11-07. 증분 디코더 — strict `decode` 는 256KB 조각 끝의 잘린 멀티바이트로 실패해 BOM 을 cp949 `癤` 로 읽었다(nfa_rescue).
+            return codecs.getincrementaldecoder(declared)().decode(b), declared
         except UnicodeDecodeError:
             pass
     for c in ("utf-8-sig", "utf-8", "cp949"):
@@ -118,6 +123,8 @@ def _csv_header(data: bytes, declared: str | None) -> dict:
 #:   그리고 juso 전자지도 여섯의 `DataSourceError` 는 970MB·1.8GB 실물을 열어야
 #:   풀린다. 그래서 이 배치는 **고치지 않고 센다** — 이 저장소가 「취입 계약 경고
 #:   51 = 래칫 51」로 쓰는 그 방식이다(§13 빚 목록).
+#:   ★ 2026-10-22 정정 — juso 여섯의 원인은 **실물 크기가 아니었다.** 대장이 레이어를 기본명으로 적는데
+#:     zip 은 `12210/` 아래에 둬서 접두 없는 경로가 안 열렸다. `probe()` 가 기본명으로 짝을 찾는다(PLAN #171).
 #: ★ 세는 것과 고치는 것은 다른 일이고, **세는 것이 먼저**다. 지금까지는 드리프트
 #:   0 으로 **조용히 통과**했다 — 빚이 있다는 사실조차 수로 없었다.
 #: ★ 이 수는 `ratchet.py` 가 **줄었을 때만** 고쳐 적는다(§309).
@@ -252,6 +259,9 @@ def probe(key: str, e: dict) -> dict | None:
     hits = sorted(_raw().glob(pat)) if any(c in pat for c in "*?[") else (
         [_raw() / pat] if (_raw() / pat).exists() else [])
     if not hits:
+        # ★ 2026-11-07. 전국본을 raw 에 안 올리는 항목(§647)의 입력은 `landing/_hold` 에 있다 — 이름으로 찾는다.
+        hits = hold_hits(e, _paths.LANDING / HOLD)
+    if not hits:
         return {"error": f"실물 없음: {pat}"}
     src = hits[0]
     declared = e.get("encoding")
@@ -341,6 +351,13 @@ def probe(key: str, e: dict) -> dict | None:
                     out["columns_error"] = f"{lay} 가 {len(got)}개다 — 하나여야 한다"
                     return out
                 out["layer_glob"], lay = lay, got[0]
+            # ★ 2026-10-22 (PLAN #171). 대장은 레이어를 기본명(`TL_SPRD_MANAGE.shp`)으로 적는데 juso 전자지도
+            #   zip 은 도엽 폴더(`12210/`) 아래에 둔다. 접두 없이 열면 `DataSourceError` 이고, 그것이 못 믿을 값 12 의
+            #   원인이었다 — 큰 실물을 못 연 것이 아니었다. 기본명이 zip 안에 **정확히 하나**일 때만 짝을 지운다.
+            if lay and lay not in names:
+                same = [n for n in names if Path(n).name == lay]
+                if len(same) == 1:
+                    lay = same[0]
             if lay:
                 out["layer_used"] = shown.get(lay, lay)
                 try:
@@ -411,8 +428,7 @@ def _q(v) -> str:
 def _fmt(sch: dict) -> str:
     """YAML 블록. 손으로 고치지 말라는 표시를 단다."""
     lines = ["    schema:                       # AUTO — ledger_schema.py 가 쓴다"]
-    # ★ 2026-10-01 (DECISIONS §340). `error` · `columns_error` 를 **뺐다.**
-    #   에러는 **기록할 것이 아니라 고칠 것**이다. 적어 두면 ① 기계 고유 경로가
+    # ★ 2026-10-01 (DECISIONS §340). `error` · `columns_error` 를 **뺐다.** 에러는 **기록할 것이 아니라 고칠 것**이다. 적어 두면 ① 기계 고유 경로가
     #   대장에 박히고(실제로 juso 여섯이 그랬다) ② 다음 실행이 같은 에러를 내므로
     #   **드리프트가 영원히 0** 이다 — 읽기 실패가 「값」이 된다.
     #   에러는 `unreadable()` 이 **매 실행 세고**, `UNREADABLE` 래칫이 든다.
@@ -436,9 +452,8 @@ def _fmt(sch: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-# ★ 2026-09-13. 구현은 `firelane.ledger.yaml_span` 한 곳이다. 여기와
-#   짝 파일이 글자 하나까지 같았다 — `sources.yaml` 의 구조를 아는 것은
-#   `ledger` 소관이고, 두 벌이면 한쪽만 고치는 날이 온다.
+# ★ 2026-09-13. 구현은 `firelane.ledger.yaml_span` 한 곳이다 — `sources.yaml` 의 구조를 아는 것은
+#   `ledger` 소관이고, 두 벌이면 한쪽만 고치는 날이 온다(짝 파일이 글자 하나까지 같았다).
 _span = _led_yaml_span
 
 
@@ -493,7 +508,8 @@ def run(*, apply: bool, check: bool, missing: bool = False) -> int:
             st, en, body = _span(s, key)
             if st < 0:
                 continue
-            nb = _drop_schema(body) + _fmt(sch)
+            pf = (e.get("schema") or {}).get("profile")   # 짝 도구(valueprofile)가 쓴 AUTO 칸은 지우지 않는다
+            nb = _drop_schema(body) + _fmt(sch) + (_vp.fmt(pf) if pf else "")
             s = s[:st] + nb + s[en:]
 
     if apply:

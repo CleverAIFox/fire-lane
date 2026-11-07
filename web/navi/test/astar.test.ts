@@ -21,7 +21,7 @@
  *   재서 「차이 0」이 나왔고, 그것은 빈 그물이었다.
  */
 import { FL, test, ok } from "./harness";
-import { buildAdjacency, findRoute } from "../src/domain/graph";
+import { buildAdjacency, findRoute, findRouteBetween } from "../src/domain/graph";
 import { adjacencyMinFactor, type Adjacency } from "../src/domain/adjacency";
 import {
   MULTIPLIERS, minCostFactor, pressureIsSane, TUNING, type TuningKnobs,
@@ -223,4 +223,27 @@ test("⑤ 압력 계수가 음수면 휴리스틱을 포기한다 (다익스트�
     { ...TUNING, parkPer1000: -1 });
   ok(adjacencyMinFactor(adj) === 0,
     `음수 계수인데 하한이 ${adjacencyMinFactor(adj)} 다 — 자료 없이는 못 묶는다`);
+});
+
+test("⑥ findRouteBetween 의 휴리스틱도 하한을 곱한다 (감사 1-5)", () => {
+  // ★ findRoute 만 mf 를 곱하고 findRouteBetween 의 h 는 곱하지 않았다 — 배수가
+  //   1.0 아래면 점 경로가 다익스트라보다 나쁜 답을 낸다. 같은 쌍을 둘 다로 푼다.
+  const bad: TuningKnobs = { ...TUNING, unknown: 0.2, noWidth: 0.2, tight: 0.2 };
+  const adj = buildAdjacency(FL.graph, FL.spec, false, "safe", bad);
+  const N = FL.graph.nodes.length;
+  let rnd = 777, pairs = 0, worse = 0, maxGap = 0;
+  const next = () => (rnd = (rnd * 1103515245 + 12345) % 2147483648) / 2147483648;
+  for (let i = 0; i < 1200; i++) {
+    const a = Math.floor(next() * N), b = Math.floor(next() * N);
+    if (a === b) continue;
+    const ra = findRouteBetween(FL.graph, adj, { node: a }, { node: b }, true);
+    const rd = findRouteBetween(FL.graph, adj, { node: a }, { node: b }, false);
+    if (!ra || !rd) continue;
+    pairs++;
+    const gap = planCost(adj, ra) - planCost(adj, rd);
+    if (gap > 1e-6) { worse++; maxGap = Math.max(maxGap, gap); }
+  }
+  ok(pairs > 50, `표본 ${pairs} — 얇다`);
+  ok(worse === 0,
+    `findRouteBetween 이 ${worse}개 쌍에서 더 나쁜 답 (최대 +${maxGap.toFixed(2)}) — h 에 하한이 안 곱해졌다`);
 });

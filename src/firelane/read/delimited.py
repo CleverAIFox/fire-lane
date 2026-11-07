@@ -1,5 +1,5 @@
 """
-delimited.py — 구분자 텍스트를 읽는 갈래. CSV 와 `|` 구분 텍스트.  (PLAN §1 #132)
+delimited.py — 구분자 텍스트를 읽는 갈래. CSV 와 `|` 구분 텍스트.  (PLAN §1 #132(닫힘))
 
 IN    좌표 있는 CSV · zip 안 대용량 CSV · 헤더 없는 구분자 텍스트 · 좌표 없는 표
 OUT   GeoDataFrame (좌표 있는 것) 또는 완성된 계보 조각 (표)
@@ -14,22 +14,26 @@ import zipfile
 import geopandas as gpd
 import pandas as pd
 
+from firelane import ledger
 from firelane.hashing import sha256
 from firelane.read._io import BBOX_4326, CRS_W, load_csv_points, read_csv_any
 from firelane.read.ctx import Ctx
+from firelane.read.extract import declared, read_extracted
 
 
 def read_csv_points(c: Ctx):
     """kind ("csv_points", "csv_point") 를 읽는다. ingest.build() 에서 그대로 옮겼다."""
     e = c.e
     src = c.src
-    g = load_csv_points(src, e["x_col"], e["y_col"], e.get("encoding", "utf-8"))
+    xc, yc = ledger.coords_in(e)
+    g = load_csv_points(src, xc, yc, e.get("encoding", "utf-8"))
     return g
 
 
 def read_csv_points_in_zip(c: Ctx):
     """kind "csv_points_in_zip" 를 읽는다. ingest.build() 에서 그대로 옮겼다."""
     e = c.e
+    xc, yc = ledger.coords_in(e)
     src = c.src
     hits = c.hits
     with zipfile.ZipFile(src) as z:
@@ -54,14 +58,14 @@ def read_csv_points_in_zip(c: Ctx):
                                  #   무엇을 적든 무시했다.
                                  encoding=e.get("encoding", "utf-8")),
                              chunksize=200_000, dtype=str, low_memory=False):
-            c[e["x_col"]] = pd.to_numeric(c[e["x_col"]], errors="coerce")
-            c[e["y_col"]] = pd.to_numeric(c[e["y_col"]], errors="coerce")
-            c = c[c[e["x_col"]].between(BBOX_4326[0], BBOX_4326[2])
-                  & c[e["y_col"]].between(BBOX_4326[1], BBOX_4326[3])]
+            c[xc] = pd.to_numeric(c[xc], errors="coerce")
+            c[yc] = pd.to_numeric(c[yc], errors="coerce")
+            c = c[c[xc].between(BBOX_4326[0], BBOX_4326[2])
+                  & c[yc].between(BBOX_4326[1], BBOX_4326[3])]
             if len(c):
                 parts.append(c)
     df = pd.concat(parts)
-    g = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[e["x_col"]], df[e["y_col"]]),
+    g = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[xc], df[yc]),
                          crs=CRS_W)
     return g
 
@@ -181,6 +185,8 @@ def read_text_table(c: Ctx):
 
 def read_csv_table(c: Ctx):
     """kind "csv_table" 를 읽는다. ingest.build() 에서 그대로 옮겼다."""
+    if declared(c.e):                       # 전국 원본 → 지역 파생본(DECISIONS §646) — hits 전부를 청크로 읽어 거르고 잇는다
+        return read_extracted(c)
     key = c.key
     e = c.e
     src = c.src
@@ -195,6 +201,8 @@ def read_csv_table(c: Ctx):
 
 def read_csv_table_multi(c: Ctx):
     """kind "csv_table_multi" 를 읽는다. ingest.build() 에서 그대로 옮겼다."""
+    if declared(c.e):
+        return read_extracted(c)
     key = c.key
     e = c.e
     hits = c.hits

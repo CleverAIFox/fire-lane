@@ -47,7 +47,8 @@ def test_the_digest_moves_when_either_side_moves(ds):
 def test_the_digest_is_order_stable(ds):
     """파일 순서가 바뀌어도 같아야 한다 — 아니면 도장이 이유 없이 무효가 된다."""
     x = ["tools/docseal.py", "tools/dms.py"]
-    assert ds.digest("본문", x) == ds.digest("본문", list(reversed(x))) or True
+    assert ds.digest("본문", x) == ds.digest("본문", list(reversed(x))), \
+        "파일 순서로 지문이 흔들린다 — 도장이 이유 없이 무효가 된다"
     # ★ `refs()` 가 정렬해서 내므로 호출부는 항상 정렬된 목록을 준다. 그 규약을 못박는다.
     got = ds.refs("`tools/dms.py` 와 `tools/docseal.py`")
     assert got == sorted(got), "`refs()` 가 정렬해서 내지 않는다 — 도장이 순서로 흔들린다"
@@ -134,6 +135,25 @@ def test_stamping_a_section_that_names_an_untracked_file_is_refused(ds, tmp_path
     body2 = "산문이 `tools/never_existed.py` 를 주장한다"
     assert ds._untracked_refs({"DOC/2": body2}, ["DOC/2"]) == {}, \
         "없는 파일을 「추적 밖」으로 센다 — 죽은 참조는 refcheck 소관이다"
+
+
+def test_a_gitignored_path_is_not_a_stamping_trap(ds, tmp_path, monkeypatch):
+    """★ `.gitignore` 가 먹는 경로는 영영 추적되지 않는다 — `git add` 하라는 안내가 거짓이고 그 절은 영구 날인 불가였다.
+
+    DECISIONS §620 이 `.claude/settings.local.json`(`.gitignore` 의 `.claude/`)을 지목해 그 절을 못 찍었다(§626). 못 물었으면 빼지 않는다.
+    """
+    monkeypatch.setattr(ds, "ROOT", tmp_path)
+    ds._tracked.cache_clear()
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "settings.local.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "tools" / "brand_new.py").write_text("#\n", encoding="utf-8")
+    monkeypatch.setattr(ds, "_tracked", lambda: frozenset())
+    body = "지목 `.claude/settings.local.json` · `tools/brand_new.py`"
+    monkeypatch.setattr(ds.gitq, "ignored", lambda rels, cwd=None: frozenset(r for r in rels if r.startswith(".claude/")))
+    assert ds._untracked_refs({"D/1": body}, ["D/1"]) == {"D/1": ["tools/brand_new.py"]}, "무시되는 경로까지 덫으로 센다 — 그 절은 영구 날인 불가가 된다"
+    monkeypatch.setattr(ds.gitq, "ignored", lambda rels, cwd=None: None)
+    assert ds._untracked_refs({"D/1": body}, ["D/1"])["D/1"] == [".claude/settings.local.json", "tools/brand_new.py"], "못 물었는데 뺐다 — 못 묻는 기계에서 덫이 꺼진다"
 
 
 def test_selftest_is_not_an_empty_net(ds):
@@ -345,3 +365,32 @@ def test_the_body_reader_caches_but_never_serves_a_stale_line(ds, tmp_path, monk
     assert d.stat().st_size == st.st_size, "이 대조는 **같은 크기**를 묻는다"
     os.utime(d, ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000))
     assert ds.body(rows, 0) == "# 하나\n바꿨다", "크기가 같으면 못 알아챈다"
+
+
+# ── 무엇이 움직였는지 말하는 자리 (DECISIONS §627 — mutate 생존 둘을 가렸다) ──
+def test_why_re_derives_the_parts_by_the_stored_formula_and_names_only_the_files_that_moved(ds, monkeypatch):
+    """★ 옛 공식(`fp`)으로 도장이 찍혔으면 **저장된 판으로 다시 내서** 댄다 — 안 바뀐 파일을 「코드가 바뀌었다」로 찍지 않는다(§307-3).
+
+    `!=` 가 `==` 로 뒤집히면 움직인 파일이 빠지고 **안 움직인 파일이 이름 올라간다** — 사람을 엉뚱한 파일로 보내는 설명이 된다.
+    """
+    monkeypatch.setattr(ds, "FP_VIEWS", {"old": object()})
+    monkeypatch.setattr(ds, "parts", lambda text, files, vf: {"본문": "same", "a.py": "1", "b.py": "CHANGED"})
+    was = {"fp": "old", "files": ["a.py", "b.py"], "parts": {"본문": "same", "a.py": "1", "b.py": "2"}}
+    now = {"files": ["a.py", "b.py"], "parts": {"본문": "same", "a.py": "9", "b.py": "9"}}
+    out = ds.why(now, was, "본문")
+    assert "b.py — 코드가 바뀌었다" in out, "움직인 파일을 못 집는다"
+    assert "a.py — 코드가 바뀌었다" not in out, "안 움직인 파일을 움직였다고 찍는다 — 옛 공식으로 다시 내지 않았다"
+    assert any("지문 공식이" in x for x in out)
+
+
+def test_stamping_the_unmoved_sections_exits_zero_and_marks_them(ds, monkeypatch, capsys):
+    """`stamp --unmoved` 가 성공하면 rc 0 이다 — 부르는 사슬(`verify`)이 이 값을 읽는다. 1 이면 성공한 날인이 실패로 센다."""
+    now = {"D/1": {"sha": "n", "files": ["tools/x.py"], "parts": {}}}
+    monkeypatch.setattr(ds, "survey", lambda: (now, {}, {"D/1": "본문"}))
+    monkeypatch.setattr(ds, "_sections", lambda: [{"id": "D/1"}])
+    monkeypatch.setattr(ds, "moved_after", lambda *a, **k: False)
+    written = {}
+    monkeypatch.setattr(ds, "_write", lambda w: written.update(w))
+    assert ds.stamp(None, unmoved=True) == 0
+    assert written["D/1"]["kind"] == "unmoved", "불변 도장으로 안 적혔다"
+    assert "불변 도장 1절" in capsys.readouterr().out

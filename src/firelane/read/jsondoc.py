@@ -1,5 +1,5 @@
 """
-jsondoc.py — JSON 문서를 읽는 갈래.  (PLAN §1 #132)
+jsondoc.py — JSON 문서를 읽는 갈래.  (PLAN §1 #132(닫힘))
 
 IN    표준데이터 JSON(`records`) · 건축행정시스템 JSON(`Data`)
 OUT   GeoDataFrame (`json_points`) 또는 완성된 계보 조각 (`json_table`)
@@ -11,6 +11,7 @@ from __future__ import annotations
 import geopandas as gpd
 import pandas as pd
 
+from firelane import ledger
 from firelane.read._io import BBOX_4326, CRS_W
 from firelane.read.ctx import Ctx
 
@@ -25,7 +26,7 @@ def read_json_points(c: Ctx):
     raw = _json.loads(src.read_text(encoding="utf-8"))
     rows = raw.get("records", raw if isinstance(raw, list) else [])
     df = pd.DataFrame(rows).astype(str)
-    xc, yc = e["x_col"], e["y_col"]
+    xc, yc = ledger.coords_in(e)
     df[xc] = pd.to_numeric(df[xc], errors="coerce")
     df[yc] = pd.to_numeric(df[yc], errors="coerce")
     df = df.dropna(subset=[xc, yc])

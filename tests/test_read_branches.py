@@ -127,7 +127,7 @@ def test_csv_points_in_zip_finds_a_member_whose_name_was_mangled(tmp_path):
     with zipfile.ZipFile(zp, "w") as z:
         z.writestr(mangled, body)
     g = read_csv_points_in_zip(_ctx(tmp_path, {
-        "inner_contains": "소방시설", "x_col": "경도", "y_col": "위도"}, zp))
+        "inner_contains": "소방시설", "coords": {"site": {"x": "경도", "y": "위도", "crs": 4326, "means": "설치 위치"}}}, zp))
     assert len(g) == 1 and g["이름"].tolist() == ["소방서"]
 
 
@@ -141,7 +141,7 @@ def test_csv_points_in_zip_reads_the_declared_encoding(tmp_path):
         z.writestr("a.csv", body)
     g = read_csv_points_in_zip(_ctx(tmp_path, {
         "inner_contains": "a.csv", "encoding": "cp949",
-        "x_col": "경도", "y_col": "위도"}, zp))
+        "coords": {"site": {"x": "경도", "y": "위도", "crs": 4326, "means": "설치 위치"}}}, zp))
     assert g["이름"].tolist() == ["충장로"]
 
 
@@ -154,7 +154,7 @@ def test_csv_points_in_zip_dies_when_the_member_is_missing(tmp_path):
         z.writestr("other.csv", b"a\n1\n")
     with pytest.raises(FileNotFoundError, match="없는것"):
         read_csv_points_in_zip(_ctx(tmp_path, {
-            "inner_contains": "없는것", "x_col": "x", "y_col": "y"}, zp))
+            "inner_contains": "없는것", "coords": {"site": {"x": "x", "y": "y", "crs": 4326, "means": "설치 위치"}}}, zp))
 
 
 # ── 표 갈래 둘 ───────────────────────────────────────────────
@@ -202,7 +202,7 @@ def test_json_points_cuts_by_the_box_and_drops_bad_coordinates(tmp_path):
         {"이름": "밖", "경도": 127.5, "위도": 36.5},
         {"이름": "글자", "경도": "없음", "위도": "없음"},
     ]}, ensure_ascii=False), encoding="utf-8")
-    g = read_json_points(_ctx(tmp_path, {"x_col": "경도", "y_col": "위도"}, p))
+    g = read_json_points(_ctx(tmp_path, {"coords": {"site": {"x": "경도", "y": "위도", "crs": 4326, "means": "설치 위치"}}}, p))
     assert g["이름"].tolist() == ["안"]
     assert g.crs.to_epsg() == 4326
 

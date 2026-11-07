@@ -130,7 +130,13 @@ CODE_EXT = (".py", ".ts", ".tsx", ".js", ".sh")
 #       `tests/test_shell_backticks.py`(겹따옴표 안의 백틱 · `529`) ·
 #       `tests/test_stagerun_vehicle.py`(자식 단계의 차량 제원 · `530`).
 #       그 셋을 `529` · `530` · `532` 가 **산문으로** 지목한다.
-SEALED_FILES = 581
+#     ★ 2026-11-02 (DECISIONS §600). 649 → **650.** 새 집 하나 — `tools/dmstree.py`(트리 지문 ·
+#       `dms.py` 에서 옮긴 `ancestry`). `600` 이 그것을 **산문으로** 지목한다. 덮임류는 실측을 따라간다(§579).
+# ★ 2026-11-07 (DECISIONS §657). 688 → **676.** 일회용 스크립트 12개를 철거했다
+#   (finish_647~656 · finish_c1 · ledger_add_nfa_ems · ledger_contract_nfa_ems).
+#   덮임은 **676/676 = 100%** 다 — 땅이 줄었을 뿐 덮지 못한 곳은 0 이다.
+#   ★ 덮임류는 실측을 따라간다(§579).
+SEALED_FILES = 677
 
 #: **강제자 칸만으로** 덮인 파일 수. 내려가는 쪽. 2026-10-10 실측 37 → **0**.
 #: 늘면 「산문 없이 칸만 적었다」는 뜻이고 그것은 한 번 속은 자리다(PLAN #165).
@@ -251,6 +257,10 @@ def show(s: dict, listing: bool) -> int:
         print("\n  (`--list` 로 전부)")
 
     print("\n★ **절이 옳은가는 안 본다.** 덮임 하나를 든다.")
+    if s["빈 곳"]:       # ★ 래칫(수)과 별개의 축이다 — `ratchet --write` 가 못 고치고 사람이 MASTER 에 적는다(DECISIONS §636)
+        print(f"\n✗ 빈 곳 {len(s['빈 곳'])} — 새 파일을 아무 절도 안 읽었다. `MASTER §22`(화면) · `§23`(가장자리·검사)에 그 파일을 지목하는 줄을 적는다 "
+              "(`--list` 로 이름). 래칫이 초록이어도 이 줄은 남는다.")
+        return 1
     if cov < SEALED_FILES:
         print(f"\n✗ 덮임 {cov} < 래칫 {SEALED_FILES} — **땅이 줄었다.**")
         print("  절을 지웠거나 파일을 늘렸다. 둘 다 덮임을 되돌린다.")

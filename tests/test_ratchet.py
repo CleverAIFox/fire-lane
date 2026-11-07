@@ -259,3 +259,22 @@ def test_verify_runs_it_without_write():
     assert line, "`step` 이 아니다 — note 로 적으면 실패가 판정에 안 든다"
     assert "--write" not in line[0], (
         "관문이 `--write` 를 돈다 — 쓰고 나서 재므로 **영영 초록이다**")
+
+
+# ── 2026-11-04 (PLAN #185 · DECISIONS §620) 우는 자리가 **다음 칸**을 말한다 ────────────
+def test_the_ratchet_names_the_next_step_where_it_cries(capsys):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_rt_chain", Path(__file__).resolve().parents[1] / "tools" / "ratchet.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m            # `@dataclass` 가 되짚는다 — 안 넣으면 지연 신관이다
+    spec.loader.exec_module(m)
+    loose = [{"tool": "uicheck.py", "name": "UI_TEXT"}]
+    m._chain(loose, [], [{"tool": "mutate.py", "name": "-", "err": "낡음"}], False)
+    out = capsys.readouterr().out
+    assert "손으로" in out and "--write` 는 안 받는다" in out, "느슨해진 쪽이 손으로라고 안 말한다"
+    assert "mutate.py --write --stale" in out, "변이 장부가 낡았는데 다음 명령을 안 말한다"
+    assert out.index("손으로") < out.index("mutate.py"), "사슬의 순서가 거꾸로다"
+    m._chain([], [{"tool": "x.py", "name": "N", "declared": 3, "measured": 2}], [], False)
+    assert "ratchet.py --write" in capsys.readouterr().out, "조이는 쪽이 `--write` 를 안 말한다"
+    m._chain([], [], [], False)
+    assert capsys.readouterr().out == "", "울 것이 없는데 말한다"

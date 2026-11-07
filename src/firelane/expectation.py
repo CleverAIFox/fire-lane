@@ -127,12 +127,27 @@ def verify_schema() -> list[str]:
         if not feats:
             continue
         real = set(feats[0]["properties"])
-        doc = set(json.loads(sch.read_text(encoding="utf-8"))["fields"])
+        spec = json.loads(sch.read_text(encoding="utf-8"))
+        doc, optional = set(spec["fields"]), spec.get("optional_fields") or {}
         for k in sorted(real - doc):
             out.append(f"{tag}: 산출물에 {k} 가 있는데 스키마에 없다")
         for k in sorted(doc - real):
-            out.append(f"{tag}: 스키마가 {k} 를 적었는데 산출물에 없다")
+            # ★ 2026-11-04 (§628). 선택 컬럼은 **그 단계가 segments 뒤에 안 돌았으면** 없는 것이 정상이다(`--only segments` 반쪽 실행). 돌았는데 없으면 결함이다.
+            #   web 은 publish 가 칸을 싣는 자리라 선택이 없다 — 스키마가 적었으면 산출물에 있어야 한다(publish 가 없는 칸을 스키마에서 뺀다).
+            if tag == "processed" and k in optional and not _ran_after_segments(optional[k]):
+                continue
+            out.append(f"{tag}: 스키마가 {k} 를 적었는데 산출물에 없다" + (f" — `{optional[k]}` 단계가 segments 뒤에 돌았다" if k in optional else ""))
     return out
+
+
+def _ran_after_segments(stage: str) -> bool:
+    """계보에서 `stage` 가 `segments` 보다 **나중에** 기록됐는가. 못 읽으면 거짓(= 안 돌았다고 본다)."""
+    import json
+    try:
+        lin = json.loads((PROCESSED / "_lineage.json").read_text(encoding="utf-8"))
+        return lin[stage]["at"] > lin["segments"]["at"]
+    except (OSError, KeyError, ValueError):
+        return False
 
 
 def web_size_verdict(mb: float) -> list[str]:

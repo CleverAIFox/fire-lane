@@ -39,7 +39,7 @@ def test_the_skeleton_switch_stays_out_of_the_judgment_closure():
                 for a in n.names}
     assert "firelane.skeleton" not in imports, (
         "`segments.py` 가 다시 `skeleton` 을 든다 — 판정 폐포가 16 → 17 로 는다.\n"
-        "  정말 되살릴 것이면 `tests/test_lake.py` 의 폐포 래칫과 이 시험을 같이 고쳐라.")
+        "  정말 되살릴 것이면 `tests/test_nfa_compare.py` 의 폐포 래칫과 이 시험을 같이 고쳐라.")
 
     from firelane.shardseal import code_closure
     n = len(code_closure("firelane.segments"))
@@ -51,8 +51,16 @@ def test_the_skeleton_switch_stays_out_of_the_judgment_closure():
     #   그러면 `geom.verdict()` 를 보는 기존 시험 스물여섯이 함께 이사한다.
     # ★ 2026-10-08 (DECISIONS §431 · PLAN #47). 17 → 18. `seg/unionfind.py` 가
     #   들어왔다. 위 §303 과 같은 이사이고, 같은 이유로 수가 하나 는다.
-    assert n == 18, \
-        f"판정 폐포가 {n}이다 — 18 이어야 한다(DECISIONS §266 · §303 · §431)"
+    # ★ 2026-10-23 (DECISIONS §545-4). 18 → 19. `occ.py`(점유압력 β · 판정에 기여하지 않는다)가 `segments.py` 의 폐포 안으로 들어왔다.
+    # ★ 2026-10-23 (DECISIONS §564 · Zm19). 19 → 20. `clearance.py`(내접원 중앙값 — 규칙 [10] 이 읽는다)가 `segments.py` 의 import 로 들어왔다.
+    # ★ 2026-11-01 (DECISIONS §523 · Zm56). 20 → 21. `seg/walkcarve.py` 가 들어왔다.
+    #   §303 · §431 과 같은 이사다 — `seg/width.py` 가 파일 길이 상한에 걸려
+    #   순수 함수 둘을 뺐고, 동작은 한 글자도 안 바뀌었다.
+    # ★ 2026-11-01 (DECISIONS §588-2 · §593 · Zm56). 21 → 22. `seg/share.py`(#77 가름)가
+    #   들어왔다. 이쪽은 이사가 아니라 신규다 — WidthEngine 의 입력을 바꾼다.
+    #   clear 276 → 275 (DM00947) 가 이 파일의 효과다(§594-1).
+    assert n == 22, \
+        f"판정 폐포가 {n}이다 — 22 이어야 한다(DECISIONS §266 · §303 · §431 · §545-4 · §564 · Zm56)"
 
     import importlib.util
     import sys as _sys
@@ -118,8 +126,18 @@ def test_road_hash_treats_nan_as_no_name_and_keeps_string_results_identical():
     assert _road_hash(float("nan")) == none_tok, "NaN 을 무명으로 안 접는다"
     assert _road_hash(math.nan) == none_tok
     assert _road_hash("") == none_tok, "빈 문자열 처리가 바뀌었다"
+    # ★ 2026-10-21 (1021). 종전은 `… if nm.strip() else True` 였다. 위 네 이름은
+    #   전부 공백이 아니므로 `else True` 가 **한 번도 안 돌았다** — 죽은 가지다.
+    #   `tests/test_test_hygiene.py` 의 전수 그물이 이 자리를 잡았다.
+    # ★ 그 가지는 잡음이 아니라 **안 시험한 의도**였다. 누가 튜플에 `""` 를 넣는
+    #   날 그 단언이 조용히 빈 그물이 된다. 가지를 떼고 의도를 **아래에 제 단언으로**
+    #   세운다. 삼항으로 감싼 단언은 조건이 거짓인 입력에서 **아무것도 안 묻는다.**
     for nm in ("필문대로289번길", "동계천로", " 경양로 ", "2순환로"):
-        assert _road_hash(nm) == _road_hash(nm.strip() or None) if nm.strip() else True
+        assert _road_hash(nm) == _road_hash(nm.strip()), f"공백만 다른 이름이 갈렸다: {nm!r}"
+    # ★ 아래 값들은 **실측했다**(1021). `nm.strip() or None` 의 가정을 산문으로
+    #   믿지 않고 재서 적는다 — 종전 삼항이 믿고 있던 것이 바로 이것이다.
+    for blank in ("",):
+        assert _road_hash(blank) == none_tok, f"공백뿐인 이름을 무명으로 안 접는다: {blank!r}"
     # 서로 다른 이름은 여전히 갈린다
     assert _road_hash("동계천로") != _road_hash("동명로") != none_tok
 

@@ -248,6 +248,7 @@ OUTSIDE: dict[str, str] = {
     # 진입점 없는 몸통 — pytest 가 **함수를 직접** 부른다(§509)
     "widthlr.py": "tests/test_widthlr.py::test_the_tool_passes_its_own_selftest",
     "prevfield.py": "tools/dms.py --selftest 가 끌어온다 (§511-2)",
+    "dmstree.py": "tools/dms.py --selftest 가 끌어온다 (§600)",
 }
 
 

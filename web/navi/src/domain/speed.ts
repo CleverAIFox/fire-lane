@@ -57,6 +57,32 @@ export function travelSeconds(plan: RoutePlan): number {
   return sec * eff;
 }
 
+/**
+ * 지령 → 현장도착의 **고정분**(초). `travelSeconds`(주행 시간)에 더해 「지령 → 현장도착」 추정을 낸다 — 지령 → 출발과 현장 접근이 여기 든다.
+ * **이 값의 정본은 여기 하나다.** 속도표(`SPEED_TABLE`)와 같은 집이고 파이썬 쪽에 사본이 없다 — `tools/cost_vs_dispatch.py` 가 이 파일을 읽는다.
+ *
+ * ── 근거 ────────────────────────────────────────────────────
+ * ① 값 210 — 전국 화재 270,174행에서 센터 → 현장 거리 **0~1km 구간의 중앙 지령 → 현장도착**이다(DECISIONS §644 · 실측).
+ *    ★ **선형회귀의 절편이 아니다** — §644 가 선형 기울기(28.1초/km = 128km/h)를 틀린 도구라고 적었다. 그 구간에는 근접 주행(약 55초/km 로 0.5km 안팎)이
+ *    들어 있어 순수 고정분보다 수십 초 클 수 있다. 우리 cost 는 펌프차 기준이고(`CONFIG.fleetDefault` = pump-js) 화재 출동이 펌프차다.
+ * ② 확인 — 119 신고접수의 구간 단위 실측(DECISIONS §650): 이 파일이 낸 **주행 시간만**의 계산과 실제 지령 → 도착의 치우침 중앙이 +208초
+ *    [+179, +234](스냅된 65곳) · 합친 표본 106곳 +208초 [+183, +227]. 210 이 두 구간 안에 있다. 전국 집계와 동명동 구간 실측은 **서로 다른 자료**다.
+ * ③ 제외 — 구급 294초(DECISIONS §645)는 구급차 값이다. 그 84초 차이는 환자 정보 확인 · 장비 점검으로 **설명된다**(추론).
+ * ★ 한계 — ② 는 센터에서 1.0~1.4km 지점에서만 섰다(거리에 레버리지가 없어 속도와 고정분을 못 가른다). 속도표와 **같이** 미검증이다.
+ *   바뀌면 `tools/cost_vs_dispatch.py` 가 치우침을 다시 낸다 — 0 에 가까워야 한다.
+ */
+export const DISPATCH_FIXED_S = 210;
+
+/**
+ * 지령 → 현장도착 추정(초) = 고정분 + 주행 시간. **관제가 지령 전에 보는 수**다.
+ *
+ * ★ `travelSeconds` 를 이것으로 바꾸지 않았다 — 그 함수는 **주행 시간**이고 `remainingSeconds`(출발 전이면 같다 · 시험이 문다)와 경로 간 차이(`routeOption.deltaSec` ·
+ *   `slowerSec`)가 그 위에 선다. 고정분은 차이에서 지워지고 달리는 중에는 이미 지나갔다. 달리는 화면의 도착 예정 시각(`remainingSeconds`)에는 안 더한다.
+ */
+export function dispatchToArrivalSeconds(plan: RoutePlan): number {
+  return DISPATCH_FIXED_S + travelSeconds(plan);
+}
+
 /** 남은 거리에 대한 소요 시간(초). 현재 위치 이후 구간만 센다. */
 export function remainingSeconds(plan: RoutePlan, drivenM: number): number {
   const eff = plan.lengthM > 0 ? plan.cost / plan.lengthM : 1;

@@ -22,6 +22,7 @@ import json
 import re
 from pathlib import Path
 
+from firelane import ledger
 from firelane import naming as nm
 from firelane.intake_body import body_file_of, body_match, body_text
 
@@ -106,12 +107,14 @@ def propose(src: Path, ds: dict) -> dict:
             blob = json.dumps(v, ensure_ascii=False, default=str)
             if out["doc_no"] in blob.upper():
                 out["matched_key"] = k
-                pat = v.get("file", "")
-                base = pat.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-                if "*" not in base:
-                    out["suggest"] = f"{pat.split('/')[0]}/{base}.{ext}"
-                    out["why"].append(
-                        f"문서번호 {out['doc_no']} 가 대장 {k} 에 있다")
+                # ★ 감사 1-4. 정본 접근자로 — 단수 `file` 만 읽으면 `files:` 항목이 제안 없이 빠진다.
+                for pat in ledger.files_decl(v):
+                    base = pat.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+                    if "*" not in base:
+                        out["suggest"] = f"{pat.split('/')[0]}/{base}.{ext}"
+                        out["why"].append(
+                            f"문서번호 {out['doc_no']} 가 대장 {k} 에 있다")
+                        break
                 break
 
     # ③ 대장 stem — 파일명이 이미 정규명인 경우

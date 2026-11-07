@@ -18,7 +18,7 @@ SILENT_MISSING       값이 없는데 **왜 없는지를 산출물이 안 말한
 ★ 셋째가 제일 중요하다. 앞 둘은 **값이 틀렸다**를 말하고, 셋째는 **왜인지를
   읽는 사람이 알 수 없다**를 말한다. 2026-10-08 실측 2건이고 둘 다 같은 꼴이다 —
   `blocked` 인데 `width_min_m` 이 비었고 사유 칸이 없다. 파이프라인은 사유를
-  **안다**(`all_xsec` — 트랜섹트가 전부 교차부에 걸렸다) 그런데 그 진단이
+  **안다**(`no_xsec_attempted` — 표본점이 전부 교차부 안이라 한 번도 안 그었다) 그런데 그 진단이
   표준출력에만 찍히고 **산출물에 안 들어간다.** 화면과 보고서는 그 둘을
   「폭 미상 통행불가」로만 보고, 왜인지 물을 자리가 없다.
 
@@ -56,7 +56,7 @@ WIDTH_OUT_OF_RANGE = 0
 ROADNAME_OFF_RULE = 0
 #: 값이 없는데 사유를 산출물이 안 말하는 구간. **2026-10-08 첫 실측 2.**
 #: ★ 같은 날 (DECISIONS §436 · PLAN #104) `width_fail` 을 발행 스키마에 실었다 —
-#:   파이프라인이 아는 사유(`all_xsec`)가 이제 산출물에 간다. 재잠금이 돌면
+#:   파이프라인이 아는 사유(`no_xsec_attempted`)가 이제 산출물에 간다. 재잠금이 돌면
 #:   **이 수는 0 이 되고** `ratchet --write` 가 그 0 을 조이는 쪽으로 받아적는다.
 #:
 #: ★ 그래서 **지금은 2 를 적는다.** 처음에 0 을 적었다가 그 도구에게 맞았다 —
@@ -181,7 +181,7 @@ def selftest() -> int:
         {"seg_id": "C", "width_min_m": None, "unknown_reason": "  "},       # 공백은 사유가 아니다
         {"seg_id": "D", "width_min_m": None},                               # 조용하다
         # ★ 2026-10-08 (§436). `width_fail` 도 사유다 — 둘 중 하나면 된다
-        {"seg_id": "E", "width_min_m": None, "width_fail": "all_xsec"},
+        {"seg_id": "E", "width_min_m": None, "width_fail": "no_xsec_attempted"},
     ])
     if sorted(x.split(":")[0] for x in s) != ["C", "D"]:
         bad.append(f"조용한 결측 판별식이 죽었다: {s}")
@@ -243,7 +243,7 @@ def main() -> int:
             rc = 1
     if rc == 0 and len(f["silent"]):
         print("\n  ★ 조용한 결측이 0 이 아니다. 파이프라인은 사유를 **안다** —")
-        print("    `width_fail`(=`all_xsec`)을 표준출력에만 찍고 산출물에 안 넣는다.")
+        print("    `width_fail`(=`no_xsec_attempted`)을 표준출력에만 찍고 산출물에 안 넣는다.")
         print("    칸을 더하는 것은 발행 스키마를 움직이므로 측정 배치의 일이다(PLAN).")
     return rc
 

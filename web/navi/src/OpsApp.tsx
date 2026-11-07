@@ -52,6 +52,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OpsMap, type OpsLayers } from "./components/OpsMap";
+import { parseShowRef } from "./components/opsLayers";
 import { OpsHistory } from "./ui/OpsHistory";
 import { MOTION_CSS } from "./ui/motion";
 import { useFleet } from "./app/useFleet";
@@ -66,7 +67,7 @@ import { dispatchUrl as mkDispatchUrl } from "./domain/dispatch";
 import type { RouteMode } from "./domain/handoff";
 import { alternateAccess, reachableEdges, MAX_WALK_M } from "./domain/access";
 import { preparePois, searchPois, type PoiHit } from "./domain/search";
-import { travelSeconds } from "./domain/speed";
+import { DISPATCH_FIXED_S, dispatchToArrivalSeconds, travelSeconds } from "./domain/speed";
 import { requiredWidth } from "./domain/vehicle";
 import {
   CLEARANCE_BAND_ORDER, clearanceCounts, fmtClearance,
@@ -106,6 +107,8 @@ export default function OpsApp() {
     //   못 봤다. 관제는 건물에 몇 층이 사는지를 보는 화면이고(`flo` · 12,663동),
     //   그 수가 진입 판단에 든다. 평면이 필요하면 같은 단추로 끈다.
     ortho: false, reach: true, cctvCov: false, bldg: true, history: false, context: false, terrain: true,
+    // ★ #62. `?ref=0` 이면 시작부터 숨김 — `?terrain=0` 과 같은 꼴(읽기만 · 주소를 다시 안 쓴다)
+    ref: parseShowRef(location.search),
   });
   const [history, setHistory] = useState<{ summary?: HistorySummary } | null>(null);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
@@ -381,9 +384,8 @@ export default function OpsApp() {
               <div style={{ ...card, borderColor: plan.plan ? (plan.alt ? D.warn : D.ok) : D.danger }}>
                 {plan.plan ? (
                   <>
-                    <div style={{ fontWeight: 800, fontSize: 18 }}>
-                      {fmtDur(travelSeconds(plan.plan))} <span style={{ fontSize: 13, color: D.sub }}>· {(plan.plan.lengthM / 1000).toFixed(1)}km · 내비 예측</span>
-                    </div>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>{fmtDur(dispatchToArrivalSeconds(plan.plan))} <span style={{ fontSize: 13, color: D.sub }}>· {(plan.plan.lengthM / 1000).toFixed(1)}km · 지령→도착 예측</span></div>
+                    <div style={{ fontSize: 11, color: D.sub, marginTop: 2 }}>주행 {fmtDur(travelSeconds(plan.plan))} + 지령→출발·접근 {fmtDur(DISPATCH_FIXED_S)}</div>
                     {myCenter?.median_s != null && (
                       <div style={{ fontSize: 11, color: D.sub, marginTop: 2 }}>
                         같은 센터 실제 출동→도착 중앙값 {fmtSec(myCenter.median_s)}
@@ -513,8 +515,9 @@ export default function OpsApp() {
               ["context", "과속방지턱 · 카메라 · 보호구역"],
               ["cctvCov", "CCTV 영상판정 반경 19m"],
               ["ortho", "항공정사영상 25cm"],
-              ["bldg", "3D 건물(비스듬히)"],
-              ["terrain", "지형(음영 · 3D 에서 지면 휨)"],
+              ["bldg", "3D 건물"],
+              ["terrain", "지형(음영 · 지면 휨)"],
+              ["ref", "발행 범위 밖 구간(흐리게) — 막힌 길 포함"],
             ] as [keyof OpsLayers, string][]).map(([k, t]) => (
               <label key={k} style={toggleRow}>
                 <input type="checkbox" checked={layers[k]} onChange={() => setLayers((L) => ({ ...L, [k]: !L[k] }))} />
@@ -527,7 +530,7 @@ export default function OpsApp() {
               </div>
             )}
             <div style={{ fontSize: 10.5, color: D.sub, marginTop: 4 }}>
-              닿는 구간 {reach?.size ?? 0} / {data.graph.edges.length} · 굵기 = 최소 유효폭
+              센터에서 닿는 구간 {reach?.size ?? 0} / 전체 {data.graph.edges.length} · 굵기 = 최소 유효폭
             </div>
             </>}
           </div>

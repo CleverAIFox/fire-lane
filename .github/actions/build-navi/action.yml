@@ -26,6 +26,15 @@ inputs:
     description: 중개자 주소. 배포는 `wss://` 여야 한다(https 페이지).
     required: false
     default: ''
+  ops-token:
+    # ★ 2026-11-06 (DECISIONS §655 · PLAN #176). 중개자의 **문을 여는 말**이다 — 주소와 달리
+    #   `secrets` 로 받는다(`${{ secrets.FIRE_LANE_OPS_TOKEN }}`). 코드는 §527 에서 섰고
+    #   (문 셋과 `/units` 가 토큰을 묻는다) 이 입력이 **배포 배선**이다.
+    #   ★ 빌드에 박힌다 — 브라우저 WebSocket 은 헤더를 못 붙여 토큰이 주소의 `?t=` 로 간다.
+    #     공개 사이트의 번들에서 읽힌다. **화면을 여는 열쇠이지 신분이 아니다**(`config.ts`).
+    description: 중개자 토큰. 주소가 있는데 이것이 비면 화면은 멀쩡하고 연결만 안 된다
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -45,6 +54,7 @@ runs:
       shell: bash
       env:
         VITE_OPS_URL: ${{ inputs.ops-url }}
+        VITE_OPS_TOKEN: ${{ inputs.ops-token }}
       run: |
         # ★ 2026-10-03 (DECISIONS §366-2). **Mapbox 토큰 관문을 걷었다.**
         #   종전에 이 자리가 `VITE_MAPBOX_TOKEN` 이 비면 **배포를 죽였다.**
@@ -74,6 +84,21 @@ runs:
                echo "  빌드와 배포는 성공한 채 **런타임에만** 안 이어진다."
                exit 1 ;;
         esac
+
+        # ★ 2026-11-06 (DECISIONS §655). **주소는 있는데 토큰이 없는 꼴을 여기서 운다.**
+        #   중개자는 토큰도 `FIRE_LANE_OPS_OPEN=1` 선언도 없으면 **안 뜬다**(`server.py`).
+        #   뜬 중개자는 토큰 없는 연결을 거절하고, 화면은 그것을 1초마다 다시 붙으며 조용히
+        #   실패한다 — 빌드도 배포도 초록이고 관제와 내비만 안 이어진다(위 §343-3 과 같은 꼴).
+        #   죽이지는 않는다: 선언하고 연 중개자 · 비밀값이 안 넘어오는 포크 PR 시운전은 정당하다.
+        #   ★ 값은 찍지 않는다 — 있다 · 없다만 적는다.
+        if [ -n "$VITE_OPS_URL" ] && [ -z "$VITE_OPS_TOKEN" ]; then
+          echo "::warning title=중개자 토큰이 없다::주소는 있는데 FIRE_LANE_OPS_TOKEN 이 비어 있다 — 토큰을 요구하는 중개자는 연결을 거절하고 화면은 조용히 안 이어진다"
+          echo "★ 중개자 토큰이 없다 — 주소는 있다."
+          echo "  Settings > Secrets and variables > Actions > Secrets"
+          echo "  이름 FIRE_LANE_OPS_TOKEN  (주소는 Variables · 토큰은 Secrets 다)"
+        elif [ -n "$VITE_OPS_TOKEN" ]; then
+          echo "중개자 토큰 OK (값은 찍지 않는다)"
+        fi
 
         # ★ base 는 `github.repository` 에서 온다. Pages 가
         #   `https://<user>.github.io/<repo>/` 로 서빙하므로 내비는

@@ -107,8 +107,13 @@ on:
 
 jobs:
   # ── 전원 공통. 여기가 최소선이다 ─────────────────────────────
-  contract-shared:
-    name: contract-shared
+  # (아래 셋이 종전 `contract-shared` 한 잡을 대신한다)
+  # ── 속도로 쪼갠 셋 + 집계 하나(fast · heavy · tests → shared) (PLAN #192 ③ · DECISIONS §633) ─────────────────────────────
+  # ★ 종전 `contract-shared` 한 잡이 95단계 · 29분이었다. 그 85% 가 `전체 테스트` 한 단계였다.
+  #   **필수 체크의 이름 `contract-shared` 는 지킨다**(룰셋을 안 고친다) — 그 이름은 이제 아래 둘의 **집계**다.
+  #   빠른 것(`contract-fast`)이 먼저 빨개져서 사람이 2~3분 안에 첫 신호를 본다.
+  contract-fast:
+    name: contract-fast
     runs-on: ubuntu-24.04
     # ★ 2026-09-30 (PLAN §13 W13-6 · DECISIONS §324). **상한이지 예상 시간이 아니다.**
     #   없으면 GitHub 기본 6시간까지 매달린다 — 죽은 작업 하나가 반나절을 태운다.
@@ -117,7 +122,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7
         with:
           # ★ 2026-09-19 (W3-17). 판을 **여기 적지 않는다.** 정본은
           #   `.python-version` 하나이고 `uv` 도 같은 파일을 읽는다.
@@ -127,10 +132,10 @@ jobs:
           #   내비 노드 22 vs 20 과 같은 형태의 파이썬 판이다(§186-2).
           #   `tests/test_ci_env.py` 가 판이 한 곳에서 오는지 강제한다.
           python-version-file: .python-version
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
         with:
           node-version: "22"
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
           version: "0.12.13"
           enable-cache: true
@@ -360,7 +365,7 @@ jobs:
       - name: 기획서 화면 그림
         run: uv run python tools/htmlfigs.py --check
       # ★ 2026-10-06 (§425). 기획서 **화면**이 정본과 같은가. 정본(`docs/proposal.md`)
-      #   · 와꾸 · 생성물이 다 커밋돼 있어 레이크도 변환기도 필요 없다 — 로컬에만
+      #   · 틀 · 생성물이 다 커밋돼 있어 레이크도 변환기도 필요 없다 — 로컬에만
       #   붙일 이유가 없다. `--check` 는 CI(`CI=true`)에서 종료 3 을 2 로 올린다:
       #   로컬에서는 「다시 구워라」 경고고 배포 경로에서는 **막는다.**
       - name: 기획서 화면 ↔ 정본
@@ -449,12 +454,6 @@ jobs:
       #   레이크 없이 돈다 — 2026-09-28 에 도구가 그 층을 덮어쓴 일이 있었다.
       - name: 실측 층 지문
         run: uv run python tools/fieldseal.py
-      # ★ 2026-10-03 (§379). **자를 의심한다.** 폭을 재는 셋(판정 · widthcross ·
-      #   width_fn)이 전부 같은 표본을 먹는다 — 법선 광선. 그 표본이 틀리면
-      #   셋이 사이좋게 틀린다. 이것은 표본을 안 쓰고 내접원을 재서 둘을 댄다.
-      #   발행본만 읽으므로 레이크 없이 돈다 — 로컬 전용이 아니다.
-      - name: 통과폭 교차대조
-        run: uv run python tools/clearance_cross.py
       # ★ 2026-10-03 (§380). 판정 상수 열셋이 출처를 못 댄다. 새 상수를 들일 때
       #   출처를 같이 적게 한다 — 안 적으면 영원히 못 적는다.
       - name: 판정 상수의 출처
@@ -505,9 +504,6 @@ jobs:
         run: uv run python tools/fixture_recut.py --check
       - name: 파일 길이 래칫 (양방향)
         run: uv run python tools/sizecheck.py
-      # ★ `--write` 를 CI 에서 안 돈다 — 쓰고 나서 재면 영영 초록이다(§309).
-      - name: 래칫 정합 (선언 = 실측)
-        run: uv run python tools/ratchet.py
       # ★ 소스 축만 CI 에 있다. 빌드본 축은 여기서 내비를 안 지어 못 본다(§310).
       - name: 화면 분리 (관제 ≠ 내비)
         run: uv run python tools/uicheck.py --split
@@ -587,7 +583,7 @@ jobs:
       #   라고 적고 있었다. 선언된 중복도 중복이다.
 
       - name: 내비 노드 — 배포 액션과 같은 판으로
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
         with:
           node-version-file: web/navi/.nvmrc
           cache: npm
@@ -667,13 +663,172 @@ jobs:
         # ★ 여기가 CV·API 파트가 GIS 코드를 안 보고 붙을 수 있는 근거다.
         run: uv run pytest tests/test_contract.py -v
 
-      # ★ 2026-10-20. 같은 나무면 안 돈다. **`schedule` 은 예외다** —
-      #   §218-4 가 그 트리거를 둔 사유가 「드리프트는 커밋이 아니라 시간이
-      #   만든다(러너 이미지 · 액션 퇴역 · 끌어내린 휠)」라, 나무가 같아도
-      #   세상이 달라졌을 수 있다. 나무로 물으면 그 축이 죽는다.
-      - name: 전체 테스트
+
+  contract-heavy:
+    name: contract-heavy
+    runs-on: ubuntu-24.04
+    # ★ 2026-09-30 (PLAN §13 W13-6 · DECISIONS §324). **상한이지 예상 시간이 아니다.**
+    #   없으면 GitHub 기본 6시간까지 매달린다 — 죽은 작업 하나가 반나절을 태운다.
+    #   이 수를 조일 근거는 W13-9(전량 재실행 시간 실측 정본)가 서야 생긴다.
+    #   지금 조이면 느린 러너에서 무고한 빨간불이 나고, 그것이 검사를 끄게 만든다.
+    timeout-minutes: 45
+    # ★ 분 단위인 둘(래칫 정합 · 통과폭 교차대조 · CI 측정 103초 + 61초)만 따로 — fast 를 2~3분으로 지키고, 시험 조각보다 먼저 끝난다.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7
+        with:
+          # ★ 2026-09-19 (W3-17). 판을 **여기 적지 않는다.** 정본은
+          #   `.python-version` 하나이고 `uv` 도 같은 파일을 읽는다.
+          #   종전에는 `"3.11"` 이 여기·`:314`·배포 워크플로 셋에 손으로
+          #   적혀 있었고, `Dockerfile` 은 W8-2 로 **3.14** 가 됐다.
+          #   **배포되는 런타임과 게이트가 도는 런타임이 달랐다** —
+          #   내비 노드 22 vs 20 과 같은 형태의 파이썬 판이다(§186-2).
+          #   `tests/test_ci_env.py` 가 판이 한 곳에서 오는지 강제한다.
+          python-version-file: .python-version
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
+        with:
+          node-version: "22"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+        with:
+          version: "0.12.13"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      # ★ 2026-10-20. **이 나무를 이미 쟀는가.** 스쿼시는 commit 을 바꾸고
+      #   tree 는 그대로 둔다 — 한 배치에서 같은 나무가 네 번 들어온다
+      #   (feat PR · part 푸시 · dev PR · main PR). §344 와 §457 이 이미 두
+      #   번 깎았고 그 사유가 「두 벌로 얻는 것이 없다 — 정보가 0 이고
+      #   판정을 흐린다」였다. 그 사유가 네 번에도 그대로 적용된다.
+      # ★ **읽기만 한다.** 적는 것은 열차(`tools/fl.sh`)가 스쿼시 직전에
+      #   한다 — 여기서 적으려면 `contents: write` 가 필요하고, 그러면
+      #   `deploy.yml` 까지 올라가 배포 권한이 넓어진다(§196-4 · 그 시험이
+      #   2026-10-20 에 이것을 막았다).
+      - name: ★ 이 나무가 이미 초록이었나
+        run: |
+          tree=$(git rev-parse "HEAD^{tree}")
+          if git ls-remote --exit-code origin "refs/green/$tree" >/dev/null 2>&1
+          then
+            echo "FL_GREEN=1" >> "$GITHUB_ENV"
+            echo "::notice::이 나무는 이미 초록이었다 ($tree) — 전체 테스트를 건너뛴다"
+          else
+            echo "FL_GREEN=0" >> "$GITHUB_ENV"
+          fi
+
+      - name: 의존성 — uv.lock 이 정본이다
+        run: uv sync --frozen --all-extras
+
+      # ★ `--write` 를 CI 에서 안 돈다 — 쓰고 나서 재면 영영 초록이다(§309).
+      - name: 래칫 정합 (선언 = 실측)
+        run: uv run python tools/ratchet.py
+      # ★ 2026-10-03 (§379). **자를 의심한다.** 폭을 재는 셋(판정 · widthcross ·
+      #   width_fn)이 전부 같은 표본을 먹는다 — 법선 광선. 그 표본이 틀리면
+      #   셋이 사이좋게 틀린다. 이것은 표본을 안 쓰고 내접원을 재서 둘을 댄다.
+      #   발행본만 읽으므로 레이크 없이 돈다 — 로컬 전용이 아니다.
+      - name: 통과폭 교차대조
+        run: uv run python tools/clearance_cross.py
+
+  contract-tests:
+    name: contract-tests (${{ matrix.part }}/4)
+    runs-on: ubuntu-24.04
+    # ★ 2026-09-30 (PLAN §13 W13-6 · DECISIONS §324). **상한이지 예상 시간이 아니다.**
+    #   없으면 GitHub 기본 6시간까지 매달린다 — 죽은 작업 하나가 반나절을 태운다.
+    #   이 수를 조일 근거는 W13-9(전량 재실행 시간 실측 정본)가 서야 생긴다.
+    #   지금 조이면 느린 러너에서 무고한 빨간불이 나고, 그것이 검사를 끄게 만든다.
+    timeout-minutes: 45
+    # ★ 파일 단위 넷. 정렬한 `tests/**/test_*.py` 의 N 번째를 `N mod 4` 로 나눈다 — 새 파일도 자동으로 어느 한 조각에 들어간다(목록을 손으로 안 든다).
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7
+        with:
+          # ★ 2026-09-19 (W3-17). 판을 **여기 적지 않는다.** 정본은
+          #   `.python-version` 하나이고 `uv` 도 같은 파일을 읽는다.
+          #   종전에는 `"3.11"` 이 여기·`:314`·배포 워크플로 셋에 손으로
+          #   적혀 있었고, `Dockerfile` 은 W8-2 로 **3.14** 가 됐다.
+          #   **배포되는 런타임과 게이트가 도는 런타임이 달랐다** —
+          #   내비 노드 22 vs 20 과 같은 형태의 파이썬 판이다(§186-2).
+          #   `tests/test_ci_env.py` 가 판이 한 곳에서 오는지 강제한다.
+          python-version-file: .python-version
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7
+        with:
+          node-version: "22"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+        with:
+          version: "0.12.13"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      # ★ 2026-10-20. **이 나무를 이미 쟀는가.** 스쿼시는 commit 을 바꾸고
+      #   tree 는 그대로 둔다 — 한 배치에서 같은 나무가 네 번 들어온다
+      #   (feat PR · part 푸시 · dev PR · main PR). §344 와 §457 이 이미 두
+      #   번 깎았고 그 사유가 「두 벌로 얻는 것이 없다 — 정보가 0 이고
+      #   판정을 흐린다」였다. 그 사유가 네 번에도 그대로 적용된다.
+      # ★ **읽기만 한다.** 적는 것은 열차(`tools/fl.sh`)가 스쿼시 직전에
+      #   한다 — 여기서 적으려면 `contents: write` 가 필요하고, 그러면
+      #   `deploy.yml` 까지 올라가 배포 권한이 넓어진다(§196-4 · 그 시험이
+      #   2026-10-20 에 이것을 막았다).
+      - name: ★ 이 나무가 이미 초록이었나
+        run: |
+          tree=$(git rev-parse "HEAD^{tree}")
+          if git ls-remote --exit-code origin "refs/green/$tree" >/dev/null 2>&1
+          then
+            echo "FL_GREEN=1" >> "$GITHUB_ENV"
+            echo "::notice::이 나무는 이미 초록이었다 ($tree) — 전체 테스트를 건너뛴다"
+          else
+            echo "FL_GREEN=0" >> "$GITHUB_ENV"
+          fi
+
+      - name: 의존성 — uv.lock 이 정본이다
+        run: uv sync --frozen --all-extras
+
+      # ★ 시험이 `web/navi` 의 설치본 · 빌드본을 읽는다(종전 한 잡에서는 `내비 타입 검사` 단계가 먼저 깔았다). 조각마다 깐다 — 약 20초.
+      - name: 내비 설치 · 빌드 (시험이 읽는다)
+        run: |
+          cd web/navi
+          npm ci --no-audit --no-fund
+          npm run build
+      # ★ 이 나무가 이미 초록이면 안 돈다(종전 `전체 테스트` 의 조건 그대로 · `schedule` 은 예외).
+      - name: 전체 테스트 — 파일 단위 조각 ${{ matrix.part }}/4
         if: env.FL_GREEN != '1' || github.event_name == 'schedule'
-        run: uv run pytest tests/ -q
+        env:
+          PART: ${{ matrix.part }}
+        run: |
+          # 무거운 열은 손으로 나눠 꽂고(PIN · 실측 소요 상위 · DECISIONS §633-3) 나머지는 정렬한 이름의 N 번째를 `N mod 4` 로 나눈다.
+          # 핀한 파일이 사라져도 무해하고, 새 파일은 자동으로 나머지 쪽에 들어간다(목록을 손으로 안 든다).
+          declare -A PIN=([tests/test_clearance_cross.py]=1 [tests/test_widthlr.py]=1 [tests/test_canary.py]=1
+                          [tests/test_fix_door.py]=2 [tests/test_cli_surface.py]=2 [tests/test_logic_print.py]=2
+                          [tests/test_place_idempotent.py]=3 [tests/test_ratchet.py]=4 [tests/test_ledger_outputs.py]=4 [tests/test_normalize_rules.py]=4)
+          mapfile -t all < <(find tests -name 'test_*.py' | LC_ALL=C sort)
+          files=(); n=0
+          for f in "${all[@]}"; do
+            if [ -n "${PIN[$f]:-}" ]; then [ "${PIN[$f]}" = "$PART" ] && files+=("$f"); continue; fi
+            n=$((n + 1)); [ $((n % 4)) = $((PART % 4)) ] && files+=("$f")
+          done
+          echo "조각 $PART/4 — ${#files[@]}개 파일"
+          uv run pytest "${files[@]}" -q
+
+  contract-shared:
+    name: contract-shared
+    # ★ **필수 체크의 이름.** 룰셋 · `ruleset_check` · `deploy.yml` 의 `gate` 가 이 이름을 안다. 위 셋이 **모두** 초록일 때만 초록이다.
+    needs: [contract-fast, contract-heavy, contract-tests]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: ★ 셋 다 초록인가
+        env:
+          FAST: ${{ needs.contract-fast.result }}
+          HEAVY: ${{ needs.contract-heavy.result }}
+          TESTS: ${{ needs.contract-tests.result }}
+        run: |
+          echo "contract-fast=$FAST contract-heavy=$HEAVY contract-tests=$TESTS"
+          if [ "$FAST" != success ] || [ "$HEAVY" != success ] || [ "$TESTS" != success ]; then
+            echo "::error::contract-fast · contract-heavy · contract-tests 중 하나가 초록이 아니다 — 취소(cancelled)도 초록이 아니다"
+            exit 1
+          fi
 
   # ── 단독 소유 경로만. 강도를 유지하는 자리 ───────────────────
   # ★ 2026-10-01 (DECISIONS §344). **main 에서만 돈다.** 룰셋이 `strict` 를
@@ -690,11 +845,11 @@ jobs:
     timeout-minutes: 30      # ★ 상한. 사유는 `contract-shared` 머리에
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7
         with:
           # ★ 정본은 `.python-version` 하나다 (W3-17).
           python-version-file: .python-version
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
           version: "0.12.13"
           enable-cache: true

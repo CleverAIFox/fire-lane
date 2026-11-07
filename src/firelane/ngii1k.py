@@ -58,6 +58,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
+import shapely
 
 from firelane.paths import ROOT
 
@@ -93,6 +94,21 @@ GEOM_OF = {"ngii1k":       "Polygon",
            "ngii1k_walk":  "Polygon",
            "ngii1k_xsec":  "Polygon",
            "ngii1k_light": "Point"}
+
+#: `build()` 가 **버려도 되는** 기하 — 레이어 키 → {기하 종류: 사유}. **선언 없이 버리는 길은 없다**: 여기 없는 기하가 한 건이라도 들어오면 `build()` 가 운다.
+#:
+#: ★ 2026-10-26 (DECISIONS §587). 종전에는 기하가 `GEOM_OF` 와 다른 피처를 조용히 버리고 **전부 사라질 때만** 울었다. NGI 판 보도 3,300건이 전부 선이라 북부 12도엽의
+#:   선 1,001건이 버려졌는데 SHP 면 1,455건이 남아 있어 아무도 몰랐다. 아래 둘만 선언돼 있다 — 둘 다 **실물을 재서** 적었고, 새 원천이 오면 그 버림을 먼저 세게 된다.
+DROP_OK: dict[str, dict[str, str]] = {
+    "ngii1k": {
+        "LineString": "도로경계 면 말고 같이 오는 선(SHP N1L 4,304 · NGI 2,203). 같은 도엽 면의 경계와 겹치지 않는다(겹침 0.3~0.4%) — 면의 윤곽을 되풀이한 것이 아니라 "
+                      "독립한 선이다. 폭 산출은 면만 쓰고 이 선은 안 쓴다. 이 선이 무엇인지는 확인하지 않았다(DECISIONS §587)",
+    },
+    "ngii1k_walk": {
+        "LineString": "면으로 못 바꾸는 보도 선만 여기로 온다 — SHP N1L 보도 선(216건: 폭 속성이 없고 같은 도엽에 면도 NGI 짝도 없으며 구간 20m 안에 0건)과 "
+                      "폭이 없거나 0 이하인 NGI 선. 폭이 있는 NGI 선은 `lines_to_areas` 가 면으로 바꾼다(DECISIONS §587)",
+    },
+}
 
 SHEET = re.compile(r"(3561\d{5})")
 YEAR = re.compile(r"_(\d{4})\d{4}(?!\d)")     # _20201231 → 2020
@@ -236,7 +252,8 @@ def read_sheet(kind: str, path: Path, want: list) -> dict:
         for k in want:
             recs = got.get(k, {}).get("records", [])
             keep = ATTR_LAYERS.get(k, [])
-            out[k] = [(r["geom"], {a: r.get(a) for a in keep}) for r in recs]
+            # ★ `__ngi` — 이 항목이 NGI 판에서 왔다는 표시. NGI 는 면을 (가장자리 선 + 폭)으로 싣는 레이어가 있어 `lines_to_areas` 가 이것을 본다.
+            out[k] = [(r["geom"], {**{a: r.get(a) for a in keep}, "__ngi": True}) for r in recs]
         return out
 
     out: dict[str, list] = {k: [] for k in want}
@@ -270,6 +287,78 @@ def read_sheet(kind: str, path: Path, want: list) -> dict:
 
 
 # ── 프레임 조립 ───────────────────────────────────────────────
+def lines_to_areas(items: list, center_items: list) -> tuple[list, dict[str, int]]:
+    """NGI 판 보도 선을 **면(띠)** 으로 바꾼다. `(바뀐 항목, 건수)` — 폴리곤과 SHP 선은 그대로 둔다.
+
+    ★ 2026-10-26 (DECISIONS §587). NGI 판은 보도를 면이 아니라 **가장자리 선 + `폭` 속성**으로 싣는다(3,300건 전부 LineString). 이전에는 `build()` 가 그것을 조용히 버렸고
+      북부 12도엽의 선 1,001건이 carve(보도 차감)에 안 닿았다.
+
+    ★ **폭/2 로 가운데 buffer 하지 않는다.** 선은 보도의 **한쪽 가장자리**다 — 겹치는 도엽 45장에서 선 길이의 88.7% 가 같은 도엽 SHP 면의 경계 0.3m 안에 있다. 가운데 buffer 는
+      띠를 선 양쪽으로 반씩 퍼뜨려 **노면 쪽으로 폭/2 를 더 깎는다**(SHP 면과 IoU 0.263). 띠는 한쪽으로만 난다. 어느 쪽인지는 선의 방향이 정하지 않는다(왼쪽이 나은 선 504 ·
+      오른쪽 484) — **가까운 도로 중심선에서 먼 쪽**으로 정한다(IoU 0.396 · 피복률 0.65 · 중심선 쪽은 0.107). 짝이 되는 반대편 선은 없다(1,012선 중 11).
+    ★ 끝단 `flat`(그려진 선 끝을 넘어 뻗지 않는다) · 꺾임 `mitre`(모서리 폭을 지킨다). 한 방향 띠에서는 끝단 · 꺾임 선택이 SHP 대비 0.001 도 안 움직였다 — 데이터가 아니라 원리로 골랐다.
+    ★ 폭이 없거나 0 이하인 선은 **바꾸지 않는다**(그대로 선으로 남아 `build()` 가 선언된 버림으로 센다). 중심선이 하나도 없으면 방향을 못 고르므로 **운다.**
+    """
+    from shapely.strtree import STRtree
+
+    stats = {"converted": 0, "no_width": 0, "not_ngi": 0, "empty": 0, "bands": 0}
+    todo = []
+    for i, (g, a) in enumerate(items):
+        if g is None or g.geom_type != "LineString":
+            continue
+        if not a.get("__ngi"):
+            stats["not_ngi"] += 1
+            continue
+        try:
+            w = float(a.get("폭"))
+        except (TypeError, ValueError):
+            w = 0.0
+        if not w > 0.0:
+            stats["no_width"] += 1
+            continue
+        todo.append((i, g, a, w))
+    if not todo:
+        return list(items), stats
+    cls = [g for g, _ in center_items if g is not None and not g.is_empty]
+    if not cls:
+        raise ValueError("보도 선을 면으로 바꾸려면 도로 중심선이 있어야 한다 — 띠가 어느 쪽인지 중심선에서 먼 쪽으로 정한다. 도로중심선(A0020000)이 0건이다")
+    tree = STRtree(cls)
+
+    def _far(c):
+        return cls[int(tree.nearest(c))].distance(c)
+
+    done: dict[int, list] = {}
+    for i, g, a, w in todo:
+        kw = {"single_sided": True, "cap_style": "flat", "join_style": "mitre"}
+        left, right = (shapely.make_valid(g.buffer(d, **kw)) for d in (w, -w))
+        band = left if _far(left.centroid) >= _far(right.centroid) else right
+        polys = [q for q in getattr(band, "geoms", [band]) if q.geom_type == "Polygon" and not q.is_empty]
+        if not polys:
+            stats["empty"] += 1
+            continue
+        done[i] = [(q, {**a, "__form": "ngi_line_band"}) for q in polys]
+        stats["converted"] += 1
+        stats["bands"] += len(polys)
+    out: list = []
+    for i, it in enumerate(items):
+        out.extend(done.get(i, [it]))
+    return out, stats
+
+
+def drops(layer: str, items: list) -> dict[str, int]:
+    """`build()` 가 버릴 피처의 **기하 종류별 건수**. 순수하다 — 비면 아무것도 안 버린다.
+
+    기하가 없는 항목은 `None` 이라는 이름으로 센다.
+    """
+    keep = GEOM_OF[LAYERS[layer][0]]
+    out: dict[str, int] = {}
+    for g, _ in items:
+        t = "None" if g is None else g.geom_type
+        if t != keep:
+            out[t] = out.get(t, 0) + 1
+    return out
+
+
 def build(layer: str, items: list):
     """(geom, attrs) 목록 → GeoDataFrame. ingest 와 공유한다.
 
@@ -281,6 +370,14 @@ def build(layer: str, items: list):
     keep = GEOM_OF[key]
     raw_n = len(items)
     kinds = [g.geom_type for g, _ in items if g is not None]
+    # ★ 센다. 기하가 기대와 다른 것을 **한 건이라도** 버리면 건수를 대고, 선언(`DROP_OK`)이 없으면 운다.
+    dropped = drops(layer, items)
+    undeclared = {t: n for t, n in dropped.items() if t not in DROP_OK.get(key, {})}
+    if undeclared:
+        raise ValueError(
+            f"{layer}({key}) 기대 {keep} 인데 선언 없이 버려지는 기하가 있다: "
+            + ", ".join(f"{t} {n}건" for t, n in sorted(undeclared.items()))
+            + f" (읽은 {raw_n}건). 면으로 바꿀 수 있으면 바꾸고, 버려도 되면 `DROP_OK` 에 사유와 함께 선언하라 — 선언 없이 버리는 길은 없다.")
     items = [(g, a) for g, a in items if g is not None and g.geom_type == keep]
     if raw_n and not items:
         # ★ 읽기는 했는데 타입 필터로 전멸했다. 소스 형식이 바뀐 것이다.
@@ -296,6 +393,9 @@ def build(layer: str, items: list):
     cols = {"src": ["ngii1k"] * len(items)}
     for a in ATTR_LAYERS.get(layer, []):
         cols[a] = [attrs.get(a) for _, attrs in items]
+    if key == "ngii1k_walk":
+        # 면이 원천 면인가 선에서 만든 띠인가 — carve 가 어느 쪽을 깎았는지 나중에 가를 수 있다.
+        cols["form"] = [attrs.get("__form", "polygon") for _, attrs in items]
     g = gpd.GeoDataFrame(cols, geometry=[geom for geom, _ in items], crs=5186)
     if keep == "Polygon":
         g["geometry"] = g.geometry.buffer(0)        # self-intersection 정리
@@ -315,6 +415,7 @@ def build(layer: str, items: list):
     if "도로폭" in g.columns:
         g["non_vehicular"] = g["도로폭"] <= 0.6
         g.loc[g.non_vehicular, "도로폭"] = None
+    g.attrs["dropped"] = dropped          # 선언한 버림의 건수. 호출 쪽이 기록한다
     return g
 
 
@@ -382,12 +483,17 @@ def main() -> int:
         return 1
 
     out.mkdir(parents=True, exist_ok=True)
+    # ★ 파이프라인(`read/shapefile.py`)과 같은 조립이다 — 보도 선을 띠로 바꾼 뒤 싣는다(§587).
+    acc["A0033320"], walk = lines_to_areas(acc["A0033320"], acc["A0020000"])
+    print(f"  보도 선 → 띠 {walk['converted']}건({walk['bands']}면) · 폭 없음 {walk['no_width']} · SHP 선 {walk['not_ngi']}")
     for layer, items in acc.items():
         g = build(layer, items)
         if g is None:
             print(f"  {LAYERS[layer][1]} 비어 있음 — 건너뜀")
             continue
         print(summary(layer, g))
+        if g.attrs.get("dropped"):
+            print(f"    선언한 버림 {g.attrs['dropped']}")
         write(g, LAYERS[layer][0], out)
     return 0
 

@@ -67,6 +67,8 @@ import re
 import sys
 from pathlib import Path
 
+from firelane.extract_decl import NORMALIZERS
+
 #: ★ 대장을 **직접 안 읽는다.** `ledger` 가 `sources.yaml` 의 주인이고 읽는 법도
 #: 거기 있다(§175 — 같은 일을 하는 함수 다섯이 `or {}` 에서 갈려 있었다).
 #: `tests/test_lake.py::test_ledger_is_loaded_through_one_door` 가 그 문을 센다.
@@ -120,8 +122,10 @@ def names(what: str, c: str) -> bool:
 
 
 def _stem(s: object) -> str:
-    """`TL_SPRD_RW.shp` 와 `TL_SPRD_RW` 는 같은 레이어다."""
-    return re.sub(r"\.\w+$", "", str(s)).strip()
+    """`TL_SPRD_RW.shp` 와 `TL_SPRD_RW` 는 같은 레이어다. **알려진 확장자만** 접는다 — 이름에 점이 든 레이어
+    (`Total.JUSUBG.20260801.TL_SPOT_TUNNEL.12210`)의 끝 `.12210` 을 확장자로 지우면 `.shp` 를 뗀 짝과 갈린다(Zm18)."""
+    base = str(s).replace("\\", "/").rsplit("/", 1)[-1]   # zip 안 폴더 접두(`12210/`)는 레이어 이름이 아니다(§646)
+    return re.sub(r"\.(?:shp|gpkg|geojson|json|csv)$", "", base).strip()
 
 
 def _enc(s: object) -> str:
@@ -138,7 +142,11 @@ def pairs(d: dict) -> list[tuple[str, str, bool, str]]:
         sch = (e or {}).get("schema") or {}
         req, cols = con.get("required_cols"), sch.get("columns")
         if req and cols:
-            miss = [c for c in req if c not in cols]
+            # ★ `normalize_columns` 를 건 항목은 `required_cols` 가 **정규화 뒤 이름**이고 `schema.columns` 는 원본이다(§646).
+            #   같은 판별식(`extract_decl.NORMALIZERS`)으로 양쪽을 맞춘 뒤 댄다 — 없는 칸은 그래도 없다.
+            f = NORMALIZERS.get(con.get("normalize_columns"), str)
+            have = {f(c) for c in cols}
+            miss = [c for c in req if f(c) not in have]
             out.append((k, "칸", not miss,
                         f"`required_cols` {miss} 가 `schema.columns` 에 없다" if miss
                         else f"약속 {len(req)}칸 전부 실측에 있다"))
@@ -223,6 +231,18 @@ def selftest() -> int:
         ("한쪽만 있으면 안 센다", g({"required_cols": ["a"]}, {}) == []),
         ("레이어 확장자를 접는다",
          g({"layer_must_exist": True}, {"layers": ["A"], "layer_used": "A.shp"}) == [True]),
+        ("점이 든 레이어 이름도 접힌다",
+         g({"layer_must_exist": True}, {"layers": ["T.1.12210"], "layer_used": "T.1.12210.shp"}) == [True]),
+        ("zip 안 폴더 접두를 접는다",
+         g({"layer_must_exist": True}, {"layers": ["A"], "layer_used": "12210/A.shp"}) == [True]),
+        ("접두를 접어도 이름이 다르면 거짓",
+         g({"layer_must_exist": True}, {"layers": ["A"], "layer_used": "12210/B.shp"}) == [False]),
+        ("정규화 선언이 있으면 대소문자를 접는다",
+         g({"normalize_columns": "lower_strip", "required_cols": ["a_b"]}, {"columns": ["A_B"]}) == [True]),
+        ("정규화를 거쳐도 없는 칸은 거짓",
+         g({"normalize_columns": "lower_strip", "required_cols": ["z"]}, {"columns": ["A_B"]}) == [False]),
+        ("정규화 선언이 없으면 대소문자를 안 접는다",
+         g({"required_cols": ["a_b"]}, {"columns": ["A_B"]}) == [False]),
         ("레이어가 밖이면 거짓",
          g({"layer_must_exist": True}, {"layers": ["A"], "layer_used": "B.shp"}) == [False]),
         ("약속 안 했으면 레이어를 안 센다",

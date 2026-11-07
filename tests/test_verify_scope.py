@@ -85,7 +85,9 @@ def test_scope_patterns_point_at_real_paths() -> None:
     bad = []
     for pat in sorted(_patterns()):
         root = pat.split("*", 1)[0].rstrip("/")
-        if root and not (ROOT / root).exists():
+        # ★ 2026-11-05 (DECISIONS §633-3). **`.gitignore` 가 덮는 뿌리는 깨끗한 체크아웃에 없다** — `data/interim/_mutate_hold` 는 `test_mutate.py` 가 **만든다.**
+        #   종전엔 그 시험이 먼저 돌아야 이 시험이 초록이었다(한 프로세스 안의 숨은 순서 의존) — 시험을 파일 단위로 나누면 운다.
+        if root and not (ROOT / root).exists() and subprocess.run(["git", "check-ignore", "-q", root], cwd=ROOT, timeout=30).returncode != 0:
             bad.append(f"  scope \"{pat}\" — `{root}` 가 저장소에 없다")
     assert not bad, (
         "영향 범위 선언이 없는 경로를 가리킨다.\n" + "\n".join(bad)

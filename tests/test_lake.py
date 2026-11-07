@@ -43,7 +43,7 @@ MAX_OWNER_BLOCK_READERS = 8   # 2026-09-22 W10-1 이 하나를 뺐다(§217-5) �
 #     받은 경로 없음   기관은 적혀 있고 괄호 꼴만 안 맞는다. **문서 작업으로 내려간다**
 #
 #   가르고 나면 둘째가 줄어드는 것을 첫째가 못 가린다. 2026-09-17 실측 45 · 17.
-MAX_AUTHORITY_MISSING = 45    # authority 칸이 아예 없는 datasets
+MAX_AUTHORITY_MISSING = 44    # authority 칸이 아예 없는 datasets
 MAX_AUTHORITY_NO_ROUTE = 17   # 기관은 적었으나 받은 경로 괄호가 없는 datasets
 
 
@@ -633,3 +633,21 @@ def test_plan_is_idempotent_across_the_move(tmp_path):
         shutil.move(s_, d_)
     again = lake.verify_plan(rows, top, legacy="raw-legacy", repo_tiles=repo, ledger_retired=led)
     assert not again.fails and not again.moves and again.counts["보존"] == 2, again.fails
+
+
+@pytest.mark.skipif(not _lake_attached(), reason="환경skip(레이크) — 레이크가 없다(CI)")
+def test_real_lake_schema_probe_reads_every_shp_layer():
+    """PLAN #171 — 레이크 쪽 못 믿을 값. juso 전자지도 여섯이 도엽 폴더(`12210/`) 아래라 기본명으로 못 열었다(12)."""
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location("lake_ledger_schema", ROOT / "tools" / "ledger_schema.py")
+    m = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = m
+    spec.loader.exec_module(m)
+    d = ledger.load()["datasets"]
+    sick = []
+    for key in ("road_link", "road_rw", "road_intrvl", "boundary_emd", "building", "building_entrance"):
+        got = m.probe(key, d[key]) or {}
+        if got.get("columns_error") or not got.get("columns"):
+            sick.append(f"{key}: {got.get('columns_error') or '칸 없음'}")
+    assert not sick, "레이크 실물에서 못 읽는 레이어 — " + " · ".join(sick)

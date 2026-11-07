@@ -264,11 +264,14 @@ export function findRouteBetween(
   }
   if (!goals.length) return null;
 
+  // ★ 감사 1-5. `findRoute` 와 같이 하한을 곱한다. 안 곱하면 배수가 1.0 아래일 때
+  //   휴리스틱이 실제 비용을 넘어 다익스트라보다 나쁜 답이 난다.
+  const mf = adjacencyMinFactor(adj);
   const h = (n: number) => {
     if (!heuristic) return 0;
     let m = Infinity;
     for (const q of goals) m = Math.min(m, distM(graph.nodes[n], graph.nodes[q.n]));
-    return m;
+    return m * mf;
   };
 
   // ── 종점 후보: 같은 구간이면 구간을 따라 곧장 ───────────────────

@@ -127,11 +127,20 @@ def test_pick_wmax_skips_what_road_bt_already_saved(desk):
 
 
 def test_pick_shoot_needs_all_three_conditions(desk):
-    ok = _f(verdict="needs_cv", cctv_dist_m=20, length_m=30, route_usage=5)
+    ok = _f(verdict="needs_cv", cctv_dist_m=15, length_m=30, route_usage=5)
     far = _f(verdict="needs_cv", cctv_dist_m=40, length_m=30)
-    short = _f(verdict="needs_cv", cctv_dist_m=20, length_m=10)
-    other = _f(verdict="clear", cctv_dist_m=20, length_m=30)
+    short = _f(verdict="needs_cv", cctv_dist_m=15, length_m=10)
+    other = _f(verdict="clear", cctv_dist_m=15, length_m=30)
     assert desk.pick([ok, far, short, other], "shoot") == [ok]
+
+
+def test_pick_shoot_edge_is_the_cctv_range(desk):
+    """촬영 후보의 CCTV 경계는 정본 `CCTV_RANGE` 다 — 옛 25 가 아니다(감사 1-6 · Zm20)."""
+    from firelane.seg.params import CCTV_RANGE
+    on = _f(verdict="needs_cv", cctv_dist_m=CCTV_RANGE, length_m=30, route_usage=5)
+    off = _f(verdict="needs_cv", cctv_dist_m=CCTV_RANGE + 0.1, length_m=30, route_usage=5)
+    assert desk.pick([on], "shoot") == [on]
+    assert not desk.pick([off], "shoot")
 
 
 def test_pick_caps_at_six(desk):

@@ -2,7 +2,7 @@
 """
 seg/width.py — 구간 폭 산출.
 
-이 파일이 `ngii1k 1162 · silpok 116 · ngii 1` 을 만든다. 소스 우선순위(결정 63),
+이 파일이 `ngii1k 1166 · silpok 118 · ngii 1` 을 만든다. 소스 우선순위(결정 63),
 표본 snap, 커버율 자격(COV_MIN), 교차부 제외까지 폭에 관한 판단이 전부 여기 있다.
 
 2026-08-18 Stage 3 에서 `segments.py` 의 `main()` 밖으로 꺼냈다. `measure`(178줄)
@@ -36,28 +36,7 @@ from firelane.seg.params import (
     WMAX_CAP,
     XSEC_EXCL,
 )
-
-
-def walk_spans(ray, walk_u, p, ux, uy):
-    """광선이 **보도면과 겹치는** 1차원 구간들. `p` 가 원점이고 `(ux,uy)` 가 +축이다.
-
-    `_span` 이 노면으로 하는 것과 같은 투영이다. 따로 둔 이유는 하나 —
-    노면 교차는 「0 을 담은 조각」 하나를 찾고, 보도 교차는 **전부** 필요하다.
-    """
-    sg = ray.intersection(walk_u)
-    if sg.is_empty:
-        return []
-    if sg.geom_type == "LineString":
-        pcs = [sg]
-    elif hasattr(sg, "geoms"):
-        pcs = [q for q in sg.geoms if q.geom_type == "LineString"]
-    else:
-        return []                                    # 점 교차. 보도 턱을 스쳤다
-    out = []
-    for q in pcs:
-        ss = [(x - p.x) * ux + (y - p.y) * uy for x, y in q.coords]
-        out.append((min(ss), max(ss)))
-    return sorted(out)
+from firelane.seg.walkcarve import carve_walk, walk_spans
 
 
 def _round_pos(x: float, nd: int = 2) -> float:
@@ -77,24 +56,8 @@ def _round_pos(x: float, nd: int = 2) -> float:
     return r if r > 0 else round(x, 6)
 
 
-def carve_walk(left, right, walk_iv):
-    """좌우 거리에서 보도를 깎는다. **0 을 담은 조각 하나만** 남는다.
-
-    ★ 2026-10-14 (DECISIONS §523-2). 재는 점이 **보도 위**면 안 깎고 그대로
-      돌려준다. 그 표본을 **버리지도 않는다** — §512-1 이 64구간 전부에서
-      버림의 효과가 0 임을 쟀고, 효과 없는 가드는 다음 사람이 무엇을 막는지
-      모른 채 영영 남는다. 중심선이 보도 위인 것은 중심선의 결함이고
-      그 자리는 `PLAN` 이 든다.
-    """
-    lo, hi = -left, right
-    if any(a <= 0.0 <= b for a, b in walk_iv):
-        return left, right
-    for a, b in walk_iv:
-        if b <= 0.0:
-            lo = max(lo, b)              # 왼쪽에서 가장 가까운 보도의 **끝**
-        elif a >= 0.0:
-            hi = min(hi, a)              # 오른쪽에서 가장 가까운 보도의 **시작**
-    return -lo, hi
+#: `width_fail` 낱말 — 표본점 전부가 교차부 안이라 횡단면을 **한 번도 긋지 않은** 구간(`n_try == 0`).
+NO_XSEC_ATTEMPTED = "no_xsec_attempted"
 
 
 class WidthEngine:
@@ -110,7 +73,7 @@ class WidthEngine:
     """
 
     def __init__(self, ngii1k_u, ngii_u, rw_u, bld_u, xn, xsec_poly,
-                 *, walk_u=None, mix_src: bool = False, old_snap: bool = False):
+                 *, walk_u=None, mix_src: bool = False, old_snap: bool = False, poly_idx=None, carver=None):
         self.ngii1k_u = ngii1k_u
         self.ngii_u = ngii_u
         self.rw_u = rw_u
@@ -128,6 +91,23 @@ class WidthEngine:
         self.mix_src = mix_src      # 구간 폭을 표본 혼합 집합의 최솟값으로(종전)
         self.old_snap = old_snap    # snap 을 소스별이 아닌 종전 방식으로
         self.debug = False          # 표본 단위 덤프. `segments.main()` 이 켰다 끈다
+        # ★ Zm3 (계측기). 소스별 (STRtree, 폴리곤 목록, 식별자 목록). 없으면 poly_id 는 None 이다. **판정에 안 쓴다.**
+        self.poly_idx = poly_idx or {}
+        # ★ Zm56 (PLAN #77 · DECISIONS §593). 「자기 몫」 가름. **기본이 None** 이고 그때는 종전과 글자까지 같은 경로다.
+        self.carver = carver
+        self._lr = None             # 직전 `_span` 이 쓴 (left, right, 규칙) — 기록 전용
+
+    def _poly_at(self, nm, pt):
+        """이 소스에서 `pt` 를 덮는 **원천 폴리곤의 식별자**. 합쳐진 면(`*_u`)은 어느 조각인지 못 말하므로 따로 든다.
+
+        여럿이 덮으면(겹침) 목록 순서가 앞선 것이다 — 결정적이다. 못 찾으면 None. **판정에 안 쓴다**(Zm3 계측).
+        """
+        ix = self.poly_idx.get(nm)
+        if ix is None or pt is None:
+            return None
+        tree, geoms, ids = ix
+        hit = sorted(int(i) for i in tree.query(pt) if geoms[int(i)].covers(pt))
+        return ids[hit[0]] if hit else None
 
     def measure(self, s, t):
         p0 = s.interpolate(t)
@@ -181,6 +161,7 @@ class WidthEngine:
             """
             r = LineString([(p.x-ux*RAY_M, p.y-uy*RAY_M),
                             (p.x+ux*RAY_M, p.y+uy*RAY_M)])
+            self._lr = None                 # ★ Zm3. 이 호출이 값을 내지 못하면 기록도 없다
             sg = r.intersection(poly_u)
             if sg.is_empty:
                 return None, "empty"          # 법선이 이 소스와 아예 안 만난다
@@ -256,10 +237,14 @@ class WidthEngine:
             #   `0.3` 은 「좁다」고 `0` 은 「못 쟀다」다. 0 을 결측으로 돌리면
             #   입장 규칙을 **안 건드린다**(입장은 깎지 않은 `s` 가 정했고 이미
             #   통과했다). 구간은 남고 그 표본 하나만 빠진다.
+            # ★ Zm12 ④ (DECISIONS §555). **양쪽이 다 열린 경우(left, right 둘 다 ≥ ESCAPE_M)를 이 분기가 따로 다루지 않는다** —
+            #   한쪽만 샌 경우와 같은 `2·min` 이 나가고, min 이 20m 를 넘어도 큰 값이 그대로 발행된다(DM01876: 27.68, 현장 입구 2.1).
+            #   엔진에는 「양쪽 열림」을 보는 조건이 없다. 진단 도구 `tools/widthlr.py` 의 `blind` 만 그것을 센다. 고치지 않았다(판정 폐포).
             if max(left, right) >= ESCAPE_M:
                 v = 2 * min(left, right)
                 if v <= 0:
                     return None, "escape_zero"   # 수가 아니라 결측이다
+                self._lr = (left, right, "escape")      # w = 2·min — left+right 가 아니다
                 return v, None
             # ★ 2026-10-14 (DECISIONS §523). **보도 차감.** 세 줄 위의 입장
             #   검사와 바로 위의 escape 검사는 **깎지 않은** 좌우를 본다 —
@@ -281,7 +266,9 @@ class WidthEngine:
                 # ★ 깎은 합이 0.3 아래로 떨어져도 **버리지 않는다** — 버리면
                 #   입장이 바뀌고 구간 수가 움직인다(§519 가 `2·min` 에 쓴 그
                 #   사유와 같다). 그 표본 수는 측정 대장 `walk-tiny` 가 든다.
+                self._lr = (left, right, "carve")        # 보도면을 깎은 뒤의 좌우
                 return left + right, None
+            self._lr = (left, right, "sum")
             return s, None
 
         # ── 측정 지점 결정 ──────────────────────────────────
@@ -324,7 +311,7 @@ class WidthEngine:
             # 측정값 자신으로 검증하므로 임계값을 새로 만들지 않는다.
             if (not self.old_snap) and v is not None and sn is not None and sn > v / 2.0:
                 v, c = None, f"snap{sn:.1f}>w/2"
-            res[nm] = (v, c, pt, sn)
+            res[nm] = (v, c, pt, sn, self._lr if v is not None else None)   # 다섯째 = Zm3 기록(left, right, 규칙)
 
         # 세 소스를 다 재고 신뢰도 순으로 채택한다. 좁은 쪽을 고르지 않는다.
         # 실폭도로는 실측 11.8m 인 동계천로에 1.30m 짜리 측구 조각을 그려 놓았고
@@ -354,8 +341,8 @@ class WidthEngine:
                       if (q.centroid.x-P.x)*ux + (q.centroid.y-P.y)*uy > 0), default=None)
             if s1 is not None and s2 is not None and 0.3 < s1+s2 < WMAX_CAP:
                 B = s1 + s2
-        # 벽 사이 폭은 도로 폭보다 좁을 수 없다. 상한(WMAX_CAP)에 걸려 잘린 경우
-        # 역전이 생기므로 도로 폭으로 끌어올린다.
+        # 벽 사이 폭은 도로 폭보다 좁을 수 없다. 상한(WMAX_CAP) 이상은 잘리지 않고 입장에서
+        # 빠지므로(DECISIONS §597) 표본마다 입장이 달라 역전이 생긴다 — 도로 폭으로 끌어올린다.
         if A is not None and B is not None and B < A:
             B = A
 
@@ -372,7 +359,17 @@ class WidthEngine:
                            zip(("1k", "ng", "rw"), WIDTH_SRCS, strict=True))
         return A, B, src, (a_1k, a_ngii, a_rw), why, res
 
+    def attach_carver(self, center, rnx):
+        """가름 규칙을 건다(Zm56 · DECISIONS §593). 중심선이 없으면 안 건다 — 종전 경로."""
+        from firelane.seg.share import ShareCarver
+        return ShareCarver.attach(self, center, rnx)
+
     def widths(self, s):
+        """구간 폭. `carver`(`seg/share.py`)가 있으면 후보일 때만 자기 몫으로 다시 재서 더 좁은 값만 받는다(Zm56 · DECISIONS §593). 없으면 종전 그대로다."""
+        res = self._widths_once(s)
+        return res if self.carver is None else self.carver.refine(self, s, res)
+
+    def _widths_once(self, s):
         A, B, fb = [], [], False
         S, D = [], []
         # 교차로 파편(길이 < MIN_SEG_LEN)은 정의상 전 구간이 교차로 안이다.
@@ -406,7 +403,7 @@ class WidthEngine:
         #     `width_samples.csv` 를 따로 낼 뿐이라 golden 지문이 그대로다.
         _rows = []
 
-        def _covr():
+        def _covr(wmed=None):
             """소스별 커버율. 정규 표본 중 그 소스가 값을 낸 비율.
 
             표본마다 다른 소스가 채택되면 wmin=min(A) 이 소스 혼합 집합에서
@@ -422,8 +419,31 @@ class WidthEngine:
             #   정규 표본 수인데, 호출부가 `_n_try`(시도 수)를 넘기고
             #   있었다. `_n_reg = len(A)` 는 여기보다 아래에서 정의되므로
             #   클로저로 못 잡는다. `A` 를 직접 센다 — 같은 값이다.
+            # ★ 2026-10-24 (Zm22). 다섯째로 구간 폭의 **중앙값**(`width_med_m`)을 낸다.
             return ({k: (round(v/_n_try, 3) if _n_try else None)
-                     for k, v in _cov.items()}, _n_try, _rows, len(A))
+                     for k, v in _cov.items()}, _n_try, _rows, len(A), wmed)
+        def _instr(sc, _res, trusted):
+            """표본 한 줄에 **재고도 버리던 것**을 남긴다(Zm3 계측 · 판정에 안 쓴다).
+
+            ★ `w_rule`(채택 소스의 값이 어떻게 정해졌나) — 셋이다:
+              `sum`     `w = left + right`. 한쪽이 20m(`ESCAPE_M`) 미만이고 보도면이 없을 때. **지금은 닿지 않는다**(보도면이 늘 있다).
+              `carve`   `w = left' + right'`. 한쪽이 20m 미만이고 **보도면을 깎은 뒤**의 좌우다(`left'` · `right'` 가 CSV 의 `left_m` · `right_m`).
+              `escape`  한쪽이라도 `ESCAPE_M`(20m) 이상이면 그 쪽은 이 도로의 반폭이 아니라 광장 · 교차로 · 이웃 도로로 **샌 것**이다.
+                        그때 `w = 2 · min(left, right)` 다 — 좌우합이 아니다. 예) DM02081 s=9 L=21.738 R=36.882 → w = 43.476(합 58.62 가 아니다).
+                        **둘 다 20m 를 넘어도 escape 다**(그래서 큰 값이 그대로 나온다). 이 값은 「법선이 도로를 따라 나간」 자리의 표시이기도 하다.
+            `v3`  세 소스 각각의 **믿을 만한 값**(WIDTH_SRCS 순서 · 못 쟀거나 snap 이 크면 None). 종전에는 채택된 하나만 남았고
+                  나머지 둘은 `_by` 에 들어갔다 사라졌다 — 소스 무관 최솟값은 여기서만 나온다.
+            채택 소스의 좌우(`left` · `right` · 규칙 `sum|carve|escape`) · 표본점이 그 폴리곤 안인가(`inside`) · 폴리곤 식별자(`poly`).
+            """
+            v3 = tuple((_res[n][0] if (n in _res and _res[n][0] is not None and trusted(n)) else None)
+                       for n in WIDTH_SRCS)
+            out = {"v3": v3}
+            if sc is not None and sc in _res and len(_res[sc]) > 4 and _res[sc][4] is not None:
+                _l, _r, _rule = _res[sc][4]
+                out.update(left=round(float(_l), 3), right=round(float(_r), 3), rule=_rule,
+                           inside=(_res[sc][3] == 0.0), poly=self._poly_at(sc, _res[sc][2]))
+            return out
+
         for t in _ts:
             _nc += 1
             _pt = s.interpolate(t)
@@ -494,12 +514,12 @@ class WidthEngine:
             if a and (sc is None or _trusted(sc)):
                 A.append(a); S.append(sc); D.append(pr)
                 _rows.append({"s": round(t, 2), "w": round(float(a), 3),
-                              "src": sc, "drop": None})
+                              "src": sc, "drop": None, **_instr(sc, _res, _trusted)})
             else:
                 # 잰 시도는 했는데 값이 안 나온 자리. `w(s)` 의 결측이다 —
                 # 커버율은 이 개수만 세지만 **어디가** 비었는지는 못 준다.
                 _rows.append({"s": round(t, 2), "w": None, "src": None,
-                              "drop": _why or "no_value"})
+                              "drop": _why or "no_value", **_instr(None, _res, _trusted)})
             # ★ pr 은 measure() 가 항상 3-튜플로 준다. strict=True 로
             #   그 계약을 고정한다 — 소스가 늘거나 줄면 여기서 죽어야
             #   조용히 한 소스가 빠지는 일이 없다.
@@ -511,8 +531,11 @@ class WidthEngine:
             _rsn = None
         elif _nc == 0:
             _rsn = "ts_empty"
-        elif _nx_skip == _nc:
-            _rsn = "all_xsec"            # 표본 전부 교차로 5m 안. 잰 적이 없다
+        elif _n_try == 0:
+            # ★ 2026-10-22 (PLAN §13 W13-31). 종전 낱말은 `all_xsec` 였고 「모든 횡단면이 실패했다」로 읽혔다.
+            #   사실은 **한 번도 안 그었다** — 표본점 전부가 교차부 안이라 `measure()` 를 부르지 않았다
+            #   (`_n_try == 0`). 시도하고 실패한 구간의 사유는 아래 갈래(`_whys`)가 따로 든다.
+            _rsn = NO_XSEC_ATTEMPTED
         else:
             _rsn = Counter(_whys).most_common(1)[0][0] if _whys else "unknown"
         # 폴백을 두지 않는다. 정규 샘플(2m 간격)로 한 점도 안 잡히면
@@ -531,6 +554,7 @@ class WidthEngine:
         # 그것을 채택하면 결정 63(수치지도 주 소스)을 정면으로 뒤집는다.
         # 부분커버 구간은 그 소스가 못 잰 구간을 모르는 채로 판정하는 것이므로
         # width_cov 로 노출해 D-25 실측 우선순위에 쓴다.
+        # ★ width_cov 는 구간 길이의 커버율이 아니라 **시도한 표본 중 채택 소스가 믿을 만한 값을 낸 비율**(성공률)이다.
         _pick = None
         if not self.mix_src:
             # 커버율은 소스를 '고르는' 기준이 아니라 '자격'이다.
@@ -566,12 +590,21 @@ class WidthEngine:
                         break
         wmin = None
         if _pick is not None:
+            # ★ 2026-10-23 (Zm4). 폴리곤 **밖**(`inside = 0`) 표본을 발행에서 빼는 안을 **되돌렸다**(DECISIONS §546-2).
+            #   `inside = 0` 은 「남의 도로」가 아니라 「내가 대표로 고르지 않은 폴리곤」이다 — 빼면 좁은 진짜 값이 사라지고
+            #   `width_min_m` 91건이 전부 **넓은 쪽(완화)** 으로 움직였다. 깃발(`drop = outside`)은 남긴다.
             wmin = _round_pos(min(_by[_pick]))
         elif A:
             wmin = _round_pos(min(A))
+        # ★ Zm22 `width_med_m` — `wmin` 과 같은 표본 · 같은 선택, 집계만 median. 판정은 안 읽는다.
+        wmed = None
+        if _pick is not None:
+            wmed = _round_pos(float(np.median(_by[_pick])))
+        elif A:
+            wmed = _round_pos(float(np.median(A)))
         wmax = _round_pos(min(B)) if B else None
         # 벽 사이 폭이 도로 폭보다 좁을 수는 없다. 샘플별로는 맞아도
-        # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 에 걸린 경우).
+        # 각각 최솟값을 취하면 역전이 생긴다(대로에서 WMAX_CAP 이상이라 입장에서 빠진 표본이 있는 경우 — DECISIONS §597).
         if wmin is not None and wmax is not None and wmax < wmin:
             wmax = wmin
         # 폴백 표본만으로 나온 값은 신뢰할 수 없다. 긴 구간에서 정규 샘플이
@@ -587,11 +620,14 @@ class WidthEngine:
         else:
             _i = A.index(min(A)) if A else None
             wsrc = S[_i] if _i is not None else None
-        # 두 공공 소스가 같은 지점을 얼마나 다르게 기술하는가.
+        # ★ 이 값은 「소스 간 최솟값 차이」가 **아니다.** 표본 전체(A)에서 값이 가장 좁은 **그 한 표본**(`_i`)에서
+        #   세 소스(1k · 5k · 실폭도로)가 낸 값 중 **둘 이상**이 있을 때의 max-min 이다. 그 표본에서 한 소스만 쟀으면 None.
+        #   구간 최솟값이 소스마다 11m 갈려도 0.0 일 수 있고(최솟값 표본이 한 소스만 잰 자리), 반대로 0 인데 1m 넘게 갈리는
+        #   구간도 있다. 소스 간 최솟값 차이는 `segments.width_any` 의 `width_source_conflict_m` 이다.
         # 이 값이 큰 순서가 곧 D-25 실측 우선순위다(§7-2 관측점 선정).
         wdis = None
         if _i is not None:
             _vals = [v for v in D[_i] if v is not None]
             if len(_vals) >= 2:
                 wdis = round(max(_vals) - min(_vals), 2)
-        return wmin, wmax, fb, wsrc, wdis, _rsn, _covr()
+        return wmin, wmax, fb, wsrc, wdis, _rsn, _covr(wmed)

@@ -13,6 +13,7 @@ dms.py — **이미 쓰인 것을 지금 규약으로 전수 검사한다.**
     uv run python tools/dms.py fill round-1.txt --apply   고른 것을 문서에 적는다
     uv run python tools/dms.py round         후보 없이 목록만
     uv run python tools/dms.py mark ID …     읽은 절을 북마크에 적는다
+    uv run python tools/dms.py tree          ★ 트리 지문 (깃발은 dmstree.py 머리말)
     uv run python tools/dms.py --selftest    ★ 프로브가 살아 있나
 
 ── 왜 CDC 앞인가 ──────────────────────────────────────────────
@@ -95,6 +96,7 @@ CANON_NONE = "강제자 없음 — 사유:"
 NONE_ANY = re.compile(r"^(?:없음|없다)")
 
 # ★ 유병률 칸의 **문법**은 `tools/prevfield.py` 가 든다 (DECISIONS §511-2)
+import dmstree as _tree  # noqa: E402  git 트리 물음 둘 — 상한 때문에 뺐다(§600)
 import prevfield as pf  # noqa: E402  이 파일 머리의 상수 자리를 지켜 여기 둔다
 
 # ── 정밀 프로브 — 1차 소급 192건 중 174가 오탐이었다 ──────────
@@ -944,6 +946,9 @@ def _log_is_fresh(log: Path) -> list[str]:
     #   잡는다 — `golden.py lock` 뒤에 `seg/width.py` · `MASTER.md` 가
     #   그렇게 걸려 30분짜리 재실행을 시켰다.
     #   "언제 만졌나" 가 아니라 "무엇이 다른가" 를 묻는 것이 맞다.
+    fresh = _tree.log_stale(log, ROOT, GENERATED)   # ★ TREE 줄이 있으면 내용으로 묻는다(§600)
+    if fresh is not None:
+        return fresh
     head = _log_head(log)
     if head is not None:
         now = _run(["git", "rev-parse", "--short", "HEAD"], 30)[1]
@@ -1519,6 +1524,7 @@ def selftest() -> int:
         bad.append("실재하는 파일 안의 **없는 함수**를 못 잡았다")
     if _missing_member("tests/test_guards.py", "test_no_dated_scripts_in_tools"):
         bad.append("실재하는 함수를 없다고 한다 — 오탐")
+    bad += ["dmstree 자기검사가 빨갛다"] * bool(_tree.selftest())   # ★ §600
     for line in bad:
         print(f"  {line}")
     print("selftest " + ("빨강" if bad else "초록"))
@@ -1672,49 +1678,8 @@ def cmd_rawdiff() -> int:
 
 
 def ancestry(root: Path = ROOT) -> tuple[int, str]:
-    """**봉인이 가리키는 커밋이 이 트리의 조상인가.** (rc, 사유)
-
-    ★ 2026-09-21 (PLAN §13 W11-1 · DECISIONS §204 · §207 · §210). 봉인이
-      `2130b14` 를 가리켰는데 그 커밋은 `refs/pull/108/head` 에만 살아 있었다.
-      feat 가지 위에서 찍고 그 가지를 스쿼시했기 때문이다. `git clone` 만 한
-      사람에게는 **없는 커밋**이었고 `delta` 는 「전수 재검사다」만 찍고 rc=0 이었다
-      — 이틀 동안 아무것도 안 울었다.
-
-    ★ 물음은 「`main` 의 조상인가」가 아니라 **「봉인 파일을 싣고 있는 이 트리의
-      조상인가」**다. 봉인 파일은 제가 실린 트리의 역사를 가리켜야 한다. feat 가지에서
-      물어도, part/infra 에서 물어도, main 에서 물어도 같은 답이 나와야 옳다.
-
-    ★ 판정 셋 — 전부 **실패**다. 못 잰 것을 통과로 치지 않는다.
-        얕은 클론     조상을 잴 역사가 없다 (CI 기본 `fetch-depth: 1`)
-        없는 커밋     이 저장소가 모르는 해시다 — `2130b14` 의 모양
-        조상 아님     있기는 한데 이 트리의 역사 밖이다
-    """
-    def git(*a: str) -> subprocess.CompletedProcess:
-        return subprocess.run(["git", *a], cwd=root, capture_output=True,
-                              text=True, check=False, stdin=subprocess.DEVNULL)
-
-    seal = root / "data" / "dms" / SEAL
-    if not seal.is_file():
-        return 1, f"봉인이 없다 — {seal.relative_to(root)}"
-    try:
-        c = json.loads(seal.read_text(encoding="utf-8")).get("commit") or ""
-    except json.JSONDecodeError as e:
-        return 1, f"봉인을 못 읽었다 — {e}"
-    if not re.fullmatch(r"[0-9a-f]{7,40}", c):
-        return 1, f"봉인의 `commit` 이 해시 꼴이 아니다 — {c!r}"
-    sh = git("rev-parse", "--is-shallow-repository")
-    if sh.returncode != 0:
-        return 1, "git 저장소가 아니다 — 조상을 잴 수 없다"
-    if sh.stdout.strip() == "true":
-        return 1, ("얕은 클론이다 — 조상을 잴 역사가 없다. "
-                   "`git fetch --unshallow` 뒤 다시 돌려라")
-    if git("cat-file", "-e", f"{c}^{{commit}}").returncode != 0:
-        return 1, (f"봉인이 가리키는 `{c}` 가 이 저장소에 없다 — "
-                   "스쿼시로 사라진 커밋이다(DECISIONS §204 의 `2130b14` 모양)")
-    if git("merge-base", "--is-ancestor", c, "HEAD").returncode != 0:
-        return 1, (f"봉인이 가리키는 `{c}` 가 HEAD 의 조상이 아니다 — "
-                   "다른 가지에서 찍었거나 그 가지가 스쿼시됐다")
-    return 0, f"봉인 `{c}` 는 HEAD 의 조상이다"
+    """봉인이 가리키는 커밋이 이 트리의 조상인가 — 몸통은 `dmstree.ancestry` 다(DECISIONS §600)."""
+    return _tree.ancestry(root, SEAL)
 
 
 def cmd_ancestry() -> int:
@@ -1731,6 +1696,8 @@ def cmd_ancestry() -> int:
 
 
 def main() -> int:
+    if sys.argv[1:2] == ["tree"]:                       # ★ 지문은 scan 도 argparse 도 필요 없다
+        return _tree.cmd_tree(ROOT, GENERATED, sys.argv[2:])
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", nargs="?", default="scan",
                     choices=["scan", "verify", "round", "mark", "prune",

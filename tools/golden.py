@@ -68,7 +68,7 @@ TOL = {"width_min_m": 1e-3, "width_max_m": 1e-3, "length_m": 1e-2}
 
 
 def _round_geom(geom, nd: int = 3):
-    """좌표를 mm 로 반올림한다. EPSG:4326 이므로 실제로는 소수 7자리."""
+    """좌표를 반올림한다. EPSG:4326 에서 소수 7자리 ≈ 1 cm 다 — 호출이 `nd=7` 을 명시한다(감사 1-3 · Zm20: 기본 3 은 ≈ 100 m 격자였다)."""
     t = geom["type"]
     c = geom["coordinates"]
 
@@ -91,7 +91,7 @@ def fingerprint() -> dict:
         p = f["properties"]
         uid = p.get("seg_uid")
         per[uid] = {k: p.get(k) for k in FIELDS}
-        geo.update(json.dumps(_round_geom(f["geometry"]), sort_keys=True).encode())
+        geo.update(json.dumps(_round_geom(f["geometry"], nd=7), sort_keys=True).encode())
 
     v = collections.Counter(f["properties"]["verdict"] for f in feats)
     ur = collections.Counter(f["properties"].get("unknown_reason")

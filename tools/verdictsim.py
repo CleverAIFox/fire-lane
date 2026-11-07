@@ -132,6 +132,7 @@ def _veto_clear(test: Callable[[dict], bool]) -> Hook:
             wmin=CLEAR_M - 0.01,          # clear 문턱 바로 아래로 낮춰 다시 먹인다
             wmax=p["width_max_m"], nreg=p["n_sample"], road_bt=p["road_bt_m"],
             length_m=p["length_m"], cctv_dist=p["cctv_dist_m"],
+            wmin_any=p.get("width_min_any_m"), wsym=p.get("width_min_sym_m"), clear_med=p.get("clear_med_m"),
         )
         return v2, (NO_WORD if v2 == "unknown" else None)
     return hook
@@ -178,13 +179,15 @@ def base(p: dict) -> tuple[str, str | None]:
     return classify(
         wmin=p["width_min_m"], wmax=p["width_max_m"], nreg=p["n_sample"],
         road_bt=p["road_bt_m"], length_m=p["length_m"], cctv_dist=p["cctv_dist_m"],
+        wmin_any=p.get("width_min_any_m"), wsym=p.get("width_min_sym_m"), clear_med=p.get("clear_med_m"),
     )
 
 
 def _check_repro(rows: list[dict]) -> None:
     """★ 재현이 안 되면 아무 수도 내지 않는다."""
+    # ★ 이유는 **각자의 칸**이다 — unknown 은 `unknown_reason`, needs_cv 는 `cv_reason`(규칙 [8]~[10]).
     bad = [p["seg_id"] for p in rows
-           if (base(p)[0], base(p)[1]) != (p["verdict"], p["unknown_reason"])]
+           if base(p) != (p["verdict"], p["unknown_reason"] if p["verdict"] == "unknown" else p.get("cv_reason"))]
     if bad:
         raise SystemExit(
             f"★ 재현이 깨졌다 — {len(bad)}/{len(rows)} 건이 공개본과 다르다.\n"

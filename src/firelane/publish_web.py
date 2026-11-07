@@ -3,7 +3,7 @@
 publish_web.py — data/processed 산출물을 web/data 경량 사본으로 내보낸다.
 
 
-IN    processed/*.geojson · processed/segments.schema.json ·
+IN    processed/*.geojson · processed/segments.schema.json · processed/ngii1k_xsec_5186.gpkg · processed/fire_access.csv ·
       processed/route_vehicle.csv · processed/corridor_5186.gpkg ·
       processed/building_5186.gpkg ·
       processed/navi_build.csv · processed/navi_jibun.csv · processed/civil_office.geojson ·
@@ -57,7 +57,7 @@ from firelane.seg.params import EMD_CD
 
 # ★ CCTV_RADIUS 는 삭제했다(2026-08-23). 여기서 0회 참조였고, 커버리지
 #   원의 반경 정본은 web/config.js 의 markers[].cover.radius 다.
-#   판정 임계(CCTV_RANGE 25.0)의 정본은 seg/params.py 다. 같은 숫자를
+#   판정 임계(`CCTV_RANGE`)의 정본은 seg/params.py 다. 같은 숫자를
 #   세 곳에 두면 반드시 한 곳만 고치고 잊는다.
 PREC = dict(driver="GeoJSON", COORDINATE_PRECISION=6)
 # ★ 건물 발행 예산(§181-2). 스코프 판 2.18MB · web/data 32MB / 상한 40MB 에서 잡았다.
@@ -81,9 +81,51 @@ def main():
     _seg["seg_no"] = (_seg.sort_values(["road_name", "_oy", "_ox"])
                           .groupby("road_name").cumcount() + 1)
 
-    _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_max_m","verdict",
+    # ── 내접원(clear_*) — Zm19 부터 **판정이 읽는다** (`firelane.segments` 가 계산하고 `seg/classify.py` 규칙 [10] 이 `clear_med_m` 을 읽는다)
+    # ★ 여기서는 다시 계산하지 않는다 — 같은 수를 두 집에서 계산하면 갈리는 쪽이 늘 판정이다. `segments.geojson` 의 칸이 그대로 실려 나간다.
+    for _k in ("clear_min_m", "clear_med_m", "clear_max_m", "clear_src", "clear_cov"):
+        assert _k in _seg.columns, f"segments.geojson 에 {_k} 가 없다 — segments 단계를 다시 돌려라"
+
+    # ── 중심선 편심(ecc_*) — 판정에 안 쓴다 (Zm13 · `firelane.eccentricity` · DECISIONS §556) ──────────────────
+    # ★ `width_samples.csv` 의 `ecc_m` 을 그대로 쓴다(새로 재지 않는다). 임계는 사람이 정한다. 판정 폐포 밖이라 여기서 싣는다(web 에만 있는 칸).
+    from firelane import eccentricity as _ecc
+    _ex = _ecc.columns(list(_seg["seg_id"]), list(_seg["width_min_m"]), _ecc.load(P/"width_samples.csv"))
+    for _k, _v in _ex.items():
+        _seg[_k] = _v
+
+    # ── 입체 구조물(struct_*) — 판정에 안 쓴다 (Zm18 · `firelane.structures` · DECISIONS §563) ──────────────────
+    # ★ 면은 도로명주소 기타자료(터널 · 고가 · 교량)다. 판정 폐포 밖이라 여기서 싣는다(web 에만 있는 칸).
+    from firelane import structures as _st
+    _sx = _st.columns(list(_seg.to_crs(5186).geometry),
+                      {_k: list(gpd.read_file(P/f"juso_{_k}_5186.gpkg").geometry) for _k, _ in _st.KINDS})
+    for _k, _v in _sx.items():
+        _seg[_k] = _v
+
+    # ── 소방통로확보대상(nfa_access_*) — 판정에 안 쓴다 (Zm8 · `firelane.fireaccess` · DECISIONS §550) ───────────
+    # ★ 좌표가 없어 도로명 문자열로 매칭한다. `len_ratio` 가 매칭 품질을 든다. 판정 폐포 밖이라 여기서 싣는다(web 에만 있는 칸).
+    from firelane import fireaccess as _fa
+    _fa_rows = _fa.load(P/"fire_access.csv")
+    _fx = _fa.columns(list(_seg["road_name"]), list(_seg["length_m"]), _fa_rows)
+    for _k, _v in _fx.items():
+        _seg[_k] = _v
+
+    # ★ 형을 바로잡는다. `None` 이 섞인 object 열은 GeoJSON 에 **문자열**('True' · 'False')로 써진다 — 관문이 `is False` 로 비교하면 **조용히 전부 통과**한다.
+    #   nullable 불리언 · 정수로 두면 true · false · null 과 정수로 써진다.
+    import pandas as _pd
+    _seg["nfa_access_loose"] = _pd.array(list(_seg["nfa_access_loose"]), dtype="boolean")
+    _seg["nfa_access_hh"] = _pd.array(list(_seg["nfa_access_hh"]), dtype="Int64")
+
+    # ── 발행 범위(scope_tier) — 판정에 안 쓴다 · 구간을 하나도 안 떨군다 (PLAN #62 · `firelane.scopetier` · DECISIONS §613) ──────
+    # ★ 1,281구간을 전부 발행하고 **이름만** 붙인다(target · corridor · listed · reference). 어디를 보여줄지는 표출이 이 칸으로 고른다.
+    #   지정(listed)은 소방서 표 지역명의 **주소부**에 도로명이 나오는 구간이다 — 위 `nfa_access_*` 와 다른 정의다(괄호 안 설명은 안 센다).
+    #   판정 폐포 밖이라 여기서 싣는다(web 에만 있는 칸).
+    from firelane import scopetier as _stier
+    _seg["scope_tier"] = _stier.columns(list(_seg["in_emd"]), list(_seg["route_usage"]),
+                                        list(_seg["road_name"]), _fa_rows)["scope_tier"]
+
+    _cols = ["seg_uid","seg_id","seg_no","width_min_m","width_med_m","width_max_m","verdict",
              "midpoint_fallback","inherited","route_usage","length_m",
-             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_cov","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
+             "run_length_m","nfa_designated","cctv_dist_m","cv_feasible","width_src","width_disagree_m","width_min_any_m","width_min_any_src","width_min_any_s_m","width_source_conflict_m","n_subphys","width_min_sym_m","width_min_sample_idx","n_poly","width_selection_reason","occ_pressure","occ_pressure_rank","width_cov","cv_reason","clear_min_m","clear_med_m","clear_max_m","clear_src","clear_cov","ecc_rel_med_m","ecc_rel_max_m","ecc_cov","struct_kind","struct_dist_m","nfa_access_listed","nfa_access_width","nfa_access_len_m","nfa_access_hh","nfa_access_len_ratio","nfa_access_loose","nfa_access_token","scope_tier","n_sample","n_try","road_name","seg_label","road_side","road_bt_m","in_emd","light_count","width_fail",
              "unknown_reason"]
     _cols += [c for c in ("z",) if c in _seg.columns]
     _seg[_cols + ["geometry"]].to_file(W/"segments.geojson", **PREC)
@@ -221,7 +263,7 @@ def main():
 
     # ── 마커 3종 ────────────────────────────────────────────────
     # 전부 스코프로 자른다. 자르지 않으면 마스크가 덮은 어두운 영역 위에
-    # 점이 떠서 "저게 뭐냐"는 오해를 부른다. (소화전 18개 중 스코프 밖이 7개였다)
+    # 점이 떠서 무엇인지 알 수 없다는 오해를 부른다. (소화전 18개 중 스코프 밖이 7개였다)
 
     # 소화전. ★ 2026-08-31 실측 — processed 524 · 스코프 안 153 · 동명동 41.
     # 종전 주석의 "공개 31개 · 동명동 1개" 는 소스 교체 전 값이고 9개월 낡았다.
@@ -384,6 +426,21 @@ def main():
     _sch["fields"]["seg_no"] = ("int 도로명 안에서의 구간 순번. ★ 표기 전용이고 "
                                 "publish 가 만든다. 노딩이 바뀌면 밀린다 — "
                                 "외부 참조는 seg_uid, 화면 표기는 seg_label")
+    _sch["fields"].update({
+        "ecc_rel_med_m": "float|null 표본 |ecc| 의 중앙값 ÷ 반폭(반폭 = width_min_m/2). ★ 길이가 아니라 **무차원 비율**이다(이름은 지시문이 정했다). 0 이면 중심선이 정중앙, 1 이면 도로 한쪽 경계. 중심선 편심 진단 — 판정에 안 쓴다 · 임계는 사람이 정한다(DECISIONS §556)",
+        "ecc_rel_max_m": "float|null 표본 |ecc| 의 최댓값 ÷ 반폭. 무차원 비율. 반폭이 작으면 1 을 넘을 수 있다 — 자르지 않는다",
+        "ecc_cov": "float width_samples.csv 의 표본점 중 ecc_m 가 있는 비율(0~1). 교차부 제외 등으로 빈 행이 분모에 든다",
+        "struct_kind": "str|null 반경 50m 안에서 가장 가까운 **입체 구조물**(터널 · 고가 · 교량 — 도로명주소 기타자료). 입력 범위 안만 적재돼 있다 — null 은 「적재된 것 중에는 없다」다. 판정에 안 쓴다(DECISIONS §563)",
+        "struct_dist_m": "float|null 그 구조물까지의 거리(m). struct_kind 가 null 이면 null",
+        "nfa_access_listed": "bool 이 구간의 road_name 이 소방서 소방통로확보대상 지역명에 나타나는가(**정확 일치** — 글자↔숫자 경계의 공백만 허용하고 더 긴 이름의 앞부분은 거른다 · DECISIONS §550-2). ★ 좌표가 없어 도로명 문자열로 맞춘다 — 판정에 안 쓴다",
+        "nfa_access_width": "str|null 소방서가 적은 폭(m) — **문자열 그대로**(2.7~3.2 같은 범위가 있다). ★ 구간 대표값이라 우리 wmin(지점 최솟값)과 **직접 비교하지 않는다**",
+        "nfa_access_len_m": "float|null 소방서가 적은 구간거리(m). 여러 행이 걸리면 구간거리가 가장 큰 행",
+        "nfa_access_hh": "int|null 소방서가 적은 세대수",
+        "nfa_access_len_ratio": "float|null 우리 그 도로명의 연장 합 ÷ 소방서 구간거리. 매칭 품질이다 — 0.5~2.0 밖이면 매칭이 느슨하다(소방서는 간선의 좁은 일부만 지정한다)",
+        "nfa_access_loose": "bool|null len_ratio 가 0.5~2.0 밖이다(매칭이 느슨해 비교가 안 된다). listed 가 false 면 null",
+        "nfa_access_token": "str|null 매칭된 행의 소방서 지역명 **원문**. 매칭은 정확 일치다(본선 경양로는 「경양로 247번길 26」 골목 행에 안 걸린다) — 소방서가 본선을 지정했는지 번길을 지정했는지는 원문을 읽고 사람이 판단한다",
+        "scope_tier": "str 발행 범위 분류 — target(동명동 안) · corridor(동 밖이고 route_usage>0) · listed(동 밖이고 route_usage==0이며 소방서 표 지역명의 **주소부**, 첫 괄호 앞에 road_name 이 통째로 나옴) · reference(나머지). ★ 구간을 하나도 안 떨군다 — 1,281구간 전부가 하나의 값을 갖고, 어디를 보여줄지는 표출이 이 칸으로 고른다. reference 는 발행 범위에 안 든다. 판정에 안 쓴다. nfa_access_listed(지역명 어디서든 걸림)와 다른 정의다 — 괄호 안 설명(구, 지호로)은 지정이 아니다",
+    })
     _sch["scope"] = "web — 표출용 사본. processed 전용 컬럼은 뺐다"
     _sch["dropped_from_processed"] = _dropped
     (W/"segments.schema.json").write_text(

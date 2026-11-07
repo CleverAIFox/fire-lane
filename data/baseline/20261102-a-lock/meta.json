@@ -1,0 +1,47 @@
+{
+  "tag": "20261102-a-lock",
+  "frozen_at": "2026-11-02T04:22:39+09:00",
+  "git_sha": "66b712873a7a33f2e548dd2e0213b285fe93089f",
+  "note": "A 재잠금 — #70 닫음 · #180 가름을 내접원에 · clear 275 → 274 (DM01876 clear → unknown)",
+  "tally": {
+    "n": 1281,
+    "verdict": {
+      "clear": 274,
+      "needs_cv": 283,
+      "blocked": 192,
+      "unknown": 532
+    },
+    "unknown_reason": {
+      "no_cctv_band": 214,
+      "needs_survey": 78,
+      "no_cctv_thin": 159,
+      "no_cctv_narrow": 70,
+      "no_cctv_single": 10,
+      "ledger_disputes": 1
+    },
+    "width_src": {
+      "ngii1k": 1162,
+      "silpok": 116,
+      "ngii": 1,
+      "null": 2
+    },
+    "length_total_m": 58309,
+    "in_emd": 416,
+    "route_usage_pos": 580,
+    "nfa_designated": 251
+  },
+  "expect_snapshot": "EXPECT = {\n}",
+  "sha256": {
+    "segments.geojson": "3b0fb6ddd9e8ccf5a548ffef7fd5ecde1049ac584b255dd8a2f1d313bf5da64e",
+    "segments.schema.json": "318738fe3c3d37cfff9b6b2b19b0107bf6f3e6d81bf50b5f4767ecb4cff42e43",
+    "_manifest.json": "3f12d4751ff0384473561cffe84535940dc381f33a20eaeb219abd9c5bbe4ff6",
+    "seg_uid_map.csv": "446ee06255fe2d5e62d0ba309038a9ff01316b998bfbab01df35a506ae9a6f75",
+    "eval.json": "d6e3fb75d11564b21ffad415f8ae186ea3ca5b62612aa1a045f8771e44341547",
+    "nfa_compare.json": "98b57c64336e69fe3afa4617879cfe90ff00667c23da25223b5d42743fec9c51"
+  },
+  "why": "구 원본(국토정보플랫폼 NGI 20도엽 2020·2022)이 2026-08-15 전량 재취득으로 소실됐다. 이 산출물은 재생성 불가다.",
+  "known_limits": [
+    "width_verified 전건 false. 레이저 실측 전이다",
+    "nfa_compare 는 검증이 아니라 적합(fit)이다"
+  ]
+}

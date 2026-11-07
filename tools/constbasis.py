@@ -24,7 +24,7 @@ constbasis.py — 판정 상수가 **어디서 왔는지** 댈 수 있는가.
     ① 문서    `§n` · DECISIONS · PLAN · MASTER — 판단이 어디 적혔나
     ② 규격    KFS- · NFPA · IFC · 소방청 · 국토지리정보원 · 시행령 · 고시
     ③ 유도    주석이 산술을 적는다 (`2.5m + 여유` 꼴)
-    ④ 실측    실측 · 쟀다 · 측정 · 조사
+    ④ 실측    실측 · 쟀다 · 측정했다(용언) · 조사 — ★ 명사 `측정` 은 안 센다(`측정지점`)
 
 ★ **값이 옳은가는 안 본다.** `WMAX_CAP` 이 60 이어야 하는지는 이 도구가 모른다.
   드는 것은 「댈 수 있는가」 하나다. 근거를 붙이는 것은 판정을 안 바꾸고,
@@ -71,7 +71,7 @@ FEEDERS: dict[str, str] = {
 }
 
 #: 근거 표지 넷. 하나라도 걸리면 「댈 수 있다」로 센다.
-BASIS = re.compile(
+_SOURCE = (
     r"§\s*\d|DECISIONS|PLAN|MASTER"                       # ① 문서
     # ★ 2026-10-12 (DECISIONS §487). `IEC` 를 더했다 — `CCTV_RANGE = 19.0` 의
     #   근거가 **IEC 62676-4:2025 DORI** 이고(§422-2 · §455), 그 이름이 이
@@ -80,8 +80,15 @@ BASIS = re.compile(
     #   좁았다 — 세는 꼴이 쓰는 꼴과 달랐다(§485 · §486 과 같은 족).
     r"|KFS-|NFPA|IFC|IEC|소방청|소방서|국토지리정보원|시행령|고시|표준"   # ② 규격
     r"|\d+(?:\.\d+)?\s*(?:m|km|분|초)\s*[+×*]"              # ③ 유도
-    r"|실측|쟀다|쟀고|측정|조사"                              # ④ 실측
 )
+# ★ 2026-11-05 (DECISIONS §639-1). **`측정` 을 명사로는 안 센다.** `측정지점` · `측정점` · `측정값` 의 `측정` 은 **무엇을 쟀는가를 가리키는 명사**이지 값이 어디서 왔는가가
+#   아니다 — `SNAP_MAX` 의 「측정지점을 노면 안으로 끌어오는 최대 거리」가 그 우연 하나로 「댈 수 있다」가 돼 있었다. 남기는 것은 **재는 일을 했다는 꼴**이다:
+#   `실측` · `쟀다`류 · 용언 `측정했다`·`측정해 보니`·`측정한 결과` · `조사`. 낱말 목록을 **줄였다**(늘린 것이 아니다).
+_MEASURED = r"실측|쟀다|쟀고|측정(?:했|하였|해 ?보|하니|한 결과)|조사"       # ④ 실측(재는 일을 했다는 꼴)
+BASIS = re.compile(_SOURCE + "|" + _MEASURED)
+#: ★ 표지 ④ **만으로** 「댈 수 있다」가 된 것을 가리는 자(DECISIONS §638-4). ④ 는 **출처와 사유 · 민감도를 못 가른다** — 「쟀다」가 값의 출처일 수도,
+#:   「움직여도 판정이 안 바뀐다」는 사유일 수도, `측정지점` 의 `측정` 이라는 **낱말 우연**일 수도 있다. 이 자는 가르지 못하고 **세기만 한다**(판정 · 래칫을 안 바꾼다).
+_SOURCE_ONLY = re.compile(_SOURCE)
 
 #: 출처를 못 대는 판정 상수 수. **문턱이 아니라 지금 수다.**
 #: 줄이는 길은 둘 — 근거를 적거나(판정 불변), 값을 재서 고치거나(측정 배치).
@@ -98,7 +105,7 @@ BASIS = re.compile(
 #     빌리면 사유 없는 상수가 옆 사유로 근거를 얻는다. 실측으로 묶음 일곱 중
 #     **둘만** 빈 줄 뒤다 — 다섯은 꼬리말이었다. **못 댔다고 말하는 쪽으로
 #     틀린다**: 못 댔다고 하면 사람이 보지만, 댔다고 잘못 말하면 아무도 안 본다.
-CONST_NO_BASIS = 11
+CONST_NO_BASIS = 9
 #: 같은 수, `FEEDERS` 쪽. **2026-10-08 첫 실측 7** — 종전에는 분모 밖이라 0 으로
 #: 보였다. 이 수가 0 에서 7 로 뛴 것은 느슨해진 것이 아니라 **처음 센 것**이다.
 CONST_NO_BASIS_FEEDER = 7
@@ -161,6 +168,11 @@ def ungrounded(rows: list[dict]) -> list[dict]:
     return [r for r in rows if not r["basis"]]
 
 
+def measured_only(rows: list[dict]) -> list[dict]:
+    """근거가 **표지 ④(실측 · 쟀다 · 측정 · 조사) 하나뿐인** 것들 — 출처인지 사유 · 민감도인지 낱말 우연인지 이 자가 못 가른다."""
+    return [r for r in rows if r["basis"] and not _SOURCE_ONLY.search(r["note"])]
+
+
 def feeder_rows() -> list[tuple[str, dict]]:
     """`FEEDERS` 전부의 상수. 파일이 없으면 `RuntimeError` — 선언이 낡은 것이다."""
     out = []
@@ -191,7 +203,7 @@ def show(rows: list[dict], only_bad: bool) -> int:
     print(f"── 판정 상수의 출처  {PARAMS.relative_to(ROOT)}")
     print(f"   수치 상수 {len(rows)} · 댈 수 있음 {len(rows) - len(bad)} · "
           f"**못 댐 {len(bad)}** · 래칫 {CONST_NO_BASIS}")
-    print("\n   근거로 치는 것 — ① 문서 §  ② 규격·기관  ③ 산술 유도  ④ 실측\n")
+    print("\n   근거로 치는 것 — ① 문서 §  ② 규격·기관  ③ 산술 유도  ④ 실측(재는 일을 했다는 꼴 · 명사 측정은 안 센다)\n")
     for r in rows:
         if only_bad and r["basis"]:
             continue
@@ -216,6 +228,11 @@ def show(rows: list[dict], only_bad: bool) -> int:
         print(f"   {mark}{r['name']:<16} {r['value']:>8}   {Path(rel).name:<14}"
               f" {r['note'][:44]}")
 
+    weak = measured_only(rows) + [r for _, r in frows if r["basis"] and not _SOURCE_ONLY.search(r["note"])]
+    if weak:
+        print(f"\n── 표지 ④ **만으로** 댈 수 있다고 센 것 {len(weak)} — 출처인지 사유 · 민감도 · 낱말 우연인지 이 자가 못 가른다(DECISIONS §638-4)")
+        for r in weak:
+            print(f"   ? {r['name']:<16} {r['value']:>8}   {r['note'][:58]}")
     print("\n★ **값이 옳은가는 안 본다.** 드는 것은 「어디서 왔는지 댈 수 있는가」다.")
     print("  근거를 적는 것은 판정을 안 바꾸고, 값을 고치는 것은 바꾼다.")
 
@@ -252,6 +269,15 @@ def selftest() -> int:
         bad.append("정책 문장을 근거로 친다 — 그것은 사유지 출처가 아니다")
     if scan("G = 1.0")[0]["basis"]:
         bad.append("주석이 없는 상수를 근거 있다고 한다")
+
+    # ★ ④ 하나뿐인 근거를 가려내는가 — 낱말 우연(`측정지점`)과 민감도 문장도 ④ 로 셈이 되므로 **세어 보여야** 한다(가르지는 못한다).
+    ms = measured_only(scan("M1 = 6.0  # 측정지점을 끌어오는 최대 거리\nM2 = 5.0  # 650개를 쟀다 · DECISIONS §12\nM3 = 2.0  # 바꿔도 판정 0 을 쟀다\nM4 = 1.0  # 교차로를 측정했더니 5m\n"))
+    if [r["name"] for r in ms] != ["M3", "M4"]:
+        bad.append(f"④ 하나뿐인 근거를 잘못 가린다: {[r['name'] for r in ms]}")
+    # ★ 명사 `측정`(측정지점 · 측정값)은 근거가 아니다 — 용언(측정했다 · 측정해 보니)은 재는 일을 했다는 꼴이라 근거다
+    nn = scan("N1 = 6.0  # 측정지점을 끌어오는 최대 거리\nN2 = 1.0  # 측정값을 그대로 쓴다\nN3 = 2.0  # 교차로를 측정했다\nN4 = 3.0  # 측정해 보니 3m 였다\n")
+    if [r["basis"] for r in nn] != [False, False, True, True]:
+        bad.append(f"명사 `측정` 과 용언 `측정했다` 를 못 가른다: {[r['basis'] for r in nn]}")
 
     # 이어지는 들여쓴 주석을 모으는가. 사유가 아래 줄에 있는 꼴이 실재한다.
     two = scan("H = 0.5  # 노드 동일시 반경\n" + " " * 12 + "# MASTER §3 가 정했다\n")

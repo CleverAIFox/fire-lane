@@ -79,6 +79,7 @@ from typing import NamedTuple
 import dms
 import docnum_check
 import plan_renumber
+import planclose
 
 from firelane import ledger
 
@@ -114,6 +115,19 @@ AXES: dict[str, Axis] = {
                   "제 칸도 부모 칸도 없는 절 — `dms.scan()` 의 `blank`"),
     "plan_open": Axis(re.compile(r"^## 1\. 남은 일 — ([\d,]+)행$", re.M),
                       "PLAN §1 표 행 수 — `plan_renumber` 가 세는 것"),
+    # ★ 앵커 뒤에 **줄의 설명 낱말**까지 건다 — DECISIONS 가 옛 블록을 회고로 인용한 줄(`열린 57 − 못 닫는 12 = 45`)을 잡으면 역사를 고치게 된다.
+    # ★ 2026-10-25 (Zm39 · DECISIONS §580). PLAN §10-1b 의 **세 수 블록**. 그 절은 「손으로 세지 않는다」고 적어 두고 수를 손으로 적어
+    #   세 번 낡았다(§520 · 533 · Zm39). 정본은 `tools/planclose.py::counts()` 하나이고 여기서 다시 세지 않는다 — 앵커는 줄머리 한글 라벨이다.
+    "pc_open": Axis(re.compile(r"^열린 (\d+) − 못 닫는 \d+ = \d+\s+어느 판이든", re.M),
+                    "PLAN §1 열린 행 — `planclose.counts()` 의 `열린`"),
+    "pc_cannot": Axis(re.compile(r"^열린 \d+ − 못 닫는 (\d+) = \d+\s+어느 판이든", re.M),
+                      "열린 행 중 물리적으로 못 닫는 행 — `planclose.counts()` 의 `못 닫는`"),
+    "pc_gap": Axis(re.compile(r"^열린 \d+ − 못 닫는 \d+ = (\d+)\s+어느 판이든", re.M),
+                   "어느 판이든 들어야 하는 행 — 열린 − 못 닫는"),
+    "pc_promised": Axis(re.compile(r"^무조건 닫는다\s+(\d+)\s+표식 없이", re.M),
+                        "표식 없이 「닫는다」로 적힌 행 — `planclose.counts()` 의 `무조건 닫는다`"),
+    "pc_decl": Axis(re.compile(r"^닫는 수 선언 합\s+(\d+)\s+이미 닫은", re.M),
+                    "배치 표 「닫는 수」 칸의 합 — `planclose.counts()` 의 `닫는 수 선언 합`"),
     # ★ 2026-09-25 (§258). 커버리지 래칫. 정본은 `tools/verify.sh` 의 `COV_MIN=`
     #   한 줄이고(`test_coverage_ratchet_has_one_home`), 문서가 그 수를 손으로
     #   들면 올릴 때마다 한쪽만 움직인다 — 2026-09-25 에 실제로 그랬다.
@@ -182,6 +196,20 @@ AXES: dict[str, Axis] = {
                         "판정 `unknown` 구간의 연장 (m)"),
     "v_unknown_m_pct": Axis(re.compile(r"전체 연장의\s*(\d+\.\d|\d+)%"),
                             "그 연장이 총연장에서 차지하는 몫 (%)"),
+    # ★ 2026-11-03 (PLAN #62 · DECISIONS §613). **발행 범위 짝 넷.** 판정 지표(위 네 수)는 1,281 기준 그대로고 이것은 곁에 두는
+    #   짝이다 — 「막힌 길 192 중 발행 범위 밖 N」을 빼지 않으려는 것이다. 세는 집은 `docnum_check.scope()` 하나(발행물의 `scope_tier`)다.
+    # ★ 앵커를 좁게 잡았다 — 낱말 「발행 범위」 + 안 / 밖 + 수. 숫자가 낱말 **앞**에 오는 회고(「118 이 발행 범위 밖」)와
+    #   「N」 자리표시는 안 걸린다. 구간 수 축은 뒤에 `구간` 이 와야 하고, 막힌 길 축은 안 와야 한다(서로 안 겹친다).
+    # ★ `v_blocked_in` 의 앵커를 `통행 불가` 가 아니라 `blocked` 로 잡았다 — `통행 불가 N` 은 `v_blocked`(1,281 기준)의 앵커라 안 / 밖 수가
+    #   그 축으로 읽혀 192 와 대조된다(2026-11-03 실제로 울었다).
+    "scope_in": Axis(re.compile(r"발행 범위 안\s*`?(\d[\d,]*)구간"),
+                     "발행 범위(`scope_tier` ≠ reference) 안의 구간 수 — 발행물 `web/data/segments.geojson`"),
+    "scope_out": Axis(re.compile(r"발행 범위 밖\s*`?(\d[\d,]*)구간"),
+                      "발행 범위 밖(참고) 구간 수"),
+    "v_blocked_in": Axis(re.compile(r"발행 범위 안 `?blocked`?\s*(\d[\d,]*)"),
+                         "발행 범위 안의 `blocked` 구간 수"),
+    "v_blocked_out": Axis(re.compile(r"그중 발행 범위 밖\s*`?(\d[\d,]*)(?!구간|\d)"),
+                          "발행 범위 밖의 `blocked` 구간 수 — 「막힌 길 192 중 N」의 N"),
 }
 
 #: 백분율 축. **소수 한 자리로 쓰고 소수 한 자리로 읽는다.**
@@ -232,6 +260,10 @@ def truth() -> dict[str, float]:
         # ★ 밑줄 이름을 그대로 부른다. 같은 범위를 세는 판별식이 이미 거기
         #   있고, 여기서 다시 쓰면 도구와 검사가 다른 것을 센다(R3).
         "plan_open": len(plan_renumber._rows(plan)),
+        # ★ Zm39. 세 수 블록의 다섯 — 세는 집은 `planclose.counts()` 하나다(R3).
+        **{k: v for k, v in zip(("pc_open", "pc_cannot", "pc_gap", "pc_promised", "pc_decl"),
+                                (lambda c: (c["열린"], c["못 닫는"], c["열린"] - c["못 닫는"], c["무조건 닫는다"], c["닫는 수 선언 합"]))(planclose.counts()),
+                                strict=True)},
         "cov_min": _cov_min(),
         # ★ `docnum_check` 를 부른다. 같은 수를 여기서 또 세면 두 집이 되고,
         #   판정이 움직이는 날 한쪽만 움직인다(2족 · §319).
@@ -239,6 +271,8 @@ def truth() -> dict[str, float]:
         # ★ 2026-10-11 (§464). 발행물에서 **유도되는** 다섯. 같은 사유로 여기서
         #   다시 세지 않는다 — 집은 `docnum_check.shape()` 하나다.
         **docnum_check.shape(),
+        # ★ 2026-11-03 (PLAN #62). 발행 범위 짝 — 세는 집은 `docnum_check.scope()` 하나(R3). 발행 전이면 비어 `alive` 가 운다.
+        **docnum_check.scope(),
     }
 
 
@@ -271,7 +305,7 @@ def alive(want: dict[str, float]) -> list[str]:
     #   어느 발행본에도 없는 값이다. 백분율은 안 든다 — 참으로 0 이 될 수 있는
     #   수에 0 문턱을 걸면 그 문이 거짓을 말하게 된다.
     for a in ("v_clear", "v_needs_cv", "v_blocked", "v_unknown",
-              "cctv_in", "v_unknown_m"):
+              "cctv_in", "v_unknown_m", "scope_in", "scope_out", "v_blocked_out"):
         if want.get(a, 0) <= 0:
             bad.append(f"`{a}` 가 0 — 산출물을 못 읽었거나 판정 어휘가 바뀌었다")
     if want["sealable"] > want["datasets"]:

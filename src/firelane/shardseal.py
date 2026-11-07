@@ -366,6 +366,18 @@ def _glob(cfg: dict) -> dict:
     return {k: _no_skip(k, _no_docs(cfg.get(k))) for k in INGEST_GLOBAL}
 
 
+def _cfg_print_v6(cfg: dict, key: str) -> str:
+    """2026-11-05 이전 판 — 점 자료의 좌표 칸을 `x_col` · `y_col` 로 적었다(지금은 `coords.site` · DECISIONS §641).
+
+    ★ 같은 설정을 **옛 이름으로 되돌려 뜬** 지문이다 — 점 자료 아홉의 봉인이 재빌드 없이(`ingest --reseal-cfg`) 새 판으로 고쳐진다.
+    """
+    from firelane.ledger import POINT_KINDS
+    own = _own(cfg, key)
+    if isinstance(own, dict) and own.get("kind") in POINT_KINDS and isinstance((site := (own.get("coords") or {}).get("site")), dict):
+        own = {**{k: v for k, v in own.items() if k != "coords"}, "x_col": site["x"], "y_col": site["y"]}
+    return _print(_narrow_layers(_glob(cfg)), _no_docs(own))
+
+
 def _cfg_print_v5(cfg: dict, key: str) -> str:
     """2026-10-08~10-11 판 — `layers` 를 **계층 단위로 안 갈랐다.**"""
     return _print(_glob(cfg), _no_docs(_own(cfg, key)))
@@ -399,7 +411,7 @@ def _cfg_print_v3(cfg: dict, key: str) -> str:
 
 #: 옛 판 지문. 만나면 **다시 빌드 없이** 받고 새 판으로 고쳐 적는다.
 #: ★ 줄이 늘 때마다 「한 번 지나면 안 찢어진다」가 한 세대 더 보장된다.
-LEGACY_PRINTS = (_cfg_print_v5, _cfg_print_v4, _cfg_print_v3, _cfg_print_v2,
+LEGACY_PRINTS = (_cfg_print_v6, _cfg_print_v5, _cfg_print_v4, _cfg_print_v3, _cfg_print_v2,
                  _cfg_print_v1)
 
 

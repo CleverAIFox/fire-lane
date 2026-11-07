@@ -22,6 +22,7 @@ PARAM 없음
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import sys
 from pathlib import Path
 
@@ -195,3 +196,71 @@ def test_the_check_cries_with_an_exit_code(dp, tmp_path):
     # ★ 멀쩡한 쪽을 **음성으로** 민다 — 양쪽을 같은 자로 밀어야 그 자가
     #   「무엇에나 운다」가 아님을 보인다(`tools/canary.py` 가 드는 꼴이다).
     assert not dp.check_many([_doc(tmp_path)]), "멀쩡한 문서에서 운다"
+
+
+# ── 종료코드가 **빨개질 수 있는가** (DECISIONS §541) ──────────────
+# ★ 2026-10-20. `check_many` 는 1 을 내는데 `__main__` 이 `sys.exit` 없이
+#   `main()` 을 불렀다. 종료코드가 늘 0 이라 verify 의 「문서 제목 무결」
+#   축이 두 달 동안 영원히 초록이었다 — **관문이 빨개질 수 없으면 없는
+#   것보다 나쁘다.** 덮고 있다고 주장하기 때문이다.
+# ★ 이 파일에 이미 시험이 열 개 있었고 **전부 통과했다.** 그중 종료코드를
+#   보는 자가 없었다. 안에서 `check_many` 를 부르면 오늘도 1 이 나온다 —
+#   병은 함수가 아니라 **배선**에 있었다. 그래서 아래는 하위 프로세스다.
+# ★ 실제 문서의 중복 수는 안 본다 — 그것은 배치마다 움직이고, 여기서 수를
+#   박으면 문서를 고칠 때마다 이 시험이 낡는다. 합성 입력만 쓴다.
+_DP_ROOT = Path(__file__).resolve().parents[1]
+_DP_TOOL = _DP_ROOT / "tools" / "docpatch.py"
+_DP_DUP = "# 머리\n\n## 1. 가\n\n본문\n\n## 1. 가\n\n본문\n"
+_DP_OK = "# 머리\n\n## 1. 가\n\n## 2. 나\n"
+
+
+def _dp_check(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(_DP_TOOL), "check", *args],
+        capture_output=True, text=True, cwd=_DP_ROOT, check=False, timeout=60)
+
+
+def test_a_duplicate_title_turns_the_gate_red(tmp_path):
+    """★ 이 시험이 2026-10-20 에 **빨강으로 먼저 섰다.** 그것이 근거다."""
+    d = tmp_path / "dup.md"
+    d.write_text(_DP_DUP, encoding="utf-8")
+    r = _dp_check(str(d))
+    assert r.returncode != 0, (
+        f"중복 제목인데 종료코드가 0 이다\n{r.stdout}{r.stderr}")
+    assert "중복" in r.stdout, f"무엇이 중복인지 말하지 않는다\n{r.stdout}"
+
+
+def test_a_clean_document_stays_green(tmp_path):
+    """반대쪽 — 늘 빨개지면 그것도 그물이 아니다."""
+    d = tmp_path / "ok.md"
+    d.write_text(_DP_OK, encoding="utf-8")
+    r = _dp_check(str(d))
+    assert r.returncode == 0, f"깨끗한 문서에서 운다\n{r.stdout}{r.stderr}"
+
+
+def test_a_missing_document_turns_the_gate_red(tmp_path):
+    """없는 경로를 조용히 넘기면 오타 하나로 관문이 빈다."""
+    r = _dp_check(str(tmp_path / "없는것.md"))
+    assert r.returncode != 0, f"없는 문서에서 조용하다\n{r.stdout}{r.stderr}"
+
+
+def test_one_bad_document_among_many_turns_the_gate_red(tmp_path):
+    """★ 여럿을 줄 때 **뒤의 초록이 앞의 빨강을 덮지 않는가.**"""
+    bad, ok = tmp_path / "bad.md", tmp_path / "ok.md"
+    bad.write_text(_DP_DUP, encoding="utf-8")
+    ok.write_text(_DP_OK, encoding="utf-8")
+    r = _dp_check(str(bad), str(ok))
+    assert r.returncode != 0, f"빨간 문서가 뒤의 초록에 덮였다\n{r.stdout}"
+
+
+def test_the_other_subcommands_still_exit_zero(tmp_path):
+    """★ `return 0` 을 붙이면서 다른 가지를 깨지 않았는가."""
+    doc = tmp_path / "d.md"
+    doc.write_text("## 1. 가\n\n| 가 |\n|---|\n| x |\n", encoding="utf-8")
+    frag = tmp_path / "f.md"
+    frag.write_text("| y |\n", encoding="utf-8")
+    r = subprocess.run(
+        [sys.executable, str(_DP_TOOL), "append-rows", str(doc),
+         "## 1.", str(frag)],
+        capture_output=True, text=True, cwd=_DP_ROOT, check=False, timeout=60)
+    assert r.returncode == 0, f"append-rows 가 운다\n{r.stdout}{r.stderr}"

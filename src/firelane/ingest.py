@@ -10,8 +10,8 @@ OUT   data/processed/<key>_5186.gpkg + <key>.geojson  (20종) — 예: building.
         hydrant_point.geojson · cctv.geojson · poi_store.geojson ·
         road_intrvl.geojson · navi_build.csv · navi_jibun.csv · civil_office.geojson ·
         turn_restriction.csv · speedbump.csv · speed_cam.csv · nfa_dispatch_119.csv ·
-        nfa_rescue.csv · nfa_fire_incident.csv · parking_enforce.csv · enforce_cam.csv.
-        `pipeline.Step` 이 그 열일곱을 명시한다(§181 · §215-1 · §216-3 · §426-2 —
+        nfa_rescue.csv · nfa_fire_incident.csv · parking_enforce.csv · enforce_cam.csv · fire_access.csv.
+        `pipeline.Step` 이 그 열여덟을 명시한다(§181 · §215-1 · §216-3 · §426-2 —
         **열일곱 번째가 3주 동안 빠져 있었다**)
       data/processed/_manifest.json                    실행 기록 · 계보 정본
 PARAM sources.yaml 의 datasets.<key>.contract 블록
@@ -128,6 +128,9 @@ def save(gdf: gpd.GeoDataFrame, key: str) -> dict:
             "columns": [c for c in gdf.columns if c != "geometry"]}
 
 
+EXTRACT_FROM: Path | None = None
+
+
 def paths_for(key: str, e: dict) -> list[Path]:
     """이 소스의 실물 경로. **입력 계층을 여기 한 곳에서 가른다.**
 
@@ -143,6 +146,8 @@ def paths_for(key: str, e: dict) -> list[Path]:
     실물이 없으면 거기서 `FileNotFoundError` 로 죽는다. **조용히 raw 로
     떨어지지 않는 것**이 이 함수의 요점이다.
     """
+    if EXTRACT_FROM is not None and read.extract.declared(e):     # raw 에 안 올린 전국본을 제자리에서(§647-4)
+        return read.extract.paths(e, EXTRACT_FROM)
     if key not in prep.migrated():
         return ledger.paths_of(e, RAW)
     rels = [q.relative_to(RAW).as_posix() for q in ledger.paths_of(e, RAW)]
@@ -152,6 +157,8 @@ def paths_for(key: str, e: dict) -> list[Path]:
 
 
 def build(key: str, e: dict, tmp: Path) -> dict:
+    if bad := ledger.coords_problems(key, e):     # ★ 좌표로 읽히는 칸이 있는 표가 `coords:` 를 안 들면 읽지 않는다(DECISIONS §634)
+        raise ValueError(f"{key}: 좌표 선언이 없거나 틀렸다 — " + " · ".join(bad))
     pats = ledger.globs(e)
     hits = paths_for(key, e)
     if not hits:
@@ -172,11 +179,9 @@ def build(key: str, e: dict, tmp: Path) -> dict:
     #     shp_dir         ngii1k.py 가 묶음 전체를 편다. 여러 개가 정상
     #     raw_only        읽지 않는다. ortho.py 가 4도엽을 직접 읽는다
     #
-    #   실전에서 5종이 경고를 냈고 그중 4종이 오탐이었다.
-    #   **매번 뜨는 경고는 아무도 안 읽는다** — 그러면 진짜 하나를 놓친다.
-    #   `hits[0]` 만 쓰는 kind 에서만 말한다.
+    #   실전에서 5종이 경고를 냈고 그중 4종이 오탐이었다. **매번 뜨는 경고는 아무도 안 읽는다** — 그러면 진짜 하나를 놓친다. `hits[0]` 만 쓰는 kind 에서만 말한다.
     # ★ 정본은 `firelane.kinds` 다. `ledger.SINGLE_PICK` 재수출은 §431 이 지웠다.
-    if len(hits) > 1 and e["kind"] in kinds.SINGLE_PICK:
+    if len(hits) > 1 and e["kind"] in kinds.SINGLE_PICK and not read.extract.declared(e):
         rest = ", ".join(x.name for x in hits[1:])
         print(f"  ★ {key}: 대장 glob 이 {len(hits)}개를 잡는데 "
               f"kind={e['kind']} 는 하나만 쓴다 → {src.name}")
@@ -223,7 +228,7 @@ def build(key: str, e: dict, tmp: Path) -> dict:
            "source_crs": crs}
     kind = e["kind"]
 
-    # ── 갈래를 부른다.  (PLAN §1 #132 · DECISIONS §274) ──────────
+    # ── 갈래를 부른다.  (PLAN §1 #132(닫힘) · DECISIONS §274) ──────────
     # ★ 종전에는 여기가 `if kind == …` 열두 갈래 389줄이었다. 그 하나가
     #   **72개 데이터셋 전부의 샤드 `seal.code`** 를 들고 있어서 `text_table`
     #   한 줄을 고치면 `raw_only` 26개까지 재도장됐다. 갈래를 `read/` 로 내려
@@ -334,6 +339,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--extract-from", metavar="DIR",
+                    help="추출 선언(contract.filter)을 든 항목의 입력을 raw 가 아니라 이 폴더에서 읽는다 — 전국본을 raw 에 올리지 않는다(§647)")
     # ★ 2026-08-23. 실패한 것만 다시 돌린다.
     #
     #   19종을 한 덩어리로 돌아서 **하나가 FAIL 하면 전체가 무효**였다.
@@ -368,6 +375,9 @@ def main():
     ap.add_argument("--stamp", action="store_true",
                     help="빌드 없이, 지금 산출물에 샤드 봉인지를 붙인다 (사람이 판단해서 부른다)")
     a = ap.parse_args()
+    if a.extract_from:
+        global EXTRACT_FROM
+        EXTRACT_FROM = read.extract.source_dir(a.extract_from, a.only)
 
     if a.retry_failed:
         man0 = OUT / "_manifest.json"
@@ -487,6 +497,11 @@ def main():
             results.append({"key": key, "found": len(hits),
                             "sha256": [sha256(h)[:16] for h in hits]})
             print(f"[{'OK ' if hits else 'MISS'}] {key:20} {len(hits)}개")
+            continue
+        # ★ 원본을 내린 추출 항목은 지난 기록을 둔다(DECISIONS §647-3 · read/extract.kept)
+        if (_k := read.extract.kept(_prev.get(key), e, OUT, paths_for(key, e))):
+            results.append(_k)
+            print(f"[KEPT   ] {key:20} 원본 부재 선언 — 지난 산출물과 계보를 둔다")
             continue
         # ★ 샤드 재사용. 지목(--only)·조회·자식·--rebuild 에서는 안 한다.
         if not (a.only or a.emit_json or a.rebuild):

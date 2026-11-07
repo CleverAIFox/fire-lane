@@ -119,6 +119,41 @@ def test_measure_on_synthetic(tmp_path, feats, want):
         {"type": "FeatureCollection",
          "features": [{"properties": q} for q in feats]}), encoding="utf-8")
     got = S.measure(p)
-    assert (round(got["밖 구간 비율"], 3),
-            round(got["밖 연장 비율"], 3),
-            round(got["무용 연장 비율"], 3)) == want
+    assert (round(got["판정 범위 밖 구간 비율"], 3),
+            round(got["판정 범위 밖 연장 비율"], 3),
+            round(got["판정 범위 무용 연장 비율"], 3)) == want
+
+
+# ── 2026-11-04 (PLAN #189 · DECISIONS §620) 발행 범위 축 ─────────────────────────
+def _write(tmp_path, feats):
+    p = tmp_path / "s.geojson"
+    p.write_text(json.dumps({"type": "FeatureCollection",
+                             "features": [{"properties": q} for q in feats]}), encoding="utf-8")
+    return p
+
+
+def test_publication_axis_measures_scope_tier(tmp_path):
+    """`reference` 가 아닌 것이 **안**이다 — 구간 · 연장 둘."""
+    feats = [{"in_emd": True, "length_m": 30, "route_usage": 1, "scope_tier": "target"},
+             {"in_emd": False, "length_m": 10, "route_usage": 0, "scope_tier": "listed"},
+             {"in_emd": False, "length_m": 60, "route_usage": 0, "scope_tier": "reference"}]
+    got = S.measure(_write(tmp_path, feats))
+    assert round(got["발행 범위 안 구간 비율"], 3) == round(2 / 3 * 100, 3)
+    assert round(got["발행 범위 안 연장 비율"], 3) == 40.0
+
+
+def test_publication_axis_is_skipped_for_an_old_publication(tmp_path):
+    """`scope_tier` 가 한 구간이라도 없으면 그 축을 **건너뛴다** — 옛 발행물이 울지 않는다."""
+    feats = [{"in_emd": True, "length_m": 10, "route_usage": 1, "scope_tier": "target"},
+             {"in_emd": False, "length_m": 10, "route_usage": 0}]
+    got = S.measure(_write(tmp_path, feats))
+    assert not [k for k in got if k.startswith("발행 범위")]
+    assert S.judge(got) is not None      # 판정 범위 축만으로 판정이 돈다(KeyError 없이)
+
+
+def test_publication_axis_cap_trips_when_the_shown_scope_widens():
+    """보여줄 것이 상한을 넘으면 운다 — 그리고 한참 낮아도 운다(양방향)."""
+    cap = {"발행 범위 안 구간 비율": 58.9}
+    assert not S.judge({"발행 범위 안 구간 비율": 58.9}, cap)
+    assert S.judge({"발행 범위 안 구간 비율": 59.0}, cap)
+    assert S.judge({"발행 범위 안 구간 비율": 58.0}, cap)

@@ -48,8 +48,8 @@ uv run fire-lane --only publish
     layer: XXX.shp               # zip 안의 레이어 (shp 계열만)
     crs_native: EPSG:5179        # ★ probe.py crs 로 검증한 실제값
     encoding: cp949 | utf-8
-    x_col: 경도                  # csv 계열만
-    y_col: 위도
+    coords:                      # 점 자료(csv 계열 · json_points)는 필수 — 읽을 좌표 칸을 대장이 말한다
+      site: {x: 경도, y: 위도, crs: 4326, means: 설치 위치}
     schema: {컬럼명: 뜻}         # 편입 후 inventory.py 가 채운다
     contract: {rows: 5002}       # 같음. 건수·컬럼 계약
     feeds_why: 왜 이것을 먹이나   # feeds 가 비어 있으면 사유를 여기 적는다

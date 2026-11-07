@@ -91,3 +91,31 @@ def test_nearest_picks_closest():
     ix = idx((LineString([(0, 3), (100, 3)]), "가까운길", "0", 5.0),
              (LineString([(0, 12), (100, 12)]), "먼길", "0", 5.0))
     assert ix.nearest(LineString([(40, 0), (60, 0)]), 15.0) == "가까운길"
+
+
+# ── PLAN #4 (Zm29) — 띠 폭을 호출 쪽이 고른다. 파이프라인의 기본값은 안 움직인다 ──────────────────────
+def test_match_takes_a_per_call_band_and_the_default_still_reads_the_module_constants():
+    """측량 대조(`tools/widthcross.py`)는 띠 5m 로 붙이고 파이프라인(`segments.py`)은 0.5m 그대로다.
+
+    인자를 안 주면 **호출 시점에** 모듈 상수를 읽는다 — `widthmatch` 가 상수를 잠깐 바꿔 쓰고 되돌리는 방식이 계속 돈다.
+    """
+    import firelane.seg.roadname as rn
+
+    far = LineString([(10, 3), (40, 3)])                       # 선에서 3m 옆을 나란히 달린다
+    ix = idx((LineString([(0, 0), (100, 0)]), "동명로", "0", 8.0))
+    assert ix.match(far) == (None, None, None), "기본 띠 0.5m 로는 3m 옆이 붙으면 안 된다(파이프라인 불변)"
+    assert ix.match(far, band=5.0) == ("동명로", "0", 8.0)
+    assert ix.match(far, band=2.0) == (None, None, None)
+    old = rn.BAND
+    rn.BAND = 5.0
+    try:
+        assert ix.match(far) == ("동명로", "0", 8.0), "인자가 없으면 호출 시점의 모듈 상수를 읽는다"
+    finally:
+        rn.BAND = old
+
+
+def test_match_min_can_also_be_given_per_call():
+    ix = idx((LineString([(0, 0), (20, 0)]), "동명로", "0", 8.0))
+    seg = LineString([(0, 0), (60, 0)])                        # 겹침 20m / 길이 60m = 0.33
+    assert ix.match(seg) == (None, None, None)
+    assert ix.match(seg, match_min=0.3) == ("동명로", "0", 8.0)

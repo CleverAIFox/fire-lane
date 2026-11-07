@@ -243,6 +243,28 @@ def _live_rows() -> set[int]:
     return set(_rows(PLAN.read_text(encoding="utf-8")))
 
 
+_CELL = re.compile(r"^\|\s*(\d+)\s*\|", re.M)
+
+
+def _rows_by_other_means(text: str) -> set[int]:
+    """§1 의 행을 **`_rows` 와 다른 방법**으로 센다 — 수집기가 놓친 행을 이름으로 잡는 대조군.
+
+    ★ 다른 점이 둘이다. ① 끝을 `### ` 가 아니라 **다음 `## ` 제목**으로 자른다(`_span` 은 `### ` 에서 끊어
+      그 사이에 낀 하위 제목이 표를 둘로 쪼개면 뒤쪽 행을 잃는다). ② 첫 칸을 「`|` 와 숫자 사이가 딱 한 칸」이 아니라
+      **공백이 느슨하게** 읽는다(`|12|` 같은 꼴을 `ROW` 는 놓친다).
+    """
+    lines = text.splitlines(keepends=True)
+    i = next(k for k, x in enumerate(lines) if x.startswith("## 1. 남은 일"))
+    j = next((k for k in range(i + 1, len(lines)) if lines[k].startswith("## ")), len(lines))
+    return {int(m.group(1)) for m in _CELL.finditer("".join(lines[i:j]))}
+
+
+def collection_gap(text: str) -> tuple[list[int], list[int]]:
+    """(수집기가 놓친 행, 수집기가 없는 행을 지어낸 행). 둘 다 비면 두 방법이 같은 행을 본다."""
+    mine, other = set(_rows(text)), _rows_by_other_means(text)
+    return sorted(other - mine), sorted(mine - other)
+
+
 
 def selftest() -> int:
     """판별식이 살아 있나. **`_canary` 를 품는다** — 둘이 같은 일이다.
@@ -273,11 +295,22 @@ def selftest() -> int:
     if "닫힘" not in CLOSED:
         fails.append("표시 어휘에 `닫힘` 이 없다")
 
+    # ★ 2026-10-25 (Zm39 · DECISIONS §580). 종전에는 「산 행이 50 미만이면 수집이 좁다」였다 — 절대수 하한이라
+    #   **일을 할수록(행이 닫힐수록) 깨진다**(2026-10-22 에 51 → 45 로 줄어 그날부터 빨강이었다).
+    #   지키려던 것은 「수집기가 행을 놓치지 않는가」이므로 **같은 문서를 다른 방법으로 세어 이름으로 대조한다.**
+    #   행이 몇 개든 두 방법이 같은 행을 보면 통과하고, 수집이 비면(0) 따로 운다.
     live = _live_rows()
-    if len(live) < 50:
-        fails.append(f"산 행을 {len(live)}개만 읽었다 — 표 수집이 좁다")
-    if 1 in live and 156 not in live and max(live, default=0) < 100:
-        fails.append("행 번호가 100 밑에서 끊긴다 — 범위가 §1 을 다 안 덮는다")
+    if not live:
+        fails.append("산 행을 하나도 못 읽었다 — 수집이 죽었다")
+    missed, invented = collection_gap(PLAN.read_text(encoding="utf-8"))
+    if missed:
+        fails.append(f"수집기가 놓친 행이 있다 — #{' · #'.join(map(str, missed[:8]))}")
+    if invented:
+        fails.append(f"수집기가 §1 밖에서 행을 가져왔다 — #{' · #'.join(map(str, invented[:8]))}")
+    # 양성 대조 — 쪼개진 표와 느슨한 칸을 **합성으로** 먹여 대조군이 실제로 무는지 본다
+    synth = "## 1. 남은 일\n\n| 1 | a |\n| 2 | b |\n\n### 쪼갬\n\n|3| c |\n| 4 | d |\n\n## 2. 다음\n\n| 9 | 남의 표 |\n"
+    if collection_gap(synth) != ([3, 4], []):
+        fails.append(f"대조군이 쪼개진 표를 못 잡는다 — {collection_gap(synth)}")
 
     # ★ 래칫이 0 을 **내지 않는다** — 수집이 비면 터져야 한다
     try:

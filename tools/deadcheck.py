@@ -791,9 +791,9 @@ EXEMPT_SCOPE = {
         "전부다(같은 함수 안 `pys(...)`)",
     # ── 2026-09-24 (DECISIONS §226). ⑤ 는 **폴더** 축, `scopedecl` ② 는 **접미사** 축이다.
     #    둘은 같은 족의 다른 축이고 서로를 대신하지 못한다 — 겹치는 것이 아니라 직교한다.
+    "tests/test_contract_split.py::test_the_four_pieces_cover_every_test_file_once": "조각이 나누는 우주가 `tests/` 다(pytest 가 받는 파일 · CI 조각 단계의 `find tests`) — 시험이 그 셸 줄을 워크플로에서 꺼내 돌려 같은 우주임을 대조한다. `src`·`tools` 를 훑으면 묻는 것이 달라진다(DECISIONS §633-3)",
     "tools/env_check.py::_sh":
-        "`.sh` 의 우주가 `tools/` 다 — `src/` 와 `tests/` 에는 셸 스크립트가 0개다. "
-        "이 함수는 **셸에 사는 환경변수**를 세려고 2026-09-24 에 생겼다",
+        "`.sh` 의 우주가 `tools/` 다 — `src/` 와 `tests/` 에는 셸 스크립트가 0개다. 이 함수는 **셸에 사는 환경변수**를 세려고 2026-09-24 에 생겼다",
     "tests/test_refcheck_paths.py::test_example_names_are_only_placeholders":
         "예시 이름 목록이 **도구 이름**을 삼키는지 보는 대조표다. 그 목록의 우주가 "
         "`tools/` 이고(`refcheck` 가 `tools/x.py` 꼴만 예시로 든다), `src`·`tests` 는 "

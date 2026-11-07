@@ -40,6 +40,7 @@ import sys
 from pathlib import Path
 
 from firelane import localplane
+from firelane.seg.params import CCTV_RANGE
 
 try:
     from PIL import Image, ImageDraw
@@ -178,7 +179,7 @@ def pick(P: list[dict], track: str) -> list[dict]:
         c.sort(key=lambda f: -f["properties"]["length_m"])
     elif track == "shoot":        # 촬영 후보. needs_cv + CCTV 안 + 통행량
         c = [f for f in P if f["properties"]["verdict"] == "needs_cv"
-             and (f["properties"]["cctv_dist_m"] or 9e9) <= 25
+             and (f["properties"]["cctv_dist_m"] or 9e9) <= CCTV_RANGE
              and f["properties"]["length_m"] >= 25]
         c.sort(key=lambda f: -(f["properties"]["route_usage"] or 0))
     else:

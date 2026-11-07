@@ -1,5 +1,5 @@
 """
-passthrough.py — 읽지 않는 갈래. 존재만 기록한다.  (PLAN §1 #132)
+passthrough.py — 읽지 않는 갈래. 존재만 기록한다.  (PLAN §1 #132(닫힘))
 
 IN    없다 — 실물을 열지 않는다
 OUT   `status: SKIP` 계보 조각

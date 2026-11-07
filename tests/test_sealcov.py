@@ -148,3 +148,14 @@ def test_the_printed_percentage_is_the_two_numbers_it_shows(capsys):
     assert f"**{s['덮임']} / {s['분모']}**" in out, "두 수를 그대로 안 찍는다"
     assert f"({want:.1f}%)" in out, (
         f"찍힌 백분율이 {want:.1f}% 가 아니다 — 두 수와 유도가 갈렸다\n  {out[:200]}")
+
+
+def test_a_gap_fails_even_when_the_ratchet_number_is_green(monkeypatch, capsys):
+    """★ 축이 둘이다 — 수(`SEALED_FILES`)는 `ratchet --write` 가 받고 **빈 곳은 못 고친다**(사람이 MASTER 에 적는다). 새 파일은 덮임을 안 움직이므로
+    래칫만 보면 초록인 채 CI 가 빨갰다(2026-11-05 `valueprofile.py` · DECISIONS §636)."""
+    monkeypatch.setattr(S, "SEALED_FILES", 9)
+    gap = {"분모": 10, "덮임": 9, "빈 곳": ["src/firelane/new.py"], "묶음별 빈 곳": {"src/firelane": 1}}
+    assert S.show(gap, listing=False) == 1
+    assert "빈 곳 1" in capsys.readouterr().out
+    monkeypatch.setattr(S, "SEALED_FILES", 10)
+    assert S.show({"분모": 10, "덮임": 10, "빈 곳": [], "묶음별 빈 곳": {}}, listing=False) == 0
