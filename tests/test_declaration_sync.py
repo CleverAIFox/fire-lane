@@ -891,7 +891,8 @@ def test_section_ref_check_separates_foreign_own_and_owned_refs():
     ㉢ 소속 붙은 타 문서 참조(`DECISIONS §633-3` · `(MASTER §16-1`) → 통과.
     """
     pr = _pr()
-    mk = lambda b: _SYNTH_PLAN.format(body=b)  # noqa: E731
+    def mk(b):
+        return _SYNTH_PLAN.format(body=b)
     assert pr.unresolved_section_refs(mk("분배(§633-3 손 핀)")) == ["§633-3"]
     assert pr.unresolved_section_refs(mk("§4-5 와 §4 를 본다")) == []
     assert pr.unresolved_section_refs(mk("DECISIONS §633-3 · (MASTER §16-1 · README §2")) == []
