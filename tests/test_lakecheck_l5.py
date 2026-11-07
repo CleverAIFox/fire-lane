@@ -113,3 +113,12 @@ def test_the_ownership_verdict_is_lakes_not_a_copy(lc):
     assert 'get("dst")' not in body, "L5 가 dst 를 직접 읽는다 — 사본이다"
     assert lake.norm_owners({"files": {"a/b.pdf": {"dst": "a/b.csv"}, "c/d.csv": {}}}) == {
         "a/b.csv": ["a/b.pdf"], "c/d.csv": ["c/d.csv"]}
+
+
+def test_load_prep_reads_the_committed_state_and_owners_cover_every_entry():
+    """`lake.load_prep` 를 **이름으로** 부른다 — L5 가 실물에서 읽는 자리다.
+    실물 `_prep.json` 의 모든 항목이 주인 표에 들어간다(`dst` 가 있으면 그쪽 이름으로)."""
+    prep = lake.load_prep()
+    assert prep.get("files"), "_prep.json 이 비었다 — 이 검사가 빈 그물이 됐다"
+    owners = lake.norm_owners(prep)
+    assert sum(len(v) for v in owners.values()) == len(prep["files"])
