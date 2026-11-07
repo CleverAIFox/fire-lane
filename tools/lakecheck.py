@@ -267,21 +267,33 @@ def l4(D: Path, y: dict) -> None:
 
 
 # ── L5  norm ↔ raw 계보 ─────────────────────────────────────────
-def l5(D: Path, y: dict) -> None:
-    """norm 은 raw 를 형식만 정규화한 것이다. 상류가 없으면 고아다."""
+def l5(D: Path, y: dict, prep: dict | None = None) -> None:
+    """norm 은 raw 를 형식만 정규화한 것이다. 상류가 없으면 고아다.
+
+    ★ 2026-11-07 (#197). 상류는 **`_prep.json` 의 raw 경로 키**로 댄다 — 그 항목의
+      `dst` 가 이 norm 이고 그 raw 가 지금 레이크에 있어야 한다. 종전에는 파일명
+      앞 14자(`nfa_dispatch_1`)로 시작하는 raw 가 **하나라도** 있으면 통과였다 —
+      같은 데이터셋의 형제 한 장이 raw 에 있으면 짝 없는 norm 이 전부 가려졌다.
+      주인 판정은 `lake.norm_owners` 가 정본이다(사본 없음).
+
+    ★ 레이크(`FIRE_LANE_DATA`)가 있어야 돈다 — 없는 기계에서는 `main` 이 L5 이전에
+      「못 쟀다」로 멈춘다(0건이 아니라 실패). `prep` 인자는 합성 시험이 밀 자리다.
+    """
+    from firelane import lake as _lake
     norm, raw = D / "norm", D / "raw"
     if not norm.is_dir():
         hit("L5", "★ norm 폴더가 없다 — 이 프로브가 못 잰다")
         return
-    raw_stems = [p.stem for p in raw.rglob("*") if p.is_file()]
+    owners = _lake.norm_owners(_lake.load_prep() if prep is None else prep)
     orphan = []
+    n = 0
     for p in sorted(norm.rglob("*")):
         if not p.is_file():
             continue
-        key = "_".join(p.stem.split("_")[:3])
-        if not any(r.startswith(key[:14]) for r in raw_stems):
+        n += 1
+        rel = p.relative_to(norm).as_posix()
+        if not any((raw / k).is_file() for k in owners.get(rel, ())):
             orphan.append(p)
-    n = sum(1 for p in norm.rglob("*") if p.is_file())
     print(f"     norm {n}건 · 상류 없는 것 {len(orphan)}건")
     for p in orphan:
         hit("L5", f"{p.relative_to(norm)}: raw 에 상류가 없다", "",

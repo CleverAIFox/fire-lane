@@ -221,13 +221,26 @@ def _shared(own: tuple[str, ...], c: Claims) -> bool:
     return all(lays) and len(set(lays)) == len(lays)
 
 
+def norm_owners(prep: dict | None) -> dict[str, list[str]]:
+    """norm 상대경로 → 그것을 낳은 raw 상대경로들. **norm 의 주인 판정 정본이다.**
+
+    ★ 2026-11-07 (#197). `resolve` 가 안에서 짓던 집합을 꺼냈다. `lakecheck` L5 가
+      따로 파일명 접두로 상류를 대고 있었고, 두 자가 「이 norm 에 주인이 있는가」에
+      다르게 답했다 — 형제 raw 가 있으면 L5 는 통과시켰다.
+    `_prep.json` 의 키는 raw 상대경로고 항목의 `dst` 가 norm 상대경로다(없으면 키와 같다).
+    """
+    out: dict[str, list[str]] = {}
+    for k, v in ((prep or {}).get("files") or {}).items():
+        out.setdefault(str((v or {}).get("dst") or k), []).append(k)
+    return out
+
+
 def resolve(y: dict, root: Path, prep: dict | None = None) -> list[Row]:
     """레이크 루트(`FIRE_LANE_DATA`) 아래 모든 파일을 판정한다. **읽기만 한다.**"""
     c = claims(y)
     # ★ `_prep.json` 의 키는 raw 상대경로다. 변환기가 확장자를 바꾸면(관리카드 pdf → csv)
     #   norm 실물은 `dst` 에 있다(§172-3). 키만 보면 그 넷이 주인없음이 된다.
-    prep_files = {str((v or {}).get("dst") or k)
-                  for k, v in ((prep or {}).get("files") or {}).items()}
+    prep_files = set(norm_owners(prep))
     rows: list[Row] = []
     seen_literal: set[str] = set()
     seen_held: set[tuple[str, str]] = set()
@@ -547,9 +560,12 @@ def table(rows: list[Row]) -> str:
     return "\n".join(lines)
 
 
-def _load_prep() -> dict:
+def load_prep() -> dict:
     p = paths.ROOT / "data" / "_prep.json"
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+
+
+_load_prep = load_prep      # 안쪽 부르는 곳이 옛 이름을 쓴다
 
 
 def main(argv: list[str] | None = None) -> int:
