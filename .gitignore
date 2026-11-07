@@ -167,7 +167,4 @@ fire-lane-*.zip
 
 # Zm11 — 도구가 만드는 시안(contact_sheet)과 로컬 에이전트 설정은 추적하지 않는다
 data/processed/contact/
-# ★ .claude/ 는 LLM 작업의 자리다. 개인 설정은 무시하되
-#   지시문 틀은 **공유한다** — 빼면 사람마다 다른 금지 목록을 쓴다.
-.claude/*
-!.claude/TASK_TEMPLATE.md
+.claude/
