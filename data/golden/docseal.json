@@ -12067,14 +12067,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "27c1d020a594a601",
-   "80607e0b011b49eb",
-   "96b6d4b1397bcb64",
-   "9fc75c6158173521",
-   "b1a0d3949f529648",
-   "c77de734746c54be",
-   "cc1c6435f27ba010",
-   "df8d9e82525dc170"
+   "159f8c5ca7585d1c",
+   "7757c393de95c2bf",
+   "9deacb744e5cbbcc",
+   "b46bc1674fd5dd8e",
+   "ba2973548c117668",
+   "c0da43f908a9c458",
+   "f2244b64cf942471",
+   "f65d861009ad2baf"
   ],
   "parts": {
    ".github/workflows/contract.yml": "4aac99714cfc66f6",
@@ -12086,9 +12086,9 @@
    "tests/test_publish_context.py": "f12d8ba5f4ec3d29",
    "tests/test_verify_scope.py": "e805ce5cc9505b6c",
    "tools/ruleset_check.py": "df3c41a20fd27cfb",
-   "본문": "d4fdefa44bd0b81b"
+   "본문": "f93e0327f16e14fa"
   },
-  "sha": "b1a0d3949f529648"
+  "sha": "7757c393de95c2bf"
  },
  "DECISIONS/634": {
   "doc": "docs/DECISIONS.md",
@@ -15822,6 +15822,7 @@
    "tools/jijeok_review.py",
    "tools/plan_renumber.py",
    "tools/sealcov.py",
+   "tools/treescan.sh",
    "tools/verify.sh",
    "web/assets/vehicles/profiles.json",
    "web/navi/vite.config.ts"
@@ -15829,14 +15830,14 @@
   "fp": "view-v2",
   "kind": "read",
   "legacy": [
-   "0cc71c01b28deda6",
-   "335b07095722dff8",
-   "51108df69c97f5eb",
-   "52326597df10aa4c",
-   "69e3fa88cb8b1aba",
-   "8b2e427be6b749c0",
-   "ac68cd1e19afcf0b",
-   "fa1b5afe247e58ad"
+   "3b909fdd4bb38e48",
+   "3fefa314fb20418d",
+   "584d110933f92c1a",
+   "8661f33558f9dddd",
+   "9df17049a72ac6fd",
+   "b2a6d6a256fda0d4",
+   "b73a3456b73b19d9",
+   "eb68bf5ebfad7a68"
   ],
   "parts": {
    ".github/actions/build-navi/action.yml": "7bd07a49dd13d991",
@@ -15856,12 +15857,13 @@
    "tools/jijeok_review.py": "9152024cad57ddff",
    "tools/plan_renumber.py": "9cc7d5d82d57a203",
    "tools/sealcov.py": "e8f1311e55d7fd4a",
-   "tools/verify.sh": "5a6907b2b67dac5d",
+   "tools/treescan.sh": "49ca728c9ef7e4c7",
+   "tools/verify.sh": "0fb90d99406bc71f",
    "web/assets/vehicles/profiles.json": "1348b7791e2e1e9c",
    "web/navi/vite.config.ts": "5c31395ea740c669",
-   "본문": "fe997dc6ce2a999b"
+   "본문": "5da1fbd9f4f161ed"
   },
-  "sha": "69e3fa88cb8b1aba"
+  "sha": "eb68bf5ebfad7a68"
  },
  "PLAN/1-27": {
   "doc": "docs/PLAN.md",
@@ -15907,12 +15909,12 @@
    "web/navi/package-lock.json"
   ],
   "fp": "view-v2",
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "42f0f2cdb6cf3ffd",
-   "b75e8a1e2af486fa",
-   "d50aaa24ba749bcb",
-   "fd85cf60890d3924"
+   "00332a0e132d2019",
+   "2def9fe68a8f75f1",
+   "acde917a4f70d378",
+   "dc85e70a931c5b42"
   ],
   "parts": {
    "sources.yaml": "f23e5fd6ebc1657c",
@@ -15929,9 +15931,9 @@
    "tools/whoknows.py": "69c643537039c2f4",
    "tools/widthcross.py": "0320341ec4393edc",
    "web/navi/package-lock.json": "1798253ab41c3491",
-   "본문": "9b87ff0ce5c4c21f"
+   "본문": "df9b9ad8f9181440"
   },
-  "sha": "d50aaa24ba749bcb"
+  "sha": "dc85e70a931c5b42"
  },
  "PLAN/10-1": {
   "doc": "docs/PLAN.md",
@@ -15958,16 +15960,16 @@
    "tools/planclose.py"
   ],
   "fp": "view-v2",
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "61cb4544c7e7718d",
-   "cc3d3d20869cea4b"
+   "3cc597b25844997d",
+   "e17dcf3a8bec377f"
   ],
   "parts": {
    "tools/planclose.py": "b57e85539007ee27",
-   "본문": "c4c97dd4c87afe7e"
+   "본문": "dc30c91fe94a3585"
   },
-  "sha": "61cb4544c7e7718d"
+  "sha": "3cc597b25844997d"
  },
  "PLAN/10-2": {
   "doc": "docs/PLAN.md",
@@ -16046,20 +16048,20 @@
    "tools/rule12_sim.py"
   ],
   "fp": "view-v2",
-  "kind": "unmoved",
+  "kind": "read",
   "legacy": [
-   "4a95ba68bef80c7e",
-   "7a542a3ec070f0ad",
-   "c70300d4bf15d1e0",
-   "c7c134cbc911a5e6"
+   "4e4076ce1cb3c018",
+   "940d7d094220574a",
+   "a7b6d2f461591f62",
+   "e9670cd0e12e1df2"
   ],
   "parts": {
    "tests/test_clearance_cross.py": "b9bcb1ae5b837be0",
    "tests/test_plan_blocks.py": "9704e90048e64095",
    "tools/rule12_sim.py": "e6867096b69379bd",
-   "본문": "4cd29b4290fa8478"
+   "본문": "4fca3788c61f34ce"
   },
-  "sha": "c7c134cbc911a5e6"
+  "sha": "e9670cd0e12e1df2"
  },
  "PLAN/12": {
   "doc": "docs/PLAN.md",
