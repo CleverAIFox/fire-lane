@@ -47062,8 +47062,8 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 유병률  **1회** — 「관문이 도는 시험이 전수가 아니라서 빨강이 쌓인다」. §646~§656 이 하루에 열한 번 푸시됐고 그 사이 `pre-push` 가 초록이었는데 CI 가 빨갰다. 이번에 전수를 한 번 돌려서 열셋이 한꺼번에 나왔다.
 
-강제자  없음 — 사유: 이 절이 적는 것은 **고치는 일이 다음 판**인 구조 문제 셋(①②③)이다. 이 판이 고친 열셋은 각자 제 시험이 이미 든다(아래 657-1)
-        **하위 다섯이 이 칸을 물려받는다**
+강제자  `tests/test_lake_hold.py` — 657-6 의 `_hold` 주인 · `tests/test_contract_vocab.py` — 657-8 의 래칫 판정. 657-1 ~ 657-5 가 적은 구조 문제 셋(①②③)은 **고치는 일이 다음 판**이고, 그 판이 고친 열셋은 각자 제 시험이 이미 든다(657-1)
+        **하위 열이 이 칸을 물려받는다**
 
 ### 657-1. 열셋은 무엇이었나 — 오늘 만든 것이 아니라 오늘 드러난 것
 전수 `pytest -q` 가 14 failed / 4463 passed 였다. 그중 `test_shardseal` 하나는 `nfa_ems` 재빌드가 시험 도중에 끝나서 난 것이라 이미 초록이었고, 남은 열셋을 처리했다.
@@ -47094,3 +47094,66 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 - **이름을 `_kr_` 로 바꾸면 안 된다** — sha 가 전국본의 것인 양 보인다.
 - 대장은 이미 그 넷을 `retired`(`nfa_*_derived`)로 **선언했다**(파일 이름 + sha256). 못 하는 것은 코드다: `ledger.entry_of` 가 retired 파일을 **살아 있는 항목**으로 풀어 `canonical` 이 `_kr_` 를 낸다. `tools/migrate_names.py` 가 돌면 그 넷을 개명하고 대장 문자열(`retired` 블록 포함)을 치환한다 — 시험이 우는 것은 그 사고가 나기 전 신호다.
 - 시험을 느슨하게 하지 않았다. 선택지는 보고에 적었다.
+
+
+### 657-6. `landing/_hold` 의 전국본을 도구가 몰랐다 — 선언과 도구가 갈려 있었다 (2026-11-07)
+§647 ~ §649 는 전국본을 raw 에 안 올리고 `landing/_hold` 에서 제자리로 읽기로 정했다(대장 `status: missing` + 추출 선언 · `ingest --extract-from`). 읽는 쪽(`read/extract.py`)만 그 폴더를 알았고 나머지 도구는 raw 만 보았다. 레이크 기계에서 verify 를 돌리자 한 뿌리에서 셋이 났다.
+- `lake gate` — `_hold` 29파일(119 신고접수 4 · 화재 7 · 구급 7 · 구조 4 · 소방대상물 7 · 약 17GB)이 전부 **주인없음**이었다. landing 의 주인은 `landing_disposition` 하나뿐이었다. 같은 파일을 대장은 `nfa/<이름>` 으로 적어 raw 에 없다는 **결손**으로도 셌다(34건 중 nfa 29).
+- `ledger_schema --check` — 다섯 항목(`nfa_dispatch_119` · `nfa_rescue` · `nfa_ems` · `nfa_fire_incident` · `nfa_target_building`)이 「실물 없음」이었다. 하나가 아니라 다섯이었다.
+- `contract.check_one` — `status: missing` 이면 파일을 보기 전에 경고로 끝나서 이 도구는 틀리지 않았다. 대신 입력이 `_hold` 에 있는지는 아무도 말하지 않았다.
+
+**고친 것.** 판별식은 `extract_decl` 에 하나만 둔다 — `held(e)`(`status: missing` **이고** 추출을 선언했다) · `held_names` · `hold_hits`. `lake.resolve` 는 `_hold/<이름>` 이 그 항목의 `files` 파일명과 맞을 때만 주인(`datasets:<키>`)을 주고, 맞은 이름은 raw 결손에서 뺀다. `ledger_schema.probe` 는 raw 에서 못 찾으면 `_hold` 에서 이름으로 찾는다. `contract` 는 결손 경고에 「제자리 입력 `landing/_hold` n/m」을 붙인다(판정은 경고 그대로다).
+- 결과: 관문 landing 주인없음 31 → 0(남은 둘은 657-9 의 일방통행 자료) · 결손 34 → 5(`_hold` 와 무관한 기존) · `ledger_schema` 실물 없음 5 → 0.
+- ★ **양성 대조가 시험의 본체다**(`tests/test_lake_hold.py`). 풀어 주는 쪽만 보면 `_hold` 의 모든 파일을 풀어 주는 구현도 초록이다. 선언 밖 이름 · 하위 폴더 · `_hold` 가 아닌 landing · `_held` 폴더 · `status` 가 missing 이 아닌 항목 · 추출 선언이 없는 항목, 이 여섯이 **여전히 주인없음**이어야 한다.
+- 건너뜀을 꺼서 시험이 무는지 보았다. `held()` 를 항상 True 로 하면 양성 대조 · 조회 시험이 빨개지고, `lake` 가 `_hold` 를 안 보면 주인 시험이 빨개지고, `_hold` 아래 아무 이름이나 풀면 양성 대조 · 주인 시험이 빨개졌다. 원복하면 5개가 초록이다.
+- **안 한 것.** 이 판은 `_hold` 파일의 **내용**이 계약과 맞는지는 보지 않는다(읽어 거르는 쪽이 `ingest`). `contract` 가 입력이 모자랄 때 실패로 올리지 않는다 — 경고 문구만 바꾼다(레이크가 있는 기계에서만 도는 검사라 실패로 올리면 `_hold` 가 없는 기계가 빨개진다).
+- `nfa_rescue` · `nfa_target_building` 의 `missing_why` 가 입력을 「레이크 밖 Downloads」라고 적던 것을 §650-1 이후의 `_hold` 로 고쳤다(zip 의 출처는 그대로).
+
+### 657-7. `ledger_schema` 가 한글 CSV 헤더를 깼다 — 256KB 조각 끝의 멀티바이트 (2026-11-07)
+`_hold` 를 읽게 하자 `nfa_rescue` 의 첫 칸이 `CLMTY_RSCU_RPTP_NO` 가 아니라 `癤풠LMTY_RSCU_RPTP_NO` 로 읽혀 드리프트 1이 났다. 파일은 UTF-8 BOM 이고 대장도 `utf-8-sig` 라고 적었다.
+- **원인.** 이 도구는 헤더 한 줄만 보려고 앞 256KB 만 읽는다. 그 경계가 한글 세 바이트 가운데에서 잘리면 strict `decode("utf-8-sig")` 가 `unexpected end of data` 로 실패하고, 후보 순서를 따라 내려가 마지막에 cp949 가 성공한다. cp949 는 BOM(`EF BB BF`)을 `癤` 로 읽는다. `_decode` 의 머리말이 이미 「조각은 멀티바이트 경계에서 잘려 있어 strict 디코드가 실패할 수 있고 그것은 인코딩이 틀린 것이 아니다」라고 적었는데, 선언 인코딩을 먼저 시도하는 첫 줄이 그 말을 따르지 않았다.
+- **왜 지금 나왔나.** 이 파일들은 raw 에 없어서 이 경로에 닿은 적이 없었다. 구조 현황 2019(309MB)가 처음 닿았다. 같은 조각 읽기는 zip 안 CSV 갈래에도 있다.
+- **고친 것.** 선언 인코딩을 증분 디코더(`codecs.getincrementaldecoder`)로 읽는다 — 끝에서 잘린 바이트를 오류로 세지 않는다. 고친 뒤 드리프트 0.
+- **안 잡은 것.** 이 결함을 직접 문 시험은 없다. 실물(`_hold` 의 구조 2019)이 있어야 재현돼서 레이크 기계에서만 `ledger_schema --check` 가 잡는다. 합성 바이트로 문 시험을 세우는 일은 남았다.
+
+### 657-8. 취입 계약 경고 67 > 기록 58 — 내역 아홉 (2026-11-07)
+`REAL_WARN_RATCHET` 은 58 인데 레이크 기계의 실측이 67 이다. 기준 커밋 `be1fa738`(래칫 58 을 적은 11-02)의 대장을 **지금의 레이크**에 대어 어긋난 아홉을 가렸다(그날의 실제 경고 목록이 아니라 그 대장으로 지금 잰 것이다 — 아래 둘째 줄과 셋째 줄은 이 방법으로 추정했다).
+| 수 | 키 | 원인 |
+|---|---|---|
+| 5 | `nfa_dispatch_119` · `nfa_ems` · `nfa_fire_incident` · `nfa_rescue` · `nfa_target_building` | **이 배치(§647 ~ §649).** `status: missing` 으로 내려 「결손 선언됨」 경고가 됐다 |
+| 2 | `eais_roadledger_dm` · `vworld_uq164` | §602. 실패 → 경고(레이크 분실 뒤 「받지 않기로 했다」). 실패는 줄고 경고가 늘었다 |
+| 2 | `building_connector` · `building_entrance` | 11-04 `a5a3467e` 가 대장을 `juso_bldg_geom_jngj_20260801.zip` 으로 바꾼 뒤 「`.prj` 가 없다」 경고 |
+- **`REAL_WARN_RATCHET` 은 안 올렸다.** 올리면 이 배치가 다섯을 늘린 사실이 래칫 안에 숨는다. 관문은 「이 배치가 늘렸다」로 계속 운다 — 그것이 지금의 정직한 상태다. 내릴 길은 둘이다: 다섯은 입력이 있는 `status: missing` 을 경고 아닌 별도 등급(`declared`)으로 세는 것(PLAN `#191` 이 `acquire --verify` 에 한 것과 같은 모양) · 둘은 `.prj` 가 있는 원천으로 바꾸는 것. 어느 쪽이든 사람이 정한다.
+- **`REAL_FAIL_RATCHET` 은 8 → 7 로 조였다.** 같은 실행에서 실패가 7 이었다. 조이는 쪽이다.
+- 원인이 `nfa_*` 의 결손 선언이라는 것은 657-6 의 도구 쪽 고침과 독립이다 — 도구가 `_hold` 를 알아도 항목은 여전히 `status: missing` 이라 경고 하나씩이다.
+
+### 657-9. landing 에 백업이 없다는 선언 · 일방통행 자료 둘 (2026-11-07)
+`layers.landing` 은 `backup: false` · `regenerable: false` 인데 `_hold/` 에 **약 17GB 가 있다.** 그 사실이 어디에도 선언돼 있지 않았다 — 지우면 소방안전 빅데이터 플랫폼에서 다시 받아야 하고, 재현의 증명은 원본 바이트가 아니라 `_manifest.json` 의 `extract`(입력별 sha256 · 바이트 · 전후 행 수 · 필터)뿐이다.
+- `sources.yaml` `layers.landing.caveats` 와 MASTER §18 에 적었다. 주인은 대장이 이름으로 선언한 파일뿐이라는 규칙도 같이 적었다(강제자 `tests/test_lake_hold.py`).
+- landing 의 일방통행 자료 둘(`0. 일방통행로 현황(공개).xlsx` · `동명동 일대 일방통행 지정도로 (1).hwpx`)을 `landing_disposition` 에 `ingested` 로 적었다. 둘 다 raw 의 정규명 파일과 sha256 이 같다(`gjcity_oneway` · `gjpolice_oneway`). §653 의 판독에 쓴 근거 자료이고 landing 의 것은 **받은 이름을 보존한 중복**이다. 왜 landing 에 남았는지는 기록이 없다.
+
+### 657-10. 옛 지역판 넷을 retired 로 옮기면 남는 것 — norm 다섯 · `_prep.json` 다섯 · L5 의 눈먼 판정 (2026-11-07)
+옛 지역판 넷(`raw/nfa/nfa_{dispatch_119,fire_incident,rescue,target_building}_jngj-*`)은 대장이 이미 `retired` 로 선언했고 sha 가 실물과 같다. 실물 이동은 사람이 친다. 이동만으로는 끝나지 않는다.
+- **norm 에 같은 지역판 다섯이 있다**(`norm/nfa/` 의 dispatch 둘 · fire · rescue · target). 모두 `_prep.json` 의 `dst_sha256` 과 같은 온전한 파생본이고, norm 은 `regenerable: true` · `backup: false` 이며 `ingest` 가 `nfa_*` 를 norm 에서 읽지 않는다(`layers.norm.migrated` 에 없고 추출은 `--extract-from` 이다). 상류가 retired 로 가면 쓸모가 없다.
+- 확인: 하드링크 사본 레이크에서 이동 → norm 삭제 → `prep --prune` 을 흉내 냈다. 이동만 하면 `prep --check` 는 38 정상이고(`src` 가 없는 norm 은 불평하지 않는다) `--prune` 은 「뺄 것이 없다」이며 `lakecheck` L5 가 5건을 낸다. norm 5개를 지운 뒤에는 `prep --check` 가 「누락 5」를 내고 `--prune` 이 같은 다섯을 「raw · norm 둘 다 없다」로 든다(38 중 5 · 절반 미만이라 통과). `--prune --apply` 뒤에는 L5 0.
+- **정리 순서(사람이 친다).** ① raw 4개를 `retired/nfa/` 로 옮긴다 ② `norm/nfa/*jngj-dong*` 다섯을 지운다 ③ `uv run python -m firelane.prep --prune --apply` 가 `data/_prep.json` 에서 그 다섯을 뺀다(스크립트가 쓰고 손으로 안 고친다) ④ `lakecheck` · `lake gate` · `prep --check` 를 다시 돌린다. `data/_intake.json` 의 `origin_name` 기록은 입수 이력이라 안 건드린다.
+- ★ **L5 의 상류 판정이 눈멀었다 — 지금 초록인 것이 틀린 이유로 초록이다.** `lakecheck.l5` 는 norm 파일 이름의 앞 14자(`nfa_dispatch_1`)로 시작하는 raw 가 **하나라도** 있으면 통과시킨다. `norm/nfa/nfa_dispatch_119_jngj-dongmyeong_20260903.csv` 는 raw 에 짝이 없는데(raw 에는 `…20261104` 뿐이다) 형제 한 장 때문에 L5 가 「상류 없는 것 0건」을 낸다. 4개를 옮기면 형제가 사라져 5건이 한꺼번에 울린다 — 그 5건이 정직한 값이다. **PLAN `#197`** 로 세웠다(표 셋 — §1 · §10-1 `Zs` · §10-5 `C`). 도착 조건은 `_prep.json` 의 raw 경로 키로 판정하고 형제가 있어도 짝 없는 norm 이 잡히는 양성 대조 시험을 두는 것이다.
+- 이 판은 L5 를 고치지 않았다 — 행으로 세웠을 뿐이다. 정리를 먼저 하지 않고 L5 를 고치면 그 자리에서 1건이 운다(위 dispatch).
+
+### 657-11. 래칫 · 도구
+- 판정 · 폐포 · golden 안 건드림. 코드: `extract_decl`(+판별식 셋) · `lake`(599줄 — 상한 600 에 붙었다) · `ledger_schema`(641 → 648 · `sizetable` 에 사유) · `contract`(+5) · `contract_verdict`(`REAL_FAIL_RATCHET` 8 → 7).
+- `ratchet.py` 를 돌린 중간에 느슨해진 셋이 나왔고 이 판이 낸 것이라 고쳤다 — `scopedecl`(새 시험에 `밖` 칸 없음) · `srccov`(새 순수 함수 둘을 시험이 이름으로 안 부름) · `suppress`(사유 없는 `noqa` 둘). 낡음 0.
+- `mutate` 장부가 낡았다(`ledger_schema` · `naviweight` · `sizecheck`). `uv run python tools/mutate.py --write --stale` 는 사람이 친다. `naviweight` 는 이 판이 바꾼 것이 아니다(§657 의 웹 작업).
+- `lakecheck` L3 의 한 건(`소방청_전국 구급 현황.zip` 이 레이크 밖 Downloads 에 있다)은 이 판의 범위 밖이라 그대로다.
+
+### 657-12. 같은 수 82 를 하루에 두 번 만났고 처리가 정반대였다 (2026-11-06 · 2026-11-07)
+`mutate` 의 `SURVIVORS` 가 하루 사이에 같은 값 82 로 두 번 나왔다. 처리는 반대였다.
+
+| 때 | 본 수 | 무슨 일 | 처리 |
+|---|---|---|---|
+| 2026-11-06 밤 | 82 | `sealcov` 자기검사가 빨개서 그 도구 변이 4개가 「못 쟀다」가 되고 그 안의 생존 1 이 빠졌다(657-3) | **83 으로 되돌렸다** |
+| 2026-11-07 낮 | 82 | `ledger_schema` 의 인코딩 버그(657-7)를 고치자 그 도구 생존이 4 → 3 으로 줄었다 | **82 로 조였다** |
+
+- ★ **수는 같고 처리는 반대다.** 가른 것은 「왜 줄었나」를 본 것뿐이다. 앞은 측정이 빠져서 줄었고(가짜), 뒤는 생존자가 실제로 죽어서 줄었다(진짜).
+- **가리는 법.** 장부를 도구별로 대조한다 — `data/golden/mutation.json` 의 도구별 생존을 지금 측정과 견주면 1분에 가려진다. 줄어든 도구가 「못 쟀다」로 빠진 도구인지, 시험이 새로 죽인 도구인지가 거기서 갈린다.
+- ★ **래칫 도구가 「받아적을 일이 아니라 결함이다 — 그 도구가 왜 우는지 읽어라」를 말하는 이유가 이 둘이다.** 수만 받아적으면 두 사례 가운데 하나는 반드시 틀린다. 하루 만에 양쪽 사례가 다 나왔다.

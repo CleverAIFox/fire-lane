@@ -221,54 +221,6 @@
    "notes": [],
    "at": "2026-09-01T23:16:35+09:00"
   },
-  "nfa/nfa_dispatch_119_jngj-dongmyeong_20260903.csv": {
-   "key": "nfa_dispatch_119",
-   "src_sha256": "740dedf4e0c6f6de0424971e59391c04f6e58d9f37747fa6d822352471950371",
-   "dst_sha256": "e572bd001a92157b29593580472993cc8586f034097733a21053ec4cae58026d",
-   "src_encoding": "utf-8-sig",
-   "src_newline": "lf",
-   "dst_encoding": "utf-8",
-   "dst_newline": "lf",
-   "hangul_ratio": 0.1391,
-   "notes": [],
-   "at": "2026-09-14T18:57:42+09:00"
-  },
-  "nfa/nfa_rescue_jngj-dongmyeong_20260903.csv": {
-   "key": "nfa_rescue",
-   "src_sha256": "66cd210b56f6fb13f4dbd7f26b560e2059936e34f4a06a38a9b3ce820d7363f5",
-   "dst_sha256": "be0ce80de28f6b4e7840d5ec4ae52368ec10f52eb2f1b57fb10561571d07d502",
-   "src_encoding": "utf-8-sig",
-   "src_newline": "lf",
-   "dst_encoding": "utf-8",
-   "dst_newline": "lf",
-   "hangul_ratio": 0.116,
-   "notes": [],
-   "at": "2026-09-14T18:57:42+09:00"
-  },
-  "nfa/nfa_fire_incident_jngj-donggu_20260903.csv": {
-   "key": "nfa_fire_incident",
-   "src_sha256": "c1f98a86160ef4f7d545d609ac953e33a288ad4d8113e25b45f0371e95f2f621",
-   "dst_sha256": "7ebfcb62b453bbb093401c2b561a9ca7008eb2fcfc6632d5f32884840f69ae74",
-   "src_encoding": "utf-8-sig",
-   "src_newline": "lf",
-   "dst_encoding": "utf-8",
-   "dst_newline": "lf",
-   "hangul_ratio": 0.2864,
-   "notes": [],
-   "at": "2026-09-14T18:57:42+09:00"
-  },
-  "nfa/nfa_target_building_jngj-dongmyeong_20260903.csv": {
-   "key": "nfa_target_building",
-   "src_sha256": "d85ec9f5b7fbdca363c3fb2a569aee5cca8d139169f54f00aee1b8f11f934394",
-   "dst_sha256": "de004d05808e35772bd9c2caa467b11a9390db1a0b6f81a613631a028062b51b",
-   "src_encoding": "utf-8-sig",
-   "src_newline": "mixed",
-   "dst_encoding": "utf-8",
-   "dst_newline": "lf",
-   "hangul_ratio": 0.329,
-   "notes": [],
-   "at": "2026-09-14T18:57:42+09:00"
-  },
   "eais/eais_bldgledger_dm_jngj-dongmyeong_20260906.json": {
    "key": "bldg_ledger_dm",
    "src_sha256": "82d938c21281441c166e4e8dcef539a983f603b6195d949281f3d5f05f93bd63",
@@ -439,18 +391,6 @@
    "notes": [],
    "at": "2026-09-17T19:39:54+09:00"
   },
-  "nfa/nfa_dispatch_119_jngj-dongmyeong_20261104.csv": {
-   "key": "nfa_dispatch_119",
-   "src_sha256": "153a0ddc9d0b1331f7c2152a4be0208a04307ec12c0b64e9e14afb4d3386aea7",
-   "dst_sha256": "39652827fadf0db9be0d9b39c5eed9a96d209f16cf25cc4a63edb0ac7e55f21f",
-   "src_encoding": "utf-8-sig",
-   "src_newline": "crlf",
-   "dst_encoding": "utf-8",
-   "dst_newline": "lf",
-   "hangul_ratio": 0.1303,
-   "notes": [],
-   "at": "2026-11-04T21:24:26+09:00"
-  },
   "gjcity/gjcity_oneway_donggu_jngj-donggu_20261008.xlsx": {
    "key": "gjcity_oneway",
    "dst": "gjcity/gjcity_oneway_donggu_jngj-donggu_20261008.csv",
@@ -472,5 +412,5 @@
    "at": "2026-11-06T15:54:55+09:00"
   }
  },
- "at": "2026-11-06T15:54:55+09:00"
+ "at": "2026-11-07T10:13:00+09:00"
 }

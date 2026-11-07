@@ -10,6 +10,9 @@ OUT   `declared` · `problems` · `normalize`
 """
 from __future__ import annotations
 
+from pathlib import Path
+
+HOLD = "_hold"   # `landing` 아래 평평한 폴더(provider 폴더 없음) — 전국본을 raw 에 안 올리고 제자리에서 읽는 자리(DECISIONS §647 · §648)
 KINDS = ("csv_table", "csv_table_multi")
 # ★ 둘이다. **출력 칸 이름이 하류의 이름과 같은 쪽**을 고른다 — `nfa_ems` 는 소비자가 없어 소문자(`lower_strip`) ·
 #   `nfa_dispatch_119` 는 `publish_context`(`r.DSPT_DRTV_DT`) · 대장 `coords` · `schema.columns` 가 전부 대문자라 `upper_strip`(DECISIONS §648).
@@ -88,3 +91,33 @@ def problems(key: str, e: dict) -> list[str]:
             if col not in have:
                 out.append(f"filter.column `{col}` 이 schema.columns{' (정규화 뒤)' if mode else ''} 에 없다 — 필터가 조용히 안 걸린다")
     return out
+
+
+def held(e: dict | None) -> bool:
+    """입력을 `landing/_hold` 에서 제자리로 읽는 항목인가 — **`status: missing` 이고 추출을 선언했다.** 둘이 같이일 때만이다.
+
+    ★ 2026-11-07. 이 판별이 없어서 `lake` 는 `_hold` 의 전국본 29개를 주인없음으로, 대장이 raw 이름으로 적은 같은 파일을 결손으로 읽었다.
+      「아무 이름이나 `_hold` 에 넣으면 풀린다」가 아니다 — 대장이 이름으로 선언한 파일만 풀린다.
+    """
+    from firelane import ledger  # noqa: PLC0415  가벼운 자리를 지킨다 — 이 함수가 불릴 때만 든다
+    return ledger.absence(e)[0] == "missing" and declared(e or {})
+
+
+def held_names(datasets: dict | None) -> dict[str, list[str]]:
+    """`_hold` 에서 읽는 항목들의 파일명(패턴) → 주인 키들. **폴더는 떼고 이름으로만** 맞춘다(`read/extract.paths` 와 같다)."""
+    from firelane import ledger  # noqa: PLC0415  `held` 와 같다 — 가벼운 자리를 지킨다
+    out: dict[str, list[str]] = {}
+    for k, e in (datasets or {}).items():
+        if held(e):
+            for pat in ledger.globs(e):
+                out.setdefault(Path(pat).name, []).append(k)
+    return out
+
+
+def hold_hits(e: dict | None, hold: Path) -> list[Path]:
+    """이 항목의 입력 중 `hold` 폴더에 실물이 있는 것. `held` 가 아니면 비어 있다(어느 폴더도 안 읽는다)."""
+    from firelane import ledger  # noqa: PLC0415  `held` 와 같다 — 가벼운 자리를 지킨다
+    if not held(e) or not hold.is_dir():
+        return []
+    return sorted({q for pat in ledger.globs(e) for q in hold.glob(Path(pat).name)
+                   if q.is_file() and not ledger.is_acquisition_meta(q)})

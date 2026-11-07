@@ -91,8 +91,10 @@ from pathlib import Path
 # ★ 2026-10-08 (DECISIONS §433). 어휘가 `contract_crs` 로 내려갔다 — 이 파일이
 #   그 파일을 들이므로 거꾸로 들이면 순환이다. 정본은 하나이고 여기는 읽는다.
 from firelane import ledger as _led
+from firelane import paths as _paths
 from firelane.contract_crs import FAIL, OK, WARN
 from firelane.encoding import CANDIDATES_REPORT
+from firelane.extract_decl import HOLD, held, hold_hits
 from firelane.paths import ROOT
 
 
@@ -224,7 +226,10 @@ def check_one(key: str, e: dict, raw: Path, bbox: tuple | None) -> Report:
     from firelane.ledger import absence as _absence  # noqa: PLC0415  맞물림을 끊는다
     lvl, why = _absence(e)
     if lvl == "missing":
-        r.add(WARN, f"결손 선언됨 — {why}")
+        # ★ 2026-11-07. 입력을 `landing/_hold` 에서 읽는 항목(§647)은 그 입력이 **거기 있는지**를 한 줄로 든다 — 없으면 경고 문구가 그것을 말한다.
+        n = len(_led.globs(e)) if held(e) else 0
+        got = len(hold_hits(e, _paths.LANDING / HOLD)) if n else 0
+        r.add(WARN, f"결손 선언됨 — {why}" + (f"\n  ★ 제자리 입력 `landing/{HOLD}` {got}/{n}" + ("" if got == n else " — **입력이 모자란다**") if n else ""))
         return r
     if lvl == "awaiting":
         r.add(WARN, f"아직 raw 에 없다 — {why}")

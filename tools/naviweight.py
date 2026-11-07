@@ -139,7 +139,11 @@ EXTERNAL = 0
 #: ★ 2026-10-09 (DECISIONS §441). 128 → **127.** `ui/Manual.tsx` 가 들어오고
 #:   화면 문장 여럿이 빠졌는데 **합이 1KB 줄었다** — 걷어낸 글이 더 컸다.
 #:   내려가는 쪽이라 받아 적는다(바로 위 문단의 규약).
-ENTRY_KB = 127
+#: ★ 2026-11-07 (DECISIONS §657). 127 → **114.** `ui/deferred.tsx` 가 넷을 lazy 로 뺐다
+#:   (RouteBrief · BottleneckPanel · ShareChip · DevBar). 165커밋 사이에 주행 화면 부품이
+#:   `App.tsx` 의 정적 import 로 전부 진입 청크에 들어와 128KB 로 터졌고, 그것을 되돌린 것이다.
+#:   130,560 → 117,152 바이트. 여유 13KB.
+ENTRY_KB = 114
 
 #: ★ `ENTRY_KB` 는 **안 태운다.** `tools/ratchet.py` 의 규약은 「어디서나 잴 수 있는
 #:   수」를 전제하는데, 진입 청크는 **빌드본이 있어야** 재진다. 빌드본이 없는 기계

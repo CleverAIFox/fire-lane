@@ -2002,7 +2002,7 @@ git push origin --delete feat/<이름>
 권한으로 실행된다. **규칙이 있어도 예외가 있으면 없는 것과 같다**(`DECISIONS §79`).
 
 ★ **한시로 낮춘 것 — `FIRE_LANE_OPS_TOKEN` 미등록 · 중개자가 아직 없다.** (2026-11-06 · DECISIONS §655 · §657)
-`tools/ruleset_check.py` 가 「Secret 미등록」으로 rc=1 을 냈고 그 도구가 제시한 길이 「한시로 낮춘 것이면 되돌릴 날과 함께 적어라」였다.
+`tools/ruleset_check.py` 가 「Secret 미등록」으로 rc=1 을 냈고 그 도구가 제시한 길은 한시로 낮춘 것이면 되돌릴 날과 함께 적는 것이었다.
 - **빈 값이 배포본을 깨지 않는다.** 액션이 스스로 「비어도 된다 — 단 주소가 있으면 경고가 찍힌다」로 선언하고(`.github/actions/stage-site/action.yml`),
   주소(`vars.FIRE_LANE_OPS_URL`)도 비어 있어 경고조차 안 찍힌다. `deploy.yml` 의 `dry` 가 「비어 있으면 탭끼리만 경고를 찍고 통과한다 — 그것이 지금의 사실」을 설계로 적는다(§343-3).
 - ★ 이 토큰은 **설계상 공개된다** — 브라우저 WebSocket 이 헤더를 못 붙여 주소의 `?t=` 로 가고 번들에서 읽힌다. 「화면을 여는 열쇠이지 신분이 아니다」(§655). 등록을 미루는 이유는 비밀 유지가 아니라 **그 열쇠가 열 문이 아직 없다**는 것이다. 주소(`vars.FIRE_LANE_OPS_URL`)가 비어 연결 시도 자체가 없으므로 값을 넣어도 의미 없는 문자열을 번들에 싣는 것뿐이다.
@@ -3429,6 +3429,12 @@ uv run python -m firelane.datalog fsck
 그것이 곧 **"이 계층이 왜 거기 있나"** 의 답이다.
 
 **계층이 없으면 파일은 아무 데나 떨어진다.** 규율이 아니라 구조의 문제다.
+
+★ **`landing/_hold` — 백업이 없는 17GB.** `landing` 은 `backup: false` · `regenerable: false` 인데 `_hold/` 에 raw 에 안 올린 전국본이 29파일 약 17GB 있다
+(119 신고접수 4 · 화재 7 · 구급 7 · 구조 4 · 소방대상물 7 · §647 ~ §650). 입력을 raw 에 올리지 않고 `ingest --only <키> --extract-from <_hold>` 가 제자리에서 읽는다.
+**지우면 되살릴 길이 소방안전 빅데이터 플랫폼에서 다시 받는 것뿐이다.** 재현의 증명은 원본 바이트가 아니라 `_manifest.json` 의 `extract`(입력별 sha256 · 바이트 · 전후 행 수 · 필터)다.
+주인은 대장이 이름으로 선언한 파일뿐이다 — `status: missing` + 추출 선언 항목의 `files` 파일명과 맞을 때만 `lake` 가 주인을 준다. 그 밖의 이름은 주인없음으로 관문을 닫는다.
+강제자 — `tests/test_lake_hold.py`(선언한 입력은 주인이 있고 결손이 아니다 · 아무 이름이나 넣으면 여전히 주인없음 · `ledger_schema` · `contract` 가 쓰는 조회)
 
 강제자 — `tests/test_layers.py::test_master_layer_table_matches_paths`
 

@@ -43,6 +43,7 @@ PARAM 없음
 from __future__ import annotations
 
 import argparse
+import codecs
 import csv
 import fnmatch
 import io
@@ -54,7 +55,9 @@ from pathlib import Path
 import yaml
 
 from firelane import ledger as _led
+from firelane import paths as _paths
 from firelane import valueprofile as _vp
+from firelane.extract_decl import HOLD, hold_hits
 
 ROOT = Path(__file__).resolve().parents[1]
 YAML = ROOT / "sources.yaml"
@@ -90,7 +93,8 @@ def _decode(b: bytes, declared: str | None) -> tuple[str, str]:
     """
     if declared:
         try:
-            return b.decode(declared), declared
+            # ★ 2026-11-07. 증분 디코더 — strict `decode` 는 256KB 조각 끝의 잘린 멀티바이트로 실패해 BOM 을 cp949 `癤` 로 읽었다(nfa_rescue).
+            return codecs.getincrementaldecoder(declared)().decode(b), declared
         except UnicodeDecodeError:
             pass
     for c in ("utf-8-sig", "utf-8", "cp949"):
@@ -254,6 +258,9 @@ def probe(key: str, e: dict) -> dict | None:
     pat = str(files[0])
     hits = sorted(_raw().glob(pat)) if any(c in pat for c in "*?[") else (
         [_raw() / pat] if (_raw() / pat).exists() else [])
+    if not hits:
+        # ★ 2026-11-07. 전국본을 raw 에 안 올리는 항목(§647)의 입력은 `landing/_hold` 에 있다 — 이름으로 찾는다.
+        hits = hold_hits(e, _paths.LANDING / HOLD)
     if not hits:
         return {"error": f"실물 없음: {pat}"}
     src = hits[0]
