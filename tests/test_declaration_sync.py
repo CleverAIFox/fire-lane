@@ -318,10 +318,7 @@ def test_plan_section_refs_resolve():
       그 검사가 목록을 손으로 관리하지 않는 이유가 이것이다.
     """
     # ★ 2026-11-08. 판단은 `tools/plan_renumber.py::unresolved_section_refs` 한 곳이다(pre-push 가 같은 것을 돈다).
-    sys.path.insert(0, str(ROOT / "tools"))
-    import plan_renumber as pr
-
-    bad = pr.unresolved_section_refs(PLAN.read_text(encoding="utf-8"))
+    bad = _pr().unresolved_section_refs(PLAN.read_text(encoding="utf-8"))
     assert not bad, (
         f"PLAN 안에 실체가 없는 절 참조: {bad}\n"
         "  다른 문서를 가리키는 것이면 `MASTER §N` 처럼 소속을 적는다.")
@@ -876,12 +873,6 @@ _SYNTH_PLAN = (
     "## 4. 자기 절\n\n### 4-5. 하위\n\n"
     "{body}\n"
 )
-
-
-def _pr():
-    sys.path.insert(0, str(ROOT / "tools"))
-    import plan_renumber as pr
-    return pr
 
 
 def test_section_ref_check_separates_foreign_own_and_owned_refs():

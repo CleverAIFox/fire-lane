@@ -125,8 +125,10 @@ def check_invalid_seals(root: Path, run: Runner) -> Block | None:
 
 
 # ── ㉢ 도장 없는 절 ──────────────────────────────────────────────
+# ★ 자리를 **`cwd`(= tools/)로** 준다 — `python -c` 는 cwd 를 먼저 본다. `sys.path` 를 코드 문자열에 적으면
+#   `test_layering::test_sys_path_해킹이_없다` 가 그 글자를 센다(`mutate_guard` 가 같은 길을 쓴다).
 _UNSEALED_PROBE = (
-    "import sys; sys.path.insert(0, 'tools'); import docseal as d; "
+    "import docseal as d; "
     "now, was, _ = d.survey(); "
     "print('DECLARED', d.UNSEALED); "
     "[print('UNSEALED', k) for k in sorted(now) if k not in was]"
@@ -134,7 +136,7 @@ _UNSEALED_PROBE = (
 
 
 def check_unsealed(root: Path, run: Runner) -> Block | None:
-    rc, out = run([*_PY, "-c", _UNSEALED_PROBE], root)
+    rc, out = run([*_PY, "-c", _UNSEALED_PROBE], root / "tools")
     declared = next((int(x.split()[1]) for x in out.splitlines() if x.startswith("DECLARED ")), None)
     if rc != 0 or declared is None:
         return Block("㉢", "도장 없는 절을 못 셌다(탐침이 죽었다)", out.strip().splitlines()[-5:],
@@ -173,11 +175,11 @@ def check_dirty(root: Path, run: Runner) -> Block | None:
 
 
 # ── ㉤ 변이 장부 ─────────────────────────────────────────────────
-_MUTATE_PROBE = "import sys; sys.path.insert(0, 'tools'); import mutate; mutate.ratchet_values()"
+_MUTATE_PROBE = "import mutate; mutate.ratchet_values()"
 
 
 def check_mutate(root: Path, run: Runner) -> Block | None:
-    rc, out = run([*_PY, "-c", _MUTATE_PROBE], root)
+    rc, out = run([*_PY, "-c", _MUTATE_PROBE], root / "tools")
     if rc == 0:
         return None
     last = [x for x in out.strip().splitlines() if x.strip()][-2:]

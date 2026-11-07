@@ -9,12 +9,10 @@
 from __future__ import annotations
 
 import subprocess
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-import pushready as P  # noqa: E402 — `sys.path` 를 먼저 깔아야 import 가 된다
+import pushready as P  # `pyproject` 의 `pythonpath` 가 tools 를 얹는다 — sys.path 를 손대지 않는다
 
 GREEN = {
     "ratchet": (0, "래칫 83개 · 낡음 0 (조이는 쪽 0 · 느슨해진 쪽 0)\n✓ 래칫이 전부 실측과 같다\n"),
