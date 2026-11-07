@@ -222,13 +222,8 @@ def _shared(own: tuple[str, ...], c: Claims) -> bool:
 
 
 def norm_owners(prep: dict | None) -> dict[str, list[str]]:
-    """norm 상대경로 → 그것을 낳은 raw 상대경로들. **norm 의 주인 판정 정본이다.**
-
-    ★ 2026-11-07 (#197). `resolve` 가 안에서 짓던 집합을 꺼냈다. `lakecheck` L5 가
-      따로 파일명 접두로 상류를 대고 있었고, 두 자가 「이 norm 에 주인이 있는가」에
-      다르게 답했다 — 형제 raw 가 있으면 L5 는 통과시켰다.
-    `_prep.json` 의 키는 raw 상대경로고 항목의 `dst` 가 norm 상대경로다(없으면 키와 같다).
-    """
+    """norm 상대경로 → 그것을 낳은 raw 상대경로들 — **norm 의 주인 판정 정본**(#197 · `resolve` 와 L5 가 같이 읽는다).
+    `_prep.json` 의 키는 raw 경로고 `dst` 가 norm 경로다(없으면 키와 같다)."""
     out: dict[str, list[str]] = {}
     for k, v in ((prep or {}).get("files") or {}).items():
         out.setdefault(str((v or {}).get("dst") or k), []).append(k)
@@ -565,9 +560,6 @@ def load_prep() -> dict:
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
 
 
-_load_prep = load_prep      # 안쪽 부르는 곳이 옛 이름을 쓴다
-
-
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="firelane.lake")
     ap.add_argument("cmd", choices=["scan", "gate", "plan"])
@@ -595,7 +587,7 @@ def main(argv: list[str] | None = None) -> int:
         pm, pr = write_commands(res, a.out, top)
         print(f"\n이동 {len(res.moves)} → {pm}\n삭제 {len(res.deletes)} → {pr}")
         return 0
-    rows = resolve(y, paths.DATA, _load_prep())
+    rows = resolve(y, paths.DATA, load_prep())
     print(table(rows))
     if a.json:
         a.json.write_text(json.dumps([asdict(r) for r in rows], ensure_ascii=False, indent=1) + "\n",

@@ -47167,6 +47167,8 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 강제자  없음 — 사유: 「재취득 전에 sha 부터 잰다」는 사람이 하는 절차이고 기계가 묻지 않는다. 대장 항목 사이의 sha 중복을 세는 검사는 **세우지 않았다**(후보일 뿐이다 — 이 절이 그 필요를 처음 센 것이다). 실물 이동 뒤의 대장 정합은 `tests/test_lake.py`(authority 래칫 17 → 16)가 문다.
 
+쓴 칸    없음 — 사유: 측정이 아니라 대장 정리다. `sources.yaml` 의 항목 키(`nfa_mas_spec_2025` · `mas_vehicle_spec`)와 `profiles.json` 링크를 읽었고 표 칸(`schema.columns`)은 읽지 않았다
+
 **① `profiles.json` 의 인제소방서 링크 (PLAN #30(닫힘)).** `web/assets/vehicles/profiles.json` 이 회전반경 출처로 인제소방서 링크를 「대장 밖 · 미검증」으로 적고 있었다. 그 파일이 레이크의 `nfa_bldgcomm_guide` 와 sha256 이 같았다(6a314d89… · 5,363,907 B). 받아서 대조하니 동일했다.
 - 새로 반입할 것이 없다. 8쪽 표 여덟 행이 `profiles.json` 과 전부 같다. 구조공작차 · 구급차는 표에 없다. 제작규격 기반이라 실측은 아니다 — D-30 은 별도다.
 - PLAN #30(닫힘) 을 닫았다. 닫는 문장(PLAN 에 적어 준 그대로): 「`profiles.json` 의 인제소방서 링크는 `nfa_bldgcomm_guide` 와 sha256 이 같은 파일이다(6a314d89… · 5,363,907 B). 새로 반입할 것이 없고 8쪽 표 여덟 행이 `profiles.json` 과 전부 같다. 구조공작차 · 구급차는 표에 없다. 제작규격 기반이라 실측은 아니다 — D-30 은 별도.」
@@ -47186,6 +47188,8 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 
 강제자  `tests/test_ledger_fields.py`(`test_a_sheet_number_after_a_year_is_not_read_as_a_date` · `test_a_short_vintage_does_not_fill_updated` · `test_a_short_vintage_is_reported_as_skipped_not_silent` · `test_an_eight_digit_vintage_still_fills_next_to_a_part`) · `tests/test_normalize_rules.py`(`test_the_passthrough_rule_reads_the_grammar_from_naming`)
 
+쓴 칸    없음 — 사유: 표 칸을 안 읽었다. 입력은 **파일명**(`x_kr_2025_35616037.csv` 꼴)이고 `ledger_fields` 가 파일명에서 `updated` 를 유도하는 길을 고쳤다
+
 `tools/ledger_fields.py` 의 `updated` 유도가 8자리 숫자를 파일명 **어디서든** 집었다(`_(\d{8})(?:_|\.)`). `x_kr_2025_35616037.csv` 는 vintage 가 `2025` 이고 `35616037` 은 도엽번호인데, 그 정규식은 도엽번호를 날짜로 읽어 `3561-60-37` 을 대장에 쓸 수 있었다. 아무도 안 밟았을 뿐 열려 있었다 — 지금 실물은 전부 8자리 vintage 라 vintage 가 곧 첫 8자리 숫자였기 때문이다.
 - **고침.** vintage 토큰(**숫자 토큰 중 첫째** — 도엽번호 · 개정은 그 뒤에 온다)만 본다. 문법은 `naming.VINTAGE_ALT` 한 곳에서 읽는다(PLAN #196). 8자리면 ISO 로 채우고 `YYYY` · `YYYYMM` 은 **채우지 않고 사유를 찍는다**(정밀도가 모자라다 — `YYYY1231` 로 메우면 파일명이 말하지 않은 날이 박힌다).
 - 이것은 문법을 넓히기(PLAN #196)의 **전제**였다. 규칙만 넓혔으면 이 길이 열린 채로 `YYYY` 파일이 정규화를 통과했을 것이다. 남은 것은 PLAN #196 에 적었다 — norm 관문(`providers.pattern_file` · `layers.norm.naming`)은 아직 `\d{8}` 이다.
@@ -47197,6 +47201,8 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 유병률  **1회** — 「유보한 수가 판정이 바뀐 뒤 낡았다」(§561-4 의 수는 Zm19 이전 판정 clear 362 기준이었다). 이 절이 그 수를 지금 판정으로 처음 다시 센 것이다.
 
 강제자  없음 — 사유: 측정 기록이고 `tools/hydrant_reach.py` 는 `부류 조사`(사람이 손으로 돌린다 · DECISIONS §398)다. 도구가 값을 문 시험은 없다. 판정 수는 불변량(`clear 275 · needs_cv 283 · blocked 193 · unknown 536 · 구간 1,287`)이 맞았다.
+
+쓴 칸    없음 — 사유: 대장의 표 칸을 읽지 않았다. 입력은 구간 gpkg(`segments_5186.gpkg`)와 소화전 점 gpkg(`hydrant_point_5186.gpkg`)의 **기하**(직선거리)와 구간의 판정 라벨이고, 둘 다 대장 항목의 칸이 아니다(`tools/hydrant_reach.py`)
 
 **쓴 도구와 자료.** `tools/hydrant_reach.py`(구간 → 가장 가까운 소화전까지의 **직선거리** · 호스 길이의 하한) · `segments_5186.gpkg`(1,287구간) · `hydrant_point_5186.gpkg`(소화전 528). 가장 가까운 소화전까지 중앙 32m · p90 68m · 최대 120m(전건이 140m 안이라 140m 는 여전히 변별력이 0이다).
 
@@ -47222,6 +47228,8 @@ PLAN §10-5 의 C판 열다섯 행(#30 #31 #60 #57 #93 #95 #120 #10 #66 #55 #183
 유병률  **1회** — 「한 행이 굳은 것과 안 굳은 것을 한 칸에 담아 닫지 못했다」. `#75` 가 셋 중 둘이 굳은 채 한 달 열려 있었다.
 
 강제자  없음 — 사유: 닫는 판단과 출처 조사의 기록이다. 코드가 읽는 값이 아니다. 행 신설의 표 셋은 `tests/test_plan_tables.py` · `tools/planclose.py` 가 문다.
+
+쓴 칸    없음 — 사유: 대장의 표 칸을 읽지 않았다. 입력은 소스 코드 · 문서의 `grep`(`2.0` · `2m` · `MIN_WIDTH` · `IMPASSABLE`)과 `seg/params.py` · `seg/classify.py` 의 상수다
 
 **① `#75` 를 닫았다.** 닫는 문장: 「셋 중 둘이 원문으로 확인됐다(§429 · §658). 셋째(2m)는 `#205` 로 갈라 세웠다.」 굳은 둘은 소방청 「건축위원회(심의) 표준 가이드라인」(2023.12) 1-1 의 「회전반경 차량 중심에서 최소 10m」와 「도로 폭 최소 4~6m」이고, 그 문서는 대장 `nfa_bldgcomm_guide` 로 들어와 있다(§658 ①이 `profiles.json` 링크와 sha256 이 같음을 확인했다). 사람이 B(셋째를 따로 세운다)를 골랐다.
 

@@ -342,8 +342,11 @@ def test_stem_of_agrees_with_the_ledger_for_every_real_file():
     raw = sorted(json.loads(
         (ROOT / "data/_acquire.json").read_text(encoding="utf-8"))["files"])
     assert len(raw) > 50, "실물 목록이 비었다 — 이 검사가 빈 그물이 됐다"
+    # ★ 2026-11-07 (PLAN #55 ③). 폐기로 간 파일(`retired.*.files`)은 raw 에 남아 있어도
+    #   살아 있는 항목의 stem 이 아니다 — 대장이 「폐기로 안다」(`retired_names`)고 적은 것만 뺀다.
+    dead = L.retired_names()
     bad = [f"  {p} → {iname.stem_of(p)!r}" for p in raw
-           if iname.stem_of(p) not in stems]
+           if p not in dead and iname.stem_of(p) not in stems]
     assert not bad, (
         "줄기가 대장의 어느 stem 과도 같지 않다 — 반입이 그 파일을 못 짝짓는다.\n"
         + "\n".join(bad))
