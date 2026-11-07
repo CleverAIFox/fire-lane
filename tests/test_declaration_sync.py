@@ -317,27 +317,14 @@ def test_plan_section_refs_resolve():
       결함이 생긴 것이 아니라 가려져 있던 것이 보이게 된 것이다 —
       그 검사가 목록을 손으로 관리하지 않는 이유가 이것이다.
     """
-    text = PLAN.read_text(encoding="utf-8")
-    h2 = set(re.findall(r"^## (\d+)\.", text, re.M))
-    h3 = set(re.findall(r"^### (\d+-[0-9a-z]+)\.", text, re.M))
+    # ★ 2026-11-08. 판단은 `tools/plan_renumber.py::unresolved_section_refs` 한 곳이다(pre-push 가 같은 것을 돈다).
+    sys.path.insert(0, str(ROOT / "tools"))
+    import plan_renumber as pr
 
-    bad = set()
-    for m in re.finditer(r"§(\d+)(?:-([0-9a-z]+))?", text):
-        # 다른 문서를 가리키면 바로 앞에 소속이 붙는다 — `MASTER §16-1`.
-        # 앞에 조사나 여는 괄호가 붙어도(`잡는다(MASTER §16-1`) 인정한다.
-        before = text[max(0, m.start() - 12):m.start()]
-        if re.search(r"(MASTER|DECISIONS|README)\s*$", before):
-            continue
-        top, sub = m.group(1), m.group(2)
-        if sub:
-            if f"{top}-{sub}" not in h3 and top not in h2:
-                bad.add(f"§{top}-{sub}")
-        elif top not in h2:
-            bad.add(f"§{top}")
+    bad = pr.unresolved_section_refs(PLAN.read_text(encoding="utf-8"))
     assert not bad, (
-        f"PLAN 안에 실체가 없는 절 참조: {sorted(bad)}\n"
+        f"PLAN 안에 실체가 없는 절 참조: {bad}\n"
         "  다른 문서를 가리키는 것이면 `MASTER §N` 처럼 소속을 적는다.")
-
 
 
 def _code_only(src: str) -> str:
@@ -883,3 +870,40 @@ def test_plan_guide_probe_tells_a_tombstone_from_a_guide():
         f"길잡이 프로브가 {got} 를 찾았다.\n"
         "  묘비(3줄)를 같이 집으면 역사를 고치라고 운다.\n"
         "  `§1 #4` 뒤의 `MASTER §19-5` 를 같이 집으면 남의 절을 행으로 읽는다.")
+
+
+_SYNTH_PLAN = (
+    "## 4. 자기 절\n\n### 4-5. 하위\n\n"
+    "{body}\n"
+)
+
+
+def _pr():
+    sys.path.insert(0, str(ROOT / "tools"))
+    import plan_renumber as pr
+    return pr
+
+
+def test_section_ref_check_separates_foreign_own_and_owned_refs():
+    """★ 양성 대조(2026-11-08). 합성 PLAN 으로 셋을 세운다.
+
+    ㉠ 소속 없는 타 문서 참조(`§633-3`) → 잡는다 · ㉡ 실재하는 자기 절(`§4-5` · `§4`) → 통과
+    ㉢ 소속 붙은 타 문서 참조(`DECISIONS §633-3` · `(MASTER §16-1`) → 통과.
+    """
+    pr = _pr()
+    mk = lambda b: _SYNTH_PLAN.format(body=b)  # noqa: E731
+    assert pr.unresolved_section_refs(mk("분배(§633-3 손 핀)")) == ["§633-3"]
+    assert pr.unresolved_section_refs(mk("§4-5 와 §4 를 본다")) == []
+    assert pr.unresolved_section_refs(mk("DECISIONS §633-3 · (MASTER §16-1 · README §2")) == []
+    # 셋을 한 PLAN 에 섞어도 ㉠ 만 남는다
+    assert pr.unresolved_section_refs(mk("§4-5 · DECISIONS §633-3 · §99")) == ["§99"]
+
+
+def test_section_ref_check_is_the_single_judge_and_the_prepush_runs_it():
+    """판단이 한 벌이고(시험이 도구 함수를 부른다) pre-push 가 그 도구를 돈다. 구현을 비우면 위 시험이 빨개진다."""
+    src = (ROOT / "tests" / "test_declaration_sync.py").read_text(encoding="utf-8")
+    body = src.split("def test_plan_section_refs_resolve", 1)[1].split("\ndef ", 1)[0]
+    assert "unresolved_section_refs" in body and "re.finditer" not in body, \
+        "시험이 정규식을 다시 들고 있다 — 판단은 plan_renumber 한 곳이다"
+    gates = (ROOT / ".githooks" / "pre-push.gates").read_text(encoding="utf-8")
+    assert "tools/plan_renumber.py" in gates
