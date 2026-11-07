@@ -63,7 +63,8 @@ class Block:
 
 
 def real_run(argv: list[str], cwd: Path) -> tuple[int, str]:
-    r = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    # ★ 시한을 둔다 — 시한 없는 기다림은 빨강을 무한 대기로 바꾼다(`test_no_unbounded_waits`). 래칫 전수가 2분이라 넉넉히 잡는다.
+    r = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=900)
     return r.returncode, (r.stdout or "") + (r.stderr or "")
 
 

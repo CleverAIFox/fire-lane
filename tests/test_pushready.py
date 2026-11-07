@@ -90,7 +90,7 @@ def test_stale_mutation_ledger_is_caught():
 
 
 def _git(cwd: Path, *a: str) -> None:
-    subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", *a], cwd=cwd, check=True, capture_output=True)
+    subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", *a], cwd=cwd, check=True, capture_output=True, timeout=60)
 
 
 def test_a_stamp_without_a_commit_is_caught_in_a_real_repo(tmp_path: Path):
