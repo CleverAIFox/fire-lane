@@ -6,7 +6,7 @@ acquire.py — landing → raw 획득 게이트. **적재한 것을 검증한다
     uv run python tools/acquire.py --stage         landing → raw 편입
     uv run python tools/acquire.py --verify        raw 와 landing 의 sha 대조
     uv run python tools/acquire.py --prune-landing raw 와 sha 가 같은 landing 원본 삭제
-    uv run python tools/acquire.py --quarantine    대장에 없는 raw 파일을 격리
+    (--quarantine 은 폐지됐다 — DECISIONS §173-2. 부르면 거절하고 종료코드 2 로 죽는다)
 
 ── 왜 만들었나 ────────────────────────────────────────────────
 MASTER §18-12 는 이 도구를 **이름까지 적어놓고** 있었다.
@@ -14,7 +14,7 @@ MASTER §18-12 는 이 도구를 **이름까지 적어놓고** 있었다.
     landing ($FIRE_LANE_DATA/landing — 이 기계는 /home/fox/lake/landing)
             ↓  acquire.py stage  — 대장 매칭
     data/raw/<제공기관>/
-    data/_quarantine/
+    (data/_quarantine/ 는 폐지된 층이다 — 되살아나는지 `doctor` · `lakecheck` L2 가 지킨다)
 
 **그런데 파일이 없었다.** `contract.py` 머리말이 적은 것과 같은 일이다 —
 *"설계는 있었고 구현이 없었다."* 그래서 실제로는 이렇게 굴러갔다.
@@ -44,13 +44,13 @@ MASTER §18-12 는 이 도구를 **이름까지 적어놓고** 있었다.
 ── 세 판정 (§18-12) ───────────────────────────────────────────
     대장에 있음 + 파일 있음   →  raw 편입 · sha 기록
     대장에 있음 + 파일 없음   →  ★ 결손 경고
-    대장에 없음 + 파일 있음   →  _quarantine (삭제하지 않는다)
+    대장에 없음 + 파일 있음   →  판단 대기(사람이 대장 retired 에 이름 · sha 로 적고 retired/ 로 옮긴다 — `_quarantine` 은 폐지)
 
 ★ 멱등하다. 같은 sha 면 다시 복사하지 않고, `--stage` 를 몇 번 돌려도 결과가
   같다. 크기가 아니라 **내용**으로 판정하므로 그 약속이 실제로 성립한다.
 
 IN    $FIRE_LANE_DATA/landing · sources.yaml
-OUT   $FIRE_LANE_DATA/raw · _quarantine · data/_acquire.json (sha 대장 · 커밋한다)
+OUT   $FIRE_LANE_DATA/raw · data/_acquire.json (sha 대장 · 커밋한다)
 PARAM 없음
 부류  생산   산출물·대장·그림을 만든다  (DECISIONS §398)
 """
